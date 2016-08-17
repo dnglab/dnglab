@@ -5,6 +5,9 @@ use std::io::Read;
 extern crate byteorder;
 use byteorder::{ByteOrder, BigEndian, LittleEndian};
 
+mod decoders;
+use decoders::Decoder;
+
 fn usage() {
   println!("rawloader <file>");
 }
@@ -25,8 +28,11 @@ fn main() {
   let mut f = File::open(file).unwrap();
   let mut buffer = Vec::new();
   f.read_to_end(&mut buffer).unwrap();
-  println!("Total file is {} bytes in length", buffer.len());
 
+  println!("Total file is {} bytes in length", buffer.len());
   println!("buffer[0..3] is big endian {}", BigEndian::read_u32(&buffer[2..6]));
   println!("buffer[0..3] is little endian {}", LittleEndian::read_u32(&buffer[2..6]));
+
+  let decoder = decoders::get_decoder(&buffer);
+  println!("Found camera \"{}\" model \"{}\"", decoder.make(), decoder.model());
 }
