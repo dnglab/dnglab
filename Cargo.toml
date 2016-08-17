@@ -1,0 +1,7 @@
+[package]
+name = "rawloader"
+version = "0.1.0"
+authors = ["Pedro Côrte-Real <pedro@pedrocr.net>"]
+
+[dependencies]
+byteorder = "0.5.3"
