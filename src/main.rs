@@ -1,9 +1,7 @@
 use std::env;
 use std::fs::File;
 use std::io::Read;
-
-extern crate byteorder;
-use byteorder::{ByteOrder, BigEndian, LittleEndian};
+use std::mem;
 
 mod decoders;
 use decoders::Decoder;
@@ -30,9 +28,7 @@ fn main() {
   f.read_to_end(&mut buffer).unwrap();
 
   println!("Total file is {} bytes in length", buffer.len());
-  println!("buffer[0..3] is big endian {}", BigEndian::read_u32(&buffer[2..6]));
-  println!("buffer[0..3] is little endian {}", LittleEndian::read_u32(&buffer[2..6]));
 
-  let decoder = decoders::get_decoder(&buffer);
+  let decoder = decoders::get_decoder(&buffer).unwrap();
   println!("Found camera \"{}\" model \"{}\"", decoder.make(), decoder.model());
 }
