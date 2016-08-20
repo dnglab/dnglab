@@ -1,5 +1,6 @@
 use decoders::*;
 use decoders::basics::*;
+use std::f32;
 
 pub fn is_mrw(buf: &[u8]) -> bool {
   BEu32(buf,0) == 0x004D524D
@@ -11,7 +12,7 @@ pub struct MrwDecoder<'a> {
   raw_width: u16,
   raw_height: u16,
   packed: bool,
-  wb_coeffs: [f32;4],
+  wb_vals: [u16;4],
 }
 
 impl<'a> MrwDecoder<'a> {
@@ -20,7 +21,7 @@ impl<'a> MrwDecoder<'a> {
     let mut raw_height: u16 = 0;
     let mut raw_width: u16 = 0;
     let mut packed = false;
-    let mut wb_coeffs: [f32;4] = [0.0,0.0,0.0,0.0];
+    let mut wb_vals: [u16;4] = [0;4];
 
     let mut currpos: usize = 8;
     // At most we read 20 bytes from currpos so check we don't step outside that
@@ -36,7 +37,7 @@ impl<'a> MrwDecoder<'a> {
         }
         0x574247 => { // WBG
           for i in 0..4 {
-            wb_coeffs[i] = (BEu16(buf, currpos+12+i*2)) as f32;
+            wb_vals[i] = BEu16(buf, currpos+12+i*2);
           }
         }
         0x545457 => { // TTW
@@ -62,7 +63,7 @@ impl<'a> MrwDecoder<'a> {
       raw_width: raw_width,
       raw_height: raw_height,
       packed: packed,
-      wb_coeffs: wb_coeffs,
+      wb_vals: wb_vals,
     }
   }
 }
@@ -88,10 +89,24 @@ impl<'a> Decoder for MrwDecoder<'a> {
       decode_12be_unpacked(&src, w, h)
     };
 
+    let swapped_wb = false;
+
+    let wb_coeffs = if swapped_wb {
+      [self.wb_vals[2] as f32,
+       self.wb_vals[0] as f32,
+       self.wb_vals[1] as f32,
+       f32::NAN]
+    } else {
+      [self.wb_vals[0] as f32,
+       self.wb_vals[1] as f32,
+       self.wb_vals[3] as f32,
+       f32::NAN]
+    };
+
     Image {
       width: self.raw_width as u32,
       height: self.raw_height as u32,
-      wb_coeffs: self.wb_coeffs,
+      wb_coeffs: wb_coeffs,
       data: buffer.into_boxed_slice(),
     }
   }
