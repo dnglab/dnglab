@@ -1,4 +1,5 @@
 mod basics;
+mod tiff;
 mod mrw;
 
 pub trait Decoder {

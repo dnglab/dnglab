@@ -1,4 +1,5 @@
 use decoders::*;
+use decoders::tiff::*;
 use decoders::basics::*;
 use std::f32;
 
@@ -13,6 +14,7 @@ pub struct MrwDecoder<'a> {
   raw_height: u16,
   packed: bool,
   wb_vals: [u16;4],
+  tiff: TiffIFD,
 }
 
 impl<'a> MrwDecoder<'a> {
@@ -22,6 +24,7 @@ impl<'a> MrwDecoder<'a> {
     let mut raw_width: u16 = 0;
     let mut packed = false;
     let mut wb_vals: [u16;4] = [0;4];
+    let mut tiffpos: usize = 0;
 
     let mut currpos: usize = 8;
     // At most we read 20 bytes from currpos so check we don't step outside that
@@ -43,13 +46,7 @@ impl<'a> MrwDecoder<'a> {
         0x545457 => { // TTW
           // Base value for offsets needs to be at the beginning of the 
           // TIFF block, not the file
-//          FileMap *f = new FileMap(mFile, currpos+8);
-//          if (little == getHostEndianness())
-//            tiff_meta = new TiffIFDBE(f, 8);
-//          else
-//            tiff_meta = new TiffIFD(f, 8);
-//          delete f;
-//          break;
+          tiffpos = currpos+8;
         }
         _ => {}
       }
@@ -64,6 +61,7 @@ impl<'a> MrwDecoder<'a> {
       raw_height: raw_height,
       packed: packed,
       wb_vals: wb_vals,
+      tiff: TiffIFD::new(&buf[tiffpos+8 .. buf.len()], 0, 0),
     }
   }
 }
