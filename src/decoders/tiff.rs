@@ -9,8 +9,8 @@ pub enum Tag {
   SUBIFDS        = 0x014A,
   EXIFIFDPOINTER = 0x8769,
 }
+
                           // 0-1-2-3-4-5-6-7-8-9-10-11-12-13
-const DATASIZES:  [u8;14] = [0,1,1,2,4,8,1,1,2,4, 8, 4, 8, 4];
 const DATASHIFTS: [u8;14] = [0,0,0,1,2,3,0,0,1,2, 3, 2, 3, 2];
 
 fn t (tag: Tag) -> u16 {
@@ -37,12 +37,11 @@ impl<'a> TiffIFD<'a> {
     let num = BEu16(buf, offset); // Directory entries in this IFD
     for i in 0..num {
       let entry_offset: usize = offset + 2 + (i as usize)*12;
-      let entry = TiffEntry::new(buf, entry_offset, offset);
+      let entry = TiffEntry::new(buf, entry_offset);
 
       if entry.tag == t(Tag::SUBIFDS) || entry.tag == t(Tag::EXIFIFDPOINTER) {
         if depth < 10 { // Avoid infinite looping IFDs
           for i in 0..entry.count {
-            let pos = entry.get_u32(i);
             subifds.push(TiffIFD::new(buf, entry.get_u32(i) as usize, depth+1));
           }
         }
@@ -74,7 +73,7 @@ impl<'a> TiffIFD<'a> {
 }
 
 impl<'a> TiffEntry<'a> {
-  pub fn new(buf: &'a[u8], offset: usize, parent_offset: usize) -> TiffEntry<'a> {
+  pub fn new(buf: &'a[u8], offset: usize) -> TiffEntry<'a> {
     let tag = BEu16(buf, offset);
     let mut typ = BEu16(buf, offset+2);
     let count = BEu32(buf, offset+4);
@@ -106,7 +105,7 @@ impl<'a> TiffEntry<'a> {
   pub fn get_str(&self) -> &str {
     match str::from_utf8(&self.data[0..self.data.len()-1]) {
       Result::Ok(val) => val.trim(),
-      Result::Err(err) => "",
+      Result::Err(err) => panic!(err),
     }
   }
 }

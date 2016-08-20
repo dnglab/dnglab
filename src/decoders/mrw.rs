@@ -68,7 +68,7 @@ impl<'a> MrwDecoder<'a> {
 }
 
 impl<'a> Decoder for MrwDecoder<'a> {
-  fn identify(&self) -> Result<Camera, String> {
+  fn identify(&self) -> Result<&Camera, String> {
     let make = self.tiff.find_entry(Tag::MAKE).unwrap().get_str();
     let model = self.tiff.find_entry(Tag::MODEL).unwrap().get_str();
 

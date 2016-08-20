@@ -9,13 +9,8 @@ mod basics;
 mod tiff;
 mod mrw;
 
-pub struct Camera<'a> {
-  pub make: &'a str,
-  pub model: &'a str,
-}
-
 pub trait Decoder {
-  fn identify(&self) -> Result<Camera, String>;
+  fn identify(&self) -> Result<&Camera, String>;
   fn image(&self) -> Image;
 }
 
@@ -27,24 +22,26 @@ pub struct Image {
 }
 
 #[derive(Debug)]
-pub struct CameraMetadata {
+pub struct Camera {
   pub make: String,
   pub model: String,
+  pub canonical_make: String,
+  pub canonical_model: String,
 }
 
-impl CameraMetadata {
-  pub fn from_toml(text: &str) -> CameraMetadata {
+impl Camera {
+  pub fn from_toml(text: &str) -> Camera {
     let camvalue = toml::Parser::new(text).parse().unwrap();
     let cameradata = camvalue.get("camera").unwrap().as_table().unwrap();
     let make = cameradata.get("make").unwrap().as_str().unwrap().to_string();
     let model = cameradata.get("model").unwrap().as_str().unwrap().to_string();
-    CameraMetadata{make: make, model: model}
+    Camera{make: make.clone(), model: model.clone(), canonical_make: make.clone(), canonical_model: model.clone()}
   }
 }
 
 #[derive(Debug)]
 pub struct RawLoader {
-  pub cameras: HashMap<(String,String),CameraMetadata>,
+  pub cameras: HashMap<(String,String),Camera>,
 }
 
 impl RawLoader {
@@ -57,10 +54,10 @@ impl RawLoader {
           let mut f = File::open(path).unwrap();
           let mut toml = String::new();
           f.read_to_string(&mut toml).unwrap();
-          let cmd = CameraMetadata::from_toml(&toml);
+          let cmd = Camera::from_toml(&toml);
           map.insert((cmd.make.clone(),cmd.model.clone()), cmd);
         }
-        Err(e) => {}
+        Err(err) => panic!(err),
       }
     }
 
@@ -77,15 +74,10 @@ impl RawLoader {
     None
   }
 
-  pub fn check_supported<'a>(&'a self, make: &'a str, model: &'a str) -> Result<Camera<'a>, String> {
-    let cam_meta = match self.cameras.get(&(make.to_string(),model.to_string())) {
-      Some(cam) => cam,
-      None => return Err(format!("Couldn't find camera \"{}\" \"{}\"", make, model)),
-    };
-
-    Ok(Camera {
-      make: make,
-      model: model,
-    })
+  pub fn check_supported<'a>(&'a self, make: &'a str, model: &'a str) -> Result<&Camera, String> {
+    match self.cameras.get(&(make.to_string(),model.to_string())) {
+      Some(cam) => Ok(cam),
+      None => Err(format!("Couldn't find camera \"{}\" \"{}\"", make, model)),
+    }
   }
 }
