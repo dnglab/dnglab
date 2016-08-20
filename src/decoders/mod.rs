@@ -30,12 +30,39 @@ pub struct Camera {
 }
 
 impl Camera {
-  pub fn from_toml(text: &str) -> Camera {
-    let camvalue = toml::Parser::new(text).parse().unwrap();
-    let cameradata = camvalue.get("camera").unwrap().as_table().unwrap();
-    let make = cameradata.get("make").unwrap().as_str().unwrap().to_string();
-    let model = cameradata.get("model").unwrap().as_str().unwrap().to_string();
-    Camera{make: make.clone(), model: model.clone(), canonical_make: make.clone(), canonical_model: model.clone()}
+  pub fn from_toml(text: &str) -> Result<Camera, String> {
+    let camvalue = match toml::Parser::new(text).parse() {
+      Some(val) => val,
+      None => return Err("parse failed".to_string())
+    };
+    let cameradata = match camvalue.get("camera") {
+      Some(c) => match c.as_table() {
+        Some(tbl) => tbl,
+        None => return Err("parsing [camera] failed".to_string())
+      },
+      None => return Err("parsing [camera] failed".to_string()),
+    };
+
+    let make = match cameradata.get("make") {
+      Some(m) => match m.as_str() {
+        Some(ms) => ms.to_string(),
+        None => return Err("parsing [camera]->make failed".to_string()),
+      },
+      None => return Err("parsing [camera]->make failed".to_string()),
+    };
+    let model = match cameradata.get("model") {
+      Some(m) => match m.as_str() {
+        Some(ms) => ms.to_string(),
+        None => return Err("parsing [camera]->model failed".to_string()),
+      },
+      None => return Err("parsing [camera]->model failed".to_string()),
+    };
+    Ok(Camera{
+      make: make.clone(),
+      model: model.clone(),
+      canonical_make: make.clone(),
+      canonical_model: model.clone()
+    })
   }
 }
 
@@ -51,10 +78,18 @@ impl RawLoader {
     for entry in glob(&(path.to_string()+"/**/*.toml")).expect("Failed to read glob pattern") {
       match entry {
         Ok(path) => {
-          let mut f = File::open(path).unwrap();
+          let mut f = match File::open(path) {
+            Ok(val) => val,
+            Err(_) => continue,
+          };
           let mut toml = String::new();
-          f.read_to_string(&mut toml).unwrap();
-          let cmd = Camera::from_toml(&toml);
+          if f.read_to_string(&mut toml).is_err() {
+            continue
+          }
+          let cmd = match Camera::from_toml(&toml) {
+            Ok(val) => val,
+            Err(_) => continue,
+          };
           map.insert((cmd.make.clone(),cmd.model.clone()), cmd);
         }
         Err(err) => panic!(err),
