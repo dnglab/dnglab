@@ -104,8 +104,8 @@ impl<'a> TiffEntry<'a> {
   }
 
   pub fn get_str(&self) -> &str {
-    match str::from_utf8(self.data) {
-      Result::Ok(val) => val,
+    match str::from_utf8(&self.data[0..self.data.len()-1]) {
+      Result::Ok(val) => val.trim(),
       Result::Err(err) => "",
     }
   }

@@ -6,3 +6,4 @@ authors = ["Pedro Côrte-Real <pedro@pedrocr.net>"]
 [dependencies]
 itertools = "0.4.18"
 toml = "0.2.0"
+glob = "0.2.11"

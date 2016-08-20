@@ -9,6 +9,7 @@ pub fn is_mrw(buf: &[u8]) -> bool {
 
 pub struct MrwDecoder<'a> {
   buffer: &'a [u8],
+  rawloader: &'a RawLoader,
   data_offset: usize,
   raw_width: u16,
   raw_height: u16,
@@ -18,7 +19,7 @@ pub struct MrwDecoder<'a> {
 }
 
 impl<'a> MrwDecoder<'a> {
-  pub fn new(buf: &[u8]) -> MrwDecoder {
+  pub fn new(buf: &'a [u8], rawloader: &'a RawLoader) -> MrwDecoder<'a> {
     let data_offset: usize = (BEu32(buf, 4) + 8) as usize;
     let mut raw_height: u16 = 0;
     let mut raw_width: u16 = 0;
@@ -61,19 +62,17 @@ impl<'a> MrwDecoder<'a> {
       packed: packed,
       wb_vals: wb_vals,
       tiff: TiffIFD::new(&buf[tiffpos .. buf.len()], 8, 0),
+      rawloader: rawloader,
     }
   }
 }
 
 impl<'a> Decoder for MrwDecoder<'a> {
-  fn identify(&self) -> Camera {
+  fn identify(&self) -> Result<Camera, String> {
     let make = self.tiff.find_entry(Tag::MAKE).unwrap().get_str();
     let model = self.tiff.find_entry(Tag::MODEL).unwrap().get_str();
 
-    Camera {
-      make: make,
-      model: model,
-    }
+    self.rawloader.check_supported(make, model)
   }
 
   fn image(&self) -> Image {

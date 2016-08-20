@@ -24,11 +24,9 @@ fn main() {
 
   println!("Total file is {} bytes in length", buffer.len());
 
-  let rawloader = decoders::RawLoader::new();
-  println!("Cameras is {:?}", rawloader.cameras);
-
+  let rawloader = decoders::RawLoader::new("./data/cameras/");
   let decoder = rawloader.get_decoder(&buffer).unwrap();
-  let camera = decoder.identify();
+  let camera = decoder.identify().unwrap();
   println!("Found camera \"{}\" model \"{}\"", camera.make, camera.model);
 
   let image = decoder.image();
