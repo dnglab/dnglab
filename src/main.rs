@@ -10,16 +10,12 @@ fn usage() {
 
 fn main() {
   let args: Vec<_> = env::args().collect();
-
   if args.len() != 2 {
     usage();
-    
     std::process::exit(2);
   }
-
   let file = &args[1];
   println!("Loading file \"{}\"", file);
-
 
   let mut f = File::open(file).unwrap();
   let mut buffer = Vec::new();
