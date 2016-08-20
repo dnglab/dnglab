@@ -24,7 +24,9 @@ fn main() {
   println!("Total file is {} bytes in length", buffer.len());
 
   let decoder = decoders::get_decoder(&buffer).unwrap();
-  println!("Found camera \"{}\" model \"{}\"", decoder.make(), decoder.model());
+  let camera = decoder.identify();
+  println!("Found camera \"{}\" model \"{}\"", camera.make, camera.model);
+
   let image = decoder.image();
   println!("Image size is {}x{}", image.width, image.height);
   println!("WB coeffs are {},{},{},{}", image.wb_coeffs[0],

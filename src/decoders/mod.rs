@@ -2,9 +2,13 @@ mod basics;
 mod tiff;
 mod mrw;
 
+pub struct Camera<'a> {
+  pub make: &'a str,
+  pub model: &'a str,
+}
+
 pub trait Decoder {
-  fn make(&self) -> String;
-  fn model(&self) -> String;
+  fn identify(&self) -> Camera;
   fn image(&self) -> Image;
 }
 

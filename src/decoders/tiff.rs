@@ -1,7 +1,11 @@
 use std::collections::HashMap;
 use decoders::basics::*;
+use std::str;
 
-enum Tag {
+#[derive(Debug, Copy, Clone)]
+pub enum Tag {
+  MAKE           = 0x010F,
+  MODEL          = 0x0110,
   SUBIFDS        = 0x014A,
   EXIFIFDPOINTER = 0x8769,
 }
@@ -52,6 +56,21 @@ impl<'a> TiffIFD<'a> {
       subifds: subifds,
     }
   }
+
+  pub fn find_entry(&self, tag: Tag) -> Option<&TiffEntry> {
+    let utag: u16 = tag as u16;
+    if self.entries.contains_key(&utag) {
+      self.entries.get(&utag)
+    } else {
+      for ifd in &self.subifds {
+        match ifd.find_entry(tag) {
+          Some(x) => return Some(x),
+          None => {},
+        }
+      }
+      None
+    }
+  }
 }
 
 impl<'a> TiffEntry<'a> {
@@ -82,5 +101,12 @@ impl<'a> TiffEntry<'a> {
 
   pub fn get_u32(&self, idx: u32) -> u32 {
     BEu32(self.data, (idx*4) as usize)
+  }
+
+  pub fn get_str(&self) -> &str {
+    match str::from_utf8(self.data) {
+      Result::Ok(val) => val,
+      Result::Err(err) => "",
+    }
   }
 }

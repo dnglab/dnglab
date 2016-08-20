@@ -66,12 +66,14 @@ impl<'a> MrwDecoder<'a> {
 }
 
 impl<'a> Decoder for MrwDecoder<'a> {
-  fn make(&self) -> String {
-    "Minolta".to_string()
-  }
+  fn identify(&self) -> Camera {
+    let make = self.tiff.find_entry(Tag::MAKE).unwrap().get_str();
+    let model = self.tiff.find_entry(Tag::MODEL).unwrap().get_str();
 
-  fn model(&self) -> String {
-    "SomeModel".to_string()
+    Camera {
+      make: make,
+      model: model,
+    }
   }
 
   fn image(&self) -> Image {
