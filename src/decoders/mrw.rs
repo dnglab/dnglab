@@ -35,7 +35,7 @@ impl<'a> MrwDecoder<'a> {
           packed = buf[currpos+24] == 12;
         }
         0x574247 => { // WBG
-          for i in 0..3 {
+          for i in 0..4 {
             wb_coeffs[i] = (BEu16(buf, currpos+12+i*2)) as f32;
           }
         }
@@ -91,6 +91,7 @@ impl<'a> Decoder for MrwDecoder<'a> {
     Image {
       width: self.raw_width as u32,
       height: self.raw_height as u32,
+      wb_coeffs: self.wb_coeffs,
       data: buffer.into_boxed_slice(),
     }
   }

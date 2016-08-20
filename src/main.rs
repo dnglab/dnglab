@@ -27,6 +27,10 @@ fn main() {
   println!("Found camera \"{}\" model \"{}\"", decoder.make(), decoder.model());
   let image = decoder.image();
   println!("Image size is {}x{}", image.width, image.height);
+  println!("WB coeffs are {},{},{},{}", image.wb_coeffs[0],
+                                        image.wb_coeffs[1],
+                                        image.wb_coeffs[2],
+                                        image.wb_coeffs[3]);
 
   let mut sum: u64 = 0;
   for i in 0..(image.width*image.height) {

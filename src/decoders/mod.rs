@@ -10,6 +10,7 @@ pub trait Decoder {
 pub struct Image {
   pub width: u32,
   pub height: u32,
+  pub wb_coeffs: [f32;4],
   pub data: Box<[u16]>,
 }
 
