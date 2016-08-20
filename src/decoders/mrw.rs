@@ -53,7 +53,6 @@ impl<'a> MrwDecoder<'a> {
       currpos += (len+8) as usize;
     }
 
-
     MrwDecoder { 
       buffer: buf,
       data_offset: data_offset,
@@ -61,7 +60,7 @@ impl<'a> MrwDecoder<'a> {
       raw_height: raw_height,
       packed: packed,
       wb_vals: wb_vals,
-      tiff: TiffIFD::new(&buf[tiffpos+8 .. buf.len()], 0, 0),
+      tiff: TiffIFD::new(&buf[tiffpos .. buf.len()], 8, 0),
     }
   }
 }

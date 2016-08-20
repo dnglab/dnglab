@@ -31,13 +31,17 @@ impl<'a> TiffIFD<'a> {
     let mut subifds = Vec::new();
 
     let num = BEu16(buf, offset); // Directory entries in this IFD
-
     for i in 0..num {
       let entry_offset: usize = offset + 2 + (i as usize)*12;
       let entry = TiffEntry::new(buf, entry_offset, offset);
 
       if entry.tag == t(Tag::SUBIFDS) || entry.tag == t(Tag::EXIFIFDPOINTER) {
-        //subifds.push(TiffIFD::new(buf, offset, depth+1);
+        if depth < 10 { // Avoid infinite looping IFDs
+          for i in 0..entry.count {
+            let pos = entry.get_u32(i);
+            subifds.push(TiffIFD::new(buf, entry.get_u32(i) as usize, depth+1));
+          }
+        }
       } else {
         entries.insert(entry.tag, entry);
       }
@@ -72,7 +76,11 @@ impl<'a> TiffEntry<'a> {
       tag: tag,
       typ: typ,
       count: count,
-      data: &buf[doffset .. doffset+bytesize-1],
+      data: &buf[doffset .. doffset+bytesize],
     }
+  }
+
+  pub fn get_u32(&self, idx: u32) -> u32 {
+    BEu32(self.data, (idx*4) as usize)
   }
 }
