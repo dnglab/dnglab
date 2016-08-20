@@ -66,12 +66,12 @@ impl RawLoader {
     }
   }
 
-  pub fn get_decoder<'b>(&'b self, buffer: &'b [u8]) -> Option<Box<Decoder+'b>> {
+  pub fn get_decoder<'b>(&'b self, buffer: &'b [u8]) -> Result<Box<Decoder+'b>, String> {
     if mrw::is_mrw(buffer) {
       let dec = Box::new(mrw::MrwDecoder::new(buffer, &self));
-      return Some(dec as Box<Decoder>);
+      return Ok(dec as Box<Decoder>);
     }
-    None
+    Err("Couldn't find a decoder!".to_string())
   }
 
   pub fn check_supported<'a>(&'a self, make: &'a str, model: &'a str) -> Result<&Camera, String> {
