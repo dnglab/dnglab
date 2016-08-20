@@ -25,4 +25,14 @@ fn main() {
 
   let decoder = decoders::get_decoder(&buffer).unwrap();
   println!("Found camera \"{}\" model \"{}\"", decoder.make(), decoder.model());
+  let image = decoder.image();
+  println!("Image size is {}x{}", image.width, image.height);
+
+  let mut sum: u64 = 0;
+  for i in 0..(image.width*image.height) {
+    sum += image.data[i as usize] as u64;
+  }
+  println!("Image sum: {}", sum);
+  let count: u64 = (image.width as u64) * (image.height as u64);
+  println!("Image avg: {}", sum/count);
 }

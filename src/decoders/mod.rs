@@ -4,6 +4,13 @@ mod mrw;
 pub trait Decoder {
   fn make(&self) -> String;
   fn model(&self) -> String;
+  fn image(&self) -> Image;
+}
+
+pub struct Image {
+  pub width: u32,
+  pub height: u32,
+  pub data: Box<[u16]>,
 }
 
 pub fn get_decoder<'a>(buffer: &'a [u8]) -> Option<Box<Decoder+'a>> {

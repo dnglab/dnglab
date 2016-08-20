@@ -1,6 +1,5 @@
-use decoders::Decoder;
+use decoders::*;
 use decoders::basics::*;
-use std::cmp;
 
 pub fn is_mrw(buf: &[u8]) -> bool {
   BEu32(buf,0) == 0x004D524D
@@ -75,5 +74,24 @@ impl<'a> Decoder for MrwDecoder<'a> {
 
   fn model(&self) -> String {
     "SomeModel".to_string()
+  }
+
+  fn image(&self) -> Image {
+    let src = &self.buffer[self.data_offset .. self.buffer.len()];
+    let w = self.raw_width as usize;
+    let h = self.raw_height as usize;
+
+    let buffer = if self.packed {
+      decode_12be(&src, w, h)
+    }
+    else {
+      decode_12be_unpacked(&src, w, h)
+    };
+
+    Image {
+      width: self.raw_width as u32,
+      height: self.raw_height as u32,
+      data: buffer.into_boxed_slice(),
+    }
   }
 }
