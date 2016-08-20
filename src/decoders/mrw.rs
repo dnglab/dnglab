@@ -14,7 +14,7 @@ pub struct MrwDecoder<'a> {
   raw_height: u16,
   packed: bool,
   wb_vals: [u16;4],
-  tiff: TiffIFD,
+  tiff: TiffIFD<'a>,
 }
 
 impl<'a> MrwDecoder<'a> {
