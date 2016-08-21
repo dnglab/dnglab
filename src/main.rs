@@ -1,7 +1,7 @@
 use std::env;
 use std::fs::File;
-use std::io::Read;
 use std::error::Error;
+use std::io::prelude::*;
 extern crate toml;
 
 mod decoders;
@@ -60,4 +60,25 @@ fn main() {
   println!("Image sum: {}", sum);
   let count: u64 = (image.width as u64) * (image.height as u64);
   println!("Image avg: {}", sum/count);
+
+  let mut f = match File::create(format!("{}.ppm",file)) {
+    Ok(val) => val,
+    Err(e) => {error(e.description());unreachable!()},
+  };
+  let preamble = format!("P6 {} {} {}\n", image.width, image.height, 4095).into_bytes();
+  if let Err(err) = f.write_all(&preamble) {
+    error(err.description());
+  }
+  for row in 0..image.height {
+    let from: usize = (row as usize) * (image.width as usize);
+    let to: usize = ((row+1) as usize) * (image.width as usize);
+    let imgline = &image.data[from .. to];
+
+    for pixel in imgline {
+      let bytes = [(pixel>>4) as u8, (pixel&0x0f) as u8, (pixel>>4) as u8, (pixel&0x0f) as u8, (pixel>>4) as u8, (pixel&0x0f) as u8];
+       if let Err(err) = f.write_all(&bytes) {
+        error(err.description());
+      }
+    }
+  }
 }
