@@ -59,6 +59,7 @@ fn main() {
   println!("black levels are {:?}", image.blacklevels);
   println!("white levels are {:?}", image.whitelevels);
   println!("color matrix is {:?}", image.color_matrix);
+  println!("dcraw filters {:#x}", image.dcraw_filters);
 
   let mut sum: u64 = 0;
   for i in 0..(image.width*image.height) {

@@ -54,6 +54,7 @@ fn main() {
   println!("black levels are {:?}", image.blacklevels);
   println!("white levels are {:?}", image.whitelevels);
   println!("color matrix is {:?}", image.color_matrix);
+  println!("dcraw filters {:#x}", image.dcraw_filters);
 
   // Write out the image as a grayscale PPM in an extremely inneficient way
   let mut f = File::create(format!("{}.ppm",file)).unwrap();

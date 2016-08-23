@@ -24,6 +24,7 @@ pub struct Image {
   pub whitelevels: [i64;4],
   pub blacklevels: [i64;4],
   pub color_matrix: [i64;12],
+  pub dcraw_filters: u32,
 }
 
 #[derive(Debug)]
@@ -35,9 +36,7 @@ pub struct Camera {
   whitelevels: [i64;4],
   blacklevels: [i64;4],
   color_matrix: [i64;12],
-}
-
-impl Camera {
+  dcraw_filters: u32,
 }
 
 #[derive(Debug)]
@@ -68,6 +67,7 @@ impl RawLoader {
       for (i, val) in matrix.into_iter().enumerate() {
         cmatrix[i] = val.as_integer().unwrap();
       }
+      let color_pattern = ct.get("color_pattern").unwrap().as_str().unwrap().to_string();
       let cam = Camera{
         make: make.clone(),
         model: model.clone(),
@@ -76,6 +76,7 @@ impl RawLoader {
         whitelevels: [white, white, white, white],
         blacklevels: [black, black, black, black],
         color_matrix : cmatrix,
+        dcraw_filters: RawLoader::dcraw_filters(&color_pattern),
       };
       map.insert((make.clone(),model.clone()), cam);
     }
@@ -97,6 +98,16 @@ impl RawLoader {
     match self.cameras.get(&(make.to_string(),model.to_string())) {
       Some(cam) => Ok(cam),
       None => Err(format!("Couldn't find camera \"{}\" \"{}\"", make, model)),
+    }
+  }
+
+  fn dcraw_filters(pattern: &str) -> u32 {
+    match pattern {
+      "BGGR" => 0x16161616,
+      "GRBG" => 0x61616161,
+      "GBRG" => 0x49494949,
+      "RGGB" => 0x94949494,
+      _ => 0,
     }
   }
 }
