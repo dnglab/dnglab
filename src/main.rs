@@ -52,10 +52,7 @@ fn main() {
     Err(e) => {error(&e);unreachable!()},
   };
   println!("Image size is {}x{}", image.width, image.height);
-  println!("WB coeffs are {},{},{},{}", image.wb_coeffs[0],
-                                        image.wb_coeffs[1],
-                                        image.wb_coeffs[2],
-                                        image.wb_coeffs[3]);
+  println!("WB coeffs are {:?}", image.wb_coeffs);
   println!("black levels are {:?}", image.blacklevels);
   println!("white levels are {:?}", image.whitelevels);
   println!("color matrix is {:?}", image.color_matrix);
