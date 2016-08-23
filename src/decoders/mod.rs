@@ -25,6 +25,7 @@ pub struct Image {
   pub blacklevels: [i64;4],
   pub color_matrix: [i64;12],
   pub dcraw_filters: u32,
+  pub crops: [i64;4],
 }
 
 #[derive(Debug)]
@@ -37,6 +38,7 @@ pub struct Camera {
   blacklevels: [i64;4],
   color_matrix: [i64;12],
   dcraw_filters: u32,
+  crops: [i64;4],
 }
 
 #[derive(Debug)]
@@ -67,6 +69,11 @@ impl RawLoader {
       for (i, val) in matrix.into_iter().enumerate() {
         cmatrix[i] = val.as_integer().unwrap();
       }
+      let crop_vals = ct.get("crops").unwrap().as_slice().unwrap();
+      let mut crops: [i64;4] = [0,0,0,0];
+      for (i, val) in crop_vals.into_iter().enumerate() {
+        crops[i] = val.as_integer().unwrap();
+      }
       let color_pattern = ct.get("color_pattern").unwrap().as_str().unwrap().to_string();
       let cam = Camera{
         make: make.clone(),
@@ -77,6 +84,7 @@ impl RawLoader {
         blacklevels: [black, black, black, black],
         color_matrix : cmatrix,
         dcraw_filters: RawLoader::dcraw_filters(&color_pattern),
+        crops: crops,
       };
       map.insert((make.clone(),model.clone()), cam);
     }

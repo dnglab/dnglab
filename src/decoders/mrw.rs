@@ -121,6 +121,7 @@ impl<'a> Decoder for MrwDecoder<'a> {
       whitelevels: camera.whitelevels,
       color_matrix: camera.color_matrix,
       dcraw_filters: camera.dcraw_filters,
+      crops: camera.crops,
     })
   }
 }

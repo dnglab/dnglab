@@ -4,6 +4,7 @@ This is a rust library to extract the raw data and some metadata from digital ca
 
   * Identification of the camera that produced the image (both the EXIF name and a clean/canonical name)
   * The raw pixels themselves, exactly as encoded by the camera
+  * The number of pixels to crop on the top, right, bottom, left of the image to only use the actual image area
   * The black and white points of each of the color channels
   * The multipliers to apply to the color channels for the white balance
   * A conversion matrix between the camera color space and XYZ
@@ -53,6 +54,7 @@ fn main() {
   println!("white levels are {:?}", image.whitelevels);
   println!("color matrix is {:?}", image.color_matrix);
   println!("dcraw filters is {:#x}", image.dcraw_filters);
+  println!("crops are {:?}", image.crops);
 
   // Write out the image as a grayscale PPM in an extremely inneficient way
   let mut f = File::create(format!("{}.ppm",file)).unwrap();
