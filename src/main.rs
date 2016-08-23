@@ -34,7 +34,7 @@ fn main() {
   }
   println!("Total file is {} bytes in length", buffer.len());
 
-  let rawloader = decoders::RawLoader::new("./data/cameras/");
+  let rawloader = decoders::RawLoader::new();
   let decoder = match rawloader.get_decoder(&buffer) {
     Ok(val) => val,
     Err(e) => {error(&e);unreachable!()},

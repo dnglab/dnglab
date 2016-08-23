@@ -40,7 +40,7 @@ pub struct RawLoader {
 }
 
 impl RawLoader {
-  pub fn new(path: &str) -> RawLoader {
+  pub fn new() -> RawLoader {
     let mut map = HashMap::new();
 
     let mut parser = toml::Parser::new(&CAMERAS_TOML);
