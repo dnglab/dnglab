@@ -45,13 +45,20 @@ fn main() {
     Err(e) => {error(&e);unreachable!()},
   };
   println!("Found camera \"{}\" model \"{}\"", camera.make, camera.model);
+  println!("Found canonical named camera \"{}\" model \"{}\"", camera.canonical_make, camera.canonical_model);
 
-  let image = decoder.image();
+  let image = match decoder.image() {
+    Ok(val) => val,
+    Err(e) => {error(&e);unreachable!()},
+  };
   println!("Image size is {}x{}", image.width, image.height);
   println!("WB coeffs are {},{},{},{}", image.wb_coeffs[0],
                                         image.wb_coeffs[1],
                                         image.wb_coeffs[2],
                                         image.wb_coeffs[3]);
+  println!("black levels are {:?}", image.blacklevels);
+  println!("white levels are {:?}", image.whitelevels);
+  println!("color matrix is {:?}", image.color_matrix);
 
   let mut sum: u64 = 0;
   for i in 0..(image.width*image.height) {

@@ -81,7 +81,7 @@ impl<'a> Decoder for MrwDecoder<'a> {
     self.rawloader.check_supported(make, model)
   }
 
-  fn image(&self) -> Image {
+  fn image(&self) -> Result<Image,String> {
     let src = &self.buffer[self.data_offset .. self.buffer.len()];
     let w = self.raw_width as usize;
     let h = self.raw_height as usize;
@@ -107,11 +107,19 @@ impl<'a> Decoder for MrwDecoder<'a> {
        f32::NAN]
     };
 
-    Image {
+    let camera = match self.identify() {
+      Ok(val) => val,
+      Err(e) => {return Err(e)},
+    };
+
+    Ok(Image {
       width: self.raw_width as u32,
       height: self.raw_height as u32,
       wb_coeffs: wb_coeffs,
       data: buffer.into_boxed_slice(),
-    }
+      blacklevels: camera.blacklevels,
+      whitelevels: camera.whitelevels,
+      color_matrix: camera.color_matrix,
+    })
   }
 }

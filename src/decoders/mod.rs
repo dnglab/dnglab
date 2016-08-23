@@ -13,7 +13,7 @@ pub static CAMERAS_TOML: &'static str = include_str!("../../data/cameras/all.tom
 
 pub trait Decoder {
   fn identify(&self) -> Result<&Camera, String>;
-  fn image(&self) -> Image;
+  fn image(&self) -> Result<Image, String>;
 }
 
 pub struct Image {
@@ -21,6 +21,9 @@ pub struct Image {
   pub height: u32,
   pub wb_coeffs: [f32;4],
   pub data: Box<[u16]>,
+  pub whitelevels: [i64;4],
+  pub blacklevels: [i64;4],
+  pub color_matrix: [i64;12],
 }
 
 #[derive(Debug)]
@@ -29,6 +32,9 @@ pub struct Camera {
   pub model: String,
   pub canonical_make: String,
   pub canonical_model: String,
+  whitelevels: [i64;4],
+  blacklevels: [i64;4],
+  color_matrix: [i64;12],
 }
 
 impl Camera {
@@ -53,11 +59,23 @@ impl RawLoader {
       let ct = c.as_table().unwrap();
       let make = ct.get("make").unwrap().as_str().unwrap().to_string();
       let model = ct.get("model").unwrap().as_str().unwrap().to_string();
+      let canonical_make = ct.get("canonical_make").unwrap().as_str().unwrap().to_string();
+      let canonical_model = ct.get("canonical_model").unwrap().as_str().unwrap().to_string();
+      let white = ct.get("whitepoint").unwrap().as_integer().unwrap();
+      let black = ct.get("blackpoint").unwrap().as_integer().unwrap();
+      let matrix = ct.get("color_matrix").unwrap().as_slice().unwrap();
+      let mut cmatrix: [i64;12] = [0,0,0,0,0,0,0,0,0,0,0,0];
+      for (i, val) in matrix.into_iter().enumerate() {
+        cmatrix[i] = val.as_integer().unwrap();
+      }
       let cam = Camera{
         make: make.clone(),
         model: model.clone(),
-        canonical_make: make.clone(),
-        canonical_model: model.clone()
+        canonical_make: canonical_make.clone(),
+        canonical_model: canonical_model.clone(),
+        whitelevels: [white, white, white, white],
+        blacklevels: [black, black, black, black],
+        color_matrix : cmatrix,
       };
       map.insert((make.clone(),model.clone()), cam);
     }
