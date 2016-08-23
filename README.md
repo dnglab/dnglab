@@ -44,6 +44,7 @@ fn main() {
   let decoder = rawloader.get_decoder(&buffer).unwrap();
   let camera = decoder.identify().unwrap();
   println!("Found camera \"{}\" model \"{}\"", camera.make, camera.model);
+  println!("Found canonical named camera \"{}\" model \"{}\"", camera.canonical_make, camera.canonical_model);
 
   let image = decoder.image().unwrap();
   println!("Image size is {}x{}", image.width, image.height);
