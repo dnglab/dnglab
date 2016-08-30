@@ -1,5 +1,9 @@
 use std::collections::HashMap;
 
+macro_rules! fetch_tag {
+  ($tiff:expr, $tag:expr, $message:expr) => (try!($tiff.find_entry($tag).ok_or($message.to_string())););
+}
+
 extern crate toml;
 mod basics;
 mod tiff;
