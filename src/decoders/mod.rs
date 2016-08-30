@@ -14,6 +14,7 @@ pub trait Decoder {
   fn image(&self) -> Result<Image, String>;
 }
 
+#[derive(Debug, Clone)]
 pub struct Image {
   pub width: u32,
   pub height: u32,
@@ -26,7 +27,7 @@ pub struct Image {
   pub crops: [i64;4],
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Camera {
   pub make: String,
   pub model: String,
@@ -39,7 +40,7 @@ pub struct Camera {
   crops: [i64;4],
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct RawLoader {
   pub cameras: HashMap<(String,String),Camera>,
 }

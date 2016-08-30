@@ -7,6 +7,7 @@ pub fn is_mrw(buf: &[u8]) -> bool {
   BEu32(buf,0) == 0x004D524D
 }
 
+#[derive(Debug, Clone)]
 pub struct MrwDecoder<'a> {
   buffer: &'a [u8],
   rawloader: &'a RawLoader,

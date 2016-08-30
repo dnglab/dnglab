@@ -17,6 +17,7 @@ fn t (tag: Tag) -> u16 {
   tag as u16
 }
 
+#[derive(Debug, Copy, Clone)]
 pub struct TiffEntry<'a> {
   tag: u16,
   typ: u16,
@@ -25,6 +26,7 @@ pub struct TiffEntry<'a> {
   endian: Endian,
 }
 
+#[derive(Debug, Clone)]
 pub struct TiffIFD<'a> {
   entries: HashMap<u16,TiffEntry<'a>>,
   subifds: Vec<TiffIFD<'a>>,
