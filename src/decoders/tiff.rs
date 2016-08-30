@@ -11,7 +11,13 @@ pub enum Tag {
   MODEL          = 0x0110,
   STRIPOFFSETS   = 0x0111,
   SUBIFDS        = 0x014A,
+  SONY_OFFSET    = 0x7200,
+  SONY_LENGTH    = 0x7201,
+  SONY_KEY       = 0x7221,
+  SONYGRBGLEVELS = 0x7303,
+  SONYRGGBLEVELS = 0x7313,
   EXIFIFDPOINTER = 0x8769,
+  DNGPRIVATEDATA = 0xC634,
 }
 
                           // 0-1-2-3-4-5-6-7-8-9-10-11-12-13
