@@ -13,7 +13,6 @@ build = "data/cameras/join.rs"
 [dependencies]
 itertools = "0.4.18"
 toml = "0.2.0"
-glob = "0.2.11"
 
 [build-dependencies]
 glob = "0.2.11"

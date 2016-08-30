@@ -25,8 +25,8 @@ impl Endian {
 }
 
 
-pub static BigEndian: Endian = Endian{big: true};
-pub static LittleEndian: Endian = Endian{big: false};
+pub static BIG_ENDIAN: Endian = Endian{big: true};
+pub static LITTLE_ENDIAN: Endian = Endian{big: false};
 
 #[allow(non_snake_case)] pub fn BEu32(buf: &[u8], pos: usize) -> u32 {
   (buf[pos] as u32) << 24 |
