@@ -111,13 +111,13 @@ impl RawLoader {
     };
 
     macro_rules! use_decoder {
-        ($dec:ty, $tiff:ident, $rawdec:ident) => (Ok(Box::new(<$dec>::new($tiff, $rawdec)) as Box<Decoder>));
+        ($dec:ty, $buf:ident, $tiff:ident, $rawdec:ident) => (Ok(Box::new(<$dec>::new($buf, $tiff, $rawdec)) as Box<Decoder>));
     }
 
     let tiff = TiffIFD::new_root(buffer, 4, 0, endian);
     let make: &str = &(try!(tiff.find_entry(Tag::MAKE).ok_or("Couldn't find Make".to_string())).get_str().to_string());
     match make {
-      "SONY" => use_decoder!(arw::ArwDecoder, tiff, self),
+      "SONY" => use_decoder!(arw::ArwDecoder, buffer, tiff, self),
       make => Err(format!("Couldn't find a decoder for make \"{}\"", make).to_string()),
     }
   }

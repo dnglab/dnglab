@@ -85,3 +85,20 @@ pub fn decode_12be_unpacked(buf: &[u8], width: usize, height: usize) -> Vec<u16>
 
   buffer
 }
+
+pub fn decode_16le(buf: &[u8], width: usize, height: usize) -> Vec<u16> {
+  let mut buffer: Vec<u16> = vec![0; width*height];
+  let mut pos: usize = 0;
+
+  for row in 0..height {
+    for col in 0..width {
+      let g1: u16 = buf[pos] as u16;
+      let g2: u16 = buf[pos+1] as u16;
+      pos += 2;
+
+      buffer[width*row+col] = (g2 << 8) | g1;
+    }
+  }
+
+  buffer
+}

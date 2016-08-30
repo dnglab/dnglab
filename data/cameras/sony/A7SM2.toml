@@ -1,0 +1,9 @@
+make = "SONY"
+model = "ILCE-7SM2"
+canonical_make = "Sony"
+canonical_model = "A7S II"
+blackpoint = 512
+whitepoint = 16300
+color_matrix = [5838,-1430,-246,-3497,11477,2297,-748,1885,5778]
+color_pattern = "RGGB"
+crops = [0,32,0,0]

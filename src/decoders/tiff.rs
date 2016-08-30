@@ -4,8 +4,12 @@ use std::str;
 
 #[derive(Debug, Copy, Clone)]
 pub enum Tag {
+  IMAGEWIDTH     = 0x0100,
+  IMAGELENGTH    = 0x0101,
+  COMPRESSION    = 0x0103,
   MAKE           = 0x010F,
   MODEL          = 0x0110,
+  STRIPOFFSETS   = 0x0111,
   SUBIFDS        = 0x014A,
   EXIFIFDPOINTER = 0x8769,
 }
@@ -68,7 +72,7 @@ impl<'a> TiffIFD<'a> {
       if entry.tag == t(Tag::SUBIFDS) || entry.tag == t(Tag::EXIFIFDPOINTER) {
         if depth < 10 { // Avoid infinite looping IFDs
           for i in 0..entry.count {
-            subifds.push(TiffIFD::new(buf, entry.get_u32(i) as usize, depth+1, e));
+            subifds.push(TiffIFD::new(buf, entry.get_u32(i as usize) as usize, depth+1, e));
           }
         }
       } else {
@@ -85,9 +89,8 @@ impl<'a> TiffIFD<'a> {
   }
 
   pub fn find_entry(&self, tag: Tag) -> Option<&TiffEntry> {
-    let utag: u16 = tag as u16;
-    if self.entries.contains_key(&utag) {
-      self.entries.get(&utag)
+    if self.entries.contains_key(&t(tag)) {
+      self.entries.get(&t(tag))
     } else {
       for ifd in &self.subifds {
         match ifd.find_entry(tag) {
@@ -97,6 +100,17 @@ impl<'a> TiffIFD<'a> {
       }
       None
     }
+  }
+
+  pub fn find_ifds_with_tag(&self, tag: Tag) -> Vec<&TiffIFD> {
+    let mut ifds = Vec::new();
+    for ifd in &self.subifds {
+      if ifd.entries.contains_key(&t(tag)) {
+        ifds.push(ifd);
+      }
+      ifds.extend(ifd.find_ifds_with_tag(tag));
+    }
+    ifds
   }
 }
 
@@ -127,8 +141,12 @@ impl<'a> TiffEntry<'a> {
     }
   }
 
-  pub fn get_u32(&self, idx: u32) -> u32 {
-    self.endian.ru32(self.data, (idx*4) as usize)
+  pub fn get_u32(&self, idx: usize) -> u32 {
+    self.endian.ru32(self.data, idx*4)
+  }
+
+  pub fn get_u16(&self, idx: usize) -> u16 {
+    self.endian.ru16(self.data, idx*2)
   }
 
   pub fn get_str(&self) -> &str {
