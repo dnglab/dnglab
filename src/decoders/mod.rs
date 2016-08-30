@@ -106,10 +106,14 @@ impl RawLoader {
       x => {return Err(format!("Couldn't find decoder for marker 0x{:x}", x).to_string())},
     };
 
+    macro_rules! use_decoder {
+        ($dec:ty, $tiff:ident, $rawdec:ident) => (Ok(Box::new(<$dec>::new($tiff, $rawdec)) as Box<Decoder>));
+    }
+
     let tiff = TiffIFD::new_root(buffer, 4, 0, endian);
     // FIXME: Cloning tiff is ugly as hell, need to fix the borrowing in this case
     match try!(tiff.clone().find_entry(Tag::MAKE).ok_or("Couldn't find Make".to_string())).get_str() {
-      "SONY" => Ok(Box::new(arw::ArwDecoder::new(tiff, &self)) as Box<Decoder>),
+      "SONY" => use_decoder!(arw::ArwDecoder, tiff, self),
       make => Err(format!("Couldn't find a decoder for make \"{}\"", make).to_string()),
     }
   }
