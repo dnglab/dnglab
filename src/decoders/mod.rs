@@ -8,6 +8,7 @@ extern crate toml;
 mod basics;
 mod tiff;
 mod mrw;
+use self::basics::*;
 
 pub static CAMERAS_TOML: &'static str = include_str!("../../data/cameras/all.toml");
 
@@ -99,6 +100,10 @@ impl RawLoader {
       let dec = Box::new(mrw::MrwDecoder::new(buffer, &self));
       return Ok(dec as Box<Decoder>);
     }
+    match LEu16(buffer, 0) {
+      x => {return Err(format!("Couldn't find decoder for marker 0x{:x}", x).to_string())},
+    }
+
     Err("Couldn't find a decoder!".to_string())
   }
 

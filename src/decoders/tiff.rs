@@ -22,27 +22,29 @@ pub struct TiffEntry<'a> {
   typ: u16,
   count: u32,
   data: &'a [u8],
+  endian: Endian,
 }
 
 pub struct TiffIFD<'a> {
   entries: HashMap<u16,TiffEntry<'a>>,
   subifds: Vec<TiffIFD<'a>>,
+  endian: Endian,
 }
 
 impl<'a> TiffIFD<'a> {
-  pub fn new(buf: &'a[u8], offset: usize, depth: u32) -> TiffIFD<'a> {
+  pub fn new(buf: &'a[u8], offset: usize, depth: u32, e: Endian) -> TiffIFD<'a> {
     let mut entries = HashMap::new();
     let mut subifds = Vec::new();
 
-    let num = BEu16(buf, offset); // Directory entries in this IFD
+    let num = e.ru16(buf, offset); // Directory entries in this IFD
     for i in 0..num {
       let entry_offset: usize = offset + 2 + (i as usize)*12;
-      let entry = TiffEntry::new(buf, entry_offset);
+      let entry = TiffEntry::new(buf, entry_offset, e);
 
       if entry.tag == t(Tag::SUBIFDS) || entry.tag == t(Tag::EXIFIFDPOINTER) {
         if depth < 10 { // Avoid infinite looping IFDs
           for i in 0..entry.count {
-            subifds.push(TiffIFD::new(buf, entry.get_u32(i) as usize, depth+1));
+            subifds.push(TiffIFD::new(buf, entry.get_u32(i) as usize, depth+1, e));
           }
         }
       } else {
@@ -53,6 +55,7 @@ impl<'a> TiffIFD<'a> {
     TiffIFD {
       entries: entries,
       subifds: subifds,
+      endian: e,
     }
   }
 
@@ -73,10 +76,10 @@ impl<'a> TiffIFD<'a> {
 }
 
 impl<'a> TiffEntry<'a> {
-  pub fn new(buf: &'a[u8], offset: usize) -> TiffEntry<'a> {
-    let tag = BEu16(buf, offset);
-    let mut typ = BEu16(buf, offset+2);
-    let count = BEu32(buf, offset+4);
+  pub fn new(buf: &'a[u8], offset: usize, e: Endian) -> TiffEntry<'a> {
+    let tag = e.ru16(buf, offset);
+    let mut typ = e.ru16(buf, offset+2);
+    let count = e.ru32(buf, offset+4);
 
     // If we don't know the type assume byte data
     if typ == 0 || typ > 13 {
@@ -87,7 +90,7 @@ impl<'a> TiffEntry<'a> {
     let doffset: usize = if bytesize <= 4 {
       (offset + 8)
     } else {
-      BEu32(buf, offset+8) as usize
+      e.ru32(buf, offset+8) as usize
     };
 
     TiffEntry {
@@ -95,11 +98,12 @@ impl<'a> TiffEntry<'a> {
       typ: typ,
       count: count,
       data: &buf[doffset .. doffset+bytesize],
+      endian: e,
     }
   }
 
   pub fn get_u32(&self, idx: u32) -> u32 {
-    BEu32(self.data, (idx*4) as usize)
+    self.endian.ru32(self.data, (idx*4) as usize)
   }
 
   pub fn get_str(&self) -> &str {
