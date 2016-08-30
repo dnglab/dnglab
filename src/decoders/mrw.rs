@@ -70,15 +70,8 @@ impl<'a> MrwDecoder<'a> {
 
 impl<'a> Decoder for MrwDecoder<'a> {
   fn identify(&self) -> Result<&Camera, String> {
-    let make = match self.tiff.find_entry(Tag::MAKE) {
-      Some(val) => val,
-      None => return Err("MRW: Couldn't find the maker".to_string()),
-    }.get_str();
-    let model = match self.tiff.find_entry(Tag::MODEL) {
-      Some(val) => val,
-      None => return Err("MRW: Couldn't find the model".to_string()),
-    }.get_str();
-
+    let make = try!(self.tiff.find_entry(Tag::MAKE).ok_or("MRW: Couldn't find Make".to_string())).get_str();
+    let model = try!(self.tiff.find_entry(Tag::MODEL).ok_or("MRW: Couldn't find Model".to_string())).get_str();
     self.rawloader.check_supported(make, model)
   }
 
