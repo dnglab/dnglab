@@ -5,6 +5,7 @@ mod basics;
 mod tiff;
 mod mrw;
 use self::basics::*;
+use self::tiff::*;
 
 pub static CAMERAS_TOML: &'static str = include_str!("../../data/cameras/all.toml");
 
@@ -96,11 +97,17 @@ impl RawLoader {
       let dec = Box::new(mrw::MrwDecoder::new(buffer, &self));
       return Ok(dec as Box<Decoder>);
     }
-    match LEu16(buffer, 0) {
-      x => {return Err(format!("Couldn't find decoder for marker 0x{:x}", x).to_string())},
-    }
 
-    Err("Couldn't find a decoder!".to_string())
+    let endian = match LEu16(buffer, 0) {
+      0x4949 => LITTLE_ENDIAN,
+      0x4d4d => BIG_ENDIAN,
+      x => {return Err(format!("Couldn't find decoder for marker 0x{:x}", x).to_string())},
+    };
+
+    let tiff = TiffIFD::new_root(buffer, 4, 0, endian);
+    let make = try!(tiff.find_entry(Tag::MAKE).ok_or("Couldn't find Make".to_string())).get_str();
+
+    Err(format!("Couldn't find a decoder for make \"{}\"", make).to_string())
   }
 
   pub fn check_supported<'a>(&'a self, make: &'a str, model: &'a str) -> Result<&Camera, String> {

@@ -28,10 +28,32 @@ pub struct TiffEntry<'a> {
 pub struct TiffIFD<'a> {
   entries: HashMap<u16,TiffEntry<'a>>,
   subifds: Vec<TiffIFD<'a>>,
+  nextifd: usize,
   endian: Endian,
 }
 
 impl<'a> TiffIFD<'a> {
+  pub fn new_root(buf: &'a[u8], offset: usize, depth: u32, e: Endian) -> TiffIFD<'a> {
+    let mut subifds = Vec::new();
+    let mut nextifd = e.ru32(buf, offset) as usize;
+
+    for _ in 0..100 { // Never read more than 100 IFDs
+      let ifd = TiffIFD::new(buf, nextifd, depth, e);
+      nextifd = ifd.nextifd;
+      subifds.push(ifd);
+      if nextifd == 0 {
+        break
+      }
+    }
+
+    TiffIFD {
+      entries: HashMap::new(),
+      subifds: subifds,
+      nextifd: 0,
+      endian: e,
+    }
+  }
+
   pub fn new(buf: &'a[u8], offset: usize, depth: u32, e: Endian) -> TiffIFD<'a> {
     let mut entries = HashMap::new();
     let mut subifds = Vec::new();
@@ -55,6 +77,7 @@ impl<'a> TiffIFD<'a> {
     TiffIFD {
       entries: entries,
       subifds: subifds,
+      nextifd: e.ru32(buf, offset + (2+num*12) as usize) as usize,
       endian: e,
     }
   }
