@@ -115,7 +115,7 @@ impl RawLoader {
     }
 
     let tiff = TiffIFD::new_root(buffer, 4, 0, endian);
-    let make: &str = &(try!(tiff.find_entry(Tag::MAKE).ok_or("Couldn't find Make".to_string())).get_str().to_string());
+    let make: &str = &(try!(tiff.find_entry(Tag::Make).ok_or("Couldn't find Make".to_string())).get_str().to_string());
     match make {
       "SONY" => use_decoder!(arw::ArwDecoder, buffer, tiff, self),
       make => Err(format!("Couldn't find a decoder for make \"{}\"", make).to_string()),

@@ -25,19 +25,19 @@ impl<'a> ArwDecoder<'a> {
 
 impl<'a> Decoder for ArwDecoder<'a> {
   fn identify(&self) -> Result<&Camera, String> {
-    let make = fetch_tag!(self.tiff, Tag::MAKE, "ARW: Couldn't find Make").get_str();
-    let model = fetch_tag!(self.tiff, Tag::MODEL, "ARW: Couldn't find Model").get_str();
+    let make = fetch_tag!(self.tiff, Tag::Make, "ARW: Couldn't find Make").get_str();
+    let model = fetch_tag!(self.tiff, Tag::Model, "ARW: Couldn't find Model").get_str();
     self.rawloader.check_supported(make, model)
   }
 
   fn image(&self) -> Result<Image,String> {
     let camera = try!(self.identify());
-    let data = self.tiff.find_ifds_with_tag(Tag::STRIPOFFSETS);
+    let data = self.tiff.find_ifds_with_tag(Tag::StripOffsets);
     if data.len() == 0 {
       return Err("ARW: Couldn't find the data IFD!".to_string())
     }
     let raw = data[0];
-    let compression = fetch_tag!(raw, Tag::COMPRESSION, "ARW: Couldn't find Compression").get_u16(0);
+    let compression = fetch_tag!(raw, Tag::Compression, "ARW: Couldn't find Compression").get_u16(0);
     match compression {
       1 => self.decode_uncompressed(camera, raw),
       x => Err(format!("ARW: Don't know how to decode type {}", x).to_string())
@@ -47,9 +47,9 @@ impl<'a> Decoder for ArwDecoder<'a> {
 
 impl<'a> ArwDecoder<'a> {
   fn decode_uncompressed(&self, camera: &Camera, raw: &TiffIFD) -> Result<Image,String> {
-    let width = fetch_tag!(raw, Tag::IMAGEWIDTH, "ARW: Couldn't find width").get_u16(0) as u32;
-    let height = fetch_tag!(raw, Tag::IMAGELENGTH, "ARW: Couldn't find height").get_u16(0) as u32;
-    let offset = fetch_tag!(raw, Tag::STRIPOFFSETS, "ARW: Couldn't find offset").get_u32(0) as usize;
+    let width = fetch_tag!(raw, Tag::ImageWidth, "ARW: Couldn't find width").get_u16(0) as u32;
+    let height = fetch_tag!(raw, Tag::ImageLength, "ARW: Couldn't find height").get_u16(0) as u32;
+    let offset = fetch_tag!(raw, Tag::StripOffsets, "ARW: Couldn't find offset").get_u32(0) as usize;
 
     let src = &self.buffer[offset .. self.buffer.len()];
     let image = decode_16le(src, width as usize, height as usize);
@@ -68,16 +68,16 @@ impl<'a> ArwDecoder<'a> {
   }
 
   fn get_wb(&self) -> Result<[f32;4], String> {
-    let priv_offset = fetch_tag!(self.tiff, Tag::DNGPRIVATEDATA, "ARW: Couldn't find private offset").get_u32(0);
+    let priv_offset = fetch_tag!(self.tiff, Tag::DNGPrivateArea, "ARW: Couldn't find private offset").get_u32(0);
     let priv_tiff = TiffIFD::new(self.buffer, priv_offset as usize, 0, LITTLE_ENDIAN);
-    let sony_offset = fetch_tag!(priv_tiff, Tag::SONY_OFFSET, "ARW: Couldn't find sony offset").get_u32(0) as usize;
-    let sony_length = fetch_tag!(priv_tiff, Tag::SONY_LENGTH, "ARW: Couldn't find sony length").get_u32(0) as usize;
-    let sony_key = fetch_tag!(priv_tiff, Tag::SONY_KEY, "ARW: Couldn't find sony key").get_u32(0);
+    let sony_offset = fetch_tag!(priv_tiff, Tag::SonyOffset, "ARW: Couldn't find sony offset").get_u32(0) as usize;
+    let sony_length = fetch_tag!(priv_tiff, Tag::SonyLength, "ARW: Couldn't find sony length").get_u32(0) as usize;
+    let sony_key = fetch_tag!(priv_tiff, Tag::SonyKey, "ARW: Couldn't find sony key").get_u32(0);
     let mut clone = self.buffer.to_vec();
     ArwDecoder::sony_decrypt(& mut clone, sony_offset, sony_length, sony_key);
     let decrypted_tiff = TiffIFD::new(&clone, sony_offset, 0, LITTLE_ENDIAN);
-    let grgb_levels = decrypted_tiff.find_entry(Tag::SONYGRBGLEVELS);
-    let rggb_levels = decrypted_tiff.find_entry(Tag::SONYRGGBLEVELS);
+    let grgb_levels = decrypted_tiff.find_entry(Tag::SonyGRBG);
+    let rggb_levels = decrypted_tiff.find_entry(Tag::SonyRGGB);
     if grgb_levels.is_some() {
       let levels = grgb_levels.unwrap();
       Ok([levels.get_u16(1) as f32, levels.get_u16(0) as f32, levels.get_u16(2) as f32, f32::NAN])

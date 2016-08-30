@@ -70,8 +70,8 @@ impl<'a> MrwDecoder<'a> {
 
 impl<'a> Decoder for MrwDecoder<'a> {
   fn identify(&self) -> Result<&Camera, String> {
-    let make = fetch_tag!(self.tiff, Tag::MAKE, "ARW: Couldn't find Make").get_str();
-    let model = fetch_tag!(self.tiff, Tag::MODEL, "ARW: Couldn't find Model").get_str();
+    let make = fetch_tag!(self.tiff, Tag::Make, "ARW: Couldn't find Make").get_str();
+    let model = fetch_tag!(self.tiff, Tag::Model, "ARW: Couldn't find Model").get_str();
     self.rawloader.check_supported(make, model)
   }
 

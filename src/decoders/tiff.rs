@@ -4,20 +4,20 @@ use std::str;
 
 #[derive(Debug, Copy, Clone)]
 pub enum Tag {
-  IMAGEWIDTH     = 0x0100,
-  IMAGELENGTH    = 0x0101,
-  COMPRESSION    = 0x0103,
-  MAKE           = 0x010F,
-  MODEL          = 0x0110,
-  STRIPOFFSETS   = 0x0111,
-  SUBIFDS        = 0x014A,
-  SONY_OFFSET    = 0x7200,
-  SONY_LENGTH    = 0x7201,
-  SONY_KEY       = 0x7221,
-  SONYGRBGLEVELS = 0x7303,
-  SONYRGGBLEVELS = 0x7313,
-  EXIFIFDPOINTER = 0x8769,
-  DNGPRIVATEDATA = 0xC634,
+  ImageWidth     = 0x0100,
+  ImageLength    = 0x0101,
+  Compression    = 0x0103,
+  Make           = 0x010F,
+  Model          = 0x0110,
+  StripOffsets   = 0x0111,
+  SubIFDs        = 0x014A,
+  SonyOffset     = 0x7200,
+  SonyLength     = 0x7201,
+  SonyKey        = 0x7221,
+  SonyGRBG       = 0x7303,
+  SonyRGGB       = 0x7313,
+  ExifIFDPointer = 0x8769,
+  DNGPrivateArea = 0xC634,
 }
 
                           // 0-1-2-3-4-5-6-7-8-9-10-11-12-13
@@ -75,7 +75,7 @@ impl<'a> TiffIFD<'a> {
       let entry_offset: usize = offset + 2 + (i as usize)*12;
       let entry = TiffEntry::new(buf, entry_offset, e);
 
-      if entry.tag == t(Tag::SUBIFDS) || entry.tag == t(Tag::EXIFIFDPOINTER) {
+      if entry.tag == t(Tag::SubIFDs) || entry.tag == t(Tag::ExifIFDPointer) {
         if depth < 10 { // Avoid infinite looping IFDs
           for i in 0..entry.count {
             subifds.push(TiffIFD::new(buf, entry.get_u32(i as usize) as usize, depth+1, e));
