@@ -121,3 +121,27 @@ pub fn decode_16le(buf: &[u8], width: usize, height: usize) -> Vec<u16> {
 
   buffer
 }
+
+pub struct BitPump<'a> {
+  buffer: &'a [u8],
+  offset: usize,
+}
+
+impl<'a> BitPump<'a> {
+  pub fn new(src: &'a [u8]) -> BitPump {
+    BitPump {
+      buffer: src,
+      offset: 0,
+    }
+  }
+
+  pub fn peek_bits(&self, nbits: u32) -> u32 {
+    (LEu32(self.buffer, self.offset>>3) >> (self.offset&7)) & ((1<<nbits) - 1)
+  }
+
+  pub fn get_bits(&mut self, nbits: u32) -> u32 {
+    let val = self.peek_bits(nbits);
+    self.offset += nbits as usize;
+    val
+  }
+}

@@ -5,6 +5,7 @@ use std::mem::transmute;
 extern crate itertools;
 use self::itertools::Itertools;
 use std::f32;
+use std::cmp;
 
 #[derive(Debug, Clone)]
 pub struct ArwDecoder<'a> {
@@ -41,9 +42,14 @@ impl<'a> Decoder for ArwDecoder<'a> {
     let height = fetch_tag!(raw, Tag::ImageLength, "ARW: Couldn't find height").get_u16(0) as u32;
     let offset = fetch_tag!(raw, Tag::StripOffsets, "ARW: Couldn't find offset").get_u32(0) as usize;
     let count = fetch_tag!(raw, Tag::StripByteCounts, "ARW: Couldn't find byte count").get_u32(0) as usize;
-    let bps = fetch_tag!(raw, Tag::BitsPerSample, "ARW: Couldn't find bps").get_u16(0) as u32;
     let compression = fetch_tag!(raw, Tag::Compression, "ARW: Couldn't find Compression").get_u16(0);
+    let bps = if camera.bps != 0 {
+      camera.bps
+    } else {
+      fetch_tag!(raw, Tag::BitsPerSample, "ARW: Couldn't find bps").get_u16(0) as u32
+    };
     let src = &self.buffer[offset .. self.buffer.len()];
+
     let image = match compression {
       1 => decode_16le(src, width as usize, height as usize),
       32767 => {
@@ -67,11 +73,38 @@ impl<'a> Decoder for ArwDecoder<'a> {
 impl<'a> ArwDecoder<'a> {
   fn decode_arw1(buf: &[u8], width: u32, height: u32) -> Vec<u16> {
     let mut buffer: Vec<u16> = vec![0; (width*height) as usize];
+
     buffer
   }
 
   fn decode_arw2(buf: &[u8], width: u32, height: u32) -> Vec<u16> {
     let mut buffer: Vec<u16> = vec![0; (width*height) as usize];
+    let mut pump = BitPump::new(buf);
+
+    for row in 0..height {
+      // Process 16 pixels at a time in interleaved fashion
+      let mut col = 0;
+      while col < (width-30) {
+        let max = pump.get_bits(11);
+        let min = pump.get_bits(11);
+        let imax = pump.get_bits(4);
+        let imin = pump.get_bits(4);
+        let mut sh = 0;
+        while sh<4 && (0x80 << sh) <= (max - min) {sh = sh + 1;}
+        for i in 0..16 {
+          let val = if i == imax {
+            max
+          } else if i == imin {
+            min
+          } else {
+            cmp::min(0x7ff,(pump.get_bits(7) << sh) + min)
+          };
+          buffer[(row*width+col+i*2) as usize] = val as u16;
+        }
+        col += if (col & 1) != 0 {31} else {1};  // Skip to next 16 pixels
+      }
+    }
+
     buffer
   }
 

@@ -62,6 +62,7 @@ pub struct Camera {
   color_matrix: [i64;12],
   dcraw_filters: u32,
   crops: [i64;4],
+  bps: u32,
 }
 
 pub fn ok_image(camera: &Camera, width: u32, height: u32, wb_coeffs: [f32;4], image: Vec<u16>) -> Result<Image,String> {
@@ -112,6 +113,10 @@ impl RawLoader {
         crops[i] = val.as_integer().unwrap();
       }
       let color_pattern = ct.get("color_pattern").unwrap().as_str().unwrap().to_string();
+      let bps: u32 = match ct.get("bps") {
+        Some(x) => x.as_integer().unwrap() as u32,
+        None => 0,
+      };
       let cam = Camera{
         make: make.clone(),
         model: model.clone(),
@@ -122,6 +127,7 @@ impl RawLoader {
         color_matrix : cmatrix,
         dcraw_filters: RawLoader::dcraw_filters(&color_pattern),
         crops: crops,
+        bps: bps,
       };
       map.insert((make.clone(),model.clone()), cam);
     }
