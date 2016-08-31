@@ -6,10 +6,12 @@ use std::str;
 pub enum Tag {
   ImageWidth     = 0x0100,
   ImageLength    = 0x0101,
+  BitsPerSample  = 0x0102,
   Compression    = 0x0103,
   Make           = 0x010F,
   Model          = 0x0110,
   StripOffsets   = 0x0111,
+  StripByteCounts= 0x0117,
   SubIFDs        = 0x014A,
   SonyOffset     = 0x7200,
   SonyLength     = 0x7201,

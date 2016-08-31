@@ -40,12 +40,54 @@ impl<'a> Decoder for ArwDecoder<'a> {
     let compression = fetch_tag!(raw, Tag::Compression, "ARW: Couldn't find Compression").get_u16(0);
     match compression {
       1 => self.decode_uncompressed(camera, raw),
+      32767 => self.decode_compressed(camera, raw),
       x => Err(format!("ARW: Don't know how to decode type {}", x).to_string())
     }
   }
 }
 
 impl<'a> ArwDecoder<'a> {
+  fn decode_compressed(&self, camera: &Camera, raw: &TiffIFD) -> Result<Image,String> {
+    let width = fetch_tag!(raw, Tag::ImageWidth, "ARW: Couldn't find width").get_u16(0) as u32;
+    let height = fetch_tag!(raw, Tag::ImageLength, "ARW: Couldn't find height").get_u16(0) as u32;
+    let offset = fetch_tag!(raw, Tag::StripOffsets, "ARW: Couldn't find offset").get_u32(0) as usize;
+    let count = fetch_tag!(raw, Tag::StripByteCounts, "ARW: Couldn't find byte count").get_u32(0) as usize;
+    let bps = fetch_tag!(raw, Tag::BitsPerSample, "ARW: Couldn't find bps").get_u16(0) as u32;
+
+    let src = &self.buffer[offset .. self.buffer.len()];
+    let image: Vec<u16> = if ((width*height*bps) as usize) != count*8 {
+      ArwDecoder::decode_arw1(src, width, height)
+    } else {
+      match bps {
+        8 => ArwDecoder::decode_arw2(src, width, height),
+        12 => decode_12le(src, width as usize, height as usize),
+        _ => return Err(format!("ARW2: Don't know how to decode images with {} bps", bps)),
+      }
+    };
+
+    Ok(Image {
+      width: width,
+      height: height,
+      wb_coeffs: try!(self.get_wb()),
+      data: image.into_boxed_slice(),
+      blacklevels: camera.blacklevels,
+      whitelevels: camera.whitelevels,
+      color_matrix: camera.color_matrix,
+      dcraw_filters: camera.dcraw_filters,
+      crops: camera.crops,
+    })
+  }
+
+  fn decode_arw1(buf: &[u8], width: u32, height: u32) -> Vec<u16> {
+    let mut buffer: Vec<u16> = vec![0; (width*height) as usize];
+    buffer
+  }
+
+  fn decode_arw2(buf: &[u8], width: u32, height: u32) -> Vec<u16> {
+    let mut buffer: Vec<u16> = vec![0; (width*height) as usize];
+    buffer
+  }
+
   fn decode_uncompressed(&self, camera: &Camera, raw: &TiffIFD) -> Result<Image,String> {
     let width = fetch_tag!(raw, Tag::ImageWidth, "ARW: Couldn't find width").get_u16(0) as u32;
     let height = fetch_tag!(raw, Tag::ImageLength, "ARW: Couldn't find height").get_u16(0) as u32;
