@@ -106,16 +106,6 @@ impl<'a> Decoder for MrwDecoder<'a> {
       Err(e) => {return Err(e)},
     };
 
-    Ok(Image {
-      width: self.raw_width as u32,
-      height: self.raw_height as u32,
-      wb_coeffs: wb_coeffs,
-      data: buffer.into_boxed_slice(),
-      blacklevels: camera.blacklevels,
-      whitelevels: camera.whitelevels,
-      color_matrix: camera.color_matrix,
-      dcraw_filters: camera.dcraw_filters,
-      crops: camera.crops,
-    })
+    ok_image(camera, self.raw_width as u32, self.raw_height as u32, wb_coeffs, buffer)
   }
 }

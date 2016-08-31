@@ -45,6 +45,20 @@ pub struct Camera {
   crops: [i64;4],
 }
 
+pub fn ok_image(camera: &Camera, width: u32, height: u32, wb_coeffs: [f32;4], image: Vec<u16>) -> Result<Image,String> {
+  Ok(Image {
+    width: width,
+    height: height,
+    wb_coeffs: wb_coeffs,
+    data: image.into_boxed_slice(),
+    blacklevels: camera.blacklevels,
+    whitelevels: camera.whitelevels,
+    color_matrix: camera.color_matrix,
+    dcraw_filters: camera.dcraw_filters,
+    crops: camera.crops,
+  })
+}
+
 #[derive(Debug, Clone)]
 pub struct RawLoader {
   pub cameras: HashMap<(String,String),Camera>,

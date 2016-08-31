@@ -65,17 +65,7 @@ impl<'a> ArwDecoder<'a> {
       }
     };
 
-    Ok(Image {
-      width: width,
-      height: height,
-      wb_coeffs: try!(self.get_wb()),
-      data: image.into_boxed_slice(),
-      blacklevels: camera.blacklevels,
-      whitelevels: camera.whitelevels,
-      color_matrix: camera.color_matrix,
-      dcraw_filters: camera.dcraw_filters,
-      crops: camera.crops,
-    })
+    ok_image(camera, width, height, try!(self.get_wb()), image)
   }
 
   fn decode_arw1(buf: &[u8], width: u32, height: u32) -> Vec<u16> {
@@ -96,17 +86,7 @@ impl<'a> ArwDecoder<'a> {
     let src = &self.buffer[offset .. self.buffer.len()];
     let image = decode_16le(src, width as usize, height as usize);
 
-    Ok(Image {
-      width: width,
-      height: height,
-      wb_coeffs: try!(self.get_wb()),
-      data: image.into_boxed_slice(),
-      blacklevels: camera.blacklevels,
-      whitelevels: camera.whitelevels,
-      color_matrix: camera.color_matrix,
-      dcraw_filters: camera.dcraw_filters,
-      crops: camera.crops,
-    })
+    ok_image(camera, width, height, try!(self.get_wb()), image)
   }
 
   fn get_wb(&self) -> Result<[f32;4], String> {
