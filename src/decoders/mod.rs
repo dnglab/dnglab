@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::io::Read;
 
 macro_rules! fetch_tag {
   ($tiff:expr, $tag:expr, $message:expr) => (try!($tiff.find_entry($tag).ok_or($message.to_string())););
@@ -17,6 +18,24 @@ pub static CAMERAS_TOML: &'static str = include_str!("../../data/cameras/all.tom
 pub trait Decoder {
   fn identify(&self) -> Result<&Camera, String>;
   fn image(&self) -> Result<Image, String>;
+}
+
+#[derive(Debug, Clone)]
+pub struct Buffer {
+  buf: Vec<u8>,
+}
+
+impl Buffer {
+  pub fn new(reader: &mut Read) -> Result<Buffer, String> {
+    let mut buffer = Vec::new();
+    if let Err(err) = reader.read_to_end(&mut buffer) {
+      return Err(format!("IOError: {}", err).to_string())
+    }
+    buffer.extend([0;16].iter().cloned());
+    Ok(Buffer {
+      buf: buffer,
+    })
+  }
 }
 
 #[derive(Debug, Clone)]
@@ -112,13 +131,15 @@ impl RawLoader {
     }
   }
 
-  pub fn get_decoder<'b>(&'b self, buffer: &'b [u8]) -> Result<Box<Decoder+'b>, String> {
+  pub fn get_decoder<'b>(&'b self, buf: &'b Buffer) -> Result<Box<Decoder+'b>, String> {
+    let buffer = &buf.buf;
+
     if mrw::is_mrw(buffer) {
       let dec = Box::new(mrw::MrwDecoder::new(buffer, &self));
       return Ok(dec as Box<Decoder>);
     }
 
-    let endian = match LEu16(buffer, 0) {
+    let endian = match LEu16(&buffer, 0) {
       0x4949 => LITTLE_ENDIAN,
       0x4d4d => BIG_ENDIAN,
       x => {return Err(format!("Couldn't find decoder for marker 0x{:x}", x).to_string())},

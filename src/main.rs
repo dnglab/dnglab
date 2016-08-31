@@ -28,11 +28,11 @@ fn main() {
     Ok(val) => val,
     Err(e) => {error(e.description());unreachable!()},
   };
-  let mut buffer = Vec::new();
-  if let Err(err) = f.read_to_end(&mut buffer) {
-    error(err.description());
-  }
-  println!("Total file is {} bytes in length", buffer.len());
+
+  let buffer = match decoders::Buffer::new(&mut f) {
+    Ok(val) => val,
+    Err(e) => {error(&e);unreachable!()},
+  };
 
   let rawloader = decoders::RawLoader::new();
   let decoder = match rawloader.get_decoder(&buffer) {
