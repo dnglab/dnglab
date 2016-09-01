@@ -1,5 +1,8 @@
 use std::collections::HashMap;
 use std::io::Read;
+use std::fs::File;
+use std::error::Error;
+use std::panic;
 
 macro_rules! fetch_tag {
   ($tiff:expr, $tag:expr, $message:expr) => (try!($tiff.find_entry($tag).ok_or($message.to_string())););
@@ -192,5 +195,18 @@ impl RawLoader {
     let buffer = try!(Buffer::new(reader));
     let decoder = try!(self.get_decoder(&buffer));
     decoder.image()
+  }
+
+  pub fn decode_safe(&self, path: &str) -> Result<Image, String> {
+    match panic::catch_unwind(|| {
+      let mut f = match File::open(path) {
+        Ok(val) => val,
+        Err(e) => {return Err(e.description().to_string())},
+      };
+      self.decode(&mut f)
+    }) {
+      Ok(val) => val,
+      Err(_) => Err("Caught a panic while decoding, please file a bug and attach a sample file".to_string()),
+    }
   }
 }

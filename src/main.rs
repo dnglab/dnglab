@@ -24,13 +24,8 @@ fn main() {
   let file = &args[1];
   println!("Loading file \"{}\"", file);
 
-  let mut f = match File::open(file) {
-    Ok(val) => val,
-    Err(e) => {error(e.description());unreachable!()},
-  };
-
   let rawloader = decoders::RawLoader::new();
-  let image = match rawloader.decode(&mut f) {
+  let image = match rawloader.decode_safe(file) {
     Ok(val) => val,
     Err(e) => {error(&e);unreachable!()},
   };
