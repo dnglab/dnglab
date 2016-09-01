@@ -40,6 +40,10 @@ impl Buffer {
 
 #[derive(Debug, Clone)]
 pub struct Image {
+  pub make: String,
+  pub model: String,
+  pub canonical_make: String,
+  pub canonical_model: String,
   pub width: u32,
   pub height: u32,
   pub wb_coeffs: [f32;4],
@@ -67,6 +71,10 @@ pub struct Camera {
 
 pub fn ok_image(camera: &Camera, width: u32, height: u32, wb_coeffs: [f32;4], image: Vec<u16>) -> Result<Image,String> {
   Ok(Image {
+    make: camera.make.clone(),
+    model: camera.model.clone(),
+    canonical_make: camera.canonical_make.clone(),
+    canonical_model: camera.canonical_model.clone(),
     width: width,
     height: height,
     wb_coeffs: wb_coeffs,
@@ -178,5 +186,11 @@ impl RawLoader {
       "RGGB" => 0x94949494,
       _ => 0,
     }
+  }
+
+  pub fn decode(&self, reader: &mut Read) -> Result<Image, String> {
+    let buffer = try!(Buffer::new(reader));
+    let decoder = try!(self.get_decoder(&buffer));
+    decoder.image()
   }
 }
