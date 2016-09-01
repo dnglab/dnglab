@@ -110,13 +110,12 @@ impl<'a> ArwDecoder<'a> {
 
   fn get_wb(&self) -> Result<[f32;4], String> {
     let priv_offset = fetch_tag!(self.tiff, Tag::DNGPrivateArea, "ARW: Couldn't find private offset").get_u32(0);
-    let priv_tiff = TiffIFD::new(self.buffer, priv_offset as usize, 0, LITTLE_ENDIAN);
+    let priv_tiff = TiffIFD::new(self.buffer, priv_offset as usize, 0, 0, LITTLE_ENDIAN);
     let sony_offset = fetch_tag!(priv_tiff, Tag::SonyOffset, "ARW: Couldn't find sony offset").get_u32(0) as usize;
     let sony_length = fetch_tag!(priv_tiff, Tag::SonyLength, "ARW: Couldn't find sony length").get_u32(0) as usize;
     let sony_key = fetch_tag!(priv_tiff, Tag::SonyKey, "ARW: Couldn't find sony key").get_u32(0);
-    let mut clone = self.buffer.to_vec();
-    ArwDecoder::sony_decrypt(& mut clone, sony_offset, sony_length, sony_key);
-    let decrypted_tiff = TiffIFD::new(&clone, sony_offset, 0, LITTLE_ENDIAN);
+    let decrypted_buf = ArwDecoder::sony_decrypt(self.buffer, sony_offset, sony_length, sony_key);
+    let decrypted_tiff = TiffIFD::new(&decrypted_buf, 0, sony_offset, 0, LITTLE_ENDIAN);
     let grgb_levels = decrypted_tiff.find_entry(Tag::SonyGRBG);
     let rggb_levels = decrypted_tiff.find_entry(Tag::SonyRGGB);
     if grgb_levels.is_some() {
@@ -130,9 +129,12 @@ impl<'a> ArwDecoder<'a> {
     }
   }
 
-  fn sony_decrypt(buf: & mut [u8], offset: usize, length: usize, key: u32) {
+  fn sony_decrypt(buf: &[u8], offset: usize, length: usize, key: u32) -> Vec<u8>{
     let mut pad: [u32; 128] = [0 as u32; 128];
     let mut mkey = key;
+    // Make sure we always have space for the final bytes even if the buffer
+    // isn't a multiple of 4
+    let mut out = vec![0;length+4];
     // Initialize the decryption pad from the key
     for p in 0..4 {
       mkey = mkey.wrapping_mul(48828125).wrapping_add(1);
@@ -151,10 +153,11 @@ impl<'a> ArwDecoder<'a> {
       pad[p & 127] = pad[(p+1) & 127] ^ pad[(p+1+64) & 127];
       let output = LEu32(buf, offset+i) ^ pad[p & 127];
       let bytes: [u8; 4] = unsafe { transmute(output.to_le()) };
-      buf[offset+i]   = bytes[0];
-      buf[offset+i+1] = bytes[1];
-      buf[offset+i+2] = bytes[2];
-      buf[offset+i+3] = bytes[3];
+      out[i]   = bytes[0];
+      out[i+1] = bytes[1];
+      out[i+2] = bytes[2];
+      out[i+3] = bytes[3];
     }
+    out
   }
 }

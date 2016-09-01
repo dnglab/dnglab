@@ -52,7 +52,7 @@ impl<'a> TiffIFD<'a> {
     let mut nextifd = e.ru32(buf, offset) as usize;
 
     for _ in 0..100 { // Never read more than 100 IFDs
-      let ifd = TiffIFD::new(buf, nextifd, depth, e);
+      let ifd = TiffIFD::new(buf, nextifd, 0, depth, e);
       nextifd = ifd.nextifd;
       subifds.push(ifd);
       if nextifd == 0 {
@@ -68,19 +68,19 @@ impl<'a> TiffIFD<'a> {
     }
   }
 
-  pub fn new(buf: &'a[u8], offset: usize, depth: u32, e: Endian) -> TiffIFD<'a> {
+  pub fn new(buf: &'a[u8], offset: usize, base_offset: usize, depth: u32, e: Endian) -> TiffIFD<'a> {
     let mut entries = HashMap::new();
     let mut subifds = Vec::new();
 
     let num = e.ru16(buf, offset); // Directory entries in this IFD
     for i in 0..num {
       let entry_offset: usize = offset + 2 + (i as usize)*12;
-      let entry = TiffEntry::new(buf, entry_offset, e);
+      let entry = TiffEntry::new(buf, entry_offset, base_offset, e);
 
       if entry.tag == t(Tag::SubIFDs) || entry.tag == t(Tag::ExifIFDPointer) {
         if depth < 10 { // Avoid infinite looping IFDs
           for i in 0..entry.count {
-            subifds.push(TiffIFD::new(buf, entry.get_u32(i as usize) as usize, depth+1, e));
+            subifds.push(TiffIFD::new(buf, entry.get_u32(i as usize) as usize, base_offset, depth+1, e));
           }
         }
       } else {
@@ -123,7 +123,7 @@ impl<'a> TiffIFD<'a> {
 }
 
 impl<'a> TiffEntry<'a> {
-  pub fn new(buf: &'a[u8], offset: usize, e: Endian) -> TiffEntry<'a> {
+  pub fn new(buf: &'a[u8], offset: usize, base_offset: usize, e: Endian) -> TiffEntry<'a> {
     let tag = e.ru16(buf, offset);
     let mut typ = e.ru16(buf, offset+2);
     let count = e.ru32(buf, offset+4);
@@ -137,7 +137,7 @@ impl<'a> TiffEntry<'a> {
     let doffset: usize = if bytesize <= 4 {
       (offset + 8)
     } else {
-      e.ru32(buf, offset+8) as usize
+      (e.ru32(buf, offset+8) as usize) - base_offset
     };
 
     TiffEntry {

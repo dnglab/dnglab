@@ -62,7 +62,7 @@ impl<'a> MrwDecoder<'a> {
       raw_height: raw_height,
       packed: packed,
       wb_vals: wb_vals,
-      tiff: TiffIFD::new(&buf[tiffpos .. buf.len()], 8, 0, BIG_ENDIAN),
+      tiff: TiffIFD::new(&buf[tiffpos .. buf.len()], 8, 0, 0, BIG_ENDIAN),
       rawloader: rawloader,
     }
   }
