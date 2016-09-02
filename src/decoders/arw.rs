@@ -4,6 +4,7 @@ use decoders::basics::*;
 use std::mem::transmute;
 extern crate itertools;
 use self::itertools::Itertools;
+extern crate crossbeam;
 use std::f32;
 use std::cmp;
 
@@ -57,7 +58,7 @@ impl<'a> Decoder for ArwDecoder<'a> {
           ArwDecoder::decode_arw1(src, width, height)
         } else {
           match bps {
-            8 => {let curve = try!(ArwDecoder::get_curve(raw)); ArwDecoder::decode_arw2(src, width, height, curve)},
+            8 => {let curve = try!(ArwDecoder::get_curve(raw)); ArwDecoder::decode_arw2(src, width, height, &curve)},
             12 => decode_12le(src, width as usize, height as usize),
             _ => return Err(format!("ARW2: Don't know how to decode images with {} bps", bps)),
           }
@@ -79,7 +80,35 @@ impl<'a> ArwDecoder<'a> {
     buffer
   }
 
-  fn decode_arw2(buf: &[u8], width: u32, height: u32, curve: LookupTable) -> Vec<u16> {
+  fn decode_arw2(buf: &[u8], width: u32, height: u32, curve: &LookupTable) -> Vec<u16> {
+    // Simple dual threaded implementation of the arw decode that could be
+    // generalized into more threads easily. In practice doing much more than
+    // two threads is probably suboptimal on most hardware. Could be worth a
+    // shot though.
+    let height1 = height/2;
+    let height2 = height - height1;
+    let split = (height1+1)*width;
+    let src1 = &buf[0..(split as usize)];
+    let src2 = &buf[(split as usize)..buf.len()];
+
+    crossbeam::scope(|scope| {
+      let handle1 = scope.spawn(move || {
+        ArwDecoder::decode_arw2_slice(src1, width, height1, &curve)
+      });
+      let handle2 = scope.spawn(move || {
+        ArwDecoder::decode_arw2_slice(src2, width, height2, &curve)
+      });
+
+      let mut out1 = handle1.join();
+      let mut out2 = handle2.join();
+      out1.append(&mut out2);
+      out1
+    })
+  }
+
+  fn decode_arw2_slice(buf: &[u8], width: u32, height: u32, curve: &LookupTable) -> Vec<u16> {
+    println!("Decoding {}x{} with a {} bytes buf", width, height, buf.len());
+
     let mut buffer: Vec<u16> = vec![0; (width*height) as usize];
     let mut pump = BitPump::new(buf);
 
