@@ -122,6 +122,7 @@ pub fn decode_16le(buf: &[u8], width: usize, height: usize) -> Vec<u16> {
   buffer
 }
 
+#[derive(Debug, Clone)]
 pub struct LookupTable {
   table: Vec<(u16, u16, u16)>,
 }
