@@ -52,7 +52,7 @@ fn main() {
     Ok(val) => val,
     Err(e) => {error(e.description());unreachable!()},
   };
-  let preamble = format!("P6 {} {} {}\n", image.width, image.height, 4095).into_bytes();
+  let preamble = format!("P6 {} {} {}\n", image.width, image.height, image.whitelevels[0]).into_bytes();
   if let Err(err) = f.write_all(&preamble) {
     error(err.description());
   }

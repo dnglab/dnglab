@@ -52,7 +52,7 @@ fn main() {
 
   // Write out the image as a grayscale PPM in an extremely inneficient way
   let mut f = File::create(format!("{}.ppm",file)).unwrap();
-  let preamble = format!("P6 {} {} {}\n", image.width, image.height, 4095).into_bytes();
+  let preamble = format!("P6 {} {} {}\n", image.width, image.height, image.whitelevels[0]).into_bytes();
   f.write_all(&preamble).unwrap();
   for row in 0..image.height {
     let from: usize = (row as usize) * (image.width as usize);
