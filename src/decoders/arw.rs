@@ -58,7 +58,7 @@ impl<'a> Decoder for ArwDecoder<'a> {
           ArwDecoder::decode_arw1(src, width, height)
         } else {
           match bps {
-            8 => ArwDecoder::decode_arw2(src, width, height),
+            8 => {let curve = try!(ArwDecoder::get_curve(raw)); ArwDecoder::decode_arw2(src, width, height, curve)},
             12 => {shiftscale=2;decode_12le(src, width as usize, height as usize)},
             _ => return Err(format!("ARW2: Don't know how to decode images with {} bps", bps)),
           }
@@ -88,13 +88,14 @@ impl<'a> ArwDecoder<'a> {
     buffer
   }
 
-  fn decode_arw2(buf: &[u8], width: u32, height: u32) -> Vec<u16> {
+  fn decode_arw2(buf: &[u8], width: u32, height: u32, curve: LookupTable) -> Vec<u16> {
     let mut buffer: Vec<u16> = vec![0; (width*height) as usize];
     let mut pump = BitPump::new(buf);
 
     for row in 0..height {
       // Process 16 pixels at a time in interleaved fashion
       let mut col = 0;
+      let mut random = pump.peek_bits(24);
       while col < (width-30) {
         let max = pump.get_bits(11);
         let min = pump.get_bits(11);
@@ -110,7 +111,7 @@ impl<'a> ArwDecoder<'a> {
           } else {
             cmp::min(0x7ff,(pump.get_bits(7) << sh) + min)
           };
-          buffer[(row*width+col+i*2) as usize] = val as u16;
+          buffer[(row*width+col+i*2) as usize] = curve.dither(val as u16, &mut random);
         }
         col += if (col & 1) != 0 {31} else {1};  // Skip to next 16 pixels
       }
@@ -138,6 +139,24 @@ impl<'a> ArwDecoder<'a> {
     } else {
       Err("ARW: Couldn't find GRGB or RGGB levels".to_string())
     }
+  }
+
+  fn get_curve(raw: &TiffIFD) -> Result<LookupTable, String> {
+    let centry = fetch_tag!(raw, Tag::SonyCurve, "ARW: Couldn't find sony curve");
+    let mut curve: [u32;6] = [ 0, 0, 0, 0, 0, 4095 ];
+
+    for i in 0..4 {
+      curve[i+1] = ((centry.get_u16(i) >> 2) & 0xfff) as u32;
+    }
+
+    let mut out = vec![0 as u16; (curve[5]+1) as usize];
+    for i in 0..5 {
+      for j in (curve[i]+1)..(curve[i+1]+1) {
+        out[j as usize] = out[(j-1) as usize] + (1<<i);
+      }
+    }
+
+    Ok(LookupTable::new(&out))
   }
 
   fn sony_decrypt(buf: &[u8], offset: usize, length: usize, key: u32) -> Vec<u8>{

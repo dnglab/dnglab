@@ -13,6 +13,7 @@ pub enum Tag {
   StripOffsets   = 0x0111,
   StripByteCounts= 0x0117,
   SubIFDs        = 0x014A,
+  SonyCurve      = 0x7010,
   SonyOffset     = 0x7200,
   SonyLength     = 0x7201,
   SonyKey        = 0x7221,
