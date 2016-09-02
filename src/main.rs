@@ -2,6 +2,7 @@ use std::env;
 use std::fs::File;
 use std::error::Error;
 use std::io::prelude::*;
+use std::io::BufWriter;
 extern crate toml;
 
 mod decoders;
@@ -48,10 +49,11 @@ fn main() {
   let count: u64 = (image.width as u64) * (image.height as u64);
   println!("Image avg: {}", sum/count);
 
-  let mut f = match File::create(format!("{}.ppm",file)) {
+  let uf = match File::create(format!("{}.ppm",file)) {
     Ok(val) => val,
     Err(e) => {error(e.description());unreachable!()},
   };
+  let mut f = BufWriter::new(uf);
   let preamble = format!("P6 {} {} {}\n", image.width, image.height, image.whitelevels[0]).into_bytes();
   if let Err(err) = f.write_all(&preamble) {
     error(err.description());
