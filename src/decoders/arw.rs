@@ -50,7 +50,6 @@ impl<'a> Decoder for ArwDecoder<'a> {
     };
     let src = &self.buffer[offset .. self.buffer.len()];
 
-    let mut shiftscale = 0;
     let image = match compression {
       1 => decode_16le(src, width as usize, height as usize),
       32767 => {
@@ -59,7 +58,7 @@ impl<'a> Decoder for ArwDecoder<'a> {
         } else {
           match bps {
             8 => {let curve = try!(ArwDecoder::get_curve(raw)); ArwDecoder::decode_arw2(src, width, height, curve)},
-            12 => {shiftscale=2;decode_12le(src, width as usize, height as usize)},
+            12 => decode_12le(src, width as usize, height as usize),
             _ => return Err(format!("ARW2: Don't know how to decode images with {} bps", bps)),
           }
         }
@@ -67,15 +66,7 @@ impl<'a> Decoder for ArwDecoder<'a> {
       _ => return Err(format!("ARW: Don't know how to decode type {}", compression).to_string()),
     };
 
-    let mut whites: [i64;4] = [0,0,0,0];
-    let mut blacks: [i64;4] = [0,0,0,0];
-
-    for i in 0..4 {
-      whites[i] = camera.whitelevels[i] >> shiftscale;
-      blacks[i] = camera.blacklevels[i] >> shiftscale;
-    }
-
-    ok_image_with_levels(camera, width, height, try!(self.get_wb()), whites, blacks, image)
+    ok_image(camera, width, height, try!(self.get_wb()), image)
   }
 }
 
