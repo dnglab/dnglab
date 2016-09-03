@@ -107,8 +107,6 @@ impl<'a> ArwDecoder<'a> {
   }
 
   fn decode_arw2_slice(buf: &[u8], width: u32, height: u32, curve: &LookupTable) -> Vec<u16> {
-    println!("Decoding {}x{} with a {} bytes buf", width, height, buf.len());
-
     let mut buffer: Vec<u16> = vec![0; (width*height) as usize];
     let mut pump = BitPump::new(buf);
 
