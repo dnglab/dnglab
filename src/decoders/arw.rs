@@ -4,7 +4,6 @@ use decoders::basics::*;
 use std::mem::transmute;
 extern crate itertools;
 use self::itertools::Itertools;
-extern crate crossbeam;
 use std::f32;
 use std::cmp;
 
@@ -81,67 +80,34 @@ impl<'a> ArwDecoder<'a> {
   }
 
   fn decode_arw2(buf: &[u8], width: u32, height: u32, curve: &LookupTable) -> Vec<u16> {
-    let mut out: Vec<u16> = vec![0; (width*height) as usize];
+    decode_threaded(width, height, &(|out: &mut [u16], start, width, height| {
+      let mut pump = BitPump::new(&buf[((start*width) as usize)..buf.len()]);
 
-    // Default to 4 threads as that should be close to the ideal speedup on most
-    // machines. In the future we need a way to have this be a parameter or even
-    // to set it dynamically based on how loaded the machine is.
-    let threads = 4;
-    if threads < 2 || height < threads {
-      ArwDecoder::decode_arw2_slice(&mut out, buf, width, height, &curve);
-      return out
-    }
-
-    let mut split = height/threads;
-    if split*threads < height { // Make sure the last split is always the smallest
-      split += 1;
-    }
-
-    crossbeam::scope(|scope| {
-      let mut handles = Vec::new();
-      for (i,out_part) in (&mut out[..]).chunks_mut((split*width) as usize).enumerate() {
-        let start = split*(i as u32);
-        let tall = (out_part.len() as u32)/width;
-        let src = &buf[((start*width) as usize)..buf.len()];
-        let handle = scope.spawn(move || {
-          ArwDecoder::decode_arw2_slice(out_part, src, width, tall, &curve)
-        });
-        handles.push(handle);
-      }
-
-      for h in handles { h.join() };
-    });
-
-    out
-  }
-
-  fn decode_arw2_slice(out: &mut [u16], buf: &[u8], width: u32, height: u32, curve: &LookupTable) {
-    let mut pump = BitPump::new(buf);
-
-    for row in 0..height {
-      // Process 16 pixels at a time in interleaved fashion
-      let mut col = 0;
-      let mut random = pump.peek_bits(24);
-      while col < (width-30) {
-        let max = pump.get_bits(11);
-        let min = pump.get_bits(11);
-        let imax = pump.get_bits(4);
-        let imin = pump.get_bits(4);
-        let mut sh = 0;
-        while sh<4 && (0x80 << sh) <= (max - min) {sh = sh + 1;}
-        for i in 0..16 {
-          let val = if i == imax {
-            max
-          } else if i == imin {
-            min
-          } else {
-            cmp::min(0x7ff,(pump.get_bits(7) << sh) + min)
-          };
-          out[(row*width+col+i*2) as usize] = curve.dither(val as u16, &mut random);
+      for row in 0..height {
+        // Process 16 pixels at a time in interleaved fashion
+        let mut col = 0;
+        let mut random = pump.peek_bits(24);
+        while col < (width-30) {
+          let max = pump.get_bits(11);
+          let min = pump.get_bits(11);
+          let imax = pump.get_bits(4);
+          let imin = pump.get_bits(4);
+          let mut sh = 0;
+          while sh<4 && (0x80 << sh) <= (max - min) {sh = sh + 1;}
+          for i in 0..16 {
+            let val = if i == imax {
+              max
+            } else if i == imin {
+              min
+            } else {
+              cmp::min(0x7ff,(pump.get_bits(7) << sh) + min)
+            };
+            out[(row*width+col+i*2) as usize] = curve.dither(val as u16, &mut random);
+          }
+          col += if (col & 1) != 0 {31} else {1};  // Skip to next 16 pixels
         }
-        col += if (col & 1) != 0 {31} else {1};  // Skip to next 16 pixels
       }
-    }
+    }))
   }
 
   fn get_wb(&self) -> Result<[f32;4], String> {

@@ -1,5 +1,7 @@
 extern crate itertools;
 use self::itertools::Itertools;
+extern crate crossbeam;
+use std;
 
 #[derive(Debug, Copy, Clone)]
 pub struct Endian {
@@ -120,6 +122,43 @@ pub fn decode_16le(buf: &[u8], width: usize, height: usize) -> Vec<u16> {
   }
 
   buffer
+}
+
+pub fn decode_threaded<F>(width: u32, height: u32, closure: &F) -> Vec<u16>
+  where F : Fn(&mut [u16], u32, u32, u32)+std::marker::Sync {
+  let mut out: Vec<u16> = vec![0; (width*height) as usize];
+
+  // Default to 4 threads as that should be close to the ideal speedup on most
+  // machines. In the future we need a way to have this be a parameter or even
+  // to set it dynamically based on how loaded the machine is.
+  let threads = 4;
+
+  // If we're only using one thread do it all sequentially and be done with it
+  if threads < 2 || height < threads {
+    closure(&mut out, 0, width, height);
+    return out
+  }
+
+  let mut split = height/threads;
+  if split*threads < height { // Make sure the last split is always the smallest
+    split += 1;
+  }
+
+  crossbeam::scope(|scope| {
+    let mut handles = Vec::new();
+    for (i,out_part) in (&mut out[..]).chunks_mut((split*width) as usize).enumerate() {
+      let start = split*(i as u32);
+      let tall = (out_part.len() as u32)/width;
+      let handle = scope.spawn(move || {
+        closure(out_part, start, width, tall);
+      });
+      handles.push(handle);
+    }
+
+    for h in handles { h.join() };
+  });
+
+  out
 }
 
 #[derive(Debug, Clone)]
