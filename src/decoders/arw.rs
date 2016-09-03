@@ -2,6 +2,7 @@ use decoders::*;
 use decoders::tiff::*;
 use decoders::basics::*;
 use std::mem::transmute;
+use std::slice;
 extern crate itertools;
 use self::itertools::Itertools;
 extern crate crossbeam;
@@ -81,48 +82,50 @@ impl<'a> ArwDecoder<'a> {
   }
 
   fn decode_arw2(buf: &[u8], width: u32, height: u32, curve: &LookupTable) -> Vec<u16> {
-    // Speedup doesn't currently seem worthwhile above 2 threads, probably because
-    // of too much copying
-    let threads = 2;
+    let mut out: Vec<u16> = vec![0; (width*height) as usize];
+
+    // Default to 4 threads as that should be close to the ideal speedup on most
+    // machines. In the future we need a way to have this be a parameter or even
+    // to set it dynamically based on how loaded the machine is.
+    let threads = 4;
     if threads < 2 || height < threads {
-      return ArwDecoder::decode_arw2_slice(buf, width, height, &curve);
+      ArwDecoder::decode_arw2_slice(&mut out, buf, width, height, &curve);
+      return out
     }
 
-    let mut heights = Vec::new();
-    let split = height/threads;
-    let mut height_split = 0;
-    for i in 0..threads {
-      let start = height_split;
-      height_split += split;
-      let end = if i == threads-1 {
-        height
-      } else {
-        height_split -1
-      };
-      heights.push((start, end));
+    {
+      let mut heights = Vec::new();
+      let split = height/threads;
+      let mut height_split = 0;
+      for i in 0..threads {
+        let start = height_split;
+        height_split += split;
+        let end = if i == threads-1 { height } else { height_split -1 };
+        let tall = end-start+1;
+        let ptr = (&mut out[(start*width) as usize ..]).as_mut_ptr();
+        let out_part = unsafe {
+           slice::from_raw_parts_mut(ptr, (tall*width) as usize)
+        };
+        heights.push((start, tall, out_part));
+      }
+
+      crossbeam::scope(|scope| {
+        let mut handles = Vec::new();
+        for (start, tall, out_part) in heights {
+          let src = &buf[((start*width) as usize)..buf.len()];
+          let handle = scope.spawn(move || {
+            ArwDecoder::decode_arw2_slice(out_part, src, width, tall, &curve)
+          });
+          handles.push(handle);
+        }
+
+        for h in handles { h.join() };
+      });
     }
-
-    crossbeam::scope(|scope| {
-      let mut handles = Vec::new();
-      for (start, end) in heights {
-        let src = &buf[((start*width) as usize)..buf.len()];
-        let handle = scope.spawn(move || {
-          ArwDecoder::decode_arw2_slice(src, width, end-start+1, &curve)
-        });
-        handles.push(handle);
-      }
-
-      let mut out = Vec::new();
-      for h in handles {
-        let mut other = h.join();
-        out.append(&mut other);
-      }
-      out
-    })
+    out
   }
 
-  fn decode_arw2_slice(buf: &[u8], width: u32, height: u32, curve: &LookupTable) -> Vec<u16> {
-    let mut buffer: Vec<u16> = vec![0; (width*height) as usize];
+  fn decode_arw2_slice(out: &mut [u16], buf: &[u8], width: u32, height: u32, curve: &LookupTable) {
     let mut pump = BitPump::new(buf);
 
     for row in 0..height {
@@ -144,13 +147,11 @@ impl<'a> ArwDecoder<'a> {
           } else {
             cmp::min(0x7ff,(pump.get_bits(7) << sh) + min)
           };
-          buffer[(row*width+col+i*2) as usize] = curve.dither(val as u16, &mut random);
+          out[(row*width+col+i*2) as usize] = curve.dither(val as u16, &mut random);
         }
         col += if (col & 1) != 0 {31} else {1};  // Skip to next 16 pixels
       }
     }
-
-    buffer
   }
 
   fn get_wb(&self) -> Result<[f32;4], String> {
