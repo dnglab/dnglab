@@ -2,7 +2,6 @@ use decoders::*;
 use decoders::tiff::*;
 use decoders::basics::*;
 use std::mem::transmute;
-use std::slice;
 extern crate itertools;
 use self::itertools::Itertools;
 extern crate crossbeam;
@@ -93,35 +92,26 @@ impl<'a> ArwDecoder<'a> {
       return out
     }
 
-    {
-      let mut heights = Vec::new();
-      let split = height/threads;
-      let mut height_split = 0;
-      for i in 0..threads {
-        let start = height_split;
-        height_split += split;
-        let end = if i == threads-1 { height } else { height_split -1 };
-        let tall = end-start+1;
-        let ptr = (&mut out[(start*width) as usize ..]).as_mut_ptr();
-        let out_part = unsafe {
-           slice::from_raw_parts_mut(ptr, (tall*width) as usize)
-        };
-        heights.push((start, tall, out_part));
+    let mut split = height/threads;
+    if split*threads < height { // Make sure the last split is always the smallest
+      split += 1;
+    }
+
+    crossbeam::scope(|scope| {
+      let mut handles = Vec::new();
+      for (i,out_part) in (&mut out[..]).chunks_mut((split*width) as usize).enumerate() {
+        let start = split*(i as u32);
+        let tall = (out_part.len() as u32)/width;
+        let src = &buf[((start*width) as usize)..buf.len()];
+        let handle = scope.spawn(move || {
+          ArwDecoder::decode_arw2_slice(out_part, src, width, tall, &curve)
+        });
+        handles.push(handle);
       }
 
-      crossbeam::scope(|scope| {
-        let mut handles = Vec::new();
-        for (start, tall, out_part) in heights {
-          let src = &buf[((start*width) as usize)..buf.len()];
-          let handle = scope.spawn(move || {
-            ArwDecoder::decode_arw2_slice(out_part, src, width, tall, &curve)
-          });
-          handles.push(handle);
-        }
+      for h in handles { h.join() };
+    });
 
-        for h in handles { h.join() };
-      });
-    }
     out
   }
 
