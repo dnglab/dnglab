@@ -1,6 +1,6 @@
 [package]
 name = "rawloader"
-version = "0.5.0"
+version = "0.6.0"
 authors = ["Pedro Côrte-Real <pedro@pedrocr.net>"]
 description = "A library to extract the data from camera raw formats"
 #documentation = "..."
