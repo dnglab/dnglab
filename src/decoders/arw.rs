@@ -54,10 +54,10 @@ impl<'a> Decoder for ArwDecoder<'a> {
       1 => decode_16le(src, width as usize, height as usize),
       32767 => {
         if ((width*height*bps) as usize) != count*8 {
-          ArwDecoder::decode_arw1(src, width, height)
+          ArwDecoder::decode_arw1(src, width as usize, height as usize)
         } else {
           match bps {
-            8 => {let curve = try!(ArwDecoder::get_curve(raw)); ArwDecoder::decode_arw2(src, width, height, &curve)},
+            8 => {let curve = try!(ArwDecoder::get_curve(raw)); ArwDecoder::decode_arw2(src, width as usize, height as usize, &curve)},
             12 => decode_12le(src, width as usize, height as usize),
             _ => return Err(format!("ARW2: Don't know how to decode images with {} bps", bps)),
           }
@@ -71,7 +71,7 @@ impl<'a> Decoder for ArwDecoder<'a> {
 }
 
 impl<'a> ArwDecoder<'a> {
-  fn decode_arw1(buf: &[u8], width: u32, height: u32) -> Vec<u16> {
+  fn decode_arw1(buf: &[u8], width: usize, height: usize) -> Vec<u16> {
     let mut buffer: Vec<u16> = vec![0; (width*height) as usize];
 
     buffer[0] = buf[0] as u16; // Shut up the warnings for now
@@ -79,9 +79,9 @@ impl<'a> ArwDecoder<'a> {
     buffer
   }
 
-  fn decode_arw2(buf: &[u8], width: u32, height: u32, curve: &LookupTable) -> Vec<u16> {
+  fn decode_arw2(buf: &[u8], width: usize, height: usize, curve: &LookupTable) -> Vec<u16> {
     decode_threaded(width, height, &(|out: &mut [u16], start, width, height| {
-      let mut pump = BitPump::new(&buf[((start*width) as usize)..buf.len()]);
+      let mut pump = BitPump::new(&buf[(start*width)..buf.len()]);
 
       for row in 0..height {
         // Process 16 pixels at a time in interleaved fashion
@@ -102,7 +102,7 @@ impl<'a> ArwDecoder<'a> {
             } else {
               cmp::min(0x7ff,(pump.get_bits(7) << sh) + min)
             };
-            out[(row*width+col+i*2) as usize] = curve.dither(val as u16, &mut random);
+            out[row*width+col+(i*2) as usize] = curve.dither(val as u16, &mut random);
           }
           col += if (col & 1) != 0 {31} else {1};  // Skip to next 16 pixels
         }

@@ -53,85 +53,85 @@ pub static LITTLE_ENDIAN: Endian = Endian{big: false};
 }
 
 pub fn decode_12be(buf: &[u8], width: usize, height: usize) -> Vec<u16> {
-  let mut buffer: Vec<u16> = vec![0; width*height];
-  let mut pos: usize = 0;
+  decode_threaded(width, height, &(|out: &mut [u16], start, width, height| {
+    let inb = &buf[((start*width*12/8) as usize)..buf.len()];
+    let mut pos: usize = 0;
 
-  for row in 0..height {
-    for col in (0..width).step(2) {
-      let g1: u16 = buf[pos] as u16;
-      let g2: u16 = buf[pos+1] as u16;
-      let g3: u16 = buf[pos+2] as u16;
-      pos += 3;
+    for row in 0..height {
+      for col in (0..width).step(2) {
+        let g1: u16 = inb[pos] as u16;
+        let g2: u16 = inb[pos+1] as u16;
+        let g3: u16 = inb[pos+2] as u16;
+        pos += 3;
 
-      buffer[width*row+col]   = (g1 << 4) | (g2 >> 4);
-      buffer[width*row+col+1] = ((g2 & 0x0f) << 8) | g3;
+        out[width*row+col]   = (g1 << 4) | (g2 >> 4);
+        out[width*row+col+1] = ((g2 & 0x0f) << 8) | g3;
+      }
     }
-  }
-
-  buffer
+  }))
 }
 
 pub fn decode_12le(buf: &[u8], width: usize, height: usize) -> Vec<u16> {
-  let mut buffer: Vec<u16> = vec![0; width*height];
-  let mut pos: usize = 0;
+  decode_threaded(width, height, &(|out: &mut [u16], start, width, height| {
+    let inb = &buf[((start*width*12/8) as usize)..buf.len()];
+    let mut pos: usize = 0;
 
-  for row in 0..height {
-    for col in (0..width).step(2) {
-      let g1: u16 = buf[pos] as u16;
-      let g2: u16 = buf[pos+1] as u16;
-      let g3: u16 = buf[pos+2] as u16;
-      pos += 3;
+    for row in 0..height {
+      for col in (0..width).step(2) {
+        let g1: u16 = inb[pos] as u16;
+        let g2: u16 = inb[pos+1] as u16;
+        let g3: u16 = inb[pos+2] as u16;
+        pos += 3;
 
-      buffer[width*row+col]   = ((g2 & 0x0f) << 8) | g1;
-      buffer[width*row+col+1] = (g3 << 4) | (g2 >> 4);
+        out[width*row+col]   = ((g2 & 0x0f) << 8) | g1;
+        out[width*row+col+1] = (g3 << 4) | (g2 >> 4);
+      }
     }
-  }
-
-  buffer
+  }))
 }
 
 pub fn decode_12be_unpacked(buf: &[u8], width: usize, height: usize) -> Vec<u16> {
-  let mut buffer: Vec<u16> = vec![0; width*height];
-  let mut pos: usize = 0;
+  decode_threaded(width, height, &(|out: &mut [u16], start, width, height| {
+    let inb = &buf[((start*width*2) as usize)..buf.len()];
+    let mut pos: usize = 0;
 
-  for row in 0..height {
-    for col in 0..width {
-      let g1: u16 = buf[pos] as u16;
-      let g2: u16 = buf[pos+1] as u16;
-      pos += 2;
+    for row in 0..height {
+      for col in 0..width {
+        let g1: u16 = inb[pos] as u16;
+        let g2: u16 = inb[pos+1] as u16;
+        pos += 2;
 
-      buffer[width*row+col] = ((g1 & 0x0f) << 8) | g2;
+        out[width*row+col] = ((g1 & 0x0f) << 8) | g2;
+      }
     }
-  }
-
-  buffer
+  }))
 }
 
 pub fn decode_16le(buf: &[u8], width: usize, height: usize) -> Vec<u16> {
-  let mut buffer: Vec<u16> = vec![0; width*height];
-  let mut pos: usize = 0;
+  decode_threaded(width, height, &(|out: &mut [u16], start, width, height| {
+    let inb = &buf[((start*width*2) as usize)..buf.len()];
+    let mut pos: usize = 0;
 
-  for row in 0..height {
-    for col in 0..width {
-      let g1: u16 = buf[pos] as u16;
-      let g2: u16 = buf[pos+1] as u16;
-      pos += 2;
+    for row in 0..height {
+      for col in 0..width {
+        let g1: u16 = inb[pos] as u16;
+        let g2: u16 = inb[pos+1] as u16;
+        pos += 2;
 
-      buffer[width*row+col] = (g2 << 8) | g1;
+        out[width*row+col] = (g2 << 8) | g1;
+      }
     }
-  }
-
-  buffer
+  }))
 }
 
-pub fn decode_threaded<F>(width: u32, height: u32, closure: &F) -> Vec<u16>
-  where F : Fn(&mut [u16], u32, u32, u32)+std::marker::Sync {
+pub fn decode_threaded<F>(width: usize, height: usize, closure: &F) -> Vec<u16>
+  where F : Fn(&mut [u16], usize, usize, usize)+std::marker::Sync {
   let mut out: Vec<u16> = vec![0; (width*height) as usize];
 
   // Default to 4 threads as that should be close to the ideal speedup on most
   // machines. In the future we need a way to have this be a parameter or even
   // to set it dynamically based on how loaded the machine is.
-  let threads = 4;
+  let threads = 3;
 
   // If we're only using one thread do it all sequentially and be done with it
   if threads < 2 || height < threads {
@@ -146,9 +146,9 @@ pub fn decode_threaded<F>(width: u32, height: u32, closure: &F) -> Vec<u16>
 
   crossbeam::scope(|scope| {
     let mut handles = Vec::new();
-    for (i,out_part) in (&mut out[..]).chunks_mut((split*width) as usize).enumerate() {
-      let start = split*(i as u32);
-      let tall = (out_part.len() as u32)/width;
+    for (i,out_part) in (&mut out[..]).chunks_mut(split*width).enumerate() {
+      let start = split*(i);
+      let tall = out_part.len()/width;
       let handle = scope.spawn(move || {
         closure(out_part, start, width, tall);
       });
