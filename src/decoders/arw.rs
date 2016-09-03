@@ -81,28 +81,43 @@ impl<'a> ArwDecoder<'a> {
   }
 
   fn decode_arw2(buf: &[u8], width: u32, height: u32, curve: &LookupTable) -> Vec<u16> {
-    // Simple dual threaded implementation of the arw decode that could be
-    // generalized into more threads easily. In practice doing much more than
-    // two threads is probably suboptimal on most hardware. Could be worth a
-    // shot though.
-    let height1 = height/2;
-    let height2 = height - height1;
-    let split = (height1+1)*width;
-    let src1 = &buf[0..(split as usize)];
-    let src2 = &buf[(split as usize)..buf.len()];
+    // Speedup doesn't currently seem worthwhile above 2 threads, probably because
+    // of too much copying
+    let threads = 2;
+    if threads < 2 || height < threads {
+      return ArwDecoder::decode_arw2_slice(buf, width, height, &curve);
+    }
+
+    let mut heights = Vec::new();
+    let split = height/threads;
+    let mut height_split = 0;
+    for i in 0..threads {
+      let start = height_split;
+      height_split += split;
+      let end = if i == threads-1 {
+        height
+      } else {
+        height_split -1
+      };
+      heights.push((start, end));
+    }
 
     crossbeam::scope(|scope| {
-      let handle1 = scope.spawn(move || {
-        ArwDecoder::decode_arw2_slice(src1, width, height1, &curve)
-      });
-      let handle2 = scope.spawn(move || {
-        ArwDecoder::decode_arw2_slice(src2, width, height2, &curve)
-      });
+      let mut handles = Vec::new();
+      for (start, end) in heights {
+        let src = &buf[((start*width) as usize)..buf.len()];
+        let handle = scope.spawn(move || {
+          ArwDecoder::decode_arw2_slice(src, width, end-start+1, &curve)
+        });
+        handles.push(handle);
+      }
 
-      let mut out1 = handle1.join();
-      let mut out2 = handle2.join();
-      out1.append(&mut out2);
-      out1
+      let mut out = Vec::new();
+      for h in handles {
+        let mut other = h.join();
+        out.append(&mut other);
+      }
+      out
     })
   }
 
