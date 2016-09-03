@@ -131,7 +131,7 @@ pub fn decode_threaded<F>(width: usize, height: usize, closure: &F) -> Vec<u16>
   // Default to 4 threads as that should be close to the ideal speedup on most
   // machines. In the future we need a way to have this be a parameter or even
   // to set it dynamically based on how loaded the machine is.
-  let threads = 3;
+  let threads = 4;
 
   // If we're only using one thread do it all sequentially and be done with it
   if threads < 2 || height < threads {
