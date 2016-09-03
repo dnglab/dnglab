@@ -5,8 +5,8 @@ use std::io::prelude::*;
 use std::io::BufWriter;
 extern crate time;
 extern crate toml;
-
-mod decoders;
+extern crate rawloader;
+use rawloader::decoders;
 
 fn usage() {
   println!("rawloader <file>");
