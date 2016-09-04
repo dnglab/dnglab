@@ -54,7 +54,7 @@ pub static LITTLE_ENDIAN: Endian = Endian{big: false};
 
 pub fn decode_12be(buf: &[u8], width: usize, height: usize) -> Vec<u16> {
   decode_threaded(width, height, &(|out: &mut [u16], start, width, height| {
-    let inb = &buf[((start*width*12/8) as usize)..buf.len()];
+    let inb = &buf[((start*width*12/8) as usize)..];
     let mut pos: usize = 0;
 
     for row in 0..height {
@@ -73,7 +73,7 @@ pub fn decode_12be(buf: &[u8], width: usize, height: usize) -> Vec<u16> {
 
 pub fn decode_12le(buf: &[u8], width: usize, height: usize) -> Vec<u16> {
   decode_threaded(width, height, &(|out: &mut [u16], start, width, height| {
-    let inb = &buf[((start*width*12/8) as usize)..buf.len()];
+    let inb = &buf[((start*width*12/8) as usize)..];
     let mut pos: usize = 0;
 
     for row in 0..height {
@@ -92,7 +92,7 @@ pub fn decode_12le(buf: &[u8], width: usize, height: usize) -> Vec<u16> {
 
 pub fn decode_12be_unpacked(buf: &[u8], width: usize, height: usize) -> Vec<u16> {
   decode_threaded(width, height, &(|out: &mut [u16], start, width, height| {
-    let inb = &buf[((start*width*2) as usize)..buf.len()];
+    let inb = &buf[((start*width*2) as usize)..];
     let mut pos: usize = 0;
 
     for row in 0..height {
@@ -109,7 +109,7 @@ pub fn decode_12be_unpacked(buf: &[u8], width: usize, height: usize) -> Vec<u16>
 
 pub fn decode_16le(buf: &[u8], width: usize, height: usize) -> Vec<u16> {
   decode_threaded(width, height, &(|out: &mut [u16], start, width, height| {
-    let inb = &buf[((start*width*2) as usize)..buf.len()];
+    let inb = &buf[((start*width*2) as usize)..];
     let mut pos: usize = 0;
 
     for row in 0..height {
