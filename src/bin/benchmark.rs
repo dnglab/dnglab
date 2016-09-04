@@ -8,7 +8,9 @@ fn usage() {
   std::process::exit(1);
 }
 
-static ITERATIONS: u32 = 100;
+static STEP_ITERATIONS: u32 = 10;
+static MIN_ITERATIONS: u32 = 100;
+static MIN_TIME: u64 = 10000000000;
 
 fn error(err: &str) {
   println!("ERROR: {}", err);
@@ -25,12 +27,19 @@ fn main() {
 
   let rawloader = decoders::RawLoader::new();
   let from_time = time::precise_time_ns();
-  for _ in 0..ITERATIONS {
-    match rawloader.decode_safe(file) {
-      Ok(_) => {},
-      Err(e) => error(&e),
+  let mut iterations = 0;
+  loop {
+    for _ in 0..STEP_ITERATIONS {
+      match rawloader.decode_safe(file) {
+        Ok(_) => {},
+        Err(e) => error(&e),
+      }
+    }
+    iterations += STEP_ITERATIONS;
+    let to_time = time::precise_time_ns();
+    if iterations >= MIN_ITERATIONS && (to_time-from_time) >= MIN_TIME {
+      println!("Average decode time: {} ms ({} iterations)", (to_time-from_time)/(iterations as u64)/1000000, iterations);
+      break;
     }
   }
-  let to_time = time::precise_time_ns();
-  println!("Decoded {} times in {} ms", ITERATIONS, (to_time - from_time)/1000000);
 }
