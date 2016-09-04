@@ -199,24 +199,39 @@ impl LookupTable {
 
 pub struct BitPump<'a> {
   buffer: &'a [u8],
-  offset: usize,
+  pos: usize,
+  bits: u64,
+  nbits: u32,
 }
 
 impl<'a> BitPump<'a> {
   pub fn new(src: &'a [u8]) -> BitPump {
     BitPump {
       buffer: src,
-      offset: 0,
+      pos: 0,
+      bits: 0,
+      nbits: 0,
     }
   }
 
-  pub fn peek_bits(&self, nbits: u32) -> u32 {
-    (LEu32(self.buffer, self.offset>>3) >> (self.offset&7)) & ((1<<nbits) - 1)
+  fn fill_bits(&mut self) {
+    let inbits: u64 = LEu32(self.buffer, self.pos) as u64;
+    self.pos += 4;
+    self.bits = ((inbits << 32) | (self.bits << (32-self.nbits))) >> (32-self.nbits);
+    self.nbits += 32;
   }
 
-  pub fn get_bits(&mut self, nbits: u32) -> u32 {
-    let val = self.peek_bits(nbits);
-    self.offset += nbits as usize;
+  pub fn peek_bits(&mut self, num: u32) -> u32 {
+    if num > self.nbits {
+      self.fill_bits();
+    }
+    (self.bits & (0x0ffffffffu64 >> (32-num))) as u32
+  }
+
+  pub fn get_bits(&mut self, num: u32) -> u32 {
+    let val = self.peek_bits(num);
+    self.bits = self.bits >> num;
+    self.nbits -= num;
     val
   }
 }
