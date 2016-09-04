@@ -1,6 +1,8 @@
 use std::collections::HashMap;
 use std::io::Read;
 use std::fs::File;
+use std::io::BufReader;
+use std::io::BufRead;
 use std::error::Error;
 use std::panic;
 
@@ -17,6 +19,30 @@ use self::basics::*;
 use self::tiff::*;
 
 pub static CAMERAS_TOML: &'static str = include_str!("../../data/cameras/all.toml");
+
+extern crate num_cpus;
+
+lazy_static! {
+  pub static ref NUM_CORES: usize = {
+    let file = match File::open("/proc/cpuinfo") {
+      Ok(val) => val,
+      Err(_) => return num_cpus::get(),
+    };
+    let reader = BufReader::new(file);
+    let mut map = HashMap::new();
+    for line in reader.lines().filter_map(|result| result.ok()) {
+        let parts: Vec<&str> = line.split(':').map(|s| s.trim()).collect();
+        if parts.len() != 2 {
+          continue
+        }
+        if parts[0] == "core id" {
+          map.insert(parts[1].to_string(), true);
+        }
+    }
+    let count = map.len();
+    if count == 0 { num_cpus::get() } else { count }
+  };
+}
 
 pub trait Decoder {
   fn identify(&self) -> Result<&Camera, String>;

@@ -1,5 +1,6 @@
 extern crate crossbeam;
 use std;
+use decoders::NUM_CORES;
 
 #[derive(Debug, Copy, Clone)]
 pub struct Endian {
@@ -110,10 +111,8 @@ pub fn decode_threaded<F>(width: usize, height: usize, closure: &F) -> Vec<u16>
   where F : Fn(&mut [u16], usize, usize, usize)+std::marker::Sync {
   let mut out: Vec<u16> = vec![0; (width*height) as usize];
 
-  // Default to 4 threads as that should be close to the ideal speedup on most
-  // machines. In the future we need a way to have this be a parameter or even
-  // to set it dynamically based on how loaded the machine is.
-  let threads = 4;
+  // Default to the number of available physical cores (no hyperthreading)
+  let threads = *NUM_CORES;
 
   // If we're only using one thread do it all sequentially and be done with it
   if threads < 2 || height < threads {
