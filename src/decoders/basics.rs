@@ -1,5 +1,3 @@
-extern crate itertools;
-use self::itertools::Itertools;
 extern crate crossbeam;
 use std;
 
@@ -53,73 +51,57 @@ pub static LITTLE_ENDIAN: Endian = Endian{big: false};
 }
 
 pub fn decode_12be(buf: &[u8], width: usize, height: usize) -> Vec<u16> {
-  decode_threaded(width, height, &(|out: &mut [u16], start, width, height| {
+  decode_threaded(width, height, &(|out: &mut [u16], start, width, _| {
     let inb = &buf[((start*width*12/8) as usize)..];
-    let mut pos: usize = 0;
 
-    for row in 0..height {
-      for col in (0..width).step(2) {
-        let g1: u16 = inb[pos] as u16;
-        let g2: u16 = inb[pos+1] as u16;
-        let g3: u16 = inb[pos+2] as u16;
-        pos += 3;
+    for (o, i) in out.chunks_mut(2).zip(inb.chunks(3)) {
+      let g1: u16 = i[0] as u16;
+      let g2: u16 = i[1] as u16;
+      let g3: u16 = i[2] as u16;
 
-        out[width*row+col]   = (g1 << 4) | (g2 >> 4);
-        out[width*row+col+1] = ((g2 & 0x0f) << 8) | g3;
-      }
+      o[0] = (g1 << 4) | (g2 >> 4);
+      o[1] = ((g2 & 0x0f) << 8) | g3;
     }
   }))
 }
 
 pub fn decode_12le(buf: &[u8], width: usize, height: usize) -> Vec<u16> {
-  decode_threaded(width, height, &(|out: &mut [u16], start, width, height| {
+  decode_threaded(width, height, &(|out: &mut [u16], start, width, _| {
     let inb = &buf[((start*width*12/8) as usize)..];
-    let mut pos: usize = 0;
 
-    for row in 0..height {
-      for col in (0..width).step(2) {
-        let g1: u16 = inb[pos] as u16;
-        let g2: u16 = inb[pos+1] as u16;
-        let g3: u16 = inb[pos+2] as u16;
-        pos += 3;
+    for (o, i) in out.chunks_mut(2).zip(inb.chunks(3)) {
+      let g1: u16 = i[0] as u16;
+      let g2: u16 = i[1] as u16;
+      let g3: u16 = i[2] as u16;
 
-        out[width*row+col]   = ((g2 & 0x0f) << 8) | g1;
-        out[width*row+col+1] = (g3 << 4) | (g2 >> 4);
-      }
+      o[0] = ((g2 & 0x0f) << 8) | g1;
+      o[1] = (g3 << 4) | (g2 >> 4);
     }
   }))
 }
 
 pub fn decode_12be_unpacked(buf: &[u8], width: usize, height: usize) -> Vec<u16> {
-  decode_threaded(width, height, &(|out: &mut [u16], start, width, height| {
+  decode_threaded(width, height, &(|out: &mut [u16], start, width, _| {
     let inb = &buf[((start*width*2) as usize)..];
-    let mut pos: usize = 0;
 
-    for row in 0..height {
-      for col in 0..width {
-        let g1: u16 = inb[pos] as u16;
-        let g2: u16 = inb[pos+1] as u16;
-        pos += 2;
+    for (o, i) in out.chunks_mut(2).zip(inb.chunks(2)) {
+      let g1: u16 = i[0] as u16;
+      let g2: u16 = i[1] as u16;
 
-        out[width*row+col] = ((g1 & 0x0f) << 8) | g2;
-      }
+      o[0] = ((g1 & 0x0f) << 8) | g2;
     }
   }))
 }
 
 pub fn decode_16le(buf: &[u8], width: usize, height: usize) -> Vec<u16> {
-  decode_threaded(width, height, &(|out: &mut [u16], start, width, height| {
+  decode_threaded(width, height, &(|out: &mut [u16], start, width, _| {
     let inb = &buf[((start*width*2) as usize)..];
-    let mut pos: usize = 0;
 
-    for row in 0..height {
-      for col in 0..width {
-        let g1: u16 = inb[pos] as u16;
-        let g2: u16 = inb[pos+1] as u16;
-        pos += 2;
+    for (o, i) in out.chunks_mut(2).zip(inb.chunks(2)) {
+      let g1: u16 = i[0] as u16;
+      let g2: u16 = i[1] as u16;
 
-        out[width*row+col] = (g2 << 8) | g1;
-      }
+      o[0] = (g2 << 8) | g1;
     }
   }))
 }
