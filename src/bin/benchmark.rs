@@ -1,4 +1,7 @@
 use std::env;
+use std::fs::File;
+use std::error::Error;
+
 extern crate rawloader;
 extern crate time;
 use rawloader::decoders;
@@ -25,12 +28,24 @@ fn main() {
   let file = &args[1];
   println!("Loading file \"{}\"", file);
 
+  let mut iterations = 0;
+  let mut f = match File::open(file) {
+    Ok(val) => val,
+    Err(e) => {error(e.description());return},
+  };
+  let buffer = match decoders::Buffer::new(&mut f) {
+    Ok(val) => val,
+    Err(e) => {error(&e); return},
+  };
   let rawloader = decoders::RawLoader::new();
   let from_time = time::precise_time_ns();
-  let mut iterations = 0;
   loop {
     for _ in 0..STEP_ITERATIONS {
-      match rawloader.decode_safe(file) {
+      let decoder = match rawloader.get_decoder(&buffer) {
+        Ok(val) => val,
+        Err(e) => {error(&e); return},
+      };
+      match decoder.image() {
         Ok(_) => {},
         Err(e) => error(&e),
       }
