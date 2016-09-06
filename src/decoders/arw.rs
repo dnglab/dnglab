@@ -90,17 +90,20 @@ impl<'a> ArwDecoder<'a> {
         while col < (width-30) {
           let max = pump.get_bits(11);
           let min = pump.get_bits(11);
+          let delta = max-min;
+          // Calculate the size of the data shift needed by how large the delta is
+          // A delta with 11 bits requires a shift of 4, 10 bits of 3, etc
+          let delta_shift: u32 = cmp::max(0, (32-(delta.leading_zeros() as i32)) - 7) as u32;
           let imax = pump.get_bits(4);
           let imin = pump.get_bits(4);
-          let mut sh = 0;
-          while sh<4 && (0x80 << sh) <= (max - min) {sh = sh + 1;}
+
           for i in 0..16 {
             let val = if i == imax {
               max
             } else if i == imin {
               min
             } else {
-              cmp::min(0x7ff,(pump.get_bits(7) << sh) + min)
+              cmp::min(0x7ff,(pump.get_bits(7) << delta_shift) + min)
             };
             out[row*width+col+(i*2) as usize] = curve.dither(val as u16, &mut random);
           }
