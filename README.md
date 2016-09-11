@@ -13,9 +13,9 @@ This is a rust library to extract the raw data and some metadata from digital ca
 Current State
 -------------
 
-The library is still in its very beginning with very few formats implemented:
+The library is still in its very beginning with only a few formats implemented:
   * Minolta MRW
-  * Most of Sony ARW (all modern cameras including uncompressed files)
+  * Sony ARW
 
 Usage
 -----
