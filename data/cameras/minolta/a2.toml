@@ -1,0 +1,9 @@
+make = "Konica Minolta Camera, Inc."
+model = "DiMAGE A2"
+canonical_make = "Minolta"
+canonical_model = "DiMAGE A2"
+blackpoint = 0
+whitepoint = 3965
+color_matrix = [9097, -2726, -1053, -8073, 15506, 2762, -966, 981, 7763]
+color_pattern = "RGGB"
+crops = [0,0,0,0]
