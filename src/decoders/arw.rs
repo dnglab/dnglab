@@ -82,7 +82,6 @@ impl<'a> ArwDecoder<'a> {
       for y in (0..height*2).step(2) {
         let row = if y < height {y} else {y-height+1};
         let mut len: u32 = 4 - pump.get_bits(2);
-        //println!("Read len {}", len);
         if len == 3 && pump.get_bits(1) != 0 {
           len = 0;
         }
@@ -96,7 +95,6 @@ impl<'a> ArwDecoder<'a> {
           diff -= (1 << len) - 1;
         }
         sum += diff;
-        //println!("Sum is {} diff {} len {} at {}x{}", sum, diff, len, row, col);
         out[row*width+col] = sum as u16;
       }
     }
