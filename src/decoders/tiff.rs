@@ -55,7 +55,7 @@ impl<'a> TiffIFD<'a> {
     let mut nextifd = e.ru32(buf, offset) as usize;
 
     for _ in 0..100 { // Never read more than 100 IFDs
-      let ifd = TiffIFD::new(buf, nextifd, 0, depth, e);
+      let ifd = TiffIFD::new(buf, nextifd, 0, depth, e).unwrap();
       nextifd = ifd.nextifd;
       subifds.push(ifd);
       if nextifd == 0 {
@@ -71,11 +71,14 @@ impl<'a> TiffIFD<'a> {
     }
   }
 
-  pub fn new(buf: &'a[u8], offset: usize, base_offset: usize, depth: u32, e: Endian) -> TiffIFD<'a> {
+  pub fn new(buf: &'a[u8], offset: usize, base_offset: usize, depth: u32, e: Endian) -> Result<TiffIFD<'a>, String> {
     let mut entries = HashMap::new();
     let mut subifds = Vec::new();
 
     let num = e.ru16(buf, offset); // Directory entries in this IFD
+    if num > 4000 {
+      return Err("too many entries in IFD".to_string())
+    }
     for i in 0..num {
       let entry_offset: usize = offset + 2 + (i as usize)*12;
       if Tag::from_u16(e.ru16(buf, entry_offset)).is_none() {
@@ -87,7 +90,11 @@ impl<'a> TiffIFD<'a> {
       if entry.tag == t(Tag::SubIFDs) || entry.tag == t(Tag::ExifIFDPointer) {
         if depth < 10 { // Avoid infinite looping IFDs
           for i in 0..entry.count {
-            subifds.push(TiffIFD::new(buf, entry.get_u32(i as usize) as usize, base_offset, depth+1, e));
+            let ifd = TiffIFD::new(buf, entry.get_u32(i as usize) as usize, base_offset, depth+1, e);
+            match ifd {
+              Ok(val) => {subifds.push(val);},
+              Err(_) => {entries.insert(entry.tag, entry);}, // Ignore unparsable IFDs
+            }
           }
         }
       } else {
@@ -95,12 +102,12 @@ impl<'a> TiffIFD<'a> {
       }
     }
 
-    TiffIFD {
+    Ok(TiffIFD {
       entries: entries,
       subifds: subifds,
       nextifd: e.ru32(buf, offset + (2+num*12) as usize) as usize,
       endian: e,
-    }
+    })
   }
 
   pub fn find_entry(&self, tag: Tag) -> Option<&TiffEntry> {

@@ -33,6 +33,10 @@ impl<'a> Decoder for ArwDecoder<'a> {
 
   fn image(&self) -> Result<Image,String> {
     let camera = try!(self.identify());
+    if camera.model == "DSLR-A100" {
+      return self.image_a100(camera)
+    }
+
     let data = self.tiff.find_ifds_with_tag(Tag::StripOffsets);
     if data.len() == 0 {
       return Err("ARW: Couldn't find the data IFD!".to_string())
@@ -72,6 +76,44 @@ impl<'a> Decoder for ArwDecoder<'a> {
 }
 
 impl<'a> ArwDecoder<'a> {
+  fn image_a100(&self, camera: &Camera) -> Result<Image,String> {
+    // We've caught the elusive A100 in the wild, a transitional format
+    // between the simple sanity of the MRW custom format and the wordly
+    // wonderfullness of the Tiff-based ARW format, let's shoot from the hip
+    let data = self.tiff.find_ifds_with_tag(Tag::SubIFDs);
+    if data.len() == 0 {
+      return Err("ARW: Couldn't find the data IFD!".to_string())
+    }
+    let raw = data[0];
+    let width = 3881;
+    let height = 2608;
+    let offset = fetch_tag!(raw, Tag::SubIFDs, "ARW: Couldn't find offset").get_u32(0) as usize;
+
+    let src = &self.buffer[offset .. self.buffer.len()];
+    let image = ArwDecoder::decode_arw1(src, width as usize, height as usize);
+
+    // Get the WB the MRW way
+    let priv_offset = fetch_tag!(self.tiff, Tag::DNGPrivateArea, "ARW: Couldn't find private offset").get_u32(0);
+    let buf = &self.buffer[priv_offset as usize..];
+    let mut currpos: usize = 8;
+    let mut wb_vals: [u16;4] = [0;4];
+    // At most we read 20 bytes from currpos so check we don't step outside that
+    while currpos+20 < buf.len() {
+      let tag: u32 = BEu32(buf,currpos);
+      let len: u32 = LEu32(buf,currpos+4);
+      if tag == 0x574247 { // WBG
+        for i in 0..4 {
+          wb_vals[i] = LEu16(buf, currpos+12+i*2);
+        }
+        break;
+      }
+      currpos += (len+8) as usize;
+    }
+    let wb_coeffs = [wb_vals[0] as f32, wb_vals[1] as f32, wb_vals[3] as f32, f32::NAN];
+
+    ok_image(camera, width, height, wb_coeffs, image)
+  }
+
   fn decode_arw1(buf: &[u8], width: usize, height: usize) -> Vec<u16> {
     let mut pump = BitPump::new(buf, PumpOrder::MSB);
     let mut out: Vec<u16> = vec![0; (width*height) as usize];
@@ -137,12 +179,12 @@ impl<'a> ArwDecoder<'a> {
 
   fn get_wb(&self) -> Result<[f32;4], String> {
     let priv_offset = fetch_tag!(self.tiff, Tag::DNGPrivateArea, "ARW: Couldn't find private offset").get_u32(0);
-    let priv_tiff = TiffIFD::new(self.buffer, priv_offset as usize, 0, 0, LITTLE_ENDIAN);
+    let priv_tiff = TiffIFD::new(self.buffer, priv_offset as usize, 0, 0, LITTLE_ENDIAN).unwrap();
     let sony_offset = fetch_tag!(priv_tiff, Tag::SonyOffset, "ARW: Couldn't find sony offset").get_u32(0) as usize;
     let sony_length = fetch_tag!(priv_tiff, Tag::SonyLength, "ARW: Couldn't find sony length").get_u32(0) as usize;
     let sony_key = fetch_tag!(priv_tiff, Tag::SonyKey, "ARW: Couldn't find sony key").get_u32(0);
     let decrypted_buf = ArwDecoder::sony_decrypt(self.buffer, sony_offset, sony_length, sony_key);
-    let decrypted_tiff = TiffIFD::new(&decrypted_buf, 0, sony_offset, 0, LITTLE_ENDIAN);
+    let decrypted_tiff = TiffIFD::new(&decrypted_buf, 0, sony_offset, 0, LITTLE_ENDIAN).unwrap();
     let grgb_levels = decrypted_tiff.find_entry(Tag::SonyGRBG);
     let rggb_levels = decrypted_tiff.find_entry(Tag::SonyRGGB);
     if grgb_levels.is_some() {
