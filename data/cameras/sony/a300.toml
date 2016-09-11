@@ -1,0 +1,9 @@
+make = "SONY"
+model = "DSLR-A300"
+canonical_make = "Sony"
+canonical_model = "DSLR-A300"
+blackpoint = 0
+whitepoint = 4095
+color_matrix = [9847, -3091, -928, -8485, 16345, 2225, -715, 595, 7103]
+color_pattern = "GRBG"
+crops = [0,0,0,0]

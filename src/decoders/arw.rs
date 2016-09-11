@@ -39,7 +39,7 @@ impl<'a> Decoder for ArwDecoder<'a> {
     }
     let raw = data[0];
     let width = fetch_tag!(raw, Tag::ImageWidth, "ARW: Couldn't find width").get_u16(0) as u32;
-    let height = fetch_tag!(raw, Tag::ImageLength, "ARW: Couldn't find height").get_u16(0) as u32;
+    let mut height = fetch_tag!(raw, Tag::ImageLength, "ARW: Couldn't find height").get_u16(0) as u32;
     let offset = fetch_tag!(raw, Tag::StripOffsets, "ARW: Couldn't find offset").get_u32(0) as usize;
     let count = fetch_tag!(raw, Tag::StripByteCounts, "ARW: Couldn't find byte count").get_u32(0) as usize;
     let compression = fetch_tag!(raw, Tag::Compression, "ARW: Couldn't find Compression").get_u16(0);
@@ -54,6 +54,7 @@ impl<'a> Decoder for ArwDecoder<'a> {
       1 => decode_16le(src, width as usize, height as usize),
       32767 => {
         if ((width*height*bps) as usize) != count*8 {
+          height += 8;
           ArwDecoder::decode_arw1(src, width as usize, height as usize)
         } else {
           match bps {
@@ -72,16 +73,39 @@ impl<'a> Decoder for ArwDecoder<'a> {
 
 impl<'a> ArwDecoder<'a> {
   fn decode_arw1(buf: &[u8], width: usize, height: usize) -> Vec<u16> {
-    let mut buffer: Vec<u16> = vec![0; (width*height) as usize];
+    let mut pump = BitPump::new(buf, PumpOrder::MSB);
+    let mut out: Vec<u16> = vec![0; (width*height) as usize];
 
-    buffer[0] = buf[0] as u16; // Shut up the warnings for now
-
-    buffer
+    let mut sum: i32 = 0;
+    for x in 0..width {
+      let col = width-1-x;
+      for y in (0..height*2).step(2) {
+        let row = if y < height {y} else {y-height+1};
+        let mut len: u32 = 4 - pump.get_bits(2);
+        //println!("Read len {}", len);
+        if len == 3 && pump.get_bits(1) != 0 {
+          len = 0;
+        }
+        if len == 4 {
+          while len < 17 && pump.get_bits(1) == 0 {
+            len += 1;
+          }
+        }
+        let mut diff: i32 = pump.get_ibits(len);
+        if len > 0 && (diff & (1 << (len - 1))) == 0 {
+          diff -= (1 << len) - 1;
+        }
+        sum += diff;
+        //println!("Sum is {} diff {} len {} at {}x{}", sum, diff, len, row, col);
+        out[row*width+col] = sum as u16;
+      }
+    }
+    out
   }
 
   fn decode_arw2(buf: &[u8], width: usize, height: usize, curve: &LookupTable) -> Vec<u16> {
     decode_threaded(width, height, &(|out: &mut [u16], start, width, height| {
-      let mut pump = BitPump::new(&buf[(start*width)..]);
+      let mut pump = BitPump::new(&buf[(start*width)..], PumpOrder::LSB);
 
       for row in 0..height {
         // Process 16 pixels at a time in interleaved fashion

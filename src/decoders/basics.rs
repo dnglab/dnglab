@@ -1,6 +1,7 @@
 extern crate crossbeam;
 use std;
 use decoders::NUM_CORES;
+use std::mem;
 
 extern crate byteorder;
 use self::byteorder::{BigEndian, LittleEndian, ByteOrder};
@@ -175,41 +176,81 @@ impl LookupTable {
   }
 }
 
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+pub enum PumpOrder {
+  LSB,
+  MSB,
+}
+
 pub struct BitPump<'a> {
   buffer: &'a [u8],
   pos: usize,
   bits: u64,
   nbits: u32,
+  order: PumpOrder,
 }
 
 impl<'a> BitPump<'a> {
-  pub fn new(src: &'a [u8]) -> BitPump {
+  pub fn new(src: &'a [u8], order: PumpOrder) -> BitPump {
     BitPump {
       buffer: src,
       pos: 0,
       bits: 0,
       nbits: 0,
+      order: order,
     }
   }
 
   fn fill_bits(&mut self) {
-    let inbits: u64 = LEu32(self.buffer, self.pos) as u64;
-    self.pos += 4;
-    self.bits = ((inbits << 32) | (self.bits << (32-self.nbits))) >> (32-self.nbits);
-    self.nbits += 32;
+    if self.order == PumpOrder::MSB {
+      let mut bytes: [u8;8] = unsafe{mem::transmute(self.bits)};
+      let fillbytes = (64-self.nbits) / 8;
+      for i in 0..(8-fillbytes) {
+        bytes[(7-i) as usize] = bytes[(7-i-fillbytes) as usize];
+      }
+      for i in 0..fillbytes {
+        bytes[(fillbytes-i-1) as usize] = self.buffer[self.pos];
+        self.pos += 1;
+      }
+      self.bits = unsafe{mem::transmute(bytes)};
+      self.nbits += fillbytes*8;
+    } else {
+      let inbits: u64 = LEu32(self.buffer, self.pos) as u64;
+      self.pos += 4;
+      self.bits = ((inbits << 32) | (self.bits << (32-self.nbits))) >> (32-self.nbits);
+      self.nbits += 32;
+    }
   }
 
   pub fn peek_bits(&mut self, num: u32) -> u32 {
     if num > self.nbits {
       self.fill_bits();
     }
-    (self.bits & (0x0ffffffffu64 >> (32-num))) as u32
+    if self.order == PumpOrder::MSB {
+      (self.bits >> (self.nbits-num)) as u32
+    } else {
+      (self.bits & (0x0ffffffffu64 >> (32-num))) as u32
+    }
   }
 
   pub fn get_bits(&mut self, num: u32) -> u32 {
+    if num == 0 {
+      return 0
+    }
+
     let val = self.peek_bits(num);
-    self.bits = self.bits >> num;
     self.nbits -= num;
+    if self.order == PumpOrder::MSB {
+      let erasebits = 64-self.nbits;
+      self.bits = (self.bits << erasebits) >> erasebits;
+    } else {
+      self.bits = self.bits >> num;
+    }
     val
+  }
+
+  pub fn get_ibits(&mut self, num: u32) -> i32 {
+    let val = self.get_bits(num);
+    unsafe{mem::transmute(val)}
   }
 }
