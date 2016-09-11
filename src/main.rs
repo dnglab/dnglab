@@ -9,7 +9,7 @@ extern crate rawloader;
 use rawloader::decoders;
 
 fn usage() {
-  println!("rawloader <file>");
+  println!("rawloader <file> [outfile]");
   std::process::exit(1);
 }
 
@@ -20,11 +20,17 @@ fn error(err: &str) {
 
 fn main() {
   let args: Vec<_> = env::args().collect();
-  if args.len() != 2 {
+  if args.len() < 2 {
     usage();
   }
   let file = &args[1];
-  println!("Loading file \"{}\"", file);
+  let fileppm = format!("{}.ppm",file);
+  let outfile = if args.len() > 2 {
+    &args[2]
+  } else {
+    &fileppm
+  };
+  println!("Loading file \"{}\" and saving it as \"{}\"", file, outfile);
 
   let rawloader = decoders::RawLoader::new();
   let from_time = time::precise_time_ns();
@@ -53,7 +59,7 @@ fn main() {
   let count: u64 = (image.width as u64) * (image.height as u64);
   println!("Image avg: {}", sum/count);
 
-  let uf = match File::create(format!("{}.ppm",file)) {
+  let uf = match File::create(outfile) {
     Ok(val) => val,
     Err(e) => {error(e.description());unreachable!()},
   };
