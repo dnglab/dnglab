@@ -1,0 +1,10 @@
+make = "SONY"
+model = "SLT-A55V"
+canonical_make = "Sony"
+canonical_model = "SLT-A55V"
+blackpoint = 512
+whitepoint = 16300
+color_matrix = [5932, -1492, -411, -4813, 12285, 2856, -741, 1524, 6739]
+color_pattern = "RGGB"
+crops = [0,0,0,0]
+bps = 8
