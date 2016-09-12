@@ -55,7 +55,13 @@ impl<'a> Decoder for ArwDecoder<'a> {
     let src = &self.buffer[offset .. self.buffer.len()];
 
     let image = match compression {
-      1 => decode_16le(src, width as usize, height as usize),
+      1 => {
+        if camera.model == "DSC-R1" {
+          decode_14be_unpacked(src, width as usize, height as usize)
+        } else {
+          decode_16le(src, width as usize, height as usize)
+        }
+      }
       32767 => {
         if ((width*height*bps) as usize) != count*8 {
           height += 8;
