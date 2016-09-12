@@ -33,13 +33,13 @@ impl<'a> Decoder for ArwDecoder<'a> {
 
   fn image(&self) -> Result<Image,String> {
     let camera = try!(self.identify());
-    if camera.model == "DSLR-A100" {
-      return self.image_a100(camera)
-    }
-
     let data = self.tiff.find_ifds_with_tag(Tag::StripOffsets);
     if data.len() == 0 {
-      return Err("ARW: Couldn't find the data IFD!".to_string())
+      if camera.model == "DSLR-A100" {
+        return self.image_a100(camera)
+      } else { // try decoding as SRF
+        return self.image_srf(camera)
+      }
     }
     let raw = data[0];
     let width = fetch_tag!(raw, Tag::ImageWidth, "ARW: Couldn't find width").get_u16(0) as u32;
@@ -112,6 +112,35 @@ impl<'a> ArwDecoder<'a> {
     let wb_coeffs = [wb_vals[0] as f32, wb_vals[1] as f32, wb_vals[3] as f32, f32::NAN];
 
     ok_image(camera, width, height, wb_coeffs, image)
+  }
+
+  fn image_srf(&self, camera: &Camera) -> Result<Image,String> {
+    let data = self.tiff.find_ifds_with_tag(Tag::ImageWidth);
+    if data.len() == 0 {
+      return Err("ARW: Couldn't find the data IFD!".to_string())
+    }
+    let raw = data[0];
+
+    let width = fetch_tag!(raw, Tag::ImageWidth, "SRF: Couldn't find width").get_u16(0) as u32;
+    let height = fetch_tag!(raw, Tag::ImageLength, "SRF: Couldn't find height").get_u16(0) as u32;
+    let len = (width*height*2) as usize;
+
+    // Constants taken from dcraw
+    let off: usize = 862144;
+    let key_off: usize = 200896;
+    let head_off: usize = 164600;
+
+    // Replicate the dcraw contortions to get the "decryption" key
+    let offset = (self.buffer[key_off as usize] as usize)*4;
+    let first_key = BEu32(self.buffer, key_off+offset);
+    let head = ArwDecoder::sony_decrypt(self.buffer, head_off, 40, first_key);
+    let second_key = LEu32(&head, 22);
+
+    // "Decrypt" the whole image buffer
+    let image_data = ArwDecoder::sony_decrypt(self.buffer, off, len, second_key);
+    let image = decode_16be(&image_data, width as usize, height as usize);
+
+    ok_image(camera, width, height, [f32::NAN,f32::NAN,f32::NAN,f32::NAN], image)
   }
 
   fn decode_arw1(buf: &[u8], width: usize, height: usize) -> Vec<u16> {
