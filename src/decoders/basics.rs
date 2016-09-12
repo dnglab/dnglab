@@ -241,12 +241,9 @@ impl<'a> BitPump<'a> {
     let val = self.peek_bits(num);
     self.nbits -= num;
     if self.order == PumpOrder::MSB {
-      if self.nbits > 0 {
-        let erasebits = 64-self.nbits;
-        self.bits = (self.bits << erasebits) >> erasebits;
-      }
+      self.bits &= (1 << self.nbits) - 1;
     } else {
-      self.bits = self.bits >> num;
+      self.bits >>= num;
     }
     val
   }
