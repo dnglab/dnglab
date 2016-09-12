@@ -203,23 +203,14 @@ impl<'a> BitPump<'a> {
 
   fn fill_bits(&mut self) {
     if self.order == PumpOrder::MSB {
-      let mut bytes: [u8;8] = unsafe{mem::transmute(self.bits)};
-      let fillbytes = (64-self.nbits) / 8;
-      for i in 0..(8-fillbytes) {
-        bytes[(7-i) as usize] = bytes[(7-i-fillbytes) as usize];
-      }
-      for i in 0..fillbytes {
-        bytes[(fillbytes-i-1) as usize] = self.buffer[self.pos];
-        self.pos += 1;
-      }
-      self.bits = unsafe{mem::transmute(bytes)};
-      self.nbits += fillbytes*8;
+      let inbits: u64 = BEu32(self.buffer, self.pos) as u64;
+      self.bits = (self.bits << 32) | inbits;
     } else {
       let inbits: u64 = LEu32(self.buffer, self.pos) as u64;
-      self.pos += 4;
       self.bits = ((inbits << 32) | (self.bits << (32-self.nbits))) >> (32-self.nbits);
-      self.nbits += 32;
     }
+    self.pos += 4;
+    self.nbits += 32;
   }
 
   pub fn peek_bits(&mut self, num: u32) -> u32 {
