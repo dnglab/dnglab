@@ -121,23 +121,27 @@ impl<'a> ArwDecoder<'a> {
     let mut sum: i32 = 0;
     for x in 0..width {
       let col = width-1-x;
-      for y in (0..height*2).step(2) {
-        let row = if y < height {y} else {y-height+1};
+      let mut row = 0;
+      while row <= height {
+        if row == height {
+          row = 1;
+        }
+
         let mut len: u32 = 4 - pump.get_bits(2);
         if len == 3 && pump.get_bits(1) != 0 {
           len = 0;
+        } else if len == 4 {
+          let zeros = pump.peek_bits(13).leading_zeros() - 19;
+          len += zeros;
+          pump.get_bits(cmp::min(13, zeros+1));
         }
-        if len == 4 {
-          while len < 17 && pump.get_bits(1) == 0 {
-            len += 1;
-          }
-        }
-        let mut diff: i32 = pump.get_ibits(len);
-        if len > 0 && (diff & (1 << (len - 1))) == 0 {
-          diff -= (1 << len) - 1;
-        }
+        let diff: i32 = pump.get_ibits(len);
         sum += diff;
+        if len > 0 && (diff & (1 << (len - 1))) == 0 {
+          sum -= (1 << len) - 1;
+        }
         out[row*width+col] = sum as u16;
+        row += 2
       }
     }
     out
