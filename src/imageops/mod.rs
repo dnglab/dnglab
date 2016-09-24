@@ -1,6 +1,7 @@
 pub mod demosaic;
 pub mod whitebalance;
 pub mod level;
+pub mod gamma;
 
 use decoders::Image;
 
@@ -35,6 +36,7 @@ pub fn simple_decode (img: &Image) -> Vec<f32> {
   let leveled = level::level(img);
   let wbed = whitebalance::whitebalance(img, &leveled);
   let demosaic = demosaic::ppg(img, &wbed);
+  let gamma = gamma::gamma(img, &demosaic);
 
-  demosaic
+  gamma
 }
