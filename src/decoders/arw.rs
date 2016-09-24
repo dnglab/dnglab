@@ -208,7 +208,7 @@ impl<'a> ArwDecoder<'a> {
             } else {
               cmp::min(0x7ff,(pump.get_bits(7) << delta_shift) + min)
             };
-            out[row*width+col+(i*2) as usize] = curve.dither(val as u16, &mut random);
+            out[row*width+col+(i*2) as usize] = curve.dither((val<<1) as u16, &mut random);
           }
           col += if (col & 1) != 0 {31} else {1};  // Skip to next 16 pixels
         }
