@@ -53,12 +53,19 @@ fn main() {
   println!("crops are {:?}", image.crops);
 
   let mut sum: u64 = 0;
+  let mut min: u16 = image.data[0];
+  let mut max: u16 = 0;
   for i in 0..(image.width*image.height) {
-    sum += image.data[i as usize] as u64;
+    let val = image.data[i as usize];
+    sum += val as u64;
+    if val < min { min = val; }
+    if val > max { max = val; }
   }
   println!("Image sum: {}", sum);
   let count: u64 = (image.width as u64) * (image.height as u64);
   println!("Image avg: {}", sum/count);
+  println!("Image min: {}", min);
+  println!("Image max: {}", max);
 
   let decoded = imageops::simple_decode(&image);
 
