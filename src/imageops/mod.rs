@@ -2,6 +2,7 @@ pub mod demosaic;
 pub mod whitebalance;
 pub mod level;
 pub mod gamma;
+pub mod curves;
 
 use decoders::Image;
 
@@ -36,7 +37,8 @@ pub fn simple_decode (img: &Image) -> Vec<f32> {
   let leveled = level::level(img);
   let wbed = whitebalance::whitebalance(img, &leveled);
   let demosaic = demosaic::ppg(img, &wbed);
-  let gamma = gamma::gamma(img, &demosaic);
+  let curved = curves::base(img, &demosaic);
+  let gamma = gamma::gamma(img, &curved);
 
   gamma
 }
