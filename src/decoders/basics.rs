@@ -202,39 +202,33 @@ impl LookupTable {
   }
 }
 
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
-pub enum PumpOrder {
-  LSB,
-  MSB,
-}
-
-pub struct BitPump<'a> {
+pub struct BitPumpLSB<'a> {
   buffer: &'a [u8],
   pos: usize,
   bits: u64,
   nbits: u32,
-  order: PumpOrder,
 }
 
-impl<'a> BitPump<'a> {
-  pub fn new(src: &'a [u8], order: PumpOrder) -> BitPump {
-    BitPump {
+pub struct BitPumpMSB<'a> {
+  buffer: &'a [u8],
+  pos: usize,
+  bits: u64,
+  nbits: u32,
+}
+
+impl<'a> BitPumpLSB<'a> {
+  pub fn new(src: &'a [u8]) -> BitPumpLSB {
+    BitPumpLSB {
       buffer: src,
       pos: 0,
       bits: 0,
       nbits: 0,
-      order: order,
     }
   }
 
   fn fill_bits(&mut self) {
-    if self.order == PumpOrder::MSB {
-      let inbits: u64 = BEu32(self.buffer, self.pos) as u64;
-      self.bits = (self.bits << 32) | inbits;
-    } else {
-      let inbits: u64 = LEu32(self.buffer, self.pos) as u64;
-      self.bits = ((inbits << 32) | (self.bits << (32-self.nbits))) >> (32-self.nbits);
-    }
+    let inbits: u64 = LEu32(self.buffer, self.pos) as u64;
+    self.bits = ((inbits << 32) | (self.bits << (32-self.nbits))) >> (32-self.nbits);
     self.pos += 4;
     self.nbits += 32;
   }
@@ -243,11 +237,7 @@ impl<'a> BitPump<'a> {
     if num > self.nbits {
       self.fill_bits();
     }
-    if self.order == PumpOrder::MSB {
-      (self.bits >> (self.nbits-num)) as u32
-    } else {
-      (self.bits & (0x0ffffffffu64 >> (32-num))) as u32
-    }
+    (self.bits & (0x0ffffffffu64 >> (32-num))) as u32
   }
 
   pub fn get_bits(&mut self, num: u32) -> u32 {
@@ -257,11 +247,44 @@ impl<'a> BitPump<'a> {
 
     let val = self.peek_bits(num);
     self.nbits -= num;
-    if self.order == PumpOrder::MSB {
-      self.bits &= (1 << self.nbits) - 1;
-    } else {
-      self.bits >>= num;
+    self.bits >>= num;
+
+    val
+  }
+}
+
+impl<'a> BitPumpMSB<'a> {
+  pub fn new(src: &'a [u8]) -> BitPumpMSB {
+    BitPumpMSB {
+      buffer: src,
+      pos: 0,
+      bits: 0,
+      nbits: 0,
     }
+  }
+
+  fn fill_bits(&mut self) {
+    let inbits: u64 = BEu32(self.buffer, self.pos) as u64;
+    self.bits = (self.bits << 32) | inbits;
+    self.pos += 4;
+    self.nbits += 32;
+  }
+
+  pub fn peek_bits(&mut self, num: u32) -> u32 {
+    if num > self.nbits {
+      self.fill_bits();
+    }
+    (self.bits >> (self.nbits-num)) as u32
+  }
+
+  pub fn get_bits(&mut self, num: u32) -> u32 {
+    if num == 0 {
+      return 0
+    }
+
+    let val = self.peek_bits(num);
+    self.nbits -= num;
+    self.bits &= (1 << self.nbits) - 1;
     val
   }
 

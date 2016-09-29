@@ -150,7 +150,7 @@ impl<'a> ArwDecoder<'a> {
   }
 
   fn decode_arw1(buf: &[u8], width: usize, height: usize) -> Vec<u16> {
-    let mut pump = BitPump::new(buf, PumpOrder::MSB);
+    let mut pump = BitPumpMSB::new(buf);
     let mut out: Vec<u16> = vec![0; (width*height) as usize];
 
     let mut sum: i32 = 0;
@@ -184,7 +184,7 @@ impl<'a> ArwDecoder<'a> {
 
   fn decode_arw2(buf: &[u8], width: usize, height: usize, curve: &LookupTable) -> Vec<u16> {
     decode_threaded(width, height, &(|out: &mut [u16], start, width, height| {
-      let mut pump = BitPump::new(&buf[(start*width)..], PumpOrder::LSB);
+      let mut pump = BitPumpLSB::new(&buf[(start*width)..]);
 
       for row in 0..height {
         // Process 16 pixels at a time in interleaved fashion
