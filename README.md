@@ -16,7 +16,6 @@ Additionally it includes a simple set of basic raw processing steps that can be 
   * Whitebalance
   * Demosaic
   * Color conversion from image colorspace
-  * Curve application to go from linear
   * Gamma application for output
 
 Current State
