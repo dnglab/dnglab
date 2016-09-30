@@ -7,14 +7,18 @@ pub fn camera_to_rec709(img: &Image, inb: &[f32]) -> Vec<f32> {
 
   let cmatrix = cam_to_rec709_matrix(img);
 
-  for pos in (0..(img.height*img.width*3)).step(3) {
+  let mut opos = 0;
+  for pos in (0..(img.height*img.width*4)).step(4) {
     let cr = inb[pos];
     let cg = inb[pos+1];
     let cb = inb[pos+2];
+    let ce = inb[pos+3];
 
-    out[pos+0] = cr * cmatrix[0][0] + cg * cmatrix[0][1] + cb * cmatrix[0][2];
-    out[pos+1] = cr * cmatrix[1][0] + cg * cmatrix[1][1] + cb * cmatrix[1][2];
-    out[pos+2] = cr * cmatrix[2][0] + cg * cmatrix[2][1] + cb * cmatrix[2][2];
+    out[opos+0] = cr * cmatrix[0][0] + cg * cmatrix[0][1] + cb * cmatrix[0][2] + ce * cmatrix[0][3];
+    out[opos+1] = cr * cmatrix[1][0] + cg * cmatrix[1][1] + cb * cmatrix[1][2] + ce * cmatrix[1][3];
+    out[opos+2] = cr * cmatrix[2][0] + cg * cmatrix[2][1] + cb * cmatrix[2][2] + ce * cmatrix[2][3];
+
+    opos += 3;
   }
 
   out

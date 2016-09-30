@@ -4,7 +4,7 @@ use imageops::fcol;
 use std::cmp;
 
 pub fn ppg(img: &Image, inb: &[f32]) -> Vec<f32> {
-  let mut out: Vec<f32> = vec![0.0; (img.width*img.height*3) as usize];
+  let mut out: Vec<f32> = vec![0.0; (img.width*img.height*4) as usize];
 
   // First we set the colors we already have
   let mut ipos = 0;
@@ -14,7 +14,7 @@ pub fn ppg(img: &Image, inb: &[f32]) -> Vec<f32> {
       let color = fcol(img, row, col);
       out[opos+color] = inb[ipos];
       ipos += 1;
-      opos += 3;
+      opos += 4;
     }
   }
 
@@ -23,7 +23,7 @@ pub fn ppg(img: &Image, inb: &[f32]) -> Vec<f32> {
   for row in 0..img.height {
     for col in 0..img.width {
       let mut sums: [f32; 4] = [0.0;4];
-      let mut counts: [f32; 4] = [0.0;4];
+      let mut counts: [u32; 4] = [0; 4];
       let color = fcol(img, row, col);
 
       for y in (cmp::max(0,(row as isize)-1) as usize) .. cmp::min(img.height, row+2) {
@@ -31,14 +31,14 @@ pub fn ppg(img: &Image, inb: &[f32]) -> Vec<f32> {
           let c = fcol(img, y, x);
           if c != color {
             sums[c] += inb[y*img.width+x];
-            counts[c] += 1.0;
+            counts[c] += 1;
           }
         }
       }
 
-      for c in 0..3 {
-        if c != color {
-          out[(row*img.width+col)*3+c] = sums[c] / counts[c];
+      for c in 0..4 {
+        if c != color && counts[c] > 0 {
+          out[(row*img.width+col)*4+c] = sums[c] / (counts[c] as f32);
         }
       }
     }
