@@ -10,6 +10,15 @@ This is a rust library to extract the raw data and some metadata from digital ca
   * A conversion matrix between the camera color space and XYZ
   * The description of the bayer pattern itself so you'll know which pixels are which color
 
+Additionally it includes a simple set of basic raw processing steps that can be used to get decent RGB output out of the raw data:
+
+  * Black and whitelevel application
+  * Whitebalance
+  * Demosaic
+  * Color conversion from image colorspace
+  * Curve application to go from linear
+  * Gamma application for output
+
 Current State
 -------------
 
@@ -70,6 +79,23 @@ fn main() {
   }
 }
 ```
+
+To do the image decoding decode the image the same way but then do:
+
+```
+  let decoded = imageops::simple_decode(&image);
+
+  let mut f = BufWriter::new(File::create(format!("{}.ppm",file)).unwrap());
+  let preamble = format!("P6 {} {} {}\n", image.width, image.height, 255).into_bytes();
+  f.write_all(&preamble).unwrap();
+  for pix in decoded {
+    let pixel = ((pix.max(0.0)*255.0).min(255.0)) as u8;
+    f.write_all(&[pixel]).unwrap();
+  }
+}
+```
+
+And this will write out an 8bit RGB image.
 
 Contributing
 ------------
