@@ -82,7 +82,7 @@ fn main() {
 
 To do the image decoding decode the image the same way but then do:
 
-```
+```rust
   let decoded = imageops::simple_decode(&image);
 
   let mut f = BufWriter::new(File::create(format!("{}.ppm",file)).unwrap());
@@ -92,7 +92,6 @@ To do the image decoding decode the image the same way but then do:
     let pixel = ((pix.max(0.0)*255.0).min(255.0)) as u8;
     f.write_all(&[pixel]).unwrap();
   }
-}
 ```
 
 And this will write out an 8bit RGB image.
