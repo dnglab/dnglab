@@ -1,7 +1,7 @@
 use decoders::Image;
 use std::cmp;
 
-pub fn base(img: &Image, inb: &[f32]) -> Vec<f32> {
+pub fn base(_: &Image, inb: &[f32]) -> Vec<f32> {
   let mut out: Vec<f32> = vec![0.0; inb.len() as usize];  
 
   let xs = [0.0, 0.050, 0.100, 0.450, 0.850, 1.0];
