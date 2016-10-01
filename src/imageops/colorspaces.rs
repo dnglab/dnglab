@@ -202,7 +202,7 @@ fn labf(val: f32) -> f32 {
   let constant = 4.0 / 29.0;
 
   if val > cutoff {
-    val.powf(1.0 / 3.0)
+    val.cbrt()
   } else {
     val * multiplier + constant
   }
@@ -229,7 +229,7 @@ fn labinvf(val: f32) -> f32 {
   let constant = multiplier * (-4.0 / 29.0);
 
   if val > cutoff {
-    val.powf(3.0)
+    val * val * val
   } else {
     val * multiplier + constant
   }
