@@ -171,14 +171,14 @@ fn xyz_to_rec709_matrix() -> [[f32;3];3] {
 }
 
 fn xyz_to_lab(x: f32, y: f32, z: f32) -> (f32,f32,f32) {
-  // D65 White
-  let xw = 95.074; let yw = 100.0; let zw = 108.883;
+  // D50 White
+  let xw = 0.9642; let yw = 1.000; let zw = 0.8249;
 
   let l = 116.0 * labf(y/yw) - 16.0;
   let a = 500.0 * (labf(x/xw) - labf(y/yw));
   let b = 200.0 * (labf(y/yw) - labf(z/zw));
 
-  (l,a,b)
+  (l/100.0,(a+128.0)/256.0,(b+128.0)/256.0)
 }
 
 fn labf(val: f32) -> f32 {
@@ -194,12 +194,16 @@ fn labf(val: f32) -> f32 {
 }
 
 fn lab_to_xyz(l: f32, a: f32, b: f32) -> (f32,f32,f32) {
-  // D65 White
-  let xw = 95.074; let yw = 100.0; let zw = 108.883;
+  // D50 White
+  let xw = 0.9642; let yw = 1.000; let zw = 0.8249;
 
-  let x = xw * labinvf((1.0/116.0) * (l+16.0) + (1.0/500.0) * a);
-  let y = yw * labinvf((1.0/116.0) * (l+16.0));
-  let z = zw * labinvf((1.0/116.0) * (l+16.0) - (1.0/200.0) * b);
+  let cl = l * 100.0;
+  let ca = (a * 256.0) - 128.0;
+  let cb = (b * 256.0) - 128.0;
+
+  let x = xw * labinvf((1.0/116.0) * (cl+16.0) + (1.0/500.0) * ca);
+  let y = yw * labinvf((1.0/116.0) * (cl+16.0));
+  let z = zw * labinvf((1.0/116.0) * (cl+16.0) - (1.0/200.0) * cb);
 
   (x,y,z)
 }
