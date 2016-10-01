@@ -10,13 +10,15 @@ This is a rust library to extract the raw data and some metadata from digital ca
   * A conversion matrix between the camera color space and XYZ
   * The description of the bayer pattern itself so you'll know which pixels are which color
 
-Additionally it includes a simple set of basic raw processing steps that can be used to get decent RGB output out of the raw data:
+Additionally it includes a simple raw processing pipeline that does the following:
 
   * Black and whitelevel application
   * Whitebalance
   * Demosaic
-  * Color conversion from image colorspace
-  * Gamma application for output
+  * Convert from camera space to Lab
+  * Apply a contrast curve to the L channel
+  * Convert from Lab to Rec709
+  * Apply sRGB gamma for output
 
 Current State
 -------------
