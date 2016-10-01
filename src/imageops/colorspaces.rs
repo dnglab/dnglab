@@ -125,47 +125,62 @@ fn cam_to_xyz_matrix(img: &Image) -> [[f32;4];3] {
     xyz_to_cam[i/3][i%3] = img.color_matrix[i] as f32;
   }
 
-  // Normalize xyz_to_cam so that xyz_to_cam * (1,1,1) is (1,1,1,1)
-  for i in 0..4 {
-    let mut num = 0.0;
-    for j in 0..3 {
-      num += xyz_to_cam[i][j];
-    }
-    for j in 0..3 {
-      xyz_to_cam[i][j] = if num == 0.0 {
-        0.0
-      }  else {
-        xyz_to_cam[i][j] / num
-      };
-    }
-  }
-
-  pseudoinverse(xyz_to_cam)
-}
-
-fn xyz_to_rec709_matrix() -> [[f32;3];3] {
-  let mut rgb_to_xyz = [
+  let d65_white = [0.9547,1.0,1.08883];
+  let rgb_to_xyz = [
   // sRGB D65
     [ 0.412453, 0.357580, 0.180423 ],
     [ 0.212671, 0.715160, 0.072169 ],
     [ 0.019334, 0.119193, 0.950227 ],
   ];
 
+  // Multiply RGB matrix
+  let mut rgb_to_cam = [[0.0;3];4];
+  for i in 0..4 {
+    for j in 0..3 {
+      rgb_to_cam[i][j] = 0.0;
+      for k in 0..3 {
+        rgb_to_cam[i][j] += xyz_to_cam[i][k] * rgb_to_xyz[k][j];
+      }
+    }
+  }
 
-  // Normalize rgb_to_xyz so that rgb_to_xyz * (1,1,1) is (1,1,1)
-  for i in 0..3 {
+  // Normalize rgb_to_cam so that rgb_to_cam * (1,1,1) is (1,1,1,1)
+  for i in 0..4 {
     let mut num = 0.0;
     for j in 0..3 {
-      num += rgb_to_xyz[i][j];
+      num += rgb_to_cam[i][j];
     }
     for j in 0..3 {
-      rgb_to_xyz[i][j] = if num == 0.0 {
+      rgb_to_cam[i][j] = if num == 0.0 {
         0.0
       }  else {
-        rgb_to_xyz[i][j] / num
+        rgb_to_cam[i][j] / num
       };
     }
   }
+
+  let cam_to_rgb = pseudoinverse(rgb_to_cam);
+  let mut cam_to_xyz = [[0.0;4];3];
+  // Multiply RGB matrix and adjust white to get a cam_to_xyz
+  for i in 0..3 {
+    for j in 0..4 {
+      cam_to_xyz[i][j] = 0.0;
+      for k in 0..3 {
+        cam_to_xyz[i][j] += cam_to_rgb[k][j] * rgb_to_xyz[i][k] / d65_white[i];
+      }
+    }
+  }
+
+  cam_to_xyz
+}
+
+fn xyz_to_rec709_matrix() -> [[f32;3];3] {
+  let rgb_to_xyz = [
+  // sRGB D65
+    [ 0.412453, 0.357580, 0.180423 ],
+    [ 0.212671, 0.715160, 0.072169 ],
+    [ 0.019334, 0.119193, 0.950227 ],
+  ];
 
   inverse(rgb_to_xyz)
 }
