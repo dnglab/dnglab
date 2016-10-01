@@ -38,9 +38,10 @@ pub fn simple_decode (img: &Image) -> Vec<f32> {
   let leveled = level::level(img);
   let wbed = whitebalance::whitebalance(img, &leveled);
   let demosaic = demosaic::ppg(img, &wbed);
-  let rgbed = colorspaces::camera_to_rec709(img, &demosaic);
+  let lab = colorspaces::camera_to_lab(img, &demosaic);
+  let rgb = colorspaces::lab_to_rec709(img, &lab);
   //let curved = curves::base(img, &rgbed);
-  let gamma = gamma::gamma(img, &rgbed);
+  let gamma = gamma::gamma(img, &rgb);
 
   gamma
 }
