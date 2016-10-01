@@ -13,7 +13,7 @@ pub fn whitebalance(img: &Image, inb: &[f32]) -> Vec<f32> {
     for col in 0..img.width {
       let pixel = inb[pos];
       let color = fcol(img, row, col);
-      out[pos] = pixel * mul[color];
+      out[pos] = (pixel * mul[color]).min(1.0);
       pos += 1;
     }
   }
