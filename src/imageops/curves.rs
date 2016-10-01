@@ -6,13 +6,11 @@ pub fn base(_: &Image, buf: &mut Vec<f32>) {
   let ys = [0.0, 0.25, 0.5, 0.75, 1.0];
   let func = SplineFunc::new(&xs, &ys);
 
-  for i in 0..(buf.len()) {
-    let val = buf[i];
-
-    buf[i] = if i % 3 == 0 {
-      func.interpolate(val)
+  for (i,pix) in buf.chunks_mut(1).enumerate() {
+    pix[0] = if i % 3 == 0 {
+      func.interpolate(pix[0])
     } else {
-      val
+      pix[0]
     };
   }
 }
