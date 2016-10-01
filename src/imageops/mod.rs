@@ -36,13 +36,16 @@ use decoders::Image;
 }
 
 pub fn simple_decode (img: &Image) -> Vec<f32> {
-  let leveled = level::level(img);
-  let wbed = whitebalance::whitebalance(img, &leveled);
-  let demosaic = demosaic::ppg(img, &wbed);
-  let lab = colorspaces::camera_to_lab(img, &demosaic);
-  let curved = curves::base(img, &lab);
-  let rgb = colorspaces::lab_to_rec709(img, &curved);
-  let gamma = gamma::gamma(img, &rgb);
+  // Start with a 1 channel f32 (pre-demosaic)
+  let mut channel1 = level::level(img);
+  whitebalance::whitebalance(img, &mut channel1);
+  // Demosaic into 4 channel f32 (RGB or RGBE)
+  let channel4 = demosaic::ppg(img, &channel1);
+  // From now on we are in 3 channel f32 (RGB or Lab)
+  let mut channel3 = colorspaces::camera_to_lab(img, &channel4);
+  curves::base(img, &mut channel3);
+  colorspaces::lab_to_rec709(img, &mut channel3);
+  gamma::gamma(img, &mut channel3);
 
-  gamma
+  channel3
 }

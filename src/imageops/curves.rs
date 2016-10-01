@@ -1,22 +1,20 @@
 use decoders::Image;
 use std::cmp;
 
-pub fn base(_: &Image, inb: &[f32]) -> Vec<f32> {
-  let mut out: Vec<f32> = vec![0.0; inb.len() as usize];  
-
+pub fn base(_: &Image, buf: &mut Vec<f32>) {
   let xs = [0.0, 0.30, 0.5, 0.70, 1.0];
   let ys = [0.0, 0.25, 0.5, 0.75, 1.0];
   let func = SplineFunc::new(&xs, &ys);
 
-  for (i,val) in inb.iter().enumerate() {
-    out[i] = if i % 3 == 0 {
-      func.interpolate(*val)
+  for i in 0..(buf.len()) {
+    let val = buf[i];
+
+    buf[i] = if i % 3 == 0 {
+      func.interpolate(val)
     } else {
-      *val
+      val
     };
   }
-
-  out
 }
 
 

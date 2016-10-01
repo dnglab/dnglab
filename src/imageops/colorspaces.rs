@@ -29,15 +29,13 @@ pub fn camera_to_lab(img: &Image, inb: &[f32]) -> Vec<f32> {
   out
 }
 
-pub fn lab_to_rec709(img: &Image, inb: &[f32]) -> Vec<f32> {
-  let mut out: Vec<f32> = vec![0.0; (img.width*img.height*3) as usize];
+pub fn lab_to_rec709(img: &Image, buf: &mut Vec<f32>) {
   let cmatrix = xyz_to_rec709_matrix();
 
-  let mut opos = 0;
   for pos in (0..(img.height*img.width*3)).step(3) {
-    let l = inb[pos];
-    let a = inb[pos+1];
-    let b = inb[pos+2];
+    let l = buf[pos];
+    let a = buf[pos+1];
+    let b = buf[pos+2];
 
     let (x,y,z) = lab_to_xyz(l,a,b);
 
@@ -45,14 +43,10 @@ pub fn lab_to_rec709(img: &Image, inb: &[f32]) -> Vec<f32> {
     let g = x * cmatrix[1][0] + y * cmatrix[1][1] + z * cmatrix[1][2];
     let b = x * cmatrix[2][0] + y * cmatrix[2][1] + z * cmatrix[2][2];
 
-    out[opos+0] = r;
-    out[opos+1] = g;
-    out[opos+2] = b;
-
-    opos += 3;
+    buf[pos+0] = r;
+    buf[pos+1] = g;
+    buf[pos+2] = b;
   }
-
-  out
 }
 
 fn inverse(inm: [[f32;3];3]) -> [[f32;3];3] {
