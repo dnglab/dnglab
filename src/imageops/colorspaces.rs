@@ -1,41 +1,36 @@
 use decoders::Image;
-extern crate itertools;
-use self::itertools::Itertools;
 
 pub fn camera_to_lab(img: &Image, inb: &[f32]) -> Vec<f32> {
   let mut out: Vec<f32> = vec![0.0; (img.width*img.height*3) as usize];
   let cmatrix = cam_to_xyz_matrix(img);
 
-  let mut opos = 0;
-  for pos in (0..(img.height*img.width*4)).step(4) {
-    let cr = inb[pos];
-    let cg = inb[pos+1];
-    let cb = inb[pos+2];
-    let ce = inb[pos+3];
+  for (pixin, pixout) in inb.chunks(4).zip(out.chunks_mut(3)) {
+    let r = pixin[0];
+    let g = pixin[1];
+    let b = pixin[2];
+    let e = pixin[3];
 
-    let x = cr * cmatrix[0][0] + cg * cmatrix[0][1] + cb * cmatrix[0][2] + ce * cmatrix[0][3];
-    let y = cr * cmatrix[1][0] + cg * cmatrix[1][1] + cb * cmatrix[1][2] + ce * cmatrix[1][3];
-    let z = cr * cmatrix[2][0] + cg * cmatrix[2][1] + cb * cmatrix[2][2] + ce * cmatrix[2][3];
+    let x = r * cmatrix[0][0] + g * cmatrix[0][1] + b * cmatrix[0][2] + e * cmatrix[0][3];
+    let y = r * cmatrix[1][0] + g * cmatrix[1][1] + b * cmatrix[1][2] + e * cmatrix[1][3];
+    let z = r * cmatrix[2][0] + g * cmatrix[2][1] + b * cmatrix[2][2] + e * cmatrix[2][3];
 
     let (l,a,b) = xyz_to_lab(x,y,z);
 
-    out[opos+0] = l;
-    out[opos+1] = a;
-    out[opos+2] = b;
-
-    opos += 3;
+    pixout[0] = l;
+    pixout[1] = a;
+    pixout[2] = b;
   }
 
   out
 }
 
-pub fn lab_to_rec709(img: &Image, buf: &mut Vec<f32>) {
+pub fn lab_to_rec709(_: &Image, buf: &mut Vec<f32>) {
   let cmatrix = xyz_to_rec709_matrix();
 
-  for pos in (0..(img.height*img.width*3)).step(3) {
-    let l = buf[pos];
-    let a = buf[pos+1];
-    let b = buf[pos+2];
+  for pix in buf.chunks_mut(3) {
+    let l = pix[0];
+    let a = pix[1];
+    let b = pix[2];
 
     let (x,y,z) = lab_to_xyz(l,a,b);
 
@@ -43,9 +38,9 @@ pub fn lab_to_rec709(img: &Image, buf: &mut Vec<f32>) {
     let g = x * cmatrix[1][0] + y * cmatrix[1][1] + z * cmatrix[1][2];
     let b = x * cmatrix[2][0] + y * cmatrix[2][1] + z * cmatrix[2][2];
 
-    buf[pos+0] = r;
-    buf[pos+1] = g;
-    buf[pos+2] = b;
+    pix[0] = r;
+    pix[1] = g;
+    pix[2] = b;
   }
 }
 
