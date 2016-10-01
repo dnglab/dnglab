@@ -7,13 +7,11 @@ pub fn level (img: &Image) -> Vec<f32> {
   let mins = img.blacklevels.iter().map(|&x| x as f32).collect::<Vec<f32>>();
   let ranges = img.whitelevels.iter().enumerate().map(|(i, &x)| (x as f32) - mins[i]).collect::<Vec<f32>>();
 
-  let mut pos = 0;
-  for row in 0..img.height {
-    for col in 0..img.width {
+  for (row,line) in img.data.chunks(img.width).enumerate() {
+    for (col,pix) in line.iter().enumerate() {
       let color = fcol(img, row, col);
-      let pixel = img.data[pos] as f32;
-      out[pos] = (pixel - mins[color]) / ranges[color];
-      pos += 1;
+      let pixel = *pix as f32;
+      out[row*img.width+col] = (pixel - mins[color]) / ranges[color];
     }
   }
 
