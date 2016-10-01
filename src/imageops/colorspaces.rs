@@ -190,13 +190,29 @@ fn xyz_to_lab(x: f32, y: f32, z: f32) -> (f32,f32,f32) {
   (l/100.0,(a+128.0)/256.0,(b+128.0)/256.0)
 }
 
+static CBRT_MAXVALS: usize = 1 << 16; // 2^16 should be enough precision
+lazy_static! {
+  static ref CBRT_LOOKUP: Vec<f32> = {
+    let mut lookup: Vec<f32> = vec![0.0; CBRT_MAXVALS+1];
+    for i in 0..(CBRT_MAXVALS+1) {
+      let v = (i as f32) / (CBRT_MAXVALS as f32);
+      lookup[i] = v.cbrt();
+    }
+    lookup
+  };
+}
+
 fn labf(val: f32) -> f32 {
   let cutoff = (6.0/29.0)*(6.0/29.0)*(6.0/29.0);
   let multiplier = (1.0/3.0) * (29.0/6.0) * (29.0/6.0);
   let constant = 4.0 / 29.0;
 
   if val > cutoff {
-    val.cbrt()
+    if val > 0.0 && val < 1.0 { // use the lookup table
+      CBRT_LOOKUP[(val*(CBRT_MAXVALS as f32)) as usize]
+    } else {
+      val.cbrt()
+    }
   } else {
     val * multiplier + constant
   }
