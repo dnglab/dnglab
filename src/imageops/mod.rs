@@ -37,11 +37,11 @@ use decoders::Image;
 
 pub fn simple_decode (img: &Image) -> Vec<f32> {
   // Start with a 1 channel f32 (pre-demosaic)
-  let mut channel1 = level::level(img);
-  whitebalance::whitebalance(img, &mut channel1);
+  let channel1 = level::level(img);
   // Demosaic into 4 channel f32 (RGB or RGBE)
-  let channel4 = demosaic::ppg(img, &channel1);
+  let mut channel4 = demosaic::ppg(img, &channel1);
   // From now on we are in 3 channel f32 (RGB or Lab)
+  whitebalance::whitebalance(img, &mut channel4);
   let mut channel3 = colorspaces::camera_to_lab(img, &channel4);
   curves::base(img, &mut channel3);
   colorspaces::lab_to_rec709(img, &mut channel3);
