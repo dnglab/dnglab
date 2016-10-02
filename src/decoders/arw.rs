@@ -181,10 +181,10 @@ impl<'a> ArwDecoder<'a> {
   }
 
   fn decode_arw2(buf: &[u8], width: usize, height: usize, curve: &LookupTable) -> Vec<u16> {
-    decode_threaded(width, height, &(|out: &mut [u16], start, width, height| {
+    decode_threaded(width, height, &(|out: &mut [u16], start, width, _| {
       let mut pump = BitPumpLSB::new(&buf[(start*width)..]);
 
-      for row in 0..height {
+      for line in out.chunks_mut(width) {
         // Process 16 pixels at a time in interleaved fashion
         let mut col = 0;
         let mut random = pump.peek_bits(24);
@@ -206,7 +206,7 @@ impl<'a> ArwDecoder<'a> {
             } else {
               cmp::min(0x7ff,(pump.get_bits(7) << delta_shift) + min)
             };
-            out[row*width+col+(i*2) as usize] = curve.dither((val<<1) as u16, &mut random);
+            line[col+(i*2) as usize] = curve.dither((val<<1) as u16, &mut random);
           }
           col += if (col & 1) != 0 {31} else {1};  // Skip to next 16 pixels
         }
