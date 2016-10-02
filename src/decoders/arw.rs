@@ -2,8 +2,6 @@ use decoders::*;
 use decoders::tiff::*;
 use decoders::basics::*;
 use std::mem::transmute;
-extern crate itertools;
-use self::itertools::Itertools;
 use std::f32;
 use std::cmp;
 
@@ -258,9 +256,6 @@ impl<'a> ArwDecoder<'a> {
   fn sony_decrypt(buf: &[u8], offset: usize, length: usize, key: u32) -> Vec<u8>{
     let mut pad: [u32; 128] = [0 as u32; 128];
     let mut mkey = key;
-    // Make sure we always have space for the final bytes even if the buffer
-    // isn't a multiple of 4
-    let mut out = vec![0;length+4];
     // Initialize the decryption pad from the key
     for p in 0..4 {
       mkey = mkey.wrapping_mul(48828125).wrapping_add(1);
@@ -274,15 +269,16 @@ impl<'a> ArwDecoder<'a> {
       pad[p] = u32::from_be(pad[p]);
     }
 
-    for i in (0..length).step(4) {
-      let p = i/4 + 127;
+    let mut out = Vec::with_capacity(length+4);
+    for i in 0..(length/4+1) {
+      let p = i + 127;
       pad[p & 127] = pad[(p+1) & 127] ^ pad[(p+1+64) & 127];
-      let output = LEu32(buf, offset+i) ^ pad[p & 127];
-      let bytes: [u8; 4] = unsafe { transmute(output.to_le()) };
-      out[i]   = bytes[0];
-      out[i+1] = bytes[1];
-      out[i+2] = bytes[2];
-      out[i+3] = bytes[3];
+      let output = LEu32(buf, offset+i*4) ^ pad[p & 127];
+      let bytes: [u8;4] = unsafe { transmute(output.to_le()) };
+      out.push(bytes[0]);
+      out.push(bytes[1]);
+      out.push(bytes[2]);
+      out.push(bytes[3]);
     }
     out
   }
