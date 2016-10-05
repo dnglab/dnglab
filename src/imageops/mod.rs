@@ -1,9 +1,9 @@
+pub mod ingest;
 pub mod demosaic;
-pub mod whitebalance;
 pub mod level;
-pub mod gamma;
-pub mod curves;
 pub mod colorspaces;
+pub mod curves;
+pub mod gamma;
 
 use decoders::Image;
 
@@ -37,11 +37,11 @@ use decoders::Image;
 
 pub fn simple_decode (img: &Image) -> Vec<f32> {
   // Start with a 1 channel f32 (pre-demosaic)
-  let channel1 = level::level(img);
+  let channel1 = ingest::float(img);
   // Demosaic into 4 channel f32 (RGB or RGBE)
   let mut channel4 = demosaic::ppg(img, &channel1);
+  level::level_and_balance(img, &mut channel4);
   // From now on we are in 3 channel f32 (RGB or Lab)
-  whitebalance::whitebalance(img, &mut channel4);
   let mut channel3 = colorspaces::camera_to_lab(img, &channel4);
   curves::base(img, &mut channel3);
   colorspaces::lab_to_rec709(img, &mut channel3);
