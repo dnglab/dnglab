@@ -24,7 +24,7 @@ pub fn camera_to_lab(img: &Image, inb: &[f32]) -> Vec<f32> {
   out
 }
 
-pub fn lab_to_rec709(_: &Image, buf: &mut Vec<f32>) {
+pub fn lab_to_rec709(_: &Image, buf: &mut [f32]) {
   let cmatrix = xyz_to_rec709_matrix();
 
   for pix in buf.chunks_mut(3) {

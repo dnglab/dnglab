@@ -1,6 +1,6 @@
 use decoders::Image;
 
-pub fn gamma(_: &Image, buf: &mut Vec<f32>) {
+pub fn gamma(_: &Image, buf: &mut [f32]) {
   let g: f32 = 0.45;
   let f: f32 = 0.099;
   let min: f32 = 0.018;
