@@ -74,11 +74,11 @@ fn main() {
     Err(e) => {error(e.description());unreachable!()},
   };
   let mut f = BufWriter::new(uf);
-  let preamble = format!("P6 {} {} {}\n", image.width, image.height, 255).into_bytes();
+  let preamble = format!("P6 {} {} {}\n", decoded.width, decoded.height, 255).into_bytes();
   if let Err(err) = f.write_all(&preamble) {
     error(err.description());
   }
-  for pix in decoded {
+  for pix in decoded.data {
     let pixel = ((pix.max(0.0)*255.0).min(255.0)) as u8;
     if let Err(err) = f.write_all(&[pixel]) {
       error(err.description());

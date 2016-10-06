@@ -9,6 +9,14 @@ use decoders::Image;
 
 extern crate time;
 
+#[derive(Debug, Clone)]
+pub struct OpBuffer {
+  pub width: usize,
+  pub height: usize,
+  pub colors: u8,
+  pub data: Vec<f32>,
+}
+
 #[inline] pub fn fcol (img: &Image, row: usize, col: usize) -> usize {
 //  let filter: [usize; 256] = [
 //    2,1,1,3,2,3,2,0,3,2,3,0,1,2,1,0,
@@ -46,7 +54,7 @@ fn do_timing<O, F: FnMut() -> O>(name: &str, mut closure: F) -> O {
   ret
 }
 
-pub fn simple_decode (img: &Image) -> Vec<f32> {
+pub fn simple_decode (img: &Image) -> OpBuffer {
   // Start with a 1 channel f32 (pre-demosaic)
   let channel1 = do_timing("ingest", ||ingest::float(img));
   // Demosaic into 4 channel f32 (RGB or RGBE)

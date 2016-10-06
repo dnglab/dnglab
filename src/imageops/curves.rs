@@ -1,12 +1,13 @@
 use decoders::Image;
+use imageops::OpBuffer;
 use std::cmp;
 
-pub fn base(_: &Image, buf: &mut [f32]) {
+pub fn base(_: &Image, buf: &mut OpBuffer) {
   let xs = [0.0, 0.30, 0.5, 0.70, 1.0];
   let ys = [0.0, 0.25, 0.5, 0.75, 1.0];
   let func = SplineFunc::new(&xs, &ys);
 
-  for pix in buf.chunks_mut(3) {
+  for pix in buf.data.chunks_mut(3) {
     pix[0] = func.interpolate(pix[0]);
     pix[1] = pix[1];
     pix[2] = pix[2];

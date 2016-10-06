@@ -1,10 +1,11 @@
 // Demosaic methods adapted from dcraw 9.27
 use decoders::Image;
 use imageops::fcol;
+use imageops::OpBuffer;
 use std::cmp;
 
-pub fn ppg(img: &Image, inb: &[f32]) -> Vec<f32> {
-  let mut out: Vec<f32> = vec![0.0; (img.width*img.height*4) as usize];
+pub fn ppg(img: &Image, inb: &OpBuffer) -> OpBuffer {
+  let mut out: Vec<f32> = vec![0.0; (inb.width*inb.height*4) as usize];
 
   // First we set the colors we already have
   let mut ipos = 0;
@@ -12,7 +13,7 @@ pub fn ppg(img: &Image, inb: &[f32]) -> Vec<f32> {
   for row in 0..img.height {
     for col in 0..img.width {
       let color = fcol(img, row, col);
-      out[opos+color] = inb[ipos];
+      out[opos+color] = inb.data[ipos];
       ipos += 1;
       opos += 4;
     }
@@ -30,7 +31,7 @@ pub fn ppg(img: &Image, inb: &[f32]) -> Vec<f32> {
         for x in (cmp::max(0,(col as isize)-1) as usize) .. cmp::min(img.width, col+2) {
           let c = fcol(img, y, x);
           if c != color {
-            sums[c] += inb[y*img.width+x];
+            sums[c] += inb.data[y*img.width+x];
             counts[c] += 1;
           }
         }
@@ -44,5 +45,10 @@ pub fn ppg(img: &Image, inb: &[f32]) -> Vec<f32> {
     }
   }
 
-  out
+  OpBuffer {
+    width: inb.width,
+    height: inb.height,
+    colors: 4,
+    data: out,
+  }
 }
