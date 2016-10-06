@@ -12,9 +12,9 @@ This is a rust library to extract the raw data and some metadata from digital ca
 
 Additionally it includes a simple raw processing pipeline that does the following:
 
+  * Demosaic
   * Black and whitelevel application
   * Whitebalance
-  * Demosaic
   * Convert from camera space to Lab
   * Apply a contrast curve to the L channel
   * Convert from Lab to Rec709
@@ -84,12 +84,13 @@ fn main() {
 To do the image decoding decode the image the same way but then do:
 
 ```rust
-  let decoded = imageops::simple_decode(&image);
+  // Decode to at least full HD size
+  let decoded = imageops::simple_decode(&image, 1920, 1080);
 
   let mut f = BufWriter::new(File::create(format!("{}.ppm",file)).unwrap());
-  let preamble = format!("P6 {} {} {}\n", image.width, image.height, 255).into_bytes();
+  let preamble = format!("P6 {} {} {}\n", decoded.width, decoded.height, 255).into_bytes();
   f.write_all(&preamble).unwrap();
-  for pix in decoded {
+  for pix in decoded.data {
     let pixel = ((pix.max(0.0)*255.0).min(255.0)) as u8;
     f.write_all(&[pixel]).unwrap();
   }
