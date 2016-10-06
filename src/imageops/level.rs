@@ -3,8 +3,8 @@ use imageops::OpBuffer;
 
 pub fn level_and_balance(img: &Image, buf: &mut OpBuffer) {
   // Calculate the blacklevels
-  let mins = img.blacklevels.iter().map(|&x| (x as f32) / 65535.0).collect::<Vec<f32>>();
-  let ranges = img.whitelevels.iter().enumerate().map(|(i, &x)| ((x as f32) / 65535.0) - mins[i]).collect::<Vec<f32>>();
+  let mins = img.blacklevels.iter().map(|&x| x as f32).collect::<Vec<f32>>();
+  let ranges = img.whitelevels.iter().enumerate().map(|(i, &x)| (x as f32) - mins[i]).collect::<Vec<f32>>();
 
   // Set green multiplier as 1.0
   let unity: f32 = img.wb_coeffs[1];
