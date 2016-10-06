@@ -58,8 +58,6 @@ pub fn full(img: &Image) -> OpBuffer {
 }
 
 pub fn scaled(img: &Image, scale: usize) -> OpBuffer {
-  println!("Scaled demosaic'ing at 1/{} scale", scale);
-
   let mut out = OpBuffer::new(img.width/scale, img.height/scale, 4);
 
   // Go around the image averaging every block of pixels
