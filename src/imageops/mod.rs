@@ -1,4 +1,3 @@
-pub mod ingest;
 pub mod demosaic;
 pub mod level;
 pub mod colorspaces;
@@ -25,6 +24,16 @@ impl OpBuffer {
       colors: colors,
       data: vec![0.0; width*height*(colors as usize)],
     }
+  }
+
+  pub fn from_image(img: &Image) -> OpBuffer {
+    let mut out = OpBuffer::new(img.width, img.height, 1);
+
+    for (pixin,pixout) in img.data.chunks(1).zip(out.data.chunks_mut(1)) {
+      pixout[0] = (pixin[0] as f32) / 65535.0;
+    }
+
+    out
   }
 }
 
@@ -67,7 +76,7 @@ fn do_timing<O, F: FnMut() -> O>(name: &str, mut closure: F) -> O {
 
 pub fn simple_decode (img: &Image) -> OpBuffer {
   // Start with a 1 channel f32 (pre-demosaic)
-  let channel1 = do_timing("ingest", ||ingest::float(img));
+  let channel1 = do_timing("ingest", ||OpBuffer::from_image(img));
   // Demosaic into 4 channel f32 (RGB or RGBE)
   let mut channel4 = do_timing("demosaic", ||demosaic::ppg(img, &channel1));
 
