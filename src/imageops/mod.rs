@@ -17,6 +17,17 @@ pub struct OpBuffer {
   pub data: Vec<f32>,
 }
 
+impl OpBuffer {
+  pub fn new(width: usize, height: usize, colors: u8) -> OpBuffer {
+    OpBuffer {
+      width: width,
+      height: height,
+      colors: colors,
+      data: vec![0.0; width*height*(colors as usize)],
+    }
+  }
+}
+
 #[inline] pub fn fcol (img: &Image, row: usize, col: usize) -> usize {
 //  let filter: [usize; 256] = [
 //    2,1,1,3,2,3,2,0,3,2,3,0,1,2,1,0,

@@ -5,7 +5,7 @@ use imageops::OpBuffer;
 use std::cmp;
 
 pub fn ppg(img: &Image, inb: &OpBuffer) -> OpBuffer {
-  let mut out: Vec<f32> = vec![0.0; (inb.width*inb.height*4) as usize];
+  let mut out = OpBuffer::new(inb.width, inb.height, 4);
 
   // First we set the colors we already have
   let mut ipos = 0;
@@ -13,7 +13,7 @@ pub fn ppg(img: &Image, inb: &OpBuffer) -> OpBuffer {
   for row in 0..img.height {
     for col in 0..img.width {
       let color = fcol(img, row, col);
-      out[opos+color] = inb.data[ipos];
+      out.data[opos+color] = inb.data[ipos];
       ipos += 1;
       opos += 4;
     }
@@ -39,16 +39,11 @@ pub fn ppg(img: &Image, inb: &OpBuffer) -> OpBuffer {
 
       for c in 0..4 {
         if c != color && counts[c] > 0 {
-          out[(row*img.width+col)*4+c] = sums[c] / (counts[c] as f32);
+          out.data[(row*img.width+col)*4+c] = sums[c] / (counts[c] as f32);
         }
       }
     }
   }
 
-  OpBuffer {
-    width: inb.width,
-    height: inb.height,
-    colors: 4,
-    data: out,
-  }
+  out
 }

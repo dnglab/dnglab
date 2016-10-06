@@ -2,10 +2,10 @@ use decoders::Image;
 use imageops::OpBuffer;
 
 pub fn camera_to_lab(img: &Image, inb: &OpBuffer) -> OpBuffer {
-  let mut out: Vec<f32> = vec![0.0; (inb.width * inb.height * 3) as usize];
+  let mut out = OpBuffer::new(inb.width, inb.height, 3);
   let cmatrix = cam_to_xyz_matrix(img);
 
-  for (pixin, pixout) in inb.data.chunks(4).zip(out.chunks_mut(3)) {
+  for (pixin, pixout) in inb.data.chunks(4).zip(out.data.chunks_mut(3)) {
     let r = pixin[0];
     let g = pixin[1];
     let b = pixin[2];
@@ -22,12 +22,7 @@ pub fn camera_to_lab(img: &Image, inb: &OpBuffer) -> OpBuffer {
     pixout[2] = b;
   }
 
-  OpBuffer {
-    width: inb.width,
-    height: inb.height,
-    colors: 3,
-    data: out,
-  }
+  out
 }
 
 pub fn lab_to_rec709(_: &Image, buf: &mut OpBuffer) {
