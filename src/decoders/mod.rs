@@ -13,6 +13,7 @@ mod basics;
 mod tiff;
 mod mrw;
 mod arw;
+mod mef;
 use self::basics::*;
 use self::tiff::*;
 
@@ -190,8 +191,10 @@ impl RawLoader {
 
     let tiff = TiffIFD::new_root(buffer, 4, 0, endian);
     let make: &str = &(try!(tiff.find_entry(Tag::Make).ok_or("Couldn't find Make".to_string())).get_str().to_string());
+
     match make {
-      "SONY" => use_decoder!(arw::ArwDecoder, buffer, tiff, self),
+      "SONY"               => use_decoder!(arw::ArwDecoder, buffer, tiff, self),
+      "Mamiya-OP Co.,Ltd." => use_decoder!(mef::MefDecoder, buffer, tiff, self),
       make => Err(format!("Couldn't find a decoder for make \"{}\"", make).to_string()),
     }
   }

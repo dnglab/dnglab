@@ -26,6 +26,7 @@ Current State
 The library is still in its very beginning with only a few formats implemented:
   * Minolta MRW
   * Sony ARW, SRF and SR2
+  * Mamiya MEF
 
 Usage
 -----

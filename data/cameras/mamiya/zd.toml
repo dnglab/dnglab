@@ -1,0 +1,9 @@
+make = "Mamiya-OP Co.,Ltd."
+model = "MAMIYA ZD"
+canonical_make = "Mamiya-OP Co.,Ltd."
+canonical_model = "MAMIYA ZD"
+blackpoint = 0
+whitepoint = 4000
+color_matrix = [7645, 2579, -1363, -8689, 16717, 2015, -3712, 5941, 5961]
+color_pattern = "RGGB"
+crops = [0,0,0,0]
