@@ -172,7 +172,12 @@ impl<'a> TiffEntry<'a> {
   }
 
   pub fn get_str(&self) -> &str {
-    match str::from_utf8(&self.data[0..self.data.len()-1]) {
+    // Truncate the string when there are \0 bytes
+    let len = match self.data.iter().position(|&x| x == 0) {
+      Some(p) => p,
+      None => self.data.len(),
+    };
+    match str::from_utf8(&self.data[0..len]) {
       Result::Ok(val) => val.trim(),
       Result::Err(err) => panic!(err),
     }
