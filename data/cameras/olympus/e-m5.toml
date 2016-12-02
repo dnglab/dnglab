@@ -1,0 +1,9 @@
+make = "OLYMPUS IMAGING CORP."
+model = "E-M5"
+canonical_make = "OLYMPUS IMAGING CORP."
+canonical_model = "E-M5"
+blackpoint = 254
+whitepoint = 4000
+color_matrix = [8380, -2630, -639, -2887, 10725, 2496, -627, 1427, 5438]
+color_pattern = "RGGB"
+crops = [0,0,0,0]
