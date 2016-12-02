@@ -194,10 +194,11 @@ impl RawLoader {
     let make: &str = &(try!(tiff.find_entry(Tag::Make).ok_or("Couldn't find Make".to_string())).get_str().to_string());
 
     match make {
-      "SONY"                  => use_decoder!(arw::ArwDecoder, buffer, tiff, self),
-      "Mamiya-OP Co.,Ltd."    => use_decoder!(mef::MefDecoder, buffer, tiff, self),
-      "OLYMPUS IMAGING CORP." => use_decoder!(orf::OrfDecoder, buffer, tiff, self),
-      "OLYMPUS CORPORATION"   => use_decoder!(orf::OrfDecoder, buffer, tiff, self),
+      "SONY"                    => use_decoder!(arw::ArwDecoder, buffer, tiff, self),
+      "Mamiya-OP Co.,Ltd."      => use_decoder!(mef::MefDecoder, buffer, tiff, self),
+      "OLYMPUS IMAGING CORP."   => use_decoder!(orf::OrfDecoder, buffer, tiff, self),
+      "OLYMPUS CORPORATION"     => use_decoder!(orf::OrfDecoder, buffer, tiff, self),
+      "OLYMPUS OPTICAL CO.,LTD" => use_decoder!(orf::OrfDecoder, buffer, tiff, self),
       make => Err(format!("Couldn't find a decoder for make \"{}\"", make).to_string()),
     }
   }
