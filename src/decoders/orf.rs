@@ -47,7 +47,7 @@ impl<'a> Decoder for OrfDecoder<'a> {
     } else {
       OrfDecoder::decode_compressed(src, width as usize, height as usize)
     };
-    ok_image(camera, width, height, [NAN,NAN,NAN,NAN] , image)
+    ok_image(camera, width, height, try!(self.get_wb()), image)
   }
 }
 
@@ -139,5 +139,27 @@ impl<'a> OrfDecoder<'a> {
       }
     }
     out
+  }
+
+  fn get_wb(&self) -> Result<[f32;4],String> {
+    let redmul = self.tiff.find_entry(Tag::OlympusRedMul);
+    let bluemul = self.tiff.find_entry(Tag::OlympusBlueMul);
+
+    if redmul.is_some() && bluemul.is_some() {
+      Ok([redmul.unwrap().get_u16(0) as f32,256.0,bluemul.unwrap().get_u16(0) as f32,NAN])
+    } else {
+      let iproc = fetch_tag!(self.tiff,Tag::OlympusImgProc, "ORF: Couldn't find ImgProc");
+      let poff = iproc.parent_offset() - 12;
+      let off = (iproc.get_u32(0) as usize) + poff;
+      let ifd = try!(TiffIFD::new(self.buffer, off, 0, 0, self.tiff.get_endian()));
+      let wbs = fetch_tag!(ifd, Tag::ImageWidth, "ORF: Couldn't find WBs");
+      if wbs.count() == 4 {
+        let off = poff + wbs.doffset();
+        let nwbs = &wbs.copy_with_new_data(&self.buffer[off..]);
+        Ok([nwbs.get_u16(0) as f32,256.0,nwbs.get_u16(1) as f32,NAN])
+      } else {
+        Ok([wbs.get_u16(0) as f32,256.0,wbs.get_u16(1) as f32,NAN])
+      }
+    }
   }
 }

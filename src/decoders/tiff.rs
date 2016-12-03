@@ -15,6 +15,9 @@ pub enum Tag {
   StripOffsets   = 0x0111,
   StripByteCounts= 0x0117,
   SubIFDs        = 0x014A,
+  OlympusRedMul  = 0x1017,
+  OlympusBlueMul = 0x1018,
+  OlympusImgProc = 0x2040,
   SonyCurve      = 0x7010,
   SonyOffset     = 0x7200,
   SonyLength     = 0x7201,
@@ -22,7 +25,9 @@ pub enum Tag {
   SonyGRBG       = 0x7303,
   SonyRGGB       = 0x7313,
   ExifIFDPointer = 0x8769,
+  Makernote      = 0x927C,
   DNGPrivateArea = 0xC634,
+
 }
 }
                           // 0-1-2-3-4-5-6-7-8-9-10-11-12-13
@@ -37,6 +42,8 @@ pub struct TiffEntry<'a> {
   tag: u16,
   typ: u16,
   count: u32,
+  parent_offset: usize,
+  doffset: usize,
   data: &'a [u8],
   endian: Endian,
 }
@@ -77,7 +84,7 @@ impl<'a> TiffIFD<'a> {
 
     let num = e.ru16(buf, offset); // Directory entries in this IFD
     if num > 4000 {
-      return Err("too many entries in IFD".to_string())
+      return Err(format!("too many entries in IFD ({})", num).to_string())
     }
     for i in 0..num {
       let entry_offset: usize = offset + 2 + (i as usize)*12;
@@ -85,7 +92,7 @@ impl<'a> TiffIFD<'a> {
         // Skip entries we don't know about to speedup decoding
         continue;
       }
-      let entry = TiffEntry::new(buf, entry_offset, base_offset, e);
+      let entry = TiffEntry::new(buf, entry_offset, base_offset, offset, e);
 
       if entry.tag == t(Tag::SubIFDs) || entry.tag == t(Tag::ExifIFDPointer) {
         if depth < 10 { // Avoid infinite looping IFDs
@@ -95,6 +102,14 @@ impl<'a> TiffIFD<'a> {
               Ok(val) => {subifds.push(val);},
               Err(_) => {entries.insert(entry.tag, entry);}, // Ignore unparsable IFDs
             }
+          }
+        }
+      } else if entry.tag == t(Tag::Makernote) {
+        if depth < 10 { // Avoid infinite looping IFDs
+          let ifd = TiffIFD::new_makernote(buf, entry.doffset(), base_offset, depth+1, e);
+          match ifd {
+            Ok(val) => {subifds.push(val);},
+            Err(_) => {entries.insert(entry.tag, entry);}, // Ignore unparsable IFDs
           }
         }
       } else {
@@ -108,6 +123,21 @@ impl<'a> TiffIFD<'a> {
       nextifd: e.ru32(buf, offset + (2+num*12) as usize) as usize,
       endian: e,
     })
+  }
+
+  pub fn new_makernote(buf: &'a[u8], offset: usize, base_offset: usize, depth: u32, e: Endian) -> Result<TiffIFD<'a>, String> {
+    let mut off = offset;
+    let data = &buf[offset..];
+
+    // Olympus starts the makernote with their own name, sometimes truncated
+    if data[0..5] == b"OLYMP"[..] {
+      off += 8;
+      if data[0..7] == b"OLYMPUS"[..] {
+        off += 4;
+      }
+    }
+
+    TiffIFD::new(buf, off, base_offset, depth, e)
   }
 
   pub fn find_entry(&self, tag: Tag) -> Option<&TiffEntry> {
@@ -134,10 +164,14 @@ impl<'a> TiffIFD<'a> {
     }
     ifds
   }
+
+  pub fn get_endian(&self) -> Endian {
+    self.endian
+  }
 }
 
 impl<'a> TiffEntry<'a> {
-  pub fn new(buf: &'a[u8], offset: usize, base_offset: usize, e: Endian) -> TiffEntry<'a> {
+  pub fn new(buf: &'a[u8], offset: usize, base_offset: usize, parent_offset: usize, e: Endian) -> TiffEntry<'a> {
     let tag = e.ru16(buf, offset);
     let mut typ = e.ru16(buf, offset+2);
     let count = e.ru32(buf, offset+4);
@@ -158,22 +192,25 @@ impl<'a> TiffEntry<'a> {
       tag: tag,
       typ: typ,
       count: count,
+      parent_offset: parent_offset,
+      doffset: doffset,
       data: &buf[doffset .. doffset+bytesize],
       endian: e,
     }
   }
 
-  pub fn count(&self) -> u32 {
-    self.count
+  pub fn copy_with_new_data(&self, data: &'a[u8]) -> TiffEntry<'a> {
+    let mut copy = self.clone();
+    copy.data = data;
+    copy
   }
 
-  pub fn get_u32(&self, idx: usize) -> u32 {
-    self.endian.ru32(self.data, idx*4)
-  }
-
-  pub fn get_u16(&self, idx: usize) -> u16 {
-    self.endian.ru16(self.data, idx*2)
-  }
+  pub fn doffset(&self) -> usize { self.doffset }
+  pub fn parent_offset(&self) -> usize { self.parent_offset }
+  pub fn count(&self) -> u32 { self.count }
+  //pub fn typ(&self) -> u16 { self.typ }
+  pub fn get_u32(&self, idx: usize) -> u32 { self.endian.ru32(self.data, idx*4) }
+  pub fn get_u16(&self, idx: usize) -> u16 { self.endian.ru16(self.data, idx*2) }
 
   pub fn get_str(&self) -> &str {
     // Truncate the string when there are \0 bytes
