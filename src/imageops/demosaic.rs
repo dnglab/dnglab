@@ -4,7 +4,11 @@ use imageops::OpBuffer;
 use std::cmp;
 
 pub fn demosaic_and_scale(img: &Image, minwidth: usize, minheight: usize) -> OpBuffer {
-  let scale = cmp::min(img.width / minwidth, img.height / minheight);
+  let scale = if minwidth == 0 || minheight == 0 {
+    0
+  } else {
+    cmp::min(img.width / minwidth, img.height / minheight)
+  };
 
   if scale <= 1 {
     full(img)

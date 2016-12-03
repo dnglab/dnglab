@@ -67,7 +67,7 @@ fn main() {
   println!("Image min: {}", min);
   println!("Image max: {}", max);
 
-  let decoded = imageops::simple_decode(&image, 300, 300);
+  let decoded = imageops::simple_decode(&image, 0, 0);
 
   let uf = match File::create(outfile) {
     Ok(val) => val,
