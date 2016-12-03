@@ -305,6 +305,11 @@ impl<'a> BitPumpMSB<'a> {
     val
   }
 
+  pub fn peek_ibits(&mut self, num: u32) -> i32 {
+    let val = self.peek_bits(num);
+    unsafe{mem::transmute(val)}
+  }
+
   pub fn get_ibits(&mut self, num: u32) -> i32 {
     let val = self.get_bits(num);
     unsafe{mem::transmute(val)}

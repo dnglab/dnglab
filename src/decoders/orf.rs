@@ -34,9 +34,110 @@ impl<'a> Decoder for OrfDecoder<'a> {
     let width = fetch_tag!(raw, Tag::ImageWidth, "ORF: Couldn't find width").get_u16(0) as u32;
     let height = fetch_tag!(raw, Tag::ImageLength, "ORF: Couldn't find height").get_u16(0) as u32;
     let offset = fetch_tag!(raw, Tag::StripOffsets, "ORF: Couldn't find offset").get_u32(0) as usize;
+    let counts = fetch_tag!(raw, Tag::StripByteCounts, "ORF: Couldn't find counts");
+    let mut size: usize = 0;
+    for i in 0..counts.count() {
+      size += counts.get_u32(i as usize) as usize;
+    }
+
     let src = &self.buffer[offset .. self.buffer.len()];
 
-    let image = decode_12be_interlaced(src, width as usize, height as usize);
+    let image = if size >= ((width*height*12/8) as usize) {
+      decode_12be_interlaced(src, width as usize, height as usize)
+    } else {
+      OrfDecoder::decode_compressed(src, width as usize, height as usize)
+    };
     ok_image(camera, width, height, [NAN,NAN,NAN,NAN] , image)
+  }
+}
+
+
+impl<'a> OrfDecoder<'a> {
+  /* This is probably the slowest decoder of them all.
+   * I cannot see any way to effectively speed up the prediction
+   * phase, which is by far the slowest part of this algorithm.
+   * Also there is no way to multithread this code, since prediction
+   * is based on the output of all previous pixel (bar the first four)
+   */
+
+  pub fn decode_compressed(buf: &'a [u8], width: usize, height: usize) -> Vec<u16> {
+    let mut out: Vec<u16> = vec![0; (width*height) as usize];
+
+    /* Build a table to quickly look up "high" value */
+    let mut bittable: [u8; 4096] = [0; 4096];
+    for i in 0..4096 {
+      let mut b = 12;
+      for high in 0..12 {
+        if ((i >> (11-high))&1) != 0 { b = high; break }
+      }
+      bittable[i] = b;
+    }
+
+    let mut left: [i32; 2] = [0; 2];
+    let mut nw: [i32; 2] = [0; 2];
+    let mut pump = BitPumpMSB::new(&buf[7..]);
+
+    for row in 0..height {
+      let mut acarry: [[i32; 3];2] = [[0; 3];2];
+
+      for c in 0..width/2 {
+        let col: usize = c * 2;
+        for s in 0..2 { // Run twice for odd and even pixels
+          let i = if acarry[s][2] < 3 {2} else {0};
+          let mut nbits = 2 + i;
+          while ((acarry[s][0] >> (nbits + i)) & 0xffff) > 0 { nbits += 1 }
+          let b = pump.peek_ibits(15);
+
+          let sign: i32 = (b >> 14) * -1;
+          let low: i32  = (b >> 12) &  3;
+          let mut high: i32 = bittable[(b&4095) as usize] as i32;
+
+          // Skip bytes used above or read bits
+          if high == 12 {
+            pump.get_bits(15);
+            high = pump.get_ibits(16 - nbits) >> 1;
+          } else {
+            pump.get_bits((high + 4) as u32);
+          }
+
+          acarry[s][0] = ((high << nbits) | pump.get_ibits(nbits)) as i32;
+          let diff = (acarry[s][0] ^ sign) + acarry[s][1];
+          acarry[s][1] = (diff * 3 + acarry[s][1]) >> 5;
+          acarry[s][2] = if acarry[s][0] > 16 { 0 } else { acarry[s][2] + 1 };
+
+          if row < 2 || col < 2 { // We're in a border, special care is needed
+            let pred = if row < 2 && col < 2 { // We're in the top left corner
+              0
+            } else if row < 2 { // We're going along the top border
+              left[s]
+            } else { // col < 2, we're at the start of a line
+              nw[s] = out[(row-2) * width + (col+s)] as i32;
+              nw[s]
+            };
+            left[s] = pred + ((diff << 2) | low);
+            out[row*width + (col+s)] = left[s] as u16;
+          } else {
+            let up: i32 = out[(row-2) * width + (col+s)] as i32;
+            let left_minus_nw: i32 = left[s] - nw[s];
+            let up_minus_nw: i32 = up - nw[s];
+            // Check if sign is different, and one is not zero
+            let pred = if left_minus_nw * up_minus_nw < 0 {
+              if left_minus_nw.abs() > 32 || up_minus_nw.abs() > 32 {
+                left[s] + up_minus_nw
+              } else {
+                (left[s] + up) >> 1
+              }
+            } else {
+              if left_minus_nw.abs() > up_minus_nw.abs() { left[s] } else { up }
+            };
+
+            left[s] = pred + ((diff << 2) | low);
+            nw[s] = up;
+            out[(row*width + (col+s)) as usize] = left[s] as u16;
+          }
+        }
+      }
+    }
+    out
   }
 }

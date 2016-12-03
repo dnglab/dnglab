@@ -163,6 +163,10 @@ impl<'a> TiffEntry<'a> {
     }
   }
 
+  pub fn count(&self) -> u32 {
+    self.count
+  }
+
   pub fn get_u32(&self, idx: usize) -> u32 {
     self.endian.ru32(self.data, idx*4)
   }
