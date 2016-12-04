@@ -27,6 +27,7 @@ The library is still in its very beginning with only a few formats implemented:
   * Minolta MRW
   * Sony ARW, SRF and SR2
   * Mamiya MEF
+  * Olympus ORF
 
 Usage
 -----
@@ -85,7 +86,7 @@ fn main() {
 To do the image decoding decode the image the same way but then do:
 
 ```rust
-  // Decode to at least full HD size
+  // Decode to at most full HD size
   let decoded = imageops::simple_decode(&image, 1920, 1080);
 
   let mut f = BufWriter::new(File::create(format!("{}.ppm",file)).unwrap());
@@ -97,7 +98,7 @@ To do the image decoding decode the image the same way but then do:
   }
 ```
 
-And this will write out an 8bit RGB image.
+And this will write out an 8bit RGB image. Reducing the decode size makes the processing much faster by doing the scaling extremely early in the processing (at the demosaic). So this can be used quite directly to do fast thumbnailing of raw images.
 
 Contributing
 ------------
