@@ -44,6 +44,8 @@ impl<'a> Decoder for OrfDecoder<'a> {
 
     let image = if size >= ((width*height*2) as usize) {
       decode_12le_unpacked(src, width as usize, height as usize)
+    } else if size >= ((width*height/10*16) as usize) {
+      decode_12le_wcontrol(src, width as usize, height as usize)
     } else if size >= ((width*height*12/8) as usize) {
       decode_12be_interlaced(src, width as usize, height as usize)
     } else {
