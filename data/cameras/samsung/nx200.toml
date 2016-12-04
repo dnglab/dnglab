@@ -1,0 +1,9 @@
+make = "SAMSUNG"
+model = "NX200"
+canonical_make = "SAMSUNG"
+canonical_model = "NX200"
+blackpoint = 0
+whitepoint = 3750
+color_matrix = [6933, -2268, -753, -4921, 13387, 1647, -803, 1641, 6096]
+color_pattern = "GRBG"
+crops = [0,0,0,0]

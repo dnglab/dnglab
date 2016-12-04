@@ -26,6 +26,9 @@ pub enum Tag {
   SonyRGGB       = 0x7313,
   ExifIFDPointer = 0x8769,
   Makernote      = 0x927C,
+  SrwSensorAreas = 0xA010,
+  SrwRGGBLevels  = 0xA021,
+  SrwRGGBBlacks  = 0xA028,
   DNGPrivateArea = 0xC634,
 
 }
@@ -202,6 +205,10 @@ impl<'a> TiffEntry<'a> {
     let mut copy = self.clone();
     copy.data = data;
     copy
+  }
+
+  pub fn copy_offset_from_parent(&self, buffer: &'a[u8]) -> TiffEntry<'a> {
+    self.copy_with_new_data(&buffer[self.parent_offset+self.doffset..])
   }
 
   pub fn doffset(&self) -> usize { self.doffset }
