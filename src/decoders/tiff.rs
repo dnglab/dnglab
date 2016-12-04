@@ -165,9 +165,8 @@ impl<'a> TiffIFD<'a> {
     ifds
   }
 
-  pub fn get_endian(&self) -> Endian {
-    self.endian
-  }
+  pub fn get_endian(&self) -> Endian { self.endian }
+  pub fn little_endian(&self) -> bool { self.endian.little() }
 }
 
 impl<'a> TiffEntry<'a> {
