@@ -2,6 +2,7 @@ use decoders::*;
 use decoders::tiff::*;
 use decoders::basics::*;
 use std::f32::NAN;
+use std::cmp;
 
 #[derive(Debug, Clone)]
 pub struct OrfDecoder<'a> {
@@ -90,6 +91,7 @@ impl<'a> OrfDecoder<'a> {
           let i = if acarry[s][2] < 3 {2} else {0};
           let mut nbits = 2 + i;
           while ((acarry[s][0] >> (nbits + i)) & 0xffff) > 0 { nbits += 1 }
+          nbits = cmp::min(nbits, 16);
           let b = pump.peek_ibits(15);
 
           let sign: i32 = (b >> 14) * -1;
