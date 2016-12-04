@@ -102,6 +102,19 @@ pub fn decode_12le(buf: &[u8], width: usize, height: usize) -> Vec<u16> {
   }))
 }
 
+pub fn decode_12le_unpacked(buf: &[u8], width: usize, height: usize) -> Vec<u16> {
+  decode_threaded(width, height, &(|out: &mut [u16], start, width, _| {
+    let inb = &buf[((start*width*2) as usize)..];
+
+    for (o, i) in out.chunks_mut(1).zip(inb.chunks(2)) {
+      let g1: u16 = i[0] as u16;
+      let g2: u16 = i[1] as u16;
+
+      o[0] = ((g2 << 8) | g1) >> 4;
+    }
+  }))
+}
+
 pub fn decode_12be_unpacked(buf: &[u8], width: usize, height: usize) -> Vec<u16> {
   decode_threaded(width, height, &(|out: &mut [u16], start, width, _| {
     let inb = &buf[((start*width*2) as usize)..];

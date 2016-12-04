@@ -42,7 +42,9 @@ impl<'a> Decoder for OrfDecoder<'a> {
 
     let src = &self.buffer[offset .. self.buffer.len()];
 
-    let image = if size >= ((width*height*12/8) as usize) {
+    let image = if size >= ((width*height*2) as usize) {
+      decode_12le_unpacked(src, width as usize, height as usize)
+    } else if size >= ((width*height*12/8) as usize) {
       decode_12be_interlaced(src, width as usize, height as usize)
     } else {
       OrfDecoder::decode_compressed(src, width as usize, height as usize)
