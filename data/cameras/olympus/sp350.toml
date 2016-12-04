@@ -1,0 +1,9 @@
+make = "OLYMPUS IMAGING CORP."
+model = "SP350"
+canonical_make = "OLYMPUS IMAGING CORP."
+canonical_model = "SP350"
+blackpoint = 0
+whitepoint = 4095
+color_matrix = [12078, -4836, -1069, -6671, 14306, 2578, -786, 939, 7418]
+color_pattern = "RGGB"
+crops = [0,0,0,0]

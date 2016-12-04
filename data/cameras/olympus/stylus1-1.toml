@@ -1,0 +1,9 @@
+make = "OLYMPUS IMAGING CORP."
+model = "STYLUS1,1s"
+canonical_make = "OLYMPUS IMAGING CORP."
+canonical_model = "STYLUS1,1s"
+blackpoint = 200
+whitepoint = 3900
+color_matrix = [8360, -2420, -880, -3928, 12353, 1739, -1381, 2416, 5173]
+color_pattern = "RGGB"
+crops = [0,0,0,0]

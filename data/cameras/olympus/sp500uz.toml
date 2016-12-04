@@ -1,0 +1,9 @@
+make = "OLYMPUS IMAGING CORP."
+model = "SP500UZ"
+canonical_make = "OLYMPUS IMAGING CORP."
+canonical_model = "SP500UZ"
+blackpoint = 0
+whitepoint = 4095
+color_matrix = [9493, -3415, -666, -5211, 12334, 3260, -1548, 2262, 6482]
+color_pattern = "GBRG"
+crops = [0,0,0,0]

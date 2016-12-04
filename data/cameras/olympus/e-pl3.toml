@@ -1,0 +1,9 @@
+make = "OLYMPUS IMAGING CORP."
+model = "E-PL3"
+canonical_make = "OLYMPUS IMAGING CORP."
+canonical_model = "E-PL3"
+blackpoint = 64
+whitepoint = 3700
+color_matrix = [7575, -2159, -571, -3722, 11341, 2725, -1434, 2819, 6271]
+color_pattern = "RGGB"
+crops = [0,0,0,0]
