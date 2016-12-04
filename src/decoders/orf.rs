@@ -52,7 +52,11 @@ impl<'a> Decoder for OrfDecoder<'a> {
     } else if size >= ((width*height/10*16) as usize) {
       decode_12le_wcontrol(src, width as usize, height as usize)
     } else if size >= ((width*height*12/8) as usize) {
-      decode_12be_interlaced(src, width as usize, height as usize)
+      if width < 3500 { // The interlaced stuff is all old and smaller
+        decode_12be_interlaced(src, width as usize, height as usize)
+      } else {
+        decode_12be_msb32(src, width as usize, height as usize)
+      }
     } else {
       OrfDecoder::decode_compressed(src, width as usize, height as usize)
     };
