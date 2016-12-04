@@ -211,8 +211,8 @@ impl<'a> TiffEntry<'a> {
 
   pub fn get_u32(&self, idx: usize) -> u32 {
     match self.typ {
-      3 => self.endian.ru16(self.data, idx*2) as u32,
-      4 | 13 => self.endian.ru32(self.data, idx*4),
+      3 | 8              => self.endian.ru16(self.data, idx*2) as u32,
+      1 | 4 | 7 | 9 | 13 => self.endian.ru32(self.data, idx*4),
       _ => panic!(format!("Trying to read typ {} for a u32", self.typ).to_string()),
     }
   }
