@@ -108,10 +108,10 @@ impl<'a> OrfDecoder<'a> {
 
           // Skip bytes used above or read bits
           if high == 12 {
-            pump.get_bits(15);
+            pump.consume_bits(15);
             high = pump.get_ibits(16 - nbits) >> 1;
           } else {
-            pump.get_bits((high + 4) as u32);
+            pump.consume_bits((high + 4) as u32);
           }
 
           acarry[s][0] = ((high << nbits) | pump.get_ibits(nbits)) as i32;
