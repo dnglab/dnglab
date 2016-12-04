@@ -318,6 +318,32 @@ pub struct BitPumpMSB<'a> {
   nbits: u32,
 }
 
+pub trait BitPump {
+  fn peek_bits(&mut self, num: u32) -> u32;
+  fn consume_bits(&mut self, num: u32);
+
+  fn get_bits(&mut self, num: u32) -> u32 {
+    if num == 0 {
+      return 0
+    }
+
+    let val = self.peek_bits(num);
+    self.consume_bits(num);
+
+    val
+  }
+
+  fn peek_ibits(&mut self, num: u32) -> i32 {
+    let val = self.peek_bits(num);
+    unsafe{mem::transmute(val)}
+  }
+
+  fn get_ibits(&mut self, num: u32) -> i32 {
+    let val = self.get_bits(num);
+    unsafe{mem::transmute(val)}
+  }
+}
+
 impl<'a> BitPumpLSB<'a> {
   pub fn new(src: &'a [u8]) -> BitPumpLSB {
     BitPumpLSB {
@@ -327,31 +353,22 @@ impl<'a> BitPumpLSB<'a> {
       nbits: 0,
     }
   }
+}
 
-  fn fill_bits(&mut self) {
-    let inbits: u64 = LEu32(self.buffer, self.pos) as u64;
-    self.bits = ((inbits << 32) | (self.bits << (32-self.nbits))) >> (32-self.nbits);
-    self.pos += 4;
-    self.nbits += 32;
-  }
-
-  pub fn peek_bits(&mut self, num: u32) -> u32 {
+impl<'a> BitPump for BitPumpLSB<'a> {
+  fn peek_bits(&mut self, num: u32) -> u32 {
     if num > self.nbits {
-      self.fill_bits();
+      let inbits: u64 = LEu32(self.buffer, self.pos) as u64;
+      self.bits = ((inbits << 32) | (self.bits << (32-self.nbits))) >> (32-self.nbits);
+      self.pos += 4;
+      self.nbits += 32;
     }
     (self.bits & (0x0ffffffffu64 >> (32-num))) as u32
   }
 
-  pub fn get_bits(&mut self, num: u32) -> u32 {
-    if num == 0 {
-      return 0
-    }
-
-    let val = self.peek_bits(num);
+  fn consume_bits(&mut self, num: u32) {
     self.nbits -= num;
     self.bits >>= num;
-
-    val
   }
 }
 
@@ -364,39 +381,21 @@ impl<'a> BitPumpMSB<'a> {
       nbits: 0,
     }
   }
+}
 
-  fn fill_bits(&mut self) {
-    let inbits: u64 = BEu32(self.buffer, self.pos) as u64;
-    self.bits = (self.bits << 32) | inbits;
-    self.pos += 4;
-    self.nbits += 32;
-  }
-
-  pub fn peek_bits(&mut self, num: u32) -> u32 {
+impl<'a> BitPump for BitPumpMSB<'a> {
+  fn peek_bits(&mut self, num: u32) -> u32 {
     if num > self.nbits {
-      self.fill_bits();
+      let inbits: u64 = BEu32(self.buffer, self.pos) as u64;
+      self.bits = (self.bits << 32) | inbits;
+      self.pos += 4;
+      self.nbits += 32;
     }
     (self.bits >> (self.nbits-num)) as u32
   }
 
-  pub fn get_bits(&mut self, num: u32) -> u32 {
-    if num == 0 {
-      return 0
-    }
-
-    let val = self.peek_bits(num);
+  fn consume_bits(&mut self, num: u32) {
     self.nbits -= num;
     self.bits &= (1 << self.nbits) - 1;
-    val
-  }
-
-  pub fn peek_ibits(&mut self, num: u32) -> i32 {
-    let val = self.peek_bits(num);
-    unsafe{mem::transmute(val)}
-  }
-
-  pub fn get_ibits(&mut self, num: u32) -> i32 {
-    let val = self.get_bits(num);
-    unsafe{mem::transmute(val)}
   }
 }
