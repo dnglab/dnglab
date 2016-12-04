@@ -209,8 +209,14 @@ impl<'a> TiffEntry<'a> {
   pub fn parent_offset(&self) -> usize { self.parent_offset }
   pub fn count(&self) -> u32 { self.count }
   //pub fn typ(&self) -> u16 { self.typ }
-  pub fn get_u32(&self, idx: usize) -> u32 { self.endian.ru32(self.data, idx*4) }
-  pub fn get_u16(&self, idx: usize) -> u16 { self.endian.ru16(self.data, idx*2) }
+
+  pub fn get_u32(&self, idx: usize) -> u32 {
+    match self.typ {
+      3 => self.endian.ru16(self.data, idx*2) as u32,
+      4 | 13 => self.endian.ru32(self.data, idx*4),
+      _ => panic!(format!("Trying to read typ {} for a u32", self.typ).to_string()),
+    }
+  }
 
   pub fn get_str(&self) -> &str {
     // Truncate the string when there are \0 bytes

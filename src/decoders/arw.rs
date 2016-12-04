@@ -40,15 +40,15 @@ impl<'a> Decoder for ArwDecoder<'a> {
       }
     }
     let raw = data[0];
-    let width = fetch_tag!(raw, Tag::ImageWidth, "ARW: Couldn't find width").get_u16(0) as u32;
-    let mut height = fetch_tag!(raw, Tag::ImageLength, "ARW: Couldn't find height").get_u16(0) as u32;
+    let width = fetch_tag!(raw, Tag::ImageWidth, "ARW: Couldn't find width").get_u32(0);
+    let mut height = fetch_tag!(raw, Tag::ImageLength, "ARW: Couldn't find height").get_u32(0);
     let offset = fetch_tag!(raw, Tag::StripOffsets, "ARW: Couldn't find offset").get_u32(0) as usize;
     let count = fetch_tag!(raw, Tag::StripByteCounts, "ARW: Couldn't find byte count").get_u32(0) as usize;
-    let compression = fetch_tag!(raw, Tag::Compression, "ARW: Couldn't find Compression").get_u16(0);
+    let compression = fetch_tag!(raw, Tag::Compression, "ARW: Couldn't find Compression").get_u32(0);
     let bps = if camera.bps != 0 {
       camera.bps
     } else {
-      fetch_tag!(raw, Tag::BitsPerSample, "ARW: Couldn't find bps").get_u16(0) as u32
+      fetch_tag!(raw, Tag::BitsPerSample, "ARW: Couldn't find bps").get_u32(0)
     };
     let src = &self.buffer[offset .. self.buffer.len()];
 
@@ -125,8 +125,8 @@ impl<'a> ArwDecoder<'a> {
     }
     let raw = data[0];
 
-    let width = fetch_tag!(raw, Tag::ImageWidth, "SRF: Couldn't find width").get_u16(0) as u32;
-    let height = fetch_tag!(raw, Tag::ImageLength, "SRF: Couldn't find height").get_u16(0) as u32;
+    let width = fetch_tag!(raw, Tag::ImageWidth, "SRF: Couldn't find width").get_u32(0);
+    let height = fetch_tag!(raw, Tag::ImageLength, "SRF: Couldn't find height").get_u32(0);
     let len = (width*height*2) as usize;
 
     // Constants taken from dcraw
@@ -226,10 +226,10 @@ impl<'a> ArwDecoder<'a> {
     let rggb_levels = decrypted_tiff.find_entry(Tag::SonyRGGB);
     if grgb_levels.is_some() {
       let levels = grgb_levels.unwrap();
-      Ok([levels.get_u16(1) as f32, levels.get_u16(0) as f32, levels.get_u16(2) as f32, f32::NAN])
+      Ok([levels.get_u32(1) as f32, levels.get_u32(0) as f32, levels.get_u32(2) as f32, f32::NAN])
     } else if rggb_levels.is_some() {
       let levels = rggb_levels.unwrap();
-      Ok([levels.get_u16(0) as f32, levels.get_u16(1) as f32, levels.get_u16(3) as f32, f32::NAN])
+      Ok([levels.get_u32(0) as f32, levels.get_u32(1) as f32, levels.get_u32(3) as f32, f32::NAN])
     } else {
       Err("ARW: Couldn't find GRGB or RGGB levels".to_string())
     }
@@ -240,7 +240,7 @@ impl<'a> ArwDecoder<'a> {
     let mut curve: [u32;6] = [ 0, 0, 0, 0, 0, 4095 ];
 
     for i in 0..4 {
-      curve[i+1] = ((centry.get_u16(i) >> 2) & 0xfff) as u32;
+      curve[i+1] = ((centry.get_u32(i) >> 2) & 0xfff) as u32;
     }
 
     let mut out = vec![0 as u16; (curve[5]+1) as usize];

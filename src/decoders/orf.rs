@@ -32,8 +32,8 @@ impl<'a> Decoder for OrfDecoder<'a> {
     let camera = try!(self.identify());
     let data = self.tiff.find_ifds_with_tag(Tag::StripOffsets);
     let raw = data[0];
-    let width = fetch_tag!(raw, Tag::ImageWidth, "ORF: Couldn't find width").get_u16(0) as u32;
-    let height = fetch_tag!(raw, Tag::ImageLength, "ORF: Couldn't find height").get_u16(0) as u32;
+    let width = fetch_tag!(raw, Tag::ImageWidth, "ORF: Couldn't find width").get_u32(0);
+    let height = fetch_tag!(raw, Tag::ImageLength, "ORF: Couldn't find height").get_u32(0);
     let offset = fetch_tag!(raw, Tag::StripOffsets, "ORF: Couldn't find offset").get_u32(0) as usize;
     let counts = fetch_tag!(raw, Tag::StripByteCounts, "ORF: Couldn't find counts");
     let mut size: usize = 0;
@@ -152,7 +152,7 @@ impl<'a> OrfDecoder<'a> {
     let bluemul = self.tiff.find_entry(Tag::OlympusBlueMul);
 
     if redmul.is_some() && bluemul.is_some() {
-      Ok([redmul.unwrap().get_u16(0) as f32,256.0,bluemul.unwrap().get_u16(0) as f32,NAN])
+      Ok([redmul.unwrap().get_u32(0) as f32,256.0,bluemul.unwrap().get_u32(0) as f32,NAN])
     } else {
       let iproc = fetch_tag!(self.tiff,Tag::OlympusImgProc, "ORF: Couldn't find ImgProc");
       let poff = iproc.parent_offset() - 12;
@@ -162,9 +162,9 @@ impl<'a> OrfDecoder<'a> {
       if wbs.count() == 4 {
         let off = poff + wbs.doffset();
         let nwbs = &wbs.copy_with_new_data(&self.buffer[off..]);
-        Ok([nwbs.get_u16(0) as f32,256.0,nwbs.get_u16(1) as f32,NAN])
+        Ok([nwbs.get_u32(0) as f32,256.0,nwbs.get_u32(1) as f32,NAN])
       } else {
-        Ok([wbs.get_u16(0) as f32,256.0,wbs.get_u16(1) as f32,NAN])
+        Ok([wbs.get_u32(0) as f32,256.0,wbs.get_u32(1) as f32,NAN])
       }
     }
   }
