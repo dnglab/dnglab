@@ -12,13 +12,12 @@ build = "data/cameras/join.rs"
 
 [dependencies]
 toml = "0.2.0"
-crossbeam = "0.2.10"
 time = "0.1.35"
 enum_primitive = "0.1.0"
 num = "0.1.35"
-num_cpus = "1.1.0"
 lazy_static = "0.2.1"
 byteorder = "0.5.3"
+rayon = "0.5.0"
 
 [build-dependencies]
 glob = "0.2.11"

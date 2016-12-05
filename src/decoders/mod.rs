@@ -21,10 +21,6 @@ use self::tiff::*;
 
 pub static CAMERAS_TOML: &'static str = include_str!("../../data/cameras/all.toml");
 
-extern crate num_cpus;
-
-lazy_static! { pub static ref NUM_CORES: usize = num_cpus::get_physical(); }
-
 pub trait Decoder {
   fn identify(&self) -> Result<&Camera, String>;
   fn image(&self) -> Result<Image, String>;

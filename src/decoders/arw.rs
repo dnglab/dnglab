@@ -181,35 +181,33 @@ impl<'a> ArwDecoder<'a> {
   }
 
   fn decode_arw2(buf: &[u8], width: usize, height: usize, curve: &LookupTable) -> Vec<u16> {
-    decode_threaded(width, height, &(|out: &mut [u16], start, width, _| {
-      let mut pump = BitPumpLSB::new(&buf[(start*width)..]);
+    decode_threaded(width, height, &(|out: &mut [u16], row| {
+      let mut pump = BitPumpLSB::new(&buf[(row*width)..]);
 
-      for line in out.chunks_mut(width) {
-        // Process 16 pixels at a time in interleaved fashion
-        let mut col = 0;
-        let mut random = pump.peek_bits(24);
-        while col < (width-30) {
-          let max = pump.get_bits(11);
-          let min = pump.get_bits(11);
-          let delta = max-min;
-          // Calculate the size of the data shift needed by how large the delta is
-          // A delta with 11 bits requires a shift of 4, 10 bits of 3, etc
-          let delta_shift: u32 = cmp::max(0, (32-(delta.leading_zeros() as i32)) - 7) as u32;
-          let imax = pump.get_bits(4);
-          let imin = pump.get_bits(4);
+      // Process 16 pixels at a time in interleaved fashion
+      let mut col = 0;
+      let mut random = pump.peek_bits(24);
+      while col < (width-30) {
+        let max = pump.get_bits(11);
+        let min = pump.get_bits(11);
+        let delta = max-min;
+        // Calculate the size of the data shift needed by how large the delta is
+        // A delta with 11 bits requires a shift of 4, 10 bits of 3, etc
+        let delta_shift: u32 = cmp::max(0, (32-(delta.leading_zeros() as i32)) - 7) as u32;
+        let imax = pump.get_bits(4);
+        let imin = pump.get_bits(4);
 
-          for i in 0..16 {
-            let val = if i == imax {
-              max
-            } else if i == imin {
-              min
-            } else {
-              cmp::min(0x7ff,(pump.get_bits(7) << delta_shift) + min)
-            };
-            line[col+(i*2) as usize] = curve.dither((val<<1) as u16, &mut random);
-          }
-          col += if (col & 1) != 0 {31} else {1};  // Skip to next 16 pixels
+        for i in 0..16 {
+          let val = if i == imax {
+            max
+          } else if i == imin {
+            min
+          } else {
+            cmp::min(0x7ff,(pump.get_bits(7) << delta_shift) + min)
+          };
+          out[col+(i*2) as usize] = curve.dither((val<<1) as u16, &mut random);
         }
+        col += if (col & 1) != 0 {31} else {1};  // Skip to next 16 pixels
       }
     }))
   }
