@@ -86,7 +86,7 @@ fn main() {
 To do the image decoding decode the image the same way but then do:
 
 ```rust
-  // Decode to at most full HD size
+  // Decode to at least full HD size or full image if it's smaller
   let decoded = imageops::simple_decode(&image, 1920, 1080);
 
   let mut f = BufWriter::new(File::create(format!("{}.ppm",file)).unwrap());
