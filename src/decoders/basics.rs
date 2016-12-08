@@ -195,7 +195,7 @@ pub fn decode_14le_unpacked(buf: &[u8], width: usize, height: usize) -> Vec<u16>
   decode_threaded(width, height, &(|out: &mut [u16], row| {
     let inb = &buf[((row*width*2) as usize)..];
 
-    for (i, bytes) in inb.chunks(2).take(width*height).enumerate() {
+    for (i, bytes) in (0..width).zip(inb.chunks(2)) {
       out[i] = LEu16(bytes, 0) & 0x3fff;
     }
   }))
@@ -205,7 +205,7 @@ pub fn decode_14be_unpacked(buf: &[u8], width: usize, height: usize) -> Vec<u16>
   decode_threaded(width, height, &(|out: &mut [u16], row| {
     let inb = &buf[((row*width*2) as usize)..];
 
-    for (i, bytes) in inb.chunks(2).take(width*height).enumerate() {
+    for (i, bytes) in (0..width).zip(inb.chunks(2)) {
       out[i] = BEu16(bytes, 0) & 0x3fff;
     }
   }))
@@ -215,7 +215,7 @@ pub fn decode_16le(buf: &[u8], width: usize, height: usize) -> Vec<u16> {
   decode_threaded(width, height, &(|out: &mut [u16], row| {
     let inb = &buf[((row*width*2) as usize)..];
 
-    for (i, bytes) in inb.chunks(2).take(width*height).enumerate() {
+    for (i, bytes) in (0..width).zip(inb.chunks(2)) {
       out[i] = LEu16(bytes, 0);
     }
   }))
@@ -225,7 +225,7 @@ pub fn decode_16be(buf: &[u8], width: usize, height: usize) -> Vec<u16> {
   decode_threaded(width, height, &(|out: &mut [u16], row| {
     let inb = &buf[((row*width*2) as usize)..];
 
-    for (i, bytes) in inb.chunks(2).take(width*height).enumerate() {
+    for (i, bytes) in (0..width).zip(inb.chunks(2)) {
       out[i] = BEu16(bytes, 0);
     }
   }))
