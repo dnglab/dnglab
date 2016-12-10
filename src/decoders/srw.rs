@@ -49,7 +49,13 @@ impl<'a> Decoder for SrwDecoder<'a> {
       32770 => {
         match raw.find_entry(Tag::SrwSensorAreas) {
           None => match bits {
-            12 => decode_12be(src, width as usize, height as usize),
+            12 => {
+              if camera.find_hint("little_endian") {
+                decode_12le(src, width as usize, height as usize)
+              } else {
+                decode_12be(src, width as usize, height as usize)
+              }
+            },
             14 => decode_14le_unpacked(src, width as usize, height as usize),
              x => return Err(format!("SRW: Don't know how to handle bps {}", x).to_string()),
           },
