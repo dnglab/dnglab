@@ -55,6 +55,9 @@ impl<'a> Decoder for SrwDecoder<'a> {
           }
         }
       }
+      32772 => {
+       SrwDecoder::decode_srw2(src, width as usize, height as usize)
+      }
       x => return Err(format!("SRW: Don't know how to handle compression {}", x).to_string()),
     };
 
@@ -129,6 +132,72 @@ impl<'a> SrwDecoder<'a> {
 
     out
   }
+
+  pub fn decode_srw2(buf: &[u8], width: usize, height: usize) -> Vec<u16> {
+    let mut out: Vec<u16> = vec![0; (width*height) as usize];
+
+    // This format has a variable length encoding of how many bits are needed
+    // to encode the difference between pixels, we use a table to process it
+    // that has two values, the first the number of bits that were used to
+    // encode, the second the number of bits that come after with the difference
+    // The table has 14 entries because the difference can have between 0 (no
+    // difference) and 13 bits (differences between 12 bits numbers can need 13)
+    let tab: [[u32;2];14] = [[3,4], [3,7], [2,6], [2,5], [4,3], [6,0], [7,9],
+                             [8,10], [9,11], [10,12], [10,13], [5,1], [4,8], [4,2]];
+
+    // We generate a 1024 entry table (to be addressed by reading 10 bits) by
+    // consecutively filling in 2^(10-N) positions where N is the variable number of
+    // bits of the encoding. So for example 4 is encoded with 3 bits so the first
+    // 2^(10-3)=128 positions are set with 3,4 so that any time we read 000 we
+    // know the next 4 bits are the difference. We read 10 bits because that is
+    // the maximum number of bits used in the variable encoding (for the 12 and
+    // 13 cases)
+    let mut tbl: [[u32;2];1024] = [[0,0];1024];
+    let mut n: usize = 0;
+    for i in 0..14 {
+      let mut c = 0;
+      while c < (1024 >> tab[i][0]) {
+        tbl[n][0] = tab[i][0];
+        tbl[n][1] = tab[i][1];
+        n += 1;
+        c += 1;
+      }
+    }
+
+    let mut vpred: [[i32;2];2] = [[0,0],[0,0]];
+    let mut hpred: [i32;2] = [0,0];
+    let mut pump = BitPumpMSB::new(buf);
+    for row in 0..height {
+      for col in 0..width {
+        let diff = SrwDecoder::srw2_diff(&mut pump, &tbl);
+        if col < 2 {
+          vpred[row & 1][col] += diff;
+          hpred[col] = vpred[row & 1][col];
+        } else {
+          hpred[col & 1] += diff;
+        }
+        out[row*width+col] = hpred[col & 1] as u16;
+      }
+    }
+
+    out
+  }
+
+  pub fn srw2_diff(pump: &mut BitPumpMSB, tbl: &[[u32;2];1024]) -> i32{
+    // We read 10 bits to index into our table
+    let c = pump.peek_bits(10);
+    // Skip the bits that were used to encode this case
+    pump.consume_bits(tbl[c as usize][0]);
+    // Read the number of bits the table tells me
+    let len = tbl[c as usize][1];
+    let mut diff = pump.get_bits(len) as i32;
+    // If the first bit is 0 we need to turn this into a negative number
+    if len != 0 && (diff & (1 << (len-1))) == 0 {
+      diff -= (1 << len) - 1;
+    }
+    diff
+  }
+
 
   fn get_wb(&self) -> Result<[f32;4], String> {
     let rggb_levels = fetch_tag!(self.tiff, Tag::SrwRGGBLevels, "SRW: No RGGB Levels");
