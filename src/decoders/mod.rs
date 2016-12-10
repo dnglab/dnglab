@@ -73,6 +73,13 @@ pub struct Camera {
   dcraw_filters: u32,
   crops: [i64;4],
   bps: u32,
+  hints: Vec<String>,
+}
+
+impl Camera {
+  pub fn find_hint(&self, hint: &str) -> bool {
+    self.hints.contains(&(hint.to_string()))
+  }
 }
 
 pub fn ok_image(camera: &Camera, width: u32, height: u32, wb_coeffs: [f32;4], image: Vec<u16>) -> Result<Image,String> {
@@ -149,6 +156,15 @@ impl RawLoader {
         Some(x) => x.as_integer().unwrap() as u32,
         None => 0,
       };
+      let mut hints: Vec<String> = Vec::new();
+      match ct.get("hints") {
+        None => {},
+        Some(x) => {
+          for val in x.as_slice().unwrap() {
+            hints.push(val.as_str().unwrap().to_string());
+          }
+        },
+      }
       let cam = Camera{
         make: make.clone(),
         model: model.clone(),
@@ -160,6 +176,7 @@ impl RawLoader {
         dcraw_filters: RawLoader::dcraw_filters(&color_pattern),
         crops: crops,
         bps: bps,
+        hints: hints,
       };
       map.insert((make.clone(),model.clone()), cam);
     }
