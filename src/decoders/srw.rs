@@ -41,6 +41,10 @@ impl<'a> Decoder for SrwDecoder<'a> {
     let src = &self.buffer[offset..];
 
     let image = match compression {
+      32769 => match bits {
+        14 => decode_14le_unpacked(src, width as usize, height as usize),
+         x => return Err(format!("SRW: Don't know how to handle bps {}", x).to_string()),
+      },
       32770 => {
         match raw.find_entry(Tag::SrwSensorAreas) {
           None => match bits {
