@@ -25,6 +25,7 @@ pub enum Tag {
   SonyKey        = 0x7221,
   SonyGRBG       = 0x7303,
   SonyRGGB       = 0x7313,
+  CFAPattern     = 0x828E,
   ExifIFDPointer = 0x8769,
   Makernote      = 0x927C,
   SrwSensorAreas = 0xA010,

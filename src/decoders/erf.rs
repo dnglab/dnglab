@@ -29,8 +29,8 @@ impl<'a> Decoder for ErfDecoder<'a> {
 
   fn image(&self) -> Result<Image,String> {
     let camera = try!(self.identify());
-    let data = self.tiff.find_ifds_with_tag(Tag::StripOffsets);
-    let raw = data[1];
+    let data = self.tiff.find_ifds_with_tag(Tag::CFAPattern);
+    let raw = data[0];
     let width = fetch_tag!(raw, Tag::ImageWidth, "ERF: Couldn't find width").get_u32(0);
     let height = fetch_tag!(raw, Tag::ImageLength, "ERF: Couldn't find height").get_u32(0);
     let offset = fetch_tag!(raw, Tag::StripOffsets, "ERF: Couldn't find offset").get_u32(0) as usize;
