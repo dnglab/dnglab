@@ -15,6 +15,7 @@ pub enum Tag {
   StripOffsets   = 0x0111,
   StripByteCounts= 0x0117,
   SubIFDs        = 0x014A,
+  EpsonWB        = 0x0E80,
   OlympusRedMul  = 0x1017,
   OlympusBlueMul = 0x1018,
   OlympusImgProc = 0x2040,
@@ -140,6 +141,11 @@ impl<'a> TiffIFD<'a> {
       }
     }
 
+    // Epson starts the makernote with its own name
+    if data[0..5] == b"EPSON"[..] {
+      off += 8;
+    }
+
     TiffIFD::new(buf, off, base_offset, depth, e)
   }
 
@@ -234,5 +240,9 @@ impl<'a> TiffEntry<'a> {
       Result::Ok(val) => val.trim(),
       Result::Err(err) => panic!(err),
     }
+  }
+
+  pub fn get_data(&self) -> &[u8] {
+    self.data
   }
 }

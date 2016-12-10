@@ -125,6 +125,27 @@ pub fn decode_12le_wcontrol(buf: &[u8], width: usize, height: usize) -> Vec<u16>
   }))
 }
 
+pub fn decode_12be_wcontrol(buf: &[u8], width: usize, height: usize) -> Vec<u16> {
+  // Calulate expected bytes per line.
+  let perline = width * 12 / 8 + ((width+2) / 10);
+
+  decode_threaded(width, height, &(|out: &mut [u16], row| {
+    let inb = &buf[((row*perline) as usize)..];
+
+    for (oc, ic) in out.chunks_mut(10).zip(inb.chunks(16)) {
+      for (o, i) in oc.chunks_mut(2).zip(ic.chunks(3)) {
+        let g1: u16 = i[0] as u16;
+        let g2: u16 = i[1] as u16;
+        let g3: u16 = i[2] as u16;
+
+        o[0] = (g1 << 4) | (g2 >> 4);
+        o[1] = ((g2 & 0x0f) << 8) | g3;
+      }
+    }
+  }))
+}
+
+
 pub fn decode_12be_interlaced(buf: &[u8], width: usize, height: usize) -> Vec<u16> {
   let half = (height+1) >> 1;
   // Second field is 2048 byte aligned
