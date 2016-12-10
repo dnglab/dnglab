@@ -45,7 +45,7 @@ impl<'a> Decoder for OrfDecoder<'a> {
 
     let image = if size >= ((width*height*2) as usize) {
       if self.tiff.little_endian() {
-        decode_12le_unpacked(src, width as usize, height as usize)
+        decode_12le_unpacked_left_aligned(src, width as usize, height as usize)
       } else {
         decode_12be_unpacked_left_aligned(src, width as usize, height as usize)
       }
