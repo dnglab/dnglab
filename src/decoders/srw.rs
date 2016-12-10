@@ -58,6 +58,9 @@ impl<'a> Decoder for SrwDecoder<'a> {
       32772 => {
        SrwDecoder::decode_srw2(src, width as usize, height as usize)
       }
+      32773 => {
+       SrwDecoder::decode_srw3(src, width as usize, height as usize)
+      }
       x => return Err(format!("SRW: Don't know how to handle compression {}", x).to_string()),
     };
 
@@ -198,6 +201,174 @@ impl<'a> SrwDecoder<'a> {
     diff
   }
 
+  pub fn decode_srw3(buf: &[u8], width: usize, height: usize) -> Vec<u16> {
+    // Decoder for third generation compressed SRW files (NX1)
+    // Seriously Samsung just use lossless jpeg already, it compresses better too :)
+
+    // Thanks to Michael Reichmann (Luminous Landscape) for putting me in contact
+    // and Loring von Palleske (Samsung) for pointing to the open-source code of
+    // Samsung's DNG converter at http://opensource.samsung.com/
+
+    let mut out: Vec<u16> = vec![0; (width*height) as usize];
+    let mut pump = BitPumpMSB32::new(buf);
+
+    // Process the initial metadata bits, we only really use initVal, width and
+    // height (the last two match the TIFF values anyway)
+    pump.get_bits(16); // NLCVersion
+    pump.get_bits(4);  // ImgFormat
+    let bit_depth = pump.get_bits(4)+1;
+    pump.get_bits(4);  // NumBlkInRCUnit
+    pump.get_bits(4);  // CompressionRatio
+    pump.get_bits(16);  // Width;
+    pump.get_bits(16);  // Height;
+    pump.get_bits(16); // TileWidth
+    pump.get_bits(4);  // reserved
+
+    // The format includes an optimization code that sets 3 flags to change the
+    // decoding parameters
+    let optflags = pump.get_bits(4);
+    static OPT_SKIP: u32 = 1; // Skip checking if we need differences from previous line
+    static OPT_MV  : u32 = 2; // Simplify motion vector definition
+    static OPT_QP  : u32 = 4; // Don't scale the diff values
+
+    pump.get_bits(8);  // OverlapWidth
+    pump.get_bits(8);  // reserved
+    pump.get_bits(8);  // Inc
+    pump.get_bits(2);  // reserved
+    let init_val = pump.get_bits(14) as u16;
+
+    // The format is relatively straightforward. Each line gets encoded as a set
+    // of differences from pixels from another line. Pixels are grouped in blocks
+    // of 16 (8 green, 8 red or blue). Each block is encoded in three sections.
+    // First 1 or 4 bits to specify which reference pixels to use, then a section
+    // that specifies for each pixel the number of bits in the difference, then
+    // the actual difference bits
+    let mut line_offset = 0;
+    for row in 0..height {
+      line_offset += pump.get_pos();
+      // Align pump to 16byte boundary
+      if (line_offset & 0x0f) != 0 {
+        line_offset += 16 - (line_offset & 0xf);
+      }
+      pump = BitPumpMSB32::new(&buf[line_offset..]);
+
+      let img = width*row;
+      let img_up   = width*(cmp::max(1, row)-1);
+      let img_up2  = width*(cmp::max(2, row)-2);
+
+      // Initialize the motion and diff modes at the start of the line
+      let mut motion: usize = 7;
+      // By default we are not scaling values at all
+      let mut scale: i32 = 0;
+      let mut diff_bits_mode: [[u32;2];3] = [[0;2];3];
+      for i in 0..3 {
+        let init: u32 = if row < 2 {7} else {4};
+        diff_bits_mode[i][0] = init;
+        diff_bits_mode[i][1] = init;
+      }
+
+      for col in (0..width).step(16) {
+        // Calculate how much scaling the final values will need
+        scale = if (optflags & OPT_QP) == 0 && (col & 63) == 0 {
+          let scalevals: [i32;3] = [0,-2,2];
+          let i = pump.get_bits(2) as usize;
+          if i < 3 {
+            scale+scalevals[i]
+          } else {
+            pump.get_bits(12) as i32
+          }
+        } else {
+          0
+        };
+
+        // First we figure out which reference pixels mode we're in
+        if (optflags & OPT_MV) != 0 {
+          motion = if pump.get_bits(1) != 0 {3} else {7};
+        } else if pump.get_bits(1) == 0 {
+          motion = pump.get_bits(3) as usize;
+        }
+
+        if row < 2 && motion != 7 {
+          panic!("SRW Decoder: At start of image and motion isn't 7. File corrupted?")
+        }
+
+        if motion == 7 {
+          // The base case, just set all pixels to the previous ones on the same line
+          // If we're at the left edge we just start at the initial value
+          for i in 0..16 {
+            out[img+col+i] = if col == 0 {init_val} else {out[img+col+i-2]};
+          }
+        } else {
+          // The complex case, we now need to actually lookup one or two lines above
+          if row < 2 {
+            panic!("SRW: Got a previous line lookup on first two lines. File corrupted?");
+          }
+          let motion_offset: [isize;7]  = [-4,-2,-2,0,0,2,4];
+          let motion_average: [i32;7] = [ 0, 0, 1,0,1,0,0];
+          let slide_offset = motion_offset[motion];
+
+          for i in 0..16 {
+            let refpixel: usize = if ((row+i) & 0x1) != 0 {
+              // Red or blue pixels use same color two lines up
+              ((img_up2 + col + i) as isize + slide_offset) as usize
+            } else {
+              // Green pixel N uses Green pixel N from row above (top left or top right)
+              if (i % 2) != 0 {
+                ((img_up + col + i - 1) as isize + slide_offset) as usize
+              } else {
+                ((img_up + col + i + 1) as isize + slide_offset) as usize
+              }
+            };
+            // In some cases we use as reference interpolation of this pixel and the next
+            out[img+col+i] = if motion_average[motion] != 0 {
+              (out[refpixel] + out[refpixel+2] + 1) >> 1
+            } else {
+              out[refpixel]
+            }
+          }
+        }
+
+        // Figure out how many difference bits we have to read for each pixel
+        let mut diff_bits: [u32; 4] = [0;4];
+        if (optflags & OPT_SKIP) != 0 || pump.get_bits(1) == 0 {
+          let flags: [u32; 4] = [pump.get_bits(2), pump.get_bits(2), pump.get_bits(2), pump.get_bits(2)];
+          for i in 0..4 {
+            // The color is 0-Green 1-Blue 2-Red
+            let colornum: usize = if row % 2 != 0 {i>>1} else {((i>>1)+2) % 3};
+            match flags[i] {
+              0 => {diff_bits[i] = diff_bits_mode[colornum][0];},
+              1 => {diff_bits[i] = diff_bits_mode[colornum][0]+1;},
+              2 => {diff_bits[i] = diff_bits_mode[colornum][0]-1;},
+              3 => {diff_bits[i] = pump.get_bits(4);},
+              _ => {},
+            }
+            diff_bits_mode[colornum][0] = diff_bits_mode[colornum][1];
+            diff_bits_mode[colornum][1] = diff_bits[i];
+            if diff_bits[i] > bit_depth+1 {
+              panic!("SRW Decoder: Too many difference bits. File corrupted?");
+            }
+          }
+        }
+
+        // Actually read the differences and write them to the pixels
+        for i in 0..16 {
+          let len = diff_bits[i>>2];
+          let mut diff = pump.get_ibits_sextended(len);
+          diff = diff * (scale*2+1) + scale;
+
+          // Apply the diff to pixels 0 2 4 6 8 10 12 14 1 3 5 7 9 11 13 15
+          let pos = if row % 2 != 0 {
+            ((i&0x7) << 1) + 1 - (i>>3)
+          } else {
+            ((i&0x7) << 1) + (i>>3)
+          } + img + col;
+          out[pos] = clampbits((out[pos] as i32) + diff, bit_depth) as u16;
+        }
+      }
+    }
+
+    out
+  }
 
   fn get_wb(&self) -> Result<[f32;4], String> {
     let rggb_levels = fetch_tag!(self.tiff, Tag::SrwRGGBLevels, "SRW: No RGGB Levels");

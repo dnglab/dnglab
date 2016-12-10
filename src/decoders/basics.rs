@@ -6,6 +6,15 @@ use self::rayon::prelude::*;
 extern crate byteorder;
 use self::byteorder::{BigEndian, LittleEndian, ByteOrder};
 
+pub fn clampbits(val: i32, bits: u32) -> i32 {
+  let temp = val >> bits;
+  if temp != 0 {
+    !temp >> (32-bits)
+  } else {
+    val
+  }
+}
+
 #[derive(Debug, Copy, Clone)]
 pub struct Endian {
   big: bool,
@@ -328,6 +337,10 @@ impl<'a> BitPumpMSB32<'a> {
       bits: 0,
       nbits: 0,
     }
+  }
+
+  pub fn get_pos(&self) -> usize {
+    self.pos - ((self.nbits >> 3) as usize)
   }
 }
 
