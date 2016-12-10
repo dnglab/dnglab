@@ -42,6 +42,7 @@ impl<'a> Decoder for SrwDecoder<'a> {
 
     let image = match compression {
       32769 => match bits {
+        12 => decode_12le_unpacked(src, width as usize, height as usize),
         14 => decode_14le_unpacked(src, width as usize, height as usize),
          x => return Err(format!("SRW: Don't know how to handle bps {}", x).to_string()),
       },
