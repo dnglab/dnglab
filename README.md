@@ -30,6 +30,7 @@ The library is still in its very beginning with only a few formats implemented:
   * Olympus ORF
   * Samsung SRW
   * Epson ERF
+  * Kodak KDC
 
 Usage
 -----
