@@ -60,6 +60,17 @@ pub static LITTLE_ENDIAN: Endian = Endian{big: false};
   LittleEndian::read_u16(&buf[pos..pos+2])
 }
 
+pub fn decode_8bit_wtable(buf: &[u8], tbl: &LookupTable, width: usize, height: usize) -> Vec<u16> {
+  decode_threaded(width, height, &(|out: &mut [u16], row| {
+    let inb = &buf[((row*width) as usize)..];
+    let mut random = LEu32(inb, 0);
+
+    for (o, i) in out.chunks_mut(1).zip(inb.chunks(1)) {
+      o[0] = tbl.dither(i[0] as u16, &mut random);
+    }
+  }))
+}
+
 pub fn decode_12be(buf: &[u8], width: usize, height: usize) -> Vec<u16> {
   decode_threaded(width, height, &(|out: &mut [u16], row| {
     let inb = &buf[((row*width*12/8) as usize)..];
@@ -284,7 +295,7 @@ impl LookupTable {
       let center = table[i];
       let lower = if i > 0 {table[i-1]} else {center};
       let upper = if i < (table.len()-1) {table[i+1]} else {center};
-      let base = center - ((upper - lower + 2) / 4);
+      let base = if center == 0 {0} else {center - ((upper - lower + 2) / 4)};
       let delta = upper - lower;
       tbl[i] = (center, base, delta);
     }

@@ -14,6 +14,7 @@ pub enum Tag {
   Model          = 0x0110,
   StripOffsets   = 0x0111,
   StripByteCounts= 0x0117,
+  GrayResponse   = 0x0123,
   SubIFDs        = 0x014A,
   EpsonWB        = 0x0E80,
   KodakWB        = 0x0F00,
