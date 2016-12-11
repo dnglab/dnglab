@@ -17,6 +17,7 @@ mod mef;
 mod orf;
 mod srw;
 mod erf;
+mod kdc;
 use self::basics::*;
 use self::tiff::*;
 
@@ -216,6 +217,7 @@ impl RawLoader {
       "OLYMPUS OPTICAL CO.,LTD" => use_decoder!(orf::OrfDecoder, buffer, tiff, self),
       "SAMSUNG"                 => use_decoder!(srw::SrwDecoder, buffer, tiff, self),
       "SEIKO EPSON CORP."       => use_decoder!(erf::ErfDecoder, buffer, tiff, self),
+      "EASTMAN KODAK COMPANY"   => use_decoder!(kdc::KdcDecoder, buffer, tiff, self),
       make => Err(format!("Couldn't find a decoder for make \"{}\"", make).to_string()),
     }
   }

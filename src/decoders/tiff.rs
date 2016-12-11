@@ -16,6 +16,7 @@ pub enum Tag {
   StripByteCounts= 0x0117,
   SubIFDs        = 0x014A,
   EpsonWB        = 0x0E80,
+  KodakWB        = 0x0F00,
   OlympusRedMul  = 0x1017,
   OlympusBlueMul = 0x1018,
   OlympusImgProc = 0x2040,
@@ -32,7 +33,9 @@ pub enum Tag {
   SrwRGGBLevels  = 0xA021,
   SrwRGGBBlacks  = 0xA028,
   DNGPrivateArea = 0xC634,
-
+  KdcWidth       = 0xFD00,
+  KdcLength      = 0xFD01,
+  KdcOffset      = 0xFD04,
 }
 }
                           // 0-1-2-3-4-5-6-7-8-9-10-11-12-13
