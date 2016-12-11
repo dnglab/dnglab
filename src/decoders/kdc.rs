@@ -50,13 +50,24 @@ impl<'a> Decoder for KdcDecoder<'a> {
 
 impl<'a> KdcDecoder<'a> {
   fn get_wb(&self) -> Result<[f32;4], String> {
-    let levels = fetch_tag!(self.tiff, Tag::KodakWB, "KDC: No levels");
-    if levels.count() != 734 && levels.count() != 1502 {
-      Err("KDC: Levels count is off".to_string())
-    } else {
-      let r = BEu16(levels.get_data(), 148) as f32;
-      let b = BEu16(levels.get_data(), 150) as f32;
-      Ok([r / 256.0, 1.0, b / 256.0, NAN])
+    match self.tiff.find_entry(Tag::KdcWB) {
+      Some(levels) => {
+        if levels.count() != 3 {
+          Err("KDC: Levels count is off".to_string())
+        } else {
+          Ok([levels.get_f32(0), levels.get_f32(1), levels.get_f32(2), NAN])
+        }
+      },
+      None => {
+        let levels = fetch_tag!(self.tiff, Tag::KodakWB, "KDC: No levels");
+        if levels.count() != 734 && levels.count() != 1502 {
+          Err("KDC: Levels count is off".to_string())
+        } else {
+          let r = BEu16(levels.get_data(), 148) as f32;
+          let b = BEu16(levels.get_data(), 150) as f32;
+          Ok([r / 256.0, 1.0, b / 256.0, NAN])
+        }
+      },
     }
   }
 }

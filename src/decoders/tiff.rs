@@ -33,9 +33,11 @@ pub enum Tag {
   SrwRGGBLevels  = 0xA021,
   SrwRGGBBlacks  = 0xA028,
   DNGPrivateArea = 0xC634,
+  KdcWB          = 0xFA2A,
   KdcWidth       = 0xFD00,
   KdcLength      = 0xFD01,
   KdcOffset      = 0xFD04,
+  KdcIFD         = 0xFE00,
 }
 }
                           // 0-1-2-3-4-5-6-7-8-9-10-11-12-13
@@ -102,7 +104,9 @@ impl<'a> TiffIFD<'a> {
       }
       let entry = TiffEntry::new(buf, entry_offset, base_offset, offset, e);
 
-      if entry.tag == t(Tag::SubIFDs) || entry.tag == t(Tag::ExifIFDPointer) {
+      if entry.tag == t(Tag::SubIFDs)
+      || entry.tag == t(Tag::ExifIFDPointer)
+      || entry.tag == t(Tag::KdcIFD) {
         if depth < 10 { // Avoid infinite looping IFDs
           for i in 0..entry.count {
             let ifd = TiffIFD::new(buf, entry.get_u32(i as usize) as usize, base_offset, depth+1, e);
@@ -232,6 +236,10 @@ impl<'a> TiffEntry<'a> {
       1 | 4 | 7 | 9 | 13 => self.endian.ru32(self.data, idx*4),
       _ => panic!(format!("Trying to read typ {} for a u32", self.typ).to_string()),
     }
+  }
+
+  pub fn get_f32(&self, idx: usize) -> f32 {
+    self.get_u32(idx) as f32
   }
 
   pub fn get_str(&self) -> &str {
