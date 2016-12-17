@@ -1,0 +1,9 @@
+make = "Panasonic"
+model = "DMC-FZ8"
+canonical_make = "Panasonic"
+canonical_model = "DMC-FZ8"
+blackpoint = 0
+whitepoint = 3986
+color_matrix = [8986, -2755, -802, -6341, 13575, 3077, -1476, 2144, 6379]
+color_pattern = "RGGB"
+crops = [0,0,0,0]

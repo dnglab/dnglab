@@ -6,6 +6,13 @@ use num::FromPrimitive;
 enum_from_primitive! {
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub enum Tag {
+  PanaWidth      = 0x0002,
+  PanaLength     = 0x0003,
+  PanaWBsR       = 0x0011,
+  PanaWBsB       = 0x0012,
+  PanaWBs2R      = 0x0024,
+  PanaWBs2G      = 0x0025,
+  PanaWBs2B      = 0x0026,
   ImageWidth     = 0x0100,
   ImageLength    = 0x0101,
   BitsPerSample  = 0x0102,
@@ -14,6 +21,7 @@ pub enum Tag {
   Model          = 0x0110,
   StripOffsets   = 0x0111,
   StripByteCounts= 0x0117,
+  PanaOffsets    = 0x0118,
   GrayResponse   = 0x0123,
   SubIFDs        = 0x014A,
   EpsonWB        = 0x0E80,
@@ -170,6 +178,10 @@ impl<'a> TiffIFD<'a> {
       }
       None
     }
+  }
+
+  pub fn has_entry(&self, tag: Tag) -> bool {
+    self.find_entry(tag).is_some()
   }
 
   pub fn find_ifds_with_tag(&self, tag: Tag) -> Vec<&TiffIFD> {

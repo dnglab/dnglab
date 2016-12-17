@@ -1,0 +1,9 @@
+make = "Panasonic"
+model = "DMC-FZ18"
+canonical_make = "Panasonic"
+canonical_model = "DMC-FZ18"
+blackpoint = 0
+whitepoint = 3986
+color_matrix = [9932, -3060, -935, -5809, 13331, 2753, -1267, 2155, 5575]
+color_pattern = "BGGR"
+crops = [0,0,0,0]
