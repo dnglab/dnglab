@@ -24,8 +24,8 @@ impl<'a> SrwDecoder<'a> {
 
 impl<'a> Decoder for SrwDecoder<'a> {
   fn identify(&self) -> Result<&Camera, String> {
-    let make = fetch_tag!(self.tiff, Tag::Make, "SRW: Couldn't find Make").get_str();
-    let model = fetch_tag!(self.tiff, Tag::Model, "SRW: Couldn't find Model").get_str();
+    let make = fetch_tag!(self.tiff, Tag::Make).get_str();
+    let model = fetch_tag!(self.tiff, Tag::Model).get_str();
     self.rawloader.check_supported(make, model)
   }
 
@@ -33,11 +33,11 @@ impl<'a> Decoder for SrwDecoder<'a> {
     let camera = try!(self.identify());
     let data = self.tiff.find_ifds_with_tag(Tag::StripOffsets);
     let raw = data[0];
-    let width = fetch_tag!(raw, Tag::ImageWidth, "SRW: Couldn't find width").get_u32(0);
-    let height = fetch_tag!(raw, Tag::ImageLength, "SRW: Couldn't find height").get_u32(0);
-    let offset = fetch_tag!(raw, Tag::StripOffsets, "SRW: Couldn't find offset").get_u32(0) as usize;
-    let compression = fetch_tag!(raw, Tag::Compression, "SRW: Couldn't find compression").get_u32(0);
-    let bits = fetch_tag!(raw, Tag::BitsPerSample, "SRW: Couldn't find bps").get_u32(0);
+    let width = fetch_tag!(raw, Tag::ImageWidth).get_u32(0);
+    let height = fetch_tag!(raw, Tag::ImageLength).get_u32(0);
+    let offset = fetch_tag!(raw, Tag::StripOffsets).get_u32(0) as usize;
+    let compression = fetch_tag!(raw, Tag::Compression).get_u32(0);
+    let bits = fetch_tag!(raw, Tag::BitsPerSample).get_u32(0);
     let src = &self.buffer[offset..];
 
     let image = match compression {
@@ -382,8 +382,8 @@ impl<'a> SrwDecoder<'a> {
   }
 
   fn get_wb(&self) -> Result<[f32;4], String> {
-    let rggb_levels = fetch_tag!(self.tiff, Tag::SrwRGGBLevels, "SRW: No RGGB Levels");
-    let rggb_blacks = fetch_tag!(self.tiff, Tag::SrwRGGBBlacks, "SRW: No RGGB Blacks");
+    let rggb_levels = fetch_tag!(self.tiff, Tag::SrwRGGBLevels);
+    let rggb_blacks = fetch_tag!(self.tiff, Tag::SrwRGGBBlacks);
     if rggb_levels.count() != 4 || rggb_blacks.count() != 4 {
       Err("SRW: RGGB Levels and Blacks don't have 4 elements".to_string())
     } else {

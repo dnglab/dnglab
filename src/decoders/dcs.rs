@@ -22,8 +22,8 @@ impl<'a> DcsDecoder<'a> {
 
 impl<'a> Decoder for DcsDecoder<'a> {
   fn identify(&self) -> Result<&Camera, String> {
-    let make = fetch_tag!(self.tiff, Tag::Make, "DCS: Couldn't find Make").get_str();
-    let model = fetch_tag!(self.tiff, Tag::Model, "DCS: Couldn't find Model").get_str();
+    let make = fetch_tag!(self.tiff, Tag::Make).get_str();
+    let model = fetch_tag!(self.tiff, Tag::Model).get_str();
     self.rawloader.check_supported(make, model)
   }
 
@@ -33,11 +33,11 @@ impl<'a> Decoder for DcsDecoder<'a> {
     let raw = data.iter().find(|&&ifd| {
       ifd.find_entry(Tag::ImageWidth).unwrap().get_u32(0) > 1000
     }).unwrap();
-    let width = fetch_tag!(raw, Tag::ImageWidth, "DCS: Couldn't find width").get_u32(0);
-    let height = fetch_tag!(raw, Tag::ImageLength, "DCS: Couldn't find height").get_u32(0);
-    let offset = fetch_tag!(raw, Tag::StripOffsets, "DCS: Couldn't find offset").get_u32(0) as usize;
+    let width = fetch_tag!(raw, Tag::ImageWidth).get_u32(0);
+    let height = fetch_tag!(raw, Tag::ImageLength).get_u32(0);
+    let offset = fetch_tag!(raw, Tag::StripOffsets).get_u32(0) as usize;
     let src = &self.buffer[offset .. self.buffer.len()];
-    let linearization = fetch_tag!(self.tiff, Tag::GrayResponse, "DCS: Couldn't find linearization");
+    let linearization = fetch_tag!(self.tiff, Tag::GrayResponse);
     let table = {
       let mut t: [u16;256] = [0;256];
       for i in 0..256 {

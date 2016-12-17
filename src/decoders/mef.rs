@@ -22,8 +22,8 @@ impl<'a> MefDecoder<'a> {
 
 impl<'a> Decoder for MefDecoder<'a> {
   fn identify(&self) -> Result<&Camera, String> {
-    let make = fetch_tag!(self.tiff, Tag::Make, "MEF: Couldn't find Make").get_str();
-    let model = fetch_tag!(self.tiff, Tag::Model, "MEF: Couldn't find Model").get_str();
+    let make = fetch_tag!(self.tiff, Tag::Make).get_str();
+    let model = fetch_tag!(self.tiff, Tag::Model).get_str();
     self.rawloader.check_supported(make, model)
   }
 
@@ -31,9 +31,9 @@ impl<'a> Decoder for MefDecoder<'a> {
     let camera = try!(self.identify());
     let data = self.tiff.find_ifds_with_tag(Tag::CFAPattern);
     let raw = data[0];
-    let width = fetch_tag!(raw, Tag::ImageWidth, "MEF: Couldn't find width").get_u32(0);
-    let height = fetch_tag!(raw, Tag::ImageLength, "MEF: Couldn't find height").get_u32(0);
-    let offset = fetch_tag!(raw, Tag::StripOffsets, "MEF: Couldn't find offset").get_u32(0) as usize;
+    let width = fetch_tag!(raw, Tag::ImageWidth).get_u32(0);
+    let height = fetch_tag!(raw, Tag::ImageLength).get_u32(0);
+    let offset = fetch_tag!(raw, Tag::StripOffsets).get_u32(0) as usize;
     let src = &self.buffer[offset .. self.buffer.len()];
 
     let image = decode_12be(src, width as usize, height as usize);

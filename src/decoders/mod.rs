@@ -5,7 +5,7 @@ use std::error::Error;
 use std::panic;
 
 macro_rules! fetch_tag {
-  ($tiff:expr, $tag:expr, $message:expr) => (try!($tiff.find_entry($tag).ok_or($message.to_string())););
+  ($tiff:expr, $tag:expr) => (try!($tiff.find_entry($tag).ok_or(format!("Couldn't find tag {}",stringify!($tag)).to_string())););
 }
 
 extern crate toml;

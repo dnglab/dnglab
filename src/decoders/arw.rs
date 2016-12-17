@@ -24,8 +24,8 @@ impl<'a> ArwDecoder<'a> {
 
 impl<'a> Decoder for ArwDecoder<'a> {
   fn identify(&self) -> Result<&Camera, String> {
-    let make = fetch_tag!(self.tiff, Tag::Make, "ARW: Couldn't find Make").get_str();
-    let model = fetch_tag!(self.tiff, Tag::Model, "ARW: Couldn't find Model").get_str();
+    let make = fetch_tag!(self.tiff, Tag::Make).get_str();
+    let model = fetch_tag!(self.tiff, Tag::Model).get_str();
     self.rawloader.check_supported(make, model)
   }
 
@@ -40,15 +40,15 @@ impl<'a> Decoder for ArwDecoder<'a> {
       }
     }
     let raw = data[0];
-    let width = fetch_tag!(raw, Tag::ImageWidth, "ARW: Couldn't find width").get_u32(0);
-    let mut height = fetch_tag!(raw, Tag::ImageLength, "ARW: Couldn't find height").get_u32(0);
-    let offset = fetch_tag!(raw, Tag::StripOffsets, "ARW: Couldn't find offset").get_u32(0) as usize;
-    let count = fetch_tag!(raw, Tag::StripByteCounts, "ARW: Couldn't find byte count").get_u32(0) as usize;
-    let compression = fetch_tag!(raw, Tag::Compression, "ARW: Couldn't find Compression").get_u32(0);
+    let width = fetch_tag!(raw, Tag::ImageWidth).get_u32(0);
+    let mut height = fetch_tag!(raw, Tag::ImageLength).get_u32(0);
+    let offset = fetch_tag!(raw, Tag::StripOffsets).get_u32(0) as usize;
+    let count = fetch_tag!(raw, Tag::StripByteCounts).get_u32(0) as usize;
+    let compression = fetch_tag!(raw, Tag::Compression).get_u32(0);
     let bps = if camera.bps != 0 {
       camera.bps
     } else {
-      fetch_tag!(raw, Tag::BitsPerSample, "ARW: Couldn't find bps").get_u32(0)
+      fetch_tag!(raw, Tag::BitsPerSample).get_u32(0)
     };
     let src = &self.buffer[offset .. self.buffer.len()];
 
@@ -91,13 +91,13 @@ impl<'a> ArwDecoder<'a> {
     let raw = data[0];
     let width = 3881;
     let height = 2608;
-    let offset = fetch_tag!(raw, Tag::SubIFDs, "ARW: Couldn't find offset").get_u32(0) as usize;
+    let offset = fetch_tag!(raw, Tag::SubIFDs).get_u32(0) as usize;
 
     let src = &self.buffer[offset .. self.buffer.len()];
     let image = ArwDecoder::decode_arw1(src, width as usize, height as usize);
 
     // Get the WB the MRW way
-    let priv_offset = fetch_tag!(self.tiff, Tag::DNGPrivateArea, "ARW: Couldn't find private offset").get_u32(0);
+    let priv_offset = fetch_tag!(self.tiff, Tag::DNGPrivateArea).get_u32(0);
     let buf = &self.buffer[priv_offset as usize..];
     let mut currpos: usize = 8;
     let mut wb_vals: [u16;4] = [0;4];
@@ -125,8 +125,8 @@ impl<'a> ArwDecoder<'a> {
     }
     let raw = data[0];
 
-    let width = fetch_tag!(raw, Tag::ImageWidth, "SRF: Couldn't find width").get_u32(0);
-    let height = fetch_tag!(raw, Tag::ImageLength, "SRF: Couldn't find height").get_u32(0);
+    let width = fetch_tag!(raw, Tag::ImageWidth).get_u32(0);
+    let height = fetch_tag!(raw, Tag::ImageLength).get_u32(0);
     let len = (width*height*2) as usize;
 
     // Constants taken from dcraw
@@ -213,11 +213,11 @@ impl<'a> ArwDecoder<'a> {
   }
 
   fn get_wb(&self) -> Result<[f32;4], String> {
-    let priv_offset = fetch_tag!(self.tiff, Tag::DNGPrivateArea, "ARW: Couldn't find private offset").get_u32(0);
+    let priv_offset = fetch_tag!(self.tiff, Tag::DNGPrivateArea).get_u32(0);
     let priv_tiff = TiffIFD::new(self.buffer, priv_offset as usize, 0, 0, LITTLE_ENDIAN).unwrap();
-    let sony_offset = fetch_tag!(priv_tiff, Tag::SonyOffset, "ARW: Couldn't find sony offset").get_u32(0) as usize;
-    let sony_length = fetch_tag!(priv_tiff, Tag::SonyLength, "ARW: Couldn't find sony length").get_u32(0) as usize;
-    let sony_key = fetch_tag!(priv_tiff, Tag::SonyKey, "ARW: Couldn't find sony key").get_u32(0);
+    let sony_offset = fetch_tag!(priv_tiff, Tag::SonyOffset).get_u32(0) as usize;
+    let sony_length = fetch_tag!(priv_tiff, Tag::SonyLength).get_u32(0) as usize;
+    let sony_key = fetch_tag!(priv_tiff, Tag::SonyKey).get_u32(0);
     let decrypted_buf = ArwDecoder::sony_decrypt(self.buffer, sony_offset, sony_length, sony_key);
     let decrypted_tiff = TiffIFD::new(&decrypted_buf, 0, sony_offset, 0, LITTLE_ENDIAN).unwrap();
     let grgb_levels = decrypted_tiff.find_entry(Tag::SonyGRBG);
@@ -234,7 +234,7 @@ impl<'a> ArwDecoder<'a> {
   }
 
   fn get_curve(raw: &TiffIFD) -> Result<LookupTable, String> {
-    let centry = fetch_tag!(raw, Tag::SonyCurve, "ARW: Couldn't find sony curve");
+    let centry = fetch_tag!(raw, Tag::SonyCurve);
     let mut curve: [u32;6] = [ 0, 0, 0, 0, 0, 4095 ];
 
     for i in 0..4 {

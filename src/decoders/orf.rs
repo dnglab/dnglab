@@ -23,8 +23,8 @@ impl<'a> OrfDecoder<'a> {
 
 impl<'a> Decoder for OrfDecoder<'a> {
   fn identify(&self) -> Result<&Camera, String> {
-    let make = fetch_tag!(self.tiff, Tag::Make, "ORF: Couldn't find Make").get_str();
-    let model = fetch_tag!(self.tiff, Tag::Model, "ORF: Couldn't find Model").get_str();
+    let make = fetch_tag!(self.tiff, Tag::Make).get_str();
+    let model = fetch_tag!(self.tiff, Tag::Model).get_str();
     self.rawloader.check_supported(make, model)
   }
 
@@ -32,10 +32,10 @@ impl<'a> Decoder for OrfDecoder<'a> {
     let camera = try!(self.identify());
     let data = self.tiff.find_ifds_with_tag(Tag::StripOffsets);
     let raw = data[0];
-    let width = fetch_tag!(raw, Tag::ImageWidth, "ORF: Couldn't find width").get_u32(0);
-    let height = fetch_tag!(raw, Tag::ImageLength, "ORF: Couldn't find height").get_u32(0);
-    let offset = fetch_tag!(raw, Tag::StripOffsets, "ORF: Couldn't find offset").get_u32(0) as usize;
-    let counts = fetch_tag!(raw, Tag::StripByteCounts, "ORF: Couldn't find counts");
+    let width = fetch_tag!(raw, Tag::ImageWidth).get_u32(0);
+    let height = fetch_tag!(raw, Tag::ImageLength).get_u32(0);
+    let offset = fetch_tag!(raw, Tag::StripOffsets).get_u32(0) as usize;
+    let counts = fetch_tag!(raw, Tag::StripByteCounts);
     let mut size: usize = 0;
     for i in 0..counts.count() {
       size += counts.get_u32(i as usize) as usize;
@@ -162,11 +162,11 @@ impl<'a> OrfDecoder<'a> {
     if redmul.is_some() && bluemul.is_some() {
       Ok([redmul.unwrap().get_u32(0) as f32,256.0,bluemul.unwrap().get_u32(0) as f32,NAN])
     } else {
-      let iproc = fetch_tag!(self.tiff,Tag::OlympusImgProc, "ORF: Couldn't find ImgProc");
+      let iproc = fetch_tag!(self.tiff,Tag::OlympusImgProc);
       let poff = iproc.parent_offset() - 12;
       let off = (iproc.get_u32(0) as usize) + poff;
       let ifd = try!(TiffIFD::new(self.buffer, off, 0, 0, self.tiff.get_endian()));
-      let wbs = fetch_tag!(ifd, Tag::ImageWidth, "ORF: Couldn't find WBs");
+      let wbs = fetch_tag!(ifd, Tag::ImageWidth);
       if wbs.count() == 4 {
         let off = poff + wbs.doffset();
         let nwbs = &wbs.copy_with_new_data(&self.buffer[off..]);

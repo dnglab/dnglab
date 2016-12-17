@@ -22,16 +22,16 @@ impl<'a> KdcDecoder<'a> {
 
 impl<'a> Decoder for KdcDecoder<'a> {
   fn identify(&self) -> Result<&Camera, String> {
-    let make = fetch_tag!(self.tiff, Tag::Make, "KDC: Couldn't find Make").get_str();
-    let model = fetch_tag!(self.tiff, Tag::Model, "KDC: Couldn't find Model").get_str();
+    let make = fetch_tag!(self.tiff, Tag::Make).get_str();
+    let model = fetch_tag!(self.tiff, Tag::Model).get_str();
     self.rawloader.check_supported(make, model)
   }
 
   fn image(&self) -> Result<Image,String> {
     let camera = try!(self.identify());
-    let width = fetch_tag!(self.tiff, Tag::KdcWidth, "KDC: Couldn't find width").get_u32(0)+80;
-    let height = fetch_tag!(self.tiff, Tag::KdcLength, "KDC: Couldn't find height").get_u32(0)+70;
-    let offset = fetch_tag!(self.tiff, Tag::KdcOffset, "KDC: Couldn't find offset");
+    let width = fetch_tag!(self.tiff, Tag::KdcWidth).get_u32(0)+80;
+    let height = fetch_tag!(self.tiff, Tag::KdcLength).get_u32(0)+70;
+    let offset = fetch_tag!(self.tiff, Tag::KdcOffset);
     if offset.count() < 13 {
       panic!("KDC Decoder: Couldn't find the KDC offset");
     }
@@ -59,7 +59,7 @@ impl<'a> KdcDecoder<'a> {
         }
       },
       None => {
-        let levels = fetch_tag!(self.tiff, Tag::KodakWB, "KDC: No levels");
+        let levels = fetch_tag!(self.tiff, Tag::KodakWB);
         if levels.count() != 734 && levels.count() != 1502 {
           Err("KDC: Levels count is off".to_string())
         } else {

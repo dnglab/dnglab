@@ -22,8 +22,8 @@ impl<'a> ErfDecoder<'a> {
 
 impl<'a> Decoder for ErfDecoder<'a> {
   fn identify(&self) -> Result<&Camera, String> {
-    let make = fetch_tag!(self.tiff, Tag::Make, "ERF: Couldn't find Make").get_str();
-    let model = fetch_tag!(self.tiff, Tag::Model, "ERF: Couldn't find Model").get_str();
+    let make = fetch_tag!(self.tiff, Tag::Make).get_str();
+    let model = fetch_tag!(self.tiff, Tag::Model).get_str();
     self.rawloader.check_supported(make, model)
   }
 
@@ -31,9 +31,9 @@ impl<'a> Decoder for ErfDecoder<'a> {
     let camera = try!(self.identify());
     let data = self.tiff.find_ifds_with_tag(Tag::CFAPattern);
     let raw = data[0];
-    let width = fetch_tag!(raw, Tag::ImageWidth, "ERF: Couldn't find width").get_u32(0);
-    let height = fetch_tag!(raw, Tag::ImageLength, "ERF: Couldn't find height").get_u32(0);
-    let offset = fetch_tag!(raw, Tag::StripOffsets, "ERF: Couldn't find offset").get_u32(0) as usize;
+    let width = fetch_tag!(raw, Tag::ImageWidth).get_u32(0);
+    let height = fetch_tag!(raw, Tag::ImageLength).get_u32(0);
+    let offset = fetch_tag!(raw, Tag::StripOffsets).get_u32(0) as usize;
     let src = &self.buffer[offset .. self.buffer.len()];
 
     let image = decode_12be_wcontrol(src, width as usize, height as usize);
@@ -43,7 +43,7 @@ impl<'a> Decoder for ErfDecoder<'a> {
 
 impl<'a> ErfDecoder<'a> {
   fn get_wb(&self) -> Result<[f32;4], String> {
-    let levels = fetch_tag!(self.tiff, Tag::EpsonWB, "ERF: No levels");
+    let levels = fetch_tag!(self.tiff, Tag::EpsonWB);
     if levels.count() != 256 {
       Err("ERF: Levels count is off".to_string())
     } else {
