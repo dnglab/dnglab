@@ -23,14 +23,8 @@ impl<'a> SrwDecoder<'a> {
 }
 
 impl<'a> Decoder for SrwDecoder<'a> {
-  fn identify(&self) -> Result<&Camera, String> {
-    let make = fetch_tag!(self.tiff, Tag::Make).get_str();
-    let model = fetch_tag!(self.tiff, Tag::Model).get_str();
-    self.rawloader.check_supported(make, model)
-  }
-
   fn image(&self) -> Result<Image,String> {
-    let camera = try!(self.identify());
+    let camera = try!(self.rawloader.check_supported(&self.tiff));
     let data = self.tiff.find_ifds_with_tag(Tag::StripOffsets);
     let raw = data[0];
     let width = fetch_tag!(raw, Tag::ImageWidth).get_u32(0);

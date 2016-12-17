@@ -25,7 +25,6 @@ use self::tiff::*;
 pub static CAMERAS_TOML: &'static str = include_str!("../../data/cameras/all.toml");
 
 pub trait Decoder {
-  fn identify(&self) -> Result<&Camera, String>;
   fn image(&self) -> Result<Image, String>;
 }
 
@@ -224,7 +223,10 @@ impl RawLoader {
     }
   }
 
-  pub fn check_supported<'a>(&'a self, make: &'a str, model: &'a str) -> Result<&Camera, String> {
+  pub fn check_supported<'a>(&'a self, tiff: &'a TiffIFD) -> Result<&Camera, String> {
+    let make = fetch_tag!(tiff, Tag::Make).get_str();
+    let model = fetch_tag!(tiff, Tag::Model).get_str();
+
     match self.cameras.get(&(make.to_string(),model.to_string())) {
       Some(cam) => Ok(cam),
       None => Err(format!("Couldn't find camera \"{}\" \"{}\"", make, model)),
