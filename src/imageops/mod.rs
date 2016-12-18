@@ -1,3 +1,7 @@
+use std;
+extern crate rayon;
+use self::rayon::prelude::*;
+
 pub mod demosaic;
 pub mod level;
 pub mod colorspaces;
@@ -12,18 +16,26 @@ extern crate time;
 pub struct OpBuffer {
   pub width: usize,
   pub height: usize,
-  pub colors: u8,
+  pub colors: usize,
   pub data: Vec<f32>,
 }
 
 impl OpBuffer {
-  pub fn new(width: usize, height: usize, colors: u8) -> OpBuffer {
+  pub fn new(width: usize, height: usize, colors: usize) -> OpBuffer {
     OpBuffer {
       width: width,
       height: height,
       colors: colors,
       data: vec![0.0; width*height*(colors as usize)],
     }
+  }
+
+  pub fn mutate_lines<F>(&mut self, closure: &F)
+    where F : Fn(&mut [f32], usize)+std::marker::Sync {
+
+    self.data.par_chunks_mut(self.width*self.colors).enumerate().for_each(|(row, line)| {
+      closure(line, row);
+    });
   }
 }
 

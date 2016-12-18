@@ -34,7 +34,7 @@ pub fn full(img: &Image) -> OpBuffer {
 
   // Now we go around the image setting the unset colors to the average of the
   // surrounding pixels
-  for row in 0..img.height {
+  out.mutate_lines(&(|line: &mut [f32], row| {
     for col in 0..img.width {
       let mut sums: [f32; 4] = [0.0;4];
       let mut counts: [u32; 4] = [0; 4];
@@ -52,21 +52,22 @@ pub fn full(img: &Image) -> OpBuffer {
 
       for c in 0..4 {
         if c != color && counts[c] > 0 {
-          out.data[(row*img.width+col)*4+c] = sums[c] / (counts[c] as f32);
+          line[col*4+c] = sums[c] / (counts[c] as f32);
         }
       }
     }
-  }
+  }));
 
   out
 }
 
 pub fn scaled(img: &Image, scale: usize) -> OpBuffer {
-  let mut out = OpBuffer::new(img.width/scale, img.height/scale, 4);
+  let width = img.width/scale;
+  let mut out = OpBuffer::new(width, img.height/scale, 4);
 
   // Go around the image averaging every block of pixels
-  for row in 0..out.height {
-    for col in 0..out.width {
+  out.mutate_lines(&(|line: &mut [f32], row| {
+    for col in 0..width {
       let mut sums: [f32; 4] = [0.0;4];
       let mut counts: [u32; 4] = [0; 4];
 
@@ -80,11 +81,11 @@ pub fn scaled(img: &Image, scale: usize) -> OpBuffer {
 
       for c in 0..4 {
         if counts[c] > 0 {
-          out.data[(row*out.width+col)*4+c] = sums[c] / (counts[c] as f32);
+          line[col*4+c] = sums[c] / (counts[c] as f32);
         }
       }
     }
-  }
+  }));
 
   out
 }
