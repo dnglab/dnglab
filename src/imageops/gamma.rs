@@ -18,7 +18,9 @@ pub fn gamma(_: &Image, buf: &mut OpBuffer) {
     }
   }
 
-  for pix in buf.data.chunks_mut(1) {
-    pix[0] = glookup[(pix[0].max(0.0)*(maxvals as f32)).min(maxvals as f32) as usize];
-  }
+  buf.mutate_lines(&(|line: &mut [f32], _| {
+    for pix in line.chunks_mut(1) {
+      pix[0] = glookup[(pix[0].max(0.0)*(maxvals as f32)).min(maxvals as f32) as usize];
+    }
+  }));
 }
