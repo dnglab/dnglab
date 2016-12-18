@@ -21,16 +21,12 @@ pub fn full(img: &Image) -> OpBuffer {
   let mut out = OpBuffer::new(img.width, img.height, 4);
 
   // First we set the colors we already have
-  let mut ipos = 0;
-  let mut opos = 0;
-  for row in 0..img.height {
-    for col in 0..img.width {
+  out.mutate_lines(&(|line: &mut [f32], row| {
+    for (col, (pixin, pixout)) in img.data.chunks(1).zip(line.chunks_mut(4)).enumerate() {
       let color = fcol(img, row, col);
-      out.data[opos+color] = img.data[ipos] as f32;
-      ipos += 1;
-      opos += 4;
+      pixout[color] = pixin[0] as f32;
     }
-  }
+  }));
 
   // Now we go around the image setting the unset colors to the average of the
   // surrounding pixels
