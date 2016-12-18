@@ -61,13 +61,17 @@ impl<'a> Rw2Decoder<'a> {
   }
 
   fn decode_panasonic(buf: &[u8], width: usize, height: usize) -> Vec<u16> {
-    let mut pump = BitPumpPanasonic::new(buf);
-    let mut out: Vec<u16> = vec![0; (width*height) as usize];
+    decode_threaded(width, height, &(|out: &mut [u16], row| {
+      let skip = ((width * row * 9) + (width/14 * 2 * row)) / 8;
+      let blocks = skip / 0x4000;
+      let mut pump = BitPumpPanasonic::new(&buf[blocks*0x4000..]);
+      for _ in 0..(skip % 0x4000) {
+        pump.get_bits(8);
+      }
 
-    let mut sh: i32 = 0;
-    let mut pred: [i32;2] = [0,0];
-    let mut nonz: [i32;2] = [0,0];
-    for row in 0..height {
+      let mut sh: i32 = 0;
+      let mut pred: [i32;2] = [0,0];
+      let mut nonz: [i32;2] = [0,0];
       for col in 0..width {
         let i = col % 14;
         if i == 0 {
@@ -92,11 +96,9 @@ impl<'a> Rw2Decoder<'a> {
             pred[i & 1] = nonz[i & 1] << 4 | (pump.get_bits(4) as i32);
           }
         }
-        out[row*width+col] = pred[col & 1] as u16;
+        out[col] = pred[col & 1] as u16;
       }
-    }
-
-    out
+    }))
   }
 }
 
