@@ -2,7 +2,6 @@ use decoders::*;
 use decoders::tiff::*;
 use decoders::basics::*;
 use std::f32::NAN;
-use itertools::Itertools;
 
 #[derive(Debug, Clone)]
 pub struct Rw2Decoder<'a> {
@@ -76,18 +75,17 @@ impl<'a> Rw2Decoder<'a> {
   }
 
   fn decode_panasonic(buf: &[u8], width: usize, height: usize, split: bool) -> Vec<u16> {
-    decode_threaded(width, height, &(|out: &mut [u16], row| {
+    decode_threaded_multiline(width, height, 5, &(|out: &mut [u16], row| {
       let skip = ((width * row * 9) + (width/14 * 2 * row)) / 8;
       let blocks = skip / 0x4000;
       let src = &buf[blocks*0x4000..];
       let mut pump = BitPumpPanasonic::new(src, split);
-
       for _ in 0..(skip % 0x4000) {
         pump.get_bits(8);
       }
 
       let mut sh: i32 = 0;
-      for col in (0..width).step(14) {
+      for out in out.chunks_mut(14) {
         let mut pred: [i32;2] = [0,0];
         let mut nonz: [i32;2] = [0,0];
 
@@ -110,7 +108,7 @@ impl<'a> Rw2Decoder<'a> {
               pred[i & 1] = nonz[i & 1] << 4 | (pump.get_bits(4) as i32);
             }
           }
-          out[col+i] = pred[i & 1] as u16;
+          out[i] = pred[i & 1] as u16;
         }
       }
     }))

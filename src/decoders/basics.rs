@@ -283,6 +283,16 @@ pub fn decode_threaded<F>(width: usize, height: usize, closure: &F) -> Vec<u16>
   out
 }
 
+pub fn decode_threaded_multiline<F>(width: usize, height: usize, lines: usize, closure: &F) -> Vec<u16>
+  where F : Fn(&mut [u16], usize)+std::marker::Sync {
+
+  let mut out: Vec<u16> = vec![0; (width*height) as usize];
+  out.par_chunks_mut(width*lines).enumerate().for_each(|(row, line)| {
+    closure(line, row*lines);
+  });
+  out
+}
+
 #[derive(Debug, Clone)]
 pub struct LookupTable {
   table: Vec<(u16, u16, u16)>,
