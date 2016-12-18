@@ -24,19 +24,33 @@ impl<'a> Rw2Decoder<'a> {
 impl<'a> Decoder for Rw2Decoder<'a> {
   fn image(&self) -> Result<Image,String> {
     let camera = try!(self.rawloader.check_supported(&self.tiff));
-    let data = self.tiff.find_ifds_with_tag(Tag::StripOffsets);
-    let raw = data[0];
-    let width = fetch_tag!(raw, Tag::PanaWidth).get_u32(0) as usize;
-    let height = fetch_tag!(raw, Tag::PanaLength).get_u32(0) as usize;
-    let offset = fetch_tag!(raw, Tag::StripOffsets).get_u32(0) as usize;
-    let src = &self.buffer[offset..];
+    let width: usize;
+    let height: usize;
+    let image = {
+      let data = self.tiff.find_ifds_with_tag(Tag::PanaOffsets);
+      if data.len() > 0 {
+        let raw = data[0];
+        width = fetch_tag!(raw, Tag::PanaWidth).get_u32(0) as usize;
+        height = fetch_tag!(raw, Tag::PanaLength).get_u32(0) as usize;
+        let offset = fetch_tag!(raw, Tag::PanaOffsets).get_u32(0) as usize;
+        let src = &self.buffer[offset..];
+        Rw2Decoder::decode_panasonic(src, width, height, true)
+      } else {
+        let data = self.tiff.find_ifds_with_tag(Tag::StripOffsets);
+        let raw = data[0];
+        width = fetch_tag!(raw, Tag::PanaWidth).get_u32(0) as usize;
+        height = fetch_tag!(raw, Tag::PanaLength).get_u32(0) as usize;
+        let offset = fetch_tag!(raw, Tag::StripOffsets).get_u32(0) as usize;
+        let src = &self.buffer[offset..];
 
-    let image = if src.len() >= width*height*2 {
-      decode_12le_unpacked_left_aligned(src, width, height)
-    } else if src.len() >= width*height*3/2 {
-      decode_12le_wcontrol(src, width, height)
-    } else {
-      Rw2Decoder::decode_panasonic(src, width, height)
+        if src.len() >= width*height*2 {
+          decode_12le_unpacked_left_aligned(src, width, height)
+        } else if src.len() >= width*height*3/2 {
+          decode_12le_wcontrol(src, width, height)
+        } else {
+          Rw2Decoder::decode_panasonic(src, width, height, false)
+        }
+      }
     };
 
     ok_image(camera, width as u32, height as u32, try!(self.get_wb()), image)
@@ -61,11 +75,13 @@ impl<'a> Rw2Decoder<'a> {
     }
   }
 
-  fn decode_panasonic(buf: &[u8], width: usize, height: usize) -> Vec<u16> {
+  fn decode_panasonic(buf: &[u8], width: usize, height: usize, split: bool) -> Vec<u16> {
     decode_threaded(width, height, &(|out: &mut [u16], row| {
       let skip = ((width * row * 9) + (width/14 * 2 * row)) / 8;
       let blocks = skip / 0x4000;
-      let mut pump = BitPumpPanasonic::new(&buf[blocks*0x4000..]);
+      let src = &buf[blocks*0x4000..];
+      let mut pump = BitPumpPanasonic::new(src, split);
+
       for _ in 0..(skip % 0x4000) {
         pump.get_bits(8);
       }
@@ -105,14 +121,16 @@ pub struct BitPumpPanasonic<'a> {
   buffer: &'a [u8],
   pos: usize,
   nbits: u32,
+  split: bool,
 }
 
 impl<'a> BitPumpPanasonic<'a> {
-  pub fn new(src: &'a [u8]) -> BitPumpPanasonic {
+  pub fn new(src: &'a [u8], split: bool) -> BitPumpPanasonic {
     BitPumpPanasonic {
       buffer: src,
       pos: 0,
       nbits: 0,
+      split: split,
     }
   }
 }
@@ -123,7 +141,10 @@ impl<'a> BitPump for BitPumpPanasonic<'a> {
       self.nbits += 0x4000 * 8;
       self.pos += 0x4000;
     }
-    let byte = (self.nbits-num) >> 3 ^ 0x3ff0;
+    let mut byte = (self.nbits-num) >> 3 ^ 0x3ff0;
+    if self.split {
+      byte = (byte + 0x4000 - 0x2008) % 0x4000;
+    }
     let bits = LEu16(self.buffer, byte as usize + self.pos - 0x4000) as u32;
     (bits >> ((self.nbits-num) & 7)) & (0x0ffffffffu32 >> (32-num))
   }
