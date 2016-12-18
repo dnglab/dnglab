@@ -22,7 +22,7 @@ pub fn full(img: &Image) -> OpBuffer {
 
   // First we set the colors we already have
   out.mutate_lines(&(|line: &mut [f32], row| {
-    for (col, (pixin, pixout)) in img.data.chunks(1).zip(line.chunks_mut(4)).enumerate() {
+    for (col, (pixin, pixout)) in img.data[img.width*row..].chunks(1).zip(line.chunks_mut(4)).enumerate() {
       let color = fcol(img, row, col);
       pixout[color] = pixin[0] as f32;
     }
