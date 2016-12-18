@@ -7,11 +7,13 @@ pub fn base(_: &Image, buf: &mut OpBuffer) {
   let ys = [0.0, 0.25, 0.5, 0.75, 1.0];
   let func = SplineFunc::new(&xs, &ys);
 
-  for pix in buf.data.chunks_mut(3) {
-    pix[0] = func.interpolate(pix[0]);
-    pix[1] = pix[1];
-    pix[2] = pix[2];
-  }
+  buf.mutate_lines(&(|line: &mut [f32], _| {
+    for pix in line.chunks_mut(3) {
+      pix[0] = func.interpolate(pix[0]);
+      pix[1] = pix[1];
+      pix[2] = pix[2];
+    }
+  }));
 }
 
 
