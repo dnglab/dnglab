@@ -2,6 +2,7 @@ use decoders::*;
 use decoders::tiff::*;
 use decoders::basics::*;
 use std::f32::NAN;
+use itertools::Itertools;
 
 #[derive(Debug, Clone)]
 pub struct Rw2Decoder<'a> {
@@ -70,33 +71,31 @@ impl<'a> Rw2Decoder<'a> {
       }
 
       let mut sh: i32 = 0;
-      let mut pred: [i32;2] = [0,0];
-      let mut nonz: [i32;2] = [0,0];
-      for col in 0..width {
-        let i = col % 14;
-        if i == 0 {
-          pred = [0,0];
-          nonz = [0,0];
-        }
-        if (i % 3) == 2 {
-          sh = 4 >> (3 - pump.get_bits(2));
-        }
-        if nonz[i&1] != 0 {
-          let j = pump.get_bits(8) as i32;
-          if j != 0 {
-            pred[i & 1] -= 0x80 << sh;
-            if pred[i & 1] < 0 || sh == 4 {
-              pred[i & 1] &= !(-1 << sh);
+      for col in (0..width).step(14) {
+        let mut pred: [i32;2] = [0,0];
+        let mut nonz: [i32;2] = [0,0];
+
+        for i in 0..14 {
+          if (i % 3) == 2 {
+            sh = 4 >> (3 - pump.get_bits(2));
+          }
+          if nonz[i & 1] != 0 {
+            let j = pump.get_bits(8) as i32;
+            if j != 0 {
+              pred[i & 1] -= 0x80 << sh;
+              if pred[i & 1] < 0 || sh == 4 {
+                pred[i & 1] &= !(-1 << sh);
+              }
+              pred[i & 1] += j << sh;
             }
-            pred[i & 1] += j << sh;
+          } else {
+            nonz[i & 1] = pump.get_bits(8) as i32;
+            if nonz[i & 1] != 0 || i > 11 {
+              pred[i & 1] = nonz[i & 1] << 4 | (pump.get_bits(4) as i32);
+            }
           }
-        } else {
-          nonz[i & 1] = pump.get_bits(8) as i32;
-          if nonz[i & 1] != 0 || i > 11 {
-            pred[i & 1] = nonz[i & 1] << 4 | (pump.get_bits(4) as i32);
-          }
+          out[col+i] = pred[i & 1] as u16;
         }
-        out[col] = pred[col & 1] as u16;
       }
     }))
   }
