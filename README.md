@@ -23,7 +23,7 @@ Additionally it includes a simple raw processing pipeline that does the followin
 Current State
 -------------
 
-The library is still in its very beginning with only a few formats implemented:
+The library is still a work in process with the following formats already implemented:
   * Minolta MRW
   * Sony ARW, SRF and SR2
   * Mamiya MEF
@@ -32,6 +32,7 @@ The library is still in its very beginning with only a few formats implemented:
   * Epson ERF
   * Kodak KDC
   * Kodak DCS
+  * Panasonic RW2
 
 Usage
 -----
