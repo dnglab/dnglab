@@ -1,0 +1,9 @@
+make = "Panasonic"
+model = "DMC-GF5"
+canonical_make = "Panasonic"
+canonical_model = "DMC-GF5"
+blackpoint = 143
+whitepoint = 3956
+color_matrix = [8228, -2945, -660, -3938, 11792, 2430, -1094, 2278, 5793]
+color_pattern = "GBRG"
+crops = [0,0,0,0]

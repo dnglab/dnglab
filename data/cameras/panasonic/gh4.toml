@@ -1,0 +1,9 @@
+make = "Panasonic"
+model = "DMC-GH4"
+canonical_make = "Panasonic"
+canonical_model = "DMC-GH4"
+blackpoint = 143
+whitepoint = 4095
+color_matrix = [7122, -2108, -512, -3155, 11201, 2231, -541, 1423, 5045]
+color_pattern = "BGGR"
+crops = [0,0,0,0]

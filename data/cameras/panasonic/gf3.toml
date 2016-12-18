@@ -1,0 +1,9 @@
+make = "Panasonic"
+model = "DMC-GF3"
+canonical_make = "Panasonic"
+canonical_model = "DMC-GF3"
+blackpoint = 143
+whitepoint = 3956
+color_matrix = [9051, -2468, -1204, -5212, 13276, 2121, -1197, 2510, 6890]
+color_pattern = "GBRG"
+crops = [0,0,0,0]

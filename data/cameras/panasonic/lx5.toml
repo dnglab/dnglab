@@ -1,0 +1,9 @@
+make = "Panasonic"
+model = "DMC-LX5"
+canonical_make = "Panasonic"
+canonical_model = "DMC-LX5"
+blackpoint = 143
+whitepoint = 3986
+color_matrix = [10909, -4295, -948, -1333, 9306, 2399, 22, 1738, 4582]
+color_pattern = "GRBG"
+crops = [0,0,0,0]

@@ -1,0 +1,9 @@
+make = "Panasonic"
+model = "DMC-FZ70"
+canonical_make = "Panasonic"
+canonical_model = "DMC-FZ70"
+blackpoint = 163
+whitepoint = 3941
+color_matrix = [11532, -4324, -1066, -2375, 10847, 1749, -564, 1699, 4351]
+color_pattern = "RGGB"
+crops = [0,0,0,0]

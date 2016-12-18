@@ -1,0 +1,9 @@
+make = "Panasonic"
+model = "DMC-FZ1000"
+canonical_make = "Panasonic"
+canonical_model = "DMC-FZ1000"
+blackpoint = 143
+whitepoint = 4095
+color_matrix = [7830, -2696, -763, -3325, 11667, 1866, -641, 1712, 4824]
+color_pattern = "GBRG"
+crops = [0,0,0,0]

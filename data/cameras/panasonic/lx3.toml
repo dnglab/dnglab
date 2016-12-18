@@ -1,0 +1,9 @@
+make = "Panasonic"
+model = "DMC-LX3"
+canonical_make = "Panasonic"
+canonical_model = "DMC-LX3"
+blackpoint = 15
+whitepoint = 3986
+color_matrix = [8128, -2668, -655, -6134, 13307, 3161, -1782, 2568, 6083]
+color_pattern = "BGGR"
+crops = [0,0,0,0]

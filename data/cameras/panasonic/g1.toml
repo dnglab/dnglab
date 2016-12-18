@@ -1,0 +1,9 @@
+make = "Panasonic"
+model = "DMC-G1"
+canonical_make = "Panasonic"
+canonical_model = "DMC-G1"
+blackpoint = 15
+whitepoint = 3986
+color_matrix = [8199, -2065, -1056, -8124, 16156, 2033, -2458, 3022, 7220]
+color_pattern = "GBRG"
+crops = [0,0,0,0]
