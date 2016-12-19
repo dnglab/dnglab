@@ -1,6 +1,6 @@
 make = "OLYMPUS IMAGING CORP."
 model = "E-M1"
-canonical_make = "OLYMPUS IMAGING CORP."
+canonical_make = "Olympus"
 canonical_model = "E-M1"
 blackpoint = 255
 whitepoint = 4000

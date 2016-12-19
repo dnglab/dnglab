@@ -1,6 +1,6 @@
 make = "OLYMPUS CORPORATION"
 model = "C8080WZ"
-canonical_make = "OLYMPUS CORPORATION"
+canonical_make = "Olympus"
 canonical_model = "C8080WZ"
 blackpoint = 0
 whitepoint = 4095

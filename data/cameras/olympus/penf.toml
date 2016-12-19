@@ -1,6 +1,6 @@
 make = "OLYMPUS CORPORATION"
 model = "PEN-F"
-canonical_make = "OLYMPUS CORPORATION"
+canonical_make = "Olympus"
 canonical_model = "PEN-F"
 blackpoint = 242
 whitepoint = 4000

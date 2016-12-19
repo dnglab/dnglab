@@ -1,9 +1,9 @@
 make = "OLYMPUS IMAGING CORP."
 model = "E-P5"
-canonical_make = "OLYMPUS IMAGING CORP."
+canonical_make = "Olympus"
 canonical_model = "E-P5"
 blackpoint = 255
 whitepoint = 4000
 color_matrix = [8380, -2630, -639, -2887, 10725, 2496, -627, 1427, 5438]
 color_pattern = "RGGB"
-crops = [0,0,0,0]
+crops = [8,24,8,8]

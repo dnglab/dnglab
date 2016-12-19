@@ -1,9 +1,9 @@
 make = "OLYMPUS IMAGING CORP."
 model = "E-30"
-canonical_make = "OLYMPUS IMAGING CORP."
+canonical_make = "Olympus"
 canonical_model = "E-30"
 blackpoint = 64
 whitepoint = 4015
 color_matrix = [8144, -1861, -1111, -7763, 15894, 1929, -1865, 2542, 7607]
 color_pattern = "BGGR"
-crops = [0,0,0,0]
+crops = [0,6,2,0]
