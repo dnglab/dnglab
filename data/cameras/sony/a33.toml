@@ -1,10 +1,10 @@
 make = "SONY"
 model = "SLT-A33"
 canonical_make = "Sony"
-canonical_model = "A33"
-blackpoint = 520
-whitepoint = 16596
-color_matrix = [6069,-1221,-366,-5221,12779,2734,-1024,2066,6834]
+canonical_model = "SLT-A33"
+blackpoint = 512
+whitepoint = 16300
+color_matrix = [6069, -1221, -366, -5221, 12779, 2734, -1024, 2066, 6834]
 color_pattern = "RGGB"
 crops = [0,0,0,0]
 bps = 8

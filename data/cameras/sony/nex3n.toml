@@ -6,5 +6,5 @@ blackpoint = 512
 whitepoint = 16300
 color_matrix = [6129, -1545, -418, -4930, 12490, 2743, -977, 1693, 6615]
 color_pattern = "RGGB"
-crops = [0,0,0,0]
+crops = [0,10,0,0]
 bps = 8
