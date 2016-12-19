@@ -1,6 +1,6 @@
 make = "SEIKO EPSON CORP."
 model = "R-D1"
-canonical_make = "SEIKO EPSON CORP."
+canonical_make = "Epson"
 canonical_model = "R-D1"
 blackpoint = 63
 whitepoint = 4095
