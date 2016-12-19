@@ -29,7 +29,7 @@ pub fn full(img: &Image, xs: usize, ys: usize, width: usize, height: usize) -> O
   // First we set the colors we already have
   out.mutate_lines(&(|line: &mut [f32], row| {
     for (col, (pixout, pixin)) in line.chunks_mut(4).zip(img.data[img.width*(row+ys)+xs..].chunks(1)).enumerate() {
-      let color = fcol(img, row, col);
+      let color = fcol(img, row+ys, col+xs);
       pixout[color] = pixin[0] as f32;
     }
   }));
@@ -40,7 +40,7 @@ pub fn full(img: &Image, xs: usize, ys: usize, width: usize, height: usize) -> O
     for col in 0..width {
       let mut sums: [f32; 4] = [0.0;4];
       let mut counts: [u32; 4] = [0; 4];
-      let color = fcol(img, row, col);
+      let color = fcol(img, row+ys, col+xs);
 
       for y in (cmp::max(0,(row as isize)-1) as usize) .. cmp::min(height, row+2) {
         for x in (cmp::max(0,(col as isize)-1) as usize) .. cmp::min(width, col+2) {
