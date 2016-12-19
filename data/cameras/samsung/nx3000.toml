@@ -1,9 +1,9 @@
 make = "SAMSUNG"
 model = "NX3000"
-canonical_make = "SAMSUNG"
+canonical_make = "Samsung"
 canonical_model = "NX3000"
 blackpoint = 0
 whitepoint = 4095
 color_matrix = [8060, -2933, -761, -4504, 12890, 1762, -630, 1489, 5227]
 color_pattern = "GRBG"
-crops = [0,0,0,0]
+crops = [42,32,24,96]
