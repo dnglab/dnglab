@@ -135,9 +135,8 @@ impl RawLoader {
       Some(val) => val,
       None => panic!(format!("Error parsing all.toml: {:?}", parser.errors)),
     };
-    let cameras = toml.get("cameras").unwrap().as_table().unwrap();
-    for (_,c) in cameras {
-      let ct = c.as_table().unwrap();
+    for camera in toml.get("cameras").unwrap().as_slice().unwrap() {
+      let ct = camera.as_table().unwrap();
       let make = ct.get("make").unwrap().as_str().unwrap().to_string();
       let model = ct.get("model").unwrap().as_str().unwrap().to_string();
       let canonical_make = ct.get("canonical_make").unwrap().as_str().unwrap().to_string();
