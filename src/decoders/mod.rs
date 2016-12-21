@@ -68,6 +68,7 @@ pub struct Image {
 pub struct Camera {
   pub make: String,
   pub model: String,
+  pub mode: String,
   pub canonical_make: String,
   pub canonical_model: String,
   whitelevels: [i64;4],
@@ -82,6 +83,58 @@ pub struct Camera {
 impl Camera {
   pub fn find_hint(&self, hint: &str) -> bool {
     self.hints.contains(&(hint.to_string()))
+  }
+
+  pub fn update_from_toml(&mut self, ct: &toml::Table) {
+    for (name, val) in ct {
+      match name.as_ref() {
+        "make" => {self.make = val.as_str().unwrap().to_string().clone();},
+        "model" => {self.model = val.as_str().unwrap().to_string().clone();},
+        "mode" => {self.mode = val.as_str().unwrap().to_string().clone();},
+        "canonical_name" => {self.canonical_make = val.as_str().unwrap().to_string().clone();},
+        "canonical_model" => {self.canonical_model = val.as_str().unwrap().to_string().clone();},
+        "whitepoint" => {let white = val.as_integer().unwrap(); self.whitelevels = [white, white, white, white];},
+        "blackpoint" => {let black = val.as_integer().unwrap(); self.blacklevels = [black, black, black, black];},
+        "color_matrix" => {
+          let matrix = val.as_slice().unwrap();
+          for (i, val) in matrix.into_iter().enumerate() {
+            self.color_matrix[i] = val.as_integer().unwrap();
+          }
+        },
+        "crops" => {
+          let crop_vals = val.as_slice().unwrap();
+          for (i, val) in crop_vals.into_iter().enumerate() {
+            self.crops[i] = val.as_integer().unwrap();
+          }
+        },
+        "color_pattern" => {self.dcraw_filters = RawLoader::dcraw_filters(&val.as_str().unwrap().to_string());},
+        "bps" => {self.bps = val.as_integer().unwrap() as u32;},
+        "hints" => {
+          self.hints = Vec::new();
+          for hint in val.as_slice().unwrap() {
+            self.hints.push(hint.as_str().unwrap().to_string());
+          }
+        },
+        _ => {},
+      }
+    }
+  }
+
+  pub fn new() -> Camera {
+    Camera {
+      make: "".to_string(),
+      model: "".to_string(),
+      mode: "".to_string(),
+      canonical_make: "".to_string(),
+      canonical_model: "".to_string(),
+      whitelevels: [0;4],
+      blacklevels: [0;4],
+      color_matrix : [0;12],
+      dcraw_filters: 0,
+      crops: [0,0,0,0],
+      bps: 0,
+      hints: Vec::new(),
+    }
   }
 }
 
@@ -123,64 +176,40 @@ pub fn ok_image(camera: &Camera, width: u32, height: u32, wb_coeffs: [f32;4], im
 
 #[derive(Debug, Clone)]
 pub struct RawLoader {
-  pub cameras: HashMap<(String,String),Camera>,
+  pub cameras: HashMap<(String,String,String),Camera>,
 }
 
 impl RawLoader {
   pub fn new() -> RawLoader {
-    let mut map = HashMap::new();
-
     let mut parser = toml::Parser::new(&CAMERAS_TOML);
     let toml = match parser.parse() {
       Some(val) => val,
       None => panic!(format!("Error parsing all.toml: {:?}", parser.errors)),
     };
+    let mut cams = Vec::new();
     for camera in toml.get("cameras").unwrap().as_slice().unwrap() {
       let ct = camera.as_table().unwrap();
-      let make = ct.get("make").unwrap().as_str().unwrap().to_string();
-      let model = ct.get("model").unwrap().as_str().unwrap().to_string();
-      let canonical_make = ct.get("canonical_make").unwrap().as_str().unwrap().to_string();
-      let canonical_model = ct.get("canonical_model").unwrap().as_str().unwrap().to_string();
-      let white = ct.get("whitepoint").unwrap().as_integer().unwrap();
-      let black = ct.get("blackpoint").unwrap().as_integer().unwrap();
-      let matrix = ct.get("color_matrix").unwrap().as_slice().unwrap();
-      let mut cmatrix: [i64;12] = [0,0,0,0,0,0,0,0,0,0,0,0];
-      for (i, val) in matrix.into_iter().enumerate() {
-        cmatrix[i] = val.as_integer().unwrap();
-      }
-      let crop_vals = ct.get("crops").unwrap().as_slice().unwrap();
-      let mut crops: [i64;4] = [0,0,0,0];
-      for (i, val) in crop_vals.into_iter().enumerate() {
-        crops[i] = val.as_integer().unwrap();
-      }
-      let color_pattern = ct.get("color_pattern").unwrap().as_str().unwrap().to_string();
-      let bps: u32 = match ct.get("bps") {
-        Some(x) => x.as_integer().unwrap() as u32,
-        None => 0,
-      };
-      let mut hints: Vec<String> = Vec::new();
-      match ct.get("hints") {
-        None => {},
-        Some(x) => {
-          for val in x.as_slice().unwrap() {
-            hints.push(val.as_str().unwrap().to_string());
+      let mut cam = Camera::new();
+      cam.update_from_toml(ct);
+      let basecam = cam.clone();
+      cams.push(cam);
+
+      match ct.get("modes") {
+        Some(val) => {
+          for mode in val.as_slice().unwrap() {
+            let cmt = mode.as_table().unwrap();
+            let mut mcam = basecam.clone();
+            mcam.update_from_toml(cmt);
+            cams.push(mcam);
           }
         },
+        None => {},
       }
-      let cam = Camera{
-        make: make.clone(),
-        model: model.clone(),
-        canonical_make: canonical_make.clone(),
-        canonical_model: canonical_model.clone(),
-        whitelevels: [white, white, white, white],
-        blacklevels: [black, black, black, black],
-        color_matrix : cmatrix,
-        dcraw_filters: RawLoader::dcraw_filters(&color_pattern),
-        crops: crops,
-        bps: bps,
-        hints: hints,
-      };
-      map.insert((make.clone(),model.clone()), cam);
+    }
+
+    let mut map = HashMap::new();
+    for cam in cams {
+      map.insert((cam.make.clone(),cam.model.clone(),cam.mode.clone()), cam);
     }
 
     RawLoader{
@@ -228,7 +257,7 @@ impl RawLoader {
     let make = fetch_tag!(tiff, Tag::Make).get_str();
     let model = fetch_tag!(tiff, Tag::Model).get_str();
 
-    match self.cameras.get(&(make.to_string(),model.to_string())) {
+    match self.cameras.get(&(make.to_string(),model.to_string(),"".to_string())) {
       Some(cam) => Ok(cam),
       None => Err(format!("Couldn't find camera \"{}\" \"{}\"", make, model)),
     }
