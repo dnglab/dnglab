@@ -3,6 +3,8 @@ use std::io::Read;
 use std::fs::File;
 use std::error::Error;
 use std::panic;
+use std::fmt;
+use std::clone;
 
 macro_rules! fetch_tag {
   ($tiff:expr, $tag:expr) => (try!($tiff.find_entry($tag).ok_or(format!("Couldn't find tag {}",stringify!($tag)).to_string())););
@@ -47,6 +49,60 @@ impl Buffer {
   }
 }
 
+pub struct CFA {
+  patname: String,
+  pattern: [[usize;48];48],
+}
+
+impl CFA {
+  pub fn new(patname: &str) -> CFA {
+    let filters = match patname {
+      "BGGR" => 0x16161616,
+      "GRBG" => 0x61616161,
+      "GBRG" => 0x49494949,
+      "RGGB" => 0x94949494,
+      "ERBG" => 0x63636363,
+      _ => 0,
+    };
+
+    let mut pattern: [[usize;48];48] = [[0;48];48];
+    for row in 0..48 {
+      for col in 0..48 {
+        pattern[row][col] = filters >> (((row << 1 & 14) + (col & 1) ) << 1) & 3;
+      }
+    }
+    CFA {
+      patname: patname.to_string(),
+      pattern: pattern,
+    }
+  }
+
+  pub fn color_at(&self, row: usize, col: usize) -> usize {
+    self.pattern[(row+48) % 48][(col+48) % 48]
+  }
+}
+
+impl fmt::Debug for CFA {
+  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    write!(f, "CFA {{ name:{} }}", self.patname)
+  }
+}
+
+impl clone::Clone for CFA {
+  fn clone(&self) -> CFA {
+    let mut cpattern: [[usize;48];48] = [[0;48];48];
+    for row in 0..48 {
+      for col in 0..48 {
+        cpattern[row][col] = self.pattern[row][col];
+      }
+    }
+    CFA {
+      patname: self.patname.clone(),
+      pattern: cpattern,
+    }
+  }
+}
+
 #[derive(Debug, Clone)]
 pub struct Image {
   pub make: String,
@@ -60,7 +116,7 @@ pub struct Image {
   pub whitelevels: [i64;4],
   pub blacklevels: [i64;4],
   pub color_matrix: [i64;12],
-  pub dcraw_filters: u32,
+  pub cfa: CFA,
   pub crops: [i64;4],
 }
 
@@ -74,7 +130,7 @@ pub struct Camera {
   whitelevels: [i64;4],
   blacklevels: [i64;4],
   color_matrix: [i64;12],
-  dcraw_filters: u32,
+  cfa: CFA,
   crops: [i64;4],
   bps: u32,
   hints: Vec<String>,
@@ -107,7 +163,7 @@ impl Camera {
             self.crops[i] = val.as_integer().unwrap();
           }
         },
-        "color_pattern" => {self.dcraw_filters = RawLoader::dcraw_filters(&val.as_str().unwrap().to_string());},
+        "color_pattern" => {self.cfa = CFA::new(&val.as_str().unwrap().to_string());},
         "bps" => {self.bps = val.as_integer().unwrap() as u32;},
         "hints" => {
           self.hints = Vec::new();
@@ -130,7 +186,7 @@ impl Camera {
       whitelevels: [0;4],
       blacklevels: [0;4],
       color_matrix : [0;12],
-      dcraw_filters: 0,
+      cfa: CFA::new(""),
       crops: [0,0,0,0],
       bps: 0,
       hints: Vec::new(),
@@ -151,7 +207,7 @@ pub fn ok_image(camera: &Camera, width: u32, height: u32, wb_coeffs: [f32;4], im
     blacklevels: camera.blacklevels,
     whitelevels: camera.whitelevels,
     color_matrix: camera.color_matrix,
-    dcraw_filters: camera.dcraw_filters,
+    cfa: camera.cfa.clone(),
     crops: camera.crops,
   })
 }
@@ -260,17 +316,6 @@ impl RawLoader {
     match self.cameras.get(&(make.to_string(),model.to_string(),"".to_string())) {
       Some(cam) => Ok(cam),
       None => Err(format!("Couldn't find camera \"{}\" \"{}\"", make, model)),
-    }
-  }
-
-  fn dcraw_filters(pattern: &str) -> u32 {
-    match pattern {
-      "BGGR" => 0x16161616,
-      "GRBG" => 0x61616161,
-      "GBRG" => 0x49494949,
-      "RGGB" => 0x94949494,
-      "ERBG" => 0x63636363,
-      _ => 0,
     }
   }
 

@@ -49,7 +49,7 @@ fn main() {
   println!("black levels are {:?}", image.blacklevels);
   println!("white levels are {:?}", image.whitelevels);
   println!("color matrix is {:?}", image.color_matrix);
-  println!("dcraw filters is {:#x}", image.dcraw_filters);
+  println!("CFA is {:?}", image.cfa);
   println!("crops are {:?}", image.crops);
 
   let mut sum: u64 = 0;
