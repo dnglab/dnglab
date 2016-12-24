@@ -309,14 +309,18 @@ impl RawLoader {
     }
   }
 
-  pub fn check_supported<'a>(&'a self, tiff: &'a TiffIFD) -> Result<&Camera, String> {
+  pub fn check_supported_with_mode<'a>(&'a self, tiff: &'a TiffIFD, mode: &str) -> Result<&Camera, String> {
     let make = fetch_tag!(tiff, Tag::Make).get_str();
     let model = fetch_tag!(tiff, Tag::Model).get_str();
 
-    match self.cameras.get(&(make.to_string(),model.to_string(),"".to_string())) {
+    match self.cameras.get(&(make.to_string(),model.to_string(),mode.to_string())) {
       Some(cam) => Ok(cam),
-      None => Err(format!("Couldn't find camera \"{}\" \"{}\"", make, model)),
+      None => Err(format!("Couldn't find camera \"{}\" \"{}\" mode \"{}\"", make, model, mode)),
     }
+  }
+
+  pub fn check_supported<'a>(&'a self, tiff: &'a TiffIFD) -> Result<&Camera, String> {
+    self.check_supported_with_mode(tiff, "")
   }
 
   pub fn decode(&self, reader: &mut Read) -> Result<Image, String> {

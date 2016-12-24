@@ -6,4 +6,7 @@ blackpoint = 0
 whitepoint = 3986
 color_matrix = [8025, -1942, -1050, -7920, 15904, 2100, -2456, 3005, 7039]
 color_pattern = "GBRG"
-crops = [0,0,0,0]
+
+[[cameras.modes]]
+mode = "4:3"
+crops = [0,28,1,0]

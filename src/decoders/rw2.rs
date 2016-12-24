@@ -22,7 +22,6 @@ impl<'a> Rw2Decoder<'a> {
 
 impl<'a> Decoder for Rw2Decoder<'a> {
   fn image(&self) -> Result<Image,String> {
-    let camera = try!(self.rawloader.check_supported(&self.tiff));
     let width: usize;
     let height: usize;
     let image = {
@@ -51,6 +50,20 @@ impl<'a> Decoder for Rw2Decoder<'a> {
         }
       }
     };
+
+    let mode = {
+      let ratio = width*100/height;
+      if ratio < 125 {
+        "1:1"
+      } else if ratio < 145 {
+        "4:3"
+      } else if ratio < 165 {
+        "3:2"
+      } else {
+        "16:9"
+      }
+    };
+    let camera = try!(self.rawloader.check_supported_with_mode(&self.tiff, mode));
 
     ok_image(camera, width as u32, height as u32, try!(self.get_wb()), image)
   }

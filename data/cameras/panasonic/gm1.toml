@@ -6,4 +6,19 @@ blackpoint = 143
 whitepoint = 3956
 color_matrix = [6770, -1895, -744, -5232, 13145, 2303, -1664, 2691, 5703]
 color_pattern = "BGGR"
+
+[[cameras.modes]]
+mode = "1:1"
 crops = [0,0,0,0]
+
+[[cameras.modes]]
+mode = "4:3"
+crops = [0,206,0,0]
+
+[[cameras.modes]]
+mode = "3:2"
+crops = [0,206,0,0]
+
+[[cameras.modes]]
+mode = "16:9"
+crops = [0,206,0,0]

@@ -6,4 +6,7 @@ blackpoint = 0
 whitepoint = 3971
 color_matrix = [10704, -4187, -1230, -8314, 15952, 2501, -920, 945, 8927]
 color_pattern = "RGGB"
-crops = [0,0,0,0]
+
+[[cameras.modes]]
+mode = "16:9"
+crops = [0,16,0,6]
