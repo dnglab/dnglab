@@ -67,7 +67,7 @@ fn main() {
   println!("black levels are {:?}", image.blacklevels);
   println!("white levels are {:?}", image.whitelevels);
   println!("color matrix is {:?}", image.color_matrix);
-  println!("dcraw filters is {:#x}", image.dcraw_filters);
+  println!("CFA is {:?}", image.cfa);
   println!("crops are {:?}", image.crops);
 
   // Write out the image as a grayscale PPM
@@ -103,7 +103,7 @@ To do the image decoding decode the image the same way but then do:
   }
 ```
 
-And this will write out an 8bit RGB image. Reducing the decode size makes the processing much faster by doing the scaling extremely early in the processing (at the demosaic). So this can be used quite directly to do fast thumbnailing of raw images.
+And this will write out an 8bit RGB image. Reducing the decode size makes the processing much faster by doing the scaling extremely early in the processing (at the demosaic). So this can be used quite directly to do fast thumbnailing of raw images. A 24MP raw file can be turned into a 500x500 thumbnail in 200-300ms on normal laptop hardware.
 
 Contributing
 ------------
