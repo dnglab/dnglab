@@ -44,7 +44,27 @@ impl<'a> Decoder for RafDecoder<'a> {
       16 => decode_16le(src, width as usize, height as usize),
       _ => {return Err(format!("RAF: Don't know how to decode bps {}", bps).to_string());},
     };
-    ok_image(camera, width, height, try!(self.get_wb()), image)
+
+    if camera.find_hint("fuji_rotation") {
+      let (width, height, image) = RafDecoder::rotate_image(&image, camera, width as usize, height as usize);
+      Ok(Image {
+        make: camera.make.clone(),
+        model: camera.model.clone(),
+        canonical_make: camera.canonical_make.clone(),
+        canonical_model: camera.canonical_model.clone(),
+        width: width as usize,
+        height: height as usize,
+        wb_coeffs: try!(self.get_wb()),
+        data: image.into_boxed_slice(),
+        blacklevels: camera.blacklevels,
+        whitelevels: camera.whitelevels,
+        color_matrix: camera.color_matrix,
+        cfa: camera.cfa.clone(),
+        crops: [0,0,0,0],
+      })
+    } else {
+      ok_image(camera, width, height, try!(self.get_wb()), image)
+    }
   }
 }
 
@@ -57,5 +77,27 @@ impl<'a> RafDecoder<'a> {
         Ok([levels.get_f32(1), levels.get_f32(0), levels.get_f32(3), NAN])
       },
     }
+  }
+
+  fn rotate_image(src: &[u16], camera: &Camera, width: usize, height: usize) -> (usize, usize, Vec<u16>) {
+    let x = camera.crops[3] as usize;
+    let y = camera.crops[0] as usize;
+    let cropwidth = width - (camera.crops[1] as usize) - x;
+    let cropheight = height - (camera.crops[2] as usize) - y;
+
+    let rotatedwidth = cropwidth + cropheight/2;
+    let rotatedheight = rotatedwidth-1;
+
+    let mut out: Vec<u16> = vec![0; (rotatedwidth*rotatedheight) as usize];
+    for row in 0..cropheight {
+      let inb = &src[row*width+x..];
+      for col in 0..cropwidth {
+        let out_row = cropwidth - 1 - col + (row>>1);
+        let out_col = ((row+1) >> 1) + col;
+        out[out_row*rotatedwidth+out_col] = inb[col];
+      }
+    }
+
+    (rotatedwidth, rotatedheight, out)
   }
 }

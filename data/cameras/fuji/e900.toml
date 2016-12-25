@@ -7,3 +7,4 @@ whitepoint = 15564
 color_matrix = [9183, -2526, -1078, -7461, 15071, 2574, -2022, 2440, 8639]
 color_pattern = "GBRG"
 crops = [0,32,0,32]
+hints = ["fuji_rotation"]
