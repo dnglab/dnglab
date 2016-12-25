@@ -60,21 +60,35 @@ pub struct CFA {
 
 impl CFA {
   pub fn new(patname: &str) -> CFA {
-    let filters = match patname {
-      "BGGR" => 0x16161616,
-      "GRBG" => 0x61616161,
-      "GBRG" => 0x49494949,
-      "RGGB" => 0x94949494,
-      "ERBG" => 0x63636363,
-      _ => 0,
+    let size = match patname.len() {
+      0 => 0,
+      4 => 2,
+      36 => 6,
+      144 => 12,
+      _ => panic!(format!("Unknown CFA with size {}", patname.len()).to_string()),
     };
-
     let mut pattern: [[usize;48];48] = [[0;48];48];
-    for row in 0..48 {
-      for col in 0..48 {
-        pattern[row][col] = filters >> (((row << 1 & 14) + (col & 1) ) << 1) & 3;
+
+    if size > 0 {
+      // copy the pattern into the top left
+      for (i,c) in patname.bytes().enumerate() {
+        pattern[i/size][i%size] = match c {
+          b'R' => 0,
+          b'G' => 1,
+          b'B' => 2,
+          b'E' => 3,
+          _   => panic!(format!("Unknown CFA color \"{}\"", c).to_string()),
+        };
+      }
+
+      // extend the pattern into the full matrix
+      for row in 0..48 {
+        for col in 0..48 {
+          pattern[row][col] = pattern[row%size][col%size];
+        }
       }
     }
+
     CFA {
       patname: patname.to_string(),
       pattern: pattern,
@@ -88,7 +102,7 @@ impl CFA {
 
 impl fmt::Debug for CFA {
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-    write!(f, "CFA {{ name:{} }}", self.patname)
+    write!(f, "CFA {{ {} }}", self.patname)
   }
 }
 

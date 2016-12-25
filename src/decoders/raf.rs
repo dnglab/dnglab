@@ -27,9 +27,14 @@ impl<'a> Decoder for RafDecoder<'a> {
     let width = fetch_tag!(raw, Tag::RafImageWidth).get_u32(0);
     let height = fetch_tag!(raw, Tag::RafImageLength).get_u32(0);
     let offset = fetch_tag!(raw, Tag::RafOffsets).get_u32(0) as usize + raw.start_offset();
+    let bps = fetch_tag!(raw, Tag::RafBitsPerSample).get_u32(0);
     let src = &self.buffer[offset..];
 
-    let image = decode_12le(src, width as usize, height as usize);
+    let image = match bps {
+      12 => decode_12le(src, width as usize, height as usize),
+      14 => decode_14le_unpacked(src, width as usize, height as usize),
+      _ => {return Err(format!("RAF: Don't know how to decode bps {}", bps).to_string());},
+    };
     ok_image(camera, width, height, try!(self.get_wb()), image)
   }
 }
