@@ -158,7 +158,7 @@ impl<'a> OrfDecoder<'a> {
       let iproc = fetch_tag!(self.tiff,Tag::OlympusImgProc);
       let poff = iproc.parent_offset() - 12;
       let off = (iproc.get_u32(0) as usize) + poff;
-      let ifd = try!(TiffIFD::new(self.buffer, off, 0, 0, self.tiff.get_endian()));
+      let ifd = try!(TiffIFD::new(self.buffer, off, 0, 0, 0, self.tiff.get_endian()));
       let wbs = fetch_tag!(ifd, Tag::ImageWidth);
       if wbs.count() == 4 {
         let off = poff + wbs.doffset();

@@ -26,7 +26,7 @@ mod erf;
 mod kdc;
 mod dcs;
 mod rw2;
-use self::basics::*;
+mod raf;
 use self::tiff::*;
 
 pub static CAMERAS_TOML: &'static str = include_str!("../../data/cameras/all.toml");
@@ -285,20 +285,13 @@ impl RawLoader {
       return Ok(dec as Box<Decoder>);
     }
 
-    let endian = match LEu16(&buffer, 0) {
-      0x4949 => LITTLE_ENDIAN,
-      0x4d4d => BIG_ENDIAN,
-      x => {return Err(format!("Couldn't find decoder for marker 0x{:x}", x).to_string())},
-    };
+    let tiff = try!(TiffIFD::new_file(buffer));
 
     macro_rules! use_decoder {
         ($dec:ty, $buf:ident, $tiff:ident, $rawdec:ident) => (Ok(Box::new(<$dec>::new($buf, $tiff, $rawdec)) as Box<Decoder>));
     }
 
-    let tiff = TiffIFD::new_root(buffer, 4, 0, endian);
-    let make: &str = &(try!(tiff.find_entry(Tag::Make).ok_or("Couldn't find Make".to_string())).get_str().to_string());
-
-    match make {
+    match fetch_tag!(tiff, Tag::Make).get_str().to_string().as_ref() {
       "SONY"                    => use_decoder!(arw::ArwDecoder, buffer, tiff, self),
       "Mamiya-OP Co.,Ltd."      => use_decoder!(mef::MefDecoder, buffer, tiff, self),
       "OLYMPUS IMAGING CORP."   => use_decoder!(orf::OrfDecoder, buffer, tiff, self),
@@ -309,6 +302,7 @@ impl RawLoader {
       "EASTMAN KODAK COMPANY"   => use_decoder!(kdc::KdcDecoder, buffer, tiff, self),
       "KODAK"                   => use_decoder!(dcs::DcsDecoder, buffer, tiff, self),
       "Panasonic"               => use_decoder!(rw2::Rw2Decoder, buffer, tiff, self),
+      "FUJIFILM"                => use_decoder!(raf::RafDecoder, buffer, tiff, self),
       make => Err(format!("Couldn't find a decoder for make \"{}\"", make).to_string()),
     }
   }

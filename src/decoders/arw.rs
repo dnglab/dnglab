@@ -208,12 +208,12 @@ impl<'a> ArwDecoder<'a> {
 
   fn get_wb(&self) -> Result<[f32;4], String> {
     let priv_offset = fetch_tag!(self.tiff, Tag::DNGPrivateArea).get_u32(0);
-    let priv_tiff = TiffIFD::new(self.buffer, priv_offset as usize, 0, 0, LITTLE_ENDIAN).unwrap();
+    let priv_tiff = TiffIFD::new(self.buffer, priv_offset as usize, 0, 0, 0, LITTLE_ENDIAN).unwrap();
     let sony_offset = fetch_tag!(priv_tiff, Tag::SonyOffset).get_u32(0) as usize;
     let sony_length = fetch_tag!(priv_tiff, Tag::SonyLength).get_u32(0) as usize;
     let sony_key = fetch_tag!(priv_tiff, Tag::SonyKey).get_u32(0);
     let decrypted_buf = ArwDecoder::sony_decrypt(self.buffer, sony_offset, sony_length, sony_key);
-    let decrypted_tiff = TiffIFD::new(&decrypted_buf, 0, sony_offset, 0, LITTLE_ENDIAN).unwrap();
+    let decrypted_tiff = TiffIFD::new(&decrypted_buf, 0, sony_offset, 0, 0, LITTLE_ENDIAN).unwrap();
     let grgb_levels = decrypted_tiff.find_entry(Tag::SonyGRBG);
     let rggb_levels = decrypted_tiff.find_entry(Tag::SonyRGGB);
     if grgb_levels.is_some() {

@@ -42,6 +42,11 @@ pub enum Tag {
   SrwRGGBLevels  = 0xA021,
   SrwRGGBBlacks  = 0xA028,
   DNGPrivateArea = 0xC634,
+  RafRawSubIFD   = 0xF000,
+  RafImageWidth  = 0xF001,
+  RafImageLength = 0xF002,
+  RafOffsets     = 0xF007,
+  RafWBGRB       = 0xF00E,
   KdcWB          = 0xFA2A,
   KdcWidth       = 0xFD00,
   KdcLength      = 0xFD01,
@@ -72,16 +77,46 @@ pub struct TiffIFD<'a> {
   entries: HashMap<u16,TiffEntry<'a>>,
   subifds: Vec<TiffIFD<'a>>,
   nextifd: usize,
+  start_offset: usize,
   endian: Endian,
 }
 
 impl<'a> TiffIFD<'a> {
-  pub fn new_root(buf: &'a[u8], offset: usize, depth: u32, e: Endian) -> TiffIFD<'a> {
-    let mut subifds = Vec::new();
-    let mut nextifd = e.ru32(buf, offset) as usize;
+  pub fn new_file(buf: &'a[u8]) -> Result<TiffIFD<'a>, String> {
+    if buf[0..8] == b"FUJIFILM"[..] {
+      let ifd1 = TiffIFD::new_root(buf, (BEu32(buf, 84)+12) as usize)?;
+      let endian = ifd1.get_endian();
+      let mut subifds = vec![ifd1];
 
+      match TiffIFD::new_root(buf, BEu32(buf, 100) as usize) {
+        Ok(val) => {subifds.push(val);}
+        Err(_) => {},
+      }
+      //subifds.push(TiffIFD::new_fuji(buf, BEu32(buf, 92) as usize)?);
+
+      Ok(TiffIFD {
+        entries: HashMap::new(),
+        subifds: subifds,
+        nextifd: 0,
+        start_offset: 0,
+        endian: endian,
+      })
+    } else {
+      TiffIFD::new_root(buf, 0)
+    }
+  }
+
+  pub fn new_root(buf: &'a[u8], offset: usize) -> Result<TiffIFD<'a>, String> {
+    let mut subifds = Vec::new();
+
+    let endian = match LEu16(buf, offset) {
+      0x4949 => LITTLE_ENDIAN,
+      0x4d4d => BIG_ENDIAN,
+      x => {return Err(format!("TIFF: don't know marker 0x{:x}", x).to_string())},
+    };
+    let mut nextifd = endian.ru32(buf, offset+4) as usize;
     for _ in 0..100 { // Never read more than 100 IFDs
-      let ifd = TiffIFD::new(buf, nextifd, 0, depth, e).unwrap();
+      let ifd = try!(TiffIFD::new(&buf[offset..], nextifd, 0, offset, 0, endian));
       nextifd = ifd.nextifd;
       subifds.push(ifd);
       if nextifd == 0 {
@@ -89,15 +124,16 @@ impl<'a> TiffIFD<'a> {
       }
     }
 
-    TiffIFD {
+    Ok(TiffIFD {
       entries: HashMap::new(),
       subifds: subifds,
       nextifd: 0,
-      endian: e,
-    }
+      start_offset: offset,
+      endian: endian,
+    })
   }
 
-  pub fn new(buf: &'a[u8], offset: usize, base_offset: usize, depth: u32, e: Endian) -> Result<TiffIFD<'a>, String> {
+  pub fn new(buf: &'a[u8], offset: usize, base_offset: usize, start_offset: usize, depth: u32, e: Endian) -> Result<TiffIFD<'a>, String> {
     let mut entries = HashMap::new();
     let mut subifds = Vec::new();
 
@@ -115,10 +151,11 @@ impl<'a> TiffIFD<'a> {
 
       if entry.tag == t(Tag::SubIFDs)
       || entry.tag == t(Tag::ExifIFDPointer)
+      || entry.tag == t(Tag::RafRawSubIFD)
       || entry.tag == t(Tag::KdcIFD) {
         if depth < 10 { // Avoid infinite looping IFDs
           for i in 0..entry.count {
-            let ifd = TiffIFD::new(buf, entry.get_u32(i as usize) as usize, base_offset, depth+1, e);
+            let ifd = TiffIFD::new(buf, entry.get_u32(i as usize) as usize, base_offset, start_offset, depth+1, e);
             match ifd {
               Ok(val) => {subifds.push(val);},
               Err(_) => {entries.insert(entry.tag, entry);}, // Ignore unparsable IFDs
@@ -142,6 +179,7 @@ impl<'a> TiffIFD<'a> {
       entries: entries,
       subifds: subifds,
       nextifd: e.ru32(buf, offset + (2+num*12) as usize) as usize,
+      start_offset: start_offset,
       endian: e,
     })
   }
@@ -163,7 +201,7 @@ impl<'a> TiffIFD<'a> {
       off += 8;
     }
 
-    TiffIFD::new(buf, off, base_offset, depth, e)
+    TiffIFD::new(buf, off, base_offset, 0, depth, e)
   }
 
   pub fn find_entry(&self, tag: Tag) -> Option<&TiffEntry> {
@@ -206,6 +244,7 @@ impl<'a> TiffIFD<'a> {
 
   pub fn get_endian(&self) -> Endian { self.endian }
   pub fn little_endian(&self) -> bool { self.endian.little() }
+  pub fn start_offset(&self) -> usize { self.start_offset }
 }
 
 impl<'a> TiffEntry<'a> {
