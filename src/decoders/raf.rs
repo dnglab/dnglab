@@ -88,15 +88,26 @@ impl<'a> RafDecoder<'a> {
     let rotatedwidth = cropwidth + cropheight/2;
     let rotatedheight = rotatedwidth-1;
 
-    let mut out: Vec<u16> = vec![0; (rotatedwidth*rotatedheight) as usize];
-    for row in 0..cropheight {
-      let inb = &src[row*width+x..];
-      for col in 0..cropwidth {
-        let out_row = cropwidth - 1 - col + (row>>1);
-        let out_col = ((row+1) >> 1) + col;
-        out[out_row*rotatedwidth+out_col] = inb[col];
+    // Doing the rotation by iterating the output instead of the input results in stranger
+    // code that is ~30% faster including threading. In absolute terms it's not a large
+    // improvement though so going back to the simpler code may make sense in case of bugs
+    let out = decode_threaded(rotatedwidth, rotatedheight, &(|out: &mut [u16], row| {
+      let startcol = if row < cropwidth { cropwidth - 1 - row } else { row + 1 - cropwidth };
+      let endcol = if (row + cropwidth) < rotatedwidth {
+        row + cropwidth
+      } else {
+        (rotatedwidth - 1) - (row + cropwidth - rotatedwidth) - 1
+      };
+
+      for (i,col) in (startcol..endcol+1).enumerate() {
+        let (in_row, in_col) = if row < cropwidth {
+          (y+i, (x+cropwidth-1) - row + i/2)
+        } else {
+          (y + (row-cropwidth+1)*2 + i, x + i/2)
+        };
+        out[col] = src[in_row*width + in_col];
       }
-    }
+    }));
 
     (rotatedwidth, rotatedheight, out)
   }
