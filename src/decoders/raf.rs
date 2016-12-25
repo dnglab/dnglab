@@ -43,6 +43,8 @@ impl<'a> Decoder for RafDecoder<'a> {
       // that is identical but darker to the first. The two combined can produce
       // a higher dynamic range image. Right now we're ignoring it.
       decode_16le_skiplines(src, width as usize, height as usize)
+    } else if camera.find_hint("jpeg32") {
+      decode_12be_msb32(src, width as usize, height as usize)
     } else {
       match bps {
         12 => decode_12le(src, width as usize, height as usize),
