@@ -29,6 +29,7 @@ pub enum Tag {
   OlympusRedMul    = 0x1017,
   OlympusBlueMul   = 0x1018,
   OlympusImgProc   = 0x2040,
+  RafOldWB         = 0x2ff0,
   SonyCurve        = 0x7010,
   SonyOffset       = 0x7200,
   SonyLength       = 0x7201,
@@ -88,15 +89,30 @@ impl<'a> TiffIFD<'a> {
       let ifd1 = TiffIFD::new_root(buf, (BEu32(buf, 84)+12) as usize)?;
       let endian = ifd1.get_endian();
       let mut subifds = vec![ifd1];
+      let mut entries = HashMap::new();
 
-      match TiffIFD::new_root(buf, BEu32(buf, 100) as usize) {
+      let ioffset = BEu32(buf, 100) as usize;
+      match TiffIFD::new_root(buf, ioffset) {
         Ok(val) => {subifds.push(val);}
-        Err(_) => {},
+        Err(_) => {
+          entries.insert(Tag::RafOffsets as u16, TiffEntry{
+            tag: t(Tag::RafOffsets),
+            typ: 4, // Long
+            count: 1,
+            parent_offset: 0,
+            doffset: 100,
+            data: &buf[100..104],
+            endian: BIG_ENDIAN,
+          });
+        },
       }
-      //subifds.push(TiffIFD::new_fuji(buf, BEu32(buf, 92) as usize)?);
+      match TiffIFD::new_fuji(buf, BEu32(buf, 92) as usize) {
+        Ok(val) => subifds.push(val),
+        Err(_) => {}
+      }
 
       Ok(TiffIFD {
-        entries: HashMap::new(),
+        entries: entries,
         subifds: subifds,
         nextifd: 0,
         start_offset: 0,
@@ -205,6 +221,49 @@ impl<'a> TiffIFD<'a> {
     TiffIFD::new(buf, off, base_offset, 0, depth, e)
   }
 
+  pub fn new_fuji(buf: &'a[u8], offset: usize) -> Result<TiffIFD<'a>, String> {
+    let mut entries = HashMap::new();
+    let num = BEu32(buf, offset); // Directory entries in this IFD
+    if num > 4000 {
+      return Err(format!("too many entries in IFD ({})", num).to_string())
+    }
+    let mut off = offset+4;
+    for _ in 0..num {
+      let tag = BEu16(buf, off);
+      let len = BEu16(buf, off+2);
+      if tag == t(Tag::ImageWidth) {
+        entries.insert(t(Tag::ImageWidth), TiffEntry {
+          tag: t(Tag::ImageWidth),
+          typ: 3, // Short
+          count: 2,
+          parent_offset: 0,
+          doffset: off+4,
+          data: &buf[off+4..off+8],
+          endian: BIG_ENDIAN,
+        });
+      } else if tag == t(Tag::RafOldWB) {
+        entries.insert(t(Tag::RafOldWB), TiffEntry {
+          tag: t(Tag::RafOldWB),
+          typ: 3, // Short
+          count: 4,
+          parent_offset: 0,
+          doffset: off+4,
+          data: &buf[off+4..off+12],
+          endian: BIG_ENDIAN,
+        });
+      }
+      off += (len+4) as usize;
+    }
+
+    Ok(TiffIFD {
+      entries: entries,
+      subifds: Vec::new(),
+      nextifd: 0,
+      start_offset: 0,
+      endian: BIG_ENDIAN,
+    })
+  }
+
   pub fn find_entry(&self, tag: Tag) -> Option<&TiffEntry> {
     if self.entries.contains_key(&t(tag)) {
       self.entries.get(&t(tag))
@@ -225,6 +284,9 @@ impl<'a> TiffIFD<'a> {
 
   pub fn find_ifds_with_tag(&self, tag: Tag) -> Vec<&TiffIFD> {
     let mut ifds = Vec::new();
+    if self.entries.contains_key(&t(tag)) {
+      ifds.push(self);
+    }
     for ifd in &self.subifds {
       if ifd.entries.contains_key(&t(tag)) {
         ifds.push(ifd);
