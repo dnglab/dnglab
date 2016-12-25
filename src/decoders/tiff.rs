@@ -195,6 +195,15 @@ impl<'a> TiffIFD<'a> {
     ifds
   }
 
+  pub fn find_first_ifd(&self, tag: Tag) -> Option<&TiffIFD> {
+    let ifds = self.find_ifds_with_tag(tag);
+    if ifds.len() == 0 {
+      None
+    } else {
+      Some(ifds[0])
+    }
+  }
+
   pub fn get_endian(&self) -> Endian { self.endian }
   pub fn little_endian(&self) -> bool { self.endian.little() }
 }

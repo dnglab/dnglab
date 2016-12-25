@@ -24,8 +24,7 @@ impl<'a> OrfDecoder<'a> {
 impl<'a> Decoder for OrfDecoder<'a> {
   fn image(&self) -> Result<Image,String> {
     let camera = try!(self.rawloader.check_supported(&self.tiff));
-    let data = self.tiff.find_ifds_with_tag(Tag::StripOffsets);
-    let raw = data[0];
+    let raw = fetch_ifd!(&self.tiff, Tag::StripOffsets);
     let width = fetch_tag!(raw, Tag::ImageWidth).get_u32(0);
     let height = fetch_tag!(raw, Tag::ImageLength).get_u32(0);
     let offset = fetch_tag!(raw, Tag::StripOffsets).get_u32(0) as usize;
