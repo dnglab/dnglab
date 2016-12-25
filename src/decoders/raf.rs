@@ -38,11 +38,18 @@ impl<'a> Decoder for RafDecoder<'a> {
     };
     let src = &self.buffer[offset..];
 
-    let image = match bps {
-      12 => decode_12le(src, width as usize, height as usize),
-      14 => decode_14le_unpacked(src, width as usize, height as usize),
-      16 => decode_16le(src, width as usize, height as usize),
-      _ => {return Err(format!("RAF: Don't know how to decode bps {}", bps).to_string());},
+    let image = if camera.find_hint("double_width") {
+      // Some fuji SuperCCD cameras include a second raw image next to the first one
+      // that is identical but darker to the first. The two combined can produce
+      // a higher dynamic range image. Right now we're ignoring it.
+      decode_16le_skiplines(src, width as usize, height as usize)
+    } else {
+      match bps {
+        12 => decode_12le(src, width as usize, height as usize),
+        14 => decode_14le_unpacked(src, width as usize, height as usize),
+        16 => decode_16le(src, width as usize, height as usize),
+        _ => {return Err(format!("RAF: Don't know how to decode bps {}", bps).to_string());},
+      }
     };
 
     if camera.find_hint("fuji_rotation") {
