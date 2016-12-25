@@ -49,7 +49,13 @@ impl<'a> Decoder for RafDecoder<'a> {
       match bps {
         12 => decode_12le(src, width as usize, height as usize),
         14 => decode_14le_unpacked(src, width as usize, height as usize),
-        16 => decode_16le(src, width as usize, height as usize),
+        16 => {
+          if self.tiff.little_endian() {
+            decode_16le(src, width as usize, height as usize)
+          } else {
+            decode_16be(src, width as usize, height as usize)
+          }
+        },
         _ => {return Err(format!("RAF: Don't know how to decode bps {}", bps).to_string());},
       }
     };
