@@ -54,7 +54,7 @@ impl<'a> Decoder for RafDecoder<'a> {
       }
     };
 
-    if camera.find_hint("fuji_rotation") {
+    if camera.find_hint("fuji_rotation") || camera.find_hint("fuji_rotation_alt") {
       let (width, height, image) = RafDecoder::rotate_image(&image, camera, width as usize, height as usize);
       Ok(Image {
         make: camera.make.clone(),
@@ -94,30 +94,61 @@ impl<'a> RafDecoder<'a> {
     let cropwidth = width - (camera.crops[1] as usize) - x;
     let cropheight = height - (camera.crops[2] as usize) - y;
 
-    let rotatedwidth = cropwidth + cropheight/2;
-    let rotatedheight = rotatedwidth-1;
-
     // Doing the rotation by iterating the output instead of the input results in stranger
     // code that is ~30% faster including threading. In absolute terms it's not a large
     // improvement though so going back to the simpler code may make sense in case of bugs
-    let out = decode_threaded(rotatedwidth, rotatedheight, &(|out: &mut [u16], row| {
-      let startcol = if row < cropwidth { cropwidth - 1 - row } else { row + 1 - cropwidth };
-      let endcol = if (row + cropwidth) < rotatedwidth {
-        row + cropwidth
-      } else {
-        (rotatedwidth - 1) - (row + cropwidth - rotatedwidth) - 1
-      };
+    if camera.find_hint("fuji_rotation_alt") {
+      let rotatedwidth = cropheight + cropwidth/2;
+      let rotatedheight = rotatedwidth-1;
 
-      for (i,col) in (startcol..endcol+1).enumerate() {
-        let (in_row, in_col) = if row < cropwidth {
-          (y+i, (x+cropwidth-1) - row + i/2)
+      let out = decode_threaded(rotatedwidth, rotatedheight, &(|out: &mut [u16], row| {
+        let startcol = if row < cropheight {
+          cropheight - 1 - row
         } else {
-          (y + (row-cropwidth+1)*2 + i, x + i/2)
+          row - cropheight + 1
         };
-        out[col] = src[in_row*width + in_col];
-      }
-    }));
+        let endcol = if (row+cropheight+1) < rotatedwidth {
+          row + cropheight
+        } else {
+          (rotatedwidth - 1) - (row + cropheight - rotatedwidth) - 1
+        };
 
-    (rotatedwidth, rotatedheight, out)
+        for (i,col) in (startcol..endcol+1).enumerate() {
+          let (in_row, in_col) = if row < cropheight {
+            (y + row - i/2, x + i)
+          } else {
+            ((y + cropheight - 1) - i/2, x + (row-cropheight+1)*2 + i)
+          };
+          out[col] = src[in_row*width + in_col];
+        }
+      }));
+      (rotatedwidth, rotatedheight, out)
+    } else {
+      let rotatedwidth = cropwidth + cropheight/2;
+      let rotatedheight = rotatedwidth-1;
+
+      let out = decode_threaded(rotatedwidth, rotatedheight, &(|out: &mut [u16], row| {
+        let startcol = if row < cropwidth {
+          cropwidth - 1 - row
+        } else {
+          row + 1 - cropwidth
+        };
+        let endcol = if (row + cropwidth) < rotatedwidth {
+          row + cropwidth
+        } else {
+          (rotatedwidth - 1) - (row + cropwidth - rotatedwidth) - 1
+        };
+
+        for (i,col) in (startcol..endcol+1).enumerate() {
+          let (in_row, in_col) = if row < cropwidth {
+            (y+i, (x+cropwidth-1) - row + i/2)
+          } else {
+            (y + (row-cropwidth+1)*2 + i, x + i/2)
+          };
+          out[col] = src[in_row*width + in_col];
+        }
+      }));
+      (rotatedwidth, rotatedheight, out)
+    }
   }
 }
