@@ -3,8 +3,6 @@ use std::io::Read;
 use std::fs::File;
 use std::error::Error;
 use std::panic;
-use std::fmt;
-use std::clone;
 
 macro_rules! fetch_tag {
   ($tiff:expr, $tag:expr) => (try!($tiff.find_entry($tag).ok_or(format!("Couldn't find tag {}",stringify!($tag)).to_string())););
@@ -16,6 +14,7 @@ macro_rules! fetch_ifd {
 
 extern crate toml;
 mod basics;
+mod cfa;
 mod tiff;
 mod mrw;
 mod arw;
@@ -53,74 +52,6 @@ impl Buffer {
   }
 }
 
-pub struct CFA {
-  patname: String,
-  pattern: [[usize;48];48],
-}
-
-impl CFA {
-  pub fn new(patname: &str) -> CFA {
-    let size = match patname.len() {
-      0 => 0,
-      4 => 2,
-      36 => 6,
-      144 => 12,
-      _ => panic!(format!("Unknown CFA with size {}", patname.len()).to_string()),
-    };
-    let mut pattern: [[usize;48];48] = [[0;48];48];
-
-    if size > 0 {
-      // copy the pattern into the top left
-      for (i,c) in patname.bytes().enumerate() {
-        pattern[i/size][i%size] = match c {
-          b'R' => 0,
-          b'G' => 1,
-          b'B' => 2,
-          b'E' => 3,
-          _   => panic!(format!("Unknown CFA color \"{}\"", c).to_string()),
-        };
-      }
-
-      // extend the pattern into the full matrix
-      for row in 0..48 {
-        for col in 0..48 {
-          pattern[row][col] = pattern[row%size][col%size];
-        }
-      }
-    }
-
-    CFA {
-      patname: patname.to_string(),
-      pattern: pattern,
-    }
-  }
-
-  pub fn color_at(&self, row: usize, col: usize) -> usize {
-    self.pattern[(row+48) % 48][(col+48) % 48]
-  }
-}
-
-impl fmt::Debug for CFA {
-  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-    write!(f, "CFA {{ {} }}", self.patname)
-  }
-}
-
-impl clone::Clone for CFA {
-  fn clone(&self) -> CFA {
-    let mut cpattern: [[usize;48];48] = [[0;48];48];
-    for row in 0..48 {
-      for col in 0..48 {
-        cpattern[row][col] = self.pattern[row][col];
-      }
-    }
-    CFA {
-      patname: self.patname.clone(),
-      pattern: cpattern,
-    }
-  }
-}
-
 #[derive(Debug, Clone)]
 pub struct Image {
   pub make: String,
@@ -134,7 +65,7 @@ pub struct Image {
   pub whitelevels: [i64;4],
   pub blacklevels: [i64;4],
   pub color_matrix: [i64;12],
-  pub cfa: CFA,
+  pub cfa: cfa::CFA,
   pub crops: [i64;4],
 }
 
@@ -148,7 +79,7 @@ pub struct Camera {
   whitelevels: [i64;4],
   blacklevels: [i64;4],
   color_matrix: [i64;12],
-  cfa: CFA,
+  cfa: cfa::CFA,
   crops: [i64;4],
   bps: u32,
   hints: Vec<String>,
@@ -181,7 +112,7 @@ impl Camera {
             self.crops[i] = val.as_integer().unwrap();
           }
         },
-        "color_pattern" => {self.cfa = CFA::new(&val.as_str().unwrap().to_string());},
+        "color_pattern" => {self.cfa = cfa::CFA::new(&val.as_str().unwrap().to_string());},
         "bps" => {self.bps = val.as_integer().unwrap() as u32;},
         "hints" => {
           self.hints = Vec::new();
@@ -204,7 +135,7 @@ impl Camera {
       whitelevels: [0;4],
       blacklevels: [0;4],
       color_matrix : [0;12],
-      cfa: CFA::new(""),
+      cfa: cfa::CFA::new(""),
       crops: [0,0,0,0],
       bps: 0,
       hints: Vec::new(),
