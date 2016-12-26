@@ -22,7 +22,14 @@ pub fn demosaic_and_scale(img: &Image, minwidth: usize, minheight: usize) -> OpB
     }
   };
 
-  if scale < 2.0 {
+  let minscale = match img.cfa.width() {
+    2  => 2.0,  // RGGB/RGBE bayer
+    6  => 3.0,  // x-trans is 6 wide but has all colors in every 3x3 block
+    12 => 12.0, // some crazy sensor I haven't actually encountered, use full block
+    _  => 2.0,  // default
+  };
+
+  if scale < minscale {
     full(img, x, y, width, height)
   } else {
     scaled(img, x, y, width, height, nwidth, nheight)

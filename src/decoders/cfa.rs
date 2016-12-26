@@ -4,6 +4,7 @@ use std::clone;
 pub struct CFA {
   patname: String,
   pattern: [[usize;48];48],
+  patwidth: usize,
 }
 
 impl CFA {
@@ -40,6 +41,7 @@ impl CFA {
     CFA {
       patname: patname.to_string(),
       pattern: pattern,
+      patwidth: size,
     }
   }
 
@@ -57,8 +59,11 @@ impl CFA {
     CFA {
       patname: format!("shifted-{}-{}-{}", x, y, self.patname).to_string(),
       pattern: pattern,
+      patwidth: self.patwidth,
     }
   }
+
+  pub fn width(&self) -> usize { self.patwidth }
 }
 
 impl fmt::Debug for CFA {
@@ -78,6 +83,7 @@ impl clone::Clone for CFA {
     CFA {
       patname: self.patname.clone(),
       pattern: cpattern,
+      patwidth: self.patwidth,
     }
   }
 }
