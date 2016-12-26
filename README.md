@@ -34,6 +34,7 @@ The library is still a work in process with the following formats already implem
   * Kodak DCS
   * Panasonic RW2
   * Fuji RAF
+  * Kodak DCR
 
 Usage
 -----
