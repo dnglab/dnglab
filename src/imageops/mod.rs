@@ -58,9 +58,9 @@ fn do_timing<O, F: FnMut() -> O>(name: &str, mut closure: F) -> O {
   ret
 }
 
-pub fn simple_decode (img: &Image, minwidth: usize, minheight: usize) -> OpBuffer {
+pub fn simple_decode (img: &Image, maxwidth: usize, maxheight: usize) -> OpBuffer {
   // Demosaic into 4 channel f32 (RGB or RGBE)
-  let mut channel4 = do_timing("demosaic", ||demosaic::demosaic_and_scale(img, minwidth, minheight));
+  let mut channel4 = do_timing("demosaic", ||demosaic::demosaic_and_scale(img, maxwidth, maxheight));
 
   do_timing("level_and_balance", || { level::level_and_balance(img, &mut channel4) });
   // From now on we are in 3 channel f32 (RGB or Lab)

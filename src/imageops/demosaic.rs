@@ -2,23 +2,23 @@ use decoders::Image;
 use imageops::OpBuffer;
 use std::cmp;
 
-pub fn demosaic_and_scale(img: &Image, minwidth: usize, minheight: usize) -> OpBuffer {
+pub fn demosaic_and_scale(img: &Image, maxwidth: usize, maxheight: usize) -> OpBuffer {
   // Calculate the resulting width/height and top-left corner after crops
   let width = (img.width as i64 - img.crops[1] - img.crops[3]) as usize;
   let height = (img.height as i64 - img.crops[0] - img.crops[2]) as usize;
   let x = img.crops[3] as usize;
   let y = img.crops[0] as usize;
 
-  let (scale, nwidth, nheight) = if minwidth == 0 || minheight == 0 {
+  let (scale, nwidth, nheight) = if maxwidth == 0 || maxheight == 0 {
     (0.0, width, height)
   } else {
     // Do the calculations manually to avoid off-by-one errors from floating point rounding
-    let xscale = (width as f32) / (minwidth as f32);
-    let yscale = (height as f32) / (minheight as f32);
+    let xscale = (width as f32) / (maxwidth as f32);
+    let yscale = (height as f32) / (maxheight as f32);
     if yscale > xscale {
-      (yscale, ((width as f32)/yscale) as usize, minheight)
+      (yscale, ((width as f32)/yscale) as usize, maxheight)
     } else {
-      (xscale, minwidth, ((height as f32)/xscale) as usize)
+      (xscale, maxwidth, ((height as f32)/xscale) as usize)
     }
   };
 
@@ -30,7 +30,12 @@ pub fn demosaic_and_scale(img: &Image, minwidth: usize, minheight: usize) -> OpB
   };
 
   if scale < minscale {
-    full(img, x, y, width, height)
+    let buf = full(img, x, y, width, height);
+    if scale > 1.0 {
+      scale_down(&buf, nwidth, nheight)
+    } else {
+      buf
+    }
   } else {
     scaled(img, x, y, width, height, nwidth, nheight)
   }
@@ -77,13 +82,13 @@ pub fn full(img: &Image, xs: usize, ys: usize, width: usize, height: usize) -> O
   out
 }
 
-fn calc_skips(idx: usize, skip: f32) -> (usize, usize, f32, f32) {
+fn calc_skips(idx: usize, idxmax: usize, skip: f32) -> (usize, usize, f32, f32) {
   let from = (idx as f32)*skip;
   let fromback = from.floor();
   let fromfactor = 1.0 - (from-fromback).fract();
 
   let to = ((idx+1) as f32)*skip;
-  let toforward = to.ceil();
+  let toforward = (idxmax as f32).min(to.ceil());
   let tofactor = (toforward-to).fract();
 
   (fromback as usize, toforward as usize, fromfactor, tofactor)
@@ -101,9 +106,9 @@ pub fn scaled(img: &Image, xs: usize, ys: usize, width: usize, height: usize, nw
     for col in 0..nwidth {
       let mut sums: [f32; 4] = [0.0;4];
       let mut counts: [f32; 4] = [0.0;4];
-      let (fromrow, torow, topfactor, bottomfactor) = calc_skips(row, rowskip);
+      let (fromrow, torow, topfactor, bottomfactor) = calc_skips(row, height, rowskip);
       for y in fromrow..torow {
-        let (fromcol, tocol, leftfactor, rightfactor) = calc_skips(col, colskip);
+        let (fromcol, tocol, leftfactor, rightfactor) = calc_skips(col, width, colskip);
         for x in fromcol..tocol {
           let factor = {
             (if y == fromrow {topfactor} else if y == torow {bottomfactor} else {1.0}) *
@@ -118,7 +123,44 @@ pub fn scaled(img: &Image, xs: usize, ys: usize, width: usize, height: usize, nw
 
       for c in 0..4 {
         if counts[c] > 0.0 {
-          line[col*4+c] = sums[c] / (counts[c] as f32);
+          line[col*4+c] = sums[c] / counts[c];
+        }
+      }
+    }
+  }));
+
+  out
+}
+
+pub fn scale_down(buf: &OpBuffer, nwidth: usize, nheight: usize) -> OpBuffer {
+  let mut out = OpBuffer::new(nwidth, nheight, buf.colors);
+  let rowskip = (buf.width as f32) / (nwidth as f32);
+  let colskip = (buf.height as f32) / (nheight as f32);
+
+  // Go around the image averaging blocks of pixels
+  out.mutate_lines(&(|line: &mut [f32], row| {
+    for col in 0..nwidth {
+      let mut sums: [f32; 4] = [0.0;4];
+      let mut counts: [f32; 4] = [0.0;4];
+      let (fromrow, torow, topfactor, bottomfactor) = calc_skips(row, buf.height, rowskip);
+      for y in fromrow..torow {
+        let (fromcol, tocol, leftfactor, rightfactor) = calc_skips(col, buf.width, colskip);
+        for x in fromcol..tocol {
+          let factor = {
+            (if y == fromrow {topfactor} else if y == torow {bottomfactor} else {1.0}) *
+            (if x == fromcol {leftfactor} else if x == tocol {rightfactor} else {1.0})
+          };
+
+          for c in 0..buf.colors {
+            sums[c] += buf.data[(y*buf.width+x)*buf.colors + c] * factor;
+            counts[c] += factor;
+          }
+        }
+      }
+
+      for c in 0..buf.colors {
+        if counts[c] > 0.0 {
+          line[col*buf.colors+c] = sums[c] / counts[c];
         }
       }
     }

@@ -92,7 +92,9 @@ fn main() {
 To do the image decoding decode the image the same way but then do:
 
 ```rust
-  // Decode to at least full HD size or full image if it's smaller
+  // Decode to the largest image that fits in 1080p size. If the original image is
+  // smaller this will not scale up but otherwise you will get an image that is either
+  // 1920 pixels wide or 1080 pixels tall and maintains the image ratio.
   let decoded = imageops::simple_decode(&image, 1920, 1080);
 
   let mut f = BufWriter::new(File::create(format!("{}.ppm",file)).unwrap());
