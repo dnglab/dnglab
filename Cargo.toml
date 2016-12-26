@@ -11,14 +11,14 @@ license = "LGPL-2.1"
 build = "data/cameras/join.rs"
 
 [dependencies]
-toml = "0.2.0"
+toml = "0.2.1"
 time = "0.1.35"
 enum_primitive = "0.1.0"
-num = "0.1.35"
-lazy_static = "0.2.1"
+num = "0.1.36"
+lazy_static = "0.2.2"
 byteorder = "0.5.3"
-rayon = "0.5.0"
-itertools = "0.5.6"
+rayon = "0.6.0"
+itertools = "0.5.8"
 
 [build-dependencies]
 glob = "0.2.11"
