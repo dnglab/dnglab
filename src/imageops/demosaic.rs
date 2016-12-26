@@ -24,11 +24,12 @@ pub fn demosaic_and_scale(img: &Image, minwidth: usize, minheight: usize) -> OpB
 
 pub fn full(img: &Image, xs: usize, ys: usize, width: usize, height: usize) -> OpBuffer {
   let mut out = OpBuffer::new(width, height, 4);
+  let crop_cfa = img.cfa.shift(xs, ys);
 
   // First we set the colors we already have
   out.mutate_lines(&(|line: &mut [f32], row| {
     for (col, (pixout, pixin)) in line.chunks_mut(4).zip(img.data[img.width*(row+ys)+xs..].chunks(1)).enumerate() {
-      let color = img.cfa.color_at(row+ys, col+xs);
+      let color = crop_cfa.color_at(row, col);
       pixout[color] = pixin[0] as f32;
     }
   }));
@@ -39,11 +40,11 @@ pub fn full(img: &Image, xs: usize, ys: usize, width: usize, height: usize) -> O
     for col in 0..width {
       let mut sums: [f32; 4] = [0.0;4];
       let mut counts: [u32; 4] = [0; 4];
-      let color = img.cfa.color_at(row+ys, col+xs);
+      let color = crop_cfa.color_at(row, col);
 
       for y in (cmp::max(0,(row as isize)-1) as usize) .. cmp::min(height, row+2) {
         for x in (cmp::max(0,(col as isize)-1) as usize) .. cmp::min(width, col+2) {
-          let c = img.cfa.color_at(y+ys, x+xs);
+          let c = crop_cfa.color_at(y, x);
           if c != color {
             sums[c] += img.data[(y+ys)*img.width+(x+xs)] as f32;
             counts[c] += 1;
@@ -66,6 +67,7 @@ pub fn scaled(img: &Image, scale: usize, xs: usize, ys: usize, width: usize, hei
   let nwidth = width/scale;
   let nheight = height/scale;
   let mut out = OpBuffer::new(nwidth, nheight, 4);
+  let crop_cfa = img.cfa.shift(xs, ys);
 
   // Go around the image averaging every block of pixels
   out.mutate_lines(&(|line: &mut [f32], row| {
@@ -75,7 +77,7 @@ pub fn scaled(img: &Image, scale: usize, xs: usize, ys: usize, width: usize, hei
 
       for y in row*scale..(row+1)*scale {
         for x in col*scale..(col+1)*scale {
-          let c = img.cfa.color_at(y+ys, x+xs);
+          let c = crop_cfa.color_at(y, x);
           sums[c] += img.data[(y+ys)*img.width+(x+xs)] as f32;
           counts[c] += 1;
         }

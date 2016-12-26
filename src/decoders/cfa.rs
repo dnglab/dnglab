@@ -46,6 +46,19 @@ impl CFA {
   pub fn color_at(&self, row: usize, col: usize) -> usize {
     self.pattern[(row+48) % 48][(col+48) % 48]
   }
+
+  pub fn shift(&self, x: usize, y: usize) -> CFA {
+    let mut pattern: [[usize;48];48] = [[0;48];48];
+    for row in 0..48 {
+      for col in 0..48 {
+        pattern[row][col] = self.color_at(row+y,col+x);
+      }
+    }
+    CFA {
+      patname: format!("shifted-{}-{}-{}", x, y, self.patname).to_string(),
+      pattern: pattern,
+    }
+  }
 }
 
 impl fmt::Debug for CFA {
