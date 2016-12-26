@@ -24,6 +24,8 @@ pub enum Tag {
   PanaOffsets      = 0x0118,
   GrayResponse     = 0x0123,
   SubIFDs          = 0x014A,
+  DcrWB            = 0x03FD,
+  DcrLinearization = 0x090D,
   EpsonWB          = 0x0E80,
   KodakWB          = 0x0F00,
   OlympusRedMul    = 0x1017,
@@ -37,6 +39,7 @@ pub enum Tag {
   SonyGRBG         = 0x7303,
   SonyRGGB         = 0x7313,
   CFAPattern       = 0x828E,
+  KodakIFD         = 0x8290,
   ExifIFDPointer   = 0x8769,
   Makernote        = 0x927C,
   SrwSensorAreas   = 0xA010,
@@ -169,6 +172,7 @@ impl<'a> TiffIFD<'a> {
       if entry.tag == t(Tag::SubIFDs)
       || entry.tag == t(Tag::ExifIFDPointer)
       || entry.tag == t(Tag::RafRawSubIFD)
+      || entry.tag == t(Tag::KodakIFD)
       || entry.tag == t(Tag::KdcIFD) {
         if depth < 10 { // Avoid infinite looping IFDs
           for i in 0..entry.count {

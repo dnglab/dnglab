@@ -477,3 +477,24 @@ impl<'a> BitPump for BitPumpMSB32<'a> {
     self.bits &= (1 << self.nbits) - 1;
   }
 }
+
+pub struct ByteStream<'a> {
+  buffer: &'a [u8],
+  pos: usize,
+}
+
+impl<'a> ByteStream<'a> {
+  pub fn new(src: &'a [u8]) -> ByteStream {
+    ByteStream {
+      buffer: src,
+      pos: 0,
+    }
+  }
+
+  pub fn peek_byte(&self) -> u8 { self.buffer[self.pos] }
+  pub fn get_byte(&mut self) -> u8 {
+    let val = self.peek_byte();
+    self.pos += 1;
+    val
+  }
+}
