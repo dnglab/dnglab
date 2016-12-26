@@ -77,6 +77,18 @@ pub fn full(img: &Image, xs: usize, ys: usize, width: usize, height: usize) -> O
   out
 }
 
+fn calc_skips(idx: usize, skip: f32) -> (usize, usize, f32, f32) {
+  let from = (idx as f32)*skip;
+  let fromback = from.floor();
+  let fromfactor = 1.0 - (from-fromback).fract();
+
+  let to = ((idx+1) as f32)*skip;
+  let toforward = to.ceil();
+  let tofactor = (toforward-to).fract();
+
+  (fromback as usize, toforward as usize, fromfactor, tofactor)
+}
+
 pub fn scaled(img: &Image, xs: usize, ys: usize, width: usize, height: usize, nwidth: usize, nheight: usize) -> OpBuffer {
   let mut out = OpBuffer::new(nwidth, nheight, 4);
   let crop_cfa = img.cfa.shift(xs, ys);
@@ -89,16 +101,18 @@ pub fn scaled(img: &Image, xs: usize, ys: usize, width: usize, height: usize, nw
     for col in 0..nwidth {
       let mut sums: [f32; 4] = [0.0;4];
       let mut counts: [f32; 4] = [0.0;4];
-
-      let fromrow = ((row as f32)*rowskip).floor() as usize;
-      let torow = cmp::min(height, (((row+1) as f32)*rowskip).ceil() as usize);
+      let (fromrow, torow, topfactor, bottomfactor) = calc_skips(row, rowskip);
       for y in fromrow..torow {
-        let fromcol = ((col as f32)*colskip).floor() as usize;
-        let tocol = cmp::min(width, (((col+1) as f32)*colskip).ceil() as usize);
+        let (fromcol, tocol, leftfactor, rightfactor) = calc_skips(col, colskip);
         for x in fromcol..tocol {
+          let factor = {
+            (if y == fromrow {topfactor} else if y == torow {bottomfactor} else {1.0}) *
+            (if x == fromcol {leftfactor} else if x == tocol {rightfactor} else {1.0})
+          };
+
           let c = crop_cfa.color_at(y, x);
-          sums[c] += img.data[(y+ys)*img.width+(x+xs)] as f32;
-          counts[c] += 1.0;
+          sums[c] += (img.data[(y+ys)*img.width+(x+xs)] as f32) * factor;
+          counts[c] += factor;
         }
       }
 
