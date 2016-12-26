@@ -9,16 +9,23 @@ pub fn demosaic_and_scale(img: &Image, minwidth: usize, minheight: usize) -> OpB
   let x = img.crops[3] as usize;
   let y = img.crops[0] as usize;
 
-  let scale = if minwidth == 0 || minheight == 0 {
-    0
+  let (scale, nwidth, nheight) = if minwidth == 0 || minheight == 0 {
+    (0.0, width, height)
   } else {
-    cmp::min(width / minwidth, height / minheight)
+    // Do the calculations manually to avoid off-by-one errors from floating point rounding
+    let xscale = (width as f32) / (minwidth as f32);
+    let yscale = (height as f32) / (minheight as f32);
+    if yscale > xscale {
+      (yscale, ((width as f32)/yscale) as usize, minheight)
+    } else {
+      (xscale, minwidth, ((height as f32)/xscale) as usize)
+    }
   };
 
-  if scale <= 1 {
+  if scale < 2.0 {
     full(img, x, y, width, height)
   } else {
-    scaled(img, cmp::min(scale, 16), x, y, width, height) // Never go less than 1/16th demosaic
+    scaled(img, x, y, width, height, nwidth, nheight)
   }
 }
 
@@ -63,28 +70,33 @@ pub fn full(img: &Image, xs: usize, ys: usize, width: usize, height: usize) -> O
   out
 }
 
-pub fn scaled(img: &Image, scale: usize, xs: usize, ys: usize, width: usize, height: usize) -> OpBuffer {
-  let nwidth = width/scale;
-  let nheight = height/scale;
+pub fn scaled(img: &Image, xs: usize, ys: usize, width: usize, height: usize, nwidth: usize, nheight: usize) -> OpBuffer {
   let mut out = OpBuffer::new(nwidth, nheight, 4);
   let crop_cfa = img.cfa.shift(xs, ys);
 
-  // Go around the image averaging every block of pixels
+  let rowskip = (width as f32) / (nwidth as f32);
+  let colskip = (height as f32) / (nheight as f32);
+
+  // Go around the image averaging blocks of pixels
   out.mutate_lines(&(|line: &mut [f32], row| {
     for col in 0..nwidth {
       let mut sums: [f32; 4] = [0.0;4];
-      let mut counts: [u32; 4] = [0; 4];
+      let mut counts: [f32; 4] = [0.0;4];
 
-      for y in row*scale..(row+1)*scale {
-        for x in col*scale..(col+1)*scale {
+      let fromrow = ((row as f32)*rowskip).floor() as usize;
+      let torow = cmp::min(height, (((row+1) as f32)*rowskip).ceil() as usize);
+      for y in fromrow..torow {
+        let fromcol = ((col as f32)*colskip).floor() as usize;
+        let tocol = cmp::min(width, (((col+1) as f32)*colskip).ceil() as usize);
+        for x in fromcol..tocol {
           let c = crop_cfa.color_at(y, x);
           sums[c] += img.data[(y+ys)*img.width+(x+xs)] as f32;
-          counts[c] += 1;
+          counts[c] += 1.0;
         }
       }
 
       for c in 0..4 {
-        if counts[c] > 0 {
+        if counts[c] > 0.0 {
           line[col*4+c] = sums[c] / (counts[c] as f32);
         }
       }
