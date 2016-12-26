@@ -100,60 +100,35 @@ impl<'a> RafDecoder<'a> {
     let cropwidth = width - (camera.crops[1] as usize) - x;
     let cropheight = height - (camera.crops[2] as usize) - y;
 
-    // Doing the rotation by iterating the output instead of the input results in stranger
-    // code that is ~30% faster including threading. In absolute terms it's not a large
-    // improvement though so going back to the simpler code may make sense in case of bugs
     if camera.find_hint("fuji_rotation_alt") {
       let rotatedwidth = cropheight + cropwidth/2;
       let rotatedheight = rotatedwidth-1;
 
-      let out = decode_threaded(rotatedwidth, rotatedheight, &(|out: &mut [u16], row| {
-        let startcol = if row < cropheight {
-          cropheight - 1 - row
-        } else {
-          row - cropheight + 1
-        };
-        let endcol = if (row+cropheight+1) < rotatedwidth {
-          row + cropheight
-        } else {
-          (rotatedwidth - 1) - (row + cropheight - rotatedwidth) - 1
-        };
-
-        for (i,col) in (startcol..endcol+1).enumerate() {
-          let (in_row, in_col) = if row < cropheight {
-            (y + row - i/2, x + i)
-          } else {
-            ((y + cropheight - 1) - i/2, x + (row-cropheight+1)*2 + i)
-          };
-          out[col] = src[in_row*width + in_col];
+      let mut out: Vec<u16> = vec![0; (rotatedwidth*rotatedheight) as usize];
+      for row in 0..cropheight {
+        let inb = &src[(row+y)*width+x..];
+        for col in 0..cropwidth {
+          let out_row = rotatedwidth - (cropheight + 1 - row + (col >> 1));
+          let out_col = ((col+1) >> 1) + row;
+          out[out_row*rotatedwidth+out_col] = inb[col];
         }
-      }));
+      }
+
       (rotatedwidth, rotatedheight, out)
     } else {
       let rotatedwidth = cropwidth + cropheight/2;
       let rotatedheight = rotatedwidth-1;
 
-      let out = decode_threaded(rotatedwidth, rotatedheight, &(|out: &mut [u16], row| {
-        let startcol = if row < cropwidth {
-          cropwidth - 1 - row
-        } else {
-          row + 1 - cropwidth
-        };
-        let endcol = if (row + cropwidth) < rotatedwidth {
-          row + cropwidth
-        } else {
-          (rotatedwidth - 1) - (row + cropwidth - rotatedwidth) - 1
-        };
-
-        for (i,col) in (startcol..endcol+1).enumerate() {
-          let (in_row, in_col) = if row < cropwidth {
-            (y+i, (x+cropwidth-1) - row + i/2)
-          } else {
-            (y + (row-cropwidth+1)*2 + i, x + i/2)
-          };
-          out[col] = src[in_row*width + in_col];
+      let mut out: Vec<u16> = vec![0; (rotatedwidth*rotatedheight) as usize];
+      for row in 0..cropheight {
+        let inb = &src[(row+y)*width+x..];
+        for col in 0..cropwidth {
+          let out_row = cropwidth - 1 - col + (row>>1);
+          let out_col = ((row+1) >> 1) + col;
+          out[out_row*rotatedwidth+out_col] = inb[col];
         }
-      }));
+      }
+
       (rotatedwidth, rotatedheight, out)
     }
   }

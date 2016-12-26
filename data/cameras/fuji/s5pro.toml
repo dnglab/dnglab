@@ -1,10 +1,10 @@
 make = "FUJIFILM"
-model = "FinePix S3Pro"
+model = "FinePix S5Pro"
 canonical_make = "Fujifilm"
-canonical_model = "FinePix S3Pro"
+canonical_model = "FinePix S5Pro"
 blackpoint = 0
 whitepoint = 16383
-color_matrix = [11807, -4612, -1294, -8927, 16968, 1988, -2120, 2741, 8006]
+color_matrix = [12300, -5110, -1304, -9117, 17143, 1998, -1947, 2448, 8100]
 color_pattern = "GBRG"
 crops = [2,32,2,32]
 hints = ["fuji_rotation_alt"]
