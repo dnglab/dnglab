@@ -1,0 +1,9 @@
+make = "FUJIFILM"
+model = "XQ1"
+canonical_make = "Fujifilm"
+canonical_model = "XQ1"
+blackpoint = 257
+whitepoint = 4094
+color_matrix = [9252, -2704, -1064, -5893, 14265, 1717, -1101, 2341, 4349]
+color_pattern = "GBGGRGRGRBGBGBGGRGGRGGBGBGBRGRGRGGBG"
+crops = [0,64,0,0]
