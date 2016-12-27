@@ -1,6 +1,7 @@
 use decoders::*;
 use decoders::tiff::*;
 use decoders::basics::*;
+use decoders::ljpeg::*;
 use std::f32::NAN;
 
 #[derive(Debug, Clone)]
@@ -37,6 +38,7 @@ impl<'a> Decoder for DngDecoder<'a> {
 
     let image = match fetch_tag!(raw, Tag::Compression).get_u32(0) {
       1 => try!(self.decode_uncompressed(raw, width as usize, height as usize)),
+      7 => try!(self.decode_compressed(raw, width as usize, height as usize)),
       c => return Err(format!("Don't know how to read DNGs with compression {}", c).to_string()),
     };
 
@@ -58,5 +60,12 @@ impl<'a> DngDecoder<'a> {
       16  => Ok(decode_16le(src, width, height)),
       bps => Err(format!("DNG: Don't know about {} bps images", bps).to_string()),
     }
+  }
+
+  pub fn decode_compressed(&self, raw: &TiffIFD, width: usize, height: usize) -> Result<Vec<u16>,String> {
+    let offset = fetch_tag!(raw, Tag::StripOffsets).get_u32(0) as usize;
+    let src = &self.buffer[offset..];
+
+    try!(LjpegDecompressor::new(src, width, height, false)).decode()
   }
 }

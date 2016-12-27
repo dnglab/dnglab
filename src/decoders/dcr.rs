@@ -57,7 +57,7 @@ impl<'a> DcrDecoder<'a> {
 
   fn decode_kodak65000(buf: &[u8], curve: &LookupTable, width: usize, height: usize) -> Vec<u16> {
     let mut out: Vec<u16> = vec![0; (width*height) as usize];
-    let mut input = ByteStream::new(buf);
+    let mut input = ByteStream::new(buf, LITTLE_ENDIAN);
 
     let mut random: u32 = 0;
     for row in 0..height {
@@ -79,14 +79,14 @@ impl<'a> DcrDecoder<'a> {
 
     let mut lens: [usize;256] = [0;256];
     for i in (0..size).step(2) {
-      lens[i] = (input.peek_byte() & 15) as usize;
-      lens[i+1] = (input.get_byte() >> 4) as usize;
+      lens[i] = (input.peek_u8() & 15) as usize;
+      lens[i+1] = (input.get_u8() >> 4) as usize;
     }
 
     let mut bitbuf: u64 = 0;
     let mut bits: usize = 0;
     if (size & 7) == 4 {
-      bitbuf  = (input.get_byte() as u64) << 8 | (input.get_byte() as u64);
+      bitbuf  = (input.get_u8() as u64) << 8 | (input.get_u8() as u64);
       bits = 16;
     }
 
@@ -94,7 +94,7 @@ impl<'a> DcrDecoder<'a> {
       let len = lens[i];
       if bits < len {
         for j in (0..32).step(8) {
-          bitbuf += (input.get_byte() as u64) << (bits+(j^8));
+          bitbuf += (input.get_u8() as u64) << (bits+(j^8));
         }
         bits += 32;
       }

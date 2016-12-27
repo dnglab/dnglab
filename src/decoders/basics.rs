@@ -339,6 +339,7 @@ impl LookupTable {
   }
 }
 
+#[derive(Debug, Copy, Clone)]
 pub struct BitPumpLSB<'a> {
   buffer: &'a [u8],
   pos: usize,
@@ -357,6 +358,7 @@ impl<'a> BitPumpLSB<'a> {
   }
 }
 
+#[derive(Debug, Copy, Clone)]
 pub struct BitPumpMSB<'a> {
   buffer: &'a [u8],
   pos: usize,
@@ -375,6 +377,7 @@ impl<'a> BitPumpMSB<'a> {
   }
 }
 
+#[derive(Debug, Copy, Clone)]
 pub struct BitPumpMSB32<'a> {
   buffer: &'a [u8],
   pos: usize,
@@ -478,23 +481,55 @@ impl<'a> BitPump for BitPumpMSB32<'a> {
   }
 }
 
+#[derive(Debug, Copy, Clone)]
 pub struct ByteStream<'a> {
   buffer: &'a [u8],
   pos: usize,
+  endian: Endian,
 }
 
 impl<'a> ByteStream<'a> {
-  pub fn new(src: &'a [u8]) -> ByteStream {
+  pub fn new(src: &'a [u8], endian: Endian) -> ByteStream {
     ByteStream {
       buffer: src,
       pos: 0,
+      endian: endian,
     }
   }
 
-  pub fn peek_byte(&self) -> u8 { self.buffer[self.pos] }
-  pub fn get_byte(&mut self) -> u8 {
-    let val = self.peek_byte();
+  pub fn peek_u8(&self) -> u8 { self.buffer[self.pos] }
+  pub fn get_u8(&mut self) -> u8 {
+    let val = self.peek_u8();
     self.pos += 1;
     val
+  }
+
+  pub fn peek_u16(&self) -> u16 { self.endian.ru16(self.buffer, self.pos) }
+  pub fn get_u16(&mut self) -> u16 {
+    let val = self.peek_u16();
+    self.pos += 2;
+    val
+  }
+
+//  pub fn peek_u32(&self) -> u32 { self.endian.ru32(self.buffer, self.pos) }
+//  pub fn get_u32(&mut self) -> u32 {
+//    let val = self.peek_u32();
+//    self.pos += 4;
+//    val
+//  }
+
+  pub fn skip_to_marker(&mut self) -> Result<usize, String> {
+    let mut skip_count = 0;
+    while !(self.buffer[self.pos] == 0xFF &&
+            self.buffer[self.pos+1] != 0 &&
+            self.buffer[self.pos+1] != 0xFF) {
+      self.pos += 1;
+      skip_count += 1;
+      if self.pos >= self.buffer.len() {
+        return Err("No marker found inside rest of buffer".to_string())
+      }
+    }
+    self.pos += 1; // Make the next byte the marker
+    Ok(skip_count+1)
   }
 }

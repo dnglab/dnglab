@@ -26,6 +26,7 @@ macro_rules! fetch_ifd {
 
 extern crate toml;
 mod basics;
+mod ljpeg;
 mod cfa;
 mod tiff;
 mod mrw;
