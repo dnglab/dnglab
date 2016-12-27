@@ -66,6 +66,6 @@ impl<'a> DngDecoder<'a> {
     let offset = fetch_tag!(raw, Tag::StripOffsets).get_u32(0) as usize;
     let src = &self.buffer[offset..];
 
-    try!(LjpegDecompressor::new(src, width, height, false)).decode()
+    try!(LjpegDecompressor::new(src, width, height, true)).decode()
   }
 }

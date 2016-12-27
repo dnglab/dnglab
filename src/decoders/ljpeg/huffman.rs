@@ -83,7 +83,7 @@ impl HuffTable {
       numbits: [0;256],
       bigtable: Vec::new(),
       precision: precision,
-      use_bigtable: false,
+      use_bigtable: true,
       dng_compatible: true,
       initialized: false,
     }
@@ -177,6 +177,7 @@ impl HuffTable {
       try!(self.initialize_bigtable());
     }
     self.initialized = true;
+    self.use_bigtable = use_bigtable;
     Ok(())
   }
 
@@ -184,7 +185,7 @@ impl HuffTable {
     let bits: usize = 14; // HuffDecode functions must be changed, if this is modified.
     let size: usize = 1 << bits;
 
-    self.bigtable = Vec::with_capacity(size);
+    self.bigtable = vec![0 as i32;size];
     let mut rv: i32;
     for i in 0..size {
       let input = (i << 2) as u16;
@@ -244,6 +245,10 @@ impl HuffTable {
 
   // Taken from Figure F.16: extract next coded symbol from input stream
   pub fn huff_decode(&self, pump: &mut BitPump) -> Result<i32,String> {
+    if !self.initialized {
+      return Err("ljpeg: Trying to read from uninitialized HuffTable".to_string());
+    }
+
     //First attempt to do complete decode, by using the first 14 bits
     let mut code: i32 = pump.peek_bits(14) as i32;
     if self.use_bigtable {
