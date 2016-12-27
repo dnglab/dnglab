@@ -1,7 +1,9 @@
 use decoders::basics::*;
 
 mod huffman;
+mod decompressors;
 use decoders::ljpeg::huffman::*;
+use decoders::ljpeg::decompressors::*;
 
 enum Marker {
   Stuff        = 0x00,
@@ -116,12 +118,15 @@ impl SOFInfo {
   }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct LjpegDecompressor<'a> {
   buffer: &'a [u8],
   width: usize,
   height: usize,
   sof: SOFInfo,
+  predictor: usize,
+  point_transform: usize,
+  dhts: [HuffTable;4],
 }
 
 impl<'a> LjpegDecompressor<'a> {
@@ -144,6 +149,7 @@ impl<'a> LjpegDecompressor<'a> {
       } else if marker == m(Marker::SOS) {
         let (a, b) = try!(sof.parse_sos(&mut input));
         pred = a; pt = b;
+        break;
       } else if marker == m(Marker::DHT) {
         if sof.precision > 16 || sof.precision < 12 {
           return Err(format!("ljpeg: DHT with sof.precision {}", sof.precision).to_string())
@@ -158,23 +164,16 @@ impl<'a> LjpegDecompressor<'a> {
       }
     }
 
-    println!("Got SOF: {:?}", sof);
-    println!("Got pred: {:?}", pred);
-    println!("Got pt: {:?}", pt);
-    println!("Got DHTs {:?}", dhts);
-
+    let offset = input.get_pos();
     Ok(LjpegDecompressor {
-      buffer: src,
+      buffer: &src[offset..],
       width: width,
       height: height,
       sof: sof,
+      predictor: pred,
+      point_transform: pt,
+      dhts: dhts,
     })
-  }
-
-  pub fn decode(&mut self) -> Result<Vec<u16>,String> {
-    let mut out: Vec<u16> = vec![0; (self.width*self.height) as usize];
-
-    Ok(out)
   }
 
   fn get_next_marker(input: &mut ByteStream, allowskip:bool) -> Result<u8,String> {
@@ -235,5 +234,23 @@ impl<'a> LjpegDecompressor<'a> {
     }
 
     Ok(())
+  }
+
+  pub fn decode(&self) -> Result<Vec<u16>,String> {
+    for component in self.sof.components.iter() {
+      if component.super_h !=1 || component.super_v != 1 {
+        return Err("ljpeg: subsampled images not supported".to_string());
+      }
+    }
+
+    match self.predictor {
+      1 => {
+        match self.sof.cps {
+          2 => decode_ljpeg_2components(self),
+          c => return Err(format!("ljpeg: {} component files not supported", c).to_string()),
+        }
+      },
+      p => return Err(format!("ljpeg: predictor {} not supported", p).to_string()),
+    }
   }
 }

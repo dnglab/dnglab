@@ -40,7 +40,6 @@ impl Endian {
   pub fn little(&self) -> bool { !self.big }
 }
 
-
 pub static BIG_ENDIAN: Endian = Endian{big: true};
 pub static LITTLE_ENDIAN: Endian = Endian{big: false};
 
@@ -400,6 +399,27 @@ impl<'a> BitPumpMSB32<'a> {
   }
 }
 
+#[derive(Debug, Copy, Clone)]
+pub struct BitPumpJPEG<'a> {
+  buffer: &'a [u8],
+  pos: usize,
+  bits: u64,
+  nbits: u32,
+  finished: bool,
+}
+
+impl<'a> BitPumpJPEG<'a> {
+  pub fn new(src: &'a [u8]) -> BitPumpJPEG {
+    BitPumpJPEG {
+      buffer: src,
+      pos: 0,
+      bits: 0,
+      nbits: 0,
+      finished: false,
+    }
+  }
+}
+
 pub trait BitPump {
   fn peek_bits(&mut self, num: u32) -> u32;
   fn consume_bits(&mut self, num: u32);
@@ -481,6 +501,35 @@ impl<'a> BitPump for BitPumpMSB32<'a> {
   }
 }
 
+impl<'a> BitPump for BitPumpJPEG<'a> {
+  fn peek_bits(&mut self, num: u32) -> u32 {
+    if num > self.nbits && !self.finished {
+      // Read 32 bits
+      let mut read_bytes = 0;
+      while read_bytes < 4 && !self.finished {
+        let byte = self.buffer[self.pos];
+        if byte == 0xff && self.buffer[self.pos+1] != 0 {
+          self.finished = true;
+        } else {
+          if byte == 0xff {
+            self.pos += 1; // Skip the extra byte used to mark 255
+          }
+          self.bits = (self.bits << 8) | (byte as u64);
+          self.pos += 1;
+          self.nbits += 8;
+          read_bytes += 1;
+        }
+      }
+    }
+    (self.bits >> (self.nbits-num)) as u32
+  }
+
+  fn consume_bits(&mut self, num: u32) {
+    self.nbits -= num;
+    self.bits &= (1 << self.nbits) - 1;
+  }
+}
+
 #[derive(Debug, Copy, Clone)]
 pub struct ByteStream<'a> {
   buffer: &'a [u8],
@@ -496,6 +545,8 @@ impl<'a> ByteStream<'a> {
       endian: endian,
     }
   }
+
+  pub fn get_pos(&self) -> usize { self.pos }
 
   pub fn peek_u8(&self) -> u8 { self.buffer[self.pos] }
   pub fn get_u8(&mut self) -> u8 {

@@ -35,6 +35,7 @@
 */
 
 use std::fmt;
+use decoders::basics::*;
 
 const HUFF_BITMASK: [u32;32] = [0xffffffff, 0x7fffffff,
                                 0x3fffffff, 0x1fffffff,
@@ -66,6 +67,7 @@ pub struct HuffTable {
   numbits: [usize;256],
   bigtable: Vec<i32>,
   precision: usize,
+  pub use_bigtable: bool,
   pub dng_compatible: bool,
   pub initialized: bool,
 }
@@ -81,7 +83,8 @@ impl HuffTable {
       numbits: [0;256],
       bigtable: Vec::new(),
       precision: precision,
-      dng_compatible: false,
+      use_bigtable: false,
+      dng_compatible: true,
       initialized: false,
     }
   }
@@ -234,8 +237,71 @@ impl HuffTable {
         self.bigtable[i] = l as i32;
       }
     }
-
+    self.use_bigtable = true;
     Ok(())
+  }
+
+
+  // Taken from Figure F.16: extract next coded symbol from input stream
+  pub fn huff_decode(&self, pump: &mut BitPump) -> Result<i32,String> {
+    //First attempt to do complete decode, by using the first 14 bits
+    let mut code: i32 = pump.peek_bits(14) as i32;
+    if self.use_bigtable {
+      let val: i32 = self.bigtable[code as usize];
+      if val & 0xff != 0xff {
+        pump.consume_bits((val & 0xff) as u32);
+        return Ok(val >> 8)
+      }
+    }
+
+    // If the huffman code is less than 8 bits, we can use the fast
+    // table lookup to get its value.  It's more than 8 bits about
+    // 3-4% of the time.
+    let rv: i32;
+    code >>= 6;
+    let val = self.numbits[code as usize] as i32;
+    let mut l = val & 15;
+    if l != 0 {
+      pump.consume_bits(l as u32);
+      rv = val >> 4;
+    } else {
+      pump.consume_bits(8);
+      l = 8;
+      while code > self.maxcode[l as usize] {
+        let temp = pump.get_bits(1) as i32;
+        code = (code << 1) | temp;
+        l += 1;
+      }
+
+      // With garbage input we may reach the sentinel value l = 17.
+      if l > self.precision as i32 || self.valptr[l as usize] == 0xff {
+        return Err(format!("ljpeg: bad Huffman code: {}", l).to_string())
+      } else {
+        rv = self.huffval[
+          self.valptr[l as usize] as usize +
+          (code - (self.mincode[l as usize] as i32)) as usize
+        ] as i32;
+      }
+    }
+
+    if rv == 16 {
+      if self.dng_compatible {
+        pump.consume_bits(16);
+      }
+      return Ok(-32768);
+    }
+
+    // Section F.2.2.1: decode the difference and
+    // Figure F.12: extend sign bit
+    if rv != 0 {
+      let mut x: i32 = pump.get_bits(rv as u32) as i32;
+      if (x & (1 << (rv - 1))) == 0 {
+        x -= (1 << rv) - 1;
+      }
+      return Ok(x)
+    }
+
+    return Ok(0)
   }
 }
 
