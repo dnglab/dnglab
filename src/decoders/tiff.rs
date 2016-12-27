@@ -13,6 +13,7 @@ pub enum Tag {
   PanaWBs2R        = 0x0024,
   PanaWBs2G        = 0x0025,
   PanaWBs2B        = 0x0026,
+  NewSubFileType   = 0x00FE,
   ImageWidth       = 0x0100,
   ImageLength      = 0x0101,
   BitsPerSample    = 0x0102,
@@ -45,6 +46,8 @@ pub enum Tag {
   SrwSensorAreas   = 0xA010,
   SrwRGGBLevels    = 0xA021,
   SrwRGGBBlacks    = 0xA028,
+  DNGVersion       = 0xC612,
+  AsShotNeutral    = 0xC628,
   DNGPrivateArea   = 0xC634,
   RafRawSubIFD     = 0xF000,
   RafImageWidth    = 0xF001,
@@ -367,7 +370,13 @@ impl<'a> TiffEntry<'a> {
   }
 
   pub fn get_f32(&self, idx: usize) -> f32 {
-    self.get_u32(idx) as f32
+    if self.typ == 5 { // Rational
+      let a = self.endian.ru32(self.data, idx*8) as f32;
+      let b = self.endian.ru32(self.data, idx*8+4) as f32;
+      a / b
+    } else {
+      self.get_u32(idx) as f32
+    }
   }
 
   pub fn get_str(&self) -> &str {

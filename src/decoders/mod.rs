@@ -39,6 +39,7 @@ mod dcs;
 mod rw2;
 mod raf;
 mod dcr;
+mod dng;
 use self::tiff::*;
 
 pub static CAMERAS_TOML: &'static str = include_str!("../../data/cameras/all.toml");
@@ -244,6 +245,10 @@ impl RawLoader {
     }
 
     let tiff = try!(TiffIFD::new_file(buffer));
+
+    if tiff.has_entry(Tag::DNGVersion) {
+      return Ok(Box::new(dng::DngDecoder::new(buffer, tiff, self)))
+    }
 
     macro_rules! use_decoder {
         ($dec:ty, $buf:ident, $tiff:ident, $rawdec:ident) => (Ok(Box::new(<$dec>::new($buf, $tiff, $rawdec)) as Box<Decoder>));
