@@ -4,10 +4,10 @@ use std::cmp;
 
 pub fn demosaic_and_scale(img: &Image, maxwidth: usize, maxheight: usize) -> OpBuffer {
   // Calculate the resulting width/height and top-left corner after crops
-  let width = (img.width as i64 - img.crops[1] - img.crops[3]) as usize;
-  let height = (img.height as i64 - img.crops[0] - img.crops[2]) as usize;
-  let x = img.crops[3] as usize;
-  let y = img.crops[0] as usize;
+  let width = img.width - img.crops[1] - img.crops[3];
+  let height = img.height - img.crops[0] - img.crops[2];
+  let x = img.crops[3];
+  let y = img.crops[0];
 
   let (scale, nwidth, nheight) = if maxwidth == 0 || maxheight == 0 {
     (0.0, width, height)

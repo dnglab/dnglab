@@ -77,11 +77,11 @@ pub struct Image {
   pub height: usize,
   pub wb_coeffs: [f32;4],
   pub data: Box<[u16]>,
-  pub whitelevels: [i64;4],
-  pub blacklevels: [i64;4],
-  pub color_matrix: [i64;12],
+  pub whitelevels: [u16;4],
+  pub blacklevels: [u16;4],
+  pub color_matrix: [i32;12],
   pub cfa: cfa::CFA,
-  pub crops: [i64;4],
+  pub crops: [usize;4],
 }
 
 #[derive(Debug, Clone)]
@@ -91,11 +91,11 @@ pub struct Camera {
   pub mode: String,
   pub canonical_make: String,
   pub canonical_model: String,
-  whitelevels: [i64;4],
-  blacklevels: [i64;4],
-  color_matrix: [i64;12],
+  whitelevels: [u16;4],
+  blacklevels: [u16;4],
+  color_matrix: [i32;12],
   cfa: cfa::CFA,
-  crops: [i64;4],
+  crops: [usize;4],
   bps: u32,
   hints: Vec<String>,
 }
@@ -113,18 +113,18 @@ impl Camera {
         "mode" => {self.mode = val.as_str().unwrap().to_string().clone();},
         "canonical_name" => {self.canonical_make = val.as_str().unwrap().to_string().clone();},
         "canonical_model" => {self.canonical_model = val.as_str().unwrap().to_string().clone();},
-        "whitepoint" => {let white = val.as_integer().unwrap(); self.whitelevels = [white, white, white, white];},
-        "blackpoint" => {let black = val.as_integer().unwrap(); self.blacklevels = [black, black, black, black];},
+        "whitepoint" => {let white = val.as_integer().unwrap() as u16; self.whitelevels = [white, white, white, white];},
+        "blackpoint" => {let black = val.as_integer().unwrap() as u16; self.blacklevels = [black, black, black, black];},
         "color_matrix" => {
           let matrix = val.as_slice().unwrap();
           for (i, val) in matrix.into_iter().enumerate() {
-            self.color_matrix[i] = val.as_integer().unwrap();
+            self.color_matrix[i] = val.as_integer().unwrap() as i32;
           }
         },
         "crops" => {
           let crop_vals = val.as_slice().unwrap();
           for (i, val) in crop_vals.into_iter().enumerate() {
-            self.crops[i] = val.as_integer().unwrap();
+            self.crops[i] = val.as_integer().unwrap() as usize;
           }
         },
         "color_pattern" => {self.cfa = cfa::CFA::new(&val.as_str().unwrap().to_string());},
