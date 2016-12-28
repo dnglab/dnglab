@@ -127,6 +127,7 @@ impl<'a> DngDecoder<'a> {
 
     match fetch_tag!(raw, Tag::BitsPerSample).get_u32(0) {
       16  => Ok(decode_16le(src, width, height)),
+      12  => Ok(decode_12be(src, width, height)),
       bps => Err(format!("DNG: Don't know about {} bps images", bps).to_string()),
     }
   }
