@@ -121,8 +121,6 @@ impl SOFInfo {
 #[derive(Debug)]
 pub struct LjpegDecompressor<'a> {
   buffer: &'a [u8],
-  width: usize,
-  height: usize,
   sof: SOFInfo,
   predictor: usize,
   point_transform: usize,
@@ -130,7 +128,7 @@ pub struct LjpegDecompressor<'a> {
 }
 
 impl<'a> LjpegDecompressor<'a> {
-  pub fn new(src: &'a [u8], width: usize, height: usize, use_bigtable: bool) -> Result<LjpegDecompressor, String> {
+  pub fn new(src: &'a [u8], use_bigtable: bool) -> Result<LjpegDecompressor, String> {
     let mut input = ByteStream::new(src, BIG_ENDIAN);
 
     if try!(LjpegDecompressor::get_next_marker(&mut input, false)) != m(Marker::SOI) {
@@ -140,35 +138,37 @@ impl<'a> LjpegDecompressor<'a> {
     let mut sof = SOFInfo::empty();
     let mut dhts = [HuffTable::empty(0),HuffTable::empty(0),
                     HuffTable::empty(0),HuffTable::empty(0)];
-    let mut pred = 0;
-    let mut pt = 0;
+    let pred;
+    let pt;
     loop {
       let marker = try!(LjpegDecompressor::get_next_marker(&mut input, true));
-      if marker == m(Marker::EOI) {
-        break
-      } else if marker == m(Marker::SOS) {
-        let (a, b) = try!(sof.parse_sos(&mut input));
-        pred = a; pt = b;
-        break;
-      } else if marker == m(Marker::DHT) {
+      if marker == m(Marker::SOF3) {
+        // Start of the frame, giving us the basic info
+        try!(sof.parse_sof(&mut input));
         if sof.precision > 16 || sof.precision < 12 {
-          return Err(format!("ljpeg: DHT with sof.precision {}", sof.precision).to_string())
+          return Err(format!("ljpeg: sof.precision {}", sof.precision).to_string())
         }
         dhts = [HuffTable::empty(sof.precision),HuffTable::empty(sof.precision),
                 HuffTable::empty(sof.precision),HuffTable::empty(sof.precision)];
+      } else if marker == m(Marker::DHT) {
+        // Huffman table settings
         try!(LjpegDecompressor::parse_dht(&mut input, &mut dhts, use_bigtable));
-      } else if marker == m(Marker::SOF3) {
-        try!(sof.parse_sof(&mut input));
+      } else if marker == m(Marker::SOS) {
+        // Start of the actual stream, we can decode after this
+        let (a, b) = try!(sof.parse_sos(&mut input));
+        pred = a; pt = b;
+        break;
+      } else if marker == m(Marker::EOI) {
+        // Should never be reached as we stop at SOS
+        return Err("ljpeg: reached EOI before SOS".to_string())
       } else if marker == m(Marker::DQT) {
-        return Err("ljpeg: not a valid raw file".to_string())
+        return Err("ljpeg: not a valid raw file, found DQT".to_string())
       }
     }
 
     let offset = input.get_pos();
     Ok(LjpegDecompressor {
       buffer: &src[offset..],
-      width: width,
-      height: height,
       sof: sof,
       predictor: pred,
       point_transform: pt,
@@ -236,7 +236,7 @@ impl<'a> LjpegDecompressor<'a> {
     Ok(())
   }
 
-  pub fn decode(&self) -> Result<Vec<u16>,String> {
+  pub fn decode(&self, out: &mut [u16], x: usize, stripwidth: usize, width: usize, height: usize) -> Result<(),String> {
     for component in self.sof.components.iter() {
       if component.super_h !=1 || component.super_v != 1 {
         return Err("ljpeg: subsampled images not supported".to_string());
@@ -246,7 +246,7 @@ impl<'a> LjpegDecompressor<'a> {
     match self.predictor {
       1 => {
         match self.sof.cps {
-          2 => decode_ljpeg_2components(self),
+          2 => decode_ljpeg_2components(self, out, x, stripwidth, width, height),
           c => return Err(format!("ljpeg: {} component files not supported", c).to_string()),
         }
       },

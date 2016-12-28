@@ -2,36 +2,43 @@ use decoders::ljpeg::*;
 use decoders::basics::*;
 use itertools::Itertools;
 
-pub fn decode_ljpeg_2components(ljpeg: &LjpegDecompressor) -> Result<Vec<u16>,String> {
-  let mut out: Vec<u16> = vec![0; ljpeg.width*ljpeg.height];
-
+pub fn decode_ljpeg_2components(ljpeg: &LjpegDecompressor, out: &mut [u16], x: usize, stripwidth:usize, width: usize, height: usize) -> Result<(),String> {
+  if ljpeg.sof.width*2 < width || ljpeg.sof.height < height {
+    return Err(format!("ljpeg: trying to decode {}x{} into {}x{}",
+                       ljpeg.sof.width*2, ljpeg.sof.height,
+                       width, height).to_string())
+  }
   let ref htable1 = ljpeg.dhts[ljpeg.sof.components[0].dc_tbl_num];
   let ref htable2 = ljpeg.dhts[ljpeg.sof.components[1].dc_tbl_num];
   let mut pump = BitPumpJPEG::new(ljpeg.buffer);
 
   let base_prediction = 1 << (ljpeg.sof.precision - ljpeg.point_transform -1);
-  out[0] = (base_prediction + try!(htable1.huff_decode(&mut pump))) as u16;
-  out[1] = (base_prediction + try!(htable2.huff_decode(&mut pump))) as u16;
+  out[x]   = (base_prediction + try!(htable1.huff_decode(&mut pump))) as u16;
+  out[x+1] = (base_prediction + try!(htable2.huff_decode(&mut pump))) as u16;
+  let skip_x = ljpeg.sof.width - width/2;
 
-  for row in 0..ljpeg.height {
-    let startcol = if row == 0 {2} else {0};
-    for col in (startcol..ljpeg.width).step(2) {
-      let (p1,p2) = if col == 0 {
+  for row in 0..height {
+    let startcol = if row == 0 {x+2} else {x};
+    for col in (startcol..(width+x)).step(2) {
+      let (p1,p2) = if col == x {
         // At start of line predictor starts with start of previous line
-        (out[(row-1)*ljpeg.width],out[(row-1)*ljpeg.width+1])
+        (out[(row-1)*stripwidth+x],out[(row-1)*stripwidth+1+x])
       } else {
         // All other cases use the two previous pixels in the same line
-        (out[row*ljpeg.width+col-2], out[row*ljpeg.width+col-1])
+        (out[row*stripwidth+col-2], out[row*stripwidth+col-1])
       };
 
       let diff1 = try!(htable1.huff_decode(&mut pump));
-      out[row*ljpeg.width+col] = ((p1 as i32) + diff1) as u16;
-      if col + 1 < ljpeg.width {
-        let diff2 = try!(htable2.huff_decode(&mut pump));
-        out[row*ljpeg.width+col+1] = ((p2 as i32) + diff2) as u16;
-      }
+      let diff2 = try!(htable2.huff_decode(&mut pump));
+      out[row*stripwidth+col] = ((p1 as i32) + diff1) as u16;
+      out[row*stripwidth+col+1] = ((p2 as i32) + diff2) as u16;
+    }
+    // Skip extra encoded differences if the ljpeg frame is wider than the output
+    for _ in 0..skip_x {
+      try!(htable1.huff_decode(&mut pump));
+      try!(htable2.huff_decode(&mut pump));
     }
   }
 
-  Ok(out)
+  Ok(())
 }

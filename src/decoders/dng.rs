@@ -3,6 +3,7 @@ use decoders::tiff::*;
 use decoders::basics::*;
 use decoders::ljpeg::*;
 use std::f32::NAN;
+use std::cmp;
 
 #[derive(Debug, Clone)]
 pub struct DngDecoder<'a> {
@@ -63,9 +64,44 @@ impl<'a> DngDecoder<'a> {
   }
 
   pub fn decode_compressed(&self, raw: &TiffIFD, width: usize, height: usize) -> Result<Vec<u16>,String> {
-    let offset = fetch_tag!(raw, Tag::StripOffsets).get_u32(0) as usize;
-    let src = &self.buffer[offset..];
+    if raw.has_entry(Tag::StripOffsets) { // We're in a normal offset situation
+      let offsets = fetch_tag!(raw, Tag::StripOffsets);
+      if offsets.count() != 1 {
+        return Err("DNG: files with more than one slice not supported yet".to_string())
+      }
+      let offset = offsets.get_u32(0) as usize;
+      let src = &self.buffer[offset..];
+      let mut out = vec![0 as u16; width*height];
+      let decompressor = try!(LjpegDecompressor::new(src, true));
+      try!(decompressor.decode(&mut out, 0, width, width, height));
+      Ok(out)
+    } else if raw.has_entry(Tag::TileOffsets) { // They've gone with tiling
+      let twidth = fetch_tag!(raw, Tag::TileWidth).get_u32(0) as usize;
+      let tlength = fetch_tag!(raw, Tag::TileLength).get_u32(0) as usize;
+      let offsets = fetch_tag!(raw, Tag::TileOffsets);
+      let coltiles = (width-1)/twidth + 1;
+      let rowtiles = (height-1)/tlength + 1;
+      if coltiles*rowtiles != offsets.count() as usize {
+        return Err(format!("DNG: trying to decode {} tiles from {} offsets",
+                           coltiles*rowtiles, offsets.count()).to_string())
+      }
 
-    try!(LjpegDecompressor::new(src, width, height, true)).decode()
+      let mut out = vec![0 as u16; width*height];
+      for (row,strip) in out.chunks_mut(tlength*width).enumerate() {
+        for col in 0..coltiles {
+          let offset = offsets.get_u32(row*coltiles+col) as usize;
+          let src = &self.buffer[offset..];
+          // We don't use bigtable here as the tiles are two small to amortize the setup cost
+          let decompressor = try!(LjpegDecompressor::new(src, true));
+          let bwidth = cmp::min(width, (col+1)*twidth) - col*twidth;
+          let blength = cmp::min(height, (row+1)*tlength) - row*tlength;
+          try!(decompressor.decode(strip, col*twidth, width, bwidth, blength));
+        }
+      }
+
+      Ok(out)
+    } else {
+      Err("DNG: didn't find tiles or strips".to_string())
+    }
   }
 }
