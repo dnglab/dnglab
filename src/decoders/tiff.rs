@@ -28,6 +28,7 @@ pub enum Tag {
   TileLength       = 0x0143,
   TileOffsets      = 0x0144,
   SubIFDs          = 0x014A,
+  PefWB            = 0x0201,
   DcrWB            = 0x03FD,
   DcrLinearization = 0x090D,
   EpsonWB          = 0x0E80,
@@ -216,8 +217,9 @@ impl<'a> TiffIFD<'a> {
   }
 
   pub fn new_makernote(buf: &'a[u8], offset: usize, base_offset: usize, depth: u32, e: Endian) -> Result<TiffIFD<'a>, String> {
-    let mut off = offset;
+    let mut off = 0;
     let data = &buf[offset..];
+    let mut endian = e;
 
     // Olympus starts the makernote with their own name, sometimes truncated
     if data[0..5] == b"OLYMP"[..] {
@@ -232,7 +234,21 @@ impl<'a> TiffIFD<'a> {
       off += 8;
     }
 
-    TiffIFD::new(buf, off, base_offset, 0, depth, e)
+    // Pentax makernote starts with AOC\0 - If it's there, skip it
+    if data[0..4] == b"AOC\0"[..] {
+      off +=4;
+    }
+
+    // Some have MM or II to indicate endianness - read that
+    if data[off..off+2] == b"II"[..] {
+      off +=2;
+      endian = LITTLE_ENDIAN;
+    } if data[off..off+2] == b"MM"[..] {
+      off +=2;
+      endian = BIG_ENDIAN;
+    }
+
+    TiffIFD::new(buf, offset+off, base_offset, 0, depth, endian)
   }
 
   pub fn new_fuji(buf: &'a[u8], offset: usize) -> Result<TiffIFD<'a>, String> {
