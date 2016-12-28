@@ -507,18 +507,22 @@ impl<'a> BitPump for BitPumpJPEG<'a> {
       // Read 32 bits
       let mut read_bytes = 0;
       while read_bytes < 4 && !self.finished {
-        let byte = self.buffer[self.pos];
-        if byte == 0xff && self.buffer[self.pos+1] != 0 {
-          self.finished = true;
-        } else {
-          if byte == 0xff {
+        let byte = {
+          let nextbyte = self.buffer[self.pos];
+          if nextbyte != 0xff {
+            nextbyte
+          } else if self.buffer[self.pos+1] == 0x00 {
             self.pos += 1; // Skip the extra byte used to mark 255
+            nextbyte
+          } else {
+            self.finished = true;
+            0
           }
-          self.bits = (self.bits << 8) | (byte as u64);
-          self.pos += 1;
-          self.nbits += 8;
-          read_bytes += 1;
-        }
+        };
+        self.bits = (self.bits << 8) | (byte as u64);
+        self.pos += 1;
+        self.nbits += 8;
+        read_bytes += 1;
       }
     }
     (self.bits >> (self.nbits-num)) as u32
