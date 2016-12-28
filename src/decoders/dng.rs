@@ -98,9 +98,14 @@ impl<'a> DngDecoder<'a> {
   }
 
   fn get_crops(&self, raw: &TiffIFD, width: usize, height: usize) -> Result<[usize;4],String> {
-    let crops = fetch_tag!(raw, Tag::ActiveArea);
-    Ok([crops.get_u32(0) as usize, width - crops.get_u32(3) as usize,
-        height - crops.get_u32(2) as usize, crops.get_u32(1) as usize])
+    if raw.has_entry(Tag::ActiveArea) {
+      let crops = fetch_tag!(raw, Tag::ActiveArea);
+      Ok([crops.get_u32(0) as usize, width - crops.get_u32(3) as usize,
+          height - crops.get_u32(2) as usize, crops.get_u32(1) as usize])
+    } else {
+      // Ignore missing crops, at least some pentax DNGs don't have it
+      Ok([0,0,0,0])
+    }
   }
 
   fn get_color_matrix(&self) -> Result<[[f32;3];4],String> {
