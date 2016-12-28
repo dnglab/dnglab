@@ -21,6 +21,14 @@ pub struct Endian {
 }
 
 impl Endian {
+  pub fn ri32(&self, buf: &[u8], pos: usize) -> i32 {
+    if self.big {
+      BEi32(buf,pos)
+    } else {
+      LEi32(buf,pos)
+    }
+  }
+
   pub fn ru32(&self, buf: &[u8], pos: usize) -> u32 {
     if self.big {
       BEu32(buf,pos)
@@ -42,6 +50,14 @@ impl Endian {
 
 pub static BIG_ENDIAN: Endian = Endian{big: true};
 pub static LITTLE_ENDIAN: Endian = Endian{big: false};
+
+#[allow(non_snake_case)] #[inline] pub fn BEi32(buf: &[u8], pos: usize) -> i32 {
+  BigEndian::read_i32(&buf[pos..pos+4])
+}
+
+#[allow(non_snake_case)] #[inline] pub fn LEi32(buf: &[u8], pos: usize) -> i32 {
+  LittleEndian::read_i32(&buf[pos..pos+4])
+}
 
 #[allow(non_snake_case)] #[inline] pub fn BEu32(buf: &[u8], pos: usize) -> u32 {
   BigEndian::read_u32(&buf[pos..pos+4])

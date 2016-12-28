@@ -50,8 +50,12 @@ pub enum Tag {
   SrwRGGBLevels    = 0xA021,
   SrwRGGBBlacks    = 0xA028,
   DNGVersion       = 0xC612,
+  BlackLevels      = 0xC61A,
+  WhiteLevel       = 0xC61D,
+  ColorMatrix2     = 0xC622,
   AsShotNeutral    = 0xC628,
   DNGPrivateArea   = 0xC634,
+  ActiveArea       = 0xC68D,
   RafRawSubIFD     = 0xF000,
   RafImageWidth    = 0xF001,
   RafImageLength   = 0xF002,
@@ -381,6 +385,10 @@ impl<'a> TiffEntry<'a> {
     if self.typ == 5 { // Rational
       let a = self.endian.ru32(self.data, idx*8) as f32;
       let b = self.endian.ru32(self.data, idx*8+4) as f32;
+      a / b
+    } else if self.typ == 10 { // Signed Rational
+      let a = self.endian.ri32(self.data, idx*8) as f32;
+      let b = self.endian.ri32(self.data, idx*8+4) as f32;
       a / b
     } else {
       self.get_u32(idx) as f32

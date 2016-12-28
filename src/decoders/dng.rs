@@ -2,6 +2,7 @@ use decoders::*;
 use decoders::tiff::*;
 use decoders::basics::*;
 use decoders::ljpeg::*;
+use decoders::cfa::*;
 use std::f32::NAN;
 use std::cmp;
 
@@ -24,7 +25,6 @@ impl<'a> DngDecoder<'a> {
 
 impl<'a> Decoder for DngDecoder<'a> {
   fn image(&self) -> Result<Image,String> {
-    let camera = try!(self.rawloader.check_supported(&self.tiff));
     let ifds = self.tiff.find_ifds_with_tag(Tag::Compression).into_iter().filter(|ifd| {
       let compression = (**ifd).find_entry(Tag::Compression).unwrap().get_u32(0);
       let subsampled = match (**ifd).find_entry(Tag::NewSubFileType) {
@@ -43,7 +43,35 @@ impl<'a> Decoder for DngDecoder<'a> {
       c => return Err(format!("Don't know how to read DNGs with compression {}", c).to_string()),
     };
 
-    ok_image(camera, width, height, try!(self.get_wb()), image)
+    let (make, model, canonical_make, canonical_model) = {
+      match self.rawloader.check_supported(&self.tiff) {
+        Ok(cam) => {
+          (cam.make.clone(), cam.model.clone(),
+           cam.canonical_make.clone(),cam.canonical_model.clone())
+        },
+        Err(_) => {
+          let make = fetch_tag!(self.tiff, Tag::Make).get_str();
+          let model = fetch_tag!(self.tiff, Tag::Model).get_str();
+          (make.to_string(), model.to_string(), make.to_string(), model.to_string())
+        },
+      }
+    };
+
+    Ok(Image {
+      make: make,
+      model: model,
+      canonical_make: canonical_make,
+      canonical_model: canonical_model,
+      width: width as usize,
+      height: height as usize,
+      wb_coeffs: try!(self.get_wb()),
+      data: image.into_boxed_slice(),
+      blacklevels: try!(self.get_blacklevels(raw)),
+      whitelevels: try!(self.get_whitelevels(raw)),
+      xyz_to_cam: try!(self.get_color_matrix()),
+      cfa: try!(self.get_cfa(raw)),
+      crops: try!(self.get_crops(raw, width as usize, height as usize)),
+    })
   }
 }
 
@@ -51,6 +79,41 @@ impl<'a> DngDecoder<'a> {
   fn get_wb(&self) -> Result<[f32;4], String> {
     let levels = fetch_tag!(self.tiff, Tag::AsShotNeutral);
     Ok([1.0/levels.get_f32(0),1.0/levels.get_f32(1),1.0/levels.get_f32(2),NAN])
+  }
+
+  fn get_blacklevels(&self, raw: &TiffIFD) -> Result<[u16;4], String> {
+    let levels = fetch_tag!(raw, Tag::BlackLevels);
+    Ok([levels.get_f32(0) as u16,levels.get_f32(1) as u16,
+        levels.get_f32(2) as u16,levels.get_f32(3) as u16])
+  }
+
+  fn get_whitelevels(&self, raw: &TiffIFD) -> Result<[u16;4], String> {
+    let level = fetch_tag!(raw, Tag::WhiteLevel).get_u32(0) as u16;
+    Ok([level,level,level,level])
+  }
+
+  fn get_cfa(&self, raw: &TiffIFD) -> Result<CFA,String> {
+    let pattern = fetch_tag!(raw, Tag::CFAPattern);
+    Ok(CFA::new_from_tag(pattern))
+  }
+
+  fn get_crops(&self, raw: &TiffIFD, width: usize, height: usize) -> Result<[usize;4],String> {
+    let crops = fetch_tag!(raw, Tag::ActiveArea);
+    Ok([crops.get_u32(0) as usize, width - crops.get_u32(3) as usize,
+        height - crops.get_u32(2) as usize, crops.get_u32(1) as usize])
+  }
+
+  fn get_color_matrix(&self) -> Result<[[f32;3];4],String> {
+    let mut matrix: [[f32;3];4] = [[0.0;3];4];
+    let cmatrix = fetch_tag!(self.tiff, Tag::ColorMatrix2);
+    if cmatrix.count() > 12 {
+      Err(format!("color matrix supposedly has {} components",cmatrix.count()).to_string())
+    } else {
+      for i in 0..(cmatrix.count() as usize) {
+        matrix[i/3][i%3] = cmatrix.get_f32(i);
+      }
+      Ok(matrix)
+    }
   }
 
   pub fn decode_uncompressed(&self, raw: &TiffIFD, width: usize, height: usize) -> Result<Vec<u16>,String> {

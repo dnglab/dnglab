@@ -1,3 +1,4 @@
+use decoders::tiff::*;
 use std::fmt;
 use std::clone;
 
@@ -8,6 +9,19 @@ pub struct CFA {
 }
 
 impl CFA {
+  pub fn new_from_tag(pat: &TiffEntry) -> CFA {
+    let mut patname = String::new();
+    for i in 0..pat.count() {
+      patname.push(match pat.get_u32(i as usize) {
+        0 => 'R',
+        1 => 'G',
+        2 => 'B',
+        _ => 'U',
+      });
+    }
+    CFA::new(&patname)
+  }
+
   pub fn new(patname: &str) -> CFA {
     let size = match patname.len() {
       0 => 0,
