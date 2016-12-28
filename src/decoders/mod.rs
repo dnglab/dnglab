@@ -111,7 +111,7 @@ impl Camera {
         "make" => {self.make = val.as_str().unwrap().to_string().clone();},
         "model" => {self.model = val.as_str().unwrap().to_string().clone();},
         "mode" => {self.mode = val.as_str().unwrap().to_string().clone();},
-        "canonical_name" => {self.canonical_make = val.as_str().unwrap().to_string().clone();},
+        "canonical_make" => {self.canonical_make = val.as_str().unwrap().to_string().clone();},
         "canonical_model" => {self.canonical_model = val.as_str().unwrap().to_string().clone();},
         "whitepoint" => {let white = val.as_integer().unwrap() as u16; self.whitelevels = [white, white, white, white];},
         "blackpoint" => {let black = val.as_integer().unwrap() as u16; self.blacklevels = [black, black, black, black];},
