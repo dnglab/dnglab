@@ -31,6 +31,7 @@ impl<'a> Decoder for PefDecoder<'a> {
 
     let image = match fetch_tag!(raw, Tag::Compression).get_u32(0) {
       1 => decode_16be(src, width as usize, height as usize),
+      32773 => decode_12be(src, width as usize, height as usize),
       c => return Err(format!("PEF: Don't know how to read compression {}", c).to_string()),
     };
 

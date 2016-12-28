@@ -1,0 +1,9 @@
+make = "PENTAX Corporation"
+model = "PENTAX *ist DL2"
+canonical_make = "Pentax"
+canonical_model = "*ist DL2"
+blackpoint = 127
+whitepoint = 3950
+color_matrix = [10504, -2438, -1189, -8603, 16207, 2531, -1022, 863, 12242]
+color_pattern = "RGGB"
+crops = [0,0,0,0]
