@@ -366,10 +366,15 @@ impl<'a> TiffEntry<'a> {
 
   pub fn get_u32(&self, idx: usize) -> u32 {
     match self.typ {
+      1                  => self.data[idx] as u32,
       3 | 8              => self.endian.ru16(self.data, idx*2) as u32,
-      1 | 4 | 7 | 9 | 13 => self.endian.ru32(self.data, idx*4),
+      4 | 7 | 9 | 13     => self.get_force_u32(idx),
       _ => panic!(format!("Trying to read typ {} for a u32", self.typ).to_string()),
     }
+  }
+
+  pub fn get_force_u32(&self, idx: usize) -> u32 {
+    self.endian.ru32(self.data, idx*4)
   }
 
   pub fn get_f32(&self, idx: usize) -> f32 {
