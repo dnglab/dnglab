@@ -86,20 +86,18 @@ impl<'a> DngDecoder<'a> {
                            coltiles*rowtiles, offsets.count()).to_string())
       }
 
-      let mut out = vec![0 as u16; width*height];
-      for (row,strip) in out.chunks_mut(tlength*width).enumerate() {
+      Ok(decode_threaded_multiline(width, height, tlength, &(|strip: &mut [u16], row| {
+        let row = row / tlength;
         for col in 0..coltiles {
           let offset = offsets.get_u32(row*coltiles+col) as usize;
           let src = &self.buffer[offset..];
           // We don't use bigtable here as the tiles are two small to amortize the setup cost
-          let decompressor = try!(LjpegDecompressor::new(src, true));
+          let decompressor = LjpegDecompressor::new(src, true).unwrap();
           let bwidth = cmp::min(width, (col+1)*twidth) - col*twidth;
           let blength = cmp::min(height, (row+1)*tlength) - row*tlength;
-          try!(decompressor.decode(strip, col*twidth, width, bwidth, blength));
+          decompressor.decode(strip, col*twidth, width, bwidth, blength).unwrap();
         }
-      }
-
-      Ok(out)
+      })))
     } else {
       Err("DNG: didn't find tiles or strips".to_string())
     }
