@@ -48,7 +48,7 @@ fn main() {
   println!("WB coeffs are {:?}", image.wb_coeffs);
   println!("black levels are {:?}", image.blacklevels);
   println!("white levels are {:?}", image.whitelevels);
-  println!("color matrix is {:?}", image.color_matrix);
+  println!("xyz_to_cam is {:?}", image.xyz_to_cam);
   println!("CFA is {:?}", image.cfa);
   println!("crops are {:?}", image.crops);
 

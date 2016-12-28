@@ -111,11 +111,6 @@ fn pseudoinverse(inm: [[f32;3];4]) -> [[f32;4];3] {
 
 
 fn cam_to_xyz_matrix(img: &Image) -> [[f32;4];3] {
-  let mut xyz_to_cam = [[0.0;3];4];
-  for i in 0..12 {
-    xyz_to_cam[i/3][i%3] = img.color_matrix[i] as f32;
-  }
-
   let d65_white = [0.9547,1.0,1.08883];
   let rgb_to_xyz = [
   // sRGB D65
@@ -130,7 +125,7 @@ fn cam_to_xyz_matrix(img: &Image) -> [[f32;4];3] {
     for j in 0..3 {
       rgb_to_cam[i][j] = 0.0;
       for k in 0..3 {
-        rgb_to_cam[i][j] += xyz_to_cam[i][k] * rgb_to_xyz[k][j];
+        rgb_to_cam[i][j] += img.xyz_to_cam[i][k] * rgb_to_xyz[k][j];
       }
     }
   }

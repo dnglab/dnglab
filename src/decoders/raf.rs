@@ -73,7 +73,7 @@ impl<'a> Decoder for RafDecoder<'a> {
         data: image.into_boxed_slice(),
         blacklevels: camera.blacklevels,
         whitelevels: camera.whitelevels,
-        color_matrix: camera.color_matrix,
+        xyz_to_cam: camera.xyz_to_cam,
         cfa: camera.cfa.clone(),
         crops: [0,0,0,0],
       })

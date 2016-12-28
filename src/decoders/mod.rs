@@ -79,7 +79,7 @@ pub struct Image {
   pub data: Box<[u16]>,
   pub whitelevels: [u16;4],
   pub blacklevels: [u16;4],
-  pub color_matrix: [i32;12],
+  pub xyz_to_cam: [[f32;3];4],
   pub cfa: cfa::CFA,
   pub crops: [usize;4],
 }
@@ -93,7 +93,7 @@ pub struct Camera {
   pub canonical_model: String,
   whitelevels: [u16;4],
   blacklevels: [u16;4],
-  color_matrix: [i32;12],
+  xyz_to_cam: [[f32;3];4],
   cfa: cfa::CFA,
   crops: [usize;4],
   bps: u32,
@@ -118,7 +118,7 @@ impl Camera {
         "color_matrix" => {
           let matrix = val.as_slice().unwrap();
           for (i, val) in matrix.into_iter().enumerate() {
-            self.color_matrix[i] = val.as_integer().unwrap() as i32;
+            self.xyz_to_cam[i/3][i%3] = val.as_integer().unwrap() as f32;
           }
         },
         "crops" => {
@@ -149,7 +149,7 @@ impl Camera {
       canonical_model: "".to_string(),
       whitelevels: [0;4],
       blacklevels: [0;4],
-      color_matrix : [0;12],
+      xyz_to_cam : [[0.0;3];4],
       cfa: cfa::CFA::new(""),
       crops: [0,0,0,0],
       bps: 0,
@@ -170,7 +170,7 @@ pub fn ok_image(camera: &Camera, width: u32, height: u32, wb_coeffs: [f32;4], im
     data: image.into_boxed_slice(),
     blacklevels: camera.blacklevels,
     whitelevels: camera.whitelevels,
-    color_matrix: camera.color_matrix,
+    xyz_to_cam: camera.xyz_to_cam,
     cfa: camera.cfa.clone(),
     crops: camera.crops,
   })
@@ -188,7 +188,7 @@ pub fn ok_image(camera: &Camera, width: u32, height: u32, wb_coeffs: [f32;4], im
 //    data: image.into_boxed_slice(),
 //    blacklevels: blacks,
 //    whitelevels: whites,
-//    color_matrix: camera.color_matrix,
+//    xyz_to_cam: camera.xyz_to_cam,
 //    dcraw_filters: camera.dcraw_filters,
 //    crops: camera.crops,
 //  })
