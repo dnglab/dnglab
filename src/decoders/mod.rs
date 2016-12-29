@@ -177,23 +177,23 @@ pub fn ok_image(camera: &Camera, width: u32, height: u32, wb_coeffs: [f32;4], im
   })
 }
 
-//pub fn ok_image_with_levels(camera: &Camera, width: u32, height: u32, wb_coeffs: [f32;4], whites: [i64;4], blacks: [i64;4], image: Vec<u16>) -> Result<Image,String> {
-//  Ok(Image {
-//    make: camera.make.clone(),
-//    model: camera.model.clone(),
-//    canonical_make: camera.canonical_make.clone(),
-//    canonical_model: camera.canonical_model.clone(),
-//    width: width,
-//    height: height,
-//    wb_coeffs: wb_coeffs,
-//    data: image.into_boxed_slice(),
-//    blacklevels: blacks,
-//    whitelevels: whites,
-//    xyz_to_cam: camera.xyz_to_cam,
-//    dcraw_filters: camera.dcraw_filters,
-//    crops: camera.crops,
-//  })
-//}
+pub fn ok_image_with_blacklevels(camera: &Camera, width: u32, height: u32, wb_coeffs: [f32;4], blacks: [u16;4], image: Vec<u16>) -> Result<Image,String> {
+  Ok(Image {
+    make: camera.make.clone(),
+    model: camera.model.clone(),
+    canonical_make: camera.canonical_make.clone(),
+    canonical_model: camera.canonical_model.clone(),
+    width: width as usize,
+    height: height as usize,
+    wb_coeffs: wb_coeffs,
+    data: image.into_boxed_slice(),
+    blacklevels: blacks,
+    whitelevels: camera.whitelevels,
+    xyz_to_cam: camera.xyz_to_cam,
+    cfa: camera.cfa.clone(),
+    crops: camera.crops,
+  })
+}
 
 #[derive(Debug, Clone)]
 pub struct RawLoader {

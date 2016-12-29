@@ -28,6 +28,7 @@ pub enum Tag {
   TileLength       = 0x0143,
   TileOffsets      = 0x0144,
   SubIFDs          = 0x014A,
+  PefBlackLevels   = 0x0200,
   PefWB            = 0x0201,
   DcrWB            = 0x03FD,
   DcrLinearization = 0x090D,
