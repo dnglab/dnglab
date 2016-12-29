@@ -30,6 +30,7 @@ pub enum Tag {
   SubIFDs          = 0x014A,
   PefBlackLevels   = 0x0200,
   PefWB            = 0x0201,
+  PefHuffman       = 0x0220,
   DcrWB            = 0x03FD,
   DcrLinearization = 0x090D,
   EpsonWB          = 0x0E80,

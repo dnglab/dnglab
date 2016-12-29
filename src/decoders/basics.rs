@@ -599,6 +599,10 @@ impl<'a> ByteStream<'a> {
 //    val
 //  }
 
+  pub fn consume_bytes(&mut self, num: usize) {
+    self.pos += num
+  }
+
   pub fn skip_to_marker(&mut self) -> Result<usize, String> {
     let mut skip_count = 0;
     while !(self.buffer[self.pos] == 0xFF &&
