@@ -25,4 +25,7 @@ glob = "0.2.11"
 
 [profile.release]
 panic = "unwind"
-#debug-assertions = true
+
+[profile.dev]
+panic = "unwind"
+opt-level = 3
