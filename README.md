@@ -36,6 +36,7 @@ The library is still a work in process with the following formats already implem
   * Fuji RAF
   * Kodak DCR
   * Adobe DNG (the "good parts"<sup>1</sup>)
+  * Pentax PEF
 
 <sup>1</sup> DNG is a 101 page overambitions spec that tries to be an interchange format for processed images, complete with image transformation operations. We just implement enough of the spec so that actual raw files from DNG producing cameras or the Adobe DNG converter can be read.
 
