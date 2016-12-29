@@ -66,7 +66,7 @@ impl<'a> PefDecoder<'a> {
     /* Attempt to read huffman table, if found in makernote */
     if self.tiff.has_entry(Tag::PefHuffman) {
       let huff = fetch_tag!(self.tiff, Tag::PefHuffman);
-      let mut stream = ByteStream::new(huff.get_data(), BIG_ENDIAN);
+      let mut stream = ByteStream::new(huff.get_data(), self.tiff.get_endian());
 
       let depth: usize = (stream.get_u16() as usize + 12) & 0xf;
       stream.consume_bytes(12);

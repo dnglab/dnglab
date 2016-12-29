@@ -241,6 +241,13 @@ impl<'a> TiffIFD<'a> {
       off +=4;
     }
 
+    // Pentax can also start with PENTAX and in that case uses different offsets
+    if data[0..6] == b"PENTAX"[..] {
+      off += 8;
+      let endian = if data[off..off+2] == b"II"[..] {LITTLE_ENDIAN} else {BIG_ENDIAN};
+      return TiffIFD::new(&buf[offset..], 10, base_offset, 0, depth, endian)
+    }
+
     // Some have MM or II to indicate endianness - read that
     if data[off..off+2] == b"II"[..] {
       off +=2;
