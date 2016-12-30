@@ -70,8 +70,10 @@ impl<'a> CrwDecoder<'a> {
                    NAN])
       }
       let off = cam.wb_offset;
-      return Ok([cinfo.get_force_u16(off+1) as f32, cinfo.get_force_u16(off+0) as f32,
-                 cinfo.get_force_u16(off+2) as f32, NAN])
+      let key: [u16;2] = if cam.find_hint("wb_mangle") {[0x410, 0x45f3]} else {[0,0]};
+      return Ok([(cinfo.get_force_u16(off+1)^key[1]) as f32,
+                 (cinfo.get_force_u16(off+0)^key[0]) as f32,
+                 (cinfo.get_force_u16(off+2)^key[0]) as f32, NAN])
     }
     Err("Couldn't find any way to fetch the WB".to_string())
   }
