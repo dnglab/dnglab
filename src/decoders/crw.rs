@@ -52,7 +52,11 @@ impl<'a> CrwDecoder<'a> {
     }
     if self.ciff.has_entry(CiffTag::ColorInfo2) {
       let cinfo = fetch_tag!(self.ciff, CiffTag::ColorInfo2);
-      return Ok([cinfo.get_f32(62), cinfo.get_f32(63), cinfo.get_f32(60), cinfo.get_f32(61)])
+      return if cinfo.get_u32(0) > 512 {
+        Ok([cinfo.get_f32(62), cinfo.get_f32(63), cinfo.get_f32(60), cinfo.get_f32(61)])
+      } else {
+        Ok([cinfo.get_f32(51), cinfo.get_f32(50), cinfo.get_f32(52), NAN])
+      }
     }
     Err("Couldn't find any way to fetch the WB".to_string())
   }
