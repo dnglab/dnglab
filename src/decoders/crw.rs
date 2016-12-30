@@ -30,11 +30,14 @@ impl<'a> Decoder for CrwDecoder<'a> {
     }
     let camera = try!(self.rawloader.check_supported_with_everything(&makemodel[0], &makemodel[1], ""));
 
-    let sensorinfo = fetch_tag!(self.ciff, CiffTag::SensorInfo);
-    let width = sensorinfo.get_u32(1);
-    let height = sensorinfo.get_u32(2);
-
-    let image = try!(self.decode_compressed(camera, width as usize, height as usize));
+    let (width, height, image) = if camera.model == "Canon PowerShot Pro70" {
+      (1552,1024,decode_10le_lsb16(&self.buffer[26..], 1552, 1024))
+    } else {
+      let sensorinfo = fetch_tag!(self.ciff, CiffTag::SensorInfo);
+      let width = sensorinfo.get_u32(1);
+      let height = sensorinfo.get_u32(2);
+      (width, height, try!(self.decode_compressed(camera, width as usize, height as usize)))
+    };
 
     ok_image(camera, width, height, try!(self.get_wb(camera)), image)
   }

@@ -86,6 +86,34 @@ pub fn decode_8bit_wtable(buf: &[u8], tbl: &LookupTable, width: usize, height: u
   }))
 }
 
+pub fn decode_10le_lsb16(buf: &[u8], width: usize, height: usize) -> Vec<u16> {
+  decode_threaded(width, height, &(|out: &mut [u16], row| {
+    let inb = &buf[((row*width*10/8) as usize)..];
+
+    for (o, i) in out.chunks_mut(8).zip(inb.chunks(10)) {
+      let g1:  u16 = i[0] as u16;
+      let g2:  u16 = i[1] as u16;
+      let g3:  u16 = i[2] as u16;
+      let g4:  u16 = i[3] as u16;
+      let g5:  u16 = i[4] as u16;
+      let g6:  u16 = i[5] as u16;
+      let g7:  u16 = i[6] as u16;
+      let g8:  u16 = i[7] as u16;
+      let g9:  u16 = i[8] as u16;
+      let g10: u16 = i[9] as u16;
+
+      o[0] = g2 << 2  | g1 >> 6;
+      o[1] = (g1 & 0x3f) << 4 | g4 >> 4;
+      o[2] = (g4 & 0x0f) << 6 | g3 >> 2;
+      o[3] = (g3 & 0x03) << 8 | g6;
+      o[4] = g5 << 2 | g8 >> 6;
+      o[5] = (g8 & 0x3f) << 4 | g7 >> 4;
+      o[6] = (g7 & 0x0f) << 6 | g10 >> 2;
+      o[7] = (g10 & 0x03) << 8 | g9;
+    }
+  }))
+}
+
 pub fn decode_12be(buf: &[u8], width: usize, height: usize) -> Vec<u16> {
   decode_threaded(width, height, &(|out: &mut [u16], row| {
     let inb = &buf[((row*width*12/8) as usize)..];
