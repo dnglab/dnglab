@@ -180,7 +180,7 @@ impl<'a> CrwDecoder<'a> {
       return Err(format!("CRW: Unknown decoder table {}", dectable).to_string())
     }
 
-    let lowbits = !cam.find_hint("lowbits");
+    let lowbits = !cam.find_hint("nolowbits");
     let htables = CrwDecoder::init_huff_tables(dectable);
     let offset = 540 + (lowbits as usize)*height*width/4;
     let mut pump = BitPumpJPEG::new(&self.buffer[offset..]);
