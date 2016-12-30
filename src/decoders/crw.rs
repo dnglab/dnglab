@@ -52,14 +52,23 @@ impl<'a> CrwDecoder<'a> {
     }
     if self.ciff.has_entry(CiffTag::ColorInfo2) {
       let cinfo = fetch_tag!(self.ciff, CiffTag::ColorInfo2);
-      return if cinfo.get_u32(0) > 512 {
-        Ok([cinfo.get_f32(62), cinfo.get_f32(63), cinfo.get_f32(60), cinfo.get_f32(61)])
+      if cinfo.get_u32(0) > 512 {
+        return Ok([cinfo.get_f32(62), cinfo.get_f32(63),
+                   cinfo.get_f32(60), cinfo.get_f32(61)])
       } else {
-        Ok([cinfo.get_f32(51), cinfo.get_f32(50), cinfo.get_f32(52), NAN])
+        if cinfo.get_u32(50) == cinfo.get_u32(53) { // D30 fails this test
+          return Ok([cinfo.get_f32(51), cinfo.get_f32(50), cinfo.get_f32(52), NAN])
+        }
       }
     }
     if self.ciff.has_entry(CiffTag::ColorInfo1) {
       let cinfo = fetch_tag!(self.ciff, CiffTag::ColorInfo1);
+      if cinfo.count == 768 { // D30
+        return Ok([1024.0/(cinfo.get_force_u16(36) as f32),
+                   1024.0/(cinfo.get_force_u16(37) as f32),
+                   1024.0/(cinfo.get_force_u16(39) as f32),
+                   NAN])
+      }
       let off = cam.wb_offset;
       return Ok([cinfo.get_force_u16(off+1) as f32, cinfo.get_force_u16(off+0) as f32,
                  cinfo.get_force_u16(off+2) as f32, NAN])
