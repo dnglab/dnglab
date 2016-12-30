@@ -145,4 +145,6 @@ impl<'a> CiffEntry<'a> {
       _ => panic!(format!("Trying to read typ {} for a u32", self.typ).to_string()),
     }
   }
+
+  pub fn get_f32(&self, idx: usize) -> f32 { self.get_u32(idx) as f32 }
 }

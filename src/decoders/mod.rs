@@ -104,6 +104,7 @@ pub struct Camera {
   cfa: cfa::CFA,
   crops: [usize;4],
   bps: u32,
+  wb_offset: usize,
   hints: Vec<String>,
 }
 
@@ -136,6 +137,7 @@ impl Camera {
         },
         "color_pattern" => {self.cfa = cfa::CFA::new(&val.as_str().unwrap().to_string());},
         "bps" => {self.bps = val.as_integer().unwrap() as u32;},
+        "wb_offset" => {self.wb_offset = val.as_integer().unwrap() as usize;},
         "hints" => {
           self.hints = Vec::new();
           for hint in val.as_slice().unwrap() {
@@ -160,6 +162,7 @@ impl Camera {
       cfa: cfa::CFA::new(""),
       crops: [0,0,0,0],
       bps: 0,
+      wb_offset: 0,
       hints: Vec::new(),
     }
   }

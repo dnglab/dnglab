@@ -36,13 +36,15 @@ impl<'a> Decoder for CrwDecoder<'a> {
 
     let image = try!(self.decode_compressed(camera, width as usize, height as usize));
 
-    ok_image(camera, width, height, try!(self.get_wb()), image)
+    ok_image(camera, width, height, try!(self.get_wb(camera)), image)
   }
 }
 
 impl<'a> CrwDecoder<'a> {
-  fn get_wb(&self) -> Result<[f32;4], String> {
-    Ok([NAN,NAN,NAN,NAN])
+  fn get_wb(&self, cam: &Camera) -> Result<[f32;4], String> {
+    let levels = fetch_tag!(self.ciff, CiffTag::WhiteBalance);
+    let offset = cam.wb_offset;
+    Ok([levels.get_f32(offset+0), levels.get_f32(offset+1), levels.get_f32(offset+3), NAN])
   }
 
   // The rest of this file was ported from dcraw. The code seems different enough that
