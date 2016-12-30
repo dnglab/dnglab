@@ -7,6 +7,7 @@ enum_from_primitive! {
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub enum CiffTag {
   Null         = 0x0000,
+  ColorInfo1   = 0x0032,
   MakeModel    = 0x080a,
   ShotInfo     = 0x102a,
   ColorInfo2   = 0x102c,
@@ -152,4 +153,6 @@ impl<'a> CiffEntry<'a> {
   }
 
   pub fn get_f32(&self, idx: usize) -> f32 { self.get_u32(idx) as f32 }
+
+  pub fn get_force_u16(&self, idx: usize) -> u16 { LEu16(self.data, idx*2) }
 }

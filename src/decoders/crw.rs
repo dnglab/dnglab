@@ -58,6 +58,12 @@ impl<'a> CrwDecoder<'a> {
         Ok([cinfo.get_f32(51), cinfo.get_f32(50), cinfo.get_f32(52), NAN])
       }
     }
+    if self.ciff.has_entry(CiffTag::ColorInfo1) {
+      let cinfo = fetch_tag!(self.ciff, CiffTag::ColorInfo1);
+      let off = cam.wb_offset;
+      return Ok([cinfo.get_force_u16(off+1) as f32, cinfo.get_force_u16(off+0) as f32,
+                 cinfo.get_force_u16(off+2) as f32, NAN])
+    }
     Err("Couldn't find any way to fetch the WB".to_string())
   }
 
