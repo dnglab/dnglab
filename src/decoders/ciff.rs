@@ -46,7 +46,7 @@ pub fn is_ciff(buf: &[u8]) -> bool {
 impl<'a> CiffIFD<'a> {
   pub fn new_file(buf: &'a Buffer) -> Result<CiffIFD<'a>,String> {
     let data = &buf.buf;
-    CiffIFD::new(data, data[2] as usize, buf.size, 1)
+    CiffIFD::new(data, LEu32(data,2) as usize, buf.size, 1)
   }
 
   pub fn new(buf: &'a[u8], start: usize, end: usize, depth: u32) -> Result<CiffIFD<'a>, String> {
@@ -135,5 +135,14 @@ impl<'a> CiffEntry<'a> {
 
   pub fn get_strings(&self) -> Vec<String> {
     String::from_utf8_lossy(self.data).split_terminator("\0").map(|x| x.to_string()).collect()
+  }
+
+  pub fn get_u32(&self, idx: usize) -> u32 {
+    match self.typ {
+      0x0000 | 0x8000                       => self.data[idx] as u32,
+      0x1000                                => LEu16(self.data, idx*2) as u32,
+      0x1800 | 0x2000 | 0x2800 | 0x3000     => LEu32(self.data, idx*4),
+      _ => panic!(format!("Trying to read typ {} for a u32", self.typ).to_string()),
+    }
   }
 }
