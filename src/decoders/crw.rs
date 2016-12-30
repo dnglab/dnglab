@@ -45,13 +45,11 @@ impl<'a> Decoder for CrwDecoder<'a> {
 
 impl<'a> CrwDecoder<'a> {
   fn get_wb(&self, cam: &Camera) -> Result<[f32;4], String> {
-    if self.ciff.has_entry(CiffTag::WhiteBalance) {
-      let levels = fetch_tag!(self.ciff, CiffTag::WhiteBalance);
+    if let Some(levels) = self.ciff.find_entry(CiffTag::WhiteBalance) {
       let offset = cam.wb_offset;
       return Ok([levels.get_f32(offset+0), levels.get_f32(offset+1), levels.get_f32(offset+3), NAN])
     }
-    if self.ciff.has_entry(CiffTag::ColorInfo2) {
-      let cinfo = fetch_tag!(self.ciff, CiffTag::ColorInfo2);
+    if let Some(cinfo) = self.ciff.find_entry(CiffTag::ColorInfo2) {
       if cinfo.get_u32(0) > 512 {
         return Ok([cinfo.get_f32(62), cinfo.get_f32(63),
                    cinfo.get_f32(60), cinfo.get_f32(61)])
@@ -61,8 +59,7 @@ impl<'a> CrwDecoder<'a> {
         }
       }
     }
-    if self.ciff.has_entry(CiffTag::ColorInfo1) {
-      let cinfo = fetch_tag!(self.ciff, CiffTag::ColorInfo1);
+    if let Some(cinfo) = self.ciff.find_entry(CiffTag::ColorInfo1) {
       if cinfo.count == 768 { // D30
         return Ok([1024.0/(cinfo.get_force_u16(36) as f32),
                    1024.0/(cinfo.get_force_u16(37) as f32),

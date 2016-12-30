@@ -98,8 +98,7 @@ impl<'a> DngDecoder<'a> {
   }
 
   fn get_crops(&self, raw: &TiffIFD, width: usize, height: usize) -> Result<[usize;4],String> {
-    if raw.has_entry(Tag::ActiveArea) {
-      let crops = fetch_tag!(raw, Tag::ActiveArea);
+    if let Some(crops) = raw.find_entry(Tag::ActiveArea) {
       Ok([crops.get_u32(0) as usize, width - crops.get_u32(3) as usize,
           height - crops.get_u32(2) as usize, crops.get_u32(1) as usize])
     } else {
@@ -133,8 +132,7 @@ impl<'a> DngDecoder<'a> {
   }
 
   pub fn decode_compressed(&self, raw: &TiffIFD, width: usize, height: usize) -> Result<Vec<u16>,String> {
-    if raw.has_entry(Tag::StripOffsets) { // We're in a normal offset situation
-      let offsets = fetch_tag!(raw, Tag::StripOffsets);
+    if let Some(offsets) = raw.find_entry(Tag::StripOffsets) { // We're in a normal offset situation
       if offsets.count() != 1 {
         return Err("DNG: files with more than one slice not supported yet".to_string())
       }
@@ -144,10 +142,10 @@ impl<'a> DngDecoder<'a> {
       let decompressor = try!(LjpegDecompressor::new(src, true));
       try!(decompressor.decode(&mut out, 0, width, width, height));
       Ok(out)
-    } else if raw.has_entry(Tag::TileOffsets) { // They've gone with tiling
+    } else if let Some(offsets) = raw.find_entry(Tag::TileOffsets) {
+      // They've gone with tiling
       let twidth = fetch_tag!(raw, Tag::TileWidth).get_u32(0) as usize;
       let tlength = fetch_tag!(raw, Tag::TileLength).get_u32(0) as usize;
-      let offsets = fetch_tag!(raw, Tag::TileOffsets);
       let coltiles = (width-1)/twidth + 1;
       let rowtiles = (height-1)/tlength + 1;
       if coltiles*rowtiles != offsets.count() as usize {

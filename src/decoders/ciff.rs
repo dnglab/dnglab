@@ -93,10 +93,6 @@ impl<'a> CiffIFD<'a> {
       None
     }
   }
-
-  pub fn has_entry(&self, tag: CiffTag) -> bool {
-    self.find_entry(tag).is_some()
-  }
 }
 
 impl<'a> CiffEntry<'a> {
