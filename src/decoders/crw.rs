@@ -45,9 +45,16 @@ impl<'a> Decoder for CrwDecoder<'a> {
 
 impl<'a> CrwDecoder<'a> {
   fn get_wb(&self, cam: &Camera) -> Result<[f32;4], String> {
-    let levels = fetch_tag!(self.ciff, CiffTag::WhiteBalance);
-    let offset = cam.wb_offset;
-    Ok([levels.get_f32(offset+0), levels.get_f32(offset+1), levels.get_f32(offset+3), NAN])
+    if self.ciff.has_entry(CiffTag::WhiteBalance) {
+      let levels = fetch_tag!(self.ciff, CiffTag::WhiteBalance);
+      let offset = cam.wb_offset;
+      return Ok([levels.get_f32(offset+0), levels.get_f32(offset+1), levels.get_f32(offset+3), NAN])
+    }
+    if self.ciff.has_entry(CiffTag::ColorInfo2) {
+      let cinfo = fetch_tag!(self.ciff, CiffTag::ColorInfo2);
+      return Ok([cinfo.get_f32(62), cinfo.get_f32(63), cinfo.get_f32(60), cinfo.get_f32(61)])
+    }
+    Err("Couldn't find any way to fetch the WB".to_string())
   }
 
   // The rest of this file was ported from dcraw. The code seems different enough that

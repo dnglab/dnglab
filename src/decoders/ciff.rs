@@ -9,6 +9,7 @@ pub enum CiffTag {
   Null         = 0x0000,
   MakeModel    = 0x080a,
   ShotInfo     = 0x102a,
+  ColorInfo2   = 0x102c,
   WhiteBalance = 0x10a9,
   SensorInfo   = 0x1031,
   ImageInfo    = 0x1810,
@@ -90,6 +91,10 @@ impl<'a> CiffIFD<'a> {
       }
       None
     }
+  }
+
+  pub fn has_entry(&self, tag: CiffTag) -> bool {
+    self.find_entry(tag).is_some()
   }
 }
 
