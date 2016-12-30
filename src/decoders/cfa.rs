@@ -3,9 +3,10 @@ use std::fmt;
 use std::clone;
 
 pub struct CFA {
-  patname: String,
+  name: String,
   pattern: [[usize;48];48],
-  patwidth: usize,
+  pub width: usize,
+  pub height: usize,
 }
 
 impl CFA {
@@ -23,23 +24,26 @@ impl CFA {
   }
 
   pub fn new(patname: &str) -> CFA {
-    let size = match patname.len() {
-      0 => 0,
-      4 => 2,
-      36 => 6,
-      144 => 12,
-      _ => panic!(format!("Unknown CFA with size {}", patname.len()).to_string()),
+    let (width, height) = match patname.len() {
+      0 => (0,0),
+      4 => (2,2),
+      36 => (6,6),
+      16 => (2,8),
+      144 => (12,12),
+      _ => panic!(format!("Unknown CFA size \"{}\"", patname).to_string()),
     };
     let mut pattern: [[usize;48];48] = [[0;48];48];
 
-    if size > 0 {
+    if width > 0 {
       // copy the pattern into the top left
       for (i,c) in patname.bytes().enumerate() {
-        pattern[i/size][i%size] = match c {
+        pattern[i/width][i%width] = match c {
           b'R' => 0,
           b'G' => 1,
           b'B' => 2,
           b'E' => 3,
+          b'M' => 1,
+          b'Y' => 3,
           _   => panic!(format!("Unknown CFA color \"{}\"", c).to_string()),
         };
       }
@@ -47,15 +51,16 @@ impl CFA {
       // extend the pattern into the full matrix
       for row in 0..48 {
         for col in 0..48 {
-          pattern[row][col] = pattern[row%size][col%size];
+          pattern[row][col] = pattern[row%height][col%width];
         }
       }
     }
 
     CFA {
-      patname: patname.to_string(),
+      name: patname.to_string(),
       pattern: pattern,
-      patwidth: size,
+      width: width,
+      height: height,
     }
   }
 
@@ -71,18 +76,17 @@ impl CFA {
       }
     }
     CFA {
-      patname: format!("shifted-{}-{}-{}", x, y, self.patname).to_string(),
+      name: format!("shifted-{}-{}-{}", x, y, self.name).to_string(),
       pattern: pattern,
-      patwidth: self.patwidth,
+      width: self.width,
+      height: self.height,
     }
   }
-
-  pub fn width(&self) -> usize { self.patwidth }
 }
 
 impl fmt::Debug for CFA {
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-    write!(f, "CFA {{ {} }}", self.patname)
+    write!(f, "CFA {{ {} }}", self.name)
   }
 }
 
@@ -95,9 +99,10 @@ impl clone::Clone for CFA {
       }
     }
     CFA {
-      patname: self.patname.clone(),
+      name: self.name.clone(),
       pattern: cpattern,
-      patwidth: self.patwidth,
+      width: self.width,
+      height: self.height,
     }
   }
 }

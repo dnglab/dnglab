@@ -22,9 +22,10 @@ pub fn demosaic_and_scale(img: &Image, maxwidth: usize, maxheight: usize) -> OpB
     }
   };
 
-  let minscale = match img.cfa.width() {
+  let minscale = match img.cfa.width {
     2  => 2.0,  // RGGB/RGBE bayer
     6  => 3.0,  // x-trans is 6 wide but has all colors in every 3x3 block
+    8  => 2.0,  // Canon pro 70 has a 8x2 patern that has all four colors every 2x2 block
     12 => 12.0, // some crazy sensor I haven't actually encountered, use full block
     _  => 2.0,  // default
   };
