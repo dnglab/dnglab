@@ -75,7 +75,7 @@ impl<'a> CrwDecoder<'a> {
                  (cinfo.get_force_u16(off+0)^key[0]) as f32,
                  (cinfo.get_force_u16(off+2)^key[0]) as f32, NAN])
     }
-    Err("Couldn't find any way to fetch the WB".to_string())
+    Ok([NAN,NAN,NAN,NAN])
   }
 
   // The rest of this file was ported from dcraw. The code seems different enough that
