@@ -6,35 +6,54 @@ use std::f32::NAN;
 // The decoding bits of this file were ported from dcraw. The code seems different enough
 // that it doesn't make sense to try and share the huffman stuff with the normal ljpeg code
 
-lazy_static! {
-  static ref CRW_HUFF_TABLES: [[Vec<u16>;2];3] = {
-    fn create_table(source: &[u8]) -> Vec<u16> {
-      let mut max: usize = 16;
-      for i in 0..16 {
-        if source[15-i] != 0 {
-          break;
-        }
-        max -= 1;
-      }
+struct CrwHuffTable {
+  nbits: u32,
+  tbl: Vec<(u8,u8)>,
+}
 
-      let mut tbl = vec![0 as u16; (1 << max) + 1];
-      tbl[0] = max as u16;
-      let mut h = 1;
-      let mut pos = 16;
-      for len in 1..(max+1) {
-        for _ in 0..source[len-1] {
-          for _ in 0..(1 << (max-len)) {
-            if h <= (1 << max) {
-              tbl[h] = (len as u16) << 8 | (source[pos] as u16);
-              h += 1;
-            }
-          }
-          pos += 1;
-        }
+impl CrwHuffTable {
+  fn new(source: &[u8]) -> CrwHuffTable {
+    let mut max: u32 = 16;
+    for i in 0..16 {
+      if source[15-i] != 0 {
+        break;
       }
-      tbl
+      max -= 1;
     }
 
+    let tblsize = 1 << max;
+    let mut tbl = vec![(0 as u8, 0 as u8); tblsize];
+
+    let mut h = 0;
+    let mut pos = 16;
+    for len in 1..(max+1) {
+      for _ in 0..source[(len-1) as usize] {
+        for _ in 0..(1 << (max-len)) {
+          if h <= (1 << max) {
+            tbl[h] = (len as u8, source[pos]);
+            h += 1;
+          }
+        }
+        pos += 1;
+      }
+    }
+
+    CrwHuffTable {
+      nbits: max,
+      tbl: tbl,
+    }
+  }
+
+  fn get_bits(&self, pump: &mut BitPump) -> u32 {
+    let c = pump.peek_bits(self.nbits) as usize;
+    let (len, leaf) = self.tbl[c];
+    pump.consume_bits(len as u32);
+    leaf as u32
+  }
+}
+
+lazy_static! {
+  static ref CRW_HUFF_TABLES: [[CrwHuffTable;2];3] = {
     let first_tree: [[u8;29];3] = [
       [ 0,1,4,2,3,1,2,0,0,0,0,0,0,0,0,0,
         0x04,0x03,0x05,0x06,0x02,0x07,0x01,0x08,0x09,0x00,0x0a,0x0b,0xff ],
@@ -92,9 +111,9 @@ lazy_static! {
     ];
 
     [
-      [create_table(&first_tree[0]), create_table(&second_tree[0])],
-      [create_table(&first_tree[1]), create_table(&second_tree[1])],
-      [create_table(&first_tree[2]), create_table(&second_tree[2])],
+      [CrwHuffTable::new(&first_tree[0]), CrwHuffTable::new(&second_tree[0])],
+      [CrwHuffTable::new(&first_tree[1]), CrwHuffTable::new(&second_tree[1])],
+      [CrwHuffTable::new(&first_tree[2]), CrwHuffTable::new(&second_tree[2])],
     ]
   };
 }
@@ -169,14 +188,6 @@ impl<'a> CrwDecoder<'a> {
     Ok([NAN,NAN,NAN,NAN])
   }
 
-  fn get_bits_huff(pump: &mut BitPump, nbits: u32, huff: &[u16]) -> u32 {
-    let c = pump.peek_bits(nbits) as usize;
-    // Skip bits given by the high order bits of the huff table
-    pump.consume_bits((huff[c] >> 8) as u32);
-    // Return the lower order bits
-    (huff[c] & 0xff) as u32
-  }
-
   fn decode_compressed(&self, cam: &Camera, width: usize, height: usize) -> Result<Vec<u16>,String> {
     let mut out = vec![0 as u16; width*height];
 
@@ -198,12 +209,12 @@ impl<'a> CrwDecoder<'a> {
       let mut diffbuf = [0 as i32; 64];
       let mut i: usize = 0;
       while i < 64 {
-        let tidx = (i > 0) as usize;
-        let leaf = CrwDecoder::get_bits_huff(&mut pump, htables[tidx][0] as u32, &htables[tidx][1..]);
+        let ref tbl = htables[(i > 0) as usize];
+        let leaf = tbl.get_bits(&mut pump);
         if leaf == 0 && i != 0 { break; }
         if leaf == 0xff { i+= 1; continue; }
         i += (leaf >> 4) as usize;
-        let len: u32 = leaf & 0x0f;
+        let len = leaf & 0x0f;
         if len == 0 { i+= 1; continue; }
         let mut diff: i32 = pump.get_bits(len) as i32;
         if (diff & (1 << (len-1))) == 0 {
