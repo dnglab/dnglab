@@ -117,7 +117,13 @@ impl<'a> DngDecoder<'a> {
 
   fn get_color_matrix(&self) -> Result<[[f32;3];4],String> {
     let mut matrix: [[f32;3];4] = [[0.0;3];4];
-    let cmatrix = fetch_tag!(self.tiff, Tag::ColorMatrix2);
+    let cmatrix = {
+      if let Some(c) = self.tiff.find_entry(Tag::ColorMatrix2) {
+        c
+      } else {
+        fetch_tag!(self.tiff, Tag::ColorMatrix1)
+      }
+    };
     if cmatrix.count() > 12 {
       Err(format!("color matrix supposedly has {} components",cmatrix.count()).to_string())
     } else {

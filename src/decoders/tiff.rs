@@ -56,6 +56,7 @@ pub enum Tag {
   Linearization    = 0xC618,
   BlackLevels      = 0xC61A,
   WhiteLevel       = 0xC61D,
+  ColorMatrix1     = 0xC621,
   ColorMatrix2     = 0xC622,
   AsShotNeutral    = 0xC628,
   DNGPrivateArea   = 0xC634,
