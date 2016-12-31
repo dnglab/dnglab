@@ -1,5 +1,5 @@
 make = "OLYMPUS IMAGING CORP."
-model = "STYLUS1,1s"
+model = "STYLUS1"
 canonical_make = "Olympus"
 canonical_model = "Stylus1"
 blackpoint = 200
