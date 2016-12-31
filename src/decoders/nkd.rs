@@ -23,8 +23,15 @@ impl<'a> Decoder for NakedDecoder<'a> {
   fn image(&self) -> Result<Image,String> {
     let width = self.camera.raw_width;
     let height = self.camera.raw_height;
+    let size = self.camera.filesize;
+    let bits = size*8 / width / height;
 
-    let image = decode_10le_lsb16(self.buffer, width, height);
+    let image = match bits {
+      10 => decode_10le_lsb16(self.buffer, width, height),
+      12 => decode_12be_msb16(self.buffer, width, height),
+      _  => return Err(format!("Naked: Don't know about {} bps images", bits).to_string()),
+    };
+
     ok_image(self.camera, width as u32, height as u32, [NAN,NAN,NAN,NAN], image)
   }
 }

@@ -148,6 +148,26 @@ pub fn decode_12be(buf: &[u8], width: usize, height: usize) -> Vec<u16> {
   }))
 }
 
+pub fn decode_12be_msb16(buf: &[u8], width: usize, height: usize) -> Vec<u16> {
+  let mut out: Vec<u16> = vec![0; (width*height) as usize];
+
+  for (o, i) in out.chunks_mut(4).zip(buf.chunks(6)) {
+    let g1:  u16 = i[ 0] as u16;
+    let g2:  u16 = i[ 1] as u16;
+    let g3:  u16 = i[ 2] as u16;
+    let g4:  u16 = i[ 3] as u16;
+    let g5:  u16 = i[ 4] as u16;
+    let g6:  u16 = i[ 5] as u16;
+
+    o[0] = (g2 << 4) | (g1 >> 4);
+    o[1] = ((g1 & 0x0f) << 8) | g4;
+    o[2] = (g3 << 4) | (g6 >> 4);
+    o[3] = ((g6 & 0x0f) << 8) | g5;
+  }
+
+  out
+}
+
 pub fn decode_12be_msb32(buf: &[u8], width: usize, height: usize) -> Vec<u16> {
   let mut out: Vec<u16> = vec![0; (width*height) as usize];
 
