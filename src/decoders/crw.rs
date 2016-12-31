@@ -2,8 +2,6 @@ use decoders::*;
 use decoders::ciff::*;
 use decoders::basics::*;
 use std::f32::NAN;
-use itertools::Itertools;
-use std::cmp;
 
 #[derive(Debug, Clone)]
 pub struct CrwDecoder<'a> {
@@ -218,39 +216,40 @@ impl<'a> CrwDecoder<'a> {
     let mut carry: i32 = 0;
     let mut base = [0 as i32;2];
     let mut pnum = 0;
-    for row in (0..height).step(8) {
-      let nblocks = cmp::min(8, height-row) * width >> 6;
-      for block in 0..nblocks {
-        let mut diffbuf = [0 as i32; 64];
-        let mut i: usize = 0;
-        while i < 64 {
-          let tidx = (i > 0) as usize;
-          let leaf = CrwDecoder::get_bits_huff(&mut pump, htables[tidx][0] as u32, &htables[tidx][1..]);
-          if leaf == 0 && i != 0 { break; }
-          if leaf == 0xff { i+= 1; continue; }
-          i += (leaf >> 4) as usize;
-          let len: u32 = leaf & 0x0f;
-          if len == 0 { i+= 1; continue; }
-          let mut diff: i32 = pump.get_bits(len) as i32;
-          if (diff & (1 << (len-1))) == 0 {
-            diff -= (1 << len) - 1;
-          }
-          if i < 64 {
-            diffbuf[i] = diff;
-          }
-          i += 1;
+    for pixout in out.chunks_mut(64) {
+      // Decode a block of 64 differences
+      let mut diffbuf = [0 as i32; 64];
+      let mut i: usize = 0;
+      while i < 64 {
+        let tidx = (i > 0) as usize;
+        let leaf = CrwDecoder::get_bits_huff(&mut pump, htables[tidx][0] as u32, &htables[tidx][1..]);
+        if leaf == 0 && i != 0 { break; }
+        if leaf == 0xff { i+= 1; continue; }
+        i += (leaf >> 4) as usize;
+        let len: u32 = leaf & 0x0f;
+        if len == 0 { i+= 1; continue; }
+        let mut diff: i32 = pump.get_bits(len) as i32;
+        if (diff & (1 << (len-1))) == 0 {
+          diff -= (1 << len) - 1;
         }
-        diffbuf[0] += carry;
-        carry = diffbuf[0];
-        for i in 0..64 {
-          if pnum % width == 0 {
-            base[0] = 512;
-            base[1] = 512;
-          }
-          pnum += 1;
-          base[i & 1] += diffbuf[i];
-          out[row*width + (block << 6) + i] = base[i & 1] as u16;
+        if i < 64 {
+          diffbuf[i] = diff;
         }
+        i += 1;
+      }
+      diffbuf[0] += carry;
+      carry = diffbuf[0];
+
+      // Save those differences to 64 pixels adjusting the predictor as we go
+      for i in 0..64 {
+        // At the start of lines reset the predictor to 512
+        if pnum % width == 0 {
+          base[0] = 512;
+          base[1] = 512;
+        }
+        pnum += 1;
+        base[i & 1] += diffbuf[i];
+        pixout[i] = base[i & 1] as u16;
       }
     }
 
