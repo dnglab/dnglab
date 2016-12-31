@@ -135,6 +135,18 @@ impl<'a> DngDecoder<'a> {
     match fetch_tag!(raw, Tag::BitsPerSample).get_u32(0) {
       16  => Ok(decode_16le(src, width, height)),
       12  => Ok(decode_12be(src, width, height)),
+      8   => {
+        // It's 8 bit so there will be linearization involved surely!
+        let linearization = fetch_tag!(self.tiff, Tag::Linearization);
+        let curve = {
+          let mut points = vec![0 as u16; 256];
+          for i in 0..256 {
+            points[i] = linearization.get_u32(i) as u16;
+          }
+          LookupTable::new(&points)
+        };
+        Ok(decode_8bit_wtable(src, &curve, width, height))
+      },
       bps => Err(format!("DNG: Don't know about {} bps images", bps).to_string()),
     }
   }
