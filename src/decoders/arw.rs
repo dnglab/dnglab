@@ -2,7 +2,7 @@ use decoders::*;
 use decoders::tiff::*;
 use decoders::basics::*;
 use std::mem::transmute;
-use std::f32;
+use std::f32::NAN;
 use std::cmp;
 
 #[derive(Debug, Clone)]
@@ -91,23 +91,22 @@ impl<'a> ArwDecoder<'a> {
     let image = ArwDecoder::decode_arw1(src, width as usize, height as usize);
 
     // Get the WB the MRW way
-    let priv_offset = fetch_tag!(self.tiff, Tag::DNGPrivateArea).get_u32(0);
+    let priv_offset = fetch_tag!(self.tiff, Tag::DNGPrivateArea).get_force_u32(0);
     let buf = &self.buffer[priv_offset as usize..];
     let mut currpos: usize = 8;
-    let mut wb_vals: [u16;4] = [0;4];
+    let mut wb_coeffs: [f32;4] = [0.0, 0.0, 0.0, NAN];
     // At most we read 20 bytes from currpos so check we don't step outside that
     while currpos+20 < buf.len() {
       let tag: u32 = BEu32(buf,currpos);
       let len: u32 = LEu32(buf,currpos+4);
       if tag == 0x574247 { // WBG
-        for i in 0..4 {
-          wb_vals[i] = LEu16(buf, currpos+12+i*2);
-        }
+        wb_coeffs[0] = LEu16(buf, currpos+12) as f32;
+        wb_coeffs[1] = LEu16(buf, currpos+14) as f32;
+        wb_coeffs[2] = LEu16(buf, currpos+18) as f32;
         break;
       }
       currpos += (len+8) as usize;
     }
-    let wb_coeffs = [wb_vals[0] as f32, wb_vals[1] as f32, wb_vals[3] as f32, f32::NAN];
 
     ok_image(camera, width, height, wb_coeffs, image)
   }
@@ -138,7 +137,7 @@ impl<'a> ArwDecoder<'a> {
     let image_data = ArwDecoder::sony_decrypt(self.buffer, off, len, second_key);
     let image = decode_16be(&image_data, width as usize, height as usize);
 
-    ok_image(camera, width, height, [f32::NAN,f32::NAN,f32::NAN,f32::NAN], image)
+    ok_image(camera, width, height, [NAN,NAN,NAN,NAN], image)
   }
 
   fn decode_arw1(buf: &[u8], width: usize, height: usize) -> Vec<u16> {
@@ -218,10 +217,10 @@ impl<'a> ArwDecoder<'a> {
     let rggb_levels = decrypted_tiff.find_entry(Tag::SonyRGGB);
     if grgb_levels.is_some() {
       let levels = grgb_levels.unwrap();
-      Ok([levels.get_u32(1) as f32, levels.get_u32(0) as f32, levels.get_u32(2) as f32, f32::NAN])
+      Ok([levels.get_u32(1) as f32, levels.get_u32(0) as f32, levels.get_u32(2) as f32, NAN])
     } else if rggb_levels.is_some() {
       let levels = rggb_levels.unwrap();
-      Ok([levels.get_u32(0) as f32, levels.get_u32(1) as f32, levels.get_u32(3) as f32, f32::NAN])
+      Ok([levels.get_u32(0) as f32, levels.get_u32(1) as f32, levels.get_u32(3) as f32, NAN])
     } else {
       Err("ARW: Couldn't find GRGB or RGGB levels".to_string())
     }
