@@ -32,7 +32,7 @@ The library is still a work in process with the following formats already implem
   * Epson ERF
   * Kodak KDC
   * Kodak DCS
-  * Panasonic RW2
+  * Panasonic RW2 (also used by Leica)
   * Fuji RAF
   * Kodak DCR
   * Adobe DNG (the "good parts"<sup>1</sup>)
