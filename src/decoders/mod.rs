@@ -44,6 +44,7 @@ mod dcr;
 mod dng;
 mod pef;
 mod crw;
+mod nkd;
 use self::tiff::*;
 use self::ciff::*;
 
@@ -98,6 +99,9 @@ pub struct Camera {
   pub mode: String,
   pub canonical_make: String,
   pub canonical_model: String,
+  pub filesize: usize,
+  pub raw_width: usize,
+  pub raw_height: usize,
   whitelevels: [u16;4],
   blacklevels: [u16;4],
   xyz_to_cam: [[f32;3];4],
@@ -138,6 +142,9 @@ impl Camera {
         "color_pattern" => {self.cfa = cfa::CFA::new(&val.as_str().unwrap().to_string());},
         "bps" => {self.bps = val.as_integer().unwrap() as u32;},
         "wb_offset" => {self.wb_offset = val.as_integer().unwrap() as usize;},
+        "filesize" => {self.filesize = val.as_integer().unwrap() as usize;},
+        "raw_width" => {self.raw_width = val.as_integer().unwrap() as usize;},
+        "raw_height" => {self.raw_height = val.as_integer().unwrap() as usize;},
         "hints" => {
           self.hints = Vec::new();
           for hint in val.as_slice().unwrap() {
@@ -156,6 +163,9 @@ impl Camera {
       mode: "".to_string(),
       canonical_make: "".to_string(),
       canonical_model: "".to_string(),
+      filesize: 0,
+      raw_width: 0,
+      raw_height: 0,
       whitelevels: [0;4],
       blacklevels: [0;4],
       xyz_to_cam : [[0.0;3];4],
@@ -207,6 +217,7 @@ pub fn ok_image_with_blacklevels(camera: &Camera, width: u32, height: u32, wb_co
 #[derive(Debug, Clone)]
 pub struct RawLoader {
   pub cameras: HashMap<(String,String,String),Camera>,
+  pub naked: HashMap<usize,Camera>,
 }
 
 impl RawLoader {
@@ -238,12 +249,17 @@ impl RawLoader {
     }
 
     let mut map = HashMap::new();
+    let mut naked = HashMap::new();
     for cam in cams {
-      map.insert((cam.make.clone(),cam.model.clone(),cam.mode.clone()), cam);
+      map.insert((cam.make.clone(),cam.model.clone(),cam.mode.clone()), cam.clone());
+      if cam.filesize > 0 {
+        naked.insert(cam.filesize, cam);
+      }
     }
 
     RawLoader{
       cameras: map,
+      naked: naked,
     }
   }
 
@@ -261,35 +277,42 @@ impl RawLoader {
       return Ok(dec as Box<Decoder>);
     }
 
-    let tiff = try!(TiffIFD::new_file(buffer));
+    if let Ok(tiff) = TiffIFD::new_file(buffer) {
+      if tiff.has_entry(Tag::DNGVersion) {
+        return Ok(Box::new(dng::DngDecoder::new(buffer, tiff, self)))
+      }
 
-    if tiff.has_entry(Tag::DNGVersion) {
-      return Ok(Box::new(dng::DngDecoder::new(buffer, tiff, self)))
+      macro_rules! use_decoder {
+          ($dec:ty, $buf:ident, $tiff:ident, $rawdec:ident) => (Ok(Box::new(<$dec>::new($buf, $tiff, $rawdec)) as Box<Decoder>));
+      }
+
+      return match fetch_tag!(tiff, Tag::Make).get_str().to_string().as_ref() {
+        "SONY"                        => use_decoder!(arw::ArwDecoder, buffer, tiff, self),
+        "Mamiya-OP Co.,Ltd."          => use_decoder!(mef::MefDecoder, buffer, tiff, self),
+        "OLYMPUS IMAGING CORP."       => use_decoder!(orf::OrfDecoder, buffer, tiff, self),
+        "OLYMPUS CORPORATION"         => use_decoder!(orf::OrfDecoder, buffer, tiff, self),
+        "OLYMPUS OPTICAL CO.,LTD"     => use_decoder!(orf::OrfDecoder, buffer, tiff, self),
+        "SAMSUNG"                     => use_decoder!(srw::SrwDecoder, buffer, tiff, self),
+        "SEIKO EPSON CORP."           => use_decoder!(erf::ErfDecoder, buffer, tiff, self),
+        "EASTMAN KODAK COMPANY"       => use_decoder!(kdc::KdcDecoder, buffer, tiff, self),
+        "KODAK"                       => use_decoder!(dcs::DcsDecoder, buffer, tiff, self),
+        "Kodak"                       => use_decoder!(dcr::DcrDecoder, buffer, tiff, self),
+        "Panasonic"                   => use_decoder!(rw2::Rw2Decoder, buffer, tiff, self),
+        "LEICA"                       => use_decoder!(rw2::Rw2Decoder, buffer, tiff, self),
+        "FUJIFILM"                    => use_decoder!(raf::RafDecoder, buffer, tiff, self),
+        "PENTAX Corporation"          => use_decoder!(pef::PefDecoder, buffer, tiff, self),
+        "RICOH IMAGING COMPANY, LTD." => use_decoder!(pef::PefDecoder, buffer, tiff, self),
+        "PENTAX"                      => use_decoder!(pef::PefDecoder, buffer, tiff, self),
+        make => Err(format!("Couldn't find a decoder for make \"{}\"", make).to_string()),
+      }
     }
 
-    macro_rules! use_decoder {
-        ($dec:ty, $buf:ident, $tiff:ident, $rawdec:ident) => (Ok(Box::new(<$dec>::new($buf, $tiff, $rawdec)) as Box<Decoder>));
+    // If all else fails see if we match by filesize to one of those CHDK style files
+    if let Some(cam) = self.naked.get(&buf.size) {
+      return Ok(Box::new(nkd::NakedDecoder::new(buffer, cam, self)))
     }
 
-    match fetch_tag!(tiff, Tag::Make).get_str().to_string().as_ref() {
-      "SONY"                        => use_decoder!(arw::ArwDecoder, buffer, tiff, self),
-      "Mamiya-OP Co.,Ltd."          => use_decoder!(mef::MefDecoder, buffer, tiff, self),
-      "OLYMPUS IMAGING CORP."       => use_decoder!(orf::OrfDecoder, buffer, tiff, self),
-      "OLYMPUS CORPORATION"         => use_decoder!(orf::OrfDecoder, buffer, tiff, self),
-      "OLYMPUS OPTICAL CO.,LTD"     => use_decoder!(orf::OrfDecoder, buffer, tiff, self),
-      "SAMSUNG"                     => use_decoder!(srw::SrwDecoder, buffer, tiff, self),
-      "SEIKO EPSON CORP."           => use_decoder!(erf::ErfDecoder, buffer, tiff, self),
-      "EASTMAN KODAK COMPANY"       => use_decoder!(kdc::KdcDecoder, buffer, tiff, self),
-      "KODAK"                       => use_decoder!(dcs::DcsDecoder, buffer, tiff, self),
-      "Kodak"                       => use_decoder!(dcr::DcrDecoder, buffer, tiff, self),
-      "Panasonic"                   => use_decoder!(rw2::Rw2Decoder, buffer, tiff, self),
-      "LEICA"                       => use_decoder!(rw2::Rw2Decoder, buffer, tiff, self),
-      "FUJIFILM"                    => use_decoder!(raf::RafDecoder, buffer, tiff, self),
-      "PENTAX Corporation"          => use_decoder!(pef::PefDecoder, buffer, tiff, self),
-      "RICOH IMAGING COMPANY, LTD." => use_decoder!(pef::PefDecoder, buffer, tiff, self),
-      "PENTAX"                      => use_decoder!(pef::PefDecoder, buffer, tiff, self),
-      make => Err(format!("Couldn't find a decoder for make \"{}\"", make).to_string()),
-    }
+    Err("Couldn't find a decoder for this file".to_string())
   }
 
   pub fn check_supported_with_everything<'a>(&'a self, make: &str, model: &str, mode: &str) -> Result<&Camera, String> {
