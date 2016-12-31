@@ -82,9 +82,17 @@ impl<'a> DngDecoder<'a> {
   }
 
   fn get_blacklevels(&self, raw: &TiffIFD) -> Result<[u16;4], String> {
-    let levels = fetch_tag!(raw, Tag::BlackLevels);
-    Ok([levels.get_f32(0) as u16,levels.get_f32(1) as u16,
-        levels.get_f32(2) as u16,levels.get_f32(3) as u16])
+    if let Some(levels) = raw.find_entry(Tag::BlackLevels) {
+      if levels.count() < 4 {
+        let black = levels.get_u32(0) as u16;
+        Ok([black, black, black, black])
+      } else {
+        Ok([levels.get_u32(0) as u16,levels.get_u32(1) as u16,
+            levels.get_u32(2) as u16,levels.get_u32(3) as u16])
+      }
+    } else {
+      Ok([0,0,0,0])
+    }
   }
 
   fn get_whitelevels(&self, raw: &TiffIFD) -> Result<[u16;4], String> {
