@@ -7,3 +7,4 @@ whitepoint = 3965
 color_matrix = [8560, -2487, -986, -8112, 15535, 2771, -1209, 1324, 7743]
 color_pattern = "GBRG"
 crops = [0,0,0,0]
+hints = ["swapped_wb"]
