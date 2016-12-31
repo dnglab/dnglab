@@ -283,6 +283,7 @@ impl RawLoader {
       "KODAK"                       => use_decoder!(dcs::DcsDecoder, buffer, tiff, self),
       "Kodak"                       => use_decoder!(dcr::DcrDecoder, buffer, tiff, self),
       "Panasonic"                   => use_decoder!(rw2::Rw2Decoder, buffer, tiff, self),
+      "LEICA"                       => use_decoder!(rw2::Rw2Decoder, buffer, tiff, self),
       "FUJIFILM"                    => use_decoder!(raf::RafDecoder, buffer, tiff, self),
       "PENTAX Corporation"          => use_decoder!(pef::PefDecoder, buffer, tiff, self),
       "RICOH IMAGING COMPANY, LTD." => use_decoder!(pef::PefDecoder, buffer, tiff, self),
