@@ -114,6 +114,25 @@ pub fn decode_10le_lsb16(buf: &[u8], width: usize, height: usize) -> Vec<u16> {
   }))
 }
 
+pub fn decode_10le(buf: &[u8], width: usize, height: usize) -> Vec<u16> {
+  decode_threaded(width, height, &(|out: &mut [u16], row| {
+    let inb = &buf[((row*width*10/8) as usize)..];
+
+    for (o, i) in out.chunks_mut(4).zip(inb.chunks(5)) {
+      let g1:  u16 = i[0] as u16;
+      let g2:  u16 = i[1] as u16;
+      let g3:  u16 = i[2] as u16;
+      let g4:  u16 = i[3] as u16;
+      let g5:  u16 = i[4] as u16;
+
+      o[0] = g1 << 2  | g2 >> 6;
+      o[1] = (g2 & 0x3f) << 4 | g3 >> 4;
+      o[2] = (g3 & 0x0f) << 6 | g3 >> 2;
+      o[3] = (g4 & 0x03) << 8 | g5;
+    }
+  }))
+}
+
 pub fn decode_12be(buf: &[u8], width: usize, height: usize) -> Vec<u16> {
   decode_threaded(width, height, &(|out: &mut [u16], row| {
     let inb = &buf[((row*width*12/8) as usize)..];
