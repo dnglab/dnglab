@@ -243,9 +243,8 @@ impl<'a> CrwDecoder<'a> {
 
     if lowbits {
       // Add the uncompressed 2 low bits to the decoded 8 high bits
-      let mut stream = ByteStream::new(&self.buffer[26..], LITTLE_ENDIAN);
-      for o in out.chunks_mut(4) {
-        let c = stream.get_u8() as u16;
+      for (i,o) in out.chunks_mut(4).enumerate() {
+        let c = self.buffer[26+i] as u16;
         o[0] = o[0] << 2 | (c     ) & 0x03;
         o[1] = o[1] << 2 | (c >> 2) & 0x03;
         o[2] = o[2] << 2 | (c >> 4) & 0x03;
