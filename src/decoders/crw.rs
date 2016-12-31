@@ -252,21 +252,23 @@ impl<'a> CrwDecoder<'a> {
           out[row*width + (block << 6) + i] = base[i & 1] as u16;
         }
       }
+    }
 
+    if lowbits {
       // Add the uncompressed 2 low bits to the decoded 8 high bits
-      if lowbits {
-        let offset = 26 + row*width/4;
-        let mut stream = ByteStream::new(&self.buffer[offset..], LITTLE_ENDIAN);
-        let lines = cmp::min(height-row, 8); // Process 8 rows or however are left
-        for i in 0..(width/4*lines) {
-          let c = stream.get_u8() as u16;
-          for r in 0..4 { // Fill in 4 pixels for each byte
-            let mut val = out[row*width+i*4+r] << 2 | ((c >> r*2) & 0x0003);
-            if width == 2672 && val < 512 {
-              val += 2; // No idea why this is needed, probably some broken camera
-            }
-            out[row*width+i*4+r] = val;
-          }
+      let mut stream = ByteStream::new(&self.buffer[26..], LITTLE_ENDIAN);
+      for o in out.chunks_mut(4) {
+        let c = stream.get_u8() as u16;
+        o[0] = o[0] << 2 | (c     ) & 0x03;
+        o[1] = o[1] << 2 | (c >> 2) & 0x03;
+        o[2] = o[2] << 2 | (c >> 4) & 0x03;
+        o[3] = o[3] << 2 | (c >> 6) & 0x03;
+        if width == 2672 {
+          // No idea why this is needed, probably some broken camera
+          if o[0] < 512 { o[0] += 2}
+          if o[1] < 512 { o[1] += 2}
+          if o[2] < 512 { o[2] += 2}
+          if o[3] < 512 { o[3] += 2}
         }
       }
     }
