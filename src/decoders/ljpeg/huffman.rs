@@ -196,7 +196,7 @@ impl HuffTable {
         rv = (val >> 4) as i32;
       } else {
         l = 8;
-        while code > self.maxcode[l as usize] {
+        while code > self.maxcode[l as usize] && l < 16 {
           let temp: i32 = (input >> (15 - l) & 1) as i32;
           code = (code << 1) | temp;
           l += 1;
