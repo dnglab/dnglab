@@ -49,6 +49,7 @@ pub enum Tag {
   SonyRGGB         = 0x7313,
   CFAPattern       = 0x828E,
   KodakIFD         = 0x8290,
+  LeafMetadata     = 0x8606,
   ExifIFDPointer   = 0x8769,
   Makernote        = 0x927C,
   SrwSensorAreas   = 0xA010,

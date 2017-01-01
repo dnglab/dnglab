@@ -39,6 +39,25 @@ impl<'a> Decoder for MosDecoder<'a> {
 
 impl<'a> MosDecoder<'a> {
   fn get_wb(&self) -> Result<[f32;4], String> {
+    let meta = fetch_tag!(self.tiff, Tag::LeafMetadata).get_data();
+    let mut pos = 0;
+    // We need at least 16+45+10 bytes for the NeutObj_neutrals section itself
+    while pos + 70 < meta.len() {
+      if meta[pos..pos+16] == b"NeutObj_neutrals"[..] {
+        let data = &meta[pos+44..];
+        if let Some(endpos) = data.iter().position(|&x| x == 0) {
+          let nums = String::from_utf8_lossy(&data[0..endpos])
+                       .split_terminator("\n")
+                       .map(|x| x.parse::<f32>().unwrap_or(NAN))
+                       .collect::<Vec<f32>>();
+          if nums.len() == 4 {
+            return Ok([nums[0]/nums[1], nums[0]/nums[2], nums[0]/nums[3], NAN])
+          }
+        }
+        break;
+      }
+      pos += 1;
+    }
     Ok([NAN,NAN,NAN,NAN])
   }
 
