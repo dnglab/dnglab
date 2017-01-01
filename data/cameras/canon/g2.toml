@@ -9,4 +9,3 @@ color_pattern = "RGGB"
 crops = [6,52,2,12]
 hints = ["nolowbits"]
 blackareav = [2326,50]
-blackareah = [0,10]

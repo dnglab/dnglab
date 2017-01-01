@@ -10,4 +10,3 @@ crops = [6,52,2,12]
 hints = ["nolowbits"]
 wb_offset = 60
 blackareav = [2326,50]
-blackareah = [0,10]

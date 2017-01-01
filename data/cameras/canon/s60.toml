@@ -10,4 +10,3 @@ crops = [6,44,2,12]
 wb_offset = 48
 hints = ["wb_mangle"]
 blackareav = [2632,40]
-blackareah = [0,10]
