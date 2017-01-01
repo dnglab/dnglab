@@ -45,6 +45,7 @@ mod dng;
 mod pef;
 mod crw;
 mod nkd;
+mod mos;
 use self::tiff::*;
 use self::ciff::*;
 
@@ -282,28 +283,35 @@ impl RawLoader {
         return Ok(Box::new(dng::DngDecoder::new(buffer, tiff, self)))
       }
 
-      macro_rules! use_decoder {
-          ($dec:ty, $buf:ident, $tiff:ident, $rawdec:ident) => (Ok(Box::new(<$dec>::new($buf, $tiff, $rawdec)) as Box<Decoder>));
-      }
+      if tiff.has_entry(Tag::Make) {
+        macro_rules! use_decoder {
+            ($dec:ty, $buf:ident, $tiff:ident, $rawdec:ident) => (Ok(Box::new(<$dec>::new($buf, $tiff, $rawdec)) as Box<Decoder>));
+        }
 
-      return match fetch_tag!(tiff, Tag::Make).get_str().to_string().as_ref() {
-        "SONY"                        => use_decoder!(arw::ArwDecoder, buffer, tiff, self),
-        "Mamiya-OP Co.,Ltd."          => use_decoder!(mef::MefDecoder, buffer, tiff, self),
-        "OLYMPUS IMAGING CORP."       => use_decoder!(orf::OrfDecoder, buffer, tiff, self),
-        "OLYMPUS CORPORATION"         => use_decoder!(orf::OrfDecoder, buffer, tiff, self),
-        "OLYMPUS OPTICAL CO.,LTD"     => use_decoder!(orf::OrfDecoder, buffer, tiff, self),
-        "SAMSUNG"                     => use_decoder!(srw::SrwDecoder, buffer, tiff, self),
-        "SEIKO EPSON CORP."           => use_decoder!(erf::ErfDecoder, buffer, tiff, self),
-        "EASTMAN KODAK COMPANY"       => use_decoder!(kdc::KdcDecoder, buffer, tiff, self),
-        "KODAK"                       => use_decoder!(dcs::DcsDecoder, buffer, tiff, self),
-        "Kodak"                       => use_decoder!(dcr::DcrDecoder, buffer, tiff, self),
-        "Panasonic"                   => use_decoder!(rw2::Rw2Decoder, buffer, tiff, self),
-        "LEICA"                       => use_decoder!(rw2::Rw2Decoder, buffer, tiff, self),
-        "FUJIFILM"                    => use_decoder!(raf::RafDecoder, buffer, tiff, self),
-        "PENTAX Corporation"          => use_decoder!(pef::PefDecoder, buffer, tiff, self),
-        "RICOH IMAGING COMPANY, LTD." => use_decoder!(pef::PefDecoder, buffer, tiff, self),
-        "PENTAX"                      => use_decoder!(pef::PefDecoder, buffer, tiff, self),
-        make => Err(format!("Couldn't find a decoder for make \"{}\"", make).to_string()),
+        return match fetch_tag!(tiff, Tag::Make).get_str().to_string().as_ref() {
+          "SONY"                        => use_decoder!(arw::ArwDecoder, buffer, tiff, self),
+          "Mamiya-OP Co.,Ltd."          => use_decoder!(mef::MefDecoder, buffer, tiff, self),
+          "OLYMPUS IMAGING CORP."       => use_decoder!(orf::OrfDecoder, buffer, tiff, self),
+          "OLYMPUS CORPORATION"         => use_decoder!(orf::OrfDecoder, buffer, tiff, self),
+          "OLYMPUS OPTICAL CO.,LTD"     => use_decoder!(orf::OrfDecoder, buffer, tiff, self),
+          "SAMSUNG"                     => use_decoder!(srw::SrwDecoder, buffer, tiff, self),
+          "SEIKO EPSON CORP."           => use_decoder!(erf::ErfDecoder, buffer, tiff, self),
+          "EASTMAN KODAK COMPANY"       => use_decoder!(kdc::KdcDecoder, buffer, tiff, self),
+          "KODAK"                       => use_decoder!(dcs::DcsDecoder, buffer, tiff, self),
+          "Kodak"                       => use_decoder!(dcr::DcrDecoder, buffer, tiff, self),
+          "Panasonic"                   => use_decoder!(rw2::Rw2Decoder, buffer, tiff, self),
+          "LEICA"                       => use_decoder!(rw2::Rw2Decoder, buffer, tiff, self),
+          "FUJIFILM"                    => use_decoder!(raf::RafDecoder, buffer, tiff, self),
+          "PENTAX Corporation"          => use_decoder!(pef::PefDecoder, buffer, tiff, self),
+          "RICOH IMAGING COMPANY, LTD." => use_decoder!(pef::PefDecoder, buffer, tiff, self),
+          "PENTAX"                      => use_decoder!(pef::PefDecoder, buffer, tiff, self),
+          make => Err(format!("Couldn't find a decoder for make \"{}\"", make).to_string()),
+        };
+      } else if tiff.has_entry(Tag::Software) {
+        // Last ditch effort to identify Leaf cameras without Make and Model
+        if fetch_tag!(tiff, Tag::Software).get_str() == "Camera Library" {
+          return Ok(Box::new(mos::MosDecoder::new(buffer, tiff, self)))
+        }
       }
     }
 
