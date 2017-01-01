@@ -25,6 +25,7 @@ macro_rules! fetch_ifd {
 }
 
 extern crate toml;
+mod image;
 mod basics;
 mod ljpeg;
 mod cfa;
@@ -48,6 +49,7 @@ mod nkd;
 mod mos;
 use self::tiff::*;
 use self::ciff::*;
+pub use self::image::*;
 
 pub static CAMERAS_TOML: &'static str = include_str!("../../data/cameras/all.toml");
 
@@ -74,23 +76,6 @@ impl Buffer {
       size: size,
     })
   }
-}
-
-#[derive(Debug, Clone)]
-pub struct Image {
-  pub make: String,
-  pub model: String,
-  pub canonical_make: String,
-  pub canonical_model: String,
-  pub width: usize,
-  pub height: usize,
-  pub wb_coeffs: [f32;4],
-  pub data: Box<[u16]>,
-  pub whitelevels: [u16;4],
-  pub blacklevels: [u16;4],
-  pub xyz_to_cam: [[f32;3];4],
-  pub cfa: cfa::CFA,
-  pub crops: [usize;4],
 }
 
 #[derive(Debug, Clone)]
@@ -180,39 +165,13 @@ impl Camera {
 }
 
 pub fn ok_image(camera: &Camera, width: usize, height: usize, wb_coeffs: [f32;4], image: Vec<u16>) -> Result<Image,String> {
-  Ok(Image {
-    make: camera.make.clone(),
-    model: camera.model.clone(),
-    canonical_make: camera.canonical_make.clone(),
-    canonical_model: camera.canonical_model.clone(),
-    width: width,
-    height: height,
-    wb_coeffs: wb_coeffs,
-    data: image.into_boxed_slice(),
-    blacklevels: camera.blacklevels,
-    whitelevels: camera.whitelevels,
-    xyz_to_cam: camera.xyz_to_cam,
-    cfa: camera.cfa.clone(),
-    crops: camera.crops,
-  })
+  Ok(Image::new(camera, width, height, wb_coeffs, image))
 }
 
 pub fn ok_image_with_blacklevels(camera: &Camera, width: usize, height: usize, wb_coeffs: [f32;4], blacks: [u16;4], image: Vec<u16>) -> Result<Image,String> {
-  Ok(Image {
-    make: camera.make.clone(),
-    model: camera.model.clone(),
-    canonical_make: camera.canonical_make.clone(),
-    canonical_model: camera.canonical_model.clone(),
-    width: width,
-    height: height,
-    wb_coeffs: wb_coeffs,
-    data: image.into_boxed_slice(),
-    blacklevels: blacks,
-    whitelevels: camera.whitelevels,
-    xyz_to_cam: camera.xyz_to_cam,
-    cfa: camera.cfa.clone(),
-    crops: camera.crops,
-  })
+  let mut img = Image::new(camera, width, height, wb_coeffs, image);
+  img.blacklevels = blacks;
+  Ok(img)
 }
 
 #[derive(Debug, Clone)]
