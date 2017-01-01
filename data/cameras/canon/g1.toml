@@ -8,3 +8,4 @@ color_matrix = [-4778, 9467, 2172, 4743, -1141, 4344, -5146, 9908, 6077, -1566, 
 color_pattern = "RGEB"
 crops = [8,52,2,4]
 hints = ["nolowbits"]
+blackareav = [2094,50]

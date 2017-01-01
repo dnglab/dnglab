@@ -10,3 +10,4 @@ crops = [12,4,0,36]
 filesize = 9219600
 raw_width = 3152
 raw_height = 2340
+blackareav = [0,30]

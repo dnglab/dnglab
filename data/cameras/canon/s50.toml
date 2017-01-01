@@ -8,3 +8,5 @@ color_matrix = [8882, -2571, -863, -6348, 14234, 2288, -1516, 2172, 6569]
 color_pattern = "RGGB"
 crops = [6,44,2,12]
 wb_offset = 60
+blackareav = [2632,40]
+blackareah = [0,10]

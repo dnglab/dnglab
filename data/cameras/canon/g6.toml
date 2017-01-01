@@ -9,3 +9,5 @@ color_pattern = "RGGB"
 crops = [12,4,4,44]
 wb_offset = 48
 hints = ["wb_mangle"]
+blackareav = [0,40]
+blackareah = [0,10]
