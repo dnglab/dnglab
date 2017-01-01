@@ -162,14 +162,13 @@ impl<'a> CrwDecoder<'a> {
       let offset = cam.wb_offset;
       return Ok([levels.get_f32(offset+0), levels.get_f32(offset+1), levels.get_f32(offset+3), NAN])
     }
-    if let Some(cinfo) = self.ciff.find_entry(CiffTag::ColorInfo2) {
-      if cinfo.get_u32(0) > 512 {
-        return Ok([cinfo.get_f32(62), cinfo.get_f32(63),
-                   cinfo.get_f32(60), cinfo.get_f32(61)])
-      } else {
-        if cinfo.get_u32(50) == cinfo.get_u32(53) { // D30 fails this test
-          return Ok([cinfo.get_f32(51), cinfo.get_f32(50), cinfo.get_f32(52), NAN])
-        }
+    if !cam.find_hint("nocinfo2") {
+      if let Some(cinfo) = self.ciff.find_entry(CiffTag::ColorInfo2) {
+        return Ok(if cinfo.get_u32(0) > 512 {
+          [cinfo.get_f32(62), cinfo.get_f32(63), cinfo.get_f32(60), cinfo.get_f32(61)]
+        } else {
+          [cinfo.get_f32(51), (cinfo.get_f32(50)+cinfo.get_f32(53))/2.0, cinfo.get_f32(52), NAN]
+        })
       }
     }
     if let Some(cinfo) = self.ciff.find_entry(CiffTag::ColorInfo1) {
