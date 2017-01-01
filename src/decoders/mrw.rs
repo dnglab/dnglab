@@ -12,8 +12,8 @@ pub struct MrwDecoder<'a> {
   buffer: &'a [u8],
   rawloader: &'a RawLoader,
   data_offset: usize,
-  raw_width: u16,
-  raw_height: u16,
+  raw_width: usize,
+  raw_height: usize,
   packed: bool,
   wb_vals: [u16;4],
   tiff: TiffIFD<'a>,
@@ -22,8 +22,8 @@ pub struct MrwDecoder<'a> {
 impl<'a> MrwDecoder<'a> {
   pub fn new(buf: &'a [u8], rawloader: &'a RawLoader) -> MrwDecoder<'a> {
     let data_offset: usize = (BEu32(buf, 4) + 8) as usize;
-    let mut raw_height: u16 = 0;
-    let mut raw_width: u16 = 0;
+    let mut raw_height: usize = 0;
+    let mut raw_width: usize = 0;
     let mut packed = false;
     let mut wb_vals: [u16;4] = [0;4];
     let mut tiffpos: usize = 0;
@@ -36,8 +36,8 @@ impl<'a> MrwDecoder<'a> {
       
       match tag {
         0x505244 => { // PRD
-          raw_height = BEu16(buf,currpos+16);
-          raw_width = BEu16(buf,currpos+18);
+          raw_height = BEu16(buf,currpos+16) as usize;
+          raw_width = BEu16(buf,currpos+18) as usize;
           packed = buf[currpos+24] == 12;
         }
         0x574247 => { // WBG
@@ -71,15 +71,13 @@ impl<'a> MrwDecoder<'a> {
 impl<'a> Decoder for MrwDecoder<'a> {
   fn image(&self) -> Result<Image,String> {
     let camera = try!(self.rawloader.check_supported(&self.tiff));
-    let src = &self.buffer[self.data_offset .. self.buffer.len()];
-    let w = self.raw_width as usize;
-    let h = self.raw_height as usize;
+    let src = &self.buffer[self.data_offset..];
 
     let buffer = if self.packed {
-      decode_12be(&src, w, h)
+      decode_12be(src, self.raw_width, self.raw_height)
     }
     else {
-      decode_12be_unpacked(&src, w, h)
+      decode_12be_unpacked(src, self.raw_width, self.raw_height)
     };
 
     let wb_coeffs = if camera.find_hint("swapped_wb") {
@@ -94,6 +92,6 @@ impl<'a> Decoder for MrwDecoder<'a> {
        f32::NAN]
     };
 
-    ok_image(camera, self.raw_width as u32, self.raw_height as u32, wb_coeffs, buffer)
+    ok_image(camera, self.raw_width, self.raw_height, wb_coeffs, buffer)
   }
 }

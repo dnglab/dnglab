@@ -88,7 +88,7 @@ fn t (tag: Tag) -> u16 {
 pub struct TiffEntry<'a> {
   tag: u16,
   typ: u16,
-  count: u32,
+  count: usize,
   parent_offset: usize,
   doffset: usize,
   data: &'a [u8],
@@ -358,14 +358,14 @@ impl<'a> TiffEntry<'a> {
   pub fn new(buf: &'a[u8], offset: usize, base_offset: usize, parent_offset: usize, e: Endian) -> TiffEntry<'a> {
     let tag = e.ru16(buf, offset);
     let mut typ = e.ru16(buf, offset+2);
-    let count = e.ru32(buf, offset+4);
+    let count = e.ru32(buf, offset+4) as usize;
 
     // If we don't know the type assume byte data
     if typ == 0 || typ > 13 {
       typ = 1;
     }
 
-    let bytesize: usize = (count as usize) << DATASHIFTS[typ as usize];
+    let bytesize: usize = count << DATASHIFTS[typ as usize];
     let doffset: usize = if bytesize <= 4 {
       (offset + 8)
     } else {
@@ -395,7 +395,7 @@ impl<'a> TiffEntry<'a> {
 
   pub fn doffset(&self) -> usize { self.doffset }
   pub fn parent_offset(&self) -> usize { self.parent_offset }
-  pub fn count(&self) -> u32 { self.count }
+  pub fn count(&self) -> usize { self.count }
   //pub fn typ(&self) -> u16 { self.typ }
 
   pub fn get_u32(&self, idx: usize) -> u32 {
@@ -406,6 +406,8 @@ impl<'a> TiffEntry<'a> {
       _ => panic!(format!("Trying to read typ {} for a u32", self.typ).to_string()),
     }
   }
+
+  pub fn get_usize(&self, idx: usize) -> usize { self.get_u32(idx) as usize }
 
   pub fn get_force_u32(&self, idx: usize) -> u32 {
     self.endian.ru32(self.data, idx*4)

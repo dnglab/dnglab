@@ -34,12 +34,12 @@ impl<'a> Decoder for DngDecoder<'a> {
       !subsampled && (compression == 7 || compression == 1 || compression == 0x884c)
     }).collect::<Vec<&TiffIFD>>();
     let raw = ifds[0];
-    let width = fetch_tag!(raw, Tag::ImageWidth).get_u32(0);
-    let height = fetch_tag!(raw, Tag::ImageLength).get_u32(0);
+    let width = fetch_tag!(raw, Tag::ImageWidth).get_usize(0);
+    let height = fetch_tag!(raw, Tag::ImageLength).get_usize(0);
 
     let image = match fetch_tag!(raw, Tag::Compression).get_u32(0) {
-      1 => try!(self.decode_uncompressed(raw, width as usize, height as usize)),
-      7 => try!(self.decode_compressed(raw, width as usize, height as usize)),
+      1 => try!(self.decode_uncompressed(raw, width, height)),
+      7 => try!(self.decode_compressed(raw, width, height)),
       c => return Err(format!("Don't know how to read DNGs with compression {}", c).to_string()),
     };
 
@@ -62,15 +62,15 @@ impl<'a> Decoder for DngDecoder<'a> {
       model: model,
       canonical_make: canonical_make,
       canonical_model: canonical_model,
-      width: width as usize,
-      height: height as usize,
+      width: width,
+      height: height,
       wb_coeffs: try!(self.get_wb()),
       data: image.into_boxed_slice(),
       blacklevels: try!(self.get_blacklevels(raw)),
       whitelevels: try!(self.get_whitelevels(raw)),
       xyz_to_cam: try!(self.get_color_matrix()),
       cfa: try!(self.get_cfa(raw)),
-      crops: try!(self.get_crops(raw, width as usize, height as usize)),
+      crops: try!(self.get_crops(raw, width, height)),
     })
   }
 }
@@ -107,8 +107,8 @@ impl<'a> DngDecoder<'a> {
 
   fn get_crops(&self, raw: &TiffIFD, width: usize, height: usize) -> Result<[usize;4],String> {
     if let Some(crops) = raw.find_entry(Tag::ActiveArea) {
-      Ok([crops.get_u32(0) as usize, width - crops.get_u32(3) as usize,
-          height - crops.get_u32(2) as usize, crops.get_u32(1) as usize])
+      Ok([crops.get_usize(0), width - crops.get_usize(3),
+          height - crops.get_usize(2), crops.get_usize(1)])
     } else {
       // Ignore missing crops, at least some pentax DNGs don't have it
       Ok([0,0,0,0])
@@ -127,7 +127,7 @@ impl<'a> DngDecoder<'a> {
     if cmatrix.count() > 12 {
       Err(format!("color matrix supposedly has {} components",cmatrix.count()).to_string())
     } else {
-      for i in 0..(cmatrix.count() as usize) {
+      for i in 0..cmatrix.count() {
         matrix[i/3][i%3] = cmatrix.get_f32(i);
       }
       Ok(matrix)
@@ -135,7 +135,7 @@ impl<'a> DngDecoder<'a> {
   }
 
   pub fn decode_uncompressed(&self, raw: &TiffIFD, width: usize, height: usize) -> Result<Vec<u16>,String> {
-    let offset = fetch_tag!(raw, Tag::StripOffsets).get_u32(0) as usize;
+    let offset = fetch_tag!(raw, Tag::StripOffsets).get_usize(0);
     let src = &self.buffer[offset..];
 
     match fetch_tag!(raw, Tag::BitsPerSample).get_u32(0) {
@@ -163,7 +163,7 @@ impl<'a> DngDecoder<'a> {
       if offsets.count() != 1 {
         return Err("DNG: files with more than one slice not supported yet".to_string())
       }
-      let offset = offsets.get_u32(0) as usize;
+      let offset = offsets.get_usize(0);
       let src = &self.buffer[offset..];
       let mut out = vec![0 as u16; width*height];
       let decompressor = try!(LjpegDecompressor::new(src, true));
@@ -171,11 +171,11 @@ impl<'a> DngDecoder<'a> {
       Ok(out)
     } else if let Some(offsets) = raw.find_entry(Tag::TileOffsets) {
       // They've gone with tiling
-      let twidth = fetch_tag!(raw, Tag::TileWidth).get_u32(0) as usize;
-      let tlength = fetch_tag!(raw, Tag::TileLength).get_u32(0) as usize;
+      let twidth = fetch_tag!(raw, Tag::TileWidth).get_usize(0);
+      let tlength = fetch_tag!(raw, Tag::TileLength).get_usize(0);
       let coltiles = (width-1)/twidth + 1;
       let rowtiles = (height-1)/tlength + 1;
-      if coltiles*rowtiles != offsets.count() as usize {
+      if coltiles*rowtiles != offsets.count() {
         return Err(format!("DNG: trying to decode {} tiles from {} offsets",
                            coltiles*rowtiles, offsets.count()).to_string())
       }
@@ -183,7 +183,7 @@ impl<'a> DngDecoder<'a> {
       Ok(decode_threaded_multiline(width, height, tlength, &(|strip: &mut [u16], row| {
         let row = row / tlength;
         for col in 0..coltiles {
-          let offset = offsets.get_u32(row*coltiles+col) as usize;
+          let offset = offsets.get_usize(row*coltiles+col);
           let src = &self.buffer[offset..];
           // We don't use bigtable here as the tiles are two small to amortize the setup cost
           let decompressor = LjpegDecompressor::new(src, true).unwrap();

@@ -108,7 +108,7 @@ pub struct Camera {
   xyz_to_cam: [[f32;3];4],
   cfa: cfa::CFA,
   crops: [usize;4],
-  bps: u32,
+  bps: usize,
   wb_offset: usize,
   hints: Vec<String>,
 }
@@ -141,7 +141,7 @@ impl Camera {
           }
         },
         "color_pattern" => {self.cfa = cfa::CFA::new(&val.as_str().unwrap().to_string());},
-        "bps" => {self.bps = val.as_integer().unwrap() as u32;},
+        "bps" => {self.bps = val.as_integer().unwrap() as usize;},
         "wb_offset" => {self.wb_offset = val.as_integer().unwrap() as usize;},
         "filesize" => {self.filesize = val.as_integer().unwrap() as usize;},
         "raw_width" => {self.raw_width = val.as_integer().unwrap() as usize;},
@@ -179,14 +179,14 @@ impl Camera {
   }
 }
 
-pub fn ok_image(camera: &Camera, width: u32, height: u32, wb_coeffs: [f32;4], image: Vec<u16>) -> Result<Image,String> {
+pub fn ok_image(camera: &Camera, width: usize, height: usize, wb_coeffs: [f32;4], image: Vec<u16>) -> Result<Image,String> {
   Ok(Image {
     make: camera.make.clone(),
     model: camera.model.clone(),
     canonical_make: camera.canonical_make.clone(),
     canonical_model: camera.canonical_model.clone(),
-    width: width as usize,
-    height: height as usize,
+    width: width,
+    height: height,
     wb_coeffs: wb_coeffs,
     data: image.into_boxed_slice(),
     blacklevels: camera.blacklevels,
@@ -197,14 +197,14 @@ pub fn ok_image(camera: &Camera, width: u32, height: u32, wb_coeffs: [f32;4], im
   })
 }
 
-pub fn ok_image_with_blacklevels(camera: &Camera, width: u32, height: u32, wb_coeffs: [f32;4], blacks: [u16;4], image: Vec<u16>) -> Result<Image,String> {
+pub fn ok_image_with_blacklevels(camera: &Camera, width: usize, height: usize, wb_coeffs: [f32;4], blacks: [u16;4], image: Vec<u16>) -> Result<Image,String> {
   Ok(Image {
     make: camera.make.clone(),
     model: camera.model.clone(),
     canonical_make: camera.canonical_make.clone(),
     canonical_model: camera.canonical_model.clone(),
-    width: width as usize,
-    height: height as usize,
+    width: width,
+    height: height,
     wb_coeffs: wb_coeffs,
     data: image.into_boxed_slice(),
     blacklevels: blacks,

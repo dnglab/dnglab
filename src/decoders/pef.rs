@@ -26,15 +26,15 @@ impl<'a> Decoder for PefDecoder<'a> {
   fn image(&self) -> Result<Image,String> {
     let camera = try!(self.rawloader.check_supported(&self.tiff));
     let raw = fetch_ifd!(&self.tiff, Tag::StripOffsets);
-    let width = fetch_tag!(raw, Tag::ImageWidth).get_u32(0);
-    let height = fetch_tag!(raw, Tag::ImageLength).get_u32(0);
-    let offset = fetch_tag!(raw, Tag::StripOffsets).get_u32(0) as usize;
+    let width = fetch_tag!(raw, Tag::ImageWidth).get_usize(0);
+    let height = fetch_tag!(raw, Tag::ImageLength).get_usize(0);
+    let offset = fetch_tag!(raw, Tag::StripOffsets).get_usize(0);
     let src = &self.buffer[offset .. self.buffer.len()];
 
     let image = match fetch_tag!(raw, Tag::Compression).get_u32(0) {
-      1 => decode_16be(src, width as usize, height as usize),
-      32773 => decode_12be(src, width as usize, height as usize),
-      65535 => try!(self.decode_compressed(src, width as usize, height as usize)),
+      1 => decode_16be(src, width, height),
+      32773 => decode_12be(src, width, height),
+      65535 => try!(self.decode_compressed(src, width, height)),
       c => return Err(format!("PEF: Don't know how to read compression {}", c).to_string()),
     };
 

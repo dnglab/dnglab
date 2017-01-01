@@ -25,9 +25,9 @@ impl<'a> Decoder for OrfDecoder<'a> {
   fn image(&self) -> Result<Image,String> {
     let camera = try!(self.rawloader.check_supported(&self.tiff));
     let raw = fetch_ifd!(&self.tiff, Tag::StripOffsets);
-    let width = fetch_tag!(raw, Tag::ImageWidth).get_u32(0);
-    let height = fetch_tag!(raw, Tag::ImageLength).get_u32(0);
-    let offset = fetch_tag!(raw, Tag::StripOffsets).get_u32(0) as usize;
+    let width = fetch_tag!(raw, Tag::ImageWidth).get_usize(0);
+    let height = fetch_tag!(raw, Tag::ImageLength).get_usize(0);
+    let offset = fetch_tag!(raw, Tag::StripOffsets).get_usize(0);
     let counts = fetch_tag!(raw, Tag::StripByteCounts);
     let mut size: usize = 0;
     for i in 0..counts.count() {
@@ -36,22 +36,22 @@ impl<'a> Decoder for OrfDecoder<'a> {
 
     let src = &self.buffer[offset .. self.buffer.len()];
 
-    let image = if size >= ((width*height*2) as usize) {
+    let image = if size >= width*height*2 {
       if self.tiff.little_endian() {
-        decode_12le_unpacked_left_aligned(src, width as usize, height as usize)
+        decode_12le_unpacked_left_aligned(src, width, height)
       } else {
-        decode_12be_unpacked_left_aligned(src, width as usize, height as usize)
+        decode_12be_unpacked_left_aligned(src, width, height)
       }
-    } else if size >= ((width*height/10*16) as usize) {
-      decode_12le_wcontrol(src, width as usize, height as usize)
-    } else if size >= ((width*height*12/8) as usize) {
+    } else if size >= width*height/10*16 {
+      decode_12le_wcontrol(src, width, height)
+    } else if size >= width*height*12/8 {
       if width < 3500 { // The interlaced stuff is all old and smaller
-        decode_12be_interlaced(src, width as usize, height as usize)
+        decode_12be_interlaced(src, width, height)
       } else {
-        decode_12be_msb32(src, width as usize, height as usize)
+        decode_12be_msb32(src, width, height)
       }
     } else {
-      OrfDecoder::decode_compressed(src, width as usize, height as usize)
+      OrfDecoder::decode_compressed(src, width, height)
     };
     ok_image(camera, width, height, try!(self.get_wb()), image)
   }
@@ -67,7 +67,7 @@ impl<'a> OrfDecoder<'a> {
    */
 
   pub fn decode_compressed(buf: &'a [u8], width: usize, height: usize) -> Vec<u16> {
-    let mut out: Vec<u16> = vec![0; (width*height) as usize];
+    let mut out: Vec<u16> = vec![0; width*height];
 
     /* Build a table to quickly look up "high" value */
     let mut bittable: [u8; 4096] = [0; 4096];
@@ -140,7 +140,7 @@ impl<'a> OrfDecoder<'a> {
 
             left[s] = pred + ((diff << 2) | low);
             nw[s] = up;
-            out[(row*width + (col+s)) as usize] = left[s] as u16;
+            out[row*width + (col+s)] = left[s] as u16;
           }
         }
       }
@@ -157,7 +157,7 @@ impl<'a> OrfDecoder<'a> {
     } else {
       let iproc = fetch_tag!(self.tiff,Tag::OlympusImgProc);
       let poff = iproc.parent_offset() - 12;
-      let off = (iproc.get_u32(0) as usize) + poff;
+      let off = (iproc.get_usize(0)) + poff;
       let ifd = try!(TiffIFD::new(self.buffer, off, 0, 0, 0, self.tiff.get_endian()));
       let wbs = fetch_tag!(ifd, Tag::ImageWidth);
       if wbs.count() == 4 {

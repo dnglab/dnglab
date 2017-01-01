@@ -34,34 +34,34 @@ impl<'a> Decoder for ArwDecoder<'a> {
       }
     }
     let raw = data[0];
-    let width = fetch_tag!(raw, Tag::ImageWidth).get_u32(0);
-    let mut height = fetch_tag!(raw, Tag::ImageLength).get_u32(0);
-    let offset = fetch_tag!(raw, Tag::StripOffsets).get_u32(0) as usize;
-    let count = fetch_tag!(raw, Tag::StripByteCounts).get_u32(0) as usize;
+    let width = fetch_tag!(raw, Tag::ImageWidth).get_usize(0);
+    let mut height = fetch_tag!(raw, Tag::ImageLength).get_usize(0);
+    let offset = fetch_tag!(raw, Tag::StripOffsets).get_usize(0);
+    let count = fetch_tag!(raw, Tag::StripByteCounts).get_usize(0);
     let compression = fetch_tag!(raw, Tag::Compression).get_u32(0);
     let bps = if camera.bps != 0 {
       camera.bps
     } else {
-      fetch_tag!(raw, Tag::BitsPerSample).get_u32(0)
+      fetch_tag!(raw, Tag::BitsPerSample).get_usize(0)
     };
     let src = &self.buffer[offset .. self.buffer.len()];
 
     let image = match compression {
       1 => {
         if camera.model == "DSC-R1" {
-          decode_14be_unpacked(src, width as usize, height as usize)
+          decode_14be_unpacked(src, width, height)
         } else {
-          decode_16le(src, width as usize, height as usize)
+          decode_16le(src, width, height)
         }
       }
       32767 => {
-        if ((width*height*bps) as usize) != count*8 {
+        if (width*height*bps) != count*8 {
           height += 8;
-          ArwDecoder::decode_arw1(src, width as usize, height as usize)
+          ArwDecoder::decode_arw1(src, width, height)
         } else {
           match bps {
-            8 => {let curve = try!(ArwDecoder::get_curve(raw)); ArwDecoder::decode_arw2(src, width as usize, height as usize, &curve)},
-            12 => decode_12le(src, width as usize, height as usize),
+            8 => {let curve = try!(ArwDecoder::get_curve(raw)); ArwDecoder::decode_arw2(src, width, height, &curve)},
+            12 => decode_12le(src, width, height),
             _ => return Err(format!("ARW2: Don't know how to decode images with {} bps", bps)),
           }
         }
@@ -85,27 +85,27 @@ impl<'a> ArwDecoder<'a> {
     let raw = data[0];
     let width = 3881;
     let height = 2608;
-    let offset = fetch_tag!(raw, Tag::SubIFDs).get_u32(0) as usize;
+    let offset = fetch_tag!(raw, Tag::SubIFDs).get_usize(0);
 
     let src = &self.buffer[offset .. self.buffer.len()];
-    let image = ArwDecoder::decode_arw1(src, width as usize, height as usize);
+    let image = ArwDecoder::decode_arw1(src, width, height);
 
     // Get the WB the MRW way
-    let priv_offset = fetch_tag!(self.tiff, Tag::DNGPrivateArea).get_force_u32(0);
-    let buf = &self.buffer[priv_offset as usize..];
+    let priv_offset = fetch_tag!(self.tiff, Tag::DNGPrivateArea).get_force_u32(0) as usize;
+    let buf = &self.buffer[priv_offset..];
     let mut currpos: usize = 8;
     let mut wb_coeffs: [f32;4] = [0.0, 0.0, 0.0, NAN];
     // At most we read 20 bytes from currpos so check we don't step outside that
     while currpos+20 < buf.len() {
       let tag: u32 = BEu32(buf,currpos);
-      let len: u32 = LEu32(buf,currpos+4);
+      let len: usize = LEu32(buf,currpos+4) as usize;
       if tag == 0x574247 { // WBG
         wb_coeffs[0] = LEu16(buf, currpos+12) as f32;
         wb_coeffs[1] = LEu16(buf, currpos+14) as f32;
         wb_coeffs[2] = LEu16(buf, currpos+18) as f32;
         break;
       }
-      currpos += (len+8) as usize;
+      currpos += len+8;
     }
 
     ok_image(camera, width, height, wb_coeffs, image)
@@ -118,9 +118,9 @@ impl<'a> ArwDecoder<'a> {
     }
     let raw = data[0];
 
-    let width = fetch_tag!(raw, Tag::ImageWidth).get_u32(0);
-    let height = fetch_tag!(raw, Tag::ImageLength).get_u32(0);
-    let len = (width*height*2) as usize;
+    let width = fetch_tag!(raw, Tag::ImageWidth).get_usize(0);
+    let height = fetch_tag!(raw, Tag::ImageLength).get_usize(0);
+    let len = width*height*2;
 
     // Constants taken from dcraw
     let off: usize = 862144;
@@ -128,21 +128,21 @@ impl<'a> ArwDecoder<'a> {
     let head_off: usize = 164600;
 
     // Replicate the dcraw contortions to get the "decryption" key
-    let offset = (self.buffer[key_off as usize] as usize)*4;
+    let offset = (self.buffer[key_off] as usize)*4;
     let first_key = BEu32(self.buffer, key_off+offset);
     let head = ArwDecoder::sony_decrypt(self.buffer, head_off, 40, first_key);
     let second_key = LEu32(&head, 22);
 
     // "Decrypt" the whole image buffer
     let image_data = ArwDecoder::sony_decrypt(self.buffer, off, len, second_key);
-    let image = decode_16be(&image_data, width as usize, height as usize);
+    let image = decode_16be(&image_data, width, height);
 
     ok_image(camera, width, height, [NAN,NAN,NAN,NAN], image)
   }
 
   fn decode_arw1(buf: &[u8], width: usize, height: usize) -> Vec<u16> {
     let mut pump = BitPumpMSB::new(buf);
-    let mut out: Vec<u16> = vec![0; (width*height) as usize];
+    let mut out: Vec<u16> = vec![0; width*height];
 
     let mut sum: i32 = 0;
     for x in 0..width {
@@ -187,8 +187,8 @@ impl<'a> ArwDecoder<'a> {
           // Calculate the size of the data shift needed by how large the delta is
           // A delta with 11 bits requires a shift of 4, 10 bits of 3, etc
           let delta_shift: u32 = cmp::max(0, (32-(delta.leading_zeros() as i32)) - 7) as u32;
-          let imax = pump.get_bits(4);
-          let imin = pump.get_bits(4);
+          let imax = pump.get_bits(4) as usize;
+          let imin = pump.get_bits(4) as usize;
 
           for i in 0..16 {
             let val = if i == imax {
@@ -198,7 +198,7 @@ impl<'a> ArwDecoder<'a> {
             } else {
               cmp::min(0x7ff,(pump.get_bits(7) << delta_shift) + min)
             };
-            out[j+(i*2) as usize] = curve.dither((val<<1) as u16, &mut random);
+            out[j+(i*2)] = curve.dither((val<<1) as u16, &mut random);
           }
         }
       }
@@ -206,10 +206,10 @@ impl<'a> ArwDecoder<'a> {
   }
 
   fn get_wb(&self) -> Result<[f32;4], String> {
-    let priv_offset = fetch_tag!(self.tiff, Tag::DNGPrivateArea).get_force_u32(0);
-    let priv_tiff = TiffIFD::new(self.buffer, priv_offset as usize, 0, 0, 0, LITTLE_ENDIAN).unwrap();
-    let sony_offset = fetch_tag!(priv_tiff, Tag::SonyOffset).get_u32(0) as usize;
-    let sony_length = fetch_tag!(priv_tiff, Tag::SonyLength).get_u32(0) as usize;
+    let priv_offset = fetch_tag!(self.tiff, Tag::DNGPrivateArea).get_force_u32(0) as usize;
+    let priv_tiff = try!(TiffIFD::new(self.buffer, priv_offset, 0, 0, 0, LITTLE_ENDIAN));
+    let sony_offset = fetch_tag!(priv_tiff, Tag::SonyOffset).get_usize(0);
+    let sony_length = fetch_tag!(priv_tiff, Tag::SonyLength).get_usize(0);
     let sony_key = fetch_tag!(priv_tiff, Tag::SonyKey).get_u32(0);
     let decrypted_buf = ArwDecoder::sony_decrypt(self.buffer, sony_offset, sony_length, sony_key);
     let decrypted_tiff = TiffIFD::new(&decrypted_buf, 0, sony_offset, 0, 0, LITTLE_ENDIAN).unwrap();
@@ -228,16 +228,16 @@ impl<'a> ArwDecoder<'a> {
 
   fn get_curve(raw: &TiffIFD) -> Result<LookupTable, String> {
     let centry = fetch_tag!(raw, Tag::SonyCurve);
-    let mut curve: [u32;6] = [ 0, 0, 0, 0, 0, 4095 ];
+    let mut curve: [usize;6] = [ 0, 0, 0, 0, 0, 4095 ];
 
     for i in 0..4 {
-      curve[i+1] = ((centry.get_u32(i) >> 2) & 0xfff) as u32;
+      curve[i+1] = ((centry.get_u32(i) >> 2) & 0xfff) as usize;
     }
 
-    let mut out = vec![0 as u16; (curve[5]+1) as usize];
+    let mut out = vec![0 as u16; curve[5]+1];
     for i in 0..5 {
       for j in (curve[i]+1)..(curve[i+1]+1) {
-        out[j as usize] = out[(j-1) as usize] + (1<<i);
+        out[j] = out[(j-1)] + (1<<i);
       }
     }
 

@@ -26,9 +26,9 @@ impl<'a> Decoder for DcrDecoder<'a> {
   fn image(&self) -> Result<Image,String> {
     let camera = try!(self.rawloader.check_supported(&self.tiff));
     let raw = fetch_ifd!(&self.tiff, Tag::CFAPattern);
-    let width = fetch_tag!(raw, Tag::ImageWidth).get_u32(0);
-    let height = fetch_tag!(raw, Tag::ImageLength).get_u32(0);
-    let offset = fetch_tag!(raw, Tag::StripOffsets).get_u32(0) as usize;
+    let width = fetch_tag!(raw, Tag::ImageWidth).get_usize(0);
+    let height = fetch_tag!(raw, Tag::ImageLength).get_usize(0);
+    let offset = fetch_tag!(raw, Tag::StripOffsets).get_usize(0);
     let src = &self.buffer[offset .. self.buffer.len()];
 
     let linearization = fetch_tag!(self.tiff, Tag::DcrLinearization);
@@ -40,7 +40,7 @@ impl<'a> Decoder for DcrDecoder<'a> {
       LookupTable::new(&points)
     };
 
-    let image = DcrDecoder::decode_kodak65000(src, &curve, width as usize, height as usize);
+    let image = DcrDecoder::decode_kodak65000(src, &curve, width, height);
 
     ok_image(camera, width, height, try!(self.get_wb()), image)
   }
@@ -56,7 +56,7 @@ impl<'a> DcrDecoder<'a> {
   }
 
   fn decode_kodak65000(buf: &[u8], curve: &LookupTable, width: usize, height: usize) -> Vec<u16> {
-    let mut out: Vec<u16> = vec![0; (width*height) as usize];
+    let mut out: Vec<u16> = vec![0; width*height];
     let mut input = ByteStream::new(buf, LITTLE_ENDIAN);
 
     let mut random: u32 = 0;

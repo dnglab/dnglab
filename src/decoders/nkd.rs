@@ -32,6 +32,6 @@ impl<'a> Decoder for NakedDecoder<'a> {
       _  => return Err(format!("Naked: Don't know about {} bps images", bits).to_string()),
     };
 
-    ok_image(self.camera, width as u32, height as u32, [NAN,NAN,NAN,NAN], image)
+    ok_image(self.camera, width, height, [NAN,NAN,NAN,NAN], image)
   }
 }

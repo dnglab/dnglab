@@ -147,9 +147,9 @@ impl<'a> Decoder for CrwDecoder<'a> {
       (1552,1024,decode_10le_lsb16(&self.buffer[26..], 1552, 1024))
     } else {
       let sensorinfo = fetch_tag!(self.ciff, CiffTag::SensorInfo);
-      let width = sensorinfo.get_u32(1);
-      let height = sensorinfo.get_u32(2);
-      (width, height, try!(self.decode_compressed(camera, width as usize, height as usize)))
+      let width = sensorinfo.get_usize(1);
+      let height = sensorinfo.get_usize(2);
+      (width, height, try!(self.decode_compressed(camera, width, height)))
     };
 
     ok_image(camera, width, height, try!(self.get_wb(camera)), image)
@@ -191,7 +191,7 @@ impl<'a> CrwDecoder<'a> {
   fn decode_compressed(&self, cam: &Camera, width: usize, height: usize) -> Result<Vec<u16>,String> {
     let mut out = vec![0 as u16; width*height];
 
-    let dectable = fetch_tag!(self.ciff, CiffTag::DecoderTable).get_u32(0) as usize;
+    let dectable = fetch_tag!(self.ciff, CiffTag::DecoderTable).get_usize(0);
     if dectable > 2 {
       return Err(format!("CRW: Unknown decoder table {}", dectable).to_string())
     }

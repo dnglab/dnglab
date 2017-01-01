@@ -28,16 +28,16 @@ impl<'a> Decoder for Rw2Decoder<'a> {
       let data = self.tiff.find_ifds_with_tag(Tag::PanaOffsets);
       if data.len() > 0 {
         let raw = data[0];
-        width = fetch_tag!(raw, Tag::PanaWidth).get_u32(0) as usize;
-        height = fetch_tag!(raw, Tag::PanaLength).get_u32(0) as usize;
-        let offset = fetch_tag!(raw, Tag::PanaOffsets).get_u32(0) as usize;
+        width = fetch_tag!(raw, Tag::PanaWidth).get_usize(0);
+        height = fetch_tag!(raw, Tag::PanaLength).get_usize(0);
+        let offset = fetch_tag!(raw, Tag::PanaOffsets).get_usize(0);
         let src = &self.buffer[offset..];
         Rw2Decoder::decode_panasonic(src, width, height, true)
       } else {
         let raw = fetch_ifd!(&self.tiff, Tag::StripOffsets);
-        width = fetch_tag!(raw, Tag::PanaWidth).get_u32(0) as usize;
-        height = fetch_tag!(raw, Tag::PanaLength).get_u32(0) as usize;
-        let offset = fetch_tag!(raw, Tag::StripOffsets).get_u32(0) as usize;
+        width = fetch_tag!(raw, Tag::PanaWidth).get_usize(0);
+        height = fetch_tag!(raw, Tag::PanaLength).get_usize(0);
+        let offset = fetch_tag!(raw, Tag::StripOffsets).get_usize(0);
         let src = &self.buffer[offset..];
 
         if src.len() >= width*height*2 {
@@ -64,7 +64,7 @@ impl<'a> Decoder for Rw2Decoder<'a> {
     };
     let camera = try!(self.rawloader.check_supported_with_mode(&self.tiff, mode));
 
-    ok_image(camera, width as u32, height as u32, try!(self.get_wb()), image)
+    ok_image(camera, width, height, try!(self.get_wb()), image)
   }
 }
 

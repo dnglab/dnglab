@@ -148,7 +148,7 @@ impl<'a> CiffEntry<'a> {
     }
   }
 
+  pub fn get_usize(&self, idx: usize) -> usize { self.get_u32(idx) as usize }
   pub fn get_f32(&self, idx: usize) -> f32 { self.get_u32(idx) as f32 }
-
   pub fn get_force_u16(&self, idx: usize) -> u16 { LEu16(self.data, idx*2) }
 }

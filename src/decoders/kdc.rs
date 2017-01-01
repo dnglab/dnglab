@@ -23,13 +23,13 @@ impl<'a> KdcDecoder<'a> {
 impl<'a> Decoder for KdcDecoder<'a> {
   fn image(&self) -> Result<Image,String> {
     let camera = try!(self.rawloader.check_supported(&self.tiff));
-    let width = fetch_tag!(self.tiff, Tag::KdcWidth).get_u32(0)+80;
-    let height = fetch_tag!(self.tiff, Tag::KdcLength).get_u32(0)+70;
+    let width = fetch_tag!(self.tiff, Tag::KdcWidth).get_usize(0)+80;
+    let height = fetch_tag!(self.tiff, Tag::KdcLength).get_usize(0)+70;
     let offset = fetch_tag!(self.tiff, Tag::KdcOffset);
     if offset.count() < 13 {
       panic!("KDC Decoder: Couldn't find the KDC offset");
     }
-    let mut off = (offset.get_u32(4) + offset.get_u32(12)) as usize;
+    let mut off = offset.get_usize(4) + offset.get_usize(12);
 
     // Offset hardcoding gotten from dcraw
     if camera.find_hint("easyshare_offset_hack") {
@@ -37,7 +37,7 @@ impl<'a> Decoder for KdcDecoder<'a> {
     }
 
     let src = &self.buffer[off..];
-    let image = decode_12be(src, width as usize, height as usize);
+    let image = decode_12be(src, width, height);
     ok_image(camera, width, height, try!(self.get_wb()), image)
   }
 }

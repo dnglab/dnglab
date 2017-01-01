@@ -25,13 +25,13 @@ impl<'a> Decoder for RafDecoder<'a> {
     let camera = try!(self.rawloader.check_supported(&self.tiff));
     let raw = fetch_ifd!(&self.tiff, Tag::RafOffsets);
     let (width,height) = if raw.has_entry(Tag::RafImageWidth) {
-      (fetch_tag!(raw, Tag::RafImageWidth).get_u32(0),
-       fetch_tag!(raw, Tag::RafImageLength).get_u32(0))
+      (fetch_tag!(raw, Tag::RafImageWidth).get_usize(0),
+       fetch_tag!(raw, Tag::RafImageLength).get_usize(0))
     } else {
       let sizes = fetch_tag!(raw, Tag::ImageWidth);
-      (sizes.get_u32(1), sizes.get_u32(0))
+      (sizes.get_usize(1), sizes.get_usize(0))
     };
-    let offset = fetch_tag!(raw, Tag::RafOffsets).get_u32(0) as usize + raw.start_offset();
+    let offset = fetch_tag!(raw, Tag::RafOffsets).get_usize(0) + raw.start_offset();
     let bps = match raw.find_entry(Tag::RafBitsPerSample) {
       Some(val) => val.get_u32(0),
       None      => 16,
@@ -42,18 +42,18 @@ impl<'a> Decoder for RafDecoder<'a> {
       // Some fuji SuperCCD cameras include a second raw image next to the first one
       // that is identical but darker to the first. The two combined can produce
       // a higher dynamic range image. Right now we're ignoring it.
-      decode_16le_skiplines(src, width as usize, height as usize)
+      decode_16le_skiplines(src, width, height)
     } else if camera.find_hint("jpeg32") {
-      decode_12be_msb32(src, width as usize, height as usize)
+      decode_12be_msb32(src, width, height)
     } else {
       match bps {
-        12 => decode_12le(src, width as usize, height as usize),
-        14 => decode_14le_unpacked(src, width as usize, height as usize),
+        12 => decode_12le(src, width, height),
+        14 => decode_14le_unpacked(src, width, height),
         16 => {
           if self.tiff.little_endian() {
-            decode_16le(src, width as usize, height as usize)
+            decode_16le(src, width, height)
           } else {
-            decode_16be(src, width as usize, height as usize)
+            decode_16be(src, width, height)
           }
         },
         _ => {return Err(format!("RAF: Don't know how to decode bps {}", bps).to_string());},
@@ -61,14 +61,14 @@ impl<'a> Decoder for RafDecoder<'a> {
     };
 
     if camera.find_hint("fuji_rotation") || camera.find_hint("fuji_rotation_alt") {
-      let (width, height, image) = RafDecoder::rotate_image(&image, camera, width as usize, height as usize);
+      let (width, height, image) = RafDecoder::rotate_image(&image, camera, width, height);
       Ok(Image {
         make: camera.make.clone(),
         model: camera.model.clone(),
         canonical_make: camera.canonical_make.clone(),
         canonical_model: camera.canonical_model.clone(),
-        width: width as usize,
-        height: height as usize,
+        width: width,
+        height: height,
         wb_coeffs: try!(self.get_wb()),
         data: image.into_boxed_slice(),
         blacklevels: camera.blacklevels,
@@ -95,16 +95,16 @@ impl<'a> RafDecoder<'a> {
   }
 
   fn rotate_image(src: &[u16], camera: &Camera, width: usize, height: usize) -> (usize, usize, Vec<u16>) {
-    let x = camera.crops[3] as usize;
-    let y = camera.crops[0] as usize;
-    let cropwidth = width - (camera.crops[1] as usize) - x;
-    let cropheight = height - (camera.crops[2] as usize) - y;
+    let x = camera.crops[3];
+    let y = camera.crops[0];
+    let cropwidth = width - camera.crops[1] - x;
+    let cropheight = height - camera.crops[2] - y;
 
     if camera.find_hint("fuji_rotation_alt") {
       let rotatedwidth = cropheight + cropwidth/2;
       let rotatedheight = rotatedwidth-1;
 
-      let mut out: Vec<u16> = vec![0; (rotatedwidth*rotatedheight) as usize];
+      let mut out: Vec<u16> = vec![0; rotatedwidth * rotatedheight];
       for row in 0..cropheight {
         let inb = &src[(row+y)*width+x..];
         for col in 0..cropwidth {
@@ -119,7 +119,7 @@ impl<'a> RafDecoder<'a> {
       let rotatedwidth = cropwidth + cropheight/2;
       let rotatedheight = rotatedwidth-1;
 
-      let mut out: Vec<u16> = vec![0; (rotatedwidth*rotatedheight) as usize];
+      let mut out: Vec<u16> = vec![0; rotatedwidth * rotatedheight];
       for row in 0..cropheight {
         let inb = &src[(row+y)*width+x..];
         for col in 0..cropwidth {

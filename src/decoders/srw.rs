@@ -26,17 +26,17 @@ impl<'a> Decoder for SrwDecoder<'a> {
   fn image(&self) -> Result<Image,String> {
     let camera = try!(self.rawloader.check_supported(&self.tiff));
     let raw = fetch_ifd!(&self.tiff, Tag::StripOffsets);
-    let width = fetch_tag!(raw, Tag::ImageWidth).get_u32(0);
-    let height = fetch_tag!(raw, Tag::ImageLength).get_u32(0);
-    let offset = fetch_tag!(raw, Tag::StripOffsets).get_u32(0) as usize;
+    let width = fetch_tag!(raw, Tag::ImageWidth).get_usize(0);
+    let height = fetch_tag!(raw, Tag::ImageLength).get_usize(0);
+    let offset = fetch_tag!(raw, Tag::StripOffsets).get_usize(0);
     let compression = fetch_tag!(raw, Tag::Compression).get_u32(0);
     let bits = fetch_tag!(raw, Tag::BitsPerSample).get_u32(0);
     let src = &self.buffer[offset..];
 
     let image = match compression {
       32769 => match bits {
-        12 => decode_12le_unpacked(src, width as usize, height as usize),
-        14 => decode_14le_unpacked(src, width as usize, height as usize),
+        12 => decode_12le_unpacked(src, width, height),
+        14 => decode_14le_unpacked(src, width, height),
          x => return Err(format!("SRW: Don't know how to handle bps {}", x).to_string()),
       },
       32770 => {
@@ -44,26 +44,26 @@ impl<'a> Decoder for SrwDecoder<'a> {
           None => match bits {
             12 => {
               if camera.find_hint("little_endian") {
-                decode_12le(src, width as usize, height as usize)
+                decode_12le(src, width, height)
               } else {
-                decode_12be(src, width as usize, height as usize)
+                decode_12be(src, width, height)
               }
             },
-            14 => decode_14le_unpacked(src, width as usize, height as usize),
+            14 => decode_14le_unpacked(src, width, height),
              x => return Err(format!("SRW: Don't know how to handle bps {}", x).to_string()),
           },
           Some(x) => {
-            let coffset = x.get_u32(0) as usize;
+            let coffset = x.get_usize(0);
             let loffsets = &self.buffer[coffset..];
-            SrwDecoder::decode_srw1(src, loffsets, width as usize, height as usize)
+            SrwDecoder::decode_srw1(src, loffsets, width, height)
           }
         }
       }
       32772 => {
-       SrwDecoder::decode_srw2(src, width as usize, height as usize)
+       SrwDecoder::decode_srw2(src, width, height)
       }
       32773 => {
-       SrwDecoder::decode_srw3(src, width as usize, height as usize)
+       SrwDecoder::decode_srw3(src, width, height)
       }
       x => return Err(format!("SRW: Don't know how to handle compression {}", x).to_string()),
     };
@@ -74,7 +74,7 @@ impl<'a> Decoder for SrwDecoder<'a> {
 
 impl<'a> SrwDecoder<'a> {
   pub fn decode_srw1(buf: &[u8], loffsets: &[u8], width: usize, height: usize) -> Vec<u16> {
-    let mut out: Vec<u16> = vec![0; (width*height) as usize];
+    let mut out: Vec<u16> = vec![0; width*height];
 
     for row in 0..height {
       let mut len: [u32; 4] = [if row < 2 {7} else {4}; 4];
@@ -141,7 +141,7 @@ impl<'a> SrwDecoder<'a> {
   }
 
   pub fn decode_srw2(buf: &[u8], width: usize, height: usize) -> Vec<u16> {
-    let mut out: Vec<u16> = vec![0; (width*height) as usize];
+    let mut out: Vec<u16> = vec![0; width*height];
 
     // This format has a variable length encoding of how many bits are needed
     // to encode the difference between pixels, we use a table to process it
@@ -213,7 +213,7 @@ impl<'a> SrwDecoder<'a> {
     // and Loring von Palleske (Samsung) for pointing to the open-source code of
     // Samsung's DNG converter at http://opensource.samsung.com/
 
-    let mut out: Vec<u16> = vec![0; (width*height) as usize];
+    let mut out: Vec<u16> = vec![0; width*height];
     let mut pump = BitPumpMSB32::new(buf);
 
     // Process the initial metadata bits, we only really use initVal, width and

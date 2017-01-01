@@ -27,9 +27,9 @@ impl<'a> Decoder for DcsDecoder<'a> {
     let raw = data.iter().find(|&&ifd| {
       ifd.find_entry(Tag::ImageWidth).unwrap().get_u32(0) > 1000
     }).unwrap();
-    let width = fetch_tag!(raw, Tag::ImageWidth).get_u32(0);
-    let height = fetch_tag!(raw, Tag::ImageLength).get_u32(0);
-    let offset = fetch_tag!(raw, Tag::StripOffsets).get_u32(0) as usize;
+    let width = fetch_tag!(raw, Tag::ImageWidth).get_usize(0);
+    let height = fetch_tag!(raw, Tag::ImageLength).get_usize(0);
+    let offset = fetch_tag!(raw, Tag::StripOffsets).get_usize(0);
     let src = &self.buffer[offset .. self.buffer.len()];
     let linearization = fetch_tag!(self.tiff, Tag::GrayResponse);
     let table = {
@@ -40,7 +40,7 @@ impl<'a> Decoder for DcsDecoder<'a> {
       LookupTable::new(&t)
     };
 
-    let image = decode_8bit_wtable(src, &table, width as usize, height as usize);
+    let image = decode_8bit_wtable(src, &table, width, height);
     ok_image(camera, width, height, [NAN,NAN,NAN,NAN], image)
   }
 }
