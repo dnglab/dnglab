@@ -20,6 +20,31 @@ pub struct Image {
 
 impl Image {
   pub fn new(camera: &Camera, width: usize, height: usize, wb_coeffs: [f32;4], image: Vec<u16>) -> Image {
+    let blacks = if camera.blackareah.1 != 0 || camera.blackareav.1 != 0 {
+      let mut avg = [0 as f32; 4];
+      let mut count = [0 as f32; 4];
+      for row in camera.blackareah.0 .. camera.blackareah.0+camera.blackareah.1 {
+        for col in 0..width {
+          let color = camera.cfa.color_at(row,col);
+          avg[color] += image[row*width+col] as f32;
+          count[color] += 1.0;
+        }
+      }
+      for row in 0..height {
+        for col in camera.blackareav.0 .. camera.blackareav.0+camera.blackareav.1 {
+          let color = camera.cfa.color_at(row,col);
+          avg[color] += image[row*width+col] as f32;
+          count[color] += 1.0;
+        }
+      }
+      [(avg[0]/count[0]) as u16,
+       (avg[1]/count[1]) as u16,
+       (avg[2]/count[2]) as u16,
+       (avg[3]/count[3]) as u16]
+    } else {
+      camera.blacklevels
+    };
+
     Image {
       make: camera.make.clone(),
       model: camera.model.clone(),
@@ -29,7 +54,7 @@ impl Image {
       height: height,
       wb_coeffs: wb_coeffs,
       data: image.into_boxed_slice(),
-      blacklevels: camera.blacklevels,
+      blacklevels: blacks,
       whitelevels: camera.whitelevels,
       xyz_to_cam: camera.xyz_to_cam,
       cfa: camera.cfa.clone(),

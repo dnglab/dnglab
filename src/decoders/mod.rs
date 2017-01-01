@@ -90,6 +90,8 @@ pub struct Camera {
   pub raw_height: usize,
   whitelevels: [u16;4],
   blacklevels: [u16;4],
+  blackareah: (usize, usize),
+  blackareav: (usize, usize),
   xyz_to_cam: [[f32;3];4],
   cfa: cfa::CFA,
   crops: [usize;4],
@@ -113,6 +115,16 @@ impl Camera {
         "canonical_model" => {self.canonical_model = val.as_str().unwrap().to_string().clone();},
         "whitepoint" => {let white = val.as_integer().unwrap() as u16; self.whitelevels = [white, white, white, white];},
         "blackpoint" => {let black = val.as_integer().unwrap() as u16; self.blacklevels = [black, black, black, black];},
+        "blackareah" => {
+          let vals = val.as_slice().unwrap();
+          self.blackareah = (vals[0].as_integer().unwrap() as usize,
+                             vals[1].as_integer().unwrap() as usize);
+        },
+        "blackareav" => {
+          let vals = val.as_slice().unwrap();
+          self.blackareav = (vals[0].as_integer().unwrap() as usize,
+                             vals[1].as_integer().unwrap() as usize);
+        },
         "color_matrix" => {
           let matrix = val.as_slice().unwrap();
           for (i, val) in matrix.into_iter().enumerate() {
@@ -154,6 +166,8 @@ impl Camera {
       raw_height: 0,
       whitelevels: [0;4],
       blacklevels: [0;4],
+      blackareah: (0,0),
+      blackareav: (0,0),
       xyz_to_cam : [[0.0;3];4],
       cfa: cfa::CFA::new(""),
       crops: [0,0,0,0],
