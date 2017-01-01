@@ -6,9 +6,15 @@ pub fn level_and_balance(img: &Image, buf: &mut OpBuffer) {
   let mins = img.blacklevels.iter().map(|&x| x as f32).collect::<Vec<f32>>();
   let ranges = img.whitelevels.iter().enumerate().map(|(i, &x)| (x as f32) - mins[i]).collect::<Vec<f32>>();
 
+  let coeffs = if img.wb_coeffs[0].is_nan() {
+    img.neutralwb()
+  } else {
+    img.wb_coeffs
+  };
+
   // Set green multiplier as 1.0
-  let unity: f32 = img.wb_coeffs[1];
-  let mul = img.wb_coeffs.iter().map(|x| if x.is_nan() { 1.0 } else { x / unity }).collect::<Vec<f32>>();
+  let unity: f32 = coeffs[1];
+  let mul = coeffs.iter().map(|x| if x.is_nan() { 1.0 } else { x / unity }).collect::<Vec<f32>>();
 
   buf.mutate_lines(&(|line: &mut [f32], _| {
     for pix in line.chunks_mut(4) {

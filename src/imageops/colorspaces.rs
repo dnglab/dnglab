@@ -2,7 +2,7 @@ use decoders::Image;
 use imageops::OpBuffer;
 
 pub fn camera_to_lab(img: &Image, inb: &OpBuffer) -> OpBuffer {
-  let (cmatrix,_) = img.xyz_matrix_and_neutralwb();
+  let cmatrix = img.cam_to_xyz();
 
   inb.process_into_new(3, &(|outb: &mut [f32], inb: &[f32]| {
     for (pixin, pixout) in inb.chunks(4).zip(outb.chunks_mut(3)) {

@@ -37,7 +37,20 @@ impl Image {
     }
   }
 
-  pub fn xyz_matrix_and_neutralwb(&self) -> ([[f32;4];3],[f32;4]) {
+  pub fn cam_to_xyz(&self) -> [[f32;4];3] {
+    let (cam_to_xyz, _) = self.xyz_matrix_and_neutralwb();
+    cam_to_xyz
+  }
+
+  pub fn neutralwb(&self) -> [f32;4] {
+    let (_, neutralwb) = self.xyz_matrix_and_neutralwb();
+    [neutralwb[0]/neutralwb[1],
+     neutralwb[1]/neutralwb[1],
+     neutralwb[2]/neutralwb[1],
+     neutralwb[3]/neutralwb[1]]
+  }
+
+  fn xyz_matrix_and_neutralwb(&self) -> ([[f32;4];3],[f32;4]) {
     let d65_white = [0.9547,1.0,1.08883];
     let rgb_to_xyz = [
     // sRGB D65
