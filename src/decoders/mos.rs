@@ -23,7 +23,8 @@ impl<'a> MosDecoder<'a> {
 impl<'a> Decoder for MosDecoder<'a> {
   fn image(&self) -> Result<Image,String> {
     let make = try!(self.xmp_tag("Make"));
-    let model = try!(self.xmp_tag("Model"));
+    let model_full = try!(self.xmp_tag("Model")).to_string();
+    let model = model_full.split_terminator("(").next().unwrap();
     let camera = try!(self.rawloader.check_supported_with_everything(&make, &model, ""));
 
     let raw = fetch_ifd!(&self.tiff, Tag::TileOffsets);

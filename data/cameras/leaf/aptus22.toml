@@ -1,5 +1,5 @@
 make = "Creo/Leaf"
-model = "Leaf Aptus 22(LF3779     )/Hasselblad H1"
+model = "Leaf Aptus 22"
 clean_make = "Leaf"
 clean_model = "Aptus 22"
 blackpoint = 0
