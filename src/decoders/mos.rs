@@ -32,7 +32,12 @@ impl<'a> Decoder for MosDecoder<'a> {
     let offset = fetch_tag!(raw, Tag::TileOffsets).get_usize(0);
     let src = &self.buffer[offset..];
 
-    let image = decode_16be(src, width, height);
+    let image = if self.tiff.little_endian() {
+      decode_16le(src, width, height)
+    } else {
+      decode_16be(src, width, height)
+    };
+
     ok_image(camera, width, height, try!(self.get_wb()), image)
   }
 }
