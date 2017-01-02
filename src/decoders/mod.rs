@@ -47,6 +47,7 @@ mod pef;
 mod crw;
 mod nkd;
 mod mos;
+mod iiq;
 use self::tiff::*;
 use self::ciff::*;
 pub use self::image::*;
@@ -278,6 +279,7 @@ impl RawLoader {
           "PENTAX Corporation"          => use_decoder!(pef::PefDecoder, buffer, tiff, self),
           "RICOH IMAGING COMPANY, LTD." => use_decoder!(pef::PefDecoder, buffer, tiff, self),
           "PENTAX"                      => use_decoder!(pef::PefDecoder, buffer, tiff, self),
+          "Leaf"                        => use_decoder!(iiq::IiqDecoder, buffer, tiff, self),
           make => Err(format!("Couldn't find a decoder for make \"{}\"", make).to_string()),
         };
       } else if tiff.has_entry(Tag::Software) {

@@ -67,6 +67,10 @@ pub static LITTLE_ENDIAN: Endian = Endian{big: false};
   LittleEndian::read_u32(&buf[pos..pos+4])
 }
 
+#[allow(non_snake_case)] #[inline] pub fn LEf32(buf: &[u8], pos: usize) -> f32 {
+  LittleEndian::read_f32(&buf[pos..pos+4])
+}
+
 #[allow(non_snake_case)] #[inline] pub fn BEu16(buf: &[u8], pos: usize) -> u16 {
   BigEndian::read_u16(&buf[pos..pos+2])
 }
