@@ -1,7 +1,7 @@
 make = "Panasonic"
 model = "DMC-LX100"
-canonical_make = "Panasonic"
-canonical_model = "DMC-LX100"
+clean_make = "Panasonic"
+clean_model = "DMC-LX100"
 blackpoint = 143
 whitepoint = 4095
 color_matrix = [8844, -3538, -768, -3709, 11762, 2200, -698, 1792, 5220]

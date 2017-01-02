@@ -1,7 +1,7 @@
 make = "SONY"
 model = "DSC-F828"
-canonical_make = "Sony"
-canonical_model = "DSC-F828"
+clean_make = "Sony"
+clean_model = "DSC-F828"
 blackpoint = 495
 whitepoint = 16383
 color_matrix = [7924, -1910, -777, -8226, 15459, 2998, -1517, 2199, 6818, -7242, 11401, 3481]

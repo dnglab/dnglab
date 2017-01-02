@@ -1,7 +1,7 @@
 make = "LEICA"
 model = "V-LUX 1"
-canonical_make = "Leica"
-canonical_model = "V-LUX 1"
+clean_make = "Leica"
+clean_model = "V-LUX 1"
 blackpoint = 0
 whitepoint = 3986
 color_matrix = [7906, -2709, -594, -6231, 13351, 3220, -1922, 2631, 6537]

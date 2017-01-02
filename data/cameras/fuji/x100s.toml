@@ -1,7 +1,7 @@
 make = "FUJIFILM"
 model = "X100S"
-canonical_make = "Fujifilm"
-canonical_model = "X100S"
+clean_make = "Fujifilm"
+clean_model = "X100S"
 blackpoint = 1024
 whitepoint = 16383
 color_matrix = [10592, -4262, -1008, -3514, 11355, 2465, -870, 2025, 6386]

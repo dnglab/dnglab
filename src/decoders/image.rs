@@ -5,8 +5,8 @@ use decoders::cfa::*;
 pub struct Image {
   pub make: String,
   pub model: String,
-  pub canonical_make: String,
-  pub canonical_model: String,
+  pub clean_make: String,
+  pub clean_model: String,
   pub width: usize,
   pub height: usize,
   pub wb_coeffs: [f32;4],
@@ -48,8 +48,8 @@ impl Image {
     Image {
       make: camera.make.clone(),
       model: camera.model.clone(),
-      canonical_make: camera.canonical_make.clone(),
-      canonical_model: camera.canonical_model.clone(),
+      clean_make: camera.clean_make.clone(),
+      clean_model: camera.clean_model.clone(),
       width: width,
       height: height,
       wb_coeffs: wb_coeffs,

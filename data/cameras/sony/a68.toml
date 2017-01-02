@@ -1,7 +1,7 @@
 make = "SONY"
 model = "ILCA-68"
-canonical_make = "Sony"
-canonical_model = "ILCA-68"
+clean_make = "Sony"
+clean_model = "ILCA-68"
 blackpoint = 512
 whitepoint = 16300
 color_matrix = [6435, -1903, -536, -4722, 12449, 2550, -663, 1363, 6517]

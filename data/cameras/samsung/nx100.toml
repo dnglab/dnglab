@@ -1,7 +1,7 @@
 make = "SAMSUNG"
 model = "NX100"
-canonical_make = "Samsung"
-canonical_model = "NX100"
+clean_make = "Samsung"
+clean_model = "NX100"
 blackpoint = 3
 whitepoint = 3750
 color_matrix = [10332, -3234, -1168, -6111, 14639, 1520, -1352, 2647, 8331]

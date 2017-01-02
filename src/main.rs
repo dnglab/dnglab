@@ -43,7 +43,7 @@ fn main() {
   println!("Decoded in {} ms", (to_time - from_time)/1000000);
 
   println!("Found camera \"{}\" model \"{}\"", image.make, image.model);
-  println!("Found canonical named camera \"{}\" model \"{}\"", image.canonical_make, image.canonical_model);
+  println!("Found clean named camera \"{}\" model \"{}\"", image.clean_make, image.clean_model);
   println!("Image size is {}x{}", image.width, image.height);
   println!("WB coeffs are {:?}", image.wb_coeffs);
   println!("black levels are {:?}", image.blacklevels);

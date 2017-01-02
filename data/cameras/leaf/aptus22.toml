@@ -1,7 +1,7 @@
 make = "Creo/Leaf"
 model = "Leaf Aptus 22(LF3779     )/Hasselblad H1"
-canonical_make = "Leaf"
-canonical_model = "Aptus 22"
+clean_make = "Leaf"
+clean_model = "Aptus 22"
 blackpoint = 0
 whitepoint = 16191
 color_matrix = [8236, 1746, -1314, -8251, 15953, 2428, -3673, 5786, 5771]

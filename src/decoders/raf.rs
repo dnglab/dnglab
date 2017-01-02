@@ -65,8 +65,8 @@ impl<'a> Decoder for RafDecoder<'a> {
       Ok(Image {
         make: camera.make.clone(),
         model: camera.model.clone(),
-        canonical_make: camera.canonical_make.clone(),
-        canonical_model: camera.canonical_model.clone(),
+        clean_make: camera.clean_make.clone(),
+        clean_model: camera.clean_model.clone(),
         width: width,
         height: height,
         wb_coeffs: try!(self.get_wb()),

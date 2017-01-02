@@ -1,7 +1,7 @@
 make = "FUJIFILM"
 model = "FinePix F600EXR"
-canonical_make = "Fujifilm"
-canonical_model = "FinePix F600EXR"
+clean_make = "Fujifilm"
+clean_model = "FinePix F600EXR"
 blackpoint = 256
 whitepoint = 3900
 color_matrix = [13690, -5358, -1474, -3369, 11600, 1998, -132, 1554, 4395]

@@ -1,7 +1,7 @@
 make = "OLYMPUS CORPORATION"
 model = "C5060WZ"
-canonical_make = "Olympus"
-canonical_model = "C5060WZ"
+clean_make = "Olympus"
+clean_model = "C5060WZ"
 blackpoint = 0
 whitepoint = 4095
 color_matrix = [10445, -3362, -1307, -7662, 15690, 2058, -1135, 1176, 7602]

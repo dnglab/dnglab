@@ -1,7 +1,7 @@
 make = "FUJIFILM"
 model = "FinePix E900"
-canonical_make = "Fujifilm"
-canonical_model = "FinePix E900"
+clean_make = "Fujifilm"
+clean_model = "FinePix E900"
 blackpoint = 0
 whitepoint = 15564
 color_matrix = [9183, -2526, -1078, -7461, 15071, 2574, -2022, 2440, 8639]

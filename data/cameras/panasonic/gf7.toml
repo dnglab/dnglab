@@ -1,7 +1,7 @@
 make = "Panasonic"
 model = "DMC-GF7"
-canonical_make = "Panasonic"
-canonical_model = "DMC-GF7"
+clean_make = "Panasonic"
+clean_model = "DMC-GF7"
 blackpoint = 143
 whitepoint = 4095
 color_matrix = [7610, -2780, -576, -4614, 12195, 2733, -1375, 2393, 6490]

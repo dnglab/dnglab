@@ -1,7 +1,7 @@
 make = "Panasonic"
 model = "DMC-FZ18"
-canonical_make = "Panasonic"
-canonical_model = "DMC-FZ18"
+clean_make = "Panasonic"
+clean_model = "DMC-FZ18"
 blackpoint = 0
 whitepoint = 3986
 color_matrix = [9932, -3060, -935, -5809, 13331, 2753, -1267, 2155, 5575]

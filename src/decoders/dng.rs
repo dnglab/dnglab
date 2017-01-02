@@ -43,11 +43,11 @@ impl<'a> Decoder for DngDecoder<'a> {
       c => return Err(format!("Don't know how to read DNGs with compression {}", c).to_string()),
     };
 
-    let (make, model, canonical_make, canonical_model) = {
+    let (make, model, clean_make, clean_model) = {
       match self.rawloader.check_supported(&self.tiff) {
         Ok(cam) => {
           (cam.make.clone(), cam.model.clone(),
-           cam.canonical_make.clone(),cam.canonical_model.clone())
+           cam.clean_make.clone(),cam.clean_model.clone())
         },
         Err(_) => {
           let make = fetch_tag!(self.tiff, Tag::Make).get_str();
@@ -60,8 +60,8 @@ impl<'a> Decoder for DngDecoder<'a> {
     Ok(Image {
       make: make,
       model: model,
-      canonical_make: canonical_make,
-      canonical_model: canonical_model,
+      clean_make: clean_make,
+      clean_model: clean_model,
       width: width,
       height: height,
       wb_coeffs: try!(self.get_wb()),

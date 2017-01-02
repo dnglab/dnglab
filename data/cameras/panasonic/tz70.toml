@@ -1,7 +1,7 @@
 make = "Panasonic"
 model = "DMC-TZ70"
-canonical_make = "Panasonic"
-canonical_model = "DMC-TZ70"
+clean_make = "Panasonic"
+clean_model = "DMC-TZ70"
 blackpoint = 143
 whitepoint = 3971
 color_matrix = [8802, -3135, -789, -3151, 11468, 1904, -550, 1745, 4810]

@@ -1,7 +1,7 @@
 make = "Canon"
 model = "Canon EOS D30"
-canonical_make = "Canon"
-canonical_model = "EOS D30"
+clean_make = "Canon"
+clean_model = "EOS D30"
 blackpoint = 126
 whitepoint = 4095
 color_matrix = [9805, -2689, -1312, -5803, 13064, 3068, -2438, 3075, 8775]

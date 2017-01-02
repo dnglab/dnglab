@@ -1,7 +1,7 @@
 make = "FUJIFILM"
 model = "X-Pro1"
-canonical_make = "Fujifilm"
-canonical_model = "X-Pro1"
+clean_make = "Fujifilm"
+clean_model = "X-Pro1"
 blackpoint = 256
 whitepoint = 4094
 color_matrix = [10413, -3996, -993, -3721, 11640, 2361, -733, 1540, 6011]

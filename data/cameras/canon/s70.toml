@@ -1,7 +1,7 @@
 make = "Canon"
 model = "Canon PowerShot S70"
-canonical_make = "Canon"
-canonical_model = "PowerShot S70"
+clean_make = "Canon"
+clean_model = "PowerShot S70"
 blackpoint = 129
 whitepoint = 4095
 color_matrix = [9976, -3810, -832, -7115, 14463, 2906, -901, 989, 7889]

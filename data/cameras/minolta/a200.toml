@@ -1,7 +1,7 @@
 make = "KONICA MINOLTA"
 model = "DiMAGE A200"
-canonical_make = "Minolta"
-canonical_model = "DiMAGE A200"
+clean_make = "Minolta"
+clean_model = "DiMAGE A200"
 blackpoint = 0
 whitepoint = 3965
 color_matrix = [8560, -2487, -986, -8112, 15535, 2771, -1209, 1324, 7743]

@@ -1,7 +1,7 @@
 make = "SONY"
 model = "DSLR-A330"
-canonical_make = "Sony"
-canonical_model = "DSLR-A330"
+clean_make = "Sony"
+clean_model = "DSLR-A330"
 blackpoint = 0
 whitepoint = 4095
 color_matrix = [9847, -3091, -929, -8485, 16346, 2225, -714, 595, 7103]

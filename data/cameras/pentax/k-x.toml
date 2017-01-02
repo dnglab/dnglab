@@ -1,7 +1,7 @@
 make = "PENTAX"
 model = "PENTAX K-x"
-canonical_make = "Pentax"
-canonical_model = "K-x"
+clean_make = "Pentax"
+clean_model = "K-x"
 blackpoint = 48
 whitepoint = 4095
 color_matrix = [8843, -2837, -625, -5025, 12644, 2668, -411, 1234, 7410]

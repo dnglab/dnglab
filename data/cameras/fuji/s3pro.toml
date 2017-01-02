@@ -1,7 +1,7 @@
 make = "FUJIFILM"
 model = "FinePix S3Pro"
-canonical_make = "Fujifilm"
-canonical_model = "FinePix S3Pro"
+clean_make = "Fujifilm"
+clean_model = "FinePix S3Pro"
 blackpoint = 0
 whitepoint = 16383
 color_matrix = [11807, -4612, -1294, -8927, 16968, 1988, -2120, 2741, 8006]

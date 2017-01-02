@@ -1,7 +1,7 @@
 make = "RICOH IMAGING COMPANY, LTD."
 model = "PENTAX K-3 II"
-canonical_make = "Pentax"
-canonical_model = "K-3 II"
+clean_make = "Pentax"
+clean_model = "K-3 II"
 blackpoint = 0
 whitepoint = 16253
 color_matrix = [7415, -2052, -721, -5186, 12788, 2682, -1446, 2157, 6773]

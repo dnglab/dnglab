@@ -1,7 +1,7 @@
 make = "FUJIFILM"
 model = "FinePixS2Pro"
-canonical_make = "Fujifilm"
-canonical_model = "FinePix S2Pro"
+clean_make = "Fujifilm"
+clean_model = "FinePix S2Pro"
 blackpoint = 126
 whitepoint = 4095
 color_matrix = [12492, -4690, -1402, -7033, 15423, 1647, -1507, 2111, 7697]

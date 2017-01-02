@@ -1,7 +1,7 @@
 make = "SONY"
 model = "DSC-RX10M2"
-canonical_make = "Sony"
-canonical_model = "DSC-RX10M2"
+clean_make = "Sony"
+clean_model = "DSC-RX10M2"
 blackpoint = 800
 whitepoint = 16300
 color_matrix = [6679, -1825, -745, -5047, 13256, 1953, -1580, 2422, 5183]

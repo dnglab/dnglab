@@ -1,7 +1,7 @@
 make = "OLYMPUS CORPORATION"
 model = "E-1"
-canonical_make = "Olympus"
-canonical_model = "E-1"
+clean_make = "Olympus"
+clean_model = "E-1"
 blackpoint = 65
 whitepoint = 4095
 color_matrix = [11846, -4767, -945, -7027, 15878, 1089, -2699, 4122, 8311]

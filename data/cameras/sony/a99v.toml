@@ -1,7 +1,7 @@
 make = "SONY"
 model = "SLT-A99V"
-canonical_make = "Sony"
-canonical_model = "SLT-A99V"
+clean_make = "Sony"
+clean_model = "SLT-A99V"
 blackpoint = 512
 whitepoint = 16300
 color_matrix = [6344, -1612, -462, -4863, 12477, 2681, -865, 1786, 6899]

@@ -1,7 +1,7 @@
 make = "SONY"
 model = "DSLR-A500"
-canonical_make = "Sony"
-canonical_model = "DSLR-A500"
+clean_make = "Sony"
+clean_model = "DSLR-A500"
 blackpoint = 512
 whitepoint = 16300
 color_matrix = [6046, -1127, -278, -5574, 13076, 2786, -691, 1419, 7625]

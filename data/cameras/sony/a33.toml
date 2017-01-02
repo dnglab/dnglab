@@ -1,7 +1,7 @@
 make = "SONY"
 model = "SLT-A33"
-canonical_make = "Sony"
-canonical_model = "SLT-A33"
+clean_make = "Sony"
+clean_model = "SLT-A33"
 blackpoint = 512
 whitepoint = 16300
 color_matrix = [6069, -1221, -366, -5221, 12779, 2734, -1024, 2066, 6834]

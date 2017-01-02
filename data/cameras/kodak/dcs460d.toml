@@ -1,7 +1,7 @@
 make = "KODAK"
 model = "DCS460D         FILE VERSION 3"
-canonical_make = "Kodak"
-canonical_model = "DCS460D"
+clean_make = "Kodak"
+clean_model = "DCS460D"
 blackpoint = 7
 whitepoint = 6664
 color_matrix = [10592, -2206, -967, -1944, 11685, 230, 2206, 670, 1273]

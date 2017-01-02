@@ -1,7 +1,7 @@
 make = "SAMSUNG"
 model = "EX1"
-canonical_make = "Samsung"
-canonical_model = "EX1"
+clean_make = "Samsung"
+clean_model = "EX1"
 blackpoint = 0
 whitepoint = 15600
 color_matrix = [8898, -2498, -994, -3144, 11328, 2066, -760, 1381, 4576]

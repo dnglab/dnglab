@@ -1,7 +1,7 @@
 make = "SONY"
 model = "ILCE-7R"
-canonical_make = "Sony"
-canonical_model = "ILCE-7R"
+clean_make = "Sony"
+clean_model = "ILCE-7R"
 blackpoint = 512
 whitepoint = 16300
 color_matrix = [4913, -541, -202, -6130, 13513, 2906, -1564, 2151, 7183]

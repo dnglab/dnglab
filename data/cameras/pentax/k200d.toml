@@ -1,7 +1,7 @@
 make = "PENTAX Corporation"
 model = "PENTAX K200D"
-canonical_make = "Pentax"
-canonical_model = "K200D"
+clean_make = "Pentax"
+clean_model = "K200D"
 blackpoint = 0
 whitepoint = 4095
 color_matrix = [9186, -2678, -907, -8693, 16517, 2260, -1129, 1094, 8524]
