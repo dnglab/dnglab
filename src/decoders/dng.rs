@@ -185,8 +185,7 @@ impl<'a> DngDecoder<'a> {
         for col in 0..coltiles {
           let offset = offsets.get_usize(row*coltiles+col);
           let src = &self.buffer[offset..];
-          // We don't use bigtable here as the tiles are two small to amortize the setup cost
-          let decompressor = LjpegDecompressor::new(src, false).unwrap();
+          let decompressor = LjpegDecompressor::new(src, true).unwrap();
           let bwidth = cmp::min(width, (col+1)*twidth) - col*twidth;
           let blength = cmp::min(height, (row+1)*tlength) - row*tlength;
           // FIXME: instead of unwrap() we need to propagate the error
