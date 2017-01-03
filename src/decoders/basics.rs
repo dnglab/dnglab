@@ -622,6 +622,12 @@ impl<'a> BitPump for BitPumpJPEG<'a> {
         }
       }
     }
+    if num > self.nbits && self.finished {
+      // Stuff with zeroes to not fail to read
+      self.bits <<= 32;
+      self.nbits += 32;
+    }
+
     (self.bits >> (self.nbits-num)) as u32
   }
 
