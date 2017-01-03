@@ -49,6 +49,7 @@ mod nkd;
 mod mos;
 mod iiq;
 mod tfr;
+mod nef;
 use self::tiff::*;
 use self::ciff::*;
 pub use self::image::*;
@@ -282,6 +283,7 @@ impl RawLoader {
           "PENTAX"                      => use_decoder!(pef::PefDecoder, buffer, tiff, self),
           "Leaf"                        => use_decoder!(iiq::IiqDecoder, buffer, tiff, self),
           "Hasselblad"                  => use_decoder!(tfr::TfrDecoder, buffer, tiff, self),
+          "NIKON CORPORATION"           => use_decoder!(nef::NefDecoder, buffer, tiff, self),
           make => Err(format!("Couldn't find a decoder for make \"{}\"", make).to_string()),
         };
       } else if tiff.has_entry(Tag::Software) {

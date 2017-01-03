@@ -14,6 +14,7 @@ pub enum Tag {
   PanaWBs2G        = 0x0025,
   PanaWBs2B        = 0x0026,
   NewSubFileType   = 0x00FE,
+  NefWB1           = 0x0097,
   ImageWidth       = 0x0100,
   ImageLength      = 0x0101,
   BitsPerSample    = 0x0102,
@@ -253,6 +254,12 @@ impl<'a> TiffIFD<'a> {
       return TiffIFD::new(&buf[offset..], 10, base_offset, 0, depth, endian)
     }
 
+    if data[0..7] == b"Nikon\0\x02"[..] {
+      off += 10;
+      let endian = if data[off..off+2] == b"II"[..] {LITTLE_ENDIAN} else {BIG_ENDIAN};
+      return TiffIFD::new(&buf[off+offset..], 8, base_offset, 0, depth, endian)
+    }
+
     // Some have MM or II to indicate endianness - read that
     if data[off..off+2] == b"II"[..] {
       off +=2;
@@ -411,6 +418,10 @@ impl<'a> TiffEntry<'a> {
 
   pub fn get_force_u32(&self, idx: usize) -> u32 {
     self.endian.ru32(self.data, idx*4)
+  }
+
+  pub fn get_force_u16(&self, idx: usize) -> u16 {
+    self.endian.ru16(self.data, idx*2)
   }
 
   pub fn get_f32(&self, idx: usize) -> f32 {
