@@ -244,9 +244,9 @@ impl HuffTable {
   // Taken from Figure F.16: extract next coded symbol from input stream
   pub fn huff_decode(&self, pump: &mut BitPump) -> Result<i32,String> {
     //First attempt to do complete decode, by using the first 14 bits
-    let code: i32 = pump.peek_bits(14) as i32;
     if self.use_bigtable {
-      let val: i32 = self.bigtable[code as usize];
+      let code = pump.peek_bits(14) as usize;
+      let val: i32 = self.bigtable[code];
       if val & 0xff != 0xff {
         pump.consume_bits((val & 0xff) as u32);
         return Ok(val >> 8)
