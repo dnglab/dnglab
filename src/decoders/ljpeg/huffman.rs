@@ -245,10 +245,6 @@ impl HuffTable {
 
   // Taken from Figure F.16: extract next coded symbol from input stream
   pub fn huff_decode(&self, pump: &mut BitPump) -> Result<i32,String> {
-    if !self.initialized {
-      return Err("ljpeg: Trying to read from uninitialized HuffTable".to_string());
-    }
-
     //First attempt to do complete decode, by using the first 14 bits
     let code: i32 = pump.peek_bits(14) as i32;
     if self.use_bigtable {
