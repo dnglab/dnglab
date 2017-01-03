@@ -109,9 +109,6 @@ impl SOFInfo {
       component.dc_tbl_num = td;
     }
     let pred = input.get_u8() as usize;
-    if pred > 7 {
-      return Err(format!("ljpeg: invalid predictor mode {}",pred).to_string())
-    }
     input.get_u8();                           // Se + Ah Not used in LJPEG
     let pt = (input.get_u8() as usize) & 0xf; // Point Transform
     Ok((pred, pt))
@@ -250,6 +247,7 @@ impl<'a> LjpegDecompressor<'a> {
           c => return Err(format!("ljpeg: {} component files not supported", c).to_string()),
         }
       },
+      8 => decode_hasselblad(self, out, width),
       p => return Err(format!("ljpeg: predictor {} not supported", p).to_string()),
     }
   }
