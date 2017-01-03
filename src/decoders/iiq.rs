@@ -67,11 +67,9 @@ impl<'a> IiqDecoder<'a> {
   }
 
   fn decode_compressed(&self, data_offset: usize, strip_offset: usize, width: usize, height: usize) -> Vec<u16>{
-    let mut out = vec![0 as u16; width*height];
-
     let lens: [u32; 10] = [8,7,6,9,11,10,5,12,14,13];
 
-    for row in 0..height {
+    decode_threaded(width, height, &(|out: &mut [u16], row| {
       let offset = data_offset + LEu32(self.buffer, strip_offset+row*4) as usize;
       let mut pump = BitPumpMSB32::new(&self.buffer[offset..]);
       let mut pred = [0 as u32; 2];
@@ -95,10 +93,8 @@ impl<'a> IiqDecoder<'a> {
         } else {
           pred[col & 1] + pump.get_bits(i) + 1 - (1 << (i-1))
         };
-        out[row*width+col] = pred[col & 1] as u16;
+        out[col] = pred[col & 1] as u16;
       }
-    }
-
-    out
+    }))
   }
 }
