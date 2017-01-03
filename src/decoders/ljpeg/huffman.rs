@@ -295,7 +295,7 @@ impl HuffTable {
       0 => 0,
       16 => {
         if self.dng_compatible {
-          pump.consume_bits(16);
+          pump.get_bits(16); // consume can fail because we haven't peeked yet
         }
         -32768
       },
