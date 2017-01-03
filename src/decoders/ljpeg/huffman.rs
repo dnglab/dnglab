@@ -64,7 +64,7 @@ pub struct HuffTable {
   mincode: [u16;17],
   maxcode: [i32;18],
   valptr: [i16;17],
-  numbits: [usize;256],
+  numbits: [u32;256],
   bigtable: Vec<i32>,
   precision: usize,
   pub use_bigtable: bool,
@@ -168,7 +168,7 @@ impl HuffTable {
           return Err("ljpeg: Code length too long. Corrupt data.".to_string())
         }
         for i in ll..(ul+1) {
-          self.numbits[i as usize] = (size as usize) | ((value as usize) << 4);
+          self.numbits[i as usize] = (size as u32) | ((value as u32) << 4);
         }
       }
     }
@@ -190,7 +190,7 @@ impl HuffTable {
     for i in 0..size {
       let input = (i << 2) as u16;
       let mut code: i32 = (input >> 8) as i32;
-      let val: u32 = self.numbits[code as usize] as u32;
+      let val = self.numbits[code as usize];
       let mut l: u32 = val & 15;
       if l > 0 {
         rv = (val >> 4) as i32;
