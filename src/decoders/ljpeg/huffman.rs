@@ -242,7 +242,6 @@ impl HuffTable {
     Ok(())
   }
 
-
   // Taken from Figure F.16: extract next coded symbol from input stream
   pub fn huff_decode(&self, pump: &mut BitPump) -> Result<i32,String> {
     //First attempt to do complete decode, by using the first 14 bits
@@ -282,7 +281,7 @@ impl HuffTable {
       return Ok(self.huffval[
         self.valptr[l as usize] as usize +
         (code - (self.mincode[l as usize] as usize)) as usize
-      ] as u32);
+      ]);
     }
   }
 

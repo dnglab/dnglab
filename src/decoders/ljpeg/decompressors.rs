@@ -53,11 +53,10 @@ pub fn decode_hasselblad(ljpeg: &LjpegDecompressor, out: &mut [u16], width: usiz
     let mut p1: i32 = 0x8000;
     let mut p2: i32 = 0x8000;
     for o in line.chunks_mut(2) {
-      let len1 = try!(htable.huff_len(&mut pump)) as u32;
-      let len2 = try!(htable.huff_len(&mut pump)) as u32;
+      let len1 = try!(htable.huff_len(&mut pump));
+      let len2 = try!(htable.huff_len(&mut pump));
       p1 += htable.huff_diff(&mut pump, len1);
       p2 += htable.huff_diff(&mut pump, len2);
-      //println!("Len is {} {} p1 {} p2 {}", len1, len2, p1, p2);
       o[0] = p1 as u16;
       o[1] = p2 as u16;
     }
