@@ -260,26 +260,26 @@ impl HuffTable {
   pub fn huff_len(&self, pump: &mut BitPump) -> Result<u32,String> {
     let mut code = pump.peek_bits(8) as usize;
     let val = self.numbits[code as usize] as u32;
-    let mut l = val & 15;
-    if l != 0 {
-      pump.consume_bits(l);
+    let len = val & 15;
+    if len != 0 {
+      pump.consume_bits(len);
       return Ok(val >> 4)
     }
     pump.consume_bits(8);
-    l = 8;
-    while code as i32 > self.maxcode[l as usize] {
+    let mut l: usize = 8;
+    while code as i32 > self.maxcode[l] {
       let temp = pump.get_bits(1) as usize;
       code = (code << 1) | temp;
       l += 1;
     }
 
     // With garbage input we may reach the sentinel value l = 17.
-    if l > self.precision as u32 || self.valptr[l as usize] == 0xff {
+    if l > self.precision || self.valptr[l] == 0xff {
       return Err(format!("ljpeg: bad Huffman code: {}", l).to_string())
     } else {
       return Ok(self.huffval[
-        self.valptr[l as usize] as usize +
-        (code - (self.mincode[l as usize] as usize)) as usize
+        self.valptr[l] as usize +
+        (code - (self.mincode[l] as usize)) as usize
       ]);
     }
   }
