@@ -259,52 +259,55 @@ impl HuffTable {
       }
     }
 
-    let rv = try!(self.huff_len(pump));
-    if rv == 16 {
-      if self.dng_compatible {
-        pump.consume_bits(16);
-      }
-      return Ok(-32768);
-    }
-
-    // Section F.2.2.1: decode the difference and
-    // Figure F.12: extend sign bit
-    if rv != 0 {
-      let mut x: i32 = pump.get_bits(rv as u32) as i32;
-      if (x & (1 << (rv - 1))) == 0 {
-        x -= (1 << rv) - 1;
-      }
-      return Ok(x)
-    }
-
-    return Ok(0)
+    let len = try!(self.huff_len(pump));
+    Ok(self.huff_diff(pump, len))
   }
 
-  pub fn huff_len(&self, pump: &mut BitPump) -> Result<i32,String> {
-    let mut code: i32 = pump.peek_bits(8) as i32;
-    let val = self.numbits[code as usize] as i32;
+  pub fn huff_len(&self, pump: &mut BitPump) -> Result<u32,String> {
+    let mut code = pump.peek_bits(8) as usize;
+    let val = self.numbits[code as usize] as u32;
     let mut l = val & 15;
-    //println!("code {} val {} l {}", code, val, l);
     if l != 0 {
-      pump.consume_bits(l as u32);
+      pump.consume_bits(l);
       return Ok(val >> 4)
     }
     pump.consume_bits(8);
     l = 8;
-    while code > self.maxcode[l as usize] {
-      let temp = pump.get_bits(1) as i32;
+    while code as i32 > self.maxcode[l as usize] {
+      let temp = pump.get_bits(1) as usize;
       code = (code << 1) | temp;
       l += 1;
     }
 
     // With garbage input we may reach the sentinel value l = 17.
-    if l > self.precision as i32 || self.valptr[l as usize] == 0xff {
+    if l > self.precision as u32 || self.valptr[l as usize] == 0xff {
       return Err(format!("ljpeg: bad Huffman code: {}", l).to_string())
     } else {
       return Ok(self.huffval[
         self.valptr[l as usize] as usize +
-        (code - (self.mincode[l as usize] as i32)) as usize
-      ] as i32);
+        (code - (self.mincode[l as usize] as usize)) as usize
+      ] as u32);
+    }
+  }
+
+  pub fn huff_diff(&self, pump: &mut BitPump, len: u32) -> i32 {
+    match len {
+      0 => 0,
+      16 => {
+        if self.dng_compatible {
+          pump.consume_bits(16);
+        }
+        -32768
+      },
+      len => {
+        // Section F.2.2.1: decode the difference and
+        // Figure F.12: extend sign bit
+        let mut x: i32 = pump.get_bits(len as u32) as i32;
+        if (x & (1 << (len - 1))) == 0 {
+          x -= (1 << len) - 1;
+        }
+        x
+      },
     }
   }
 }
