@@ -174,14 +174,14 @@ impl HuffTable {
     }
 
     if use_bigtable {
-      try!(self.initialize_bigtable());
+      self.initialize_bigtable();
     }
     self.initialized = true;
     self.use_bigtable = use_bigtable;
     Ok(())
   }
 
-  fn initialize_bigtable(&mut self) -> Result<(), String> {
+  fn initialize_bigtable(&mut self) {
     let bits: usize = 14; // HuffDecode functions must be changed, if this is modified.
     let size: usize = 1 << bits;
 
@@ -239,7 +239,6 @@ impl HuffTable {
       }
     }
     self.use_bigtable = true;
-    Ok(())
   }
 
   // Taken from Figure F.16: extract next coded symbol from input stream
