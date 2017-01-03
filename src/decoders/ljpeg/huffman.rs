@@ -37,6 +37,8 @@
 use std::fmt;
 use decoders::basics::*;
 
+const BIG_TABLE_BITS: u32 = 13;
+
 const HUFF_BITMASK: [u32;32] = [0xffffffff, 0x7fffffff,
                                 0x3fffffff, 0x1fffffff,
                                 0x0fffffff, 0x07ffffff,
@@ -182,13 +184,12 @@ impl HuffTable {
   }
 
   fn initialize_bigtable(&mut self) {
-    let bits: usize = 14; // HuffDecode functions must be changed, if this is modified.
-    let size: usize = 1 << bits;
+    let size: usize = 1 << BIG_TABLE_BITS;
 
     self.bigtable = vec![0 as i32;size];
     let mut rv: i32;
     for i in 0..size {
-      let input = (i << 2) as u16;
+      let input = (i << (16-BIG_TABLE_BITS)) as u16;
       let mut code: i32 = (input >> 8) as i32;
       let val = self.numbits[code as usize];
       let mut l: u32 = val & 15;
@@ -223,7 +224,7 @@ impl HuffTable {
         continue
       }
 
-      if rv + l as i32 > bits as i32 {
+      if rv + l as i32 > BIG_TABLE_BITS as i32 {
         self.bigtable[i] = 0xff;
         continue
       }
@@ -245,7 +246,7 @@ impl HuffTable {
   pub fn huff_decode(&self, pump: &mut BitPump) -> Result<i32,String> {
     //First attempt to do complete decode, by using the first 14 bits
     if self.use_bigtable {
-      let code = pump.peek_bits(14) as usize;
+      let code = pump.peek_bits(BIG_TABLE_BITS) as usize;
       let val: i32 = self.bigtable[code];
       if val & 0xff != 0xff {
         pump.consume_bits((val & 0xff) as u32);
