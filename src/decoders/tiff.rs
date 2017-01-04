@@ -14,6 +14,8 @@ pub enum Tag {
   PanaWBs2G        = 0x0025,
   PanaWBs2B        = 0x0026,
   NewSubFileType   = 0x00FE,
+  NefMeta1         = 0x008c,
+  NefMeta2         = 0x0096,
   NefWB1           = 0x0097,
   ImageWidth       = 0x0100,
   ImageLength      = 0x0101,
