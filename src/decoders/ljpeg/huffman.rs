@@ -91,6 +91,24 @@ impl HuffTable {
     }
   }
 
+  pub fn new(bits: [u32;17], huffval: [u32;256], precision: usize, use_bigtable: bool) -> Result<HuffTable,String> {
+    let mut tbl = HuffTable {
+      bits: bits,
+      huffval: huffval,
+      mincode: [0;17],
+      maxcode: [0;18],
+      valptr: [0;17],
+      numbits: [0;256],
+      bigtable: Vec::new(),
+      precision: precision,
+      use_bigtable: false,
+      dng_compatible: true,
+      initialized: false,
+    };
+    try!(tbl.initialize(use_bigtable));
+    Ok(tbl)
+  }
+
   pub fn initialize(&mut self, use_bigtable: bool) -> Result<(), String> {
     // Figure C.1: make table of Huffman code length for each symbol
     // Note that this is in code-length order.
@@ -316,4 +334,3 @@ impl fmt::Debug for HuffTable {
     }
   }
 }
-

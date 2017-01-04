@@ -121,20 +121,20 @@ pub struct LjpegDecompressor<'a> {
   sof: SOFInfo,
   predictor: usize,
   point_transform: usize,
-  dhts: [HuffTable;4],
+  dhts: Vec<HuffTable>,
 }
 
 impl<'a> LjpegDecompressor<'a> {
   pub fn new(src: &'a [u8], use_bigtable: bool) -> Result<LjpegDecompressor, String> {
     let mut input = ByteStream::new(src, BIG_ENDIAN);
-
     if try!(LjpegDecompressor::get_next_marker(&mut input, false)) != m(Marker::SOI) {
       return Err("ljpeg: Image did not start with SOI. Probably not LJPEG".to_string())
     }
 
     let mut sof = SOFInfo::empty();
-    let mut dhts = [HuffTable::empty(0),HuffTable::empty(0),
-                    HuffTable::empty(0),HuffTable::empty(0)];
+    let mut dht_init = [false;4];
+    let mut dht_bits = [[0 as u32;17];4];
+    let mut dht_huffval = [[0 as u32;256];4];
     let pred;
     let pt;
     loop {
@@ -145,11 +145,9 @@ impl<'a> LjpegDecompressor<'a> {
         if sof.precision > 16 || sof.precision < 12 {
           return Err(format!("ljpeg: sof.precision {}", sof.precision).to_string())
         }
-        dhts = [HuffTable::empty(sof.precision),HuffTable::empty(sof.precision),
-                HuffTable::empty(sof.precision),HuffTable::empty(sof.precision)];
       } else if marker == m(Marker::DHT) {
         // Huffman table settings
-        try!(LjpegDecompressor::parse_dht(&mut input, &mut dhts, use_bigtable));
+        try!(LjpegDecompressor::parse_dht(&mut input, &mut dht_init, &mut dht_bits, &mut dht_huffval));
       } else if marker == m(Marker::SOS) {
         // Start of the actual stream, we can decode after this
         let (a, b) = try!(sof.parse_sos(&mut input));
@@ -161,6 +159,15 @@ impl<'a> LjpegDecompressor<'a> {
       } else if marker == m(Marker::DQT) {
         return Err("ljpeg: not a valid raw file, found DQT".to_string())
       }
+    }
+
+    let mut dhts = Vec::new();
+    for i in 0..4 {
+      dhts.push(if dht_init[i] {
+        try!(HuffTable::new(dht_bits[i], dht_huffval[i], sof.precision, use_bigtable))
+      } else {
+        HuffTable::empty(0)
+      });
     }
 
     let offset = input.get_pos();
@@ -189,7 +196,7 @@ impl<'a> LjpegDecompressor<'a> {
     Ok(input.get_u8())
   }
 
-  fn parse_dht(input: &mut ByteStream, htables: &mut [HuffTable;4], use_bigtable: bool) -> Result<(), String> {
+  fn parse_dht(input: &mut ByteStream, init: &mut [bool;4], bits: &mut [[u32;17];4], huffval: &mut [[u32;256];4]) -> Result<(), String> {
     let mut length = (input.get_u16() as usize) - 2;
 
     while length > 0 {
@@ -205,14 +212,11 @@ impl<'a> LjpegDecompressor<'a> {
       }
 
       let mut acc: usize = 0;
-      if htables[th].initialized {
-        return Err("ljpeg: duplicate table def in DHT".to_string())
-      }
       for i in 0..16 {
-        htables[th].bits[i+1] = input.get_u8() as u32;
-        acc += htables[th].bits[i+1] as usize;
+        bits[th][i+1] = input.get_u8() as u32;
+        acc += bits[th][i+1] as usize;
       }
-      htables[th].bits[0] = 0;
+      bits[th][0] = 0;
 
       if acc > 256 {
         return Err("ljpeg: invalid DHT table".to_string())
@@ -223,10 +227,10 @@ impl<'a> LjpegDecompressor<'a> {
       }
 
       for i in 0..acc {
-        htables[th].huffval[i] = input.get_u8() as u32;
+        huffval[th][i] = input.get_u8() as u32;
       }
 
-      try!(htables[th].initialize(use_bigtable));
+      init[th] = true;
       length -= 1 + 16 + acc;
     }
 
