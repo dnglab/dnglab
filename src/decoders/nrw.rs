@@ -23,7 +23,10 @@ impl<'a> NrwDecoder<'a> {
 impl<'a> Decoder for NrwDecoder<'a> {
   fn image(&self) -> Result<Image,String> {
     let camera = try!(self.rawloader.check_supported(&self.tiff));
-    let raw = fetch_ifd!(&self.tiff, Tag::CFAPattern);
+    let data = self.tiff.find_ifds_with_tag(Tag::CFAPattern);
+    let raw = data.iter().find(|&&ifd| {
+      ifd.find_entry(Tag::ImageWidth).unwrap().get_u32(0) > 1000
+    }).unwrap();
     let width = fetch_tag!(raw, Tag::ImageWidth).get_usize(0);
     let height = fetch_tag!(raw, Tag::ImageLength).get_usize(0);
     let offset = fetch_tag!(raw, Tag::StripOffsets).get_usize(0);
@@ -37,14 +40,16 @@ impl<'a> Decoder for NrwDecoder<'a> {
       decode_12be(src, width, height)
     };
 
-    ok_image(camera, width, height, try!(self.get_wb()), image)
+    ok_image(camera, width, height, try!(self.get_wb(camera)), image)
   }
 }
 
 impl<'a> NrwDecoder<'a> {
-  fn get_wb(&self) -> Result<[f32;4], String> {
-    if let Some(levels) = self.tiff.find_entry(Tag::NefWB0) {
-      Ok([levels.get_f32(0), levels.get_f32(2), levels.get_f32(1), NAN])
+  fn get_wb(&self, cam: &Camera) -> Result<[f32;4], String> {
+    if cam.find_hint("nowb") {
+      Ok([NAN,NAN,NAN,NAN])
+    } else if let Some(levels) = self.tiff.find_entry(Tag::NefWB0) {
+      Ok([levels.get_f32(0), 1.0, levels.get_f32(1), NAN])
     } else if let Some(levels) = self.tiff.find_entry(Tag::NrwWB) {
       let data = levels.get_data();
       if data[0..3] == b"NRW"[..] {
