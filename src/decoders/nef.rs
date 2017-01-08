@@ -213,10 +213,10 @@ impl<'a> NefDecoder<'a> {
     } else if let Some(levels) = self.tiff.find_entry(Tag::NefWB2) {
       let data = levels.get_data();
       if data[0..3] == b"NRW"[..] {
-        let offset = if data[3..7] == b"0100"[..] {
-          56
-        } else {
+        let offset = if data[4..8] == b"0100"[..] {
           1556
+        } else {
+          56
         };
 
         Ok([(LEu32(data, offset) << 2) as f32,
