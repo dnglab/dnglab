@@ -63,7 +63,9 @@ impl<'a> Decoder for NefDecoder<'a> {
 
 impl<'a> NefDecoder<'a> {
   fn get_wb(&self) -> Result<[f32;4], String> {
-    if let Some(levels) = self.tiff.find_entry(Tag::NefWB1) {
+    if let Some(levels) = self.tiff.find_entry(Tag::NefWB0) {
+      Ok([levels.get_f32(0), levels.get_f32(2), levels.get_f32(1), NAN])
+    } else if let Some(levels) = self.tiff.find_entry(Tag::NefWB1) {
       let mut version: u32 = 0;
       for i in 0..4 {
         version = (version << 4) + (levels.get_data()[i]-b'0') as u32;

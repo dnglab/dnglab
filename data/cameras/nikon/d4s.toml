@@ -1,0 +1,9 @@
+make = "NIKON CORPORATION"
+model = "NIKON D4S"
+clean_make = "Nikon"
+clean_model = "D4S"
+blackpoint = 768
+whitepoint = 15520
+color_matrix = [8598, -2848, -857, -5618, 13606, 2195, -1002, 1773, 7137]
+color_pattern = "RGGB"
+crops = [0,0,0,0]

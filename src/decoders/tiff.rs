@@ -8,6 +8,7 @@ enum_from_primitive! {
 pub enum Tag {
   PanaWidth        = 0x0002,
   PanaLength       = 0x0003,
+  NefWB0           = 0x000C,
   PanaWBsR         = 0x0011,
   PanaWBsB         = 0x0012,
   PanaWBs2R        = 0x0024,
