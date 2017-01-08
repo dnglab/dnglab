@@ -86,7 +86,11 @@ impl<'a> Decoder for NefDecoder<'a> {
         } else {
           match bps {
             14 => decode_14le_unpacked(src, width, height),
-            12 => decode_12le(src, width, height),
+            12 => if self.tiff.little_endian() {
+              decode_12le(src, width, height)
+            } else {
+              decode_12be(src, width, height)
+            },
             x => return Err(format!("Don't know uncompressed bps {}", x).to_string()),
           }
         }
