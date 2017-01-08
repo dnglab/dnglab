@@ -126,7 +126,20 @@ impl<'a> NefDecoder<'a> {
       }
     } else if let Some(levels) = self.tiff.find_entry(Tag::NefWB2) {
       let data = levels.get_data();
-      Ok([BEu16(data,1248) as f32, 256.0, BEu16(data,1250) as f32, NAN])
+      if data[0..3] == b"NRW"[..] {
+        let offset = if data[3..7] == b"0100"[..] {
+          56
+        } else {
+          1556
+        };
+
+        Ok([(LEu32(data, offset) << 2) as f32,
+            (LEu32(data, offset+4) + LEu32(data, offset+8)) as f32,
+            (LEu32(data, offset+12) << 2) as f32,
+            NAN])
+      } else {
+        Ok([BEu16(data,1248) as f32, 256.0, BEu16(data,1250) as f32, NAN])
+      }
     } else {
       Err("NEF: Don't know how to fetch WB".to_string())
     }
