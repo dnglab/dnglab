@@ -44,16 +44,24 @@ impl<'a> Decoder for NefDecoder<'a> {
     let mut width = fetch_tag!(raw, Tag::ImageWidth).get_usize(0);
     let height = fetch_tag!(raw, Tag::ImageLength).get_usize(0);
     let bps = fetch_tag!(raw, Tag::BitsPerSample).get_usize(0);
+    let compression = fetch_tag!(raw, Tag::Compression).get_usize(0);
     let offset = fetch_tag!(raw, Tag::StripOffsets).get_usize(0);
+    let size = fetch_tag!(raw, Tag::StripByteCounts).get_usize(0);
     let src = &self.buffer[offset..];
 
     let image = if camera.model == "NIKON D100" {
       width = 3040;
       decode_12be_wcontrol(src, width, height)
     } else {
-      match fetch_tag!(raw, Tag::Compression).get_usize(0) {
-        34713 => try!(self.decode_compressed(src, width, height, bps)),
-        x => return Err(format!("Don't know how to handle compression {}", x).to_string()),
+      if compression == 1 || size == width*height*bps/8 {
+        match bps {
+          14 => decode_14le_unpacked(src, width, height),
+          x => return Err(format!("Don't know uncompressed bps {}", x).to_string()),
+        }
+      } else if compression == 34713 {
+        try!(self.decode_compressed(src, width, height, bps))
+      } else {
+        return Err(format!("NEF: Don't know compression {}", compression).to_string())
       }
     };
 
