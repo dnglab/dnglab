@@ -39,12 +39,16 @@ impl<'a> NefDecoder<'a> {
 
 impl<'a> Decoder for NefDecoder<'a> {
   fn image(&self) -> Result<Image,String> {
-    let camera = try!(self.rawloader.check_supported(&self.tiff));
     let raw = fetch_ifd!(&self.tiff, Tag::CFAPattern);
     let mut width = fetch_tag!(raw, Tag::ImageWidth).get_usize(0);
     let height = fetch_tag!(raw, Tag::ImageLength).get_usize(0);
     let bps = fetch_tag!(raw, Tag::BitsPerSample).get_usize(0);
     let compression = fetch_tag!(raw, Tag::Compression).get_usize(0);
+
+    // Make sure we always use a 12/14 bit mode to get correct white/blackpoints
+    let mode = format!("{}bit", bps).to_string();
+    let camera = try!(self.rawloader.check_supported_with_mode(&self.tiff, &mode));
+
     let offset = fetch_tag!(raw, Tag::StripOffsets).get_usize(0);
     let size = fetch_tag!(raw, Tag::StripByteCounts).get_usize(0);
     let src = &self.buffer[offset..];
@@ -56,6 +60,7 @@ impl<'a> Decoder for NefDecoder<'a> {
       if compression == 1 || size == width*height*bps/8 {
         match bps {
           14 => decode_14le_unpacked(src, width, height),
+          12 => decode_12le(src, width, height),
           x => return Err(format!("Don't know uncompressed bps {}", x).to_string()),
         }
       } else if compression == 34713 {
