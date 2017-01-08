@@ -120,6 +120,9 @@ impl<'a> NefDecoder<'a> {
                       levels.get_force_u16(12) as f32, NAN]),
         x => Err(format!("NEF: Don't know about WB version 0x{:x}", x).to_string()),
       }
+    } else if let Some(levels) = self.tiff.find_entry(Tag::NefWB2) {
+      let data = levels.get_data();
+      Ok([BEu16(data,1248) as f32, 256.0, BEu16(data,1250) as f32, NAN])
     } else {
       Err("NEF: Don't know how to fetch WB".to_string())
     }
