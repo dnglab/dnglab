@@ -81,6 +81,8 @@ impl<'a> Decoder for NefDecoder<'a> {
       if compression == 1 || size == width*height*bps/8 {
         if camera.find_hint("coolpixsplit") {
           decode_12be_interlaced_unaligned(src, width, height)
+        } else if camera.find_hint("msb32") {
+          decode_12be_msb32(src, width, height)
         } else {
           match bps {
             14 => decode_14le_unpacked(src, width, height),
