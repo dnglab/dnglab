@@ -14,7 +14,7 @@ pub fn gamma(_: &Image, buf: &mut OpBuffer) {
     glookup[i] = if v <= min {
       mul * v
     } else {
-      ((1.0+f) * v).powf(g) - f
+      ((1.0+f) * v.powf(g)) - f
     }
   }
 
