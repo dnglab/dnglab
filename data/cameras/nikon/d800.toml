@@ -1,0 +1,17 @@
+make = "NIKON CORPORATION"
+model = "NIKON D800"
+clean_make = "Nikon"
+clean_model = "D800"
+color_matrix = [7866, -2108, -555, -4869, 12483, 2681, -1176, 2069, 7501]
+color_pattern = "RGGB"
+crops = [0,48,0,2]
+
+[[cameras.modes]]
+mode = "12bit"
+blackpoint = 0
+whitepoint = 3880
+
+[[cameras.modes]]
+mode = "14bit"
+blackpoint = 0
+whitepoint = 15520

@@ -85,7 +85,11 @@ impl<'a> Decoder for NefDecoder<'a> {
           decode_12be_msb32(src, width, height)
         } else {
           match bps {
-            14 => decode_14le_unpacked(src, width, height),
+            14 => if self.tiff.little_endian() {
+              decode_14le_unpacked(src, width, height)
+            } else {
+              decode_14be_unpacked(src, width, height)
+            },
             12 => if self.tiff.little_endian() {
               decode_12le(src, width, height)
             } else {
