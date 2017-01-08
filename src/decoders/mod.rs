@@ -284,6 +284,7 @@ impl RawLoader {
           "Leaf"                        => use_decoder!(iiq::IiqDecoder, buffer, tiff, self),
           "Hasselblad"                  => use_decoder!(tfr::TfrDecoder, buffer, tiff, self),
           "NIKON CORPORATION"           => use_decoder!(nef::NefDecoder, buffer, tiff, self),
+          "NIKON"                       => use_decoder!(nef::NefDecoder, buffer, tiff, self),
           make => Err(format!("Couldn't find a decoder for make \"{}\"", make).to_string()),
         };
       } else if tiff.has_entry(Tag::Software) {

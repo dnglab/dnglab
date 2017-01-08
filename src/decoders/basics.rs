@@ -264,6 +264,25 @@ pub fn decode_12be_interlaced(buf: &[u8], width: usize, height: usize) -> Vec<u1
   }))
 }
 
+pub fn decode_12be_interlaced_unaligned(buf: &[u8], width: usize, height: usize) -> Vec<u16> {
+  let half = (height+1) >> 1;
+  let second_field = &buf[half*width*12/8..];
+
+  decode_threaded(width, height, &(|out: &mut [u16], row| {
+    let off = row/2*width*12/8;
+    let inb = if (row % 2) == 0 { &buf[off..] } else { &second_field[off..] };
+
+    for (o, i) in out.chunks_mut(2).zip(inb.chunks(3)) {
+      let g1: u16 = i[0] as u16;
+      let g2: u16 = i[1] as u16;
+      let g3: u16 = i[2] as u16;
+
+      o[0] = (g1 << 4) | (g2 >> 4);
+      o[1] = ((g2 & 0x0f) << 8) | g3;
+    }
+  }))
+}
+
 pub fn decode_12le(buf: &[u8], width: usize, height: usize) -> Vec<u16> {
   decode_threaded(width, height, &(|out: &mut [u16], row| {
     let inb = &buf[(row*width*12/8)..];

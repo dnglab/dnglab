@@ -79,10 +79,14 @@ impl<'a> Decoder for NefDecoder<'a> {
       decode_12be_wcontrol(src, width, height)
     } else {
       if compression == 1 || size == width*height*bps/8 {
-        match bps {
-          14 => decode_14le_unpacked(src, width, height),
-          12 => decode_12le(src, width, height),
-          x => return Err(format!("Don't know uncompressed bps {}", x).to_string()),
+        if camera.find_hint("coolpixsplit") {
+          decode_12be_interlaced_unaligned(src, width, height)
+        } else {
+          match bps {
+            14 => decode_14le_unpacked(src, width, height),
+            12 => decode_12le(src, width, height),
+            x => return Err(format!("Don't know uncompressed bps {}", x).to_string()),
+          }
         }
       } else if size == width*height*3 {
         cpp = 3;
