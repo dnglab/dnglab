@@ -11,7 +11,7 @@ pub enum Tag {
   NefWB0           = 0x000C,
   PanaWBsR         = 0x0011,
   PanaWBsB         = 0x0012,
-  NefWB2           = 0x0014,
+  NrwWB            = 0x0014,
   NefSerial        = 0x001d,
   PanaWBs2R        = 0x0024,
   PanaWBs2G        = 0x0025,

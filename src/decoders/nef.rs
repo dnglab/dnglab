@@ -118,24 +118,18 @@ impl<'a> Decoder for NefDecoder<'a> {
       decode_12be_wcontrol(src, width, height)
     } else {
       if compression == 1 || size == width*height*bps/8 {
-        if camera.find_hint("coolpixsplit") {
-          decode_12be_interlaced_unaligned(src, width, height)
-        } else if camera.find_hint("msb32") {
-          decode_12be_msb32(src, width, height)
-        } else {
-          match bps {
-            14 => if self.tiff.little_endian() {
-              decode_14le_unpacked(src, width, height)
-            } else {
-              decode_14be_unpacked(src, width, height)
-            },
-            12 => if self.tiff.little_endian() && !camera.find_hint("msb") {
-              decode_12le(src, width, height)
-            } else {
-              decode_12be(src, width, height)
-            },
-            x => return Err(format!("Don't know uncompressed bps {}", x).to_string()),
-          }
+        match bps {
+          14 => if self.tiff.little_endian() {
+            decode_14le_unpacked(src, width, height)
+          } else {
+            decode_14be_unpacked(src, width, height)
+          },
+          12 => if self.tiff.little_endian() {
+            decode_12le(src, width, height)
+          } else {
+            decode_12be(src, width, height)
+          },
+          x => return Err(format!("Don't know uncompressed bps {}", x).to_string()),
         }
       } else if size == width*height*3 {
         cpp = 3;
@@ -209,22 +203,6 @@ impl<'a> NefDecoder<'a> {
               BEu16(&buf, off+6) as f32, NAN])
         },
         x => Err(format!("NEF: Don't know about WB version 0x{:x}", x).to_string()),
-      }
-    } else if let Some(levels) = self.tiff.find_entry(Tag::NefWB2) {
-      let data = levels.get_data();
-      if data[0..3] == b"NRW"[..] {
-        let offset = if data[4..8] == b"0100"[..] {
-          1556
-        } else {
-          56
-        };
-
-        Ok([(LEu32(data, offset) << 2) as f32,
-            (LEu32(data, offset+4) + LEu32(data, offset+8)) as f32,
-            (LEu32(data, offset+12) << 2) as f32,
-            NAN])
-      } else {
-        Ok([BEu16(data,1248) as f32, 256.0, BEu16(data,1250) as f32, NAN])
       }
     } else {
       Err("NEF: Don't know how to fetch WB".to_string())
