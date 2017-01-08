@@ -20,6 +20,26 @@ const NIKON_TREE: [[u8;32];6] = [
   [0,1,4,2,2,3,1,2,0,0,0,0,0,0,0,0,7,6,8,5,9,4,10,3,11,12,2,0,1,13,14,0],
 ];
 
+lazy_static! {
+  // Pre-initialize the sRGB gamma curve for sNEF
+  static ref SNEF_CURVE: LookupTable = {
+    let g: f32 = 2.4;
+    let f: f32 = 0.055;
+    let min: f32 = 0.04045;
+    let mul: f32 = 12.92;
+    let curve = (0..4096).map(|i| {
+      let v = (i as f32) / 4095.0;
+      let res = if v <= min {
+        v / mul
+      } else {
+        ((v+f)/(1.0+f)).powf(g)
+      };
+      clampbits((res*65535.0*4.0) as i32, 16) as u16
+    }).collect::<Vec<u16>>();
+    LookupTable::new(&curve)
+  };
+}
+
 #[derive(Debug, Clone)]
 pub struct NefDecoder<'a> {
   buffer: &'a [u8],
@@ -52,6 +72,7 @@ impl<'a> Decoder for NefDecoder<'a> {
     let offset = fetch_tag!(raw, Tag::StripOffsets).get_usize(0);
     let size = fetch_tag!(raw, Tag::StripByteCounts).get_usize(0);
     let src = &self.buffer[offset..];
+    let mut cpp = 1;
 
     let image = if camera.model == "NIKON D100" {
       width = 3040;
@@ -63,6 +84,9 @@ impl<'a> Decoder for NefDecoder<'a> {
           12 => decode_12le(src, width, height),
           x => return Err(format!("Don't know uncompressed bps {}", x).to_string()),
         }
+      } else if size == width*height*3 {
+        cpp = 3;
+        try!(self.decode_snef_compressed(src, width, height))
       } else if compression == 34713 {
         try!(self.decode_compressed(src, width, height, bps))
       } else {
@@ -70,7 +94,13 @@ impl<'a> Decoder for NefDecoder<'a> {
       }
     };
 
-    ok_image(camera, width, height, try!(self.get_wb()), image)
+    let mut img = Image::new(camera, width, height, try!(self.get_wb()), image);
+    if cpp == 3 {
+      img.cpp = 3;
+      img.blacklevels = [0,0,0,0];
+      img.whitelevels = [65535,65535,65535,65535];
+    }
+    Ok(img)
   }
 }
 
@@ -194,5 +224,49 @@ impl<'a> NefDecoder<'a> {
     }
 
     Ok(out)
+  }
+
+  // Decodes 12 bit data in an YUY2-like pattern (2 Luma, 1 Chroma per 2 pixels).
+  // We un-apply the whitebalance, so output matches lossless.
+  fn decode_snef_compressed(&self, src: &[u8], width: usize, height: usize) -> Result<Vec<u16>, String> {
+    let coeffs = try!(self.get_wb());
+    let inv_wb_r = (1024.0 / coeffs[0]) as i32;
+    let inv_wb_b = (1024.0 / coeffs[2]) as i32;
+
+    println!("Got invwb {} {}", inv_wb_r, inv_wb_b);
+
+    Ok(decode_threaded(width*3, height, &(|out: &mut [u16], row| {
+      let inb = &src[row*width*3..];
+      let mut random = BEu32(inb, 0);
+      for (o, i) in out.chunks_mut(6).zip(inb.chunks(6)) {
+        let g1: u16 = i[0] as u16;
+        let g2: u16 = i[1] as u16;
+        let g3: u16 = i[2] as u16;
+        let g4: u16 = i[3] as u16;
+        let g5: u16 = i[4] as u16;
+        let g6: u16 = i[5] as u16;
+
+        let y1  = (g1 | ((g2 & 0x0f) << 8)) as f32;
+        let y2  = ((g2 >> 4) | (g3 << 4)) as f32;
+        let cb = (g4 | ((g5 & 0x0f) << 8)) as f32 - 2048.0;
+        let cr = ((g5 >> 4) | (g6 << 4)) as f32 - 2048.0;
+
+        let r = SNEF_CURVE.dither(clampbits((y1 + 1.370705 * cr) as i32, 12) as u16, &mut random);
+        let g = SNEF_CURVE.dither(clampbits((y1 - 0.337633 * cb - 0.698001 * cr) as i32, 12) as u16, &mut random);
+        let b = SNEF_CURVE.dither(clampbits((y1 + 1.732446 * cb) as i32, 12) as u16, &mut random);
+        // invert the white balance
+        o[0] = clampbits((inv_wb_r * r as i32 + (1<<9)) >> 10, 15) as u16;
+        o[1] = g;
+        o[2] = clampbits((inv_wb_b * b as i32 + (1<<9)) >> 10, 15) as u16;
+
+        let r = SNEF_CURVE.dither(clampbits((y2 + 1.370705 * cr) as i32, 12) as u16, &mut random);
+        let g = SNEF_CURVE.dither(clampbits((y2 - 0.337633 * cb - 0.698001 * cr) as i32, 12) as u16, &mut random);
+        let b = SNEF_CURVE.dither(clampbits((y2 + 1.732446 * cb) as i32, 12) as u16, &mut random);
+        // invert the white balance
+        o[3] = clampbits((inv_wb_r * r as i32 + (1<<9)) >> 10, 15) as u16;
+        o[4] = g;
+        o[5] = clampbits((inv_wb_b * b as i32 + (1<<9)) >> 10, 15) as u16;
+      }
+    })))
   }
 }

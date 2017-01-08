@@ -69,6 +69,7 @@ impl<'a> Decoder for RafDecoder<'a> {
         clean_model: camera.clean_model.clone(),
         width: width,
         height: height,
+        cpp: 1,
         wb_coeffs: try!(self.get_wb()),
         data: image.into_boxed_slice(),
         blacklevels: camera.blacklevels,

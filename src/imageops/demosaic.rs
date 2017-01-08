@@ -30,8 +30,12 @@ pub fn demosaic_and_scale(img: &Image, maxwidth: usize, maxheight: usize) -> OpB
     _  => 2.0,  // default
   };
 
-  if scale < minscale {
-    let buf = full(img, x, y, width, height);
+  if scale < minscale || img.cpp != 1 {
+    let buf = match img.cpp {
+      3 => rgb(img, x, y, width, height),
+      // FIXME: return an error when cpp != 1 and cpp != 3
+      _ => full(img, x, y, width, height),
+    };
     if scale > 1.0 {
       scale_down(&buf, nwidth, nheight)
     } else {
@@ -40,6 +44,18 @@ pub fn demosaic_and_scale(img: &Image, maxwidth: usize, maxheight: usize) -> OpB
   } else {
     scaled(img, x, y, width, height, nwidth, nheight)
   }
+}
+
+pub fn rgb(img: &Image, xs: usize, ys: usize, width: usize, height: usize) -> OpBuffer {
+  let mut out = OpBuffer::new(width, height, 4);
+  out.mutate_lines(&(|line: &mut [f32], row| {
+    for (o, i) in line.chunks_mut(4).zip(img.data[(img.width*(row+ys)+xs)*3..].chunks(3)) {
+      o[0] = i[0] as f32;
+      o[1] = i[1] as f32;
+      o[2] = i[2] as f32;
+    }
+  }));
+  out
 }
 
 pub fn full(img: &Image, xs: usize, ys: usize, width: usize, height: usize) -> OpBuffer {
