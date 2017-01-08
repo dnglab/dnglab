@@ -129,7 +129,7 @@ impl<'a> Decoder for NefDecoder<'a> {
             } else {
               decode_14be_unpacked(src, width, height)
             },
-            12 => if self.tiff.little_endian() {
+            12 => if self.tiff.little_endian() && !camera.find_hint("msb") {
               decode_12le(src, width, height)
             } else {
               decode_12be(src, width, height)
