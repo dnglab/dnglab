@@ -14,7 +14,7 @@ pub fn level_and_balance(img: &Image, buf: &mut OpBuffer) {
 
   // Set green multiplier as 1.0
   let unity: f32 = coeffs[1];
-  let mul = coeffs.iter().map(|x| if x.is_nan() { 1.0 } else { x / unity }).collect::<Vec<f32>>();
+  let mul = coeffs.iter().map(|x| if !x.is_normal() { 1.0 } else { x / unity }).collect::<Vec<f32>>();
 
   buf.mutate_lines(&(|line: &mut [f32], _| {
     for pix in line.chunks_mut(4) {
