@@ -71,9 +71,15 @@ impl<'a> Decoder for Cr2Decoder<'a> {
 
 impl<'a> Cr2Decoder<'a> {
   fn get_wb(&self, cam: &Camera) -> Result<[f32;4], String> {
-    let levels = fetch_tag!(self.tiff, Tag::Cr2ColorData);
-    let offset = if cam.wb_offset != 0 {cam.wb_offset} else {63};
-    Ok([levels.get_force_u16(offset) as f32, levels.get_force_u16(offset+1) as f32,
-        levels.get_force_u16(offset+3) as f32, NAN])
+    if let Some(levels) = self.tiff.find_entry(Tag::Cr2ColorData) {
+      let offset = if cam.wb_offset != 0 {cam.wb_offset} else {63};
+      Ok([levels.get_force_u16(offset) as f32, levels.get_force_u16(offset+1) as f32,
+          levels.get_force_u16(offset+3) as f32, NAN])
+    } else if let Some(levels) = self.tiff.find_entry(Tag::Cr2PowerShotWB) {
+      Ok([levels.get_force_u32(3) as f32, levels.get_force_u32(2) as f32,
+          levels.get_force_u32(4) as f32, NAN])
+    } else {
+      Err("CR2: Couldn't find WB".to_string())
+    }
   }
 }
