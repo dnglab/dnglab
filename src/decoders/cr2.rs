@@ -2,8 +2,6 @@ use decoders::*;
 use decoders::tiff::*;
 use decoders::ljpeg::*;
 use std::f32::NAN;
-use std::cmp;
-use itertools::Itertools;
 
 #[derive(Debug, Clone)]
 pub struct Cr2Decoder<'a> {
@@ -40,10 +38,16 @@ impl<'a> Decoder for Cr2Decoder<'a> {
       // FIXME: Doing this at the decode would reduce about 5% in runtime but I haven't
       //        been able to do it without hairy code
       let mut out = vec![0 as u16; width*height];
-      let canoncol = fetch_tag!(raw, Tag::Cr2StripeWidths).get_usize(1);
-      for (field, fieldstart) in (0..width).step(canoncol).enumerate() {
-        let fieldwidth = cmp::min((field+1)*canoncol,width) - field*canoncol;
-        let fieldpos = field*canoncol*height;
+      let canoncol = fetch_tag!(raw, Tag::Cr2StripeWidths);
+      let mut fieldwidths = Vec::new();
+      for _ in 0..canoncol.get_usize(0) {
+        fieldwidths.push(canoncol.get_usize(1));
+      }
+      fieldwidths.push(canoncol.get_usize(2));
+
+      let mut fieldstart = 0;
+      let mut fieldpos = 0;
+      for fieldwidth in fieldwidths {
         for row in 0..height {
           let outpos = row*width+fieldstart;
           let inpos = fieldpos+row*fieldwidth;
@@ -51,6 +55,8 @@ impl<'a> Decoder for Cr2Decoder<'a> {
           let inb = &ljpegout[inpos..inpos+fieldwidth];
           outb.copy_from_slice(inb);
         }
+        fieldstart += fieldwidth;
+        fieldpos += fieldwidth*height;
       }
 
       (width, height, out)
