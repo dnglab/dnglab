@@ -23,8 +23,17 @@ impl<'a> Cr2Decoder<'a> {
 impl<'a> Decoder for Cr2Decoder<'a> {
   fn image(&self) -> Result<Image,String> {
     let camera = try!(self.rawloader.check_supported(&self.tiff));
-    let raw = fetch_ifd!(&self.tiff, Tag::Cr2Id);
-    let offset = fetch_tag!(raw, Tag::StripOffsets).get_usize(0);
+    let (raw, offset) = {
+      if let Some(raw) = self.tiff.find_first_ifd(Tag::Cr2Id) {
+        (raw, fetch_tag!(raw, Tag::StripOffsets).get_usize(0))
+      } else if let Some(raw) = self.tiff.find_first_ifd(Tag::CFAPattern) {
+        (raw, fetch_tag!(raw, Tag::StripOffsets).get_usize(0))
+      } else if let Some(off) = self.tiff.find_entry(Tag::Cr2OldOffset) {
+        (&self.tiff, off.get_usize(0))
+      } else {
+        return Err("CR2: Couldn't find raw info".to_string())
+      }
+    };
     let src = &self.buffer[offset..];
 
     let (width, height, image) = {
