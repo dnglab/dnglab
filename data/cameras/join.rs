@@ -3,6 +3,7 @@ use std::io::prelude::*;
 
 extern crate glob;
 use self::glob::glob;
+extern crate toml;
   
 fn main() {
   let mut out = File::create("./data/cameras/all.toml").unwrap();
@@ -10,9 +11,18 @@ fn main() {
   for entry in glob("./data/cameras/*/**/*.toml").expect("Failed to read glob pattern") {
     out.write_all(b"[[cameras]]\n").unwrap();
     let path = entry.unwrap();
-    let mut f = File::open(path).unwrap();
+    let mut f = File::open(path.clone()).unwrap();
     let mut toml = String::new();
     f.read_to_string(&mut toml).unwrap();
+
+    {
+      let mut parser = toml::Parser::new(&toml);
+      match parser.parse() {
+        Some(_) => {},
+        None => panic!(format!("Error parsing {:?}: {:?}", path, parser.errors)),
+      };
+    }
+
     out.write_all(&toml.into_bytes()).unwrap();
     out.write_all(b"\n").unwrap();
   }

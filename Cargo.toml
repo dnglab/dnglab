@@ -22,6 +22,7 @@ itertools = "0.5.8"
 
 [build-dependencies]
 glob = "0.2.11"
+toml = "0.2.1"
 
 [profile.release]
 panic = "unwind"
