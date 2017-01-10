@@ -73,6 +73,8 @@ impl<'a> Decoder for Cr2Decoder<'a> {
 
           (width, height, out)
         }
+      } else if camera.find_hint("double_line") {
+        (width/2, height*2, ljpegout)
       } else {
         (width, height, ljpegout)
       }
