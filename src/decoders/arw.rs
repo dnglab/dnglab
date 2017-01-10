@@ -44,7 +44,7 @@ impl<'a> Decoder for ArwDecoder<'a> {
     } else {
       fetch_tag!(raw, Tag::BitsPerSample).get_usize(0)
     };
-    let src = &self.buffer[offset .. self.buffer.len()];
+    let src = &self.buffer[offset..];
 
     let image = match compression {
       1 => {
@@ -87,7 +87,7 @@ impl<'a> ArwDecoder<'a> {
     let height = 2608;
     let offset = fetch_tag!(raw, Tag::SubIFDs).get_usize(0);
 
-    let src = &self.buffer[offset .. self.buffer.len()];
+    let src = &self.buffer[offset..];
     let image = ArwDecoder::decode_arw1(src, width, height);
 
     // Get the WB the MRW way

@@ -27,7 +27,7 @@ impl<'a> Decoder for MefDecoder<'a> {
     let width = fetch_tag!(raw, Tag::ImageWidth).get_usize(0);
     let height = fetch_tag!(raw, Tag::ImageLength).get_usize(0);
     let offset = fetch_tag!(raw, Tag::StripOffsets).get_usize(0);
-    let src = &self.buffer[offset .. self.buffer.len()];
+    let src = &self.buffer[offset..];
 
     let image = decode_12be(src, width, height);
     ok_image(camera, width, height, [NAN,NAN,NAN,NAN], image)

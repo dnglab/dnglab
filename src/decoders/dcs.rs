@@ -30,7 +30,7 @@ impl<'a> Decoder for DcsDecoder<'a> {
     let width = fetch_tag!(raw, Tag::ImageWidth).get_usize(0);
     let height = fetch_tag!(raw, Tag::ImageLength).get_usize(0);
     let offset = fetch_tag!(raw, Tag::StripOffsets).get_usize(0);
-    let src = &self.buffer[offset .. self.buffer.len()];
+    let src = &self.buffer[offset..];
     let linearization = fetch_tag!(self.tiff, Tag::GrayResponse);
     let table = {
       let mut t: [u16;256] = [0;256];

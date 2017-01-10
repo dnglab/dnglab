@@ -34,7 +34,7 @@ impl<'a> Decoder for OrfDecoder<'a> {
       size += counts.get_u32(i as usize) as usize;
     }
 
-    let src = &self.buffer[offset .. self.buffer.len()];
+    let src = &self.buffer[offset..];
 
     let image = if size >= width*height*2 {
       if self.tiff.little_endian() {
