@@ -37,7 +37,7 @@ impl<'a> Decoder for Cr2Decoder<'a> {
       try!(decompressor.decode(&mut ljpegout, 0, width, width, height));
 
       // Take each of the vertical fields and put them into the right location
-      // FIXME: Doing this at the decode would reduce about 10% in runtime but I haven't
+      // FIXME: Doing this at the decode would reduce about 5% in runtime but I haven't
       //        been able to do it without hairy code
       let mut out = vec![0 as u16; width*height];
       let canoncol = fetch_tag!(raw, Tag::Cr2StripeWidths).get_usize(1);
@@ -45,9 +45,11 @@ impl<'a> Decoder for Cr2Decoder<'a> {
         let fieldwidth = cmp::min((field+1)*canoncol,width) - field*canoncol;
         let fieldpos = field*canoncol*height;
         for row in 0..height {
-          for col in 0..fieldwidth {
-            out[row*width+fieldstart+col] = ljpegout[fieldpos+row*fieldwidth+col];
-          }
+          let outpos = row*width+fieldstart;
+          let inpos = fieldpos+row*fieldwidth;
+          let outb = &mut out[outpos..outpos+fieldwidth];
+          let inb = &ljpegout[inpos..inpos+fieldwidth];
+          outb.copy_from_slice(inb);
         }
       }
 
