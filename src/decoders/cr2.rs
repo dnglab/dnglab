@@ -37,31 +37,35 @@ impl<'a> Decoder for Cr2Decoder<'a> {
       // Take each of the vertical fields and put them into the right location
       // FIXME: Doing this at the decode would reduce about 5% in runtime but I haven't
       //        been able to do it without hairy code
-      let mut out = vec![0 as u16; width*height];
       let canoncol = fetch_tag!(raw, Tag::Cr2StripeWidths);
-      let mut fieldwidths = Vec::new();
-      for _ in 0..canoncol.get_usize(0) {
-        fieldwidths.push(canoncol.get_usize(1));
-      }
-      fieldwidths.push(canoncol.get_usize(2));
-
-      let mut fieldstart = 0;
-      let mut fieldpos = 0;
-      for fieldwidth in fieldwidths {
-        for row in 0..height {
-          let outpos = row*width+fieldstart;
-          let inpos = fieldpos+row*fieldwidth;
-          let outb = &mut out[outpos..outpos+fieldwidth];
-          let inb = &ljpegout[inpos..inpos+fieldwidth];
-          outb.copy_from_slice(inb);
+      if canoncol.get_usize(0) == 0 {
+        (width, height, ljpegout)
+      } else {
+        let mut out = vec![0 as u16; width*height];
+        let mut fieldwidths = Vec::new();
+        for _ in 0..canoncol.get_usize(0) {
+          fieldwidths.push(canoncol.get_usize(1));
         }
-        fieldstart += fieldwidth;
-        fieldpos += fieldwidth*height;
-      }
+        fieldwidths.push(canoncol.get_usize(2));
 
-      (width, height, out)
+        let mut fieldstart = 0;
+        let mut fieldpos = 0;
+        for fieldwidth in fieldwidths {
+          for row in 0..height {
+            let outpos = row*width+fieldstart;
+            let inpos = fieldpos+row*fieldwidth;
+            let outb = &mut out[outpos..outpos+fieldwidth];
+            let inb = &ljpegout[inpos..inpos+fieldwidth];
+            outb.copy_from_slice(inb);
+          }
+          fieldstart += fieldwidth;
+          fieldpos += fieldwidth*height;
+        }
+
+        (width, height, out)
+      }
     };
-    ok_image(camera, width, height, try!(self.get_wb()), image)
+    ok_image(camera, width, height, try!(self.get_wb(camera)), image)
   }
 }
 
