@@ -51,6 +51,7 @@ mod iiq;
 mod tfr;
 mod nef;
 mod nrw;
+mod cr2;
 use self::tiff::*;
 use self::ciff::*;
 pub use self::image::*;
@@ -286,6 +287,7 @@ impl RawLoader {
           "Hasselblad"                  => use_decoder!(tfr::TfrDecoder, buffer, tiff, self),
           "NIKON CORPORATION"           => use_decoder!(nef::NefDecoder, buffer, tiff, self),
           "NIKON"                       => use_decoder!(nrw::NrwDecoder, buffer, tiff, self),
+          "Canon"                       => use_decoder!(cr2::Cr2Decoder, buffer, tiff, self),
           make => Err(format!("Couldn't find a decoder for make \"{}\"", make).to_string()),
         };
       } else if tiff.has_entry(Tag::Software) {

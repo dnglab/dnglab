@@ -255,4 +255,7 @@ impl<'a> LjpegDecompressor<'a> {
       p => return Err(format!("ljpeg: predictor {} not supported", p).to_string()),
     }
   }
+
+  pub fn width(&self) -> usize { self.sof.width * self.sof.cps }
+  pub fn height(&self) -> usize { self.sof.height }
 }
