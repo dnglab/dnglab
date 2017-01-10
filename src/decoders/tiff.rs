@@ -22,6 +22,7 @@ pub enum Tag {
   NefMeta1         = 0x008c,
   NefMeta2         = 0x0096,
   NefWB1           = 0x0097,
+  Cr2OldWB         = 0x00A4,
   NefKey           = 0x00a7,
   ImageWidth       = 0x0100,
   ImageLength      = 0x0101,

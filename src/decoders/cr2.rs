@@ -92,6 +92,8 @@ impl<'a> Cr2Decoder<'a> {
     } else if let Some(levels) = self.tiff.find_entry(Tag::Cr2PowerShotWB) {
       Ok([levels.get_force_u32(3) as f32, levels.get_force_u32(2) as f32,
           levels.get_force_u32(4) as f32, NAN])
+    } else if let Some(levels) = self.tiff.find_entry(Tag::Cr2OldWB) {
+      Ok([levels.get_f32(0), levels.get_f32(1), levels.get_f32(2), NAN])
     } else {
       Err("CR2: Couldn't find WB".to_string())
     }
