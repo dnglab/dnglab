@@ -1,5 +1,6 @@
 use decoders::*;
 use decoders::tiff::*;
+use decoders::basics::*;
 use decoders::ljpeg::*;
 use std::f32::NAN;
 
@@ -42,6 +43,23 @@ impl<'a> Decoder for Cr2Decoder<'a> {
       let height = decompressor.height();
       let mut ljpegout = vec![0 as u16; width*height];
       try!(decompressor.decode(&mut ljpegout, 0, width, width, height));
+
+      // Linearize the output (applies only to D2000 as far as I can tell)
+      if camera.find_hint("linearization") {
+        let table = {
+          let linearization = fetch_tag!(self.tiff, Tag::GrayResponse);
+          let mut t = [0 as u16;4096];
+          for i in 0..t.len() {
+            t[i] = linearization.get_u32(i) as u16;
+          }
+          LookupTable::new(&t)
+        };
+
+        let mut random = ljpegout[0] as u32;
+        for o in ljpegout.chunks_mut(1) {
+          o[0] = table.dither(o[0], &mut random);
+        }
+      }
 
       // Take each of the vertical fields and put them into the right location
       // FIXME: Doing this at the decode would reduce about 5% in runtime but I haven't
