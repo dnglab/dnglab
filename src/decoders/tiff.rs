@@ -48,6 +48,7 @@ pub enum Tag {
   OlympusBlueMul   = 0x1018,
   OlympusImgProc   = 0x2040,
   RafOldWB         = 0x2ff0,
+  Cr2ColorData     = 0x4001,
   SonyCurve        = 0x7010,
   SonyOffset       = 0x7200,
   SonyLength       = 0x7201,
