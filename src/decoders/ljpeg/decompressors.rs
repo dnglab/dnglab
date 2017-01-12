@@ -117,11 +117,12 @@ fn set_yuv_420(out: &mut [u16], row: usize, col: usize, width: usize, y1: i32, y
 }
 
 pub fn decode_ljpeg_420(ljpeg: &LjpegDecompressor, out: &mut [u16], width: usize, height: usize) -> Result<(),String> {
-  if ljpeg.sof.width*3 < width || ljpeg.sof.height < height {
+  if ljpeg.sof.width*3 != width || ljpeg.sof.height != height {
     return Err(format!("ljpeg: trying to decode {}x{} into {}x{}",
                        ljpeg.sof.width*3, ljpeg.sof.height,
                        width, height).to_string())
   }
+
   let ref htable1 = ljpeg.dhts[ljpeg.sof.components[0].dc_tbl_num];
   let ref htable2 = ljpeg.dhts[ljpeg.sof.components[1].dc_tbl_num];
   let ref htable3 = ljpeg.dhts[ljpeg.sof.components[2].dc_tbl_num];
@@ -174,7 +175,7 @@ fn set_yuv_422(out: &mut [u16], row: usize, col: usize, width: usize, y1: i32, y
 }
 
 pub fn decode_ljpeg_422(ljpeg: &LjpegDecompressor, out: &mut [u16], width: usize, height: usize) -> Result<(),String> {
-  if ljpeg.sof.width*3 < width || ljpeg.sof.height < height {
+  if ljpeg.sof.width*3 != width || ljpeg.sof.height != height {
     return Err(format!("ljpeg: trying to decode {}x{} into {}x{}",
                        ljpeg.sof.width*3, ljpeg.sof.height,
                        width, height).to_string())
