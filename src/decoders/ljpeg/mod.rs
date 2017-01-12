@@ -238,10 +238,10 @@ impl<'a> LjpegDecompressor<'a> {
   }
 
   pub fn decode(&self, out: &mut [u16], x: usize, stripwidth: usize, width: usize, height: usize) -> Result<(),String> {
-    for component in self.sof.components.iter() {
-      if component.super_h !=1 || component.super_v != 1 {
-        return Err("ljpeg: subsampled images not supported".to_string());
-      }
+    if self.sof.components[0].super_h == 2 && self.sof.components[0].super_v == 2 {
+      return decode_ljpeg_420(self, out, width, height)
+    } else if self.sof.components[0].super_h == 2 && self.sof.components[0].super_v == 1 {
+      return Err("YUV422 not supported yet".to_string())
     }
 
     match self.predictor {
@@ -259,4 +259,6 @@ impl<'a> LjpegDecompressor<'a> {
 
   pub fn width(&self) -> usize { self.sof.width * self.sof.cps }
   pub fn height(&self) -> usize { self.sof.height }
+  pub fn super_v(&self) -> usize { self.sof.components[0].super_v }
+  pub fn super_h(&self) -> usize { self.sof.components[0].super_h }
 }
