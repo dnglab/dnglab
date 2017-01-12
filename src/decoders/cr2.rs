@@ -37,10 +37,11 @@ impl<'a> Decoder for Cr2Decoder<'a> {
     };
     let src = &self.buffer[offset..];
 
-    let (width, height, image) = {
+    let (width, height, cpp, image) = {
       let decompressor = try!(LjpegDecompressor::new(src, true));
       let width = decompressor.width();
       let height = decompressor.height();
+      let cpp = if decompressor.super_h() == 2 {3} else {1};
       let mut ljpegout = vec![0 as u16; width*height];
       try!(decompressor.decode(&mut ljpegout, 0, width, width, height));
 
@@ -61,12 +62,17 @@ impl<'a> Decoder for Cr2Decoder<'a> {
         }
       }
 
+      // Convert the YUV in sRAWs to RGB
+      if cpp == 3 {
+        try!(self.convert_to_rgb(camera, &mut ljpegout));
+      }
+
       // Take each of the vertical fields and put them into the right location
       // FIXME: Doing this at the decode would reduce about 5% in runtime but I haven't
       //        been able to do it without hairy code
       if let Some(canoncol) = raw.find_entry(Tag::Cr2StripeWidths) {
         if canoncol.get_usize(0) == 0 {
-          (width, height, ljpegout)
+          (width, height, cpp, ljpegout)
         } else {
           let mut out = vec![0 as u16; width*height];
           let mut fieldwidths = Vec::new();
@@ -77,27 +83,66 @@ impl<'a> Decoder for Cr2Decoder<'a> {
 
           let mut fieldstart = 0;
           let mut fieldpos = 0;
-          for fieldwidth in fieldwidths {
-            for row in 0..height {
-              let outpos = row*width+fieldstart;
-              let inpos = fieldpos+row*fieldwidth;
-              let outb = &mut out[outpos..outpos+fieldwidth];
-              let inb = &ljpegout[inpos..inpos+fieldwidth];
-              outb.copy_from_slice(inb);
+          if decompressor.super_v() == 2 {
+            // We've decoded 2 lines at a time so we also need to copy two strips at a time
+            let nfields = fieldwidths.len();
+            let fieldwidth = fieldwidths[0];
+            let mut fieldstart = 0;
+            let mut inpos = 0;
+            for _ in 0..nfields {
+              let mut row = 0;
+              while row < height {
+                for _ in 0..nfields {
+                  let outpos = row*width+fieldstart;
+                  {
+                    let outb = &mut out[outpos..outpos+fieldwidth];
+                    let inb = &ljpegout[inpos..inpos+fieldwidth];
+                    outb.copy_from_slice(inb);
+                    row += 1;
+                  }
+                  let outpos = row*width+fieldstart;
+                  let outb = &mut out[outpos..outpos+fieldwidth];
+                  let inb = &ljpegout[inpos+width..inpos+width+fieldwidth];
+                  outb.copy_from_slice(inb);
+                  row += 1;
+                  inpos += fieldwidth;
+                }
+                inpos += width; // skip the line we already used
+              }
+              fieldstart += fieldwidth;
             }
-            fieldstart += fieldwidth;
-            fieldpos += fieldwidth*height;
+          } else {
+            for fieldwidth in fieldwidths {
+              for row in 0..height {
+                let outpos = row*width+fieldstart;
+                let inpos = fieldpos+row*fieldwidth;
+                let outb = &mut out[outpos..outpos+fieldwidth];
+                let inb = &ljpegout[inpos..inpos+fieldwidth];
+                outb.copy_from_slice(inb);
+              }
+              fieldstart += fieldwidth;
+              fieldpos += fieldwidth*height;
+            }
           }
 
-          (width, height, out)
+          (width, height, cpp, out)
         }
       } else if camera.find_hint("double_line") {
-        (width/2, height*2, ljpegout)
+        (width/2, height*2, cpp, ljpegout)
       } else {
-        (width, height, ljpegout)
+        (width, height, cpp, ljpegout)
       }
     };
-    ok_image(camera, width, height, try!(self.get_wb(camera)), image)
+
+    let mut img = Image::new(camera, width, height, try!(self.get_wb(camera)), image);
+    if cpp == 3 {
+      img.cpp = 3;
+      img.width /= 3;
+      img.crops = [0,0,0,0];
+      img.blacklevels = [0,0,0,0];
+      img.whitelevels = [65535,65535,65535,65535];
+    }
+    Ok(img)
   }
 }
 
@@ -116,5 +161,27 @@ impl<'a> Cr2Decoder<'a> {
       // At least the D2000 has no WB
       Ok([NAN,NAN,NAN,NAN])
     }
+  }
+
+  fn convert_to_rgb(&self, cam: &Camera, image: &mut [u16]) -> Result<(),String>{
+    let coeffs = try!(self.get_wb(cam));
+    let c1 = (1024.0*1024.0/coeffs[0]) as i32;
+    let c2 = coeffs[1] as i32;
+    let c3 = (1024.0*1024.0/coeffs[2]) as i32;
+
+    for pix in image.chunks_mut(3) {
+      let y = pix[0] as i32;
+      let cb = pix[1] as i32 - 16380;
+      let cr = pix[2] as i32 - 16380;
+
+      let r = c1 * (y + cr);
+      let g = c2 * (y + ((-778*cb - (cr<<11)) >> 12));
+      let b = c3 * (y + cb);
+
+      pix[0] = (r >> 8) as u16;
+      pix[1] = (g >> 8) as u16;
+      pix[2] = (b >> 8) as u16;
+    }
+    Ok(())
   }
 }
