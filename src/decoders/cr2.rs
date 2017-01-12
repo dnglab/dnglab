@@ -39,8 +39,8 @@ impl<'a> Decoder for Cr2Decoder<'a> {
 
     let (width, height, cpp, image) = {
       let decompressor = try!(LjpegDecompressor::new(src, true));
-      let width = decompressor.width();
-      let height = decompressor.height();
+      let mut width = decompressor.width();
+      let mut height = decompressor.height();
       let cpp = if decompressor.super_h() == 2 {3} else {1};
       let mut ljpegout = vec![0 as u16; width*height];
       try!(decompressor.decode(&mut ljpegout, 0, width, width, height));
@@ -65,6 +65,11 @@ impl<'a> Decoder for Cr2Decoder<'a> {
       // Convert the YUV in sRAWs to RGB
       if cpp == 3 {
         try!(self.convert_to_rgb(camera, &mut ljpegout));
+        if width/cpp < height {
+          let temp = width/cpp;
+          width = height*cpp;
+          height = temp;
+        }
       }
 
       // Take each of the vertical fields and put them into the right location
