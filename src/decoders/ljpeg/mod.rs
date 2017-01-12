@@ -80,8 +80,8 @@ impl SOFInfo {
         id: id,
         index: i,
         dc_tbl_num: 0,
-        super_h: subs & 0xf,
-        super_v: subs >> 4,
+        super_v: subs & 0xf,
+        super_h: subs >> 4,
       });
     }
     Ok(())
