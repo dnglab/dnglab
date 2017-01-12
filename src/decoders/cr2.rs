@@ -72,6 +72,11 @@ impl<'a> Decoder for Cr2Decoder<'a> {
         }
       }
 
+      if camera.find_hint("double_line") {
+        width /= 2;
+        height *= 2;
+      }
+
       // Take each of the vertical fields and put them into the right location
       // FIXME: Doing this at the decode would reduce about 5% in runtime but I haven't
       //        been able to do it without hairy code
@@ -134,8 +139,6 @@ impl<'a> Decoder for Cr2Decoder<'a> {
 
           (width, height, cpp, out)
         }
-      } else if camera.find_hint("double_line") {
-        (width/2, height*2, cpp, ljpegout)
       } else {
         (width, height, cpp, ljpegout)
       }
