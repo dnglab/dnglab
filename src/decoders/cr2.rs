@@ -81,8 +81,6 @@ impl<'a> Decoder for Cr2Decoder<'a> {
           }
           fieldwidths.push(canoncol.get_usize(2));
 
-          let mut fieldstart = 0;
-          let mut fieldpos = 0;
           if decompressor.super_v() == 2 {
             // We've decoded 2 lines at a time so we also need to copy two strips at a time
             let nfields = fieldwidths.len();
@@ -112,7 +110,11 @@ impl<'a> Decoder for Cr2Decoder<'a> {
               fieldstart += fieldwidth;
             }
           } else {
+            let sh = decompressor.super_h();
+            let mut fieldstart = 0;
+            let mut fieldpos = 0;
             for fieldwidth in fieldwidths {
+              let fieldwidth = fieldwidth/sh*cpp;
               for row in 0..height {
                 let outpos = row*width+fieldstart;
                 let inpos = fieldpos+row*fieldwidth;
