@@ -161,6 +161,58 @@ pub fn decode_ljpeg_420(ljpeg: &LjpegDecompressor, out: &mut [u16], width: usize
   Ok(())
 }
 
+fn set_yuv_422(out: &mut [u16], row: usize, col: usize, width: usize, y1: i32, y2: i32, cb: i32, cr: i32) {
+  let pix1 = row*width+col;
+  let pix2 = pix1+3;
+
+  out[pix1+0] = y1 as u16;
+  out[pix1+1] = cb as u16;
+  out[pix1+2] = cr as u16;
+  out[pix2+0] = y2 as u16;
+  out[pix2+1] = cb as u16;
+  out[pix2+2] = cr as u16;
+}
+
+pub fn decode_ljpeg_422(ljpeg: &LjpegDecompressor, out: &mut [u16], width: usize, height: usize) -> Result<(),String> {
+  if ljpeg.sof.width*3 < width || ljpeg.sof.height < height {
+    return Err(format!("ljpeg: trying to decode {}x{} into {}x{}",
+                       ljpeg.sof.width*3, ljpeg.sof.height,
+                       width, height).to_string())
+  }
+  let ref htable1 = ljpeg.dhts[ljpeg.sof.components[0].dc_tbl_num];
+  let ref htable2 = ljpeg.dhts[ljpeg.sof.components[1].dc_tbl_num];
+  let ref htable3 = ljpeg.dhts[ljpeg.sof.components[2].dc_tbl_num];
+  let mut pump = BitPumpJPEG::new(ljpeg.buffer);
+
+  let base_prediction = 1 << (ljpeg.sof.precision - ljpeg.point_transform -1);
+  let y1 = base_prediction + try!(htable1.huff_decode(&mut pump));
+  let y2 = y1 + try!(htable1.huff_decode(&mut pump));
+  let cb = base_prediction + try!(htable2.huff_decode(&mut pump));
+  let cr = base_prediction + try!(htable3.huff_decode(&mut pump));
+  set_yuv_422(out, 0, 0, width, y1, y2, cb, cr);
+
+  for row in 0..height {
+    let startcol = if row == 0 {6} else {0};
+    for col in (startcol..width).step(6) {
+      let pos = if col == 0 {
+        // At start of line predictor starts with first pixel of start of previous line
+        (row-1)*width
+      } else {
+        // All other cases use the last pixel in the same two lines
+        row*width+col-3
+      };
+      let (py,pcb,pcr) = (out[pos],out[pos+1],out[pos+2]);
+
+      let y1 = (py  as i32) + try!(htable1.huff_decode(&mut pump));
+      let y2 = (y1  as i32) + try!(htable1.huff_decode(&mut pump));
+      let cb = (pcb as i32) + try!(htable2.huff_decode(&mut pump));
+      let cr = (pcr as i32) + try!(htable3.huff_decode(&mut pump));
+      set_yuv_422(out, row, col, width, y1, y2, cb, cr);
+    }
+  }
+
+  Ok(())
+}
 
 pub fn decode_hasselblad(ljpeg: &LjpegDecompressor, out: &mut [u16], width: usize) -> Result<(),String> {
   // Pixels are packed two at a time, not like LJPEG:
