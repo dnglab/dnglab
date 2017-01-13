@@ -125,7 +125,7 @@ pub struct LjpegDecompressor<'a> {
 }
 
 impl<'a> LjpegDecompressor<'a> {
-  pub fn new(src: &'a [u8], use_bigtable: bool) -> Result<LjpegDecompressor, String> {
+  pub fn new(src: &'a [u8], dng_bug: bool) -> Result<LjpegDecompressor, String> {
     let mut input = ByteStream::new(src, BIG_ENDIAN);
     if try!(LjpegDecompressor::get_next_marker(&mut input, false)) != m(Marker::SOI) {
       return Err("ljpeg: Image did not start with SOI. Probably not LJPEG".to_string())
@@ -164,7 +164,7 @@ impl<'a> LjpegDecompressor<'a> {
     let mut dhts = Vec::new();
     for i in 0..4 {
       dhts.push(if dht_init[i] {
-        try!(HuffTable::new(dht_bits[i], dht_huffval[i], sof.precision, use_bigtable))
+        try!(HuffTable::new(dht_bits[i], dht_huffval[i], sof.precision, dng_bug))
       } else {
         HuffTable::empty(0)
       });

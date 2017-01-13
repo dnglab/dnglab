@@ -61,7 +61,6 @@ impl<'a> PefDecoder<'a> {
 
   fn decode_compressed(&self, src: &[u8], width: usize, height: usize) -> Result<Vec<u16>,String> {
     let mut htable = HuffTable::empty(16);
-    htable.dng_compatible = false;
 
     /* Attempt to read huffman table, if found in makernote */
     if let Some(huff) = self.tiff.find_entry(Tag::PefHuffman) {

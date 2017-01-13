@@ -42,7 +42,7 @@ impl<'a> TfrDecoder<'a> {
 
   fn decode_compressed(&self, src: &[u8], width: usize, height: usize) -> Result<Vec<u16>,String> {
     let mut out = vec![0 as u16; width*height];
-    let decompressor = try!(LjpegDecompressor::new(src, false));
+    let decompressor = try!(LjpegDecompressor::new(src, true));
     try!(decompressor.decode(&mut out, 0, width, width, height));
     Ok(out)
   }

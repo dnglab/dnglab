@@ -70,7 +70,7 @@ pub struct HuffTable {
   bigtable: Vec<i32>,
   precision: usize,
   pub use_bigtable: bool,
-  pub dng_compatible: bool,
+  pub dng_bug: bool,
   pub initialized: bool,
 }
 
@@ -86,12 +86,12 @@ impl HuffTable {
       bigtable: Vec::new(),
       precision: precision,
       use_bigtable: true,
-      dng_compatible: true,
+      dng_bug: false,
       initialized: false,
     }
   }
 
-  pub fn new(bits: [u32;17], huffval: [u32;256], precision: usize, use_bigtable: bool) -> Result<HuffTable,String> {
+  pub fn new(bits: [u32;17], huffval: [u32;256], precision: usize, dng_bug: bool) -> Result<HuffTable,String> {
     let mut tbl = HuffTable {
       bits: bits,
       huffval: huffval,
@@ -101,11 +101,12 @@ impl HuffTable {
       numbits: [0;256],
       bigtable: Vec::new(),
       precision: precision,
-      use_bigtable: false,
-      dng_compatible: true,
+      use_bigtable: true,
+      dng_bug: dng_bug,
       initialized: false,
     };
-    try!(tbl.initialize(use_bigtable));
+    // Always use big table, haven't found a situation where it doesn't help
+    try!(tbl.initialize(true));
     Ok(tbl)
   }
 
@@ -234,7 +235,7 @@ impl HuffTable {
       }
 
       if rv == 16 {
-        self.bigtable[i] = if self.dng_compatible {
+        self.bigtable[i] = if self.dng_bug {
           (-(32768 << 8)) | (16 + l as i32)
         } else {
           (-(32768 << 8)) | l as i32
@@ -307,7 +308,7 @@ impl HuffTable {
     match len {
       0 => 0,
       16 => {
-        if self.dng_compatible {
+        if self.dng_bug {
           pump.get_bits(16); // consume can fail because we haven't peeked yet
         }
         -32768
