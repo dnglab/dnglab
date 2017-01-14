@@ -168,7 +168,7 @@ impl<'a> DngDecoder<'a> {
       let offset = offsets.get_usize(0);
       let src = &self.buffer[offset..];
       let mut out = vec![0 as u16; width*height];
-      let decompressor = try!(LjpegDecompressor::new(src, false));
+      let decompressor = try!(LjpegDecompressor::new(src));
       try!(decompressor.decode(&mut out, 0, width, width, height));
       Ok(out)
     } else if let Some(offsets) = raw.find_entry(Tag::TileOffsets) {
@@ -187,7 +187,7 @@ impl<'a> DngDecoder<'a> {
         for col in 0..coltiles {
           let offset = offsets.get_usize(row*coltiles+col);
           let src = &self.buffer[offset..];
-          let decompressor = LjpegDecompressor::new(src, false).unwrap();
+          let decompressor = LjpegDecompressor::new(src).unwrap();
           let bwidth = cmp::min(width, (col+1)*twidth) - col*twidth;
           let blength = cmp::min(height, (row+1)*tlength) - row*tlength;
           // FIXME: instead of unwrap() we need to propagate the error

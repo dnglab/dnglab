@@ -40,16 +40,18 @@ struct SOFInfo {
   cps: usize,
   precision: usize,
   components: Vec<JpegComponentInfo>,
+  csfix: bool,
 }
 
 impl SOFInfo {
-  fn empty() -> SOFInfo {
+  fn empty(csfix: bool) -> SOFInfo {
     SOFInfo {
       width: 0,
       height: 0,
       cps: 0,
       precision: 0,
       components: Vec::new(),
+      csfix: csfix,
     }
   }
 
@@ -96,8 +98,9 @@ impl SOFInfo {
       return Err("ljpeg: component number mismatch in SOS".to_string())
     }
     for cs in 0..self.cps {
-      // Skip the selector as it's not always correct and nobody lists them not in order
-      input.get_u8();
+      // At least some MOS cameras have this broken
+      let readcs = input.get_u8() as usize;
+      let cs = if self.csfix {cs} else {readcs};
       let component = match self.components.iter_mut().find(|&&mut c| c.id == cs) {
         Some(val) => val,
         None => return Err(format!("ljpeg: invalid component selector {}", cs).to_string())
@@ -125,13 +128,17 @@ pub struct LjpegDecompressor<'a> {
 }
 
 impl<'a> LjpegDecompressor<'a> {
-  pub fn new(src: &'a [u8], dng_bug: bool) -> Result<LjpegDecompressor, String> {
+  pub fn new(src: &'a [u8]) -> Result<LjpegDecompressor, String> {
+    LjpegDecompressor::new_full(src, false, false)
+  }
+
+  pub fn new_full(src: &'a [u8], dng_bug: bool, csfix: bool) -> Result<LjpegDecompressor, String> {
     let mut input = ByteStream::new(src, BIG_ENDIAN);
     if try!(LjpegDecompressor::get_next_marker(&mut input, false)) != m(Marker::SOI) {
       return Err("ljpeg: Image did not start with SOI. Probably not LJPEG".to_string())
     }
 
-    let mut sof = SOFInfo::empty();
+    let mut sof = SOFInfo::empty(csfix);
     let mut dht_init = [false;4];
     let mut dht_bits = [[0 as u32;17];4];
     let mut dht_huffval = [[0 as u32;256];4];

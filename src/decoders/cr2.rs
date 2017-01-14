@@ -38,7 +38,7 @@ impl<'a> Decoder for Cr2Decoder<'a> {
     let src = &self.buffer[offset..];
 
     let (width, height, cpp, image) = {
-      let decompressor = try!(LjpegDecompressor::new(src, true));
+      let decompressor = try!(LjpegDecompressor::new(src));
       let mut width = decompressor.width();
       let mut height = decompressor.height();
       let cpp = if decompressor.super_h() == 2 {3} else {1};
