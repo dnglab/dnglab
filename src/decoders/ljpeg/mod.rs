@@ -258,6 +258,36 @@ impl<'a> LjpegDecompressor<'a> {
     }
   }
 
+  pub fn decode_leaf(&self, width: usize, height: usize) -> Result<Vec<u16>,String> {
+    let mut offsets = vec![0 as usize; 1];
+    let mut input = ByteStream::new(self.buffer, BIG_ENDIAN);
+    loop {
+      match LjpegDecompressor::get_next_marker(&mut input, true) {
+        Ok(marker) => {
+          if marker == m(Marker::EOI) {
+            break;
+          }
+          offsets.push(input.get_pos());
+        },
+        Err(_) => { break },
+      }
+    }
+    let nstrips = (height-1)/8 + 1;
+    if offsets.len() != nstrips {
+      return Err(format!("MOS: expecting {} strips found {}", nstrips, offsets.len()).to_string())
+    }
+
+    let ref htable1 = self.dhts[self.sof.components[0].dc_tbl_num];
+    let ref htable2 = self.dhts[self.sof.components[1].dc_tbl_num];
+    let bpred = 1 << (self.sof.precision - self.point_transform -1);
+    Ok(decode_threaded_multiline(width, height, 8, &(|strip: &mut [u16], block| {
+      let block = block / 8;
+      let offset = offsets[block];
+      let nlines = strip.len()/width;
+      decode_leaf_strip(&self.buffer[offset..], strip, width, nlines, htable1, htable2, bpred).unwrap();
+    })))
+  }
+
   pub fn width(&self) -> usize { self.sof.width * self.sof.cps }
   pub fn height(&self) -> usize { self.sof.height }
   pub fn super_v(&self) -> usize { self.sof.components[0].super_v }

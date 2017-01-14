@@ -1,6 +1,7 @@
 use decoders::*;
 use decoders::tiff::*;
 use decoders::basics::*;
+use decoders::ljpeg::*;
 use std::f32::NAN;
 
 #[derive(Debug, Clone)]
@@ -41,6 +42,9 @@ impl<'a> Decoder for MosDecoder<'a> {
           decode_16be(src, width, height)
         }
       },
+      7 => {
+        try!(self.decode_compressed(src, width, height))
+      },
       x => return Err(format!("MOS: unsupported compression {}", x).to_string())
     };
 
@@ -79,5 +83,10 @@ impl<'a> MosDecoder<'a> {
     let end   = try!(xmp.find(&format!("</tiff:{}>",tag)).ok_or(error.clone()));
 
     Ok(xmp[start+tag.len()+7..end].to_string())
+  }
+
+  pub fn decode_compressed(&self, src: &[u8], width: usize, height: usize) -> Result<Vec<u16>,String> {
+    let decompressor = try!(LjpegDecompressor::new(src, true));
+    decompressor.decode_leaf(width, height)
   }
 }

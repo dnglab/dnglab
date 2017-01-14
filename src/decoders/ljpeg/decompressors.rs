@@ -1,4 +1,5 @@
 use decoders::ljpeg::*;
+use decoders::ljpeg::huffman::*;
 use decoders::basics::*;
 use itertools::Itertools;
 
@@ -279,6 +280,32 @@ pub fn decode_hasselblad(ljpeg: &LjpegDecompressor, out: &mut [u16], width: usiz
       p2 += htable.huff_diff(&mut pump, len2);
       o[0] = p1 as u16;
       o[1] = p2 as u16;
+    }
+  }
+
+  Ok(())
+}
+
+pub fn decode_leaf_strip(src: &[u8], out: &mut [u16], width: usize, height: usize, htable1: &HuffTable, htable2: &HuffTable, bpred: i32) -> Result<(),String> {
+  let mut pump = BitPumpJPEG::new(src);
+  out[0] = (bpred + try!(htable1.huff_decode(&mut pump))) as u16;
+  out[1] = (bpred + try!(htable2.huff_decode(&mut pump))) as u16;
+  for row in 0..height {
+    let startcol = if row == 0 {2} else {0};
+    for col in (startcol..width).step(2) {
+      let pos = if col == 0 {
+        // At start of line predictor starts with start of previous line
+        (row-1)*width
+      } else {
+        // All other cases use the two previous pixels in the same line
+        row*width+col-2
+      };
+      let (p1,p2) = (out[pos],out[pos+1]);
+
+      let diff1 = try!(htable1.huff_decode(&mut pump));
+      let diff2 = try!(htable2.huff_decode(&mut pump));
+      out[row*width+col]   = ((p1 as i32) + diff1) as u16;
+      out[row*width+col+1] = ((p2 as i32) + diff2) as u16;
     }
   }
 
