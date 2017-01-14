@@ -4,6 +4,7 @@ clean_make = "Pentax"
 clean_model = "Optio S4"
 blackpoint = 0
 whitepoint = 3968
+# Matrix stolen from Canon A610 because it looks ok...
 color_matrix = [15591, -6402, -1592, -5365, 13198, 2168, -1300, 1824, 5075]
 color_pattern = "RGGB"
 crops = [0,22,0,0]
