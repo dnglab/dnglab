@@ -1,0 +1,11 @@
+make = "Canon"
+model = "Canon EOS 1200D"
+clean_make = "Canon"
+clean_model = "EOS 1200D"
+blackpoint = 2046
+whitepoint = 12279
+color_matrix = [6461, -907, -882, -4300, 12184, 2378, -819, 1944, 5931]
+color_pattern = "GBRG"
+crops = [54,0,0,146]
+blackareav = [0, 140]
+blackareah = [4, 44]

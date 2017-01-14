@@ -1,0 +1,9 @@
+make = "Canon"
+model = "Canon EOS 750D"
+clean_make = "Canon"
+clean_model = "EOS 750D"
+blackpoint = 2047
+whitepoint = 11765
+color_matrix = [6362, -823, -847, -4426, 12109, 2616, -743, 1857, 5635]
+color_pattern = "RGGB"
+crops = [34,0,0,72]

@@ -1,0 +1,11 @@
+make = "Canon"
+model = "Canon EOS 600D"
+clean_make = "Canon"
+clean_model = "EOS 600D"
+blackpoint = 2048
+whitepoint = 13926
+color_matrix = [6461, -907, -882, -4300, 12184, 2378, -819, 1944, 5931]
+color_pattern = "GBRG"
+crops = [54,0,0,146]
+blackareav = [0, 140]
+blackareah = [4, 44]
