@@ -42,7 +42,7 @@ impl<'a> Decoder for MosDecoder<'a> {
           decode_16be(src, width, height)
         }
       },
-      7 => {
+      7 | 99 => {
         try!(self.decode_compressed(src, width, height))
       },
       x => return Err(format!("MOS: unsupported compression {}", x).to_string())

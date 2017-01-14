@@ -73,9 +73,8 @@ impl SOFInfo {
     for i in 0..self.cps {
       let id = input.get_u8() as usize;
       let subs = input.get_u8() as usize;
-      if input.get_u8() != 0 {
-        return Err("ljpeg: Quantized components not supported.".to_string())
-      }
+      input.get_u8(); // Skip info about quantized
+
       self.components.push(JpegComponentInfo {
         id: id,
         index: i,
@@ -96,11 +95,12 @@ impl SOFInfo {
     if self.cps != soscps {
       return Err("ljpeg: component number mismatch in SOS".to_string())
     }
-    for _ in 0..self.cps {
-      let cs = input.get_u8() as usize;
+    for cs in 0..self.cps {
+      // Skip the selector as it's not always correct and nobody lists them not in order
+      input.get_u8();
       let component = match self.components.iter_mut().find(|&&mut c| c.id == cs) {
         Some(val) => val,
-        None => return Err("ljpeg: invalid component selector".to_string())
+        None => return Err(format!("ljpeg: invalid component selector {}", cs).to_string())
       };
       let td = (input.get_u8() as usize) >> 4;
       if td > 3 {
