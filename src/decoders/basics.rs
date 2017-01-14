@@ -172,6 +172,21 @@ pub fn decode_12be_msb16(buf: &[u8], width: usize, height: usize) -> Vec<u16> {
   out
 }
 
+pub fn decode_12le_16bitaligned(buf: &[u8], width: usize, height: usize) -> Vec<u16> {
+  let stride = ((width*12/8+1) >> 1) << 1;
+  decode_threaded(width, height, &(|out: &mut [u16], row| {
+    let inb = &buf[row*stride..];
+    for (o, i) in out.chunks_mut(2).zip(inb.chunks(3)) {
+      let g1:  u16 = i[ 0] as u16;
+      let g2:  u16 = i[ 1] as u16;
+      let g3:  u16 = i[ 2] as u16;
+
+      o[0] = (g1 << 4) | (g2 >> 4);
+      o[1] = (g2 & 0x0f) << 8 | g3;
+    }
+  }))
+}
+
 pub fn decode_12be_msb32(buf: &[u8], width: usize, height: usize) -> Vec<u16> {
   let mut out: Vec<u16> = vec![0; width*height];
 
