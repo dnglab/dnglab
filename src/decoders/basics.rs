@@ -610,7 +610,8 @@ impl<'a> BitPump for BitPumpMSB32<'a> {
 impl<'a> BitPump for BitPumpJPEG<'a> {
   fn peek_bits(&mut self, num: u32) -> u32 {
     if num > self.nbits && !self.finished {
-      if self.buffer[self.pos+0] != 0xff &&
+      if self.pos < self.buffer.len()-4 &&
+         self.buffer[self.pos+0] != 0xff &&
          self.buffer[self.pos+1] != 0xff &&
          self.buffer[self.pos+2] != 0xff &&
          self.buffer[self.pos+3] != 0xff {
@@ -623,15 +624,20 @@ impl<'a> BitPump for BitPumpJPEG<'a> {
         let mut read_bytes = 0;
         while read_bytes < 4 && !self.finished {
           let byte = {
-            let nextbyte = self.buffer[self.pos];
-            if nextbyte != 0xff {
-              nextbyte
-            } else if self.buffer[self.pos+1] == 0x00 {
-              self.pos += 1; // Skip the extra byte used to mark 255
-              nextbyte
-            } else {
+            if self.pos >= self.buffer.len() {
               self.finished = true;
               0
+            } else {
+              let nextbyte = self.buffer[self.pos];
+              if nextbyte != 0xff {
+                nextbyte
+              } else if self.buffer[self.pos+1] == 0x00 {
+                self.pos += 1; // Skip the extra byte used to mark 255
+                nextbyte
+              } else {
+                self.finished = true;
+                0
+              }
             }
           };
           self.bits = (self.bits << 8) | (byte as u64);
