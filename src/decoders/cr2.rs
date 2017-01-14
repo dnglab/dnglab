@@ -181,16 +181,16 @@ impl<'a> Cr2Decoder<'a> {
 
     for pix in image.chunks_mut(3) {
       let y = pix[0] as i32;
-      let cb = pix[1] as i32 - 16380;
-      let cr = pix[2] as i32 - 16380;
+      let cb = pix[1] as i32 - 16383;
+      let cr = pix[2] as i32 - 16383;
 
       let r = c1 * (y + cr);
       let g = c2 * (y + ((-778*cb - (cr<<11)) >> 12));
       let b = c3 * (y + cb);
 
-      pix[0] = (r >> 8) as u16;
-      pix[1] = (g >> 8) as u16;
-      pix[2] = (b >> 8) as u16;
+      pix[0] = clampbits(r >> 8, 16) as u16;
+      pix[1] = clampbits(g >> 8, 16) as u16;
+      pix[2] = clampbits(b >> 8, 16) as u16;
     }
     Ok(())
   }
