@@ -274,7 +274,8 @@ impl HuffTable {
     }
 
     let len = try!(self.huff_len(pump));
-    Ok(self.huff_diff(pump, len))
+    let diff = self.huff_diff(pump, len);
+    Ok(diff)
   }
 
   pub fn huff_len(&self, pump: &mut BitPump) -> Result<u32,String> {
@@ -314,13 +315,12 @@ impl HuffTable {
         -32768
       },
       len => {
-        // Section F.2.2.1: decode the difference and
-        // Figure F.12: extend sign bit
-        let mut x: i32 = pump.get_bits(len as u32) as i32;
-        if (x & (1 << (len - 1))) == 0 {
-          x -= (1 << len) - 1;
+        // decode the difference and extend sign bit
+        let mut diff = pump.get_bits(len) as i32;
+        if (diff & (1 << (len - 1))) == 0 {
+          diff -= (1 << len) - 1;
         }
-        x
+        diff
       },
     }
   }
