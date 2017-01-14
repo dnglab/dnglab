@@ -43,7 +43,7 @@ impl<'a> Decoder for MosDecoder<'a> {
         }
       },
       7 | 99 => {
-        try!(self.decode_compressed(src, width, height))
+        try!(self.decode_compressed(camera, src, width, height))
       },
       x => return Err(format!("MOS: unsupported compression {}", x).to_string())
     };
@@ -85,8 +85,18 @@ impl<'a> MosDecoder<'a> {
     Ok(xmp[start+tag.len()+7..end].to_string())
   }
 
-  pub fn decode_compressed(&self, src: &[u8], width: usize, height: usize) -> Result<Vec<u16>,String> {
+  pub fn decode_compressed(&self, cam: &Camera, src: &[u8], width: usize, height: usize) -> Result<Vec<u16>,String> {
     let decompressor = try!(LjpegDecompressor::new(src, true));
-    decompressor.decode_leaf(width, height)
+    let ljpegout = try!(decompressor.decode_leaf(width, height));
+    if cam.find_hint("interlaced") {
+      let mut out = vec![0 as u16; width*height];
+      for (row,line) in ljpegout.chunks(width).enumerate() {
+        let orow = if row & 1 == 1 {height-1-row/2} else {row/2};
+        out[orow*width .. (orow+1)*width].copy_from_slice(line);
+      }
+      Ok(out)
+    } else {
+      Ok(ljpegout)
+    }
   }
 }
