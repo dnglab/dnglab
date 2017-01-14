@@ -75,8 +75,7 @@ impl<'a> Decoder for Cr2Decoder<'a> {
           width = height*cpp;
           height = temp;
         }
-      }
-      if camera.find_hint("double_line") {
+      } else if camera.find_hint("double_line") {
         width /= 2;
         height *= 2;
       }
