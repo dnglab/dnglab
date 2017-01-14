@@ -36,10 +36,11 @@ impl<'a> Decoder for DngDecoder<'a> {
     let raw = ifds[0];
     let width = fetch_tag!(raw, Tag::ImageWidth).get_usize(0);
     let height = fetch_tag!(raw, Tag::ImageLength).get_usize(0);
+    let cpp = fetch_tag!(raw, Tag::SamplesPerPixel).get_usize(0);
 
     let image = match fetch_tag!(raw, Tag::Compression).get_u32(0) {
-      1 => try!(self.decode_uncompressed(raw, width, height)),
-      7 => try!(self.decode_compressed(raw, width, height)),
+      1 => try!(self.decode_uncompressed(raw, width*cpp, height)),
+      7 => try!(self.decode_compressed(raw, width*cpp, height, cpp)),
       c => return Err(format!("Don't know how to read DNGs with compression {}", c).to_string()),
     };
 
@@ -64,13 +65,13 @@ impl<'a> Decoder for DngDecoder<'a> {
       clean_model: clean_model,
       width: width,
       height: height,
-      cpp: 1,
+      cpp: cpp,
       wb_coeffs: try!(self.get_wb()),
       data: image.into_boxed_slice(),
       blacklevels: try!(self.get_blacklevels(raw)),
       whitelevels: try!(self.get_whitelevels(raw)),
       xyz_to_cam: try!(self.get_color_matrix()),
-      cfa: try!(self.get_cfa(raw)),
+      cfa: if cpp == 3 {CFA::new("")} else {try!(self.get_cfa(raw))},
       crops: try!(self.get_crops(raw, width, height)),
     })
   }
@@ -159,7 +160,7 @@ impl<'a> DngDecoder<'a> {
     }
   }
 
-  pub fn decode_compressed(&self, raw: &TiffIFD, width: usize, height: usize) -> Result<Vec<u16>,String> {
+  pub fn decode_compressed(&self, raw: &TiffIFD, width: usize, height: usize, cpp: usize) -> Result<Vec<u16>,String> {
     if let Some(offsets) = raw.find_entry(Tag::StripOffsets) { // We're in a normal offset situation
       if offsets.count() != 1 {
         return Err("DNG: files with more than one slice not supported yet".to_string())
@@ -172,7 +173,7 @@ impl<'a> DngDecoder<'a> {
       Ok(out)
     } else if let Some(offsets) = raw.find_entry(Tag::TileOffsets) {
       // They've gone with tiling
-      let twidth = fetch_tag!(raw, Tag::TileWidth).get_usize(0);
+      let twidth = fetch_tag!(raw, Tag::TileWidth).get_usize(0)*cpp;
       let tlength = fetch_tag!(raw, Tag::TileLength).get_usize(0);
       let coltiles = (width-1)/twidth + 1;
       let rowtiles = (height-1)/tlength + 1;

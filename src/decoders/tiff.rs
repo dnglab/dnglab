@@ -31,6 +31,7 @@ pub enum Tag {
   Make             = 0x010F,
   Model            = 0x0110,
   StripOffsets     = 0x0111,
+  SamplesPerPixel  = 0x0115,
   StripByteCounts  = 0x0117,
   PanaOffsets      = 0x0118,
   GrayResponse     = 0x0123,

@@ -248,6 +248,7 @@ impl<'a> LjpegDecompressor<'a> {
       1 => {
         match self.sof.cps {
           2 => decode_ljpeg_2components(self, out, x, stripwidth, width, height),
+          3 => decode_ljpeg_3components(self, out, x, stripwidth, width, height),
           4 => decode_ljpeg_4components(self, out, width, height),
           c => return Err(format!("ljpeg: {} component files not supported", c).to_string()),
         }
