@@ -67,16 +67,16 @@ impl<'a> Decoder for Cr2Decoder<'a> {
       // Convert the YUV in sRAWs to RGB
       if cpp == 3 {
         try!(self.convert_to_rgb(camera, &mut ljpegout));
+        if raw.has_entry(Tag::ImageWidth) {
+          width = fetch_tag!(raw, Tag::ImageWidth).get_usize(0) * cpp;
+          height = fetch_tag!(raw, Tag::ImageLength).get_usize(0) ;
+        } else if width/cpp < height {
+          let temp = width/cpp;
+          width = height*cpp;
+          height = temp;
+        }
       }
-
-      if raw.has_entry(Tag::ImageWidth) {
-        width = fetch_tag!(raw, Tag::ImageWidth).get_usize(0) * cpp;
-        height = fetch_tag!(raw, Tag::ImageLength).get_usize(0) ;
-      } else if width/cpp < height {
-        let temp = width/cpp;
-        width = height*cpp;
-        height = temp;
-      } else if camera.find_hint("double_line") {
+      if camera.find_hint("double_line") {
         width /= 2;
         height *= 2;
       }
