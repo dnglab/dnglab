@@ -3,6 +3,7 @@ use decoders::tiff::*;
 use decoders::basics::*;
 use decoders::ljpeg::*;
 use std::f32::NAN;
+use itertools::Itertools;
 
 #[derive(Debug, Clone)]
 pub struct Cr2Decoder<'a> {
@@ -39,7 +40,8 @@ impl<'a> Decoder for Cr2Decoder<'a> {
 
     let (width, height, cpp, image) = {
       let decompressor = try!(LjpegDecompressor::new(src));
-      let mut width = decompressor.width();
+      let ljpegwidth = decompressor.width();
+      let mut width = ljpegwidth;
       let mut height = decompressor.height();
       let cpp = if decompressor.super_h() == 2 {3} else {1};
       let mut ljpegout = vec![0 as u16; width*height];
@@ -100,24 +102,19 @@ impl<'a> Decoder for Cr2Decoder<'a> {
             let mut fieldstart = 0;
             let mut inpos = 0;
             for _ in 0..nfields {
-              let mut row = 0;
-              while row < height {
-                for _ in 0..nfields {
-                  let outpos = row*width+fieldstart;
-                  {
-                    let outb = &mut out[outpos..outpos+fieldwidth];
-                    let inb = &ljpegout[inpos..inpos+fieldwidth];
-                    outb.copy_from_slice(inb);
-                    row += 1;
+              for row in (0..height).step(2) {
+                for col in (0..fieldwidth).step(3) {
+                  let outpos = row*width+fieldstart+col;
+                  out[outpos..outpos+3].copy_from_slice(&ljpegout[inpos..inpos+3]);
+                  let outpos = (row+1)*width+fieldstart+col;
+                  let inpos2 = inpos+ljpegwidth;
+                  out[outpos..outpos+3].copy_from_slice(&ljpegout[inpos2..inpos2+3]);
+                  inpos += 3;
+                  if inpos % ljpegwidth == 0 {
+                    // we've used a full input line and we're reading 2 by 2 so skip one
+                    inpos += ljpegwidth;
                   }
-                  let outpos = row*width+fieldstart;
-                  let outb = &mut out[outpos..outpos+fieldwidth];
-                  let inb = &ljpegout[inpos+width..inpos+width+fieldwidth];
-                  outb.copy_from_slice(inb);
-                  row += 1;
-                  inpos += fieldwidth;
                 }
-                inpos += width; // skip the line we already used
               }
               fieldstart += fieldwidth;
             }
