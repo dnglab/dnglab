@@ -12,8 +12,8 @@ fn usage() {
 }
 
 static STEP_ITERATIONS: u32 = 10;
-static MIN_ITERATIONS: u32 = 100;
-static MIN_TIME: u64 = 10000000000;
+static MIN_ITERATIONS: u32 = 25;
+static MIN_TIME: u64 = 5000000000;
 
 fn error(err: &str) {
   println!("ERROR: {}", err);
