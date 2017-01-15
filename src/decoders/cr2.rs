@@ -177,8 +177,10 @@ impl<'a> Cr2Decoder<'a> {
     let c2 = coeffs[1] as i32;
     let c3 = (1024.0*1024.0/coeffs[2]) as i32;
 
+    let yoffset = if cam.find_hint("40d_yuv") { 512 } else { 0 };
+
     for pix in image.chunks_mut(3) {
-      let y = pix[0] as i32;
+      let y = pix[0] as i32 - yoffset;
       let cb = pix[1] as i32 - 16383;
       let cr = pix[2] as i32 - 16383;
 
