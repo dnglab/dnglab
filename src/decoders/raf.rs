@@ -21,7 +21,7 @@ impl<'a> RafDecoder<'a> {
 }
 
 impl<'a> Decoder for RafDecoder<'a> {
-  fn image(&self) -> Result<Image,String> {
+  fn image(&self) -> Result<RawImage,String> {
     let camera = try!(self.rawloader.check_supported(&self.tiff));
     let raw = fetch_ifd!(&self.tiff, Tag::RafOffsets);
     let (width,height) = if raw.has_entry(Tag::RafImageWidth) {
@@ -62,7 +62,7 @@ impl<'a> Decoder for RafDecoder<'a> {
 
     if camera.find_hint("fuji_rotation") || camera.find_hint("fuji_rotation_alt") {
       let (width, height, image) = RafDecoder::rotate_image(&image, camera, width, height);
-      Ok(Image {
+      Ok(RawImage {
         make: camera.make.clone(),
         model: camera.model.clone(),
         clean_make: camera.clean_make.clone(),

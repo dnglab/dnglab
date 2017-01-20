@@ -23,7 +23,7 @@ impl<'a> Cr2Decoder<'a> {
 }
 
 impl<'a> Decoder for Cr2Decoder<'a> {
-  fn image(&self) -> Result<Image,String> {
+  fn image(&self) -> Result<RawImage,String> {
     let camera = try!(self.rawloader.check_supported(&self.tiff));
     let (raw, offset) = {
       if let Some(raw) = self.tiff.find_first_ifd(Tag::Cr2Id) {
@@ -142,7 +142,7 @@ impl<'a> Decoder for Cr2Decoder<'a> {
       }
     };
 
-    let mut img = Image::new(camera, width, height, try!(self.get_wb(camera)), image);
+    let mut img = RawImage::new(camera, width, height, try!(self.get_wb(camera)), image);
     if cpp == 3 {
       img.cpp = 3;
       img.width /= 3;

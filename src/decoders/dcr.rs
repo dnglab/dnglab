@@ -23,7 +23,7 @@ impl<'a> DcrDecoder<'a> {
 }
 
 impl<'a> Decoder for DcrDecoder<'a> {
-  fn image(&self) -> Result<Image,String> {
+  fn image(&self) -> Result<RawImage,String> {
     let camera = try!(self.rawloader.check_supported(&self.tiff));
     let raw = fetch_ifd!(&self.tiff, Tag::CFAPattern);
     let width = fetch_tag!(raw, Tag::ImageWidth).get_usize(0);

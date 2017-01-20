@@ -22,7 +22,7 @@ impl<'a> AriDecoder<'a> {
 }
 
 impl<'a> Decoder for AriDecoder<'a> {
-  fn image(&self) -> Result<Image,String> {
+  fn image(&self) -> Result<RawImage,String> {
     let offset = LEu32(self.buffer, 8) as usize;
     let width = LEu32(self.buffer, 20) as usize;
     let height = LEu32(self.buffer, 24) as usize;

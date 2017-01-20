@@ -1,8 +1,8 @@
-use decoders::Image;
+use decoders::RawImage;
 use imageops::OpBuffer;
 use std::cmp;
 
-pub fn base(_: &Image, buf: &mut OpBuffer) {
+pub fn base(_: &RawImage, buf: &mut OpBuffer) {
   let xs = [0.0, 0.30, 0.5, 0.70, 1.0];
   let ys = [0.0, 0.25, 0.5, 0.75, 1.0];
   let func = SplineFunc::new(&xs, &ys);

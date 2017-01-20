@@ -2,7 +2,7 @@ use decoders::*;
 use decoders::cfa::*;
 
 #[derive(Debug, Clone)]
-pub struct Image {
+pub struct RawImage {
   pub make: String,
   pub model: String,
   pub clean_make: String,
@@ -19,8 +19,8 @@ pub struct Image {
   pub crops: [usize;4],
 }
 
-impl Image {
-  pub fn new(camera: &Camera, width: usize, height: usize, wb_coeffs: [f32;4], image: Vec<u16>) -> Image {
+impl RawImage {
+  pub fn new(camera: &Camera, width: usize, height: usize, wb_coeffs: [f32;4], image: Vec<u16>) -> RawImage {
     let blacks = if camera.blackareah.1 != 0 || camera.blackareav.1 != 0 {
       let mut avg = [0 as f32; 4];
       let mut count = [0 as f32; 4];
@@ -46,7 +46,7 @@ impl Image {
       camera.blacklevels
     };
 
-    Image {
+    RawImage {
       make: camera.make.clone(),
       model: camera.model.clone(),
       clean_make: camera.clean_make.clone(),

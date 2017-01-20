@@ -6,13 +6,13 @@ extern crate num;
 extern crate itertools;
 
 #[doc(hidden)] pub mod decoders;
-pub use decoders::Image;
+pub use decoders::RawImage;
 #[doc(hidden)] pub mod imageops;
 
 lazy_static! {
   static ref LOADER: decoders::RawLoader = decoders::RawLoader::new();
 }
 
-pub fn decode(path: &str) -> Result<Image, String> {
+pub fn decode(path: &str) -> Result<RawImage,String> {
   LOADER.decode_safe(path)
 }

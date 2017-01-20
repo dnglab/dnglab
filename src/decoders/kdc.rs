@@ -21,7 +21,7 @@ impl<'a> KdcDecoder<'a> {
 }
 
 impl<'a> Decoder for KdcDecoder<'a> {
-  fn image(&self) -> Result<Image,String> {
+  fn image(&self) -> Result<RawImage,String> {
     let camera = try!(self.rawloader.check_supported(&self.tiff));
     let width = fetch_tag!(self.tiff, Tag::KdcWidth).get_usize(0)+80;
     let height = fetch_tag!(self.tiff, Tag::KdcLength).get_usize(0)+70;

@@ -1,7 +1,7 @@
-use decoders::Image;
+use decoders::RawImage;
 use imageops::OpBuffer;
 
-pub fn camera_to_lab(img: &Image, inb: &OpBuffer) -> OpBuffer {
+pub fn camera_to_lab(img: &RawImage, inb: &OpBuffer) -> OpBuffer {
   let cmatrix = img.cam_to_xyz();
 
   inb.process_into_new(3, &(|outb: &mut [f32], inb: &[f32]| {
@@ -24,7 +24,7 @@ pub fn camera_to_lab(img: &Image, inb: &OpBuffer) -> OpBuffer {
   }))
 }
 
-pub fn lab_to_rec709(_: &Image, buf: &mut OpBuffer) {
+pub fn lab_to_rec709(_: &RawImage, buf: &mut OpBuffer) {
   let cmatrix = xyz_to_rec709_matrix();
 
   buf.mutate_lines(&(|line: &mut [f32], _| {

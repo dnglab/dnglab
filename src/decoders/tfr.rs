@@ -21,7 +21,7 @@ impl<'a> TfrDecoder<'a> {
 }
 
 impl<'a> Decoder for TfrDecoder<'a> {
-  fn image(&self) -> Result<Image,String> {
+  fn image(&self) -> Result<RawImage,String> {
     let camera = try!(self.rawloader.check_supported(&self.tiff));
     let raw = fetch_ifd!(&self.tiff, Tag::WhiteLevel);
     let width = fetch_tag!(raw, Tag::ImageWidth).get_usize(0);

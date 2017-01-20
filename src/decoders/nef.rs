@@ -97,7 +97,7 @@ impl<'a> NefDecoder<'a> {
 }
 
 impl<'a> Decoder for NefDecoder<'a> {
-  fn image(&self) -> Result<Image,String> {
+  fn image(&self) -> Result<RawImage,String> {
     let raw = fetch_ifd!(&self.tiff, Tag::CFAPattern);
     let mut width = fetch_tag!(raw, Tag::ImageWidth).get_usize(0);
     let height = fetch_tag!(raw, Tag::ImageLength).get_usize(0);
@@ -141,7 +141,7 @@ impl<'a> Decoder for NefDecoder<'a> {
       }
     };
 
-    let mut img = Image::new(camera, width, height, try!(self.get_wb()), image);
+    let mut img = RawImage::new(camera, width, height, try!(self.get_wb()), image);
     if cpp == 3 {
       img.cpp = 3;
       img.blacklevels = [0,0,0,0];

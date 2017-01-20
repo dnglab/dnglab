@@ -23,7 +23,7 @@ impl<'a> ArwDecoder<'a> {
 }
 
 impl<'a> Decoder for ArwDecoder<'a> {
-  fn image(&self) -> Result<Image,String> {
+  fn image(&self) -> Result<RawImage,String> {
     let camera = try!(self.rawloader.check_supported(&self.tiff));
     let data = self.tiff.find_ifds_with_tag(Tag::StripOffsets);
     if data.len() == 0 {
@@ -74,7 +74,7 @@ impl<'a> Decoder for ArwDecoder<'a> {
 }
 
 impl<'a> ArwDecoder<'a> {
-  fn image_a100(&self, camera: &Camera) -> Result<Image,String> {
+  fn image_a100(&self, camera: &Camera) -> Result<RawImage,String> {
     // We've caught the elusive A100 in the wild, a transitional format
     // between the simple sanity of the MRW custom format and the wordly
     // wonderfullness of the Tiff-based ARW format, let's shoot from the hip
@@ -111,7 +111,7 @@ impl<'a> ArwDecoder<'a> {
     ok_image(camera, width, height, wb_coeffs, image)
   }
 
-  fn image_srf(&self, camera: &Camera) -> Result<Image,String> {
+  fn image_srf(&self, camera: &Camera) -> Result<RawImage,String> {
     let data = self.tiff.find_ifds_with_tag(Tag::ImageWidth);
     if data.len() == 0 {
       return Err("ARW: Couldn't find the data IFD!".to_string())

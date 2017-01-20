@@ -8,7 +8,7 @@ pub mod colorspaces;
 pub mod curves;
 pub mod gamma;
 
-use decoders::Image;
+use decoders::RawImage;
 
 extern crate time;
 
@@ -58,7 +58,7 @@ fn do_timing<O, F: FnMut() -> O>(name: &str, mut closure: F) -> O {
   ret
 }
 
-pub fn simple_decode (img: &Image, maxwidth: usize, maxheight: usize) -> OpBuffer {
+pub fn simple_decode (img: &RawImage, maxwidth: usize, maxheight: usize) -> OpBuffer {
   // Demosaic into 4 channel f32 (RGB or RGBE)
   let mut channel4 = do_timing("demosaic", ||demosaic::demosaic_and_scale(img, maxwidth, maxheight));
 

@@ -1,7 +1,7 @@
-use decoders::Image;
+use decoders::RawImage;
 use imageops::OpBuffer;
 
-pub fn gamma(_: &Image, buf: &mut OpBuffer) {
+pub fn gamma(_: &RawImage, buf: &mut OpBuffer) {
   let g: f32 = 0.45;
   let f: f32 = 0.099;
   let min: f32 = 0.018;

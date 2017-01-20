@@ -136,7 +136,7 @@ impl<'a> CrwDecoder<'a> {
 }
 
 impl<'a> Decoder for CrwDecoder<'a> {
-  fn image(&self) -> Result<Image,String> {
+  fn image(&self) -> Result<RawImage,String> {
     let makemodel = fetch_tag!(self.ciff, CiffTag::MakeModel).get_strings();
     if makemodel.len() < 2 {
       return Err("CRW: MakeModel tag needs to have 2 strings".to_string())

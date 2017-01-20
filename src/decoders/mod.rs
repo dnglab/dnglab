@@ -60,7 +60,7 @@ pub use self::image::*;
 pub static CAMERAS_TOML: &'static str = include_str!("../../data/cameras/all.toml");
 
 pub trait Decoder {
-  fn image(&self) -> Result<Image, String>;
+  fn image(&self) -> Result<RawImage, String>;
 }
 
 #[derive(Debug, Clone)]
@@ -184,12 +184,12 @@ impl Camera {
   }
 }
 
-pub fn ok_image(camera: &Camera, width: usize, height: usize, wb_coeffs: [f32;4], image: Vec<u16>) -> Result<Image,String> {
-  Ok(Image::new(camera, width, height, wb_coeffs, image))
+pub fn ok_image(camera: &Camera, width: usize, height: usize, wb_coeffs: [f32;4], image: Vec<u16>) -> Result<RawImage,String> {
+  Ok(RawImage::new(camera, width, height, wb_coeffs, image))
 }
 
-pub fn ok_image_with_blacklevels(camera: &Camera, width: usize, height: usize, wb_coeffs: [f32;4], blacks: [u16;4], image: Vec<u16>) -> Result<Image,String> {
-  let mut img = Image::new(camera, width, height, wb_coeffs, image);
+pub fn ok_image_with_blacklevels(camera: &Camera, width: usize, height: usize, wb_coeffs: [f32;4], blacks: [u16;4], image: Vec<u16>) -> Result<RawImage,String> {
+  let mut img = RawImage::new(camera, width, height, wb_coeffs, image);
   img.blacklevels = blacks;
   Ok(img)
 }
@@ -331,13 +331,13 @@ impl RawLoader {
     self.check_supported_with_mode(tiff, "")
   }
 
-  pub fn decode(&self, reader: &mut Read) -> Result<Image, String> {
+  pub fn decode(&self, reader: &mut Read) -> Result<RawImage,String> {
     let buffer = try!(Buffer::new(reader));
     let decoder = try!(self.get_decoder(&buffer));
     decoder.image()
   }
 
-  pub fn decode_safe(&self, path: &str) -> Result<Image, String> {
+  pub fn decode_safe(&self, path: &str) -> Result<RawImage,String> {
     match panic::catch_unwind(|| {
       let mut f = match File::open(path) {
         Ok(val) => val,

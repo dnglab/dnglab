@@ -21,7 +21,7 @@ impl<'a> NrwDecoder<'a> {
 }
 
 impl<'a> Decoder for NrwDecoder<'a> {
-  fn image(&self) -> Result<Image,String> {
+  fn image(&self) -> Result<RawImage,String> {
     let camera = try!(self.rawloader.check_supported(&self.tiff));
     let data = self.tiff.find_ifds_with_tag(Tag::CFAPattern);
     let raw = data.iter().find(|&&ifd| {

@@ -1,8 +1,8 @@
-use decoders::Image;
+use decoders::RawImage;
 use imageops::OpBuffer;
 use std::cmp;
 
-pub fn demosaic_and_scale(img: &Image, maxwidth: usize, maxheight: usize) -> OpBuffer {
+pub fn demosaic_and_scale(img: &RawImage, maxwidth: usize, maxheight: usize) -> OpBuffer {
   // Calculate the resulting width/height and top-left corner after crops
   let width = img.width - img.crops[1] - img.crops[3];
   let height = img.height - img.crops[0] - img.crops[2];
@@ -46,7 +46,7 @@ pub fn demosaic_and_scale(img: &Image, maxwidth: usize, maxheight: usize) -> OpB
   }
 }
 
-pub fn rgb(img: &Image, xs: usize, ys: usize, width: usize, height: usize) -> OpBuffer {
+pub fn rgb(img: &RawImage, xs: usize, ys: usize, width: usize, height: usize) -> OpBuffer {
   let mut out = OpBuffer::new(width, height, 4);
   out.mutate_lines(&(|line: &mut [f32], row| {
     for (o, i) in line.chunks_mut(4).zip(img.data[(img.width*(row+ys)+xs)*3..].chunks(3)) {
@@ -58,7 +58,7 @@ pub fn rgb(img: &Image, xs: usize, ys: usize, width: usize, height: usize) -> Op
   out
 }
 
-pub fn full(img: &Image, xs: usize, ys: usize, width: usize, height: usize) -> OpBuffer {
+pub fn full(img: &RawImage, xs: usize, ys: usize, width: usize, height: usize) -> OpBuffer {
   let mut out = OpBuffer::new(width, height, 4);
   let crop_cfa = img.cfa.shift(xs, ys);
 
@@ -111,7 +111,7 @@ fn calc_skips(idx: usize, idxmax: usize, skip: f32) -> (usize, usize, f32, f32) 
   (fromback as usize, toforward as usize, fromfactor, tofactor)
 }
 
-pub fn scaled(img: &Image, xs: usize, ys: usize, width: usize, height: usize, nwidth: usize, nheight: usize) -> OpBuffer {
+pub fn scaled(img: &RawImage, xs: usize, ys: usize, width: usize, height: usize, nwidth: usize, nheight: usize) -> OpBuffer {
   let mut out = OpBuffer::new(nwidth, nheight, 4);
   let crop_cfa = img.cfa.shift(xs, ys);
 

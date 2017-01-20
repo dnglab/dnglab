@@ -24,7 +24,7 @@ impl<'a> DngDecoder<'a> {
 }
 
 impl<'a> Decoder for DngDecoder<'a> {
-  fn image(&self) -> Result<Image,String> {
+  fn image(&self) -> Result<RawImage,String> {
     let ifds = self.tiff.find_ifds_with_tag(Tag::Compression).into_iter().filter(|ifd| {
       let compression = (**ifd).find_entry(Tag::Compression).unwrap().get_u32(0);
       let subsampled = match (**ifd).find_entry(Tag::NewSubFileType) {
@@ -58,7 +58,7 @@ impl<'a> Decoder for DngDecoder<'a> {
       }
     };
 
-    Ok(Image {
+    Ok(RawImage {
       make: make,
       model: model,
       clean_make: clean_make,
