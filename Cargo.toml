@@ -30,3 +30,7 @@ panic = "unwind"
 [profile.dev]
 panic = "unwind"
 opt-level = 3
+
+[[bin]]
+name = "main"
+doc = false
