@@ -74,8 +74,7 @@ fn main() {
   let file = &args[1];
   println!("Loading file \"{}\"", file);
 
-  let rawloader = decoders::RawLoader::new();
-  let image = rawloader.decode_safe(file).unwrap();
+  let image = rawloader::decode(file).unwrap();
 
   println!("Found camera \"{}\" model \"{}\"", image.make, image.model);
   println!("Found clean named camera \"{}\" model \"{}\"", image.clean_make, image.clean_model);

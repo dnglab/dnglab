@@ -6,7 +6,6 @@ use std::io::BufWriter;
 extern crate time;
 extern crate toml;
 extern crate rawloader;
-use rawloader::decoders;
 use rawloader::imageops;
 
 fn usage() {
@@ -33,9 +32,8 @@ fn main() {
   };
   println!("Loading file \"{}\" and saving it as \"{}\"", file, outfile);
 
-  let rawloader = decoders::RawLoader::new();
   let from_time = time::precise_time_ns();
-  let image = match rawloader.decode_safe(file) {
+  let image = match rawloader::decode(file) {
     Ok(val) => val,
     Err(e) => {error(&e);unreachable!()},
   };
