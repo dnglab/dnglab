@@ -26,9 +26,9 @@
 //!   f.write_all(&preamble).unwrap();
 //!   for pix in image.data {
 //!     // Do an extremely crude "demosaic" by setting R=G=B
-//!     f.write_all(&[(pix>>4) as u8, (pix&0x0f) as u8,
-//!                   (pix>>4) as u8, (pix&0x0f) as u8,
-//!                   (pix>>4) as u8, (pix&0x0f) as u8]).unwrap()
+//!     let pixhigh = (pix>>8) as u8;
+//!     let pixlow  = (pix&0x0f) as u8;
+//!     f.write_all(&[pixhigh, pixlow, pixhigh, pixlow, pixhigh, pixlow]).unwrap()
 //!   }
 //! }
 //! ```
@@ -85,6 +85,15 @@ lazy_static! {
   static ref LOADER: decoders::RawLoader = decoders::RawLoader::new();
 }
 
+/// Take a path to a raw file and return a decoded image or an error
+///
+/// # Example
+/// ```rust,ignore
+/// let image = match rawloader::decode("path/to/your/file.RAW") {
+///   Ok(val) => val,
+///   Err(e) => ... some appropriate action when the file is unreadable ...
+/// };
+/// ```
 pub fn decode(path: &str) -> Result<RawImage,String> {
   LOADER.decode_safe(path)
 }

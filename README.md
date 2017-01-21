@@ -91,9 +91,9 @@ fn main() {
   f.write_all(&preamble).unwrap();
   for pix in image.data {
     // Do an extremely crude "demosaic" by setting R=G=B
-    f.write_all(&[(pix>>4) as u8, (pix&0x0f) as u8,
-                  (pix>>4) as u8, (pix&0x0f) as u8,
-                  (pix>>4) as u8, (pix&0x0f) as u8]).unwrap()
+    let pixhigh = (pix>>8) as u8;
+    let pixlow  = (pix&0x0f) as u8;
+    f.write_all(&[pixhigh, pixlow, pixhigh, pixlow, pixhigh, pixlow]).unwrap()
   }
 }
 ```
