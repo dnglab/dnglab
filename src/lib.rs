@@ -8,6 +8,7 @@ extern crate itertools;
 #[doc(hidden)] pub mod decoders;
 pub use decoders::RawImage;
 pub use decoders::cfa::CFA;
+pub use decoders::RGBImage;
 #[doc(hidden)] pub mod imageops;
 
 lazy_static! {

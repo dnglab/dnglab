@@ -63,7 +63,6 @@ use std::io::prelude::*;
 use std::io::BufWriter;
 
 extern crate rawloader;
-use rawloader::decoders;
 
 fn main() {
   let args: Vec<_> = env::args().collect();
@@ -110,7 +109,7 @@ To do the image decoding decode the image the same way but then do:
   // Decode to the largest image that fits in 1080p size. If the original image is
   // smaller this will not scale up but otherwise you will get an image that is either
   // 1920 pixels wide or 1080 pixels tall and maintains the image ratio.
-  let decoded = imageops::simple_decode(&image, 1920, 1080);
+  let decoded = image.to_rgb(1920, 1080).unwrap();
 
   let mut f = BufWriter::new(File::create(format!("{}.ppm",file)).unwrap());
   let preamble = format!("P6 {} {} {}\n", decoded.width, decoded.height, 255).into_bytes();

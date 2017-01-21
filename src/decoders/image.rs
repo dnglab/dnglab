@@ -1,5 +1,6 @@
 use decoders::*;
 use decoders::cfa::*;
+use imageops;
 
 #[derive(Debug, Clone)]
 pub struct RawImage {
@@ -17,6 +18,13 @@ pub struct RawImage {
   pub xyz_to_cam: [[f32;3];4],
   pub cfa: CFA,
   pub crops: [usize;4],
+}
+
+#[derive(Debug, Clone)]
+pub struct RGBImage {
+  pub width: usize,
+  pub height: usize,
+  pub data: Vec<f32>,
 }
 
 impl RawImage {
@@ -169,5 +177,15 @@ impl RawImage {
     }
 
     out
+  }
+
+  pub fn to_rgb(&self, maxwidth: usize, maxheight: usize) -> Result<RGBImage,String> {
+    let buffer = imageops::simple_decode(self, maxwidth, maxheight);
+
+    Ok(RGBImage{
+      width: buffer.width,
+      height: buffer.height,
+      data: buffer.data,
+    })
   }
 }
