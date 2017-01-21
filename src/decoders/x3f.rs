@@ -1,6 +1,7 @@
 use decoders::*;
+use decoders::tiff::*;
 use decoders::basics::*;
-  use std::f32::NAN;
+use std::f32::NAN;
 
 pub fn is_x3f(buf: &[u8]) -> bool {
   buf[0..4] == b"FOVb"[..]
@@ -9,6 +10,7 @@ pub fn is_x3f(buf: &[u8]) -> bool {
 #[derive(Debug, Clone)]
 struct X3fFile {
   dirs: Vec<X3fDirectory>,
+  images: Vec<X3fImage>,
 }
 
 #[derive(Debug, Clone)]
@@ -16,6 +18,16 @@ struct X3fDirectory {
   offset: usize,
   len: usize,
   id: String,
+}
+
+#[derive(Debug, Clone)]
+struct X3fImage {
+  typ: usize,
+  format: usize,
+  width: usize,
+  height: usize,
+  pitch: usize,
+  doffset: usize,
 }
 
 impl X3fFile {
@@ -28,13 +40,20 @@ impl X3fFile {
     }
     let entries = LEu32(data, 8) as usize;
     let mut dirs = Vec::new();
+    let mut images = Vec::new();
     for i in 0..entries {
       let dir = try!(X3fDirectory::new(data, 12+i*12));
+      if dir.id == "IMA2" {
+        let img = try!(X3fImage::new(&buf.buf, dir.offset));
+        println!("Found image with offset {}", img.doffset);
+        images.push(img);
+      }
       dirs.push(dir);
     }
 
     Ok(X3fFile{
       dirs: dirs,
+      images: images,
     })
   }
 }
@@ -50,6 +69,22 @@ impl X3fDirectory {
       offset: off,
       len: len,
       id: name,
+    })
+  }
+}
+
+impl X3fImage {
+  fn new(buf: &[u8], offset: usize) -> Result<X3fImage, String> {
+    let data = &buf[offset..];
+    println!("Decoding image at offset {}", offset);
+
+    Ok(X3fImage {
+      typ:     LEu32(data,  8) as usize,
+      format:  LEu32(data, 12) as usize,
+      width:   LEu32(data, 16) as usize,
+      height:  LEu32(data, 20) as usize,
+      pitch:   LEu32(data, 24) as usize,
+      doffset: offset+28,
     })
   }
 }
@@ -75,7 +110,28 @@ impl<'a> X3fDecoder<'a> {
 
 impl<'a> Decoder for X3fDecoder<'a> {
   fn image(&self) -> Result<RawImage,String> {
-    Err("X3F not finished yet".to_string())
+    let caminfo = try!(
+      self.dir.images.iter().find(|i| i.typ == 2 && i.format == 0x12)
+        .ok_or("X3F: Couldn't find camera info".to_string())
+    );
+    let data = &self.buffer[caminfo.doffset+6..];
+    if data[0..4] != b"Exif"[..] {
+      return Err("X3F: Couldn't find EXIF info".to_string())
+    }
+    let tiff = try!(TiffIFD::new_root(self.buffer, caminfo.doffset+12));
+    let camera = try!(self.rawloader.check_supported(&tiff));
+
+    let imginfo = try!(
+      self.dir.images.iter().find(|i| i.typ == 1 || i.typ == 3)
+        .ok_or("X3F: Couldn't find image".to_string())
+    );
+    let width = imginfo.width;
+    let height = imginfo.height;
+    let offset = imginfo.doffset;
+    let src = &self.buffer[offset..];
+
+    let image = decode_12be(src, width, height);
+    ok_image(camera, width, height, try!(self.get_wb()), image)
   }
 }
 
