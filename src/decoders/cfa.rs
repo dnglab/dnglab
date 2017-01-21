@@ -3,14 +3,15 @@ use std::fmt;
 use std::clone;
 
 pub struct CFA {
-  name: String,
-  pattern: [[usize;48];48],
+  pub name: String,
   pub width: usize,
   pub height: usize,
+
+  pattern: [[usize;48];48],
 }
 
 impl CFA {
-  pub fn new_from_tag(pat: &TiffEntry) -> CFA {
+  #[doc(hidden)] pub fn new_from_tag(pat: &TiffEntry) -> CFA {
     let mut patname = String::new();
     for i in 0..pat.count() {
       patname.push(match pat.get_u32(i as usize) {
