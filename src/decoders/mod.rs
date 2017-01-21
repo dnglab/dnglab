@@ -53,6 +53,7 @@ mod nef;
 mod nrw;
 mod cr2;
 mod ari;
+mod x3f;
 use self::tiff::*;
 use self::ciff::*;
 pub use self::image::*;
@@ -259,6 +260,11 @@ impl RawLoader {
 
     if ari::is_ari(buffer) {
       let dec = Box::new(ari::AriDecoder::new(buffer, &self));
+      return Ok(dec as Box<Decoder>);
+    }
+
+    if x3f::is_x3f(buffer) {
+      let dec = Box::new(x3f::X3fDecoder::new(buf, &self));
       return Ok(dec as Box<Decoder>);
     }
 
