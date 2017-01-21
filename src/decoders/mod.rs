@@ -28,7 +28,7 @@ extern crate toml;
 mod image;
 mod basics;
 mod ljpeg;
-mod cfa;
+pub mod cfa;
 mod tiff;
 mod ciff;
 mod mrw;
