@@ -2,24 +2,44 @@ use decoders::*;
 use decoders::cfa::*;
 use imageops;
 
+/// All the data needed to process this raw image, including the image data itself as well
+/// as all the needed metadata
 #[derive(Debug, Clone)]
 pub struct RawImage {
+  /// camera make as encoded in the file
   pub make: String,
+  /// camera model as encoded in the file
   pub model: String,
+  /// make cleaned up to be consistent and short
   pub clean_make: String,
+  /// model cleaned up to be consistent and short
   pub clean_model: String,
+  /// width of the full image
   pub width: usize,
+  /// height of the full image
   pub height: usize,
+  /// number of components per pixel (1 for bayer, 3 for RGB images)
   pub cpp: usize,
+  /// whitebalance coefficients encoded in the file in RGBE order
   pub wb_coeffs: [f32;4],
-  pub data: Vec<u16>,
+  /// image whitelevels in RGBE order
   pub whitelevels: [u16;4],
+  /// image blacklevels in RGBE order
   pub blacklevels: [u16;4],
+  /// matrix to convert XYZ to camera RGBE
   pub xyz_to_cam: [[f32;3];4],
+  /// color filter array
   pub cfa: CFA,
+  /// how much to crop the image to get all the usable area, order is top, right, bottom, left
   pub crops: [usize;4],
+  /// image data itself, has width*height*cpp elements
+  pub data: Vec<u16>,
 }
 
+/// A RawImage processed into a full RGB image with levels and gamma
+///
+/// The data is a Vec<f32> width width*height*3 elements, where each element is a value
+/// between 0 and 1 with the intensity of the color channel
 #[derive(Debug, Clone)]
 pub struct RGBImage {
   pub width: usize,
