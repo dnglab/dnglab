@@ -48,7 +48,7 @@ pub struct RGBImage {
 }
 
 impl RawImage {
-  pub fn new(camera: &Camera, width: usize, height: usize, wb_coeffs: [f32;4], image: Vec<u16>) -> RawImage {
+  #[doc(hidden)] pub fn new(camera: &Camera, width: usize, height: usize, wb_coeffs: [f32;4], image: Vec<u16>) -> RawImage {
     let blacks = if camera.blackareah.1 != 0 || camera.blackareav.1 != 0 {
       let mut avg = [0 as f32; 4];
       let mut count = [0 as f32; 4];
@@ -92,11 +92,15 @@ impl RawImage {
     }
   }
 
+  /// Outputs the inverted matrix that converts pixels in the camera colorspace into
+  /// XYZ components. Those can then be easily used to convert to Lab or a RGB output space
   pub fn cam_to_xyz(&self) -> [[f32;4];3] {
     let (cam_to_xyz, _) = self.xyz_matrix_and_neutralwb();
     cam_to_xyz
   }
 
+  /// Not all cameras encode a whitebalance so in those cases just using a 6500K neutral one
+  /// is a good compromise
   pub fn neutralwb(&self) -> [f32;4] {
     let (_, neutralwb) = self.xyz_matrix_and_neutralwb();
     [neutralwb[0]/neutralwb[1],
@@ -199,6 +203,11 @@ impl RawImage {
     out
   }
 
+  /// Convert the image to a RGB image by doing a demosaic and applying levels whitebalance
+  /// The maxwidth and maxheight values specify maximum dimensions for the final image. If
+  /// the original image is smaller this will not scale up but otherwise you will get an
+  /// image that is either maxwidth wide or maxheight tall and maintains the image ratio.
+  /// Pass in maxwidth and maxheight as 0 if you want the maximum possible image size.
   pub fn to_rgb(&self, maxwidth: usize, maxheight: usize) -> Result<RGBImage,String> {
     let buffer = imageops::simple_decode(self, maxwidth, maxheight);
 
