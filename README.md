@@ -87,18 +87,13 @@ fn main() {
 
   // Write out the image as a grayscale PPM
   let mut f = BufWriter::new(File::create(format!("{}.ppm",file)).unwrap());
-  let preamble = format!("P6 {} {} {}\n", image.width, image.height, image.whitelevels[0]).into_bytes();
+  let preamble = format!("P6 {} {} {}\n", image.width, image.height, 65535).into_bytes();
   f.write_all(&preamble).unwrap();
-  for row in 0..image.height {
-    let from: usize = (row as usize) * (image.width as usize);
-    let to: usize = ((row+1) as usize) * (image.width as usize);
-    let imgline = &image.data[from .. to];
-
-    for pixel in imgline {
-      // Do an extremely crude "demosaic" by setting R=G=B
-      let bytes = [(pixel>>4) as u8, (pixel&0x0f) as u8, (pixel>>4) as u8, (pixel&0x0f) as u8, (pixel>>4) as u8, (pixel&0x0f) as u8];
-      f.write_all(&bytes).unwrap();
-    }
+  for pix in image.data {
+    // Do an extremely crude "demosaic" by setting R=G=B
+    f.write_all(&[(pix>>4) as u8, (pix&0x0f) as u8,
+                  (pix>>4) as u8, (pix&0x0f) as u8,
+                  (pix>>4) as u8, (pix&0x0f) as u8]).unwrap()
   }
 }
 ```
