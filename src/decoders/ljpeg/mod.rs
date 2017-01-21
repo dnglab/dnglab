@@ -1,9 +1,9 @@
 use decoders::basics::*;
+use decoders::ljpeg::huffman::*;
+use decoders::ljpeg::decompressors::*;
 
 pub mod huffman;
 mod decompressors;
-use decoders::ljpeg::huffman::*;
-use decoders::ljpeg::decompressors::*;
 
 enum Marker {
   Stuff        = 0x00,

@@ -1,6 +1,6 @@
-use decoders::ljpeg::*;
-use decoders::ljpeg::huffman::*;
 use decoders::basics::*;
+use decoders::ljpeg::LjpegDecompressor;
+use decoders::ljpeg::huffman::*;
 use itertools::Itertools;
 
 pub fn decode_ljpeg_2components(ljpeg: &LjpegDecompressor, out: &mut [u16], x: usize, stripwidth:usize, width: usize, height: usize) -> Result<(),String> {
