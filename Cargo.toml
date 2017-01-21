@@ -33,5 +33,9 @@ panic = "unwind"
 opt-level = 3
 
 [[bin]]
-name = "main"
+name = "rawloader"
+doc = false
+
+[[bin]]
+name = "benchmark"
 doc = false
