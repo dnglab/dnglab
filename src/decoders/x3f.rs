@@ -45,7 +45,6 @@ impl X3fFile {
       let dir = try!(X3fDirectory::new(data, 12+i*12));
       if dir.id == "IMA2" {
         let img = try!(X3fImage::new(&buf.buf, dir.offset));
-        println!("Found image with offset {}", img.doffset);
         images.push(img);
       }
       dirs.push(dir);
@@ -76,7 +75,6 @@ impl X3fDirectory {
 impl X3fImage {
   fn new(buf: &[u8], offset: usize) -> Result<X3fImage, String> {
     let data = &buf[offset..];
-    println!("Decoding image at offset {}", offset);
 
     Ok(X3fImage {
       typ:     LEu32(data,  8) as usize,
@@ -130,13 +128,24 @@ impl<'a> Decoder for X3fDecoder<'a> {
     let offset = imginfo.doffset;
     let src = &self.buffer[offset..];
 
-    let image = decode_12be(src, width, height);
-    ok_image(camera, width, height, try!(self.get_wb()), image)
+    let image = match imginfo.format {
+      35 => try!(self.decode_compressed(src, width, height)),
+      x => return Err(format!("X3F Don't know how to decode format {}", x).to_string())
+    };
+
+    let mut img = RawImage::new(camera, width, height, try!(self.get_wb()), image);
+    img.cpp = 3;
+    Ok(img)
   }
 }
 
 impl<'a> X3fDecoder<'a> {
   fn get_wb(&self) -> Result<[f32;4], String> {
     Ok([NAN,NAN,NAN,NAN])
+  }
+
+  fn decode_compressed(&self, src: &[u8], width: usize, height: usize) -> Result<Vec<u16>, String> {
+    let mut out = vec![0 as u16; width*height*3];
+    Ok(out)
   }
 }
