@@ -3,10 +3,11 @@ name = "rawloader"
 version = "0.28.0"
 authors = ["Pedro Côrte-Real <pedro@pedrocr.net>"]
 description = "A library to extract the data from camera raw formats"
-#documentation = "..."
+documentation = "https://docs.rs/rawloader/"
 #homepage = "..."
 repository = "https://github.com/pedrocr/rawloader"
 license = "LGPL-2.1"
+categories = ["multimedia::images"]
 
 build = "data/cameras/join.rs"
 
