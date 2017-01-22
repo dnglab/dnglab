@@ -13,13 +13,13 @@ build = "data/cameras/join.rs"
 
 [dependencies]
 toml = "0.2.1"
-time = "0.1.35"
-enum_primitive = "0.1.0"
+time = "0.1.36"
+enum_primitive = "0.1.1"
 num = "0.1.36"
 lazy_static = "0.2.2"
-byteorder = "0.5.3"
+byteorder = "1"
 rayon = "0.6.0"
-itertools = "0.5.8"
+itertools = "0.5.9"
 
 [build-dependencies]
 glob = "0.2.11"
