@@ -1,4 +1,3 @@
-use std;
 extern crate rayon;
 use self::rayon::prelude::*;
 
@@ -31,7 +30,7 @@ impl OpBuffer {
   }
 
   pub fn mutate_lines<F>(&mut self, closure: &F)
-    where F : Fn(&mut [f32], usize)+std::marker::Sync {
+    where F : Fn(&mut [f32], usize)+Sync {
 
     self.data.par_chunks_mut(self.width*self.colors).enumerate().for_each(|(row, line)| {
       closure(line, row);
@@ -39,7 +38,7 @@ impl OpBuffer {
   }
 
   pub fn process_into_new<F>(&self, colors: usize, closure: &F) -> OpBuffer
-    where F : Fn(&mut [f32], &[f32])+std::marker::Sync {
+    where F : Fn(&mut [f32], &[f32])+Sync {
 
     let mut out = OpBuffer::new(self.width, self.height, colors);
     out.data.par_chunks_mut(out.width*out.colors).enumerate().for_each(|(row, line)| {

@@ -57,7 +57,6 @@ mod cr2;
 mod ari;
 mod x3f;
 use self::tiff::*;
-use self::ciff::*;
 pub use self::image::*;
 
 pub static CAMERAS_TOML: &'static str = include_str!("../../data/cameras/all.toml");
@@ -255,7 +254,7 @@ impl RawLoader {
     }
 
     if ciff::is_ciff(buffer) {
-      let ciff = try!(CiffIFD::new_file(buf));
+      let ciff = try!(ciff::CiffIFD::new_file(buf));
       let dec = Box::new(crw::CrwDecoder::new(buffer, ciff, &self));
       return Ok(dec as Box<Decoder>);
     }

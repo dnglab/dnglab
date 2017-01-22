@@ -1,4 +1,3 @@
-use std;
 extern crate rayon;
 use self::rayon::prelude::*;
 
@@ -82,7 +81,7 @@ pub static LITTLE_ENDIAN: Endian = Endian{big: false};
 }
 
 pub fn decode_threaded<F>(width: usize, height: usize, closure: &F) -> Vec<u16>
-  where F : Fn(&mut [u16], usize)+std::marker::Sync {
+  where F : Fn(&mut [u16], usize)+Sync {
 
   let mut out: Vec<u16> = vec![0; width*height];
   out.par_chunks_mut(width).enumerate().for_each(|(row, line)| {
@@ -92,7 +91,7 @@ pub fn decode_threaded<F>(width: usize, height: usize, closure: &F) -> Vec<u16>
 }
 
 pub fn decode_threaded_multiline<F>(width: usize, height: usize, lines: usize, closure: &F) -> Vec<u16>
-  where F : Fn(&mut [u16], usize)+std::marker::Sync {
+  where F : Fn(&mut [u16], usize)+Sync {
 
   let mut out: Vec<u16> = vec![0; width*height];
   out.par_chunks_mut(width*lines).enumerate().for_each(|(row, line)| {

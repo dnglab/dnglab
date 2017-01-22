@@ -458,8 +458,8 @@ impl<'a> TiffEntry<'a> {
       None => self.data.len(),
     };
     match str::from_utf8(&self.data[0..len]) {
-      Result::Ok(val) => val.trim(),
-      Result::Err(err) => panic!(err),
+      Ok(val) => val.trim(),
+      Err(err) => panic!(err),
     }
   }
 

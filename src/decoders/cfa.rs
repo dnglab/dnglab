@@ -1,6 +1,5 @@
 use decoders::tiff::*;
 use std::fmt;
-use std::clone;
 
 /// Representation of the color filter array pattern in raw cameras
 ///
@@ -135,7 +134,7 @@ impl fmt::Debug for CFA {
   }
 }
 
-impl clone::Clone for CFA {
+impl Clone for CFA {
   fn clone(&self) -> CFA {
     let mut cpattern: [[usize;48];48] = [[0;48];48];
     for row in 0..48 {
