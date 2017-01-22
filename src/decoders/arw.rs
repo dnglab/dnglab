@@ -1,7 +1,6 @@
 use decoders::*;
 use decoders::tiff::*;
 use decoders::basics::*;
-use std::mem::transmute;
 use std::f32::NAN;
 use std::cmp;
 
@@ -265,11 +264,10 @@ impl<'a> ArwDecoder<'a> {
       let p = i + 127;
       pad[p & 127] = pad[(p+1) & 127] ^ pad[(p+1+64) & 127];
       let output = LEu32(buf, offset+i*4) ^ pad[p & 127];
-      let bytes: [u8;4] = unsafe { transmute(output.to_le()) };
-      out.push(bytes[0]);
-      out.push(bytes[1]);
-      out.push(bytes[2]);
-      out.push(bytes[3]);
+      out.push(((output >>  0) & 0xff) as u8);
+      out.push(((output >>  8) & 0xff) as u8);
+      out.push(((output >> 16) & 0xff) as u8);
+      out.push(((output >> 24) & 0xff) as u8);
     }
     out
   }

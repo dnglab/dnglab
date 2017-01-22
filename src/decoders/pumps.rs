@@ -1,5 +1,4 @@
 use decoders::basics::*;
-use std::mem;
 
 #[derive(Debug, Copy, Clone)]
 pub struct BitPumpLSB<'a> {
@@ -99,11 +98,11 @@ pub trait BitPump {
   }
 
   fn peek_ibits(&mut self, num: u32) -> i32 {
-    unsafe{mem::transmute(self.peek_bits(num))}
+    self.peek_bits(num) as i32
   }
 
   fn get_ibits(&mut self, num: u32) -> i32 {
-    unsafe{mem::transmute(self.get_bits(num))}
+    self.get_bits(num) as i32
   }
 
   // Sign extend ibits
