@@ -68,6 +68,15 @@
 //! it will be a decent output that is produced fast (200-300ms for a 500x500 thumbnail of
 //! a 24MP image).
 
+#![deny(
+  missing_docs,
+  missing_debug_implementations,
+  missing_copy_implementations,
+  unsafe_code,
+  unstable_features,
+  unused_import_braces,
+)]
+
 #[macro_use] extern crate enum_primitive;
 extern crate num;
 
