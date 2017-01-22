@@ -1,5 +1,7 @@
 # rawloader
 
+[![Build Status](https://travis-ci.org/pedrocr/rawloader.svg?branch=master)](https://travis-ci.org/pedrocr/rawloader)
+
 This is a rust library to extract the raw data and some metadata from digital camera images. Given an image in a supported format and camera you will be able to get everything needed to process the image:
 
   * Identification of the camera that produced the image (both the EXIF name and a cleaned up name)
