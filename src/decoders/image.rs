@@ -203,7 +203,9 @@ impl RawImage {
     out
   }
 
-  /// Convert the image to a RGB image by doing a demosaic and applying levels whitebalance
+  /// Convert the image to a sRGB image by doing a demosaic and applying levels,
+  /// whitebalance, a base curve, color conversions and gamma.
+  ///
   /// The maxwidth and maxheight values specify maximum dimensions for the final image. If
   /// the original image is smaller this will not scale up but otherwise you will get an
   /// image that is either maxwidth wide or maxheight tall and maintains the image ratio.
@@ -218,7 +220,9 @@ impl RawImage {
     })
   }
 
-  /// Convert the image to a RGB image by doing a demosaic and applying levels whitebalance
+  /// Convert the image to a linear sRGB image by doing a demosaic and applying levels and
+  /// whitebalance, a base curve and color conversions.
+  ///
   /// The maxwidth and maxheight values specify maximum dimensions for the final image. If
   /// the original image is smaller this will not scale up but otherwise you will get an
   /// image that is either maxwidth wide or maxheight tall and maintains the image ratio.
