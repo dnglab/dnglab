@@ -217,4 +217,19 @@ impl RawImage {
       data: buffer.data,
     })
   }
+
+  /// Convert the image to a RGB image by doing a demosaic and applying levels whitebalance
+  /// The maxwidth and maxheight values specify maximum dimensions for the final image. If
+  /// the original image is smaller this will not scale up but otherwise you will get an
+  /// image that is either maxwidth wide or maxheight tall and maintains the image ratio.
+  /// Pass in maxwidth and maxheight as 0 if you want the maximum possible image size.
+  pub fn to_linear_rgb(&self, maxwidth: usize, maxheight: usize) -> Result<RGBImage,String> {
+    let buffer = imageops::simple_decode_linear(self, maxwidth, maxheight);
+
+    Ok(RGBImage{
+      width: buffer.width,
+      height: buffer.height,
+      data: buffer.data,
+    })
+  }
 }

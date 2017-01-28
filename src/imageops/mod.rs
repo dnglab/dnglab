@@ -70,3 +70,16 @@ pub fn simple_decode (img: &RawImage, maxwidth: usize, maxheight: usize) -> OpBu
 
   channel3
 }
+
+pub fn simple_decode_linear (img: &RawImage, maxwidth: usize, maxheight: usize) -> OpBuffer {
+  // Demosaic into 4 channel f32 (RGB or RGBE)
+  let mut channel4 = do_timing("demosaic", ||demosaic::demosaic_and_scale(img, maxwidth, maxheight));
+
+  do_timing("level_and_balance", || { level::level_and_balance(img, &mut channel4) });
+  // From now on we are in 3 channel f32 (RGB or Lab)
+  let mut channel3 = do_timing("camera_to_lab", ||colorspaces::camera_to_lab(img, &channel4));
+  do_timing("base_curve", ||curves::base(img, &mut channel3));
+  do_timing("lab_to_rec709", ||colorspaces::lab_to_rec709(img, &mut channel3));
+
+  channel3
+}
