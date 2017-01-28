@@ -144,8 +144,7 @@ impl<'a> X3fDecoder<'a> {
     Ok([NAN,NAN,NAN,NAN])
   }
 
-  fn decode_compressed(&self, src: &[u8], width: usize, height: usize) -> Result<Vec<u16>, String> {
-    let mut out = vec![0 as u16; width*height*3];
-    Ok(out)
+  fn decode_compressed(&self, _: &[u8], _: usize, _: usize) -> Result<Vec<u16>, String> {
+    return Err("X3F decoding not implemented yet".to_string())
   }
 }
