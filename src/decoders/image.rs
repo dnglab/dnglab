@@ -47,6 +47,18 @@ pub struct RGBImage {
   pub data: Vec<f32>,
 }
 
+/// A RawImage processed into a full 8bit sRGB image with levels and gamma
+///
+/// The data is a Vec<u8> width width*height*3 elements, where each element is a value
+/// between 0 and 255 with the intensity of the color channel with gamma applied
+#[derive(Debug, Clone)]
+pub struct SRGBImage {
+  pub width: usize,
+  pub height: usize,
+  pub data: Vec<u8>,
+}
+
+
 impl RawImage {
   #[doc(hidden)] pub fn new(camera: &Camera, width: usize, height: usize, wb_coeffs: [f32;4], image: Vec<u16>) -> RawImage {
     let blacks = if camera.blackareah.1 != 0 || camera.blackareav.1 != 0 {
@@ -217,6 +229,27 @@ impl RawImage {
       width: buffer.width,
       height: buffer.height,
       data: buffer.data,
+    })
+  }
+
+  /// Convert the image to an 8bit sRGB image by doing a demosaic and applying levels,
+  /// whitebalance, a base curve, color conversions and gamma.
+  ///
+  /// The maxwidth and maxheight values specify maximum dimensions for the final image. If
+  /// the original image is smaller this will not scale up but otherwise you will get an
+  /// image that is either maxwidth wide or maxheight tall and maintains the image ratio.
+  /// Pass in maxwidth and maxheight as 0 if you want the maximum possible image size.
+  pub fn to_srgb(&self, maxwidth: usize, maxheight: usize) -> Result<SRGBImage,String> {
+    let buffer = imageops::simple_decode(self, maxwidth, maxheight);
+    let mut image = vec![0 as u8; buffer.width*buffer.height*3];
+    for (o, i) in image.chunks_mut(1).zip(buffer.data.iter()) {
+      o[0] = (i*255.0).max(0.0).min(255.0) as u8;
+    }
+
+    Ok(SRGBImage{
+      width: buffer.width,
+      height: buffer.height,
+      data: image,
     })
   }
 
