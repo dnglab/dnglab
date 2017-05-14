@@ -25,6 +25,7 @@ macro_rules! fetch_ifd {
 }
 
 extern crate toml;
+use self::toml::Value;
 mod image;
 mod basics;
 mod packed;
@@ -113,7 +114,7 @@ impl Camera {
     self.hints.contains(&(hint.to_string()))
   }
 
-  pub fn update_from_toml(&mut self, ct: &toml::Table) {
+  pub fn update_from_toml(&mut self, ct: &toml::value::Table) {
     for (name, val) in ct {
       match name.as_ref() {
         "make" => {self.make = val.as_str().unwrap().to_string().clone();},
@@ -124,23 +125,23 @@ impl Camera {
         "whitepoint" => {let white = val.as_integer().unwrap() as u16; self.whitelevels = [white, white, white, white];},
         "blackpoint" => {let black = val.as_integer().unwrap() as u16; self.blacklevels = [black, black, black, black];},
         "blackareah" => {
-          let vals = val.as_slice().unwrap();
+          let vals = val.as_array().unwrap();
           self.blackareah = (vals[0].as_integer().unwrap() as usize,
                              vals[1].as_integer().unwrap() as usize);
         },
         "blackareav" => {
-          let vals = val.as_slice().unwrap();
+          let vals = val.as_array().unwrap();
           self.blackareav = (vals[0].as_integer().unwrap() as usize,
                              vals[1].as_integer().unwrap() as usize);
         },
         "color_matrix" => {
-          let matrix = val.as_slice().unwrap();
+          let matrix = val.as_array().unwrap();
           for (i, val) in matrix.into_iter().enumerate() {
             self.xyz_to_cam[i/3][i%3] = val.as_integer().unwrap() as f32;
           }
         },
         "crops" => {
-          let crop_vals = val.as_slice().unwrap();
+          let crop_vals = val.as_array().unwrap();
           for (i, val) in crop_vals.into_iter().enumerate() {
             self.crops[i] = val.as_integer().unwrap() as usize;
           }
@@ -153,7 +154,7 @@ impl Camera {
         "raw_height" => {self.raw_height = val.as_integer().unwrap() as usize;},
         "hints" => {
           self.hints = Vec::new();
-          for hint in val.as_slice().unwrap() {
+          for hint in val.as_array().unwrap() {
             self.hints.push(hint.as_str().unwrap().to_string());
           }
         },
@@ -204,13 +205,12 @@ pub struct RawLoader {
 
 impl RawLoader {
   pub fn new() -> RawLoader {
-    let mut parser = toml::Parser::new(&CAMERAS_TOML);
-    let toml = match parser.parse() {
-      Some(val) => val,
-      None => panic!(format!("Error parsing all.toml: {:?}", parser.errors)),
+    let toml = match CAMERAS_TOML.parse::<Value>() {
+      Ok(val) => val,
+      Err(e) => panic!(format!("Error parsing all.toml: {:?}", e)),
     };
     let mut cams = Vec::new();
-    for camera in toml.get("cameras").unwrap().as_slice().unwrap() {
+    for camera in toml.get("cameras").unwrap().as_array().unwrap() {
       let ct = camera.as_table().unwrap();
       let mut cam = Camera::new();
       cam.update_from_toml(ct);
@@ -219,7 +219,7 @@ impl RawLoader {
 
       match ct.get("modes") {
         Some(val) => {
-          for mode in val.as_slice().unwrap() {
+          for mode in val.as_array().unwrap() {
             let cmt = mode.as_table().unwrap();
             let mut mcam = basecam.clone();
             mcam.update_from_toml(cmt);

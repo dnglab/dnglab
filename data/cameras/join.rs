@@ -4,6 +4,7 @@ use std::io::prelude::*;
 extern crate glob;
 use self::glob::glob;
 extern crate toml;
+use toml::Value;
   
 fn main() {
   let mut out = File::create("./data/cameras/all.toml").unwrap();
@@ -16,10 +17,9 @@ fn main() {
     f.read_to_string(&mut toml).unwrap();
 
     {
-      let mut parser = toml::Parser::new(&toml);
-      match parser.parse() {
-        Some(_) => {},
-        None => panic!(format!("Error parsing {:?}: {:?}", path, parser.errors)),
+      match toml.parse::<Value>() {
+        Ok(_) => {},
+        Err(e) => panic!(format!("Error parsing {:?}: {:?}", path, e)),
       };
     }
 
