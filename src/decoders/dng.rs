@@ -44,16 +44,22 @@ impl<'a> Decoder for DngDecoder<'a> {
       c => return Err(format!("Don't know how to read DNGs with compression {}", c).to_string()),
     };
 
-    let (make, model, clean_make, clean_model) = {
+    let (make, model, clean_make, clean_model, orientation) = {
       match self.rawloader.check_supported(&self.tiff) {
         Ok(cam) => {
           (cam.make.clone(), cam.model.clone(),
-           cam.clean_make.clone(),cam.clean_model.clone())
+           cam.clean_make.clone(), cam.clean_model.clone(),
+           cam.orientation)
         },
         Err(_) => {
           let make = fetch_tag!(self.tiff, Tag::Make).get_str();
           let model = fetch_tag!(self.tiff, Tag::Model).get_str();
-          (make.to_string(), model.to_string(), make.to_string(), model.to_string())
+          let orientation = if let Some(ifd) = self.tiff.find_first_ifd(Tag::Orientation) {
+            Orientation::from_u16(ifd.find_entry(Tag::Orientation).unwrap().get_usize(0) as u16)
+          } else {
+            Orientation::Unknown
+          };
+          (make.to_string(), model.to_string(), make.to_string(), model.to_string(), orientation)
         },
       }
     };
@@ -73,6 +79,7 @@ impl<'a> Decoder for DngDecoder<'a> {
       xyz_to_cam: try!(self.get_color_matrix()),
       cfa: if cpp == 3 {CFA::new("")} else {try!(self.get_cfa(raw))},
       crops: try!(self.get_crops(raw, width, height)),
+      orientation: orientation,
     })
   }
 }

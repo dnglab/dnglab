@@ -149,10 +149,11 @@ impl<'a> Decoder for CrwDecoder<'a> {
       let sensorinfo = fetch_tag!(self.ciff, CiffTag::SensorInfo);
       let width = sensorinfo.get_usize(1);
       let height = sensorinfo.get_usize(2);
-      (width, height, try!(self.decode_compressed(camera, width, height)))
+      (width, height, try!(self.decode_compressed(&camera, width, height)))
     };
 
-    ok_image(camera, width, height, try!(self.get_wb(camera)), image)
+    let wb = self.get_wb(&camera)?;
+    ok_image(camera, width, height, wb, image)
   }
 }
 

@@ -43,7 +43,7 @@ impl<'a> Decoder for MosDecoder<'a> {
         }
       },
       7 | 99 => {
-        try!(self.decode_compressed(camera, src, width, height))
+        try!(self.decode_compressed(&camera, src, width, height))
       },
       x => return Err(format!("MOS: unsupported compression {}", x).to_string())
     };

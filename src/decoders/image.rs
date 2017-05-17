@@ -32,6 +32,8 @@ pub struct RawImage {
   pub cfa: CFA,
   /// how much to crop the image to get all the usable area, order is top, right, bottom, left
   pub crops: [usize;4],
+  /// orientation of the image as indicated by the image metadata
+  pub orientation: Orientation,
   /// image data itself, has width*height*cpp elements
   pub data: Vec<u16>,
 }
@@ -60,7 +62,7 @@ pub struct SRGBImage {
 
 
 impl RawImage {
-  #[doc(hidden)] pub fn new(camera: &Camera, width: usize, height: usize, wb_coeffs: [f32;4], image: Vec<u16>) -> RawImage {
+  #[doc(hidden)] pub fn new(camera: Camera, width: usize, height: usize, wb_coeffs: [f32;4], image: Vec<u16>) -> RawImage {
     let blacks = if camera.blackareah.1 != 0 || camera.blackareav.1 != 0 {
       let mut avg = [0 as f32; 4];
       let mut count = [0 as f32; 4];
@@ -101,6 +103,7 @@ impl RawImage {
       xyz_to_cam: camera.xyz_to_cam,
       cfa: camera.cfa.clone(),
       crops: camera.crops,
+      orientation: camera.orientation,
     }
   }
 

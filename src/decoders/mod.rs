@@ -87,6 +87,7 @@ impl Buffer {
   }
 }
 
+/// Contains sanitized information about the raw image's properties
 #[derive(Debug, Clone)]
 pub struct Camera {
   pub make: String,
@@ -97,6 +98,7 @@ pub struct Camera {
   pub filesize: usize,
   pub raw_width: usize,
   pub raw_height: usize,
+  pub orientation: Orientation,
   whitelevels: [u16;4],
   blacklevels: [u16;4],
   blackareah: (usize, usize),
@@ -183,15 +185,65 @@ impl Camera {
       bps: 0,
       wb_offset: 0,
       hints: Vec::new(),
+      orientation: Orientation::Unknown,
     }
   }
 }
 
-pub fn ok_image(camera: &Camera, width: usize, height: usize, wb_coeffs: [f32;4], image: Vec<u16>) -> Result<RawImage,String> {
+/// Possible values for the IFD tag Orientation (0x0112)
+#[derive(Debug, Copy, Clone, PartialEq)]
+pub enum Orientation {
+  Normal,
+  HorizontalFlip,
+  Rotate180,
+  VerticalFlip,
+  Transpose,
+  Rotate90,
+  Transverse,
+  Rotate270,
+  Unknown,
+}
+
+impl Orientation {
+  /// Convert a u16 from the IFD tag Orientation (0x0112) into its corresponding
+  /// enum value
+  pub fn from_u16(orientation: u16) -> Orientation {
+    match orientation {
+      1 => Orientation::Normal,
+      2 => Orientation::HorizontalFlip,
+      3 => Orientation::Rotate180,
+      4 => Orientation::VerticalFlip,
+      5 => Orientation::Transpose,
+      6 => Orientation::Rotate90,
+      7 => Orientation::Transverse,
+      8 => Orientation::Rotate270,
+      _ => Orientation::Unknown,
+    }
+  }
+
+  /// Convert orientation to an image flip operation tuple. The first field is
+  /// if x and y coordinates should be swapped (transposed). The second and
+  /// third field is horizontal and vertical flipping respectively.
+  pub fn to_flips(&self) -> (bool, bool, bool) {
+    match *self {
+      Orientation::Normal
+      | Orientation::Unknown => (false, false, false),
+      Orientation::VerticalFlip => (false, false, true),
+      Orientation::HorizontalFlip => (false, true, false),
+      Orientation::Rotate180 => (false, true, true),
+      Orientation::Transpose => (true, false, false),
+      Orientation::Rotate270 => (true, false, true),
+      Orientation::Rotate90 => (true, true, false),
+      Orientation::Transverse => (true, true, true),
+    }
+  }
+}
+
+pub fn ok_image(camera: Camera, width: usize, height: usize, wb_coeffs: [f32;4], image: Vec<u16>) -> Result<RawImage,String> {
   Ok(RawImage::new(camera, width, height, wb_coeffs, image))
 }
 
-pub fn ok_image_with_blacklevels(camera: &Camera, width: usize, height: usize, wb_coeffs: [f32;4], blacks: [u16;4], image: Vec<u16>) -> Result<RawImage,String> {
+pub fn ok_image_with_blacklevels(camera: Camera, width: usize, height: usize, wb_coeffs: [f32;4], blacks: [u16;4], image: Vec<u16>) -> Result<RawImage,String> {
   let mut img = RawImage::new(camera, width, height, wb_coeffs, image);
   img.blacklevels = blacks;
   Ok(img)
@@ -314,27 +366,37 @@ impl RawLoader {
 
     // If all else fails see if we match by filesize to one of those CHDK style files
     if let Some(cam) = self.naked.get(&buf.size) {
-      return Ok(Box::new(nkd::NakedDecoder::new(buffer, cam, self)))
+      return Ok(Box::new(nkd::NakedDecoder::new(buffer, cam.clone(), self)))
     }
 
     Err("Couldn't find a decoder for this file".to_string())
   }
 
-  pub fn check_supported_with_everything<'a>(&'a self, make: &str, model: &str, mode: &str) -> Result<&Camera, String> {
+  pub fn check_supported_with_everything<'a>(&'a self, make: &str, model: &str, mode: &str) -> Result<Camera, String> {
     match self.cameras.get(&(make.to_string(),model.to_string(),mode.to_string())) {
-      Some(cam) => Ok(cam),
+      Some(cam) => Ok(cam.clone()),
       None => Err(format!("Couldn't find camera \"{}\" \"{}\" mode \"{}\"", make, model, mode)),
     }
   }
 
-  pub fn check_supported_with_mode<'a>(&'a self, tiff: &'a TiffIFD, mode: &str) -> Result<&Camera, String> {
+  pub fn check_supported_with_mode<'a>(&'a self, tiff: &'a TiffIFD, mode: &str) -> Result<Camera, String> {
     let make = fetch_tag!(tiff, Tag::Make).get_str();
     let model = fetch_tag!(tiff, Tag::Model).get_str();
 
-    self.check_supported_with_everything(make, model, mode)
+    // Get a default instance to modify
+    let mut camera = self.check_supported_with_everything(make, model, mode)?;
+
+    // Lookup the orientation of the image to store for rotating after demosaic
+    if let Some(ifd) = tiff.find_first_ifd(Tag::Orientation) {
+      // Since we got here it should always be safe to unwrap
+      camera.orientation = Orientation::from_u16(
+        ifd.find_entry(Tag::Orientation).unwrap().get_usize(0) as u16)
+    }
+
+    Ok(camera)
   }
 
-  pub fn check_supported<'a>(&'a self, tiff: &'a TiffIFD) -> Result<&Camera, String> {
+  pub fn check_supported<'a>(&'a self, tiff: &'a TiffIFD) -> Result<Camera, String> {
     self.check_supported_with_mode(tiff, "")
   }
 
