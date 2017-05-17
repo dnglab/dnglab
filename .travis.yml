@@ -17,3 +17,4 @@ notifications:
       - "irc.mozilla.org#chimper"
     on_success: always
     on_failure: always
+    skip_join: true
