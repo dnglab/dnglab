@@ -1,0 +1,10 @@
+make = "Canon"
+model = "Canon EOS DIGITAL REBEL XTi"
+clean_make = "Canon"
+clean_model = "EOS Digital Rebel XTi"
+blackpoint = 0
+whitepoint = 4058
+color_matrix = [7054, -1501, -990, -8156, 15544, 2812, -1278, 1414, 7796]
+color_pattern = "RGGB"
+crops = [18,0,2,42]
+blackareav = [0, 40]

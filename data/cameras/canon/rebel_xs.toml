@@ -1,7 +1,7 @@
 make = "Canon"
-model = "Canon EOS 1000D"
+model = "Canon EOS DIGITAL REBEL XS"
 clean_make = "Canon"
-clean_model = "EOS 1000D"
+clean_model = "EOS Digital Rebel XS"
 blackpoint = 0
 whitepoint = 3600
 color_matrix = [6771, -1139, -977, -7818, 15123, 2928, -1244, 1437, 7533]

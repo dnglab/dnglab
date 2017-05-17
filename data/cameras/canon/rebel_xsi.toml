@@ -1,0 +1,9 @@
+make = "Canon"
+model = "Canon EOS DIGITAL REBEL XSi"
+clean_make = "Canon"
+clean_model = "Digital Rebel XSi"
+blackpoint = 1020
+whitepoint = 14500
+color_matrix = [5784, -262, -821, -7539, 15064, 2672, -1982, 2681, 7427]
+color_pattern = "RGGB"
+crops = [18,0,2,22]
