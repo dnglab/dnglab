@@ -54,11 +54,7 @@ impl<'a> Decoder for DngDecoder<'a> {
         Err(_) => {
           let make = fetch_tag!(self.tiff, Tag::Make).get_str();
           let model = fetch_tag!(self.tiff, Tag::Model).get_str();
-          let orientation = if let Some(ifd) = self.tiff.find_first_ifd(Tag::Orientation) {
-            Orientation::from_u16(ifd.find_entry(Tag::Orientation).unwrap().get_usize(0) as u16)
-          } else {
-            Orientation::Unknown
-          };
+          let orientation = Orientation::from_tiff(&self.tiff);
           (make.to_string(), model.to_string(), make.to_string(), model.to_string(), orientation)
         },
       }

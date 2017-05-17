@@ -221,6 +221,15 @@ impl Orientation {
     }
   }
 
+  /// Extract orienation from a TiffIFD. If the given TiffIFD has an invalid
+  /// value or contains no orientation data `Orientation::Unknown` is returned
+  fn from_tiff(tiff: &TiffIFD) -> Orientation {
+    match tiff.find_entry(Tag::Orientation) {
+      Some(entry) => Orientation::from_u16(entry.get_usize(0) as u16),
+      None => Orientation::Unknown,
+    }
+  }
+
   /// Convert orientation to an image flip operation tuple. The first field is
   /// if x and y coordinates should be swapped (transposed). The second and
   /// third field is horizontal and vertical flipping respectively.
@@ -386,12 +395,8 @@ impl RawLoader {
     // Get a default instance to modify
     let mut camera = self.check_supported_with_everything(make, model, mode)?;
 
-    // Lookup the orientation of the image to store for rotating after demosaic
-    if let Some(ifd) = tiff.find_first_ifd(Tag::Orientation) {
-      // Since we got here it should always be safe to unwrap
-      camera.orientation = Orientation::from_u16(
-        ifd.find_entry(Tag::Orientation).unwrap().get_usize(0) as u16)
-    }
+    // Lookup the orientation of the image for later image rotation
+    camera.orientation = Orientation::from_tiff(tiff);
 
     Ok(camera)
   }
