@@ -1,7 +1,12 @@
 make = "SONY"
-model = "SLT-A55V"
+model = "SLT-A55"
 clean_make = "Sony"
-clean_model = "SLT-A55V"
+clean_model = "SLT-A55"
+
+model_aliases = [
+  ["SLT-A55V", "SLT-A55V"],
+]
+
 blackpoint = 512
 whitepoint = 16300
 color_matrix = [5932, -1492, -411, -4813, 12285, 2856, -741, 1524, 6739]
