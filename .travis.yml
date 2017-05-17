@@ -12,4 +12,8 @@ notifications:
       - pedro@pedrocr.net
     on_success: never
     on_failure: always
-  irc: "irc.mozilla.org#chimper"
+  irc:
+    channels:
+      - "irc.mozilla.org#chimper"
+    on_success: always
+    on_failure: always
