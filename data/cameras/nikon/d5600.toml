@@ -1,8 +1,8 @@
 make = "NIKON CORPORATION"
-model = "NIKON D7200"
+model = "NIKON D5600"
 clean_make = "Nikon"
-clean_model = "D7200"
-color_matrix = [8322, -3112, -1047, -6367, 14342, 2179, -988, 1638, 6394]
+clean_model = "D5600"
+color_matrix = [8821, -2938, -785, -4178, 12142, 2287, -824, 1651, 6860]
 color_pattern = "RGGB"
 crops = [0,0,0,0]
 
