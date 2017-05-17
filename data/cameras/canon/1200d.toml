@@ -2,6 +2,14 @@ make = "Canon"
 model = "Canon EOS 1200D"
 clean_make = "Canon"
 clean_model = "EOS 1200D"
+
+model_aliases = [
+  ["Canon EOS DIGITAL REBEL T5", "Rebel T5"],
+  ["Canon EOS REBEL T5", "Rebel T5"],
+  ["Canon EOS Kiss Digital X70", "Kiss X70"],
+  ["Canon EOS Kiss X70", "Kiss X70"],
+]
+
 blackpoint = 2046
 whitepoint = 12279
 color_matrix = [6461, -907, -882, -4300, 12184, 2378, -819, 1944, 5931]
