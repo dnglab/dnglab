@@ -40,7 +40,8 @@ impl<'a> Decoder for NrwDecoder<'a> {
       decode_12be(src, width, height)
     };
 
-    ok_image(camera, width, height, try!(self.get_wb(camera)), image)
+    let wb = self.get_wb(&camera)?;
+    ok_image(camera, width, height, wb, image)
   }
 }
 

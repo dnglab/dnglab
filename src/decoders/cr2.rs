@@ -66,7 +66,7 @@ impl<'a> Decoder for Cr2Decoder<'a> {
 
       // Convert the YUV in sRAWs to RGB
       if cpp == 3 {
-        try!(self.convert_to_rgb(camera, &mut ljpegout));
+        try!(self.convert_to_rgb(&camera, &mut ljpegout));
         if raw.has_entry(Tag::ImageWidth) {
           width = fetch_tag!(raw, Tag::ImageWidth).get_usize(0) * cpp;
           height = fetch_tag!(raw, Tag::ImageLength).get_usize(0) ;
@@ -142,7 +142,8 @@ impl<'a> Decoder for Cr2Decoder<'a> {
       }
     };
 
-    let mut img = RawImage::new(camera, width, height, try!(self.get_wb(camera)), image);
+    let wb = self.get_wb(&camera)?;
+    let mut img = RawImage::new(camera, width, height, wb, image);
     if cpp == 3 {
       img.cpp = 3;
       img.width /= 3;

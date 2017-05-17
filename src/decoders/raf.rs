@@ -61,7 +61,7 @@ impl<'a> Decoder for RafDecoder<'a> {
     };
 
     if camera.find_hint("fuji_rotation") || camera.find_hint("fuji_rotation_alt") {
-      let (width, height, image) = RafDecoder::rotate_image(&image, camera, width, height);
+      let (width, height, image) = RafDecoder::rotate_image(&image, &camera, width, height);
       Ok(RawImage {
         make: camera.make.clone(),
         model: camera.model.clone(),
@@ -77,6 +77,7 @@ impl<'a> Decoder for RafDecoder<'a> {
         xyz_to_cam: camera.xyz_to_cam,
         cfa: camera.cfa.clone(),
         crops: [0,0,0,0],
+        orientation: camera.orientation,
       })
     } else {
       ok_image(camera, width, height, try!(self.get_wb()), image)

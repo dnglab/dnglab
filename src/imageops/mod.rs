@@ -6,8 +6,9 @@ pub mod level;
 pub mod colorspaces;
 pub mod curves;
 pub mod gamma;
+pub mod transform;
 
-use decoders::RawImage;
+use decoders::{Orientation, RawImage};
 
 extern crate time;
 
@@ -58,8 +59,22 @@ fn do_timing<O, F: FnMut() -> O>(name: &str, mut closure: F) -> O {
 }
 
 pub fn simple_decode (img: &RawImage, maxwidth: usize, maxheight: usize) -> OpBuffer {
+  // First we check if the image's orientation results in a rotation that
+  // swaps the maximum width with the maximum height
+  let (transpose, ..) = img.orientation.to_flips();
+  let (maxwidth, maxheight) = if transpose {
+    (maxheight, maxwidth)
+  } else {
+    (maxwidth, maxheight)
+  };
+
   // Demosaic into 4 channel f32 (RGB or RGBE)
   let mut channel4 = do_timing("demosaic", ||demosaic::demosaic_and_scale(img, maxwidth, maxheight));
+
+  // Fix orientation if necessary and possible
+  if img.orientation != Orientation::Normal && img.orientation != Orientation::Unknown {
+    channel4 = do_timing("rotate", || { transform::rotate(img, &channel4) });
+  }
 
   do_timing("level_and_balance", || { level::level_and_balance(img, &mut channel4) });
   // From now on we are in 3 channel f32 (RGB or Lab)
@@ -74,6 +89,11 @@ pub fn simple_decode (img: &RawImage, maxwidth: usize, maxheight: usize) -> OpBu
 pub fn simple_decode_linear (img: &RawImage, maxwidth: usize, maxheight: usize) -> OpBuffer {
   // Demosaic into 4 channel f32 (RGB or RGBE)
   let mut channel4 = do_timing("demosaic", ||demosaic::demosaic_and_scale(img, maxwidth, maxheight));
+
+  // Fix orientation if necessary and possible
+  if img.orientation != Orientation::Normal && img.orientation != Orientation::Unknown {
+    channel4 = do_timing("rotate", || { transform::rotate(img, &channel4) });
+  }
 
   do_timing("level_and_balance", || { level::level_and_balance(img, &mut channel4) });
   // From now on we are in 3 channel f32 (RGB or Lab)

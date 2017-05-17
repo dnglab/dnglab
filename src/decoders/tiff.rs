@@ -31,6 +31,7 @@ pub enum Tag {
   Make             = 0x010F,
   Model            = 0x0110,
   StripOffsets     = 0x0111,
+  Orientation      = 0x0112,
   SamplesPerPixel  = 0x0115,
   StripByteCounts  = 0x0117,
   PanaOffsets      = 0x0118,
@@ -91,6 +92,7 @@ pub enum Tag {
   KdcIFD           = 0xFE00,
 }
 }
+
                           // 0-1-2-3-4-5-6-7-8-9-10-11-12-13
 const DATASHIFTS: [u8;14] = [0,0,0,1,2,3,0,0,1,2, 3, 2, 3, 2];
 
