@@ -209,24 +209,28 @@ impl RawLoader {
       Ok(val) => val,
       Err(e) => panic!(format!("Error parsing all.toml: {:?}", e)),
     };
+
     let mut cams = Vec::new();
     for camera in toml.get("cameras").unwrap().as_array().unwrap() {
+      // Create a list of all the camera modes including the base one
+      let mut cammodes = Vec::new();
       let ct = camera.as_table().unwrap();
-      let mut cam = Camera::new();
-      cam.update_from_toml(ct);
-      let basecam = cam.clone();
-      cams.push(cam);
+      cammodes.push(ct);
+      if let Some(val) = ct.get("modes") {
+        for mode in val.as_array().unwrap() {
+          cammodes.push(mode.as_table().unwrap());
+        }
+      }
 
-      match ct.get("modes") {
-        Some(val) => {
-          for mode in val.as_array().unwrap() {
-            let cmt = mode.as_table().unwrap();
-            let mut mcam = basecam.clone();
-            mcam.update_from_toml(cmt);
-            cams.push(mcam);
-          }
-        },
-        None => {},
+      // Start with the basic camera
+      let mut cam = Camera::new();
+      cam.update_from_toml(cammodes[0]);
+
+      // For each mode (including the base) do the updates and append to the vector
+      for ct in cammodes {
+        let mut mcam = cam.clone();
+        mcam.update_from_toml(ct);
+        cams.push(mcam);
       }
     }
 
