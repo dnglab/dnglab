@@ -225,12 +225,25 @@ impl RawLoader {
       // Start with the basic camera
       let mut cam = Camera::new();
       cam.update_from_toml(cammodes[0]);
+      // Create a list of alias names including the base one
+      let mut camnames = Vec::new();
+      camnames.push((cam.model.clone(), cam.clean_model.clone()));
+      if let Some(val) = ct.get("model_aliases") {
+        for alias in val.as_array().unwrap() {
+          camnames.push((alias[0].as_str().unwrap().to_string().clone(), 
+                         alias[1].as_str().unwrap().to_string().clone()));
+        }
+      }
 
-      // For each mode (including the base) do the updates and append to the vector
-      for ct in cammodes {
-        let mut mcam = cam.clone();
-        mcam.update_from_toml(ct);
-        cams.push(mcam);
+      // For each combination of alias and mode (including the base ones) create Camera
+      for (model, clean_model) in camnames {
+        for ct in cammodes.clone() {
+          let mut mcam = cam.clone();
+          mcam.update_from_toml(ct);
+          mcam.model = model.clone();
+          mcam.clean_model = clean_model.clone();
+          cams.push(mcam);
+        }
       }
     }
 
