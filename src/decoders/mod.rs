@@ -352,6 +352,11 @@ impl RawLoader {
         return Ok(Box::new(dng::DngDecoder::new(buffer, tiff, self)))
       }
 
+      // The DCS560C is really a CR2 camera so we just special case it here
+      if tiff.has_entry(Tag::Model) && fetch_tag!(tiff, Tag::Model).get_str() == "DCS560C" {
+        return Ok(Box::new(cr2::Cr2Decoder::new(buffer, tiff, self)))
+      }
+
       if tiff.has_entry(Tag::Make) {
         macro_rules! use_decoder {
             ($dec:ty, $buf:ident, $tiff:ident, $rawdec:ident) => (Ok(Box::new(<$dec>::new($buf, $tiff, $rawdec)) as Box<Decoder>));
