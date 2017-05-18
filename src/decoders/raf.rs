@@ -33,7 +33,7 @@ impl<'a> Decoder for RafDecoder<'a> {
     };
     let offset = fetch_tag!(raw, Tag::RafOffsets).get_usize(0) + raw.start_offset();
     let bps = match raw.find_entry(Tag::RafBitsPerSample) {
-      Some(val) => val.get_u32(0),
+      Some(val) => val.get_u32(0) as usize,
       None      => 16,
     };
     let src = &self.buffer[offset..];
@@ -46,6 +46,9 @@ impl<'a> Decoder for RafDecoder<'a> {
     } else if camera.find_hint("jpeg32") {
       decode_12be_msb32(src, width, height)
     } else {
+      if src.len() < bps*width*height/8 {
+        return Err("RAF: Don't know how to decode compressed yet".to_string())
+      }
       match bps {
         12 => decode_12le(src, width, height),
         14 => decode_14le_unpacked(src, width, height),
