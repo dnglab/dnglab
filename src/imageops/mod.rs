@@ -13,7 +13,7 @@ use decoders::{Orientation, RawImage};
 
 extern crate time;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct OpBuffer {
   pub width: usize,
   pub height: usize,
@@ -47,6 +47,39 @@ impl OpBuffer {
       closure(line, &self.data[self.width*self.colors*row..]);
     });
     out
+  }
+
+  /// Helper function to allow human readable creation of `OpBuffer` instances
+  pub fn from_rgb_str_vec(data: Vec<&str>) -> OpBuffer {
+    let width = data.first().expect("Invalid data for rgb helper function").len();
+    let height = data.len();
+    let colors = 3;
+
+    let mut pixel_data: Vec<f32> = Vec::with_capacity(width * height * colors);
+    for row in data {
+      for col in row.chars() {
+        let (r, g, b) = match col {
+            'R' => (1.0, 0.0, 0.0),
+            'G' => (0.0, 1.0, 0.0),
+            'B' => (0.0, 0.0, 1.0),
+            'O' => (1.0, 1.0, 1.0),
+            ' ' => (0.0, 0.0, 0.0),
+            c @ _ => panic!(format!(
+              "Invalid color '{}' sent to rgb expected any of 'RGBO '", c)),
+        };
+
+        pixel_data.push(r);
+        pixel_data.push(g);
+        pixel_data.push(b);
+      }
+    }
+
+    OpBuffer {
+      width: width,
+      height: height,
+      colors: colors,
+      data: pixel_data,
+    }
   }
 }
 

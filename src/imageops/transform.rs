@@ -1,7 +1,7 @@
 extern crate rayon;
 use self::rayon::prelude::*;
 
-use decoders::RawImage;
+use decoders::{Orientation, RawImage};
 use imageops::OpBuffer;
 
 /// Mirror an OpBuffer horizontally
@@ -49,9 +49,8 @@ pub fn transpose(buf: &OpBuffer) -> OpBuffer {
   out
 }
 
-/// Rotate an OpBuffer based on the given RawImage's orientation
-pub fn rotate(img: &RawImage, buf: &OpBuffer) -> OpBuffer {
-  match img.orientation.to_flips() {
+fn rotate_buffer(buf: &OpBuffer, orientation: &Orientation) -> OpBuffer {
+  match orientation.to_flips() {
     (false, false, false) => buf.clone(),
     (false, false, true) => flip_vertical(buf),
     (false, true, false) => flip_horizontal(buf),
@@ -59,6 +58,132 @@ pub fn rotate(img: &RawImage, buf: &OpBuffer) -> OpBuffer {
     (true, false, false) => transpose(buf),
     (true, false, true) => flip_vertical(&transpose(buf)),
     (true, true, false) => flip_horizontal(&transpose(buf)),
-    (true, true, true) => flip_vertical(&transpose(&flip_horizontal(buf))),
+    (true, true, true) => flip_vertical(&flip_horizontal(&transpose(buf))),
+  }
+}
+
+/// Rotate an OpBuffer based on the given RawImage's orientation
+pub fn rotate(img: &RawImage, buf: &OpBuffer) -> OpBuffer {
+  rotate_buffer(buf, &img.orientation)
+}
+
+#[cfg(test)]
+mod tests {
+  use decoders::Orientation;
+  use imageops::OpBuffer;
+  use super::rotate_buffer;
+
+  // Store a colorful capital F as a constant, since it is used in all tests
+  lazy_static! {
+      static ref F: OpBuffer = {
+        OpBuffer::from_rgb_str_vec(vec![
+          "        ",
+          " RRRRRR ",
+          " GG     ",
+          " BBBB   ",
+          " GG     ",
+          " GG     ",
+          "        ",
+        ])
+      };
+  }
+
+  #[test]
+  fn rotate_unknown() {
+    assert_eq!(rotate_buffer(&F.clone(), &Orientation::Unknown), F.clone());
+  }
+
+  #[test]
+  fn rotate_normal() {
+    assert_eq!(rotate_buffer(&F.clone(), &Orientation::Normal), F.clone());
+  }
+
+  #[test]
+  fn rotate_flip_x() {
+    let output = OpBuffer::from_rgb_str_vec(vec![
+      "        ",
+      " RRRRRR ",
+      "     GG ",
+      "   BBBB ",
+      "     GG ",
+      "     GG ",
+      "        ",
+    ]);
+
+    assert_eq!(rotate_buffer(&F.clone(), &Orientation::HorizontalFlip), output);
+  }
+
+  #[test]
+  fn rotate_flip_y() {
+    let output = OpBuffer::from_rgb_str_vec(vec![
+      "        ",
+      " GG     ",
+      " GG     ",
+      " BBBB   ",
+      " GG     ",
+      " RRRRRR ",
+      "        ",
+    ]);
+    assert_eq!(rotate_buffer(&F.clone(), &Orientation::VerticalFlip), output);
+  }
+
+  #[test]
+  fn rotate_rotate90_cw() {
+    let output = OpBuffer::from_rgb_str_vec(vec![
+      "       ",
+      " GGBGR ",
+      " GGBGR ",
+      "   B R ",
+      "   B R ",
+      "     R ",
+      "     R ",
+      "       ",
+    ]);
+    assert_eq!(rotate_buffer(&F.clone(), &Orientation::Rotate90), output);
+  }
+
+  #[test]
+  fn rotate_rotate270_cw() {
+    let output = OpBuffer::from_rgb_str_vec(vec![
+      "       ",
+      " R     ",
+      " R     ",
+      " R B   ",
+      " R B   ",
+      " RGBGG ",
+      " RGBGG ",
+      "       ",
+    ]);
+    assert_eq!(rotate_buffer(&F.clone(), &Orientation::Rotate270), output);
+  }
+
+  #[test]
+  fn rotate_transpose() {
+    let output = OpBuffer::from_rgb_str_vec(vec![
+      "       ",
+      " RGBGG ",
+      " RGBGG ",
+      " R B   ",
+      " R B   ",
+      " R     ",
+      " R     ",
+      "       ",
+    ]);
+    assert_eq!(rotate_buffer(&F.clone(), &Orientation::Transpose), output);
+  }
+
+  #[test]
+  fn rotate_transverse() {
+    let output = OpBuffer::from_rgb_str_vec(vec![
+      "       ",
+      "     R ",
+      "     R ",
+      "   B R ",
+      "   B R ",
+      " GGBGR ",
+      " GGBGR ",
+      "       ",
+    ]);
+    assert_eq!(rotate_buffer(&F.clone(), &Orientation::Transverse), output);
   }
 }
