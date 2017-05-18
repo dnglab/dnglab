@@ -6,7 +6,9 @@ pub fn level_and_balance(img: &RawImage, buf: &mut OpBuffer) {
   let mins = img.blacklevels.iter().map(|&x| x as f32).collect::<Vec<f32>>();
   let ranges = img.whitelevels.iter().enumerate().map(|(i, &x)| (x as f32) - mins[i]).collect::<Vec<f32>>();
 
-  let coeffs = if img.wb_coeffs[0].is_nan() {
+  let coeffs = if img.is_monochrome() {
+    [1.0, 1.0, 1.0, 1.0]
+  } else if img.wb_coeffs[0].is_nan() {
     img.neutralwb()
   } else {
     img.wb_coeffs

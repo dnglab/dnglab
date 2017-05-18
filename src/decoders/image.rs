@@ -278,4 +278,9 @@ impl RawImage {
   pub fn cropped_cfa(&self) -> CFA {
     self.cfa.shift(self.crops[3], self.crops[0])
   }
+
+  /// Checks if the image is monochrome
+  pub fn is_monochrome(&self) -> bool {
+    self.cpp == 1 && !self.cfa.is_valid()
+  }
 }
