@@ -48,11 +48,16 @@ impl<'a> Decoder for DcrDecoder<'a> {
 
 impl<'a> DcrDecoder<'a> {
   fn get_wb(&self) -> Result<[f32;4], String> {
-    let levels = fetch_tag!(self.tiff, Tag::DcrWB).get_data();
-    Ok([2048.0 / BEu16(levels,40) as f32,
-        2048.0 / BEu16(levels,42) as f32,
-        2048.0 / BEu16(levels,44) as f32,
-        NAN])
+    let dcrwb = fetch_tag!(self.tiff, Tag::DcrWB);
+    if dcrwb.count() >= 46 {
+      let levels = dcrwb.get_data();
+      Ok([2048.0 / BEu16(levels,40) as f32,
+          2048.0 / BEu16(levels,42) as f32,
+          2048.0 / BEu16(levels,44) as f32,
+          NAN])
+    } else {
+      Ok([NAN,NAN,NAN,NAN])
+    }
   }
 
   fn decode_kodak65000(buf: &[u8], curve: &LookupTable, width: usize, height: usize) -> Vec<u16> {
