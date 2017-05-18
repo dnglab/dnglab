@@ -73,44 +73,10 @@ mod tests {
   use imageops::OpBuffer;
   use super::rotate_buffer;
 
-  /// Helper function to allow human readable creation of `OpBuffer` instances
-  fn rgb(data: Vec<&str>) -> OpBuffer {
-    let width = data.first().expect("Invalid data for rgb helper function").len();
-    let height = data.len();
-    let colors = 3;
-
-    let mut pixel_data: Vec<f32> = Vec::with_capacity(width * height * colors);
-    for row in data {
-      for col in row.chars() {
-        let (r, g, b) = match col {
-            'R' => (1.0, 0.0, 0.0),
-            'G' => (0.0, 1.0, 0.0),
-            'B' => (0.0, 0.0, 1.0),
-            'O' => (1.0, 1.0, 1.0),
-            ' ' => (0.0, 0.0, 0.0),
-            c @ _ => panic!(format!(
-              "Invalid color '{}' sent to rgb expected any of 'RGBO '", c)),
-        };
-
-        pixel_data.push(r);
-        pixel_data.push(g);
-        pixel_data.push(b);
-      }
-    }
-
-    OpBuffer {
-      width: width,
-      height: height,
-      colors: colors,
-      data: pixel_data,
-    }
-  }
-
-
   // Store a colorful capital F as a constant, since it is used in all tests
   lazy_static! {
       static ref F: OpBuffer = {
-        rgb(vec![
+        OpBuffer::from_rgb_str_vec(vec![
           "        ",
           " RRRRRR ",
           " GG     ",
@@ -134,7 +100,7 @@ mod tests {
 
   #[test]
   fn rotate_flip_x() {
-    let output = rgb(vec![
+    let output = OpBuffer::from_rgb_str_vec(vec![
       "        ",
       " RRRRRR ",
       "     GG ",
@@ -149,7 +115,7 @@ mod tests {
 
   #[test]
   fn rotate_flip_y() {
-    let output = rgb(vec![
+    let output = OpBuffer::from_rgb_str_vec(vec![
       "        ",
       " GG     ",
       " GG     ",
@@ -163,7 +129,7 @@ mod tests {
 
   #[test]
   fn rotate_rotate90_cw() {
-    let output = rgb(vec![
+    let output = OpBuffer::from_rgb_str_vec(vec![
       "       ",
       " GGBGR ",
       " GGBGR ",
@@ -178,7 +144,7 @@ mod tests {
 
   #[test]
   fn rotate_rotate270_cw() {
-    let output = rgb(vec![
+    let output = OpBuffer::from_rgb_str_vec(vec![
       "       ",
       " R     ",
       " R     ",
@@ -193,7 +159,7 @@ mod tests {
 
   #[test]
   fn rotate_transpose() {
-    let output = rgb(vec![
+    let output = OpBuffer::from_rgb_str_vec(vec![
       "       ",
       " RGBGG ",
       " RGBGG ",
@@ -208,7 +174,7 @@ mod tests {
 
   #[test]
   fn rotate_transverse() {
-    let output = rgb(vec![
+    let output = OpBuffer::from_rgb_str_vec(vec![
       "       ",
       "     R ",
       "     R ",
