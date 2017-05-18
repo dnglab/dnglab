@@ -62,10 +62,13 @@ impl<'a> DcrDecoder<'a> {
     let mut random: u32 = 0;
     for row in 0..height {
       for col in (0..width).step(256) {
-        let mut pred: [u32;2] = [0;2];
+        let mut pred: [i32;2] = [0;2];
         let buf = DcrDecoder::decode_segment(&mut input, cmp::min(256, width-col));
         for (i,val) in buf.iter().enumerate() {
-          pred[i & 1] += *val as u32;
+          pred[i & 1] += *val;
+          if pred[i & 1] < 0 {
+            println!("Found a negative pixel!");
+          }
           out[row*width+col+i] = curve.dither(pred[i & 1] as u16, &mut random);
         }
       }
@@ -74,8 +77,8 @@ impl<'a> DcrDecoder<'a> {
     out
   }
 
-  fn decode_segment(input: &mut ByteStream, size: usize) -> Vec<u16> {
-    let mut out: Vec<u16> = vec![0; size];
+  fn decode_segment(input: &mut ByteStream, size: usize) -> Vec<i32> {
+    let mut out: Vec<i32> = vec![0; size];
 
     let mut lens: [usize;256] = [0;256];
     for i in (0..size).step(2) {
@@ -98,13 +101,12 @@ impl<'a> DcrDecoder<'a> {
         }
         bits += 32;
       }
-      let mut diff = (bitbuf & (0xffff >> (16-len))) as u32;
+      out[i] = (bitbuf & (0xffff >> (16-len))) as i32;
       bitbuf >>= len;
       bits -= len;
-      if len != 0 && (diff & (1 << (len-1))) == 0 {
-        diff -= (1 << len) - 1;
+      if len != 0 && (out[i] & (1 << (len-1))) == 0 {
+        out[i] -= (1 << len) - 1;
       }
-      out[i] = diff as u16;
     }
 
     out
