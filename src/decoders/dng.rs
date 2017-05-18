@@ -37,6 +37,7 @@ impl<'a> Decoder for DngDecoder<'a> {
     let width = fetch_tag!(raw, Tag::ImageWidth).get_usize(0);
     let height = fetch_tag!(raw, Tag::ImageLength).get_usize(0);
     let cpp = fetch_tag!(raw, Tag::SamplesPerPixel).get_usize(0);
+    let linear = fetch_tag!(raw, Tag::PhotometricInt).get_usize(0) == 34892;
 
     let image = match fetch_tag!(raw, Tag::Compression).get_u32(0) {
       1 => try!(self.decode_uncompressed(raw, width*cpp, height)),
@@ -73,7 +74,7 @@ impl<'a> Decoder for DngDecoder<'a> {
       blacklevels: try!(self.get_blacklevels(raw)),
       whitelevels: try!(self.get_whitelevels(raw)),
       xyz_to_cam: try!(self.get_color_matrix()),
-      cfa: if cpp == 3 {CFA::new("")} else {try!(self.get_cfa(raw))},
+      cfa: if linear {CFA::new("")} else {try!(self.get_cfa(raw))},
       crops: try!(self.get_crops(raw, width, height)),
       orientation: orientation,
     })
@@ -82,8 +83,11 @@ impl<'a> Decoder for DngDecoder<'a> {
 
 impl<'a> DngDecoder<'a> {
   fn get_wb(&self) -> Result<[f32;4], String> {
-    let levels = fetch_tag!(self.tiff, Tag::AsShotNeutral);
-    Ok([1.0/levels.get_f32(0),1.0/levels.get_f32(1),1.0/levels.get_f32(2),NAN])
+    if let Some(levels) = self.tiff.find_entry(Tag::AsShotNeutral) {
+      Ok([1.0/levels.get_f32(0),1.0/levels.get_f32(1),1.0/levels.get_f32(2),NAN])
+    } else {
+      Ok([NAN,NAN,NAN,NAN])
+    }
   }
 
   fn get_blacklevels(&self, raw: &TiffIFD) -> Result<[u16;4], String> {
@@ -125,8 +129,16 @@ impl<'a> DngDecoder<'a> {
     let cmatrix = {
       if let Some(c) = self.tiff.find_entry(Tag::ColorMatrix2) {
         c
+      } else if let Some(c) = self.tiff.find_entry(Tag::ColorMatrix1) {
+        c
       } else {
-        fetch_tag!(self.tiff, Tag::ColorMatrix1)
+        return Ok([
+          // sRGB D65
+          [ 0.412453, 0.357580, 0.180423 ],
+          [ 0.212671, 0.715160, 0.072169 ],
+          [ 0.019334, 0.119193, 0.950227 ],
+          [ 0.0, 0.0, 0.0],
+        ])
       }
     };
     if cmatrix.count() > 12 {

@@ -28,6 +28,7 @@ pub enum Tag {
   ImageLength      = 0x0101,
   BitsPerSample    = 0x0102,
   Compression      = 0x0103,
+  PhotometricInt   = 0x0106,
   Make             = 0x010F,
   Model            = 0x0110,
   StripOffsets     = 0x0111,
