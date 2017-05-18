@@ -1,6 +1,7 @@
 extern crate rayon;
 use self::rayon::prelude::*;
 
+pub mod gofloat;
 pub mod demosaic;
 pub mod level;
 pub mod colorspaces;
@@ -58,7 +59,7 @@ fn do_timing<O, F: FnMut() -> O>(name: &str, mut closure: F) -> O {
   ret
 }
 
-pub fn simple_decode (img: &RawImage, maxwidth: usize, maxheight: usize) -> OpBuffer {
+fn decoder(img: &RawImage, maxwidth: usize, maxheight: usize, linear: bool) -> OpBuffer {
   // First we check if the image's orientation results in a rotation that
   // swaps the maximum width with the maximum height
   let (transpose, ..) = img.orientation.to_flips();
@@ -68,8 +69,10 @@ pub fn simple_decode (img: &RawImage, maxwidth: usize, maxheight: usize) -> OpBu
     (maxwidth, maxheight)
   };
 
+  let input = do_timing("gofloat", ||gofloat::convert(img));
+
   // Demosaic into 4 channel f32 (RGB or RGBE)
-  let mut channel4 = do_timing("demosaic", ||demosaic::demosaic_and_scale(img, maxwidth, maxheight));
+  let mut channel4 = do_timing("demosaic", ||demosaic::demosaic_and_scale(img, &input, maxwidth, maxheight));
 
   // Fix orientation if necessary and possible
   if img.orientation != Orientation::Normal && img.orientation != Orientation::Unknown {
@@ -81,25 +84,17 @@ pub fn simple_decode (img: &RawImage, maxwidth: usize, maxheight: usize) -> OpBu
   let mut channel3 = do_timing("camera_to_lab", ||colorspaces::camera_to_lab(img, &channel4));
   do_timing("base_curve", ||curves::base(img, &mut channel3));
   do_timing("lab_to_rec709", ||colorspaces::lab_to_rec709(img, &mut channel3));
-  do_timing("gamma", ||gamma::gamma(img, &mut channel3));
+  if !linear {
+    do_timing("gamma", ||gamma::gamma(img, &mut channel3));
+  }
 
   channel3
 }
 
-pub fn simple_decode_linear (img: &RawImage, maxwidth: usize, maxheight: usize) -> OpBuffer {
-  // Demosaic into 4 channel f32 (RGB or RGBE)
-  let mut channel4 = do_timing("demosaic", ||demosaic::demosaic_and_scale(img, maxwidth, maxheight));
+pub fn simple_decode(img: &RawImage, maxwidth: usize, maxheight: usize) -> OpBuffer {
+  decoder(img, maxwidth, maxheight, false)
+}
 
-  // Fix orientation if necessary and possible
-  if img.orientation != Orientation::Normal && img.orientation != Orientation::Unknown {
-    channel4 = do_timing("rotate", || { transform::rotate(img, &channel4) });
-  }
-
-  do_timing("level_and_balance", || { level::level_and_balance(img, &mut channel4) });
-  // From now on we are in 3 channel f32 (RGB or Lab)
-  let mut channel3 = do_timing("camera_to_lab", ||colorspaces::camera_to_lab(img, &channel4));
-  do_timing("base_curve", ||curves::base(img, &mut channel3));
-  do_timing("lab_to_rec709", ||colorspaces::lab_to_rec709(img, &mut channel3));
-
-  channel3
+pub fn simple_decode_linear(img: &RawImage, maxwidth: usize, maxheight: usize) -> OpBuffer {
+  decoder(img, maxwidth, maxheight, true)
 }

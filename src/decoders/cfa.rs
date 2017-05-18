@@ -126,6 +126,21 @@ impl CFA {
       height: self.height,
     }
   }
+
+  /// Test if this is actually a valid CFA pattern
+  ///
+  /// # Example
+  /// ```
+  /// use rawloader::CFA;
+  /// let cfa = CFA::new("RGGB");
+  /// assert!(cfa.is_valid());
+  ///
+  /// let cfa = CFA::new("");
+  /// assert!(!cfa.is_valid());
+  /// ```
+  pub fn is_valid(&self) -> bool {
+    self.width != 0 && self.height != 0
+  }
 }
 
 impl fmt::Debug for CFA {

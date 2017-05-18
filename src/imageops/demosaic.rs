@@ -2,23 +2,17 @@ use decoders::RawImage;
 use imageops::OpBuffer;
 use std::cmp;
 
-pub fn demosaic_and_scale(img: &RawImage, maxwidth: usize, maxheight: usize) -> OpBuffer {
-  // Calculate the resulting width/height and top-left corner after crops
-  let width = img.width - img.crops[1] - img.crops[3];
-  let height = img.height - img.crops[0] - img.crops[2];
-  let x = img.crops[3];
-  let y = img.crops[0];
-
+pub fn demosaic_and_scale(img: &RawImage, buf: &OpBuffer, maxwidth: usize, maxheight: usize) -> OpBuffer {
   let (scale, nwidth, nheight) = if maxwidth == 0 || maxheight == 0 {
-    (0.0, width, height)
+    (0.0, buf.width, buf.height)
   } else {
     // Do the calculations manually to avoid off-by-one errors from floating point rounding
-    let xscale = (width as f32) / (maxwidth as f32);
-    let yscale = (height as f32) / (maxheight as f32);
+    let xscale = (buf.width as f32) / (maxwidth as f32);
+    let yscale = (buf.height as f32) / (maxheight as f32);
     if yscale > xscale {
-      (yscale, ((width as f32)/yscale) as usize, maxheight)
+      (yscale, ((buf.width as f32)/yscale) as usize, maxheight)
     } else {
-      (xscale, maxwidth, ((height as f32)/xscale) as usize)
+      (xscale, maxwidth, ((buf.height as f32)/xscale) as usize)
     }
   };
 
@@ -30,41 +24,29 @@ pub fn demosaic_and_scale(img: &RawImage, maxwidth: usize, maxheight: usize) -> 
     _  => 2.0,  // default
   };
 
-  if scale < minscale || img.cpp != 1 {
-    let buf = match img.cpp {
-      3 => rgb(img, x, y, width, height),
+  if scale < minscale || buf.colors != 1 {
+    let out = match buf.colors {
+      4 => buf.clone(),
       // FIXME: return an error when cpp != 1 and cpp != 3
-      _ => full(img, x, y, width, height),
+      _ => full(img, buf),
     };
     if scale > 1.0 {
-      scale_down(&buf, nwidth, nheight)
+      scale_down(&out, nwidth, nheight)
     } else {
-      buf
+      out
     }
   } else {
-    scaled(img, x, y, width, height, nwidth, nheight)
+    scaled(img, buf, nwidth, nheight)
   }
 }
 
-pub fn rgb(img: &RawImage, xs: usize, ys: usize, width: usize, height: usize) -> OpBuffer {
-  let mut out = OpBuffer::new(width, height, 4);
-  out.mutate_lines(&(|line: &mut [f32], row| {
-    for (o, i) in line.chunks_mut(4).zip(img.data[(img.width*(row+ys)+xs)*3..].chunks(3)) {
-      o[0] = i[0] as f32;
-      o[1] = i[1] as f32;
-      o[2] = i[2] as f32;
-    }
-  }));
-  out
-}
-
-pub fn full(img: &RawImage, xs: usize, ys: usize, width: usize, height: usize) -> OpBuffer {
-  let mut out = OpBuffer::new(width, height, 4);
-  let crop_cfa = img.cfa.shift(xs, ys);
+pub fn full(img: &RawImage, buf: &OpBuffer) -> OpBuffer {
+  let mut out = OpBuffer::new(buf.width, buf.height, 4);
+  let crop_cfa = img.cropped_cfa();
 
   // First we set the colors we already have
   out.mutate_lines(&(|line: &mut [f32], row| {
-    for (col, (pixout, pixin)) in line.chunks_mut(4).zip(img.data[img.width*(row+ys)+xs..].chunks(1)).enumerate() {
+    for (col, (pixout, pixin)) in line.chunks_mut(4).zip(buf.data[buf.width*row..].chunks(1)).enumerate() {
       let color = crop_cfa.color_at(row, col);
       pixout[color] = pixin[0] as f32;
     }
@@ -73,16 +55,16 @@ pub fn full(img: &RawImage, xs: usize, ys: usize, width: usize, height: usize) -
   // Now we go around the image setting the unset colors to the average of the
   // surrounding pixels
   out.mutate_lines(&(|line: &mut [f32], row| {
-    for col in 0..width {
+    for col in 0..buf.width {
       let mut sums: [f32; 4] = [0.0;4];
       let mut counts: [u32; 4] = [0; 4];
       let color = crop_cfa.color_at(row, col);
 
-      for y in (cmp::max(0,(row as isize)-1) as usize) .. cmp::min(height, row+2) {
-        for x in (cmp::max(0,(col as isize)-1) as usize) .. cmp::min(width, col+2) {
+      for y in (cmp::max(0,(row as isize)-1) as usize) .. cmp::min(buf.height, row+2) {
+        for x in (cmp::max(0,(col as isize)-1) as usize) .. cmp::min(buf.width, col+2) {
           let c = crop_cfa.color_at(y, x);
           if c != color {
-            sums[c] += img.data[(y+ys)*img.width+(x+xs)] as f32;
+            sums[c] += buf.data[y*buf.width+x] as f32;
             counts[c] += 1;
           }
         }
@@ -111,21 +93,21 @@ fn calc_skips(idx: usize, idxmax: usize, skip: f32) -> (usize, usize, f32, f32) 
   (fromback as usize, toforward as usize, fromfactor, tofactor)
 }
 
-pub fn scaled(img: &RawImage, xs: usize, ys: usize, width: usize, height: usize, nwidth: usize, nheight: usize) -> OpBuffer {
+pub fn scaled(img: &RawImage, buf: &OpBuffer, nwidth: usize, nheight: usize) -> OpBuffer {
   let mut out = OpBuffer::new(nwidth, nheight, 4);
-  let crop_cfa = img.cfa.shift(xs, ys);
+  let crop_cfa = img.cropped_cfa();
 
-  let rowskip = (width as f32) / (nwidth as f32);
-  let colskip = (height as f32) / (nheight as f32);
+  let rowskip = (buf.width as f32) / (nwidth as f32);
+  let colskip = (buf.height as f32) / (nheight as f32);
 
   // Go around the image averaging blocks of pixels
   out.mutate_lines(&(|line: &mut [f32], row| {
     for col in 0..nwidth {
       let mut sums: [f32; 4] = [0.0;4];
       let mut counts: [f32; 4] = [0.0;4];
-      let (fromrow, torow, topfactor, bottomfactor) = calc_skips(row, height, rowskip);
+      let (fromrow, torow, topfactor, bottomfactor) = calc_skips(row, buf.height, rowskip);
       for y in fromrow..torow {
-        let (fromcol, tocol, leftfactor, rightfactor) = calc_skips(col, width, colskip);
+        let (fromcol, tocol, leftfactor, rightfactor) = calc_skips(col, buf.width, colskip);
         for x in fromcol..tocol {
           let factor = {
             (if y == fromrow {topfactor} else if y == torow {bottomfactor} else {1.0}) *
@@ -133,7 +115,7 @@ pub fn scaled(img: &RawImage, xs: usize, ys: usize, width: usize, height: usize,
           };
 
           let c = crop_cfa.color_at(y, x);
-          sums[c] += (img.data[(y+ys)*img.width+(x+xs)] as f32) * factor;
+          sums[c] += (buf.data[y*buf.width+x] as f32) * factor;
           counts[c] += factor;
         }
       }

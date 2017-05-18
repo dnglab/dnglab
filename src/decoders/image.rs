@@ -272,4 +272,10 @@ impl RawImage {
       data: buffer.data,
     })
   }
+
+  /// Returns the CFA pattern after the crop has been applied (and thus the pattern
+  /// potentially shifted)
+  pub fn cropped_cfa(&self) -> CFA {
+    self.cfa.shift(self.crops[3], self.crops[0])
+  }
 }
