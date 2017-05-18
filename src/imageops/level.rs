@@ -8,7 +8,9 @@ pub fn level_and_balance(img: &RawImage, buf: &mut OpBuffer) {
 
   let coeffs = if img.is_monochrome() {
     [1.0, 1.0, 1.0, 1.0]
-  } else if img.wb_coeffs[0].is_nan() {
+  } else if !img.wb_coeffs[0].is_normal() ||
+            !img.wb_coeffs[1].is_normal() ||
+            !img.wb_coeffs[2].is_normal() {
     img.neutralwb()
   } else {
     img.wb_coeffs
