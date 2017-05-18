@@ -12,7 +12,7 @@ use decoders::{Orientation, RawImage};
 
 extern crate time;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct OpBuffer {
   pub width: usize,
   pub height: usize,
