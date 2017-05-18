@@ -33,9 +33,9 @@ impl<'a> Decoder for DcrDecoder<'a> {
 
     let linearization = fetch_tag!(self.tiff, Tag::DcrLinearization);
     let curve = {
-      let mut points = vec![0 as u16; 1024];
-      for i in 0..1024 {
-        points[i] = linearization.get_u32(i) as u16;
+      let mut points = Vec::new();
+      for i in 0..linearization.count() {
+        points.push(linearization.get_u32(i) as u16);
       }
       LookupTable::new(&points)
     };
