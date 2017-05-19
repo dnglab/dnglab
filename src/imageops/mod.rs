@@ -107,11 +107,6 @@ fn decoder(img: &RawImage, maxwidth: usize, maxheight: usize, linear: bool) -> O
   // Demosaic into 4 channel f32 (RGB or RGBE)
   let mut channel4 = do_timing("demosaic", ||demosaic::demosaic_and_scale(img, &input, maxwidth, maxheight));
 
-  // Fix orientation if necessary and possible
-  if img.orientation != Orientation::Normal && img.orientation != Orientation::Unknown {
-    channel4 = do_timing("rotate", || { transform::rotate(img, &channel4) });
-  }
-
   do_timing("level_and_balance", || { level::level_and_balance(img, &mut channel4) });
   // From now on we are in 3 channel f32 (RGB or Lab)
   let mut channel3 = do_timing("camera_to_lab", ||colorspaces::camera_to_lab(img, &channel4));
@@ -121,7 +116,12 @@ fn decoder(img: &RawImage, maxwidth: usize, maxheight: usize, linear: bool) -> O
     do_timing("gamma", ||gamma::gamma(img, &mut channel3));
   }
 
-  channel3
+  // Fix orientation if necessary and possible
+  if img.orientation != Orientation::Normal && img.orientation != Orientation::Unknown {
+    do_timing("rotate", || { transform::rotate(img, &channel3) })
+  } else {
+    channel3
+  }
 }
 
 pub fn simple_decode(img: &RawImage, maxwidth: usize, maxheight: usize) -> OpBuffer {
