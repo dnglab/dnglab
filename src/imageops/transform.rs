@@ -158,6 +158,20 @@ mod tests {
   }
 
   #[test]
+  fn rotate_rotate180() {
+    let output = OpBuffer::from_rgb_str_vec(vec![
+      "        ",
+      "     GG ",
+      "     GG ",
+      "   BBBB ",
+      "     GG ",
+      " RRRRRR ",
+      "        ",
+    ]);
+    assert_eq!(rotate_buffer(&F.clone(), &Orientation::Rotate180), output);
+  }
+
+  #[test]
   fn rotate_transpose() {
     let output = OpBuffer::from_rgb_str_vec(vec![
       "       ",
