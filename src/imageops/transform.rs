@@ -1,65 +1,61 @@
-extern crate rayon;
-use self::rayon::prelude::*;
+use std::mem;
+use std::usize;
 
 use decoders::{Orientation, RawImage};
 use imageops::OpBuffer;
 
-/// Mirror an OpBuffer horizontally
-pub fn flip_horizontal(buf: &OpBuffer) -> OpBuffer {
-  let mut out = OpBuffer::new(buf.width, buf.height, buf.colors);
-  out.data.par_chunks_mut(out.width * out.colors).enumerate().for_each(|(row, line)| {
-    let offset = buf.width * row * buf.colors;
-    for col in 0 .. buf.width {
-      for c in 0 .. buf.colors {
-        line[col * buf.colors + c] = buf.data[offset + (buf.width - 1 - col) * buf.colors + c];
-      }
-    }
-  });
-
-  out
-}
-
-/// Mirror an OpBuffer vertically
-pub fn flip_vertical(buf: &OpBuffer) -> OpBuffer {
-  let mut out = OpBuffer::new(buf.width, buf.height, buf.colors);
-  out.data.par_chunks_mut(out.width * out.colors).enumerate().for_each(|(row, line)| {
-    let offset = (buf.height - 1 - row) * buf.width * buf.colors;
-    for col in 0 .. buf.width * buf.colors {
-      line[col] = buf.data[offset + col];
-    }
-  });
-
-  out
-}
-
-/// Transpose an OpBuffer
-pub fn transpose(buf: &OpBuffer) -> OpBuffer {
-  let mut out = OpBuffer::new(buf.height, buf.width, buf.colors);
-
-  out.data.par_chunks_mut(out.width * out.colors).enumerate().for_each(|(row, line)| {
-    for col in 0 .. buf.height {
-      let target = col * buf.colors;
-      let source = (col * buf.width + row) * buf.colors;
-      for c in 0 .. buf.colors {
-        line[target + c] = buf.data[source + c];
-      }
-    }
-  });
-
-  out
-}
 
 fn rotate_buffer(buf: &OpBuffer, orientation: &Orientation) -> OpBuffer {
-  match orientation.to_flips() {
-    (false, false, false) => buf.clone(),
-    (false, false, true) => flip_vertical(buf),
-    (false, true, false) => flip_horizontal(buf),
-    (false, true, true) => flip_horizontal(&flip_vertical(buf)),
-    (true, false, false) => transpose(buf),
-    (true, false, true) => flip_vertical(&transpose(buf)),
-    (true, true, false) => flip_horizontal(&transpose(buf)),
-    (true, true, true) => flip_vertical(&flip_horizontal(&transpose(buf))),
+  // Since we are using isize when calculating values for the rotation its
+  // indices must be addressable by an isize as well
+  if buf.data.len() >= usize::MAX / 2 {
+    panic!("Buffer is too wide or high to rotate");
   }
+
+  // We extract buffers parameters early since all math is done with isize.
+  // This avoids verbose casts later on
+  let mut width = buf.width as isize;
+  let mut height = buf.height as isize;
+  let colors = buf.colors as isize;
+
+  let (transpose, flip_x, flip_y) = orientation.to_flips();
+
+  let mut base_offset: isize = 0;
+  let mut x_step: isize = colors;
+  let mut y_step: isize = width * colors;
+
+  if flip_x {
+    x_step = -x_step;
+    base_offset += (width - 1) * colors;
+  }
+
+  if flip_y {
+    y_step = -y_step;
+    base_offset += width * (height - 1) * colors;
+  }
+
+  let mut out = if transpose {
+    mem::swap(&mut width, &mut height);
+    mem::swap(&mut x_step, &mut y_step);
+    OpBuffer::new(buf.height, buf.width, colors as usize)
+  } else {
+    OpBuffer::new(buf.width, buf.height, colors as usize)
+  };
+
+  out.mutate_lines(&(|line: &mut [f32], row| {
+    // Calculate the current line's offset in original buffer. When transposing
+    // this is the current column's offset in the original buffer
+    let line_offset = base_offset + y_step * row as isize;
+    for col in 0..width {
+      // The current pixel's offset in original buffer
+      let offset = line_offset + x_step * col;
+      for c in 0..colors {
+        line[(col * colors + c) as usize] = buf.data[(offset + c) as usize];
+      }
+    }
+  }));
+
+  out
 }
 
 /// Rotate an OpBuffer based on the given RawImage's orientation
