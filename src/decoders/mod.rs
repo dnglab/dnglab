@@ -234,7 +234,8 @@ impl Orientation {
 
   /// Convert orientation to an image flip operation tuple. The first field is
   /// if x and y coordinates should be swapped (transposed). The second and
-  /// third field is horizontal and vertical flipping respectively.
+  /// third field is horizontal and vertical flipping respectively. For a
+  /// correct result, flipping must be done before transposing.
   pub fn to_flips(&self) -> (bool, bool, bool) {
     match *self {
       Orientation::Normal
@@ -243,8 +244,8 @@ impl Orientation {
       Orientation::HorizontalFlip => (false, true, false),
       Orientation::Rotate180 => (false, true, true),
       Orientation::Transpose => (true, false, false),
-      Orientation::Rotate270 => (true, false, true),
-      Orientation::Rotate90 => (true, true, false),
+      Orientation::Rotate90 => (true, false, true),
+      Orientation::Rotate270 => (true, true, false),
       Orientation::Transverse => (true, true, true),
     }
   }
