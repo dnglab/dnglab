@@ -219,19 +219,6 @@ impl<'a> TiffIFD<'a> {
             }
           }
         }
-      } else if entry.tag == t(Tag::OlympusImgProc) {
-        // Add the ImgProc tag for later usage
-        entries.insert(entry.tag, entry);
-        if depth < 10 { // Avoid infinite looping IFDs
-          let baseoff = entry.get_usize(0);
-          let off = baseoff+offset-12;
-          let ifd = TiffIFD::new(&buf[off..], 0, baseoff, start_offset, depth+1, e);
-
-          match ifd {
-            Ok(val) => {subifds.push(val);},
-            Err(_) => {}, // Ignore unparsable IFDs
-          }
-        }
       } else if entry.tag == t(Tag::Makernote) {
         if depth < 10 { // Avoid infinite looping IFDs
           let ifd = TiffIFD::new_makernote(buf, entry.doffset(), base_offset, depth+1, e);
@@ -265,6 +252,21 @@ impl<'a> TiffIFD<'a> {
       if data[0..7] == b"OLYMPUS"[..] {
         off += 4;
       }
+
+      let mut mainifd = try!(TiffIFD::new(buf, offset+off, base_offset, 0, depth, endian));
+
+      if off == 12 {
+        // Parse the Olympus ImgProc section if it exists
+        let ioff = if let Some(entry) = mainifd.find_entry(Tag::OlympusImgProc) {
+          entry.get_usize(0)
+        } else { 0 };
+        if ioff != 0 {
+          let iprocifd = try!(TiffIFD::new(&buf[offset+ioff..], 0, ioff, 0, depth, endian));
+          mainifd.subifds.push(iprocifd);
+        }
+      }
+
+      return Ok(mainifd)
     }
 
     // Epson starts the makernote with its own name

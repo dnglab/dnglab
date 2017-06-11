@@ -170,19 +170,12 @@ impl<'a> OrfDecoder<'a> {
     if redmul.is_some() && bluemul.is_some() {
       Ok([redmul.unwrap().get_u32(0) as f32,256.0,bluemul.unwrap().get_u32(0) as f32,NAN])
     } else {
-      let iproc = fetch_tag!(self.tiff,Tag::OlympusImgProc);
-      let poff = iproc.parent_offset() - 12;
-      let off = (iproc.get_usize(0)) + poff;
-      let ifd = try!(TiffIFD::new(self.buffer, off, 0, 0, 0, self.tiff.get_endian()));
-
-      let wbs = fetch_tag!(ifd, Tag::ImageWidth);
-      if wbs.count() == 4 {
-        let off = poff + wbs.doffset();
-        let nwbs = &wbs.copy_with_new_data(&self.buffer[off..]);
-        Ok([nwbs.get_u32(0) as f32,256.0,nwbs.get_u32(1) as f32,NAN])
-      } else {
-        Ok([wbs.get_u32(0) as f32,256.0,wbs.get_u32(1) as f32,NAN])
+      let ifd = self.tiff.find_ifds_with_tag(Tag::OrfBlackLevels);
+      if ifd.len() == 0 {
+        return Err("ORF: Couldn't find ImgProc IFD".to_string());
       }
+      let wbs = fetch_tag!(ifd[0], Tag::ImageWidth);
+      Ok([wbs.get_f32(0), 256.0, wbs.get_f32(1),NAN])
     }
   }
 }
