@@ -47,6 +47,7 @@ pub enum Tag {
   PefHuffman       = 0x0220,
   Xmp              = 0x02BC,
   DcrWB            = 0x03FD,
+  OrfBlackLevels   = 0x0600,
   DcrLinearization = 0x090D,
   EpsonWB          = 0x0E80,
   KodakWB          = 0x0F00,
@@ -216,6 +217,19 @@ impl<'a> TiffIFD<'a> {
               Ok(val) => {subifds.push(val);},
               Err(_) => {entries.insert(entry.tag, entry);}, // Ignore unparsable IFDs
             }
+          }
+        }
+      } else if entry.tag == t(Tag::OlympusImgProc) {
+        // Add the ImgProc tag for later usage
+        entries.insert(entry.tag, entry);
+        if depth < 10 { // Avoid infinite looping IFDs
+          let baseoff = entry.get_usize(0);
+          let off = baseoff+offset-12;
+          let ifd = TiffIFD::new(&buf[off..], 0, baseoff, start_offset, depth+1, e);
+
+          match ifd {
+            Ok(val) => {subifds.push(val);},
+            Err(_) => {}, // Ignore unparsable IFDs
           }
         }
       } else if entry.tag == t(Tag::Makernote) {
@@ -421,10 +435,17 @@ impl<'a> TiffEntry<'a> {
   pub fn count(&self) -> usize { self.count }
   //pub fn typ(&self) -> u16 { self.typ }
 
+  pub fn get_u16(&self, idx: usize) -> u16 {
+    match self.typ {
+      1                  => self.data[idx] as u16,
+      3 | 8              => self.get_force_u16(idx),
+      _ => panic!(format!("Trying to read typ {} for a u32", self.typ).to_string()),
+    }
+  }
+
   pub fn get_u32(&self, idx: usize) -> u32 {
     match self.typ {
-      1                  => self.data[idx] as u32,
-      3 | 8              => self.endian.ru16(self.data, idx*2) as u32,
+      1 | 3 | 8          => self.get_u16(idx) as u32,
       4 | 7 | 9 | 13     => self.get_force_u32(idx),
       _ => panic!(format!("Trying to read typ {} for a u32", self.typ).to_string()),
     }

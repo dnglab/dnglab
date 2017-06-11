@@ -59,7 +59,11 @@ impl<'a> Decoder for OrfDecoder<'a> {
     } else {
       OrfDecoder::decode_compressed(src, width, height)
     };
-    ok_image(camera, width, height, try!(self.get_wb()), image)
+
+    match self.get_blacks() {
+      Ok(val) => ok_image_with_blacklevels(camera, width, height, try!(self.get_wb()), val, image),
+      Err(_)  => ok_image(camera, width, height, try!(self.get_wb()), image),
+    }
   }
 }
 
@@ -154,6 +158,11 @@ impl<'a> OrfDecoder<'a> {
     out
   }
 
+  fn get_blacks(&self) -> Result<[u16;4], String> {
+    let blacks = fetch_tag!(self.tiff, Tag::OrfBlackLevels);
+    Ok([blacks.get_u16(0), blacks.get_u16(1), blacks.get_u16(2), blacks.get_u16(3)])
+  }
+
   fn get_wb(&self) -> Result<[f32;4],String> {
     let redmul = self.tiff.find_entry(Tag::OlympusRedMul);
     let bluemul = self.tiff.find_entry(Tag::OlympusBlueMul);
@@ -165,6 +174,7 @@ impl<'a> OrfDecoder<'a> {
       let poff = iproc.parent_offset() - 12;
       let off = (iproc.get_usize(0)) + poff;
       let ifd = try!(TiffIFD::new(self.buffer, off, 0, 0, 0, self.tiff.get_endian()));
+
       let wbs = fetch_tag!(ifd, Tag::ImageWidth);
       if wbs.count() == 4 {
         let off = poff + wbs.doffset();
