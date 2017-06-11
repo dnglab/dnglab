@@ -34,6 +34,12 @@ impl<'a> Decoder for OrfDecoder<'a> {
       size += counts.get_u32(i as usize) as usize;
     }
 
+    let camera = if width >= camera.highres_width {
+      try!(self.rawloader.check_supported_with_mode(&self.tiff, "highres"))
+    } else {
+      camera
+    };
+
     let src = &self.buffer[offset..];
 
     let image = if size >= width*height*2 {

@@ -7,3 +7,8 @@ whitepoint = 4000
 color_matrix = [9422, -3258, -711, -2655, 10898, 2015, -512, 1354, 5512]
 color_pattern = "RGGB"
 crops = [0,0,0,0]
+highres_width = 9280
+
+[[cameras.modes]]
+mode = "highres"
+color_pattern = "GRBG"

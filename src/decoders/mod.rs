@@ -110,6 +110,7 @@ pub struct Camera {
   crops: [usize;4],
   bps: usize,
   wb_offset: usize,
+  highres_width: usize,
   hints: Vec<String>,
 }
 
@@ -156,6 +157,7 @@ impl Camera {
         "filesize" => {self.filesize = val.as_integer().unwrap() as usize;},
         "raw_width" => {self.raw_width = val.as_integer().unwrap() as usize;},
         "raw_height" => {self.raw_height = val.as_integer().unwrap() as usize;},
+        "highres_width" => {self.highres_width = val.as_integer().unwrap() as usize;},
         "hints" => {
           self.hints = Vec::new();
           for hint in val.as_array().unwrap() {
@@ -186,6 +188,7 @@ impl Camera {
       crops: [0,0,0,0],
       bps: 0,
       wb_offset: 0,
+      highres_width: usize::max_value(),
       hints: Vec::new(),
       orientation: Orientation::Unknown,
     }
