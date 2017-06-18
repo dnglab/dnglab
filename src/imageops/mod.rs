@@ -9,7 +9,7 @@ pub mod curves;
 pub mod gamma;
 pub mod transform;
 
-use decoders::{Orientation, RawImage};
+use decoders::RawImage;
 
 extern crate time;
 
@@ -92,42 +92,76 @@ fn do_timing<O, F: FnMut() -> O>(name: &str, mut closure: F) -> O {
   ret
 }
 
-fn decoder(img: &RawImage, maxwidth: usize, maxheight: usize, linear: bool) -> OpBuffer {
-  // First we check if the image's orientation results in a rotation that
-  // swaps the maximum width with the maximum height
-  let (transpose, ..) = img.orientation.to_flips();
-  let (maxwidth, maxheight) = if transpose {
-    (maxheight, maxwidth)
-  } else {
-    (maxwidth, maxheight)
-  };
+pub trait ImageOp {
+  fn name(&self) -> &str;
+  fn run(&self, pipeline: &Pipeline, buf: &OpBuffer) -> OpBuffer;
+}
 
-  let input = do_timing("gofloat", ||gofloat::convert(img));
+#[derive(Copy, Clone, Debug)]
+pub struct Pipeline<'a> {
+  maxwidth: usize,
+  maxheight: usize,
+  linear: bool,
+  image: &'a RawImage,
+  demosaic: demosaic::OpDemosaic,
+  level: level::OpLevel,
+  tolab: colorspaces::OpToLab,
+  basecurve: curves::OpBaseCurve,
+  fromlab: colorspaces::OpFromLab,
+  gamma: gamma::OpGamma,
+  transform: transform::OpTransform,
+}
 
-  // Demosaic into 4 channel f32 (RGB or RGBE)
-  let mut channel4 = do_timing("demosaic", ||demosaic::demosaic_and_scale(img, &input, maxwidth, maxheight));
+impl<'a> Pipeline<'a> {
+  pub fn new(img: &RawImage, maxwidth: usize, maxheight: usize, linear: bool) -> Pipeline {
+    // Check if the image's orientation results in a rotation that
+    // swaps the maximum width with the maximum height
+    let (transpose, ..) = img.orientation.to_flips();
+    let (maxwidth, maxheight) = if transpose {
+      (maxheight, maxwidth)
+    } else {
+      (maxwidth, maxheight)
+    };
 
-  do_timing("level_and_balance", || { level::level_and_balance(img, &mut channel4) });
-  // From now on we are in 3 channel f32 (RGB or Lab)
-  let mut channel3 = do_timing("camera_to_lab", ||colorspaces::camera_to_lab(img, &channel4));
-  do_timing("base_curve", ||curves::base(img, &mut channel3));
-  do_timing("lab_to_rec709", ||colorspaces::lab_to_rec709(img, &mut channel3));
-  if !linear {
-    do_timing("gamma", ||gamma::gamma(img, &mut channel3));
+    Pipeline {
+      maxwidth,
+      maxheight,
+      linear,
+      image: img,
+      demosaic: demosaic::OpDemosaic::new(img),
+      level: level::OpLevel::new(img),
+      tolab: colorspaces::OpToLab::new(img),
+      basecurve: curves::OpBaseCurve::new(img),
+      fromlab: colorspaces::OpFromLab::new(img),
+      gamma: gamma::OpGamma::new(img),
+      transform: transform::OpTransform::new(img),
+    }
   }
 
-  // Fix orientation if necessary and possible
-  if img.orientation != Orientation::Normal && img.orientation != Orientation::Unknown {
-    do_timing("rotate", || { transform::rotate(img, &channel3) })
-  } else {
-    channel3
+  pub fn run(&self) -> OpBuffer {
+    let mut buf = do_timing("gofloat", ||gofloat::convert(self.image));
+    let ops: Vec<Box<ImageOp>> = vec![
+      Box::new(self.demosaic),
+      Box::new(self.level),
+      Box::new(self.tolab),
+      Box::new(self.basecurve),
+      Box::new(self.fromlab),
+      Box::new(self.gamma),
+      Box::new(self.transform),
+    ];
+    for op in ops {
+      buf = do_timing(op.name(), ||op.run(self, &buf));
+    }
+    buf
   }
 }
 
 pub fn simple_decode(img: &RawImage, maxwidth: usize, maxheight: usize) -> OpBuffer {
-  decoder(img, maxwidth, maxheight, false)
+  let pipeline = Pipeline::new(img, maxwidth, maxheight, false);
+  pipeline.run()
 }
 
 pub fn simple_decode_linear(img: &RawImage, maxwidth: usize, maxheight: usize) -> OpBuffer {
-  decoder(img, maxwidth, maxheight, true)
+  let pipeline = Pipeline::new(img, maxwidth, maxheight, true);
+  pipeline.run()
 }

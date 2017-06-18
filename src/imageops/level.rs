@@ -1,7 +1,26 @@
 use decoders::RawImage;
-use imageops::OpBuffer;
+use imageops::{OpBuffer,ImageOp,Pipeline};
 
-pub fn level_and_balance(img: &RawImage, buf: &mut OpBuffer) {
+#[derive(Copy, Clone, Debug)]
+pub struct OpLevel {
+}
+
+impl OpLevel {
+  pub fn new(_img: &RawImage) -> OpLevel {
+    OpLevel{}
+  }
+}
+
+impl ImageOp for OpLevel {
+  fn name(&self) -> &str {"level"}
+  fn run(&self, pipeline: &Pipeline, buf: &OpBuffer) -> OpBuffer {
+    level_and_balance(pipeline.image, buf)
+  }
+}
+
+pub fn level_and_balance(img: &RawImage, buf: &OpBuffer) -> OpBuffer {
+  let mut buf = buf.clone();
+
   // Calculate the blacklevels
   let mins = img.blacklevels.iter().map(|&x| x as f32).collect::<Vec<f32>>();
   let ranges = img.whitelevels.iter().enumerate().map(|(i, &x)| (x as f32) - mins[i]).collect::<Vec<f32>>();
@@ -28,4 +47,6 @@ pub fn level_and_balance(img: &RawImage, buf: &mut OpBuffer) {
       pix[3] = (((pix[3] - mins[3]) / ranges[3]) * mul[3]).min(1.0);
     }
   }));
+
+  buf
 }

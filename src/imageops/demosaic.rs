@@ -1,6 +1,23 @@
 use decoders::RawImage;
-use imageops::OpBuffer;
+use imageops::{OpBuffer,ImageOp,Pipeline};
 use std::cmp;
+
+#[derive(Copy, Clone, Debug)]
+pub struct OpDemosaic {
+}
+
+impl OpDemosaic {
+  pub fn new(_img: &RawImage) -> OpDemosaic {
+    OpDemosaic{}
+  }
+}
+
+impl ImageOp for OpDemosaic {
+  fn name(&self) -> &str {"demosaic"}
+  fn run(&self, pipeline: &Pipeline, buf: &OpBuffer) -> OpBuffer {
+    demosaic_and_scale(pipeline.image, buf, pipeline.maxwidth, pipeline.maxheight)
+  }
+}
 
 pub fn demosaic_and_scale(img: &RawImage, buf: &OpBuffer, maxwidth: usize, maxheight: usize) -> OpBuffer {
   let (scale, nwidth, nheight) = if maxwidth == 0 || maxheight == 0 {

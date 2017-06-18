@@ -1,8 +1,27 @@
-use decoders::RawImage;
-use imageops::OpBuffer;
 use std::cmp;
+use decoders::RawImage;
+use imageops::{OpBuffer,ImageOp,Pipeline};
 
-pub fn base(_: &RawImage, buf: &mut OpBuffer) {
+#[derive(Copy, Clone, Debug)]
+pub struct OpBaseCurve {
+}
+
+impl OpBaseCurve {
+  pub fn new(_img: &RawImage) -> OpBaseCurve {
+    OpBaseCurve{}
+  }
+}
+
+impl ImageOp for OpBaseCurve {
+  fn name(&self) -> &str {"basecurve"}
+  fn run(&self, pipeline: &Pipeline, buf: &OpBuffer) -> OpBuffer {
+    base(pipeline.image, buf)
+  }
+}
+
+pub fn base(_: &RawImage, buf: &OpBuffer) -> OpBuffer {
+  let mut buf = buf.clone();
+
   let xs = [0.0, 0.30, 0.5, 0.70, 1.0];
   let ys = [0.0, 0.25, 0.5, 0.75, 1.0];
   let func = SplineFunc::new(&xs, &ys);
@@ -14,6 +33,8 @@ pub fn base(_: &RawImage, buf: &mut OpBuffer) {
       pix[2] = pix[2];
     }
   }));
+
+  buf
 }
 
 

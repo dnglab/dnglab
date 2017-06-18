@@ -2,10 +2,31 @@ use std::mem;
 use std::usize;
 
 use decoders::{Orientation, RawImage};
-use imageops::OpBuffer;
+use imageops::{OpBuffer,ImageOp,Pipeline};
 
+#[derive(Copy, Clone, Debug)]
+pub struct OpTransform {
+}
+
+impl OpTransform {
+  pub fn new(_img: &RawImage) -> OpTransform {
+    OpTransform{}
+  }
+}
+
+impl ImageOp for OpTransform {
+  fn name(&self) -> &str {"transform"}
+  fn run(&self, pipeline: &Pipeline, buf: &OpBuffer) -> OpBuffer {
+    rotate(pipeline.image, buf)
+  }
+}
 
 fn rotate_buffer(buf: &OpBuffer, orientation: &Orientation) -> OpBuffer {
+  // Don't rotate things we don't know how to rotate or don't need to
+  if *orientation == Orientation::Normal || *orientation == Orientation::Unknown {
+    return buf.clone();
+  }
+
   // Since we are using isize when calculating values for the rotation its
   // indices must be addressable by an isize as well
   if buf.data.len() >= usize::MAX / 2 {

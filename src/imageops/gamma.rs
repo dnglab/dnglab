@@ -1,7 +1,30 @@
 use decoders::RawImage;
-use imageops::OpBuffer;
+use imageops::{OpBuffer,ImageOp,Pipeline};
 
-pub fn gamma(_: &RawImage, buf: &mut OpBuffer) {
+#[derive(Copy, Clone, Debug)]
+pub struct OpGamma {
+}
+
+impl OpGamma {
+  pub fn new(_img: &RawImage) -> OpGamma {
+    OpGamma{}
+  }
+}
+
+impl ImageOp for OpGamma {
+  fn name(&self) -> &str {"gamma"}
+  fn run(&self, pipeline: &Pipeline, buf: &OpBuffer) -> OpBuffer {
+    if pipeline.linear {
+      buf.clone()
+    } else {
+      gamma(pipeline.image, buf)
+    }
+  }
+}
+
+pub fn gamma(_: &RawImage, buf: &OpBuffer) -> OpBuffer {
+  let mut buf = buf.clone();
+
   let g: f32 = 0.45;
   let f: f32 = 0.099;
   let min: f32 = 0.018;
@@ -23,4 +46,6 @@ pub fn gamma(_: &RawImage, buf: &mut OpBuffer) {
       pix[0] = glookup[(pix[0].max(0.0)*(maxvals as f32)).min(maxvals as f32) as usize];
     }
   }));
+
+  buf
 }
