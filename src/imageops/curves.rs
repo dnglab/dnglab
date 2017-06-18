@@ -2,39 +2,37 @@ use std::cmp;
 use decoders::RawImage;
 use imageops::{OpBuffer,ImageOp,Pipeline};
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Clone, Debug)]
 pub struct OpBaseCurve {
+  xs: Vec<f32>,
+  ys: Vec<f32>,
 }
 
 impl OpBaseCurve {
   pub fn new(_img: &RawImage) -> OpBaseCurve {
-    OpBaseCurve{}
+    OpBaseCurve{
+      xs: vec![0.0, 0.30, 0.5, 0.70, 1.0],
+      ys: vec![0.0, 0.25, 0.5, 0.75, 1.0],
+    }
   }
 }
 
 impl ImageOp for OpBaseCurve {
   fn name(&self) -> &str {"basecurve"}
-  fn run(&self, pipeline: &Pipeline, buf: &OpBuffer) -> OpBuffer {
-    base(pipeline.image, buf)
+  fn run(&self, _pipeline: &Pipeline, buf: &OpBuffer) -> OpBuffer {
+    let mut buf = buf.clone();
+    let func = SplineFunc::new(&self.xs, &self.ys);
+
+    buf.mutate_lines(&(|line: &mut [f32], _| {
+      for pix in line.chunks_mut(3) {
+        pix[0] = func.interpolate(pix[0]);
+        pix[1] = pix[1];
+        pix[2] = pix[2];
+      }
+    }));
+
+    buf
   }
-}
-
-pub fn base(_: &RawImage, buf: &OpBuffer) -> OpBuffer {
-  let mut buf = buf.clone();
-
-  let xs = [0.0, 0.30, 0.5, 0.70, 1.0];
-  let ys = [0.0, 0.25, 0.5, 0.75, 1.0];
-  let func = SplineFunc::new(&xs, &ys);
-
-  buf.mutate_lines(&(|line: &mut [f32], _| {
-    for pix in line.chunks_mut(3) {
-      pix[0] = func.interpolate(pix[0]);
-      pix[1] = pix[1];
-      pix[2] = pix[2];
-    }
-  }));
-
-  buf
 }
 
 
