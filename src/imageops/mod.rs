@@ -97,7 +97,7 @@ pub trait ImageOp {
   fn run(&self, pipeline: &Pipeline, buf: &OpBuffer) -> OpBuffer;
 }
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Clone, Debug)]
 pub struct Pipeline<'a> {
   maxwidth: usize,
   maxheight: usize,
@@ -143,15 +143,15 @@ impl<'a> Pipeline<'a> {
   pub fn run(&self) -> OpBuffer {
     // Start with a dummy buffer, gofloat doesn't use it
     let mut buf = OpBuffer::new(0,0,0);
-    let ops: Vec<Box<ImageOp>> = vec![
-      Box::new(self.gofloat),
-      Box::new(self.demosaic),
-      Box::new(self.level),
-      Box::new(self.tolab),
-      Box::new(self.basecurve),
-      Box::new(self.fromlab),
-      Box::new(self.gamma),
-      Box::new(self.transform),
+    let ops: Vec<Box<&ImageOp>> = vec![
+      Box::new(&self.gofloat),
+      Box::new(&self.demosaic),
+      Box::new(&self.level),
+      Box::new(&self.tolab),
+      Box::new(&self.basecurve),
+      Box::new(&self.fromlab),
+      Box::new(&self.gamma),
+      Box::new(&self.transform),
     ];
     for op in ops {
       buf = do_timing(op.name(), ||op.run(self, &buf));

@@ -119,8 +119,22 @@ impl CFA {
         pattern[row][col] = self.color_at(row+y,col+x);
       }
     }
+
+    let mut name = "".to_string();
+    for row in 0..self.height {
+      for col in 0..self.width {
+        name.push_str(match pattern[row][col] {
+          0 => "R",
+          1 => "G",
+          2 => "B",
+          3 => "E",
+          x => panic!(format!("Unknown CFA color \"{}\"", x).to_string()),
+        });
+      }
+    }
+
     CFA {
-      name: format!("shifted-{}-{}-{}", x, y, self.name).to_string(),
+      name: name,
       pattern: pattern,
       width: self.width,
       height: self.height,
@@ -140,6 +154,21 @@ impl CFA {
   /// ```
   pub fn is_valid(&self) -> bool {
     self.width != 0 && self.height != 0
+  }
+
+  /// Convert the CFA back into a pattern string
+  ///
+  /// # Example
+  /// ```
+  /// use rawloader::CFA;
+  /// let cfa = CFA::new("RGGB");
+  /// assert_eq!(cfa.to_string(), "RGGB");
+  ///
+  /// let shifted = cfa.shift(1,1);
+  /// assert_eq!(shifted.to_string(), "BGGR");
+  /// ```
+  pub fn to_string(&self) -> String {
+    self.name.clone()
   }
 }
 
