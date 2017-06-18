@@ -1,5 +1,23 @@
 use decoders::RawImage;
-use imageops::OpBuffer;
+use imageops::{OpBuffer,ImageOp,Pipeline};
+
+#[derive(Copy, Clone, Debug)]
+pub struct OpGoFloat {
+}
+
+impl OpGoFloat {
+  pub fn new(_img: &RawImage) -> OpGoFloat {
+    OpGoFloat{}
+  }
+}
+
+impl ImageOp for OpGoFloat {
+  fn name(&self) -> &str {"gofloat"}
+  fn run(&self, pipeline: &Pipeline, _buf: &OpBuffer) -> OpBuffer {
+    convert(pipeline.image)
+  }
+}
+
 
 pub fn convert(img: &RawImage) -> OpBuffer {
   // Calculate the resulting width/height and top-left corner after crops

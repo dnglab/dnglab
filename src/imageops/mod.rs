@@ -103,6 +103,7 @@ pub struct Pipeline<'a> {
   maxheight: usize,
   linear: bool,
   image: &'a RawImage,
+  gofloat: gofloat::OpGoFloat,
   demosaic: demosaic::OpDemosaic,
   level: level::OpLevel,
   tolab: colorspaces::OpToLab,
@@ -128,6 +129,7 @@ impl<'a> Pipeline<'a> {
       maxheight,
       linear,
       image: img,
+      gofloat: gofloat::OpGoFloat::new(img),
       demosaic: demosaic::OpDemosaic::new(img),
       level: level::OpLevel::new(img),
       tolab: colorspaces::OpToLab::new(img),
@@ -139,8 +141,10 @@ impl<'a> Pipeline<'a> {
   }
 
   pub fn run(&self) -> OpBuffer {
-    let mut buf = do_timing("gofloat", ||gofloat::convert(self.image));
+    // Start with a dummy buffer, gofloat doesn't use it
+    let mut buf = OpBuffer::new(0,0,0);
     let ops: Vec<Box<ImageOp>> = vec![
+      Box::new(self.gofloat),
       Box::new(self.demosaic),
       Box::new(self.level),
       Box::new(self.tolab),
