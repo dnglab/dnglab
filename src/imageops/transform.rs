@@ -6,18 +6,21 @@ use imageops::{OpBuffer,ImageOp,Pipeline};
 
 #[derive(Copy, Clone, Debug)]
 pub struct OpTransform {
+  orientation: Orientation,
 }
 
 impl OpTransform {
-  pub fn new(_img: &RawImage) -> OpTransform {
-    OpTransform{}
+  pub fn new(img: &RawImage) -> OpTransform {
+    OpTransform{
+      orientation: img.orientation,
+    }
   }
 }
 
 impl ImageOp for OpTransform {
   fn name(&self) -> &str {"transform"}
-  fn run(&self, pipeline: &Pipeline, buf: &OpBuffer) -> OpBuffer {
-    rotate(pipeline.image, buf)
+  fn run(&self, _pipeline: &Pipeline, buf: &OpBuffer) -> OpBuffer {
+    rotate_buffer(buf, &self.orientation)
   }
 }
 
@@ -77,11 +80,6 @@ fn rotate_buffer(buf: &OpBuffer, orientation: &Orientation) -> OpBuffer {
   }));
 
   out
-}
-
-/// Rotate an OpBuffer based on the given RawImage's orientation
-pub fn rotate(img: &RawImage, buf: &OpBuffer) -> OpBuffer {
-  rotate_buffer(buf, &img.orientation)
 }
 
 #[cfg(test)]
