@@ -140,20 +140,23 @@ impl<'a> Pipeline<'a> {
     }
   }
 
+  pub fn ops(&self) -> Vec<&ImageOp> {
+    vec![
+      &self.gofloat,
+      &self.demosaic,
+      &self.level,
+      &self.tolab,
+      &self.basecurve,
+      &self.fromlab,
+      &self.gamma,
+      &self.transform,
+    ]
+  }
+
   pub fn run(&self) -> OpBuffer {
     // Start with a dummy buffer, gofloat doesn't use it
     let mut buf = OpBuffer::new(0,0,0);
-    let ops: Vec<Box<&ImageOp>> = vec![
-      Box::new(&self.gofloat),
-      Box::new(&self.demosaic),
-      Box::new(&self.level),
-      Box::new(&self.tolab),
-      Box::new(&self.basecurve),
-      Box::new(&self.fromlab),
-      Box::new(&self.gamma),
-      Box::new(&self.transform),
-    ];
-    for op in ops {
+    for op in self.ops() {
       buf = do_timing(op.name(), ||op.run(self, &buf));
     }
     buf
