@@ -2,9 +2,9 @@ use std::mem;
 use std::usize;
 
 use decoders::{Orientation, RawImage};
-use imageops::{OpBuffer,ImageOp,Pipeline};
+use imageops::{OpBuffer,ImageOp,Pipeline,standard_to_settings};
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, Serialize, Deserialize)]
 pub struct OpTransform {
   orientation: Orientation,
 }
@@ -17,8 +17,9 @@ impl OpTransform {
   }
 }
 
-impl ImageOp for OpTransform {
+impl<'a> ImageOp<'a> for OpTransform {
   fn name(&self) -> &str {"transform"}
+  fn to_settings(&self) -> String {standard_to_settings(self)}
   fn run(&self, _pipeline: &Pipeline, buf: &OpBuffer) -> OpBuffer {
     rotate_buffer(buf, &self.orientation)
   }

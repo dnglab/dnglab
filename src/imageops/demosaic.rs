@@ -1,9 +1,9 @@
 use decoders::RawImage;
 use decoders::cfa::CFA;
-use imageops::{OpBuffer,ImageOp,Pipeline};
+use imageops::{OpBuffer,ImageOp,Pipeline,standard_to_settings};
 use std::cmp;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct OpDemosaic {
   cfa: String,
 }
@@ -16,8 +16,9 @@ impl OpDemosaic {
   }
 }
 
-impl ImageOp for OpDemosaic {
+impl<'a> ImageOp<'a> for OpDemosaic {
   fn name(&self) -> &str {"demosaic"}
+  fn to_settings(&self) -> String {standard_to_settings(self)}
   fn run(&self, pipeline: &Pipeline, buf: &OpBuffer) -> OpBuffer {
     let (scale, nwidth, nheight) = if pipeline.maxwidth == 0 || pipeline.maxheight == 0 {
       (0.0, buf.width, buf.height)

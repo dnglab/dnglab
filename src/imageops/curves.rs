@@ -1,8 +1,8 @@
 use std::cmp;
 use decoders::RawImage;
-use imageops::{OpBuffer,ImageOp,Pipeline};
+use imageops::{OpBuffer,ImageOp,Pipeline,standard_to_settings};
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct OpBaseCurve {
   xs: Vec<f32>,
   ys: Vec<f32>,
@@ -17,8 +17,9 @@ impl OpBaseCurve {
   }
 }
 
-impl ImageOp for OpBaseCurve {
+impl<'a> ImageOp<'a> for OpBaseCurve {
   fn name(&self) -> &str {"basecurve"}
+  fn to_settings(&self) -> String {standard_to_settings(self)}
   fn run(&self, _pipeline: &Pipeline, buf: &OpBuffer) -> OpBuffer {
     let mut buf = buf.clone();
     let func = SplineFunc::new(&self.xs, &self.ys);

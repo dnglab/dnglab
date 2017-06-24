@@ -1,7 +1,7 @@
 use decoders::RawImage;
-use imageops::{OpBuffer,ImageOp,Pipeline};
+use imageops::{OpBuffer,ImageOp,Pipeline,standard_to_settings};
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, Serialize, Deserialize)]
 pub struct OpGoFloat {
   width: usize,
   height: usize,
@@ -25,8 +25,9 @@ impl OpGoFloat {
   }
 }
 
-impl ImageOp for OpGoFloat {
+impl<'a> ImageOp<'a> for OpGoFloat {
   fn name(&self) -> &str {"gofloat"}
+  fn to_settings(&self) -> String {standard_to_settings(self)}
   fn run(&self, pipeline: &Pipeline, _buf: &OpBuffer) -> OpBuffer {
     let img = pipeline.image;
     let x = self.x;

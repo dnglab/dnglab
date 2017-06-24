@@ -12,6 +12,16 @@ pub mod transform;
 use decoders::RawImage;
 
 extern crate time;
+extern crate toml;
+extern crate serde;
+extern crate serde_yaml;
+use self::serde::Serialize;
+
+use std::hash::{Hash, Hasher};
+extern crate metrohash;
+use self::metrohash::MetroHash;
+
+use std::fmt::Debug;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct OpBuffer {
@@ -92,9 +102,18 @@ fn do_timing<O, F: FnMut() -> O>(name: &str, mut closure: F) -> O {
   ret
 }
 
-pub trait ImageOp {
+pub trait ImageOp<'a>: Debug {
   fn name(&self) -> &str;
   fn run(&self, pipeline: &Pipeline, buf: &OpBuffer) -> OpBuffer;
+  fn to_settings(&self) -> String;
+  fn hash(&self, hasher: &mut MetroHash) {
+    //FIXME: use actual hashing of values instead of hashing the settings serialization
+    self.to_settings().hash(hasher)
+  }
+}
+
+fn standard_to_settings<T: Serialize>(obj: &T) -> String {
+  serde_yaml::to_string(obj).unwrap()
 }
 
 #[derive(Clone, Debug)]
@@ -156,7 +175,17 @@ impl<'a> Pipeline<'a> {
   pub fn run(&self) -> OpBuffer {
     // Start with a dummy buffer, gofloat doesn't use it
     let mut buf = OpBuffer::new(0,0,0);
+
+    // Generate all the hashes for the operations
+    let mut hasher = MetroHash::new();
+    let mut ophashes = Vec::new();
     for op in self.ops() {
+      op.hash(&mut hasher);
+      ophashes.push((hasher.finish(), op));
+    }
+
+    // Now actually do the operations
+    for (hash, op) in ophashes {
       buf = do_timing(op.name(), ||op.run(self, &buf));
     }
     buf

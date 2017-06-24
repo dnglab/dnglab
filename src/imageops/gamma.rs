@@ -1,18 +1,19 @@
 use decoders::RawImage;
-use imageops::{OpBuffer,ImageOp,Pipeline};
+use imageops::{OpBuffer,ImageOp,Pipeline,standard_to_settings};
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, Serialize, Deserialize)]
 pub struct OpGamma {
 }
 
-impl OpGamma {
+impl<'a> OpGamma {
   pub fn new(_img: &RawImage) -> OpGamma {
     OpGamma{}
   }
 }
 
-impl ImageOp for OpGamma {
+impl<'a> ImageOp<'a> for OpGamma {
   fn name(&self) -> &str {"gamma"}
+  fn to_settings(&self) -> String {standard_to_settings(self)}
   fn run(&self, pipeline: &Pipeline, buf: &OpBuffer) -> OpBuffer {
     if pipeline.linear {
       buf.clone()

@@ -80,9 +80,8 @@
 
 #[macro_use] extern crate enum_primitive;
 extern crate num;
-
 #[macro_use] extern crate lazy_static;
-
+#[macro_use] extern crate serde_derive;
 extern crate itertools;
 
 #[doc(hidden)] pub mod decoders;

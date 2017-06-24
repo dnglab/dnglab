@@ -1,7 +1,7 @@
 use decoders::RawImage;
-use imageops::{OpBuffer,ImageOp,Pipeline};
+use imageops::{OpBuffer,ImageOp,Pipeline,standard_to_settings};
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, Serialize, Deserialize)]
 pub struct OpToLab {
   cam_to_xyz: [[f32;4];3],
 }
@@ -14,8 +14,9 @@ impl OpToLab {
   }
 }
 
-impl ImageOp for OpToLab {
+impl<'a> ImageOp<'a> for OpToLab {
   fn name(&self) -> &str {"to_lab"}
+  fn to_settings(&self) -> String {standard_to_settings(self)}
   fn run(&self, _pipeline: &Pipeline, buf: &OpBuffer) -> OpBuffer {
     let cmatrix = self.cam_to_xyz;
 
@@ -40,7 +41,7 @@ impl ImageOp for OpToLab {
   }
 }
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, Serialize, Deserialize)]
 pub struct OpFromLab {
 }
 
@@ -50,8 +51,9 @@ impl OpFromLab {
   }
 }
 
-impl ImageOp for OpFromLab {
+impl<'a> ImageOp<'a> for OpFromLab {
   fn name(&self) -> &str {"from_lab"}
+  fn to_settings(&self) -> String {standard_to_settings(self)}
   fn run(&self, _pipeline: &Pipeline, buf: &OpBuffer) -> OpBuffer {
     let mut buf = buf.clone();
     let cmatrix = xyz_to_rec709_matrix();

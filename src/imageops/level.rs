@@ -1,7 +1,7 @@
 use decoders::RawImage;
-use imageops::{OpBuffer,ImageOp,Pipeline};
+use imageops::{OpBuffer,ImageOp,Pipeline,standard_to_settings};
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, Serialize, Deserialize)]
 pub struct OpLevel {
   blacklevels: [f32;4],
   whitelevels: [f32;4],
@@ -38,8 +38,9 @@ impl OpLevel {
   }
 }
 
-impl ImageOp for OpLevel {
+impl<'a> ImageOp<'a> for OpLevel {
   fn name(&self) -> &str {"level"}
+  fn to_settings(&self) -> String {standard_to_settings(self)}
   fn run(&self, _pipeline: &Pipeline, buf: &OpBuffer) -> OpBuffer {
     let mut buf = buf.clone();
 
