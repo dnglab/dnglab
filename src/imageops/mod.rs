@@ -25,6 +25,7 @@ use std::fmt::Debug;
 
 extern crate multicache;
 use self::multicache::MultiCache;
+use std::sync::Arc;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct OpBuffer {
@@ -193,7 +194,7 @@ impl<'a> Pipeline<'a> {
     }
   }
 
-  pub fn run(&mut self) -> OpBuffer {
+  pub fn run(&mut self) -> Arc<OpBuffer> {
     // Generate all the hashes for the operations
     let mut hasher = MetroHash::new();
     let mut ophashes = Vec::new();
@@ -209,16 +210,25 @@ impl<'a> Pipeline<'a> {
       do_timing(op.name(), ||op.run(globals, bufin, hash));
       bufin = hash;
     }
-    (*(self.globals.cache.get(bufin).unwrap())).clone()
+    self.globals.cache.get(bufin).unwrap()
   }
 }
 
+fn simple_decode_full(img: &RawImage, maxwidth: usize, maxheight: usize, linear: bool) -> OpBuffer {
+  let buf = {
+    let mut pipeline = Pipeline::new(img, maxwidth, maxheight, linear);
+    pipeline.run()
+  };
+
+  // Since we've kept the pipeline to ourselves unwraping always works
+  Arc::try_unwrap(buf).unwrap()
+}
+
+
 pub fn simple_decode(img: &RawImage, maxwidth: usize, maxheight: usize) -> OpBuffer {
-  let mut pipeline = Pipeline::new(img, maxwidth, maxheight, false);
-  pipeline.run()
+  simple_decode_full(img, maxwidth, maxheight, false)
 }
 
 pub fn simple_decode_linear(img: &RawImage, maxwidth: usize, maxheight: usize) -> OpBuffer {
-  let mut pipeline = Pipeline::new(img, maxwidth, maxheight, true);
-  pipeline.run()
+  simple_decode_full(img, maxwidth, maxheight, true)
 }

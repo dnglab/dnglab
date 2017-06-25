@@ -24,7 +24,7 @@ serde = "1"
 serde_derive = "1"
 serde_yaml = "0.7.1"
 metrohash = "1"
-multicache = "0.1.3"
+multicache = "0.2.0"
 
 [build-dependencies]
 glob = "0.2.11"

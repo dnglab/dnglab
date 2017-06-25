@@ -16,9 +16,7 @@ impl<'a> ImageOp<'a> for OpGamma {
   fn to_settings(&self) -> String {standard_to_settings(self)}
   fn run(&self, pipeline: &mut PipelineGlobals, inid: u64, outid: u64) {
     if pipeline.linear {
-      // FIXME: avoid copying by implementing aliasing in multicache
-      let buf = (*pipeline.cache.get(inid).unwrap()).clone();
-      pipeline.cache.put(outid, buf, 1);
+      pipeline.cache.alias(inid, outid);
     } else {
       let mut buf = (*pipeline.cache.get(inid).unwrap()).clone();
 

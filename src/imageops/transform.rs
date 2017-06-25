@@ -21,9 +21,13 @@ impl<'a> ImageOp<'a> for OpTransform {
   fn name(&self) -> &str {"transform"}
   fn to_settings(&self) -> String {standard_to_settings(self)}
   fn run(&self, pipeline: &mut PipelineGlobals, inid: u64, outid: u64) {
-    let buf = pipeline.cache.get(inid).unwrap();
-    let buf = rotate_buffer(&buf, &self.orientation);
-    pipeline.cache.put(outid, buf, 1);
+    if self.orientation == Orientation::Normal || self.orientation == Orientation::Unknown {
+      pipeline.cache.alias(inid, outid);
+    } else {
+      let buf = pipeline.cache.get(inid).unwrap();
+      let buf = rotate_buffer(&buf, &self.orientation);
+      pipeline.cache.put(outid, buf, 1);
+    }
   }
 }
 

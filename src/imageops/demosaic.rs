@@ -2,7 +2,6 @@ use decoders::RawImage;
 use decoders::cfa::CFA;
 use imageops::{OpBuffer,ImageOp,PipelineGlobals,standard_to_settings};
 use std::cmp;
-use std::sync::Arc;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct OpDemosaic {
@@ -45,24 +44,23 @@ impl<'a> ImageOp<'a> for OpDemosaic {
       _  => 2.0,  // default
     };
 
-    let buf = if scale < minscale || buf.colors != 1 {
-      let fullsize = match buf.colors {
-        4 => buf,
-        // FIXME: return an error when cpp != 1 and cpp != 3
-        _ => Arc::new(full(cfa, &buf)),
-      };
-
-      if scale > 1.0 {
-        Arc::new(scale_down(&fullsize, nwidth, nheight))
+    // If we want full size and the image is already 4 color pass it through
+    if (scale < minscale || buf.colors != 1) && buf.colors == 4 {
+      pipeline.cache.alias(inid, outid);
+    // If we're not scaling enough do full demosaic and then scale down
+    } else if scale < minscale  {
+      let fullsize = full(cfa, &buf);
+      let buf = if scale > 1.0 {
+        scale_down(&fullsize, nwidth, nheight)
       } else {
         fullsize
-      }
+      };
+      pipeline.cache.put(outid, buf, 1);
+    // Do a demosaic by scaling down
     } else {
-      Arc::new(scaled(cfa, &buf, nwidth, nheight))
-    };
-
-    //FIXME: Remove copying by implementing multicache aliasing
-    pipeline.cache.put(outid, (*buf).clone(), 1);
+      let buf = scaled(cfa, &buf, nwidth, nheight);
+      pipeline.cache.put(outid, buf, 1);
+    }
   }
 }
 
