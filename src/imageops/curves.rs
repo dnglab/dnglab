@@ -1,18 +1,40 @@
 use std::cmp;
 use decoders::RawImage;
-use imageops::{ImageOp,PipelineGlobals,standard_to_settings};
+use imageops::*;
+extern crate ordered_float;
+use self::ordered_float::OrderedFloat;
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+pub fn ord(a: f32, b: f32) -> (OrderedFloat<f32>, OrderedFloat<f32>) {
+  (OrderedFloat(a), OrderedFloat(b))
+}
+
+pub fn flo(pair: (OrderedFloat<f32>, OrderedFloat<f32>)) -> (f32, f32) {
+  (pair.0.into(), pair.1.into())
+}
+
+pub fn vec_to_flo(arr: &[(OrderedFloat<f32>, OrderedFloat<f32>)]) -> Vec<(f32,f32)> {
+  let mut out = Vec::new();
+  for pair in arr {
+    out.push(flo(*pair))
+  }
+  out
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, Hash)]
 pub struct OpBaseCurve {
-  xs: Vec<f32>,
-  ys: Vec<f32>,
+  points: Vec<(OrderedFloat<f32>, OrderedFloat<f32>)>,
 }
 
 impl OpBaseCurve {
   pub fn new(_img: &RawImage) -> OpBaseCurve {
     OpBaseCurve{
-      xs: vec![0.0, 0.30, 0.5, 0.70, 1.0],
-      ys: vec![0.0, 0.25, 0.5, 0.75, 1.0],
+      points: vec![
+        ord(0.00, 0.00),
+        ord(0.30, 0.25),
+        ord(0.50, 0.50),
+        ord(0.70, 0.75),
+        ord(1.00, 1.00),
+      ],
     }
   }
 }
@@ -20,9 +42,10 @@ impl OpBaseCurve {
 impl<'a> ImageOp<'a> for OpBaseCurve {
   fn name(&self) -> &str {"basecurve"}
   fn to_settings(&self) -> String {standard_to_settings(self)}
+  fn hash(&self, hasher: &mut MetroHash) {standard_hash(self, hasher)}
   fn run(&self, pipeline: &mut PipelineGlobals, inid: u64, outid: u64) {
     let mut buf = (*pipeline.cache.get(inid).unwrap()).clone();
-    let func = SplineFunc::new(&self.xs, &self.ys);
+    let func = SplineFunc::new(vec_to_flo(&self.points));
 
     buf.mutate_lines(&(|line: &mut [f32], _| {
       for pix in line.chunks_mut(3) {
@@ -37,27 +60,25 @@ impl<'a> ImageOp<'a> for OpBaseCurve {
 }
 
 
-struct SplineFunc<'a> {
-  xs: &'a [f32],
-  ys: &'a [f32],
+struct SplineFunc {
+  points: Vec<(f32,f32)>,
   c1s: Vec<f32>,
   c2s: Vec<f32>,
   c3s: Vec<f32>,
 }
 
-impl<'a> SplineFunc<'a> {
+impl SplineFunc {
   // Monotone cubic interpolation code adapted from the Javascript example in Wikipedia
-  fn new(xs: &'a[f32], ys: &'a[f32]) -> SplineFunc<'a> {
-    if xs.len() != ys.len() { panic!("Different number of Xs and Ys for Spline"); }
-    if xs.len() < 2 { panic!("Need at least 2 points for Spline"); }
+  fn new(points: Vec<(f32,f32)>) -> SplineFunc {
+    if points.len() < 2 { panic!("Need at least 2 points for Spline"); }
 
     // Get consecutive differences and slopes
     let mut dxs = Vec::new();
     let mut dys = Vec::new();
     let mut slopes = Vec::new();
-    for i in 0..(xs.len()-1) {
-      let dx = xs[i+1] - xs[i];
-      let dy = ys[i+1] - ys[i];
+    for i in 0..(points.len()-1) {
+      let dx = points[i+1].0 - points[i].0;
+      let dy = points[i+1].1 - points[i].1;
       dxs.push(dx);
       dys.push(dy);
       slopes.push(dy/dx);
@@ -92,9 +113,8 @@ impl<'a> SplineFunc<'a> {
     }
   
     SplineFunc {
-      xs: xs,
-      ys: ys,
-        c1s: c1s,
+      points: points,
+      c1s: c1s,
       c2s: c2s,
       c3s: c3s,
     }
@@ -102,9 +122,9 @@ impl<'a> SplineFunc<'a> {
 
   fn interpolate(&self, val: f32) -> f32 {
     // Anything at or beyond the last value returns the last value
-    let end = self.xs[self.xs.len()-1];
+    let end = self.points[self.points.len()-1].0;
     if val >= end {
-      return self.ys[self.ys.len()-1];
+      return self.points[self.points.len()-1].1;
     }
     
     // Search for the interval x is in, returning the corresponding y if x is one of the original xs
@@ -114,16 +134,16 @@ impl<'a> SplineFunc<'a> {
 
     while low <= high {
       mid = (low+high)/2;
-      let xhere = self.xs[mid as usize];
+      let xhere = self.points[mid as usize].0;
       if xhere < val { low = mid + 1; }
       else if xhere > val { high = mid - 1; }
-      else { return self.ys[mid as usize] }
+      else { return self.points[mid as usize].1 }
     }
     let i = cmp::max(0, high) as usize;
     
     // Interpolate
-    let diff = val - self.xs[i];
+    let diff = val - self.points[i].0;
 
-    self.ys[i] + self.c1s[i]*diff + self.c2s[i]*diff*diff + self.c3s[i]*diff*diff*diff
+    self.points[i].1 + self.c1s[i]*diff + self.c2s[i]*diff*diff + self.c3s[i]*diff*diff*diff
   }
 }

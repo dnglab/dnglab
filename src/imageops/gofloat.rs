@@ -1,7 +1,7 @@
 use decoders::RawImage;
-use imageops::{OpBuffer,ImageOp,PipelineGlobals,standard_to_settings};
+use imageops::*;
 
-#[derive(Copy, Clone, Debug, Serialize, Deserialize)]
+#[derive(Copy, Clone, Debug, Serialize, Deserialize, Hash)]
 pub struct OpGoFloat {
   width: usize,
   height: usize,
@@ -28,6 +28,7 @@ impl OpGoFloat {
 impl<'a> ImageOp<'a> for OpGoFloat {
   fn name(&self) -> &str {"gofloat"}
   fn to_settings(&self) -> String {standard_to_settings(self)}
+  fn hash(&self, hasher: &mut MetroHash) {standard_hash(self, hasher)}
   fn run(&self, pipeline: &mut PipelineGlobals, _inid: u64, outid: u64) {
     let img = pipeline.image;
     let x = self.x;

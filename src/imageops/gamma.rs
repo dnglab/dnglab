@@ -1,7 +1,7 @@
 use decoders::RawImage;
-use imageops::{ImageOp,PipelineGlobals,standard_to_settings};
+use imageops::*;
 
-#[derive(Copy, Clone, Debug, Serialize, Deserialize)]
+#[derive(Copy, Clone, Debug, Serialize, Deserialize, Hash)]
 pub struct OpGamma {
 }
 
@@ -14,6 +14,7 @@ impl<'a> OpGamma {
 impl<'a> ImageOp<'a> for OpGamma {
   fn name(&self) -> &str {"gamma"}
   fn to_settings(&self) -> String {standard_to_settings(self)}
+  fn hash(&self, hasher: &mut MetroHash) {standard_hash(self, hasher)}
   fn run(&self, pipeline: &mut PipelineGlobals, inid: u64, outid: u64) {
     if pipeline.linear {
       pipeline.cache.alias(inid, outid);

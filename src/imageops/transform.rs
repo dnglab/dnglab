@@ -2,9 +2,9 @@ use std::mem;
 use std::usize;
 
 use decoders::{Orientation, RawImage};
-use imageops::{OpBuffer,ImageOp,PipelineGlobals,standard_to_settings};
+use imageops::*;
 
-#[derive(Copy, Clone, Debug, Serialize, Deserialize)]
+#[derive(Copy, Clone, Debug, Serialize, Deserialize, Hash)]
 pub struct OpTransform {
   orientation: Orientation,
 }
@@ -20,6 +20,7 @@ impl OpTransform {
 impl<'a> ImageOp<'a> for OpTransform {
   fn name(&self) -> &str {"transform"}
   fn to_settings(&self) -> String {standard_to_settings(self)}
+  fn hash(&self, hasher: &mut MetroHash) {standard_hash(self, hasher)}
   fn run(&self, pipeline: &mut PipelineGlobals, inid: u64, outid: u64) {
     if self.orientation == Orientation::Normal || self.orientation == Orientation::Unknown {
       pipeline.cache.alias(inid, outid);

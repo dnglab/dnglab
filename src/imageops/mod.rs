@@ -110,14 +110,15 @@ pub trait ImageOp<'a>: Debug {
   fn name(&self) -> &str;
   fn run(&self, pipeline: &mut PipelineGlobals, inid: u64, outid: u64);
   fn to_settings(&self) -> String;
-  fn hash(&self, hasher: &mut MetroHash) {
-    //FIXME: use actual hashing of values instead of hashing the settings serialization
-    self.to_settings().hash(hasher)
-  }
+  fn hash(&self, hasher: &mut MetroHash);
 }
 
 fn standard_to_settings<T: Serialize>(obj: &T) -> String {
   serde_yaml::to_string(obj).unwrap()
+}
+
+fn standard_hash<T: Hash>(obj: &T, hasher: &mut MetroHash) {
+  obj.hash(hasher)
 }
 
 #[derive(Debug)]
@@ -199,6 +200,8 @@ impl<'a> Pipeline<'a> {
     let mut hasher = MetroHash::new();
     let mut ophashes = Vec::new();
     for op in self.ops.all() {
+      // Hash the name first as a zero sized struct doesn't actually do any hashing
+      op.name().hash(&mut hasher);
       op.hash(&mut hasher);
       ophashes.push((hasher.finish(), op));
     }

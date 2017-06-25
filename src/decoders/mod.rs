@@ -196,7 +196,7 @@ impl Camera {
 }
 
 /// Possible values for the IFD tag Orientation (0x0112)
-#[derive(Debug, Copy, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Copy, Clone, PartialEq, Serialize, Deserialize, Hash)]
 pub enum Orientation {
   Normal,
   HorizontalFlip,

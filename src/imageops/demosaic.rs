@@ -1,9 +1,9 @@
 use decoders::RawImage;
 use decoders::cfa::CFA;
-use imageops::{OpBuffer,ImageOp,PipelineGlobals,standard_to_settings};
+use imageops::*;
 use std::cmp;
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, Hash)]
 pub struct OpDemosaic {
   cfa: String,
 }
@@ -19,6 +19,7 @@ impl OpDemosaic {
 impl<'a> ImageOp<'a> for OpDemosaic {
   fn name(&self) -> &str {"demosaic"}
   fn to_settings(&self) -> String {standard_to_settings(self)}
+  fn hash(&self, hasher: &mut MetroHash) {standard_hash(self, hasher)}
   fn run(&self, pipeline: &mut PipelineGlobals, inid: u64, outid: u64) {
     let buf = pipeline.cache.get(inid).unwrap();
 

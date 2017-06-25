@@ -1,15 +1,33 @@
 use decoders::RawImage;
-use imageops::{ImageOp,PipelineGlobals,standard_to_settings};
+use imageops::*;
+extern crate ordered_float;
+use self::ordered_float::OrderedFloat;
 
-#[derive(Copy, Clone, Debug, Serialize, Deserialize)]
+fn from_ordered(m: [[OrderedFloat<f32>;4];3]) -> [[f32;4];3] {
+  [
+    [m[0][0].into(),m[0][1].into(),m[0][2].into(),m[0][3].into()],
+    [m[1][0].into(),m[1][1].into(),m[1][2].into(),m[1][3].into()],
+    [m[2][0].into(),m[2][1].into(),m[2][2].into(),m[2][3].into()],
+  ]
+}
+
+fn to_ordered(m: [[f32;4];3]) -> [[OrderedFloat<f32>;4];3] {
+  [
+    [OrderedFloat(m[0][0]),OrderedFloat(m[0][1]),OrderedFloat(m[0][2]),OrderedFloat(m[0][3])],
+    [OrderedFloat(m[1][0]),OrderedFloat(m[1][1]),OrderedFloat(m[1][2]),OrderedFloat(m[1][3])],
+    [OrderedFloat(m[2][0]),OrderedFloat(m[2][1]),OrderedFloat(m[2][2]),OrderedFloat(m[2][3])],
+  ]
+}
+
+#[derive(Copy, Clone, Debug, Serialize, Deserialize, Hash)]
 pub struct OpToLab {
-  cam_to_xyz: [[f32;4];3],
+  cam_to_xyz: [[OrderedFloat<f32>;4];3],
 }
 
 impl OpToLab {
   pub fn new(img: &RawImage) -> OpToLab {
     OpToLab{
-      cam_to_xyz: img.cam_to_xyz(),
+      cam_to_xyz: to_ordered(img.cam_to_xyz()),
     }
   }
 }
@@ -17,9 +35,10 @@ impl OpToLab {
 impl<'a> ImageOp<'a> for OpToLab {
   fn name(&self) -> &str {"to_lab"}
   fn to_settings(&self) -> String {standard_to_settings(self)}
+  fn hash(&self, hasher: &mut MetroHash) {standard_hash(self, hasher)}
   fn run(&self, pipeline: &mut PipelineGlobals, inid: u64, outid: u64) {
     let buf = pipeline.cache.get(inid).unwrap();
-    let cmatrix = self.cam_to_xyz;
+    let cmatrix = from_ordered(self.cam_to_xyz);
 
     let buf = buf.process_into_new(3, &(|outb: &mut [f32], inb: &[f32]| {
       for (pixin, pixout) in inb.chunks(4).zip(outb.chunks_mut(3)) {
@@ -44,7 +63,7 @@ impl<'a> ImageOp<'a> for OpToLab {
   }
 }
 
-#[derive(Copy, Clone, Debug, Serialize, Deserialize)]
+#[derive(Copy, Clone, Debug, Serialize, Deserialize, Hash)]
 pub struct OpFromLab {
 }
 
@@ -57,6 +76,7 @@ impl OpFromLab {
 impl<'a> ImageOp<'a> for OpFromLab {
   fn name(&self) -> &str {"from_lab"}
   fn to_settings(&self) -> String {standard_to_settings(self)}
+  fn hash(&self, hasher: &mut MetroHash) {standard_hash(self, hasher)}
   fn run(&self, pipeline: &mut PipelineGlobals, inid: u64, outid: u64) {
     let mut buf = (*pipeline.cache.get(inid).unwrap()).clone();
     let cmatrix = xyz_to_rec709_matrix();

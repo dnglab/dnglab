@@ -1,11 +1,26 @@
 use decoders::RawImage;
-use imageops::{ImageOp,PipelineGlobals,standard_to_settings};
+use imageops::*;
+extern crate ordered_float;
+use self::ordered_float::OrderedFloat;
 
-#[derive(Copy, Clone, Debug, Serialize, Deserialize)]
+#[derive(Copy, Clone, Debug, Serialize, Deserialize, Hash)]
 pub struct OpLevel {
-  blacklevels: [f32;4],
-  whitelevels: [f32;4],
-  wb_coeffs: [f32;4],
+  blacklevels: [OrderedFloat<f32>;4],
+  whitelevels: [OrderedFloat<f32>;4],
+  wb_coeffs: [OrderedFloat<f32>;4],
+}
+
+fn from_int4(arr: [u16;4]) -> [OrderedFloat<f32>;4] {
+  [OrderedFloat(arr[0] as f32), OrderedFloat(arr[1] as f32),
+   OrderedFloat(arr[2] as f32), OrderedFloat(arr[3] as f32)]
+}
+
+fn from_float4(arr: [f32;4]) -> [OrderedFloat<f32>;4] {
+  [OrderedFloat(arr[0]), OrderedFloat(arr[1]), OrderedFloat(arr[2]), OrderedFloat(arr[3])]
+}
+
+fn from_ordered4(arr: [OrderedFloat<f32>;4]) -> [f32;4] {
+  [arr[0].into(), arr[1].into(), arr[2].into(), arr[3].into()]
 }
 
 impl OpLevel {
@@ -21,19 +36,9 @@ impl OpLevel {
     };
 
     OpLevel{
-      blacklevels: [
-        img.blacklevels[0] as f32, 
-        img.blacklevels[1] as f32, 
-        img.blacklevels[2] as f32, 
-        img.blacklevels[3] as f32
-      ],
-      whitelevels: [
-        img.whitelevels[0] as f32, 
-        img.whitelevels[1] as f32, 
-        img.whitelevels[2] as f32, 
-        img.whitelevels[3] as f32
-      ],
-      wb_coeffs: coeffs,
+      blacklevels: from_int4(img.blacklevels),
+      whitelevels: from_int4(img.whitelevels),
+      wb_coeffs: from_float4(coeffs),
     }
   }
 }
@@ -41,16 +46,27 @@ impl OpLevel {
 impl<'a> ImageOp<'a> for OpLevel {
   fn name(&self) -> &str {"level"}
   fn to_settings(&self) -> String {standard_to_settings(self)}
+  fn hash(&self, hasher: &mut MetroHash) {standard_hash(self, hasher)}
   fn run(&self, pipeline: &mut PipelineGlobals, inid: u64, outid: u64) {
     let mut buf = (*pipeline.cache.get(inid).unwrap()).clone();
 
     // Calculate the levels
-    let mins = self.blacklevels;
-    let ranges = self.whitelevels.iter().enumerate().map(|(i, &x)| x - mins[i]).collect::<Vec<f32>>();
+    let mins = from_ordered4(self.blacklevels);
+    let ranges = self.whitelevels.iter().enumerate().map(|(i, &x)| {
+      let x: f32 = (*x).into();
+      x - mins[i]
+    }).collect::<Vec<f32>>();
 
     // Set green multiplier as 1.0
-    let unity: f32 = self.wb_coeffs[1];
-    let mul = self.wb_coeffs.iter().map(|x| if !x.is_normal() { 1.0 } else { x / unity }).collect::<Vec<f32>>();
+    let unity: f32 = self.wb_coeffs[1].into();
+    let mul = self.wb_coeffs.iter().map(|x| {
+      if !x.is_normal() { 
+        1.0 
+      } else { 
+        let x: f32 = (*x).into();
+        x / unity 
+      }
+    }).collect::<Vec<f32>>();
 
     buf.mutate_lines(&(|line: &mut [f32], _| {
       for pix in line.chunks_mut(4) {
