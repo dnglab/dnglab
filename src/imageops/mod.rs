@@ -23,6 +23,9 @@ use self::metrohash::MetroHash;
 
 use std::fmt::Debug;
 
+extern crate multicache;
+use self::multicache::MultiCache;
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct OpBuffer {
   pub width: usize,
@@ -104,7 +107,7 @@ fn do_timing<O, F: FnMut() -> O>(name: &str, mut closure: F) -> O {
 
 pub trait ImageOp<'a>: Debug {
   fn name(&self) -> &str;
-  fn run(&self, pipeline: &Pipeline, buf: &OpBuffer) -> OpBuffer;
+  fn run(&self, pipeline: &mut PipelineGlobals, inid: u64, outid: u64);
   fn to_settings(&self) -> String;
   fn hash(&self, hasher: &mut MetroHash) {
     //FIXME: use actual hashing of values instead of hashing the settings serialization
@@ -116,12 +119,17 @@ fn standard_to_settings<T: Serialize>(obj: &T) -> String {
   serde_yaml::to_string(obj).unwrap()
 }
 
-#[derive(Clone, Debug)]
-pub struct Pipeline<'a> {
+#[derive(Debug)]
+pub struct PipelineGlobals<'a> {
+  cache: MultiCache<u64, OpBuffer>,
   maxwidth: usize,
   maxheight: usize,
   linear: bool,
   image: &'a RawImage,
+}
+
+#[derive(Debug)]
+pub struct PipelineOps {
   gofloat: gofloat::OpGoFloat,
   demosaic: demosaic::OpDemosaic,
   level: level::OpLevel,
@@ -130,6 +138,27 @@ pub struct Pipeline<'a> {
   fromlab: colorspaces::OpFromLab,
   gamma: gamma::OpGamma,
   transform: transform::OpTransform,
+}
+
+impl PipelineOps {
+  pub fn all(&self) -> Vec<&ImageOp> {
+    vec![
+      &self.gofloat,
+      &self.demosaic,
+      &self.level,
+      &self.tolab,
+      &self.basecurve,
+      &self.fromlab,
+      &self.gamma,
+      &self.transform,
+    ]
+  }
+}
+
+#[derive(Debug)]
+pub struct Pipeline<'a> {
+  globals: PipelineGlobals<'a>,
+  ops: PipelineOps,
 }
 
 impl<'a> Pipeline<'a> {
@@ -144,60 +173,52 @@ impl<'a> Pipeline<'a> {
     };
 
     Pipeline {
-      maxwidth,
-      maxheight,
-      linear,
-      image: img,
-      gofloat: gofloat::OpGoFloat::new(img),
-      demosaic: demosaic::OpDemosaic::new(img),
-      level: level::OpLevel::new(img),
-      tolab: colorspaces::OpToLab::new(img),
-      basecurve: curves::OpBaseCurve::new(img),
-      fromlab: colorspaces::OpFromLab::new(img),
-      gamma: gamma::OpGamma::new(img),
-      transform: transform::OpTransform::new(img),
+      globals: PipelineGlobals {
+        cache: MultiCache::new(1),
+        maxwidth,
+        maxheight,
+        linear,
+        image: img,
+      },
+      ops: PipelineOps {
+        gofloat: gofloat::OpGoFloat::new(img),
+        demosaic: demosaic::OpDemosaic::new(img),
+        level: level::OpLevel::new(img),
+        tolab: colorspaces::OpToLab::new(img),
+        basecurve: curves::OpBaseCurve::new(img),
+        fromlab: colorspaces::OpFromLab::new(img),
+        gamma: gamma::OpGamma::new(img),
+        transform: transform::OpTransform::new(img),
+      },
     }
   }
 
-  pub fn ops(&self) -> Vec<&ImageOp> {
-    vec![
-      &self.gofloat,
-      &self.demosaic,
-      &self.level,
-      &self.tolab,
-      &self.basecurve,
-      &self.fromlab,
-      &self.gamma,
-      &self.transform,
-    ]
-  }
-
-  pub fn run(&self) -> OpBuffer {
-    // Start with a dummy buffer, gofloat doesn't use it
-    let mut buf = OpBuffer::new(0,0,0);
-
+  pub fn run(&mut self) -> OpBuffer {
     // Generate all the hashes for the operations
     let mut hasher = MetroHash::new();
     let mut ophashes = Vec::new();
-    for op in self.ops() {
+    for op in self.ops.all() {
       op.hash(&mut hasher);
       ophashes.push((hasher.finish(), op));
     }
 
-    // Now actually do the operations
+    // Do the operations, starting with a dummy buffer id as gofloat doesn't use it
+    let mut bufin: u64 = 0;
     for (hash, op) in ophashes {
-      buf = do_timing(op.name(), ||op.run(self, &buf));
+      let globals = &mut self.globals;
+      do_timing(op.name(), ||op.run(globals, bufin, hash));
+      bufin = hash;
     }
-    buf
+    (*(self.globals.cache.get(bufin).unwrap())).clone()
   }
 }
 
 pub fn simple_decode(img: &RawImage, maxwidth: usize, maxheight: usize) -> OpBuffer {
-  let pipeline = Pipeline::new(img, maxwidth, maxheight, false);
+  let mut pipeline = Pipeline::new(img, maxwidth, maxheight, false);
   pipeline.run()
 }
 
 pub fn simple_decode_linear(img: &RawImage, maxwidth: usize, maxheight: usize) -> OpBuffer {
-  let pipeline = Pipeline::new(img, maxwidth, maxheight, true);
+  let mut pipeline = Pipeline::new(img, maxwidth, maxheight, true);
   pipeline.run()
 }

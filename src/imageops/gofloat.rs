@@ -1,5 +1,5 @@
 use decoders::RawImage;
-use imageops::{OpBuffer,ImageOp,Pipeline,standard_to_settings};
+use imageops::{OpBuffer,ImageOp,PipelineGlobals,standard_to_settings};
 
 #[derive(Copy, Clone, Debug, Serialize, Deserialize)]
 pub struct OpGoFloat {
@@ -28,12 +28,12 @@ impl OpGoFloat {
 impl<'a> ImageOp<'a> for OpGoFloat {
   fn name(&self) -> &str {"gofloat"}
   fn to_settings(&self) -> String {standard_to_settings(self)}
-  fn run(&self, pipeline: &Pipeline, _buf: &OpBuffer) -> OpBuffer {
+  fn run(&self, pipeline: &mut PipelineGlobals, _inid: u64, outid: u64) {
     let img = pipeline.image;
     let x = self.x;
     let y = self.y;
 
-    if self.cpp == 1 && !self.is_cfa {
+    let buf = if self.cpp == 1 && !self.is_cfa {
       // We're in a monochrome image so turn it into RGB
       let mut out = OpBuffer::new(self.width, self.height, 4);
       out.mutate_lines(&(|line: &mut [f32], row| {
@@ -65,6 +65,8 @@ impl<'a> ImageOp<'a> for OpGoFloat {
         }
       }));
       out
-    }
+    };
+
+    pipeline.cache.put(outid, buf, 1);
   }
 }

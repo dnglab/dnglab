@@ -1,5 +1,5 @@
 use decoders::RawImage;
-use imageops::{OpBuffer,ImageOp,Pipeline,standard_to_settings};
+use imageops::{ImageOp,PipelineGlobals,standard_to_settings};
 
 #[derive(Copy, Clone, Debug, Serialize, Deserialize)]
 pub struct OpLevel {
@@ -41,8 +41,8 @@ impl OpLevel {
 impl<'a> ImageOp<'a> for OpLevel {
   fn name(&self) -> &str {"level"}
   fn to_settings(&self) -> String {standard_to_settings(self)}
-  fn run(&self, _pipeline: &Pipeline, buf: &OpBuffer) -> OpBuffer {
-    let mut buf = buf.clone();
+  fn run(&self, pipeline: &mut PipelineGlobals, inid: u64, outid: u64) {
+    let mut buf = (*pipeline.cache.get(inid).unwrap()).clone();
 
     // Calculate the levels
     let mins = self.blacklevels;
@@ -61,6 +61,6 @@ impl<'a> ImageOp<'a> for OpLevel {
       }
     }));
 
-    buf
+    pipeline.cache.put(outid, buf, 1);
   }
 }

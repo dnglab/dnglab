@@ -1,7 +1,8 @@
 use decoders::RawImage;
 use decoders::cfa::CFA;
-use imageops::{OpBuffer,ImageOp,Pipeline,standard_to_settings};
+use imageops::{OpBuffer,ImageOp,PipelineGlobals,standard_to_settings};
 use std::cmp;
+use std::sync::Arc;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct OpDemosaic {
@@ -19,7 +20,9 @@ impl OpDemosaic {
 impl<'a> ImageOp<'a> for OpDemosaic {
   fn name(&self) -> &str {"demosaic"}
   fn to_settings(&self) -> String {standard_to_settings(self)}
-  fn run(&self, pipeline: &Pipeline, buf: &OpBuffer) -> OpBuffer {
+  fn run(&self, pipeline: &mut PipelineGlobals, inid: u64, outid: u64) {
+    let buf = pipeline.cache.get(inid).unwrap();
+
     let (scale, nwidth, nheight) = if pipeline.maxwidth == 0 || pipeline.maxheight == 0 {
       (0.0, buf.width, buf.height)
     } else {
@@ -42,20 +45,24 @@ impl<'a> ImageOp<'a> for OpDemosaic {
       _  => 2.0,  // default
     };
 
-    if scale < minscale || buf.colors != 1 {
-      let out = match buf.colors {
-        4 => buf.clone(),
+    let buf = if scale < minscale || buf.colors != 1 {
+      let fullsize = match buf.colors {
+        4 => buf,
         // FIXME: return an error when cpp != 1 and cpp != 3
-        _ => full(cfa, buf),
+        _ => Arc::new(full(cfa, &buf)),
       };
+
       if scale > 1.0 {
-        scale_down(&out, nwidth, nheight)
+        Arc::new(scale_down(&fullsize, nwidth, nheight))
       } else {
-        out
+        fullsize
       }
     } else {
-      scaled(cfa, buf, nwidth, nheight)
-    }
+      Arc::new(scaled(cfa, &buf, nwidth, nheight))
+    };
+
+    //FIXME: Remove copying by implementing multicache aliasing
+    pipeline.cache.put(outid, (*buf).clone(), 1);
   }
 }
 

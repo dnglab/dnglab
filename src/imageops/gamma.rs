@@ -1,5 +1,5 @@
 use decoders::RawImage;
-use imageops::{OpBuffer,ImageOp,Pipeline,standard_to_settings};
+use imageops::{ImageOp,PipelineGlobals,standard_to_settings};
 
 #[derive(Copy, Clone, Debug, Serialize, Deserialize)]
 pub struct OpGamma {
@@ -14,11 +14,13 @@ impl<'a> OpGamma {
 impl<'a> ImageOp<'a> for OpGamma {
   fn name(&self) -> &str {"gamma"}
   fn to_settings(&self) -> String {standard_to_settings(self)}
-  fn run(&self, pipeline: &Pipeline, buf: &OpBuffer) -> OpBuffer {
+  fn run(&self, pipeline: &mut PipelineGlobals, inid: u64, outid: u64) {
     if pipeline.linear {
-      buf.clone()
+      // FIXME: avoid copying by implementing aliasing in multicache
+      let buf = (*pipeline.cache.get(inid).unwrap()).clone();
+      pipeline.cache.put(outid, buf, 1);
     } else {
-      let mut buf = buf.clone();
+      let mut buf = (*pipeline.cache.get(inid).unwrap()).clone();
 
       let g: f32 = 0.45;
       let f: f32 = 0.099;
@@ -42,7 +44,7 @@ impl<'a> ImageOp<'a> for OpGamma {
         }
       }));
 
-      buf
+      pipeline.cache.put(outid, buf, 1);
     }
   }
 }
