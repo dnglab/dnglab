@@ -34,8 +34,6 @@ impl OpToLab {
 
 impl<'a> ImageOp<'a> for OpToLab {
   fn name(&self) -> &str {"to_lab"}
-  fn to_settings(&self) -> String {standard_to_settings(self)}
-  fn hash(&self, hasher: &mut MetroHash) {standard_hash(self, hasher)}
   fn run(&self, pipeline: &mut PipelineGlobals, inid: u64, outid: u64) {
     let buf = pipeline.cache.get(inid).unwrap();
     let cmatrix = from_ordered(self.cam_to_xyz);
@@ -75,8 +73,6 @@ impl OpFromLab {
 
 impl<'a> ImageOp<'a> for OpFromLab {
   fn name(&self) -> &str {"from_lab"}
-  fn to_settings(&self) -> String {standard_to_settings(self)}
-  fn hash(&self, hasher: &mut MetroHash) {standard_hash(self, hasher)}
   fn run(&self, pipeline: &mut PipelineGlobals, inid: u64, outid: u64) {
     let mut buf = (*pipeline.cache.get(inid).unwrap()).clone();
     let cmatrix = xyz_to_rec709_matrix();

@@ -45,8 +45,6 @@ impl OpLevel {
 
 impl<'a> ImageOp<'a> for OpLevel {
   fn name(&self) -> &str {"level"}
-  fn to_settings(&self) -> String {standard_to_settings(self)}
-  fn hash(&self, hasher: &mut MetroHash) {standard_hash(self, hasher)}
   fn run(&self, pipeline: &mut PipelineGlobals, inid: u64, outid: u64) {
     let mut buf = (*pipeline.cache.get(inid).unwrap()).clone();
 

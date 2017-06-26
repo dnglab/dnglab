@@ -18,8 +18,6 @@ impl OpDemosaic {
 
 impl<'a> ImageOp<'a> for OpDemosaic {
   fn name(&self) -> &str {"demosaic"}
-  fn to_settings(&self) -> String {standard_to_settings(self)}
-  fn hash(&self, hasher: &mut MetroHash) {standard_hash(self, hasher)}
   fn run(&self, pipeline: &mut PipelineGlobals, inid: u64, outid: u64) {
     let buf = pipeline.cache.get(inid).unwrap();
 

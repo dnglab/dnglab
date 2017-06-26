@@ -106,19 +106,12 @@ fn do_timing<O, F: FnMut() -> O>(name: &str, mut closure: F) -> O {
   ret
 }
 
-pub trait ImageOp<'a>: Debug {
+pub trait ImageOp<'a>: Debug+Hash+Serialize {
   fn name(&self) -> &str;
   fn run(&self, pipeline: &mut PipelineGlobals, inid: u64, outid: u64);
-  fn to_settings(&self) -> String;
-  fn hash(&self, hasher: &mut MetroHash);
-}
-
-fn standard_to_settings<T: Serialize>(obj: &T) -> String {
-  serde_yaml::to_string(obj).unwrap()
-}
-
-fn standard_hash<T: Hash>(obj: &T, hasher: &mut MetroHash) {
-  obj.hash(hasher)
+  fn to_settings(&self) -> String {
+    serde_yaml::to_string(self).unwrap()
+  }
 }
 
 #[derive(Debug)]
@@ -142,18 +135,29 @@ pub struct PipelineOps {
   transform: transform::OpTransform,
 }
 
-impl PipelineOps {
-  pub fn all(&self) -> Vec<&ImageOp> {
-    vec![
-      &self.gofloat,
-      &self.demosaic,
-      &self.level,
-      &self.tolab,
-      &self.basecurve,
-      &self.fromlab,
-      &self.gamma,
-      &self.transform,
-    ]
+macro_rules! for_vals {
+  ([$($val:expr),*] |$x:pat| $body:expr) => {
+    $({
+      let $x = $val;
+      $body
+    })*
+  }
+}
+
+macro_rules! all_ops {
+  ($ops:expr, |$x:pat| $body:expr) => {
+    for_vals!([
+      $ops.gofloat,
+      $ops.demosaic,
+      $ops.level,
+      $ops.tolab,
+      $ops.basecurve,
+      $ops.fromlab,
+      $ops.gamma,
+      $ops.transform
+    ] |$x| {
+      $body
+    });
   }
 }
 
@@ -199,20 +203,23 @@ impl<'a> Pipeline<'a> {
     // Generate all the hashes for the operations
     let mut hasher = MetroHash::new();
     let mut ophashes = Vec::new();
-    for op in self.ops.all() {
+    all_ops!(self.ops, |ref op| {
       // Hash the name first as a zero sized struct doesn't actually do any hashing
       op.name().hash(&mut hasher);
       op.hash(&mut hasher);
-      ophashes.push((hasher.finish(), op));
-    }
+      ophashes.push(hasher.finish());
+    });
 
     // Do the operations, starting with a dummy buffer id as gofloat doesn't use it
     let mut bufin: u64 = 0;
-    for (hash, op) in ophashes {
+    let mut pos = 0;
+    all_ops!(self.ops, |ref op| {
       let globals = &mut self.globals;
+      pos +=1;
+      let hash = ophashes[pos-1];
       do_timing(op.name(), ||op.run(globals, bufin, hash));
       bufin = hash;
-    }
+    });
     self.globals.cache.get(bufin).unwrap()
   }
 }

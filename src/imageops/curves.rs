@@ -41,8 +41,6 @@ impl OpBaseCurve {
 
 impl<'a> ImageOp<'a> for OpBaseCurve {
   fn name(&self) -> &str {"basecurve"}
-  fn to_settings(&self) -> String {standard_to_settings(self)}
-  fn hash(&self, hasher: &mut MetroHash) {standard_hash(self, hasher)}
   fn run(&self, pipeline: &mut PipelineGlobals, inid: u64, outid: u64) {
     let mut buf = (*pipeline.cache.get(inid).unwrap()).clone();
     let func = SplineFunc::new(vec_to_flo(&self.points));
