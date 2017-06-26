@@ -136,16 +136,19 @@ pub struct PipelineOps {
 }
 
 macro_rules! for_vals {
-  ([$($val:expr),*] |$x:pat| $body:expr) => {
+  ([$($val:expr),*] |$x:pat, $i:ident| $body:expr) => {
+    let mut pos = 0;
     $({
       let $x = $val;
+      pos += 1;
+      let $i = pos-1;
       $body
     })*
   }
 }
 
 macro_rules! all_ops {
-  ($ops:expr, |$x:pat| $body:expr) => {
+  ($ops:expr, |$x:pat, $i:ident| $body:expr) => {
     for_vals!([
       $ops.gofloat,
       $ops.demosaic,
@@ -155,7 +158,7 @@ macro_rules! all_ops {
       $ops.fromlab,
       $ops.gamma,
       $ops.transform
-    ] |$x| {
+    ] |$x, $i| {
       $body
     });
   }
@@ -203,7 +206,7 @@ impl<'a> Pipeline<'a> {
     // Generate all the hashes for the operations
     let mut hasher = MetroHash::new();
     let mut ophashes = Vec::new();
-    all_ops!(self.ops, |ref op| {
+    all_ops!(self.ops, |ref op, _i| {
       // Hash the name first as a zero sized struct doesn't actually do any hashing
       op.name().hash(&mut hasher);
       op.hash(&mut hasher);
@@ -212,11 +215,9 @@ impl<'a> Pipeline<'a> {
 
     // Do the operations, starting with a dummy buffer id as gofloat doesn't use it
     let mut bufin: u64 = 0;
-    let mut pos = 0;
-    all_ops!(self.ops, |ref op| {
+    all_ops!(self.ops, |ref op, i| {
       let globals = &mut self.globals;
-      pos +=1;
-      let hash = ophashes[pos-1];
+      let hash = ophashes[i];
       do_timing(op.name(), ||op.run(globals, bufin, hash));
       bufin = hash;
     });
