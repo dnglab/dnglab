@@ -18,7 +18,7 @@ impl OpDemosaic {
 
 impl<'a> ImageOp<'a> for OpDemosaic {
   fn name(&self) -> &str {"demosaic"}
-  fn run(&self, pipeline: &mut PipelineGlobals, inid: u64, outid: u64) {
+  fn run(&self, pipeline: &mut PipelineGlobals, inid: BufHash, outid: BufHash) {
     let buf = pipeline.cache.get(inid).unwrap();
 
     let (scale, nwidth, nheight) = if pipeline.maxwidth == 0 || pipeline.maxheight == 0 {

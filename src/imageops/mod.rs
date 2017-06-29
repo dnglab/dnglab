@@ -17,9 +17,9 @@ extern crate serde;
 extern crate serde_yaml;
 use self::serde::Serialize;
 
-use std::hash::{Hash, Hasher};
-extern crate metrohash;
-use self::metrohash::MetroHash;
+extern crate bincode;
+extern crate sha2;
+use self::sha2::{Sha256, Digest};
 
 use std::fmt::Debug;
 
@@ -106,17 +106,23 @@ fn do_timing<O, F: FnMut() -> O>(name: &str, mut closure: F) -> O {
   ret
 }
 
-pub trait ImageOp<'a>: Debug+Hash+Serialize {
+pub trait ImageOp<'a>: Debug+Serialize {
   fn name(&self) -> &str;
-  fn run(&self, pipeline: &mut PipelineGlobals, inid: u64, outid: u64);
+  fn run(&self, pipeline: &mut PipelineGlobals, inid: BufHash, outid: BufHash);
   fn to_settings(&self) -> String {
     serde_yaml::to_string(self).unwrap()
   }
+  fn hash(&self, hasher: &mut Sha256) {
+    let encoded = self::bincode::serialize(self, self::bincode::Infinite).unwrap();
+    hasher.input(&encoded);
+  }
 }
+
+type BufHash = [u8;32];
 
 #[derive(Debug)]
 pub struct PipelineGlobals<'a> {
-  cache: MultiCache<u64, OpBuffer>,
+  cache: MultiCache<BufHash, OpBuffer>,
   maxwidth: usize,
   maxheight: usize,
   linear: bool,
@@ -204,17 +210,21 @@ impl<'a> Pipeline<'a> {
 
   pub fn run(&mut self) -> Arc<OpBuffer> {
     // Generate all the hashes for the operations
-    let mut hasher = MetroHash::new();
+    let mut hasher = Sha256::default();
     let mut ophashes = Vec::new();
     all_ops!(self.ops, |ref op, _i| {
       // Hash the name first as a zero sized struct doesn't actually do any hashing
-      op.name().hash(&mut hasher);
+      hasher.input(op.name().as_bytes());
       op.hash(&mut hasher);
-      ophashes.push(hasher.finish());
+      let mut result = BufHash::default();
+      for (i, byte) in hasher.result().into_iter().enumerate() {
+        result[i] = byte;
+      }
+      ophashes.push(result);
     });
 
     // Do the operations, starting with a dummy buffer id as gofloat doesn't use it
-    let mut bufin: u64 = 0;
+    let mut bufin = BufHash::default();
     all_ops!(self.ops, |ref op, i| {
       let globals = &mut self.globals;
       let hash = ophashes[i];

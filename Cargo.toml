@@ -23,7 +23,8 @@ itertools = "0.6.0"
 serde = "1"
 serde_derive = "1"
 serde_yaml = "0.7.1"
-metrohash = "1"
+bincode = "0.8.0"
+sha2 = "0.6.0"
 multicache = "0.2.0"
 
 [dependencies.ordered-float]

@@ -41,7 +41,7 @@ impl OpBaseCurve {
 
 impl<'a> ImageOp<'a> for OpBaseCurve {
   fn name(&self) -> &str {"basecurve"}
-  fn run(&self, pipeline: &mut PipelineGlobals, inid: u64, outid: u64) {
+  fn run(&self, pipeline: &mut PipelineGlobals, inid: BufHash, outid: BufHash) {
     let mut buf = (*pipeline.cache.get(inid).unwrap()).clone();
     let func = SplineFunc::new(vec_to_flo(&self.points));
 

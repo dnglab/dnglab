@@ -27,7 +27,7 @@ impl OpGoFloat {
 
 impl<'a> ImageOp<'a> for OpGoFloat {
   fn name(&self) -> &str {"gofloat"}
-  fn run(&self, pipeline: &mut PipelineGlobals, _inid: u64, outid: u64) {
+  fn run(&self, pipeline: &mut PipelineGlobals, _inid: BufHash, outid: BufHash) {
     let img = pipeline.image;
     let x = self.x;
     let y = self.y;

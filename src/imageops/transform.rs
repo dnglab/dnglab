@@ -19,7 +19,7 @@ impl OpTransform {
 
 impl<'a> ImageOp<'a> for OpTransform {
   fn name(&self) -> &str {"transform"}
-  fn run(&self, pipeline: &mut PipelineGlobals, inid: u64, outid: u64) {
+  fn run(&self, pipeline: &mut PipelineGlobals, inid: BufHash, outid: BufHash) {
     if self.orientation == Orientation::Normal || self.orientation == Orientation::Unknown {
       pipeline.cache.alias(inid, outid);
     } else {

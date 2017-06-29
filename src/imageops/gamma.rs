@@ -13,7 +13,7 @@ impl<'a> OpGamma {
 
 impl<'a> ImageOp<'a> for OpGamma {
   fn name(&self) -> &str {"gamma"}
-  fn run(&self, pipeline: &mut PipelineGlobals, inid: u64, outid: u64) {
+  fn run(&self, pipeline: &mut PipelineGlobals, inid: BufHash, outid: BufHash) {
     if pipeline.linear {
       pipeline.cache.alias(inid, outid);
     } else {
