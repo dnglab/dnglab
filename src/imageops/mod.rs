@@ -214,7 +214,8 @@ impl<'a> Pipeline<'a> {
     // Generate all the hashes for the operations
     let mut hasher = BufHasher::default();
     let mut ophashes = Vec::new();
-    all_ops!(self.ops, |ref op, _i| {
+    let mut startpos = 0;
+    all_ops!(self.ops, |ref op, i| {
       // Hash the name first as a zero sized struct doesn't actually do any hashing
       hasher.input(op.name().as_bytes());
       op.hash(&mut hasher);
@@ -223,14 +224,21 @@ impl<'a> Pipeline<'a> {
         result[i] = byte;
       }
       ophashes.push(result);
+
+      // Set the latest op for which we already have the calculated buffer
+      if self.globals.cache.contains_key(&result) {
+        startpos = i+1;
+      }
     });
 
     // Do the operations, starting with a dummy buffer id as gofloat doesn't use it
     let mut bufin = BufHash::default();
     all_ops!(self.ops, |ref op, i| {
-      let globals = &mut self.globals;
       let hash = ophashes[i];
-      do_timing(op.name(), ||op.run(globals, bufin, hash));
+      if i >= startpos { // We're at the point where we need to start calculating ops
+        let globals = &mut self.globals;
+        do_timing(op.name(), ||op.run(globals, bufin, hash));
+      }
       bufin = hash;
     });
     self.globals.cache.get(bufin).unwrap()
@@ -240,6 +248,7 @@ impl<'a> Pipeline<'a> {
 fn simple_decode_full(img: &RawImage, maxwidth: usize, maxheight: usize, linear: bool) -> OpBuffer {
   let buf = {
     let mut pipeline = Pipeline::new(img, maxwidth, maxheight, linear);
+    // pipeline.run(); // Used for testing if the pipeline is caching properly
     pipeline.run()
   };
 

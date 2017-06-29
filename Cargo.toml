@@ -25,7 +25,7 @@ serde_derive = "1"
 serde_yaml = "0.7.1"
 bincode = "0.8.0"
 sha2 = "0.6.0"
-multicache = "0.2.0"
+multicache = "0.3.1"
 
 [build-dependencies]
 glob = "0.2.11"
