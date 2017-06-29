@@ -19,7 +19,7 @@ use self::serde::Serialize;
 
 extern crate bincode;
 extern crate sha2;
-use self::sha2::{Sha256, Digest};
+use self::sha2::Digest;
 
 use std::fmt::Debug;
 
@@ -106,19 +106,21 @@ fn do_timing<O, F: FnMut() -> O>(name: &str, mut closure: F) -> O {
   ret
 }
 
+// Use SHA256 as the hash for buffers
+type BufHasher = sha2::Sha256;
+type BufHash = [u8;32];
+
 pub trait ImageOp<'a>: Debug+Serialize {
   fn name(&self) -> &str;
   fn run(&self, pipeline: &mut PipelineGlobals, inid: BufHash, outid: BufHash);
   fn to_settings(&self) -> String {
     serde_yaml::to_string(self).unwrap()
   }
-  fn hash(&self, hasher: &mut Sha256) {
+  fn hash(&self, hasher: &mut BufHasher) {
     let encoded = self::bincode::serialize(self, self::bincode::Infinite).unwrap();
     hasher.input(&encoded);
   }
 }
-
-type BufHash = [u8;32];
 
 #[derive(Debug)]
 pub struct PipelineGlobals<'a> {
@@ -210,7 +212,7 @@ impl<'a> Pipeline<'a> {
 
   pub fn run(&mut self) -> Arc<OpBuffer> {
     // Generate all the hashes for the operations
-    let mut hasher = Sha256::default();
+    let mut hasher = BufHasher::default();
     let mut ophashes = Vec::new();
     all_ops!(self.ops, |ref op, _i| {
       // Hash the name first as a zero sized struct doesn't actually do any hashing
