@@ -3,7 +3,7 @@ use decoders::cfa::CFA;
 use imageops::*;
 use std::cmp;
 
-#[derive(Clone, Debug, Serialize, Deserialize, Hash)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct OpDemosaic {
   cfa: String,
 }

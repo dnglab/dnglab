@@ -4,7 +4,7 @@ use std::usize;
 use decoders::{Orientation, RawImage};
 use imageops::*;
 
-#[derive(Copy, Clone, Debug, Serialize, Deserialize, Hash)]
+#[derive(Copy, Clone, Debug, Serialize, Deserialize)]
 pub struct OpTransform {
   orientation: Orientation,
 }

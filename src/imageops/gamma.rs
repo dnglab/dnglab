@@ -1,7 +1,7 @@
 use decoders::RawImage;
 use imageops::*;
 
-#[derive(Copy, Clone, Debug, Serialize, Deserialize, Hash)]
+#[derive(Copy, Clone, Debug, Serialize, Deserialize)]
 pub struct OpGamma {
 }
 

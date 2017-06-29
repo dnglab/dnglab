@@ -1,39 +1,21 @@
 use std::cmp;
 use decoders::RawImage;
 use imageops::*;
-extern crate ordered_float;
-use self::ordered_float::OrderedFloat;
 
-pub fn ord(a: f32, b: f32) -> (OrderedFloat<f32>, OrderedFloat<f32>) {
-  (OrderedFloat(a), OrderedFloat(b))
-}
-
-pub fn flo(pair: (OrderedFloat<f32>, OrderedFloat<f32>)) -> (f32, f32) {
-  (pair.0.into(), pair.1.into())
-}
-
-pub fn vec_to_flo(arr: &[(OrderedFloat<f32>, OrderedFloat<f32>)]) -> Vec<(f32,f32)> {
-  let mut out = Vec::new();
-  for pair in arr {
-    out.push(flo(*pair))
-  }
-  out
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize, Hash)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct OpBaseCurve {
-  points: Vec<(OrderedFloat<f32>, OrderedFloat<f32>)>,
+  points: Vec<(f32, f32)>,
 }
 
 impl OpBaseCurve {
   pub fn new(_img: &RawImage) -> OpBaseCurve {
     OpBaseCurve{
       points: vec![
-        ord(0.00, 0.00),
-        ord(0.30, 0.25),
-        ord(0.50, 0.50),
-        ord(0.70, 0.75),
-        ord(1.00, 1.00),
+        (0.00, 0.00),
+        (0.30, 0.25),
+        (0.50, 0.50),
+        (0.70, 0.75),
+        (1.00, 1.00),
       ],
     }
   }
@@ -43,7 +25,7 @@ impl<'a> ImageOp<'a> for OpBaseCurve {
   fn name(&self) -> &str {"basecurve"}
   fn run(&self, pipeline: &mut PipelineGlobals, inid: BufHash, outid: BufHash) {
     let mut buf = (*pipeline.cache.get(inid).unwrap()).clone();
-    let func = SplineFunc::new(vec_to_flo(&self.points));
+    let func = SplineFunc::new(self.points.clone());
 
     buf.mutate_lines(&(|line: &mut [f32], _| {
       for pix in line.chunks_mut(3) {
