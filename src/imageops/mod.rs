@@ -15,7 +15,7 @@ extern crate time;
 extern crate toml;
 extern crate serde;
 extern crate serde_yaml;
-use self::serde::Serialize;
+use self::serde::{Serialize,Deserialize};
 
 extern crate bincode;
 extern crate sha2;
@@ -110,7 +110,7 @@ fn do_timing<O, F: FnMut() -> O>(name: &str, mut closure: F) -> O {
 type BufHasher = sha2::Sha256;
 type BufHash = [u8;32];
 
-pub trait ImageOp<'a>: Debug+Serialize {
+pub trait ImageOp<'a>: Debug+Serialize+Deserialize<'a> {
   fn name(&self) -> &str;
   fn run(&self, pipeline: &mut PipelineGlobals, inid: BufHash, outid: BufHash);
   fn to_settings(&self) -> String {
