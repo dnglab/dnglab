@@ -131,7 +131,7 @@ pub struct PipelineGlobals<'a> {
   image: &'a RawImage,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PipelineOps {
   gofloat: gofloat::OpGoFloat,
   demosaic: demosaic::OpDemosaic,
@@ -178,6 +178,12 @@ pub struct Pipeline<'a> {
   ops: PipelineOps,
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+pub struct PipelineSerialization {
+  version: u32,
+  filehash: String,
+}
+
 impl<'a> Pipeline<'a> {
   pub fn new(img: &RawImage, maxwidth: usize, maxheight: usize, linear: bool) -> Pipeline {
     // Check if the image's orientation results in a rotation that
@@ -207,6 +213,30 @@ impl<'a> Pipeline<'a> {
         gamma: gamma::OpGamma::new(img),
         transform: transform::OpTransform::new(img),
       },
+    }
+  }
+
+  pub fn to_serial(&self) -> String {
+    let serial = (PipelineSerialization {
+      version: 0,
+      filehash: "0".to_string(),
+    }, &self.ops);
+
+    serde_yaml::to_string(&serial).unwrap()
+  }
+
+  pub fn new_from_serial(img: &RawImage, maxwidth: usize, maxheight: usize, linear: bool, serial: String) -> Pipeline {
+    let serial: (PipelineSerialization, PipelineOps) = serde_yaml::from_str(&serial).unwrap();
+
+    Pipeline {
+      globals: PipelineGlobals {
+        cache: MultiCache::new(1),
+        maxwidth,
+        maxheight,
+        linear,
+        image: img,
+      },
+      ops: serial.1,
     }
   }
 
@@ -248,7 +278,15 @@ impl<'a> Pipeline<'a> {
 fn simple_decode_full(img: &RawImage, maxwidth: usize, maxheight: usize, linear: bool) -> OpBuffer {
   let buf = {
     let mut pipeline = Pipeline::new(img, maxwidth, maxheight, linear);
-    // pipeline.run(); // Used for testing if the pipeline is caching properly
+    // FIXME: turn these into tests
+    //
+    // --- Check if serialization roundtrips
+    // let serial = pipeline.to_serial();
+    // println!("Settings are: {}", serial);
+    // pipeline = Pipeline::new_from_serial(img, maxwidth, maxheight, linear, serial);
+    //
+    // --- Check that the pipeline caches buffers and does not recalculate
+    // pipeline.run();
     pipeline.run()
   };
 
