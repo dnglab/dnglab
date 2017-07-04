@@ -21,6 +21,9 @@ extern crate bincode;
 extern crate sha2;
 use self::sha2::Digest;
 
+use std;
+use std::io::Write;
+use std::fmt;
 use std::fmt::Debug;
 
 extern crate multicache;
@@ -106,9 +109,39 @@ fn do_timing<O, F: FnMut() -> O>(name: &str, mut closure: F) -> O {
   ret
 }
 
-// Use SHA256 as the hash for buffers
-type BufHasher = sha2::Sha256;
+type HashType = self::sha2::Sha256;
 type BufHash = [u8;32];
+#[derive(Copy, Clone)]
+pub struct BufHasher {
+  hash: HashType,
+}
+impl BufHasher {
+  pub fn new() -> BufHasher {
+    BufHasher {
+      hash: HashType::default(),
+    }
+  }
+  pub fn result(&self) -> BufHash {
+    let mut result = BufHash::default();
+    for (i, byte) in self.hash.result().into_iter().enumerate() {
+      result[i] = byte;
+    }
+    result
+  }
+}
+impl Debug for BufHasher {
+  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    write!(f, "BufHasher {{ {:?} }}", self.result())
+  }
+}
+
+impl Write for BufHasher {
+  fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
+    self.hash.input(buf);
+    Ok(buf.len())
+  }
+  fn flush(&mut self) -> std::io::Result<()> {Ok(())}
+}
 
 pub trait ImageOp<'a>: Debug+Serialize+Deserialize<'a> {
   fn name(&self) -> &str;
@@ -117,8 +150,9 @@ pub trait ImageOp<'a>: Debug+Serialize+Deserialize<'a> {
     serde_yaml::to_string(self).unwrap()
   }
   fn hash(&self, hasher: &mut BufHasher) {
-    let encoded = self::bincode::serialize(self, self::bincode::Infinite).unwrap();
-    hasher.input(&encoded);
+    // Hash the name first as a zero sized struct doesn't actually do any hashing
+    hasher.write(self.name().as_bytes()).unwrap();
+    self::bincode::serialize_into(hasher, self, self::bincode::Infinite).unwrap();
   }
 }
 
@@ -242,17 +276,12 @@ impl<'a> Pipeline<'a> {
 
   pub fn run(&mut self) -> Arc<OpBuffer> {
     // Generate all the hashes for the operations
-    let mut hasher = BufHasher::default();
+    let mut hasher = BufHasher::new();
     let mut ophashes = Vec::new();
     let mut startpos = 0;
     all_ops!(self.ops, |ref op, i| {
-      // Hash the name first as a zero sized struct doesn't actually do any hashing
-      hasher.input(op.name().as_bytes());
       op.hash(&mut hasher);
-      let mut result = BufHash::default();
-      for (i, byte) in hasher.result().into_iter().enumerate() {
-        result[i] = byte;
-      }
+      let result = hasher.result();
       ophashes.push(result);
 
       // Set the latest op for which we already have the calculated buffer
