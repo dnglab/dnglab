@@ -48,7 +48,7 @@ impl<'a> ImageOp<'a> for OpGoFloat {
       // We're in an RGB image, turn it into four channel
       let mut out = OpBuffer::new(self.width, self.height, 4);
       out.mutate_lines(&(|line: &mut [f32], row| {
-        for (o, i) in line.chunks_mut(4).zip(img.data[img.width*(row+y)+x..].chunks(3)) {
+        for (o, i) in line.chunks_mut(4).zip(img.data[(img.width*(row+y)+x)*3..].chunks(3)) {
           o[0] = i[0] as f32;
           o[1] = i[1] as f32;
           o[2] = i[2] as f32;
