@@ -22,7 +22,7 @@ impl<'a> ImageOp<'a> for OpDemosaic {
     let buf = pipeline.cache.get(inid).unwrap();
 
     let (scale, nwidth, nheight) = if pipeline.maxwidth == 0 || pipeline.maxheight == 0 {
-      (0.0, buf.width, buf.height)
+      (1.0, buf.width, buf.height)
     } else {
       // Do the calculations manually to avoid off-by-one errors from floating point rounding
       let xscale = (buf.width as f32) / (pipeline.maxwidth as f32);
@@ -43,21 +43,27 @@ impl<'a> ImageOp<'a> for OpDemosaic {
       _  => 2.0,  // default
     };
 
-    // If we want full size and the image is already 4 color pass it through
-    if (scale < minscale || buf.colors != 1) && buf.colors == 4 {
+    if scale <= 1.0 && buf.colors == 4 {
+      // We want full size and the image is already 4 color, pass it through
       pipeline.cache.alias(inid, outid);
-    // If we're not scaling enough do full demosaic and then scale down
-    } else if scale < minscale  {
+    } else if buf.colors == 4 {
+      // Scale down a 4 colour image
+      let buf = scale_down(&buf, nwidth, nheight);
+      pipeline.cache.put(outid, buf, 1);
+    } else if scale >= minscale {
+      // We're scaling down enough that each pixel has all four colors under it so do the
+      // demosaic and scale down in one go
+      let buf = scaled(cfa, &buf, nwidth, nheight);
+      pipeline.cache.put(outid, buf, 1);
+    } else {
+      // We're in a close to full scale output that needs full demosaic and possibly
+      // minimal scale down
       let fullsize = full(cfa, &buf);
       let buf = if scale > 1.0 {
         scale_down(&fullsize, nwidth, nheight)
       } else {
         fullsize
       };
-      pipeline.cache.put(outid, buf, 1);
-    // Do a demosaic by scaling down
-    } else {
-      let buf = scaled(cfa, &buf, nwidth, nheight);
       pipeline.cache.put(outid, buf, 1);
     }
   }
