@@ -159,7 +159,9 @@ pub fn scaled(cfa: CFA, buf: &OpBuffer, nwidth: usize, nheight: usize) -> OpBuff
 }
 
 pub fn scale_down(buf: &OpBuffer, nwidth: usize, nheight: usize) -> OpBuffer {
-  let mut out = OpBuffer::new(nwidth, nheight, buf.colors);
+  assert_eq!(buf.colors, 4); // When we're scaling down we're always at 4 cpp
+
+  let mut out = OpBuffer::new(nwidth, nheight, 4);
   let rowskip = (buf.width as f32) / (nwidth as f32);
   let colskip = (buf.height as f32) / (nheight as f32);
 
@@ -177,16 +179,16 @@ pub fn scale_down(buf: &OpBuffer, nwidth: usize, nheight: usize) -> OpBuffer {
             (if x == fromcol {leftfactor} else if x == tocol {rightfactor} else {1.0})
           };
 
-          for c in 0..buf.colors {
-            sums[c] += buf.data[(y*buf.width+x)*buf.colors + c] * factor;
+          for c in 0..4 {
+            sums[c] += buf.data[(y*buf.width+x)*4 + c] * factor;
             counts[c] += factor;
           }
         }
       }
 
-      for c in 0..buf.colors {
+      for c in 0..4 {
         if counts[c] > 0.0 {
-          line[col*buf.colors+c] = sums[c] / counts[c];
+          line[col*4+c] = sums[c] / counts[c];
         }
       }
     }
