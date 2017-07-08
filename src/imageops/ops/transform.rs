@@ -31,6 +31,8 @@ impl<'a> ImageOp<'a> for OpTransform {
 }
 
 fn rotate_buffer(buf: &OpBuffer, orientation: &Orientation) -> OpBuffer {
+  assert_eq!(buf.colors, 3); // When we're rotating we're always at 3 cpp
+
   // Don't rotate things we don't know how to rotate or don't need to
   if *orientation == Orientation::Normal || *orientation == Orientation::Unknown {
     return buf.clone();
@@ -46,30 +48,29 @@ fn rotate_buffer(buf: &OpBuffer, orientation: &Orientation) -> OpBuffer {
   // This avoids verbose casts later on
   let mut width = buf.width as isize;
   let mut height = buf.height as isize;
-  let colors = buf.colors as isize;
 
   let (transpose, flip_x, flip_y) = orientation.to_flips();
 
   let mut base_offset: isize = 0;
-  let mut x_step: isize = colors;
-  let mut y_step: isize = width * colors;
+  let mut x_step: isize = 3;
+  let mut y_step: isize = width * 3;
 
   if flip_x {
     x_step = -x_step;
-    base_offset += (width - 1) * colors;
+    base_offset += (width - 1) * 3;
   }
 
   if flip_y {
     y_step = -y_step;
-    base_offset += width * (height - 1) * colors;
+    base_offset += width * (height - 1) * 3;
   }
 
   let mut out = if transpose {
     mem::swap(&mut width, &mut height);
     mem::swap(&mut x_step, &mut y_step);
-    OpBuffer::new(buf.height, buf.width, colors as usize)
+    OpBuffer::new(buf.height, buf.width, 3 as usize)
   } else {
-    OpBuffer::new(buf.width, buf.height, colors as usize)
+    OpBuffer::new(buf.width, buf.height, 3 as usize)
   };
 
   out.mutate_lines(&(|line: &mut [f32], row| {
@@ -79,8 +80,8 @@ fn rotate_buffer(buf: &OpBuffer, orientation: &Orientation) -> OpBuffer {
     for col in 0..width {
       // The current pixel's offset in original buffer
       let offset = line_offset + x_step * col;
-      for c in 0..colors {
-        line[(col * colors + c) as usize] = buf.data[(offset + c) as usize];
+      for c in 0..3 {
+        line[(col * 3 + c) as usize] = buf.data[(offset + c) as usize];
       }
     }
   }));
