@@ -90,7 +90,6 @@ pub fn full(cfa: CFA, buf: &OpBuffer) -> OpBuffer {
         let ocolor = cfa.color_at(row, col);
         colors[i] = if ocolor != pixcolor || (dx == 0 && dy == 0) { ocolor } else { 4 };
       }
-      //println!("pixcolor {} colors is {:?}", pixcolor, colors);
     }
   }
 
