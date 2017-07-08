@@ -35,7 +35,7 @@ impl OpLevel {
 impl<'a> ImageOp<'a> for OpLevel {
   fn name(&self) -> &str {"level"}
   fn run(&self, pipeline: &mut PipelineGlobals, inid: BufHash, outid: BufHash) {
-    let mut buf = (*pipeline.cache.get(inid).unwrap()).clone();
+    let mut buf = (*pipeline.cache.get(&inid).unwrap()).clone();
 
     // Calculate the levels
     let mins = self.blacklevels;

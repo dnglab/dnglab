@@ -176,6 +176,6 @@ impl<'a> Pipeline<'a> {
       }
       bufin = hash;
     });
-    self.globals.cache.get(bufin).unwrap()
+    self.globals.cache.get(&bufin).unwrap()
   }
 }

@@ -17,7 +17,7 @@ impl OpToLab {
 impl<'a> ImageOp<'a> for OpToLab {
   fn name(&self) -> &str {"to_lab"}
   fn run(&self, pipeline: &mut PipelineGlobals, inid: BufHash, outid: BufHash) {
-    let buf = pipeline.cache.get(inid).unwrap();
+    let buf = pipeline.cache.get(&inid).unwrap();
     let cmatrix = self.cam_to_xyz;
 
     let buf = buf.process_into_new(3, &(|outb: &mut [f32], inb: &[f32]| {
@@ -56,7 +56,7 @@ impl OpFromLab {
 impl<'a> ImageOp<'a> for OpFromLab {
   fn name(&self) -> &str {"from_lab"}
   fn run(&self, pipeline: &mut PipelineGlobals, inid: BufHash, outid: BufHash) {
-    let mut buf = (*pipeline.cache.get(inid).unwrap()).clone();
+    let mut buf = (*pipeline.cache.get(&inid).unwrap()).clone();
     let cmatrix = xyz_to_rec709_matrix();
 
     buf.mutate_lines(&(|line: &mut [f32], _| {

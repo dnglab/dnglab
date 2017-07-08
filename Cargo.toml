@@ -12,20 +12,20 @@ categories = ["multimedia::images"]
 build = "data/cameras/join.rs"
 
 [dependencies]
-toml = "0.4.1"
-time = "0.1.37"
+toml = "0.4.2"
+time = "0.1.38"
 enum_primitive = "0.1.1"
-num = "0.1.37"
+num = "0.1.39"
 lazy_static = "0.2.8"
 byteorder = "1"
-rayon = "0.7.0"
+rayon = "0.8.2"
 itertools = "0.6.0"
 serde = "1"
 serde_derive = "1"
 serde_yaml = "0.7.1"
 bincode = "0.8.0"
 sha2 = "0.6.0"
-multicache = "0.3.1"
+multicache = "0.4.0"
 
 [build-dependencies]
 glob = "0.2.11"

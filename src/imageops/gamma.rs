@@ -17,7 +17,7 @@ impl<'a> ImageOp<'a> for OpGamma {
     if pipeline.linear {
       pipeline.cache.alias(inid, outid);
     } else {
-      let mut buf = (*pipeline.cache.get(inid).unwrap()).clone();
+      let mut buf = (*pipeline.cache.get(&inid).unwrap()).clone();
 
       let g: f32 = 0.45;
       let f: f32 = 0.099;

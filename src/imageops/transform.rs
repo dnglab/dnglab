@@ -23,7 +23,7 @@ impl<'a> ImageOp<'a> for OpTransform {
     if self.orientation == Orientation::Normal || self.orientation == Orientation::Unknown {
       pipeline.cache.alias(inid, outid);
     } else {
-      let buf = pipeline.cache.get(inid).unwrap();
+      let buf = pipeline.cache.get(&inid).unwrap();
       let buf = rotate_buffer(&buf, &self.orientation);
       pipeline.cache.put(outid, buf, 1);
     }
