@@ -1,19 +1,11 @@
-pub mod buffer;
+mod buffer;
 use self::buffer::*;
-
-pub mod hasher;
-pub use self::hasher::*;
+mod hasher;
+use self::hasher::*;
+mod ops;
 
 pub mod pipeline;
-pub use self::pipeline::*;
-
-pub mod gofloat;
-pub mod demosaic;
-pub mod level;
-pub mod colorspaces;
-pub mod curves;
-pub mod gamma;
-pub mod transform;
+use self::pipeline::*;
 
 use decoders::RawImage;
 
@@ -38,7 +30,6 @@ fn simple_decode_full(img: &RawImage, maxwidth: usize, maxheight: usize, linear:
   // Since we've kept the pipeline to ourselves unwraping always works
   Arc::try_unwrap(buf).unwrap()
 }
-
 
 pub fn simple_decode(img: &RawImage, maxwidth: usize, maxheight: usize) -> OpBuffer {
   simple_decode_full(img, maxwidth, maxheight, false)

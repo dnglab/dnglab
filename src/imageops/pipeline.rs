@@ -1,4 +1,5 @@
 use imageops::*;
+use imageops::ops::*;
 
 extern crate multicache;
 use self::multicache::MultiCache;
