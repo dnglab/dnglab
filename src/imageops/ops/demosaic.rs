@@ -1,7 +1,6 @@
 use decoders::RawImage;
 use decoders::cfa::CFA;
 use imageops::*;
-use std::cmp;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct OpDemosaic {
@@ -72,35 +71,50 @@ impl<'a> ImageOp<'a> for OpDemosaic {
 pub fn full(cfa: CFA, buf: &OpBuffer) -> OpBuffer {
   let mut out = OpBuffer::new(buf.width, buf.height, 4);
 
-  // First we set the colors we already have
-  out.mutate_lines(&(|line: &mut [f32], row| {
-    for (col, (pixout, pixin)) in line.chunks_mut(4).zip(buf.data[buf.width*row..].chunks(1)).enumerate() {
-      let color = cfa.color_at(row, col);
-      pixout[color] = pixin[0] as f32;
+  let offsets33: [(isize,isize);9] = [
+    (-1,-1), (-1, 0), (-1, 1),
+    ( 0,-1), ( 0, 0), ( 0, 1),
+    ( 1,-1), ( 1, 0), ( 1, 1),
+  ];
+
+  // Initialize a lookup table for the colors of each pixel in a 3x3 grid
+  let mut lookups = [[[0;9];48];48];
+  for (row, line) in lookups.iter_mut().enumerate() {
+    for (col, colors) in line.iter_mut().enumerate() {
+      let pixcolor = cfa.color_at(row, col);
+
+      for (i, o) in offsets33.iter().enumerate() {
+        let (dy, dx) = *o;
+        let row = (48+dy) as usize + row;
+        let col = (48+dx) as usize + col;
+        let ocolor = cfa.color_at(row, col);
+        colors[i] = if ocolor != pixcolor || (dx == 0 && dy == 0) { ocolor } else { 4 };
+      }
+      //println!("pixcolor {} colors is {:?}", pixcolor, colors);
     }
-  }));
+  }
 
-  // Now we go around the image setting the unset colors to the average of the
-  // surrounding pixels
+  // Now calculate RGBE for each pixel based on the lookup table
   out.mutate_lines(&(|line: &mut [f32], row| {
-    for col in 0..buf.width {
-      let mut sums: [f32; 4] = [0.0;4];
-      let mut counts: [u32; 4] = [0; 4];
-      let color = cfa.color_at(row, col);
+    for (col, pix) in line.chunks_mut(4).enumerate() {
+      let ref colors = lookups[row%48][col%48];
+      let mut sums = [0f32;5];
+      let mut counts = [0f32;5];
 
-      for y in (cmp::max(0,(row as isize)-1) as usize) .. cmp::min(buf.height, row+2) {
-        for x in (cmp::max(0,(col as isize)-1) as usize) .. cmp::min(buf.width, col+2) {
-          let c = cfa.color_at(y, x);
-          if c != color {
-            sums[c] += buf.data[y*buf.width+x] as f32;
-            counts[c] += 1;
-          }
+      for (i, o) in offsets33.iter().enumerate() {
+        let (dy, dx) = *o;
+        let row = row as isize + dy;
+        let col = col as isize + dx;
+        if row >= 0 && row < (buf.height as isize) &&
+           col >= 0 && col < (buf.width as isize) {
+          sums[colors[i]] += buf.data[(row as usize)*buf.width+(col as usize)];
+          counts[colors[i]] += 1.0;
         }
       }
 
       for c in 0..4 {
-        if c != color && counts[c] > 0 {
-          line[col*4+c] = sums[c] / (counts[c] as f32);
+        if counts[c] > 0.0 {
+          pix[c] = sums[c] / counts[c];
         }
       }
     }
