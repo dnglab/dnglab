@@ -20,16 +20,16 @@ impl<'a> ImageOp<'a> for OpDemosaic {
   fn run(&self, pipeline: &mut PipelineGlobals, inid: BufHash, outid: BufHash) {
     let buf = pipeline.cache.get(&inid).unwrap();
 
-    let (scale, nwidth, nheight) = if pipeline.maxwidth == 0 || pipeline.maxheight == 0 {
+    let (scale, nwidth, nheight) = if pipeline.settings.maxwidth == 0 || pipeline.settings.maxheight == 0 {
       (1.0, buf.width, buf.height)
     } else {
       // Do the calculations manually to avoid off-by-one errors from floating point rounding
-      let xscale = (buf.width as f32) / (pipeline.maxwidth as f32);
-      let yscale = (buf.height as f32) / (pipeline.maxheight as f32);
+      let xscale = (buf.width as f32) / (pipeline.settings.maxwidth as f32);
+      let yscale = (buf.height as f32) / (pipeline.settings.maxheight as f32);
       if yscale > xscale {
-        (yscale, ((buf.width as f32)/yscale) as usize, pipeline.maxheight)
+        (yscale, ((buf.width as f32)/yscale) as usize, pipeline.settings.maxheight)
       } else {
-        (xscale, pipeline.maxwidth, ((buf.height as f32)/xscale) as usize)
+        (xscale, pipeline.settings.maxwidth, ((buf.height as f32)/xscale) as usize)
       }
     };
 

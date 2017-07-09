@@ -33,13 +33,24 @@ pub trait ImageOp<'a>: Debug+Serialize+Deserialize<'a> {
   }
 }
 
-#[derive(Debug)]
-pub struct PipelineGlobals<'a> {
-  pub cache: MultiCache<BufHash, OpBuffer>,
+#[derive(Debug, Copy, Clone, Serialize)]
+pub struct PipelineSettings {
   pub maxwidth: usize,
   pub maxheight: usize,
   pub linear: bool,
+}
+
+impl PipelineSettings{
+  fn hash(&self, hasher: &mut BufHasher) {
+    hasher.from_serialize(self);
+  }
+}
+
+#[derive(Debug)]
+pub struct PipelineGlobals<'a> {
+  pub cache: MultiCache<BufHash, OpBuffer>,
   pub image: &'a RawImage,
+  pub settings: PipelineSettings,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -109,10 +120,8 @@ impl<'a> Pipeline<'a> {
     Pipeline {
       globals: PipelineGlobals {
         cache: MultiCache::new(1),
-        maxwidth,
-        maxheight,
-        linear,
         image: img,
+        settings: PipelineSettings {maxwidth, maxheight, linear},
       },
       ops: PipelineOps {
         gofloat: gofloat::OpGoFloat::new(img),
@@ -142,10 +151,8 @@ impl<'a> Pipeline<'a> {
     Pipeline {
       globals: PipelineGlobals {
         cache: MultiCache::new(1),
-        maxwidth,
-        maxheight,
-        linear,
         image: img,
+        settings: PipelineSettings {maxwidth, maxheight, linear},
       },
       ops: serial.1,
     }
@@ -156,6 +163,9 @@ impl<'a> Pipeline<'a> {
     let mut hasher = BufHasher::new();
     let mut ophashes = Vec::new();
     let mut startpos = 0;
+    // Hash the base settings that are potentially used by all operations
+    self.globals.settings.hash(&mut hasher);
+    // Now hash op by op
     all_ops!(self.ops, |ref op, i| {
       op.hash(&mut hasher);
       let result = hasher.result();
