@@ -71,7 +71,7 @@ impl<'a> ImageOp<'a> for OpDemosaic {
 pub fn full(cfa: CFA, buf: &OpBuffer) -> OpBuffer {
   let mut out = OpBuffer::new(buf.width, buf.height, 4);
 
-  let offsets33: [(isize,isize);9] = [
+  let offsets3x3: [(isize,isize);9] = [
     (-1,-1), (-1, 0), (-1, 1),
     ( 0,-1), ( 0, 0), ( 0, 1),
     ( 1,-1), ( 1, 0), ( 1, 1),
@@ -83,7 +83,7 @@ pub fn full(cfa: CFA, buf: &OpBuffer) -> OpBuffer {
     for (col, colors) in line.iter_mut().enumerate() {
       let pixcolor = cfa.color_at(row, col);
 
-      for (i, o) in offsets33.iter().enumerate() {
+      for (i, o) in offsets3x3.iter().enumerate() {
         let (dy, dx) = *o;
         let row = (48+dy) as usize + row;
         let col = (48+dx) as usize + col;
@@ -100,7 +100,7 @@ pub fn full(cfa: CFA, buf: &OpBuffer) -> OpBuffer {
       let mut sums = [0f32;5];
       let mut counts = [0f32;5];
 
-      for (i, o) in offsets33.iter().enumerate() {
+      for (i, o) in offsets3x3.iter().enumerate() {
         let (dy, dx) = *o;
         let row = row as isize + dy;
         let col = col as isize + dx;
