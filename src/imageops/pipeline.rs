@@ -11,11 +11,11 @@ extern crate serde;
 extern crate serde_yaml;
 use self::serde::{Serialize,Deserialize};
 
-fn do_timing<O, F: FnMut() -> O>(name: &str, mut closure: F) -> O {
-  let from_time = time::precise_time_ns();
+fn do_timing<O, F: FnMut() -> O>(_name: &str, mut closure: F) -> O {
+  //let from_time = time::precise_time_ns();
   let ret = closure();
-  let to_time = time::precise_time_ns();
-  println!("{} ms for '{}'", (to_time - from_time)/1000000, name);
+  //let to_time = time::precise_time_ns();
+  //println!("{} ms for '{}'", (to_time - from_time)/1000000, name);
 
   ret
 }
