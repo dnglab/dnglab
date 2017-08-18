@@ -12,7 +12,7 @@ categories = ["multimedia::images"]
 build = "data/cameras/join.rs"
 
 [dependencies]
-toml = "0.4.2"
+toml = "0.4.5"
 time = "0.1.38"
 enum_primitive = "0.1.1"
 num = "0.1.39"
@@ -25,11 +25,11 @@ serde_derive = "1"
 serde_yaml = "0.7.1"
 bincode = "0.8.0"
 sha2 = "0.6.0"
-multicache = "0.4.0"
+multicache = "0.4.1"
 
 [build-dependencies]
 glob = "0.2.11"
-toml = "0.4.1"
+toml = "0.4.5"
 
 [profile.release]
 panic = "unwind"
