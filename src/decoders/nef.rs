@@ -317,7 +317,7 @@ impl<'a> NefDecoder<'a> {
     let inv_wb_r = (1024.0 / coeffs[0]) as i32;
     let inv_wb_b = (1024.0 / coeffs[2]) as i32;
 
-    println!("Got invwb {} {}", inv_wb_r, inv_wb_b);
+    //println!("Got invwb {} {}", inv_wb_r, inv_wb_b);
 
     Ok(decode_threaded(width*3, height, &(|out: &mut [u16], row| {
       let inb = &src[row*width*3..];
