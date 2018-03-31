@@ -95,6 +95,8 @@ lazy_static! {
   static ref LOADER: decoders::RawLoader = decoders::RawLoader::new();
 }
 
+use std::path::Path;
+
 /// Take a path to a raw file and return a decoded image or an error
 ///
 /// # Example
@@ -104,6 +106,7 @@ lazy_static! {
 ///   Err(e) => ... some appropriate action when the file is unreadable ...
 /// };
 /// ```
-pub fn decode(path: &str) -> Result<RawImage,String> {
-  LOADER.decode_safe(path)
+
+pub fn decode<P: AsRef<Path>>(path: P) -> Result<RawImage,String> {
+  LOADER.decode_safe(path.as_ref())
 }

@@ -3,6 +3,7 @@ use std::io::Read;
 use std::fs::File;
 use std::error::Error;
 use std::panic;
+use std::path::Path;
 
 macro_rules! fetch_tag {
   ($tiff:expr, $tag:expr) => (
@@ -439,7 +440,7 @@ impl RawLoader {
     decoder.image()
   }
 
-  pub fn decode_safe(&self, path: &str) -> Result<RawImage,String> {
+  pub fn decode_safe(&self, path: &Path) -> Result<RawImage,String> {
     match panic::catch_unwind(|| {
       let mut f = match File::open(path) {
         Ok(val) => val,
