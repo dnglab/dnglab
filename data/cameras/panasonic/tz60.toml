@@ -2,6 +2,11 @@ make = "Panasonic"
 model = "DMC-TZ60"
 clean_make = "Panasonic"
 clean_model = "DMC-TZ60"
+
+model_aliases = [
+  ["DMC-ZS40", "DMC-ZS40"],
+]
+
 blackpoint = 145
 whitepoint = 3956
 color_matrix = [8607, -2822, -808, -3755, 11930, 2049, -820, 2060, 5224]

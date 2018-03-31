@@ -10,3 +10,15 @@ color_pattern = "BGGR"
 [[cameras.modes]]
 mode = "4:3"
 crops = [0,224,16,0]
+
+[[cameras.modes]]
+mode = "1:1"
+crops = [0,32,0,0]
+
+[[cameras.modes]]
+mode = "3:2"
+crops = [0,224,0,0]
+
+[[cameras.modes]]
+mode = "16:9"
+crops = [0,224,0,0]
