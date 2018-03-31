@@ -1,7 +1,6 @@
 use std::collections::HashMap;
 use decoders::basics::*;
 use decoders::Buffer;
-use std::str;
 
 enum_from_primitive! {
 #[derive(Debug, Copy, Clone, PartialEq)]
