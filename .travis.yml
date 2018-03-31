@@ -10,11 +10,12 @@ notifications:
   email:
     recipients:
       - pedro@pedrocr.net
-    on_success: never
+    on_success: change
     on_failure: always
   irc:
     channels:
       - "irc.mozilla.org#chimper"
-    on_success: always
+    on_success: change
     on_failure: always
     skip_join: true
+if: tag IS blank
