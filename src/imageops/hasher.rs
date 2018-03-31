@@ -47,6 +47,6 @@ impl Write for BufHasher {
 
 impl BufHasher {
   pub fn from_serialize<T>(&mut self, obj: &T) where T: Serialize {
-    self::bincode::serialize_into(self, obj, self::bincode::Infinite).unwrap();
+    self::bincode::serialize_into(self, obj).unwrap();
   }
 }
