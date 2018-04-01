@@ -10,3 +10,8 @@ crops = [0,50,0,2]
 mode = "14bit"
 blackpoint = 0
 whitepoint = 15520
+
+[[cameras.modes]]
+mode = "12bit"
+blackpoint = 0
+whitepoint = 3880
