@@ -1,6 +1,7 @@
 use decoders::*;
 use decoders::tiff::*;
 use decoders::ljpeg::*;
+use decoders::basics::*;
 use std::f32::NAN;
 
 #[derive(Debug, Clone)]
@@ -29,7 +30,12 @@ impl<'a> Decoder for TfrDecoder<'a> {
     let offset = fetch_tag!(raw, Tag::StripOffsets).get_usize(0);
     let src = &self.buffer[offset..];
 
-    let image = try!(self.decode_compressed(src, width, height));
+    let image = if camera.find_hint("uncompressed") {
+      decode_16le(src, width, height)
+    } else {
+      try!(self.decode_compressed(src, width, height))
+    };
+
     ok_image(camera, width, height, try!(self.get_wb()), image)
   }
 }
