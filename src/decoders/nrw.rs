@@ -36,6 +36,8 @@ impl<'a> Decoder for NrwDecoder<'a> {
       decode_12be_interlaced_unaligned(src, width, height)
     } else if camera.find_hint("msb32") {
       decode_12be_msb32(src, width, height)
+    } else if camera.find_hint("unpacked") {
+      decode_16be(src, width, height)
     } else {
       decode_12be(src, width, height)
     };
