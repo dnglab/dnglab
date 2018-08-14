@@ -68,7 +68,7 @@ impl CFA {
           b'E' => 3,
           b'M' => 1,
           b'Y' => 3,
-          _   => panic!(format!("Unknown CFA color \"{}\"", c).to_string()),
+          _    => panic!("Unknown CFA color \"{}\"", c),
         };
       }
 
