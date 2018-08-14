@@ -68,7 +68,10 @@ impl CFA {
           b'E' => 3,
           b'M' => 1,
           b'Y' => 3,
-          _    => panic!("Unknown CFA color \"{}\"", c),
+          _    => {
+              let unknown_char = patname[i..].chars().next().unwrap();
+              panic!("Unknown CFA color \"{}\" in pattern \"{}\"", unknown_char, patname)
+          },
         };
       }
 
