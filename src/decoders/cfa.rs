@@ -54,7 +54,7 @@ impl CFA {
       36 => (6,6),
       16 => (2,8),
       144 => (12,12),
-      _ => panic!(format!("Unknown CFA size \"{}\"", patname).to_string()),
+      _ => panic!("Unknown CFA size \"{}\"", patname),
     };
     let mut pattern: [[usize;48];48] = [[0;48];48];
 
@@ -131,7 +131,7 @@ impl CFA {
           1 => "G",
           2 => "B",
           3 => "E",
-          x => panic!(format!("Unknown CFA color \"{}\"", x).to_string()),
+          x => panic!("Unknown CFA color \"{}\"", x),
         });
       }
     }
