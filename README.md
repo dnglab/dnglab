@@ -13,16 +13,6 @@ This is a rust library to extract the raw data and some metadata from digital ca
   * A conversion matrix between the camera color space and XYZ
   * The description of the bayer pattern itself so you'll know which pixels are which color
 
-Additionally it includes a simple raw processing pipeline that does the following:
-
-  * Demosaic
-  * Black and whitelevel application
-  * Whitebalance
-  * Convert from camera space to Lab
-  * Apply a contrast curve to the L channel
-  * Convert from Lab to Rec709
-  * Apply sRGB gamma for output
-
 Current State
 -------------
 
@@ -100,25 +90,6 @@ fn main() {
   }
 }
 ```
-
-To do the image decoding decode the image the same way but then do:
-
-```rust
-  // Decode to the largest image that fits in 1080p size. If the original image is
-  // smaller this will not scale up but otherwise you will get an image that is either
-  // 1920 pixels wide or 1080 pixels tall and maintains the image ratio.
-  let decoded = image.to_rgb(1920, 1080).unwrap();
-
-  let mut f = BufWriter::new(File::create(format!("{}.ppm",file)).unwrap());
-  let preamble = format!("P6 {} {} {}\n", decoded.width, decoded.height, 255).into_bytes();
-  f.write_all(&preamble).unwrap();
-  for pix in decoded.data {
-    let pixel = ((pix.max(0.0)*255.0).min(255.0)) as u8;
-    f.write_all(&[pixel]).unwrap();
-  }
-```
-
-And this will write out an 8bit RGB image. Reducing the decode size makes the processing much faster by doing the scaling extremely early in the processing (at the demosaic). So this can be used quite directly to do fast thumbnailing of raw images. A 24MP raw file can be turned into a 500x500 thumbnail in 200-300ms on normal laptop hardware.
 
 Contributing
 ------------

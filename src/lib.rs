@@ -32,41 +32,6 @@
 //!   }
 //! }
 //! ```
-//!
-//! To do the image decoding decode the image the same way but then do:
-//!
-//! ```rust,no_run
-//! # use std::env;
-//! # use std::fs::File;
-//! # use std::io::prelude::*;
-//! # use std::io::BufWriter;
-//! # extern crate rawloader;
-//! # fn main() {
-//! #  let args: Vec<_> = env::args().collect();
-//! #  if args.len() != 2 {
-//! #    println!("Usage: {} <file>", args[0]);
-//! #    std::process::exit(2);
-//! #  }
-//! #  let file = &args[1];
-//! #  let image = rawloader::decode(file).unwrap();
-//! // Decode to the largest image that fits in 1080p size. If the original image is
-//! // smaller this will not scale up but otherwise you will get an image that is either
-//! // 1920 pixels wide or 1080 pixels tall and maintains the image ratio.
-//! let decoded = image.to_rgb(1920, 1080).unwrap();
-//!
-//! let mut f = BufWriter::new(File::create(format!("{}.ppm",file)).unwrap());
-//! let preamble = format!("P6 {} {} {}\n", decoded.width, decoded.height, 255).into_bytes();
-//! f.write_all(&preamble).unwrap();
-//! for pix in decoded.data {
-//!   let pixel = ((pix.max(0.0)*255.0).min(255.0)) as u8;
-//!   f.write_all(&[pixel]).unwrap();
-//! }
-//! # }
-//! ```
-//!
-//! This is useful as a reference output and if all you need is a thumbnail or a preview
-//! it will be a decent output that is produced fast (200-300ms for a 500x500 thumbnail of
-//! a 24MP image).
 
 #![deny(
   missing_docs,
@@ -106,7 +71,6 @@ use std::path::Path;
 ///   Err(e) => ... some appropriate action when the file is unreadable ...
 /// };
 /// ```
-
 pub fn decode<P: AsRef<Path>>(path: P) -> Result<RawImage,String> {
   LOADER.decode(path.as_ref())
 }
