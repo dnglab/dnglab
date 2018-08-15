@@ -198,7 +198,10 @@ impl Camera {
   }
 }
 
-/// Possible values for the IFD tag Orientation (0x0112)
+/// Possible orientations of an image
+///
+/// Values are taken from the IFD tag Orientation (0x0112) in most cases but they can be
+/// obtained from other metadata in the file.
 #[derive(Debug, Copy, Clone, PartialEq, Serialize, Deserialize, Hash)]
 #[allow(missing_docs)]
 pub enum Orientation {
@@ -271,10 +274,8 @@ pub fn ok_image_with_blacklevels(camera: Camera, width: usize, height: usize, wb
 /// The struct that holds all the info about the cameras and is able to decode a file
 #[derive(Debug, Clone)]
 pub struct RawLoader {
-  /// Information about all cameras that are found using (make,model,mode) tuples
-  pub cameras: HashMap<(String,String,String),Camera>,
-  /// So called "naked" cameras that are found using file size
-  pub naked: HashMap<usize,Camera>,
+  cameras: HashMap<(String,String,String),Camera>,
+  naked: HashMap<usize,Camera>,
 }
 
 impl RawLoader {

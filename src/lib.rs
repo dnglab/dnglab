@@ -53,8 +53,8 @@ mod decoders;
 pub use decoders::RawImage;
 pub use decoders::Orientation;
 pub use decoders::cfa::CFA;
-pub use decoders::Buffer;
-pub use decoders::RawLoader;
+#[doc(hidden)] pub use decoders::Buffer;
+#[doc(hidden)] pub use decoders::RawLoader;
 
 lazy_static! {
   static ref LOADER: RawLoader = decoders::RawLoader::new();
