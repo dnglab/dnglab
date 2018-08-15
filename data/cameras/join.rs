@@ -7,7 +7,7 @@ extern crate toml;
 use toml::Value;
   
 fn main() {
-  let mut out = File::create("./data/cameras/all.toml").unwrap();
+  let mut out = File::create("./target/all.toml").unwrap();
 
   for entry in glob("./data/cameras/*/**/*.toml").expect("Failed to read glob pattern") {
     out.write_all(b"[[cameras]]\n").unwrap();
