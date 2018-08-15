@@ -1,6 +1,5 @@
 use decoders::*;
 use decoders::cfa::*;
-use imageops;
 
 /// All the data needed to process this raw image, including the image data itself as well
 /// as all the needed metadata
@@ -37,29 +36,6 @@ pub struct RawImage {
   /// image data itself, has width*height*cpp elements
   pub data: Vec<u16>,
 }
-
-/// A RawImage processed into a full RGB image with levels and gamma
-///
-/// The data is a Vec<f32> width width*height*3 elements, where each element is a value
-/// between 0 and 1 with the intensity of the color channel
-#[derive(Debug, Clone)]
-pub struct RGBImage {
-  pub width: usize,
-  pub height: usize,
-  pub data: Vec<f32>,
-}
-
-/// A RawImage processed into a full 8bit sRGB image with levels and gamma
-///
-/// The data is a Vec<u8> width width*height*3 elements, where each element is a value
-/// between 0 and 255 with the intensity of the color channel with gamma applied
-#[derive(Debug, Clone)]
-pub struct SRGBImage {
-  pub width: usize,
-  pub height: usize,
-  pub data: Vec<u8>,
-}
-
 
 impl RawImage {
   #[doc(hidden)] pub fn new(camera: Camera, width: usize, height: usize, wb_coeffs: [f32;4], image: Vec<u16>) -> RawImage {
@@ -216,61 +192,6 @@ impl RawImage {
     }
 
     out
-  }
-
-  /// Convert the image to a sRGB image by doing a demosaic and applying levels,
-  /// whitebalance, a base curve, color conversions and gamma.
-  ///
-  /// The maxwidth and maxheight values specify maximum dimensions for the final image. If
-  /// the original image is smaller this will not scale up but otherwise you will get an
-  /// image that is either maxwidth wide or maxheight tall and maintains the image ratio.
-  /// Pass in maxwidth and maxheight as 0 if you want the maximum possible image size.
-  pub fn to_rgb(&self, maxwidth: usize, maxheight: usize) -> Result<RGBImage,String> {
-    let buffer = imageops::simple_decode(self, maxwidth, maxheight);
-
-    Ok(RGBImage{
-      width: buffer.width,
-      height: buffer.height,
-      data: buffer.data,
-    })
-  }
-
-  /// Convert the image to an 8bit sRGB image by doing a demosaic and applying levels,
-  /// whitebalance, a base curve, color conversions and gamma.
-  ///
-  /// The maxwidth and maxheight values specify maximum dimensions for the final image. If
-  /// the original image is smaller this will not scale up but otherwise you will get an
-  /// image that is either maxwidth wide or maxheight tall and maintains the image ratio.
-  /// Pass in maxwidth and maxheight as 0 if you want the maximum possible image size.
-  pub fn to_srgb(&self, maxwidth: usize, maxheight: usize) -> Result<SRGBImage,String> {
-    let buffer = imageops::simple_decode(self, maxwidth, maxheight);
-    let mut image = vec![0 as u8; buffer.width*buffer.height*3];
-    for (o, i) in image.chunks_mut(1).zip(buffer.data.iter()) {
-      o[0] = (i*255.0).max(0.0).min(255.0) as u8;
-    }
-
-    Ok(SRGBImage{
-      width: buffer.width,
-      height: buffer.height,
-      data: image,
-    })
-  }
-
-  /// Convert the image to a linear sRGB image by doing a demosaic and applying levels and
-  /// whitebalance, a base curve and color conversions.
-  ///
-  /// The maxwidth and maxheight values specify maximum dimensions for the final image. If
-  /// the original image is smaller this will not scale up but otherwise you will get an
-  /// image that is either maxwidth wide or maxheight tall and maintains the image ratio.
-  /// Pass in maxwidth and maxheight as 0 if you want the maximum possible image size.
-  pub fn to_linear_rgb(&self, maxwidth: usize, maxheight: usize) -> Result<RGBImage,String> {
-    let buffer = imageops::simple_decode_linear(self, maxwidth, maxheight);
-
-    Ok(RGBImage{
-      width: buffer.width,
-      height: buffer.height,
-      data: buffer.data,
-    })
   }
 
   /// Returns the CFA pattern after the crop has been applied (and thus the pattern
