@@ -34,7 +34,16 @@ pub struct RawImage {
   /// orientation of the image as indicated by the image metadata
   pub orientation: Orientation,
   /// image data itself, has width*height*cpp elements
-  pub data: Vec<u16>,
+  pub data: RawImageData,
+}
+
+/// The actual image data, after decoding
+#[derive(Debug, Clone)]
+pub enum RawImageData {
+  /// The most usual u16 output of almost all formats
+  Integer(Vec<u16>),
+  /// Some formats are directly encoded as f32, most notably some DNGs
+  Float(Vec<f32>),
 }
 
 impl RawImage {
@@ -73,7 +82,7 @@ impl RawImage {
       height: height,
       cpp: 1,
       wb_coeffs: wb_coeffs,
-      data: image,
+      data: RawImageData::Integer(image),
       blacklevels: blacks,
       whitelevels: camera.whitelevels,
       xyz_to_cam: camera.xyz_to_cam,

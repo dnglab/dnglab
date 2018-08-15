@@ -70,7 +70,7 @@ impl<'a> Decoder for DngDecoder<'a> {
       height: height,
       cpp: cpp,
       wb_coeffs: try!(self.get_wb()),
-      data: image,
+      data: RawImageData::Integer(image),
       blacklevels: try!(self.get_blacklevels(raw)),
       whitelevels: try!(self.get_whitelevels(raw)),
       xyz_to_cam: try!(self.get_color_matrix()),

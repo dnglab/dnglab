@@ -74,7 +74,7 @@ impl<'a> Decoder for RafDecoder<'a> {
         height: height,
         cpp: 1,
         wb_coeffs: try!(self.get_wb()),
-        data: image,
+        data: RawImageData::Integer(image),
         blacklevels: camera.blacklevels,
         whitelevels: camera.whitelevels,
         xyz_to_cam: camera.xyz_to_cam,

@@ -24,11 +24,15 @@
 //!   let mut f = BufWriter::new(File::create(format!("{}.ppm",file)).unwrap());
 //!   let preamble = format!("P6 {} {} {}\n", image.width, image.height, 65535).into_bytes();
 //!   f.write_all(&preamble).unwrap();
-//!   for pix in image.data {
-//!     // Do an extremely crude "demosaic" by setting R=G=B
-//!     let pixhigh = (pix>>8) as u8;
-//!     let pixlow  = (pix&0x0f) as u8;
-//!     f.write_all(&[pixhigh, pixlow, pixhigh, pixlow, pixhigh, pixlow]).unwrap()
+//!   if let rawloader::RawImageData::Integer(data) = image.data {
+//!     for pix in data {
+//!       // Do an extremely crude "demosaic" by setting R=G=B
+//!       let pixhigh = (pix>>8) as u8;
+//!       let pixlow  = (pix&0x0f) as u8;
+//!       f.write_all(&[pixhigh, pixlow, pixhigh, pixlow, pixhigh, pixlow]).unwrap()
+//!     }
+//!   } else {
+//!     eprintln!("Don't know how to process non-integer raw files");
 //!   }
 //! }
 //! ```
@@ -51,6 +55,7 @@ extern crate itertools;
 
 mod decoders;
 pub use decoders::RawImage;
+pub use decoders::RawImageData;
 pub use decoders::Orientation;
 pub use decoders::cfa::CFA;
 #[doc(hidden)] pub use decoders::Buffer;
