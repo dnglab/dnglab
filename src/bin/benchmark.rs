@@ -4,7 +4,6 @@ use std::error::Error;
 
 extern crate rawloader;
 extern crate time;
-use rawloader::decoders;
 
 fn usage() {
   println!("benchmark <file>");
@@ -30,11 +29,11 @@ fn main() {
     Ok(val) => val,
     Err(e) => {error(e.description());return},
   };
-  let buffer = match decoders::Buffer::new(&mut f) {
+  let buffer = match rawloader::Buffer::new(&mut f) {
     Ok(val) => val,
     Err(e) => {error(&e); return},
   };
-  let rawloader = decoders::RawLoader::new();
+  let rawloader = rawloader::RawLoader::new();
   let from_time = time::precise_time_ns();
   {
     for _ in 0..ITERATIONS {

@@ -84,12 +84,15 @@ extern crate num;
 #[macro_use] extern crate serde_derive;
 extern crate itertools;
 
-#[doc(hidden)] pub mod decoders;
+mod decoders;
 pub use decoders::RawImage;
+pub use decoders::Orientation;
 pub use decoders::cfa::CFA;
+pub use decoders::Buffer;
+pub use decoders::RawLoader;
 
 lazy_static! {
-  static ref LOADER: decoders::RawLoader = decoders::RawLoader::new();
+  static ref LOADER: RawLoader = decoders::RawLoader::new();
 }
 
 use std::path::Path;
@@ -105,5 +108,5 @@ use std::path::Path;
 /// ```
 
 pub fn decode<P: AsRef<Path>>(path: P) -> Result<RawImage,String> {
-  LOADER.decode_safe(path.as_ref())
+  LOADER.decode(path.as_ref())
 }

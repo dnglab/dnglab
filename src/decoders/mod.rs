@@ -69,6 +69,7 @@ pub trait Decoder {
   fn image(&self) -> Result<RawImage, String>;
 }
 
+/// Buffer to hold an image in memory with enough extra space at the end for speed optimizations
 #[derive(Debug, Clone)]
 pub struct Buffer {
   buf: Vec<u8>,
@@ -76,6 +77,7 @@ pub struct Buffer {
 }
 
 impl Buffer {
+  /// Creates a new buffer from anything that can be read
   pub fn new(reader: &mut Read) -> Result<Buffer, String> {
     let mut buffer = Vec::new();
     if let Err(err) = reader.read_to_end(&mut buffer) {
@@ -198,6 +200,7 @@ impl Camera {
 
 /// Possible values for the IFD tag Orientation (0x0112)
 #[derive(Debug, Copy, Clone, PartialEq, Serialize, Deserialize, Hash)]
+#[allow(missing_docs)]
 pub enum Orientation {
   Normal,
   HorizontalFlip,
@@ -265,13 +268,17 @@ pub fn ok_image_with_blacklevels(camera: Camera, width: usize, height: usize, wb
   Ok(img)
 }
 
+/// The struct that holds all the info about the cameras and is able to decode a file
 #[derive(Debug, Clone)]
 pub struct RawLoader {
+  /// Information about all cameras that are found using (make,model,mode) tuples
   pub cameras: HashMap<(String,String,String),Camera>,
+  /// So called "naked" cameras that are found using file size
   pub naked: HashMap<usize,Camera>,
 }
 
 impl RawLoader {
+  /// Creates a new raw loader using the camera information included in the library
   pub fn new() -> RawLoader {
     let toml = match CAMERAS_TOML.parse::<Value>() {
       Ok(val) => val,
@@ -330,6 +337,7 @@ impl RawLoader {
     }
   }
 
+  /// Returns a decoder for a given buffer
   pub fn get_decoder<'b>(&'b self, buf: &'b Buffer) -> Result<Box<Decoder+'b>, String> {
     let buffer = &buf.buf;
 
@@ -411,14 +419,14 @@ impl RawLoader {
     Err(format!("Couldn't find a decoder for this file.{}", SAMPLE).to_string())
   }
 
-  pub fn check_supported_with_everything<'a>(&'a self, make: &str, model: &str, mode: &str) -> Result<Camera, String> {
+  fn check_supported_with_everything<'a>(&'a self, make: &str, model: &str, mode: &str) -> Result<Camera, String> {
     match self.cameras.get(&(make.to_string(),model.to_string(),mode.to_string())) {
       Some(cam) => Ok(cam.clone()),
       None => Err(format!("Couldn't find camera \"{}\" \"{}\" mode \"{}\".{}", make, model, mode, SAMPLE)),
     }
   }
 
-  pub fn check_supported_with_mode<'a>(&'a self, tiff: &'a TiffIFD, mode: &str) -> Result<Camera, String> {
+  fn check_supported_with_mode<'a>(&'a self, tiff: &'a TiffIFD, mode: &str) -> Result<Camera, String> {
     let make = fetch_tag!(tiff, Tag::Make).get_str();
     let model = fetch_tag!(tiff, Tag::Model).get_str();
 
@@ -431,23 +439,24 @@ impl RawLoader {
     Ok(camera)
   }
 
-  pub fn check_supported<'a>(&'a self, tiff: &'a TiffIFD) -> Result<Camera, String> {
+  fn check_supported<'a>(&'a self, tiff: &'a TiffIFD) -> Result<Camera, String> {
     self.check_supported_with_mode(tiff, "")
   }
 
-  pub fn decode(&self, reader: &mut Read) -> Result<RawImage,String> {
+  fn decode_unsafe(&self, reader: &mut Read) -> Result<RawImage,String> {
     let buffer = try!(Buffer::new(reader));
     let decoder = try!(self.get_decoder(&buffer));
     decoder.image()
   }
 
-  pub fn decode_safe(&self, path: &Path) -> Result<RawImage,String> {
+  /// Decodes a buffer into a RawImage
+  pub fn decode(&self, path: &Path) -> Result<RawImage,String> {
     match panic::catch_unwind(|| {
       let mut f = match File::open(path) {
         Ok(val) => val,
         Err(e) => {return Err(e.description().to_string())},
       };
-      self.decode(&mut f)
+      self.decode_unsafe(&mut f)
     }) {
       Ok(val) => val,
       Err(_) => Err(format!("Caught a panic while decoding.{}", BUG).to_string()),

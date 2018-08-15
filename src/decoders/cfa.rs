@@ -18,8 +18,11 @@ use std::fmt;
 /// designed to be fast so it can be called inside the inner loop of demosaic or other
 /// color-aware algorithms that work on pre-demosaic data
 pub struct CFA {
+  /// CFA pattern as a String
   pub name: String,
+  /// Width of the repeating pattern
   pub width: usize,
+  /// Height of the repeating pattern
   pub height: usize,
 
   pattern: [[usize;48];48],
