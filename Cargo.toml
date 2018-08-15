@@ -22,10 +22,6 @@ rayon = "1"
 itertools = "0.7"
 serde = "1"
 serde_derive = "1"
-serde_yaml = "0.7"
-bincode = "1"
-sha2 = "0.6"
-multicache = "0.4"
 
 [build-dependencies]
 glob = "0.2.11"
