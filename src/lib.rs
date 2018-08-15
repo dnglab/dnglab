@@ -61,6 +61,31 @@ lazy_static! {
 }
 
 use std::path::Path;
+use std::error::Error;
+use std::fmt;
+
+/// Error type for any reason for the decode to fail
+#[derive(Debug)]
+pub struct RawLoaderError {
+  msg: String,
+}
+
+impl fmt::Display for RawLoaderError {
+  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    write!(f, "RawLoaderError: \"{}\"", self.msg)
+  }
+}
+
+impl Error for RawLoaderError {
+}
+
+impl RawLoaderError {
+  fn new(msg: String) -> Self {
+    Self {
+      msg,
+    }
+  }
+}
 
 /// Take a path to a raw file and return a decoded image or an error
 ///
@@ -71,6 +96,6 @@ use std::path::Path;
 ///   Err(e) => ... some appropriate action when the file is unreadable ...
 /// };
 /// ```
-pub fn decode<P: AsRef<Path>>(path: P) -> Result<RawImage,String> {
-  LOADER.decode(path.as_ref())
+pub fn decode<P: AsRef<Path>>(path: P) -> Result<RawImage,RawLoaderError> {
+  LOADER.decode(path.as_ref()).map_err(|err| RawLoaderError::new(err))
 }
