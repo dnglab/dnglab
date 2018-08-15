@@ -61,7 +61,7 @@ mod x3f;
 use self::tiff::*;
 pub use self::image::*;
 
-pub static CAMERAS_TOML: &'static str = include_str!("../../target/all.toml");
+pub static CAMERAS_TOML: &'static str = include_str!(concat!(env!("OUT_DIR"), "/all.toml"));
 pub static SAMPLE: &'static str = "\nPlease submit samples at https://raw.pixls.us/";
 pub static BUG: &'static str = "\nPlease file a bug with a sample file at https://github.com/pedrocr/rawloader/issues/new";
 
