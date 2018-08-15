@@ -444,23 +444,29 @@ impl RawLoader {
     self.check_supported_with_mode(tiff, "")
   }
 
-  fn decode_unsafe(&self, reader: &mut Read) -> Result<RawImage,String> {
-    let buffer = try!(Buffer::new(reader));
+  fn decode_unsafe(&self, buffer: &Buffer) -> Result<RawImage,String> {
     let decoder = try!(self.get_decoder(&buffer));
     decoder.image()
   }
 
-  /// Decodes a buffer into a RawImage
-  pub fn decode(&self, path: &Path) -> Result<RawImage,String> {
+  /// Decodes an input into a RawImage
+  pub fn decode(&self, reader: &mut Read) -> Result<RawImage,String> {
+    let buffer = try!(Buffer::new(reader));
+
     match panic::catch_unwind(|| {
-      let mut f = match File::open(path) {
-        Ok(val) => val,
-        Err(e) => {return Err(e.description().to_string())},
-      };
-      self.decode_unsafe(&mut f)
+      self.decode_unsafe(&buffer)
     }) {
       Ok(val) => val,
       Err(_) => Err(format!("Caught a panic while decoding.{}", BUG).to_string()),
     }
+  }
+
+  /// Decodes a file into a RawImage
+  pub fn decode_file(&self, path: &Path) -> Result<RawImage,String> {
+    let mut file = match File::open(path) {
+      Ok(val) => val,
+      Err(e) => {return Err(e.description().to_string())},
+    };
+    self.decode(&mut file)
   }
 }
