@@ -4,7 +4,7 @@ use decoders::basics::*;
 pub struct BitPumpLSB<'a> {
   buffer: &'a [u8],
   pos: usize,
-  bits: u32, // This benchmarks better than u64 and u128
+  bits: u64,
   nbits: u32,
 }
 
@@ -23,7 +23,7 @@ impl<'a> BitPumpLSB<'a> {
 pub struct BitPumpMSB<'a> {
   buffer: &'a [u8],
   pos: usize,
-  bits: u64, // This benchmarks better than u32 and u128
+  bits: u64,
   nbits: u32,
 }
 
@@ -115,12 +115,12 @@ pub trait BitPump {
 impl<'a> BitPump for BitPumpLSB<'a> {
   fn peek_bits(&mut self, num: u32) -> u32 {
     if num > self.nbits {
-      let inbits: u32 = LEu16(self.buffer, self.pos) as u32;
-      self.bits = ((inbits << 16) | (self.bits << (16-self.nbits))) >> (16-self.nbits);
-      self.pos += 2;
-      self.nbits += 16;
+      let inbits: u64 = LEu32(self.buffer, self.pos) as u64;
+      self.bits = ((inbits << 32) | (self.bits << (32-self.nbits))) >> (32-self.nbits);
+      self.pos += 4;
+      self.nbits += 32;
     }
-    (self.bits & (0x0ffffu32 >> (16-num))) as u32
+    (self.bits & (0x0ffffffffu64 >> (32-num))) as u32
   }
 
   fn consume_bits(&mut self, num: u32) {
