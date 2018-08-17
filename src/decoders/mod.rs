@@ -202,7 +202,7 @@ impl Camera {
 ///
 /// Values are taken from the IFD tag Orientation (0x0112) in most cases but they can be
 /// obtained from other metadata in the file.
-#[derive(Debug, Copy, Clone, PartialEq, Serialize, Deserialize, Hash)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Serialize, Deserialize, Hash)]
 #[allow(missing_docs)]
 pub enum Orientation {
   Normal,
