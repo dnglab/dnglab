@@ -259,6 +259,21 @@ impl Orientation {
       Orientation::Transverse => (true, true, true),
     }
   }
+
+  /// Convert orientation to the Tiff Orientation value
+  pub fn to_u16(&self) -> u16 {
+    match *self {
+      Orientation::Unknown =>        0,
+      Orientation::Normal =>         1,
+      Orientation::HorizontalFlip => 2,
+      Orientation::Rotate180 =>      3,
+      Orientation::VerticalFlip =>   4,
+      Orientation::Transpose =>      5,
+      Orientation::Rotate90 =>       6,
+      Orientation::Transverse =>     7,
+      Orientation::Rotate270 =>      8,
+    }
+  }
 }
 
 pub fn ok_image(camera: Camera, width: usize, height: usize, wb_coeffs: [f32;4], image: Vec<u16>) -> Result<RawImage,String> {
