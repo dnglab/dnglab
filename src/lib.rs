@@ -83,6 +83,10 @@ impl fmt::Display for RawLoaderError {
 }
 
 impl Error for RawLoaderError {
+  // Implement description so that older versions of rust still work
+  fn description(&self) -> &str {
+    "description() is deprecated; use Display"
+  }
 }
 
 impl RawLoaderError {
