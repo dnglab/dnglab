@@ -260,6 +260,20 @@ impl Orientation {
     }
   }
 
+  /// Does the opposite of to_flips()
+  pub fn from_flips(flips: (bool, bool, bool)) -> Self {
+    match flips {
+      (false, false, false) => Orientation::Normal,
+      (false, false, true)  => Orientation::VerticalFlip,
+      (false, true,  false) => Orientation::HorizontalFlip,
+      (false, true,  true)  => Orientation::Rotate180,
+      (true,  false, false) => Orientation::Transpose,
+      (true,  false, true)  => Orientation::Rotate90,
+      (true,  true,  false) => Orientation::Rotate270,
+      (true,  true,  true)  => Orientation::Transverse,
+    }
+  }
+
   /// Convert orientation to the Tiff Orientation value
   pub fn to_u16(&self) -> u16 {
     match *self {
