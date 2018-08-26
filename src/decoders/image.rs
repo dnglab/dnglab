@@ -93,24 +93,36 @@ impl RawImage {
   }
 
   /// Outputs the inverted matrix that converts pixels in the camera colorspace into
-  /// XYZ components. Those can then be easily used to convert to Lab or a RGB output space
+  /// XYZ components.
   pub fn cam_to_xyz(&self) -> [[f32;4];3] {
-    let (cam_to_xyz, _) = self.xyz_matrix_and_neutralwb();
-    cam_to_xyz
+    self.pseudoinverse(self.xyz_to_cam)
+  }
+
+  /// Outputs the inverted matrix that converts pixels in the camera colorspace into
+  /// XYZ components normalized to be easily used to convert to Lab or a RGB output space
+  pub fn cam_to_xyz_normalized(&self) -> [[f32;4];3] {
+    let mut xyz_to_cam = self.xyz_to_cam;
+    // Normalize xyz_to_cam so that xyz_to_cam * (1,1,1) is (1,1,1,1)
+    for i in 0..4 {
+      let mut num = 0.0;
+      for j in 0..3 {
+        num += xyz_to_cam[i][j];
+      }
+      for j in 0..3 {
+        xyz_to_cam[i][j] = if num == 0.0 {
+          0.0
+        }  else {
+          xyz_to_cam[i][j] / num
+        };
+      }
+    }
+
+    self.pseudoinverse(xyz_to_cam)
   }
 
   /// Not all cameras encode a whitebalance so in those cases just using a 6500K neutral one
   /// is a good compromise
   pub fn neutralwb(&self) -> [f32;4] {
-    let (_, neutralwb) = self.xyz_matrix_and_neutralwb();
-    [neutralwb[0]/neutralwb[1],
-     neutralwb[1]/neutralwb[1],
-     neutralwb[2]/neutralwb[1],
-     neutralwb[3]/neutralwb[1]]
-  }
-
-  fn xyz_matrix_and_neutralwb(&self) -> ([[f32;4];3],[f32;4]) {
-    let d65_white = [0.9547,1.0,1.08883];
     let rgb_to_xyz = [
     // sRGB D65
       [ 0.412453, 0.357580, 0.180423 ],
@@ -130,35 +142,18 @@ impl RawImage {
     }
 
     let mut neutralwb = [0 as f32; 4];
-    // Normalize rgb_to_cam so that rgb_to_cam * (1,1,1) is (1,1,1,1)
     for i in 0..4 {
       let mut num = 0.0;
       for j in 0..3 {
         num += rgb_to_cam[i][j];
       }
-      for j in 0..3 {
-        rgb_to_cam[i][j] = if num == 0.0 {
-          0.0
-        }  else {
-          rgb_to_cam[i][j] / num
-        };
-      }
       neutralwb[i] = 1.0 / num;
     }
 
-    let cam_to_rgb = self.pseudoinverse(rgb_to_cam);
-    let mut cam_to_xyz = [[0.0;4];3];
-    // Multiply RGB matrix and adjust white to get a cam_to_xyz
-    for i in 0..3 {
-      for j in 0..4 {
-        cam_to_xyz[i][j] = 0.0;
-        for k in 0..3 {
-          cam_to_xyz[i][j] += cam_to_rgb[k][j] * rgb_to_xyz[i][k] / d65_white[i];
-        }
-      }
-    }
-
-    (cam_to_xyz, neutralwb)
+    [neutralwb[0]/neutralwb[1],
+     neutralwb[1]/neutralwb[1],
+     neutralwb[2]/neutralwb[1],
+     neutralwb[3]/neutralwb[1]]
   }
 
   fn pseudoinverse(&self, inm: [[f32;3];4]) -> [[f32;4];3] {
