@@ -270,10 +270,10 @@ pub fn decode_hasselblad(ljpeg: &LjpegDecompressor, out: &mut [u16], width: usiz
   let mut pump = BitPumpMSB32::new(ljpeg.buffer);
   let ref htable = ljpeg.dhts[ljpeg.sof.components[0].dc_tbl_num];
 
-  for line in out.chunks_mut(width) {
+  for line in out.chunks_exact_mut(width) {
     let mut p1: i32 = 0x8000;
     let mut p2: i32 = 0x8000;
-    for o in line.chunks_mut(2) {
+    for o in line.chunks_exact_mut(2) {
       let len1 = try!(htable.huff_len(&mut pump));
       let len2 = try!(htable.huff_len(&mut pump));
       p1 += htable.huff_diff(&mut pump, len1);

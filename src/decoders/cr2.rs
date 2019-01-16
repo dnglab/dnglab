@@ -59,7 +59,7 @@ impl<'a> Decoder for Cr2Decoder<'a> {
         };
 
         let mut random = ljpegout[0] as u32;
-        for o in ljpegout.chunks_mut(1) {
+        for o in ljpegout.chunks_exact_mut(1) {
           o[0] = table.dither(o[0], &mut random);
         }
       }
@@ -180,7 +180,7 @@ impl<'a> Cr2Decoder<'a> {
 
     let yoffset = if cam.find_hint("40d_yuv") { 512 } else { 0 };
 
-    for pix in image.chunks_mut(3) {
+    for pix in image.chunks_exact_mut(3) {
       let y = pix[0] as i32 - yoffset;
       let cb = pix[1] as i32 - 16383;
       let cr = pix[2] as i32 - 16383;

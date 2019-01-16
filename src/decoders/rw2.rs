@@ -97,7 +97,7 @@ impl<'a> Rw2Decoder<'a> {
       }
 
       let mut sh: i32 = 0;
-      for out in out.chunks_mut(14) {
+      for out in out.chunks_exact_mut(14) {
         let mut pred: [i32;2] = [0,0];
         let mut nonz: [i32;2] = [0,0];
 

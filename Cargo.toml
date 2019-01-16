@@ -26,6 +26,7 @@ serde_derive = "1"
 [build-dependencies]
 glob = "0.2.11"
 toml = "0.4.5"
+rustc_version = "0.2.3"
 
 [profile.release]
 panic = "unwind"

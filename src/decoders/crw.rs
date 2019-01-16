@@ -204,7 +204,7 @@ impl<'a> CrwDecoder<'a> {
     let mut carry: i32 = 0;
     let mut base = [0 as i32;2];
     let mut pnum = 0;
-    for pixout in out.chunks_mut(64) {
+    for pixout in out.chunks_exact_mut(64) {
       // Decode a block of 64 differences
       let mut diffbuf = [0 as i32; 64];
       let mut i: usize = 0;
@@ -243,7 +243,7 @@ impl<'a> CrwDecoder<'a> {
 
     if lowbits {
       // Add the uncompressed 2 low bits to the decoded 8 high bits
-      for (i,o) in out.chunks_mut(4).enumerate() {
+      for (i,o) in out.chunks_exact_mut(4).enumerate() {
         let c = self.buffer[26+i] as u16;
         o[0] = o[0] << 2 | (c     ) & 0x03;
         o[1] = o[1] << 2 | (c >> 2) & 0x03;

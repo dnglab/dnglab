@@ -177,7 +177,7 @@ impl<'a> ArwDecoder<'a> {
       let mut pump = BitPumpLSB::new(&buf[(row*width)..]);
 
       let mut random = pump.peek_bits(16);
-      for out in out.chunks_mut(32) {
+      for out in out.chunks_exact_mut(32) {
         // Process 32 pixels at a time in interleaved fashion
         for j in 0..2 {
           let max = pump.get_bits(11);

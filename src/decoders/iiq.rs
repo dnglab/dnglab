@@ -74,7 +74,7 @@ impl<'a> IiqDecoder<'a> {
       let mut pump = BitPumpMSB32::new(&self.buffer[offset..]);
       let mut pred = [0 as u32; 2];
       let mut len = [0 as u32; 2];
-      for (col, pixout) in out.chunks_mut(1).enumerate() {
+      for (col, pixout) in out.chunks_exact_mut(1).enumerate() {
         if col >= (width & 0xfffffff8) {
           len[0] = 14;
           len[1] = 14;

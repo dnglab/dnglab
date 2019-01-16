@@ -322,7 +322,7 @@ impl<'a> NefDecoder<'a> {
     Ok(decode_threaded(width*3, height, &(|out: &mut [u16], row| {
       let inb = &src[row*width*3..];
       let mut random = BEu32(inb, 0);
-      for (o, i) in out.chunks_mut(6).zip(inb.chunks(6)) {
+      for (o, i) in out.chunks_exact_mut(6).zip(inb.chunks_exact(6)) {
         let g1: u16 = i[0] as u16;
         let g2: u16 = i[1] as u16;
         let g3: u16 = i[2] as u16;

@@ -5,7 +5,7 @@ pub fn decode_8bit_wtable(buf: &[u8], tbl: &LookupTable, width: usize, height: u
     let inb = &buf[(row*width)..];
     let mut random = LEu32(inb, 0);
 
-    for (o, i) in out.chunks_mut(1).zip(inb.chunks(1)) {
+    for (o, i) in out.chunks_exact_mut(1).zip(inb.chunks_exact(1)) {
       o[0] = tbl.dither(i[0] as u16, &mut random);
     }
   }))
@@ -15,7 +15,7 @@ pub fn decode_10le_lsb16(buf: &[u8], width: usize, height: usize) -> Vec<u16> {
   decode_threaded(width, height, &(|out: &mut [u16], row| {
     let inb = &buf[(row*width*10/8)..];
 
-    for (o, i) in out.chunks_mut(8).zip(inb.chunks(10)) {
+    for (o, i) in out.chunks_exact_mut(8).zip(inb.chunks_exact(10)) {
       let g1:  u16 = i[0] as u16;
       let g2:  u16 = i[1] as u16;
       let g3:  u16 = i[2] as u16;
@@ -43,7 +43,7 @@ pub fn decode_10le(buf: &[u8], width: usize, height: usize) -> Vec<u16> {
   decode_threaded(width, height, &(|out: &mut [u16], row| {
     let inb = &buf[(row*width*10/8)..];
 
-    for (o, i) in out.chunks_mut(4).zip(inb.chunks(5)) {
+    for (o, i) in out.chunks_exact_mut(4).zip(inb.chunks_exact(5)) {
       let g1:  u16 = i[0] as u16;
       let g2:  u16 = i[1] as u16;
       let g3:  u16 = i[2] as u16;
@@ -62,7 +62,7 @@ pub fn decode_12be(buf: &[u8], width: usize, height: usize) -> Vec<u16> {
   decode_threaded(width, height, &(|out: &mut [u16], row| {
     let inb = &buf[(row*width*12/8)..];
 
-    for (o, i) in out.chunks_mut(2).zip(inb.chunks(3)) {
+    for (o, i) in out.chunks_exact_mut(2).zip(inb.chunks_exact(3)) {
       let g1: u16 = i[0] as u16;
       let g2: u16 = i[1] as u16;
       let g3: u16 = i[2] as u16;
@@ -76,7 +76,7 @@ pub fn decode_12be(buf: &[u8], width: usize, height: usize) -> Vec<u16> {
 pub fn decode_12be_msb16(buf: &[u8], width: usize, height: usize) -> Vec<u16> {
   let mut out: Vec<u16> = vec![0; width*height];
 
-  for (o, i) in out.chunks_mut(4).zip(buf.chunks(6)) {
+  for (o, i) in out.chunks_exact_mut(4).zip(buf.chunks_exact(6)) {
     let g1:  u16 = i[ 0] as u16;
     let g2:  u16 = i[ 1] as u16;
     let g3:  u16 = i[ 2] as u16;
@@ -97,7 +97,7 @@ pub fn decode_12le_16bitaligned(buf: &[u8], width: usize, height: usize) -> Vec<
   let stride = ((width*12/8+1) >> 1) << 1;
   decode_threaded(width, height, &(|out: &mut [u16], row| {
     let inb = &buf[row*stride..];
-    for (o, i) in out.chunks_mut(2).zip(inb.chunks(3)) {
+    for (o, i) in out.chunks_exact_mut(2).zip(inb.chunks_exact(3)) {
       let g1:  u16 = i[ 0] as u16;
       let g2:  u16 = i[ 1] as u16;
       let g3:  u16 = i[ 2] as u16;
@@ -111,7 +111,7 @@ pub fn decode_12le_16bitaligned(buf: &[u8], width: usize, height: usize) -> Vec<
 pub fn decode_12be_msb32(buf: &[u8], width: usize, height: usize) -> Vec<u16> {
   let mut out: Vec<u16> = vec![0; width*height];
 
-  for (o, i) in out.chunks_mut(8).zip(buf.chunks(12)) {
+  for (o, i) in out.chunks_exact_mut(8).zip(buf.chunks_exact(12)) {
     let g1:  u16 = i[ 0] as u16;
     let g2:  u16 = i[ 1] as u16;
     let g3:  u16 = i[ 2] as u16;
@@ -145,8 +145,8 @@ pub fn decode_12le_wcontrol(buf: &[u8], width: usize, height: usize) -> Vec<u16>
   decode_threaded(width, height, &(|out: &mut [u16], row| {
     let inb = &buf[(row*perline)..];
 
-    for (oc, ic) in out.chunks_mut(10).zip(inb.chunks(16)) {
-      for (o, i) in oc.chunks_mut(2).zip(ic.chunks(3)) {
+    for (oc, ic) in out.chunks_exact_mut(10).zip(inb.chunks_exact(16)) {
+      for (o, i) in oc.chunks_exact_mut(2).zip(ic.chunks_exact(3)) {
         let g1: u16 = i[0] as u16;
         let g2: u16 = i[1] as u16;
         let g3: u16 = i[2] as u16;
@@ -165,8 +165,8 @@ pub fn decode_12be_wcontrol(buf: &[u8], width: usize, height: usize) -> Vec<u16>
   decode_threaded(width, height, &(|out: &mut [u16], row| {
     let inb = &buf[(row*perline)..];
 
-    for (oc, ic) in out.chunks_mut(10).zip(inb.chunks(16)) {
-      for (o, i) in oc.chunks_mut(2).zip(ic.chunks(3)) {
+    for (oc, ic) in out.chunks_exact_mut(10).zip(inb.chunks_exact(16)) {
+      for (o, i) in oc.chunks_exact_mut(2).zip(ic.chunks_exact(3)) {
         let g1: u16 = i[0] as u16;
         let g2: u16 = i[1] as u16;
         let g3: u16 = i[2] as u16;
@@ -189,7 +189,7 @@ pub fn decode_12be_interlaced(buf: &[u8], width: usize, height: usize) -> Vec<u1
     let off = row/2*width*12/8;
     let inb = if (row % 2) == 0 { &buf[off..] } else { &second_field[off..] };
 
-    for (o, i) in out.chunks_mut(2).zip(inb.chunks(3)) {
+    for (o, i) in out.chunks_exact_mut(2).zip(inb.chunks_exact(3)) {
       let g1: u16 = i[0] as u16;
       let g2: u16 = i[1] as u16;
       let g3: u16 = i[2] as u16;
@@ -208,7 +208,7 @@ pub fn decode_12be_interlaced_unaligned(buf: &[u8], width: usize, height: usize)
     let off = row/2*width*12/8;
     let inb = if (row % 2) == 0 { &buf[off..] } else { &second_field[off..] };
 
-    for (o, i) in out.chunks_mut(2).zip(inb.chunks(3)) {
+    for (o, i) in out.chunks_exact_mut(2).zip(inb.chunks_exact(3)) {
       let g1: u16 = i[0] as u16;
       let g2: u16 = i[1] as u16;
       let g3: u16 = i[2] as u16;
@@ -223,7 +223,7 @@ pub fn decode_12le(buf: &[u8], width: usize, height: usize) -> Vec<u16> {
   decode_threaded(width, height, &(|out: &mut [u16], row| {
     let inb = &buf[(row*width*12/8)..];
 
-    for (o, i) in out.chunks_mut(2).zip(inb.chunks(3)) {
+    for (o, i) in out.chunks_exact_mut(2).zip(inb.chunks_exact(3)) {
       let g1: u16 = i[0] as u16;
       let g2: u16 = i[1] as u16;
       let g3: u16 = i[2] as u16;
@@ -238,7 +238,7 @@ pub fn decode_12le_unpacked(buf: &[u8], width: usize, height: usize) -> Vec<u16>
   decode_threaded(width, height, &(|out: &mut [u16], row| {
     let inb = &buf[(row*width*2)..];
 
-    for (i, bytes) in (0..width).zip(inb.chunks(2)) {
+    for (i, bytes) in (0..width).zip(inb.chunks_exact(2)) {
       out[i] = LEu16(bytes, 0) & 0x0fff;
     }
   }))
@@ -248,7 +248,7 @@ pub fn decode_12be_unpacked(buf: &[u8], width: usize, height: usize) -> Vec<u16>
   decode_threaded(width, height, &(|out: &mut [u16], row| {
     let inb = &buf[(row*width*2)..];
 
-    for (i, bytes) in (0..width).zip(inb.chunks(2)) {
+    for (i, bytes) in (0..width).zip(inb.chunks_exact(2)) {
       out[i] = BEu16(bytes, 0) & 0x0fff;
     }
   }))
@@ -258,7 +258,7 @@ pub fn decode_12be_unpacked_left_aligned(buf: &[u8], width: usize, height: usize
   decode_threaded(width, height, &(|out: &mut [u16], row| {
     let inb = &buf[(row*width*2)..];
 
-    for (i, bytes) in (0..width).zip(inb.chunks(2)) {
+    for (i, bytes) in (0..width).zip(inb.chunks_exact(2)) {
       out[i] = BEu16(bytes, 0) >> 4;
     }
   }))
@@ -268,7 +268,7 @@ pub fn decode_12le_unpacked_left_aligned(buf: &[u8], width: usize, height: usize
   decode_threaded(width, height, &(|out: &mut [u16], row| {
     let inb = &buf[(row*width*2)..];
 
-    for (i, bytes) in (0..width).zip(inb.chunks(2)) {
+    for (i, bytes) in (0..width).zip(inb.chunks_exact(2)) {
       out[i] = LEu16(bytes, 0) >> 4;
     }
   }))
@@ -278,7 +278,7 @@ pub fn decode_14le_unpacked(buf: &[u8], width: usize, height: usize) -> Vec<u16>
   decode_threaded(width, height, &(|out: &mut [u16], row| {
     let inb = &buf[(row*width*2)..];
 
-    for (i, bytes) in (0..width).zip(inb.chunks(2)) {
+    for (i, bytes) in (0..width).zip(inb.chunks_exact(2)) {
       out[i] = LEu16(bytes, 0) & 0x3fff;
     }
   }))
@@ -288,7 +288,7 @@ pub fn decode_14be_unpacked(buf: &[u8], width: usize, height: usize) -> Vec<u16>
   decode_threaded(width, height, &(|out: &mut [u16], row| {
     let inb = &buf[(row*width*2)..];
 
-    for (i, bytes) in (0..width).zip(inb.chunks(2)) {
+    for (i, bytes) in (0..width).zip(inb.chunks_exact(2)) {
       out[i] = BEu16(bytes, 0) & 0x3fff;
     }
   }))
@@ -298,7 +298,7 @@ pub fn decode_16le(buf: &[u8], width: usize, height: usize) -> Vec<u16> {
   decode_threaded(width, height, &(|out: &mut [u16], row| {
     let inb = &buf[(row*width*2)..];
 
-    for (i, bytes) in (0..width).zip(inb.chunks(2)) {
+    for (i, bytes) in (0..width).zip(inb.chunks_exact(2)) {
       out[i] = LEu16(bytes, 0);
     }
   }))
@@ -308,7 +308,7 @@ pub fn decode_16le_skiplines(buf: &[u8], width: usize, height: usize) -> Vec<u16
   decode_threaded(width, height, &(|out: &mut [u16], row| {
     let inb = &buf[(row*width*4)..];
 
-    for (i, bytes) in (0..width).zip(inb.chunks(2)) {
+    for (i, bytes) in (0..width).zip(inb.chunks_exact(2)) {
       out[i] = LEu16(bytes, 0);
     }
   }))
@@ -318,7 +318,7 @@ pub fn decode_16be(buf: &[u8], width: usize, height: usize) -> Vec<u16> {
   decode_threaded(width, height, &(|out: &mut [u16], row| {
     let inb = &buf[(row*width*2)..];
 
-    for (i, bytes) in (0..width).zip(inb.chunks(2)) {
+    for (i, bytes) in (0..width).zip(inb.chunks_exact(2)) {
       out[i] = BEu16(bytes, 0);
     }
   }))

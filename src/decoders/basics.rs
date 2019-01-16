@@ -135,3 +135,30 @@ impl LookupTable {
     pixel as u16
   }
 }
+
+// For rust <= 1.31 we just alias chunks_exact() and chunks_exact_mut() to the non-exact versions
+// so we can use exact everywhere without spreading special cases across the code
+#[cfg(needs_chunks_exact)]
+mod chunks_exact {
+  use std::slice;
+
+  // Add a chunks_exact for &[u8] and Vec<u16>
+  pub trait ChunksExact<T> {
+    fn chunks_exact(&self, n: usize) -> slice::Chunks<T>;
+  }
+  impl<'a, T> ChunksExact<T> for &'a [T] {
+    fn chunks_exact(&self, n: usize) -> slice::Chunks<T> { self.chunks(n) }
+  }
+  impl<T> ChunksExact<T> for Vec<T> {
+    fn chunks_exact(&self, n: usize) -> slice::Chunks<T> { self.chunks(n) }
+  }
+
+  // Add a chunks_exact_mut for &mut[u16] mostly
+  pub trait ChunksExactMut<'a, T> {
+    fn chunks_exact_mut(self, n: usize) -> slice::ChunksMut<'a, T>;
+  }
+  impl<'a, T> ChunksExactMut<'a, T> for &'a mut [T] {
+    fn chunks_exact_mut(self, n: usize) -> slice::ChunksMut<'a, T> { self.chunks_mut(n) }
+  }
+}
+#[cfg(needs_chunks_exact)] pub use self::chunks_exact::*;
