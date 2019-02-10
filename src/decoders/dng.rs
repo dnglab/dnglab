@@ -76,6 +76,7 @@ impl<'a> Decoder for DngDecoder<'a> {
       xyz_to_cam: try!(self.get_color_matrix()),
       cfa: if linear {CFA::new("")} else {try!(self.get_cfa(raw))},
       crops: try!(self.get_crops(raw, width, height)),
+      blackarea: self.get_masked_areas(raw),
       orientation: orientation,
     })
   }
@@ -122,6 +123,23 @@ impl<'a> DngDecoder<'a> {
       // Ignore missing crops, at least some pentax DNGs don't have it
       Ok([0,0,0,0])
     }
+  }
+
+  fn get_masked_areas(&self, raw: &TiffIFD) -> Vec<(u64, u64, u64, u64)> {
+    let mut areas = Vec::new();
+
+    if let Some(masked_area) = raw.find_entry(Tag::MaskedAreas) {
+      for x in (0..masked_area.count()).step_by(4) {
+        areas.push((
+          masked_area.get_u32(x).into(),
+          masked_area.get_u32(x + 1).into(),
+          masked_area.get_u32(x + 2).into(),
+          masked_area.get_u32(x + 3).into()
+        ));
+      }
+    }
+
+    areas
   }
 
   fn get_color_matrix(&self) -> Result<[[f32;3];4],String> {
