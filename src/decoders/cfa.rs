@@ -17,6 +17,7 @@ use std::fmt;
 /// initialized and ready to be used in processing. The color_at() implementation is
 /// designed to be fast so it can be called inside the inner loop of demosaic or other
 /// color-aware algorithms that work on pre-demosaic data
+#[derive(Clone)]
 pub struct CFA {
   /// CFA pattern as a String
   pub name: String,
@@ -181,22 +182,5 @@ impl CFA {
 impl fmt::Debug for CFA {
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
     write!(f, "CFA {{ {} }}", self.name)
-  }
-}
-
-impl Clone for CFA {
-  fn clone(&self) -> CFA {
-    let mut cpattern: [[usize;48];48] = [[0;48];48];
-    for row in 0..48 {
-      for col in 0..48 {
-        cpattern[row][col] = self.pattern[row][col];
-      }
-    }
-    CFA {
-      name: self.name.clone(),
-      pattern: cpattern,
-      width: self.width,
-      height: self.height,
-    }
   }
 }
