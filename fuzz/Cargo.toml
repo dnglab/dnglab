@@ -5,7 +5,8 @@ authors = ["Pedro Côrte-Real <pedro@pedrocr.net>"]
 edition = "2018"
 
 [dependencies.afl]
-version = "0.4"
+git = "https://github.com/pedrocr/afl.rs/"
+branch = "myblend"
 
 [dependencies.rawloader]
 path = "../"

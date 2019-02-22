@@ -5,10 +5,7 @@ extern crate rawloader;
 fn main() {
   rawloader::force_initialization();
 
-  fuzz!(|data: &[u8]| {
-    // Remove the panic hook so we can actually catch panic
-    std::panic::set_hook(Box::new(|_| {} ));
-
+  fuzz_nohook!(|data: &[u8]| {
     rawloader::decode(&mut &data[..]).ok();
   });
 }
