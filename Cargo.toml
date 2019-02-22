@@ -38,3 +38,7 @@ opt-level = 3
 [[bin]]
 name = "benchmark"
 doc = false
+
+[[bin]]
+name = "identify"
+doc = false
