@@ -121,7 +121,7 @@ impl<'a> PefDecoder<'a> {
     let mut pred_left1: i32;
     let mut pred_left2: i32;
 
-    let mut out = vec![0 as u16; width*height];
+    let mut out = alloc_image!(width, height);
     for row in 0..height {
       pred_up1[row & 1] += try!(htable.huff_decode(&mut pump));
       pred_up2[row & 1] += try!(htable.huff_decode(&mut pump));

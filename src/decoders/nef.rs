@@ -285,7 +285,7 @@ impl<'a> NefDecoder<'a> {
     }
     let curve = LookupTable::new(&points[0..max]);
 
-    let mut out = vec![0 as u16; width * height];
+    let mut out = alloc_image!(width, height);
     let mut pump = BitPumpMSB::new(src);
     let mut random = pump.peek_bits(24);
 

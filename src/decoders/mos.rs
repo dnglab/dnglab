@@ -89,7 +89,7 @@ impl<'a> MosDecoder<'a> {
     let decompressor = try!(LjpegDecompressor::new_full(src, true, true));
     let ljpegout = try!(decompressor.decode_leaf(width, height));
     if cam.find_hint("interlaced") {
-      let mut out = vec![0 as u16; width*height];
+      let mut out = alloc_image!(width, height);
       for (row,line) in ljpegout.chunks_exact(width).enumerate() {
         let orow = if row & 1 == 1 {height-1-row/2} else {row/2};
         out[orow*width .. (orow+1)*width].copy_from_slice(line);

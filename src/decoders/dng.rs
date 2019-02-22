@@ -200,7 +200,7 @@ impl<'a> DngDecoder<'a> {
       }
       let offset = offsets.get_usize(0);
       let src = &self.buffer[offset..];
-      let mut out = vec![0 as u16; width*height];
+      let mut out = alloc_image!(width, height);
       let decompressor = try!(LjpegDecompressor::new(src));
       try!(decompressor.decode(&mut out, 0, width, width, height));
       Ok(out)

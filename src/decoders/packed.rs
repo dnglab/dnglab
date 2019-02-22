@@ -74,7 +74,7 @@ pub fn decode_12be(buf: &[u8], width: usize, height: usize) -> Vec<u16> {
 }
 
 pub fn decode_12be_msb16(buf: &[u8], width: usize, height: usize) -> Vec<u16> {
-  let mut out: Vec<u16> = vec![0; width*height];
+  let mut out: Vec<u16> = alloc_image!(width, height);
 
   for (o, i) in out.chunks_exact_mut(4).zip(buf.chunks_exact(6)) {
     let g1:  u16 = i[ 0] as u16;
@@ -109,7 +109,7 @@ pub fn decode_12le_16bitaligned(buf: &[u8], width: usize, height: usize) -> Vec<
 }
 
 pub fn decode_12be_msb32(buf: &[u8], width: usize, height: usize) -> Vec<u16> {
-  let mut out: Vec<u16> = vec![0; width*height];
+  let mut out: Vec<u16> = alloc_image!(width, height);
 
   for (o, i) in out.chunks_exact_mut(8).zip(buf.chunks_exact(12)) {
     let g1:  u16 = i[ 0] as u16;

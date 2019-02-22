@@ -189,7 +189,7 @@ impl<'a> CrwDecoder<'a> {
   }
 
   fn decode_compressed(&self, cam: &Camera, width: usize, height: usize) -> Result<Vec<u16>,String> {
-    let mut out = vec![0 as u16; width*height];
+    let mut out = alloc_image!(width, height);
 
     let dectable = fetch_tag!(self.ciff, CiffTag::DecoderTable).get_usize(0);
     if dectable > 2 {

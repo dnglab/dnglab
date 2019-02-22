@@ -141,7 +141,7 @@ impl<'a> ArwDecoder<'a> {
 
   fn decode_arw1(buf: &[u8], width: usize, height: usize) -> Vec<u16> {
     let mut pump = BitPumpMSB::new(buf);
-    let mut out: Vec<u16> = vec![0; width*height];
+    let mut out: Vec<u16> = alloc_image!(width, height);
 
     let mut sum: i32 = 0;
     for x in 0..width {

@@ -44,7 +44,7 @@ impl<'a> Decoder for Cr2Decoder<'a> {
       let mut width = ljpegwidth;
       let mut height = decompressor.height();
       let cpp = if decompressor.super_h() == 2 {3} else {1};
-      let mut ljpegout = vec![0 as u16; width*height];
+      let mut ljpegout = alloc_image!(width, height);
       try!(decompressor.decode(&mut ljpegout, 0, width, width, height));
 
       // Linearize the output (applies only to D2000 as far as I can tell)
@@ -87,7 +87,7 @@ impl<'a> Decoder for Cr2Decoder<'a> {
         if canoncol.get_usize(0) == 0 {
           (width, height, cpp, ljpegout)
         } else {
-          let mut out = vec![0 as u16; width*height];
+          let mut out = alloc_image!(width, height);
           let mut fieldwidths = Vec::new();
           for _ in 0..canoncol.get_usize(0) {
             fieldwidths.push(canoncol.get_usize(1));

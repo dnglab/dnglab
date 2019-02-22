@@ -77,7 +77,7 @@ impl<'a> OrfDecoder<'a> {
    */
 
   pub fn decode_compressed(buf: &'a [u8], width: usize, height: usize) -> Vec<u16> {
-    let mut out: Vec<u16> = vec![0; width*height];
+    let mut out: Vec<u16> = alloc_image!(width, height);
 
     /* Build a table to quickly look up "high" value */
     let mut bittable: [u8; 4096] = [0; 4096];

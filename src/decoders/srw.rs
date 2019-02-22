@@ -74,7 +74,7 @@ impl<'a> Decoder for SrwDecoder<'a> {
 
 impl<'a> SrwDecoder<'a> {
   pub fn decode_srw1(buf: &[u8], loffsets: &[u8], width: usize, height: usize) -> Vec<u16> {
-    let mut out: Vec<u16> = vec![0; width*height];
+    let mut out: Vec<u16> = alloc_image!(width, height);
 
     for row in 0..height {
       let mut len: [u32; 4] = [if row < 2 {7} else {4}; 4];
@@ -141,7 +141,7 @@ impl<'a> SrwDecoder<'a> {
   }
 
   pub fn decode_srw2(buf: &[u8], width: usize, height: usize) -> Vec<u16> {
-    let mut out: Vec<u16> = vec![0; width*height];
+    let mut out: Vec<u16> = alloc_image!(width, height);
 
     // This format has a variable length encoding of how many bits are needed
     // to encode the difference between pixels, we use a table to process it
@@ -213,7 +213,7 @@ impl<'a> SrwDecoder<'a> {
     // and Loring von Palleske (Samsung) for pointing to the open-source code of
     // Samsung's DNG converter at http://opensource.samsung.com/
 
-    let mut out: Vec<u16> = vec![0; width*height];
+    let mut out: Vec<u16> = alloc_image!(width, height);
     let mut pump = BitPumpMSB32::new(buf);
 
     // Process the initial metadata bits, we only really use initVal, width and

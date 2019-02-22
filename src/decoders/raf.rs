@@ -110,7 +110,7 @@ impl<'a> RafDecoder<'a> {
       let rotatedwidth = cropheight + cropwidth/2;
       let rotatedheight = rotatedwidth-1;
 
-      let mut out: Vec<u16> = vec![0; rotatedwidth * rotatedheight];
+      let mut out: Vec<u16> = alloc_image!(rotatedwidth, rotatedheight);
       for row in 0..cropheight {
         let inb = &src[(row+y)*width+x..];
         for col in 0..cropwidth {
@@ -125,7 +125,7 @@ impl<'a> RafDecoder<'a> {
       let rotatedwidth = cropwidth + cropheight/2;
       let rotatedheight = rotatedwidth-1;
 
-      let mut out: Vec<u16> = vec![0; rotatedwidth * rotatedheight];
+      let mut out: Vec<u16> = alloc_image!(rotatedwidth, rotatedheight);
       for row in 0..cropheight {
         let inb = &src[(row+y)*width+x..];
         for col in 0..cropwidth {
