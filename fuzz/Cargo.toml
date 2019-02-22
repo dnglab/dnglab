@@ -1,0 +1,15 @@
+[package]
+name = "fuzz-rawloader"
+version = "0.0.1"
+authors = ["Pedro Côrte-Real <pedro@pedrocr.net>"]
+edition = "2018"
+
+[dependencies.afl]
+version = "0.4"
+
+[dependencies.rawloader]
+path = "../"
+
+[profile.dev]
+panic = "unwind"
+opt-level = 3
