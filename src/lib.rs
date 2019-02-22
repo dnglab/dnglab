@@ -97,6 +97,14 @@ impl RawLoaderError {
   }
 }
 
+// Used to force lazy_static initializations. Useful for fuzzing.
+#[doc(hidden)]
+pub fn force_initialization() {
+  lazy_static::initialize(&LOADER);
+  lazy_static::initialize(&decoders::CRW_HUFF_TABLES);
+  lazy_static::initialize(&decoders::SNEF_CURVE);
+}
+
 /// Take a path to a raw file and return a decoded image or an error
 ///
 /// # Example

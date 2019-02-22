@@ -6,7 +6,7 @@ use std::f32::NAN;
 // The decoding bits of this file were ported from dcraw. The code seems different enough
 // that it doesn't make sense to try and share the huffman stuff with the normal ljpeg code
 
-struct CrwHuffTable {
+pub struct CrwHuffTable {
   nbits: u32,
   tbl: Vec<(u8,u8)>,
 }
@@ -53,7 +53,7 @@ impl CrwHuffTable {
 }
 
 lazy_static! {
-  static ref CRW_HUFF_TABLES: [[CrwHuffTable;2];3] = {
+  pub static ref CRW_HUFF_TABLES: [[CrwHuffTable;2];3] = {
     let first_tree: [[u8;29];3] = [
       [ 0,1,4,2,3,1,2,0,0,0,0,0,0,0,0,0,
         0x04,0x03,0x05,0x06,0x02,0x07,0x01,0x08,0x09,0x00,0x0a,0x0b,0xff ],

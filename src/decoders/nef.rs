@@ -22,7 +22,7 @@ const NIKON_TREE: [[u8;32];6] = [
 
 lazy_static! {
   // Pre-initialize the sRGB gamma curve for sNEF
-  static ref SNEF_CURVE: LookupTable = {
+  pub static ref SNEF_CURVE: LookupTable = {
     let g: f32 = 2.4;
     let f: f32 = 0.055;
     let min: f32 = 0.04045;
