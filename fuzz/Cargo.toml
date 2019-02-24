@@ -14,3 +14,7 @@ path = "../"
 [profile.dev]
 panic = "unwind"
 opt-level = 3
+
+[[bin]]
+name = "fuzz-rawloader-unwrapped"
+path = "src/unwrapped.rs"

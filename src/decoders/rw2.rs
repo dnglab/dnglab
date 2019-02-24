@@ -86,7 +86,7 @@ impl<'a> Rw2Decoder<'a> {
     }
   }
 
-  fn decode_panasonic(buf: &[u8], width: usize, height: usize, split: bool) -> Vec<u16> {
+  pub(crate) fn decode_panasonic(buf: &[u8], width: usize, height: usize, split: bool) -> Vec<u16> {
     decode_threaded_multiline(width, height, 5, &(|out: &mut [u16], row| {
       let skip = ((width * row * 9) + (width/14 * 2 * row)) / 8;
       let blocks = skip / 0x4000;

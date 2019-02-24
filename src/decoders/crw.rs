@@ -189,17 +189,20 @@ impl<'a> CrwDecoder<'a> {
   }
 
   fn decode_compressed(&self, cam: &Camera, width: usize, height: usize) -> Result<Vec<u16>,String> {
-    let mut out = alloc_image!(width, height);
-
+    let lowbits = !cam.find_hint("nolowbits");
     let dectable = fetch_tag!(self.ciff, CiffTag::DecoderTable).get_usize(0);
     if dectable > 2 {
       return Err(format!("CRW: Unknown decoder table {}", dectable).to_string())
     }
+    Ok(Self::do_decode(&self.buffer, lowbits, dectable, width, height))
+  }
 
-    let lowbits = !cam.find_hint("nolowbits");
+  pub(crate) fn do_decode(buffer: &[u8], lowbits: bool, dectable: usize, width: usize, height: usize) -> Vec<u16> {
+    let mut out = alloc_image!(width, height);
+
     let ref htables = CRW_HUFF_TABLES[dectable];
     let offset = 540 + (lowbits as usize)*height*width/4;
-    let mut pump = BitPumpJPEG::new(&self.buffer[offset..]);
+    let mut pump = BitPumpJPEG::new(&buffer[offset..]);
 
     let mut carry: i32 = 0;
     let mut base = [0 as i32;2];
@@ -244,7 +247,7 @@ impl<'a> CrwDecoder<'a> {
     if lowbits {
       // Add the uncompressed 2 low bits to the decoded 8 high bits
       for (i,o) in out.chunks_exact_mut(4).enumerate() {
-        let c = self.buffer[26+i] as u16;
+        let c = buffer[26+i] as u16;
         o[0] = o[0] << 2 | (c     ) & 0x03;
         o[1] = o[1] << 2 | (c >> 2) & 0x03;
         o[2] = o[2] << 2 | (c >> 4) & 0x03;
@@ -258,6 +261,6 @@ impl<'a> CrwDecoder<'a> {
         }
       }
     }
-    Ok(out)
+    out
   }
 }

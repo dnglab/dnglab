@@ -74,6 +74,7 @@ mod ari;
 mod x3f;
 use self::tiff::*;
 pub use self::image::*;
+mod unwrapped;
 
 pub static CAMERAS_TOML: &'static str = include_str!(concat!(env!("OUT_DIR"), "/all.toml"));
 pub static SAMPLE: &'static str = "\nPlease submit samples at https://raw.pixls.us/";
@@ -512,5 +513,19 @@ impl RawLoader {
     };
     let mut buffered_file = BufReader::new(file);
     self.decode(&mut buffered_file)
+  }
+
+  // Decodes an unwraped input (just the image data with minimal metadata) into a RawImage
+  // This is only useful for fuzzing really
+  #[doc(hidden)]
+  pub fn decode_unwrapped(&self, reader: &mut Read) -> Result<RawImageData,String> {
+    let buffer = try!(Buffer::new(reader));
+
+    match panic::catch_unwind(|| {
+      unwrapped::decode_unwrapped(&buffer)
+    }) {
+      Ok(val) => val,
+      Err(_) => Err(format!("Caught a panic while decoding.{}", BUG).to_string()),
+    }
   }
 }

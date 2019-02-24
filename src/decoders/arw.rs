@@ -139,7 +139,7 @@ impl<'a> ArwDecoder<'a> {
     ok_image(camera, width, height, [NAN,NAN,NAN,NAN], image)
   }
 
-  fn decode_arw1(buf: &[u8], width: usize, height: usize) -> Vec<u16> {
+  pub(crate) fn decode_arw1(buf: &[u8], width: usize, height: usize) -> Vec<u16> {
     let mut pump = BitPumpMSB::new(buf);
     let mut out: Vec<u16> = alloc_image!(width, height);
 
@@ -172,7 +172,7 @@ impl<'a> ArwDecoder<'a> {
     out
   }
 
-  fn decode_arw2(buf: &[u8], width: usize, height: usize, curve: &LookupTable) -> Vec<u16> {
+  pub(crate) fn decode_arw2(buf: &[u8], width: usize, height: usize, curve: &LookupTable) -> Vec<u16> {
     decode_threaded(width, height, &(|out: &mut [u16], row| {
       let mut pump = BitPumpLSB::new(&buf[(row*width)..]);
 
@@ -233,17 +233,20 @@ impl<'a> ArwDecoder<'a> {
       curve[i+1] = ((centry.get_u32(i) >> 2) & 0xfff) as usize;
     }
 
+    Ok(Self::calculate_curve(curve))
+  }
+
+  pub(crate) fn calculate_curve(curve: [usize;6]) -> LookupTable {
     let mut out = vec![0 as u16; curve[5]+1];
     for i in 0..5 {
       for j in (curve[i]+1)..(curve[i+1]+1) {
         out[j] = out[(j-1)] + (1<<i);
       }
     }
-
-    Ok(LookupTable::new(&out))
+    LookupTable::new(&out)
   }
 
-  fn sony_decrypt(buf: &[u8], offset: usize, length: usize, key: u32) -> Vec<u8>{
+  pub(crate) fn sony_decrypt(buf: &[u8], offset: usize, length: usize, key: u32) -> Vec<u8>{
     let mut pad: [u32; 128] = [0 as u32; 128];
     let mut mkey = key;
     // Initialize the decryption pad from the key

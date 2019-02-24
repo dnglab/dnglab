@@ -97,14 +97,6 @@ impl RawLoaderError {
   }
 }
 
-// Used to force lazy_static initializations. Useful for fuzzing.
-#[doc(hidden)]
-pub fn force_initialization() {
-  lazy_static::initialize(&LOADER);
-  lazy_static::initialize(&decoders::CRW_HUFF_TABLES);
-  lazy_static::initialize(&decoders::SNEF_CURVE);
-}
-
 /// Take a path to a raw file and return a decoded image or an error
 ///
 /// # Example
@@ -130,4 +122,19 @@ pub fn decode_file<P: AsRef<Path>>(path: P) -> Result<RawImage,RawLoaderError> {
 /// ```
 pub fn decode(reader: &mut Read) -> Result<RawImage,RawLoaderError> {
   LOADER.decode(reader).map_err(|err| RawLoaderError::new(err))
+}
+
+// Used to force lazy_static initializations. Useful for fuzzing.
+#[doc(hidden)]
+pub fn force_initialization() {
+  lazy_static::initialize(&LOADER);
+  lazy_static::initialize(&decoders::CRW_HUFF_TABLES);
+  lazy_static::initialize(&decoders::SNEF_CURVE);
+}
+
+// Used for fuzzing targets that just want to test the actual decoders instead of the full formats
+// with all their TIFF and other crazyness
+#[doc(hidden)]
+pub fn decode_unwrapped(reader: &mut Read) -> Result<RawImageData,RawLoaderError> {
+  LOADER.decode_unwrapped(reader).map_err(|err| RawLoaderError::new(err))
 }

@@ -60,7 +60,7 @@ impl<'a> DcrDecoder<'a> {
     }
   }
 
-  fn decode_kodak65000(buf: &[u8], curve: &LookupTable, width: usize, height: usize) -> Vec<u16> {
+  pub(crate) fn decode_kodak65000(buf: &[u8], curve: &LookupTable, width: usize, height: usize) -> Vec<u16> {
     let mut out: Vec<u16> = alloc_image!(width, height);
     let mut input = ByteStream::new(buf, LITTLE_ENDIAN);
 

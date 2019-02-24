@@ -81,7 +81,7 @@ impl<'a> KdcDecoder<'a> {
     }
   }
 
-  fn decode_dc120(src: &[u8], width: usize, height: usize) -> Vec<u16> {
+  pub(crate) fn decode_dc120(src: &[u8], width: usize, height: usize) -> Vec<u16> {
     let mut out = alloc_image!(width, height);
 
     let mul: [usize;4] = [162, 192, 187,  92];

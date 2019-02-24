@@ -86,9 +86,14 @@ impl<'a> MosDecoder<'a> {
   }
 
   pub fn decode_compressed(&self, cam: &Camera, src: &[u8], width: usize, height: usize) -> Result<Vec<u16>,String> {
+    let interlaced = cam.find_hint("interlaced");
+    Self::do_decode(src, interlaced, width, height)
+  }
+
+  pub(crate) fn do_decode(src: &[u8], interlaced:bool, width: usize, height: usize) -> Result<Vec<u16>,String> {
     let decompressor = try!(LjpegDecompressor::new_full(src, true, true));
     let ljpegout = try!(decompressor.decode_leaf(width, height));
-    if cam.find_hint("interlaced") {
+    if interlaced {
       let mut out = alloc_image!(width, height);
       for (row,line) in ljpegout.chunks_exact(width).enumerate() {
         let orow = if row & 1 == 1 {height-1-row/2} else {row/2};

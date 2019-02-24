@@ -60,11 +60,19 @@ impl<'a> PefDecoder<'a> {
   }
 
   fn decode_compressed(&self, src: &[u8], width: usize, height: usize) -> Result<Vec<u16>,String> {
+    if let Some(huff) = self.tiff.find_entry(Tag::PefHuffman) {
+      Self::do_decode(src, Some((huff.get_data(), self.tiff.get_endian())), width, height)
+    } else {
+      Self::do_decode(src, None, width, height)
+    }
+  }
+
+  pub(crate) fn do_decode(src: &[u8], huff: Option<(&[u8], Endian)>, width: usize, height: usize) -> Result<Vec<u16>,String> {
     let mut htable = HuffTable::empty(16);
 
     /* Attempt to read huffman table, if found in makernote */
-    if let Some(huff) = self.tiff.find_entry(Tag::PefHuffman) {
-      let mut stream = ByteStream::new(huff.get_data(), self.tiff.get_endian());
+    if let Some((huff, endian)) = huff {
+      let mut stream = ByteStream::new(huff, endian);
 
       let depth: usize = (stream.get_u16() as usize + 12) & 0xf;
       stream.consume_bytes(12);

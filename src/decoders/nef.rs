@@ -112,6 +112,7 @@ impl<'a> Decoder for NefDecoder<'a> {
     let size = fetch_tag!(raw, Tag::StripByteCounts).get_usize(0);
     let src = &self.buffer[offset..];
     let mut cpp = 1;
+    let coeffs = try!(self.get_wb());
 
     let image = if camera.model == "NIKON D100" {
       width = 3040;
@@ -133,7 +134,7 @@ impl<'a> Decoder for NefDecoder<'a> {
         }
       } else if size == width*height*3 {
         cpp = 3;
-        try!(self.decode_snef_compressed(src, width, height))
+        Self::decode_snef_compressed(src, coeffs, width, height)
       } else if compression == 34713 {
         try!(self.decode_compressed(src, width, height, bps))
       } else {
@@ -141,7 +142,7 @@ impl<'a> Decoder for NefDecoder<'a> {
       }
     };
 
-    let mut img = RawImage::new(camera, width, height, try!(self.get_wb()), image);
+    let mut img = RawImage::new(camera, width, height, coeffs, image);
     if cpp == 3 {
       img.cpp = 3;
       img.blacklevels = [0,0,0,0];
@@ -209,7 +210,7 @@ impl<'a> NefDecoder<'a> {
     }
   }
 
-  fn create_hufftable(&self, num: usize, bps: usize) -> Result<HuffTable,String> {
+  fn create_hufftable(num: usize, bps: usize) -> Result<HuffTable,String> {
     let mut htable = HuffTable::empty(bps);
 
     let mut acc = 0 as usize;
@@ -232,7 +233,11 @@ impl<'a> NefDecoder<'a> {
     let meta = if let Some(meta) = metaifd.find_entry(Tag::NefMeta2) {meta} else {
       fetch_tag!(metaifd, Tag::NefMeta1)
     };
-    let mut stream = ByteStream::new(meta.get_data(), metaifd.get_endian());
+    Self::do_decode(src, meta.get_data(), metaifd.get_endian(), width, height, bps)
+  }
+
+  pub(crate) fn do_decode(src: &[u8], meta: &[u8], endian: Endian, width: usize, height: usize, bps: usize) -> Result<Vec<u16>, String> {
+    let mut stream = ByteStream::new(meta, endian);
     let v0 = stream.get_u8();
     let v1 = stream.get_u8();
     //println!("Nef version v0:{}, v1:{}", v0, v1);
@@ -249,7 +254,7 @@ impl<'a> NefDecoder<'a> {
     }
 
     // Create the huffman table used to decode
-    let mut htable = try!(self.create_hufftable(huff_select, bps));
+    let mut htable = try!(Self::create_hufftable(huff_select, bps));
 
     // Setup the predictors
     let mut pred_up1: [i32;2] = [stream.get_u16() as i32, stream.get_u16() as i32];
@@ -276,7 +281,7 @@ impl<'a> NefDecoder<'a> {
         points[i] = ((points[i-i%step] as usize * (step - i % step) +
                      points[i-i%step+step] as usize * (i%step)) / step) as u16;
       }
-      split = metaifd.get_endian().ru16(meta.get_data(), 562) as usize;
+      split = endian.ru16(meta, 562) as usize;
     } else if v0 != 70 && csize <= 0x4001 {
       for i in 0..csize {
         points[i] = stream.get_u16();
@@ -291,7 +296,7 @@ impl<'a> NefDecoder<'a> {
 
     for row in 0..height {
       if split > 0 && row == split {
-        htable = try!(self.create_hufftable(huff_select+1, bps));
+        htable = try!(Self::create_hufftable(huff_select+1, bps));
       }
       pred_up1[row&1] += try!(htable.huff_decode(&mut pump));
       pred_up2[row&1] += try!(htable.huff_decode(&mut pump));
@@ -312,14 +317,13 @@ impl<'a> NefDecoder<'a> {
 
   // Decodes 12 bit data in an YUY2-like pattern (2 Luma, 1 Chroma per 2 pixels).
   // We un-apply the whitebalance, so output matches lossless.
-  fn decode_snef_compressed(&self, src: &[u8], width: usize, height: usize) -> Result<Vec<u16>, String> {
-    let coeffs = try!(self.get_wb());
+  pub(crate) fn decode_snef_compressed(src: &[u8], coeffs: [f32; 4], width: usize, height: usize) -> Vec<u16> {
     let inv_wb_r = (1024.0 / coeffs[0]) as i32;
     let inv_wb_b = (1024.0 / coeffs[2]) as i32;
 
     //println!("Got invwb {} {}", inv_wb_r, inv_wb_b);
 
-    Ok(decode_threaded(width*3, height, &(|out: &mut [u16], row| {
+    decode_threaded(width*3, height, &(|out: &mut [u16], row| {
       let inb = &src[row*width*3..];
       let mut random = BEu32(inb, 0);
       for (o, i) in out.chunks_exact_mut(6).zip(inb.chunks_exact(6)) {
@@ -351,6 +355,6 @@ impl<'a> NefDecoder<'a> {
         o[4] = g;
         o[5] = clampbits((inv_wb_b * b as i32 + (1<<9)) >> 10, 15) as u16;
       }
-    })))
+    }))
   }
 }
