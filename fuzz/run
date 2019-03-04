@@ -1,0 +1,23 @@
+#!/usr/bin/env ruby
+
+if ARGV.size != 1
+  $stderr.puts "Usage: run [base|unwrapped]"
+  exit 2
+end
+
+BINARY = {
+  "base"      => "fuzz-rawloader",
+  "unwrapped" => "fuzz-rawloader-unwrapped",
+}
+FUZZ_OPTS = "-m 500 -t 2000"
+
+target = ARGV[0]
+bin = BINARY[target]
+
+if !bin
+  $stderr.puts "ERROR: Don't know how to run fuzzing target #{target.inspect}"
+  exit 3
+end
+
+
+system "cargo afl fuzz -i 'runs/#{target}/in' -o 'runs/#{target}/out' #{FUZZ_OPTS} ./target/release/#{bin}"
