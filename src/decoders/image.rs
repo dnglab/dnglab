@@ -52,8 +52,8 @@ pub enum RawImageData {
 }
 
 impl RawImage {
-  #[doc(hidden)] pub fn new(camera: Camera, width: usize, height: usize, wb_coeffs: [f32;4], image: Vec<u16>) -> RawImage {
-    let blacks = if camera.blackareah.1 != 0 || camera.blackareav.1 != 0 {
+  #[doc(hidden)] pub fn new(camera: Camera, width: usize, height: usize, wb_coeffs: [f32;4], image: Vec<u16>, dummy: bool) -> RawImage {
+    let blacks = if !dummy && (camera.blackareah.1 != 0 || camera.blackareav.1 != 0) {
       let mut avg = [0 as f32; 4];
       let mut count = [0 as f32; 4];
       for row in camera.blackareah.0 .. camera.blackareah.0+camera.blackareah.1 {

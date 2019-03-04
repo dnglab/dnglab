@@ -22,7 +22,7 @@ impl<'a> AriDecoder<'a> {
 }
 
 impl<'a> Decoder for AriDecoder<'a> {
-  fn image(&self) -> Result<RawImage,String> {
+  fn image(&self, dummy: bool) -> Result<RawImage,String> {
     let offset = LEu32(self.buffer, 8) as usize;
     let width = LEu32(self.buffer, 20) as usize;
     let height = LEu32(self.buffer, 24) as usize;
@@ -30,7 +30,7 @@ impl<'a> Decoder for AriDecoder<'a> {
     let camera = try!(self.rawloader.check_supported_with_everything("ARRI", &model, ""));
     let src = &self.buffer[offset..];
 
-    let image = decode_12be_msb32(src, width, height);
+    let image = decode_12be_msb32(src, width, height, dummy);
 
     ok_image(camera, width, height, try!(self.get_wb()), image)
   }

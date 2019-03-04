@@ -21,7 +21,7 @@ impl<'a> RafDecoder<'a> {
 }
 
 impl<'a> Decoder for RafDecoder<'a> {
-  fn image(&self) -> Result<RawImage,String> {
+  fn image(&self, dummy: bool) -> Result<RawImage,String> {
     let camera = try!(self.rawloader.check_supported(&self.tiff));
     let raw = fetch_ifd!(&self.tiff, Tag::RafOffsets);
     let (width,height) = if raw.has_entry(Tag::RafImageWidth) {
@@ -42,21 +42,21 @@ impl<'a> Decoder for RafDecoder<'a> {
       // Some fuji SuperCCD cameras include a second raw image next to the first one
       // that is identical but darker to the first. The two combined can produce
       // a higher dynamic range image. Right now we're ignoring it.
-      decode_16le_skiplines(src, width, height)
+      decode_16le_skiplines(src, width, height, dummy)
     } else if camera.find_hint("jpeg32") {
-      decode_12be_msb32(src, width, height)
+      decode_12be_msb32(src, width, height, dummy)
     } else {
       if src.len() < bps*width*height/8 {
         return Err("RAF: Don't know how to decode compressed yet".to_string())
       }
       match bps {
-        12 => decode_12le(src, width, height),
-        14 => decode_14le_unpacked(src, width, height),
+        12 => decode_12le(src, width, height, dummy),
+        14 => decode_14le_unpacked(src, width, height, dummy),
         16 => {
           if self.tiff.little_endian() {
-            decode_16le(src, width, height)
+            decode_16le(src, width, height, dummy)
           } else {
-            decode_16be(src, width, height)
+            decode_16be(src, width, height, dummy)
           }
         },
         _ => {return Err(format!("RAF: Don't know how to decode bps {}", bps).to_string());},
@@ -64,7 +64,7 @@ impl<'a> Decoder for RafDecoder<'a> {
     };
 
     if camera.find_hint("fuji_rotation") || camera.find_hint("fuji_rotation_alt") {
-      let (width, height, image) = RafDecoder::rotate_image(&image, &camera, width, height);
+      let (width, height, image) = RafDecoder::rotate_image(&image, &camera, width, height, dummy);
       Ok(RawImage {
         make: camera.make.clone(),
         model: camera.model.clone(),
@@ -100,7 +100,7 @@ impl<'a> RafDecoder<'a> {
     }
   }
 
-  fn rotate_image(src: &[u16], camera: &Camera, width: usize, height: usize) -> (usize, usize, Vec<u16>) {
+  fn rotate_image(src: &[u16], camera: &Camera, width: usize, height: usize, dummy: bool) -> (usize, usize, Vec<u16>) {
     let x = camera.crops[3];
     let y = camera.crops[0];
     let cropwidth = width - camera.crops[1] - x;
@@ -110,13 +110,15 @@ impl<'a> RafDecoder<'a> {
       let rotatedwidth = cropheight + cropwidth/2;
       let rotatedheight = rotatedwidth-1;
 
-      let mut out: Vec<u16> = alloc_image!(rotatedwidth, rotatedheight);
-      for row in 0..cropheight {
-        let inb = &src[(row+y)*width+x..];
-        for col in 0..cropwidth {
-          let out_row = rotatedwidth - (cropheight + 1 - row + (col >> 1));
-          let out_col = ((col+1) >> 1) + row;
-          out[out_row*rotatedwidth+out_col] = inb[col];
+      let mut out: Vec<u16> = alloc_image_plain!(rotatedwidth, rotatedheight, dummy);
+      if !dummy {
+        for row in 0..cropheight {
+          let inb = &src[(row+y)*width+x..];
+          for col in 0..cropwidth {
+            let out_row = rotatedwidth - (cropheight + 1 - row + (col >> 1));
+            let out_col = ((col+1) >> 1) + row;
+            out[out_row*rotatedwidth+out_col] = inb[col];
+          }
         }
       }
 
@@ -125,13 +127,15 @@ impl<'a> RafDecoder<'a> {
       let rotatedwidth = cropwidth + cropheight/2;
       let rotatedheight = rotatedwidth-1;
 
-      let mut out: Vec<u16> = alloc_image!(rotatedwidth, rotatedheight);
-      for row in 0..cropheight {
-        let inb = &src[(row+y)*width+x..];
-        for col in 0..cropwidth {
-          let out_row = cropwidth - 1 - col + (row>>1);
-          let out_col = ((row+1) >> 1) + col;
-          out[out_row*rotatedwidth+out_col] = inb[col];
+      let mut out: Vec<u16> = alloc_image_plain!(rotatedwidth, rotatedheight, dummy);
+      if !dummy {
+        for row in 0..cropheight {
+          let inb = &src[(row+y)*width+x..];
+          for col in 0..cropwidth {
+            let out_row = cropwidth - 1 - col + (row>>1);
+            let out_col = ((row+1) >> 1) + col;
+            out[out_row*rotatedwidth+out_col] = inb[col];
+          }
         }
       }
 

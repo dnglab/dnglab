@@ -21,7 +21,7 @@ impl<'a> KdcDecoder<'a> {
 }
 
 impl<'a> Decoder for KdcDecoder<'a> {
-  fn image(&self) -> Result<RawImage,String> {
+  fn image(&self, dummy: bool) -> Result<RawImage,String> {
     let camera = try!(self.rawloader.check_supported(&self.tiff));
 
     if camera.model == "Kodak DC120 ZOOM Digital Camera" {
@@ -31,7 +31,7 @@ impl<'a> Decoder for KdcDecoder<'a> {
       let off = fetch_tag!(raw, Tag::StripOffsets).get_usize(0);
       let src = &self.buffer[off..];
       let image = match fetch_tag!(raw, Tag::Compression).get_usize(0) {
-        1 => Self::decode_dc120(src, width, height),
+        1 => Self::decode_dc120(src, width, height, dummy),
         c => return Err(format!("KDC: DC120: Don't know how to handle compression type {}", c).to_string())
       };
 
@@ -52,7 +52,7 @@ impl<'a> Decoder for KdcDecoder<'a> {
     }
 
     let src = &self.buffer[off..];
-    let image = decode_12be(src, width, height);
+    let image = decode_12be(src, width, height, dummy);
 
     ok_image(camera, width, height, try!(self.get_wb()), image)
   }
@@ -81,8 +81,8 @@ impl<'a> KdcDecoder<'a> {
     }
   }
 
-  pub(crate) fn decode_dc120(src: &[u8], width: usize, height: usize) -> Vec<u16> {
-    let mut out = alloc_image!(width, height);
+  pub(crate) fn decode_dc120(src: &[u8], width: usize, height: usize, dummy: bool) -> Vec<u16> {
+    let mut out = alloc_image!(width, height, dummy);
 
     let mul: [usize;4] = [162, 192, 187,  92];
     let add: [usize;4] = [  0, 636, 424, 212];

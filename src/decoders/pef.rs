@@ -23,7 +23,7 @@ impl<'a> PefDecoder<'a> {
 }
 
 impl<'a> Decoder for PefDecoder<'a> {
-  fn image(&self) -> Result<RawImage,String> {
+  fn image(&self, dummy: bool) -> Result<RawImage,String> {
     let camera = try!(self.rawloader.check_supported(&self.tiff));
     let raw = fetch_ifd!(&self.tiff, Tag::StripOffsets);
     let width = fetch_tag!(raw, Tag::ImageWidth).get_usize(0);
@@ -32,9 +32,9 @@ impl<'a> Decoder for PefDecoder<'a> {
     let src = &self.buffer[offset..];
 
     let image = match fetch_tag!(raw, Tag::Compression).get_u32(0) {
-      1 => decode_16be(src, width, height),
-      32773 => decode_12be(src, width, height),
-      65535 => try!(self.decode_compressed(src, width, height)),
+      1 => decode_16be(src, width, height, dummy),
+      32773 => decode_12be(src, width, height, dummy),
+      65535 => try!(self.decode_compressed(src, width, height, dummy)),
       c => return Err(format!("PEF: Don't know how to read compression {}", c).to_string()),
     };
 
@@ -59,15 +59,16 @@ impl<'a> PefDecoder<'a> {
     }
   }
 
-  fn decode_compressed(&self, src: &[u8], width: usize, height: usize) -> Result<Vec<u16>,String> {
+  fn decode_compressed(&self, src: &[u8], width: usize, height: usize, dummy: bool) -> Result<Vec<u16>,String> {
     if let Some(huff) = self.tiff.find_entry(Tag::PefHuffman) {
-      Self::do_decode(src, Some((huff.get_data(), self.tiff.get_endian())), width, height)
+      Self::do_decode(src, Some((huff.get_data(), self.tiff.get_endian())), width, height, dummy)
     } else {
-      Self::do_decode(src, None, width, height)
+      Self::do_decode(src, None, width, height, dummy)
     }
   }
 
-  pub(crate) fn do_decode(src: &[u8], huff: Option<(&[u8], Endian)>, width: usize, height: usize) -> Result<Vec<u16>,String> {
+  pub(crate) fn do_decode(src: &[u8], huff: Option<(&[u8], Endian)>, width: usize, height: usize, dummy: bool) -> Result<Vec<u16>,String> {
+    let mut out = alloc_image_ok!(width, height, dummy);
     let mut htable = HuffTable::empty(16);
 
     /* Attempt to read huffman table, if found in makernote */
@@ -129,7 +130,6 @@ impl<'a> PefDecoder<'a> {
     let mut pred_left1: i32;
     let mut pred_left2: i32;
 
-    let mut out = alloc_image!(width, height);
     for row in 0..height {
       pred_up1[row & 1] += try!(htable.huff_decode(&mut pump));
       pred_up2[row & 1] += try!(htable.huff_decode(&mut pump));

@@ -121,7 +121,7 @@ pub fn decode_file<P: AsRef<Path>>(path: P) -> Result<RawImage,RawLoaderError> {
 /// };
 /// ```
 pub fn decode(reader: &mut Read) -> Result<RawImage,RawLoaderError> {
-  LOADER.decode(reader).map_err(|err| RawLoaderError::new(err))
+  LOADER.decode(reader, false).map_err(|err| RawLoaderError::new(err))
 }
 
 // Used to force lazy_static initializations. Useful for fuzzing.
@@ -137,4 +137,10 @@ pub fn force_initialization() {
 #[doc(hidden)]
 pub fn decode_unwrapped(reader: &mut Read) -> Result<RawImageData,RawLoaderError> {
   LOADER.decode_unwrapped(reader).map_err(|err| RawLoaderError::new(err))
+}
+
+// Used for fuzzing everything but the decoders themselves
+#[doc(hidden)]
+pub fn decode_dummy(reader: &mut Read) -> Result<RawImage,RawLoaderError> {
+  LOADER.decode(reader, true).map_err(|err| RawLoaderError::new(err))
 }

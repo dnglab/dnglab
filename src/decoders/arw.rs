@@ -22,14 +22,14 @@ impl<'a> ArwDecoder<'a> {
 }
 
 impl<'a> Decoder for ArwDecoder<'a> {
-  fn image(&self) -> Result<RawImage,String> {
+  fn image(&self, dummy: bool) -> Result<RawImage,String> {
     let camera = try!(self.rawloader.check_supported(&self.tiff));
     let data = self.tiff.find_ifds_with_tag(Tag::StripOffsets);
     if data.len() == 0 {
       if camera.model == "DSLR-A100" {
-        return self.image_a100(camera)
+        return self.image_a100(camera, dummy)
       } else { // try decoding as SRF
-        return self.image_srf(camera)
+        return self.image_srf(camera, dummy)
       }
     }
     let raw = data[0];
@@ -48,19 +48,22 @@ impl<'a> Decoder for ArwDecoder<'a> {
     let image = match compression {
       1 => {
         if camera.model == "DSC-R1" {
-          decode_14be_unpacked(src, width, height)
+          decode_14be_unpacked(src, width, height, dummy)
         } else {
-          decode_16le(src, width, height)
+          decode_16le(src, width, height, dummy)
         }
       }
       32767 => {
         if (width*height*bps) != count*8 {
           height += 8;
-          ArwDecoder::decode_arw1(src, width, height)
+          ArwDecoder::decode_arw1(src, width, height, dummy)
         } else {
           match bps {
-            8 => {let curve = try!(ArwDecoder::get_curve(raw)); ArwDecoder::decode_arw2(src, width, height, &curve)},
-            12 => decode_12le(src, width, height),
+            8 => {
+              let curve = try!(ArwDecoder::get_curve(raw));
+              ArwDecoder::decode_arw2(src, width, height, &curve, dummy)
+            },
+            12 => decode_12le(src, width, height, dummy),
             _ => return Err(format!("ARW2: Don't know how to decode images with {} bps", bps)),
           }
         }
@@ -73,7 +76,7 @@ impl<'a> Decoder for ArwDecoder<'a> {
 }
 
 impl<'a> ArwDecoder<'a> {
-  fn image_a100(&self, camera: Camera) -> Result<RawImage,String> {
+  fn image_a100(&self, camera: Camera, dummy: bool) -> Result<RawImage,String> {
     // We've caught the elusive A100 in the wild, a transitional format
     // between the simple sanity of the MRW custom format and the wordly
     // wonderfullness of the Tiff-based ARW format, let's shoot from the hip
@@ -87,7 +90,7 @@ impl<'a> ArwDecoder<'a> {
     let offset = fetch_tag!(raw, Tag::SubIFDs).get_usize(0);
 
     let src = &self.buffer[offset..];
-    let image = ArwDecoder::decode_arw1(src, width, height);
+    let image = ArwDecoder::decode_arw1(src, width, height, dummy);
 
     // Get the WB the MRW way
     let priv_offset = fetch_tag!(self.tiff, Tag::DNGPrivateArea).get_force_u32(0) as usize;
@@ -110,7 +113,7 @@ impl<'a> ArwDecoder<'a> {
     ok_image(camera, width, height, wb_coeffs, image)
   }
 
-  fn image_srf(&self, camera: Camera) -> Result<RawImage,String> {
+  fn image_srf(&self, camera: Camera, dummy: bool) -> Result<RawImage,String> {
     let data = self.tiff.find_ifds_with_tag(Tag::ImageWidth);
     if data.len() == 0 {
       return Err("ARW: Couldn't find the data IFD!".to_string())
@@ -119,29 +122,34 @@ impl<'a> ArwDecoder<'a> {
 
     let width = fetch_tag!(raw, Tag::ImageWidth).get_usize(0);
     let height = fetch_tag!(raw, Tag::ImageLength).get_usize(0);
-    let len = width*height*2;
 
-    // Constants taken from dcraw
-    let off: usize = 862144;
-    let key_off: usize = 200896;
-    let head_off: usize = 164600;
+    let image = if dummy {
+      vec![0]
+    } else {
+      let len = width*height*2;
 
-    // Replicate the dcraw contortions to get the "decryption" key
-    let offset = (self.buffer[key_off] as usize)*4;
-    let first_key = BEu32(self.buffer, key_off+offset);
-    let head = ArwDecoder::sony_decrypt(self.buffer, head_off, 40, first_key);
-    let second_key = LEu32(&head, 22);
+      // Constants taken from dcraw
+      let off: usize = 862144;
+      let key_off: usize = 200896;
+      let head_off: usize = 164600;
 
-    // "Decrypt" the whole image buffer
-    let image_data = ArwDecoder::sony_decrypt(self.buffer, off, len, second_key);
-    let image = decode_16be(&image_data, width, height);
+      // Replicate the dcraw contortions to get the "decryption" key
+      let offset = (self.buffer[key_off] as usize)*4;
+      let first_key = BEu32(self.buffer, key_off+offset);
+      let head = ArwDecoder::sony_decrypt(self.buffer, head_off, 40, first_key);
+      let second_key = LEu32(&head, 22);
+
+      // "Decrypt" the whole image buffer
+      let image_data = ArwDecoder::sony_decrypt(self.buffer, off, len, second_key);
+      decode_16be(&image_data, width, height, dummy)
+    };
 
     ok_image(camera, width, height, [NAN,NAN,NAN,NAN], image)
   }
 
-  pub(crate) fn decode_arw1(buf: &[u8], width: usize, height: usize) -> Vec<u16> {
+  pub(crate) fn decode_arw1(buf: &[u8], width: usize, height: usize, dummy: bool) -> Vec<u16> {
+    let mut out: Vec<u16> = alloc_image!(width, height, dummy);
     let mut pump = BitPumpMSB::new(buf);
-    let mut out: Vec<u16> = alloc_image!(width, height);
 
     let mut sum: i32 = 0;
     for x in 0..width {
@@ -172,8 +180,8 @@ impl<'a> ArwDecoder<'a> {
     out
   }
 
-  pub(crate) fn decode_arw2(buf: &[u8], width: usize, height: usize, curve: &LookupTable) -> Vec<u16> {
-    decode_threaded(width, height, &(|out: &mut [u16], row| {
+  pub(crate) fn decode_arw2(buf: &[u8], width: usize, height: usize, curve: &LookupTable, dummy: bool) -> Vec<u16> {
+    decode_threaded(width, height, dummy, &(|out: &mut [u16], row| {
       let mut pump = BitPumpLSB::new(&buf[(row*width)..]);
 
       let mut random = pump.peek_bits(16);

@@ -21,7 +21,7 @@ impl<'a> Rw2Decoder<'a> {
 }
 
 impl<'a> Decoder for Rw2Decoder<'a> {
-  fn image(&self) -> Result<RawImage,String> {
+  fn image(&self, dummy: bool) -> Result<RawImage,String> {
     let width: usize;
     let height: usize;
     let image = {
@@ -32,7 +32,7 @@ impl<'a> Decoder for Rw2Decoder<'a> {
         height = fetch_tag!(raw, Tag::PanaLength).get_usize(0);
         let offset = fetch_tag!(raw, Tag::PanaOffsets).get_usize(0);
         let src = &self.buffer[offset..];
-        Rw2Decoder::decode_panasonic(src, width, height, true)
+        Rw2Decoder::decode_panasonic(src, width, height, true, dummy)
       } else {
         let raw = fetch_ifd!(&self.tiff, Tag::StripOffsets);
         width = fetch_tag!(raw, Tag::PanaWidth).get_usize(0);
@@ -41,11 +41,11 @@ impl<'a> Decoder for Rw2Decoder<'a> {
         let src = &self.buffer[offset..];
 
         if src.len() >= width*height*2 {
-          decode_12le_unpacked_left_aligned(src, width, height)
+          decode_12le_unpacked_left_aligned(src, width, height, dummy)
         } else if src.len() >= width*height*3/2 {
-          decode_12le_wcontrol(src, width, height)
+          decode_12le_wcontrol(src, width, height, dummy)
         } else {
-          Rw2Decoder::decode_panasonic(src, width, height, false)
+          Rw2Decoder::decode_panasonic(src, width, height, false, dummy)
         }
       }
     };
@@ -86,8 +86,8 @@ impl<'a> Rw2Decoder<'a> {
     }
   }
 
-  pub(crate) fn decode_panasonic(buf: &[u8], width: usize, height: usize, split: bool) -> Vec<u16> {
-    decode_threaded_multiline(width, height, 5, &(|out: &mut [u16], row| {
+  pub(crate) fn decode_panasonic(buf: &[u8], width: usize, height: usize, split: bool, dummy: bool) -> Vec<u16> {
+    decode_threaded_multiline(width, height, 5, dummy, &(|out: &mut [u16], row| {
       let skip = ((width * row * 9) + (width/14 * 2 * row)) / 8;
       let blocks = skip / 0x4000;
       let src = &buf[blocks*0x4000..];

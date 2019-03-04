@@ -21,7 +21,7 @@ impl<'a> NrwDecoder<'a> {
 }
 
 impl<'a> Decoder for NrwDecoder<'a> {
-  fn image(&self) -> Result<RawImage,String> {
+  fn image(&self, dummy: bool) -> Result<RawImage,String> {
     let camera = try!(self.rawloader.check_supported(&self.tiff));
     let data = self.tiff.find_ifds_with_tag(Tag::CFAPattern);
     let raw = data.iter().find(|&&ifd| {
@@ -33,13 +33,13 @@ impl<'a> Decoder for NrwDecoder<'a> {
     let src = &self.buffer[offset..];
 
     let image = if camera.find_hint("coolpixsplit") {
-      decode_12be_interlaced_unaligned(src, width, height)
+      decode_12be_interlaced_unaligned(src, width, height, dummy)
     } else if camera.find_hint("msb32") {
-      decode_12be_msb32(src, width, height)
+      decode_12be_msb32(src, width, height, dummy)
     } else if camera.find_hint("unpacked") {
-      decode_16be(src, width, height)
+      decode_16be(src, width, height, dummy)
     } else {
-      decode_12be(src, width, height)
+      decode_12be(src, width, height, dummy)
     };
 
     let wb = self.get_wb(&camera)?;

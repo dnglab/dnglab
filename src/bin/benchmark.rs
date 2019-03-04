@@ -41,7 +41,7 @@ fn main() {
         Ok(val) => val,
         Err(e) => {error(&e); return},
       };
-      match decoder.image() {
+      match decoder.image(false) {
         Ok(_) => {},
         Err(e) => error(&e),
       }

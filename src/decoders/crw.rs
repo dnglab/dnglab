@@ -136,7 +136,7 @@ impl<'a> CrwDecoder<'a> {
 }
 
 impl<'a> Decoder for CrwDecoder<'a> {
-  fn image(&self) -> Result<RawImage,String> {
+  fn image(&self, dummy: bool) -> Result<RawImage,String> {
     let makemodel = fetch_tag!(self.ciff, CiffTag::MakeModel).get_strings();
     if makemodel.len() < 2 {
       return Err("CRW: MakeModel tag needs to have 2 strings".to_string())
@@ -144,12 +144,12 @@ impl<'a> Decoder for CrwDecoder<'a> {
     let camera = try!(self.rawloader.check_supported_with_everything(&makemodel[0], &makemodel[1], ""));
 
     let (width, height, image) = if camera.model == "Canon PowerShot Pro70" {
-      (1552,1024,decode_10le_lsb16(&self.buffer[26..], 1552, 1024))
+      (1552,1024,decode_10le_lsb16(&self.buffer[26..], 1552, 1024, dummy))
     } else {
       let sensorinfo = fetch_tag!(self.ciff, CiffTag::SensorInfo);
       let width = sensorinfo.get_usize(1);
       let height = sensorinfo.get_usize(2);
-      (width, height, try!(self.decode_compressed(&camera, width, height)))
+      (width, height, try!(self.decode_compressed(&camera, width, height, dummy)))
     };
 
     let wb = self.get_wb(&camera)?;
@@ -188,17 +188,17 @@ impl<'a> CrwDecoder<'a> {
     Ok([NAN,NAN,NAN,NAN])
   }
 
-  fn decode_compressed(&self, cam: &Camera, width: usize, height: usize) -> Result<Vec<u16>,String> {
+  fn decode_compressed(&self, cam: &Camera, width: usize, height: usize, dummy: bool) -> Result<Vec<u16>,String> {
     let lowbits = !cam.find_hint("nolowbits");
     let dectable = fetch_tag!(self.ciff, CiffTag::DecoderTable).get_usize(0);
     if dectable > 2 {
       return Err(format!("CRW: Unknown decoder table {}", dectable).to_string())
     }
-    Ok(Self::do_decode(&self.buffer, lowbits, dectable, width, height))
+    Ok(Self::do_decode(&self.buffer, lowbits, dectable, width, height, dummy))
   }
 
-  pub(crate) fn do_decode(buffer: &[u8], lowbits: bool, dectable: usize, width: usize, height: usize) -> Vec<u16> {
-    let mut out = alloc_image!(width, height);
+  pub(crate) fn do_decode(buffer: &[u8], lowbits: bool, dectable: usize, width: usize, height: usize, dummy: bool) -> Vec<u16> {
+    let mut out = alloc_image!(width, height, dummy);
 
     let ref htables = CRW_HUFF_TABLES[dectable];
     let offset = 540 + (lowbits as usize)*height*width/4;

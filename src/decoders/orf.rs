@@ -22,7 +22,7 @@ impl<'a> OrfDecoder<'a> {
 }
 
 impl<'a> Decoder for OrfDecoder<'a> {
-  fn image(&self) -> Result<RawImage,String> {
+  fn image(&self, dummy: bool) -> Result<RawImage,String> {
     let camera = try!(self.rawloader.check_supported(&self.tiff));
     let raw = fetch_ifd!(&self.tiff, Tag::StripOffsets);
     let width = fetch_tag!(raw, Tag::ImageWidth).get_usize(0);
@@ -44,20 +44,20 @@ impl<'a> Decoder for OrfDecoder<'a> {
 
     let image = if size >= width*height*2 {
       if self.tiff.little_endian() {
-        decode_12le_unpacked_left_aligned(src, width, height)
+        decode_12le_unpacked_left_aligned(src, width, height, dummy)
       } else {
-        decode_12be_unpacked_left_aligned(src, width, height)
+        decode_12be_unpacked_left_aligned(src, width, height, dummy)
       }
     } else if size >= width*height/10*16 {
-      decode_12le_wcontrol(src, width, height)
+      decode_12le_wcontrol(src, width, height, dummy)
     } else if size >= width*height*12/8 {
       if width < 3500 { // The interlaced stuff is all old and smaller
-        decode_12be_interlaced(src, width, height)
+        decode_12be_interlaced(src, width, height, dummy)
       } else {
-        decode_12be_msb32(src, width, height)
+        decode_12be_msb32(src, width, height, dummy)
       }
     } else {
-      OrfDecoder::decode_compressed(src, width, height)
+      OrfDecoder::decode_compressed(src, width, height, dummy)
     };
 
     match self.get_blacks() {
@@ -76,8 +76,8 @@ impl<'a> OrfDecoder<'a> {
    * is based on the output of all previous pixel (bar the first four)
    */
 
-  pub fn decode_compressed(buf: &'a [u8], width: usize, height: usize) -> Vec<u16> {
-    let mut out: Vec<u16> = alloc_image!(width, height);
+  pub fn decode_compressed(buf: &'a [u8], width: usize, height: usize, dummy: bool) -> Vec<u16> {
+    let mut out: Vec<u16> = alloc_image!(width, height, dummy);
 
     /* Build a table to quickly look up "high" value */
     let mut bittable: [u8; 4096] = [0; 4096];

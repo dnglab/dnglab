@@ -107,7 +107,7 @@ impl<'a> X3fDecoder<'a> {
 }
 
 impl<'a> Decoder for X3fDecoder<'a> {
-  fn image(&self) -> Result<RawImage,String> {
+  fn image(&self, dummy: bool) -> Result<RawImage,String> {
     let caminfo = try!(
       self.dir.images.iter().find(|i| i.typ == 2 && i.format == 0x12)
         .ok_or("X3F: Couldn't find camera info".to_string())
@@ -129,11 +129,11 @@ impl<'a> Decoder for X3fDecoder<'a> {
     let src = &self.buffer[offset..];
 
     let image = match imginfo.format {
-      35 => try!(self.decode_compressed(src, width, height)),
+      35 => try!(self.decode_compressed(src, width, height, dummy)),
       x => return Err(format!("X3F Don't know how to decode format {}", x).to_string())
     };
 
-    let mut img = RawImage::new(camera, width, height, try!(self.get_wb()), image);
+    let mut img = RawImage::new(camera, width, height, try!(self.get_wb()), image, dummy);
     img.cpp = 3;
     Ok(img)
   }
@@ -144,7 +144,7 @@ impl<'a> X3fDecoder<'a> {
     Ok([NAN,NAN,NAN,NAN])
   }
 
-  fn decode_compressed(&self, _: &[u8], _: usize, _: usize) -> Result<Vec<u16>, String> {
+  fn decode_compressed(&self, _buf: &[u8], _width: usize, _height: usize, _dummy: bool) -> Result<Vec<u16>, String> {
     return Err("X3F decoding not implemented yet".to_string())
   }
 }

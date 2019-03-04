@@ -21,7 +21,7 @@ impl<'a> IiqDecoder<'a> {
 }
 
 impl<'a> Decoder for IiqDecoder<'a> {
-  fn image(&self) -> Result<RawImage,String> {
+  fn image(&self, dummy: bool) -> Result<RawImage,String> {
     let camera = try!(self.rawloader.check_supported(&self.tiff));
 
     let off = LEu32(self.buffer, 16) as usize + 8;
@@ -53,7 +53,7 @@ impl<'a> Decoder for IiqDecoder<'a> {
       return Err("IIQ: couldn't find width and height".to_string())
     }
 
-    let image = Self::decode_compressed(self.buffer, data_offset, strip_offset, width, height);
+    let image = Self::decode_compressed(self.buffer, data_offset, strip_offset, width, height, dummy);
 
     ok_image_with_blacklevels(camera, width, height, try!(self.get_wb(wb_offset)), [black, black, black, black], image)
   }
@@ -66,10 +66,10 @@ impl<'a> IiqDecoder<'a> {
         LEf32(self.buffer, wb_offset+8), NAN])
   }
 
-  pub(crate) fn decode_compressed(buffer: &[u8], data_offset: usize, strip_offset: usize, width: usize, height: usize) -> Vec<u16>{
+  pub(crate) fn decode_compressed(buffer: &[u8], data_offset: usize, strip_offset: usize, width: usize, height: usize, dummy: bool) -> Vec<u16>{
     let lens: [u32; 10] = [8,7,6,9,11,10,5,12,14,13];
 
-    decode_threaded(width, height, &(|out: &mut [u16], row| {
+    decode_threaded(width, height, dummy, &(|out: &mut [u16], row| {
       let offset = data_offset + LEu32(buffer, strip_offset+row*4) as usize;
       let mut pump = BitPumpMSB32::new(&buffer[offset..]);
       let mut pred = [0 as u32; 2];

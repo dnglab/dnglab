@@ -244,7 +244,11 @@ impl<'a> LjpegDecompressor<'a> {
     Ok(())
   }
 
-  pub fn decode(&self, out: &mut [u16], x: usize, stripwidth: usize, width: usize, height: usize) -> Result<(),String> {
+  pub fn decode(&self, out: &mut [u16], x: usize, stripwidth: usize, width: usize, height: usize, dummy: bool) -> Result<(),String> {
+    if dummy {
+      return Ok(());
+    }
+
     if self.sof.components[0].super_h == 2 && self.sof.components[0].super_v == 2 {
       return decode_ljpeg_420(self, out, width, height)
     } else if self.sof.components[0].super_h == 2 && self.sof.components[0].super_v == 1 {
@@ -287,7 +291,7 @@ impl<'a> LjpegDecompressor<'a> {
     let ref htable1 = self.dhts[self.sof.components[0].dc_tbl_num];
     let ref htable2 = self.dhts[self.sof.components[1].dc_tbl_num];
     let bpred = 1 << (self.sof.precision - self.point_transform -1);
-    Ok(decode_threaded_multiline(width, height, 8, &(|strip: &mut [u16], block| {
+    Ok(decode_threaded_multiline(width, height, 8, false, &(|strip: &mut [u16], block| {
       let block = block / 8;
       let offset = offsets[block];
       let nlines = strip.len()/width;

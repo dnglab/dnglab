@@ -80,20 +80,20 @@ pub static LITTLE_ENDIAN: Endian = Endian{big: false};
   LittleEndian::read_u16(&buf[pos..pos+2])
 }
 
-pub fn decode_threaded<F>(width: usize, height: usize, closure: &F) -> Vec<u16>
+pub fn decode_threaded<F>(width: usize, height: usize, dummy: bool, closure: &F) -> Vec<u16>
   where F : Fn(&mut [u16], usize)+Sync {
 
-  let mut out: Vec<u16> = alloc_image!(width, height);
-  out.par_chunks_mut(width).enumerate().for_each(|(row, line)| {
+  let mut out: Vec<u16> = alloc_image!(width, height, dummy);
+    out.par_chunks_mut(width).enumerate().for_each(|(row, line)| {
     closure(line, row);
   });
   out
 }
 
-pub fn decode_threaded_multiline<F>(width: usize, height: usize, lines: usize, closure: &F) -> Vec<u16>
+pub fn decode_threaded_multiline<F>(width: usize, height: usize, lines: usize, dummy: bool, closure: &F) -> Vec<u16>
   where F : Fn(&mut [u16], usize)+Sync {
 
-  let mut out: Vec<u16> = alloc_image!(width, height);
+  let mut out: Vec<u16> = alloc_image!(width, height, dummy);
   out.par_chunks_mut(width*lines).enumerate().for_each(|(row, line)| {
     closure(line, row*lines);
   });

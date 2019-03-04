@@ -97,7 +97,7 @@ impl<'a> NefDecoder<'a> {
 }
 
 impl<'a> Decoder for NefDecoder<'a> {
-  fn image(&self) -> Result<RawImage,String> {
+  fn image(&self, dummy: bool) -> Result<RawImage,String> {
     let raw = fetch_ifd!(&self.tiff, Tag::CFAPattern);
     let mut width = fetch_tag!(raw, Tag::ImageWidth).get_usize(0);
     let height = fetch_tag!(raw, Tag::ImageLength).get_usize(0);
@@ -116,33 +116,33 @@ impl<'a> Decoder for NefDecoder<'a> {
 
     let image = if camera.model == "NIKON D100" {
       width = 3040;
-      decode_12be_wcontrol(src, width, height)
+      decode_12be_wcontrol(src, width, height, dummy)
     } else {
       if compression == 1 || size == width*height*bps/8 {
         match bps {
           14 => if self.tiff.little_endian() {
-            decode_14le_unpacked(src, width, height)
+            decode_14le_unpacked(src, width, height, dummy)
           } else {
-            decode_14be_unpacked(src, width, height)
+            decode_14be_unpacked(src, width, height, dummy)
           },
           12 => if self.tiff.little_endian() {
-            decode_12le(src, width, height)
+            decode_12le(src, width, height, dummy)
           } else {
-            decode_12be(src, width, height)
+            decode_12be(src, width, height, dummy)
           },
           x => return Err(format!("Don't know uncompressed bps {}", x).to_string()),
         }
       } else if size == width*height*3 {
         cpp = 3;
-        Self::decode_snef_compressed(src, coeffs, width, height)
+        Self::decode_snef_compressed(src, coeffs, width, height, dummy)
       } else if compression == 34713 {
-        try!(self.decode_compressed(src, width, height, bps))
+        try!(self.decode_compressed(src, width, height, bps, dummy))
       } else {
         return Err(format!("NEF: Don't know compression {}", compression).to_string())
       }
     };
 
-    let mut img = RawImage::new(camera, width, height, coeffs, image);
+    let mut img = RawImage::new(camera, width, height, coeffs, image, false);
     if cpp == 3 {
       img.cpp = 3;
       img.blacklevels = [0,0,0,0];
@@ -228,15 +228,16 @@ impl<'a> NefDecoder<'a> {
     Ok(htable)
   }
 
-  fn decode_compressed(&self, src: &[u8], width: usize, height: usize, bps: usize) -> Result<Vec<u16>, String> {
+  fn decode_compressed(&self, src: &[u8], width: usize, height: usize, bps: usize, dummy: bool) -> Result<Vec<u16>, String> {
     let metaifd = fetch_ifd!(self.tiff, Tag::NefMeta1);
     let meta = if let Some(meta) = metaifd.find_entry(Tag::NefMeta2) {meta} else {
       fetch_tag!(metaifd, Tag::NefMeta1)
     };
-    Self::do_decode(src, meta.get_data(), metaifd.get_endian(), width, height, bps)
+    Self::do_decode(src, meta.get_data(), metaifd.get_endian(), width, height, bps, dummy)
   }
 
-  pub(crate) fn do_decode(src: &[u8], meta: &[u8], endian: Endian, width: usize, height: usize, bps: usize) -> Result<Vec<u16>, String> {
+  pub(crate) fn do_decode(src: &[u8], meta: &[u8], endian: Endian, width: usize, height: usize, bps: usize, dummy: bool) -> Result<Vec<u16>, String> {
+    let mut out = alloc_image_ok!(width, height, dummy);
     let mut stream = ByteStream::new(meta, endian);
     let v0 = stream.get_u8();
     let v1 = stream.get_u8();
@@ -290,7 +291,6 @@ impl<'a> NefDecoder<'a> {
     }
     let curve = LookupTable::new(&points[0..max]);
 
-    let mut out = alloc_image!(width, height);
     let mut pump = BitPumpMSB::new(src);
     let mut random = pump.peek_bits(24);
 
@@ -317,13 +317,13 @@ impl<'a> NefDecoder<'a> {
 
   // Decodes 12 bit data in an YUY2-like pattern (2 Luma, 1 Chroma per 2 pixels).
   // We un-apply the whitebalance, so output matches lossless.
-  pub(crate) fn decode_snef_compressed(src: &[u8], coeffs: [f32; 4], width: usize, height: usize) -> Vec<u16> {
+  pub(crate) fn decode_snef_compressed(src: &[u8], coeffs: [f32; 4], width: usize, height: usize, dummy: bool) -> Vec<u16> {
     let inv_wb_r = (1024.0 / coeffs[0]) as i32;
     let inv_wb_b = (1024.0 / coeffs[2]) as i32;
 
     //println!("Got invwb {} {}", inv_wb_r, inv_wb_b);
 
-    decode_threaded(width*3, height, &(|out: &mut [u16], row| {
+    decode_threaded(width*3, height, dummy, &(|out: &mut [u16], row| {
       let inb = &src[row*width*3..];
       let mut random = BEu32(inb, 0);
       for (o, i) in out.chunks_exact_mut(6).zip(inb.chunks_exact(6)) {

@@ -69,15 +69,15 @@ impl<'a> MrwDecoder<'a> {
 }
 
 impl<'a> Decoder for MrwDecoder<'a> {
-  fn image(&self) -> Result<RawImage,String> {
+  fn image(&self, dummy: bool) -> Result<RawImage,String> {
     let camera = try!(self.rawloader.check_supported(&self.tiff));
     let src = &self.buffer[self.data_offset..];
 
     let buffer = if self.packed {
-      decode_12be(src, self.raw_width, self.raw_height)
+      decode_12be(src, self.raw_width, self.raw_height, dummy)
     }
     else {
-      decode_12be_unpacked(src, self.raw_width, self.raw_height)
+      decode_12be_unpacked(src, self.raw_width, self.raw_height, dummy)
     };
 
     let wb_coeffs = if camera.find_hint("swapped_wb") {

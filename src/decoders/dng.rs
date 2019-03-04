@@ -24,7 +24,7 @@ impl<'a> DngDecoder<'a> {
 }
 
 impl<'a> Decoder for DngDecoder<'a> {
-  fn image(&self) -> Result<RawImage,String> {
+  fn image(&self, dummy: bool) -> Result<RawImage,String> {
     let ifds = self.tiff.find_ifds_with_tag(Tag::Compression).into_iter().filter(|ifd| {
       let compression = (**ifd).find_entry(Tag::Compression).unwrap().get_u32(0);
       let subsampled = match (**ifd).find_entry(Tag::NewSubFileType) {
@@ -40,8 +40,8 @@ impl<'a> Decoder for DngDecoder<'a> {
     let linear = fetch_tag!(raw, Tag::PhotometricInt).get_usize(0) == 34892;
 
     let image = match fetch_tag!(raw, Tag::Compression).get_u32(0) {
-      1 => try!(self.decode_uncompressed(raw, width*cpp, height)),
-      7 => try!(self.decode_compressed(raw, width*cpp, height, cpp)),
+      1 => try!(self.decode_uncompressed(raw, width*cpp, height, dummy)),
+      7 => try!(self.decode_compressed(raw, width*cpp, height, cpp, dummy)),
       c => return Err(format!("Don't know how to read DNGs with compression {}", c).to_string()),
     };
 
@@ -169,14 +169,14 @@ impl<'a> DngDecoder<'a> {
     }
   }
 
-  pub fn decode_uncompressed(&self, raw: &TiffIFD, width: usize, height: usize) -> Result<Vec<u16>,String> {
+  pub fn decode_uncompressed(&self, raw: &TiffIFD, width: usize, height: usize, dummy: bool) -> Result<Vec<u16>,String> {
     let offset = fetch_tag!(raw, Tag::StripOffsets).get_usize(0);
     let src = &self.buffer[offset..];
 
     match fetch_tag!(raw, Tag::BitsPerSample).get_u32(0) {
-      16  => Ok(decode_16le(src, width, height)),
-      12  => Ok(decode_12be(src, width, height)),
-      10  => Ok(decode_10le(src, width, height)),
+      16  => Ok(decode_16le(src, width, height, dummy)),
+      12  => Ok(decode_12be(src, width, height, dummy)),
+      10  => Ok(decode_10le(src, width, height, dummy)),
       8   => {
         // It's 8 bit so there will be linearization involved surely!
         let linearization = fetch_tag!(self.tiff, Tag::Linearization);
@@ -187,22 +187,22 @@ impl<'a> DngDecoder<'a> {
           }
           LookupTable::new(&points)
         };
-        Ok(decode_8bit_wtable(src, &curve, width, height))
+        Ok(decode_8bit_wtable(src, &curve, width, height, dummy))
       },
       bps => Err(format!("DNG: Don't know about {} bps images", bps).to_string()),
     }
   }
 
-  pub fn decode_compressed(&self, raw: &TiffIFD, width: usize, height: usize, cpp: usize) -> Result<Vec<u16>,String> {
+  pub fn decode_compressed(&self, raw: &TiffIFD, width: usize, height: usize, cpp: usize, dummy: bool) -> Result<Vec<u16>,String> {
     if let Some(offsets) = raw.find_entry(Tag::StripOffsets) { // We're in a normal offset situation
       if offsets.count() != 1 {
         return Err("DNG: files with more than one slice not supported yet".to_string())
       }
       let offset = offsets.get_usize(0);
       let src = &self.buffer[offset..];
-      let mut out = alloc_image!(width, height);
+      let mut out = alloc_image_ok!(width, height, dummy);
       let decompressor = try!(LjpegDecompressor::new(src));
-      try!(decompressor.decode(&mut out, 0, width, width, height));
+      try!(decompressor.decode(&mut out, 0, width, width, height, dummy));
       Ok(out)
     } else if let Some(offsets) = raw.find_entry(Tag::TileOffsets) {
       // They've gone with tiling
@@ -215,7 +215,7 @@ impl<'a> DngDecoder<'a> {
                            coltiles*rowtiles, offsets.count()).to_string())
       }
 
-      Ok(decode_threaded_multiline(width, height, tlength, &(|strip: &mut [u16], row| {
+      Ok(decode_threaded_multiline(width, height, tlength, dummy, &(|strip: &mut [u16], row| {
         let row = row / tlength;
         for col in 0..coltiles {
           let offset = offsets.get_usize(row*coltiles+col);
@@ -224,7 +224,7 @@ impl<'a> DngDecoder<'a> {
           let bwidth = cmp::min(width, (col+1)*twidth) - col*twidth;
           let blength = cmp::min(height, (row+1)*tlength) - row*tlength;
           // FIXME: instead of unwrap() we need to propagate the error
-          decompressor.decode(strip, col*twidth, width, bwidth, blength).unwrap();
+          decompressor.decode(strip, col*twidth, width, bwidth, blength, dummy).unwrap();
         }
       })))
     } else {

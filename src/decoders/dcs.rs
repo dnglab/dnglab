@@ -21,7 +21,7 @@ impl<'a> DcsDecoder<'a> {
 }
 
 impl<'a> Decoder for DcsDecoder<'a> {
-  fn image(&self) -> Result<RawImage,String> {
+  fn image(&self, dummy: bool) -> Result<RawImage,String> {
     let camera = try!(self.rawloader.check_supported(&self.tiff));
     let data = self.tiff.find_ifds_with_tag(Tag::StripOffsets);
     let raw = data.iter().find(|&&ifd| {
@@ -40,7 +40,7 @@ impl<'a> Decoder for DcsDecoder<'a> {
       LookupTable::new(&t)
     };
 
-    let image = decode_8bit_wtable(src, &table, width, height);
+    let image = decode_8bit_wtable(src, &table, width, height, dummy);
     ok_image(camera, width, height, [NAN,NAN,NAN,NAN], image)
   }
 }

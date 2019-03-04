@@ -21,7 +21,7 @@ impl<'a> ErfDecoder<'a> {
 }
 
 impl<'a> Decoder for ErfDecoder<'a> {
-  fn image(&self) -> Result<RawImage,String> {
+  fn image(&self, dummy: bool) -> Result<RawImage,String> {
     let camera = try!(self.rawloader.check_supported(&self.tiff));
     let raw = fetch_ifd!(&self.tiff, Tag::CFAPattern);
     let width = fetch_tag!(raw, Tag::ImageWidth).get_usize(0);
@@ -29,7 +29,7 @@ impl<'a> Decoder for ErfDecoder<'a> {
     let offset = fetch_tag!(raw, Tag::StripOffsets).get_usize(0);
     let src = &self.buffer[offset..];
 
-    let image = decode_12be_wcontrol(src, width, height);
+    let image = decode_12be_wcontrol(src, width, height, dummy);
     ok_image(camera, width, height, try!(self.get_wb()), image)
   }
 }

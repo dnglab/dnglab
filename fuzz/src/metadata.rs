@@ -6,6 +6,6 @@ fn main() {
   rawloader::force_initialization();
 
   fuzz_nohook!(|data: &[u8]| {
-    rawloader::decode(&mut &data[..]).ok();
+    rawloader::decode_dummy(&mut &data[..]).ok();
   });
 }

@@ -22,7 +22,7 @@ impl<'a> MosDecoder<'a> {
 }
 
 impl<'a> Decoder for MosDecoder<'a> {
-  fn image(&self) -> Result<RawImage,String> {
+  fn image(&self, dummy: bool) -> Result<RawImage,String> {
     let make = try!(self.xmp_tag("Make"));
     let model_full = try!(self.xmp_tag("Model")).to_string();
     let model = model_full.split_terminator("(").next().unwrap();
@@ -37,13 +37,13 @@ impl<'a> Decoder for MosDecoder<'a> {
     let image = match fetch_tag!(raw, Tag::Compression).get_usize(0) {
       1 => {
         if self.tiff.little_endian() {
-          decode_16le(src, width, height)
+          decode_16le(src, width, height, dummy)
         } else {
-          decode_16be(src, width, height)
+          decode_16be(src, width, height, dummy)
         }
       },
       7 | 99 => {
-        try!(self.decode_compressed(&camera, src, width, height))
+        try!(self.decode_compressed(&camera, src, width, height, dummy))
       },
       x => return Err(format!("MOS: unsupported compression {}", x).to_string())
     };
@@ -85,16 +85,20 @@ impl<'a> MosDecoder<'a> {
     Ok(xmp[start+tag.len()+7..end].to_string())
   }
 
-  pub fn decode_compressed(&self, cam: &Camera, src: &[u8], width: usize, height: usize) -> Result<Vec<u16>,String> {
+  pub fn decode_compressed(&self, cam: &Camera, src: &[u8], width: usize, height: usize, dummy: bool) -> Result<Vec<u16>,String> {
     let interlaced = cam.find_hint("interlaced");
-    Self::do_decode(src, interlaced, width, height)
+    Self::do_decode(src, interlaced, width, height, dummy)
   }
 
-  pub(crate) fn do_decode(src: &[u8], interlaced:bool, width: usize, height: usize) -> Result<Vec<u16>,String> {
+  pub(crate) fn do_decode(src: &[u8], interlaced:bool, width: usize, height: usize, dummy: bool) -> Result<Vec<u16>,String> {
+    if dummy {
+      return Ok(vec![0]);
+    }
+
     let decompressor = try!(LjpegDecompressor::new_full(src, true, true));
     let ljpegout = try!(decompressor.decode_leaf(width, height));
     if interlaced {
-      let mut out = alloc_image!(width, height);
+      let mut out = alloc_image_ok!(width, height, dummy);
       for (row,line) in ljpegout.chunks_exact(width).enumerate() {
         let orow = if row & 1 == 1 {height-1-row/2} else {row/2};
         out[orow*width .. (orow+1)*width].copy_from_slice(line);
