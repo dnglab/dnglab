@@ -43,6 +43,8 @@ impl<'a> Decoder for ArwDecoder<'a> {
     } else {
       fetch_tag!(raw, Tag::BitsPerSample).get_usize(0)
     };
+    let mut white = camera.whitelevels[0];
+    let mut black = camera.blacklevels[0];
     let src = &self.buffer[offset..];
 
     let image = match compression {
@@ -63,7 +65,19 @@ impl<'a> Decoder for ArwDecoder<'a> {
               let curve = try!(ArwDecoder::get_curve(raw));
               ArwDecoder::decode_arw2(src, width, height, &curve, dummy)
             },
-            12 => decode_12le(src, width, height, dummy),
+            12 => {
+              /*
+                Some cameras like the A700 have an uncompressed mode where the output is 12bit and
+                does not require any curve. For these all we need to do is set 12bit black and white
+                points instead of the 14bit ones of the normal compressed 8bit -> 10bit -> 14bit mode.
+
+                We set these 12bit points by shifting down the 14bit points. It might make sense to
+                have a separate camera mode instead but since the values seem good we don't bother.
+              */
+              white >>= 2;
+              black >>= 2;
+              decode_12le(src, width, height, dummy)
+            },
             _ => return Err(format!("ARW2: Don't know how to decode images with {} bps", bps)),
           }
         }
@@ -71,7 +85,7 @@ impl<'a> Decoder for ArwDecoder<'a> {
       _ => return Err(format!("ARW: Don't know how to decode type {}", compression).to_string()),
     };
 
-    ok_image(camera, width, height, try!(self.get_wb()), image)
+    ok_image_with_black_white(camera, width, height, try!(self.get_wb()), black, white, image)
   }
 }
 
@@ -251,6 +265,7 @@ impl<'a> ArwDecoder<'a> {
         out[j] = out[(j-1)] + (1<<i);
       }
     }
+
     LookupTable::new(&out)
   }
 

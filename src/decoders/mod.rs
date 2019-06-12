@@ -343,6 +343,13 @@ pub fn ok_image_with_blacklevels(camera: Camera, width: usize, height: usize, wb
   Ok(img)
 }
 
+pub fn ok_image_with_black_white(camera: Camera, width: usize, height: usize, wb_coeffs: [f32;4], black: u16, white: u16, image: Vec<u16>) -> Result<RawImage,String> {
+  let mut img = RawImage::new(camera, width, height, wb_coeffs, image, false);
+  img.blacklevels = [black, black, black, black];
+  img.whitelevels = [white, white, white, white];
+  Ok(img)
+}
+
 /// The struct that holds all the info about the cameras and is able to decode a file
 #[derive(Debug, Clone)]
 pub struct RawLoader {
