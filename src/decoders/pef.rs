@@ -3,7 +3,6 @@ use decoders::tiff::*;
 use decoders::basics::*;
 use decoders::ljpeg::huffman::*;
 use std::f32::NAN;
-use itertools::Itertools;
 
 #[derive(Debug, Clone)]
 pub struct PefDecoder<'a> {
@@ -137,7 +136,7 @@ impl<'a> PefDecoder<'a> {
       pred_left2 = pred_up2[row & 1];
       out[row*width+0] = pred_left1 as u16;
       out[row*width+1] = pred_left2 as u16;
-      for col in (2..width).step(2) {
+      for col in (2..width).step_by(2) {
         pred_left1 += try!(htable.huff_decode(&mut pump));
         pred_left2 += try!(htable.huff_decode(&mut pump));
         out[row*width+col+0] = pred_left1 as u16;

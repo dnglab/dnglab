@@ -2,7 +2,6 @@ use decoders::*;
 use decoders::tiff::*;
 use decoders::basics::*;
 use std::f32::NAN;
-use itertools::Itertools;
 use std::cmp;
 
 #[derive(Debug, Clone)]
@@ -66,7 +65,7 @@ impl<'a> DcrDecoder<'a> {
 
     let mut random: u32 = 0;
     for row in 0..height {
-      for col in (0..width).step(256) {
+      for col in (0..width).step_by(256) {
         let mut pred: [i32;2] = [0;2];
         let buf = DcrDecoder::decode_segment(&mut input, cmp::min(256, width-col));
         for (i,val) in buf.iter().enumerate() {
@@ -86,7 +85,7 @@ impl<'a> DcrDecoder<'a> {
     let mut out: Vec<i32> = vec![0; size];
 
     let mut lens: [usize;256] = [0;256];
-    for i in (0..size).step(2) {
+    for i in (0..size).step_by(2) {
       lens[i] = (input.peek_u8() & 15) as usize;
       lens[i+1] = (input.get_u8() >> 4) as usize;
     }
@@ -101,7 +100,7 @@ impl<'a> DcrDecoder<'a> {
     for i in 0..size {
       let len = lens[i];
       if bits < len {
-        for j in (0..32).step(8) {
+        for j in (0..32).step_by(8) {
           bitbuf += (input.get_u8() as u64) << (bits+(j^8));
         }
         bits += 32;

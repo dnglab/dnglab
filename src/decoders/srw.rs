@@ -2,7 +2,6 @@ use decoders::*;
 use decoders::tiff::*;
 use decoders::basics::*;
 use std::f32::NAN;
-use itertools::Itertools;
 use std::cmp;
 
 #[derive(Debug, Clone)]
@@ -86,7 +85,7 @@ impl<'a> SrwDecoder<'a> {
       let img_up2  = width*(cmp::max(2, row)-2);
 
       // Image is arranged in groups of 16 pixels horizontally
-      for col in (0..width).step(16) {
+      for col in (0..width).step_by(16) {
         let dir = pump.get_bits(1) == 1;
 
         let ops = [pump.get_bits(2), pump.get_bits(2), pump.get_bits(2), pump.get_bits(2)];
@@ -100,7 +99,7 @@ impl<'a> SrwDecoder<'a> {
         }
 
         // First decode even pixels
-        for c in (0..16).step(2) {
+        for c in (0..16).step_by(2) {
           let l = len[(c >> 3)];
           let adj = pump.get_ibits_sextended(l);
           let predictor = if dir { // Upward prediction
@@ -113,7 +112,7 @@ impl<'a> SrwDecoder<'a> {
           }
         }
         // Now decode odd pixels
-        for c in (1..16).step(2) {
+        for c in (1..16).step_by(2) {
           let l = len[2 | (c >> 3)];
           let adj = pump.get_ibits_sextended(l);
           let predictor = if dir { // Upward prediction
@@ -131,8 +130,8 @@ impl<'a> SrwDecoder<'a> {
     // SRW1 apparently has red and blue swapped, just changing the CFA pattern to
     // match causes color fringing in high contrast areas because the actual pixel
     // locations would not match the CFA pattern
-    for row in (0..height).step(2) {
-      for col in (0..width).step(2) {
+    for row in (0..height).step_by(2) {
+      for col in (0..width).step_by(2) {
         out.swap(row*width+col+1, (row+1)*width+col);
       }
     }
@@ -271,7 +270,7 @@ impl<'a> SrwDecoder<'a> {
         diff_bits_mode[i][1] = init;
       }
 
-      for col in (0..width).step(16) {
+      for col in (0..width).step_by(16) {
         // Calculate how much scaling the final values will need
         scale = if (optflags & OPT_QP) == 0 && (col & 63) == 0 {
           let scalevals: [i32;3] = [0,-2,2];

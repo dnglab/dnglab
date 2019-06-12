@@ -2,7 +2,6 @@ use decoders::*;
 use decoders::tiff::*;
 use decoders::basics::*;
 use decoders::ljpeg::huffman::*;
-use itertools::Itertools;
 use std::f32::NAN;
 
 const NIKON_TREE: [[u8;32];6] = [
@@ -302,7 +301,7 @@ impl<'a> NefDecoder<'a> {
       pred_up2[row&1] += try!(htable.huff_decode(&mut pump));
       let mut pred_left1 = pred_up1[row&1];
       let mut pred_left2 = pred_up2[row&1];
-      for col in (0..width).step(2) {
+      for col in (0..width).step_by(2) {
         if col > 0 {
           pred_left1 += try!(htable.huff_decode(&mut pump));
           pred_left2 += try!(htable.huff_decode(&mut pump));

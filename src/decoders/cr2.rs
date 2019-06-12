@@ -3,7 +3,6 @@ use decoders::tiff::*;
 use decoders::basics::*;
 use decoders::ljpeg::*;
 use std::f32::NAN;
-use itertools::Itertools;
 
 #[derive(Debug, Clone)]
 pub struct Cr2Decoder<'a> {
@@ -103,8 +102,8 @@ impl<'a> Decoder for Cr2Decoder<'a> {
               let mut fieldstart = 0;
               let mut inpos = 0;
               for _ in 0..nfields {
-                for row in (0..height).step(2) {
-                  for col in (0..fieldwidth).step(3) {
+                for row in (0..height).step_by(2) {
+                  for col in (0..fieldwidth).step_by(3) {
                     let outpos = row*width+fieldstart+col;
                     out[outpos..outpos+3].copy_from_slice(&ljpegout[inpos..inpos+3]);
                     let outpos = (row+1)*width+fieldstart+col;

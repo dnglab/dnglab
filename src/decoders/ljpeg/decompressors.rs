@@ -1,7 +1,6 @@
 use decoders::basics::*;
 use decoders::ljpeg::LjpegDecompressor;
 use decoders::ljpeg::huffman::*;
-use itertools::Itertools;
 
 pub fn decode_ljpeg_2components(ljpeg: &LjpegDecompressor, out: &mut [u16], x: usize, stripwidth:usize, width: usize, height: usize) -> Result<(),String> {
   if ljpeg.sof.width*2 < width || ljpeg.sof.height < height {
@@ -20,7 +19,7 @@ pub fn decode_ljpeg_2components(ljpeg: &LjpegDecompressor, out: &mut [u16], x: u
 
   for row in 0..height {
     let startcol = if row == 0 {x+2} else {x};
-    for col in (startcol..(width+x)).step(2) {
+    for col in (startcol..(width+x)).step_by(2) {
       let (p1,p2) = if col == x {
         // At start of line predictor starts with start of previous line
         (out[(row-1)*stripwidth+x],out[(row-1)*stripwidth+1+x])
@@ -64,7 +63,7 @@ pub fn decode_ljpeg_3components(ljpeg: &LjpegDecompressor, out: &mut [u16], x: u
 
   for row in 0..height {
     let startcol = if row == 0 {x+3} else {x};
-    for col in (startcol..(width+x)).step(3) {
+    for col in (startcol..(width+x)).step_by(3) {
       let pos = if col == x {
         // At start of line predictor starts with start of previous line
         (row-1)*stripwidth+x
@@ -113,7 +112,7 @@ pub fn decode_ljpeg_4components(ljpeg: &LjpegDecompressor, out: &mut [u16], widt
 
   for row in 0..height {
     let startcol = if row == 0 {4} else {0};
-    for col in (startcol..width).step(4) {
+    for col in (startcol..width).step_by(4) {
       let pos = if col == 0 {
         // At start of line predictor starts with start of previous line
         (row-1)*width
@@ -186,9 +185,9 @@ pub fn decode_ljpeg_420(ljpeg: &LjpegDecompressor, out: &mut [u16], width: usize
   let cr = base_prediction + try!(htable3.huff_decode(&mut pump));
   set_yuv_420(out, 0, 0, width, y1, y2, y3, y4, cb, cr);
 
-  for row in (0..height).step(2) {
+  for row in (0..height).step_by(2) {
     let startcol = if row == 0 {6} else {0};
-    for col in (startcol..width).step(6) {
+    for col in (startcol..width).step_by(6) {
       let pos = if col == 0 {
         // At start of line predictor starts with first pixel of start of previous line
         (row-2)*width
@@ -243,7 +242,7 @@ pub fn decode_ljpeg_422(ljpeg: &LjpegDecompressor, out: &mut [u16], width: usize
 
   for row in 0..height {
     let startcol = if row == 0 {6} else {0};
-    for col in (startcol..width).step(6) {
+    for col in (startcol..width).step_by(6) {
       let pos = if col == 0 {
         // At start of line predictor starts with first pixel of start of previous line
         (row-1)*width
@@ -292,7 +291,7 @@ pub fn decode_leaf_strip(src: &[u8], out: &mut [u16], width: usize, height: usiz
   out[1] = (bpred + try!(htable2.huff_decode(&mut pump))) as u16;
   for row in 0..height {
     let startcol = if row == 0 {2} else {0};
-    for col in (startcol..width).step(2) {
+    for col in (startcol..width).step_by(2) {
       let pos = if col == 0 {
         // At start of line predictor starts with start of previous line
         (row-1)*width
