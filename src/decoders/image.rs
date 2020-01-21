@@ -1,5 +1,5 @@
-use decoders::*;
-use decoders::cfa::*;
+use crate::decoders::*;
+use crate::decoders::cfa::*;
 
 /// All the data needed to process this raw image, including the image data itself as well
 /// as all the needed metadata

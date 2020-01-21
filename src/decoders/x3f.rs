@@ -1,7 +1,8 @@
-use decoders::*;
-use decoders::tiff::*;
-use decoders::basics::*;
 use std::f32::NAN;
+
+use crate::decoders::*;
+use crate::decoders::tiff::*;
+use crate::decoders::basics::*;
 
 pub fn is_x3f(buf: &[u8]) -> bool {
   buf[0..4] == b"FOVb"[..]
@@ -42,9 +43,9 @@ impl X3fFile {
     let mut dirs = Vec::new();
     let mut images = Vec::new();
     for i in 0..entries {
-      let dir = try!(X3fDirectory::new(data, 12+i*12));
+      let dir = X3fDirectory::new(data, 12+i*12)?;
       if dir.id == "IMA2" {
-        let img = try!(X3fImage::new(&buf.buf, dir.offset));
+        let img = X3fImage::new(&buf.buf, dir.offset)?;
         images.push(img);
       }
       dirs.push(dir);
@@ -108,32 +109,32 @@ impl<'a> X3fDecoder<'a> {
 
 impl<'a> Decoder for X3fDecoder<'a> {
   fn image(&self, dummy: bool) -> Result<RawImage,String> {
-    let caminfo = try!(
-      self.dir.images.iter().find(|i| i.typ == 2 && i.format == 0x12)
-        .ok_or("X3F: Couldn't find camera info".to_string())
-    );
+    let caminfo = self.dir.images
+        .iter()
+        .find(|i| i.typ == 2 && i.format == 0x12)
+        .ok_or("X3F: Couldn't find camera info".to_string())?;
     let data = &self.buffer[caminfo.doffset+6..];
     if data[0..4] != b"Exif"[..] {
       return Err("X3F: Couldn't find EXIF info".to_string())
     }
-    let tiff = try!(TiffIFD::new_root(self.buffer, caminfo.doffset+12));
-    let camera = try!(self.rawloader.check_supported(&tiff));
+    let tiff = TiffIFD::new_root(self.buffer, caminfo.doffset+12)?;
+    let camera = self.rawloader.check_supported(&tiff)?;
 
-    let imginfo = try!(
-      self.dir.images.iter().find(|i| i.typ == 1 || i.typ == 3)
-        .ok_or("X3F: Couldn't find image".to_string())
-    );
+    let imginfo = self.dir.images
+        .iter()
+        .find(|i| i.typ == 1 || i.typ == 3)
+        .ok_or("X3F: Couldn't find image".to_string())?;
     let width = imginfo.width;
     let height = imginfo.height;
     let offset = imginfo.doffset;
     let src = &self.buffer[offset..];
 
     let image = match imginfo.format {
-      35 => try!(self.decode_compressed(src, width, height, dummy)),
+      35 => self.decode_compressed(src, width, height, dummy)?,
       x => return Err(format!("X3F Don't know how to decode format {}", x).to_string())
     };
 
-    let mut img = RawImage::new(camera, width, height, try!(self.get_wb()), image, dummy);
+    let mut img = RawImage::new(camera, width, height, self.get_wb()?, image, dummy);
     img.cpp = 3;
     Ok(img)
   }

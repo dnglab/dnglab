@@ -1,6 +1,6 @@
-use decoders::basics::*;
-use decoders::ljpeg::huffman::*;
-use decoders::ljpeg::decompressors::*;
+use crate::decoders::basics::*;
+use crate::decoders::ljpeg::huffman::*;
+use crate::decoders::ljpeg::decompressors::*;
 
 pub mod huffman;
 mod decompressors;
@@ -134,7 +134,7 @@ impl<'a> LjpegDecompressor<'a> {
 
   pub fn new_full(src: &'a [u8], dng_bug: bool, csfix: bool) -> Result<LjpegDecompressor, String> {
     let mut input = ByteStream::new(src, BIG_ENDIAN);
-    if try!(LjpegDecompressor::get_next_marker(&mut input, false)) != m(Marker::SOI) {
+    if LjpegDecompressor::get_next_marker(&mut input, false)? != m(Marker::SOI) {
       return Err("ljpeg: Image did not start with SOI. Probably not LJPEG".to_string())
     }
 
@@ -145,19 +145,19 @@ impl<'a> LjpegDecompressor<'a> {
     let pred;
     let pt;
     loop {
-      let marker = try!(LjpegDecompressor::get_next_marker(&mut input, true));
+      let marker = LjpegDecompressor::get_next_marker(&mut input, true)?;
       if marker == m(Marker::SOF3) {
         // Start of the frame, giving us the basic info
-        try!(sof.parse_sof(&mut input));
+        sof.parse_sof(&mut input)?;
         if sof.precision > 16 || sof.precision < 12 {
           return Err(format!("ljpeg: sof.precision {}", sof.precision).to_string())
         }
       } else if marker == m(Marker::DHT) {
         // Huffman table settings
-        try!(LjpegDecompressor::parse_dht(&mut input, &mut dht_init, &mut dht_bits, &mut dht_huffval));
+        LjpegDecompressor::parse_dht(&mut input, &mut dht_init, &mut dht_bits, &mut dht_huffval)?;
       } else if marker == m(Marker::SOS) {
         // Start of the actual stream, we can decode after this
-        let (a, b) = try!(sof.parse_sos(&mut input));
+        let (a, b) = sof.parse_sos(&mut input)?;
         pred = a; pt = b;
         break;
       } else if marker == m(Marker::EOI) {
@@ -171,7 +171,7 @@ impl<'a> LjpegDecompressor<'a> {
     let mut dhts = Vec::new();
     for i in 0..4 {
       dhts.push(if dht_init[i] {
-        try!(HuffTable::new(dht_bits[i], dht_huffval[i], sof.precision, dng_bug))
+        HuffTable::new(dht_bits[i], dht_huffval[i], sof.precision, dng_bug)?
       } else {
         HuffTable::empty(0)
       });
@@ -198,7 +198,7 @@ impl<'a> LjpegDecompressor<'a> {
       }
       return Ok(mark)
     }
-    try!(input.skip_to_marker());
+    input.skip_to_marker()?;
 
     Ok(input.get_u8())
   }

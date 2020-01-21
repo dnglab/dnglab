@@ -1,7 +1,9 @@
-use std::collections::HashMap;
-use decoders::basics::*;
-use std::str;
+use enum_primitive::{enum_from_primitive, enum_from_primitive_impl, enum_from_primitive_impl_ty};
 use num::FromPrimitive;
+use std::collections::HashMap;
+use std::str;
+
+use crate::decoders::basics::*;
 
 enum_from_primitive! {
 #[derive(Debug, Copy, Clone, PartialEq)]
@@ -173,7 +175,7 @@ impl<'a> TiffIFD<'a> {
     };
     let mut nextifd = endian.ru32(buf, offset+4) as usize;
     for _ in 0..100 { // Never read more than 100 IFDs
-      let ifd = try!(TiffIFD::new(&buf[offset..], nextifd, 0, offset, 0, endian));
+      let ifd = TiffIFD::new(&buf[offset..], nextifd, 0, offset, 0, endian)?;
       nextifd = ifd.nextifd;
       subifds.push(ifd);
       if nextifd == 0 {
@@ -254,7 +256,7 @@ impl<'a> TiffIFD<'a> {
         off += 4;
       }
 
-      let mut mainifd = try!(TiffIFD::new(buf, offset+off, base_offset, 0, depth, endian));
+      let mut mainifd = TiffIFD::new(buf, offset+off, base_offset, 0, depth, endian)?;
 
       if off == 12 {
         // Parse the Olympus ImgProc section if it exists
@@ -262,7 +264,7 @@ impl<'a> TiffIFD<'a> {
           entry.get_usize(0)
         } else { 0 };
         if ioff != 0 {
-          let iprocifd = try!(TiffIFD::new(&buf[offset+ioff..], 0, ioff, 0, depth, endian));
+          let iprocifd = TiffIFD::new(&buf[offset+ioff..], 0, ioff, 0, depth, endian)?;
           mainifd.subifds.push(iprocifd);
         }
       }

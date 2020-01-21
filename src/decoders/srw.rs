@@ -1,8 +1,9 @@
-use decoders::*;
-use decoders::tiff::*;
-use decoders::basics::*;
 use std::f32::NAN;
 use std::cmp;
+
+use crate::decoders::*;
+use crate::decoders::tiff::*;
+use crate::decoders::basics::*;
 
 #[derive(Debug, Clone)]
 pub struct SrwDecoder<'a> {
@@ -23,7 +24,7 @@ impl<'a> SrwDecoder<'a> {
 
 impl<'a> Decoder for SrwDecoder<'a> {
   fn image(&self, dummy: bool) -> Result<RawImage,String> {
-    let camera = try!(self.rawloader.check_supported(&self.tiff));
+    let camera = self.rawloader.check_supported(&self.tiff)?;
     let raw = fetch_ifd!(&self.tiff, Tag::StripOffsets);
     let width = fetch_tag!(raw, Tag::ImageWidth).get_usize(0);
     let height = fetch_tag!(raw, Tag::ImageLength).get_usize(0);
@@ -67,7 +68,7 @@ impl<'a> Decoder for SrwDecoder<'a> {
       x => return Err(format!("SRW: Don't know how to handle compression {}", x).to_string()),
     };
 
-    ok_image(camera, width, height, try!(self.get_wb()), image)
+    ok_image(camera, width, height, self.get_wb()?, image)
   }
 }
 

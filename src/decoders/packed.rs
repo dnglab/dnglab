@@ -1,4 +1,4 @@
-use decoders::basics::*;
+use crate::decoders::basics::*;
 
 pub fn decode_8bit_wtable(buf: &[u8], tbl: &LookupTable, width: usize, height: usize, dummy: bool) -> Vec<u16> {
   decode_threaded(width, height, dummy,&(|out: &mut [u16], row| {

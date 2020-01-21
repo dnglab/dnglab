@@ -1,8 +1,9 @@
-use decoders::*;
-use decoders::tiff::*;
-use decoders::basics::*;
 use std::f32::NAN;
 use std::cmp;
+
+use crate::decoders::*;
+use crate::decoders::tiff::*;
+use crate::decoders::basics::*;
 
 #[derive(Debug, Clone)]
 pub struct OrfDecoder<'a> {
@@ -23,7 +24,7 @@ impl<'a> OrfDecoder<'a> {
 
 impl<'a> Decoder for OrfDecoder<'a> {
   fn image(&self, dummy: bool) -> Result<RawImage,String> {
-    let camera = try!(self.rawloader.check_supported(&self.tiff));
+    let camera = self.rawloader.check_supported(&self.tiff)?;
     let raw = fetch_ifd!(&self.tiff, Tag::StripOffsets);
     let width = fetch_tag!(raw, Tag::ImageWidth).get_usize(0);
     let height = fetch_tag!(raw, Tag::ImageLength).get_usize(0);
@@ -35,7 +36,7 @@ impl<'a> Decoder for OrfDecoder<'a> {
     }
 
     let camera = if width >= camera.highres_width {
-      try!(self.rawloader.check_supported_with_mode(&self.tiff, "highres"))
+      self.rawloader.check_supported_with_mode(&self.tiff, "highres")?
     } else {
       camera
     };
@@ -61,8 +62,8 @@ impl<'a> Decoder for OrfDecoder<'a> {
     };
 
     match self.get_blacks() {
-      Ok(val) => ok_image_with_blacklevels(camera, width, height, try!(self.get_wb()), val, image),
-      Err(_)  => ok_image(camera, width, height, try!(self.get_wb()), image),
+      Ok(val) => ok_image_with_blacklevels(camera, width, height, self.get_wb()?, val, image),
+      Err(_)  => ok_image(camera, width, height, self.get_wb()?, image),
     }
   }
 }

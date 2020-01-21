@@ -1,8 +1,9 @@
-use decoders::*;
-use decoders::tiff::*;
-use decoders::ljpeg::*;
-use decoders::basics::*;
 use std::f32::NAN;
+
+use crate::decoders::*;
+use crate::decoders::tiff::*;
+use crate::decoders::ljpeg::*;
+use crate::decoders::basics::*;
 
 #[derive(Debug, Clone)]
 pub struct TfrDecoder<'a> {
@@ -23,7 +24,7 @@ impl<'a> TfrDecoder<'a> {
 
 impl<'a> Decoder for TfrDecoder<'a> {
   fn image(&self, dummy: bool) -> Result<RawImage,String> {
-    let camera = try!(self.rawloader.check_supported(&self.tiff));
+    let camera = self.rawloader.check_supported(&self.tiff)?;
     let raw = fetch_ifd!(&self.tiff, Tag::WhiteLevel);
     let width = fetch_tag!(raw, Tag::ImageWidth).get_usize(0);
     let height = fetch_tag!(raw, Tag::ImageLength).get_usize(0);
@@ -33,10 +34,10 @@ impl<'a> Decoder for TfrDecoder<'a> {
     let image = if camera.find_hint("uncompressed") {
       decode_16le(src, width, height, dummy)
     } else {
-      try!(self.decode_compressed(src, width, height, dummy))
+      self.decode_compressed(src, width, height, dummy)?
     };
 
-    ok_image(camera, width, height, try!(self.get_wb()), image)
+    ok_image(camera, width, height, self.get_wb()?, image)
   }
 }
 
@@ -48,8 +49,8 @@ impl<'a> TfrDecoder<'a> {
 
   fn decode_compressed(&self, src: &[u8], width: usize, height: usize, dummy: bool) -> Result<Vec<u16>,String> {
     let mut out = alloc_image_ok!(width, height, dummy);
-    let decompressor = try!(LjpegDecompressor::new_full(src, true, false));
-    try!(decompressor.decode(&mut out, 0, width, width, height, dummy));
+    let decompressor = LjpegDecompressor::new_full(src, true, false)?;
+    decompressor.decode(&mut out, 0, width, width, height, dummy)?;
     Ok(out)
   }
 }

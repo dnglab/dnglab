@@ -1,5 +1,3 @@
-extern crate rawloader;
-
 use std::env;
 
 fn main() {

@@ -1,8 +1,9 @@
-use decoders::*;
-use decoders::tiff::*;
-use decoders::basics::*;
-use decoders::ljpeg::*;
 use std::f32::NAN;
+
+use crate::decoders::*;
+use crate::decoders::tiff::*;
+use crate::decoders::basics::*;
+use crate::decoders::ljpeg::*;
 
 #[derive(Debug, Clone)]
 pub struct MosDecoder<'a> {
@@ -23,10 +24,10 @@ impl<'a> MosDecoder<'a> {
 
 impl<'a> Decoder for MosDecoder<'a> {
   fn image(&self, dummy: bool) -> Result<RawImage,String> {
-    let make = try!(self.xmp_tag("Make"));
-    let model_full = try!(self.xmp_tag("Model")).to_string();
+    let make = self.xmp_tag("Make")?;
+    let model_full = self.xmp_tag("Model")?.to_string();
     let model = model_full.split_terminator("(").next().unwrap();
-    let camera = try!(self.rawloader.check_supported_with_everything(&make, &model, ""));
+    let camera = self.rawloader.check_supported_with_everything(&make, &model, "")?;
 
     let raw = fetch_ifd!(&self.tiff, Tag::TileOffsets);
     let width = fetch_tag!(raw, Tag::ImageWidth).get_usize(0);
@@ -43,12 +44,12 @@ impl<'a> Decoder for MosDecoder<'a> {
         }
       },
       7 | 99 => {
-        try!(self.decode_compressed(&camera, src, width, height, dummy))
+        self.decode_compressed(&camera, src, width, height, dummy)?
       },
       x => return Err(format!("MOS: unsupported compression {}", x).to_string())
     };
 
-    ok_image(camera, width, height, try!(self.get_wb()), image)
+    ok_image(camera, width, height, self.get_wb()?, image)
   }
 }
 
@@ -79,8 +80,8 @@ impl<'a> MosDecoder<'a> {
   fn xmp_tag(&self, tag: &str) -> Result<String, String> {
     let xmp = fetch_tag!(self.tiff, Tag::Xmp).get_str();
     let error = format!("MOS: Couldn't find XMP tag {}", tag).to_string();
-    let start = try!(xmp.find(&format!("<tiff:{}>",tag)).ok_or(error.clone()));
-    let end   = try!(xmp.find(&format!("</tiff:{}>",tag)).ok_or(error.clone()));
+    let start = xmp.find(&format!("<tiff:{}>",tag)).ok_or(error.clone())?;
+    let end   = xmp.find(&format!("</tiff:{}>",tag)).ok_or(error.clone())?;
 
     Ok(xmp[start+tag.len()+7..end].to_string())
   }
@@ -95,8 +96,8 @@ impl<'a> MosDecoder<'a> {
       return Ok(vec![0]);
     }
 
-    let decompressor = try!(LjpegDecompressor::new_full(src, true, true));
-    let ljpegout = try!(decompressor.decode_leaf(width, height));
+    let decompressor = LjpegDecompressor::new_full(src, true, true)?;
+    let ljpegout = decompressor.decode_leaf(width, height)?;
     if interlaced {
       let mut out = alloc_image_ok!(width, height, dummy);
       for (row,line) in ljpegout.chunks_exact(width).enumerate() {

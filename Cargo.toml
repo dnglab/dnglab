@@ -8,6 +8,7 @@ documentation = "https://docs.rs/rawloader/"
 repository = "https://github.com/pedrocr/rawloader"
 license = "LGPL-2.1"
 categories = ["multimedia::images"]
+edition = "2018"
 
 build = "data/cameras/join.rs"
 

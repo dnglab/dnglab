@@ -1,8 +1,9 @@
-use decoders::*;
-use decoders::tiff::*;
-use decoders::basics::*;
-use decoders::ljpeg::huffman::*;
 use std::f32::NAN;
+
+use crate::decoders::*;
+use crate::decoders::tiff::*;
+use crate::decoders::basics::*;
+use crate::decoders::ljpeg::huffman::*;
 
 #[derive(Debug, Clone)]
 pub struct PefDecoder<'a> {
@@ -23,7 +24,7 @@ impl<'a> PefDecoder<'a> {
 
 impl<'a> Decoder for PefDecoder<'a> {
   fn image(&self, dummy: bool) -> Result<RawImage,String> {
-    let camera = try!(self.rawloader.check_supported(&self.tiff));
+    let camera = self.rawloader.check_supported(&self.tiff)?;
     let raw = fetch_ifd!(&self.tiff, Tag::StripOffsets);
     let width = fetch_tag!(raw, Tag::ImageWidth).get_usize(0);
     let height = fetch_tag!(raw, Tag::ImageLength).get_usize(0);
@@ -33,12 +34,12 @@ impl<'a> Decoder for PefDecoder<'a> {
     let image = match fetch_tag!(raw, Tag::Compression).get_u32(0) {
       1 => decode_16be(src, width, height, dummy),
       32773 => decode_12be(src, width, height, dummy),
-      65535 => try!(self.decode_compressed(src, width, height, dummy)),
+      65535 => self.decode_compressed(src, width, height, dummy)?,
       c => return Err(format!("PEF: Don't know how to read compression {}", c).to_string()),
     };
 
     let blacklevels = self.get_blacklevels().unwrap_or(camera.blacklevels);
-    ok_image_with_blacklevels(camera, width, height, try!(self.get_wb()), blacklevels, image)
+    ok_image_with_blacklevels(camera, width, height, self.get_wb()?, blacklevels, image)
   }
 }
 
@@ -121,7 +122,7 @@ impl<'a> PefDecoder<'a> {
       }
     }
 
-    try!(htable.initialize(true));
+    htable.initialize(true)?;
 
     let mut pump = BitPumpMSB::new(src);
     let mut pred_up1: [i32;2] = [0, 0];
@@ -130,15 +131,15 @@ impl<'a> PefDecoder<'a> {
     let mut pred_left2: i32;
 
     for row in 0..height {
-      pred_up1[row & 1] += try!(htable.huff_decode(&mut pump));
-      pred_up2[row & 1] += try!(htable.huff_decode(&mut pump));
+      pred_up1[row & 1] += htable.huff_decode(&mut pump)?;
+      pred_up2[row & 1] += htable.huff_decode(&mut pump)?;
       pred_left1 = pred_up1[row & 1];
       pred_left2 = pred_up2[row & 1];
       out[row*width+0] = pred_left1 as u16;
       out[row*width+1] = pred_left2 as u16;
       for col in (2..width).step_by(2) {
-        pred_left1 += try!(htable.huff_decode(&mut pump));
-        pred_left2 += try!(htable.huff_decode(&mut pump));
+        pred_left1 += htable.huff_decode(&mut pump)?;
+        pred_left2 += htable.huff_decode(&mut pump)?;
         out[row*width+col+0] = pred_left1 as u16;
         out[row*width+col+1] = pred_left2 as u16;
       }
