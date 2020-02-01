@@ -1,6 +1,6 @@
-use decoders::*;
-use decoders::tiff::*;
-use decoders::basics::*;
+use crate::decoders::*;
+use crate::decoders::tiff::*;
+use crate::decoders::basics::*;
 use std::f32::NAN;
 
 #[derive(Debug, Clone)]
@@ -22,7 +22,7 @@ impl<'a> MefDecoder<'a> {
 
 impl<'a> Decoder for MefDecoder<'a> {
   fn image(&self, dummy: bool) -> Result<RawImage,String> {
-    let camera = try!(self.rawloader.check_supported(&self.tiff));
+    let camera = self.rawloader.check_supported(&self.tiff)?;
     let raw = fetch_ifd!(&self.tiff, Tag::CFAPattern);
     let width = fetch_tag!(raw, Tag::ImageWidth).get_usize(0);
     let height = fetch_tag!(raw, Tag::ImageLength).get_usize(0);

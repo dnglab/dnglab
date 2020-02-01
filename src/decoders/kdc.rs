@@ -1,7 +1,8 @@
-use decoders::*;
-use decoders::tiff::*;
-use decoders::basics::*;
 use std::f32::NAN;
+
+use crate::decoders::*;
+use crate::decoders::tiff::*;
+use crate::decoders::basics::*;
 
 #[derive(Debug, Clone)]
 pub struct KdcDecoder<'a> {
@@ -22,7 +23,7 @@ impl<'a> KdcDecoder<'a> {
 
 impl<'a> Decoder for KdcDecoder<'a> {
   fn image(&self, dummy: bool) -> Result<RawImage,String> {
-    let camera = try!(self.rawloader.check_supported(&self.tiff));
+    let camera = self.rawloader.check_supported(&self.tiff)?;
 
     if camera.model == "Kodak DC120 ZOOM Digital Camera" {
       let width = 848;
@@ -54,7 +55,7 @@ impl<'a> Decoder for KdcDecoder<'a> {
     let src = &self.buffer[off..];
     let image = decode_12be(src, width, height, dummy);
 
-    ok_image(camera, width, height, try!(self.get_wb()), image)
+    ok_image(camera, width, height, self.get_wb()?, image)
   }
 }
 

@@ -1,27 +1,25 @@
+use serde_derive::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::io::{Read, BufReader};
 use std::fs::File;
 use std::error::Error;
 use std::panic;
 use std::path::Path;
+use toml::Value;
 
 macro_rules! fetch_tag {
   ($tiff:expr, $tag:expr) => (
-    try!(
-      $tiff.find_entry($tag).ok_or(
-        format!("Couldn't find tag {}",stringify!($tag)).to_string()
-      )
-    );
+    $tiff.find_entry($tag).ok_or(
+      format!("Couldn't find tag {}",stringify!($tag)).to_string()
+    )?;
   );
 }
 
 macro_rules! fetch_ifd {
   ($tiff:expr, $tag:expr) => (
-    try!(
-      $tiff.find_first_ifd($tag).ok_or(
-        format!("Couldn't find ifd with tag {}",stringify!($tag)).to_string()
-      )
-    );
+    $tiff.find_first_ifd($tag).ok_or(
+      format!("Couldn't find ifd with tag {}",stringify!($tag)).to_string()
+    )?;
   );
 }
 
@@ -64,8 +62,6 @@ macro_rules! alloc_image_ok {
   );
 }
 
-extern crate toml;
-use self::toml::Value;
 mod image;
 mod basics;
 mod packed;
@@ -120,7 +116,7 @@ pub struct Buffer {
 
 impl Buffer {
   /// Creates a new buffer from anything that can be read
-  pub fn new(reader: &mut Read) -> Result<Buffer, String> {
+  pub fn new(reader: &mut dyn Read) -> Result<Buffer, String> {
     let mut buffer = Vec::new();
     if let Err(err) = reader.read_to_end(&mut buffer) {
       return Err(format!("IOError: {}", err).to_string())
@@ -417,28 +413,28 @@ impl RawLoader {
   }
 
   /// Returns a decoder for a given buffer
-  pub fn get_decoder<'b>(&'b self, buf: &'b Buffer) -> Result<Box<Decoder+'b>, String> {
+  pub fn get_decoder<'b>(&'b self, buf: &'b Buffer) -> Result<Box<dyn Decoder+'b>, String> {
     let buffer = &buf.buf;
 
     if mrw::is_mrw(buffer) {
       let dec = Box::new(mrw::MrwDecoder::new(buffer, &self));
-      return Ok(dec as Box<Decoder>);
+      return Ok(dec as Box<dyn Decoder>);
     }
 
     if ciff::is_ciff(buffer) {
-      let ciff = try!(ciff::CiffIFD::new_file(buf));
+      let ciff = ciff::CiffIFD::new_file(buf)?;
       let dec = Box::new(crw::CrwDecoder::new(buffer, ciff, &self));
-      return Ok(dec as Box<Decoder>);
+      return Ok(dec as Box<dyn Decoder>);
     }
 
     if ari::is_ari(buffer) {
       let dec = Box::new(ari::AriDecoder::new(buffer, &self));
-      return Ok(dec as Box<Decoder>);
+      return Ok(dec as Box<dyn Decoder>);
     }
 
     if x3f::is_x3f(buffer) {
       let dec = Box::new(x3f::X3fDecoder::new(buf, &self));
-      return Ok(dec as Box<Decoder>);
+      return Ok(dec as Box<dyn Decoder>);
     }
 
     if let Ok(tiff) = TiffIFD::new_file(buffer) {
@@ -453,7 +449,7 @@ impl RawLoader {
 
       if tiff.has_entry(Tag::Make) {
         macro_rules! use_decoder {
-            ($dec:ty, $buf:ident, $tiff:ident, $rawdec:ident) => (Ok(Box::new(<$dec>::new($buf, $tiff, $rawdec)) as Box<Decoder>));
+            ($dec:ty, $buf:ident, $tiff:ident, $rawdec:ident) => (Ok(Box::new(<$dec>::new($buf, $tiff, $rawdec)) as Box<dyn Decoder>));
         }
 
         return match fetch_tag!(tiff, Tag::Make).get_str().to_string().as_ref() {
@@ -523,13 +519,13 @@ impl RawLoader {
   }
 
   fn decode_unsafe(&self, buffer: &Buffer, dummy: bool) -> Result<RawImage,String> {
-    let decoder = try!(self.get_decoder(&buffer));
+    let decoder = self.get_decoder(&buffer)?;
     decoder.image(dummy)
   }
 
   /// Decodes an input into a RawImage
-  pub fn decode(&self, reader: &mut Read, dummy: bool) -> Result<RawImage,String> {
-    let buffer = try!(Buffer::new(reader));
+  pub fn decode(&self, reader: &mut dyn Read, dummy: bool) -> Result<RawImage,String> {
+    let buffer = Buffer::new(reader)?;
 
     match panic::catch_unwind(|| {
       self.decode_unsafe(&buffer, dummy)
@@ -549,11 +545,11 @@ impl RawLoader {
     self.decode(&mut buffered_file, false)
   }
 
-  // Decodes an unwraped input (just the image data with minimal metadata) into a RawImage
+  // Decodes an unwrapped input (just the image data with minimal metadata) into a RawImage
   // This is only useful for fuzzing really
   #[doc(hidden)]
-  pub fn decode_unwrapped(&self, reader: &mut Read) -> Result<RawImageData,String> {
-    let buffer = try!(Buffer::new(reader));
+  pub fn decode_unwrapped(&self, reader: &mut dyn Read) -> Result<RawImageData,String> {
+    let buffer = Buffer::new(reader)?;
 
     match panic::catch_unwind(|| {
       unwrapped::decode_unwrapped(&buffer)

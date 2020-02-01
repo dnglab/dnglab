@@ -1,8 +1,9 @@
-use decoders::*;
-use decoders::tiff::*;
-use decoders::basics::*;
 use std::f32::NAN;
 use std::cmp;
+
+use crate::decoders::*;
+use crate::decoders::tiff::*;
+use crate::decoders::basics::*;
 
 #[derive(Debug, Clone)]
 pub struct ArwDecoder<'a> {
@@ -23,7 +24,7 @@ impl<'a> ArwDecoder<'a> {
 
 impl<'a> Decoder for ArwDecoder<'a> {
   fn image(&self, dummy: bool) -> Result<RawImage,String> {
-    let camera = try!(self.rawloader.check_supported(&self.tiff));
+    let camera = self.rawloader.check_supported(&self.tiff)?;
     let data = self.tiff.find_ifds_with_tag(Tag::StripOffsets);
     if data.len() == 0 {
       if camera.model == "DSLR-A100" {
@@ -62,7 +63,7 @@ impl<'a> Decoder for ArwDecoder<'a> {
         } else {
           match bps {
             8 => {
-              let curve = try!(ArwDecoder::get_curve(raw));
+              let curve = ArwDecoder::get_curve(raw)?;
               ArwDecoder::decode_arw2(src, width, height, &curve, dummy)
             },
             12 => {
@@ -85,7 +86,7 @@ impl<'a> Decoder for ArwDecoder<'a> {
       _ => return Err(format!("ARW: Don't know how to decode type {}", compression).to_string()),
     };
 
-    ok_image_with_black_white(camera, width, height, try!(self.get_wb()), black, white, image)
+    ok_image_with_black_white(camera, width, height, self.get_wb()?, black, white, image)
   }
 }
 
@@ -228,7 +229,7 @@ impl<'a> ArwDecoder<'a> {
 
   fn get_wb(&self) -> Result<[f32;4], String> {
     let priv_offset = fetch_tag!(self.tiff, Tag::DNGPrivateArea).get_force_u32(0) as usize;
-    let priv_tiff = try!(TiffIFD::new(self.buffer, priv_offset, 0, 0, 0, LITTLE_ENDIAN));
+    let priv_tiff = TiffIFD::new(self.buffer, priv_offset, 0, 0, 0, LITTLE_ENDIAN)?;
     let sony_offset = fetch_tag!(priv_tiff, Tag::SonyOffset).get_usize(0);
     let sony_length = fetch_tag!(priv_tiff, Tag::SonyLength).get_usize(0);
     let sony_key = fetch_tag!(priv_tiff, Tag::SonyKey).get_u32(0);

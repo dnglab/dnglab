@@ -9,8 +9,6 @@
 //! use std::io::prelude::*;
 //! use std::io::BufWriter;
 //!
-//! extern crate rawloader;
-//!
 //! fn main() {
 //!   let args: Vec<_> = env::args().collect();
 //!   if args.len() != 2 {
@@ -47,11 +45,7 @@
   unused_qualifications
 )]
 
-#[macro_use] extern crate enum_primitive;
-extern crate num;
-#[macro_use] extern crate lazy_static;
-#[macro_use] extern crate serde_derive;
-extern crate itertools;
+use lazy_static::lazy_static;
 
 mod decoders;
 pub use decoders::RawImage;
@@ -120,7 +114,7 @@ pub fn decode_file<P: AsRef<Path>>(path: P) -> Result<RawImage,RawLoaderError> {
 ///   Err(e) => ... some appropriate action when the file is unreadable ...
 /// };
 /// ```
-pub fn decode(reader: &mut Read) -> Result<RawImage,RawLoaderError> {
+pub fn decode(reader: &mut dyn Read) -> Result<RawImage,RawLoaderError> {
   LOADER.decode(reader, false).map_err(|err| RawLoaderError::new(err))
 }
 
@@ -135,12 +129,12 @@ pub fn force_initialization() {
 // Used for fuzzing targets that just want to test the actual decoders instead of the full formats
 // with all their TIFF and other crazyness
 #[doc(hidden)]
-pub fn decode_unwrapped(reader: &mut Read) -> Result<RawImageData,RawLoaderError> {
+pub fn decode_unwrapped(reader: &mut dyn Read) -> Result<RawImageData,RawLoaderError> {
   LOADER.decode_unwrapped(reader).map_err(|err| RawLoaderError::new(err))
 }
 
 // Used for fuzzing everything but the decoders themselves
 #[doc(hidden)]
-pub fn decode_dummy(reader: &mut Read) -> Result<RawImage,RawLoaderError> {
+pub fn decode_dummy(reader: &mut dyn Read) -> Result<RawImage,RawLoaderError> {
   LOADER.decode(reader, true).map_err(|err| RawLoaderError::new(err))
 }

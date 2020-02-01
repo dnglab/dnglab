@@ -1,7 +1,8 @@
-use decoders::*;
-use decoders::tiff::*;
-use decoders::basics::*;
 use std::f32::NAN;
+
+use crate::decoders::*;
+use crate::decoders::tiff::*;
+use crate::decoders::basics::*;
 
 #[derive(Debug, Clone)]
 pub struct DcsDecoder<'a> {
@@ -22,7 +23,7 @@ impl<'a> DcsDecoder<'a> {
 
 impl<'a> Decoder for DcsDecoder<'a> {
   fn image(&self, dummy: bool) -> Result<RawImage,String> {
-    let camera = try!(self.rawloader.check_supported(&self.tiff));
+    let camera = self.rawloader.check_supported(&self.tiff)?;
     let data = self.tiff.find_ifds_with_tag(Tag::StripOffsets);
     let raw = data.iter().find(|&&ifd| {
       ifd.find_entry(Tag::ImageWidth).unwrap().get_u32(0) > 1000

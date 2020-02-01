@@ -1,7 +1,8 @@
-use decoders::*;
-use decoders::tiff::*;
-use decoders::basics::*;
 use std::f32::NAN;
+
+use crate::decoders::*;
+use crate::decoders::tiff::*;
+use crate::decoders::basics::*;
 
 #[derive(Debug, Clone)]
 pub struct Rw2Decoder<'a> {
@@ -62,9 +63,9 @@ impl<'a> Decoder for Rw2Decoder<'a> {
         "16:9"
       }
     };
-    let camera = try!(self.rawloader.check_supported_with_mode(&self.tiff, mode));
+    let camera = self.rawloader.check_supported_with_mode(&self.tiff, mode)?;
 
-    ok_image(camera, width, height, try!(self.get_wb()), image)
+    ok_image(camera, width, height, self.get_wb()?, image)
   }
 }
 

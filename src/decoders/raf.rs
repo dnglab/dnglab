@@ -1,7 +1,8 @@
-use decoders::*;
-use decoders::tiff::*;
-use decoders::basics::*;
 use std::f32::NAN;
+
+use crate::decoders::*;
+use crate::decoders::tiff::*;
+use crate::decoders::basics::*;
 
 #[derive(Debug, Clone)]
 pub struct RafDecoder<'a> {
@@ -22,7 +23,7 @@ impl<'a> RafDecoder<'a> {
 
 impl<'a> Decoder for RafDecoder<'a> {
   fn image(&self, dummy: bool) -> Result<RawImage,String> {
-    let camera = try!(self.rawloader.check_supported(&self.tiff));
+    let camera = self.rawloader.check_supported(&self.tiff)?;
     let raw = fetch_ifd!(&self.tiff, Tag::RafOffsets);
     let (width,height) = if raw.has_entry(Tag::RafImageWidth) {
       (fetch_tag!(raw, Tag::RafImageWidth).get_usize(0),
@@ -73,7 +74,7 @@ impl<'a> Decoder for RafDecoder<'a> {
         width: width,
         height: height,
         cpp: 1,
-        wb_coeffs: try!(self.get_wb()),
+        wb_coeffs: self.get_wb()?,
         data: RawImageData::Integer(image),
         blacklevels: camera.blacklevels,
         whitelevels: camera.whitelevels,
@@ -84,7 +85,7 @@ impl<'a> Decoder for RafDecoder<'a> {
         orientation: camera.orientation,
       })
     } else {
-      ok_image(camera, width, height, try!(self.get_wb()), image)
+      ok_image(camera, width, height, self.get_wb()?, image)
     }
   }
 }

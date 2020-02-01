@@ -1,7 +1,8 @@
-use decoders::*;
-use decoders::tiff::*;
-use decoders::basics::*;
 use std::f32::NAN;
+
+use crate::decoders::*;
+use crate::decoders::tiff::*;
+use crate::decoders::basics::*;
 
 #[derive(Debug, Clone)]
 pub struct IiqDecoder<'a> {
@@ -22,7 +23,7 @@ impl<'a> IiqDecoder<'a> {
 
 impl<'a> Decoder for IiqDecoder<'a> {
   fn image(&self, dummy: bool) -> Result<RawImage,String> {
-    let camera = try!(self.rawloader.check_supported(&self.tiff));
+    let camera = self.rawloader.check_supported(&self.tiff)?;
 
     let off = LEu32(self.buffer, 16) as usize + 8;
     let entries = LEu32(self.buffer, off);
@@ -55,7 +56,7 @@ impl<'a> Decoder for IiqDecoder<'a> {
 
     let image = Self::decode_compressed(self.buffer, data_offset, strip_offset, width, height, dummy);
 
-    ok_image_with_blacklevels(camera, width, height, try!(self.get_wb(wb_offset)), [black, black, black, black], image)
+    ok_image_with_blacklevels(camera, width, height, self.get_wb(wb_offset)?, [black, black, black, black], image)
   }
 }
 

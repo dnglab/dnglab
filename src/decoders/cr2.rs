@@ -1,8 +1,9 @@
-use decoders::*;
-use decoders::tiff::*;
-use decoders::basics::*;
-use decoders::ljpeg::*;
 use std::f32::NAN;
+
+use crate::decoders::*;
+use crate::decoders::tiff::*;
+use crate::decoders::basics::*;
+use crate::decoders::ljpeg::*;
 
 #[derive(Debug, Clone)]
 pub struct Cr2Decoder<'a> {
@@ -23,7 +24,7 @@ impl<'a> Cr2Decoder<'a> {
 
 impl<'a> Decoder for Cr2Decoder<'a> {
   fn image(&self, dummy: bool) -> Result<RawImage,String> {
-    let camera = try!(self.rawloader.check_supported(&self.tiff));
+    let camera = self.rawloader.check_supported(&self.tiff)?;
     let (raw, offset) = {
       if let Some(raw) = self.tiff.find_first_ifd(Tag::Cr2Id) {
         (raw, fetch_tag!(raw, Tag::StripOffsets).get_usize(0))
@@ -38,14 +39,14 @@ impl<'a> Decoder for Cr2Decoder<'a> {
     let src = &self.buffer[offset..];
 
     let (width, height, cpp, image) = {
-      let decompressor = try!(LjpegDecompressor::new(src));
+      let decompressor = LjpegDecompressor::new(src)?;
       let ljpegwidth = decompressor.width();
       let mut width = ljpegwidth;
       let mut height = decompressor.height();
       let cpp = if decompressor.super_h() == 2 {3} else {1};
       let mut ljpegout = alloc_image_plain!(width, height, dummy);
 
-      try!(decompressor.decode(&mut ljpegout, 0, width, width, height, dummy));
+      decompressor.decode(&mut ljpegout, 0, width, width, height, dummy)?;
 
       // Linearize the output (applies only to D2000 as far as I can tell)
       if camera.find_hint("linearization") {
@@ -66,7 +67,7 @@ impl<'a> Decoder for Cr2Decoder<'a> {
 
       // Convert the YUV in sRAWs to RGB
       if cpp == 3 {
-        try!(self.convert_to_rgb(&camera, &mut ljpegout, dummy));
+        self.convert_to_rgb(&camera, &mut ljpegout, dummy)?;
         if raw.has_entry(Tag::ImageWidth) {
           width = fetch_tag!(raw, Tag::ImageWidth).get_usize(0) * cpp;
           height = fetch_tag!(raw, Tag::ImageLength).get_usize(0) ;
@@ -175,7 +176,7 @@ impl<'a> Cr2Decoder<'a> {
   }
 
   fn convert_to_rgb(&self, cam: &Camera, image: &mut [u16], dummy: bool) -> Result<(),String>{
-    let coeffs = try!(self.get_wb(cam));
+    let coeffs = self.get_wb(cam)?;
     if dummy {
       return Ok(())
     }

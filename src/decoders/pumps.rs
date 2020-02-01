@@ -1,4 +1,4 @@
-use decoders::basics::*;
+use crate::decoders::basics::*;
 
 #[derive(Debug, Copy, Clone)]
 pub struct BitPumpLSB<'a> {

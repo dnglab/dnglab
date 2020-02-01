@@ -1,7 +1,8 @@
-use decoders::*;
-use decoders::tiff::*;
-use decoders::basics::*;
 use std::f32;
+
+use crate::decoders::*;
+use crate::decoders::tiff::*;
+use crate::decoders::basics::*;
 
 pub fn is_mrw(buf: &[u8]) -> bool {
   BEu32(buf,0) == 0x004D524D
@@ -70,7 +71,7 @@ impl<'a> MrwDecoder<'a> {
 
 impl<'a> Decoder for MrwDecoder<'a> {
   fn image(&self, dummy: bool) -> Result<RawImage,String> {
-    let camera = try!(self.rawloader.check_supported(&self.tiff));
+    let camera = self.rawloader.check_supported(&self.tiff)?;
     let src = &self.buffer[self.data_offset..];
 
     let buffer = if self.packed {

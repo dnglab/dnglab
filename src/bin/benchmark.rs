@@ -2,9 +2,6 @@ use std::env;
 use std::fs::File;
 use std::error::Error;
 
-extern crate rawloader;
-extern crate time;
-
 fn usage() {
   println!("benchmark <file>");
   std::process::exit(1);

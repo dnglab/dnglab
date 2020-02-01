@@ -1,6 +1,7 @@
-use decoders::*;
-use decoders::basics::*;
 use std::f32::NAN;
+
+use crate::decoders::*;
+use crate::decoders::basics::*;
 
 pub fn is_ari(buf: &[u8]) -> bool {
   buf[0..4] == b"ARRI"[..]
@@ -27,12 +28,12 @@ impl<'a> Decoder for AriDecoder<'a> {
     let width = LEu32(self.buffer, 20) as usize;
     let height = LEu32(self.buffer, 24) as usize;
     let model = String::from_utf8_lossy(&self.buffer[668..]).split_terminator("\0").next().unwrap_or("").to_string();
-    let camera = try!(self.rawloader.check_supported_with_everything("ARRI", &model, ""));
+    let camera = self.rawloader.check_supported_with_everything("ARRI", &model, "")?;
     let src = &self.buffer[offset..];
 
     let image = decode_12be_msb32(src, width, height, dummy);
 
-    ok_image(camera, width, height, try!(self.get_wb()), image)
+    ok_image(camera, width, height, self.get_wb()?, image)
   }
 }
 

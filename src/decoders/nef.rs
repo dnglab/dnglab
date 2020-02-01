@@ -1,8 +1,10 @@
-use decoders::*;
-use decoders::tiff::*;
-use decoders::basics::*;
-use decoders::ljpeg::huffman::*;
+use lazy_static::lazy_static;
 use std::f32::NAN;
+
+use crate::decoders::*;
+use crate::decoders::tiff::*;
+use crate::decoders::basics::*;
+use crate::decoders::ljpeg::huffman::*;
 
 const NIKON_TREE: [[u8;32];6] = [
   // 12-bit lossy
@@ -105,13 +107,13 @@ impl<'a> Decoder for NefDecoder<'a> {
 
     // Make sure we always use a 12/14 bit mode to get correct white/blackpoints
     let mode = format!("{}bit", bps).to_string();
-    let camera = try!(self.rawloader.check_supported_with_mode(&self.tiff, &mode));
+    let camera = self.rawloader.check_supported_with_mode(&self.tiff, &mode)?;
 
     let offset = fetch_tag!(raw, Tag::StripOffsets).get_usize(0);
     let size = fetch_tag!(raw, Tag::StripByteCounts).get_usize(0);
     let src = &self.buffer[offset..];
     let mut cpp = 1;
-    let coeffs = try!(self.get_wb());
+    let coeffs = self.get_wb()?;
 
     let image = if camera.model == "NIKON D100" {
       width = 3040;
@@ -135,7 +137,7 @@ impl<'a> Decoder for NefDecoder<'a> {
         cpp = 3;
         Self::decode_snef_compressed(src, coeffs, width, height, dummy)
       } else if compression == 34713 {
-        try!(self.decode_compressed(src, width, height, bps, dummy))
+        self.decode_compressed(src, width, height, bps, dummy)?
       } else {
         return Err(format!("NEF: Don't know compression {}", compression).to_string())
       }
@@ -223,7 +225,7 @@ impl<'a> NefDecoder<'a> {
       htable.huffval[i] = NIKON_TREE[num][i+16] as u32;
     }
 
-    try!(htable.initialize(true));
+    htable.initialize(true)?;
     Ok(htable)
   }
 
@@ -254,7 +256,7 @@ impl<'a> NefDecoder<'a> {
     }
 
     // Create the huffman table used to decode
-    let mut htable = try!(Self::create_hufftable(huff_select, bps));
+    let mut htable = Self::create_hufftable(huff_select, bps)?;
 
     // Setup the predictors
     let mut pred_up1: [i32;2] = [stream.get_u16() as i32, stream.get_u16() as i32];
@@ -295,16 +297,16 @@ impl<'a> NefDecoder<'a> {
 
     for row in 0..height {
       if split > 0 && row == split {
-        htable = try!(Self::create_hufftable(huff_select+1, bps));
+        htable = Self::create_hufftable(huff_select+1, bps)?;
       }
-      pred_up1[row&1] += try!(htable.huff_decode(&mut pump));
-      pred_up2[row&1] += try!(htable.huff_decode(&mut pump));
+      pred_up1[row&1] += htable.huff_decode(&mut pump)?;
+      pred_up2[row&1] += htable.huff_decode(&mut pump)?;
       let mut pred_left1 = pred_up1[row&1];
       let mut pred_left2 = pred_up2[row&1];
       for col in (0..width).step_by(2) {
         if col > 0 {
-          pred_left1 += try!(htable.huff_decode(&mut pump));
-          pred_left2 += try!(htable.huff_decode(&mut pump));
+          pred_left1 += htable.huff_decode(&mut pump)?;
+          pred_left2 += htable.huff_decode(&mut pump)?;
         }
         out[row*width+col+0] = curve.dither(clampbits(pred_left1,15) as u16, &mut random);
         out[row*width+col+1] = curve.dither(clampbits(pred_left2,15) as u16, &mut random);

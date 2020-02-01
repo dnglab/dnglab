@@ -1,11 +1,8 @@
-extern crate rayon;
-use self::rayon::prelude::*;
+use byteorder::{BigEndian, LittleEndian, ByteOrder};
+use rayon::prelude::*;
 
-extern crate byteorder;
-use self::byteorder::{BigEndian, LittleEndian, ByteOrder};
-
-pub use decoders::packed::*;
-pub use decoders::pumps::*;
+pub use crate::decoders::packed::*;
+pub use crate::decoders::pumps::*;
 
 pub fn clampbits(val: i32, bits: u32) -> i32 {
   let temp = val >> bits;

@@ -1,10 +1,11 @@
-use decoders::*;
-use decoders::tiff::*;
-use decoders::basics::*;
-use decoders::ljpeg::*;
-use decoders::cfa::*;
 use std::f32::NAN;
 use std::cmp;
+
+use crate::decoders::*;
+use crate::decoders::tiff::*;
+use crate::decoders::basics::*;
+use crate::decoders::ljpeg::*;
+use crate::decoders::cfa::*;
 
 #[derive(Debug, Clone)]
 pub struct DngDecoder<'a> {
@@ -40,8 +41,8 @@ impl<'a> Decoder for DngDecoder<'a> {
     let linear = fetch_tag!(raw, Tag::PhotometricInt).get_usize(0) == 34892;
 
     let image = match fetch_tag!(raw, Tag::Compression).get_u32(0) {
-      1 => try!(self.decode_uncompressed(raw, width*cpp, height, dummy)),
-      7 => try!(self.decode_compressed(raw, width*cpp, height, cpp, dummy)),
+      1 => self.decode_uncompressed(raw, width*cpp, height, dummy)?,
+      7 => self.decode_compressed(raw, width*cpp, height, cpp, dummy)?,
       c => return Err(format!("Don't know how to read DNGs with compression {}", c).to_string()),
     };
 
@@ -69,13 +70,13 @@ impl<'a> Decoder for DngDecoder<'a> {
       width: width,
       height: height,
       cpp: cpp,
-      wb_coeffs: try!(self.get_wb()),
+      wb_coeffs: self.get_wb()?,
       data: RawImageData::Integer(image),
-      blacklevels: try!(self.get_blacklevels(raw)),
-      whitelevels: try!(self.get_whitelevels(raw)),
-      xyz_to_cam: try!(self.get_color_matrix()),
-      cfa: if linear {CFA::new("")} else {try!(self.get_cfa(raw))},
-      crops: try!(self.get_crops(raw, width, height)),
+      blacklevels: self.get_blacklevels(raw)?,
+      whitelevels: self.get_whitelevels(raw)?,
+      xyz_to_cam: self.get_color_matrix()?,
+      cfa: if linear {CFA::new("")} else {self.get_cfa(raw)?},
+      crops: self.get_crops(raw, width, height)?,
       blackareas: self.get_masked_areas(raw),
       orientation: orientation,
     })
@@ -201,8 +202,8 @@ impl<'a> DngDecoder<'a> {
       let offset = offsets.get_usize(0);
       let src = &self.buffer[offset..];
       let mut out = alloc_image_ok!(width, height, dummy);
-      let decompressor = try!(LjpegDecompressor::new(src));
-      try!(decompressor.decode(&mut out, 0, width, width, height, dummy));
+      let decompressor = LjpegDecompressor::new(src)?;
+      decompressor.decode(&mut out, 0, width, width, height, dummy)?;
       Ok(out)
     } else if let Some(offsets) = raw.find_entry(Tag::TileOffsets) {
       // They've gone with tiling

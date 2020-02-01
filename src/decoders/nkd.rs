@@ -1,5 +1,5 @@
-use decoders::*;
-use decoders::basics::*;
+use crate::decoders::*;
+use crate::decoders::basics::*;
 use std::f32::NAN;
 
 #[derive(Debug, Clone)]

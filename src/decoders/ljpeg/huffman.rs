@@ -35,7 +35,7 @@
 */
 
 use std::fmt;
-use decoders::basics::*;
+use crate::decoders::basics::*;
 
 const BIG_TABLE_BITS: u32 = 13;
 
@@ -106,7 +106,7 @@ impl HuffTable {
       initialized: false,
     };
     // Always use big table, haven't found a situation where it doesn't help
-    try!(tbl.initialize(true));
+    tbl.initialize(true)?;
     Ok(tbl)
   }
 
@@ -262,7 +262,7 @@ impl HuffTable {
   }
 
   // Taken from Figure F.16: extract next coded symbol from input stream
-  pub fn huff_decode(&self, pump: &mut BitPump) -> Result<i32,String> {
+  pub fn huff_decode(&self, pump: &mut dyn BitPump) -> Result<i32,String> {
     //First attempt to do complete decode, by using the first 14 bits
     if self.use_bigtable {
       let code = pump.peek_bits(BIG_TABLE_BITS) as usize;
@@ -273,12 +273,12 @@ impl HuffTable {
       }
     }
 
-    let len = try!(self.huff_len(pump));
+    let len = self.huff_len(pump)?;
     let diff = self.huff_diff(pump, len);
     Ok(diff)
   }
 
-  pub fn huff_len(&self, pump: &mut BitPump) -> Result<u32,String> {
+  pub fn huff_len(&self, pump: &mut dyn BitPump) -> Result<u32,String> {
     let mut code = pump.peek_bits(8) as usize;
     let val = self.numbits[code as usize] as u32;
     let len = val & 15;
@@ -305,7 +305,7 @@ impl HuffTable {
     }
   }
 
-  pub fn huff_diff(&self, pump: &mut BitPump, len: u32) -> i32 {
+  pub fn huff_diff(&self, pump: &mut dyn BitPump, len: u32) -> i32 {
     match len {
       0 => 0,
       16 => {
