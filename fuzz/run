@@ -5,7 +5,7 @@ require 'fileutils'
 FUZZ_OPTS = "-m 500 -t 2000"
 
 if ARGV.size != 1
-  $stderr.puts "Usage: run [base|unwrapped]"
+  $stderr.puts "Usage: run [decoders|metadata]"
   exit 2
 end
 
@@ -18,4 +18,4 @@ if !File.exist? bin
 end
 
 FileUtils.mkdir_p "runs/#{target}/"
-system "cargo afl fuzz -i 'runs/#{target}/in' -o 'runs/#{target}/out' #{FUZZ_OPTS} ./target/release/#{bin}"
+system "cargo afl fuzz -i 'runs/#{target}/in' -o 'runs/#{target}/out' #{FUZZ_OPTS} #{bin}"
