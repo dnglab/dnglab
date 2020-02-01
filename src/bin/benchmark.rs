@@ -31,7 +31,7 @@ fn main() {
     Err(e) => {error(&e); return},
   };
   let rawloader = rawloader::RawLoader::new();
-  let from_time = time::precise_time_ns();
+  let from_time = time::PrimitiveDateTime::now();
   {
     for _ in 0..ITERATIONS {
       let decoder = match rawloader.get_decoder(&buffer) {
@@ -44,8 +44,8 @@ fn main() {
       }
     }
   }
-  let to_time = time::precise_time_ns();
+  let to_time = time::PrimitiveDateTime::now();
 
-  let avgtime = ((to_time-from_time)/ITERATIONS/1000) as f64 / 1000.0;
+  let avgtime = (((to_time-from_time).whole_nanoseconds() as u64)/ITERATIONS/1000) as f64 / 1000.0;
   println!("Average decode time: {} ms ({} iterations)", avgtime, ITERATIONS);
 }
