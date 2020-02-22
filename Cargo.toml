@@ -15,7 +15,7 @@ build = "data/cameras/join.rs"
 [dependencies]
 toml = "0.5"
 time = "0.2"
-enum_primitive = "0.1"
+enumn = "0.1"
 num = "0.2"
 lazy_static = "1"
 byteorder = "1"
