@@ -407,7 +407,7 @@ impl<'a> TiffEntry<'a> {
 
     let bytesize: usize = count << DATASHIFTS[typ as usize];
     let doffset: usize = if bytesize <= 4 {
-      (offset + 8)
+      offset + 8
     } else {
       (e.ru32(buf, offset+8) as usize) - base_offset
     };

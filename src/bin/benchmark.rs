@@ -1,6 +1,6 @@
 use std::env;
 use std::fs::File;
-use std::error::Error;
+use std::time::Instant;
 
 fn usage() {
   println!("benchmark <file>");
@@ -24,14 +24,14 @@ fn main() {
 
   let mut f = match File::open(file) {
     Ok(val) => val,
-    Err(e) => {error(e.description());return},
+    Err(e) => {error(&e.to_string());return},
   };
   let buffer = match rawloader::Buffer::new(&mut f) {
     Ok(val) => val,
     Err(e) => {error(&e); return},
   };
   let rawloader = rawloader::RawLoader::new();
-  let from_time = time::PrimitiveDateTime::now();
+  let from_time = Instant::now();
   {
     for _ in 0..ITERATIONS {
       let decoder = match rawloader.get_decoder(&buffer) {
@@ -44,8 +44,8 @@ fn main() {
       }
     }
   }
-  let to_time = time::PrimitiveDateTime::now();
+  let duration = from_time.elapsed();
 
-  let avgtime = (((to_time-from_time).whole_nanoseconds() as u64)/ITERATIONS/1000) as f64 / 1000.0;
+  let avgtime = ((duration.as_nanos() as u64)/ITERATIONS/1000) as f64 / 1000.0;
   println!("Average decode time: {} ms ({} iterations)", avgtime, ITERATIONS);
 }

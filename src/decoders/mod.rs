@@ -2,7 +2,6 @@ use serde_derive::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::io::{Read, BufReader};
 use std::fs::File;
-use std::error::Error;
 use std::panic;
 use std::path::Path;
 use toml::Value;
@@ -539,7 +538,7 @@ impl RawLoader {
   pub fn decode_file(&self, path: &Path) -> Result<RawImage,String> {
     let file = match File::open(path) {
       Ok(val) => val,
-      Err(e) => {return Err(e.description().to_string())},
+      Err(e) => {return Err(e.to_string())},
     };
     let mut buffered_file = BufReader::new(file);
     self.decode(&mut buffered_file, false)
