@@ -1,6 +1,5 @@
 use std::env;
 use std::fs::File;
-use std::error::Error;
 use std::time::Instant;
 
 fn usage() {
@@ -25,7 +24,7 @@ fn main() {
 
   let mut f = match File::open(file) {
     Ok(val) => val,
-    Err(e) => {error(e.description());return},
+    Err(e) => {error(&e.to_string());return},
   };
   let buffer = match rawloader::Buffer::new(&mut f) {
     Ok(val) => val,
