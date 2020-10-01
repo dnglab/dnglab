@@ -1,10 +1,8 @@
-use enum_primitive::{enum_from_primitive, enum_from_primitive_impl, enum_from_primitive_impl_ty};
 use std::collections::HashMap;
 
 use crate::decoders::basics::*;
 use crate::decoders::Buffer;
 
-enum_from_primitive! {
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub enum CiffTag {
   Null         = 0x0000,
@@ -19,7 +17,6 @@ pub enum CiffTag {
   RawData      = 0x2005,
   SubIFD       = 0x300a,
   Exif         = 0x300b,
-}
 }
 
 fn ct (tag: CiffTag) -> u16 {
