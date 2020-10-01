@@ -15,7 +15,6 @@ build = "data/cameras/join.rs"
 [dependencies]
 toml = "0.5"
 enumn = "0.1"
-num = "0.3"
 lazy_static = "1"
 byteorder = "1"
 rayon = "1"
