@@ -5,18 +5,18 @@ use crate::decoders::Buffer;
 
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub enum CiffTag {
-  Null         = 0x0000,
+//Null         = 0x0000,
   ColorInfo1   = 0x0032,
   MakeModel    = 0x080a,
-  ShotInfo     = 0x102a,
+//ShotInfo     = 0x102a,
   ColorInfo2   = 0x102c,
   WhiteBalance = 0x10a9,
   SensorInfo   = 0x1031,
-  ImageInfo    = 0x1810,
+//ImageInfo    = 0x1810,
   DecoderTable = 0x1835,
-  RawData      = 0x2005,
-  SubIFD       = 0x300a,
-  Exif         = 0x300b,
+//RawData      = 0x2005,
+//SubIFD       = 0x300a,
+//Exif         = 0x300b,
 }
 
 fn ct (tag: CiffTag) -> u16 {
