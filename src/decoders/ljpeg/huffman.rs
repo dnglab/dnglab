@@ -61,12 +61,16 @@ pub struct HuffTable {
   pub bits: [u32;17],
   pub huffval: [u32;256],
 
+  // Represent the weird shifts that are needed for some NEF files
+  pub shiftval: [u32;256],
+
   // The remaining fields are computed from the above to allow more
   // efficient coding and decoding and thus private
   mincode: [u16;17],
   maxcode: [i32;18],
   valptr: [i16;17],
   numbits: [u32;256],
+  numshift: [u32;256],
   bigtable: Vec<i32>,
   precision: usize,
   pub use_bigtable: bool,
@@ -79,10 +83,12 @@ impl HuffTable {
     HuffTable {
       bits: [0;17],
       huffval: [0;256],
+      shiftval: [0;256],
       mincode: [0;17],
       maxcode: [0;18],
       valptr: [0;17],
       numbits: [0;256],
+      numshift: [0;256],
       bigtable: Vec::new(),
       precision: precision,
       use_bigtable: true,
@@ -95,10 +101,12 @@ impl HuffTable {
     let mut tbl = HuffTable {
       bits: bits,
       huffval: huffval,
+      shiftval: [0;256],
       mincode: [0;17],
       maxcode: [0;18],
       valptr: [0;17],
       numbits: [0;256],
+      numshift: [0;256],
       bigtable: Vec::new(),
       precision: precision,
       use_bigtable: true,
@@ -178,6 +186,7 @@ impl HuffTable {
       let size = huffsize[p];
       if size <= 8 {
         let value: i32 = self.huffval[p] as i32;
+        let shift = self.shiftval[p];
         let code = huffcode[p];
         let ll: i32 = (code << (8 - size)) as i32;
         let ul: i32 = if size < 8 {
@@ -190,6 +199,7 @@ impl HuffTable {
         }
         for i in ll..(ul+1) {
           self.numbits[i as usize] = (size as u32) | ((value as u32) << 4);
+          self.numshift[i as usize] = shift;
         }
       }
     }
@@ -323,6 +333,54 @@ impl HuffTable {
         diff
       },
     }
+  }
+
+  // NEF includes some weird modes where some extra shifting is needed so decode
+  // it as a special case.
+  // TODO: add BigTable support for the shifts to speed up NEF
+  pub fn huff_decode_nef(&self, pump: &mut dyn BitPump) -> Result<i32,String> {
+    let len = self.huff_len_nef(pump)?;
+    let diff = self.huff_diff_nef(pump, len);
+    Ok(diff)
+  }
+
+  pub fn huff_len_nef(&self, pump: &mut dyn BitPump) -> Result<(u32,u32),String> {
+    let mut code = pump.peek_bits(8) as usize;
+    let val = self.numbits[code as usize] as u32;
+    let len = val & 15;
+    if len != 0 {
+      pump.consume_bits(len);
+      let shift = self.numshift[code as usize];
+      Ok((val >> 4, shift))
+    } else {
+      // Our tables didn't work we're going the hard way
+      pump.consume_bits(8);
+      let mut l: usize = 8;
+      while code as i32 > self.maxcode[l] {
+        let temp = pump.get_bits(1) as usize;
+        code = (code << 1) | temp;
+        l += 1;
+      }
+      let idx = self.valptr[l] as usize + (code - (self.mincode[l] as usize)) as usize;
+      Ok((self.huffval[idx],self.shiftval[idx]))
+    }
+  }
+
+  pub fn huff_diff_nef(&self, pump: &mut dyn BitPump, input: (u32,u32)) -> i32 {
+    let (len, shift) = input;
+
+    if len == 0 {
+      return 0;
+    }
+
+    let fulllen: i32 = (len + shift) as i32;
+    let shift: i32 = shift as i32;
+    let bits = pump.get_bits(len) as i32;
+    let mut diff: i32 = ((bits << 1) + 1) << shift >> 1;
+    if (diff & (1 << (fulllen - 1))) == 0 {
+      diff -= (1 << fulllen) - ((shift == 0) as i32);
+    }
+    diff
   }
 }
 

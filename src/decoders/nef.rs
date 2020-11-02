@@ -6,19 +6,40 @@ use crate::decoders::tiff::*;
 use crate::decoders::basics::*;
 use crate::decoders::ljpeg::huffman::*;
 
-const NIKON_TREE: [[u8;32];6] = [
-  // 12-bit lossy
-  [0,1,5,1,1,1,1,1,1,2,0,0,0,0,0,0,5,4,3,6,2,7,1,0,8,9,11,10,12,0,0,0],
-  // 12-bit lossy after split
-  [0,1,5,1,1,1,1,1,1,2,0,0,0,0,0,0,0x39,0x5a,0x38,0x27,0x16,5,4,3,2,1,0,11,12,12,0,0],
-  // 12-bit lossless
-  [0,1,4,2,3,1,2,0,0,0,0,0,0,0,0,0,5,4,6,3,7,2,8,1,9,0,10,11,12,0,0,0],
-  // 14-bit lossy
-  [0,1,4,3,1,1,1,1,1,2,0,0,0,0,0,0,5,6,4,7,8,3,9,2,1,0,10,11,12,13,14,0],
-  // 14-bit lossy after split
-  [0,1,5,1,1,1,1,1,1,1,2,0,0,0,0,0,8,0x5c,0x4b,0x3a,0x29,7,6,5,4,3,2,1,0,13,14,0],
-  // 14-bit lossless
-  [0,1,4,2,2,3,1,2,0,0,0,0,0,0,0,0,7,6,8,5,9,4,10,3,11,12,2,0,1,13,14,0],
+// NEF Huffman tables in order. First two are the normal huffman definitions.
+// Third one are weird shifts that are used in the lossy split encodings only
+// Values are extracted from dcraw with the shifts unmangled out.
+const NIKON_TREE: [[[u8;16];3];6] = [
+  [ // 12-bit lossy
+    [0,0,1,5,1,1,1,1,1,1,2,0,0,0,0,0],
+    [5,4,3,6,2,7,1,0,8,9,11,10,12,0,0,0],
+    [0,0,0,0,0,0,0,0,0,0, 0, 0, 0,0,0,0],
+  ],
+  [ // 12-bit lossy after split
+    [0,0,1,5,1,1,1,1,1,1,2,0,0,0,0,0],
+    [6,5,5,5,5,5,4,3,2,1,0,11,12,12,0,0],
+    [3,5,3,2,1,0,0,0,0,0, 0, 0, 0,0,0,0],
+  ],
+  [ // 12-bit lossless
+    [0,0,1,4,2,3,1,2,0,0,0,0,0,0,0,0],
+    [5,4,6,3,7,2,8,1,9,0,10,11,12,0,0,0],
+    [0,0,0,0,0,0,0,0,0,0, 0, 0, 0,0,0,0],
+  ],
+  [ // 14-bit lossy
+    [0,0,1,4,3,1,1,1,1,1,2,0,0,0,0,0],
+    [5,6,4,7,8,3,9,2,1,0,10,11,12,13,14,0],
+    [0,0,0,0,0,0,0,0,0,0, 0, 0, 0, 0, 0,0],
+  ],
+  [ // 14-bit lossy after split
+    [0,0,1,5,1,1,1,1,1,1,1,2,0,0,0,0],
+    [8,7,7,7,7,7,6,5,4,3,2,1,0,13,14,0],
+    [0,5,4,3,2,0,0,0,0,0,0,0,0, 0, 0,0],
+  ],
+  [ // 14-bit lossless
+    [0,0,1,4,2,2,3,1,2,0,0,0,0,0,0,0],
+    [7,6,8,5,9,4,10,3,11,12,2,0,1,13,14,0],
+    [0,0,0,0,0,0, 0,0, 0, 0,0,0,0, 0, 0,0],
+  ],
 ];
 
 lazy_static! {
@@ -214,15 +235,10 @@ impl<'a> NefDecoder<'a> {
   fn create_hufftable(num: usize, bps: usize) -> Result<HuffTable,String> {
     let mut htable = HuffTable::empty(bps);
 
-    let mut acc = 0 as usize;
-    for i in 0..16 {
-      htable.bits[i+1] = NIKON_TREE[num][i] as u32;
-      acc += htable.bits[i+1] as usize;
-    }
-    htable.bits[0] = 0;
-
-    for i in 0..acc {
-      htable.huffval[i] = NIKON_TREE[num][i+16] as u32;
+    for i in 0..15 {
+      htable.bits[i] = NIKON_TREE[num][0][i] as u32;
+      htable.huffval[i] = NIKON_TREE[num][1][i] as u32;
+      htable.shiftval[i] = NIKON_TREE[num][2][i] as u32;
     }
 
     htable.initialize(true)?;
@@ -299,14 +315,14 @@ impl<'a> NefDecoder<'a> {
       if split > 0 && row == split {
         htable = Self::create_hufftable(huff_select+1, bps)?;
       }
-      pred_up1[row&1] += htable.huff_decode(&mut pump)?;
-      pred_up2[row&1] += htable.huff_decode(&mut pump)?;
+      pred_up1[row&1] += htable.huff_decode_nef(&mut pump)?;
+      pred_up2[row&1] += htable.huff_decode_nef(&mut pump)?;
       let mut pred_left1 = pred_up1[row&1];
       let mut pred_left2 = pred_up2[row&1];
       for col in (0..width).step_by(2) {
         if col > 0 {
-          pred_left1 += htable.huff_decode(&mut pump)?;
-          pred_left2 += htable.huff_decode(&mut pump)?;
+          pred_left1 += htable.huff_decode_nef(&mut pump)?;
+          pred_left2 += htable.huff_decode_nef(&mut pump)?;
         }
         out[row*width+col+0] = curve.dither(clampbits(pred_left1,15) as u16, &mut random);
         out[row*width+col+1] = curve.dither(clampbits(pred_left2,15) as u16, &mut random);
