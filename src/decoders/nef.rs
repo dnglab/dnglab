@@ -279,11 +279,11 @@ impl<'a> NefDecoder<'a> {
     let mut pred_up2: [i32;2] = [stream.get_u16() as i32, stream.get_u16() as i32];
 
     // Get the linearization curve
-    let mut points = [0 as u16;65536];
+    let mut points = [0 as u16; 1<<14];
     for i in 0..points.len() {
       points[i] = i as u16;
     }
-    let mut max = (1 << bps) & 0x7fff;
+    let mut max = 1 << bps;
     let csize = stream.get_u16() as usize;
     let mut split = 0 as usize;
     let step = if csize > 1 {
@@ -311,9 +311,10 @@ impl<'a> NefDecoder<'a> {
     let mut pump = BitPumpMSB::new(src);
     let mut random = pump.peek_bits(24);
 
+    let bps: u32 = bps as u32;
     for row in 0..height {
       if split > 0 && row == split {
-        htable = Self::create_hufftable(huff_select+1, bps)?;
+        htable = Self::create_hufftable(huff_select+1, bps as usize)?;
       }
       pred_up1[row&1] += htable.huff_decode_nef(&mut pump)?;
       pred_up2[row&1] += htable.huff_decode_nef(&mut pump)?;
@@ -324,8 +325,8 @@ impl<'a> NefDecoder<'a> {
           pred_left1 += htable.huff_decode_nef(&mut pump)?;
           pred_left2 += htable.huff_decode_nef(&mut pump)?;
         }
-        out[row*width+col+0] = curve.dither(clampbits(pred_left1,14), &mut random);
-        out[row*width+col+1] = curve.dither(clampbits(pred_left2,14), &mut random);
+        out[row*width+col+0] = curve.dither(clampbits(pred_left1,bps), &mut random);
+        out[row*width+col+1] = curve.dither(clampbits(pred_left2,bps), &mut random);
       }
     }
 
