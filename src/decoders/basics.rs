@@ -4,12 +4,13 @@ use rayon::prelude::*;
 pub use crate::decoders::packed::*;
 pub use crate::decoders::pumps::*;
 
-pub fn clampbits(val: i32, bits: u32) -> i32 {
-  let temp = val >> bits;
-  if temp != 0 {
-    !temp >> (32-bits)
+pub fn clampbits(val: i32, bits: u32) -> u16 {
+  if val < 0 {
+    0
+  } else if val > (1 << bits) {
+    1 << bits
   } else {
-    val
+    val as u16
   }
 }
 

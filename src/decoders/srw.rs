@@ -366,7 +366,7 @@ impl<'a> SrwDecoder<'a> {
           } else {
             ((i&0x7) << 1) + (i>>3)
           } + img + col;
-          out[pos] = clampbits((out[pos] as i32) + diff, bit_depth) as u16;
+          out[pos] = clampbits((out[pos] as i32) + diff, bit_depth);
         }
       }
     }

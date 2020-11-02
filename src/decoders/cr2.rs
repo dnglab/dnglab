@@ -196,9 +196,9 @@ impl<'a> Cr2Decoder<'a> {
       let g = c2 * (y + ((-778*cb - (cr<<11)) >> 12));
       let b = c3 * (y + cb);
 
-      pix[0] = clampbits(r >> 8, 16) as u16;
-      pix[1] = clampbits(g >> 8, 16) as u16;
-      pix[2] = clampbits(b >> 8, 16) as u16;
+      pix[0] = clampbits(r >> 8, 16);
+      pix[1] = clampbits(g >> 8, 16);
+      pix[2] = clampbits(b >> 8, 16);
     }
     Ok(())
   }

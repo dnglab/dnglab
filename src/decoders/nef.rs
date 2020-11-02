@@ -56,7 +56,7 @@ lazy_static! {
       } else {
         ((v+f)/(1.0+f)).powf(g)
       };
-      clampbits((res*65535.0*4.0) as i32, 16) as u16
+      clampbits((res*65535.0*4.0) as i32, 16)
     }).collect::<Vec<u16>>();
     LookupTable::new(&curve)
   };
@@ -324,8 +324,8 @@ impl<'a> NefDecoder<'a> {
           pred_left1 += htable.huff_decode_nef(&mut pump)?;
           pred_left2 += htable.huff_decode_nef(&mut pump)?;
         }
-        out[row*width+col+0] = curve.dither(clampbits(pred_left1,15) as u16, &mut random);
-        out[row*width+col+1] = curve.dither(clampbits(pred_left2,15) as u16, &mut random);
+        out[row*width+col+0] = curve.dither(clampbits(pred_left1,14), &mut random);
+        out[row*width+col+1] = curve.dither(clampbits(pred_left2,14), &mut random);
       }
     }
 
@@ -356,21 +356,21 @@ impl<'a> NefDecoder<'a> {
         let cb = (g4 | ((g5 & 0x0f) << 8)) as f32 - 2048.0;
         let cr = ((g5 >> 4) | (g6 << 4)) as f32 - 2048.0;
 
-        let r = SNEF_CURVE.dither(clampbits((y1 + 1.370705 * cr) as i32, 12) as u16, &mut random);
-        let g = SNEF_CURVE.dither(clampbits((y1 - 0.337633 * cb - 0.698001 * cr) as i32, 12) as u16, &mut random);
-        let b = SNEF_CURVE.dither(clampbits((y1 + 1.732446 * cb) as i32, 12) as u16, &mut random);
+        let r = SNEF_CURVE.dither(clampbits((y1 + 1.370705 * cr) as i32, 12), &mut random);
+        let g = SNEF_CURVE.dither(clampbits((y1 - 0.337633 * cb - 0.698001 * cr) as i32, 12), &mut random);
+        let b = SNEF_CURVE.dither(clampbits((y1 + 1.732446 * cb) as i32, 12), &mut random);
         // invert the white balance
-        o[0] = clampbits((inv_wb_r * r as i32 + (1<<9)) >> 10, 15) as u16;
+        o[0] = clampbits((inv_wb_r * r as i32 + (1<<9)) >> 10, 15);
         o[1] = g;
-        o[2] = clampbits((inv_wb_b * b as i32 + (1<<9)) >> 10, 15) as u16;
+        o[2] = clampbits((inv_wb_b * b as i32 + (1<<9)) >> 10, 15);
 
-        let r = SNEF_CURVE.dither(clampbits((y2 + 1.370705 * cr) as i32, 12) as u16, &mut random);
-        let g = SNEF_CURVE.dither(clampbits((y2 - 0.337633 * cb - 0.698001 * cr) as i32, 12) as u16, &mut random);
-        let b = SNEF_CURVE.dither(clampbits((y2 + 1.732446 * cb) as i32, 12) as u16, &mut random);
+        let r = SNEF_CURVE.dither(clampbits((y2 + 1.370705 * cr) as i32, 12), &mut random);
+        let g = SNEF_CURVE.dither(clampbits((y2 - 0.337633 * cb - 0.698001 * cr) as i32, 12), &mut random);
+        let b = SNEF_CURVE.dither(clampbits((y2 + 1.732446 * cb) as i32, 12), &mut random);
         // invert the white balance
-        o[3] = clampbits((inv_wb_r * r as i32 + (1<<9)) >> 10, 15) as u16;
+        o[3] = clampbits((inv_wb_r * r as i32 + (1<<9)) >> 10, 15);
         o[4] = g;
-        o[5] = clampbits((inv_wb_b * b as i32 + (1<<9)) >> 10, 15) as u16;
+        o[5] = clampbits((inv_wb_b * b as i32 + (1<<9)) >> 10, 15);
       }
     }))
   }
