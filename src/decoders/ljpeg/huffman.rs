@@ -38,23 +38,7 @@ use std::fmt;
 use crate::decoders::basics::*;
 
 const BIG_TABLE_BITS: u32 = 13;
-
-const HUFF_BITMASK: [u32;32] = [0xffffffff, 0x7fffffff,
-                                0x3fffffff, 0x1fffffff,
-                                0x0fffffff, 0x07ffffff,
-                                0x03ffffff, 0x01ffffff,
-                                0x00ffffff, 0x007fffff,
-                                0x003fffff, 0x001fffff,
-                                0x000fffff, 0x0007ffff,
-                                0x0003ffff, 0x0001ffff,
-                                0x0000ffff, 0x00007fff,
-                                0x00003fff, 0x00001fff,
-                                0x00000fff, 0x000007ff,
-                                0x000003ff, 0x000001ff,
-                                0x000000ff, 0x0000007f,
-                                0x0000003f, 0x0000001f,
-                                0x0000000f, 0x00000007,
-                                0x00000003, 0x00000001];
+const SMALL_TABLE_BITS: u32 = 8;
 
 pub struct HuffTable {
   // These two fields directly represent the contents of a JPEG DHT marker
@@ -69,8 +53,8 @@ pub struct HuffTable {
   mincode: [u16;17],
   maxcode: [i32;18],
   valptr: [i16;17],
-  numbits: [u32;256],
-  numshift: [u32;256],
+  numbits: [u32;1<<SMALL_TABLE_BITS],
+  numshift: [u32;1<<SMALL_TABLE_BITS],
   bigtable: Vec<i32>,
   precision: usize,
   pub use_bigtable: bool,
@@ -87,8 +71,8 @@ impl HuffTable {
       mincode: [0;17],
       maxcode: [0;18],
       valptr: [0;17],
-      numbits: [0;256],
-      numshift: [0;256],
+      numbits: [0;1<<SMALL_TABLE_BITS],
+      numshift: [0;1<<SMALL_TABLE_BITS],
       bigtable: Vec::new(),
       precision: precision,
       use_bigtable: true,
@@ -105,8 +89,8 @@ impl HuffTable {
       mincode: [0;17],
       maxcode: [0;18],
       valptr: [0;17],
-      numbits: [0;256],
-      numshift: [0;256],
+      numbits: [0;1<<SMALL_TABLE_BITS],
+      numshift: [0;1<<SMALL_TABLE_BITS],
       bigtable: Vec::new(),
       precision: precision,
       use_bigtable: true,
@@ -184,17 +168,17 @@ impl HuffTable {
     // code (this happens about 3-4% of the time).
     for p in 0..lastp {
       let size = huffsize[p];
-      if size <= 8 {
+      if size <= (SMALL_TABLE_BITS as u8) {
         let value: i32 = self.huffval[p] as i32;
         let shift = self.shiftval[p];
         let code = huffcode[p];
-        let ll: i32 = (code << (8 - size)) as i32;
-        let ul: i32 = if size < 8 {
-          ll | (HUFF_BITMASK[(24+size) as usize]) as i32
+        let ll: i32 = (code << (SMALL_TABLE_BITS-(size as u32))) as i32;
+        let ul: i32 = if size < SMALL_TABLE_BITS as u8 {
+          ll | (0x7fffffff >> (32-SMALL_TABLE_BITS-1+(size as u32)))
         } else {
           ll
         };
-        if ul > 256 || ll > ul {
+        if ul > (1<<SMALL_TABLE_BITS) || ll > ul {
           return Err("ljpeg: Code length too long. Corrupt data.".to_string())
         }
         for i in ll..(ul+1) {
@@ -289,15 +273,15 @@ impl HuffTable {
   }
 
   pub fn huff_len(&self, pump: &mut dyn BitPump) -> Result<u32,String> {
-    let mut code = pump.peek_bits(8) as usize;
+    let mut code = pump.peek_bits(SMALL_TABLE_BITS) as usize;
     let val = self.numbits[code as usize] as u32;
     let len = val & 15;
     if len != 0 {
       pump.consume_bits(len);
       return Ok(val >> 4)
     }
-    pump.consume_bits(8);
-    let mut l: usize = 8;
+    pump.consume_bits(SMALL_TABLE_BITS);
+    let mut l = SMALL_TABLE_BITS as usize;
     while code as i32 > self.maxcode[l] {
       let temp = pump.get_bits(1) as usize;
       code = (code << 1) | temp;
@@ -345,7 +329,7 @@ impl HuffTable {
   }
 
   pub fn huff_len_nef(&self, pump: &mut dyn BitPump) -> Result<(u32,u32),String> {
-    let mut code = pump.peek_bits(8) as usize;
+    let mut code = pump.peek_bits(SMALL_TABLE_BITS) as usize;
     let val = self.numbits[code as usize] as u32;
     let len = val & 15;
     if len != 0 {
@@ -354,8 +338,8 @@ impl HuffTable {
       Ok((val >> 4, shift))
     } else {
       // Our tables didn't work we're going the hard way
-      pump.consume_bits(8);
-      let mut l: usize = 8;
+      pump.consume_bits(SMALL_TABLE_BITS);
+      let mut l = SMALL_TABLE_BITS as usize;
       while code as i32 > self.maxcode[l] {
         let temp = pump.get_bits(1) as usize;
         code = (code << 1) | temp;
