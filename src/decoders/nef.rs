@@ -279,7 +279,7 @@ impl<'a> NefDecoder<'a> {
     let mut pred_up2: [i32;2] = [stream.get_u16() as i32, stream.get_u16() as i32];
 
     // Get the linearization curve
-    let mut points = [0 as u16; 1<<14];
+    let mut points = [0 as u16; 1<<16];
     for i in 0..points.len() {
       points[i] = i as u16;
     }
