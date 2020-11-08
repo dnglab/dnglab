@@ -69,7 +69,7 @@ impl<'a> PefDecoder<'a> {
 
   pub(crate) fn do_decode(src: &[u8], huff: Option<(&[u8], Endian)>, width: usize, height: usize, dummy: bool) -> Result<Vec<u16>,String> {
     let mut out = alloc_image_ok!(width, height, dummy);
-    let mut htable = HuffTable::empty(16);
+    let mut htable = HuffTable::empty();
 
     /* Attempt to read huffman table, if found in makernote */
     if let Some((huff, endian)) = huff {
@@ -122,7 +122,7 @@ impl<'a> PefDecoder<'a> {
       }
     }
 
-    htable.initialize(true)?;
+    htable.initialize()?;
 
     let mut pump = BitPumpMSB::new(src);
     let mut pred_up1: [i32;2] = [0, 0];

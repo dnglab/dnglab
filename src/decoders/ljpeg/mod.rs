@@ -171,9 +171,9 @@ impl<'a> LjpegDecompressor<'a> {
     let mut dhts = Vec::new();
     for i in 0..4 {
       dhts.push(if dht_init[i] {
-        HuffTable::new(dht_bits[i], dht_huffval[i], sof.precision, dng_bug)?
+        HuffTable::new(dht_bits[i], dht_huffval[i], dng_bug)?
       } else {
-        HuffTable::empty(0)
+        HuffTable::empty()
       });
     }
 

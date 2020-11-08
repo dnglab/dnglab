@@ -273,8 +273,8 @@ pub fn decode_hasselblad(ljpeg: &LjpegDecompressor, out: &mut [u16], width: usiz
     let mut p1: i32 = 0x8000;
     let mut p2: i32 = 0x8000;
     for o in line.chunks_exact_mut(2) {
-      let len1 = htable.huff_len(&mut pump)?;
-      let len2 = htable.huff_len(&mut pump)?;
+      let len1 = htable.huff_len(&mut pump);
+      let len2 = htable.huff_len(&mut pump);
       p1 += htable.huff_diff(&mut pump, len1);
       p2 += htable.huff_diff(&mut pump, len2);
       o[0] = p1 as u16;

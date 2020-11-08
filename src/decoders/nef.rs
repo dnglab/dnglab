@@ -232,8 +232,8 @@ impl<'a> NefDecoder<'a> {
     }
   }
 
-  fn create_hufftable(num: usize, bps: usize) -> Result<HuffTable,String> {
-    let mut htable = HuffTable::empty(bps);
+  fn create_hufftable(num: usize) -> Result<HuffTable,String> {
+    let mut htable = HuffTable::empty();
 
     for i in 0..15 {
       htable.bits[i] = NIKON_TREE[num][0][i] as u32;
@@ -241,7 +241,7 @@ impl<'a> NefDecoder<'a> {
       htable.shiftval[i] = NIKON_TREE[num][2][i] as u32;
     }
 
-    htable.initialize(true)?;
+    htable.initialize()?;
     Ok(htable)
   }
 
@@ -272,7 +272,7 @@ impl<'a> NefDecoder<'a> {
     }
 
     // Create the huffman table used to decode
-    let mut htable = Self::create_hufftable(huff_select, bps)?;
+    let mut htable = Self::create_hufftable(huff_select)?;
 
     // Setup the predictors
     let mut pred_up1: [i32;2] = [stream.get_u16() as i32, stream.get_u16() as i32];
@@ -314,16 +314,16 @@ impl<'a> NefDecoder<'a> {
     let bps: u32 = bps as u32;
     for row in 0..height {
       if split > 0 && row == split {
-        htable = Self::create_hufftable(huff_select+1, bps as usize)?;
+        htable = Self::create_hufftable(huff_select+1)?;
       }
-      pred_up1[row&1] += htable.huff_decode_nef(&mut pump)?;
-      pred_up2[row&1] += htable.huff_decode_nef(&mut pump)?;
+      pred_up1[row&1] += htable.huff_decode(&mut pump)?;
+      pred_up2[row&1] += htable.huff_decode(&mut pump)?;
       let mut pred_left1 = pred_up1[row&1];
       let mut pred_left2 = pred_up2[row&1];
       for col in (0..width).step_by(2) {
         if col > 0 {
-          pred_left1 += htable.huff_decode_nef(&mut pump)?;
-          pred_left2 += htable.huff_decode_nef(&mut pump)?;
+          pred_left1 += htable.huff_decode(&mut pump)?;
+          pred_left2 += htable.huff_decode(&mut pump)?;
         }
         out[row*width+col+0] = curve.dither(clampbits(pred_left1,bps), &mut random);
         out[row*width+col+1] = curve.dither(clampbits(pred_left2,bps), &mut random);
