@@ -271,8 +271,12 @@ impl HuffTable {
         break;
       }
     }
-    let idx = self.valptr[l] as usize + (code as usize - (self.mincode[l] as usize)) as usize;
-    (l as u32,self.huffval[idx],self.shiftval[idx])
+    if l >= 17 {
+      (0, 0, 0)
+    } else {
+      let idx = self.valptr[l] as usize + (code as usize - (self.mincode[l] as usize)) as usize;
+      (l as u32,self.huffval[idx],self.shiftval[idx])
+    }
   }
 
   pub fn huff_diff(&self, pump: &mut dyn BitPump, input: (u32,u32,u32)) -> i32 {
