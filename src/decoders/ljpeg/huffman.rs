@@ -1,7 +1,7 @@
 use std::fmt;
 use crate::decoders::basics::*;
 
-const DECODE_TABLE_BITS: u32 = 11;
+const DECODE_CACHE_BITS: u32 = 11;
 
 pub struct HuffTable {
   // These two fields directly represent the contents of a JPEG DHT marker
@@ -11,13 +11,24 @@ pub struct HuffTable {
   // Represent the weird shifts that are needed for some NEF files
   pub shiftval: [u32;256],
 
+  // Enable the workaround for 16 bit decodes in DNG that need to consume those
+  // bits instead of the value being implied
+  pub dng_bug: bool,
+
   // The remaining fields are computed from the above to allow more
   // efficient coding and decoding and thus private
+
+  // The max number of bits in a huffman code and the table that converts those
+  // bits into how many bits to consume and the decoded length and shift
   nbits: u32,
   hufftable: Vec<(u16,u16,u16)>,
-  decodetable: [Option<(u16,i32)>; 1<< DECODE_TABLE_BITS],
-  pub dng_bug: bool,
-  pub initialized: bool,
+
+  // A pregenerated table that goes straight to decoding a diff without first
+  // finding a length, fetching bits, and sign extending them. The table is
+  // sized by DECODE_CACHE_BITS and can have 97%+ hit rate with 11 bits
+  decodecache: [Option<(u16,i32)>; 1<< DECODE_CACHE_BITS],
+
+  initialized: bool,
 }
 
 struct MockPump {
@@ -60,10 +71,11 @@ impl HuffTable {
       bits: [0;17],
       huffval: [0;256],
       shiftval: [0;256],
+      dng_bug: false,
+
       nbits: 0,
       hufftable: Vec::new(),
-      decodetable: [None; 1 << DECODE_TABLE_BITS],
-      dng_bug: false,
+      decodecache: [None; 1 << DECODE_CACHE_BITS],
       initialized: false,
     }
   }
@@ -73,10 +85,11 @@ impl HuffTable {
       bits: bits,
       huffval: huffval,
       shiftval: [0;256],
+      dng_bug: dng_bug,
+
       nbits: 0,
       hufftable: Vec::new(),
-      decodetable: [None; 1 << DECODE_TABLE_BITS],
-      dng_bug: dng_bug,
+      decodecache: [None; 1 << DECODE_CACHE_BITS],
       initialized: false,
     };
     tbl.initialize()?;
@@ -84,7 +97,7 @@ impl HuffTable {
   }
 
   pub fn initialize(&mut self) -> Result<(), String> {
-    // Create the decoding table for the huffman lengths
+    // Find out the max code length and allocate a table with that size
     self.nbits = 16;
     for i in 0..16 {
       if self.bits[16-i] != 0 {
@@ -92,10 +105,9 @@ impl HuffTable {
       }
       self.nbits -= 1;
     }
+    self.hufftable = vec![(0,0,0); 1 << self.nbits];
 
-    let tblsize = 1 << self.nbits;
-    self.hufftable = vec![(0,0,0); tblsize];
-
+    // Fill in the table itself
     let mut h = 0;
     let mut pos = 0;
     for len in 0..self.nbits {
@@ -108,17 +120,18 @@ impl HuffTable {
       }
     }
 
-    // Now bootstrap the full decode table
+    // Create the decode cache by running the slow code over all the possible
+    // values DECODE_CACHE_BITS wide
     let mut pump = MockPump::empty();
     let mut i = 0;
     loop {
-      pump.set(i, DECODE_TABLE_BITS);
+      pump.set(i, DECODE_CACHE_BITS);
       let decode = self.huff_decode_slow(&mut pump);
       if pump.validbits() >= 0 {
-        self.decodetable[i as usize] = Some(decode);
+        self.decodecache[i as usize] = Some(decode);
       }
       i += 1;
-      if i >= 1 << DECODE_TABLE_BITS {
+      if i >= 1 << DECODE_CACHE_BITS {
         break;
       }
     }
@@ -128,8 +141,8 @@ impl HuffTable {
   }
 
   pub fn huff_decode(&self, pump: &mut dyn BitPump) -> Result<i32,String> {
-    let code = pump.peek_bits(DECODE_TABLE_BITS) as usize;
-    if let Some((bits,decode)) = self.decodetable[code] {
+    let code = pump.peek_bits(DECODE_CACHE_BITS) as usize;
+    if let Some((bits,decode)) = self.decodecache[code] {
       pump.consume_bits(bits as u32);
       Ok(decode)
     } else {
