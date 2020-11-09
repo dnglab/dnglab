@@ -24,12 +24,12 @@ pub struct HuffTable {
   // The max number of bits in a huffman code and the table that converts those
   // bits into how many bits to consume and the decoded length and shift
   nbits: u32,
-  hufftable: Vec<(u16,u16,u16)>,
+  hufftable: Vec<(u8,u8,u8)>,
 
   // A pregenerated table that goes straight to decoding a diff without first
   // finding a length, fetching bits, and sign extending them. The table is
   // sized by DECODE_CACHE_BITS and can have 97%+ hit rate with 11 bits
-  decodecache: [Option<(u16,i32)>; 1<< DECODE_CACHE_BITS],
+  decodecache: [Option<(u8,i32)>; 1<< DECODE_CACHE_BITS],
 
   initialized: bool,
 }
@@ -118,7 +118,7 @@ impl HuffTable {
     for len in 0..self.nbits {
       for _ in 0..self.bits[len as usize + 1] {
         for _ in 0..(1 << (self.nbits-len-1)) {
-          self.hufftable[h] = (len as u16 + 1, self.huffval[pos] as u16, self.shiftval[pos] as u16);
+          self.hufftable[h] = (len as u8 + 1, self.huffval[pos] as u8, self.shiftval[pos] as u8);
           h += 1;
         }
         pos += 1;
@@ -158,19 +158,19 @@ impl HuffTable {
     }
   }
 
-  pub fn huff_decode_slow(&self, pump: &mut dyn BitPump) -> (u16,i32) {
+  pub fn huff_decode_slow(&self, pump: &mut dyn BitPump) -> (u8,i32) {
     let len = self.huff_len(pump);
     (len.0+len.1, self.huff_diff(pump, len))
   }
 
-  pub fn huff_len(&self, pump: &mut dyn BitPump) -> (u16,u16,u16) {
+  pub fn huff_len(&self, pump: &mut dyn BitPump) -> (u8,u8,u8) {
     let code = pump.peek_bits(self.nbits) as usize;
     let (bits, len, shift) = self.hufftable[code];
     pump.consume_bits(bits as u32);
     (bits, len, shift)
   }
 
-  pub fn huff_diff(&self, pump: &mut dyn BitPump, input: (u16,u16,u16)) -> i32 {
+  pub fn huff_diff(&self, pump: &mut dyn BitPump, input: (u8,u8,u8)) -> i32 {
     let (_, len, shift) = input;
 
     match len {
