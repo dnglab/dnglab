@@ -170,6 +170,13 @@ impl HuffTable {
     (bits, len, shift)
   }
 
+  pub fn huff_get_bits(&self, pump: &mut dyn BitPump) -> u32 {
+    let code = pump.peek_bits(self.nbits) as usize;
+    let (bits, len, _) = self.hufftable[code];
+    pump.consume_bits(bits as u32);
+    len as u32
+  }
+
   pub fn huff_diff(&self, pump: &mut dyn BitPump, input: (u8,u8,u8)) -> i32 {
     let (_, len, shift) = input;
 

@@ -179,7 +179,7 @@ impl<'a> CrwDecoder<'a> {
       let mut i: usize = 0;
       while i < 64 {
         let ref tbl = htables[(i > 0) as usize];
-        let leaf = tbl.huff_len(&mut pump).1 as u32;
+        let leaf = tbl.huff_get_bits(&mut pump);
         if leaf == 0 && i != 0 { break; }
         if leaf == 0xff { i+= 1; continue; }
         i += (leaf >> 4) as usize;
