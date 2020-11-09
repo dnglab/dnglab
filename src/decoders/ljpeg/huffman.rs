@@ -16,7 +16,7 @@ pub struct HuffTable {
   // efficient coding and decoding and thus private
   nbits: u32,
   hufftable: Vec<(u16,u16,u16)>,
-  decodetable: Vec<Option<(u16,i32)>>,
+  decodetable: [Option<(u16,i32)>; 1<< DECODE_TABLE_BITS],
   pub dng_bug: bool,
   pub initialized: bool,
 }
@@ -63,7 +63,7 @@ impl HuffTable {
       shiftval: [0;256],
       nbits: 0,
       hufftable: Vec::new(),
-      decodetable: Vec::new(),
+      decodetable: [None; 1 << DECODE_TABLE_BITS],
       dng_bug: false,
       initialized: false,
     }
@@ -76,7 +76,7 @@ impl HuffTable {
       shiftval: [0;256],
       nbits: 0,
       hufftable: Vec::new(),
-      decodetable: Vec::new(),
+      decodetable: [None; 1 << DECODE_TABLE_BITS],
       dng_bug: dng_bug,
       initialized: false,
     };
@@ -111,7 +111,6 @@ impl HuffTable {
 
     // Now bootstrap the full decode table
     let mut pump = MockPump::empty();
-    self.decodetable = vec![None; 1 << DECODE_TABLE_BITS];
     let mut i = 0;
     loop {
       pump.set(i, DECODE_TABLE_BITS);
