@@ -15,6 +15,9 @@ pub struct HuffTable {
   // bits instead of the value being implied
   pub dng_bug: bool,
 
+  // In CRW we only use the len code so the cache is not needed
+  pub disable_cache: bool,
+
   // The remaining fields are computed from the above to allow more
   // efficient coding and decoding and thus private
 
@@ -72,6 +75,7 @@ impl HuffTable {
       huffval: [0;256],
       shiftval: [0;256],
       dng_bug: false,
+      disable_cache: false,
 
       nbits: 0,
       hufftable: Vec::new(),
@@ -86,6 +90,7 @@ impl HuffTable {
       huffval: huffval,
       shiftval: [0;256],
       dng_bug: dng_bug,
+      disable_cache: false,
 
       nbits: 0,
       hufftable: Vec::new(),
@@ -122,17 +127,19 @@ impl HuffTable {
 
     // Create the decode cache by running the slow code over all the possible
     // values DECODE_CACHE_BITS wide
-    let mut pump = MockPump::empty();
-    let mut i = 0;
-    loop {
-      pump.set(i, DECODE_CACHE_BITS);
-      let decode = self.huff_decode_slow(&mut pump);
-      if pump.validbits() >= 0 {
-        self.decodecache[i as usize] = Some(decode);
-      }
-      i += 1;
-      if i >= 1 << DECODE_CACHE_BITS {
-        break;
+    if !self.disable_cache {
+      let mut pump = MockPump::empty();
+      let mut i = 0;
+      loop {
+        pump.set(i, DECODE_CACHE_BITS);
+        let decode = self.huff_decode_slow(&mut pump);
+        if pump.validbits() >= 0 {
+          self.decodecache[i as usize] = Some(decode);
+        }
+        i += 1;
+        if i >= 1 << DECODE_CACHE_BITS {
+          break;
+        }
       }
     }
 

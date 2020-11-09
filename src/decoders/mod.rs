@@ -83,7 +83,6 @@ mod dcr;
 mod dng;
 mod pef;
 mod crw;
-pub use self::crw::CRW_HUFF_TABLES;
 mod nkd;
 mod mos;
 mod iiq;
