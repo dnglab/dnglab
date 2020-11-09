@@ -1,4 +1,5 @@
 use std::fmt;
+use std::cmp;
 use crate::decoders::basics::*;
 
 const DECODE_TABLE_BITS: u32 = 11;
@@ -114,20 +115,22 @@ impl HuffTable {
     let mut i = 0;
     loop {
       pump.set(i, DECODE_TABLE_BITS);
-      let res = self.huff_decode_slow(&mut pump);
+      let (lenbits, totalbits, decode) = self.huff_decode_slow(&mut pump);
       let validbits = pump.validbits();
       if validbits >= 0 {
         // We had a valid decode within the lookup bits, save that result to
         // every position where the decode applies.
         for _ in 0..(1 << validbits) {
-          self.decodetable[i as usize] = Some(res);
+          self.decodetable[i as usize] = Some((totalbits, decode));
           i += 1;
           if i >= 1 << DECODE_TABLE_BITS {
             break;
           }
         }
       } else {
-        i += 1;
+        // We had an invalid decode, we can skip as many positions as the ones
+        // that have the same bits for length
+        i += 1 << cmp::max(0, DECODE_TABLE_BITS - (lenbits as u32));
       }
       if i >= 1 << DECODE_TABLE_BITS {
         break;
@@ -145,13 +148,13 @@ impl HuffTable {
       Ok(decode)
     } else {
       let decode = self.huff_decode_slow(pump);
-      Ok(decode.1)
+      Ok(decode.2)
     }
   }
 
-  pub fn huff_decode_slow(&self, pump: &mut dyn BitPump) -> (u16,i32) {
+  pub fn huff_decode_slow(&self, pump: &mut dyn BitPump) -> (u16, u16,i32) {
     let len = self.huff_len(pump);
-    (len.0+len.1, self.huff_diff(pump, len))
+    (len.0, len.0+len.1, self.huff_diff(pump, len))
   }
 
   pub fn huff_len(&self, pump: &mut dyn BitPump) -> (u16,u16,u16) {
