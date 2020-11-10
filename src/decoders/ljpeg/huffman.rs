@@ -1,7 +1,7 @@
 use std::fmt;
 use crate::decoders::basics::*;
 
-const DECODE_CACHE_BITS: u32 = 11;
+const DECODE_CACHE_BITS: u32 = 13;
 
 pub struct HuffTable {
   // These two fields directly represent the contents of a JPEG DHT marker
@@ -28,8 +28,8 @@ pub struct HuffTable {
 
   // A pregenerated table that goes straight to decoding a diff without first
   // finding a length, fetching bits, and sign extending them. The table is
-  // sized by DECODE_CACHE_BITS and can have 97%+ hit rate with 11 bits
-  decodecache: [Option<(u8,i32)>; 1<< DECODE_CACHE_BITS],
+  // sized by DECODE_CACHE_BITS and can have 99%+ hit rate with 13 bits
+  decodecache: [Option<(u8,i16)>; 1<< DECODE_CACHE_BITS],
 
   initialized: bool,
 }
@@ -132,9 +132,9 @@ impl HuffTable {
       let mut i = 0;
       loop {
         pump.set(i, DECODE_CACHE_BITS);
-        let decode = self.huff_decode_slow(&mut pump);
+        let (bits, decode) = self.huff_decode_slow(&mut pump);
         if pump.validbits() >= 0 {
-          self.decodecache[i as usize] = Some(decode);
+          self.decodecache[i as usize] = Some((bits, decode as i16));
         }
         i += 1;
         if i >= 1 << DECODE_CACHE_BITS {
@@ -151,7 +151,7 @@ impl HuffTable {
     let code = pump.peek_bits(DECODE_CACHE_BITS) as usize;
     if let Some((bits,decode)) = self.decodecache[code] {
       pump.consume_bits(bits as u32);
-      Ok(decode)
+      Ok(decode as i32)
     } else {
       let decode = self.huff_decode_slow(pump);
       Ok(decode.1)
