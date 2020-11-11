@@ -147,6 +147,7 @@ impl HuffTable {
     Ok(())
   }
 
+  #[inline(always)]
   pub fn huff_decode(&self, pump: &mut dyn BitPump) -> Result<i32,String> {
     let code = pump.peek_bits(DECODE_CACHE_BITS) as usize;
     if let Some((bits,decode)) = self.decodecache[code] {
@@ -158,11 +159,13 @@ impl HuffTable {
     }
   }
 
+  #[inline(always)]
   pub fn huff_decode_slow(&self, pump: &mut dyn BitPump) -> (u8,i32) {
     let len = self.huff_len(pump);
     (len.0+len.1, self.huff_diff(pump, len))
   }
 
+  #[inline(always)]
   pub fn huff_len(&self, pump: &mut dyn BitPump) -> (u8,u8,u8) {
     let code = pump.peek_bits(self.nbits) as usize;
     let (bits, len, shift) = self.hufftable[code];
@@ -170,6 +173,7 @@ impl HuffTable {
     (bits, len, shift)
   }
 
+  #[inline(always)]
   pub fn huff_get_bits(&self, pump: &mut dyn BitPump) -> u32 {
     let code = pump.peek_bits(self.nbits) as usize;
     let (bits, len, _) = self.hufftable[code];
@@ -177,6 +181,7 @@ impl HuffTable {
     len as u32
   }
 
+  #[inline(always)]
   pub fn huff_diff(&self, pump: &mut dyn BitPump, input: (u8,u8,u8)) -> i32 {
     let (_, len, shift) = input;
 
