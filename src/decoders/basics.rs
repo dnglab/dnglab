@@ -4,6 +4,7 @@ use rayon::prelude::*;
 pub use crate::decoders::packed::*;
 pub use crate::decoders::pumps::*;
 
+#[inline(always)]
 pub fn clampbits(val: i32, bits: u32) -> u16 {
   if val < 0 {
     0
@@ -124,6 +125,7 @@ impl LookupTable {
 //    val
 //  }
 
+  #[inline(always)]
   pub fn dither(&self, value: u16, rand: &mut u32) -> u16 {
     let (_, sbase, sdelta) = self.table[value as usize];
     let base = sbase as u32;
