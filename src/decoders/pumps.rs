@@ -56,6 +56,7 @@ impl<'a> BitPumpMSB32<'a> {
     }
   }
 
+  #[inline(always)]
   pub fn get_pos(&self) -> usize {
     self.pos - ((self.nbits >> 3) as usize)
   }
@@ -86,6 +87,7 @@ pub trait BitPump {
   fn peek_bits(&mut self, num: u32) -> u32;
   fn consume_bits(&mut self, num: u32);
 
+  #[inline(always)]
   fn get_bits(&mut self, num: u32) -> u32 {
     if num == 0 {
       return 0
@@ -97,15 +99,18 @@ pub trait BitPump {
     val
   }
 
+  #[inline(always)]
   fn peek_ibits(&mut self, num: u32) -> i32 {
     self.peek_bits(num) as i32
   }
 
+  #[inline(always)]
   fn get_ibits(&mut self, num: u32) -> i32 {
     self.get_bits(num) as i32
   }
 
   // Sign extend ibits
+  #[inline(always)]
   fn get_ibits_sextended(&mut self, num: u32) -> i32 {
     let val = self.get_ibits(num);
     val.wrapping_shl(32 - num).wrapping_shr(32 - num)
@@ -113,6 +118,7 @@ pub trait BitPump {
 }
 
 impl<'a> BitPump for BitPumpLSB<'a> {
+  #[inline(always)]
   fn peek_bits(&mut self, num: u32) -> u32 {
     if num > self.nbits {
       let inbits: u64 = LEu32(self.buffer, self.pos) as u64;
@@ -123,6 +129,7 @@ impl<'a> BitPump for BitPumpLSB<'a> {
     (self.bits & (0x0ffffffffu64 >> (32-num))) as u32
   }
 
+  #[inline(always)]
   fn consume_bits(&mut self, num: u32) {
     self.nbits -= num;
     self.bits >>= num;
@@ -130,6 +137,7 @@ impl<'a> BitPump for BitPumpLSB<'a> {
 }
 
 impl<'a> BitPump for BitPumpMSB<'a> {
+  #[inline(always)]
   fn peek_bits(&mut self, num: u32) -> u32 {
     if num > self.nbits {
       let inbits: u64 = BEu32(self.buffer, self.pos) as u64;
@@ -140,6 +148,7 @@ impl<'a> BitPump for BitPumpMSB<'a> {
     (self.bits >> (self.nbits-num)) as u32
   }
 
+  #[inline(always)]
   fn consume_bits(&mut self, num: u32) {
     self.nbits -= num;
     self.bits &= (1 << self.nbits) - 1;
@@ -147,6 +156,7 @@ impl<'a> BitPump for BitPumpMSB<'a> {
 }
 
 impl<'a> BitPump for BitPumpMSB32<'a> {
+  #[inline(always)]
   fn peek_bits(&mut self, num: u32) -> u32 {
     if num > self.nbits {
       let inbits: u64 = LEu32(self.buffer, self.pos) as u64;
@@ -157,6 +167,7 @@ impl<'a> BitPump for BitPumpMSB32<'a> {
     (self.bits >> (self.nbits-num)) as u32
   }
 
+  #[inline(always)]
   fn consume_bits(&mut self, num: u32) {
     self.nbits -= num;
     self.bits &= (1 << self.nbits) - 1;
@@ -164,6 +175,7 @@ impl<'a> BitPump for BitPumpMSB32<'a> {
 }
 
 impl<'a> BitPump for BitPumpJPEG<'a> {
+  #[inline(always)]
   fn peek_bits(&mut self, num: u32) -> u32 {
     if num > self.nbits && !self.finished {
       if self.pos < self.buffer.len()-4 &&
@@ -212,6 +224,7 @@ impl<'a> BitPump for BitPumpJPEG<'a> {
     (self.bits >> (self.nbits-num)) as u32
   }
 
+  #[inline(always)]
   fn consume_bits(&mut self, num: u32) {
     self.nbits -= num;
     self.bits &= (1 << self.nbits) - 1;
@@ -234,33 +247,42 @@ impl<'a> ByteStream<'a> {
     }
   }
 
+  #[inline(always)]
   pub fn get_pos(&self) -> usize { self.pos }
 
+  #[inline(always)]
   pub fn peek_u8(&self) -> u8 { self.buffer[self.pos] }
+  #[inline(always)]
   pub fn get_u8(&mut self) -> u8 {
     let val = self.peek_u8();
     self.pos += 1;
     val
   }
 
+  #[inline(always)]
   pub fn peek_u16(&self) -> u16 { self.endian.ru16(self.buffer, self.pos) }
+  #[inline(always)]
   pub fn get_u16(&mut self) -> u16 {
     let val = self.peek_u16();
     self.pos += 2;
     val
   }
 
+//  #[inline(always)]
 //  pub fn peek_u32(&self) -> u32 { self.endian.ru32(self.buffer, self.pos) }
+//  #[inline(always)]
 //  pub fn get_u32(&mut self) -> u32 {
 //    let val = self.peek_u32();
 //    self.pos += 4;
 //    val
 //  }
 
+  #[inline(always)]
   pub fn consume_bytes(&mut self, num: usize) {
     self.pos += num
   }
 
+  #[inline(always)]
   pub fn skip_to_marker(&mut self) -> Result<usize, String> {
     let mut skip_count = 0;
     while !(self.buffer[self.pos] == 0xFF &&
