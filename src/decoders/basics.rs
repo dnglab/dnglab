@@ -6,10 +6,11 @@ pub use crate::decoders::pumps::*;
 
 #[inline(always)]
 pub fn clampbits(val: i32, bits: u32) -> u16 {
+  let max = (1 << bits) - 1;
   if val < 0 {
     0
-  } else if val > (1 << bits) {
-    1 << bits
+  } else if val > max {
+    max as u16
   } else {
     val as u16
   }
