@@ -1,4 +1,3 @@
-use lazy_static::lazy_static;
 use std::f32::NAN;
 
 use crate::decoders::*;
@@ -41,26 +40,6 @@ const NIKON_TREE: [[[u8;16];3];6] = [
     [0,0,0,0,0,0, 0,0, 0, 0,0,0,0, 0, 0,0],
   ],
 ];
-
-lazy_static! {
-  // Pre-initialize the sRGB gamma curve for sNEF
-  pub static ref SNEF_CURVE: LookupTable = {
-    let g: f32 = 2.4;
-    let f: f32 = 0.055;
-    let min: f32 = 0.04045;
-    let mul: f32 = 12.92;
-    let curve = (0..4096).map(|i| {
-      let v = (i as f32) / 4095.0;
-      let res = if v <= min {
-        v / mul
-      } else {
-        ((v+f)/(1.0+f)).powf(g)
-      };
-      clampbits((res*65535.0*4.0) as i32, 16)
-    }).collect::<Vec<u16>>();
-    LookupTable::new(&curve)
-  };
-}
 
 // We use this for the D50 and D2X whacky WB "encryption"
 const WB_SERIALMAP: [u8;256] = [
@@ -341,6 +320,23 @@ impl<'a> NefDecoder<'a> {
 
     //println!("Got invwb {} {}", inv_wb_r, inv_wb_b);
 
+    let snef_curve = {
+      let g: f32 = 2.4;
+      let f: f32 = 0.055;
+      let min: f32 = 0.04045;
+      let mul: f32 = 12.92;
+      let curve = (0..4096).map(|i| {
+        let v = (i as f32) / 4095.0;
+        let res = if v <= min {
+          v / mul
+        } else {
+          ((v+f)/(1.0+f)).powf(g)
+        };
+        clampbits((res*65535.0*4.0) as i32, 16)
+      }).collect::<Vec<u16>>();
+      LookupTable::new(&curve)
+    };
+
     decode_threaded(width*3, height, dummy, &(|out: &mut [u16], row| {
       let inb = &src[row*width*3..];
       let mut random = BEu32(inb, 0);
@@ -357,17 +353,17 @@ impl<'a> NefDecoder<'a> {
         let cb = (g4 | ((g5 & 0x0f) << 8)) as f32 - 2048.0;
         let cr = ((g5 >> 4) | (g6 << 4)) as f32 - 2048.0;
 
-        let r = SNEF_CURVE.dither(clampbits((y1 + 1.370705 * cr) as i32, 12), &mut random);
-        let g = SNEF_CURVE.dither(clampbits((y1 - 0.337633 * cb - 0.698001 * cr) as i32, 12), &mut random);
-        let b = SNEF_CURVE.dither(clampbits((y1 + 1.732446 * cb) as i32, 12), &mut random);
+        let r = snef_curve.dither(clampbits((y1 + 1.370705 * cr) as i32, 12), &mut random);
+        let g = snef_curve.dither(clampbits((y1 - 0.337633 * cb - 0.698001 * cr) as i32, 12), &mut random);
+        let b = snef_curve.dither(clampbits((y1 + 1.732446 * cb) as i32, 12), &mut random);
         // invert the white balance
         o[0] = clampbits((inv_wb_r * r as i32 + (1<<9)) >> 10, 15);
         o[1] = g;
         o[2] = clampbits((inv_wb_b * b as i32 + (1<<9)) >> 10, 15);
 
-        let r = SNEF_CURVE.dither(clampbits((y2 + 1.370705 * cr) as i32, 12), &mut random);
-        let g = SNEF_CURVE.dither(clampbits((y2 - 0.337633 * cb - 0.698001 * cr) as i32, 12), &mut random);
-        let b = SNEF_CURVE.dither(clampbits((y2 + 1.732446 * cb) as i32, 12), &mut random);
+        let r = snef_curve.dither(clampbits((y2 + 1.370705 * cr) as i32, 12), &mut random);
+        let g = snef_curve.dither(clampbits((y2 - 0.337633 * cb - 0.698001 * cr) as i32, 12), &mut random);
+        let b = snef_curve.dither(clampbits((y2 + 1.732446 * cb) as i32, 12), &mut random);
         // invert the white balance
         o[3] = clampbits((inv_wb_r * r as i32 + (1<<9)) >> 10, 15);
         o[4] = g;

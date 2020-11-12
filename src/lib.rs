@@ -122,7 +122,6 @@ pub fn decode(reader: &mut dyn Read) -> Result<RawImage,RawLoaderError> {
 #[doc(hidden)]
 pub fn force_initialization() {
   lazy_static::initialize(&LOADER);
-  lazy_static::initialize(&decoders::SNEF_CURVE);
 }
 
 // Used for fuzzing targets that just want to test the actual decoders instead of the full formats

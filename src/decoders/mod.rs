@@ -88,7 +88,6 @@ mod mos;
 mod iiq;
 mod tfr;
 mod nef;
-pub use self::nef::SNEF_CURVE;
 mod nrw;
 mod cr2;
 mod ari;
