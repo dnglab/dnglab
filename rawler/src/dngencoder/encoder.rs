@@ -235,22 +235,6 @@ impl<'a, W: 'a + Write + Seek, K: TiffKind> DirectoryEncoder<'a, W, K> {
         Ok(K::convert_offset(offset)?)
     }
 
-    /*
-    fn finish_internal(&mut self) -> TiffResult<()> {
-        let ifd_pointer = self.write_directory()?;
-        let curr_pos = self.writer.offset();
-
-        self.writer.goto_offset(self.ifd_pointer_pos)?;
-        K::write_offset(&mut self.writer, ifd_pointer)?;
-        self.writer.goto_offset(curr_pos)?;
-        K::write_offset(&mut self.writer, 0)?;
-
-        self.dropped = true;
-
-        Ok(())
-    }
-     */
-
     pub fn finish(mut self) -> DngResult<K::OffsetType> {
         // TODO: new by myself
         let ifd_pointer = self.write_directory()?;
