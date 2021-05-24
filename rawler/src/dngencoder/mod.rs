@@ -3,18 +3,18 @@
 // Copyright 2021 Daniel Vogelbacher <daniel@chaospixel.com>
 
 mod bytecast;
+mod cfa_image;
 pub mod colortype;
 mod encoder;
 mod error;
-mod cfa_image;
 mod preview_image;
 pub mod tags;
 mod tiff_value;
 mod writer;
 
+pub use cfa_image::CfaImageEncoder;
 pub use encoder::DngEncoder;
 pub use error::DngResult;
-pub use cfa_image::CfaImageEncoder;
 pub use preview_image::PreviewImageEncoder;
 pub use tiff_value::*;
 

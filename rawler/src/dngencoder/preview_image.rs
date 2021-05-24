@@ -9,8 +9,8 @@ use std::{
 };
 
 use super::{
-    colortype::ColorType, encoder::DirectoryEncoder, encoder::TiffKind, error::DngResult,
-    cfa_image::CfaImageEncoder, tags, tags::ResolutionUnit, tags::Tag, Rational, TiffValue,
+    cfa_image::CfaImageEncoder, colortype::ColorType, encoder::DirectoryEncoder, encoder::TiffKind,
+    error::DngResult, tags, tags::ResolutionUnit, tags::Tag, Rational, TiffValue,
 };
 
 pub struct PreviewImageEncoder<'a, W: 'a + Write + Seek, C: ColorType, K: TiffKind> {
