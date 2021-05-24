@@ -441,7 +441,7 @@ impl<'a> TiffEntry<'a> {
     match self.typ {
       1                  => self.data[idx] as u16,
       3 | 8              => self.get_force_u16(idx),
-      _ => panic!(format!("Trying to read typ {} for a u32", self.typ).to_string()),
+      _ => panic!("{}", format!("Trying to read typ {} for a u32", self.typ).to_string()),
     }
   }
 
@@ -449,7 +449,7 @@ impl<'a> TiffEntry<'a> {
     match self.typ {
       1 | 3 | 8          => self.get_u16(idx) as u32,
       4 | 7 | 9 | 13     => self.get_force_u32(idx),
-      _ => panic!(format!("Trying to read typ {} for a u32", self.typ).to_string()),
+      _ => panic!("{}", format!("Trying to read typ {} for a u32", self.typ).to_string()),
     }
   }
 
@@ -485,7 +485,7 @@ impl<'a> TiffEntry<'a> {
     };
     match str::from_utf8(&self.data[0..len]) {
       Ok(val) => val.trim(),
-      Err(err) => panic!(err),
+      Err(err) => panic!("{}", format!("from_utf8() failed: {}", err)),
     }
   }
 
