@@ -2,7 +2,7 @@ use std::f32::NAN;
 
 use crate::decoders::*;
 use crate::decoders::tiff::*;
-use crate::decoders::ljpeg::*;
+use crate::decompressors::ljpeg::*;
 use crate::decoders::basics::*;
 
 #[derive(Debug, Clone)]

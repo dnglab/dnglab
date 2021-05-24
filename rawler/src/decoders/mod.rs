@@ -62,10 +62,9 @@ macro_rules! alloc_image_ok {
 }
 
 mod image;
-mod basics;
+pub mod basics;
 mod packed;
 mod pumps;
-mod ljpeg;
 pub mod cfa;
 mod tiff;
 mod ciff;
@@ -96,7 +95,7 @@ use self::tiff::*;
 pub use self::image::*;
 mod unwrapped;
 
-pub static CAMERAS_TOML: &'static str = include_str!(concat!(env!("OUT_DIR"), "/all.toml"));
+pub static CAMERAS_TOML: &'static str = "FAIL"; // FIXME
 pub static SAMPLE: &'static str = "\nPlease submit samples at https://raw.pixls.us/";
 pub static BUG: &'static str = "\nPlease file a bug with a sample file at https://github.com/pedrocr/rawloader/issues/new";
 
@@ -377,7 +376,7 @@ impl RawLoader {
       camnames.push((cam.model.clone(), cam.clean_model.clone()));
       if let Some(val) = ct.get("model_aliases") {
         for alias in val.as_array().unwrap() {
-          camnames.push((alias[0].as_str().unwrap().to_string().clone(), 
+          camnames.push((alias[0].as_str().unwrap().to_string().clone(),
                          alias[1].as_str().unwrap().to_string().clone()));
         }
       }

@@ -1,5 +1,6 @@
 use crate::decoders::*;
 use crate::decoders::basics::*;
+use crate::decompressors::ljpeg::LjpegDecompressor;
 
 pub fn decode_unwrapped(buffer: &Buffer) -> Result<RawImageData,String> {
   let decoder = LEu16(&buffer.buf, 0);
@@ -131,7 +132,7 @@ pub fn decode_unwrapped(buffer: &Buffer) -> Result<RawImageData,String> {
 
 fn decode_ljpeg(src: &[u8], width: usize, height: usize, dng_bug: bool, csfix: bool) -> Result<RawImageData,String> {
   let mut out = vec![0u16; width*height];
-  let decompressor = ljpeg::LjpegDecompressor::new_full(src, dng_bug, csfix)?;
+  let decompressor = LjpegDecompressor::new_full(src, dng_bug, csfix)?;
   decompressor.decode(&mut out, 0, width, width, height, false)?;
   Ok(RawImageData::Integer(out))
 }

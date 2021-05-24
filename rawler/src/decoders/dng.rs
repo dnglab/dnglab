@@ -4,7 +4,7 @@ use std::cmp;
 use crate::decoders::*;
 use crate::decoders::tiff::*;
 use crate::decoders::basics::*;
-use crate::decoders::ljpeg::*;
+use crate::decompressors::ljpeg::*;
 use crate::decoders::cfa::*;
 
 #[derive(Debug, Clone)]
