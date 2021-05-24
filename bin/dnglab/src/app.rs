@@ -37,6 +37,5 @@ pub fn create_app() -> App<'static, 'static> {
             (about: "Start GUI")
         )
     );
-
-    return app;
+    app
 }
