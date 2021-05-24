@@ -353,7 +353,7 @@ impl RawLoader {
   pub fn new() -> RawLoader {
     let toml = match CAMERAS_TOML.parse::<Value>() {
       Ok(val) => val,
-      Err(e) => panic!(format!("Error parsing all.toml: {:?}", e)),
+      Err(e) => panic!("{}", format!("Error parsing all.toml: {:?}", e)),
     };
 
     let mut cams = Vec::new();
