@@ -1,0 +1,6 @@
+version: 2
+updates:
+  - package-ecosystem: "rust:cargo"
+    directory: "/"
+    schedule:
+      interval: "daily"
