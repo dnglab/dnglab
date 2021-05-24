@@ -3,7 +3,7 @@
 
 pub mod decoders;
 pub mod decompressors;
-pub mod dng;
+pub mod dngencoder;
 pub mod formats;
 
 #[cfg(test)]
