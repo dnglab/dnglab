@@ -24,13 +24,39 @@ jobs:
       - run: cargo test
       - run: cargo check
 
-  windows:
-    name: Windows
+  windows_check:
+    name: Windows check
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v2
       - uses: dtolnay/rust-toolchain@stable
       - run: cargo check
+
+  windows_artifact:
+    name: Windows release artifact
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: dtolnay/rust-toolchain@stable
+      - run: cargo build --release
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: dnglab.exe
+          path: 'target/release/dnglab.exe'
+
+  linux_artifact:
+    name: Linux release artifact
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v2
+      - uses: dtolnay/rust-toolchain@stable
+      - run: cargo build --release
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: dnglab_x64
+          path: 'target/release/dnglab'
 
   clippy:
     name: Clippy
