@@ -28,25 +28,6 @@ use super::writer::*;
 /// to encode Tiff/BigTiff ifd directories with images.
 ///
 /// See `DirectoryEncoder` and `ImageEncoder`.
-///
-/// # Examples
-/// ```
-/// # extern crate tiff;
-/// # fn main() {
-/// # let mut file = std::io::Cursor::new(Vec::new());
-/// # let image_data = vec![0; 100*100*3];
-/// use tiff::encoder::*;
-///
-/// // create a standard Tiff file
-/// let mut tiff = DngEncoder::new(&mut file).unwrap();
-/// tiff.write_image::<colortype::RGB8>(100, 100, &image_data).unwrap();
-///
-/// // create a BigTiff file
-/// let mut bigtiff = DngEncoder::new_big(&mut file).unwrap();
-/// bigtiff.write_image::<colortype::RGB8>(100, 100, &image_data).unwrap();
-///
-/// # }
-/// ```
 pub struct DngEncoder<W, K: TiffKind = TiffKindStandard> {
     writer: DngWriter<W>,
     kind: PhantomData<K>,
