@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: LGPL-2.1
 // Copyright 2021 Daniel Vogelbacher <daniel@chaospixel.com>
 
-use clap::{App, clap_app, crate_version};
+use clap::{clap_app, crate_version, App};
 use log::debug;
 
 pub fn create_app() -> App<'static, 'static> {
     debug!("Creating CLAP app configuration");
-   let app = clap_app!(stackment =>
+    let app = clap_app!(stackment =>
         (version: crate_version!())
         (author: "Daniel V. <daniel@chaospixel.com>")
         (about: "DngLab - A camera raw utility and DNG converter")
