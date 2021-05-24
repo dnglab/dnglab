@@ -1,0 +1,20 @@
+<?xml encoding="utf8" version="1.0" ?>
+
+<cameras>
+	<camera make="Canon" model="Canon EOS 5D Mark III">
+		<id make="Canon" model="EOS 5D Mark III">Canon EOS 5D Mark III</ID>
+        <aliases />
+        <modes>
+            <mode name="default">
+                <expectations>
+                    <dimensions w="1024" h="1024" />
+                    <sensorsize w="400" h="2000" />
+                    <activearea x="0" y="0" w="200" h="200" />
+                </expectations>
+            </mode>
+        </modes>
+        <calibration>
+            <matrix illuminant="D65">6722,-635,-963,-4287,12460,2028,-908,2162,5668</matrix>
+        </calibration>
+	</camera>
+</cameras>
