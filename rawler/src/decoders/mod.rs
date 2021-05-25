@@ -95,7 +95,7 @@ use self::tiff::*;
 pub use self::image::*;
 mod unwrapped;
 
-pub static CAMERAS_TOML: &'static str = "FAIL"; // FIXME
+pub static CAMERAS_TOML: &'static str = include_str!("../../data/all.toml");
 pub static SAMPLE: &'static str = "\nPlease submit samples at https://raw.pixls.us/";
 pub static BUG: &'static str = "\nPlease file a bug with a sample file at https://github.com/pedrocr/rawloader/issues/new";
 
