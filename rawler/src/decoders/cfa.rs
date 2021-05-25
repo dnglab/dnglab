@@ -6,7 +6,7 @@ use crate::decoders::tiff::*;
 ///
 /// # Example
 /// ```
-/// use rawloader::CFA;
+/// use rawler::CFA;
 /// let cfa = CFA::new("RGGB");
 /// assert_eq!(cfa.color_at(0,0), 0);
 /// assert_eq!(cfa.color_at(0,1), 1);
@@ -107,7 +107,7 @@ impl CFA {
   ///
   /// # Example
   /// ```
-  /// use rawloader::CFA;
+  /// use rawler::CFA;
   /// let cfa = CFA::new("RGGB");
   /// assert_eq!(cfa.color_at(0,0), 0);
   /// assert_eq!(cfa.color_at(0,1), 1);
@@ -153,7 +153,7 @@ impl CFA {
   ///
   /// # Example
   /// ```
-  /// use rawloader::CFA;
+  /// use rawler::CFA;
   /// let cfa = CFA::new("RGGB");
   /// assert!(cfa.is_valid());
   ///
@@ -168,7 +168,7 @@ impl CFA {
   ///
   /// # Example
   /// ```
-  /// use rawloader::CFA;
+  /// use rawler::CFA;
   /// let cfa = CFA::new("RGGB");
   /// assert_eq!(cfa.to_string(), "RGGB");
   ///

@@ -16,13 +16,13 @@
 //!     std::process::exit(2);
 //!   }
 //!   let file = &args[1];
-//!   let image = rawloader::decode_file(file).unwrap();
+//!   let image = rawler::decode_file(file).unwrap();
 //!
 //!   // Write out the image as a grayscale PPM
 //!   let mut f = BufWriter::new(File::create(format!("{}.ppm",file)).unwrap());
 //!   let preamble = format!("P6 {} {} {}\n", image.width, image.height, 65535).into_bytes();
 //!   f.write_all(&preamble).unwrap();
-//!   if let rawloader::RawImageData::Integer(data) = image.data {
+//!   if let rawler::RawImageData::Integer(data) = image.data {
 //!     for pix in data {
 //!       // Do an extremely crude "demosaic" by setting R=G=B
 //!       let pixhigh = (pix>>8) as u8;
@@ -99,7 +99,7 @@
   ///
   /// # Example
   /// ```rust,ignore
-  /// let image = match rawloader::decode_file("path/to/your/file.RAW") {
+  /// let image = match rawler::decode_file("path/to/your/file.RAW") {
   ///   Ok(val) => val,
   ///   Err(e) => ... some appropriate action when the file is unreadable ...
   /// };
@@ -113,7 +113,7 @@
   /// # Example
   /// ```rust,ignore
   /// let mut file = match File::open(path).unwrap();
-  /// let image = match rawloader::decode(&mut file) {
+  /// let image = match rawler::decode(&mut file) {
   ///   Ok(val) => val,
   ///   Err(e) => ... some appropriate action when the file is unreadable ...
   /// };
