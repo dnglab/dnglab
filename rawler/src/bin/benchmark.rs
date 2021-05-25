@@ -26,11 +26,11 @@ fn main() {
     Ok(val) => val,
     Err(e) => {error(&e.to_string());return},
   };
-  let buffer = match rawloader::Buffer::new(&mut f) {
+  let buffer = match rawler::Buffer::new(&mut f) {
     Ok(val) => val,
     Err(e) => {error(&e); return},
   };
-  let rawloader = rawloader::RawLoader::new();
+  let rawloader = rawler::RawLoader::new();
   let from_time = Instant::now();
   {
     for _ in 0..ITERATIONS {

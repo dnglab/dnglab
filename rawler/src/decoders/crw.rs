@@ -3,7 +3,7 @@ use std::f32::NAN;
 use crate::decoders::*;
 use crate::decoders::ciff::*;
 use crate::decoders::basics::*;
-use crate::decoders::ljpeg::huffman::*;
+use crate::decompressors::ljpeg::huffman::*;
 
 const CRW_FIRST_TREE: [[u8;29];3] = [
   [ 0,1,4,2,3,1,2,0,0,0,0,0,0,0,0,0,

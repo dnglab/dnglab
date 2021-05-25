@@ -7,7 +7,7 @@ fn main() {
     std::process::exit(2);
   }
   let file = &args[1];
-  match rawloader::decode_file(file) {
+  match rawler::decode_file(file) {
     Ok(_)  => println!("OK file"),
     Err(_) => println!("FAILED file"),
   }

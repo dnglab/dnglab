@@ -3,7 +3,7 @@ use std::f32::NAN;
 use crate::decoders::*;
 use crate::decoders::tiff::*;
 use crate::decoders::basics::*;
-use crate::decoders::ljpeg::huffman::*;
+use crate::decompressors::ljpeg::huffman::*;
 
 #[derive(Debug, Clone)]
 pub struct PefDecoder<'a> {

@@ -1,6 +1,6 @@
 use crate::decoders::basics::*;
-use crate::decoders::ljpeg::LjpegDecompressor;
-use crate::decoders::ljpeg::huffman::*;
+use super::LjpegDecompressor;
+use super::huffman::*;
 
 pub fn decode_ljpeg_2components(ljpeg: &LjpegDecompressor, out: &mut [u16], x: usize, stripwidth:usize, width: usize, height: usize) -> Result<(),String> {
   if ljpeg.sof.width*2 < width || ljpeg.sof.height < height {
