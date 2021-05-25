@@ -1,0 +1,21 @@
+#!/usr/bin/env ruby
+
+require 'fileutils'
+
+FUZZ_OPTS = "-m 500 -t 2000"
+
+if ARGV.size != 1
+  $stderr.puts "Usage: run [decoders|metadata]"
+  exit 2
+end
+
+target = ARGV[0]
+bin = "./target/release/fuzz-rawloader-#{target}"
+
+if !File.exist? bin
+  $stderr.puts "ERROR: No such file #{bin.inspect}"
+  exit 3
+end
+
+FileUtils.mkdir_p "runs/#{target}/"
+system "cargo afl fuzz -i 'runs/#{target}/in' -o 'runs/#{target}/out' #{FUZZ_OPTS} #{bin}"

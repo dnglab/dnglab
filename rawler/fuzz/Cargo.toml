@@ -1,0 +1,24 @@
+[package]
+name = "fuzz-rawloader"
+version = "0.0.1"
+authors = ["Pedro Côrte-Real <pedro@pedrocr.net>"]
+edition = "2018"
+
+[dependencies.afl]
+git = "https://github.com/pedrocr/afl.rs/"
+branch = "myblend"
+
+[dependencies.rawloader]
+path = "../"
+
+[profile.dev]
+panic = "unwind"
+opt-level = 3
+
+[[bin]]
+name = "fuzz-rawloader-decoders"
+path = "src/decoders.rs"
+
+[[bin]]
+name = "fuzz-rawloader-metadata"
+path = "src/metadata.rs"

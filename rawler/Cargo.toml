@@ -1,0 +1,43 @@
+[package]
+name = "rawloader"
+version = "0.36.3"
+authors = ["Pedro Côrte-Real <pedro@pedrocr.net>"]
+description = "A library to extract the data from camera raw formats"
+documentation = "https://docs.rs/rawloader/"
+#homepage = "..."
+repository = "https://github.com/pedrocr/rawloader"
+license = "LGPL-2.1"
+categories = ["multimedia::images"]
+edition = "2018"
+
+build = "data/cameras/join.rs"
+
+[dependencies]
+toml = "0.5"
+enumn = "0.1"
+lazy_static = "1"
+byteorder = "1"
+rayon = "1"
+itertools = "0.9"
+serde = "1"
+serde_derive = "1"
+
+[build-dependencies]
+glob = "0.3"
+toml = "0.5"
+rustc_version = "0.2.3"
+
+[profile.release]
+panic = "unwind"
+
+[profile.dev]
+panic = "unwind"
+opt-level = 3
+
+[[bin]]
+name = "benchmark"
+doc = false
+
+[[bin]]
+name = "identify"
+doc = false
