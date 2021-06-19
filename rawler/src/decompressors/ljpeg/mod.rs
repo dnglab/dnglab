@@ -1,6 +1,8 @@
-use crate::decoders::basics::*;
+use crate::bits::Endian;
+use crate::decoders::decode_threaded_multiline;
 use crate::decompressors::ljpeg::huffman::*;
 use crate::decompressors::ljpeg::decompressors::*;
+use crate::pumps::ByteStream;
 
 pub mod huffman;
 mod decompressors;
@@ -133,7 +135,7 @@ impl<'a> LjpegDecompressor<'a> {
   }
 
   pub fn new_full(src: &'a [u8], dng_bug: bool, csfix: bool) -> Result<LjpegDecompressor, String> {
-    let mut input = ByteStream::new(src, BIG_ENDIAN);
+    let mut input = ByteStream::new(src, Endian::Big);
     if LjpegDecompressor::get_next_marker(&mut input, false)? != m(Marker::SOI) {
       return Err("ljpeg: Image did not start with SOI. Probably not LJPEG".to_string())
     }
@@ -271,7 +273,7 @@ impl<'a> LjpegDecompressor<'a> {
 
   pub fn decode_leaf(&self, width: usize, height: usize) -> Result<Vec<u16>,String> {
     let mut offsets = vec![0 as usize; 1];
-    let mut input = ByteStream::new(self.buffer, BIG_ENDIAN);
+    let mut input = ByteStream::new(self.buffer, Endian::Big);
     loop {
       match LjpegDecompressor::get_next_marker(&mut input, true) {
         Ok(marker) => {

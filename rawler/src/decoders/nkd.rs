@@ -1,5 +1,4 @@
-use crate::decoders::*;
-use crate::decoders::basics::*;
+use crate::{decoders::*, packed::*};
 use std::f32::NAN;
 
 #[derive(Debug, Clone)]
@@ -20,7 +19,7 @@ impl<'a> NakedDecoder<'a> {
 }
 
 impl<'a> Decoder for NakedDecoder<'a> {
-  fn image(&self, dummy: bool) -> Result<RawImage,String> {
+  fn raw_image(&self, dummy: bool) -> Result<RawImage,String> {
     let width = self.camera.raw_width;
     let height = self.camera.raw_height;
     let size = self.camera.filesize;

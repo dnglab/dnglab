@@ -1,8 +1,11 @@
 use std::f32::NAN;
 
+use crate::RawImage;
 use crate::decoders::*;
-use crate::decoders::tiff::*;
-use crate::decoders::basics::*;
+use crate::formats::tiff::*;
+use crate::bits::*;
+use crate::pumps::BitPump;
+use crate::pumps::BitPumpMSB32;
 
 #[derive(Debug, Clone)]
 pub struct IiqDecoder<'a> {
@@ -22,7 +25,7 @@ impl<'a> IiqDecoder<'a> {
 }
 
 impl<'a> Decoder for IiqDecoder<'a> {
-  fn image(&self, dummy: bool) -> Result<RawImage,String> {
+  fn raw_image(&self, dummy: bool) -> Result<RawImage,String> {
     let camera = self.rawloader.check_supported(&self.tiff)?;
 
     let off = LEu32(self.buffer, 16) as usize + 8;

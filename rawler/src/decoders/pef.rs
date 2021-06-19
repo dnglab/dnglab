@@ -1,9 +1,13 @@
 use std::f32::NAN;
 
+use crate::alloc_image_ok;
+use crate::bits::Endian;
 use crate::decoders::*;
-use crate::decoders::tiff::*;
-use crate::decoders::basics::*;
+use crate::formats::tiff::*;
 use crate::decompressors::ljpeg::huffman::*;
+use crate::packed::*;
+use crate::pumps::BitPumpMSB;
+use crate::pumps::ByteStream;
 
 #[derive(Debug, Clone)]
 pub struct PefDecoder<'a> {
@@ -23,15 +27,15 @@ impl<'a> PefDecoder<'a> {
 }
 
 impl<'a> Decoder for PefDecoder<'a> {
-  fn image(&self, dummy: bool) -> Result<RawImage,String> {
+  fn raw_image(&self, dummy: bool) -> Result<RawImage,String> {
     let camera = self.rawloader.check_supported(&self.tiff)?;
-    let raw = fetch_ifd!(&self.tiff, Tag::StripOffsets);
-    let width = fetch_tag!(raw, Tag::ImageWidth).get_usize(0);
-    let height = fetch_tag!(raw, Tag::ImageLength).get_usize(0);
-    let offset = fetch_tag!(raw, Tag::StripOffsets).get_usize(0);
+    let raw = fetch_ifd!(&self.tiff, TiffRootTag::StripOffsets);
+    let width = fetch_tag!(raw, TiffRootTag::ImageWidth).get_usize(0);
+    let height = fetch_tag!(raw, TiffRootTag::ImageLength).get_usize(0);
+    let offset = fetch_tag!(raw, TiffRootTag::StripOffsets).get_usize(0);
     let src = &self.buffer[offset..];
 
-    let image = match fetch_tag!(raw, Tag::Compression).get_u32(0) {
+    let image = match fetch_tag!(raw, TiffRootTag::Compression).get_u32(0) {
       1 => decode_16be(src, width, height, dummy),
       32773 => decode_12be(src, width, height, dummy),
       65535 => self.decode_compressed(src, width, height, dummy)?,
@@ -45,12 +49,12 @@ impl<'a> Decoder for PefDecoder<'a> {
 
 impl<'a> PefDecoder<'a> {
   fn get_wb(&self) -> Result<[f32;4], String> {
-    let levels = fetch_tag!(self.tiff, Tag::PefWB);
+    let levels = fetch_tag!(self.tiff, TiffRootTag::PefWB);
     Ok([levels.get_f32(0), levels.get_f32(1), levels.get_f32(3), NAN])
   }
 
   fn get_blacklevels(&self) -> Option<[u16;4]> {
-    match self.tiff.find_entry(Tag::PefBlackLevels) {
+    match self.tiff.find_entry(TiffRootTag::PefBlackLevels) {
       Some(levels) => {
         Some([levels.get_f32(0) as u16,levels.get_f32(1) as u16,
              levels.get_f32(2) as u16,levels.get_f32(3) as u16])
@@ -60,7 +64,7 @@ impl<'a> PefDecoder<'a> {
   }
 
   fn decode_compressed(&self, src: &[u8], width: usize, height: usize, dummy: bool) -> Result<Vec<u16>,String> {
-    if let Some(huff) = self.tiff.find_entry(Tag::PefHuffman) {
+    if let Some(huff) = self.tiff.find_entry(TiffRootTag::PefHuffman) {
       Self::do_decode(src, Some((huff.get_data(), self.tiff.get_endian())), width, height, dummy)
     } else {
       Self::do_decode(src, None, width, height, dummy)

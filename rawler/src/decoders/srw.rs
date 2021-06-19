@@ -1,9 +1,14 @@
 use std::f32::NAN;
 use std::cmp;
 
+use crate::bits::clampbits;
 use crate::decoders::*;
-use crate::decoders::tiff::*;
-use crate::decoders::basics::*;
+use crate::formats::tiff::*;
+use crate::bits::*;
+use crate::packed::*;
+use crate::pumps::BitPump;
+use crate::pumps::BitPumpMSB;
+use crate::pumps::BitPumpMSB32;
 
 #[derive(Debug, Clone)]
 pub struct SrwDecoder<'a> {
@@ -23,14 +28,14 @@ impl<'a> SrwDecoder<'a> {
 }
 
 impl<'a> Decoder for SrwDecoder<'a> {
-  fn image(&self, dummy: bool) -> Result<RawImage,String> {
+  fn raw_image(&self, dummy: bool) -> Result<RawImage,String> {
     let camera = self.rawloader.check_supported(&self.tiff)?;
-    let raw = fetch_ifd!(&self.tiff, Tag::StripOffsets);
-    let width = fetch_tag!(raw, Tag::ImageWidth).get_usize(0);
-    let height = fetch_tag!(raw, Tag::ImageLength).get_usize(0);
-    let offset = fetch_tag!(raw, Tag::StripOffsets).get_usize(0);
-    let compression = fetch_tag!(raw, Tag::Compression).get_u32(0);
-    let bits = fetch_tag!(raw, Tag::BitsPerSample).get_u32(0);
+    let raw = fetch_ifd!(&self.tiff, TiffRootTag::StripOffsets);
+    let width = fetch_tag!(raw, TiffRootTag::ImageWidth).get_usize(0);
+    let height = fetch_tag!(raw, TiffRootTag::ImageLength).get_usize(0);
+    let offset = fetch_tag!(raw, TiffRootTag::StripOffsets).get_usize(0);
+    let compression = fetch_tag!(raw, TiffRootTag::Compression).get_u32(0);
+    let bits = fetch_tag!(raw, TiffRootTag::BitsPerSample).get_u32(0);
     let src = &self.buffer[offset..];
 
     let image = match compression {
@@ -40,7 +45,7 @@ impl<'a> Decoder for SrwDecoder<'a> {
          x => return Err(format!("SRW: Don't know how to handle bps {}", x).to_string()),
       },
       32770 => {
-        match raw.find_entry(Tag::SrwSensorAreas) {
+        match raw.find_entry(TiffRootTag::SrwSensorAreas) {
           None => match bits {
             12 => {
               if camera.find_hint("little_endian") {
@@ -375,8 +380,8 @@ impl<'a> SrwDecoder<'a> {
   }
 
   fn get_wb(&self) -> Result<[f32;4], String> {
-    let rggb_levels = fetch_tag!(self.tiff, Tag::SrwRGGBLevels);
-    let rggb_blacks = fetch_tag!(self.tiff, Tag::SrwRGGBBlacks);
+    let rggb_levels = fetch_tag!(self.tiff, TiffRootTag::SrwRGGBLevels);
+    let rggb_blacks = fetch_tag!(self.tiff, TiffRootTag::SrwRGGBBlacks);
     if rggb_levels.count() != 4 || rggb_blacks.count() != 4 {
       Err("SRW: RGGB Levels and Blacks don't have 4 elements".to_string())
     } else {

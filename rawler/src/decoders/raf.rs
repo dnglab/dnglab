@@ -1,8 +1,9 @@
 use std::f32::NAN;
 
+use crate::alloc_image_plain;
 use crate::decoders::*;
-use crate::decoders::tiff::*;
-use crate::decoders::basics::*;
+use crate::formats::tiff::*;
+use crate::packed::*;
 
 #[derive(Debug, Clone)]
 pub struct RafDecoder<'a> {
@@ -22,18 +23,18 @@ impl<'a> RafDecoder<'a> {
 }
 
 impl<'a> Decoder for RafDecoder<'a> {
-  fn image(&self, dummy: bool) -> Result<RawImage,String> {
+  fn raw_image(&self, dummy: bool) -> Result<RawImage,String> {
     let camera = self.rawloader.check_supported(&self.tiff)?;
-    let raw = fetch_ifd!(&self.tiff, Tag::RafOffsets);
-    let (width,height) = if raw.has_entry(Tag::RafImageWidth) {
-      (fetch_tag!(raw, Tag::RafImageWidth).get_usize(0),
-       fetch_tag!(raw, Tag::RafImageLength).get_usize(0))
+    let raw = fetch_ifd!(&self.tiff, TiffRootTag::RafOffsets);
+    let (width,height) = if raw.has_entry(TiffRootTag::RafImageWidth) {
+      (fetch_tag!(raw, TiffRootTag::RafImageWidth).get_usize(0),
+       fetch_tag!(raw, TiffRootTag::RafImageLength).get_usize(0))
     } else {
-      let sizes = fetch_tag!(raw, Tag::ImageWidth);
+      let sizes = fetch_tag!(raw, TiffRootTag::ImageWidth);
       (sizes.get_usize(1), sizes.get_usize(0))
     };
-    let offset = fetch_tag!(raw, Tag::RafOffsets).get_usize(0) + raw.start_offset();
-    let bps = match raw.find_entry(Tag::RafBitsPerSample) {
+    let offset = fetch_tag!(raw, TiffRootTag::RafOffsets).get_usize(0) + raw.start_offset();
+    let bps = match raw.find_entry(TiffRootTag::RafBitsPerSample) {
       Some(val) => val.get_u32(0) as usize,
       None      => 16,
     };
@@ -83,6 +84,9 @@ impl<'a> Decoder for RafDecoder<'a> {
         crops: [0,0,0,0],
         blackareas: Vec::new(),
         orientation: camera.orientation,
+        xyz_to_cam2: camera.xyz_to_cam2,
+        illuminant2: camera.illuminant2,
+        illuminant2_denominator: camera.illuminant2_denominator,
       })
     } else {
       ok_image(camera, width, height, self.get_wb()?, image)
@@ -92,10 +96,10 @@ impl<'a> Decoder for RafDecoder<'a> {
 
 impl<'a> RafDecoder<'a> {
   fn get_wb(&self) -> Result<[f32;4], String> {
-    match self.tiff.find_entry(Tag::RafWBGRB) {
+    match self.tiff.find_entry(TiffRootTag::RafWBGRB) {
       Some(levels) => Ok([levels.get_f32(1), levels.get_f32(0), levels.get_f32(2), NAN]),
       None => {
-        let levels = fetch_tag!(self.tiff, Tag::RafOldWB);
+        let levels = fetch_tag!(self.tiff, TiffRootTag::RafOldWB);
         Ok([levels.get_f32(1), levels.get_f32(0), levels.get_f32(3), NAN])
       },
     }

@@ -1,6 +1,8 @@
+use crate::bits::Endian;
 use crate::decoders::*;
-use crate::decoders::basics::*;
+use crate::bits::*;
 use crate::decompressors::ljpeg::LjpegDecompressor;
+use crate::packed::*;
 
 pub fn decode_unwrapped(buffer: &Buffer) -> Result<RawImageData,String> {
   let decoder = LEu16(&buffer.buf, 0);
@@ -98,14 +100,14 @@ pub fn decode_unwrapped(buffer: &Buffer) -> Result<RawImageData,String> {
       let huff = data;
       let data = &data[64..];
       Ok(RawImageData::Integer(
-        pef::PefDecoder::do_decode(data, Some((huff, LITTLE_ENDIAN)), width, height, false).unwrap()
+        pef::PefDecoder::do_decode(data, Some((huff, Endian::Little)), width, height, false).unwrap()
       ))
     },
     38  => {
       let huff = data;
       let data = &data[64..];
       Ok(RawImageData::Integer(
-        pef::PefDecoder::do_decode(data, Some((huff, BIG_ENDIAN)), width, height, false).unwrap()
+        pef::PefDecoder::do_decode(data, Some((huff, Endian::Big)), width, height, false).unwrap()
       ))
     },
     39  => Ok(RawImageData::Integer(crw::CrwDecoder::do_decode(data, false, 0, width, height, false))),
@@ -117,10 +119,10 @@ pub fn decode_unwrapped(buffer: &Buffer) -> Result<RawImageData,String> {
     45  => Ok(RawImageData::Integer(mos::MosDecoder::do_decode(data, false, width, height, false).unwrap())),
     46  => Ok(RawImageData::Integer(mos::MosDecoder::do_decode(data, true, width, height, false).unwrap())),
     47  => Ok(RawImageData::Integer(iiq::IiqDecoder::decode_compressed(data, height*4, 0, width, height, false))),
-    48  => decode_nef(data, width, height, LITTLE_ENDIAN, 12),
-    49  => decode_nef(data, width, height, LITTLE_ENDIAN, 14),
-    50  => decode_nef(data, width, height, BIG_ENDIAN, 12),
-    51  => decode_nef(data, width, height, BIG_ENDIAN, 14),
+    48  => decode_nef(data, width, height, Endian::Little, 12),
+    49  => decode_nef(data, width, height, Endian::Little, 14),
+    50  => decode_nef(data, width, height, Endian::Big, 12),
+    51  => decode_nef(data, width, height, Endian::Big, 14),
     52  => {
       let coeffs = [LEf32(data,0), LEf32(data,4), LEf32(data,8), LEf32(data,12)];
       let data = &data[16..];

@@ -1,8 +1,12 @@
 use std::f32::NAN;
 
+use crate::RawImage;
+use crate::alloc_image;
 use crate::decoders::*;
 use crate::decoders::ciff::*;
-use crate::decoders::basics::*;
+use crate::packed::*;
+use crate::pumps::BitPump;
+use crate::pumps::BitPumpJPEG;
 use crate::decompressors::ljpeg::huffman::*;
 
 const CRW_FIRST_TREE: [[u8;29];3] = [
@@ -80,7 +84,7 @@ impl<'a> CrwDecoder<'a> {
 }
 
 impl<'a> Decoder for CrwDecoder<'a> {
-  fn image(&self, dummy: bool) -> Result<RawImage,String> {
+  fn raw_image(&self, dummy: bool) -> Result<RawImage,String> {
     let makemodel = fetch_tag!(self.ciff, CiffTag::MakeModel).get_strings();
     if makemodel.len() < 2 {
       return Err("CRW: MakeModel tag needs to have 2 strings".to_string())

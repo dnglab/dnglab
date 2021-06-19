@@ -1,9 +1,18 @@
 use std::f32::NAN;
 use std::cmp;
 
+use crate::RawImage;
+use crate::alloc_image;
+use crate::bits::Endian;
 use crate::decoders::*;
-use crate::decoders::tiff::*;
-use crate::decoders::basics::*;
+use crate::packed::*;
+use crate::pumps::BitPump;
+use crate::pumps::BitPumpLSB;
+use crate::pumps::BitPumpMSB;
+use crate::formats::tiff::*;
+use crate::tags::TiffRootTag;
+use crate::bits::*;
+
 
 #[derive(Debug, Clone)]
 pub struct ArwDecoder<'a> {
@@ -23,9 +32,9 @@ impl<'a> ArwDecoder<'a> {
 }
 
 impl<'a> Decoder for ArwDecoder<'a> {
-  fn image(&self, dummy: bool) -> Result<RawImage,String> {
+  fn raw_image(&self, dummy: bool) -> Result<RawImage,String> {
     let camera = self.rawloader.check_supported(&self.tiff)?;
-    let data = self.tiff.find_ifds_with_tag(Tag::StripOffsets);
+    let data = self.tiff.find_ifds_with_tag(TiffRootTag::StripOffsets);
     if data.len() == 0 {
       if camera.model == "DSLR-A100" {
         return self.image_a100(camera, dummy)
@@ -34,15 +43,15 @@ impl<'a> Decoder for ArwDecoder<'a> {
       }
     }
     let raw = data[0];
-    let width = fetch_tag!(raw, Tag::ImageWidth).get_usize(0);
-    let mut height = fetch_tag!(raw, Tag::ImageLength).get_usize(0);
-    let offset = fetch_tag!(raw, Tag::StripOffsets).get_usize(0);
-    let count = fetch_tag!(raw, Tag::StripByteCounts).get_usize(0);
-    let compression = fetch_tag!(raw, Tag::Compression).get_u32(0);
+    let width = fetch_tag!(raw, TiffRootTag::ImageWidth).get_usize(0);
+    let mut height = fetch_tag!(raw, TiffRootTag::ImageLength).get_usize(0);
+    let offset = fetch_tag!(raw, TiffRootTag::StripOffsets).get_usize(0);
+    let count = fetch_tag!(raw, TiffRootTag::StripByteCounts).get_usize(0);
+    let compression = fetch_tag!(raw, TiffRootTag::Compression).get_u32(0);
     let bps = if camera.bps != 0 {
       camera.bps
     } else {
-      fetch_tag!(raw, Tag::BitsPerSample).get_usize(0)
+      fetch_tag!(raw, TiffRootTag::BitsPerSample).get_usize(0)
     };
     let mut white = camera.whitelevels[0];
     let mut black = camera.blacklevels[0];
@@ -95,20 +104,20 @@ impl<'a> ArwDecoder<'a> {
     // We've caught the elusive A100 in the wild, a transitional format
     // between the simple sanity of the MRW custom format and the wordly
     // wonderfullness of the Tiff-based ARW format, let's shoot from the hip
-    let data = self.tiff.find_ifds_with_tag(Tag::SubIFDs);
+    let data = self.tiff.find_ifds_with_tag(TiffRootTag::SubIFDs);
     if data.len() == 0 {
       return Err("ARW: Couldn't find the data IFD!".to_string())
     }
     let raw = data[0];
     let width = 3881;
     let height = 2608;
-    let offset = fetch_tag!(raw, Tag::SubIFDs).get_usize(0);
+    let offset = fetch_tag!(raw, TiffRootTag::SubIFDs).get_usize(0);
 
     let src = &self.buffer[offset..];
     let image = ArwDecoder::decode_arw1(src, width, height, dummy);
 
     // Get the WB the MRW way
-    let priv_offset = fetch_tag!(self.tiff, Tag::DNGPrivateArea).get_force_u32(0) as usize;
+    let priv_offset = fetch_tag!(self.tiff, TiffRootTag::DNGPrivateArea).get_force_u32(0) as usize;
     let buf = &self.buffer[priv_offset..];
     let mut currpos: usize = 8;
     let mut wb_coeffs: [f32;4] = [0.0, 0.0, 0.0, NAN];
@@ -129,14 +138,14 @@ impl<'a> ArwDecoder<'a> {
   }
 
   fn image_srf(&self, camera: Camera, dummy: bool) -> Result<RawImage,String> {
-    let data = self.tiff.find_ifds_with_tag(Tag::ImageWidth);
+    let data = self.tiff.find_ifds_with_tag(TiffRootTag::ImageWidth);
     if data.len() == 0 {
       return Err("ARW: Couldn't find the data IFD!".to_string())
     }
     let raw = data[0];
 
-    let width = fetch_tag!(raw, Tag::ImageWidth).get_usize(0);
-    let height = fetch_tag!(raw, Tag::ImageLength).get_usize(0);
+    let width = fetch_tag!(raw, TiffRootTag::ImageWidth).get_usize(0);
+    let height = fetch_tag!(raw, TiffRootTag::ImageLength).get_usize(0);
 
     let image = if dummy {
       vec![0]
@@ -228,15 +237,15 @@ impl<'a> ArwDecoder<'a> {
   }
 
   fn get_wb(&self) -> Result<[f32;4], String> {
-    let priv_offset = fetch_tag!(self.tiff, Tag::DNGPrivateArea).get_force_u32(0) as usize;
-    let priv_tiff = TiffIFD::new(self.buffer, priv_offset, 0, 0, 0, LITTLE_ENDIAN)?;
-    let sony_offset = fetch_tag!(priv_tiff, Tag::SonyOffset).get_usize(0);
-    let sony_length = fetch_tag!(priv_tiff, Tag::SonyLength).get_usize(0);
-    let sony_key = fetch_tag!(priv_tiff, Tag::SonyKey).get_u32(0);
+    let priv_offset = fetch_tag!(self.tiff, TiffRootTag::DNGPrivateArea).get_force_u32(0) as usize;
+    let priv_tiff = TiffIFD::new(self.buffer, priv_offset, 0, 0, 0, Endian::Little, &vec![])?;
+    let sony_offset = fetch_tag!(priv_tiff, TiffRootTag::SonyOffset).get_usize(0);
+    let sony_length = fetch_tag!(priv_tiff, TiffRootTag::SonyLength).get_usize(0);
+    let sony_key = fetch_tag!(priv_tiff, TiffRootTag::SonyKey).get_u32(0);
     let decrypted_buf = ArwDecoder::sony_decrypt(self.buffer, sony_offset, sony_length, sony_key);
-    let decrypted_tiff = TiffIFD::new(&decrypted_buf, 0, sony_offset, 0, 0, LITTLE_ENDIAN).unwrap();
-    let grgb_levels = decrypted_tiff.find_entry(Tag::SonyGRBG);
-    let rggb_levels = decrypted_tiff.find_entry(Tag::SonyRGGB);
+    let decrypted_tiff = TiffIFD::new(&decrypted_buf, 0, sony_offset, 0, 0, Endian::Little, &vec![]).unwrap();
+    let grgb_levels = decrypted_tiff.find_entry(TiffRootTag::SonyGRBG);
+    let rggb_levels = decrypted_tiff.find_entry(TiffRootTag::SonyRGGB);
     if grgb_levels.is_some() {
       let levels = grgb_levels.unwrap();
       Ok([levels.get_u32(1) as f32, levels.get_u32(0) as f32, levels.get_u32(2) as f32, NAN])
@@ -249,7 +258,7 @@ impl<'a> ArwDecoder<'a> {
   }
 
   fn get_curve(raw: &TiffIFD) -> Result<LookupTable, String> {
-    let centry = fetch_tag!(raw, Tag::SonyCurve);
+    let centry = fetch_tag!(raw, TiffRootTag::SonyCurve);
     let mut curve: [usize;6] = [ 0, 0, 0, 0, 0, 4095 ];
 
     for i in 0..4 {
