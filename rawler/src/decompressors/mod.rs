@@ -2,3 +2,4 @@
 // Copyright 2021 Daniel Vogelbacher <daniel@chaospixel.com>
 
 pub mod ljpeg;
+pub mod crx;
