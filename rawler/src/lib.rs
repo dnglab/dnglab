@@ -45,7 +45,6 @@
     //unused_qualifications
   )]
 
-  extern crate openmp_sys;
 
 
   use decoders::Decoder;
