@@ -10,6 +10,246 @@ color_matrix = [32404542, -15371385, -4985314, -9692660, 18760108, 415560, 55643
 color_pattern = "RGGB"
 crops = [0,0,0,0]
 
+
+[[cameras]]
+make = "Canon"
+model = "Canon EOS R5"
+clean_make = "Canon"
+clean_model = "EOS R5"
+blackpoint = 512
+whitepoint = 16000
+color_matrix = [9766,-2953,-1254,-4276,12116,2433,-437,1336,5131]
+color_pattern = "RGGB"
+color_matrix2_xyz = [6722, -635, -963, -4287, 12460, 2028, -908, 2162, 5668]
+color_matrix2_denominator = 10000
+color_matrix2_illuminant = 21
+crops = [18,0,2,42]
+#blackareav = [0, 0]
+wb_offset = 85
+bl_offset = 343
+wl_offset = 810
+
+[[cameras]]
+make = "Canon"
+model = "Canon EOS R6"
+clean_make = "Canon"
+clean_model = "EOS R6"
+blackpoint = 512
+whitepoint = 16000
+color_matrix = [9766,-2953,-1254,-4276,12116,2433,-437,1336,5131]
+color_pattern = "RGGB"
+color_matrix2_xyz = [8293,-1611,-1132,-4759,12711,2275,-1013,2415,5509]
+color_matrix2_denominator = 10000
+color_matrix2_illuminant = 21
+crops = [18,0,2,42]
+#blackareav = [0, 0]
+wb_offset = 85
+bl_offset = 343
+wl_offset = 810
+
+[[cameras]]
+make = "Canon"
+model = "Canon EOS-1D X Mark III"
+clean_make = "Canon"
+clean_model = "EOS-1D X Mark III"
+blackpoint = 512
+whitepoint = 16000
+color_matrix = [9766,-2953,-1254,-4276,12116,2433,-437,1336,5131]
+color_pattern = "RGGB"
+color_matrix2_xyz = [8971,-2022,-1242,-5405,13249,2380,-1280,2483,6072]
+color_matrix2_denominator = 10000
+color_matrix2_illuminant = 21
+crops = [18,0,2,42]
+#blackareav = [0, 0]
+wb_offset = 85
+bl_offset = 343
+wl_offset = 810
+
+[[cameras]]
+make = "Canon"
+model = "Canon EOS R"
+clean_make = "Canon"
+clean_model = "EOS R"
+blackpoint = 512
+whitepoint = 16000
+color_matrix = [9766,-2953,-1254,-4276,12116,2433,-437,1336,5131]
+color_pattern = "RGGB"
+color_matrix2_xyz = [8293,-1789,-1094,-5025,12925,2327,-1199,2769,6108]
+color_matrix2_denominator = 10000
+color_matrix2_illuminant = 21
+crops = [18,0,2,42]
+#blackareav = [0, 0]
+wb_offset = 71
+bl_offset = 329
+wl_offset = 796
+
+[[cameras]]
+make = "Canon"
+model = "Canon EOS RP"
+clean_make = "Canon"
+clean_model = "EOS RP"
+blackpoint = 512
+whitepoint = 16000
+color_matrix = [9766,-2953,-1254,-4276,12116,2433,-437,1336,5131]
+color_pattern = "RGGB"
+color_matrix2_xyz = [8608,-2097,-1178,-5425,13265,2383,-1149,2238,5680]
+color_matrix2_denominator = 10000
+color_matrix2_illuminant = 21
+crops = [18,0,2,42]
+#blackareav = [0, 0]
+wb_offset = 71
+bl_offset = 329
+wl_offset = 796
+
+[[cameras]]
+make = "Canon"
+model = "Canon EOS M50"
+clean_make = "Canon"
+clean_model = "EOS M50"
+blackpoint = 512
+whitepoint = 16000
+color_matrix = [9766,-2953,-1254,-4276,12116,2433,-437,1336,5131]
+color_pattern = "RGGB"
+color_matrix2_xyz = [8532,-701,-1167,-4095,11879,2508,-797,2424,7010]
+color_matrix2_denominator = 10000
+color_matrix2_illuminant = 21
+crops = [18,0,2,42]
+#blackareav = [0, 0]
+wb_offset = 71
+bl_offset = 329
+wl_offset = 796
+
+[[cameras]]
+make = "Canon"
+model = "Canon EOS 90D"
+clean_make = "Canon"
+clean_model = "EOS 90D"
+blackpoint = 512
+whitepoint = 16000
+color_matrix = [9766,-2953,-1254,-4276,12116,2433,-437,1336,5131]
+color_pattern = "RGGB"
+color_matrix2_xyz = [11498,-3759,-1516,-5073,12954,2349,-892,1867,6118]
+color_matrix2_denominator = 10000
+color_matrix2_illuminant = 21
+crops = [18,0,2,42]
+#blackareav = [0, 0]
+wb_offset = 71
+bl_offset = 329
+wl_offset = 796
+
+[[cameras]]
+make = "Canon"
+model = "Canon EOS 850D"
+model_aliases = [
+  ["Canon EOS Rebel T8i", "EOS Rebel T8i"],
+]
+clean_make = "Canon"
+clean_model = "EOS 850D"
+blackpoint = 512
+whitepoint = 16000
+color_matrix = [9766,-2953,-1254,-4276,12116,2433,-437,1336,5131]
+color_pattern = "RGGB"
+color_matrix2_xyz = [9079,-1923,-1236,-4677,12454,2492,-922,2319,5565]
+color_matrix2_denominator = 10000
+color_matrix2_illuminant = 21
+crops = [18,0,2,42]
+#blackareav = [0, 0]
+wb_offset = 71
+bl_offset = 329
+wl_offset = 796
+
+[[cameras]]
+make = "Canon"
+model = "Canon EOS 250D"
+clean_make = "Canon"
+clean_model = "EOS 250D"
+blackpoint = 512
+whitepoint = 16000
+color_matrix = [9766,-2953,-1254,-4276,12116,2433,-437,1336,5131]
+color_pattern = "RGGB"
+color_matrix2_xyz = [9079,-1923,-1236,-4677,12454,2492,-922,2319,5565]
+color_matrix2_denominator = 10000
+color_matrix2_illuminant = 21
+crops = [18,0,2,42]
+#blackareav = [0, 0]
+wb_offset = 71
+bl_offset = 329
+wl_offset = 796
+
+[[cameras]]
+make = "Canon"
+model = "Canon EOS M6 Mark II"
+clean_make = "Canon"
+clean_model = "EOS M6 Mark II"
+blackpoint = 512
+whitepoint = 16000
+color_matrix = [9766,-2953,-1254,-4276,12116,2433,-437,1336,5131]
+color_pattern = "RGGB"
+color_matrix2_xyz = [11498,-3759,-1516,-5073,12954,2349,-892,1867,6118]
+color_matrix2_denominator = 10000
+color_matrix2_illuminant = 21
+crops = [18,0,2,42]
+#blackareav = [0, 0]
+wb_offset = 71
+bl_offset = 329
+wl_offset = 796
+
+[[cameras]]
+make = "Canon"
+model = "Canon EOS M50m2"
+clean_make = "Canon"
+clean_model = "EOS M50 Mark II"
+blackpoint = 512
+whitepoint = 16000
+color_matrix = [9766,-2953,-1254,-4276,12116,2433,-437,1336,5131]
+color_pattern = "RGGB"
+color_matrix2_xyz = [10463,-2173,-1437,-4856,12635,2482,-1216,2915,7237]
+color_matrix2_denominator = 10000
+color_matrix2_illuminant = 21
+crops = [18,0,2,42]
+#blackareav = [0, 0]
+wb_offset = 71
+bl_offset = 329
+wl_offset = 796
+
+[[cameras]]
+make = "Canon"
+model = "Canon PowerShot G7 X Mark III"
+clean_make = "Canon"
+clean_model = "PowerShot G7 X Mark III"
+blackpoint = 512
+whitepoint = 16000
+color_matrix = [9766,-2953,-1254,-4276,12116,2433,-437,1336,5131]
+color_pattern = "RGGB"
+color_matrix2_xyz = [11629,-5713,-914,-2706,11090,1842,-206,1225,5515]
+color_matrix2_denominator = 10000
+color_matrix2_illuminant = 21
+crops = [18,0,2,42]
+#blackareav = [0, 0]
+wb_offset = 71
+bl_offset = 329
+wl_offset = 796
+
+[[cameras]]
+make = "Canon"
+model = "Canon PowerShot G5 X Mark II"
+clean_make = "Canon"
+clean_model = "PowerShot G5 X Mark II"
+blackpoint = 512
+whitepoint = 16000
+color_matrix = [9766,-2953,-1254,-4276,12116,2433,-437,1336,5131]
+color_pattern = "RGGB"
+color_matrix2_xyz = [11629,-5713,-914,-2706,11090,1842,-206,1225,5515]
+color_matrix2_denominator = 10000
+color_matrix2_illuminant = 21
+crops = [18,0,2,42]
+#blackareav = [0, 0]
+wb_offset = 71
+bl_offset = 329
+wl_offset = 796
+
+
+
 [[cameras]]
 make = "Canon"
 model = "Canon EOS 1000D"
@@ -29,6 +269,7 @@ color_matrix = [6771, -1139, -977, -7818, 15123, 2928, -1244, 1437, 7533]
 color_pattern = "RGGB"
 crops = [18,0,2,42]
 blackareav = [0, 41]
+
 
 [[cameras]]
 make = "Canon"
