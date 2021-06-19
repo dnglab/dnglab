@@ -1,4 +1,7 @@
-use crate::decoders::basics::*;
+
+use crate::pumps::BitPumpJPEG;
+use crate::pumps::BitPumpMSB32;
+
 use super::LjpegDecompressor;
 use super::huffman::*;
 
