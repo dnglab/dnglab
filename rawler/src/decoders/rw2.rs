@@ -1,8 +1,10 @@
 use std::f32::NAN;
 
 use crate::decoders::*;
-use crate::decoders::tiff::*;
-use crate::decoders::basics::*;
+use crate::formats::tiff::*;
+use crate::bits::*;
+use crate::packed::*;
+use crate::pumps::BitPump;
 
 #[derive(Debug, Clone)]
 pub struct Rw2Decoder<'a> {
@@ -22,23 +24,23 @@ impl<'a> Rw2Decoder<'a> {
 }
 
 impl<'a> Decoder for Rw2Decoder<'a> {
-  fn image(&self, dummy: bool) -> Result<RawImage,String> {
+  fn raw_image(&self, dummy: bool) -> Result<RawImage,String> {
     let width: usize;
     let height: usize;
     let image = {
-      let data = self.tiff.find_ifds_with_tag(Tag::PanaOffsets);
+      let data = self.tiff.find_ifds_with_tag(TiffRootTag::PanaOffsets);
       if data.len() > 0 {
         let raw = data[0];
-        width = fetch_tag!(raw, Tag::PanaWidth).get_usize(0);
-        height = fetch_tag!(raw, Tag::PanaLength).get_usize(0);
-        let offset = fetch_tag!(raw, Tag::PanaOffsets).get_usize(0);
+        width = fetch_tag!(raw, TiffRootTag::PanaWidth).get_usize(0);
+        height = fetch_tag!(raw, TiffRootTag::PanaLength).get_usize(0);
+        let offset = fetch_tag!(raw, TiffRootTag::PanaOffsets).get_usize(0);
         let src = &self.buffer[offset..];
         Rw2Decoder::decode_panasonic(src, width, height, true, dummy)
       } else {
-        let raw = fetch_ifd!(&self.tiff, Tag::StripOffsets);
-        width = fetch_tag!(raw, Tag::PanaWidth).get_usize(0);
-        height = fetch_tag!(raw, Tag::PanaLength).get_usize(0);
-        let offset = fetch_tag!(raw, Tag::StripOffsets).get_usize(0);
+        let raw = fetch_ifd!(&self.tiff, TiffRootTag::StripOffsets);
+        width = fetch_tag!(raw, TiffRootTag::PanaWidth).get_usize(0);
+        height = fetch_tag!(raw, TiffRootTag::PanaLength).get_usize(0);
+        let offset = fetch_tag!(raw, TiffRootTag::StripOffsets).get_usize(0);
         let src = &self.buffer[offset..];
 
         if src.len() >= width*height*2 {
@@ -71,16 +73,16 @@ impl<'a> Decoder for Rw2Decoder<'a> {
 
 impl<'a> Rw2Decoder<'a> {
   fn get_wb(&self) -> Result<[f32;4], String> {
-    if self.tiff.has_entry(Tag::PanaWBsR) && self.tiff.has_entry(Tag::PanaWBsB) {
-      let r = fetch_tag!(self.tiff, Tag::PanaWBsR).get_u32(0) as f32;
-      let b = fetch_tag!(self.tiff, Tag::PanaWBsB).get_u32(0) as f32;
+    if self.tiff.has_entry(TiffRootTag::PanaWBsR) && self.tiff.has_entry(TiffRootTag::PanaWBsB) {
+      let r = fetch_tag!(self.tiff, TiffRootTag::PanaWBsR).get_u32(0) as f32;
+      let b = fetch_tag!(self.tiff, TiffRootTag::PanaWBsB).get_u32(0) as f32;
       Ok([r, 256.0, b, NAN])
-    } else if self.tiff.has_entry(Tag::PanaWBs2R)
-           && self.tiff.has_entry(Tag::PanaWBs2G)
-           && self.tiff.has_entry(Tag::PanaWBs2B) {
-      let r = fetch_tag!(self.tiff, Tag::PanaWBs2R).get_u32(0) as f32;
-      let g = fetch_tag!(self.tiff, Tag::PanaWBs2G).get_u32(0) as f32;
-      let b = fetch_tag!(self.tiff, Tag::PanaWBs2B).get_u32(0) as f32;
+    } else if self.tiff.has_entry(TiffRootTag::PanaWBs2R)
+           && self.tiff.has_entry(TiffRootTag::PanaWBs2G)
+           && self.tiff.has_entry(TiffRootTag::PanaWBs2B) {
+      let r = fetch_tag!(self.tiff, TiffRootTag::PanaWBs2R).get_u32(0) as f32;
+      let g = fetch_tag!(self.tiff, TiffRootTag::PanaWBs2G).get_u32(0) as f32;
+      let b = fetch_tag!(self.tiff, TiffRootTag::PanaWBs2B).get_u32(0) as f32;
       Ok([r, g, b, NAN])
     } else {
       Err("Couldn't find WB".to_string())

@@ -1,5 +1,4 @@
-use crate::decoders::*;
-use crate::decoders::cfa::*;
+use crate::{CFA, decoders::*};
 
 /// All the data needed to process this raw image, including the image data itself as well
 /// as all the needed metadata
@@ -40,6 +39,11 @@ pub struct RawImage {
   pub orientation: Orientation,
   /// image data itself, has `width`\*`height`\*`cpp` elements
   pub data: RawImageData,
+
+
+  pub xyz_to_cam2: [[i32;3];4],
+  pub illuminant2: u16,
+  pub illuminant2_denominator: i32,  
 }
 
 /// The actual image data, after decoding
@@ -104,10 +108,16 @@ impl RawImage {
       blacklevels: blacks,
       whitelevels: camera.whitelevels,
       xyz_to_cam: camera.xyz_to_cam,
+      
       cfa: camera.cfa.clone(),
       crops: camera.crops,
       blackareas: blackareas,
       orientation: camera.orientation,
+        xyz_to_cam2: camera.xyz_to_cam2,
+        illuminant2: camera.illuminant2,
+        illuminant2_denominator: camera.illuminant2_denominator,
+
+      
     }
   }
 
@@ -227,4 +237,47 @@ impl RawImage {
   pub fn is_monochrome(&self) -> bool {
     self.cpp == 1 && !self.cfa.is_valid()
   }
+}
+
+
+#[macro_export]
+macro_rules! alloc_image_plain {
+  ($width:expr, $height:expr, $dummy: expr) => (
+    {
+      if $width * $height > 500000000 || $width > 50000 || $height > 50000 {
+        panic!("rawloader: surely there's no such thing as a >500MP or >50000 px wide/tall image!");
+      }
+      if $dummy {
+        vec![0]
+      } else {
+        vec![0; $width * $height]
+      }
+    }
+  );
+}
+
+#[macro_export]
+macro_rules! alloc_image {
+  ($width:expr, $height:expr, $dummy: expr) => (
+    {
+      let out = crate::alloc_image_plain!($width, $height, $dummy);
+      if $dummy {
+        return out
+      }
+      out
+    }
+  );
+}
+
+#[macro_export]
+macro_rules! alloc_image_ok {
+  ($width:expr, $height:expr, $dummy: expr) => (
+    {
+      let out = crate::alloc_image_plain!($width, $height, $dummy);
+      if $dummy {
+        return Ok(out)
+      }
+      out
+    }
+  );
 }

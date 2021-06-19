@@ -1,7 +1,13 @@
 use std::f32::NAN;
 
-use crate::decoders::*;
-use crate::decoders::basics::*;
+use crate::RawImage;
+use crate::RawLoader;
+use crate::bits::*;
+use crate::packed::*;
+
+use super::Decoder;
+use super::ok_image;
+
 
 pub fn is_ari(buf: &[u8]) -> bool {
   buf[0..4] == b"ARRI"[..]
@@ -23,7 +29,7 @@ impl<'a> AriDecoder<'a> {
 }
 
 impl<'a> Decoder for AriDecoder<'a> {
-  fn image(&self, dummy: bool) -> Result<RawImage,String> {
+  fn raw_image(&self, dummy: bool) -> Result<RawImage,String> {
     let offset = LEu32(self.buffer, 8) as usize;
     let width = LEu32(self.buffer, 20) as usize;
     let height = LEu32(self.buffer, 24) as usize;

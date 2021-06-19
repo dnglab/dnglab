@@ -1,5 +1,5 @@
 use std::fmt;
-use crate::decoders::basics::*;
+use crate::pumps::BitPump;
 
 const DECODE_CACHE_BITS: u32 = 13;
 

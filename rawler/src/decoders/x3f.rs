@@ -1,8 +1,8 @@
 use std::f32::NAN;
 
 use crate::decoders::*;
-use crate::decoders::tiff::*;
-use crate::decoders::basics::*;
+use crate::formats::tiff::*;
+use crate::bits::*;
 
 pub fn is_x3f(buf: &[u8]) -> bool {
   buf[0..4] == b"FOVb"[..]
@@ -108,7 +108,7 @@ impl<'a> X3fDecoder<'a> {
 }
 
 impl<'a> Decoder for X3fDecoder<'a> {
-  fn image(&self, dummy: bool) -> Result<RawImage,String> {
+  fn raw_image(&self, dummy: bool) -> Result<RawImage,String> {
     let caminfo = self.dir.images
         .iter()
         .find(|i| i.typ == 2 && i.format == 0x12)
@@ -117,7 +117,7 @@ impl<'a> Decoder for X3fDecoder<'a> {
     if data[0..4] != b"Exif"[..] {
       return Err("X3F: Couldn't find EXIF info".to_string())
     }
-    let tiff = TiffIFD::new_root(self.buffer, caminfo.doffset+12)?;
+    let tiff = TiffIFD::new_root(self.buffer, caminfo.doffset+12, &vec![])?;
     let camera = self.rawloader.check_supported(&tiff)?;
 
     let imginfo = self.dir.images

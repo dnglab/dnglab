@@ -1,9 +1,14 @@
 use std::f32::NAN;
 use std::cmp;
 
+use crate::RawImage;
+use crate::alloc_image;
+use crate::bits::Endian;
 use crate::decoders::*;
-use crate::decoders::tiff::*;
-use crate::decoders::basics::*;
+use crate::pumps::ByteStream;
+use crate::formats::tiff::*;
+use crate::bits::*;
+use crate::tags::TiffRootTag;
 
 #[derive(Debug, Clone)]
 pub struct DcrDecoder<'a> {
@@ -23,19 +28,19 @@ impl<'a> DcrDecoder<'a> {
 }
 
 impl<'a> Decoder for DcrDecoder<'a> {
-  fn image(&self, dummy: bool) -> Result<RawImage,String> {
+  fn raw_image(&self, dummy: bool) -> Result<RawImage,String> {
     let camera = self.rawloader.check_supported(&self.tiff)?;
-    let raw = fetch_ifd!(&self.tiff, Tag::CFAPattern);
-    let width = fetch_tag!(raw, Tag::ImageWidth).get_usize(0);
-    let height = fetch_tag!(raw, Tag::ImageLength).get_usize(0);
-    let offset = fetch_tag!(raw, Tag::StripOffsets).get_usize(0);
+    let raw = fetch_ifd!(&self.tiff, TiffRootTag::CFAPattern);
+    let width = fetch_tag!(raw, TiffRootTag::ImageWidth).get_usize(0);
+    let height = fetch_tag!(raw, TiffRootTag::ImageLength).get_usize(0);
+    let offset = fetch_tag!(raw, TiffRootTag::StripOffsets).get_usize(0);
     let src = &self.buffer[offset..];
 
-    let linearization = fetch_tag!(self.tiff, Tag::DcrLinearization);
+    let linearization = fetch_tag!(self.tiff, TiffRootTag::DcrLinearization);
     let curve = {
       let mut points = Vec::new();
       for i in 0..linearization.count() {
-        points.push(linearization.get_u32(i) as u16);
+        points.push(linearization.get_u32(i as usize) as u16);
       }
       LookupTable::new(&points)
     };
@@ -48,7 +53,7 @@ impl<'a> Decoder for DcrDecoder<'a> {
 
 impl<'a> DcrDecoder<'a> {
   fn get_wb(&self) -> Result<[f32;4], String> {
-    let dcrwb = fetch_tag!(self.tiff, Tag::DcrWB);
+    let dcrwb = fetch_tag!(self.tiff, TiffRootTag::DcrWB);
     if dcrwb.count() >= 46 {
       let levels = dcrwb.get_data();
       Ok([2048.0 / BEu16(levels,40) as f32,
@@ -62,7 +67,7 @@ impl<'a> DcrDecoder<'a> {
 
   pub(crate) fn decode_kodak65000(buf: &[u8], curve: &LookupTable, width: usize, height: usize, dummy: bool) -> Vec<u16> {
     let mut out: Vec<u16> = alloc_image!(width, height, dummy);
-    let mut input = ByteStream::new(buf, LITTLE_ENDIAN);
+    let mut input = ByteStream::new(buf, Endian::Little);
 
     let mut random: u32 = 0;
     for row in 0..height {

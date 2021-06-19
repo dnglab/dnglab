@@ -1,6 +1,6 @@
 use std::fmt;
 
-use crate::decoders::tiff::*;
+use crate::formats::tiff::*;
 
 /// Representation of the color filter array pattern in raw cameras
 ///

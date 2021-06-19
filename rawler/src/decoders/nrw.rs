@@ -1,8 +1,9 @@
 use std::f32::NAN;
 
 use crate::decoders::*;
-use crate::decoders::tiff::*;
-use crate::decoders::basics::*;
+use crate::formats::tiff::*;
+use crate::bits::*;
+use crate::packed::*;
 
 #[derive(Debug, Clone)]
 pub struct NrwDecoder<'a> {
@@ -22,15 +23,15 @@ impl<'a> NrwDecoder<'a> {
 }
 
 impl<'a> Decoder for NrwDecoder<'a> {
-  fn image(&self, dummy: bool) -> Result<RawImage,String> {
+  fn raw_image(&self, dummy: bool) -> Result<RawImage,String> {
     let camera = self.rawloader.check_supported(&self.tiff)?;
-    let data = self.tiff.find_ifds_with_tag(Tag::CFAPattern);
+    let data = self.tiff.find_ifds_with_tag(TiffRootTag::CFAPattern);
     let raw = data.iter().find(|&&ifd| {
-      ifd.find_entry(Tag::ImageWidth).unwrap().get_u32(0) > 1000
+      ifd.find_entry(TiffRootTag::ImageWidth).unwrap().get_u32(0) > 1000
     }).unwrap();
-    let width = fetch_tag!(raw, Tag::ImageWidth).get_usize(0);
-    let height = fetch_tag!(raw, Tag::ImageLength).get_usize(0);
-    let offset = fetch_tag!(raw, Tag::StripOffsets).get_usize(0);
+    let width = fetch_tag!(raw, TiffRootTag::ImageWidth).get_usize(0);
+    let height = fetch_tag!(raw, TiffRootTag::ImageLength).get_usize(0);
+    let offset = fetch_tag!(raw, TiffRootTag::StripOffsets).get_usize(0);
     let src = &self.buffer[offset..];
 
     let image = if camera.find_hint("coolpixsplit") {
@@ -52,9 +53,9 @@ impl<'a> NrwDecoder<'a> {
   fn get_wb(&self, cam: &Camera) -> Result<[f32;4], String> {
     if cam.find_hint("nowb") {
       Ok([NAN,NAN,NAN,NAN])
-    } else if let Some(levels) = self.tiff.find_entry(Tag::NefWB0) {
+    } else if let Some(levels) = self.tiff.find_entry(TiffRootTag::NefWB0) {
       Ok([levels.get_f32(0), 1.0, levels.get_f32(1), NAN])
-    } else if let Some(levels) = self.tiff.find_entry(Tag::NrwWB) {
+    } else if let Some(levels) = self.tiff.find_entry(TiffRootTag::NrwWB) {
       let data = levels.get_data();
       if data[0..3] == b"NRW"[..] {
         let offset = if data[4..8] == b"0100"[..] {

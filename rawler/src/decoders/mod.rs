@@ -1,4 +1,8 @@
-use serde_derive::{Deserialize, Serialize};
+use image::DynamicImage;
+use rayon::iter::IndexedParallelIterator;
+use rayon::iter::ParallelIterator;
+use rayon::slice::ParallelSliceMut;
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::io::{Read, BufReader};
 use std::fs::File;
@@ -22,51 +26,7 @@ macro_rules! fetch_ifd {
   );
 }
 
-macro_rules! alloc_image_plain {
-  ($width:expr, $height:expr, $dummy: expr) => (
-    {
-      if $width * $height > 500000000 || $width > 50000 || $height > 50000 {
-        panic!("rawloader: surely there's no such thing as a >500MP or >50000 px wide/tall image!");
-      }
-      if $dummy {
-        vec![0]
-      } else {
-        vec![0; $width * $height]
-      }
-    }
-  );
-}
 
-macro_rules! alloc_image {
-  ($width:expr, $height:expr, $dummy: expr) => (
-    {
-      let out = alloc_image_plain!($width, $height, $dummy);
-      if $dummy {
-        return out
-      }
-      out
-    }
-  );
-}
-
-macro_rules! alloc_image_ok {
-  ($width:expr, $height:expr, $dummy: expr) => (
-    {
-      let out = alloc_image_plain!($width, $height, $dummy);
-      if $dummy {
-        return Ok(out)
-      }
-      out
-    }
-  );
-}
-
-mod image;
-pub mod basics;
-mod packed;
-mod pumps;
-pub mod cfa;
-mod tiff;
 mod ciff;
 mod mrw;
 mod arw;
@@ -89,18 +49,66 @@ mod tfr;
 mod nef;
 mod nrw;
 mod cr2;
+mod cr3;
 mod ari;
 mod x3f;
-use self::tiff::*;
-pub use self::image::*;
+use crate::{formats::bmff::Bmff, tiff::DirectoryWriter};
+use crate::formats::tiff::Rational;
+use crate::formats::tiff::SRational;
+
+use crate::formats::tiff::TiffTag;
+use crate::CFA;
+use crate::alloc_image;
+use crate::formats::tiff::TiffIFD;
+use crate::tags::ExifTag;
+use crate::tags::TiffRootTag;
+
+//use self::tiff::*;
+pub use super::rawimage::*;
 mod unwrapped;
 
 pub static CAMERAS_TOML: &'static str = include_str!("../../data/all.toml");
 pub static SAMPLE: &'static str = "\nPlease submit samples at https://raw.pixls.us/";
 pub static BUG: &'static str = "\nPlease file a bug with a sample file at https://github.com/pedrocr/rawloader/issues/new";
 
+
+pub trait Foobar {}
+
 pub trait Decoder {
-  fn image(&self, dummy: bool) -> Result<RawImage, String>;
+  fn raw_image(&self, dummy: bool) -> Result<RawImage, String>;
+
+  fn thumbnail_image(&self) -> Result<DynamicImage, String> {
+    unimplemented!()
+  }
+
+  fn preview_image(&self) -> Result<DynamicImage, String> {
+    unimplemented!()
+  }
+
+  fn full_image(&self) -> Result<DynamicImage, String> {
+    unimplemented!()
+  }
+
+  fn xpacket(&self) -> Option<&Vec<u8>> {
+    None
+  }
+
+  fn gps_metadata(&self) -> Option<&Gps> {
+    None
+  }
+
+
+  fn populate_dng_root(&mut self, _: &mut DirectoryWriter) -> Result<(), String> {
+    Ok(())
+  }
+
+  fn populate_dng_exif(&mut self, _: &mut DirectoryWriter) -> Result<(), String> {
+    Ok(())
+  }
+
+  fn decode_metadata(&mut self) -> Result<(), String> {
+    Ok(())
+  }
 }
 
 /// Buffer to hold an image in memory with enough extra space at the end for speed optimizations
@@ -118,11 +126,15 @@ impl Buffer {
       return Err(format!("IOError: {}", err).to_string())
     }
     let size = buffer.len();
-    buffer.extend([0;16].iter().cloned());
+    //buffer.extend([0;16].iter().cloned());
     Ok(Buffer {
       buf: buffer,
       size: size,
     })
+  }
+
+  pub fn raw_buf(&self) -> &[u8] {
+    &self.buf[..self.size]
   }
 }
 
@@ -138,17 +150,22 @@ pub struct Camera {
   pub raw_width: usize,
   pub raw_height: usize,
   pub orientation: Orientation,
-  whitelevels: [u16;4],
-  blacklevels: [u16;4],
-  blackareah: (usize, usize),
-  blackareav: (usize, usize),
-  xyz_to_cam: [[f32;3];4],
-  cfa: cfa::CFA,
-  crops: [usize;4],
-  bps: usize,
-  wb_offset: usize,
-  highres_width: usize,
-  hints: Vec<String>,
+  pub whitelevels: [u16;4],
+  pub blacklevels: [u16;4],
+  pub blackareah: (usize, usize),
+  pub blackareav: (usize, usize),
+  pub xyz_to_cam: [[f32;3];4],
+  pub xyz_to_cam2: [[i32;3];4],
+  pub illuminant2: u16,
+  pub illuminant2_denominator: i32,
+  pub cfa: CFA,
+  pub crops: [usize;4],
+  pub bps: usize,
+  pub wb_offset: usize,
+  pub bl_offset: usize,
+  pub wl_offset: usize,
+  pub highres_width: usize,
+  pub hints: Vec<String>,
 }
 
 impl Camera {
@@ -182,15 +199,29 @@ impl Camera {
             self.xyz_to_cam[i/3][i%3] = val.as_integer().unwrap() as f32;
           }
         },
+        "color_matrix2_xyz" => {
+          let matrix = val.as_array().unwrap();
+          for (i, val) in matrix.into_iter().enumerate() {
+            self.xyz_to_cam2[i/3][i%3] = val.as_integer().unwrap() as i32;
+          }
+        },
+        "color_matrix2_illuminant" => {
+          self.illuminant2 = val.as_integer().unwrap() as u16;
+        },
+        "color_matrix2_denominator" => {
+          self.illuminant2_denominator = val.as_integer().unwrap() as i32;
+        },
         "crops" => {
           let crop_vals = val.as_array().unwrap();
           for (i, val) in crop_vals.into_iter().enumerate() {
             self.crops[i] = val.as_integer().unwrap() as usize;
           }
         },
-        "color_pattern" => {self.cfa = cfa::CFA::new(&val.as_str().unwrap().to_string());},
+        "color_pattern" => {self.cfa = CFA::new(&val.as_str().unwrap().to_string());},
         "bps" => {self.bps = val.as_integer().unwrap() as usize;},
         "wb_offset" => {self.wb_offset = val.as_integer().unwrap() as usize;},
+        "bl_offset" => {self.bl_offset = val.as_integer().unwrap() as usize;},
+        "wl_offset" => {self.wl_offset = val.as_integer().unwrap() as usize;},
         "filesize" => {self.filesize = val.as_integer().unwrap() as usize;},
         "raw_width" => {self.raw_width = val.as_integer().unwrap() as usize;},
         "raw_height" => {self.raw_height = val.as_integer().unwrap() as usize;},
@@ -221,13 +252,18 @@ impl Camera {
       blackareah: (0,0),
       blackareav: (0,0),
       xyz_to_cam : [[0.0;3];4],
-      cfa: cfa::CFA::new(""),
+      illuminant2: 0,
+      illuminant2_denominator: 0,
+      xyz_to_cam2: [[0;3]; 4],
+      cfa: CFA::new(""),
       crops: [0,0,0,0],
       bps: 0,
       wb_offset: 0,
       highres_width: usize::max_value(),
       hints: Vec::new(),
       orientation: Orientation::Unknown,
+        bl_offset: 0,
+        wl_offset: 0,
     }
   }
 }
@@ -270,7 +306,7 @@ impl Orientation {
   /// Extract orienation from a TiffIFD. If the given TiffIFD has an invalid
   /// value or contains no orientation data `Orientation::Unknown` is returned
   fn from_tiff(tiff: &TiffIFD) -> Orientation {
-    match tiff.find_entry(Tag::Orientation) {
+    match tiff.find_entry(TiffRootTag::Orientation) {
       Some(entry) => Orientation::from_u16(entry.get_usize(0) as u16),
       None => Orientation::Unknown,
     }
@@ -433,22 +469,30 @@ impl RawLoader {
       return Ok(dec as Box<dyn Decoder>);
     }
 
-    if let Ok(tiff) = TiffIFD::new_file(buffer) {
-      if tiff.has_entry(Tag::DNGVersion) {
+
+    if let Ok(bmff) = Bmff::new_buf(buffer) {
+      if bmff.compatible_brand("crx ") {
+        return Ok(Box::new(cr3::Cr3Decoder::new(buffer, bmff, self)))
+      }
+    }
+
+
+    if let Ok(tiff) = TiffIFD::new_file(buffer, &vec![]) {
+      if tiff.has_entry(TiffRootTag::DNGVersion) {
         return Ok(Box::new(dng::DngDecoder::new(buffer, tiff, self)))
       }
 
       // The DCS560C is really a CR2 camera so we just special case it here
-      if tiff.has_entry(Tag::Model) && fetch_tag!(tiff, Tag::Model).get_str() == "DCS560C" {
+      if tiff.has_entry(TiffRootTag::Model) && fetch_tag!(tiff, TiffRootTag::Model).get_str() == "DCS560C" {
         return Ok(Box::new(cr2::Cr2Decoder::new(buffer, tiff, self)))
       }
 
-      if tiff.has_entry(Tag::Make) {
+      if tiff.has_entry(TiffRootTag::Make) {
         macro_rules! use_decoder {
             ($dec:ty, $buf:ident, $tiff:ident, $rawdec:ident) => (Ok(Box::new(<$dec>::new($buf, $tiff, $rawdec)) as Box<dyn Decoder>));
         }
 
-        return match fetch_tag!(tiff, Tag::Make).get_str().to_string().as_ref() {
+        return match fetch_tag!(tiff, TiffRootTag::Make).get_str().to_string().as_ref() {
           "SONY"                        => use_decoder!(arw::ArwDecoder, buffer, tiff, self),
           "Mamiya-OP Co.,Ltd."          => use_decoder!(mef::MefDecoder, buffer, tiff, self),
           "OLYMPUS IMAGING CORP."       => use_decoder!(orf::OrfDecoder, buffer, tiff, self),
@@ -474,9 +518,9 @@ impl RawLoader {
           "Phase One A/S"               => use_decoder!(iiq::IiqDecoder, buffer, tiff, self),
           make => Err(format!("Couldn't find a decoder for make \"{}\".{}", make, SAMPLE).to_string()),
         };
-      } else if tiff.has_entry(Tag::Software) {
+      } else if tiff.has_entry(TiffRootTag::Software) {
         // Last ditch effort to identify Leaf cameras without Make and Model
-        if fetch_tag!(tiff, Tag::Software).get_str() == "Camera Library" {
+        if fetch_tag!(tiff, TiffRootTag::Software).get_str() == "Camera Library" {
           return Ok(Box::new(mos::MosDecoder::new(buffer, tiff, self)))
         }
       }
@@ -490,6 +534,7 @@ impl RawLoader {
     Err(format!("Couldn't find a decoder for this file.{}", SAMPLE).to_string())
   }
 
+
   fn check_supported_with_everything<'a>(&'a self, make: &str, model: &str, mode: &str) -> Result<Camera, String> {
     match self.cameras.get(&(make.to_string(),model.to_string(),mode.to_string())) {
       Some(cam) => Ok(cam.clone()),
@@ -498,8 +543,8 @@ impl RawLoader {
   }
 
   fn check_supported_with_mode<'a>(&'a self, tiff: &'a TiffIFD, mode: &str) -> Result<Camera, String> {
-    let make = fetch_tag!(tiff, Tag::Make).get_str();
-    let model = fetch_tag!(tiff, Tag::Model).get_str();
+    let make = fetch_tag!(tiff, TiffRootTag::Make).get_str();
+    let model = fetch_tag!(tiff, TiffRootTag::Model).get_str();
 
     // Get a default instance to modify
     let mut camera = self.check_supported_with_everything(make, model, mode)?;
@@ -516,7 +561,7 @@ impl RawLoader {
 
   fn decode_unsafe(&self, buffer: &Buffer, dummy: bool) -> Result<RawImage,String> {
     let decoder = self.get_decoder(&buffer)?;
-    decoder.image(dummy)
+    decoder.raw_image(dummy)
   }
 
   /// Decodes an input into a RawImage
@@ -554,4 +599,91 @@ impl RawLoader {
       Err(_) => Err(format!("Caught a panic while decoding.{}", BUG).to_string()),
     }
   }
+}
+
+
+
+pub fn decode_threaded<F>(width: usize, height: usize, dummy: bool, closure: &F) -> Vec<u16>
+  where F : Fn(&mut [u16], usize)+Sync {
+
+  let mut out: Vec<u16> = alloc_image!(width, height, dummy);
+    out.par_chunks_mut(width).enumerate().for_each(|(row, line)| {
+    closure(line, row);
+  });
+  out
+}
+
+pub fn decode_threaded_multiline<F>(width: usize, height: usize, lines: usize, dummy: bool, closure: &F) -> Vec<u16>
+  where F : Fn(&mut [u16], usize)+Sync {
+
+  let mut out: Vec<u16> = alloc_image!(width, height, dummy);
+  out.par_chunks_mut(width*lines).enumerate().for_each(|(row, line)| {
+    closure(line, row*lines);
+  });
+  out
+}
+
+
+// For rust <= 1.31 we just alias chunks_exact() and chunks_exact_mut() to the non-exact versions
+// so we can use exact everywhere without spreading special cases across the code
+#[cfg(needs_chunks_exact)]
+mod chunks_exact {
+  use std::slice;
+
+  // Add a chunks_exact for &[u8] and Vec<u16>
+  pub trait ChunksExact<T> {
+    fn chunks_exact(&self, n: usize) -> slice::Chunks<T>;
+  }
+  impl<'a, T> ChunksExact<T> for &'a [T] {
+    fn chunks_exact(&self, n: usize) -> slice::Chunks<T> { self.chunks(n) }
+  }
+  impl<T> ChunksExact<T> for Vec<T> {
+    fn chunks_exact(&self, n: usize) -> slice::Chunks<T> { self.chunks(n) }
+  }
+
+  // Add a chunks_exact_mut for &mut[u16] mostly
+  pub trait ChunksExactMut<'a, T> {
+    fn chunks_exact_mut(self, n: usize) -> slice::ChunksMut<'a, T>;
+  }
+  impl<'a, T> ChunksExactMut<'a, T> for &'a mut [T] {
+    fn chunks_exact_mut(self, n: usize) -> slice::ChunksMut<'a, T> { self.chunks_mut(n) }
+  }
+}
+#[cfg(needs_chunks_exact)] pub use self::chunks_exact::*;
+
+
+
+pub trait ExifWrite {
+  //fn write_tag_xx<T: TiffValue>(&mut self, tag: Tag, value: T) -> DngResult<()>;
+
+  //fn write_entry(&mut self, entry: &TiffEntry) -> std::result::Result<(), String>;
+
+  fn write_tag_rational(&mut self, tag: TiffTag, value: Rational) -> std::result::Result<(), String>;
+  fn write_tag_srational(&mut self, tag: TiffTag, value: SRational) -> std::result::Result<(), String>;
+
+  fn write_tag_u16(&mut self, tag: TiffTag, value: u16) -> std::result::Result<(), String>;
+  fn write_tag_u32(&mut self, tag: TiffTag, value: u32) -> std::result::Result<(), String>;
+  fn write_tag_u8(&mut self, tag: TiffTag, value: u8) -> std::result::Result<(), String>;
+  fn write_tag_u8_array(&mut self, tag: TiffTag, value: &[u8]) -> std::result::Result<(), String>;
+  fn write_tag_u16_array(&mut self, tag: TiffTag, value: &[u16]) -> std::result::Result<(), String>;
+  fn write_tag_u32_array(&mut self, tag: TiffTag, value: &[u32]) -> std::result::Result<(), String>;
+  fn write_tag_str(&mut self, tag: TiffTag, value: &str) -> std::result::Result<(), String>;
+}
+
+
+
+#[derive(Debug, Clone, Default)]
+pub struct Gps {
+  pub version_id: Option<[u8; 4]>,
+  pub latitude_ref: Option<String>,
+  pub latitude: Option<[Rational; 3]>,
+  pub longitude_ref: Option<String>,
+  pub longitude : Option<[Rational; 3]>,
+  pub altitude_ref : Option<u8>,
+  pub altitude : Option<Rational>,
+  pub time_stamp: Option<[Rational; 3]>,
+  pub satellites : Option<String>,
+  pub status : Option<String>,
+  pub map_datum : Option<String>,
+  pub date_stamp: Option<String>,
 }

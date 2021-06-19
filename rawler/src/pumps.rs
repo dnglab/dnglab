@@ -1,4 +1,4 @@
-use crate::decoders::basics::*;
+use crate::bits::*;
 
 #[derive(Debug, Copy, Clone)]
 pub struct BitPumpLSB<'a> {
@@ -248,6 +248,9 @@ impl<'a> ByteStream<'a> {
   }
 
   #[inline(always)]
+  pub fn remaining_bytes(&self) -> usize { self.buffer.len() - self.pos }
+
+  #[inline(always)]
   pub fn get_pos(&self) -> usize { self.pos }
 
   #[inline(always)]
@@ -260,11 +263,29 @@ impl<'a> ByteStream<'a> {
   }
 
   #[inline(always)]
-  pub fn peek_u16(&self) -> u16 { self.endian.ru16(self.buffer, self.pos) }
+  pub fn peek_u16(&self) -> u16 { self.endian.read_u16(self.buffer, self.pos) }
   #[inline(always)]
   pub fn get_u16(&mut self) -> u16 {
     let val = self.peek_u16();
     self.pos += 2;
+    val
+  }
+
+  #[inline(always)]
+  pub fn peek_u32(&self) -> u32 { self.endian.read_u32(self.buffer, self.pos) }
+
+  #[inline(always)]
+  pub fn get_u32(&mut self) -> u32 {
+    let val = self.peek_u32();
+    self.pos += 4;
+    val
+  }
+
+  #[inline(always)]
+  pub fn get_bytes(&mut self, n: usize) -> Vec<u8> {
+    let mut val = Vec::with_capacity(n);
+    val.extend_from_slice(&self.buffer[self.pos..self.pos+n]);
+    self.pos += n;
     val
   }
 

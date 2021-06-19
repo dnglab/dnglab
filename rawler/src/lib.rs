@@ -45,17 +45,30 @@
     //unused_qualifications
   )]
 
-  use lazy_static::lazy_static;
+  extern crate openmp_sys;
 
+
+  use decoders::Decoder;
+use lazy_static::lazy_static;
+
+  pub mod bits;
   pub mod decoders;
   pub mod decompressors;
   pub mod dngencoder;
   pub mod formats;
+  pub mod tags;
+  pub mod packed;
+  pub mod pumps;
+  pub mod cfa;
+  pub mod rawimage;
+  pub mod ljpeg92;
+  pub mod tiff;
+  pub mod devtools;
 
-  pub use decoders::RawImage;
-  pub use decoders::RawImageData;
+  pub use rawimage::RawImage;
+  pub use rawimage::RawImageData;
   pub use decoders::Orientation;
-  pub use decoders::cfa::CFA;
+  pub use cfa::CFA;
   #[doc(hidden)] pub use decoders::Buffer;
   #[doc(hidden)] pub use decoders::RawLoader;
 
@@ -139,4 +152,9 @@
   #[doc(hidden)]
   pub fn decode_dummy(reader: &mut dyn Read) -> Result<RawImage,RawLoaderError> {
     LOADER.decode(reader, true).map_err(|err| RawLoaderError::new(err))
+  }
+
+
+  pub fn get_decoder<'b>(buf: &'b Buffer) -> Result<Box<dyn Decoder + 'b>, RawLoaderError> {
+    LOADER.get_decoder(buf).map_err(|err| RawLoaderError::new(err))
   }

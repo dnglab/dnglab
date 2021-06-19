@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::decoders::basics::*;
+use crate::bits::*;
 use crate::decoders::Buffer;
 
 #[derive(Debug, Copy, Clone, PartialEq)]
