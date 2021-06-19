@@ -2,8 +2,9 @@
 // Copyright 2021 Daniel Vogelbacher <daniel@chaospixel.com>
 
 use clap::ArgMatches;
-use log::debug;
+//use log::debug;
 
 pub fn gui(_options: Option<&ArgMatches<'_>>) -> anyhow::Result<()> {
-    unimplemented!();
+    println!("GUI is not available yet");
+    Ok(())
 }
