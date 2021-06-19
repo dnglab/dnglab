@@ -4,6 +4,8 @@
 
 use std::io::Write;
 
+use crate::formats::tiff::{Ifd, Ifd8, Rational, SRational};
+
 use super::writer::DngWriter;
 use super::{bytecast, error::DngError, tags::Type, DngResult};
 
@@ -461,26 +463,4 @@ impl<'a, T: TiffValue + ?Sized> TiffValue for &'a T {
     fn write<W: Write>(&self, writer: &mut DngWriter<W>) -> DngResult<()> {
         (*self).write(writer)
     }
-}
-
-/// Type to represent tiff values of type `IFD`
-#[derive(Clone)]
-pub struct Ifd(pub u32);
-
-/// Type to represent tiff values of type `IFD8`
-#[derive(Clone)]
-pub struct Ifd8(pub u64);
-
-/// Type to represent tiff values of type `RATIONAL`
-#[derive(Clone)]
-pub struct Rational {
-    pub n: u32,
-    pub d: u32,
-}
-
-/// Type to represent tiff values of type `SRATIONAL`
-#[derive(Clone)]
-pub struct SRational {
-    pub n: i32,
-    pub d: i32,
 }
