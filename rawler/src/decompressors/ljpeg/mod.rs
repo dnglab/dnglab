@@ -260,6 +260,7 @@ impl<'a> LjpegDecompressor<'a> {
     match self.predictor {
       1 => {
         match self.sof.cps {
+          1 => decode_ljpeg_1components(self, out, x, stripwidth, width, height),
           2 => decode_ljpeg_2components(self, out, x, stripwidth, width, height),
           3 => decode_ljpeg_3components(self, out, x, stripwidth, width, height),
           4 => decode_ljpeg_4components(self, out, width, height),
