@@ -1,13 +1,13 @@
-use std::io::{Read, Seek, SeekFrom};
-
-
-use log::debug;
-use serde::{Serialize};
+// SPDX-License-Identifier: MIT
+// Copyright 2021 Daniel Vogelbacher <daniel@chaospixel.com>
 
 use super::{
   super::{read_box_header_ext, BmffError, BoxHeader, FourCC, ReadBox, Result},
   iad1::Iad1Box,
 };
+use log::debug;
+use serde::Serialize;
+use std::io::{Read, Seek, SeekFrom};
 
 #[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct Cdi1Box {

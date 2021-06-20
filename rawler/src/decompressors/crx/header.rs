@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LGPL-2.1
+// Copyright 2021 Daniel Vogelbacher <daniel@chaospixel.com>
+
 use byteorder::{BigEndian, ReadBytesExt};
 use log::debug;
 use std::io::Cursor;

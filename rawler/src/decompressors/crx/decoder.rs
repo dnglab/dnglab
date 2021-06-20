@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LGPL-2.1
+// Copyright 2021 Daniel Vogelbacher <daniel@chaospixel.com>
+
 use bitstream_io::{BigEndian as BitStreamBig, BitRead, BitReader};
 use log::debug;
 use rayon::prelude::*;

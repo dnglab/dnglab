@@ -1,11 +1,12 @@
-use std::io::{Read, Seek, SeekFrom};
-
-
-use log::debug;
-use serde::{Serialize};
-use uuid::Uuid;
+// SPDX-License-Identifier: MIT
+// Copyright 2020 Alfred Gutierrez
+// Copyright 2021 Daniel Vogelbacher <daniel@chaospixel.com>
 
 use super::{ext_cr3::cr3desc::Cr3DescBox, mvhd::MvhdBox, trak::TrakBox, vendor::VendorBox, BmffError, BoxHeader, FourCC, ReadBox, Result};
+use log::debug;
+use serde::Serialize;
+use std::io::{Read, Seek, SeekFrom};
+use uuid::Uuid;
 
 #[derive(Debug, Clone, PartialEq, Default, Serialize)]
 pub struct MoovBox {

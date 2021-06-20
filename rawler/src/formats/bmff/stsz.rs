@@ -1,9 +1,11 @@
-use std::io::{Read, Seek, SeekFrom};
-
-use byteorder::{BigEndian, ReadBytesExt};
-use serde::{Serialize};
+// SPDX-License-Identifier: MIT
+// Copyright 2020 Alfred Gutierrez
+// Copyright 2021 Daniel Vogelbacher <daniel@chaospixel.com>
 
 use super::{read_box_header_ext, BoxHeader, FourCC, ReadBox, Result};
+use byteorder::{BigEndian, ReadBytesExt};
+use serde::Serialize;
+use std::io::{Read, Seek, SeekFrom};
 
 #[derive(Debug, Clone, PartialEq, Default, Serialize)]
 pub struct StszBox {
@@ -12,7 +14,6 @@ pub struct StszBox {
   pub flags: u32,
   pub sample_size: u32,
   pub sample_count: u32,
-
   pub sample_sizes: Vec<u32>,
 }
 
@@ -33,8 +34,8 @@ impl<R: Read + Seek> ReadBox<&mut R> for StszBox {
         sample_sizes.push(sample_number);
       }
     } else {
-        // If the sample_size is non-zero, it is the only sample_size
-        sample_sizes.push(sample_size);
+      // If the sample_size is non-zero, it is the only sample_size
+      sample_sizes.push(sample_size);
     }
 
     reader.seek(SeekFrom::Start(header.end_offset()))?;

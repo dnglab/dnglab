@@ -1,13 +1,8 @@
-use std::io::{Read, Seek, SeekFrom};
-
-
-
-use serde::{Serialize};
-
-use crate::formats::bmff::{free::FreeBox, skip::SkipBox};
+// SPDX-License-Identifier: MIT
+// Copyright 2021 Daniel Vogelbacher <daniel@chaospixel.com>
 
 use super::{
-  super::{ BmffError, BoxHeader, ReadBox, Result},
+  super::{BmffError, BoxHeader, ReadBox, Result},
   cctp::CctpBox,
   cmt1::Cmt1Box,
   cmt2::Cmt2Box,
@@ -17,6 +12,9 @@ use super::{
   ctbo::CtboBox,
   thmb::ThmbBox,
 };
+use crate::formats::bmff::{free::FreeBox, skip::SkipBox};
+use serde::Serialize;
+use std::io::{Read, Seek, SeekFrom};
 
 #[derive(Debug, Clone, PartialEq, Default, Serialize)]
 pub struct Cr3DescBox {

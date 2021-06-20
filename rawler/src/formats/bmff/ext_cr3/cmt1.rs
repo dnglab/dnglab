@@ -1,12 +1,9 @@
+// SPDX-License-Identifier: MIT
+// Copyright 2021 Daniel Vogelbacher <daniel@chaospixel.com>
+
+use super::super::{BoxHeader, FourCC, ReadBox, Result};
+use serde::Serialize;
 use std::io::{Read, Seek, SeekFrom};
-
-
-
-use serde::{Serialize};
-
-use super::{
-  super::{ BoxHeader, FourCC, ReadBox, Result},
-};
 
 #[derive(Debug, Clone, PartialEq, Default, Serialize)]
 pub struct Cmt1Box {

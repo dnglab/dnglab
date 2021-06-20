@@ -1,12 +1,11 @@
-use std::io::{Read, Seek, SeekFrom};
+// SPDX-License-Identifier: MIT
+// Copyright 2020 Alfred Gutierrez
+// Copyright 2021 Daniel Vogelbacher <daniel@chaospixel.com>
 
-
+use super::{dinf::DinfBox, stbl::StblBox, vendor::VendorBox, vmhd::VmhdBox, BmffError, BoxHeader, FourCC, ReadBox, Result};
 use log::debug;
-use serde::{Serialize};
-
-use super::{ dinf::DinfBox, stbl::StblBox, vendor::VendorBox,
-  vmhd::VmhdBox, BmffError, BoxHeader, FourCC, ReadBox, Result,
-};
+use serde::Serialize;
+use std::io::{Read, Seek, SeekFrom};
 
 #[derive(Debug, Clone, PartialEq, Default, Serialize)]
 pub struct MinfBox {
