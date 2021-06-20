@@ -39,7 +39,7 @@ For a list of supported cameras please see [SUPPORTED_CAMERAS.md](SUPPORTED_CAME
 ### convert subcommand
 
 ````
-nglab-convert
+dnglab-convert
 Convert raw image(s) into dng format
 
 USAGE:
