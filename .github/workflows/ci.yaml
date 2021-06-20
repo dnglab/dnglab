@@ -15,7 +15,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        rust: [nightly, beta, stable, 1.51.0, 1.50.0]
+        rust: [nightly, beta, stable, 1.52.0, 1.51.0]
     steps:
       - uses: actions/checkout@v2
       - uses: dtolnay/rust-toolchain@master
@@ -66,18 +66,18 @@ jobs:
 #      - uses: dtolnay/rust-toolchain@clippy
 #      - run: cargo clippy --tests -- -Dclippy::all -Dclippy::pedantic -A clippy::module-name-repetitions
 
-  fmt:
-    name: Rustfmt
-    runs-on: ubuntu-20.04
-    steps:
-      - name: Checkout sources
-        uses: actions/checkout@v2
-      - name: Install stable toolchain
-        uses: dtolnay/rust-toolchain@stable
-      - name: Install rustfmt
-        run: rustup component add rustfmt
-      - name: Run cargo fmt
-        uses: actions-rs/cargo@v1
-        with:
-          command: fmt
-          args: --all -- --check
+#  fmt:
+#    name: Rustfmt
+#    runs-on: ubuntu-20.04
+#    steps:
+#      - name: Checkout sources
+#        uses: actions/checkout@v2
+#      - name: Install stable toolchain
+#        uses: dtolnay/rust-toolchain@stable
+#      - name: Install rustfmt
+#        run: rustup component add rustfmt
+#      - name: Run cargo fmt
+#        uses: actions-rs/cargo@v1
+#        with:
+#          command: fmt
+#          args: --all -- --check
