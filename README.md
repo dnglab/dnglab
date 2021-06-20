@@ -15,13 +15,13 @@ Command line tool to convert camera RAW files to Digital Negative Format (DNG).
 
 ## Supported cameras and file formats
 
-For a list of supported cameras please see [SUPPORTED_CAMERAS.md].
+For a list of supported cameras please see [SUPPORTED_CAMERAS.md](SUPPORTED_CAMERAS.md).
 
 ### Supported raw file formats
 
 | Format | Supported                         | Remarks                                |
 |--------|-----------------------------------|----------------------------------------|
-| CR3    | ✅ Yes<sup>with restrictions</sup> | [CR3_STATE.md]                         |
+| CR3    | ✅ Yes<sup>with restrictions</sup> | [CR3_STATE.md](CR3_STATE.md)           |
 | CR2    | ❌ No<sup> planned</sup>           |                                        |
 | CRW    | ❌ No                              |                                        |
 
