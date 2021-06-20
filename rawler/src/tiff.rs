@@ -355,6 +355,14 @@ impl Rational {
   pub fn new(n: u32, d: u32) -> Self {
     Self { n, d }
   }
+
+  pub fn new_f32(n: f32, d: u32) -> Self {
+    Self { n: (n * d as f32) as u32, d }
+  }
+
+  pub fn new_f64(n: f32, d: u32) -> Self {
+    Self { n: (n * d as f32) as u32, d }
+  }
 }
 
 /// Type to represent tiff values of type `SRATIONAL`
@@ -404,10 +412,9 @@ impl Value {
   pub fn as_string(&self) -> Result<String> {
     match self {
       Self::Ascii(v) => Ok(v.strings()[0].clone()),
-      _ => Err(TiffError::General("String value not available".into()))
+      _ => Err(TiffError::General("String value not available".into())),
     }
   }
-
 
   pub fn count(&self) -> usize {
     match self {
@@ -1175,6 +1182,15 @@ impl<'a, 'w> DirectoryWriter<'a, 'w> {
     self.tiff.writer.write_all(data)?;
     Ok(offset)
   }
+
+  pub fn write_data_u16_be(&mut self, data: &[u16]) -> Result<u32> {
+    self.tiff.pad_word_boundary()?;
+    let offset = self.tiff.position()?;
+    for v in data {
+      self.tiff.writer.write_u16::<LittleEndian>(*v)?;
+    }
+    Ok(offset)
+  }
 }
 
 pub struct DirReader {}
@@ -1301,11 +1317,19 @@ impl From<u16> for Value {
   }
 }
 
+
 impl From<&[u16]> for Value {
   fn from(value: &[u16]) -> Self {
     Value::Short(value.into())
   }
 }
+
+impl From<&Vec<u16>> for Value {
+  fn from(value: &Vec<u16>) -> Self {
+    Value::Short(value.clone())
+  }
+}
+
 
 impl<const N: usize> From<[u16; N]> for Value {
   fn from(value: [u16; N]) -> Self {
@@ -1322,6 +1346,12 @@ impl From<u32> for Value {
 impl From<&[u32]> for Value {
   fn from(value: &[u32]) -> Self {
     Value::Long(value.into())
+  }
+}
+
+impl From<&Vec<u32>> for Value {
+  fn from(value: &Vec<u32>) -> Self {
+    Value::Long(value.clone())
   }
 }
 
@@ -1429,9 +1459,6 @@ mod tests {
   #[test]
   fn write_tiff_file_basic() -> std::result::Result<(), Box<dyn std::error::Error>> {
     let mut output = Cursor::new(Vec::new());
-    //output.write_u32::<BigEndian>(55442299)?; // placeholder for data shift
-    //let mut output = File::create("/tmp/tifftest.tif")?;
-
     let mut tiff = TiffWriter::new(&mut output).unwrap();
 
     let ifd_offset = {

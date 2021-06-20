@@ -6,11 +6,15 @@ mod app;
 mod convert;
 mod extract;
 mod gui;
+mod dnggen;
 
 use clap::AppSettings;
 use thiserror::Error;
 use fern::colors::{Color, ColoredLevelConfig};
 //use log::debug;
+
+const PKG_VERSION: &'static str = env!("CARGO_PKG_VERSION");
+const PKG_NAME: &'static str = env!("CARGO_PKG_NAME");
 
 /// Main entry function
 ///

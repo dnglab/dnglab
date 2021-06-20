@@ -1,15 +1,11 @@
-use std::f32::NAN;
-use std::{convert::TryFrom, io::Write};
-
 use image::DynamicImage;
 use log::debug;
+use std::convert::TryFrom;
+use std::f32::NAN;
 
 use crate::bits::Endian;
-
 use crate::decoders::*;
 use crate::decompressors::crx::decompress_crx_image;
-//use crate::decompressors::crx::IsoMCanonCmp1Box;
-
 use crate::formats::bmff::ext_cr3::cr3desc::Cr3DescBox;
 use crate::formats::bmff::ext_cr3::iad1::Iad1Type;
 use crate::formats::tiff::*;
@@ -95,6 +91,14 @@ impl<'a> Decoder for Cr3Decoder<'a> {
   }
 
   fn populate_dng_root(&mut self, root_ifd: &mut DirectoryWriter) -> Result<(), String> {
+    // Copy Orientation tag
+    if let Some(cmt1_ifd) = self.cmt1.as_ref() {
+      let ifd = cmt1_ifd.root_ifd();
+      if let Some(orientation) = ifd.get_entry(ExifTag::Orientation) {
+        root_ifd.add_value(ExifTag::Orientation, orientation.value.clone()).unwrap();
+      }
+    }
+
     if let Some(cmt4) = self.cmt4.as_ref() {
       let gpsinfo_offset = {
         let mut gps_ifd = root_ifd.new_directory();
@@ -166,8 +170,8 @@ impl<'a> Decoder for Cr3Decoder<'a> {
 
         //let makernotes = TiffIFD::new(&rec8.payload[8..], 0, 0, 0, 1, Endian::Little, &vec![]).unwrap();
 
-        let mut filebuf = File::create("/tmp/fdump.tif").unwrap();
-        filebuf.write(&rec8.payload).unwrap();
+        //let mut filebuf = File::create("/tmp/fdump.tif").unwrap();
+        //filebuf.write(&rec8.payload).unwrap();
 
         let ctmd_record8 = TiffReader::new_with_buffer(&rec8.payload[8..], 0, Some(0)).unwrap();
 
@@ -259,7 +263,6 @@ impl<'a> Decoder for Cr3Decoder<'a> {
 
       debug!("cmp1 mdat hdr size: {}", cmp1.mdat_hdr_size);
 
-
       let image = decompress_crx_image(&buf, cmp1).unwrap();
 
       let wb = self.wb.unwrap();
@@ -303,145 +306,6 @@ impl<'a> Decoder for Cr3Decoder<'a> {
     } else {
       return Err(format!("Camera model unknown"));
     }
-
-    //img.active_area = [0, 0, 0, 0];
-
-    //let img = image::load_from_memory_with_format(buf, image::ImageFormat::Jpeg).unwrap();
-
-    //unimplemented!()
-    /*
-    let camera = self.rawloader.check_supported(&self.tiff)?;
-    let (raw, offset) = {
-      if let Some(raw) = self.tiff.find_first_ifd(TiffRootTag::Cr2Id) {
-        (raw, fetch_tag!(raw, TiffRootTag::StripOffsets).get_usize(0))
-      } else if let Some(raw) = self.tiff.find_first_ifd(TiffRootTag::CFAPattern) {
-        (raw, fetch_tag!(raw, TiffRootTag::StripOffsets).get_usize(0))
-      } else if let Some(off) = self.tiff.find_entry(TiffRootTag::Cr2OldOffset) {
-        (&self.tiff, off.get_usize(0))
-      } else {
-        return Err("CR2: Couldn't find raw info".to_string())
-      }
-    };
-    let src = &self.buffer[offset..];
-
-    let (width, height, cpp, image) = {
-      let decompressor = LjpegDecompressor::new(src)?;
-      let ljpegwidth = decompressor.width();
-      let mut width = ljpegwidth;
-      let mut height = decompressor.height();
-      let cpp = if decompressor.super_h() == 2 {3} else {1};
-      let mut ljpegout = alloc_image_plain!(width, height, dummy);
-
-      decompressor.decode(&mut ljpegout, 0, width, width, height, dummy)?;
-
-      // Linearize the output (applies only to D2000 as far as I can tell)
-      if camera.find_hint("linearization") {
-        let table = {
-          let linearization = fetch_tag!(self.tiff, TiffRootTag::GrayResponse);
-          let mut t = [0 as u16;4096];
-          for i in 0..t.len() {
-            t[i] = linearization.get_u32(i) as u16;
-          }
-          LookupTable::new(&t)
-        };
-
-        let mut random = ljpegout[0] as u32;
-        for o in ljpegout.chunks_exact_mut(1) {
-          o[0] = table.dither(o[0], &mut random);
-        }
-      }
-
-      // Convert the YUV in sRAWs to RGB
-      if cpp == 3 {
-        self.convert_to_rgb(&camera, &mut ljpegout, dummy)?;
-        if raw.has_entry(TiffRootTag::ImageWidth) {
-          width = fetch_tag!(raw, TiffRootTag::ImageWidth).get_usize(0) * cpp;
-          height = fetch_tag!(raw, TiffRootTag::ImageLength).get_usize(0) ;
-        } else if width/cpp < height {
-          let temp = width/cpp;
-          width = height*cpp;
-          height = temp;
-        }
-      } else if camera.find_hint("double_line") {
-        width /= 2;
-        height *= 2;
-      }
-
-      // Take each of the vertical fields and put them into the right location
-      // FIXME: Doing this at the decode would reduce about 5% in runtime but I haven't
-      //        been able to do it without hairy code
-      if let Some(canoncol) = raw.find_entry(TiffRootTag::Cr2StripeWidths) {
-        if canoncol.get_usize(0) == 0 {
-          (width, height, cpp, ljpegout)
-        } else {
-          let mut out = alloc_image_plain!(width, height, dummy);
-          if !dummy {
-            let mut fieldwidths = Vec::new();
-            for _ in 0..canoncol.get_usize(0) {
-              fieldwidths.push(canoncol.get_usize(1));
-            }
-            fieldwidths.push(canoncol.get_usize(2));
-
-            if decompressor.super_v() == 2 {
-              // We've decoded 2 lines at a time so we also need to copy two strips at a time
-              let nfields = fieldwidths.len();
-              let fieldwidth = fieldwidths[0];
-              let mut fieldstart = 0;
-              let mut inpos = 0;
-              for _ in 0..nfields {
-                for row in (0..height).step_by(2) {
-                  for col in (0..fieldwidth).step_by(3) {
-                    let outpos = row*width+fieldstart+col;
-                    out[outpos..outpos+3].copy_from_slice(&ljpegout[inpos..inpos+3]);
-                    let outpos = (row+1)*width+fieldstart+col;
-                    let inpos2 = inpos+ljpegwidth;
-                    out[outpos..outpos+3].copy_from_slice(&ljpegout[inpos2..inpos2+3]);
-                    inpos += 3;
-                    if inpos % ljpegwidth == 0 {
-                      // we've used a full input line and we're reading 2 by 2 so skip one
-                      inpos += ljpegwidth;
-                    }
-                  }
-                }
-                fieldstart += fieldwidth;
-              }
-            } else {
-              let sh = decompressor.super_h();
-              let mut fieldstart = 0;
-              let mut fieldpos = 0;
-              for fieldwidth in fieldwidths {
-                let fieldwidth = fieldwidth/sh*cpp;
-                for row in 0..height {
-                  let outpos = row*width+fieldstart;
-                  let inpos = fieldpos+row*fieldwidth;
-                  let outb = &mut out[outpos..outpos+fieldwidth];
-                  let inb = &ljpegout[inpos..inpos+fieldwidth];
-                  outb.copy_from_slice(inb);
-                }
-                fieldstart += fieldwidth;
-                fieldpos += fieldwidth*height;
-              }
-            }
-          }
-
-          (width, height, cpp, out)
-        }
-      } else {
-        (width, height, cpp, ljpegout)
-      }
-    };
-
-    let wb = self.get_wb(&camera)?;
-    let mut img = RawImage::new(camera, width, height, wb, image, dummy);
-    if cpp == 3 {
-      img.cpp = 3;
-      img.width /= 3;
-      img.crops = [0,0,0,0];
-      img.blacklevels = [0,0,0,0];
-      img.whitelevels = [65535,65535,65535,65535];
-    }
-    Ok(img)
-     */
   }
 
   fn full_image(&self) -> Result<DynamicImage, String> {
@@ -452,13 +316,7 @@ impl<'a> Decoder for Cr3Decoder<'a> {
     //let mdat_data_offset = (self.bmff.filebox.mdat.header.offset + self.bmff.filebox.mdat.header.header_len) as usize;
 
     let buf = &self.buffer[offset..offset + size];
-
     let img = image::load_from_memory_with_format(buf, image::ImageFormat::Jpeg).unwrap();
-
-    //img.save_with_format("/tmp/livedump.jpg", image::ImageFormat::Jpeg).unwrap();
-
-    //unimplemented!()
-
     Ok(img)
   }
 }
