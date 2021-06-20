@@ -1,8 +1,10 @@
-use std::io::{Read, Seek, SeekFrom};
+// SPDX-License-Identifier: MIT
+// Copyright 2021 Daniel Vogelbacher <daniel@chaospixel.com>
 
 use byteorder::{BigEndian, ReadBytesExt};
 use log::debug;
-use serde::{Serialize};
+use serde::Serialize;
+use std::io::{Read, Seek, SeekFrom};
 
 use super::{
   super::{read_box_header_ext, BmffError, BoxHeader, FourCC, ReadBox, Result},

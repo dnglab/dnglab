@@ -1,12 +1,10 @@
-use std::io::{Read, Seek, SeekFrom};
+// SPDX-License-Identifier: MIT
+// Copyright 2021 Daniel Vogelbacher <daniel@chaospixel.com>
 
+use super::super::{BoxHeader, FourCC, ReadBox, Result};
 use byteorder::{BigEndian, ReadBytesExt};
-
-use serde::{Serialize};
-
-use super::{
-  super::{BoxHeader, FourCC, ReadBox, Result},
-};
+use serde::Serialize;
+use std::io::{Read, Seek, SeekFrom};
 
 #[derive(Debug, Clone, PartialEq, Default, Serialize)]
 pub struct CtmdBox {

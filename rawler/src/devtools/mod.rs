@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LGPL-2.1
+// Copyright 2021 Daniel Vogelbacher <daniel@chaospixel.com>
+
 use image::{ImageBuffer, ImageFormat, Luma};
 
 pub fn dump_image_u16(data: &Vec<u16>, width: usize, height: usize, path: impl AsRef<str>) {

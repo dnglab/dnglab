@@ -1,10 +1,5 @@
-use std::io::{Read, Seek, SeekFrom};
-
-use byteorder::{BigEndian, ReadBytesExt};
-
-use serde::{Serialize};
-
-use crate::formats::bmff::free::FreeBox;
+// SPDX-License-Identifier: MIT
+// Copyright 2021 Daniel Vogelbacher <daniel@chaospixel.com>
 
 use super::{
   super::{BmffError, BoxHeader, FourCC, ReadBox, Result},
@@ -12,6 +7,10 @@ use super::{
   cmp1::Cmp1Box,
   jpeg::JpegBox,
 };
+use crate::formats::bmff::free::FreeBox;
+use byteorder::{BigEndian, ReadBytesExt};
+use serde::Serialize;
+use std::io::{Read, Seek, SeekFrom};
 
 #[derive(Debug, Clone, PartialEq, Default, Serialize)]
 pub struct CrawBox {
@@ -90,8 +89,8 @@ impl<R: Read + Seek> ReadBox<&mut R> for CrawBox {
           cdi1 = Some(Cdi1Box::read_box(&mut reader, header)?);
         }
         FreeBox::TYP => {
-            let _ = Some(FreeBox::read_box(&mut reader, header)?);
-          }
+          let _ = Some(FreeBox::read_box(&mut reader, header)?);
+        }
         _ => {
           //debug!("Unknown box???");
           return Err(BmffError::Parse(format!("Invalid box found in CRAW: {:?}", header.typ)));

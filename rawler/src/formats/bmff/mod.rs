@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: MIT
+// Copyright 2020 Alfred Gutierrez
+// Copyright 2021 Daniel Vogelbacher <daniel@chaospixel.com>
+
 use std::{
   fmt,
   fs::File,
@@ -95,9 +99,8 @@ impl BoxHeader {
     let start = (self.offset + self.header_len) as usize + skip;
     if limit == 0 {
       &buffer[start..start + (self.size - self.header_len) as usize - skip]
-      
     } else {
-      &buffer[start..start+limit]      
+      &buffer[start..start + limit]
     }
   }
 }
@@ -205,139 +208,6 @@ pub fn parse_buffer(buf: &Vec<u8>) -> Result<FileBox> {
   Ok(filebox)
 }
 
-/*
-pub struct AbstractBox {
-    header: BoxHeader,
-}
-
-
-
-
-pub struct FileBox {
-  pub ftyp: FtypBox,
-  pub moov: MoovBox,
-  pub mdat: MdatBox,
-  pub additional: Vec<AbstractBox>,
-}
-
-impl FileBox {
-    pub fn parse<R: Read + Seek>(file: R) -> Result<Self> {
-        unimplemented!()
-    }
-}
-
-
-pub fn box_start<R: Seek>(seeker: &mut R) -> Result<u64> {
-    Ok(seeker.seek(SeekFrom::Current(0))? - HEADER_SIZE)
-}
-
-pub fn skip_bytes<S: Seek>(seeker: &mut S, size: u64) -> Result<()> {
-    seeker.seek(SeekFrom::Current(size as i64))?;
-    Ok(())
-}
-
-pub fn seek_to<S: Seek>(seeker: &mut S, pos: u64) -> Result<()> {
-    seeker.seek(SeekFrom::Start(pos))?;
-    Ok(())
-}
-
-
-impl<R: Read + Seek> ReadBox<&mut R> for FtypBox {
-    fn read_box(reader: &mut R, size: u64) -> Result<Self> {
-        let start = box_start(reader)?;
-
-        let major = reader.read_u32::<BigEndian>()?;
-        let minor = reader.read_u32::<BigEndian>()?;
-        if size % 4 != 0 {
-            return Err(Error::InvalidData("invalid ftyp size"));
-        }
-        let brand_count = (size - 16) / 4; // header + major + minor
-
-        let mut brands = Vec::new();
-        for _ in 0..brand_count {
-            let b = reader.read_u32::<BigEndian>()?;
-            brands.push(From::from(b));
-        }
-
-        skip_bytes_to(reader, start + size)?;
-
-        Ok(FtypBox {
-            major_brand: From::from(major),
-            minor_version: minor,
-            compatible_brands: brands,
-        })
-    }
-}
-
-
-
-pub fn parse_file<R: Read + Seek>(file: R) -> Result<FileBox> {
-
-
-
-  unimplemented!()
-}
-
- */
-
-/*
-pub struct BoxReader<R: Read + Seek> {
-  reader: R,
-  limit: u64,
-}
-
-impl<R: Read + Seek> BoxReader<R> {
-  pub fn new(reader: R, limit: u64) -> Self {
-    Self { reader, limit }
-  }
-
-
-  pub fn read_header(&mut self) -> Result<(u64, BoxHeader)> {
-    let pos = self.curr_pos()?;
-    let mut size = self.reader.read_u32::<BigEndian>()? as u64;
-    let typ = self.reader.read_u32::<BigEndian>()?;
-    if size == 1 {
-      size = self.reader.read_u64::<BigEndian>()?;
-    }
-    Ok((
-      self.curr_pos()? - pos,
-      BoxHeader {
-        size,
-        typ: typ.into(),
-        uuid: None,
-        offset: pos,
-      },
-    ))
-  }
-
-  pub fn curr_pos(&mut self) -> Result<u64> {
-    Ok(self.reader.seek(SeekFrom::Current(0))?)
-  }
-}
-
-
-impl<R: Read + Seek>  Iterator for BoxReader<R> {
-    type Item = Result<AbstractBox>;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        let pos = self.curr_pos()?;
-        if self.limit == 0 || self.curr_pos()
-    }
-
-}
-
-
-
-
-pub fn parse_file<R: Read + Seek>(file: R) -> Result<AbstractBox> {
-  let mut reader = BoxReader::new(file, 0);
-
-  let xx = reader.parse()?;
-
-  unimplemented!()
-}
- */
-
 #[derive(Default, PartialEq, Eq, Clone, Copy)]
 pub struct FourCC {
   pub value: [u8; 4],
@@ -362,9 +232,7 @@ impl FourCC {
 
 impl From<u32> for FourCC {
   fn from(number: u32) -> Self {
-    FourCC {
-      value: number.to_be_bytes(),
-    }
+    FourCC { value: number.to_be_bytes() }
   }
 }
 
@@ -385,9 +253,7 @@ impl std::str::FromStr for FourCC {
 
   fn from_str(s: &str) -> Result<Self> {
     if let [a, b, c, d] = s.as_bytes() {
-      Ok(Self {
-        value: [*a, *b, *c, *d],
-      })
+      Ok(Self { value: [*a, *b, *c, *d] })
     } else {
       Err(BmffError::Parse("expected exactly four bytes in string".into()))
     }
@@ -399,15 +265,6 @@ impl From<[u8; 4]> for FourCC {
     FourCC { value }
   }
 }
-/*
-impl From<BoxType> for FourCC {
-    fn from(t: BoxType) -> FourCC {
-        let box_num: u32 = Into::into(t);
-        From::from(box_num)
-    }
-}
-
- */
 
 impl fmt::Debug for FourCC {
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -433,15 +290,6 @@ pub struct Bmff {
 }
 
 impl Bmff {
-  /*
-      pub fn new_file(buf: &Vec<u8>) -> Result<Self> {
-        let mut cursor = Cursor::new(buf);
-        let filebox = parse_file(&mut cursor)?;
-        Ok(Self {
-          filebox,
-        })
-      }
-  */
   pub fn new_buf(buf: &Vec<u8>) -> Result<Self> {
     let filebox = parse_buffer(&buf)?;
     Ok(Self { filebox })

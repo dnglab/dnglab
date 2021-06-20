@@ -1,21 +1,25 @@
-use std::io::{Read, Seek, SeekFrom};
+// SPDX-License-Identifier: MIT
+// Copyright 2020 Alfred Gutierrez
+// Copyright 2021 Daniel Vogelbacher <daniel@chaospixel.com>
 
+use super::{
+  ext_cr3::{craw::CrawBox, ctmd::CtmdBox},
+  read_box_header_ext,
+  vendor::VendorBox,
+  BoxHeader, FourCC, ReadBox, Result,
+};
 use byteorder::{BigEndian, ReadBytesExt};
 use log::debug;
-use serde::{Serialize};
-
-use super::{BoxHeader, FourCC, ReadBox, Result, ext_cr3::{craw::CrawBox, ctmd::CtmdBox}, read_box_header_ext, vendor::VendorBox};
+use serde::Serialize;
+use std::io::{Read, Seek, SeekFrom};
 
 #[derive(Debug, Clone, PartialEq, Default, Serialize)]
 pub struct StsdBox {
   pub header: BoxHeader,
   pub version: u8,
   pub flags: u32,
-
-  // TODO: add canon boxes?
   pub craw: Option<CrawBox>,
   pub ctmd: Option<CtmdBox>,
-
   pub vendor: Vec<VendorBox>,
 }
 
@@ -43,14 +47,12 @@ impl<R: Read + Seek> ReadBox<&mut R> for StsdBox {
       let header = BoxHeader::parse(&mut reader)?;
 
       match header.typ {
-
         CrawBox::TYP => {
           craw = Some(CrawBox::read_box(&mut reader, header)?);
         }
         CtmdBox::TYP => {
-            ctmd = Some(CtmdBox::read_box(&mut reader, header)?);
-          }
-
+          ctmd = Some(CtmdBox::read_box(&mut reader, header)?);
+        }
 
         _ => {
           debug!("Vendor box found in stsd: {:?}", header.typ);

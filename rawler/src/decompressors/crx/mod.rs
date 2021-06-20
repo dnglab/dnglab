@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LGPL-2.1
+// Copyright 2021 Daniel Vogelbacher <daniel@chaospixel.com>
+
 use byteorder::{BigEndian, ReadBytesExt};
 use log::debug;
 use std::io::{Read, Seek};
@@ -328,3 +331,4 @@ pub fn decompress_crx_image(buf: &[u8], cmp1: &Cmp1Box) -> Result<Vec<u16>> {
   let result = image.decode(buf).unwrap();
   Ok(result)
 }
+

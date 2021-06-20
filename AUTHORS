@@ -1,0 +1,13 @@
+DNGLab was originally created in 2021 by Daniel Vogelbacher.
+
+Here is an inevitably incomplete list of MUCH-APPRECIATED CONTRIBUTORS --
+people who have submitted patches or written code that is otherwise used
+in this project:
+
+	Alfred Gutierrez	- BMFF box parsing from mp4-rust
+	Andrew Baldwin		- Lossless JPEG-92 compression
+	Pedro Côrte-Real	- rawloader rust library
+	Alexey Danilchenko	- crx decoder crx.cpp from libraw
+	Alex Tutubalin,
+		LibRaw LLC	- crx decoder crx.cpp from libraw
+
