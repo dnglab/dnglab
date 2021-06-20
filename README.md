@@ -2,6 +2,10 @@
 
 Command line tool to convert camera RAW files to Digital Negative Format (DNG).
 
+
+ It is currently in alpha state, so don't expect a polished and bugfree application.
+ Please report bugs in our [issue tracker](https://github.com/dnglab/dnglab/issues).
+
 ## Examples
 
 **Convert a single file:**
