@@ -1,5 +1,4 @@
 use byteorder::{BigEndian, ReadBytesExt};
-use libc::{c_int, size_t};
 use log::debug;
 use std::io::{Read, Seek};
 use thiserror::Error;

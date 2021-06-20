@@ -53,16 +53,17 @@ use lazy_static::lazy_static;
   pub mod bits;
   pub mod decoders;
   pub mod decompressors;
-  pub mod dngencoder;
   pub mod formats;
   pub mod tags;
   pub mod packed;
   pub mod pumps;
+  pub mod tiles;
   pub mod cfa;
   pub mod rawimage;
   pub mod ljpeg92;
   pub mod tiff;
   pub mod devtools;
+  pub mod dng;
 
   pub use rawimage::RawImage;
   pub use rawimage::RawImageData;
