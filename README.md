@@ -21,13 +21,43 @@ For a list of supported cameras please see [SUPPORTED_CAMERAS.md].
 
 | Format | Supported                         | Remarks                                |
 |--------|-----------------------------------|----------------------------------------|
-| CR3    | ✅ Yes<sup>with restrictions</sup> | CRAW (compressed RAW) is not supported |
+| CR3    | ✅ Yes<sup>with restrictions</sup> | [CR3_STATE.md]                         |
 | CR2    | ❌ No<sup> planned</sup>           |                                        |
 | CRW    | ❌ No                              |                                        |
+
 
 ### Supported DNG features
 
  * DNG lossless compression (LJPEG-92)
+
+## Command line help
+
+### convert subcommand
+
+````
+nglab-convert
+Convert raw image(s) into dng format
+
+USAGE:
+    dnglab convert [FLAGS] [OPTIONS] <INPUT> <OUTPUT>
+
+FLAGS:
+    -d                  Sets the level of debugging information
+    -h, --help          Prints help information
+        --nocrop        Do not crop black areas, output full sensor data
+        --noembedded    Do not embed original raw file
+    -f, --override      Override existing files
+    -V, --version       Prints version information
+        --verbose       Print more messages
+
+OPTIONS:
+    -c, --compression <compression>    'lossless' (default) or 'none'
+
+ARGS:
+    <INPUT>     Input file or directory
+    <OUTPUT>    Output file or existing directory
+````
+
 
 ## FAQ
 
