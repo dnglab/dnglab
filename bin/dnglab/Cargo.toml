@@ -2,7 +2,11 @@
 authors = ["Daniel Vogelbacher <daniel@chaospixel.com>"]
 edition = "2018"
 name = "dnglab"
-version = "0.1.0"
+version = "0.1.0-rc1"
+description = "Camera RAW to DNG file format converter"
+license = "LGPL-2.1"
+repository = "https://github.com/dnglab/dnglab"
+
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -20,3 +24,12 @@ serde_json = "1.0"
 rayon = "1"
 itertools = "0.9"
 thiserror = "1.0.25"
+
+[package.metadata.deb]
+maintainer = "Daniel Vogelbacher <daniel@chaospixel.com>"
+license-file = ["../../LICENSE", "0"]
+extended-description = """\
+Utility for converting digital camera RAW format files\
+into Digital Negatives (DNG)."""
+section = "graphics"
+priority = "optional"

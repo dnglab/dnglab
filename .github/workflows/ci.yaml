@@ -6,6 +6,7 @@ on:
       - main
     paths-ignore:
       - '**.md'
+      - '.github/workflows/release.yaml'
   pull_request:
 
 jobs:

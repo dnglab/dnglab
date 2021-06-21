@@ -9,3 +9,4 @@ opt-level = 3
 overflow-checks = false
 debug = 0
 lto = "fat"
+
