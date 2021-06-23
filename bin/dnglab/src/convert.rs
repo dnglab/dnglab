@@ -4,6 +4,7 @@
 use anyhow::Context;
 use clap::ArgMatches;
 use log::debug;
+use rayon::prelude::*;
 use std::{fs, io::Write};
 use std::{
   fs::{read_dir, File},
@@ -48,7 +49,7 @@ fn convert_dir(in_path: &Path, out_path: &Path, options: &ArgMatches<'_>) -> any
     .collect();
 
   let results: Vec<bool> = in_files
-    .iter()
+    .par_iter()
     .map(|in_path| {
       if let Ok(out_path) = build_output_path(in_path, out_path) {
         convert_file(&in_path, &out_path, options).is_ok()
