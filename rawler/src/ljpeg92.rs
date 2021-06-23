@@ -297,7 +297,7 @@ impl<'a> LjpegCompressor<'a> {
     let mut rv = 0;
     let mut vl = 0;
     let mut sym = 0;
-    let mut i = 0;
+    let mut i: u32 = 0;
     while i < (1 << maxbits) {
       if bitsused > maxbits {
         panic!("This should never happen");
@@ -314,7 +314,7 @@ impl<'a> LjpegCompressor<'a> {
         continue;
       }
       self.huffbits[sym] = bitsused as u16;
-      self.huffenc[sym] = i >> (maxbits - bitsused);
+      self.huffenc[sym] = (i >> (maxbits - bitsused)) as u16;
       sym += 1;
       i += 1 << (maxbits - bitsused);
       rv = 1 << (maxbits - bitsused);
