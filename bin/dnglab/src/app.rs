@@ -34,7 +34,9 @@ pub fn create_app() -> App<'static, 'static> {
       )
       (@subcommand extract =>
           (about: "Extract embedded original Raw from DNG")
-          //(@arg recursive: -r --recursive "Process input directory recursive")
+          (@arg recursive: -r --recursive "Process input directory recursive")
+          (@arg override: -f --override "Override existing files")
+          (@arg skipchecks: --skipchecks "Skip integrity checks")
           (@arg INPUT: +required "Input file or directory")
           (@arg OUTPUT: +required "Output file or existing directory")
       )

@@ -4,13 +4,14 @@
 mod analyze;
 mod app;
 mod convert;
-mod extract;
-mod gui;
 mod dnggen;
+mod extract;
+mod filemap;
+mod gui;
 
 use clap::AppSettings;
-use thiserror::Error;
 use fern::colors::{Color, ColoredLevelConfig};
+use thiserror::Error;
 //use log::debug;
 
 const PKG_VERSION: &'static str = env!("CARGO_PKG_VERSION");
@@ -21,8 +22,7 @@ const PKG_NAME: &'static str = env!("CARGO_PKG_NAME");
 /// We initialize the fern logger here, create a Clap command line
 /// parser and check for the correct environment.
 fn main() -> anyhow::Result<()> {
-  let app = app::create_app()
-  .setting(AppSettings::ArgRequiredElseHelp);
+  let app = app::create_app().setting(AppSettings::ArgRequiredElseHelp);
   let matches = app.get_matches_safe().unwrap_or_else(|e| e.exit());
 
   let colors = ColoredLevelConfig::new().debug(Color::Magenta);
@@ -59,9 +59,24 @@ fn main() -> anyhow::Result<()> {
   }
 }
 
-
 #[derive(Error, Debug)]
 pub enum AppError {
   #[error("Invalid arguments")]
   InvalidArgs,
+  #[error("Invalid arguments: {}", _0)]
+  InvalidCmdSwitch(String),
+  #[error("I/O error: {}", _0)]
+  Io(#[from] std::io::Error),
+  #[error("Source not exists: {}", _0)]
+  NotExists(String),
+  #[error("Destination already exists: {}", _0)]
+  DestExists(String),
+  #[error("Invalid format: {}", _0)]
+  InvalidFormat(String),
+  #[error("Decoder failed: {}", _0)]
+  DecoderFail(String),
+  #[error("General error: {}", _0)]
+  General(String),
 }
+
+pub type Result<T> = std::result::Result<T, AppError>;

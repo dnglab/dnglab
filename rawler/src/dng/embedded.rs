@@ -1,16 +1,17 @@
 // SPDX-License-Identifier: LGPL-2.1
 // Copyright 2021 Daniel Vogelbacher <daniel@chaospixel.com>
 
-use libflate::zlib::{EncodeOptions, Encoder};
+use byteorder::{BigEndian, ReadBytesExt};
+use libflate::zlib::{Decoder, EncodeOptions, Encoder};
 use rayon::prelude::*;
-use std::io::{Cursor, Seek, SeekFrom, Write};
+use std::io::{Cursor, Read, Seek, SeekFrom, Write};
 
 // DNG requires this block size
 const COMPRESS_BLOCK_SIZE: u32 = 65536;
 
 /// Calculate digest for original file, DNG uses MD5 for that
 pub fn original_digest(data: &[u8]) -> [u8; 16] {
-  md5::compute(&data).into()
+  md5::compute(data).into()
 }
 
 /// Compress an original file for embedding into DNG
@@ -18,7 +19,7 @@ pub fn original_compress(uncomp_data: &[u8]) -> Result<Vec<u8>, std::io::Error> 
   let pool = rayon::ThreadPoolBuilder::new()
     .num_threads(rayon::current_num_threads() / 2 + 1)
     .build()
-    .unwrap();
+    .expect("Failed to build thread pool");
 
   let result = pool.install(move || {
     let mut compr_data = Cursor::new(Vec::<u8>::new());
@@ -71,6 +72,45 @@ pub fn original_compress(uncomp_data: &[u8]) -> Result<Vec<u8>, std::io::Error> 
   result
 }
 
+/// Decompress an original file from DNG
+pub fn original_decompress(comp_data: &[u8]) -> Result<Vec<u8>, std::io::Error> {
+  let pool = rayon::ThreadPoolBuilder::new()
+    .num_threads(rayon::current_num_threads() / 2 + 1)
+    .build()
+    .expect("Failed to build thread pool");
+
+  let result = pool.install(move || {
+    let mut comp_data = Cursor::new(comp_data);
+
+    let raw_fork_size: u32 = comp_data.read_u32::<BigEndian>()?;
+    let raw_fork_blocks: u32 = ((raw_fork_size + (COMPRESS_BLOCK_SIZE - 1)) / COMPRESS_BLOCK_SIZE) as u32;
+
+    let mut index_list: Vec<usize> = Vec::with_capacity(raw_fork_blocks as usize + 1);
+
+    for _ in 0..raw_fork_blocks + 1 {
+      let idx: usize = comp_data.read_u32::<BigEndian>()? as usize;
+      index_list.push(idx);
+    }
+
+    let comp_data = comp_data.into_inner();
+    let mut chunks: Vec<&[u8]> = Vec::new();
+    let mut prev_idx = index_list.first().expect("Failed to get first element");
+    for idx in index_list.iter().skip(1) {
+      let chunk = &comp_data[*prev_idx..*idx];
+      chunks.push(chunk);
+      prev_idx = idx;
+    }
+
+    let uncompr_chunks: Vec<Result<UncomprChunk, String>> = chunks.par_iter().map(|chunk| decompress_chunk(chunk)).collect();
+    let mut data: Vec<u8> = Vec::new();
+    for chunk in uncompr_chunks {
+      data.extend_from_slice(&chunk.unwrap().chunk);
+    }
+    Ok(data)
+  });
+  result
+}
+
 /// Single chunk for compressed data
 struct ComprChunk {
   chunk: Vec<u8>,
@@ -83,4 +123,17 @@ fn compress_chunk(buf: &[u8]) -> Result<ComprChunk, String> {
   Ok(ComprChunk {
     chunk: encoder.finish().into_result().unwrap(),
   })
+}
+
+/// Single chunk for compressed data
+struct UncomprChunk {
+  chunk: Vec<u8>,
+}
+
+/// Compress a buffer to ComprChunk
+fn decompress_chunk(buf: &[u8]) -> Result<UncomprChunk, String> {
+  let mut decoder = Decoder::new(buf).unwrap();
+  let mut chunk = Vec::new();
+  decoder.read_to_end(&mut chunk).unwrap();
+  Ok(UncomprChunk { chunk })
 }
