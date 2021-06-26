@@ -4,6 +4,7 @@
 mod embedded;
 
 pub use embedded::original_compress;
+pub use embedded::original_decompress;
 pub use embedded::original_digest;
 
 use crate::RawImage;
