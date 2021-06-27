@@ -82,8 +82,8 @@ pub fn raw_to_dng(raw_file: &mut File, dng_file: &mut File, orig_filename: &str,
   let orig_compress_handle = if !params.no_embedded {
     let in_buffer_clone = in_buffer.clone();
     Some(thread::spawn(move || {
-      let raw_digest = original_digest(in_buffer_clone.raw_buf());
       let raw_data_compreessed = original_compress(in_buffer_clone.raw_buf()).unwrap();
+      let raw_digest = original_digest(&raw_data_compreessed);
       (raw_digest, raw_data_compreessed)
     }))
   } else {
