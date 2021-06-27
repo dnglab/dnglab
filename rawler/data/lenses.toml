@@ -12,6 +12,13 @@ focal_range = [[15, 1], [35, 1]]
 aperture_range = [[28, 10], [28, 10]]
 
 [[lenses]]
+key = "RF24-105mm F4 L IS USM"
+make = "Canon"
+model = "RF 24-105mm F4L IS USM"
+focal_range = [[24, 1], [105, 1]]
+aperture_range = [[4, 1], [4, 1]]
+
+[[lenses]]
 key = "RF24-70mm F2.8 L IS USM"
 make = "Canon"
 model = "RF 24-70mm F2.8L IS USM"
