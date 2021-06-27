@@ -35,9 +35,15 @@ jobs:
         - os: ubuntu-20.04
           install-deps: |
               cargo install cargo-deb
-          build-cmd: cargo deb -p dnglab
+              sudo apt-get update
+              sudo apt-get install libc6-dev-arm64-cross crossbuild-essential-arm64
+              rustup target add aarch64-unknown-linux-gnu
+          build-cmd: |
+            RUSTFLAGS="-C linker=aarch64-linux-gnu-gcc" cargo deb --no-strip -p dnglab --target=aarch64-unknown-linux-gnu
+            cargo deb -p dnglab
           package-files: |
               target/debian/dnglab*.deb
+              target/aarch64-unknown-linux-gnu/debian/dnglab*.deb
 
         - os: windows-latest
           build-cmd: cargo build --release
