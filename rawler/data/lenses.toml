@@ -4,6 +4,7 @@
 # in CR3 files Canon stores an internal lens name which can be directly
 # used here as lookup key.
 
+# Canon RF mount lenses
 
 [[lenses]]
 key = "RF50mm F1.2 L USM"
@@ -11,13 +12,6 @@ make = "Canon"
 model = "RF 50mm F1.2L USM"
 focal_range = [[50, 1], [50, 1]]
 aperture_range = [[23, 1], [12, 10]]
-
-[[lenses]]
-key = "RF15-35mm F2.8 L IS USM"
-make = "Canon"
-model = "RF 15-35mm F2.8L IS USM"
-focal_range = [[15, 1], [35, 1]]
-aperture_range = [[28, 10], [28, 10]]
 
 [[lenses]]
 key = "RF24-105mm F4 L IS USM"
@@ -53,6 +47,7 @@ make = "Canon"
 model = "RF 85mm F1.2L USM DS"
 focal_range = [[85, 1], [85, 1]]
 aperture_range = [[12, 10], [12, 10]]
+
 [[lenses]]
 key = "RF24-70mm F2.8 L IS USM"
 make = "Canon"
@@ -60,6 +55,12 @@ model = "RF 24-70mm F2.8L IS USM"
 focal_range = [[24, 1], [70, 1]]
 aperture_range = [[28, 10], [28, 10]]
 
+[[lenses]]
+key = "RF15-35mm F2.8 L IS USM"
+make = "Canon"
+model = "RF 15-35mm F2.8L IS USM"
+focal_range = [[15, 1], [35, 1]]
+aperture_range = [[28, 10], [28, 10]]
 
 [[lenses]]
 key = "RF24-240mm F4-6.3 IS USM"
@@ -67,6 +68,7 @@ make = "Canon"
 model = "RF 24-240mm F4-6.3 IS USM"
 focal_range = [[24, 1], [240, 1]]
 aperture_range = [[40, 10], [63, 10]]
+
 [[lenses]]
 key = "RF70-200mm F2.8 L IS USM"
 make = "Canon"
@@ -122,12 +124,18 @@ make = "Canon"
 model = "RF 50mm F1.8 STM"
 focal_range = [[50, 1], [50, 1]]
 aperture_range = [[18, 10], [18, 10]]
+
+
+# Canon EF mount lenses
+
 [[lenses]]
 key = "EF16-35mm f/4L IS USM"
 make = "Canon"
 model = "EF 16-35mm f/4L IS USM"
 focal_range = [[16, 1], [35, 1]]
 aperture_range = [[4, 1], [4, 1]]
+
+# Sigma lenses
 
 [[lenses]]
 key = "150-600mm F5-6.3 DG OS HSM | Contemporary 015"
