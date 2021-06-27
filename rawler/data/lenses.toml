@@ -81,6 +81,13 @@ make = "Canon"
 model = "RF 24-105mm F4-7.1 IS STM"
 focal_range = [[24, 1], [105, 1]]
 aperture_range = [[40, 10], [71, 10]]
+
+[[lenses]]
+key = "RF100-500mm F4.5-7.1 L IS USM"
+make = "Canon"
+model = "RF 100-500mm F4.5-7.1L IS USM"
+focal_range = [[100, 1], [500, 1]]
+aperture_range = [[45, 10], [71, 10]]
 [[lenses]]
 key = "EF16-35mm f/4L IS USM"
 make = "Canon"
