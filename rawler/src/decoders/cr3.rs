@@ -134,8 +134,7 @@ impl<'a> Decoder for Cr3Decoder<'a> {
       let lens_info: [Rational; 4] = [lens.focal_range[0], lens.focal_range[1], lens.aperture_range[0], lens.aperture_range[1]];
       exif_ifd.add_tag(ExifTag::LensSpecification, lens_info).unwrap();
       exif_ifd.add_tag(ExifTag::LensMake, &lens.lens_make).unwrap();
-      // EXIF uses the full name (including make) in the LensModel
-      exif_ifd.add_tag(ExifTag::LensModel, &lens.lens_name).unwrap();
+      exif_ifd.add_tag(ExifTag::LensModel, &lens.lens_model).unwrap();
     }
 
     Ok(())
