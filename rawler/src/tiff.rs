@@ -348,7 +348,7 @@ impl From<Value> for Entry {
  */
 
 /// Type to represent tiff values of type `RATIONAL`
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Copy)]
 pub struct Rational {
   pub n: u32,
   pub d: u32,
@@ -369,7 +369,7 @@ impl Rational {
 }
 
 /// Type to represent tiff values of type `SRATIONAL`
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Copy)]
 pub struct SRational {
   pub n: i32,
   pub d: i32,
