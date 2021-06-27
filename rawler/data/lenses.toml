@@ -3,3 +3,10 @@
 # `key` should be an identifier used for fast lookup. For example,
 # in CR3 files Canon stores an internal lens name which can be directly
 # used here as lookup key.
+
+[[lenses]]
+key = "RF15-35mm F2.8 L IS USM"
+make = "Canon"
+model = "RF 15-35mm F2.8L IS USM"
+focal_range = [[15, 1], [35, 1]]
+aperture_range = [[28, 10], [28, 10]]
