@@ -1,0 +1,5 @@
+# Lens database
+#
+# `key` should be an identifier used for fast lookup. For example,
+# in CR3 files Canon stores an internal lens name which can be directly
+# used here as lookup key.

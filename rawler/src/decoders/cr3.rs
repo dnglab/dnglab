@@ -11,9 +11,9 @@ use crate::decoders::*;
 use crate::decompressors::crx::decompress_crx_image;
 use crate::formats::bmff::ext_cr3::cr3desc::Cr3DescBox;
 use crate::formats::bmff::ext_cr3::iad1::Iad1Type;
-use crate::formats::tiff::*;
-use crate::tags::TiffTagEnum;
-use crate::tiff::{Entry, TiffReader};
+use crate::lens::{LensDescription, LensResolver};
+use crate::tags::{DngTag, TiffTagEnum};
+use crate::tiff::{Entry, Rational, TiffReader};
 use crate::{pumps::ByteStream, RawImage};
 
 #[derive(Debug, Clone)]
@@ -32,8 +32,7 @@ pub struct Cr3Decoder<'a> {
   cmt3: Option<TiffReader>,
   cmt4: Option<TiffReader>,
   xpacket: Option<Vec<u8>>,
-  lens_maker: Option<String>,
-  lens_model: Option<String>,
+  lens_description: Option<&'static LensDescription>,
 }
 
 impl<'a> Cr3Decoder<'a> {
@@ -52,8 +51,7 @@ impl<'a> Cr3Decoder<'a> {
       cmt3: None,
       cmt4: None,
       xpacket: None,
-      lens_maker: None,
-      lens_model: None,
+      lens_description: None,
     }
   }
 }
@@ -102,6 +100,11 @@ impl<'a> Decoder for Cr3Decoder<'a> {
       }
     }
 
+    if let Some(lens) = self.lens_description {
+      let lens_info: [Rational; 4] = [lens.focal_range[0], lens.focal_range[1], lens.aperture_range[0], lens.aperture_range[1]];
+      root_ifd.add_tag(DngTag::LensInfo, lens_info).unwrap();
+    }
+
     if let Some(cmt4) = self.cmt4.as_ref() {
       let gpsinfo_offset = {
         let mut gps_ifd = root_ifd.new_directory();
@@ -127,12 +130,12 @@ impl<'a> Decoder for Cr3Decoder<'a> {
       debug!("CMT2 is not available, no EXIF!");
     }
 
-    if let Some(value) = self.lens_maker.as_ref() {
-      exif_ifd.add_tag(ExifTag::LensMake, value).unwrap();
-    }
-
-    if let Some(value) = self.lens_model.as_ref() {
-      exif_ifd.add_tag(ExifTag::LensModel, value).unwrap();
+    if let Some(lens) = self.lens_description {
+      let lens_info: [Rational; 4] = [lens.focal_range[0], lens.focal_range[1], lens.aperture_range[0], lens.aperture_range[1]];
+      exif_ifd.add_tag(ExifTag::LensSpecification, lens_info).unwrap();
+      exif_ifd.add_tag(ExifTag::LensMake, &lens.lens_make).unwrap();
+      // EXIF uses the full name (including make) in the LensModel
+      exif_ifd.add_tag(ExifTag::LensModel, &lens.lens_name).unwrap();
     }
 
     Ok(())
@@ -207,16 +210,9 @@ impl<'a> Decoder for Cr3Decoder<'a> {
               ..
             }) = cmt2.get_entry(ExifTag::LensModel)
             {
-              if lens_id.strings()[0] == "EF135mm f/2L USM" {
-                self.lens_maker = Some(String::from("Canon"));
-                self.lens_model = Some(String::from("Canon EF 135mm f/2L USM"));
-              } else if lens_id.strings()[0] == "EF16-35mm f/4L IS USM" {
-                self.lens_maker = Some(String::from("Canon"));
-                self.lens_model = Some(String::from("Canon EF 16-35mm f/4L IS USM"));
-              } else if lens_id.strings()[0] == "RF15-35mm F2.8 L IS USM" {
-                self.lens_maker = Some(String::from("Canon"));
-                self.lens_model = Some(String::from("Canon RF 15-35mm F2.8L IS USM"));
-              }
+              let lens_str = &lens_id.strings()[0];
+              let resolver = LensResolver::new().with_lens_model(lens_str);
+              self.lens_description = resolver.resolve();
             }
           }
         }
