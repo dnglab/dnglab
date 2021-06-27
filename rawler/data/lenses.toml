@@ -25,6 +25,20 @@ make = "Canon"
 model = "RF 35mm F1.8 MACRO IS STM"
 focal_range = [[35, 1], [35, 1]]
 aperture_range = [[18, 10], [18, 10]]
+
+[[lenses]]
+key = "RF85mm F1.2 L USM"
+make = "Canon"
+model = "RF 85mm F1.2L USM"
+focal_range = [[85, 1], [85, 1]]
+aperture_range = [[12, 10], [12, 10]]
+
+[[lenses]]
+key = "RF85mm F1.2 L USM DS"
+make = "Canon"
+model = "RF 85mm F1.2L USM DS"
+focal_range = [[85, 1], [85, 1]]
+aperture_range = [[12, 10], [12, 10]]
 [[lenses]]
 key = "RF24-70mm F2.8 L IS USM"
 make = "Canon"
