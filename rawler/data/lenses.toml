@@ -4,6 +4,14 @@
 # in CR3 files Canon stores an internal lens name which can be directly
 # used here as lookup key.
 
+
+[[lenses]]
+key = "RF50mm F1.2 L USM"
+make = "Canon"
+model = "RF 50mm F1.2L USM"
+focal_range = [[50, 1], [50, 1]]
+aperture_range = [[23, 1], [12, 10]]
+
 [[lenses]]
 key = "RF15-35mm F2.8 L IS USM"
 make = "Canon"
