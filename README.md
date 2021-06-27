@@ -1,5 +1,8 @@
 # DNGLab - A camera RAW to DNG file format converter
 
+[![CI](https://github.com/dnglab/dnglab/actions/workflows/ci.yaml/badge.svg)](https://github.com/dnglab/dnglab/actions/workflows/ci.yaml)
+[![Matrix](https://img.shields.io/matrix/dnglab:matrix.org?server_fqdn=matrix.org)](https://app.element.io/#/room/#dnglab:matrix.org)
+
 Command line tool to convert camera RAW files to Digital Negative Format (DNG).
 
 
