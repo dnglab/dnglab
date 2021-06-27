@@ -64,6 +64,7 @@ use lazy_static::lazy_static;
   pub mod tiff;
   pub mod devtools;
   pub mod dng;
+  pub mod lens;
 
   pub use rawimage::RawImage;
   pub use rawimage::RawImageData;
