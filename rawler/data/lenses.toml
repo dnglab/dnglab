@@ -31,3 +31,10 @@ make = "Canon"
 model = "EF 16-35mm f/4L IS USM"
 focal_range = [[16, 1], [35, 1]]
 aperture_range = [[4, 1], [4, 1]]
+
+[[lenses]]
+key = "150-600mm F5-6.3 DG OS HSM | Contemporary 015"
+make = "Sigma"
+model = "150-600mm f/5-6.3 DG OS HSM | C"
+focal_range = [[150, 1], [600, 1]]
+aperture_range = [[50, 10], [63, 10]]
