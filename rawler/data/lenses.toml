@@ -60,6 +60,13 @@ model = "RF 70-200mm F2.8L IS USM"
 focal_range = [[70, 1], [200, 1]]
 aperture_range = [[28, 10], [28, 10]]
 
+
+[[lenses]]
+key = "RF600mm F11 IS STM"
+make = "Canon"
+model = "RF 600mm F11 IS STM"
+focal_range = [[600, 1], [600, 1]]
+aperture_range = [[11, 1], [11, 1]]
 [[lenses]]
 key = "EF16-35mm f/4L IS USM"
 make = "Canon"
