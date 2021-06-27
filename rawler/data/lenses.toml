@@ -10,3 +10,10 @@ make = "Canon"
 model = "RF 15-35mm F2.8L IS USM"
 focal_range = [[15, 1], [35, 1]]
 aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+key = "RF24-70mm F2.8 L IS USM"
+make = "Canon"
+model = "RF 24-70mm F2.8L IS USM"
+focal_range = [[24, 1], [70, 1]]
+aperture_range = [[28, 10], [28, 10]]
