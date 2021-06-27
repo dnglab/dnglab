@@ -3,7 +3,7 @@
 
 use image::DynamicImage;
 use log::debug;
-use std::convert::TryFrom;
+use std::convert::{TryFrom, TryInto};
 use std::f32::NAN;
 
 use crate::bits::Endian;
@@ -32,6 +32,7 @@ pub struct Cr3Decoder<'a> {
   cmt3: Option<TiffReader>,
   cmt4: Option<TiffReader>,
   xpacket: Option<Vec<u8>>,
+  image_unique_id: Option<[u8; 16]>,
   lens_description: Option<&'static LensDescription>,
 }
 
@@ -51,6 +52,7 @@ impl<'a> Cr3Decoder<'a> {
       cmt3: None,
       cmt4: None,
       xpacket: None,
+      image_unique_id: None,
       lens_description: None,
     }
   }
@@ -103,6 +105,11 @@ impl<'a> Decoder for Cr3Decoder<'a> {
     if let Some(lens) = self.lens_description {
       let lens_info: [Rational; 4] = [lens.focal_range[0], lens.focal_range[1], lens.aperture_range[0], lens.aperture_range[1]];
       root_ifd.add_tag(DngTag::LensInfo, lens_info).unwrap();
+    }
+
+    if let Some(unique_id) = self.image_unique_id {
+      // For CR3, we use the already included Makernote tag with unique image ID
+      root_ifd.add_tag(DngTag::RawDataUniqueID, unique_id).unwrap();
     }
 
     if let Some(cmt4) = self.cmt4.as_ref() {
@@ -214,6 +221,21 @@ impl<'a> Decoder for Cr3Decoder<'a> {
               self.lens_description = resolver.resolve();
             }
           }
+        }
+      }
+
+
+      if let Some(cmt3) = self.cmt3.as_ref() {
+        if let Some(Entry {
+          value: crate::tiff::Value::Byte(v),
+          ..
+        }) = cmt3.get_entry(Cr3MakernoteTag::ImgUniqueID)
+        {
+          if v.len() == 16 {
+            debug!("CR3 makernote ImgUniqueID: {:x?}", v);
+            self.image_unique_id = Some(v.as_slice().try_into().expect("Invalid slice size"));
+          }
+
         }
       }
 
