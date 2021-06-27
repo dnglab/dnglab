@@ -499,7 +499,7 @@ pub enum ExifTag {
     ImageUniqueID = 0xa420,
     OwnerName = 0xa430,
     SerialNumber = 0xa431,
-    LensInfo = 0xa432,
+    LensSpecification = 0xa432,
     LensMake = 0xa433,
     LensModel = 0xa434,
     LensSerialNumber = 0xa435,
