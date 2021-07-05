@@ -51,7 +51,9 @@ where
     // TODO: write tests
     let start = len / 8;
     for i in (1..start).rev() {
-      if len % i == 0 {
+      // We need mod_2 because tiles are compressed
+      // with 2-component LJPEG
+      if (len % i == 0) && (i % 2 == 0) {
         return i;
       }
     }
