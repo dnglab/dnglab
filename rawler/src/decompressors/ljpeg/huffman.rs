@@ -151,7 +151,16 @@ impl HuffTable {
   pub fn huff_decode(&self, pump: &mut dyn BitPump) -> Result<i32,String> {
     let code = pump.peek_bits(DECODE_CACHE_BITS) as usize;
     if let Some((bits,decode)) = self.decodecache[code] {
-      pump.consume_bits(bits as u32);
+      match (decode, self.dng_bug) {
+        // Special case: for -32768 no SSSS bits are stored
+        (-32768, false) => {
+          assert!(bits > 16);
+          pump.consume_bits(bits as u32 - 16);
+        },
+        _ => {
+          pump.consume_bits(bits as u32);
+        }
+      }
       Ok(decode as i32)
     } else {
       let decode = self.huff_decode_slow(pump);
