@@ -8,6 +8,7 @@ mod dnggen;
 mod extract;
 mod filemap;
 mod gui;
+mod jobs;
 
 use clap::AppSettings;
 use fern::colors::{Color, ColoredLevelConfig};
