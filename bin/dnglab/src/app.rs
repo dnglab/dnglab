@@ -10,7 +10,7 @@ pub fn create_app() -> App<'static, 'static> {
       (version: crate_version!())
       (author: "Daniel V. <daniel@chaospixel.com>")
       (about: "DNGLab - A camera raw utility and DNG converter")
-      (@arg verbose: --verbose +global "Print more messages")
+      (@arg verbose: -v --verbose +global "Print more messages")
       (@arg debug: -d ... +global "Sets the level of debugging information")
       /*
       (@subcommand analyze =>
@@ -27,7 +27,7 @@ pub fn create_app() -> App<'static, 'static> {
           (@arg compression: -c --compression +takes_value "'lossless' (default) or 'none'")
           (@arg nocrop: --nocrop "Do not crop black areas, output full sensor data")
           (@arg noembedded: --noembedded "Do not embed original raw file")
-          //(@arg recursive: -r --recursive "Process input directory recursive")
+          (@arg recursive: -r --recursive "Process input directory recursive")
           (@arg override: -f --override "Override existing files")
           (@arg INPUT: +required "Input file or directory")
           (@arg OUTPUT: +required "Output file or existing directory")

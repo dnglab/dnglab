@@ -1,95 +1,94 @@
 // SPDX-License-Identifier: LGPL-2.1
 // Copyright 2021 Daniel Vogelbacher <daniel@chaospixel.com>
 
-use anyhow::Context;
 use clap::ArgMatches;
-use log::debug;
 use rayon::prelude::*;
-use std::{fs, io::Write};
-use std::{
-  fs::{read_dir, File},
-  path::{Path, PathBuf},
-  time::Instant,
+use std::fs::create_dir_all;
+use std::path::PathBuf;
+use std::time::Instant;
+
+use crate::filemap::{FileMap, MapMode};
+use crate::jobs::raw2dng::{JobResult, Raw2DngJob};
+use crate::jobs::Job;
+use crate::{
+  dnggen::{DngCompression, DngParams},
+  AppError, Result, PKG_NAME, PKG_VERSION,
 };
 
-use crate::{AppError, PKG_NAME, PKG_VERSION, dnggen::{DngCompression, DngParams, raw_to_dng}};
-
-const SUPPORTED_FILE_EXT: [&'static str; 3] = ["CR3", "CR2", "CRW"];
+const SUPPORTED_FILE_EXT: [&'static str; 1] = ["CR3"];
 
 /// Entry point for Clap sub command `convert`
 pub fn convert(options: &ArgMatches<'_>) -> anyhow::Result<()> {
+  let now = Instant::now();
   let in_path = PathBuf::from(options.value_of("INPUT").expect("INPUT not available"));
   let out_path = PathBuf::from(options.value_of("OUTPUT").expect("OUTPUT not available"));
-  if !in_path.exists() {
-    println!("INPUT path '{}' not exists", in_path.display());
-    return Err(AppError::InvalidArgs.into());
-  }
-  let in_md = fs::metadata(&in_path).context("Unable to determine metadata for given input")?;
-  if in_md.is_file() {
-    // Convert a single file
-    return convert_file(&in_path, &build_output_path(&in_path, &out_path)?, options);
-  } else if in_md.is_dir() {
-    // Convert whole directory
-    return convert_dir(&in_path, &out_path, options);
-  } else {
-    println!("INPUT is not a file nor directory");
-    return Err(AppError::InvalidArgs.into());
-  }
-}
+  let recursive = options.is_present("recursive");
 
-/// Convert whole directory into DNG files
-fn convert_dir(in_path: &Path, out_path: &Path, options: &ArgMatches<'_>) -> anyhow::Result<()> {
-  let in_files: Vec<PathBuf> = read_dir(in_path)?
-    .map(|entry| entry.unwrap().path())
-    .filter(|entry| fs::metadata(entry).map(|md| md.is_file()).unwrap_or(true))
-    .filter(|file| match file.extension() {
-      Some(ext) => is_ext_supported(ext.to_string_lossy()),
-      None => false,
-    })
-    .collect();
+  let proc = MapMode::new(&in_path, &out_path)?;
 
-  let results: Vec<bool> = in_files
-    .par_iter()
-    .map(|in_path| {
-      if let Ok(out_path) = build_output_path(in_path, out_path) {
-        convert_file(&in_path, &out_path, options).is_ok()
-      } else {
-        false
+  // List of jobs
+  let mut jobs = Vec::new();
+
+  // drop pathes to prevent use
+  drop(in_path);
+  drop(out_path);
+
+  match proc {
+    // We have only one input file, so output must be a file, too.
+    MapMode::File(sd) => {
+      let job = generate_job(&sd, options)?;
+      jobs.push(job);
+    }
+    // Input is directory, to process all files
+    MapMode::Dir(sd) => {
+      let list = sd.file_list(recursive, |file| {
+        if let Some(ext) = file.extension().map(|ext| ext.to_string_lossy()) {
+          is_ext_supported(&ext)
+        } else {
+          false
+        }
+      })?;
+      for entry in list {
+        let job = generate_job(&entry, options)?;
+        jobs.push(job);
       }
+    }
+  }
+
+  let verbose = options.is_present("verbose");
+
+  let results: Vec<JobResult> = jobs
+    .par_iter()
+    .map(|job| {
+      let res = job.execute();
+      if verbose {
+        println!("{}", res);
+      }
+      res
     })
     .collect();
 
-  let success_count = results.iter().filter(|r| **r).count();
-  let failed_count = results.iter().filter(|r| !**r).count();
+  let total = results.len();
+  let success = results.iter().filter(|j| j.error.is_none()).count();
+  let failure = results.iter().filter(|j| j.error.is_some()).count();
 
-  if failed_count == 0 {
-    println!("Finished {}/{}", success_count, results.len());
+  if failure == 0 {
+    println!("Converted {}/{} files", success, total,);
   } else {
-    println!("Finished {}/{}, {} failed", success_count, results.len(), failed_count);
+    eprintln!("Converted {}/{} files, {} failed:", success, total, failure,);
+    for failed in results.iter().filter(|j| j.error.is_some()) {
+      eprintln!("   {}", failed.job.input.display().to_string());
+    }
   }
-
+  println!("Total time: {:.2}s", now.elapsed().as_secs_f32());
   Ok(())
 }
 
 /// Convert given raw file to dng file
-fn convert_file(in_file: &Path, out_file: &Path, options: &ArgMatches<'_>) -> anyhow::Result<()> {
-  debug!("Infile: {:?}, Outfile: {:?}", in_file, out_file);
-  let now = Instant::now();
-
-  if out_file.exists() && !options.is_present("override") {
-    println!("File {} already exists and --override was not given", out_file.to_str().unwrap_or_default());
-    return Err(AppError::InvalidArgs.into());
-  }
-
-  let orig_filename = String::from(in_file.file_name().unwrap().to_os_string().to_str().unwrap());
-
-  let mut raw_file = File::open(in_file)?;
-  let mut dng_file = File::create(out_file)?;
-
+fn generate_job(entry: &FileMap, options: &ArgMatches<'_>) -> Result<Raw2DngJob> {
   // Params for conversion process
   let params = DngParams {
     no_embedded: options.is_present("noembedded"),
-    //compression: crate::dnggen::DngCompression::Lossless,
     compression: match options.value_of("compression") {
       Some("lossless") => DngCompression::Lossless,
       Some("none") => DngCompression::Uncompressed,
@@ -103,70 +102,31 @@ fn convert_file(in_file: &Path, out_file: &Path, options: &ArgMatches<'_>) -> an
     software: format!("{} {}", PKG_NAME, PKG_VERSION),
   };
 
-  match raw_to_dng(&mut raw_file, &mut dng_file, &orig_filename, &params) {
-    Ok(_) => {
-      dng_file.flush()?;
-      println!(
-        "Converted: '{}' => '{}' (in {:.2}s)",
-        shorten_path(in_file),
-        shorten_path(out_file),
-        now.elapsed().as_secs_f32()
-      );
-      Ok(())
-    }
-    Err(e) => {
-      println!("Failed: '{}' => '{}'", shorten_path(in_file), shorten_path(out_file),);
-      Err(e.into())
-    }
+  let mut output = PathBuf::from(&entry.dest);
+  if !output.set_extension("dng") {
+    return Err(AppError::General("Unable to rename target to dng".into()));
   }
-}
 
-/// Make a short path
-fn shorten_path(path: &Path) -> String {
-  let os_str = path.as_os_str();
-  if os_str.len() <= 30 {
-    String::from(os_str.to_string_lossy())
-  } else {
-    let full = String::from(os_str.to_string_lossy());
-    //let a = &full[..full.len()-8];
-    //let b = &full[full.len()-8..];
-    //format!("{}...{}", a, b)
-    full
-  }
-}
-
-/// Build an output path for a given input path
-fn build_output_path(in_path: &Path, out_path: &Path) -> anyhow::Result<PathBuf> {
-  if out_path.exists() {
-    let out_md = fs::metadata(out_path).context("Unable to determine metadata for given output")?;
-    if out_md.is_file() {
-      return Ok(PathBuf::from(out_path));
-    } else if out_md.is_dir() {
-      let new_filename = in_path.with_extension("DNG").file_name().unwrap().to_str().unwrap().to_string();
-      let mut tmp = PathBuf::from(out_path);
-      tmp.push(new_filename);
-      return Ok(tmp);
-    } else {
-      return Err(AppError::InvalidArgs.into());
-    }
-  } else {
-    match out_path.parent() {
-      Some(parent) => {
-        let out_md = fs::metadata(parent).context("Unable to determine metadata for given output")?;
-        if out_md.is_dir() {
-          // Ok, parent exists an is directory
-          return Ok(PathBuf::from(out_path));
-        } else {
-          println!("Output or parent directory not exists");
-          return Err(AppError::InvalidArgs.into());
+  match output.parent() {
+    Some(parent) => {
+      if !parent.exists() {
+        create_dir_all(parent)?;
+        if options.is_present("verbose") {
+          println!("Creating output directory '{}'", parent.display());
         }
       }
-      None => {
-        println!("Output or parent directory not exists");
-        return Err(AppError::InvalidArgs.into());
-      }
+    }
+    None => {
+      return Err(AppError::General(format!("Output path has no parent directory")));
     }
   }
+
+  Ok(Raw2DngJob {
+    input: PathBuf::from(&entry.src),
+    output,
+    replace: options.is_present("override"),
+    params,
+  })
 }
 
 /// Check if file extension is a supported extension
