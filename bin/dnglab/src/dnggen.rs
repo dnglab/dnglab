@@ -119,7 +119,6 @@ pub fn raw_to_dng(raw_file: &mut File, dng_file: &mut File, orig_filename: &str,
   root_ifd.add_tag(DngTag::UniqueCameraModel, uq_model.as_str())?;
   root_ifd.add_tag(ExifTag::ModifyDate, chrono::Local::now().format("%Y:%m:%d %H:%M:%S").to_string())?;
 
-
   // Add matrix and illumninant
   root_ifd.add_tag(DngTag::CalibrationIlluminant1, matrix1_ill)?;
   root_ifd.add_tag(DngTag::ColorMatrix1, matrix1)?;
@@ -230,15 +229,42 @@ fn dng_put_raw(raw_ifd: &mut DirectoryWriter<'_, '_>, rawimage: &RawImage, param
 /// Compress RAW image with LJPEG-92
 ///
 /// Data is split into multiple tiles, each tile is compressed seperately
+///
+/// Predictor mode 4,5,6,7 is best for images where two images
+/// lines are merged, because then the image bayer pattern is:
+/// RGRGGBGB
+/// RGRGGBGB
+/// Instead of the default:
+/// RGRG
+/// GBGB
+/// RGRG
+/// GBGB
 fn dng_put_raw_ljpeg(raw_ifd: &mut DirectoryWriter<'_, '_>, rawimage: &RawImage) -> Result<()> {
+  let components = 2;
+  let predictor = 1;
+  let realign = if (4..=7).contains(&predictor) { 2 } else { 1 };
   let lj92_data = match rawimage.data {
     RawImageData::Integer(ref data) => {
-      let tiled_data = TiledData::new(data, rawimage.width, rawimage.height);
+      // Inject black pixel data for testing purposes.
+      // let data = vec![0x0000; data.len()];
+      let tiled_data = TiledData::new(&data, rawimage.width, rawimage.height);
       let tiles_compr: Vec<Vec<u8>> = tiled_data
         .tiles
         .par_iter()
         .map(|tile| {
-          let state = LjpegCompressor::new(tile, tiled_data.tile_width, tiled_data.tile_length, 16, 0).unwrap();
+          assert_eq!(tiled_data.tile_width % components, 0);
+          assert_eq!(tiled_data.tile_width % 2, 0);
+          assert_eq!(tiled_data.tile_length % 2, 0);
+          let state = LjpegCompressor::new(
+            tile,
+            (tiled_data.tile_width / components) * realign,
+            tiled_data.tile_length / realign,
+            components,
+            16,
+            predictor,
+            0,
+          )
+          .unwrap();
           state.encode().unwrap()
         })
         .collect();
@@ -299,7 +325,6 @@ fn dng_put_raw_uncompressed(raw_ifd: &mut DirectoryWriter<'_, '_>, rawimage: &Ra
 
   Ok(())
 }
-
 
 /// Write thumbnail image into DNG
 fn dng_put_thumbnail(ifd: &mut DirectoryWriter<'_, '_>, img: &DynamicImage) -> Result<()> {
