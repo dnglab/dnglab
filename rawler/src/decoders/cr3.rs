@@ -283,7 +283,11 @@ impl<'a> Decoder for Cr3Decoder<'a> {
 
       debug!("cmp1 mdat hdr size: {}", cmp1.mdat_hdr_size);
 
-      let image = decompress_crx_image(&buf, cmp1).unwrap();
+      let image = if !dummy {
+        decompress_crx_image(&buf, cmp1).map_err(|e| format!("Failed to decode raw: {}", e.to_string()))?
+      } else {
+        Vec::new()
+      };
 
       let wb = self.wb.unwrap();
       let blacklevel = self.blacklevels.as_ref().unwrap();
@@ -329,15 +333,22 @@ impl<'a> Decoder for Cr3Decoder<'a> {
   }
 
   fn full_image(&self) -> Result<DynamicImage, String> {
-    let offset = self.bmff.filebox.moov.traks[0].mdia.minf.stbl.co64.as_ref().unwrap().entries[0] as usize;
+    let offset = self.bmff.filebox.moov.traks[0].mdia.minf.stbl.co64.as_ref().expect("co64 box").entries[0] as usize;
     let size = self.bmff.filebox.moov.traks[0].mdia.minf.stbl.stsz.sample_sizes[0] as usize;
     debug!("jpeg mdat offset: {}", offset);
     debug!("jpeg mdat size: {}", size);
     //let mdat_data_offset = (self.bmff.filebox.mdat.header.offset + self.bmff.filebox.mdat.header.header_len) as usize;
 
     let buf = &self.buffer[offset..offset + size];
-    let img = image::load_from_memory_with_format(buf, image::ImageFormat::Jpeg).unwrap();
-    Ok(img)
+    match image::load_from_memory_with_format(buf, image::ImageFormat::Jpeg) {
+      Ok(img) => {
+        Ok(img)
+      },
+      Err(e) => {
+        debug!("TRAK 0 contains no JPEG preview, is it a PQ/HEIF? Error: {}", e);
+        Err("Unsupported format: HDR-PQ CR3".into())
+      }
+    }
   }
 }
 

@@ -35,10 +35,10 @@ use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum DngError {
-  #[error("Decoder failed: _0")]
+  #[error("{}", _0)]
   DecoderFail(String),
 
-  #[error("Decoder failed: _0")]
+  #[error("{}", _0)]
   TiffFail(#[from] TiffError),
 }
 
@@ -92,8 +92,8 @@ pub fn raw_to_dng(raw_file: &mut File, dng_file: &mut File, orig_filename: &str,
 
   decoder.decode_metadata().unwrap();
 
-  let full_img = decoder.full_image().unwrap();
-  let rawimage = decoder.raw_image(false).unwrap();
+  let full_img = decoder.full_image().map_err(|e| DngError::DecoderFail(e.to_string()))?;
+  let rawimage = decoder.raw_image(false).map_err(|e| DngError::DecoderFail(e.to_string()))?;
 
   debug!(
     "coeff: {} {} {} {}",

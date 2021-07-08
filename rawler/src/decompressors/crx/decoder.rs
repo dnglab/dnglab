@@ -43,6 +43,11 @@ impl CodecParams {
     // Build nested Tiles/Planes/Bands
     let tiles = self.parse_header(mdat)?;
 
+    // CRAW is unsupported
+    if self.levels > 0 {
+      return Err(CrxError::Unsupp("CRAW".into()));
+    }
+
     // cfa output is of final resolution
     let mut cfa: Vec<u16> = vec![0; self.resolution()];
 
