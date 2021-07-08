@@ -2,10 +2,10 @@
 // Copyright 2021 Daniel Vogelbacher <daniel@chaospixel.com>
 
 use super::super::{read_box_header_ext, BoxHeader, FourCC, ReadBox, Result};
-use serde::Serialize;
+use serde::{Serialize, Deserialize};
 use std::io::{Read, Seek, SeekFrom};
 
-#[derive(Debug, Clone, PartialEq, Default, Serialize)]
+#[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize)]
 pub struct JpegBox {
   pub header: BoxHeader,
   pub version: u8,

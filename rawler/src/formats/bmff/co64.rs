@@ -3,12 +3,12 @@
 // Copyright 2021 Daniel Vogelbacher <daniel@chaospixel.com>
 
 use byteorder::{BigEndian, ReadBytesExt};
-use serde::Serialize;
+use serde::{Serialize, Deserialize};
 use std::io::{Read, Seek, SeekFrom};
 
 use super::{read_box_header_ext, BoxHeader, FourCC, ReadBox, Result};
 
-#[derive(Debug, Clone, PartialEq, Default, Serialize)]
+#[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize)]
 pub struct Co64Box {
   pub header: BoxHeader,
   pub version: u8,

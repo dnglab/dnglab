@@ -3,10 +3,10 @@
 
 use super::super::{read_box_header_ext, BoxHeader, FourCC, ReadBox, Result};
 use byteorder::{BigEndian, ReadBytesExt};
-use serde::Serialize;
+use serde::{Serialize, Deserialize};
 use std::io::{Read, Seek, SeekFrom};
 
-#[derive(Debug, Clone, PartialEq, Serialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Iad1Box {
   pub header: BoxHeader,
   pub version: u8,
@@ -20,13 +20,13 @@ pub struct Iad1Box {
   pub iad1_type: Iad1Type,
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum Iad1Type {
   Small(Iad1Small),
   Big(Iad1Big),
 }
 
-#[derive(Debug, Clone, PartialEq, Default, Serialize)]
+#[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize)]
 pub struct Iad1Small {
   pub unknown1: u16,
   pub unknown2: u16,
@@ -38,7 +38,7 @@ pub struct Iad1Small {
   pub unknown8: u16,
 }
 
-#[derive(Debug, Clone, PartialEq, Default, Serialize)]
+#[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize)]
 pub struct Iad1Big {
   pub crop_left_offset: u16,
   pub crop_top_offset: u16,

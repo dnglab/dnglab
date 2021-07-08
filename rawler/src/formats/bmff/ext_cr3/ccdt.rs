@@ -3,10 +3,10 @@
 
 use super::super::{BoxHeader, FourCC, ReadBox, Result};
 use byteorder::{BigEndian, ReadBytesExt};
-use serde::Serialize;
+use serde::{Serialize, Deserialize};
 use std::io::{Read, Seek, SeekFrom};
 
-#[derive(Debug, Clone, PartialEq, Default, Serialize)]
+#[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize)]
 pub struct CcdtBox {
   pub header: BoxHeader,
   pub image_type: u64,

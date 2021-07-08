@@ -10,7 +10,7 @@ use std::{
 
 use byteorder::{BigEndian, ReadBytesExt};
 use log::debug;
-use serde::{Serialize, Serializer};
+use serde::{Serialize, Serializer, Deserialize, Deserializer};
 use thiserror::Error;
 
 pub mod co64;
@@ -54,7 +54,7 @@ pub fn read_box_header_ext<R: Read>(reader: &mut R) -> Result<(u8, u32)> {
   Ok((version, flags))
 }
 
-#[derive(Debug, Clone, PartialEq, Default, Serialize)]
+#[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize)]
 pub struct BoxHeader {
   pub size: u64,
   pub typ: FourCC,
@@ -126,7 +126,7 @@ pub enum BmffError {
 
 type Result<T> = std::result::Result<T, BmffError>;
 
-#[derive(Debug, Clone, PartialEq, Default, Serialize)]
+#[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize)]
 pub struct FileBox {
   pub ftyp: FtypBox,
   pub moov: MoovBox,
@@ -219,6 +219,23 @@ impl Serialize for FourCC {
     S: Serializer,
   {
     serializer.serialize_str(&self.to_string())
+  }
+}
+
+impl<'de> Deserialize<'de> for FourCC {
+  fn deserialize<D>(deserializer: D) -> std::result::Result<FourCC, D::Error>
+  where
+    D: Deserializer<'de>,
+  {
+    use serde::de::Error;
+    let s = String::deserialize(deserializer)?;
+    if s.len() != 4 {
+      Err(D::Error::custom(format!("Invalid FourCC value: {}", s)))
+    } else {
+      Ok(FourCC {
+        value: [s.as_bytes()[0], s.as_bytes()[1], s.as_bytes()[2], s.as_bytes()[3]],
+      })
+    }
   }
 }
 

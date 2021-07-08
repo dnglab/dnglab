@@ -13,10 +13,10 @@ use super::{
   thmb::ThmbBox,
 };
 use crate::formats::bmff::{free::FreeBox, skip::SkipBox};
-use serde::Serialize;
+use serde::{Serialize, Deserialize};
 use std::io::{Read, Seek, SeekFrom};
 
-#[derive(Debug, Clone, PartialEq, Default, Serialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Cr3DescBox {
   pub header: BoxHeader,
   pub cncv: CncvBox,

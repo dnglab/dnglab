@@ -4,10 +4,10 @@
 
 use super::{read_box_header_ext, BoxHeader, FourCC, ReadBox, Result};
 use byteorder::{BigEndian, ReadBytesExt};
-use serde::Serialize;
+use serde::{Serialize, Deserialize};
 use std::io::{Read, Seek, SeekFrom};
 
-#[derive(Debug, Clone, PartialEq, Default, Serialize)]
+#[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize)]
 pub struct VmhdBox {
   pub header: BoxHeader,
   pub version: u8,
@@ -16,7 +16,7 @@ pub struct VmhdBox {
   pub op_color: RgbColor,
 }
 
-#[derive(Debug, Clone, PartialEq, Default, Serialize)]
+#[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize)]
 pub struct RgbColor {
   pub red: u16,
   pub green: u16,

@@ -6,10 +6,10 @@ use super::{
   iad1::Iad1Box,
 };
 use log::debug;
-use serde::Serialize;
+use serde::{Serialize, Deserialize};
 use std::io::{Read, Seek, SeekFrom};
 
-#[derive(Debug, Clone, PartialEq, Serialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Cdi1Box {
   pub header: BoxHeader,
   pub version: u8,

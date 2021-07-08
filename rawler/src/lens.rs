@@ -75,7 +75,7 @@ impl LensResolver {
   ///
   /// Returns None, if resolver was unable to find a lens.
   pub fn resolve(self) -> Option<&'static LensDescription> {
-    if let Some(lens_model) = self.lens_model.as_ref() {
+    if let Some(lens_model) = self.lens_model.as_ref().filter(|s| !s.is_empty()) {
       debug!("Lens model: {}", lens_model);
       if let Some(db_entry) = LENSES_DB.get(lens_model) {
         return Some(db_entry);
@@ -87,7 +87,7 @@ impl LensResolver {
         return None;
       }
     } else {
-      eprintln!("No lens model found. Please open an issue at https://github.com/dnglab/dnglab/issues and provide the RAW file");
+      debug!("Lens information is empty");
     }
     None
   }

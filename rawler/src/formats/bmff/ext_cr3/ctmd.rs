@@ -3,10 +3,10 @@
 
 use super::super::{BoxHeader, FourCC, ReadBox, Result};
 use byteorder::{BigEndian, ReadBytesExt};
-use serde::Serialize;
+use serde::{Serialize, Deserialize};
 use std::io::{Read, Seek, SeekFrom};
 
-#[derive(Debug, Clone, PartialEq, Default, Serialize)]
+#[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize)]
 pub struct CtmdBox {
   pub header: BoxHeader,
   //pub version: u8,
@@ -17,7 +17,7 @@ pub struct CtmdBox {
   pub records: Vec<CtmdRecord>,
 }
 
-#[derive(Debug, Clone, PartialEq, Default, Serialize)]
+#[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize)]
 pub struct CtmdRecord {
   pub unknown1: u8, // 0x00, sometimes 0x01
   pub unknown2: u8, // 0x00, seomtimes 0x01

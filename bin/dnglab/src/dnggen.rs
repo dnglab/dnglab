@@ -25,7 +25,6 @@ use std::{
   fs::File,
   io::{BufReader, BufWriter},
   mem::size_of,
-  rc::Rc,
   sync::Arc,
   thread,
   time::Instant,
@@ -129,7 +128,7 @@ pub fn raw_to_dng(raw_file: &mut File, dng_file: &mut File, orig_filename: &str,
   // If compression thread handle is available, embed original file
   if let Some(handle) = orig_compress_handle {
     let (raw_digest, raw_data_compreessed) = handle.join().unwrap();
-    root_ifd.add_tag_undefined(DngTag::OriginalRawFileData, Rc::new(raw_data_compreessed))?;
+    root_ifd.add_tag_undefined(DngTag::OriginalRawFileData, raw_data_compreessed)?;
     root_ifd.add_tag(DngTag::OriginalRawFileName, orig_filename)?;
     root_ifd.add_tag(DngTag::OriginalRawFileDigest, raw_digest)?;
   }
@@ -138,7 +137,7 @@ pub fn raw_to_dng(raw_file: &mut File, dng_file: &mut File, orig_filename: &str,
   let exif_offset = {
     let mut exif_ifd = root_ifd.new_directory();
     // Add EXIF version 0220
-    exif_ifd.add_tag_undefined(ExifTag::ExifVersion, Rc::new(vec![48, 50, 50, 48]))?;
+    exif_ifd.add_tag_undefined(ExifTag::ExifVersion, vec![48, 50, 50, 48])?;
     decoder.populate_dng_exif(&mut exif_ifd).unwrap();
     exif_ifd.build()?
   };

@@ -4,10 +4,10 @@
 
 use super::{read_box_header_ext, BoxHeader, FourCC, ReadBox, Result};
 use byteorder::{BigEndian, ReadBytesExt};
-use serde::Serialize;
+use serde::{Serialize, Deserialize};
 use std::io::{Read, Seek, SeekFrom};
 
-#[derive(Debug, Clone, PartialEq, Default, Serialize)]
+#[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize)]
 pub struct StscBox {
   pub header: BoxHeader,
   pub version: u8,
@@ -15,7 +15,7 @@ pub struct StscBox {
   pub entries: Vec<StscEntry>,
 }
 
-#[derive(Debug, Clone, PartialEq, Default, Serialize)]
+#[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize)]
 pub struct StscEntry {
   pub first_chunk: u32,
   pub samples_per_chunk: u32,

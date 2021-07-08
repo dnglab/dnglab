@@ -1,15 +1,18 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2021 Daniel Vogelbacher <daniel@chaospixel.com>
 
+use crate::{formats::bmff::BmffError, tiff::TiffReader};
+
 use super::super::{BoxHeader, FourCC, ReadBox, Result};
-use serde::Serialize;
+use serde::{Serialize, Deserialize};
 use std::io::{Read, Seek, SeekFrom};
 
-#[derive(Debug, Clone, PartialEq, Default, Serialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Cmt2Box {
   pub header: BoxHeader,
   #[serde(skip_serializing)]
   pub data: Vec<u8>,
+  pub tiff: TiffReader,
 }
 
 impl Cmt2Box {
@@ -20,11 +23,13 @@ impl<R: Read + Seek> ReadBox<&mut R> for Cmt2Box {
   fn read_box(reader: &mut R, header: BoxHeader) -> Result<Self> {
     let current = reader.seek(SeekFrom::Current(0))?;
     let data_len = header.end_offset() - current;
-    let mut data = Vec::with_capacity(data_len as usize);
+    let mut data = vec![0; data_len as usize];
     reader.read_exact(&mut data)?;
 
     reader.seek(SeekFrom::Start(header.end_offset()))?;
 
-    Ok(Self { header, data })
+    let tiff = TiffReader::new_with_buffer(&data, 0, None).map_err(|e| BmffError::Parse(e.to_string()))?;
+
+    Ok(Self { header, data, tiff })
   }
 }

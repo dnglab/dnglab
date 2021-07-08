@@ -66,6 +66,7 @@ use lazy_static::lazy_static;
   pub mod devtools;
   pub mod dng;
   pub mod lens;
+pub mod analyze;
 
   pub use rawimage::RawImage;
   pub use rawimage::RawImageData;

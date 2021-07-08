@@ -4,11 +4,11 @@
 
 use super::{ext_cr3::cr3desc::Cr3DescBox, mvhd::MvhdBox, trak::TrakBox, vendor::VendorBox, BmffError, BoxHeader, FourCC, ReadBox, Result};
 use log::debug;
-use serde::Serialize;
+use serde::{Serialize, Deserialize};
 use std::io::{Read, Seek, SeekFrom};
 use uuid::Uuid;
 
-#[derive(Debug, Clone, PartialEq, Default, Serialize)]
+#[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize)]
 pub struct MoovBox {
   pub header: BoxHeader,
   pub mvhd: MvhdBox,
