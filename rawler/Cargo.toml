@@ -8,6 +8,10 @@ version = "0.1.0"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+[features]
+# This is a developer feature, it enabled deep inspection of algorithm execution stages
+inspector = []
+
 [dependencies]
 bitstream-io = "1.0.0"
 byteorder = "1"
@@ -22,6 +26,7 @@ md5 = "0.7.0"
 rayon = "1"
 serde = {version = "1.0", features = ["derive"]}
 serde_json = "1.0"
+simple_logger = "1.11.0"
 thiserror = "1.0.25"
 toml = "0.5"
 uuid = {version = "0.8", features = ["serde", "v4"]}

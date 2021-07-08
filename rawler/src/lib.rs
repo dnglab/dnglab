@@ -61,6 +61,7 @@ use lazy_static::lazy_static;
   pub mod cfa;
   pub mod rawimage;
   pub mod ljpeg92;
+  pub mod bitarray;
   pub mod tiff;
   pub mod devtools;
   pub mod dng;
