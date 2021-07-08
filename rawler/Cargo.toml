@@ -11,6 +11,7 @@ version = "0.1.0"
 [features]
 # This is a developer feature, it enabled deep inspection of algorithm execution stages
 inspector = []
+samplecheck = []
 
 [dependencies]
 bitstream-io = "1.0.0"
