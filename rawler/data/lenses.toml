@@ -135,6 +135,59 @@ model = "EF 16-35mm f/4L IS USM"
 focal_range = [[16, 1], [35, 1]]
 aperture_range = [[4, 1], [4, 1]]
 
+[[lenses]]
+key = "EF24-70mm f/2.8L II USM"
+make = "Canon"
+model = "EF 24-70mm f/2.8L II USM"
+focal_range = [[24, 1], [70, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+key = "EF24-70mm f/4L IS USM"
+make = "Canon"
+model = "EF 24-70mm f/4L IS USM"
+focal_range = [[24, 1], [70, 1]]
+aperture_range = [[4, 1], [4, 1]]
+
+# Canon EF-S mount lenses
+
+[[lenses]]
+key = "EF-S18-55mm f/3.5-5.6 IS"
+make = "Canon"
+model = "EF-S 18-55mm f/3.5-5.6 IS"
+focal_range = [[18, 1], [55, 1]]
+aperture_range = [[35, 10], [56, 10]]
+
+[[lenses]]
+key = "EF-S18-135mm f/3.5-5.6 IS USM"
+make = "Canon"
+model = "EF-S 18-135mm f/3.5-5.6 IS USM"
+focal_range = [[18, 1], [135, 1]]
+aperture_range = [[35, 10], [56, 10]]
+
+# Canon EF-M mount lenses
+
+[[lenses]]
+key = "EF-M15-45mm f/3.5-6.3 IS STM"
+make = "Canon"
+model = "EF-M 15-45mm f/3.5-6.3 IS STM"
+focal_range = [[15, 1], [45, 1]]
+aperture_range = [[35, 10], [63, 10]]
+
+[[lenses]]
+key = "EF-M18-150mm f/3.5-6.3 IS STM"
+make = "Canon"
+model = "EF-M 18-150mm f/3.5-6.3 IS STM"
+focal_range = [[18, 1], [150, 1]]
+aperture_range = [[35, 10], [63, 10]]
+
+[[lenses]]
+key = "EF-M32mm f/1.4 STM"
+make = "Canon"
+model = "EF-M 32mm f/1.4 STM"
+focal_range = [[32, 1], [32, 1]]
+aperture_range = [[14, 10], [14, 10]]
+
 # Sigma lenses
 
 [[lenses]]
@@ -150,3 +203,19 @@ make = "Sigma"
 model = "150-600mm f/5-6.3 DG OS HSM | S"
 focal_range = [[150, 1], [600, 1]]
 aperture_range = [[50, 10], [63, 10]]
+
+
+[[lenses]]
+key = "30mm F1.4 DC HSM | Art 013"
+make = "Sigma"
+model = "30mm f/1.4 DC HSM | A"
+focal_range = [[30, 1], [30, 1]]
+aperture_range = [[14, 10], [14, 10]]
+
+
+[[lenses]]
+key = "50mm F1.4 DG HSM | Art 014"
+make = "Sigma"
+model = "50mm f/1.4 DG HSM | A"
+focal_range = [[50, 1], [50, 1]]
+aperture_range = [[14, 10], [14, 10]]
