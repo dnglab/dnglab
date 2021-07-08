@@ -13,8 +13,9 @@ use crate::formats::bmff::ext_cr3::cr3desc::Cr3DescBox;
 use crate::formats::bmff::ext_cr3::iad1::Iad1Type;
 use crate::lens::{LensDescription, LensResolver};
 use crate::tags::{DngTag, TiffTagEnum};
-use crate::tiff::{Entry, Rational, TiffReader};
+use crate::tiff::{Entry, Rational, TiffReader, Value};
 use crate::{pumps::ByteStream, RawImage};
+
 
 #[derive(Debug, Clone)]
 pub struct Cr3Decoder<'a> {
@@ -91,6 +92,33 @@ fn transfer_exif_tag(tag: u16) -> bool {
 impl<'a> Decoder for Cr3Decoder<'a> {
   fn xpacket(&self) -> Option<&Vec<u8>> {
     self.xpacket.as_ref()
+  }
+
+  fn populate_capture_info(&mut self, capture_info: &mut CaptureInfo) -> Result<(), String> {
+
+      if let Some(cmt2_ifd) = self.cmt2.as_ref() {
+        let ifd = cmt2_ifd.root_ifd();
+        if let Some(Entry { value: Value::Rational(v), .. }) = ifd.get_entry(ExifTag::ExposureTime) {
+          capture_info.exposure_time = Some(v[0])
+        }
+        if let Some(Entry { value: Value::SRational(v), .. }) = ifd.get_entry(ExifTag::ExposureBiasValue) {
+          capture_info.exposure_bias = Some(v[0])
+        }
+        if let Some(Entry { value: Value::SRational(v), .. }) = ifd.get_entry(ExifTag::ShutterSpeedValue) {
+          capture_info.shutter_speed = Some(v[0])
+        }
+      } else {
+        debug!("CMT2 is not available, no EXIF!");
+      }
+
+      if let Some(lens) = self.lens_description {
+        let lens_spec: [Rational; 4] = [lens.focal_range[0], lens.focal_range[1], lens.aperture_range[0], lens.aperture_range[1]];
+        capture_info.lens_make = Some(lens.lens_make.clone());
+        capture_info.lens_model = Some(lens.lens_model.clone());
+        capture_info.lens_spec = Some(lens_spec);
+      }
+
+    Ok(())
   }
 
   fn populate_dng_root(&mut self, root_ifd: &mut DirectoryWriter) -> Result<(), String> {

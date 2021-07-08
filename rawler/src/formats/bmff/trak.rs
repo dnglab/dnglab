@@ -4,10 +4,10 @@
 
 use super::{mdia::MdiaBox, tkhd::TkhdBox, vendor::VendorBox, BmffError, BoxHeader, FourCC, ReadBox, Result};
 use log::debug;
-use serde::Serialize;
+use serde::{Serialize, Deserialize};
 use std::io::{Read, Seek, SeekFrom};
 
-#[derive(Debug, Clone, PartialEq, Default, Serialize)]
+#[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize)]
 pub struct TrakBox {
   pub header: BoxHeader,
   pub tkhd: TkhdBox,

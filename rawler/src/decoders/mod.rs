@@ -52,6 +52,7 @@ mod cr2;
 mod cr3;
 mod ari;
 mod x3f;
+use crate::analyze::CaptureInfo;
 use crate::{formats::bmff::Bmff, tiff::DirectoryWriter};
 use crate::formats::tiff::Rational;
 use crate::formats::tiff::SRational;
@@ -97,6 +98,9 @@ pub trait Decoder {
     None
   }
 
+  fn populate_capture_info(&mut self, _capture_info: &mut CaptureInfo) -> Result<(), String> {
+    Ok(())
+  }
 
   fn populate_dng_root(&mut self, _: &mut DirectoryWriter) -> Result<(), String> {
     Ok(())

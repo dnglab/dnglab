@@ -12,14 +12,15 @@ pub fn create_app() -> App<'static, 'static> {
       (about: "DNGLab - A camera raw utility and DNG converter")
       (@arg verbose: -v --verbose +global "Print more messages")
       (@arg debug: -d ... +global "Sets the level of debugging information")
-      /*
       (@subcommand analyze =>
           (about: "Analyze raw image")
-          (@arg reset: --reset "Reset the profile (delete all content and keys)")
-          (@arg default: --default "Mark the new profile as default")
+          (@arg pixel: --pixel "Write uncompressed pixel data to STDOUT")
+          (@arg meta: --meta "Write metadata to STDOUT")
+          (@arg summary: --summary "Write summary information for file to STDOUT")
+          (@arg json: --json "Format metadata as JSON")
+          (@arg yaml: --yaml "Format metadata as YAML")
           (@arg FILE: +required "Input file")
       )
-       */
       (@subcommand convert =>
           (about: "Convert raw image(s) into dng format")
           //(@arg profile: -p --profile "Profile file to use")

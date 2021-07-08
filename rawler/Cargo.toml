@@ -16,6 +16,7 @@ inspector = []
 bitstream-io = "1.0.0"
 byteorder = "1"
 enumn = "0.1"
+hex = "0.4.3"
 image = "0.23"
 itertools = "0.9"
 lazy_static = "1"
@@ -30,3 +31,6 @@ simple_logger = "1.11.0"
 thiserror = "1.0.25"
 toml = "0.5"
 uuid = {version = "0.8", features = ["serde", "v4"]}
+
+[dev-dependencies]
+serde_yaml = "0.8"

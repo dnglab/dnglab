@@ -3,7 +3,7 @@
 
 use byteorder::{BigEndian, ReadBytesExt};
 use log::debug;
-use serde::Serialize;
+use serde::{Serialize, Deserialize};
 use std::io::{Read, Seek, SeekFrom};
 
 use super::{
@@ -11,7 +11,7 @@ use super::{
   ccdt::CcdtBox,
 };
 
-#[derive(Debug, Clone, PartialEq, Default, Serialize)]
+#[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize)]
 pub struct CctpBox {
   pub header: BoxHeader,
   pub version: u8,

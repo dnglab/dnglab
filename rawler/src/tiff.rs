@@ -5,11 +5,11 @@ use std::{
   collections::BTreeMap,
   ffi::CString,
   io::{Cursor, Read, Seek, SeekFrom, Write},
-  rc::Rc,
 };
 
 use byteorder::{BigEndian, LittleEndian, NativeEndian, ReadBytesExt, WriteBytesExt};
 use log::debug;
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use thiserror::Error;
 
 use crate::{bits::Endian, tags::TiffTagEnum};
@@ -152,7 +152,7 @@ pub enum TiffError {
 /// Result type for Compressor results
 type Result<T> = std::result::Result<T, TiffError>;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Entry {
   pub tag: u16,
   pub value: Value,
@@ -194,8 +194,7 @@ impl Entry {
     reader.goto(data_offset)?;
     let entry = match typ {
       TYPE_BYTE => {
-        let mut v = Vec::with_capacity(count as usize);
-        v.resize(count as usize, 0);
+        let mut v = vec![0; count as usize];
         reader.read_u8_into(&mut v)?;
         Entry {
           tag,
@@ -204,8 +203,7 @@ impl Entry {
         }
       }
       TYPE_ASCII => {
-        let mut v = Vec::with_capacity(count as usize);
-        v.resize(count as usize, 0);
+        let mut v = vec![0; count as usize];
         reader.read_u8_into(&mut v)?;
         Entry {
           tag,
@@ -214,8 +212,7 @@ impl Entry {
         }
       }
       TYPE_SHORT => {
-        let mut v = Vec::with_capacity(count as usize);
-        v.resize(count as usize, 0);
+        let mut v = vec![0; count as usize];
         reader.read_u16_into(&mut v)?;
         Entry {
           tag,
@@ -224,8 +221,7 @@ impl Entry {
         }
       }
       TYPE_LONG => {
-        let mut v = Vec::with_capacity(count as usize);
-        v.resize(count as usize, 0);
+        let mut v = vec![0; count as usize];
         reader.read_u32_into(&mut v)?;
         Entry {
           tag,
@@ -234,8 +230,7 @@ impl Entry {
         }
       }
       TYPE_RATIONAL => {
-        let mut tmp = Vec::with_capacity(count as usize * 2);
-        tmp.resize(count as usize * 2, 0); // Rational is 2x u32
+        let mut tmp = vec![0; count as usize *2]; // Rational is 2x u32
         reader.read_u32_into(&mut tmp)?;
 
         let mut v = Vec::with_capacity(count as usize);
@@ -249,8 +244,7 @@ impl Entry {
         }
       }
       TYPE_SBYTE => {
-        let mut v = Vec::with_capacity(count as usize);
-        v.resize(count as usize, 0);
+        let mut v = vec![0; count as usize];
         reader.read_i8_into(&mut v)?;
         Entry {
           tag,
@@ -259,18 +253,16 @@ impl Entry {
         }
       }
       TYPE_UNDEFINED => {
-        let mut v = Vec::with_capacity(count as usize);
-        v.resize(count as usize, 0);
+        let mut v = vec![0; count as usize];
         reader.read_u8_into(&mut v)?;
         Entry {
           tag,
-          value: Value::Undefined(Rc::new(v)),
+          value: Value::Undefined(v),
           embedded: None,
         }
       }
       TYPE_SSHORT => {
-        let mut v = Vec::with_capacity(count as usize);
-        v.resize(count as usize, 0);
+        let mut v = vec![0; count as usize];
         reader.read_i16_into(&mut v)?;
         Entry {
           tag,
@@ -279,8 +271,7 @@ impl Entry {
         }
       }
       TYPE_SLONG => {
-        let mut v = Vec::with_capacity(count as usize);
-        v.resize(count as usize, 0);
+        let mut v = vec![0; count as usize];
         reader.read_i32_into(&mut v)?;
         Entry {
           tag,
@@ -289,8 +280,7 @@ impl Entry {
         }
       }
       TYPE_SRATIONAL => {
-        let mut tmp = Vec::with_capacity(count as usize * 2);
-        tmp.resize(count as usize * 2, 0); // Rational is 2x u32
+        let mut tmp = vec![0; count as usize*2]; // SRational is 2x i32
         reader.read_i32_into(&mut tmp)?;
 
         let mut v = Vec::with_capacity(count as usize);
@@ -304,8 +294,7 @@ impl Entry {
         }
       }
       TYPE_FLOAT => {
-        let mut v = Vec::with_capacity(count as usize);
-        v.resize(count as usize, 0.0);
+        let mut v = vec![0.0; count as usize];
         reader.read_f32_into(&mut v)?;
         Entry {
           tag,
@@ -314,8 +303,7 @@ impl Entry {
         }
       }
       TYPE_DOUBLE => {
-        let mut v = Vec::with_capacity(count as usize);
-        v.resize(count as usize, 0.0);
+        let mut v = vec![0.0; count as usize];
         reader.read_f64_into(&mut v)?;
         Entry {
           tag,
@@ -324,8 +312,7 @@ impl Entry {
         }
       }
       x => {
-        let mut v = Vec::with_capacity(count as usize);
-        v.resize(count as usize, 0);
+        let mut v = vec![0; count as usize];
         reader.read_u8_into(&mut v)?;
         Entry {
           tag,
@@ -348,7 +335,7 @@ impl From<Value> for Entry {
  */
 
 /// Type to represent tiff values of type `RATIONAL`
-#[derive(Clone, Debug, Default, Copy)]
+#[derive(Clone, Debug, Default, PartialEq, Copy)]
 pub struct Rational {
   pub n: u32,
   pub d: u32,
@@ -368,8 +355,37 @@ impl Rational {
   }
 }
 
+impl Serialize for Rational {
+  fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+  where
+    S: Serializer,
+  {
+    let s = format!("{}/{}", self.n, self.d);
+    serializer.serialize_str(&s)
+  }
+}
+
+impl<'de> Deserialize<'de> for Rational {
+  fn deserialize<D>(deserializer: D) -> std::result::Result<Rational, D::Error>
+  where
+    D: Deserializer<'de>,
+  {
+    use serde::de::Error;
+    let s = String::deserialize(deserializer)?;
+    let values: Vec<&str> = s.split("/").collect();
+    if values.len() != 2 {
+      Err(D::Error::custom(format!("Invalid rational value: {}", s)))
+    } else {
+      Ok(Rational::new(
+        values[0].parse::<u32>().map_err(D::Error::custom)?,
+        values[1].parse::<u32>().map_err(D::Error::custom)?,
+      ))
+    }
+  }
+}
+
 /// Type to represent tiff values of type `SRATIONAL`
-#[derive(Clone, Debug, Default, Copy)]
+#[derive(Clone, Debug, Default, PartialEq, Copy)]
 pub struct SRational {
   pub n: i32,
   pub d: i32,
@@ -381,7 +397,36 @@ impl SRational {
   }
 }
 
-#[derive(Clone, Debug)]
+impl Serialize for SRational {
+  fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+  where
+    S: Serializer,
+  {
+    let s = format!("{}/{}", self.n, self.d);
+    serializer.serialize_str(&s)
+  }
+}
+
+impl<'de> Deserialize<'de> for SRational {
+  fn deserialize<D>(deserializer: D) -> std::result::Result<SRational, D::Error>
+  where
+    D: Deserializer<'de>,
+  {
+    use serde::de::Error;
+    let s = String::deserialize(deserializer)?;
+    let values: Vec<&str> = s.split("/").collect();
+    if values.len() != 2 {
+      Err(D::Error::custom(format!("Invalid srational value: {}", s)))
+    } else {
+      Ok(SRational::new(
+        values[0].parse::<i32>().map_err(D::Error::custom)?,
+        values[1].parse::<i32>().map_err(D::Error::custom)?,
+      ))
+    }
+  }
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum Value {
   /// 8-bit unsigned integer
   Byte(Vec<u8>),
@@ -396,7 +441,7 @@ pub enum Value {
   /// 8-bit signed integer
   SByte(Vec<i8>),
   /// 8-bit byte that may contain anything, depending on the field
-  Undefined(Rc<Vec<u8>>),
+  Undefined(Vec<u8>),
   /// 16-bit signed integer
   SShort(Vec<i16>),
   /// 32-bit signed integer
@@ -596,7 +641,7 @@ impl Value {
   }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize)]
 pub struct TiffAscii {
   strings: Vec<String>,
 }
@@ -653,7 +698,7 @@ pub struct DataOffset {
   pub offset: usize,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize)]
 pub struct IFD {
   offset: u32,
   next_ifd: u32,
@@ -892,7 +937,7 @@ fn apply_corr(offset: u32, corr: i32) -> u32 {
 }
 
 /// Reader for TIFF files
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize)]
 pub struct TiffReader {
   /// Chain of all IFDs in TIFF
   pub chain: Vec<IFD>,
@@ -1152,7 +1197,7 @@ impl<'a, 'w> DirectoryWriter<'a, 'w> {
     Ok(())
   }
 
-  pub fn add_tag_undefined<T: TiffTagEnum>(&mut self, tag: T, data: Rc<Vec<u8>>) -> Result<()> {
+  pub fn add_tag_undefined<T: TiffTagEnum>(&mut self, tag: T, data: Vec<u8>) -> Result<()> {
     let tag: u16 = tag.into();
     //let data = data.as_ref();
     //let offset = self.write_data(data)?;
@@ -1160,7 +1205,7 @@ impl<'a, 'w> DirectoryWriter<'a, 'w> {
       tag,
       Entry {
         tag,
-        value: Value::Undefined(data.clone()),
+        value: Value::Undefined(data),
         embedded: None,
       },
     );
@@ -1320,7 +1365,6 @@ impl From<u16> for Value {
   }
 }
 
-
 impl From<&[u16]> for Value {
   fn from(value: &[u16]) -> Self {
     Value::Short(value.into())
@@ -1332,7 +1376,6 @@ impl From<&Vec<u16>> for Value {
     Value::Short(value.clone())
   }
 }
-
 
 impl<const N: usize> From<[u16; N]> for Value {
   fn from(value: [u16; N]) -> Self {

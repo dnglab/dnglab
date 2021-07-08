@@ -9,10 +9,10 @@ use super::{
 };
 use crate::formats::bmff::free::FreeBox;
 use byteorder::{BigEndian, ReadBytesExt};
-use serde::Serialize;
+use serde::{Serialize, Deserialize};
 use std::io::{Read, Seek, SeekFrom};
 
-#[derive(Debug, Clone, PartialEq, Default, Serialize)]
+#[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize)]
 pub struct CrawBox {
   pub header: BoxHeader,
   //pub version: u8,

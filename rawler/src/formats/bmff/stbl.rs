@@ -4,10 +4,10 @@
 
 use super::{co64::Co64Box, stsc::StscBox, stsd::StsdBox, stsz::StszBox, stts::SttsBox, vendor::VendorBox, BmffError, BoxHeader, FourCC, ReadBox, Result};
 use log::debug;
-use serde::Serialize;
+use serde::{Serialize, Deserialize};
 use std::io::{Read, Seek, SeekFrom};
 
-#[derive(Debug, Clone, PartialEq, Default, Serialize)]
+#[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize)]
 pub struct StblBox {
   pub header: BoxHeader,
   pub stsd: StsdBox,

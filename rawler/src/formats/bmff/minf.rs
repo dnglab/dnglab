@@ -4,13 +4,12 @@
 
 use super::{dinf::DinfBox, stbl::StblBox, vendor::VendorBox, vmhd::VmhdBox, BmffError, BoxHeader, FourCC, ReadBox, Result};
 use log::debug;
-use serde::Serialize;
+use serde::{Serialize, Deserialize};
 use std::io::{Read, Seek, SeekFrom};
 
-#[derive(Debug, Clone, PartialEq, Default, Serialize)]
+#[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize)]
 pub struct MinfBox {
   pub header: BoxHeader,
-  #[serde(skip_serializing_if = "Option::is_none")]
   pub vmhd: Option<VmhdBox>,
 
   //#[serde(skip_serializing_if = "Option::is_none")]
