@@ -22,6 +22,10 @@ pub enum CrxError {
   #[error("General error: {}", _0)]
   General(String),
 
+  /// General error
+  #[error("Unsupported format: {}", _0)]
+  Unsupp(String),
+
   /// Error on internal cursor type
   #[error("I/O error")]
   Io(#[from] std::io::Error),
@@ -90,16 +94,21 @@ impl Tile {
     //let counter = flags >> 28;
     let counter = (flags >> 16) & 0xF;
     let tail_sign = flags & 0xFFFF;
-    let mut qp_data = None;
-    if size == 16 {
-      qp_data = Some(TileQPData {
-        mdat_qp_data_size: hdr.read_u32::<BigEndian>()?,
-        mdat_extra_size: hdr.read_u16::<BigEndian>()?,
-        terminator: hdr.read_u16::<BigEndian>()?,
-      });
-      assert!(qp_data.as_ref().unwrap().terminator == 0); // terminator
-    }
+    let qp_data = if size == 16 {
+      let mdat_qp_data_size = hdr.read_u32::<BigEndian>()?;
+      let mdat_extra_size = hdr.read_u16::<BigEndian>()?;
+      let terminator = hdr.read_u16::<BigEndian>()?;
+      assert!(terminator == 0);
+      Some(TileQPData {
+        mdat_qp_data_size,
+        mdat_extra_size,
+        terminator,
+      })
+    } else {
+      None
+    };
 
+    // TODO check on release
     assert!((size == 8 && tail_sign == 0) || (size == 16 && tail_sign == 0x4000));
 
     Ok(Tile {
@@ -119,16 +128,36 @@ impl Tile {
   }
 
   pub fn descriptor_line(&self) -> String {
+    let extra_data = match self.qp_data.as_ref() {
+      Some(qp_data) => {
+        format!(
+          " qp_data_size: {:#x} extra_size: {:#x}, terminator: {:#x}",
+          qp_data.mdat_qp_data_size, qp_data.mdat_extra_size, qp_data.terminator
+        )
+      }
+      None => String::new(),
+    };
     format!(
-      "Tile {:#x} size: {:#x} tile_size: {:#x} flags: {:#x} counter: {:#x} tail_sign: {:#x}",
+      "Tile {:#x} size: {:#x} tile_size: {:#x} flags: {:#x} counter: {:#x} tail_sign: {:#x}{}",
       self.ind,
       self.size,
       self.tile_size,
       self.flags,
       self.counter,
       self.tail_sign,
+      extra_data,
       //mdatQPDataSize.unwrap_or_default()
     )
+  }
+
+  /// Tile may contain some extra data for quantization
+  pub fn extra_size(&self) -> u32 {
+    match self.qp_data.as_ref() {
+      Some(qp_data) => {
+        qp_data.mdat_qp_data_size + qp_data.mdat_extra_size as u32
+      }
+      None => 0
+    }
   }
 }
 
@@ -326,9 +355,8 @@ impl BandParam {
 }
 
 pub fn decompress_crx_image(buf: &[u8], cmp1: &Cmp1Box) -> Result<Vec<u16>> {
-  let image = CodecParams::new(cmp1).unwrap();
+  let image = CodecParams::new(cmp1)?;
   debug!("{:?}", image);
-  let result = image.decode(buf).unwrap();
+  let result = image.decode(buf)?;
   Ok(result)
 }
-

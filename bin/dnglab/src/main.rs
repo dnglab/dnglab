@@ -76,7 +76,7 @@ pub enum AppError {
   InvalidFormat(String),
   #[error("Decoder failed: {}", _0)]
   DecoderFail(String),
-  #[error("General error: {}", _0)]
+  #[error("{}", _0)]
   General(String),
 }
 

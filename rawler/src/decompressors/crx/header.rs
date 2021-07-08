@@ -110,11 +110,11 @@ impl CodecParams {
     }
     // process subbands
     for tile in tiles {
-      debug!("{}", tile.descriptor_line());
-      debug!("Tw: {}, Th: {}", tile.width, tile.height);
+      println!("{}", tile.descriptor_line());
+      println!("Tw: {}, Th: {}", tile.width, tile.height);
       let mut plane_sizes = 0;
       for plane in &mut tile.planes {
-        debug!("{}", plane.descriptor_line());
+        println!("{}", plane.descriptor_line());
         let mut band_sizes = 0;
         for band in &mut plane.subbands {
           band_sizes += band.subband_size;
@@ -123,13 +123,16 @@ impl CodecParams {
           band.width = self.plane_width;
           band.height = self.plane_height;
           // FIXME: ExCoef
-          debug!("{}", band.descriptor_line());
-          debug!("    Bw: {}, Bh: {}", band.width, band.height);
+          println!("{}", band.descriptor_line());
+          println!("    Bw: {}, Bh: {}", band.width, band.height);
         }
         assert_eq!(plane.plane_size, band_sizes);
         plane_sizes += plane.plane_size;
       }
-      assert_eq!(tile.tile_size, plane_sizes);
+      // Tile may contain some extra bytes for quantization
+      // This extra size must be subtracted before comaring to the
+      // sum of plane sizes.
+      assert_eq!(tile.tile_size - tile.extra_size(), plane_sizes);
     }
   }
 
@@ -158,7 +161,7 @@ impl CodecParams {
         }
         0xff02 | 0xff12 => {
           let plane = Plane::new(
-            tiles.last_mut().unwrap().planes.len(),
+            tiles.last_mut().expect("tile expected").planes.len(),
             &mut hdr,
             ind,
             tiles.last().unwrap().data_offset,
@@ -166,18 +169,18 @@ impl CodecParams {
           )?;
           plane_offset += plane.plane_size as usize;
           band_offset = 0; // reset band offset
-          tiles.last_mut().unwrap().planes.push(plane);
+          tiles.last_mut().expect("tile expected").planes.push(plane);
         }
         0xff03 | 0xff13 => {
           let subband = Subband::new(
-            tiles.last_mut().unwrap().planes.last_mut().unwrap().subbands.len(),
+            tiles.last_mut().expect("tile expected").planes.last_mut().unwrap().subbands.len(),
             &mut hdr,
             ind,
-            tiles.last().unwrap().data_offset + tiles.last().unwrap().planes.last().unwrap().data_offset,
+            tiles.last().expect("tile expected").data_offset + tiles.last().unwrap().planes.last().unwrap().data_offset,
             band_offset,
           )?;
           band_offset += subband.subband_size as usize;
-          tiles.last_mut().unwrap().planes.last_mut().unwrap().subbands.push(subband);
+          tiles.last_mut().expect("tile expected").planes.last_mut().unwrap().subbands.push(subband);
         }
         0x0000 => {
           debug!("end reached?");
