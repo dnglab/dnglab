@@ -149,6 +149,13 @@ model = "EF 24-70mm f/4L IS USM"
 focal_range = [[24, 1], [70, 1]]
 aperture_range = [[4, 1], [4, 1]]
 
+[[lenses]]
+key = "EF50mm f/1.4 USM"
+make = "Canon"
+model = "EF 50mm f/1.4 USM"
+focal_range = [[50, 1], [50, 1]]
+aperture_range = [[14, 10], [14, 10]]
+
 # Canon EF-S mount lenses
 
 [[lenses]]
