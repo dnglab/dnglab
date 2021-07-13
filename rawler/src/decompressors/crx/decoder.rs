@@ -34,6 +34,8 @@ const J:[u32; 32] = [0, 0, 0, 0, 1,    1,    1,    1,    2,    2,   2,
                      2, 3, 3, 3, 3,    4,    4,    5,    5,    6,   6,
                      7, 7, 8, 9, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F];
 
+const PREDICT_K_MAX: u32 = 15;
+
 impl CodecParams {
   /// Decode MDAT section into a single CFA image
   ///
@@ -167,8 +169,8 @@ impl CodecParams {
   #[inline(always)]
   fn predict_k_param_max(prev_k: u32, bit_code: u32, max_val: u32) -> u32 {
     // K is is range 0..=15
-    assert!(prev_k <= 15);
-    assert!(max_val <= 15);
+    assert!(prev_k <= PREDICT_K_MAX);
+    assert!(max_val <= PREDICT_K_MAX);
 
     // Calculate new K
     let new_k = if max_val == 0 {
@@ -240,7 +242,7 @@ impl CodecParams {
     }
 
     // update K parameter
-    param.k_param = Self::predict_k_param_max(param.k_param, bit_code, 15);
+    param.k_param = Self::predict_k_param_max(param.k_param, bit_code, PREDICT_K_MAX);
     param.advance_buf1();
 
     Ok(())
@@ -250,7 +252,7 @@ impl CodecParams {
   fn decode_top_line(&self, param: &mut BandParam, bitpump: &mut BitPump) -> Result<()> {
     *param.get_line1(0) = 0;
 
-    let mut length = param.subband_width as i32;
+    let mut length = param.subband_width as u32;
 
     while length > 1 {
       if *param.get_line1(0) != 0 {
@@ -258,9 +260,9 @@ impl CodecParams {
         *param.get_line1(1) = *param.get_line1(0);
       } else {
         if Self::bitstream_get_bits(bitpump, 1)? == 1 {
-          let mut n_syms: i32 = 1;
+          let mut n_syms: u32 = 1;
           while Self::bitstream_get_bits(bitpump, 1)? == 1 {
-            n_syms += JS[param.s_param as usize] as i32; // TODO type?
+            n_syms += JS[param.s_param as usize];
             if n_syms > length {
               n_syms = length;
               break;
@@ -274,7 +276,7 @@ impl CodecParams {
           } // End while
           if n_syms < length {
             if J[param.s_param as usize] != 0 {
-              n_syms += Self::bitstream_get_bits(bitpump, J[param.s_param as usize])? as i32;
+              n_syms += Self::bitstream_get_bits(bitpump, J[param.s_param as usize])?;
             }
             if param.s_param > 0 {
               param.s_param -= 1;
@@ -284,7 +286,7 @@ impl CodecParams {
             }
           }
 
-          length -= n_syms;
+          length = length.saturating_sub(n_syms);
 
           // copy symbol n_syms times
           while n_syms > 0 {
@@ -303,10 +305,10 @@ impl CodecParams {
 
       //debug!("k_param: {}, bit_code: {}", param.k_param, bit_code);
       *param.get_line1(1) += error_code_signed(bit_code);
-      param.k_param = Self::predict_k_param_max(param.k_param, bit_code, 15);
+      param.k_param = Self::predict_k_param_max(param.k_param, bit_code, PREDICT_K_MAX);
       param.advance_buf1();
 
-      length -= 1;
+      length = length.saturating_sub(1);
     }
 
     if length == 1 {
@@ -314,7 +316,7 @@ impl CodecParams {
 
       let bit_code = self.next_error_symbol(param, bitpump)?;
       *param.get_line1(1) += error_code_signed(bit_code);
-      param.k_param = Self::predict_k_param_max(param.k_param, bit_code, 15);
+      param.k_param = Self::predict_k_param_max(param.k_param, bit_code, PREDICT_K_MAX);
       param.advance_buf1();
     }
 
@@ -324,7 +326,7 @@ impl CodecParams {
 
   /// Decode a line which is not a top line
   fn decode_nontop_line(&self, param: &mut BandParam, bitpump: &mut BitPump) -> Result<()> {
-    let mut length = param.subband_width as i32;
+    let mut length = param.subband_width as u32;
 
     // copy down from line0 to line1
     *param.get_line1(0) = *param.get_line0(1);
@@ -334,9 +336,9 @@ impl CodecParams {
         self.decode_symbol_L1(param, bitpump, true, true)?;
       } else {
         if Self::bitstream_get_bits(bitpump, 1)? == 1 {
-          let mut n_syms: i32 = 1;
+          let mut n_syms: u32 = 1;
           while Self::bitstream_get_bits(bitpump, 1)? == 1 {
-            n_syms += JS[param.s_param as usize] as i32; // TODO type?
+            n_syms += JS[param.s_param as usize];
             if n_syms > length {
               n_syms = length;
               break;
@@ -350,7 +352,7 @@ impl CodecParams {
           } // End while
           if n_syms < length {
             if J[param.s_param as usize] != 0 {
-              n_syms += Self::bitstream_get_bits(bitpump, J[param.s_param as usize])? as i32;
+              n_syms += Self::bitstream_get_bits(bitpump, J[param.s_param as usize])?;
             }
             if param.s_param > 0 {
               param.s_param -= 1;
@@ -360,9 +362,9 @@ impl CodecParams {
             }
           }
 
-          length -= n_syms;
+          length = length.saturating_sub(n_syms);
 
-          // Forward line0 position as line1 position is forwared, too
+          // Forward line0 position as line1 position is forwarded, too
           param.line0_pos += n_syms as usize;
 
           // copy symbol n_syms times
@@ -378,7 +380,7 @@ impl CodecParams {
         }
       }
 
-      length -= 1;
+      length = length.saturating_sub(1);
     } // end while
 
     if length == 1 {
