@@ -110,11 +110,11 @@ impl CodecParams {
     }
     // process subbands
     for tile in tiles {
-      println!("{}", tile.descriptor_line());
-      println!("Tw: {}, Th: {}", tile.width, tile.height);
+      //println!("{}", tile.descriptor_line());
+      //println!("Tw: {}, Th: {}", tile.width, tile.height);
       let mut plane_sizes = 0;
       for plane in &mut tile.planes {
-        println!("{}", plane.descriptor_line());
+        //println!("{}", plane.descriptor_line());
         let mut band_sizes = 0;
         for band in &mut plane.subbands {
           band_sizes += band.subband_size;
@@ -123,8 +123,8 @@ impl CodecParams {
           band.width = self.plane_width;
           band.height = self.plane_height;
           // FIXME: ExCoef
-          println!("{}", band.descriptor_line());
-          println!("    Bw: {}, Bh: {}", band.width, band.height);
+          //println!("{}", band.descriptor_line());
+          //println!("    Bw: {}, Bh: {}", band.width, band.height);
         }
         assert_eq!(plane.plane_size, band_sizes);
         plane_sizes += plane.plane_size;

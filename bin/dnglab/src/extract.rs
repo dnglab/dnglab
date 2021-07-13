@@ -17,12 +17,19 @@ use crate::{AppError, Result};
 
 const SUPPORTED_FILE_EXT: [&'static str; 1] = ["DNG"];
 
-/// Entry point for Clap sub command `convert`
+/// Entry point for Clap sub command `extract`
 pub fn extract(options: &ArgMatches<'_>) -> anyhow::Result<()> {
   let now = Instant::now();
   let in_path = PathBuf::from(options.value_of("INPUT").expect("INPUT not available"));
   let out_path = PathBuf::from(options.value_of("OUTPUT").expect("OUTPUT not available"));
   let recursive = options.is_present("recursive");
+
+  if !out_path.exists() {
+    return Err(AppError::General(format!("Output path not exists")).into());
+  }
+  if !out_path.is_dir() {
+    return Err(AppError::General(format!("Output path must be directory")).into());
+  }
 
   let proc = MapMode::new(&in_path, &out_path)?;
 
