@@ -124,7 +124,7 @@ pub fn analyze_file<P: AsRef<Path>>(path: P) -> Result<AnalyzerResult, ()> {
   result.file.file_size = fs_meta.len();
   result.file.digest = Some(digest.into());
 
-  let rawimage = decoder.raw_image(false).unwrap();
+  let rawimage = decoder.raw_image(true).unwrap();
   result.capture_info.make = rawimage.make;
   result.capture_info.model = rawimage.model;
   result.raw_params.raw_width = rawimage.width;
