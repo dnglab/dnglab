@@ -166,10 +166,9 @@ impl CodecParams {
   /// Predict K parameter with maximum constraint
   #[inline(always)]
   fn predict_k_param_max(prev_k: u32, bit_code: u32, max_val: u32) -> u32 {
-    // K is a small value and should not exceed ~64.
-    // If this assert fails, please check if the values are really correct
-    // before increasing it.
-    assert!(prev_k <= 64);
+    // K is is range 0..=15
+    assert!(prev_k <= 15);
+    assert!(max_val <= 15);
 
     // Calculate new K
     let new_k = if max_val == 0 {
@@ -198,6 +197,17 @@ impl CodecParams {
     new_k
   }
 
+  /// Get next error symbol
+  fn next_error_symbol(&self, param: &mut BandParam, bitpump: &mut BitPump) -> Result<u32> {
+    let mut bit_code = Self::bitstream_zeros(bitpump)?;
+    if bit_code >= 41 {
+      bit_code = Self::bitstream_get_bits(bitpump, 21)?;
+    } else if param.k_param > 0 {
+      bit_code = Self::bitstream_get_bits(bitpump, param.k_param)? | (bit_code << param.k_param);
+    }
+    Ok(bit_code)
+  }
+
   /// Decode a single L1 symbol
   #[allow(non_snake_case)]
   fn decode_symbol_L1(&self, param: &mut BandParam, bitpump: &mut BitPump, do_median_pred: bool, not_eol: bool) -> Result<()> {
@@ -217,15 +227,10 @@ impl CodecParams {
     }
 
     // get next error symbol
-    let mut bit_code = Self::bitstream_zeros(bitpump)?;
-    if bit_code >= 41 {
-      bit_code = Self::bitstream_get_bits(bitpump, 21)?;
-    } else if param.k_param > 0 {
-      bit_code = Self::bitstream_get_bits(bitpump, param.k_param)? | (bit_code << param.k_param);
-    }
+    let mut bit_code = self.next_error_symbol(param, bitpump)?;
 
     // add converted (+/-) error code to predicted value
-    *param.get_line1(1) += -((bit_code & 1) as i32) ^ (bit_code >> 1) as i32;
+    *param.get_line1(1) += error_code_signed(bit_code);
 
     // for not end of the line - use one symbol ahead to estimate next K
     if not_eol {
@@ -294,15 +299,10 @@ impl CodecParams {
         *param.get_line1(1) = 0;
       }
 
-      let mut bit_code = Self::bitstream_zeros(bitpump)?;
-      if bit_code >= 41 {
-        bit_code = Self::bitstream_get_bits(bitpump, 21)?;
-      } else {
-        bit_code = Self::bitstream_get_bits(bitpump, param.k_param)? | (bit_code << param.k_param);
-      }
+      let bit_code = self.next_error_symbol(param, bitpump)?;
+
       //debug!("k_param: {}, bit_code: {}", param.k_param, bit_code);
-      //debug!("val: {}", -((bit_code & 1) as i32) ^ (bit_code >> 1) as i32);
-      *param.get_line1(1) += -((bit_code & 1) as i32) ^ (bit_code >> 1) as i32;
+      *param.get_line1(1) += error_code_signed(bit_code);
       param.k_param = Self::predict_k_param_max(param.k_param, bit_code, 15);
       param.advance_buf1();
 
@@ -312,13 +312,8 @@ impl CodecParams {
     if length == 1 {
       *param.get_line1(1) = *param.get_line1(0);
 
-      let mut bit_code = Self::bitstream_zeros(bitpump)?;
-      if bit_code >= 41 {
-        bit_code = Self::bitstream_get_bits(bitpump, 21)?;
-      } else {
-        bit_code = Self::bitstream_get_bits(bitpump, param.k_param)? | (bit_code << param.k_param);
-      }
-      *param.get_line1(1) += -((bit_code & 1) as i32) ^ (bit_code >> 1) as i32;
+      let bit_code = self.next_error_symbol(param, bitpump)?;
+      *param.get_line1(1) += error_code_signed(bit_code);
       param.k_param = Self::predict_k_param_max(param.k_param, bit_code, 15);
       param.advance_buf1();
     }
@@ -512,4 +507,13 @@ fn constrain(value: i32, min: i32, max: i32) -> i32 {
   };
   assert!(res <= u16::MAX as i32);
   res
+}
+
+/// The error code contains a sign bit at bit 0.
+/// This routine converts an unsigned bit_code to the correct
+/// signed integer value.
+/// For this, the sign bit is inverted and XOR with
+/// the shifted integer value.
+fn error_code_signed(bit_code: u32) -> i32 {
+  -((bit_code & 1) as i32) ^ (bit_code >> 1) as i32
 }
