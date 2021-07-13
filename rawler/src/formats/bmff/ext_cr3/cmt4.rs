@@ -10,7 +10,6 @@ use std::io::{Read, Seek, SeekFrom};
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Cmt4Box {
   pub header: BoxHeader,
-  #[serde(skip_serializing)]
   pub data: Vec<u8>,
   pub tiff: TiffReader,
 }
