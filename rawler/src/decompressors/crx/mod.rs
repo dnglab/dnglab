@@ -304,7 +304,7 @@ impl Subband {
     )
   }
 }
-
+/// Parameter for a single Subband
 struct BandParam<'mdat> {
   subband_width: usize,
   subband_height: usize,
@@ -320,9 +320,9 @@ struct BandParam<'mdat> {
   s_param: u32,
   k_param: u32,
   supports_partial: bool,
-
+  /// Holds the decoding buffer for a single row
   dec_buf: Vec<i32>,
-
+  /// Bitstream from MDAT
   bitpump: BitPump<'mdat>,
 }
 
@@ -378,6 +378,7 @@ impl<'mdat> BandParam<'mdat> {
   }
 
   /// Get next error symbol
+  /// This is Golomb-Rice encoded (not 100% sure)
   fn next_error_symbol(&mut self) -> Result<u32> {
     let mut bit_code = self.bitstream_zeros()?;
     if bit_code >= 41 {

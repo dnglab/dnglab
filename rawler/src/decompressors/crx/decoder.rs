@@ -220,6 +220,36 @@ impl CodecParams {
     Ok(())
   }
 
+  /// Get symbol count for run-length decoding
+  fn symbol_count_runlength(&self, param: &mut BandParam, length: u32) -> Result<u32> {
+    let mut n_syms: u32 = 1;
+    while param.bitstream_get_bits(1)? == 1 {
+      n_syms += JS[param.s_param as usize];
+      if n_syms > length {
+        n_syms = length;
+        break;
+      }
+      if param.s_param < 31 {
+        param.s_param += 1;
+      }
+      if n_syms == length {
+        break;
+      }
+    } // End while
+    if n_syms < length {
+      if J[param.s_param as usize] != 0 {
+        n_syms += param.bitstream_get_bits(J[param.s_param as usize])?;
+      }
+      if param.s_param > 0 {
+        param.s_param -= 1;
+      }
+      if n_syms > length {
+        return Err(CrxError::General(format!("Crx decoder error while decoding line")));
+      }
+    }
+    Ok(n_syms)
+  }
+
   /// Decode top line
   fn decode_top_line(&self, param: &mut BandParam) -> Result<()> {
     *param.get_line1(0) = 0;
@@ -232,44 +262,18 @@ impl CodecParams {
         *param.get_line1(1) = *param.get_line1(0);
       } else {
         if param.bitstream_get_bits(1)? == 1 {
-          let mut n_syms: u32 = 1;
-          while param.bitstream_get_bits(1)? == 1 {
-            n_syms += JS[param.s_param as usize];
-            if n_syms > length {
-              n_syms = length;
-              break;
-            }
-            if param.s_param < 31 {
-              param.s_param += 1;
-            }
-            if n_syms == length {
-              break;
-            }
-          } // End while
-          if n_syms < length {
-            if J[param.s_param as usize] != 0 {
-              n_syms += param.bitstream_get_bits(J[param.s_param as usize])?;
-            }
-            if param.s_param > 0 {
-              param.s_param -= 1;
-            }
-            if n_syms > length {
-              return Err(CrxError::General(format!("Crx decoder error while decoding line")));
-            }
-          }
-
+          let n_syms = self.symbol_count_runlength(param, length)?;
           length = length.saturating_sub(n_syms);
-
           // copy symbol n_syms times
-          while n_syms > 0 {
+          for _ in 0..n_syms {
             *param.get_line1(1) = *param.get_line1(0);
             param.advance_buf1();
-            n_syms -= 1;
           }
           if length <= 0 {
             break;
           }
-        }
+        } // if bitstream == 1
+
         *param.get_line1(1) = 0;
       }
 
@@ -284,12 +288,13 @@ impl CodecParams {
     }
 
     if length == 1 {
+      // Copy previous and add error correction
       *param.get_line1(1) = *param.get_line1(0);
-
       let bit_code = param.next_error_symbol()?;
       *param.get_line1(1) += error_code_signed(bit_code);
-      param.k_param = Self::predict_k_param_max(param.k_param, bit_code, PREDICT_K_MAX);
       param.advance_buf1();
+      // Predict new K
+      param.k_param = Self::predict_k_param_max(param.k_param, bit_code, PREDICT_K_MAX);
     }
 
     *param.get_line1(1) = *param.get_line1(0) + 1;
@@ -308,43 +313,15 @@ impl CodecParams {
         self.decode_symbol_L1(param, true, true)?;
       } else {
         if param.bitstream_get_bits(1)? == 1 {
-          let mut n_syms: u32 = 1;
-          while param.bitstream_get_bits(1)? == 1 {
-            n_syms += JS[param.s_param as usize];
-            if n_syms > length {
-              n_syms = length;
-              break;
-            }
-            if param.s_param < 31 {
-              param.s_param += 1;
-            }
-            if n_syms == length {
-              break;
-            }
-          } // End while
-          if n_syms < length {
-            if J[param.s_param as usize] != 0 {
-              n_syms += param.bitstream_get_bits(J[param.s_param as usize])?;
-            }
-            if param.s_param > 0 {
-              param.s_param -= 1;
-            }
-            if n_syms > length {
-              return Err(CrxError::General(format!("Crx decoder error while decoding line")));
-            }
-          }
-
+          let n_syms = self.symbol_count_runlength(param, length)?;
           length = length.saturating_sub(n_syms);
-
-          // Forward line0 position as line1 position is forwarded, too
-          param.line0_pos += n_syms as usize;
-
           // copy symbol n_syms times
-          while n_syms > 0 {
+          for _ in 0..n_syms {
             *param.get_line1(1) = *param.get_line1(0);
             param.advance_buf1();
-            n_syms = n_syms - 1;
           }
+          // Forward line0 position as line1 position is forwarded, too
+          param.line0_pos += n_syms as usize;
         } // if bitstream == 1
 
         if length > 0 {
