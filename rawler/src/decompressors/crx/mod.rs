@@ -1,15 +1,19 @@
 // SPDX-License-Identifier: LGPL-2.1
 // Copyright 2021 Daniel Vogelbacher <daniel@chaospixel.com>
 
+use bitstream_io::{BitRead, BitReader};
 use byteorder::{BigEndian, ReadBytesExt};
 use log::debug;
-use std::io::{Read, Seek};
+use std::io::{Cursor, Read, Seek};
 use thiserror::Error;
 
 use crate::formats::bmff::ext_cr3::cmp1::Cmp1Box;
 
 mod decoder;
 mod header;
+
+/// BitPump for Big Endian bit streams
+type BitPump<'a> = BitReader<Cursor<&'a [u8]>, bitstream_io::BigEndian>;
 
 /// Error variants for compressor
 #[derive(Debug, Error)]
@@ -301,8 +305,7 @@ impl Subband {
   }
 }
 
-#[derive(Debug)]
-struct BandParam {
+struct BandParam<'mdat> {
   subband_width: usize,
   subband_height: usize,
   rounded_bits_mask: i32,
@@ -317,9 +320,13 @@ struct BandParam {
   s_param: u32,
   k_param: u32,
   supports_partial: bool,
+
+  dec_buf: Vec<i32>,
+
+  bitpump: BitPump<'mdat>,
 }
 
-impl BandParam {
+impl<'mdat> BandParam<'mdat> {
   #[inline(always)]
   fn get_line0(&mut self, idx: usize) -> &mut i32 {
     &mut self.line_buf[self.line0_pos + idx]
@@ -351,6 +358,34 @@ impl BandParam {
   fn _advance_buf2(&mut self) {
     self.line2_pos += 1;
     //.buf2[self.line2_pos-1]
+  }
+
+
+  /// Return the positive number of 0-bits in bitstream.
+  /// All 0-bits are consumed.
+  #[inline(always)]
+  fn bitstream_zeros(&mut self) -> Result<u32> {
+    Ok(self.bitpump.read_unary1()?)
+  }
+
+  /// Return the requested bits
+  // All bits are consumed.
+  // The maximum number of bits are 32
+  #[inline(always)]
+  fn bitstream_get_bits(&mut self, bits: u32) -> Result<u32> {
+    assert!(bits <= 32);
+    Ok(self.bitpump.read(bits)?)
+  }
+
+  /// Get next error symbol
+  fn next_error_symbol(&mut self) -> Result<u32> {
+    let mut bit_code = self.bitstream_zeros()?;
+    if bit_code >= 41 {
+      bit_code = self.bitstream_get_bits(21)?;
+    } else if self.k_param > 0 {
+      bit_code = self.bitstream_get_bits(self.k_param)? | (bit_code << self.k_param);
+    }
+    Ok(bit_code)
   }
 }
 

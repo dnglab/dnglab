@@ -1,15 +1,12 @@
 // SPDX-License-Identifier: LGPL-2.1
 // Copyright 2021 Daniel Vogelbacher <daniel@chaospixel.com>
 
-use bitstream_io::{BigEndian as BitStreamBig, BitRead, BitReader};
+use bitstream_io::BitReader;
 use log::debug;
 use rayon::prelude::*;
 use std::{io::Cursor, time::Instant};
 
 use super::{BandParam, CodecParams, CrxError, Plane, Result, Tile};
-
-/// BitPump for Big Endian bit streams
-type BitPump<'a> = BitReader<Cursor<&'a [u8]>, BitStreamBig>;
 
 #[cfg_attr(rustfmt, rustfmt_skip)]
 const _EX_COEF_NUM_TBL:[i32; 144] = [
@@ -110,6 +107,8 @@ impl CodecParams {
     // Line length is subband + one additional pixel at start end end
     let line_len = 1 + plane.subbands[0].width + 1;
 
+    let bitpump = BitReader::endian(Cursor::new(band_buf), bitstream_io::BigEndian);
+
     let mut param = BandParam {
       subband_width: plane.subbands[0].width,
       subband_height: plane.subbands[0].height,
@@ -124,39 +123,23 @@ impl CodecParams {
       s_param: 0,
       k_param: 0,
       supports_partial: if plane.support_partial { true } else { false }, // TODO: only for subbandnum == 0
+      bitpump,
+      dec_buf: vec![0; plane.subbands[0].width],
     };
 
-    let cursor = Cursor::new(band_buf);
-    let mut bitstream = BitReader::endian(cursor, BitStreamBig);
 
-    debug!("Param: {:?}", param);
 
-    let mut band_buf = vec![0; param.subband_width];
+    //debug!("Param: {:?}", param);
+
     for _ in 0..band.height {
-      self.decode_line(&mut param, &mut bitstream, &mut band_buf)?;
-      assert_eq!(band_buf.len(), param.subband_width as usize);
-      self.convert_plane_line(band_buf.as_slice(), &mut outbuf);
+      self.decode_line(&mut param)?;
+      assert_eq!(param.dec_buf.len(), param.subband_width as usize);
+      self.convert_plane_line(param.dec_buf.as_slice(), &mut outbuf);
     }
 
     assert_eq!(outbuf.len(), (self.plane_height * self.plane_width) as usize);
 
     Ok(outbuf)
-  }
-
-  /// Return the positive number of 0-bits in bitstream.
-  /// All 0-bits are consumed.
-  #[inline(always)]
-  fn bitstream_zeros(bitpump: &mut BitPump) -> Result<u32> {
-    Ok(bitpump.read_unary1()?)
-  }
-
-  /// Return the requested bits
-  // All bits are consumed.
-  // The maximum number of bits are 32
-  #[inline(always)]
-  fn bitstream_get_bits(bitpump: &mut BitPump, bits: u32) -> Result<u32> {
-    assert!(bits <= 32);
-    Ok(bitpump.read(bits)?)
   }
 
   /// Predict K parameter without a maximum constraint
@@ -199,20 +182,9 @@ impl CodecParams {
     new_k
   }
 
-  /// Get next error symbol
-  fn next_error_symbol(&self, param: &mut BandParam, bitpump: &mut BitPump) -> Result<u32> {
-    let mut bit_code = Self::bitstream_zeros(bitpump)?;
-    if bit_code >= 41 {
-      bit_code = Self::bitstream_get_bits(bitpump, 21)?;
-    } else if param.k_param > 0 {
-      bit_code = Self::bitstream_get_bits(bitpump, param.k_param)? | (bit_code << param.k_param);
-    }
-    Ok(bit_code)
-  }
-
   /// Decode a single L1 symbol
   #[allow(non_snake_case)]
-  fn decode_symbol_L1(&self, param: &mut BandParam, bitpump: &mut BitPump, do_median_pred: bool, not_eol: bool) -> Result<()> {
+  fn decode_symbol_L1(&self, param: &mut BandParam, do_median_pred: bool, not_eol: bool) -> Result<()> {
     if do_median_pred {
       let delta: i32 = *param.get_line0(1) - *param.get_line0(0);
       let lookup = ((((*param.get_line0(0) < *param.get_line1(0)) as usize) ^ ((delta < 0) as usize)) << 1)
@@ -229,7 +201,7 @@ impl CodecParams {
     }
 
     // get next error symbol
-    let mut bit_code = self.next_error_symbol(param, bitpump)?;
+    let mut bit_code = param.next_error_symbol()?;
 
     // add converted (+/-) error code to predicted value
     *param.get_line1(1) += error_code_signed(bit_code);
@@ -249,7 +221,7 @@ impl CodecParams {
   }
 
   /// Decode top line
-  fn decode_top_line(&self, param: &mut BandParam, bitpump: &mut BitPump) -> Result<()> {
+  fn decode_top_line(&self, param: &mut BandParam) -> Result<()> {
     *param.get_line1(0) = 0;
 
     let mut length = param.subband_width as u32;
@@ -259,9 +231,9 @@ impl CodecParams {
         // Re-use value
         *param.get_line1(1) = *param.get_line1(0);
       } else {
-        if Self::bitstream_get_bits(bitpump, 1)? == 1 {
+        if param.bitstream_get_bits(1)? == 1 {
           let mut n_syms: u32 = 1;
-          while Self::bitstream_get_bits(bitpump, 1)? == 1 {
+          while param.bitstream_get_bits(1)? == 1 {
             n_syms += JS[param.s_param as usize];
             if n_syms > length {
               n_syms = length;
@@ -276,7 +248,7 @@ impl CodecParams {
           } // End while
           if n_syms < length {
             if J[param.s_param as usize] != 0 {
-              n_syms += Self::bitstream_get_bits(bitpump, J[param.s_param as usize])?;
+              n_syms += param.bitstream_get_bits(J[param.s_param as usize])?;
             }
             if param.s_param > 0 {
               param.s_param -= 1;
@@ -301,7 +273,7 @@ impl CodecParams {
         *param.get_line1(1) = 0;
       }
 
-      let bit_code = self.next_error_symbol(param, bitpump)?;
+      let bit_code = param.next_error_symbol()?;
 
       //debug!("k_param: {}, bit_code: {}", param.k_param, bit_code);
       *param.get_line1(1) += error_code_signed(bit_code);
@@ -314,7 +286,7 @@ impl CodecParams {
     if length == 1 {
       *param.get_line1(1) = *param.get_line1(0);
 
-      let bit_code = self.next_error_symbol(param, bitpump)?;
+      let bit_code = param.next_error_symbol()?;
       *param.get_line1(1) += error_code_signed(bit_code);
       param.k_param = Self::predict_k_param_max(param.k_param, bit_code, PREDICT_K_MAX);
       param.advance_buf1();
@@ -325,7 +297,7 @@ impl CodecParams {
   }
 
   /// Decode a line which is not a top line
-  fn decode_nontop_line(&self, param: &mut BandParam, bitpump: &mut BitPump) -> Result<()> {
+  fn decode_nontop_line(&self, param: &mut BandParam) -> Result<()> {
     let mut length = param.subband_width as u32;
 
     // copy down from line0 to line1
@@ -333,11 +305,11 @@ impl CodecParams {
 
     while length > 1 {
       if *param.get_line1(0) != *param.get_line0(1) || *param.get_line1(0) != *param.get_line0(2) {
-        self.decode_symbol_L1(param, bitpump, true, true)?;
+        self.decode_symbol_L1(param, true, true)?;
       } else {
-        if Self::bitstream_get_bits(bitpump, 1)? == 1 {
+        if param.bitstream_get_bits(1)? == 1 {
           let mut n_syms: u32 = 1;
-          while Self::bitstream_get_bits(bitpump, 1)? == 1 {
+          while param.bitstream_get_bits(1)? == 1 {
             n_syms += JS[param.s_param as usize];
             if n_syms > length {
               n_syms = length;
@@ -352,7 +324,7 @@ impl CodecParams {
           } // End while
           if n_syms < length {
             if J[param.s_param as usize] != 0 {
-              n_syms += Self::bitstream_get_bits(bitpump, J[param.s_param as usize])?;
+              n_syms += param.bitstream_get_bits(J[param.s_param as usize])?;
             }
             if param.s_param > 0 {
               param.s_param -= 1;
@@ -376,7 +348,7 @@ impl CodecParams {
         } // if bitstream == 1
 
         if length > 0 {
-          self.decode_symbol_L1(param, bitpump, false, length > 1)?;
+          self.decode_symbol_L1(param, false, length > 1)?;
         }
       }
 
@@ -384,14 +356,14 @@ impl CodecParams {
     } // end while
 
     if length == 1 {
-      self.decode_symbol_L1(param, bitpump, true, false)?;
+      self.decode_symbol_L1(param, true, false)?;
     }
     *param.get_line1(1) = *param.get_line1(0) + 1;
     Ok(())
   }
 
   /// Decode a single line from input band
-  fn decode_line(&self, param: &mut BandParam, bitpump: &mut BitPump, band_buf: &mut Vec<i32>) -> Result<()> {
+  fn decode_line(&self, param: &mut BandParam) -> Result<()> {
     assert!(param.cur_line < param.subband_height);
     if param.cur_line == 0 {
       param.s_param = 0;
@@ -401,9 +373,9 @@ impl CodecParams {
           param.line0_pos = 0;
           param.line1_pos = param.line0_pos + param.line_len;
           let line_pos = param.line1_pos + 1;
-          self.decode_top_line(param, bitpump)?;
+          self.decode_top_line(param)?;
           //band_buf.extend_from_slice(&param.line_buf[line_pos..line_pos + param.subband_width]);
-          band_buf.copy_from_slice(&param.line_buf[line_pos..line_pos + param.subband_width]);
+          param.dec_buf.copy_from_slice(&param.line_buf[line_pos..line_pos + param.subband_width]);
           param.cur_line += 1;
         } else {
           unimplemented!()
@@ -422,9 +394,9 @@ impl CodecParams {
         param.line1_pos = param.line0_pos + param.line_len;
       }
       let line_pos = param.line1_pos + 1;
-      self.decode_nontop_line(param, bitpump)?;
+      self.decode_nontop_line(param)?;
       //band_buf.extend_from_slice(&param.line_buf[line_pos..line_pos + param.subband_width]);
-      band_buf.copy_from_slice(&param.line_buf[line_pos..line_pos + param.subband_width]);
+      param.dec_buf.copy_from_slice(&param.line_buf[line_pos..line_pos + param.subband_width]);
       param.cur_line += 1;
     } else {
       unimplemented!()
