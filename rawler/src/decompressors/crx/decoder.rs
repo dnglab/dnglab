@@ -6,7 +6,9 @@ use log::debug;
 use rayon::prelude::*;
 use std::{io::Cursor, time::Instant};
 
-use super::{BandParam, CodecParams, CrxError, Plane, Result, Tile};
+use crate::decompressors::crx::mdat::parse_header;
+
+use super::{BandParam, CodecParams, CrxError, Result, mdat::{Plane, Tile}};
 
 #[cfg_attr(rustfmt, rustfmt_skip)]
 const _EX_COEF_NUM_TBL:[i32; 144] = [
@@ -40,7 +42,8 @@ impl CodecParams {
   /// decoded planes into proper tile output position and CFA pattern.
   pub fn decode(mut self, mdat: &[u8]) -> Result<Vec<u16>> {
     // Build nested Tiles/Planes/Bands
-    let tiles = self.parse_header(mdat)?;
+    let mut tiles = parse_header(self.get_header(mdat))?;
+    self.process_tiles(&mut tiles);
 
     // CRAW is unsupported
     if self.levels > 0 {

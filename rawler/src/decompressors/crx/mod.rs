@@ -2,15 +2,16 @@
 // Copyright 2021 Daniel Vogelbacher <daniel@chaospixel.com>
 
 use bitstream_io::{BitRead, BitReader};
-use byteorder::{BigEndian, ReadBytesExt};
 use log::debug;
-use std::io::{Cursor, Read, Seek};
+use std::io::Cursor;
 use thiserror::Error;
 
 use crate::formats::bmff::ext_cr3::cmp1::Cmp1Box;
 
+use self::mdat::Tile;
+
 mod decoder;
-mod header;
+mod mdat;
 
 /// BitPump for Big Endian bit streams
 type BitPump<'a> = BitReader<Cursor<&'a [u8]>, bitstream_io::BigEndian>;
@@ -72,238 +73,131 @@ impl CodecParams {
   fn resolution(&self) -> usize {
     self.image_width * self.image_height
   }
-}
 
-#[derive(Debug)]
-pub struct Tile {
-  pub id: usize,
-  pub ind: u16,
-  pub size: u16,
-  pub tile_size: u32,
-  pub flags: u32,
-  pub counter: u32,
-  pub tail_sign: u32,
-  pub data_offset: usize,
-  pub planes: Vec<Plane>,
-  pub width: usize,
-  pub height: usize,
-  pub qp_data: Option<TileQPData>,
-}
+  /// Create new codec parameters
+  pub fn new(cmp1: &Cmp1Box) -> Result<Self> {
+    const INCR_BIT_TABLE: [u8; 16] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 0];
 
-impl Tile {
-  pub fn new<R: Read + Seek>(id: usize, hdr: &mut R, ind: u16, tile_offset: usize) -> Result<Self> {
-    let size = hdr.read_u16::<BigEndian>().unwrap();
-    let tile_size = hdr.read_u32::<BigEndian>().unwrap();
-    let flags = hdr.read_u32::<BigEndian>().unwrap();
-    //let counter = flags >> 28;
-    let counter = (flags >> 16) & 0xF;
-    let tail_sign = flags & 0xFFFF;
-    let qp_data = if size == 16 {
-      let mdat_qp_data_size = hdr.read_u32::<BigEndian>()?;
-      let mdat_extra_size = hdr.read_u16::<BigEndian>()?;
-      let terminator = hdr.read_u16::<BigEndian>()?;
-      assert!(terminator == 0);
-      Some(TileQPData {
-        mdat_qp_data_size,
-        mdat_extra_size,
-        terminator,
-      })
-    } else {
-      None
+    if cmp1.n_planes != 4 {
+      return Err(CrxError::General(format!("Plane configration {} is not supported", cmp1.n_planes)));
+    }
+
+    let tile_cols: usize = (cmp1.f_width / cmp1.tile_width) as usize;
+    let tile_rows: usize = (cmp1.f_height / cmp1.tile_height) as usize;
+    assert!(tile_cols > 0);
+    assert!(tile_rows > 0);
+
+    let params = Self {
+      sample_precision: cmp1.n_bits as u8 + INCR_BIT_TABLE[4 * cmp1.enc_type as usize + 2] + 1,
+      image_width: cmp1.f_width as usize,
+      image_height: cmp1.f_height as usize,
+      plane_count: cmp1.n_planes as u8,
+      plane_width: if cmp1.n_planes == 4 {
+        cmp1.f_width as usize / tile_cols / 2
+      } else {
+        cmp1.f_width as usize / tile_cols
+      },
+      plane_height: if cmp1.n_planes == 4 {
+        cmp1.f_height as usize / tile_rows / 2
+      } else {
+        cmp1.f_height as usize / tile_rows
+      },
+      // 3 bands per level + one last LL
+      // only 1 band for zero levels (uncompressed)
+      subband_count: 3 * cmp1.image_levels as u8 + 1,
+      levels: cmp1.image_levels as u8,
+      n_bits: cmp1.n_bits as u8,
+      enc_type: cmp1.enc_type as u8,
+      tile_cols,
+      tile_rows,
+      tile_width: cmp1.tile_width as usize,
+      tile_height: cmp1.tile_height as usize,
+      mdat_hdr_size: cmp1.mdat_hdr_size,
     };
 
-    // TODO check on release
-    assert!((size == 8 && tail_sign == 0) || (size == 16 && tail_sign == 0x4000));
+    if params.tile_cols > 0xff {
+      return Err(CrxError::General(format!("Tile column count {} is not supported", tile_cols)));
+    }
+    if params.tile_rows > 0xff {
+      return Err(CrxError::General(format!("Tile row count {} is not supported", tile_rows)));
+    }
+    if params.tile_width < 0x16 || params.tile_height < 0x16 || params.plane_width > 0x7FFF || params.plane_height > 0x7FFF {
+      return Err(CrxError::General(format!("Invalid params for band decoding")));
+    }
 
-    Ok(Tile {
-      id,
-      ind,
-      size,
-      tile_size,
-      flags,
-      counter,
-      tail_sign,
-      data_offset: tile_offset,
-      planes: vec![],
-      height: 0,
-      width: 0,
-      qp_data,
-    })
+    Ok(params)
   }
 
-  pub fn descriptor_line(&self) -> String {
-    let extra_data = match self.qp_data.as_ref() {
-      Some(qp_data) => {
-        format!(
-          " qp_data_size: {:#x} extra_size: {:#x}, terminator: {:#x}",
-          qp_data.mdat_qp_data_size, qp_data.mdat_extra_size, qp_data.terminator
-        )
+  /// Process tiles and update values
+  pub(super) fn process_tiles(&mut self, tiles: &mut Vec<Tile>) {
+    let tile_count = tiles.len();
+    // Update each tile
+    for cur_tile in tiles.iter_mut() {
+      if (cur_tile.id + 1) % self.tile_cols != 0 {
+        // not the last tile in a tile row
+        cur_tile.width = self.tile_width;
+        if self.tile_cols > 1 {
+          cur_tile.tiles_right = true;
+          if cur_tile.id % self.tile_cols != 0 {
+            // not the first tile in tile row
+            cur_tile.tiles_left = true;
+          }
+        }
+      } else {
+        // last tile in a tile row
+        cur_tile.width = self.tile_width;
+        //tiles[curTile].width = self.plane_width - self.tile_width * (self.tile_cols - 1);
+        if self.tile_cols > 1 {
+          cur_tile.tiles_left = true;
+        }
       }
-      None => String::new(),
-    };
-    format!(
-      "Tile {:#x} size: {:#x} tile_size: {:#x} flags: {:#x} counter: {:#x} tail_sign: {:#x}{}",
-      self.ind,
-      self.size,
-      self.tile_size,
-      self.flags,
-      self.counter,
-      self.tail_sign,
-      extra_data,
-      //mdatQPDataSize.unwrap_or_default()
-    )
-  }
-
-  /// Tile may contain some extra data for quantization
-  pub fn extra_size(&self) -> u32 {
-    match self.qp_data.as_ref() {
-      Some(qp_data) => {
-        qp_data.mdat_qp_data_size + qp_data.mdat_extra_size as u32
+      if (cur_tile.id) < (tile_count - self.tile_cols) {
+        // in first tile row
+        cur_tile.height = self.tile_height;
+        if self.tile_rows > 1 {
+          cur_tile.tiles_bottom = true;
+          if cur_tile.id >= self.tile_cols {
+            cur_tile.tiles_top = true;
+          }
+        }
+      } else {
+        // non first tile row
+        cur_tile.height = self.tile_height;
+        //tiles[curTile].height = self.plane_height - self.tile_height * (self.tile_rows - 1);
+        if self.tile_rows > 1 {
+          cur_tile.tiles_top = true;
+        }
       }
-      None => 0
+    }
+    // process subbands
+    for tile in tiles {
+      //println!("{}", tile.descriptor_line());
+      //println!("Tw: {}, Th: {}", tile.width, tile.height);
+      let mut plane_sizes = 0;
+      for plane in &mut tile.planes {
+        //println!("{}", plane.descriptor_line());
+        let mut band_sizes = 0;
+        for band in &mut plane.subbands {
+          band_sizes += band.subband_size;
+          //band.width = tile.width;
+          //band.height = tile.height;
+          band.width = self.plane_width;
+          band.height = self.plane_height;
+          // FIXME: ExCoef
+          //println!("{}", band.descriptor_line());
+          //println!("    Bw: {}, Bh: {}", band.width, band.height);
+        }
+        assert_eq!(plane.plane_size, band_sizes);
+        plane_sizes += plane.plane_size;
+      }
+      // Tile may contain some extra bytes for quantization
+      // This extra size must be subtracted before comaring to the
+      // sum of plane sizes.
+      assert_eq!(tile.tile_size - tile.extra_size(), plane_sizes);
     }
   }
 }
 
-#[derive(Debug)]
-pub struct TileQPData {
-  pub mdat_qp_data_size: u32,
-  pub mdat_extra_size: u16,
-  pub terminator: u16,
-}
-
-#[derive(Debug)]
-pub struct Plane {
-  pub id: usize,
-  pub ind: u16,
-  pub size: u16,
-  pub plane_size: u32,
-  pub flags: u32,
-  pub counter: u32,
-  pub support_partial: bool,
-  pub rounded_bits_mask: i32,
-  pub data_offset: usize,
-  pub parent_offset: usize,
-  pub subbands: Vec<Subband>,
-}
-
-impl Plane {
-  pub fn new<R: Read + Seek>(id: usize, hdr: &mut R, ind: u16, parent_offset: usize, plane_offset: usize) -> Result<Self> {
-    let size = hdr.read_u16::<BigEndian>().unwrap();
-    let plane_size = hdr.read_u32::<BigEndian>().unwrap();
-    let flags = hdr.read_u32::<BigEndian>().unwrap();
-    let counter = (flags >> 28) & 0xf; // 4 bits
-
-    //let support_partial = (flags >> 27) & 0x1; // 1 bit
-    let support_partial: bool = (flags & 0x8000000) != 0;
-    let rounded_bits_mask = ((flags >> 25) & 0x3) as i32; // 2 bit
-    assert!(flags & 0x00FFFFFF == 0);
-    Ok(Plane {
-      id,
-      ind,
-      size,
-      plane_size,
-      flags,
-      counter,
-      support_partial,
-      rounded_bits_mask,
-      data_offset: plane_offset,
-      parent_offset,
-      subbands: vec![],
-    })
-  }
-
-  pub fn descriptor_line(&self) -> String {
-    format!(
-      "  Plane {:#x} size: {:#x} plane_size: {:#x} flags: {:#x} counter: {:#x} support_partial: {} rounded_bits: {:#x}",
-      self.ind, self.size, self.plane_size, self.flags, self.counter, self.support_partial, self.rounded_bits_mask
-    )
-  }
-}
-
-#[derive(Debug)]
-pub struct Subband {
-  pub id: usize,
-  pub ind: u16,
-  pub size: u16,
-  pub subband_size: u32,
-  pub flags: u32,
-  pub counter: u32,
-  pub support_partial: bool,
-  pub q_param: u32,
-  pub unknown: u32,
-  pub q_step_base: u32,
-  pub q_step_multi: u16,
-
-  pub data_offset: usize,
-  pub parent_offset: usize,
-  pub data_size: u64, // bit count?
-  pub width: usize,
-  pub height: usize,
-}
-
-impl Subband {
-  pub fn new<R: Read + Seek>(id: usize, hdr: &mut R, ind: u16, parent_offset: usize, band_offset: usize) -> Result<Self> {
-    let size = hdr.read_u16::<BigEndian>().unwrap();
-    let subband_size = hdr.read_u32::<BigEndian>().unwrap();
-
-    assert!((size == 8 && ind == 0xFF03) || (size == 16 && ind == 0xFF13));
-
-    let flags = hdr.read_u32::<BigEndian>().unwrap();
-    let counter = (flags >> 28) & 0xf; // 4 bits
-
-    //let support_partial = (flags >> 27) & 0x1; // 1 bit
-    let support_partial: bool = (flags & 0x8000000) != 0;
-    let q_param = (flags >> 19) & 0xFF; // 8 bit qParam
-    let unknown = flags & 0x7FFFF; // 19 bit, related to subband_size
-    let mut q_step_base = 0;
-    let mut q_step_multi = 0;
-    if size == 16 {
-      q_step_base = hdr.read_u32::<BigEndian>()?;
-      q_step_multi = hdr.read_u16::<BigEndian>()?;
-      let end_marker = hdr.read_u16::<BigEndian>()?;
-      assert!(end_marker == 0);
-    }
-    //assert!(subband_size >= 0x7FFFF);
-    let data_size: u64 = (subband_size - (flags & 0x7FFFF)) as u64;
-    //let data_size: u64 = 0;
-    //let band_height = tiles.last().unwrap().height;
-    //let band_width = tiles.last().unwrap().width;
-
-    Ok(Subband {
-      id,
-      ind,
-      size,
-      subband_size,
-      flags,
-      counter,
-      support_partial,
-      q_param,
-      q_step_base,
-      q_step_multi,
-      unknown,
-      data_offset: band_offset,
-      parent_offset,
-      data_size,
-      width: 0,
-      height: 0,
-    })
-  }
-
-  // This is buggy and unsed anymore?
-  pub fn data<'a>(&self, data: &'a [u8]) -> &'a [u8] {
-    let offset = self.parent_offset + self.data_offset;
-    &data[offset..offset + self.subband_size as usize]
-  }
-
-  pub fn descriptor_line(&self) -> String {
-    format!(
-      "    Subband {:#x} size: {:#x} subband_size: {:#x} flags: {:#x} counter: {:#x} support_partial: {} quant_value: {:#x} unknown: {:#x} qStepBase: {:#x} qStepMult: {:#x} ",
-      self.ind, self.size, self.subband_size, self.flags, self.counter, self.support_partial, self.q_param, self.unknown, self.q_step_base, self.q_step_multi
-
-    )
-  }
-}
 /// Parameter for a single Subband
 struct BandParam<'mdat> {
   subband_width: usize,
@@ -359,7 +253,6 @@ impl<'mdat> BandParam<'mdat> {
     self.line2_pos += 1;
     //.buf2[self.line2_pos-1]
   }
-
 
   /// Return the positive number of 0-bits in bitstream.
   /// All 0-bits are consumed.
