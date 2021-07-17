@@ -54,11 +54,83 @@ FLAGS:
         --nocrop        Do not crop black areas, output full sensor data
         --noembedded    Do not embed original raw file
     -f, --override      Override existing files
+    -r, --recursive     Process input directory recursive
     -V, --version       Prints version information
-        --verbose       Print more messages
+    -v, --verbose       Print more messages
 
 OPTIONS:
     -c, --compression <compression>    'lossless' (default) or 'none'
+
+ARGS:
+    <INPUT>     Input file or directory
+    <OUTPUT>    Output file or existing directory
+````
+
+### analyze subcommand
+
+````
+dnglab-analyze
+Analyze raw image
+
+USAGE:
+    dnglab analyze [FLAGS] <FILE>
+
+FLAGS:
+    -d               Sets the level of debugging information
+    -h, --help       Prints help information
+        --json       Format metadata as JSON
+        --meta       Write metadata to STDOUT
+        --pixel      Write uncompressed pixel data to STDOUT
+        --summary    Write summary information for file to STDOUT
+    -V, --version    Prints version information
+    -v, --verbose    Print more messages
+        --yaml       Format metadata as YAML
+
+ARGS:
+    <FILE>    Input file
+````
+
+With **analyze**, you can get a full dump of the internal file structure
+as YAML or JSON. With JSON output, it's possible to filter and transform
+the data with **jq**.
+For example, to get the *cfa_layout* from the CMP1 box for CR3 files, you can
+write:
+
+````
+find /cr3samples/ -type f -name "*.CR3" -exec dnglab analyze --meta '{}' --json \; | \
+  jq ". | { file: .file.fileName, cfa_layout: .format.cr3.moov.trak[1].mdia.minf.stbl.stsd.craw.cmp1.cfa_layout}"
+````
+
+The output is:
+
+```json
+{
+  "file": "Canon EOS 90D_CRAW_ISO_250_nocrop_nodual.CR3",
+  "cfa_layout": 1
+}
+{
+  "file": "Canon EOS 90D_CRAW_ISO_100_nocrop_nodual.CR3",
+  "cfa_layout": 1
+}
+```
+
+### extract subcommand
+
+````
+dnglab-extract
+Extract embedded original Raw from DNG
+
+USAGE:
+    dnglab extract [FLAGS] <INPUT> <OUTPUT>
+
+FLAGS:
+    -d                  Sets the level of debugging information
+    -h, --help          Prints help information
+    -f, --override      Override existing files
+    -r, --recursive     Process input directory recursive
+        --skipchecks    Skip integrity checks
+    -V, --version       Prints version information
+    -v, --verbose       Print more messages
 
 ARGS:
     <INPUT>     Input file or directory
@@ -81,3 +153,16 @@ Well, depends on developer resources.
 ### Is a GUI in planning?
 Yes, DNGLab should get a GUI in near future.
 
+## Credits
+
+Special thanks goes to:
+
+ * Darktable developer team [www.darktable.org](www.darktable.org)
+ * Laurent Clévy [CR3 documentation](https://github.com/lclevy/canon_cr3)
+ * Kostya Shishkov
+ * Hubert Kowalski
+ * Rawloader development team [rawloader](https://github.com/pedrocr/rawloader)
+ * All volunteers who have contributed samples.
+
+Without the support and engagement from these people the development of
+dnglab would not have been possible.
