@@ -157,7 +157,7 @@ Yes, DNGLab should get a GUI in near future.
 
 Special thanks goes to:
 
- * Darktable developer team [www.darktable.org](www.darktable.org)
+ * Darktable developer team [www.darktable.org](https://www.darktable.org)
  * Laurent Clévy [CR3 documentation](https://github.com/lclevy/canon_cr3)
  * Kostya Shishkov
  * Hubert Kowalski
