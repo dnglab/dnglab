@@ -1,6 +1,10 @@
 // SPDX-License-Identifier: LGPL-2.1
 // Copyright 2021 Daniel Vogelbacher <daniel@chaospixel.com>
 
+// Original Crx decoder crx.cpp was written by Alexey Danilchenko for libraw.
+// Rewritten in Rust by Daniel Vogelbacher, based on logic found in
+// crx.cpp and documentation done by Laurent Clévy (https://github.com/lclevy/canon_cr3).
+
 use byteorder::{BigEndian, ReadBytesExt};
 use std::io::{Cursor, Read};
 

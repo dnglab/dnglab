@@ -1,6 +1,10 @@
 // SPDX-License-Identifier: LGPL-2.1
 // Copyright 2021 Daniel Vogelbacher <daniel@chaospixel.com>
 
+// Original Crx decoder crx.cpp was written by Alexey Danilchenko for libraw.
+// Rewritten in Rust by Daniel Vogelbacher, based on logic found in
+// crx.cpp and documentation done by Laurent Clévy (https://github.com/lclevy/canon_cr3).
+
 use bitstream_io::BitReader;
 use log::debug;
 use rayon::prelude::*;
@@ -8,7 +12,10 @@ use std::{io::Cursor, time::Instant};
 
 use crate::decompressors::crx::mdat::parse_header;
 
-use super::{BandParam, CodecParams, CrxError, Result, mdat::{Plane, Tile}};
+use super::{
+  mdat::{Plane, Tile},
+  BandParam, CodecParams, CrxError, Result,
+};
 
 #[cfg_attr(rustfmt, rustfmt_skip)]
 const _EX_COEF_NUM_TBL:[i32; 144] = [
@@ -22,18 +29,27 @@ const _EX_COEF_NUM_TBL:[i32; 144] = [
 #[cfg_attr(rustfmt, rustfmt_skip)]
 const _Q_STEP_TBL:[i32; 8] = [0x28, 0x2D, 0x33, 0x39, 0x40, 0x48, 0x00, 0x00];
 
+/// See ITU T.78 Section A.2.1 Step 3
+/// Initialise the variables for the run mode: RUNindex=0 and J[0..31]
 #[cfg_attr(rustfmt, rustfmt_skip)]
-const JS:[u32; 32] = [1,     1,     1,     1,     2,      2,      2,      2,
-                      4,     4,     4,     4,     8,      8,      8,      8,
-                      0x10,  0x10,  0x20,  0x20,  0x40,   0x40,   0x80,   0x80,
-                      0x100, 0x200, 0x400, 0x800, 0x1000, 0x2000, 0x4000, 0x8000];
+const J: [u32; 32] = [0, 0,  0,  0,  1,  1,  1,  1,
+                      2, 2,  2,  2,  3,  3,  3,  3,
+                      4, 4,  5,  5,  6,  6,  7,  7,
+                      8, 9, 10, 11, 12, 13, 14, 15];
 
+/// Precalculated values for (1 << J[0..31])
 #[cfg_attr(rustfmt, rustfmt_skip)]
-const J:[u32; 32] = [0, 0, 0, 0, 1,    1,    1,    1,    2,    2,   2,
-                     2, 3, 3, 3, 3,    4,    4,    5,    5,    6,   6,
-                     7, 7, 8, 9, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F];
+const JSHIFT: [u32; 32] = [1 << J[0],  1 << J[1],  1 << J[2],  1 << J[3],
+                           1 << J[4],  1 << J[5],  1 << J[6],  1 << J[7],
+                           1 << J[8],  1 << J[9],  1 << J[10], 1 << J[11],
+                           1 << J[12], 1 << J[13], 1 << J[14], 1 << J[15],
+                           1 << J[16], 1 << J[17], 1 << J[18], 1 << J[19],
+                           1 << J[20], 1 << J[21], 1 << J[22], 1 << J[23],
+                           1 << J[24], 1 << J[25], 1 << J[26], 1 << J[27],
+                           1 << J[28], 1 << J[29], 1 << J[30], 1 << J[31]];
 
-const PREDICT_K_MAX: u32 = 15;
+/// Maximum value for K during Adaptive Golomb-Rice for K prediction
+pub(super) const PREDICT_K_MAX: u32 = 15;
 
 impl CodecParams {
   /// Decode MDAT section into a single CFA image
@@ -95,9 +111,7 @@ impl CodecParams {
 
     // Plane decoder returns a vector of exactly the size
     // of a plane (w*h).
-    // We reserve only the correct capacity, values are pushed
-    // into while decoding.
-    let mut outbuf = Vec::with_capacity((self.plane_height * self.plane_width) as usize);
+    let mut plane_buf = vec![0; (self.plane_height * self.plane_width) as usize];
 
     let tile_mdat_offset =
       tile.data_offset + tile.qp_data.as_ref().map(|qp| qp.mdat_qp_data_size + qp.mdat_extra_size as u32).unwrap_or(0) as usize + plane.data_offset;
@@ -112,237 +126,196 @@ impl CodecParams {
 
     let bitpump = BitReader::endian(Cursor::new(band_buf), bitstream_io::BigEndian);
 
+    let line_buf = [vec![0; line_len], vec![0; line_len]];
+
     let mut param = BandParam {
       subband_width: plane.subbands[0].width,
       subband_height: plane.subbands[0].height,
       rounded_bits_mask: if plane.support_partial { plane.rounded_bits_mask } else { 0 },
       rounded_bits: 0,
       cur_line: 0,
-      line_buf: vec![0; line_len * 2], // fill for two buffered lines
+      line_buf,
+      line_pos: 0,
       line_len,
-      line0_pos: 0,
-      line1_pos: 0,
-      line2_pos: 0,
       s_param: 0,
       k_param: 0,
       supports_partial: if plane.support_partial { true } else { false }, // TODO: only for subbandnum == 0
       bitpump,
-      dec_buf: vec![0; plane.subbands[0].width],
+      //dec_buf: vec![0; plane.subbands[0].width],
     };
-
-
 
     //debug!("Param: {:?}", param);
 
-    for _ in 0..band.height {
+    //println!("band height: {}", band.height);
+    for i in 0..band.height {
       self.decode_line(&mut param)?;
-      assert_eq!(param.dec_buf.len(), param.subband_width as usize);
-      self.convert_plane_line(param.dec_buf.as_slice(), &mut outbuf);
+      assert_eq!(param.decoded_buf().len(), param.subband_width as usize);
+      self.convert_plane_line(param.decoded_buf(), &mut plane_buf[(i * band.width)..]);
     }
 
-    assert_eq!(outbuf.len(), (self.plane_height * self.plane_width) as usize);
+    assert_eq!(plane_buf.len(), (self.plane_height * self.plane_width) as usize);
 
-    Ok(outbuf)
+    Ok(plane_buf)
   }
 
-  /// Predict K parameter without a maximum constraint
-  #[inline(always)]
-  fn _predict_k_param(prev_k: u32, bit_code: u32) -> u32 {
-    Self::predict_k_param_max(prev_k, bit_code, 0)
-  }
-
-  /// Predict K parameter with maximum constraint
-  #[inline(always)]
-  fn predict_k_param_max(prev_k: u32, bit_code: u32, max_val: u32) -> u32 {
-    // K is is range 0..=15
-    assert!(prev_k <= PREDICT_K_MAX);
-    assert!(max_val <= PREDICT_K_MAX);
-
-    // Calculate new K
-    let new_k = if max_val == 0 {
-      1 // no prediction
-    } else {
-      let p: u32 = 2_u32.pow(prev_k);
-      let bp: u32 = bit_code >> prev_k;
-      let new_k_param = prev_k
-        + if bp > 2 {
-          if bp > 5 {
-            2
-          } else {
-            1
-          }
-        } else {
-          0
-        };
-      if bit_code < (p / 2) {
-        assert_ne!(new_k_param, 0);
-        std::cmp::min(new_k_param - 1, max_val) // p >> 1
-      } else {
-        std::cmp::min(new_k_param, max_val)
-      }
-    };
-    //debug!("Predict K: {} for prev: {}, bitcode: {}, max: {}", new_k, prev_k, bit_code, max_val);
-    new_k
-  }
-
-  /// Decode a single L1 symbol
-  #[allow(non_snake_case)]
-  fn decode_symbol_L1(&self, param: &mut BandParam, do_median_pred: bool, not_eol: bool) -> Result<()> {
-    if do_median_pred {
-      let delta: i32 = *param.get_line0(1) - *param.get_line0(0);
-      let lookup = ((((*param.get_line0(0) < *param.get_line1(0)) as usize) ^ ((delta < 0) as usize)) << 1)
-        + (((*param.get_line1(0) < *param.get_line0(1)) as usize) ^ ((delta < 0) as usize));
-
-      *param.get_line1(1) = match lookup {
-        0 | 1 => delta + *param.get_line1(0),
-        2 => *param.get_line1(0),
-        3 => *param.get_line0(1),
-        _ => return Err(CrxError::General(format!("Crx decoder error while decode symbol L1"))),
-      };
-    } else {
-      *param.get_line1(1) = *param.get_line0(1);
-    }
-
-    // get next error symbol
-    let mut bit_code = param.next_error_symbol()?;
-
-    // add converted (+/-) error code to predicted value
-    *param.get_line1(1) += error_code_signed(bit_code);
-
-    // for not end of the line - use one symbol ahead to estimate next K
-    if not_eol {
-      let next_delta: i32 = (*param.get_line0(2) - *param.get_line0(1)) << 1;
-      bit_code = (bit_code + next_delta.abs() as u32) >> 1;
-      param.advance_buf0();
-    }
-
-    // update K parameter
-    param.k_param = Self::predict_k_param_max(param.k_param, bit_code, PREDICT_K_MAX);
-    param.advance_buf1();
-
-    Ok(())
-  }
-
-  /// Get symbol count for run-length decoding
-  fn symbol_count_runlength(&self, param: &mut BandParam, length: u32) -> Result<u32> {
-    let mut n_syms: u32 = 1;
-    while param.bitstream_get_bits(1)? == 1 {
-      n_syms += JS[param.s_param as usize];
-      if n_syms > length {
-        n_syms = length;
+  /// Get symbol run count for run-length decoding
+  /// See T.87 Section A.7.1.2 Run-length coding
+  fn symbol_run_count(&self, param: &mut BandParam, remaining: u32) -> Result<u32> {
+    assert!(remaining > 1);
+    let mut run_cnt: u32 = 1;
+    // See T.87 A.7.1.2 Code segment A.15
+    // Bitstream 111110... means 5 lookups into J to decode final RUNcnt
+    while run_cnt != remaining && param.bitstream_get_bits(1)? == 1 {
+      // JS is precalculated (1 << J[RUNindex])
+      run_cnt += JSHIFT[param.s_param as usize];
+      if run_cnt > remaining {
+        run_cnt = remaining;
         break;
       }
-      if param.s_param < 31 {
-        param.s_param += 1;
+      param.s_param = std::cmp::min(param.s_param + 1, 31);
+    }
+    // See T.87 A.7.1.2 Code segment A.16
+    if run_cnt < remaining {
+      if J[param.s_param as usize] > 0 {
+        run_cnt += param.bitstream_get_bits(J[param.s_param as usize])?;
       }
-      if n_syms == length {
-        break;
-      }
-    } // End while
-    if n_syms < length {
-      if J[param.s_param as usize] != 0 {
-        n_syms += param.bitstream_get_bits(J[param.s_param as usize])?;
-      }
-      if param.s_param > 0 {
-        param.s_param -= 1;
-      }
-      if n_syms > length {
+      param.s_param = param.s_param.saturating_sub(1); // prevent underflow
+      if run_cnt > remaining {
         return Err(CrxError::General(format!("Crx decoder error while decoding line")));
       }
     }
-    Ok(n_syms)
+    Ok(run_cnt)
   }
 
   /// Decode top line
-  fn decode_top_line(&self, param: &mut BandParam) -> Result<()> {
-    *param.get_line1(0) = 0;
-
-    let mut length = param.subband_width as u32;
-
-    while length > 1 {
-      if *param.get_line1(0) != 0 {
-        // Re-use value
-        *param.get_line1(1) = *param.get_line1(0);
+  /// For the first line (top) in a plane, no MED is used because
+  /// there is no previous line for coeffs b, c and d.
+  /// So this decoding is a simplified version from decode_nontop_line().
+  fn decode_top_line(&self, p: &mut BandParam) -> Result<()> {
+    assert_eq!(p.line_pos, 1);
+    let mut remaining = p.subband_width as u32;
+    // Init coeff a (real image pixel starts at 1)
+    p.line_buf[1][p.line_pos - 1] = 0; // is is [0] because at start line_pos is 1
+    while remaining > 1 {
+      // Loop over full width of line (backwards)
+      if p.coeff_a() != 0 {
+        p.line_buf[1][p.line_pos] = p.coeff_a();
       } else {
-        if param.bitstream_get_bits(1)? == 1 {
-          let n_syms = self.symbol_count_runlength(param, length)?;
-          length = length.saturating_sub(n_syms);
+        if p.bitstream_get_bits(1)? == 1 {
+          let n_syms = self.symbol_run_count(p, remaining)?;
+          remaining = remaining.saturating_sub(n_syms);
           // copy symbol n_syms times
           for _ in 0..n_syms {
-            *param.get_line1(1) = *param.get_line1(0);
-            param.advance_buf1();
+            p.line_buf[1][p.line_pos] = p.coeff_a();
+            p.line_pos += 1;
           }
-          if length <= 0 {
+          if remaining == 0 {
             break;
           }
         } // if bitstream == 1
-
-        *param.get_line1(1) = 0;
+        p.line_buf[1][p.line_pos] = 0;
       }
-
-      let bit_code = param.next_error_symbol()?;
-
-      //debug!("k_param: {}, bit_code: {}", param.k_param, bit_code);
-      *param.get_line1(1) += error_code_signed(bit_code);
-      param.k_param = Self::predict_k_param_max(param.k_param, bit_code, PREDICT_K_MAX);
-      param.advance_buf1();
-
-      length = length.saturating_sub(1);
+      let bit_code = p.adaptive_rice_decode(true)?;
+      p.line_buf[1][p.line_pos] += error_code_signed(bit_code);
+      p.line_pos += 1;
+      remaining = remaining.saturating_sub(1);
     }
-
-    if length == 1 {
-      // Copy previous and add error correction
-      *param.get_line1(1) = *param.get_line1(0);
-      let bit_code = param.next_error_symbol()?;
-      *param.get_line1(1) += error_code_signed(bit_code);
-      param.advance_buf1();
-      // Predict new K
-      param.k_param = Self::predict_k_param_max(param.k_param, bit_code, PREDICT_K_MAX);
+    // Remaining pixel?
+    if remaining == 1 {
+      let x = p.coeff_a(); // no MED, just use coeff a
+      let bit_code = p.adaptive_rice_decode(true)?;
+      p.line_buf[1][p.line_pos] = x + error_code_signed(bit_code);
+      p.line_pos += 1;
     }
-
-    *param.get_line1(1) = *param.get_line1(0) + 1;
+    assert!(p.line_pos < p.line_buf[1].len());
+    p.line_buf[1][p.line_pos] = p.coeff_a() + 1;
     Ok(())
   }
 
   /// Decode a line which is not a top line
-  fn decode_nontop_line(&self, param: &mut BandParam) -> Result<()> {
-    let mut length = param.subband_width as u32;
-
-    // copy down from line0 to line1
-    *param.get_line1(0) = *param.get_line0(1);
-
-    while length > 1 {
-      if *param.get_line1(0) != *param.get_line0(1) || *param.get_line1(0) != *param.get_line0(2) {
-        self.decode_symbol_L1(param, true, true)?;
-      } else {
-        if param.bitstream_get_bits(1)? == 1 {
-          let n_syms = self.symbol_count_runlength(param, length)?;
-          length = length.saturating_sub(n_syms);
+  /// This used run length coding, Median Edge Detection (MED) and
+  /// adaptive Golomb-Rice entropy encoding.
+  /// Golomb-Rice becomes more efficient when using an adaptive K value
+  /// instead of a fixed one.
+  /// The K parameter is used as q = n >> k where n is the sample to encode.
+  fn decode_nontop_line(&self, p: &mut BandParam) -> Result<()> {
+    assert_eq!(p.line_pos, 1);
+    let mut remaining = p.subband_width as u32;
+    // Init coeff a: a = b
+    p.line_buf[1][p.line_pos - 1] = p.coeff_b();
+    // Loop over full width of line (backwards)
+    while remaining > 1 {
+      let mut x = 0;
+      //  c b d
+      //  a x n
+      // Median Edge Detection to predict pixel x. Described in patent US2016/0323602 and T.87
+      if p.coeff_a() == p.coeff_b() && p.coeff_a() == p.coeff_d() {
+        // different than step [0104], where Condition: "a=c and c=b and b=d", c not used
+        if p.bitstream_get_bits(1)? == 1 {
+          let n_syms = self.symbol_run_count(p, remaining)?;
+          remaining = remaining.saturating_sub(n_syms);
           // copy symbol n_syms times
           for _ in 0..n_syms {
-            *param.get_line1(1) = *param.get_line1(0);
-            param.advance_buf1();
+            p.line_buf[1][p.line_pos] = p.coeff_a();
+            p.line_pos += 1;
           }
-          // Forward line0 position as line1 position is forwarded, too
-          param.line0_pos += n_syms as usize;
         } // if bitstream == 1
-
-        if length > 0 {
-          self.decode_symbol_L1(param, false, length > 1)?;
+        if remaining > 0 {
+          x = p.coeff_b(); // use new coeff b because we moved line_pos!
         }
+      } else {
+        // no run length coding, use MED instead
+        x = med(p.coeff_a(), p.coeff_b(), p.coeff_c());
       }
-
-      length = length.saturating_sub(1);
-    } // end while
-
-    if length == 1 {
-      self.decode_symbol_L1(param, true, false)?;
+      if remaining > 0 {
+        let mut bit_code = p.adaptive_rice_decode(false)?;
+        // add converted (+/-) error code to predicted value
+        p.line_buf[1][p.line_pos] = x + error_code_signed(bit_code);
+        // for not end of the line - use one symbol ahead to estimate next K
+        if remaining > 1 {
+          let delta: i32 = (p.coeff_d() - p.coeff_b()) << 1;
+          bit_code = (bit_code + delta.abs() as u32) >> 1;
+        }
+        p.k_param = predict_k_param_max(p.k_param, bit_code, PREDICT_K_MAX);
+        p.line_pos += 1;
+      }
+      remaining = remaining.saturating_sub(1);
+    } // end while length > 1
+      // Remaining pixel?
+    if remaining == 1 {
+      let x = med(p.coeff_a(), p.coeff_b(), p.coeff_c());
+      let bit_code = p.adaptive_rice_decode(true)?;
+      // add converted (+/-) error code to predicted value
+      p.line_buf[1][p.line_pos] = x + error_code_signed(bit_code);
+      p.line_pos += 1;
     }
-    *param.get_line1(1) = *param.get_line1(0) + 1;
+    assert!(p.line_pos < p.line_buf[1].len());
+    p.line_buf[1][p.line_pos] = p.coeff_a() + 1;
     Ok(())
   }
 
   /// Decode a single line from input band
+  /// For decoding, two line buffers are required (except for the first line).
+  /// After each decoding line, the two buffers are swapped, so the previous one
+  /// is always in line_buf[0] (containing coefficents c, b, d) and the current
+  /// line is in line_buf[1] (containing coefficents a, x, n).
+  ///
+  /// The line buffers has an extra sample on both ends. So the buffer layout is:
+  ///
+  /// |E|Samples........................|E|
+  /// |c|bd                           cb|d|
+  /// |a|xn                           ax|n|
+  ///  ^ ^                               ^
+  ///  | |                               |-- Extra sample to provide fake d coefficent
+  ///  | |---- First sample value
+  ///  |------ Extra sample to provide a fake a/c coefficent
+  ///
+  /// After line is decoded, the E samples are ignored when
+  /// copied into the final plane buffer.
+  ///
+  /// For non-LL bands, decoding process differs a little bit
+  /// because some value rounding is added. This process is not
+  /// implemented yet.
   fn decode_line(&self, param: &mut BandParam) -> Result<()> {
     assert!(param.cur_line < param.subband_height);
     if param.cur_line == 0 {
@@ -350,47 +323,46 @@ impl CodecParams {
       param.k_param = 0;
       if param.supports_partial {
         if param.rounded_bits_mask <= 0 {
-          param.line0_pos = 0;
-          param.line1_pos = param.line0_pos + param.line_len;
-          let line_pos = param.line1_pos + 1;
+          // We start at first real pixel value
+          param.line_pos = 1;
           self.decode_top_line(param)?;
-          //band_buf.extend_from_slice(&param.line_buf[line_pos..line_pos + param.subband_width]);
-          param.dec_buf.copy_from_slice(&param.line_buf[line_pos..line_pos + param.subband_width]);
           param.cur_line += 1;
         } else {
+          // Used for wavelet transformed data, not supported
           unimplemented!()
         }
       } else {
+        // Used for wavelet transformed data, not supported
         unimplemented!()
       }
     } else if !param.supports_partial {
+      // Used for wavelet transformed data, not supported
       unimplemented!()
     } else if param.rounded_bits_mask <= 0 {
-      if param.cur_line & 1 == 1 {
-        param.line1_pos = 0;
-        param.line0_pos = param.line1_pos + param.line_len;
-      } else {
-        param.line0_pos = 0;
-        param.line1_pos = param.line0_pos + param.line_len;
-      }
-      let line_pos = param.line1_pos + 1;
+      param.line_pos = 1;
+      // Swap line buffers so previous decoded (1) is now above (0)
+      param.line_buf.swap(0, 1);
       self.decode_nontop_line(param)?;
-      //band_buf.extend_from_slice(&param.line_buf[line_pos..line_pos + param.subband_width]);
-      param.dec_buf.copy_from_slice(&param.line_buf[line_pos..line_pos + param.subband_width]);
       param.cur_line += 1;
     } else {
+      // Used for wavelet transformed data, not supported
       unimplemented!()
     }
     Ok(())
   }
 
   /// Convert a decoded line to plane output
-  fn convert_plane_line(&self, line: &[i32], plane_buf: &mut Vec<u16>) {
+  /// Results from decode_line() are signed 32 bit integers.
+  /// By using a median and max value, these are converted
+  /// to unsigned 16 bit integers.
+  fn convert_plane_line(&self, line: &[i32], plane_buf: &mut [u16]) {
     assert_eq!(self.enc_type, 0);
     assert_eq!(self.plane_count, 4);
     let median: i32 = 1 << (self.n_bits - 1);
     let max_val: i32 = (1 << self.n_bits) - 1;
-    line.iter().for_each(|v| plane_buf.push(constrain(median + v, 0, max_val) as u16));
+    for (i, v) in line.iter().enumerate() {
+      plane_buf[i] = constrain(median + v, 0, max_val) as u16
+    }
   }
 
   /// Integrate a plane buffer into CFA output image
@@ -450,8 +422,9 @@ impl CodecParams {
 }
 
 /// Constrain a given value into min/max
-#[inline(always)]
 fn constrain(value: i32, min: i32, max: i32) -> i32 {
+  std::cmp::min(std::cmp::max(value, min), max)
+  /*
   let res = if value < min {
     min
   } else if value > max {
@@ -461,13 +434,54 @@ fn constrain(value: i32, min: i32, max: i32) -> i32 {
   };
   assert!(res <= u16::MAX as i32);
   res
+   */
 }
 
 /// The error code contains a sign bit at bit 0.
+/// Example: 10010 1 -> negative value, 10010 0 -> positive value
 /// This routine converts an unsigned bit_code to the correct
 /// signed integer value.
 /// For this, the sign bit is inverted and XOR with
 /// the shifted integer value.
 fn error_code_signed(bit_code: u32) -> i32 {
   -((bit_code & 1) as i32) ^ (bit_code >> 1) as i32
+}
+
+/// Predict K parameter without a maximum constraint
+pub(super) fn _predict_k_param(prev_k: u32, bit_code: u32) -> u32 {
+  predict_k_param_max(prev_k, bit_code, 0)
+}
+
+/// Predict K parameter with maximum constraint
+/// Golomb-Rice becomes more efficient when used with an adaptive
+/// K parameter. This is done my predicting the next K value for the
+/// next sample value.
+pub(super) fn predict_k_param_max(prev_k: u32, value: u32, max_val: u32) -> u32 {
+  // K is is range 0..=15
+  assert!(prev_k <= PREDICT_K_MAX);
+  assert!(max_val <= PREDICT_K_MAX);
+  let mut new_k = prev_k;
+  if value >> prev_k > 2 {
+    new_k += 1;
+  }
+  if value >> prev_k > 5 {
+    new_k += 1;
+  }
+  if value < ((1 << prev_k) >> 1) {
+    new_k -= 1;
+  }
+  std::cmp::min(new_k, max_val)
+}
+
+/// Median Edge Detection
+/// [0053] Obtains a predictive value p of the coefficient by using
+/// MED prediction, thereby performing predictive coding.
+pub(super) fn med(a: i32, b: i32, c: i32) -> i32 {
+  if c >= std::cmp::max(a, b) {
+    std::cmp::min(a, b)
+  } else if c <= std::cmp::min(a, b) {
+    std::cmp::max(a, b)
+  } else {
+    a + b - c // no edge detected
+  }
 }

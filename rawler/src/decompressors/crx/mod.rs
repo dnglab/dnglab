@@ -1,6 +1,34 @@
 // SPDX-License-Identifier: LGPL-2.1
 // Copyright 2021 Daniel Vogelbacher <daniel@chaospixel.com>
 
+// Original Crx decoder crx.cpp was written by Alexey Danilchenko for libraw.
+// Rewritten in Rust by Daniel Vogelbacher, based on logic found in
+// crx.cpp and documentation done by Laurent Clévy (https://github.com/lclevy/canon_cr3).
+
+// Crx is based on JPEG-LS from ITU T.78 and described in US patent US 2016/0323602 A1.
+// It has two modes:
+//  - Lossless compression
+//  - Lossy compression
+// For lossless (only LL band exists) and LL band from lossy compression,
+// prediction is used combined with adaptive Golomb-Rice entropy encoding for compression.
+// For lossy bands other than LL a special value rounding is introduced
+// into Golomb-Rice encoded values.
+//
+// LL band compression uses for the first image line run-length encoding
+// from JPEG-LS and adaptive Golomb-Rice encoding. For other lines,
+// MED (Median Edge Detection) is added to the encoding routines.
+//
+// For Lossy compression, image input is wavelet-transformed into subbands.
+// The LL band for low frequency part
+// The LH band for horizontal-direction frequency characteristic
+// The HL band for vertical-direction frequency characteristic
+// The HH band for oblique-direction frequency characteristic
+//
+// Transformation is directed by i, number of wavelet transformations.
+// Crx uses i=3, so the output is LL(3), LH(3), HL(3), HH(3), LH(2), HL(2), HH(2), LH(1), HL(1), HH(1)
+//
+// TODO: Subband encoding for other than LL ???
+
 use bitstream_io::{BitRead, BitReader};
 use log::debug;
 use std::io::Cursor;
@@ -8,7 +36,10 @@ use thiserror::Error;
 
 use crate::formats::bmff::ext_cr3::cmp1::Cmp1Box;
 
-use self::mdat::Tile;
+use self::{
+  decoder::{predict_k_param_max, PREDICT_K_MAX},
+  mdat::Tile,
+};
 
 mod decoder;
 mod mdat;
@@ -203,55 +234,53 @@ struct BandParam<'mdat> {
   subband_width: usize,
   subband_height: usize,
   rounded_bits_mask: i32,
+  #[allow(dead_code)] // TODO: rounded_bits is used for 5/3
   rounded_bits: i32,
   cur_line: usize,
-  line_buf: Vec<i32>,
+  line_buf: [Vec<i32>; 2],
+  line_pos: usize,
+  #[allow(dead_code)]
   line_len: usize,
-  line0_pos: usize,
-  line1_pos: usize,
-  line2_pos: usize,
-
   s_param: u32,
   k_param: u32,
   supports_partial: bool,
   /// Holds the decoding buffer for a single row
-  dec_buf: Vec<i32>,
+  //dec_buf: Vec<i32>,
   /// Bitstream from MDAT
   bitpump: BitPump<'mdat>,
 }
 
 impl<'mdat> BandParam<'mdat> {
-  #[inline(always)]
-  fn get_line0(&mut self, idx: usize) -> &mut i32 {
-    &mut self.line_buf[self.line0_pos + idx]
+  /// Get coefficent `a` from line buffer
+  ///  c b d  (buf 0)
+  ///  a x n  (buf 1)
+  fn coeff_a(&self) -> i32 {
+    self.line_buf[1][self.line_pos - 1]
   }
 
-  #[inline(always)]
-  fn get_line1(&mut self, idx: usize) -> &mut i32 {
-    &mut self.line_buf[self.line1_pos + idx]
+  /// Get coefficent `b` from line buffer
+  ///  c b d  (buf 0)
+  ///  a x n  (buf 1)
+  fn coeff_b(&self) -> i32 {
+    self.line_buf[0][self.line_pos]
   }
 
-  #[inline(always)]
-  fn _get_line2(&mut self, idx: usize) -> &mut i32 {
-    &mut self.line_buf[self.line2_pos + idx]
+  /// Get coefficent `c` from line buffer
+  ///  c b d  (buf 0)
+  ///  a x n  (buf 1)
+  fn coeff_c(&self) -> i32 {
+    self.line_buf[0][self.line_pos - 1]
   }
 
-  #[inline(always)]
-  fn advance_buf0(&mut self) {
-    self.line0_pos += 1;
-    //self.buf0[self.line0_pos-1]
+  /// Get coefficent `d` from line buffer
+  ///  c b d  (buf 0)
+  ///  a x n  (buf 1)
+  fn coeff_d(&self) -> i32 {
+    self.line_buf[0][self.line_pos + 1]
   }
 
-  #[inline(always)]
-  fn advance_buf1(&mut self) {
-    self.line1_pos += 1;
-    //self.buf1[self.line1_pos-1]
-  }
-
-  #[inline(always)]
-  fn _advance_buf2(&mut self) {
-    self.line2_pos += 1;
-    //.buf2[self.line2_pos-1]
+  fn decoded_buf(&self) -> &[i32] {
+    &self.line_buf[1][1..1 + self.subband_width]
   }
 
   /// Return the positive number of 0-bits in bitstream.
@@ -270,16 +299,36 @@ impl<'mdat> BandParam<'mdat> {
     Ok(self.bitpump.read(bits)?)
   }
 
-  /// Get next error symbol
-  /// This is Golomb-Rice encoded (not 100% sure)
-  fn next_error_symbol(&mut self) -> Result<u32> {
-    let mut bit_code = self.bitstream_zeros()?;
-    if bit_code >= 41 {
-      bit_code = self.bitstream_get_bits(21)?;
-    } else if self.k_param > 0 {
-      bit_code = self.bitstream_get_bits(self.k_param)? | (bit_code << self.k_param);
+  /// Golomb-Rice decoding
+  /// https://w3.ual.es/~vruiz/Docencia/Apuntes/Coding/Text/03-symbol_encoding/09-Golomb_coding/index.html
+  /// escape and esc_bits are used to interrupt decoding when
+  /// a value is not encoded using Golomb-Rice but directly encoded
+  /// by esc_bits bits.
+  fn rice_decode(&mut self, k: u32, escape: u32, esc_bits: u32) -> Result<u32> {
+    // q, quotient = n//m, with m = 2^k (Rice coding)
+    let prefix = self.bitstream_zeros()?;
+    if prefix >= escape {
+      // n
+      Ok(self.bitstream_get_bits(esc_bits)?)
+    } else if k > 0 {
+      // Golomb-Rice coding : n = q * 2^k + r, with r is next k bits. r is n - (q*2^k)
+      Ok((prefix << k) | self.bitstream_get_bits(k)?)
+    } else {
+      // q
+      Ok(prefix)
     }
-    Ok(bit_code)
+  }
+
+  /// Adaptive Golomb-Rice decoding, by adapting k value
+  /// Sometimes adapting is based on the next coefficent (n) instead
+  /// of current (x) coefficent. So you can disable it with `adapt_k`
+  /// and update k later.
+  fn adaptive_rice_decode(&mut self, adapt_k: bool) -> Result<u32> {
+    let val = self.rice_decode(self.k_param, 41, 21)?;
+    if adapt_k {
+      self.k_param = predict_k_param_max(self.k_param, val, PREDICT_K_MAX);
+    }
+    Ok(val)
   }
 }
 
