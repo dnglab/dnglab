@@ -26,6 +26,9 @@ mod camera_samples {
   camera_file_check!("Canon", "EOS R5", canon_eos_r5_raw_crop_dual, "Canon EOS R5_RAW_ISO_100_crop_dual.CR3.raw");
   camera_file_check!("Canon", "EOS R5", canon_eos_r5_raw_crop_nodual, "Canon EOS R5_RAW_ISO_100_crop_nodual.CR3.raw");
 
+  camera_file_check!("Canon", "EOS R5", canon_eos_r5_raw_biasframe, "Canon EOS R5_RAW_biasframe.CR3.raw");
+  camera_file_check!("Canon", "EOS R5", canon_eos_r5_raw_whiteframe, "Canon EOS R5_RAW_whiteframe.CR3.raw");
+
   camera_file_check!(
     "Canon",
     "EOS R6",
