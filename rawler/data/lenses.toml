@@ -214,7 +214,7 @@ aperture_range = [[50, 10], [63, 10]]
 [[lenses]]
 key = "18-300mm F3.5-6.3 DC MACRO OS HSM | Contemporary 014"
 make = "Sigma"
-model = "18-300mm F3.5-6.3 DC MACRO OS HSM | C"
+model = "18-300mm f/3.5-6.3 DC MACRO OS HSM | C"
 focal_range = [[18, 1], [300, 1]]
 aperture_range = [[35, 10], [63, 10]]
 
