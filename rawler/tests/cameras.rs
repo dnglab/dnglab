@@ -16,102 +16,67 @@ mod camera_samples {
     };
   }
 
-  camera_file_check!(
-    "Canon",
-    "EOS R5",
-    canon_eos_r5_raw_nocrop_nodual,
-    "Canon EOS R5_RAW_ISO_100_nocrop_nodual.CR3.raw"
-  );
+  camera_file_check!("Canon", "EOS R5", canon_eos_r5_raw_nocrop_nodual, "Canon EOS R5_RAW_ISO_100_nocrop_nodual.CR3.raw");
   camera_file_check!("Canon", "EOS R5", canon_eos_r5_raw_nocrop_dual, "Canon EOS R5_RAW_ISO_100_nocrop_dual.CR3.raw");
   camera_file_check!("Canon", "EOS R5", canon_eos_r5_raw_crop_dual, "Canon EOS R5_RAW_ISO_100_crop_dual.CR3.raw");
   camera_file_check!("Canon", "EOS R5", canon_eos_r5_raw_crop_nodual, "Canon EOS R5_RAW_ISO_100_crop_nodual.CR3.raw");
 
+  camera_file_check!("Canon", "EOS R5", canon_eos_r5_craw_nocrop_nodual, "Canon EOS R5_CRAW_ISO_100_nocrop_nodual.CR3.raw");
+  camera_file_check!("Canon", "EOS R5", canon_eos_r5_craw_nocrop_dual, "Canon EOS R5_CRAW_ISO_100_nocrop_dual.CR3.raw");
+  camera_file_check!("Canon", "EOS R5", canon_eos_r5_craw_crop_dual, "Canon EOS R5_CRAW_ISO_100_crop_dual.CR3.raw");
+  camera_file_check!("Canon", "EOS R5", canon_eos_r5_craw_crop_nodual, "Canon EOS R5_CRAW_ISO_100_crop_nodual.CR3.raw");
+
   camera_file_check!("Canon", "EOS R5", canon_eos_r5_raw_biasframe, "Canon EOS R5_RAW_biasframe.CR3.raw");
   camera_file_check!("Canon", "EOS R5", canon_eos_r5_raw_whiteframe, "Canon EOS R5_RAW_whiteframe.CR3.raw");
 
-  camera_file_check!(
-    "Canon",
-    "EOS R6",
-    canon_eos_r6_raw_nocrop_nodual,
-    "Canon EOS R6_RAW_ISO_100_nocrop_nodual.CR3.raw"
-  );
+  camera_file_check!("Canon", "EOS R6", canon_eos_r6_raw_nocrop_nodual, "Canon EOS R6_RAW_ISO_100_nocrop_nodual.CR3.raw");
   camera_file_check!("Canon", "EOS R6", canon_eos_r6_raw_crop_nodual, "Canon EOS R6_RAW_ISO_100_crop_nodual.CR3.raw");
 
-  camera_file_check!(
-    "Canon",
-    "EOS RP",
-    canon_eos_rp_raw_nocrop_nodual,
-    "Canon EOS RP_RAW_ISO_100_nocrop_nodual.CR3.raw"
-  );
+  camera_file_check!("Canon", "EOS R6", canon_eos_r6_craw_nocrop_nodual, "Canon EOS R6_CRAW_ISO_100_nocrop_nodual.CR3.raw");
+  camera_file_check!("Canon", "EOS R6", canon_eos_r6_craw_crop_nodual, "Canon EOS R6_CRAW_ISO_100_crop_nodual.CR3.raw");
+
+  camera_file_check!("Canon", "EOS RP", canon_eos_rp_raw_nocrop_nodual, "Canon EOS RP_RAW_ISO_100_nocrop_nodual.CR3.raw");
   camera_file_check!("Canon", "EOS RP", canon_eos_rp_raw_crop_nodual, "Canon EOS RP_RAW_ISO_100_crop_nodual.CR3.raw");
+
+  camera_file_check!("Canon", "EOS RP", canon_eos_rp_craw_nocrop_nodual, "Canon EOS RP_CRAW_ISO_100_nocrop_nodual.CR3.raw");
+  camera_file_check!("Canon", "EOS RP", canon_eos_rp_craw_crop_nodual, "Canon EOS RP_CRAW_ISO_100_crop_nodual.CR3.raw");
 
   camera_file_check!("Canon", "EOS R", canon_eos_r_raw_nocrop_nodual, "Canon EOS R_RAW_ISO_100_nocrop_nodual.CR3.raw");
   camera_file_check!("Canon", "EOS R", canon_eos_r_raw_nocrop_dual, "Canon EOS R_RAW_ISO_100_nocrop_dual.CR3.raw");
   camera_file_check!("Canon", "EOS R", canon_eos_r_raw_crop_dual, "Canon EOS R_RAW_ISO_100_crop_dual.CR3.raw");
   camera_file_check!("Canon", "EOS R", canon_eos_r_raw_crop_nodual, "Canon EOS R_RAW_ISO_100_crop_nodual.CR3.raw");
 
-  camera_file_check!(
-    "Canon",
-    "EOS-1D X Mark III",
-    canon_eos_1dx_mark3_raw_nocrop_nodual,
-    "Canon EOS-1D X Mark III_RAW_ISO_100_nocrop_nodual.CR3.raw"
-  );
+  camera_file_check!("Canon", "EOS R", canon_eos_r_craw_nocrop_nodual, "Canon EOS R_CRAW_ISO_100_nocrop_nodual.CR3.raw");
+  camera_file_check!("Canon", "EOS R", canon_eos_r_craw_nocrop_dual, "Canon EOS R_CRAW_ISO_100_nocrop_dual.CR3.raw");
+  camera_file_check!("Canon", "EOS R", canon_eos_r_craw_crop_dual, "Canon EOS R_CRAW_ISO_100_crop_dual.CR3.raw");
+  camera_file_check!("Canon", "EOS R", canon_eos_r_craw_crop_nodual, "Canon EOS R_CRAW_ISO_100_crop_nodual.CR3.raw");
 
-  camera_file_check!(
-    "Canon",
-    "EOS 250D",
-    canon_eos_250d_raw_nocrop_nodual,
-    "Canon EOS 250D_RAW_ISO_100_nocrop_nodual.CR3.raw"
-  );
+  camera_file_check!("Canon", "EOS-1D X Mark III", canon_eos_1dx_mark3_raw_nocrop_nodual, "Canon EOS-1D X Mark III_RAW_ISO_100_nocrop_nodual.CR3.raw");
+  camera_file_check!("Canon", "EOS-1D X Mark III", canon_eos_1dx_mark3_craw_nocrop_nodual, "Canon EOS-1D X Mark III_CRAW_ISO_100_nocrop_nodual.CR3.raw");
 
-  camera_file_check!(
-    "Canon",
-    "EOS 850D",
-    canon_eos_850d_raw_nocrop_nodual,
-    "Canon EOS 850D_RAW_ISO_100_nocrop_nodual.CR3.raw"
-  );
+  camera_file_check!("Canon", "EOS 250D", canon_eos_250d_raw_nocrop_nodual, "Canon EOS 250D_RAW_ISO_100_nocrop_nodual.CR3.raw");
+  camera_file_check!("Canon", "EOS 250D", canon_eos_250d_craw_nocrop_nodual, "Canon EOS 250D_CRAW_ISO_100_nocrop_nodual.CR3.raw");
 
-  camera_file_check!(
-    "Canon",
-    "EOS 90D",
-    canon_eos_90d_raw_nocrop_nodual,
-    "Canon EOS 90D_RAW_ISO_100_nocrop_nodual.CR3.raw"
-  );
+  camera_file_check!("Canon", "EOS 850D", canon_eos_850d_raw_nocrop_nodual, "Canon EOS 850D_RAW_ISO_100_nocrop_nodual.CR3.raw");
+  camera_file_check!("Canon", "EOS 850D", canon_eos_850d_craw_nocrop_nodual, "Canon EOS 850D_CRAW_ISO_100_nocrop_nodual.CR3.raw");
 
-  camera_file_check!(
-    "Canon",
-    "EOS M50",
-    canon_eos_m50_raw_nocrop_nodual,
-    "Canon EOS M50_RAW_ISO_100_nocrop_nodual.CR3.raw"
-  );
+  camera_file_check!("Canon", "EOS 90D", canon_eos_90d_raw_nocrop_nodual, "Canon EOS 90D_RAW_ISO_100_nocrop_nodual.CR3.raw");
+  camera_file_check!("Canon", "EOS 90D", canon_eos_90d_craw_nocrop_nodual, "Canon EOS 90D_CRAW_ISO_100_nocrop_nodual.CR3.raw");
 
-  camera_file_check!(
-    "Canon",
-    "EOS M50 Mark II",
-    canon_eos_m50_mark2_raw_nocrop_nodual,
-    "Canon EOS M50m2_RAW_ISO_100_nocrop_nodual.CR3.raw"
-  );
+  camera_file_check!("Canon", "EOS M50", canon_eos_m50_raw_nocrop_nodual, "Canon EOS M50_RAW_ISO_100_nocrop_nodual.CR3.raw");
+  camera_file_check!("Canon", "EOS M50", canon_eos_m50_craw_nocrop_nodual, "Canon EOS M50_CRAW_ISO_100_nocrop_nodual.CR3.raw");
 
-  camera_file_check!(
-    "Canon",
-    "EOS M6 Mark II",
-    canon_eos_m6_mark2_raw_nocrop_nodual,
-    "Canon EOS M6 Mark II_RAW_ISO_100_nocrop_nodual.CR3.raw"
-  );
+  camera_file_check!("Canon", "EOS M50 Mark II", canon_eos_m50_mark2_raw_nocrop_nodual, "Canon EOS M50m2_RAW_ISO_100_nocrop_nodual.CR3.raw");
+  camera_file_check!("Canon", "EOS M50 Mark II", canon_eos_m50_mark2_craw_nocrop_nodual, "Canon EOS M50m2_CRAW_ISO_100_nocrop_nodual.CR3.raw");
 
-  camera_file_check!(
-    "Canon",
-    "PowerShot G5 X Mark II",
-    canon_powershot_g5x_mark2_raw_nocrop_nodual,
-    "Canon PowerShot G5 X Mark II_RAW_ISO_200_nocrop_nodual.CR3.raw"
-  );
+  camera_file_check!("Canon", "EOS M6 Mark II", canon_eos_m6_mark2_raw_nocrop_nodual, "Canon EOS M6 Mark II_RAW_ISO_100_nocrop_nodual.CR3.raw");
+  camera_file_check!("Canon", "EOS M6 Mark II", canon_eos_m6_mark2_craw_nocrop_nodual, "Canon EOS M6 Mark II_CRAW_ISO_100_nocrop_nodual.CR3.raw");
 
-  camera_file_check!(
-    "Canon",
-    "PowerShot G7 X Mark III",
-    canon_powershot_g7x_mark3_raw_nocrop_nodual,
-    "Canon PowerShot G7 X Mark III_RAW_ISO_200_nocrop_nodual.CR3.raw"
-  );
+  camera_file_check!("Canon", "PowerShot G5 X Mark II", canon_powershot_g5x_mark2_raw_nocrop_nodual, "Canon PowerShot G5 X Mark II_RAW_ISO_200_nocrop_nodual.CR3.raw");
+  camera_file_check!("Canon", "PowerShot G5 X Mark II", canon_powershot_g5x_mark2_craw_nocrop_nodual, "Canon PowerShot G5 X Mark II_CRAW_ISO_200_nocrop_nodual.CR3.raw");
+
+  camera_file_check!("Canon", "PowerShot G7 X Mark III", canon_powershot_g7x_mark3_raw_nocrop_nodual, "Canon PowerShot G7 X Mark III_RAW_ISO_200_nocrop_nodual.CR3.raw");
+  camera_file_check!("Canon", "PowerShot G7 X Mark III", canon_powershot_g7x_mark3_craw_nocrop_nodual, "Canon PowerShot G7 X Mark III_CRAW_ISO_200_nocrop_nodual.CR3.raw");
 
   /// Generic function to check camera raw files against
   /// pre-generated stats and pixel files.
