@@ -161,9 +161,9 @@ aperture_range = [[14, 10], [14, 10]]
 [[lenses]]
 key = "EF-S24mm f/2.8 STM"
 make = "Canon"
-model = "EF-S24mm f/2.8 STM"
+model = "EF-S 24mm f/2.8 STM"
 focal_range = [[24, 1], [24, 1]]
-aperture_range = [[28, 10], [22, 1]]
+aperture_range = [[28, 10], [28, 10]]
 
 [[lenses]]
 key = "EF-S18-55mm f/3.5-5.6 IS"
@@ -214,7 +214,7 @@ aperture_range = [[50, 10], [63, 10]]
 [[lenses]]
 key = "18-300mm F3.5-6.3 DC MACRO OS HSM | Contemporary 014"
 make = "Sigma"
-model = "18-300mm F3.5-6.3 DC MACRO OS HSM | Contemporary 014"
+model = "18-300mm F3.5-6.3 DC MACRO OS HSM | C"
 focal_range = [[18, 1], [300, 1]]
 aperture_range = [[35, 10], [63, 10]]
 
