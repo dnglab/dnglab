@@ -29,20 +29,36 @@
 //
 // TODO: Subband encoding for other than LL ???
 
-use bitstream_io::{BitRead, BitReader};
+use bitstream_io::BitReader;
 use log::debug;
 use std::io::Cursor;
 use thiserror::Error;
 
 use crate::formats::bmff::ext_cr3::cmp1::Cmp1Box;
 
-use self::{
-  decoder::{predict_k_param_max, PREDICT_K_MAX},
-  mdat::Tile,
-};
+use self::{mdat::Tile, rice::RiceDecoder};
 
 mod decoder;
+mod idwt;
+mod iquant;
 mod mdat;
+mod rice;
+mod runlength;
+
+/// Each level has 6*8 = 0x30 = 48 ex coef values
+/// Not every level is used. For example, an image with level=3
+/// only used the last level 3 values. TODO: check this, seems to be wrong
+#[cfg_attr(rustfmt, rustfmt_skip)]
+const EX_COEF_NUM_TBL:[usize; 0x30*3] = [
+    // Level 1
+    1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0,
+    1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0,
+    // Level 2
+    1, 1, 1, 1, 0, 0, 1, 0, 1, 0, 0, 0, 1, 2, 2, 1, 0, 0, 1, 1, 1, 1, 0, 0,
+    1, 1, 1, 1, 0, 0, 1, 0, 1, 0, 0, 0, 1, 2, 2, 1, 0, 0, 1, 1, 1, 1, 0, 0,
+    // Level 3
+    1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 0, 1, 2, 2, 2, 2, 1, 1, 1, 1, 2, 2, 1,
+    1, 1, 1, 2, 2, 1, 1, 0, 1, 1, 1, 1, 1, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1];
 
 /// BitPump for Big Endian bit streams
 type BitPump<'a> = BitReader<Cursor<&'a [u8]>, bitstream_io::BigEndian>;
@@ -77,10 +93,10 @@ pub struct CodecParams {
   image_width: usize,
   image_height: usize,
   plane_count: u8,
-  plane_width: usize,
-  plane_height: usize,
+  //plane_width: usize,
+  //plane_height: usize,
   subband_count: u8,
-  levels: u8,
+  levels: usize,
   n_bits: u8,
   enc_type: u8,
   tile_cols: usize,
@@ -88,6 +104,7 @@ pub struct CodecParams {
   tile_width: usize,
   tile_height: usize,
   mdat_hdr_size: u32,
+  version: u16,
 }
 
 impl CodecParams {
@@ -113,8 +130,13 @@ impl CodecParams {
       return Err(CrxError::General(format!("Plane configration {} is not supported", cmp1.n_planes)));
     }
 
-    let tile_cols: usize = (cmp1.f_width / cmp1.tile_width) as usize;
-    let tile_rows: usize = (cmp1.f_height / cmp1.tile_height) as usize;
+    //let tile_cols: usize = (cmp1.f_width / cmp1.tile_width) as usize;
+    //let tile_rows: usize = (cmp1.f_height / cmp1.tile_height) as usize;
+
+    // Rounding for unbalanced sizes
+    let tile_cols: usize = ((cmp1.f_width + cmp1.tile_width - 1) / cmp1.tile_width) as usize;
+    let tile_rows: usize = ((cmp1.f_height + cmp1.tile_height - 1) / cmp1.tile_height) as usize;
+
     assert!(tile_cols > 0);
     assert!(tile_rows > 0);
 
@@ -123,6 +145,7 @@ impl CodecParams {
       image_width: cmp1.f_width as usize,
       image_height: cmp1.f_height as usize,
       plane_count: cmp1.n_planes as u8,
+      /*
       plane_width: if cmp1.n_planes == 4 {
         cmp1.f_width as usize / tile_cols / 2
       } else {
@@ -133,10 +156,11 @@ impl CodecParams {
       } else {
         cmp1.f_height as usize / tile_rows
       },
+       */
       // 3 bands per level + one last LL
       // only 1 band for zero levels (uncompressed)
       subband_count: 3 * cmp1.image_levels as u8 + 1,
-      levels: cmp1.image_levels as u8,
+      levels: cmp1.image_levels as usize,
       n_bits: cmp1.n_bits as u8,
       enc_type: cmp1.enc_type as u8,
       tile_cols,
@@ -144,6 +168,7 @@ impl CodecParams {
       tile_width: cmp1.tile_width as usize,
       tile_height: cmp1.tile_height as usize,
       mdat_hdr_size: cmp1.mdat_hdr_size,
+      version: cmp1.version,
     };
 
     if params.tile_cols > 0xff {
@@ -152,9 +177,9 @@ impl CodecParams {
     if params.tile_rows > 0xff {
       return Err(CrxError::General(format!("Tile row count {} is not supported", tile_rows)));
     }
-    if params.tile_width < 0x16 || params.tile_height < 0x16 || params.plane_width > 0x7FFF || params.plane_height > 0x7FFF {
-      return Err(CrxError::General(format!("Invalid params for band decoding")));
-    }
+    //if params.tile_width < 0x16 || params.tile_height < 0x16 || params.plane_width > 0x7FFF || params.plane_height > 0x7FFF {
+    //  return Err(CrxError::General(format!("Invalid params for band decoding")));
+    //}
 
     Ok(params)
   }
@@ -166,7 +191,8 @@ impl CodecParams {
     for cur_tile in tiles.iter_mut() {
       if (cur_tile.id + 1) % self.tile_cols != 0 {
         // not the last tile in a tile row
-        cur_tile.width = self.tile_width;
+        cur_tile.tile_width = self.tile_width;
+        cur_tile.plane_width = cur_tile.tile_width >> if self.plane_count == 4 { 1 } else { 0 };
         if self.tile_cols > 1 {
           cur_tile.tiles_right = true;
           if cur_tile.id % self.tile_cols != 0 {
@@ -176,7 +202,14 @@ impl CodecParams {
         }
       } else {
         // last tile in a tile row
-        cur_tile.width = self.tile_width;
+        //cur_tile.width = self.tile_width;
+        //cur_tile.width = self.plane_width;
+        //println!("tile width: {}, {}", self.plane_width, self.tile_width);
+        cur_tile.tile_width = self.image_width - self.tile_width * (self.tile_cols - 1);
+        cur_tile.plane_width = cur_tile.tile_width >> if self.plane_count == 4 { 1 } else { 0 };
+        //cur_tile.width = self.plane_width - self.tile_width * (self.tile_cols - 1); // old one
+        //cur_tile.width = self.tile_width - self.plane_width * (self.tile_cols - 1);
+        //cur_tile.width = self.image_width - self.tile_width * (self.tile_cols - 1);
         //tiles[curTile].width = self.plane_width - self.tile_width * (self.tile_cols - 1);
         if self.tile_cols > 1 {
           cur_tile.tiles_left = true;
@@ -184,7 +217,8 @@ impl CodecParams {
       }
       if (cur_tile.id) < (tile_count - self.tile_cols) {
         // in first tile row
-        cur_tile.height = self.tile_height;
+        cur_tile.tile_height = self.tile_height;
+        cur_tile.plane_height = cur_tile.tile_height >> if self.plane_count == 4 { 1 } else { 0 };
         if self.tile_rows > 1 {
           cur_tile.tiles_bottom = true;
           if cur_tile.id >= self.tile_cols {
@@ -193,7 +227,12 @@ impl CodecParams {
         }
       } else {
         // non first tile row
-        cur_tile.height = self.tile_height;
+        //cur_tile.height = self.tile_height;
+        //cur_tile.height = self.plane_height;
+        //cur_tile.height = self.tile_height - self.plane_height * (self.tile_rows - 1);
+        cur_tile.tile_height = self.image_height - self.tile_height * (self.tile_rows - 1);
+        cur_tile.plane_height = cur_tile.tile_height >> if self.plane_count == 4 { 1 } else { 0 };
+        //cur_tile.height = self.plane_height - self.tile_height * (self.tile_rows - 1); // old one
         //tiles[curTile].height = self.plane_height - self.tile_height * (self.tile_rows - 1);
         if self.tile_rows > 1 {
           cur_tile.tiles_top = true;
@@ -202,21 +241,34 @@ impl CodecParams {
     }
     // process subbands
     for tile in tiles {
-      //println!("{}", tile.descriptor_line());
-      //println!("Tw: {}, Th: {}", tile.width, tile.height);
+      //eprintln!("{}", tile.descriptor_line());
+      //eprintln!("Tw: {}, Th: {}", tile.tile_width, tile.tile_height);
       let mut plane_sizes = 0;
+      self.process_subbands(tile);
       for plane in &mut tile.planes {
-        //println!("{}", plane.descriptor_line());
+        //eprintln!("{}", plane.descriptor_line());
         let mut band_sizes = 0;
+
         for band in &mut plane.subbands {
+          assert!(band.subband_size != 0);
+          assert_eq!(band.subband_size % 8, 0);
           band_sizes += band.subband_size;
+          // Init QP
+          //band.q_param = 4;
           //band.width = tile.width;
           //band.height = tile.height;
-          band.width = self.plane_width;
-          band.height = self.plane_height;
+          //band.width = self.plane_width; // Latest
+          //band.height = self.plane_height;
           // FIXME: ExCoef
-          //println!("{}", band.descriptor_line());
-          //println!("    Bw: {}, Bh: {}", band.width, band.height);
+
+          /*
+          eprintln!("{}", band.descriptor_line());
+          eprintln!("    Bw: {}, Bh: {}", band.width, band.height);
+          eprintln!(
+            "    rsa: {}, rea: {}, csa: {}, cea: {}, ls: {}",
+            band.row_start_addon, band.row_end_addon, band.col_start_addon, band.col_end_addon, band.level_shift
+          );
+           */
         }
         assert_eq!(plane.plane_size, band_sizes);
         plane_sizes += plane.plane_size;
@@ -227,27 +279,123 @@ impl CodecParams {
       assert_eq!(tile.tile_size - tile.extra_size(), plane_sizes);
     }
   }
+
+  /// Process tiles and update values
+  pub(super) fn process_subbands(&self, tile: &mut Tile) {
+    for plane in &mut tile.planes {
+      let mut band_w = tile.plane_width;
+      let mut band_h = tile.plane_height;
+      let mut band_width_ex_coef = 0;
+      let mut band_height_ex_coef = 0;
+      if self.levels > 0 {
+        let row_ex_coef = &EX_COEF_NUM_TBL[0x30 * (self.levels - 1) + 6 * (tile.plane_width & 7)..];
+        let col_ex_coef = &EX_COEF_NUM_TBL[0x30 * (self.levels - 1) + 6 * (tile.plane_height & 7)..];
+
+        for lev in 0..self.levels {
+          let w_odd_pixel = band_w & 1;
+          let h_odd_pixel = band_h & 1;
+          // With each level, width and hight are divided by 2
+          band_w = (w_odd_pixel + band_w) >> 1;
+          band_h = (h_odd_pixel + band_h) >> 1;
+
+          let mut w_ex_coef0 = 0;
+          let mut w_ex_coef1 = 0;
+          let mut h_ex_coef0 = 0;
+          let mut h_ex_coef1 = 0;
+          let mut col_start = 0;
+          let mut row_start = 0;
+          if tile.tiles_right {
+            w_ex_coef0 = row_ex_coef[2 * lev];
+            w_ex_coef1 = row_ex_coef[2 * lev + 1];
+          }
+          if tile.tiles_left {
+            w_ex_coef0 += 1;
+            col_start = 1;
+          }
+          if tile.tiles_bottom {
+            h_ex_coef0 = col_ex_coef[2 * lev];
+            h_ex_coef1 = col_ex_coef[2 * lev + 1];
+          }
+          if tile.tiles_top {
+            h_ex_coef0 += 1;
+            row_start = 1;
+          }
+
+          // This sets the band width/height values.
+          // Theoretically, it's just always plane_width/2.
+          // But for multi-tile images, the band may contain
+          // extra coefficents on any sides. Assumption is that
+          // these extra coefficents are copied from the other tiles
+          // over to improve compression or/and supress artefacts
+          // on tile boundaries after tiles are assembled to full image.
+          let i = (self.levels - lev) * 3;
+          plane.subbands[i - 0].width = band_w + w_ex_coef0 - w_odd_pixel;
+          plane.subbands[i - 0].height = band_h + h_ex_coef0 - h_odd_pixel;
+          plane.subbands[i - 0].setup_idx(self.version, lev + 1, col_start, w_ex_coef0 - col_start, row_start, h_ex_coef0 - row_start);
+
+          plane.subbands[i - 1].width = band_w + w_ex_coef1;
+          plane.subbands[i - 1].height = band_h + h_ex_coef0 - h_odd_pixel;
+          plane.subbands[i - 1].setup_idx(self.version, lev + 1, 0, w_ex_coef1, row_start, h_ex_coef0 - row_start);
+
+          plane.subbands[i - 2].width = band_w + w_ex_coef0 - w_odd_pixel;
+          plane.subbands[i - 2].height = band_h + h_ex_coef1;
+          plane.subbands[i - 2].setup_idx(self.version, lev + 1, col_start, w_ex_coef0 - col_start, 0, h_ex_coef1);
+        }
+        band_width_ex_coef = 0;
+        band_height_ex_coef = 0;
+        if tile.tiles_right {
+          band_width_ex_coef = row_ex_coef[2 * self.levels - 1];
+        }
+        if tile.tiles_bottom {
+          band_height_ex_coef = col_ex_coef[2 * self.levels - 1];
+        }
+      }
+
+      // LL3 band
+      plane.subbands[0].width = band_width_ex_coef + band_w;
+      plane.subbands[0].height = band_height_ex_coef + band_h;
+      if self.levels > 0 {
+        plane.subbands[0].setup_idx(self.version, self.levels, 0, band_width_ex_coef, 0, band_height_ex_coef);
+      }
+    }
+  }
 }
 
 /// Parameter for a single Subband
 struct BandParam<'mdat> {
+  /// Width of the band in pixels
   subband_width: usize,
+  /// Height of the band in pixels
   subband_height: usize,
+  /// Mask for bit rounding (unused)
   rounded_bits_mask: i32,
-  #[allow(dead_code)] // TODO: rounded_bits is used for 5/3
+  /// Bits for rounding (unused)
+  #[allow(dead_code)]
   rounded_bits: i32,
+  /// Current line, starting with 0
   cur_line: usize,
+  /// Two lines to decode current line [1] and lookup into prev line [0]
+  /// After each line iteration, the two items are just swapped.
   line_buf: [Vec<i32>; 2],
+  /// Previous K values for Golomb-Rice adaptive decoding
+  /// This buffer is only used for non-LL bands
+  line_k: Vec<u32>,
+  /// Current position
   line_pos: usize,
+  /// Length of the current line (unused, but good to keep)
   #[allow(dead_code)]
   line_len: usize,
+  /// Runlength control parameter
   s_param: u32,
-  k_param: u32,
+  /// Q parameter for QP (see Subband for more details)
+  /// The MDAT header contains a Q parameter which should be constant.
+  /// But for some (unused) decoding routines, the Q param needs to be updated,
+  /// so we need a mutable copy in the BandParam.
+  pub q_param: u32,
+  /// Unsure what partial means...
   supports_partial: bool,
-  /// Holds the decoding buffer for a single row
-  //dec_buf: Vec<i32>,
-  /// Bitstream from MDAT
-  bitpump: BitPump<'mdat>,
+  /// Rice decoder, provides bit access to the MDAT stream
+  rice: RiceDecoder<'mdat>,
 }
 
 impl<'mdat> BandParam<'mdat> {
@@ -279,62 +427,22 @@ impl<'mdat> BandParam<'mdat> {
     self.line_buf[0][self.line_pos + 1]
   }
 
+  /// Get decoded buffer
   fn decoded_buf(&self) -> &[i32] {
+    // Skip first and last extra pixel
     &self.line_buf[1][1..1 + self.subband_width]
   }
 
-  /// Return the positive number of 0-bits in bitstream.
-  /// All 0-bits are consumed.
-  #[inline(always)]
-  fn bitstream_zeros(&mut self) -> Result<u32> {
-    Ok(self.bitpump.read_unary1()?)
-  }
-
-  /// Return the requested bits
-  // All bits are consumed.
-  // The maximum number of bits are 32
-  #[inline(always)]
-  fn bitstream_get_bits(&mut self, bits: u32) -> Result<u32> {
-    assert!(bits <= 32);
-    Ok(self.bitpump.read(bits)?)
-  }
-
-  /// Golomb-Rice decoding
-  /// https://w3.ual.es/~vruiz/Docencia/Apuntes/Coding/Text/03-symbol_encoding/09-Golomb_coding/index.html
-  /// escape and esc_bits are used to interrupt decoding when
-  /// a value is not encoded using Golomb-Rice but directly encoded
-  /// by esc_bits bits.
-  fn rice_decode(&mut self, k: u32, escape: u32, esc_bits: u32) -> Result<u32> {
-    // q, quotient = n//m, with m = 2^k (Rice coding)
-    let prefix = self.bitstream_zeros()?;
-    if prefix >= escape {
-      // n
-      Ok(self.bitstream_get_bits(esc_bits)?)
-    } else if k > 0 {
-      // Golomb-Rice coding : n = q * 2^k + r, with r is next k bits. r is n - (q*2^k)
-      Ok((prefix << k) | self.bitstream_get_bits(k)?)
-    } else {
-      // q
-      Ok(prefix)
-    }
-  }
-
-  /// Adaptive Golomb-Rice decoding, by adapting k value
-  /// Sometimes adapting is based on the next coefficent (n) instead
-  /// of current (x) coefficent. So you can disable it with `adapt_k`
-  /// and update k later.
-  fn adaptive_rice_decode(&mut self, adapt_k: bool) -> Result<u32> {
-    let val = self.rice_decode(self.k_param, 41, 21)?;
-    if adapt_k {
-      self.k_param = predict_k_param_max(self.k_param, val, PREDICT_K_MAX);
-    }
-    Ok(val)
+  /// Get decoded buffer
+  fn decoded_buf_mut(&mut self) -> &mut [i32] {
+    // Skip first and last extra pixel
+    &mut self.line_buf[1][1..1 + self.subband_width]
   }
 }
 
+/// Decompress a MDAT image buffer by given CMP1 box parameters
 pub fn decompress_crx_image(buf: &[u8], cmp1: &Cmp1Box) -> Result<Vec<u16>> {
   let image = CodecParams::new(cmp1)?;
-  debug!("{:?}", image);
-  let result = image.decode(buf)?;
-  Ok(result)
+  debug!("CRX codec parameter: {:?}", image);
+  image.decode(buf)
 }
