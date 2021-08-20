@@ -1,0 +1,15 @@
+#brace_style = "SameLineWhere"
+#comment_width = 160
+#wrap_comments = true
+edition = "2021"
+#enum_discrim_align_threshold = 30
+force_explicit_abi = true
+#format_strings = true
+max_width = 300
+#imports_layout = "HorizontalVertical"
+merge_derives = true
+#imports_granularity = "Crate"
+reorder_imports = true
+#report_fixme = "Always"
+#report_todo = "Always"
+tab_spaces = 2

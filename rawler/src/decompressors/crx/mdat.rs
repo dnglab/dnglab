@@ -5,11 +5,10 @@
 // Rewritten in Rust by Daniel Vogelbacher, based on logic found in
 // crx.cpp and documentation done by Laurent Clévy (https://github.com/lclevy/canon_cr3).
 
+use super::{iquant::QStep, Result};
+use crate::decompressors::crx::CrxError;
 use byteorder::{BigEndian, ReadBytesExt};
 use std::io::{Cursor, Read};
-
-use super::Result;
-use crate::decompressors::crx::CrxError;
 
 #[derive(Debug, Clone)]
 pub struct Tile {
@@ -23,15 +22,20 @@ pub struct Tile {
   pub id: usize,
   pub counter: u32,
   pub tail_sign: u32,
+  /// Offset of tile data relative to mdat header end
   pub data_offset: usize,
-  pub width: usize,
-  pub height: usize,
+  pub tile_width: usize,
+  pub tile_height: usize,
+  pub plane_width: usize,
+  pub plane_height: usize,
   pub tiles_top: bool,
   pub tiles_bottom: bool,
   pub tiles_left: bool,
   pub tiles_right: bool,
   /// Planes for tile
   pub planes: Vec<Plane>,
+  /// QStep table for this tile and for each level (1, 2, 3)
+  pub q_step: Option<Vec<QStep>>,
 }
 
 impl Tile {
@@ -69,13 +73,16 @@ impl Tile {
       tail_sign,
       data_offset: tile_offset,
       planes: vec![],
-      height: 0,
-      width: 0,
+      tile_height: 0,
+      tile_width: 0,
+      plane_height: 0,
+      plane_width: 0,
       qp_data,
       tiles_top: false,
       tiles_bottom: false,
       tiles_left: false,
       tiles_right: false,
+      q_step: None,
     })
   }
 
@@ -87,10 +94,10 @@ impl Tile {
           qp_data.mdat_qp_data_size, qp_data.mdat_extra_size, qp_data.terminator
         )
       }
-      None => String::new(),
+      None => String::from("NONE"),
     };
     format!(
-      "Tile {:#x} size: {:#x} tile_size: {:#x} flags: {:#x} counter: {:#x} tail_sign: {:#x}{}",
+      "Tile {:#x} size: {:#x} tile_size: {:#x} flags: {:#x} counter: {:#x} tail_sign: {:#x} extra: {}\n   top: {}, left: {}, bottom: {}, right: {}",
       self.ind,
       self.size,
       self.tile_size,
@@ -98,6 +105,10 @@ impl Tile {
       self.counter,
       self.tail_sign,
       extra_data,
+      self.tiles_top,
+      self.tiles_left,
+      self.tiles_bottom,
+      self.tiles_right,
       //mdatQPDataSize.unwrap_or_default()
     )
   }
@@ -113,8 +124,11 @@ impl Tile {
 
 #[derive(Debug, Clone)]
 pub struct TileQPData {
+  /// Size in bytes of QP data for version 0x200
   pub mdat_qp_data_size: u32,
+  /// Unused bytes to extend tile size to 0x8 boundary
   pub mdat_extra_size: u16,
+  /// 0 - Terminator
   pub terminator: u16,
 }
 
@@ -129,6 +143,8 @@ pub struct Plane {
   pub id: usize,
   pub counter: u32,
   pub support_partial: bool,
+  /// Rounded bits mask - only used for level=0 images
+  /// with suuport_partial=true
   pub rounded_bits_mask: i32,
   pub data_offset: usize,
   pub parent_offset: usize,
@@ -145,7 +161,11 @@ impl Plane {
 
     //let support_partial = (flags >> 27) & 0x1; // 1 bit
     let support_partial: bool = (flags & 0x8000000) != 0;
-    let rounded_bits_mask = ((flags >> 25) & 0x3) as i32; // 2 bit
+    let mut rounded_bits_mask = ((flags >> 25) & 0x3) as i32; // 2 bit
+    if rounded_bits_mask != 0 {
+      rounded_bits_mask = 1 << (rounded_bits_mask - 1);
+    }
+
     assert!(flags & 0x00FFFFFF == 0);
     Ok(Plane {
       id,
@@ -170,88 +190,168 @@ impl Plane {
   }
 }
 
-#[derive(Debug, Clone)]
+/// Header information for a single subband
+///
+/// Two indicators are known: 0xFF03 and 0xFF13
+#[derive(Debug, Clone, Default)]
 pub struct Subband {
-  // Header fields
+  /// Indicator, 0xFF03 for version 1, 0xFF13 for version 2
   pub ind: u16,
-  pub size: u16,
+  /// Header size
+  pub header_size: u16,
+  /// Subband size, uncorrected, size boundary = 0x8
   pub subband_size: usize,
+  /// Flags like partial support or subband size correction value
   pub flags: u32,
+  /// Q step base, used for inverse quantization (band != LL)
   pub q_step_base: u32,
+  // Q step multiplicator, used for inverse quantization (band != LL)
   pub q_step_multi: u16,
-  // Calculated fields
+  // --- Calculated fields
+  /// Band ID (0-9)
   pub id: usize,
+  /// Band counter (0-9)
   pub counter: u32,
+  /// Partial decoding (only band LL)
   pub support_partial: bool,
+  /// QP - quantization parameter for QStep
+  /// Version 0x100 has no embedded QStep table, instead
+  /// a predefined QStep table is used.
   pub q_param: u32,
-  pub unknown: u32,
+  /// Unused bytes in band data at end
+  pub unused_bytes: u32,
+  /// Band data offset relative to plane offset
   pub data_offset: usize,
+  /// Parent offset, TODO: Remove, it's not exact beacuse of tile extra data
   pub parent_offset: usize,
-  pub data_size: u64, // bit count?
+  /// Band data size, this is subband_size corrected by unused_bytes
+  pub data_size: usize,
+  /// Width of band in pixels
   pub width: usize,
+  /// Height of band in pixels
   pub height: usize,
+
+  // For Wavelets
+  pub row_start_addon: usize,
+  pub row_end_addon: usize,
+  pub col_start_addon: usize,
+  pub col_end_addon: usize,
+  pub level_shift: i16,
 }
 
 impl Subband {
   pub fn new<R: Read>(id: usize, hdr: &mut R, ind: u16, parent_offset: usize, band_offset: usize) -> Result<Self> {
     let size = hdr.read_u16::<BigEndian>()?;
-    let subband_size = hdr.read_u32::<BigEndian>()? as usize;
-
     assert!((size == 8 && ind == 0xFF03) || (size == 16 && ind == 0xFF13));
+    let subband_size = hdr.read_u32::<BigEndian>()? as usize;
+    match ind {
+      0xFF03 => {
+        let flags = hdr.read_u32::<BigEndian>()?;
+        let counter = (flags >> 28) & 0xf; // 4 bits
+        let support_partial: bool = (flags & 0x8000000) != 0;
+        let q_param = (flags >> 19) & 0xFF; // 8 bit q_aram
+        let unused_bytes = flags & 0x7FFFF; // 19 bit, related to subband_size
+        let data_size: usize = (subband_size as u32 - unused_bytes) as usize;
+        let q_step_base = 0;
+        let q_step_multi = 0;
 
-    let flags = hdr.read_u32::<BigEndian>()?;
-    let counter = (flags >> 28) & 0xf; // 4 bits
+        Ok(Subband {
+          id,
+          ind,
+          header_size: size,
+          subband_size,
+          flags,
+          counter,
+          support_partial,
+          q_param,
+          q_step_base,
+          q_step_multi,
+          unused_bytes,
+          data_offset: band_offset,
+          parent_offset,
+          data_size,
+          ..Default::default()
+        })
+      }
+      0xFF13 => {
+        // support_partial and q_Param are not supported in this version
+        let q_param = 0;
+        let support_partial = false;
 
-    //let support_partial = (flags >> 27) & 0x1; // 1 bit
-    let support_partial: bool = (flags & 0x8000000) != 0;
-    let q_param = (flags >> 19) & 0xFF; // 8 bit qParam
-    let unknown = flags & 0x7FFFF; // 19 bit, related to subband_size
-    let mut q_step_base = 0;
-    let mut q_step_multi = 0;
-    if size == 16 {
-      q_step_base = hdr.read_u32::<BigEndian>()?;
-      q_step_multi = hdr.read_u16::<BigEndian>()?;
-      let end_marker = hdr.read_u16::<BigEndian>()?;
-      assert!(end_marker == 0);
+        let flags = hdr.read_u16::<BigEndian>()? as u32;
+        let q_step_multi = hdr.read_u16::<BigEndian>()?;
+        let q_step_base = hdr.read_u32::<BigEndian>()?;
+        let unused_bytes = hdr.read_u16::<BigEndian>()? as u32;
+        let end_marker = hdr.read_u16::<BigEndian>()?;
+        assert!(end_marker == 0);
+        let counter = (flags >> 12) & 0xf; // 4 bits
+        let data_size: usize = (subband_size as u32 - unused_bytes) as usize;
+
+        Ok(Subband {
+          id,
+          ind,
+          header_size: size,
+          subband_size,
+          flags,
+          counter,
+          support_partial,
+          q_param,
+          q_step_base,
+          q_step_multi,
+          unused_bytes,
+          data_offset: band_offset,
+          parent_offset,
+          data_size,
+          ..Default::default()
+        })
+      }
+      _ => Err(CrxError::General(format!("Unknown subband header indicator: {:?}", ind))),
     }
-    //assert!(subband_size >= 0x7FFFF);
-    let data_size: u64 = (subband_size as u32 - (flags & 0x7FFFF)) as u64;
-    //let data_size: u64 = 0;
-    //let band_height = tiles.last().unwrap().height;
-    //let band_width = tiles.last().unwrap().width;
-
-    Ok(Subband {
-      id,
-      ind,
-      size,
-      subband_size,
-      flags,
-      counter,
-      support_partial,
-      q_param,
-      q_step_base,
-      q_step_multi,
-      unknown,
-      data_offset: band_offset,
-      parent_offset,
-      data_size,
-      width: 0,
-      height: 0,
-    })
-  }
-
-  // This is buggy and unsed anymore?
-  pub fn data<'a>(&self, data: &'a [u8]) -> &'a [u8] {
-    let offset = self.parent_offset + self.data_offset;
-    &data[offset..offset + self.subband_size as usize]
   }
 
   pub fn descriptor_line(&self) -> String {
     format!(
-      "    Subband {:#x} size: {:#x} subband_size: {:#x} flags: {:#x} counter: {:#x} support_partial: {} quant_value: {:#x} unknown: {:#x} qStepBase: {:#x} qStepMult: {:#x} ",
-      self.ind, self.size, self.subband_size, self.flags, self.counter, self.support_partial, self.q_param, self.unknown, self.q_step_base, self.q_step_multi
+      "    Subband {:#x} size: {:#x} subband_size: {:#x} flags: {:#x} counter: {:#x} support_partial: {} q_param: {:#x} unused_bytes: {:#x} qStepBase: {:#x} qStepMult: {:#x} ",
+      self.ind, self.header_size, self.subband_size, self.flags, self.counter, self.support_partial, self.q_param, self.unused_bytes, self.q_step_base, self.q_step_multi
 
     )
+  }
+
+  pub(super) fn get_subband_row(&self, row: usize) -> usize {
+    if row < self.row_start_addon {
+      0
+    } else {
+      if row < self.height - self.row_end_addon {
+        row - self.row_end_addon
+      } else {
+        self.height - self.row_end_addon - self.row_start_addon - 1
+      }
+    }
+  }
+
+  pub(super) fn setup_idx(
+    &mut self,
+    version: u16,
+    level: usize,
+    col_start_idx: usize,
+    band_width_ex_coef: usize,
+    row_start_idx: usize,
+    band_height_ex_coef: usize,
+  ) {
+    //println!("Version: 0x{:x?}", version);
+    if version == 0x200 {
+      self.row_start_addon = row_start_idx;
+      self.row_end_addon = band_height_ex_coef;
+      self.col_start_addon = col_start_idx;
+      self.col_end_addon = band_width_ex_coef;
+      self.level_shift = 3 - level as i16;
+    } else {
+      self.row_start_addon = 0;
+      self.row_end_addon = 0;
+      self.col_start_addon = 0;
+      self.col_end_addon = 0;
+      self.level_shift = 0;
+    }
   }
 }
 

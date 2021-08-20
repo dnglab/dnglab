@@ -283,21 +283,23 @@ impl<'a> Decoder for Cr3Decoder<'a> {
   fn raw_image(&self, dummy: bool) -> Result<RawImage, String> {
     // TODO: add support check
 
+    let raw_trak_id = std::env::var("RAWLER_CRX_RAW_TRAK").ok().map(|id| id.parse::<usize>().expect("RAWLER_CRX_RAW_TRAK must by of type usize")).unwrap_or(2);
+
     if let Some(cmt1) = &self.cmt1 {
       let make = cmt1.get_entry(ExifTag::Make).unwrap().value.as_string().unwrap();
       let model = cmt1.get_entry(ExifTag::Model).unwrap().value.as_string().unwrap();
 
       let camera = self.rawloader.check_supported_with_everything(&make, &model, "")?;
 
-      let offset = self.bmff.filebox.moov.traks[2].mdia.minf.stbl.co64.as_ref().unwrap().entries[0] as usize;
-      let size = self.bmff.filebox.moov.traks[2].mdia.minf.stbl.stsz.sample_sizes[0] as usize;
+      let offset = self.bmff.filebox.moov.traks[raw_trak_id].mdia.minf.stbl.co64.as_ref().unwrap().entries[0] as usize;
+      let size = self.bmff.filebox.moov.traks[raw_trak_id].mdia.minf.stbl.stsz.sample_sizes[0] as usize;
       debug!("raw mdat offset: {}", offset);
       debug!("raw mdat size: {}", size);
       //let mdat_data_offset = (self.bmff.filebox.mdat.header.offset + self.bmff.filebox.mdat.header.header_len) as usize;
 
       let buf = &self.buffer[offset..offset + size];
 
-      let cmp1 = self.bmff.filebox.moov.traks[2]
+      let cmp1 = self.bmff.filebox.moov.traks[raw_trak_id]
         .mdia
         .minf
         .stbl
@@ -330,7 +332,7 @@ impl<'a> Decoder for Cr3Decoder<'a> {
         *self.whitelevel.as_ref().unwrap(),
       ];
 
-      let iad1 = &self.bmff.filebox.moov.traks[2]
+      let iad1 = &self.bmff.filebox.moov.traks[raw_trak_id]
         .mdia
         .minf
         .stbl
