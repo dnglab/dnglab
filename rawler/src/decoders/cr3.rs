@@ -375,8 +375,8 @@ impl<'a> Decoder for Cr3Decoder<'a> {
         Ok(img)
       },
       Err(e) => {
-        debug!("TRAK 0 contains no JPEG preview, is it a PQ/HEIF? Error: {}", e);
-        Err("Unsupported format: HDR-PQ CR3".into())
+        debug!("TRAK 0 contains no JPEG preview, is it PQ/HEIF? Error: {}", e);
+        Err("Unable to extract preview image from CR3 HDR-PQ file. Please see 'https://github.com/dnglab/dnglab/issues/7'".into())
       }
     }
   }

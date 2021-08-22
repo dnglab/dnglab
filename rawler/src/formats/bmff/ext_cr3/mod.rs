@@ -15,6 +15,7 @@ pub mod cr3xpacket;
 pub mod craw;
 pub mod ctbo;
 pub mod ctmd;
+pub mod hevc;
 pub mod iad1;
 pub mod jpeg;
 pub mod thmb;

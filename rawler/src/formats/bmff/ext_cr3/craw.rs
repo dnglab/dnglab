@@ -1,12 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2021 Daniel Vogelbacher <daniel@chaospixel.com>
 
-use super::{
-  super::{BmffError, BoxHeader, FourCC, ReadBox, Result},
-  cdi1::Cdi1Box,
-  cmp1::Cmp1Box,
-  jpeg::JpegBox,
-};
+use super::{super::{BmffError, BoxHeader, FourCC, ReadBox, Result}, cdi1::Cdi1Box, cmp1::Cmp1Box, hevc::HevcBox, jpeg::JpegBox};
 use crate::formats::bmff::free::FreeBox;
 use byteorder::{BigEndian, ReadBytesExt};
 use serde::{Serialize, Deserialize};
@@ -33,6 +28,7 @@ pub struct CrawBox {
   pub img_type: u16,
 
   pub jpeg: Option<JpegBox>,
+  pub hevc: Option<HevcBox>,
   pub cmp1: Option<Cmp1Box>,
   pub cdi1: Option<Cdi1Box>,
 }
@@ -68,6 +64,7 @@ impl<R: Read + Seek> ReadBox<&mut R> for CrawBox {
     let img_type = reader.read_u16::<BigEndian>()?;
 
     let mut jpeg = None;
+    let mut hevc = None;
     let mut cmp1 = None;
     let mut cdi1 = None;
 
@@ -81,6 +78,9 @@ impl<R: Read + Seek> ReadBox<&mut R> for CrawBox {
       match header.typ {
         JpegBox::TYP => {
           jpeg = Some(JpegBox::read_box(&mut reader, header)?);
+        }
+        HevcBox::TYP => {
+          hevc = Some(HevcBox::read_box(&mut reader, header)?);
         }
         Cmp1Box::TYP => {
           cmp1 = Some(Cmp1Box::read_box(&mut reader, header)?);
@@ -121,6 +121,7 @@ impl<R: Read + Seek> ReadBox<&mut R> for CrawBox {
       img_flags,
       img_type,
       jpeg,
+      hevc,
       cmp1,
       cdi1,
     })

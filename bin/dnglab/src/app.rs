@@ -15,6 +15,7 @@ pub fn create_app() -> App<'static, 'static> {
       (@subcommand analyze =>
           (about: "Analyze raw image")
           (@arg pixel: --pixel "Write uncompressed pixel data to STDOUT")
+          (@arg srgb: --srgb "Write sRGB 16-bit TIFF to STDOUT")
           (@arg meta: --meta "Write metadata to STDOUT")
           (@arg summary: --summary "Write summary information for file to STDOUT")
           (@arg json: --json "Format metadata as JSON")
@@ -25,9 +26,13 @@ pub fn create_app() -> App<'static, 'static> {
           (about: "Convert raw image(s) into dng format")
           //(@arg profile: -p --profile "Profile file to use")
           //(@arg dng_version: --dng-version +takes_value "DNG version for output file")
-          (@arg compression: -c --compression +takes_value "'lossless' (default) or 'none'")
-          (@arg nocrop: --nocrop "Do not crop black areas, output full sensor data")
-          (@arg noembedded: --noembedded "Do not embed original raw file")
+          (@arg compression: -c --compression default_value[lossless] {validate_compression} "'lossless' or 'none'")
+          (@arg predictor: --("ljpeg92-predictor") +takes_value #{1, 7} "LJPEG-92 predictor (1-7)")
+          (@arg preview: --("dng-preview") default_value[yes] {validate_bool} "Include a DNG preview image")
+          (@arg thumbnail: --("dng-thumbnail") default_value[yes] {validate_bool} "Include a DNG thumbnail image")
+          (@arg embedded: --("dng-embedded") default_value[yes] {validate_bool} "Embed the raw file into DNG")
+          (@arg artist: --("artist") +takes_value "Set the artist tag")
+          (@arg crop: --("crop") default_value[yes] {validate_bool} "Apply crop to ActiveArea")
           (@arg recursive: -r --recursive "Process input directory recursive")
           (@arg override: -f --override "Override existing files")
           (@arg INPUT: +required "Input file or directory")
@@ -46,4 +51,36 @@ pub fn create_app() -> App<'static, 'static> {
       )
   );
   app
+}
+
+fn validate_bool(v: String) -> Result<(), String> {
+  convert_bool(Some(&v), false).map(|_| ())
+}
+
+fn validate_compression(v: String) -> Result<(), String> {
+  if v.eq("lossless") || v.eq("none") {
+    return Ok(());
+  } else {
+    Err(format!("'{}' is not a valid compression method", v))
+  }
+}
+
+pub fn convert_bool(v: Option<&str>, default: bool) -> Result<bool, String> {
+  const T: [&'static str; 3] = ["1", "true", "yes"];
+  const F: [&'static str; 3] = ["0", "false", "no"];
+  match &v {
+    Some(v) => {
+        if T.contains(v) {
+            return Ok(true);
+          } else if F.contains(v) {
+            return Ok(false);
+          } else {
+            return Err(format!("{} is not a valid option", v));
+          }
+    },
+    None => {
+        Ok(default)
+    }
+  }
+
 }

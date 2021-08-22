@@ -55,6 +55,7 @@ use lazy_static::lazy_static;
   pub mod decompressors;
   pub mod formats;
   pub mod tags;
+  pub mod imgop;
   pub mod packed;
   pub mod pumps;
   pub mod tiles;

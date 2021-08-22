@@ -7,11 +7,12 @@ use std::fs::create_dir_all;
 use std::path::PathBuf;
 use std::time::Instant;
 
+use crate::app::convert_bool;
 use crate::filemap::{FileMap, MapMode};
 use crate::jobs::raw2dng::{JobResult, Raw2DngJob};
 use crate::jobs::Job;
 use crate::{
-  dnggen::{DngCompression, DngParams},
+  dnggen::{ConvertParams, DngCompression},
   AppError, Result, PKG_NAME, PKG_VERSION,
 };
 
@@ -62,7 +63,7 @@ pub fn convert(options: &ArgMatches<'_>) -> anyhow::Result<()> {
     .map(|job| {
       let res = job.execute();
       if verbose {
-        println!("{}", res);
+        println!("Status: {}", res);
       }
       res
     })
@@ -87,8 +88,12 @@ pub fn convert(options: &ArgMatches<'_>) -> anyhow::Result<()> {
 /// Convert given raw file to dng file
 fn generate_job(entry: &FileMap, options: &ArgMatches<'_>) -> Result<Raw2DngJob> {
   // Params for conversion process
-  let params = DngParams {
-    no_embedded: options.is_present("noembedded"),
+  let params = ConvertParams {
+    predictor: options.value_of("predictor").unwrap_or("1").parse::<u8>().unwrap(),
+    embedded: convert_bool(options.value_of("embedded"), true).unwrap(),
+    crop: convert_bool(options.value_of("crop"), true).unwrap(),
+    preview: convert_bool(options.value_of("preview"), true).unwrap(),
+    thumbnail: convert_bool(options.value_of("thumbnail"), true).unwrap(),
     compression: match options.value_of("compression") {
       Some("lossless") => DngCompression::Lossless,
       Some("none") => DngCompression::Uncompressed,
@@ -98,7 +103,7 @@ fn generate_job(entry: &FileMap, options: &ArgMatches<'_>) -> Result<Raw2DngJob>
       }
       None => DngCompression::Lossless,
     },
-    no_crop: options.is_present("nocrop"),
+    artist: options.value_of("artist").map(|v| String::from(v)),
     software: format!("{} {}", PKG_NAME, PKG_VERSION),
   };
 

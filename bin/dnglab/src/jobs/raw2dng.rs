@@ -3,7 +3,7 @@
 
 use super::Job;
 use crate::{
-  dnggen::{raw_to_dng, DngParams},
+  dnggen::{raw_to_dng, ConvertParams},
   AppError, Result,
 };
 use log::debug;
@@ -16,7 +16,7 @@ pub struct Raw2DngJob {
   pub input: PathBuf,
   pub output: PathBuf,
   pub replace: bool,
-  pub params: DngParams,
+  pub params: ConvertParams,
 }
 
 /// State of conversion 

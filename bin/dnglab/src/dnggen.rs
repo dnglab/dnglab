@@ -2,10 +2,11 @@
 // Copyright 2021 Daniel Vogelbacher <daniel@chaospixel.com>
 
 use core::panic;
-use image::{imageops::FilterType, DynamicImage, GenericImageView};
-use log::debug;
+use image::{imageops::FilterType, DynamicImage, GenericImageView, ImageBuffer};
+use log::{debug, info};
 use rawler::{
   dng::dng_active_area,
+  imgop::{raw::develop_raw_srgb, rescale_f32_to_u16},
   tiff::{CompressionMethod, DirectoryWriter, PhotometricInterpretation, PreviewColorSpace, TiffError, Value},
   RawImage,
 };
@@ -58,15 +59,19 @@ pub enum DngCompression {
 
 /// Parameters for DNG conversion
 #[derive(Clone, Debug)]
-pub struct DngParams {
-  pub no_embedded: bool,
+pub struct ConvertParams {
+  pub embedded: bool,
   pub compression: DngCompression,
-  pub no_crop: bool,
+  pub crop: bool,
+  pub predictor: u8,
+  pub preview: bool,
+  pub thumbnail: bool,
+  pub artist: Option<String>,
   pub software: String,
 }
 
 /// Convert a raw input file into DNG
-pub fn raw_to_dng(raw_file: &mut File, dng_file: &mut File, orig_filename: &str, params: &DngParams) -> Result<()> {
+pub fn raw_to_dng(raw_file: &mut File, dng_file: &mut File, orig_filename: &str, params: &ConvertParams) -> Result<()> {
   let mut raw_file = BufReader::new(raw_file);
   let mut dng_file = BufWriter::new(dng_file);
 
@@ -75,10 +80,10 @@ pub fn raw_to_dng(raw_file: &mut File, dng_file: &mut File, orig_filename: &str,
   let in_buffer = Arc::new(Buffer::new(&mut raw_file).unwrap());
 
   // Get decoder or return
-  let mut decoder = rawler::get_decoder(&in_buffer).map_err(|_s| DngError::DecoderFail("failed".into()))?;
+  let mut decoder = rawler::get_decoder(&in_buffer).map_err(|_s| DngError::DecoderFail("failed to get decoder".into()))?;
 
   // Compress original if requested
-  let orig_compress_handle = if !params.no_embedded {
+  let orig_compress_handle = if params.embedded {
     let in_buffer_clone = in_buffer.clone();
     Some(thread::spawn(move || {
       let raw_data_compreessed = original_compress(in_buffer_clone.raw_buf()).unwrap();
@@ -107,8 +112,16 @@ pub fn raw_to_dng(raw_file: &mut File, dng_file: &mut File, orig_filename: &str,
   let mut dng = TiffWriter::new(&mut dng_file).unwrap();
   let mut root_ifd = dng.new_directory();
 
-  dng_put_thumbnail(&mut root_ifd, &full_img).unwrap();
+  root_ifd.add_tag(TiffRootTag::NewSubFileType, 1 as u16)?;
+  if let Some(full_img) = &full_img {
+    if params.thumbnail {
+      dng_put_thumbnail(&mut root_ifd, &full_img).unwrap();
+    }
+  }
 
+  if let Some(artist) = &params.artist {
+    root_ifd.add_tag(TiffRootTag::Artist, artist)?;
+  }
   root_ifd.add_tag(TiffRootTag::Software, &params.software)?;
   root_ifd.add_tag(DngTag::DNGVersion, &DNG_VERSION_V1_4[..])?;
   root_ifd.add_tag(DngTag::DNGBackwardVersion, &DNG_VERSION_V1_4[..])?;
@@ -149,22 +162,30 @@ pub fn raw_to_dng(raw_file: &mut File, dng_file: &mut File, orig_filename: &str,
     root_ifd.add_tag(ExifTag::ApplicationNotes, &xpacket[..])?;
   }
 
+  let mut sub_ifds = Vec::new();
+
   // Add raw image
   let raw_offset = {
     let mut raw_ifd = root_ifd.new_directory();
     dng_put_raw(&mut raw_ifd, &rawimage, params)?;
     raw_ifd.build()?
   };
+  sub_ifds.push(raw_offset);
 
-  // Add preview image
-  let preview_offset = {
-    let mut prev_image_ifd = root_ifd.new_directory();
-    dng_put_preview(&mut prev_image_ifd, &full_img)?;
-    prev_image_ifd.build()?
-  };
+  if let Some(full_img) = &full_img {
+    if params.preview {
+      // Add preview image
+      let preview_offset = {
+        let mut prev_image_ifd = root_ifd.new_directory();
+        dng_put_preview(&mut prev_image_ifd, &full_img)?;
+        prev_image_ifd.build()?
+      };
+      sub_ifds.push(preview_offset);
+    }
+  }
 
   // Add SubIFDs
-  root_ifd.add_tag(TiffRootTag::SubIFDs, [raw_offset as u32, preview_offset as u32])?;
+  root_ifd.add_tag(TiffRootTag::SubIFDs, &sub_ifds)?;
 
   // Add decoder specific entries to DNG root
   // This may override previous entries!
@@ -179,12 +200,12 @@ pub fn raw_to_dng(raw_file: &mut File, dng_file: &mut File, orig_filename: &str,
 /// Write RAW image data into DNG
 ///
 /// Encode raw image data as new raw IFD with NewSubFileType 0
-fn dng_put_raw(raw_ifd: &mut DirectoryWriter<'_, '_>, rawimage: &RawImage, params: &DngParams) -> Result<()> {
+fn dng_put_raw(raw_ifd: &mut DirectoryWriter<'_, '_>, rawimage: &RawImage, params: &ConvertParams) -> Result<()> {
   let black_level = blacklevel_to_tiff_value(&rawimage.blacklevels);
   let white_level = rawimage.whitelevels[0];
 
   // Active area or uncropped
-  let active_area = if params.no_crop {
+  let active_area = if !params.crop {
     [0, 0, rawimage.height as u16, rawimage.width as u16]
   } else {
     dng_active_area(&rawimage)
@@ -218,7 +239,7 @@ fn dng_put_raw(raw_ifd: &mut DirectoryWriter<'_, '_>, rawimage: &RawImage, param
     }
     DngCompression::Lossless => {
       raw_ifd.add_tag(TiffRootTag::Compression, CompressionMethod::ModernJPEG)?;
-      dng_put_raw_ljpeg(raw_ifd, rawimage)?;
+      dng_put_raw_ljpeg(raw_ifd, rawimage, params.predictor)?;
     }
   }
 
@@ -238,9 +259,8 @@ fn dng_put_raw(raw_ifd: &mut DirectoryWriter<'_, '_>, rawimage: &RawImage, param
 /// GBGB
 /// RGRG
 /// GBGB
-fn dng_put_raw_ljpeg(raw_ifd: &mut DirectoryWriter<'_, '_>, rawimage: &RawImage) -> Result<()> {
+fn dng_put_raw_ljpeg(raw_ifd: &mut DirectoryWriter<'_, '_>, rawimage: &RawImage, predictor: u8) -> Result<()> {
   let components = 2;
-  let predictor = 1;
   let realign = if (4..=7).contains(&predictor) { 2 } else { 1 };
   let lj92_data = match rawimage.data {
     RawImageData::Integer(ref data) => {
@@ -329,7 +349,6 @@ fn dng_put_raw_uncompressed(raw_ifd: &mut DirectoryWriter<'_, '_>, rawimage: &Ra
 fn dng_put_thumbnail(ifd: &mut DirectoryWriter<'_, '_>, img: &DynamicImage) -> Result<()> {
   let thumb_img = img.resize(240, 120, FilterType::Nearest).to_rgb8();
 
-  ifd.add_tag(TiffRootTag::NewSubFileType, 1 as u16)?;
   ifd.add_tag(TiffRootTag::ImageWidth, thumb_img.width() as u32)?;
   ifd.add_tag(TiffRootTag::ImageLength, thumb_img.height() as u32)?;
   ifd.add_tag(TiffRootTag::Compression, CompressionMethod::None)?;

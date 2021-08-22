@@ -10,7 +10,13 @@ use itertools::Itertools;
 use md5::Digest;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
-use crate::{Buffer, RawImageData, formats::bmff::{FileBox, parse_file}, tiff::Rational, tiff::SRational};
+use crate::{
+  formats::bmff::{parse_file, FileBox},
+  imgop::{raw::develop_raw_srgb, rescale_f32_to_u16, Dim2},
+  tiff::Rational,
+  tiff::SRational,
+  Buffer, RawImageData,
+};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Md5Digest {
@@ -140,11 +146,11 @@ pub fn analyze_file<P: AsRef<Path>>(path: P) -> Result<AnalyzerResult, ()> {
     .collect_tuple()
     .unwrap();
 
-    let mut in_f = File::open(&path).unwrap();
+  let mut in_f = File::open(&path).unwrap();
 
-    let filebox = parse_file(&mut in_f).unwrap();
+  let filebox = parse_file(&mut in_f).unwrap();
 
-    result.format = Some(FormatDump::Cr3(filebox));
+  result.format = Some(FormatDump::Cr3(filebox));
 
   decoder.populate_capture_info(&mut result.capture_info).unwrap();
   Ok(result)
@@ -170,9 +176,41 @@ pub fn extract_raw_pixels<P: AsRef<Path>>(path: P) -> Result<(usize, usize, Vec<
   }
 }
 
+pub fn raw_to_srgb<P: AsRef<Path>>(path: P) -> Result<(Vec<u16>, Dim2), ()> {
+  let mut raw_file = BufReader::new(File::open(&path).unwrap());
+
+  // Read whole raw file
+  // TODO: Large input file bug, we need to test the raw file before open it
+  let in_buffer = Buffer::new(&mut raw_file).unwrap();
+
+  // Get decoder or return
+  let mut decoder = crate::get_decoder(&in_buffer).unwrap();
+  decoder.decode_metadata().unwrap();
+  let rawimage = decoder.raw_image(false).unwrap();
+  let params = rawimage.develop_params().unwrap();
+  eprint!("Params: {:?}", params);
+  let buf = match rawimage.data {
+    RawImageData::Integer(buf) => buf,
+    RawImageData::Float(_) => todo!(),
+  };
+  let (srgbf, dim) = develop_raw_srgb(&buf, &params).unwrap();
+  let output = rescale_f32_to_u16(&srgbf, 0, u16::MAX);
+  Ok((output, dim))
+}
+
 /// Dump raw pixel data as PGM
 pub fn raw_as_pgm(width: usize, height: usize, buf: &[u16], writer: &mut dyn Write) -> std::io::Result<()> {
   let header = format!("P5 {} {} {}\n", width, height, 65535);
+  writer.write_all(header.as_bytes())?;
+  for px in buf {
+    writer.write_u16::<BigEndian>(*px)?;
+  }
+  Ok(())
+}
+
+/// Dump raw pixel data as PPM
+pub fn raw_as_ppm16(width: usize, height: usize, buf: &[u16], writer: &mut dyn Write) -> std::io::Result<()> {
+  let header = format!("P6 {} {} {}\n", width, height, 65535);
   writer.write_all(header.as_bytes())?;
   for px in buf {
     writer.write_u16::<BigEndian>(*px)?;
