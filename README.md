@@ -49,17 +49,21 @@ USAGE:
     dnglab convert [FLAGS] [OPTIONS] <INPUT> <OUTPUT>
 
 FLAGS:
-    -d                  Sets the level of debugging information
-    -h, --help          Prints help information
-        --nocrop        Do not crop black areas, output full sensor data
-        --noembedded    Do not embed original raw file
-    -f, --override      Override existing files
-    -r, --recursive     Process input directory recursive
-    -V, --version       Prints version information
-    -v, --verbose       Print more messages
+    -d                 Sets the level of debugging information
+    -h, --help         Prints help information
+    -f, --override     Override existing files
+    -r, --recursive    Process input directory recursive
+    -V, --version      Prints version information
+    -v, --verbose      Print more messages
 
 OPTIONS:
-    -c, --compression <compression>    'lossless' (default) or 'none'
+        --artist <artist>                  Set the artist tag
+    -c, --compression <compression>        'lossless' or 'none' [default: lossless]
+        --crop <crop>                      Apply crop to ActiveArea [default: yes]
+        --dng-embedded <embedded>          Embed the raw file into DNG [default: yes]
+        --ljpeg92-predictor <predictor>    LJPEG-92 predictor (1-7)
+        --dng-preview <preview>            Include a DNG preview image [default: yes]
+        --dng-thumbnail <thumbnail>        Include a DNG thumbnail image [default: yes]
 
 ARGS:
     <INPUT>     Input file or directory

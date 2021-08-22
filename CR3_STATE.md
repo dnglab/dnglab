@@ -7,8 +7,8 @@
 | GPS                  | ✅ Yes                                   |                                                                             |
 | Makernotes           | ✅ Yes <sup> only required fields </sup> |                                                                             |
 | RAW decoding         | ✅ Yes                                   |                                                                             |
-| CRAW decoding        | ❌ No                                    | Unknown compression method                                                  |
+| CRAW decoding        | ✅ Yes                                   | Unknown compression method                                                  |
 | Dual Pixel           | ✅ Yes <sup> with restrictions </sup>    | Dual Pixel files can be decoded, but no Dual Pixel corrections are possible |
-| Thumbnail extraction | ❌ No<sup>not required</sup>             |                                                                             |
-| Preview extraction   | ✅ Yes<sup>used as thumbnail</sup>       |                                                                             |
-| HDR PQ / HEIF        | ❌ No                                    | HDR PQ has no effect for RAW data, but makes CR3 more difficult to handle.  |
+| Thumb/Preview extraction   | ✅ Yes       | Thumbnail is generated from preview                                                               |
+| HDR PQ / HEIF        | ✅ Yes                                    | For HDR-PQ, DNG thumbnail and preview image is generated from RAW  |
+| CR3 Filmroll | ❌ No            | Filmrolls using encoding type 3                                                                            |
