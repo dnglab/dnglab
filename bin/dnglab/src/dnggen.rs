@@ -96,8 +96,27 @@ pub fn raw_to_dng(raw_file: &mut File, dng_file: &mut File, orig_filename: &str,
 
   decoder.decode_metadata().unwrap();
 
-  let full_img = decoder.full_image().map_err(|e| DngError::DecoderFail(e.to_string()))?;
   let rawimage = decoder.raw_image(false).map_err(|e| DngError::DecoderFail(e.to_string()))?;
+
+  let full_img = if params.preview || params.thumbnail {
+    match decoder.full_image() {
+      Ok(img) => Some(img),
+      Err(e) => {
+        info!("No embedded image found, generate sRGB from RAW, error was: {}", e);
+        let params = rawimage.develop_params().unwrap();
+        let buf = match &rawimage.data {
+          RawImageData::Integer(buf) => buf,
+          RawImageData::Float(_) => todo!(),
+        };
+        let (srgbf, dim) = develop_raw_srgb(&buf, &params).unwrap();
+        let output = rescale_f32_to_u16(&srgbf, 0, u16::MAX);
+        let img = DynamicImage::ImageRgb16(ImageBuffer::from_raw(dim.w as u32, dim.h as u32, output).unwrap());
+        Some(img)
+      }
+    }
+  } else {
+    None
+  };
 
   debug!(
     "coeff: {} {} {} {}",
