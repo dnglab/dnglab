@@ -4,7 +4,7 @@
 #[cfg(feature = "samplecheck")]
 mod camera_samples {
 
-  use rawler::analyze::{analyze_file, extract_raw_pixels, raw_as_pgm, AnalyzerResult};
+  use rawler::{analyze::{analyze_file, extract_raw_pixels, raw_as_pgm, AnalyzerResult}, decoders::RawDecodeParams};
   use std::{cmp::Ordering, io::Cursor, path::PathBuf};
 
   macro_rules! camera_file_check {
@@ -74,6 +74,7 @@ mod camera_samples {
 
   camera_file_check!("Canon", "PowerShot G5 X Mark II", canon_powershot_g5x_mark2_raw_nocrop_nodual, "Canon PowerShot G5 X Mark II_RAW_ISO_200_nocrop_nodual.CR3.raw");
   camera_file_check!("Canon", "PowerShot G5 X Mark II", canon_powershot_g5x_mark2_craw_nocrop_nodual, "Canon PowerShot G5 X Mark II_CRAW_ISO_200_nocrop_nodual.CR3.raw");
+  camera_file_check!("Canon", "PowerShot G5 X Mark II", canon_powershot_g5x_mark2_filmroll_nocrop_nodual, "Canon PowerShot G5 X Mark II_FILMROLL_ISO_200_nocrop_nodual.CR3.raw");
 
   camera_file_check!("Canon", "PowerShot G7 X Mark III", canon_powershot_g7x_mark3_raw_nocrop_nodual, "Canon PowerShot G7 X Mark III_RAW_ISO_200_nocrop_nodual.CR3.raw");
   camera_file_check!("Canon", "PowerShot G7 X Mark III", canon_powershot_g7x_mark3_craw_nocrop_nodual, "Canon PowerShot G7 X Mark III_CRAW_ISO_200_nocrop_nodual.CR3.raw");
@@ -98,7 +99,7 @@ mod camera_samples {
     assert_eq!(old_stats, new_stats);
 
     // Validate pixel data
-    let (width, height, buf) = extract_raw_pixels(&raw_file).unwrap();
+    let (width, height, buf) = extract_raw_pixels(&raw_file, RawDecodeParams::default()).unwrap();
     let mut new_pgm = Vec::new();
     raw_as_pgm(width, height, &buf, &mut Cursor::new(&mut new_pgm))?;
     let old_pgm = std::fs::read(&pixel_file)?;

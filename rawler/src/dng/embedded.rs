@@ -3,6 +3,7 @@
 
 use byteorder::{BigEndian, ReadBytesExt};
 use libflate::zlib::{Decoder, EncodeOptions, Encoder};
+use log::debug;
 use rayon::prelude::*;
 use std::io::{Cursor, Read, Seek, SeekFrom, Write};
 
@@ -16,8 +17,10 @@ pub fn original_digest(data: &[u8]) -> [u8; 16] {
 
 /// Compress an original file for embedding into DNG
 pub fn original_compress(uncomp_data: &[u8]) -> Result<Vec<u8>, std::io::Error> {
+  let threads = rayon::current_num_threads() / 2 + 1;
+  debug!("Compress original raw using {} threads", threads);
   let pool = rayon::ThreadPoolBuilder::new()
-    .num_threads(rayon::current_num_threads() / 2 + 1)
+    .num_threads(threads)
     .build()
     .expect("Failed to build thread pool");
 
@@ -32,21 +35,15 @@ pub fn original_compress(uncomp_data: &[u8]) -> Result<Vec<u8>, std::io::Error> 
 
     let mut index_list: Vec<u32> = Vec::with_capacity(raw_fork_blocks as usize + 1);
 
-    let compr_chunks: Vec<Result<ComprChunk, String>> = uncomp_data
+    let compr_chunks: Result<Vec<ComprChunk>, String> = uncomp_data
       .par_chunks(COMPRESS_BLOCK_SIZE as usize)
       .map(|chunk| compress_chunk(chunk))
       .collect();
+    let compr_chunks = compr_chunks.unwrap(); // TODO
 
     for chunk in &compr_chunks {
       index_list.push(compr_data.stream_position()? as u32);
-      match chunk {
-        Ok(chunk) => {
-          compr_data.write_all(&chunk.chunk)?;
-        }
-        Err(_) => {
-          panic!("Compression failed!")
-        }
-      }
+      compr_data.write_all(&chunk.chunk)?;
     }
     index_list.push(compr_data.stream_position()? as u32); // end index
 

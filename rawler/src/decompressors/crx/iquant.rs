@@ -12,6 +12,7 @@ use super::{
 };
 use crate::decompressors::crx::{decoder::error_code_signed, rice::RiceDecoder};
 use bitstream_io::BitReader;
+use log::warn;
 use std::io::Cursor;
 
 /// QStep table for QP [0,1,2,3,4,5]
@@ -41,6 +42,7 @@ impl CodecParams {
   /// Update Q parameter.
   /// Seems not to be used in real world (untested).
   pub(super) fn update_q_param(_band: &Subband, param: &mut BandParam) -> Result<()> {
+    warn!("Untested routine, please send in a sample file");
     let bit_code = param.rice.adaptive_rice_decode(true, 23, 8, 0)?;
     param.q_param = ((param.q_param as i32) + error_code_signed(bit_code)) as u32;
     if param.rice.k() > 7 {
@@ -203,7 +205,7 @@ impl Tile {
           q_steps.push(q_step);
         }
         _ => {
-          panic!("Unsupported level while generating qstep data: {}", level);
+          return Err(CrxError::General(format!("Unsupported level while generating qstep data: {}", level)));
         }
       }
     }

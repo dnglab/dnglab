@@ -27,16 +27,13 @@
 // Transformation is directed by i, number of wavelet transformations.
 // Crx uses i=3, so the output is LL(3), LH(3), HL(3), HH(3), LH(2), HL(2), HH(2), LH(1), HL(1), HH(1)
 //
-// TODO: Subband encoding for other than LL ???
 
+use self::{mdat::Tile, rice::RiceDecoder};
+use crate::formats::bmff::ext_cr3::cmp1::Cmp1Box;
 use bitstream_io::BitReader;
 use log::debug;
 use std::io::Cursor;
 use thiserror::Error;
-
-use crate::formats::bmff::ext_cr3::cmp1::Cmp1Box;
-
-use self::{mdat::Tile, rice::RiceDecoder};
 
 mod decoder;
 mod idwt;
@@ -47,7 +44,7 @@ mod runlength;
 
 /// Each level has 6*8 = 0x30 = 48 ex coef values
 /// Not every level is used. For example, an image with level=3
-/// only used the last level 3 values. TODO: check this, seems to be wrong
+/// only used the last level 3 values.
 #[cfg_attr(rustfmt, rustfmt_skip)]
 const EX_COEF_NUM_TBL:[usize; 0x30*3] = [
     // Level 1
@@ -87,7 +84,7 @@ pub enum CrxError {
 type Result<T> = std::result::Result<T, CrxError>;
 
 /// Codec parameters for decoding
-#[derive(Default, Debug)]
+#[derive(Default, Debug, Clone, Copy)]
 pub struct CodecParams {
   sample_precision: u8,
   image_width: usize,
@@ -113,6 +110,15 @@ impl CodecParams {
     &mdat[..self.mdat_hdr_size as usize]
   }
 
+  /// The MDAT section contains the raw pixel data.
+  /// Multiple images and data can be embedded into MDAT. The offsets
+  /// and size is located in co64 and stsz BMF boxes. The raw data
+  /// starts with an header block describing the data and subband offsets.
+  ///
+  /// MDAT Layout:
+  /// |-----|-----------|-----|-----------|------------|--------------|-----|
+  /// | HDR | RAW-BANDS | HDR | RAW-BANDS | JPEG Thumb | JPEG Preview | ... |
+  /// |-----|-----------|-----|-----------|------------|--------------|-----|
   #[inline(always)]
   fn get_data<'a>(&self, mdat: &'a [u8]) -> &'a [u8] {
     &mdat[self.mdat_hdr_size as usize..]
@@ -145,18 +151,6 @@ impl CodecParams {
       image_width: cmp1.f_width as usize,
       image_height: cmp1.f_height as usize,
       plane_count: cmp1.n_planes as u8,
-      /*
-      plane_width: if cmp1.n_planes == 4 {
-        cmp1.f_width as usize / tile_cols / 2
-      } else {
-        cmp1.f_width as usize / tile_cols
-      },
-      plane_height: if cmp1.n_planes == 4 {
-        cmp1.f_height as usize / tile_rows / 2
-      } else {
-        cmp1.f_height as usize / tile_rows
-      },
-       */
       // 3 bands per level + one last LL
       // only 1 band for zero levels (uncompressed)
       subband_count: 3 * cmp1.image_levels as u8 + 1,
@@ -202,15 +196,8 @@ impl CodecParams {
         }
       } else {
         // last tile in a tile row
-        //cur_tile.width = self.tile_width;
-        //cur_tile.width = self.plane_width;
-        //println!("tile width: {}, {}", self.plane_width, self.tile_width);
         cur_tile.tile_width = self.image_width - self.tile_width * (self.tile_cols - 1);
         cur_tile.plane_width = cur_tile.tile_width >> if self.plane_count == 4 { 1 } else { 0 };
-        //cur_tile.width = self.plane_width - self.tile_width * (self.tile_cols - 1); // old one
-        //cur_tile.width = self.tile_width - self.plane_width * (self.tile_cols - 1);
-        //cur_tile.width = self.image_width - self.tile_width * (self.tile_cols - 1);
-        //tiles[curTile].width = self.plane_width - self.tile_width * (self.tile_cols - 1);
         if self.tile_cols > 1 {
           cur_tile.tiles_left = true;
         }
@@ -227,13 +214,8 @@ impl CodecParams {
         }
       } else {
         // non first tile row
-        //cur_tile.height = self.tile_height;
-        //cur_tile.height = self.plane_height;
-        //cur_tile.height = self.tile_height - self.plane_height * (self.tile_rows - 1);
         cur_tile.tile_height = self.image_height - self.tile_height * (self.tile_rows - 1);
         cur_tile.plane_height = cur_tile.tile_height >> if self.plane_count == 4 { 1 } else { 0 };
-        //cur_tile.height = self.plane_height - self.tile_height * (self.tile_rows - 1); // old one
-        //tiles[curTile].height = self.plane_height - self.tile_height * (self.tile_rows - 1);
         if self.tile_rows > 1 {
           cur_tile.tiles_top = true;
         }
@@ -241,34 +223,19 @@ impl CodecParams {
     }
     // process subbands
     for tile in tiles {
-      //eprintln!("{}", tile.descriptor_line());
-      //eprintln!("Tw: {}, Th: {}", tile.tile_width, tile.tile_height);
+      debug!("{}", tile.descriptor_line());
+      debug!("tile width: {}, tile height: {}", tile.tile_width, tile.tile_height);
       let mut plane_sizes = 0;
       self.process_subbands(tile);
       for plane in &mut tile.planes {
-        //eprintln!("{}", plane.descriptor_line());
+        debug!("{}", plane.descriptor_line());
         let mut band_sizes = 0;
 
         for band in &mut plane.subbands {
+          debug!("{}", band.descriptor_line());
           assert!(band.subband_size != 0);
           assert_eq!(band.subband_size % 8, 0);
           band_sizes += band.subband_size;
-          // Init QP
-          //band.q_param = 4;
-          //band.width = tile.width;
-          //band.height = tile.height;
-          //band.width = self.plane_width; // Latest
-          //band.height = self.plane_height;
-          // FIXME: ExCoef
-
-          /*
-          eprintln!("{}", band.descriptor_line());
-          eprintln!("    Bw: {}, Bh: {}", band.width, band.height);
-          eprintln!(
-            "    rsa: {}, rea: {}, csa: {}, cea: {}, ls: {}",
-            band.row_start_addon, band.row_end_addon, band.col_start_addon, band.col_end_addon, band.level_shift
-          );
-           */
         }
         assert_eq!(plane.plane_size, band_sizes);
         plane_sizes += plane.plane_size;

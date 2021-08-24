@@ -32,6 +32,7 @@ pub fn create_app() -> App<'static, 'static> {
           (@arg thumbnail: --("dng-thumbnail") default_value[yes] {validate_bool} "Include a DNG thumbnail image")
           (@arg embedded: --("dng-embedded") default_value[yes] {validate_bool} "Embed the raw file into DNG")
           (@arg artist: --("artist") +takes_value "Set the artist tag")
+          (@arg index: --("image-index") +takes_value "Select a specific image index (or 'all') if file is a image container")
           (@arg crop: --("crop") default_value[yes] {validate_bool} "Apply crop to ActiveArea")
           (@arg recursive: -r --recursive "Process input directory recursive")
           (@arg override: -f --override "Override existing files")
