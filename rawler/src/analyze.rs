@@ -10,13 +10,7 @@ use itertools::Itertools;
 use md5::Digest;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
-use crate::{
-  formats::bmff::{parse_file, FileBox},
-  imgop::{raw::develop_raw_srgb, rescale_f32_to_u16, Dim2},
-  tiff::Rational,
-  tiff::SRational,
-  Buffer, RawImageData,
-};
+use crate::{Buffer, RawImageData, decoders::RawDecodeParams, formats::bmff::{parse_file, FileBox}, imgop::{raw::develop_raw_srgb, rescale_f32_to_u16, Dim2}, tiff::Rational, tiff::SRational};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Md5Digest {
@@ -130,7 +124,7 @@ pub fn analyze_file<P: AsRef<Path>>(path: P) -> Result<AnalyzerResult, ()> {
   result.file.file_size = fs_meta.len();
   result.file.digest = Some(digest.into());
 
-  let rawimage = decoder.raw_image(true).unwrap();
+  let rawimage = decoder.raw_image(RawDecodeParams::default(), true).unwrap();
   result.capture_info.make = rawimage.make;
   result.capture_info.model = rawimage.model;
   result.raw_params.raw_width = rawimage.width;
@@ -156,7 +150,7 @@ pub fn analyze_file<P: AsRef<Path>>(path: P) -> Result<AnalyzerResult, ()> {
   Ok(result)
 }
 
-pub fn extract_raw_pixels<P: AsRef<Path>>(path: P) -> Result<(usize, usize, Vec<u16>), ()> {
+pub fn extract_raw_pixels<P: AsRef<Path>>(path: P, params: RawDecodeParams) -> Result<(usize, usize, Vec<u16>), ()> {
   let mut raw_file = BufReader::new(File::open(&path).unwrap());
 
   // Read whole raw file
@@ -168,7 +162,7 @@ pub fn extract_raw_pixels<P: AsRef<Path>>(path: P) -> Result<(usize, usize, Vec<
 
   decoder.decode_metadata().unwrap();
 
-  let rawimage = decoder.raw_image(false).unwrap();
+  let rawimage = decoder.raw_image(params, false).unwrap();
 
   match rawimage.data {
     RawImageData::Integer(buf) => Ok((rawimage.width, rawimage.height, buf)),
@@ -176,7 +170,7 @@ pub fn extract_raw_pixels<P: AsRef<Path>>(path: P) -> Result<(usize, usize, Vec<
   }
 }
 
-pub fn raw_to_srgb<P: AsRef<Path>>(path: P) -> Result<(Vec<u16>, Dim2), ()> {
+pub fn raw_to_srgb<P: AsRef<Path>>(path: P, params: RawDecodeParams) -> Result<(Vec<u16>, Dim2), ()> {
   let mut raw_file = BufReader::new(File::open(&path).unwrap());
 
   // Read whole raw file
@@ -186,7 +180,7 @@ pub fn raw_to_srgb<P: AsRef<Path>>(path: P) -> Result<(Vec<u16>, Dim2), ()> {
   // Get decoder or return
   let mut decoder = crate::get_decoder(&in_buffer).unwrap();
   decoder.decode_metadata().unwrap();
-  let rawimage = decoder.raw_image(false).unwrap();
+  let rawimage = decoder.raw_image(params, false).unwrap();
   let params = rawimage.develop_params().unwrap();
   eprint!("Params: {:?}", params);
   let buf = match rawimage.data {

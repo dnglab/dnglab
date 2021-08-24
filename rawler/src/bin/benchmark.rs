@@ -2,6 +2,8 @@ use std::env;
 use std::fs::File;
 use std::time::Instant;
 
+use rawler::decoders::RawDecodeParams;
+
 fn usage() {
   println!("benchmark <file>");
   std::process::exit(1);
@@ -38,7 +40,7 @@ fn main() {
         Ok(val) => val,
         Err(e) => {error(&e); return},
       };
-      match decoder.raw_image(false) {
+      match decoder.raw_image(RawDecodeParams::default(), false) {
         Ok(_) => {},
         Err(e) => error(&e),
       }

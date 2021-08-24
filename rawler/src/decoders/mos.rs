@@ -24,7 +24,7 @@ impl<'a> MosDecoder<'a> {
 }
 
 impl<'a> Decoder for MosDecoder<'a> {
-  fn raw_image(&self, dummy: bool) -> Result<RawImage,String> {
+  fn raw_image(&self, _params: RawDecodeParams, dummy: bool) -> Result<RawImage,String> {
     let make = self.xmp_tag("Make")?;
     let model_full = self.xmp_tag("Model")?.to_string();
     let model = model_full.split_terminator("(").next().unwrap();

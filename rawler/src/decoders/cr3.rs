@@ -16,7 +16,6 @@ use crate::tags::{DngTag, TiffTagEnum};
 use crate::tiff::{Entry, Rational, TiffReader, Value};
 use crate::{pumps::ByteStream, RawImage};
 
-
 #[derive(Debug, Clone)]
 pub struct Cr3Decoder<'a> {
   buffer: &'a [u8],
@@ -94,30 +93,34 @@ impl<'a> Decoder for Cr3Decoder<'a> {
     self.xpacket.as_ref()
   }
 
-
   fn populate_capture_info(&mut self, capture_info: &mut CaptureInfo) -> Result<(), String> {
-
-      if let Some(cmt2_ifd) = self.cmt2.as_ref() {
-        let ifd = cmt2_ifd.root_ifd();
-        if let Some(Entry { value: Value::Rational(v), .. }) = ifd.get_entry(ExifTag::ExposureTime) {
-          capture_info.exposure_time = Some(v[0])
-        }
-        if let Some(Entry { value: Value::SRational(v), .. }) = ifd.get_entry(ExifTag::ExposureBiasValue) {
-          capture_info.exposure_bias = Some(v[0])
-        }
-        if let Some(Entry { value: Value::SRational(v), .. }) = ifd.get_entry(ExifTag::ShutterSpeedValue) {
-          capture_info.shutter_speed = Some(v[0])
-        }
-      } else {
-        debug!("CMT2 is not available, no EXIF!");
+    if let Some(cmt2_ifd) = self.cmt2.as_ref() {
+      let ifd = cmt2_ifd.root_ifd();
+      if let Some(Entry { value: Value::Rational(v), .. }) = ifd.get_entry(ExifTag::ExposureTime) {
+        capture_info.exposure_time = Some(v[0])
       }
-
-      if let Some(lens) = self.lens_description {
-        let lens_spec: [Rational; 4] = [lens.focal_range[0], lens.focal_range[1], lens.aperture_range[0], lens.aperture_range[1]];
-        capture_info.lens_make = Some(lens.lens_make.clone());
-        capture_info.lens_model = Some(lens.lens_model.clone());
-        capture_info.lens_spec = Some(lens_spec);
+      if let Some(Entry {
+        value: Value::SRational(v), ..
+      }) = ifd.get_entry(ExifTag::ExposureBiasValue)
+      {
+        capture_info.exposure_bias = Some(v[0])
       }
+      if let Some(Entry {
+        value: Value::SRational(v), ..
+      }) = ifd.get_entry(ExifTag::ShutterSpeedValue)
+      {
+        capture_info.shutter_speed = Some(v[0])
+      }
+    } else {
+      debug!("CMT2 is not available, no EXIF!");
+    }
+
+    if let Some(lens) = self.lens_description {
+      let lens_spec: [Rational; 4] = [lens.focal_range[0], lens.focal_range[1], lens.aperture_range[0], lens.aperture_range[1]];
+      capture_info.lens_make = Some(lens.lens_make.clone());
+      capture_info.lens_model = Some(lens.lens_model.clone());
+      capture_info.lens_spec = Some(lens_spec);
+    }
 
     Ok(())
   }
@@ -253,7 +256,6 @@ impl<'a> Decoder for Cr3Decoder<'a> {
         }
       }
 
-
       if let Some(cmt3) = self.cmt3.as_ref() {
         if let Some(Entry {
           value: crate::tiff::Value::Byte(v),
@@ -264,7 +266,6 @@ impl<'a> Decoder for Cr3Decoder<'a> {
             debug!("CR3 makernote ImgUniqueID: {:x?}", v);
             self.image_unique_id = Some(v.as_slice().try_into().expect("Invalid slice size"));
           }
-
         }
       }
 
@@ -281,11 +282,30 @@ impl<'a> Decoder for Cr3Decoder<'a> {
     Ok(())
   }
 
-  fn raw_image(&self, dummy: bool) -> Result<RawImage, String> {
+  fn raw_image_count(&self) -> Result<usize, String> {
+    let raw_trak_id = std::env::var("RAWLER_CRX_RAW_TRAK")
+      .ok()
+      .map(|id| id.parse::<usize>().expect("RAWLER_CRX_RAW_TRAK must by of type usize"))
+      .unwrap_or(2);
+    let moov_trak = self
+      .bmff
+      .filebox
+      .moov
+      .traks
+      .get(raw_trak_id)
+      .ok_or(format!("Unable to get MOOV trak {}", raw_trak_id))?;
+    let co64 = moov_trak.mdia.minf.stbl.co64.as_ref().ok_or(format!("No co64 box found"))?;
+    Ok(co64.entries.len())
+  }
+
+  fn raw_image(&self, params: RawDecodeParams, dummy: bool) -> Result<RawImage, String> {
     // TODO: add support check
 
-    let raw_trak_id = std::env::var("RAWLER_CRX_RAW_TRAK").ok().map(|id| id.parse::<usize>().expect("RAWLER_CRX_RAW_TRAK must by of type usize")).unwrap_or(2);
-    let raw_image_id = std::env::var("RAWLER_CRX_RAW_ID").ok().map(|id| id.parse::<usize>().expect("RAWLER_CRX_RAW_ID must by of type usize")).unwrap_or(0);
+    let raw_trak_id = std::env::var("RAWLER_CRX_RAW_TRAK")
+      .ok()
+      .map(|id| id.parse::<usize>().expect("RAWLER_CRX_RAW_TRAK must by of type usize"))
+      .unwrap_or(2);
+    let raw_image_id = params.image_index;
 
     if let Some(cmt1) = &self.cmt1 {
       let make = cmt1.get_entry(ExifTag::Make).unwrap().value.as_string().unwrap();
@@ -293,11 +313,23 @@ impl<'a> Decoder for Cr3Decoder<'a> {
 
       let camera = self.rawloader.check_supported_with_everything(&make, &model, "")?;
 
-      let offset = self.bmff.filebox.moov.traks[raw_trak_id].mdia.minf.stbl.co64.as_ref().unwrap().entries[raw_image_id] as usize;
-      let size = self.bmff.filebox.moov.traks[raw_trak_id].mdia.minf.stbl.stsz.sample_sizes[raw_image_id] as usize;
+      let moov_trak = self
+        .bmff
+        .filebox
+        .moov
+        .traks
+        .get(raw_trak_id)
+        .ok_or(format!("Unable to get MOOV trak {}", raw_trak_id))?;
+      let co64 = moov_trak.mdia.minf.stbl.co64.as_ref().ok_or(format!("No co64 box found"))?;
+      let stsz = &moov_trak.mdia.minf.stbl.stsz;
+
+      let offset = *co64.entries.get(raw_image_id).ok_or(format!("image index {} is out of range", raw_image_id))? as usize;
+      let size = *stsz
+        .sample_sizes
+        .get(raw_image_id)
+        .ok_or(format!("image index {} is out of range", raw_image_id))? as usize;
       debug!("raw mdat offset: {}", offset);
       debug!("raw mdat size: {}", size);
-      //let mdat_data_offset = (self.bmff.filebox.mdat.header.offset + self.bmff.filebox.mdat.header.header_len) as usize;
 
       let buf = &self.buffer[offset..offset + size];
 
@@ -373,9 +405,7 @@ impl<'a> Decoder for Cr3Decoder<'a> {
 
     let buf = &self.buffer[offset..offset + size];
     match image::load_from_memory_with_format(buf, image::ImageFormat::Jpeg) {
-      Ok(img) => {
-        Ok(img)
-      },
+      Ok(img) => Ok(img),
       Err(e) => {
         debug!("TRAK 0 contains no JPEG preview, is it PQ/HEIF? Error: {}", e);
         Err("Unable to extract preview image from CR3 HDR-PQ file. Please see 'https://github.com/dnglab/dnglab/issues/7'".into())

@@ -30,7 +30,7 @@ impl<'a> DngDecoder<'a> {
 }
 
 impl<'a> Decoder for DngDecoder<'a> {
-  fn raw_image(&self, dummy: bool) -> Result<RawImage,String> {
+  fn raw_image(&self, _params: RawDecodeParams, dummy: bool) -> Result<RawImage,String> {
     let ifds = self.tiff.find_ifds_with_tag(TiffRootTag::Compression).into_iter().filter(|ifd| {
       let compression = (**ifd).find_entry(TiffRootTag::Compression).unwrap().get_u32(0);
       let subsampled = match (**ifd).find_entry(TiffRootTag::NewSubFileType) {

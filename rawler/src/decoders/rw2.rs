@@ -24,7 +24,7 @@ impl<'a> Rw2Decoder<'a> {
 }
 
 impl<'a> Decoder for Rw2Decoder<'a> {
-  fn raw_image(&self, dummy: bool) -> Result<RawImage,String> {
+  fn raw_image(&self, _params: RawDecodeParams, dummy: bool) -> Result<RawImage,String> {
     let width: usize;
     let height: usize;
     let image = {

@@ -19,7 +19,7 @@ impl<'a> NakedDecoder<'a> {
 }
 
 impl<'a> Decoder for NakedDecoder<'a> {
-  fn raw_image(&self, dummy: bool) -> Result<RawImage,String> {
+  fn raw_image(&self, _params: RawDecodeParams, dummy: bool) -> Result<RawImage,String> {
     let width = self.camera.raw_width;
     let height = self.camera.raw_height;
     let size = self.camera.filesize;

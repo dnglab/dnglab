@@ -48,6 +48,7 @@
 
 
   use decoders::Decoder;
+use decoders::RawDecodeParams;
 use lazy_static::lazy_static;
 
   pub mod bits;
@@ -135,8 +136,8 @@ pub mod analyze;
   ///   Err(e) => ... some appropriate action when the file is unreadable ...
   /// };
   /// ```
-  pub fn decode(reader: &mut dyn Read) -> Result<RawImage,RawLoaderError> {
-    LOADER.decode(reader, false).map_err(|err| RawLoaderError::new(err))
+  pub fn decode(reader: &mut dyn Read, params: RawDecodeParams) -> Result<RawImage,RawLoaderError> {
+    LOADER.decode(reader, params, false).map_err(|err| RawLoaderError::new(err))
   }
 
   // Used to force lazy_static initializations. Useful for fuzzing.
@@ -155,10 +156,14 @@ pub mod analyze;
   // Used for fuzzing everything but the decoders themselves
   #[doc(hidden)]
   pub fn decode_dummy(reader: &mut dyn Read) -> Result<RawImage,RawLoaderError> {
-    LOADER.decode(reader, true).map_err(|err| RawLoaderError::new(err))
+    LOADER.decode(reader, RawDecodeParams::default(), true).map_err(|err| RawLoaderError::new(err))
   }
 
 
   pub fn get_decoder<'b>(buf: &'b Buffer) -> Result<Box<dyn Decoder + 'b>, RawLoaderError> {
     LOADER.get_decoder(buf).map_err(|err| RawLoaderError::new(err))
+  }
+
+  pub fn raw_image_count_file<P: AsRef<Path>>(path: P) -> Result<usize,RawLoaderError> {
+    LOADER.raw_image_count_file(path.as_ref()).map_err(|err| RawLoaderError::new(err))
   }

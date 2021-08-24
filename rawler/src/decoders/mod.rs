@@ -73,10 +73,17 @@ pub static SAMPLE: &'static str = "\nPlease submit samples at https://raw.pixls.
 pub static BUG: &'static str = "\nPlease file a bug with a sample file at https://github.com/pedrocr/rawloader/issues/new";
 
 
-pub trait Foobar {}
+#[derive(Default, Clone, Debug)]
+pub struct RawDecodeParams {
+  pub image_index: usize,
+}
 
 pub trait Decoder {
-  fn raw_image(&self, dummy: bool) -> Result<RawImage, String>;
+  fn raw_image(&self, params: RawDecodeParams, dummy: bool) -> Result<RawImage, String>;
+
+  fn raw_image_count(&self) -> Result<usize, String> {
+    Ok(1)
+  }
 
   fn thumbnail_image(&self) -> Result<DynamicImage, String> {
     unimplemented!()
@@ -563,17 +570,17 @@ impl RawLoader {
     self.check_supported_with_mode(tiff, "")
   }
 
-  fn decode_unsafe(&self, buffer: &Buffer, dummy: bool) -> Result<RawImage,String> {
+  fn decode_unsafe(&self, buffer: &Buffer, params: RawDecodeParams, dummy: bool) -> Result<RawImage,String> {
     let decoder = self.get_decoder(&buffer)?;
-    decoder.raw_image(dummy)
+    decoder.raw_image(params, dummy)
   }
 
   /// Decodes an input into a RawImage
-  pub fn decode(&self, reader: &mut dyn Read, dummy: bool) -> Result<RawImage,String> {
+  pub fn decode(&self, reader: &mut dyn Read, params: RawDecodeParams, dummy: bool) -> Result<RawImage,String> {
     let buffer = Buffer::new(reader)?;
 
     match panic::catch_unwind(|| {
-      self.decode_unsafe(&buffer, dummy)
+      self.decode_unsafe(&buffer, params, dummy)
     }) {
       Ok(val) => val,
       Err(_) => Err(format!("Caught a panic while decoding.{}", BUG).to_string()),
@@ -587,7 +594,19 @@ impl RawLoader {
       Err(e) => {return Err(e.to_string())},
     };
     let mut buffered_file = BufReader::new(file);
-    self.decode(&mut buffered_file, false)
+    self.decode(&mut buffered_file, RawDecodeParams::default(), false)
+  }
+
+   /// Decodes a file into a RawImage
+   pub fn raw_image_count_file(&self, path: &Path) -> Result<usize,String> {
+    let file = match File::open(path) {
+      Ok(val) => val,
+      Err(e) => {return Err(e.to_string())},
+    };
+    let mut buffered_file = BufReader::new(file);
+    let buffer = Buffer::new(&mut buffered_file)?;
+    let decoder = self.get_decoder(&buffer)?;
+    decoder.raw_image_count()
   }
 
   // Decodes an unwrapped input (just the image data with minimal metadata) into a RawImage

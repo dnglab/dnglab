@@ -105,7 +105,7 @@ impl<'a> NefDecoder<'a> {
 }
 
 impl<'a> Decoder for NefDecoder<'a> {
-  fn raw_image(&self, dummy: bool) -> Result<RawImage,String> {
+  fn raw_image(&self, _params: RawDecodeParams, dummy: bool) -> Result<RawImage,String> {
     let raw = fetch_ifd!(&self.tiff, TiffRootTag::CFAPattern);
     let mut width = fetch_tag!(raw, TiffRootTag::ImageWidth).get_usize(0);
     let height = fetch_tag!(raw, TiffRootTag::ImageLength).get_usize(0);

@@ -5,6 +5,7 @@ use clap::ArgMatches;
 use log::debug;
 use rawler::analyze::{analyze_file, extract_raw_pixels, raw_as_pgm};
 use rawler::analyze::{raw_as_ppm16, raw_to_srgb};
+use rawler::decoders::RawDecodeParams;
 use std::{
   io::{BufWriter, Write},
   path::PathBuf,
@@ -27,10 +28,10 @@ pub fn analyze(options: &ArgMatches<'_>) -> anyhow::Result<()> {
       println!("{}", json);
     }
   } else if options.is_present("pixel") {
-    let (width, height, buf) = extract_raw_pixels(&PathBuf::from(in_file)).unwrap();
+    let (width, height, buf) = extract_raw_pixels(&PathBuf::from(in_file), RawDecodeParams::default()).unwrap();
     dump_pgm(width, height, &buf)?;
   } else if options.is_present("srgb") {
-    let (buf, dim) = raw_to_srgb(&PathBuf::from(in_file)).unwrap();
+    let (buf, dim) = raw_to_srgb(&PathBuf::from(in_file), RawDecodeParams::default()).unwrap();
     dump_ppm16(dim.w, dim.h, &buf)?;
   }
   Ok(())

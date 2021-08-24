@@ -63,7 +63,7 @@ impl<'a> Decoder for Cr2Decoder<'a> {
     Ok(())
   }
 
-  fn raw_image(&self, dummy: bool) -> Result<RawImage,String> {
+  fn raw_image(&self, _params: RawDecodeParams, dummy: bool) -> Result<RawImage,String> {
     let camera = self.rawloader.check_supported(&self.tiff)?;
     let (raw, offset) = {
       if let Some(raw) = self.tiff.find_first_ifd(TiffRootTag::Cr2Id) {

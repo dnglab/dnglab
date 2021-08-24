@@ -72,7 +72,7 @@ impl<'a> MrwDecoder<'a> {
 }
 
 impl<'a> Decoder for MrwDecoder<'a> {
-  fn raw_image(&self, dummy: bool) -> Result<RawImage,String> {
+  fn raw_image(&self, _params: RawDecodeParams, dummy: bool) -> Result<RawImage,String> {
     let camera = self.rawloader.check_supported(&self.tiff)?;
     let src = &self.buffer[self.data_offset..];
 

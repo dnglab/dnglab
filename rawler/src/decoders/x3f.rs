@@ -108,7 +108,7 @@ impl<'a> X3fDecoder<'a> {
 }
 
 impl<'a> Decoder for X3fDecoder<'a> {
-  fn raw_image(&self, dummy: bool) -> Result<RawImage,String> {
+  fn raw_image(&self, _params: RawDecodeParams, dummy: bool) -> Result<RawImage,String> {
     let caminfo = self.dir.images
         .iter()
         .find(|i| i.typ == 2 && i.format == 0x12)

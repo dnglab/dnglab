@@ -23,7 +23,7 @@ impl<'a> RafDecoder<'a> {
 }
 
 impl<'a> Decoder for RafDecoder<'a> {
-  fn raw_image(&self, dummy: bool) -> Result<RawImage,String> {
+  fn raw_image(&self, _params: RawDecodeParams, dummy: bool) -> Result<RawImage,String> {
     let camera = self.rawloader.check_supported(&self.tiff)?;
     let raw = fetch_ifd!(&self.tiff, TiffRootTag::RafOffsets);
     let (width,height) = if raw.has_entry(TiffRootTag::RafImageWidth) {

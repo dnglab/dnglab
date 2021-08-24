@@ -5,6 +5,7 @@ use core::panic;
 use image::{imageops::FilterType, DynamicImage, GenericImageView, ImageBuffer};
 use log::{debug, info};
 use rawler::{
+  decoders::RawDecodeParams,
   dng::dng_active_area,
   imgop::{raw::develop_raw_srgb, rescale_f32_to_u16},
   tiff::{CompressionMethod, DirectoryWriter, PhotometricInterpretation, PreviewColorSpace, TiffError, Value},
@@ -29,7 +30,7 @@ use std::{
   sync::Arc,
   thread,
   time::Instant,
-  u16,
+  u16, usize,
 };
 use thiserror::Error;
 
@@ -68,6 +69,7 @@ pub struct ConvertParams {
   pub thumbnail: bool,
   pub artist: Option<String>,
   pub software: String,
+  pub index: usize,
 }
 
 /// Convert a raw input file into DNG
@@ -96,7 +98,10 @@ pub fn raw_to_dng(raw_file: &mut File, dng_file: &mut File, orig_filename: &str,
 
   decoder.decode_metadata().unwrap();
 
-  let rawimage = decoder.raw_image(false).map_err(|e| DngError::DecoderFail(e.to_string()))?;
+  let raw_params = RawDecodeParams { image_index: params.index };
+
+  info!("Raw image count: {}", decoder.raw_image_count().unwrap());
+  let rawimage = decoder.raw_image(raw_params, false).map_err(|e| DngError::DecoderFail(e.to_string()))?;
 
   let full_img = if params.preview || params.thumbnail {
     match decoder.full_image() {

@@ -25,7 +25,7 @@ impl<'a> DcsDecoder<'a> {
 }
 
 impl<'a> Decoder for DcsDecoder<'a> {
-  fn raw_image(&self, dummy: bool) -> Result<RawImage,String> {
+  fn raw_image(&self, _params: RawDecodeParams, dummy: bool) -> Result<RawImage,String> {
     let camera = self.rawloader.check_supported(&self.tiff)?;
     let data = self.tiff.find_ifds_with_tag(TiffRootTag::StripOffsets);
     let raw = data.iter().find(|&&ifd| {
