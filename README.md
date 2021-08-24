@@ -28,9 +28,9 @@ For a list of supported cameras please see [SUPPORTED_CAMERAS.md](SUPPORTED_CAME
 
 | Format | Supported                         | Remarks                                |
 |--------|-----------------------------------|----------------------------------------|
-| CR3    | ✅ Yes<sup>with restrictions</sup> | [CR3_STATE.md](CR3_STATE.md)           |
-| CR2    | ❌ No<sup> planned</sup>           |                                        |
-| CRW    | ❌ No                              |                                        |
+| CR3    | ✅ Yes                            | [CR3_STATE.md](CR3_STATE.md)           |
+| CR2    | ❌ No<sup> planned</sup>          |                                        |
+| CRW    | ❌ No                             |                                        |
 
 
 ### Supported DNG features
@@ -61,6 +61,7 @@ OPTIONS:
     -c, --compression <compression>        'lossless' or 'none' [default: lossless]
         --crop <crop>                      Apply crop to ActiveArea [default: yes]
         --dng-embedded <embedded>          Embed the raw file into DNG [default: yes]
+        --image-index <index>              Select a specific image index (or 'all') if file is a image container
         --ljpeg92-predictor <predictor>    LJPEG-92 predictor (1-7)
         --dng-preview <preview>            Include a DNG preview image [default: yes]
         --dng-thumbnail <thumbnail>        Include a DNG thumbnail image [default: yes]
