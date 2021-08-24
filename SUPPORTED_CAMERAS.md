@@ -13,5 +13,6 @@
 | Canon | EOS M50                       | ✅ Yes |  |
 | Canon | EOS M50 Mark II               | ✅ Yes |  |
 | Canon | EOS M6 Mark II                | ✅ Yes |  |
+| Canon | EOS M200                      | ✅ Yes |  |
 | Canon | Canon PowerShot G7 X Mark III | ✅ Yes |  |
 | Canon | Canon PowerShot G5 X Mark II  | ✅ Yes |  |

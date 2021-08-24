@@ -66,6 +66,9 @@ mod camera_samples {
   camera_file_check!("Canon", "EOS M50", canon_eos_m50_raw_nocrop_nodual, "Canon EOS M50_RAW_ISO_100_nocrop_nodual.CR3.raw");
   camera_file_check!("Canon", "EOS M50", canon_eos_m50_craw_nocrop_nodual, "Canon EOS M50_CRAW_ISO_100_nocrop_nodual.CR3.raw");
 
+  camera_file_check!("Canon", "EOS M200", canon_eos_m200_raw_nocrop_nodual, "Canon EOS M200_RAW_ISO_100_nocrop_nodual.CR3.raw");
+  camera_file_check!("Canon", "EOS M200", canon_eos_m200_craw_nocrop_nodual, "Canon EOS M200_CRAW_ISO_100_nocrop_nodual.CR3.raw");
+
   camera_file_check!("Canon", "EOS M50 Mark II", canon_eos_m50_mark2_raw_nocrop_nodual, "Canon EOS M50m2_RAW_ISO_100_nocrop_nodual.CR3.raw");
   camera_file_check!("Canon", "EOS M50 Mark II", canon_eos_m50_mark2_craw_nocrop_nodual, "Canon EOS M50m2_CRAW_ISO_100_nocrop_nodual.CR3.raw");
 
