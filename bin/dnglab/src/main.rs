@@ -39,8 +39,9 @@ fn main() -> anyhow::Result<()> {
     })
     .format(move |out, message, record| {
       out.finish(format_args!(
-        "{}[{:6}][{}] {} ({}:{})",
-        chrono::Utc::now().format("[%Y-%m-%d %H:%M:%S%z]"),
+        //"{}[{:6}][{}] {} ({}:{})",
+        //chrono::Utc::now().format("[%Y-%m-%d %H:%M:%S%z]"),
+        "[{:6}][{}] {} ({}:{})",
         colors.color(record.level()),
         record.target(),
         message,
