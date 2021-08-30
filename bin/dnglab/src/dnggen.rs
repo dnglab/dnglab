@@ -7,7 +7,7 @@ use log::{debug, info};
 use rawler::{
   decoders::RawDecodeParams,
   dng::dng_active_area,
-  imgop::{raw::develop_raw_srgb, rescale_f32_to_u16},
+  imgop::{raw::develop_raw_srgb, rescale_f32_to_u16, xyz::Illuminant},
   tiff::{CompressionMethod, DirectoryWriter, PhotometricInterpretation, PreviewColorSpace, TiffError, Value},
   RawImage,
 };
@@ -41,6 +41,12 @@ pub enum DngError {
 
   #[error("{}", _0)]
   TiffFail(#[from] TiffError),
+}
+
+impl From<String> for DngError {
+    fn from(what: String) -> Self {
+        Self::DecoderFail(what)
+    }
 }
 
 /// Result type for dnggen
@@ -79,7 +85,7 @@ pub fn raw_to_dng(raw_file: &mut File, dng_file: &mut File, orig_filename: &str,
 
   // Read whole raw file
   // TODO: Large input file bug, we need to test the raw file before open it
-  let in_buffer = Arc::new(Buffer::new(&mut raw_file).unwrap());
+  let in_buffer = Arc::new(Buffer::new(&mut raw_file)?);
 
   // Get decoder or return
   let mut decoder = rawler::get_decoder(&in_buffer).map_err(|_s| DngError::DecoderFail("failed to get decoder".into()))?;
@@ -96,24 +102,24 @@ pub fn raw_to_dng(raw_file: &mut File, dng_file: &mut File, orig_filename: &str,
     None
   };
 
-  decoder.decode_metadata().unwrap();
+  decoder.decode_metadata()?;
 
   let raw_params = RawDecodeParams { image_index: params.index };
 
-  info!("Raw image count: {}", decoder.raw_image_count().unwrap());
-  let rawimage = decoder.raw_image(raw_params, false).map_err(|e| DngError::DecoderFail(e.to_string()))?;
+  info!("Raw image count: {}", decoder.raw_image_count()?);
+  let rawimage = decoder.raw_image(raw_params, false)?;
 
   let full_img = if params.preview || params.thumbnail {
     match decoder.full_image() {
       Ok(img) => Some(img),
       Err(e) => {
         info!("No embedded image found, generate sRGB from RAW, error was: {}", e);
-        let params = rawimage.develop_params().unwrap();
+        let params = rawimage.develop_params()?;
         let buf = match &rawimage.data {
           RawImageData::Integer(buf) => buf,
           RawImageData::Float(_) => todo!(),
         };
-        let (srgbf, dim) = develop_raw_srgb(&buf, &params).unwrap();
+        let (srgbf, dim) = develop_raw_srgb(&buf, &params)?;
         let output = rescale_f32_to_u16(&srgbf, 0, u16::MAX);
         let img = DynamicImage::ImageRgb16(ImageBuffer::from_raw(dim.w as u32, dim.h as u32, output).unwrap());
         Some(img)
@@ -129,9 +135,9 @@ pub fn raw_to_dng(raw_file: &mut File, dng_file: &mut File, orig_filename: &str,
   );
 
   let wb_coeff = wbcoeff_to_tiff_value(&rawimage.wb_coeffs);
-
-  let matrix1 = matrix_to_tiff_value(&rawimage.xyz_to_cam2, rawimage.illuminant2_denominator);
-  let matrix1_ill = rawimage.illuminant2;
+  let color_matrix = rawimage.color_matrix.get(&Illuminant::D65).unwrap(); // TODO fixme
+  let matrix1 = matrix_to_tiff_value(color_matrix, 10_000);
+  let matrix1_ill: u16 = Illuminant::D65.into();
 
   let mut dng = TiffWriter::new(&mut dng_file).unwrap();
   let mut root_ifd = dng.new_directory();
@@ -157,7 +163,7 @@ pub fn raw_to_dng(raw_file: &mut File, dng_file: &mut File, orig_filename: &str,
 
   // Add matrix and illumninant
   root_ifd.add_tag(DngTag::CalibrationIlluminant1, matrix1_ill)?;
-  root_ifd.add_tag(DngTag::ColorMatrix1, matrix1)?;
+  root_ifd.add_tag(DngTag::ColorMatrix1, &matrix1[..])?;
 
   // Add White balance info
   root_ifd.add_tag(DngTag::AsShotNeutral, &wb_coeff[..])?;
@@ -448,16 +454,6 @@ fn wbcoeff_to_tiff_value(wb_coeffs: &[f32; 4]) -> [Rational; 3] {
   ]
 }
 
-fn matrix_to_tiff_value(xyz_to_cam: &[[i32; 3]; 4], d: i32) -> [SRational; 9] {
-  [
-    SRational::new(xyz_to_cam[0][0], d),
-    SRational::new(xyz_to_cam[0][1], d),
-    SRational::new(xyz_to_cam[0][2], d),
-    SRational::new(xyz_to_cam[1][0], d),
-    SRational::new(xyz_to_cam[1][1], d),
-    SRational::new(xyz_to_cam[1][2], d),
-    SRational::new(xyz_to_cam[2][0], d),
-    SRational::new(xyz_to_cam[2][1], d),
-    SRational::new(xyz_to_cam[2][2], d),
-  ]
+fn matrix_to_tiff_value(xyz_to_cam: &Vec<f32>, d: i32) -> Vec<SRational> {
+  xyz_to_cam.iter().map(|a| SRational::new((a * d as f32) as i32, d)).collect()
 }

@@ -1,9 +1,0 @@
-make = "OLYMPUS OPTICAL CO.,LTD"
-model = "E-20,E-20N,E-20P"
-clean_make = "Olympus"
-clean_model = "E-20"
-blackpoint = 0
-whitepoint = 4092
-color_matrix = [13173, -4732, -1499, -5807, 14036, 1895, -2045, 2452, 7142]
-color_pattern = "RGGB"
-crops = [0,0,0,0]

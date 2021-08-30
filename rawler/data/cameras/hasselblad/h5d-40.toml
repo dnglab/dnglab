@@ -1,9 +1,0 @@
-make = "Hasselblad"
-model = "Hasselblad H5D-40"
-clean_make = "Hasselblad"
-clean_model = "H5D-40"
-blackpoint = 256
-whitepoint = 62914
-color_matrix = [6159, -1402, -177, -5439, 12762, 3007, -955, 2200, 7104]
-color_pattern = "RGGB"
-crops = [4,40,80,42]

@@ -1,9 +1,0 @@
-make = "Phase One A/S"
-model = "P30"
-clean_make = "Phase One A/S"
-clean_model = "P30"
-blackpoint = 0
-whitepoint = 65535
-color_matrix = [4516, -245, -37, -7020, 14976, 2173, -3206, 4671, 7087]
-color_pattern = "GRBG"
-crops = [22,20,28,40]

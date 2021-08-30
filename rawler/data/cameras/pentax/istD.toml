@@ -1,9 +1,0 @@
-make = "PENTAX Corporation"
-model = "PENTAX *ist D"
-clean_make = "Pentax"
-clean_model = "*ist D"
-blackpoint = 128
-whitepoint = 4095
-color_matrix = [9651, -2059, -1189, -8881, 16512, 2487, -1460, 1345, 10687]
-color_pattern = "RGGB"
-crops = [0,0,0,0]

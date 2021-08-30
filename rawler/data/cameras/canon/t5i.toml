@@ -1,9 +1,0 @@
-make = "Canon"
-model = "Canon EOS REBEL T5i"
-clean_make = "Canon"
-clean_model = "EOS Rebel T5i"
-blackpoint = 2047
-whitepoint = 12277
-color_matrix = [6602, -841, -939, -4472, 12458, 2247, -975, 2039, 6148]
-color_pattern = "RGGB"
-crops = [52,0,0,72]

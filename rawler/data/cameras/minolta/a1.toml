@@ -1,9 +1,0 @@
-make = "Minolta Co., Ltd."
-model = "DiMAGE A1"
-clean_make = "Minolta"
-clean_model = "DiMAGE A1"
-blackpoint = 0
-whitepoint = 3965
-color_matrix = [9274, -2547, -1167, -8220, 16323, 1943, -2273, 2720, 8340]
-color_pattern = "RGGB"
-crops = [0,0,0,0]

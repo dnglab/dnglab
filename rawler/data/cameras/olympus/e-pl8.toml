@@ -1,9 +1,0 @@
-make = "OLYMPUS CORPORATION"
-model = "E-PL8"
-clean_make = "OLYMPUS CORPORATION"
-clean_model = "E-PL8"
-blackpoint = 254
-whitepoint = 4000
-color_matrix = [9197, -3190, -659, -2606, 10830, 2039, -458, 1250, 5458]
-color_pattern = "RGGB"
-crops = [0,0,0,0]

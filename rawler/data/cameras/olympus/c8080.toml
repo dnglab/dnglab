@@ -1,9 +1,0 @@
-make = "OLYMPUS CORPORATION"
-model = "C8080WZ"
-clean_make = "Olympus"
-clean_model = "C8080WZ"
-blackpoint = 0
-whitepoint = 4095
-color_matrix = [8606, -2509, -1014, -8238, 15714, 2703, -942, 979, 7760]
-color_pattern = "BGGR"
-crops = [0,0,0,0]

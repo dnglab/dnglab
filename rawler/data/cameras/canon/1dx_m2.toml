@@ -1,9 +1,0 @@
-make = "Canon"
-model = "Canon EOS-1D X Mark II"
-clean_make = "Canon"
-clean_model = "Canon EOS-1D X Mark II"
-blackpoint = 2048
-whitepoint = 14888
-color_matrix = [7596, -978, -967, -4808, 12571, 2503, -1398, 2567, 5752]
-color_pattern = "RGGB"
-crops = [0,0,0,0]

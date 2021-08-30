@@ -1,9 +1,0 @@
-make = "Kodak"
-model = "DCS Pro SLR/n"
-clean_make = "Kodak"
-clean_model = "DCS Pro SLR/n"
-blackpoint = 0
-whitepoint = 3700
-color_matrix = [5494, 2393, -232, -6427, 13850, 2846, -1876, 3997, 5445]
-color_pattern = "GRBG"
-crops = [0,0,0,0]

@@ -1,0 +1,9 @@
+make = "Canon"
+model = "Canon EOS R6"
+clean_make = "Canon"
+clean_model = "EOS R6"
+color_pattern = "RGGB"
+color_matrix = {D65 = [0.8293, -0.1611, -0.1132, -0.4759, 1.2711, 0.2275, -0.1013, 0.2415, 0.5509]}
+wb_offset = 85
+bl_offset = 343
+wl_offset = 810

@@ -1,9 +1,0 @@
-make = "Leaf"
-model = "Leaf AFi-II 7"
-clean_make = "Leaf"
-clean_model = "AFi-II 7"
-blackpoint = 0
-whitepoint = 15000
-color_matrix = [7691, -108, -339, -6185, 13627, 2833, -2046, 3899, 5952]
-color_pattern = "RGGB"
-crops = [0,0,0,0]

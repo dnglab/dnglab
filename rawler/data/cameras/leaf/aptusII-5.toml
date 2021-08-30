@@ -1,9 +1,0 @@
-make = "Leaf"
-model = "Leaf Aptus-II 5"
-clean_make = "Leaf"
-clean_model = "Aptus-II 5"
-blackpoint = 0
-whitepoint = 15000
-color_matrix = [1846, 7955, -1222, -12994, 19563, 3596, -2035, 3340, 5136]
-color_pattern = "GRBG"
-crops = [0,0,0,0]

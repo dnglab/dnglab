@@ -1,15 +1,8 @@
+use std::collections::HashMap;
+
 use log::debug;
 
-use crate::{
-  decoders::*,
-  imgop::{
-    raw::{ColorMatrix, DevelopParams},
-    sensor::bayer::BayerPattern,
-    xyz::Illuminant,
-    Dim2, Point, Rect,
-  },
-  CFA,
-};
+use crate::{CFA, decoders::*, imgop::{Dim2, Point, Rect, raw::{ColorMatrix, DevelopParams}, sensor::bayer::BayerPattern, xyz::{FlatColorMatrix, Illuminant}}};
 
 /// All the data needed to process this raw image, including the image data itself as well
 /// as all the needed metadata
@@ -51,9 +44,7 @@ pub struct RawImage {
   /// image data itself, has `width`\*`height`\*`cpp` elements
   pub data: RawImageData,
 
-  pub xyz_to_cam2: [[i32; 3]; 4],
-  pub illuminant2: u16,
-  pub illuminant2_denominator: i32,
+  pub color_matrix: HashMap<Illuminant, FlatColorMatrix>,
 }
 
 /// The actual image data, after decoding
@@ -67,20 +58,20 @@ pub enum RawImageData {
 
 impl RawImage {
   #[doc(hidden)]
-  pub fn new(camera: Camera, width: usize, height: usize, wb_coeffs: [f32; 4], image: Vec<u16>, dummy: bool) -> RawImage {
-    let blacks = if !dummy && (camera.blackareah.1 != 0 || camera.blackareav.1 != 0) {
+  pub fn new(cam: Camera, width: usize, height: usize, wb_coeffs: [f32; 4], image: Vec<u16>, dummy: bool) -> RawImage {
+    let blacks = if !dummy && (cam.blackareah.1 != 0 || cam.blackareav.1 != 0) {
       let mut avg = [0 as f32; 4];
       let mut count = [0 as f32; 4];
-      for row in camera.blackareah.0..camera.blackareah.0 + camera.blackareah.1 {
+      for row in cam.blackareah.0..cam.blackareah.0 + cam.blackareah.1 {
         for col in 0..width {
-          let color = camera.cfa.color_at(row, col);
+          let color = cam.cfa.color_at(row, col);
           avg[color] += image[row * width + col] as f32;
           count[color] += 1.0;
         }
       }
       for row in 0..height {
-        for col in camera.blackareav.0..camera.blackareav.0 + camera.blackareav.1 {
-          let color = camera.cfa.color_at(row, col);
+        for col in cam.blackareav.0..cam.blackareav.0 + cam.blackareav.1 {
+          let color = cam.cfa.color_at(row, col);
           avg[color] += image[row * width + col] as f32;
           count[color] += 1.0;
         }
@@ -92,49 +83,50 @@ impl RawImage {
         (avg[3] / count[3]) as u16,
       ]
     } else {
-      camera.blacklevels
+      cam.blacklevels
     };
 
     // tuple format is top, right, bottom left
     let mut blackareas: Vec<(u64, u64, u64, u64)> = Vec::new();
 
-    if camera.blackareah.1 != 0 {
-      blackareas.push((camera.blackareah.0 as u64, width as u64, (camera.blackareah.0 + camera.blackareah.1) as u64, 0));
+    if cam.blackareah.1 != 0 {
+      blackareas.push((cam.blackareah.0 as u64, width as u64, (cam.blackareah.0 + cam.blackareah.1) as u64, 0));
     }
 
-    if camera.blackareav.1 != 0 {
-      blackareas.push((0, (camera.blackareav.0 + camera.blackareav.1) as u64, height as u64, camera.blackareav.0 as u64))
+    if cam.blackareav.1 != 0 {
+      blackareas.push((0, (cam.blackareav.0 + cam.blackareav.1) as u64, height as u64, cam.blackareav.0 as u64))
     }
 
     RawImage {
-      make: camera.make.clone(),
-      model: camera.model.clone(),
-      clean_make: camera.clean_make.clone(),
-      clean_model: camera.clean_model.clone(),
+      make: cam.make.clone(),
+      model: cam.model.clone(),
+      clean_make: cam.clean_make.clone(),
+      clean_model: cam.clean_model.clone(),
       width: width,
       height: height,
       cpp: 1,
       wb_coeffs: wb_coeffs,
       data: RawImageData::Integer(image),
       blacklevels: blacks,
-      whitelevels: camera.whitelevels,
-      xyz_to_cam: camera.xyz_to_cam,
+      whitelevels: cam.whitelevels,
+      xyz_to_cam: cam.xyz_to_cam,
 
-      cfa: camera.cfa.clone(),
-      crops: camera.crops,
+      cfa: cam.cfa.clone(),
+      crops: cam.crops,
       blackareas: blackareas,
-      orientation: camera.orientation,
-      xyz_to_cam2: camera.xyz_to_cam2,
-      illuminant2: camera.illuminant2,
-      illuminant2_denominator: camera.illuminant2_denominator,
+      orientation: cam.orientation,
+      color_matrix: cam.color_matrix,
     }
   }
 
   pub fn develop_params(&self) -> Result<DevelopParams, String> {
     let mut xyz2cam: [[f32; 3]; 4] = [[0.0; 3]; 4];
-    for i in 0..4 {
+    let color_matrix = self.color_matrix.get(&Illuminant::D65).unwrap(); // TODO fixme
+    assert_eq!(color_matrix.len() % 3, 0); // this is not so nice...
+    let components = color_matrix.len() / 3;
+    for i in 0..components {
       for j in 0..3 {
-        xyz2cam[i][j] = self.xyz_to_cam2[i][j] as f32 / self.illuminant2_denominator as f32;
+        xyz2cam[i][j] = color_matrix[i*3+j];
       }
     }
 

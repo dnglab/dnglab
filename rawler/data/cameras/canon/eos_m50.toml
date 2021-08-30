@@ -1,0 +1,9 @@
+make = "Canon"
+model = "Canon EOS M50"
+clean_make = "Canon"
+clean_model = "EOS M50"
+color_pattern = "RGGB"
+color_matrix = {D65 = [0.8532, -0.0701, -0.1167, -0.4095, 1.1879, 0.2508, -0.0797, 0.2424, 0.701]}
+wb_offset = 71
+bl_offset = 329
+wl_offset = 796

@@ -1,9 +1,0 @@
-make = "SAMSUNG"
-model = "NX mini"
-clean_make = "Samsung"
-clean_model = "NX mini"
-blackpoint = 0
-whitepoint = 4000
-color_matrix = [5222, -1196, -550, -6540, 14649, 2009, -1666, 2819, 5657]
-color_pattern = "RGGB"
-crops = [16,56,0,96]

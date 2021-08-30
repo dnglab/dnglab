@@ -1,0 +1,9 @@
+make = "Canon"
+model = "Canon EOS 250D"
+clean_make = "Canon"
+clean_model = "EOS 250D"
+color_pattern = "RGGB"
+color_matrix = {D65 = [0.9079, -0.1923, -0.1236, -0.4677, 1.2454, 0.2492, -0.0922, 0.2319, 0.5565]}
+wb_offset = 71
+bl_offset = 329
+wl_offset = 796

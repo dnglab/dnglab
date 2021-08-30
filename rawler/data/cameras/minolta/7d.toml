@@ -1,9 +1,0 @@
-make = "KONICA MINOLTA"
-model = "DYNAX 7D"
-clean_make = "Minolta"
-clean_model = "Dynax 7D"
-blackpoint = 0
-whitepoint = 4095
-color_matrix = [10239, -3104, -1099, -8037, 15727, 2451, -927, 925, 6871]
-color_pattern = "RGGB"
-crops = [0,0,0,0]

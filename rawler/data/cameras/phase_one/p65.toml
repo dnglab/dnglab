@@ -1,9 +1,0 @@
-make = "Phase One A/S"
-model = "P65+"
-clean_make = "Phase One A/S"
-clean_model = "P65+"
-blackpoint = 0
-whitepoint = 65535
-color_matrix = [8035, 435, -962, -6001, 13872, 2320, -1159, 3065, 5434]
-color_pattern = "RGGB"
-crops = [6,16,32,46]

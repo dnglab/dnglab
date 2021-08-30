@@ -1,9 +1,0 @@
-make = "RICOH IMAGING COMPANY, LTD."
-model = "PENTAX K-70"
-clean_make = "RICOH IMAGING COMPANY, LTD."
-clean_model = "PENTAX K-70"
-blackpoint = 64
-whitepoint = 16315
-color_matrix = [8766, -3149, -747, -3976, 11943, 2292, -517, 1259, 5552]
-color_pattern = "RGGB"
-crops = [0,0,0,0]

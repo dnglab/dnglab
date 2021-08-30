@@ -24,7 +24,7 @@ impl<'a> RafDecoder<'a> {
 
 impl<'a> Decoder for RafDecoder<'a> {
   fn raw_image(&self, _params: RawDecodeParams, dummy: bool) -> Result<RawImage,String> {
-    let camera = self.rawloader.check_supported(&self.tiff)?;
+    let cam = self.rawloader.check_supported(&self.tiff)?;
     let raw = fetch_ifd!(&self.tiff, TiffRootTag::RafOffsets);
     let (width,height) = if raw.has_entry(TiffRootTag::RafImageWidth) {
       (fetch_tag!(raw, TiffRootTag::RafImageWidth).get_usize(0),
@@ -40,12 +40,12 @@ impl<'a> Decoder for RafDecoder<'a> {
     };
     let src = &self.buffer[offset..];
 
-    let image = if camera.find_hint("double_width") {
+    let image = if cam.find_hint("double_width") {
       // Some fuji SuperCCD cameras include a second raw image next to the first one
       // that is identical but darker to the first. The two combined can produce
       // a higher dynamic range image. Right now we're ignoring it.
       decode_16le_skiplines(src, width, height, dummy)
-    } else if camera.find_hint("jpeg32") {
+    } else if cam.find_hint("jpeg32") {
       decode_12be_msb32(src, width, height, dummy)
     } else {
       if src.len() < bps*width*height/8 {
@@ -65,31 +65,29 @@ impl<'a> Decoder for RafDecoder<'a> {
       }
     };
 
-    if camera.find_hint("fuji_rotation") || camera.find_hint("fuji_rotation_alt") {
-      let (width, height, image) = RafDecoder::rotate_image(&image, &camera, width, height, dummy);
+    if cam.find_hint("fuji_rotation") || cam.find_hint("fuji_rotation_alt") {
+      let (width, height, image) = RafDecoder::rotate_image(&image, &cam, width, height, dummy);
       Ok(RawImage {
-        make: camera.make.clone(),
-        model: camera.model.clone(),
-        clean_make: camera.clean_make.clone(),
-        clean_model: camera.clean_model.clone(),
+        make: cam.make.clone(),
+        model: cam.model.clone(),
+        clean_make: cam.clean_make.clone(),
+        clean_model: cam.clean_model.clone(),
         width: width,
         height: height,
         cpp: 1,
         wb_coeffs: self.get_wb()?,
         data: RawImageData::Integer(image),
-        blacklevels: camera.blacklevels,
-        whitelevels: camera.whitelevels,
-        xyz_to_cam: camera.xyz_to_cam,
-        cfa: camera.cfa.clone(),
+        blacklevels: cam.blacklevels,
+        whitelevels: cam.whitelevels,
+        xyz_to_cam: cam.xyz_to_cam,
+        cfa: cam.cfa.clone(),
         crops: [0,0,0,0],
         blackareas: Vec::new(),
-        orientation: camera.orientation,
-        xyz_to_cam2: camera.xyz_to_cam2,
-        illuminant2: camera.illuminant2,
-        illuminant2_denominator: camera.illuminant2_denominator,
+        orientation: cam.orientation,
+        color_matrix: cam.color_matrix,
       })
     } else {
-      ok_image(camera, width, height, self.get_wb()?, image)
+      ok_image(cam, width, height, self.get_wb()?, image)
     }
   }
 }

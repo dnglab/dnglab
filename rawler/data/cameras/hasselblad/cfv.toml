@@ -1,9 +1,0 @@
-make = "Hasselblad"
-model = "Hasselblad 500 mech."
-clean_make = "Hasselblad"
-clean_model = "CFV"
-blackpoint = 0
-whitepoint = 31456
-color_matrix = [8519, -3260, -280, -5081, 13459, 1738, -1449, 2960, 7809]
-color_pattern = "RGGB"
-crops = [0,0,0,0]

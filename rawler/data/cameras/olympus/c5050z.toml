@@ -1,9 +1,0 @@
-make = "OLYMPUS OPTICAL CO.,LTD"
-model = "C5050Z"
-clean_make = "Olympus"
-clean_model = "C5050Z"
-blackpoint = 0
-whitepoint = 4095
-color_matrix = [10508, -3124, -1273, -6079, 14294, 1901, -1653, 2306, 6237]
-color_pattern = "BGGR"
-crops = [0,0,0,0]

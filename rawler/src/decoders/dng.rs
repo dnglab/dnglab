@@ -86,9 +86,7 @@ impl<'a> Decoder for DngDecoder<'a> {
       crops: self.get_crops(raw, width, height)?,
       blackareas: self.get_masked_areas(raw),
       orientation: orientation,
-        xyz_to_cam2: cam.xyz_to_cam2,
-        illuminant2: cam.illuminant2,
-        illuminant2_denominator: cam.illuminant2_denominator,
+      color_matrix: cam.color_matrix,
     })
   }
 }

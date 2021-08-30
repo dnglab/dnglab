@@ -1,9 +1,0 @@
-make = "KODAK"
-model = "EOSDCS1B        FILE VERSION 3"
-clean_make = "Kodak"
-clean_model = "EOS DCS 1"
-blackpoint = 19
-whitepoint = 7638
-color_matrix = [10592, -2206, -967, -1944, 11685, 230, 2206, 670, 1273]
-color_pattern = "GRBG"
-crops = [3,0,3,0]

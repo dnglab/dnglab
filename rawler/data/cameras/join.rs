@@ -12,7 +12,7 @@ use rustc_version::{version, Version};
   
 fn main() {
   let out_dir = env::var("OUT_DIR").unwrap();
-  let dest_path = Path::new(&out_dir).join("all.toml");
+  let dest_path = Path::new(&out_dir).join("cameras.toml");
   let mut out = File::create(dest_path).unwrap();
 
   for entry in glob("./data/cameras/*/**/*.toml").expect("Failed to read glob pattern") {
@@ -24,8 +24,9 @@ fn main() {
 
     {
       match toml.parse::<Value>() {
-        Ok(_) => {},
-        Err(e) => panic!(format!("Error parsing {:?}: {:?}", path, e)),
+        Ok(_) => {
+        },
+        Err(e) => panic!("Error parsing {:?}: {:?}", path, e),
       };
     }
 

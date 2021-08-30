@@ -1,9 +1,0 @@
-make = "RICOH IMAGING COMPANY, LTD."
-model = "PENTAX KP"
-clean_make = "Pentax"
-clean_model = "KP"
-blackpoint = 128
-whitepoint = 16254
-color_matrix = [8617, -3228, -1034, -4674, 12821, 2044, -803, 1577, 5728]
-color_pattern = "RGGB"
-crops = [0,0,0,0]

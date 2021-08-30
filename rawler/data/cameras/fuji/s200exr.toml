@@ -1,9 +1,0 @@
-make = "FUJIFILM"
-model = "FinePix S200EXR"
-clean_make = "Fujifilm"
-clean_model = "FinePix S200EXR"
-blackpoint = 519
-whitepoint = 16250
-color_matrix = [11401, -4498, -1312, -5088, 12751, 2613, -838, 1568, 5941]
-color_pattern = "RGGB"
-crops = [0,28,0,28]

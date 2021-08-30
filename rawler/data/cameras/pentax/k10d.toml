@@ -1,9 +1,0 @@
-make = "PENTAX Corporation"
-model = "PENTAX K10D"
-clean_make = "Pentax"
-clean_model = "K10D"
-blackpoint = 0
-whitepoint = 4095
-color_matrix = [9566, -2863, -803, -7170, 15172, 2112, -818, 803, 9705]
-color_pattern = "RGGB"
-crops = [0,48,16,0]

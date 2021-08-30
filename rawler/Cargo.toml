@@ -8,6 +8,9 @@ version = "0.1.0"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+build = "data/cameras/join.rs"
+
+
 [features]
 # This is a developer feature, it enabled deep inspection of algorithm execution stages
 inspector = []
@@ -35,3 +38,9 @@ uuid = {version = "0.8", features = ["serde", "v4"]}
 
 [dev-dependencies]
 serde_yaml = "0.8"
+
+[build-dependencies]
+glob = "0.3"
+toml = "0.5"
+rustc_version = "0.3"
+

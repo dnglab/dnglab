@@ -1,0 +1,9 @@
+make = "Canon"
+model = "Canon EOS 90D"
+clean_make = "Canon"
+clean_model = "EOS 90D"
+color_pattern = "RGGB"
+color_matrix = {D65 = [1.1498, -0.3759, -0.1516, -0.5073, 1.2954, 0.2349, -0.0892, 0.1867, 0.6118]}
+wb_offset = 71
+bl_offset = 329
+wl_offset = 796

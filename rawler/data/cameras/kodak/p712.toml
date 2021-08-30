@@ -1,9 +1,0 @@
-make = "EASTMAN KODAK COMPANY"
-model = "KODAK P712 ZOOM DIGITAL CAMERA"
-clean_make = "Kodak"
-clean_model = "P712"
-blackpoint = 0
-whitepoint = 4030
-color_matrix = [9658, -3314, -823, -5163, 12695, 2768, -1342, 1843, 6044]
-color_pattern = "BGGR"
-crops = [0,0,0,0]

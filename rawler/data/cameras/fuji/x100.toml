@@ -1,9 +1,0 @@
-make = "FUJIFILM"
-model = "FinePix X100"
-clean_make = "Fujifilm"
-clean_model = "FinePix X100"
-blackpoint = 254
-whitepoint = 4000
-color_matrix = [12161, -4457, -1069, -5034, 12874, 2400, -795, 1724, 6904]
-color_pattern = "RGGB"
-crops = [1,73,1,73]

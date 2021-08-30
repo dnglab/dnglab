@@ -1,9 +1,0 @@
-make = "FUJIFILM"
-model = "GFX 50S"
-clean_make = "Fujifilm"
-clean_model = "GFX 50S"
-blackpoint = 1023
-whitepoint = 16383
-color_matrix = [11756, -4754, -874, -3056, 11045, 2305, -381, 1457, 6006]
-color_pattern = "RGGB"
-crops = [0,0,0,0]

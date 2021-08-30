@@ -1,9 +1,0 @@
-make = "OLYMPUS IMAGING CORP."
-model = "C7070WZ"
-clean_make = "Olympus"
-clean_model = "C7070WZ"
-blackpoint = 0
-whitepoint = 4095
-color_matrix = [10252, -3531, -1095, -7114, 14850, 2436, -1451, 1723, 6365]
-color_pattern = "RGGB"
-crops = [0,0,0,0]

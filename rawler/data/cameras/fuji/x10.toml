@@ -1,9 +1,0 @@
-make = "FUJIFILM"
-model = "X10"
-clean_make = "Fujifilm"
-clean_model = "FinePix X10"
-blackpoint = 256
-whitepoint = 4000
-color_matrix = [13509, -6199, -1254, -4430, 12733, 1865, -331, 1441, 5022]
-color_pattern = "BGGR"
-crops = [0,48,0,48]

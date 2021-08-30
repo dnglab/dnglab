@@ -1,0 +1,9 @@
+make = "Canon"
+model = "Canon EOS R"
+clean_make = "Canon"
+clean_model = "EOS R"
+color_pattern = "RGGB"
+color_matrix = {D65 = [0.8293, -0.1789, -0.1094, -0.5025, 1.2925, 0.2327, -0.1199, 0.2769, 0.6108]}
+wb_offset = 71
+bl_offset = 329
+wl_offset = 796

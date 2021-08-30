@@ -1,9 +1,0 @@
-make = "Minolta Co., Ltd."
-model = "DiMAGE 7Hi"
-clean_make = "Minolta"
-clean_model = "DiMAGE 7Hi"
-blackpoint = 0
-whitepoint = 3965
-color_matrix = [11368, -3894, -1242, -6521, 14358, 2339, -2475, 3056, 7285]
-color_pattern = "RGGB"
-crops = [0,0,0,0]

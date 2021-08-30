@@ -1,9 +1,0 @@
-make = "RICOH IMAGING COMPANY, LTD."
-model = "PENTAX 645Z"
-clean_make = "Pentax"
-clean_model = "645Z"
-blackpoint = 1
-whitepoint = 16316
-color_matrix = [9519, -3591, -664, -4074, 11725, 2671, -624, 1501, 6653]
-color_pattern = "RGGB"
-crops = [0,0,0,0]

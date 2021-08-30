@@ -1,9 +1,0 @@
-make = "Creo/Leaf"
-model = "Leaf Aptus 22"
-clean_make = "Leaf"
-clean_model = "Aptus 22"
-blackpoint = 0
-whitepoint = 16191
-color_matrix = [8236, 1746, -1314, -8251, 15953, 2428, -3673, 5786, 5771]
-color_pattern = "RGGB"
-crops = [0,0,0,0]

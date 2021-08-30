@@ -1,9 +1,0 @@
-make = "FUJIFILM"
-model = "X30"
-clean_make = "Fujifilm"
-clean_model = "X30"
-blackpoint = 257
-whitepoint = 4094
-color_matrix = [12328, -5256, -1144, -4469, 12927, 1675, -87, 1291, 4351]
-color_pattern = "GBGGRGRGRBGBGBGGRGGRGGBGBGBRGRGRGGBG"
-crops = [0,64,0,0]

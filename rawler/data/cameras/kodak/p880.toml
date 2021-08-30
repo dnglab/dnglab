@@ -1,9 +1,0 @@
-make = "EASTMAN KODAK COMPANY"
-model = "KODAK P880 ZOOM DIGITAL CAMERA"
-clean_make = "Kodak"
-clean_model = "P880"
-blackpoint = 0
-whitepoint = 4095
-color_matrix = [12805, -4662, -1376, -7480, 15267, 2360, -1626, 2194, 7904]
-color_pattern = "BGGR"
-crops = [0,0,0,0]

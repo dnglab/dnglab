@@ -1,9 +1,0 @@
-make = "RICOH IMAGING COMPANY, LTD."
-model = "PENTAX K-S2"
-clean_make = "Pentax"
-clean_model = "K-S2"
-blackpoint = 16
-whitepoint = 4079
-color_matrix = [52900, -16627, -7529, -25443, 80936, 11071, -5585, 9879, 41775]
-color_pattern = "RGGB"
-crops = [0,0,0,0]

@@ -1,9 +1,0 @@
-make = "OLYMPUS IMAGING CORP."
-model = "E-420"
-clean_make = "Olympus"
-clean_model = "E-420"
-blackpoint = 0
-whitepoint = 4015
-color_matrix = [8746, -2425, -1095, -7594, 15612, 2073, -1780, 2309, 7416]
-color_pattern = "RGGB"
-crops = [0,0,0,0]

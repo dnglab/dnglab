@@ -1,9 +1,0 @@
-make = "OLYMPUS CORPORATION"
-model = "TG-4"
-clean_make = "Olympus"
-clean_model = "TG-4"
-blackpoint = 302
-whitepoint = 4000
-color_matrix = [11426, -4159, -1126, -2066, 10678, 1593, -120, 1327, 4998]
-color_pattern = "GRBG"
-crops = [8,16,8,16]

@@ -1,9 +1,0 @@
-make = "OLYMPUS CORPORATION"
-model = "E-M10 Mark III"
-clean_make = "OLYMPUS CORPORATION"
-clean_model = "E-M10 Mark III"
-blackpoint = 254
-whitepoint = 4000
-color_matrix = [8380, -2630, -639, -2887, 10725, 2496, -627, 1427, 5438]
-color_pattern = "RGGB"
-crops = [0,0,0,0]

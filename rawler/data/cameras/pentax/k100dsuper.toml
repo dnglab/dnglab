@@ -1,9 +1,0 @@
-make = "PENTAX Corporation"
-model = "PENTAX K100D Super"
-clean_make = "Pentax"
-clean_model = "K100D Super"
-blackpoint = 127
-whitepoint = 4095
-color_matrix = [11095, -3157, -1324, -8377, 15834, 2720, -1108, 947, 11688]
-color_pattern = "RGGB"
-crops = [0,0,0,0]

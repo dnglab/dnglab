@@ -1,9 +1,0 @@
-make = "Canon"
-model = "Canon PowerShot Pro70"
-clean_make = "Canon"
-clean_model = "PowerShot Pro70"
-blackpoint = 34
-whitepoint = 990
-color_matrix = [-4155, 9818, 1529, 3939, -25, 4522, -5521, 9870, 6610, -2238, 10873, 1342]
-color_pattern = "EBGRBERGEBRGBEGR"
-crops = [0,0,0,0]

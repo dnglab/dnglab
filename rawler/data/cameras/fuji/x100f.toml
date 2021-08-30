@@ -1,9 +1,0 @@
-make = "FUJIFILM"
-model = "X100F"
-clean_make = "Fujifilm"
-clean_model = "X100F"
-blackpoint = 1024
-whitepoint = 16383
-color_matrix = [11434, -4948, -1210, -3746, 12042, 1903, -666, 1479, 5235]
-color_pattern = "RBGBRGGGRGGBGGBGGRBRGRBGGGBGGRGGRGGB"
-crops = [0,128,0,0]

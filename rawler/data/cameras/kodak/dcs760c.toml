@@ -1,9 +1,0 @@
-make = "Kodak"
-model = "DCS760C"
-clean_make = "Kodak"
-clean_model = "DCS760C"
-blackpoint = 0
-whitepoint = 3500
-color_matrix = [16623, -6309, -1411, -4344, 13923, 323, 2285, 274, 2926]
-color_pattern = "GRBG"
-crops = [0,0,0,0]

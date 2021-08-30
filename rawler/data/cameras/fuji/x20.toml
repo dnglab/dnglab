@@ -1,9 +1,0 @@
-make = "FUJIFILM"
-model = "X20"
-clean_make = "Fujifilm"
-clean_model = "X20"
-blackpoint = 257
-whitepoint = 4094
-color_matrix = [11768, -4971, -1133, -4904, 12927, 2183, -480, 1723, 4605]
-color_pattern = "GBGGRGRGRBGBGBGGRGGRGGBGBGBRGRGRGGBG"
-crops = [0,64,0,0]

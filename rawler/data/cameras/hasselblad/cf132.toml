@@ -1,9 +1,0 @@
-make = "Hasselblad"
-model = "Flash Sync"
-clean_make = "Hasselblad"
-clean_model = "CF132"
-blackpoint = 0
-whitepoint = 62914
-color_matrix = [8519, -3260, -280, -5081, 13459, 1738, -1449, 2960, 7809]
-color_pattern = "RGGB"
-crops = [0,0,0,0]

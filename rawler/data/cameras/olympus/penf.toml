@@ -1,9 +1,0 @@
-make = "OLYMPUS CORPORATION"
-model = "PEN-F"
-clean_make = "Olympus"
-clean_model = "PEN-F"
-blackpoint = 242
-whitepoint = 4000
-color_matrix = [9476, -3182, -765, -2613, 10958, 1893, -449, 1315, 5268]
-color_pattern = "RGGB"
-crops = [0,0,0,0]

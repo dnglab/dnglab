@@ -1,9 +1,0 @@
-make = "Leaf"
-model = "Credo 80"
-clean_make = "Leaf"
-clean_model = "Credo 80"
-blackpoint = 0
-whitepoint = 16383
-color_matrix = [6294, 686, -712, -5435, 13417, 2211, -1006, 2435, 5042]
-color_pattern = "RGGB"
-crops = [8,16,48,36]

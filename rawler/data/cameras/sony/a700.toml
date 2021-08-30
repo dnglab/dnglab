@@ -1,9 +1,0 @@
-make = "SONY"
-model = "DSLR-A700"
-clean_make = "Sony"
-clean_model = "DSLR-A700"
-blackpoint = 512
-whitepoint = 16383
-color_matrix = [5775, -805, -359, -8574, 16295, 2391, -1943, 2341, 7249]
-color_pattern = "RGGB"
-crops = [0,0,0,0]

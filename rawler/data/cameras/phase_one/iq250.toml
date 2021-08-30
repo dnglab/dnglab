@@ -1,9 +1,0 @@
-make = "Phase One A/S"
-model = "IQ250"
-clean_make = "Phase One"
-clean_model = "IQ250"
-blackpoint = 1024
-whitepoint = 65535
-color_matrix = [3984, 0, 0, 0, 10000, 0, 0, 0, 7666]
-color_pattern = "RGGB"
-crops = [108,0,0,92]

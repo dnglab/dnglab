@@ -1,8 +1,0 @@
-make = "Panasonic"
-model = "DMC-FZ2000"
-clean_make = "Panasonic"
-clean_model = "DMC-FZ2000"
-blackpoint = 142
-whitepoint = 2095
-color_matrix = [7386, -2443, -743, -3437, 11864, 1757, -608, 1660, 4766]
-color_pattern = "GBRG"

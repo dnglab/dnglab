@@ -1,9 +1,0 @@
-make = "SEIKO EPSON CORP."
-model = "R-D1"
-clean_make = "Epson"
-clean_model = "R-D1"
-blackpoint = 63
-whitepoint = 4095
-color_matrix = [6827, -1878, -732, -8429, 16012, 2564, -704, 592, 7145]
-color_pattern = "RGGB"
-crops = [0,0,0,0]

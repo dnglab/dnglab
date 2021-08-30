@@ -1,9 +1,0 @@
-make = "FUJIFILM"
-model = "X-A3"
-clean_make = "Fujifilm"
-clean_model = "X-A3"
-blackpoint = 1024
-whitepoint = 16383
-color_matrix = [12407, -5222, -1086, -2971, 11116, 2120, -294, 1029, 5284]
-color_pattern = "RGGB"
-crops = [0,0,0,0]

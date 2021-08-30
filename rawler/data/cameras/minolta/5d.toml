@@ -1,9 +1,0 @@
-make = "KONICA MINOLTA"
-model = "DYNAX 5D"
-clean_make = "Minolta"
-clean_model = "Dynax 5D"
-blackpoint = 0
-whitepoint = 4095
-color_matrix = [10284, -3283, -1086, -7957, 15762, 2316, -829, 882, 6644]
-color_pattern = "RGGB"
-crops = [0,0,0,0]

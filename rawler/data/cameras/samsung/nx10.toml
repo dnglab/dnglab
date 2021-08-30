@@ -1,9 +1,0 @@
-make = "SAMSUNG"
-model = "NX10"
-clean_make = "Samsung"
-clean_model = "NX10"
-blackpoint = 3
-whitepoint = 3750
-color_matrix = [10332, -3234, -1168, -6111, 14639, 1520, -1352, 2647, 8331]
-color_pattern = "BGGR"
-crops = [8,85,48,17]

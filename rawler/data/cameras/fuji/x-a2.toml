@@ -1,9 +1,0 @@
-make = "FUJIFILM"
-model = "X-A2"
-clean_make = "Fujifilm"
-clean_model = "X-A2"
-blackpoint = 256
-whitepoint = 4094
-color_matrix = [10763, -4560, -917, -3346, 11311, 2322, -475, 1135, 5843]
-color_pattern = "RGGB"
-crops = [0,168,0,0]

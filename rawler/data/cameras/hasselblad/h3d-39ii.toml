@@ -1,9 +1,0 @@
-make = "Hasselblad"
-model = "Hasselblad H3D"
-clean_make = "Hasselblad"
-clean_model = "H3D"
-blackpoint = 0
-whitepoint = 31456
-color_matrix = [3857, 452, -46, -6008, 14477, 1596, -2627, 4481, 5718]
-color_pattern = "RGGB"
-crops = [0,0,0,0]

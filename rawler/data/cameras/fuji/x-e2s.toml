@@ -1,9 +1,0 @@
-make = "FUJIFILM"
-model = "X-E2S"
-clean_make = "Fujifilm"
-clean_model = "X-E2S"
-blackpoint = 1024
-whitepoint = 16383
-color_matrix = [11562, -5118, -961, -3022, 11007, 2311, -525, 1569, 6097]
-color_pattern = "RBGBRGGGRGGBGGBGGRBRGRBGGGBGGRGGRGGB"
-crops = [0,52,0,4]

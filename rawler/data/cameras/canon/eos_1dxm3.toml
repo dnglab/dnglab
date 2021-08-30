@@ -1,0 +1,9 @@
+make = "Canon"
+model = "Canon EOS-1D X Mark III"
+clean_make = "Canon"
+clean_model = "EOS-1D X Mark III"
+color_pattern = "RGGB"
+color_matrix = {D65 = [0.8971, -0.2022, -0.1242, -0.5405, 1.3249, 0.238, -0.128, 0.2483, 0.6072]}
+wb_offset = 85
+bl_offset = 343
+wl_offset = 810

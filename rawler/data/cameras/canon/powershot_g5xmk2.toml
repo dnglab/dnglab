@@ -1,0 +1,9 @@
+make = "Canon"
+model = "Canon PowerShot G5 X Mark II"
+clean_make = "Canon"
+clean_model = "PowerShot G5 X Mark II"
+color_pattern = "RGGB"
+color_matrix = {D65 = [1.1629, -0.5713, -0.0914, -0.2706, 1.109, 0.1842, -0.0206, 0.1225, 0.5515]}
+wb_offset = 71
+bl_offset = 329
+wl_offset = 796

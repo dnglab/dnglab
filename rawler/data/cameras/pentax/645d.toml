@@ -1,9 +1,0 @@
-make = "PENTAX"
-model = "PENTAX 645D"
-clean_make = "Pentax"
-clean_model = "645D"
-blackpoint = 0
-whitepoint = 15767
-color_matrix = [10646, -3593, -1158, -3329, 11699, 1831, -667, 2874, 6287]
-color_pattern = "BGGR"
-crops = [0,0,0,0]
