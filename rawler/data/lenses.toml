@@ -156,6 +156,13 @@ model = "EF 50mm f/1.4 USM"
 focal_range = [[50, 1], [50, 1]]
 aperture_range = [[14, 10], [14, 10]]
 
+[[lenses]]
+key = "EF100-400mm f/4.5-5.6L IS II USM"
+make = "Canon"
+model = "EF100-400mm f/4.5-5.6L IS II USM"
+focal_range = [[100, 1], [400, 1]]
+aperture_range = [[45, 10], [56, 10]]
+
 # Canon EF-S mount lenses
 
 [[lenses]]
@@ -240,3 +247,11 @@ make = "Sigma"
 model = "50mm f/1.4 DG HSM | A"
 focal_range = [[50, 1], [50, 1]]
 aperture_range = [[14, 10], [14, 10]]
+
+# Tamron lenses
+[[lenses]]
+key = "TAMRON SP 90mm F/2.8 Di VC USD MACRO1:1 F004"
+make = "TAMRON"
+model = "TAMRON SP 90mm F/2.8 Di VC USD MACRO1:1 F004"
+focal_range = [[90, 1], [90, 1]]
+aperture_range = [[28, 10], [28, 10]]
