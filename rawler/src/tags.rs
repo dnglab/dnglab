@@ -14,7 +14,7 @@ impl TiffTagEnum for u16 {}
 
 #[derive(Debug, Copy, Clone, PartialEq, enumn::N)]
 #[repr(u16)]
-pub enum TiffRootTag {
+pub enum LegacyTiffRootTag {
   PanaWidth        = 0x0002,
   PanaLength       = 0x0003,
   NefWB0           = 0x000C,
@@ -114,9 +114,9 @@ pub enum TiffRootTag {
   CFARepeatPatternDim = 33421,
 }
 
-impl TiffTagEnum for TiffRootTag {}
+impl TiffTagEnum for LegacyTiffRootTag {}
 
-impl TryFrom<u16> for TiffRootTag {
+impl TryFrom<u16> for LegacyTiffRootTag {
     type Error = String;
 
     fn try_from(value: u16) -> Result<Self, Self::Error> {

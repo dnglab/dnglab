@@ -1,7 +1,7 @@
 use std::f32::NAN;
 
 use crate::decoders::*;
-use crate::formats::tiff::*;
+use crate::formats::tiff_legacy::*;
 use crate::bits::*;
 use crate::packed::*;
 use crate::pumps::BitPump;
@@ -10,11 +10,11 @@ use crate::pumps::BitPump;
 pub struct Rw2Decoder<'a> {
   buffer: &'a [u8],
   rawloader: &'a RawLoader,
-  tiff: TiffIFD<'a>,
+  tiff: LegacyTiffIFD<'a>,
 }
 
 impl<'a> Rw2Decoder<'a> {
-  pub fn new(buf: &'a [u8], tiff: TiffIFD<'a>, rawloader: &'a RawLoader) -> Rw2Decoder<'a> {
+  pub fn new(buf: &'a [u8], tiff: LegacyTiffIFD<'a>, rawloader: &'a RawLoader) -> Rw2Decoder<'a> {
     Rw2Decoder {
       buffer: buf,
       tiff: tiff,
@@ -24,23 +24,23 @@ impl<'a> Rw2Decoder<'a> {
 }
 
 impl<'a> Decoder for Rw2Decoder<'a> {
-  fn raw_image(&self, _params: RawDecodeParams, dummy: bool) -> Result<RawImage,String> {
+  fn raw_image(&self, _params: RawDecodeParams, dummy: bool) -> Result<RawImage> {
     let width: usize;
     let height: usize;
     let image = {
-      let data = self.tiff.find_ifds_with_tag(TiffRootTag::PanaOffsets);
+      let data = self.tiff.find_ifds_with_tag(LegacyTiffRootTag::PanaOffsets);
       if data.len() > 0 {
         let raw = data[0];
-        width = fetch_tag!(raw, TiffRootTag::PanaWidth).get_usize(0);
-        height = fetch_tag!(raw, TiffRootTag::PanaLength).get_usize(0);
-        let offset = fetch_tag!(raw, TiffRootTag::PanaOffsets).get_usize(0);
+        width = fetch_tag!(raw, LegacyTiffRootTag::PanaWidth).get_usize(0);
+        height = fetch_tag!(raw, LegacyTiffRootTag::PanaLength).get_usize(0);
+        let offset = fetch_tag!(raw, LegacyTiffRootTag::PanaOffsets).get_usize(0);
         let src = &self.buffer[offset..];
         Rw2Decoder::decode_panasonic(src, width, height, true, dummy)
       } else {
-        let raw = fetch_ifd!(&self.tiff, TiffRootTag::StripOffsets);
-        width = fetch_tag!(raw, TiffRootTag::PanaWidth).get_usize(0);
-        height = fetch_tag!(raw, TiffRootTag::PanaLength).get_usize(0);
-        let offset = fetch_tag!(raw, TiffRootTag::StripOffsets).get_usize(0);
+        let raw = fetch_ifd!(&self.tiff, LegacyTiffRootTag::StripOffsets);
+        width = fetch_tag!(raw, LegacyTiffRootTag::PanaWidth).get_usize(0);
+        height = fetch_tag!(raw, LegacyTiffRootTag::PanaLength).get_usize(0);
+        let offset = fetch_tag!(raw, LegacyTiffRootTag::StripOffsets).get_usize(0);
         let src = &self.buffer[offset..];
 
         if src.len() >= width*height*2 {
@@ -72,20 +72,20 @@ impl<'a> Decoder for Rw2Decoder<'a> {
 }
 
 impl<'a> Rw2Decoder<'a> {
-  fn get_wb(&self) -> Result<[f32;4], String> {
-    if self.tiff.has_entry(TiffRootTag::PanaWBsR) && self.tiff.has_entry(TiffRootTag::PanaWBsB) {
-      let r = fetch_tag!(self.tiff, TiffRootTag::PanaWBsR).get_u32(0) as f32;
-      let b = fetch_tag!(self.tiff, TiffRootTag::PanaWBsB).get_u32(0) as f32;
+  fn get_wb(&self) -> Result<[f32;4]> {
+    if self.tiff.has_entry(LegacyTiffRootTag::PanaWBsR) && self.tiff.has_entry(LegacyTiffRootTag::PanaWBsB) {
+      let r = fetch_tag!(self.tiff, LegacyTiffRootTag::PanaWBsR).get_u32(0) as f32;
+      let b = fetch_tag!(self.tiff, LegacyTiffRootTag::PanaWBsB).get_u32(0) as f32;
       Ok([r, 256.0, b, NAN])
-    } else if self.tiff.has_entry(TiffRootTag::PanaWBs2R)
-           && self.tiff.has_entry(TiffRootTag::PanaWBs2G)
-           && self.tiff.has_entry(TiffRootTag::PanaWBs2B) {
-      let r = fetch_tag!(self.tiff, TiffRootTag::PanaWBs2R).get_u32(0) as f32;
-      let g = fetch_tag!(self.tiff, TiffRootTag::PanaWBs2G).get_u32(0) as f32;
-      let b = fetch_tag!(self.tiff, TiffRootTag::PanaWBs2B).get_u32(0) as f32;
+    } else if self.tiff.has_entry(LegacyTiffRootTag::PanaWBs2R)
+           && self.tiff.has_entry(LegacyTiffRootTag::PanaWBs2G)
+           && self.tiff.has_entry(LegacyTiffRootTag::PanaWBs2B) {
+      let r = fetch_tag!(self.tiff, LegacyTiffRootTag::PanaWBs2R).get_u32(0) as f32;
+      let g = fetch_tag!(self.tiff, LegacyTiffRootTag::PanaWBs2G).get_u32(0) as f32;
+      let b = fetch_tag!(self.tiff, LegacyTiffRootTag::PanaWBs2B).get_u32(0) as f32;
       Ok([r, g, b, NAN])
     } else {
-      Err("Couldn't find WB".to_string())
+      Err(RawlerError::General("Couldn't find WB".to_string()))
     }
   }
 

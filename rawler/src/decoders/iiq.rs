@@ -2,7 +2,7 @@ use std::f32::NAN;
 
 use crate::RawImage;
 use crate::decoders::*;
-use crate::formats::tiff::*;
+use crate::formats::tiff_legacy::*;
 use crate::bits::*;
 use crate::pumps::BitPump;
 use crate::pumps::BitPumpMSB32;
@@ -11,11 +11,11 @@ use crate::pumps::BitPumpMSB32;
 pub struct IiqDecoder<'a> {
   buffer: &'a [u8],
   rawloader: &'a RawLoader,
-  tiff: TiffIFD<'a>,
+  tiff: LegacyTiffIFD<'a>,
 }
 
 impl<'a> IiqDecoder<'a> {
-  pub fn new(buf: &'a [u8], tiff: TiffIFD<'a>, rawloader: &'a RawLoader) -> IiqDecoder<'a> {
+  pub fn new(buf: &'a [u8], tiff: LegacyTiffIFD<'a>, rawloader: &'a RawLoader) -> IiqDecoder<'a> {
     IiqDecoder {
       buffer: buf,
       tiff: tiff,
@@ -25,7 +25,7 @@ impl<'a> IiqDecoder<'a> {
 }
 
 impl<'a> Decoder for IiqDecoder<'a> {
-  fn raw_image(&self, _params: RawDecodeParams, dummy: bool) -> Result<RawImage,String> {
+  fn raw_image(&self, _params: RawDecodeParams, dummy: bool) -> Result<RawImage> {
     let camera = self.rawloader.check_supported(&self.tiff)?;
 
     let off = LEu32(self.buffer, 16) as usize + 8;
@@ -54,7 +54,7 @@ impl<'a> Decoder for IiqDecoder<'a> {
     }
 
     if width <= 0 || height <= 0 {
-      return Err("IIQ: couldn't find width and height".to_string())
+      return Err(RawlerError::General("IIQ: couldn't find width and height".to_string()))
     }
 
     let image = Self::decode_compressed(self.buffer, data_offset, strip_offset, width, height, dummy);
@@ -64,7 +64,7 @@ impl<'a> Decoder for IiqDecoder<'a> {
 }
 
 impl<'a> IiqDecoder<'a> {
-  fn get_wb(&self, wb_offset: usize) -> Result<[f32;4], String> {
+  fn get_wb(&self, wb_offset: usize) -> Result<[f32;4]> {
     Ok([LEf32(self.buffer, wb_offset),
         LEf32(self.buffer, wb_offset+4),
         LEf32(self.buffer, wb_offset+8), NAN])

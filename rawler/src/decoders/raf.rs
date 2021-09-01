@@ -2,18 +2,18 @@ use std::f32::NAN;
 
 use crate::alloc_image_plain;
 use crate::decoders::*;
-use crate::formats::tiff::*;
+use crate::formats::tiff_legacy::*;
 use crate::packed::*;
 
 #[derive(Debug, Clone)]
 pub struct RafDecoder<'a> {
   buffer: &'a [u8],
   rawloader: &'a RawLoader,
-  tiff: TiffIFD<'a>,
+  tiff: LegacyTiffIFD<'a>,
 }
 
 impl<'a> RafDecoder<'a> {
-  pub fn new(buf: &'a [u8], tiff: TiffIFD<'a>, rawloader: &'a RawLoader) -> RafDecoder<'a> {
+  pub fn new(buf: &'a [u8], tiff: LegacyTiffIFD<'a>, rawloader: &'a RawLoader) -> RafDecoder<'a> {
     RafDecoder {
       buffer: buf,
       tiff: tiff,
@@ -23,18 +23,18 @@ impl<'a> RafDecoder<'a> {
 }
 
 impl<'a> Decoder for RafDecoder<'a> {
-  fn raw_image(&self, _params: RawDecodeParams, dummy: bool) -> Result<RawImage,String> {
+  fn raw_image(&self, _params: RawDecodeParams, dummy: bool) -> Result<RawImage> {
     let cam = self.rawloader.check_supported(&self.tiff)?;
-    let raw = fetch_ifd!(&self.tiff, TiffRootTag::RafOffsets);
-    let (width,height) = if raw.has_entry(TiffRootTag::RafImageWidth) {
-      (fetch_tag!(raw, TiffRootTag::RafImageWidth).get_usize(0),
-       fetch_tag!(raw, TiffRootTag::RafImageLength).get_usize(0))
+    let raw = fetch_ifd!(&self.tiff, LegacyTiffRootTag::RafOffsets);
+    let (width,height) = if raw.has_entry(LegacyTiffRootTag::RafImageWidth) {
+      (fetch_tag!(raw, LegacyTiffRootTag::RafImageWidth).get_usize(0),
+       fetch_tag!(raw, LegacyTiffRootTag::RafImageLength).get_usize(0))
     } else {
-      let sizes = fetch_tag!(raw, TiffRootTag::ImageWidth);
+      let sizes = fetch_tag!(raw, LegacyTiffRootTag::ImageWidth);
       (sizes.get_usize(1), sizes.get_usize(0))
     };
-    let offset = fetch_tag!(raw, TiffRootTag::RafOffsets).get_usize(0) + raw.start_offset();
-    let bps = match raw.find_entry(TiffRootTag::RafBitsPerSample) {
+    let offset = fetch_tag!(raw, LegacyTiffRootTag::RafOffsets).get_usize(0) + raw.start_offset();
+    let bps = match raw.find_entry(LegacyTiffRootTag::RafBitsPerSample) {
       Some(val) => val.get_u32(0) as usize,
       None      => 16,
     };
@@ -49,7 +49,7 @@ impl<'a> Decoder for RafDecoder<'a> {
       decode_12be_msb32(src, width, height, dummy)
     } else {
       if src.len() < bps*width*height/8 {
-        return Err("RAF: Don't know how to decode compressed yet".to_string())
+        return Err(RawlerError::Unsupported("RAF: Don't know how to decode compressed yet".to_string()))
       }
       match bps {
         12 => decode_12le(src, width, height, dummy),
@@ -61,7 +61,7 @@ impl<'a> Decoder for RafDecoder<'a> {
             decode_16be(src, width, height, dummy)
           }
         },
-        _ => {return Err(format!("RAF: Don't know how to decode bps {}", bps).to_string());},
+        _ => {return Err(RawlerError::Unsupported(format!("RAF: Don't know how to decode bps {}", bps).to_string()));},
       }
     };
 
@@ -93,11 +93,11 @@ impl<'a> Decoder for RafDecoder<'a> {
 }
 
 impl<'a> RafDecoder<'a> {
-  fn get_wb(&self) -> Result<[f32;4], String> {
-    match self.tiff.find_entry(TiffRootTag::RafWBGRB) {
+  fn get_wb(&self) -> Result<[f32;4]> {
+    match self.tiff.find_entry(LegacyTiffRootTag::RafWBGRB) {
       Some(levels) => Ok([levels.get_f32(1), levels.get_f32(0), levels.get_f32(2), NAN]),
       None => {
-        let levels = fetch_tag!(self.tiff, TiffRootTag::RafOldWB);
+        let levels = fetch_tag!(self.tiff, LegacyTiffRootTag::RafOldWB);
         Ok([levels.get_f32(1), levels.get_f32(0), levels.get_f32(3), NAN])
       },
     }

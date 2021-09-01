@@ -10,7 +10,14 @@ use itertools::Itertools;
 use md5::Digest;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
-use crate::{Buffer, RawImageData, decoders::RawDecodeParams, formats::bmff::{parse_file, FileBox}, imgop::{raw::develop_raw_srgb, rescale_f32_to_u16, Dim2}, tiff::Rational, tiff::SRational};
+use crate::{
+  decoders::RawDecodeParams,
+  formats::bmff::{parse_file, FileBox},
+  imgop::{raw::develop_raw_srgb, rescale_f32_to_u16, Dim2},
+  formats::tiff::Rational,
+  formats::tiff::SRational,
+  Buffer, RawImageData, RawlerError, Result,
+};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Md5Digest {
@@ -24,7 +31,7 @@ impl From<md5::Digest> for Md5Digest {
 }
 
 impl Serialize for Md5Digest {
-  fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+  fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
   where
     S: Serializer,
   {
@@ -103,28 +110,28 @@ pub struct Cr3Format {}
 #[serde(rename_all = "camelCase")]
 pub struct Cr2Format {}
 
-pub fn analyze_file<P: AsRef<Path>>(path: P) -> Result<AnalyzerResult, ()> {
-  let fs_meta = metadata(&path).unwrap();
+pub fn analyze_file<P: AsRef<Path>>(path: P) -> Result<AnalyzerResult> {
+  let fs_meta = metadata(&path).map_err(|e| RawlerError::with_io_error(&path, e))?;
 
-  let mut raw_file = BufReader::new(File::open(&path).unwrap());
+  let mut raw_file = BufReader::new(File::open(&path).map_err(|e| RawlerError::with_io_error(&path, e))?);
 
   // Read whole raw file
   // TODO: Large input file bug, we need to test the raw file before open it
-  let in_buffer = Buffer::new(&mut raw_file).unwrap();
+  let in_buffer = Buffer::new(&mut raw_file)?;
 
   // Get decoder or return
-  let mut decoder = crate::get_decoder(&in_buffer).unwrap();
+  let mut decoder = crate::get_decoder(&in_buffer)?;
 
   let digest = md5::compute(in_buffer.raw_buf());
 
-  decoder.decode_metadata().unwrap();
+  decoder.decode_metadata()?;
 
   let mut result = AnalyzerResult::default();
   result.file.file_name = path.as_ref().file_name().unwrap().to_string_lossy().to_string();
   result.file.file_size = fs_meta.len();
   result.file.digest = Some(digest.into());
 
-  let rawimage = decoder.raw_image(RawDecodeParams::default(), true).unwrap();
+  let rawimage = decoder.raw_image(RawDecodeParams::default(), true)?;
   result.capture_info.make = rawimage.make;
   result.capture_info.model = rawimage.model;
   result.raw_params.raw_width = rawimage.width;
@@ -140,29 +147,29 @@ pub fn analyze_file<P: AsRef<Path>>(path: P) -> Result<AnalyzerResult, ()> {
     .collect_tuple()
     .unwrap();
 
-  let mut in_f = File::open(&path).unwrap();
+  let mut in_f = File::open(&path).map_err(|e| RawlerError::with_io_error(&path, e))?;
 
   let filebox = parse_file(&mut in_f).unwrap();
 
   result.format = Some(FormatDump::Cr3(filebox));
 
-  decoder.populate_capture_info(&mut result.capture_info).unwrap();
+  decoder.populate_capture_info(&mut result.capture_info)?;
   Ok(result)
 }
 
-pub fn extract_raw_pixels<P: AsRef<Path>>(path: P, params: RawDecodeParams) -> Result<(usize, usize, Vec<u16>), ()> {
-  let mut raw_file = BufReader::new(File::open(&path).unwrap());
+pub fn extract_raw_pixels<P: AsRef<Path>>(path: P, params: RawDecodeParams) -> Result<(usize, usize, Vec<u16>)> {
+  let mut raw_file = BufReader::new(File::open(&path).map_err(|e| RawlerError::with_io_error(&path, e))?);
 
   // Read whole raw file
   // TODO: Large input file bug, we need to test the raw file before open it
-  let in_buffer = Buffer::new(&mut raw_file).unwrap();
+  let in_buffer = Buffer::new(&mut raw_file)?;
 
   // Get decoder or return
-  let mut decoder = crate::get_decoder(&in_buffer).unwrap();
+  let mut decoder = crate::get_decoder(&in_buffer)?;
 
-  decoder.decode_metadata().unwrap();
+  decoder.decode_metadata()?;
 
-  let rawimage = decoder.raw_image(params, false).unwrap();
+  let rawimage = decoder.raw_image(params, false)?;
 
   match rawimage.data {
     RawImageData::Integer(buf) => Ok((rawimage.width, rawimage.height, buf)),
@@ -170,24 +177,23 @@ pub fn extract_raw_pixels<P: AsRef<Path>>(path: P, params: RawDecodeParams) -> R
   }
 }
 
-pub fn raw_to_srgb<P: AsRef<Path>>(path: P, params: RawDecodeParams) -> Result<(Vec<u16>, Dim2), ()> {
-  let mut raw_file = BufReader::new(File::open(&path).unwrap());
+pub fn raw_to_srgb<P: AsRef<Path>>(path: P, params: RawDecodeParams) -> Result<(Vec<u16>, Dim2)> {
+  let mut raw_file = BufReader::new(File::open(&path).map_err(|e| RawlerError::with_io_error(&path, e))?);
 
   // Read whole raw file
   // TODO: Large input file bug, we need to test the raw file before open it
-  let in_buffer = Buffer::new(&mut raw_file).unwrap();
+  let in_buffer = Buffer::new(&mut raw_file)?;
 
   // Get decoder or return
-  let mut decoder = crate::get_decoder(&in_buffer).unwrap();
-  decoder.decode_metadata().unwrap();
-  let rawimage = decoder.raw_image(params, false).unwrap();
-  let params = rawimage.develop_params().unwrap();
-  eprint!("Params: {:?}", params);
+  let mut decoder = crate::get_decoder(&in_buffer)?;
+  decoder.decode_metadata()?;
+  let rawimage = decoder.raw_image(params, false)?;
+  let params = rawimage.develop_params()?;
   let buf = match rawimage.data {
     RawImageData::Integer(buf) => buf,
     RawImageData::Float(_) => todo!(),
   };
-  let (srgbf, dim) = develop_raw_srgb(&buf, &params).unwrap();
+  let (srgbf, dim) = develop_raw_srgb(&buf, &params)?;
   let output = rescale_f32_to_u16(&srgbf, 0, u16::MAX);
   Ok((output, dim))
 }

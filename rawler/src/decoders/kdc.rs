@@ -3,20 +3,20 @@ use std::f32::NAN;
 use crate::RawImage;
 use crate::alloc_image;
 use crate::decoders::*;
-use crate::formats::tiff::*;
+use crate::formats::tiff_legacy::*;
 use crate::bits::*;
 use crate::packed::decode_12be;
-use crate::tags::TiffRootTag;
+use crate::tags::LegacyTiffRootTag;
 
 #[derive(Debug, Clone)]
 pub struct KdcDecoder<'a> {
   buffer: &'a [u8],
   rawloader: &'a RawLoader,
-  tiff: TiffIFD<'a>,
+  tiff: LegacyTiffIFD<'a>,
 }
 
 impl<'a> KdcDecoder<'a> {
-  pub fn new(buf: &'a [u8], tiff: TiffIFD<'a>, rawloader: &'a RawLoader) -> KdcDecoder<'a> {
+  pub fn new(buf: &'a [u8], tiff: LegacyTiffIFD<'a>, rawloader: &'a RawLoader) -> KdcDecoder<'a> {
     KdcDecoder {
       buffer: buf,
       tiff: tiff,
@@ -26,26 +26,26 @@ impl<'a> KdcDecoder<'a> {
 }
 
 impl<'a> Decoder for KdcDecoder<'a> {
-  fn raw_image(&self, _params: RawDecodeParams, dummy: bool) -> Result<RawImage,String> {
+  fn raw_image(&self, _params: RawDecodeParams, dummy: bool) -> Result<RawImage> {
     let camera = self.rawloader.check_supported(&self.tiff)?;
 
     if camera.model == "Kodak DC120 ZOOM Digital Camera" {
       let width = 848;
       let height = 976;
-      let raw = self.tiff.find_ifds_with_tag(TiffRootTag::CFAPattern)[0];
-      let off = fetch_tag!(raw, TiffRootTag::StripOffsets).get_usize(0);
+      let raw = self.tiff.find_ifds_with_tag(LegacyTiffRootTag::CFAPattern)[0];
+      let off = fetch_tag!(raw, LegacyTiffRootTag::StripOffsets).get_usize(0);
       let src = &self.buffer[off..];
-      let image = match fetch_tag!(raw, TiffRootTag::Compression).get_usize(0) {
+      let image = match fetch_tag!(raw, LegacyTiffRootTag::Compression).get_usize(0) {
         1 => Self::decode_dc120(src, width, height, dummy),
-        c => return Err(format!("KDC: DC120: Don't know how to handle compression type {}", c).to_string())
+        c => return Err(RawlerError::Unsupported(format!("KDC: DC120: Don't know how to handle compression type {}", c).to_string()))
       };
 
       return ok_image(camera, width, height, [NAN, NAN, NAN, NAN], image)
     }
 
-    let width = fetch_tag!(self.tiff, TiffRootTag::KdcWidth).get_usize(0)+80;
-    let height = fetch_tag!(self.tiff, TiffRootTag::KdcLength).get_usize(0)+70;
-    let offset = fetch_tag!(self.tiff, TiffRootTag::KdcOffset);
+    let width = fetch_tag!(self.tiff, LegacyTiffRootTag::KdcWidth).get_usize(0)+80;
+    let height = fetch_tag!(self.tiff, LegacyTiffRootTag::KdcLength).get_usize(0)+70;
+    let offset = fetch_tag!(self.tiff, LegacyTiffRootTag::KdcOffset);
     if offset.count() < 13 {
       panic!("KDC Decoder: Couldn't find the KDC offset");
     }
@@ -64,19 +64,19 @@ impl<'a> Decoder for KdcDecoder<'a> {
 }
 
 impl<'a> KdcDecoder<'a> {
-  fn get_wb(&self) -> Result<[f32;4], String> {
-    match self.tiff.find_entry(TiffRootTag::KdcWB) {
+  fn get_wb(&self) -> Result<[f32;4]> {
+    match self.tiff.find_entry(LegacyTiffRootTag::KdcWB) {
       Some(levels) => {
         if levels.count() != 3 {
-          Err("KDC: Levels count is off".to_string())
+          Err(RawlerError::General("KDC: Levels count is off".to_string()))
         } else {
           Ok([levels.get_f32(0), levels.get_f32(1), levels.get_f32(2), NAN])
         }
       },
       None => {
-        let levels = fetch_tag!(self.tiff, TiffRootTag::KodakWB);
+        let levels = fetch_tag!(self.tiff, LegacyTiffRootTag::KodakWB);
         if levels.count() != 734 && levels.count() != 1502 {
-          Err("KDC: Levels count is off".to_string())
+          Err(RawlerError::General("KDC: Levels count is off".to_string()))
         } else {
           let r = BEu16(levels.get_data(), 148) as f32;
           let b = BEu16(levels.get_data(), 150) as f32;

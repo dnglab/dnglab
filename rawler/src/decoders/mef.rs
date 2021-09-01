@@ -1,19 +1,19 @@
 use crate::RawImage;
 use crate::decoders::*;
-use crate::formats::tiff::*;
+use crate::formats::tiff_legacy::*;
 use crate::packed::decode_12be;
-use crate::tags::TiffRootTag;
+use crate::tags::LegacyTiffRootTag;
 use std::f32::NAN;
 
 #[derive(Debug, Clone)]
 pub struct MefDecoder<'a> {
   buffer: &'a [u8],
   rawloader: &'a RawLoader,
-  tiff: TiffIFD<'a>,
+  tiff: LegacyTiffIFD<'a>,
 }
 
 impl<'a> MefDecoder<'a> {
-  pub fn new(buf: &'a [u8], tiff: TiffIFD<'a>, rawloader: &'a RawLoader) -> MefDecoder<'a> {
+  pub fn new(buf: &'a [u8], tiff: LegacyTiffIFD<'a>, rawloader: &'a RawLoader) -> MefDecoder<'a> {
     MefDecoder {
       buffer: buf,
       tiff: tiff,
@@ -23,12 +23,12 @@ impl<'a> MefDecoder<'a> {
 }
 
 impl<'a> Decoder for MefDecoder<'a> {
-  fn raw_image(&self, _params: RawDecodeParams, dummy: bool) -> Result<RawImage,String> {
+  fn raw_image(&self, _params: RawDecodeParams, dummy: bool) -> Result<RawImage> {
     let camera = self.rawloader.check_supported(&self.tiff)?;
-    let raw = fetch_ifd!(&self.tiff, TiffRootTag::CFAPattern);
-    let width = fetch_tag!(raw, TiffRootTag::ImageWidth).get_usize(0);
-    let height = fetch_tag!(raw, TiffRootTag::ImageLength).get_usize(0);
-    let offset = fetch_tag!(raw, TiffRootTag::StripOffsets).get_usize(0);
+    let raw = fetch_ifd!(&self.tiff, LegacyTiffRootTag::CFAPattern);
+    let width = fetch_tag!(raw, LegacyTiffRootTag::ImageWidth).get_usize(0);
+    let height = fetch_tag!(raw, LegacyTiffRootTag::ImageLength).get_usize(0);
+    let offset = fetch_tag!(raw, LegacyTiffRootTag::StripOffsets).get_usize(0);
     let src = &self.buffer[offset..];
 
     let image = decode_12be(src, width, height, dummy);

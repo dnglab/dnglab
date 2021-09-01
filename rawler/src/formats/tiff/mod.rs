@@ -230,7 +230,7 @@ impl Entry {
         }
       }
       TYPE_RATIONAL => {
-        let mut tmp = vec![0; count as usize *2]; // Rational is 2x u32
+        let mut tmp = vec![0; count as usize * 2]; // Rational is 2x u32
         reader.read_u32_into(&mut tmp)?;
 
         let mut v = Vec::with_capacity(count as usize);
@@ -280,7 +280,7 @@ impl Entry {
         }
       }
       TYPE_SRATIONAL => {
-        let mut tmp = vec![0; count as usize*2]; // SRational is 2x i32
+        let mut tmp = vec![0; count as usize * 2]; // SRational is 2x i32
         reader.read_i32_into(&mut tmp)?;
 
         let mut v = Vec::with_capacity(count as usize);
@@ -1235,7 +1235,7 @@ impl<'a, 'w> DirectoryWriter<'a, 'w> {
     self.tiff.pad_word_boundary()?;
     let offset = self.tiff.position()?;
     for v in data {
-      self.tiff.writer.write_u16::<LittleEndian>(*v)?;
+      self.tiff.writer.write_u16::<LittleEndian>(*v)?; // TODO bug?
     }
     Ok(offset)
   }
@@ -1465,7 +1465,7 @@ impl<const N: usize> From<[i32; N]> for Value {
 mod tests {
   use std::io::Cursor;
 
-  use crate::tags::TiffRootTag;
+  use crate::tags::LegacyTiffRootTag;
 
   use super::*;
 
@@ -1476,17 +1476,9 @@ mod tests {
 
   #[test]
   fn encode_tiff_test() -> std::result::Result<(), Box<dyn std::error::Error>> {
-    //let mut demo = Cursor::new(Vec::new());
-
-    //let tiff_reader = TiffReader::new(&mut demo, 0, Some(16)).unwrap();
-
     let mut buf = Cursor::new(Vec::new());
-
-    let mut tiff = TiffWriter::new(&mut buf).unwrap();
-
+    let mut tiff = TiffWriter::new(&mut buf)?;
     let mut dir = tiff.new_directory();
-
-    //transfer_entry(&tiff_reader, &mut dir);
 
     let offset = {
       let mut dir2 = dir.new_directory();
@@ -1494,10 +1486,10 @@ mod tests {
       dir2.build()?
     };
 
-    dir.add_tag(TiffRootTag::ActiveArea, offset as u16)?;
-    dir.add_tag(TiffRootTag::ActiveArea, [23_u16, 45_u16])?;
-    dir.add_tag(TiffRootTag::ActiveArea, &[23_u16, 45_u16][..])?;
-    dir.add_tag(TiffRootTag::ActiveArea, "Fobbar")?;
+    dir.add_tag(LegacyTiffRootTag::ActiveArea, offset as u16)?;
+    dir.add_tag(LegacyTiffRootTag::ActiveArea, [23_u16, 45_u16])?;
+    dir.add_tag(LegacyTiffRootTag::ActiveArea, &[23_u16, 45_u16][..])?;
+    dir.add_tag(LegacyTiffRootTag::ActiveArea, "Fobbar")?;
 
     Ok(())
   }
@@ -1505,7 +1497,7 @@ mod tests {
   #[test]
   fn write_tiff_file_basic() -> std::result::Result<(), Box<dyn std::error::Error>> {
     let mut output = Cursor::new(Vec::new());
-    let mut tiff = TiffWriter::new(&mut output).unwrap();
+    let mut tiff = TiffWriter::new(&mut output)?;
 
     let ifd_offset = {
       let mut dir = tiff.new_directory();
@@ -1516,14 +1508,14 @@ mod tests {
         dir2.build()?
       };
 
-      dir.add_tag(TiffRootTag::ExifIFDPointer, offset)?;
+      dir.add_tag(LegacyTiffRootTag::ExifIFDPointer, offset)?;
 
-      dir.add_tag(TiffRootTag::ActiveArea, [9_u16, 10_u16, 11_u16, 12, 13, 14])?;
-      dir.add_tag(TiffRootTag::BlackLevels, [9_u16, 10_u16])?;
-      dir.add_tag(TiffRootTag::WhiteLevel, [11_u16])?;
-      dir.add_tag(TiffRootTag::BitsPerSample, [12_u32])?;
-      dir.add_tag(TiffRootTag::ResolutionUnit, [-5_i32])?;
-      dir.add_tag(TiffRootTag::Artist, "AT")?;
+      dir.add_tag(LegacyTiffRootTag::ActiveArea, [9_u16, 10_u16, 11_u16, 12, 13, 14])?;
+      dir.add_tag(LegacyTiffRootTag::BlackLevels, [9_u16, 10_u16])?;
+      dir.add_tag(LegacyTiffRootTag::WhiteLevel, [11_u16])?;
+      dir.add_tag(LegacyTiffRootTag::BitsPerSample, [12_u32])?;
+      dir.add_tag(LegacyTiffRootTag::ResolutionUnit, [-5_i32])?;
+      dir.add_tag(LegacyTiffRootTag::Artist, "AT")?;
       dir.build()?
     };
 
@@ -1542,14 +1534,14 @@ mod tests {
     let reader = TiffReader::new(&mut garbage_output, 1, Some(16))?; // 1 byte offset correction
 
     assert_eq!(reader.root_ifd().entry_count(), 7);
-    assert!(reader.root_ifd().get_entry(TiffRootTag::WhiteLevel).is_some());
+    assert!(reader.root_ifd().get_entry(LegacyTiffRootTag::WhiteLevel).is_some());
 
     assert!(matches!(
-      reader.root_ifd().get_entry(TiffRootTag::ExifIFDPointer).unwrap().value,
+      reader.root_ifd().get_entry(LegacyTiffRootTag::ExifIFDPointer).unwrap().value,
       Value::Long { .. }
     ));
     assert!(matches!(
-      reader.root_ifd().get_entry(TiffRootTag::WhiteLevel).unwrap().value,
+      reader.root_ifd().get_entry(LegacyTiffRootTag::WhiteLevel).unwrap().value,
       Value::Short { .. }
     ));
 

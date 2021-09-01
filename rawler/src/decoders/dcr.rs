@@ -6,19 +6,19 @@ use crate::alloc_image;
 use crate::bits::Endian;
 use crate::decoders::*;
 use crate::pumps::ByteStream;
-use crate::formats::tiff::*;
+use crate::formats::tiff_legacy::*;
 use crate::bits::*;
-use crate::tags::TiffRootTag;
+use crate::tags::LegacyTiffRootTag;
 
 #[derive(Debug, Clone)]
 pub struct DcrDecoder<'a> {
   buffer: &'a [u8],
   rawloader: &'a RawLoader,
-  tiff: TiffIFD<'a>,
+  tiff: LegacyTiffIFD<'a>,
 }
 
 impl<'a> DcrDecoder<'a> {
-  pub fn new(buf: &'a [u8], tiff: TiffIFD<'a>, rawloader: &'a RawLoader) -> DcrDecoder<'a> {
+  pub fn new(buf: &'a [u8], tiff: LegacyTiffIFD<'a>, rawloader: &'a RawLoader) -> DcrDecoder<'a> {
     DcrDecoder {
       buffer: buf,
       tiff: tiff,
@@ -28,15 +28,15 @@ impl<'a> DcrDecoder<'a> {
 }
 
 impl<'a> Decoder for DcrDecoder<'a> {
-  fn raw_image(&self, _params: RawDecodeParams, dummy: bool) -> Result<RawImage,String> {
+  fn raw_image(&self, _params: RawDecodeParams, dummy: bool) -> Result<RawImage> {
     let camera = self.rawloader.check_supported(&self.tiff)?;
-    let raw = fetch_ifd!(&self.tiff, TiffRootTag::CFAPattern);
-    let width = fetch_tag!(raw, TiffRootTag::ImageWidth).get_usize(0);
-    let height = fetch_tag!(raw, TiffRootTag::ImageLength).get_usize(0);
-    let offset = fetch_tag!(raw, TiffRootTag::StripOffsets).get_usize(0);
+    let raw = fetch_ifd!(&self.tiff, LegacyTiffRootTag::CFAPattern);
+    let width = fetch_tag!(raw, LegacyTiffRootTag::ImageWidth).get_usize(0);
+    let height = fetch_tag!(raw, LegacyTiffRootTag::ImageLength).get_usize(0);
+    let offset = fetch_tag!(raw, LegacyTiffRootTag::StripOffsets).get_usize(0);
     let src = &self.buffer[offset..];
 
-    let linearization = fetch_tag!(self.tiff, TiffRootTag::DcrLinearization);
+    let linearization = fetch_tag!(self.tiff, LegacyTiffRootTag::DcrLinearization);
     let curve = {
       let mut points = Vec::new();
       for i in 0..linearization.count() {
@@ -52,8 +52,8 @@ impl<'a> Decoder for DcrDecoder<'a> {
 }
 
 impl<'a> DcrDecoder<'a> {
-  fn get_wb(&self) -> Result<[f32;4], String> {
-    let dcrwb = fetch_tag!(self.tiff, TiffRootTag::DcrWB);
+  fn get_wb(&self) -> Result<[f32;4]> {
+    let dcrwb = fetch_tag!(self.tiff, LegacyTiffRootTag::DcrWB);
     if dcrwb.count() >= 46 {
       let levels = dcrwb.get_data();
       Ok([2048.0 / BEu16(levels,40) as f32,

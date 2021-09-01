@@ -30,7 +30,7 @@ fn main() {
   };
   let buffer = match rawler::Buffer::new(&mut f) {
     Ok(val) => val,
-    Err(e) => {error(&e); return},
+    Err(e) => {error(&e.to_string()); return},
   };
   let rawloader = rawler::RawLoader::new();
   let from_time = Instant::now();
@@ -38,11 +38,11 @@ fn main() {
     for _ in 0..ITERATIONS {
       let decoder = match rawloader.get_decoder(&buffer) {
         Ok(val) => val,
-        Err(e) => {error(&e); return},
+        Err(e) => {error(&e.to_string()); return},
       };
       match decoder.raw_image(RawDecodeParams::default(), false) {
         Ok(_) => {},
-        Err(e) => error(&e),
+        Err(e) => error(&e.to_string()),
       }
     }
   }

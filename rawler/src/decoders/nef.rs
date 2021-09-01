@@ -4,7 +4,7 @@ use crate::alloc_image_ok;
 use crate::bits::Endian;
 use crate::bits::clampbits;
 use crate::decoders::*;
-use crate::formats::tiff::*;
+use crate::formats::tiff_legacy::*;
 use crate::bits::*;
 use crate::decompressors::ljpeg::huffman::*;
 use crate::packed::*;
@@ -91,11 +91,11 @@ const WB_KEYMAP: [u8;256] = [
 pub struct NefDecoder<'a> {
   buffer: &'a [u8],
   rawloader: &'a RawLoader,
-  tiff: TiffIFD<'a>,
+  tiff: LegacyTiffIFD<'a>,
 }
 
 impl<'a> NefDecoder<'a> {
-  pub fn new(buf: &'a [u8], tiff: TiffIFD<'a>, rawloader: &'a RawLoader) -> NefDecoder<'a> {
+  pub fn new(buf: &'a [u8], tiff: LegacyTiffIFD<'a>, rawloader: &'a RawLoader) -> NefDecoder<'a> {
     NefDecoder {
       buffer: buf,
       tiff: tiff,
@@ -105,19 +105,19 @@ impl<'a> NefDecoder<'a> {
 }
 
 impl<'a> Decoder for NefDecoder<'a> {
-  fn raw_image(&self, _params: RawDecodeParams, dummy: bool) -> Result<RawImage,String> {
-    let raw = fetch_ifd!(&self.tiff, TiffRootTag::CFAPattern);
-    let mut width = fetch_tag!(raw, TiffRootTag::ImageWidth).get_usize(0);
-    let height = fetch_tag!(raw, TiffRootTag::ImageLength).get_usize(0);
-    let bps = fetch_tag!(raw, TiffRootTag::BitsPerSample).get_usize(0);
-    let compression = fetch_tag!(raw, TiffRootTag::Compression).get_usize(0);
+  fn raw_image(&self, _params: RawDecodeParams, dummy: bool) -> Result<RawImage> {
+    let raw = fetch_ifd!(&self.tiff, LegacyTiffRootTag::CFAPattern);
+    let mut width = fetch_tag!(raw, LegacyTiffRootTag::ImageWidth).get_usize(0);
+    let height = fetch_tag!(raw, LegacyTiffRootTag::ImageLength).get_usize(0);
+    let bps = fetch_tag!(raw, LegacyTiffRootTag::BitsPerSample).get_usize(0);
+    let compression = fetch_tag!(raw, LegacyTiffRootTag::Compression).get_usize(0);
 
     // Make sure we always use a 12/14 bit mode to get correct white/blackpoints
     let mode = format!("{}bit", bps).to_string();
     let camera = self.rawloader.check_supported_with_mode(&self.tiff, &mode)?;
 
-    let offset = fetch_tag!(raw, TiffRootTag::StripOffsets).get_usize(0);
-    let size = fetch_tag!(raw, TiffRootTag::StripByteCounts).get_usize(0);
+    let offset = fetch_tag!(raw, LegacyTiffRootTag::StripOffsets).get_usize(0);
+    let size = fetch_tag!(raw, LegacyTiffRootTag::StripByteCounts).get_usize(0);
     let src = &self.buffer[offset..];
     let mut cpp = 1;
     let coeffs = self.get_wb()?;
@@ -138,7 +138,7 @@ impl<'a> Decoder for NefDecoder<'a> {
           } else {
             decode_12be(src, width, height, dummy)
           },
-          x => return Err(format!("Don't know uncompressed bps {}", x).to_string()),
+          x => return Err(RawlerError::Unsupported(format!("Don't know uncompressed bps {}", x).to_string())),
         }
       } else if size == width*height*3 {
         cpp = 3;
@@ -146,7 +146,7 @@ impl<'a> Decoder for NefDecoder<'a> {
       } else if compression == 34713 {
         self.decode_compressed(src, width, height, bps, dummy)?
       } else {
-        return Err(format!("NEF: Don't know compression {}", compression).to_string())
+        return Err(RawlerError::Unsupported(format!("NEF: Don't know compression {}", compression).to_string()))
       }
     };
 
@@ -161,10 +161,10 @@ impl<'a> Decoder for NefDecoder<'a> {
 }
 
 impl<'a> NefDecoder<'a> {
-  fn get_wb(&self) -> Result<[f32;4], String> {
-    if let Some(levels) = self.tiff.find_entry(TiffRootTag::NefWB0) {
+  fn get_wb(&self) -> Result<[f32;4]> {
+    if let Some(levels) = self.tiff.find_entry(LegacyTiffRootTag::NefWB0) {
       Ok([levels.get_f32(0), 1.0, levels.get_f32(1), NAN])
-    } else if let Some(levels) = self.tiff.find_entry(TiffRootTag::NefWB1) {
+    } else if let Some(levels) = self.tiff.find_entry(LegacyTiffRootTag::NefWB1) {
       let mut version: u32 = 0;
       for i in 0..4 {
         version = (version << 4) + (levels.get_data()[i]-b'0') as u32;
@@ -175,7 +175,7 @@ impl<'a> NefDecoder<'a> {
         0x103 =>  Ok([levels.get_force_u16(10) as f32, levels.get_force_u16(11) as f32,
                       levels.get_force_u16(12) as f32, NAN]),
         0x204 | 0x205 => {
-          let serial = fetch_tag!(self.tiff, TiffRootTag::NefSerial);
+          let serial = fetch_tag!(self.tiff, LegacyTiffRootTag::NefSerial);
           let data = serial.get_data();
           let mut serialno = 0 as usize;
           for i in 0..serial.count() as usize {
@@ -188,7 +188,7 @@ impl<'a> NefDecoder<'a> {
           }
 
           // Get the "decryption" key
-          let keydata = fetch_tag!(self.tiff, TiffRootTag::NefKey).get_data();
+          let keydata = fetch_tag!(self.tiff, LegacyTiffRootTag::NefKey).get_data();
           let keyno = (keydata[0]^keydata[1]^keydata[2]^keydata[3]) as usize;
 
           let src = if version == 0x204 {
@@ -211,14 +211,14 @@ impl<'a> NefDecoder<'a> {
           Ok([BEu16(&buf, off) as f32, BEu16(&buf, off+2) as f32,
               BEu16(&buf, off+6) as f32, NAN])
         },
-        x => Err(format!("NEF: Don't know about WB version 0x{:x}", x).to_string()),
+        x => Err(RawlerError::Unsupported(format!("NEF: Don't know about WB version 0x{:x}", x).to_string())),
       }
     } else {
-      Err("NEF: Don't know how to fetch WB".to_string())
+      Err(RawlerError::General("NEF: Don't know how to fetch WB".to_string()))
     }
   }
 
-  fn create_hufftable(num: usize) -> Result<HuffTable,String> {
+  fn create_hufftable(num: usize) -> Result<HuffTable> {
     let mut htable = HuffTable::empty();
 
     for i in 0..15 {
@@ -231,15 +231,15 @@ impl<'a> NefDecoder<'a> {
     Ok(htable)
   }
 
-  fn decode_compressed(&self, src: &[u8], width: usize, height: usize, bps: usize, dummy: bool) -> Result<Vec<u16>, String> {
-    let metaifd = fetch_ifd!(self.tiff, TiffRootTag::NefMeta1);
-    let meta = if let Some(meta) = metaifd.find_entry(TiffRootTag::NefMeta2) {meta} else {
-      fetch_tag!(metaifd, TiffRootTag::NefMeta1)
+  fn decode_compressed(&self, src: &[u8], width: usize, height: usize, bps: usize, dummy: bool) -> Result<Vec<u16>> {
+    let metaifd = fetch_ifd!(self.tiff, LegacyTiffRootTag::NefMeta1);
+    let meta = if let Some(meta) = metaifd.find_entry(LegacyTiffRootTag::NefMeta2) {meta} else {
+      fetch_tag!(metaifd, LegacyTiffRootTag::NefMeta1)
     };
     Self::do_decode(src, meta.get_data(), metaifd.get_endian(), width, height, bps, dummy)
   }
 
-  pub(crate) fn do_decode(src: &[u8], meta: &[u8], endian: Endian, width: usize, height: usize, bps: usize, dummy: bool) -> Result<Vec<u16>, String> {
+  pub(crate) fn do_decode(src: &[u8], meta: &[u8], endian: Endian, width: usize, height: usize, bps: usize, dummy: bool) -> Result<Vec<u16>> {
     let mut out = alloc_image_ok!(width, height, dummy);
     let mut stream = ByteStream::new(meta, endian);
     let v0 = stream.get_u8();

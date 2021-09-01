@@ -3,7 +3,7 @@ use std::cmp;
 
 use crate::bits::clampbits;
 use crate::decoders::*;
-use crate::formats::tiff::*;
+use crate::formats::tiff_legacy::*;
 use crate::bits::*;
 use crate::packed::*;
 use crate::pumps::BitPump;
@@ -14,11 +14,11 @@ use crate::pumps::BitPumpMSB32;
 pub struct SrwDecoder<'a> {
   buffer: &'a [u8],
   rawloader: &'a RawLoader,
-  tiff: TiffIFD<'a>,
+  tiff: LegacyTiffIFD<'a>,
 }
 
 impl<'a> SrwDecoder<'a> {
-  pub fn new(buf: &'a [u8], tiff: TiffIFD<'a>, rawloader: &'a RawLoader) -> SrwDecoder<'a> {
+  pub fn new(buf: &'a [u8], tiff: LegacyTiffIFD<'a>, rawloader: &'a RawLoader) -> SrwDecoder<'a> {
     SrwDecoder {
       buffer: buf,
       tiff: tiff,
@@ -28,24 +28,24 @@ impl<'a> SrwDecoder<'a> {
 }
 
 impl<'a> Decoder for SrwDecoder<'a> {
-  fn raw_image(&self, _params: RawDecodeParams, dummy: bool) -> Result<RawImage,String> {
+  fn raw_image(&self, _params: RawDecodeParams, dummy: bool) -> Result<RawImage> {
     let camera = self.rawloader.check_supported(&self.tiff)?;
-    let raw = fetch_ifd!(&self.tiff, TiffRootTag::StripOffsets);
-    let width = fetch_tag!(raw, TiffRootTag::ImageWidth).get_usize(0);
-    let height = fetch_tag!(raw, TiffRootTag::ImageLength).get_usize(0);
-    let offset = fetch_tag!(raw, TiffRootTag::StripOffsets).get_usize(0);
-    let compression = fetch_tag!(raw, TiffRootTag::Compression).get_u32(0);
-    let bits = fetch_tag!(raw, TiffRootTag::BitsPerSample).get_u32(0);
+    let raw = fetch_ifd!(&self.tiff, LegacyTiffRootTag::StripOffsets);
+    let width = fetch_tag!(raw, LegacyTiffRootTag::ImageWidth).get_usize(0);
+    let height = fetch_tag!(raw, LegacyTiffRootTag::ImageLength).get_usize(0);
+    let offset = fetch_tag!(raw, LegacyTiffRootTag::StripOffsets).get_usize(0);
+    let compression = fetch_tag!(raw, LegacyTiffRootTag::Compression).get_u32(0);
+    let bits = fetch_tag!(raw, LegacyTiffRootTag::BitsPerSample).get_u32(0);
     let src = &self.buffer[offset..];
 
     let image = match compression {
       32769 => match bits {
         12 => decode_12le_unpacked(src, width, height, dummy),
         14 => decode_14le_unpacked(src, width, height, dummy),
-         x => return Err(format!("SRW: Don't know how to handle bps {}", x).to_string()),
+         x => return Err(RawlerError::Unsupported(format!("SRW: Don't know how to handle bps {}", x).to_string())),
       },
       32770 => {
-        match raw.find_entry(TiffRootTag::SrwSensorAreas) {
+        match raw.find_entry(LegacyTiffRootTag::SrwSensorAreas) {
           None => match bits {
             12 => {
               if camera.find_hint("little_endian") {
@@ -55,7 +55,7 @@ impl<'a> Decoder for SrwDecoder<'a> {
               }
             },
             14 => decode_14le_unpacked(src, width, height, dummy),
-             x => return Err(format!("SRW: Don't know how to handle bps {}", x).to_string()),
+             x => return Err(RawlerError::Unsupported(format!("SRW: Don't know how to handle bps {}", x).to_string())),
           },
           Some(x) => {
             let coffset = x.get_usize(0);
@@ -70,7 +70,7 @@ impl<'a> Decoder for SrwDecoder<'a> {
       32773 => {
        SrwDecoder::decode_srw3(src, width, height, dummy)
       }
-      x => return Err(format!("SRW: Don't know how to handle compression {}", x).to_string()),
+      x => return Err(RawlerError::Unsupported(format!("SRW: Don't know how to handle compression {}", x).to_string())),
     };
 
     ok_image(camera, width, height, self.get_wb()?, image)
@@ -379,11 +379,11 @@ impl<'a> SrwDecoder<'a> {
     out
   }
 
-  fn get_wb(&self) -> Result<[f32;4], String> {
-    let rggb_levels = fetch_tag!(self.tiff, TiffRootTag::SrwRGGBLevels);
-    let rggb_blacks = fetch_tag!(self.tiff, TiffRootTag::SrwRGGBBlacks);
+  fn get_wb(&self) -> Result<[f32;4]> {
+    let rggb_levels = fetch_tag!(self.tiff, LegacyTiffRootTag::SrwRGGBLevels);
+    let rggb_blacks = fetch_tag!(self.tiff, LegacyTiffRootTag::SrwRGGBBlacks);
     if rggb_levels.count() != 4 || rggb_blacks.count() != 4 {
-      Err("SRW: RGGB Levels and Blacks don't have 4 elements".to_string())
+      Err(RawlerError::General("SRW: RGGB Levels and Blacks don't have 4 elements".to_string()))
     } else {
       let nlevels = &rggb_levels.copy_offset_from_parent(&self.buffer);
       let nblacks = &rggb_blacks.copy_offset_from_parent(&self.buffer);

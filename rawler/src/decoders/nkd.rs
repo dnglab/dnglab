@@ -19,7 +19,7 @@ impl<'a> NakedDecoder<'a> {
 }
 
 impl<'a> Decoder for NakedDecoder<'a> {
-  fn raw_image(&self, _params: RawDecodeParams, dummy: bool) -> Result<RawImage,String> {
+  fn raw_image(&self, _params: RawDecodeParams, dummy: bool) -> Result<RawImage> {
     let width = self.camera.raw_width;
     let height = self.camera.raw_height;
     let size = self.camera.filesize;
@@ -31,7 +31,7 @@ impl<'a> Decoder for NakedDecoder<'a> {
       match bits {
         10 => decode_10le_lsb16(self.buffer, width, height, dummy),
         12 => decode_12be_msb16(self.buffer, width, height, dummy),
-        _  => return Err(format!("Naked: Don't know about {} bps images", bits).to_string()),
+        _  => return Err(RawlerError::Unsupported(format!("Naked: Don't know about {} bps images", bits).to_string())),
       }
     };
 

@@ -13,7 +13,7 @@ use std::usize;
 
 use byteorder::{ByteOrder, LittleEndian};
 
-use crate::{bits::Endian, tags::{TiffRootTag, TiffTagEnum}};
+use crate::{bits::Endian, tags::{LegacyTiffRootTag, TiffTagEnum}};
 
 use log::debug;
 
@@ -21,17 +21,17 @@ use log::debug;
 const DATASHIFTS: [u8;14] = [0,0,0,1,2,3,0,0,1,2, 3, 2, 3, 2];
 
 /// General type for a u16 TIFF tag
-pub type TiffTag = u16;
+pub type LegacyTiffTag = u16;
 
 
-impl Into<TiffTag> for TiffRootTag {
-  fn into(self) -> TiffTag {
-      self as TiffTag
+impl Into<LegacyTiffTag> for LegacyTiffRootTag {
+  fn into(self) -> LegacyTiffTag {
+      self as LegacyTiffTag
   }
 }
 
 #[derive(Debug, Copy, Clone)]
-pub struct TiffEntry<'a> {
+pub struct LegacyTiffEntry<'a> {
   tag: u16,
   typ: u16,
   count: u32,
@@ -42,18 +42,18 @@ pub struct TiffEntry<'a> {
 }
 
 #[derive(Debug, Clone)]
-pub struct TiffIFD<'a> {
+pub struct LegacyTiffIFD<'a> {
   pub chain_level: isize,
-  pub entries: BTreeMap<u16,TiffEntry<'a>>,
-  pub chained_ifds: Vec<TiffIFD<'a>>,
-  pub sub_ifds: BTreeMap<u16, Vec<TiffIFD<'a>>>,
+  pub entries: BTreeMap<u16,LegacyTiffEntry<'a>>,
+  pub chained_ifds: Vec<LegacyTiffIFD<'a>>,
+  pub sub_ifds: BTreeMap<u16, Vec<LegacyTiffIFD<'a>>>,
   nextifd: usize,
   pub start_offset: usize,
   endian: Endian,
   file_buf: &'a [u8],
 }
 
-impl<'a> Display for TiffIFD<'a> {
+impl<'a> Display for LegacyTiffIFD<'a> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_fmt(format_args!("IFD chained level({})\n", self.chain_level))?;
         f.write_fmt(format_args!("IFD entries: {}\n", self.entries.len()))?;
@@ -79,13 +79,13 @@ impl<'a> Display for TiffIFD<'a> {
 }
 
 
-impl<'a> TiffIFD<'a> {
-  pub fn new_file(buf: &'a[u8], known_subifds: &Vec<u16>) -> Result<TiffIFD<'a>, String> {
-      TiffIFD::new_root(buf, 0, known_subifds)
+impl<'a> LegacyTiffIFD<'a> {
+  pub fn new_file(buf: &'a[u8], known_subifds: &Vec<u16>) -> Result<LegacyTiffIFD<'a>, String> {
+      LegacyTiffIFD::new_root(buf, 0, known_subifds)
   }
 
 
-  pub fn new_root(buf: &'a[u8], offset: usize, known_subifds: &Vec<u16>) -> Result<TiffIFD<'a>, String> {
+  pub fn new_root(buf: &'a[u8], offset: usize, known_subifds: &Vec<u16>) -> Result<LegacyTiffIFD<'a>, String> {
     let mut chained_ifds = Vec::new();
 
     let endian = match LittleEndian::read_u16(&buf[offset..]) {
@@ -100,7 +100,7 @@ impl<'a> TiffIFD<'a> {
         break;
       }
       //let ifd = TiffIFD::new(&buf[offset..], nextifd, 0, offset, chain_level, endian, known_subifds)?;
-      let ifd = TiffIFD::new(buf, nextifd, 0, offset, chain_level, endian, known_subifds)?;
+      let ifd = LegacyTiffIFD::new(buf, nextifd, 0, offset, chain_level, endian, known_subifds)?;
       nextifd = ifd.nextifd;
       chained_ifds.push(ifd);
       debug!("next ifd: {}", nextifd);
@@ -111,7 +111,7 @@ impl<'a> TiffIFD<'a> {
 
     // This creates a virtual root IFD container that contains all other
     // real IFDs
-    Ok(TiffIFD {
+    Ok(LegacyTiffIFD {
         chain_level: -1, // container IFD
       entries: BTreeMap::new(),
       chained_ifds: chained_ifds,
@@ -123,9 +123,9 @@ impl<'a> TiffIFD<'a> {
     })
   }
 
-  pub fn new(buf: &'a[u8], offset: usize, base_offset: usize, start_offset: usize, chain_level: isize, e: Endian, known_subifds: &Vec<u16>) -> Result<TiffIFD<'a>, String> {
+  pub fn new(buf: &'a[u8], offset: usize, base_offset: usize, start_offset: usize, chain_level: isize, e: Endian, known_subifds: &Vec<u16>) -> Result<LegacyTiffIFD<'a>, String> {
     let mut entries = BTreeMap::new();
-    let mut sub_ifds: BTreeMap<u16, Vec<TiffIFD<'a>>> = BTreeMap::new();
+    let mut sub_ifds: BTreeMap<u16, Vec<LegacyTiffIFD<'a>>> = BTreeMap::new();
 
     let num = e.read_u16(buf, offset); // Directory entries in this IFD
     if num > 4000 { // TODO: add constant
@@ -137,13 +137,13 @@ impl<'a> TiffIFD<'a> {
       //  // Skip entries we don't know about to speedup decoding
       //  continue;
       //}
-      let entry = TiffEntry::new(buf, entry_offset, base_offset, offset, e);
+      let entry = LegacyTiffEntry::new(buf, entry_offset, base_offset, offset, e);
 
       if known_subifds.contains(&entry.tag) {
         if chain_level < 32 { // Avoid infinite looping IFDs
           let mut ifds = Vec::with_capacity(entry.count as usize);
           for i in 0..entry.count {
-            let ifd = TiffIFD::new(buf, entry.get_u32(i as usize) as usize, base_offset, start_offset, chain_level+1, e, known_subifds);
+            let ifd = LegacyTiffIFD::new(buf, entry.get_u32(i as usize) as usize, base_offset, start_offset, chain_level+1, e, known_subifds);
             match ifd {
               Ok(val) => {ifds.push(val);},
               Err(_) => {
@@ -187,7 +187,7 @@ impl<'a> TiffIFD<'a> {
       //}
     }
 
-    Ok(TiffIFD {
+    Ok(LegacyTiffIFD {
       chain_level,
       entries,
       chained_ifds: Vec::new(),
@@ -210,15 +210,15 @@ impl<'a> TiffIFD<'a> {
   pub fn singlestrip_data(&self) -> Result<&[u8], String> {
     assert!(self.contains_singlestrip_image());
 
-    let offset = self.find_entry(TiffRootTag::StripOffsets).unwrap().get_u32(0) as usize;
-    let len = self.find_entry(TiffRootTag::StripByteCounts).unwrap().get_u32(0) as usize;
+    let offset = self.find_entry(LegacyTiffRootTag::StripOffsets).unwrap().get_u32(0) as usize;
+    let len = self.find_entry(LegacyTiffRootTag::StripByteCounts).unwrap().get_u32(0) as usize;
 
     let src = self.sub_buf(offset, len);
 
     Ok(src)
   }
 
-  pub fn find_entry<T: Into<TiffTag> + Copy>(&self, tag: T) -> Option<&TiffEntry> {
+  pub fn find_entry<T: Into<LegacyTiffTag> + Copy>(&self, tag: T) -> Option<&LegacyTiffEntry> {
     if self.entries.contains_key(&tag.into()) {
       self.entries.get(&tag.into())
     } else {
@@ -240,11 +240,11 @@ impl<'a> TiffIFD<'a> {
     }
   }
 
-  pub fn has_entry<T: Into<TiffTag> + Copy>(&self, tag: T) -> bool {
+  pub fn has_entry<T: Into<LegacyTiffTag> + Copy>(&self, tag: T) -> bool {
     self.find_entry(tag).is_some()
   }
 
-  pub fn find_ifds_with_tag<T: Into<TiffTag> + Copy>(&self, tag: T) -> Vec<&TiffIFD> {
+  pub fn find_ifds_with_tag<T: Into<LegacyTiffTag> + Copy>(&self, tag: T) -> Vec<&LegacyTiffIFD> {
     let mut ifds = Vec::new();
     if self.entries.contains_key(&tag.into()) {
       ifds.push(self);
@@ -266,7 +266,7 @@ impl<'a> TiffIFD<'a> {
     ifds
   }
 
-  pub fn find_first_ifd<T: Into<TiffTag> + Copy>(&self, tag: T) -> Option<&TiffIFD> {
+  pub fn find_first_ifd<T: Into<LegacyTiffTag> + Copy>(&self, tag: T) -> Option<&LegacyTiffIFD> {
     let ifds = self.find_ifds_with_tag(tag);
     if ifds.len() == 0 {
       None
@@ -280,8 +280,8 @@ impl<'a> TiffIFD<'a> {
   pub fn start_offset(&self) -> usize { self.start_offset }
 }
 
-impl<'a> TiffEntry<'a> {
-  pub fn new(buf: &'a[u8], offset: usize, base_offset: usize, parent_offset: usize, e: Endian) -> TiffEntry<'a> {
+impl<'a> LegacyTiffEntry<'a> {
+  pub fn new(buf: &'a[u8], offset: usize, base_offset: usize, parent_offset: usize, e: Endian) -> LegacyTiffEntry<'a> {
     let tag = e.read_u16(buf, offset);
     let mut typ = e.read_u16(buf, offset+2);
     let count = e.read_u32(buf, offset+4);
@@ -298,7 +298,7 @@ impl<'a> TiffEntry<'a> {
       (e.read_u32(buf, offset+8) as usize) - base_offset
     };
 
-    TiffEntry {
+    LegacyTiffEntry {
       tag: tag,
       typ: typ,
       count: count,
@@ -309,13 +309,13 @@ impl<'a> TiffEntry<'a> {
     }
   }
 
-  pub fn copy_with_new_data(&self, data: &'a[u8]) -> TiffEntry<'a> {
+  pub fn copy_with_new_data(&self, data: &'a[u8]) -> LegacyTiffEntry<'a> {
     let mut copy = self.clone();
     copy.data = data;
     copy
   }
 
-  pub fn copy_offset_from_parent(&self, buffer: &'a[u8]) -> TiffEntry<'a> {
+  pub fn copy_offset_from_parent(&self, buffer: &'a[u8]) -> LegacyTiffEntry<'a> {
     self.copy_with_new_data(&buffer[self.parent_offset+self.data_offset..])
   }
 
@@ -609,14 +609,14 @@ pub enum TagType {
 }
 
 pub fn tag_name(tag: &u16) -> String {
-    if let Some(e) = TiffRootTag::n(*tag) {
+    if let Some(e) = LegacyTiffRootTag::n(*tag) {
         String::from(format!("{:?}", e))
     } else {
         String::from("UNKNOWN")
     }
 }
 
-pub(crate) fn dump_ifd_entries<T: TiffTagEnum>(ifd: &TiffIFD) -> String {
+pub(crate) fn dump_ifd_entries<T: TiffTagEnum>(ifd: &LegacyTiffIFD) -> String {
   let mut out = String::new();
   out.push_str(&format!("IFD entries: {}\n", ifd.entries.len()));
   out.push_str(&format!("{0:<34}  | {1:<10} | {2:<6} | {3}\n", "Tag", "Type", "Count", "Data"));

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2021 Daniel Vogelbacher <daniel@chaospixel.com>
 
-use crate::{formats::bmff::BmffError, tiff::TiffReader};
+use crate::{formats::bmff::BmffError, formats::tiff::TiffReader};
 
 use super::super::{BoxHeader, FourCC, ReadBox, Result};
 use serde::{Serialize, Deserialize};

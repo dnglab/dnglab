@@ -3,7 +3,7 @@ use std::f32::NAN;
 use crate::RawImage;
 use crate::alloc_image;
 use crate::decoders::*;
-use crate::decoders::ciff::*;
+use crate::formats::ciff::*;
 use crate::packed::*;
 use crate::pumps::BitPump;
 use crate::pumps::BitPumpJPEG;
@@ -84,10 +84,10 @@ impl<'a> CrwDecoder<'a> {
 }
 
 impl<'a> Decoder for CrwDecoder<'a> {
-  fn raw_image(&self, _params: RawDecodeParams, dummy: bool) -> Result<RawImage,String> {
+  fn raw_image(&self, _params: RawDecodeParams, dummy: bool) -> Result<RawImage> {
     let makemodel = fetch_tag!(self.ciff, CiffTag::MakeModel).get_strings();
     if makemodel.len() < 2 {
-      return Err("CRW: MakeModel tag needs to have 2 strings".to_string())
+      return Err(RawlerError::General("CRW: MakeModel tag needs to have 2 strings".to_string()))
     }
     let camera = self.rawloader.check_supported_with_everything(&makemodel[0], &makemodel[1], "")?;
 
@@ -106,7 +106,7 @@ impl<'a> Decoder for CrwDecoder<'a> {
 }
 
 impl<'a> CrwDecoder<'a> {
-  fn get_wb(&self, cam: &Camera) -> Result<[f32;4], String> {
+  fn get_wb(&self, cam: &Camera) -> Result<[f32;4]> {
     if let Some(levels) = self.ciff.find_entry(CiffTag::WhiteBalance) {
       let offset = cam.wb_offset;
       return Ok([levels.get_f32(offset+0), levels.get_f32(offset+1), levels.get_f32(offset+3), NAN])
@@ -158,11 +158,11 @@ impl<'a> CrwDecoder<'a> {
     htable
   }
 
-  fn decode_compressed(&self, cam: &Camera, width: usize, height: usize, dummy: bool) -> Result<Vec<u16>,String> {
+  fn decode_compressed(&self, cam: &Camera, width: usize, height: usize, dummy: bool) -> Result<Vec<u16>> {
     let lowbits = !cam.find_hint("nolowbits");
     let dectable = fetch_tag!(self.ciff, CiffTag::DecoderTable).get_usize(0);
     if dectable > 2 {
-      return Err(format!("CRW: Unknown decoder table {}", dectable).to_string())
+      return Err(RawlerError::General(format!("CRW: Unknown decoder table {}", dectable).to_string()))
     }
     Ok(Self::do_decode(&self.buffer, lowbits, dectable, width, height, dummy))
   }

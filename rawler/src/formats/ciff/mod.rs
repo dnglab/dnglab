@@ -45,8 +45,8 @@ pub fn is_ciff(buf: &[u8]) -> bool {
 
 impl<'a> CiffIFD<'a> {
   pub fn new_file(buf: &'a Buffer) -> Result<CiffIFD<'a>,String> {
-    let data = &buf.buf;
-    CiffIFD::new(data, LEu32(data,2) as usize, buf.size, 1)
+    let data = buf.raw_buf();
+    CiffIFD::new(data, LEu32(data,2) as usize, buf.size(), 1)
   }
 
   pub fn new(buf: &'a[u8], start: usize, end: usize, depth: u32) -> Result<CiffIFD<'a>, String> {

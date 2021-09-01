@@ -1,6 +1,6 @@
 use std::fmt;
 
-use crate::formats::tiff::*;
+use crate::formats::tiff_legacy::*;
 
 /// Representation of the color filter array pattern in raw cameras
 ///
@@ -31,7 +31,7 @@ pub struct CFA {
 }
 
 impl CFA {
-  #[doc(hidden)] pub fn new_from_tag(pat: &TiffEntry) -> CFA {
+  #[doc(hidden)] pub fn new_from_tag(pat: &LegacyTiffEntry) -> CFA {
     let mut patname = String::new();
     for i in 0..pat.count() {
       patname.push(match pat.get_u32(i as usize) {

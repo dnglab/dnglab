@@ -1,7 +1,7 @@
 use std::f32::NAN;
 
 use crate::decoders::*;
-use crate::formats::tiff::*;
+use crate::formats::tiff_legacy::*;
 use crate::bits::*;
 use crate::packed::*;
 
@@ -9,11 +9,11 @@ use crate::packed::*;
 pub struct NrwDecoder<'a> {
   buffer: &'a [u8],
   rawloader: &'a RawLoader,
-  tiff: TiffIFD<'a>,
+  tiff: LegacyTiffIFD<'a>,
 }
 
 impl<'a> NrwDecoder<'a> {
-  pub fn new(buf: &'a [u8], tiff: TiffIFD<'a>, rawloader: &'a RawLoader) -> NrwDecoder<'a> {
+  pub fn new(buf: &'a [u8], tiff: LegacyTiffIFD<'a>, rawloader: &'a RawLoader) -> NrwDecoder<'a> {
     NrwDecoder {
       buffer: buf,
       tiff: tiff,
@@ -23,15 +23,15 @@ impl<'a> NrwDecoder<'a> {
 }
 
 impl<'a> Decoder for NrwDecoder<'a> {
-  fn raw_image(&self, _params: RawDecodeParams, dummy: bool) -> Result<RawImage,String> {
+  fn raw_image(&self, _params: RawDecodeParams, dummy: bool) -> Result<RawImage> {
     let camera = self.rawloader.check_supported(&self.tiff)?;
-    let data = self.tiff.find_ifds_with_tag(TiffRootTag::CFAPattern);
+    let data = self.tiff.find_ifds_with_tag(LegacyTiffRootTag::CFAPattern);
     let raw = data.iter().find(|&&ifd| {
-      ifd.find_entry(TiffRootTag::ImageWidth).unwrap().get_u32(0) > 1000
+      ifd.find_entry(LegacyTiffRootTag::ImageWidth).unwrap().get_u32(0) > 1000
     }).unwrap();
-    let width = fetch_tag!(raw, TiffRootTag::ImageWidth).get_usize(0);
-    let height = fetch_tag!(raw, TiffRootTag::ImageLength).get_usize(0);
-    let offset = fetch_tag!(raw, TiffRootTag::StripOffsets).get_usize(0);
+    let width = fetch_tag!(raw, LegacyTiffRootTag::ImageWidth).get_usize(0);
+    let height = fetch_tag!(raw, LegacyTiffRootTag::ImageLength).get_usize(0);
+    let offset = fetch_tag!(raw, LegacyTiffRootTag::StripOffsets).get_usize(0);
     let src = &self.buffer[offset..];
 
     let image = if camera.find_hint("coolpixsplit") {
@@ -50,12 +50,12 @@ impl<'a> Decoder for NrwDecoder<'a> {
 }
 
 impl<'a> NrwDecoder<'a> {
-  fn get_wb(&self, cam: &Camera) -> Result<[f32;4], String> {
+  fn get_wb(&self, cam: &Camera) -> Result<[f32;4]> {
     if cam.find_hint("nowb") {
       Ok([NAN,NAN,NAN,NAN])
-    } else if let Some(levels) = self.tiff.find_entry(TiffRootTag::NefWB0) {
+    } else if let Some(levels) = self.tiff.find_entry(LegacyTiffRootTag::NefWB0) {
       Ok([levels.get_f32(0), 1.0, levels.get_f32(1), NAN])
-    } else if let Some(levels) = self.tiff.find_entry(TiffRootTag::NrwWB) {
+    } else if let Some(levels) = self.tiff.find_entry(LegacyTiffRootTag::NrwWB) {
       let data = levels.get_data();
       if data[0..3] == b"NRW"[..] {
         let offset = if data[4..8] == b"0100"[..] {
@@ -72,7 +72,7 @@ impl<'a> NrwDecoder<'a> {
         Ok([BEu16(data,1248) as f32, 256.0, BEu16(data,1250) as f32, NAN])
       }
     } else {
-      Err("NRW: Don't know how to fetch WB".to_string())
+      Err(RawlerError::General("NRW: Don't know how to fetch WB".to_string()))
     }
   }
 }

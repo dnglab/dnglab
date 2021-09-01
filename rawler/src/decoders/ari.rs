@@ -4,6 +4,7 @@ use crate::RawImage;
 use crate::RawLoader;
 use crate::bits::*;
 use crate::packed::*;
+use crate::Result;
 
 use super::Decoder;
 use super::RawDecodeParams;
@@ -30,7 +31,7 @@ impl<'a> AriDecoder<'a> {
 }
 
 impl<'a> Decoder for AriDecoder<'a> {
-  fn raw_image(&self, _params: RawDecodeParams, dummy: bool) -> Result<RawImage,String> {
+  fn raw_image(&self, _params: RawDecodeParams, dummy: bool) -> Result<RawImage> {
     let offset = LEu32(self.buffer, 8) as usize;
     let width = LEu32(self.buffer, 20) as usize;
     let height = LEu32(self.buffer, 24) as usize;
@@ -45,7 +46,7 @@ impl<'a> Decoder for AriDecoder<'a> {
 }
 
 impl<'a> AriDecoder<'a> {
-  fn get_wb(&self) -> Result<[f32;4], String> {
+  fn get_wb(&self) -> Result<[f32;4]> {
     Ok([LEf32(self.buffer, 100), LEf32(self.buffer, 104), LEf32(self.buffer, 108), NAN])
   }
 }

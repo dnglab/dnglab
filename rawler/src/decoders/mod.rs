@@ -1,3 +1,4 @@
+use crate::Result;
 use image::DynamicImage;
 use rayon::iter::IndexedParallelIterator;
 use rayon::iter::ParallelIterator;
@@ -28,7 +29,6 @@ macro_rules! fetch_ifd {
 
 mod ari;
 mod arw;
-mod ciff;
 mod cr2;
 mod cr3;
 mod crw;
@@ -52,17 +52,19 @@ mod srw;
 mod tfr;
 mod x3f;
 use crate::analyze::CaptureInfo;
-use crate::formats::tiff::Rational;
-use crate::formats::tiff::SRational;
+use crate::formats::ciff;
+use crate::formats::tiff_legacy::Rational;
+use crate::formats::tiff_legacy::SRational;
 use crate::imgop::xyz::FlatColorMatrix;
 use crate::imgop::xyz::Illuminant;
-use crate::{formats::bmff::Bmff, tiff::DirectoryWriter};
+use crate::RawlerError;
+use crate::{formats::bmff::Bmff, formats::tiff::DirectoryWriter};
 
 use crate::alloc_image;
-use crate::formats::tiff::TiffIFD;
-use crate::formats::tiff::TiffTag;
+use crate::formats::tiff_legacy::LegacyTiffIFD;
+use crate::formats::tiff_legacy::LegacyTiffTag;
 use crate::tags::ExifTag;
-use crate::tags::TiffRootTag;
+use crate::tags::LegacyTiffRootTag;
 use crate::CFA;
 
 //use self::tiff::*;
@@ -79,21 +81,21 @@ pub struct RawDecodeParams {
 }
 
 pub trait Decoder {
-  fn raw_image(&self, params: RawDecodeParams, dummy: bool) -> Result<RawImage, String>;
+  fn raw_image(&self, params: RawDecodeParams, dummy: bool) -> Result<RawImage>;
 
-  fn raw_image_count(&self) -> Result<usize, String> {
+  fn raw_image_count(&self) -> Result<usize> {
     Ok(1)
   }
 
-  fn thumbnail_image(&self) -> Result<DynamicImage, String> {
+  fn thumbnail_image(&self) -> Result<DynamicImage> {
     unimplemented!()
   }
 
-  fn preview_image(&self) -> Result<DynamicImage, String> {
+  fn preview_image(&self) -> Result<DynamicImage> {
     unimplemented!()
   }
 
-  fn full_image(&self) -> Result<DynamicImage, String> {
+  fn full_image(&self) -> Result<DynamicImage> {
     unimplemented!()
   }
 
@@ -105,19 +107,19 @@ pub trait Decoder {
     None
   }
 
-  fn populate_capture_info(&mut self, _capture_info: &mut CaptureInfo) -> Result<(), String> {
+  fn populate_capture_info(&mut self, _capture_info: &mut CaptureInfo) -> Result<()> {
     Ok(())
   }
 
-  fn populate_dng_root(&mut self, _: &mut DirectoryWriter) -> Result<(), String> {
+  fn populate_dng_root(&mut self, _: &mut DirectoryWriter) -> Result<()> {
     Ok(())
   }
 
-  fn populate_dng_exif(&mut self, _: &mut DirectoryWriter) -> Result<(), String> {
+  fn populate_dng_exif(&mut self, _: &mut DirectoryWriter) -> Result<()> {
     Ok(())
   }
 
-  fn decode_metadata(&mut self) -> Result<(), String> {
+  fn decode_metadata(&mut self) -> Result<()> {
     Ok(())
   }
 }
@@ -131,10 +133,10 @@ pub struct Buffer {
 
 impl Buffer {
   /// Creates a new buffer from anything that can be read
-  pub fn new(reader: &mut dyn Read) -> Result<Buffer, String> {
+  pub fn new(reader: &mut dyn Read) -> Result<Buffer> {
     let mut buffer = Vec::new();
     if let Err(err) = reader.read_to_end(&mut buffer) {
-      return Err(format!("IOError: {}", err).to_string());
+      return Err(RawlerError::with_io_error("<internal_buf>", err));
     }
     let size = buffer.len();
     //buffer.extend([0;16].iter().cloned());
@@ -143,6 +145,10 @@ impl Buffer {
 
   pub fn raw_buf(&self) -> &[u8] {
     &self.buf[..self.size]
+  }
+
+  pub fn size(&self) -> usize {
+    self.size
   }
 }
 
@@ -335,8 +341,8 @@ impl Orientation {
 
   /// Extract orienation from a TiffIFD. If the given TiffIFD has an invalid
   /// value or contains no orientation data `Orientation::Unknown` is returned
-  fn from_tiff(tiff: &TiffIFD) -> Orientation {
-    match tiff.find_entry(TiffRootTag::Orientation) {
+  fn from_tiff(tiff: &LegacyTiffIFD) -> Orientation {
+    match tiff.find_entry(LegacyTiffRootTag::Orientation) {
       Some(entry) => Orientation::from_u16(entry.get_usize(0) as u16),
       None => Orientation::Unknown,
     }
@@ -389,18 +395,11 @@ impl Orientation {
   }
 }
 
-pub fn ok_image(camera: Camera, width: usize, height: usize, wb_coeffs: [f32; 4], image: Vec<u16>) -> Result<RawImage, String> {
+pub fn ok_image(camera: Camera, width: usize, height: usize, wb_coeffs: [f32; 4], image: Vec<u16>) -> Result<RawImage> {
   Ok(RawImage::new(camera, width, height, wb_coeffs, image, false))
 }
 
-pub fn ok_image_with_blacklevels(
-  camera: Camera,
-  width: usize,
-  height: usize,
-  wb_coeffs: [f32; 4],
-  blacks: [u16; 4],
-  image: Vec<u16>,
-) -> Result<RawImage, String> {
+pub fn ok_image_with_blacklevels(camera: Camera, width: usize, height: usize, wb_coeffs: [f32; 4], blacks: [u16; 4], image: Vec<u16>) -> Result<RawImage> {
   let mut img = RawImage::new(camera, width, height, wb_coeffs, image, false);
   img.blacklevels = blacks;
   Ok(img)
@@ -414,7 +413,7 @@ pub fn ok_image_with_black_white(
   black: u16,
   white: u16,
   image: Vec<u16>,
-) -> Result<RawImage, String> {
+) -> Result<RawImage> {
   let mut img = RawImage::new(camera, width, height, wb_coeffs, image, false);
   img.blacklevels = [black, black, black, black];
   img.whitelevels = [white, white, white, white];
@@ -485,7 +484,7 @@ impl RawLoader {
   }
 
   /// Returns a decoder for a given buffer
-  pub fn get_decoder<'b>(&'b self, buf: &'b Buffer) -> Result<Box<dyn Decoder + 'b>, String> {
+  pub fn get_decoder<'b>(&'b self, buf: &'b Buffer) -> Result<Box<dyn Decoder + 'b>> {
     let buffer = &buf.buf;
 
     if mrw::is_mrw(buffer) {
@@ -515,24 +514,24 @@ impl RawLoader {
       }
     }
 
-    if let Ok(tiff) = TiffIFD::new_file(buffer, &vec![]) {
-      if tiff.has_entry(TiffRootTag::DNGVersion) {
+    if let Ok(tiff) = LegacyTiffIFD::new_file(buffer, &vec![]) {
+      if tiff.has_entry(LegacyTiffRootTag::DNGVersion) {
         return Ok(Box::new(dng::DngDecoder::new(buffer, tiff, self)));
       }
 
       // The DCS560C is really a CR2 camera so we just special case it here
-      if tiff.has_entry(TiffRootTag::Model) && fetch_tag!(tiff, TiffRootTag::Model).get_str() == "DCS560C" {
+      if tiff.has_entry(LegacyTiffRootTag::Model) && fetch_tag!(tiff, LegacyTiffRootTag::Model).get_str() == "DCS560C" {
         return Ok(Box::new(cr2::Cr2Decoder::new(buffer, tiff, self)));
       }
 
-      if tiff.has_entry(TiffRootTag::Make) {
+      if tiff.has_entry(LegacyTiffRootTag::Make) {
         macro_rules! use_decoder {
           ($dec:ty, $buf:ident, $tiff:ident, $rawdec:ident) => {
             Ok(Box::new(<$dec>::new($buf, $tiff, $rawdec)) as Box<dyn Decoder>)
           };
         }
 
-        return match fetch_tag!(tiff, TiffRootTag::Make).get_str().to_string().as_ref() {
+        return match fetch_tag!(tiff, LegacyTiffRootTag::Make).get_str().to_string().as_ref() {
           "SONY" => use_decoder!(arw::ArwDecoder, buffer, tiff, self),
           "Mamiya-OP Co.,Ltd." => use_decoder!(mef::MefDecoder, buffer, tiff, self),
           "OLYMPUS IMAGING CORP." => use_decoder!(orf::OrfDecoder, buffer, tiff, self),
@@ -556,11 +555,13 @@ impl RawLoader {
           "NIKON" => use_decoder!(nrw::NrwDecoder, buffer, tiff, self),
           "Canon" => use_decoder!(cr2::Cr2Decoder, buffer, tiff, self),
           "Phase One A/S" => use_decoder!(iiq::IiqDecoder, buffer, tiff, self),
-          make => Err(format!("Couldn't find a decoder for make \"{}\".{}", make, SAMPLE).to_string()),
+          make => Err(RawlerError::Unsupported(
+            format!("Couldn't find a decoder for make \"{}\".{}", make, SAMPLE).to_string(),
+          )),
         };
-      } else if tiff.has_entry(TiffRootTag::Software) {
+      } else if tiff.has_entry(LegacyTiffRootTag::Software) {
         // Last ditch effort to identify Leaf cameras without Make and Model
-        if fetch_tag!(tiff, TiffRootTag::Software).get_str() == "Camera Library" {
+        if fetch_tag!(tiff, LegacyTiffRootTag::Software).get_str() == "Camera Library" {
           return Ok(Box::new(mos::MosDecoder::new(buffer, tiff, self)));
         }
       }
@@ -571,19 +572,24 @@ impl RawLoader {
       return Ok(Box::new(nkd::NakedDecoder::new(buffer, cam.clone(), self)));
     }
 
-    Err(format!("Couldn't find a decoder for this file.{}", SAMPLE).to_string())
+    Err(RawlerError::Unsupported(
+      format!("Couldn't find a decoder for this file.{}", SAMPLE).to_string(),
+    ))
   }
 
-  fn check_supported_with_everything<'a>(&'a self, make: &str, model: &str, mode: &str) -> Result<Camera, String> {
+  fn check_supported_with_everything<'a>(&'a self, make: &str, model: &str, mode: &str) -> Result<Camera> {
     match self.cameras.get(&(make.to_string(), model.to_string(), mode.to_string())) {
       Some(cam) => Ok(cam.clone()),
-      None => Err(format!("Couldn't find camera \"{}\" \"{}\" mode \"{}\".{}", make, model, mode, SAMPLE)),
+      None => Err(RawlerError::Unsupported(format!(
+        "Couldn't find camera \"{}\" \"{}\" mode \"{}\".{}",
+        make, model, mode, SAMPLE
+      ))),
     }
   }
 
-  fn check_supported_with_mode<'a>(&'a self, tiff: &'a TiffIFD, mode: &str) -> Result<Camera, String> {
-    let make = fetch_tag!(tiff, TiffRootTag::Make).get_str();
-    let model = fetch_tag!(tiff, TiffRootTag::Model).get_str();
+  fn check_supported_with_mode<'a>(&'a self, tiff: &'a LegacyTiffIFD, mode: &str) -> Result<Camera> {
+    let make = fetch_tag!(tiff, LegacyTiffRootTag::Make).get_str();
+    let model = fetch_tag!(tiff, LegacyTiffRootTag::Model).get_str();
 
     // Get a default instance to modify
     let mut camera = self.check_supported_with_everything(make, model, mode)?;
@@ -594,40 +600,40 @@ impl RawLoader {
     Ok(camera)
   }
 
-  fn check_supported<'a>(&'a self, tiff: &'a TiffIFD) -> Result<Camera, String> {
+  fn check_supported<'a>(&'a self, tiff: &'a LegacyTiffIFD) -> Result<Camera> {
     self.check_supported_with_mode(tiff, "")
   }
 
-  fn decode_unsafe(&self, buffer: &Buffer, params: RawDecodeParams, dummy: bool) -> Result<RawImage, String> {
+  fn decode_unsafe(&self, buffer: &Buffer, params: RawDecodeParams, dummy: bool) -> Result<RawImage> {
     let decoder = self.get_decoder(&buffer)?;
     decoder.raw_image(params, dummy)
   }
 
   /// Decodes an input into a RawImage
-  pub fn decode(&self, reader: &mut dyn Read, params: RawDecodeParams, dummy: bool) -> Result<RawImage, String> {
+  pub fn decode(&self, reader: &mut dyn Read, params: RawDecodeParams, dummy: bool) -> Result<RawImage> {
     let buffer = Buffer::new(reader)?;
 
     match panic::catch_unwind(|| self.decode_unsafe(&buffer, params, dummy)) {
       Ok(val) => val,
-      Err(_) => Err(format!("Caught a panic while decoding.{}", BUG).to_string()),
+      Err(_) => Err(RawlerError::General(format!("Caught a panic while decoding.{}", BUG))),
     }
   }
 
   /// Decodes a file into a RawImage
-  pub fn decode_file(&self, path: &Path) -> Result<RawImage, String> {
+  pub fn decode_file(&self, path: &Path) -> Result<RawImage> {
     let file = match File::open(path) {
       Ok(val) => val,
-      Err(e) => return Err(e.to_string()),
+      Err(e) => return Err(RawlerError::with_io_error(path, e)),
     };
     let mut buffered_file = BufReader::new(file);
     self.decode(&mut buffered_file, RawDecodeParams::default(), false)
   }
 
   /// Decodes a file into a RawImage
-  pub fn raw_image_count_file(&self, path: &Path) -> Result<usize, String> {
+  pub fn raw_image_count_file(&self, path: &Path) -> Result<usize> {
     let file = match File::open(path) {
       Ok(val) => val,
-      Err(e) => return Err(e.to_string()),
+      Err(e) => return Err(RawlerError::with_io_error(path, e)),
     };
     let mut buffered_file = BufReader::new(file);
     let buffer = Buffer::new(&mut buffered_file)?;
@@ -638,12 +644,12 @@ impl RawLoader {
   // Decodes an unwrapped input (just the image data with minimal metadata) into a RawImage
   // This is only useful for fuzzing really
   #[doc(hidden)]
-  pub fn decode_unwrapped(&self, reader: &mut dyn Read) -> Result<RawImageData, String> {
+  pub fn decode_unwrapped(&self, reader: &mut dyn Read) -> Result<RawImageData> {
     let buffer = Buffer::new(reader)?;
 
     match panic::catch_unwind(|| unwrapped::decode_unwrapped(&buffer)) {
       Ok(val) => val,
-      Err(_) => Err(format!("Caught a panic while decoding.{}", BUG).to_string()),
+      Err(_) => Err(RawlerError::General(format!("Caught a panic while decoding.{}", BUG).to_string())),
     }
   }
 }
@@ -709,16 +715,16 @@ pub trait ExifWrite {
 
   //fn write_entry(&mut self, entry: &TiffEntry) -> std::result::Result<(), String>;
 
-  fn write_tag_rational(&mut self, tag: TiffTag, value: Rational) -> std::result::Result<(), String>;
-  fn write_tag_srational(&mut self, tag: TiffTag, value: SRational) -> std::result::Result<(), String>;
+  fn write_tag_rational(&mut self, tag: LegacyTiffTag, value: Rational) -> std::result::Result<(), String>;
+  fn write_tag_srational(&mut self, tag: LegacyTiffTag, value: SRational) -> std::result::Result<(), String>;
 
-  fn write_tag_u16(&mut self, tag: TiffTag, value: u16) -> std::result::Result<(), String>;
-  fn write_tag_u32(&mut self, tag: TiffTag, value: u32) -> std::result::Result<(), String>;
-  fn write_tag_u8(&mut self, tag: TiffTag, value: u8) -> std::result::Result<(), String>;
-  fn write_tag_u8_array(&mut self, tag: TiffTag, value: &[u8]) -> std::result::Result<(), String>;
-  fn write_tag_u16_array(&mut self, tag: TiffTag, value: &[u16]) -> std::result::Result<(), String>;
-  fn write_tag_u32_array(&mut self, tag: TiffTag, value: &[u32]) -> std::result::Result<(), String>;
-  fn write_tag_str(&mut self, tag: TiffTag, value: &str) -> std::result::Result<(), String>;
+  fn write_tag_u16(&mut self, tag: LegacyTiffTag, value: u16) -> std::result::Result<(), String>;
+  fn write_tag_u32(&mut self, tag: LegacyTiffTag, value: u32) -> std::result::Result<(), String>;
+  fn write_tag_u8(&mut self, tag: LegacyTiffTag, value: u8) -> std::result::Result<(), String>;
+  fn write_tag_u8_array(&mut self, tag: LegacyTiffTag, value: &[u8]) -> std::result::Result<(), String>;
+  fn write_tag_u16_array(&mut self, tag: LegacyTiffTag, value: &[u16]) -> std::result::Result<(), String>;
+  fn write_tag_u32_array(&mut self, tag: LegacyTiffTag, value: &[u32]) -> std::result::Result<(), String>;
+  fn write_tag_str(&mut self, tag: LegacyTiffTag, value: &str) -> std::result::Result<(), String>;
 }
 
 #[derive(Debug, Clone, Default)]

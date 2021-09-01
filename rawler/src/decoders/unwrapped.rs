@@ -4,7 +4,7 @@ use crate::bits::*;
 use crate::decompressors::ljpeg::LjpegDecompressor;
 use crate::packed::*;
 
-pub fn decode_unwrapped(buffer: &Buffer) -> Result<RawImageData,String> {
+pub fn decode_unwrapped(buffer: &Buffer) -> Result<RawImageData> {
   let decoder = LEu16(&buffer.buf, 0);
   let width   = LEu16(&buffer.buf, 2) as usize;
   let height  = LEu16(&buffer.buf, 4) as usize;
@@ -128,18 +128,18 @@ pub fn decode_unwrapped(buffer: &Buffer) -> Result<RawImageData,String> {
       let data = &data[16..];
       Ok(RawImageData::Integer(nef::NefDecoder::decode_snef_compressed(data, coeffs, width, height, false)))
     },
-    _   => Err("No such decoder".to_string()),
+    _   => Err(RawlerError::Unsupported("No such decoder".to_string())),
   }
 }
 
-fn decode_ljpeg(src: &[u8], width: usize, height: usize, dng_bug: bool, csfix: bool) -> Result<RawImageData,String> {
+fn decode_ljpeg(src: &[u8], width: usize, height: usize, dng_bug: bool, csfix: bool) -> Result<RawImageData> {
   let mut out = vec![0u16; width*height];
   let decompressor = LjpegDecompressor::new_full(src, dng_bug, csfix)?;
   decompressor.decode(&mut out, 0, width, width, height, false)?;
   Ok(RawImageData::Integer(out))
 }
 
-fn decode_nef(data: &[u8], width: usize, height: usize, endian: Endian, bps: usize) -> Result<RawImageData,String> {
+fn decode_nef(data: &[u8], width: usize, height: usize, endian: Endian, bps: usize) -> Result<RawImageData> {
   let meta = data;
   let data = &data[4096..];
   Ok(RawImageData::Integer(nef::NefDecoder::do_decode(data, meta, endian, width, height, bps, false).unwrap()))

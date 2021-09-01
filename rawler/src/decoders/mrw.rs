@@ -2,7 +2,7 @@ use std::f32;
 
 use crate::bits::Endian;
 use crate::decoders::*;
-use crate::formats::tiff::*;
+use crate::formats::tiff_legacy::*;
 use crate::bits::*;
 use crate::packed::*;
 
@@ -19,7 +19,7 @@ pub struct MrwDecoder<'a> {
   raw_height: usize,
   packed: bool,
   wb_vals: [u16;4],
-  tiff: TiffIFD<'a>,
+  tiff: LegacyTiffIFD<'a>,
 }
 
 impl<'a> MrwDecoder<'a> {
@@ -65,14 +65,14 @@ impl<'a> MrwDecoder<'a> {
       raw_height: raw_height,
       packed: packed,
       wb_vals: wb_vals,
-      tiff: TiffIFD::new(&buf[tiffpos..], 8, 0, 0, 0, Endian::Big, &vec![]).unwrap(),
+      tiff: LegacyTiffIFD::new(&buf[tiffpos..], 8, 0, 0, 0, Endian::Big, &vec![]).unwrap(),
       rawloader: rawloader,
     }
   }
 }
 
 impl<'a> Decoder for MrwDecoder<'a> {
-  fn raw_image(&self, _params: RawDecodeParams, dummy: bool) -> Result<RawImage,String> {
+  fn raw_image(&self, _params: RawDecodeParams, dummy: bool) -> Result<RawImage> {
     let camera = self.rawloader.check_supported(&self.tiff)?;
     let src = &self.buffer[self.data_offset..];
 

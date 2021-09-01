@@ -9,20 +9,21 @@ use crate::packed::*;
 use crate::pumps::BitPump;
 use crate::pumps::BitPumpLSB;
 use crate::pumps::BitPumpMSB;
-use crate::formats::tiff::*;
-use crate::tags::TiffRootTag;
+use crate::formats::tiff_legacy::*;
+use crate::tags::LegacyTiffRootTag;
 use crate::bits::*;
+use crate::Result;
 
 
 #[derive(Debug, Clone)]
 pub struct ArwDecoder<'a> {
   buffer: &'a [u8],
   rawloader: &'a RawLoader,
-  tiff: TiffIFD<'a>,
+  tiff: LegacyTiffIFD<'a>,
 }
 
 impl<'a> ArwDecoder<'a> {
-  pub fn new(buf: &'a [u8], tiff: TiffIFD<'a>, rawloader: &'a RawLoader) -> ArwDecoder<'a> {
+  pub fn new(buf: &'a [u8], tiff: LegacyTiffIFD<'a>, rawloader: &'a RawLoader) -> ArwDecoder<'a> {
     ArwDecoder {
       buffer: buf,
       tiff: tiff,
@@ -32,9 +33,9 @@ impl<'a> ArwDecoder<'a> {
 }
 
 impl<'a> Decoder for ArwDecoder<'a> {
-  fn raw_image(&self, _params: RawDecodeParams, dummy: bool) -> Result<RawImage,String> {
+  fn raw_image(&self, _params: RawDecodeParams, dummy: bool) -> Result<RawImage> {
     let camera = self.rawloader.check_supported(&self.tiff)?;
-    let data = self.tiff.find_ifds_with_tag(TiffRootTag::StripOffsets);
+    let data = self.tiff.find_ifds_with_tag(LegacyTiffRootTag::StripOffsets);
     if data.len() == 0 {
       if camera.model == "DSLR-A100" {
         return self.image_a100(camera, dummy)
@@ -43,15 +44,15 @@ impl<'a> Decoder for ArwDecoder<'a> {
       }
     }
     let raw = data[0];
-    let width = fetch_tag!(raw, TiffRootTag::ImageWidth).get_usize(0);
-    let mut height = fetch_tag!(raw, TiffRootTag::ImageLength).get_usize(0);
-    let offset = fetch_tag!(raw, TiffRootTag::StripOffsets).get_usize(0);
-    let count = fetch_tag!(raw, TiffRootTag::StripByteCounts).get_usize(0);
-    let compression = fetch_tag!(raw, TiffRootTag::Compression).get_u32(0);
+    let width = fetch_tag!(raw, LegacyTiffRootTag::ImageWidth).get_usize(0);
+    let mut height = fetch_tag!(raw, LegacyTiffRootTag::ImageLength).get_usize(0);
+    let offset = fetch_tag!(raw, LegacyTiffRootTag::StripOffsets).get_usize(0);
+    let count = fetch_tag!(raw, LegacyTiffRootTag::StripByteCounts).get_usize(0);
+    let compression = fetch_tag!(raw, LegacyTiffRootTag::Compression).get_u32(0);
     let bps = if camera.bps != 0 {
       camera.bps
     } else {
-      fetch_tag!(raw, TiffRootTag::BitsPerSample).get_usize(0)
+      fetch_tag!(raw, LegacyTiffRootTag::BitsPerSample).get_usize(0)
     };
     let mut white = camera.whitelevels[0];
     let mut black = camera.blacklevels[0];
@@ -88,11 +89,11 @@ impl<'a> Decoder for ArwDecoder<'a> {
               black >>= 2;
               decode_12le(src, width, height, dummy)
             },
-            _ => return Err(format!("ARW2: Don't know how to decode images with {} bps", bps)),
+            _ => return Err(RawlerError::General(format!("ARW2: Don't know how to decode images with {} bps", bps))),
           }
         }
       },
-      _ => return Err(format!("ARW: Don't know how to decode type {}", compression).to_string()),
+      _ => return Err(RawlerError::General(format!("ARW: Don't know how to decode type {}", compression))),
     };
 
     ok_image_with_black_white(camera, width, height, self.get_wb()?, black, white, image)
@@ -100,24 +101,24 @@ impl<'a> Decoder for ArwDecoder<'a> {
 }
 
 impl<'a> ArwDecoder<'a> {
-  fn image_a100(&self, camera: Camera, dummy: bool) -> Result<RawImage,String> {
+  fn image_a100(&self, camera: Camera, dummy: bool) -> Result<RawImage> {
     // We've caught the elusive A100 in the wild, a transitional format
     // between the simple sanity of the MRW custom format and the wordly
     // wonderfullness of the Tiff-based ARW format, let's shoot from the hip
-    let data = self.tiff.find_ifds_with_tag(TiffRootTag::SubIFDs);
+    let data = self.tiff.find_ifds_with_tag(LegacyTiffRootTag::SubIFDs);
     if data.len() == 0 {
-      return Err("ARW: Couldn't find the data IFD!".to_string())
+      return Err(RawlerError::General("ARW: Couldn't find the data IFD!".to_string()))
     }
     let raw = data[0];
     let width = 3881;
     let height = 2608;
-    let offset = fetch_tag!(raw, TiffRootTag::SubIFDs).get_usize(0);
+    let offset = fetch_tag!(raw, LegacyTiffRootTag::SubIFDs).get_usize(0);
 
     let src = &self.buffer[offset..];
     let image = ArwDecoder::decode_arw1(src, width, height, dummy);
 
     // Get the WB the MRW way
-    let priv_offset = fetch_tag!(self.tiff, TiffRootTag::DNGPrivateArea).get_force_u32(0) as usize;
+    let priv_offset = fetch_tag!(self.tiff, LegacyTiffRootTag::DNGPrivateArea).get_force_u32(0) as usize;
     let buf = &self.buffer[priv_offset..];
     let mut currpos: usize = 8;
     let mut wb_coeffs: [f32;4] = [0.0, 0.0, 0.0, NAN];
@@ -137,15 +138,15 @@ impl<'a> ArwDecoder<'a> {
     ok_image(camera, width, height, wb_coeffs, image)
   }
 
-  fn image_srf(&self, camera: Camera, dummy: bool) -> Result<RawImage,String> {
-    let data = self.tiff.find_ifds_with_tag(TiffRootTag::ImageWidth);
+  fn image_srf(&self, camera: Camera, dummy: bool) -> Result<RawImage> {
+    let data = self.tiff.find_ifds_with_tag(LegacyTiffRootTag::ImageWidth);
     if data.len() == 0 {
-      return Err("ARW: Couldn't find the data IFD!".to_string())
+      return Err(RawlerError::General("ARW: Couldn't find the data IFD!".to_string()))
     }
     let raw = data[0];
 
-    let width = fetch_tag!(raw, TiffRootTag::ImageWidth).get_usize(0);
-    let height = fetch_tag!(raw, TiffRootTag::ImageLength).get_usize(0);
+    let width = fetch_tag!(raw, LegacyTiffRootTag::ImageWidth).get_usize(0);
+    let height = fetch_tag!(raw, LegacyTiffRootTag::ImageLength).get_usize(0);
 
     let image = if dummy {
       vec![0]
@@ -236,16 +237,16 @@ impl<'a> ArwDecoder<'a> {
     }))
   }
 
-  fn get_wb(&self) -> Result<[f32;4], String> {
-    let priv_offset = fetch_tag!(self.tiff, TiffRootTag::DNGPrivateArea).get_force_u32(0) as usize;
-    let priv_tiff = TiffIFD::new(self.buffer, priv_offset, 0, 0, 0, Endian::Little, &vec![])?;
-    let sony_offset = fetch_tag!(priv_tiff, TiffRootTag::SonyOffset).get_usize(0);
-    let sony_length = fetch_tag!(priv_tiff, TiffRootTag::SonyLength).get_usize(0);
-    let sony_key = fetch_tag!(priv_tiff, TiffRootTag::SonyKey).get_u32(0);
+  fn get_wb(&self) -> Result<[f32;4]> {
+    let priv_offset = fetch_tag!(self.tiff, LegacyTiffRootTag::DNGPrivateArea).get_force_u32(0) as usize;
+    let priv_tiff = LegacyTiffIFD::new(self.buffer, priv_offset, 0, 0, 0, Endian::Little, &vec![])?;
+    let sony_offset = fetch_tag!(priv_tiff, LegacyTiffRootTag::SonyOffset).get_usize(0);
+    let sony_length = fetch_tag!(priv_tiff, LegacyTiffRootTag::SonyLength).get_usize(0);
+    let sony_key = fetch_tag!(priv_tiff, LegacyTiffRootTag::SonyKey).get_u32(0);
     let decrypted_buf = ArwDecoder::sony_decrypt(self.buffer, sony_offset, sony_length, sony_key);
-    let decrypted_tiff = TiffIFD::new(&decrypted_buf, 0, sony_offset, 0, 0, Endian::Little, &vec![]).unwrap();
-    let grgb_levels = decrypted_tiff.find_entry(TiffRootTag::SonyGRBG);
-    let rggb_levels = decrypted_tiff.find_entry(TiffRootTag::SonyRGGB);
+    let decrypted_tiff = LegacyTiffIFD::new(&decrypted_buf, 0, sony_offset, 0, 0, Endian::Little, &vec![]).unwrap();
+    let grgb_levels = decrypted_tiff.find_entry(LegacyTiffRootTag::SonyGRBG);
+    let rggb_levels = decrypted_tiff.find_entry(LegacyTiffRootTag::SonyRGGB);
     if grgb_levels.is_some() {
       let levels = grgb_levels.unwrap();
       Ok([levels.get_u32(1) as f32, levels.get_u32(0) as f32, levels.get_u32(2) as f32, NAN])
@@ -253,12 +254,12 @@ impl<'a> ArwDecoder<'a> {
       let levels = rggb_levels.unwrap();
       Ok([levels.get_u32(0) as f32, levels.get_u32(1) as f32, levels.get_u32(3) as f32, NAN])
     } else {
-      Err("ARW: Couldn't find GRGB or RGGB levels".to_string())
+      Err(RawlerError::General("ARW: Couldn't find GRGB or RGGB levels".to_string()))
     }
   }
 
-  fn get_curve(raw: &TiffIFD) -> Result<LookupTable, String> {
-    let centry = fetch_tag!(raw, TiffRootTag::SonyCurve);
+  fn get_curve(raw: &LegacyTiffIFD) -> Result<LookupTable> {
+    let centry = fetch_tag!(raw, LegacyTiffRootTag::SonyCurve);
     let mut curve: [usize;6] = [ 0, 0, 0, 0, 0, 4095 ];
 
     for i in 0..4 {

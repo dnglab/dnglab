@@ -6,8 +6,8 @@ use crate::{AppError, Result};
 use log::debug;
 use rawler::{
   dng::{original_decompress, original_digest},
+  formats::tiff::{Entry, TiffReader, Value},
   tags::DngTag,
-  tiff::{Entry, TiffReader, Value},
 };
 use std::{
   fmt::Display,

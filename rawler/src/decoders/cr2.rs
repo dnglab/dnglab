@@ -10,22 +10,22 @@ use crate::bits::Endian;
 use crate::bits::LookupTable;
 use crate::bits::clampbits;
 use crate::decoders::*;
-use crate::formats::tiff::*;
+use crate::formats::tiff_legacy::*;
 use crate::decompressors::ljpeg::*;
-use crate::tags::TiffRootTag;
+use crate::tags::LegacyTiffRootTag;
 use crate::tags::TiffTagEnum;
 
 #[derive(Debug, Clone)]
 pub struct Cr2Decoder<'a> {
   buffer: &'a [u8],
   rawloader: &'a RawLoader,
-  tiff: TiffIFD<'a>,
-  exif: Option<TiffIFD<'a>>,
-  makernotes: Option<TiffIFD<'a>>,
+  tiff: LegacyTiffIFD<'a>,
+  exif: Option<LegacyTiffIFD<'a>>,
+  makernotes: Option<LegacyTiffIFD<'a>>,
 }
 
 impl<'a> Cr2Decoder<'a> {
-  pub fn new(buf: &'a [u8], tiff: TiffIFD<'a>, rawloader: &'a RawLoader) -> Cr2Decoder<'a> {
+  pub fn new(buf: &'a [u8], tiff: LegacyTiffIFD<'a>, rawloader: &'a RawLoader) -> Cr2Decoder<'a> {
     Cr2Decoder {
       buffer: buf,
       tiff: tiff,
@@ -38,12 +38,12 @@ impl<'a> Cr2Decoder<'a> {
 
 impl<'a> Decoder for Cr2Decoder<'a> {
 
-  fn decode_metadata(&mut self) -> Result<(), String> {
+  fn decode_metadata(&mut self) -> Result<()> {
     // TODO: ExifIFD tag should be save and can be moved to general parser?
-    let tiff = TiffIFD::new_file(self.buffer, &vec![TiffRootTag::ExifIFDPointer.into()])?;
+    let tiff = LegacyTiffIFD::new_file(self.buffer, &vec![LegacyTiffRootTag::ExifIFDPointer.into()])?;
     self.tiff = tiff;
 
-    if let Some(entry) = self.tiff.find_entry(TiffRootTag::Makernote) {
+    if let Some(entry) = self.tiff.find_entry(LegacyTiffRootTag::Makernote) {
 
       let ifd = Self::new_makernote(self.buffer, entry.data_offset(), self.tiff.start_offset, self.tiff.chain_level, self.tiff.get_endian());
       match ifd {
@@ -63,17 +63,17 @@ impl<'a> Decoder for Cr2Decoder<'a> {
     Ok(())
   }
 
-  fn raw_image(&self, _params: RawDecodeParams, dummy: bool) -> Result<RawImage,String> {
+  fn raw_image(&self, _params: RawDecodeParams, dummy: bool) -> Result<RawImage> {
     let camera = self.rawloader.check_supported(&self.tiff)?;
     let (raw, offset) = {
-      if let Some(raw) = self.tiff.find_first_ifd(TiffRootTag::Cr2Id) {
-        (raw, fetch_tag!(raw, TiffRootTag::StripOffsets).get_usize(0))
-      } else if let Some(raw) = self.tiff.find_first_ifd(TiffRootTag::CFAPattern) {
-        (raw, fetch_tag!(raw, TiffRootTag::StripOffsets).get_usize(0))
-      } else if let Some(off) = self.tiff.find_entry(TiffRootTag::Cr2OldOffset) {
+      if let Some(raw) = self.tiff.find_first_ifd(LegacyTiffRootTag::Cr2Id) {
+        (raw, fetch_tag!(raw, LegacyTiffRootTag::StripOffsets).get_usize(0))
+      } else if let Some(raw) = self.tiff.find_first_ifd(LegacyTiffRootTag::CFAPattern) {
+        (raw, fetch_tag!(raw, LegacyTiffRootTag::StripOffsets).get_usize(0))
+      } else if let Some(off) = self.tiff.find_entry(LegacyTiffRootTag::Cr2OldOffset) {
         (&self.tiff, off.get_usize(0))
       } else {
-        return Err("CR2: Couldn't find raw info".to_string())
+        return Err(RawlerError::General("CR2: Couldn't find raw info".to_string()))
       }
     };
     let src = &self.buffer[offset..];
@@ -91,7 +91,7 @@ impl<'a> Decoder for Cr2Decoder<'a> {
       // Linearize the output (applies only to D2000 as far as I can tell)
       if camera.find_hint("linearization") {
         let table = {
-          let linearization = fetch_tag!(self.tiff, TiffRootTag::GrayResponse);
+          let linearization = fetch_tag!(self.tiff, LegacyTiffRootTag::GrayResponse);
           let mut t = [0 as u16;4096];
           for i in 0..t.len() {
             t[i] = linearization.get_u32(i) as u16;
@@ -108,9 +108,9 @@ impl<'a> Decoder for Cr2Decoder<'a> {
       // Convert the YUV in sRAWs to RGB
       if cpp == 3 {
         self.convert_to_rgb(&camera, &mut ljpegout, dummy)?;
-        if raw.has_entry(TiffRootTag::ImageWidth) {
-          width = fetch_tag!(raw, TiffRootTag::ImageWidth).get_usize(0) * cpp;
-          height = fetch_tag!(raw, TiffRootTag::ImageLength).get_usize(0) ;
+        if raw.has_entry(LegacyTiffRootTag::ImageWidth) {
+          width = fetch_tag!(raw, LegacyTiffRootTag::ImageWidth).get_usize(0) * cpp;
+          height = fetch_tag!(raw, LegacyTiffRootTag::ImageLength).get_usize(0) ;
         } else if width/cpp < height {
           let temp = width/cpp;
           width = height*cpp;
@@ -124,7 +124,7 @@ impl<'a> Decoder for Cr2Decoder<'a> {
       // Take each of the vertical fields and put them into the right location
       // FIXME: Doing this at the decode would reduce about 5% in runtime but I haven't
       //        been able to do it without hairy code
-      if let Some(canoncol) = raw.find_entry(TiffRootTag::Cr2StripeWidths) {
+      if let Some(canoncol) = raw.find_entry(LegacyTiffRootTag::Cr2StripeWidths) {
         if canoncol.get_usize(0) == 0 {
           (width, height, cpp, ljpegout)
         } else {
@@ -198,7 +198,7 @@ impl<'a> Decoder for Cr2Decoder<'a> {
   }
 
 
-  fn full_image(&self) -> Result<DynamicImage, String> {
+  fn full_image(&self) -> Result<DynamicImage> {
     // For CR2, there is a full resolution image in IFD0.
     // This is compressed with old-JPEG compression (Compression = 6)
     let root_ifd = &self.tiff.chained_ifds[0];
@@ -209,7 +209,7 @@ impl<'a> Decoder for Cr2Decoder<'a> {
 }
 
 impl<'a> Cr2Decoder<'a> {
-  pub fn new_makernote(buf: &'a[u8], offset: usize, base_offset: usize, chain_level: isize, e: Endian) -> Result<TiffIFD<'a>, String> {
+  pub fn new_makernote(buf: &'a[u8], offset: usize, base_offset: usize, chain_level: isize, e: Endian) -> Result<LegacyTiffIFD<'a>> {
     let mut off = 0;
     let data = &buf[offset..];
     let mut endian = e;
@@ -223,11 +223,11 @@ impl<'a> Cr2Decoder<'a> {
       endian = Endian::Big;
     }
 
-    TiffIFD::new(buf, offset+off, base_offset, 0, chain_level+1, endian, &vec![])
+    Ok(LegacyTiffIFD::new(buf, offset+off, base_offset, 0, chain_level+1, endian, &vec![])?)
   }
 
 
-  fn get_wb(&self, cam: &Camera) -> Result<[f32;4], String> {
+  fn get_wb(&self, cam: &Camera) -> Result<[f32;4]> {
     if let Some(makernotes) = self.makernotes.as_ref() {
       if let Some(levels) = makernotes.find_entry(Cr2MakernoteTag::ColorData) {
         let offset = if cam.wb_offset != 0 {cam.wb_offset} else {63};
@@ -236,10 +236,10 @@ impl<'a> Cr2Decoder<'a> {
       }
     }
     // TODO: check if these tags belongs to RootIFD or makernote
-    if let Some(levels) = self.tiff.find_entry(TiffRootTag::Cr2PowerShotWB) {
+    if let Some(levels) = self.tiff.find_entry(LegacyTiffRootTag::Cr2PowerShotWB) {
       Ok([levels.get_force_u32(3) as f32, levels.get_force_u32(2) as f32,
           levels.get_force_u32(4) as f32, NAN])
-    } else if let Some(levels) = self.tiff.find_entry(TiffRootTag::Cr2OldWB) {
+    } else if let Some(levels) = self.tiff.find_entry(LegacyTiffRootTag::Cr2OldWB) {
       Ok([levels.get_f32(0), levels.get_f32(1), levels.get_f32(2), NAN])
     } else {
       // At least the D2000 has no WB
@@ -247,7 +247,7 @@ impl<'a> Cr2Decoder<'a> {
     }
   }
 
-  fn convert_to_rgb(&self, cam: &Camera, image: &mut [u16], dummy: bool) -> Result<(),String>{
+  fn convert_to_rgb(&self, cam: &Camera, image: &mut [u16], dummy: bool) -> Result<()>{
     let coeffs = self.get_wb(cam)?;
     if dummy {
       return Ok(())
@@ -374,7 +374,7 @@ impl Into<u16> for Cr2MakernoteTag {
 impl TryFrom<u16> for Cr2MakernoteTag {
   type Error = String;
 
-  fn try_from(value: u16) -> Result<Self, Self::Error> {
+  fn try_from(value: u16) -> std::result::Result<Self, Self::Error> {
       Self::n(value).ok_or(format!("Unable to convert tag: {}, not defined in enum", value))
   }
 }

@@ -45,125 +45,132 @@
     //unused_qualifications
   )]
 
-
-
-  use decoders::Decoder;
+use decoders::Decoder;
 use decoders::RawDecodeParams;
 use lazy_static::lazy_static;
 
-  pub mod bits;
-  pub mod decoders;
-  pub mod decompressors;
-  pub mod formats;
-  pub mod tags;
-  pub mod imgop;
-  pub mod packed;
-  pub mod pumps;
-  pub mod tiles;
-  pub mod cfa;
-  pub mod rawimage;
-  pub mod ljpeg92;
-  pub mod bitarray;
-  pub mod tiff;
-  pub mod devtools;
-  pub mod dng;
-  pub mod lens;
 pub mod analyze;
+pub mod bitarray;
+pub mod bits;
+pub mod cfa;
+pub mod decoders;
+pub mod decompressors;
+pub mod devtools;
+pub mod dng;
+pub mod formats;
+pub mod imgop;
+pub mod lens;
+pub mod ljpeg92;
+pub mod packed;
+pub mod pumps;
+pub mod rawimage;
+pub mod tags;
+pub mod tiles;
 
-  pub use rawimage::RawImage;
-  pub use rawimage::RawImageData;
-  pub use decoders::Orientation;
-  pub use cfa::CFA;
-  #[doc(hidden)] pub use decoders::Buffer;
-  #[doc(hidden)] pub use decoders::RawLoader;
+pub use cfa::CFA;
+#[doc(hidden)]
+pub use decoders::Buffer;
+pub use decoders::Orientation;
+#[doc(hidden)]
+pub use decoders::RawLoader;
+pub use rawimage::RawImage;
+pub use rawimage::RawImageData;
+use formats::tiff::TiffError;
 
-  lazy_static! {
-    static ref LOADER: RawLoader = decoders::RawLoader::new();
+lazy_static! {
+  static ref LOADER: RawLoader = decoders::RawLoader::new();
+}
+
+use std::io::Read;
+use std::path::Path;
+use thiserror::Error;
+
+#[derive(Error, Debug)]
+pub enum RawlerError {
+  #[error("File is unsupported: {}", _0)]
+  Unsupported(String),
+
+  #[error("{}", _0)]
+  General(String),
+}
+
+pub type Result<T> = std::result::Result<T, RawlerError>;
+
+impl RawlerError {
+  pub fn with_io_error(path: impl AsRef<Path>, error: std::io::Error) -> Self {
+    Self::General(format!("I/O error on file: {:?}, {}", path.as_ref(), error.to_string()))
   }
+}
 
-  use std::path::Path;
-  use std::error::Error;
-  use std::fmt;
-  use std::io::Read;
-
-  /// Error type for any reason for the decode to fail
-  #[derive(Debug)]
-  pub struct RawLoaderError {
-    msg: String,
+impl From<&String> for RawlerError {
+  fn from(str: &String) -> Self {
+    Self::General(str.clone())
   }
+}
 
-  impl fmt::Display for RawLoaderError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-      write!(f, "RawLoaderError: \"{}\"", self.msg)
-    }
+impl From<String> for RawlerError {
+  fn from(str: String) -> Self {
+    Self::General(str)
   }
+}
 
-  impl Error for RawLoaderError {
-    // Implement description so that older versions of rust still work
-    fn description(&self) -> &str {
-      "description() is deprecated; use Display"
-    }
+
+impl From<TiffError> for RawlerError {
+  fn from(err: TiffError) -> Self {
+    Self::General(err.to_string())
   }
+}
 
-  impl RawLoaderError {
-    fn new(msg: String) -> Self {
-      Self {
-        msg,
-      }
-    }
-  }
+/// Take a path to a raw file and return a decoded image or an error
+///
+/// # Example
+/// ```rust,ignore
+/// let image = match rawler::decode_file("path/to/your/file.RAW") {
+///   Ok(val) => val,
+///   Err(e) => ... some appropriate action when the file is unreadable ...
+/// };
+/// ```
+pub fn decode_file<P: AsRef<Path>>(path: P) -> Result<RawImage> {
+  LOADER.decode_file(path.as_ref())
+}
 
-  /// Take a path to a raw file and return a decoded image or an error
-  ///
-  /// # Example
-  /// ```rust,ignore
-  /// let image = match rawler::decode_file("path/to/your/file.RAW") {
-  ///   Ok(val) => val,
-  ///   Err(e) => ... some appropriate action when the file is unreadable ...
-  /// };
-  /// ```
-  pub fn decode_file<P: AsRef<Path>>(path: P) -> Result<RawImage,RawLoaderError> {
-    LOADER.decode_file(path.as_ref()).map_err(|err| RawLoaderError::new(err))
-  }
+/// Take a readable source and return a decoded image or an error
+///
+/// # Example
+/// ```rust,ignore
+/// let mut file = match File::open(path).unwrap();
+/// let image = match rawler::decode(&mut file) {
+///   Ok(val) => val,
+///   Err(e) => ... some appropriate action when the file is unreadable ...
+/// };
+/// ```
+pub fn decode(reader: &mut dyn Read, params: RawDecodeParams) -> Result<RawImage> {
+  LOADER.decode(reader, params, false)
+}
 
-  /// Take a readable source and return a decoded image or an error
-  ///
-  /// # Example
-  /// ```rust,ignore
-  /// let mut file = match File::open(path).unwrap();
-  /// let image = match rawler::decode(&mut file) {
-  ///   Ok(val) => val,
-  ///   Err(e) => ... some appropriate action when the file is unreadable ...
-  /// };
-  /// ```
-  pub fn decode(reader: &mut dyn Read, params: RawDecodeParams) -> Result<RawImage,RawLoaderError> {
-    LOADER.decode(reader, params, false).map_err(|err| RawLoaderError::new(err))
-  }
+// Used to force lazy_static initializations. Useful for fuzzing.
+#[doc(hidden)]
+pub fn force_initialization() {
+  lazy_static::initialize(&LOADER);
+}
 
-  // Used to force lazy_static initializations. Useful for fuzzing.
-  #[doc(hidden)]
-  pub fn force_initialization() {
-    lazy_static::initialize(&LOADER);
-  }
+// Used for fuzzing targets that just want to test the actual decoders instead of the full formats
+// with all their TIFF and other crazyness
+#[doc(hidden)]
+pub fn decode_unwrapped(reader: &mut dyn Read) -> Result<RawImageData> {
+  LOADER.decode_unwrapped(reader)
+}
 
-  // Used for fuzzing targets that just want to test the actual decoders instead of the full formats
-  // with all their TIFF and other crazyness
-  #[doc(hidden)]
-  pub fn decode_unwrapped(reader: &mut dyn Read) -> Result<RawImageData,RawLoaderError> {
-    LOADER.decode_unwrapped(reader).map_err(|err| RawLoaderError::new(err))
-  }
+// Used for fuzzing everything but the decoders themselves
+#[doc(hidden)]
+pub fn decode_dummy(reader: &mut dyn Read) -> Result<RawImage> {
+  LOADER.decode(reader, RawDecodeParams::default(), true)
+}
 
-  // Used for fuzzing everything but the decoders themselves
-  #[doc(hidden)]
-  pub fn decode_dummy(reader: &mut dyn Read) -> Result<RawImage,RawLoaderError> {
-    LOADER.decode(reader, RawDecodeParams::default(), true).map_err(|err| RawLoaderError::new(err))
-  }
+pub fn get_decoder<'b>(buf: &'b Buffer) -> Result<Box<dyn Decoder + 'b>> {
+  LOADER.get_decoder(buf)
+}
 
-
-  pub fn get_decoder<'b>(buf: &'b Buffer) -> Result<Box<dyn Decoder + 'b>, RawLoaderError> {
-    LOADER.get_decoder(buf).map_err(|err| RawLoaderError::new(err))
-  }
-
-  pub fn raw_image_count_file<P: AsRef<Path>>(path: P) -> Result<usize,RawLoaderError> {
-    LOADER.raw_image_count_file(path.as_ref()).map_err(|err| RawLoaderError::new(err))
-  }
+pub fn raw_image_count_file<P: AsRef<Path>>(path: P) -> Result<usize> {
+  LOADER.raw_image_count_file(path.as_ref())
+}

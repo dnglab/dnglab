@@ -11,16 +11,16 @@ extern crate rustc_version;
 use rustc_version::{version, Version};
   
 fn main() {
-  let out_dir = env::var("OUT_DIR").unwrap();
+  let out_dir = env::var("OUT_DIR").expect("Missing ENV OUT_DIR");
   let dest_path = Path::new(&out_dir).join("cameras.toml");
-  let mut out = File::create(dest_path).unwrap();
+  let mut out = File::create(dest_path).expect("Unable to create output file");
 
   for entry in glob("./data/cameras/*/**/*.toml").expect("Failed to read glob pattern") {
-    out.write_all(b"[[cameras]]\n").unwrap();
-    let path = entry.unwrap();
-    let mut f = File::open(path.clone()).unwrap();
+    out.write_all(b"[[cameras]]\n").expect("Failed to write camera TOML");
+    let path = entry.expect("Invalid glob entry");
+    let mut f = File::open(&path).expect("failed to open camera definition file");
     let mut toml = String::new();
-    f.read_to_string(&mut toml).unwrap();
+    f.read_to_string(&mut toml).expect("Failed to read camera definition file");
 
     {
       match toml.parse::<Value>() {
@@ -30,12 +30,12 @@ fn main() {
       };
     }
 
-    out.write_all(&toml.into_bytes()).unwrap();
-    out.write_all(b"\n").unwrap();
+    out.write_all(&toml.into_bytes()).expect("Failed to write");
+    out.write_all(b"\n").expect("Failed to write");
   }
 
   // Check for a minimum version
-  if version().unwrap() < Version::parse("1.31.0").unwrap() {
+  if version().expect("version failed") < Version::parse("1.31.0").expect("version parse failed") {
       println!("cargo:rustc-cfg=needs_chunks_exact");
   }
 }

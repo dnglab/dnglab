@@ -13,7 +13,7 @@ use crate::formats::bmff::ext_cr3::cr3desc::Cr3DescBox;
 use crate::formats::bmff::ext_cr3::iad1::Iad1Type;
 use crate::lens::{LensDescription, LensResolver};
 use crate::tags::{DngTag, TiffTagEnum};
-use crate::tiff::{Entry, Rational, TiffReader, Value};
+use crate::formats::tiff::{Entry, Rational, TiffReader, Value};
 use crate::{pumps::ByteStream, RawImage};
 
 #[derive(Debug, Clone)]
@@ -93,7 +93,7 @@ impl<'a> Decoder for Cr3Decoder<'a> {
     self.xpacket.as_ref()
   }
 
-  fn populate_capture_info(&mut self, capture_info: &mut CaptureInfo) -> Result<(), String> {
+  fn populate_capture_info(&mut self, capture_info: &mut CaptureInfo) -> Result<()> {
     if let Some(cmt2_ifd) = self.cmt2.as_ref() {
       let ifd = cmt2_ifd.root_ifd();
       if let Some(Entry { value: Value::Rational(v), .. }) = ifd.get_entry(ExifTag::ExposureTime) {
@@ -125,23 +125,23 @@ impl<'a> Decoder for Cr3Decoder<'a> {
     Ok(())
   }
 
-  fn populate_dng_root(&mut self, root_ifd: &mut DirectoryWriter) -> Result<(), String> {
+  fn populate_dng_root(&mut self, root_ifd: &mut DirectoryWriter) -> Result<()> {
     // Copy Orientation tag
     if let Some(cmt1_ifd) = self.cmt1.as_ref() {
       let ifd = cmt1_ifd.root_ifd();
       if let Some(orientation) = ifd.get_entry(ExifTag::Orientation) {
-        root_ifd.add_value(ExifTag::Orientation, orientation.value.clone()).unwrap();
+        root_ifd.add_value(ExifTag::Orientation, orientation.value.clone())?;
       }
     }
 
     if let Some(lens) = self.lens_description {
       let lens_info: [Rational; 4] = [lens.focal_range[0], lens.focal_range[1], lens.aperture_range[0], lens.aperture_range[1]];
-      root_ifd.add_tag(DngTag::LensInfo, lens_info).unwrap();
+      root_ifd.add_tag(DngTag::LensInfo, lens_info)?;
     }
 
     if let Some(unique_id) = self.image_unique_id {
       // For CR3, we use the already included Makernote tag with unique image ID
-      root_ifd.add_tag(DngTag::RawDataUniqueID, unique_id).unwrap();
+      root_ifd.add_tag(DngTag::RawDataUniqueID, unique_id)?;
     }
 
     if let Some(cmt4) = self.cmt4.as_ref() {
@@ -150,20 +150,20 @@ impl<'a> Decoder for Cr3Decoder<'a> {
         let ifd = cmt4.root_ifd();
         // Copy all GPS tags
         for (tag, entry) in ifd.entries() {
-          gps_ifd.add_value(*tag, entry.value.clone()).unwrap();
+          gps_ifd.add_value(*tag, entry.value.clone())?;
         }
-        gps_ifd.build().unwrap()
+        gps_ifd.build()?
       };
-      root_ifd.add_tag(ExifTag::GPSInfo, gpsinfo_offset as u32).unwrap();
+      root_ifd.add_tag(ExifTag::GPSInfo, gpsinfo_offset as u32)?;
     }
     Ok(())
   }
 
-  fn populate_dng_exif(&mut self, exif_ifd: &mut DirectoryWriter) -> Result<(), String> {
+  fn populate_dng_exif(&mut self, exif_ifd: &mut DirectoryWriter) -> Result<()> {
     if let Some(cmt2_ifd) = self.cmt2.as_ref() {
       let ifd = cmt2_ifd.root_ifd();
       for (tag, entry) in ifd.entries().iter().filter(|(tag, _)| transfer_exif_tag(**tag)) {
-        exif_ifd.add_value(*tag, entry.value.clone()).unwrap();
+        exif_ifd.add_value(*tag, entry.value.clone())?;
       }
     } else {
       debug!("CMT2 is not available, no EXIF!");
@@ -171,24 +171,24 @@ impl<'a> Decoder for Cr3Decoder<'a> {
 
     if let Some(lens) = self.lens_description {
       let lens_info: [Rational; 4] = [lens.focal_range[0], lens.focal_range[1], lens.aperture_range[0], lens.aperture_range[1]];
-      exif_ifd.add_tag(ExifTag::LensSpecification, lens_info).unwrap();
-      exif_ifd.add_tag(ExifTag::LensMake, &lens.lens_make).unwrap();
-      exif_ifd.add_tag(ExifTag::LensModel, &lens.lens_model).unwrap();
+      exif_ifd.add_tag(ExifTag::LensSpecification, lens_info)?;
+      exif_ifd.add_tag(ExifTag::LensMake, &lens.lens_make)?;
+      exif_ifd.add_tag(ExifTag::LensModel, &lens.lens_model)?;
     }
 
     Ok(())
   }
 
-  fn decode_metadata(&mut self) -> Result<(), String> {
+  fn decode_metadata(&mut self) -> Result<()> {
     if let Some(Cr3DescBox { cmt1, cmt2, cmt3, cmt4, .. }) = self.bmff.filebox.moov.cr3desc.as_ref() {
       let buf1 = cmt1.header.make_view(self.buffer, 0, 0);
-      self.cmt1 = Some(TiffReader::new_with_buffer(buf1, 0, None).unwrap());
+      self.cmt1 = Some(TiffReader::new_with_buffer(buf1, 0, None)?);
       let buf2 = cmt2.header.make_view(self.buffer, 0, 0);
-      self.cmt2 = Some(TiffReader::new_with_buffer(buf2, 0, None).unwrap());
+      self.cmt2 = Some(TiffReader::new_with_buffer(buf2, 0, None)?);
       let buf3 = cmt3.header.make_view(self.buffer, 0, 0);
-      self.cmt3 = Some(TiffReader::new_with_buffer(buf3, 0, None).unwrap());
+      self.cmt3 = Some(TiffReader::new_with_buffer(buf3, 0, None)?);
       let buf4 = cmt4.header.make_view(self.buffer, 0, 0);
-      self.cmt4 = Some(TiffReader::new_with_buffer(buf4, 0, None).unwrap());
+      self.cmt4 = Some(TiffReader::new_with_buffer(buf4, 0, None)?);
     }
 
     if let Some(cmt1) = &self.cmt1 {
@@ -217,7 +217,7 @@ impl<'a> Decoder for Cr3Decoder<'a> {
         //let mut filebuf = File::create("/tmp/fdump.tif").unwrap();
         //filebuf.write(&rec8.payload).unwrap();
 
-        let ctmd_record8 = TiffReader::new_with_buffer(&rec8.payload[8..], 0, Some(0)).unwrap();
+        let ctmd_record8 = TiffReader::new_with_buffer(&rec8.payload[8..], 0, Some(0))?;
 
         //let ctmd_record8 = TiffIFD::new_root(&rec8.payload[8..], 0, &vec![]).unwrap();
 
@@ -225,7 +225,7 @@ impl<'a> Decoder for Cr3Decoder<'a> {
           let wb_idx = if cam.wb_offset != 0 { cam.wb_offset } else { 0 }; // TODO: fail if not found
           let bl_idx = if cam.bl_offset != 0 { cam.bl_offset } else { 0 };
           let wl_idx = if cam.wl_offset != 0 { cam.wl_offset } else { 0 };
-          if let crate::tiff::Value::Short(v) = &levels.value {
+          if let crate::formats::tiff::Value::Short(v) = &levels.value {
             self.wb = Some([v[wb_idx] as f32, v[wb_idx + 1] as f32, v[wb_idx + 3] as f32, NAN]);
             self.blacklevels = Some([v[bl_idx], v[bl_idx + 1], v[bl_idx + 2], v[bl_idx + 3]]);
             self.whitelevel = Some(v[wl_idx]);
@@ -235,7 +235,7 @@ impl<'a> Decoder for Cr3Decoder<'a> {
 
       if let Some(cmt3) = self.cmt3.as_ref() {
         if let Some(Entry {
-          value: crate::tiff::Value::Short(v),
+          value: crate::formats::tiff::Value::Short(v),
           ..
         }) = cmt3.get_entry(Cr3MakernoteTag::CameraSettings)
         {
@@ -244,7 +244,7 @@ impl<'a> Decoder for Cr3Decoder<'a> {
 
           if let Some(cmt2) = self.cmt2.as_ref() {
             if let Some(Entry {
-              value: crate::tiff::Value::Ascii(lens_id),
+              value: crate::formats::tiff::Value::Ascii(lens_id),
               ..
             }) = cmt2.get_entry(ExifTag::LensModel)
             {
@@ -258,7 +258,7 @@ impl<'a> Decoder for Cr3Decoder<'a> {
 
       if let Some(cmt3) = self.cmt3.as_ref() {
         if let Some(Entry {
-          value: crate::tiff::Value::Byte(v),
+          value: crate::formats::tiff::Value::Byte(v),
           ..
         }) = cmt3.get_entry(Cr3MakernoteTag::ImgUniqueID)
         {
@@ -276,13 +276,13 @@ impl<'a> Decoder for Cr3Decoder<'a> {
         self.xpacket = Some(Vec::from(buf));
       }
     } else {
-      return Err(format!("CMT1 not found"));
+      return Err(RawlerError::General(format!("CMT1 not found")));
     }
 
     Ok(())
   }
 
-  fn raw_image_count(&self) -> Result<usize, String> {
+  fn raw_image_count(&self) -> Result<usize> {
     let raw_trak_id = std::env::var("RAWLER_CRX_RAW_TRAK")
       .ok()
       .map(|id| id.parse::<usize>().expect("RAWLER_CRX_RAW_TRAK must by of type usize"))
@@ -298,7 +298,7 @@ impl<'a> Decoder for Cr3Decoder<'a> {
     Ok(co64.entries.len())
   }
 
-  fn raw_image(&self, params: RawDecodeParams, dummy: bool) -> Result<RawImage, String> {
+  fn raw_image(&self, params: RawDecodeParams, dummy: bool) -> Result<RawImage> {
     // TODO: add support check
 
     let raw_trak_id = std::env::var("RAWLER_CRX_RAW_TRAK")
@@ -392,11 +392,11 @@ impl<'a> Decoder for Cr3Decoder<'a> {
 
       return Ok(img);
     } else {
-      return Err(format!("Camera model unknown"));
+      return Err(RawlerError::General(format!("Camera model unknown")));
     }
   }
 
-  fn full_image(&self) -> Result<DynamicImage, String> {
+  fn full_image(&self) -> Result<DynamicImage> {
     let offset = self.bmff.filebox.moov.traks[0].mdia.minf.stbl.co64.as_ref().expect("co64 box").entries[0] as usize;
     let size = self.bmff.filebox.moov.traks[0].mdia.minf.stbl.stsz.sample_sizes[0] as usize;
     debug!("jpeg mdat offset: {}", offset);
@@ -408,14 +408,14 @@ impl<'a> Decoder for Cr3Decoder<'a> {
       Ok(img) => Ok(img),
       Err(e) => {
         debug!("TRAK 0 contains no JPEG preview, is it PQ/HEIF? Error: {}", e);
-        Err("Unable to extract preview image from CR3 HDR-PQ file. Please see 'https://github.com/dnglab/dnglab/issues/7'".into())
+        Err(RawlerError::General("Unable to extract preview image from CR3 HDR-PQ file. Please see 'https://github.com/dnglab/dnglab/issues/7'".into()))
       }
     }
   }
 }
 
 impl<'a> Cr3Decoder<'a> {
-  pub fn _new_makernote(buf: &'a [u8], offset: usize, base_offset: usize, chain_level: isize, e: Endian) -> Result<TiffIFD<'a>, String> {
+  pub fn _new_makernote(buf: &'a [u8], offset: usize, base_offset: usize, chain_level: isize, e: Endian) -> Result<LegacyTiffIFD<'a>> {
     let mut off = 0;
     let data = &buf[offset..];
     let mut endian = e;
@@ -430,7 +430,7 @@ impl<'a> Cr3Decoder<'a> {
       endian = Endian::Big;
     }
 
-    TiffIFD::new(buf, offset + off, base_offset, 0, chain_level + 1, endian, &vec![])
+    Ok(LegacyTiffIFD::new(buf, offset + off, base_offset, 0, chain_level + 1, endian, &vec![])?)
   }
 }
 
@@ -566,7 +566,7 @@ impl Into<u16> for Cr3MakernoteTag {
 impl TryFrom<u16> for Cr3MakernoteTag {
   type Error = String;
 
-  fn try_from(value: u16) -> Result<Self, Self::Error> {
+  fn try_from(value: u16) -> std::result::Result<Self, Self::Error> {
     Self::n(value).ok_or(format!("Unable to convert tag: {}, not defined in enum", value))
   }
 }

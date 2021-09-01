@@ -1,7 +1,7 @@
 use std::f32::NAN;
 
 use crate::decoders::*;
-use crate::formats::tiff::*;
+use crate::formats::tiff_legacy::*;
 use crate::bits::*;
 
 pub fn is_x3f(buf: &[u8]) -> bool {
@@ -32,12 +32,12 @@ struct X3fImage {
 }
 
 impl X3fFile {
-  fn new(buf: &Buffer) -> Result<X3fFile, String> {
+  fn new(buf: &Buffer) -> Result<X3fFile> {
     let offset = LEu32(&buf.buf, buf.size-4) as usize;
     let data = &buf.buf[offset..];
     let version = LEu32(data, 4);
     if version < 0x00020000 {
-      return Err(format!("X3F: Directory version too old {}", version).to_string())
+      return Err(RawlerError::Unsupported(format!("X3F: Directory version too old {}", version).to_string()))
     }
     let entries = LEu32(data, 8) as usize;
     let mut dirs = Vec::new();
@@ -59,7 +59,7 @@ impl X3fFile {
 }
 
 impl X3fDirectory {
-  fn new(buf: &[u8], offset: usize) -> Result<X3fDirectory, String> {
+  fn new(buf: &[u8], offset: usize) -> Result<X3fDirectory> {
     let data = &buf[offset..];
     let off = LEu32(data, 0) as usize;
     let len = LEu32(data, 4) as usize;
@@ -74,7 +74,7 @@ impl X3fDirectory {
 }
 
 impl X3fImage {
-  fn new(buf: &[u8], offset: usize) -> Result<X3fImage, String> {
+  fn new(buf: &[u8], offset: usize) -> Result<X3fImage> {
     let data = &buf[offset..];
 
     Ok(X3fImage {
@@ -108,16 +108,16 @@ impl<'a> X3fDecoder<'a> {
 }
 
 impl<'a> Decoder for X3fDecoder<'a> {
-  fn raw_image(&self, _params: RawDecodeParams, dummy: bool) -> Result<RawImage,String> {
+  fn raw_image(&self, _params: RawDecodeParams, dummy: bool) -> Result<RawImage> {
     let caminfo = self.dir.images
         .iter()
         .find(|i| i.typ == 2 && i.format == 0x12)
         .ok_or("X3F: Couldn't find camera info".to_string())?;
     let data = &self.buffer[caminfo.doffset+6..];
     if data[0..4] != b"Exif"[..] {
-      return Err("X3F: Couldn't find EXIF info".to_string())
+      return Err(RawlerError::Unsupported("X3F: Couldn't find EXIF info".to_string()))
     }
-    let tiff = TiffIFD::new_root(self.buffer, caminfo.doffset+12, &vec![])?;
+    let tiff = LegacyTiffIFD::new_root(self.buffer, caminfo.doffset+12, &vec![])?;
     let camera = self.rawloader.check_supported(&tiff)?;
 
     let imginfo = self.dir.images
@@ -131,7 +131,7 @@ impl<'a> Decoder for X3fDecoder<'a> {
 
     let image = match imginfo.format {
       35 => self.decode_compressed(src, width, height, dummy)?,
-      x => return Err(format!("X3F Don't know how to decode format {}", x).to_string())
+      x => return Err(RawlerError::Unsupported(format!("X3F Don't know how to decode format {}", x).to_string()))
     };
 
     let mut img = RawImage::new(camera, width, height, self.get_wb()?, image, dummy);
@@ -141,11 +141,11 @@ impl<'a> Decoder for X3fDecoder<'a> {
 }
 
 impl<'a> X3fDecoder<'a> {
-  fn get_wb(&self) -> Result<[f32;4], String> {
+  fn get_wb(&self) -> Result<[f32;4]> {
     Ok([NAN,NAN,NAN,NAN])
   }
 
-  fn decode_compressed(&self, _buf: &[u8], _width: usize, _height: usize, _dummy: bool) -> Result<Vec<u16>, String> {
-    return Err("X3F decoding not implemented yet".to_string())
+  fn decode_compressed(&self, _buf: &[u8], _width: usize, _height: usize, _dummy: bool) -> Result<Vec<u16>> {
+    return Err(RawlerError::Unsupported("X3F decoding not implemented yet".to_string()))
   }
 }

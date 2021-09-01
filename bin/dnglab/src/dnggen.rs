@@ -7,19 +7,18 @@ use log::{debug, info};
 use rawler::{
   decoders::RawDecodeParams,
   dng::dng_active_area,
+  formats::tiff::{CompressionMethod, DirectoryWriter, PhotometricInterpretation, PreviewColorSpace, TiffError, TiffWriter, Value},
   imgop::{raw::develop_raw_srgb, rescale_f32_to_u16, xyz::Illuminant},
-  tiff::{CompressionMethod, DirectoryWriter, PhotometricInterpretation, PreviewColorSpace, TiffError, Value},
-  RawImage,
+  RawImage, RawlerError,
 };
 use rawler::{
   dng::{original_compress, original_digest, DNG_VERSION_V1_4},
   ljpeg92::LjpegCompressor,
-  tags::{DngTag, ExifTag, TiffRootTag},
-  tiff::TiffWriter,
+  tags::{DngTag, ExifTag, LegacyTiffRootTag},
   Buffer, RawImageData,
 };
 use rawler::{
-  tiff::{Rational, SRational},
+  formats::tiff::{Rational, SRational},
   tiles::TiledData,
 };
 use rayon::prelude::*;
@@ -44,9 +43,15 @@ pub enum DngError {
 }
 
 impl From<String> for DngError {
-    fn from(what: String) -> Self {
-        Self::DecoderFail(what)
-    }
+  fn from(what: String) -> Self {
+    Self::DecoderFail(what)
+  }
+}
+
+impl From<RawlerError> for DngError {
+  fn from(err: RawlerError) -> Self {
+    Self::DecoderFail(err.to_string()) // TODO better handling
+  }
 }
 
 /// Result type for dnggen
@@ -142,7 +147,7 @@ pub fn raw_to_dng(raw_file: &mut File, dng_file: &mut File, orig_filename: &str,
   let mut dng = TiffWriter::new(&mut dng_file).unwrap();
   let mut root_ifd = dng.new_directory();
 
-  root_ifd.add_tag(TiffRootTag::NewSubFileType, 1 as u16)?;
+  root_ifd.add_tag(LegacyTiffRootTag::NewSubFileType, 1 as u16)?;
   if let Some(full_img) = &full_img {
     if params.thumbnail {
       dng_put_thumbnail(&mut root_ifd, &full_img).unwrap();
@@ -150,13 +155,13 @@ pub fn raw_to_dng(raw_file: &mut File, dng_file: &mut File, orig_filename: &str,
   }
 
   if let Some(artist) = &params.artist {
-    root_ifd.add_tag(TiffRootTag::Artist, artist)?;
+    root_ifd.add_tag(LegacyTiffRootTag::Artist, artist)?;
   }
-  root_ifd.add_tag(TiffRootTag::Software, &params.software)?;
+  root_ifd.add_tag(LegacyTiffRootTag::Software, &params.software)?;
   root_ifd.add_tag(DngTag::DNGVersion, &DNG_VERSION_V1_4[..])?;
   root_ifd.add_tag(DngTag::DNGBackwardVersion, &DNG_VERSION_V1_4[..])?;
-  root_ifd.add_tag(TiffRootTag::Make, rawimage.make.as_str())?;
-  root_ifd.add_tag(TiffRootTag::Model, rawimage.clean_model.as_str())?;
+  root_ifd.add_tag(LegacyTiffRootTag::Make, rawimage.make.as_str())?;
+  root_ifd.add_tag(LegacyTiffRootTag::Model, rawimage.clean_model.as_str())?;
   let uq_model = String::from(format!("{} {}", rawimage.clean_make, rawimage.clean_model));
   root_ifd.add_tag(DngTag::UniqueCameraModel, uq_model.as_str())?;
   root_ifd.add_tag(ExifTag::ModifyDate, chrono::Local::now().format("%Y:%m:%d %H:%M:%S").to_string())?;
@@ -184,7 +189,7 @@ pub fn raw_to_dng(raw_file: &mut File, dng_file: &mut File, orig_filename: &str,
     decoder.populate_dng_exif(&mut exif_ifd).unwrap();
     exif_ifd.build()?
   };
-  root_ifd.add_tag(TiffRootTag::ExifIFDPointer, exif_offset)?;
+  root_ifd.add_tag(LegacyTiffRootTag::ExifIFDPointer, exif_offset)?;
 
   // Add XPACKET (XMP) information
   if let Some(xpacket) = decoder.xpacket() {
@@ -215,7 +220,7 @@ pub fn raw_to_dng(raw_file: &mut File, dng_file: &mut File, orig_filename: &str,
   }
 
   // Add SubIFDs
-  root_ifd.add_tag(TiffRootTag::SubIFDs, &sub_ifds)?;
+  root_ifd.add_tag(LegacyTiffRootTag::SubIFDs, &sub_ifds)?;
 
   // Add decoder specific entries to DNG root
   // This may override previous entries!
@@ -241,34 +246,34 @@ fn dng_put_raw(raw_ifd: &mut DirectoryWriter<'_, '_>, rawimage: &RawImage, param
     dng_active_area(&rawimage)
   };
 
-  raw_ifd.add_tag(TiffRootTag::NewSubFileType, 0 as u16)?; // Raw
-  raw_ifd.add_tag(TiffRootTag::ImageWidth, rawimage.width as u32)?;
-  raw_ifd.add_tag(TiffRootTag::ImageLength, rawimage.height as u32)?;
+  raw_ifd.add_tag(LegacyTiffRootTag::NewSubFileType, 0 as u16)?; // Raw
+  raw_ifd.add_tag(LegacyTiffRootTag::ImageWidth, rawimage.width as u32)?;
+  raw_ifd.add_tag(LegacyTiffRootTag::ImageLength, rawimage.height as u32)?;
   raw_ifd.add_tag(DngTag::ActiveArea, active_area)?;
   raw_ifd.add_tag(DngTag::BlackLevel, black_level)?;
   raw_ifd.add_tag(DngTag::BlackLevelRepeatDim, [2_u16, 2_u16])?;
   raw_ifd.add_tag(DngTag::WhiteLevel, white_level as u16)?;
-  raw_ifd.add_tag(TiffRootTag::PhotometricInt, PhotometricInterpretation::CFA)?;
+  raw_ifd.add_tag(LegacyTiffRootTag::PhotometricInt, PhotometricInterpretation::CFA)?;
   raw_ifd.add_tag(DngTag::CFALayout, 1 as u16)?;
-  raw_ifd.add_tag(TiffRootTag::CFAPattern, [0u8, 1u8, 1u8, 2u8])?; // RGGB
-  raw_ifd.add_tag(TiffRootTag::CFARepeatPatternDim, [2u16, 2u16])?;
+  raw_ifd.add_tag(LegacyTiffRootTag::CFAPattern, [0u8, 1u8, 1u8, 2u8])?; // RGGB
+  raw_ifd.add_tag(LegacyTiffRootTag::CFARepeatPatternDim, [2u16, 2u16])?;
   raw_ifd.add_tag(ExifTag::PlanarConfiguration, 1_u16)?;
   raw_ifd.add_tag(DngTag::DefaultScale, [Rational::new(1, 1), Rational::new(1, 1)])?;
   raw_ifd.add_tag(DngTag::BestQualityScale, Rational::new(1, 1))?;
 
   //raw_ifd.add_tag(TiffRootTag::RowsPerStrip, rawimage.height as u16)?;
-  raw_ifd.add_tag(TiffRootTag::SamplesPerPixel, 1_u16)?;
-  raw_ifd.add_tag(TiffRootTag::BitsPerSample, [16_u16])?;
+  raw_ifd.add_tag(LegacyTiffRootTag::SamplesPerPixel, 1_u16)?;
+  raw_ifd.add_tag(LegacyTiffRootTag::BitsPerSample, [16_u16])?;
   //raw_ifd.add_tag(DngTag::DefaultCropOrigin, &default_crop[..])?;
   //raw_ifd.add_tag(DngTag::DefaultCropSize, &default_size[..])?;
 
   match params.compression {
     DngCompression::Uncompressed => {
-      raw_ifd.add_tag(TiffRootTag::Compression, CompressionMethod::None)?;
+      raw_ifd.add_tag(LegacyTiffRootTag::Compression, CompressionMethod::None)?;
       dng_put_raw_uncompressed(raw_ifd, rawimage)?;
     }
     DngCompression::Lossless => {
-      raw_ifd.add_tag(TiffRootTag::Compression, CompressionMethod::ModernJPEG)?;
+      raw_ifd.add_tag(LegacyTiffRootTag::Compression, CompressionMethod::ModernJPEG)?;
       dng_put_raw_ljpeg(raw_ifd, rawimage, params.predictor)?;
     }
   }
@@ -334,10 +339,10 @@ fn dng_put_raw_ljpeg(raw_ifd: &mut DirectoryWriter<'_, '_>, rawimage: &RawImage,
   });
 
   //let offs = raw_ifd.write_data(&lj92_data)?;
-  raw_ifd.add_tag(TiffRootTag::TileOffsets, &tile_offsets)?;
-  raw_ifd.add_tag(TiffRootTag::TileByteCounts, &tile_sizes)?;
-  raw_ifd.add_tag(TiffRootTag::TileWidth, lj92_data.1 as u16)?; // FIXME
-  raw_ifd.add_tag(TiffRootTag::TileLength, lj92_data.2 as u16)?;
+  raw_ifd.add_tag(LegacyTiffRootTag::TileOffsets, &tile_offsets)?;
+  raw_ifd.add_tag(LegacyTiffRootTag::TileByteCounts, &tile_sizes)?;
+  raw_ifd.add_tag(LegacyTiffRootTag::TileWidth, lj92_data.1 as u16)?; // FIXME
+  raw_ifd.add_tag(LegacyTiffRootTag::TileLength, lj92_data.2 as u16)?;
 
   Ok(())
 }
@@ -363,9 +368,9 @@ fn dng_put_raw_uncompressed(raw_ifd: &mut DirectoryWriter<'_, '_>, rawimage: &Ra
         strip_rows.push((strip.len() / rawimage.width) as u32);
       }
 
-      raw_ifd.add_tag(TiffRootTag::StripOffsets, &strip_offsets)?;
-      raw_ifd.add_tag(TiffRootTag::StripByteCounts, &strip_sizes)?;
-      raw_ifd.add_tag(TiffRootTag::RowsPerStrip, &strip_rows)?;
+      raw_ifd.add_tag(LegacyTiffRootTag::StripOffsets, &strip_offsets)?;
+      raw_ifd.add_tag(LegacyTiffRootTag::StripByteCounts, &strip_sizes)?;
+      raw_ifd.add_tag(LegacyTiffRootTag::RowsPerStrip, &strip_rows)?;
     }
     RawImageData::Float(ref _data) => {
       panic!("invalid format");
@@ -379,22 +384,22 @@ fn dng_put_raw_uncompressed(raw_ifd: &mut DirectoryWriter<'_, '_>, rawimage: &Ra
 fn dng_put_thumbnail(ifd: &mut DirectoryWriter<'_, '_>, img: &DynamicImage) -> Result<()> {
   let thumb_img = img.resize(240, 120, FilterType::Nearest).to_rgb8();
 
-  ifd.add_tag(TiffRootTag::ImageWidth, thumb_img.width() as u32)?;
-  ifd.add_tag(TiffRootTag::ImageLength, thumb_img.height() as u32)?;
-  ifd.add_tag(TiffRootTag::Compression, CompressionMethod::None)?;
-  ifd.add_tag(TiffRootTag::BitsPerSample, 8_u16)?;
-  ifd.add_tag(TiffRootTag::SampleFormat, [1_u16, 1, 1])?;
-  ifd.add_tag(TiffRootTag::PhotometricInt, PhotometricInterpretation::RGB)?;
-  ifd.add_tag(TiffRootTag::SamplesPerPixel, 3_u16)?;
+  ifd.add_tag(LegacyTiffRootTag::ImageWidth, thumb_img.width() as u32)?;
+  ifd.add_tag(LegacyTiffRootTag::ImageLength, thumb_img.height() as u32)?;
+  ifd.add_tag(LegacyTiffRootTag::Compression, CompressionMethod::None)?;
+  ifd.add_tag(LegacyTiffRootTag::BitsPerSample, 8_u16)?;
+  ifd.add_tag(LegacyTiffRootTag::SampleFormat, [1_u16, 1, 1])?;
+  ifd.add_tag(LegacyTiffRootTag::PhotometricInt, PhotometricInterpretation::RGB)?;
+  ifd.add_tag(LegacyTiffRootTag::SamplesPerPixel, 3_u16)?;
   //ifd.add_tag(TiffRootTag::XResolution, Rational { n: 1, d: 1 })?;
   //ifd.add_tag(TiffRootTag::YResolution, Rational { n: 1, d: 1 })?;
   //ifd.add_tag(TiffRootTag::ResolutionUnit, ResolutionUnit::None.to_u16())?;
 
   let offset = ifd.write_data(&thumb_img)?;
 
-  ifd.add_tag(TiffRootTag::StripOffsets, offset)?;
-  ifd.add_tag(TiffRootTag::StripByteCounts, thumb_img.len() as u32)?;
-  ifd.add_tag(TiffRootTag::RowsPerStrip, thumb_img.height() as u32)?;
+  ifd.add_tag(LegacyTiffRootTag::StripOffsets, offset)?;
+  ifd.add_tag(LegacyTiffRootTag::StripByteCounts, thumb_img.len() as u32)?;
+  ifd.add_tag(LegacyTiffRootTag::RowsPerStrip, thumb_img.height() as u32)?;
 
   Ok(())
 }
@@ -404,15 +409,15 @@ fn dng_put_preview(ifd: &mut DirectoryWriter<'_, '_>, img: &DynamicImage) -> Res
   let preview_img = DynamicImage::ImageRgb8(img.resize(1024, 768, FilterType::Nearest).to_rgb8());
   debug!("preview downscale: {} s", now.elapsed().as_secs_f32());
 
-  ifd.add_tag(TiffRootTag::NewSubFileType, 1 as u16)?;
-  ifd.add_tag(TiffRootTag::ImageWidth, preview_img.width() as u32)?;
-  ifd.add_tag(TiffRootTag::ImageLength, preview_img.height() as u32)?;
-  ifd.add_tag(TiffRootTag::Compression, CompressionMethod::ModernJPEG)?;
-  ifd.add_tag(TiffRootTag::BitsPerSample, 8_u16)?;
-  ifd.add_tag(TiffRootTag::SampleFormat, [1_u16, 1, 1])?;
-  ifd.add_tag(TiffRootTag::PhotometricInt, PhotometricInterpretation::YCbCr)?;
-  ifd.add_tag(TiffRootTag::RowsPerStrip, preview_img.height() as u32)?;
-  ifd.add_tag(TiffRootTag::SamplesPerPixel, 3_u16)?;
+  ifd.add_tag(LegacyTiffRootTag::NewSubFileType, 1 as u16)?;
+  ifd.add_tag(LegacyTiffRootTag::ImageWidth, preview_img.width() as u32)?;
+  ifd.add_tag(LegacyTiffRootTag::ImageLength, preview_img.height() as u32)?;
+  ifd.add_tag(LegacyTiffRootTag::Compression, CompressionMethod::ModernJPEG)?;
+  ifd.add_tag(LegacyTiffRootTag::BitsPerSample, 8_u16)?;
+  ifd.add_tag(LegacyTiffRootTag::SampleFormat, [1_u16, 1, 1])?;
+  ifd.add_tag(LegacyTiffRootTag::PhotometricInt, PhotometricInterpretation::YCbCr)?;
+  ifd.add_tag(LegacyTiffRootTag::RowsPerStrip, preview_img.height() as u32)?;
+  ifd.add_tag(LegacyTiffRootTag::SamplesPerPixel, 3_u16)?;
   ifd.add_tag(DngTag::PreviewColorSpace, PreviewColorSpace::SRgb)?; // ??
 
   //ifd.add_tag(TiffRootTag::XResolution, Rational { n: 1, d: 1 })?;
@@ -431,8 +436,8 @@ fn dng_put_preview(ifd: &mut DirectoryWriter<'_, '_>, img: &DynamicImage) -> Res
   let data_len = ifd.tiff.position()? - offset;
   debug!("writing preview: {} s", now.elapsed().as_secs_f32());
 
-  ifd.add_value(TiffRootTag::StripOffsets, Value::Long(vec![offset]))?;
-  ifd.add_tag(TiffRootTag::StripByteCounts, [data_len as u32])?;
+  ifd.add_value(LegacyTiffRootTag::StripOffsets, Value::Long(vec![offset]))?;
+  ifd.add_tag(LegacyTiffRootTag::StripByteCounts, [data_len as u32])?;
 
   Ok(())
 }

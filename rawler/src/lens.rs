@@ -6,7 +6,7 @@ use log::debug;
 use std::collections::HashMap;
 use toml::Value;
 
-use crate::tiff::Rational;
+use crate::formats::tiff::Rational;
 
 pub static LENSES_TOML: &'static str = include_str!("../data/lenses.toml");
 

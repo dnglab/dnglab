@@ -2,7 +2,7 @@ use std::f32::NAN;
 
 use crate::alloc_image_ok;
 use crate::decoders::*;
-use crate::formats::tiff::*;
+use crate::formats::tiff_legacy::*;
 use crate::decompressors::ljpeg::*;
 use crate::packed::*;
 
@@ -10,11 +10,11 @@ use crate::packed::*;
 pub struct MosDecoder<'a> {
   buffer: &'a [u8],
   rawloader: &'a RawLoader,
-  tiff: TiffIFD<'a>,
+  tiff: LegacyTiffIFD<'a>,
 }
 
 impl<'a> MosDecoder<'a> {
-  pub fn new(buf: &'a [u8], tiff: TiffIFD<'a>, rawloader: &'a RawLoader) -> MosDecoder<'a> {
+  pub fn new(buf: &'a [u8], tiff: LegacyTiffIFD<'a>, rawloader: &'a RawLoader) -> MosDecoder<'a> {
     MosDecoder {
       buffer: buf,
       tiff: tiff,
@@ -24,19 +24,19 @@ impl<'a> MosDecoder<'a> {
 }
 
 impl<'a> Decoder for MosDecoder<'a> {
-  fn raw_image(&self, _params: RawDecodeParams, dummy: bool) -> Result<RawImage,String> {
+  fn raw_image(&self, _params: RawDecodeParams, dummy: bool) -> Result<RawImage> {
     let make = self.xmp_tag("Make")?;
     let model_full = self.xmp_tag("Model")?.to_string();
     let model = model_full.split_terminator("(").next().unwrap();
     let camera = self.rawloader.check_supported_with_everything(&make, &model, "")?;
 
-    let raw = fetch_ifd!(&self.tiff, TiffRootTag::TileOffsets);
-    let width = fetch_tag!(raw, TiffRootTag::ImageWidth).get_usize(0);
-    let height = fetch_tag!(raw, TiffRootTag::ImageLength).get_usize(0);
-    let offset = fetch_tag!(raw, TiffRootTag::TileOffsets).get_usize(0);
+    let raw = fetch_ifd!(&self.tiff, LegacyTiffRootTag::TileOffsets);
+    let width = fetch_tag!(raw, LegacyTiffRootTag::ImageWidth).get_usize(0);
+    let height = fetch_tag!(raw, LegacyTiffRootTag::ImageLength).get_usize(0);
+    let offset = fetch_tag!(raw, LegacyTiffRootTag::TileOffsets).get_usize(0);
     let src = &self.buffer[offset..];
 
-    let image = match fetch_tag!(raw, TiffRootTag::Compression).get_usize(0) {
+    let image = match fetch_tag!(raw, LegacyTiffRootTag::Compression).get_usize(0) {
       1 => {
         if self.tiff.little_endian() {
           decode_16le(src, width, height, dummy)
@@ -47,7 +47,7 @@ impl<'a> Decoder for MosDecoder<'a> {
       7 | 99 => {
         self.decode_compressed(&camera, src, width, height, dummy)?
       },
-      x => return Err(format!("MOS: unsupported compression {}", x).to_string())
+      x => return Err(RawlerError::Unsupported(format!("MOS: unsupported compression {}", x).to_string()))
     };
 
     ok_image(camera, width, height, self.get_wb()?, image)
@@ -55,8 +55,8 @@ impl<'a> Decoder for MosDecoder<'a> {
 }
 
 impl<'a> MosDecoder<'a> {
-  fn get_wb(&self) -> Result<[f32;4], String> {
-    let meta = fetch_tag!(self.tiff, TiffRootTag::LeafMetadata).get_data();
+  fn get_wb(&self) -> Result<[f32;4]> {
+    let meta = fetch_tag!(self.tiff, LegacyTiffRootTag::LeafMetadata).get_data();
     let mut pos = 0;
     // We need at least 16+45+10 bytes for the NeutObj_neutrals section itself
     while pos + 70 < meta.len() {
@@ -78,8 +78,8 @@ impl<'a> MosDecoder<'a> {
     Ok([NAN,NAN,NAN,NAN])
   }
 
-  fn xmp_tag(&self, tag: &str) -> Result<String, String> {
-    let xmp = fetch_tag!(self.tiff, TiffRootTag::Xmp).get_str();
+  fn xmp_tag(&self, tag: &str) -> Result<String> {
+    let xmp = fetch_tag!(self.tiff, LegacyTiffRootTag::Xmp).get_str();
     let error = format!("MOS: Couldn't find XMP tag {}", tag).to_string();
     let start = xmp.find(&format!("<tiff:{}>",tag)).ok_or(error.clone())?;
     let end   = xmp.find(&format!("</tiff:{}>",tag)).ok_or(error.clone())?;
@@ -87,12 +87,12 @@ impl<'a> MosDecoder<'a> {
     Ok(xmp[start+tag.len()+7..end].to_string())
   }
 
-  pub fn decode_compressed(&self, cam: &Camera, src: &[u8], width: usize, height: usize, dummy: bool) -> Result<Vec<u16>,String> {
+  pub fn decode_compressed(&self, cam: &Camera, src: &[u8], width: usize, height: usize, dummy: bool) -> Result<Vec<u16>> {
     let interlaced = cam.find_hint("interlaced");
     Self::do_decode(src, interlaced, width, height, dummy)
   }
 
-  pub(crate) fn do_decode(src: &[u8], interlaced:bool, width: usize, height: usize, dummy: bool) -> Result<Vec<u16>,String> {
+  pub(crate) fn do_decode(src: &[u8], interlaced:bool, width: usize, height: usize, dummy: bool) -> Result<Vec<u16>> {
     if dummy {
       return Ok(vec![0]);
     }

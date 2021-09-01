@@ -3,7 +3,7 @@
 
 use clap::ArgMatches;
 use rawler::tags::DngTag;
-use rawler::tiff::{Entry, TiffReader, Value};
+use rawler::formats::tiff::{Entry, TiffReader, Value};
 use rayon::prelude::*;
 use std::fs::{create_dir_all, File};
 use std::io::BufReader;

@@ -2,7 +2,7 @@ use std::f32::NAN;
 
 use crate::alloc_image_ok;
 use crate::decoders::*;
-use crate::formats::tiff::*;
+use crate::formats::tiff_legacy::*;
 use crate::decompressors::ljpeg::*;
 use crate::packed::*;
 
@@ -10,11 +10,11 @@ use crate::packed::*;
 pub struct TfrDecoder<'a> {
   buffer: &'a [u8],
   rawloader: &'a RawLoader,
-  tiff: TiffIFD<'a>,
+  tiff: LegacyTiffIFD<'a>,
 }
 
 impl<'a> TfrDecoder<'a> {
-  pub fn new(buf: &'a [u8], tiff: TiffIFD<'a>, rawloader: &'a RawLoader) -> TfrDecoder<'a> {
+  pub fn new(buf: &'a [u8], tiff: LegacyTiffIFD<'a>, rawloader: &'a RawLoader) -> TfrDecoder<'a> {
     TfrDecoder {
       buffer: buf,
       tiff: tiff,
@@ -24,12 +24,12 @@ impl<'a> TfrDecoder<'a> {
 }
 
 impl<'a> Decoder for TfrDecoder<'a> {
-  fn raw_image(&self, _params: RawDecodeParams, dummy: bool) -> Result<RawImage,String> {
+  fn raw_image(&self, _params: RawDecodeParams, dummy: bool) -> Result<RawImage> {
     let camera = self.rawloader.check_supported(&self.tiff)?;
-    let raw = fetch_ifd!(&self.tiff, TiffRootTag::WhiteLevel);
-    let width = fetch_tag!(raw, TiffRootTag::ImageWidth).get_usize(0);
-    let height = fetch_tag!(raw, TiffRootTag::ImageLength).get_usize(0);
-    let offset = fetch_tag!(raw, TiffRootTag::StripOffsets).get_usize(0);
+    let raw = fetch_ifd!(&self.tiff, LegacyTiffRootTag::WhiteLevel);
+    let width = fetch_tag!(raw, LegacyTiffRootTag::ImageWidth).get_usize(0);
+    let height = fetch_tag!(raw, LegacyTiffRootTag::ImageLength).get_usize(0);
+    let offset = fetch_tag!(raw, LegacyTiffRootTag::StripOffsets).get_usize(0);
     let src = &self.buffer[offset..];
 
     let image = if camera.find_hint("uncompressed") {
@@ -43,12 +43,12 @@ impl<'a> Decoder for TfrDecoder<'a> {
 }
 
 impl<'a> TfrDecoder<'a> {
-  fn get_wb(&self) -> Result<[f32;4], String> {
-    let levels = fetch_tag!(self.tiff, TiffRootTag::AsShotNeutral);
+  fn get_wb(&self) -> Result<[f32;4]> {
+    let levels = fetch_tag!(self.tiff, LegacyTiffRootTag::AsShotNeutral);
     Ok([1.0/levels.get_f32(0),1.0/levels.get_f32(1),1.0/levels.get_f32(2),NAN])
   }
 
-  fn decode_compressed(&self, src: &[u8], width: usize, height: usize, dummy: bool) -> Result<Vec<u16>,String> {
+  fn decode_compressed(&self, src: &[u8], width: usize, height: usize, dummy: bool) -> Result<Vec<u16>> {
     let mut out = alloc_image_ok!(width, height, dummy);
     let decompressor = LjpegDecompressor::new_full(src, true, false)?;
     decompressor.decode(&mut out, 0, width, width, height, dummy)?;

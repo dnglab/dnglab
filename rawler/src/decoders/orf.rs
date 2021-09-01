@@ -2,7 +2,7 @@ use std::f32::NAN;
 use std::cmp;
 
 use crate::decoders::*;
-use crate::formats::tiff::*;
+use crate::formats::tiff_legacy::*;
 use crate::packed::*;
 use crate::pumps::BitPump;
 use crate::pumps::BitPumpMSB;
@@ -11,11 +11,11 @@ use crate::pumps::BitPumpMSB;
 pub struct OrfDecoder<'a> {
   buffer: &'a [u8],
   rawloader: &'a RawLoader,
-  tiff: TiffIFD<'a>,
+  tiff: LegacyTiffIFD<'a>,
 }
 
 impl<'a> OrfDecoder<'a> {
-  pub fn new(buf: &'a [u8], tiff: TiffIFD<'a>, rawloader: &'a RawLoader) -> OrfDecoder<'a> {
+  pub fn new(buf: &'a [u8], tiff: LegacyTiffIFD<'a>, rawloader: &'a RawLoader) -> OrfDecoder<'a> {
     OrfDecoder {
       buffer: buf,
       tiff: tiff,
@@ -25,13 +25,13 @@ impl<'a> OrfDecoder<'a> {
 }
 
 impl<'a> Decoder for OrfDecoder<'a> {
-  fn raw_image(&self, _params: RawDecodeParams, dummy: bool) -> Result<RawImage,String> {
+  fn raw_image(&self, _params: RawDecodeParams, dummy: bool) -> Result<RawImage> {
     let camera = self.rawloader.check_supported(&self.tiff)?;
-    let raw = fetch_ifd!(&self.tiff, TiffRootTag::StripOffsets);
-    let width = fetch_tag!(raw, TiffRootTag::ImageWidth).get_usize(0);
-    let height = fetch_tag!(raw, TiffRootTag::ImageLength).get_usize(0);
-    let offset = fetch_tag!(raw, TiffRootTag::StripOffsets).get_usize(0);
-    let counts = fetch_tag!(raw, TiffRootTag::StripByteCounts);
+    let raw = fetch_ifd!(&self.tiff, LegacyTiffRootTag::StripOffsets);
+    let width = fetch_tag!(raw, LegacyTiffRootTag::ImageWidth).get_usize(0);
+    let height = fetch_tag!(raw, LegacyTiffRootTag::ImageLength).get_usize(0);
+    let offset = fetch_tag!(raw, LegacyTiffRootTag::StripOffsets).get_usize(0);
+    let counts = fetch_tag!(raw, LegacyTiffRootTag::StripByteCounts);
     let mut size: usize = 0;
     for i in 0..counts.count() {
       size += counts.get_u32(i as usize) as usize;
@@ -161,23 +161,23 @@ impl<'a> OrfDecoder<'a> {
     out
   }
 
-  fn get_blacks(&self) -> Result<[u16;4], String> {
-    let blacks = fetch_tag!(self.tiff, TiffRootTag::OrfBlackLevels);
+  fn get_blacks(&self) -> Result<[u16;4]> {
+    let blacks = fetch_tag!(self.tiff, LegacyTiffRootTag::OrfBlackLevels);
     Ok([blacks.get_u16(0), blacks.get_u16(1), blacks.get_u16(2), blacks.get_u16(3)])
   }
 
-  fn get_wb(&self) -> Result<[f32;4],String> {
-    let redmul = self.tiff.find_entry(TiffRootTag::OlympusRedMul);
-    let bluemul = self.tiff.find_entry(TiffRootTag::OlympusBlueMul);
+  fn get_wb(&self) -> Result<[f32;4]> {
+    let redmul = self.tiff.find_entry(LegacyTiffRootTag::OlympusRedMul);
+    let bluemul = self.tiff.find_entry(LegacyTiffRootTag::OlympusBlueMul);
 
     if redmul.is_some() && bluemul.is_some() {
       Ok([redmul.unwrap().get_u32(0) as f32,256.0,bluemul.unwrap().get_u32(0) as f32,NAN])
     } else {
-      let ifd = self.tiff.find_ifds_with_tag(TiffRootTag::OrfBlackLevels);
+      let ifd = self.tiff.find_ifds_with_tag(LegacyTiffRootTag::OrfBlackLevels);
       if ifd.len() == 0 {
-        return Err("ORF: Couldn't find ImgProc IFD".to_string());
+        return Err(RawlerError::General("ORF: Couldn't find ImgProc IFD".to_string()));
       }
-      let wbs = fetch_tag!(ifd[0], TiffRootTag::ImageWidth);
+      let wbs = fetch_tag!(ifd[0], LegacyTiffRootTag::ImageWidth);
       Ok([wbs.get_f32(0), 256.0, wbs.get_f32(1),NAN])
     }
   }
