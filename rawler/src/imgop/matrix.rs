@@ -74,3 +74,46 @@ pub fn pseudo_inverse<const N: usize>(matrix: [[f32; 3]; N]) -> [[f32; N]; 3] {
   }
   result
 }
+
+/// Transpose a given input matrix
+pub fn transpose<const N: usize, const M: usize>(matrix: &[[f32; M]; N]) -> [[f32; N]; M] {
+  let mut transposed = [[f32::NAN; N]; M];
+  for n in 0..N {
+    for m in 0..M {
+      transposed[m][n] = matrix[n][m];
+    }
+  }
+  transposed
+}
+
+/// Transform a 2D matrix representation to 1D
+pub fn transform_2d<const N: usize, const M: usize>(matrix: &[[f32; M]; N]) -> Vec<f32> {
+  matrix.iter().flat_map(|n| n.iter().cloned()).collect()
+}
+
+/// Transform a 1D matrix representation to 2D
+pub fn transform_1d<const N: usize, const M: usize>(matrix: &[f32]) -> Option<[[f32; M]; N]> {
+  if matrix.len() != (N * M) {
+    return None;
+  };
+  let mut transformed = [[f32::NAN; M]; N];
+  for (i, v) in matrix.iter().cloned().enumerate() {
+    *transformed.get_mut(i / M).and_then(|inner| inner.get_mut(i % M))? = v;
+  }
+  Some(transformed)
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[test]
+  fn transform_1d_to_2d() -> std::result::Result<(), Box<dyn std::error::Error>> {
+    let m1d = vec![1.3, 5.3, 6.1, 4.2, 8.3, 8.2];
+    assert!(transform_1d::<2, 3>(&m1d).is_some());
+    assert!(transform_1d::<3, 2>(&m1d).is_some());
+    assert!(transform_1d::<1, 1>(&m1d).is_none());
+    assert!(transform_1d::<6, 7>(&m1d).is_none());
+    Ok(())
+  }
+}
