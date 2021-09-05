@@ -271,7 +271,7 @@ aperture_range = [[28, 10], [40, 10]]
 # Venus Optics/Laowa lenses
 [[lenses]]
 key = "LAOWA 100mm F2.8 CA-Dreamer Macro 2x"
-model = "100mm F2.8 2X Ultra Macro APO"
-make = "Venus Laowa"
+model = "Laowa 100mm F2.8 2X Ultra Macro APO"
+make = "Venus"
 focal_range = [[100, 1], [100, 1]]
 aperture_range = [[28, 10], [28, 10]]
