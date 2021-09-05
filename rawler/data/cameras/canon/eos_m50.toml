@@ -1,5 +1,8 @@
 make = "Canon"
 model = "Canon EOS M50"
+model_aliases = [
+  ["Canon EOS KISS M", "EOS KISS M"],
+]
 clean_make = "Canon"
 clean_model = "EOS M50"
 color_pattern = "RGGB"
