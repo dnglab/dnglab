@@ -156,6 +156,13 @@ model = "EF 50mm f/1.4 USM"
 focal_range = [[50, 1], [50, 1]]
 aperture_range = [[14, 10], [14, 10]]
 
+[[lenses]]
+key = "EF100-400mm f/4.5-5.6L IS II USM"
+make = "Canon"
+model = "EF 100-400mm f/4.5-5.6L IS II USM"
+focal_range = [[100, 1], [400, 1]]
+aperture_range = [[45, 10], [56, 10]]
+
 # Canon EF-S mount lenses
 
 [[lenses]]
@@ -182,6 +189,13 @@ aperture_range = [[35, 10], [56, 10]]
 # Canon EF-M mount lenses
 
 [[lenses]]
+key = "EF-M11-22mm f/4-5.6 IS STM"
+make = "Canon"
+model = "EF-M 11-22mm f/4-5.6 IS STM"
+focal_range = [[11, 1], [22, 1]]
+aperture_range = [[40, 10], [56, 10]]
+
+[[lenses]]
 key = "EF-M15-45mm f/3.5-6.3 IS STM"
 make = "Canon"
 model = "EF-M 15-45mm f/3.5-6.3 IS STM"
@@ -196,11 +210,25 @@ focal_range = [[18, 1], [150, 1]]
 aperture_range = [[35, 10], [63, 10]]
 
 [[lenses]]
+key = "EF-M22mm f/2 STM"
+make = "Canon"
+model = "EF-M 22mm f/2 STM"
+focal_range = [[22, 1], [22, 1]]
+aperture_range = [[2, 1], [2, 1]]
+
+[[lenses]]
 key = "EF-M32mm f/1.4 STM"
 make = "Canon"
 model = "EF-M 32mm f/1.4 STM"
 focal_range = [[32, 1], [32, 1]]
 aperture_range = [[14, 10], [14, 10]]
+
+[[lenses]]
+key = "EF-M55-200mm f/4.5-6.3 IS STM"
+make = "Canon"
+model = "EF-M 55-200mm f/4.5-6.3 IS STM"
+focal_range = [[55, 1], [200, 1]]
+aperture_range = [[45, 10], [63, 10]]
 
 # Sigma lenses
 
@@ -225,7 +253,6 @@ model = "150-600mm f/5-6.3 DG OS HSM | S"
 focal_range = [[150, 1], [600, 1]]
 aperture_range = [[50, 10], [63, 10]]
 
-
 [[lenses]]
 key = "30mm F1.4 DC HSM | Art 013"
 make = "Sigma"
@@ -233,10 +260,39 @@ model = "30mm f/1.4 DC HSM | A"
 focal_range = [[30, 1], [30, 1]]
 aperture_range = [[14, 10], [14, 10]]
 
-
 [[lenses]]
 key = "50mm F1.4 DG HSM | Art 014"
 make = "Sigma"
 model = "50mm f/1.4 DG HSM | A"
 focal_range = [[50, 1], [50, 1]]
 aperture_range = [[14, 10], [14, 10]]
+
+# Tamron lenses
+[[lenses]]
+key = "TAMRON SP 90mm F/2.8 Di VC USD MACRO1:1 F004"
+make = "Tamron"
+model = "SP 90mm F/2.8 Di VC USD Macro 1:1 F004"
+focal_range = [[90, 1], [90, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+key = "TAMRON 10-24mm F/3.5-4.5 Di II VC HLD B023"
+make = "Tamron"
+model = "10-24mm f/3.5-4.5 Di II VC HLD (B023)"
+focal_range = [[10, 1], [24, 1]]
+aperture_range = [[35, 10], [45, 10]]
+
+[[lenses]]
+key = "TAMRON 17-35mm F/2.8-4 Di OSD A037"
+model = "17-35mm F/2.8-4 Di OSD A037"
+make = "Tamron"
+focal_range = [[17, 1], [35, 1]]
+aperture_range = [[28, 10], [40, 10]]
+
+# Venus Optics/Laowa lenses
+[[lenses]]
+key = "LAOWA 100mm F2.8 CA-Dreamer Macro 2x"
+model = "Laowa 100mm F2.8 2X Ultra Macro APO"
+make = "Venus"
+focal_range = [[100, 1], [100, 1]]
+aperture_range = [[28, 10], [28, 10]]
