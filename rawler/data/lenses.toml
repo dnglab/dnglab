@@ -157,6 +157,13 @@ focal_range = [[50, 1], [50, 1]]
 aperture_range = [[14, 10], [14, 10]]
 
 [[lenses]]
+key = "EF50mm f/1.8 STM"
+make = "Canon"
+model = "EF 50mm f/1.8 STM"
+focal_range = [[50, 1], [50, 1]]
+aperture_range = [[18, 10], [18, 10]]
+
+[[lenses]]
 key = "EF100-400mm f/4.5-5.6L IS II USM"
 make = "Canon"
 model = "EF 100-400mm f/4.5-5.6L IS II USM"
