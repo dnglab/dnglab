@@ -303,3 +303,11 @@ model = "Laowa 100mm F2.8 2X Ultra Macro APO"
 make = "Venus"
 focal_range = [[100, 1], [100, 1]]
 aperture_range = [[28, 10], [28, 10]]
+
+# Samyang lenses
+[[lenses]]
+key = "SAMYANG RF 14mm F2.8"
+model = "AF 14/2.8 RF"
+make = "Samyang"
+focal_range = [[14, 1], [14, 1]]
+aperture_range = [[28, 10], [28, 10]]
