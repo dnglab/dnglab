@@ -14,6 +14,7 @@ use std::{
   io::{BufReader, BufWriter, Write},
 };
 use std::{fs::File, path::PathBuf, time::Instant};
+use async_trait::async_trait;
 
 /// Job for converting RAW to DNG
 #[derive(Debug, Clone)]
@@ -103,10 +104,11 @@ impl ExtractRawJob {
   }
 }
 
+#[async_trait]
 impl Job for ExtractRawJob {
   type Output = JobResult;
 
-  fn execute(&self) -> Self::Output {
+  async fn execute(&self) -> Self::Output {
     debug!("Job running: input: {:?}, output: {:?}", self.input, self.output);
     let now = Instant::now();
     match self.internal_exec() {

@@ -22,7 +22,8 @@ const PKG_NAME: &'static str = env!("CARGO_PKG_NAME");
 ///
 /// We initialize the fern logger here, create a Clap command line
 /// parser and check for the correct environment.
-fn main() -> anyhow::Result<()> {
+#[tokio::main]
+async fn main() -> anyhow::Result<()> {
   let app = app::create_app().setting(AppSettings::ArgRequiredElseHelp);
   let matches = app.get_matches_safe().unwrap_or_else(|e| e.exit());
 
@@ -53,10 +54,10 @@ fn main() -> anyhow::Result<()> {
     .expect("Invalid fern configuration, exiting");
 
   match matches.subcommand() {
-    ("analyze", Some(sc)) => analyze::analyze(sc),
-    ("convert", Some(sc)) => convert::convert(sc),
-    ("extract", Some(sc)) => extract::extract(sc),
-    ("gui", sc) => gui::gui(sc),
+    ("analyze", Some(sc)) => analyze::analyze(sc).await,
+    ("convert", Some(sc)) => convert::convert(sc).await,
+    ("extract", Some(sc)) => extract::extract(sc).await,
+    ("gui", sc) => gui::gui(sc).await,
     _ => panic!("Unknown subcommand was used"),
   }
 }

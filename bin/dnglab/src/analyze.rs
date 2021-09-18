@@ -12,7 +12,7 @@ use std::{
 };
 
 /// Analyze a given image
-pub fn analyze(options: &ArgMatches<'_>) -> anyhow::Result<()> {
+pub async fn analyze(options: &ArgMatches<'_>) -> anyhow::Result<()> {
   let in_file = options.value_of("FILE").expect("FILE not available");
 
   debug!("Infile: {}", in_file);

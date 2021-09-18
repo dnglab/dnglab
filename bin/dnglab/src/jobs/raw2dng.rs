@@ -7,8 +7,10 @@ use crate::{
   AppError, Result,
 };
 use log::debug;
-use std::{fmt::Display, io::Write};
-use std::{fs::File, path::PathBuf, time::Instant};
+use std::{fmt::Display};
+use std::{ path::PathBuf, time::Instant};
+use async_trait::async_trait;
+use tokio::{fs::File, io::AsyncWriteExt};
 
 /// Job for converting RAW to DNG
 #[derive(Debug, Clone)]
@@ -19,7 +21,7 @@ pub struct Raw2DngJob {
   pub params: ConvertParams,
 }
 
-/// State of conversion 
+/// State of conversion
 #[derive(Debug)]
 pub struct JobResult {
   pub job: Raw2DngJob,
@@ -45,7 +47,7 @@ impl Display for JobResult {
 }
 
 impl Raw2DngJob {
-  fn internal_exec(&self) -> Result<JobResult> {
+  async fn internal_exec(&self) -> Result<JobResult> {
     if self.output.exists() && !self.replace {
       return Err(AppError::DestExists(self.output.display().to_string()));
     }
@@ -58,12 +60,12 @@ impl Raw2DngJob {
       .to_string_lossy()
       .to_string();
 
-    let mut raw_file = File::open(&self.input)?;
-    let mut dng_file = File::create(&self.output)?;
+    let mut raw_file = File::open(&self.input).await?;
+    let mut dng_file = File::create(&self.output).await?;
 
-    match raw_to_dng(&mut raw_file, &mut dng_file, &orig_filename, &self.params) {
+    match raw_to_dng(&mut raw_file, &mut dng_file, orig_filename, &self.params).await {
       Ok(_) => {
-        dng_file.flush()?;
+        dng_file.flush().await?;
         Ok(JobResult {
           job: self.clone(),
           duration: 0.0,
@@ -75,13 +77,14 @@ impl Raw2DngJob {
   }
 }
 
+#[async_trait]
 impl Job for Raw2DngJob {
   type Output = JobResult;
 
-  fn execute(&self) -> Self::Output {
+  async fn execute(&self) -> Self::Output {
     debug!("Job running: input: {:?}, output: {:?}", self.input, self.output);
     let now = Instant::now();
-    match self.internal_exec() {
+    match self.internal_exec().await {
       Ok(mut stat) => {
         stat.duration = now.elapsed().as_secs_f32();
         stat

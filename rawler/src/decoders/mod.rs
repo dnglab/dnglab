@@ -80,7 +80,7 @@ pub struct RawDecodeParams {
   pub image_index: usize,
 }
 
-pub trait Decoder {
+pub trait Decoder: Send {
   fn raw_image(&self, params: RawDecodeParams, dummy: bool) -> Result<RawImage>;
 
   fn raw_image_count(&self) -> Result<usize> {
@@ -149,6 +149,13 @@ impl Buffer {
 
   pub fn size(&self) -> usize {
     self.size
+  }
+}
+
+impl From<Vec<u8>> for Buffer {
+  fn from(buf: Vec<u8>) -> Self {
+    let size = buf.len();
+    Self { buf, size }
   }
 }
 

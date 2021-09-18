@@ -2,9 +2,9 @@
 // Copyright 2021 Daniel Vogelbacher <daniel@chaospixel.com>
 
 use clap::ArgMatches;
-use rawler::tags::DngTag;
+use futures::future::join_all;
 use rawler::formats::tiff::{Entry, TiffReader, Value};
-use rayon::prelude::*;
+use rawler::tags::DngTag;
 use std::fs::{create_dir_all, File};
 use std::io::BufReader;
 use std::path::PathBuf;
@@ -18,7 +18,7 @@ use crate::{AppError, Result};
 const SUPPORTED_FILE_EXT: [&'static str; 1] = ["DNG"];
 
 /// Entry point for Clap sub command `extract`
-pub fn extract(options: &ArgMatches<'_>) -> anyhow::Result<()> {
+pub async fn extract(options: &ArgMatches<'_>) -> anyhow::Result<()> {
   let now = Instant::now();
   let in_path = PathBuf::from(options.value_of("INPUT").expect("INPUT not available"));
   let out_path = PathBuf::from(options.value_of("OUTPUT").expect("OUTPUT not available"));
@@ -64,16 +64,22 @@ pub fn extract(options: &ArgMatches<'_>) -> anyhow::Result<()> {
 
   let verbose = options.is_present("verbose");
 
-  let results: Vec<JobResult> = jobs
-    .par_iter()
-    .map(|job| {
-      let res = job.execute();
-      if verbose {
-        println!("{}", res);
-      }
-      res
-    })
-    .collect();
+  println!("{:?}", jobs);
+
+  let mut results: Vec<JobResult> = Vec::new();
+  for chunks in jobs.chunks(8) {
+    let mut temp: Vec<JobResult> = join_all(chunks.iter().map(|j| j.execute()))
+      .await
+      .into_iter()
+      .map(|res| {
+        if verbose {
+          println!("Status: {}", res);
+        }
+        res
+      })
+      .collect();
+    results.append(&mut temp);
+  }
 
   let total = results.len();
   let success = results.iter().filter(|j| j.error.is_none()).count();

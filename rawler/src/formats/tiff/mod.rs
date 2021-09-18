@@ -1070,7 +1070,7 @@ impl TiffReader {
 
 pub struct TiffWriter<'w> {
   ifd_location: u64,
-  pub writer: &'w mut dyn WriteAndSeek,
+  pub writer: &'w mut (dyn WriteAndSeek + Send),
 }
 
 pub trait WriteAndSeek: Write + Seek {}
@@ -1078,7 +1078,7 @@ pub trait WriteAndSeek: Write + Seek {}
 impl<T> WriteAndSeek for T where T: Write + Seek {}
 
 impl<'w> TiffWriter<'w> {
-  pub fn new(writer: &'w mut dyn WriteAndSeek) -> Result<Self> {
+  pub fn new<T: WriteAndSeek + Send>(writer: &'w mut T) -> Result<Self> {
     let mut tmp = Self { writer, ifd_location: 0 };
     tmp.write_header()?;
     Ok(tmp)

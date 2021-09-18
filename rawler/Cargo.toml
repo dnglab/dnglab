@@ -35,6 +35,9 @@ simple_logger = "1.11.0"
 thiserror = "1.0.25"
 toml = "0.5"
 uuid = {version = "0.8", features = ["serde", "v4"]}
+tokio = { version = "1.11.0", features = ["full"] }
+async-trait = "0.1.51"
+futures = "0.3"
 
 [dev-dependencies]
 serde_yaml = "0.8"

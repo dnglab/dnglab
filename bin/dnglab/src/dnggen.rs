@@ -22,16 +22,12 @@ use rawler::{
   tiles::TiledData,
 };
 use rayon::prelude::*;
-use std::{
-  fs::File,
-  io::{BufReader, BufWriter},
-  mem::size_of,
-  sync::Arc,
-  thread,
-  time::Instant,
-  u16, usize,
-};
+use std::{io::Cursor, mem::size_of, sync::Arc, thread, time::Instant, u16, usize};
 use thiserror::Error;
+use tokio::{
+  fs::File,
+  io::{AsyncReadExt, AsyncWriteExt},
+};
 
 #[derive(Error, Debug)]
 pub enum DngError {
@@ -84,13 +80,40 @@ pub struct ConvertParams {
 }
 
 /// Convert a raw input file into DNG
-pub fn raw_to_dng(raw_file: &mut File, dng_file: &mut File, orig_filename: &str, params: &ConvertParams) -> Result<()> {
-  let mut raw_file = BufReader::new(raw_file);
-  let mut dng_file = BufWriter::new(dng_file);
+pub async fn raw_to_dng(raw_file: &mut File, dng_file: &mut File, orig_filename: String, params: &ConvertParams) -> Result<()> {
+  // let mut raw_file = BufReader::new(raw_file);
+
+  let mut contents = vec![];
+  let _len = raw_file.read_to_end(&mut contents).await;
 
   // Read whole raw file
   // TODO: Large input file bug, we need to test the raw file before open it
-  let in_buffer = Arc::new(Buffer::new(&mut raw_file)?);
+  let in_buffer = Arc::new(Buffer::from(contents));
+
+  let params = params.clone();
+
+  let dng_content = tokio::task::spawn_blocking(move || {
+    let dng_content = raw_to_dng_internal(in_buffer, orig_filename, &params).unwrap();
+    dng_content
+  })
+  .await
+  .unwrap();
+  dng_file
+    .write_all(&dng_content)
+    .await
+    .map_err(|ioerr| DngError::DecoderFail(ioerr.to_string()))?;
+
+  Ok(())
+}
+
+/// Convert a raw input file into DNG
+pub fn raw_to_dng_internal(raw_content: Arc<Buffer>, orig_filename: String, params: &ConvertParams) -> Result<Vec<u8>> {
+  // let mut raw_file = BufReader::new(raw_file);
+  let mut dng_buffer = Cursor::new(Vec::new());
+
+  // Read whole raw file
+  // TODO: Large input file bug, we need to test the raw file before open it
+  let in_buffer = raw_content;
 
   // Get decoder or return
   let mut decoder = rawler::get_decoder(&in_buffer).map_err(|_s| DngError::DecoderFail("failed to get decoder".into()))?;
@@ -144,7 +167,7 @@ pub fn raw_to_dng(raw_file: &mut File, dng_file: &mut File, orig_filename: &str,
   let matrix1 = matrix_to_tiff_value(color_matrix, 10_000);
   let matrix1_ill: u16 = Illuminant::D65.into();
 
-  let mut dng = TiffWriter::new(&mut dng_file).unwrap();
+  let mut dng = TiffWriter::new(&mut dng_buffer).unwrap();
   let mut root_ifd = dng.new_directory();
 
   root_ifd.add_tag(LegacyTiffRootTag::NewSubFileType, 1 as u16)?;
@@ -229,7 +252,8 @@ pub fn raw_to_dng(raw_file: &mut File, dng_file: &mut File, orig_filename: &str,
   // Finalize DNG file by updating IFD0 offset
   let ifd0_offset = root_ifd.build()?;
   dng.build(ifd0_offset)?;
-  Ok(())
+
+  Ok(dng_buffer.into_inner())
 }
 
 /// Write RAW image data into DNG

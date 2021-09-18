@@ -2,7 +2,7 @@
 // Copyright 2021 Daniel Vogelbacher <daniel@chaospixel.com>
 
 use clap::ArgMatches;
-use rayon::prelude::*;
+use futures::future::join_all;
 use std::fs::create_dir_all;
 use std::path::PathBuf;
 use std::time::Instant;
@@ -19,7 +19,7 @@ use crate::{
 const SUPPORTED_FILE_EXT: [&'static str; 1] = ["CR3"];
 
 /// Entry point for Clap sub command `convert`
-pub fn convert(options: &ArgMatches<'_>) -> anyhow::Result<()> {
+pub async fn convert(options: &ArgMatches<'_>) -> anyhow::Result<()> {
   let now = Instant::now();
   let in_path = PathBuf::from(options.value_of("INPUT").expect("INPUT not available"));
   let out_path = PathBuf::from(options.value_of("OUTPUT").expect("OUTPUT not available"));
@@ -56,16 +56,20 @@ pub fn convert(options: &ArgMatches<'_>) -> anyhow::Result<()> {
 
   let verbose = options.is_present("verbose");
 
-  let results: Vec<JobResult> = jobs
-    .par_iter()
-    .map(|job| {
-      let res = job.execute();
-      if verbose {
-        println!("Status: {}", res);
-      }
-      res
-    })
-    .collect();
+  let mut results: Vec<JobResult> = Vec::new();
+  for chunks in jobs.chunks(8) {
+    let mut temp: Vec<JobResult> = join_all(chunks.iter().map(|j| j.execute()))
+      .await
+      .into_iter()
+      .map(|res| {
+        if verbose {
+          println!("Status: {}", res);
+        }
+        res
+      })
+      .collect();
+    results.append(&mut temp);
+  }
 
   let total = results.len();
   let success = results.iter().filter(|j| j.error.is_none()).count();
