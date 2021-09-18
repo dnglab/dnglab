@@ -6,6 +6,8 @@ use std::{
   path::{Path, PathBuf},
 };
 
+use log::warn;
+
 use crate::{AppError, Result};
 
 #[derive(Debug, Clone)]
@@ -121,7 +123,8 @@ where
         result.extend(read_filtered_dir(&entry.path(), recursive, filter)?);
       }
     } else {
-      return Err(AppError::General(format!("Unable to determine type of {}", entry.path().display())));
+      // If we hit sockets, device files etc. just warn and ignore them.
+      warn!("Unable to determine type of {}", entry.path().display());
     }
   }
   Ok(result)

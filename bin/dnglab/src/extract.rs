@@ -5,7 +5,7 @@ use clap::ArgMatches;
 use futures::future::join_all;
 use rawler::formats::tiff::{Entry, TiffReader, Value};
 use rawler::tags::DngTag;
-use std::fs::{create_dir_all, File};
+use std::fs::File;
 use std::io::BufReader;
 use std::path::PathBuf;
 use std::time::Instant;
@@ -24,12 +24,12 @@ pub async fn extract(options: &ArgMatches<'_>) -> anyhow::Result<()> {
   let out_path = PathBuf::from(options.value_of("OUTPUT").expect("OUTPUT not available"));
   let recursive = options.is_present("recursive");
 
-  if !out_path.exists() {
-    return Err(AppError::General(format!("Output path not exists")).into());
-  }
-  if !out_path.is_dir() {
-    return Err(AppError::General(format!("Output path must be directory")).into());
-  }
+  //if !out_path.exists() {
+  //  return Err(AppError::General(format!("Output path not exists")).into());
+  //}
+  //if !out_path.is_dir() {
+  //  return Err(AppError::General(format!("Output path must be directory")).into());
+  //}
 
   let proc = MapMode::new(&in_path, &out_path)?;
 
@@ -43,7 +43,7 @@ pub async fn extract(options: &ArgMatches<'_>) -> anyhow::Result<()> {
   match proc {
     // We have only one input file, so output must be a file, too.
     MapMode::File(sd) => {
-      let job = generate_job(&sd, options)?;
+      let job = generate_job(&sd, options, false)?;
       jobs.push(job);
     }
     // Input is directory, to process all files
@@ -56,15 +56,13 @@ pub async fn extract(options: &ArgMatches<'_>) -> anyhow::Result<()> {
         }
       })?;
       for entry in list {
-        let job = generate_job(&entry, options)?;
+        let job = generate_job(&entry, options, true)?;
         jobs.push(job);
       }
     }
   }
 
   let verbose = options.is_present("verbose");
-
-  println!("{:?}", jobs);
 
   let mut results: Vec<JobResult> = Vec::new();
   for chunks in jobs.chunks(8) {
@@ -98,7 +96,7 @@ pub async fn extract(options: &ArgMatches<'_>) -> anyhow::Result<()> {
 }
 
 /// Convert given raw file to dng file
-fn generate_job(entry: &FileMap, options: &ArgMatches<'_>) -> Result<ExtractRawJob> {
+fn generate_job(entry: &FileMap, options: &ArgMatches<'_>, use_orig_filename: bool) -> Result<ExtractRawJob> {
   let mut in_file = BufReader::new(File::open(&entry.src)?);
   let file = TiffReader::new(&mut in_file, 0, None).map_err(|e| AppError::General(e.to_string()))?;
 
@@ -108,20 +106,15 @@ fn generate_job(entry: &FileMap, options: &ArgMatches<'_>) -> Result<ExtractRawJ
 
   let orig_filename = get_original_name(&file).ok_or(AppError::General("No embedded raw file found".into()))?;
 
-  let output = PathBuf::from(&entry.dest).with_file_name(orig_filename);
-  match output.parent() {
-    Some(parent) => {
-      if !parent.exists() {
-        create_dir_all(parent)?;
-        if options.is_present("verbose") {
-          println!("Creating output directory '{}'", parent.display());
-        }
-      }
-    }
-    None => {
-      return Err(AppError::General(format!("Output path has no parent directory")));
-    }
-  }
+  let output = if entry.dest.is_dir() {
+    let mut p = PathBuf::from(&entry.dest);
+    p.push(orig_filename);
+    p
+  } else if use_orig_filename {
+    PathBuf::from(&entry.dest).with_file_name(orig_filename)
+  } else {
+    PathBuf::from(&entry.dest)
+  };
 
   Ok(ExtractRawJob {
     input: PathBuf::from(&entry.src),

@@ -70,7 +70,7 @@ pub enum AppError {
   InvalidCmdSwitch(String),
   #[error("I/O error: {}", _0)]
   Io(#[from] std::io::Error),
-  #[error("Source not exists: {}", _0)]
+  #[error("Path not exists: {}", _0)]
   NotExists(String),
   #[error("Destination already exists: {}", _0)]
   DestExists(String),
