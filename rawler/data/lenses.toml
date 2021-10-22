@@ -164,6 +164,13 @@ focal_range = [[50, 1], [50, 1]]
 aperture_range = [[14, 10], [14, 10]]
 
 [[lenses]]
+key = "EF85mm f/1.8 USM"
+make = "Canon"
+model = "EF 85mm f/1.8 USM"
+focal_range = [[85, 1], [85, 1]]
+aperture_range = [[18, 10], [18, 10]]
+
+[[lenses]]
 key = "EF50mm f/1.8 STM"
 make = "Canon"
 model = "EF 50mm f/1.8 STM"
