@@ -63,6 +63,13 @@ focal_range = [[15, 1], [35, 1]]
 aperture_range = [[28, 10], [28, 10]]
 
 [[lenses]]
+key = "RF14-35mm F4 L IS USM"
+make = "Canon"
+model = "RF 14-35mm F4L IS USM"
+focal_range = [[14, 1], [35, 1]]
+aperture_range = [[4, 1], [4, 1]]
+
+[[lenses]]
 key = "RF24-240mm F4-6.3 IS USM"
 make = "Canon"
 model = "RF 24-240mm F4-6.3 IS USM"
