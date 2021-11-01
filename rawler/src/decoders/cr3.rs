@@ -132,6 +132,12 @@ impl<'a> Decoder for Cr3Decoder<'a> {
       if let Some(orientation) = ifd.get_entry(ExifTag::Orientation) {
         root_ifd.add_value(ExifTag::Orientation, orientation.value.clone())?;
       }
+      if let Some(artist) = ifd.get_entry(ExifTag::Artist) {
+        root_ifd.add_value(ExifTag::Artist, artist.value.clone())?;
+      }
+      if let Some(copyright) = ifd.get_entry(ExifTag::Copyright) {
+        root_ifd.add_value(ExifTag::Copyright, copyright.value.clone())?;
+      }
     }
 
     if let Some(lens) = self.lens_description {
