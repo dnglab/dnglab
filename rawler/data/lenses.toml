@@ -317,6 +317,13 @@ make = "Tamron"
 focal_range = [[17, 1], [35, 1]]
 aperture_range = [[28, 10], [40, 10]]
 
+[[lenses]]
+key = "TAMRON 28-300mm F/3.5-6.3 Di VC PZD A010"
+model = "28-300mm f/3.5-6.3 Di VC PZD"
+make = "Tamron"
+focal_range = [[28, 1], [300, 1]]
+aperture_range = [[35, 10], [63, 10]]
+
 # Venus Optics/Laowa lenses
 [[lenses]]
 key = "LAOWA 100mm F2.8 CA-Dreamer Macro 2x"
