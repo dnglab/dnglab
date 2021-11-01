@@ -214,6 +214,13 @@ model = "EF-S 18-135mm f/3.5-5.6 IS USM"
 focal_range = [[18, 1], [135, 1]]
 aperture_range = [[35, 10], [56, 10]]
 
+[[lenses]]
+key = "EF-S18-135mm f/3.5-5.6 IS STM"
+make = "Canon"
+model = "EF-S 18-135mm f/3.5-5.6 IS STM"
+focal_range = [[18, 1], [135, 1]]
+aperture_range = [[35, 10], [56, 10]]
+
 # Canon EF-M mount lenses
 
 [[lenses]]
