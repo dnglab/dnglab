@@ -2,7 +2,7 @@
 // Copyright 2021 Daniel Vogelbacher <daniel@chaospixel.com>
 
 use image::DynamicImage;
-use log::debug;
+use log::{debug, warn};
 use std::convert::{TryFrom, TryInto};
 use std::f32::NAN;
 
@@ -11,9 +11,9 @@ use crate::decoders::*;
 use crate::decompressors::crx::decompress_crx_image;
 use crate::formats::bmff::ext_cr3::cr3desc::Cr3DescBox;
 use crate::formats::bmff::ext_cr3::iad1::Iad1Type;
+use crate::formats::tiff::{Entry, Rational, TiffReader, Value};
 use crate::lens::{LensDescription, LensResolver};
 use crate::tags::{DngTag, TiffTagEnum};
-use crate::formats::tiff::{Entry, Rational, TiffReader, Value};
 use crate::{pumps::ByteStream, RawImage};
 
 #[derive(Debug, Clone)]
@@ -150,7 +150,25 @@ impl<'a> Decoder for Cr3Decoder<'a> {
         let ifd = cmt4.root_ifd();
         // Copy all GPS tags
         for (tag, entry) in ifd.entries() {
-          gps_ifd.add_value(*tag, entry.value.clone())?;
+          match tag {
+            // Special handling for Exif.GPSInfo.GPSLatitude and Exif.GPSInfo.GPSLongitude.
+            // Exif.GPSInfo.GPSTimeStamp is wrong, too and can be fixed with the same logic.
+            // Canon CR3 contains only two rationals, but these tags are specified as a vector
+            // of three reationals (degrees, minutes, seconds).
+            // We fix this by extending with 0/1 as seconds value.
+            0x0002 | 0x0004 | 0x0007 => match &entry.value {
+              Value::Rational(v) => {
+                let fixed_value = if v.len() == 2 { vec![v[0], v[1], Rational::new(0, 1)] } else { v.clone() };
+                gps_ifd.add_value(*tag, Value::Rational(fixed_value))?;
+              }
+              _ => {
+                warn!("CR3: Exif.GPSInfo.GPSLatitude and Exif.GPSInfo.GPSLongitude expected to be of type RATIONAL, GPS data is ignored");
+              }
+            },
+            _ => {
+              gps_ifd.add_value(*tag, entry.value.clone())?;
+            }
+          }
         }
         gps_ifd.build()?
       };
