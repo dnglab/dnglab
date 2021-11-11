@@ -191,6 +191,13 @@ model = "EF 24-85mm f/3.5-4.5 USM"
 focal_range = [[24, 1], [85, 1]]
 aperture_range = [[35, 10], [45, 10]]
 
+[[lenses]]
+key = "EF400mm f/2.8L IS II USM"
+make = "Canon"
+model = "EF 400mm f/2.8L IS II USM"
+focal_range = [[400, 1], [400, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
 # Canon EF-S mount lenses
 
 [[lenses]]
