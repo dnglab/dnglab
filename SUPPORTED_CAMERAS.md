@@ -4,6 +4,7 @@
 |-------|-------------------------------|-----------------------------------|---------------------------------------------------|
 | Canon | EOS R                         | ✅ Yes |  |
 | Canon | EOS RP                        | ✅ Yes |  |
+| Canon | EOS R3                        | ✅ Yes | (Only RAW tested, but CRAW should work, too) |
 | Canon | EOS R5                        | ✅ Yes |  |
 | Canon | EOS R6                        | ✅ Yes |  |
 | Canon | EOS-1Dx Mark III              | ✅ Yes |  |
