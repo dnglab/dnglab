@@ -4,6 +4,6 @@ clean_make = "Canon"
 clean_model = "EOS R3"
 color_pattern = "RGGB"
 color_matrix = {D65 = [0.9423, -0.2839, -0.1195, -0.4532, 1.2377, 0.2415, -0.0483, 0.1374, 0.5276]}
-wb_offset = 105
-bl_offset = 363
-wl_offset = 641
+wb_offset = 0x69 # ColorData11
+bl_offset = 0x16b
+wl_offset = 0x282
