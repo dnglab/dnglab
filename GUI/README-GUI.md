@@ -1,5 +1,7 @@
 ## <center> DNGLabGUI, a Simple GUI for dnglab ##
 ### <center>Convert Raw Canon CR3 Images into DNG Images ###
+<center> <img src = "GUI_Screenshot.png">
+    
 This is a simple gui to help users not familiar with running programs from the terminal use dnglab to convert Canon .CR3 raw image files to the open format DNG format.  It has buttons where the user can select the folder of .CR3 images they want to convert (or the single image file to convert) and the destination folder for the images converted to DNG format.  Their new names will be the old name, but the extension will be .DNG instead of .CR3.  They can then be edited with darktable and other open source editors in Linux.  The conversion uses dnglab, a command line program this GUI opens up in gnome-terminal with the correct syntax to do the conversion the user specified with the GUI.  
 
 #### Prerequisites for Installation ####
