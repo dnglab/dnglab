@@ -25,6 +25,21 @@ jobs:
       - run: cargo test
       - run: cargo check
 
+  samplecheck:
+    name: Testdata validation with Rust ${{matrix.rust}}
+    runs-on: testdata-avail
+    strategy:
+      fail-fast: false
+      matrix:
+        rust: [1.53.0, stable, beta]
+    steps:
+      - uses: actions/checkout@v2
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{matrix.rust}}
+      - run: git clone /var/lib/git/dnglab-testdata.git testdata
+      - run: cargo test --release --features samplecheck
+
   windows_check:
     name: Windows check
     runs-on: windows-latest
