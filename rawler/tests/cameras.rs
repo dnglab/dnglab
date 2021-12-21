@@ -82,6 +82,9 @@ mod camera_samples {
   camera_file_check!("Canon", "PowerShot G7 X Mark III", canon_powershot_g7x_mark3_raw_nocrop_nodual, "Canon PowerShot G7 X Mark III_RAW_ISO_200_nocrop_nodual.CR3.raw");
   camera_file_check!("Canon", "PowerShot G7 X Mark III", canon_powershot_g7x_mark3_craw_nocrop_nodual, "Canon PowerShot G7 X Mark III_CRAW_ISO_200_nocrop_nodual.CR3.raw");
 
+  camera_file_check!("Canon", "PowerShot SX70 HS", canon_powershot_sx70_hs_raw_nocrop_nodual, "Canon PowerShot SX70 HS_RAW_ISO_100_nocrop_nodual.CR3.raw");
+  camera_file_check!("Canon", "PowerShot SX70 HS", canon_powershot_sx70_hs_craw_nocrop_nodual, "Canon PowerShot SX70 HS_CRAW_ISO_100_nocrop_nodual.CR3.raw");
+
   /// Generic function to check camera raw files against
   /// pre-generated stats and pixel files.
   fn check_camera_raw_file_conversion(make: &str, model: &str, sample: &str) -> std::result::Result<(), Box<dyn std::error::Error>> {
