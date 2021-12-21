@@ -11,24 +11,24 @@ repository = "https://github.com/dnglab/dnglab"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-byteorder = "1"
-anyhow = "1.0"
-chrono = "0.4"
+byteorder = "1.4.3"
+anyhow = "1.0.41"
+chrono = "0.4.19"
 clap = "2.33.3"
-fern = {version = "0.5", features = ["colored"]}
-log = "0.4"
-prettytable-rs = "^0.8"
+fern = { version = "0.6.0", features = ["colored"] }
+log = "0.4.14"
+prettytable-rs = "0.8.0"
 rawler = {path = "../../rawler"}
-image = "0.23"
-serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0"
-serde_yaml = "0.8"
-rayon = "1"
-itertools = "0.9"
+image = "0.23.14"
+serde = { version = "1.0.126", features = ["derive"] }
+serde_json = "1.0.64"
+serde_yaml = "0.8.17"
+rayon = "1.5.1"
+itertools = "0.10.1"
 thiserror = "1.0.25"
-tokio = { version = "1.11.0", features = ["full"] }
+tokio = { version = "1.15.0", features = ["full"] }
 async-trait = "0.1.51"
-futures = "0.3"
+futures = "0.3.15"
 
 
 [package.metadata.deb]
