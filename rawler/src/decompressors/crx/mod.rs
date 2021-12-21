@@ -86,12 +86,14 @@ type Result<T> = std::result::Result<T, CrxError>;
 /// Codec parameters for decoding
 #[derive(Default, Debug, Clone, Copy)]
 pub struct CodecParams {
+  #[allow(dead_code)]
   sample_precision: u8,
   image_width: usize,
   image_height: usize,
   plane_count: u8,
   //plane_width: usize,
   //plane_height: usize,
+  #[allow(dead_code)]
   subband_count: u8,
   levels: usize,
   n_bits: u8,

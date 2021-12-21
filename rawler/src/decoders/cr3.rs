@@ -22,7 +22,9 @@ pub struct Cr3Decoder<'a> {
   rawloader: &'a RawLoader,
   //tiff: TiffIFD<'a>,
   bmff: Bmff,
+  #[allow(dead_code)]
   exif: Option<TiffReader>,
+  #[allow(dead_code)]
   makernotes: Option<TiffReader>,
   wb: Option<[f32; 4]>,
   blacklevels: Option<[u16; 4]>,
@@ -465,11 +467,16 @@ struct Ctmd {
 
 #[derive(Clone, Debug)]
 struct CtmdRecord {
+  #[allow(dead_code)]
   pub rec_size: u32,
   pub rec_type: u16,
+  #[allow(dead_code)]
   pub reserved1: u8,
+  #[allow(dead_code)]
   pub reserved2: u8,
+  #[allow(dead_code)]
   pub reserved3: u16,
+  #[allow(dead_code)]
   pub reserved4: u16,
   pub payload: Vec<u8>,
 }

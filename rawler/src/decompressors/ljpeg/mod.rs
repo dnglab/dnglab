@@ -26,6 +26,7 @@ fn m(marker: Marker) -> u8 {
 struct JpegComponentInfo {
   // These values are fixed over the whole image, read from the SOF marker.
   id: usize,    // identifier for this component (0..255)
+  #[allow(dead_code)]
   index: usize, // its index in SOF or cPtr->compInfo[]
 
   // Huffman table selector (0..3). The value may vary between scans.

@@ -32,6 +32,7 @@ pub struct LensResolver {
   /// Camera model, if known
   camera_model: Option<String>,
   /// Focal lenth for taken photo
+  #[allow(dead_code)]
   focal_len: Option<Rational>,
 }
 
