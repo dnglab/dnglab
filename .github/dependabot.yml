@@ -1,6 +1,10 @@
 version: 2
 updates:
   - package-ecosystem: "rust:cargo"
-    directory: "/"
+    directory: "/rawler"
+    schedule:
+      interval: "daily"
+ - package-ecosystem: "rust:cargo"
+    directory: "/bin/dnglab"
     schedule:
       interval: "daily"
