@@ -801,15 +801,18 @@ impl<'a> LjpegCompressor<'a> {
 
 #[cfg(test)]
 mod tests {
-  use simple_logger::SimpleLogger;
-
   use super::*;
+
+  fn init() {
+    let _ = env_logger::builder().is_test(true).try_init();
+  }
+
   /// We reuse the decompressor to check both...
   use crate::decompressors::ljpeg::LjpegDecompressor;
 
   #[test]
   fn bitstream_test1() -> std::result::Result<(), Box<dyn std::error::Error>> {
-    let _ = SimpleLogger::new().init().unwrap_or(());
+    init();
     let mut buf = Vec::new();
     let mut bs = BitstreamJPEG::new(&mut buf);
     bs.write(1, 0b1)?;
@@ -837,7 +840,7 @@ mod tests {
 
   #[test]
   fn encode_16x16_16bit_black_decode_single() -> std::result::Result<(), Box<dyn std::error::Error>> {
-    let _ = SimpleLogger::new().init().unwrap_or(());
+    init();
     let h = 16;
     let w = 16;
     let c = 1;
@@ -884,7 +887,7 @@ mod tests {
 
   #[test]
   fn encode_16x16_16bit_black_decode_2component() -> std::result::Result<(), Box<dyn std::error::Error>> {
-    let _ = SimpleLogger::new().init().unwrap_or(());
+    init();
     let h = 2;
     let w = 2;
     let c = 2;
@@ -906,7 +909,7 @@ mod tests {
 
   #[test]
   fn encode_16x16_16bit_black() -> std::result::Result<(), Box<dyn std::error::Error>> {
-    let _ = SimpleLogger::new().init().unwrap_or(());
+    init();
     let h = 16;
     let w = 16;
     let c = 1;
@@ -919,7 +922,7 @@ mod tests {
 
   #[test]
   fn encode_16x16_16bit_white() -> std::result::Result<(), Box<dyn std::error::Error>> {
-    let _ = SimpleLogger::new().init().unwrap_or(());
+    init();
     let h = 16;
     let w = 16;
     let c = 1;
@@ -932,7 +935,7 @@ mod tests {
 
   #[test]
   fn encode_16x16_bitdepth_error() -> std::result::Result<(), Box<dyn std::error::Error>> {
-    let _ = SimpleLogger::new().init().unwrap_or(());
+    init();
     let h = 16;
     let w = 16;
     let c = 1;
@@ -945,7 +948,7 @@ mod tests {
 
   #[test]
   fn encode_16x16_short_buffer_error() -> std::result::Result<(), Box<dyn std::error::Error>> {
-    let _ = SimpleLogger::new().init().unwrap_or(());
+    init();
     let h = 16;
     let w = 16;
     let c = 1;
@@ -957,7 +960,7 @@ mod tests {
 
   #[test]
   fn encode_16x16_16bit_incr() -> std::result::Result<(), Box<dyn std::error::Error>> {
-    let _ = SimpleLogger::new().init().unwrap_or(());
+    init();
     let h = 16;
     let w = 16;
     let c = 2;

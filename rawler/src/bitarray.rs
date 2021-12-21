@@ -185,13 +185,15 @@ impl BitStorage for u128 {
 
 #[cfg(test)]
 mod tests {
-  use simple_logger::SimpleLogger;
-
   use super::*;
+
+  fn init() {
+    let _ = env_logger::builder().is_test(true).try_init();
+}
 
   #[test]
   fn check_storage() -> std::result::Result<(), Box<dyn std::error::Error>> {
-    let _ = SimpleLogger::new().init().unwrap_or(());
+    init();
     assert_eq!(BitArray16::from_lsb(3, 0b110).storage(), 0b1100_0000_0000_0000);
     assert_eq!(BitArray16::from_msb(3, 0b110 << u16::BITS - 3).storage(), 0b1100_0000_0000_0000);
     Ok(())
@@ -199,7 +201,7 @@ mod tests {
 
   #[test]
   fn push_check_storage() -> std::result::Result<(), Box<dyn std::error::Error>> {
-    let _ = SimpleLogger::new().init().unwrap_or(());
+    init();
     let mut bits = BitArray8::new();
     bits.push(true);
     assert_eq!(bits.len(), 1);
@@ -209,7 +211,7 @@ mod tests {
 
   #[test]
   fn ppo_check_storage() -> std::result::Result<(), Box<dyn std::error::Error>> {
-    let _ = SimpleLogger::new().init().unwrap_or(());
+    init();
     let mut bits = BitArray8::new();
     bits.push(true);
     bits.push(false);
@@ -228,7 +230,7 @@ mod tests {
 
   #[test]
   fn bitvec_compare() -> std::result::Result<(), Box<dyn std::error::Error>> {
-    let _ = SimpleLogger::new().init().unwrap_or(());
+    init();
     assert!(BitArray8::from_lsb(1, 0b1) > BitArray8::from_lsb(1, 0b0));
     assert!(BitArray8::from_lsb(2, 0b00) > BitArray8::from_lsb(1, 0b0));
     assert!(BitArray8::from_lsb(2, 0b11) < BitArray8::from_lsb(3, 0b000));
