@@ -20,6 +20,7 @@ pub struct Cr2Decoder<'a> {
   buffer: &'a [u8],
   rawloader: &'a RawLoader,
   tiff: LegacyTiffIFD<'a>,
+  #[allow(dead_code)]
   exif: Option<LegacyTiffIFD<'a>>,
   makernotes: Option<LegacyTiffIFD<'a>>,
 }

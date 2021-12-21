@@ -4,6 +4,7 @@ use std::f32::NAN;
 #[derive(Debug, Clone)]
 pub struct NakedDecoder<'a> {
   buffer: &'a [u8],
+  #[allow(dead_code)]
   rawloader: &'a RawLoader,
   camera: Camera,
 }

@@ -10,6 +10,7 @@ pub fn is_x3f(buf: &[u8]) -> bool {
 
 #[derive(Debug, Clone)]
 struct X3fFile {
+  #[allow(dead_code)]
   dirs: Vec<X3fDirectory>,
   images: Vec<X3fImage>,
 }
@@ -17,6 +18,7 @@ struct X3fFile {
 #[derive(Debug, Clone)]
 struct X3fDirectory {
   offset: usize,
+  #[allow(dead_code)]
   len: usize,
   id: String,
 }
@@ -27,6 +29,7 @@ struct X3fImage {
   format: usize,
   width: usize,
   height: usize,
+  #[allow(dead_code)]
   pitch: usize,
   doffset: usize,
 }

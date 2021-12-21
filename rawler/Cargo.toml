@@ -31,13 +31,17 @@ md5 = "0.7.0"
 rayon = "1"
 serde = {version = "1.0", features = ["derive"]}
 serde_json = "1.0"
-simple_logger = "1.11.0"
 thiserror = "1.0.25"
 toml = "0.5"
 uuid = {version = "0.8", features = ["serde", "v4"]}
 tokio = { version = "1.11.0", features = ["full"] }
 async-trait = "0.1.51"
 futures = "0.3"
+
+[dependencies.simple_logger]
+version = "1.16.0"
+default-features = false
+features = ["colors"]
 
 [dev-dependencies]
 serde_yaml = "0.8"
