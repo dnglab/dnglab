@@ -17,3 +17,4 @@
 | Canon | EOS M200                      | ✅ Yes |  |
 | Canon | Canon PowerShot G7 X Mark III | ✅ Yes |  |
 | Canon | Canon PowerShot G5 X Mark II  | ✅ Yes |  |
+| Canon | Canon PowerShot SX70 HS       | ✅ Yes |  |
