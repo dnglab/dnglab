@@ -1,0 +1,20 @@
+[package]
+name = "embedftp"
+version = "0.0.1"
+edition = "2021"
+authors = ["Guillaume Gomez", "Daniel Vogelbacher"]
+license = "MIT"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+tokio = { version = "1", features = ["full"] }
+tokio-util = { version = "0.6", features = ["full"] }
+bytes = "1.1"
+futures = "0.3.17"
+chrono = "0.4.19"
+glob = "0.3.0"
+log = "0.4"
+
+[dev-dependencies]
+ftp = "^2.2.1"

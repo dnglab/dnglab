@@ -6,6 +6,7 @@ mod app;
 mod convert;
 mod dnggen;
 mod extract;
+mod ftpconv;
 mod filemap;
 mod gui;
 mod jobs;
@@ -32,10 +33,12 @@ async fn main() -> anyhow::Result<()> {
     .chain(std::io::stderr())
     //.level(log::LevelFilter::Debug)
     .level({
-      if matches.is_present("debug") {
-        log::LevelFilter::Trace
-      } else {
-        log::LevelFilter::Warn
+      match matches.occurrences_of("debug") {
+        0 => log::LevelFilter::Error,
+        1 => log::LevelFilter::Warn,
+        2 => log::LevelFilter::Info,
+        3 => log::LevelFilter::Debug,
+        4 | _ => log::LevelFilter::Trace,
       }
     })
     .format(move |out, message, record| {
@@ -57,6 +60,7 @@ async fn main() -> anyhow::Result<()> {
     ("analyze", Some(sc)) => analyze::analyze(sc).await,
     ("convert", Some(sc)) => convert::convert(sc).await,
     ("extract", Some(sc)) => extract::extract(sc).await,
+    ("ftpconvert", Some(sc)) => ftpconv::ftpconvert(sc).await,
     ("gui", sc) => gui::gui(sc).await,
     _ => panic!("Unknown subcommand was used"),
   }

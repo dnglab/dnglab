@@ -1,6 +1,6 @@
 [package]
 authors = ["Daniel Vogelbacher <daniel@chaospixel.com>"]
-edition = "2018"
+edition = "2021"
 name = "dnglab"
 version = "0.3.1"
 description = "Camera RAW to DNG file format converter"
@@ -19,6 +19,7 @@ fern = {version = "0.5", features = ["colored"]}
 log = "0.4"
 prettytable-rs = "^0.8"
 rawler = {path = "../../rawler"}
+embedftp = {path = "../../embedftp"}
 image = "0.23"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
