@@ -1,10 +1,18 @@
 version: 2
 updates:
-  - package-ecosystem: "rust:cargo"
+  - package-ecosystem: "cargo"
     directory: "/rawler"
+    labels:
+      - "improvement"
+    assignees:
+      - "cytrinox"
     schedule:
       interval: "daily"
- - package-ecosystem: "rust:cargo"
+ - package-ecosystem: "cargo"
     directory: "/bin/dnglab"
+    labels:
+      - "improvement"
+    assignees:
+      - "cytrinox"
     schedule:
       interval: "daily"
