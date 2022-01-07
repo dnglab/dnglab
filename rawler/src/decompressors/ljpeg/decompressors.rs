@@ -1,4 +1,3 @@
-
 use crate::pumps::BitPumpJPEG;
 use crate::pumps::BitPumpMSB32;
 use super::huffman::*;
@@ -94,30 +93,28 @@ pub fn decode_ljpeg(ljpeg: &LjpegDecompressor, out: &mut [u16], x: usize, stripw
 
 
 fn set_yuv_420(out: &mut [u16], row: usize, col: usize, width: usize, y1: i32, y2: i32, y3: i32, y4: i32, cb: i32, cr: i32) {
-  let pix1 = row*width+col;
-  let pix2 = pix1+3;
-  let pix3 = (row+1)*width+col;
-  let pix4 = pix3+3;
+  let pix1 = row * width + col;
+  let pix2 = pix1 + 3;
+  let pix3 = (row + 1) * width + col;
+  let pix4 = pix3 + 3;
 
-  out[pix1+0] = y1 as u16;
-  out[pix1+1] = cb as u16;
-  out[pix1+2] = cr as u16;
-  out[pix2+0] = y2 as u16;
-  out[pix2+1] = cb as u16;
-  out[pix2+2] = cr as u16;
-  out[pix3+0] = y3 as u16;
-  out[pix3+1] = cb as u16;
-  out[pix3+2] = cr as u16;
-  out[pix4+0] = y4 as u16;
-  out[pix4+1] = cb as u16;
-  out[pix4+2] = cr as u16;
+  out[pix1 + 0] = y1 as u16;
+  out[pix1 + 1] = cb as u16;
+  out[pix1 + 2] = cr as u16;
+  out[pix2 + 0] = y2 as u16;
+  out[pix2 + 1] = cb as u16;
+  out[pix2 + 2] = cr as u16;
+  out[pix3 + 0] = y3 as u16;
+  out[pix3 + 1] = cb as u16;
+  out[pix3 + 2] = cr as u16;
+  out[pix4 + 0] = y4 as u16;
+  out[pix4 + 1] = cb as u16;
+  out[pix4 + 2] = cr as u16;
 }
 
-pub fn decode_ljpeg_420(ljpeg: &LjpegDecompressor, out: &mut [u16], width: usize, height: usize) -> Result<(),String> {
-  if ljpeg.sof.width*3 != width || ljpeg.sof.height != height {
-    return Err(format!("ljpeg: trying to decode {}x{} into {}x{}",
-                       ljpeg.sof.width*3, ljpeg.sof.height,
-                       width, height).to_string())
+pub fn decode_ljpeg_420(ljpeg: &LjpegDecompressor, out: &mut [u16], width: usize, height: usize) -> Result<(), String> {
+  if ljpeg.sof.width * 3 != width || ljpeg.sof.height != height {
+    return Err(format!("ljpeg: trying to decode {}x{} into {}x{}", ljpeg.sof.width * 3, ljpeg.sof.height, width, height).to_string());
   }
 
   let ref htable1 = ljpeg.dhts[ljpeg.sof.components[0].dc_tbl_num];
@@ -125,7 +122,7 @@ pub fn decode_ljpeg_420(ljpeg: &LjpegDecompressor, out: &mut [u16], width: usize
   let ref htable3 = ljpeg.dhts[ljpeg.sof.components[2].dc_tbl_num];
   let mut pump = BitPumpJPEG::new(ljpeg.buffer);
 
-  let base_prediction = 1 << (ljpeg.sof.precision - ljpeg.point_transform -1);
+  let base_prediction = 1 << (ljpeg.sof.precision - ljpeg.point_transform - 1);
   let y1 = base_prediction + htable1.huff_decode(&mut pump)?;
   let y2 = y1 + htable1.huff_decode(&mut pump)?;
   let y3 = y2 + htable1.huff_decode(&mut pump)?;
@@ -135,21 +132,21 @@ pub fn decode_ljpeg_420(ljpeg: &LjpegDecompressor, out: &mut [u16], width: usize
   set_yuv_420(out, 0, 0, width, y1, y2, y3, y4, cb, cr);
 
   for row in (0..height).step_by(2) {
-    let startcol = if row == 0 {6} else {0};
+    let startcol = if row == 0 { 6 } else { 0 };
     for col in (startcol..width).step_by(6) {
       let pos = if col == 0 {
         // At start of line predictor starts with first pixel of start of previous line
-        (row-2)*width
+        (row - 2) * width
       } else {
         // All other cases use the last pixel in the same two lines
-        (row+1)*width+col-3
+        (row + 1) * width + col - 3
       };
-      let (py,pcb,pcr) = (out[pos],out[pos+1],out[pos+2]);
+      let (py, pcb, pcr) = (out[pos], out[pos + 1], out[pos + 2]);
 
-      let y1 = (py  as i32) + htable1.huff_decode(&mut pump)?;
-      let y2 = (y1  as i32) + htable1.huff_decode(&mut pump)?;
-      let y3 = (y2  as i32) + htable1.huff_decode(&mut pump)?;
-      let y4 = (y3  as i32) + htable1.huff_decode(&mut pump)?;
+      let y1 = (py as i32) + htable1.huff_decode(&mut pump)?;
+      let y2 = (y1 as i32) + htable1.huff_decode(&mut pump)?;
+      let y3 = (y2 as i32) + htable1.huff_decode(&mut pump)?;
+      let y4 = (y3 as i32) + htable1.huff_decode(&mut pump)?;
       let cb = (pcb as i32) + htable2.huff_decode(&mut pump)?;
       let cr = (pcr as i32) + htable3.huff_decode(&mut pump)?;
       set_yuv_420(out, row, col, width, y1, y2, y3, y4, cb, cr);
@@ -160,29 +157,27 @@ pub fn decode_ljpeg_420(ljpeg: &LjpegDecompressor, out: &mut [u16], width: usize
 }
 
 fn set_yuv_422(out: &mut [u16], row: usize, col: usize, width: usize, y1: i32, y2: i32, cb: i32, cr: i32) {
-  let pix1 = row*width+col;
-  let pix2 = pix1+3;
+  let pix1 = row * width + col;
+  let pix2 = pix1 + 3;
 
-  out[pix1+0] = y1 as u16;
-  out[pix1+1] = cb as u16;
-  out[pix1+2] = cr as u16;
-  out[pix2+0] = y2 as u16;
-  out[pix2+1] = cb as u16;
-  out[pix2+2] = cr as u16;
+  out[pix1 + 0] = y1 as u16;
+  out[pix1 + 1] = cb as u16;
+  out[pix1 + 2] = cr as u16;
+  out[pix2 + 0] = y2 as u16;
+  out[pix2 + 1] = cb as u16;
+  out[pix2 + 2] = cr as u16;
 }
 
-pub fn decode_ljpeg_422(ljpeg: &LjpegDecompressor, out: &mut [u16], width: usize, height: usize) -> Result<(),String> {
-  if ljpeg.sof.width*3 != width || ljpeg.sof.height != height {
-    return Err(format!("ljpeg: trying to decode {}x{} into {}x{}",
-                       ljpeg.sof.width*3, ljpeg.sof.height,
-                       width, height).to_string())
+pub fn decode_ljpeg_422(ljpeg: &LjpegDecompressor, out: &mut [u16], width: usize, height: usize) -> Result<(), String> {
+  if ljpeg.sof.width * 3 != width || ljpeg.sof.height != height {
+    return Err(format!("ljpeg: trying to decode {}x{} into {}x{}", ljpeg.sof.width * 3, ljpeg.sof.height, width, height).to_string());
   }
   let ref htable1 = ljpeg.dhts[ljpeg.sof.components[0].dc_tbl_num];
   let ref htable2 = ljpeg.dhts[ljpeg.sof.components[1].dc_tbl_num];
   let ref htable3 = ljpeg.dhts[ljpeg.sof.components[2].dc_tbl_num];
   let mut pump = BitPumpJPEG::new(ljpeg.buffer);
 
-  let base_prediction = 1 << (ljpeg.sof.precision - ljpeg.point_transform -1);
+  let base_prediction = 1 << (ljpeg.sof.precision - ljpeg.point_transform - 1);
   let y1 = base_prediction + htable1.huff_decode(&mut pump)?;
   let y2 = y1 + htable1.huff_decode(&mut pump)?;
   let cb = base_prediction + htable2.huff_decode(&mut pump)?;
@@ -190,19 +185,19 @@ pub fn decode_ljpeg_422(ljpeg: &LjpegDecompressor, out: &mut [u16], width: usize
   set_yuv_422(out, 0, 0, width, y1, y2, cb, cr);
 
   for row in 0..height {
-    let startcol = if row == 0 {6} else {0};
+    let startcol = if row == 0 { 6 } else { 0 };
     for col in (startcol..width).step_by(6) {
       let pos = if col == 0 {
         // At start of line predictor starts with first pixel of start of previous line
-        (row-1)*width
+        (row - 1) * width
       } else {
         // All other cases use the last pixel in the same two lines
-        row*width+col-3
+        row * width + col - 3
       };
-      let (py,pcb,pcr) = (out[pos],out[pos+1],out[pos+2]);
+      let (py, pcb, pcr) = (out[pos], out[pos + 1], out[pos + 2]);
 
-      let y1 = (py  as i32) + htable1.huff_decode(&mut pump)?;
-      let y2 = (y1  as i32) + htable1.huff_decode(&mut pump)?;
+      let y1 = (py as i32) + htable1.huff_decode(&mut pump)?;
+      let y2 = (y1 as i32) + htable1.huff_decode(&mut pump)?;
       let cb = (pcb as i32) + htable2.huff_decode(&mut pump)?;
       let cr = (pcr as i32) + htable3.huff_decode(&mut pump)?;
       set_yuv_422(out, row, col, width, y1, y2, cb, cr);
@@ -212,7 +207,7 @@ pub fn decode_ljpeg_422(ljpeg: &LjpegDecompressor, out: &mut [u16], width: usize
   Ok(())
 }
 
-pub fn decode_hasselblad(ljpeg: &LjpegDecompressor, out: &mut [u16], width: usize) -> Result<(),String> {
+pub fn decode_hasselblad(ljpeg: &LjpegDecompressor, out: &mut [u16], width: usize) -> Result<(), String> {
   // Pixels are packed two at a time, not like LJPEG:
   // [p1_length_as_huffman][p2_length_as_huffman][p0_diff_with_length][p1_diff_with_length]|NEXT PIXELS
   let mut pump = BitPumpMSB32::new(ljpeg.buffer);
@@ -234,26 +229,26 @@ pub fn decode_hasselblad(ljpeg: &LjpegDecompressor, out: &mut [u16], width: usiz
   Ok(())
 }
 
-pub fn decode_leaf_strip(src: &[u8], out: &mut [u16], width: usize, height: usize, htable1: &HuffTable, htable2: &HuffTable, bpred: i32) -> Result<(),String> {
+pub fn decode_leaf_strip(src: &[u8], out: &mut [u16], width: usize, height: usize, htable1: &HuffTable, htable2: &HuffTable, bpred: i32) -> Result<(), String> {
   let mut pump = BitPumpJPEG::new(src);
   out[0] = (bpred + htable1.huff_decode(&mut pump)?) as u16;
   out[1] = (bpred + htable2.huff_decode(&mut pump)?) as u16;
   for row in 0..height {
-    let startcol = if row == 0 {2} else {0};
+    let startcol = if row == 0 { 2 } else { 0 };
     for col in (startcol..width).step_by(2) {
       let pos = if col == 0 {
         // At start of line predictor starts with start of previous line
-        (row-1)*width
+        (row - 1) * width
       } else {
         // All other cases use the two previous pixels in the same line
-        row*width+col-2
+        row * width + col - 2
       };
-      let (p1,p2) = (out[pos],out[pos+1]);
+      let (p1, p2) = (out[pos], out[pos + 1]);
 
       let diff1 = htable1.huff_decode(&mut pump)?;
       let diff2 = htable2.huff_decode(&mut pump)?;
-      out[row*width+col]   = ((p1 as i32) + diff1) as u16;
-      out[row*width+col+1] = ((p2 as i32) + diff2) as u16;
+      out[row * width + col] = ((p1 as i32) + diff1) as u16;
+      out[row * width + col + 1] = ((p2 as i32) + diff2) as u16;
     }
   }
 
