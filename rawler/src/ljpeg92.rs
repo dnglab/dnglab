@@ -116,7 +116,7 @@ struct HuffTableBuilder {
 
   /// Code for each symbol
   /// Is is a combination of Huffbits and Huffenc
-  huffcode: [HuffCode; Self::CLASSES],
+  huffcode: [HuffCode; Self::CLASSES + 1],
 
   /// Maps a value (ssss) to a symbol.
   /// This symbol can be used as index into
