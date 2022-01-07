@@ -1,189 +1,97 @@
 
 use crate::pumps::BitPumpJPEG;
 use crate::pumps::BitPumpMSB32;
-
-use super::LjpegDecompressor;
 use super::huffman::*;
+use super::LjpegDecompressor;
 
-
-
-pub fn decode_ljpeg_1components(ljpeg: &LjpegDecompressor, out: &mut [u16], x: usize, stripwidth:usize, width: usize, height: usize) -> Result<(),String> {
-  if ljpeg.sof.width < width || ljpeg.sof.height < height {
-    return Err(format!("ljpeg: trying to decode {}x{} into {}x{}",
-                       ljpeg.sof.width, ljpeg.sof.height,
-                       width, height).to_string())
+/// Decode the ljpeg stream to `out`.
+/// `x` is the start of output in `out`, usually 0.
+/// `stripwidth` is the widh of bytes of a single output strip (may
+/// be larger than width if each row has padding bytes).
+/// `width` is the output image width in bytes.
+pub fn decode_ljpeg(ljpeg: &LjpegDecompressor, out: &mut [u16], x: usize, stripwidth: usize, width: usize, height: usize) -> Result<(), String> {
+  let ncomp: usize = ljpeg.components();
+  if ljpeg.sof.width * ncomp < width || ljpeg.sof.height < height {
+    return Err(format!("ljpeg: trying to decode {}x{} into {}x{}", ljpeg.sof.width, ljpeg.sof.height, width, height).to_string());
   }
-  let ref htable1 = ljpeg.dhts[ljpeg.sof.components[0].dc_tbl_num];
-  let mut pump = BitPumpJPEG::new(ljpeg.buffer);
 
-  let base_prediction = 1 << (ljpeg.sof.precision - ljpeg.point_transform -1);
-  out[x]   = (base_prediction + htable1.huff_decode(&mut pump)?) as u16;
-  let skip_x = ljpeg.sof.width - width;
+  let htable = |index: usize| -> &HuffTable { &ljpeg.dhts[ljpeg.sof.components[index].dc_tbl_num] };
+  let mut pump = BitPumpJPEG::new(ljpeg.buffer);
+  let base_prediction = 1 << (ljpeg.sof.precision - ljpeg.point_transform - 1);
+
+  // initialize first pixel components
+  for c in 0..ncomp {
+    out[x + c] = (base_prediction + htable(c).huff_decode(&mut pump)?) as u16;
+  }
+
+  let skip_x = ljpeg.sof.width - width / ncomp;
 
   for row in 0..height {
-    let startcol = if row == 0 {x+1} else {x};
-    for col in startcol..(width+x) {
-      let p1 = if col == x {
-        // At start of line predictor starts with start of previous line
-        out[(row-1)*stripwidth+x]
-      } else {
-        // All other cases use the two previous pixels in the same line
-        out[row*stripwidth+col-1]
-      };
+    let startcol = if row == 0 { x + ncomp } else { x }; // skip first pixel in first row
+    for col in (startcol..(width + x)).step_by(ncomp) {
+      for c in 0..ncomp {
+        let p: i32 = if col == x {
+          // At start of line predictor starts with start of previous line
+          out[(row - 1) * stripwidth + x + c] as i32
+        } else {
+          // All other cases use the two previous pixels in the same line
+          match (row, ljpeg.predictor) {
+            (row @ 0, _) | (row, 1) => {
+              let a = out[row * stripwidth + (col - ncomp) + c] as i32;
+              a
+            }
+            (row, 2) => {
+              let b = out[(row - 1) * stripwidth + col + c] as i32;
+              b
+            }
+            (row, 3) => {
+              let c = out[(row - 1) * stripwidth + (col - ncomp) + c] as i32;
+              c
+            }
+            (row, 4) => {
+              let a = out[row * stripwidth + (col - ncomp) + c] as i32;
+              let b = out[(row - 1) * stripwidth + col + c] as i32;
+              let c = out[(row - 1) * stripwidth + (col - ncomp) + c] as i32;
+              a + b - c
+            }
+            (row, 5) => {
+              let a = out[row * stripwidth + (col - ncomp) + c] as i32;
+              let b = out[(row - 1) * stripwidth + col + c] as i32;
+              let c = out[(row - 1) * stripwidth + (col - ncomp) + c] as i32;
+              a + ((b - c) >> 1)
+            }
+            (row, 6) => {
+              let a = out[row * stripwidth + (col - ncomp) + c] as i32;
+              let b = out[(row - 1) * stripwidth + col + c] as i32;
+              let c = out[(row - 1) * stripwidth + (col - ncomp) + c] as i32;
+              b + ((a - c) >> 1)
+            }
+            (row, 7) => {
+              let a = out[row * stripwidth + (col - ncomp) + c] as i32;
+              let b = out[(row - 1) * stripwidth + col + c] as i32;
+              (a + b) >> 1 // Adobe DNG SDK uses int32 and shifts, so we will do, too.
+            }
+            _ => {
+              panic!("Unsupported prediction in LJPEG")
+            }
+          }
+        };
 
-      let diff1 = htable1.huff_decode(&mut pump)?;
-      out[row*stripwidth+col] = ((p1 as i32) + diff1) as u16;
+        let diff = htable(c).huff_decode(&mut pump)?;
+        out[row * stripwidth + col + c] = (p + diff) as u16;
+      }
     }
-    // Skip extra encoded differences if the ljpeg frame is wider than the output
     for _ in 0..skip_x {
-      htable1.huff_decode(&mut pump)?;
+      for c in 0..ncomp {
+        // Skip extra encoded differences if the ljpeg frame is wider than the output
+        htable(c).huff_decode(&mut pump)?;
+      }
     }
   }
 
   Ok(())
 }
 
-pub fn decode_ljpeg_2components(ljpeg: &LjpegDecompressor, out: &mut [u16], x: usize, stripwidth:usize, width: usize, height: usize) -> Result<(),String> {
-  if ljpeg.sof.width*2 < width || ljpeg.sof.height < height {
-    return Err(format!("ljpeg: trying to decode {}x{} into {}x{}",
-                       ljpeg.sof.width*2, ljpeg.sof.height,
-                       width, height).to_string())
-  }
-  let ref htable1 = ljpeg.dhts[ljpeg.sof.components[0].dc_tbl_num];
-  let ref htable2 = ljpeg.dhts[ljpeg.sof.components[1].dc_tbl_num];
-  let mut pump = BitPumpJPEG::new(ljpeg.buffer);
-
-  let base_prediction = 1 << (ljpeg.sof.precision - ljpeg.point_transform -1);
-  out[x]   = (base_prediction + htable1.huff_decode(&mut pump)?) as u16;
-  out[x+1] = (base_prediction + htable2.huff_decode(&mut pump)?) as u16;
-  let skip_x = ljpeg.sof.width - width/2;
-
-  for row in 0..height {
-    let startcol = if row == 0 {x+2} else {x};
-    for col in (startcol..(width+x)).step_by(2) {
-      let (p1,p2) = if col == x {
-        // At start of line predictor starts with start of previous line
-        (out[(row-1)*stripwidth+x],out[(row-1)*stripwidth+1+x])
-      } else {
-        // All other cases use the two previous pixels in the same line
-        (out[row*stripwidth+col-2], out[row*stripwidth+col-1])
-      };
-
-      let diff1 = htable1.huff_decode(&mut pump)?;
-      let diff2 = htable2.huff_decode(&mut pump)?;
-      out[row*stripwidth+col] = ((p1 as i32) + diff1) as u16;
-      out[row*stripwidth+col+1] = ((p2 as i32) + diff2) as u16;
-    }
-    // Skip extra encoded differences if the ljpeg frame is wider than the output
-    for _ in 0..skip_x {
-      htable1.huff_decode(&mut pump)?;
-      htable2.huff_decode(&mut pump)?;
-    }
-  }
-
-  Ok(())
-}
-
-pub fn decode_ljpeg_3components(ljpeg: &LjpegDecompressor, out: &mut [u16], x: usize, stripwidth:usize, width: usize, height: usize) -> Result<(),String> {
-  if ljpeg.sof.width*3 < width || ljpeg.sof.height < height {
-    return Err(format!("ljpeg: trying to decode {}x{} into {}x{}",
-                       ljpeg.sof.width*3, ljpeg.sof.height,
-                       width, height).to_string())
-  }
-
-  let ref htable1 = ljpeg.dhts[ljpeg.sof.components[0].dc_tbl_num];
-  let ref htable2 = ljpeg.dhts[ljpeg.sof.components[1].dc_tbl_num];
-  let ref htable3 = ljpeg.dhts[ljpeg.sof.components[2].dc_tbl_num];
-  let mut pump = BitPumpJPEG::new(ljpeg.buffer);
-
-  let base_prediction = 1 << (ljpeg.sof.precision - ljpeg.point_transform -1);
-  out[x]   = (base_prediction + htable1.huff_decode(&mut pump)?) as u16;
-  out[x+1] = (base_prediction + htable2.huff_decode(&mut pump)?) as u16;
-  out[x+2] = (base_prediction + htable3.huff_decode(&mut pump)?) as u16;
-  let skip_x = ljpeg.sof.width - width/3;
-
-  for row in 0..height {
-    let startcol = if row == 0 {x+3} else {x};
-    for col in (startcol..(width+x)).step_by(3) {
-      let pos = if col == x {
-        // At start of line predictor starts with start of previous line
-        (row-1)*stripwidth+x
-      } else {
-        // All other cases use the two previous pixels in the same line
-        row*stripwidth+col-3
-      };
-      let (p1,p2,p3) = (out[pos],out[pos+1],out[pos+2]);
-
-      let diff1 = htable1.huff_decode(&mut pump)?;
-      let diff2 = htable2.huff_decode(&mut pump)?;
-      let diff3 = htable3.huff_decode(&mut pump)?;
-      out[row*stripwidth+col] = ((p1 as i32) + diff1) as u16;
-      out[row*stripwidth+col+1] = ((p2 as i32) + diff2) as u16;
-      out[row*stripwidth+col+2] = ((p3 as i32) + diff3) as u16;
-    }
-    // Skip extra encoded differences if the ljpeg frame is wider than the output
-    for _ in 0..skip_x {
-      htable1.huff_decode(&mut pump)?;
-      htable2.huff_decode(&mut pump)?;
-      htable3.huff_decode(&mut pump)?;
-    }
-  }
-
-  Ok(())
-}
-
-pub fn decode_ljpeg_4components(ljpeg: &LjpegDecompressor, out: &mut [u16], width: usize, height: usize) -> Result<(),String> {
-  if ljpeg.sof.width*4 < width || ljpeg.sof.height < height {
-    return Err(format!("ljpeg: trying to decode {}x{} into {}x{}",
-                       ljpeg.sof.width*4, ljpeg.sof.height,
-                       width, height).to_string())
-  }
-  let ref htable1 = ljpeg.dhts[ljpeg.sof.components[0].dc_tbl_num];
-  let ref htable2 = ljpeg.dhts[ljpeg.sof.components[1].dc_tbl_num];
-  let ref htable3 = ljpeg.dhts[ljpeg.sof.components[2].dc_tbl_num];
-  let ref htable4 = ljpeg.dhts[ljpeg.sof.components[3].dc_tbl_num];
-  let mut pump = BitPumpJPEG::new(ljpeg.buffer);
-
-  let base_prediction = 1 << (ljpeg.sof.precision - ljpeg.point_transform -1);
-  out[0] = (base_prediction + htable1.huff_decode(&mut pump)?) as u16;
-  out[1] = (base_prediction + htable2.huff_decode(&mut pump)?) as u16;
-  out[2] = (base_prediction + htable3.huff_decode(&mut pump)?) as u16;
-  out[3] = (base_prediction + htable4.huff_decode(&mut pump)?) as u16;
-  let skip_x = ljpeg.sof.width - width/4;
-
-  for row in 0..height {
-    let startcol = if row == 0 {4} else {0};
-    for col in (startcol..width).step_by(4) {
-      let pos = if col == 0 {
-        // At start of line predictor starts with start of previous line
-        (row-1)*width
-      } else {
-        // All other cases use the two previous pixels in the same line
-        row*width+col-4
-      };
-
-      let (p1,p2,p3,p4) = (out[pos],out[pos+1],out[pos+2],out[pos+3]);
-
-      let diff1 = htable1.huff_decode(&mut pump)?;
-      let diff2 = htable2.huff_decode(&mut pump)?;
-      let diff3 = htable3.huff_decode(&mut pump)?;
-      let diff4 = htable4.huff_decode(&mut pump)?;
-      out[row*width+col] = ((p1 as i32) + diff1) as u16;
-      out[row*width+col+1] = ((p2 as i32) + diff2) as u16;
-      out[row*width+col+2] = ((p3 as i32) + diff3) as u16;
-      out[row*width+col+3] = ((p4 as i32) + diff4) as u16;
-    }
-    // Skip extra encoded differences if the ljpeg frame is wider than the output
-    for _ in 0..skip_x {
-      htable1.huff_decode(&mut pump)?;
-      htable2.huff_decode(&mut pump)?;
-      htable3.huff_decode(&mut pump)?;
-      htable4.huff_decode(&mut pump)?;
-    }
-  }
-
-  Ok(())
-}
 
 fn set_yuv_420(out: &mut [u16], row: usize, col: usize, width: usize, y1: i32, y2: i32, y3: i32, y4: i32, cb: i32, cr: i32) {
   let pix1 = row*width+col;
