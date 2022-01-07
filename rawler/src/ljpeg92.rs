@@ -26,6 +26,7 @@
 // SOFTWARE.
 
 use byteorder::{BigEndian, WriteBytesExt};
+use log::debug;
 use std::{
   cmp::min,
   io::{Cursor, Write},
@@ -146,7 +147,7 @@ impl HuffTableBuilder {
   /// Figure K.1 - Procedure to find Huffman code sizes
   fn gen_codesizes(&mut self) {
     loop {
-      // smallest frequencies found in llop
+      // smallest frequencies found in loop
       let mut v1freq: f32 = 3.0; // just a value larger then 1.0
       let mut v2freq: f32 = 3.0;
       // Indices into frequency table
@@ -166,6 +167,8 @@ impl HuffTableBuilder {
           v2 = Some(i);
         }
       }
+
+      inspector!("V1: {:?}, V2: {:?}", v1, v2);
 
       match (&mut v1, &mut v2) {
         (Some(v1), Some(v2)) => {
@@ -199,6 +202,8 @@ impl HuffTableBuilder {
       }
     }
 
+    inspector!("ITER SIZE: {}", ccc);
+
     #[cfg(feature = "inspector")]
     for (i, codesize) in self.codesize.iter().enumerate() {
       inspector!("codesize[{}]={}", i, codesize);
@@ -215,6 +220,11 @@ impl HuffTableBuilder {
     } // end of K2
 
     self.adjust_bits();
+
+    #[cfg(feature = "inspector")]
+    for (i, bit) in self.bits.iter().enumerate() {
+      inspector!("bits[{}]={}", i, bit);
+    }
   }
 
   /// Section K.2 Figure K.4 Sorting of input values according to code size
@@ -330,6 +340,7 @@ impl HuffTableBuilder {
 
   /// Build Huffman table
   fn build(mut self) -> [BitArray16; HuffTableBuilder::CLASSES] {
+    inspector!("Start building table");
     self.gen_codesizes();
     self.count_bits();
     self.sort_input();
@@ -587,18 +598,18 @@ impl<'a> LjpegCompressor<'a> {
             let ra = Self::px_ra(current_row, col, comp, cc, pt);
             let rb = Self::px_rb(prev_row, current_row, col, comp, cc, pt);
             let rc = Self::px_rc(prev_row, current_row, col, comp, cc, pt);
-            ra + ((rb - rc) >> 1)
+            ra + ((rb - rc) >> 1) // Adobe DNG SDK uses int32 and shifts, so we will do, too.
           }
           6 => {
             let ra = Self::px_ra(current_row, col, comp, cc, pt);
             let rb = Self::px_rb(prev_row, current_row, col, comp, cc, pt);
             let rc = Self::px_rc(prev_row, current_row, col, comp, cc, pt);
-            rb + ((ra - rc) >> 1)
+            rb + ((ra - rc) >> 1)// Adobe DNG SDK uses int32 and shifts, so we will do, too.
           }
           7 => {
             let ra = Self::px_ra(current_row, col, comp, cc, pt);
             let rb = Self::px_rb(prev_row, current_row, col, comp, cc, pt);
-            (ra + rb) / 2
+            (ra + rb) >> 1// Adobe DNG SDK uses int32 and shifts, so we will do, too.
           }
           _ => {
             // We panic here because supported predictor check
@@ -659,7 +670,7 @@ impl<'a> LjpegCompressor<'a> {
 
     let huffgen = HuffTableBuilder::new(self.comp_state[comp].histogram.clone(), self.resolution() as f32);
     let table = huffgen.build();
-    //let table = HuffTableBuilder::_generic_table(self.huffman[comp].hist.clone());
+    //let table = HuffTableBuilder::_generic_table(self.comp_state[comp].histogram.clone(), self.resolution() as f32);
     #[cfg(feature = "inspector")]
     for (i, code) in table.iter().enumerate() {
       inspector!("table[{}]={}", i, code);
@@ -820,7 +831,7 @@ mod tests {
   use super::*;
 
   fn init() {
-    let _ = env_logger::builder().is_test(true).try_init();
+    let _ = env_logger::builder().is_test(true).filter_level(log::LevelFilter::Debug).try_init();
   }
 
   /// We reuse the decompressor to check both...
