@@ -1002,9 +1002,374 @@ mod tests {
     let dec = LjpegDecompressor::new_full(&jpeg, false, false)?;
     let mut outbuf = vec![0; h * w * c];
     dec.decode(&mut outbuf, 0, w * c, w * c, h, false)?;
+    //debug!("input: {:?}", input_image);
+    //debug!("output: {:?}", outbuf);
     for i in 0..outbuf.len() {
-      assert!((outbuf[i] as i32 - input_image[i] as i32).abs() < 2);
+      assert_eq!(outbuf[i], input_image[i]);
     }
+    Ok(())
+  }
+
+  #[test]
+  fn encode_all_differences() -> std::result::Result<(), Box<dyn std::error::Error>> {
+    init();
+    // This simulates an input where every 17 SSSS classes are used because each difference
+    // value exists (see ITU-T81 H.1.2.2 Table H.2, p. 138).
+    let input_image = vec![
+      0, 0, 1, 0, 2, 0, 4, 0, 8, 0, 16, 0, 32, 0, 64, 0, 128, 0, 256, 0, 512, 0, 1024, 0, 2048, 0, 4096, 0, 8192, 0, 16384, 0, 32768,
+    ];
+    let h = 1;
+    let w = input_image.len();
+    let c = 1;
+
+    let enc = LjpegCompressor::new(&input_image, w, h, c, 16, 1, 0)?;
+    let result = enc.encode();
+    assert!(result.is_ok());
+    let jpeg = result?;
+    let dec = LjpegDecompressor::new_full(&jpeg, false, false)?;
+    let mut outbuf = vec![0; h * w * c];
+    dec.decode(&mut outbuf, 0, w * c, w * c, h, false)?;
+    for i in 0..outbuf.len() {
+      assert_eq!(outbuf[i], input_image[i]);
+    }
+    Ok(())
+  }
+
+  #[test]
+  fn encode_ssss_16() -> std::result::Result<(), Box<dyn std::error::Error>> {
+    init();
+    // This simulates an input where every 17 SSSS classes are used because each difference
+    // value exists (see ITU-T81 H.1.2.2 Table H.2, p. 138).
+    //let input_image = vec![0, 0, 0, 32768, 0, 0];
+    let input_image = vec![0, 0, 0, 32768];
+    let h = 1;
+    let w = input_image.len();
+    let c = 1;
+
+    let enc = LjpegCompressor::new(&input_image, w, h, c, 16, 1, 0)?;
+    let result = enc.encode();
+    assert!(result.is_ok());
+    let jpeg = result?;
+    let dec = LjpegDecompressor::new_full(&jpeg, false, false)?;
+    let mut outbuf = vec![0; h * w * c];
+    dec.decode(&mut outbuf, 0, w * c, w * c, h, false)?;
+    for i in 0..outbuf.len() {
+      assert_eq!(outbuf[i], input_image[i]);
+    }
+    Ok(())
+  }
+
+  #[test]
+  fn encode_difference_above_32768() -> std::result::Result<(), Box<dyn std::error::Error>> {
+    init();
+    // Test values larger than i16::MAX
+    let input_image = vec![0, 0, 0, 32768 + 1, 0, 0, 0, u16::MAX, u16::MAX, 1, u16::MAX, 1, 0];
+    let h = 1;
+    let w = input_image.len();
+    let c = 1;
+
+    let enc = LjpegCompressor::new(&input_image, w, h, c, 16, 1, 0)?;
+    let result = enc.encode();
+    assert!(result.is_ok());
+    let jpeg = result?;
+    let dec = LjpegDecompressor::new_full(&jpeg, false, false)?;
+    let mut outbuf = vec![0; h * w * c];
+    dec.decode(&mut outbuf, 0, w * c, w * c, h, false)?;
+    //debug!("{:?}", outbuf);
+    for i in 0..outbuf.len() {
+      assert_eq!(outbuf[i], input_image[i]);
+    }
+    Ok(())
+  }
+
+
+
+  #[test]
+  fn encode_predictor2_1comp() -> std::result::Result<(), Box<dyn std::error::Error>> {
+    init();
+    let input_image = vec![0, 0, u16::MAX, 0, 0, 0, u16::MAX-5, 0];
+    let h = 2;
+    let w = 4;
+    let c = 1;
+
+    let enc = LjpegCompressor::new(&input_image, w, h, c, 16, 2, 0)?;
+    let result = enc.encode();
+    assert!(result.is_ok());
+    let jpeg = result?;
+
+    let dec = LjpegDecompressor::new_full(&jpeg, false, false)?;
+    let mut outbuf = vec![0; h * w * c];
+    dec.decode(&mut outbuf, 0, w * c, w * c, h, false)?;
+    //debug!("{:?}", outbuf);
+    for i in 0..outbuf.len() {
+      assert_eq!(outbuf[i], input_image[i]);
+    }
+
+    Ok(())
+  }
+
+  #[test]
+  fn encode_predictor3_1comp() -> std::result::Result<(), Box<dyn std::error::Error>> {
+    init();
+    let input_image = vec![0, u16::MAX, 0, 0, 0, 0, u16::MAX-5, 0];
+    let h = 2;
+    let w = 4;
+    let c = 1;
+
+    let enc = LjpegCompressor::new(&input_image, w, h, c, 16, 3, 0)?;
+    let result = enc.encode();
+    assert!(result.is_ok());
+    let jpeg = result?;
+
+    let dec = LjpegDecompressor::new_full(&jpeg, false, false)?;
+    let mut outbuf = vec![0; h * w * c];
+    dec.decode(&mut outbuf, 0, w * c, w * c, h, false)?;
+    //debug!("{:?}", outbuf);
+    for i in 0..outbuf.len() {
+      assert_eq!(outbuf[i], input_image[i]);
+    }
+
+    Ok(())
+  }
+
+  #[test]
+  fn encode_predictor4_1comp() -> std::result::Result<(), Box<dyn std::error::Error>> {
+    init();
+    let input_image = vec![0, 0, u16::MAX, 0, 0, u16::MAX, 0, 0];
+    let h = 2;
+    let w = 4;
+    let c = 1;
+
+    let enc = LjpegCompressor::new(&input_image, w, h, c, 16, 4, 0)?;
+    let result = enc.encode();
+    assert!(result.is_ok());
+    let jpeg = result?;
+
+    let dec = LjpegDecompressor::new_full(&jpeg, false, false)?;
+    let mut outbuf = vec![0; h * w * c];
+    dec.decode(&mut outbuf, 0, w * c, w * c, h, false)?;
+    //debug!("{:?}", outbuf);
+    for i in 0..outbuf.len() {
+      assert_eq!(outbuf[i], input_image[i]);
+    }
+
+    Ok(())
+  }
+
+  #[test]
+  fn encode_predictor5_1comp() -> std::result::Result<(), Box<dyn std::error::Error>> {
+    init();
+    let input_image = vec![
+      0, u16::MAX, u16::MAX, 0,
+      0, u16::MAX, 0,         0];
+    let h = 2;
+    let w = 4;
+    let c = 1;
+
+    let enc = LjpegCompressor::new(&input_image, w, h, c, 16, 5, 0)?;
+    let result = enc.encode();
+    assert!(result.is_ok());
+    let jpeg = result?;
+
+    let dec = LjpegDecompressor::new_full(&jpeg, false, false)?;
+    let mut outbuf = vec![0; h * w * c];
+    dec.decode(&mut outbuf, 0, w * c, w * c, h, false)?;
+    //debug!("{:?}", outbuf);
+    for i in 0..outbuf.len() {
+      assert_eq!(outbuf[i], input_image[i]);
+    }
+
+    Ok(())
+  }
+
+  #[test]
+  fn encode_predictor6_1comp() -> std::result::Result<(), Box<dyn std::error::Error>> {
+    init();
+    let input_image = vec![
+      0, u16::MAX, u16::MAX, 0,
+      0, u16::MAX, 0,         0];
+    let h = 2;
+    let w = 4;
+    let c = 1;
+
+    let enc = LjpegCompressor::new(&input_image, w, h, c, 16, 6, 0)?;
+    let result = enc.encode();
+    assert!(result.is_ok());
+    let jpeg = result?;
+
+    let dec = LjpegDecompressor::new_full(&jpeg, false, false)?;
+    let mut outbuf = vec![0; h * w * c];
+    dec.decode(&mut outbuf, 0, w * c, w * c, h, false)?;
+    //debug!("{:?}", outbuf);
+    for i in 0..outbuf.len() {
+      assert_eq!(outbuf[i], input_image[i]);
+    }
+
+    Ok(())
+  }
+
+
+  #[test]
+  fn encode_predictor6_3comp() -> std::result::Result<(), Box<dyn std::error::Error>> {
+    init();
+    let input_image = vec![
+     56543, 45, 65000, 0, 0, 35632];
+    let h = 2;
+    let w = 1;
+    let c = 3;
+
+    let enc = LjpegCompressor::new(&input_image, w, h, c, 16, 6, 0)?;
+    let result = enc.encode();
+    assert!(result.is_ok());
+    let jpeg = result?;
+
+    let dec = LjpegDecompressor::new_full(&jpeg, false, false)?;
+    let mut outbuf = vec![0; h * w * c];
+    dec.decode(&mut outbuf, 0, w * c, w * c, h, false)?;
+    //debug!("{:?}", outbuf);
+    for i in 0..outbuf.len() {
+      assert_eq!(outbuf[i], input_image[i]);
+    }
+
+    Ok(())
+  }
+
+  #[test]
+  fn encode_predictor6_3comp_ssss16() -> std::result::Result<(), Box<dyn std::error::Error>> {
+    init();
+    let input_image = vec![
+      0, 0, 0, 0, 0, 0,
+      0, 0, 0, 32768, 32768, 32768,
+      0, 0, 0, 0, 0, 0,
+      ];
+    let h = 3;
+    let w = 2;
+    let c = 3;
+
+    let enc = LjpegCompressor::new(&input_image, w, h, c, 16, 6, 0)?;
+    let result = enc.encode();
+    assert!(result.is_ok());
+    let jpeg = result?;
+
+    let dec = LjpegDecompressor::new_full(&jpeg, false, false)?;
+    let mut outbuf = vec![0; h * w * c];
+    dec.decode(&mut outbuf, 0, w * c, w * c, h, false)?;
+    //debug!("{:?}", outbuf);
+    for i in 0..outbuf.len() {
+      assert_eq!(outbuf[i], input_image[i]);
+    }
+
+    Ok(())
+  }
+
+  #[test]
+  fn encode_predictor7_1comp() -> std::result::Result<(), Box<dyn std::error::Error>> {
+    init();
+    let input_image = vec![
+      0, 0,        u16::MAX, 0,
+      0, u16::MAX, 0,        0];
+    let h = 2;
+    let w = 4;
+    let c = 1;
+
+    let enc = LjpegCompressor::new(&input_image, w, h, c, 16, 7, 0)?;
+    let result = enc.encode();
+    assert!(result.is_ok());
+    let jpeg = result?;
+
+    let dec = LjpegDecompressor::new_full(&jpeg, false, false)?;
+    let mut outbuf = vec![0; h * w * c];
+    dec.decode(&mut outbuf, 0, w * c, w * c, h, false)?;
+    //debug!("{:?}", outbuf);
+    for i in 0..outbuf.len() {
+      assert_eq!(outbuf[i], input_image[i]);
+    }
+
+    Ok(())
+  }
+
+
+  #[test]
+  fn encode_predictor1_ljpeg_width_larger_than_output() -> std::result::Result<(), Box<dyn std::error::Error>> {
+    init();
+    let input_image = vec![
+      100, 105, 200, 207, 50, 48, 34, 45,
+      50,  45,  23,  100, 34, 76, 23, 99,
+    ];
+    let expected_output = vec![
+      100, 105, 200, 207,
+      50,  45,  23,  100,
+    ];
+    let h = 2;
+    let w = 4;
+    let c = 2;
+
+    let enc = LjpegCompressor::new(&input_image, w, h, c, 16, 1, 0)?;
+    let result = enc.encode();
+    assert!(result.is_ok());
+    let jpeg = result?;
+
+    let w = w / 2; // we only want the first part of the image
+    let dec = LjpegDecompressor::new_full(&jpeg, false, false)?;
+    let mut outbuf = vec![0; h * w * c];
+    dec.decode(&mut outbuf, 0, w * c, w * c, h, false)?;
+    //debug!("{:?}", outbuf);
+    assert_eq!(outbuf, expected_output);
+
+    Ok(())
+  }
+
+  #[test]
+  fn encode_predictor4_trigger_minus1_prediction() -> std::result::Result<(), Box<dyn std::error::Error>> {
+    init();
+    let input_image = vec![
+      0, 0, 5, 2, 0, 0,
+      0, 0, 2, 9, 0, 0,
+    ];
+    let h = 2;
+    let w = 6;
+    let c = 1;
+
+    let enc = LjpegCompressor::new(&input_image, w, h, c, 16, 4, 0)?;
+    let result = enc.encode();
+    assert!(result.is_ok());
+    let jpeg = result?;
+
+    let dec = LjpegDecompressor::new_full(&jpeg, false, false)?;
+    let mut outbuf = vec![0; h * w * c];
+    dec.decode(&mut outbuf, 0, w * c, w * c, h, false)?;
+    //debug!("{:?}", outbuf);
+    for i in 0..outbuf.len() {
+      assert_eq!(outbuf[i], input_image[i]);
+    }
+
+    Ok(())
+  }
+
+  #[test]
+  fn encode_predictor5_trigger_minus1_prediction() -> std::result::Result<(), Box<dyn std::error::Error>> {
+    init();
+    let input_image = vec![
+      0, 0, 2, 1,
+      0, 0, 1, 9,
+    ];
+    let h = 2;
+    let w = 4;
+    let c = 1;
+
+    let enc = LjpegCompressor::new(&input_image, w, h, c, 16, 5, 0)?;
+    let result = enc.encode();
+    assert!(result.is_ok());
+    let jpeg = result?;
+
+    let dec = LjpegDecompressor::new_full(&jpeg, false, false)?;
+    let mut outbuf = vec![0; h * w * c];
+    dec.decode(&mut outbuf, 0, w * c, w * c, h, false)?;
+    //debug!("{:?}", outbuf);
+    for i in 0..outbuf.len() {
+      assert_eq!(outbuf[i], input_image[i]);
+    }
+
     Ok(())
   }
 }
