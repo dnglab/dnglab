@@ -631,8 +631,9 @@ impl<'a> LjpegCompressor<'a> {
             )));
           }
           let px = self.predict_px(prev_row, current_row, row, col, comp);
-          let diff: i32 = sample as i32 - px;
-          let ssss = if diff == 0 { 0 } else { 32 - diff.abs().leading_zeros() };
+          // See write_body() to learn why to use i16 and 32 here.
+          let diff: i16 = (sample as i16).wrapping_sub(px as i16);
+          let ssss = if diff == 0 { 0 } else { 32 - (diff as i32).abs().leading_zeros() };
           self.comp_state[comp].histogram[ssss as usize] += 1;
         }
       }
@@ -762,9 +763,21 @@ impl<'a> LjpegCompressor<'a> {
             )));
           }
           let px = self.predict_px(prev_row, current_row, row, col, comp);
-          let mut diff: i32 = sample as i32 - px;
+          //debug!("Px: {}", px);
+
+          //let mut diff: i16 = (sample as i16 - px as i16);
+          // We need to calculate the wrapping result. We can't use i32 because
+          // the biggest class SSSS=16 is 32768 for difference. With i32 calculation,
+          // we get maybe bigger difference values. So i16 calculation guarantee
+          // differences <= 32768.
+          let mut diff: i16 = (sample as i32 - px) as i16;
+
+          // Because the absolute value for i16 may be bigger than i16 can handle,
+          // we must cast the diff to i32.
+          let ssss = if diff == 0 { 0 } else { 32 - (diff as i32).abs().leading_zeros() };
+
           //inspector!("Sample: {}, px: {}, diff: {}", sample, px, diff);
-          let ssss = if diff == 0 { 0 } else { 32 - diff.abs().leading_zeros() };
+          //println!("{} - {}, DIFF is: {}, ssss={}", sample, px, diff, ssss);
 
           let enc = self.comp_state[comp].hufftable[ssss as usize];
 
@@ -776,11 +789,14 @@ impl<'a> LjpegCompressor<'a> {
           // Sign encoding
           let vt = if ssss > 0 { 1 << (ssss - 1) } else { 0 };
           if diff < vt {
-            diff += (1 << ssss) - 1;
+            //diff += (1 << ssss) - 1;
+            diff = diff.wrapping_add(((1_u16 << ssss) - 1) as i16);
           }
 
-          assert!(diff <= (diff & (1 << ssss) - 1));
+          //assert!(diff <= (diff & (1 << ssss) - 1));
           //inspector!("diff: {}, ssss: {}", diff, ssss);
+
+          assert!(ssss <= 16);
 
           // Write the rest of the bits for the value
           // For ssss == 16 no additional bits are written
