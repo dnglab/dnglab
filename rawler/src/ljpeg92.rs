@@ -26,6 +26,7 @@
 // SOFTWARE.
 
 use byteorder::{BigEndian, WriteBytesExt};
+use log::debug;
 use std::{
   cmp::min,
   io::{Cursor, Write},
@@ -116,7 +117,7 @@ struct HuffTableBuilder {
 
   /// Code for each symbol
   /// Is is a combination of Huffbits and Huffenc
-  huffcode: [HuffCode; Self::CLASSES],
+  huffcode: [HuffCode; Self::CLASSES + 1],
 
   /// Maps a value (ssss) to a symbol.
   /// This symbol can be used as index into
@@ -146,7 +147,7 @@ impl HuffTableBuilder {
   /// Figure K.1 - Procedure to find Huffman code sizes
   fn gen_codesizes(&mut self) {
     loop {
-      // smallest frequencies found in llop
+      // smallest frequencies found in loop
       let mut v1freq: f32 = 3.0; // just a value larger then 1.0
       let mut v2freq: f32 = 3.0;
       // Indices into frequency table
@@ -166,6 +167,8 @@ impl HuffTableBuilder {
           v2 = Some(i);
         }
       }
+
+      inspector!("V1: {:?}, V2: {:?}", v1, v2);
 
       match (&mut v1, &mut v2) {
         (Some(v1), Some(v2)) => {
@@ -199,6 +202,8 @@ impl HuffTableBuilder {
       }
     }
 
+    inspector!("ITER SIZE: {}", ccc);
+
     #[cfg(feature = "inspector")]
     for (i, codesize) in self.codesize.iter().enumerate() {
       inspector!("codesize[{}]={}", i, codesize);
@@ -215,6 +220,11 @@ impl HuffTableBuilder {
     } // end of K2
 
     self.adjust_bits();
+
+    #[cfg(feature = "inspector")]
+    for (i, bit) in self.bits.iter().enumerate() {
+      inspector!("bits[{}]={}", i, bit);
+    }
   }
 
   /// Section K.2 Figure K.4 Sorting of input values according to code size
@@ -309,7 +319,7 @@ impl HuffTableBuilder {
 
     while i > 16 {
       if self.bits[i] > 0 {
-        let mut j = i - 2;
+        let mut j = i - 1;
         while self.bits[j] == 0 {
           j = j - 1;
         }
@@ -330,6 +340,7 @@ impl HuffTableBuilder {
 
   /// Build Huffman table
   fn build(mut self) -> [BitArray16; HuffTableBuilder::CLASSES] {
+    inspector!("Start building table");
     self.gen_codesizes();
     self.count_bits();
     self.sort_input();
@@ -587,18 +598,18 @@ impl<'a> LjpegCompressor<'a> {
             let ra = Self::px_ra(current_row, col, comp, cc, pt);
             let rb = Self::px_rb(prev_row, current_row, col, comp, cc, pt);
             let rc = Self::px_rc(prev_row, current_row, col, comp, cc, pt);
-            ra + ((rb - rc) >> 1)
+            ra + ((rb - rc) >> 1) // Adobe DNG SDK uses int32 and shifts, so we will do, too.
           }
           6 => {
             let ra = Self::px_ra(current_row, col, comp, cc, pt);
             let rb = Self::px_rb(prev_row, current_row, col, comp, cc, pt);
             let rc = Self::px_rc(prev_row, current_row, col, comp, cc, pt);
-            rb + ((ra - rc) >> 1)
+            rb + ((ra - rc) >> 1)// Adobe DNG SDK uses int32 and shifts, so we will do, too.
           }
           7 => {
             let ra = Self::px_ra(current_row, col, comp, cc, pt);
             let rb = Self::px_rb(prev_row, current_row, col, comp, cc, pt);
-            (ra + rb) / 2
+            (ra + rb) >> 1// Adobe DNG SDK uses int32 and shifts, so we will do, too.
           }
           _ => {
             // We panic here because supported predictor check
@@ -631,8 +642,9 @@ impl<'a> LjpegCompressor<'a> {
             )));
           }
           let px = self.predict_px(prev_row, current_row, row, col, comp);
-          let diff: i32 = sample as i32 - px;
-          let ssss = if diff == 0 { 0 } else { 32 - diff.abs().leading_zeros() };
+          // See write_body() to learn why to use i16 and 32 here.
+          let diff: i16 = (sample as i16).wrapping_sub(px as i16);
+          let ssss = if diff == 0 { 0 } else { 32 - (diff as i32).abs().leading_zeros() };
           self.comp_state[comp].histogram[ssss as usize] += 1;
         }
       }
@@ -658,7 +670,7 @@ impl<'a> LjpegCompressor<'a> {
 
     let huffgen = HuffTableBuilder::new(self.comp_state[comp].histogram.clone(), self.resolution() as f32);
     let table = huffgen.build();
-    //let table = HuffTableBuilder::_generic_table(self.huffman[comp].hist.clone());
+    //let table = HuffTableBuilder::_generic_table(self.comp_state[comp].histogram.clone(), self.resolution() as f32);
     #[cfg(feature = "inspector")]
     for (i, code) in table.iter().enumerate() {
       inspector!("table[{}]={}", i, code);
@@ -762,9 +774,21 @@ impl<'a> LjpegCompressor<'a> {
             )));
           }
           let px = self.predict_px(prev_row, current_row, row, col, comp);
-          let mut diff: i32 = sample as i32 - px;
+          //debug!("Px: {}", px);
+
+          //let mut diff: i16 = (sample as i16 - px as i16);
+          // We need to calculate the wrapping result. We can't use i32 because
+          // the biggest class SSSS=16 is 32768 for difference. With i32 calculation,
+          // we get maybe bigger difference values. So i16 calculation guarantee
+          // differences <= 32768.
+          let mut diff: i16 = (sample as i32 - px) as i16;
+
+          // Because the absolute value for i16 may be bigger than i16 can handle,
+          // we must cast the diff to i32.
+          let ssss = if diff == 0 { 0 } else { 32 - (diff as i32).abs().leading_zeros() };
+
           //inspector!("Sample: {}, px: {}, diff: {}", sample, px, diff);
-          let ssss = if diff == 0 { 0 } else { 32 - diff.abs().leading_zeros() };
+          //println!("{} - {}, DIFF is: {}, ssss={}", sample, px, diff, ssss);
 
           let enc = self.comp_state[comp].hufftable[ssss as usize];
 
@@ -776,11 +800,14 @@ impl<'a> LjpegCompressor<'a> {
           // Sign encoding
           let vt = if ssss > 0 { 1 << (ssss - 1) } else { 0 };
           if diff < vt {
-            diff += (1 << ssss) - 1;
+            //diff += (1 << ssss) - 1;
+            diff = diff.wrapping_add(((1_u16 << ssss) - 1) as i16);
           }
 
-          assert!(diff <= (diff & (1 << ssss) - 1));
+          //assert!(diff <= (diff & (1 << ssss) - 1));
           //inspector!("diff: {}, ssss: {}", diff, ssss);
+
+          assert!(ssss <= 16);
 
           // Write the rest of the bits for the value
           // For ssss == 16 no additional bits are written
@@ -804,7 +831,7 @@ mod tests {
   use super::*;
 
   fn init() {
-    let _ = env_logger::builder().is_test(true).try_init();
+    let _ = env_logger::builder().is_test(true).filter_level(log::LevelFilter::Debug).try_init();
   }
 
   /// We reuse the decompressor to check both...
@@ -975,9 +1002,374 @@ mod tests {
     let dec = LjpegDecompressor::new_full(&jpeg, false, false)?;
     let mut outbuf = vec![0; h * w * c];
     dec.decode(&mut outbuf, 0, w * c, w * c, h, false)?;
+    //debug!("input: {:?}", input_image);
+    //debug!("output: {:?}", outbuf);
     for i in 0..outbuf.len() {
-      assert!((outbuf[i] as i32 - input_image[i] as i32).abs() < 2);
+      assert_eq!(outbuf[i], input_image[i]);
     }
+    Ok(())
+  }
+
+  #[test]
+  fn encode_all_differences() -> std::result::Result<(), Box<dyn std::error::Error>> {
+    init();
+    // This simulates an input where every 17 SSSS classes are used because each difference
+    // value exists (see ITU-T81 H.1.2.2 Table H.2, p. 138).
+    let input_image = vec![
+      0, 0, 1, 0, 2, 0, 4, 0, 8, 0, 16, 0, 32, 0, 64, 0, 128, 0, 256, 0, 512, 0, 1024, 0, 2048, 0, 4096, 0, 8192, 0, 16384, 0, 32768,
+    ];
+    let h = 1;
+    let w = input_image.len();
+    let c = 1;
+
+    let enc = LjpegCompressor::new(&input_image, w, h, c, 16, 1, 0)?;
+    let result = enc.encode();
+    assert!(result.is_ok());
+    let jpeg = result?;
+    let dec = LjpegDecompressor::new_full(&jpeg, false, false)?;
+    let mut outbuf = vec![0; h * w * c];
+    dec.decode(&mut outbuf, 0, w * c, w * c, h, false)?;
+    for i in 0..outbuf.len() {
+      assert_eq!(outbuf[i], input_image[i]);
+    }
+    Ok(())
+  }
+
+  #[test]
+  fn encode_ssss_16() -> std::result::Result<(), Box<dyn std::error::Error>> {
+    init();
+    // This simulates an input where every 17 SSSS classes are used because each difference
+    // value exists (see ITU-T81 H.1.2.2 Table H.2, p. 138).
+    //let input_image = vec![0, 0, 0, 32768, 0, 0];
+    let input_image = vec![0, 0, 0, 32768];
+    let h = 1;
+    let w = input_image.len();
+    let c = 1;
+
+    let enc = LjpegCompressor::new(&input_image, w, h, c, 16, 1, 0)?;
+    let result = enc.encode();
+    assert!(result.is_ok());
+    let jpeg = result?;
+    let dec = LjpegDecompressor::new_full(&jpeg, false, false)?;
+    let mut outbuf = vec![0; h * w * c];
+    dec.decode(&mut outbuf, 0, w * c, w * c, h, false)?;
+    for i in 0..outbuf.len() {
+      assert_eq!(outbuf[i], input_image[i]);
+    }
+    Ok(())
+  }
+
+  #[test]
+  fn encode_difference_above_32768() -> std::result::Result<(), Box<dyn std::error::Error>> {
+    init();
+    // Test values larger than i16::MAX
+    let input_image = vec![0, 0, 0, 32768 + 1, 0, 0, 0, u16::MAX, u16::MAX, 1, u16::MAX, 1, 0];
+    let h = 1;
+    let w = input_image.len();
+    let c = 1;
+
+    let enc = LjpegCompressor::new(&input_image, w, h, c, 16, 1, 0)?;
+    let result = enc.encode();
+    assert!(result.is_ok());
+    let jpeg = result?;
+    let dec = LjpegDecompressor::new_full(&jpeg, false, false)?;
+    let mut outbuf = vec![0; h * w * c];
+    dec.decode(&mut outbuf, 0, w * c, w * c, h, false)?;
+    //debug!("{:?}", outbuf);
+    for i in 0..outbuf.len() {
+      assert_eq!(outbuf[i], input_image[i]);
+    }
+    Ok(())
+  }
+
+
+
+  #[test]
+  fn encode_predictor2_1comp() -> std::result::Result<(), Box<dyn std::error::Error>> {
+    init();
+    let input_image = vec![0, 0, u16::MAX, 0, 0, 0, u16::MAX-5, 0];
+    let h = 2;
+    let w = 4;
+    let c = 1;
+
+    let enc = LjpegCompressor::new(&input_image, w, h, c, 16, 2, 0)?;
+    let result = enc.encode();
+    assert!(result.is_ok());
+    let jpeg = result?;
+
+    let dec = LjpegDecompressor::new_full(&jpeg, false, false)?;
+    let mut outbuf = vec![0; h * w * c];
+    dec.decode(&mut outbuf, 0, w * c, w * c, h, false)?;
+    //debug!("{:?}", outbuf);
+    for i in 0..outbuf.len() {
+      assert_eq!(outbuf[i], input_image[i]);
+    }
+
+    Ok(())
+  }
+
+  #[test]
+  fn encode_predictor3_1comp() -> std::result::Result<(), Box<dyn std::error::Error>> {
+    init();
+    let input_image = vec![0, u16::MAX, 0, 0, 0, 0, u16::MAX-5, 0];
+    let h = 2;
+    let w = 4;
+    let c = 1;
+
+    let enc = LjpegCompressor::new(&input_image, w, h, c, 16, 3, 0)?;
+    let result = enc.encode();
+    assert!(result.is_ok());
+    let jpeg = result?;
+
+    let dec = LjpegDecompressor::new_full(&jpeg, false, false)?;
+    let mut outbuf = vec![0; h * w * c];
+    dec.decode(&mut outbuf, 0, w * c, w * c, h, false)?;
+    //debug!("{:?}", outbuf);
+    for i in 0..outbuf.len() {
+      assert_eq!(outbuf[i], input_image[i]);
+    }
+
+    Ok(())
+  }
+
+  #[test]
+  fn encode_predictor4_1comp() -> std::result::Result<(), Box<dyn std::error::Error>> {
+    init();
+    let input_image = vec![0, 0, u16::MAX, 0, 0, u16::MAX, 0, 0];
+    let h = 2;
+    let w = 4;
+    let c = 1;
+
+    let enc = LjpegCompressor::new(&input_image, w, h, c, 16, 4, 0)?;
+    let result = enc.encode();
+    assert!(result.is_ok());
+    let jpeg = result?;
+
+    let dec = LjpegDecompressor::new_full(&jpeg, false, false)?;
+    let mut outbuf = vec![0; h * w * c];
+    dec.decode(&mut outbuf, 0, w * c, w * c, h, false)?;
+    //debug!("{:?}", outbuf);
+    for i in 0..outbuf.len() {
+      assert_eq!(outbuf[i], input_image[i]);
+    }
+
+    Ok(())
+  }
+
+  #[test]
+  fn encode_predictor5_1comp() -> std::result::Result<(), Box<dyn std::error::Error>> {
+    init();
+    let input_image = vec![
+      0, u16::MAX, u16::MAX, 0,
+      0, u16::MAX, 0,         0];
+    let h = 2;
+    let w = 4;
+    let c = 1;
+
+    let enc = LjpegCompressor::new(&input_image, w, h, c, 16, 5, 0)?;
+    let result = enc.encode();
+    assert!(result.is_ok());
+    let jpeg = result?;
+
+    let dec = LjpegDecompressor::new_full(&jpeg, false, false)?;
+    let mut outbuf = vec![0; h * w * c];
+    dec.decode(&mut outbuf, 0, w * c, w * c, h, false)?;
+    //debug!("{:?}", outbuf);
+    for i in 0..outbuf.len() {
+      assert_eq!(outbuf[i], input_image[i]);
+    }
+
+    Ok(())
+  }
+
+  #[test]
+  fn encode_predictor6_1comp() -> std::result::Result<(), Box<dyn std::error::Error>> {
+    init();
+    let input_image = vec![
+      0, u16::MAX, u16::MAX, 0,
+      0, u16::MAX, 0,         0];
+    let h = 2;
+    let w = 4;
+    let c = 1;
+
+    let enc = LjpegCompressor::new(&input_image, w, h, c, 16, 6, 0)?;
+    let result = enc.encode();
+    assert!(result.is_ok());
+    let jpeg = result?;
+
+    let dec = LjpegDecompressor::new_full(&jpeg, false, false)?;
+    let mut outbuf = vec![0; h * w * c];
+    dec.decode(&mut outbuf, 0, w * c, w * c, h, false)?;
+    //debug!("{:?}", outbuf);
+    for i in 0..outbuf.len() {
+      assert_eq!(outbuf[i], input_image[i]);
+    }
+
+    Ok(())
+  }
+
+
+  #[test]
+  fn encode_predictor6_3comp() -> std::result::Result<(), Box<dyn std::error::Error>> {
+    init();
+    let input_image = vec![
+     56543, 45, 65000, 0, 0, 35632];
+    let h = 2;
+    let w = 1;
+    let c = 3;
+
+    let enc = LjpegCompressor::new(&input_image, w, h, c, 16, 6, 0)?;
+    let result = enc.encode();
+    assert!(result.is_ok());
+    let jpeg = result?;
+
+    let dec = LjpegDecompressor::new_full(&jpeg, false, false)?;
+    let mut outbuf = vec![0; h * w * c];
+    dec.decode(&mut outbuf, 0, w * c, w * c, h, false)?;
+    //debug!("{:?}", outbuf);
+    for i in 0..outbuf.len() {
+      assert_eq!(outbuf[i], input_image[i]);
+    }
+
+    Ok(())
+  }
+
+  #[test]
+  fn encode_predictor6_3comp_ssss16() -> std::result::Result<(), Box<dyn std::error::Error>> {
+    init();
+    let input_image = vec![
+      0, 0, 0, 0, 0, 0,
+      0, 0, 0, 32768, 32768, 32768,
+      0, 0, 0, 0, 0, 0,
+      ];
+    let h = 3;
+    let w = 2;
+    let c = 3;
+
+    let enc = LjpegCompressor::new(&input_image, w, h, c, 16, 6, 0)?;
+    let result = enc.encode();
+    assert!(result.is_ok());
+    let jpeg = result?;
+
+    let dec = LjpegDecompressor::new_full(&jpeg, false, false)?;
+    let mut outbuf = vec![0; h * w * c];
+    dec.decode(&mut outbuf, 0, w * c, w * c, h, false)?;
+    //debug!("{:?}", outbuf);
+    for i in 0..outbuf.len() {
+      assert_eq!(outbuf[i], input_image[i]);
+    }
+
+    Ok(())
+  }
+
+  #[test]
+  fn encode_predictor7_1comp() -> std::result::Result<(), Box<dyn std::error::Error>> {
+    init();
+    let input_image = vec![
+      0, 0,        u16::MAX, 0,
+      0, u16::MAX, 0,        0];
+    let h = 2;
+    let w = 4;
+    let c = 1;
+
+    let enc = LjpegCompressor::new(&input_image, w, h, c, 16, 7, 0)?;
+    let result = enc.encode();
+    assert!(result.is_ok());
+    let jpeg = result?;
+
+    let dec = LjpegDecompressor::new_full(&jpeg, false, false)?;
+    let mut outbuf = vec![0; h * w * c];
+    dec.decode(&mut outbuf, 0, w * c, w * c, h, false)?;
+    //debug!("{:?}", outbuf);
+    for i in 0..outbuf.len() {
+      assert_eq!(outbuf[i], input_image[i]);
+    }
+
+    Ok(())
+  }
+
+
+  #[test]
+  fn encode_predictor1_ljpeg_width_larger_than_output() -> std::result::Result<(), Box<dyn std::error::Error>> {
+    init();
+    let input_image = vec![
+      100, 105, 200, 207, 50, 48, 34, 45,
+      50,  45,  23,  100, 34, 76, 23, 99,
+    ];
+    let expected_output = vec![
+      100, 105, 200, 207,
+      50,  45,  23,  100,
+    ];
+    let h = 2;
+    let w = 4;
+    let c = 2;
+
+    let enc = LjpegCompressor::new(&input_image, w, h, c, 16, 1, 0)?;
+    let result = enc.encode();
+    assert!(result.is_ok());
+    let jpeg = result?;
+
+    let w = w / 2; // we only want the first part of the image
+    let dec = LjpegDecompressor::new_full(&jpeg, false, false)?;
+    let mut outbuf = vec![0; h * w * c];
+    dec.decode(&mut outbuf, 0, w * c, w * c, h, false)?;
+    //debug!("{:?}", outbuf);
+    assert_eq!(outbuf, expected_output);
+
+    Ok(())
+  }
+
+  #[test]
+  fn encode_predictor4_trigger_minus1_prediction() -> std::result::Result<(), Box<dyn std::error::Error>> {
+    init();
+    let input_image = vec![
+      0, 0, 5, 2, 0, 0,
+      0, 0, 2, 9, 0, 0,
+    ];
+    let h = 2;
+    let w = 6;
+    let c = 1;
+
+    let enc = LjpegCompressor::new(&input_image, w, h, c, 16, 4, 0)?;
+    let result = enc.encode();
+    assert!(result.is_ok());
+    let jpeg = result?;
+
+    let dec = LjpegDecompressor::new_full(&jpeg, false, false)?;
+    let mut outbuf = vec![0; h * w * c];
+    dec.decode(&mut outbuf, 0, w * c, w * c, h, false)?;
+    //debug!("{:?}", outbuf);
+    for i in 0..outbuf.len() {
+      assert_eq!(outbuf[i], input_image[i]);
+    }
+
+    Ok(())
+  }
+
+  #[test]
+  fn encode_predictor5_trigger_minus1_prediction() -> std::result::Result<(), Box<dyn std::error::Error>> {
+    init();
+    let input_image = vec![
+      0, 0, 2, 1,
+      0, 0, 1, 9,
+    ];
+    let h = 2;
+    let w = 4;
+    let c = 1;
+
+    let enc = LjpegCompressor::new(&input_image, w, h, c, 16, 5, 0)?;
+    let result = enc.encode();
+    assert!(result.is_ok());
+    let jpeg = result?;
+
+    let dec = LjpegDecompressor::new_full(&jpeg, false, false)?;
+    let mut outbuf = vec![0; h * w * c];
+    dec.decode(&mut outbuf, 0, w * c, w * c, h, false)?;
+    //debug!("{:?}", outbuf);
+    for i in 0..outbuf.len() {
+      assert_eq!(outbuf[i], input_image[i]);
+    }
+
     Ok(())
   }
 }

@@ -178,7 +178,7 @@ impl<'a> BitPump for BitPumpJPEG<'a> {
   #[inline(always)]
   fn peek_bits(&mut self, num: u32) -> u32 {
     if num > self.nbits && !self.finished {
-      if self.pos < self.buffer.len()-4 &&
+      if (self.buffer.len() >= 4) && self.pos < self.buffer.len()-4 &&
          self.buffer[self.pos+0] != 0xff &&
          self.buffer[self.pos+1] != 0xff &&
          self.buffer[self.pos+2] != 0xff &&

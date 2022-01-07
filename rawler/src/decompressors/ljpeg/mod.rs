@@ -259,7 +259,9 @@ impl<'a> LjpegDecompressor<'a> {
     }
 
     match self.predictor {
-      1 => {
+      1 | 2 | 3 | 4 | 5 | 6 | 7 => {
+        decode_ljpeg(self, out, x, stripwidth, width, height)
+        /*
         match self.sof.cps {
           1 => decode_ljpeg_1components(self, out, x, stripwidth, width, height),
           2 => decode_ljpeg_2components(self, out, x, stripwidth, width, height),
@@ -267,6 +269,7 @@ impl<'a> LjpegDecompressor<'a> {
           4 => decode_ljpeg_4components(self, out, width, height),
           c => return Err(format!("ljpeg: {} component files not supported", c).to_string()),
         }
+        */
       },
       8 => decode_hasselblad(self, out, width),
       p => return Err(format!("ljpeg: predictor {} not supported", p).to_string()),
@@ -307,4 +310,5 @@ impl<'a> LjpegDecompressor<'a> {
   pub fn height(&self) -> usize { self.sof.height }
   pub fn super_v(&self) -> usize { self.sof.components[0].super_v }
   pub fn super_h(&self) -> usize { self.sof.components[0].super_h }
+  pub fn components(&self) -> usize { self.sof.components.len() }
 }
