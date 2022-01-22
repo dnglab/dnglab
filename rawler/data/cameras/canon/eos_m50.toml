@@ -1,3 +1,4 @@
+[[cameras]]
 make = "Canon"
 model = "Canon EOS M50"
 model_aliases = [
@@ -6,7 +7,12 @@ model_aliases = [
 clean_make = "Canon"
 clean_model = "EOS M50"
 color_pattern = "RGGB"
-color_matrix = {D65 = [0.8532, -0.0701, -0.1167, -0.4095, 1.1879, 0.2508, -0.0797, 0.2424, 0.701]}
-wb_offset = 0x47 # ColorData9
-bl_offset = 0x149
-wl_offset = 0x31d
+
+[cameras.color_matrix]
+D65 = [0.8532, -0.0701, -0.1167, -0.4095, 1.1879, 0.2508, -0.0797, 0.2424, 0.701]
+
+[cameras.params]
+# ColorData9
+colordata_blacklevel = 0x149
+colordata_whitelevel = 0x31d
+colordata_wbcoeffs = 0x47

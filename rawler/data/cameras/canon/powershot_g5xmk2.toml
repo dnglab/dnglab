@@ -1,9 +1,15 @@
+[[cameras]]
 make = "Canon"
 model = "Canon PowerShot G5 X Mark II"
 clean_make = "Canon"
 clean_model = "PowerShot G5 X Mark II"
 color_pattern = "RGGB"
-color_matrix = {D65 = [1.1629, -0.5713, -0.0914, -0.2706, 1.109, 0.1842, -0.0206, 0.1225, 0.5515]}
-wb_offset = 0x47 # ColorData9
-bl_offset = 0x149
-wl_offset = 0x31d
+
+[cameras.color_matrix]
+D65 = [1.1629, -0.5713, -0.0914, -0.2706, 1.109, 0.1842, -0.0206, 0.1225, 0.5515]
+
+[cameras.params]
+# ColorData9
+colordata_blacklevel = 0x149
+colordata_whitelevel = 0x31d
+colordata_wbcoeffs = 0x47

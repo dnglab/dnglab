@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use crate::bits::*;
-use crate::decoders::Buffer;
+use crate::buffer::Buffer;
 
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub enum CiffTag {

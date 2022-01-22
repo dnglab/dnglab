@@ -192,6 +192,13 @@ focal_range = [[24, 1], [85, 1]]
 aperture_range = [[35, 10], [45, 10]]
 
 [[lenses]]
+key = "EF70-200mm f/2.8L IS II USM"
+make = "Canon"
+model = "EF 70-200mm f/2.8L IS II USM"
+focal_range = [[70, 1], [200, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
 key = "EF400mm f/2.8L IS II USM"
 make = "Canon"
 model = "EF 400mm f/2.8L IS II USM"

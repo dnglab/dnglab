@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2021 Daniel Vogelbacher <daniel@chaospixel.com>
 
-use crate::{formats::bmff::BmffError, formats::tiff::TiffReader};
+use crate::{formats::bmff::BmffError, formats::tiff::GenericTiffReader};
 
 use super::super::{BoxHeader, FourCC, ReadBox, Result};
 use serde::{Serialize, Deserialize};
@@ -11,7 +11,7 @@ use std::io::{Read, Seek, SeekFrom};
 pub struct Cmt4Box {
   pub header: BoxHeader,
   pub data: Vec<u8>,
-  pub tiff: TiffReader,
+  pub tiff: GenericTiffReader,
 }
 
 impl Cmt4Box {
@@ -27,7 +27,7 @@ impl<R: Read + Seek> ReadBox<&mut R> for Cmt4Box {
 
     reader.seek(SeekFrom::Start(header.end_offset()))?;
 
-    let tiff = TiffReader::new_with_buffer(&data, 0, None).map_err(|e| BmffError::Parse(e.to_string()))?;
+    let tiff = GenericTiffReader::new_with_buffer(&data, 0, 0, None).map_err(|e| BmffError::Parse(e.to_string()))?;
 
     Ok(Self { header, data, tiff })
   }

@@ -1,9 +1,15 @@
+[[cameras]]
 make = "Canon"
 model = "Canon EOS R3"
 clean_make = "Canon"
 clean_model = "EOS R3"
 color_pattern = "RGGB"
-color_matrix = {D65 = [0.9423, -0.2839, -0.1195, -0.4532, 1.2377, 0.2415, -0.0483, 0.1374, 0.5276]}
-wb_offset = 0x69 # ColorData11
-bl_offset = 0x16b
-wl_offset = 0x282
+
+[cameras.color_matrix]
+D65 = [0.9423, -0.2839, -0.1195, -0.4532, 1.2377, 0.2415, -0.0483, 0.1374, 0.5276]
+
+[cameras.params]
+# ColorData11
+colordata_blacklevel = 0x16b
+colordata_whitelevel = 0x282
+colordata_wbcoeffs = 0x69

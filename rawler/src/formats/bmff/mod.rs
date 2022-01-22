@@ -136,8 +136,9 @@ pub struct FileBox {
 }
 
 impl FileBox {
-  pub fn parse<R: Read + Seek>(mut file: R, size: u64) -> Result<FileBox> {
-    let mut current = file.seek(SeekFrom::Current(0))?;
+  pub fn parse<R: Read + Seek>(mut file: R) -> Result<FileBox> {
+    let size = file.seek(SeekFrom::End(0))?;
+    let mut current = file.seek(SeekFrom::Start(0))?;
 
     let mut ftyp = None;
     let mut moov = None;
@@ -196,15 +197,14 @@ impl FileBox {
 }
 
 pub fn parse_file(file: &mut File) -> Result<FileBox> {
-  let size = file.metadata()?.len();
-  let filebox = FileBox::parse(file, size)?;
+  let filebox = FileBox::parse(file)?;
   Ok(filebox)
 }
 
-pub fn parse_buffer(buf: &Vec<u8>) -> Result<FileBox> {
+pub fn parse_buffer(buf: &[u8]) -> Result<FileBox> {
   // TODO: add AsRef<u8>
   let mut cursor = Cursor::new(buf);
-  let filebox = FileBox::parse(&mut cursor, buf.len() as u64)?;
+  let filebox = FileBox::parse(&mut cursor)?;
   Ok(filebox)
 }
 
@@ -307,7 +307,13 @@ pub struct Bmff {
 }
 
 impl Bmff {
-  pub fn new_buf(buf: &Vec<u8>) -> Result<Self> {
+
+  pub fn new<R: Read + Seek>(file: R) -> Result<Self> {
+    let filebox = FileBox::parse(file)?;
+    Ok(Self { filebox })
+  }
+
+  pub fn new_buf(buf: &[u8]) -> Result<Self> {
     let filebox = parse_buffer(&buf)?;
     Ok(Self { filebox })
   }

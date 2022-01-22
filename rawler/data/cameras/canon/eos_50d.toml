@@ -1,0 +1,46 @@
+[[cameras]]
+make = "Canon"
+model = "Canon EOS 50D"
+clean_make = "Canon"
+clean_model = "EOS 50D"
+color_pattern = "RGGB"
+bps = 14
+active_area = [62,51,2,0]
+blackareav = [4, 50]
+blackareah = [0, 60]
+[cameras.color_matrix]
+D65 = [0.6722, -0.0635, -0.0963, -0.4287, 1.246, 0.2028, -0.0908, 0.2162, 0.5668]
+[cameras.params]
+# ColorData7
+colordata_blacklevel = 0x1f8
+colordata_whitelevel = 0x1fd
+colordata_wbcoeffs = 0x3f
+
+[[cameras]]
+make = "Canon"
+model = "Canon EOS 50D"
+mode = "sRaw1"
+clean_make = "Canon"
+clean_model = "EOS 50D"
+bps = 16
+whitepoint = 53000
+active_area = [0, 0, 72, 0]
+[cameras.color_matrix]
+D65 = [0.6722, -0.0635, -0.0963, -0.4287, 1.246, 0.2028, -0.0908, 0.2162, 0.5668]
+[cameras.params]
+# ColorData7
+colordata_wbcoeffs = 0x3f
+
+[[cameras]]
+make = "Canon"
+model = "Canon EOS 50D"
+mode = "sRaw2"
+clean_make = "Canon"
+clean_model = "EOS 50D"
+bps = 16
+whitepoint = 53000
+[cameras.color_matrix]
+D65 = [0.6722, -0.0635, -0.0963, -0.4287, 1.246, 0.2028, -0.0908, 0.2162, 0.5668]
+[cameras.params]
+# ColorData7
+colordata_wbcoeffs = 0x3f

@@ -89,7 +89,7 @@ impl<'mdat> RiceDecoder<'mdat> {
 
   /// Predict K parameter with maximum constraint
   /// Golomb-Rice becomes more efficient when used with an adaptive
-  /// K parameter. This is done my predicting the next K value for the
+  /// K parameter. This is done by predicting the next K value for the
   /// next sample value.
   fn predict_k_param_max(prev_k: u32, value: u32, k_max: u32) -> u32 {
     let mut new_k = prev_k;

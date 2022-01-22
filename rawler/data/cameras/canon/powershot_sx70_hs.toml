@@ -1,9 +1,15 @@
+[[cameras]]
 make = "Canon"
 model = "Canon PowerShot SX70 HS"
 clean_make = "Canon"
 clean_model = "PowerShot SX70 HS"
 color_pattern = "RGGB"
-color_matrix = {D65 = [1.8285, -0.8907, -0.1951, -0.1845, 1.0688, 0.1323, 0.0364, 0.1101, 0.5139]}
-wb_offset = 0x47 # ColorData9
-bl_offset = 0x149
-wl_offset = 0x31d
+
+[cameras.color_matrix]
+D65 = [1.8285, -0.8907, -0.1951, -0.1845, 1.0688, 0.1323, 0.0364, 0.1101, 0.5139]
+
+[cameras.params]
+# ColorData9
+colordata_blacklevel = 0x149
+colordata_whitelevel = 0x31d
+colordata_wbcoeffs = 0x47

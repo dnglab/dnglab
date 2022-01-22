@@ -1,0 +1,12 @@
+[[cameras]]
+make = "Canon"
+model = "EOS D2000C"
+clean_make = "Canon"
+clean_model = "EOS D2000C"
+blackpoint = 96
+whitepoint = 4095
+color_pattern = "GRBG"
+#crops = [0,0,0,0]
+hints = ["linearization"]
+[cameras.color_matrix]
+D65 = [2.4542, -1.0860, -0.3401, -0.1490, 1.1370, -0.0297, 0.2858, -0.0605, 0.3225]

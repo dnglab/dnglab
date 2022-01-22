@@ -114,7 +114,7 @@ impl<'a> Decoder for NefDecoder<'a> {
 
     // Make sure we always use a 12/14 bit mode to get correct white/blackpoints
     let mode = format!("{}bit", bps).to_string();
-    let camera = self.rawloader.check_supported_with_mode(&self.tiff, &mode)?;
+    let camera = self.rawloader.check_supported_with_mode_old(&self.tiff, &mode)?;
 
     let offset = fetch_tag!(raw, LegacyTiffRootTag::StripOffsets).get_usize(0);
     let size = fetch_tag!(raw, LegacyTiffRootTag::StripByteCounts).get_usize(0);

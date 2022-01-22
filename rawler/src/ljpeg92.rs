@@ -26,7 +26,6 @@
 // SOFTWARE.
 
 use byteorder::{BigEndian, WriteBytesExt};
-use log::debug;
 use std::{
   cmp::min,
   io::{Cursor, Write},
@@ -480,6 +479,7 @@ impl<'a> LjpegCompressor<'a> {
   ///
   /// skip_len is given as byte count after a row width.
   pub fn new(image: &'a [u16], width: usize, height: usize, components: usize, bitdepth: u8, predictor: u8, skip_len: usize) -> Result<Self> {
+    //debug!("LJPG compression: bit depth: {}", bitdepth);
     if !(1..=7).contains(&predictor) {
       return Err(CompressorError::Overflow(format!("Unsupported predictor: {}", predictor)));
     }
@@ -604,12 +604,12 @@ impl<'a> LjpegCompressor<'a> {
             let ra = Self::px_ra(current_row, col, comp, cc, pt);
             let rb = Self::px_rb(prev_row, current_row, col, comp, cc, pt);
             let rc = Self::px_rc(prev_row, current_row, col, comp, cc, pt);
-            rb + ((ra - rc) >> 1)// Adobe DNG SDK uses int32 and shifts, so we will do, too.
+            rb + ((ra - rc) >> 1) // Adobe DNG SDK uses int32 and shifts, so we will do, too.
           }
           7 => {
             let ra = Self::px_ra(current_row, col, comp, cc, pt);
             let rb = Self::px_rb(prev_row, current_row, col, comp, cc, pt);
-            (ra + rb) >> 1// Adobe DNG SDK uses int32 and shifts, so we will do, too.
+            (ra + rb) >> 1 // Adobe DNG SDK uses int32 and shifts, so we will do, too.
           }
           _ => {
             // We panic here because supported predictor check
@@ -830,16 +830,12 @@ impl<'a> LjpegCompressor<'a> {
 mod tests {
   use super::*;
 
-  fn init() {
-    let _ = env_logger::builder().is_test(true).filter_level(log::LevelFilter::Debug).try_init();
-  }
-
   /// We reuse the decompressor to check both...
   use crate::decompressors::ljpeg::LjpegDecompressor;
 
   #[test]
   fn bitstream_test1() -> std::result::Result<(), Box<dyn std::error::Error>> {
-    init();
+    crate::init_test_logger();
     let mut buf = Vec::new();
     let mut bs = BitstreamJPEG::new(&mut buf);
     bs.write(1, 0b1)?;
@@ -867,7 +863,7 @@ mod tests {
 
   #[test]
   fn encode_16x16_16bit_black_decode_single() -> std::result::Result<(), Box<dyn std::error::Error>> {
-    init();
+    crate::init_test_logger();
     let h = 16;
     let w = 16;
     let c = 1;
@@ -914,7 +910,7 @@ mod tests {
 
   #[test]
   fn encode_16x16_16bit_black_decode_2component() -> std::result::Result<(), Box<dyn std::error::Error>> {
-    init();
+    crate::init_test_logger();
     let h = 2;
     let w = 2;
     let c = 2;
@@ -936,7 +932,7 @@ mod tests {
 
   #[test]
   fn encode_16x16_16bit_black() -> std::result::Result<(), Box<dyn std::error::Error>> {
-    init();
+    crate::init_test_logger();
     let h = 16;
     let w = 16;
     let c = 1;
@@ -949,7 +945,7 @@ mod tests {
 
   #[test]
   fn encode_16x16_16bit_white() -> std::result::Result<(), Box<dyn std::error::Error>> {
-    init();
+    crate::init_test_logger();
     let h = 16;
     let w = 16;
     let c = 1;
@@ -962,7 +958,7 @@ mod tests {
 
   #[test]
   fn encode_16x16_bitdepth_error() -> std::result::Result<(), Box<dyn std::error::Error>> {
-    init();
+    crate::init_test_logger();
     let h = 16;
     let w = 16;
     let c = 1;
@@ -975,7 +971,7 @@ mod tests {
 
   #[test]
   fn encode_16x16_short_buffer_error() -> std::result::Result<(), Box<dyn std::error::Error>> {
-    init();
+    crate::init_test_logger();
     let h = 16;
     let w = 16;
     let c = 1;
@@ -987,7 +983,7 @@ mod tests {
 
   #[test]
   fn encode_16x16_16bit_incr() -> std::result::Result<(), Box<dyn std::error::Error>> {
-    init();
+    crate::init_test_logger();
     let h = 16;
     let w = 16;
     let c = 2;
@@ -1012,7 +1008,7 @@ mod tests {
 
   #[test]
   fn encode_all_differences() -> std::result::Result<(), Box<dyn std::error::Error>> {
-    init();
+    crate::init_test_logger();
     // This simulates an input where every 17 SSSS classes are used because each difference
     // value exists (see ITU-T81 H.1.2.2 Table H.2, p. 138).
     let input_image = vec![
@@ -1037,7 +1033,7 @@ mod tests {
 
   #[test]
   fn encode_ssss_16() -> std::result::Result<(), Box<dyn std::error::Error>> {
-    init();
+    crate::init_test_logger();
     // This simulates an input where every 17 SSSS classes are used because each difference
     // value exists (see ITU-T81 H.1.2.2 Table H.2, p. 138).
     //let input_image = vec![0, 0, 0, 32768, 0, 0];
@@ -1061,7 +1057,7 @@ mod tests {
 
   #[test]
   fn encode_difference_above_32768() -> std::result::Result<(), Box<dyn std::error::Error>> {
-    init();
+    crate::init_test_logger();
     // Test values larger than i16::MAX
     let input_image = vec![0, 0, 0, 32768 + 1, 0, 0, 0, u16::MAX, u16::MAX, 1, u16::MAX, 1, 0];
     let h = 1;
@@ -1082,12 +1078,10 @@ mod tests {
     Ok(())
   }
 
-
-
   #[test]
   fn encode_predictor2_1comp() -> std::result::Result<(), Box<dyn std::error::Error>> {
-    init();
-    let input_image = vec![0, 0, u16::MAX, 0, 0, 0, u16::MAX-5, 0];
+    crate::init_test_logger();
+    let input_image = vec![0, 0, u16::MAX, 0, 0, 0, u16::MAX - 5, 0];
     let h = 2;
     let w = 4;
     let c = 1;
@@ -1110,8 +1104,8 @@ mod tests {
 
   #[test]
   fn encode_predictor3_1comp() -> std::result::Result<(), Box<dyn std::error::Error>> {
-    init();
-    let input_image = vec![0, u16::MAX, 0, 0, 0, 0, u16::MAX-5, 0];
+    crate::init_test_logger();
+    let input_image = vec![0, u16::MAX, 0, 0, 0, 0, u16::MAX - 5, 0];
     let h = 2;
     let w = 4;
     let c = 1;
@@ -1134,7 +1128,7 @@ mod tests {
 
   #[test]
   fn encode_predictor4_1comp() -> std::result::Result<(), Box<dyn std::error::Error>> {
-    init();
+    crate::init_test_logger();
     let input_image = vec![0, 0, u16::MAX, 0, 0, u16::MAX, 0, 0];
     let h = 2;
     let w = 4;
@@ -1158,10 +1152,8 @@ mod tests {
 
   #[test]
   fn encode_predictor5_1comp() -> std::result::Result<(), Box<dyn std::error::Error>> {
-    init();
-    let input_image = vec![
-      0, u16::MAX, u16::MAX, 0,
-      0, u16::MAX, 0,         0];
+    crate::init_test_logger();
+    let input_image = vec![0, u16::MAX, u16::MAX, 0, 0, u16::MAX, 0, 0];
     let h = 2;
     let w = 4;
     let c = 1;
@@ -1184,10 +1176,8 @@ mod tests {
 
   #[test]
   fn encode_predictor6_1comp() -> std::result::Result<(), Box<dyn std::error::Error>> {
-    init();
-    let input_image = vec![
-      0, u16::MAX, u16::MAX, 0,
-      0, u16::MAX, 0,         0];
+    crate::init_test_logger();
+    let input_image = vec![0, u16::MAX, u16::MAX, 0, 0, u16::MAX, 0, 0];
     let h = 2;
     let w = 4;
     let c = 1;
@@ -1208,12 +1198,10 @@ mod tests {
     Ok(())
   }
 
-
   #[test]
   fn encode_predictor6_3comp() -> std::result::Result<(), Box<dyn std::error::Error>> {
-    init();
-    let input_image = vec![
-     56543, 45, 65000, 0, 0, 35632];
+    crate::init_test_logger();
+    let input_image = vec![56543, 45, 65000, 0, 0, 35632];
     let h = 2;
     let w = 1;
     let c = 3;
@@ -1236,12 +1224,8 @@ mod tests {
 
   #[test]
   fn encode_predictor6_3comp_ssss16() -> std::result::Result<(), Box<dyn std::error::Error>> {
-    init();
-    let input_image = vec![
-      0, 0, 0, 0, 0, 0,
-      0, 0, 0, 32768, 32768, 32768,
-      0, 0, 0, 0, 0, 0,
-      ];
+    crate::init_test_logger();
+    let input_image = vec![0, 0, 0, 0, 0, 0, 0, 0, 0, 32768, 32768, 32768, 0, 0, 0, 0, 0, 0];
     let h = 3;
     let w = 2;
     let c = 3;
@@ -1264,10 +1248,8 @@ mod tests {
 
   #[test]
   fn encode_predictor7_1comp() -> std::result::Result<(), Box<dyn std::error::Error>> {
-    init();
-    let input_image = vec![
-      0, 0,        u16::MAX, 0,
-      0, u16::MAX, 0,        0];
+    crate::init_test_logger();
+    let input_image = vec![0, 0, u16::MAX, 0, 0, u16::MAX, 0, 0];
     let h = 2;
     let w = 4;
     let c = 1;
@@ -1288,18 +1270,11 @@ mod tests {
     Ok(())
   }
 
-
   #[test]
   fn encode_predictor1_ljpeg_width_larger_than_output() -> std::result::Result<(), Box<dyn std::error::Error>> {
-    init();
-    let input_image = vec![
-      100, 105, 200, 207, 50, 48, 34, 45,
-      50,  45,  23,  100, 34, 76, 23, 99,
-    ];
-    let expected_output = vec![
-      100, 105, 200, 207,
-      50,  45,  23,  100,
-    ];
+    crate::init_test_logger();
+    let input_image = vec![100, 105, 200, 207, 50, 48, 34, 45, 50, 45, 23, 100, 34, 76, 23, 99];
+    let expected_output = vec![100, 105, 200, 207, 50, 45, 23, 100];
     let h = 2;
     let w = 4;
     let c = 2;
@@ -1321,11 +1296,8 @@ mod tests {
 
   #[test]
   fn encode_predictor4_trigger_minus1_prediction() -> std::result::Result<(), Box<dyn std::error::Error>> {
-    init();
-    let input_image = vec![
-      0, 0, 5, 2, 0, 0,
-      0, 0, 2, 9, 0, 0,
-    ];
+    crate::init_test_logger();
+    let input_image = vec![0, 0, 5, 2, 0, 0, 0, 0, 2, 9, 0, 0];
     let h = 2;
     let w = 6;
     let c = 1;
@@ -1348,11 +1320,8 @@ mod tests {
 
   #[test]
   fn encode_predictor5_trigger_minus1_prediction() -> std::result::Result<(), Box<dyn std::error::Error>> {
-    init();
-    let input_image = vec![
-      0, 0, 2, 1,
-      0, 0, 1, 9,
-    ];
+    crate::init_test_logger();
+    let input_image = vec![0, 0, 2, 1, 0, 0, 1, 9];
     let h = 2;
     let w = 4;
     let c = 1;

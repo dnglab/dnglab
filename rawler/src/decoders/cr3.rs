@@ -5,43 +5,46 @@ use image::DynamicImage;
 use log::{debug, warn};
 use std::convert::{TryFrom, TryInto};
 use std::f32::NAN;
+use std::io::SeekFrom;
 
 use crate::bits::Endian;
-use crate::decoders::*;
 use crate::decompressors::crx::decompress_crx_image;
 use crate::formats::bmff::ext_cr3::cr3desc::Cr3DescBox;
 use crate::formats::bmff::ext_cr3::iad1::Iad1Type;
-use crate::formats::tiff::{Entry, Rational, TiffReader, Value};
+use crate::formats::bmff::FileBox;
+use crate::formats::tiff::reader::TiffReader;
+use crate::formats::tiff::{Entry, Rational, GenericTiffReader, Value};
+use crate::imgop::{Point, Rect};
 use crate::lens::{LensDescription, LensResolver};
 use crate::tags::{DngTag, TiffTagEnum};
+use crate::{decoders::*, RawFile};
 use crate::{pumps::ByteStream, RawImage};
 
 #[derive(Debug, Clone)]
 pub struct Cr3Decoder<'a> {
-  buffer: &'a [u8],
+  //filebuf:Arc<Buffer>,
   rawloader: &'a RawLoader,
   //tiff: TiffIFD<'a>,
   bmff: Bmff,
   #[allow(dead_code)]
-  exif: Option<TiffReader>,
+  exif: Option<GenericTiffReader>,
   #[allow(dead_code)]
-  makernotes: Option<TiffReader>,
+  makernotes: Option<GenericTiffReader>,
   wb: Option<[f32; 4]>,
   blacklevels: Option<[u16; 4]>,
   whitelevel: Option<u16>,
-  cmt1: Option<TiffReader>,
-  cmt2: Option<TiffReader>,
-  cmt3: Option<TiffReader>,
-  cmt4: Option<TiffReader>,
+  cmt1: Option<GenericTiffReader>,
+  cmt2: Option<GenericTiffReader>,
+  cmt3: Option<GenericTiffReader>,
+  cmt4: Option<GenericTiffReader>,
   xpacket: Option<Vec<u8>>,
   image_unique_id: Option<[u8; 16]>,
   lens_description: Option<&'static LensDescription>,
 }
 
 impl<'a> Cr3Decoder<'a> {
-  pub fn new(buf: &'a [u8], bmff: Bmff, rawloader: &'a RawLoader) -> Cr3Decoder<'a> {
-    Cr3Decoder {
-      buffer: buf,
+  pub fn new(_rawfile: &mut RawFile, bmff: Bmff, rawloader: &'a RawLoader) -> Result<Cr3Decoder<'a>> {
+    let mut decoder = Cr3Decoder {
       bmff,
       rawloader: rawloader,
       exif: None,
@@ -56,7 +59,9 @@ impl<'a> Cr3Decoder<'a> {
       xpacket: None,
       image_unique_id: None,
       lens_description: None,
-    }
+    };
+    decoder.decode_metadata(_rawfile)?;
+    Ok(decoder)
   }
 }
 
@@ -90,8 +95,20 @@ fn transfer_exif_tag(tag: u16) -> bool {
   EXIF_TRANSFER_TAGS.contains(&tag)
 }
 
+#[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Cr3Format {
+  pub filebox: FileBox,
+}
+
 impl<'a> Decoder for Cr3Decoder<'a> {
-  fn xpacket(&self) -> Option<&Vec<u8>> {
+  fn format_dump(&self) -> FormatDump {
+    FormatDump::Cr3(Cr3Format {
+      filebox: self.bmff.filebox.clone(),
+    })
+  }
+
+  fn xpacket(&self, _file: &mut RawFile) -> Option<&Vec<u8>> {
     self.xpacket.as_ref()
   }
 
@@ -205,16 +222,38 @@ impl<'a> Decoder for Cr3Decoder<'a> {
     Ok(())
   }
 
-  fn decode_metadata(&mut self) -> Result<()> {
+  fn decode_metadata(&mut self, rawfile: &mut RawFile) -> Result<()> {
     if let Some(Cr3DescBox { cmt1, cmt2, cmt3, cmt4, .. }) = self.bmff.filebox.moov.cr3desc.as_ref() {
-      let buf1 = cmt1.header.make_view(self.buffer, 0, 0);
-      self.cmt1 = Some(TiffReader::new_with_buffer(buf1, 0, None)?);
-      let buf2 = cmt2.header.make_view(self.buffer, 0, 0);
-      self.cmt2 = Some(TiffReader::new_with_buffer(buf2, 0, None)?);
-      let buf3 = cmt3.header.make_view(self.buffer, 0, 0);
-      self.cmt3 = Some(TiffReader::new_with_buffer(buf3, 0, None)?);
-      let buf4 = cmt4.header.make_view(self.buffer, 0, 0);
-      self.cmt4 = Some(TiffReader::new_with_buffer(buf4, 0, None)?);
+      /*
+      let buf1 = cmt1.header.make_view(self.filebuf.raw_buf(), 0, 0);
+      self.cmt1 = Some(TiffReader::new_with_buffer(buf1, 0, 0, None)?);
+      let buf2 = cmt2.header.make_view(self.filebuf.raw_buf(), 0, 0);
+      self.cmt2 = Some(TiffReader::new_with_buffer(buf2, 0, 0, None)?);
+      let buf3 = cmt3.header.make_view(self.filebuf.raw_buf(), 0, 0);
+      self.cmt3 = Some(TiffReader::new_with_buffer(buf3, 0, 0, None)?);
+      let buf4 = cmt4.header.make_view(self.filebuf.raw_buf(), 0, 0);
+      self.cmt4 = Some(TiffReader::new_with_buffer(buf4, 0, 0, None)?);
+      */
+      {
+        let cmt1offset = cmt1.header.offset + cmt1.header.header_len;
+        rawfile.inner().seek(SeekFrom::Start(cmt1offset)).unwrap();
+        self.cmt1 = Some(GenericTiffReader::new(rawfile.inner(), cmt1offset as u32, 0, None, &[])?);
+      }
+      {
+        let cmt2offset = cmt2.header.offset + cmt2.header.header_len;
+        rawfile.inner().seek(SeekFrom::Start(cmt2offset)).unwrap();
+        self.cmt2 = Some(GenericTiffReader::new(rawfile.inner(), cmt2offset as u32, 0, None, &[])?);
+      }
+      {
+        let cmt3offset = cmt3.header.offset + cmt3.header.header_len;
+        rawfile.inner().seek(SeekFrom::Start(cmt3offset)).unwrap();
+        self.cmt3 = Some(GenericTiffReader::new(rawfile.inner(), cmt3offset as u32, 0, None, &[])?);
+      }
+      {
+        let cmt4offset = cmt4.header.offset + cmt4.header.header_len;
+        rawfile.inner().seek(SeekFrom::Start(cmt4offset)).unwrap();
+        self.cmt4 = Some(GenericTiffReader::new(rawfile.inner(), cmt4offset as u32, 0, None, &[])?);
+      }
     }
 
     if let Some(cmt1) = &self.cmt1 {
@@ -223,15 +262,17 @@ impl<'a> Decoder for Cr3Decoder<'a> {
 
       let cam = self.rawloader.check_supported_with_everything(&make, &model, "")?;
 
-      let offset = self.bmff.filebox.moov.traks[3].mdia.minf.stbl.co64.as_ref().unwrap().entries[0] as usize;
-      let size = self.bmff.filebox.moov.traks[3].mdia.minf.stbl.stsz.sample_sizes[0] as usize;
+      let offset = self.bmff.filebox.moov.traks[3].mdia.minf.stbl.co64.as_ref().unwrap().entries[0];
+      let size = self.bmff.filebox.moov.traks[3].mdia.minf.stbl.stsz.sample_sizes[0] as u64;
 
       debug!("CTMD mdat offset: {}", offset);
       debug!("CTMD mdat size: {}", size);
 
-      let buf = &self.buffer[offset..offset + size];
+      let buf = rawfile
+        .get_range(offset, size)
+        .map_err(|e| RawlerError::General(format!("I/O error while reading CR3 CTMD: {:?}", e)))?;
 
-      let mut substream = ByteStream::new(buf, Endian::Little);
+      let mut substream = ByteStream::new(&buf, Endian::Little);
 
       let ctmd = Ctmd::new(&mut substream);
 
@@ -243,21 +284,28 @@ impl<'a> Decoder for Cr3Decoder<'a> {
         //let mut filebuf = File::create("/tmp/fdump.tif").unwrap();
         //filebuf.write(&rec8.payload).unwrap();
 
-        let ctmd_record8 = TiffReader::new_with_buffer(&rec8.payload[8..], 0, Some(0))?;
+        let ctmd_record8 = GenericTiffReader::new_with_buffer(&rec8.payload[8..], 0, 0, Some(0))?;
 
         //let ctmd_record8 = TiffIFD::new_root(&rec8.payload[8..], 0, &vec![]).unwrap();
 
         if let Some(levels) = ctmd_record8.get_entry(Cr3MakernoteTag::ColorData) {
-          let wb_idx = if cam.wb_offset != 0 { cam.wb_offset } else { 0 }; // TODO: fail if not found
-          let bl_idx = if cam.bl_offset != 0 { cam.bl_offset } else { 0 };
-          let wl_idx = if cam.wl_offset != 0 { cam.wl_offset } else { 0 };
           if let crate::formats::tiff::Value::Short(v) = &levels.value {
-            self.wb = Some([v[wb_idx] as f32, v[wb_idx + 1] as f32, v[wb_idx + 3] as f32, NAN]);
-            self.blacklevels = Some([v[bl_idx], v[bl_idx + 1], v[bl_idx + 2], v[bl_idx + 3]]);
-            self.whitelevel = Some(v[wl_idx]);
+            if let Some(offset) = cam.param_usize("colordata_wbcoeffs") {
+              self.wb = Some([v[offset] as f32, v[offset + 1] as f32, v[offset + 3] as f32, NAN]);
+            }
+            if let Some(offset) = cam.param_usize("colordata_blacklevel") {
+              debug!("Blacklevel offset: {:x}", offset);
+              self.blacklevels = Some([v[offset], v[offset + 1], v[offset + 2], v[offset + 3]]);
+            }
+            if let Some(offset) = cam.param_usize("colordata_whitelevel") {
+              self.whitelevel = Some(v[offset]);
+            }
           }
         }
       }
+
+      debug!("CR3 blacklevels: {:?}", self.blacklevels);
+      debug!("CR3 whitelevel: {:?}", self.whitelevel);
 
       if let Some(cmt3) = self.cmt3.as_ref() {
         if let Some(Entry {
@@ -296,9 +344,11 @@ impl<'a> Decoder for Cr3Decoder<'a> {
       }
 
       if let Some(xpacket_box) = self.bmff.filebox.cr3xpacket.as_ref() {
-        let offset = (xpacket_box.header.offset + xpacket_box.header.header_len) as usize;
-        let size = (xpacket_box.header.size - xpacket_box.header.header_len) as usize;
-        let buf = &self.buffer[offset..offset + size];
+        let offset = xpacket_box.header.offset + xpacket_box.header.header_len;
+        let size = xpacket_box.header.size - xpacket_box.header.header_len;
+        let buf = rawfile
+          .get_range(offset, size)
+          .map_err(|e| RawlerError::General(format!("I/O error while reading CR3 XPACKET: {:?}", e)))?;
         self.xpacket = Some(Vec::from(buf));
       }
     } else {
@@ -324,7 +374,7 @@ impl<'a> Decoder for Cr3Decoder<'a> {
     Ok(co64.entries.len())
   }
 
-  fn raw_image(&self, params: RawDecodeParams, dummy: bool) -> Result<RawImage> {
+  fn raw_image(&self, file: &mut RawFile, params: RawDecodeParams, dummy: bool) -> Result<RawImage> {
     // TODO: add support check
 
     let raw_trak_id = std::env::var("RAWLER_CRX_RAW_TRAK")
@@ -357,7 +407,9 @@ impl<'a> Decoder for Cr3Decoder<'a> {
       debug!("raw mdat offset: {}", offset);
       debug!("raw mdat size: {}", size);
 
-      let buf = &self.buffer[offset..offset + size];
+      let buf = file
+        .get_range(offset as u64, size as u64)
+        .map_err(|e| RawlerError::General(format!("I/O error while reading CR3 raw image: {:?}", e)))?;
 
       let cmp1 = self.bmff.filebox.moov.traks[raw_trak_id]
         .mdia
@@ -381,8 +433,9 @@ impl<'a> Decoder for Cr3Decoder<'a> {
 
       let wb = self.wb.unwrap();
       let blacklevel = self.blacklevels.as_ref().unwrap();
+      let cpp = 1;
 
-      let mut img = RawImage::new(camera, cmp1.f_width as usize, cmp1.f_height as usize, wb, image, dummy);
+      let mut img = RawImage::new(camera, cmp1.f_width as usize, cmp1.f_height as usize, cpp, wb, image, dummy);
 
       img.blacklevels = *blacklevel;
       img.whitelevels = [
@@ -406,14 +459,49 @@ impl<'a> Decoder for Cr3Decoder<'a> {
         .iad1;
 
       if let Iad1Type::Big(iad1_borders) = &iad1.iad1_type {
+        let rect = Rect::new_with_points(
+          Point::new(iad1_borders.crop_left_offset as usize, iad1_borders.crop_top_offset as usize),
+          Point::new((iad1_borders.crop_right_offset + 1) as usize, (iad1_borders.crop_bottom_offset + 1) as usize),
+        );
+        img.crop_area = Some(rect);
+
+        let _rect = Rect::new_with_points(
+          Point::new(iad1_borders.active_area_left_offset as usize, iad1_borders.active_area_top_offset as usize),
+          Point::new(
+            (iad1_borders.active_area_right_offset - 1) as usize,
+            (iad1_borders.active_area_bottom_offset - 1) as usize,
+          ),
+        );
+        //img.active_area = Some(rect);
+        img.active_area = img.crop_area;
+
+        let blackarea_h = Rect::new_with_points(
+          Point::new(iad1_borders.lob_left_offset as usize, iad1_borders.lob_top_offset as usize),
+          Point::new((iad1_borders.lob_right_offset - 1) as usize, (iad1_borders.lob_bottom_offset - 1) as usize),
+        );
+        if !blackarea_h.is_empty() {
+          //img.blackareas.push(blackarea_h);
+        }
+        let blackarea_v = Rect::new_with_points(
+          Point::new(iad1_borders.tob_left_offset as usize, iad1_borders.tob_top_offset as usize),
+          Point::new((iad1_borders.tob_right_offset - 1) as usize, (iad1_borders.tob_bottom_offset - 1) as usize),
+        );
+        if !blackarea_v.is_empty() {
+          //img.blackareas.push(blackarea_v);
+        }
+
+        debug!("Canon active area: {:?}", img.active_area);
+        debug!("Canon crop area: {:?}", img.crop_area);
+        debug!("Black areas: {:?}", img.blackareas);
+
+        /*
         img.crops = [
           iad1_borders.crop_top_offset as usize,                            // top
           (iad1.img_width - iad1_borders.crop_right_offset - 1) as usize,   // right
           (iad1.img_height - iad1_borders.crop_bottom_offset - 1) as usize, // bottom
           iad1_borders.crop_left_offset as usize,                           // left
         ];
-
-        debug!("Canon active area: {:?}", img.crops);
+         */
       }
 
       return Ok(img);
@@ -422,19 +510,23 @@ impl<'a> Decoder for Cr3Decoder<'a> {
     }
   }
 
-  fn full_image(&self) -> Result<DynamicImage> {
+  fn full_image(&self, file: &mut RawFile) -> Result<DynamicImage> {
     let offset = self.bmff.filebox.moov.traks[0].mdia.minf.stbl.co64.as_ref().expect("co64 box").entries[0] as usize;
     let size = self.bmff.filebox.moov.traks[0].mdia.minf.stbl.stsz.sample_sizes[0] as usize;
     debug!("jpeg mdat offset: {}", offset);
     debug!("jpeg mdat size: {}", size);
     //let mdat_data_offset = (self.bmff.filebox.mdat.header.offset + self.bmff.filebox.mdat.header.header_len) as usize;
 
-    let buf = &self.buffer[offset..offset + size];
-    match image::load_from_memory_with_format(buf, image::ImageFormat::Jpeg) {
+    let buf = file
+      .get_range(offset as u64, size as u64)
+      .map_err(|e| RawlerError::General(format!("I/O error while reading CR3 full image: {:?}", e)))?;
+    match image::load_from_memory_with_format(&buf, image::ImageFormat::Jpeg) {
       Ok(img) => Ok(img),
       Err(e) => {
         debug!("TRAK 0 contains no JPEG preview, is it PQ/HEIF? Error: {}", e);
-        Err(RawlerError::General("Unable to extract preview image from CR3 HDR-PQ file. Please see 'https://github.com/dnglab/dnglab/issues/7'".into()))
+        Err(RawlerError::General(
+          "Unable to extract preview image from CR3 HDR-PQ file. Please see 'https://github.com/dnglab/dnglab/issues/7'".into(),
+        ))
       }
     }
   }

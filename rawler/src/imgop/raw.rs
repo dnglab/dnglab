@@ -30,6 +30,7 @@ pub struct DevelopParams {
   pub pattern: BayerPattern,
   pub wb_coeff: Vec<f32>,
   pub active_area: Option<Rect>,
+  pub crop_area: Option<Rect>,
   pub gamma: f32,
 }
 

@@ -34,7 +34,7 @@ impl<'a> ArwDecoder<'a> {
 
 impl<'a> Decoder for ArwDecoder<'a> {
   fn raw_image(&self, _params: RawDecodeParams, dummy: bool) -> Result<RawImage> {
-    let camera = self.rawloader.check_supported(&self.tiff)?;
+    let camera = self.rawloader.check_supported_old(&self.tiff)?;
     let data = self.tiff.find_ifds_with_tag(LegacyTiffRootTag::StripOffsets);
     if data.len() == 0 {
       if camera.model == "DSLR-A100" {

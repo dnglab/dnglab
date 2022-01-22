@@ -26,7 +26,7 @@ impl<'a> ErfDecoder<'a> {
 
 impl<'a> Decoder for ErfDecoder<'a> {
   fn raw_image(&self, _params: RawDecodeParams, dummy: bool) -> Result<RawImage> {
-    let camera = self.rawloader.check_supported(&self.tiff)?;
+    let camera = self.rawloader.check_supported_old(&self.tiff)?;
     let raw = fetch_ifd!(&self.tiff, LegacyTiffRootTag::CFAPattern);
     let width = fetch_tag!(raw, LegacyTiffRootTag::ImageWidth).get_usize(0);
     let height = fetch_tag!(raw, LegacyTiffRootTag::ImageLength).get_usize(0);

@@ -6,11 +6,11 @@ use crate::{
   dnggen::{raw_to_dng, ConvertParams},
   AppError, Result,
 };
-use log::debug;
-use std::{fmt::Display};
-use std::{ path::PathBuf, time::Instant};
 use async_trait::async_trait;
-use tokio::{fs::File, io::AsyncWriteExt};
+use log::debug;
+use std::{fmt::Display, fs::File};
+use std::{path::PathBuf, time::Instant};
+use tokio::task::spawn_blocking;
 
 /// Job for converting RAW to DNG
 #[derive(Debug, Clone)]
@@ -30,7 +30,7 @@ pub struct JobResult {
 }
 
 impl Display for JobResult {
-    /// Pretty print the conversion state
+  /// Pretty print the conversion state
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
     if let Some(error) = self.error.as_ref() {
       f.write_fmt(format_args!("Failed: '{}', {}", self.job.input.display(), error.to_string()))?;
@@ -47,7 +47,7 @@ impl Display for JobResult {
 }
 
 impl Raw2DngJob {
-  async fn internal_exec(&self) -> Result<JobResult> {
+  fn internal_exec(&self) -> Result<JobResult> {
     if self.output.exists() && !self.replace {
       return Err(AppError::DestExists(self.output.display().to_string()));
     }
@@ -60,12 +60,12 @@ impl Raw2DngJob {
       .to_string_lossy()
       .to_string();
 
-    let mut raw_file = File::open(&self.input).await?;
-    let mut dng_file = File::create(&self.output).await?;
+    let raw_file = File::open(&self.input)?;
+    let mut dng_file = File::create(&self.output)?;
 
-    match raw_to_dng(&mut raw_file, &mut dng_file, orig_filename, &self.params).await {
+    match raw_to_dng(raw_file, &mut dng_file, orig_filename, &self.params) {
       Ok(_) => {
-        dng_file.flush().await?;
+        drop(dng_file);
         Ok(JobResult {
           job: self.clone(),
           duration: 0.0,
@@ -84,15 +84,22 @@ impl Job for Raw2DngJob {
   async fn execute(&self) -> Self::Output {
     debug!("Job running: input: {:?}, output: {:?}", self.input, self.output);
     let now = Instant::now();
-    match self.internal_exec().await {
-      Ok(mut stat) => {
+    let cp = self.clone();
+    let handle = spawn_blocking(move || cp.internal_exec());
+    match handle.await {
+      Ok(Ok(mut stat)) => {
         stat.duration = now.elapsed().as_secs_f32();
         stat
       }
-      Err(e) => JobResult {
+      Ok(Err(e)) => JobResult {
         job: self.clone(),
         duration: now.elapsed().as_secs_f32(),
         error: Some(e),
+      },
+      Err(e) => JobResult {
+        job: self.clone(),
+        duration: now.elapsed().as_secs_f32(),
+        error: Some(AppError::General(format!("Join handle failed: {:?}", e))),
       },
     }
   }

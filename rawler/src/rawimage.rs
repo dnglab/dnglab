@@ -2,7 +2,16 @@ use std::collections::HashMap;
 
 use log::debug;
 
-use crate::{CFA, decoders::*, imgop::{Dim2, Point, Rect, raw::{ColorMatrix, DevelopParams}, sensor::bayer::BayerPattern, xyz::{FlatColorMatrix, Illuminant}}};
+use crate::{
+  decoders::*,
+  imgop::{
+    raw::{ColorMatrix, DevelopParams},
+    sensor::bayer::BayerPattern,
+    xyz::{FlatColorMatrix, Illuminant},
+    Dim2, Point, Rect,
+  },
+  CFA,
+};
 
 /// All the data needed to process this raw image, including the image data itself as well
 /// as all the needed metadata
@@ -22,6 +31,8 @@ pub struct RawImage {
   pub height: usize,
   /// number of components per pixel (1 for bayer, 3 for RGB images)
   pub cpp: usize,
+  /// Bits per pixel
+  pub bps: usize,
   /// whitebalance coefficients encoded in the file in RGBE order
   pub wb_coeffs: [f32; 4],
   /// image whitelevels in RGBE order
@@ -32,12 +43,14 @@ pub struct RawImage {
   pub xyz_to_cam: [[f32; 3]; 4],
   /// color filter array
   pub cfa: CFA,
-  /// how much to crop the image to get all the usable area, order is top, right, bottom, left
-  pub crops: [usize; 4],
+  /// how much to crop the image to get all the usable (non-black) area
+  pub active_area: Option<Rect>,
+  /// how much to crop the image to get all the recommended area
+  pub crop_area: Option<Rect>,
 
   /// Areas of the sensor that is masked to prevent it from receiving light. Used to calculate
-  /// black levels and noise. Each tuple represents a masked rectangle's top, right, bottom, left
-  pub blackareas: Vec<(u64, u64, u64, u64)>,
+  /// black levels and noise.
+  pub blackareas: Vec<Rect>,
 
   /// orientation of the image as indicated by the image metadata
   pub orientation: Orientation,
@@ -57,66 +70,101 @@ pub enum RawImageData {
 }
 
 impl RawImage {
-  #[doc(hidden)]
-  pub fn new(cam: Camera, width: usize, height: usize, wb_coeffs: [f32; 4], image: Vec<u16>, dummy: bool) -> RawImage {
-    let blacks = if !dummy && (cam.blackareah.1 != 0 || cam.blackareav.1 != 0) {
-      let mut avg = [0 as f32; 4];
-      let mut count = [0 as f32; 4];
-      for row in cam.blackareah.0..cam.blackareah.0 + cam.blackareah.1 {
-        for col in 0..width {
+  pub fn calc_black_levels(cam: &Camera, blackareas: &Vec<Rect>, width: usize, _height: usize, image: &Vec<u16>) -> Option<[u16; 4]> {
+    let mut avg = [0 as f32; 4];
+    let mut count = [0 as f32; 4];
+
+    for area in blackareas {
+      for row in area.p.y..area.p.y + area.d.h {
+        for col in area.p.x..area.p.x + area.d.w {
           let color = cam.cfa.color_at(row, col);
           avg[color] += image[row * width + col] as f32;
           count[color] += 1.0;
         }
       }
-      for row in 0..height {
-        for col in cam.blackareav.0..cam.blackareav.0 + cam.blackareav.1 {
-          let color = cam.cfa.color_at(row, col);
-          avg[color] += image[row * width + col] as f32;
-          count[color] += 1.0;
-        }
-      }
-      [
+    }
+
+    if cam.blackareav.is_some() || cam.blackareah.is_some() {
+      let blacklevels = [
         (avg[0] / count[0]) as u16,
         (avg[1] / count[1]) as u16,
         (avg[2] / count[2]) as u16,
         (avg[3] / count[3]) as u16,
-      ]
+      ];
+      debug!("Calculated blacklevels: {:?}", blacklevels);
+      Some(blacklevels)
+    } else {
+      None
+    }
+  }
+
+  #[doc(hidden)]
+  pub fn new(cam: Camera, width: usize, height: usize, cpp: usize, wb_coeffs: [f32; 4], image: Vec<u16>, dummy: bool) -> RawImage {
+    /*
+    let (width, height, image) = if let Some(crops) = &cam.crops {
+      let crops = Rect::new_with_borders(Dim2::new(width, height), crops);
+      if !dummy {
+        let mut croppedimage = Vec::with_capacity(crops.d.h * crops.d.w * cpp);
+        for row in crops.p.y..(crops.p.y + crops.d.h) {
+          let start = row * width * cpp + crops.p.x;
+          croppedimage.extend_from_slice(&image[start..start + crops.d.w * cpp]);
+        }
+        (crops.d.w, crops.d.h, croppedimage)
+      } else {
+        (crops.d.w, crops.d.h, image)
+      }
+    } else {
+      (width, height, image)
+    };
+    */
+
+    let mut blackareas: Vec<Rect> = Vec::new();
+
+    let active_area = cam.active_area.map(|area| Rect::new_with_borders(Dim2::new(width, height), &area));
+
+    if let Some(active) = active_area {
+      // Build black areas
+      if let Some(ah) = cam.blackareah {
+        blackareas.push(Rect::new_with_points(Point::new(active.p.x, ah.0), Point::new(active.p.x + active.d.w, ah.1)));
+      }
+      if let Some(av) = cam.blackareav {
+        blackareas.push(Rect::new_with_points(Point::new(av.0, active.p.y), Point::new(av.1, active.p.y + active.d.h)));
+      }
+    }
+
+    let blacks = if !dummy {
+      Self::calc_black_levels(&cam, &blackareas, width, height, &image).unwrap_or(cam.blacklevels)
     } else {
       cam.blacklevels
     };
 
-    // tuple format is top, right, bottom left
-    let mut blackareas: Vec<(u64, u64, u64, u64)> = Vec::new();
-
-    if cam.blackareah.1 != 0 {
-      blackareas.push((cam.blackareah.0 as u64, width as u64, (cam.blackareah.0 + cam.blackareah.1) as u64, 0));
-    }
-
-    if cam.blackareav.1 != 0 {
-      blackareas.push((0, (cam.blackareav.0 + cam.blackareav.1) as u64, height as u64, cam.blackareav.0 as u64))
-    }
+    let crop_area = cam.crop_area.map(|area| Rect::new_with_borders(Dim2::new(width, height), &area));
 
     RawImage {
       make: cam.make.clone(),
       model: cam.model.clone(),
       clean_make: cam.clean_make.clone(),
       clean_model: cam.clean_model.clone(),
-      width: width,
-      height: height,
-      cpp: 1,
-      wb_coeffs: wb_coeffs,
+      width,
+      height,
+      cpp,
+      bps: cam.bps,
+      wb_coeffs,
       data: RawImageData::Integer(image),
       blacklevels: blacks,
       whitelevels: cam.whitelevels,
       xyz_to_cam: cam.xyz_to_cam,
-
       cfa: cam.cfa.clone(),
-      crops: cam.crops,
-      blackareas: blackareas,
-      orientation: cam.orientation,
+      active_area,
+      crop_area,
+      blackareas,
+      orientation: Orientation::Normal, //cam.orientation, // TODO fixme
       color_matrix: cam.color_matrix,
     }
+  }
+
+  pub fn dim(&self) -> Dim2 {
+    Dim2::new(self.width, self.height)
   }
 
   pub fn develop_params(&self) -> Result<DevelopParams, String> {
@@ -126,15 +174,17 @@ impl RawImage {
     let components = color_matrix.len() / 3;
     for i in 0..components {
       for j in 0..3 {
-        xyz2cam[i][j] = color_matrix[i*3+j];
+        xyz2cam[i][j] = color_matrix[i * 3 + j];
       }
     }
 
+    /*
     let active_area = Rect::new(
       Point::new(self.crops[3], self.crops[0]),
       Dim2::new(self.width - self.crops[3] - self.crops[1], self.height - self.crops[0] - self.crops[2]),
     );
-    debug!("RAW developing active area: {:?}", active_area);
+    */
+    debug!("RAW developing active area: {:?}", self.active_area);
 
     let params = DevelopParams {
       width: self.width,
@@ -147,7 +197,8 @@ impl RawImage {
       black_level: self.blacklevels.into(),
       pattern: BayerPattern::RGGB,
       wb_coeff: self.wb_coeffs.iter().map(|v| v / 1024.0).take(3).collect(),
-      active_area: Some(active_area),
+      active_area: self.active_area,
+      crop_area: self.crop_area,
       gamma: 2.4,
     };
 
@@ -263,7 +314,9 @@ impl RawImage {
   /// Returns the CFA pattern after the crop has been applied (and thus the pattern
   /// potentially shifted)
   pub fn cropped_cfa(&self) -> CFA {
-    self.cfa.shift(self.crops[3], self.crops[0])
+    //self.cfa.shift(self.crops[3], self.crops[0])
+    todo!()
+    // Need to specify which crop, active or DefaultCrop
   }
 
   /// Checks if the image is monochrome

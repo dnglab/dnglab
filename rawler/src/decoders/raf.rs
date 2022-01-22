@@ -24,7 +24,7 @@ impl<'a> RafDecoder<'a> {
 
 impl<'a> Decoder for RafDecoder<'a> {
   fn raw_image(&self, _params: RawDecodeParams, dummy: bool) -> Result<RawImage> {
-    let cam = self.rawloader.check_supported(&self.tiff)?;
+    let cam = self.rawloader.check_supported_old(&self.tiff)?;
     let raw = fetch_ifd!(&self.tiff, LegacyTiffRootTag::RafOffsets);
     let (width,height) = if raw.has_entry(LegacyTiffRootTag::RafImageWidth) {
       (fetch_tag!(raw, LegacyTiffRootTag::RafImageWidth).get_usize(0),

@@ -26,7 +26,7 @@ impl<'a> DcsDecoder<'a> {
 
 impl<'a> Decoder for DcsDecoder<'a> {
   fn raw_image(&self, _params: RawDecodeParams, dummy: bool) -> Result<RawImage> {
-    let camera = self.rawloader.check_supported(&self.tiff)?;
+    let camera = self.rawloader.check_supported_old(&self.tiff)?;
     let data = self.tiff.find_ifds_with_tag(LegacyTiffRootTag::StripOffsets);
     let raw = data.iter().find(|&&ifd| {
       ifd.find_entry(LegacyTiffRootTag::ImageWidth).unwrap().get_u32(0) > 1000

@@ -6,7 +6,7 @@ use crate::{AppError, Result};
 use log::debug;
 use rawler::{
   dng::{original_decompress, original_digest},
-  formats::tiff::{Entry, TiffReader, Value},
+  formats::tiff::{Entry, GenericTiffReader, Value, reader::TiffReader},
   tags::DngTag,
 };
 use std::{
@@ -58,7 +58,7 @@ impl ExtractRawJob {
     let dng_file = File::open(&self.input)?;
 
     let mut in_file = BufReader::new(dng_file);
-    let file = TiffReader::new(&mut in_file, 0, None).map_err(|e| AppError::General(e.to_string()))?;
+    let file = GenericTiffReader::new(&mut in_file, 0, 0, None, &[]).map_err(|e| AppError::General(e.to_string()))?;
 
     if !file.has_entry(DngTag::DNGVersion) {
       debug!("Input is not a DNG file");

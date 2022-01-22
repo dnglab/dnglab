@@ -1,62 +1,119 @@
 // SPDX-License-Identifier: LGPL-2.1
 // Copyright 2021 Daniel Vogelbacher <daniel@chaospixel.com>
 
-use log::debug;
+use std::{iter, ops::Range};
 
-/// Image tiles
-pub struct TiledData<T> {
-  pub tile_width: usize,
-  pub tile_length: usize,
-  pub tiles: Vec<Vec<T>>,
+/// Image tile generator
+pub struct ImageTiler<'a, T> {
+  data: &'a [T],
+  width: usize,
+  #[allow(dead_code)]
+  height: usize,
+  cpp: usize,
+  tiles: Range<usize>,
+  tw: usize,
+  th: usize,
+  tcols: usize,
+  trows: usize,
 }
 
-impl<T> TiledData<T>
-where
-  T: Clone,
-{
-  /// Construct new TiledData for given image
-  ///
-  /// `width` and `height` are for input. Tile size will be
-  /// calculated based in input.
-  pub fn new(img: &[T], width: usize, height: usize) -> Self {
-    debug!("Tile input: w: {}, h: {}", width, height);
-    let tile_width = Self::find_optimal_tile_size(width);
-    let tile_length = Self::find_optimal_tile_size(height);
-    let tile_dim = tile_length * tile_width;
-
-    assert_eq!(width % tile_width, 0);
-    assert_eq!(height % tile_length, 0);
-
-    let mut tiles = Vec::with_capacity((width * height) / (tile_width * tile_length));
-
-    for tile_row in 0..height / tile_length {
-      for tile_col in 0..width / tile_width {
-        let mut tile = Vec::with_capacity(tile_dim);
-        for line in 0..tile_length {
-          let offset = ((tile_row * tile_length) + line) * width + (tile_col * tile_width);
-          tile.extend_from_slice(&img[offset..offset + tile_width]); // add line
-        }
-        tiles.push(tile);
-      }
-    }
+impl<'a, T> ImageTiler<'a, T> {
+  pub fn new(data: &'a [T], width: usize, height: usize, cpp: usize, tw: usize, th: usize) -> Self {
+    assert!(data.len() >= height * width * cpp);
+    let tcols = (width + (tw - 1)) / tw;
+    let trows = (height + (th - 1)) / th;
     Self {
-      tile_width,
-      tile_length,
-      tiles,
+      data,
+      width,
+      height,
+      cpp,
+      tiles: Range { start: 0, end: trows * tcols },
+      tw,
+      th,
+      tcols,
+      trows,
     }
   }
 
-  /// Find optimal tile size
-  fn find_optimal_tile_size(len: usize) -> usize {
-    // TODO: write tests
-    let start = len / 8;
-    for i in (1..start).rev() {
-      // We need mod_2 because tiles are compressed
-      // with 2-component LJPEG
-      if (len % i == 0) && (i % 2 == 0) {
-        return i;
+  pub fn tile_cols(&self) -> usize {
+    self.tcols
+  }
+
+  pub fn tile_rows(&self) -> usize {
+    self.trows
+  }
+
+  pub fn tile_count(&self) -> usize {
+    self.tile_rows() * self.tile_cols()
+  }
+
+  fn needs_padding(&self) -> bool {
+    self.width % self.tw > 0
+  }
+}
+
+impl<'a, T> Iterator for ImageTiler<'a, T>
+where
+  T: Copy + Default,
+{
+  type Item = Vec<T>;
+
+  fn next(&mut self) -> Option<Self::Item> {
+    if let Some(i) = self.tiles.next() {
+      let mut buf = Vec::with_capacity(self.th * self.tw * self.cpp);
+
+      let tile_row = i / self.tile_cols();
+      let tile_col = i % self.tile_cols();
+
+      //println!("Tile row: {}, col: {}", tile_row, tile_col);
+
+      for row in 0..self.th {
+        let off_row = (tile_row * self.th) + row;
+        let offset = off_row * self.width * self.cpp + (tile_col * self.tw * self.cpp);
+
+        if offset < self.data.len() {
+          //println!("Fill row: {}", row);
+          if tile_col < self.tile_cols() - 1 || !self.needs_padding() {
+            let sub = &self.data[offset..offset + self.tw * self.cpp];
+            buf.extend_from_slice(sub);
+          } else {
+            buf.extend_from_slice(&self.data[offset..offset + (self.width % self.tw) * self.cpp]);
+            let last_pix = buf.last().copied().unwrap_or(T::default());
+            buf.extend(iter::repeat(last_pix).take((self.tw - (self.width % self.tw)) * self.cpp));
+          };
+        } else {
+          //println!("extend row: {}", row);
+          buf.extend_from_within((row - 1) * self.tw * self.cpp..((row - 1) * self.tw * self.cpp) + self.tw * self.cpp);
+        }
       }
+      Some(buf)
+    } else {
+      None
     }
-    return len;
+  }
+
+  fn size_hint(&self) -> (usize, Option<usize>) {
+    (self.tile_count(), Some(self.tile_count()))
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[test]
+  fn tile_1x1() -> std::result::Result<(), Box<dyn std::error::Error>> {
+    crate::init_test_logger();
+    let w = 1;
+    let h = 1;
+    let c = 3;
+    let buf = vec![0_u16; w * h * c];
+
+    let tiles: Vec<Vec<u16>> = ImageTiler::new(&buf, w, h, c, 20, 20).collect();
+
+    assert_eq!(tiles.len(), 1);
+    assert_eq!(tiles[0].len(), c * 20 * 20);
+
+    Ok(())
   }
 }

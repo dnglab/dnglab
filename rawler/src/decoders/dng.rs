@@ -52,7 +52,7 @@ impl<'a> Decoder for DngDecoder<'a> {
     };
 
     let (make, model, clean_make, clean_model, orientation) = {
-      match self.rawloader.check_supported(&self.tiff) {
+      match self.rawloader.check_supported_old(&self.tiff) {
         Ok(cam) => {
           (cam.make.clone(), cam.model.clone(),
            cam.clean_make.clone(), cam.clean_model.clone(),
@@ -67,7 +67,7 @@ impl<'a> Decoder for DngDecoder<'a> {
       }
     };
 
-    let cam = self.rawloader.check_supported(&self.tiff).unwrap();
+    let cam = self.rawloader.check_supported_old(&self.tiff).unwrap();
 
     Ok(RawImage {
       make: make,
