@@ -32,12 +32,13 @@ jobs:
       fail-fast: false
       matrix:
         rust: [1.57.0, stable, beta]
+    env:
+      RAWLER_RAWDB: /opt/rawdb2
     steps:
       - uses: actions/checkout@v2
       - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: ${{matrix.rust}}
-      - run: git clone /var/lib/git/dnglab-testdata.git testdata
       - run: cargo test --release --features samplecheck
 
   windows_check:
