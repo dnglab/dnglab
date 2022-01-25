@@ -8,7 +8,7 @@ updates:
       - "cytrinox"
     schedule:
       interval: "daily"
- - package-ecosystem: "cargo"
+  - package-ecosystem: "cargo"
     directory: "/bin/dnglab"
     labels:
       - "improvement"
