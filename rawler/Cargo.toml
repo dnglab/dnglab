@@ -45,5 +45,5 @@ env_logger = "0.8.4"
 [build-dependencies]
 glob = "0.3"
 toml = "0.5"
-rustc_version = "0.3"
+rustc_version = "0.4"
 
