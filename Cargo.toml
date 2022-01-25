@@ -2,6 +2,7 @@
 members = [
 	"bin/dnglab",
 	"rawler",
+	"embedftp"
 ]
 
 [profile.release]
