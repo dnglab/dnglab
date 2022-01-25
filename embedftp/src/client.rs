@@ -12,7 +12,6 @@ use std::ffi::OsString;
 use std::fs::{create_dir, read_dir, remove_dir_all, remove_file, File};
 use std::io::{self, Write};
 use std::net::{IpAddr, SocketAddr};
-use std::os::unix::prelude::MetadataExt;
 use std::path::{Component, Path, PathBuf, StripPrefixError};
 use std::result;
 use tokio::io::AsyncWriteExt;
@@ -20,6 +19,12 @@ use tokio::net::tcp::{OwnedReadHalf, OwnedWriteHalf};
 use tokio::net::{TcpListener, TcpStream};
 use tokio::runtime::Handle;
 use tokio_util::codec::{Decoder, Framed};
+
+#[cfg(unix)]
+use std::os::unix::prelude::MetadataExt;
+#[cfg(windows)]
+use std::os::windows::fs::MetadataExt;
+
 
 use crate::codec::FtpCodec;
 use crate::command::{Command, TransferType};
@@ -738,7 +743,10 @@ fn add_file_info(path: PathBuf, out: &mut Vec<u8>) {
     _ => return,
   };
   let time: chrono::DateTime<Utc> = meta.modified().unwrap().into();
+  #[cfg(unix)]
   let file_size = meta.size();
+  #[cfg(windows)]
+  let file_size = meta.file_size();
   let path = match path.to_str() {
     Some(path) => match path.split("/").last() {
       Some(path) => path,
