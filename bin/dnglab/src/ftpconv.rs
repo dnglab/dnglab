@@ -2,13 +2,12 @@
 // Copyright 2021 Daniel Vogelbacher <daniel@chaospixel.com>
 
 use clap::ArgMatches;
-use embedftp::server::serve;
 use embedftp::config::{Config, FtpCallback};
-use rawler::Buffer;
+use embedftp::server::serve;
+use rawler::RawFile;
 use std::fs::File;
-use std::io::Write;
+use std::io::{BufWriter, Cursor};
 use std::path::PathBuf;
-use std::sync::Arc;
 use tokio::runtime::Handle;
 
 use crate::app::convert_bool;
@@ -18,7 +17,7 @@ use crate::{
   AppError, PKG_NAME, PKG_VERSION,
 };
 
-const SUPPORTED_FILE_EXT: [&'static str; 1] = ["CR3"];
+const SUPPORTED_FILE_EXT: [&'static str; 2] = ["CR3", "CR2"]; // TODO: fixme more extensions
 
 #[derive(Clone)]
 struct FtpState {
@@ -27,32 +26,28 @@ struct FtpState {
 }
 
 impl FtpCallback for FtpState {
-  fn stor_file(&self, path: PathBuf, data: &Vec<u8>) -> bool {
+  fn stor_file(&self, path: PathBuf, data: Vec<u8>) -> Option<Vec<u8>> {
     if let Some(ext) = path.extension().map(|ext| ext.to_string_lossy()) {
       if is_ext_supported(&ext) {
-        // TODO: Large input file bug, we need to test the raw file before open it
-        let in_buffer = Arc::new(Buffer::from(data.clone()));
+        let mut filebuf = RawFile::new(Cursor::new(data.clone())); // TODO: prevent clone
 
         let params = self.params.clone();
-
         let orig_filename = path.file_name().unwrap().to_str().unwrap();
 
-        let dng_content = raw_to_dng_internal(in_buffer, orig_filename.into(), &params).unwrap();
-
         let out_path = path.with_extension("dng");
+        let mut buf_file = BufWriter::new(File::create(out_path).unwrap());
 
-        let mut file = File::create(out_path).unwrap();
-        file.write_all(&dng_content).unwrap();
+        raw_to_dng_internal(&mut filebuf, &mut buf_file, orig_filename.into(), &params).unwrap();
 
         if self.keep_orig {
-          return false;
+          return Some(data);
         } else {
-          return true;
+          return None;
         }
       }
     }
 
-    false
+    Some(data)
   }
 }
 

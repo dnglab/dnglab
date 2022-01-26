@@ -65,7 +65,7 @@ impl<'a> Decoder for Rw2Decoder<'a> {
         "16:9"
       }
     };
-    let camera = self.rawloader.check_supported_with_mode(&self.tiff, mode)?;
+    let camera = self.rawloader.check_supported_with_mode_old(&self.tiff, mode)?;
 
     ok_image(camera, width, height, self.get_wb()?, image)
   }

@@ -1,0 +1,45 @@
+[[cameras]]
+make = "Canon"
+model = "Canon EOS 60D"
+clean_make = "Canon"
+clean_model = "EOS 60D"
+color_pattern = "GBRG"
+bps = 14
+active_area = [142,51,0,0]
+blackareav = [2, 140]
+blackareah = [10, 48]
+[cameras.color_matrix]
+D65 = [0.6719, -0.0994, -0.0925, -0.4408, 1.2426, 0.2211, -0.0887, 0.2129, 0.6051]
+[cameras.params]
+# ColorData4
+colordata_blacklevel = 0x2cf
+colordata_whitelevel = 0x2d4
+colordata_wbcoeffs = 0x3f
+
+[[cameras]]
+make = "Canon"
+model = "Canon EOS 60D"
+mode = "sRaw1"
+clean_make = "Canon"
+clean_model = "EOS 60D"
+bps = 16
+whitepoint = 65535
+[cameras.color_matrix]
+D65 = [0.6719, -0.0994, -0.0925, -0.4408, 1.2426, 0.2211, -0.0887, 0.2129, 0.6051]
+[cameras.params]
+# ColorData4
+colordata_wbcoeffs = 0x3f
+
+[[cameras]]
+make = "Canon"
+model = "Canon EOS 60D"
+mode = "sRaw2"
+clean_make = "Canon"
+clean_model = "EOS 60D"
+bps = 16
+whitepoint = 65535
+[cameras.color_matrix]
+D65 = [0.6719, -0.0994, -0.0925, -0.4408, 1.2426, 0.2211, -0.0887, 0.2129, 0.6051]
+[cameras.params]
+# ColorData4
+colordata_wbcoeffs = 0x3f

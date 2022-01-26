@@ -9,6 +9,7 @@ pub mod srgb;
 pub mod xyz;
 
 use rayon::prelude::*;
+use serde::{Serialize, Deserialize};
 
 pub type Result<T> = std::result::Result<T, String>;
 
@@ -39,7 +40,7 @@ macro_rules! min {
  */
 
 /// Descriptor of a two-dimensional area
-#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Debug)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
 pub struct Dim2 {
   pub w: usize,
   pub h: usize,
@@ -48,6 +49,10 @@ pub struct Dim2 {
 impl Dim2 {
   pub fn new(w: usize, h: usize) -> Self {
     Self { w, h }
+  }
+
+  pub fn is_empty(&self) -> bool {
+    self.w == 0 && self.h == 0
   }
 }
 
@@ -88,7 +93,7 @@ pub fn clip01(p: f32) -> f32 {
 }
 
 /// A simple x/y point
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
 pub struct Point {
   pub x: usize,
   pub y: usize,
@@ -98,19 +103,74 @@ impl Point {
   pub fn new(x: usize, y: usize) -> Self {
     Self { x, y }
   }
+
+  pub fn zero() -> Self {
+    Self {
+      x: 0,
+      y: 0,
+    }
+  }
 }
 
 /// Rectangle by a point and dimension
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
 pub struct Rect {
   pub p: Point,
   pub d: Dim2,
+}
+
+impl std::fmt::Debug for Rect {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        //f.debug_struct("Rect").field("p", &self.p).field("d", &self.d).finish()?;
+        f.write_fmt(format_args!("Rect{{{}:{}, {}x{}, LTRB=[{}, {}, {}, {}]}}", self.p.x, self.p.y, self.d.w, self.d.h,  self.p.x, self.p.y, self.p.x+self.d.w, self.p.y+self.d.h))
+    }
 }
 
 impl Rect {
   pub fn new(p: Point, d: Dim2) -> Self {
     Self { p, d }
   }
+
+  // left, top, right, bottom
+  pub fn new_with_points(p1: Point, p2: Point) -> Self {
+    Self {
+      p: p1,
+      d: Dim2 {
+        w: p2.x-p1.x,
+        h: p2.y-p1.y,
+      }
+    }
+  }
+
+  pub fn new_with_borders(dim: Dim2, borders: &[usize; 4]) -> Self {
+    Self::new_with_points(Point::new(borders[0], borders[1]),
+    Point::new(dim.w - borders[2], dim.h - borders[3])
+  )
+  }
+
+  pub fn is_empty(&self) -> bool {
+    self.d.is_empty()
+  }
+
+  /// Return in LTRB coordinates
+  pub fn as_ltrb(&self) -> [usize; 4] {
+    [
+      self.p.x,
+      self.p.y,
+      self.p.x + self.d.w,
+      self.p.y + self.d.h,
+    ]
+  }
+
+    /// Return in TLBR
+    pub fn as_tlbr(&self) -> [usize; 4] {
+      [
+        self.p.y,
+        self.p.x,
+        self.p.y + self.d.h,
+        self.p.x + self.d.w,
+      ]
+    }
 }
 
 /// Crop image to specific area

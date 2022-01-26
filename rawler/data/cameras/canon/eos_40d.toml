@@ -1,0 +1,33 @@
+[[cameras]]
+make = "Canon"
+model = "Canon EOS 40D"
+clean_make = "Canon"
+clean_model = "EOS 40D"
+color_pattern = "RGGB"
+bps = 14
+active_area = [30, 18, 6, 2] # LTRB
+#crop_area = [30, 18, 6, 2] # todo fix
+whitepoint = 13600
+blackareav = [0, 28]
+blackareah = [4, 18]
+[cameras.color_matrix]
+D65 = [0.6071, -0.0747, -0.0856, -0.7653, 1.5365, 0.2441, -0.2025, 0.2553, 0.7315]
+[cameras.params]
+# ColorData4
+colordata_blacklevel = 0xe7
+colordata_wbcoeffs = 0x3f
+
+[[cameras]]
+make = "Canon"
+model = "Canon EOS 40D"
+mode = "sRaw2"
+clean_make = "Canon"
+clean_model = "EOS 40D"
+whitepoint = 13600
+hints = ["sraw_40d"]
+[cameras.color_matrix]
+D65 = [0.6071, -0.0747, -0.0856, -0.7653, 1.5365, 0.2441, -0.2025, 0.2553, 0.7315]
+[cameras.params]
+# ColorData4
+colordata_blacklevel = 0xe7
+colordata_wbcoeffs = 0x3f

@@ -24,7 +24,7 @@ impl<'a> NrwDecoder<'a> {
 
 impl<'a> Decoder for NrwDecoder<'a> {
   fn raw_image(&self, _params: RawDecodeParams, dummy: bool) -> Result<RawImage> {
-    let camera = self.rawloader.check_supported(&self.tiff)?;
+    let camera = self.rawloader.check_supported_old(&self.tiff)?;
     let data = self.tiff.find_ifds_with_tag(LegacyTiffRootTag::CFAPattern);
     let raw = data.iter().find(|&&ifd| {
       ifd.find_entry(LegacyTiffRootTag::ImageWidth).unwrap().get_u32(0) > 1000

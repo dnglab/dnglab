@@ -1,0 +1,52 @@
+[[cameras]]
+make = "Canon"
+model = "Canon EOS 80D"
+clean_make = "Canon"
+clean_model = "EOS 80D"
+color_pattern = "RGGB"
+bps = 14
+active_area = [264,34,2,0]
+blackareav = [4, 260]
+blackareah = [0, 30]
+[cameras.color_matrix]
+D65 = [0.7457, -0.0671, -0.0937, -0.4849, 1.2495, 0.2643, -0.1213, 0.2354, 0.5492]
+[cameras.params]
+# ColorData8
+colordata_blacklevel = 0x30a
+colordata_whitelevel = 0x30f
+colordata_wbcoeffs = 0x3f
+
+[[cameras]]
+make = "Canon"
+model = "Canon EOS 80D"
+mode = "sRaw1"
+clean_make = "Canon"
+clean_model = "EOS 80D"
+bps = 16
+whitepoint = 58832
+active_area = [28,10,0,0]
+hints = ["invert_sraw_wb", "sraw_new"]
+[cameras.color_matrix]
+D65 = [0.7457, -0.0671, -0.0937, -0.4849, 1.2495, 0.2643, -0.1213, 0.2354, 0.5492]
+[cameras.params]
+# ColorData8
+colordata_blacklevel = 0x30a
+colordata_whitelevel = 0x30f
+colordata_wbcoeffs = 0x3f
+
+[[cameras]]
+make = "Canon"
+model = "Canon EOS 80D"
+mode = "sRaw2"
+clean_make = "Canon"
+clean_model = "EOS 80D"
+bps = 16
+whitepoint = 58832
+hints = ["invert_sraw_wb", "sraw_new"]
+[cameras.color_matrix]
+D65 = [0.7457, -0.0671, -0.0937, -0.4849, 1.2495, 0.2643, -0.1213, 0.2354, 0.5492]
+[cameras.params]
+# ColorData8
+colordata_blacklevel = 0x30a
+colordata_whitelevel = 0x30f
+colordata_wbcoeffs = 0x3f

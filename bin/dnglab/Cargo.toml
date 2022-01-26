@@ -30,7 +30,7 @@ thiserror = "1.0.25"
 tokio = { version = "1.11.0", features = ["full"] }
 async-trait = "0.1.51"
 futures = "0.3"
-
+hex = "0.4.3"
 
 [package.metadata.deb]
 maintainer = "Daniel Vogelbacher <daniel@chaospixel.com>"

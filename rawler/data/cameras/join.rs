@@ -16,7 +16,7 @@ fn main() {
   let mut out = File::create(dest_path).expect("Unable to create output file");
 
   for entry in glob("./data/cameras/*/**/*.toml").expect("Failed to read glob pattern") {
-    out.write_all(b"[[cameras]]\n").expect("Failed to write camera TOML");
+    //out.write_all(b"[[cameras]]\n").expect("Failed to write camera TOML");
     let path = entry.expect("Invalid glob entry");
     let mut f = File::open(&path).expect("failed to open camera definition file");
     let mut toml = String::new();

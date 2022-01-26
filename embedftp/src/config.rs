@@ -20,8 +20,8 @@ pub struct Config {
 /// This callback provides filtering for specific FTP
 /// commands, for example to inject a custom STOR handler.
 pub trait FtpCallback {
-  fn stor_file(&self, _path: PathBuf, _data: &Vec<u8>) -> bool {
-    false // unhandled
+  fn stor_file(&self, _path: PathBuf, data: Vec<u8>) -> Option<Vec<u8>> {
+    Some(data) // unhandled
   }
 }
 

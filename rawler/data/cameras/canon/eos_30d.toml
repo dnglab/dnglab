@@ -1,0 +1,15 @@
+[[cameras]]
+make = "Canon"
+model = "Canon EOS 30D"
+clean_make = "Canon"
+clean_model = "EOS 30D"
+color_pattern = "RGGB"
+active_area = [74, 12, 0, 0] # LTRB
+whitepoint = 3398
+blackareav = [4, 70]
+[cameras.color_matrix]
+D65 = [0.6257, -0.0303, -0.1000, -0.7880, 1.5621, 0.2396, -0.1714, 0.1904, 0.7046]
+[cameras.params]
+# ColorData3
+colordata_blacklevel = 0xc4
+colordata_wbcoeffs = 0x3f

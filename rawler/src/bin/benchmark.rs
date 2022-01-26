@@ -2,6 +2,8 @@ use std::env;
 use std::fs::File;
 use std::time::Instant;
 
+
+use rawler::RawFile;
 use rawler::decoders::RawDecodeParams;
 
 fn usage() {
@@ -16,6 +18,7 @@ fn error(err: &str) {
   std::process::exit(2);
 }
 
+
 fn main() {
   let args: Vec<_> = env::args().collect();
   if args.len() != 2 {
@@ -24,23 +27,23 @@ fn main() {
   let file = &args[1];
   println!("Loading file \"{}\"", file);
 
-  let mut f = match File::open(file) {
+  let f = match File::open(file) {
     Ok(val) => val,
     Err(e) => {error(&e.to_string());return},
   };
-  let buffer = match rawler::Buffer::new(&mut f) {
-    Ok(val) => val,
-    Err(e) => {error(&e.to_string()); return},
-  };
+
+  let mut rawfile = RawFile { file: Box::new(f), start_offset: 0 };
+
   let rawloader = rawler::RawLoader::new();
+
   let from_time = Instant::now();
   {
     for _ in 0..ITERATIONS {
-      let decoder = match rawloader.get_decoder(&buffer) {
+      let decoder = match rawloader.get_decoder(&mut rawfile) {
         Ok(val) => val,
         Err(e) => {error(&e.to_string()); return},
       };
-      match decoder.raw_image(RawDecodeParams::default(), false) {
+      match decoder.raw_image(&mut rawfile, RawDecodeParams::default(), false) {
         Ok(_) => {},
         Err(e) => error(&e.to_string()),
       }

@@ -26,7 +26,7 @@ impl<'a> IiqDecoder<'a> {
 
 impl<'a> Decoder for IiqDecoder<'a> {
   fn raw_image(&self, _params: RawDecodeParams, dummy: bool) -> Result<RawImage> {
-    let camera = self.rawloader.check_supported(&self.tiff)?;
+    let camera = self.rawloader.check_supported_old(&self.tiff)?;
 
     let off = LEu32(self.buffer, 16) as usize + 8;
     let entries = LEu32(self.buffer, off);

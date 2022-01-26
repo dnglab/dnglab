@@ -1,0 +1,47 @@
+[[cameras]]
+make = "Canon"
+model = "Canon EOS 5D Mark IV"
+clean_make = "Canon"
+clean_model = "EOS 5D Mark IV"
+color_pattern = "RGGB"
+active_area = [136,42,0,0]
+blackareav = [2, 134]
+blackareah = [2, 40]
+hints = ["double_line"]
+[cameras.color_matrix]
+D65 = [0.6446, -0.0366, -0.0864, -0.4436, 1.2204, 0.2513, -0.0952, 0.2496, 0.6348]
+[cameras.params]
+# ColorData8
+colordata_blacklevel = 0x30a
+colordata_whitelevel = 0x30f
+colordata_wbcoeffs = 0x3f
+
+[[cameras]]
+make = "Canon"
+model = "Canon EOS 5D Mark IV"
+mode = "sRaw1"
+clean_make = "Canon"
+clean_model = "EOS 5D Mark IV"
+hints = ["invert_sraw_wb", "sraw_new"]
+[cameras.color_matrix]
+D65 = [0.6446, -0.0366, -0.0864, -0.4436, 1.2204, 0.2513, -0.0952, 0.2496, 0.6348]
+[cameras.params]
+# ColorData8
+colordata_blacklevel = 0x30a
+colordata_whitelevel = 0x30f
+colordata_wbcoeffs = 0x3f
+
+[[cameras]]
+make = "Canon"
+model = "Canon EOS 5D Mark IV"
+mode = "sRaw2"
+clean_make = "Canon"
+clean_model = "EOS 5D Mark IV"
+hints = ["invert_sraw_wb", "sraw_new"]
+[cameras.color_matrix]
+D65 = [0.6446, -0.0366, -0.0864, -0.4436, 1.2204, 0.2513, -0.0952, 0.2496, 0.6348]
+[cameras.params]
+# ColorData8
+colordata_blacklevel = 0x30a
+colordata_whitelevel = 0x30f
+colordata_wbcoeffs = 0x3f

@@ -121,7 +121,7 @@ impl<'a> Decoder for X3fDecoder<'a> {
       return Err(RawlerError::Unsupported("X3F: Couldn't find EXIF info".to_string()))
     }
     let tiff = LegacyTiffIFD::new_root(self.buffer, caminfo.doffset+12, &vec![])?;
-    let camera = self.rawloader.check_supported(&tiff)?;
+    let camera = self.rawloader.check_supported_old(&tiff)?;
 
     let imginfo = self.dir.images
         .iter()

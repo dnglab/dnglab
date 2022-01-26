@@ -3,7 +3,8 @@
 
 use clap::ArgMatches;
 use futures::future::join_all;
-use rawler::formats::tiff::{Entry, TiffReader, Value};
+use rawler::formats::tiff::reader::TiffReader;
+use rawler::formats::tiff::{Entry, GenericTiffReader, Value};
 use rawler::tags::DngTag;
 use std::fs::File;
 use std::io::BufReader;
@@ -98,7 +99,7 @@ pub async fn extract(options: &ArgMatches<'_>) -> anyhow::Result<()> {
 /// Convert given raw file to dng file
 fn generate_job(entry: &FileMap, options: &ArgMatches<'_>, use_orig_filename: bool) -> Result<ExtractRawJob> {
   let mut in_file = BufReader::new(File::open(&entry.src)?);
-  let file = TiffReader::new(&mut in_file, 0, None).map_err(|e| AppError::General(e.to_string()))?;
+  let file = GenericTiffReader::new(&mut in_file, 0, 0, None, &[]).map_err(|e| AppError::General(e.to_string()))?;
 
   if !file.has_entry(DngTag::DNGVersion) {
     return Err(AppError::General("Input file is not a DNG".into()));
@@ -131,7 +132,7 @@ fn is_ext_supported<T: AsRef<str>>(ext: T) -> bool {
 }
 
 /// Extract DNG OriginalRawFileName from TIFF structure
-fn get_original_name(file: &TiffReader) -> Option<String> {
+fn get_original_name(file: &GenericTiffReader) -> Option<String> {
   if let Some(Entry {
     value: Value::Ascii(orig_name),
     ..

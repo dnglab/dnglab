@@ -1,0 +1,28 @@
+cameras/Canon/EOS-1D X Mark III/raw_modes
+cameras/Canon/EOS 5D Mark III/raw_modes
+cameras/Canon/Canon EOS M50/raw_modes
+cameras/Canon/EOS 5D Mark IV/raw_modes
+cameras/Canon/Canon EOS R/raw_modes
+cameras/Canon/Canon PowerShot SX70 HS/raw_modes
+cameras/Canon/EOS 80D/raw_modes
+cameras/Canon/Canon PowerShot G7 X Mark III/raw_modes
+cameras/Canon/EOS D2000C/raw_modes
+cameras/Canon/EOS 850D/raw_modes
+cameras/Canon/EOS 20D/raw_modes
+cameras/Canon/Canon EOS M50m2/raw_modes
+cameras/Canon/EOS 30D/raw_modes
+cameras/Canon/Canon EOS M6 Mark II/raw_modes
+cameras/Canon/Canon PowerShot G5 X Mark II/raw_modes
+cameras/Canon/EOS 90D/raw_modes
+cameras/Canon/EOS 250D/raw_modes
+cameras/Canon/EOS 70D/raw_modes
+cameras/Canon/EOS 5D Mark II/raw_modes
+cameras/Canon/Canon EOS M200/raw_modes
+cameras/Canon/EOS 60D/raw_modes
+cameras/Canon/EOS 5D/raw_modes
+cameras/Canon/Canon EOS R5/raw_modes
+cameras/Canon/EOS 40D/raw_modes
+cameras/Canon/EOS 50D/raw_modes
+cameras/Canon/Canon EOS RP/raw_modes
+cameras/Canon/Canon EOS R6/raw_modes
+

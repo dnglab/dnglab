@@ -15,6 +15,7 @@ pub fn create_app() -> App<'static, 'static> {
       (@subcommand analyze =>
           (about: "Analyze raw image")
           (@arg pixel: --pixel "Write uncompressed pixel data to STDOUT")
+          (@arg checksum: --checksum "Write MD5 checksum of raw pixels to STDOUT")
           (@arg srgb: --srgb "Write sRGB 16-bit TIFF to STDOUT")
           (@arg meta: --meta "Write metadata to STDOUT")
           (@arg summary: --summary "Write summary information for file to STDOUT")

@@ -27,7 +27,7 @@ impl<'a> KdcDecoder<'a> {
 
 impl<'a> Decoder for KdcDecoder<'a> {
   fn raw_image(&self, _params: RawDecodeParams, dummy: bool) -> Result<RawImage> {
-    let camera = self.rawloader.check_supported(&self.tiff)?;
+    let camera = self.rawloader.check_supported_old(&self.tiff)?;
 
     if camera.model == "Kodak DC120 ZOOM Digital Camera" {
       let width = 848;

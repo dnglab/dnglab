@@ -2,6 +2,7 @@
 // Copyright 2021 Daniel Vogelbacher <daniel@chaospixel.com>
 
 use byteorder::{BigEndian, ByteOrder, LittleEndian};
+use serde::{Serialize, Deserialize};
 
 #[inline(always)]
 pub fn clampbits(val: i32, bits: u32) -> u16 {
@@ -15,10 +16,17 @@ pub fn clampbits(val: i32, bits: u32) -> u16 {
   }
 }
 
-#[derive(Debug, Copy, Clone)]
+
+#[derive(Debug, Copy, Clone, PartialEq, Serialize, Deserialize)]
 pub enum Endian {
   Big,
   Little,
+}
+
+impl Default for Endian {
+    fn default() -> Self {
+        Self::Little
+    }
 }
 
 impl Endian {

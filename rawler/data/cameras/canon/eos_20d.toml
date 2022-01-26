@@ -1,0 +1,17 @@
+[[cameras]]
+make = "Canon"
+model = "Canon EOS 20D"
+clean_make = "Canon"
+clean_model = "EOS 20D"
+color_pattern = "RGGB"
+active_area = [74, 12, 0, 0] # LTRB
+#crop_area = [30, 18, 6, 2] # todo fix
+blackpoint = 126
+whitepoint = 4095
+blackareav = [4, 70]
+[cameras.color_matrix]
+D65 = [0.6599, -0.0537, -0.0891, -0.8071, 1.5783, 0.2424, -0.1983, 0.2234, 0.7462]
+[cameras.params]
+# ColorData4
+#colordata_blacklevel = 0xe7
+colordata_wbcoeffs = 0x19

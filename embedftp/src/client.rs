@@ -638,7 +638,7 @@ where
       let data = self.receive_data().await?;
       info!("Received file: {:?}, {} bytes", path, data.len());
       self.close_data_connection();
-      match self.put_file(path, &data).await {
+      match self.put_file(path, data).await {
         Ok(_) => {
           self.send(Answer::new(ResultCode::ClosingDataConnection, "Transfer done")).await?;
         }
@@ -655,10 +655,10 @@ where
   }
 
   /// Put file directly or delegate to a filter
-  async fn put_file(&mut self, path: PathBuf, data: &Vec<u8>) -> Result<()> {
+  async fn put_file(&mut self, path: PathBuf, data: Vec<u8>) -> Result<()> {
     let path = PathBuf::from(&self.server_root).join(path.iter().skip(1).collect::<PathBuf>());
     let handled = self.env.stor_file(path.clone(), data);
-    if !handled {
+    if let Some(data) = handled {
       let mut file = File::create(path)?;
       file.write_all(&data)?;
     }

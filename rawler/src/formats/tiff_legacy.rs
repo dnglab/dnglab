@@ -616,7 +616,7 @@ pub fn tag_name(tag: &u16) -> String {
     }
 }
 
-pub(crate) fn dump_ifd_entries<T: TiffTagEnum>(ifd: &LegacyTiffIFD) -> String {
+pub(crate) fn _dump_ifd_entries<T: TiffTagEnum>(ifd: &LegacyTiffIFD) -> String {
   let mut out = String::new();
   out.push_str(&format!("IFD entries: {}\n", ifd.entries.len()));
   out.push_str(&format!("{0:<34}  | {1:<10} | {2:<6} | {3}\n", "Tag", "Type", "Count", "Data"));

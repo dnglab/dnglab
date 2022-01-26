@@ -25,7 +25,7 @@ pub fn original_compress(uncomp_data: &[u8]) -> Result<Vec<u8>, std::io::Error> 
     .expect("Failed to build thread pool");
 
   let result = pool.install(move || {
-    let mut compr_data = Cursor::new(Vec::<u8>::new());
+    let mut compr_data = Cursor::new(Vec::<u8>::with_capacity(uncomp_data.len()));
 
     let raw_fork_size: u32 = uncomp_data.len() as u32;
     let raw_fork_blocks: u32 = ((raw_fork_size + (COMPRESS_BLOCK_SIZE - 1)) / COMPRESS_BLOCK_SIZE) as u32;
@@ -115,14 +115,18 @@ struct ComprChunk {
 
 /// Compress a buffer to ComprChunk
 fn compress_chunk(buf: &[u8]) -> Result<ComprChunk, String> {
-  let mut encoder = Encoder::with_options(Vec::new(), EncodeOptions::new().block_size(COMPRESS_BLOCK_SIZE as usize)).unwrap();
+  let mut encoder = Encoder::with_options(
+    Vec::with_capacity(COMPRESS_BLOCK_SIZE as usize),
+    EncodeOptions::new().block_size(COMPRESS_BLOCK_SIZE as usize),
+  )
+  .unwrap();
   encoder.write_all(&buf).unwrap();
   Ok(ComprChunk {
     chunk: encoder.finish().into_result().unwrap(),
   })
 }
 
-/// Single chunk for compressed data
+/// Single chunk for uncompressed data
 struct UncomprChunk {
   chunk: Vec<u8>,
 }

@@ -3,7 +3,7 @@
 
 use clap::ArgMatches;
 use log::debug;
-use rawler::analyze::{analyze_file, extract_raw_pixels, raw_as_pgm};
+use rawler::analyze::{analyze_file, extract_raw_pixels, raw_as_pgm, raw_pixels_digest};
 use rawler::analyze::{raw_as_ppm16, raw_to_srgb};
 use rawler::decoders::RawDecodeParams;
 use std::{
@@ -27,9 +27,17 @@ pub async fn analyze(options: &ArgMatches<'_>) -> anyhow::Result<()> {
       let json = serde_json::to_string_pretty(&analyze)?;
       println!("{}", json);
     }
+  } else if options.is_present("checksum") {
+    let digest = raw_pixels_digest(&PathBuf::from(in_file), RawDecodeParams::default()).unwrap();
+    println!("{}", hex::encode(&digest));
   } else if options.is_present("pixel") {
-    let (width, height, buf) = extract_raw_pixels(&PathBuf::from(in_file), RawDecodeParams::default()).unwrap();
-    dump_pgm(width, height, &buf)?;
+    let (width, height, cpp, buf) = extract_raw_pixels(&PathBuf::from(in_file), RawDecodeParams::default()).unwrap();
+    if cpp == 3 {
+      dump_ppm16(width, height, &buf)?;
+    } else {
+      dump_pgm(width, height, &buf)?;
+    }
+
   } else if options.is_present("srgb") {
     let (buf, dim) = raw_to_srgb(&PathBuf::from(in_file), RawDecodeParams::default()).unwrap();
     dump_ppm16(dim.w, dim.h, &buf)?;

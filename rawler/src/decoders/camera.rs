@@ -1,0 +1,181 @@
+use toml::Value;
+
+use crate::imgop::xyz::FlatColorMatrix;
+use crate::imgop::xyz::Illuminant;
+use crate::CFA;
+
+use std::collections::HashMap;
+use std::convert::TryInto;
+
+/// Contains sanitized information about the raw image's properties
+#[derive(Debug, Clone)]
+pub struct Camera {
+  pub make: String,
+  pub model: String,
+  pub mode: String,
+  pub clean_make: String,
+  pub clean_model: String,
+  pub filesize: usize,
+  pub raw_width: usize,
+  pub raw_height: usize,
+  //pub orientation: Orientation,
+  pub whitelevels: [u16; 4],
+  pub blacklevels: [u16; 4],
+  pub blackareah: Option<(usize, usize)>,
+  pub blackareav: Option<(usize, usize)>,
+  pub xyz_to_cam: [[f32; 3]; 4],
+  pub color_matrix: HashMap<Illuminant, FlatColorMatrix>,
+  pub cfa: CFA,
+  // Active area relative to sensor size
+  pub active_area: Option<[usize; 4]>,
+  // Recommended area relative to sensor size
+  pub crop_area: Option<[usize; 4]>,
+  pub bps: usize,
+  pub highres_width: usize,
+  pub hints: Vec<String>,
+  pub params: HashMap<String, Value>,
+}
+
+impl Camera {
+  pub fn find_hint(&self, hint: &str) -> bool {
+    self.hints.contains(&hint.to_string())
+  }
+
+  pub fn param_usize(&self, name: &str) -> Option<usize> {
+    self.params.get(name).and_then(|p| p.as_integer()).map(|i| i as usize)
+  }
+
+  pub fn param_i32(&self, name: &str) -> Option<i32> {
+    self.params.get(name).and_then(|p| p.as_integer()).map(|i| i as i32)
+  }
+
+  pub fn param_str(&self, name: &str) -> Option<&str> {
+    self.params.get(name).and_then(|p| p.as_str())
+  }
+
+  pub fn update_from_toml(&mut self, ct: &toml::value::Table) {
+    for (name, val) in ct {
+      match name.as_ref() {
+        n @ "make" => {
+          self.make = val.as_str().expect(&format!("{} must be a string", n)).to_string();
+        }
+        n @ "model" => {
+          self.model = val.as_str().expect(&format!("{} must be a string", n)).to_string();
+        }
+        n @ "mode" => {
+          self.mode = val.as_str().expect(&format!("{} must be a string", n)).to_string();
+        }
+        n @ "clean_make" => {
+          self.clean_make = val.as_str().expect(&format!("{} must be a string", n)).to_string();
+        }
+        n @ "clean_model" => {
+          self.clean_model = val.as_str().expect(&format!("{} must be a string", n)).to_string();
+        }
+        n @ "whitepoint" => {
+          let white = val.as_integer().expect(&format!("{} must be an integer", n)) as u16;
+          self.whitelevels = [white, white, white, white];
+        }
+        n @ "blackpoint" => {
+          let black = val.as_integer().expect(&format!("{} must be an integer", n)) as u16;
+          self.blacklevels = [black, black, black, black];
+        }
+        n @ "blackareah" => {
+          let vals = val.as_array().expect(&format!("{} must be an array", n));
+          self.blackareah = Some((vals[0].as_integer().unwrap() as usize, vals[1].as_integer().unwrap() as usize));
+        }
+        n @ "blackareav" => {
+          let vals = val.as_array().expect(&format!("{} must be an array", n));
+          self.blackareav = Some((vals[0].as_integer().unwrap() as usize, vals[1].as_integer().unwrap() as usize));
+        }
+        "color_matrix" => {
+          if let Some(color_matrix) = val.as_table() {
+            for (illu_str, matrix) in color_matrix.into_iter() {
+              let illu = illu_str.try_into().unwrap();
+              let xyz_to_cam = matrix.as_array().unwrap().into_iter().map(|a| a.as_float().unwrap() as f32).collect();
+              self.color_matrix.insert(illu, xyz_to_cam);
+            }
+          } else {
+            eprintln!("Invalid matrix spec for {}", self.clean_model);
+          }
+          assert!(self.color_matrix.len() > 0);
+        }
+        n @ "active_area" => {
+          let crop_vals = val.as_array().expect(&format!("{} must be an array", n));
+          let mut crop = [0, 0, 0, 0];
+          for (i, val) in crop_vals.into_iter().enumerate() {
+            crop[i] = val.as_integer().unwrap() as usize;
+          }
+          self.active_area = Some(crop);
+        }
+        n @ "crop_area" => {
+          let crop_vals = val.as_array().expect(&format!("{} must be an array", n));
+          let mut crop = [0, 0, 0, 0];
+          for (i, val) in crop_vals.into_iter().enumerate() {
+            crop[i] = val.as_integer().unwrap() as usize;
+          }
+          self.crop_area = Some(crop);
+        }
+        n @ "color_pattern" => {
+          self.cfa = CFA::new(&val.as_str().expect(&format!("{} must be a string", n)).to_string());
+        }
+        n @ "bps" => {
+          self.bps = val.as_integer().expect(&format!("{} must be an integer", n)) as usize;
+        }
+        n @ "filesize" => {
+          self.filesize = val.as_integer().expect(&format!("{} must be an integer", n)) as usize;
+        }
+        n @ "raw_width" => {
+          self.raw_width = val.as_integer().expect(&format!("{} must be an integer", n)) as usize;
+        }
+        n @ "raw_height" => {
+          self.raw_height = val.as_integer().expect(&format!("{} must be an integer", n)) as usize;
+        }
+        n @ "highres_width" => {
+          self.highres_width = val.as_integer().expect(&format!("{} must be an integer", n)) as usize;
+        }
+        n @ "hints" => {
+          self.hints = Vec::new();
+          for hint in val.as_array().expect(&format!("{} must be an array", n)) {
+            self.hints.push(hint.as_str().expect("hints must be a string").to_string());
+          }
+        }
+        n @ "params" => {
+          for (name, val) in val.as_table().expect(&format!("{} must be a table", n)) {
+            self.params.insert(name.clone(), val.clone());
+          }
+        }
+        "model_aliases" => {}
+        key @ _ => {
+          panic!("Unknown key: {}", key);
+        }
+      }
+    }
+  }
+
+  pub fn new() -> Camera {
+    Camera {
+      make: "".to_string(),
+      model: "".to_string(),
+      mode: "".to_string(),
+      clean_make: "".to_string(),
+      clean_model: "".to_string(),
+      filesize: 0,
+      raw_width: 0,
+      raw_height: 0,
+      whitelevels: [u16::MAX; 4],
+      blacklevels: [0; 4],
+      blackareah: None,
+      blackareav: None,
+      xyz_to_cam: [[0.0; 3]; 4],
+      color_matrix: HashMap::new(),
+      cfa: CFA::new(""),
+      active_area: None,
+      crop_area: None,
+      bps: 16,
+      highres_width: usize::max_value(),
+      hints: Vec::new(),
+      params: HashMap::new(),
+      //orientation: Orientation::Unknown,
+    }
+  }
+}

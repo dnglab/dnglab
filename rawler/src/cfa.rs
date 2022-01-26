@@ -18,7 +18,7 @@ use crate::formats::tiff_legacy::*;
 /// initialized and ready to be used in processing. The color_at() implementation is
 /// designed to be fast so it can be called inside the inner loop of demosaic or other
 /// color-aware algorithms that work on pre-demosaic data
-#[derive(Clone)]
+#[derive(Clone, Eq, PartialEq, PartialOrd, Ord)]
 pub struct CFA {
   /// CFA pattern as a String
   pub name: String,
@@ -100,6 +100,11 @@ impl CFA {
   /// from inner loops without performance issues.
   pub fn color_at(&self, row: usize, col: usize) -> usize {
     self.pattern[(row+48) % 48][(col+48) % 48]
+  }
+
+  /// Get a flat pattern
+  pub fn flat_pattern(&self) -> Vec<u8> {
+    self.pattern.iter().take(self.height).flat_map(|v| v.iter().take(self.width)).cloned().map(|v| v as u8).collect()
   }
 
   /// Shift the pattern left and/or down. This is useful when cropping the image to get
