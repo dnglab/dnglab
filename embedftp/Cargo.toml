@@ -17,4 +17,4 @@ glob = "0.3.0"
 log = "0.4"
 
 [dev-dependencies]
-ftp = "^2.2.1"
+ftp = "^3.0.1"
