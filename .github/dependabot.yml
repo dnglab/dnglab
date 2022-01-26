@@ -11,8 +11,17 @@ updates:
   - package-ecosystem: "cargo"
     directory: "/bin/dnglab"
     labels:
-      - "improvement"
+      - "dependency"
     assignees:
       - "cytrinox"
     schedule:
       interval: "daily"
+  - package-ecosystem: "cargo"
+    directory: "/embedftp"
+    labels:
+      - "dependency"
+    assignees:
+      - "cytrinox"
+    schedule:
+      interval: "daily"
+
