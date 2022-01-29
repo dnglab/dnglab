@@ -89,6 +89,7 @@ impl Job for Raw2DngJob {
     match handle.await {
       Ok(Ok(mut stat)) => {
         stat.duration = now.elapsed().as_secs_f32();
+        eprintln!("Writing DNG output file: {}", stat.job.output.display());
         stat
       }
       Ok(Err(e)) => JobResult {
