@@ -9,7 +9,7 @@ use crate::imgop::xyz::SRGB_TO_XYZ_D65;
 use crate::imgop::{crop, Rect};
 use super::sensor::bayer::BayerPattern;
 use super::xyz::Illuminant;
-use super::{Dim2, Result};
+use super::{Dim2, Result, Point};
 
 
 /// Conversion matrix for a specific illuminant
@@ -70,7 +70,7 @@ pub fn develop_raw_srgb(pixels: &Vec<u16>, params: &DevelopParams) -> Result<(Ve
   let rgb2cam = normalize(multiply(&xyz2cam, &SRGB_TO_XYZ_D65));
   let cam2rgb = pseudo_inverse(rgb2cam);
 
-  let active_area = params.active_area.unwrap();
+  let active_area = params.active_area.unwrap_or(Rect::new_with_points(Point::zero(), Point::new(params.width, params.height)));
 
   //eprintln!("cam2rgb: {:?}", cam2rgb);
   let cropped_pixels = crop(&pixels, Dim2::new(params.width, params.height), active_area);
