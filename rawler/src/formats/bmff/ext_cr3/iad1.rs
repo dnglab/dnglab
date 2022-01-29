@@ -28,14 +28,14 @@ pub enum Iad1Type {
 
 #[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize)]
 pub struct Iad1Small {
-  pub unknown1: u16,
-  pub unknown2: u16,
-  pub unknown3: u16,
-  pub unknown4: u16,
-  pub unknown5: u16,
-  pub unknown6: u16,
-  pub unknown7: u16,
-  pub unknown8: u16,
+  pub crop_left_offset: u16,
+  pub crop_top_offset: u16,
+  pub crop_right_offset: u16,
+  pub crop_bottom_offset: u16,
+  pub sensor_x_start: u16,
+  pub sensor_y_start: u16,
+  pub sensor_x_end: u16,
+  pub sensor_y_end: u16,
 }
 
 #[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize)]
@@ -75,14 +75,14 @@ impl<R: Read + Seek> ReadBox<&mut R> for Iad1Box {
 
     let iad1_type = match image_type {
       0 => Iad1Type::Small(Iad1Small {
-        unknown1: reader.read_u16::<BigEndian>()?,
-        unknown2: reader.read_u16::<BigEndian>()?,
-        unknown3: reader.read_u16::<BigEndian>()?,
-        unknown4: reader.read_u16::<BigEndian>()?,
-        unknown5: reader.read_u16::<BigEndian>()?,
-        unknown6: reader.read_u16::<BigEndian>()?,
-        unknown7: reader.read_u16::<BigEndian>()?,
-        unknown8: reader.read_u16::<BigEndian>()?,
+        crop_left_offset: reader.read_u16::<BigEndian>()?,
+        crop_top_offset: reader.read_u16::<BigEndian>()?,
+        crop_right_offset: reader.read_u16::<BigEndian>()?,
+        crop_bottom_offset: reader.read_u16::<BigEndian>()?,
+        sensor_x_start: reader.read_u16::<BigEndian>()?,
+        sensor_y_start: reader.read_u16::<BigEndian>()?,
+        sensor_x_end: reader.read_u16::<BigEndian>()?,
+        sensor_y_end: reader.read_u16::<BigEndian>()?,
       }),
       2 => Iad1Type::Big(Iad1Big {
         crop_left_offset: reader.read_u16::<BigEndian>()?,

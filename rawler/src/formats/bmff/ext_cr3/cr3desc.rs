@@ -10,7 +10,7 @@ use super::{
   cmt4::Cmt4Box,
   cncv::CncvBox,
   ctbo::CtboBox,
-  thmb::ThmbBox,
+  thmb::ThmbBox, cnop::CnopBox,
 };
 use crate::formats::bmff::{free::FreeBox, skip::SkipBox};
 use serde::{Serialize, Deserialize};
@@ -73,6 +73,9 @@ impl<R: Read + Seek> ReadBox<&mut R> for Cr3DescBox {
         }
         Cmt4Box::TYP => {
           cmt4 = Some(Cmt4Box::read_box(&mut reader, header)?);
+        }
+        CnopBox::TYP => {
+          let _ignore = Some(CnopBox::read_box(&mut reader, header)?);
         }
         ThmbBox::TYP => {
           thmb = Some(ThmbBox::read_box(&mut reader, header)?);

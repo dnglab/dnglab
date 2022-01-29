@@ -9,11 +9,12 @@ use std::io::SeekFrom;
 
 use crate::bits::Endian;
 use crate::decompressors::crx::decompress_crx_image;
+use crate::formats::bmff::ext_cr3::cmp1::Cmp1Box;
 use crate::formats::bmff::ext_cr3::cr3desc::Cr3DescBox;
-use crate::formats::bmff::ext_cr3::iad1::Iad1Type;
+use crate::formats::bmff::ext_cr3::iad1::{Iad1Box, Iad1Type};
 use crate::formats::bmff::FileBox;
 use crate::formats::tiff::reader::TiffReader;
-use crate::formats::tiff::{Entry, Rational, GenericTiffReader, Value};
+use crate::formats::tiff::{Entry, GenericTiffReader, Rational, Value};
 use crate::imgop::{Point, Rect};
 use crate::lens::{LensDescription, LensResolver};
 use crate::tags::{DngTag, TiffTagEnum};
@@ -72,6 +73,20 @@ impl<'a> Cr3Decoder<'a> {
     };
     decoder.decode_metadata(_rawfile)?;
     Ok(decoder)
+  }
+
+  /// Get IAD1 box for specific trak
+  fn iad1_box(&self, trak_idx: usize) -> Option<&Iad1Box> {
+    let trak = &self.bmff.filebox.moov.traks[trak_idx];
+    let craw = trak.mdia.minf.stbl.stsd.craw.as_ref();
+    craw.and_then(|craw| craw.cdi1.as_ref()).and_then(|cdi1| Some(&cdi1.iad1))
+  }
+
+  /// Get CMP1 box for specific trak
+  fn cmp1_box(&self, trak_idx: usize) -> Option<&Cmp1Box> {
+    let trak = &self.bmff.filebox.moov.traks[trak_idx];
+    let craw = trak.mdia.minf.stbl.stsd.craw.as_ref();
+    craw.and_then(|craw| craw.cmp1.as_ref())
   }
 }
 
@@ -372,7 +387,11 @@ impl<'a> Decoder for Cr3Decoder<'a> {
     let raw_trak_id = std::env::var("RAWLER_CRX_RAW_TRAK")
       .ok()
       .map(|id| id.parse::<usize>().expect("RAWLER_CRX_RAW_TRAK must by of type usize"))
-      .unwrap_or(2);
+      .unwrap_or(
+        self
+          .get_trak_index(Cr3ImageType::CrxBix)
+          .ok_or(RawlerError::General("Unable to find trak index".into()))?,
+      );
     let moov_trak = self
       .bmff
       .filebox
@@ -380,8 +399,7 @@ impl<'a> Decoder for Cr3Decoder<'a> {
       .traks
       .get(raw_trak_id)
       .ok_or(format!("Unable to get MOOV trak {}", raw_trak_id))?;
-    let co64 = moov_trak.mdia.minf.stbl.co64.as_ref().ok_or(format!("No co64 box found"))?;
-    Ok(co64.entries.len())
+    Ok(moov_trak.mdia.minf.stbl.stsz.sample_count as usize)
   }
 
   fn raw_image(&self, file: &mut RawFile, params: RawDecodeParams, dummy: bool) -> Result<RawImage> {
@@ -390,8 +408,19 @@ impl<'a> Decoder for Cr3Decoder<'a> {
     let raw_trak_id = std::env::var("RAWLER_CRX_RAW_TRAK")
       .ok()
       .map(|id| id.parse::<usize>().expect("RAWLER_CRX_RAW_TRAK must by of type usize"))
-      .unwrap_or(2);
-    let raw_image_id = params.image_index;
+      .unwrap_or(
+        self
+          .get_trak_index(Cr3ImageType::CrxBix)
+          .ok_or(RawlerError::General("Unable to find trak index".into()))?,
+      );
+    let sample_idx = params.image_index;
+    if sample_idx >= self.raw_image_count()? {
+      return Err(RawlerError::General(format!(
+        "Raw image index {} out of range ({})",
+        sample_idx,
+        self.raw_image_count()?
+      )));
+    }
 
     if let Some(cmt1) = &self.cmt1 {
       let make = cmt1.get_entry(ExifTag::Make).unwrap().value.as_string().unwrap();
@@ -406,14 +435,8 @@ impl<'a> Decoder for Cr3Decoder<'a> {
         .traks
         .get(raw_trak_id)
         .ok_or(format!("Unable to get MOOV trak {}", raw_trak_id))?;
-      let co64 = moov_trak.mdia.minf.stbl.co64.as_ref().ok_or(format!("No co64 box found"))?;
-      let stsz = &moov_trak.mdia.minf.stbl.stsz;
 
-      let offset = *co64.entries.get(raw_image_id).ok_or(format!("image index {} is out of range", raw_image_id))? as usize;
-      let size = *stsz
-        .sample_sizes
-        .get(raw_image_id)
-        .ok_or(format!("image index {} is out of range", raw_image_id))? as usize;
+      let (offset, size) = moov_trak.mdia.minf.stbl.get_sample_offset(sample_idx as u32 + 1).unwrap();
       debug!("raw mdat offset: {}", offset);
       debug!("raw mdat size: {}", size);
 
@@ -421,18 +444,9 @@ impl<'a> Decoder for Cr3Decoder<'a> {
         .get_range(offset as u64, size as u64)
         .map_err(|e| RawlerError::General(format!("I/O error while reading CR3 raw image: {:?}", e)))?;
 
-      let cmp1 = self.bmff.filebox.moov.traks[raw_trak_id]
-        .mdia
-        .minf
-        .stbl
-        .stsd
-        .craw
-        .as_ref()
-        .unwrap()
-        .cmp1
-        .as_ref()
-        .unwrap();
-
+      let cmp1 = self
+        .cmp1_box(raw_trak_id)
+        .ok_or(RawlerError::General(format!("CMP1 box not found for trak {}", raw_trak_id)))?;
       debug!("cmp1 mdat hdr size: {}", cmp1.mdat_hdr_size);
 
       let image = if !dummy {
@@ -441,78 +455,70 @@ impl<'a> Decoder for Cr3Decoder<'a> {
         Vec::new()
       };
 
-      let wb = self.wb.unwrap();
-      let blacklevel = self.blacklevels.as_ref().unwrap();
+      let wb = self.wb.unwrap_or([NAN, NAN, NAN, NAN]);
       let cpp = 1;
+      let whitelevel = self.whitelevel.unwrap_or(u16::MAX);
 
       let mut img = RawImage::new(camera, cmp1.f_width as usize, cmp1.f_height as usize, cpp, wb, image, dummy);
 
-      img.blacklevels = *blacklevel;
-      img.whitelevels = [
-        *self.whitelevel.as_ref().unwrap(),
-        *self.whitelevel.as_ref().unwrap(),
-        *self.whitelevel.as_ref().unwrap(),
-        *self.whitelevel.as_ref().unwrap(),
-      ];
+      img.blacklevels = self.blacklevels.unwrap_or([0, 0, 0, 0]);
+      img.whitelevels = [whitelevel, whitelevel, whitelevel, whitelevel];
 
-      let iad1 = &self.bmff.filebox.moov.traks[raw_trak_id]
-        .mdia
-        .minf
-        .stbl
-        .stsd
-        .craw
-        .as_ref()
-        .unwrap()
-        .cdi1
-        .as_ref()
-        .unwrap()
-        .iad1;
+      // IAD1 box contains sensor information
+      // We use the sensor crop from IAD1 as recommended image crop.
+      // The same crop is used as ActiveArea, because black areas in IAD1 are not
+      // correct (they differs like 4-6 pixels from real values).
+      match self.iad1_box(raw_trak_id) {
+        Some(iad1) => {
+          match &iad1.iad1_type {
+            // IAD1 (small, used for CRM movie files)
+            Iad1Type::Small(small) => {
+              img.crop_area = Some(Rect::new_with_points(
+                Point::new(small.crop_left_offset as usize, small.crop_top_offset as usize),
+                Point::new((small.crop_right_offset + 1) as usize, (small.crop_bottom_offset + 1) as usize),
+              ));
+              img.active_area = img.crop_area;
+            }
+            // IAD1 (big, used for full size raws)
+            Iad1Type::Big(big) => {
+              img.crop_area = Some(Rect::new_with_points(
+                Point::new(big.crop_left_offset as usize, big.crop_top_offset as usize),
+                Point::new((big.crop_right_offset + 1) as usize, (big.crop_bottom_offset + 1) as usize),
+              ));
 
-      if let Iad1Type::Big(iad1_borders) = &iad1.iad1_type {
-        let rect = Rect::new_with_points(
-          Point::new(iad1_borders.crop_left_offset as usize, iad1_borders.crop_top_offset as usize),
-          Point::new((iad1_borders.crop_right_offset + 1) as usize, (iad1_borders.crop_bottom_offset + 1) as usize),
-        );
-        img.crop_area = Some(rect);
+              // Won't work!
+              let _rect = Rect::new_with_points(
+                Point::new(big.active_area_left_offset as usize, big.active_area_top_offset as usize),
+                Point::new((big.active_area_right_offset - 1) as usize, (big.active_area_bottom_offset - 1) as usize),
+              );
+              //img.active_area = Some(rect);
+              img.active_area = img.crop_area;
 
-        let _rect = Rect::new_with_points(
-          Point::new(iad1_borders.active_area_left_offset as usize, iad1_borders.active_area_top_offset as usize),
-          Point::new(
-            (iad1_borders.active_area_right_offset - 1) as usize,
-            (iad1_borders.active_area_bottom_offset - 1) as usize,
-          ),
-        );
-        //img.active_area = Some(rect);
-        img.active_area = img.crop_area;
-
-        let blackarea_h = Rect::new_with_points(
-          Point::new(iad1_borders.lob_left_offset as usize, iad1_borders.lob_top_offset as usize),
-          Point::new((iad1_borders.lob_right_offset - 1) as usize, (iad1_borders.lob_bottom_offset - 1) as usize),
-        );
-        if !blackarea_h.is_empty() {
-          //img.blackareas.push(blackarea_h);
+              let blackarea_h = Rect::new_with_points(
+                Point::new(big.lob_left_offset as usize, big.lob_top_offset as usize),
+                Point::new((big.lob_right_offset - 1) as usize, (big.lob_bottom_offset - 1) as usize),
+              );
+              if !blackarea_h.is_empty() {
+                //img.blackareas.push(blackarea_h);
+              }
+              let blackarea_v = Rect::new_with_points(
+                Point::new(big.tob_left_offset as usize, big.tob_top_offset as usize),
+                Point::new((big.tob_right_offset - 1) as usize, (big.tob_bottom_offset - 1) as usize),
+              );
+              if !blackarea_v.is_empty() {
+                //img.blackareas.push(blackarea_v);
+              }
+            }
+          }
         }
-        let blackarea_v = Rect::new_with_points(
-          Point::new(iad1_borders.tob_left_offset as usize, iad1_borders.tob_top_offset as usize),
-          Point::new((iad1_borders.tob_right_offset - 1) as usize, (iad1_borders.tob_bottom_offset - 1) as usize),
-        );
-        if !blackarea_v.is_empty() {
-          //img.blackareas.push(blackarea_v);
+        None => {
+          warn!("No IAD1 box found for sensor data");
         }
-
-        debug!("Canon active area: {:?}", img.active_area);
-        debug!("Canon crop area: {:?}", img.crop_area);
-        debug!("Black areas: {:?}", img.blackareas);
-
-        /*
-        img.crops = [
-          iad1_borders.crop_top_offset as usize,                            // top
-          (iad1.img_width - iad1_borders.crop_right_offset - 1) as usize,   // right
-          (iad1.img_height - iad1_borders.crop_bottom_offset - 1) as usize, // bottom
-          iad1_borders.crop_left_offset as usize,                           // left
-        ];
-         */
       }
+
+      debug!("Canon active area: {:?}", img.active_area);
+      debug!("Canon crop area: {:?}", img.crop_area);
+      debug!("Black areas: {:?}", img.blackareas);
 
       return Ok(img);
     } else {

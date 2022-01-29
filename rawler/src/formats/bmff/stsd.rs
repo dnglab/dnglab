@@ -48,11 +48,14 @@ impl<R: Read + Seek> ReadBox<&mut R> for StsdBox {
 
       match header.typ {
         CrawBox::TYP => {
+          assert_eq!(craw, None, "Found second CRAW box");
           craw = Some(CrawBox::read_box(&mut reader, header)?);
         }
         CtmdBox::TYP => {
+          assert_eq!(ctmd, None, "Found second CTMD box");
           ctmd = Some(CtmdBox::read_box(&mut reader, header)?);
         }
+        // TODO: Multiple CRAW boxes can occour in CRM files?! BMFF Spec says the SampleBox is an array.
 
         _ => {
           debug!("Vendor box found in stsd: {:?}", header.typ);
