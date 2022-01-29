@@ -4,7 +4,7 @@
 
 use super::{read_box_header_ext, BoxHeader, FourCC, ReadBox, Result};
 use byteorder::{BigEndian, ReadBytesExt};
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 use std::io::{Read, Seek, SeekFrom};
 
 #[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize)]
@@ -25,6 +25,16 @@ pub struct StscEntry {
 
 impl StscBox {
   pub const TYP: FourCC = FourCC::with(['s', 't', 's', 'c']);
+
+  pub fn get_entry_for_sample(&self, sample: u32) -> &StscEntry {
+    assert!(sample > 0, "Sample numbering starts with 1");
+    assert_eq!(self.entries.is_empty(), false, "stsc box must contains at least one entry");
+    assert_eq!(self.entries[0].first_sample, 1, "First entry must start with first sample");
+    match self.entries.binary_search_by(|entry| entry.first_sample.cmp(&sample)) {
+      Ok(i) => &self.entries[i],
+      Err(i) => &self.entries[i - 1],
+    }
+  }
 }
 
 impl<R: Read + Seek> ReadBox<&mut R> for StscBox {
@@ -33,27 +43,31 @@ impl<R: Read + Seek> ReadBox<&mut R> for StscBox {
 
     let entry_count = reader.read_u32::<BigEndian>()?;
     let mut entries = Vec::with_capacity(entry_count as usize);
-    for _ in 0..entry_count {
-      let entry = StscEntry {
+
+    // Reader for a single stsc entry
+    let mut read_entry = || -> Result<StscEntry> {
+      Ok(StscEntry {
         first_chunk: reader.read_u32::<BigEndian>()?,
         samples_per_chunk: reader.read_u32::<BigEndian>()?,
         sample_description_index: reader.read_u32::<BigEndian>()?,
         first_sample: 0,
-      };
-      entries.push(entry);
-    }
+      })
+    };
 
-    let mut sample_id = 1;
-    for i in 0..entry_count {
-      let (first_chunk, samples_per_chunk) = {
-        let mut entry = entries.get_mut(i as usize).unwrap();
-        entry.first_sample = sample_id;
-        (entry.first_chunk, entry.samples_per_chunk)
-      };
-      if i < entry_count - 1 {
-        let next_entry = entries.get(i as usize + 1).unwrap();
-        sample_id += (next_entry.first_chunk - first_chunk) * samples_per_chunk;
+    if entry_count > 0 {
+      // Read first entry and hold it back
+      let mut holdback = read_entry()?;
+      holdback.first_sample = 1;
+
+      for _ in 1..entry_count {
+        let mut entry = read_entry()?;
+        // Now we know the chunk count to calc the amount of samples in holdback
+        entry.first_sample = holdback.first_sample + ((entry.first_chunk - holdback.first_sample) * holdback.samples_per_chunk);
+        entries.push(holdback);
+        holdback = entry;
       }
+      // Finalize entry list
+      entries.push(holdback);
     }
 
     reader.seek(SeekFrom::Start(header.end_offset()))?;

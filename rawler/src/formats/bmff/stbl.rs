@@ -4,7 +4,7 @@
 
 use super::{co64::Co64Box, stsc::StscBox, stsd::StsdBox, stsz::StszBox, stts::SttsBox, vendor::VendorBox, BmffError, BoxHeader, FourCC, ReadBox, Result};
 use log::debug;
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 use std::io::{Read, Seek, SeekFrom};
 
 #[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize)]
@@ -21,6 +21,27 @@ pub struct StblBox {
 
 impl StblBox {
   pub const TYP: FourCC = FourCC::with(['s', 't', 'b', 'l']);
+
+  pub fn get_sample_offset(&self, sample: u32) -> Option<(usize, usize)> {
+    if let Some(co64) = self.co64.as_ref() {
+      assert!(sample > 0, "sample number must be greater than 0");
+      let desc = self.stsc.get_entry_for_sample(sample);
+      let chunk = desc.first_chunk + (((sample - 1) - (desc.first_sample - 1)) / desc.samples_per_chunk);
+      let chunk_sample_idx = (sample - 1) % desc.samples_per_chunk;
+
+      let chunk_offset = co64.entries[chunk as usize - 1];
+
+      let mut sample_offset = 0;
+      for i in 0..chunk_sample_idx {
+        sample_offset += self.stsz.sample_sizes[((sample - 1) - chunk_sample_idx + i) as usize];
+      }
+      let sample_size = self.stsz.sample_sizes[sample as usize - 1];
+
+      Some((chunk_offset as usize + sample_offset as usize, sample_size as usize))
+    } else {
+      None
+    }
+  }
 }
 
 impl<R: Read + Seek> ReadBox<&mut R> for StblBox {
