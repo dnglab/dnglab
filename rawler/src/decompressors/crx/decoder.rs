@@ -672,7 +672,7 @@ fn convert_plane_line(codec: &CodecParams, l0: &[i32], l1: &[i32], l2: &[i32], l
 
   match codec.enc_type {
     0 => {
-      let median: i32 = 1 << (codec.n_bits - 1);
+      let median: i32 = 1 << (codec.median_bits - 1);
       let max_val: i32 = (1 << codec.n_bits) - 1;
 
       izip!(l0, l1, l2, l3).enumerate().for_each(|(i, (v0, v1, v2, v3))| {
@@ -683,7 +683,7 @@ fn convert_plane_line(codec: &CodecParams, l0: &[i32], l1: &[i32], l2: &[i32], l
       });
     }
     3 => {
-      let median: i32 = 1 << (codec.n_bits - 1) << 10;
+      let median: i32 = 1 << (codec.median_bits - 1) << 10;
       let max_val: i32 = (1 << codec.n_bits) - 1;
 
       izip!(l0, l1, l2, l3).enumerate().for_each(|(i, (v0, v1, v2, v3))| {
