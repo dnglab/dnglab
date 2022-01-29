@@ -515,7 +515,8 @@ format:
                         has_tile_cols: 0
                         has_tile_rows: 0
                         mdat_hdr_size: 544
-                        unknown2: 0
+                        ext_header: 0
+                        median_bits: 14
                       cdi1:
                         header:
                           size: 52
@@ -542,14 +543,14 @@ format:
                           unknown3: 0
                           iad1_type:
                             Small:
-                              unknown1: 3
-                              unknown2: 0
-                              unknown3: 1442
-                              unknown4: 1079
-                              unknown5: 0
-                              unknown6: 0
-                              unknown7: 1443
-                              unknown8: 1079
+                              crop_left_offset: 3
+                              crop_top_offset: 0
+                              crop_right_offset: 1442
+                              crop_bottom_offset: 1079
+                              sensor_x_start: 0
+                              sensor_y_start: 0
+                              sensor_x_end: 1443
+                              sensor_y_end: 1079
                     ctmd: ~
                     vendor: []
                   stts:
@@ -811,7 +812,8 @@ format:
                         has_tile_cols: 1
                         has_tile_rows: 0
                         mdat_hdr_size: 1080
-                        unknown2: 0
+                        ext_header: 0
+                        median_bits: 14
                       cdi1:
                         header:
                           size: 68
