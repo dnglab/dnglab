@@ -42,6 +42,16 @@ pub struct Cr3Decoder<'a> {
   lens_description: Option<&'static LensDescription>,
 }
 
+#[derive(Clone, Copy, Debug)]
+#[allow(dead_code)]
+enum Cr3ImageType {
+  CrxBix = 0,
+  CrxSmall = 1,
+  PreviewBig = 2,
+  Ctmd = 3,
+  CrxDual = 4,
+}
+
 impl<'a> Cr3Decoder<'a> {
   pub fn new(_rawfile: &mut RawFile, bmff: Bmff, rawloader: &'a RawLoader) -> Result<Cr3Decoder<'a>> {
     let mut decoder = Cr3Decoder {
@@ -549,6 +559,17 @@ impl<'a> Cr3Decoder<'a> {
     }
 
     Ok(LegacyTiffIFD::new(buf, offset + off, base_offset, 0, chain_level + 1, endian, &vec![])?)
+  }
+
+  fn get_trak_index(&self, image_type: Cr3ImageType) -> Option<usize> {
+    if let Some(cr3desc) = &self.bmff.filebox.moov.cr3desc {
+      cr3desc.cctp.ccdts.iter().filter(|ccdt| ccdt.image_type == image_type as u64).next().map(|rec| {
+        assert!(rec.trak_index > 0);
+        (rec.trak_index - 1) as usize
+      })
+    } else {
+      None
+    }
   }
 }
 
