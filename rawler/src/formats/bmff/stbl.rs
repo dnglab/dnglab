@@ -33,9 +33,9 @@ impl StblBox {
 
       let mut sample_offset = 0;
       for i in 0..chunk_sample_idx {
-        sample_offset += self.stsz.sample_sizes[((sample - 1) - chunk_sample_idx + i) as usize];
+        sample_offset += self.stsz.sample_size(sample - chunk_sample_idx + i);
       }
-      let sample_size = self.stsz.sample_sizes[sample as usize - 1];
+      let sample_size = self.stsz.sample_size(sample);
 
       Some((chunk_offset as usize + sample_offset as usize, sample_size as usize))
     } else {
