@@ -101,7 +101,7 @@ impl<'a> Decoder for Cr2Decoder<'a> {
     FormatDump::Cr2(Cr2Format { tiff: self.tiff.clone() })
   }
 
-  fn raw_image(&self, file: &mut RawFile, _params: RawDecodeParams, dummy: bool) -> Result<RawImage> {
+  fn raw_image(&mut self, file: &mut RawFile, _params: RawDecodeParams, dummy: bool) -> Result<RawImage> {
     /*
     for (i, ifd) in self.tiff.chains().iter().enumerate() {
       eprintln!("IFD {}", i);

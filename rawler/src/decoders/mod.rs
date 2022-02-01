@@ -107,7 +107,7 @@ pub struct RawDecodeParams {
 }
 
 pub trait Decoder: Send {
-  fn raw_image(&self, file: &mut RawFile, params: RawDecodeParams, dummy: bool) -> Result<RawImage>;
+  fn raw_image(&mut self, file: &mut RawFile, params: RawDecodeParams, dummy: bool) -> Result<RawImage>;
 
   fn raw_image_count(&self) -> Result<usize> {
     Ok(1)
@@ -548,14 +548,7 @@ impl RawLoader {
   fn check_supported_with_mode(&self, ifd0: &IFD, mode: &str) -> Result<Camera> {
     let make = fetch_tag_new!(ifd0, LegacyTiffRootTag::Make).get_string()?;
     let model = fetch_tag_new!(ifd0, LegacyTiffRootTag::Model).get_string()?;
-
-    // Get a default instance to modify
-    let camera = self.check_supported_with_everything(make, model, mode)?;
-
-    // Lookup the orientation of the image for later image rotation
-    //camera.orientation = Orientation::from_tiff(tiff);
-
-    Ok(camera)
+    self.check_supported_with_everything(make, model, mode)
   }
 
   #[allow(dead_code)]
@@ -564,7 +557,7 @@ impl RawLoader {
   }
 
   fn decode_unsafe<'b>(&'b self, rawfile: &mut RawFile, params: RawDecodeParams, dummy: bool) -> Result<RawImage> {
-    let decoder = self.get_decoder(rawfile)?;
+    let mut decoder = self.get_decoder(rawfile)?;
     decoder.raw_image(rawfile, params, dummy)
   }
 
