@@ -97,6 +97,7 @@ pub struct CodecParams {
   subband_count: u8,
   levels: usize,
   /// Bit depth of image
+  #[allow(dead_code)]
   n_bits: u8,
   /// Bit depth for median (enc_type == 3, otherwise it is same as n_bits)
   median_bits: u8,
