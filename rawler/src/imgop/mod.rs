@@ -87,10 +87,6 @@ pub fn clip(p: f32, min: f32, max: f32) -> f32 {
   }
 }
 
-/// Clip a value into the range 0.0 - 1.0
-pub fn clip01(p: f32) -> f32 {
-  clip(p, 0.0, 1.0)
-}
 
 /// A simple x/y point
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
