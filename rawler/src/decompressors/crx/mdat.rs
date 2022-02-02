@@ -204,7 +204,7 @@ pub struct Subband {
   /// Flags like partial support or subband size correction value
   pub flags: u32,
   /// Q step base, used for inverse quantization (band != LL)
-  pub q_step_base: u32,
+  pub q_step_base: i32,
   // Q step multiplicator, used for inverse quantization (band != LL)
   pub q_step_multi: u16,
   // --- Calculated fields
@@ -280,7 +280,7 @@ impl Subband {
 
         let flags = hdr.read_u16::<BigEndian>()? as u32;
         let q_step_multi = hdr.read_u16::<BigEndian>()?;
-        let q_step_base = hdr.read_u32::<BigEndian>()?;
+        let q_step_base = hdr.read_i32::<BigEndian>()?;
         let unused_bytes = hdr.read_u16::<BigEndian>()? as u32;
         let end_marker = hdr.read_u16::<BigEndian>()?;
         assert!(end_marker == 0);

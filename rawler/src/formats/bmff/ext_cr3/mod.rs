@@ -10,6 +10,7 @@ pub mod cmt2;
 pub mod cmt3;
 pub mod cmt4;
 pub mod cncv;
+pub mod cnop;
 pub mod cr3desc; // TODO rename to cr3box
 pub mod cr3xpacket;
 pub mod craw;

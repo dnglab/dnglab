@@ -5,63 +5,152 @@ use image::DynamicImage;
 use log::{debug, warn};
 use std::convert::{TryFrom, TryInto};
 use std::f32::NAN;
-use std::io::SeekFrom;
+use std::fmt::Debug;
 
 use crate::bits::Endian;
 use crate::decompressors::crx::decompress_crx_image;
+use crate::envparams::{rawler_crx_raw_trak, rawler_ignore_previews};
+use crate::formats::bmff::ext_cr3::cmp1::Cmp1Box;
 use crate::formats::bmff::ext_cr3::cr3desc::Cr3DescBox;
-use crate::formats::bmff::ext_cr3::iad1::Iad1Type;
+use crate::formats::bmff::ext_cr3::iad1::{Iad1Box, Iad1Type};
+use crate::formats::bmff::trak::TrakBox;
 use crate::formats::bmff::FileBox;
 use crate::formats::tiff::reader::TiffReader;
-use crate::formats::tiff::{Entry, Rational, GenericTiffReader, Value};
+use crate::formats::tiff::{Entry, GenericTiffReader, Rational, Value};
 use crate::imgop::{Point, Rect};
 use crate::lens::{LensDescription, LensResolver};
 use crate::tags::{DngTag, TiffTagEnum};
 use crate::{decoders::*, RawFile};
 use crate::{pumps::ByteStream, RawImage};
 
+/// Decoder for CR3 and CRM files
+#[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub struct Cr3Decoder<'a> {
-  //filebuf:Arc<Buffer>,
+  camera: Camera,
   rawloader: &'a RawLoader,
-  //tiff: TiffIFD<'a>,
   bmff: Bmff,
-  #[allow(dead_code)]
   exif: Option<GenericTiffReader>,
-  #[allow(dead_code)]
   makernotes: Option<GenericTiffReader>,
   wb: Option<[f32; 4]>,
   blacklevels: Option<[u16; 4]>,
   whitelevel: Option<u16>,
-  cmt1: Option<GenericTiffReader>,
-  cmt2: Option<GenericTiffReader>,
-  cmt3: Option<GenericTiffReader>,
-  cmt4: Option<GenericTiffReader>,
+  // Basic EXIF information
+  cmt1: GenericTiffReader,
+  // EXIF
+  cmt2: GenericTiffReader,
+  // Makernotes
+  cmt3: GenericTiffReader,
+  // GPS
+  cmt4: GenericTiffReader,
+  ctmd_exposure: Option<CtmdExposureInfo>,
+  ctmd_rec7_exif: Option<GenericTiffReader>,
+  ctmd_rec7_makernotes: Option<GenericTiffReader>,
+  // CTMD Makernotes: COLORDATA
+  ctmd_rec8: Option<GenericTiffReader>,
+  ctmd_rec9: Option<GenericTiffReader>,
   xpacket: Option<Vec<u8>>,
   image_unique_id: Option<[u8; 16]>,
   lens_description: Option<&'static LensDescription>,
 }
 
+#[allow(dead_code)]
+const CR3_CTMD_BLOCK_EXIFIFD: u16 = 0x8769;
+const CR3_CTMD_BLOCK_MAKERNOTES: u16 = 0x927c;
+
+/// Type values fro CCTP records
+#[derive(Clone, Copy, Debug)]
+#[allow(dead_code)]
+enum Cr3ImageType {
+  CrxBix = 0,
+  CrxSmall = 1,
+  PreviewBig = 2,
+  Ctmd = 3,
+  CrxDual = 4,
+}
+
 impl<'a> Cr3Decoder<'a> {
+  /// Construct new CR3 or CRM deocder
   pub fn new(_rawfile: &mut RawFile, bmff: Bmff, rawloader: &'a RawLoader) -> Result<Cr3Decoder<'a>> {
-    let mut decoder = Cr3Decoder {
-      bmff,
-      rawloader: rawloader,
-      exif: None,
-      makernotes: None,
-      wb: None,
-      blacklevels: None,
-      whitelevel: None,
-      cmt1: None,
-      cmt2: None,
-      cmt3: None,
-      cmt4: None,
-      xpacket: None,
-      image_unique_id: None,
-      lens_description: None,
-    };
-    decoder.decode_metadata(_rawfile)?;
-    Ok(decoder)
+    if let Some(Cr3DescBox { cmt1, cmt2, cmt3, cmt4, .. }) = bmff.filebox.moov.cr3desc.as_ref() {
+      let _mode = Self::get_mode(cmt3.tiff.root_ifd())?;
+      let mode = ""; // TODO add modes
+      let camera = rawloader.check_supported_with_mode(cmt1.tiff.root_ifd(), mode)?;
+      let decoder = Cr3Decoder {
+        camera,
+        rawloader,
+        exif: None,
+        makernotes: None,
+        wb: None,
+        blacklevels: None,
+        whitelevel: None,
+        cmt1: cmt1.tiff.clone(),
+        cmt2: cmt2.tiff.clone(),
+        cmt3: cmt3.tiff.clone(),
+        cmt4: cmt4.tiff.clone(),
+        xpacket: None,
+        image_unique_id: None,
+        lens_description: None,
+        ctmd_rec7_exif: None,
+        ctmd_rec7_makernotes: None,
+        ctmd_rec8: None,
+        ctmd_rec9: None,
+        ctmd_exposure: None,
+        bmff,
+      };
+      return Ok(decoder);
+    } else {
+      return Err(RawlerError::Unsupported(format!("It's not a CR3 file: CMT boxes not found.")));
+    }
+  }
+
+  // Search for quality tag inside makernotes and derive
+  // our mode string for configuration.
+  fn get_mode(makernotes: &IFD) -> Result<&str> {
+    Ok(if let Some(entry) = makernotes.get_entry(0x0001) {
+      match entry.get_u16(3)? {
+        Some(4) => "raw",
+        Some(7) => "craw",
+        Some(130) => "crm",
+        Some(131) => "crm",
+        _ => "undefined",
+      }
+    } else {
+      "undefined"
+    })
+  }
+
+  /// Get trak from moov box
+  fn moov_trak(&self, trak_id: usize) -> Option<&TrakBox> {
+    self.bmff.filebox.moov.traks.get(trak_id)
+  }
+
+  /// Get IAD1 box for specific trak
+  fn iad1_box(&self, trak_idx: usize) -> Option<&Iad1Box> {
+    let trak = &self.bmff.filebox.moov.traks[trak_idx];
+    let craw = trak.mdia.minf.stbl.stsd.craw.as_ref();
+    craw.and_then(|craw| craw.cdi1.as_ref()).and_then(|cdi1| Some(&cdi1.iad1))
+  }
+
+  /// Get CMP1 box for specific trak
+  fn cmp1_box(&self, trak_idx: usize) -> Option<&Cmp1Box> {
+    let trak = &self.bmff.filebox.moov.traks[trak_idx];
+    let craw = trak.mdia.minf.stbl.stsd.craw.as_ref();
+    craw.and_then(|craw| craw.cmp1.as_ref())
+  }
+
+  /// Read CTMD records for given sample
+  /// Each sample (for movie files) have their own CTMD records
+  fn read_ctmd(&self, rawfile: &mut RawFile, sample_idx: u32) -> Result<Option<Ctmd>> {
+    let ctmd_trak = &self.bmff.filebox.moov.traks[3];
+    let (offset, size) = ctmd_trak.mdia.minf.stbl.get_sample_offset(sample_idx as u32 + 1).unwrap();
+    debug!("CR3 CTMD mdat offset for sample_idx {}: {}, len: {}", sample_idx, offset, size);
+    let buf = rawfile
+      .get_range(offset as u64, size as u64)
+      .map_err(|e| RawlerError::General(format!("I/O error while reading CR3 CTMD: {:?}", e)))?;
+    let mut substream = ByteStream::new(&buf, Endian::Little);
+    let ctmd = Ctmd::new(&mut substream);
+    Ok(Some(ctmd))
   }
 }
 
@@ -99,12 +188,22 @@ fn transfer_exif_tag(tag: u16) -> bool {
 #[serde(rename_all = "camelCase")]
 pub struct Cr3Format {
   pub filebox: FileBox,
+  pub ctmd_exposure: Option<CtmdExposureInfo>,
+  pub ctmd_rec7_exif: Option<GenericTiffReader>,
+  pub ctmd_rec7_makernotes: Option<GenericTiffReader>,
+  pub ctmd_rec8: Option<GenericTiffReader>,
+  pub ctmd_rec9: Option<GenericTiffReader>,
 }
 
 impl<'a> Decoder for Cr3Decoder<'a> {
   fn format_dump(&self) -> FormatDump {
     FormatDump::Cr3(Cr3Format {
       filebox: self.bmff.filebox.clone(),
+      ctmd_exposure: self.ctmd_exposure.clone(),
+      ctmd_rec7_exif: self.ctmd_rec7_exif.clone(),
+      ctmd_rec7_makernotes: self.ctmd_rec7_makernotes.clone(),
+      ctmd_rec8: self.ctmd_rec8.clone(),
+      ctmd_rec9: self.ctmd_rec9.clone(),
     })
   }
 
@@ -113,25 +212,21 @@ impl<'a> Decoder for Cr3Decoder<'a> {
   }
 
   fn populate_capture_info(&mut self, capture_info: &mut CaptureInfo) -> Result<()> {
-    if let Some(cmt2_ifd) = self.cmt2.as_ref() {
-      let ifd = cmt2_ifd.root_ifd();
-      if let Some(Entry { value: Value::Rational(v), .. }) = ifd.get_entry(ExifTag::ExposureTime) {
-        capture_info.exposure_time = Some(v[0])
-      }
-      if let Some(Entry {
-        value: Value::SRational(v), ..
-      }) = ifd.get_entry(ExifTag::ExposureBiasValue)
-      {
-        capture_info.exposure_bias = Some(v[0])
-      }
-      if let Some(Entry {
-        value: Value::SRational(v), ..
-      }) = ifd.get_entry(ExifTag::ShutterSpeedValue)
-      {
-        capture_info.shutter_speed = Some(v[0])
-      }
-    } else {
-      debug!("CMT2 is not available, no EXIF!");
+    let ifd = self.cmt2.root_ifd();
+    if let Some(Entry { value: Value::Rational(v), .. }) = ifd.get_entry(ExifTag::ExposureTime) {
+      capture_info.exposure_time = Some(v[0])
+    }
+    if let Some(Entry {
+      value: Value::SRational(v), ..
+    }) = ifd.get_entry(ExifTag::ExposureBiasValue)
+    {
+      capture_info.exposure_bias = Some(v[0])
+    }
+    if let Some(Entry {
+      value: Value::SRational(v), ..
+    }) = ifd.get_entry(ExifTag::ShutterSpeedValue)
+    {
+      capture_info.shutter_speed = Some(v[0])
     }
 
     if let Some(lens) = self.lens_description {
@@ -146,17 +241,16 @@ impl<'a> Decoder for Cr3Decoder<'a> {
 
   fn populate_dng_root(&mut self, root_ifd: &mut DirectoryWriter) -> Result<()> {
     // Copy Orientation tag
-    if let Some(cmt1_ifd) = self.cmt1.as_ref() {
-      let ifd = cmt1_ifd.root_ifd();
-      if let Some(orientation) = ifd.get_entry(ExifTag::Orientation) {
-        root_ifd.add_value(ExifTag::Orientation, orientation.value.clone())?;
-      }
-      if let Some(artist) = ifd.get_entry(ExifTag::Artist) {
-        root_ifd.add_value(ExifTag::Artist, artist.value.clone())?;
-      }
-      if let Some(copyright) = ifd.get_entry(ExifTag::Copyright) {
-        root_ifd.add_value(ExifTag::Copyright, copyright.value.clone())?;
-      }
+
+    let ifd = self.cmt1.root_ifd();
+    if let Some(orientation) = ifd.get_entry(ExifTag::Orientation) {
+      root_ifd.add_value(ExifTag::Orientation, orientation.value.clone())?;
+    }
+    if let Some(artist) = ifd.get_entry(ExifTag::Artist) {
+      root_ifd.add_value(ExifTag::Artist, artist.value.clone())?;
+    }
+    if let Some(copyright) = ifd.get_entry(ExifTag::Copyright) {
+      root_ifd.add_value(ExifTag::Copyright, copyright.value.clone())?;
     }
 
     if let Some(lens) = self.lens_description {
@@ -169,47 +263,42 @@ impl<'a> Decoder for Cr3Decoder<'a> {
       root_ifd.add_tag(DngTag::RawDataUniqueID, unique_id)?;
     }
 
-    if let Some(cmt4) = self.cmt4.as_ref() {
-      let gpsinfo_offset = {
-        let mut gps_ifd = root_ifd.new_directory();
-        let ifd = cmt4.root_ifd();
-        // Copy all GPS tags
-        for (tag, entry) in ifd.entries() {
-          match tag {
-            // Special handling for Exif.GPSInfo.GPSLatitude and Exif.GPSInfo.GPSLongitude.
-            // Exif.GPSInfo.GPSTimeStamp is wrong, too and can be fixed with the same logic.
-            // Canon CR3 contains only two rationals, but these tags are specified as a vector
-            // of three reationals (degrees, minutes, seconds).
-            // We fix this by extending with 0/1 as seconds value.
-            0x0002 | 0x0004 | 0x0007 => match &entry.value {
-              Value::Rational(v) => {
-                let fixed_value = if v.len() == 2 { vec![v[0], v[1], Rational::new(0, 1)] } else { v.clone() };
-                gps_ifd.add_value(*tag, Value::Rational(fixed_value))?;
-              }
-              _ => {
-                warn!("CR3: Exif.GPSInfo.GPSLatitude and Exif.GPSInfo.GPSLongitude expected to be of type RATIONAL, GPS data is ignored");
-              }
-            },
-            _ => {
-              gps_ifd.add_value(*tag, entry.value.clone())?;
+    let gpsinfo_offset = {
+      let mut gps_ifd = root_ifd.new_directory();
+      let ifd = self.cmt4.root_ifd();
+      // Copy all GPS tags
+      for (tag, entry) in ifd.entries() {
+        match tag {
+          // Special handling for Exif.GPSInfo.GPSLatitude and Exif.GPSInfo.GPSLongitude.
+          // Exif.GPSInfo.GPSTimeStamp is wrong, too and can be fixed with the same logic.
+          // Canon CR3 contains only two rationals, but these tags are specified as a vector
+          // of three reationals (degrees, minutes, seconds).
+          // We fix this by extending with 0/1 as seconds value.
+          0x0002 | 0x0004 | 0x0007 => match &entry.value {
+            Value::Rational(v) => {
+              let fixed_value = if v.len() == 2 { vec![v[0], v[1], Rational::new(0, 1)] } else { v.clone() };
+              gps_ifd.add_value(*tag, Value::Rational(fixed_value))?;
             }
+            _ => {
+              warn!("CR3: Exif.GPSInfo.GPSLatitude and Exif.GPSInfo.GPSLongitude expected to be of type RATIONAL, GPS data is ignored");
+            }
+          },
+          _ => {
+            gps_ifd.add_value(*tag, entry.value.clone())?;
           }
         }
-        gps_ifd.build()?
-      };
-      root_ifd.add_tag(ExifTag::GPSInfo, gpsinfo_offset as u32)?;
-    }
+      }
+      gps_ifd.build()?
+    };
+    root_ifd.add_tag(ExifTag::GPSInfo, gpsinfo_offset as u32)?;
+
     Ok(())
   }
 
   fn populate_dng_exif(&mut self, exif_ifd: &mut DirectoryWriter) -> Result<()> {
-    if let Some(cmt2_ifd) = self.cmt2.as_ref() {
-      let ifd = cmt2_ifd.root_ifd();
-      for (tag, entry) in ifd.entries().iter().filter(|(tag, _)| transfer_exif_tag(**tag)) {
-        exif_ifd.add_value(*tag, entry.value.clone())?;
-      }
-    } else {
-      debug!("CMT2 is not available, no EXIF!");
+    let ifd = self.cmt2.root_ifd();
+    for (tag, entry) in ifd.entries().iter().filter(|(tag, _)| transfer_exif_tag(**tag)) {
+      exif_ifd.add_value(*tag, entry.value.clone())?;
     }
 
     if let Some(lens) = self.lens_description {
@@ -222,301 +311,136 @@ impl<'a> Decoder for Cr3Decoder<'a> {
     Ok(())
   }
 
-  fn decode_metadata(&mut self, rawfile: &mut RawFile) -> Result<()> {
-    if let Some(Cr3DescBox { cmt1, cmt2, cmt3, cmt4, .. }) = self.bmff.filebox.moov.cr3desc.as_ref() {
-      /*
-      let buf1 = cmt1.header.make_view(self.filebuf.raw_buf(), 0, 0);
-      self.cmt1 = Some(TiffReader::new_with_buffer(buf1, 0, 0, None)?);
-      let buf2 = cmt2.header.make_view(self.filebuf.raw_buf(), 0, 0);
-      self.cmt2 = Some(TiffReader::new_with_buffer(buf2, 0, 0, None)?);
-      let buf3 = cmt3.header.make_view(self.filebuf.raw_buf(), 0, 0);
-      self.cmt3 = Some(TiffReader::new_with_buffer(buf3, 0, 0, None)?);
-      let buf4 = cmt4.header.make_view(self.filebuf.raw_buf(), 0, 0);
-      self.cmt4 = Some(TiffReader::new_with_buffer(buf4, 0, 0, None)?);
-      */
-      {
-        let cmt1offset = cmt1.header.offset + cmt1.header.header_len;
-        rawfile.inner().seek(SeekFrom::Start(cmt1offset)).unwrap();
-        self.cmt1 = Some(GenericTiffReader::new(rawfile.inner(), cmt1offset as u32, 0, None, &[])?);
-      }
-      {
-        let cmt2offset = cmt2.header.offset + cmt2.header.header_len;
-        rawfile.inner().seek(SeekFrom::Start(cmt2offset)).unwrap();
-        self.cmt2 = Some(GenericTiffReader::new(rawfile.inner(), cmt2offset as u32, 0, None, &[])?);
-      }
-      {
-        let cmt3offset = cmt3.header.offset + cmt3.header.header_len;
-        rawfile.inner().seek(SeekFrom::Start(cmt3offset)).unwrap();
-        self.cmt3 = Some(GenericTiffReader::new(rawfile.inner(), cmt3offset as u32, 0, None, &[])?);
-      }
-      {
-        let cmt4offset = cmt4.header.offset + cmt4.header.header_len;
-        rawfile.inner().seek(SeekFrom::Start(cmt4offset)).unwrap();
-        self.cmt4 = Some(GenericTiffReader::new(rawfile.inner(), cmt4offset as u32, 0, None, &[])?);
-      }
-    }
-
-    if let Some(cmt1) = &self.cmt1 {
-      let make = cmt1.get_entry(ExifTag::Make).unwrap().value.as_string().unwrap();
-      let model = cmt1.get_entry(ExifTag::Model).unwrap().value.as_string().unwrap();
-
-      let cam = self.rawloader.check_supported_with_everything(&make, &model, "")?;
-
-      let offset = self.bmff.filebox.moov.traks[3].mdia.minf.stbl.co64.as_ref().unwrap().entries[0];
-      let size = self.bmff.filebox.moov.traks[3].mdia.minf.stbl.stsz.sample_sizes[0] as u64;
-
-      debug!("CTMD mdat offset: {}", offset);
-      debug!("CTMD mdat size: {}", size);
-
-      let buf = rawfile
-        .get_range(offset, size)
-        .map_err(|e| RawlerError::General(format!("I/O error while reading CR3 CTMD: {:?}", e)))?;
-
-      let mut substream = ByteStream::new(&buf, Endian::Little);
-
-      let ctmd = Ctmd::new(&mut substream);
-
-      if let Some(rec8) = ctmd.records.get(&8).as_ref() {
-        // We skip 8 bytes here as this is the record header
-
-        //let makernotes = TiffIFD::new(&rec8.payload[8..], 0, 0, 0, 1, Endian::Little, &vec![]).unwrap();
-
-        //let mut filebuf = File::create("/tmp/fdump.tif").unwrap();
-        //filebuf.write(&rec8.payload).unwrap();
-
-        let ctmd_record8 = GenericTiffReader::new_with_buffer(&rec8.payload[8..], 0, 0, Some(0))?;
-
-        //let ctmd_record8 = TiffIFD::new_root(&rec8.payload[8..], 0, &vec![]).unwrap();
-
-        if let Some(levels) = ctmd_record8.get_entry(Cr3MakernoteTag::ColorData) {
-          if let crate::formats::tiff::Value::Short(v) = &levels.value {
-            if let Some(offset) = cam.param_usize("colordata_wbcoeffs") {
-              self.wb = Some([v[offset] as f32, v[offset + 1] as f32, v[offset + 3] as f32, NAN]);
-            }
-            if let Some(offset) = cam.param_usize("colordata_blacklevel") {
-              debug!("Blacklevel offset: {:x}", offset);
-              self.blacklevels = Some([v[offset], v[offset + 1], v[offset + 2], v[offset + 3]]);
-            }
-            if let Some(offset) = cam.param_usize("colordata_whitelevel") {
-              self.whitelevel = Some(v[offset]);
-            }
-          }
-        }
-      }
-
-      debug!("CR3 blacklevels: {:?}", self.blacklevels);
-      debug!("CR3 whitelevel: {:?}", self.whitelevel);
-
-      if let Some(cmt3) = self.cmt3.as_ref() {
-        if let Some(Entry {
-          value: crate::formats::tiff::Value::Short(v),
-          ..
-        }) = cmt3.get_entry(Cr3MakernoteTag::CameraSettings)
-        {
-          let lens_info = v[22];
-          debug!("Lens Info tag: {}", lens_info);
-
-          if let Some(cmt2) = self.cmt2.as_ref() {
-            if let Some(Entry {
-              value: crate::formats::tiff::Value::Ascii(lens_id),
-              ..
-            }) = cmt2.get_entry(ExifTag::LensModel)
-            {
-              let lens_str = &lens_id.strings()[0];
-              let resolver = LensResolver::new().with_lens_model(lens_str);
-              self.lens_description = resolver.resolve();
-            }
-          }
-        }
-      }
-
-      if let Some(cmt3) = self.cmt3.as_ref() {
-        if let Some(Entry {
-          value: crate::formats::tiff::Value::Byte(v),
-          ..
-        }) = cmt3.get_entry(Cr3MakernoteTag::ImgUniqueID)
-        {
-          if v.len() == 16 {
-            debug!("CR3 makernote ImgUniqueID: {:x?}", v);
-            self.image_unique_id = Some(v.as_slice().try_into().expect("Invalid slice size"));
-          }
-        }
-      }
-
-      if let Some(xpacket_box) = self.bmff.filebox.cr3xpacket.as_ref() {
-        let offset = xpacket_box.header.offset + xpacket_box.header.header_len;
-        let size = xpacket_box.header.size - xpacket_box.header.header_len;
-        let buf = rawfile
-          .get_range(offset, size)
-          .map_err(|e| RawlerError::General(format!("I/O error while reading CR3 XPACKET: {:?}", e)))?;
-        self.xpacket = Some(Vec::from(buf));
-      }
-    } else {
-      return Err(RawlerError::General(format!("CMT1 not found")));
-    }
-
-    Ok(())
-  }
-
+  /// CR3 can store multiple samples in trak
   fn raw_image_count(&self) -> Result<usize> {
-    let raw_trak_id = std::env::var("RAWLER_CRX_RAW_TRAK")
-      .ok()
-      .map(|id| id.parse::<usize>().expect("RAWLER_CRX_RAW_TRAK must by of type usize"))
-      .unwrap_or(2);
-    let moov_trak = self
-      .bmff
-      .filebox
-      .moov
-      .traks
-      .get(raw_trak_id)
-      .ok_or(format!("Unable to get MOOV trak {}", raw_trak_id))?;
-    let co64 = moov_trak.mdia.minf.stbl.co64.as_ref().ok_or(format!("No co64 box found"))?;
-    Ok(co64.entries.len())
+    let raw_trak_id = rawler_crx_raw_trak()
+      .or(self.get_trak_index(Cr3ImageType::CrxBix))
+      .ok_or(RawlerError::General("Unable to find trak index".into()))?;
+    let moov_trak = self.moov_trak(raw_trak_id).ok_or(format!("Unable to get MOOV trak {}", raw_trak_id))?;
+    Ok(moov_trak.mdia.minf.stbl.stsz.sample_count as usize)
   }
 
-  fn raw_image(&self, file: &mut RawFile, params: RawDecodeParams, dummy: bool) -> Result<RawImage> {
-    // TODO: add support check
+  /// Decode raw image
+  fn raw_image(&mut self, file: &mut RawFile, params: RawDecodeParams, dummy: bool) -> Result<RawImage> {
+    let raw_trak_id = rawler_crx_raw_trak()
+      .or(self.get_trak_index(Cr3ImageType::CrxBix))
+      .ok_or(RawlerError::General("Unable to find trak index".into()))?;
+    let sample_idx = params.image_index;
+    if sample_idx >= self.raw_image_count()? {
+      return Err(RawlerError::General(format!(
+        "Raw image index {} out of range ({})",
+        sample_idx,
+        self.raw_image_count()?
+      )));
+    }
+    self.parse_makernotes(file)?;
+    self.load_ctmd(file, sample_idx as u32)?;
+    // Load trak with raw MDAT section
+    let moov_trak = self.moov_trak(raw_trak_id).ok_or(format!("Unable to get MOOV trak {}", raw_trak_id))?;
+    let (offset, size) = moov_trak.mdia.minf.stbl.get_sample_offset(sample_idx as u32 + 1).unwrap();
+    debug!("RAW mdat offset: {}, len: {}", offset, size);
+    // Raw data buffer
+    let buf = file
+      .get_range(offset as u64, size as u64)
+      .map_err(|e| RawlerError::General(format!("I/O error while reading CR3 raw image: {:?}", e)))?;
 
-    let raw_trak_id = std::env::var("RAWLER_CRX_RAW_TRAK")
-      .ok()
-      .map(|id| id.parse::<usize>().expect("RAWLER_CRX_RAW_TRAK must by of type usize"))
-      .unwrap_or(2);
-    let raw_image_id = params.image_index;
+    let cmp1 = self
+      .cmp1_box(raw_trak_id)
+      .ok_or(RawlerError::General(format!("CMP1 box not found for trak {}", raw_trak_id)))?;
+    debug!("cmp1 mdat hdr size: {}", cmp1.mdat_hdr_size);
 
-    if let Some(cmt1) = &self.cmt1 {
-      let make = cmt1.get_entry(ExifTag::Make).unwrap().value.as_string().unwrap();
-      let model = cmt1.get_entry(ExifTag::Model).unwrap().value.as_string().unwrap();
+    let mut wb = self.wb.unwrap_or([NAN, NAN, NAN, NAN]);
+    let whitelevel = self.whitelevel.unwrap_or(u16::MAX);
 
-      let camera = self.rawloader.check_supported_with_everything(&make, &model, "")?;
+    // Special handling for CRM movie files
+    if let Some(entry) = self.cmt3.get_entry(0x0001) {
+      if Some(130) == entry.get_u16(3)? {
+        // Light Raw
+        // WB is already applied, use 1.0
+        wb = [1024.0, 1024.0, 1024.0, 1024.0];
+      }
+      if Some(131) == entry.get_u16(3)? { // Standard Raw
+         // Nothing special for Standard raw
+      }
+    }
 
-      let moov_trak = self
-        .bmff
-        .filebox
-        .moov
-        .traks
-        .get(raw_trak_id)
-        .ok_or(format!("Unable to get MOOV trak {}", raw_trak_id))?;
-      let co64 = moov_trak.mdia.minf.stbl.co64.as_ref().ok_or(format!("No co64 box found"))?;
-      let stsz = &moov_trak.mdia.minf.stbl.stsz;
+    let image = if !dummy {
+      decompress_crx_image(&buf, cmp1).map_err(|e| format!("Failed to decode raw: {}", e.to_string()))?
+    } else {
+      Vec::new()
+    };
 
-      let offset = *co64.entries.get(raw_image_id).ok_or(format!("image index {} is out of range", raw_image_id))? as usize;
-      let size = *stsz
-        .sample_sizes
-        .get(raw_image_id)
-        .ok_or(format!("image index {} is out of range", raw_image_id))? as usize;
-      debug!("raw mdat offset: {}", offset);
-      debug!("raw mdat size: {}", size);
+    let cpp = 1;
+    let mut img = RawImage::new(self.camera.clone(), cmp1.f_width as usize, cmp1.f_height as usize, cpp, wb, image, dummy);
+    img.blacklevels = self.blacklevels.unwrap_or([0, 0, 0, 0]);
+    img.whitelevels = [whitelevel, whitelevel, whitelevel, whitelevel];
 
-      let buf = file
-        .get_range(offset as u64, size as u64)
-        .map_err(|e| RawlerError::General(format!("I/O error while reading CR3 raw image: {:?}", e)))?;
+    // IAD1 box contains sensor information
+    // We use the sensor crop from IAD1 as recommended image crop.
+    // The same crop is used as ActiveArea, because black areas in IAD1 are not
+    // correct (they differs like 4-6 pixels from real values).
+    match self.iad1_box(raw_trak_id) {
+      Some(iad1) => {
+        match &iad1.iad1_type {
+          // IAD1 (small, used for CRM movie files)
+          Iad1Type::Small(small) => {
+            img.crop_area = Some(Rect::new_with_points(
+              Point::new(small.crop_left_offset as usize, small.crop_top_offset as usize),
+              Point::new((small.crop_right_offset + 1) as usize, (small.crop_bottom_offset + 1) as usize),
+            ));
+            img.active_area = img.crop_area;
+          }
+          // IAD1 (big, used for full size raws)
+          Iad1Type::Big(big) => {
+            img.crop_area = Some(Rect::new_with_points(
+              Point::new(big.crop_left_offset as usize, big.crop_top_offset as usize),
+              Point::new((big.crop_right_offset + 1) as usize, (big.crop_bottom_offset + 1) as usize),
+            ));
 
-      let cmp1 = self.bmff.filebox.moov.traks[raw_trak_id]
-        .mdia
-        .minf
-        .stbl
-        .stsd
-        .craw
-        .as_ref()
-        .unwrap()
-        .cmp1
-        .as_ref()
-        .unwrap();
+            // Won't work!
+            let _rect = Rect::new_with_points(
+              Point::new(big.active_area_left_offset as usize, big.active_area_top_offset as usize),
+              Point::new((big.active_area_right_offset - 1) as usize, (big.active_area_bottom_offset - 1) as usize),
+            );
+            //img.active_area = Some(rect);
+            img.active_area = img.crop_area;
 
-      debug!("cmp1 mdat hdr size: {}", cmp1.mdat_hdr_size);
-
-      let image = if !dummy {
-        decompress_crx_image(&buf, cmp1).map_err(|e| format!("Failed to decode raw: {}", e.to_string()))?
-      } else {
-        Vec::new()
-      };
-
-      let wb = self.wb.unwrap();
-      let blacklevel = self.blacklevels.as_ref().unwrap();
-      let cpp = 1;
-
-      let mut img = RawImage::new(camera, cmp1.f_width as usize, cmp1.f_height as usize, cpp, wb, image, dummy);
-
-      img.blacklevels = *blacklevel;
-      img.whitelevels = [
-        *self.whitelevel.as_ref().unwrap(),
-        *self.whitelevel.as_ref().unwrap(),
-        *self.whitelevel.as_ref().unwrap(),
-        *self.whitelevel.as_ref().unwrap(),
-      ];
-
-      let iad1 = &self.bmff.filebox.moov.traks[raw_trak_id]
-        .mdia
-        .minf
-        .stbl
-        .stsd
-        .craw
-        .as_ref()
-        .unwrap()
-        .cdi1
-        .as_ref()
-        .unwrap()
-        .iad1;
-
-      if let Iad1Type::Big(iad1_borders) = &iad1.iad1_type {
-        let rect = Rect::new_with_points(
-          Point::new(iad1_borders.crop_left_offset as usize, iad1_borders.crop_top_offset as usize),
-          Point::new((iad1_borders.crop_right_offset + 1) as usize, (iad1_borders.crop_bottom_offset + 1) as usize),
-        );
-        img.crop_area = Some(rect);
-
-        let _rect = Rect::new_with_points(
-          Point::new(iad1_borders.active_area_left_offset as usize, iad1_borders.active_area_top_offset as usize),
-          Point::new(
-            (iad1_borders.active_area_right_offset - 1) as usize,
-            (iad1_borders.active_area_bottom_offset - 1) as usize,
-          ),
-        );
-        //img.active_area = Some(rect);
-        img.active_area = img.crop_area;
-
-        let blackarea_h = Rect::new_with_points(
-          Point::new(iad1_borders.lob_left_offset as usize, iad1_borders.lob_top_offset as usize),
-          Point::new((iad1_borders.lob_right_offset - 1) as usize, (iad1_borders.lob_bottom_offset - 1) as usize),
-        );
-        if !blackarea_h.is_empty() {
-          //img.blackareas.push(blackarea_h);
+            let blackarea_h = Rect::new_with_points(
+              Point::new(big.lob_left_offset as usize, big.lob_top_offset as usize),
+              Point::new((big.lob_right_offset - 1) as usize, (big.lob_bottom_offset - 1) as usize),
+            );
+            if !blackarea_h.is_empty() {
+              //img.blackareas.push(blackarea_h);
+            }
+            let blackarea_v = Rect::new_with_points(
+              Point::new(big.tob_left_offset as usize, big.tob_top_offset as usize),
+              Point::new((big.tob_right_offset - 1) as usize, (big.tob_bottom_offset - 1) as usize),
+            );
+            if !blackarea_v.is_empty() {
+              //img.blackareas.push(blackarea_v);
+            }
+          }
         }
-        let blackarea_v = Rect::new_with_points(
-          Point::new(iad1_borders.tob_left_offset as usize, iad1_borders.tob_top_offset as usize),
-          Point::new((iad1_borders.tob_right_offset - 1) as usize, (iad1_borders.tob_bottom_offset - 1) as usize),
-        );
-        if !blackarea_v.is_empty() {
-          //img.blackareas.push(blackarea_v);
-        }
-
-        debug!("Canon active area: {:?}", img.active_area);
-        debug!("Canon crop area: {:?}", img.crop_area);
-        debug!("Black areas: {:?}", img.blackareas);
-
-        /*
-        img.crops = [
-          iad1_borders.crop_top_offset as usize,                            // top
-          (iad1.img_width - iad1_borders.crop_right_offset - 1) as usize,   // right
-          (iad1.img_height - iad1_borders.crop_bottom_offset - 1) as usize, // bottom
-          iad1_borders.crop_left_offset as usize,                           // left
-        ];
-         */
       }
 
-      return Ok(img);
-    } else {
-      return Err(RawlerError::General(format!("Camera model unknown")));
+      None => {
+        warn!("No IAD1 box found for sensor data");
+      }
     }
+    debug!("Canon active area: {:?}", img.active_area);
+    debug!("Canon crop area: {:?}", img.crop_area);
+    debug!("Black areas: {:?}", img.blackareas);
+    return Ok(img);
   }
 
+  /// Extract preview image embedded in CR3
   fn full_image(&self, file: &mut RawFile) -> Result<DynamicImage> {
+    if rawler_ignore_previews() {
+      return Err(RawlerError::General("Unable to extract preview image".into()));
+    }
     let offset = self.bmff.filebox.moov.traks[0].mdia.minf.stbl.co64.as_ref().expect("co64 box").entries[0] as usize;
     let size = self.bmff.filebox.moov.traks[0].mdia.minf.stbl.stsz.sample_sizes[0] as usize;
-    debug!("jpeg mdat offset: {}", offset);
-    debug!("jpeg mdat size: {}", size);
-    //let mdat_data_offset = (self.bmff.filebox.mdat.header.offset + self.bmff.filebox.mdat.header.header_len) as usize;
-
+    debug!("JPEG preview mdat offset: {}, len: {}", offset, size);
     let buf = file
       .get_range(offset as u64, size as u64)
       .map_err(|e| RawlerError::General(format!("I/O error while reading CR3 full image: {:?}", e)))?;
@@ -550,27 +474,144 @@ impl<'a> Cr3Decoder<'a> {
 
     Ok(LegacyTiffIFD::new(buf, offset + off, base_offset, 0, chain_level + 1, endian, &vec![])?)
   }
+
+  fn get_trak_index(&self, image_type: Cr3ImageType) -> Option<usize> {
+    if let Some(cr3desc) = &self.bmff.filebox.moov.cr3desc {
+      cr3desc.cctp.ccdts.iter().filter(|ccdt| ccdt.image_type == image_type as u64).next().map(|rec| {
+        assert!(rec.trak_index > 0);
+        (rec.trak_index - 1) as usize
+      })
+    } else {
+      None
+    }
+  }
+
+  fn parse_makernotes(&mut self, rawfile: &mut RawFile) -> Result<()> {
+    if let Some(Entry {
+      value: crate::formats::tiff::Value::Short(v),
+      ..
+    }) = self.cmt3.get_entry(Cr3MakernoteTag::CameraSettings)
+    {
+      let lens_info = v[22];
+      debug!("Lens Info tag: {}", lens_info);
+
+      if let Some(Entry {
+        value: crate::formats::tiff::Value::Ascii(lens_id),
+        ..
+      }) = self.cmt2.get_entry(ExifTag::LensModel)
+      {
+        let lens_str = &lens_id.strings()[0];
+        let resolver = LensResolver::new().with_lens_model(lens_str);
+        self.lens_description = resolver.resolve();
+      }
+    }
+
+    if let Some(Entry {
+      value: crate::formats::tiff::Value::Byte(v),
+      ..
+    }) = self.cmt3.get_entry(Cr3MakernoteTag::ImgUniqueID)
+    {
+      if v.len() == 16 {
+        debug!("CR3 makernote ImgUniqueID: {:x?}", v);
+        self.image_unique_id = Some(v.as_slice().try_into().expect("Invalid slice size"));
+      }
+    }
+
+    if let Some(entry) = self.cmt3.get_entry(0x0001) {
+      let quality = match entry.get_u16(3)? {
+        Some(4) => "RAW",
+        Some(5) => "Superfine",
+        Some(7) => "CRAW",
+        Some(130) => "LightRaw",
+        Some(131) => "StandardRaw",
+        _ => "unknown",
+      };
+      debug!("Canon quality mode: {}", quality);
+    }
+
+    if let Some(entry) = self.cmt3.get_entry(0x4026) {
+      let clog = match entry.get_u32(11)? {
+        Some(0) => "OFF",
+        Some(1) => "CLog1",
+        Some(2) => "CLog2",
+        Some(3) => "CLog3",
+        _ => "unknown",
+      };
+      debug!("Canon CLog mode: {}", clog);
+    }
+
+    if let Some(xpacket_box) = self.bmff.filebox.cr3xpacket.as_ref() {
+      let offset = xpacket_box.header.offset + xpacket_box.header.header_len;
+      let size = xpacket_box.header.size - xpacket_box.header.header_len;
+      let buf = rawfile
+        .get_range(offset, size)
+        .map_err(|e| RawlerError::General(format!("I/O error while reading CR3 XPACKET: {:?}", e)))?;
+      self.xpacket = Some(Vec::from(buf));
+    }
+
+    Ok(())
+  }
+
+  fn load_ctmd(&mut self, rawfile: &mut RawFile, sample_idx: u32) -> Result<()> {
+    if let Some(ctmd) = self.read_ctmd(rawfile, sample_idx)? {
+      if let Some(rec5) = ctmd.exposure_info()? {
+        debug!("CTMD Rec(5): {:?}", rec5);
+        self.ctmd_exposure = Some(rec5);
+      }
+
+      if let Some(rec7) = ctmd.get_as_tiff(7, CR3_CTMD_BLOCK_EXIFIFD)? {
+        self.ctmd_rec7_exif = Some(rec7);
+      }
+      if let Some(rec7) = ctmd.get_as_tiff(7, CR3_CTMD_BLOCK_MAKERNOTES)? {
+        self.ctmd_rec7_makernotes = Some(rec7);
+      }
+      if let Some(rec8) = ctmd.get_as_tiff(8, CR3_CTMD_BLOCK_MAKERNOTES)? {
+        if let Some(levels) = rec8.get_entry(Cr3MakernoteTag::ColorData) {
+          if let crate::formats::tiff::Value::Short(v) = &levels.value {
+            if let Some(offset) = self.camera.param_usize("colordata_wbcoeffs") {
+              self.wb = Some([v[offset] as f32, v[offset + 1] as f32, v[offset + 3] as f32, NAN]);
+            }
+            if let Some(offset) = self.camera.param_usize("colordata_blacklevel") {
+              debug!("Blacklevel offset: {:x}", offset);
+              self.blacklevels = Some([v[offset], v[offset + 1], v[offset + 2], v[offset + 3]]);
+            }
+            if let Some(offset) = self.camera.param_usize("colordata_whitelevel") {
+              self.whitelevel = Some(v[offset]);
+            }
+          }
+        }
+        self.ctmd_rec8 = Some(rec8);
+      }
+      if let Some(rec9) = ctmd.get_as_tiff(9, CR3_CTMD_BLOCK_MAKERNOTES)? {
+        self.ctmd_rec9 = Some(rec9);
+      }
+    }
+
+    debug!("CR3 blacklevels: {:?}", self.blacklevels);
+    debug!("CR3 whitelevel: {:?}", self.whitelevel);
+
+    Ok(())
+  }
 }
 
+/// CTMD section with multiple records
 #[derive(Clone, Debug)]
 struct Ctmd {
   pub records: HashMap<u16, CtmdRecord>,
 }
 
+/// Record inside CTMD section
+#[allow(dead_code)]
 #[derive(Clone, Debug)]
 struct CtmdRecord {
-  #[allow(dead_code)]
   pub rec_size: u32,
   pub rec_type: u16,
-  #[allow(dead_code)]
   pub reserved1: u8,
-  #[allow(dead_code)]
   pub reserved2: u8,
-  #[allow(dead_code)]
   pub reserved3: u16,
-  #[allow(dead_code)]
   pub reserved4: u16,
   pub payload: Vec<u8>,
+  pub blocks: HashMap<u16, Vec<u8>>,
 }
 
 impl Ctmd {
@@ -579,7 +620,7 @@ impl Ctmd {
 
     while data.remaining_bytes() > 0 {
       let size = data.get_u32();
-      let rec = CtmdRecord {
+      let mut rec = CtmdRecord {
         rec_size: size,
         rec_type: data.get_u16(),
         reserved1: data.get_u8(),
@@ -587,11 +628,69 @@ impl Ctmd {
         reserved3: data.get_u16(),
         reserved4: data.get_u16(),
         payload: data.get_bytes(size as usize - 12),
+        blocks: HashMap::new(),
       };
+      debug!(
+        "CTMD Rec {}:  {}, {}, {}, {}",
+        rec.rec_type, rec.reserved1, rec.reserved2, rec.reserved3, rec.reserved4
+      );
+      if [7, 8, 9].contains(&rec.rec_type) {
+        let mut bs = ByteStream::new(rec.payload.as_slice(), Endian::Little);
+        let mut _block_id = 0;
+        while bs.remaining_bytes() > 0 {
+          let sz = bs.get_u32();
+          let tag = bs.get_u16();
+          let _uk = bs.get_u16();
+          let data = bs.get_bytes(sz as usize - 8);
+          //dump_buf(&format!("/tmp/ctmd_rec{}_block{}_tag0x{:X}_uk{:X}.bin", rec.rec_type, block_id, tag, uk), data.as_slice());
+          if [CR3_CTMD_BLOCK_EXIFIFD, CR3_CTMD_BLOCK_MAKERNOTES].contains(&tag) {
+            assert_eq!(rec.blocks.contains_key(&tag), false, "Double tag found?!");
+            rec.blocks.insert(tag, data);
+          }
+          _block_id += 1;
+        }
+      } else {
+        //dump_buf(&format!("/tmp/ctmd_rec{}.bin", rec.rec_type), rec.payload.as_slice());
+      }
       records.insert(rec.rec_type, rec);
     }
     Self { records }
   }
+
+  pub fn get_as_tiff(&self, record: u16, tag: u16) -> Result<Option<GenericTiffReader>> {
+    if let Some(block) = self.records.get(&record).and_then(|rec| rec.blocks.get(&tag)) {
+      Ok(Some(GenericTiffReader::new_with_buffer(&block, 0, 0, Some(0))?))
+    } else {
+      warn!("Unable to find CTMD record {}, tag 0x{:X}", record, tag);
+      Ok(None)
+    }
+  }
+
+  pub fn exposure_info(&self) -> Result<Option<CtmdExposureInfo>> {
+    if let Some(rec) = self.records.get(&5) {
+      let mut buf = ByteStream::new(rec.payload.as_slice(), Endian::Little);
+      let fnumber = Rational::new(buf.get_u16().into(), buf.get_u16().into());
+      let exposure = Rational::new(buf.get_u16().into(), buf.get_u16().into());
+      let iso_speed = buf.get_u32();
+      let unknown = buf.get_bytes(buf.remaining_bytes());
+      Ok(Some(CtmdExposureInfo {
+        fnumber,
+        exposure,
+        iso_speed,
+        unknown,
+      }))
+    } else {
+      Ok(None)
+    }
+  }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct CtmdExposureInfo {
+  pub fnumber: Rational,
+  pub exposure: Rational,
+  pub iso_speed: u32,
+  pub unknown: Vec<u8>,
 }
 
 #[derive(Debug, Copy, Clone, PartialEq, enumn::N)]

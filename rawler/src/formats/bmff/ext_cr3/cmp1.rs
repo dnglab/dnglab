@@ -25,7 +25,8 @@ pub struct Cmp1Box {
   pub has_tile_cols: u8,
   pub has_tile_rows: u8,
   pub mdat_hdr_size: u32,
-  pub unknown2: u32,
+  pub ext_header: u32,
+  pub median_bits: u8,
   // TODO: missing fields
 }
 
@@ -61,7 +62,31 @@ impl<R: Read + Seek> ReadBox<&mut R> for Cmp1Box {
     };
 
     let mdat_hdr_size = reader.read_u32::<BigEndian>()?;
-    let unknown2 = reader.read_u32::<BigEndian>()?;
+    let ext_header = reader.read_u32::<BigEndian>()?; // 32
+
+    // Median bit precision for enc_type 3 is not always same as
+    // image bit precision. For CRM movie files, there is an extended header.
+    let mut median_bits = n_bits;
+
+    // CRM Movie file
+    if (ext_header & 0x80000000 != 0) && n_planes == 4 && header.size >= 56 {
+      let _unknow = reader.read_u32::<BigEndian>()?; // 36
+      let _unknow = reader.read_u32::<BigEndian>()?; // 40
+      let _unknow = reader.read_u32::<BigEndian>()?; // 44
+      let _unknow = reader.read_u32::<BigEndian>()?; // 48
+      let _unknow = reader.read_u32::<BigEndian>()?; // 52
+      let use_median_bits = reader.read_u32::<BigEndian>()? & 0x40000000 != 0; // 56
+      if use_median_bits && header.size > 84 {
+        let _unknow = reader.read_u32::<BigEndian>()?; // 60
+        let _unknow = reader.read_u32::<BigEndian>()?; // 64
+        let _unknow = reader.read_u32::<BigEndian>()?; // 68
+        let _unknow = reader.read_u32::<BigEndian>()?; // 72
+        let _unknow = reader.read_u32::<BigEndian>()?; // 76
+        let _unknow = reader.read_u32::<BigEndian>()?; // 80
+        median_bits = reader.read_u8()?; // 84
+      }
+    }
+
 
     reader.seek(SeekFrom::Start(header.end_offset()))?;
 
@@ -83,7 +108,8 @@ impl<R: Read + Seek> ReadBox<&mut R> for Cmp1Box {
       has_tile_cols,
       has_tile_rows,
       mdat_hdr_size,
-      unknown2,
+      ext_header,
+      median_bits,
     })
   }
 }

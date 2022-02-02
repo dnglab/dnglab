@@ -77,22 +77,22 @@ impl CodecParams {
         let q_step_tbl_ptr = &q_step.q_step_tbl[(q_step.width * band.get_subband_row(param.cur_line - 1))..];
 
         for i in 0..band.col_start_addon {
-          let quant_val = band.q_step_base + ((q_step_tbl_ptr[0] * band.q_step_multi as u32) >> 3);
-          param.decoded_buf_mut()[i] *= constrain(quant_val as i32, 1, 0x168000);
+          let quant_val = band.q_step_base + ((q_step_tbl_ptr[0] * band.q_step_multi as u32) >> 3) as i32;
+          param.decoded_buf_mut()[i] *= constrain(quant_val, 1, 0x168000);
         }
 
         for i in band.col_start_addon..(band.width - band.col_end_addon) {
           let idx = (i - band.col_start_addon) >> band.level_shift;
-          let quant_val = band.q_step_base + ((q_step_tbl_ptr[idx] * band.q_step_multi as u32) >> 3);
+          let quant_val = band.q_step_base + ((q_step_tbl_ptr[idx] * band.q_step_multi as u32) >> 3) as i32;
           //eprintln!("{}", quant_val);
-          param.decoded_buf_mut()[i] *= constrain(quant_val as i32, 1, 0x168000);
+          param.decoded_buf_mut()[i] *= constrain(quant_val, 1, 0x168000);
         }
 
         let last_idx = (band.width - band.col_end_addon - band.col_start_addon - 1) >> band.level_shift;
 
         for i in (band.width - band.col_end_addon)..band.width {
-          let quant_val = band.q_step_base + ((q_step_tbl_ptr[last_idx] * band.q_step_multi as u32) >> 3);
-          param.decoded_buf_mut()[i] *= constrain(quant_val as i32, 1, 0x168000);
+          let quant_val = band.q_step_base + ((q_step_tbl_ptr[last_idx] * band.q_step_multi as u32) >> 3) as i32;
+          param.decoded_buf_mut()[i] *= constrain(quant_val, 1, 0x168000);
         }
       }
       None => {

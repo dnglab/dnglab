@@ -7,6 +7,7 @@ use crate::{
   tags::{LegacyTiffRootTag, TiffTagEnum},
 };
 use byteorder::{BigEndian, LittleEndian, ReadBytesExt};
+use log::warn;
 use serde::{Deserialize, Serialize};
 use std::{
   collections::{BTreeMap, HashMap},
@@ -129,7 +130,16 @@ pub trait TiffReader {
       }
       entries.insert(entry.tag, entry);
     }
-    let next_ifd = reader.read_u32()?;
+
+    // Some TIFF writers skip the next ifd pointer
+    // If we get an I/O error, we fallback to 0, signaling the end of IFD chains.
+    let next_ifd = match reader.read_u32() {
+      Ok(ptr) => ptr,
+      Err(e) => {
+        warn!("TIFF IFD reader failed to get next IFD pointer, fallback to 0. Error was: {}", e);
+        0
+      }
+    };
 
     // Process SubIFDs
     let pos = reader.position()?;
@@ -143,7 +153,6 @@ pub trait TiffReader {
       sub.insert(subs.0, ifds);
     }
     EndianReader::new(reader, endian).goto(pos)?; // restore
-
     Ok(IFD {
       offset,
       base,

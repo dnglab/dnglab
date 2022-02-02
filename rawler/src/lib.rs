@@ -68,6 +68,7 @@ pub mod pumps;
 pub mod rawimage;
 pub mod tags;
 pub mod tiles;
+pub(crate) mod envparams;
 
 #[doc(hidden)]
 pub use buffer::Buffer;

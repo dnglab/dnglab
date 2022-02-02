@@ -96,7 +96,11 @@ pub struct CodecParams {
   #[allow(dead_code)]
   subband_count: u8,
   levels: usize,
+  /// Bit depth of image
+  #[allow(dead_code)]
   n_bits: u8,
+  /// Bit depth for median (enc_type == 3, otherwise it is same as n_bits)
+  median_bits: u8,
   enc_type: u8,
   tile_cols: usize,
   tile_rows: usize,
@@ -157,7 +161,8 @@ impl CodecParams {
       // only 1 band for zero levels (uncompressed)
       subband_count: 3 * cmp1.image_levels as u8 + 1,
       levels: cmp1.image_levels as usize,
-      n_bits: cmp1.n_bits as u8,
+      n_bits: cmp1.n_bits,
+      median_bits: cmp1.median_bits,
       enc_type: cmp1.enc_type as u8,
       tile_cols,
       tile_rows,
