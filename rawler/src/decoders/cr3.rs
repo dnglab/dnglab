@@ -44,6 +44,7 @@ pub struct Cr3Decoder<'a> {
   // GPS
   cmt4: GenericTiffReader,
   ctmd_exposure: Option<CtmdExposureInfo>,
+  ctmd_focallen: Option<Rational>,
   ctmd_rec7_exif: Option<GenericTiffReader>,
   ctmd_rec7_makernotes: Option<GenericTiffReader>,
   // CTMD Makernotes: COLORDATA
@@ -97,6 +98,7 @@ impl<'a> Cr3Decoder<'a> {
         ctmd_rec9: None,
         ctmd_exposure: None,
         bmff,
+        ctmd_focallen: None,
       };
       return Ok(decoder);
     } else {
@@ -299,6 +301,10 @@ impl<'a> Decoder for Cr3Decoder<'a> {
     let ifd = self.cmt2.root_ifd();
     for (tag, entry) in ifd.entries().iter().filter(|(tag, _)| transfer_exif_tag(**tag)) {
       exif_ifd.add_value(*tag, entry.value.clone())?;
+    }
+
+    if let Some(focal_len) = self.ctmd_focallen {
+      exif_ifd.add_tag(ExifTag::FocalLength, focal_len)?;
     }
 
     if let Some(lens) = self.lens_description {
@@ -558,6 +564,7 @@ impl<'a> Cr3Decoder<'a> {
         debug!("CTMD Rec(5): {:?}", rec5);
         self.ctmd_exposure = Some(rec5);
       }
+      self.ctmd_focallen = ctmd.focal_len()?;
 
       if let Some(rec7) = ctmd.get_as_tiff(7, CR3_CTMD_BLOCK_EXIFIFD)? {
         self.ctmd_rec7_exif = Some(rec7);
@@ -679,6 +686,16 @@ impl Ctmd {
         iso_speed,
         unknown,
       }))
+    } else {
+      Ok(None)
+    }
+  }
+
+  pub fn focal_len(&self) -> Result<Option<Rational>> {
+    if let Some(rec) = self.records.get(&4) {
+      let mut buf = ByteStream::new(rec.payload.as_slice(), Endian::Little);
+      let focal_len = Rational::new(buf.get_u16().into(), buf.get_u16().into());
+      Ok(Some(focal_len))
     } else {
       Ok(None)
     }
