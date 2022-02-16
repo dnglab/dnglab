@@ -250,6 +250,13 @@ focal_range = [[24, 1], [24, 1]]
 aperture_range = [[28, 10], [28, 10]]
 
 [[lenses]]
+key = "EF-S17-55mm f/2.8 IS USM"
+make = "Canon"
+model = "EF-S 17-55mm f/2.8 IS USM"
+focal_range = [[17, 1], [55, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
 key = "EF-S18-55mm f/3.5-5.6 IS"
 make = "Canon"
 model = "EF-S 18-55mm f/3.5-5.6 IS"
