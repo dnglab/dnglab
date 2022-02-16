@@ -2,7 +2,7 @@
 // Copyright 2021 Daniel Vogelbacher <daniel@chaospixel.com>
 
 use core::panic;
-use image::{imageops::FilterType, DynamicImage, GenericImageView, ImageBuffer};
+use image::{imageops::FilterType, DynamicImage, ImageBuffer};
 use log::{debug, info};
 use rawler::formats::tiff::{Rational, SRational};
 use rawler::{
