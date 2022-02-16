@@ -139,6 +139,13 @@ model = "RF 100mm F2.8L Macro IS USM"
 focal_range = [[100, 1], [100, 1]]
 aperture_range = [[28, 10], [28, 10]]
 
+[[lenses]]
+key = "RF100-500mm F4.5-7.1 L IS USM"
+make = "Canon"
+model = "RF 100-500mm F4.5-7.1L IS USM"
+focal_range = [[100, 1], [500, 1]]
+aperture_range = [[45, 10], [71, 10]]
+
 
 # Canon EF mount lenses
 
