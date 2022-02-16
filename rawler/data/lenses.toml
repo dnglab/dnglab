@@ -157,6 +157,13 @@ focal_range = [[16, 1], [35, 1]]
 aperture_range = [[4, 1], [4, 1]]
 
 [[lenses]]
+key = "EF16-35mm f/2.8L USM"
+make = "Canon"
+model = "EF 16-35mm f/2.8L USM"
+focal_range = [[16, 1], [35, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
 key = "EF16-35mm f/2.8L III USM"
 make = "Canon"
 model = "EF 16-35mm f/2.8L III USM"
