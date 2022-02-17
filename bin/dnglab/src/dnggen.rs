@@ -380,7 +380,7 @@ fn dng_put_raw_ljpeg(raw_ifd: &mut DirectoryWriter<'_, '_>, rawimage: &RawImage,
           //assert_eq!((tile_w * rawimage.cpp) % components, 0);
           //assert_eq!((tile_w * rawimage.cpp) % 2, 0);
           //assert_eq!(tile_h % 2, 0);
-          let state = LjpegCompressor::new(tile, j_width * realign, j_height / realign, components, rawimage.bps as u8, predictor, 0).unwrap();
+          let state = LjpegCompressor::new(tile, j_width * realign, j_height / realign, components, rawimage.bps as u8, predictor, 0, 0).unwrap();
           state.encode().unwrap()
         })
         .collect();

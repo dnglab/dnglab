@@ -14,7 +14,7 @@ fn encode_ljpeg(img: &Vec<u16>, w: usize, h: usize, ncomp: usize) {
   let pred = 1;
   let bps = 16;
 
-  let state = LjpegCompressor::new(&img, w, h, ncomp, bps, pred, 0).unwrap();
+  let state = LjpegCompressor::new(&img, w, h, ncomp, bps, pred, 0, 0).unwrap();
   let _result = state.encode().unwrap();
 }
 
