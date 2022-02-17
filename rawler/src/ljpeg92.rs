@@ -26,6 +26,7 @@
 // SOFTWARE.
 
 use byteorder::{BigEndian, WriteBytesExt};
+use multiversion::multiversion;
 use std::{
   cmp::min,
   io::{Cursor, Write},
@@ -33,6 +34,49 @@ use std::{
 use thiserror::Error;
 
 use crate::{bitarray::BitArray16, inspector};
+
+/// Cache for bit count table.
+const NUM_BITS_TBL: [u16; 256] = build_num_bits_tbl();
+
+/// Construct a cache table for bit count lookup.
+/// Code logic copied from Adobe DNG SDK.
+const fn build_num_bits_tbl() -> [u16; 256] {
+  let mut tbl = [0; 256];
+  let mut i = 1;
+  loop {
+    if i < 256 {
+      let mut nbits = 1;
+      let mut tmp = i;
+      loop {
+        tmp >>= 1;
+        if tmp != 0 {
+          nbits += 1;
+        } else {
+          break;
+        }
+      }
+      tbl[i] = nbits;
+      i += 1;
+    } else {
+      break;
+    }
+  }
+  tbl
+}
+
+/// Find the number of bits needed for the magnitude of the coefficient
+/// This utilizes the caching table which should be faster than
+/// calculating it manually.
+fn lookup_ssss(diff: i16) -> u16 {
+  let diff_abs = (diff as i32).abs() as usize; // Convert to i32 because abs() can be overflow i16
+  if diff_abs >= 256 {
+    NUM_BITS_TBL[(diff_abs >> 8) & 0xFF] + 8
+  } else {
+    NUM_BITS_TBL[(diff_abs & 0xFF)]
+  }
+  // manual way:
+  // let ssss = if diff == 0 { 0 } else { 32 - (diff as i32).abs().leading_zeros() };
+}
 
 /// Error variants for compressor
 #[derive(Debug, Error)]
@@ -65,17 +109,17 @@ pub struct LjpegCompressor<'a> {
   components: usize,
   /// Bitdepth of input image
   bitdepth: u8,
-  /// Maximum value for given bit depth
-  max_value: u16,
   /// Point transformation parameter
   /// **Warning:** This is untested, use with caution
   point_transform: u8,
   /// Predictor
   predictor: u8,
-  /// Skip bytes after each line before next line starts
-  skip_len: usize,
+  /// Extra width after each line before next line starts
+  padding: usize,
   /// Component state (histogram, hufftable)
   comp_state: Vec<ComponentState>,
+
+  cache: Vec<i16>,
 }
 
 /// HUFFENC and HUFFBITS
@@ -195,14 +239,11 @@ impl HuffTableBuilder {
           }
         }
         _ => {
-          // exit loop, all frequencies are processed
-          break;
+          break; // exit loop, all frequencies are processed
         }
       }
     }
-
     inspector!("ITER SIZE: {}", ccc);
-
     #[cfg(feature = "inspector")]
     for (i, codesize) in self.codesize.iter().enumerate() {
       inspector!("codesize[{}]={}", i, codesize);
@@ -478,12 +519,11 @@ impl<'a> LjpegCompressor<'a> {
   /// Create a new LJPEG encoder
   ///
   /// skip_len is given as byte count after a row width.
-  pub fn new(image: &'a [u16], width: usize, height: usize, components: usize, bitdepth: u8, predictor: u8, skip_len: usize) -> Result<Self> {
-    //debug!("LJPG compression: bit depth: {}", bitdepth);
+  pub fn new(image: &'a [u16], width: usize, height: usize, components: usize, bitdepth: u8, predictor: u8, point_transform: u8, padding: usize) -> Result<Self> {
     if !(1..=7).contains(&predictor) {
       return Err(CompressorError::Overflow(format!("Unsupported predictor: {}", predictor)));
     }
-    if image.len() < height * (width * components + skip_len) {
+    if image.len() < height * ((width + padding) * components) {
       return Err(CompressorError::Overflow(format!(
         "Image input buffer is not large enough for given dimensions"
       )));
@@ -506,22 +546,22 @@ impl<'a> LjpegCompressor<'a> {
         width
       )));
     }
-    let point_transform = 0;
     Ok(Self {
       image,
       width,
       height,
       components,
       bitdepth,
-      max_value: ((1u32 << (bitdepth - point_transform)) - 1) as u16,
       point_transform,
       predictor,
-      skip_len,
+      padding,
       comp_state: vec![ComponentState::default(); components],
+      cache: Vec::default(),
     })
   }
 
-  fn components(&self) -> std::ops::Range<usize> {
+  /// Get the components as Range<usize>
+  fn component_range(&self) -> std::ops::Range<usize> {
     (0..self.components).into_iter()
   }
 
@@ -529,7 +569,7 @@ impl<'a> LjpegCompressor<'a> {
   pub fn encode(mut self) -> Result<Vec<u8>> {
     let mut encoded = Cursor::new(Vec::with_capacity(self.resolution() * self.components));
     self.scan_frequency()?;
-    for comp in self.components() {
+    for comp in self.component_range() {
       self.build_hufftable(comp);
       //self.create_default_table(comp)?;
       //self.create_encode_table(comp)?;
@@ -547,108 +587,69 @@ impl<'a> LjpegCompressor<'a> {
     self.height * self.width
   }
 
-  fn row_len(&self) -> usize {
-    self.width * self.components
-  }
-
-  #[inline(always)]
-  fn px_ra(current_row: &[u16], col: usize, comp: usize, cc: usize, pt: u8) -> i32 {
-    (current_row[((col - 1) * cc) + comp] >> pt) as i32
-  }
-
-  #[inline(always)]
-  fn px_rb(prev_row: &[u16], _current_row: &[u16], col: usize, comp: usize, cc: usize, pt: u8) -> i32 {
-    (prev_row[(col * cc) + comp] >> pt) as i32
-  }
-
-  #[inline(always)]
-  fn px_rc(prev_row: &[u16], _current_row: &[u16], col: usize, comp: usize, cc: usize, pt: u8) -> i32 {
-    (prev_row[((col - 1) * cc) + comp] >> pt) as i32
-  }
-
-  /// Predict the Px value
-  fn predict_px(&self, prev_row: Option<&[u16]>, current_row: &[u16], row: usize, col: usize, comp: usize) -> i32 {
-    let cc = self.components; // component count
-    let pt = self.point_transform;
-    match (row, col) {
-      // First sample
-      (0, 0) => (1u16 << (self.bitdepth - pt - 1)) as i32,
-      // First row always used Ra prediction
-      (0, col) => Self::px_ra(current_row, col, comp, cc, pt),
-      // For first column at any row
-      (_, 0) => {
-        let prev_row = prev_row.expect("Previous row expected");
-        Self::px_rb(prev_row, current_row, col, comp, cc, pt)
-      }
-      // Regular prediction mode
-      (row, col) => {
-        assert!(row > 0);
-        let prev_row = prev_row.expect("Previous row expected");
-        match self.predictor {
-          1 => Self::px_ra(current_row, col, comp, cc, pt),
-          2 => Self::px_rb(prev_row, current_row, col, comp, cc, pt),
-          3 => Self::px_rc(prev_row, current_row, col, comp, cc, pt),
-          4 => {
-            let ra = Self::px_ra(current_row, col, comp, cc, pt);
-            let rb = Self::px_rb(prev_row, current_row, col, comp, cc, pt);
-            let rc = Self::px_rc(prev_row, current_row, col, comp, cc, pt);
-            ra + rb - rc
-          }
-          5 => {
-            let ra = Self::px_ra(current_row, col, comp, cc, pt);
-            let rb = Self::px_rb(prev_row, current_row, col, comp, cc, pt);
-            let rc = Self::px_rc(prev_row, current_row, col, comp, cc, pt);
-            ra + ((rb - rc) >> 1) // Adobe DNG SDK uses int32 and shifts, so we will do, too.
-          }
-          6 => {
-            let ra = Self::px_ra(current_row, col, comp, cc, pt);
-            let rb = Self::px_rb(prev_row, current_row, col, comp, cc, pt);
-            let rc = Self::px_rc(prev_row, current_row, col, comp, cc, pt);
-            rb + ((ra - rc) >> 1) // Adobe DNG SDK uses int32 and shifts, so we will do, too.
-          }
-          7 => {
-            let ra = Self::px_ra(current_row, col, comp, cc, pt);
-            let rb = Self::px_rb(prev_row, current_row, col, comp, cc, pt);
-            (ra + rb) >> 1 // Adobe DNG SDK uses int32 and shifts, so we will do, too.
-          }
-          _ => {
-            // We panic here because supported predictor check
-            // is done earlier.
-            panic!("unsupported predictor")
-          }
-        }
-      }
-    }
-  }
-
   /// Scan frequency for Huff table
+  #[multiversion]
+  #[clone(target = "[x86|x86_64]+avx+avx2")]
+  #[clone(target = "x86+sse")]
   fn scan_frequency(&mut self) -> Result<()> {
-    let mut prev_row = None;
+    let mut cache = vec![0; self.resolution() * self.components];
+
+    let rowsize = self.width * self.components;
+    let linesize = (self.width + self.padding) * self.components;
+    let mut row_prev = &self.image[0..];
+    let mut row_curr = &self.image[0..];
+    let mut diffs = vec![0_i16; linesize];
+
     for row in 0..self.height {
-      let curr_offset = row * (self.row_len() + self.skip_len);
-      let current_row = &self.image[curr_offset..curr_offset + self.row_len()];
-      if row > 0 {
-        let prev_offset = (row - 1) * (self.row_len() + self.skip_len);
-        prev_row = Some(&self.image[prev_offset..prev_offset + self.row_len()]);
+      match (self.components, self.predictor) {
+        // 1
+        (1, 1) => ljpeg92_diff::<1, 1>(row, row_prev, row_curr, &mut diffs, linesize, self.point_transform, self.bitdepth),
+        (1, 2) => ljpeg92_diff::<1, 2>(row, row_prev, row_curr, &mut diffs, linesize, self.point_transform, self.bitdepth),
+        (1, 3) => ljpeg92_diff::<1, 3>(row, row_prev, row_curr, &mut diffs, linesize, self.point_transform, self.bitdepth),
+        (1, 4) => ljpeg92_diff::<1, 4>(row, row_prev, row_curr, &mut diffs, linesize, self.point_transform, self.bitdepth),
+        (1, 5) => ljpeg92_diff::<1, 5>(row, row_prev, row_curr, &mut diffs, linesize, self.point_transform, self.bitdepth),
+        (1, 6) => ljpeg92_diff::<1, 6>(row, row_prev, row_curr, &mut diffs, linesize, self.point_transform, self.bitdepth),
+        (1, 7) => ljpeg92_diff::<1, 7>(row, row_prev, row_curr, &mut diffs, linesize, self.point_transform, self.bitdepth),
+        // 2
+        (2, 1) => ljpeg92_diff::<2, 1>(row, row_prev, row_curr, &mut diffs, linesize, self.point_transform, self.bitdepth),
+        (2, 2) => ljpeg92_diff::<2, 2>(row, row_prev, row_curr, &mut diffs, linesize, self.point_transform, self.bitdepth),
+        (2, 3) => ljpeg92_diff::<2, 3>(row, row_prev, row_curr, &mut diffs, linesize, self.point_transform, self.bitdepth),
+        (2, 4) => ljpeg92_diff::<2, 4>(row, row_prev, row_curr, &mut diffs, linesize, self.point_transform, self.bitdepth),
+        (2, 5) => ljpeg92_diff::<2, 5>(row, row_prev, row_curr, &mut diffs, linesize, self.point_transform, self.bitdepth),
+        (2, 6) => ljpeg92_diff::<2, 6>(row, row_prev, row_curr, &mut diffs, linesize, self.point_transform, self.bitdepth),
+        (2, 7) => ljpeg92_diff::<2, 7>(row, row_prev, row_curr, &mut diffs, linesize, self.point_transform, self.bitdepth),
+        // 3
+        (3, 1) => ljpeg92_diff::<3, 1>(row, row_prev, row_curr, &mut diffs, linesize, self.point_transform, self.bitdepth),
+        (3, 2) => ljpeg92_diff::<3, 2>(row, row_prev, row_curr, &mut diffs, linesize, self.point_transform, self.bitdepth),
+        (3, 3) => ljpeg92_diff::<3, 3>(row, row_prev, row_curr, &mut diffs, linesize, self.point_transform, self.bitdepth),
+        (3, 4) => ljpeg92_diff::<3, 4>(row, row_prev, row_curr, &mut diffs, linesize, self.point_transform, self.bitdepth),
+        (3, 5) => ljpeg92_diff::<3, 5>(row, row_prev, row_curr, &mut diffs, linesize, self.point_transform, self.bitdepth),
+        (3, 6) => ljpeg92_diff::<3, 6>(row, row_prev, row_curr, &mut diffs, linesize, self.point_transform, self.bitdepth),
+        (3, 7) => ljpeg92_diff::<3, 7>(row, row_prev, row_curr, &mut diffs, linesize, self.point_transform, self.bitdepth),
+        // 4
+        (4, 1) => ljpeg92_diff::<4, 1>(row, row_prev, row_curr, &mut diffs, linesize, self.point_transform, self.bitdepth),
+        (4, 2) => ljpeg92_diff::<4, 2>(row, row_prev, row_curr, &mut diffs, linesize, self.point_transform, self.bitdepth),
+        (4, 3) => ljpeg92_diff::<4, 3>(row, row_prev, row_curr, &mut diffs, linesize, self.point_transform, self.bitdepth),
+        (4, 4) => ljpeg92_diff::<4, 4>(row, row_prev, row_curr, &mut diffs, linesize, self.point_transform, self.bitdepth),
+        (4, 5) => ljpeg92_diff::<4, 5>(row, row_prev, row_curr, &mut diffs, linesize, self.point_transform, self.bitdepth),
+        (4, 6) => ljpeg92_diff::<4, 6>(row, row_prev, row_curr, &mut diffs, linesize, self.point_transform, self.bitdepth),
+        (4, 7) => ljpeg92_diff::<4, 7>(row, row_prev, row_curr, &mut diffs, linesize, self.point_transform, self.bitdepth),
+
+        _ => unreachable!(),
       }
-      for col in 0..self.width {
-        for comp in self.components() {
-          let sample = current_row[(col * self.components) + comp] >> self.point_transform;
-          if sample > self.max_value {
-            inspector!("sample: {:#x} max: {:#x}", sample, self.max_value);
-            return Err(CompressorError::Overflow(format!(
-              "Sample overflow, sample is {:#x} but max value is {:#x}",
-              sample, self.max_value
-            )));
-          }
-          let px = self.predict_px(prev_row, current_row, row, col, comp);
-          // See write_body() to learn why to use i16 and 32 here.
-          let diff: i16 = (sample as i16).wrapping_sub(px as i16);
-          let ssss = if diff == 0 { 0 } else { 32 - (diff as i32).abs().leading_zeros() };
-          self.comp_state[comp].histogram[ssss as usize] += 1;
-        }
+      // Only copy rowsize values and ignore padding.
+      cache[row * rowsize..row * rowsize + rowsize].copy_from_slice(&diffs[..rowsize]);
+
+      for (i, diff) in diffs.iter().take(rowsize).enumerate() {
+        let comp = i % self.components;
+        let ssss = lookup_ssss(*diff);
+        self.comp_state[comp].histogram[ssss as usize] += 1;
       }
+
+      row_prev = row_curr;
+      row_curr = &row_curr[linesize..];
     }
+
     #[cfg(feature = "inspector")]
     for comp in self.components() {
       inspector!("Huffman table {}", comp);
@@ -656,6 +657,7 @@ impl<'a> LjpegCompressor<'a> {
         inspector!("scan: self.huffman[{}].hist[{}]={}", comp, i, self.comp_state[comp].histogram[i]);
       }
     }
+    self.cache = cache;
     Ok(())
   }
 
@@ -667,7 +669,6 @@ impl<'a> LjpegCompressor<'a> {
         inspector!("unsorted freq: {}: {}, {}", i, f, *f as f32 / (self.resolution() as f32));
       }
     }
-
     let huffgen = HuffTableBuilder::new(self.comp_state[comp].histogram.clone(), self.resolution() as f32);
     let table = huffgen.build();
     //let table = HuffTableBuilder::_generic_table(self.comp_state[comp].histogram.clone(), self.resolution() as f32);
@@ -690,13 +691,13 @@ impl<'a> LjpegCompressor<'a> {
     encoded.write_u16::<BigEndian>(self.width as u16)?;
 
     encoded.write_u8(self.components as u8)?; // Components Nf
-    for c in self.components() {
+    for c in self.component_range() {
       encoded.write_u8(c as u8)?; // Component ID
       encoded.write_u8(0x11)?; // H_i / V_i, Sampling factor 0001 0001
       encoded.write_u8(0)?; // Quantisation table Tq (not used for lossless)
     }
 
-    for comp in self.components() {
+    for comp in self.component_range() {
       // Write HUFF
       encoded.write_u16::<BigEndian>(0xffc4)?;
 
@@ -734,7 +735,7 @@ impl<'a> LjpegCompressor<'a> {
     encoded.write_u16::<BigEndian>(0xffda)?; // SCAN
     encoded.write_u16::<BigEndian>(0x0006 + (self.components as u16 * 2))?; // Ls, scan header length
     encoded.write_u8(self.components as u8)?; // Ns, Component count
-    for c in self.components() {
+    for c in self.component_range() {
       encoded.write_u8(c as u8)?; // Cs_i, Component selector
       encoded.write_u8((c as u8) << 4)?; // Td, Ta, DC/AC entropy table selector
     }
@@ -754,76 +755,167 @@ impl<'a> LjpegCompressor<'a> {
   /// Write JPEG body
   fn write_body(&mut self, encoded: &mut dyn Write) -> Result<()> {
     let mut bitstream = BitstreamJPEG::new(encoded);
+    for (i, diff) in self.cache.iter().enumerate() {
+      let comp = i % self.components;
+      let ssss = lookup_ssss(*diff);
+      let enc = self.comp_state[comp].hufftable[ssss as usize];
+      let (bits, value) = (enc.len(), enc.get_lsb() as u64);
+      assert!(bits > 0);
+      bitstream.write(bits, value)?;
+      //inspector!("huff bits: {}, value: {:b}", bits, value);
 
-    let mut prev_row = None;
-    for row in 0..self.height {
-      let curr_offset = row * (self.row_len() + self.skip_len);
-      let current_row = &self.image[curr_offset..curr_offset + self.row_len()];
-      if row > 0 {
-        let prev_offset = (row - 1) * (self.row_len() + self.skip_len);
-        prev_row = Some(&self.image[prev_offset..prev_offset + self.row_len()]);
+      // If the number of bits is 16, there is only one possible difference
+      // value (-32786), so the lossless JPEG spec says not to output anything
+      // in that case.  So we only need to output the diference value if
+      // the number of bits is between 1 and 15. This also writes nothing
+      // for ssss==0.
+      assert!(ssss <= 16);
+      if (ssss & 15) != 0 {
+        // sign encoding
+        let diff = if *diff < 0 { *diff as i32 - 1 } else { *diff as i32 };
+        bitstream.write(ssss as usize, (diff & (0x0FFFF >> (16 - ssss))) as u64)?;
       }
-
-      for col in 0..self.width {
-        for comp in self.components() {
-          let sample = current_row[(col * self.components) + comp] >> self.point_transform;
-          if sample > self.max_value {
-            return Err(CompressorError::Overflow(format!(
-              "Sample overflow, sample is {:#x} but max value is {:#x}",
-              sample, self.max_value
-            )));
-          }
-          let px = self.predict_px(prev_row, current_row, row, col, comp);
-          //debug!("Px: {}", px);
-
-          //let mut diff: i16 = (sample as i16 - px as i16);
-          // We need to calculate the wrapping result. We can't use i32 because
-          // the biggest class SSSS=16 is 32768 for difference. With i32 calculation,
-          // we get maybe bigger difference values. So i16 calculation guarantee
-          // differences <= 32768.
-          let mut diff: i16 = (sample as i32 - px) as i16;
-
-          // Because the absolute value for i16 may be bigger than i16 can handle,
-          // we must cast the diff to i32.
-          let ssss = if diff == 0 { 0 } else { 32 - (diff as i32).abs().leading_zeros() };
-
-          //inspector!("Sample: {}, px: {}, diff: {}", sample, px, diff);
-          //println!("{} - {}, DIFF is: {}, ssss={}", sample, px, diff, ssss);
-
-          let enc = self.comp_state[comp].hufftable[ssss as usize];
-
-          let (bits, value) = (enc.len(), enc.get_lsb() as u64);
-          assert!(bits > 0);
-          //inspector!("bits: {}, value: {:b}", bits, value);
-          bitstream.write(bits, value)?;
-
-          // Sign encoding
-          let vt = if ssss > 0 { 1 << (ssss - 1) } else { 0 };
-          if diff < vt {
-            //diff += (1 << ssss) - 1;
-            diff = diff.wrapping_add(((1_u16 << ssss) - 1) as i16);
-          }
-
-          //assert!(diff <= (diff & (1 << ssss) - 1));
-          //inspector!("diff: {}, ssss: {}", diff, ssss);
-
-          assert!(ssss <= 16);
-
-          // Write the rest of the bits for the value
-          // For ssss == 16 no additional bits are written
-          if ssss == 16 {
-            // ignore
-          } else {
-            bitstream.write(ssss as usize, diff as u64)?;
-          }
-        }
-      }
-    } // pixel loop
-
+    }
     // Flush the final bits
     bitstream.flush()?;
     Ok(())
   }
+}
+
+/// Calculate the difference value between a sample and the predictor
+/// value. This function is optimized for one and two component input
+/// as this the case for most image data.
+/// `linesize` is the count of values including padding data at the end
+#[multiversion]
+#[clone(target = "x86+sse")]
+#[clone(target = "[x86|x86_64]+avx+avx2")]
+#[clone(target = "[x86|x86_64]+avx+avx2+fma+bmi1+bmi2")]
+//#[clone(target = "[x86|x86_64]+avx+avx2+fma+bmi1+bmi2+avx512f+avx512bw")]
+fn ljpeg92_diff<const NCOMP: usize, const PX: u8>(
+  row: usize,          // The current row index
+  row_prev: &[u16],    // Previous row (for index 0 it's the same reference as row_curr)
+  row_curr: &[u16],    // Current row
+  diffs: &mut [i16],   // Output buffer for difference values
+  linesize: usize,     // Count of values including padding data at the end
+  point_transform: u8, // Point transform
+  bitdepth: u8,        // Bit depth
+) {
+  assert_eq!(linesize % NCOMP, 0);
+  let pixels = linesize / NCOMP; // How many pixels are in the line
+  let samplecnt = pixels * NCOMP;
+  let row_prev = &row_prev[..samplecnt]; // Hint for compiler: each slice has identical bounds (SIMD).
+  let row_curr = &row_curr[..samplecnt]; // Slice range must be identical for SIMD optimizations.
+  let diffs = &mut diffs[..samplecnt];
+
+  // In debug, check that no sample overflows max_value
+  #[cfg(debug_assertions)]
+  row_curr.iter().for_each(|sample| {
+    let max_value = ((1u32 << (bitdepth - point_transform)) - 1) as u16;
+    if (*sample >> point_transform) > max_value {
+      panic!("Sample overflow, sample is {:#x} but max value is {:#x}", sample, max_value);
+    }
+  });
+
+  match row {
+    // First row always use predictor 1
+    // Set first column to initial values
+    0 => {
+      for comp in 0..NCOMP {
+        let px = (1u16 << (bitdepth - point_transform - 1)) as i32;
+        let sample = pred_x::<NCOMP>(row_prev, row_curr, comp, point_transform);
+        diffs[0 + comp] = (sample - px) as i16;
+      }
+      // Process remaining pixels
+      for idx in NCOMP..samplecnt {
+        let px = pred_a::<NCOMP>(row_prev, row_curr, idx, point_transform);
+        let sample = pred_x::<NCOMP>(row_prev, row_curr, idx, point_transform);
+        diffs[idx] = (sample - px) as i16;
+      }
+    }
+    // Not on first row, the first column uses predictor 2
+    _ => {
+      for comp in 0..NCOMP {
+        let px = pred_b::<NCOMP>(row_prev, row_curr, 0 + comp, point_transform);
+        let sample = pred_x::<NCOMP>(row_prev, row_curr, comp, point_transform);
+        diffs[0 + comp] = (sample - px) as i16;
+      }
+      let predictor = match PX {
+        1 => pred_a::<NCOMP>,
+        2 => pred_b::<NCOMP>,
+        3 => pred_c::<NCOMP>,
+        4 => |prev: &[u16], curr: &[u16], idx: usize, pt: u8| -> i32 {
+          let ra = pred_a::<NCOMP>(prev, curr, idx, pt);
+          let rb = pred_b::<NCOMP>(prev, curr, idx, pt);
+          let rc = pred_c::<NCOMP>(prev, curr, idx, pt);
+          ra + rb - rc
+        },
+        5 => |prev: &[u16], curr: &[u16], idx: usize, pt: u8| -> i32 {
+          let ra = pred_a::<NCOMP>(prev, curr, idx, pt);
+          let rb = pred_b::<NCOMP>(prev, curr, idx, pt);
+          let rc = pred_c::<NCOMP>(prev, curr, idx, pt);
+          ra + ((rb - rc) >> 1) // Adobe DNG SDK uses int32 and shifts, so we will do, too.
+        },
+        6 => |prev: &[u16], curr: &[u16], idx: usize, pt: u8| -> i32 {
+          let ra = pred_a::<NCOMP>(prev, curr, idx, pt);
+          let rb = pred_b::<NCOMP>(prev, curr, idx, pt);
+          let rc = pred_c::<NCOMP>(prev, curr, idx, pt);
+          rb + ((ra - rc) >> 1) // Adobe DNG SDK uses int32 and shifts, so we will do, too.
+        },
+        7 => |prev: &[u16], curr: &[u16], idx: usize, pt: u8| -> i32 {
+          let ra = pred_a::<NCOMP>(prev, curr, idx, pt);
+          let rb = pred_b::<NCOMP>(prev, curr, idx, pt);
+          (ra + rb) >> 1 // Adobe DNG SDK uses int32 and shifts, so we will do, too.
+        },
+        // Other predictors are not supported and catched in previous code path.
+        _ => unreachable!(),
+      };
+      // First pixel is processed, now process the remaining pixels.
+      for idx in NCOMP..samplecnt {
+        let px = predictor(row_prev, row_curr, idx, point_transform);
+        let sample = pred_x::<NCOMP>(row_prev, row_curr, idx, point_transform);
+        // The difference between the prediction value and
+        // the input is calculated modulo 2^16. So we can cast i32
+        // down to i16 to truncate the upper 16 bits (H.1.2.1, last paragraph).
+        diffs[idx] = (sample - px) as i16;
+      }
+    }
+  }
+}
+
+/// Get Rx by current line
+/// Figure H.1
+/// | c | b |
+/// | a | x |
+#[inline(always)]
+fn pred_x<const NCOMP: usize>(_prev: &[u16], curr: &[u16], idx: usize, point_transform: u8) -> i32 {
+  unsafe { (curr.get_unchecked(idx) >> point_transform) as i32 }
+}
+
+/// Get Ra predictor by current line
+/// Figure H.1
+/// | c | b |
+/// | a | x |
+#[inline(always)]
+fn pred_a<const NCOMP: usize>(_prev: &[u16], curr: &[u16], idx: usize, point_transform: u8) -> i32 {
+  unsafe { (curr.get_unchecked(idx - NCOMP) >> point_transform) as i32 }
+}
+
+/// Get Rb predictor by previous line
+/// Figure H.1
+/// | c | b |
+/// | a | x |
+#[inline(always)]
+fn pred_b<const NCOMP: usize>(prev: &[u16], _curr: &[u16], idx: usize, point_transform: u8) -> i32 {
+  unsafe { (prev.get_unchecked(idx) >> point_transform) as i32 }
+}
+
+/// Get Rc predictor by previous line
+/// Figure H.1
+/// | c | b |
+/// | a | x |
+#[inline(always)]
+fn pred_c<const NCOMP: usize>(prev: &[u16], _curr: &[u16], idx: usize, point_transform: u8) -> i32 {
+  unsafe { (prev.get_unchecked(idx - NCOMP) >> point_transform) as i32 }
 }
 
 #[cfg(test)]
@@ -868,7 +960,7 @@ mod tests {
     let w = 16;
     let c = 1;
     let input_image = vec![0x0000; w * h * c];
-    let enc = LjpegCompressor::new(&input_image, w, h, c, 16, 1, 0)?;
+    let enc = LjpegCompressor::new(&input_image, w, h, c, 16, 1, 0, 0)?;
     let result = enc.encode();
     assert!(result.is_ok());
     let jpeg = result?;
@@ -915,7 +1007,7 @@ mod tests {
     let w = 2;
     let c = 2;
     let input_image = vec![0x0000; w * h * c];
-    let enc = LjpegCompressor::new(&input_image, w, h, c, 16, 1, 0)?;
+    let enc = LjpegCompressor::new(&input_image, w, h, c, 16, 1, 0, 0)?;
     let result = enc.encode();
     assert!(result.is_ok());
     let jpeg = result?;
@@ -937,7 +1029,7 @@ mod tests {
     let w = 16;
     let c = 1;
     let input_image = vec![0x0000; w * h * c];
-    let enc = LjpegCompressor::new(&input_image, w, h, c, 16, 1, 0)?;
+    let enc = LjpegCompressor::new(&input_image, w, h, c, 16, 1, 0, 0)?;
     let result = enc.encode();
     assert!(result.is_ok());
     Ok(())
@@ -950,23 +1042,23 @@ mod tests {
     let w = 16;
     let c = 1;
     let input_image = vec![0xffff; w * h * c];
-    let enc = LjpegCompressor::new(&input_image, w, h, c, 16, 1, 0)?;
+    let enc = LjpegCompressor::new(&input_image, w, h, c, 16, 1, 0, 0)?;
     let result = enc.encode();
     assert!(result.is_ok());
     Ok(())
   }
 
+  #[cfg(debug_assertions)]
   #[test]
-  fn encode_16x16_bitdepth_error() -> std::result::Result<(), Box<dyn std::error::Error>> {
+  #[should_panic(expected = "Sample overflow, sample is 0xfffe but max value is 0x3fff")]
+  fn encode_16x16_bitdepth_error() {
     crate::init_test_logger();
     let h = 16;
     let w = 16;
     let c = 1;
     let input_image = vec![0xfffe; w * h * c];
-    let enc = LjpegCompressor::new(&input_image, w, h, c, 14, 1, 0)?;
-    let result = enc.encode();
-    assert!(result.is_err());
-    Ok(())
+    let enc = LjpegCompressor::new(&input_image, w, h, c, 14, 1, 0, 0).unwrap();
+    let _ = enc.encode();
   }
 
   #[test]
@@ -976,7 +1068,7 @@ mod tests {
     let w = 16;
     let c = 1;
     let input_image = vec![0x9999_u16; (w * h * c) - 1];
-    let result = LjpegCompressor::new(&input_image, w, h, c, 16, 1, 0);
+    let result = LjpegCompressor::new(&input_image, w, h, c, 16, 1, 0, 0);
     assert!(result.is_err());
     Ok(())
   }
@@ -991,7 +1083,7 @@ mod tests {
     for i in 0..input_image.len() {
       input_image[i] = i as u16;
     }
-    let enc = LjpegCompressor::new(&input_image, w, h, c, 16, 1, 0)?;
+    let enc = LjpegCompressor::new(&input_image, w, h, c, 16, 1, 0, 0)?;
     let result = enc.encode();
     assert!(result.is_ok());
     let jpeg = result?;
@@ -1018,7 +1110,7 @@ mod tests {
     let w = input_image.len();
     let c = 1;
 
-    let enc = LjpegCompressor::new(&input_image, w, h, c, 16, 1, 0)?;
+    let enc = LjpegCompressor::new(&input_image, w, h, c, 16, 1, 0, 0)?;
     let result = enc.encode();
     assert!(result.is_ok());
     let jpeg = result?;
@@ -1042,7 +1134,7 @@ mod tests {
     let w = input_image.len();
     let c = 1;
 
-    let enc = LjpegCompressor::new(&input_image, w, h, c, 16, 1, 0)?;
+    let enc = LjpegCompressor::new(&input_image, w, h, c, 16, 1, 0, 0)?;
     let result = enc.encode();
     assert!(result.is_ok());
     let jpeg = result?;
@@ -1064,7 +1156,7 @@ mod tests {
     let w = input_image.len();
     let c = 1;
 
-    let enc = LjpegCompressor::new(&input_image, w, h, c, 16, 1, 0)?;
+    let enc = LjpegCompressor::new(&input_image, w, h, c, 16, 1, 0, 0)?;
     let result = enc.encode();
     assert!(result.is_ok());
     let jpeg = result?;
@@ -1086,7 +1178,7 @@ mod tests {
     let w = 4;
     let c = 1;
 
-    let enc = LjpegCompressor::new(&input_image, w, h, c, 16, 2, 0)?;
+    let enc = LjpegCompressor::new(&input_image, w, h, c, 16, 2, 0, 0)?;
     let result = enc.encode();
     assert!(result.is_ok());
     let jpeg = result?;
@@ -1103,6 +1195,32 @@ mod tests {
   }
 
   #[test]
+  fn encode_predictor1_2comp_padding() -> std::result::Result<(), Box<dyn std::error::Error>> {
+    crate::init_test_logger();
+    let input_image = vec![1, 2, 5, 6, 3, 7, 0, 0, 7, 8, 3, 4, 6, 2, 0, 0];
+    let expected_image = vec![1, 2, 5, 6, 3, 7, 7, 8, 3, 4, 6, 2];
+    let h = 2;
+    let w = 3;
+    let c = 2;
+    let padding = 1;
+
+    let enc = LjpegCompressor::new(&input_image, w, h, c, 16, 1, 0, padding)?;
+    let result = enc.encode();
+    assert!(result.is_ok());
+    let jpeg = result?;
+
+    let dec = LjpegDecompressor::new_full(&jpeg, false, false)?;
+    let mut outbuf = vec![0; h * w * c];
+    dec.decode(&mut outbuf, 0, w * c, w * c, h, false)?;
+    //debug!("{:?}", outbuf);
+    for i in 0..outbuf.len() {
+      assert_eq!(outbuf[i], expected_image[i]);
+    }
+
+    Ok(())
+  }
+
+  #[test]
   fn encode_predictor3_1comp() -> std::result::Result<(), Box<dyn std::error::Error>> {
     crate::init_test_logger();
     let input_image = vec![0, u16::MAX, 0, 0, 0, 0, u16::MAX - 5, 0];
@@ -1110,7 +1228,7 @@ mod tests {
     let w = 4;
     let c = 1;
 
-    let enc = LjpegCompressor::new(&input_image, w, h, c, 16, 3, 0)?;
+    let enc = LjpegCompressor::new(&input_image, w, h, c, 16, 3, 0, 0)?;
     let result = enc.encode();
     assert!(result.is_ok());
     let jpeg = result?;
@@ -1134,7 +1252,7 @@ mod tests {
     let w = 4;
     let c = 1;
 
-    let enc = LjpegCompressor::new(&input_image, w, h, c, 16, 4, 0)?;
+    let enc = LjpegCompressor::new(&input_image, w, h, c, 16, 4, 0, 0)?;
     let result = enc.encode();
     assert!(result.is_ok());
     let jpeg = result?;
@@ -1158,7 +1276,7 @@ mod tests {
     let w = 4;
     let c = 1;
 
-    let enc = LjpegCompressor::new(&input_image, w, h, c, 16, 5, 0)?;
+    let enc = LjpegCompressor::new(&input_image, w, h, c, 16, 5, 0, 0)?;
     let result = enc.encode();
     assert!(result.is_ok());
     let jpeg = result?;
@@ -1182,7 +1300,7 @@ mod tests {
     let w = 4;
     let c = 1;
 
-    let enc = LjpegCompressor::new(&input_image, w, h, c, 16, 6, 0)?;
+    let enc = LjpegCompressor::new(&input_image, w, h, c, 16, 6, 0, 0)?;
     let result = enc.encode();
     assert!(result.is_ok());
     let jpeg = result?;
@@ -1206,7 +1324,7 @@ mod tests {
     let w = 1;
     let c = 3;
 
-    let enc = LjpegCompressor::new(&input_image, w, h, c, 16, 6, 0)?;
+    let enc = LjpegCompressor::new(&input_image, w, h, c, 16, 6, 0, 0)?;
     let result = enc.encode();
     assert!(result.is_ok());
     let jpeg = result?;
@@ -1230,7 +1348,7 @@ mod tests {
     let w = 2;
     let c = 3;
 
-    let enc = LjpegCompressor::new(&input_image, w, h, c, 16, 6, 0)?;
+    let enc = LjpegCompressor::new(&input_image, w, h, c, 16, 6, 0, 0)?;
     let result = enc.encode();
     assert!(result.is_ok());
     let jpeg = result?;
@@ -1254,7 +1372,7 @@ mod tests {
     let w = 4;
     let c = 1;
 
-    let enc = LjpegCompressor::new(&input_image, w, h, c, 16, 7, 0)?;
+    let enc = LjpegCompressor::new(&input_image, w, h, c, 16, 7, 0, 0)?;
     let result = enc.encode();
     assert!(result.is_ok());
     let jpeg = result?;
@@ -1279,7 +1397,7 @@ mod tests {
     let w = 4;
     let c = 2;
 
-    let enc = LjpegCompressor::new(&input_image, w, h, c, 16, 1, 0)?;
+    let enc = LjpegCompressor::new(&input_image, w, h, c, 16, 1, 0, 0)?;
     let result = enc.encode();
     assert!(result.is_ok());
     let jpeg = result?;
@@ -1302,7 +1420,7 @@ mod tests {
     let w = 6;
     let c = 1;
 
-    let enc = LjpegCompressor::new(&input_image, w, h, c, 16, 4, 0)?;
+    let enc = LjpegCompressor::new(&input_image, w, h, c, 16, 4, 0, 0)?;
     let result = enc.encode();
     assert!(result.is_ok());
     let jpeg = result?;
@@ -1326,7 +1444,7 @@ mod tests {
     let w = 4;
     let c = 1;
 
-    let enc = LjpegCompressor::new(&input_image, w, h, c, 16, 5, 0)?;
+    let enc = LjpegCompressor::new(&input_image, w, h, c, 16, 5, 0, 0)?;
     let result = enc.encode();
     assert!(result.is_ok());
     let jpeg = result?;

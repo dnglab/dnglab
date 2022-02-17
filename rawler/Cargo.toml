@@ -37,6 +37,7 @@ uuid = {version = "0.8", features = ["serde", "v4"]}
 tokio = { version = "1.11.0", features = ["full"] }
 async-trait = "0.1.51"
 futures = "0.3"
+multiversion = "0.6.1"
 
 [dev-dependencies]
 serde_yaml = "0.8"
