@@ -78,6 +78,38 @@ fn lookup_ssss(diff: i16) -> u16 {
   // let ssss = if diff == 0 { 0 } else { 32 - (diff as i32).abs().leading_zeros() };
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd)]
+pub enum Predictor {
+  P1 = 1,
+  P2 = 2,
+  P3 = 3,
+  P4 = 4,
+  P5 = 5,
+  P6 = 6,
+  P7 = 7,
+}
+
+impl Predictor {
+  fn as_u8(&self) -> u8 {
+    *self as u8
+  }
+}
+
+impl From<u8> for Predictor {
+  fn from(v: u8) -> Self {
+    match v {
+      1 => Self::P1,
+      2 => Self::P2,
+      3 => Self::P3,
+      4 => Self::P4,
+      5 => Self::P5,
+      6 => Self::P6,
+      7 => Self::P7,
+      mode @ _ => panic!("Invalid predictor mode: {}", mode),
+    }
+  }
+}
+
 /// Error variants for compressor
 #[derive(Debug, Error)]
 pub enum CompressorError {
@@ -113,7 +145,7 @@ pub struct LjpegCompressor<'a> {
   /// **Warning:** This is untested, use with caution
   point_transform: u8,
   /// Predictor
-  predictor: u8,
+  predictor: Predictor,
   /// Extra width after each line before next line starts
   padding: usize,
   /// Component state (histogram, hufftable)
@@ -519,7 +551,16 @@ impl<'a> LjpegCompressor<'a> {
   /// Create a new LJPEG encoder
   ///
   /// skip_len is given as byte count after a row width.
-  pub fn new(image: &'a [u16], width: usize, height: usize, components: usize, bitdepth: u8, predictor: u8, point_transform: u8, padding: usize) -> Result<Self> {
+  pub fn new(
+    image: &'a [u16],
+    width: usize,
+    height: usize,
+    components: usize,
+    bitdepth: u8,
+    predictor: u8,
+    point_transform: u8,
+    padding: usize,
+  ) -> Result<Self> {
     if !(1..=7).contains(&predictor) {
       return Err(CompressorError::Overflow(format!("Unsupported predictor: {}", predictor)));
     }
@@ -553,7 +594,7 @@ impl<'a> LjpegCompressor<'a> {
       components,
       bitdepth,
       point_transform,
-      predictor,
+      predictor: Predictor::from(predictor),
       padding,
       comp_state: vec![ComponentState::default(); components],
       cache: Vec::default(),
@@ -600,41 +641,26 @@ impl<'a> LjpegCompressor<'a> {
     let mut row_curr = &self.image[0..];
     let mut diffs = vec![0_i16; linesize];
 
-    for row in 0..self.height {
-      match (self.components, self.predictor) {
-        // 1
-        (1, 1) => ljpeg92_diff::<1, 1>(row, row_prev, row_curr, &mut diffs, linesize, self.point_transform, self.bitdepth),
-        (1, 2) => ljpeg92_diff::<1, 2>(row, row_prev, row_curr, &mut diffs, linesize, self.point_transform, self.bitdepth),
-        (1, 3) => ljpeg92_diff::<1, 3>(row, row_prev, row_curr, &mut diffs, linesize, self.point_transform, self.bitdepth),
-        (1, 4) => ljpeg92_diff::<1, 4>(row, row_prev, row_curr, &mut diffs, linesize, self.point_transform, self.bitdepth),
-        (1, 5) => ljpeg92_diff::<1, 5>(row, row_prev, row_curr, &mut diffs, linesize, self.point_transform, self.bitdepth),
-        (1, 6) => ljpeg92_diff::<1, 6>(row, row_prev, row_curr, &mut diffs, linesize, self.point_transform, self.bitdepth),
-        (1, 7) => ljpeg92_diff::<1, 7>(row, row_prev, row_curr, &mut diffs, linesize, self.point_transform, self.bitdepth),
-        // 2
-        (2, 1) => ljpeg92_diff::<2, 1>(row, row_prev, row_curr, &mut diffs, linesize, self.point_transform, self.bitdepth),
-        (2, 2) => ljpeg92_diff::<2, 2>(row, row_prev, row_curr, &mut diffs, linesize, self.point_transform, self.bitdepth),
-        (2, 3) => ljpeg92_diff::<2, 3>(row, row_prev, row_curr, &mut diffs, linesize, self.point_transform, self.bitdepth),
-        (2, 4) => ljpeg92_diff::<2, 4>(row, row_prev, row_curr, &mut diffs, linesize, self.point_transform, self.bitdepth),
-        (2, 5) => ljpeg92_diff::<2, 5>(row, row_prev, row_curr, &mut diffs, linesize, self.point_transform, self.bitdepth),
-        (2, 6) => ljpeg92_diff::<2, 6>(row, row_prev, row_curr, &mut diffs, linesize, self.point_transform, self.bitdepth),
-        (2, 7) => ljpeg92_diff::<2, 7>(row, row_prev, row_curr, &mut diffs, linesize, self.point_transform, self.bitdepth),
-        // 3
-        (3, 1) => ljpeg92_diff::<3, 1>(row, row_prev, row_curr, &mut diffs, linesize, self.point_transform, self.bitdepth),
-        (3, 2) => ljpeg92_diff::<3, 2>(row, row_prev, row_curr, &mut diffs, linesize, self.point_transform, self.bitdepth),
-        (3, 3) => ljpeg92_diff::<3, 3>(row, row_prev, row_curr, &mut diffs, linesize, self.point_transform, self.bitdepth),
-        (3, 4) => ljpeg92_diff::<3, 4>(row, row_prev, row_curr, &mut diffs, linesize, self.point_transform, self.bitdepth),
-        (3, 5) => ljpeg92_diff::<3, 5>(row, row_prev, row_curr, &mut diffs, linesize, self.point_transform, self.bitdepth),
-        (3, 6) => ljpeg92_diff::<3, 6>(row, row_prev, row_curr, &mut diffs, linesize, self.point_transform, self.bitdepth),
-        (3, 7) => ljpeg92_diff::<3, 7>(row, row_prev, row_curr, &mut diffs, linesize, self.point_transform, self.bitdepth),
-        // 4
-        (4, 1) => ljpeg92_diff::<4, 1>(row, row_prev, row_curr, &mut diffs, linesize, self.point_transform, self.bitdepth),
-        (4, 2) => ljpeg92_diff::<4, 2>(row, row_prev, row_curr, &mut diffs, linesize, self.point_transform, self.bitdepth),
-        (4, 3) => ljpeg92_diff::<4, 3>(row, row_prev, row_curr, &mut diffs, linesize, self.point_transform, self.bitdepth),
-        (4, 4) => ljpeg92_diff::<4, 4>(row, row_prev, row_curr, &mut diffs, linesize, self.point_transform, self.bitdepth),
-        (4, 5) => ljpeg92_diff::<4, 5>(row, row_prev, row_curr, &mut diffs, linesize, self.point_transform, self.bitdepth),
-        (4, 6) => ljpeg92_diff::<4, 6>(row, row_prev, row_curr, &mut diffs, linesize, self.point_transform, self.bitdepth),
-        (4, 7) => ljpeg92_diff::<4, 7>(row, row_prev, row_curr, &mut diffs, linesize, self.point_transform, self.bitdepth),
+    macro_rules! match_predictor {
+      ($comp:expr, $pred:expr) => {
+        match $pred {
+          Predictor::P1 => ljpeg92_diff::<$comp, 1>(row_prev, row_curr, &mut diffs, linesize, self.point_transform, self.bitdepth),
+          Predictor::P2 => ljpeg92_diff::<$comp, 2>(row_prev, row_curr, &mut diffs, linesize, self.point_transform, self.bitdepth),
+          Predictor::P3 => ljpeg92_diff::<$comp, 3>(row_prev, row_curr, &mut diffs, linesize, self.point_transform, self.bitdepth),
+          Predictor::P4 => ljpeg92_diff::<$comp, 4>(row_prev, row_curr, &mut diffs, linesize, self.point_transform, self.bitdepth),
+          Predictor::P5 => ljpeg92_diff::<$comp, 5>(row_prev, row_curr, &mut diffs, linesize, self.point_transform, self.bitdepth),
+          Predictor::P6 => ljpeg92_diff::<$comp, 6>(row_prev, row_curr, &mut diffs, linesize, self.point_transform, self.bitdepth),
+          Predictor::P7 => ljpeg92_diff::<$comp, 7>(row_prev, row_curr, &mut diffs, linesize, self.point_transform, self.bitdepth),
+        }
+      };
+    }
 
+    for row in 0..self.height {
+      match self.components {
+        1 => match_predictor!(1, self.predictor),
+        2 => match_predictor!(2, self.predictor),
+        3 => match_predictor!(3, self.predictor),
+        4 => match_predictor!(4, self.predictor),
         _ => unreachable!(),
       }
       // Only copy rowsize values and ignore padding.
@@ -739,7 +765,7 @@ impl<'a> LjpegCompressor<'a> {
       encoded.write_u8(c as u8)?; // Cs_i, Component selector
       encoded.write_u8((c as u8) << 4)?; // Td, Ta, DC/AC entropy table selector
     }
-    encoded.write_u8(self.predictor)?; // Ss, Predictor for lossless
+    encoded.write_u8(self.predictor.as_u8())?; // Ss, Predictor for lossless
     encoded.write_u8(0)?; // Se, ignored for lossless
     assert!(self.point_transform <= 15);
     encoded.write_u8(0x00 | (self.point_transform & 0xF))?; // Ah=0, Al=Point transform
@@ -792,7 +818,6 @@ impl<'a> LjpegCompressor<'a> {
 #[clone(target = "[x86|x86_64]+avx+avx2+fma+bmi1+bmi2")]
 //#[clone(target = "[x86|x86_64]+avx+avx2+fma+bmi1+bmi2+avx512f+avx512bw")]
 fn ljpeg92_diff<const NCOMP: usize, const PX: u8>(
-  row: usize,          // The current row index
   row_prev: &[u16],    // Previous row (for index 0 it's the same reference as row_curr)
   row_curr: &[u16],    // Current row
   diffs: &mut [i16],   // Output buffer for difference values
@@ -816,68 +841,65 @@ fn ljpeg92_diff<const NCOMP: usize, const PX: u8>(
     }
   });
 
-  match row {
-    // First row always use predictor 1
-    // Set first column to initial values
-    0 => {
-      for comp in 0..NCOMP {
-        let px = (1u16 << (bitdepth - point_transform - 1)) as i32;
-        let sample = pred_x::<NCOMP>(row_prev, row_curr, comp, point_transform);
-        diffs[0 + comp] = (sample - px) as i16;
-      }
-      // Process remaining pixels
-      for idx in NCOMP..samplecnt {
-        let px = pred_a::<NCOMP>(row_prev, row_curr, idx, point_transform);
-        let sample = pred_x::<NCOMP>(row_prev, row_curr, idx, point_transform);
-        diffs[idx] = (sample - px) as i16;
-      }
+  // First row always use predictor 1
+  // Set first column to initial values
+  if row_curr.as_ptr() == row_prev.as_ptr() {
+    for comp in 0..NCOMP {
+      let px = (1u16 << (bitdepth - point_transform - 1)) as i32;
+      let sample = pred_x::<NCOMP>(row_prev, row_curr, comp, point_transform);
+      diffs[0 + comp] = (sample - px) as i16;
     }
+    // Process remaining pixels
+    for idx in NCOMP..samplecnt {
+      let px = pred_a::<NCOMP>(row_prev, row_curr, idx, point_transform);
+      let sample = pred_x::<NCOMP>(row_prev, row_curr, idx, point_transform);
+      diffs[idx] = (sample - px) as i16;
+    }
+  } else {
     // Not on first row, the first column uses predictor 2
-    _ => {
-      for comp in 0..NCOMP {
-        let px = pred_b::<NCOMP>(row_prev, row_curr, 0 + comp, point_transform);
-        let sample = pred_x::<NCOMP>(row_prev, row_curr, comp, point_transform);
-        diffs[0 + comp] = (sample - px) as i16;
-      }
-      let predictor = match PX {
-        1 => pred_a::<NCOMP>,
-        2 => pred_b::<NCOMP>,
-        3 => pred_c::<NCOMP>,
-        4 => |prev: &[u16], curr: &[u16], idx: usize, pt: u8| -> i32 {
-          let ra = pred_a::<NCOMP>(prev, curr, idx, pt);
-          let rb = pred_b::<NCOMP>(prev, curr, idx, pt);
-          let rc = pred_c::<NCOMP>(prev, curr, idx, pt);
-          ra + rb - rc
-        },
-        5 => |prev: &[u16], curr: &[u16], idx: usize, pt: u8| -> i32 {
-          let ra = pred_a::<NCOMP>(prev, curr, idx, pt);
-          let rb = pred_b::<NCOMP>(prev, curr, idx, pt);
-          let rc = pred_c::<NCOMP>(prev, curr, idx, pt);
-          ra + ((rb - rc) >> 1) // Adobe DNG SDK uses int32 and shifts, so we will do, too.
-        },
-        6 => |prev: &[u16], curr: &[u16], idx: usize, pt: u8| -> i32 {
-          let ra = pred_a::<NCOMP>(prev, curr, idx, pt);
-          let rb = pred_b::<NCOMP>(prev, curr, idx, pt);
-          let rc = pred_c::<NCOMP>(prev, curr, idx, pt);
-          rb + ((ra - rc) >> 1) // Adobe DNG SDK uses int32 and shifts, so we will do, too.
-        },
-        7 => |prev: &[u16], curr: &[u16], idx: usize, pt: u8| -> i32 {
-          let ra = pred_a::<NCOMP>(prev, curr, idx, pt);
-          let rb = pred_b::<NCOMP>(prev, curr, idx, pt);
-          (ra + rb) >> 1 // Adobe DNG SDK uses int32 and shifts, so we will do, too.
-        },
-        // Other predictors are not supported and catched in previous code path.
-        _ => unreachable!(),
-      };
-      // First pixel is processed, now process the remaining pixels.
-      for idx in NCOMP..samplecnt {
-        let px = predictor(row_prev, row_curr, idx, point_transform);
-        let sample = pred_x::<NCOMP>(row_prev, row_curr, idx, point_transform);
-        // The difference between the prediction value and
-        // the input is calculated modulo 2^16. So we can cast i32
-        // down to i16 to truncate the upper 16 bits (H.1.2.1, last paragraph).
-        diffs[idx] = (sample - px) as i16;
-      }
+    for comp in 0..NCOMP {
+      let px = pred_b::<NCOMP>(row_prev, row_curr, 0 + comp, point_transform);
+      let sample = pred_x::<NCOMP>(row_prev, row_curr, comp, point_transform);
+      diffs[0 + comp] = (sample - px) as i16;
+    }
+    let predictor = match PX {
+      1 => pred_a::<NCOMP>,
+      2 => pred_b::<NCOMP>,
+      3 => pred_c::<NCOMP>,
+      4 => |prev: &[u16], curr: &[u16], idx: usize, pt: u8| -> i32 {
+        let ra = pred_a::<NCOMP>(prev, curr, idx, pt);
+        let rb = pred_b::<NCOMP>(prev, curr, idx, pt);
+        let rc = pred_c::<NCOMP>(prev, curr, idx, pt);
+        ra + rb - rc
+      },
+      5 => |prev: &[u16], curr: &[u16], idx: usize, pt: u8| -> i32 {
+        let ra = pred_a::<NCOMP>(prev, curr, idx, pt);
+        let rb = pred_b::<NCOMP>(prev, curr, idx, pt);
+        let rc = pred_c::<NCOMP>(prev, curr, idx, pt);
+        ra + ((rb - rc) >> 1) // Adobe DNG SDK uses int32 and shifts, so we will do, too.
+      },
+      6 => |prev: &[u16], curr: &[u16], idx: usize, pt: u8| -> i32 {
+        let ra = pred_a::<NCOMP>(prev, curr, idx, pt);
+        let rb = pred_b::<NCOMP>(prev, curr, idx, pt);
+        let rc = pred_c::<NCOMP>(prev, curr, idx, pt);
+        rb + ((ra - rc) >> 1) // Adobe DNG SDK uses int32 and shifts, so we will do, too.
+      },
+      7 => |prev: &[u16], curr: &[u16], idx: usize, pt: u8| -> i32 {
+        let ra = pred_a::<NCOMP>(prev, curr, idx, pt);
+        let rb = pred_b::<NCOMP>(prev, curr, idx, pt);
+        (ra + rb) >> 1 // Adobe DNG SDK uses int32 and shifts, so we will do, too.
+      },
+      // Other predictors are not supported and catched in previous code path.
+      _ => unreachable!(),
+    };
+    // First pixel is processed, now process the remaining pixels.
+    for idx in NCOMP..samplecnt {
+      let px = predictor(row_prev, row_curr, idx, point_transform);
+      let sample = pred_x::<NCOMP>(row_prev, row_curr, idx, point_transform);
+      // The difference between the prediction value and
+      // the input is calculated modulo 2^16. So we can cast i32
+      // down to i16 to truncate the upper 16 bits (H.1.2.1, last paragraph).
+      diffs[idx] = (sample - px) as i16;
     }
   }
 }
