@@ -144,7 +144,7 @@ pub enum TiffError {
 }
 
 /// Result type for Compressor results
-type Result<T> = std::result::Result<T, TiffError>;
+pub type Result<T> = std::result::Result<T, TiffError>;
 
 /*
 impl From<Value> for Entry {

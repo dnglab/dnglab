@@ -1,0 +1,12 @@
+[[cameras]]
+make = "PENTAX"
+model = "PENTAX K-7"
+clean_make = "Pentax"
+clean_model = "K-7"
+blackpoint = 0
+whitepoint = 4095
+color_pattern = "BGGR"
+#crops = [0,64,32,0]
+
+[cameras.color_matrix]
+D65 = [0.9142, -0.2947, -0.0678, -0.8648, 1.6967, 0.1663, -0.2224, 0.2898, 0.8615]

@@ -1,0 +1,12 @@
+[[cameras]]
+make = "PENTAX"
+model = "PENTAX 645D"
+clean_make = "Pentax"
+clean_model = "645D"
+blackpoint = 0
+whitepoint = 15767
+color_pattern = "BGGR"
+#crops = [0,0,0,0]
+
+[cameras.color_matrix]
+D65 = [1.0646, -0.3593, -0.1158, -0.3329, 1.1699, 0.1831, -0.0667, 0.2874, 0.6287]

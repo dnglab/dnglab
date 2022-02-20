@@ -140,6 +140,14 @@ pub fn digest(&mut self) -> std::io::Result<Digest> {
     Ok(buf)
   }
 
+  pub fn get_offset(&mut self, offset: u64) -> std::io::Result<Vec<u8>> {
+    let size = self.stream_len()?;
+    let mut buf = vec![0; (size-offset) as usize]; // TODO better?
+    self.file.seek(SeekFrom::Start(offset))?;
+    self.file.read_exact(&mut buf)?;
+    Ok(buf)
+  }
+
   pub fn get_buf(&mut self) -> std::io::Result<Vec<u8>> {
     let old_pos = self.file.stream_position()?;
     self.file.seek(SeekFrom::Start(self.start_offset))?;

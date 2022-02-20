@@ -1,0 +1,12 @@
+[[cameras]]
+make = "PENTAX Corporation"
+model = "PENTAX K100D Super"
+clean_make = "Pentax"
+clean_model = "K100D Super"
+blackpoint = 127
+whitepoint = 4095
+color_pattern = "RGGB"
+#crops = [0,0,0,0]
+
+[cameras.color_matrix]
+D65 = [1.1095, -0.3157, -0.1324, -0.8377, 1.5834, 0.2720, -0.1108, 0.0947, 1.1688]

@@ -1,18 +1,14 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2021 Daniel Vogelbacher <daniel@chaospixel.com>
 
-use super::{apply_corr, entry::RawEntry, file::TiffFile, Entry, Result, TiffError, Value, IFD};
+use super::{apply_corr, entry::RawEntry, file::TiffFile, Entry, Result, TiffError, IFD};
 use crate::{
   bits::Endian,
   tags::{LegacyTiffRootTag, TiffTagEnum},
 };
 use byteorder::{BigEndian, LittleEndian, ReadBytesExt};
-use log::warn;
 use serde::{Deserialize, Serialize};
-use std::{
-  collections::{BTreeMap, HashMap},
-  io::{Cursor, Read, Seek, SeekFrom},
-};
+use std::io::{Cursor, Read, Seek, SeekFrom};
 
 pub trait TiffReader {
   fn file(&self) -> &TiffFile;
@@ -20,6 +16,10 @@ pub trait TiffReader {
 
   fn chains(&self) -> &Vec<IFD> {
     &self.file().chain
+  }
+
+  fn get_endian(&self) -> Endian {
+    self.root_ifd().endian
   }
 
   fn sub_ifd_tags(&self) -> Vec<u16> {
@@ -106,62 +106,7 @@ pub trait TiffReader {
   }
 
   fn parse_ifd<R: Read + Seek>(&self, reader: &mut R, offset: u32, base: u32, corr: i32, endian: Endian, sub_tags: &[u16]) -> Result<IFD> {
-    reader.seek(SeekFrom::Start((base + offset) as u64))?;
-    let mut sub_ifd_offsets = HashMap::new();
-    let mut reader = EndianReader::new(reader, endian);
-    let entry_count = reader.read_u16()?;
-    let mut entries = BTreeMap::new();
-    let mut sub = HashMap::new();
-    for _ in 0..entry_count {
-      //let embedded = reader.read_u32()?;
-      let tag = reader.read_u16()?;
-      let entry = Entry::parse(&mut reader, base, corr, tag)?;
-      if self.sub_ifd_tags().contains(&tag) || sub_tags.contains(&tag) {
-        //let entry = Entry::parse(&mut reader, base, corr, tag)?;
-        match &entry.value {
-          Value::Long(offsets) => {
-            sub_ifd_offsets.insert(tag, offsets.clone());
-            //sub_ifd_offsets.extend_from_slice(&offsets);
-          }
-          _ => {
-            todo!()
-          }
-        }
-      }
-      entries.insert(entry.tag, entry);
-    }
-
-    // Some TIFF writers skip the next ifd pointer
-    // If we get an I/O error, we fallback to 0, signaling the end of IFD chains.
-    let next_ifd = match reader.read_u32() {
-      Ok(ptr) => ptr,
-      Err(e) => {
-        warn!("TIFF IFD reader failed to get next IFD pointer, fallback to 0. Error was: {}", e);
-        0
-      }
-    };
-
-    // Process SubIFDs
-    let pos = reader.position()?;
-    let reader = reader.into_inner();
-    for subs in sub_ifd_offsets {
-      let mut ifds = Vec::new();
-      for offset in subs.1 {
-        let ifd = self.parse_ifd(reader, apply_corr(offset, corr), base, corr, endian, sub_tags)?;
-        ifds.push(ifd);
-      }
-      sub.insert(subs.0, ifds);
-    }
-    EndianReader::new(reader, endian).goto(pos)?; // restore
-    Ok(IFD {
-      offset,
-      base,
-      corr,
-      next_ifd: if next_ifd == 0 { 0 } else { apply_corr(next_ifd, corr) },
-      entries,
-      endian,
-      sub,
-    })
+    IFD::new(reader, offset, base, corr, endian, sub_tags)
   }
 
   /// Construct a TIFF reader from Read capable objects
@@ -192,7 +137,9 @@ pub trait TiffReader {
     let mut chain = Vec::new();
     while next_ifd != 0 {
       // TODO: check if offset is in range
-      let ifd = self.parse_ifd(reader, next_ifd, self.file().base, self.file().corr, endian, sub_tags)?;
+      let mut multi_sub_tags = self.sub_ifd_tags(); // TODO: cleanup
+      multi_sub_tags.extend_from_slice(sub_tags);
+      let ifd = IFD::new(reader, next_ifd, self.file().base, self.file().corr, endian, &multi_sub_tags)?;
       if ifd.entries.is_empty() {
         return Err(TiffError::General(format!("TIFF is invalid, IFD must contain at least one entry")));
       }

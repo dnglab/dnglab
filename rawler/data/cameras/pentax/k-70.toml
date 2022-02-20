@@ -1,0 +1,12 @@
+[[cameras]]
+make = "RICOH IMAGING COMPANY, LTD."
+model = "PENTAX K-70"
+clean_make = "RICOH IMAGING COMPANY, LTD."
+clean_model = "PENTAX K-70"
+blackpoint = 64
+whitepoint = 16315
+color_pattern = "RGGB"
+#crops = [0,0,0,0]
+
+[cameras.color_matrix]
+D65 = [0.8766, -0.3149, -0.0747, -0.3976, 1.1943, 0.2292, -0.0517, 0.1259, 0.5552]

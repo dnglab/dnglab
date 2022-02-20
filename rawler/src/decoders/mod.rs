@@ -50,6 +50,7 @@ macro_rules! fetch_ifd {
 //mod arw;
 pub mod cr2;
 pub mod cr3;
+pub mod pef;
 /*
 mod crw;
 mod dcr;
@@ -65,7 +66,6 @@ mod nef;
 mod nkd;
 mod nrw;
 mod orf;
-mod pef;
 mod raf;
 mod rw2;
 mod srw;
@@ -405,9 +405,12 @@ impl RawLoader {
 
       match tiff
         .get_entry(LegacyTiffRootTag::Make)
-        .and_then(|entry| entry.value.as_string().and_then(|s| Some(s.as_str())))
+        .and_then(|entry| entry.value.as_string().and_then(|s| Some(s.as_str().trim_end())))
       {
         Some("Canon") => return use_decoder!(cr2::Cr2Decoder, rawfile, tiff, self),
+        Some("PENTAX") => return use_decoder!(pef::PefDecoder, rawfile, tiff, self),
+        Some("PENTAX Corporation") => return use_decoder!(pef::PefDecoder, rawfile, tiff, self),
+        Some("RICOH IMAGING COMPANY, LTD.") => return use_decoder!(pef::PefDecoder, rawfile, tiff, self),
 
         Some(make) => {
           return Err(RawlerError::Unsupported(
@@ -546,8 +549,8 @@ impl RawLoader {
   }
 
   fn check_supported_with_mode(&self, ifd0: &IFD, mode: &str) -> Result<Camera> {
-    let make = fetch_tag_new!(ifd0, LegacyTiffRootTag::Make).get_string()?;
-    let model = fetch_tag_new!(ifd0, LegacyTiffRootTag::Model).get_string()?;
+    let make = fetch_tag_new!(ifd0, LegacyTiffRootTag::Make).get_string()?.trim_end();
+    let model = fetch_tag_new!(ifd0, LegacyTiffRootTag::Model).get_string()?.trim_end();
     self.check_supported_with_everything(make, model, mode)
   }
 

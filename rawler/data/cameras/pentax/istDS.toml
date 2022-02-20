@@ -1,0 +1,12 @@
+[[cameras]]
+make = "PENTAX Corporation"
+model = "PENTAX *ist DS"
+clean_make = "Pentax"
+clean_model = "*ist DS"
+blackpoint = 128
+whitepoint = 3950
+color_pattern = "RGGB"
+#crops = [0,0,2,0]
+
+[cameras.color_matrix]
+D65 = [1.0371, -0.2333, -0.1206, -0.8688, 1.6231, 0.2602, -0.1230, 0.1116, 1.1282]
