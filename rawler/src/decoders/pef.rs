@@ -1,22 +1,31 @@
 use image::DynamicImage;
 use log::debug;
 use log::warn;
+use serde::Deserialize;
+use serde::Serialize;
 use std::f32::NAN;
 
 use super::ok_image_with_blacklevels;
+use super::Camera;
 use super::Decoder;
 use super::RawDecodeParams;
 use crate::alloc_image_ok;
+use crate::analyze::FormatDump;
 use crate::bits::Endian;
 use crate::decompressors::ljpeg::huffman::*;
 use crate::formats::tiff::reader::TiffReader;
 use crate::formats::tiff::DirectoryWriter;
+use crate::formats::tiff::Entry;
 use crate::formats::tiff::GenericTiffReader;
+use crate::formats::tiff::Rational;
 use crate::formats::tiff::Value;
 use crate::formats::tiff::IFD;
+use crate::lens::LensDescription;
+use crate::lens::LensResolver;
 use crate::packed::*;
 use crate::pumps::BitPumpMSB;
 use crate::pumps::ByteStream;
+use crate::tags::DngTag;
 use crate::tags::ExifTag;
 use crate::tags::LegacyTiffRootTag;
 use crate::tags::TiffTagEnum;
@@ -28,6 +37,8 @@ use crate::Result;
 
 #[derive(Debug, Clone)]
 pub struct PefDecoder<'a> {
+  camera: Camera,
+  #[allow(unused)]
   rawloader: &'a RawLoader,
   tiff: GenericTiffReader,
   makernote: IFD,
@@ -69,6 +80,8 @@ impl<'a> PefDecoder<'a> {
   pub fn new(file: &mut RawFile, tiff: GenericTiffReader, rawloader: &'a RawLoader) -> Result<PefDecoder<'a>> {
     debug!("PEF decoder choosen");
 
+    let camera = rawloader.check_supported(tiff.root_ifd())?;
+
     let makernote = if let Some(exif) = tiff.find_first_ifd_with_tag(ExifTag::MakerNotes) {
       exif.parse_makernote(file.inner())?
     } else {
@@ -83,12 +96,13 @@ impl<'a> PefDecoder<'a> {
       .map(|entry| entry.offset().unwrap() as u32)
       .unwrap_or(0);
 
-    eprintln!("IFD makernote:");
-    for line in makernote.dump::<PefMakernote>(10) {
-      eprintln!("{}", line);
-    }
+    //eprintln!("IFD makernote:");
+    //for line in makernote.dump::<PefMakernote>(10) {
+    //  eprintln!("{}", line);
+    //}
 
     Ok(PefDecoder {
+      camera,
       tiff: tiff,
       rawloader: rawloader,
       makernote,
@@ -97,16 +111,26 @@ impl<'a> PefDecoder<'a> {
   }
 }
 
-impl<'a> Decoder for PefDecoder<'a> {
-  fn raw_image(&mut self, file: &mut RawFile, _params: RawDecodeParams, dummy: bool) -> Result<RawImage> {
-    for (i, ifd) in self.tiff.chains().iter().enumerate() {
-      eprintln!("IFD {}", i);
-      for line in ifd.dump::<crate::tags::LegacyTiffRootTag>(10) {
-        eprintln!("{}", line);
-      }
-    }
+/// CR2 format encapsulation for analyzer
+#[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PefFormat {
+  tiff: GenericTiffReader,
+}
 
-    let camera = self.rawloader.check_supported(&self.tiff.root_ifd())?;
+impl<'a> Decoder for PefDecoder<'a> {
+  fn format_dump(&self) -> FormatDump {
+    FormatDump::Pef(PefFormat { tiff: self.tiff.clone() })
+  }
+
+  fn raw_image(&mut self, file: &mut RawFile, _params: RawDecodeParams, dummy: bool) -> Result<RawImage> {
+    //for (i, ifd) in self.tiff.chains().iter().enumerate() {
+    //  eprintln!("IFD {}", i);
+    //  for line in ifd.dump::<crate::tags::LegacyTiffRootTag>(10) {
+    //    eprintln!("{}", line);
+    //  }
+    //}
+
     let raw = self
       .tiff
       .find_first_ifd_with_tag(LegacyTiffRootTag::StripOffsets)
@@ -125,11 +149,11 @@ impl<'a> Decoder for PefDecoder<'a> {
       None => return Err(RawlerError::Unsupported(format!("PEF: No compression tag found").to_string())),
     };
 
-    let blacklevels = self.get_blacklevels()?.unwrap_or(camera.blacklevels);
+    let blacklevels = self.get_blacklevels()?.unwrap_or(self.camera.blacklevels);
     let cpp = 1;
     let wb = self.get_wb()?;
     debug!("Found WB: {:?}", wb);
-    ok_image_with_blacklevels(camera, width, height, cpp, wb, blacklevels, image)
+    ok_image_with_blacklevels(self.camera.clone(), width, height, cpp, wb, blacklevels, image)
   }
 
   fn full_image(&self, file: &mut RawFile) -> Result<DynamicImage> {
@@ -137,7 +161,7 @@ impl<'a> Decoder for PefDecoder<'a> {
     let length = self.makernote.get_entry(PefMakernote::PreviewImageLength);
     let start = self.makernote.get_entry(PefMakernote::PreviewImageStart);
 
-    match (size, length, start) {
+    let image = match (size, length, start) {
       (Some(size), Some(length), Some(start)) => {
         let _width = size.get_u16(0)?.unwrap_or(0);
         let _height = size.get_u16(1)?.unwrap_or(0);
@@ -146,18 +170,38 @@ impl<'a> Decoder for PefDecoder<'a> {
         if len > 0 && offset > 0 {
           let buf = file.get_range((self.makernote_offset + offset) as u64, len as u64).unwrap();
           match image::load_from_memory_with_format(&buf, image::ImageFormat::Jpeg) {
-            Ok(img) => return Ok(img),
+            Ok(img) => Some(img),
             Err(_) => {
               // Test offset without correction
               let buf = file.get_range(offset as u64, len as u64).unwrap();
               let img = image::load_from_memory_with_format(&buf, image::ImageFormat::Jpeg).unwrap();
-              return Ok(img);
+              Some(img)
             }
           }
+        } else {
+          None
         }
       }
       _ => todo!(),
+    };
+
+    if let Some(image) = image {
+      // This tag contains the border definitions for the preview image.
+      // We cut away these black borders.
+      if let Some(Entry {
+        value: Value::Byte(borders), ..
+      }) = self.makernote.get_entry(PefMakernote::PreviewImageBorders)
+      {
+        let y = borders[0] as u32;
+        let x = borders[2] as u32;
+        let width = image.width() - x - borders[3] as u32;
+        let height = image.height() - y - borders[1] as u32;
+        return Ok(image.crop_imm(x, y, width, height));
+      } else {
+        return Ok(image);
+      }
     }
+
     todo!()
   }
 
@@ -171,6 +215,11 @@ impl<'a> Decoder for PefDecoder<'a> {
     }
     if let Some(copyright) = ifd.get_entry(ExifTag::Copyright) {
       root_ifd.add_value(ExifTag::Copyright, copyright.value.clone())?;
+    }
+
+    if let Some(lens) = self.get_lens_description()? {
+      let lens_info: [Rational; 4] = [lens.focal_range[0], lens.focal_range[1], lens.aperture_range[0], lens.aperture_range[1]];
+      root_ifd.add_tag(DngTag::LensInfo, lens_info)?;
     }
 
     // TODO: add unique image id
@@ -224,6 +273,13 @@ impl<'a> Decoder for PefDecoder<'a> {
       }
     }
 
+    if let Some(lens) = self.get_lens_description()? {
+      let lens_info: [Rational; 4] = [lens.focal_range[0], lens.focal_range[1], lens.aperture_range[0], lens.aperture_range[1]];
+      exif_ifd.add_tag(ExifTag::LensSpecification, lens_info)?;
+      exif_ifd.add_tag(ExifTag::LensMake, &lens.lens_make)?;
+      exif_ifd.add_tag(ExifTag::LensModel, &lens.lens_model)?;
+    }
+
     Ok(())
   }
 }
@@ -253,8 +309,31 @@ impl<'a> PefDecoder<'a> {
     }
   }
 
+  /// Get lens description by analyzing TIFF tags and makernotes
+  fn get_lens_description(&self) -> Result<Option<&'static LensDescription>> {
+    match self.makernote.get_entry(PefMakernote::LensRec) {
+      Some(Entry {
+        value: Value::Byte(settings), ..
+      }) => {
+        let lens_id = (settings[0] as u32, settings[1] as u32);
+        debug!("LensRec tag: {:?}", lens_id);
+        if [0, 1, 2].contains(&lens_id.0) {
+          // 0 = M-42 or no lens
+          // 1 = K or M lens
+          // 2 = A Series lens
+          return Ok(None);
+        } else {
+          let resolver = LensResolver::new().with_camera(&self.camera).with_lens_id(lens_id);
+          return Ok(resolver.resolve());
+        }
+      }
+      _ => {}
+    }
+    return Ok(None);
+  }
+
   fn decode_compressed(&self, src: &[u8], width: usize, height: usize, dummy: bool) -> Result<Vec<u16>> {
-    if let Some(huff) = self.tiff.get_entry(LegacyTiffRootTag::PefHuffman) {
+    if let Some(huff) = self.makernote.get_entry(PefMakernote::HuffmanTable) {
       match &huff.value {
         Value::Undefined(data) => Self::do_decode(src, Some((data, self.tiff.get_endian())), width, height, dummy),
         _ => todo!(), // should not happen!
@@ -270,6 +349,7 @@ impl<'a> PefDecoder<'a> {
 
     /* Attempt to read huffman table, if found in makernote */
     if let Some((huff, endian)) = huff {
+      debug!("Use in-file Huffman table");
       let mut stream = ByteStream::new(huff, endian);
 
       let depth: usize = (stream.get_u16() as usize + 12) & 0xf;
@@ -306,6 +386,7 @@ impl<'a> PefDecoder<'a> {
         v2[sm_num as usize] = 0xffffffff;
       }
     } else {
+      debug!("Fallback to standard Huffman table");
       // Initialize with legacy data
       let pentax_tree: [u8; 29] = [0, 2, 3, 1, 1, 1, 1, 1, 1, 2, 0, 0, 0, 0, 0, 0, 3, 4, 2, 5, 1, 6, 0, 7, 8, 9, 10, 11, 12];
       let mut acc: usize = 0;

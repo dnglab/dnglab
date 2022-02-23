@@ -7,6 +7,9 @@ blackpoint = 512
 whitepoint = 15866
 color_pattern = "BGGR"
 #crops = [0,34,0,12]
+active_area = [0, 0, 32, 0]
+crop_area = [22, 10, 42, 10]
+
 
 [cameras.color_matrix]
 D65 = [0.8713, -0.2833, -0.0743, -0.4342, 1.1900, 0.2772, -0.0722, 0.1543, 0.6247]

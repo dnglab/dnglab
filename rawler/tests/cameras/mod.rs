@@ -126,4 +126,87 @@ mod canon_eos_r6_raw_modes {
 	super::camera_file_check!("Canon", "Canon EOS R6", canon_eos_r6_raw_iso_100_crop_nodual_cr3, "raw_modes/Canon EOS R6_RAW_ISO_100_crop_nodual.CR3");
 	super::camera_file_check!("Canon", "Canon EOS R6", canon_eos_r6_craw_iso_100_crop_nodual_cr3, "raw_modes/Canon EOS R6_CRAW_ISO_100_crop_nodual.CR3");
 }
+mod ist_dl2_raw_modes {
+	super::camera_file_check!("Pentax", "ist DL2", pentax__ist_dl2_raw_iso_200_pef, "raw_modes/PENTAX *ist DL2_RAW_ISO_200.PEF");
+}
+mod k_5_ii_raw_modes {
+	super::camera_file_check!("Pentax", "K-5 II", pentax_k_5_ii_raw_iso_500_pef, "raw_modes/PENTAX K-5 II_RAW_ISO_500.PEF");
+}
+mod 645d_raw_modes {
+	super::camera_file_check!("Pentax", "645D", pentax_645d_raw_iso_200_pef, "raw_modes/PENTAX 645D_RAW_ISO_200.PEF");
+}
+mod 645z_raw_modes {
+	super::camera_file_check!("Pentax", "645Z", pentax_645z_raw_iso_100_pef, "raw_modes/PENTAX 645Z_RAW_ISO_100.PEF");
+}
+mod ist_dl_raw_modes {
+	super::camera_file_check!("Pentax", "ist DL", pentax__ist_dl_raw_iso_200_pef, "raw_modes/PENTAX *ist DL_RAW_ISO_200.PEF");
+}
+mod k_3_raw_modes {
+	super::camera_file_check!("Pentax", "K-3", pentax_k_3_raw_iso_100_pef, "raw_modes/PENTAX K-3_RAW_ISO_100.PEF");
+}
+mod k_7_raw_modes {
+	super::camera_file_check!("Pentax", "K-7", pentax_k_7_raw_iso_3200_pef, "raw_modes/PENTAX K-7_RAW_ISO_3200.PEF");
+}
+mod k_3_ii_raw_modes {
+	super::camera_file_check!("Pentax", "K-3 II", pentax_k_3_ii_raw_iso_100_pef, "raw_modes/PENTAX K-3 II_RAW_ISO_100.PEF");
+}
+mod k_70_raw_modes {
+	super::camera_file_check!("Pentax", "K-70", pentax_k_70_raw_iso_400_pef, "raw_modes/PENTAX K-70_RAW_ISO_400.PEF");
+}
+mod k_m_raw_modes {
+	super::camera_file_check!("Pentax", "K-m", pentax_k_m_raw_iso_200_pef, "raw_modes/PENTAX K-m_RAW_ISO_200.PEF");
+}
+mod k_r_raw_modes {
+	super::camera_file_check!("Pentax", "K-r", pentax_k_r_raw_iso_200_pef, "raw_modes/PENTAX K-r_RAW_ISO_200.PEF");
+}
+mod k_5_ii_s_raw_modes {
+	super::camera_file_check!("Pentax", "K-5 II s", pentax_k_5_ii_s_raw_iso_200_pef, "raw_modes/PENTAX K-5 II s_RAW_ISO_200.PEF");
+}
+mod ist_ds_raw_modes {
+	super::camera_file_check!("Pentax", "ist DS", pentax__ist_ds_raw_iso_200_pef, "raw_modes/PENTAX *ist DS_RAW_ISO_200.PEF");
+}
+mod k_1_mark_ii_raw_modes {
+	super::camera_file_check!("Pentax", "K-1 Mark II", pentax_k_1_mark_ii_raw__pixel_shift_enabled__iso_125_pef, "raw_modes/PENTAX K-1 Mark II_RAW (pixel shift enabled)_ISO_125.PEF");
+	super::camera_file_check!("Pentax", "K-1 Mark II", pentax_k_1_mark_ii_raw_iso_125_pef, "raw_modes/PENTAX K-1 Mark II_RAW_ISO_125.PEF");
+}
+mod ist_d_raw_modes {
+	super::camera_file_check!("Pentax", "ist D", pentax__ist_d_raw_iso_200_pef, "raw_modes/PENTAX *ist D_RAW_ISO_200.PEF");
+}
+mod k100d_super_raw_modes {
+	super::camera_file_check!("Pentax", "K100D Super", pentax_k100d_super_raw_iso_200_pef, "raw_modes/PENTAX K100D Super_RAW_ISO_200.PEF");
+}
+mod k_s2_raw_modes {
+	super::camera_file_check!("Pentax", "K-S2", pentax_k_s2_raw_iso_1250_pef, "raw_modes/PENTAX K-S2_RAW_ISO_1250.PEF");
+}
+mod k_5_raw_modes {
+	super::camera_file_check!("Pentax", "K-5", pentax_k_5_raw_iso_160_pef, "raw_modes/PENTAX K-5_RAW_ISO_160.PEF");
+}
+mod k10d_raw_modes {
+	super::camera_file_check!("Pentax", "K10D", pentax_k10d_raw_iso_100_pef, "raw_modes/PENTAX K10D_RAW_ISO_100.PEF");
+}
+mod k100d_raw_modes {
+	super::camera_file_check!("Pentax", "K100D", pentax_k100d_raw_iso_200_pef, "raw_modes/PENTAX K100D_RAW_ISO_200.PEF");
+}
+mod k_1_raw_modes {
+	super::camera_file_check!("Pentax", "K-1", pentax_k_1_raw__pixel_shift_enabled__iso_160_pef, "raw_modes/PENTAX K-1_RAW (pixel shift enabled)_ISO_160.PEF");
+	super::camera_file_check!("Pentax", "K-1", pentax_k_1_raw_iso_160_pef, "raw_modes/PENTAX K-1_RAW_ISO_160.PEF");
+}
+mod kp_raw_modes {
+	super::camera_file_check!("Pentax", "KP", pentax_kp_raw_iso_400_pef, "raw_modes/PENTAX KP_RAW_ISO_400.PEF");
+}
+mod k200d_raw_modes {
+	super::camera_file_check!("Pentax", "K200D", pentax_k200d_raw_iso_100_pef, "raw_modes/PENTAX K200D_RAW_ISO_100.PEF");
+}
+mod k_s1_raw_modes {
+	super::camera_file_check!("Pentax", "K-S1", pentax_k_s1_raw_iso_100_pef, "raw_modes/PENTAX K-S1_RAW_ISO_100.PEF");
+}
+mod k_x_raw_modes {
+	super::camera_file_check!("Pentax", "K-x", pentax_k_x_raw_iso_2000_pef, "raw_modes/PENTAX K-x_RAW_ISO_2000.PEF");
+}
+mod k20d_raw_modes {
+	super::camera_file_check!("Pentax", "K20D", pentax_k20d_raw_iso_200_pef, "raw_modes/PENTAX K20D_RAW_ISO_200.PEF");
+}
+mod k110d_raw_modes {
+	super::camera_file_check!("Pentax", "K110D", pentax_k110d_raw_iso_200_pef, "raw_modes/PENTAX K110D_RAW_ISO_200.PEF");
+}
 

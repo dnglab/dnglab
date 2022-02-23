@@ -16,7 +16,13 @@ rawParams:
   rawWidth: 4992
   rawHeight: 3284
   bitDepth: 16
-  crops: ~
+  crops:
+    p:
+      x: 22
+      y: 10
+    d:
+      w: 4928
+      h: 3264
   blacklevels:
     - 256
     - 257

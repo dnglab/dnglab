@@ -258,8 +258,11 @@ impl IFD {
           if data[0..6] == b"PENTAX"[..] {
             off += 8;
             let endian = if data[off..off + 2] == b"II"[..] { Endian::Little } else { Endian::Big };
-            return Ok(Some(IFD::new(reader, offset + 10, self.base, self.corr, endian, &[])?));
-            //return TiffIFD::new(&buf[offset..], 10, base_offset, 0, depth, endian)
+            // All offsets in this IFD are relative to the start of this tag,
+            // so wie use the offset as correction value.
+            let corr = offset as i32;
+            // The IFD itself starts 10 bytes after tag offset.
+            return Ok(Some(IFD::new(reader, offset+10, self.base, corr, endian, &[])?));
           }
 
           if data[0..7] == b"Nikon\0\x02"[..] {

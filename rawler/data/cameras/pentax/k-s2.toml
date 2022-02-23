@@ -6,7 +6,8 @@ clean_model = "K-S2"
 blackpoint = 16
 whitepoint = 4079
 color_pattern = "RGGB"
-#crops = [0,0,0,0]
+active_area = [0, 0, 12, 0]
+crop_area = [10, 4, 22, 12]
 
 [cameras.color_matrix]
 D65 = [5.2900, -1.6627, -0.7529, -2.5443, 8.0936, 1.1071, -0.5585, 0.9879, 4.1775]

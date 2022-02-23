@@ -1,12 +1,13 @@
 [[cameras]]
-make = "PENTAX Corporation"
+make = "PENTAX"
 model = "PENTAX K200D"
 clean_make = "Pentax"
 clean_model = "K200D"
 blackpoint = 0
 whitepoint = 4095
 color_pattern = "RGGB"
-#crops = [0,56,20,0]
+active_area = [0, 0, 40, 8]
+crop_area = [8, 8, 56, 24]
 
 [cameras.color_matrix]
 D65 = [0.9186, -0.2678, -0.0907, -0.8693, 1.6517, 0.2260, -0.1129, 0.1094, 0.8524]

@@ -17,7 +17,7 @@ use crate::{
   AppError, PKG_NAME, PKG_VERSION,
 };
 
-const SUPPORTED_FILE_EXT: [&'static str; 2] = ["CR3", "CR2"]; // TODO: fixme more extensions
+const SUPPORTED_FILE_EXT: [&'static str; 4] = ["CR3", "CR2", "CRM", "PEF"]; // TODO: fixme more extensions
 
 #[derive(Clone)]
 struct FtpState {

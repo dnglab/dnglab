@@ -16,7 +16,7 @@ use crate::{
   AppError, Result, PKG_NAME, PKG_VERSION,
 };
 
-const SUPPORTED_FILE_EXT: [&'static str; 3] = ["CR3", "CR2", "CRM"];
+const SUPPORTED_FILE_EXT: [&'static str; 4] = ["CR3", "CR2", "CRM", "PEF"];
 
 /// Entry point for Clap sub command `convert`
 pub async fn convert(options: &ArgMatches<'_>) -> anyhow::Result<()> {

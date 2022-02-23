@@ -6,7 +6,8 @@ clean_model = "*ist DL2"
 blackpoint = 127
 whitepoint = 3950
 color_pattern = "RGGB"
-#crops = [0,0,0,0]
+active_area = [0, 0, 0, 0]
+crop_area = [16, 8, 16, 8]
 
 [cameras.color_matrix]
 D65 = [1.0504, -0.2438, -0.1189, -0.8603, 1.6207, 0.2531, -0.1022, 0.0863, 1.2242]

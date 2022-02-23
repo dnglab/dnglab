@@ -6,7 +6,8 @@ clean_model = "K-x"
 blackpoint = 48
 whitepoint = 4095
 color_pattern = "BGGR"
-#crops = [0,44,2,0]
+active_area = [0, 0, 42, 0]
+crop_area = [10, 10, 54, 10]
 
 [cameras.color_matrix]
 D65 = [0.8843, -0.2837, -0.0625, -0.5025, 1.2644, 0.2668, -0.0411, 0.1234, 0.7410]
