@@ -26,11 +26,11 @@ For a list of supported cameras please see [SUPPORTED_CAMERAS.md](SUPPORTED_CAME
 
 ### Supported raw file formats
 
-| Format | Supported                         | Remarks                                |
-|--------|-----------------------------------|----------------------------------------|
-| CR3    | ✅ Yes                            | [CR3_STATE.md](CR3_STATE.md)           |
-| CR2    | ❌ No<sup> planned</sup>          |                                        |
-| CRW    | ❌ No                             |                                        |
+|Manufacturer | Format | Supported                         | Remarks                                |
+|-------------|--------|-----------------------------------|----------------------------------------|
+|Canon        | CR3    | ✅ Yes                            | [CR3_STATE.md](CR3_STATE.md)           |
+|Canon        | CR2    | ✅ Yes                            |                                        |
+|Pentax/Ricoh | PEF    | ✅ Yes                            |                                        |
 
 
 ### Supported DNG features

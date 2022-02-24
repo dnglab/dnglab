@@ -4,6 +4,7 @@ model = "Canon EOS R5"
 clean_make = "Canon"
 clean_model = "EOS R5"
 color_pattern = "RGGB"
+remark = "support for CRM raw movie frame extraction"
 
 [cameras.color_matrix]
 D65 = [0.6722, -0.0635, -0.0963, -0.4287, 1.2460, 0.2028, -0.0908, 0.2162, 0.5668]

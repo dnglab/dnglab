@@ -72,6 +72,9 @@ impl Camera {
         n @ "clean_model" => {
           self.clean_model = val.as_str().expect(&format!("{} must be a string", n)).to_string();
         }
+        n @ "remark" => {
+          self.remark = Some(val.as_str().expect(&format!("{} must be a string", n)).to_string());
+        }
         n @ "whitepoint" => {
           let white = val.as_integer().expect(&format!("{} must be an integer", n)) as u16;
           self.whitelevels = [white, white, white, white];
