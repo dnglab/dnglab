@@ -309,8 +309,8 @@ fn dng_put_raw(raw_ifd: &mut DirectoryWriter<'_, '_>, rawimage: &RawImage, param
 
       //raw_ifd.add_tag(DngTag::CFAPlaneColor, [1u8, 2u8, 0u8])?; //
     }
-    _ => {
-      panic!("Unsupported");
+    cpp @ _ => {
+      panic!("Unsupported cpp: {}", cpp);
     }
   }
 

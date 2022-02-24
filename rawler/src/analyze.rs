@@ -12,7 +12,7 @@ use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
 use crate::{
   buffer::Buffer,
-  decoders::{cr2::Cr2Format, cr3::Cr3Format, RawDecodeParams},
+  decoders::{cr2::Cr2Format, cr3::Cr3Format, RawDecodeParams, pef::PefFormat},
   formats::tiff::Rational,
   formats::tiff::SRational,
   imgop::{raw::develop_raw_srgb, rescale_f32_to_u16, Dim2, Rect},
@@ -102,6 +102,7 @@ pub struct RawParams {
 pub enum FormatDump {
   Cr3(Cr3Format),
   Cr2(Cr2Format),
+  Pef(PefFormat),
 }
 
 pub fn analyze_file<P: AsRef<Path>>(path: P) -> Result<AnalyzerResult> {

@@ -1,0 +1,13 @@
+[[cameras]]
+make = "RICOH IMAGING COMPANY, LTD."
+model = "PENTAX 645Z"
+clean_make = "Pentax"
+clean_model = "645Z"
+blackpoint = 1
+whitepoint = 16316
+color_pattern = "RGGB"
+active_area = [58, 8, 70, 8]
+crop_area = [58, 8, 70, 8]
+
+[cameras.color_matrix]
+D65 = [0.9519, -0.3591, -0.0664, -0.4074, 1.1725, 0.2671, -0.0624, 0.1501, 0.6653]

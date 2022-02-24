@@ -25,4 +25,31 @@ cameras/Canon/EOS 40D/raw_modes
 cameras/Canon/EOS 50D/raw_modes
 cameras/Canon/Canon EOS RP/raw_modes
 cameras/Canon/Canon EOS R6/raw_modes
+cameras/Pentax/ist DL2/raw_modes
+cameras/Pentax/K-5 II/raw_modes
+cameras/Pentax/645D/raw_modes
+cameras/Pentax/645Z/raw_modes
+cameras/Pentax/ist DL/raw_modes
+cameras/Pentax/K-3/raw_modes
+cameras/Pentax/K-7/raw_modes
+cameras/Pentax/K-3 II/raw_modes
+cameras/Pentax/K-70/raw_modes
+cameras/Pentax/K-m/raw_modes
+cameras/Pentax/K-r/raw_modes
+cameras/Pentax/K-5 II s/raw_modes
+cameras/Pentax/ist DS/raw_modes
+cameras/Pentax/K-1 Mark II/raw_modes
+cameras/Pentax/ist D/raw_modes
+cameras/Pentax/K100D Super/raw_modes
+cameras/Pentax/K-S2/raw_modes
+cameras/Pentax/K-5/raw_modes
+cameras/Pentax/K10D/raw_modes
+cameras/Pentax/K100D/raw_modes
+cameras/Pentax/K-1/raw_modes
+cameras/Pentax/KP/raw_modes
+cameras/Pentax/K200D/raw_modes
+cameras/Pentax/K-S1/raw_modes
+cameras/Pentax/K-x/raw_modes
+cameras/Pentax/K20D/raw_modes
+cameras/Pentax/K110D/raw_modes
 

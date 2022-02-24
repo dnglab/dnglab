@@ -1,0 +1,14 @@
+[[cameras]]
+make = "PENTAX Corporation"
+model = "PENTAX K10D"
+clean_make = "Pentax"
+clean_model = "K10D"
+blackpoint = 0
+whitepoint = 4095
+color_pattern = "RGGB"
+active_area = [0, 0, 48, 16]
+crop_area = [8, 8, 56, 24]
+
+
+[cameras.color_matrix]
+D65 = [0.9566, -0.2863, -0.0803, -0.7170, 1.5172, 0.2112, -0.0818, 0.0803, 0.9705]
