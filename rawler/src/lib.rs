@@ -284,6 +284,10 @@ pub fn raw_image_count_file<P: AsRef<Path>>(path: P) -> Result<usize> {
   LOADER.raw_image_count_file(path.as_ref())
 }
 
+pub fn global_loader() -> &'static RawLoader {
+  &LOADER
+}
+
 #[cfg(test)]
 pub(crate) fn init_test_logger() {
   let _ = env_logger::builder().is_test(true).filter_level(log::LevelFilter::Debug).try_init();

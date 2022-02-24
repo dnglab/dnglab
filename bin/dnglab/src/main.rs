@@ -3,11 +3,12 @@
 
 mod analyze;
 mod app;
+mod cameras;
 mod convert;
 mod dnggen;
 mod extract;
-mod ftpconv;
 mod filemap;
+mod ftpconv;
 mod gui;
 mod jobs;
 
@@ -61,6 +62,7 @@ async fn main() -> anyhow::Result<()> {
     ("convert", Some(sc)) => convert::convert(sc).await,
     ("extract", Some(sc)) => extract::extract(sc).await,
     ("ftpconvert", Some(sc)) => ftpconv::ftpconvert(sc).await,
+    ("cameras", Some(sc)) => cameras::cameras(sc).await,
     ("gui", sc) => gui::gui(sc).await,
     _ => panic!("Unknown subcommand was used"),
   }

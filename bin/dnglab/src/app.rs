@@ -66,6 +66,10 @@ pub fn create_app() -> App<'static, 'static> {
           (@arg INPUT: +required "Input file or directory")
           (@arg OUTPUT: +required "Output file or existing directory")
       )
+      (@subcommand cameras =>
+        (about: "List supported cameras")
+        (@arg markdown: --md "Format table as Markdown")
+    )
       (@subcommand gui =>
           (about: "Start GUI (not implemented)")
       )
@@ -90,17 +94,14 @@ pub fn convert_bool(v: Option<&str>, default: bool) -> Result<bool, String> {
   const F: [&'static str; 3] = ["0", "false", "no"];
   match &v {
     Some(v) => {
-        if T.contains(v) {
-            return Ok(true);
-          } else if F.contains(v) {
-            return Ok(false);
-          } else {
-            return Err(format!("{} is not a valid option", v));
-          }
-    },
-    None => {
-        Ok(default)
+      if T.contains(v) {
+        return Ok(true);
+      } else if F.contains(v) {
+        return Ok(false);
+      } else {
+        return Err(format!("{} is not a valid option", v));
+      }
     }
+    None => Ok(default),
   }
-
 }

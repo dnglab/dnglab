@@ -343,6 +343,11 @@ impl RawLoader {
     RawLoader { cameras: map, naked: naked }
   }
 
+  /// Get list of cameras
+  pub fn get_cameras(&self) -> &HashMap<(String, String, String), Camera> {
+    &self.cameras
+  }
+
   /// Returns a decoder for a given buffer
   pub fn get_decoder<'b>(&'b self, rawfile: &mut RawFile) -> Result<Box<dyn Decoder + 'b>> {
     macro_rules! reset_file {
