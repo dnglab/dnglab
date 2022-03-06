@@ -119,6 +119,13 @@ focal_range = [[100, 1], [500, 1]]
 aperture_range = [[45, 10], [71, 10]]
 
 [[lenses]]
+key = "RF100-500mm F4.5-7.1 L IS USM + EXTENDER RF2x"
+make = "Canon"
+model = "RF 100-500mm F4.5-7.1L IS USM + RF2x"
+focal_range = [[600, 1], [1000, 1]]
+aperture_range = [[11, 1], [14, 1]]
+
+[[lenses]]
 key = "RF70-200mm F4 L IS USM"
 make = "Canon"
 model = "RF 70-200mm F4L IS USM"
