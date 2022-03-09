@@ -110,11 +110,11 @@ impl<'a> Cr3Decoder<'a> {
   // our mode string for configuration.
   fn get_mode(makernotes: &IFD) -> Result<&str> {
     Ok(if let Some(entry) = makernotes.get_entry(0x0001) {
-      match entry.get_u16(3)? {
-        Some(4) => "raw",
-        Some(7) => "craw",
-        Some(130) => "crm",
-        Some(131) => "crm",
+      match entry.force_u16(3) {
+        4 => "raw",
+        7 => "craw",
+        130 => "crm",
+        131 => "crm",
         _ => "undefined",
       }
     } else {
@@ -360,12 +360,12 @@ impl<'a> Decoder for Cr3Decoder<'a> {
 
     // Special handling for CRM movie files
     if let Some(entry) = self.cmt3.get_entry(0x0001) {
-      if Some(130) == entry.get_u16(3)? {
+      if 130 == entry.force_u16(3) {
         // Light Raw
         // WB is already applied, use 1.0
         wb = [1024.0, 1024.0, 1024.0, 1024.0];
       }
-      if Some(131) == entry.get_u16(3)? { // Standard Raw
+      if 131 == entry.force_u16(3) { // Standard Raw
          // Nothing special for Standard raw
       }
     }
@@ -524,23 +524,23 @@ impl<'a> Cr3Decoder<'a> {
     }
 
     if let Some(entry) = self.cmt3.get_entry(0x0001) {
-      let quality = match entry.get_u16(3)? {
-        Some(4) => "RAW",
-        Some(5) => "Superfine",
-        Some(7) => "CRAW",
-        Some(130) => "LightRaw",
-        Some(131) => "StandardRaw",
+      let quality = match entry.force_u16(3) {
+        4 => "RAW",
+        5 => "Superfine",
+        7 => "CRAW",
+        130 => "LightRaw",
+        131 => "StandardRaw",
         _ => "unknown",
       };
       debug!("Canon quality mode: {}", quality);
     }
 
     if let Some(entry) = self.cmt3.get_entry(0x4026) {
-      let clog = match entry.get_u32(11)? {
-        Some(0) => "OFF",
-        Some(1) => "CLog1",
-        Some(2) => "CLog2",
-        Some(3) => "CLog3",
+      let clog = match entry.force_u32(11) {
+        0 => "OFF",
+        1 => "CLog1",
+        2 => "CLog2",
+        3 => "CLog3",
         _ => "unknown",
       };
       debug!("Canon CLog mode: {}", clog);

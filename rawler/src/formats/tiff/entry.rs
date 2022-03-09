@@ -139,8 +139,8 @@ impl Entry {
         reader.read_u32_into(&mut tmp)?;
 
         let mut v = Vec::with_capacity(count as usize);
-        for i in (0..count as usize).step_by(2) {
-          v.push(Rational::new(tmp[i], tmp[i + 1]));
+        for chunk in tmp.chunks_exact(2) {
+          v.push(Rational::new(chunk[0], chunk[1]));
         }
         Entry {
           tag,
@@ -189,8 +189,8 @@ impl Entry {
         reader.read_i32_into(&mut tmp)?;
 
         let mut v = Vec::with_capacity(count as usize);
-        for i in (0..count as usize).step_by(2) {
-          v.push(SRational::new(tmp[i], tmp[i + 1]));
+        for chunk in tmp.chunks_exact(2) {
+          v.push(SRational::new(chunk[0], chunk[1]));
         }
         Entry {
           tag,
@@ -230,7 +230,7 @@ impl Entry {
     Ok(entry)
   }
 
-  pub fn type_name(&self) -> String{
+  pub fn type_name(&self) -> String {
     self.value.value_type_name()
   }
 }

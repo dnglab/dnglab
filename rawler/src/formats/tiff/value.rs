@@ -1,15 +1,12 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2021 Daniel Vogelbacher <daniel@chaospixel.com>
 
-use std::{
-    ffi::CString, fmt::Display,
-  };
+use std::{convert::Infallible, ffi::CString, fmt::Display, num::TryFromIntError};
 
-  use byteorder::{NativeEndian, WriteBytesExt};
-  use serde::{Deserialize, Deserializer, Serialize, Serializer};
+use byteorder::{NativeEndian, WriteBytesExt};
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
-
-use super::{TiffError, Result, WriteAndSeek};
+use super::{Result, TiffError, WriteAndSeek};
 
 /// Type to represent tiff values of type `RATIONAL`
 #[derive(Clone, Debug, Default, PartialEq, Copy)]
@@ -19,27 +16,175 @@ pub struct Rational {
 }
 
 impl Display for Rational {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_fmt(format_args!("{}/{}", self.n, self.d))
-    }
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    f.write_fmt(format_args!("{}/{}", self.n, self.d))
+  }
 }
 
 impl Display for SRational {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-      f.write_fmt(format_args!("{}/{}", self.n, self.d))
+    f.write_fmt(format_args!("{}/{}", self.n, self.d))
   }
 }
 
-impl From<Rational> for f32 {
-    fn from(v: Rational) -> Self {
-        (v.n as f32) / (v.d as f32)
-    }
+impl TryFrom<Rational> for usize {
+  type Error = TryFromIntError;
+
+  fn try_from(value: Rational) -> std::result::Result<Self, Self::Error> {
+    Ok(((value.n as f32) / (value.d as f32)) as usize) // TODO
+  }
 }
 
-impl From<SRational> for f32 {
-    fn from(v: SRational) -> Self {
-        (v.n as f32) / (v.d as f32)
-    }
+impl TryFrom<Rational> for u8 {
+  type Error = TryFromIntError;
+
+  fn try_from(value: Rational) -> std::result::Result<Self, Self::Error> {
+    Ok(((value.n as f32) / (value.d as f32)) as u8) // TODO
+  }
+}
+
+impl TryFrom<Rational> for u16 {
+  type Error = TryFromIntError;
+
+  fn try_from(value: Rational) -> std::result::Result<Self, Self::Error> {
+    Ok(((value.n as f32) / (value.d as f32)) as u16) // TODO
+  }
+}
+
+impl TryFrom<Rational> for u32 {
+  type Error = TryFromIntError;
+
+  fn try_from(value: Rational) -> std::result::Result<Self, Self::Error> {
+    Ok(((value.n as f32) / (value.d as f32)) as u32) // TODO
+  }
+}
+
+impl TryFrom<Rational> for u64 {
+  type Error = TryFromIntError;
+
+  fn try_from(value: Rational) -> std::result::Result<Self, Self::Error> {
+    Ok(((value.n as f32) / (value.d as f32)) as u64) // TODO
+  }
+}
+
+impl TryFrom<Rational> for i8 {
+  type Error = TryFromIntError;
+
+  fn try_from(value: Rational) -> std::result::Result<Self, Self::Error> {
+    Ok(((value.n as f32) / (value.d as f32)) as i8) // TODO
+  }
+}
+
+impl TryFrom<Rational> for i16 {
+  type Error = TryFromIntError;
+
+  fn try_from(value: Rational) -> std::result::Result<Self, Self::Error> {
+    Ok(((value.n as f32) / (value.d as f32)) as i16) // TODO
+  }
+}
+
+impl TryFrom<Rational> for i32 {
+  type Error = TryFromIntError;
+
+  fn try_from(value: Rational) -> std::result::Result<Self, Self::Error> {
+    Ok(((value.n as f32) / (value.d as f32)) as i32) // TODO
+  }
+}
+
+impl TryFrom<Rational> for i64 {
+  type Error = TryFromIntError;
+
+  fn try_from(value: Rational) -> std::result::Result<Self, Self::Error> {
+    Ok(((value.n as f32) / (value.d as f32)) as i64) // TODO
+  }
+}
+
+impl TryFrom<Rational> for f32 {
+  type Error = TryFromIntError;
+
+  fn try_from(value: Rational) -> std::result::Result<Self, Self::Error> {
+    Ok(((value.n as f32) / (value.d as f32)) as f32) // TODO
+  }
+}
+
+impl TryFrom<SRational> for usize {
+  type Error = TryFromIntError;
+
+  fn try_from(value: SRational) -> std::result::Result<Self, Self::Error> {
+    Ok(((value.n as f32) / (value.d as f32)) as usize) // TODO
+  }
+}
+
+impl TryFrom<SRational> for u8 {
+  type Error = TryFromIntError;
+
+  fn try_from(value: SRational) -> std::result::Result<Self, Self::Error> {
+    Ok(((value.n as f32) / (value.d as f32)) as u8) // TODO
+  }
+}
+
+impl TryFrom<SRational> for u16 {
+  type Error = TryFromIntError;
+
+  fn try_from(value: SRational) -> std::result::Result<Self, Self::Error> {
+    Ok(((value.n as f32) / (value.d as f32)) as u16) // TODO
+  }
+}
+
+impl TryFrom<SRational> for u32 {
+  type Error = TryFromIntError;
+
+  fn try_from(value: SRational) -> std::result::Result<Self, Self::Error> {
+    Ok(((value.n as f32) / (value.d as f32)) as u32) // TODO
+  }
+}
+
+impl TryFrom<SRational> for u64 {
+  type Error = TryFromIntError;
+
+  fn try_from(value: SRational) -> std::result::Result<Self, Self::Error> {
+    Ok(((value.n as f32) / (value.d as f32)) as u64) // TODO
+  }
+}
+
+impl TryFrom<SRational> for i8 {
+  type Error = TryFromIntError;
+
+  fn try_from(value: SRational) -> std::result::Result<Self, Self::Error> {
+    Ok(((value.n as f32) / (value.d as f32)) as i8) // TODO
+  }
+}
+
+impl TryFrom<SRational> for i16 {
+  type Error = TryFromIntError;
+
+  fn try_from(value: SRational) -> std::result::Result<Self, Self::Error> {
+    Ok(((value.n as f32) / (value.d as f32)) as i16) // TODO
+  }
+}
+
+impl TryFrom<SRational> for i32 {
+  type Error = TryFromIntError;
+
+  fn try_from(value: SRational) -> std::result::Result<Self, Self::Error> {
+    Ok(((value.n as f32) / (value.d as f32)) as i32) // TODO
+  }
+}
+
+impl TryFrom<SRational> for i64 {
+  type Error = TryFromIntError;
+
+  fn try_from(value: SRational) -> std::result::Result<Self, Self::Error> {
+    Ok(((value.n as f32) / (value.d as f32)) as i64) // TODO
+  }
+}
+
+impl TryFrom<SRational> for f32 {
+  type Error = TryFromIntError;
+
+  fn try_from(value: SRational) -> std::result::Result<Self, Self::Error> {
+    Ok(((value.n as f32) / (value.d as f32)) as f32) // TODO
+  }
 }
 
 impl Rational {
@@ -127,6 +272,20 @@ impl<'de> Deserialize<'de> for SRational {
   }
 }
 
+pub struct ValueConvertError(pub(crate) ());
+
+impl From<TryFromIntError> for ValueConvertError {
+  fn from(_: TryFromIntError) -> Self {
+    todo!()
+  }
+}
+
+impl From<Infallible> for ValueConvertError {
+  fn from(_: Infallible) -> Self {
+    todo!()
+  }
+}
+
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum Value {
   /// 8-bit unsigned integer
@@ -172,74 +331,341 @@ impl Value {
     }
   }
 
-  pub fn get_usize(&self, idx: usize) -> Result<usize> {
-    match self {
-        Value::Byte(v) => Ok(v[idx] as usize),
-        Value::Short(v) => Ok(v[idx] as usize),
-        Value::Long(v) => Ok(v[idx] as usize),
-        Value::SByte(v) => Ok(v[idx] as usize),
-        Value::SShort(v) => Ok(v[idx] as usize),
-        Value::SLong(v) => Ok(v[idx] as usize),
-        _ => todo!(),
+  pub fn force_usize(&self, idx: usize) -> usize {
+    match self.get_usize(idx) {
+      Ok(Some(v)) => v,
+      Ok(None) => {
+        log::error!("TIFF value index out of range, index is {} but length is {}", idx, self.count());
+        Default::default()
+      }
+      Err(_) => {
+        log::error!("TIFF value cast error, but forced to default value!");
+        Default::default()
+      }
     }
   }
 
-  pub fn get_u16(&self, idx: usize) -> Result<Option<u16>> {
-    match self {
-        Value::Byte(v) => Ok(v.get(idx).map(ToOwned::to_owned).map(Into::into)),
-        Value::Short(v) => Ok(v.get(idx).map(ToOwned::to_owned).map(Into::into)),
-        Value::Long(v) => Ok(v.get(idx).map(ToOwned::to_owned).map(|v| v as u16)),
-        Value::SByte(v) => Ok(v.get(idx).map(ToOwned::to_owned).map(|v| v as u16)),
-        Value::SShort(v) => Ok(v.get(idx).map(ToOwned::to_owned).map(|v| v as u16)),
-        Value::SLong(v) => Ok(v.get(idx).map(ToOwned::to_owned).map(|v| v as u16)),
-        _ => Err(TiffError::General(format!("Can not use get_u16() for tiff entry value {:?}", self)))
+  pub fn force_u8(&self, idx: usize) -> u8 {
+    match self.get_u8(idx) {
+      Ok(Some(v)) => v,
+      Ok(None) => {
+        log::error!("TIFF value index out of range, index is {} but length is {}", idx, self.count());
+        Default::default()
+      }
+      Err(_) => {
+        log::error!("TIFF value cast error, but forced to default value!");
+        Default::default()
+      }
     }
   }
 
-  pub fn get_u32(&self, idx: usize) -> Result<Option<u32>> {
-    match self {
-        Value::Byte(v) => Ok(v.get(idx).map(ToOwned::to_owned).map(Into::into)),
-        Value::Short(v) => Ok(v.get(idx).map(ToOwned::to_owned).map(Into::into)),
-        Value::Long(v) => Ok(v.get(idx).map(ToOwned::to_owned).map(Into::into)),
-        Value::SByte(v) => Ok(v.get(idx).map(ToOwned::to_owned).map(|v| v as u32)),
-        Value::SShort(v) => Ok(v.get(idx).map(ToOwned::to_owned).map(|v| v as u32)),
-        Value::SLong(v) => Ok(v.get(idx).map(ToOwned::to_owned).map(|v| v as u32)),
-        _ => Err(TiffError::General(format!("Can not use get_u32() for tiff entry value {:?}", self)))
+  pub fn force_u16(&self, idx: usize) -> u16 {
+    match self.get_u16(idx) {
+      Ok(Some(v)) => v,
+      Ok(None) => {
+        log::error!("TIFF value index out of range, index is {} but length is {}", idx, self.count());
+        Default::default()
+      }
+      Err(_) => {
+        log::error!("TIFF value cast error, but forced to default value!");
+        Default::default()
+      }
     }
   }
 
-  pub fn get_f32(&self, idx: usize) -> Result<Option<f32>> {
-    match self {
-        Value::Byte(v) => Ok(v.get(idx).map(ToOwned::to_owned).map(|v| v as f32)),
-        Value::Short(v) => Ok(v.get(idx).map(ToOwned::to_owned).map(|v| v as f32)),
-        Value::Long(v) => Ok(v.get(idx).map(ToOwned::to_owned).map(|v| v as f32)),
-        Value::Rational(v) => Ok(v.get(idx).map(ToOwned::to_owned).map(Into::into)),
-        Value::SByte(v) => Ok(v.get(idx).map(ToOwned::to_owned).map(|v| v as f32)),
-        Value::SShort(v) => Ok(v.get(idx).map(ToOwned::to_owned).map(|v| v as f32)),
-        Value::SLong(v) => Ok(v.get(idx).map(ToOwned::to_owned).map(|v| v as f32)),
-        Value::SRational(v) => Ok(v.get(idx).map(ToOwned::to_owned).map(Into::into)),
-        Value::Float(v) => Ok(v.get(idx).map(ToOwned::to_owned)),
-        Value::Double(v) =>  Ok(v.get(idx).map(ToOwned::to_owned).map(|v| v as f32)),
-        _ => todo!(),
+  pub fn force_u32(&self, idx: usize) -> u32 {
+    match self.get_u32(idx) {
+      Ok(Some(v)) => v,
+      Ok(None) => {
+        log::error!("TIFF value index out of range, index is {} but length is {}", idx, self.count());
+        Default::default()
+      }
+      Err(_) => {
+        log::error!("TIFF value cast error, but forced to default value!");
+        Default::default()
+      }
     }
   }
 
+  pub fn force_u64(&self, idx: usize) -> u64 {
+    match self.get_u64(idx) {
+      Ok(Some(v)) => v,
+      Ok(None) => {
+        log::error!("TIFF value index out of range, index is {} but length is {}", idx, self.count());
+        Default::default()
+      }
+      Err(_) => {
+        log::error!("TIFF value cast error, but forced to default value!");
+        Default::default()
+      }
+    }
+  }
+
+  pub fn force_i8(&self, idx: usize) -> i8 {
+    match self.get_i8(idx) {
+      Ok(Some(v)) => v,
+      Ok(None) => {
+        log::error!("TIFF value index out of range, index is {} but length is {}", idx, self.count());
+        Default::default()
+      }
+      Err(_) => {
+        log::error!("TIFF value cast error, but forced to default value!");
+        Default::default()
+      }
+    }
+  }
+
+  pub fn force_i16(&self, idx: usize) -> i16 {
+    match self.get_i16(idx) {
+      Ok(Some(v)) => v,
+      Ok(None) => {
+        log::error!("TIFF value index out of range, index is {} but length is {}", idx, self.count());
+        Default::default()
+      }
+      Err(_) => {
+        log::error!("TIFF value cast error, but forced to default value!");
+        Default::default()
+      }
+    }
+  }
+
+  pub fn force_i32(&self, idx: usize) -> i32 {
+    match self.get_i32(idx) {
+      Ok(Some(v)) => v,
+      Ok(None) => {
+        log::error!("TIFF value index out of range, index is {} but length is {}", idx, self.count());
+        Default::default()
+      }
+      Err(_) => {
+        log::error!("TIFF value cast error, but forced to default value!");
+        Default::default()
+      }
+    }
+  }
+
+  pub fn force_i64(&self, idx: usize) -> i64 {
+    match self.get_i64(idx) {
+      Ok(Some(v)) => v,
+      Ok(None) => {
+        log::error!("TIFF value index out of range, index is {} but length is {}", idx, self.count());
+        Default::default()
+      }
+      Err(_) => {
+        log::error!("TIFF value cast error, but forced to default value!");
+        Default::default()
+      }
+    }
+  }
+
+  pub fn force_f32(&self, idx: usize) -> f32 {
+    match self.get_f32(idx) {
+      Ok(Some(v)) => v,
+      Ok(None) => {
+        log::error!("TIFF value index out of range, index is {} but length is {}", idx, self.count());
+        Default::default()
+      }
+      Err(_) => {
+        log::error!("TIFF value cast error, but forced to default value!");
+        Default::default()
+      }
+    }
+  }
+
+  pub fn get_usize(&self, idx: usize) -> std::result::Result<Option<usize>, ValueConvertError> {
+    Ok(match self {
+      Value::Byte(v) => v.get(idx).map(ToOwned::to_owned).map(TryInto::try_into).transpose()?,
+      Value::Short(v) => v.get(idx).map(ToOwned::to_owned).map(TryInto::try_into).transpose()?,
+      Value::Long(v) => v.get(idx).map(ToOwned::to_owned).map(TryInto::try_into).transpose()?,
+      Value::SByte(v) => v.get(idx).map(ToOwned::to_owned).map(TryInto::try_into).transpose()?,
+      Value::SShort(v) => v.get(idx).map(ToOwned::to_owned).map(TryInto::try_into).transpose()?,
+      Value::SLong(v) => v.get(idx).map(ToOwned::to_owned).map(TryInto::try_into).transpose()?,
+      Value::Rational(v) => v.get(idx).map(ToOwned::to_owned).map(TryInto::try_into).transpose()?,
+      Value::SRational(v) => v.get(idx).map(ToOwned::to_owned).map(TryInto::try_into).transpose()?,
+      Value::Float(v) => v.get(idx).map(ToOwned::to_owned).map(|x| x as usize),
+      Value::Double(v) => v.get(idx).map(ToOwned::to_owned).map(|x| x as usize),
+      Value::Ascii(_) => return Err(ValueConvertError(())),
+      Value::Undefined(_) => return Err(ValueConvertError(())),
+      Value::Unknown(_, _) => return Err(ValueConvertError(())),
+    })
+  }
+
+  pub fn get_u8(&self, idx: usize) -> std::result::Result<Option<u8>, ValueConvertError> {
+    Ok(match self {
+      Value::Byte(v) => v.get(idx).map(ToOwned::to_owned).map(TryInto::try_into).transpose()?,
+      Value::Short(v) => v.get(idx).map(ToOwned::to_owned).map(TryInto::try_into).transpose()?,
+      Value::Long(v) => v.get(idx).map(ToOwned::to_owned).map(TryInto::try_into).transpose()?,
+      Value::SByte(v) => v.get(idx).map(ToOwned::to_owned).map(TryInto::try_into).transpose()?,
+      Value::SShort(v) => v.get(idx).map(ToOwned::to_owned).map(TryInto::try_into).transpose()?,
+      Value::SLong(v) => v.get(idx).map(ToOwned::to_owned).map(TryInto::try_into).transpose()?,
+      Value::Rational(v) => v.get(idx).map(ToOwned::to_owned).map(TryInto::try_into).transpose()?,
+      Value::SRational(v) => v.get(idx).map(ToOwned::to_owned).map(TryInto::try_into).transpose()?,
+      Value::Float(v) => v.get(idx).map(ToOwned::to_owned).map(|x| x as u8),
+      Value::Double(v) => v.get(idx).map(ToOwned::to_owned).map(|x| x as u8),
+      Value::Ascii(_) => return Err(ValueConvertError(())),
+      Value::Undefined(_) => return Err(ValueConvertError(())),
+      Value::Unknown(_, _) => return Err(ValueConvertError(())),
+    })
+  }
+
+  pub fn get_u16(&self, idx: usize) -> std::result::Result<Option<u16>, ValueConvertError> {
+    Ok(match self {
+      Value::Byte(v) => v.get(idx).map(ToOwned::to_owned).map(TryInto::try_into).transpose()?,
+      Value::Short(v) => v.get(idx).map(ToOwned::to_owned).map(TryInto::try_into).transpose()?,
+      Value::Long(v) => v.get(idx).map(ToOwned::to_owned).map(TryInto::try_into).transpose()?,
+      Value::SByte(v) => v.get(idx).map(ToOwned::to_owned).map(TryInto::try_into).transpose()?,
+      Value::SShort(v) => v.get(idx).map(ToOwned::to_owned).map(TryInto::try_into).transpose()?,
+      Value::SLong(v) => v.get(idx).map(ToOwned::to_owned).map(TryInto::try_into).transpose()?,
+      Value::Rational(v) => v.get(idx).map(ToOwned::to_owned).map(TryInto::try_into).transpose()?,
+      Value::SRational(v) => v.get(idx).map(ToOwned::to_owned).map(TryInto::try_into).transpose()?,
+      Value::Float(v) => v.get(idx).map(ToOwned::to_owned).map(|x| x as u16),
+      Value::Double(v) => v.get(idx).map(ToOwned::to_owned).map(|x| x as u16),
+      Value::Ascii(_) => return Err(ValueConvertError(())),
+      Value::Undefined(_) => return Err(ValueConvertError(())),
+      Value::Unknown(_, _) => return Err(ValueConvertError(())),
+    })
+  }
+
+  pub fn get_u32(&self, idx: usize) -> std::result::Result<Option<u32>, ValueConvertError> {
+    Ok(match self {
+      Value::Byte(v) => v.get(idx).map(ToOwned::to_owned).map(TryInto::try_into).transpose()?,
+      Value::Short(v) => v.get(idx).map(ToOwned::to_owned).map(TryInto::try_into).transpose()?,
+      Value::Long(v) => v.get(idx).map(ToOwned::to_owned).map(TryInto::try_into).transpose()?,
+      Value::SByte(v) => v.get(idx).map(ToOwned::to_owned).map(TryInto::try_into).transpose()?,
+      Value::SShort(v) => v.get(idx).map(ToOwned::to_owned).map(TryInto::try_into).transpose()?,
+      Value::SLong(v) => v.get(idx).map(ToOwned::to_owned).map(TryInto::try_into).transpose()?,
+      Value::Rational(v) => v.get(idx).map(ToOwned::to_owned).map(TryInto::try_into).transpose()?,
+      Value::SRational(v) => v.get(idx).map(ToOwned::to_owned).map(TryInto::try_into).transpose()?,
+      Value::Float(v) => v.get(idx).map(ToOwned::to_owned).map(|x| x as u32),
+      Value::Double(v) => v.get(idx).map(ToOwned::to_owned).map(|x| x as u32),
+      Value::Ascii(_) => return Err(ValueConvertError(())),
+      Value::Undefined(_) => return Err(ValueConvertError(())),
+      Value::Unknown(_, _) => return Err(ValueConvertError(())),
+    })
+  }
+
+  pub fn get_u64(&self, idx: usize) -> std::result::Result<Option<u64>, ValueConvertError> {
+    Ok(match self {
+      Value::Byte(v) => v.get(idx).map(ToOwned::to_owned).map(TryInto::try_into).transpose()?,
+      Value::Short(v) => v.get(idx).map(ToOwned::to_owned).map(TryInto::try_into).transpose()?,
+      Value::Long(v) => v.get(idx).map(ToOwned::to_owned).map(TryInto::try_into).transpose()?,
+      Value::SByte(v) => v.get(idx).map(ToOwned::to_owned).map(TryInto::try_into).transpose()?,
+      Value::SShort(v) => v.get(idx).map(ToOwned::to_owned).map(TryInto::try_into).transpose()?,
+      Value::SLong(v) => v.get(idx).map(ToOwned::to_owned).map(TryInto::try_into).transpose()?,
+      Value::Rational(v) => v.get(idx).map(ToOwned::to_owned).map(TryInto::try_into).transpose()?,
+      Value::SRational(v) => v.get(idx).map(ToOwned::to_owned).map(TryInto::try_into).transpose()?,
+      Value::Float(v) => v.get(idx).map(ToOwned::to_owned).map(|x| x as u64),
+      Value::Double(v) => v.get(idx).map(ToOwned::to_owned).map(|x| x as u64),
+      Value::Ascii(_) => return Err(ValueConvertError(())),
+      Value::Undefined(_) => return Err(ValueConvertError(())),
+      Value::Unknown(_, _) => return Err(ValueConvertError(())),
+    })
+  }
+
+  pub fn get_i8(&self, idx: usize) -> std::result::Result<Option<i8>, ValueConvertError> {
+    Ok(match self {
+      Value::Byte(v) => v.get(idx).map(ToOwned::to_owned).map(TryInto::try_into).transpose()?,
+      Value::Short(v) => v.get(idx).map(ToOwned::to_owned).map(TryInto::try_into).transpose()?,
+      Value::Long(v) => v.get(idx).map(ToOwned::to_owned).map(TryInto::try_into).transpose()?,
+      Value::SByte(v) => v.get(idx).map(ToOwned::to_owned).map(TryInto::try_into).transpose()?,
+      Value::SShort(v) => v.get(idx).map(ToOwned::to_owned).map(TryInto::try_into).transpose()?,
+      Value::SLong(v) => v.get(idx).map(ToOwned::to_owned).map(TryInto::try_into).transpose()?,
+      Value::Rational(v) => v.get(idx).map(ToOwned::to_owned).map(TryInto::try_into).transpose()?,
+      Value::SRational(v) => v.get(idx).map(ToOwned::to_owned).map(TryInto::try_into).transpose()?,
+      Value::Float(v) => v.get(idx).map(ToOwned::to_owned).map(|x| x as i8),
+      Value::Double(v) => v.get(idx).map(ToOwned::to_owned).map(|x| x as i8),
+      Value::Ascii(_) => return Err(ValueConvertError(())),
+      Value::Undefined(_) => return Err(ValueConvertError(())),
+      Value::Unknown(_, _) => return Err(ValueConvertError(())),
+    })
+  }
+
+  pub fn get_i16(&self, idx: usize) -> std::result::Result<Option<i16>, ValueConvertError> {
+    Ok(match self {
+      Value::Byte(v) => v.get(idx).map(ToOwned::to_owned).map(TryInto::try_into).transpose()?,
+      Value::Short(v) => v.get(idx).map(ToOwned::to_owned).map(TryInto::try_into).transpose()?,
+      Value::Long(v) => v.get(idx).map(ToOwned::to_owned).map(TryInto::try_into).transpose()?,
+      Value::SByte(v) => v.get(idx).map(ToOwned::to_owned).map(TryInto::try_into).transpose()?,
+      Value::SShort(v) => v.get(idx).map(ToOwned::to_owned).map(TryInto::try_into).transpose()?,
+      Value::SLong(v) => v.get(idx).map(ToOwned::to_owned).map(TryInto::try_into).transpose()?,
+      Value::Rational(v) => v.get(idx).map(ToOwned::to_owned).map(TryInto::try_into).transpose()?,
+      Value::SRational(v) => v.get(idx).map(ToOwned::to_owned).map(TryInto::try_into).transpose()?,
+      Value::Float(v) => v.get(idx).map(ToOwned::to_owned).map(|x| x as i16),
+      Value::Double(v) => v.get(idx).map(ToOwned::to_owned).map(|x| x as i16),
+      Value::Ascii(_) => return Err(ValueConvertError(())),
+      Value::Undefined(_) => return Err(ValueConvertError(())),
+      Value::Unknown(_, _) => return Err(ValueConvertError(())),
+    })
+  }
+
+  pub fn get_i32(&self, idx: usize) -> std::result::Result<Option<i32>, ValueConvertError> {
+    Ok(match self {
+      Value::Byte(v) => v.get(idx).map(ToOwned::to_owned).map(TryInto::try_into).transpose()?,
+      Value::Short(v) => v.get(idx).map(ToOwned::to_owned).map(TryInto::try_into).transpose()?,
+      Value::Long(v) => v.get(idx).map(ToOwned::to_owned).map(TryInto::try_into).transpose()?,
+      Value::SByte(v) => v.get(idx).map(ToOwned::to_owned).map(TryInto::try_into).transpose()?,
+      Value::SShort(v) => v.get(idx).map(ToOwned::to_owned).map(TryInto::try_into).transpose()?,
+      Value::SLong(v) => v.get(idx).map(ToOwned::to_owned).map(TryInto::try_into).transpose()?,
+      Value::Rational(v) => v.get(idx).map(ToOwned::to_owned).map(TryInto::try_into).transpose()?,
+      Value::SRational(v) => v.get(idx).map(ToOwned::to_owned).map(TryInto::try_into).transpose()?,
+      Value::Float(v) => v.get(idx).map(ToOwned::to_owned).map(|x| x as i32),
+      Value::Double(v) => v.get(idx).map(ToOwned::to_owned).map(|x| x as i32),
+      Value::Ascii(_) => return Err(ValueConvertError(())),
+      Value::Undefined(_) => return Err(ValueConvertError(())),
+      Value::Unknown(_, _) => return Err(ValueConvertError(())),
+    })
+  }
+
+  pub fn get_i64(&self, idx: usize) -> std::result::Result<Option<i64>, ValueConvertError> {
+    Ok(match self {
+      Value::Byte(v) => v.get(idx).map(ToOwned::to_owned).map(TryInto::try_into).transpose()?,
+      Value::Short(v) => v.get(idx).map(ToOwned::to_owned).map(TryInto::try_into).transpose()?,
+      Value::Long(v) => v.get(idx).map(ToOwned::to_owned).map(TryInto::try_into).transpose()?,
+      Value::SByte(v) => v.get(idx).map(ToOwned::to_owned).map(TryInto::try_into).transpose()?,
+      Value::SShort(v) => v.get(idx).map(ToOwned::to_owned).map(TryInto::try_into).transpose()?,
+      Value::SLong(v) => v.get(idx).map(ToOwned::to_owned).map(TryInto::try_into).transpose()?,
+      Value::Rational(v) => v.get(idx).map(ToOwned::to_owned).map(TryInto::try_into).transpose()?,
+      Value::SRational(v) => v.get(idx).map(ToOwned::to_owned).map(TryInto::try_into).transpose()?,
+      Value::Float(v) => v.get(idx).map(ToOwned::to_owned).map(|x| x as i64),
+      Value::Double(v) => v.get(idx).map(ToOwned::to_owned).map(|x| x as i64),
+      Value::Ascii(_) => return Err(ValueConvertError(())),
+      Value::Undefined(_) => return Err(ValueConvertError(())),
+      Value::Unknown(_, _) => return Err(ValueConvertError(())),
+    })
+  }
+
+  pub fn get_f32(&self, idx: usize) -> std::result::Result<Option<f32>, ValueConvertError> {
+    Ok(match self {
+      Value::Byte(v) => v.get(idx).map(ToOwned::to_owned).map(TryInto::try_into).transpose()?,
+      Value::Short(v) => v.get(idx).map(ToOwned::to_owned).map(TryInto::try_into).transpose()?,
+      Value::Long(v) => v.get(idx).map(ToOwned::to_owned).map(|x| x as f32),
+      Value::SByte(v) => v.get(idx).map(ToOwned::to_owned).map(TryInto::try_into).transpose()?,
+      Value::SShort(v) => v.get(idx).map(ToOwned::to_owned).map(TryInto::try_into).transpose()?,
+      Value::SLong(v) => v.get(idx).map(ToOwned::to_owned).map(|x| x as f32),
+      Value::Rational(v) => v.get(idx).map(ToOwned::to_owned).map(TryInto::try_into).transpose()?,
+      Value::SRational(v) => v.get(idx).map(ToOwned::to_owned).map(TryInto::try_into).transpose()?,
+      Value::Float(v) => v.get(idx).map(ToOwned::to_owned).map(|x| x as f32),
+      Value::Double(v) => v.get(idx).map(ToOwned::to_owned).map(|x| x as f32),
+      Value::Ascii(_) => return Err(ValueConvertError(())),
+      Value::Undefined(_) => return Err(ValueConvertError(())),
+      Value::Unknown(_, _) => return Err(ValueConvertError(())),
+    })
+  }
 
   pub fn visual_rep(&self, limit: usize) -> String {
     match self {
-        Value::Byte(v) => v.iter().take(limit).map(|a| format!("{:X}", a)).collect::<Vec::<String>>().join(" "),
-        Value::Short(v) => v.iter().take(limit).map(|a| format!("{}", a)).collect::<Vec::<String>>().join(" "),
-        Value::Long(v) => v.iter().take(limit).map(|a| format!("{}", a)).collect::<Vec::<String>>().join(" "),
-        Value::Rational(v) => v.iter().take(limit).map(|a| format!("{}", a)).collect::<Vec::<String>>().join(" "),
-        Value::SByte(v) => v.iter().take(limit).map(|a| format!("{}", a)).collect::<Vec::<String>>().join(" "),
-        Value::SShort(v) => v.iter().take(limit).map(|a| format!("{}", a)).collect::<Vec::<String>>().join(" "),
-        Value::SLong(v) => v.iter().take(limit).map(|a| format!("{}", a)).collect::<Vec::<String>>().join(" "),
-        Value::SRational(v) => v.iter().take(limit).map(|a| format!("{}", a)).collect::<Vec::<String>>().join(" "),
-        Value::Float(v) => v.iter().take(limit).map(|a| format!("{}", a)).collect::<Vec::<String>>().join(" "),
-        Value::Double(v) =>  v.iter().take(limit).map(|a| format!("{}", a)).collect::<Vec::<String>>().join(" "),
-        Value::Undefined(v) => v.iter().take(limit).map(|a| format!("{:X}", a)).collect::<Vec::<String>>().join(" "),
-        Value::Unknown(_t, v) => v.iter().take(limit).map(|a| format!("{:X}", a)).collect::<Vec::<String>>().join(" "),
-        Value::Ascii(v) => v.first().clone()
+      Value::Byte(v) => v.iter().take(limit).map(|a| format!("{:X}", a)).collect::<Vec<String>>().join(" "),
+      Value::Short(v) => v.iter().take(limit).map(|a| format!("{}", a)).collect::<Vec<String>>().join(" "),
+      Value::Long(v) => v.iter().take(limit).map(|a| format!("{}", a)).collect::<Vec<String>>().join(" "),
+      Value::Rational(v) => v.iter().take(limit).map(|a| format!("{}", a)).collect::<Vec<String>>().join(" "),
+      Value::SByte(v) => v.iter().take(limit).map(|a| format!("{}", a)).collect::<Vec<String>>().join(" "),
+      Value::SShort(v) => v.iter().take(limit).map(|a| format!("{}", a)).collect::<Vec<String>>().join(" "),
+      Value::SLong(v) => v.iter().take(limit).map(|a| format!("{}", a)).collect::<Vec<String>>().join(" "),
+      Value::SRational(v) => v.iter().take(limit).map(|a| format!("{}", a)).collect::<Vec<String>>().join(" "),
+      Value::Float(v) => v.iter().take(limit).map(|a| format!("{}", a)).collect::<Vec<String>>().join(" "),
+      Value::Double(v) => v.iter().take(limit).map(|a| format!("{}", a)).collect::<Vec<String>>().join(" "),
+      Value::Undefined(v) => v.iter().take(limit).map(|a| format!("{:X}", a)).collect::<Vec<String>>().join(" "),
+      Value::Unknown(_t, v) => v.iter().take(limit).map(|a| format!("{:X}", a)).collect::<Vec<String>>().join(" "),
+      Value::Ascii(v) => v.first().clone(),
     }
   }
 
@@ -421,19 +847,21 @@ impl Value {
 
   pub fn value_type_name(&self) -> String {
     match self {
-      Self::Byte(_) => { "BYTE".into()}
-      Self::Ascii(_) => { "ASCII".into()}
-      Self::Short(_) => { "SHORT".into()}
-      Self::Long(_) => { "LONG".into()}
-      Self::Rational(_) => { "RATIONAL".into()}
-      Self::SByte(_)  => { "SBYTE".into()}
-      Self::Undefined(_)=> { "UNDEF".into()}
-      Self::SShort(_)  => { "SSHORT".into()}
-      Self::SLong(_)=> { "SLONG".into()}
-      Self::SRational(_)  => { "SRATIONAL".into()}
-      Self::Float(_)=> { "FLOAT".into()}
-      Self::Double(_)  => { "DOUBLE".into()}
-      Self::Unknown(t, _)=> {format!("UNKNOWN ({})", t)}
+      Self::Byte(_) => "BYTE".into(),
+      Self::Ascii(_) => "ASCII".into(),
+      Self::Short(_) => "SHORT".into(),
+      Self::Long(_) => "LONG".into(),
+      Self::Rational(_) => "RATIONAL".into(),
+      Self::SByte(_) => "SBYTE".into(),
+      Self::Undefined(_) => "UNDEF".into(),
+      Self::SShort(_) => "SSHORT".into(),
+      Self::SLong(_) => "SLONG".into(),
+      Self::SRational(_) => "SRATIONAL".into(),
+      Self::Float(_) => "FLOAT".into(),
+      Self::Double(_) => "DOUBLE".into(),
+      Self::Unknown(t, _) => {
+        format!("UNKNOWN ({})", t)
+      }
     }
   }
 }
@@ -491,222 +919,220 @@ impl TiffAscii {
   }
 }
 
-
-
 pub trait IntoTiffValue {
-    fn count(&self) -> usize;
-    fn size(&self) -> usize;
-    fn bytes(&self) -> usize {
-      self.count() * self.size()
-    }
+  fn count(&self) -> usize;
+  fn size(&self) -> usize;
+  fn bytes(&self) -> usize {
+    self.count() * self.size()
   }
+}
 
-  impl From<Rational> for Value {
-    fn from(value: Rational) -> Self {
-      Value::Rational(vec![value])
-    }
+impl From<Rational> for Value {
+  fn from(value: Rational) -> Self {
+    Value::Rational(vec![value])
   }
+}
 
-  impl From<&[Rational]> for Value {
-    fn from(value: &[Rational]) -> Self {
-      Value::Rational(value.into())
-    }
+impl From<&[Rational]> for Value {
+  fn from(value: &[Rational]) -> Self {
+    Value::Rational(value.into())
   }
+}
 
-  impl<const N: usize> From<[Rational; N]> for Value {
-    fn from(value: [Rational; N]) -> Self {
-      Value::Rational(value.into())
-    }
+impl<const N: usize> From<[Rational; N]> for Value {
+  fn from(value: [Rational; N]) -> Self {
+    Value::Rational(value.into())
   }
+}
 
-  impl From<SRational> for Value {
-    fn from(value: SRational) -> Self {
-      Value::SRational(vec![value])
-    }
+impl From<SRational> for Value {
+  fn from(value: SRational) -> Self {
+    Value::SRational(vec![value])
   }
+}
 
-  impl From<&[SRational]> for Value {
-    fn from(value: &[SRational]) -> Self {
-      Value::SRational(value.into())
-    }
+impl From<&[SRational]> for Value {
+  fn from(value: &[SRational]) -> Self {
+    Value::SRational(value.into())
   }
+}
 
-  impl<const N: usize> From<[SRational; N]> for Value {
-    fn from(value: [SRational; N]) -> Self {
-      Value::SRational(value.into())
-    }
+impl<const N: usize> From<[SRational; N]> for Value {
+  fn from(value: [SRational; N]) -> Self {
+    Value::SRational(value.into())
   }
+}
 
-  impl From<&str> for Value {
-    fn from(value: &str) -> Self {
-      Value::Ascii(TiffAscii::new(value))
-    }
+impl From<&str> for Value {
+  fn from(value: &str) -> Self {
+    Value::Ascii(TiffAscii::new(value))
   }
+}
 
-  impl From<&String> for Value {
-    fn from(value: &String) -> Self {
-      Value::Ascii(TiffAscii::new(value))
-    }
+impl From<&String> for Value {
+  fn from(value: &String) -> Self {
+    Value::Ascii(TiffAscii::new(value))
   }
+}
 
-  impl From<String> for Value {
-    fn from(value: String) -> Self {
-      Value::Ascii(TiffAscii::new(&value))
-    }
+impl From<String> for Value {
+  fn from(value: String) -> Self {
+    Value::Ascii(TiffAscii::new(&value))
   }
+}
 
-  impl From<f32> for Value {
-    fn from(value: f32) -> Self {
-      Value::Float(vec![value])
-    }
+impl From<f32> for Value {
+  fn from(value: f32) -> Self {
+    Value::Float(vec![value])
   }
+}
 
-  impl From<&[f32]> for Value {
-    fn from(value: &[f32]) -> Self {
-      Value::Float(value.into())
-    }
+impl From<&[f32]> for Value {
+  fn from(value: &[f32]) -> Self {
+    Value::Float(value.into())
   }
+}
 
-  impl<const N: usize> From<[f32; N]> for Value {
-    fn from(value: [f32; N]) -> Self {
-      Value::Float(value.into())
-    }
+impl<const N: usize> From<[f32; N]> for Value {
+  fn from(value: [f32; N]) -> Self {
+    Value::Float(value.into())
   }
+}
 
-  impl From<f64> for Value {
-    fn from(value: f64) -> Self {
-      Value::Double(vec![value])
-    }
+impl From<f64> for Value {
+  fn from(value: f64) -> Self {
+    Value::Double(vec![value])
   }
+}
 
-  impl From<&[f64]> for Value {
-    fn from(value: &[f64]) -> Self {
-      Value::Double(value.into())
-    }
+impl From<&[f64]> for Value {
+  fn from(value: &[f64]) -> Self {
+    Value::Double(value.into())
   }
+}
 
-  impl<const N: usize> From<[f64; N]> for Value {
-    fn from(value: [f64; N]) -> Self {
-      Value::Double(value.into())
-    }
+impl<const N: usize> From<[f64; N]> for Value {
+  fn from(value: [f64; N]) -> Self {
+    Value::Double(value.into())
   }
+}
 
-  impl From<u8> for Value {
-    fn from(value: u8) -> Self {
-      Value::Byte(vec![value])
-    }
+impl From<u8> for Value {
+  fn from(value: u8) -> Self {
+    Value::Byte(vec![value])
   }
+}
 
-  impl From<&[u8]> for Value {
-    fn from(value: &[u8]) -> Self {
-      Value::Byte(value.into())
-    }
+impl From<&[u8]> for Value {
+  fn from(value: &[u8]) -> Self {
+    Value::Byte(value.into())
   }
+}
 
-  impl<const N: usize> From<[u8; N]> for Value {
-    fn from(value: [u8; N]) -> Self {
-      Value::Byte(value.into())
-    }
+impl<const N: usize> From<[u8; N]> for Value {
+  fn from(value: [u8; N]) -> Self {
+    Value::Byte(value.into())
   }
+}
 
-  impl From<u16> for Value {
-    fn from(value: u16) -> Self {
-      Value::Short(vec![value])
-    }
+impl From<u16> for Value {
+  fn from(value: u16) -> Self {
+    Value::Short(vec![value])
   }
+}
 
-  impl From<&[u16]> for Value {
-    fn from(value: &[u16]) -> Self {
-      Value::Short(value.into())
-    }
+impl From<&[u16]> for Value {
+  fn from(value: &[u16]) -> Self {
+    Value::Short(value.into())
   }
+}
 
-  impl From<&Vec<u16>> for Value {
-    fn from(value: &Vec<u16>) -> Self {
-      Value::Short(value.clone())
-    }
+impl From<&Vec<u16>> for Value {
+  fn from(value: &Vec<u16>) -> Self {
+    Value::Short(value.clone())
   }
+}
 
-  impl<const N: usize> From<[u16; N]> for Value {
-    fn from(value: [u16; N]) -> Self {
-      Value::Short(value.into())
-    }
+impl<const N: usize> From<[u16; N]> for Value {
+  fn from(value: [u16; N]) -> Self {
+    Value::Short(value.into())
   }
+}
 
-  impl From<u32> for Value {
-    fn from(value: u32) -> Self {
-      Value::Long(vec![value])
-    }
+impl From<u32> for Value {
+  fn from(value: u32) -> Self {
+    Value::Long(vec![value])
   }
+}
 
-  impl From<&[u32]> for Value {
-    fn from(value: &[u32]) -> Self {
-      Value::Long(value.into())
-    }
+impl From<&[u32]> for Value {
+  fn from(value: &[u32]) -> Self {
+    Value::Long(value.into())
   }
+}
 
-  impl From<&Vec<u32>> for Value {
-    fn from(value: &Vec<u32>) -> Self {
-      Value::Long(value.clone())
-    }
+impl From<&Vec<u32>> for Value {
+  fn from(value: &Vec<u32>) -> Self {
+    Value::Long(value.clone())
   }
+}
 
-  impl<const N: usize> From<[u32; N]> for Value {
-    fn from(value: [u32; N]) -> Self {
-      Value::Long(value.into())
-    }
+impl<const N: usize> From<[u32; N]> for Value {
+  fn from(value: [u32; N]) -> Self {
+    Value::Long(value.into())
   }
+}
 
-  impl From<i8> for Value {
-    fn from(value: i8) -> Self {
-      Value::SByte(vec![value])
-    }
+impl From<i8> for Value {
+  fn from(value: i8) -> Self {
+    Value::SByte(vec![value])
   }
+}
 
-  impl From<&[i8]> for Value {
-    fn from(value: &[i8]) -> Self {
-      Value::SByte(value.into())
-    }
+impl From<&[i8]> for Value {
+  fn from(value: &[i8]) -> Self {
+    Value::SByte(value.into())
   }
+}
 
-  impl<const N: usize> From<[i8; N]> for Value {
-    fn from(value: [i8; N]) -> Self {
-      Value::SByte(value.into())
-    }
+impl<const N: usize> From<[i8; N]> for Value {
+  fn from(value: [i8; N]) -> Self {
+    Value::SByte(value.into())
   }
+}
 
-  impl From<i16> for Value {
-    fn from(value: i16) -> Self {
-      Value::SShort(vec![value])
-    }
+impl From<i16> for Value {
+  fn from(value: i16) -> Self {
+    Value::SShort(vec![value])
   }
+}
 
-  impl From<&[i16]> for Value {
-    fn from(value: &[i16]) -> Self {
-      Value::SShort(value.into())
-    }
+impl From<&[i16]> for Value {
+  fn from(value: &[i16]) -> Self {
+    Value::SShort(value.into())
   }
+}
 
-  impl<const N: usize> From<[i16; N]> for Value {
-    fn from(value: [i16; N]) -> Self {
-      Value::SShort(value.into())
-    }
+impl<const N: usize> From<[i16; N]> for Value {
+  fn from(value: [i16; N]) -> Self {
+    Value::SShort(value.into())
   }
+}
 
-  impl From<i32> for Value {
-    fn from(value: i32) -> Self {
-      Value::SLong(vec![value])
-    }
+impl From<i32> for Value {
+  fn from(value: i32) -> Self {
+    Value::SLong(vec![value])
   }
+}
 
-  impl From<&[i32]> for Value {
-    fn from(value: &[i32]) -> Self {
-      Value::SLong(value.into())
-    }
+impl From<&[i32]> for Value {
+  fn from(value: &[i32]) -> Self {
+    Value::SLong(value.into())
   }
+}
 
-  impl<const N: usize> From<[i32; N]> for Value {
-    fn from(value: [i32; N]) -> Self {
-      Value::SLong(value.into())
-    }
+impl<const N: usize> From<[i32; N]> for Value {
+  fn from(value: [i32; N]) -> Self {
+    Value::SLong(value.into())
   }
+}
