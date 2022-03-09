@@ -1,0 +1,12 @@
+[[cameras]]
+make = "Phase One"
+model = "iXM-100"
+clean_make = "Phase One"
+clean_model = "iXM-100"
+blackpoint = 0
+whitepoint = 65535
+color_pattern = "RGGB"
+active_area = [100, 104, 0, 0]
+
+[cameras.color_matrix]
+D65 = [0.8035, 0.0435, -0.0962, -0.6001, 1.3872, 0.2320, -0.1159, 0.3065, 0.5434]

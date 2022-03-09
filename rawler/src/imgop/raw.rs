@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: LGPL-2.1
 // Copyright 2021 Daniel Vogelbacher <daniel@chaospixel.com>
 
-
 use super::gamma::apply_gamma;
 use super::sensor::bayer::BayerPattern;
 use super::xyz::Illuminant;
@@ -186,4 +185,16 @@ pub fn mul_invert_array<const N: usize>(a: &[f32; N]) -> [f32; N] {
   let mut b = [f32::default(); N];
   b.iter_mut().zip(a.iter()).for_each(|(x, y)| *x = 1.0 / y);
   b
+}
+
+pub fn rotate_90(src: &[u16], dst: &mut [u16], width: usize, height: usize) {
+  let dst = &mut dst[..src.len()]; // optimize len hints for compiler
+  let owidth = height;
+  for (row, line) in src.chunks_exact(width).enumerate() {
+    for (col, pix) in line.iter().enumerate() {
+      let orow = col;
+      let ocol = (owidth-1)-row; // inverse
+      dst[orow * owidth + ocol] = *pix;
+    }
+  }
 }

@@ -2,14 +2,15 @@
 // Copyright 2021 Daniel Vogelbacher <daniel@chaospixel.com>
 
 use core::panic;
+use std::path::{Path, PathBuf};
 use image::{imageops::FilterType, DynamicImage, ImageBuffer};
-use log::{debug, info};
+use log::{debug, error, info};
 use rawler::formats::tiff::{Rational, SRational};
 use rawler::{
   decoders::RawDecodeParams,
   dng::rect_to_dng_area,
   formats::tiff::{CompressionMethod, DirectoryWriter, PhotometricInterpretation, PreviewColorSpace, TiffError, TiffWriter, Value},
-  imgop::{raw::develop_raw_srgb, rescale_f32_to_u16, xyz::Illuminant, Dim2, Point, Rect},
+  imgop::{raw::develop_raw_srgb, rescale_f32_to_u16, Dim2, Point, Rect},
   tiles::ImageTiler,
   RawFile, RawImage, RawlerError,
 };
@@ -81,9 +82,8 @@ pub struct ConvertParams {
 }
 
 /// Convert a raw input file into DNG
-pub fn raw_to_dng(raw_file: File, dng_file: &mut File, orig_filename: String, params: &ConvertParams) -> Result<()> {
-  let mut rawfile = RawFile::new(BufReader::new(raw_file));
-  //let mut rawfile = RawFile::with_box(Box::new(BufReader::new(raw_file)));
+pub fn raw_to_dng(path: &Path, raw_file: File, dng_file: &mut File, orig_filename: String, params: &ConvertParams) -> Result<()> {
+  let mut rawfile = RawFile::new(PathBuf::from(path), BufReader::new(raw_file));
   let mut output = BufWriter::new(dng_file);
 
   raw_to_dng_internal(&mut rawfile, &mut output, orig_filename, &params).unwrap();
@@ -98,7 +98,7 @@ pub fn raw_to_dng_internal<W: Write + Seek + Send>(rawfile: &mut RawFile, output
 
   // Compress original if requested
   let orig_compress_handle = if params.embedded {
-    let in_buffer_clone = rawfile.get_buf().unwrap();
+    let in_buffer_clone = rawfile.as_vec().unwrap();
     Some(thread::spawn(move || {
       let raw_data_compreessed = original_compress(&in_buffer_clone).unwrap();
       let raw_digest = original_digest(&raw_data_compreessed);
@@ -116,20 +116,29 @@ pub fn raw_to_dng_internal<W: Write + Seek + Send>(rawfile: &mut RawFile, output
   let rawimage = decoder.raw_image(rawfile, raw_params, false)?;
 
   let full_img = if params.preview || params.thumbnail {
-    match decoder.full_image(rawfile) {
-      Ok(img) => Some(img),
-      Err(e) => {
-        info!("No embedded image found, generate sRGB from RAW, error was: {}", e);
-        let params = rawimage.develop_params()?;
-        let buf = match &rawimage.data {
-          RawImageData::Integer(buf) => buf,
-          RawImageData::Float(_) => todo!(),
-        };
-        let (srgbf, dim) = develop_raw_srgb(&buf, &params)?;
-        let output = rescale_f32_to_u16(&srgbf, 0, u16::MAX);
-        let img = DynamicImage::ImageRgb16(ImageBuffer::from_raw(dim.w as u32, dim.h as u32, output).unwrap());
-        Some(img)
+    let image = match decoder.full_image(rawfile) {
+      Ok(Some(img)) => Some(img),
+      Ok(None) => {
+        info!("No embedded image found, generate sRGB from RAW");
+        None
       }
+      Err(e) => {
+        error!("No embedded image found, generate sRGB from RAW, error was: {}", e);
+        None
+      }
+    };
+    if image.is_some() {
+      image
+    } else {
+      let params = rawimage.develop_params()?;
+      let buf = match &rawimage.data {
+        RawImageData::Integer(buf) => buf,
+        RawImageData::Float(_) => todo!(),
+      };
+      let (srgbf, dim) = develop_raw_srgb(&buf, &params)?;
+      let output = rescale_f32_to_u16(&srgbf, 0, u16::MAX);
+      let img = DynamicImage::ImageRgb16(ImageBuffer::from_raw(dim.w as u32, dim.h as u32, output).unwrap());
+      Some(img)
     }
   } else {
     None
@@ -141,9 +150,7 @@ pub fn raw_to_dng_internal<W: Write + Seek + Send>(rawfile: &mut RawFile, output
   );
 
   let wb_coeff = wbcoeff_to_tiff_value(&rawimage.wb_coeffs);
-  let color_matrix = rawimage.color_matrix.get(&Illuminant::D65).unwrap(); // TODO fixme
-  let matrix1 = matrix_to_tiff_value(color_matrix, 10_000);
-  let matrix1_ill: u16 = Illuminant::D65.into();
+
 
   let mut dng = TiffWriter::new(output).unwrap();
   let mut root_ifd = dng.new_directory();
@@ -168,8 +175,22 @@ pub fn raw_to_dng_internal<W: Write + Seek + Send>(rawfile: &mut RawFile, output
   root_ifd.add_tag(ExifTag::ModifyDate, chrono::Local::now().format("%Y:%m:%d %H:%M:%S").to_string())?;
 
   // Add matrix and illumninant
-  root_ifd.add_tag(DngTag::CalibrationIlluminant1, matrix1_ill)?;
-  root_ifd.add_tag(DngTag::ColorMatrix1, &matrix1[..])?;
+
+  for (i, (ill, matrix)) in rawimage.color_matrix.iter().enumerate() {
+    let dng_matrix = matrix_to_tiff_value(matrix, 10_000);
+    let dng_matrix_ill: u16 = ill.clone().into();
+    match i {
+      0 => {      
+        root_ifd.add_tag(DngTag::CalibrationIlluminant1, dng_matrix_ill)?;
+        root_ifd.add_tag(DngTag::ColorMatrix1, &dng_matrix[..])?;
+      },
+      1 => {
+        root_ifd.add_tag(DngTag::CalibrationIlluminant2, dng_matrix_ill)?;
+        root_ifd.add_tag(DngTag::ColorMatrix2, &dng_matrix[..])?;
+      },
+      _ => unreachable!()
+    }
+  }
 
   // Add White balance info
   root_ifd.add_tag(DngTag::AsShotNeutral, &wb_coeff[..])?;

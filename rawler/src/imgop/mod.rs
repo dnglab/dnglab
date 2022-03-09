@@ -5,11 +5,12 @@ pub mod gamma;
 pub mod matrix;
 pub mod raw;
 pub mod sensor;
+pub mod spline;
 pub mod srgb;
 pub mod xyz;
 
 use rayon::prelude::*;
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 pub type Result<T> = std::result::Result<T, String>;
 
@@ -87,7 +88,6 @@ pub fn clip(p: f32, min: f32, max: f32) -> f32 {
   }
 }
 
-
 /// A simple x/y point
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
 pub struct Point {
@@ -101,10 +101,7 @@ impl Point {
   }
 
   pub fn zero() -> Self {
-    Self {
-      x: 0,
-      y: 0,
-    }
+    Self { x: 0, y: 0 }
   }
 }
 
@@ -116,10 +113,20 @@ pub struct Rect {
 }
 
 impl std::fmt::Debug for Rect {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        //f.debug_struct("Rect").field("p", &self.p).field("d", &self.d).finish()?;
-        f.write_fmt(format_args!("Rect{{{}:{}, {}x{}, LTRB=[{}, {}, {}, {}]}}", self.p.x, self.p.y, self.d.w, self.d.h,  self.p.x, self.p.y, self.p.x+self.d.w, self.p.y+self.d.h))
-    }
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    //f.debug_struct("Rect").field("p", &self.p).field("d", &self.d).finish()?;
+    f.write_fmt(format_args!(
+      "Rect{{{}:{}, {}x{}, LTRB=[{}, {}, {}, {}]}}",
+      self.p.x,
+      self.p.y,
+      self.d.w,
+      self.d.h,
+      self.p.x,
+      self.p.y,
+      self.p.x + self.d.w,
+      self.p.y + self.d.h
+    ))
+  }
 }
 
 impl Rect {
@@ -132,16 +139,14 @@ impl Rect {
     Self {
       p: p1,
       d: Dim2 {
-        w: p2.x-p1.x,
-        h: p2.y-p1.y,
-      }
+        w: p2.x - p1.x,
+        h: p2.y - p1.y,
+      },
     }
   }
 
   pub fn new_with_borders(dim: Dim2, borders: &[usize; 4]) -> Self {
-    Self::new_with_points(Point::new(borders[0], borders[1]),
-    Point::new(dim.w - borders[2], dim.h - borders[3])
-  )
+    Self::new_with_points(Point::new(borders[0], borders[1]), Point::new(dim.w - borders[2], dim.h - borders[3]))
   }
 
   pub fn is_empty(&self) -> bool {
@@ -150,23 +155,13 @@ impl Rect {
 
   /// Return in LTRB coordinates
   pub fn as_ltrb(&self) -> [usize; 4] {
-    [
-      self.p.x,
-      self.p.y,
-      self.p.x + self.d.w,
-      self.p.y + self.d.h,
-    ]
+    [self.p.x, self.p.y, self.p.x + self.d.w, self.p.y + self.d.h]
   }
 
-    /// Return in TLBR
-    pub fn as_tlbr(&self) -> [usize; 4] {
-      [
-        self.p.y,
-        self.p.x,
-        self.p.y + self.d.h,
-        self.p.x + self.d.w,
-      ]
-    }
+  /// Return in TLBR
+  pub fn as_tlbr(&self) -> [usize; 4] {
+    [self.p.y, self.p.x, self.p.y + self.d.h, self.p.x + self.d.w]
+  }
 }
 
 /// Crop image to specific area

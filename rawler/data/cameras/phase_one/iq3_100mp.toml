@@ -1,0 +1,14 @@
+[[cameras]]
+make = "Phase One A/S"
+model = "IQ3 100MP"
+clean_make = "Phase One"
+clean_model = "IQ3 100MP"
+blackpoint = 0
+whitepoint = 65535
+color_pattern = "RGGB"
+active_area = [148, 120, 220, 24]
+
+[cameras.color_matrix]
+D55 = [0.3101, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.8063]
+D75 = [0.2423, 0.0, 0.0, 0.0, 0.9901, 0.0, 0.0, 0.0, 0.7989]
+

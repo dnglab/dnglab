@@ -2643,3 +2643,9 @@ make = "Pentax"
 focal_range = [[38, 10], [59, 10]]
 aperture_range = [[37, 10], [4, 1]]
 
+[[lenses]]
+key = "Schneider LS 150mm f/3.5"
+model = "150mm LS f/3.5"
+make = "Schneider"
+focal_range = [[150, 1], [150, 1]]
+aperture_range = [[35, 10], [35, 10]]

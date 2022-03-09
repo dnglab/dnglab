@@ -16,6 +16,16 @@ pub fn clampbits(val: i32, bits: u32) -> u16 {
   }
 }
 
+pub fn clamp(val: i32, min: i32, max: i32) -> i32 {
+  let mut res = val;
+  if res < min {
+    res = min;
+  }
+  if res > max {
+    res = max;
+  }
+  res
+}
 
 #[derive(Debug, Copy, Clone, PartialEq, Serialize, Deserialize)]
 pub enum Endian {

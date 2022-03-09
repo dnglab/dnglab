@@ -209,4 +209,51 @@ mod camera_k20d_raw_modes {
 mod camera_k110d_raw_modes {
 	super::camera_file_check!("Pentax", "K110D", pentax_k110d_raw_iso_200_pef, "raw_modes/PENTAX K110D_RAW_ISO_200.PEF");
 }
+mod camera_iq3_100mp_raw_modes {
+	super::camera_file_check!("Phase One", "IQ3 100MP", iq3_100mp_l16_iso_50_iiq, "raw_modes/IQ3 100MP_L16_ISO_50.IIQ");
+	super::camera_file_check!("Phase One", "IQ3 100MP", iq3_100mp_iiq_l_iso_50_iiq, "raw_modes/IQ3 100MP_IIQ L_ISO_50.IIQ");
+	super::camera_file_check!("Phase One", "IQ3 100MP", iq3_100mp_iiq_sv2_iso_50_iiq, "raw_modes/IQ3 100MP_IIQ Sv2_ISO_50.IIQ");
+}
+mod camera_h_25_raw_modes {
+	super::camera_file_check!("Phase One", "H 25", h_25_iiq_s_iso_100_iiq, "raw_modes/H 25_IIQ S_ISO_100.IIQ");
+	super::camera_file_check!("Phase One", "H 25", h_25_raw0_iso_50_iiq, "raw_modes/H 25_Raw0_ISO_50.IIQ");
+}
+mod camera_ixm_100_raw_modes {
+	super::camera_file_check!("Phase One", "iXM-100", ixm_100_iiq_l_iso_100_iiq, "raw_modes/iXM-100_IIQ L_ISO_100.IIQ");
+	super::camera_file_check!("Phase One", "iXM-100", ixm_100_iiq_sv2_iso_100_iiq, "raw_modes/iXM-100_IIQ Sv2_ISO_100.IIQ");
+}
+mod camera_iq180_raw_modes {
+	super::camera_file_check!("Phase One", "IQ180", iq180_iiq_l_iso_100_iiq, "raw_modes/IQ180_IIQ L_ISO_100.IIQ");
+}
+mod camera_iq4_150mp_raw_modes {
+	super::camera_file_check!("Phase One", "IQ4 150MP", iq4_150mp_iiq_l16_iso_100_iiq, "raw_modes/IQ4 150MP_IIQ L16_ISO_100.IIQ");
+	super::camera_file_check!("Phase One", "IQ4 150MP", iq4_150mp_iiq_l16ex_iso_100_iiq, "raw_modes/IQ4 150MP_IIQ L16ex_ISO_100.IIQ");
+	super::camera_file_check!("Phase One", "IQ4 150MP", iq4_150mp_iiq_l_iso_100_iiq, "raw_modes/IQ4 150MP_IIQ L_ISO_100.IIQ");
+}
+mod camera_iq140_raw_modes {
+	super::camera_file_check!("Phase One", "IQ140", iq140_iiq_l_iso_50_iiq, "raw_modes/IQ140_IIQ L_ISO_50.IIQ");
+	super::camera_file_check!("Phase One", "IQ140", iq140_iiq_l_iso_200_sensorplus_iiq, "raw_modes/IQ140_IIQ L_ISO_200_SensorPlus.IIQ");
+	super::camera_file_check!("Phase One", "IQ140", iq140_iiq_sv2_iso_50_iiq, "raw_modes/IQ140_IIQ Sv2_ISO_50.IIQ");
+	super::camera_file_check!("Phase One", "IQ140", iq140_iiq_sv2_iso_200_sensorplus_iiq, "raw_modes/IQ140_IIQ Sv2_ISO_200_SensorPlus.IIQ");
+}
+mod camera_p30_raw_modes {
+	super::camera_file_check!("Phase One", "P30", p30_iiq_l_iso_100_iiq, "raw_modes/P30_IIQ L_ISO_100.IIQ");
+}
+mod camera_iq3_100mp_trichr_raw_modes {
+	super::camera_file_check!("Phase One", "IQ3 100MP Trichr", iq3_100mp_trichr_l16_iso_50_iiq, "raw_modes/IQ3 100MP Trichr_L16_ISO_50.IIQ");
+}
+mod camera_iq150_raw_modes {
+	super::camera_file_check!("Phase One", "IQ150", iq150_iiq_l_iso_400_iiq, "raw_modes/IQ150_IIQ L_ISO_400.IIQ");
+}
+mod camera_ixm_rs150f_raw_modes {
+	super::camera_file_check!("Phase One", "iXM-RS150F", ixm_rs150f_iiq_sv2_iso_160_iiq, "raw_modes/iXM-RS150F_IIQ Sv2_ISO_160.IIQ");
+}
+mod camera_p65_raw_modes {
+	super::camera_file_check!("Phase One", "P65", p65_plus_iiq_l_iso_200_iiq, "raw_modes/P65 Plus_IIQ L_ISO_200.IIQ");
+	super::camera_file_check!("Phase One", "P65", p65_plus_iiq_s_iso_200_iiq, "raw_modes/P65 Plus_IIQ S_ISO_200.IIQ");
+}
+mod camera_p20_raw_modes {
+	super::camera_file_check!("Phase One", "P20", p20_plus_iiq_s_iso_50_iiq, "raw_modes/P20 Plus_IIQ S_ISO_50.IIQ");
+	super::camera_file_check!("Phase One", "P20", p20_plus_iiq_l_iso_50_iiq, "raw_modes/P20 Plus_IIQ L_ISO_50.IIQ");
+}
 

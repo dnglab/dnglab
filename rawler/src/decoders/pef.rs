@@ -23,6 +23,7 @@ use crate::formats::tiff::IFD;
 use crate::lens::LensDescription;
 use crate::lens::LensResolver;
 use crate::packed::*;
+use crate::pixarray::PixU16;
 use crate::pumps::BitPumpMSB;
 use crate::pumps::ByteStream;
 use crate::tags::DngTag;
@@ -139,7 +140,7 @@ impl<'a> Decoder for PefDecoder<'a> {
     let height = fetch_tag_new!(raw, LegacyTiffRootTag::ImageLength).get_usize(0)?;
     let offset = fetch_tag_new!(raw, LegacyTiffRootTag::StripOffsets).get_usize(0)?;
 
-    let src = file.get_offset(offset as u64).unwrap();
+    let src = file.subview_until_eof(offset as u64).unwrap();
 
     let image = match fetch_tag_new!(raw, LegacyTiffRootTag::Compression).get_u32(0)? {
       Some(1) => decode_16be(&src, width, height, dummy),
@@ -153,10 +154,10 @@ impl<'a> Decoder for PefDecoder<'a> {
     let cpp = 1;
     let wb = self.get_wb()?;
     debug!("Found WB: {:?}", wb);
-    ok_image_with_blacklevels(self.camera.clone(), width, height, cpp, wb, blacklevels, image)
+    ok_image_with_blacklevels(self.camera.clone(), width, height, cpp, wb, blacklevels, image.into_inner())
   }
 
-  fn full_image(&self, file: &mut RawFile) -> Result<DynamicImage> {
+  fn full_image(&self, file: &mut RawFile) -> Result<Option<DynamicImage>> {
     let size = self.makernote.get_entry(PefMakernote::PreviewImageSize);
     let length = self.makernote.get_entry(PefMakernote::PreviewImageLength);
     let start = self.makernote.get_entry(PefMakernote::PreviewImageStart);
@@ -168,12 +169,12 @@ impl<'a> Decoder for PefDecoder<'a> {
         let len = length.get_u32(0)?.unwrap_or(0);
         let offset = start.get_u32(0)?.unwrap_or(0);
         if len > 0 && offset > 0 {
-          let buf = file.get_range((self.makernote_offset + offset) as u64, len as u64).unwrap();
+          let buf = file.subview((self.makernote_offset + offset) as u64, len as u64).unwrap();
           match image::load_from_memory_with_format(&buf, image::ImageFormat::Jpeg) {
             Ok(img) => Some(img),
             Err(_) => {
               // Test offset without correction
-              let buf = file.get_range(offset as u64, len as u64).unwrap();
+              let buf = file.subview(offset as u64, len as u64).unwrap();
               let img = image::load_from_memory_with_format(&buf, image::ImageFormat::Jpeg).unwrap();
               Some(img)
             }
@@ -196,9 +197,9 @@ impl<'a> Decoder for PefDecoder<'a> {
         let x = borders[2] as u32;
         let width = image.width() - x - borders[3] as u32;
         let height = image.height() - y - borders[1] as u32;
-        return Ok(image.crop_imm(x, y, width, height));
+        return Ok(Some(image.crop_imm(x, y, width, height)));
       } else {
-        return Ok(image);
+        return Ok(Some(image));
       }
     }
 
@@ -332,7 +333,7 @@ impl<'a> PefDecoder<'a> {
     return Ok(None);
   }
 
-  fn decode_compressed(&self, src: &[u8], width: usize, height: usize, dummy: bool) -> Result<Vec<u16>> {
+  fn decode_compressed(&self, src: &[u8], width: usize, height: usize, dummy: bool) -> Result<PixU16> {
     if let Some(huff) = self.makernote.get_entry(PefMakernote::HuffmanTable) {
       match &huff.value {
         Value::Undefined(data) => Self::do_decode(src, Some((data, self.tiff.get_endian())), width, height, dummy),
@@ -343,7 +344,7 @@ impl<'a> PefDecoder<'a> {
     }
   }
 
-  pub(crate) fn do_decode(src: &[u8], huff: Option<(&[u8], Endian)>, width: usize, height: usize, dummy: bool) -> Result<Vec<u16>> {
+  pub(crate) fn do_decode(src: &[u8], huff: Option<(&[u8], Endian)>, width: usize, height: usize, dummy: bool) -> Result<PixU16> {
     let mut out = alloc_image_ok!(width, height, dummy);
     let mut htable = HuffTable::empty();
 
@@ -421,7 +422,7 @@ impl<'a> PefDecoder<'a> {
         out[row * width + col + 1] = pred_left2 as u16;
       }
     }
-    Ok(out)
+    Ok(PixU16::new(out, width, height))
   }
 }
 

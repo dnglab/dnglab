@@ -148,7 +148,7 @@ impl<'a> Cr3Decoder<'a> {
     let (offset, size) = ctmd_trak.mdia.minf.stbl.get_sample_offset(sample_idx as u32 + 1).unwrap();
     debug!("CR3 CTMD mdat offset for sample_idx {}: {}, len: {}", sample_idx, offset, size);
     let buf = rawfile
-      .get_range(offset as u64, size as u64)
+      .subview(offset as u64, size as u64)
       .map_err(|e| RawlerError::General(format!("I/O error while reading CR3 CTMD: {:?}", e)))?;
     let mut substream = ByteStream::new(&buf, Endian::Little);
     let ctmd = Ctmd::new(&mut substream);
@@ -347,7 +347,7 @@ impl<'a> Decoder for Cr3Decoder<'a> {
     debug!("RAW mdat offset: {}, len: {}", offset, size);
     // Raw data buffer
     let buf = file
-      .get_range(offset as u64, size as u64)
+      .subview(offset as u64, size as u64)
       .map_err(|e| RawlerError::General(format!("I/O error while reading CR3 raw image: {:?}", e)))?;
 
     let cmp1 = self
@@ -440,7 +440,7 @@ impl<'a> Decoder for Cr3Decoder<'a> {
   }
 
   /// Extract preview image embedded in CR3
-  fn full_image(&self, file: &mut RawFile) -> Result<DynamicImage> {
+  fn full_image(&self, file: &mut RawFile) -> Result<Option<DynamicImage>> {
     if rawler_ignore_previews() {
       return Err(RawlerError::General("Unable to extract preview image".into()));
     }
@@ -448,10 +448,10 @@ impl<'a> Decoder for Cr3Decoder<'a> {
     let size = self.bmff.filebox.moov.traks[0].mdia.minf.stbl.stsz.sample_sizes[0] as usize;
     debug!("JPEG preview mdat offset: {}, len: {}", offset, size);
     let buf = file
-      .get_range(offset as u64, size as u64)
+      .subview(offset as u64, size as u64)
       .map_err(|e| RawlerError::General(format!("I/O error while reading CR3 full image: {:?}", e)))?;
     match image::load_from_memory_with_format(&buf, image::ImageFormat::Jpeg) {
-      Ok(img) => Ok(img),
+      Ok(img) => Ok(Some(img)),
       Err(e) => {
         debug!("TRAK 0 contains no JPEG preview, is it PQ/HEIF? Error: {}", e);
         Err(RawlerError::General(
@@ -550,7 +550,7 @@ impl<'a> Cr3Decoder<'a> {
       let offset = xpacket_box.header.offset + xpacket_box.header.header_len;
       let size = xpacket_box.header.size - xpacket_box.header.header_len;
       let buf = rawfile
-        .get_range(offset, size)
+        .subview(offset, size)
         .map_err(|e| RawlerError::General(format!("I/O error while reading CR3 XPACKET: {:?}", e)))?;
       self.xpacket = Some(Vec::from(buf));
     }

@@ -1,80 +1,97 @@
-use std::convert::TryFrom;
-
 // SPDX-License-Identifier: LGPL-2.1
 // Copyright 2021 Daniel Vogelbacher <daniel@chaospixel.com>
+
+use std::convert::TryFrom;
 
 /// Illuminants for XYZ
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Illuminant {
-  A,
-  B,
-  C,
-  D50,
-  D55,
-  D65,
-  D75,
-  E,
-  F2,
-  F7,
-  F11,
+  Unknown = 0,
+  Daylight = 1,
+  Fluorescent = 2,
+  Tungsten = 3,
+  Flash = 4,
+  FineWeather = 9,
+  CloudyWeather = 10,
+  Shade = 11,
+  DaylightFluorescent = 12,
+  DaylightWhiteFluorescent = 13,
+  CoolWhiteFluorescent = 14,
+  WhiteFluorescent = 15,
+  A = 17,
+  B = 18,
+  C = 19,
+  D55 = 20,
+  D65 = 21,
+  D75 = 22,
+  D50 = 23,
+  IsoStudioTungsten = 24,
 }
 
 pub type FlatColorMatrix = Vec<f32>;
 
-impl TryFrom<usize> for Illuminant {
+impl TryFrom<u16> for Illuminant {
   type Error = String;
 
-  fn try_from(_value: usize) -> Result<Self, Self::Error> {
-    todo!()
+  fn try_from(v: u16) -> Result<Self, Self::Error> {
+    Ok(match v {
+      0 => Self::Unknown,
+      1 => Self::Daylight,
+      2 => Self::Fluorescent,
+      3 => Self::Tungsten,
+      4 => Self::Flash,
+      9 => Self::FineWeather,
+      10 => Self::CloudyWeather,
+      11 => Self::Shade,
+      12 => Self::DaylightFluorescent,
+      13 => Self::DaylightWhiteFluorescent,
+      14 => Self::CoolWhiteFluorescent,
+      15 => Self::WhiteFluorescent,
+      17 => Self::A,
+      18 => Self::B,
+      19 => Self::C,
+      20 => Self::D55,
+      21 => Self::D65,
+      22 => Self::D75,
+      23 => Self::D50,
+      24 => Self::IsoStudioTungsten,
+      _ => {
+        return Err(format!("Unknown illuminant value: {}", v));
+      }
+    })
   }
 }
 
 impl From<Illuminant> for u16 {
   fn from(value: Illuminant) -> Self {
-    match value {
-      Illuminant::A => todo!(),
-      Illuminant::B => todo!(),
-      Illuminant::C => todo!(),
-      Illuminant::D50 => todo!(),
-      Illuminant::D55 => todo!(),
-      Illuminant::D65 => 21,
-      Illuminant::D75 => todo!(),
-      Illuminant::E => todo!(),
-      Illuminant::F2 => todo!(),
-      Illuminant::F7 => todo!(),
-      Illuminant::F11 => todo!(),
-    }
+    value as u16
   }
 }
 
-impl TryFrom<&String> for Illuminant {
-  type Error = String;
-
-  fn try_from(value: &String) -> Result<Self, Self::Error> {
-    if value == "A" {
-      Ok(Self::A)
-    } else if value == "B" {
-      Ok(Self::B)
-    } else if value == "C" {
-      Ok(Self::C)
-    } else if value == "D50" {
-      Ok(Self::D50)
-    } else if value == "D55" {
-      Ok(Self::D55)
-    } else if value == "D65" {
-      Ok(Self::D65)
-    } else if value == "D75" {
-      Ok(Self::D75)
-    } else if value == "E" {
-      Ok(Self::E)
-    } else if value == "F2" {
-      Ok(Self::F2)
-    } else if value == "F7" {
-      Ok(Self::F7)
-    } else if value == "F11" {
-      Ok(Self::F11)
-    } else {
-      Err(String::from(format!("Invalid illuminant identifier: {}", value)))
+impl Illuminant {
+  pub fn new_from_str(s: &str) -> Result<Self, String> {
+    match s {
+      "Unknown" => Ok(Self::Unknown),
+      "Daylight" => Ok(Self::Daylight),
+      "Fluorescent" => Ok(Self::Fluorescent),
+      "Tungsten" => Ok(Self::Tungsten),
+      "Flash" => Ok(Self::Flash),
+      "FineWeather" => Ok(Self::FineWeather),
+      "CloudyWeather" => Ok(Self::CloudyWeather),
+      "Shade" => Ok(Self::Shade),
+      "DaylightFluorescent" => Ok(Self::DaylightFluorescent),
+      "DaylightWhiteFluorescent" => Ok(Self::DaylightWhiteFluorescent),
+      "CoolWhiteFluorescent" => Ok(Self::CoolWhiteFluorescent),
+      "WhiteFluorescent" => Ok(Self::WhiteFluorescent),
+      "A" => Ok(Self::A),
+      "B" => Ok(Self::B),
+      "C" => Ok(Self::C),
+      "D55" => Ok(Self::D55),
+      "D65" => Ok(Self::D65),
+      "D75" => Ok(Self::D75),
+      "D50" => Ok(Self::D50),
+      "IsoStudioTungsten" => Ok(Self::IsoStudioTungsten),
+      _ => Err(format!("Unknown illuminant name: '{}'", s)),
     }
   }
 }

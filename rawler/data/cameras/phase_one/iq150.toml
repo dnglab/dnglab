@@ -1,0 +1,13 @@
+[[cameras]]
+make = "Phase One A/S"
+model = "IQ150"
+clean_make = "Phase One"
+clean_model = "IQ150"
+blackpoint = 0
+whitepoint = 65535
+color_pattern = "RGGB"
+active_area = [92, 108, 0, 0]
+
+[cameras.color_matrix]
+A = [0.5233, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.1869]
+Flash = [0.3984, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.7666]

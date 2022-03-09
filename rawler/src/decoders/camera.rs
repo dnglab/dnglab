@@ -5,7 +5,6 @@ use crate::imgop::xyz::Illuminant;
 use crate::CFA;
 
 use std::collections::HashMap;
-use std::convert::TryInto;
 
 /// Contains sanitized information about the raw image's properties
 #[derive(Debug, Clone)]
@@ -94,8 +93,8 @@ impl Camera {
         "color_matrix" => {
           if let Some(color_matrix) = val.as_table() {
             for (illu_str, matrix) in color_matrix.into_iter() {
-              let illu = illu_str.try_into().unwrap();
-              let xyz_to_cam = matrix.as_array().unwrap().into_iter().map(|a| a.as_float().unwrap() as f32).collect();
+              let illu = Illuminant::new_from_str(illu_str).unwrap();
+              let xyz_to_cam = matrix.as_array().expect("color matrix must be array").into_iter().map(|a| a.as_float().expect("color matrix values must be float") as f32).collect();
               self.color_matrix.insert(illu, xyz_to_cam);
             }
           } else {
@@ -149,6 +148,7 @@ impl Camera {
           }
         }
         "model_aliases" => {}
+        "modes" => {} // ignore
         key @ _ => {
           panic!("Unknown key: {}", key);
         }

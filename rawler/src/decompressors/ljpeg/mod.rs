@@ -2,6 +2,7 @@ use crate::bits::Endian;
 use crate::decoders::decode_threaded_multiline;
 use crate::decompressors::ljpeg::huffman::*;
 use crate::decompressors::ljpeg::decompressors::*;
+use crate::pixarray::PixU16;
 use crate::pumps::ByteStream;
 
 pub mod huffman;
@@ -276,7 +277,7 @@ impl<'a> LjpegDecompressor<'a> {
     }
   }
 
-  pub fn decode_leaf(&self, width: usize, height: usize) -> Result<Vec<u16>,String> {
+  pub fn decode_leaf(&self, width: usize, height: usize) -> Result<PixU16,String> {
     let mut offsets = vec![0 as usize; 1];
     let mut input = ByteStream::new(self.buffer, Endian::Big);
     loop {

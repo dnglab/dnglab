@@ -1,0 +1,13 @@
+[[cameras]]
+make = "Phase One"
+model = "IQ4 150MP"
+clean_make = "Phase One"
+clean_model = "IQ4 150MP"
+blackpoint = 0
+whitepoint = 65535
+color_pattern = "RGGB"
+active_area = [102, 106, 2, 2]
+
+[cameras.color_matrix]
+A = [0.7544, -0.3679, 0.0063, -0.4823, 1.2655, 0.2418, -0.0351, 0.0831, 0.6898]
+D65 = [0.6644, -0.2257, -0.0804, -0.6459, 1.4562, 0.2019, -0.1221, 0.1876, 0.6411]
