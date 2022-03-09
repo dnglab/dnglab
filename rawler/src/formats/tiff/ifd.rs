@@ -229,8 +229,8 @@ impl IFD {
   pub fn singlestrip_data<'a, R: Read + Seek>(&self, reader: &mut R) -> Result<Vec<u8>> {
     assert!(self.contains_singlestrip_image());
 
-    let offset = self.get_entry(LegacyTiffRootTag::StripOffsets).unwrap().value.get_usize(0)?;
-    let len = self.get_entry(LegacyTiffRootTag::StripByteCounts).unwrap().value.get_usize(0)?;
+    let offset = self.get_entry(LegacyTiffRootTag::StripOffsets).unwrap().value.force_usize(0);
+    let len = self.get_entry(LegacyTiffRootTag::StripByteCounts).unwrap().value.force_usize(0);
 
     self.sub_buf(reader, offset, len)
   }

@@ -136,18 +136,18 @@ impl<'a> Decoder for PefDecoder<'a> {
       .tiff
       .find_first_ifd_with_tag(LegacyTiffRootTag::StripOffsets)
       .ok_or(RawlerError::Unsupported(format!("Unable to find IFD")))?;
-    let width = fetch_tag_new!(raw, LegacyTiffRootTag::ImageWidth).get_usize(0)?;
-    let height = fetch_tag_new!(raw, LegacyTiffRootTag::ImageLength).get_usize(0)?;
-    let offset = fetch_tag_new!(raw, LegacyTiffRootTag::StripOffsets).get_usize(0)?;
+    let width = fetch_tag_new!(raw, LegacyTiffRootTag::ImageWidth).force_usize(0);
+    let height = fetch_tag_new!(raw, LegacyTiffRootTag::ImageLength).force_usize(0);
+    let offset = fetch_tag_new!(raw, LegacyTiffRootTag::StripOffsets).force_usize(0);
 
     let src = file.subview_until_eof(offset as u64).unwrap();
 
-    let image = match fetch_tag_new!(raw, LegacyTiffRootTag::Compression).get_u32(0)? {
-      Some(1) => decode_16be(&src, width, height, dummy),
-      Some(32773) => decode_12be(&src, width, height, dummy),
-      Some(65535) => self.decode_compressed(&src, width, height, dummy)?,
-      Some(c) => return Err(RawlerError::Unsupported(format!("PEF: Don't know how to read compression {}", c).to_string())),
-      None => return Err(RawlerError::Unsupported(format!("PEF: No compression tag found").to_string())),
+    let image = match fetch_tag_new!(raw, LegacyTiffRootTag::Compression).get_u32(0) {
+      Ok(Some(1)) => decode_16be(&src, width, height, dummy),
+      Ok(Some(32773)) => decode_12be(&src, width, height, dummy),
+      Ok(Some(65535)) => self.decode_compressed(&src, width, height, dummy)?,
+      Ok(Some(c)) => return Err(RawlerError::Unsupported(format!("PEF: Don't know how to read compression {}", c).to_string())),
+      _ => return Err(RawlerError::Unsupported(format!("PEF: No compression tag found").to_string())),
     };
 
     let blacklevels = self.get_blacklevels()?.unwrap_or(self.camera.blacklevels);
@@ -164,10 +164,10 @@ impl<'a> Decoder for PefDecoder<'a> {
 
     let image = match (size, length, start) {
       (Some(size), Some(length), Some(start)) => {
-        let _width = size.get_u16(0)?.unwrap_or(0);
-        let _height = size.get_u16(1)?.unwrap_or(0);
-        let len = length.get_u32(0)?.unwrap_or(0);
-        let offset = start.get_u32(0)?.unwrap_or(0);
+        let _width = size.force_u16(0);
+        let _height = size.force_u16(1);
+        let len = length.force_u32(0);
+        let offset = start.force_u32(0);
         if len > 0 && offset > 0 {
           let buf = file.subview((self.makernote_offset + offset) as u64, len as u64).unwrap();
           match image::load_from_memory_with_format(&buf, image::ImageFormat::Jpeg) {
@@ -289,9 +289,9 @@ impl<'a> PefDecoder<'a> {
   fn get_wb(&self) -> Result<[f32; 4]> {
     match self.makernote.get_entry(PefMakernote::WhitePoint) {
       Some(wb) => Ok([
-        wb.get_u16(0)?.unwrap_or(0) as f32,
-        wb.get_u16(1)?.unwrap_or(0) as f32,
-        wb.get_u16(3)?.unwrap_or(0) as f32,
+        wb.force_u16(0) as f32,
+        wb.force_u16(1) as f32,
+        wb.force_u16(3) as f32,
         NAN,
       ]),
       None => Ok([NAN, NAN, NAN, NAN]),
@@ -301,10 +301,10 @@ impl<'a> PefDecoder<'a> {
   fn get_blacklevels(&self) -> Result<Option<[u16; 4]>> {
     match self.makernote.get_entry(PefMakernote::BlackPoint) {
       Some(levels) => Ok(Some([
-        levels.get_u16(0)?.unwrap_or(0),
-        levels.get_u16(1)?.unwrap_or(0),
-        levels.get_u16(2)?.unwrap_or(0),
-        levels.get_u16(3)?.unwrap_or(0),
+        levels.force_u16(0),
+        levels.force_u16(1),
+        levels.force_u16(2),
+        levels.force_u16(3),
       ])),
       None => Ok(None),
     }

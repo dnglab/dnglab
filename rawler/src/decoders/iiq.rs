@@ -688,8 +688,8 @@ impl<'a> IiqDecoder<'a> {
 
     match (width, height) {
       (Some(width), Some(height)) => Ok((
-        width.1.get_u32(0).unwrap().unwrap() as usize, //
-        height.1.get_u32(0).unwrap().unwrap() as usize,
+        width.1.force_usize(0), //
+        height.1.force_usize(0),
       )),
       _ => Err(RawlerError::General(format!("Unable to find width/height in IIQ makernotes"))),
     }
@@ -701,8 +701,8 @@ impl<'a> IiqDecoder<'a> {
 
     match (left, top) {
       (Some(left), Some(top)) => Some((
-        left.1.get_u32(0).unwrap().unwrap() as usize, //
-        top.1.get_u32(0).unwrap().unwrap() as usize,
+        left.1.force_usize(0), //
+        top.1.force_usize(0),  //
       )),
       _ => {
         warn!("Unable to find sensor margins in IIQ makernotes");
@@ -714,7 +714,7 @@ impl<'a> IiqDecoder<'a> {
   fn sensor_temp(&self) -> Result<Option<f32>> {
     let sensor_temp = self.makernotes.get(&IiqTag::SensorTemperature1.into());
     if let Some((_, data)) = sensor_temp {
-      let x = data.get_u32(0).unwrap().unwrap();
+      let x = data.force_u32(0);
       let flt = f32::from_bits(x);
       debug!("Sensor temp: {}", flt);
       return Ok(Some(flt));
@@ -726,7 +726,7 @@ impl<'a> IiqDecoder<'a> {
     let split_col = self.makernotes.get(&IiqTag::SplitCol.into());
 
     match split_col {
-      Some(col) => Ok(Some(col.1.get_u32(0).unwrap().unwrap() as usize)),
+      Some(col) => Ok(Some(col.1.force_usize(0))),
       _ => Ok(None),
     }
   }
@@ -736,10 +736,7 @@ impl<'a> IiqDecoder<'a> {
     let split_row = self.makernotes.get(&IiqTag::SplitRow.into());
 
     match (split_col, split_row) {
-      (Some(col), Some(row)) => Ok(Some((
-        col.1.get_u32(0).unwrap().unwrap() as usize, //
-        row.1.get_u32(0).unwrap().unwrap() as usize,
-      ))),
+      (Some(col), Some(row)) => Ok(Some((col.1.force_usize(0), row.1.force_usize(0)))),
       _ => Ok(None),
     }
   }
@@ -751,13 +748,13 @@ impl<'a> IiqDecoder<'a> {
     match (black_col, black_row) {
       (Some(black_col), Some(black_row)) => {
         let stream = file.inner();
-        let (len, offset) = (black_col.0, black_col.1.get_u32(0).unwrap().unwrap() as u64);
+        let (len, offset) = (black_col.0, black_col.1.force_u64(0));
         stream.seek(SeekFrom::Start(offset + 8))?;
         let mut cols = vec![0; len / 2]; // u16 size
         for entry in cols.iter_mut() {
           *entry = stream.read_i16::<LittleEndian>()?;
         }
-        let (len, offset) = (black_row.0, black_row.1.get_u32(0).unwrap().unwrap() as u64);
+        let (len, offset) = (black_row.0, black_row.1.force_u64(0));
         stream.seek(SeekFrom::Start(offset + 8))?;
         let mut rows = vec![0; len / 2]; // u16 size
         for entry in rows.iter_mut() {
@@ -772,7 +769,7 @@ impl<'a> IiqDecoder<'a> {
   fn compression_mode(&self) -> Result<IiqCompression> {
     match self.makernotes.get(&IiqTag::Format.into()) {
       Some(mode) => {
-        let code = mode.1.get_u32(0).unwrap().unwrap();
+        let code = mode.1.force_u32(0);
         Ok(IiqCompression::from(code as usize))
       }
       _ => Err(RawlerError::General(format!("Unable to find compression mode in IIQ makernotes"))),
@@ -782,7 +779,7 @@ impl<'a> IiqDecoder<'a> {
   fn data_offset(&self) -> Result<(u64, usize)> {
     match self.makernotes.get(&IiqTag::DataOffset.into()) {
       Some(mode) => Ok((
-        (mode.1.get_u32(0).unwrap().unwrap() + 8) as u64, //
+        (mode.1.force_u64(0) + 8), //
         mode.0,
       )),
       _ => Err(RawlerError::General(format!("Unable to find data offset in IIQ makernotes"))),
@@ -792,7 +789,7 @@ impl<'a> IiqDecoder<'a> {
   fn strip_offset(&self) -> Result<(u64, usize)> {
     match self.makernotes.get(&IiqTag::StripOffset.into()) {
       Some(mode) => Ok((
-        (mode.1.get_u32(0).unwrap().unwrap() + 8) as u64, //
+        (mode.1.force_u64(0) + 8), //
         mode.0,
       )),
       _ => Err(RawlerError::General(format!("Unable to find strip offset in IIQ makernotes"))),
@@ -801,14 +798,14 @@ impl<'a> IiqDecoder<'a> {
 
   fn wb_offset(&self) -> Result<u64> {
     match self.makernotes.get(&IiqTag::WhiteBalance.into()) {
-      Some(mode) => Ok((mode.1.get_u32(0).unwrap().unwrap() + 8) as u64),
+      Some(mode) => Ok((mode.1.force_u64(0) + 8) as u64),
       _ => Err(RawlerError::General(format!("Unable to find whitebalance offset in IIQ makernotes"))),
     }
   }
 
   fn blacklevel(&self) -> Result<u16> {
     match self.makernotes.get(&IiqTag::BlackLevel.into()) {
-      Some(mode) => Ok((mode.1.get_u32(0).unwrap().unwrap()) as u16),
+      Some(mode) => Ok(mode.1.force_u16(0)),
       _ => Err(RawlerError::General(format!("Unable to find lacklevel in IIQ makernotes"))),
     }
   }
@@ -834,7 +831,7 @@ impl<'a> IiqDecoder<'a> {
 
     match self.makernotes.get(&IiqTag::SensorCorrection.into()) {
       Some((_len, offset)) => {
-        let offset = offset.get_u32(0).unwrap().unwrap() as u64;
+        let offset = offset.force_u64(0);
         debug!("Sensor correction data offset: {}", offset);
         let stream = file.inner();
         stream.seek(SeekFrom::Start(offset + 8))?;

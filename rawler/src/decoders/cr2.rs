@@ -114,11 +114,11 @@ impl<'a> Decoder for Cr2Decoder<'a> {
     let camera = &self.camera;
     let (raw, offset) = {
       if let Some(raw) = self.tiff.find_first_ifd(LegacyTiffRootTag::Cr2Id) {
-        (raw, fetch_tag_new!(raw, LegacyTiffRootTag::StripOffsets).get_usize(0)?)
+        (raw, fetch_tag_new!(raw, LegacyTiffRootTag::StripOffsets).force_usize(0))
       } else if let Some(raw) = self.tiff.find_first_ifd(LegacyTiffRootTag::CFAPattern) {
-        (raw, fetch_tag_new!(raw, LegacyTiffRootTag::StripOffsets).get_usize(0)?)
+        (raw, fetch_tag_new!(raw, LegacyTiffRootTag::StripOffsets).force_usize(0))
       } else if let Some(off) = self.tiff.root_ifd().get_entry(LegacyTiffRootTag::Cr2OldOffset) {
-        (self.tiff.root_ifd(), off.value.get_usize(0)?)
+        (self.tiff.root_ifd(), off.value.force_usize(0))
       } else {
         return Err(RawlerError::General("CR2: Couldn't find raw info".to_string()));
       }
@@ -151,7 +151,7 @@ impl<'a> Decoder for Cr2Decoder<'a> {
           let linearization = fetch_tag_new!(raw, LegacyTiffRootTag::GrayResponse);
           let mut t = [0 as u16; 4096];
           for i in 0..t.len() {
-            t[i] = linearization.get_u32(i)?.unwrap() as u16;
+            t[i] = linearization.force_u16(i);
           }
           LookupTable::new(&t)
         };
@@ -164,8 +164,8 @@ impl<'a> Decoder for Cr2Decoder<'a> {
 
       if cpp == 3 {
         if raw.has_entry(LegacyTiffRootTag::ImageWidth) {
-          width = fetch_tag_new!(raw, LegacyTiffRootTag::ImageWidth).get_usize(0)? * cpp;
-          height = fetch_tag_new!(raw, LegacyTiffRootTag::ImageLength).get_usize(0)?;
+          width = fetch_tag_new!(raw, LegacyTiffRootTag::ImageWidth).force_usize(0) * cpp;
+          height = fetch_tag_new!(raw, LegacyTiffRootTag::ImageLength).force_usize(0);
         } else if width / cpp < height {
           let temp = width / cpp;
           width = height * cpp;
@@ -183,7 +183,7 @@ impl<'a> Decoder for Cr2Decoder<'a> {
       //        been able to do it without hairy code
       if let Some(canoncol) = raw.get_entry(LegacyTiffRootTag::Cr2StripeWidths) {
         debug!("Found Cr2StripeWidths tag: {:?}", canoncol.value);
-        if canoncol.value.get_usize(0)? == 0 {
+        if canoncol.value.force_usize(0) == 0 {
           if cpp == 3 {
             self.convert_to_rgb(file, &camera, &decompressor, width, height, &mut ljpegout, dummy)?;
             width /= 3;
@@ -193,13 +193,13 @@ impl<'a> Decoder for Cr2Decoder<'a> {
           let mut out = alloc_image_plain!(width, height, dummy);
           if !dummy {
             let mut fieldwidths = Vec::new();
-            assert!(canoncol.value.get_usize(0)? > 0);
-            assert!(canoncol.value.get_usize(1)? > 0);
-            assert!(canoncol.value.get_usize(2)? > 0);
-            for _ in 0..canoncol.value.get_usize(0)? {
-              fieldwidths.push(canoncol.value.get_usize(1)?);
+            assert!(canoncol.value.force_usize(0) > 0);
+            assert!(canoncol.value.force_usize(1) > 0);
+            assert!(canoncol.value.force_usize(2) > 0);
+            for _ in 0..canoncol.value.force_usize(0) {
+              fieldwidths.push(canoncol.value.force_usize(1));
             }
-            fieldwidths.push(canoncol.value.get_usize(2)?);
+            fieldwidths.push(canoncol.value.force_usize(2));
 
             if decompressor.super_v() == 2 {
               debug!("CR2 v=2 decoder used, h={}", decompressor.super_h());
@@ -300,9 +300,9 @@ impl<'a> Decoder for Cr2Decoder<'a> {
     let compression = root_ifd
       .get_entry(LegacyTiffRootTag::Compression)
       .ok_or(RawlerError::General("Missing tag".into()))?
-      .get_usize(0)?;
-    let width = root_ifd.get_entry(LegacyTiffRootTag::ImageWidth).unwrap().get_usize(0)?;
-    let height = root_ifd.get_entry(LegacyTiffRootTag::ImageLength).unwrap().get_usize(0)?;
+      .force_usize(0);
+    let width = fetch_tag_new!(root_ifd, LegacyTiffRootTag::ImageWidth).force_usize(0);
+    let height = fetch_tag_new!(root_ifd, LegacyTiffRootTag::ImageLength).force_usize(0);
     if compression == 1 {
       return Ok(Some(DynamicImage::ImageRgb8(
         ImageBuffer::<Rgb<u8>, Vec<u8>>::from_raw(width as u32, height as u32, buf).unwrap(),
@@ -405,12 +405,13 @@ enum Cr2Mode {
 impl<'a> Cr2Decoder<'a> {
   fn get_mode(makernote: &Option<IFD>) -> Result<Cr2Mode> {
     if let Some(settings) = makernote.as_ref().and_then(|mn| mn.get_entry(Cr2MakernoteTag::CameraSettings)) {
-      match settings.get_u16(46)? {
-        Some(0) => Ok(Cr2Mode::Raw),
-        Some(1) => Ok(Cr2Mode::Sraw1),
-        Some(2) => Ok(Cr2Mode::Sraw2),
-        None => Ok(Cr2Mode::Raw),
-        Some(v) => Err(RawlerError::General(format!("Unknown sraw quality value found: {}", v))),
+      match settings.get_u16(46) {
+        Ok(Some(0)) => Ok(Cr2Mode::Raw),
+        Ok(Some(1)) => Ok(Cr2Mode::Sraw1),
+        Ok(Some(2)) => Ok(Cr2Mode::Sraw2),
+        Ok(None) => Ok(Cr2Mode::Raw),
+        Ok(Some(v)) => Err(RawlerError::General(format!("Unknown sraw quality value found: {}", v))),
+        Err(_) => Err(RawlerError::General(format!("Unknown sraw quality value"))),
       }
     } else {
       Ok(Cr2Mode::Raw)
@@ -444,9 +445,8 @@ impl<'a> Cr2Decoder<'a> {
 
     let model_id = makernote
       .as_ref()
-      .and_then(|mn| mn.get_entry(Cr2MakernoteTag::ModelId).map(|v| v.get_u32(0)))
-      .transpose()?
-      .unwrap_or(None);
+      .and_then(|mn| mn.get_entry(Cr2MakernoteTag::ModelId).and_then(|v| v.get_u32(0).transpose())).transpose()
+      .map_err(|_| RawlerError::General(format!("invalid model id")))?;
     Ok(Cr2Decoder {
       tiff,
       rawloader,
@@ -618,9 +618,9 @@ impl<'a> Cr2Decoder<'a> {
       ])
     } else if let Some(levels) = self.tiff.get_entry(LegacyTiffRootTag::Cr2OldWB) {
       Ok([
-        levels.get_f32(0)?.unwrap_or(NAN),
-        levels.get_f32(1)?.unwrap_or(NAN),
-        levels.get_f32(2)?.unwrap_or(NAN),
+        levels.force_f32(0),
+        levels.force_f32(1),
+        levels.force_f32(2),
         NAN,
       ])
     } else {
