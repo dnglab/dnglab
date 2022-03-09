@@ -36,6 +36,8 @@ jobs:
       RAWLER_RAWDB: /opt/rawdb2
     steps:
       - uses: actions/checkout@v2
+      - run: git submodule init
+      - run: git submodule update
       - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: ${{matrix.rust}}
