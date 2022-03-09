@@ -172,7 +172,7 @@ impl From<usize> for IiqCompression {
 #[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct IiqFormat {
-  tiff: GenericTiffReader,
+  //tiff: GenericTiffReader,
   makernotes: IiqMakernotes,
 }
 
@@ -311,7 +311,7 @@ impl<'a> Decoder for IiqDecoder<'a> {
 
   fn format_dump(&self) -> FormatDump {
     FormatDump::Iiq(IiqFormat {
-      tiff: self.tiff.clone(),
+      //tiff: self.tiff.clone(),
       makernotes: self.makernotes.clone(),
     })
   }
