@@ -45,7 +45,6 @@
     //unused_qualifications
   )]
 
-
 use decoders::Decoder;
 use decoders::RawDecodeParams;
 use lazy_static::lazy_static;
@@ -59,16 +58,17 @@ pub mod decoders;
 pub mod decompressors;
 pub mod devtools;
 pub mod dng;
+pub(crate) mod envparams;
 pub mod formats;
 pub mod imgop;
 pub mod lens;
 pub mod ljpeg92;
 pub mod packed;
+pub mod pixarray;
 pub mod pumps;
 pub mod rawimage;
 pub mod tags;
 pub mod tiles;
-pub(crate) mod envparams;
 
 #[doc(hidden)]
 pub use buffer::Buffer;
@@ -92,6 +92,7 @@ use std::io::Read;
 use std::io::Seek;
 use std::io::SeekFrom;
 use std::path::Path;
+use std::path::PathBuf;
 use thiserror::Error;
 
 pub trait ReadTrait: Read + Seek + Send {}
@@ -99,18 +100,22 @@ pub trait ReadTrait: Read + Seek + Send {}
 impl<T: Read + Seek + Send> ReadTrait for T {}
 
 pub struct RawFile {
+  pub path: PathBuf,
   pub file: Box<dyn ReadTrait>,
   pub start_offset: u64,
 }
 
 impl RawFile {
-  pub fn new<T>(mut input: T) -> Self
+  pub fn new<T>(path: impl AsRef<Path>, mut input: T) -> Self
   where
     T: ReadTrait + 'static,
   {
     let start_offset = input.stream_position().expect("Stream position failed");
-    Self { file: Box::new(input),
-    start_offset }
+    Self {
+      path: PathBuf::from(path.as_ref()),
+      file: Box::new(input),
+      start_offset,
+    }
   }
 
   pub fn seek_to_start(&mut self) -> std::io::Result<()> {
@@ -119,36 +124,38 @@ impl RawFile {
   }
 
   /// Calculate digest for file
-pub fn digest(&mut self) -> std::io::Result<Digest> {
-  Ok(md5::compute(self.get_buf()?))
-}
+  pub fn digest(&mut self) -> std::io::Result<Digest> {
+    Ok(md5::compute(self.as_vec()?))
+  }
 
   pub fn with_box(mut file: Box<dyn ReadTrait>) -> Self {
     let start_offset = file.stream_position().expect("Stream position failed");
-    Self { file,
-      start_offset }
+    Self {
+      path: PathBuf::new(),
+      file,
+      start_offset,
+    }
   }
 
   pub fn inner(&mut self) -> &mut Box<dyn ReadTrait> {
     &mut self.file
   }
 
-  pub fn get_range(&mut self, offset: u64, size: u64) -> std::io::Result<Vec<u8>> {
-    let mut buf = vec![0; size as usize]; // TODO better?
+  pub fn subview(&mut self, offset: u64, size: u64) -> std::io::Result<Vec<u8>> {
+    let mut buf = vec![0; size as usize];
     self.file.seek(SeekFrom::Start(offset))?;
     self.file.read_exact(&mut buf)?;
     Ok(buf)
   }
 
-  pub fn get_offset(&mut self, offset: u64) -> std::io::Result<Vec<u8>> {
-    let size = self.stream_len()?;
-    let mut buf = vec![0; (size-offset) as usize]; // TODO better?
+  pub fn subview_until_eof(&mut self, offset: u64) -> std::io::Result<Vec<u8>> {
+    let mut buf = Vec::new();
     self.file.seek(SeekFrom::Start(offset))?;
-    self.file.read_exact(&mut buf)?;
+    self.file.read_to_end(&mut buf)?;
     Ok(buf)
   }
 
-  pub fn get_buf(&mut self) -> std::io::Result<Vec<u8>> {
+  pub fn as_vec(&mut self) -> std::io::Result<Vec<u8>> {
     let old_pos = self.file.stream_position()?;
     self.file.seek(SeekFrom::Start(self.start_offset))?;
     let mut buf = Vec::new();
@@ -164,7 +171,7 @@ pub fn digest(&mut self) -> std::io::Result<Digest> {
     // Avoid seeking a third time when we were already at the end of the
     // stream. The branch is usually way cheaper than a seek operation.
     if old_pos != len {
-        self.file.seek(SeekFrom::Start(old_pos))?;
+      self.file.seek(SeekFrom::Start(old_pos))?;
     }
 
     Ok(len)
@@ -174,6 +181,7 @@ pub fn digest(&mut self) -> std::io::Result<Digest> {
 impl From<Buffer> for RawFile {
   fn from(buf: Buffer) -> Self {
     Self {
+      path: PathBuf::new(),
       file: Box::new(Cursor::new(buf.buf.clone())),
       start_offset: 0,
     }
@@ -183,15 +191,21 @@ impl From<Buffer> for RawFile {
 impl From<BufReader<File>> for RawFile {
   fn from(mut buf: BufReader<File>) -> Self {
     let start_offset = buf.stream_position().expect("Stream position failed");
-    Self { file: Box::new(buf), start_offset }
+    Self {
+      path: PathBuf::new(), // TODO
+      file: Box::new(buf),
+      start_offset,
+    }
   }
 }
 
 impl From<Cursor<Vec<u8>>> for RawFile {
   fn from(buf: Cursor<Vec<u8>>) -> Self {
-
-    Self { file: Box::new(buf) ,
-    start_offset:0 }
+    Self {
+      path: PathBuf::new(),
+      file: Box::new(buf),
+      start_offset: 0,
+    }
   }
 }
 
@@ -207,8 +221,13 @@ pub enum RawlerError {
 pub type Result<T> = std::result::Result<T, RawlerError>;
 
 impl RawlerError {
-  pub fn with_io_error(path: impl AsRef<Path>, error: std::io::Error) -> Self {
-    Self::General(format!("I/O error on file: {:?}, {}", path.as_ref(), error.to_string()))
+  pub fn with_io_error(context: impl AsRef<str>, path: impl AsRef<Path>, error: std::io::Error) -> Self {
+    Self::General(format!(
+      "I/O error in context '{}', {} on file: {}",
+      context.as_ref(),
+      error.to_string(),
+      path.as_ref().display()
+    ))
   }
 }
 

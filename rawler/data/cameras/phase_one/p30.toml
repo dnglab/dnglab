@@ -1,0 +1,14 @@
+[[cameras]]
+make = "Phase One A/S"
+model = "P30"
+clean_make = "Phase One A/S"
+clean_model = "P30"
+blackpoint = 0
+whitepoint = 65535
+color_pattern = "GRBG"
+
+active_area = [40, 22, 20, 28]
+
+[cameras.color_matrix]
+A = [0.5667, -0.1528, 0.0568, -0.5993, 1.3742, 0.2468, -0.1825, 0.3327, 0.7711]
+D65 = [0.4516, -0.0244, -0.0036, -0.702, 1.4976, 0.2174, -0.3206, 0.467, 0.7087]

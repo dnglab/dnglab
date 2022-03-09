@@ -52,4 +52,15 @@ cameras/Pentax/K-S1/raw_modes
 cameras/Pentax/K-x/raw_modes
 cameras/Pentax/K20D/raw_modes
 cameras/Pentax/K110D/raw_modes
-
+cameras/Phase One/IQ3 100MP/raw_modes
+cameras/Phase One/H 25/raw_modes
+cameras/Phase One/iXM-100/raw_modes
+cameras/Phase One/IQ180/raw_modes
+cameras/Phase One/IQ4 150MP/raw_modes
+cameras/Phase One/IQ140/raw_modes
+cameras/Phase One/P30/raw_modes
+cameras/Phase One/IQ3 100MP Trichr/raw_modes
+cameras/Phase One/IQ150/raw_modes
+cameras/Phase One/iXM-RS150F/raw_modes
+cameras/Phase One/P65/raw_modes
+cameras/Phase One/P20/raw_modes

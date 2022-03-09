@@ -63,7 +63,7 @@ impl Raw2DngJob {
     let raw_file = File::open(&self.input)?;
     let mut dng_file = File::create(&self.output)?;
 
-    match raw_to_dng(raw_file, &mut dng_file, orig_filename, &self.params) {
+    match raw_to_dng(&self.input, raw_file, &mut dng_file, orig_filename, &self.params) {
       Ok(_) => {
         drop(dng_file);
         Ok(JobResult {

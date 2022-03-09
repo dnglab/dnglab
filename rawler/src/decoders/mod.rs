@@ -2,10 +2,12 @@ use crate::analyze::FormatDump;
 use crate::formats::tiff::reader::TiffReader;
 use crate::formats::tiff::GenericTiffReader;
 use crate::formats::tiff::IFD;
+use crate::pixarray::PixU16;
 use crate::RawFile;
 use crate::Result;
 use image::DynamicImage;
 use log::debug;
+use log::warn;
 use rayon::iter::IndexedParallelIterator;
 use rayon::iter::ParallelIterator;
 use rayon::slice::ParallelSliceMut;
@@ -50,6 +52,7 @@ macro_rules! fetch_ifd {
 //mod arw;
 pub mod cr2;
 pub mod cr3;
+pub mod iiq;
 pub mod pef;
 /*
 mod crw;
@@ -57,7 +60,7 @@ mod dcr;
 mod dcs;
 mod dng;
 mod erf;
-mod iiq;
+
 mod kdc;
 mod mef;
 mod mos;
@@ -113,16 +116,19 @@ pub trait Decoder: Send {
     Ok(1)
   }
 
-  fn thumbnail_image(&self, _file: &mut RawFile) -> Result<DynamicImage> {
-    unimplemented!()
+  fn thumbnail_image(&self, _file: &mut RawFile) -> Result<Option<DynamicImage>> {
+    warn!("Decoder has no thumbnail image support, fallback to preview image");
+    Ok(None)
   }
 
-  fn preview_image(&self, _file: &mut RawFile) -> Result<DynamicImage> {
-    unimplemented!()
+  fn preview_image(&self, _file: &mut RawFile) -> Result<Option<DynamicImage>> {
+    warn!("Decoder has no preview image support");
+    Ok(None)
   }
 
-  fn full_image(&self, _file: &mut RawFile) -> Result<DynamicImage> {
-    unimplemented!()
+  fn full_image(&self, _file: &mut RawFile) -> Result<Option<DynamicImage>> {
+    warn!("Decoder has no full image support");
+    Ok(None)
   }
 
   fn xpacket(&self, _file: &mut RawFile) -> Option<&Vec<u8>> {
@@ -133,9 +139,7 @@ pub trait Decoder: Send {
     None
   }
 
-  fn format_dump(&self) -> FormatDump {
-    unimplemented!()
-  }
+  fn format_dump(&self) -> FormatDump;
 
   fn populate_capture_info(&mut self, _capture_info: &mut CaptureInfo) -> Result<()> {
     Ok(())
@@ -416,6 +420,9 @@ impl RawLoader {
         Some("PENTAX") => return use_decoder!(pef::PefDecoder, rawfile, tiff, self),
         Some("PENTAX Corporation") => return use_decoder!(pef::PefDecoder, rawfile, tiff, self),
         Some("RICOH IMAGING COMPANY, LTD.") => return use_decoder!(pef::PefDecoder, rawfile, tiff, self),
+        Some("Phase One") => return use_decoder!(iiq::IiqDecoder, rawfile, tiff, self),
+        Some("Phase One A/S") => return use_decoder!(iiq::IiqDecoder, rawfile, tiff, self),
+        Some("Leaf") => return use_decoder!(iiq::IiqDecoder, rawfile, tiff, self),
 
         Some(make) => {
           return Err(RawlerError::Unsupported(
@@ -441,14 +448,14 @@ impl RawLoader {
                    "PENTAX Corporation" => use_decoder!(pef::PefDecoder, buffer, tiff, self),
                    "RICOH IMAGING COMPANY, LTD." => use_decoder!(pef::PefDecoder, buffer, tiff, self),
                    "PENTAX" => use_decoder!(pef::PefDecoder, buffer, tiff, self),
-                   "Leaf" => use_decoder!(iiq::IiqDecoder, buffer, tiff, self),
+                   //"Leaf" => use_decoder!(iiq::IiqDecoder, buffer, tiff, self),
                    "Hasselblad" => use_decoder!(tfr::TfrDecoder, buffer, tiff, self),
                    "NIKON CORPORATION" => use_decoder!(nef::NefDecoder, buffer, tiff, self),
                    "NIKON" => use_decoder!(nrw::NrwDecoder, buffer, tiff, self),
                    */
                    //"Canon" => use_decoder!(cr2::Cr2Decoder, buffer, tiff, self),
                    /*
-                   "Phase One A/S" => use_decoder!(iiq::IiqDecoder, buffer, tiff, self),
+                   //"Phase One A/S" => use_decoder!(iiq::IiqDecoder, buffer, tiff, self),
                    */
       };
 
@@ -583,7 +590,7 @@ impl RawLoader {
   pub fn decode_file<'b>(&'b self, path: &Path) -> Result<RawImage> {
     let file = match File::open(path) {
       Ok(val) => val,
-      Err(e) => return Err(RawlerError::with_io_error(path, e)),
+      Err(e) => return Err(RawlerError::with_io_error("decode_file()", path, e)),
     };
     let mut buffered_file = RawFile::from(BufReader::new(file));
     self.decode(&mut buffered_file, RawDecodeParams::default(), false)
@@ -593,7 +600,7 @@ impl RawLoader {
   pub fn raw_image_count_file<'b>(&'b self, path: &Path) -> Result<usize> {
     let file = match File::open(path) {
       Ok(val) => val,
-      Err(e) => return Err(RawlerError::with_io_error(path, e)),
+      Err(e) => return Err(RawlerError::with_io_error("raw_image_count_file()", path, e)),
     };
     let buffered_file = BufReader::new(file);
     //let buffer = Buffer::new(&mut buffered_file)?;
@@ -617,7 +624,18 @@ impl RawLoader {
   }
 }
 
-pub fn decode_threaded<F>(width: usize, height: usize, dummy: bool, closure: &F) -> Vec<u16>
+pub fn decode_unthreaded<F>(width: usize, height: usize, dummy: bool, closure: &F) -> PixU16
+where
+  F: Fn(&mut [u16], usize) + Sync,
+{
+  let mut out: Vec<u16> = alloc_image!(width, height, dummy);
+  out.chunks_mut(width).enumerate().for_each(|(row, line)| {
+    closure(line, row);
+  });
+  PixU16::new(out, width, height)
+}
+
+pub fn decode_threaded<F>(width: usize, height: usize, dummy: bool, closure: &F) -> PixU16
 where
   F: Fn(&mut [u16], usize) + Sync,
 {
@@ -625,10 +643,10 @@ where
   out.par_chunks_mut(width).enumerate().for_each(|(row, line)| {
     closure(line, row);
   });
-  out
+  PixU16::new(out, width, height)
 }
 
-pub fn decode_threaded_multiline<F>(width: usize, height: usize, lines: usize, dummy: bool, closure: &F) -> Vec<u16>
+pub fn decode_threaded_multiline<F>(width: usize, height: usize, lines: usize, dummy: bool, closure: &F) -> PixU16
 where
   F: Fn(&mut [u16], usize) + Sync,
 {
@@ -636,7 +654,7 @@ where
   out.par_chunks_mut(width * lines).enumerate().for_each(|(row, line)| {
     closure(line, row * lines);
   });
-  out
+  PixU16::new(out, width, height)
 }
 
 // For rust <= 1.31 we just alias chunks_exact() and chunks_exact_mut() to the non-exact versions

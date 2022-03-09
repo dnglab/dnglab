@@ -12,11 +12,11 @@ use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
 use crate::{
   buffer::Buffer,
-  decoders::{cr2::Cr2Format, cr3::Cr3Format, RawDecodeParams, pef::PefFormat},
+  decoders::{cr2::Cr2Format, cr3::Cr3Format, iiq::IiqFormat, pef::PefFormat, RawDecodeParams},
   formats::tiff::Rational,
   formats::tiff::SRational,
   imgop::{raw::develop_raw_srgb, rescale_f32_to_u16, Dim2, Rect},
-  RawImageData, RawlerError, Result, RawFile,
+  RawFile, RawImageData, RawlerError, Result,
 };
 
 #[derive(Debug, Clone, PartialEq)]
@@ -103,15 +103,16 @@ pub enum FormatDump {
   Cr3(Cr3Format),
   Cr2(Cr2Format),
   Pef(PefFormat),
+  Iiq(IiqFormat),
 }
 
 pub fn analyze_file<P: AsRef<Path>>(path: P) -> Result<AnalyzerResult> {
-  let fs_meta = metadata(&path).map_err(|e| RawlerError::with_io_error(&path, e))?;
+  let fs_meta = metadata(&path).map_err(|e| RawlerError::with_io_error("read metadata", &path, e))?;
 
-  let bufread = BufReader::new(File::open(&path).map_err(|e| RawlerError::with_io_error(&path, e))?);
+  let bufread = BufReader::new(File::open(&path).map_err(|e| RawlerError::with_io_error("load into buffer", &path, e))?);
 
   //let mut rawfile = Buffer::new(&mut bufread)?.into();
-  let mut rawfile = RawFile::new(bufread);
+  let mut rawfile = RawFile::new(&path, bufread);
   let digest = rawfile.digest().unwrap();
 
   // Read whole raw file
@@ -153,7 +154,7 @@ pub fn analyze_file<P: AsRef<Path>>(path: P) -> Result<AnalyzerResult> {
 }
 
 pub fn extract_raw_pixels<P: AsRef<Path>>(path: P, params: RawDecodeParams) -> Result<(usize, usize, usize, Vec<u16>)> {
-  let mut raw_file = BufReader::new(File::open(&path).map_err(|e| RawlerError::with_io_error(&path, e))?);
+  let mut raw_file = BufReader::new(File::open(&path).map_err(|e| RawlerError::with_io_error("load buffer", &path, e))?);
 
   // Read whole raw file
   // TODO: Large input file bug, we need to test the raw file before open it
@@ -181,7 +182,7 @@ pub fn raw_pixels_digest<P: AsRef<Path>>(path: P, params: RawDecodeParams) -> Re
 }
 
 pub fn raw_to_srgb<P: AsRef<Path>>(path: P, params: RawDecodeParams) -> Result<(Vec<u16>, Dim2)> {
-  let mut raw_file = BufReader::new(File::open(&path).map_err(|e| RawlerError::with_io_error(&path, e))?);
+  let mut raw_file = BufReader::new(File::open(&path).map_err(|e| RawlerError::with_io_error("load buffer", &path, e))?);
 
   // Read whole raw file
   // TODO: Large input file bug, we need to test the raw file before open it

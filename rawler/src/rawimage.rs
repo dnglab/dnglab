@@ -167,9 +167,26 @@ impl RawImage {
     Dim2::new(self.width, self.height)
   }
 
+  pub fn pixels_u16(&self) -> &[u16] {
+    if let RawImageData::Integer(data) = &self.data {
+      return data;
+    } else {
+      panic!("Data ist not u16");
+    }
+  }
+
+  pub fn pixels_u16_mut(&mut self) -> &mut [u16] {
+    if let RawImageData::Integer(data) = &mut self.data {
+      return data;
+    } else {
+      panic!("Data ist not u16");
+    }
+  }
+
   pub fn develop_params(&self) -> Result<DevelopParams, String> {
     let mut xyz2cam: [[f32; 3]; 4] = [[0.0; 3]; 4];
-    let color_matrix = self.color_matrix.get(&Illuminant::D65).unwrap(); // TODO fixme
+    //let color_matrix = self.color_matrix.get(&Illuminant::D65).unwrap(); // TODO fixme
+    let color_matrix = self.color_matrix.values().next().unwrap(); // TODO fixme
     assert_eq!(color_matrix.len() % 3, 0); // this is not so nice...
     let components = color_matrix.len() / 3;
     for i in 0..components {
@@ -344,7 +361,7 @@ macro_rules! alloc_image {
   ($width:expr, $height:expr, $dummy: expr) => {{
     let out = crate::alloc_image_plain!($width, $height, $dummy);
     if $dummy {
-      return out;
+      return crate::pixarray::PixU16::default();
     }
     out
   }};
@@ -355,7 +372,7 @@ macro_rules! alloc_image_ok {
   ($width:expr, $height:expr, $dummy: expr) => {{
     let out = crate::alloc_image_plain!($width, $height, $dummy);
     if $dummy {
-      return Ok(out);
+      return Ok(crate::pixarray::PixU16::default());
     }
     out
   }};

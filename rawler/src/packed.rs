@@ -1,7 +1,7 @@
-use crate::{alloc_image, bits::*, decoders::decode_threaded};
+use crate::{alloc_image, bits::*, decoders::decode_threaded, pixarray::PixU16};
 
 
-pub fn decode_8bit_wtable(buf: &[u8], tbl: &LookupTable, width: usize, height: usize, dummy: bool) -> Vec<u16> {
+pub fn decode_8bit_wtable(buf: &[u8], tbl: &LookupTable, width: usize, height: usize, dummy: bool) -> PixU16 {
   decode_threaded(width, height, dummy,&(|out: &mut [u16], row| {
     let inb = &buf[(row*width)..];
     let mut random = LEu32(inb, 0);
@@ -12,7 +12,7 @@ pub fn decode_8bit_wtable(buf: &[u8], tbl: &LookupTable, width: usize, height: u
   }))
 }
 
-pub fn decode_10le_lsb16(buf: &[u8], width: usize, height: usize, dummy: bool) -> Vec<u16> {
+pub fn decode_10le_lsb16(buf: &[u8], width: usize, height: usize, dummy: bool) -> PixU16 {
   decode_threaded(width, height, dummy,&(|out: &mut [u16], row| {
     let inb = &buf[(row*width*10/8)..];
 
@@ -40,7 +40,7 @@ pub fn decode_10le_lsb16(buf: &[u8], width: usize, height: usize, dummy: bool) -
   }))
 }
 
-pub fn decode_10le(buf: &[u8], width: usize, height: usize, dummy: bool) -> Vec<u16> {
+pub fn decode_10le(buf: &[u8], width: usize, height: usize, dummy: bool) -> PixU16 {
   decode_threaded(width, height, dummy,&(|out: &mut [u16], row| {
     let inb = &buf[(row*width*10/8)..];
 
@@ -59,7 +59,7 @@ pub fn decode_10le(buf: &[u8], width: usize, height: usize, dummy: bool) -> Vec<
   }))
 }
 
-pub fn decode_12be(buf: &[u8], width: usize, height: usize, dummy: bool) -> Vec<u16> {
+pub fn decode_12be(buf: &[u8], width: usize, height: usize, dummy: bool) -> PixU16 {
   decode_threaded(width, height, dummy,&(|out: &mut [u16], row| {
     let inb = &buf[(row*width*12/8)..];
 
@@ -74,7 +74,7 @@ pub fn decode_12be(buf: &[u8], width: usize, height: usize, dummy: bool) -> Vec<
   }))
 }
 
-pub fn decode_12be_msb16(buf: &[u8], width: usize, height: usize, dummy: bool) -> Vec<u16> {
+pub fn decode_12be_msb16(buf: &[u8], width: usize, height: usize, dummy: bool) -> PixU16 {
   let mut out: Vec<u16> = alloc_image!(width, height, dummy);
 
   for (o, i) in out.chunks_exact_mut(4).zip(buf.chunks_exact(6)) {
@@ -90,11 +90,10 @@ pub fn decode_12be_msb16(buf: &[u8], width: usize, height: usize, dummy: bool) -
     o[2] = (g3 << 4) | (g6 >> 4);
     o[3] = ((g6 & 0x0f) << 8) | g5;
   }
-
-  out
+  PixU16::new(out, width, height)
 }
 
-pub fn decode_12le_16bitaligned(buf: &[u8], width: usize, height: usize, dummy: bool) -> Vec<u16> {
+pub fn decode_12le_16bitaligned(buf: &[u8], width: usize, height: usize, dummy: bool) -> PixU16 {
   let stride = ((width*12/8+1) >> 1) << 1;
   decode_threaded(width, height, dummy,&(|out: &mut [u16], row| {
     let inb = &buf[row*stride..];
@@ -109,7 +108,7 @@ pub fn decode_12le_16bitaligned(buf: &[u8], width: usize, height: usize, dummy: 
   }))
 }
 
-pub fn decode_12be_msb32(buf: &[u8], width: usize, height: usize, dummy: bool) -> Vec<u16> {
+pub fn decode_12be_msb32(buf: &[u8], width: usize, height: usize, dummy: bool) -> PixU16 {
   let mut out: Vec<u16> = alloc_image!(width, height, dummy);
 
   for (o, i) in out.chunks_exact_mut(8).zip(buf.chunks_exact(12)) {
@@ -135,11 +134,10 @@ pub fn decode_12be_msb32(buf: &[u8], width: usize, height: usize, dummy: bool) -
     o[6] = (g11 << 4) | (g10 >> 4);
     o[7] = ((g10 & 0x0f) << 8) | g9;
   }
-
-  out
+  PixU16::new(out, width, height)
 }
 
-pub fn decode_12le_wcontrol(buf: &[u8], width: usize, height: usize, dummy: bool) -> Vec<u16> {
+pub fn decode_12le_wcontrol(buf: &[u8], width: usize, height: usize, dummy: bool) -> PixU16 {
   // Calulate expected bytes per line.
   let perline = width * 12 / 8 + ((width+2) / 10);
 
@@ -159,7 +157,7 @@ pub fn decode_12le_wcontrol(buf: &[u8], width: usize, height: usize, dummy: bool
   }))
 }
 
-pub fn decode_12be_wcontrol(buf: &[u8], width: usize, height: usize, dummy: bool) -> Vec<u16> {
+pub fn decode_12be_wcontrol(buf: &[u8], width: usize, height: usize, dummy: bool) -> PixU16 {
   // Calulate expected bytes per line.
   let perline = width * 12 / 8 + ((width+2) / 10);
 
@@ -180,7 +178,7 @@ pub fn decode_12be_wcontrol(buf: &[u8], width: usize, height: usize, dummy: bool
 }
 
 
-pub fn decode_12be_interlaced(buf: &[u8], width: usize, height: usize, dummy: bool) -> Vec<u16> {
+pub fn decode_12be_interlaced(buf: &[u8], width: usize, height: usize, dummy: bool) -> PixU16 {
   let half = (height+1) >> 1;
   // Second field is 2048 byte aligned
   let second_field_offset = ((half*width*3/2 >> 11) + 1) << 11;
@@ -201,7 +199,7 @@ pub fn decode_12be_interlaced(buf: &[u8], width: usize, height: usize, dummy: bo
   }))
 }
 
-pub fn decode_12be_interlaced_unaligned(buf: &[u8], width: usize, height: usize, dummy: bool) -> Vec<u16> {
+pub fn decode_12be_interlaced_unaligned(buf: &[u8], width: usize, height: usize, dummy: bool) -> PixU16 {
   let half = (height+1) >> 1;
   let second_field = &buf[half*width*12/8..];
 
@@ -220,7 +218,7 @@ pub fn decode_12be_interlaced_unaligned(buf: &[u8], width: usize, height: usize,
   }))
 }
 
-pub fn decode_12le(buf: &[u8], width: usize, height: usize, dummy: bool) -> Vec<u16> {
+pub fn decode_12le(buf: &[u8], width: usize, height: usize, dummy: bool) -> PixU16 {
   decode_threaded(width, height, dummy,&(|out: &mut [u16], row| {
     let inb = &buf[(row*width*12/8)..];
 
@@ -235,7 +233,7 @@ pub fn decode_12le(buf: &[u8], width: usize, height: usize, dummy: bool) -> Vec<
   }))
 }
 
-pub fn decode_12le_unpacked(buf: &[u8], width: usize, height: usize, dummy: bool) -> Vec<u16> {
+pub fn decode_12le_unpacked(buf: &[u8], width: usize, height: usize, dummy: bool) -> PixU16 {
   decode_threaded(width, height, dummy,&(|out: &mut [u16], row| {
     let inb = &buf[(row*width*2)..];
 
@@ -245,7 +243,7 @@ pub fn decode_12le_unpacked(buf: &[u8], width: usize, height: usize, dummy: bool
   }))
 }
 
-pub fn decode_12be_unpacked(buf: &[u8], width: usize, height: usize, dummy: bool) -> Vec<u16> {
+pub fn decode_12be_unpacked(buf: &[u8], width: usize, height: usize, dummy: bool) -> PixU16 {
   decode_threaded(width, height, dummy,&(|out: &mut [u16], row| {
     let inb = &buf[(row*width*2)..];
 
@@ -255,7 +253,7 @@ pub fn decode_12be_unpacked(buf: &[u8], width: usize, height: usize, dummy: bool
   }))
 }
 
-pub fn decode_12be_unpacked_left_aligned(buf: &[u8], width: usize, height: usize, dummy: bool) -> Vec<u16> {
+pub fn decode_12be_unpacked_left_aligned(buf: &[u8], width: usize, height: usize, dummy: bool) -> PixU16 {
   decode_threaded(width, height, dummy,&(|out: &mut [u16], row| {
     let inb = &buf[(row*width*2)..];
 
@@ -265,7 +263,7 @@ pub fn decode_12be_unpacked_left_aligned(buf: &[u8], width: usize, height: usize
   }))
 }
 
-pub fn decode_12le_unpacked_left_aligned(buf: &[u8], width: usize, height: usize, dummy: bool) -> Vec<u16> {
+pub fn decode_12le_unpacked_left_aligned(buf: &[u8], width: usize, height: usize, dummy: bool) -> PixU16 {
   decode_threaded(width, height, dummy,&(|out: &mut [u16], row| {
     let inb = &buf[(row*width*2)..];
 
@@ -275,7 +273,7 @@ pub fn decode_12le_unpacked_left_aligned(buf: &[u8], width: usize, height: usize
   }))
 }
 
-pub fn decode_14le_unpacked(buf: &[u8], width: usize, height: usize, dummy: bool) -> Vec<u16> {
+pub fn decode_14le_unpacked(buf: &[u8], width: usize, height: usize, dummy: bool) -> PixU16 {
   decode_threaded(width, height, dummy,&(|out: &mut [u16], row| {
     let inb = &buf[(row*width*2)..];
 
@@ -285,7 +283,7 @@ pub fn decode_14le_unpacked(buf: &[u8], width: usize, height: usize, dummy: bool
   }))
 }
 
-pub fn decode_14be_unpacked(buf: &[u8], width: usize, height: usize, dummy: bool) -> Vec<u16> {
+pub fn decode_14be_unpacked(buf: &[u8], width: usize, height: usize, dummy: bool) ->PixU16 {
   decode_threaded(width, height, dummy,&(|out: &mut [u16], row| {
     let inb = &buf[(row*width*2)..];
 
@@ -295,7 +293,7 @@ pub fn decode_14be_unpacked(buf: &[u8], width: usize, height: usize, dummy: bool
   }))
 }
 
-pub fn decode_16le(buf: &[u8], width: usize, height: usize, dummy: bool) -> Vec<u16> {
+pub fn decode_16le(buf: &[u8], width: usize, height: usize, dummy: bool) -> PixU16 {
   decode_threaded(width, height, dummy,&(|out: &mut [u16], row| {
     let inb = &buf[(row*width*2)..];
 
@@ -305,7 +303,7 @@ pub fn decode_16le(buf: &[u8], width: usize, height: usize, dummy: bool) -> Vec<
   }))
 }
 
-pub fn decode_16le_skiplines(buf: &[u8], width: usize, height: usize, dummy: bool) -> Vec<u16> {
+pub fn decode_16le_skiplines(buf: &[u8], width: usize, height: usize, dummy: bool) -> PixU16 {
   decode_threaded(width, height, dummy,&(|out: &mut [u16], row| {
     let inb = &buf[(row*width*4)..];
 
@@ -315,7 +313,7 @@ pub fn decode_16le_skiplines(buf: &[u8], width: usize, height: usize, dummy: boo
   }))
 }
 
-pub fn decode_16be(buf: &[u8], width: usize, height: usize, dummy: bool) -> Vec<u16> {
+pub fn decode_16be(buf: &[u8], width: usize, height: usize, dummy: bool) -> PixU16 {
   decode_threaded(width, height, dummy,&(|out: &mut [u16], row| {
     let inb = &buf[(row*width*2)..];
 

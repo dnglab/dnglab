@@ -127,7 +127,7 @@ impl<'a> Decoder for Cr2Decoder<'a> {
     // We don't have an excact length, so read until end.
     let src = file
       .stream_len()
-      .and_then(|len| file.get_range(offset as u64, len - offset as u64))
+      .and_then(|len| file.subview(offset as u64, len - offset as u64))
       .map_err(|e| RawlerError::General(format!("I/O error: failed to read raw data from file: {}", e)))?;
 
     let (width, height, cpp, image) = {
@@ -291,7 +291,7 @@ impl<'a> Decoder for Cr2Decoder<'a> {
     self.xpacket.as_ref()
   }
 
-  fn full_image(&self, file: &mut RawFile) -> Result<DynamicImage> {
+  fn full_image(&self, file: &mut RawFile) -> Result<Option<DynamicImage>> {
     // For CR2, there is a full resolution image in IFD0.
     // This is compressed with old-JPEG compression (Compression = 6)
     let root_ifd = &self.tiff.root_ifd();
@@ -304,12 +304,12 @@ impl<'a> Decoder for Cr2Decoder<'a> {
     let width = root_ifd.get_entry(LegacyTiffRootTag::ImageWidth).unwrap().get_usize(0)?;
     let height = root_ifd.get_entry(LegacyTiffRootTag::ImageLength).unwrap().get_usize(0)?;
     if compression == 1 {
-      return Ok(DynamicImage::ImageRgb8(
+      return Ok(Some(DynamicImage::ImageRgb8(
         ImageBuffer::<Rgb<u8>, Vec<u8>>::from_raw(width as u32, height as u32, buf).unwrap(),
-      ));
+      )));
     } else {
       let img = image::load_from_memory_with_format(&buf, image::ImageFormat::Jpeg).unwrap();
-      Ok(img)
+      Ok(Some(img))
     }
   }
 

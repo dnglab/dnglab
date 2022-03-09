@@ -2,6 +2,10 @@ use std::fmt;
 
 use crate::formats::tiff_legacy::*;
 
+pub const CFA_COLOR_R: usize = 0;
+pub const CFA_COLOR_G: usize = 1;
+pub const CFA_COLOR_B: usize = 2;
+
 /// Representation of the color filter array pattern in raw cameras
 ///
 /// # Example
@@ -27,11 +31,12 @@ pub struct CFA {
   /// Height of the repeating pattern
   pub height: usize,
 
-  pattern: [[usize;48];48],
+  pattern: [[usize; 48]; 48],
 }
 
 impl CFA {
-  #[doc(hidden)] pub fn new_from_tag(pat: &LegacyTiffEntry) -> CFA {
+  #[doc(hidden)]
+  pub fn new_from_tag(pat: &LegacyTiffEntry) -> CFA {
     let mut patname = String::new();
     for i in 0..pat.count() {
       patname.push(match pat.get_u32(i as usize) {
@@ -54,36 +59,36 @@ impl CFA {
   /// work fine with this as well).
   pub fn new(patname: &str) -> CFA {
     let (width, height) = match patname.len() {
-      0 => (0,0),
-      4 => (2,2),
-      36 => (6,6),
-      16 => (2,8),
-      144 => (12,12),
+      0 => (0, 0),
+      4 => (2, 2),
+      36 => (6, 6),
+      16 => (2, 8),
+      144 => (12, 12),
       _ => panic!("Unknown CFA size \"{}\"", patname),
     };
-    let mut pattern: [[usize;48];48] = [[0;48];48];
+    let mut pattern: [[usize; 48]; 48] = [[0; 48]; 48];
 
     if width > 0 {
       // copy the pattern into the top left
-      for (i,c) in patname.bytes().enumerate() {
-        pattern[i/width][i%width] = match c {
+      for (i, c) in patname.bytes().enumerate() {
+        pattern[i / width][i % width] = match c {
           b'R' => 0,
           b'G' => 1,
           b'B' => 2,
           b'E' => 3,
           b'M' => 1,
           b'Y' => 3,
-          _    => {
-              let unknown_char = patname[i..].chars().next().unwrap();
-              panic!("Unknown CFA color \"{}\" in pattern \"{}\"", unknown_char, patname)
-          },
+          _ => {
+            let unknown_char = patname[i..].chars().next().unwrap();
+            panic!("Unknown CFA color \"{}\" in pattern \"{}\"", unknown_char, patname)
+          }
         };
       }
 
       // extend the pattern into the full matrix
       for row in 0..48 {
         for col in 0..48 {
-          pattern[row][col] = pattern[row%height][col%width];
+          pattern[row][col] = pattern[row % height][col % width];
         }
       }
     }
@@ -96,15 +101,37 @@ impl CFA {
     }
   }
 
+  /// Remap the color values
+  /// This is useful if you need to remap RGB to R G1 G2 B.
+  pub fn map_colors<F>(&self, op: F) -> Self
+  where
+    F: Fn(usize, usize, usize) -> usize, // row, col, color -> new-color
+  {
+    let mut copy = self.clone();
+    for row in 0..48 {
+      for col in 0..48 {
+        copy.pattern[row][col] = op(row % self.height, col % self.width, copy.pattern[row % self.height][col % self.width]);
+      }
+    }
+    copy
+  }
+
   /// Get the color index at the given position. Designed to be fast so it can be called
   /// from inner loops without performance issues.
   pub fn color_at(&self, row: usize, col: usize) -> usize {
-    self.pattern[(row+48) % 48][(col+48) % 48]
+    self.pattern[(row + 48) % 48][(col + 48) % 48]
   }
 
   /// Get a flat pattern
   pub fn flat_pattern(&self) -> Vec<u8> {
-    self.pattern.iter().take(self.height).flat_map(|v| v.iter().take(self.width)).cloned().map(|v| v as u8).collect()
+    self
+      .pattern
+      .iter()
+      .take(self.height)
+      .flat_map(|v| v.iter().take(self.width))
+      .cloned()
+      .map(|v| v as u8)
+      .collect()
   }
 
   /// Shift the pattern left and/or down. This is useful when cropping the image to get
@@ -126,10 +153,10 @@ impl CFA {
   /// assert_eq!(shifted.color_at(1,1), 0);
   /// ```
   pub fn shift(&self, x: usize, y: usize) -> CFA {
-    let mut pattern: [[usize;48];48] = [[0;48];48];
+    let mut pattern: [[usize; 48]; 48] = [[0; 48]; 48];
     for row in 0..48 {
       for col in 0..48 {
-        pattern[row][col] = self.color_at(row+y,col+x);
+        pattern[row][col] = self.color_at(row + y, col + x);
       }
     }
 
