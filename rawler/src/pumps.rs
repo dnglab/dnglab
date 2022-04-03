@@ -90,7 +90,7 @@ pub trait BitPump {
   #[inline(always)]
   fn get_bits(&mut self, num: u32) -> u32 {
     if num == 0 {
-      return 0
+      return 0;
     }
 
     let val = self.peek_bits(num);
@@ -122,11 +122,11 @@ impl<'a> BitPump for BitPumpLSB<'a> {
   fn peek_bits(&mut self, num: u32) -> u32 {
     if num > self.nbits {
       let inbits: u64 = LEu32(self.buffer, self.pos) as u64;
-      self.bits = ((inbits << 32) | (self.bits << (32-self.nbits))) >> (32-self.nbits);
+      self.bits = ((inbits << 32) | (self.bits << (32 - self.nbits))) >> (32 - self.nbits);
       self.pos += 4;
       self.nbits += 32;
     }
-    (self.bits & (0x0ffffffffu64 >> (32-num))) as u32
+    (self.bits & (0x0ffffffffu64 >> (32 - num))) as u32
   }
 
   #[inline(always)]
@@ -145,7 +145,7 @@ impl<'a> BitPump for BitPumpMSB<'a> {
       self.pos += 4;
       self.nbits += 32;
     }
-    (self.bits >> (self.nbits-num)) as u32
+    (self.bits >> (self.nbits - num)) as u32
   }
 
   #[inline(always)]
@@ -164,7 +164,7 @@ impl<'a> BitPump for BitPumpMSB32<'a> {
       self.pos += 4;
       self.nbits += 32;
     }
-    (self.bits >> (self.nbits-num)) as u32
+    (self.bits >> (self.nbits - num)) as u32
   }
 
   #[inline(always)]
@@ -178,11 +178,13 @@ impl<'a> BitPump for BitPumpJPEG<'a> {
   #[inline(always)]
   fn peek_bits(&mut self, num: u32) -> u32 {
     if num > self.nbits && !self.finished {
-      if (self.buffer.len() >= 4) && self.pos < self.buffer.len()-4 &&
-         self.buffer[self.pos+0] != 0xff &&
-         self.buffer[self.pos+1] != 0xff &&
-         self.buffer[self.pos+2] != 0xff &&
-         self.buffer[self.pos+3] != 0xff {
+      if (self.buffer.len() >= 4)
+        && self.pos < self.buffer.len() - 4
+        && self.buffer[self.pos + 0] != 0xff
+        && self.buffer[self.pos + 1] != 0xff
+        && self.buffer[self.pos + 2] != 0xff
+        && self.buffer[self.pos + 3] != 0xff
+      {
         let inbits: u64 = BEu32(self.buffer, self.pos) as u64;
         self.bits = (self.bits << 32) | inbits;
         self.pos += 4;
@@ -199,7 +201,7 @@ impl<'a> BitPump for BitPumpJPEG<'a> {
               let nextbyte = self.buffer[self.pos];
               if nextbyte != 0xff {
                 nextbyte
-              } else if self.buffer[self.pos+1] == 0x00 {
+              } else if self.buffer[self.pos + 1] == 0x00 {
                 self.pos += 1; // Skip the extra byte used to mark 255
                 nextbyte
               } else {
@@ -221,7 +223,7 @@ impl<'a> BitPump for BitPumpJPEG<'a> {
       self.nbits += 32;
     }
 
-    (self.bits >> (self.nbits-num)) as u32
+    (self.bits >> (self.nbits - num)) as u32
   }
 
   #[inline(always)]
@@ -241,21 +243,23 @@ pub struct ByteStream<'a> {
 
 impl<'a> ByteStream<'a> {
   pub fn new(src: &'a [u8], endian: Endian) -> ByteStream {
-    ByteStream {
-      buffer: src,
-      pos: 0,
-      endian: endian,
-    }
+    ByteStream { buffer: src, pos: 0, endian }
   }
 
   #[inline(always)]
-  pub fn remaining_bytes(&self) -> usize { self.buffer.len() - self.pos }
+  pub fn remaining_bytes(&self) -> usize {
+    self.buffer.len() - self.pos
+  }
 
   #[inline(always)]
-  pub fn get_pos(&self) -> usize { self.pos }
+  pub fn get_pos(&self) -> usize {
+    self.pos
+  }
 
   #[inline(always)]
-  pub fn peek_u8(&self) -> u8 { self.buffer[self.pos] }
+  pub fn peek_u8(&self) -> u8 {
+    self.buffer[self.pos]
+  }
   #[inline(always)]
   pub fn get_u8(&mut self) -> u8 {
     let val = self.peek_u8();
@@ -264,7 +268,9 @@ impl<'a> ByteStream<'a> {
   }
 
   #[inline(always)]
-  pub fn peek_u16(&self) -> u16 { self.endian.read_u16(self.buffer, self.pos) }
+  pub fn peek_u16(&self) -> u16 {
+    self.endian.read_u16(self.buffer, self.pos)
+  }
   #[inline(always)]
   pub fn get_u16(&mut self) -> u16 {
     let val = self.peek_u16();
@@ -273,7 +279,9 @@ impl<'a> ByteStream<'a> {
   }
 
   #[inline(always)]
-  pub fn peek_u32(&self) -> u32 { self.endian.read_u32(self.buffer, self.pos) }
+  pub fn peek_u32(&self) -> u32 {
+    self.endian.read_u32(self.buffer, self.pos)
+  }
 
   #[inline(always)]
   pub fn get_u32(&mut self) -> u32 {
@@ -285,19 +293,19 @@ impl<'a> ByteStream<'a> {
   #[inline(always)]
   pub fn get_bytes(&mut self, n: usize) -> Vec<u8> {
     let mut val = Vec::with_capacity(n);
-    val.extend_from_slice(&self.buffer[self.pos..self.pos+n]);
+    val.extend_from_slice(&self.buffer[self.pos..self.pos + n]);
     self.pos += n;
     val
   }
 
-//  #[inline(always)]
-//  pub fn peek_u32(&self) -> u32 { self.endian.ru32(self.buffer, self.pos) }
-//  #[inline(always)]
-//  pub fn get_u32(&mut self) -> u32 {
-//    let val = self.peek_u32();
-//    self.pos += 4;
-//    val
-//  }
+  //  #[inline(always)]
+  //  pub fn peek_u32(&self) -> u32 { self.endian.ru32(self.buffer, self.pos) }
+  //  #[inline(always)]
+  //  pub fn get_u32(&mut self) -> u32 {
+  //    let val = self.peek_u32();
+  //    self.pos += 4;
+  //    val
+  //  }
 
   #[inline(always)]
   pub fn consume_bytes(&mut self, num: usize) {
@@ -307,16 +315,14 @@ impl<'a> ByteStream<'a> {
   #[inline(always)]
   pub fn skip_to_marker(&mut self) -> Result<usize, String> {
     let mut skip_count = 0;
-    while !(self.buffer[self.pos] == 0xFF &&
-            self.buffer[self.pos+1] != 0 &&
-            self.buffer[self.pos+1] != 0xFF) {
+    while !(self.buffer[self.pos] == 0xFF && self.buffer[self.pos + 1] != 0 && self.buffer[self.pos + 1] != 0xFF) {
       self.pos += 1;
       skip_count += 1;
       if self.pos >= self.buffer.len() {
-        return Err("No marker found inside rest of buffer".to_string())
+        return Err("No marker found inside rest of buffer".to_string());
       }
     }
     self.pos += 1; // Make the next byte the marker
-    Ok(skip_count+1)
+    Ok(skip_count + 1)
   }
 }

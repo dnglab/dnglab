@@ -70,7 +70,7 @@ pub enum RawImageData {
 }
 
 impl RawImage {
-  pub fn calc_black_levels(cam: &Camera, blackareas: &Vec<Rect>, width: usize, _height: usize, image: &Vec<u16>) -> Option<[u16; 4]> {
+  pub fn calc_black_levels(cam: &Camera, blackareas: &[Rect], width: usize, _height: usize, image: &[u16]) -> Option<[u16; 4]> {
     let mut avg = [0 as f32; 4];
     let mut count = [0 as f32; 4];
 
@@ -148,7 +148,8 @@ impl RawImage {
       width,
       height,
       cpp,
-      bps: cam.bps,
+      //bps: cam.bps,
+      bps: 16, // bps is used by Sony cameras to determine decoding, but the outbut has higher bps, so we can't re-use the value
       wb_coeffs,
       data: RawImageData::Integer(image),
       blacklevels: blacks,
@@ -169,7 +170,7 @@ impl RawImage {
 
   pub fn pixels_u16(&self) -> &[u16] {
     if let RawImageData::Integer(data) = &self.data {
-      return data;
+      data
     } else {
       panic!("Data ist not u16");
     }
@@ -177,7 +178,7 @@ impl RawImage {
 
   pub fn pixels_u16_mut(&mut self) -> &mut [u16] {
     if let RawImageData::Integer(data) = &mut self.data {
-      return data;
+      data
     } else {
       panic!("Data ist not u16");
     }

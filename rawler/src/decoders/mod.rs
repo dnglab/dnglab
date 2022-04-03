@@ -1,10 +1,3 @@
-use crate::analyze::FormatDump;
-use crate::formats::tiff::reader::TiffReader;
-use crate::formats::tiff::GenericTiffReader;
-use crate::formats::tiff::IFD;
-use crate::pixarray::PixU16;
-use crate::RawFile;
-use crate::Result;
 use image::DynamicImage;
 use log::debug;
 use log::warn;
@@ -22,19 +15,30 @@ use std::panic::AssertUnwindSafe;
 use std::path::Path;
 use toml::Value;
 
-macro_rules! fetch_tag {
+use crate::analyze::FormatDump;
+use crate::exif::Exif;
+use crate::formats::ciff;
+use crate::formats::tiff::reader::TiffReader;
+use crate::formats::tiff::GenericTiffReader;
+use crate::formats::tiff::IFD;
+use crate::lens::LensDescription;
+use crate::pixarray::PixU16;
+use crate::tags::DngTag;
+use crate::RawFile;
+use crate::Result;
+
+macro_rules! fetch_ciff_tag {
   ($tiff:expr, $tag:expr) => {
     $tiff.find_entry($tag).ok_or(format!("Couldn't find tag {}", stringify!($tag)).to_string())?
   };
 }
 
-macro_rules! fetch_tag_new {
+macro_rules! fetch_tiff_tag {
   ($ifd:expr, $tag:expr) => {
     $ifd
       .get_entry($tag)
       .map(|entry| &entry.value)
       .ok_or(format!("Couldn't find tag {}", stringify!($tag)))?
-    //$tiff.find_entry($tag).ok_or(format!("Couldn't find tag {}", stringify!($tag)).to_string())?
   };
 }
 
@@ -48,57 +52,46 @@ macro_rules! fetch_ifd {
 }
  */
 
-//mod ari;
-//mod arw;
+pub mod ari;
+pub mod arw;
+mod camera;
 pub mod cr2;
 pub mod cr3;
+pub mod crw;
+pub mod dcr;
+pub mod dcs;
+pub mod dng;
+pub mod erf;
 pub mod iiq;
+pub mod kdc;
+pub mod mef;
+pub mod mos;
+pub mod mrw;
+pub mod nef;
+pub mod nkd;
+pub mod nrw;
+pub mod orf;
 pub mod pef;
-/*
-mod crw;
-mod dcr;
-mod dcs;
-mod dng;
-mod erf;
-
-mod kdc;
-mod mef;
-mod mos;
-mod mrw;
-mod nef;
-mod nkd;
-mod nrw;
-mod orf;
-mod raf;
-mod rw2;
-mod srw;
-mod tfr;
-mod x3f;
+pub mod raf;
+pub mod rw2;
+pub mod srw;
+pub mod tfr;
 mod unwrapped;
-*/
-
-mod camera;
+pub mod x3f;
 
 pub use camera::Camera;
 
-use crate::analyze::CaptureInfo;
-use crate::formats::tiff_legacy::Rational;
-use crate::formats::tiff_legacy::SRational;
-use crate::RawlerError;
-use crate::{formats::bmff::Bmff, formats::tiff::DirectoryWriter};
-
 use crate::alloc_image;
-use crate::formats::tiff_legacy::LegacyTiffIFD;
-use crate::formats::tiff_legacy::LegacyTiffTag;
+use crate::formats::bmff::Bmff;
 use crate::tags::ExifTag;
-use crate::tags::LegacyTiffRootTag;
+use crate::tags::TiffCommonTag;
+use crate::RawlerError;
 
-//use self::tiff::*;
 pub use super::rawimage::*;
 
-pub static CAMERAS_TOML: &'static str = include_str!(concat!(env!("OUT_DIR"), "/cameras.toml"));
-pub static SAMPLE: &'static str = "\nPlease submit samples at https://raw.pixls.us/";
-pub static BUG: &'static str = "\nPlease file a bug with a sample file at https://github.com/pedrocr/rawloader/issues/new";
+pub static CAMERAS_TOML: &str = include_str!(concat!(env!("OUT_DIR"), "/cameras.toml"));
+pub static SAMPLE: &str = "\nPlease submit samples at https://raw.pixls.us/";
+pub static BUG: &str = "\nPlease file a bug with a sample file at https://github.com/dnglab/dnglab/issues";
 
 pub trait Readable: std::io::Read + std::io::Seek {}
 
@@ -109,13 +102,59 @@ pub struct RawDecodeParams {
   pub image_index: usize,
 }
 
+#[derive(Default, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+pub struct RawMetadata {
+  pub exif: Exif,
+  pub model: String,
+  pub make: String,
+  pub lens: Option<LensDescription>,
+  pub unique_image_id: Option<u128>,
+  pub rating: Option<u32>,
+}
+
+impl RawMetadata {
+  pub(crate) fn new(camera: &Camera, exif: Exif) -> Self {
+    Self {
+      exif,
+      model: camera.clean_model.clone(),
+      make: camera.clean_make.clone(),
+      unique_image_id: None,
+      lens: None,
+      rating: None,
+    }
+  }
+
+  pub(crate) fn new_with_lens(camera: &Camera, mut exif: Exif, lens: Option<LensDescription>) -> Self {
+    if let Some(lens) = &lens {
+      exif.extend_from_lens(lens);
+    }
+    Self {
+      exif,
+      model: camera.clean_model.clone(),
+      make: camera.clean_make.clone(),
+      unique_image_id: None,
+      lens,
+      rating: None,
+    }
+  }
+}
+
 pub trait Decoder: Send {
-  fn raw_image(&mut self, file: &mut RawFile, params: RawDecodeParams, dummy: bool) -> Result<RawImage>;
+  fn raw_image(&self, file: &mut RawFile, params: RawDecodeParams, dummy: bool) -> Result<RawImage>;
 
   fn raw_image_count(&self) -> Result<usize> {
     Ok(1)
   }
 
+  /// Gives the metadata for a Raw. This is not the original data but
+  /// a generalized set of metadata attributes.
+  fn raw_metadata(&self, file: &mut RawFile, params: RawDecodeParams) -> Result<RawMetadata>;
+
+  fn xpacket(&self, _file: &mut RawFile, _params: RawDecodeParams) -> Result<Option<Vec<u8>>> {
+    Ok(None)
+  }
+
+  // TODO: extend with decode params for image index
   fn thumbnail_image(&self, _file: &mut RawFile) -> Result<Option<DynamicImage>> {
     warn!("Decoder has no thumbnail image support, fallback to preview image");
     Ok(None)
@@ -131,31 +170,7 @@ pub trait Decoder: Send {
     Ok(None)
   }
 
-  fn xpacket(&self, _file: &mut RawFile) -> Option<&Vec<u8>> {
-    None
-  }
-
-  fn gps_metadata(&self, _file: &mut RawFile) -> Option<&Gps> {
-    None
-  }
-
   fn format_dump(&self) -> FormatDump;
-
-  fn populate_capture_info(&mut self, _capture_info: &mut CaptureInfo) -> Result<()> {
-    Ok(())
-  }
-
-  fn populate_dng_root(&mut self, _: &mut DirectoryWriter) -> Result<()> {
-    Ok(())
-  }
-
-  fn populate_dng_exif(&mut self, _: &mut DirectoryWriter) -> Result<()> {
-    Ok(())
-  }
-
-  fn decode_metadata(&mut self, _file: &mut RawFile) -> Result<()> {
-    Ok(())
-  }
 }
 
 /// Possible orientations of an image
@@ -195,9 +210,9 @@ impl Orientation {
 
   /// Extract orienation from a TiffIFD. If the given TiffIFD has an invalid
   /// value or contains no orientation data `Orientation::Unknown` is returned
-  fn _from_tiff(tiff: &LegacyTiffIFD) -> Orientation {
-    match tiff.find_entry(LegacyTiffRootTag::Orientation) {
-      Some(entry) => Orientation::from_u16(entry.get_usize(0) as u16),
+  fn from_tiff(tiff: &IFD) -> Orientation {
+    match tiff.get_entry(TiffCommonTag::Orientation) {
+      Some(entry) => Orientation::from_u16(entry.force_usize(0) as u16),
       None => Orientation::Unknown,
     }
   }
@@ -284,7 +299,7 @@ pub fn ok_image_with_black_white(
 }
 
 /// The struct that holds all the info about the cameras and is able to decode a file
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct RawLoader {
   cameras: HashMap<(String, String, String), Camera>,
   #[allow(dead_code)] // TODO: remove once naked cams supported again
@@ -315,8 +330,7 @@ impl RawLoader {
       let mut cam = Camera::new();
       cam.update_from_toml(cammodes[0]);
       // Create a list of alias names including the base one
-      let mut camnames = Vec::new();
-      camnames.push((cam.model.clone(), cam.clean_model.clone()));
+      let mut camnames = vec![(cam.model.clone(), cam.clean_model.clone())];
       if let Some(val) = ct.get("model_aliases") {
         for alias in val.as_array().unwrap() {
           camnames.push((alias[0].as_str().unwrap().to_string().clone(), alias[1].as_str().unwrap().to_string().clone()));
@@ -344,7 +358,7 @@ impl RawLoader {
       }
     }
 
-    RawLoader { cameras: map, naked: naked }
+    RawLoader { cameras: map, naked }
   }
 
   /// Get list of cameras
@@ -365,28 +379,30 @@ impl RawLoader {
 
     //let buffer = rawfile.get_buf().unwrap();
 
-    /*
-    if mrw::is_mrw(buffer) {
-      let dec = Box::new(mrw::MrwDecoder::new(buffer, &self));
+    if mrw::is_mrw(rawfile) {
+      let dec = Box::new(mrw::MrwDecoder::new(rawfile, self)?);
       return Ok(dec as Box<dyn Decoder>);
     }
 
-    if ciff::is_ciff(buffer) {
-      let ciff = ciff::CiffIFD::new_file(buf)?;
-      let dec = Box::new(crw::CrwDecoder::new(buffer, ciff, &self));
+    if raf::is_raf(rawfile) {
+      let dec = Box::new(raf::RafDecoder::new(rawfile, self)?);
       return Ok(dec as Box<dyn Decoder>);
     }
 
-    if ari::is_ari(buffer) {
-      let dec = Box::new(ari::AriDecoder::new(buffer, &self));
+    if ari::is_ari(rawfile) {
+      let dec = Box::new(ari::AriDecoder::new(rawfile, self)?);
       return Ok(dec as Box<dyn Decoder>);
     }
 
-    if x3f::is_x3f(buffer) {
-      let dec = Box::new(x3f::X3fDecoder::new(buf, &self));
+    if ciff::is_ciff(rawfile) {
+      let dec = Box::new(crw::CrwDecoder::new(rawfile, self)?);
       return Ok(dec as Box<dyn Decoder>);
     }
-    */
+
+    if x3f::is_x3f(rawfile) {
+      let dec = Box::new(x3f::X3fDecoder::new(rawfile, self)?);
+      return Ok(dec as Box<dyn Decoder>);
+    }
 
     reset_file!(rawfile);
     match Bmff::new(rawfile.inner()) {
@@ -401,168 +417,109 @@ impl RawLoader {
     }
 
     reset_file!(rawfile);
-    if let Ok(tiff) = GenericTiffReader::new(rawfile.inner(), 0, 0, None, &[]) {
-      //if tiff.has_entry(LegacyTiffRootTag::DNGVersion) {
-      //  return Ok(Box::new(dng::DngDecoder::new(buffer, tiff, self)));
-      //}
+    match GenericTiffReader::new(rawfile.inner(), 0, 0, None, &[]) {
+      Ok(tiff) => {
+        debug!("File is is TIFF file!");
 
-      macro_rules! use_decoder {
-        ($dec:ty, $buf:ident, $tiff:ident, $rawdec:ident) => {
-          Ok(Box::new(<$dec>::new(rawfile, $tiff, $rawdec)?) as Box<dyn Decoder>)
-        };
-      }
-
-      match tiff
-        .get_entry(LegacyTiffRootTag::Make)
-        .and_then(|entry| entry.value.as_string().and_then(|s| Some(s.as_str().trim_end())))
-      {
-        Some("Canon") => return use_decoder!(cr2::Cr2Decoder, rawfile, tiff, self),
-        Some("PENTAX") => return use_decoder!(pef::PefDecoder, rawfile, tiff, self),
-        Some("PENTAX Corporation") => return use_decoder!(pef::PefDecoder, rawfile, tiff, self),
-        Some("RICOH IMAGING COMPANY, LTD.") => return use_decoder!(pef::PefDecoder, rawfile, tiff, self),
-        Some("Phase One") => return use_decoder!(iiq::IiqDecoder, rawfile, tiff, self),
-        Some("Phase One A/S") => return use_decoder!(iiq::IiqDecoder, rawfile, tiff, self),
-        Some("Leaf") => return use_decoder!(iiq::IiqDecoder, rawfile, tiff, self),
-
-        Some(make) => {
-          return Err(RawlerError::Unsupported(
-            format!("Couldn't find a decoder for make \"{}\".{}", make, SAMPLE).to_string(),
-          ))
-        }
-
-        None => {} /*
-                   "SONY" => use_decoder!(arw::ArwDecoder, buffer, tiff, self),
-                   "Mamiya-OP Co.,Ltd." => use_decoder!(mef::MefDecoder, buffer, tiff, self),
-                   "OLYMPUS IMAGING CORP." => use_decoder!(orf::OrfDecoder, buffer, tiff, self),
-                   "OLYMPUS CORPORATION" => use_decoder!(orf::OrfDecoder, buffer, tiff, self),
-                   "OLYMPUS OPTICAL CO.,LTD" => use_decoder!(orf::OrfDecoder, buffer, tiff, self),
-                   "SAMSUNG" => use_decoder!(srw::SrwDecoder, buffer, tiff, self),
-                   "SEIKO EPSON CORP." => use_decoder!(erf::ErfDecoder, buffer, tiff, self),
-                   "EASTMAN KODAK COMPANY" => use_decoder!(kdc::KdcDecoder, buffer, tiff, self),
-                   "Eastman Kodak Company" => use_decoder!(kdc::KdcDecoder, buffer, tiff, self),
-                   "KODAK" => use_decoder!(dcs::DcsDecoder, buffer, tiff, self),
-                   "Kodak" => use_decoder!(dcr::DcrDecoder, buffer, tiff, self),
-                   "Panasonic" => use_decoder!(rw2::Rw2Decoder, buffer, tiff, self),
-                   "LEICA" => use_decoder!(rw2::Rw2Decoder, buffer, tiff, self),
-                   "FUJIFILM" => use_decoder!(raf::RafDecoder, buffer, tiff, self),
-                   "PENTAX Corporation" => use_decoder!(pef::PefDecoder, buffer, tiff, self),
-                   "RICOH IMAGING COMPANY, LTD." => use_decoder!(pef::PefDecoder, buffer, tiff, self),
-                   "PENTAX" => use_decoder!(pef::PefDecoder, buffer, tiff, self),
-                   //"Leaf" => use_decoder!(iiq::IiqDecoder, buffer, tiff, self),
-                   "Hasselblad" => use_decoder!(tfr::TfrDecoder, buffer, tiff, self),
-                   "NIKON CORPORATION" => use_decoder!(nef::NefDecoder, buffer, tiff, self),
-                   "NIKON" => use_decoder!(nrw::NrwDecoder, buffer, tiff, self),
-                   */
-                   //"Canon" => use_decoder!(cr2::Cr2Decoder, buffer, tiff, self),
-                   /*
-                   //"Phase One A/S" => use_decoder!(iiq::IiqDecoder, buffer, tiff, self),
-                   */
-      };
-
-      if tiff.has_entry(LegacyTiffRootTag::Software) {
-        // Last ditch effort to identify Leaf cameras without Make and Model
-        //if fetch_tag!(tiff, LegacyTiffRootTag::Software).get_str() == "Camera Library" {
-        //return Ok(Box::new(mos::MosDecoder::new(buffer, tiff, self)));
-        //}
-      }
-    }
-
-    /*
-    if let Ok(tiff) = LegacyTiffIFD::new_file(buffer, &vec![]) {
-      if tiff.has_entry(LegacyTiffRootTag::DNGVersion) {
-        return Ok(Box::new(dng::DngDecoder::new(buffer, tiff, self)));
-      }
-
-      // The DCS560C is really a CR2 camera so we just special case it here
-      if tiff.has_entry(LegacyTiffRootTag::Model) && fetch_tag!(tiff, LegacyTiffRootTag::Model).get_str() == "DCS560C" {
-        //return Ok(Box::new(cr2::Cr2Decoder::new(buffer, tiff, self)));
-      }
-
-      if tiff.has_entry(LegacyTiffRootTag::Make) {
         macro_rules! use_decoder {
           ($dec:ty, $buf:ident, $tiff:ident, $rawdec:ident) => {
-            Ok(Box::new(<$dec>::new($buf, $tiff, $rawdec)) as Box<dyn Decoder>)
+            Ok(Box::new(<$dec>::new(rawfile, $tiff, $rawdec)?) as Box<dyn Decoder>)
           };
         }
 
-        return match fetch_tag!(tiff, LegacyTiffRootTag::Make).get_str().to_string().as_ref() {
-          "SONY" => use_decoder!(arw::ArwDecoder, buffer, tiff, self),
-          "Mamiya-OP Co.,Ltd." => use_decoder!(mef::MefDecoder, buffer, tiff, self),
-          "OLYMPUS IMAGING CORP." => use_decoder!(orf::OrfDecoder, buffer, tiff, self),
-          "OLYMPUS CORPORATION" => use_decoder!(orf::OrfDecoder, buffer, tiff, self),
-          "OLYMPUS OPTICAL CO.,LTD" => use_decoder!(orf::OrfDecoder, buffer, tiff, self),
-          "SAMSUNG" => use_decoder!(srw::SrwDecoder, buffer, tiff, self),
-          "SEIKO EPSON CORP." => use_decoder!(erf::ErfDecoder, buffer, tiff, self),
-          "EASTMAN KODAK COMPANY" => use_decoder!(kdc::KdcDecoder, buffer, tiff, self),
-          "Eastman Kodak Company" => use_decoder!(kdc::KdcDecoder, buffer, tiff, self),
-          "KODAK" => use_decoder!(dcs::DcsDecoder, buffer, tiff, self),
-          "Kodak" => use_decoder!(dcr::DcrDecoder, buffer, tiff, self),
-          "Panasonic" => use_decoder!(rw2::Rw2Decoder, buffer, tiff, self),
-          "LEICA" => use_decoder!(rw2::Rw2Decoder, buffer, tiff, self),
-          "FUJIFILM" => use_decoder!(raf::RafDecoder, buffer, tiff, self),
-          "PENTAX Corporation" => use_decoder!(pef::PefDecoder, buffer, tiff, self),
-          "RICOH IMAGING COMPANY, LTD." => use_decoder!(pef::PefDecoder, buffer, tiff, self),
-          "PENTAX" => use_decoder!(pef::PefDecoder, buffer, tiff, self),
-          "Leaf" => use_decoder!(iiq::IiqDecoder, buffer, tiff, self),
-          "Hasselblad" => use_decoder!(tfr::TfrDecoder, buffer, tiff, self),
-          "NIKON CORPORATION" => use_decoder!(nef::NefDecoder, buffer, tiff, self),
-          "NIKON" => use_decoder!(nrw::NrwDecoder, buffer, tiff, self),
-          //"Canon" => use_decoder!(cr2::Cr2Decoder, buffer, tiff, self),
-          "Phase One A/S" => use_decoder!(iiq::IiqDecoder, buffer, tiff, self),
-          make => Err(RawlerError::Unsupported(
-            format!("Couldn't find a decoder for make \"{}\".{}", make, SAMPLE).to_string(),
-          )),
-        };
-      } else if tiff.has_entry(LegacyTiffRootTag::Software) {
-        // Last ditch effort to identify Leaf cameras without Make and Model
-        if fetch_tag!(tiff, LegacyTiffRootTag::Software).get_str() == "Camera Library" {
-          return Ok(Box::new(mos::MosDecoder::new(buffer, tiff, self)));
+        if tiff.has_entry(DngTag::DNGVersion) {
+          return Ok(Box::new(dng::DngDecoder::new(rawfile, tiff, self)?));
         }
+
+        // The DCS560C is really a CR2 camera so we just special case it here
+        if let Some(model) = tiff.get_entry(TiffCommonTag::Model) {
+          if model.get_string().ok() == Some(&String::from("DCS560C")) {
+            return use_decoder!(cr2::Cr2Decoder, rawfile, tiff, self);
+          }
+        }
+
+        if let Some(make) = tiff
+          .get_entry(TiffCommonTag::Make)
+          .and_then(|entry| entry.value.as_string().map(|s| s.as_str().trim_end()))
+        {
+          match make {
+            "Canon" => return use_decoder!(cr2::Cr2Decoder, rawfile, tiff, self),
+            "PENTAX" => return use_decoder!(pef::PefDecoder, rawfile, tiff, self),
+            "PENTAX Corporation" => return use_decoder!(pef::PefDecoder, rawfile, tiff, self),
+            "RICOH IMAGING COMPANY, LTD." => return use_decoder!(pef::PefDecoder, rawfile, tiff, self),
+            "Phase One" => return use_decoder!(iiq::IiqDecoder, rawfile, tiff, self),
+            "Phase One A/S" => return use_decoder!(iiq::IiqDecoder, rawfile, tiff, self),
+            "Leaf" => return use_decoder!(iiq::IiqDecoder, rawfile, tiff, self),
+            "Hasselblad" => return use_decoder!(tfr::TfrDecoder, rawfile, tiff, self),
+            "SONY" => return use_decoder!(arw::ArwDecoder, rawfile, tiff, self),
+            "Mamiya-OP Co.,Ltd." => return use_decoder!(mef::MefDecoder, rawfile, tiff, self),
+            "OLYMPUS IMAGING CORP." => return use_decoder!(orf::OrfDecoder, rawfile, tiff, self),
+            "OLYMPUS CORPORATION" => return use_decoder!(orf::OrfDecoder, rawfile, tiff, self),
+            "OLYMPUS OPTICAL CO.,LTD" => return use_decoder!(orf::OrfDecoder, rawfile, tiff, self),
+            "SAMSUNG" => return use_decoder!(srw::SrwDecoder, rawfile, tiff, self),
+            "SEIKO EPSON CORP." => return use_decoder!(erf::ErfDecoder, rawfile, tiff, self),
+            "EASTMAN KODAK COMPANY" => return use_decoder!(kdc::KdcDecoder, rawfile, tiff, self),
+            "Eastman Kodak Company" => return use_decoder!(kdc::KdcDecoder, rawfile, tiff, self),
+            "KODAK" => return use_decoder!(dcs::DcsDecoder, rawfile, tiff, self),
+            "Kodak" => return use_decoder!(dcr::DcrDecoder, rawfile, tiff, self),
+            "Panasonic" => return use_decoder!(rw2::Rw2Decoder, rawfile, tiff, self),
+            "LEICA" => return use_decoder!(rw2::Rw2Decoder, rawfile, tiff, self),
+            //"FUJIFILM" => return use_decoder!(raf::RafDecoder, rawfile, tiff, self),
+            "NIKON" => return use_decoder!(nrw::NrwDecoder, rawfile, tiff, self),
+            "NIKON CORPORATION" => return use_decoder!(nef::NefDecoder, rawfile, tiff, self),
+            x => {
+              return Err(RawlerError::Unsupported {
+                what: format!("Couldn't find a decoder for make \"{}\"", x),
+                make: make.to_string(),
+                model: String::new(),
+                mode: String::new(),
+              });
+            }
+          }
+        }
+
+        if tiff.has_entry(TiffCommonTag::Software) {
+          // Last ditch effort to identify Leaf cameras without Make and Model
+          if fetch_tiff_tag!(tiff, TiffCommonTag::Software).as_string() == Some(&"Camera Library".to_string()) {
+            return use_decoder!(mos::MosDecoder, rawfile, tiff, self);
+          }
+        }
+      }
+      Err(e) => {
+        debug!("File is not a tiff file: {:?}", e);
       }
     }
 
     // If all else fails see if we match by filesize to one of those CHDK style files
-    if let Some(cam) = self.naked.get(&buf.size) {
-      return Ok(Box::new(nkd::NakedDecoder::new(buffer, cam.clone(), self)));
+    let data = rawfile.as_vec().unwrap();
+    if let Some(cam) = self.naked.get(&data.len()) {
+      return Ok(Box::new(nkd::NakedDecoder::new(cam.clone(), self)?));
     }
-    */
 
-    Err(RawlerError::Unsupported(
-      format!("Couldn't find a decoder for this file.{}", SAMPLE).to_string(),
-    ))
+    Err(RawlerError::Unsupported {
+      what: String::from("No decoder found"),
+      model: "".to_string(),
+      make: "".to_string(),
+      mode: "".to_string(),
+    })
   }
 
+  /// Check support
   fn check_supported_with_everything<'a>(&'a self, make: &str, model: &str, mode: &str) -> Result<Camera> {
     match self.cameras.get(&(make.to_string(), model.to_string(), mode.to_string())) {
       Some(cam) => Ok(cam.clone()),
-      None => Err(RawlerError::Unsupported(format!(
-        "Couldn't find camera \"{}\" \"{}\" mode \"{}\".{}",
-        make, model, mode, SAMPLE
-      ))),
+      None => Err(RawlerError::Unsupported {
+        what: String::from("Unknown camera"),
+        model: model.to_string(),
+        make: make.to_string(),
+        mode: mode.to_string(),
+      }),
     }
   }
 
-  fn _check_supported_with_mode_old<'a>(&'a self, tiff: &'a LegacyTiffIFD, mode: &str) -> Result<Camera> {
-    let make = fetch_tag!(tiff, LegacyTiffRootTag::Make).get_str();
-    let model = fetch_tag!(tiff, LegacyTiffRootTag::Model).get_str();
-
-    // Get a default instance to modify
-    let camera = self.check_supported_with_everything(make, model, mode)?;
-
-    // Lookup the orientation of the image for later image rotation
-    //camera.orientation = Orientation::from_tiff(tiff);
-
-    Ok(camera)
-  }
-
-  fn _check_supported_old<'a>(&'a self, tiff: &'a LegacyTiffIFD) -> Result<Camera> {
-    // TODO remove me
-    self._check_supported_with_mode_old(tiff, "")
-  }
-
   fn check_supported_with_mode(&self, ifd0: &IFD, mode: &str) -> Result<Camera> {
-    let make = fetch_tag_new!(ifd0, LegacyTiffRootTag::Make).get_string()?.trim_end();
-    let model = fetch_tag_new!(ifd0, LegacyTiffRootTag::Model).get_string()?.trim_end();
+    let make = fetch_tiff_tag!(ifd0, TiffCommonTag::Make).get_string()?.trim_end();
+    let model = fetch_tiff_tag!(ifd0, TiffCommonTag::Model).get_string()?.trim_end();
     self.check_supported_with_everything(make, model, mode)
   }
 
@@ -571,13 +528,13 @@ impl RawLoader {
     self.check_supported_with_mode(ifd0, "")
   }
 
-  fn decode_unsafe<'b>(&'b self, rawfile: &mut RawFile, params: RawDecodeParams, dummy: bool) -> Result<RawImage> {
-    let mut decoder = self.get_decoder(rawfile)?;
+  fn decode_unsafe(&self, rawfile: &mut RawFile, params: RawDecodeParams, dummy: bool) -> Result<RawImage> {
+    let decoder = self.get_decoder(rawfile)?;
     decoder.raw_image(rawfile, params, dummy)
   }
 
   /// Decodes an input into a RawImage
-  pub fn decode<'b>(&'b self, rawfile: &mut RawFile, params: RawDecodeParams, dummy: bool) -> Result<RawImage> {
+  pub fn decode(&self, rawfile: &mut RawFile, params: RawDecodeParams, dummy: bool) -> Result<RawImage> {
     //let buffer = Buffer::new(reader)?;
 
     match panic::catch_unwind(AssertUnwindSafe(|| self.decode_unsafe(rawfile, params, dummy))) {
@@ -587,7 +544,7 @@ impl RawLoader {
   }
 
   /// Decodes a file into a RawImage
-  pub fn decode_file<'b>(&'b self, path: &Path) -> Result<RawImage> {
+  pub fn decode_file(&self, path: &Path) -> Result<RawImage> {
     let file = match File::open(path) {
       Ok(val) => val,
       Err(e) => return Err(RawlerError::with_io_error("decode_file()", path, e)),
@@ -597,7 +554,7 @@ impl RawLoader {
   }
 
   /// Decodes a file into a RawImage
-  pub fn raw_image_count_file<'b>(&'b self, path: &Path) -> Result<usize> {
+  pub fn raw_image_count_file(&self, path: &Path) -> Result<usize> {
     let file = match File::open(path) {
       Ok(val) => val,
       Err(e) => return Err(RawlerError::with_io_error("raw_image_count_file()", path, e)),
@@ -611,16 +568,11 @@ impl RawLoader {
   // Decodes an unwrapped input (just the image data with minimal metadata) into a RawImage
   // This is only useful for fuzzing really
   #[doc(hidden)]
-  pub fn decode_unwrapped(&self, _rawfile: &mut RawFile) -> Result<RawImageData> {
-    /*
-    let buffer = Buffer::new(reader)?;
-
-    match panic::catch_unwind(|| unwrapped::decode_unwrapped(&buffer)) {
+  pub fn decode_unwrapped(&self, rawfile: &mut RawFile) -> Result<RawImageData> {
+    match panic::catch_unwind(AssertUnwindSafe(|| unwrapped::decode_unwrapped(rawfile))) {
       Ok(val) => val,
-      Err(_) => Err(RawlerError::General(format!("Caught a panic while decoding.{}", BUG).to_string())),
+      Err(_) => Err(RawlerError::General(format!("Caught a panic while decoding.{}", BUG))),
     }
-    */
-    unimplemented!()
   }
 }
 
@@ -655,72 +607,4 @@ where
     closure(line, row * lines);
   });
   PixU16::new(out, width, height)
-}
-
-// For rust <= 1.31 we just alias chunks_exact() and chunks_exact_mut() to the non-exact versions
-// so we can use exact everywhere without spreading special cases across the code
-#[cfg(needs_chunks_exact)]
-mod chunks_exact {
-  use std::slice;
-
-  // Add a chunks_exact for &[u8] and Vec<u16>
-  pub trait ChunksExact<T> {
-    fn chunks_exact(&self, n: usize) -> slice::Chunks<T>;
-  }
-  impl<'a, T> ChunksExact<T> for &'a [T] {
-    fn chunks_exact(&self, n: usize) -> slice::Chunks<T> {
-      self.chunks(n)
-    }
-  }
-  impl<T> ChunksExact<T> for Vec<T> {
-    fn chunks_exact(&self, n: usize) -> slice::Chunks<T> {
-      self.chunks(n)
-    }
-  }
-
-  // Add a chunks_exact_mut for &mut[u16] mostly
-  pub trait ChunksExactMut<'a, T> {
-    fn chunks_exact_mut(self, n: usize) -> slice::ChunksMut<'a, T>;
-  }
-  impl<'a, T> ChunksExactMut<'a, T> for &'a mut [T] {
-    fn chunks_exact_mut(self, n: usize) -> slice::ChunksMut<'a, T> {
-      self.chunks_mut(n)
-    }
-  }
-}
-
-#[cfg(needs_chunks_exact)]
-pub use self::chunks_exact::*;
-
-pub trait ExifWrite {
-  //fn write_tag_xx<T: TiffValue>(&mut self, tag: Tag, value: T) -> DngResult<()>;
-
-  //fn write_entry(&mut self, entry: &TiffEntry) -> std::result::Result<(), String>;
-
-  fn write_tag_rational(&mut self, tag: LegacyTiffTag, value: Rational) -> std::result::Result<(), String>;
-  fn write_tag_srational(&mut self, tag: LegacyTiffTag, value: SRational) -> std::result::Result<(), String>;
-
-  fn write_tag_u16(&mut self, tag: LegacyTiffTag, value: u16) -> std::result::Result<(), String>;
-  fn write_tag_u32(&mut self, tag: LegacyTiffTag, value: u32) -> std::result::Result<(), String>;
-  fn write_tag_u8(&mut self, tag: LegacyTiffTag, value: u8) -> std::result::Result<(), String>;
-  fn write_tag_u8_array(&mut self, tag: LegacyTiffTag, value: &[u8]) -> std::result::Result<(), String>;
-  fn write_tag_u16_array(&mut self, tag: LegacyTiffTag, value: &[u16]) -> std::result::Result<(), String>;
-  fn write_tag_u32_array(&mut self, tag: LegacyTiffTag, value: &[u32]) -> std::result::Result<(), String>;
-  fn write_tag_str(&mut self, tag: LegacyTiffTag, value: &str) -> std::result::Result<(), String>;
-}
-
-#[derive(Debug, Clone, Default)]
-pub struct Gps {
-  pub version_id: Option<[u8; 4]>,
-  pub latitude_ref: Option<String>,
-  pub latitude: Option<[Rational; 3]>,
-  pub longitude_ref: Option<String>,
-  pub longitude: Option<[Rational; 3]>,
-  pub altitude_ref: Option<u8>,
-  pub altitude: Option<Rational>,
-  pub time_stamp: Option<[Rational; 3]>,
-  pub satellites: Option<String>,
-  pub status: Option<String>,
-  pub map_datum: Option<String>,
-  pub date_stamp: Option<String>,
 }

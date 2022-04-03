@@ -1,0 +1,15 @@
+make = "NIKON CORPORATION"
+model = "NIKON D5000"
+clean_make = "Nikon"
+clean_model = "D5000"
+color_pattern = "GBRG"
+active_area = [0, 0, 0, 0]
+
+[cameras.color_matrix]
+D65 = [0.7309, -0.1403, -0.0519, -0.8474, 1.6008, 0.2622, -0.2433, 0.2826, 0.8064]
+
+[[cameras.modes]]
+mode = "12bit"
+blackpoint = 0
+whitepoint = 3767
+

@@ -8,8 +8,7 @@ version = "0.4.1"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
-build = "data/cameras/join.rs"
-
+build = "data/join.rs"
 
 [features]
 # This is a developer feature, it enabled deep inspection of algorithm execution stages
@@ -38,6 +37,7 @@ tokio = { version = "1.11.0", features = ["full"] }
 async-trait = "0.1.51"
 futures = "0.3"
 multiversion = "0.6.1"
+backtrace = "0.3"
 
 [dev-dependencies]
 serde_yaml = "0.8"

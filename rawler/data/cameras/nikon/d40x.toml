@@ -1,0 +1,15 @@
+make = "NIKON CORPORATION"
+model = "NIKON D40X"
+clean_make = "Nikon"
+clean_model = "D40X"
+color_pattern = "GBRG"
+active_area = [4, 0, 0, 0]
+
+[cameras.color_matrix]
+D65 = [0.8819, -0.2543, -0.0911, -0.9025, 1.6928, 0.2151, -0.1329, 0.1213, 0.8449]
+
+[[cameras.modes]]
+mode = "12bit"
+blackpoint = 0
+whitepoint = 3880
+

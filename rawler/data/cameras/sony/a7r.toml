@@ -1,0 +1,12 @@
+make = "SONY"
+model = "ILCE-7R"
+clean_make = "Sony"
+clean_model = "ILCE-7R"
+blackpoint = 512
+whitepoint = 16300
+color_pattern = "RGGB"
+active_area = [0, 0, 26, 0]
+bps = 8
+
+[cameras.color_matrix]
+D65 = [0.4913, -0.0541, -0.0202, -0.613, 1.3513, 0.2906, -0.1564, 0.2151, 0.7183]

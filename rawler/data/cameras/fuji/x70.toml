@@ -1,0 +1,11 @@
+make = "FUJIFILM"
+model = "X70"
+clean_make = "Fujifilm"
+clean_model = "X70"
+blackpoint = 1024
+whitepoint = 16383
+color_pattern = "RBGBRGGGRGGBGGBGGRBRGRBGGGBGGRGGRGGB"
+active_area = [4, 0, 52, 0]
+
+[cameras.color_matrix]
+D65 = [1.045, -0.4329, -0.0878, -0.3217, 1.1105, 0.2421, -0.0752, 0.1758, 0.6519]

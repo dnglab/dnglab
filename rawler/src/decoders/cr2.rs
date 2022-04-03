@@ -19,8 +19,8 @@ use crate::analyze::FormatDump;
 use crate::bits::clampbits;
 use crate::bits::LookupTable;
 use crate::decompressors::ljpeg::*;
+use crate::exif::Exif;
 use crate::formats::tiff::reader::TiffReader;
-use crate::formats::tiff::DirectoryWriter;
 use crate::formats::tiff::Entry;
 use crate::formats::tiff::GenericTiffReader;
 use crate::formats::tiff::Rational;
@@ -31,10 +31,9 @@ use crate::imgop::Point;
 use crate::imgop::Rect;
 use crate::lens::LensDescription;
 use crate::lens::LensResolver;
-use crate::tags::DngTag;
 use crate::tags::ExifTag;
-use crate::tags::LegacyTiffRootTag;
-use crate::tags::TiffTagEnum;
+use crate::tags::TiffCommonTag;
+use crate::tags::TiffTag;
 use crate::RawFile;
 use crate::RawImage;
 use crate::RawLoader;
@@ -43,37 +42,11 @@ use crate::RawlerError;
 use super::Camera;
 use super::Decoder;
 use super::RawDecodeParams;
+use super::RawMetadata;
 use super::Result;
 
-const EXIF_TRANSFER_TAGS: [u16; 23] = [
-  ExifTag::ExposureTime as u16,
-  ExifTag::FNumber as u16,
-  ExifTag::ISOSpeedRatings as u16,
-  ExifTag::SensitivityType as u16,
-  ExifTag::RecommendedExposureIndex as u16,
-  ExifTag::ISOSpeed as u16,
-  ExifTag::FocalLength as u16,
-  ExifTag::ExposureBiasValue as u16,
-  ExifTag::DateTimeOriginal as u16,
-  ExifTag::CreateDate as u16,
-  ExifTag::OffsetTime as u16,
-  ExifTag::OffsetTimeDigitized as u16,
-  ExifTag::OffsetTimeOriginal as u16,
-  ExifTag::OwnerName as u16,
-  ExifTag::LensSerialNumber as u16,
-  ExifTag::SerialNumber as u16,
-  ExifTag::ExposureProgram as u16,
-  ExifTag::MeteringMode as u16,
-  ExifTag::Flash as u16,
-  ExifTag::ExposureMode as u16,
-  ExifTag::WhiteBalance as u16,
-  ExifTag::SceneCaptureType as u16,
-  ExifTag::ShutterSpeedValue as u16,
-];
-
-fn transfer_exif_tag(tag: u16) -> bool {
-  EXIF_TRANSFER_TAGS.contains(&tag)
-}
+const CANON_EF_MOUNT: &str = "ef-mount";
+const CANON_CN_MOUNT: &str = "cn-mount";
 
 /// CR2 Decoder
 pub struct Cr2Decoder<'a> {
@@ -101,7 +74,7 @@ impl<'a> Decoder for Cr2Decoder<'a> {
     FormatDump::Cr2(Cr2Format { tiff: self.tiff.clone() })
   }
 
-  fn raw_image(&mut self, file: &mut RawFile, _params: RawDecodeParams, dummy: bool) -> Result<RawImage> {
+  fn raw_image(&self, file: &mut RawFile, _params: RawDecodeParams, dummy: bool) -> Result<RawImage> {
     /*
     for (i, ifd) in self.tiff.chains().iter().enumerate() {
       eprintln!("IFD {}", i);
@@ -113,11 +86,11 @@ impl<'a> Decoder for Cr2Decoder<'a> {
 
     let camera = &self.camera;
     let (raw, offset) = {
-      if let Some(raw) = self.tiff.find_first_ifd(LegacyTiffRootTag::Cr2Id) {
-        (raw, fetch_tag_new!(raw, LegacyTiffRootTag::StripOffsets).force_usize(0))
-      } else if let Some(raw) = self.tiff.find_first_ifd(LegacyTiffRootTag::CFAPattern) {
-        (raw, fetch_tag_new!(raw, LegacyTiffRootTag::StripOffsets).force_usize(0))
-      } else if let Some(off) = self.tiff.root_ifd().get_entry(LegacyTiffRootTag::Cr2OldOffset) {
+      if let Some(raw) = self.tiff.find_first_ifd(TiffCommonTag::Cr2Id) {
+        (raw, fetch_tiff_tag!(raw, TiffCommonTag::StripOffsets).force_usize(0))
+      } else if let Some(raw) = self.tiff.find_first_ifd(TiffCommonTag::CFAPattern) {
+        (raw, fetch_tiff_tag!(raw, TiffCommonTag::StripOffsets).force_usize(0))
+      } else if let Some(off) = self.tiff.root_ifd().get_entry(TiffCommonTag::Cr2OldOffset) {
         (self.tiff.root_ifd(), off.value.force_usize(0))
       } else {
         return Err(RawlerError::General("CR2: Couldn't find raw info".to_string()));
@@ -148,8 +121,8 @@ impl<'a> Decoder for Cr2Decoder<'a> {
       // Linearize the output (applies only to D2000 as far as I can tell)
       if camera.find_hint("linearization") {
         let table = {
-          let linearization = fetch_tag_new!(raw, LegacyTiffRootTag::GrayResponse);
-          let mut t = [0 as u16; 4096];
+          let linearization = fetch_tiff_tag!(raw, TiffCommonTag::GrayResponse);
+          let mut t = [0_u16; 4096];
           for i in 0..t.len() {
             t[i] = linearization.force_u16(i);
           }
@@ -163,9 +136,9 @@ impl<'a> Decoder for Cr2Decoder<'a> {
       }
 
       if cpp == 3 {
-        if raw.has_entry(LegacyTiffRootTag::ImageWidth) {
-          width = fetch_tag_new!(raw, LegacyTiffRootTag::ImageWidth).force_usize(0) * cpp;
-          height = fetch_tag_new!(raw, LegacyTiffRootTag::ImageLength).force_usize(0);
+        if raw.has_entry(TiffCommonTag::ImageWidth) {
+          width = fetch_tiff_tag!(raw, TiffCommonTag::ImageWidth).force_usize(0) * cpp;
+          height = fetch_tiff_tag!(raw, TiffCommonTag::ImageLength).force_usize(0);
         } else if width / cpp < height {
           let temp = width / cpp;
           width = height * cpp;
@@ -181,11 +154,11 @@ impl<'a> Decoder for Cr2Decoder<'a> {
       // Take each of the vertical fields and put them into the right location
       // FIXME: Doing this at the decode would reduce about 5% in runtime but I haven't
       //        been able to do it without hairy code
-      if let Some(canoncol) = raw.get_entry(LegacyTiffRootTag::Cr2StripeWidths) {
+      if let Some(canoncol) = raw.get_entry(TiffCommonTag::Cr2StripeWidths) {
         debug!("Found Cr2StripeWidths tag: {:?}", canoncol.value);
         if canoncol.value.force_usize(0) == 0 {
           if cpp == 3 {
-            self.convert_to_rgb(file, &camera, &decompressor, width, height, &mut ljpegout, dummy)?;
+            self.convert_to_rgb(file, camera, &decompressor, width, height, &mut ljpegout, dummy)?;
             width /= 3;
           }
           (width, height, cpp, ljpegout)
@@ -251,7 +224,7 @@ impl<'a> Decoder for Cr2Decoder<'a> {
             }
           }
           if cpp == 3 {
-            self.convert_to_rgb(file, &camera, &decompressor, width, height, &mut out, dummy)?;
+            self.convert_to_rgb(file, camera, &decompressor, width, height, &mut out, dummy)?;
             width /= 3;
           }
           (width, height, cpp, out)
@@ -261,19 +234,19 @@ impl<'a> Decoder for Cr2Decoder<'a> {
       }
     };
 
-    let wb = self.get_wb(file, &camera)?;
+    let wb = self.get_wb(file, camera)?;
     debug!("CR2 WB: {:?}", wb);
-    let mut img = RawImage::new(camera.clone(), width, height, cpp, wb, image.clone(), dummy);
+    let mut img = RawImage::new(camera.clone(), width, height, cpp, wb, image, dummy);
 
-    img.crop_area = Some(self.get_sensor_area(&camera, width, height)?);
+    img.crop_area = Some(self.get_sensor_area(camera, width, height)?);
     if let Some(forced_area) = camera.crop_area {
       let area = Rect::new_with_borders(Dim2::new(width, height), &forced_area);
       debug!("Metadata says crop area is: {:?}, overriding with forced: {:?}", img.crop_area, area);
       img.crop_area = Some(area);
     }
 
-    img.blacklevels = self.get_blacklevel(file, &camera)?;
-    img.whitelevels = self.get_whitelevel(file, &camera)?;
+    img.blacklevels = self.get_blacklevel(file, camera)?;
+    img.whitelevels = self.get_whitelevel(file, camera)?;
     if cpp == 3 {
       img.cpp = 3;
       img.crop_area = None;
@@ -287,111 +260,34 @@ impl<'a> Decoder for Cr2Decoder<'a> {
     Ok(img)
   }
 
-  fn xpacket(&self, _file: &mut RawFile) -> Option<&Vec<u8>> {
-    self.xpacket.as_ref()
+  fn raw_metadata(&self, _file: &mut RawFile, _params: RawDecodeParams) -> Result<RawMetadata> {
+    let exif = Exif::new(self.tiff.root_ifd())?;
+    let mdata = RawMetadata::new_with_lens(&self.camera, exif, self.get_lens_description()?.cloned());
+    Ok(mdata)
+  }
+
+  fn xpacket(&self, _file: &mut RawFile, _params: RawDecodeParams) -> Result<Option<Vec<u8>>> {
+    Ok(self.xpacket.clone())
   }
 
   fn full_image(&self, file: &mut RawFile) -> Result<Option<DynamicImage>> {
     // For CR2, there is a full resolution image in IFD0.
     // This is compressed with old-JPEG compression (Compression = 6)
     let root_ifd = &self.tiff.root_ifd();
-    let buf = root_ifd.singlestrip_data(file.inner()).unwrap();
-    // TODO: fix this
-    let compression = root_ifd
-      .get_entry(LegacyTiffRootTag::Compression)
-      .ok_or(RawlerError::General("Missing tag".into()))?
-      .force_usize(0);
-    let width = fetch_tag_new!(root_ifd, LegacyTiffRootTag::ImageWidth).force_usize(0);
-    let height = fetch_tag_new!(root_ifd, LegacyTiffRootTag::ImageLength).force_usize(0);
+    let buf = root_ifd
+      .singlestrip_data(file.inner())
+      .map_err(|e| RawlerError::General(format!("Failed to get strip data: {}", e)))?;
+    let compression = root_ifd.get_entry(TiffCommonTag::Compression).ok_or("Missing tag")?.force_usize(0);
+    let width = fetch_tiff_tag!(root_ifd, TiffCommonTag::ImageWidth).force_usize(0);
+    let height = fetch_tiff_tag!(root_ifd, TiffCommonTag::ImageLength).force_usize(0);
     if compression == 1 {
-      return Ok(Some(DynamicImage::ImageRgb8(
+      Ok(Some(DynamicImage::ImageRgb8(
         ImageBuffer::<Rgb<u8>, Vec<u8>>::from_raw(width as u32, height as u32, buf).unwrap(),
-      )));
+      )))
     } else {
       let img = image::load_from_memory_with_format(&buf, image::ImageFormat::Jpeg).unwrap();
       Ok(Some(img))
     }
-  }
-
-  fn populate_dng_root(&mut self, root_ifd: &mut DirectoryWriter) -> Result<()> {
-    let ifd = self.tiff.root_ifd();
-    if let Some(orientation) = ifd.get_entry(ExifTag::Orientation) {
-      root_ifd.add_value(ExifTag::Orientation, orientation.value.clone())?;
-    }
-    if let Some(artist) = ifd.get_entry(ExifTag::Artist) {
-      root_ifd.add_value(ExifTag::Artist, artist.value.clone())?;
-    }
-    if let Some(copyright) = ifd.get_entry(ExifTag::Copyright) {
-      root_ifd.add_value(ExifTag::Copyright, copyright.value.clone())?;
-    }
-
-    if let Some(lens) = self.get_lens_description()? {
-      let lens_info: [Rational; 4] = [lens.focal_range[0], lens.focal_range[1], lens.aperture_range[0], lens.aperture_range[1]];
-      root_ifd.add_tag(DngTag::LensInfo, lens_info)?;
-    }
-
-    if let Some(unique_id) = self.makernote.as_ref().and_then(|mn| mn.get_entry(Cr2MakernoteTag::ImgUniqueID)) {
-      debug!("Unique id: {:?}", unique_id.value);
-    }
-
-    // TODO: add unique image id
-    /*
-    if let Some(unique_id) = self.image_unique_id {
-      // For CR3, we use the already included Makernote tag with unique image ID
-      root_ifd.add_tag(DngTag::RawDataUniqueID, unique_id)?;
-    }
-     */
-
-    // TODO: add GPS
-    /*
-    if let Some(origin_gps) = self.tiff.root_ifd().get_entry(555){
-      let gpsinfo_offset = {
-        let mut gps_ifd = root_ifd.new_directory();
-        let ifd = cmt4.root_ifd();
-        // Copy all GPS tags
-        for (tag, entry) in ifd.entries() {
-          match tag {
-            // Special handling for Exif.GPSInfo.GPSLatitude and Exif.GPSInfo.GPSLongitude.
-            // Exif.GPSInfo.GPSTimeStamp is wrong, too and can be fixed with the same logic.
-            // Canon CR3 contains only two rationals, but these tags are specified as a vector
-            // of three reationals (degrees, minutes, seconds).
-            // We fix this by extending with 0/1 as seconds value.
-            0x0002 | 0x0004 | 0x0007 => match &entry.value {
-              Value::Rational(v) => {
-                let fixed_value = if v.len() == 2 { vec![v[0], v[1], Rational::new(0, 1)] } else { v.clone() };
-                gps_ifd.add_value(*tag, Value::Rational(fixed_value))?;
-              }
-              _ => {
-                warn!("CR3: Exif.GPSInfo.GPSLatitude and Exif.GPSInfo.GPSLongitude expected to be of type RATIONAL, GPS data is ignored");
-              }
-            },
-            _ => {
-              gps_ifd.add_value(*tag, entry.value.clone())?;
-            }
-          }
-        }
-        gps_ifd.build()?
-      };
-      root_ifd.add_tag(ExifTag::GPSInfo, gpsinfo_offset as u32)?;
-    }
-     */
-    Ok(())
-  }
-
-  fn populate_dng_exif(&mut self, exif_ifd: &mut DirectoryWriter) -> Result<()> {
-    let ifd = &self.exif;
-    for (tag, entry) in ifd.entries().iter().filter(|(tag, _)| transfer_exif_tag(**tag)) {
-      exif_ifd.add_value(*tag, entry.value.clone())?;
-    }
-
-    if let Some(lens) = self.get_lens_description()? {
-      let lens_info: [Rational; 4] = [lens.focal_range[0], lens.focal_range[1], lens.aperture_range[0], lens.aperture_range[1]];
-      exif_ifd.add_tag(ExifTag::LensSpecification, lens_info)?;
-      exif_ifd.add_tag(ExifTag::LensMake, &lens.lens_make)?;
-      exif_ifd.add_tag(ExifTag::LensModel, &lens.lens_model)?;
-    }
-
-    Ok(())
   }
 }
 
@@ -411,7 +307,7 @@ impl<'a> Cr2Decoder<'a> {
         Ok(Some(2)) => Ok(Cr2Mode::Sraw2),
         Ok(None) => Ok(Cr2Mode::Raw),
         Ok(Some(v)) => Err(RawlerError::General(format!("Unknown sraw quality value found: {}", v))),
-        Err(_) => Err(RawlerError::General(format!("Unknown sraw quality value"))),
+        Err(_) => Err(RawlerError::General("Unknown sraw quality value".to_string())),
       }
     } else {
       Ok(Cr2Mode::Raw)
@@ -432,7 +328,6 @@ impl<'a> Cr2Decoder<'a> {
     let exif = Self::new_exif_ifd(file, &tiff, rawloader)?;
     let makernote = Self::new_makernote(file, &tiff, &exif, rawloader)?;
     let mode = Self::get_mode(&makernote)?;
-    let xpacket = Self::read_xpacket(file, &tiff, rawloader)?;
 
     debug!("sRaw quality: {:?}", mode);
     let mode_str = match mode {
@@ -443,10 +338,13 @@ impl<'a> Cr2Decoder<'a> {
 
     let camera = rawloader.check_supported_with_mode(tiff.root_ifd(), mode_str)?;
 
+    let xpacket = Self::read_xpacket(file, &tiff, rawloader)?;
+
     let model_id = makernote
       .as_ref()
-      .and_then(|mn| mn.get_entry(Cr2MakernoteTag::ModelId).and_then(|v| v.get_u32(0).transpose())).transpose()
-      .map_err(|_| RawlerError::General(format!("invalid model id")))?;
+      .and_then(|mn| mn.get_entry(Cr2MakernoteTag::ModelId).and_then(|v| v.get_u32(0).transpose()))
+      .transpose()
+      .map_err(|_| RawlerError::General("invalid model id".to_string()))?;
     Ok(Cr2Decoder {
       tiff,
       rawloader,
@@ -465,7 +363,7 @@ impl<'a> Cr2Decoder<'a> {
     if let Some(exif_ifd) = tiff
       .root_ifd()
       .sub_ifds()
-      .get(&LegacyTiffRootTag::ExifIFDPointer.into())
+      .get(&TiffCommonTag::ExifIFDPointer.into())
       .and_then(|subs| subs.get(0))
     {
       Ok(exif_ifd.clone())
@@ -482,52 +380,68 @@ impl<'a> Cr2Decoder<'a> {
      */
   }
 
+  fn get_focal_len(&self) -> Result<Option<Rational>> {
+    if let Some(Entry {
+      value: Value::Short(focal), ..
+    }) = self.makernote.as_ref().and_then(|mn| mn.get_entry(Cr2MakernoteTag::FocalLen))
+    {
+      return Ok(focal.get(1).map(|v| Rational::new(*v as u32, 1)));
+    }
+    Ok(None)
+  }
+
   /// Get lens description by analyzing TIFF tags and makernotes
   fn get_lens_description(&self) -> Result<Option<&'static LensDescription>> {
+    let exif_lens_name = if let Some(Entry {
+      value: Value::Ascii(lens_id), ..
+    }) = self.exif.get_entry(ExifTag::LensModel)
+    {
+      lens_id.strings().get(0)
+    } else {
+      None
+    };
     match self.makernote.as_ref().and_then(|mn| mn.get_entry(Cr2MakernoteTag::CameraSettings)) {
       Some(Entry {
         value: Value::Short(settings), ..
       }) => {
         let lens_info = settings[22];
         debug!("Lens Info tag: {}", lens_info);
-
-        if let Some(Entry {
-          value: Value::Ascii(lens_id), ..
-        }) = self.exif.get_entry(ExifTag::LensModel)
-        {
-          let lens_str = &lens_id.strings()[0];
-          debug!("Found LensStr: {}", lens_str);
-          let resolver = LensResolver::new().with_lens_model(lens_str);
-          return Ok(resolver.resolve());
-        }
+        let resolver = LensResolver::new()
+          .with_lens_keyname(exif_lens_name)
+          .with_lens_id((lens_info as u32, 0))
+          .with_focal_len(self.get_focal_len()?)
+          .with_mounts(&[CANON_CN_MOUNT.into(), CANON_EF_MOUNT.into()]);
+        return Ok(resolver.resolve());
       }
-      _ => {}
+      _ => {
+        log::warn!("Camera settings in makernote not found, no lens data available");
+      }
     }
-    return Ok(None);
+    Ok(None)
   }
 
   /// Parse the Canon makernote IFD
   fn new_makernote(file: &mut RawFile, tiff: &GenericTiffReader, exif_ifd: &IFD, _rawloader: &RawLoader) -> Result<Option<IFD>> {
-    if let Some(entry) = exif_ifd.get_entry(LegacyTiffRootTag::Makernote) {
+    if let Some(entry) = exif_ifd.get_entry(TiffCommonTag::Makernote) {
       let offset = entry.offset().expect("Makernote internal offset is not present but should be");
       let makernote = tiff.parse_ifd(file.inner(), offset as u32, 0, 0, exif_ifd.endian, &[])?;
       return Ok(Some(makernote));
     }
     info!("No makernote tag found");
-    return Ok(None);
+    Ok(None)
   }
 
   /// Read XMP data from TIFF entry
   /// This is useful as it stores the image rating (if present).
   fn read_xpacket(_file: &mut RawFile, tiff: &GenericTiffReader, _rawloader: &RawLoader) -> Result<Option<Vec<u8>>> {
-    if let Some(entry) = tiff.root_ifd().get_entry(LegacyTiffRootTag::Xmp) {
+    if let Some(entry) = tiff.root_ifd().get_entry(TiffCommonTag::Xmp) {
       if let Entry { value: Value::Byte(xmp), .. } = entry {
-        return Ok(Some(xmp.clone()));
+        Ok(Some(xmp.clone()))
       } else {
-        return Err(RawlerError::Unsupported(format!("Image has XMP data but invalid tag type!")));
+        Err("Image has XMP data but invalid tag type!".into())
       }
     } else {
-      return Ok(None);
+      Ok(None)
     }
   }
 
@@ -560,7 +474,7 @@ impl<'a> Cr2Decoder<'a> {
       {
         Some(fw) => {
           let str: String = fw.chars().filter(|c| c.is_ascii_digit() || c == &'.').collect();
-          let v: Vec<u8> = str.split(".").map(|v| v.parse().expect("Only digits here")).collect();
+          let v: Vec<u8> = str.split('.').map(|v| v.parse().expect("Only digits here")).collect();
           Some(v.iter().rev().enumerate().map(|(i, v)| 10_u32.pow(i as u32 * 3) * *v as u32).sum())
         }
         None => None,
@@ -609,20 +523,15 @@ impl<'a> Cr2Decoder<'a> {
     }
 
     // TODO: check if these tags belongs to RootIFD or makernote
-    if let Some(levels) = self.tiff.get_entry_raw(LegacyTiffRootTag::Cr2PowerShotWB, rawfile.inner())? {
+    if let Some(levels) = self.tiff.get_entry_raw(TiffCommonTag::Cr2PowerShotWB, rawfile.inner())? {
       Ok([
         levels.get_force_u32(3) as f32,
         levels.get_force_u32(2) as f32,
         levels.get_force_u32(4) as f32,
         NAN,
       ])
-    } else if let Some(levels) = self.tiff.get_entry(LegacyTiffRootTag::Cr2OldWB) {
-      Ok([
-        levels.force_f32(0),
-        levels.force_f32(1),
-        levels.force_f32(2),
-        NAN,
-      ])
+    } else if let Some(levels) = self.tiff.get_entry(TiffCommonTag::Cr2OldWB) {
+      Ok([levels.force_f32(0), levels.force_f32(1), levels.force_f32(2), NAN])
     } else {
       // At least the D2000 has no WB
       Ok([NAN, NAN, NAN, NAN])
@@ -647,7 +556,7 @@ impl<'a> Cr2Decoder<'a> {
         ]);
       }
     }
-    return Ok(cam.blacklevels);
+    Ok(cam.blacklevels)
   }
 
   /// Get the white level from COLORDATA tag
@@ -668,7 +577,7 @@ impl<'a> Cr2Decoder<'a> {
         ]);
       }
     }
-    return Ok(cam.whitelevels);
+    Ok(cam.whitelevels)
   }
 
   /// Get the SENSOR information, if available
@@ -684,14 +593,12 @@ impl<'a> Cr2Decoder<'a> {
           let top = v[6] as usize;
           let right = v[7] as usize;
           let bottom = v[8] as usize;
-          return Ok(Rect::new_with_points(Point::new(left, top), Point::new(right + 1, bottom + 1)));
+          Ok(Rect::new_with_points(Point::new(left, top), Point::new(right + 1, bottom + 1)))
         }
-        _ => {
-          return Err(RawlerError::General(format!("Makernote contains invalid type for SensorInfo tag")));
-        }
+        _ => Err(RawlerError::General("Makernote contains invalid type for SensorInfo tag".to_string())),
       }
     } else {
-      return Ok(Rect::new(Point::zero(), Dim2::new(width, height)));
+      Ok(Rect::new(Point::zero(), Dim2::new(width, height)))
     }
   }
 
@@ -872,13 +779,15 @@ impl<'a> Cr2Decoder<'a> {
   }
 }
 
+crate::tags::tiff_tag_enum!(Cr2MakernoteTag);
+
 /// Specific Canon CR2 Makernotes tags.
 /// These are only related to the Makernote IFD.
 #[derive(Debug, Copy, Clone, PartialEq, enumn::N)]
 #[repr(u16)]
 pub enum Cr2MakernoteTag {
   CameraSettings = 0x0001,
-  FocusInfo = 0x0002,
+  FocalLen = 0x0002,
   FlashInfo = 0x0003,
   ShotInfo = 0x0004,
   Panorama = 0x0005,
@@ -959,21 +868,5 @@ pub enum Cr2MakernoteTag {
   AFConfig = 0x4028,
   RawBurstModeRoll = 0x403f,
 }
-
-impl Into<u16> for Cr2MakernoteTag {
-  fn into(self) -> u16 {
-    self as u16
-  }
-}
-
-impl TryFrom<u16> for Cr2MakernoteTag {
-  type Error = String;
-
-  fn try_from(value: u16) -> std::result::Result<Self, Self::Error> {
-    Self::n(value).ok_or(format!("Unable to convert tag: {}, not defined in enum", value))
-  }
-}
-
-impl TiffTagEnum for Cr2MakernoteTag {}
 
 //const CR2_MODEL_40D: u32 = 0x80000190;

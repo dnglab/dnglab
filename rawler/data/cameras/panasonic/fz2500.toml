@@ -1,0 +1,19 @@
+make = "Panasonic"
+model = "DMC-FZ2500"
+clean_make = "Panasonic"
+clean_model = "DMC-FZ2500"
+
+model_aliases = [
+  ["DMC-FZ2000", "DMC-FZ2000"],
+]
+
+blackpoint = 141
+whitepoint = 4095
+color_pattern = "GBRG"
+
+[cameras.color_matrix]
+D65 = [0.7386, -0.2443, -0.0743, -0.3437, 1.1864, 0.1757, -0.0608, 0.166, 0.4766]
+
+[[cameras.modes]]
+mode = "3:2"
+active_area = [0, 0, 0, 0]

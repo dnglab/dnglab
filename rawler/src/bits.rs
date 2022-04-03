@@ -2,7 +2,7 @@
 // Copyright 2021 Daniel Vogelbacher <daniel@chaospixel.com>
 
 use byteorder::{BigEndian, ByteOrder, LittleEndian};
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 #[inline(always)]
 pub fn clampbits(val: i32, bits: u32) -> u16 {
@@ -34,27 +34,19 @@ pub enum Endian {
 }
 
 impl Default for Endian {
-    fn default() -> Self {
-        Self::Little
-    }
+  fn default() -> Self {
+    Self::Little
+  }
 }
 
 impl Endian {
   #[inline]
   pub fn big(&self) -> bool {
-    if let Self::Big = *self {
-      true
-    } else {
-      false
-    }
+    matches!(*self, Self::Big)
   }
   #[inline]
   pub fn little(&self) -> bool {
-    if let Self::Little = *self {
-      true
-    } else {
-      false
-    }
+    matches!(*self, Self::Little)
   }
 
   #[inline]
@@ -108,36 +100,47 @@ impl Endian {
   }
 }
 
-
-
-#[allow(non_snake_case)] #[inline] pub fn BEi32(buf: &[u8], pos: usize) -> i32 {
-  BigEndian::read_i32(&buf[pos..pos+4])
+#[allow(non_snake_case)]
+#[inline]
+pub fn BEi32(buf: &[u8], pos: usize) -> i32 {
+  BigEndian::read_i32(&buf[pos..pos + 4])
 }
 
-#[allow(non_snake_case)] #[inline] pub fn LEi32(buf: &[u8], pos: usize) -> i32 {
-  LittleEndian::read_i32(&buf[pos..pos+4])
+#[allow(non_snake_case)]
+#[inline]
+pub fn LEi32(buf: &[u8], pos: usize) -> i32 {
+  LittleEndian::read_i32(&buf[pos..pos + 4])
 }
 
-#[allow(non_snake_case)] #[inline] pub fn BEu32(buf: &[u8], pos: usize) -> u32 {
-  BigEndian::read_u32(&buf[pos..pos+4])
+#[allow(non_snake_case)]
+#[inline]
+pub fn BEu32(buf: &[u8], pos: usize) -> u32 {
+  BigEndian::read_u32(&buf[pos..pos + 4])
 }
 
-#[allow(non_snake_case)] #[inline] pub fn LEu32(buf: &[u8], pos: usize) -> u32 {
-  LittleEndian::read_u32(&buf[pos..pos+4])
+#[allow(non_snake_case)]
+#[inline]
+pub fn LEu32(buf: &[u8], pos: usize) -> u32 {
+  LittleEndian::read_u32(&buf[pos..pos + 4])
 }
 
-#[allow(non_snake_case)] #[inline] pub fn LEf32(buf: &[u8], pos: usize) -> f32 {
-  LittleEndian::read_f32(&buf[pos..pos+4])
+#[allow(non_snake_case)]
+#[inline]
+pub fn LEf32(buf: &[u8], pos: usize) -> f32 {
+  LittleEndian::read_f32(&buf[pos..pos + 4])
 }
 
-#[allow(non_snake_case)] #[inline] pub fn BEu16(buf: &[u8], pos: usize) -> u16 {
-  BigEndian::read_u16(&buf[pos..pos+2])
+#[allow(non_snake_case)]
+#[inline]
+pub fn BEu16(buf: &[u8], pos: usize) -> u16 {
+  BigEndian::read_u16(&buf[pos..pos + 2])
 }
 
-#[allow(non_snake_case)] #[inline] pub fn LEu16(buf: &[u8], pos: usize) -> u16 {
-  LittleEndian::read_u16(&buf[pos..pos+2])
+#[allow(non_snake_case)]
+#[inline]
+pub fn LEu16(buf: &[u8], pos: usize) -> u16 {
+  LittleEndian::read_u16(&buf[pos..pos + 2])
 }
-
 
 #[derive(Debug, Clone)]
 pub struct LookupTable {
@@ -146,24 +149,22 @@ pub struct LookupTable {
 
 impl LookupTable {
   pub fn new(table: &[u16]) -> LookupTable {
-    let mut tbl = vec![(0,0,0); table.len()];
+    let mut tbl = vec![(0, 0, 0); table.len()];
     for i in 0..table.len() {
       let center = table[i];
-      let lower = if i > 0 {table[i-1]} else {center};
-      let upper = if i < (table.len()-1) {table[i+1]} else {center};
-      let base = if center == 0 {0} else {center - ((upper - lower + 2) / 4)};
+      let lower = if i > 0 { table[i - 1] } else { center };
+      let upper = if i < (table.len() - 1) { table[i + 1] } else { center };
+      let base = if center == 0 { 0 } else { center - ((upper - lower + 2) / 4) };
       let delta = upper - lower;
       tbl[i] = (center, base, delta);
     }
-    LookupTable {
-      table: tbl,
-    }
+    LookupTable { table: tbl }
   }
 
-//  pub fn lookup(&self, value: u16) -> u16 {
-//    let (val, _, _) = self.table[value as usize];
-//    val
-//  }
+  //  pub fn lookup(&self, value: u16) -> u16 {
+  //    let (val, _, _) = self.table[value as usize];
+  //    val
+  //  }
 
   #[inline(always)]
   pub fn dither(&self, value: u16, rand: &mut u32) -> u16 {

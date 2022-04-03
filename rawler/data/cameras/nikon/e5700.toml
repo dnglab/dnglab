@@ -1,0 +1,12 @@
+make = "NIKON"
+model = "E5700"
+clean_make = "Nikon"
+clean_model = "E5700"
+blackpoint = 0
+whitepoint = 4095
+color_pattern = "RGEB"
+active_area = [0, 0, 0, 0]
+hints = ["coolpixsplit", "nowb"]
+
+[cameras.color_matrix]
+D65 = [-0.5368, 1.1478, 0.2368, 0.5537, -0.0113, 0.3148, -0.4969, 1.0021, 0.5782, 0.0778, 0.9028, 0.0211]

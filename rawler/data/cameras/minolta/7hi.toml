@@ -1,0 +1,11 @@
+make = "Minolta Co., Ltd."
+model = "DiMAGE 7Hi"
+clean_make = "Minolta"
+clean_model = "DiMAGE 7Hi"
+blackpoint = 0
+whitepoint = 3965
+color_pattern = "RGGB"
+active_area = [0, 0, 0, 0]
+
+[cameras.color_matrix]
+D65 = [1.1368, -0.3894, -0.1242, -0.6521, 1.4358, 0.2339, -0.2475, 0.3056, 0.7285]

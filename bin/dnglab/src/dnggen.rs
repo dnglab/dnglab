@@ -2,10 +2,11 @@
 // Copyright 2021 Daniel Vogelbacher <daniel@chaospixel.com>
 
 use core::panic;
-use std::path::{Path, PathBuf};
 use image::{imageops::FilterType, DynamicImage, ImageBuffer};
 use log::{debug, error, info};
+use rawler::exif::Exif;
 use rawler::formats::tiff::{Rational, SRational};
+use rawler::tags::{ExifGpsTag, TiffTag};
 use rawler::{
   decoders::RawDecodeParams,
   dng::rect_to_dng_area,
@@ -17,10 +18,11 @@ use rawler::{
 use rawler::{
   dng::{original_compress, original_digest, DNG_VERSION_V1_4},
   ljpeg92::LjpegCompressor,
-  tags::{DngTag, ExifTag, LegacyTiffRootTag},
+  tags::{DngTag, ExifTag, TiffCommonTag},
   RawImageData,
 };
 use rayon::prelude::*;
+use std::path::{Path, PathBuf};
 use std::{
   fs::File,
   io::{BufReader, BufWriter, Seek, Write},
@@ -36,6 +38,9 @@ pub enum DngError {
   #[error("{}", _0)]
   DecoderFail(String),
 
+  #[error("{}", what)]
+  Unsupported { what: String, model: String, make: String, mode: String },
+
   #[error("{}", _0)]
   TiffFail(#[from] TiffError),
 }
@@ -48,7 +53,11 @@ impl From<String> for DngError {
 
 impl From<RawlerError> for DngError {
   fn from(err: RawlerError) -> Self {
-    Self::DecoderFail(err.to_string()) // TODO better handling
+    match err {
+      RawlerError::Unsupported { what, model, make, mode } => Self::Unsupported { what, model, make, mode },
+      RawlerError::General(what) => Self::DecoderFail(what),
+      RawlerError::IOErr(what) => Self::DecoderFail(what),
+    }
   }
 }
 
@@ -85,16 +94,14 @@ pub struct ConvertParams {
 pub fn raw_to_dng(path: &Path, raw_file: File, dng_file: &mut File, orig_filename: String, params: &ConvertParams) -> Result<()> {
   let mut rawfile = RawFile::new(PathBuf::from(path), BufReader::new(raw_file));
   let mut output = BufWriter::new(dng_file);
-
-  raw_to_dng_internal(&mut rawfile, &mut output, orig_filename, &params).unwrap();
-
+  raw_to_dng_internal(&mut rawfile, &mut output, orig_filename, params)?;
   Ok(())
 }
 
 /// Convert a raw input file into DNG
 pub fn raw_to_dng_internal<W: Write + Seek + Send>(rawfile: &mut RawFile, output: &mut W, orig_filename: String, params: &ConvertParams) -> Result<()> {
   // Get decoder or return
-  let mut decoder = rawler::get_decoder(rawfile).map_err(|e| DngError::DecoderFail(format!("failed to get decoder: {:?}", e)))?;
+  let decoder = rawler::get_decoder(rawfile)?;
 
   // Compress original if requested
   let orig_compress_handle = if params.embedded {
@@ -108,12 +115,13 @@ pub fn raw_to_dng_internal<W: Write + Seek + Send>(rawfile: &mut RawFile, output
     None
   };
 
-  decoder.decode_metadata(rawfile)?;
+  //decoder.decode_metadata(rawfile)?;
 
   let raw_params = RawDecodeParams { image_index: params.index };
 
   info!("Raw image count: {}", decoder.raw_image_count()?);
-  let rawimage = decoder.raw_image(rawfile, raw_params, false)?;
+  let rawimage = decoder.raw_image(rawfile, raw_params.clone(), false)?;
+  let metadata = decoder.raw_metadata(rawfile, raw_params.clone())?;
 
   let full_img = if params.preview || params.thumbnail {
     let image = match decoder.full_image(rawfile) {
@@ -135,7 +143,7 @@ pub fn raw_to_dng_internal<W: Write + Seek + Send>(rawfile: &mut RawFile, output
         RawImageData::Integer(buf) => buf,
         RawImageData::Float(_) => todo!(),
       };
-      let (srgbf, dim) = develop_raw_srgb(&buf, &params)?;
+      let (srgbf, dim) = develop_raw_srgb(buf, &params)?;
       let output = rescale_f32_to_u16(&srgbf, 0, u16::MAX);
       let img = DynamicImage::ImageRgb16(ImageBuffer::from_raw(dim.w as u32, dim.h as u32, output).unwrap());
       Some(img)
@@ -151,44 +159,53 @@ pub fn raw_to_dng_internal<W: Write + Seek + Send>(rawfile: &mut RawFile, output
 
   let wb_coeff = wbcoeff_to_tiff_value(&rawimage.wb_coeffs);
 
-
   let mut dng = TiffWriter::new(output).unwrap();
   let mut root_ifd = dng.new_directory();
 
-  root_ifd.add_tag(LegacyTiffRootTag::NewSubFileType, 1 as u16)?;
+  fill_exif_root(&mut root_ifd, &metadata.exif)?;
+
+  if let Some(id) = &metadata.unique_image_id {
+    root_ifd.add_tag(DngTag::RawDataUniqueID, id.to_le_bytes())?;
+  }
+
+  // Add XPACKET (XMP) information
+  if let Some(xpacket) = decoder.xpacket(rawfile, raw_params)? {
+    root_ifd.add_tag(ExifTag::ApplicationNotes, &xpacket[..])?;
+  }
+
+  root_ifd.add_tag(TiffCommonTag::NewSubFileType, 1_u16)?;
   if let Some(full_img) = &full_img {
     if params.thumbnail {
-      dng_put_thumbnail(&mut root_ifd, &full_img).unwrap();
+      dng_put_thumbnail(&mut root_ifd, full_img).unwrap();
     }
   }
 
   if let Some(artist) = &params.artist {
-    root_ifd.add_tag(LegacyTiffRootTag::Artist, artist)?;
+    root_ifd.add_tag(TiffCommonTag::Artist, artist)?;
   }
-  root_ifd.add_tag(LegacyTiffRootTag::Software, &params.software)?;
+  root_ifd.add_tag(TiffCommonTag::Software, &params.software)?;
   root_ifd.add_tag(DngTag::DNGVersion, &DNG_VERSION_V1_4[..])?;
   root_ifd.add_tag(DngTag::DNGBackwardVersion, &DNG_VERSION_V1_4[..])?;
-  root_ifd.add_tag(LegacyTiffRootTag::Make, rawimage.make.as_str())?;
-  root_ifd.add_tag(LegacyTiffRootTag::Model, rawimage.clean_model.as_str())?;
-  let uq_model = String::from(format!("{} {}", rawimage.clean_make, rawimage.clean_model));
+  root_ifd.add_tag(TiffCommonTag::Make, rawimage.make.as_str())?;
+  root_ifd.add_tag(TiffCommonTag::Model, rawimage.clean_model.as_str())?;
+  let uq_model = format!("{} {}", rawimage.clean_make, rawimage.clean_model);
   root_ifd.add_tag(DngTag::UniqueCameraModel, uq_model.as_str())?;
   root_ifd.add_tag(ExifTag::ModifyDate, chrono::Local::now().format("%Y:%m:%d %H:%M:%S").to_string())?;
 
   // Add matrix and illumninant
-
   for (i, (ill, matrix)) in rawimage.color_matrix.iter().enumerate() {
     let dng_matrix = matrix_to_tiff_value(matrix, 10_000);
-    let dng_matrix_ill: u16 = ill.clone().into();
+    let dng_matrix_ill: u16 = (*ill).into();
     match i {
-      0 => {      
+      0 => {
         root_ifd.add_tag(DngTag::CalibrationIlluminant1, dng_matrix_ill)?;
         root_ifd.add_tag(DngTag::ColorMatrix1, &dng_matrix[..])?;
-      },
+      }
       1 => {
         root_ifd.add_tag(DngTag::CalibrationIlluminant2, dng_matrix_ill)?;
         root_ifd.add_tag(DngTag::ColorMatrix2, &dng_matrix[..])?;
-      },
-      _ => unreachable!()
+      }
+      _ => unreachable!(),
     }
   }
 
@@ -208,16 +225,11 @@ pub fn raw_to_dng_internal<W: Write + Seek + Send>(rawfile: &mut RawFile, output
     let mut exif_ifd = root_ifd.new_directory();
     // Add EXIF version 0220
     exif_ifd.add_tag_undefined(ExifTag::ExifVersion, vec![48, 50, 50, 48])?;
-    decoder.populate_dng_exif(&mut exif_ifd).unwrap();
+    fill_exif_ifd(&mut exif_ifd, &metadata.exif)?;
+    //decoder.populate_dng_exif(&mut exif_ifd).unwrap();
     exif_ifd.build()?
   };
-  root_ifd.add_tag(LegacyTiffRootTag::ExifIFDPointer, exif_offset)?;
-
-  // Add XPACKET (XMP) information
-  if let Some(xpacket) = decoder.xpacket(rawfile) {
-    //exif_ifd.write_tag_u8_array(ExifTag::ApplicationNotes, &xpacket)?;
-    root_ifd.add_tag(ExifTag::ApplicationNotes, &xpacket[..])?;
-  }
+  root_ifd.add_tag(TiffCommonTag::ExifIFDPointer, exif_offset)?;
 
   let mut sub_ifds = Vec::new();
 
@@ -234,7 +246,7 @@ pub fn raw_to_dng_internal<W: Write + Seek + Send>(rawfile: &mut RawFile, output
       // Add preview image
       let preview_offset = {
         let mut prev_image_ifd = root_ifd.new_directory();
-        dng_put_preview(&mut prev_image_ifd, &full_img)?;
+        dng_put_preview(&mut prev_image_ifd, full_img)?;
         prev_image_ifd.build()?
       };
       sub_ifds.push(preview_offset);
@@ -242,15 +254,137 @@ pub fn raw_to_dng_internal<W: Write + Seek + Send>(rawfile: &mut RawFile, output
   }
 
   // Add SubIFDs
-  root_ifd.add_tag(LegacyTiffRootTag::SubIFDs, &sub_ifds)?;
+  root_ifd.add_tag(TiffCommonTag::SubIFDs, &sub_ifds)?;
 
   // Add decoder specific entries to DNG root
   // This may override previous entries!
-  decoder.populate_dng_root(&mut root_ifd).unwrap();
+  //decoder.populate_dng_root(&mut root_ifd).unwrap();
 
   // Finalize DNG file by updating IFD0 offset
   let ifd0_offset = root_ifd.build()?;
   dng.build(ifd0_offset)?;
+
+  Ok(())
+}
+
+fn transfer_entry<T, V>(raw_ifd: &mut DirectoryWriter, tag: T, entry: &Option<V>) -> Result<()>
+where
+  T: TiffTag,
+  V: Into<Value> + Clone,
+{
+  if let Some(entry) = entry {
+    raw_ifd.add_tag(tag, entry.clone())?;
+  }
+  Ok(())
+}
+
+fn transfer_entry_undefined<T>(raw_ifd: &mut DirectoryWriter, tag: T, entry: &Option<Vec<u8>>) -> Result<()>
+where
+  T: TiffTag,
+{
+  if let Some(entry) = entry {
+    raw_ifd.add_tag_undefined(tag, entry.clone())?;
+  }
+  Ok(())
+}
+
+fn fill_exif_root(raw_ifd: &mut DirectoryWriter, exif: &Exif) -> Result<()> {
+  transfer_entry(raw_ifd, ExifTag::Orientation, &exif.orientation)?;
+  transfer_entry(raw_ifd, ExifTag::ModifyDate, &exif.modify_date)?;
+  transfer_entry(raw_ifd, ExifTag::Copyright, &exif.copyright)?;
+  transfer_entry(raw_ifd, ExifTag::Artist, &exif.artist)?;
+
+  // DNG has a lens info tag that is identical to the LensSpec tag in EXIF IFD
+  transfer_entry(raw_ifd, DngTag::LensInfo, &exif.lens_spec)?;
+
+  if let Some(gps) = &exif.gps {
+    let gps_offset = {
+      let mut gps_ifd = raw_ifd.new_directory();
+      transfer_entry(&mut gps_ifd, ExifGpsTag::GPSVersionID, &gps.gps_version_id)?;
+      transfer_entry(&mut gps_ifd, ExifGpsTag::GPSLatitudeRef, &gps.gps_latitude_ref)?;
+      transfer_entry(&mut gps_ifd, ExifGpsTag::GPSLatitude, &gps.gps_latitude)?;
+      transfer_entry(&mut gps_ifd, ExifGpsTag::GPSLongitudeRef, &gps.gps_longitude_ref)?;
+      transfer_entry(&mut gps_ifd, ExifGpsTag::GPSLongitude, &gps.gps_longitude)?;
+      transfer_entry(&mut gps_ifd, ExifGpsTag::GPSAltitudeRef, &gps.gps_altitude_ref)?;
+      transfer_entry(&mut gps_ifd, ExifGpsTag::GPSAltitude, &gps.gps_altitude)?;
+      transfer_entry(&mut gps_ifd, ExifGpsTag::GPSTimeStamp, &gps.gps_timestamp)?;
+      transfer_entry(&mut gps_ifd, ExifGpsTag::GPSSatellites, &gps.gps_satellites)?;
+      transfer_entry(&mut gps_ifd, ExifGpsTag::GPSStatus, &gps.gps_status)?;
+      transfer_entry(&mut gps_ifd, ExifGpsTag::GPSMeasureMode, &gps.gps_measure_mode)?;
+      transfer_entry(&mut gps_ifd, ExifGpsTag::GPSDOP, &gps.gps_dop)?;
+      transfer_entry(&mut gps_ifd, ExifGpsTag::GPSSpeedRef, &gps.gps_speed_ref)?;
+      transfer_entry(&mut gps_ifd, ExifGpsTag::GPSSpeed, &gps.gps_speed)?;
+      transfer_entry(&mut gps_ifd, ExifGpsTag::GPSTrackRef, &gps.gps_track_ref)?;
+      transfer_entry(&mut gps_ifd, ExifGpsTag::GPSTrack, &gps.gps_track)?;
+      transfer_entry(&mut gps_ifd, ExifGpsTag::GPSImgDirectionRef, &gps.gps_img_direction_ref)?;
+      transfer_entry(&mut gps_ifd, ExifGpsTag::GPSImgDirection, &gps.gps_img_direction)?;
+      transfer_entry(&mut gps_ifd, ExifGpsTag::GPSMapDatum, &gps.gps_map_datum)?;
+      transfer_entry(&mut gps_ifd, ExifGpsTag::GPSDestLatitudeRef, &gps.gps_dest_latitude_ref)?;
+      transfer_entry(&mut gps_ifd, ExifGpsTag::GPSDestLatitude, &gps.gps_dest_latitude)?;
+      transfer_entry(&mut gps_ifd, ExifGpsTag::GPSDestLongitudeRef, &gps.gps_dest_longitude_ref)?;
+      transfer_entry(&mut gps_ifd, ExifGpsTag::GPSDestLongitude, &gps.gps_dest_longitude)?;
+      transfer_entry(&mut gps_ifd, ExifGpsTag::GPSDestBearingRef, &gps.gps_dest_bearing_ref)?;
+      transfer_entry(&mut gps_ifd, ExifGpsTag::GPSDestBearing, &gps.gps_dest_bearing)?;
+      transfer_entry(&mut gps_ifd, ExifGpsTag::GPSDestDistanceRef, &gps.gps_dest_distance_ref)?;
+      transfer_entry(&mut gps_ifd, ExifGpsTag::GPSDestDistance, &gps.gps_dest_distance)?;
+      transfer_entry_undefined(&mut gps_ifd, ExifGpsTag::GPSProcessingMethod, &gps.gps_processing_method)?;
+      transfer_entry_undefined(&mut gps_ifd, ExifGpsTag::GPSAreaInformation, &gps.gps_area_information)?;
+      transfer_entry(&mut gps_ifd, ExifGpsTag::GPSDateStamp, &gps.gps_date_stamp)?;
+      transfer_entry(&mut gps_ifd, ExifGpsTag::GPSDifferential, &gps.gps_differential)?;
+      transfer_entry(&mut gps_ifd, ExifGpsTag::GPSHPositioningError, &gps.gps_h_positioning_error)?;
+      if gps_ifd.entry_count() > 0 {
+        Some(gps_ifd.build()?)
+      } else {
+        None
+      }
+    };
+    if let Some(gps_offset) = gps_offset {
+      raw_ifd.add_tag(ExifTag::GPSInfo, [gps_offset])?;
+    }
+  }
+
+  Ok(())
+}
+
+fn fill_exif_ifd(exif_ifd: &mut DirectoryWriter, exif: &Exif) -> Result<()> {
+  transfer_entry(exif_ifd, ExifTag::FNumber, &exif.fnumber)?;
+  transfer_entry(exif_ifd, ExifTag::ApertureValue, &exif.aperture_value)?;
+  transfer_entry(exif_ifd, ExifTag::BrightnessValue, &exif.brightness_value)?;
+  transfer_entry(exif_ifd, ExifTag::RecommendedExposureIndex, &exif.recommended_exposure_index)?;
+  transfer_entry(exif_ifd, ExifTag::ExposureTime, &exif.exposure_time)?;
+  transfer_entry(exif_ifd, ExifTag::ISOSpeedRatings, &exif.iso_speed_ratings)?;
+  transfer_entry(exif_ifd, ExifTag::ISOSpeed, &exif.iso_speed)?;
+  transfer_entry(exif_ifd, ExifTag::SensitivityType, &exif.sensitivity_type)?;
+  transfer_entry(exif_ifd, ExifTag::ExposureProgram, &exif.exposure_program)?;
+  transfer_entry(exif_ifd, ExifTag::TimeZoneOffset, &exif.timezone_offset)?;
+  transfer_entry(exif_ifd, ExifTag::DateTimeOriginal, &exif.date_time_original)?;
+  transfer_entry(exif_ifd, ExifTag::CreateDate, &exif.create_date)?;
+  transfer_entry(exif_ifd, ExifTag::OffsetTime, &exif.offset_time)?;
+  transfer_entry(exif_ifd, ExifTag::OffsetTimeOriginal, &exif.offset_time_original)?;
+  transfer_entry(exif_ifd, ExifTag::OffsetTimeDigitized, &exif.offset_time_digitized)?;
+  transfer_entry(exif_ifd, ExifTag::SubSecTime, &exif.sub_sec_time)?;
+  transfer_entry(exif_ifd, ExifTag::SubSecTimeOriginal, &exif.sub_sec_time_original)?;
+  transfer_entry(exif_ifd, ExifTag::SubSecTimeDigitized, &exif.sub_sec_time_digitized)?;
+  transfer_entry(exif_ifd, ExifTag::ShutterSpeedValue, &exif.shutter_speed_value)?;
+  transfer_entry(exif_ifd, ExifTag::MaxApertureValue, &exif.max_aperture_value)?;
+  transfer_entry(exif_ifd, ExifTag::SubjectDistance, &exif.subject_distance)?;
+  transfer_entry(exif_ifd, ExifTag::MeteringMode, &exif.metering_mode)?;
+  transfer_entry(exif_ifd, ExifTag::LightSource, &exif.light_source)?;
+  transfer_entry(exif_ifd, ExifTag::Flash, &exif.flash)?;
+  transfer_entry(exif_ifd, ExifTag::FocalLength, &exif.focal_length)?;
+  transfer_entry(exif_ifd, ExifTag::ImageNumber, &exif.image_number)?;
+  transfer_entry(exif_ifd, ExifTag::ColorSpace, &exif.color_space)?;
+  transfer_entry(exif_ifd, ExifTag::FlashEnergy, &exif.flash_energy)?;
+  transfer_entry(exif_ifd, ExifTag::ExposureMode, &exif.exposure_mode)?;
+  transfer_entry(exif_ifd, ExifTag::WhiteBalance, &exif.white_balance)?;
+  transfer_entry(exif_ifd, ExifTag::SceneCaptureType, &exif.scene_capture_type)?;
+  transfer_entry(exif_ifd, ExifTag::SubjectDistanceRange, &exif.subject_distance_range)?;
+  transfer_entry(exif_ifd, ExifTag::OwnerName, &exif.owner_name)?;
+  transfer_entry(exif_ifd, ExifTag::SerialNumber, &exif.serial_number)?;
+  transfer_entry(exif_ifd, ExifTag::LensSerialNumber, &exif.lens_serial_number)?;
+  transfer_entry(exif_ifd, ExifTag::LensSpecification, &exif.lens_spec)?;
+  transfer_entry(exif_ifd, ExifTag::LensMake, &exif.lens_make)?;
+  transfer_entry(exif_ifd, ExifTag::LensModel, &exif.lens_model)?;
 
   Ok(())
 }
@@ -269,9 +403,9 @@ fn dng_put_raw(raw_ifd: &mut DirectoryWriter<'_, '_>, rawimage: &RawImage, param
     rawimage.active_area
   };
 
-  raw_ifd.add_tag(LegacyTiffRootTag::NewSubFileType, 0 as u16)?; // Raw
-  raw_ifd.add_tag(LegacyTiffRootTag::ImageWidth, rawimage.width as u32)?;
-  raw_ifd.add_tag(LegacyTiffRootTag::ImageLength, rawimage.height as u32)?;
+  raw_ifd.add_tag(TiffCommonTag::NewSubFileType, 0_u16)?; // Raw
+  raw_ifd.add_tag(TiffCommonTag::ImageWidth, rawimage.width as u32)?;
+  raw_ifd.add_tag(TiffCommonTag::ImageLength, rawimage.height as u32)?;
   if let Some(area) = active_area {
     let data = rect_to_dng_area(&area);
     raw_ifd.add_tag(DngTag::ActiveArea, data)?;
@@ -293,15 +427,15 @@ fn dng_put_raw(raw_ifd: &mut DirectoryWriter<'_, '_>, rawimage: &RawImage, param
   match rawimage.cpp {
     1 => {
       if !rawimage.blackareas.is_empty() {
-        let data: Vec<u16> = rawimage.blackareas.iter().map(|area| rect_to_dng_area(area)).flatten().collect();
+        let data: Vec<u16> = rawimage.blackareas.iter().flat_map(rect_to_dng_area).collect();
         raw_ifd.add_tag(DngTag::MaskedAreas, &data)?;
       }
 
       raw_ifd.add_tag(DngTag::BlackLevel, black_level)?;
       raw_ifd.add_tag(DngTag::BlackLevelRepeatDim, [2_u16, 2_u16])?;
-      raw_ifd.add_tag(LegacyTiffRootTag::PhotometricInt, PhotometricInterpretation::CFA)?;
-      raw_ifd.add_tag(LegacyTiffRootTag::SamplesPerPixel, 1_u16)?;
-      raw_ifd.add_tag(LegacyTiffRootTag::BitsPerSample, [16_u16])?;
+      raw_ifd.add_tag(TiffCommonTag::PhotometricInt, PhotometricInterpretation::CFA)?;
+      raw_ifd.add_tag(TiffCommonTag::SamplesPerPixel, 1_u16)?;
+      raw_ifd.add_tag(TiffCommonTag::BitsPerSample, [16_u16])?;
 
       let cfa = if let Some(area) = active_area {
         info!("CFA pattern is shifted as active area is not at CFA boundary"); // TODO false
@@ -310,12 +444,12 @@ fn dng_put_raw(raw_ifd: &mut DirectoryWriter<'_, '_>, rawimage: &RawImage, param
         rawimage.cfa.clone()
       };
 
-      raw_ifd.add_tag(LegacyTiffRootTag::CFARepeatPatternDim, [cfa.width as u16, cfa.height as u16])?;
-      raw_ifd.add_tag(LegacyTiffRootTag::CFAPattern, &cfa.flat_pattern()[..])?;
+      raw_ifd.add_tag(TiffCommonTag::CFARepeatPatternDim, [cfa.width as u16, cfa.height as u16])?;
+      raw_ifd.add_tag(TiffCommonTag::CFAPattern, &cfa.flat_pattern()[..])?;
 
       //raw_ifd.add_tag(DngTag::CFAPlaneColor, [0u8, 1u8, 2u8])?; // RGB
 
-      raw_ifd.add_tag(DngTag::CFALayout, 1 as u16)?; // Square layout
+      raw_ifd.add_tag(DngTag::CFALayout, 1_u16)?; // Square layout
 
       //raw_ifd.add_tag(LegacyTiffRootTag::CFAPattern, [0u8, 1u8, 1u8, 2u8])?; // RGGB
       //raw_ifd.add_tag(LegacyTiffRootTag::CFARepeatPatternDim, [2u16, 2u16])?;
@@ -324,13 +458,13 @@ fn dng_put_raw(raw_ifd: &mut DirectoryWriter<'_, '_>, rawimage: &RawImage, param
     3 => {
       raw_ifd.add_tag(DngTag::BlackLevel, &black_level[0..3])?;
       raw_ifd.add_tag(DngTag::BlackLevelRepeatDim, [1_u16, 1_u16])?;
-      raw_ifd.add_tag(LegacyTiffRootTag::PhotometricInt, PhotometricInterpretation::LinearRaw)?;
-      raw_ifd.add_tag(LegacyTiffRootTag::SamplesPerPixel, 3_u16)?;
-      raw_ifd.add_tag(LegacyTiffRootTag::BitsPerSample, [16_u16, 16_u16, 16_u16])?;
+      raw_ifd.add_tag(TiffCommonTag::PhotometricInt, PhotometricInterpretation::LinearRaw)?;
+      raw_ifd.add_tag(TiffCommonTag::SamplesPerPixel, 3_u16)?;
+      raw_ifd.add_tag(TiffCommonTag::BitsPerSample, [16_u16, 16_u16, 16_u16])?;
 
       //raw_ifd.add_tag(DngTag::CFAPlaneColor, [1u8, 2u8, 0u8])?; //
     }
-    cpp @ _ => {
+    cpp => {
       panic!("Unsupported cpp: {}", cpp);
     }
   }
@@ -342,11 +476,11 @@ fn dng_put_raw(raw_ifd: &mut DirectoryWriter<'_, '_>, rawimage: &RawImage, param
 
   match params.compression {
     DngCompression::Uncompressed => {
-      raw_ifd.add_tag(LegacyTiffRootTag::Compression, CompressionMethod::None)?;
+      raw_ifd.add_tag(TiffCommonTag::Compression, CompressionMethod::None)?;
       dng_put_raw_uncompressed(raw_ifd, rawimage)?;
     }
     DngCompression::Lossless => {
-      raw_ifd.add_tag(LegacyTiffRootTag::Compression, CompressionMethod::ModernJPEG)?;
+      raw_ifd.add_tag(TiffCommonTag::Compression, CompressionMethod::ModernJPEG)?;
       dng_put_raw_ljpeg(raw_ifd, rawimage, params.predictor)?;
     }
   }
@@ -384,7 +518,7 @@ fn dng_put_raw_ljpeg(raw_ifd: &mut DirectoryWriter<'_, '_>, rawimage: &RawImage,
         1
       };
 
-      let tiled_data: Vec<Vec<u16>> = ImageTiler::new(&data, rawimage.width, rawimage.height, rawimage.cpp, tile_w, tile_h).collect();
+      let tiled_data: Vec<Vec<u16>> = ImageTiler::new(data, rawimage.width, rawimage.height, rawimage.cpp, tile_w, tile_h).collect();
 
       let j_height = tile_h;
       let (j_width, components) = if rawimage.cpp == 3 {
@@ -422,12 +556,12 @@ fn dng_put_raw_ljpeg(raw_ifd: &mut DirectoryWriter<'_, '_>, rawimage: &RawImage,
   });
 
   //let offs = raw_ifd.write_data(&lj92_data)?;
-  raw_ifd.add_tag(LegacyTiffRootTag::TileOffsets, &tile_offsets)?;
-  raw_ifd.add_tag(LegacyTiffRootTag::TileByteCounts, &tile_sizes)?;
+  raw_ifd.add_tag(TiffCommonTag::TileOffsets, &tile_offsets)?;
+  raw_ifd.add_tag(TiffCommonTag::TileByteCounts, &tile_sizes)?;
   //raw_ifd.add_tag(LegacyTiffRootTag::TileWidth, lj92_data.1 as u16)?; // FIXME
   //raw_ifd.add_tag(LegacyTiffRootTag::TileLength, lj92_data.2 as u16)?;
-  raw_ifd.add_tag(LegacyTiffRootTag::TileWidth, tile_w as u16)?; // FIXME
-  raw_ifd.add_tag(LegacyTiffRootTag::TileLength, tile_h as u16)?;
+  raw_ifd.add_tag(TiffCommonTag::TileWidth, tile_w as u16)?; // FIXME
+  raw_ifd.add_tag(TiffCommonTag::TileLength, tile_h as u16)?;
 
   Ok(())
 }
@@ -453,9 +587,9 @@ fn dng_put_raw_uncompressed(raw_ifd: &mut DirectoryWriter<'_, '_>, rawimage: &Ra
         strip_rows.push((strip.len() / (rawimage.width * rawimage.cpp)) as u32);
       }
 
-      raw_ifd.add_tag(LegacyTiffRootTag::StripOffsets, &strip_offsets)?;
-      raw_ifd.add_tag(LegacyTiffRootTag::StripByteCounts, &strip_sizes)?;
-      raw_ifd.add_tag(LegacyTiffRootTag::RowsPerStrip, &strip_rows)?;
+      raw_ifd.add_tag(TiffCommonTag::StripOffsets, &strip_offsets)?;
+      raw_ifd.add_tag(TiffCommonTag::StripByteCounts, &strip_sizes)?;
+      raw_ifd.add_tag(TiffCommonTag::RowsPerStrip, &strip_rows)?;
     }
     RawImageData::Float(ref _data) => {
       panic!("invalid format");
@@ -469,22 +603,22 @@ fn dng_put_raw_uncompressed(raw_ifd: &mut DirectoryWriter<'_, '_>, rawimage: &Ra
 fn dng_put_thumbnail(ifd: &mut DirectoryWriter<'_, '_>, img: &DynamicImage) -> Result<()> {
   let thumb_img = img.resize(240, 120, FilterType::Nearest).to_rgb8();
 
-  ifd.add_tag(LegacyTiffRootTag::ImageWidth, thumb_img.width() as u32)?;
-  ifd.add_tag(LegacyTiffRootTag::ImageLength, thumb_img.height() as u32)?;
-  ifd.add_tag(LegacyTiffRootTag::Compression, CompressionMethod::None)?;
-  ifd.add_tag(LegacyTiffRootTag::BitsPerSample, 8_u16)?;
-  ifd.add_tag(LegacyTiffRootTag::SampleFormat, [1_u16, 1, 1])?;
-  ifd.add_tag(LegacyTiffRootTag::PhotometricInt, PhotometricInterpretation::RGB)?;
-  ifd.add_tag(LegacyTiffRootTag::SamplesPerPixel, 3_u16)?;
+  ifd.add_tag(TiffCommonTag::ImageWidth, thumb_img.width() as u32)?;
+  ifd.add_tag(TiffCommonTag::ImageLength, thumb_img.height() as u32)?;
+  ifd.add_tag(TiffCommonTag::Compression, CompressionMethod::None)?;
+  ifd.add_tag(TiffCommonTag::BitsPerSample, 8_u16)?;
+  ifd.add_tag(TiffCommonTag::SampleFormat, [1_u16, 1, 1])?;
+  ifd.add_tag(TiffCommonTag::PhotometricInt, PhotometricInterpretation::RGB)?;
+  ifd.add_tag(TiffCommonTag::SamplesPerPixel, 3_u16)?;
   //ifd.add_tag(TiffRootTag::XResolution, Rational { n: 1, d: 1 })?;
   //ifd.add_tag(TiffRootTag::YResolution, Rational { n: 1, d: 1 })?;
   //ifd.add_tag(TiffRootTag::ResolutionUnit, ResolutionUnit::None.to_u16())?;
 
   let offset = ifd.write_data(&thumb_img)?;
 
-  ifd.add_tag(LegacyTiffRootTag::StripOffsets, offset)?;
-  ifd.add_tag(LegacyTiffRootTag::StripByteCounts, thumb_img.len() as u32)?;
-  ifd.add_tag(LegacyTiffRootTag::RowsPerStrip, thumb_img.height() as u32)?;
+  ifd.add_tag(TiffCommonTag::StripOffsets, offset)?;
+  ifd.add_tag(TiffCommonTag::StripByteCounts, thumb_img.len() as u32)?;
+  ifd.add_tag(TiffCommonTag::RowsPerStrip, thumb_img.height() as u32)?;
 
   Ok(())
 }
@@ -494,15 +628,15 @@ fn dng_put_preview(ifd: &mut DirectoryWriter<'_, '_>, img: &DynamicImage) -> Res
   let preview_img = DynamicImage::ImageRgb8(img.resize(1024, 768, FilterType::Nearest).to_rgb8());
   debug!("preview downscale: {} s", now.elapsed().as_secs_f32());
 
-  ifd.add_tag(LegacyTiffRootTag::NewSubFileType, 1 as u16)?;
-  ifd.add_tag(LegacyTiffRootTag::ImageWidth, preview_img.width() as u32)?;
-  ifd.add_tag(LegacyTiffRootTag::ImageLength, preview_img.height() as u32)?;
-  ifd.add_tag(LegacyTiffRootTag::Compression, CompressionMethod::ModernJPEG)?;
-  ifd.add_tag(LegacyTiffRootTag::BitsPerSample, 8_u16)?;
-  ifd.add_tag(LegacyTiffRootTag::SampleFormat, [1_u16, 1, 1])?;
-  ifd.add_tag(LegacyTiffRootTag::PhotometricInt, PhotometricInterpretation::YCbCr)?;
-  ifd.add_tag(LegacyTiffRootTag::RowsPerStrip, preview_img.height() as u32)?;
-  ifd.add_tag(LegacyTiffRootTag::SamplesPerPixel, 3_u16)?;
+  ifd.add_tag(TiffCommonTag::NewSubFileType, 1_u16)?;
+  ifd.add_tag(TiffCommonTag::ImageWidth, preview_img.width() as u32)?;
+  ifd.add_tag(TiffCommonTag::ImageLength, preview_img.height() as u32)?;
+  ifd.add_tag(TiffCommonTag::Compression, CompressionMethod::ModernJPEG)?;
+  ifd.add_tag(TiffCommonTag::BitsPerSample, 8_u16)?;
+  ifd.add_tag(TiffCommonTag::SampleFormat, [1_u16, 1, 1])?;
+  ifd.add_tag(TiffCommonTag::PhotometricInt, PhotometricInterpretation::YCbCr)?;
+  ifd.add_tag(TiffCommonTag::RowsPerStrip, preview_img.height() as u32)?;
+  ifd.add_tag(TiffCommonTag::SamplesPerPixel, 3_u16)?;
   ifd.add_tag(DngTag::PreviewColorSpace, PreviewColorSpace::SRgb)?; // ??
 
   //ifd.add_tag(TiffRootTag::XResolution, Rational { n: 1, d: 1 })?;
@@ -521,8 +655,8 @@ fn dng_put_preview(ifd: &mut DirectoryWriter<'_, '_>, img: &DynamicImage) -> Res
   let data_len = ifd.tiff.position()? - offset;
   debug!("writing preview: {} s", now.elapsed().as_secs_f32());
 
-  ifd.add_value(LegacyTiffRootTag::StripOffsets, Value::Long(vec![offset]))?;
-  ifd.add_tag(LegacyTiffRootTag::StripByteCounts, [data_len as u32])?;
+  ifd.add_value(TiffCommonTag::StripOffsets, Value::Long(vec![offset]))?;
+  ifd.add_tag(TiffCommonTag::StripByteCounts, [data_len as u32])?;
 
   Ok(())
 }
@@ -545,6 +679,6 @@ fn wbcoeff_to_tiff_value(wb_coeffs: &[f32; 4]) -> [Rational; 3] {
   ]
 }
 
-fn matrix_to_tiff_value(xyz_to_cam: &Vec<f32>, d: i32) -> Vec<SRational> {
+fn matrix_to_tiff_value(xyz_to_cam: &[f32], d: i32) -> Vec<SRational> {
   xyz_to_cam.iter().map(|a| SRational::new((a * d as f32) as i32, d)).collect()
 }

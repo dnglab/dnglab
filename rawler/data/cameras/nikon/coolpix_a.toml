@@ -1,0 +1,15 @@
+make = "NIKON CORPORATION"
+model = "COOLPIX A"
+clean_make = "Nikon"
+clean_model = "Coolpix A"
+color_pattern = "RGGB"
+active_area = [0, 0, 44, 0]
+
+[cameras.color_matrix]
+D65 = [0.8198, -0.2239, -0.0724, -0.4871, 1.2389, 0.2798, -0.1043, 0.205, 0.7181]
+
+[[cameras.modes]]
+mode = "14bit"
+blackpoint = 0
+whitepoint = 15892
+

@@ -37,14 +37,22 @@
 
 #![deny(
     //missing_docs,
-    //missing_debug_implementations,
-    //missing_copy_implementations,
-    //unsafe_code,
     unstable_features,
     //unused_import_braces,
     //unused_qualifications
   )]
+// Clippy configuration
+#![allow(
+  clippy::needless_doctest_main,
+  clippy::identity_op, // we often use x + 0 to better document an algorithm
+  clippy::too_many_arguments,
+  clippy::bool_assert_comparison,
+  clippy::upper_case_acronyms,
+  clippy::eq_op,
+  clippy::needless_range_loop,
+)]
 
+use decoders::Camera;
 use decoders::Decoder;
 use decoders::RawDecodeParams;
 use lazy_static::lazy_static;
@@ -59,6 +67,7 @@ pub mod decompressors;
 pub mod devtools;
 pub mod dng;
 pub(crate) mod envparams;
+pub mod exif;
 pub mod formats;
 pub mod imgop;
 pub mod lens;
@@ -94,6 +103,48 @@ use std::io::SeekFrom;
 use std::path::Path;
 use std::path::PathBuf;
 use thiserror::Error;
+
+pub(crate) const ISSUE_HINT: &str = "Please open an issue at https://github.com/dnglab/dnglab/issues and provide the RAW file.";
+
+pub struct OptBuffer {
+  buf: Vec<u8>,
+  size: usize,
+}
+
+impl OptBuffer {
+  pub fn new(buf: Vec<u8>) -> Self {
+    let mut padded = buf;
+    let size = padded.len();
+    padded.extend([0; 16].iter().cloned()); // Pad for optimizations
+    Self { buf: padded, size }
+  }
+
+  pub fn as_slice(&self) -> &[u8] {
+    self.buf.as_slice()
+  }
+
+  pub fn len(&self) -> usize {
+    self.size
+  }
+
+  pub fn is_empty(&self) -> bool {
+    self.size == 0
+  }
+}
+
+impl std::ops::Deref for OptBuffer {
+  type Target = [u8];
+
+  fn deref(&self) -> &Self::Target {
+    self.as_slice()
+  }
+}
+
+impl From<Vec<u8>> for OptBuffer {
+  fn from(data: Vec<u8>) -> Self {
+    Self::new(data)
+  }
+}
 
 pub trait ReadTrait: Read + Seek + Send {}
 
@@ -182,7 +233,7 @@ impl From<Buffer> for RawFile {
   fn from(buf: Buffer) -> Self {
     Self {
       path: PathBuf::new(),
-      file: Box::new(Cursor::new(buf.buf.clone())),
+      file: Box::new(Cursor::new(buf.buf)),
       start_offset: 0,
     }
   }
@@ -211,29 +262,61 @@ impl From<Cursor<Vec<u8>>> for RawFile {
 
 #[derive(Error, Debug)]
 pub enum RawlerError {
-  #[error("File is unsupported: {}", _0)]
-  Unsupported(String),
+  #[error("File is unsupported: {}, model \"{}\", make: \"{}\", mode: \"{}\"", what, model, make, mode)]
+  Unsupported { what: String, model: String, make: String, mode: String },
 
   #[error("{}", _0)]
   General(String),
+
+  #[error("{}", _0)]
+  IOErr(String),
 }
 
 pub type Result<T> = std::result::Result<T, RawlerError>;
 
 impl RawlerError {
+  pub fn unsupported(camera: &Camera, what: impl AsRef<str>) -> Self {
+    Self::Unsupported {
+      what: what.as_ref().to_string(),
+      model: camera.model.clone(),
+      make: camera.make.clone(),
+      mode: camera.mode.clone(),
+    }
+  }
+
   pub fn with_io_error(context: impl AsRef<str>, path: impl AsRef<Path>, error: std::io::Error) -> Self {
     Self::General(format!(
       "I/O error in context '{}', {} on file: {}",
       context.as_ref(),
-      error.to_string(),
+      error,
       path.as_ref().display()
     ))
+  }
+}
+
+impl From<std::io::Error> for RawlerError {
+  fn from(err: std::io::Error) -> Self {
+    log::error!("I/O error: {}", err.to_string());
+    log::error!("Backtrace:\n{:?}", backtrace::Backtrace::new());
+    Self::IOErr(format!("I/O Error: {}", err))
   }
 }
 
 impl From<&String> for RawlerError {
   fn from(str: &String) -> Self {
     Self::General(str.clone())
+  }
+}
+
+impl From<&str> for RawlerError {
+  fn from(str: &str) -> Self {
+    Self::General(str.to_string())
+  }
+}
+
+impl From<std::fmt::Arguments<'_>> for RawlerError {
+  fn from(fmt: std::fmt::Arguments) -> Self {
+    Self::General(fmt.to_string())
   }
 }
 

@@ -1,0 +1,15 @@
+make = "NIKON CORPORATION"
+model = "NIKON 1 J2"
+clean_make = "Nikon"
+clean_model = "1 J2"
+color_pattern = "RGGB"
+active_area = [0, 0, 0, 2]
+
+[cameras.color_matrix]
+D65 = [0.8994, -0.2667, -0.0865, -0.4594, 1.2324, 0.2552, -0.0699, 0.1786, 0.626]
+
+[[cameras.modes]]
+mode = "12bit"
+blackpoint = 0
+whitepoint = 3300
+

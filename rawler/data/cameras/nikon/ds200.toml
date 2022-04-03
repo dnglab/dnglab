@@ -1,0 +1,15 @@
+make = "NIKON CORPORATION"
+model = "NIKON D5200"
+clean_make = "Nikon"
+clean_model = "D5200"
+color_pattern = "RGGB"
+active_area = [0, 0, 0, 0]
+
+[cameras.color_matrix]
+D65 = [0.8322, -0.3112, -0.1047, -0.6367, 1.4342, 0.2179, -0.0988, 0.1638, 0.6394]
+
+[[cameras.modes]]
+mode = "14bit"
+blackpoint = 0
+whitepoint = 15892
+

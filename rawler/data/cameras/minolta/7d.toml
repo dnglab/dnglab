@@ -1,0 +1,11 @@
+make = "KONICA MINOLTA"
+model = "DYNAX 7D"
+clean_make = "Minolta"
+clean_model = "Dynax 7D"
+blackpoint = 0
+whitepoint = 4095
+color_pattern = "RGGB"
+active_area = [0, 0, 0, 0]
+
+[cameras.color_matrix]
+D65 = [1.0239, -0.3104, -0.1099, -0.8037, 1.5727, 0.2451, -0.0927, 0.0925, 0.6871]

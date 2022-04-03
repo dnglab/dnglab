@@ -20,7 +20,7 @@ impl Decoder for FtpCodec {
     if let Some(index) = find_crlf(buf) {
       let line = buf.split_to(index);
       let _ = buf.split_to(2); // Remove \r\n.
-      Command::new(line.to_vec()).map(|command| Some(command)).map_err(Error::to_io_error)
+      Command::new(line.to_vec()).map(Some).map_err(Error::to_io_error)
     } else {
       Ok(None)
     }
@@ -32,7 +32,7 @@ impl Encoder<Answer> for FtpCodec {
 
   fn encode(&mut self, answer: Answer, buf: &mut BytesMut) -> io::Result<()> {
     let mut buffer = vec![];
-    if answer.lines.len() > 0 {
+    if !answer.lines.is_empty() {
       write!(buffer, "{}- {}\r\n", answer.code as u32, answer.message)?;
       for line in answer.lines {
         if let Some(true) = line.chars().next().map(|c| c.is_ascii_digit()) {
@@ -77,7 +77,7 @@ mod tests {
     let mut buf = BytesMut::new();
     let result = codec.encode(answer, &mut buf);
     assert!(result.is_ok(), "Result is ok");
-    assert_eq!(buf, format!("425\r\n"), "Buffer contains 425");
+    assert_eq!(buf, "425\r\n".to_string(), "Buffer contains 425");
   }
 
   #[test]

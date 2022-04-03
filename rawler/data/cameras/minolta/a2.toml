@@ -1,0 +1,11 @@
+make = "Konica Minolta Camera, Inc."
+model = "DiMAGE A2"
+clean_make = "Minolta"
+clean_model = "DiMAGE A2"
+blackpoint = 0
+whitepoint = 3965
+color_pattern = "RGGB"
+active_area = [0, 0, 0, 0]
+
+[cameras.color_matrix]
+D65 = [0.9097, -0.2726, -0.1053, -0.8073, 1.5506, 0.2762, -0.0966, 0.0981, 0.7763]

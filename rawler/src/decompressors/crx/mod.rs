@@ -45,7 +45,7 @@ mod runlength;
 /// Each level has 6*8 = 0x30 = 48 ex coef values
 /// Not every level is used. For example, an image with level=3
 /// only used the last level 3 values.
-#[cfg_attr(rustfmt, rustfmt_skip)]
+#[rustfmt::skip]
 const EX_COEF_NUM_TBL:[usize; 0x30*3] = [
     // Level 1
     1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0,

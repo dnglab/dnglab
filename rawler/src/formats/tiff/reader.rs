@@ -4,7 +4,7 @@
 use super::{apply_corr, entry::RawEntry, file::TiffFile, Entry, Result, TiffError, IFD};
 use crate::{
   bits::Endian,
-  tags::{LegacyTiffRootTag, TiffTagEnum},
+  tags::{TiffCommonTag, TiffTag},
 };
 use byteorder::{BigEndian, LittleEndian, ReadBytesExt};
 use serde::{Deserialize, Serialize};
@@ -23,7 +23,7 @@ pub trait TiffReader {
   }
 
   fn sub_ifd_tags(&self) -> Vec<u16> {
-    vec![LegacyTiffRootTag::SubIFDs.into(), LegacyTiffRootTag::ExifIFDPointer.into()]
+    vec![TiffCommonTag::SubIFDs.into(), TiffCommonTag::ExifIFDPointer.into()]
   }
 
   fn root_ifd(&self) -> &IFD {
@@ -33,41 +33,39 @@ pub trait TiffReader {
     &self.file().chain[0]
   }
 
-  fn get_entry<T: TiffTagEnum>(&self, tag: T) -> Option<&Entry> {
+  fn get_entry<T: TiffTag>(&self, tag: T) -> Option<&Entry> {
     for ifd in &self.file().chain {
-      match ifd.get_entry(tag) {
-        Some(x) => return Some(x),
-        None => {}
+      if let Some(x) = ifd.get_entry(tag) {
+        return Some(x);
       }
     }
     None
   }
 
-  fn get_entry_raw<'a, T: TiffTagEnum, R: Read + Seek>(&'a self, tag: T, file: &mut R) -> Result<Option<RawEntry>> {
+  fn get_entry_raw<'a, T: TiffTag, R: Read + Seek>(&'a self, tag: T, file: &mut R) -> Result<Option<RawEntry>> {
     for ifd in &self.file().chain {
-      match ifd.get_entry_raw(tag, file)? {
-        Some(entry) => return Ok(Some(entry)),
-        None => {}
+      if let Some(entry) = ifd.get_entry_raw(tag, file)? {
+        return Ok(Some(entry));
       }
     }
     Ok(None)
   }
 
-  fn has_entry<T: TiffTagEnum>(&self, tag: T) -> bool {
+  fn has_entry<T: TiffTag>(&self, tag: T) -> bool {
     self.get_entry(tag).is_some()
   }
 
-  fn find_ifds_with_tag<T: TiffTagEnum>(&self, tag: T) -> Vec<&IFD> {
+  fn find_ifds_with_tag<T: TiffTag>(&self, tag: T) -> Vec<&IFD> {
     let mut ifds = Vec::new();
     for ifd in &self.file().chain {
       if ifd.has_entry(tag) {
         ifds.push(ifd);
-      } else {
-        for subs in ifd.sub_ifds() {
-          for ifd in subs.1 {
-            if ifd.has_entry(tag) {
-              ifds.push(ifd);
-            }
+      }
+      // Now search in all sub IFDs
+      for subs in ifd.sub_ifds() {
+        for ifd in subs.1 {
+          if ifd.has_entry(tag) {
+            ifds.push(ifd);
           }
         }
       }
@@ -75,14 +73,22 @@ pub trait TiffReader {
     ifds
   }
 
+  fn find_ifd_with_new_subfile_type(&self, typ: u32) -> Option<&IFD> {
+    let list = self.find_ifds_with_tag(TiffCommonTag::NewSubFileType);
+    list
+      .iter()
+      .find(|ifd| ifd.get_entry(TiffCommonTag::NewSubFileType).unwrap().force_u32(0) == typ)
+      .copied()
+  }
+
   // TODO: legacy wrapper
-  fn find_first_ifd<T: TiffTagEnum>(&self, tag: T) -> Option<&IFD> {
+  fn find_first_ifd<T: TiffTag>(&self, tag: T) -> Option<&IFD> {
     self.find_first_ifd_with_tag(tag)
   }
 
-  fn find_first_ifd_with_tag<T: TiffTagEnum>(&self, tag: T) -> Option<&IFD> {
+  fn find_first_ifd_with_tag<T: TiffTag>(&self, tag: T) -> Option<&IFD> {
     let ifds = self.find_ifds_with_tag(tag);
-    if ifds.len() == 0 {
+    if ifds.is_empty() {
       None
     } else {
       Some(ifds[0])
@@ -124,11 +130,11 @@ pub trait TiffReader {
     let mut reader = EndianReader::new(file, endian);
     let magic = reader.read_u16()?;
     if magic != 42 {
-      return Err(TiffError::General(format!("Invalid magic marker for TIFF: {}", magic)));
+      //return Err(TiffError::General(format!("Invalid magic marker for TIFF: {}", magic)));
     }
     let mut next_ifd = reader.read_u32()?;
     if next_ifd == 0 {
-      return Err(TiffError::General(format!("Invalid TIFF header, contains no root IFD")));
+      return Err(TiffError::General("Invalid TIFF header, contains no root IFD".to_string()));
     }
 
     let reader = reader.into_inner();
@@ -141,7 +147,7 @@ pub trait TiffReader {
       multi_sub_tags.extend_from_slice(sub_tags);
       let ifd = IFD::new(reader, next_ifd, self.file().base, self.file().corr, endian, &multi_sub_tags)?;
       if ifd.entries.is_empty() {
-        return Err(TiffError::General(format!("TIFF is invalid, IFD must contain at least one entry")));
+        return Err(TiffError::General("TIFF is invalid, IFD must contain at least one entry".to_string()));
       }
       next_ifd = ifd.next_ifd;
       chain.push(ifd);
@@ -153,7 +159,7 @@ pub trait TiffReader {
     }
 
     if chain.is_empty() {
-      return Err(TiffError::General(format!("TIFF is invalid, must contain at least one IFD")));
+      return Err(TiffError::General("TIFF is invalid, must contain at least one IFD".to_string()));
     }
     self.file_mut().chain = chain;
     Ok(())
@@ -181,6 +187,10 @@ impl GenericTiffReader {
   pub fn is_tiff<T: AsRef<[u8]>>(buffer: T) -> bool {
     let buffer = buffer.as_ref();
     buffer[0] == 0x49 || buffer[0] == 0x4d // TODO
+  }
+
+  pub fn little_endian(&self) -> bool {
+    self.file.chain.first().unwrap().endian == Endian::Little
   }
 
   /// Construct a TIFF reader from a byte buffer

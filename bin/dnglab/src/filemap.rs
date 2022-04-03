@@ -70,10 +70,10 @@ impl DirMap {
   fn make_mapping(&self, input: &Path) -> Result<FileMap> {
     let sub_location = input.strip_prefix(&self.src).expect("Input path must be located inside source");
     let dest = self.dest.join(sub_location);
-    return Ok(FileMap {
+    Ok(FileMap {
       src: PathBuf::from(input),
       dest,
-    });
+    })
   }
 }
 
@@ -85,7 +85,7 @@ impl MapMode {
     }
     let input_md = input.metadata()?;
     if input_md.is_file() {
-      return Ok(MapMode::File(FileMap::new(&input.canonicalize()?, output)));
+      Ok(MapMode::File(FileMap::new(&input.canonicalize()?, output)))
     } else if input_md.is_dir() {
       if !output.exists() {
         return Err(AppError::NotExists(output.display().to_string()));
@@ -97,7 +97,7 @@ impl MapMode {
           output.display()
         )));
       }
-      return Ok(MapMode::Dir(DirMap::new(&input.canonicalize()?, &output.canonicalize()?)));
+      Ok(MapMode::Dir(DirMap::new(&input.canonicalize()?, &output.canonicalize()?)))
     } else {
       return Err(AppError::General(format!("Unable to determine type of {}", input.display())));
     }

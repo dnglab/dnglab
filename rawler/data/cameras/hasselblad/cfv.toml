@@ -1,0 +1,11 @@
+make = "Hasselblad"
+model = "Hasselblad 500 mech."
+clean_make = "Hasselblad"
+clean_model = "CFV"
+blackpoint = 0
+whitepoint = 31456
+color_pattern = "RGGB"
+active_area = [0, 0, 0, 0]
+
+[cameras.color_matrix]
+D65 = [0.8519, -0.3260, -0.0280, -0.5081, 1.3459, 0.1738, -0.1449, 0.2960, 0.7809]

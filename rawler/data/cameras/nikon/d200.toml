@@ -1,0 +1,15 @@
+make = "NIKON CORPORATION"
+model = "NIKON D200"
+clean_make = "Nikon"
+clean_model = "D200"
+color_pattern = "GRBG"
+active_area = [2, 0, 0, 0]
+
+[cameras.color_matrix]
+D65 = [0.8367, -0.2248, -0.0763, -0.8758, 1.6447, 0.2422, -0.1527, 0.155, 0.8053]
+
+[[cameras.modes]]
+mode = "12bit"
+blackpoint = 0
+whitepoint = 3880
+

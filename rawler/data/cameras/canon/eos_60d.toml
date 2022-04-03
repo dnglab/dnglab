@@ -1,4 +1,3 @@
-[[cameras]]
 make = "Canon"
 model = "Canon EOS 60D"
 clean_make = "Canon"
@@ -16,30 +15,12 @@ colordata_blacklevel = 0x2cf
 colordata_whitelevel = 0x2d4
 colordata_wbcoeffs = 0x3f
 
-[[cameras]]
-make = "Canon"
-model = "Canon EOS 60D"
+[[cameras.modes]]
 mode = "sRaw1"
-clean_make = "Canon"
-clean_model = "EOS 60D"
 bps = 16
 whitepoint = 65535
-[cameras.color_matrix]
-D65 = [0.6719, -0.0994, -0.0925, -0.4408, 1.2426, 0.2211, -0.0887, 0.2129, 0.6051]
-[cameras.params]
-# ColorData4
-colordata_wbcoeffs = 0x3f
 
-[[cameras]]
-make = "Canon"
-model = "Canon EOS 60D"
+[[cameras.modes]]
 mode = "sRaw2"
-clean_make = "Canon"
-clean_model = "EOS 60D"
 bps = 16
 whitepoint = 65535
-[cameras.color_matrix]
-D65 = [0.6719, -0.0994, -0.0925, -0.4408, 1.2426, 0.2211, -0.0887, 0.2129, 0.6051]
-[cameras.params]
-# ColorData4
-colordata_wbcoeffs = 0x3f

@@ -4,7 +4,7 @@
 
 use super::{hdlr::HdlrBox, mdhd::MdhdBox, minf::MinfBox, vendor::VendorBox, BmffError, BoxHeader, FourCC, ReadBox, Result};
 use log::debug;
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 use std::io::{Read, Seek, SeekFrom};
 
 #[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize)]
@@ -62,9 +62,9 @@ impl<R: Read + Seek> ReadBox<&mut R> for MdiaBox {
 
     Ok(Self {
       header,
-      mdhd: mdhd.ok_or(BmffError::Parse("mdhd box not found, corrupt file?".into()))?,
-      hdlr: hdlr.ok_or(BmffError::Parse("hdlr box not found, corrupt file?".into()))?,
-      minf: minf.ok_or(BmffError::Parse("minf box not found, corrupt file?".into()))?,
+      mdhd: mdhd.ok_or_else(|| BmffError::Parse("mdhd box not found, corrupt file?".into()))?,
+      hdlr: hdlr.ok_or_else(|| BmffError::Parse("hdlr box not found, corrupt file?".into()))?,
+      minf: minf.ok_or_else(|| BmffError::Parse("minf box not found, corrupt file?".into()))?,
       vendor: vendors,
     })
   }

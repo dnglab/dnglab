@@ -112,7 +112,7 @@ impl Spline {
       }
     }
 
-    return curve;
+    curve
   }
 }
 

@@ -1,0 +1,14 @@
+make = "Panasonic"
+model = "DMC-LX2"
+clean_make = "Panasonic"
+clean_model = "DMC-LX2"
+blackpoint = 0
+whitepoint = 3986
+color_pattern = "BGGR"
+
+[cameras.color_matrix]
+D65 = [0.8048, -0.281, -0.0623, -0.645, 1.3519, 0.3272, -0.17, 0.2146, 0.7049]
+
+[[cameras.modes]]
+mode = "16:9"
+active_area = [4, 0, 38, 3]

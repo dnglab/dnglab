@@ -1,0 +1,11 @@
+make = "SONY"
+model = "DSLR-A850"
+clean_make = "Sony"
+clean_model = "DSLR-A850"
+blackpoint = 128
+whitepoint = 4095
+color_pattern = "RGGB"
+active_area = [0, 0, 0, 0]
+
+[cameras.color_matrix]
+D65 = [0.5413, -0.1162, -0.0365, -0.5665, 1.3098, 0.2866, -0.0608, 0.1179, 0.844]

@@ -1,0 +1,103 @@
+[[lenses]]
+mount = "e-mount"
+lens_id = 50992
+make = "Voigtlander"
+model = "SUPER WIDE-HELIAR 15mm F4.5 III"
+focal_range = [[15, 1], [15, 1]]
+aperture_range = [[45, 10], [45, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 50993
+make = "Voigtlander"
+model = "HELIAR-HYPER WIDE 10mm F5.6"
+focal_range = [[10, 1], [10, 1]]
+aperture_range = [[56, 10], [56, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 50994
+make = "Voigtlander"
+model = "ULTRA WIDE-HELIAR 12mm F5.6 III"
+focal_range = [[12, 1], [12, 1]]
+aperture_range = [[56, 10], [56, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 50995
+make = "Voigtlander"
+model = "MACRO APO-LANTHAR 65mm F2 Aspherical"
+focal_range = [[65, 1], [65, 1]]
+aperture_range = [[2, 1], [2, 1]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 50996
+make = "Voigtlander"
+model = "NOKTON 40mm F1.2 Aspherical"
+focal_range = [[40, 1], [40, 1]]
+aperture_range = [[12, 10], [12, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 50997
+make = "Voigtlander"
+model = "NOKTON classic 35mm F1.4"
+focal_range = [[35, 1], [35, 1]]
+aperture_range = [[14, 10], [14, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 50998
+make = "Voigtlander"
+model = "MACRO APO-LANTHAR 110mm F2.5"
+focal_range = [[110, 1], [110, 1]]
+aperture_range = [[25, 10], [25, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 50999
+make = "Voigtlander"
+model = "COLOR-SKOPAR 21mm F3.5 Aspherical"
+focal_range = [[21, 1], [21, 1]]
+aperture_range = [[35, 10], [35, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 51000
+make = "Voigtlander"
+model = "NOKTON 50mm F1.2 Aspherical"
+focal_range = [[50, 1], [50, 1]]
+aperture_range = [[12, 10], [12, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 51001
+make = "Voigtlander"
+model = "NOKTON 21mm F1.4 Aspherical"
+focal_range = [[21, 1], [21, 1]]
+aperture_range = [[14, 10], [14, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 51002
+make = "Voigtlander"
+model = "APO-LANTHAR 50mm F2 Aspherical"
+focal_range = [[50, 1], [50, 1]]
+aperture_range = [[2, 1], [2, 1]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 51003
+make = "Voigtlander"
+model = "NOKTON 35mm F1.2 Aspherical SE"
+focal_range = [[35, 1], [35, 1]]
+aperture_range = [[12, 10], [12, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 51006
+make = "Voigtlander"
+model = "APO-LANTHAR 35mm F2 Aspherical"
+focal_range = [[35, 1], [35, 1]]
+aperture_range = [[2, 1], [2, 1]]

@@ -1,0 +1,17 @@
+make = "SONY"
+model = "SLT-A99"
+clean_make = "Sony"
+clean_model = "SLT-A99"
+
+model_aliases = [
+  ["SLT-A99V", "SLT-A99V"],
+]
+
+blackpoint = 512
+whitepoint = 16300
+color_pattern = "RGGB"
+active_area = [0, 0, 28, 0]
+bps = 8
+
+[cameras.color_matrix]
+D65 = [0.6344, -0.1612, -0.0462, -0.4863, 1.2477, 0.2681, -0.0865, 0.1786, 0.6899]

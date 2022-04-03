@@ -1,0 +1,11 @@
+make = "SAMSUNG"
+model = "NX100"
+clean_make = "Samsung"
+clean_model = "NX100"
+blackpoint = 3
+whitepoint = 3750
+color_pattern = "BGGR"
+active_area = [17, 8, 85, 48]
+
+[cameras.color_matrix]
+D65 = [1.0332, -0.3234, -0.1168, -0.6111, 1.4639, 0.152, -0.1352, 0.2647, 0.8331]

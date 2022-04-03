@@ -1,0 +1,12 @@
+make = "NIKON"
+model = "E5400"
+clean_make = "Nikon"
+clean_model = "E5400"
+blackpoint = 0
+whitepoint = 4095
+color_pattern = "BGGR"
+active_area = [0, 0, 0, 0]
+hints = ["coolpixsplit"]
+
+[cameras.color_matrix]
+D65 = [0.9349, -0.2987, -0.1001, -0.7919, 1.5766, 0.2266, -0.2098, 0.268, 0.6839]

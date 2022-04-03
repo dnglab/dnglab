@@ -1,0 +1,11 @@
+make = "OLYMPUS IMAGING CORP."
+model = "E-P2"
+clean_make = "Olympus"
+clean_model = "E-P2"
+blackpoint = 64
+whitepoint = 4095
+color_pattern = "RGGB"
+active_area = [0, 0, 0, 0]
+
+[cameras.color_matrix]
+D65 = [0.8343, -0.205, -0.1021, -0.7715, 1.5705, 0.2103, -0.1831, 0.238, 0.8235]

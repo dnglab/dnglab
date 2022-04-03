@@ -1,0 +1,15 @@
+make = "LEICA"
+model = "V-LUX 4"
+clean_make = "LEICA"
+clean_model = "V-LUX 4"
+blackpoint = 143
+whitepoint = 3956
+color_pattern = "GBRG"
+
+[cameras.color_matrix]
+D65 = [0.8112, -0.2563, -0.074, -0.373, 1.1784, 0.2197, -0.0941, 0.2075, 0.4933]
+
+[[cameras.modes]]
+mode = "4:3"
+active_area = [0, 0, 128, 3]
+

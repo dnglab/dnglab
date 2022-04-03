@@ -1,0 +1,143 @@
+[[lenses]]
+mount = "e-mount"
+lens_id = 32789
+make = "Samyang"
+model = "AF 50mm F1.4"
+focal_range = [[50, 1], [50, 1]]
+aperture_range = [[14, 10], [14, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 32790
+make = "Samyang"
+model = "AF 14mm F2.8"
+focal_range = [[14, 1], [14, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 32794
+make = "Samyang"
+model = "AF 24mm F2.8"
+focal_range = [[24, 1], [24, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 32794
+make = "Samyang"
+model = "AF 35mm F2.8"
+focal_range = [[35, 1], [35, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 32823
+make = "Samyang"
+model = "AF 85mm F1.4"
+focal_range = [[85, 1], [85, 1]]
+aperture_range = [[14, 10], [14, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 51504
+make = "Samyang"
+model = "AF 50mm F1.4"
+focal_range = [[50, 1], [50, 1]]
+aperture_range = [[14, 10], [14, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 51505
+make = "Samyang"
+model = "AF 14mm F2.8"
+focal_range = [[14, 1], [14, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 51505
+make = "Samyang"
+model = "AF 35mm F2.8"
+focal_range = [[35, 1], [35, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 51507
+make = "Samyang"
+model = "AF 35mm F1.4"
+focal_range = [[35, 1], [35, 1]]
+aperture_range = [[14, 10], [14, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 51508
+make = "Samyang"
+model = "AF 45mm F1.8"
+focal_range = [[45, 1], [45, 1]]
+aperture_range = [[18, 10], [18, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 51510
+make = "Samyang"
+model = "AF 18mm F2.8"
+focal_range = [[18, 1], [18, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 51510
+make = "Samyang"
+model = "AF 35mm F1.8"
+focal_range = [[35, 1], [35, 1]]
+aperture_range = [[18, 10], [18, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 51512
+make = "Samyang"
+model = "AF 75mm F1.8"
+focal_range = [[75, 1], [75, 1]]
+aperture_range = [[18, 10], [18, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 51513
+make = "Samyang"
+model = "AF 35mm F1.8"
+focal_range = [[35, 1], [35, 1]]
+aperture_range = [[18, 10], [18, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 51514
+make = "Samyang"
+model = "AF 24mm F1.8"
+focal_range = [[24, 1], [24, 1]]
+aperture_range = [[18, 10], [18, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 51515
+make = "Samyang"
+model = "AF 12mm F2.0"
+focal_range = [[12, 1], [12, 1]]
+aperture_range = [[20, 10], [20, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 51516
+make = "Samyang"
+model = "AF 24-70mm F2.8"
+focal_range = [[24, 1], [70, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 51517
+make = "Samyang"
+model = "AF 50mm F1.4 II"
+focal_range = [[50, 1], [50, 1]]
+aperture_range = [[14, 10], [14, 10]]

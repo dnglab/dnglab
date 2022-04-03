@@ -1,0 +1,11 @@
+make = "OLYMPUS IMAGING CORP."
+model = "SP500UZ"
+clean_make = "Olympus"
+clean_model = "SP500UZ"
+blackpoint = 0
+whitepoint = 4095
+color_pattern = "GBRG"
+active_area = [0, 0, 0, 0]
+
+[cameras.color_matrix]
+D65 = [0.9493, -0.3415, -0.0666, -0.5211, 1.2334, 0.326, -0.1548, 0.2262, 0.6482]

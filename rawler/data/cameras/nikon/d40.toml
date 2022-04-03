@@ -1,0 +1,15 @@
+make = "NIKON CORPORATION"
+model = "NIKON D40"
+clean_make = "Nikon"
+clean_model = "D40"
+color_pattern = "BGGR"
+active_area = [0, 0, 2, 0]
+
+[cameras.color_matrix]
+D65 = [0.6992, -0.1668, -0.0806, -0.8138, 1.5748, 0.2543, -0.0874, 0.085, 0.7897]
+
+[[cameras.modes]]
+mode = "12bit"
+blackpoint = 0
+whitepoint = 3880
+

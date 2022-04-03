@@ -1,0 +1,11 @@
+make = "SONY"
+model = "DSC-F828"
+clean_make = "Sony"
+clean_model = "DSC-F828"
+blackpoint = 495
+whitepoint = 16383
+color_pattern = "ERBG"
+active_area = [5, 0, 67, 0]
+
+[cameras.color_matrix]
+D65 = [0.7924, -0.191, -0.0777, -0.8226, 1.5459, 0.2998, -0.1517, 0.2199, 0.6818, -0.7242, 1.1401, 0.3481]

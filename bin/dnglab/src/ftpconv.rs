@@ -17,7 +17,7 @@ use crate::{
   AppError, PKG_NAME, PKG_VERSION,
 };
 
-const SUPPORTED_FILE_EXT: [&'static str; 4] = ["CR3", "CR2", "CRM", "PEF"]; // TODO: fixme more extensions
+const SUPPORTED_FILE_EXT: [&str; 4] = ["CR3", "CR2", "CRM", "PEF"]; // TODO: fixme more extensions
 
 #[derive(Clone)]
 struct FtpState {
@@ -70,7 +70,7 @@ pub async fn ftpconvert(options: &ArgMatches<'_>) -> anyhow::Result<()> {
       }
       None => DngCompression::Lossless,
     },
-    artist: options.value_of("artist").map(|v| String::from(v)),
+    artist: options.value_of("artist").map(String::from),
     software: format!("{} {}", PKG_NAME, PKG_VERSION),
     index: 0,
   };

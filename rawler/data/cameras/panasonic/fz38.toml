@@ -1,0 +1,27 @@
+make = "Panasonic"
+model = "DMC-FZ38"
+clean_make = "Panasonic"
+clean_model = "DMC-FZ38"
+
+model_aliases = [
+  ["DMC-FZ35", "DMC-FZ35"],
+]
+
+blackpoint = 143
+whitepoint = 3986
+color_pattern = "BGGR"
+
+[cameras.color_matrix]
+D65 = [0.9938, -0.278, -0.089, -0.4604, 1.2393, 0.248, -0.1117, 0.2304, 0.462]
+
+[[cameras.modes]]
+mode = "4:3"
+active_area = [0, 0, 44, 0]
+
+[[cameras.modes]]
+mode = "3:2"
+active_area = [0, 0, 42, 4]
+
+[[cameras.modes]]
+mode = "16:9"
+active_area = [0, 0, 42, 4]

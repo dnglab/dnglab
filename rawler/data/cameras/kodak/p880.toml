@@ -1,0 +1,11 @@
+make = "EASTMAN KODAK COMPANY"
+model = "KODAK P880 ZOOM DIGITAL CAMERA"
+clean_make = "Kodak"
+clean_model = "P880"
+blackpoint = 0
+whitepoint = 4095
+color_pattern = "BGGR"
+active_area = [0, 0, 0, 0]
+
+[cameras.color_matrix]
+D65 = [1.2805, -0.4662, -0.1376, -0.748, 1.5267, 0.236, -0.1626, 0.2194, 0.7904]

@@ -1,0 +1,31 @@
+[[lenses]]
+mount = "ef-mount"
+lens_id = 103
+make = "Rokinon"
+model = "SP 14mm f/2.4"
+focal_range = [[14, 1], [14, 1]]
+aperture_range = [[24, 10], [24, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 103
+make = "Rokinon"
+model = "AF 14mm f/2.8 EF"
+focal_range = [[14, 1], [14, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 106
+make = "Rokinon"
+model = "SP / Samyang XP 35mm f/1.2"
+focal_range = [[35, 1], [35, 1]]
+aperture_range = [[12, 10], [12, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 239
+make = "Rokinon"
+model = "SP 85mm f/1.2"
+focal_range = [[85, 1], [85, 1]]
+aperture_range = [[12, 10], [12, 10]]

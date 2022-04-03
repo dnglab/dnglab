@@ -1,0 +1,11 @@
+make = "OLYMPUS CORPORATION"
+model = "E-1"
+clean_make = "Olympus"
+clean_model = "E-1"
+blackpoint = 65
+whitepoint = 4095
+color_pattern = "GRBG"
+active_area = [0, 0, 0, 0]
+
+[cameras.color_matrix]
+D65 = [1.1846, -0.4767, -0.0945, -0.7027, 1.5878, 0.1089, -0.2699, 0.4122, 0.8311]

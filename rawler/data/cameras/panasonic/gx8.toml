@@ -1,0 +1,14 @@
+make = "Panasonic"
+model = "DMC-GX8"
+clean_make = "Panasonic"
+clean_model = "DMC-GX8"
+blackpoint = 144
+whitepoint = 4095
+color_pattern = "GBRG"
+
+[cameras.color_matrix]
+D65 = [0.7564, -0.2263, -0.0606, -0.3148, 1.1239, 0.2177, -0.054, 0.1435, 0.4853]
+
+[[cameras.modes]]
+mode = "4:3"
+active_area = [0, 0, 64, 0]

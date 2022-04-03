@@ -1,17 +1,21 @@
-use crate::pumps::BitPumpJPEG;
-use crate::pumps::BitPumpMSB32;
 use super::huffman::*;
 use super::LjpegDecompressor;
+use crate::pumps::BitPumpJPEG;
+use crate::pumps::BitPumpMSB32;
 
 /// Decode the ljpeg stream to `out`.
 /// `x` is the start of output in `out`, usually 0.
 /// `stripwidth` is the widh of bytes of a single output strip (may
 /// be larger than width if each row has padding bytes).
 /// `width` is the output image width in bytes.
+#[allow(clippy::let_and_return)]
 pub fn decode_ljpeg(ljpeg: &LjpegDecompressor, out: &mut [u16], x: usize, stripwidth: usize, width: usize, height: usize) -> Result<(), String> {
   let ncomp: usize = ljpeg.components();
   if ljpeg.sof.width * ncomp < width || ljpeg.sof.height < height {
-    return Err(format!("ljpeg: trying to decode {}x{} into {}x{}", ljpeg.sof.width, ljpeg.sof.height, width, height).to_string());
+    return Err(format!(
+      "ljpeg: trying to decode {}x{} into {}x{}",
+      ljpeg.sof.width, ljpeg.sof.height, width, height
+    ));
   }
 
   let htable = |index: usize| -> &HuffTable { &ljpeg.dhts[ljpeg.sof.components[index].dc_tbl_num] };
@@ -91,7 +95,6 @@ pub fn decode_ljpeg(ljpeg: &LjpegDecompressor, out: &mut [u16], x: usize, stripw
   Ok(())
 }
 
-
 fn set_yuv_420(out: &mut [u16], row: usize, col: usize, width: usize, y1: i32, y2: i32, y3: i32, y4: i32, cb: i32, cr: i32) {
   let pix1 = row * width + col;
   let pix2 = pix1 + 3;
@@ -114,12 +117,18 @@ fn set_yuv_420(out: &mut [u16], row: usize, col: usize, width: usize, y1: i32, y
 
 pub fn decode_ljpeg_420(ljpeg: &LjpegDecompressor, out: &mut [u16], width: usize, height: usize) -> Result<(), String> {
   if ljpeg.sof.width * 3 != width || ljpeg.sof.height != height {
-    return Err(format!("ljpeg: trying to decode {}x{} into {}x{}", ljpeg.sof.width * 3, ljpeg.sof.height, width, height).to_string());
+    return Err(format!(
+      "ljpeg: trying to decode {}x{} into {}x{}",
+      ljpeg.sof.width * 3,
+      ljpeg.sof.height,
+      width,
+      height
+    ));
   }
 
-  let ref htable1 = ljpeg.dhts[ljpeg.sof.components[0].dc_tbl_num];
-  let ref htable2 = ljpeg.dhts[ljpeg.sof.components[1].dc_tbl_num];
-  let ref htable3 = ljpeg.dhts[ljpeg.sof.components[2].dc_tbl_num];
+  let htable1 = &ljpeg.dhts[ljpeg.sof.components[0].dc_tbl_num];
+  let htable2 = &ljpeg.dhts[ljpeg.sof.components[1].dc_tbl_num];
+  let htable3 = &ljpeg.dhts[ljpeg.sof.components[2].dc_tbl_num];
   let mut pump = BitPumpJPEG::new(ljpeg.buffer);
 
   let base_prediction = 1 << (ljpeg.sof.precision - ljpeg.point_transform - 1);
@@ -170,11 +179,17 @@ fn set_yuv_422(out: &mut [u16], row: usize, col: usize, width: usize, y1: i32, y
 
 pub fn decode_ljpeg_422(ljpeg: &LjpegDecompressor, out: &mut [u16], width: usize, height: usize) -> Result<(), String> {
   if ljpeg.sof.width * 3 != width || ljpeg.sof.height != height {
-    return Err(format!("ljpeg: trying to decode {}x{} into {}x{}", ljpeg.sof.width * 3, ljpeg.sof.height, width, height).to_string());
+    return Err(format!(
+      "ljpeg: trying to decode {}x{} into {}x{}",
+      ljpeg.sof.width * 3,
+      ljpeg.sof.height,
+      width,
+      height
+    ));
   }
-  let ref htable1 = ljpeg.dhts[ljpeg.sof.components[0].dc_tbl_num];
-  let ref htable2 = ljpeg.dhts[ljpeg.sof.components[1].dc_tbl_num];
-  let ref htable3 = ljpeg.dhts[ljpeg.sof.components[2].dc_tbl_num];
+  let htable1 = &ljpeg.dhts[ljpeg.sof.components[0].dc_tbl_num];
+  let htable2 = &ljpeg.dhts[ljpeg.sof.components[1].dc_tbl_num];
+  let htable3 = &ljpeg.dhts[ljpeg.sof.components[2].dc_tbl_num];
   let mut pump = BitPumpJPEG::new(ljpeg.buffer);
 
   let base_prediction = 1 << (ljpeg.sof.precision - ljpeg.point_transform - 1);
@@ -211,7 +226,7 @@ pub fn decode_hasselblad(ljpeg: &LjpegDecompressor, out: &mut [u16], width: usiz
   // Pixels are packed two at a time, not like LJPEG:
   // [p1_length_as_huffman][p2_length_as_huffman][p0_diff_with_length][p1_diff_with_length]|NEXT PIXELS
   let mut pump = BitPumpMSB32::new(ljpeg.buffer);
-  let ref htable = ljpeg.dhts[ljpeg.sof.components[0].dc_tbl_num];
+  let htable = &ljpeg.dhts[ljpeg.sof.components[0].dc_tbl_num];
 
   for line in out.chunks_exact_mut(width) {
     let mut p1: i32 = 0x8000;

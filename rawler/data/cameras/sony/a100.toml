@@ -1,0 +1,12 @@
+make = "SONY"
+model = "DSLR-A100"
+clean_make = "Sony"
+clean_model = "DSLR-A100"
+blackpoint = 0
+whitepoint = 4095
+color_pattern = "GRBG"
+active_area = [0, 0, 0, 0]
+bps = 8
+
+[cameras.color_matrix]
+D65 = [0.9437, -0.2811, -0.0774, -0.8405, 1.6215, 0.229, -0.071, 0.0596, 0.7181]

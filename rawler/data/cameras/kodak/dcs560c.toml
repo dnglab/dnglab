@@ -1,0 +1,12 @@
+make = "Kodak"
+model = "DCS560C"
+clean_make = "Kodak"
+clean_model = "DCS560C"
+blackpoint = 0
+whitepoint = 4095
+color_pattern = "GRBG"
+active_area = [0, 0, 0, 0]
+hints = ["linearization"]
+
+[cameras.color_matrix]
+D65 = [2.0482, -0.7172, -0.3125, -0.1033, 1.041, -0.0285, 0.2542, 0.0226, 0.3136]

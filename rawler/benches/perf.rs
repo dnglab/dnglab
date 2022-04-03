@@ -4,17 +4,17 @@ use rawler::ljpeg92::LjpegCompressor;
 fn generate_data(w: usize, h: usize, ncomp: usize) -> Vec<u16> {
   let mut img = vec![0; w * h * ncomp];
 
-  for i in 0..img.len() {
-    img[i] = i as u16 % 4u16;
+  for (i, pix) in img.iter_mut().enumerate() {
+    *pix = i as u16 % 4u16;
   }
   img
 }
 
-fn encode_ljpeg(img: &Vec<u16>, w: usize, h: usize, ncomp: usize) {
+fn encode_ljpeg(img: &[u16], w: usize, h: usize, ncomp: usize) {
   let pred = 1;
   let bps = 16;
 
-  let state = LjpegCompressor::new(&img, w, h, ncomp, bps, pred, 0, 0).unwrap();
+  let state = LjpegCompressor::new(img, w, h, ncomp, bps, pred, 0, 0).unwrap();
   let _result = state.encode().unwrap();
 }
 

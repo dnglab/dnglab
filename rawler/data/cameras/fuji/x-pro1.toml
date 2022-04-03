@@ -1,0 +1,11 @@
+make = "FUJIFILM"
+model = "X-Pro1"
+clean_make = "Fujifilm"
+clean_model = "X-Pro1"
+blackpoint = 256
+whitepoint = 4094
+color_pattern = "GGRGGBGGBGGRBRGRBGGGBGGRGGRGGBRBGBRG"
+active_area = [0, 0, 168, 0]
+
+[cameras.color_matrix]
+D65 = [1.0413, -0.3996, -0.0993, -0.3721, 1.164, 0.2361, -0.0733, 0.154, 0.6011]

@@ -1,0 +1,15 @@
+make = "LEICA"
+model = "DIGILUX 2"
+clean_make = "Leica"
+clean_model = "Digilux 2"
+blackpoint = 0
+whitepoint = 4095
+color_pattern = "RGGB"
+
+[cameras.color_matrix]
+D65 = [1.134, -0.4069, -0.1275, -0.7555, 1.5266, 0.2448, -0.296, 0.3426, 0.7685]
+
+[[cameras.modes]]
+mode = "4:3"
+active_area = [0, 0, 0, 0]
+

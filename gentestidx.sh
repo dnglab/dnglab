@@ -18,7 +18,7 @@ function process_rawfile() {
         MAKE=`echo $rawfile | cut -d/ -f2`;
         MODEL=`echo $rawfile | cut -d/ -f3`;
         TESTNAME=`basename "${rawfile@L}" | sed -e 's,[[:space:][:punct:]],_,g' -e 's,_+,_,g'`;
-        echo -e "\tsuper::camera_file_check!(\"$MAKE\", \"$MODEL\", $TESTNAME, \"`echo $rawfile | cut -d'/' -f4-`\");" >> "rawler/tests/cameras/mod.rs";
+        echo -e "\tsuper::camera_file_check!(\"$MAKE\", \"$MODEL\", "cam_"$TESTNAME, \"`echo $rawfile | cut -d'/' -f4-`\");" >> "rawler/tests/cameras/mod.rs";
         #file "$pixel";
 }
 

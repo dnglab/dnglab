@@ -1,0 +1,12 @@
+make = "NIKON"
+model = "COOLPIX P7100"
+clean_make = "Nikon"
+clean_model = "Coolpix P7100"
+blackpoint = 0
+whitepoint = 3800
+color_pattern = "RGGB"
+active_area = [0, 0, 0, 0]
+hints = ["msb32"]
+
+[cameras.color_matrix]
+D65 = [1.1053, -0.4269, -0.1024, -0.1976, 1.0182, 0.2088, -0.0526, 0.1263, 0.4469]

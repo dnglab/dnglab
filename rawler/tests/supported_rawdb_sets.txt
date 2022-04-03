@@ -64,3 +64,66 @@ cameras/Phase One/IQ150/raw_modes
 cameras/Phase One/iXM-RS150F/raw_modes
 cameras/Phase One/P65/raw_modes
 cameras/Phase One/P20/raw_modes
+cameras/Hasselblad/X1D/raw_modes
+cameras/Hasselblad/X1D II 50C/raw_modes
+cameras/Nikon/D100/raw_modes
+cameras/Nikon/D1/raw_modes
+cameras/Nikon/D1X/raw_modes
+cameras/Nikon/D200/raw_modes
+cameras/Nikon/D2H/raw_modes
+cameras/Nikon/D2Hs/raw_modes
+cameras/Nikon/D2X/raw_modes
+cameras/Nikon/D2Xs/raw_modes
+cameras/Nikon/D3000/raw_modes
+cameras/Nikon/D300/raw_modes
+cameras/Nikon/D300S/raw_modes
+cameras/Nikon/D3100/raw_modes
+cameras/Nikon/D3200/raw_modes
+cameras/Nikon/D3300/raw_modes
+cameras/Nikon/D3400/raw_modes
+cameras/Nikon/D3500/raw_modes
+cameras/Nikon/D3/raw_modes
+cameras/Nikon/D3S/raw_modes
+cameras/Nikon/D3X/raw_modes
+cameras/Nikon/D40/raw_modes
+cameras/Nikon/D40X/raw_modes
+cameras/Nikon/D4/raw_modes
+cameras/Nikon/D4S/raw_modes
+cameras/Nikon/D5000/raw_modes
+cameras/Nikon/D500/raw_modes
+cameras/Nikon/D50/raw_modes
+cameras/Nikon/D5100/raw_modes
+cameras/Nikon/D5200/raw_modes
+cameras/Nikon/D5300/raw_modes
+cameras/Nikon/D5500/raw_modes
+cameras/Nikon/D5600/raw_modes
+cameras/Nikon/D5/raw_modes
+cameras/Nikon/D600/raw_modes
+cameras/Nikon/D60/raw_modes
+cameras/Nikon/D610/raw_modes
+cameras/Nikon/D7000/raw_modes
+cameras/Nikon/D700/raw_modes
+cameras/Nikon/D70/raw_modes
+cameras/Nikon/D70s/raw_modes
+cameras/Nikon/D7100/raw_modes
+cameras/Nikon/D7200/raw_modes
+cameras/Nikon/D7500/raw_modes
+cameras/Nikon/D750/raw_modes
+cameras/Nikon/D780/raw_modes
+cameras/Nikon/D800E/raw_modes
+cameras/Nikon/D800/raw_modes
+cameras/Nikon/D80/raw_modes
+cameras/Nikon/D810/raw_modes
+cameras/Nikon/D850/raw_modes
+cameras/Nikon/D90/raw_modes
+cameras/Nikon/Df/raw_modes
+cameras/Nikon/1 AW1/raw_modes
+cameras/Nikon/1 J1/raw_modes
+cameras/Nikon/1 J2/raw_modes
+cameras/Nikon/1 J3/raw_modes
+cameras/Nikon/1 J5/raw_modes
+cameras/Nikon/1 S2/raw_modes
+cameras/Nikon/1 V1/raw_modes
+cameras/Nikon/1 V2/raw_modes
+cameras/Nikon/1 V3/raw_modes
+

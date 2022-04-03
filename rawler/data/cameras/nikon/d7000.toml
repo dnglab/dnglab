@@ -1,0 +1,20 @@
+make = "NIKON CORPORATION"
+model = "NIKON D7000"
+clean_make = "Nikon"
+clean_model = "D7000"
+color_pattern = "RGGB"
+active_area = [0, 0, 46, 2]
+
+[cameras.color_matrix]
+D65 = [0.8198, -0.2239, -0.0724, -0.4871, 1.2389, 0.2798, -0.1043, 0.205, 0.7181]
+
+[[cameras.modes]]
+mode = "14bit"
+blackpoint = 0
+whitepoint = 15892
+
+[[cameras.modes]]
+mode = "12bit"
+blackpoint = 0
+whitepoint = 3972
+

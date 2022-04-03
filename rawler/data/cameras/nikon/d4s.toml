@@ -1,0 +1,20 @@
+make = "NIKON CORPORATION"
+model = "NIKON D4S"
+clean_make = "Nikon"
+clean_model = "D4S"
+color_pattern = "RGGB"
+active_area = [0, 0, 0, 0]
+
+[cameras.color_matrix]
+D65 = [0.8598, -0.2848, -0.0857, -0.5618, 1.3606, 0.2195, -0.1002, 0.1773, 0.7137]
+
+[[cameras.modes]]
+mode = "14bit"
+blackpoint = 768
+whitepoint = 15520
+
+[[cameras.modes]]
+mode = "12bit"
+blackpoint = 192
+whitepoint = 3880
+

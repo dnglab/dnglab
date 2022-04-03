@@ -1,0 +1,12 @@
+make = "SONY"
+model = "ILCA-68"
+clean_make = "Sony"
+clean_model = "ILCA-68"
+blackpoint = 512
+whitepoint = 16300
+color_pattern = "RGGB"
+active_area = [0, 0, 32, 0]
+bps = 8
+
+[cameras.color_matrix]
+D65 = [0.6435, -0.1903, -0.0536, -0.4722, 1.2449, 0.255, -0.0663, 0.1363, 0.6517]

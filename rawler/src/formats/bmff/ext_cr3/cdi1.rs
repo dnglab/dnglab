@@ -6,7 +6,7 @@ use super::{
   iad1::Iad1Box,
 };
 use log::debug;
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 use std::io::{Read, Seek, SeekFrom};
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -54,7 +54,7 @@ impl<R: Read + Seek> ReadBox<&mut R> for Cdi1Box {
       header,
       version,
       flags,
-      iad1: iad1.ok_or(BmffError::Parse("IAD1 box not found, corrupt file?".into()))?,
+      iad1: iad1.ok_or_else(|| BmffError::Parse("IAD1 box not found, corrupt file?".into()))?,
     })
   }
 }

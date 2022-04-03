@@ -1,0 +1,12 @@
+make = "SONY"
+model = "ILCA-77M2"
+clean_make = "Sony"
+clean_model = "ILCA-77M2"
+blackpoint = 512
+whitepoint = 16300
+color_pattern = "RGGB"
+active_area = [0, 0, 26, 0]
+bps = 8
+
+[cameras.color_matrix]
+D65 = [0.5991, -0.1732, -0.0443, -0.41, 1.1989, 0.2381, -0.0704, 0.1467, 0.5992]

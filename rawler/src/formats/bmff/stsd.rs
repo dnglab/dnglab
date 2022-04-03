@@ -10,7 +10,7 @@ use super::{
 };
 use byteorder::{BigEndian, ReadBytesExt};
 use log::debug;
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 use std::io::{Read, Seek, SeekFrom};
 
 #[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize)]
@@ -56,7 +56,6 @@ impl<R: Read + Seek> ReadBox<&mut R> for StsdBox {
           ctmd = Some(CtmdBox::read_box(&mut reader, header)?);
         }
         // TODO: Multiple CRAW boxes can occour in CRM files?! BMFF Spec says the SampleBox is an array.
-
         _ => {
           debug!("Vendor box found in stsd: {:?}", header.typ);
           let vendor = VendorBox::read_box(&mut reader, header)?;

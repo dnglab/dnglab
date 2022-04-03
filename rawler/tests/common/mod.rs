@@ -4,7 +4,7 @@
 //#[cfg(feature = "samplecheck")]
 use md5::Digest;
 use rawler::{
-  analyze::{analyze_file, extract_raw_pixels, AnalyzerResult},
+  analyze::{analyze_file_structure, extract_raw_pixels, AnalyzerResult, analyze_metadata},
   decoders::RawDecodeParams,
 };
 use std::{convert::TryInto, path::PathBuf};
@@ -13,8 +13,8 @@ macro_rules! camera_file_check {
   ($make:expr, $model:expr, $test:ident, $file:expr) => {
     #[test]
     fn $test() -> std::result::Result<(), Box<dyn std::error::Error>> {
-        //crate::init_test_logger();
-        crate::common::check_camera_raw_file_conversion($make, $model, $file)
+      //crate::init_test_logger();
+      crate::common::check_camera_raw_file_conversion($make, $model, $file)
     }
   };
 }
@@ -24,7 +24,7 @@ pub(crate) use camera_file_check;
 /// Generic function to check camera raw files against
 /// pre-generated stats and pixel files.
 pub(crate) fn check_camera_raw_file_conversion(make: &str, model: &str, sample: &str) -> std::result::Result<(), Box<dyn std::error::Error>> {
-  let rawdb = PathBuf::from(std::env::var("RAWLER_RAWDB").unwrap_or("/storage/main/projects/raw/cr3samples/rawdb".into()));
+  let rawdb = PathBuf::from(std::env::var("RAWLER_RAWDB").unwrap_or_else(|_| "/storage/main/projects/raw/cr3samples/rawdb".into()));
 
   let mut camera_rawdb = rawdb.clone();
   camera_rawdb.push("cameras");
@@ -47,11 +47,11 @@ pub(crate) fn check_camera_raw_file_conversion(make: &str, model: &str, sample: 
 
   //eprintln!("{:?}", stats_file);
 
-  assert_eq!(raw_file.exists(), true,"Raw file {:?} not found", raw_file);
+  assert_eq!(raw_file.exists(), true, "Raw file {:?} not found", raw_file);
   assert_eq!(stats_file.exists(), true, "Stats file {:?} not found", stats_file);
 
   // Validate stats file
-  let new_stats = analyze_file(&PathBuf::from(&raw_file)).unwrap();
+  let new_stats = analyze_metadata(&PathBuf::from(&raw_file)).unwrap();
   let old_stats = std::fs::read_to_string(&stats_file)?;
 
   let old_stats: AnalyzerResult = serde_yaml::from_str(&old_stats)?;
@@ -67,5 +67,3 @@ pub(crate) fn check_camera_raw_file_conversion(make: &str, model: &str, sample: 
   assert_eq!(old_digest, new_digest, "Old and new raw pixel digest not match!");
   Ok(())
 }
-
-

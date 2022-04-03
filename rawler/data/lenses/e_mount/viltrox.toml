@@ -1,0 +1,23 @@
+[[lenses]]
+mount = "e-mount"
+lens_id = 32796
+make = "Viltrox"
+model = "PFU RBMH 85mm F1.8"
+focal_range = [[85, 1], [85, 1]]
+aperture_range = [[18, 10], [18, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 49473
+make = "Viltrox"
+model = "23mm F1.4 E"
+focal_range = [[23, 1], [23, 1]]
+aperture_range = [[14, 10], [14, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 49473
+make = "Viltrox"
+model = "56mm F1.4 E"
+focal_range = [[56, 1], [56, 1]]
+aperture_range = [[14, 10], [14, 10]]

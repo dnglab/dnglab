@@ -1,0 +1,11 @@
+make = "SAMSUNG"
+model = "NX mini"
+clean_make = "Samsung"
+clean_model = "NX mini"
+blackpoint = 0
+whitepoint = 4000
+color_pattern = "RGGB"
+active_area = [96, 6, 56, 0]
+
+[cameras.color_matrix]
+D65 = [0.5222, -0.1196, -0.055, -0.654, 1.4649, 0.2009, -0.1666, 0.2819, 0.5657]

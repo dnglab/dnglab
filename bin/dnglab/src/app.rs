@@ -14,8 +14,13 @@ pub fn create_app() -> App<'static, 'static> {
       (@arg debug: -d ... +global "Sets the level of debugging information")
       (@subcommand analyze =>
           (about: "Analyze raw image")
-          (@arg pixel: --pixel "Write uncompressed pixel data to STDOUT")
-          (@arg checksum: --checksum "Write MD5 checksum of raw pixels to STDOUT")
+          (@arg raw_pixel: --("raw-pixel") "Write uncompressed raw pixel data to STDOUT")
+          (@arg full_pixel: --("full-pixel") "Write uncompressed full pixel data to STDOUT")
+          (@arg preview_pixel: --("preview-pixel") "Write uncompressed preview pixel data to STDOUT")
+          (@arg thumbnail_pixel: --("thumbnail-pixel") "Write uncompressed preview pixel data to STDOUT")
+          (@arg raw_checksum: --("raw-checksum") "Write MD5 checksum of raw pixels to STDOUT")
+          (@arg preview_checksum: --("preview-checksum") "Write MD5 checksum of preview pixels to STDOUT")
+          (@arg thumbnail_checksum: --("thumbnail-checksum") "Write MD5 checksum of thumbnail pixels to STDOUT")
           (@arg srgb: --srgb "Write sRGB 16-bit TIFF to STDOUT")
           (@arg meta: --meta "Write metadata to STDOUT")
           (@arg summary: --summary "Write summary information for file to STDOUT")
@@ -23,6 +28,13 @@ pub fn create_app() -> App<'static, 'static> {
           (@arg yaml: --yaml "Format metadata as YAML")
           (@arg FILE: +required "Input file")
       )
+      (@subcommand metadata =>
+        (about: "Metadata for raw image")
+        (@arg json: --json "Format metadata as JSON")
+        (@arg yaml: --yaml "Format metadata as YAML")
+        (@arg text: --text "Format metadata as TEXT")
+        (@arg FILE: +required "Input file")
+    )
       (@subcommand convert =>
           (about: "Convert raw image(s) into dng format")
           //(@arg profile: -p --profile "Profile file to use")
@@ -83,21 +95,21 @@ fn validate_bool(v: String) -> Result<(), String> {
 
 fn validate_compression(v: String) -> Result<(), String> {
   if v.eq("lossless") || v.eq("none") {
-    return Ok(());
+    Ok(())
   } else {
     Err(format!("'{}' is not a valid compression method", v))
   }
 }
 
 pub fn convert_bool(v: Option<&str>, default: bool) -> Result<bool, String> {
-  const T: [&'static str; 3] = ["1", "true", "yes"];
-  const F: [&'static str; 3] = ["0", "false", "no"];
+  const T: [&str; 3] = ["1", "true", "yes"];
+  const F: [&str; 3] = ["0", "false", "no"];
   match &v {
     Some(v) => {
       if T.contains(v) {
-        return Ok(true);
+        Ok(true)
       } else if F.contains(v) {
-        return Ok(false);
+        Ok(false)
       } else {
         return Err(format!("{} is not a valid option", v));
       }

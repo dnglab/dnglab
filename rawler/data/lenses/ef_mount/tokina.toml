@@ -1,0 +1,119 @@
+[[lenses]]
+mount = "ef-mount"
+lens_id = 6
+make = "Tokina"
+model = "AF 193-2 19-35mm f/3.5-4.5"
+focal_range = [[19, 1], [35, 1]]
+aperture_range = [[35, 10], [45, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 8
+make = "Tokina"
+model = "AT-X 242 AF 24-200mm f/3.5-5.6"
+focal_range = [[24, 1], [200, 1]]
+aperture_range = [[35, 10], [56, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 22
+make = "Tokina"
+model = "AT-X 280 AF Pro 28-80mm f/2.8 Aspherical"
+focal_range = [[28, 1], [80, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 37
+make = "Tamron"
+model = "70-200mm f/2.8 Di LD IF Macro"
+focal_range = [[70, 1], [200, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 37
+make = "Tamron"
+model = "AF 28-300mm f/3.5-6.3 XR Di VC LD Aspherical [IF] Macro (A20)"
+focal_range = [[28, 1], [300, 1]]
+aperture_range = [[35, 10], [63, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 37
+make = "Tamron"
+model = "SP AF 17-50mm f/2.8 XR Di II VC LD Aspherical [IF]"
+focal_range = [[17, 1], [50, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 37
+make = "Tamron"
+model = "AF 18-270mm f/3.5-6.3 Di II VC LD Aspherical [IF] Macro"
+focal_range = [[18, 1], [270, 1]]
+aperture_range = [[35, 10], [63, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 160
+make = "Tokina"
+model = "AT-X 124 AF Pro DX 12-24mm f/4"
+focal_range = [[12, 1], [24, 1]]
+aperture_range = [[4, 1], [4, 1]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 160
+make = "Tokina"
+model = "AT-X 107 AF DX 10-17mm f/3.5-4.5 Fisheye"
+focal_range = [[10, 1], [17, 1]]
+aperture_range = [[35, 10], [45, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 160
+make = "Tokina"
+model = "AT-X 116 AF Pro DX 11-16mm f/2.8"
+focal_range = [[11, 1], [16, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 160
+make = "Tokina"
+model = "AT-X 11-20 F2.8 PRO DX Aspherical 11-20mm f/2.8"
+focal_range = [[11, 1], [20, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 161
+make = "Tokina"
+model = "AT-X 24-70mm f/2.8 PRO FX (IF)"
+focal_range = [[24, 1], [70, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 180
+make = "Tokina"
+model = "Opera 50mm f/1.4 FF"
+focal_range = [[50, 1], [50, 1]]
+aperture_range = [[14, 10], [14, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 234
+make = "Tokina"
+model = "AT-X 12-28 PRO DX 12-28mm f/4"
+focal_range = [[12, 1], [28, 1]]
+aperture_range = [[4, 1], [4, 1]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 250
+make = "Tokina"
+model = "Opera 16-28mm f/2.8 FF"
+focal_range = [[16, 1], [28, 1]]
+aperture_range = [[28, 10], [28, 10]]

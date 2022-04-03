@@ -1,0 +1,15 @@
+make = "NIKON"
+model = "COOLPIX B700"
+clean_make = "Nikon"
+clean_model = "Coolpix B700"
+color_pattern = "RGGB"
+active_area = [0, 0, 0, 0]
+
+[cameras.color_matrix]
+D65 = [1.4387, -0.6014, -0.1299, -0.1357, 0.9975, 0.1616, 0.0467, 0.1047, 0.4744]
+
+[[cameras.modes]]
+mode = "12bit"
+blackpoint = 200
+whitepoint = 4000
+

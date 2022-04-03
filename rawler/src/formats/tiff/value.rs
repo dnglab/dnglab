@@ -1,18 +1,43 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2021 Daniel Vogelbacher <daniel@chaospixel.com>
 
-use std::{convert::Infallible, ffi::CString, fmt::Display, num::TryFromIntError};
-
 use byteorder::{NativeEndian, WriteBytesExt};
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
+use std::{convert::Infallible, ffi::CString, fmt::Display, num::TryFromIntError};
 
 use super::{Result, TiffError, WriteAndSeek};
 
 /// Type to represent tiff values of type `RATIONAL`
-#[derive(Clone, Debug, Default, PartialEq, Copy)]
+#[derive(Clone, Debug, Default, Copy)]
 pub struct Rational {
   pub n: u32,
   pub d: u32,
+}
+
+impl PartialEq for Rational {
+  fn eq(&self, other: &Self) -> bool {
+    let n1: u64 = self.n as u64 * other.d as u64;
+    let n2: u64 = self.d as u64 * other.n as u64;
+    n1.eq(&n2)
+  }
+}
+
+impl Eq for Rational {}
+
+impl PartialOrd for Rational {
+  fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+    let n1: u64 = self.n as u64 * other.d as u64;
+    let n2: u64 = self.d as u64 * other.n as u64;
+    n1.partial_cmp(&n2)
+  }
+}
+
+impl Ord for Rational {
+  fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+    let n1: u64 = self.n as u64 * other.d as u64;
+    let n2: u64 = self.d as u64 * other.n as u64;
+    n1.cmp(&n2)
+  }
 }
 
 impl Display for Rational {
@@ -187,17 +212,35 @@ impl TryFrom<SRational> for f32 {
   }
 }
 
+impl From<u16> for Rational {
+  fn from(value: u16) -> Self {
+    Self::new(value as u32, 1)
+  }
+}
+
+impl From<u8> for Rational {
+  fn from(value: u8) -> Self {
+    Self::new(value as u32, 1)
+  }
+}
+
+impl From<u32> for Rational {
+  fn from(value: u32) -> Self {
+    Self::new(value, 1)
+  }
+}
+
 impl Rational {
   pub fn new(n: u32, d: u32) -> Self {
     Self { n, d }
   }
 
   pub fn new_f32(n: f32, d: u32) -> Self {
-    Self { n: (n * d as f32) as u32, d }
+    Self::new((n * d as f32) as u32, d)
   }
 
-  pub fn new_f64(n: f32, d: u32) -> Self {
-    Self { n: (n * d as f32) as u32, d }
+  pub fn new_f64(n: f64, d: u32) -> Self {
+    Self::new((n * d as f64) as u32, d)
   }
 }
 
@@ -218,7 +261,7 @@ impl<'de> Deserialize<'de> for Rational {
   {
     use serde::de::Error;
     let s = String::deserialize(deserializer)?;
-    let values: Vec<&str> = s.split("/").collect();
+    let values: Vec<&str> = s.split('/').collect();
     if values.len() != 2 {
       Err(D::Error::custom(format!("Invalid rational value: {}", s)))
     } else {
@@ -231,7 +274,7 @@ impl<'de> Deserialize<'de> for Rational {
 }
 
 /// Type to represent tiff values of type `SRATIONAL`
-#[derive(Clone, Debug, Default, PartialEq, Copy)]
+#[derive(Clone, Debug, Default, Copy)]
 pub struct SRational {
   pub n: i32,
   pub d: i32,
@@ -239,7 +282,34 @@ pub struct SRational {
 
 impl SRational {
   pub fn new(n: i32, d: i32) -> Self {
+    assert!(d.is_positive());
     Self { n, d }
+  }
+}
+
+impl PartialEq for SRational {
+  fn eq(&self, other: &Self) -> bool {
+    let n1: i64 = self.n as i64 * other.d as i64;
+    let n2: i64 = self.d as i64 * other.n as i64;
+    n1.eq(&n2)
+  }
+}
+
+impl Eq for SRational {}
+
+impl PartialOrd for SRational {
+  fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+    let n1: i64 = self.n as i64 * other.d as i64;
+    let n2: i64 = self.d as i64 * other.n as i64;
+    n1.partial_cmp(&n2)
+  }
+}
+
+impl Ord for SRational {
+  fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+    let n1: i64 = self.n as i64 * other.d as i64;
+    let n2: i64 = self.d as i64 * other.n as i64;
+    n1.cmp(&n2)
   }
 }
 
@@ -260,7 +330,7 @@ impl<'de> Deserialize<'de> for SRational {
   {
     use serde::de::Error;
     let s = String::deserialize(deserializer)?;
-    let values: Vec<&str> = s.split("/").collect();
+    let values: Vec<&str> = s.split('/').collect();
     if values.len() != 2 {
       Err(D::Error::custom(format!("Invalid srational value: {}", s)))
     } else {
@@ -331,15 +401,29 @@ impl Value {
     }
   }
 
+  pub fn get_data(&self) -> &Vec<u8> {
+    match self {
+      Value::Ascii(data) => data.as_bytes(),
+      Value::Byte(data) => data,
+      Value::Undefined(data) => data,
+      Value::Unknown(_, data) => data,
+      _ => {
+        panic!("Unable to call get_data() on this value type");
+      }
+    }
+  }
+
   pub fn force_usize(&self, idx: usize) -> usize {
     match self.get_usize(idx) {
       Ok(Some(v)) => v,
       Ok(None) => {
         log::error!("TIFF value index out of range, index is {} but length is {}", idx, self.count());
+        log::error!("Backtrace:\n{:?}", backtrace::Backtrace::new());
         Default::default()
       }
       Err(_) => {
         log::error!("TIFF value cast error, but forced to default value!");
+        log::error!("Backtrace:\n{:?}", backtrace::Backtrace::new());
         Default::default()
       }
     }
@@ -350,10 +434,12 @@ impl Value {
       Ok(Some(v)) => v,
       Ok(None) => {
         log::error!("TIFF value index out of range, index is {} but length is {}", idx, self.count());
+        log::error!("Backtrace:\n{:?}", backtrace::Backtrace::new());
         Default::default()
       }
       Err(_) => {
         log::error!("TIFF value cast error, but forced to default value!");
+        log::error!("Backtrace:\n{:?}", backtrace::Backtrace::new());
         Default::default()
       }
     }
@@ -364,10 +450,12 @@ impl Value {
       Ok(Some(v)) => v,
       Ok(None) => {
         log::error!("TIFF value index out of range, index is {} but length is {}", idx, self.count());
+        log::error!("Backtrace:\n{:?}", backtrace::Backtrace::new());
         Default::default()
       }
       Err(_) => {
         log::error!("TIFF value cast error, but forced to default value!");
+        log::error!("Backtrace:\n{:?}", backtrace::Backtrace::new());
         Default::default()
       }
     }
@@ -378,10 +466,12 @@ impl Value {
       Ok(Some(v)) => v,
       Ok(None) => {
         log::error!("TIFF value index out of range, index is {} but length is {}", idx, self.count());
+        log::error!("Backtrace:\n{:?}", backtrace::Backtrace::new());
         Default::default()
       }
       Err(_) => {
         log::error!("TIFF value cast error, but forced to default value!");
+        log::error!("Backtrace:\n{:?}", backtrace::Backtrace::new());
         Default::default()
       }
     }
@@ -392,10 +482,12 @@ impl Value {
       Ok(Some(v)) => v,
       Ok(None) => {
         log::error!("TIFF value index out of range, index is {} but length is {}", idx, self.count());
+        log::error!("Backtrace:\n{:?}", backtrace::Backtrace::new());
         Default::default()
       }
       Err(_) => {
         log::error!("TIFF value cast error, but forced to default value!");
+        log::error!("Backtrace:\n{:?}", backtrace::Backtrace::new());
         Default::default()
       }
     }
@@ -406,10 +498,12 @@ impl Value {
       Ok(Some(v)) => v,
       Ok(None) => {
         log::error!("TIFF value index out of range, index is {} but length is {}", idx, self.count());
+        log::error!("Backtrace:\n{:?}", backtrace::Backtrace::new());
         Default::default()
       }
       Err(_) => {
         log::error!("TIFF value cast error, but forced to default value!");
+        log::error!("Backtrace:\n{:?}", backtrace::Backtrace::new());
         Default::default()
       }
     }
@@ -420,10 +514,12 @@ impl Value {
       Ok(Some(v)) => v,
       Ok(None) => {
         log::error!("TIFF value index out of range, index is {} but length is {}", idx, self.count());
+        log::error!("Backtrace:\n{:?}", backtrace::Backtrace::new());
         Default::default()
       }
       Err(_) => {
         log::error!("TIFF value cast error, but forced to default value!");
+        log::error!("Backtrace:\n{:?}", backtrace::Backtrace::new());
         Default::default()
       }
     }
@@ -434,10 +530,12 @@ impl Value {
       Ok(Some(v)) => v,
       Ok(None) => {
         log::error!("TIFF value index out of range, index is {} but length is {}", idx, self.count());
+        log::error!("Backtrace:\n{:?}", backtrace::Backtrace::new());
         Default::default()
       }
       Err(_) => {
         log::error!("TIFF value cast error, but forced to default value!");
+        log::error!("Backtrace:\n{:?}", backtrace::Backtrace::new());
         Default::default()
       }
     }
@@ -448,10 +546,12 @@ impl Value {
       Ok(Some(v)) => v,
       Ok(None) => {
         log::error!("TIFF value index out of range, index is {} but length is {}", idx, self.count());
+        log::error!("Backtrace:\n{:?}", backtrace::Backtrace::new());
         Default::default()
       }
       Err(_) => {
         log::error!("TIFF value cast error, but forced to default value!");
+        log::error!("Backtrace:\n{:?}", backtrace::Backtrace::new());
         Default::default()
       }
     }
@@ -462,10 +562,12 @@ impl Value {
       Ok(Some(v)) => v,
       Ok(None) => {
         log::error!("TIFF value index out of range, index is {} but length is {}", idx, self.count());
+        log::error!("Backtrace:\n{:?}", backtrace::Backtrace::new());
         Default::default()
       }
       Err(_) => {
         log::error!("TIFF value cast error, but forced to default value!");
+        log::error!("Backtrace:\n{:?}", backtrace::Backtrace::new());
         Default::default()
       }
     }
@@ -711,7 +813,7 @@ impl Value {
       return Err(TiffError::General("Entry as count == 0".into()));
     }
     if self.byte_size() > 4 {
-      return Err(TiffError::Overflow(format!("Invalid data")));
+      Err(TiffError::Overflow("Invalid data".to_string()))
     } else {
       match self {
         Self::Byte(v) => Ok(
@@ -792,7 +894,7 @@ impl Value {
         }
       }
       Self::Undefined(val) => {
-        w.write_all(&val)?;
+        w.write_all(val)?;
       }
       Self::SShort(val) => {
         for x in val {
@@ -841,7 +943,7 @@ impl Value {
       Self::SRational(_) => 10,
       Self::Float(_) => 11,
       Self::Double(_) => 12,
-      Self::Unknown(t, _) => t.clone(),
+      Self::Unknown(t, _) => *t,
     }
   }
 
@@ -869,21 +971,30 @@ impl Value {
 #[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize)]
 pub struct TiffAscii {
   strings: Vec<String>,
+  plain: Vec<u8>,
 }
 
 impl TiffAscii {
   pub fn new<T: AsRef<str>>(value: T) -> Self {
     Self {
       strings: vec![String::from(value.as_ref())],
+      plain: Default::default(),
     }
   }
 
   pub fn new_from_vec(values: Vec<String>) -> Self {
-    Self { strings: values }
+    Self {
+      strings: values,
+      plain: Default::default(),
+    }
   }
 
   pub fn strings(&self) -> &Vec<String> {
     &self.strings
+  }
+
+  pub fn as_bytes(&self) -> &Vec<u8> {
+    &self.plain
   }
 
   pub fn first(&self) -> &String {
@@ -915,7 +1026,10 @@ impl TiffAscii {
     //nul_range_end += 1;
     // }
 
-    Self { strings }
+    Self {
+      strings,
+      plain: Vec::from(raw),
+    }
   }
 }
 
@@ -1134,5 +1248,74 @@ impl From<&[i32]> for Value {
 impl<const N: usize> From<[i32; N]> for Value {
   fn from(value: [i32; N]) -> Self {
     Value::SLong(value.into())
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[test]
+  fn rational_type_equal() {
+    let a = Rational::new(257, 10);
+    let b = Rational::new(257, 10);
+    assert_eq!(a, b);
+
+    let a = Rational::new(257, 5);
+    let b = Rational::new(2570, 50);
+    assert_eq!(a, b);
+  }
+
+  #[test]
+  fn rational_type_nequal() {
+    let a = Rational::new(257, 10);
+    let b = Rational::new(2570, 10);
+    assert_ne!(a, b);
+  }
+
+  #[test]
+  fn rational_type_greater() {
+    let a = Rational::new(200, 1);
+    let b = Rational::new(300, 10);
+    assert!(a > b);
+  }
+
+  #[test]
+  fn rational_type_lesser() {
+    let a = Rational::new(200, 1);
+    let b = Rational::new(300, 10);
+    assert!(b < a);
+  }
+
+  #[test]
+  fn srational_type_equal() {
+    let a = SRational::new(-257, 10);
+    let b = SRational::new(-257, 10);
+    assert_eq!(a, b);
+
+    let a = SRational::new(-257, 10);
+    let b = SRational::new(-2570, 100);
+    assert_eq!(a, b);
+  }
+
+  #[test]
+  fn srational_type_nequal() {
+    let a = SRational::new(-257, 10);
+    let b = SRational::new(-2570, 10);
+    assert_ne!(a, b);
+  }
+
+  #[test]
+  fn srational_type_greater() {
+    let a = SRational::new(-200, 1);
+    let b = SRational::new(-300, 10);
+    assert!(a < b);
+  }
+
+  #[test]
+  fn srational_type_lesser() {
+    let a = SRational::new(-200, 1);
+    let b = SRational::new(-300, 10);
+    assert!(a < b);
   }
 }

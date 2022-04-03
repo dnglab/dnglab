@@ -1,0 +1,20 @@
+make = "NIKON CORPORATION"
+model = "NIKON D600"
+clean_make = "Nikon"
+clean_model = "D600"
+color_pattern = "RGGB"
+active_area = [0, 0, 50, 0]
+
+[cameras.color_matrix]
+D65 = [0.8178, -0.2245, -0.0609, -0.4857, 1.2394, 0.2776, -0.1207, 0.2086, 0.7298]
+
+[[cameras.modes]]
+mode = "14bit"
+blackpoint = 0
+whitepoint = 15520
+
+[[cameras.modes]]
+mode = "12bit"
+blackpoint = 0
+whitepoint = 3880
+

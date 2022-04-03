@@ -1,0 +1,14 @@
+make = "Panasonic"
+model = "DC-FZ80"
+clean_make = "Panasonic"
+clean_model = "DC-FZ80"
+blackpoint = 170
+whitepoint = 4095
+color_pattern = "GBRG"
+
+[cameras.color_matrix]
+D65 = [0.855, -0.2908, -0.0842, -0.3195, 1.1529, 0.1881, -0.0338, 0.1603, 0.4631]
+
+[[cameras.modes]]
+mode = "4:3"
+active_area = [0, 0, 126, 0]

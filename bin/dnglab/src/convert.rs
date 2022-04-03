@@ -16,7 +16,7 @@ use crate::{
   AppError, Result, PKG_NAME, PKG_VERSION,
 };
 
-const SUPPORTED_FILE_EXT: [&'static str; 4] = ["CR3", "CR2", "CRM", "PEF"];
+const SUPPORTED_FILE_EXT: [&str; 4] = ["CR3", "CR2", "CRM", "PEF"];
 
 /// Entry point for Clap sub command `convert`
 pub async fn convert(options: &ArgMatches<'_>) -> anyhow::Result<()> {
@@ -80,7 +80,7 @@ pub async fn convert(options: &ArgMatches<'_>) -> anyhow::Result<()> {
   } else {
     eprintln!("Converted {}/{} files, {} failed:", success, total, failure,);
     for failed in results.iter().filter(|j| j.error.is_some()) {
-      eprintln!("   {}", failed.job.input.display().to_string());
+      eprintln!("   {}", failed.job.input.display());
     }
   }
   println!("Total time: {:.2}s", now.elapsed().as_secs_f32());
@@ -117,11 +117,11 @@ fn generate_job(entry: &FileMap, options: &ArgMatches<'_>) -> Result<Vec<Raw2Dng
         Some("none") => DngCompression::Uncompressed,
         Some(s) => {
           println!("Unknown compression: {}", s);
-          return Err(AppError::InvalidArgs.into());
+          return Err(AppError::InvalidArgs);
         }
         None => DngCompression::Lossless,
       },
-      artist: options.value_of("artist").map(|v| String::from(v)),
+      artist: options.value_of("artist").map(String::from),
       software: format!("{} {}", PKG_NAME, PKG_VERSION),
       index: if do_batch { i } else { index },
     };
@@ -146,7 +146,7 @@ fn generate_job(entry: &FileMap, options: &ArgMatches<'_>) -> Result<Vec<Raw2Dng
         }
       }
       None => {
-        return Err(AppError::General(format!("Output path has no parent directory")));
+        return Err(AppError::General("Output path has no parent directory".to_string()));
       }
     }
 

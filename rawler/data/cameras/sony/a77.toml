@@ -1,0 +1,17 @@
+make = "SONY"
+model = "SLT-A77"
+clean_make = "Sony"
+clean_model = "SLT-A77"
+
+model_aliases = [
+  ["SLT-A77V", "SLT-A77V"],
+]
+
+blackpoint = 512
+whitepoint = 16300
+color_pattern = "RGGB"
+active_area = [0, 0, 28, 0]
+bps = 8
+
+[cameras.color_matrix]
+D65 = [0.5491, -0.1192, -0.0363, -0.4951, 1.2342, 0.2948, -0.0911, 0.1722, 0.7192]

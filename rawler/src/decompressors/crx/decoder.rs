@@ -66,7 +66,7 @@ impl<'a> PlaneLineIter<'a> {
         line_len,
         s_param: 0,
         q_param: band.q_param,
-        supports_partial: if plane.support_partial && band_id == 0 { true } else { false }, // TODO: only for subbandnum == 0
+        supports_partial: plane.support_partial && band_id == 0,
         rice: RiceDecoder::new(bitpump),
       };
       params.push(param);
@@ -122,7 +122,7 @@ impl<'a> PlaneLineIter<'a> {
         Ok(line_data)
       }
     } else {
-      Err(CrxError::General(format!("All rows processed, can't decode more")))
+      Err(CrxError::General("All rows processed, can't decode more".to_string()))
     }
   }
 }
@@ -154,7 +154,7 @@ type PlaneLine = Vec<i32>;
 /// Decodes a complete plane and returns it as vector of lines
 fn decode_full_plane(codec: &CodecParams, tile: &Tile, plane: &Plane, mdat: &[u8]) -> Result<Vec<PlaneLine>> {
   //eprintln!("Process tile {}, plane: {}", tile.id, plane.id);
-  let line_decoder = PlaneLineIter::new(codec.clone(), tile, plane, mdat)?;
+  let line_decoder = PlaneLineIter::new(*codec, tile, plane, mdat)?;
   line_decoder.collect()
 }
 
@@ -198,7 +198,7 @@ impl CodecParams {
           let (p0, p1, p2, p3) = (&planes[0], &planes[1], &planes[2], &planes[3]);
           // Process each PlaneLine in all 4 buffers
           for (plane_row, (l0, l1, l2, l3)) in izip!(p0, p1, p2, p3).enumerate() {
-            let (c0, c1, c2, c3) = convert_plane_line(&self, &l0, &l1, &l2, &l3)?;
+            let (c0, c1, c2, c3) = convert_plane_line(&self, l0, l1, l2, l3)?;
             integrate_cfa(&self, &tiles, &mut cfa, tile_id, 0, plane_row, &c0)?;
             integrate_cfa(&self, &tiles, &mut cfa, tile_id, 1, plane_row, &c1)?;
             integrate_cfa(&self, &tiles, &mut cfa, tile_id, 2, plane_row, &c2)?;
@@ -517,6 +517,7 @@ impl CodecParams {
   /// Golomb-Rice becomes more efficient when using an adaptive K value
   /// instead of a fixed one.
   /// The K parameter is used as q = n >> k where n is the sample to encode.
+  #[allow(clippy::comparison_chain)]
   fn decode_nontop_line_rounded(&self, p: &mut BandParam) -> Result<()> {
     assert_eq!(p.line_pos, 1);
     let mut remaining = p.subband_width as u32;
@@ -579,8 +580,7 @@ impl CodecParams {
   /// copied into the final plane buffer.
   ///
   /// For non-LL bands, decoding process differs a little bit
-  /// because some value rounding is added. This process is not
-  /// implemented yet.
+  /// because some value rounding is added.
   pub(super) fn decode_line(&self, param: &mut BandParam) -> Result<()> {
     assert!(param.cur_line < param.subband_height);
     // We start at first real pixel value
@@ -664,6 +664,7 @@ pub(super) fn med(a: i32, b: i32, c: i32) -> i32 {
 /// Results from decode_line() are signed 32 bit integers.
 /// By using a median and max value, these are converted
 /// to unsigned 16 bit integers.
+#[allow(clippy::type_complexity)]
 fn convert_plane_line(codec: &CodecParams, l0: &[i32], l1: &[i32], l2: &[i32], l3: &[i32]) -> Result<(Vec<u16>, Vec<u16>, Vec<u16>, Vec<u16>)> {
   let mut p0 = vec![0; l0.len()];
   let mut p1 = vec![0; l1.len()];
@@ -699,7 +700,7 @@ fn convert_plane_line(codec: &CodecParams, l0: &[i32], l1: &[i32], l2: &[i32], l
         p3[i] = constrain((median + (v0 << 10) + 1927 * v1 + 512) >> 10, 0, max_val) as u16;
       });
     }
-    enc_type @ _ => {
+    enc_type => {
       return Err(CrxError::General(format!("Unsupported encoding type {}", enc_type)));
     }
   }
@@ -711,15 +712,7 @@ fn convert_plane_line(codec: &CodecParams, l0: &[i32], l1: &[i32], l2: &[i32], l
 ///
 /// A plane is a single monochrome image for one of the four CFA colors.
 /// `plane_id` is 0, 1, 2 or 3 for R, G1, G2, B
-fn integrate_cfa(
-  codec: &CodecParams,
-  tiles: &Vec<Tile>,
-  cfa_buf: &mut [u16],
-  tile_id: usize,
-  plane_id: usize,
-  plane_row: usize,
-  plane_buf: &[u16],
-) -> Result<()> {
+fn integrate_cfa(codec: &CodecParams, tiles: &[Tile], cfa_buf: &mut [u16], tile_id: usize, plane_id: usize, plane_row: usize, plane_buf: &[u16]) -> Result<()> {
   // 2x2 pixel for RGGB
   const CFA_DIM: usize = 2;
 
@@ -748,7 +741,7 @@ fn integrate_cfa(
     2 => (1, 0),
     3 => (1, 1),
     _ => {
-      return Err(CrxError::General(format!("Invalid plane id")));
+      return Err(CrxError::General("Invalid plane id".to_string()));
     }
   };
   //println!("plane_width: {}, buf_size: {}", tiles[tile_id].plane_width, plane_buf.len());

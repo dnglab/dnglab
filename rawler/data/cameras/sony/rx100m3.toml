@@ -1,0 +1,12 @@
+make = "SONY"
+model = "DSC-RX100M3"
+clean_make = "Sony"
+clean_model = "DSC-RX100M3"
+blackpoint = 800
+whitepoint = 16300
+color_pattern = "RGGB"
+active_area = [0, 0, 12, 0]
+bps = 8
+
+[cameras.color_matrix]
+D65 = [0.6596, -0.2079, -0.0562, -0.4782, 1.3016, 0.1933, -0.097, 0.1581, 0.5181]

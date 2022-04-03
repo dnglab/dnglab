@@ -1,0 +1,11 @@
+make = "OLYMPUS OPTICAL CO.,LTD"
+model = "C5050Z"
+clean_make = "Olympus"
+clean_model = "C5050Z"
+blackpoint = 0
+whitepoint = 4095
+color_pattern = "BGGR"
+active_area = [0, 0, 0, 0]
+
+[cameras.color_matrix]
+D65 = [1.0508, -0.3124, -0.1273, -0.6079, 1.4294, 0.1901, -0.1653, 0.2306, 0.6237]

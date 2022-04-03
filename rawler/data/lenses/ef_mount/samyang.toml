@@ -1,0 +1,7 @@
+[[lenses]]
+mount = "ef-mount"
+lens_id = 103
+make = "Samyang"
+model = "AF 14mm f/2.8 EF"
+focal_range = [[14, 1], [14, 1]]
+aperture_range = [[28, 10], [28, 10]]

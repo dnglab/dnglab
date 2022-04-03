@@ -1,0 +1,11 @@
+make = "Minolta Co., Ltd."
+model = "DiMAGE A1"
+clean_make = "Minolta"
+clean_model = "DiMAGE A1"
+blackpoint = 0
+whitepoint = 3965
+color_pattern = "RGGB"
+active_area = [0, 0, 0, 0]
+
+[cameras.color_matrix]
+D65 = [0.9274, -0.2547, -0.1167, -0.822, 1.6323, 0.1943, -0.2273, 0.272, 0.834]

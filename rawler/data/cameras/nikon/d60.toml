@@ -1,0 +1,15 @@
+make = "NIKON CORPORATION"
+model = "NIKON D60"
+clean_make = "Nikon"
+clean_model = "D60"
+color_pattern = "GBRG"
+active_area = [0, 0, 0, 0]
+
+[cameras.color_matrix]
+D65 = [0.8736, -0.2458, -0.0935, -0.9075, 1.6894, 0.2251, -0.1354, 0.1242, 0.8263]
+
+[[cameras.modes]]
+mode = "12bit"
+blackpoint = 0
+whitepoint = 3880
+

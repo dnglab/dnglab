@@ -1,0 +1,27 @@
+make = "LEICA"
+model = "D-LUX (Typ 109)"
+clean_make = "Leica"
+clean_model = "D-LUX (Typ 109)"
+blackpoint = 143
+whitepoint = 4095
+color_pattern = "BGGR"
+
+[cameras.color_matrix]
+D65 = [0.8844, -0.3538, -0.0768, -0.3709, 1.1762, 0.22, -0.0698, 0.1792, 0.522]
+
+[[cameras.modes]]
+mode = "3:2"
+active_area = [0, 0, 80, 0]
+
+[[cameras.modes]]
+mode = "4:3"
+active_area = [0, 0, 16, 0]
+
+[[cameras.modes]]
+mode = "1:1"
+active_area = [0, 0, 144, 0]
+
+[[cameras.modes]]
+mode = "16:9"
+active_area = [0, 0, 96, 0]
+

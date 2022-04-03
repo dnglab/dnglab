@@ -1,0 +1,21 @@
+make = "Panasonic"
+model = "DMC-TZ100"
+clean_make = "Panasonic"
+clean_model = "DMC-TZ100"
+
+model_aliases = [
+  ["DMC-TZ101", "DMC-TZ101"],
+  ["DMC-TZ110", "DMC-TZ110"],
+  ["DMC-ZS100", "DMC-ZS100"],
+]
+
+blackpoint = 141
+whitepoint = 4095
+color_pattern = "GBRG"
+
+[cameras.color_matrix]
+D65 = [0.779, -0.2736, -0.0755, -0.3452, 1.187, 0.1769, -0.0628, 0.1647, 0.4898]
+
+[[cameras.modes]]
+mode = "3:2"
+active_area = [0, 0, 0, 0]

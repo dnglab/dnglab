@@ -3,10 +3,11 @@
 
 use super::Job;
 use crate::{AppError, Result};
+use async_trait::async_trait;
 use log::debug;
 use rawler::{
   dng::{original_decompress, original_digest},
-  formats::tiff::{Entry, GenericTiffReader, Value, reader::TiffReader},
+  formats::tiff::{reader::TiffReader, Entry, GenericTiffReader, Value},
   tags::DngTag,
 };
 use std::{
@@ -14,7 +15,6 @@ use std::{
   io::{BufReader, BufWriter, Write},
 };
 use std::{fs::File, path::PathBuf, time::Instant};
-use async_trait::async_trait;
 
 /// Job for converting RAW to DNG
 #[derive(Debug, Clone)]
@@ -37,7 +37,7 @@ impl Display for JobResult {
   /// Pretty print the extraction state
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
     if let Some(error) = self.error.as_ref() {
-      f.write_fmt(format_args!("Failed: '{}', {}", self.job.input.display(), error.to_string()))?;
+      f.write_fmt(format_args!("Failed: '{}', {}", self.job.input.display(), error))?;
     } else {
       f.write_fmt(format_args!(
         "Extracted '{}' => '{}' (in {:.2}s)",
@@ -66,13 +66,13 @@ impl ExtractRawJob {
     }
     if let Some(orig_data) = file.get_entry(DngTag::OriginalRawFileData) {
       if let Value::Undefined(val) = &orig_data.value {
-        let comp = original_decompress(val)?;
+        let comp = original_decompress(val).map_err(|e| AppError::General(e.to_string()))?;
         if let Some(Entry {
           value: Value::Byte(orig_digest),
           ..
         }) = file.get_entry(DngTag::OriginalRawFileDigest)
         {
-          let new_digest = original_digest(&val);
+          let new_digest = original_digest(val);
           debug!("Original calculated original data digest: {:x?}", orig_digest);
           debug!("Fresh calculated original data digest: {:x?}", new_digest);
           if !orig_digest.eq(&new_digest) {
@@ -88,18 +88,18 @@ impl ExtractRawJob {
 
         let raw_file = File::create(&self.output)?;
         let mut out_file = BufWriter::new(raw_file);
-        out_file.write(&comp)?;
+        out_file.write_all(&comp)?;
         out_file.flush()?;
-        return Ok(JobResult {
+        Ok(JobResult {
           job: self.clone(),
           duration: 0.0,
           error: None,
-        });
+        })
       } else {
-        return Err(AppError::General("No embedded raw data found".into()));
+        Err(AppError::General("No embedded raw data found".into()))
       }
     } else {
-      return Err(AppError::General("No embedded raw file found".into()));
+      Err(AppError::General("No embedded raw file found".into()))
     }
   }
 }

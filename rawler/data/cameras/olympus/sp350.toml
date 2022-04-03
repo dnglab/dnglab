@@ -1,0 +1,11 @@
+make = "OLYMPUS IMAGING CORP."
+model = "SP350"
+clean_make = "Olympus"
+clean_model = "SP350"
+blackpoint = 0
+whitepoint = 4095
+color_pattern = "RGGB"
+active_area = [0, 0, 0, 0]
+
+[cameras.color_matrix]
+D65 = [1.2078, -0.4836, -0.1069, -0.6671, 1.4306, 0.2578, -0.0786, 0.0939, 0.7418]

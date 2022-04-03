@@ -1,0 +1,15 @@
+make = "NIKON CORPORATION"
+model = "NIKON D70"
+clean_make = "Nikon"
+clean_model = "D70"
+color_pattern = "BGGR"
+active_area = [0, 0, 2, 0]
+
+[cameras.color_matrix]
+D65 = [0.7732, -0.2422, -0.0789, -0.8238, 1.5884, 0.2498, -0.0859, 0.0783, 0.733]
+
+[[cameras.modes]]
+mode = "12bit"
+blackpoint = 0
+whitepoint = 4095
+

@@ -1,0 +1,243 @@
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 26
+make = "Carl Zeiss"
+model = "Planar T* 50mm f/1.4"
+focal_range = [[50, 1], [50, 1]]
+aperture_range = [[14, 10], [14, 10]]
+
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 26
+make = "Carl Zeiss"
+model = "Planar T 85mm f/1.4 ZE"
+focal_range = [[85, 1], [85, 1]]
+aperture_range = [[14, 10], [14, 10]]
+
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 27
+make = "Carl Zeiss"
+model = "Distagon T* 28mm f/2 ZF"
+focal_range = [[28, 1], [28, 1]]
+aperture_range = [[2, 1], [2, 1]]
+
+
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 33
+make = "Carl Zeiss"
+model = "Distagon T* 15mm f/2.8 ZE"
+focal_range = [[15, 1], [15, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 33
+make = "Carl Zeiss"
+model = "Distagon T* 18mm f/3.5 ZE"
+focal_range = [[18, 1], [18, 1]]
+aperture_range = [[35, 10], [35, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 33
+make = "Carl Zeiss"
+model = "Distagon T* 21mm f/2.8 ZE"
+focal_range = [[21, 1], [21, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 33
+make = "Carl Zeiss"
+model = "Distagon T* 25mm f/2 ZE"
+focal_range = [[25, 1], [25, 1]]
+aperture_range = [[2, 1], [2, 1]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 33
+make = "Carl Zeiss"
+model = "Distagon T* 28mm f/2 ZE"
+focal_range = [[28, 1], [28, 1]]
+aperture_range = [[2, 1], [2, 1]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 33
+make = "Carl Zeiss"
+model = "Distagon T* 35mm f/2 ZE"
+focal_range = [[35, 1], [35, 1]]
+aperture_range = [[2, 1], [2, 1]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 33
+make = "Carl Zeiss"
+model = "Distagon T* 35mm f/1.4 ZE"
+focal_range = [[35, 1], [35, 1]]
+aperture_range = [[14, 10], [14, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 33
+make = "Carl Zeiss"
+model = "Planar T* 50mm f/1.4 ZE"
+focal_range = [[50, 1], [50, 1]]
+aperture_range = [[14, 10], [14, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 33
+make = "Carl Zeiss"
+model = "Makro-Planar T* 50mm f/2 ZE"
+focal_range = [[50, 1], [50, 1]]
+aperture_range = [[2, 1], [2, 1]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 33
+make = "Carl Zeiss"
+model = "Makro-Planar T* 100mm f/2 ZE"
+focal_range = [[100, 1], [100, 1]]
+aperture_range = [[2, 1], [2, 1]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 33
+make = "Carl Zeiss"
+model = "Apo-Sonnar T* 135mm f/2 ZE"
+focal_range = [[135, 1], [135, 1]]
+aperture_range = [[2, 1], [2, 1]]
+
+
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 47
+make = "Zeiss"
+model = "Milvus 35mm f/2"
+focal_range = [[35, 1], [35, 1]]
+aperture_range = [[2, 1], [2, 1]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 47
+make = "Zeiss"
+model = "Milvus 50mm f/2 Makro"
+focal_range = [[50, 1], [50, 1]]
+aperture_range = [[2, 1], [2, 1]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 47
+make = "Zeiss"
+model = "Milvus 135mm f/2 ZE"
+focal_range = [[135, 1], [135, 1]]
+aperture_range = [[2, 1], [2, 1]]
+
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 154
+make = "Zeiss"
+model = "Milvus 21mm f/2.8"
+focal_range = [[21, 1], [21, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 154
+make = "Zeiss"
+model = "Milvus 15mm f/2.8 ZE"
+focal_range = [[15, 1], [15, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 154
+make = "Zeiss"
+model = "Milvus 18mm f/2.8 ZE"
+focal_range = [[18, 1], [18, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 174
+make = "Zeiss"
+model = "Milvus 100mm f/2 Makro"
+focal_range = [[100, 1], [100, 1]]
+aperture_range = [[2, 1], [2, 1]]
+
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 180
+make = "Zeiss"
+model = "Milvus 50mm f/1.4"
+focal_range = [[50, 1], [50, 1]]
+aperture_range = [[14, 10], [14, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 180
+make = "Zeiss"
+model = "Milvus 85mm f/1.4"
+focal_range = [[85, 1], [85, 1]]
+aperture_range = [[14, 10], [14, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 180
+make = "Zeiss"
+model = "Otus 28mm f/1.4 ZE"
+focal_range = [[28, 1], [28, 1]]
+aperture_range = [[14, 10], [14, 10]]
+
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 198
+make = "Zeiss"
+model = "Otus 55mm f/1.4 ZE"
+focal_range = [[55, 1], [55, 1]]
+aperture_range = [[14, 10], [14, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 198
+make = "Zeiss"
+model = "Otus 85mm f/1.4 ZE"
+focal_range = [[85, 1], [85, 1]]
+aperture_range = [[14, 10], [14, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 198
+make = "Zeiss"
+model = "Milvus 25mm f/1.4"
+focal_range = [[25, 1], [25, 1]]
+aperture_range = [[14, 10], [14, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 198
+make = "Zeiss"
+model = "Otus 100mm f/1.4"
+focal_range = [[100, 1], [100, 1]]
+aperture_range = [[14, 10], [14, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 198
+make = "Zeiss"
+model = "Milvus 35mm f/1.4 ZE"
+focal_range = [[35, 1], [35, 1]]
+aperture_range = [[14, 10], [14, 10]]
+

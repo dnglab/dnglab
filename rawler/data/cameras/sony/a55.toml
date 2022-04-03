@@ -1,0 +1,17 @@
+make = "SONY"
+model = "SLT-A55"
+clean_make = "Sony"
+clean_model = "SLT-A55"
+
+model_aliases = [
+  ["SLT-A55V", "SLT-A55V"],
+]
+
+blackpoint = 512
+whitepoint = 16300
+color_pattern = "RGGB"
+active_area = [0, 0, 0, 0]
+bps = 8
+
+[cameras.color_matrix]
+D65 = [0.5932, -0.1492, -0.0411, -0.4813, 1.2285, 0.2856, -0.0741, 0.1524, 0.6739]

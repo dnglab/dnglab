@@ -1,0 +1,12 @@
+make = "NIKON"
+model = "COOLPIX P6000"
+clean_make = "Nikon"
+clean_model = "Coolpix P6000"
+blackpoint = 0
+whitepoint = 4095
+color_pattern = "RGGB"
+active_area = [0, 0, 0, 0]
+hints = ["msb32"]
+
+[cameras.color_matrix]
+D65 = [0.9698, -0.3367, -0.0914, -0.4706, 1.2584, 0.2368, -0.0837, 0.0968, 0.5801]

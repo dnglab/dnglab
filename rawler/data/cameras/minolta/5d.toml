@@ -1,0 +1,11 @@
+make = "KONICA MINOLTA"
+model = "DYNAX 5D"
+clean_make = "Minolta"
+clean_model = "Dynax 5D"
+blackpoint = 0
+whitepoint = 4095
+color_pattern = "RGGB"
+active_area = [0, 0, 0, 0]
+
+[cameras.color_matrix]
+D65 = [1.0284, -0.3283, -0.1086, -0.7957, 1.5762, 0.2316, -0.0829, 0.0882, 0.6644]

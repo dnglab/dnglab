@@ -1,0 +1,14 @@
+make = "Canon"
+model = "Canon EOS 10D"
+clean_make = "Canon"
+clean_model = "EOS 10D"
+blackpoint = 124
+whitepoint = 4000
+color_pattern = "RGGB"
+#crops = [12,0,0,64]
+
+[cameras.color_matrix]
+D65 = [0.8197, -0.2000, -0.1118, -0.6714, 1.4335, 0.2592, -0.2536, 0.3178, 0.8266]
+
+[cameras.params]
+wb_offset = 1
