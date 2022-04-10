@@ -1,5 +1,8 @@
 use std::f32::NAN;
 
+use image::DynamicImage;
+use image::ImageBuffer;
+use image::Rgb;
 use log::debug;
 use log::warn;
 use serde::Deserialize;
@@ -215,6 +218,24 @@ impl<'a> Decoder for NefDecoder<'a> {
     let exif = Exif::new(self.tiff.root_ifd())?;
     let mdata = RawMetadata::new(&self.camera, exif);
     Ok(mdata)
+  }
+
+  fn full_image(&self, file: &mut RawFile) -> Result<Option<DynamicImage>> {
+    let root_ifd = &self.tiff.root_ifd();
+    let buf = root_ifd
+      .singlestrip_data(file.inner())
+      .map_err(|e| RawlerError::General(format!("Failed to get strip data: {}", e)))?;
+    let compression = root_ifd.get_entry(TiffCommonTag::Compression).ok_or("Missing tag")?.force_usize(0);
+    let width = fetch_tiff_tag!(root_ifd, TiffCommonTag::ImageWidth).force_usize(0);
+    let height = fetch_tiff_tag!(root_ifd, TiffCommonTag::ImageLength).force_usize(0);
+    if compression == 1 {
+      Ok(Some(DynamicImage::ImageRgb8(
+        ImageBuffer::<Rgb<u8>, Vec<u8>>::from_raw(width as u32, height as u32, buf).unwrap(),
+      )))
+    } else {
+      let img = image::load_from_memory_with_format(&buf, image::ImageFormat::Jpeg).unwrap();
+      Ok(Some(img))
+    }
   }
 }
 
