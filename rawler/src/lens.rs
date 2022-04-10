@@ -4,14 +4,14 @@
 use std::fmt::Display;
 
 use lazy_static::lazy_static;
-use log::debug;
+use serde::{Deserialize, Serialize};
 use toml::Value;
 
 use crate::{decoders::Camera, formats::tiff::Rational};
 
-pub static LENSES_TOML: &'static str = include_str!("../data/lenses.toml");
+pub static LENSES_TOML: &str = include_str!(concat!(env!("OUT_DIR"), "/lenses.toml"));
 
-const FAIL: &'static str = "Invalid lens database";
+const FAIL: &str = "Invalid lens database";
 
 lazy_static! {
   static ref LENSES_DB: Vec<LensDescription> = build_lens_database().expect(FAIL);
@@ -21,9 +21,11 @@ lazy_static! {
 #[derive(Default, Debug, Clone)]
 pub struct LensResolver {
   /// Name of the lens model, if known
-  lens_model: Option<String>,
+  lens_keyname: Option<String>,
   /// Name of the lens make, if known
   lens_make: Option<String>,
+  /// Name of the lens model, if known
+  lens_model: Option<String>,
   /// Lens ID, if known
   lens_id: Option<LensId>,
   /// Lens EXIF info, if known
@@ -32,15 +34,18 @@ pub struct LensResolver {
   camera_make: Option<String>,
   /// Camera model, if known
   camera_model: Option<String>,
+  /// Mounts, if known
+  mounts: Option<Vec<String>>,
   /// Focal lenth for taken photo
-  #[allow(dead_code)]
   focal_len: Option<Rational>,
+  /// Aperture for taken photo
+  aperture: Option<Rational>,
 }
 
 #[allow(dead_code)]
 struct LensMatcher<'a> {
   /// Name of the lens model, if known
-  lens_model: Option<&'a str>,
+  lens_name: Option<&'a str>,
   /// Name of the lens make, if known
   lens_make: Option<&'a str>,
   /// Lens ID, if known
@@ -51,6 +56,8 @@ struct LensMatcher<'a> {
   camera_make: Option<&'a str>,
   /// Camera model, if known
   camera_model: Option<&'a str>,
+  /// Mounts, if known
+  mounts: Option<&'a [String]>,
   /// Focal lenth for taken photo
   #[allow(dead_code)]
   focal_len: Option<Rational>,
@@ -68,18 +75,38 @@ impl LensResolver {
     self
   }
 
-  pub fn with_lens_model<T: AsRef<str>>(mut self, lens_model: T) -> Self {
-    self.lens_model = Some(lens_model.as_ref().into());
+  pub fn with_lens_keyname<T: AsRef<str>>(mut self, lens_name: Option<T>) -> Self {
+    self.lens_keyname = lens_name.map(|v| v.as_ref().into());
     self
   }
 
-  pub fn with_lens_make<T: AsRef<str>>(mut self, lens_make: T) -> Self {
-    self.lens_make = Some(lens_make.as_ref().into());
+  pub fn with_lens_make<T: AsRef<str>>(mut self, lens_make: Option<T>) -> Self {
+    self.lens_make = lens_make.map(|v| v.as_ref().into());
+    self
+  }
+
+  pub fn with_lens_model<T: AsRef<str>>(mut self, lens_model: Option<T>) -> Self {
+    self.lens_model = lens_model.map(|v| v.as_ref().into());
+    self
+  }
+
+  pub fn with_mounts(mut self, mounts: &[String]) -> Self {
+    self.mounts = Some(mounts.to_vec());
     self
   }
 
   pub fn with_lens_id(mut self, lens_id: LensId) -> Self {
     self.lens_id = Some(lens_id);
+    self
+  }
+
+  pub fn with_focal_len(mut self, focal_len: Option<Rational>) -> Self {
+    self.focal_len = focal_len;
+    self
+  }
+
+  pub fn with_aperture(mut self, aperture: Option<Rational>) -> Self {
+    self.aperture = aperture;
     self
   }
 
@@ -98,15 +125,16 @@ impl LensResolver {
     self
   }
 
-  fn lens_matcher<'a>(&'a self) -> LensMatcher {
+  fn lens_matcher(&self) -> LensMatcher {
     LensMatcher {
-      lens_model: self.lens_model.as_deref(),
+      lens_name: self.lens_keyname.as_deref(),
       lens_make: self.lens_make.as_deref(),
-      lens_id: self.lens_id.clone(),
-      lens_info: self.lens_info.clone(),
+      lens_id: self.lens_id,
+      lens_info: self.lens_info,
       camera_make: self.camera_make.as_deref(),
       camera_model: self.camera_model.as_deref(),
-      focal_len: self.focal_len.clone(),
+      mounts: self.mounts.as_deref(),
+      focal_len: self.focal_len,
     }
   }
 
@@ -133,10 +161,8 @@ impl LensResolver {
         _ => None,
       };
       if second_try.is_none() {
-        eprintln!(
-          "Unknown lens id: '{}' for camera model {}. Please open an issue at https://github.com/dnglab/dnglab/issues and provide the RAW file",
-          self, self.camera_model.as_ref().unwrap_or(&"<unset>".to_string())
-        );
+        log::warn!("Unable to find lens definition. {}", crate::ISSUE_HINT);
+        log::debug!("Lens parameters: {}", self);
       }
       second_try
     }
@@ -144,41 +170,76 @@ impl LensResolver {
 
   /// Resolve the lens internally.
   fn resolve_internal(&self) -> Option<&'static LensDescription> {
-    if let Some(lens_model) = self.lens_model.as_ref().filter(|s| !s.is_empty()) {
-      debug!("Lens model: {}", lens_model);
-      if let Some(db_entry) = LENSES_DB.iter().find(|entry| entry.identifiers.name == Some(lens_model.into())) {
+    // First try, if we have an exact name, we use just this
+    if let Some(name) = self.lens_keyname.as_ref().filter(|s| !s.is_empty()) {
+      if let Some(db_entry) = LENSES_DB.iter().find(|entry| entry.identifiers.name == Some(name.into())) {
         return Some(db_entry);
       }
-    } else if let Some(lens_id) = self.lens_id.as_ref() {
-      let matches: Vec<&LensDescription> = LENSES_DB
-        .iter()
-        .filter(|entry| entry.identifiers.id.is_some() && entry.identifiers.id == Some(lens_id.to_owned()))
-        .collect();
-      match matches.len() {
-        1 => return Some(matches[0]),
-        c if c > 1 => return Some(matches[0]), // TODO: fixme
-        _ => {
-          debug!("Lens not found"); // TODO
+    }
+    // If we have a lens id (common) then we can filter as much as possible
+
+    let matches: Vec<&LensDescription> = LENSES_DB
+      .iter()
+      .filter(|entry| self.mounts.as_ref().map_or(true, |mounts| mounts.contains(&entry.mount)))
+      .filter(|entry| {
+        self
+          .lens_id
+          .as_ref()
+          .map_or(true, |id| entry.identifiers.id.as_ref().map_or(false, |entry_id| *entry_id == *id))
+      })
+      .filter(|entry| self.lens_make.as_ref().map_or(true, |make| entry.lens_make == *make))
+      .filter(|entry| self.lens_model.as_ref().map_or(true, |model| entry.lens_model == *model))
+      .filter(|entry| {
+        self
+          .focal_len
+          .as_ref()
+          .map_or(true, |focal| *focal >= entry.focal_range[0] && *focal <= entry.focal_range[1])
+      })
+      .filter(|entry| {
+        self
+          .aperture
+          .as_ref()
+          .map_or(true, |ap| *ap >= entry.aperture_range[0] || *ap <= entry.aperture_range[1])
+      })
+      .collect();
+    match matches.len() {
+      1 => return Some(matches[0]),
+      c if c > 1 => {
+        log::warn!(
+          "Found multiple ({}) lens definitions, unable to determine which lens to use. {}",
+          c,
+          crate::ISSUE_HINT
+        );
+        for lens in matches {
+          log::warn!("Possible lens: {} {}", lens.lens_make, lens.lens_model);
         }
       }
-    } else {
-      debug!("Lens information is empty");
+      _ => {}
     }
-    /*     eprintln!(
-      "Unknown lens id: '{}'. Please open an issue at https://github.com/dnglab/dnglab/issues and provide the RAW file",
-      self
-    ); */
+
     None
   }
 }
 
 impl Display for LensResolver {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    if let Some(mount) = &self.mounts {
+      f.write_fmt(format_args!("Mounts: {:?}", mount))?;
+    }
     if let Some(id) = &self.lens_id {
       f.write_fmt(format_args!("ID: {}:{}", id.0, id.1))?;
     }
+    if let Some(name) = &self.lens_keyname {
+      f.write_fmt(format_args!("Keyname: {}", name))?;
+    }
+    if let Some(name) = &self.lens_make {
+      f.write_fmt(format_args!("Make: {}", name))?;
+    }
     if let Some(name) = &self.lens_model {
       f.write_fmt(format_args!("Model: {}", name))?;
+    }
+    if let Some(name) = &self.focal_len {
+      f.write_fmt(format_args!("Focal len: {}", name))?;
     }
     Ok(())
   }
@@ -186,7 +247,7 @@ impl Display for LensResolver {
 
 pub type LensId = (u32, u32);
 
-#[derive(Debug)]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 pub struct LensIdentifier {
   pub name: Option<String>,
   pub id: Option<LensId>,
@@ -203,10 +264,11 @@ impl LensIdentifier {
 }
 
 /// Description of a lens
-#[derive(Debug)]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 pub struct LensDescription {
   /// Identifiers
   pub identifiers: LensIdentifier,
+  pub mount: String,
   /// Lens make
   pub lens_make: String,
   /// Lens model (without make)
@@ -234,6 +296,7 @@ fn build_lens_database() -> Option<Vec<LensDescription>> {
     let id_val1 = lens.get("lens_id").and_then(Value::as_integer).map(|v| v as u32);
     let id_val2 = lens.get("lens_subid").and_then(Value::as_integer).map(|v| v as u32);
     let id_id = id_val1.map(|id| (id, id_val2.unwrap_or(0)));
+    let mount = lens.get("mount").and_then(|val| val.as_str()).expect(FAIL);
     let lens_make = lens.get("make")?.as_str()?.into();
     let lens_model = lens.get("model")?.as_str()?.into();
     let focal_range: Vec<Rational> = lens
@@ -262,6 +325,7 @@ fn build_lens_database() -> Option<Vec<LensDescription>> {
     lenses.push(LensDescription {
       identifiers: LensIdentifier::new(id_name, id_id),
       lens_name: lens_name.unwrap_or(&format!("{} {}", lens_make, lens_model)).into(),
+      mount: String::from(mount),
       lens_make,
       lens_model,
       focal_range: [focal_range[0], focal_range[1]],
@@ -277,7 +341,9 @@ mod tests {
 
   #[test]
   fn resolve_single_lens() -> std::result::Result<(), Box<dyn std::error::Error>> {
-    let resolver = LensResolver::new().with_lens_make("Canon").with_lens_model("RF15-35mm F2.8 L IS USM");
+    let resolver = LensResolver::new()
+      .with_lens_make(Some("Canon"))
+      .with_lens_keyname(Some("RF15-35mm F2.8 L IS USM"));
     let lens = resolver.resolve();
     assert!(lens.is_some());
     assert_eq!(lens.expect("No lens").lens_make, "Canon");

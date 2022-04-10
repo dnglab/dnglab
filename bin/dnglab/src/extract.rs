@@ -6,6 +6,7 @@ use futures::future::join_all;
 use rawler::formats::tiff::reader::TiffReader;
 use rawler::formats::tiff::{Entry, GenericTiffReader, Value};
 use rawler::tags::DngTag;
+use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
 use std::fs::File;
 use std::io::BufReader;
 use std::path::PathBuf;
@@ -16,7 +17,7 @@ use crate::jobs::extractraw::{ExtractRawJob, JobResult};
 use crate::jobs::Job;
 use crate::{AppError, Result};
 
-const SUPPORTED_FILE_EXT: [&'static str; 1] = ["DNG"];
+const SUPPORTED_FILE_EXT: [&str; 1] = ["DNG"];
 
 /// Entry point for Clap sub command `extract`
 pub async fn extract(options: &ArgMatches<'_>) -> anyhow::Result<()> {
@@ -34,12 +35,11 @@ pub async fn extract(options: &ArgMatches<'_>) -> anyhow::Result<()> {
 
   let proc = MapMode::new(&in_path, &out_path)?;
 
-  // List of jobs
-  let mut jobs = Vec::new();
-
   // drop pathes to prevent use
   drop(in_path);
   drop(out_path);
+
+  let mut jobs = Vec::new();
 
   match proc {
     // We have only one input file, so output must be a file, too.
@@ -49,6 +49,7 @@ pub async fn extract(options: &ArgMatches<'_>) -> anyhow::Result<()> {
     }
     // Input is directory, to process all files
     MapMode::Dir(sd) => {
+      eprintln!("Scanning directory, please wait...");
       let list = sd.file_list(recursive, |file| {
         if let Some(ext) = file.extension().map(|ext| ext.to_string_lossy()) {
           is_ext_supported(&ext)
@@ -56,10 +57,9 @@ pub async fn extract(options: &ArgMatches<'_>) -> anyhow::Result<()> {
           false
         }
       })?;
-      for entry in list {
-        let job = generate_job(&entry, options, true)?;
-        jobs.push(job);
-      }
+
+      let tmp: Result<Vec<ExtractRawJob>> = list.par_iter().map(|entry| generate_job(entry, options, true)).collect();
+      jobs.extend(tmp?.into_iter());
     }
   }
 
@@ -89,7 +89,7 @@ pub async fn extract(options: &ArgMatches<'_>) -> anyhow::Result<()> {
   } else {
     eprintln!("Extracted {}/{} files, {} failed:", success, total, failure,);
     for failed in results.iter().filter(|j| j.error.is_some()) {
-      eprintln!("   {}", failed.job.input.display().to_string());
+      eprintln!("   {}", failed.job.input.display());
     }
   }
   println!("Total time: {:.2}s", now.elapsed().as_secs_f32());

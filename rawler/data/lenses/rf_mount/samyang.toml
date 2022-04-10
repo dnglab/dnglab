@@ -1,0 +1,7 @@
+[[lenses]]
+mount = "rf-mount"
+key = "SAMYANG RF 14mm F2.8"
+model = "AF 14/2.8 RF"
+make = "Samyang"
+focal_range = [[14, 1], [14, 1]]
+aperture_range = [[28, 10], [28, 10]]

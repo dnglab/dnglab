@@ -4,7 +4,7 @@
 
 use super::{read_box_header_ext, BoxHeader, FourCC, ReadBox, Result};
 use byteorder::{BigEndian, ReadBytesExt};
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 use std::io::{Read, Seek, SeekFrom};
 
 #[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize)]

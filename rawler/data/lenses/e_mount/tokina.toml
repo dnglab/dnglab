@@ -1,0 +1,23 @@
+[[lenses]]
+mount = "e-mount"
+lens_id = 49473
+make = "Tokina"
+model = "atx-m 85mm F1.8 FE"
+focal_range = [[85, 1], [85, 1]]
+aperture_range = [[18, 10], [18, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 49712
+make = "Tokina"
+model = "FiRIN 20mm F2 FE AF"
+focal_range = [[20, 1], [20, 1]]
+aperture_range = [[2, 1], [2, 1]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 49713
+make = "Tokina"
+model = "FiRIN 100mm F2.8 FE MACRO"
+focal_range = [[100, 1], [100, 1]]
+aperture_range = [[28, 10], [28, 10]]

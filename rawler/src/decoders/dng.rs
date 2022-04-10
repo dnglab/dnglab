@@ -1,149 +1,215 @@
-use std::f32::NAN;
 use std::cmp;
+use std::f32::NAN;
 
-use crate::RawImage;
-use crate::RawImageData;
 use crate::alloc_image_ok;
 use crate::bits::LookupTable;
-use crate::decoders::*;
-use crate::formats::tiff_legacy::*;
-use crate::decompressors::ljpeg::*;
 use crate::cfa::*;
+use crate::decoders::*;
+use crate::decompressors::ljpeg::*;
+use crate::imgop::xyz::FlatColorMatrix;
+use crate::imgop::xyz::Illuminant;
+use crate::imgop::Point;
+use crate::imgop::Rect;
 use crate::packed::*;
-use crate::tags::LegacyTiffRootTag;
+use crate::tags::DngTag;
+use crate::tags::TiffCommonTag;
+use crate::RawImage;
 
 #[derive(Debug, Clone)]
 pub struct DngDecoder<'a> {
-  buffer: &'a [u8],
   rawloader: &'a RawLoader,
-  tiff: LegacyTiffIFD<'a>,
+  tiff: GenericTiffReader,
 }
 
 impl<'a> DngDecoder<'a> {
-  pub fn new(buf: &'a [u8], tiff: LegacyTiffIFD<'a>, rawloader: &'a RawLoader) -> DngDecoder<'a> {
-    DngDecoder {
-      buffer: buf,
-      tiff: tiff,
-      rawloader: rawloader,
-    }
+  pub fn new(_file: &mut RawFile, tiff: GenericTiffReader, rawloader: &'a RawLoader) -> Result<DngDecoder<'a>> {
+    Ok(DngDecoder { tiff, rawloader })
   }
 }
 
 impl<'a> Decoder for DngDecoder<'a> {
-  fn raw_image(&self, _params: RawDecodeParams, dummy: bool) -> Result<RawImage> {
-    let ifds = self.tiff.find_ifds_with_tag(LegacyTiffRootTag::Compression).into_iter().filter(|ifd| {
-      let compression = (**ifd).find_entry(LegacyTiffRootTag::Compression).unwrap().get_u32(0);
-      let subsampled = match (**ifd).find_entry(LegacyTiffRootTag::NewSubFileType) {
-        Some(e) => e.get_u32(0) & 1 != 0,
-        None => false,
-      };
-      !subsampled && (compression == 7 || compression == 1 || compression == 0x884c)
-    }).collect::<Vec<&LegacyTiffIFD>>();
-    let raw = ifds[0];
-    let width = fetch_tag!(raw, LegacyTiffRootTag::ImageWidth).get_usize(0);
-    let height = fetch_tag!(raw, LegacyTiffRootTag::ImageLength).get_usize(0);
-    let cpp = fetch_tag!(raw, LegacyTiffRootTag::SamplesPerPixel).get_usize(0);
-    let linear = fetch_tag!(raw, LegacyTiffRootTag::PhotometricInt).get_usize(0) == 34892;
+  fn raw_image(&self, file: &mut RawFile, _params: RawDecodeParams, dummy: bool) -> Result<RawImage> {
+    let raw = self.get_raw_ifd()?;
+    let width = fetch_tiff_tag!(raw, TiffCommonTag::ImageWidth).force_usize(0);
+    let height = fetch_tiff_tag!(raw, TiffCommonTag::ImageLength).force_usize(0);
+    let cpp = fetch_tiff_tag!(raw, TiffCommonTag::SamplesPerPixel).force_usize(0);
 
-    let image = match fetch_tag!(raw, LegacyTiffRootTag::Compression).get_u32(0) {
-      1 => self.decode_uncompressed(raw, width*cpp, height, dummy)?,
-      7 => self.decode_compressed(raw, width*cpp, height, cpp, dummy)?,
-      c => return Err(RawlerError::General(format!("Don't know how to read DNGs with compression {}", c).to_string())),
+    let image = match fetch_tiff_tag!(raw, TiffCommonTag::Compression).force_u32(0) {
+      1 => self.decode_uncompressed(file, raw, width * cpp, height, dummy)?,
+      7 => self.decode_compressed(file, raw, width * cpp, height, cpp, dummy)?,
+      c => return Err(RawlerError::General(format!("Don't know how to read DNGs with compression {}", c))),
     };
 
-    let (make, model, clean_make, clean_model, orientation) = {
-      match self.rawloader.check_supported_old(&self.tiff) {
-        Ok(cam) => {
-          (cam.make.clone(), cam.model.clone(),
-           cam.clean_make.clone(), cam.clean_model.clone(),
-           cam.orientation)
-        },
-        Err(_) => {
-          let make = fetch_tag!(self.tiff, LegacyTiffRootTag::Make).get_str();
-          let model = fetch_tag!(self.tiff, LegacyTiffRootTag::Model).get_str();
-          let orientation = Orientation::from_tiff(&self.tiff);
-          (make.to_string(), model.to_string(), make.to_string(), model.to_string(), orientation)
-        },
-      }
-    };
+    let orientation = Orientation::from_tiff(self.tiff.root_ifd());
 
-    let cam = self.rawloader.check_supported_old(&self.tiff).unwrap();
+    let mut cam = self.make_camera(raw, width, height)?;
+    // If we know the camera, re-use the clean names
+    if let Ok(known_cam) = self.rawloader.check_supported(self.tiff.root_ifd()) {
+      cam.clean_make = known_cam.clean_make;
+      cam.clean_model = known_cam.clean_model;
+    }
 
-    Ok(RawImage {
-      make: make,
-      model: model,
-      clean_make: clean_make,
-      clean_model: clean_model,
-      width: width,
-      height: height,
-      cpp: cpp,
-      wb_coeffs: self.get_wb()?,
-      data: RawImageData::Integer(image),
-      blacklevels: self.get_blacklevels(raw)?,
-      whitelevels: self.get_whitelevels(raw)?,
-      xyz_to_cam: self.get_color_matrix()?,
-      cfa: if linear {CFA::new("")} else {self.get_cfa(raw)?},
-      crops: self.get_crops(raw, width, height)?,
-      blackareas: self.get_masked_areas(raw),
-      orientation: orientation,
-      color_matrix: cam.color_matrix,
-    })
+    let mut image = RawImage::new(cam, width, height, cpp, self.get_wb()?, image.into_inner(), false);
+    image.orientation = orientation;
+
+    Ok(image)
+  }
+
+  fn format_dump(&self) -> FormatDump {
+    todo!()
+  }
+
+  fn raw_metadata(&self, _file: &mut RawFile, _params: RawDecodeParams) -> Result<RawMetadata> {
+    let raw = self.get_raw_ifd()?;
+    let width = fetch_tiff_tag!(raw, TiffCommonTag::ImageWidth).force_usize(0);
+    let height = fetch_tiff_tag!(raw, TiffCommonTag::ImageLength).force_usize(0);
+    let mut cam = self.make_camera(raw, width, height)?;
+    // If we know the camera, re-use the clean names
+    if let Ok(known_cam) = self.rawloader.check_supported(self.tiff.root_ifd()) {
+      cam.clean_make = known_cam.clean_make;
+      cam.clean_model = known_cam.clean_model;
+    }
+    let exif = Exif::new(self.tiff.root_ifd())?;
+    let mdata = RawMetadata::new(&cam, exif);
+    Ok(mdata)
   }
 }
 
 impl<'a> DngDecoder<'a> {
-  fn get_wb(&self) -> Result<[f32;4]> {
-    if let Some(levels) = self.tiff.find_entry(LegacyTiffRootTag::AsShotNeutral) {
-      Ok([1.0/levels.get_f32(0),1.0/levels.get_f32(1),1.0/levels.get_f32(2),NAN])
-    } else {
-      Ok([NAN,NAN,NAN,NAN])
-    }
+  fn get_raw_ifd(&self) -> Result<&IFD> {
+    let ifds = self
+      .tiff
+      .find_ifds_with_tag(TiffCommonTag::Compression)
+      .into_iter()
+      .filter(|ifd| {
+        let compression = (**ifd).get_entry(TiffCommonTag::Compression).unwrap().force_u32(0);
+        let subsampled = match (**ifd).get_entry(TiffCommonTag::NewSubFileType) {
+          Some(e) => e.force_u32(0) & 1 != 0,
+          None => false,
+        };
+        !subsampled && (compression == 7 || compression == 1 || compression == 0x884c)
+      })
+      .collect::<Vec<&IFD>>();
+    Ok(ifds[0])
   }
 
-  fn get_blacklevels(&self, raw: &LegacyTiffIFD) -> Result<[u16;4]> {
-    if let Some(levels) = raw.find_entry(LegacyTiffRootTag::BlackLevels) {
-      if levels.count() < 4 {
-        let black = levels.get_f32(0) as u16;
-        Ok([black, black, black, black])
+  fn make_camera(&self, raw: &IFD, width: usize, height: usize) -> Result<Camera> {
+    let make = fetch_tiff_tag!(self.tiff, TiffCommonTag::Make).get_string()?.to_owned();
+    let model = fetch_tiff_tag!(self.tiff, TiffCommonTag::Model).get_string()?.to_owned();
+    let mode = String::from("dng");
+
+    let blacklevels = self.get_blacklevels(raw)?;
+    let whitelevels = self.get_whitelevels(raw)?;
+
+    let active_area = self.get_active_area(raw, width, height);
+    let crop_area = if let Some(crops) = self.get_crop(raw) {
+      if let Some(active_area) = &active_area {
+        let mut full = crops;
+        full.p.x += active_area[0]; // left
+        full.p.y += active_area[1]; // Top
+        Some(full.as_ltrb_offsets(width, height))
       } else {
-        Ok([levels.get_f32(0) as u16,levels.get_f32(1) as u16,
-            levels.get_f32(2) as u16,levels.get_f32(3) as u16])
+        Some(crops.as_ltrb_offsets(width, height))
       }
     } else {
-      Ok([0,0,0,0])
+      None
+    };
+
+    let linear = fetch_tiff_tag!(raw, TiffCommonTag::PhotometricInt).force_usize(0) == 34892;
+    let cfa = if linear { CFA::default() } else { self.get_cfa(raw)? };
+    let color_matrix = self.get_color_matrix()?;
+    let bps = raw.get_entry(TiffCommonTag::BitsPerSample).map(|v| v.force_usize(0)).unwrap_or(16);
+
+    Ok(Camera {
+      clean_make: make.clone(),
+      clean_model: model.clone(),
+      make,
+      model,
+      mode,
+      whitelevels,
+      blacklevels,
+      blackareah: None,
+      blackareav: None,
+      xyz_to_cam: Default::default(),
+      color_matrix,
+      cfa,
+      active_area,
+      crop_area,
+      bps,
+      ..Default::default()
+    })
+  }
+
+  fn get_wb(&self) -> Result<[f32; 4]> {
+    if let Some(levels) = self.tiff.get_entry(TiffCommonTag::AsShotNeutral) {
+      Ok([
+        1.0 / levels.force_f32(0) * 1024.0,
+        1.0 / levels.force_f32(1) * 1024.0,
+        1.0 / levels.force_f32(2) * 1024.0,
+        NAN,
+      ])
+    } else {
+      Ok([NAN, NAN, NAN, NAN])
     }
   }
 
-  fn get_whitelevels(&self, raw: &LegacyTiffIFD) -> Result<[u16;4]> {
-    let level = fetch_tag!(raw, LegacyTiffRootTag::WhiteLevel).get_u32(0) as u16;
-    Ok([level,level,level,level])
+  fn get_blacklevels(&self, raw: &IFD) -> Result<[u16; 4]> {
+    if let Some(levels) = raw.get_entry(TiffCommonTag::BlackLevels) {
+      if levels.count() < 4 {
+        let black = levels.force_f32(0) as u16;
+        Ok([black, black, black, black])
+      } else {
+        Ok([
+          levels.force_f32(0) as u16,
+          levels.force_f32(1) as u16,
+          levels.force_f32(2) as u16,
+          levels.force_f32(3) as u16,
+        ])
+      }
+    } else {
+      Ok([0, 0, 0, 0])
+    }
   }
 
-  fn get_cfa(&self, raw: &LegacyTiffIFD) -> Result<CFA> {
-    let pattern = fetch_tag!(raw, LegacyTiffRootTag::CFAPattern);
+  fn get_whitelevels(&self, raw: &IFD) -> Result<[u16; 4]> {
+    let level = fetch_tiff_tag!(raw, TiffCommonTag::WhiteLevel).force_u32(0) as u16;
+    Ok([level, level, level, level])
+  }
+
+  fn get_cfa(&self, raw: &IFD) -> Result<CFA> {
+    let pattern = fetch_tiff_tag!(raw, TiffCommonTag::CFAPattern);
     Ok(CFA::new_from_tag(pattern))
   }
 
-  fn get_crops(&self, raw: &LegacyTiffIFD, width: usize, height: usize) -> Result<[usize;4]> {
-    if let Some(crops) = raw.find_entry(LegacyTiffRootTag::ActiveArea) {
-      Ok([crops.get_usize(0), width - crops.get_usize(3),
-          height - crops.get_usize(2), crops.get_usize(1)])
+  fn get_active_area(&self, raw: &IFD, width: usize, height: usize) -> Option<[usize; 4]> {
+    if let Some(crops) = raw.get_entry(DngTag::ActiveArea) {
+      let rect = [crops.force_usize(0), crops.force_usize(1), crops.force_usize(2), crops.force_usize(3)];
+      Some(Rect::new_with_dng(&rect).as_ltrb_offsets(width, height))
     } else {
       // Ignore missing crops, at least some pentax DNGs don't have it
-      Ok([0,0,0,0])
+      None
     }
   }
 
-  fn get_masked_areas(&self, raw: &LegacyTiffIFD) -> Vec<(u64, u64, u64, u64)> {
+  fn get_crop(&self, raw: &IFD) -> Option<Rect> {
+    if let Some(crops) = raw.get_entry(DngTag::DefaultCropOrigin) {
+      let p = Point::new(crops.force_usize(0), crops.force_usize(1));
+      if let Some(size) = raw.get_entry(DngTag::DefaultCropSize) {
+        let s = Point::new(size.force_usize(0), size.force_usize(1));
+        return Some(Rect::new_with_points(p, s));
+      }
+    }
+    None
+  }
+
+  fn _get_masked_areas(&self, raw: &IFD) -> Vec<Rect> {
     let mut areas = Vec::new();
 
-    if let Some(masked_area) = raw.find_entry(LegacyTiffRootTag::MaskedAreas) {
+    if let Some(masked_area) = raw.get_entry(TiffCommonTag::MaskedAreas) {
       for x in (0..masked_area.count() as usize).step_by(4) {
-        areas.push((
-          masked_area.get_u32(x).into(),
-          masked_area.get_u32(x + 1).into(),
-          masked_area.get_u32(x + 2).into(),
-          masked_area.get_u32(x + 3).into()
+        areas.push(Rect::new_with_points(
+          Point::new(masked_area.force_usize(x), masked_area.force_usize(x + 1)),
+          Point::new(masked_area.force_usize(x + 2), masked_area.force_usize(x + 3)),
         ));
       }
     }
@@ -151,93 +217,134 @@ impl<'a> DngDecoder<'a> {
     areas
   }
 
-  fn get_color_matrix(&self) -> Result<[[f32;3];4]> {
-    let mut matrix: [[f32;3];4] = [[0.0;3];4];
-    let cmatrix = {
-      if let Some(c) = self.tiff.find_entry(LegacyTiffRootTag::ColorMatrix2) {
-        c
-      } else if let Some(c) = self.tiff.find_entry(LegacyTiffRootTag::ColorMatrix1) {
-        c
-      } else {
-        return Ok([
-          // sRGB D65
-          [ 0.412453, 0.357580, 0.180423 ],
-          [ 0.212671, 0.715160, 0.072169 ],
-          [ 0.019334, 0.119193, 0.950227 ],
-          [ 0.0, 0.0, 0.0],
-        ])
+  fn get_color_matrix(&self) -> Result<HashMap<Illuminant, FlatColorMatrix>> {
+    let mut result = HashMap::new();
+
+    let mut read_matrix = |cal: DngTag, mat: DngTag| -> Result<()> {
+      if let Some(c) = self.tiff.get_entry(mat) {
+        let illuminant: Illuminant = fetch_tiff_tag!(self.tiff, cal).force_u16(0).try_into()?;
+        let mut matrix = FlatColorMatrix::new();
+        for i in 0..c.count() as usize {
+          matrix.push(c.force_f32(i));
+        }
+        assert!(matrix.len() <= 12 && !matrix.is_empty());
+        result.insert(illuminant, matrix);
       }
+      Ok(())
     };
-    if cmatrix.count() > 12 {
-      Err(RawlerError::General(format!("color matrix supposedly has {} components",cmatrix.count()).to_string()))
-    } else {
-      for i in 0..cmatrix.count() as usize {
-        matrix[i/3][i%3] = cmatrix.get_f32(i);
-      }
-      Ok(matrix)
-    }
+
+    read_matrix(DngTag::CalibrationIlluminant1, DngTag::ColorMatrix1)?;
+    read_matrix(DngTag::CalibrationIlluminant2, DngTag::ColorMatrix2)?;
+    // TODO: add 3
+
+    Ok(result)
   }
 
-  pub fn decode_uncompressed(&self, raw: &LegacyTiffIFD, width: usize, height: usize, dummy: bool) -> Result<Vec<u16>> {
-    let offset = fetch_tag!(raw, LegacyTiffRootTag::StripOffsets).get_usize(0);
-    let src = &self.buffer[offset..];
+  pub fn decode_uncompressed(&self, file: &mut RawFile, raw: &IFD, width: usize, height: usize, dummy: bool) -> Result<PixU16> {
+    let offset = fetch_tiff_tag!(raw, TiffCommonTag::StripOffsets).force_u64(0);
+    let size = fetch_tiff_tag!(raw, TiffCommonTag::StripByteCounts).force_u64(0);
+    let src = file.subview(offset, size).unwrap();
 
-    match fetch_tag!(raw, LegacyTiffRootTag::BitsPerSample).get_u32(0) {
-      16  => Ok(decode_16le(src, width, height, dummy)),
-      12  => Ok(decode_12be(src, width, height, dummy)),
-      10  => Ok(decode_10le(src, width, height, dummy)),
-      8   => {
+    match fetch_tiff_tag!(raw, TiffCommonTag::BitsPerSample).force_u32(0) {
+      16 => Ok(decode_16le(&src, width, height, dummy)),
+      12 => Ok(decode_12be(&src, width, height, dummy)),
+      10 => Ok(decode_10le(&src, width, height, dummy)),
+      8 => {
         // It's 8 bit so there will be linearization involved surely!
-        let linearization = fetch_tag!(self.tiff, LegacyTiffRootTag::Linearization);
+        let linearization = fetch_tiff_tag!(self.tiff, TiffCommonTag::Linearization);
         let curve = {
-          let mut points = vec![0 as u16; 256];
+          let mut points = vec![0_u16; 256];
           for i in 0..256 {
-            points[i] = linearization.get_u32(i) as u16;
+            points[i] = linearization.force_u32(i) as u16;
           }
           LookupTable::new(&points)
         };
-        Ok(decode_8bit_wtable(src, &curve, width, height, dummy))
-      },
-      bps => Err(RawlerError::Unsupported(format!("DNG: Don't know about {} bps images", bps).to_string())),
+        Ok(decode_8bit_wtable(&src, &curve, width, height, dummy))
+      }
+      bps => Err(format_args!("DNG: Don't know about {} bps images", bps).into()),
     }
   }
 
-  pub fn decode_compressed(&self, raw: &LegacyTiffIFD, width: usize, height: usize, cpp: usize, dummy: bool) -> Result<Vec<u16>> {
-    if let Some(offsets) = raw.find_entry(LegacyTiffRootTag::StripOffsets) { // We're in a normal offset situation
+  pub fn decode_compressed(&self, file: &mut RawFile, raw: &IFD, width: usize, height: usize, cpp: usize, dummy: bool) -> Result<PixU16> {
+    if let Some(offsets) = raw.get_entry(TiffCommonTag::StripOffsets) {
+      // We're in a normal offset situation
       if offsets.count() != 1 {
-        return Err(RawlerError::Unsupported("DNG: files with more than one slice not supported yet".to_string()))
+        return Err("DNG: files with more than one slice not supported yet".into());
       }
-      let offset = offsets.get_usize(0);
-      let src = &self.buffer[offset..];
+      let offset = offsets.force_u64(0);
+      let size = fetch_tiff_tag!(raw, TiffCommonTag::StripByteCounts).force_u64(0);
+      let src = file.subview(offset, size).unwrap();
       let mut out = alloc_image_ok!(width, height, dummy);
-      let decompressor = LjpegDecompressor::new(src)?;
+      let decompressor = LjpegDecompressor::new(&src)?;
       decompressor.decode(&mut out, 0, width, width, height, dummy)?;
-      Ok(out)
-    } else if let Some(offsets) = raw.find_entry(LegacyTiffRootTag::TileOffsets) {
+      Ok(PixU16::new(out, width, height))
+    } else if let Some(offsets) = raw.get_entry(TiffCommonTag::TileOffsets) {
       // They've gone with tiling
-      let twidth = fetch_tag!(raw, LegacyTiffRootTag::TileWidth).get_usize(0)*cpp;
-      let tlength = fetch_tag!(raw, LegacyTiffRootTag::TileLength).get_usize(0);
-      let coltiles = (width-1)/twidth + 1;
-      let rowtiles = (height-1)/tlength + 1;
-      if coltiles*rowtiles != offsets.count() as usize {
-        return Err(RawlerError::Unsupported(format!("DNG: trying to decode {} tiles from {} offsets",
-                           coltiles*rowtiles, offsets.count()).to_string()))
+      let twidth = fetch_tiff_tag!(raw, TiffCommonTag::TileWidth).force_usize(0) * cpp;
+      let tlength = fetch_tiff_tag!(raw, TiffCommonTag::TileLength).force_usize(0);
+      let coltiles = (width - 1) / twidth + 1;
+      let rowtiles = (height - 1) / tlength + 1;
+      if coltiles * rowtiles != offsets.count() as usize {
+        return Err(format_args!("DNG: trying to decode {} tiles from {} offsets", coltiles * rowtiles, offsets.count()).into());
       }
-
-      Ok(decode_threaded_multiline(width, height, tlength, dummy, &(|strip: &mut [u16], row| {
-        let row = row / tlength;
-        for col in 0..coltiles {
-          let offset = offsets.get_usize(row*coltiles+col);
-          let src = &self.buffer[offset..];
-          let decompressor = LjpegDecompressor::new(src).unwrap();
-          let bwidth = cmp::min(width, (col+1)*twidth) - col*twidth;
-          let blength = cmp::min(height, (row+1)*tlength) - row*tlength;
-          // FIXME: instead of unwrap() we need to propagate the error
-          decompressor.decode(strip, col*twidth, width, bwidth, blength, dummy).unwrap();
-        }
-      })))
+      let buffer = file.as_vec().unwrap();
+      Ok(decode_threaded_multiline(
+        width,
+        height,
+        tlength,
+        dummy,
+        &(|strip: &mut [u16], row| {
+          let row = row / tlength;
+          for col in 0..coltiles {
+            let offset = offsets.force_usize(row * coltiles + col);
+            let src = &buffer[offset..];
+            let decompressor = LjpegDecompressor::new(src).unwrap();
+            let bwidth = cmp::min(width, (col + 1) * twidth) - col * twidth;
+            let blength = cmp::min(height, (row + 1) * tlength) - row * tlength;
+            // FIXME: instead of unwrap() we need to propagate the error
+            decompressor.decode(strip, col * twidth, width, bwidth, blength, dummy).unwrap();
+          }
+        }),
+      ))
     } else {
       Err(RawlerError::General("DNG: didn't find tiles or strips".to_string()))
     }
   }
+}
+
+pub fn decode_tiles(file: &mut RawFile, raw: &IFD, dummy: bool) -> Result<PixU16> {
+  let width = fetch_tiff_tag!(raw, TiffCommonTag::ImageWidth).force_usize(0);
+  let height = fetch_tiff_tag!(raw, TiffCommonTag::ImageLength).force_usize(0);
+  let cpp = fetch_tiff_tag!(raw, TiffCommonTag::SamplesPerPixel).force_usize(0);
+
+  let offsets = raw.get_entry(TiffCommonTag::TileOffsets).unwrap();
+
+  // They've gone with tiling
+  let twidth = fetch_tiff_tag!(raw, TiffCommonTag::TileWidth).force_usize(0) * cpp;
+  let tlength = fetch_tiff_tag!(raw, TiffCommonTag::TileLength).force_usize(0);
+  let coltiles = (width - 1) / twidth + 1;
+  let rowtiles = (height - 1) / tlength + 1;
+  if coltiles * rowtiles != offsets.count() as usize {
+    return Err(format_args!("DNG: trying to decode {} tiles from {} offsets", coltiles * rowtiles, offsets.count()).into());
+  }
+  let buffer = file.as_vec().unwrap();
+
+  Ok(decode_threaded_multiline(
+    width,
+    height,
+    tlength,
+    dummy,
+    &(|strip: &mut [u16], row| {
+      let row = row / tlength;
+      for col in 0..coltiles {
+        let offset = offsets.force_usize(row * coltiles + col);
+        let src = &buffer[offset..];
+        let decompressor = LjpegDecompressor::new(src).unwrap();
+        let bwidth = cmp::min(width, (col + 1) * twidth) - col * twidth;
+        let blength = cmp::min(height, (row + 1) * tlength) - row * tlength;
+        // FIXME: instead of unwrap() we need to propagate the error
+        decompressor.decode(strip, col * twidth, width, bwidth, blength, dummy).unwrap();
+      }
+    }),
+  ))
 }

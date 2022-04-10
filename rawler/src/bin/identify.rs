@@ -8,7 +8,7 @@ fn main() {
   }
   let file = &args[1];
   match rawler::decode_file(file) {
-    Ok(_)  => println!("OK file"),
+    Ok(_) => println!("OK file"),
     Err(_) => println!("FAILED file"),
   }
 }

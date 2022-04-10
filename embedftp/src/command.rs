@@ -127,7 +127,7 @@ impl Command {
 
 fn _to_uppercase(data: &mut [u8]) {
   for byte in data {
-    if *byte >= 'a' as u8 && *byte <= 'z' as u8 {
+    if *byte >= b'a' && *byte <= b'z' {
       *byte -= 32;
     }
   }

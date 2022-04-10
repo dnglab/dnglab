@@ -7,7 +7,7 @@ use crate::CFA;
 use std::collections::HashMap;
 
 /// Contains sanitized information about the raw image's properties
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct Camera {
   pub make: String,
   pub model: String,
@@ -57,99 +57,104 @@ impl Camera {
     for (name, val) in ct {
       match name.as_ref() {
         n @ "make" => {
-          self.make = val.as_str().expect(&format!("{} must be a string", n)).to_string();
+          self.make = val.as_str().unwrap_or_else(|| panic!("{} must be a string", n)).to_string();
         }
         n @ "model" => {
-          self.model = val.as_str().expect(&format!("{} must be a string", n)).to_string();
+          self.model = val.as_str().unwrap_or_else(|| panic!("{} must be a string", n)).to_string();
         }
         n @ "mode" => {
-          self.mode = val.as_str().expect(&format!("{} must be a string", n)).to_string();
+          self.mode = val.as_str().unwrap_or_else(|| panic!("{} must be a string", n)).to_string();
         }
         n @ "clean_make" => {
-          self.clean_make = val.as_str().expect(&format!("{} must be a string", n)).to_string();
+          self.clean_make = val.as_str().unwrap_or_else(|| panic!("{} must be a string", n)).to_string();
         }
         n @ "clean_model" => {
-          self.clean_model = val.as_str().expect(&format!("{} must be a string", n)).to_string();
+          self.clean_model = val.as_str().unwrap_or_else(|| panic!("{} must be a string", n)).to_string();
         }
         n @ "remark" => {
-          self.remark = Some(val.as_str().expect(&format!("{} must be a string", n)).to_string());
+          self.remark = Some(val.as_str().unwrap_or_else(|| panic!("{} must be a string", n)).to_string());
         }
         n @ "whitepoint" => {
-          let white = val.as_integer().expect(&format!("{} must be an integer", n)) as u16;
+          let white = val.as_integer().unwrap_or_else(|| panic!("{} must be an integer", n)) as u16;
           self.whitelevels = [white, white, white, white];
         }
         n @ "blackpoint" => {
-          let black = val.as_integer().expect(&format!("{} must be an integer", n)) as u16;
+          let black = val.as_integer().unwrap_or_else(|| panic!("{} must be an integer", n)) as u16;
           self.blacklevels = [black, black, black, black];
         }
         n @ "blackareah" => {
-          let vals = val.as_array().expect(&format!("{} must be an array", n));
+          let vals = val.as_array().unwrap_or_else(|| panic!("{} must be an array", n));
           self.blackareah = Some((vals[0].as_integer().unwrap() as usize, vals[1].as_integer().unwrap() as usize));
         }
         n @ "blackareav" => {
-          let vals = val.as_array().expect(&format!("{} must be an array", n));
+          let vals = val.as_array().unwrap_or_else(|| panic!("{} must be an array", n));
           self.blackareav = Some((vals[0].as_integer().unwrap() as usize, vals[1].as_integer().unwrap() as usize));
         }
         "color_matrix" => {
           if let Some(color_matrix) = val.as_table() {
             for (illu_str, matrix) in color_matrix.into_iter() {
               let illu = Illuminant::new_from_str(illu_str).unwrap();
-              let xyz_to_cam = matrix.as_array().expect("color matrix must be array").into_iter().map(|a| a.as_float().expect("color matrix values must be float") as f32).collect();
+              let xyz_to_cam = matrix
+                .as_array()
+                .expect("color matrix must be array")
+                .iter()
+                .map(|a| a.as_float().expect("color matrix values must be float") as f32)
+                .collect();
               self.color_matrix.insert(illu, xyz_to_cam);
             }
           } else {
             eprintln!("Invalid matrix spec for {}", self.clean_model);
           }
-          assert!(self.color_matrix.len() > 0);
+          assert!(!self.color_matrix.is_empty());
         }
         n @ "active_area" => {
-          let crop_vals = val.as_array().expect(&format!("{} must be an array", n));
+          let crop_vals = val.as_array().unwrap_or_else(|| panic!("{} must be an array", n));
           let mut crop = [0, 0, 0, 0];
-          for (i, val) in crop_vals.into_iter().enumerate() {
+          for (i, val) in crop_vals.iter().enumerate() {
             crop[i] = val.as_integer().unwrap() as usize;
           }
           self.active_area = Some(crop);
         }
         n @ "crop_area" => {
-          let crop_vals = val.as_array().expect(&format!("{} must be an array", n));
+          let crop_vals = val.as_array().unwrap_or_else(|| panic!("{} must be an array", n));
           let mut crop = [0, 0, 0, 0];
-          for (i, val) in crop_vals.into_iter().enumerate() {
+          for (i, val) in crop_vals.iter().enumerate() {
             crop[i] = val.as_integer().unwrap() as usize;
           }
           self.crop_area = Some(crop);
         }
         n @ "color_pattern" => {
-          self.cfa = CFA::new(&val.as_str().expect(&format!("{} must be a string", n)).to_string());
+          self.cfa = CFA::new(val.as_str().unwrap_or_else(|| panic!("{} must be a string", n)));
         }
         n @ "bps" => {
-          self.bps = val.as_integer().expect(&format!("{} must be an integer", n)) as usize;
+          self.bps = val.as_integer().unwrap_or_else(|| panic!("{} must be an integer", n)) as usize;
         }
         n @ "filesize" => {
-          self.filesize = val.as_integer().expect(&format!("{} must be an integer", n)) as usize;
+          self.filesize = val.as_integer().unwrap_or_else(|| panic!("{} must be an integer", n)) as usize;
         }
         n @ "raw_width" => {
-          self.raw_width = val.as_integer().expect(&format!("{} must be an integer", n)) as usize;
+          self.raw_width = val.as_integer().unwrap_or_else(|| panic!("{} must be an integer", n)) as usize;
         }
         n @ "raw_height" => {
-          self.raw_height = val.as_integer().expect(&format!("{} must be an integer", n)) as usize;
+          self.raw_height = val.as_integer().unwrap_or_else(|| panic!("{} must be an integer", n)) as usize;
         }
         n @ "highres_width" => {
-          self.highres_width = val.as_integer().expect(&format!("{} must be an integer", n)) as usize;
+          self.highres_width = val.as_integer().unwrap_or_else(|| panic!("{} must be an integer", n)) as usize;
         }
         n @ "hints" => {
           self.hints = Vec::new();
-          for hint in val.as_array().expect(&format!("{} must be an array", n)) {
+          for hint in val.as_array().unwrap_or_else(|| panic!("{} must be an array", n)) {
             self.hints.push(hint.as_str().expect("hints must be a string").to_string());
           }
         }
         n @ "params" => {
-          for (name, val) in val.as_table().expect(&format!("{} must be a table", n)) {
+          for (name, val) in val.as_table().unwrap_or_else(|| panic!("{} must be a table", n)) {
             self.params.insert(name.clone(), val.clone());
           }
         }
         "model_aliases" => {}
         "modes" => {} // ignore
-        key @ _ => {
+        key => {
           panic!("Unknown key: {}", key);
         }
       }

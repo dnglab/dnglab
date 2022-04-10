@@ -1,0 +1,7 @@
+[[lenses]]
+key = "xcd_80"
+mount = "x-mount"
+make = "Hasselblad"
+model = "XCD 80"
+focal_range = [[80, 1], [80, 1]]
+aperture_range = [[19, 10], [19, 10]]

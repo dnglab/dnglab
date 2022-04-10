@@ -9,14 +9,14 @@ use super::{BandParam, CodecParams, CrxError, Result};
 
 /// See ITU T.78 Section A.2.1 Step 3
 /// Initialise the variables for the run mode: RUNindex=0 and J[0..31]
-#[cfg_attr(rustfmt, rustfmt_skip)]
+#[rustfmt::skip]
 const J: [u32; 32] = [0, 0,  0,  0,  1,  1,  1,  1,
                       2, 2,  2,  2,  3,  3,  3,  3,
                       4, 4,  5,  5,  6,  6,  7,  7,
                       8, 9, 10, 11, 12, 13, 14, 15];
 
 /// Precalculated values for (1 << J[0..31])
-#[cfg_attr(rustfmt, rustfmt_skip)]
+#[rustfmt::skip]
 const JSHIFT: [u32; 32] = [1 << J[0],  1 << J[1],  1 << J[2],  1 << J[3],
                            1 << J[4],  1 << J[5],  1 << J[6],  1 << J[7],
                            1 << J[8],  1 << J[9],  1 << J[10], 1 << J[11],
@@ -51,7 +51,7 @@ impl CodecParams {
       param.s_param = param.s_param.saturating_sub(1); // prevent underflow
       if run_cnt > remaining {
         //println!("run_cnt: {}, remaining: {}", run_cnt, remaining);
-        return Err(CrxError::General(format!("Crx decoder error while decoding line")));
+        return Err(CrxError::General("Crx decoder error while decoding line".to_string()));
       }
     }
     Ok(run_cnt)

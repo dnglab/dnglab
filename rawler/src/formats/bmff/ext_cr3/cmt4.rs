@@ -4,7 +4,7 @@
 use crate::{formats::bmff::BmffError, formats::tiff::GenericTiffReader};
 
 use super::super::{BoxHeader, FourCC, ReadBox, Result};
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 use std::io::{Read, Seek, SeekFrom};
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]

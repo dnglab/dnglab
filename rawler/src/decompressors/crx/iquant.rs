@@ -16,7 +16,7 @@ use log::warn;
 use std::io::Cursor;
 
 /// QStep table for QP [0,1,2,3,4,5]
-#[cfg_attr(rustfmt, rustfmt_skip)]
+#[rustfmt::skip]
 pub(super) const Q_STEP_TBL: [u32; 6] = [0x28, 0x2D, 0x33, 0x39, 0x40, 0x48];
 
 /// Holds the QStep information for a tile

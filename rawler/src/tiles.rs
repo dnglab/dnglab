@@ -78,7 +78,7 @@ where
             buf.extend_from_slice(sub);
           } else {
             buf.extend_from_slice(&self.data[offset..offset + (self.width % self.tw) * self.cpp]);
-            let last_pix = buf.last().copied().unwrap_or(T::default());
+            let last_pix = buf.last().copied().unwrap_or_default();
             buf.extend(iter::repeat(last_pix).take((self.tw - (self.width % self.tw)) * self.cpp));
           };
         } else {

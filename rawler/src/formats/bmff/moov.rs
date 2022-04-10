@@ -4,7 +4,7 @@
 
 use super::{ext_cr3::cr3desc::Cr3DescBox, mvhd::MvhdBox, trak::TrakBox, vendor::VendorBox, BmffError, BoxHeader, FourCC, ReadBox, Result};
 use log::debug;
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 use std::io::{Read, Seek, SeekFrom};
 use uuid::Uuid;
 
@@ -73,7 +73,7 @@ impl<R: Read + Seek> ReadBox<&mut R> for MoovBox {
 
     Ok(Self {
       header,
-      mvhd: mvhd.ok_or(BmffError::Parse("mdhd box not found, corrupt file?".into()))?,
+      mvhd: mvhd.ok_or_else(|| BmffError::Parse("mdhd box not found, corrupt file?".into()))?,
       traks,
       cr3desc,
       vendor: vendors,

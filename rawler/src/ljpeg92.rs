@@ -105,7 +105,7 @@ impl From<u8> for Predictor {
       5 => Self::P5,
       6 => Self::P6,
       7 => Self::P7,
-      mode @ _ => panic!("Invalid predictor mode: {}", mode),
+      mode => panic!("Invalid predictor mode: {}", mode),
     }
   }
 }
@@ -335,7 +335,7 @@ impl HuffTableBuilder {
       i += 1;
     }
     self.huffcode[k].bits = 0;
-    return k;
+    k
   }
 
   /// Section C.2 Figure C.2 Generation of table of Huffman codes
@@ -393,19 +393,19 @@ impl HuffTableBuilder {
       if self.bits[i] > 0 {
         let mut j = i - 1;
         while self.bits[j] == 0 {
-          j = j - 1;
+          j -= 1;
         }
         self.bits[i] -= 2;
         self.bits[i - 1] += 1;
         self.bits[j + 1] += 2;
         self.bits[j] -= 1;
       } else {
-        i = i - 1;
+        i -= 1;
       }
     }
 
     while self.bits[i] == 0 {
-      i = i - 1;
+      i -= 1;
     }
     self.bits[i] -= 1;
   }
@@ -453,25 +453,25 @@ impl HuffTableBuilder {
   /// This is a manual optimized table for most regular images
   /// Useful for testing only.
   fn _generic_table(histogram: [usize; Self::CLASSES], _resolution: f32) -> [BitArray16; HuffTableBuilder::CLASSES] {
-    let mut dist: Vec<(usize, usize)> = histogram.iter().enumerate().map(|(a, b)| (a, b.clone())).collect();
+    let mut dist: Vec<(usize, usize)> = histogram.iter().enumerate().map(|(a, b)| (a, *b)).collect();
     dist.sort_by(|a, b| b.1.cmp(&a.1));
     #[cfg(feature = "inspector")]
     for (i, f) in &dist {
       inspector!("Freq: {}: {}, {}", i, f, *f as f32 / _resolution);
     }
     let mut table = [BitArray16::default(); HuffTableBuilder::CLASSES];
-    table[dist[00].0] = BitArray16::from_lsb(02, 0b00);
-    table[dist[01].0] = BitArray16::from_lsb(03, 0b010);
-    table[dist[02].0] = BitArray16::from_lsb(03, 0b011);
-    table[dist[03].0] = BitArray16::from_lsb(03, 0b100);
-    table[dist[04].0] = BitArray16::from_lsb(03, 0b101);
-    table[dist[05].0] = BitArray16::from_lsb(03, 0b110);
-    table[dist[06].0] = BitArray16::from_lsb(04, 0b1110);
-    table[dist[07].0] = BitArray16::from_lsb(05, 0b11110);
-    table[dist[08].0] = BitArray16::from_lsb(06, 0b111110);
-    table[dist[09].0] = BitArray16::from_lsb(07, 0b1111110);
-    table[dist[10].0] = BitArray16::from_lsb(08, 0b11111110);
-    table[dist[11].0] = BitArray16::from_lsb(09, 0b111111110);
+    table[dist[0].0] = BitArray16::from_lsb(2, 0b00);
+    table[dist[1].0] = BitArray16::from_lsb(3, 0b010);
+    table[dist[2].0] = BitArray16::from_lsb(3, 0b011);
+    table[dist[3].0] = BitArray16::from_lsb(3, 0b100);
+    table[dist[4].0] = BitArray16::from_lsb(3, 0b101);
+    table[dist[5].0] = BitArray16::from_lsb(3, 0b110);
+    table[dist[6].0] = BitArray16::from_lsb(4, 0b1110);
+    table[dist[7].0] = BitArray16::from_lsb(5, 0b11110);
+    table[dist[8].0] = BitArray16::from_lsb(6, 0b111110);
+    table[dist[9].0] = BitArray16::from_lsb(7, 0b1111110);
+    table[dist[10].0] = BitArray16::from_lsb(8, 0b11111110);
+    table[dist[11].0] = BitArray16::from_lsb(9, 0b111111110);
     table[dist[12].0] = BitArray16::from_lsb(10, 0b1111111110);
     table[dist[13].0] = BitArray16::from_lsb(11, 0b11111111110);
     table[dist[14].0] = BitArray16::from_lsb(12, 0b111111111110);
@@ -565,11 +565,11 @@ impl<'a> LjpegCompressor<'a> {
       return Err(CompressorError::Overflow(format!("Unsupported predictor: {}", predictor)));
     }
     if image.len() < height * ((width + padding) * components) {
-      return Err(CompressorError::Overflow(format!(
-        "Image input buffer is not large enough for given dimensions"
-      )));
+      return Err(CompressorError::Overflow(
+        "Image input buffer is not large enough for given dimensions".to_string(),
+      ));
     }
-    if bitdepth < 2 || bitdepth > 16 {
+    if !(2..=16).contains(&bitdepth) {
       return Err(CompressorError::Overflow(format!(
         "Overflow for bit depth {}, only 2 >= bp <= 16 is supported",
         bitdepth
@@ -603,7 +603,7 @@ impl<'a> LjpegCompressor<'a> {
 
   /// Get the components as Range<usize>
   fn component_range(&self) -> std::ops::Range<usize> {
-    (0..self.components).into_iter()
+    0..self.components
   }
 
   /// Encode input data and consume instance
@@ -695,7 +695,7 @@ impl<'a> LjpegCompressor<'a> {
         inspector!("unsorted freq: {}: {}, {}", i, f, *f as f32 / (self.resolution() as f32));
       }
     }
-    let huffgen = HuffTableBuilder::new(self.comp_state[comp].histogram.clone(), self.resolution() as f32);
+    let huffgen = HuffTableBuilder::new(self.comp_state[comp].histogram, self.resolution() as f32);
     let table = huffgen.build();
     //let table = HuffTableBuilder::_generic_table(self.comp_state[comp].histogram.clone(), self.resolution() as f32);
     #[cfg(feature = "inspector")]
@@ -727,7 +727,7 @@ impl<'a> LjpegCompressor<'a> {
       // Write HUFF
       encoded.write_u16::<BigEndian>(0xffc4)?;
 
-      let bit_sum: u16 = self.comp_state[comp].hufftable.iter().filter(|e| e.len() > 0).count() as u16;
+      let bit_sum: u16 = self.comp_state[comp].hufftable.iter().filter(|e| !e.is_empty()).count() as u16;
       inspector!("Bitsum: {}", bit_sum);
 
       encoded.write_u16::<BigEndian>(2 + (1 + 16) + bit_sum)?; // Lf, frame header length
@@ -747,7 +747,7 @@ impl<'a> LjpegCompressor<'a> {
           .iter()
           .enumerate()
           .filter(|(_, code)| code.len() == bit_len)
-          .map(|(ssss, code)| (ssss as u16, code.clone()))
+          .map(|(ssss, code)| (ssss as u16, *code))
           .collect();
         codes.sort_by(|a, b| a.1.cmp(&b.1));
         for (ssss, _) in codes.iter() {
@@ -987,8 +987,7 @@ mod tests {
     assert!(result.is_ok());
     let jpeg = result?;
     let dec = LjpegDecompressor::new(&jpeg)?;
-    let mut outbuf = Vec::with_capacity(h * w);
-    outbuf.resize(h * w, 0);
+    let mut outbuf = vec![0; h * w];
     dec.decode(&mut outbuf, 0, w * c, w * c, h, false)?;
     assert_eq!(outbuf[0], input_image[0]);
     assert_eq!(outbuf[1], input_image[1]);

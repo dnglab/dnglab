@@ -12,6 +12,8 @@ pub mod xyz;
 use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
 
+use crate::{formats::tiff::IFD, tags::DngTag};
+
 pub type Result<T> = std::result::Result<T, String>;
 
 /*
@@ -76,6 +78,7 @@ pub fn rescale_f32_to_u8(input: &[f32], black: u8, white: u8) -> Vec<u8> {
 }
 
 /// Clip a value with min/max value
+#[allow(clippy::if_same_then_else)]
 pub fn clip(p: f32, min: f32, max: f32) -> f32 {
   if p > max {
     max
@@ -149,6 +152,11 @@ impl Rect {
     Self::new_with_points(Point::new(borders[0], borders[1]), Point::new(dim.w - borders[2], dim.h - borders[3]))
   }
 
+  /// DNG used top-left-bottom-right for all rectangles
+  pub fn new_with_dng(rect: &[usize; 4]) -> Rect {
+    Self::new_with_points(Point::new(rect[1], rect[0]), Point::new(rect[3], rect[2]))
+  }
+
   pub fn is_empty(&self) -> bool {
     self.d.is_empty()
   }
@@ -161,6 +169,28 @@ impl Rect {
   /// Return in TLBR
   pub fn as_tlbr(&self) -> [usize; 4] {
     [self.p.y, self.p.x, self.p.y + self.d.h, self.p.x + self.d.w]
+  }
+
+  /// Return as offsets from each side (LTRB)
+  pub fn as_ltrb_offsets(&self, width: usize, height: usize) -> [usize; 4] {
+    [self.p.x, self.p.y, width - (self.p.x + self.d.w), height - (self.p.y + self.d.h)]
+  }
+
+  /// Return as offsets from each side (TLBR)
+  pub fn as_tlbr_offsets(&self, width: usize, height: usize) -> [usize; 4] {
+    [self.p.y, self.p.x, height - (self.p.y + self.d.h), width - (self.p.x + self.d.w)]
+  }
+
+  // Read Crop params from IFD
+  pub fn from_tiff(ifd: &IFD) -> Option<Self> {
+    if let Some(crop) = ifd.get_entry(DngTag::DefaultCropOrigin) {
+      if let Some(dim) = ifd.get_entry(DngTag::DefaultCropSize) {
+        let p = Point::new(crop.force_usize(0), crop.force_usize(1));
+        let d = Dim2::new(dim.force_usize(0), dim.force_usize(1));
+        return Some(Self::new(p, d));
+      }
+    }
+    None
   }
 }
 

@@ -1,0 +1,1791 @@
+[[lenses]]
+mount = "ef-mount"
+lens_id = 1
+make = "Canon"
+model = "EF 50mm f/1.8"
+focal_range = [[50, 1], [50, 1]]
+aperture_range = [[18, 10], [18, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 2
+make = "Canon"
+model = "EF 28mm f/2.8"
+focal_range = [[28, 1], [28, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 3
+make = "Canon"
+model = "EF 135mm f/2.8 Soft"
+focal_range = [[135, 1], [135, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 4
+make = "Canon"
+model = "EF 35-105mm f/3.5-4.5"
+focal_range = [[35, 1], [105, 1]]
+aperture_range = [[35, 10], [45, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 5
+make = "Canon"
+model = "EF 35-70mm f/3.5-4.5"
+focal_range = [[35, 1], [70, 1]]
+aperture_range = [[35, 10], [45, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 6
+make = "Canon"
+model = "EF 28-70mm f/3.5-4.5"
+focal_range = [[28, 1], [70, 1]]
+aperture_range = [[35, 10], [45, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 7
+make = "Canon"
+model = "EF 100-300mm f/5.6L"
+focal_range = [[100, 1], [300, 1]]
+aperture_range = [[56, 10], [56, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 8
+make = "Canon"
+model = "EF 100-300mm f/5.6"
+focal_range = [[100, 1], [300, 1]]
+aperture_range = [[56, 10], [56, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 8
+make = "Canon"
+model = "EF 70-210mm f/4"
+focal_range = [[70, 1], [210, 1]]
+aperture_range = [[4, 1], [4, 1]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 10
+make = "Canon"
+model = "EF 50mm f/2.5 Macro"
+focal_range = [[50, 1], [50, 1]]
+aperture_range = [[25, 10], [25, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 11
+make = "Canon"
+model = "EF 35mm f/2"
+focal_range = [[35, 1], [35, 1]]
+aperture_range = [[2, 1], [2, 1]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 13
+make = "Canon"
+model = "EF 15mm f/2.8 Fisheye"
+focal_range = [[15, 1], [15, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 14
+make = "Canon"
+model = "EF 50-200mm f/3.5-4.5L"
+focal_range = [[50, 1], [200, 1]]
+aperture_range = [[35, 10], [45, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 15
+make = "Canon"
+model = "EF 50-200mm f/3.5-4.5"
+focal_range = [[50, 1], [200, 1]]
+aperture_range = [[35, 10], [45, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 16
+make = "Canon"
+model = "EF 35-135mm f/3.5-4.5"
+focal_range = [[35, 1], [135, 1]]
+aperture_range = [[35, 10], [45, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 17
+make = "Canon"
+model = "EF 35-70mm f/3.5-4.5A"
+focal_range = [[35, 1], [70, 1]]
+aperture_range = [[35, 10], [45, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 18
+make = "Canon"
+model = "EF 28-70mm f/3.5-4.5"
+focal_range = [[28, 1], [70, 1]]
+aperture_range = [[35, 10], [45, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 20
+make = "Canon"
+model = "EF 100-200mm f/4.5A"
+focal_range = [[100, 1], [200, 1]]
+aperture_range = [[45, 10], [45, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 21
+make = "Canon"
+model = "EF 80-200mm f/2.8L"
+focal_range = [[80, 1], [200, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 22
+make = "Canon"
+model = "EF 20-35mm f/2.8L"
+focal_range = [[20, 1], [35, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 23
+make = "Canon"
+model = "EF 35-105mm f/3.5-4.5"
+focal_range = [[35, 1], [105, 1]]
+aperture_range = [[35, 10], [45, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 24
+make = "Canon"
+model = "EF 35-80mm f/4-5.6 Power Zoom"
+focal_range = [[35, 1], [80, 1]]
+aperture_range = [[4, 1], [56, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 25
+make = "Canon"
+model = "EF 35-80mm f/4-5.6 Power Zoom"
+focal_range = [[35, 1], [80, 1]]
+aperture_range = [[4, 1], [56, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 26
+make = "Canon"
+model = "EF 100mm f/2.8 Macro"
+focal_range = [[100, 1], [100, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 27
+make = "Canon"
+model = "EF 35-80mm f/4-5.6"
+focal_range = [[35, 1], [80, 1]]
+aperture_range = [[4, 1], [56, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 28
+make = "Canon"
+model = "EF 80-200mm f/4.5-5.6"
+focal_range = [[80, 1], [200, 1]]
+aperture_range = [[45, 10], [56, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 29
+make = "Canon"
+model = "EF 50mm f/1.8 II"
+focal_range = [[50, 1], [50, 1]]
+aperture_range = [[18, 10], [18, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 30
+make = "Canon"
+model = "EF 35-105mm f/4.5-5.6"
+focal_range = [[35, 1], [105, 1]]
+aperture_range = [[45, 10], [56, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 31
+make = "Canon"
+model = "EF 75-300mm f/4-5.6"
+focal_range = [[75, 1], [300, 1]]
+aperture_range = [[4, 1], [56, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 32
+make = "Canon"
+model = "EF 24mm f/2.8"
+focal_range = [[24, 1], [24, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 35
+make = "Canon"
+model = "EF 35-80mm f/4-5.6"
+focal_range = [[35, 1], [80, 1]]
+aperture_range = [[4, 1], [56, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 36
+make = "Canon"
+model = "EF 38-76mm f/4.5-5.6"
+focal_range = [[38, 1], [76, 1]]
+aperture_range = [[45, 10], [56, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 37
+make = "Canon"
+model = "EF 35-80mm f/4-5.6"
+focal_range = [[35, 1], [80, 1]]
+aperture_range = [[4, 1], [56, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 38
+make = "Canon"
+model = "EF 80-200mm f/4.5-5.6 II"
+focal_range = [[80, 1], [200, 1]]
+aperture_range = [[45, 10], [56, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 39
+make = "Canon"
+model = "EF 75-300mm f/4-5.6"
+focal_range = [[75, 1], [300, 1]]
+aperture_range = [[4, 1], [56, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 40
+make = "Canon"
+model = "EF 28-80mm f/3.5-5.6"
+focal_range = [[28, 1], [80, 1]]
+aperture_range = [[35, 10], [56, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 41
+make = "Canon"
+model = "EF 28-90mm f/4-5.6"
+focal_range = [[28, 1], [90, 1]]
+aperture_range = [[4, 1], [56, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 42
+make = "Canon"
+model = "EF 28-200mm f/3.5-5.6"
+focal_range = [[28, 1], [200, 1]]
+aperture_range = [[35, 10], [56, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 43
+make = "Canon"
+model = "EF 28-105mm f/4-5.6"
+focal_range = [[28, 1], [105, 1]]
+aperture_range = [[4, 1], [56, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 44
+make = "Canon"
+model = "EF 90-300mm f/4.5-5.6"
+focal_range = [[90, 1], [300, 1]]
+aperture_range = [[45, 10], [56, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 45
+make = "Canon"
+model = "EF-S 18-55mm f/3.5-5.6 [II]"
+focal_range = [[18, 1], [55, 1]]
+aperture_range = [[35, 10], [56, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 46
+make = "Canon"
+model = "EF 28-90mm f/4-5.6"
+focal_range = [[28, 1], [90, 1]]
+aperture_range = [[4, 1], [56, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+key = "EF-S18-55mm f/3.5-5.6 IS"
+lens_id = 48
+make = "Canon"
+model = "EF-S 18-55mm f/3.5-5.6 IS"
+focal_range = [[18, 1], [55, 1]]
+aperture_range = [[35, 10], [56, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 49
+make = "Canon"
+model = "EF-S 55-250mm f/4-5.6 IS"
+focal_range = [[55, 1], [250, 1]]
+aperture_range = [[4, 1], [56, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 50
+make = "Canon"
+model = "EF-S 18-200mm f/3.5-5.6 IS"
+focal_range = [[18, 1], [200, 1]]
+aperture_range = [[35, 10], [56, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 51
+make = "Canon"
+model = "EF-S 18-135mm f/3.5-5.6 IS"
+focal_range = [[18, 1], [135, 1]]
+aperture_range = [[35, 10], [56, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 52
+make = "Canon"
+model = "EF-S 18-55mm f/3.5-5.6 IS II"
+focal_range = [[18, 1], [55, 1]]
+aperture_range = [[35, 10], [56, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 53
+make = "Canon"
+model = "EF-S 18-55mm f/3.5-5.6 III"
+focal_range = [[18, 1], [55, 1]]
+aperture_range = [[35, 10], [56, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 54
+make = "Canon"
+model = "EF-S 55-250mm f/4-5.6 IS II"
+focal_range = [[55, 1], [250, 1]]
+aperture_range = [[4, 1], [56, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 80
+make = "Canon"
+model = "TS-E 50mm f/2.8L Macro"
+focal_range = [[50, 1], [50, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 81
+make = "Canon"
+model = "TS-E 90mm f/2.8L Macro"
+focal_range = [[90, 1], [90, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 82
+make = "Canon"
+model = "TS-E 135mm f/4L Macro"
+focal_range = [[135, 1], [135, 1]]
+aperture_range = [[4, 1], [4, 1]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 94
+make = "Canon"
+model = "TS-E 17mm f/4L"
+focal_range = [[17, 1], [17, 1]]
+aperture_range = [[4, 1], [4, 1]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 95
+make = "Canon"
+model = "TS-E 24mm f/3.5L II"
+focal_range = [[24, 1], [24, 1]]
+aperture_range = [[35, 10], [35, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 124
+make = "Canon"
+model = "MP-E 65mm f/2.8 1-5x Macro Photo"
+focal_range = [[65, 1], [65, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 125
+make = "Canon"
+model = "TS-E 24mm f/3.5L"
+focal_range = [[24, 1], [24, 1]]
+aperture_range = [[35, 10], [35, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 126
+make = "Canon"
+model = "TS-E 45mm f/2.8"
+focal_range = [[45, 1], [45, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 127
+make = "Canon"
+model = "TS-E 90mm f/2.8"
+focal_range = [[90, 1], [90, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 129
+make = "Canon"
+model = "EF 300mm f/2.8L USM"
+focal_range = [[300, 1], [300, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 130
+make = "Canon"
+model = "EF 50mm f/1.0L USM"
+focal_range = [[50, 1], [50, 1]]
+aperture_range = [[10, 10], [10, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 131
+make = "Canon"
+model = "EF 28-80mm f/2.8-4L USM"
+focal_range = [[28, 1], [80, 1]]
+aperture_range = [[28, 10], [4, 1]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 132
+make = "Canon"
+model = "EF 1200mm f/5.6L USM"
+focal_range = [[1200, 1], [1200, 1]]
+aperture_range = [[56, 10], [56, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 134
+make = "Canon"
+model = "EF 600mm f/4L IS USM"
+focal_range = [[600, 1], [600, 1]]
+aperture_range = [[4, 1], [4, 1]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 135
+make = "Canon"
+model = "EF 200mm f/1.8L USM"
+focal_range = [[200, 1], [200, 1]]
+aperture_range = [[18, 10], [18, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 136
+make = "Canon"
+model = "EF 300mm f/2.8L USM"
+focal_range = [[300, 1], [300, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 137
+make = "Canon"
+model = "EF 85mm f/1.2L USM"
+focal_range = [[85, 1], [85, 1]]
+aperture_range = [[12, 10], [12, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 138
+make = "Canon"
+model = "EF 28-80mm f/2.8-4L"
+focal_range = [[28, 1], [80, 1]]
+aperture_range = [[28, 10], [4, 1]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 139
+make = "Canon"
+model = "EF 400mm f/2.8L USM"
+focal_range = [[400, 1], [400, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 140
+make = "Canon"
+model = "EF 500mm f/4.5L USM"
+focal_range = [[500, 1], [500, 1]]
+aperture_range = [[45, 10], [45, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 141
+make = "Canon"
+model = "EF 500mm f/4.5L USM"
+focal_range = [[500, 1], [500, 1]]
+aperture_range = [[45, 10], [45, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 142
+make = "Canon"
+model = "EF 300mm f/2.8L IS USM"
+focal_range = [[300, 1], [300, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 143
+make = "Canon"
+model = "EF 500mm f/4L IS USM"
+focal_range = [[500, 1], [500, 1]]
+aperture_range = [[4, 1], [4, 1]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 144
+make = "Canon"
+model = "EF 35-135mm f/4-5.6 USM"
+focal_range = [[35, 1], [135, 1]]
+aperture_range = [[4, 1], [56, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 145
+make = "Canon"
+model = "EF 100-300mm f/4.5-5.6 USM"
+focal_range = [[100, 1], [300, 1]]
+aperture_range = [[45, 10], [56, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 146
+make = "Canon"
+model = "EF 70-210mm f/3.5-4.5 USM"
+focal_range = [[70, 1], [210, 1]]
+aperture_range = [[35, 10], [45, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 147
+make = "Canon"
+model = "EF 35-135mm f/4-5.6 USM"
+focal_range = [[35, 1], [135, 1]]
+aperture_range = [[4, 1], [56, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 148
+make = "Canon"
+model = "EF 28-80mm f/3.5-5.6 USM"
+focal_range = [[28, 1], [80, 1]]
+aperture_range = [[35, 10], [56, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 149
+make = "Canon"
+model = "EF 100mm f/2 USM"
+focal_range = [[100, 1], [100, 1]]
+aperture_range = [[2, 1], [2, 1]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 150
+make = "Canon"
+model = "EF 14mm f/2.8L USM"
+focal_range = [[14, 1], [14, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 151
+make = "Canon"
+model = "EF 200mm f/2.8L USM"
+focal_range = [[200, 1], [200, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 152
+make = "Canon"
+model = "EF 300mm f/4L IS USM"
+focal_range = [[300, 1], [300, 1]]
+aperture_range = [[4, 1], [4, 1]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 153
+make = "Canon"
+model = "EF 35-350mm f/3.5-5.6L USM"
+focal_range = [[35, 1], [350, 1]]
+aperture_range = [[35, 10], [56, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 154
+make = "Canon"
+model = "EF 20mm f/2.8 USM"
+focal_range = [[20, 1], [20, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+key = "EF85mm f/1.8 USM"
+lens_id = 155
+make = "Canon"
+model = "EF 85mm f/1.8 USM"
+focal_range = [[85, 1], [85, 1]]
+aperture_range = [[18, 10], [18, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 156
+make = "Canon"
+model = "EF 28-105mm f/3.5-4.5 USM"
+focal_range = [[28, 1], [105, 1]]
+aperture_range = [[35, 10], [45, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 160
+make = "Canon"
+model = "EF 20-35mm f/3.5-4.5 USM"
+focal_range = [[20, 1], [35, 1]]
+aperture_range = [[35, 10], [45, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 161
+make = "Canon"
+model = "EF 28-70mm f/2.8L USM"
+focal_range = [[28, 1], [70, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 162
+make = "Canon"
+model = "EF 200mm f/2.8L USM"
+focal_range = [[200, 1], [200, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 163
+make = "Canon"
+model = "EF 300mm f/4L"
+focal_range = [[300, 1], [300, 1]]
+aperture_range = [[4, 1], [4, 1]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 164
+make = "Canon"
+model = "EF 400mm f/5.6L"
+focal_range = [[400, 1], [400, 1]]
+aperture_range = [[56, 10], [56, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 165
+make = "Canon"
+model = "EF 70-200mm f/2.8L USM"
+focal_range = [[70, 1], [200, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 166
+make = "Canon"
+model = "EF 70-200mm f/2.8L USM + 1.4x"
+focal_range = [[70, 1], [200, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 167
+make = "Canon"
+model = "EF 70-200mm f/2.8L USM + 2x"
+focal_range = [[70, 1], [200, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 168
+make = "Canon"
+model = "EF 28mm f/1.8 USM"
+focal_range = [[28, 1], [28, 1]]
+aperture_range = [[18, 10], [18, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 169
+make = "Canon"
+model = "EF 17-35mm f/2.8L USM"
+focal_range = [[17, 1], [35, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 170
+make = "Canon"
+model = "EF 200mm f/2.8L II USM"
+focal_range = [[200, 1], [200, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 171
+make = "Canon"
+model = "EF 300mm f/4L USM"
+focal_range = [[300, 1], [300, 1]]
+aperture_range = [[4, 1], [4, 1]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 172
+make = "Canon"
+model = "EF 400mm f/5.6L USM"
+focal_range = [[400, 1], [400, 1]]
+aperture_range = [[56, 10], [56, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 173
+make = "Canon"
+model = "EF 180mm Macro f/3.5L USM"
+focal_range = [[180, 1], [180, 1]]
+aperture_range = [[35, 10], [35, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 174
+make = "Canon"
+model = "EF 135mm f/2L USM"
+focal_range = [[135, 1], [135, 1]]
+aperture_range = [[2, 1], [2, 1]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 175
+make = "Canon"
+model = "EF 400mm f/2.8L USM"
+focal_range = [[400, 1], [400, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+key = "EF24-85mm f/3.5-4.5 USM"
+lens_id = 176
+make = "Canon"
+model = "EF 24-85mm f/3.5-4.5 USM"
+focal_range = [[24, 1], [85, 1]]
+aperture_range = [[35, 10], [45, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 177
+make = "Canon"
+model = "EF 300mm f/4L IS USM"
+focal_range = [[300, 1], [300, 1]]
+aperture_range = [[4, 1], [4, 1]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 178
+make = "Canon"
+model = "EF 28-135mm f/3.5-5.6 IS"
+focal_range = [[28, 1], [135, 1]]
+aperture_range = [[35, 10], [56, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 179
+make = "Canon"
+model = "EF 24mm f/1.4L USM"
+focal_range = [[24, 1], [24, 1]]
+aperture_range = [[14, 10], [14, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 180
+make = "Canon"
+model = "EF 35mm f/1.4L USM"
+focal_range = [[35, 1], [35, 1]]
+aperture_range = [[14, 10], [14, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 181
+make = "Canon"
+model = "EF 100-400mm f/4.5-5.6L IS USM + 1.4x"
+focal_range = [[100, 1], [400, 1]]
+aperture_range = [[45, 10], [56, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 182
+make = "Canon"
+model = "EF 100-400mm f/4.5-5.6L IS USM + 2x"
+focal_range = [[100, 1], [400, 1]]
+aperture_range = [[45, 10], [56, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 183
+make = "Canon"
+model = "EF 100-400mm f/4.5-5.6L IS USM"
+focal_range = [[100, 1], [400, 1]]
+aperture_range = [[45, 10], [56, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 184
+make = "Canon"
+model = "EF 400mm f/2.8L USM + 2x"
+focal_range = [[400, 1], [400, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 185
+make = "Canon"
+model = "EF 600mm f/4L IS USM"
+focal_range = [[600, 1], [600, 1]]
+aperture_range = [[4, 1], [4, 1]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 186
+make = "Canon"
+model = "EF 70-200mm f/4L USM"
+focal_range = [[70, 1], [200, 1]]
+aperture_range = [[4, 1], [4, 1]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 187
+make = "Canon"
+model = "EF 70-200mm f/4L USM + 1.4x"
+focal_range = [[70, 1], [200, 1]]
+aperture_range = [[4, 1], [4, 1]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 188
+make = "Canon"
+model = "EF 70-200mm f/4L USM + 2x"
+focal_range = [[70, 1], [200, 1]]
+aperture_range = [[4, 1], [4, 1]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 189
+make = "Canon"
+model = "EF 70-200mm f/4L USM + 2.8x"
+focal_range = [[70, 1], [200, 1]]
+aperture_range = [[4, 1], [4, 1]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 190
+make = "Canon"
+model = "EF 100mm f/2.8 Macro USM"
+focal_range = [[100, 1], [100, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 191
+make = "Canon"
+model = "EF 400mm f/4 DO IS"
+focal_range = [[400, 1], [400, 1]]
+aperture_range = [[4, 1], [4, 1]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 193
+make = "Canon"
+model = "EF 35-80mm f/4-5.6 USM"
+focal_range = [[35, 1], [80, 1]]
+aperture_range = [[4, 1], [56, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 194
+make = "Canon"
+model = "EF 80-200mm f/4.5-5.6 USM"
+focal_range = [[80, 1], [200, 1]]
+aperture_range = [[45, 10], [56, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 195
+make = "Canon"
+model = "EF 35-105mm f/4.5-5.6 USM"
+focal_range = [[35, 1], [105, 1]]
+aperture_range = [[45, 10], [56, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 196
+make = "Canon"
+model = "EF 75-300mm f/4-5.6 USM"
+focal_range = [[75, 1], [300, 1]]
+aperture_range = [[4, 1], [56, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 197
+make = "Canon"
+model = "EF 75-300mm f/4-5.6 IS USM"
+focal_range = [[75, 1], [300, 1]]
+aperture_range = [[4, 1], [56, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+key = "EF50mm f/1.4 USM"
+lens_id = 198
+make = "Canon"
+model = "EF 50mm f/1.4 USM"
+focal_range = [[50, 1], [50, 1]]
+aperture_range = [[14, 10], [14, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 199
+make = "Canon"
+model = "EF 28-80mm f/3.5-5.6 USM"
+focal_range = [[28, 1], [80, 1]]
+aperture_range = [[35, 10], [56, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 200
+make = "Canon"
+model = "EF 75-300mm f/4-5.6 USM"
+focal_range = [[75, 1], [300, 1]]
+aperture_range = [[4, 1], [56, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 201
+make = "Canon"
+model = "EF 28-80mm f/3.5-5.6 USM"
+focal_range = [[28, 1], [80, 1]]
+aperture_range = [[35, 10], [56, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 202
+make = "Canon"
+model = "EF 28-80mm f/3.5-5.6 USM IV"
+focal_range = [[28, 1], [80, 1]]
+aperture_range = [[35, 10], [56, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 208
+make = "Canon"
+model = "EF 22-55mm f/4-5.6 USM"
+focal_range = [[22, 1], [55, 1]]
+aperture_range = [[4, 1], [56, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 209
+make = "Canon"
+model = "EF 55-200mm f/4.5-5.6"
+focal_range = [[55, 1], [200, 1]]
+aperture_range = [[45, 10], [56, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 210
+make = "Canon"
+model = "EF 28-90mm f/4-5.6 USM"
+focal_range = [[28, 1], [90, 1]]
+aperture_range = [[4, 1], [56, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 211
+make = "Canon"
+model = "EF 28-200mm f/3.5-5.6 USM"
+focal_range = [[28, 1], [200, 1]]
+aperture_range = [[35, 10], [56, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 212
+make = "Canon"
+model = "EF 28-105mm f/4-5.6 USM"
+focal_range = [[28, 1], [105, 1]]
+aperture_range = [[4, 1], [56, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 213
+make = "Canon"
+model = "EF 90-300mm f/4.5-5.6 USM"
+focal_range = [[90, 1], [300, 1]]
+aperture_range = [[45, 10], [56, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 214
+make = "Canon"
+model = "EF-S 18-55mm f/3.5-5.6 USM"
+focal_range = [[18, 1], [55, 1]]
+aperture_range = [[35, 10], [56, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 215
+make = "Canon"
+model = "EF 55-200mm f/4.5-5.6 II USM"
+focal_range = [[55, 1], [200, 1]]
+aperture_range = [[45, 10], [56, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 224
+make = "Canon"
+model = "EF 70-200mm f/2.8L IS USM"
+focal_range = [[70, 1], [200, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 225
+make = "Canon"
+model = "EF 70-200mm f/2.8L IS USM + 1.4x"
+focal_range = [[70, 1], [200, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 226
+make = "Canon"
+model = "EF 70-200mm f/2.8L IS USM + 2x"
+focal_range = [[70, 1], [200, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 227
+make = "Canon"
+model = "EF 70-200mm f/2.8L IS USM + 2.8x"
+focal_range = [[70, 1], [200, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 228
+make = "Canon"
+model = "EF 28-105mm f/3.5-4.5 USM"
+focal_range = [[28, 1], [105, 1]]
+aperture_range = [[35, 10], [45, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+key = "EF16-35mm f/2.8L USM"
+lens_id = 229
+make = "Canon"
+model = "EF 16-35mm f/2.8L USM"
+focal_range = [[16, 1], [35, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 230
+make = "Canon"
+model = "EF 24-70mm f/2.8L USM"
+focal_range = [[24, 1], [70, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 231
+make = "Canon"
+model = "EF 17-40mm f/4L USM"
+focal_range = [[17, 1], [40, 1]]
+aperture_range = [[4, 1], [4, 1]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 232
+make = "Canon"
+model = "EF 70-300mm f/4.5-5.6 DO IS USM"
+focal_range = [[70, 1], [300, 1]]
+aperture_range = [[45, 10], [56, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 233
+make = "Canon"
+model = "EF 28-300mm f/3.5-5.6L IS USM"
+focal_range = [[28, 1], [300, 1]]
+aperture_range = [[35, 10], [56, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 234
+make = "Canon"
+model = "EF-S 17-85mm f/4-5.6 IS USM"
+focal_range = [[17, 1], [85, 1]]
+aperture_range = [[4, 1], [56, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 235
+make = "Canon"
+model = "EF-S 10-22mm f/3.5-4.5 USM"
+focal_range = [[10, 1], [22, 1]]
+aperture_range = [[35, 10], [45, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 236
+make = "Canon"
+model = "EF-S 60mm f/2.8 Macro USM"
+focal_range = [[60, 1], [60, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 237
+make = "Canon"
+model = "EF 24-105mm f/4L IS USM"
+focal_range = [[24, 1], [105, 1]]
+aperture_range = [[4, 1], [4, 1]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 238
+make = "Canon"
+model = "EF 70-300mm f/4-5.6 IS USM"
+focal_range = [[70, 1], [300, 1]]
+aperture_range = [[4, 1], [56, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 239
+make = "Canon"
+model = "EF 85mm f/1.2L II USM"
+focal_range = [[85, 1], [85, 1]]
+aperture_range = [[12, 10], [12, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+key = "EF-S17-55mm f/2.8 IS USM"
+lens_id = 240
+make = "Canon"
+model = "EF-S 17-55mm f/2.8 IS USM"
+focal_range = [[17, 1], [55, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 241
+make = "Canon"
+model = "EF 50mm f/1.2L USM"
+focal_range = [[50, 1], [50, 1]]
+aperture_range = [[12, 10], [12, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 242
+make = "Canon"
+model = "EF 70-200mm f/4L IS USM"
+focal_range = [[70, 1], [200, 1]]
+aperture_range = [[4, 1], [4, 1]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 243
+make = "Canon"
+model = "EF 70-200mm f/4L IS USM + 1.4x"
+focal_range = [[70, 1], [200, 1]]
+aperture_range = [[4, 1], [4, 1]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 244
+make = "Canon"
+model = "EF 70-200mm f/4L IS USM + 2x"
+focal_range = [[70, 1], [200, 1]]
+aperture_range = [[4, 1], [4, 1]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 245
+make = "Canon"
+model = "EF 70-200mm f/4L IS USM + 2.8x"
+focal_range = [[70, 1], [200, 1]]
+aperture_range = [[4, 1], [4, 1]]
+
+[[lenses]]
+mount = "ef-mount"
+key = "EF16-35mm f/2.8L II USM"
+lens_id = 246
+make = "Canon"
+model = "EF 16-35mm f/2.8L II USM"
+focal_range = [[16, 1], [35, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 247
+make = "Canon"
+model = "EF 14mm f/2.8L II USM"
+focal_range = [[14, 1], [14, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 248
+make = "Canon"
+model = "EF 200mm f/2L IS USM"
+focal_range = [[200, 1], [200, 1]]
+aperture_range = [[2, 1], [2, 1]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 249
+make = "Canon"
+model = "EF 800mm f/5.6L IS USM"
+focal_range = [[800, 1], [800, 1]]
+aperture_range = [[56, 10], [56, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 250
+make = "Canon"
+model = "EF 24mm f/1.4L II USM"
+focal_range = [[24, 1], [24, 1]]
+aperture_range = [[14, 10], [14, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+key = "EF70-200mm f/2.8L IS II USM"
+lens_id = 251
+make = "Canon"
+model = "EF 70-200mm f/2.8L IS II USM"
+focal_range = [[70, 1], [200, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 251
+make = "Canon"
+model = "EF 70-200mm f/2.8L IS III USM"
+focal_range = [[70, 1], [200, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 252
+make = "Canon"
+model = "EF 70-200mm f/2.8L IS II USM + 1.4x"
+focal_range = [[70, 1], [200, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 252
+make = "Canon"
+model = "EF 70-200mm f/2.8L IS III USM + 1.4x"
+focal_range = [[70, 1], [200, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 253
+make = "Canon"
+model = "EF 70-200mm f/2.8L IS II USM + 2x"
+focal_range = [[70, 1], [200, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 253
+make = "Canon"
+model = "EF 70-200mm f/2.8L IS III USM + 2x"
+focal_range = [[70, 1], [200, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 254
+make = "Canon"
+model = "EF 100mm f/2.8L Macro IS USM"
+focal_range = [[100, 1], [100, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 488
+make = "Canon"
+model = "EF-S 15-85mm f/3.5-5.6 IS USM"
+focal_range = [[15, 1], [85, 1]]
+aperture_range = [[35, 10], [56, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 489
+make = "Canon"
+model = "EF 70-300mm f/4-5.6L IS USM"
+focal_range = [[70, 1], [300, 1]]
+aperture_range = [[4, 1], [56, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 490
+make = "Canon"
+model = "EF 8-15mm f/4L Fisheye USM"
+focal_range = [[8, 1], [15, 1]]
+aperture_range = [[4, 1], [4, 1]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 491
+make = "Canon"
+model = "EF 300mm f/2.8L IS II USM"
+focal_range = [[300, 1], [300, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+key = "EF400mm f/2.8L IS II USM"
+lens_id = 492
+make = "Canon"
+model = "EF 400mm f/2.8L IS II USM"
+focal_range = [[400, 1], [400, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 493
+make = "Canon"
+model = "EF 500mm f/4L IS II USM"
+focal_range = [[500, 1], [500, 1]]
+aperture_range = [[4, 1], [4, 1]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 493
+make = "Canon"
+model = "EF 24-105mm f/4L IS USM"
+focal_range = [[24, 1], [105, 1]]
+aperture_range = [[4, 1], [4, 1]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 494
+make = "Canon"
+model = "EF 600mm f/4L IS II USM"
+focal_range = [[600, 1], [600, 1]]
+aperture_range = [[4, 1], [4, 1]]
+
+[[lenses]]
+mount = "ef-mount"
+key = "EF24-70mm f/2.8L II USM"
+lens_id = 495
+make = "Canon"
+model = "EF 24-70mm f/2.8L II USM"
+focal_range = [[24, 1], [70, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 496
+make = "Canon"
+model = "EF 200-400mm f/4L IS USM"
+focal_range = [[200, 1], [400, 1]]
+aperture_range = [[4, 1], [4, 1]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 499
+make = "Canon"
+model = "EF 200-400mm f/4L IS USM + 1.4x"
+focal_range = [[200, 1], [400, 1]]
+aperture_range = [[4, 1], [4, 1]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 502
+make = "Canon"
+model = "EF 28mm f/2.8 IS USM"
+focal_range = [[28, 1], [28, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 503
+make = "Canon"
+model = "EF 24mm f/2.8 IS USM"
+focal_range = [[24, 1], [24, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+key = "EF24-70mm f/4L IS USM"
+lens_id = 504
+make = "Canon"
+model = "EF 24-70mm f/4L IS USM"
+focal_range = [[24, 1], [70, 1]]
+aperture_range = [[4, 1], [4, 1]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 505
+make = "Canon"
+model = "EF 35mm f/2 IS USM"
+focal_range = [[35, 1], [35, 1]]
+aperture_range = [[2, 1], [2, 1]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 506
+make = "Canon"
+model = "EF 400mm f/4 DO IS II USM"
+focal_range = [[400, 1], [400, 1]]
+aperture_range = [[4, 1], [4, 1]]
+
+[[lenses]]
+mount = "ef-mount"
+key = "EF16-35mm f/4L IS USM"
+lens_id = 507
+make = "Canon"
+model = "EF 16-35mm f/4L IS USM"
+focal_range = [[16, 1], [35, 1]]
+aperture_range = [[4, 1], [4, 1]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 508
+make = "Canon"
+model = "EF 11-24mm f/4L USM"
+focal_range = [[11, 1], [24, 1]]
+aperture_range = [[4, 1], [4, 1]]
+
+[[lenses]]
+mount = "ef-mount"
+key = "EF100-400mm f/4.5-5.6L IS II USM"
+lens_id = 747
+make = "Canon"
+model = "EF 100-400mm f/4.5-5.6L IS II USM"
+focal_range = [[100, 1], [400, 1]]
+aperture_range = [[45, 10], [56, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 748
+make = "Canon"
+model = "EF 100-400mm f/4.5-5.6L IS II USM + 1.4x"
+focal_range = [[100, 1], [400, 1]]
+aperture_range = [[45, 10], [56, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 750
+make = "Canon"
+model = "EF 35mm f/1.4L II USM"
+focal_range = [[35, 1], [35, 1]]
+aperture_range = [[14, 10], [14, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+key = "EF16-35mm f/2.8L III USM"
+lens_id = 751
+make = "Canon"
+model = "EF 16-35mm f/2.8L III USM"
+focal_range = [[16, 1], [35, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 752
+make = "Canon"
+model = "EF 24-105mm f/4L IS II USM"
+focal_range = [[24, 1], [105, 1]]
+aperture_range = [[4, 1], [4, 1]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 753
+make = "Canon"
+model = "EF 85mm f/1.4L IS USM"
+focal_range = [[85, 1], [85, 1]]
+aperture_range = [[14, 10], [14, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 754
+make = "Canon"
+model = "EF 70-200mm f/4L IS II USM"
+focal_range = [[70, 1], [200, 1]]
+aperture_range = [[4, 1], [4, 1]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 757
+make = "Canon"
+model = "EF 400mm f/2.8L IS III USM"
+focal_range = [[400, 1], [400, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 758
+make = "Canon"
+model = "EF 600mm f/4L IS III USM"
+focal_range = [[600, 1], [600, 1]]
+aperture_range = [[4, 1], [4, 1]]
+
+[[lenses]]
+mount = "ef-mount"
+key = "EF-S18-135mm f/3.5-5.6 IS STM"
+lens_id = 4142
+make = "Canon"
+model = "EF-S 18-135mm f/3.5-5.6 IS STM"
+focal_range = [[18, 1], [135, 1]]
+aperture_range = [[35, 10], [56, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 4143
+make = "Canon"
+model = "EF-M 18-55mm f/3.5-5.6 IS STM"
+focal_range = [[18, 1], [55, 1]]
+aperture_range = [[35, 10], [56, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 4144
+make = "Canon"
+model = "EF 40mm f/2.8 STM"
+focal_range = [[40, 1], [40, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+key = "EF-M22mm f/2 STM"
+lens_id = 4145
+make = "Canon"
+model = "EF-M 22mm f/2 STM"
+focal_range = [[22, 1], [22, 1]]
+aperture_range = [[2, 1], [2, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 4146
+make = "Canon"
+model = "EF-S 18-55mm f/3.5-5.6 IS STM"
+focal_range = [[18, 1], [55, 1]]
+aperture_range = [[35, 10], [56, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+key = "EF-M11-22mm f/4-5.6 IS STM"
+lens_id = 4147
+make = "Canon"
+model = "EF-M 11-22mm f/4-5.6 IS STM"
+focal_range = [[11, 1], [22, 1]]
+aperture_range = [[4, 1], [56, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 4148
+make = "Canon"
+model = "EF-S 55-250mm f/4-5.6 IS STM"
+focal_range = [[55, 1], [250, 1]]
+aperture_range = [[4, 1], [56, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+key = "EF-M55-200mm f/4.5-6.3 IS STM"
+lens_id = 4149
+make = "Canon"
+model = "EF-M 55-200mm f/4.5-6.3 IS STM"
+focal_range = [[55, 1], [200, 1]]
+aperture_range = [[45, 10], [63, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 4150
+make = "Canon"
+model = "EF-S 10-18mm f/4.5-5.6 IS STM"
+focal_range = [[10, 1], [18, 1]]
+aperture_range = [[45, 10], [56, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 4152
+make = "Canon"
+model = "EF 24-105mm f/3.5-5.6 IS STM"
+focal_range = [[24, 1], [105, 1]]
+aperture_range = [[35, 10], [56, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+key = "EF-M15-45mm f/3.5-6.3 IS STM"
+lens_id = 4153
+make = "Canon"
+model = "EF-M 15-45mm f/3.5-6.3 IS STM"
+focal_range = [[15, 1], [45, 1]]
+aperture_range = [[35, 10], [63, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+key = "EF-S24mm f/2.8 STM"
+lens_id = 4154
+make = "Canon"
+model = "EF-S 24mm f/2.8 STM"
+focal_range = [[24, 1], [24, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 4155
+make = "Canon"
+model = "EF-M 28mm f/3.5 Macro IS STM"
+focal_range = [[28, 1], [28, 1]]
+aperture_range = [[35, 10], [35, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+key = "EF50mm f/1.8 STM"
+lens_id = 4156
+make = "Canon"
+model = "EF 50mm f/1.8 STM"
+focal_range = [[50, 1], [50, 1]]
+aperture_range = [[18, 10], [18, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+key = "EF-M18-150mm f/3.5-6.3 IS STM"
+lens_id = 4157
+make = "Canon"
+model = "EF-M 18-150mm f/3.5-6.3 IS STM"
+focal_range = [[18, 1], [150, 1]]
+aperture_range = [[35, 10], [63, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 4158
+make = "Canon"
+model = "EF-S 18-55mm f/4-5.6 IS STM"
+focal_range = [[18, 1], [55, 1]]
+aperture_range = [[4, 1], [56, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+key = "EF-M32mm f/1.4 STM"
+lens_id = 4159
+make = "Canon"
+model = "EF-M 32mm f/1.4 STM"
+focal_range = [[32, 1], [32, 1]]
+aperture_range = [[14, 10], [14, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 4160
+make = "Canon"
+model = "EF-S 35mm f/2.8 Macro IS STM"
+focal_range = [[35, 1], [35, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 36910
+make = "Canon"
+model = "EF 70-300mm f/4-5.6 IS II USM"
+focal_range = [[70, 1], [300, 1]]
+aperture_range = [[4, 1], [56, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+key = "EF-S18-135mm f/3.5-5.6 IS USM"
+lens_id = 36912
+make = "Canon"
+model = "EF-S 18-135mm f/3.5-5.6 IS USM"
+focal_range = [[18, 1], [135, 1]]
+aperture_range = [[35, 10], [56, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 61491
+make = "Canon"
+model = "CN-E 14mm T3.1 L F"
+focal_range = [[14, 1], [14, 1]]
+aperture_range = [[31, 10], [31, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 61492
+make = "Canon"
+model = "CN-E 24mm T1.5 L F"
+focal_range = [[24, 1], [24, 1]]
+aperture_range = [[15, 10], [15, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 61494
+make = "Canon"
+model = "CN-E 85mm T1.3 L F"
+focal_range = [[85, 1], [85, 1]]
+aperture_range = [[13, 10], [13, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 61495
+make = "Canon"
+model = "CN-E 135mm T2.2 L F"
+focal_range = [[135, 1], [135, 1]]
+aperture_range = [[22, 10], [22, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 61496
+make = "Canon"
+model = "CN-E 35mm T1.5 L F"
+focal_range = [[35, 1], [35, 1]]
+aperture_range = [[15, 10], [15, 10]]

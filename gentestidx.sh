@@ -13,12 +13,12 @@ function process_rawfile() {
                 echo "  analyze file: $analyze"
                 echo "  digest file:  $digest"
                 ./target/release/dnglab analyze --meta --yaml "$sample" > rawler/tests/testdata/"$analyze";
-                ./target/release/dnglab analyze --checksum "$sample" > rawler/tests/testdata/"$digest";
+                ./target/release/dnglab analyze --raw-checksum "$sample" > rawler/tests/testdata/"$digest";
         #fi
         MAKE=`echo $rawfile | cut -d/ -f2`;
         MODEL=`echo $rawfile | cut -d/ -f3`;
         TESTNAME=`basename "${rawfile@L}" | sed -e 's,[[:space:][:punct:]],_,g' -e 's,_+,_,g'`;
-        echo -e "\tsuper::camera_file_check!(\"$MAKE\", \"$MODEL\", $TESTNAME, \"`echo $rawfile | cut -d'/' -f4-`\");" >> "rawler/tests/cameras/mod.rs";
+        echo -e "\tsuper::camera_file_check!(\"$MAKE\", \"$MODEL\", "cam_"$TESTNAME, \"`echo $rawfile | cut -d'/' -f4-`\");" >> "rawler/tests/cameras/mod.rs";
         #file "$pixel";
 }
 
@@ -50,6 +50,7 @@ cat rawler/tests/supported_rawdb_sets.txt | grep -v "^$" | while read setdir; do
 done;
 echo "" >> "rawler/tests/cameras/mod.rs";
 
+cargo fmt;
 
 exit;
 

@@ -1,0 +1,7 @@
+[[lenses]]
+mount = "ef-mount"
+lens_id = 26
+make = "Cosina"
+model = "100mm f/3.5 Macro AF"
+focal_range = [[100, 1], [100, 1]]
+aperture_range = [[35, 10], [35, 1]]

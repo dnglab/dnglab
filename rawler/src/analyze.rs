@@ -6,17 +6,18 @@ use std::{
 
 use byteorder::{BigEndian, WriteBytesExt};
 use hex::FromHex;
+use image::DynamicImage;
 use itertools::Itertools;
 use md5::Digest;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
 use crate::{
   buffer::Buffer,
-  decoders::{cr2::Cr2Format, cr3::Cr3Format, iiq::IiqFormat, pef::PefFormat, RawDecodeParams},
+  decoders::{cr2::Cr2Format, cr3::Cr3Format, iiq::IiqFormat, nef::NefFormat, pef::PefFormat, tfr::TfrFormat, RawDecodeParams, RawMetadata},
   formats::tiff::Rational,
   formats::tiff::SRational,
   imgop::{raw::develop_raw_srgb, rescale_f32_to_u16, Dim2, Rect},
-  RawFile, RawImageData, RawlerError, Result,
+  RawFile, RawImage, RawImageData, RawlerError, Result,
 };
 
 #[derive(Debug, Clone, PartialEq)]
@@ -67,11 +68,25 @@ pub struct FileMetadata {
 
 #[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+pub struct AnalyzerMetadata {
+  pub raw_params: RawParams,
+  pub raw_metadata: RawMetadata,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+#[allow(clippy::large_enum_variant)]
+pub enum AnalyzerData {
+  FileStructure(FormatDump),
+  Metadata(AnalyzerMetadata),
+  RawParams(RawParams),
+}
+
+#[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct AnalyzerResult {
   pub file: FileMetadata,
-  pub capture_info: CaptureInfo,
-  pub raw_params: RawParams,
-  pub format: Option<FormatDump>,
+  pub data: Option<AnalyzerData>,
 }
 
 #[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize)]
@@ -97,78 +112,86 @@ pub struct RawParams {
   pub whitelevels: [u16; 4],
   pub wb_coeffs: (Option<f32>, Option<f32>, Option<f32>, Option<f32>),
 }
+
+impl From<&RawImage> for RawParams {
+  fn from(rawimage: &RawImage) -> Self {
+    Self {
+      raw_width: rawimage.width,
+      raw_height: rawimage.height,
+      bit_depth: 16,
+      crops: rawimage.crop_area,
+      blacklevels: rawimage.blacklevels,
+      whitelevels: rawimage.whitelevels,
+      wb_coeffs: rawimage
+        .wb_coeffs
+        .iter()
+        .map(|c| if c.is_nan() { None } else { Some(*c) })
+        .collect_tuple()
+        .unwrap(),
+    }
+  }
+}
+
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+#[allow(clippy::large_enum_variant)]
 pub enum FormatDump {
   Cr3(Cr3Format),
   Cr2(Cr2Format),
   Pef(PefFormat),
   Iiq(IiqFormat),
+  Tfr(TfrFormat),
+  Nef(NefFormat),
 }
 
-pub fn analyze_file<P: AsRef<Path>>(path: P) -> Result<AnalyzerResult> {
+fn file_metadata<P: AsRef<Path>>(path: P, rawfile: &mut RawFile) -> Result<FileMetadata> {
   let fs_meta = metadata(&path).map_err(|e| RawlerError::with_io_error("read metadata", &path, e))?;
+  let digest = rawfile
+    .digest()
+    .map_err(|e| RawlerError::with_io_error("Failed to calculate digest", &path, e))?;
+  Ok(FileMetadata {
+    file_name: path.as_ref().file_name().unwrap().to_string_lossy().to_string(),
+    file_size: fs_meta.len(),
+    digest: Some(digest.into()),
+  })
+}
 
-  let bufread = BufReader::new(File::open(&path).map_err(|e| RawlerError::with_io_error("load into buffer", &path, e))?);
-
-  //let mut rawfile = Buffer::new(&mut bufread)?.into();
-  let mut rawfile = RawFile::new(&path, bufread);
-  let digest = rawfile.digest().unwrap();
-
-  // Read whole raw file
-  // TODO: Large input file bug, we need to test the raw file before open it
-  //let in_buffer = Arc::new(Buffer::new(&mut bufread)?);
-
-  // Get decoder or return
-  let mut decoder = crate::get_decoder(&mut rawfile)?;
-
-  //let digest = md5::compute(in_buffer.raw_buf());
-
-  decoder.decode_metadata(&mut rawfile)?;
-
-  let mut result = AnalyzerResult::default();
-  result.file.file_name = path.as_ref().file_name().unwrap().to_string_lossy().to_string();
-  result.file.file_size = fs_meta.len();
-  result.file.digest = Some(digest.into());
-
+pub fn analyze_metadata<P: AsRef<Path>>(path: P) -> Result<AnalyzerResult> {
+  let input = BufReader::new(File::open(&path).map_err(|e| RawlerError::with_io_error("load into buffer", &path, e))?);
+  let mut rawfile = RawFile::new(&path, input);
+  let decoder = crate::get_decoder(&mut rawfile)?;
   let rawimage = decoder.raw_image(&mut rawfile, RawDecodeParams::default(), true)?;
-  result.capture_info.make = rawimage.make;
-  result.capture_info.model = rawimage.model;
-  result.raw_params.raw_width = rawimage.width;
-  result.raw_params.raw_height = rawimage.height;
-  result.raw_params.bit_depth = 16;
-  result.raw_params.crops = rawimage.crop_area;
-  result.raw_params.blacklevels = rawimage.blacklevels;
-  result.raw_params.whitelevels = rawimage.whitelevels;
-  result.raw_params.wb_coeffs = rawimage
-    .wb_coeffs
-    .iter()
-    .map(|c| if c.is_nan() { None } else { Some(*c) })
-    .collect_tuple()
-    .unwrap();
 
-  result.format = Some(decoder.format_dump());
+  let mut result = AnalyzerResult {
+    file: file_metadata(path, &mut rawfile)?,
+    ..Default::default()
+  };
 
-  decoder.populate_capture_info(&mut result.capture_info)?;
+  let md = decoder.raw_metadata(&mut rawfile, RawDecodeParams::default())?;
+  result.data = Some(AnalyzerData::Metadata(AnalyzerMetadata {
+    raw_params: RawParams::from(&rawimage),
+    raw_metadata: md,
+  }));
+  Ok(result)
+}
+
+pub fn analyze_file_structure<P: AsRef<Path>>(path: P) -> Result<AnalyzerResult> {
+  let input = BufReader::new(File::open(&path).map_err(|e| RawlerError::with_io_error("load buffer", &path, e))?);
+  let mut rawfile = RawFile::new(&path, input);
+  let decoder = crate::get_decoder(&mut rawfile)?;
+
+  let result = AnalyzerResult {
+    file: file_metadata(path, &mut rawfile)?,
+    data: Some(AnalyzerData::FileStructure(decoder.format_dump())),
+  };
   Ok(result)
 }
 
 pub fn extract_raw_pixels<P: AsRef<Path>>(path: P, params: RawDecodeParams) -> Result<(usize, usize, usize, Vec<u16>)> {
-  let mut raw_file = BufReader::new(File::open(&path).map_err(|e| RawlerError::with_io_error("load buffer", &path, e))?);
-
-  // Read whole raw file
-  // TODO: Large input file bug, we need to test the raw file before open it
-  let in_buffer = Buffer::new(&mut raw_file)?;
-
-  let mut rawfile = in_buffer.into();
-
-  // Get decoder or return
-  let mut decoder = crate::get_decoder(&mut rawfile)?;
-
-  decoder.decode_metadata(&mut rawfile)?;
-
+  let input = BufReader::new(File::open(&path).map_err(|e| RawlerError::with_io_error("load buffer", &path, e))?);
+  let mut rawfile = RawFile::new(path, input);
+  let decoder = crate::get_decoder(&mut rawfile)?;
   let rawimage = decoder.raw_image(&mut rawfile, params, false)?;
-
   match rawimage.data {
     RawImageData::Integer(buf) => Ok((rawimage.width, rawimage.height, rawimage.cpp, buf)),
     RawImageData::Float(_) => todo!(),
@@ -181,6 +204,45 @@ pub fn raw_pixels_digest<P: AsRef<Path>>(path: P, params: RawDecodeParams) -> Re
   Ok(md5::compute(&v).into())
 }
 
+pub fn extract_full_pixels<P: AsRef<Path>>(path: P, _params: RawDecodeParams) -> Result<DynamicImage> {
+  let input = BufReader::new(File::open(&path).map_err(|e| RawlerError::with_io_error("load buffer", &path, e))?);
+  let mut rawfile = RawFile::new(path, input);
+  let decoder = crate::get_decoder(&mut rawfile)?;
+  match decoder.full_image(&mut rawfile)? {
+    Some(preview) => Ok(preview),
+    None => Err("Unable to extract full image from RAW".into()),
+  }
+}
+
+pub fn extract_preview_pixels<P: AsRef<Path>>(path: P, _params: RawDecodeParams) -> Result<DynamicImage> {
+  let input = BufReader::new(File::open(&path).map_err(|e| RawlerError::with_io_error("load buffer", &path, e))?);
+  let mut rawfile = RawFile::new(path, input);
+  let decoder = crate::get_decoder(&mut rawfile)?;
+  match decoder.preview_image(&mut rawfile)? {
+    Some(preview) => Ok(preview),
+    None => match decoder.full_image(&mut rawfile)? {
+      Some(preview) => Ok(preview),
+      None => Err("Unable to extract preview image from RAW".into()),
+    },
+  }
+}
+
+pub fn extract_thumbnail_pixels<P: AsRef<Path>>(path: P, _params: RawDecodeParams) -> Result<DynamicImage> {
+  let input = BufReader::new(File::open(&path).map_err(|e| RawlerError::with_io_error("load buffer", &path, e))?);
+  let mut rawfile = RawFile::new(path, input);
+  let decoder = crate::get_decoder(&mut rawfile)?;
+  match decoder.thumbnail_image(&mut rawfile)? {
+    Some(thumbnail) => Ok(thumbnail),
+    None => match decoder.preview_image(&mut rawfile)? {
+      Some(thumbnail) => Ok(thumbnail),
+      None => match decoder.full_image(&mut rawfile)? {
+        Some(thumbnail) => Ok(thumbnail),
+        None => Err("Unable to extract thumbnail image from RAW".into()),
+      },
+    },
+  }
+}
+
 pub fn raw_to_srgb<P: AsRef<Path>>(path: P, params: RawDecodeParams) -> Result<(Vec<u16>, Dim2)> {
   let mut raw_file = BufReader::new(File::open(&path).map_err(|e| RawlerError::with_io_error("load buffer", &path, e))?);
 
@@ -191,8 +253,8 @@ pub fn raw_to_srgb<P: AsRef<Path>>(path: P, params: RawDecodeParams) -> Result<(
   let mut rawfile = in_buffer.into();
 
   // Get decoder or return
-  let mut decoder = crate::get_decoder(&mut rawfile)?;
-  decoder.decode_metadata(&mut rawfile)?;
+  let decoder = crate::get_decoder(&mut rawfile)?;
+  //decoder.decode_metadata(&mut rawfile)?;
   let rawimage = decoder.raw_image(&mut rawfile, params, false)?;
   let params = rawimage.develop_params()?;
   let buf = match rawimage.data {
@@ -211,6 +273,14 @@ pub fn raw_as_pgm(width: usize, height: usize, buf: &[u16], writer: &mut dyn Wri
   for px in buf {
     writer.write_u16::<BigEndian>(*px)?;
   }
+  Ok(())
+}
+
+/// Dump  pixel data as PGM
+pub fn rgb8_as_ppm8(width: usize, height: usize, buf: &[u8], writer: &mut dyn Write) -> std::io::Result<()> {
+  let header = format!("P6 {} {} {}\n", width, height, u8::MAX);
+  writer.write_all(header.as_bytes())?;
+  writer.write_all(buf)?;
   Ok(())
 }
 

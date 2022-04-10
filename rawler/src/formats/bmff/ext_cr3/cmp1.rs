@@ -3,7 +3,7 @@
 
 use super::super::{BoxHeader, FourCC, ReadBox, Result};
 use byteorder::{BigEndian, ReadBytesExt};
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 use std::io::{Read, Seek, SeekFrom};
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -86,7 +86,6 @@ impl<R: Read + Seek> ReadBox<&mut R> for Cmp1Box {
         median_bits = reader.read_u8()?; // 84
       }
     }
-
 
     reader.seek(SeekFrom::Start(header.end_offset()))?;
 

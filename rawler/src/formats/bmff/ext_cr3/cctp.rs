@@ -3,7 +3,7 @@
 
 use byteorder::{BigEndian, ReadBytesExt};
 use log::debug;
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 use std::io::{Read, Seek, SeekFrom};
 
 use super::{

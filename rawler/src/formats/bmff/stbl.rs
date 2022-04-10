@@ -100,10 +100,10 @@ impl<R: Read + Seek> ReadBox<&mut R> for StblBox {
 
     Ok(Self {
       header,
-      stsd: stsd.ok_or(BmffError::Parse("stsd box not found, corrupt file?".into()))?,
-      stts: stts.ok_or(BmffError::Parse("stts box not found, corrupt file?".into()))?,
-      stsc: stsc.ok_or(BmffError::Parse("stsc box not found, corrupt file?".into()))?,
-      stsz: stsz.ok_or(BmffError::Parse("stsz box not found, corrupt file?".into()))?,
+      stsd: stsd.ok_or_else(|| BmffError::Parse("stsd box not found, corrupt file?".into()))?,
+      stts: stts.ok_or_else(|| BmffError::Parse("stts box not found, corrupt file?".into()))?,
+      stsc: stsc.ok_or_else(|| BmffError::Parse("stsc box not found, corrupt file?".into()))?,
+      stsz: stsz.ok_or_else(|| BmffError::Parse("stsz box not found, corrupt file?".into()))?,
       co64,
       vendor: vendors,
     })

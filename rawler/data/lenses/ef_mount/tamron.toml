@@ -1,0 +1,419 @@
+[[lenses]]
+mount = "ef-mount"
+lens_id = 26
+make = "Tamron"
+model = "SP AF 90mm f/2.8 Di Macro"
+focal_range = [[90, 1], [90, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 26
+make = "Tamron"
+model = "SP AF 180mm f/3.5 Di Macro"
+focal_range = [[180, 1], [180, 1]]
+aperture_range = [[35, 10], [35, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 28
+make = "Tamron"
+model = "SP AF 28-105mm f/2.8 LD Aspherical IF"
+focal_range = [[28, 1], [105, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 28
+make = "Tamron"
+model = "SP AF 28-75mm f/2.8 XR Di LD Aspherical [IF] Macro"
+focal_range = [[28, 1], [75, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 28
+make = "Tamron"
+model = "AF 70-300mm f/4.5-5.6 Di LD 1:2 Macro Zoom"
+focal_range = [[70, 1], [300, 1]]
+aperture_range = [[45, 10], [56, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 28
+make = "Tamron"
+model = "AF 70-300mm f/4-5.6 Di LD 1:2 Macro"
+focal_range = [[70, 1], [300, 1]]
+aperture_range = [[4, 1], [56, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 28
+make = "Tamron"
+model = "AF Aspherical 28-200mm f/3.8-5.6"
+focal_range = [[28, 1], [200, 1]]
+aperture_range = [[38, 10], [56, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 31
+make = "Tamron"
+model = "SP AF 300mm f/2.8 LD IF"
+focal_range = [[300, 1], [300, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 42
+make = "Tamron"
+model = "AF 28-300mm f/3.5-6.3 XR Di VC LD Aspherical [IF] Macro (A20)"
+focal_range = [[28, 1], [300, 1]]
+aperture_range = [[35, 10], [63, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 117
+make = "Tamron"
+model = "35-150mm f/2.8-4.0 Di VC OSD (A043)"
+focal_range = [[35, 1], [150, 1]]
+aperture_range = [[28, 10], [40, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 117
+make = "Tamron"
+model = "SP 35mm f/1.4 Di USD (F045)"
+focal_range = [[35, 1], [35, 1]]
+aperture_range = [[14, 10], [14, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 127
+make = "Tamron"
+model = "18-200mm f/3.5-6.3 Di II VC (B018)"
+focal_range = [[18, 1], [200, 1]]
+aperture_range = [[35, 10], [63, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 136
+make = "Tamron"
+model = "SP 15-30mm f/2.8 Di VC USD (A012)"
+focal_range = [[15, 1], [30, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 137
+make = "Tamron"
+model = "AF 18-270mm f/3.5-6.3 Di II VC PZD (B008)"
+focal_range = [[18, 1], [270, 1]]
+aperture_range = [[35, 10], [63, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 137
+make = "Tamron"
+model = "SP 17-50mm f/2.8 XR Di II VC (B005)"
+focal_range = [[17, 1], [50, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 137
+make = "Tamron"
+model = "SP 60mm f/2 Macro Di II (G005)"
+focal_range = [[60, 1], [60, 1]]
+aperture_range = [[2, 1], [2, 1]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 137
+make = "Tamron"
+model = "SP 24-70mm f/2.8 Di VC USD"
+focal_range = [[24, 1], [70, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 153
+make = "Tamron"
+model = "AF 28-300mm f/3.5-6.3 XR LD Aspherical [IF] Macro"
+focal_range = [[28, 1], [300, 1]]
+aperture_range = [[35, 10], [63, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 153
+make = "Tamron"
+model = "AF 18-200mm f/3.5-6.3 XR Di II LD Aspherical [IF] Macro (A14)"
+focal_range = [[18, 1], [200, 1]]
+aperture_range = [[35, 10], [63, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 153
+make = "Tamron"
+model = "18-250mm f/3.5-6.3 Di II LD Aspherical [IF] Macro"
+focal_range = [[18, 1], [250, 1]]
+aperture_range = [[35, 10], [63, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 156
+make = "Tamron"
+model = "SP 70-300mm f/4-5.6 Di VC USD (A005)"
+focal_range = [[70, 1], [300, 1]]
+aperture_range = [[4, 10], [56, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 156
+make = "Tamron"
+model = "SP AF 28-105mm f/2.8 LD Aspherical IF (176D)"
+focal_range = [[28, 1], [105, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 160
+make = "Tamron"
+model = "AF 19-35mm f/3.5-4.5"
+focal_range = [[19, 1], [35, 1]]
+aperture_range = [[35, 10], [45, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 161
+make = "Tamron"
+model = "AF 17-50mm f/2.8 Di-II LD Aspherical"
+focal_range = [[17, 1], [50, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 161
+make = "Tamron"
+model = "90mm f/2.8"
+focal_range = [[90, 1], [90, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 161
+make = "Tamron"
+model = "SP AF 17-35mm f/2.8-4 Di LD Aspherical IF (A05)"
+focal_range = [[17, 1], [35, 1]]
+aperture_range = [[28, 10], [4, 1]]
+
+[[lenses]]
+mount = "ef-mount"
+#lens_id = ???
+key = "TAMRON 17-35mm F/2.8-4 Di OSD A037"
+model = "17-35mm F/2.8-4 Di OSD A037"
+make = "Tamron"
+focal_range = [[17, 1], [35, 1]]
+aperture_range = [[28, 10], [40, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+#lens_id = ???
+key = "TAMRON 28-300mm F/3.5-6.3 Di VC PZD A010"
+model = "28-300mm f/3.5-6.3 Di VC PZD"
+make = "Tamron"
+focal_range = [[28, 1], [300, 1]]
+aperture_range = [[35, 10], [63, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 161
+make = "Tamron"
+model = "SP AF 28-75mm f/2.8 XR Di LD Aspherical [IF] Macro"
+focal_range = [[28, 1], [75, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 213
+make = "Tamron"
+model = "SP 150-600mm f/5-6.3 Di VC USD (A011)"
+focal_range = [[150, 1], [600, 1]]
+aperture_range = [[5, 1], [63, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 213
+make = "Tamron"
+model = "16-300mm f/3.5-6.3 Di II VC PZD Macro (B016)"
+focal_range = [[16, 1], [300, 1]]
+aperture_range = [[35, 10], [63, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 213
+make = "Tamron"
+model = "SP 35mm f/1.8 Di VC USD (F012)"
+focal_range = [[35, 1], [35, 1]]
+aperture_range = [[18, 10], [18, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 213
+make = "Tamron"
+model = "SP 45mm f/1.8 Di VC USD (F013)"
+focal_range = [[45, 1], [45, 1]]
+aperture_range = [[18, 10], [18, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 217
+make = "Tamron"
+model = "AF 18-270mm f/3.5-6.3 Di II VC PZD"
+focal_range = [[18, 1], [270, 1]]
+aperture_range = [[35, 10], [63, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 253
+make = "Tamron"
+model = "SP 70-200mm f/2.8 Di VC USD G2 (A025) + 2x"
+focal_range = [[70, 1], [200, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 254
+key = "TAMRON SP 90mm F/2.8 Di VC USD MACRO1:1 F004"
+make = "Tamron"
+model = "SP 90mm F/2.8 Di VC USD Macro 1:1 F004"
+focal_range = [[90, 1], [90, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 255
+make = "Tamron"
+model = "SP 70-200mm f/2.8 Di VC USD"
+focal_range = [[70, 1], [200, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 491
+make = "Tamron"
+model = "SP 70-200mm f/2.8 Di VC USD G2 (A025)"
+focal_range = [[70, 1], [200, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 491
+make = "Tamron"
+model = "18-400mm f/3.5-6.3 Di II VC HLD (B028)"
+focal_range = [[18, 1], [400, 1]]
+aperture_range = [[35, 10], [63, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 491
+make = "Tamron"
+model = "100-400mm f/4.5-6.3 Di VC USD (A035)"
+focal_range = [[100, 1], [400, 1]]
+aperture_range = [[45, 10], [63, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 491
+make = "Tamron"
+model = "70-210mm f/4 Di VC USD (A034)"
+focal_range = [[70, 1], [210, 1]]
+aperture_range = [[4, 1], [4, 1]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 491
+make = "Tamron"
+model = "70-210mm f/4 Di VC USD (A034) + 1.4x"
+focal_range = [[70, 1], [210, 1]]
+aperture_range = [[4, 1], [4, 1]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 491
+make = "Tamron"
+model = "SP 24-70mm f/2.8 Di VC USD G2 (A032)"
+focal_range = [[24, 1], [70, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 502
+make = "Tamron"
+model = "35mm f/1.8 Di VC USD (F012)"
+focal_range = [[35, 1], [35, 1]]
+aperture_range = [[18, 10], [18, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+key = "TAMRON 10-24mm F/3.5-4.5 Di II VC HLD B023"
+lens_id = 508
+make = "Tamron"
+model = "10-24mm f/3.5-4.5 Di II VC HLD (B023)"
+focal_range = [[10, 1], [24, 1]]
+aperture_range = [[35, 10], [45, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 747
+make = "Tamron"
+model = "SP 150-600mm f/5-6.3 Di VC USD G2"
+focal_range = [[150, 1], [600, 1]]
+aperture_range = [[5, 10], [63, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 748
+make = "Tamron"
+model = "100-400mm f/4.5-6.3 Di VC USD A035E + 1.4x"
+focal_range = [[100, 1], [400, 1]]
+aperture_range = [[45, 10], [63, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 748
+make = "Tamron"
+model = "70-210mm f/4 Di VC USD (A034) + 2x"
+focal_range = [[70, 1], [210, 1]]
+aperture_range = [[4, 1], [4, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 749
+make = "Tamron"
+model = "100-400mm f/4.5-6.3 Di VC USD A035E + 2x"
+focal_range = [[100, 1], [400, 1]]
+aperture_range = [[45, 10], [63, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 750
+make = "Tamron"
+model = "SP 85mm f/1.8 Di VC USD (F016)"
+focal_range = [[85, 1], [85, 1]]
+aperture_range = [[18, 10], [18, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 750
+make = "Tamron"
+model = "SP 45mm f/1.8 Di VC USD (F013)"
+focal_range = [[45, 1], [45, 1]]
+aperture_range = [[18, 10], [18, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 4143
+make = "Tamron"
+model = "18-200mm f/3.5-6.3 Di III VC"
+focal_range = [[18, 1], [200, 1]]
+aperture_range = [[35, 10], [63, 10]]
