@@ -15,6 +15,6 @@ whitepoint = 15520
 
 [[cameras.modes]]
 mode = "12bit"
-blackpoint = 1008
+blackpoint = 251
 whitepoint = 3880
 

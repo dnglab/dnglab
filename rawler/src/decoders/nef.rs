@@ -343,16 +343,29 @@ impl<'a> NefDecoder<'a> {
     for i in 0..points.len() {
       points[i] = i as u16;
     }
-    let mut max = 1 << bps;
+    let mut max = if v0 == 68 && v1 == 64 {
+      1 << (bps - 2) // Special for D780, Z7
+    } else {
+      1 << bps
+    };
+
     let csize = stream.get_u16() as usize;
     let mut split = 0_usize;
     let step = if csize > 1 { max / (csize - 1) } else { 0 };
-    if v0 == 68 && v1 == 32 && step > 0 {
+    if v0 == 68 && (v1 == 32 || v1 == 64) && step > 0 {
       for i in 0..csize {
         points[i * step] = stream.get_u16();
       }
       for i in 0..max {
-        points[i] = ((points[i - i % step] as usize * (step - i % step) + points[i - i % step + step] as usize * (i % step)) / step) as u16;
+        let b_scale = i % step;
+        let a_pos = i - b_scale;
+        let b_pos = a_pos + step;
+        //assert!(a_pos < max);
+        //assert!(b_pos > 0);
+        //assert!(b_pos < max);
+        //assert!(a_pos < b_pos);
+        let a_scale = step - b_scale;
+        points[i] = ((a_scale * points[a_pos] as usize + b_scale * points[b_pos] as usize) / step) as u16;
       }
       split = endian.read_u16(meta, 562) as usize;
     } else if v0 != 70 && csize <= 0x4001 {
