@@ -147,7 +147,7 @@ impl<'a> NefDecoder<'a> {
     }
     .ok_or("File has not makernotes")?;
 
-    makernote.dump::<ExifTag>(0).iter().for_each(|line| eprintln!("DUMP: {}", line));
+    //makernote.dump::<ExifTag>(0).iter().for_each(|line| eprintln!("DUMP: {}", line));
 
     Ok(NefDecoder {
       tiff,
