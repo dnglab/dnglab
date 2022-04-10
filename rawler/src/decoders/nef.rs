@@ -171,6 +171,7 @@ impl<'a> Decoder for NefDecoder<'a> {
     let src: OptBuffer = file.subview_until_eof(offset as u64).unwrap().into(); // TODO add size and check all samples
     let mut cpp = 1;
     let coeffs = self.get_wb()?;
+    debug!("WB coeff: {:?}", coeffs);
 
     let image = if self.camera.model == "NIKON D100" {
       width = 3040;
@@ -249,9 +250,13 @@ impl<'a> NefDecoder<'a> {
         version = (version << 4) + (levels.get_data()[i] - b'0') as u32;
       }
       let buf = levels.get_data();
+      debug!("NEF Color balance version: 0x{:x}", version);
 
       match version {
         0x100 => Ok([BEu16(buf, 36 * 2) as f32, BEu16(buf, 38 * 2) as f32, BEu16(buf, 37 * 2) as f32, NAN]),
+        // Nikon D2H
+        0x102 => Ok([BEu16(buf, 5 * 2) as f32, BEu16(buf, 6 * 2) as f32, BEu16(buf, 8 * 2) as f32, NAN]),
+        // Nikon D70
         0x103 => Ok([
           BEu16(buf, 10 * 2) as f32,
           BEu16(buf, 11 * 2) as f32,
