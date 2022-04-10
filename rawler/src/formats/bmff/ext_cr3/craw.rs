@@ -1,10 +1,16 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2021 Daniel Vogelbacher <daniel@chaospixel.com>
 
-use super::{super::{BmffError, BoxHeader, FourCC, ReadBox, Result}, cdi1::Cdi1Box, cmp1::Cmp1Box, hevc::HevcBox, jpeg::JpegBox};
+use super::{
+  super::{BmffError, BoxHeader, FourCC, ReadBox, Result},
+  cdi1::Cdi1Box,
+  cmp1::Cmp1Box,
+  hevc::HevcBox,
+  jpeg::JpegBox,
+};
 use crate::formats::bmff::free::FreeBox;
 use byteorder::{BigEndian, ReadBytesExt};
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 use std::io::{Read, Seek, SeekFrom};
 
 #[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize)]

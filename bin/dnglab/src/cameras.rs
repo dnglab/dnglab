@@ -51,7 +51,7 @@ pub async fn cameras(options: &ArgMatches<'_>) -> anyhow::Result<()> {
         println!("|{:max_make$}  | {:max_model$} | ✅ Yes | {} | {} |", make.0, model.0, modes, remarks);
       }
     }
-    println!("");
+    println!();
   } else {
     for make in map {
       println!("{:-<80}", "");
@@ -65,7 +65,7 @@ pub async fn cameras(options: &ArgMatches<'_>) -> anyhow::Result<()> {
           println!("{:max_make$}  {:max_model$}  {}  ({})", make.0, model.0, modes, remarks);
         }
       }
-      println!("");
+      println!();
     }
   }
   Ok(())

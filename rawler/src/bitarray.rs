@@ -35,19 +35,16 @@ impl<T: BitStorage> PartialOrd for BitArray<T> {
 
 impl<T: BitStorage> Ord for BitArray<T> {
   fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-    if self.nbits > other.nbits {
-      Ordering::Greater
-    } else if self.nbits < other.nbits {
-      Ordering::Less
-    } else {
-      self.storage.cmp(&other.storage)
+    match self.nbits.cmp(&other.nbits) {
+      Ordering::Equal => self.storage.cmp(&other.storage),
+      res => res,
     }
   }
 }
 
 impl<T: BitStorage> Display for BitArray<T> {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-    let mut value = self.clone();
+    let mut value = *self;
     let mut str = String::new();
     while !value.is_empty() {
       match value.pop() {
@@ -103,7 +100,7 @@ impl<T: BitStorage> BitArray<T> {
       let bit = self.storage & mask;
       self.storage = self.storage & !mask;
       self.nbits -= 1;
-      !(bit == T::from(false))
+      bit != T::from(false)
     }
   }
 
@@ -191,7 +188,7 @@ mod tests {
   fn check_storage() -> std::result::Result<(), Box<dyn std::error::Error>> {
     crate::init_test_logger();
     assert_eq!(BitArray16::from_lsb(3, 0b110).storage(), 0b1100_0000_0000_0000);
-    assert_eq!(BitArray16::from_msb(3, 0b110 << u16::BITS - 3).storage(), 0b1100_0000_0000_0000);
+    assert_eq!(BitArray16::from_msb(3, 0b110 << (u16::BITS - 3)).storage(), 0b1100_0000_0000_0000);
     Ok(())
   }
 

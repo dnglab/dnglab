@@ -1,0 +1,7 @@
+[[lenses]]
+mount = "ef-mount"
+lens_id = 60
+make = "Irix"
+model = "11mm f/4"
+focal_range = [[11, 1], [11, 1]]
+aperture_range = [[4, 1], [4, 1]]

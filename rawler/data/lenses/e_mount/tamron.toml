@@ -1,0 +1,111 @@
+[[lenses]]
+mount = "e-mount"
+lens_id = 49457
+make = "Tamron"
+model = "28-75mm F2.8 Di III RXD"
+focal_range = [[28, 1], [75, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 49458
+make = "Tamron"
+model = "17-28mm F2.8 Di III RXD"
+focal_range = [[17, 1], [28, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 49459
+make = "Tamron"
+model = "35mm F2.8 Di III OSD M1:2"
+focal_range = [[35, 1], [35, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 49460
+make = "Tamron"
+model = "24mm F2.8 Di III OSD M1:2"
+focal_range = [[24, 1], [24, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 49461
+make = "Tamron"
+model = "20mm F2.8 Di III OSD M1:2"
+focal_range = [[20, 1], [20, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 49462
+make = "Tamron"
+model = "70-180mm F2.8 Di III VXD"
+focal_range = [[70, 1], [180, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 49463
+make = "Tamron"
+model = "28-200mm F2.8-5.6 Di III RXD"
+focal_range = [[28, 1], [200, 1]]
+aperture_range = [[28, 10], [56, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 49464
+make = "Tamron"
+model = "70-300mm F4.5-6.3 Di III RXD"
+focal_range = [[70, 1], [300, 1]]
+aperture_range = [[45, 10], [63, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 49465
+make = "Tamron"
+model = "17-70mm F2.8 Di III-A VC RXD"
+focal_range = [[17, 1], [70, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 49466
+make = "Tamron"
+model = "150-500mm F5-6.7 Di III VC VXD"
+focal_range = [[150, 1], [500, 1]]
+aperture_range = [[5, 10], [67, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 49467
+make = "Tamron"
+model = "11-20mm F2.8 Di III-A RXD"
+focal_range = [[11, 1], [20, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 49468
+make = "Tamron"
+model = "18-300mm F3.5-6.3 Di III-A VC VXD"
+focal_range = [[18, 1], [300, 1]]
+aperture_range = [[35, 10], [63, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 49469
+make = "Tamron"
+model = "35-150mm F2-F2.8 Di III VXD"
+focal_range = [[35, 1], [150, 1]]
+aperture_range = [[2, 1], [0, 1]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 49470
+make = "Tamron"
+model = "28-75mm F2.8 Di III VXD G2"
+focal_range = [[28, 1], [75, 1]]
+aperture_range = [[28, 10], [28, 10]]

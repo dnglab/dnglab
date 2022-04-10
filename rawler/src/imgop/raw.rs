@@ -53,12 +53,10 @@ pub fn clip_range<const N: usize>(pix: &[f32; N], lower: f32, upper: f32) -> [f3
   pix.map(|p| {
     if p < lower {
       lower
+    } else if p > upper {
+      upper
     } else {
-      if p > upper {
-        upper
-      } else {
-        p
-      }
+      p
     }
   })
 }
@@ -102,35 +100,34 @@ pub fn apply_whitebalance<const N: usize>(pix: &[f32; N], coeff: &[f32; N]) -> [
 }
 
 /// Develop a RAW image to sRGB
-pub fn develop_raw_srgb(pixels: &Vec<u16>, params: &DevelopParams) -> Result<(Vec<f32>, Dim2)> {
+pub fn develop_raw_srgb(pixels: &[u16], params: &DevelopParams) -> Result<(Vec<f32>, Dim2)> {
   let black_level: [f32; 4] = match params.black_level.len() {
     1 => Ok(collect_array(iter::repeat(params.black_level[0] as f32))),
     4 => Ok(collect_array(params.black_level.iter().map(|p| *p as f32))),
-    c @ _ => Err(format!("Black level sample count of {} is invalid", c)),
+    c => Err(format!("Black level sample count of {} is invalid", c)),
   }?;
   let white_level: [f32; 4] = match params.white_level.len() {
     1 => Ok(collect_array(iter::repeat(params.white_level[0] as f32))),
     4 => Ok(collect_array(params.white_level.iter().map(|p| *p as f32))),
-    c @ _ => Err(format!("White level sample count of {} is invalid", c)),
+    c => Err(format!("White level sample count of {} is invalid", c)),
   }?;
   let wb_coeff: [f32; 4] = match params.wb_coeff.len() {
     1 => Ok(collect_array(iter::repeat(params.wb_coeff[0]))),
-    4 => Ok(collect_array(params.wb_coeff.iter().map(|p| *p))),
+    4 => Ok(collect_array(params.wb_coeff.iter().copied())),
     3 => Ok(match params.pattern {
       BayerPattern::RGGB | BayerPattern::BGGR => [params.wb_coeff[0], params.wb_coeff[1], params.wb_coeff[1], params.wb_coeff[2]],
       BayerPattern::GBRG | BayerPattern::GRBG => [params.wb_coeff[0], params.wb_coeff[1], params.wb_coeff[2], params.wb_coeff[0]],
       //BayerPattern::ERBG => todo!(),
       //BayerPattern::RGEB => todo!(),
     }),
-    c @ _ => Err(format!("AsShot wb_coeff sample count of {} is invalid", c)),
+    c => Err(format!("AsShot wb_coeff sample count of {} is invalid", c)),
   }?;
 
   //Color Space Conversion
   let xyz2cam = params
     .color_matrices
     .iter()
-    .filter(|m| m.illuminant == Illuminant::D65)
-    .next()
+    .find(|m| m.illuminant == Illuminant::D65)
     .ok_or("Illuminant matrix D65 not found")?
     .matrix;
 
@@ -139,10 +136,10 @@ pub fn develop_raw_srgb(pixels: &Vec<u16>, params: &DevelopParams) -> Result<(Ve
 
   let active_area = params
     .active_area
-    .unwrap_or(Rect::new_with_points(Point::zero(), Point::new(params.width, params.height)));
+    .unwrap_or_else(|| Rect::new_with_points(Point::zero(), Point::new(params.width, params.height)));
 
   //eprintln!("cam2rgb: {:?}", cam2rgb);
-  let cropped_pixels = crop(&pixels, Dim2::new(params.width, params.height), active_area);
+  let cropped_pixels = crop(pixels, Dim2::new(params.width, params.height), active_area);
 
   let (rgb, w, h) = debayer_superpixel(&cropped_pixels, params.pattern, active_area.d, &black_level, &white_level, &wb_coeff);
 
@@ -157,8 +154,7 @@ pub fn develop_raw_srgb(pixels: &Vec<u16>, params: &DevelopParams) -> Result<(Ve
         cam2rgb[2][0] * r + cam2rgb[2][1] * g + cam2rgb[2][2] * b,
       ]
     })
-    .map(|p| clip_euclidean_norm_avg(&p))
-    .flatten()
+    .flat_map(|p| clip_euclidean_norm_avg(&p))
     .map(|p| apply_gamma(p, params.gamma))
     .collect();
 
@@ -193,7 +189,7 @@ pub fn rotate_90(src: &[u16], dst: &mut [u16], width: usize, height: usize) {
   for (row, line) in src.chunks_exact(width).enumerate() {
     for (col, pix) in line.iter().enumerate() {
       let orow = col;
-      let ocol = (owidth-1)-row; // inverse
+      let ocol = (owidth - 1) - row; // inverse
       dst[orow * owidth + ocol] = *pix;
     }
   }

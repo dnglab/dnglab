@@ -4,7 +4,7 @@
 
 use super::{mdia::MdiaBox, tkhd::TkhdBox, vendor::VendorBox, BmffError, BoxHeader, FourCC, ReadBox, Result};
 use log::debug;
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 use std::io::{Read, Seek, SeekFrom};
 
 #[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize)]
@@ -60,8 +60,8 @@ impl<R: Read + Seek> ReadBox<&mut R> for TrakBox {
 
     Ok(Self {
       header,
-      tkhd: tkhd.ok_or(BmffError::Parse("tkhd box not found, corrupt file?".into()))?,
-      mdia: mdia.ok_or(BmffError::Parse("mdia box not found, corrupt file?".into()))?,
+      tkhd: tkhd.ok_or_else(|| BmffError::Parse("tkhd box not found, corrupt file?".into()))?,
+      mdia: mdia.ok_or_else(|| BmffError::Parse("mdia box not found, corrupt file?".into()))?,
       vendor: vendors,
     })
   }

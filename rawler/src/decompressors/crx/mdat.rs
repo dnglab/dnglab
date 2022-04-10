@@ -320,12 +320,10 @@ impl Subband {
   pub(super) fn get_subband_row(&self, row: usize) -> usize {
     if row < self.row_start_addon {
       0
+    } else if row < self.height - self.row_end_addon {
+      row - self.row_end_addon
     } else {
-      if row < self.height - self.row_end_addon {
-        row - self.row_end_addon
-      } else {
-        self.height - self.row_end_addon - self.row_start_addon - 1
-      }
+      self.height - self.row_end_addon - self.row_start_addon - 1
     }
   }
 
@@ -362,6 +360,7 @@ fn next_indicator<T: Read>(hdr: &mut T) -> Result<u16> {
 }
 
 /// Parse MDAT header for structure of embedded data
+#[allow(clippy::while_let_loop)]
 pub(super) fn parse_header(mdat_hdr: &[u8]) -> Result<Vec<Tile>> {
   let mut hdr = Cursor::new(mdat_hdr);
   let mut tiles = Vec::new();

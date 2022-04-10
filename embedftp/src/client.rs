@@ -25,14 +25,13 @@ use std::os::unix::prelude::MetadataExt;
 #[cfg(windows)]
 use std::os::windows::fs::MetadataExt;
 
-
 use crate::codec::FtpCodec;
 use crate::command::{Command, TransferType};
 use crate::config::{Config, FtpCallback};
 use crate::error::{Error, Result};
 use crate::ftp::{Answer, ResultCode};
 
-const MONTHS: [&'static str; 12] = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const MONTHS: [&str; 12] = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
 type Writer = SplitSink<Framed<TcpStream, FtpCodec>, Answer>;
 
@@ -84,7 +83,7 @@ where
 
   /// Check if current client is logged in.
   fn is_logged(&self) -> bool {
-    self.name.is_some() && self.waiting_password == false
+    self.name.is_some() && !self.waiting_password
   }
 
   /// Handle a new COMMAND from the client
@@ -96,26 +95,26 @@ where
     debug!("Received command: {:?}", cmd);
     if self.is_logged() {
       match cmd {
-        Command::Cwd(directory) => return Ok(self.cwd(directory).await?),
-        Command::List(path) => return Ok((self.list(path)).await?),
-        Command::Nlst(path) => return Ok((self.nlst(path)).await?),
-        Command::Pasv => return Ok((self.pasv()).await?),
-        Command::Epsv(proto) => return Ok((self.epsv(proto)).await?),
+        Command::Cwd(directory) => return self.cwd(directory).await,
+        Command::List(path) => return self.list(path).await,
+        Command::Nlst(path) => return self.nlst(path).await,
+        Command::Pasv => return self.pasv().await,
+        Command::Epsv(proto) => return self.epsv(proto).await,
         Command::Port(port) => {
           self.active_data_port = Some(port);
-          return Ok((self.send(Answer::new(ResultCode::Ok, &format!("Data port is now {}", port)))).await?);
+          return self.send(Answer::new(ResultCode::Ok, &format!("Data port is now {}", port))).await;
         }
         Command::Pwd => {
-          let msg = format!("{}", self.cwd.to_str().unwrap_or("")); // small trick
+          let msg = self.cwd.to_str().unwrap_or("").to_string(); // small trick
           if !msg.is_empty() {
             let message = format!("\"{}\" ", msg);
-            return Ok((self.send(Answer::new(ResultCode::PATHNAMECreated, &message))).await?);
+            return self.send(Answer::new(ResultCode::PATHNAMECreated, &message)).await;
           } else {
-            return Ok((self.send(Answer::new(ResultCode::FileNotFound, "No such file or directory"))).await?);
+            return self.send(Answer::new(ResultCode::FileNotFound, "No such file or directory")).await;
           }
         }
-        Command::Retr(file) => return Ok((self.retr(file)).await?),
-        Command::Stor(file) => return Ok((self.stor(file)).await?),
+        Command::Retr(file) => return self.retr(file).await,
+        Command::Stor(file) => return self.stor(file).await,
         Command::CdUp => {
           debug!("old Path: {:?}", self.cwd);
           if let Some(path) = self.cwd.parent().map(Path::to_path_buf) {
@@ -124,12 +123,12 @@ where
           }
           debug!("New Path: {:?}", self.cwd);
           let msg = format!("\"{}\" is the current directory.", self.cwd.to_str().unwrap_or(""));
-          return Ok((self.send(Answer::new(ResultCode::RequestedFileActionOkay, &msg))).await?);
+          return self.send(Answer::new(ResultCode::RequestedFileActionOkay, &msg)).await;
           //return Ok((self.send(Answer::new(ResultCode::Ok, "Okay."))).await?);
         }
-        Command::Mkd(path) => return Ok((self.mkd(path)).await?),
-        Command::Rmd(path) => return Ok((self.rmd(path)).await?),
-        Command::Dele(path) => return Ok((self.dele(path)).await?),
+        Command::Mkd(path) => return self.mkd(path).await,
+        Command::Rmd(path) => return self.rmd(path).await,
+        Command::Dele(path) => return self.dele(path).await,
         _ => (),
       }
     } else if self.name.is_some() && self.waiting_password {
@@ -139,17 +138,15 @@ where
           ok = true;
         } else {
           for user in &self.config.users {
-            if Some(&user.name) == self.name.as_ref() {
-              if user.password == content {
-                ok = true;
-                break;
-              }
+            if Some(&user.name) == self.name.as_ref() && user.password == content {
+              ok = true;
+              break;
             }
           }
         }
         if ok {
           self.waiting_password = false;
-          let name = self.name.clone().unwrap_or(String::new());
+          let name = self.name.clone().unwrap_or_default();
           self.send(Answer::new(ResultCode::UserLoggedIn, &format!("Welcome {}", name))).await?;
         } else {
           self.send(Answer::new(ResultCode::NotLoggedIn, "Invalid password")).await?;
@@ -185,7 +182,7 @@ where
             for user in &self.config.users {
               if user.name == content {
                 name = Some(content.clone());
-                pass_required = user.password.is_empty() == false;
+                pass_required = !user.password.is_empty();
                 break;
               }
             }
@@ -232,7 +229,7 @@ where
   async fn initiate_data_connection(&mut self) -> Result<()> {
     // only open when we are in active mode
     if let Some(port) = self.active_data_port {
-      let mut addr = self.remote_addr.clone();
+      let mut addr = self.remote_addr;
       addr.set_port(port);
       let stream = match TcpStream::connect(addr).await {
         Ok(stream) => stream,
@@ -254,11 +251,11 @@ where
     self.data_writer = None;
   }
 
-  fn complete_path(&self, path: &PathBuf) -> result::Result<PathBuf, io::Error> {
+  fn complete_path(&self, path: &Path) -> result::Result<PathBuf, io::Error> {
     let directory = self.server_root.join(if path.has_root() {
       path.iter().skip(1).clone().collect()
     } else {
-      path.clone()
+      path.to_path_buf()
     });
     let dir = directory.canonicalize();
     if let Ok(ref dir) = dir {
@@ -366,10 +363,8 @@ where
         let mut out = vec![];
         if path.is_dir() {
           if let Ok(dir) = read_dir(path) {
-            for entry in dir {
-              if let Ok(entry) = entry {
-                add_file_info(entry.path(), &mut out);
-              }
+            for entry in dir.flatten() {
+              add_file_info(entry.path(), &mut out);
             }
           } else {
             self
@@ -418,7 +413,7 @@ where
           cwd.join("*")
         };
 
-        let matches = match pattern.to_str().and_then(|s| Some(glob(s).map_err(|_| Error::from("Invalid glob pattern")))) {
+        let matches = match pattern.to_str().map(|s| glob(s).map_err(|_| Error::from("Invalid glob pattern"))) {
           Some(Ok(matches)) => matches,
           _ => {
             self
@@ -474,7 +469,7 @@ where
     self.active_data_port = None;
     //let port = if let Some(port) = self.data_port { port } else { 0 };
     let port = 0; // auto configure port
-    let mut addr = self.local_addr.clone();
+    let mut addr = self.local_addr;
     addr.set_port(port);
 
     match &addr.ip() {
@@ -499,19 +494,17 @@ where
           .await?;
 
         debug!("Waiting for data clients on port {}...", port);
-        loop {
+        {
           let (stream, _addr) = listener.accept().await?;
           let (r, w) = stream.into_split();
           self.data_writer = Some(w);
           self.data_reader = Some(r);
-          break;
         }
       }
       IpAddr::V6(_v6addr) => {
         return Err(Error::Msg("PASV is not possible for IPv6 connections.".into()));
       }
     }
-
     Ok(())
   }
 
@@ -533,7 +526,7 @@ where
 
     self.active_data_port = None;
 
-    let mut addr = self.local_addr.clone();
+    let mut addr = self.local_addr;
     addr.set_port(port);
     let listener = TcpListener::bind(&addr).await?;
     let port = listener.local_addr()?.port();
@@ -543,13 +536,12 @@ where
       .await?;
 
     debug!("Waiting for data clients on port {}...", port);
-    loop {
+    {
       let (stream, _addr) = listener.accept().await?;
       let (r, w) = stream.into_split();
 
       self.data_writer = Some(w);
       self.data_reader = Some(r);
-      break;
     }
 
     Ok(())
@@ -748,7 +740,7 @@ fn add_file_info(path: PathBuf, out: &mut Vec<u8>) {
   #[cfg(windows)]
   let file_size = meta.file_size();
   let path = match path.to_str() {
-    Some(path) => match path.split("/").last() {
+    Some(path) => match path.split('/').last() {
       Some(path) => path,
       _ => return,
     },
@@ -780,7 +772,7 @@ fn add_file_info(path: PathBuf, out: &mut Vec<u8>) {
 fn add_file_info_nlst(path: PathBuf, out: &mut Vec<u8>) {
   let extra = if path.is_dir() { "/" } else { "" };
   let path = match path.to_str() {
-    Some(path) => match path.split("/").last() {
+    Some(path) => match path.split('/').last() {
       Some(path) => path,
       _ => return,
     },

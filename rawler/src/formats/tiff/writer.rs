@@ -8,7 +8,7 @@ use std::{
 
 use byteorder::{LittleEndian, NativeEndian, WriteBytesExt};
 
-use crate::tags::TiffTagEnum;
+use crate::tags::TiffTag;
 
 use super::{Entry, Result, TiffError, Value, TIFF_MAGIC};
 
@@ -92,7 +92,7 @@ impl<'a, 'w> DirectoryWriter<'a, 'w> {
 
   pub fn build(mut self) -> Result<u32> {
     if self.entries.is_empty() {
-      return Err(TiffError::General(format!("IFD is empty, not allowed by TIFF specification")));
+      return Err(TiffError::General("IFD is empty, not allowed by TIFF specification".to_string()));
     }
     for &mut Entry {
       ref mut value,
@@ -128,7 +128,7 @@ impl<'a, 'w> DirectoryWriter<'a, 'w> {
     Ok(offset)
   }
 
-  pub fn add_tag<T: TiffTagEnum, V: Into<Value>>(&mut self, tag: T, value: V) -> Result<()> {
+  pub fn add_tag<T: TiffTag, V: Into<Value>>(&mut self, tag: T, value: V) -> Result<()> {
     let tag: u16 = tag.into();
     self.entries.insert(
       tag,
@@ -141,7 +141,7 @@ impl<'a, 'w> DirectoryWriter<'a, 'w> {
     Ok(())
   }
 
-  pub fn add_tag_undefined<T: TiffTagEnum>(&mut self, tag: T, data: Vec<u8>) -> Result<()> {
+  pub fn add_tag_undefined<T: TiffTag>(&mut self, tag: T, data: Vec<u8>) -> Result<()> {
     let tag: u16 = tag.into();
     //let data = data.as_ref();
     //let offset = self.write_data(data)?;
@@ -156,7 +156,7 @@ impl<'a, 'w> DirectoryWriter<'a, 'w> {
     Ok(())
   }
 
-  pub fn add_value<T: TiffTagEnum>(&mut self, tag: T, value: Value) -> Result<()> {
+  pub fn add_value<T: TiffTag>(&mut self, tag: T, value: Value) -> Result<()> {
     let tag: u16 = tag.into();
     self.entries.insert(tag, Entry { tag, value, embedded: None });
     Ok(())

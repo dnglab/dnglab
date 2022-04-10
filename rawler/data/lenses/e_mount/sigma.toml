@@ -1,0 +1,295 @@
+[[lenses]]
+mount = "e-mount"
+lens_id = 50480
+make = "Sigma"
+model = "30mm F1.4 DC DN | C"
+focal_range = [[30, 1], [30, 1]]
+aperture_range = [[14, 10], [14, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 50481
+make = "Sigma"
+model = "50mm F1.4 DG HSM | A"
+focal_range = [[50, 1], [50, 1]]
+aperture_range = [[14, 10], [14, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 50482
+make = "Sigma"
+model = "18-300mm F3.5-6.3 DC MACRO OS HSM | C + MC-11"
+focal_range = [[18, 1], [300, 1]]
+aperture_range = [[35, 10], [63, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 50483
+make = "Sigma"
+model = "18-35mm F1.8 DC HSM | A + MC-11"
+focal_range = [[18, 1], [35, 1]]
+aperture_range = [[18, 10], [18, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 50484
+make = "Sigma"
+model = "24-35mm F2 DG HSM | A + MC-11"
+focal_range = [[24, 1], [35, 1]]
+aperture_range = [[2, 1], [2, 1]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 50485
+make = "Sigma"
+model = "24mm F1.4 DG HSM | A + MC-11"
+focal_range = [[24, 1], [24, 1]]
+aperture_range = [[14, 10], [14, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 50486
+make = "Sigma"
+model = "150-600mm F5-6.3 DG OS HSM | C + MC-11"
+focal_range = [[150, 1], [600, 1]]
+aperture_range = [[5, 1], [63, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 50487
+make = "Sigma"
+model = "20mm F1.4 DG HSM | A + MC-11"
+focal_range = [[20, 1], [20, 1]]
+aperture_range = [[14, 10], [14, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 50488
+make = "Sigma"
+model = "35mm F1.4 DG HSM | A"
+focal_range = [[35, 1], [35, 1]]
+aperture_range = [[14, 10], [14, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 50489
+make = "Sigma"
+model = "150-600mm F5-6.3 DG OS HSM | S + MC-11"
+focal_range = [[150, 1], [600, 1]]
+aperture_range = [[5, 1], [63, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 50490
+make = "Sigma"
+model = "120-300mm F2.8 DG OS HSM | S + MC-11"
+focal_range = [[120, 1], [300, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 50492
+make = "Sigma"
+model = "24-105mm F4 DG OS HSM | A + MC-11"
+focal_range = [[24, 1], [105, 1]]
+aperture_range = [[4, 1], [4, 1]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 50493
+make = "Sigma"
+model = "17-70mm F2.8-4 DC MACRO OS HSM | C + MC-11"
+focal_range = [[17, 1], [70, 1]]
+aperture_range = [[28, 10], [4, 1]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 50495
+make = "Sigma"
+model = "50-100mm F1.8 DC HSM | A + MC-11"
+focal_range = [[50, 1], [100, 1]]
+aperture_range = [[18, 10], [18, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 50499
+make = "Sigma"
+model = "85mm F1.4 DG HSM | A"
+focal_range = [[85, 1], [85, 1]]
+aperture_range = [[14, 10], [14, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 50501
+make = "Sigma"
+model = "100-400mm F5-6.3 DG OS HSM | C + MC-11"
+focal_range = [[100, 1], [400, 1]]
+aperture_range = [[5, 1], [63, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 50503
+make = "Sigma"
+model = "16mm F1.4 DC DN | C"
+focal_range = [[16, 1], [16, 1]]
+aperture_range = [[14, 10], [14, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 50507
+make = "Sigma"
+model = "105mm F1.4 DG HSM | A"
+focal_range = [[105, 1], [105, 1]]
+aperture_range = [[14, 10], [14, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 50508
+make = "Sigma"
+model = "56mm F1.4 DC DN | C"
+focal_range = [[56, 1], [56, 1]]
+aperture_range = [[14, 10], [14, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 50512
+make = "Sigma"
+model = "70-200mm F2.8 DG OS HSM | S + MC-11"
+focal_range = [[70, 1], [200, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 50513
+make = "Sigma"
+model = "70mm F2.8 DG MACRO | A"
+focal_range = [[70, 1], [70, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 50514
+make = "Sigma"
+model = "45mm F2.8 DG DN | C"
+focal_range = [[45, 1], [45, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 50515
+make = "Sigma"
+model = "35mm F1.2 DG DN | A"
+focal_range = [[35, 1], [35, 1]]
+aperture_range = [[12, 10], [12, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 50516
+make = "Sigma"
+model = "14-24mm F2.8 DG DN | A"
+focal_range = [[14, 1], [24, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 50517
+make = "Sigma"
+model = "24-70mm F2.8 DG DN | A"
+focal_range = [[24, 1], [70, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 50518
+make = "Sigma"
+model = "100-400mm F5-6.3 DG DN OS | C"
+focal_range = [[100, 1], [400, 1]]
+aperture_range = [[5, 1], [63, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 50521
+make = "Sigma"
+model = "85mm F1.4 DG DN | A"
+focal_range = [[85, 1], [85, 1]]
+aperture_range = [[14, 10], [14, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 50522
+make = "Sigma"
+model = "105mm F2.8 DG DN MACRO | A"
+focal_range = [[105, 1], [105, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 50523
+make = "Sigma"
+model = "65mm F2 DG DN | C"
+focal_range = [[65, 1], [65, 1]]
+aperture_range = [[2, 1], [2, 1]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 50524
+make = "Sigma"
+model = "35mm F2 DG DN | C"
+focal_range = [[35, 1], [35, 1]]
+aperture_range = [[2, 1], [2, 1]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 50525
+make = "Sigma"
+model = "24mm F3.5 DG DN | C"
+focal_range = [[24, 1], [24, 1]]
+aperture_range = [[35, 10], [35, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 50526
+make = "Sigma"
+model = "28-70mm F2.8 DG DN | C"
+focal_range = [[28, 1], [70, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 50527
+make = "Sigma"
+model = "150-600mm F5-6.3 DG DN OS | S"
+focal_range = [[150, 1], [600, 1]]
+aperture_range = [[5, 1], [63, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 50528
+make = "Sigma"
+model = "35mm F1.4 DG DN | A"
+focal_range = [[35, 1], [35, 1]]
+aperture_range = [[14, 10], [14, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 50529
+make = "Sigma"
+model = "90mm F2.8 DG DN | C"
+focal_range = [[90, 1], [90, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 50530
+make = "Sigma"
+model = "24mm F2 DG DN | C"
+focal_range = [[24, 1], [24, 1]]
+aperture_range = [[2, 1], [2, 1]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 50531
+make = "Sigma"
+model = "18-50mm F2.8 DC DN | C"
+focal_range = [[18, 1], [50, 1]]
+aperture_range = [[28, 10], [28, 10]]

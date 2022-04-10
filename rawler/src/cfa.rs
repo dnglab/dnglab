@@ -1,6 +1,6 @@
 use std::fmt;
 
-use crate::formats::tiff_legacy::*;
+use crate::formats::tiff::Value;
 
 pub const CFA_COLOR_R: usize = 0;
 pub const CFA_COLOR_G: usize = 1;
@@ -34,12 +34,18 @@ pub struct CFA {
   pattern: [[usize; 48]; 48],
 }
 
+impl Default for CFA {
+  fn default() -> Self {
+    Self::new("")
+  }
+}
+
 impl CFA {
   #[doc(hidden)]
-  pub fn new_from_tag(pat: &LegacyTiffEntry) -> CFA {
+  pub fn new_from_tag(pat: &Value) -> CFA {
     let mut patname = String::new();
     for i in 0..pat.count() {
-      patname.push(match pat.get_u32(i as usize) {
+      patname.push(match pat.force_u32(i as usize) {
         0 => 'R',
         1 => 'G',
         2 => 'B',
@@ -95,9 +101,9 @@ impl CFA {
 
     CFA {
       name: patname.to_string(),
-      pattern: pattern,
-      width: width,
-      height: height,
+      pattern,
+      width,
+      height,
     }
   }
 
@@ -174,8 +180,8 @@ impl CFA {
     }
 
     CFA {
-      name: name,
-      pattern: pattern,
+      name,
+      pattern,
       width: self.width,
       height: self.height,
     }
@@ -195,7 +201,9 @@ impl CFA {
   pub fn is_valid(&self) -> bool {
     self.width != 0 && self.height != 0
   }
+}
 
+impl fmt::Display for CFA {
   /// Convert the CFA back into a pattern string
   ///
   /// # Example
@@ -207,8 +215,8 @@ impl CFA {
   /// let shifted = cfa.shift(1,1);
   /// assert_eq!(shifted.to_string(), "BGGR");
   /// ```
-  pub fn to_string(&self) -> String {
-    self.name.clone()
+  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    f.write_str(&self.name)
   }
 }
 

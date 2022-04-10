@@ -6,11 +6,11 @@ use std::io::{Read, Seek, SeekFrom};
 use thiserror::Error;
 
 pub mod entry;
+pub mod file;
 pub mod ifd;
 pub mod reader;
 pub mod value;
 pub mod writer;
-pub mod file;
 
 pub use entry::Entry;
 pub use ifd::IFD;
@@ -168,7 +168,7 @@ pub struct DirReader {}
 mod tests {
   use std::io::{Cursor, Seek, SeekFrom};
 
-  use crate::{tags::LegacyTiffRootTag, formats::tiff::reader::TiffReader};
+  use crate::{formats::tiff::reader::TiffReader, tags::TiffCommonTag};
 
   use super::*;
 
@@ -185,14 +185,14 @@ mod tests {
 
     let offset = {
       let mut dir2 = dir.new_directory();
-      dir2.add_tag(32 as u16, 23 as u16)?;
+      dir2.add_tag(32_u16, 23_u16)?;
       dir2.build()?
     };
 
-    dir.add_tag(LegacyTiffRootTag::ActiveArea, offset as u16)?;
-    dir.add_tag(LegacyTiffRootTag::ActiveArea, [23_u16, 45_u16])?;
-    dir.add_tag(LegacyTiffRootTag::ActiveArea, &[23_u16, 45_u16][..])?;
-    dir.add_tag(LegacyTiffRootTag::ActiveArea, "Fobbar")?;
+    dir.add_tag(TiffCommonTag::ActiveArea, offset as u16)?;
+    dir.add_tag(TiffCommonTag::ActiveArea, [23_u16, 45_u16])?;
+    dir.add_tag(TiffCommonTag::ActiveArea, &[23_u16, 45_u16][..])?;
+    dir.add_tag(TiffCommonTag::ActiveArea, "Fobbar")?;
 
     Ok(())
   }
@@ -207,18 +207,18 @@ mod tests {
 
       let offset = {
         let mut dir2 = dir.new_directory();
-        dir2.add_tag(32 as u16, 23 as u16)?;
+        dir2.add_tag(32_u16, 23_u16)?;
         dir2.build()?
       };
 
-      dir.add_tag(LegacyTiffRootTag::ExifIFDPointer, offset)?;
+      dir.add_tag(TiffCommonTag::ExifIFDPointer, offset)?;
 
-      dir.add_tag(LegacyTiffRootTag::ActiveArea, [9_u16, 10_u16, 11_u16, 12, 13, 14])?;
-      dir.add_tag(LegacyTiffRootTag::BlackLevels, [9_u16, 10_u16])?;
-      dir.add_tag(LegacyTiffRootTag::WhiteLevel, [11_u16])?;
-      dir.add_tag(LegacyTiffRootTag::BitsPerSample, [12_u32])?;
-      dir.add_tag(LegacyTiffRootTag::ResolutionUnit, [-5_i32])?;
-      dir.add_tag(LegacyTiffRootTag::Artist, "AT")?;
+      dir.add_tag(TiffCommonTag::ActiveArea, [9_u16, 10_u16, 11_u16, 12, 13, 14])?;
+      dir.add_tag(TiffCommonTag::BlackLevels, [9_u16, 10_u16])?;
+      dir.add_tag(TiffCommonTag::WhiteLevel, [11_u16])?;
+      dir.add_tag(TiffCommonTag::BitsPerSample, [12_u32])?;
+      dir.add_tag(TiffCommonTag::ResolutionUnit, [-5_i32])?;
+      dir.add_tag(TiffCommonTag::Artist, "AT")?;
       dir.build()?
     };
 
@@ -226,9 +226,7 @@ mod tests {
 
     //assert!(TiffReader::is_tiff(&mut output) == true);
 
-    let mut garbage_output: Vec<u8> = Vec::new();
-    garbage_output.push(0x4a); // 1 byte garbage
-    garbage_output.push(0xee); // 1 byte garbage
+    let mut garbage_output: Vec<u8> = vec![0x4a, 0xee]; // Garbage
     garbage_output.extend_from_slice(&output.into_inner());
 
     let mut garbage_output = Cursor::new(garbage_output);
@@ -238,14 +236,14 @@ mod tests {
     let reader = GenericTiffReader::new(&mut garbage_output, 1, 1, Some(16), &[])?; // 1 byte offset correction
 
     assert_eq!(reader.root_ifd().entry_count(), 7);
-    assert!(reader.root_ifd().get_entry(LegacyTiffRootTag::WhiteLevel).is_some());
+    assert!(reader.root_ifd().get_entry(TiffCommonTag::WhiteLevel).is_some());
 
     assert!(matches!(
-      reader.root_ifd().get_entry(LegacyTiffRootTag::ExifIFDPointer).unwrap().value,
+      reader.root_ifd().get_entry(TiffCommonTag::ExifIFDPointer).unwrap().value,
       Value::Long { .. }
     ));
     assert!(matches!(
-      reader.root_ifd().get_entry(LegacyTiffRootTag::WhiteLevel).unwrap().value,
+      reader.root_ifd().get_entry(TiffCommonTag::WhiteLevel).unwrap().value,
       Value::Short { .. }
     ));
 

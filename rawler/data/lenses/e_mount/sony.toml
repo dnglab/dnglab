@@ -1,0 +1,594 @@
+[[lenses]]
+mount = "e-mount"
+lens_id = 32784
+make = "Sony"
+model = "E 16mm F2.8"
+focal_range = [[16, 1], [16, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 32785
+make = "Sony"
+model = "E 18-55mm F3.5-5.6 OSS"
+focal_range = [[18, 1], [55, 1]]
+aperture_range = [[35, 10], [56, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 32786
+make = "Sony"
+model = "E 55-210mm F4.5-6.3 OSS"
+focal_range = [[55, 1], [210, 1]]
+aperture_range = [[45, 10], [63, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 32787
+make = "Sony"
+model = "E 18-200mm F3.5-6.3 OSS"
+focal_range = [[18, 1], [200, 1]]
+aperture_range = [[35, 10], [63, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 32788
+make = "Sony"
+model = "E 30mm F3.5 Macro"
+focal_range = [[30, 1], [30, 1]]
+aperture_range = [[35, 10], [35, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 32789
+make = "Sony"
+model = "E 24mm F1.8 ZA"
+focal_range = [[24, 1], [24, 1]]
+aperture_range = [[18, 10], [18, 10]]
+
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 32790
+make = "Sony"
+model = "E 50mm F1.8 OSS"
+focal_range = [[50, 1], [50, 1]]
+aperture_range = [[18, 10], [18, 10]]
+
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 32791
+make = "Sony"
+model = "E 16-70mm F4 ZA OSS"
+focal_range = [[16, 1], [70, 1]]
+aperture_range = [[4, 1], [4, 1]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 32792
+make = "Sony"
+model = "E 10-18mm F4 OSS"
+focal_range = [[10, 1], [18, 1]]
+aperture_range = [[4, 1], [4, 1]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 32793
+make = "Sony"
+model = "E PZ 16-50mm F3.5-5.6 OSS"
+focal_range = [[16, 1], [50, 1]]
+aperture_range = [[35, 10], [56, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 32794
+make = "Sony"
+model = "FE 35mm F2.8 ZA"
+focal_range = [[35, 1], [35, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 32795
+make = "Sony"
+model = "FE 24-70mm F4 ZA OSS"
+focal_range = [[24, 1], [70, 1]]
+aperture_range = [[4, 1], [4, 1]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 32796
+make = "Sony"
+model = "FE 85mm F1.8"
+focal_range = [[85, 1], [85, 1]]
+aperture_range = [[18, 10], [18, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 32797
+make = "Sony"
+model = "E 18-200mm F3.5-6.3 OSS LE"
+focal_range = [[18, 1], [200, 1]]
+aperture_range = [[35, 10], [63, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 32798
+make = "Sony"
+model = "E 20mm F2.8"
+focal_range = [[20, 1], [20, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 32799
+make = "Sony"
+model = "E 35mm F1.8 OSS"
+focal_range = [[35, 1], [35, 1]]
+aperture_range = [[18, 10], [18, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 32800
+make = "Sony"
+model = "E PZ 18-105mm F4 G OSS"
+focal_range = [[18, 1], [105, 1]]
+aperture_range = [[4, 1], [4, 1]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 32801
+make = "Sony"
+model = "FE 12-24mm F4 G"
+focal_range = [[12, 1], [24, 1]]
+aperture_range = [[4, 1], [4, 1]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 32802
+make = "Sony"
+model = "FE 90mm F2.8 Macro G OSS"
+focal_range = [[90, 1], [90, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 32803
+make = "Sony"
+model = "E 18-50mm F4-5.6"
+focal_range = [[18, 1], [50, 1]]
+aperture_range = [[4, 10], [56, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 32804
+make = "Sony"
+model = "FE 24mm F1.4 GM"
+focal_range = [[24, 1], [24, 1]]
+aperture_range = [[14, 10], [14, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 32805
+make = "Sony"
+model = "FE 24-105mm F4 G OSS"
+focal_range = [[24, 1], [105, 1]]
+aperture_range = [[4, 1], [4, 1]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 32807
+make = "Sony"
+model = "E PZ 18-200mm F3.5-6.3 OSS"
+focal_range = [[18, 1], [200, 1]]
+aperture_range = [[35, 10], [63, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 32808
+make = "Sony"
+model = "FE 55mm F1.8 ZA"
+focal_range = [[55, 1], [55, 1]]
+aperture_range = [[18, 10], [18, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 32810
+make = "Sony"
+model = "FE 70-200mm F4 G OSS"
+focal_range = [[70, 1], [200, 1]]
+aperture_range = [[4, 1], [4, 1]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 32811
+make = "Sony"
+model = "FE 16-35mm F4 ZA OSS"
+focal_range = [[16, 1], [35, 1]]
+aperture_range = [[4, 1], [4, 1]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 32812
+make = "Sony"
+model = "FE 50mm F2.8 Macro"
+focal_range = [[50, 1], [50, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 32813
+make = "Sony"
+model = "FE 28-70mm F3.5-5.6 OSS"
+focal_range = [[28, 1], [70, 1]]
+aperture_range = [[35, 10], [56, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 32814
+make = "Sony"
+model = "FE 35mm F1.4 ZA"
+focal_range = [[35, 1], [35, 1]]
+aperture_range = [[14, 10], [14, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 32815
+make = "Sony"
+model = "FE 24-240mm F3.5-6.3 OSS"
+focal_range = [[24, 1], [240, 1]]
+aperture_range = [[35, 10], [63, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 32816
+make = "Sony"
+model = "FE 28mm F2"
+focal_range = [[28, 1], [28, 1]]
+aperture_range = [[2, 1], [2, 1]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 32817
+make = "Sony"
+model = "FE PZ 28-135mm F4 G OSS"
+focal_range = [[28, 1], [135, 1]]
+aperture_range = [[4, 1], [4, 1]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 32819
+make = "Sony"
+model = "FE 100mm F2.8 STF GM OSS"
+focal_range = [[100, 1], [100, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 32820
+make = "Sony"
+model = "E PZ 18-110mm F4 G OSS"
+focal_range = [[18, 1], [110, 1]]
+aperture_range = [[4, 1], [4, 1]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 32821
+make = "Sony"
+model = "FE 24-70mm F2.8 GM"
+focal_range = [[24, 1], [70, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 32822
+make = "Sony"
+model = "FE 50mm F1.4 ZA"
+focal_range = [[50, 1], [50, 1]]
+aperture_range = [[14, 10], [14, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 32823
+make = "Sony"
+model = "FE 85mm F1.4 GM"
+focal_range = [[85, 1], [85, 1]]
+aperture_range = [[14, 10], [14, 10]]
+
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 32824
+make = "Sony"
+model = "FE 50mm F1.8"
+focal_range = [[50, 1], [50, 1]]
+aperture_range = [[18, 10], [18, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 32826
+make = "Sony"
+model = "FE 21mm F2.8 (SEL28F20 + SEL075UWC)"
+focal_range = [[21, 1], [21, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 32827
+make = "Sony"
+model = "FE 16mm F3.5 Fisheye (SEL28F20 + SEL057FEC)"
+focal_range = [[16, 1], [16, 1]]
+aperture_range = [[35, 10], [35, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 32828
+make = "Sony"
+model = "FE 70-300mm F4.5-5.6 G OSS"
+focal_range = [[70, 1], [300, 1]]
+aperture_range = [[45, 10], [56, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 32829
+make = "Sony"
+model = "FE 100-400mm F4.5-5.6 GM OSS"
+focal_range = [[100, 1], [400, 1]]
+aperture_range = [[45, 10], [56, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 32830
+make = "Sony"
+model = "FE 70-200mm F2.8 GM OSS"
+focal_range = [[70, 1], [200, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 32831
+make = "Sony"
+model = "FE 16-35mm F2.8 GM"
+focal_range = [[16, 1], [35, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 32848
+make = "Sony"
+model = "FE 400mm F2.8 GM OSS"
+focal_range = [[400, 1], [400, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 32849
+make = "Sony"
+model = "E 18-135mm F3.5-5.6 OSS"
+focal_range = [[18, 1], [135, 1]]
+aperture_range = [[35, 10], [56, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 32850
+make = "Sony"
+model = "FE 135mm F1.8 GM"
+focal_range = [[135, 1], [135, 1]]
+aperture_range = [[18, 10], [18, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 32851
+make = "Sony"
+model = "FE 200-600mm F5.6-6.3 G OSS"
+focal_range = [[200, 1], [600, 1]]
+aperture_range = [[56, 10], [63, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 32852
+make = "Sony"
+model = "FE 600mm F4 GM OSS"
+focal_range = [[600, 1], [600, 1]]
+aperture_range = [[4, 1], [4, 1]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 32853
+make = "Sony"
+model = "E 16-55mm F2.8 G"
+focal_range = [[16, 1], [55, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 32854
+make = "Sony"
+model = "E 70-350mm F4.5-6.3 G OSS"
+focal_range = [[70, 1], [350, 1]]
+aperture_range = [[45, 10], [63, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 32855
+make = "Sony"
+model = "FE C 16-35mm T3.1 G"
+focal_range = [[16, 1], [35, 1]]
+aperture_range = [[31, 10], [31, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 32858
+make = "Sony"
+model = "FE 35mm F1.8"
+focal_range = [[35, 1], [35, 1]]
+aperture_range = [[18, 10], [18, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 32859
+make = "Sony"
+model = "FE 20mm F1.8 G"
+focal_range = [[20, 1], [20, 1]]
+aperture_range = [[18, 10], [18, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 32860
+make = "Sony"
+model = "FE 12-24mm F2.8 GM"
+focal_range = [[12, 1], [24, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 32862
+make = "Sony"
+model = "FE 50mm F1.2 GM"
+focal_range = [[50, 1], [50, 1]]
+aperture_range = [[12, 10], [12, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 32863
+make = "Sony"
+model = "FE 14mm F1.8 GM"
+focal_range = [[14, 1], [14, 1]]
+aperture_range = [[18, 10], [18, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 32864
+make = "Sony"
+model = "FE 28-60mm F4-5.6"
+focal_range = [[28, 1], [60, 1]]
+aperture_range = [[4, 10], [56, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 32865
+make = "Sony"
+model = "FE 35mm F1.4 GM"
+focal_range = [[35, 1], [35, 1]]
+aperture_range = [[14, 10], [14, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 32866
+make = "Sony"
+model = "FE 24mm F2.8 G"
+focal_range = [[24, 1], [24, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 32867
+make = "Sony"
+model = "FE 40mm F2.5 G"
+focal_range = [[40, 1], [40, 1]]
+aperture_range = [[25, 10], [25, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 32868
+make = "Sony"
+model = "FE 50mm F2.5 G"
+focal_range = [[50, 1], [50, 1]]
+aperture_range = [[25, 10], [25, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 32874
+make = "Sony"
+model = "FE 70-200mm F2.8 GM OSS II"
+focal_range = [[70, 1], [200, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 33072
+make = "Sony"
+model = "FE 70-200mm F2.8 GM OSS + 1.4X Teleconverter"
+focal_range = [[70, 1], [200, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 33073
+make = "Sony"
+model = "FE 70-200mm F2.8 GM OSS + 2X Teleconverter"
+focal_range = [[70, 1], [200, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 33076
+make = "Sony"
+model = "FE 100mm F2.8 STF GM OSS (macro mode)"
+focal_range = [[100, 1], [100, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 33077
+make = "Sony"
+model = "FE 100-400mm F4.5-5.6 GM OSS + 1.4X Teleconverter"
+focal_range = [[100, 1], [400, 1]]
+aperture_range = [[45, 10], [56, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 33078
+make = "Sony"
+model = "FE 100-400mm F4.5-5.6 GM OSS + 2X Teleconverter"
+focal_range = [[100, 1], [400, 1]]
+aperture_range = [[45, 10], [56, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 33079
+make = "Sony"
+model = "FE 400mm F2.8 GM OSS + 1.4X Teleconverter"
+focal_range = [[400, 1], [400, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 33080
+make = "Sony"
+model = "FE 400mm F2.8 GM OSS + 2X Teleconverter"
+focal_range = [[400, 1], [400, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 33081
+make = "Sony"
+model = "FE 200-600mm F5.6-6.3 G OSS + 1.4X Teleconverter"
+focal_range = [[200, 1], [600, 1]]
+aperture_range = [[56, 10], [63, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 33082
+make = "Sony"
+model = "FE 200-600mm F5.6-6.3 G OSS + 2X Teleconverter"
+focal_range = [[200, 1], [600, 1]]
+aperture_range = [[56, 10], [63, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 33083
+make = "Sony"
+model = "FE 600mm F4 GM OSS + 1.4X Teleconverter"
+focal_range = [[600, 1], [600, 1]]
+aperture_range = [[4, 1], [4, 1]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 33084
+make = "Sony"
+model = "FE 600mm F4 GM OSS + 2X Teleconverter"
+focal_range = [[600, 1], [600, 1]]
+aperture_range = [[4, 1], [4, 1]]

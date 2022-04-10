@@ -75,8 +75,15 @@ where
   }
 }
 
-impl<T> Default for Pix2D<T> where T: Default {
-    fn default() -> Self {
-        Self { width: 0, height: 0, data: Default::default() }
+impl<T> Default for Pix2D<T>
+where
+  T: Default,
+{
+  fn default() -> Self {
+    Self {
+      width: 0,
+      height: 0,
+      data: Default::default(),
     }
+  }
 }

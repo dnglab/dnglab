@@ -10,7 +10,7 @@ use std::{
 
 use byteorder::{BigEndian, ReadBytesExt};
 use log::debug;
-use serde::{Serialize, Serializer, Deserialize, Deserializer};
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use thiserror::Error;
 
 pub mod co64;
@@ -187,9 +187,9 @@ impl FileBox {
     }
 
     Ok(Self {
-      ftyp: ftyp.ok_or(BmffError::Parse("ftyp box not found, corrupt file?".into()))?,
-      moov: moov.ok_or(BmffError::Parse("moov box not found, corrupt file?".into()))?,
-      mdat: mdat.ok_or(BmffError::Parse("mdat box not found, corrupt file?".into()))?,
+      ftyp: ftyp.ok_or_else(|| BmffError::Parse("ftyp box not found, corrupt file?".into()))?,
+      moov: moov.ok_or_else(|| BmffError::Parse("moov box not found, corrupt file?".into()))?,
+      mdat: mdat.ok_or_else(|| BmffError::Parse("mdat box not found, corrupt file?".into()))?,
       vendor: vendors,
       cr3xpacket,
     })
@@ -307,14 +307,13 @@ pub struct Bmff {
 }
 
 impl Bmff {
-
   pub fn new<R: Read + Seek>(file: R) -> Result<Self> {
     let filebox = FileBox::parse(file)?;
     Ok(Self { filebox })
   }
 
   pub fn new_buf(buf: &[u8]) -> Result<Self> {
-    let filebox = parse_buffer(&buf)?;
+    let filebox = parse_buffer(buf)?;
     Ok(Self { filebox })
   }
 

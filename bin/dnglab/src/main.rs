@@ -1,6 +1,17 @@
 // SPDX-License-Identifier: LGPL-2.1
 // Copyright 2021 Daniel Vogelbacher <daniel@chaospixel.com>
 
+#![allow(
+  clippy::expect_fun_call,
+  clippy::or_fun_call,
+  clippy::identity_op,
+  clippy::let_and_return,
+  clippy::if_same_then_else,
+  clippy::eq_op,
+  clippy::needless_range_loop,
+  clippy::large_enum_variant
+)]
+
 mod analyze;
 mod app;
 mod cameras;
@@ -11,21 +22,34 @@ mod filemap;
 mod ftpconv;
 mod gui;
 mod jobs;
+mod metadata;
 
 use clap::AppSettings;
 use fern::colors::{Color, ColoredLevelConfig};
 use thiserror::Error;
+use tokio::runtime::Builder;
 //use log::debug;
 
-const PKG_VERSION: &'static str = env!("CARGO_PKG_VERSION");
-const PKG_NAME: &'static str = env!("CARGO_PKG_NAME");
+const PKG_VERSION: &str = env!("CARGO_PKG_VERSION");
+const PKG_NAME: &str = env!("CARGO_PKG_NAME");
+const STACK_SIZE_MIB: usize = 4;
+
+fn main() -> anyhow::Result<()> {
+  let runtime = Builder::new_multi_thread()
+    .enable_all()
+    .thread_name("dnglab-tokio-worker")
+    .thread_stack_size(STACK_SIZE_MIB * 1024 * 1024)
+    .build()
+    .unwrap();
+
+  runtime.block_on(main_async())
+}
 
 /// Main entry function
 ///
 /// We initialize the fern logger here, create a Clap command line
 /// parser and check for the correct environment.
-#[tokio::main]
-async fn main() -> anyhow::Result<()> {
+async fn main_async() -> anyhow::Result<()> {
   let app = app::create_app().setting(AppSettings::ArgRequiredElseHelp);
   let matches = app.get_matches_safe().unwrap_or_else(|e| e.exit());
 
@@ -39,7 +63,7 @@ async fn main() -> anyhow::Result<()> {
         1 => log::LevelFilter::Warn,
         2 => log::LevelFilter::Info,
         3 => log::LevelFilter::Debug,
-        4 | _ => log::LevelFilter::Trace,
+        _ => log::LevelFilter::Trace,
       }
     })
     .format(move |out, message, record| {
@@ -59,6 +83,7 @@ async fn main() -> anyhow::Result<()> {
 
   match matches.subcommand() {
     ("analyze", Some(sc)) => analyze::analyze(sc).await,
+    ("metadata", Some(sc)) => metadata::metadata(sc).await,
     ("convert", Some(sc)) => convert::convert(sc).await,
     ("extract", Some(sc)) => extract::extract(sc).await,
     ("ftpconvert", Some(sc)) => ftpconv::ftpconvert(sc).await,

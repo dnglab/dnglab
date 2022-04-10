@@ -1,0 +1,31 @@
+[[lenses]]
+mount = "ef-mount"
+lens_id = 26
+make = "Voigtlander"
+model = "APO Lanthar 125mm F2.5 SL Macro"
+focal_range = [[125, 1], [125, 1]]
+aperture_range = [[25, 10], [25, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 33
+make = "Voigtlander"
+model = "Ultron 40mm f/2 SLII Aspherical"
+focal_range = [[40, 1], [40, 1]]
+aperture_range = [[2, 1], [2, 1]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 33
+make = "Voigtlander"
+model = "Color Skopar 20mm f/3.5 SLII Aspherical"
+focal_range = [[20, 1], [20, 1]]
+aperture_range = [[35, 10], [35, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 33
+make = "Voigtlander"
+model = "APO-Lanthar 90mm f/3.5 SLII Close Focus"
+focal_range = [[90, 1], [90, 1]]
+aperture_range = [[35, 10], [35, 10]]

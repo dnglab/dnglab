@@ -1,0 +1,1012 @@
+[[lenses]]
+mount = "ef-mount"
+lens_id = 2
+make = "Sigma"
+model = "24mm f/2.8 Super Wide II"
+focal_range = [[24, 1], [24, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 4
+make = "Sigma"
+model = "UC Zoom 35-135mm f/4-5.6"
+focal_range = [[35, 1], [135, 1]]
+aperture_range = [[4, 1], [56, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 6
+make = "Sigma"
+model = "18-50mm f/3.5-5.6 DC"
+focal_range = [[18, 1], [50, 1]]
+aperture_range = [[35, 10], [56, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 6
+make = "Sigma"
+model = "18-125mm f/3.5-5.6 DC IF ASP"
+focal_range = [[18, 1], [125, 1]]
+aperture_range = [[35, 10], [56, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 6
+make = "Sigma"
+model = "28-80mm f/3.5-5.6 II Macro"
+focal_range = [[28, 1], [80, 1]]
+aperture_range = [[35, 10], [56, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 6
+make = "Sigma"
+model = "28-300mm f/3.5-6.3 DG Macro"
+focal_range = [[28, 1], [300, 1]]
+aperture_range = [[35, 10], [63, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 8
+make = "Sigma"
+model = "70-300mm f/4-5.6 [APO] DG Macro"
+focal_range = [[70, 1], [300, 1]]
+aperture_range = [[4, 10], [56, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 9
+make = "Sigma"
+model = "55-200mm f/4-5.6 DC"
+focal_range = [[55, 1], [200, 1]]
+aperture_range = [[4, 10], [56, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 10
+make = "Sigma"
+model = "50mm f/2.8 EX"
+focal_range = [[50, 1], [50, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 10
+make = "Sigma"
+model = "28mm f/1.8"
+focal_range = [[28, 1], [28, 1]]
+aperture_range = [[18, 10], [18, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 10
+make = "Sigma"
+model = "105mm f/2.8 Macro EX"
+focal_range = [[105, 1], [105, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 10
+make = "Sigma"
+model = "70mm f/2.8 EX DG Macro EF"
+focal_range = [[70, 1], [70, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 32
+make = "Sigma"
+model = "15mm f/2.8 EX Fisheye"
+focal_range = [[15, 1], [15, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 112
+make = "Sigma"
+model = "28mm f/1.5 FF High-speed Prime"
+focal_range = [[28, 1], [28, 1]]
+aperture_range = [[15, 10], [15, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 112
+make = "Sigma"
+model = "40mm f/1.5 FF High-speed Prime"
+focal_range = [[40, 1], [40, 1]]
+aperture_range = [[15, 10], [15, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 112
+make = "Sigma"
+model = "105mm f/1.5 FF High-speed Prime"
+focal_range = [[105, 1], [105, 1]]
+aperture_range = [[15, 10], [15, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 131
+make = "Sigma"
+model = "8mm f/3.5 EX DG Circular Fisheye"
+focal_range = [[8, 1], [8, 1]]
+aperture_range = [[35, 10], [35, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 131
+make = "Sigma"
+model = "17-35mm f/2.8-4 EX DG Aspherical HSM"
+focal_range = [[17, 1], [35, 1]]
+aperture_range = [[28, 10], [4, 1]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 131
+make = "Sigma"
+model = "17-70mm f/2.8-4.5 DC Macro"
+focal_range = [[17, 1], [70, 1]]
+aperture_range = [[28, 10], [45, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 131
+make = "Sigma"
+model = "APO 50-150mm f/2.8 [II] EX DC HSM"
+focal_range = [[50, 1], [150, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 131
+make = "Sigma"
+model = "APO 120-300mm f/2.8 EX DG HSM"
+focal_range = [[120, 1], [300, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 131
+make = "Sigma"
+model = "4.5mm f/2.8 EX DC HSM Circular Fisheye"
+focal_range = [[45, 10], [45, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 131
+make = "Sigma"
+model = "70-200mm f/2.8 APO EX HSM"
+focal_range = [[70, 1], [200, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 131
+make = "Sigma"
+model = "28-70mm f/2.8-4 DG"
+focal_range = [[28, 1], [70, 1]]
+aperture_range = [[28, 10], [4, 1]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 137
+make = "Sigma"
+model = "18-50mm f/2.8-4.5 DC OS HSM"
+focal_range = [[18, 1], [50, 1]]
+aperture_range = [[28, 10], [45, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 137
+make = "Sigma"
+model = "50-200mm f/4-5.6 DC OS HSM"
+focal_range = [[50, 1], [200, 1]]
+aperture_range = [[4, 10], [56, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 137
+make = "Sigma"
+model = "18-250mm f/3.5-6.3 DC OS HSM"
+focal_range = [[18, 1], [250, 1]]
+aperture_range = [[35, 10], [63, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 137
+make = "Sigma"
+model = "24-70mm f/2.8 IF EX DG HSM"
+focal_range = [[24, 1], [70, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 137
+make = "Sigma"
+model = "18-125mm f/3.8-5.6 DC OS HSM"
+focal_range = [[18, 1], [125, 1]]
+aperture_range = [[38, 10], [56, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 137
+make = "Sigma"
+model = "17-70mm f/2.8-4 DC Macro OS HSM | C"
+focal_range = [[17, 1], [70, 1]]
+aperture_range = [[28, 10], [4, 1]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 137
+make = "Sigma"
+model = "17-50mm f/2.8 OS HSM"
+focal_range = [[17, 1], [50, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 137
+make = "Sigma"
+model = "18-200mm f/3.5-6.3 DC OS HSM [II]"
+focal_range = [[18, 1], [200, 1]]
+aperture_range = [[35, 10], [63, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 137
+make = "Sigma"
+model = "8-16mm f/4.5-5.6 DC HSM"
+focal_range = [[8, 1], [16, 1]]
+aperture_range = [[45, 10], [56, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 137
+make = "Sigma"
+model = "10-20mm f/3.5 EX DC HSM"
+focal_range = [[10, 1], [20, 1]]
+aperture_range = [[35, 10], [35, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 137
+make = "Sigma"
+model = "18-35mm f/1.8 DC HSM"
+focal_range = [[18, 1], [35, 1]]
+aperture_range = [[18, 10], [18, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 137
+make = "Sigma"
+model = "12-24mm f/4.5-5.6 DG HSM II"
+focal_range = [[12, 1], [24, 1]]
+aperture_range = [[45, 10], [56, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 137
+make = "Sigma"
+model = "70-300mm f/4-5.6 DG OS"
+focal_range = [[70, 1], [300, 1]]
+aperture_range = [[4, 10], [56, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 143
+make = "Sigma"
+model = "17-70mm f/2.8-4 DC Macro OS HSM"
+focal_range = [[17, 1], [70, 1]]
+aperture_range = [[28, 10], [4, 1]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 150
+make = "Sigma"
+model = "20mm EX f/1.8"
+focal_range = [[20, 1], [20, 1]]
+aperture_range = [[18, 10], [18, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+key = "30mm F1.4 DC HSM | Art 013"
+lens_id = 150
+make = "Sigma"
+model = "30mm f/1.4 DC HSM | A"
+focal_range = [[30, 1], [30, 1]]
+aperture_range = [[14, 10], [14, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 150
+make = "Sigma"
+model = "24mm f/1.8 DG Macro EX"
+focal_range = [[24, 1], [24, 1]]
+aperture_range = [[18, 10], [18, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 150
+make = "Sigma"
+model = "28mm f/1.8 DG Macro EX"
+focal_range = [[28, 1], [28, 1]]
+aperture_range = [[18, 10], [18, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 150
+make = "Sigma"
+model = "18-35mm f/1.8 DC HSM | A"
+focal_range = [[18, 1], [35, 1]]
+aperture_range = [[18, 10], [18, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 152
+make = "Sigma"
+model = "12-24mm f/4.5-5.6 EX DG ASPHERICAL HSM"
+focal_range = [[12, 1], [24, 1]]
+aperture_range = [[45, 10], [56, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 152
+make = "Sigma"
+model = "14mm f/2.8 EX Aspherical HSM"
+focal_range = [[14, 1], [14, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 152
+make = "Sigma"
+model = "10-20mm f/4-5.6"
+focal_range = [[10, 1], [20, 1]]
+aperture_range = [[4, 10], [56, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 152
+make = "Sigma"
+model = "100-300mm f/4"
+focal_range = [[100, 1], [300, 1]]
+aperture_range = [[4, 1], [4, 1]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 152
+make = "Sigma"
+model = "300-800mm f/5.6 APO EX DG HSM"
+focal_range = [[300, 1], [800, 1]]
+aperture_range = [[56, 10], [56, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 153
+make = "Sigma"
+model = "50-500mm f/4-6.3 APO HSM EX"
+focal_range = [[50, 1], [500, 1]]
+aperture_range = [[4, 10], [63, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 155
+make = "Sigma"
+model = "14mm f/1.8 DG HSM | A"
+focal_range = [[14, 1], [14, 1]]
+aperture_range = [[18, 10], [18, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 161
+make = "Sigma"
+model = "24-70mm f/2.8 EX"
+focal_range = [[24, 1], [70, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 161
+make = "Sigma"
+model = "28-70mm f/2.8 EX"
+focal_range = [[28, 1], [70, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 161
+make = "Sigma"
+model = "24-60mm f/2.8 EX DG"
+focal_range = [[24, 1], [60, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 168
+make = "Sigma"
+model = "50-100mm f/1.8 DC HSM | A"
+focal_range = [[50, 1], [100, 1]]
+aperture_range = [[18, 10], [18, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 169
+make = "Sigma"
+model = "18-200mm f/3.5-6.3 DC OS"
+focal_range = [[18, 1], [200, 1]]
+aperture_range = [[35, 10], [63, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 169
+make = "Sigma"
+model = "15-30mm f/3.5-4.5 EX DG Aspherical"
+focal_range = [[15, 1], [30, 1]]
+aperture_range = [[35, 10], [45, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 169
+make = "Sigma"
+model = "18-50mm f/2.8 Macro"
+focal_range = [[18, 1], [50, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 169
+make = "Sigma"
+model = "50mm f/1.4 EX DG HSM"
+focal_range = [[50, 1], [50, 1]]
+aperture_range = [[14, 10], [14, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 169
+make = "Sigma"
+model = "85mm f/1.4 EX DG HSM"
+focal_range = [[85, 1], [85, 1]]
+aperture_range = [[14, 10], [14, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 169
+make = "Sigma"
+model = "30mm f/1.4 EX DC HSM"
+focal_range = [[30, 1], [30, 1]]
+aperture_range = [[14, 10], [14, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 169
+make = "Sigma"
+model = "35mm f/1.4 DG HSM"
+focal_range = [[35, 1], [35, 1]]
+aperture_range = [[14, 10], [14, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 169
+make = "Sigma"
+model = "35mm f/1.5 FF High-Speed Prime | 017"
+focal_range = [[35, 1], [35, 1]]
+aperture_range = [[15, 10], [15, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 169
+make = "Sigma"
+model = "70mm f/2.8 Macro EX DG"
+focal_range = [[70, 1], [70, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 170
+make = "Sigma"
+model = "300mm f/2.8 APO EX DG HSM"
+focal_range = [[300, 1], [300, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 170
+make = "Sigma"
+model = "800mm f/5.6 APO EX DG HSM"
+focal_range = [[800, 1], [800, 1]]
+aperture_range = [[56, 10], [56, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 172
+make = "Sigma"
+model = "150-600mm f/5-6.3 DG OS HSM | S"
+focal_range = [[150, 1], [600, 1]]
+aperture_range = [[5, 10], [63, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 172
+make = "Sigma"
+model = "500mm f/4.5 APO EX DG HSM"
+focal_range = [[500, 1], [500, 1]]
+aperture_range = [[45, 10], [45, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 173
+make = "Sigma"
+model = "180mm EX HSM Macro f/3.5"
+focal_range = [[180, 1], [180, 1]]
+aperture_range = [[35, 10], [35, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 173
+make = "Sigma"
+model = "APO Macro 150mm f/2.8 EX DG HSM"
+focal_range = [[150, 1], [150, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 173
+make = "Sigma"
+model = "10mm f/2.8 EX DC Fisheye"
+focal_range = [[10, 1], [10, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 173
+make = "Sigma"
+model = "15mm f/2.8 EX DG Diagonal Fisheye"
+focal_range = [[15, 1], [15, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 174
+make = "Sigma"
+model = "70-200mm f/2.8 EX DG APO OS HSM"
+focal_range = [[70, 1], [200, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 174
+make = "Sigma"
+model = "50-500mm f/4.5-6.3 APO DG OS HSM"
+focal_range = [[50, 1], [500, 1]]
+aperture_range = [[45, 10], [63, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 174
+make = "Sigma"
+model = "150-500mm f/5-6.3 APO DG OS HSM"
+focal_range = [[150, 1], [500, 1]]
+aperture_range = [[5, 10], [63, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 174
+make = "Sigma"
+model = "APO 50-150mm f/2.8 EX DC OS HSM"
+focal_range = [[50, 1], [150, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 174
+make = "Sigma"
+model = "APO 120-300mm f/2.8 EX DG OS HSM"
+focal_range = [[120, 1], [300, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 174
+make = "Sigma"
+model = "120-300mm f/2.8 DG OS HSM S013"
+focal_range = [[120, 1], [300, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 174
+make = "Sigma"
+model = "120-400mm f/4.5-5.6 APO DG OS HSM"
+focal_range = [[120, 1], [400, 1]]
+aperture_range = [[45, 10], [56, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 174
+make = "Sigma"
+model = "200-500mm f/2.8 APO EX DG"
+focal_range = [[200, 1], [500, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+key = "50mm F1.4 DG HSM | Art 014"
+lens_id = 180
+make = "Sigma"
+model = "50mm f/1.4 DG HSM | A"
+focal_range = [[50, 1], [50, 1]]
+aperture_range = [[14, 10], [14, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 180
+make = "Sigma"
+model = "24mm f/1.4 DG HSM | A"
+focal_range = [[24, 1], [24, 1]]
+aperture_range = [[14, 10], [14, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 180
+make = "Sigma"
+model = "24mm f/1.5 FF High-Speed Prime | 017"
+focal_range = [[24, 1], [24, 1]]
+aperture_range = [[15, 10], [15, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 180
+make = "Sigma"
+model = "50mm f/1.5 FF High-Speed Prime | 017"
+focal_range = [[50, 1], [50, 1]]
+aperture_range = [[15, 10], [15, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 180
+make = "Sigma"
+model = "85mm f/1.5 FF High-Speed Prime | 017"
+focal_range = [[85, 1], [85, 1]]
+aperture_range = [[15, 10], [15, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 180
+make = "Sigma"
+model = "20mm f/1.4 DG HSM | A"
+focal_range = [[20, 1], [20, 1]]
+aperture_range = [[14, 10], [14, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 181
+make = "Sigma"
+model = "150-600mm f/5-6.3 DG OS HSM | S + 1.4x"
+focal_range = [[150, 1], [600, 1]]
+aperture_range = [[5, 10], [63, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 182
+make = "Sigma"
+model = "150-600mm f/5-6.3 DG OS HSM | S + 2x"
+focal_range = [[150, 1], [600, 1]]
+aperture_range = [[5, 10], [63, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 183
+make = "Sigma"
+model = "150mm f/2.8 EX DG OS HSM APO Macro"
+focal_range = [[150, 1], [150, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 183
+make = "Sigma"
+model = "105mm f/2.8 EX DG OS HSM Macro"
+focal_range = [[105, 1], [105, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 183
+make = "Sigma"
+model = "180mm f/2.8 EX DG OS HSM APO Macro"
+focal_range = [[180, 1], [180, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+key = "150-600mm F5-6.3 DG OS HSM | Contemporary 015"
+lens_id = 183
+make = "Sigma"
+model = "150-600mm f/5-6.3 DG OS HSM | C"
+focal_range = [[150, 1], [600, 1]]
+aperture_range = [[5, 10], [63, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 183
+make = "Sigma"
+model = "150-600mm f/5-6.3 DG OS HSM | S"
+focal_range = [[150, 1], [600, 1]]
+aperture_range = [[5, 10], [63, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 183
+make = "Sigma"
+model = "100-400mm f/5-6.3 DG OS HSM"
+focal_range = [[100, 1], [400, 1]]
+aperture_range = [[5, 10], [63, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 183
+make = "Sigma"
+model = "180mm f/3.5 APO Macro EX DG IF HSM"
+focal_range = [[180, 1], [180, 1]]
+aperture_range = [[35, 10], [35, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 191
+make = "Sigma"
+model = "500mm f/4 DG OS HSM"
+focal_range = [[500, 1], [500, 1]]
+aperture_range = [[4, 1], [4, 1]]
+
+[[lenses]]
+mount = "ef-mount"
+key = "18-300mm F3.5-6.3 DC MACRO OS HSM | Contemporary 014"
+lens_id = 197
+make = "Sigma"
+model = "18-300mm f/3.5-6.3 DC MACRO OS HSM | C"
+focal_range = [[18, 1], [300, 1]]
+aperture_range = [[35, 10], [63, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 231
+make = "Sigma"
+model = "12-24mm f/4 DG HSM A016"
+focal_range = [[12, 1], [24, 1]]
+aperture_range = [[4, 1], [4, 1]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 240
+make = "Sigma"
+model = "17-50mm f/2.8 EX DC OS HSM"
+focal_range = [[17, 1], [50, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 248
+make = "Sigma"
+model = "24-35mm f/2 DG HSM | A"
+focal_range = [[24, 1], [35, 1]]
+aperture_range = [[2, 1], [2, 1]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 248
+make = "Sigma"
+model = "135mm f/2 FF High-Speed Prime | 017"
+focal_range = [[135, 1], [135, 1]]
+aperture_range = [[2, 1], [2, 1]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 248
+make = "Sigma"
+model = "24-35mm f/2.2 FF Zoom | 017"
+focal_range = [[24, 1], [35, 1]]
+aperture_range = [[22, 10], [22, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 248
+make = "Sigma"
+model = "135mm f/1.8 DG HSM A017"
+focal_range = [[135, 1], [135, 1]]
+aperture_range = [[18, 10], [18, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 250
+make = "Sigma"
+model = "20mm f/1.4 DG HSM | A"
+focal_range = [[20, 1], [20, 1]]
+aperture_range = [[14, 10], [14, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 250
+make = "Sigma"
+model = "20mm f/1.5 FF High-Speed Prime | 017"
+focal_range = [[20, 1], [20, 1]]
+aperture_range = [[15, 10], [15, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 250
+make = "Sigma"
+model = "85mm f/1.4 DG HSM A016"
+focal_range = [[85, 1], [85, 1]]
+aperture_range = [[14, 10], [14, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 255
+make = "Sigma"
+model = "24-105mm f/4 DG OS HSM | A"
+focal_range = [[24, 1], [105, 1]]
+aperture_range = [[4, 1], [4, 1]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 255
+make = "Sigma"
+model = "180mm f/2.8 EX DG OS HSM APO Macro"
+focal_range = [[180, 1], [180, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 368
+make = "Sigma"
+model = "14-24mm f/2.8 DG HSM | A"
+focal_range = [[14, 1], [24, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 368
+make = "Sigma"
+model = "20mm f/1.4 DG HSM | A"
+focal_range = [[20, 1], [20, 1]]
+aperture_range = [[14, 10], [14, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 368
+make = "Sigma"
+model = "50mm f/1.4 DG HSM | A"
+focal_range = [[50, 1], [50, 1]]
+aperture_range = [[14, 10], [14, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 368
+make = "Sigma"
+model = "40mm f/1.4 DG HSM | A"
+focal_range = [[40, 1], [40, 1]]
+aperture_range = [[14, 10], [14, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 368
+make = "Sigma"
+model = "60-600mm f/4.5-6.3 DG OS HSM | S"
+focal_range = [[60, 1], [600, 1]]
+aperture_range = [[45, 10], [63, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 368
+make = "Sigma"
+model = "28mm f/1.4 DG HSM | A"
+focal_range = [[28, 1], [28, 1]]
+aperture_range = [[14, 10], [14, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+key = "150-600mm F5-6.3 DG OS HSM | Sports 014"
+lens_id = 368
+make = "Sigma"
+model = "150-600mm f/5-6.3 DG OS HSM | S"
+focal_range = [[150, 1], [600, 1]]
+aperture_range = [[5, 10], [63, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 368
+make = "Sigma"
+model = "85mm f/1.4 DG HSM | A"
+focal_range = [[85, 1], [85, 1]]
+aperture_range = [[14, 10], [14, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 368
+make = "Sigma"
+model = "105mm f/1.4 DG HSM"
+focal_range = [[105, 1], [105, 1]]
+aperture_range = [[14, 10], [14, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 368
+make = "Sigma"
+model = "14-24mm f/2.8 DG HSM"
+focal_range = [[14, 1], [24, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 368
+make = "Sigma"
+model = "35mm f/1.4 DG HSM | A"
+focal_range = [[35, 1], [35, 1]]
+aperture_range = [[14, 10], [14, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 368
+make = "Sigma"
+model = "70mm f/2.8 DG Macro"
+focal_range = [[70, 1], [70, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 368
+make = "Sigma"
+model = "18-35mm f/1.8 DC HSM | A"
+focal_range = [[18, 1], [35, 1]]
+aperture_range = [[18, 10], [18, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 495
+make = "Sigma"
+model = "24-70mm f/2.8 DG OS HSM | A"
+focal_range = [[24, 1], [70, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 624
+make = "Sigma"
+model = "70-200mm f/2.8 DG OS HSM | S"
+focal_range = [[70, 1], [200, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 624
+make = "Sigma"
+model = "150-600mm f/5-6.3 | C"
+focal_range = [[150, 1], [600, 1]]
+aperture_range = [[5, 10], [63, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 1136
+make = "Sigma"
+model = "24-70mm f/2.8 DG OS HSM | A"
+focal_range = [[24, 1], [70, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 4208
+make = "Sigma"
+model = "56mm f/1.4 DC DN | C"
+focal_range = [[56, 1], [56, 1]]
+aperture_range = [[14, 10], [14, 10]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 4208
+make = "Sigma"
+model = "30mm F1.4 DC DN | C"
+focal_range = [[30, 1], [30, 1]]
+aperture_range = [[14, 10], [14, 10]]

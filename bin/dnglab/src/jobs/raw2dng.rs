@@ -3,7 +3,7 @@
 
 use super::Job;
 use crate::{
-  dnggen::{raw_to_dng, ConvertParams},
+  dnggen::{raw_to_dng, ConvertParams, DngError},
   AppError, Result,
 };
 use async_trait::async_trait;
@@ -33,7 +33,7 @@ impl Display for JobResult {
   /// Pretty print the conversion state
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
     if let Some(error) = self.error.as_ref() {
-      f.write_fmt(format_args!("Failed: '{}', {}", self.job.input.display(), error.to_string()))?;
+      f.write_fmt(format_args!("Failed: '{}', {}", self.job.input.display(), error))?;
     } else {
       f.write_fmt(format_args!(
         "Converted '{}' => '{}' (in {:.2}s)",
@@ -63,7 +63,7 @@ impl Raw2DngJob {
     let raw_file = File::open(&self.input)?;
     let mut dng_file = File::create(&self.output)?;
 
-    match raw_to_dng(&self.input, raw_file, &mut dng_file, orig_filename, &self.params) {
+    match raw_to_dng(&self.input, raw_file, &mut dng_file, orig_filename.clone(), &self.params) {
       Ok(_) => {
         drop(dng_file);
         Ok(JobResult {
@@ -72,7 +72,31 @@ impl Raw2DngJob {
           error: None,
         })
       }
-      Err(e) => Err(AppError::General(e.to_string())),
+      Err(err) => {
+        match &err {
+          DngError::DecoderFail(what) => {
+            log::error!("Error while decoding: {} in file {}\nPlease report this issue!", what, orig_filename);
+          }
+          DngError::Unsupported { what, model, make, mode } => {
+            log::error!(
+              "Unsupported file: \"{}\"\n{}: make: \"{}\", model: \"{}\", mode: \"{}\"\nPlease report this issue at 'https://github.com/dnglab/dnglab/issues'!",
+              orig_filename,
+              what,
+              make,
+              model,
+              mode,
+            );
+          }
+          DngError::TiffFail(what) => {
+            log::error!(
+              "Error while processing TIFF tags: {} in file {}\nPlease report this issue!",
+              what,
+              orig_filename
+            );
+          }
+        }
+        Err(AppError::General(err.to_string()))
+      }
     }
   }
 }

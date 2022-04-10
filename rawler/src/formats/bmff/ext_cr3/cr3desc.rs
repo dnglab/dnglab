@@ -9,11 +9,12 @@ use super::{
   cmt3::Cmt3Box,
   cmt4::Cmt4Box,
   cncv::CncvBox,
+  cnop::CnopBox,
   ctbo::CtboBox,
-  thmb::ThmbBox, cnop::CnopBox,
+  thmb::ThmbBox,
 };
 use crate::formats::bmff::{free::FreeBox, skip::SkipBox};
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 use std::io::{Read, Seek, SeekFrom};
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -97,14 +98,14 @@ impl<R: Read + Seek> ReadBox<&mut R> for Cr3DescBox {
 
     Ok(Self {
       header,
-      cncv: cncv.ok_or(BmffError::Parse("cncv box not found, corrupt file?".into()))?,
-      cctp: cctp.ok_or(BmffError::Parse("cctp box not found, corrupt file?".into()))?,
-      ctbo: ctbo.ok_or(BmffError::Parse("ctbo box not found, corrupt file?".into()))?,
-      cmt1: cmt1.ok_or(BmffError::Parse("cmt1 box not found, corrupt file?".into()))?,
-      cmt2: cmt2.ok_or(BmffError::Parse("cmt2 box not found, corrupt file?".into()))?,
-      cmt3: cmt3.ok_or(BmffError::Parse("cmt3 box not found, corrupt file?".into()))?,
-      cmt4: cmt4.ok_or(BmffError::Parse("cmt4 box not found, corrupt file?".into()))?,
-      thmb: thmb.ok_or(BmffError::Parse("thmb box not found, corrupt file?".into()))?,
+      cncv: cncv.ok_or_else(|| BmffError::Parse("cncv box not found, corrupt file?".into()))?,
+      cctp: cctp.ok_or_else(|| BmffError::Parse("cctp box not found, corrupt file?".into()))?,
+      ctbo: ctbo.ok_or_else(|| BmffError::Parse("ctbo box not found, corrupt file?".into()))?,
+      cmt1: cmt1.ok_or_else(|| BmffError::Parse("cmt1 box not found, corrupt file?".into()))?,
+      cmt2: cmt2.ok_or_else(|| BmffError::Parse("cmt2 box not found, corrupt file?".into()))?,
+      cmt3: cmt3.ok_or_else(|| BmffError::Parse("cmt3 box not found, corrupt file?".into()))?,
+      cmt4: cmt4.ok_or_else(|| BmffError::Parse("cmt4 box not found, corrupt file?".into()))?,
+      thmb: thmb.ok_or_else(|| BmffError::Parse("thmb box not found, corrupt file?".into()))?,
     })
   }
 }

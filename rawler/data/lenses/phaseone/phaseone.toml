@@ -1,0 +1,7 @@
+[[lenses]]
+mount = "phaseone"
+key = "Schneider LS 150mm f/3.5"
+model = "150mm LS f/3.5"
+make = "Schneider"
+focal_range = [[150, 1], [150, 1]]
+aperture_range = [[35, 10], [35, 10]]

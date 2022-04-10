@@ -98,6 +98,7 @@ impl Illuminant {
 
 // Constant matrix for converting sRGB to XYZ(D65):
 // http://www.brucelindbloom.com/Eqn_RGB_XYZ_Matrix.html
+#[allow(clippy::excessive_precision)]
 pub const SRGB_TO_XYZ_D65: [[f32; 3]; 3] = [
   [0.4124564, 0.3575761, 0.1804375],
   [0.2126729, 0.7151522, 0.0721750],

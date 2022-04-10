@@ -1,4 +1,3 @@
-[[cameras]]
 make = "Canon"
 model = "Canon EOS 5D Mark III"
 clean_make = "Canon"
@@ -15,32 +14,10 @@ colordata_blacklevel = 0x1f8
 colordata_whitelevel = 0x1fd
 colordata_wbcoeffs = 0x3f
 
-[[cameras]]
-make = "Canon"
-model = "Canon EOS 5D Mark III"
+[[cameras.modes]]
 mode = "sRaw1"
-clean_make = "Canon"
-clean_model = "EOS 5D Mark III"
 hints = ["invert_sraw_wb", "sraw_new"]
-[cameras.color_matrix]
-D65 = [0.6722, -0.0635, -0.0963, -0.4287, 1.246, 0.2028, -0.0908, 0.2162, 0.5668]
-[cameras.params]
-# ColorData7
-colordata_blacklevel = 0x1f8
-colordata_whitelevel = 0x1fd
-colordata_wbcoeffs = 0x3f
 
-[[cameras]]
-make = "Canon"
-model = "Canon EOS 5D Mark III"
+[[cameras.modes]]
 mode = "sRaw2"
-clean_make = "Canon"
-clean_model = "EOS 5D Mark III"
 hints = ["invert_sraw_wb", "sraw_new"]
-[cameras.color_matrix]
-D65 = [0.6722, -0.0635, -0.0963, -0.4287, 1.246, 0.2028, -0.0908, 0.2162, 0.5668]
-[cameras.params]
-# ColorData7
-colordata_blacklevel = 0x1f8
-colordata_whitelevel = 0x1fd
-colordata_wbcoeffs = 0x3f

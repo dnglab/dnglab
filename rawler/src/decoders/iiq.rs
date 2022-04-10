@@ -24,11 +24,10 @@ use crate::bits::*;
 use crate::cfa;
 use crate::decoders::decode_threaded;
 use crate::decoders::ok_image_with_blacklevels;
+use crate::exif::Exif;
 use crate::formats::tiff;
 use crate::formats::tiff::reader::TiffReader;
-use crate::formats::tiff::DirectoryWriter;
 use crate::formats::tiff::GenericTiffReader;
-use crate::formats::tiff::Rational;
 use crate::imgop::spline::Spline;
 use crate::imgop::Point;
 use crate::lens::LensDescription;
@@ -36,8 +35,6 @@ use crate::lens::LensResolver;
 use crate::pixarray::PixU16;
 use crate::pumps::BitPump;
 use crate::pumps::BitPumpMSB32;
-use crate::tags::DngTag;
-use crate::tags::ExifTag;
 use crate::RawFile;
 use crate::RawImage;
 use crate::RawLoader;
@@ -47,36 +44,7 @@ use crate::Result;
 use super::Camera;
 use super::Decoder;
 use super::RawDecodeParams;
-
-const EXIF_TRANSFER_TAGS: [u16; 23] = [
-  ExifTag::ExposureTime as u16,
-  ExifTag::FNumber as u16,
-  ExifTag::ISOSpeedRatings as u16,
-  ExifTag::SensitivityType as u16,
-  ExifTag::RecommendedExposureIndex as u16,
-  ExifTag::ISOSpeed as u16,
-  ExifTag::FocalLength as u16,
-  ExifTag::ExposureBiasValue as u16,
-  ExifTag::DateTimeOriginal as u16,
-  ExifTag::CreateDate as u16,
-  ExifTag::OffsetTime as u16,
-  ExifTag::OffsetTimeDigitized as u16,
-  ExifTag::OffsetTimeOriginal as u16,
-  ExifTag::OwnerName as u16,
-  ExifTag::LensSerialNumber as u16,
-  ExifTag::SerialNumber as u16,
-  ExifTag::ExposureProgram as u16,
-  ExifTag::MeteringMode as u16,
-  ExifTag::Flash as u16,
-  ExifTag::ExposureMode as u16,
-  ExifTag::WhiteBalance as u16,
-  ExifTag::SceneCaptureType as u16,
-  ExifTag::ShutterSpeedValue as u16,
-];
-
-fn transfer_exif_tag(tag: u16) -> bool {
-  EXIF_TRANSFER_TAGS.contains(&tag)
-}
+use super::RawMetadata;
 
 const MAX_BITDEPTH: u32 = 16;
 
@@ -195,7 +163,7 @@ impl<'a> IiqDecoder<'a> {
     Ok(IiqDecoder {
       camera,
       tiff,
-      rawloader: rawloader,
+      rawloader,
       makernotes,
     })
   }
@@ -257,7 +225,7 @@ fn new_makernote(file: &mut RawFile, moffset: u64) -> std::io::Result<HashMap<u3
 }
 
 impl<'a> Decoder for IiqDecoder<'a> {
-  fn raw_image(&mut self, file: &mut RawFile, _params: RawDecodeParams, dummy: bool) -> Result<RawImage> {
+  fn raw_image(&self, file: &mut RawFile, _params: RawDecodeParams, dummy: bool) -> Result<RawImage> {
     let fmt = self.compression_mode()?;
 
     let wb_offset = self.wb_offset()?;
@@ -270,7 +238,7 @@ impl<'a> Decoder for IiqDecoder<'a> {
     debug!("data offset: {}", data_offset);
     debug!("RAW IIQ Format: {:?}", fmt);
 
-    if width <= 0 || height <= 0 {
+    if width == 0 || height == 0 {
       return Err(RawlerError::General("IIQ: couldn't find width and height".to_string()));
     }
 
@@ -316,48 +284,10 @@ impl<'a> Decoder for IiqDecoder<'a> {
     })
   }
 
-  fn populate_dng_root(&mut self, root_ifd: &mut DirectoryWriter) -> Result<()> {
-    let ifd = self.tiff.root_ifd();
-    if let Some(orientation) = ifd.get_entry(ExifTag::Orientation) {
-      root_ifd.add_value(ExifTag::Orientation, orientation.value.clone())?;
-    }
-
-    if let Some(artist) = ifd.get_entry(ExifTag::Artist) {
-      root_ifd.add_value(ExifTag::Artist, artist.value.clone())?;
-    }
-    if let Some(copyright) = ifd.get_entry(ExifTag::Copyright) {
-      root_ifd.add_value(ExifTag::Copyright, copyright.value.clone())?;
-    }
-
-    if let Some(lens) = self.get_lens_description()? {
-      let lens_info: [Rational; 4] = [lens.focal_range[0], lens.focal_range[1], lens.aperture_range[0], lens.aperture_range[1]];
-      root_ifd.add_tag(DngTag::LensInfo, lens_info)?;
-    }
-
-    // TODO: add unique image id
-    /*
-    if let Some(unique_id) = self.image_unique_id {
-      root_ifd.add_tag(DngTag::RawDataUniqueID, unique_id)?;
-    }
-     */
-    Ok(())
-  }
-
-  fn populate_dng_exif(&mut self, exif_ifd: &mut DirectoryWriter) -> Result<()> {
-    if let Some(exif) = self.tiff.find_first_ifd_with_tag(ExifTag::MakerNotes) {
-      for (tag, entry) in exif.entries().iter().filter(|(tag, _)| transfer_exif_tag(**tag)) {
-        exif_ifd.add_value(*tag, entry.value.clone())?;
-      }
-    }
-
-    if let Some(lens) = self.get_lens_description()? {
-      let lens_info: [Rational; 4] = [lens.focal_range[0], lens.focal_range[1], lens.aperture_range[0], lens.aperture_range[1]];
-      exif_ifd.add_tag(ExifTag::LensSpecification, lens_info)?;
-      exif_ifd.add_tag(ExifTag::LensMake, &lens.lens_make)?;
-      exif_ifd.add_tag(ExifTag::LensModel, &lens.lens_model)?;
-    }
-
-    Ok(())
+  fn raw_metadata(&self, _file: &mut RawFile, _params: RawDecodeParams) -> Result<RawMetadata> {
+    let exif = Exif::new(self.tiff.root_ifd())?;
+    let mdata = RawMetadata::new_with_lens(&self.camera, exif, self.get_lens_description()?.cloned());
+    Ok(mdata)
   }
 }
 
@@ -396,7 +326,7 @@ impl<'a> IiqDecoder<'a> {
       debug!("Apply polynom curve half correction");
       let split_col = self.split_column()?.expect("Must have split column");
 
-      let mut poly = poly.clone();
+      let mut poly = *poly;
       let sensor_temp = self.sensor_temp()?.expect("Half polynom curve correction requires the sensor temp.");
       poly[3] += (sensor_temp - poly[7]) * poly[6] + 1.0;
 
@@ -691,7 +621,7 @@ impl<'a> IiqDecoder<'a> {
         width.1.force_usize(0), //
         height.1.force_usize(0),
       )),
-      _ => Err(RawlerError::General(format!("Unable to find width/height in IIQ makernotes"))),
+      _ => Err(RawlerError::General("Unable to find width/height in IIQ makernotes".to_string())),
     }
   }
 
@@ -719,7 +649,7 @@ impl<'a> IiqDecoder<'a> {
       debug!("Sensor temp: {}", flt);
       return Ok(Some(flt));
     }
-    return Ok(None);
+    Ok(None)
   }
 
   fn split_column(&self) -> Result<Option<usize>> {
@@ -772,7 +702,7 @@ impl<'a> IiqDecoder<'a> {
         let code = mode.1.force_u32(0);
         Ok(IiqCompression::from(code as usize))
       }
-      _ => Err(RawlerError::General(format!("Unable to find compression mode in IIQ makernotes"))),
+      _ => Err(RawlerError::General("Unable to find compression mode in IIQ makernotes".to_string())),
     }
   }
 
@@ -782,7 +712,7 @@ impl<'a> IiqDecoder<'a> {
         (mode.1.force_u64(0) + 8), //
         mode.0,
       )),
-      _ => Err(RawlerError::General(format!("Unable to find data offset in IIQ makernotes"))),
+      _ => Err(RawlerError::General("Unable to find data offset in IIQ makernotes".to_string())),
     }
   }
 
@@ -792,21 +722,21 @@ impl<'a> IiqDecoder<'a> {
         (mode.1.force_u64(0) + 8), //
         mode.0,
       )),
-      _ => Err(RawlerError::General(format!("Unable to find strip offset in IIQ makernotes"))),
+      _ => Err(RawlerError::General("Unable to find strip offset in IIQ makernotes".to_string())),
     }
   }
 
   fn wb_offset(&self) -> Result<u64> {
     match self.makernotes.get(&IiqTag::WhiteBalance.into()) {
       Some(mode) => Ok((mode.1.force_u64(0) + 8) as u64),
-      _ => Err(RawlerError::General(format!("Unable to find whitebalance offset in IIQ makernotes"))),
+      _ => Err(RawlerError::General("Unable to find whitebalance offset in IIQ makernotes".to_string())),
     }
   }
 
   fn blacklevel(&self) -> Result<u16> {
     match self.makernotes.get(&IiqTag::BlackLevel.into()) {
       Some(mode) => Ok(mode.1.force_u16(0)),
-      _ => Err(RawlerError::General(format!("Unable to find lacklevel in IIQ makernotes"))),
+      _ => Err(RawlerError::General("Unable to find lacklevel in IIQ makernotes".to_string())),
     }
   }
 
@@ -948,7 +878,7 @@ impl<'a> IiqDecoder<'a> {
           stream.seek(SeekFrom::Start(stream_pos))?; // restore
         }
 
-        return Ok(SensorCalibration {
+        Ok(SensorCalibration {
           poly_curve_half,
           poly_curve_full,
           quadrant_linearization,
@@ -959,7 +889,7 @@ impl<'a> IiqDecoder<'a> {
           blacklevel,
           q_blacklevel,
           sensor_margins,
-        });
+        })
       }
       _ => panic!("No sensor calibration data found."),
     }
@@ -1032,14 +962,14 @@ impl<'a> IiqDecoder<'a> {
     let mut buffer = vec![0; 3 * 4];
     file.inner().seek(SeekFrom::Start(wb_offset))?;
     file.inner().read_exact(&mut buffer)?;
-    Ok([LEf32(&mut buffer, 0), LEf32(&mut buffer, 4), LEf32(&mut buffer, 8), NAN])
+    Ok([LEf32(&buffer, 0), LEf32(&buffer, 4), LEf32(&buffer, 8), NAN])
   }
 
   /// Get lens description by analyzing TIFF tags and makernotes
   fn get_lens_description(&self) -> Result<Option<&'static LensDescription>> {
     match self.lens_model()? {
       Some(model) => {
-        let resolver = LensResolver::new().with_camera(&self.camera).with_lens_model(model);
+        let resolver = LensResolver::new().with_camera(&self.camera).with_lens_keyname(Some(model));
         return Ok(resolver.resolve());
       }
       None => Ok(None),
@@ -1085,7 +1015,7 @@ impl<'a> IiqDecoder<'a> {
   }
 
   /// Decoder for IIQ L / S data
-  fn decode_compressed(buffer: &[u8], strips: &[u8], width: usize, height: usize, bits: u8, dummy: bool) -> PixU16 {
+  pub(crate) fn decode_compressed(buffer: &[u8], strips: &[u8], width: usize, height: usize, bits: u8, dummy: bool) -> PixU16 {
     let value_shift: u32 = MAX_BITDEPTH - (bits as u32);
     let lens: [u32; 10] = [8, 7, 6, 9, 11, 10, 5, 12, 14, 13];
     decode_threaded(
@@ -1095,8 +1025,8 @@ impl<'a> IiqDecoder<'a> {
       &(|out: &mut [u16], row| {
         let offset = LEu32(strips, row * 4) as usize;
         let mut pump = BitPumpMSB32::new(&buffer[offset..]);
-        let mut pred = [0 as u32; 2];
-        let mut len = [0 as u32; 2];
+        let mut pred = [0_u32; 2];
+        let mut len = [0_u32; 2];
         for (col, pixout) in out.chunks_exact_mut(1).enumerate() {
           if col >= (width & 0xfffffff8) {
             len[0] = 14;
@@ -1162,7 +1092,7 @@ impl<'a> IiqDecoder<'a> {
               }
             }
 
-            let pump_savepoint = pump.clone(); // savepoint for error recovery
+            let pump_savepoint = pump; // savepoint for error recovery
             let x = pump.peek_bits(3) as usize; // 3 bits are max 7, so it's safe as array index
             pump.consume_bits(SV2_USED_CORR[x]);
 

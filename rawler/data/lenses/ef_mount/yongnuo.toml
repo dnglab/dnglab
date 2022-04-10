@@ -1,0 +1,17 @@
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 198
+make = "Yongnuo"
+model = "YN 35mm f/2"
+focal_range = [[35, 1], [35, 1]]
+aperture_range = [[2, 1], [2, 1]]
+
+[[lenses]]
+mount = "ef-mount"
+lens_id = 220
+make = "Yongnuo"
+model = "YN 50mm f/1.8"
+focal_range = [[50, 1], [50, 1]]
+aperture_range = [[18, 10], [18, 10]]
+

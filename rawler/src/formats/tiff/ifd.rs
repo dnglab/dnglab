@@ -10,14 +10,21 @@ use super::{
 };
 use crate::{
   bits::Endian,
-  tags::{ExifTag, LegacyTiffRootTag, TiffTagEnum},
+  tags::{ExifTag, TiffCommonTag, TiffTag},
 };
-use log::{warn, debug};
+use byteorder::{LittleEndian, ReadBytesExt};
+use log::{debug, warn};
 use serde::{Deserialize, Serialize};
 use std::{
   collections::{BTreeMap, HashMap},
   io::{Read, Seek, SeekFrom},
 };
+
+#[derive(Debug)]
+pub enum OffsetMode {
+  Absolute,
+  RelativeToIFD,
+}
 
 #[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize)]
 pub struct IFD {
@@ -28,9 +35,63 @@ pub struct IFD {
   pub entries: BTreeMap<u16, Entry>,
   pub endian: Endian,
   pub sub: HashMap<u16, Vec<IFD>>,
+  pub chain: Vec<IFD>,
 }
 
+// TODO: fixme
 impl IFD {
+  /// Construct new IFD from reader at specific base
+  pub fn new_root<R: Read + Seek>(reader: &mut R, base: u32) -> Result<IFD> {
+    Self::new_root_with_correction(reader, 0, base, 0, 10, &[TiffCommonTag::SubIFDs.into(), TiffCommonTag::ExifIFDPointer.into()])
+  }
+
+  pub fn new_root_with_correction<R: Read + Seek>(reader: &mut R, offset: u32, base: u32, corr: i32, max_chain: usize, sub_tags: &[u16]) -> Result<IFD> {
+    reader.seek(SeekFrom::Start((base + offset) as u64))?;
+    let endian = match reader.read_u16::<LittleEndian>()? {
+      0x4949 => Endian::Little,
+      0x4d4d => Endian::Big,
+      x => {
+        return Err(TiffError::General(format!("TIFF: don't know marker 0x{:x}", x)));
+      }
+    };
+    let mut reader = EndianReader::new(reader, endian);
+    let magic = reader.read_u16()?;
+    if magic != 42 {
+      return Err(TiffError::General(format!("Invalid magic marker for TIFF: {}", magic)));
+    }
+    let mut next_ifd = reader.read_u32()?;
+    if next_ifd == 0 {
+      return Err(TiffError::General("Invalid TIFF header, contains no root IFD".to_string()));
+    }
+
+    let reader = reader.into_inner();
+    let mut multi_sub_tags = vec![];
+    multi_sub_tags.extend_from_slice(sub_tags);
+
+    next_ifd = apply_corr(next_ifd, corr);
+    let mut root = IFD::new(reader, next_ifd, base, corr, endian, &multi_sub_tags)?;
+    if root.entries.is_empty() {
+      return Err(TiffError::General("TIFF is invalid, IFD must contain at least one entry".to_string()));
+    }
+    next_ifd = root.next_ifd;
+
+    while next_ifd != 0 {
+      next_ifd = apply_corr(next_ifd, corr);
+      let ifd = IFD::new(reader, next_ifd, base, corr, endian, &multi_sub_tags)?;
+      if ifd.entries.is_empty() {
+        return Err(TiffError::General("TIFF is invalid, IFD must contain at least one entry".to_string()));
+      }
+      next_ifd = ifd.next_ifd;
+      root.chain.push(ifd);
+
+      if root.chain.len() > max_chain && max_chain > 0 {
+        break;
+      }
+    }
+
+    Ok(root)
+  }
+
   pub fn new<R: Read + Seek>(reader: &mut R, offset: u32, base: u32, corr: i32, endian: Endian, sub_tags: &[u16]) -> Result<IFD> {
     reader.seek(SeekFrom::Start((base + offset) as u64))?;
     let mut sub_ifd_offsets = HashMap::new();
@@ -50,7 +111,12 @@ impl IFD {
             sub_ifd_offsets.insert(tag, offsets.clone());
             //sub_ifd_offsets.extend_from_slice(&offsets);
           }
-          _ => {
+          Value::Unknown(tag, offsets) => {
+            sub_ifd_offsets.insert(*tag, vec![offsets[0] as u32]);
+            //sub_ifd_offsets.extend_from_slice(&offsets);
+          }
+          val => {
+            debug!("Found IFD offset tag, but type mismatch: {:?}", val);
             todo!()
           }
         }
@@ -88,6 +154,7 @@ impl IFD {
       entries,
       endian,
       sub,
+      chain: vec![],
     })
   }
 
@@ -140,6 +207,47 @@ impl IFD {
   }
    */
 
+  /// Extend the IFD with sub-IFDs from a specific tag.
+  /// The IFD corrections are used from current IFD.
+  pub fn extend_sub_ifds<R: Read + Seek>(&mut self, reader: &mut R, tag: u16) -> Result<Option<&Vec<Self>>> {
+    if let Some(entry) = self.get_entry(tag) {
+      let mut subs = Vec::new();
+      match &entry.value {
+        Value::Long(offsets) => {
+          for off in offsets {
+            let ifd = Self::new_root_with_correction(reader, *off, self.base, self.corr, 10, &[])?;
+            subs.push(ifd);
+          }
+          self.sub.insert(tag, subs);
+          Ok(self.sub.get(&tag))
+        }
+        val => {
+          debug!("Found IFD offset tag, but type mismatch: {:?}", val);
+          todo!()
+        }
+      }
+    } else {
+      Ok(None)
+    }
+  }
+
+  pub fn extend_sub_ifds_custom<R, F>(&mut self, reader: &mut R, tag: u16, op: F) -> Result<Option<&Vec<Self>>>
+  where
+    R: Read + Seek,
+    F: FnOnce(&mut R, &IFD, &Entry) -> Result<Option<Vec<IFD>>>,
+  {
+    if let Some(entry) = self.get_entry(tag) {
+      if let Some(subs) = op(reader, self, entry)? {
+        self.sub.insert(tag, subs);
+        Ok(self.sub.get(&tag))
+      } else {
+        Ok(None)
+      }
+    } else {
+      Ok(None)
+    }
+  }
+
   pub fn sub_ifds(&self) -> &HashMap<u16, Vec<IFD>> {
     &self.sub
   }
@@ -156,11 +264,11 @@ impl IFD {
     &self.entries
   }
 
-  pub fn get_entry<T: TiffTagEnum>(&self, tag: T) -> Option<&Entry> {
+  pub fn get_entry<T: TiffTag>(&self, tag: T) -> Option<&Entry> {
     self.entries.get(&tag.into())
   }
 
-  pub fn get_entry_subs<T: TiffTagEnum>(&self, tag: T) -> Option<&Entry> {
+  pub fn get_entry_subs<T: TiffTag>(&self, tag: T) -> Option<&Entry> {
     for subs in &self.sub {
       for ifd in subs.1 {
         if let Some(entry) = ifd.get_entry_recursive(tag) {
@@ -171,22 +279,53 @@ impl IFD {
     None
   }
 
-  pub fn get_entry_recursive<T: TiffTagEnum>(&self, tag: T) -> Option<&Entry> {
+  pub fn get_entry_recursive<T: TiffTag>(&self, tag: T) -> Option<&Entry> {
     self.entries.get(&tag.into()).or_else(|| self.get_entry_subs(tag))
   }
 
-  pub fn get_entry_raw<'a, T: TiffTagEnum, R: Read + Seek>(&'a self, tag: T, file: &mut R) -> Result<Option<RawEntry>> {
-    match self.get_entry(tag) {
-      Some(entry) => {
-        return Ok(Some(RawEntry {
-          entry,
-          endian: self.endian,
-          data: read_from_file(file, self.base + entry.offset().unwrap() as u32, entry.byte_size())?,
-        }))
-      }
-      None => {}
+  pub fn get_entry_raw<'a, T: TiffTag, R: Read + Seek>(&'a self, tag: T, file: &mut R) -> Result<Option<RawEntry>> {
+    if let Some(entry) = self.get_entry(tag) {
+      return Ok(Some(RawEntry {
+        entry,
+        endian: self.endian,
+        data: read_from_file(file, self.base + entry.offset().unwrap() as u32, entry.byte_size())?,
+      }));
     }
     Ok(None)
+  }
+
+  /// Get the data of a tag by just reading as many `len` bytes from offet.
+  pub fn get_entry_raw_with_len<'a, T: TiffTag, R: Read + Seek>(&'a self, tag: T, file: &mut R, len: usize) -> Result<Option<RawEntry>> {
+    if let Some(entry) = self.get_entry(tag) {
+      return Ok(Some(RawEntry {
+        entry,
+        endian: self.endian,
+        data: read_from_file(file, self.base + entry.offset().unwrap() as u32, len)?,
+      }));
+    }
+    Ok(None)
+  }
+
+  pub fn get_sub_ifds<T: TiffTag>(&self, tag: T) -> Option<&Vec<IFD>> {
+    self.sub.get(&tag.into())
+  }
+
+  pub fn find_ifds_with_tag<T: TiffTag>(&self, tag: T) -> Vec<&IFD> {
+    let mut ifds = Vec::new();
+    if self.get_entry(tag).is_some() {
+      ifds.push(self);
+    }
+    // Now search in all sub IFDs
+    for subs in self.sub_ifds() {
+      for ifd in subs.1 {
+        ifds.append(&mut ifd.find_ifds_with_tag(tag));
+      }
+    }
+    ifds
+  }
+
+  pub fn find_first_ifd_with_tag<T: TiffTag>(&self, tag: T) -> Option<&IFD> {
+    self.find_ifds_with_tag(tag).get(0).copied()
   }
 
   /*
@@ -210,11 +349,11 @@ impl IFD {
   }
    */
 
-  pub fn has_entry<T: TiffTagEnum>(&self, tag: T) -> bool {
+  pub fn has_entry<T: TiffTag>(&self, tag: T) -> bool {
     self.get_entry(tag).is_some()
   }
 
-  pub fn sub_buf<'a, R: Read + Seek>(&self, reader: &mut R, offset: usize, len: usize) -> Result<Vec<u8>> {
+  pub fn sub_buf<R: Read + Seek>(&self, reader: &mut R, offset: usize, len: usize) -> Result<Vec<u8>> {
     //&buf[self.start_offset+offset..self.start_offset+offset+len]
     let mut buf = vec![0; len];
     reader.seek(SeekFrom::Start(self.base as u64 + offset as u64))?;
@@ -226,16 +365,16 @@ impl IFD {
     true // FIXME
   }
 
-  pub fn singlestrip_data<'a, R: Read + Seek>(&self, reader: &mut R) -> Result<Vec<u8>> {
+  pub fn singlestrip_data<R: Read + Seek>(&self, reader: &mut R) -> Result<Vec<u8>> {
     assert!(self.contains_singlestrip_image());
 
-    let offset = self.get_entry(LegacyTiffRootTag::StripOffsets).unwrap().value.force_usize(0);
-    let len = self.get_entry(LegacyTiffRootTag::StripByteCounts).unwrap().value.force_usize(0);
+    let offset = self.get_entry(TiffCommonTag::StripOffsets).unwrap().value.force_usize(0);
+    let len = self.get_entry(TiffCommonTag::StripByteCounts).unwrap().value.force_usize(0);
 
     self.sub_buf(reader, offset, len)
   }
 
-  pub fn parse_makernote<'a, R: Read + Seek>(&self, reader: &mut R) -> Result<Option<IFD>> {
+  pub fn parse_makernote<R: Read + Seek>(&self, reader: &mut R, offset_mode: OffsetMode, sub_tags: &[u16]) -> Result<Option<IFD>> {
     if let Some(exif) = self.get_entry(ExifTag::MakerNotes) {
       let offset = exif.offset().unwrap() as u32;
       debug!("Makernote offset: {}", offset);
@@ -244,9 +383,22 @@ impl IFD {
           let mut off = 0;
           let mut endian = self.endian;
 
+          // Olympus starts the makernote with their own name, sometimes truncated
+          if data[0..5] == b"OLYMP"[..] {
+            off += 8;
+            if data[0..7] == b"OLYMPUS"[..] {
+              off += 4;
+            }
+          }
+
           // Epson starts the makernote with its own name
           if data[0..5] == b"EPSON"[..] {
             off += 8;
+          }
+
+          // Fujifilm has 12 extra bytes
+          if data[0..8] == b"FUJIFILM"[..] {
+            off += 12;
           }
 
           // Pentax makernote starts with AOC\0 - If it's there, skip it
@@ -262,13 +414,13 @@ impl IFD {
             // so wie use the offset as correction value.
             let corr = offset as i32;
             // The IFD itself starts 10 bytes after tag offset.
-            return Ok(Some(IFD::new(reader, offset+10, self.base, corr, endian, &[])?));
+            return Ok(Some(IFD::new(reader, offset + 10, self.base, corr, endian, sub_tags)?));
           }
 
           if data[0..7] == b"Nikon\0\x02"[..] {
             off += 10;
             let endian = if data[off..off + 2] == b"II"[..] { Endian::Little } else { Endian::Big };
-            return Ok(Some(IFD::new(reader, offset + 8, self.base, self.corr, endian, &[])?));
+            return Ok(Some(IFD::new(reader, 8, self.base + offset + 10, 0, endian, sub_tags)?));
           }
 
           // Some have MM or II to indicate endianness - read that
@@ -281,48 +433,53 @@ impl IFD {
             endian = Endian::Big;
           }
 
-          Ok(Some(IFD::new(reader, offset + off as u32, self.base, self.corr, endian, &[])?))
+          match offset_mode {
+            OffsetMode::Absolute => Ok(Some(IFD::new(reader, offset + off as u32, self.base, self.corr, endian, sub_tags)?)),
+            OffsetMode::RelativeToIFD => {
+              // Value offsets are relative to IFD offset
+              let corr = offset + off as u32;
+              Ok(Some(IFD::new(reader, offset + off as u32, self.base, corr as i32, endian, sub_tags)?))
+            }
+          }
         }
-        _ => Err(TiffError::General(format!("EXIF makernote has unknown type"))),
+        _ => Err(TiffError::General("EXIF makernote has unknown type".to_string())),
       }
     } else {
       Ok(None)
     }
   }
 
-
-pub fn dump<T: TiffTagEnum>(&self, limit: usize) -> Vec<String> {
-  let mut out = Vec::new();
-  out.push(format!("IFD entries: {}\n", self.entries.len()));
-  out.push(format!("{0:<34}  | {1:<10} | {2:<6} | {3}\n", "Tag", "Type", "Count", "Data"));
-  for (tag, entry) in &self.entries {
-    let mut line = String::new();
-    let tag_name = {
-      if let Ok(name) = T::try_from(*tag) {
-        String::from(format!("{:?}", name))
-      } else {
-        format!("<?{}>", tag).into()
-      }
-    };
-    line.push_str(&format!(
-      "{0:#06x} : {0:<6} {1:<20}| {2:<10} | {3:<6} | ",
-      tag,
-      tag_name,
-      entry.type_name(),
-      entry.count()
-    ));
-    line.push_str(&entry.visual_rep(limit));
-    out.push(line);
-  }
-  for subs in self.sub_ifds().iter() {
-    for (i, sub) in subs.1.iter().enumerate() {
-      out.push(format!("SubIFD({}:{})", subs.0, i));
-      for line in sub.dump::<T>(limit) {
-        out.push(format!("   {}", line));
+  pub fn dump<T: TiffTag>(&self, limit: usize) -> Vec<String> {
+    let mut out = Vec::new();
+    out.push(format!("IFD entries: {}\n", self.entries.len()));
+    out.push(format!("{0:<34}  | {1:<10} | {2:<6} | {3}\n", "Tag", "Type", "Count", "Data"));
+    for (tag, entry) in &self.entries {
+      let mut line = String::new();
+      let tag_name = {
+        if let Ok(name) = T::try_from(*tag) {
+          format!("{:?}", name)
+        } else {
+          format!("<?{}>", tag)
+        }
+      };
+      line.push_str(&format!(
+        "{0:#06x} : {0:<6} {1:<20}| {2:<10} | {3:<6} | ",
+        tag,
+        tag_name,
+        entry.type_name(),
+        entry.count()
+      ));
+      line.push_str(&entry.visual_rep(limit));
+      out.push(line);
+    }
+    for subs in self.sub_ifds().iter() {
+      for (i, sub) in subs.1.iter().enumerate() {
+        out.push(format!("SubIFD({}:{})", subs.0, i));
+        for line in sub.dump::<T>(limit) {
+          out.push(format!("   {}", line));
+        }
       }
     }
+    out
   }
-  out
 }
-}
-

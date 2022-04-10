@@ -45,7 +45,7 @@ fn main() {
   let from_time = Instant::now();
   {
     for _ in 0..ITERATIONS {
-      let mut decoder = match rawloader.get_decoder(&mut rawfile) {
+      let decoder = match rawloader.get_decoder(&mut rawfile) {
         Ok(val) => val,
         Err(e) => {
           error(&e.to_string());

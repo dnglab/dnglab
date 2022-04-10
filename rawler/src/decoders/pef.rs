@@ -9,15 +9,16 @@ use super::ok_image_with_blacklevels;
 use super::Camera;
 use super::Decoder;
 use super::RawDecodeParams;
+use super::RawMetadata;
 use crate::alloc_image_ok;
 use crate::analyze::FormatDump;
 use crate::bits::Endian;
 use crate::decompressors::ljpeg::huffman::*;
+use crate::exif::Exif;
+use crate::formats::tiff::ifd::OffsetMode;
 use crate::formats::tiff::reader::TiffReader;
-use crate::formats::tiff::DirectoryWriter;
 use crate::formats::tiff::Entry;
 use crate::formats::tiff::GenericTiffReader;
-use crate::formats::tiff::Rational;
 use crate::formats::tiff::Value;
 use crate::formats::tiff::IFD;
 use crate::lens::LensDescription;
@@ -26,10 +27,9 @@ use crate::packed::*;
 use crate::pixarray::PixU16;
 use crate::pumps::BitPumpMSB;
 use crate::pumps::ByteStream;
-use crate::tags::DngTag;
 use crate::tags::ExifTag;
-use crate::tags::LegacyTiffRootTag;
-use crate::tags::TiffTagEnum;
+use crate::tags::TiffCommonTag;
+use crate::tags::TiffTag;
 use crate::RawFile;
 use crate::RawImage;
 use crate::RawLoader;
@@ -47,36 +47,6 @@ pub struct PefDecoder<'a> {
   makernote_offset: u32,
 }
 
-const EXIF_TRANSFER_TAGS: [u16; 23] = [
-  ExifTag::ExposureTime as u16,
-  ExifTag::FNumber as u16,
-  ExifTag::ISOSpeedRatings as u16,
-  ExifTag::SensitivityType as u16,
-  ExifTag::RecommendedExposureIndex as u16,
-  ExifTag::ISOSpeed as u16,
-  ExifTag::FocalLength as u16,
-  ExifTag::ExposureBiasValue as u16,
-  ExifTag::DateTimeOriginal as u16,
-  ExifTag::CreateDate as u16,
-  ExifTag::OffsetTime as u16,
-  ExifTag::OffsetTimeDigitized as u16,
-  ExifTag::OffsetTimeOriginal as u16,
-  ExifTag::OwnerName as u16,
-  ExifTag::LensSerialNumber as u16,
-  ExifTag::SerialNumber as u16,
-  ExifTag::ExposureProgram as u16,
-  ExifTag::MeteringMode as u16,
-  ExifTag::Flash as u16,
-  ExifTag::ExposureMode as u16,
-  ExifTag::WhiteBalance as u16,
-  ExifTag::SceneCaptureType as u16,
-  ExifTag::ShutterSpeedValue as u16,
-];
-
-fn transfer_exif_tag(tag: u16) -> bool {
-  EXIF_TRANSFER_TAGS.contains(&tag)
-}
-
 impl<'a> PefDecoder<'a> {
   pub fn new(file: &mut RawFile, tiff: GenericTiffReader, rawloader: &'a RawLoader) -> Result<PefDecoder<'a>> {
     debug!("PEF decoder choosen");
@@ -84,12 +54,12 @@ impl<'a> PefDecoder<'a> {
     let camera = rawloader.check_supported(tiff.root_ifd())?;
 
     let makernote = if let Some(exif) = tiff.find_first_ifd_with_tag(ExifTag::MakerNotes) {
-      exif.parse_makernote(file.inner())?
+      exif.parse_makernote(file.inner(), OffsetMode::Absolute, &[])?
     } else {
       warn!("PEF makernote not found");
       None
     }
-    .ok_or(RawlerError::General(format!("File has not makernotes")))?;
+    .ok_or("File has not makernotes")?;
 
     let makernote_offset = tiff
       .find_first_ifd_with_tag(ExifTag::MakerNotes)
@@ -104,8 +74,8 @@ impl<'a> PefDecoder<'a> {
 
     Ok(PefDecoder {
       camera,
-      tiff: tiff,
-      rawloader: rawloader,
+      tiff,
+      rawloader,
       makernote,
       makernote_offset,
     })
@@ -124,7 +94,7 @@ impl<'a> Decoder for PefDecoder<'a> {
     FormatDump::Pef(PefFormat { tiff: self.tiff.clone() })
   }
 
-  fn raw_image(&mut self, file: &mut RawFile, _params: RawDecodeParams, dummy: bool) -> Result<RawImage> {
+  fn raw_image(&self, file: &mut RawFile, _params: RawDecodeParams, dummy: bool) -> Result<RawImage> {
     //for (i, ifd) in self.tiff.chains().iter().enumerate() {
     //  eprintln!("IFD {}", i);
     //  for line in ifd.dump::<crate::tags::LegacyTiffRootTag>(10) {
@@ -134,20 +104,20 @@ impl<'a> Decoder for PefDecoder<'a> {
 
     let raw = self
       .tiff
-      .find_first_ifd_with_tag(LegacyTiffRootTag::StripOffsets)
-      .ok_or(RawlerError::Unsupported(format!("Unable to find IFD")))?;
-    let width = fetch_tag_new!(raw, LegacyTiffRootTag::ImageWidth).force_usize(0);
-    let height = fetch_tag_new!(raw, LegacyTiffRootTag::ImageLength).force_usize(0);
-    let offset = fetch_tag_new!(raw, LegacyTiffRootTag::StripOffsets).force_usize(0);
+      .find_first_ifd_with_tag(TiffCommonTag::StripOffsets)
+      .ok_or_else(|| RawlerError::unsupported(&self.camera, "Unable to find IFD"))?;
+    let width = fetch_tiff_tag!(raw, TiffCommonTag::ImageWidth).force_usize(0);
+    let height = fetch_tiff_tag!(raw, TiffCommonTag::ImageLength).force_usize(0);
+    let offset = fetch_tiff_tag!(raw, TiffCommonTag::StripOffsets).force_usize(0);
 
     let src = file.subview_until_eof(offset as u64).unwrap();
 
-    let image = match fetch_tag_new!(raw, LegacyTiffRootTag::Compression).get_u32(0) {
+    let image = match fetch_tiff_tag!(raw, TiffCommonTag::Compression).get_u32(0) {
       Ok(Some(1)) => decode_16be(&src, width, height, dummy),
       Ok(Some(32773)) => decode_12be(&src, width, height, dummy),
       Ok(Some(65535)) => self.decode_compressed(&src, width, height, dummy)?,
-      Ok(Some(c)) => return Err(RawlerError::Unsupported(format!("PEF: Don't know how to read compression {}", c).to_string())),
-      _ => return Err(RawlerError::Unsupported(format!("PEF: No compression tag found").to_string())),
+      Ok(Some(c)) => return Err(RawlerError::unsupported(&self.camera, format!("PEF: Don't know how to read compression {}", c))),
+      _ => return Err(RawlerError::unsupported(&self.camera, "PEF: No compression tag found")),
     };
 
     let blacklevels = self.get_blacklevels()?.unwrap_or(self.camera.blacklevels);
@@ -206,131 +176,50 @@ impl<'a> Decoder for PefDecoder<'a> {
     todo!()
   }
 
-  fn populate_dng_root(&mut self, root_ifd: &mut DirectoryWriter) -> Result<()> {
-    let ifd = self.tiff.root_ifd();
-    if let Some(orientation) = ifd.get_entry(ExifTag::Orientation) {
-      root_ifd.add_value(ExifTag::Orientation, orientation.value.clone())?;
-    }
-    if let Some(artist) = ifd.get_entry(ExifTag::Artist) {
-      root_ifd.add_value(ExifTag::Artist, artist.value.clone())?;
-    }
-    if let Some(copyright) = ifd.get_entry(ExifTag::Copyright) {
-      root_ifd.add_value(ExifTag::Copyright, copyright.value.clone())?;
-    }
-
-    if let Some(lens) = self.get_lens_description()? {
-      let lens_info: [Rational; 4] = [lens.focal_range[0], lens.focal_range[1], lens.aperture_range[0], lens.aperture_range[1]];
-      root_ifd.add_tag(DngTag::LensInfo, lens_info)?;
-    }
-
-    // TODO: add unique image id
-    /*
-    if let Some(unique_id) = self.image_unique_id {
-      // For CR3, we use the already included Makernote tag with unique image ID
-      root_ifd.add_tag(DngTag::RawDataUniqueID, unique_id)?;
-    }
-     */
-
-    // TODO: add GPS
-    /*
-    if let Some(origin_gps) = self.tiff.root_ifd().get_entry(555){
-      let gpsinfo_offset = {
-        let mut gps_ifd = root_ifd.new_directory();
-        let ifd = cmt4.root_ifd();
-        // Copy all GPS tags
-        for (tag, entry) in ifd.entries() {
-          match tag {
-            // Special handling for Exif.GPSInfo.GPSLatitude and Exif.GPSInfo.GPSLongitude.
-            // Exif.GPSInfo.GPSTimeStamp is wrong, too and can be fixed with the same logic.
-            // Canon CR3 contains only two rationals, but these tags are specified as a vector
-            // of three reationals (degrees, minutes, seconds).
-            // We fix this by extending with 0/1 as seconds value.
-            0x0002 | 0x0004 | 0x0007 => match &entry.value {
-              Value::Rational(v) => {
-                let fixed_value = if v.len() == 2 { vec![v[0], v[1], Rational::new(0, 1)] } else { v.clone() };
-                gps_ifd.add_value(*tag, Value::Rational(fixed_value))?;
-              }
-              _ => {
-                warn!("CR3: Exif.GPSInfo.GPSLatitude and Exif.GPSInfo.GPSLongitude expected to be of type RATIONAL, GPS data is ignored");
-              }
-            },
-            _ => {
-              gps_ifd.add_value(*tag, entry.value.clone())?;
-            }
-          }
-        }
-        gps_ifd.build()?
-      };
-      root_ifd.add_tag(ExifTag::GPSInfo, gpsinfo_offset as u32)?;
-    }
-     */
-    Ok(())
-  }
-
-  fn populate_dng_exif(&mut self, exif_ifd: &mut DirectoryWriter) -> Result<()> {
-    if let Some(exif) = self.tiff.find_first_ifd_with_tag(ExifTag::MakerNotes) {
-      for (tag, entry) in exif.entries().iter().filter(|(tag, _)| transfer_exif_tag(**tag)) {
-        exif_ifd.add_value(*tag, entry.value.clone())?;
-      }
-    }
-
-    if let Some(lens) = self.get_lens_description()? {
-      let lens_info: [Rational; 4] = [lens.focal_range[0], lens.focal_range[1], lens.aperture_range[0], lens.aperture_range[1]];
-      exif_ifd.add_tag(ExifTag::LensSpecification, lens_info)?;
-      exif_ifd.add_tag(ExifTag::LensMake, &lens.lens_make)?;
-      exif_ifd.add_tag(ExifTag::LensModel, &lens.lens_model)?;
-    }
-
-    Ok(())
+  fn raw_metadata(&self, _file: &mut RawFile, _params: RawDecodeParams) -> Result<RawMetadata> {
+    let exif = Exif::new(self.tiff.root_ifd())?;
+    let mdata = RawMetadata::new_with_lens(&self.camera, exif, self.get_lens_description()?.cloned());
+    Ok(mdata)
   }
 }
 
 impl<'a> PefDecoder<'a> {
   fn get_wb(&self) -> Result<[f32; 4]> {
     match self.makernote.get_entry(PefMakernote::WhitePoint) {
-      Some(wb) => Ok([
-        wb.force_u16(0) as f32,
-        wb.force_u16(1) as f32,
-        wb.force_u16(3) as f32,
-        NAN,
-      ]),
+      Some(wb) => Ok([wb.force_u16(0) as f32, wb.force_u16(1) as f32, wb.force_u16(3) as f32, NAN]),
       None => Ok([NAN, NAN, NAN, NAN]),
     }
   }
 
   fn get_blacklevels(&self) -> Result<Option<[u16; 4]>> {
     match self.makernote.get_entry(PefMakernote::BlackPoint) {
-      Some(levels) => Ok(Some([
-        levels.force_u16(0),
-        levels.force_u16(1),
-        levels.force_u16(2),
-        levels.force_u16(3),
-      ])),
+      Some(levels) => Ok(Some([levels.force_u16(0), levels.force_u16(1), levels.force_u16(2), levels.force_u16(3)])),
       None => Ok(None),
     }
   }
 
   /// Get lens description by analyzing TIFF tags and makernotes
   fn get_lens_description(&self) -> Result<Option<&'static LensDescription>> {
-    match self.makernote.get_entry(PefMakernote::LensRec) {
-      Some(Entry {
-        value: Value::Byte(settings), ..
-      }) => {
-        let lens_id = (settings[0] as u32, settings[1] as u32);
-        debug!("LensRec tag: {:?}", lens_id);
-        if [0, 1, 2].contains(&lens_id.0) {
-          // 0 = M-42 or no lens
-          // 1 = K or M lens
-          // 2 = A Series lens
-          return Ok(None);
-        } else {
-          let resolver = LensResolver::new().with_camera(&self.camera).with_lens_id(lens_id);
-          return Ok(resolver.resolve());
-        }
+    if let Some(Entry {
+      value: Value::Byte(settings), ..
+    }) = self.makernote.get_entry(PefMakernote::LensRec)
+    {
+      let lens_id = (settings[0] as u32, settings[1] as u32);
+      debug!("LensRec tag: {:?}", lens_id);
+      if [0, 1, 2].contains(&lens_id.0) {
+        // 0 = M-42 or no lens
+        // 1 = K or M lens
+        // 2 = A Series lens
+        return Ok(None);
+      } else {
+        let resolver = LensResolver::new()
+          .with_camera(&self.camera)
+          .with_lens_id(lens_id)
+          .with_mounts(&["k-mount".into()]);
+        return Ok(resolver.resolve());
       }
-      _ => {}
     }
-    return Ok(None);
+    Ok(None)
   }
 
   fn decode_compressed(&self, src: &[u8], width: usize, height: usize, dummy: bool) -> Result<PixU16> {
@@ -425,6 +314,8 @@ impl<'a> PefDecoder<'a> {
     Ok(PixU16::new(out, width, height))
   }
 }
+
+crate::tags::tiff_tag_enum!(PefMakernote);
 
 #[allow(non_camel_case_types)]
 #[derive(Debug, Copy, Clone, PartialEq, enumn::N)]
@@ -583,20 +474,4 @@ pub enum PefMakernote {
   ToneCurves = 0x0403,
   UnknownBlock = 0x0405,
   PrintIM = 0x0e00,
-}
-
-impl TiffTagEnum for PefMakernote {}
-
-impl Into<u16> for PefMakernote {
-  fn into(self) -> u16 {
-    self as u16
-  }
-}
-
-impl TryFrom<u16> for PefMakernote {
-  type Error = String;
-
-  fn try_from(value: u16) -> std::result::Result<Self, Self::Error> {
-    Self::n(value).ok_or(format!("Unable to convert tag: {}, not defined in enum", value))
-  }
 }

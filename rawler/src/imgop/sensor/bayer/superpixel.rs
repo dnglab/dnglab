@@ -15,7 +15,7 @@ use rayon::prelude::*;
 /// Before debayer, WB coefficents are applied. If you don't won't WB correction,
 /// just supply 1.0 as factor.
 pub fn debayer_superpixel(
-  pixels: &Vec<u16>,
+  pixels: &[u16],
   pattern: BayerPattern,
   dim: Dim2,
   black_level: &[f32; 4],
