@@ -1,0 +1,12 @@
+make = "NIKON"
+model = "COOLPIX P340"
+clean_make = "Nikon"
+clean_model = "Coolpix P340"
+blackpoint = 200
+whitepoint = 3800
+color_pattern = "RGGB"
+active_area = [0, 0, 0, 0]
+hints = ["msb"]
+
+[cameras.color_matrix]
+D65 = [1.0321, -0.392, -0.0931, -0.275, 1.1146, 0.1824, -0.0442, 0.1545, 0.5539]

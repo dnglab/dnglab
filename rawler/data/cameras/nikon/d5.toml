@@ -1,0 +1,15 @@
+make = "NIKON CORPORATION"
+model = "NIKON D5"
+clean_make = "Nikon"
+clean_model = "D5"
+color_pattern = "RGGB"
+active_area = [0, 0, 0, 0]
+
+[cameras.color_matrix]
+D65 = [0.92, -0.3522, -0.0992, -0.5755, 1.3803, 0.2117, -0.0753, 0.1486, 0.6338]
+
+[[cameras.modes]]
+mode = "14bit"
+blackpoint = 400
+whitepoint = 15520
+

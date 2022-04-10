@@ -1,0 +1,15 @@
+make = "NIKON CORPORATION"
+model = "NIKON D3100"
+clean_make = "Nikon"
+clean_model = "D3100"
+color_pattern = "GBRG"
+active_area = [8, 2, 24, 2]
+
+[cameras.color_matrix]
+D65 = [0.7911, -0.2167, -0.0813, -0.5327, 1.315, 0.2408, -0.1288, 0.2483, 0.7968]
+
+[[cameras.modes]]
+mode = "12bit"
+blackpoint = 0
+whitepoint = 3880
+

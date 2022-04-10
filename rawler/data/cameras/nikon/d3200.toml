@@ -1,0 +1,15 @@
+make = "NIKON CORPORATION"
+model = "NIKON D3200"
+clean_make = "Nikon"
+clean_model = "D3200"
+color_pattern = "RGGB"
+active_area = [0, 0, 48, 0]
+
+[cameras.color_matrix]
+D65 = [0.7013, -0.1408, -0.0635, -0.5268, 1.2902, 0.264, -0.147, 0.2801, 0.7379]
+
+[[cameras.modes]]
+mode = "12bit"
+blackpoint = 0
+whitepoint = 3880
+

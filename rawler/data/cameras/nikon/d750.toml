@@ -1,0 +1,20 @@
+make = "NIKON CORPORATION"
+model = "NIKON D750"
+clean_make = "Nikon"
+clean_model = "D750"
+color_pattern = "RGGB"
+active_area = [0, 0, 0, 0]
+
+[cameras.color_matrix]
+D65 = [0.902, -0.289, -0.0715, -0.4535, 1.2436, 0.2348, -0.0934, 0.1919, 0.7086]
+
+[[cameras.modes]]
+mode = "14bit"
+blackpoint = 600
+whitepoint = 15520
+
+[[cameras.modes]]
+mode = "12bit"
+blackpoint = 150
+whitepoint = 3880
+

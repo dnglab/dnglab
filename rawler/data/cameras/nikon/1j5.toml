@@ -1,0 +1,15 @@
+make = "NIKON CORPORATION"
+model = "NIKON 1 J5"
+clean_make = "Nikon"
+clean_model = "1 J5"
+color_pattern = "RGGB"
+active_area = [0, 0, 0, 0]
+
+[cameras.color_matrix]
+D65 = [0.752, -0.2518, -0.0645, -0.3844, 1.2102, 0.1945, -0.0913, 0.2249, 0.6835]
+
+[[cameras.modes]]
+mode = "12bit"
+blackpoint = 200
+whitepoint = 3800
+

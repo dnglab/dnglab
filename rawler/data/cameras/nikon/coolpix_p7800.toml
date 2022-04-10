@@ -1,0 +1,12 @@
+make = "NIKON"
+model = "COOLPIX P7800"
+clean_make = "Nikon"
+clean_model = "Coolpix P7800"
+blackpoint = 3195
+whitepoint = 65000
+color_pattern = "RGGB"
+active_area = [0, 0, 0, 0]
+hints = ["unpacked"]
+
+[cameras.color_matrix]
+D65 = [1.0321, -0.392, -0.0931, -0.275, 1.1146, 0.1824, -0.0442, 0.1545, 0.5539]

@@ -1,0 +1,21 @@
+make = "NIKON CORPORATION"
+model = "NIKON D3S"
+clean_make = "Nikon"
+clean_model = "D3S"
+color_pattern = "RGGB"
+active_area = [2, 0, 0, 0]
+
+[cameras.color_matrix]
+D65 = [0.8828, -0.2406, -0.0694, -0.4874, 1.2603, 0.2541, -0.066, 0.1509, 0.7587]
+
+[[cameras.modes]]
+mode = "12bit"
+blackpoint = 0
+whitepoint = 3880
+
+
+[[cameras.modes]]
+mode = "14bit"
+blackpoint = 0
+whitepoint = 15520
+

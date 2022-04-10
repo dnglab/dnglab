@@ -1,0 +1,15 @@
+make = "NIKON"
+model = "COOLPIX P330"
+clean_make = "Nikon"
+clean_model = "Coolpix P330"
+color_pattern = "RGGB"
+active_area = [0, 0, 0, 0]
+
+[cameras.color_matrix]
+D65 = [1.0321, -0.392, -0.0931, -0.275, 1.1146, 0.1824, -0.0442, 0.1545, 0.5539]
+
+[[cameras.modes]]
+mode = "14bit"
+blackpoint = 3210
+whitepoint = 65000
+

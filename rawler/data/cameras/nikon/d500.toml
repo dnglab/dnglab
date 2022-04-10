@@ -1,0 +1,20 @@
+make = "NIKON CORPORATION"
+model = "NIKON D500"
+clean_make = "Nikon"
+clean_model = "D500"
+color_pattern = "RGGB"
+active_area = [0, 0, 0, 0]
+
+[cameras.color_matrix]
+D65 = [0.8813, -0.321, -0.1036, -0.4703, 1.2868, 0.2021, -0.1054, 0.194, 0.6129]
+
+[[cameras.modes]]
+mode = "14bit"
+blackpoint = 400
+whitepoint = 15520
+
+[[cameras.modes]]
+mode = "12bit"
+blackpoint = 100
+whitepoint = 3880
+

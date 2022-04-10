@@ -1,0 +1,15 @@
+make = "NIKON CORPORATION"
+model = "NIKON D3500"
+clean_make = "Nikon"
+clean_model = "D3500"
+color_pattern = "RGGB"
+active_area = [0, 0, 0, 0]
+
+[cameras.color_matrix]
+D65 = [0.8821, -0.2938, -0.0785, -0.4178, 1.2142, 0.2287, -0.0824, 0.1651, 0.686]
+
+[[cameras.modes]]
+mode = "12bit"
+blackpoint = 600
+whitepoint = 3972
+

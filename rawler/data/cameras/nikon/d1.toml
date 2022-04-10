@@ -1,0 +1,15 @@
+make = "NIKON CORPORATION"
+model = "NIKON D1"
+clean_make = "Nikon"
+clean_model = "D1"
+color_pattern = "BGGR"
+active_area = [0, 0, 12, 12]
+
+[cameras.color_matrix]
+D65 = [0.7559, -0.213, -0.0965, -0.7611, 1.5713, 0.1972, -0.2478, 0.3042, 0.829]
+
+[[cameras.modes]]
+mode = "12bit"
+blackpoint = 0
+whitepoint = 4095
+
