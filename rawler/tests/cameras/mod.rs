@@ -338,10 +338,10 @@ mod camera_d3x_raw_modes {
   super::camera_file_check!("Nikon", "D3X", cam_nikon_d3x_iso_100_14bits_lossless_nef, "raw_modes/NIKON D3X_ISO_100_14bits_Lossless.NEF");
 }
 mod camera_d40_raw_modes {
-  super::camera_file_check!("Nikon", "D40", cam_dsc_1842_nef, "raw_modes/DSC_1842.NEF");
+  super::camera_file_check!("Nikon", "D40", cam_nikon_d40_iso_200_12bits_lossy__type_1__nef, "raw_modes/NIKON D40_ISO_200_12bits_Lossy (type 1).NEF");
 }
 mod camera_d40x_raw_modes {
-  super::camera_file_check!("Nikon", "D40X", cam_dsc_4670_nef, "raw_modes/DSC_4670.NEF");
+  super::camera_file_check!("Nikon", "D40X", cam_nikon_d40x_iso_250_12bits_lossy__type_1__nef, "raw_modes/NIKON D40X_ISO_250_12bits_Lossy (type 1).NEF");
 }
 mod camera_d4_raw_modes {
   super::camera_file_check!("Nikon", "D4", cam_nikon_d4_iso_400_12bits_lossy__type_2__nef, "raw_modes/NIKON D4_ISO_400_12bits_Lossy (type 2).NEF");
@@ -352,13 +352,13 @@ mod camera_d4_raw_modes {
   super::camera_file_check!("Nikon", "D4", cam_nikon_d4_iso_400_14bits_lossy__type_2__nef, "raw_modes/NIKON D4_ISO_400_14bits_Lossy (type 2).NEF");
 }
 mod camera_d4s_raw_modes {
-  super::camera_file_check!("Nikon", "D4S", cam_fu9_3810_nef, "raw_modes/FU9_3810.NEF");
-  super::camera_file_check!("Nikon", "D4S", cam_fu9_3807_nef, "raw_modes/FU9_3807.NEF");
-  super::camera_file_check!("Nikon", "D4S", cam_fu9_3809_nef, "raw_modes/FU9_3809.NEF");
-  super::camera_file_check!("Nikon", "D4S", cam_fu9_3804_nef, "raw_modes/FU9_3804.NEF");
-  super::camera_file_check!("Nikon", "D4S", cam_fu9_3803_nef, "raw_modes/FU9_3803.NEF");
-  super::camera_file_check!("Nikon", "D4S", cam_fu9_3802_nef, "raw_modes/FU9_3802.NEF");
-  super::camera_file_check!("Nikon", "D4S", cam_fu9_3805_nef, "raw_modes/FU9_3805.NEF");
+  super::camera_file_check!("Nikon", "D4S", cam_nikon_d4s_iso_360_12bits_small_nef, "raw_modes/NIKON D4S_ISO_360_12bits_Small.NEF");
+  super::camera_file_check!("Nikon", "D4S", cam_nikon_d4s_iso_360_14bits_lossy__type_2__nef, "raw_modes/NIKON D4S_ISO_360_14bits_Lossy (type 2).NEF");
+  super::camera_file_check!("Nikon", "D4S", cam_nikon_d4s_iso_280_14bits_uncompressed_nef, "raw_modes/NIKON D4S_ISO_280_14bits_Uncompressed.NEF");
+  super::camera_file_check!("Nikon", "D4S", cam_nikon_d4s_iso_320_14bits_lossless_nef, "raw_modes/NIKON D4S_ISO_320_14bits_Lossless.NEF");
+  super::camera_file_check!("Nikon", "D4S", cam_nikon_d4s_iso_280_12bits_lossy__type_2__nef, "raw_modes/NIKON D4S_ISO_280_12bits_Lossy (type 2).NEF");
+  super::camera_file_check!("Nikon", "D4S", cam_nikon_d4s_iso_320_12bits_uncompressed__reduced_to_12_bit__nef, "raw_modes/NIKON D4S_ISO_320_12bits_Uncompressed (reduced to 12 bit).NEF");
+  super::camera_file_check!("Nikon", "D4S", cam_nikon_d4s_iso_280_12bits_lossless_nef, "raw_modes/NIKON D4S_ISO_280_12bits_Lossless.NEF");
 }
 mod camera_d5000_raw_modes {
   super::camera_file_check!("Nikon", "D5000", cam_nikon_d5000_iso_400_12bits_lossy__type_2__nef, "raw_modes/NIKON D5000_ISO_400_12bits_Lossy (type 2).NEF");
@@ -387,7 +387,7 @@ mod camera_d5200_raw_modes {
   super::camera_file_check!("Nikon", "D5200", cam_nikon_d5200_iso_200_14bits_lossy__type_2__nef, "raw_modes/NIKON D5200_ISO_200_14bits_Lossy (type 2).NEF");
 }
 mod camera_d5300_raw_modes {
-  super::camera_file_check!("Nikon", "D5300", cam_dsc_2053_nef, "raw_modes/DSC_2053.NEF");
+  super::camera_file_check!("Nikon", "D5300", cam_nikon_d5300_iso_160_14bits_lossy__type_2__nef, "raw_modes/NIKON D5300_ISO_160_14bits_Lossy (type 2).NEF");
 }
 mod camera_d5500_raw_modes {
   super::camera_file_check!("Nikon", "D5500", cam_nikon_d5500_iso_100_12bits_lossy__type_2__nef, "raw_modes/NIKON D5500_ISO_100_12bits_Lossy (type 2).NEF");
@@ -401,8 +401,8 @@ mod camera_d5600_raw_modes {
   super::camera_file_check!("Nikon", "D5600", cam_nikon_d5600_iso_200_12bits_lossy__type_2__nef, "raw_modes/NIKON D5600_ISO_200_12bits_Lossy (type 2).NEF");
 }
 mod camera_d5_raw_modes {
-  super::camera_file_check!("Nikon", "D5", cam_lv5_4402_nef, "raw_modes/LV5_4402.NEF");
-  super::camera_file_check!("Nikon", "D5", cam_20170603_ccsg_on_nikon_d5_dsc3096_nef, "raw_modes/20170603_CCSG_on_Nikon_D5-DSC3096.NEF");
+  super::camera_file_check!("Nikon", "D5", cam_nikon_d5_iso_400_14bits_lossy__type_2__nef, "raw_modes/NIKON D5_ISO_400_14bits_Lossy (type 2).NEF");
+  super::camera_file_check!("Nikon", "D5", cam_nikon_d5_iso_100_14bits_uncompressed_nef, "raw_modes/NIKON D5_ISO_100_14bits_Uncompressed.NEF");
 }
 mod camera_d600_raw_modes {
   super::camera_file_check!("Nikon", "D600", cam_nikon_d600_iso_400_14bits_lossless_nef, "raw_modes/NIKON D600_ISO_400_14bits_Lossless.NEF");
