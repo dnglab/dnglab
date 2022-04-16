@@ -5,6 +5,7 @@ use clap::ArgMatches;
 use embedftp::config::{Config, FtpCallback};
 use embedftp::server::serve;
 use rawler::RawFile;
+use rawler::decoders::supported_extensions;
 use std::fs::File;
 use std::io::{BufWriter, Cursor};
 use std::path::PathBuf;
@@ -17,7 +18,6 @@ use crate::{
   AppError, PKG_NAME, PKG_VERSION,
 };
 
-const SUPPORTED_FILE_EXT: [&str; 4] = ["CR3", "CR2", "CRM", "PEF"]; // TODO: fixme more extensions
 
 #[derive(Clone)]
 struct FtpState {
@@ -91,5 +91,5 @@ pub async fn ftpconvert(options: &ArgMatches<'_>) -> anyhow::Result<()> {
 /// Check if file extension is a supported extension
 fn is_ext_supported<T: AsRef<str>>(ext: T) -> bool {
   let uc = ext.as_ref().to_uppercase();
-  SUPPORTED_FILE_EXT.iter().any(|ext| ext.eq(&uc))
+  supported_extensions().iter().any(|ext| ext.eq(&uc))
 }

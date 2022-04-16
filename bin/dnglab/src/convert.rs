@@ -3,6 +3,7 @@
 
 use clap::ArgMatches;
 use futures::future::join_all;
+use rawler::decoders::supported_extensions;
 use std::fs::create_dir_all;
 use std::path::PathBuf;
 use std::time::Instant;
@@ -16,7 +17,6 @@ use crate::{
   AppError, Result, PKG_NAME, PKG_VERSION,
 };
 
-const SUPPORTED_FILE_EXT: [&str; 4] = ["CR3", "CR2", "CRM", "PEF"];
 
 /// Entry point for Clap sub command `convert`
 pub async fn convert(options: &ArgMatches<'_>) -> anyhow::Result<()> {
@@ -163,5 +163,5 @@ fn generate_job(entry: &FileMap, options: &ArgMatches<'_>) -> Result<Vec<Raw2Dng
 /// Check if file extension is a supported extension
 fn is_ext_supported<T: AsRef<str>>(ext: T) -> bool {
   let uc = ext.as_ref().to_uppercase();
-  SUPPORTED_FILE_EXT.iter().any(|ext| ext.eq(&uc))
+  supported_extensions().iter().any(|ext| ext.eq(&uc))
 }
