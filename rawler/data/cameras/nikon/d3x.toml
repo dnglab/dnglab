@@ -4,12 +4,13 @@ clean_make = "Nikon"
 clean_model = "D3X"
 color_pattern = "RGGB"
 active_area = [0, 0, 0, 0]
+crop_area = [15, 6, 17, 6]
 
 [cameras.color_matrix]
+A = [0.8213, -0.3151, 0.0011, -0.6594, 1.3688, 0.3236, -0.1101, 0.1577, 0.7803]
 D65 = [0.7171, -0.1986, -0.0648, -0.8085, 1.5555, 0.2718, -0.217, 0.2512, 0.7457]
 
 [[cameras.modes]]
 mode = "14bit"
 blackpoint = 0
 whitepoint = 15892
-

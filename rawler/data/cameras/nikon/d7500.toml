@@ -4,8 +4,10 @@ clean_make = "NIKON CORPORATION"
 clean_model = "NIKON D7500"
 color_pattern = "RGGB"
 active_area = [0, 0, 0, 0]
+crop_area = [16, 8, 16, 8]
 
 [cameras.color_matrix]
+A = [0.9376, -0.4139, -0.0394, -0.4687, 1.2495, 0.2454, -0.0699, 0.1378, 0.7486]
 D65 = [0.8813, -0.321, -0.1036, -0.4703, 1.2868, 0.2021, -0.1054, 0.194, 0.6129]
 
 [[cameras.modes]]
@@ -17,4 +19,3 @@ whitepoint = 3880
 mode = "14bit"
 blackpoint = 400
 whitepoint = 15520
-

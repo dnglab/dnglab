@@ -14,6 +14,7 @@ use crate::bits::clampbits;
 use crate::bits::BEu16;
 use crate::bits::BEu32;
 use crate::bits::Endian;
+use crate::bits::LEu32;
 use crate::bits::LookupTable;
 use crate::decoders::decode_threaded;
 use crate::decompressors::ljpeg::huffman::HuffTable;
@@ -21,12 +22,12 @@ use crate::exif::Exif;
 use crate::formats::tiff::ifd::OffsetMode;
 use crate::formats::tiff::reader::TiffReader;
 use crate::formats::tiff::GenericTiffReader;
+use crate::formats::tiff::Value;
 use crate::formats::tiff::IFD;
-use crate::packed::decode_12be;
-use crate::packed::decode_12be_wcontrol;
-use crate::packed::decode_12le;
-use crate::packed::decode_14be_unpacked;
-use crate::packed::decode_14le_unpacked;
+use crate::imgop::Dim2;
+use crate::imgop::Point;
+use crate::imgop::Rect;
+use crate::packed::*;
 use crate::pixarray::PixU16;
 use crate::pumps::BitPump;
 use crate::pumps::BitPumpMSB;
@@ -165,29 +166,72 @@ impl<'a> Decoder for NefDecoder<'a> {
     let height = fetch_tiff_tag!(raw, TiffCommonTag::ImageLength).force_usize(0);
     let bps = fetch_tiff_tag!(raw, TiffCommonTag::BitsPerSample).force_usize(0);
     let compression = fetch_tiff_tag!(raw, TiffCommonTag::Compression).force_usize(0);
+    let nef_compression = self
+      .makernote
+      .get_entry(NikonMakernote::NefCompression)
+      .map(|entry| entry.force_u16(0))
+      .and_then(|value| NefCompression::try_from(value).ok());
+    debug!("TIFF compression flag: {}, NEF compression mode: {:?}", compression, nef_compression);
 
     let offset = fetch_tiff_tag!(raw, TiffCommonTag::StripOffsets).force_usize(0);
     let size = fetch_tiff_tag!(raw, TiffCommonTag::StripByteCounts).force_usize(0);
-    let src: OptBuffer = file.subview_until_eof(offset as u64).unwrap().into(); // TODO add size and check all samples
+    let rows_per_strip = fetch_tiff_tag!(raw, TiffCommonTag::RowsPerStrip).get_usize(0).ok().flatten().unwrap_or(height);
+
+    // That's little bit hacky here. Some files like D500 using multiple strips.
+    // Because the strips has no holes between and are perfectly aligned, we can process the whole
+    // chunk at once, instead of iterating over every strip.
+    // It would be saver to process each strip offset, but it is not need for any known model so far.
+    let src: OptBuffer = if rows_per_strip == height {
+      file.subview(offset as u64, size as u64)?.into()
+    } else {
+      let full_size: u32 = match fetch_tiff_tag!(raw, TiffCommonTag::StripByteCounts) {
+        Value::Long(data) => data.iter().copied().sum(),
+        _ => {
+          return Err(RawlerError::General("Foo".to_string()));
+        }
+      };
+      file.subview(offset as u64, full_size as u64)?.into()
+    };
+
     let mut cpp = 1;
     let coeffs = self.get_wb()?;
     debug!("WB coeff: {:?}", coeffs);
 
+    assert_eq!(self.tiff.little_endian(), self.makernote.endian == Endian::Little);
+
     let image = if self.camera.model == "NIKON D100" {
       width = 3040;
       decode_12be_wcontrol(&src, width, height, dummy)
-    } else if compression == 1 || size == width * height * bps / 8 {
+    } else if self.camera.find_hint("coolpixsplit") {
+      decode_12be_interlaced_unaligned(&src, width, height, dummy)
+    } else if self.camera.find_hint("msb32") {
+      decode_12be_msb32(&src, width, height, dummy)
+    } else if self.camera.find_hint("unpacked") {
+      // P7800 and others is LE, but data is BE, so we use hints here
+      if (self.tiff.little_endian() || self.camera.find_hint("little_endian")) && !self.camera.find_hint("big_endian") {
+        decode_16le(&src, width, height, dummy)
+      } else {
+        decode_16be(&src, width, height, dummy)
+      }
+    } else if let Some(padding) = self.is_uncompressed(raw)? {
+      debug!("NEF uncompressed row padding: {}", padding);
       match bps {
         14 => {
-          if self.tiff.little_endian() {
-            decode_14le_unpacked(&src, width, height, dummy)
+          if (self.tiff.little_endian() || self.camera.find_hint("little_endian")) && !self.camera.find_hint("big_endian") {
+            // Models like D6 uses packed instead of unpacked 14le encoding. And D6 uses
+            // row padding.
+            if matches!(nef_compression, Some(NefCompression::Packed14Bits)) {
+              decode_14le_padded(&src, width, height, (width * bps / u8::BITS as usize) + padding, dummy)
+            } else {
+              decode_14le_unpacked(&src, width, height, dummy)
+            }
           } else {
             decode_14be_unpacked(&src, width, height, dummy)
           }
         }
         12 => {
-          if self.tiff.little_endian() {
-            decode_12le(&src, width, height, dummy)
+          if (self.tiff.little_endian() || self.camera.find_hint("little_endian")) && !self.camera.find_hint("big_endian") {
+            decode_12le_padded(&src, width, height, (width * bps / u8::BITS as usize) + padding, dummy)
           } else {
             decode_12be(&src, width, height, dummy)
           }
@@ -204,10 +248,22 @@ impl<'a> Decoder for NefDecoder<'a> {
     };
 
     let mut img = RawImage::new(self.camera.clone(), width, height, cpp, coeffs, image.into_inner(), false);
+
+    if let Some(crop) = self.get_crop()? {
+      debug!("RAW Crops: {:?}", crop);
+      img.crop_area = Some(crop);
+    }
+
+    if let Some(blacklevels) = self.get_blacklevel()? {
+      debug!("RAW Blacklevels: {:?}", blacklevels);
+      img.blacklevels = blacklevels;
+    }
+
     if cpp == 3 {
       img.blacklevels = [0, 0, 0, 0];
       img.whitelevels = [65535, 65535, 65535, 65535];
     }
+
     Ok(img)
   }
 
@@ -241,9 +297,45 @@ impl<'a> Decoder for NefDecoder<'a> {
 }
 
 impl<'a> NefDecoder<'a> {
+  fn get_blacklevel(&self) -> Result<Option<[u16; 4]>> {
+    if let Some(levels) = self.makernote.get_entry(NikonMakernote::BlackLevel) {
+      Ok(Some([levels.force_u16(0), levels.force_u16(1), levels.force_u16(2), levels.force_u16(3)]))
+    } else {
+      Ok(None)
+    }
+  }
+
+  fn get_crop(&self) -> Result<Option<Rect>> {
+    if let Some(crop) = self.makernote.get_entry(NikonMakernote::CropArea) {
+      let values = [crop.force_u16(0), crop.force_u16(1), crop.force_u16(2), crop.force_u16(3)];
+      let rect = Rect::new(
+        Point::new(values[0] as usize, values[1] as usize),
+        Dim2::new(values[2] as usize, values[3] as usize),
+      );
+      Ok(Some(rect))
+    } else {
+      Ok(None)
+    }
+  }
+
   fn get_wb(&self) -> Result<[f32; 4]> {
-    if let Some(levels) = self.makernote.get_entry(TiffCommonTag::NefWB0) {
+    if self.camera.find_hint("nowb") {
+      Ok([NAN, NAN, NAN, NAN])
+    } else if let Some(levels) = self.makernote.get_entry(TiffCommonTag::NefWB0) {
       Ok([levels.force_f32(0), 1.0, levels.force_f32(1), NAN])
+    } else if let Some(levels) = self.makernote.get_entry(TiffCommonTag::NrwWB) {
+      let data = levels.get_data();
+      if data[0..3] == b"NRW"[..] {
+        let offset = if data[4..8] == b"0100"[..] { 1556 } else { 56 };
+        Ok([
+          (LEu32(data, offset) << 2) as f32,
+          (LEu32(data, offset + 4) + LEu32(data, offset + 8)) as f32,
+          (LEu32(data, offset + 12) << 2) as f32,
+          NAN,
+        ])
+      } else {
+        Ok([BEu16(data, 1248) as f32, 256.0, BEu16(data, 1250) as f32, NAN])
+      }
     } else if let Some(levels) = self.makernote.get_entry(TiffCommonTag::NefWB1) {
       let mut version: u32 = 0;
       for i in 0..4 {
@@ -326,6 +418,44 @@ impl<'a> NefDecoder<'a> {
     Ok(htable)
   }
 
+  /// The compression flags in some raws are not reliable because of firmware bugs.
+  /// We try to figure out the compression by some heuristics.
+  /// The return value is None if the file is not uncompressed or Some(x)
+  /// where x is the extra amount of bytes after each row.
+  fn is_uncompressed(&self, raw: &IFD) -> Result<Option<usize>> {
+    let width = fetch_tiff_tag!(raw, TiffCommonTag::ImageWidth).force_usize(0);
+    let height = fetch_tiff_tag!(raw, TiffCommonTag::ImageLength).force_usize(0);
+    let bps = fetch_tiff_tag!(raw, TiffCommonTag::BitsPerSample).force_usize(0);
+    let compression = fetch_tiff_tag!(raw, TiffCommonTag::Compression).force_usize(0);
+    let size = fetch_tiff_tag!(raw, TiffCommonTag::StripByteCounts).force_usize(0);
+
+    fn div_round_up(a: usize, b: usize) -> usize {
+      (a + b - 1) / b
+    }
+
+    let req_pixels = width * height;
+    let req_input_bits = bps * req_pixels;
+    let req_input_bytes = div_round_up(req_input_bits, 8);
+
+    Ok(if compression == 1 || size == width * height * bps / 8 {
+      Some(0)
+    } else if size >= req_input_bytes {
+      // Some models (D6) using row padding, so the row width is slightly larger.
+      // This should be no more than 16 extra bytes.
+      let total_padding = size - req_input_bytes;
+      let per_row_padding = total_padding / height;
+      if total_padding % height != 0 {
+        None
+      } else if per_row_padding < 16 {
+        Some(per_row_padding)
+      } else {
+        None
+      }
+    } else {
+      None
+    })
+  }
+
   fn decode_compressed(&self, src: &OptBuffer, width: usize, height: usize, bps: usize, dummy: bool) -> Result<PixU16> {
     //let metaifd = self.tiff.find_first_ifd_with_tag(LegacyTiffRootTag::NefMeta1).unwrap();
     let meta = if let Some(meta) = self.makernote.get_entry(TiffCommonTag::NefMeta2) {
@@ -348,6 +478,7 @@ impl<'a> NefDecoder<'a> {
 
     let mut huff_select = 0;
     if v0 == 73 || v1 == 88 {
+      assert!(stream.remaining_bytes() >= 2110);
       stream.consume_bytes(2110);
     }
     if v0 == 70 {
@@ -488,5 +619,60 @@ impl<'a> NefDecoder<'a> {
         }
       }),
     )
+  }
+}
+
+crate::tags::tiff_tag_enum!(NikonMakernote);
+
+#[allow(non_camel_case_types)]
+#[derive(Debug, Copy, Clone, PartialEq, enumn::N)]
+#[repr(u16)]
+pub enum NikonMakernote {
+  MakernoteVersion = 0x0001,
+  PreviewIFD = 0x0011,
+  ImageSizeRaw = 0x003e,
+  CropArea = 0x0045,
+  BlackLevel = 0x003d,
+  ShotInfo = 0x0091,
+  NefCompression = 0x0093,
+}
+
+/// Known NEF compression formats
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+#[allow(non_camel_case_types)]
+enum NefCompression {
+  LossyType1 = 1,
+  Uncompressed = 2,
+  Lossless = 3,
+  LossyType2 = 4,
+  StripedPacked12Bits = 5,
+  UncompressedReduced12Bits = 6,
+  Unpacked12Bits = 7,
+  Small = 8,
+  Packed12Bits = 9,
+  Packed14Bits = 10,
+  HighEfficency = 13,
+  HighEfficencyStar = 14,
+}
+
+impl TryFrom<u16> for NefCompression {
+  type Error = String;
+
+  fn try_from(v: u16) -> std::result::Result<Self, Self::Error> {
+    Ok(match v {
+      1 => Self::LossyType1,
+      2 => Self::Uncompressed,
+      3 => Self::Lossless,
+      4 => Self::LossyType2,
+      5 => Self::StripedPacked12Bits,
+      6 => Self::UncompressedReduced12Bits,
+      7 => Self::Unpacked12Bits,
+      8 => Self::Small,
+      9 => Self::Packed12Bits,
+      10 => Self::Packed14Bits,
+      13 => Self::HighEfficency,
+      14 => Self::HighEfficencyStar,
+      _ => return Err(format!("unknown nef compression: {}", v)),
+    })
   }
 }

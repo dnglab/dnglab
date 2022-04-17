@@ -4,12 +4,13 @@ clean_make = "Nikon"
 clean_model = "D3500"
 color_pattern = "RGGB"
 active_area = [0, 0, 0, 0]
+crop_area = [8, 8, 8, 8]
 
 [cameras.color_matrix]
+A = [0.9659, -0.3972, -0.0266, -0.4733, 1.2653, 0.2316, -0.0649, 0.1302, 0.8287]
 D65 = [0.8821, -0.2938, -0.0785, -0.4178, 1.2142, 0.2287, -0.0824, 0.1651, 0.686]
 
 [[cameras.modes]]
 mode = "12bit"
-blackpoint = 600
+blackpoint = 150
 whitepoint = 3972
-

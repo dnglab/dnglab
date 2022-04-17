@@ -4,12 +4,13 @@ clean_make = "Nikon"
 clean_model = "D5200"
 color_pattern = "RGGB"
 active_area = [0, 0, 0, 0]
+crop_area = [18, 10, 18, 10]
 
 [cameras.color_matrix]
+A = [0.8693, -0.3745, -0.0467, -0.5349, 1.2601, 0.3098, -0.0367, 0.0752, 0.7041]
 D65 = [0.8322, -0.3112, -0.1047, -0.6367, 1.4342, 0.2179, -0.0988, 0.1638, 0.6394]
 
 [[cameras.modes]]
 mode = "14bit"
 blackpoint = 0
 whitepoint = 15892
-

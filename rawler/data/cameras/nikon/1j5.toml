@@ -4,12 +4,13 @@ clean_make = "Nikon"
 clean_model = "1 J5"
 color_pattern = "RGGB"
 active_area = [0, 0, 0, 0]
+crop_area = [8, 7, 8, 7]
 
 [cameras.color_matrix]
+A = [0.8097, -0.3404, -0.0074, -0.3897, 1.1673, 0.2527, -0.0634, 0.1625, 0.7974]
 D65 = [0.752, -0.2518, -0.0645, -0.3844, 1.2102, 0.1945, -0.0913, 0.2249, 0.6835]
 
 [[cameras.modes]]
 mode = "12bit"
 blackpoint = 200
 whitepoint = 3800
-

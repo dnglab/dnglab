@@ -4,12 +4,13 @@ clean_make = "Nikon"
 clean_model = "1 S2"
 color_pattern = "RGGB"
 active_area = [0, 0, 0, 0]
+crop_area = [8, 4, 8, 4]
 
 [cameras.color_matrix]
+A = [0.6773, -0.1848, -0.0176, -0.3602, 1.0862, 0.3165, -0.0153, 0.1459, 0.6044]
 D65 = [0.6612, -0.1342, -0.0618, -0.3338, 1.1055, 0.2623, -0.0174, 0.1792, 0.5075]
 
 [[cameras.modes]]
 mode = "12bit"
 blackpoint = 200
 whitepoint = 4095
-

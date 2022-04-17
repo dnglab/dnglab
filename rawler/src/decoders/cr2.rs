@@ -33,7 +33,6 @@ use crate::lens::LensDescription;
 use crate::lens::LensResolver;
 use crate::tags::ExifTag;
 use crate::tags::TiffCommonTag;
-use crate::tags::TiffTag;
 use crate::RawFile;
 use crate::RawImage;
 use crate::RawLoader;

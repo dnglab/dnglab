@@ -1,0 +1,17 @@
+make = "NIKON"
+model = "E8800"
+clean_make = "Nikon"
+clean_model = "Coolpix E8800"
+color_pattern = "BGGR"
+active_area = [0, 0, 0, 0]
+crop_area = [5, 1, 11, 5]
+hints = ["coolpixsplit"]
+
+[cameras.color_matrix]
+A = [0.9106, -0.3664, -0.0105, -0.6701, 1.3632, 0.343, -0.0681, 0.0905, 0.7683]
+D65 = [0.797, -0.2314, -0.0913, -0.8452, 1.5762, 0.2894, -0.1442, 0.1521, 0.761]
+
+[[cameras.modes]]
+mode = "12bit"
+blackpoint = 0
+whitepoint = 4095

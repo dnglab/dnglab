@@ -3,13 +3,14 @@ model = "NIKON D2X"
 clean_make = "Nikon"
 clean_model = "D2X"
 color_pattern = "RGGB"
-active_area = [0, 0, 32, 8]
+active_area = [0, 0, 0, 0]
+crop_area = [16, 10, 8, 10]
 
 [cameras.color_matrix]
-D65 = [1.0231, -0.2769, -0.1255, -0.8301, 1.59, 0.2552, -0.0797, 0.068, 0.7148]
+A = [1.0996, -0.3606, -0.0715, -0.7096, 1.441, 0.2947, -0.046, 0.0487, 0.7018]
+D65 = [1.0231, -0.2768, -0.1254, -0.8302, 1.59, 0.2551, -0.0797, 0.0681, 0.7148]
 
 [[cameras.modes]]
 mode = "12bit"
 blackpoint = 0
 whitepoint = 3880
-

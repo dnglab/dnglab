@@ -17,7 +17,6 @@ use crate::{
   AppError, Result, PKG_NAME, PKG_VERSION,
 };
 
-
 /// Entry point for Clap sub command `convert`
 pub async fn convert(options: &ArgMatches<'_>) -> anyhow::Result<()> {
   let now = Instant::now();

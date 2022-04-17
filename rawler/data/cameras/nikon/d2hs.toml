@@ -2,14 +2,15 @@ make = "NIKON CORPORATION"
 model = "NIKON D2Hs"
 clean_make = "Nikon"
 clean_model = "D2Hs"
-color_pattern = "RGGB"
-active_area = [0, 0, 32, 8]
+color_pattern = "GBRG"
+active_area = [0, 0, 0, 0]
+crop_area = [10, 9, 8, 7]
 
 [cameras.color_matrix]
+A = [0.6562, -0.1792, -0.0314, -0.6967, 1.4736, 0.2402, -0.1709, 0.2719, 0.7642]
 D65 = [0.5733, -0.0911, -0.0629, -0.7967, 1.5987, 0.2055, -0.305, 0.4013, 0.7048]
 
 [[cameras.modes]]
 mode = "12bit"
 blackpoint = 0
 whitepoint = 3880
-

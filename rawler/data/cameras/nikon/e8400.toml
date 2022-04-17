@@ -3,10 +3,15 @@ model = "E8400"
 clean_make = "Nikon"
 clean_model = "E8400"
 color_pattern = "BGGR"
-active_area = [0, 0, 0, 0]
-blackpoint = 0
-whitepoint = 4095
 hints = ["coolpixsplit"]
+active_area = [0, 0, 0, 0]
+crop_area = [5, 1, 11, 5]
 
 [cameras.color_matrix]
-D65 = [0.7842, -0.232, -0.0992, -0.8154, 1.5718, 0.2599, -0.1098, 0.1342, 0.756]
+A = [0.8578, -0.3296, -0.0237, -0.6914, 1.3965, 0.3274, -0.0621, 0.0808, 0.7863]
+D65 = [0.7842, -0.2319, -0.0992, -0.8154, 1.5719, 0.2599, -0.1098, 0.1342, 0.756]
+
+[[cameras.modes]]
+mode = "12bit"
+blackpoint = 0
+whitepoint = 4095

@@ -1,0 +1,16 @@
+make = "NIKON CORPORATION"
+model = "COOLPIX A1000"
+clean_make = "Nikon"
+clean_model = "Coolpix A1000"
+color_pattern = "RGGB"
+active_area = [0, 0, 0, 0]
+hints = ["unpacked", "little_endian"]
+
+[cameras.color_matrix]
+A = [1.208, -0.5684, 0.0231, -0.1505, 0.9256, 0.2661, 0.0163, 0.0792, 0.6183]
+D65 = [1.0601, -0.3487, -0.1127, -0.2931, 1.1443, 0.1676, -0.0587, 0.174, 0.5278]
+
+[[cameras.modes]]
+mode = "12bit"
+blackpoint = 0
+whitepoint = 4095

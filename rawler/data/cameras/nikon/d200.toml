@@ -3,13 +3,14 @@ model = "NIKON D200"
 clean_make = "Nikon"
 clean_model = "D200"
 color_pattern = "GRBG"
-active_area = [2, 0, 0, 0]
+active_area = [0, 0, 0, 0]
+crop_area = [15, 12, 13, 12]
 
 [cameras.color_matrix]
-D65 = [0.8367, -0.2248, -0.0763, -0.8758, 1.6447, 0.2422, -0.1527, 0.155, 0.8053]
+A = [0.9483, -0.3452, -0.0142, -0.7374, 1.4683, 0.2942, -0.0723, 0.0859, 0.8369]
+D65 = [0.8367, -0.2248, -0.0763, -0.8758, 1.6447, 0.2422, -0.1528, 0.1551, 0.8053]
 
 [[cameras.modes]]
 mode = "12bit"
 blackpoint = 0
 whitepoint = 3880
-

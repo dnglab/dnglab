@@ -2,11 +2,16 @@ make = "NIKON"
 model = "E5400"
 clean_make = "Nikon"
 clean_model = "E5400"
-blackpoint = 0
-whitepoint = 4095
 color_pattern = "BGGR"
-active_area = [0, 0, 0, 0]
 hints = ["coolpixsplit"]
+active_area = [0, 0, 0, 0]
+crop_area = [8, 2, 8, 4]
 
 [cameras.color_matrix]
-D65 = [0.9349, -0.2987, -0.1001, -0.7919, 1.5766, 0.2266, -0.2098, 0.268, 0.6839]
+A = [1.0761, -0.4766, 0.0061, -0.5795, 1.3064, 0.3059, -0.1058, 0.1707, 0.7019]
+D65 = [0.9349, -0.2988, -0.1001, -0.7918, 1.5766, 0.2266, -0.2097, 0.268, 0.6839]
+
+[[cameras.modes]]
+mode = "12bit"
+blackpoint = 0
+whitepoint = 4095

@@ -256,92 +256,38 @@ mod camera_p20_raw_modes {
   super::camera_file_check!("Phase One", "P20", cam_p20_plus_iiq_s_iso_50_iiq, "raw_modes/P20 Plus_IIQ S_ISO_50.IIQ");
   super::camera_file_check!("Phase One", "P20", cam_p20_plus_iiq_l_iso_50_iiq, "raw_modes/P20 Plus_IIQ L_ISO_50.IIQ");
 }
-mod camera_d100_raw_modes {
-  super::camera_file_check!("Nikon", "D100", cam_nikon_d100_iso_400_12bits_uncompressed_nef, "raw_modes/NIKON D100_ISO_400_12bits_Uncompressed.NEF");
+mod camera_d3500_raw_modes {
+  super::camera_file_check!("Nikon", "D3500", cam_nikon_d3500_iso_100_12bits_lossy__type_2__nef, "raw_modes/NIKON D3500_ISO_100_12bits_Lossy (type 2).NEF");
 }
-mod camera_d1_raw_modes {
-  super::camera_file_check!("Nikon", "D1", cam_nikon_d1_iso_200_12bits_uncompressed_nef, "raw_modes/NIKON D1_ISO_200_12bits_Uncompressed.NEF");
+mod camera_1_v2_raw_modes {
+  super::camera_file_check!("Nikon", "1 V2", cam_nikon_1_v2_iso_200_12bits_lossy__type_2__nef, "raw_modes/NIKON 1 V2_ISO_200_12bits_Lossy (type 2).NEF");
 }
-mod camera_d1x_raw_modes {
-  super::camera_file_check!("Nikon", "D1X", cam_nikon_d1x_iso_200_12bits_uncompressed_nef, "raw_modes/NIKON D1X_ISO_200_12bits_Uncompressed.NEF");
-  super::camera_file_check!("Nikon", "D1X", cam_nikon_d1x_iso_125_12bits_lossy__type_1__nef, "raw_modes/NIKON D1X_ISO_125_12bits_Lossy (type 1).NEF");
+mod camera_d40x_raw_modes {
+  super::camera_file_check!("Nikon", "D40X", cam_nikon_d40x_iso_250_12bits_lossy__type_1__nef, "raw_modes/NIKON D40X_ISO_250_12bits_Lossy (type 1).NEF");
 }
-mod camera_d200_raw_modes {
-  super::camera_file_check!("Nikon", "D200", cam_nikon_d200_iso_200_12bits_uncompressed_nef, "raw_modes/NIKON D200_ISO_200_12bits_Uncompressed.NEF");
+mod camera_d5600_raw_modes {
+  super::camera_file_check!("Nikon", "D5600", cam_nikon_d5600_iso_12800_12bits_lossy__type_2__nef, "raw_modes/NIKON D5600_ISO_12800_12bits_Lossy (type 2).NEF");
+  super::camera_file_check!("Nikon", "D5600", cam_nikon_d5600_iso_200_14bits_lossy__type_2__nef, "raw_modes/NIKON D5600_ISO_200_14bits_Lossy (type 2).NEF");
+  super::camera_file_check!("Nikon", "D5600", cam_nikon_d5600_iso_12800_14bits_lossy__type_2__nef, "raw_modes/NIKON D5600_ISO_12800_14bits_Lossy (type 2).NEF");
+  super::camera_file_check!("Nikon", "D5600", cam_nikon_d5600_iso_200_12bits_lossy__type_2__nef, "raw_modes/NIKON D5600_ISO_200_12bits_Lossy (type 2).NEF");
 }
-mod camera_d2h_raw_modes {
-  super::camera_file_check!("Nikon", "D2H", cam_nikon_d2h_iso_200_12bits_lossy__type_1__nef, "raw_modes/NIKON D2H_ISO_200_12bits_Lossy (type 1).NEF");
+mod camera_d70s_raw_modes {
+  super::camera_file_check!("Nikon", "D70s", cam_nikon_d70s_iso_200_12bits_lossy__type_1__nef, "raw_modes/NIKON D70s_ISO_200_12bits_Lossy (type 1).NEF");
 }
-mod camera_d2hs_raw_modes {
-  super::camera_file_check!("Nikon", "D2Hs", cam_nikon_d2hs_iso_200_12bits_uncompressed_nef, "raw_modes/NIKON D2Hs_ISO_200_12bits_Uncompressed.NEF");
+mod camera_coolpix_p7100_raw_modes {
+  super::camera_file_check!("Nikon", "Coolpix P7100", cam_coolpix_p7100_iso_100_12bits_uncompressed_nrw, "raw_modes/COOLPIX P7100_ISO_100_12bits_Uncompressed.NRW");
+}
+mod camera_d600_raw_modes {
+  super::camera_file_check!("Nikon", "D600", cam_nikon_d600_iso_400_14bits_lossless_nef, "raw_modes/NIKON D600_ISO_400_14bits_Lossless.NEF");
+  super::camera_file_check!("Nikon", "D600", cam_nikon_d600_iso_400_12bits_lossy__type_2__nef, "raw_modes/NIKON D600_ISO_400_12bits_Lossy (type 2).NEF");
+  super::camera_file_check!("Nikon", "D600", cam_nikon_d600_iso_400_12bits_lossless_nef, "raw_modes/NIKON D600_ISO_400_12bits_Lossless.NEF");
+  super::camera_file_check!("Nikon", "D600", cam_nikon_d600_iso_400_14bits_lossy__type_2__nef, "raw_modes/NIKON D600_ISO_400_14bits_Lossy (type 2).NEF");
 }
 mod camera_d2x_raw_modes {
   super::camera_file_check!("Nikon", "D2X", cam_nikon_d2x_iso_100_12bits_uncompressed_nef, "raw_modes/NIKON D2X_ISO_100_12bits_Uncompressed.NEF");
 }
-mod camera_d2xs_raw_modes {
-  super::camera_file_check!("Nikon", "D2Xs", cam_nikon_d2xs_iso_100_12bits_uncompressed_nef, "raw_modes/NIKON D2Xs_ISO_100_12bits_Uncompressed.NEF");
-  super::camera_file_check!("Nikon", "D2Xs", cam_nikon_d2xs_iso_100_12bits_lossy__type_1__nef, "raw_modes/NIKON D2Xs_ISO_100_12bits_Lossy (type 1).NEF");
-}
-mod camera_d3000_raw_modes {
-  super::camera_file_check!("Nikon", "D3000", cam_nikon_d3000_iso_100_12bits_lossy__type_1__nef, "raw_modes/NIKON D3000_ISO_100_12bits_Lossy (type 1).NEF");
-}
-mod camera_d300_raw_modes {
-  super::camera_file_check!("Nikon", "D300", cam_nikon_d300_iso_200_12bits_lossy__type_2__nef, "raw_modes/NIKON D300_ISO_200_12bits_Lossy (type 2).NEF");
-  super::camera_file_check!("Nikon", "D300", cam_nikon_d300_iso_200_12bits_uncompressed_nef, "raw_modes/NIKON D300_ISO_200_12bits_Uncompressed.NEF");
-  super::camera_file_check!("Nikon", "D300", cam_nikon_d300_iso_200_12bits_lossless_nef, "raw_modes/NIKON D300_ISO_200_12bits_Lossless.NEF");
-  super::camera_file_check!("Nikon", "D300", cam_nikon_d300_iso_200_14bits_uncompressed_nef, "raw_modes/NIKON D300_ISO_200_14bits_Uncompressed.NEF");
-  super::camera_file_check!("Nikon", "D300", cam_nikon_d300_iso_200_14bits_lossy__type_2__nef, "raw_modes/NIKON D300_ISO_200_14bits_Lossy (type 2).NEF");
-  super::camera_file_check!("Nikon", "D300", cam_nikon_d300_iso_200_14bits_lossless_nef, "raw_modes/NIKON D300_ISO_200_14bits_Lossless.NEF");
-}
-mod camera_d300s_raw_modes {
-  super::camera_file_check!("Nikon", "D300S", cam_nikon_d300s_iso_100_14bits_uncompressed_nef, "raw_modes/NIKON D300S_ISO_100_14bits_Uncompressed.NEF");
-  super::camera_file_check!("Nikon", "D300S", cam_nikon_d300s_iso_100_12bits_lossless_nef, "raw_modes/NIKON D300S_ISO_100_12bits_Lossless.NEF");
-  super::camera_file_check!("Nikon", "D300S", cam_nikon_d300s_iso_100_12bits_uncompressed_nef, "raw_modes/NIKON D300S_ISO_100_12bits_Uncompressed.NEF");
-  super::camera_file_check!("Nikon", "D300S", cam_nikon_d300s_iso_100_14bits_lossy__type_2__nef, "raw_modes/NIKON D300S_ISO_100_14bits_Lossy (type 2).NEF");
-  super::camera_file_check!("Nikon", "D300S", cam_nikon_d300s_iso_100_14bits_lossless_nef, "raw_modes/NIKON D300S_ISO_100_14bits_Lossless.NEF");
-  super::camera_file_check!("Nikon", "D300S", cam_nikon_d300s_iso_100_12bits_lossy__type_2__nef, "raw_modes/NIKON D300S_ISO_100_12bits_Lossy (type 2).NEF");
-}
-mod camera_d3100_raw_modes {
-  super::camera_file_check!("Nikon", "D3100", cam_nikon_d3100_iso_220_12bits_lossy__type_2__nef, "raw_modes/NIKON D3100_ISO_220_12bits_Lossy (type 2).NEF");
-}
-mod camera_d3200_raw_modes {
-  super::camera_file_check!("Nikon", "D3200", cam_nikon_d3200_iso_800_12bits_lossy__type_2__nef, "raw_modes/NIKON D3200_ISO_800_12bits_Lossy (type 2).NEF");
-}
-mod camera_d3300_raw_modes {
-  super::camera_file_check!("Nikon", "D3300", cam_nikon_d3300_iso_400_12bits_lossy__type_2__nef, "raw_modes/NIKON D3300_ISO_400_12bits_Lossy (type 2).NEF");
-}
-mod camera_d3400_raw_modes {
-  super::camera_file_check!("Nikon", "D3400", cam_nikon_d3400_iso_3200_12bits_lossy__type_2__nef, "raw_modes/NIKON D3400_ISO_3200_12bits_Lossy (type 2).NEF");
-  super::camera_file_check!("Nikon", "D3400", cam_nikon_d3400_iso_400_12bits_lossy__type_2__nef, "raw_modes/NIKON D3400_ISO_400_12bits_Lossy (type 2).NEF");
-}
-mod camera_d3500_raw_modes {
-  super::camera_file_check!("Nikon", "D3500", cam_nikon_d3500_iso_100_12bits_lossy__type_2__nef, "raw_modes/NIKON D3500_ISO_100_12bits_Lossy (type 2).NEF");
-}
-mod camera_d3_raw_modes {
-  super::camera_file_check!("Nikon", "D3", cam_nikon_d3_iso_200_14bits_lossless_nef, "raw_modes/NIKON D3_ISO_200_14bits_Lossless.NEF");
-  super::camera_file_check!("Nikon", "D3", cam_nikon_d3_iso_200_12bits_lossy__type_2__nef, "raw_modes/NIKON D3_ISO_200_12bits_Lossy (type 2).NEF");
-  super::camera_file_check!("Nikon", "D3", cam_nikon_d3_iso_200_12bits_lossless_nef, "raw_modes/NIKON D3_ISO_200_12bits_Lossless.NEF");
-  super::camera_file_check!("Nikon", "D3", cam_nikon_d3_iso_200_14bits_uncompressed_nef, "raw_modes/NIKON D3_ISO_200_14bits_Uncompressed.NEF");
-  super::camera_file_check!("Nikon", "D3", cam_nikon_d3_iso_200_14bits_lossy__type_2__nef, "raw_modes/NIKON D3_ISO_200_14bits_Lossy (type 2).NEF");
-  super::camera_file_check!("Nikon", "D3", cam_nikon_d3_iso_200_12bits_uncompressed_nef, "raw_modes/NIKON D3_ISO_200_12bits_Uncompressed.NEF");
-}
-mod camera_d3s_raw_modes {
-  super::camera_file_check!("Nikon", "D3S", cam_nikon_d3s_iso_200_12bits_lossless_nef, "raw_modes/NIKON D3S_ISO_200_12bits_Lossless.NEF");
-  super::camera_file_check!("Nikon", "D3S", cam_nikon_d3s_iso_200_12bits_uncompressed_nef, "raw_modes/NIKON D3S_ISO_200_12bits_Uncompressed.NEF");
-  super::camera_file_check!("Nikon", "D3S", cam_nikon_d3s_iso_200_14bits_uncompressed_nef, "raw_modes/NIKON D3S_ISO_200_14bits_Uncompressed.NEF");
-  super::camera_file_check!("Nikon", "D3S", cam_nikon_d3s_iso_200_14bits_lossless_nef, "raw_modes/NIKON D3S_ISO_200_14bits_Lossless.NEF");
-  super::camera_file_check!("Nikon", "D3S", cam_nikon_d3s_iso_200_12bits_lossy__type_2__nef, "raw_modes/NIKON D3S_ISO_200_12bits_Lossy (type 2).NEF");
-  super::camera_file_check!("Nikon", "D3S", cam_nikon_d3s_iso_200_14bits_lossy__type_2__nef, "raw_modes/NIKON D3S_ISO_200_14bits_Lossy (type 2).NEF");
-}
-mod camera_d3x_raw_modes {
-  super::camera_file_check!("Nikon", "D3X", cam_nikon_d3x_iso_125_14bits_uncompressed_nef, "raw_modes/NIKON D3X_ISO_125_14bits_Uncompressed.NEF");
-  super::camera_file_check!("Nikon", "D3X", cam_nikon_d3x_iso_100_14bits_lossless_nef, "raw_modes/NIKON D3X_ISO_100_14bits_Lossless.NEF");
-}
 mod camera_d40_raw_modes {
   super::camera_file_check!("Nikon", "D40", cam_nikon_d40_iso_200_12bits_lossy__type_1__nef, "raw_modes/NIKON D40_ISO_200_12bits_Lossy (type 1).NEF");
-}
-mod camera_d40x_raw_modes {
-  super::camera_file_check!("Nikon", "D40X", cam_nikon_d40x_iso_250_12bits_lossy__type_1__nef, "raw_modes/NIKON D40X_ISO_250_12bits_Lossy (type 1).NEF");
 }
 mod camera_d4_raw_modes {
   super::camera_file_check!("Nikon", "D4", cam_nikon_d4_iso_400_12bits_lossy__type_2__nef, "raw_modes/NIKON D4_ISO_400_12bits_Lossy (type 2).NEF");
@@ -351,18 +297,84 @@ mod camera_d4_raw_modes {
   super::camera_file_check!("Nikon", "D4", cam_nikon_d4_iso_400_12bits_lossless_nef, "raw_modes/NIKON D4_ISO_400_12bits_Lossless.NEF");
   super::camera_file_check!("Nikon", "D4", cam_nikon_d4_iso_400_14bits_lossy__type_2__nef, "raw_modes/NIKON D4_ISO_400_14bits_Lossy (type 2).NEF");
 }
-mod camera_d4s_raw_modes {
-  super::camera_file_check!("Nikon", "D4S", cam_nikon_d4s_iso_360_12bits_small_nef, "raw_modes/NIKON D4S_ISO_360_12bits_Small.NEF");
-  super::camera_file_check!("Nikon", "D4S", cam_nikon_d4s_iso_360_14bits_lossy__type_2__nef, "raw_modes/NIKON D4S_ISO_360_14bits_Lossy (type 2).NEF");
-  super::camera_file_check!("Nikon", "D4S", cam_nikon_d4s_iso_280_14bits_uncompressed_nef, "raw_modes/NIKON D4S_ISO_280_14bits_Uncompressed.NEF");
-  super::camera_file_check!("Nikon", "D4S", cam_nikon_d4s_iso_320_14bits_lossless_nef, "raw_modes/NIKON D4S_ISO_320_14bits_Lossless.NEF");
-  super::camera_file_check!("Nikon", "D4S", cam_nikon_d4s_iso_280_12bits_lossy__type_2__nef, "raw_modes/NIKON D4S_ISO_280_12bits_Lossy (type 2).NEF");
-  super::camera_file_check!("Nikon", "D4S", cam_nikon_d4s_iso_320_12bits_uncompressed__reduced_to_12_bit__nef, "raw_modes/NIKON D4S_ISO_320_12bits_Uncompressed (reduced to 12 bit).NEF");
-  super::camera_file_check!("Nikon", "D4S", cam_nikon_d4s_iso_280_12bits_lossless_nef, "raw_modes/NIKON D4S_ISO_280_12bits_Lossless.NEF");
+mod camera_d300s_raw_modes {
+  super::camera_file_check!("Nikon", "D300S", cam_nikon_d300s_iso_100_14bits_uncompressed_nef, "raw_modes/NIKON D300S_ISO_100_14bits_Uncompressed.NEF");
+  super::camera_file_check!("Nikon", "D300S", cam_nikon_d300s_iso_100_12bits_lossless_nef, "raw_modes/NIKON D300S_ISO_100_12bits_Lossless.NEF");
+  super::camera_file_check!("Nikon", "D300S", cam_nikon_d300s_iso_100_12bits_uncompressed_nef, "raw_modes/NIKON D300S_ISO_100_12bits_Uncompressed.NEF");
+  super::camera_file_check!("Nikon", "D300S", cam_nikon_d300s_iso_100_14bits_lossy__type_2__nef, "raw_modes/NIKON D300S_ISO_100_14bits_Lossy (type 2).NEF");
+  super::camera_file_check!("Nikon", "D300S", cam_nikon_d300s_iso_100_14bits_lossless_nef, "raw_modes/NIKON D300S_ISO_100_14bits_Lossless.NEF");
+  super::camera_file_check!("Nikon", "D300S", cam_nikon_d300s_iso_100_12bits_lossy__type_2__nef, "raw_modes/NIKON D300S_ISO_100_12bits_Lossy (type 2).NEF");
 }
-mod camera_d5000_raw_modes {
-  super::camera_file_check!("Nikon", "D5000", cam_nikon_d5000_iso_400_12bits_lossy__type_2__nef, "raw_modes/NIKON D5000_ISO_400_12bits_Lossy (type 2).NEF");
-  super::camera_file_check!("Nikon", "D5000", cam_nikon_d5000_iso_200_12bits_lossy__type_2__nef, "raw_modes/NIKON D5000_ISO_200_12bits_Lossy (type 2).NEF");
+mod camera_d2xs_raw_modes {
+  super::camera_file_check!("Nikon", "D2Xs", cam_nikon_d2xs_iso_100_12bits_uncompressed_nef, "raw_modes/NIKON D2Xs_ISO_100_12bits_Uncompressed.NEF");
+  super::camera_file_check!("Nikon", "D2Xs", cam_nikon_d2xs_iso_100_12bits_lossy__type_1__nef, "raw_modes/NIKON D2Xs_ISO_100_12bits_Lossy (type 1).NEF");
+}
+mod camera_d3_raw_modes {
+  super::camera_file_check!("Nikon", "D3", cam_nikon_d3_iso_200_14bits_lossless_nef, "raw_modes/NIKON D3_ISO_200_14bits_Lossless.NEF");
+  super::camera_file_check!("Nikon", "D3", cam_nikon_d3_iso_200_12bits_lossy__type_2__nef, "raw_modes/NIKON D3_ISO_200_12bits_Lossy (type 2).NEF");
+  super::camera_file_check!("Nikon", "D3", cam_nikon_d3_iso_200_12bits_lossless_nef, "raw_modes/NIKON D3_ISO_200_12bits_Lossless.NEF");
+  super::camera_file_check!("Nikon", "D3", cam_nikon_d3_iso_200_14bits_uncompressed_nef, "raw_modes/NIKON D3_ISO_200_14bits_Uncompressed.NEF");
+  super::camera_file_check!("Nikon", "D3", cam_nikon_d3_iso_200_14bits_lossy__type_2__nef, "raw_modes/NIKON D3_ISO_200_14bits_Lossy (type 2).NEF");
+  super::camera_file_check!("Nikon", "D3", cam_nikon_d3_iso_200_12bits_uncompressed_nef, "raw_modes/NIKON D3_ISO_200_12bits_Uncompressed.NEF");
+}
+mod camera_d800e_raw_modes {
+  super::camera_file_check!("Nikon", "D800E", cam_nikon_d800e_iso_560_14bits_uncompressed_nef, "raw_modes/NIKON D800E_ISO_560_14bits_Uncompressed.NEF");
+  super::camera_file_check!("Nikon", "D800E", cam_nikon_d800e_iso_100_14bits_lossless_nef, "raw_modes/NIKON D800E_ISO_100_14bits_Lossless.NEF");
+}
+mod camera_e5400_raw_modes {
+  super::camera_file_check!("Nikon", "E5400", cam_e5400_iso_0_12bits_uncompressed_nef, "raw_modes/E5400_ISO_0_12bits_Uncompressed.NEF");
+}
+mod camera_coolpix_p6000_raw_modes {
+  super::camera_file_check!("Nikon", "Coolpix P6000", cam_coolpix_p6000_iso_64_12bits_uncompressed_nrw, "raw_modes/COOLPIX P6000_ISO_64_12bits_Uncompressed.NRW");
+}
+mod camera_d700_raw_modes {
+  super::camera_file_check!("Nikon", "D700", cam_nikon_d700_iso_100_14bits_lossy__type_2__nef, "raw_modes/NIKON D700_ISO_100_14bits_Lossy (type 2).NEF");
+  super::camera_file_check!("Nikon", "D700", cam_nikon_d700_iso_100_14bits_lossless_nef, "raw_modes/NIKON D700_ISO_100_14bits_Lossless.NEF");
+  super::camera_file_check!("Nikon", "D700", cam_nikon_d700_iso_100_14bits_uncompressed_nef, "raw_modes/NIKON D700_ISO_100_14bits_Uncompressed.NEF");
+  super::camera_file_check!("Nikon", "D700", cam_nikon_d700_iso_100_12bits_lossless_nef, "raw_modes/NIKON D700_ISO_100_12bits_Lossless.NEF");
+  super::camera_file_check!("Nikon", "D700", cam_nikon_d700_iso_100_12bits_uncompressed_nef, "raw_modes/NIKON D700_ISO_100_12bits_Uncompressed.NEF");
+  super::camera_file_check!("Nikon", "D700", cam_nikon_d700_iso_100_12bits_lossy__type_2__nef, "raw_modes/NIKON D700_ISO_100_12bits_Lossy (type 2).NEF");
+}
+mod camera_coolpix_p7000_raw_modes {
+  super::camera_file_check!("Nikon", "Coolpix P7000", cam_coolpix_p7000_iso_800_12bits_uncompressed_nrw, "raw_modes/COOLPIX P7000_ISO_800_12bits_Uncompressed.NRW");
+}
+mod camera_d3400_raw_modes {
+  super::camera_file_check!("Nikon", "D3400", cam_nikon_d3400_iso_3200_12bits_lossy__type_2__nef, "raw_modes/NIKON D3400_ISO_3200_12bits_Lossy (type 2).NEF");
+  super::camera_file_check!("Nikon", "D3400", cam_nikon_d3400_iso_400_12bits_lossy__type_2__nef, "raw_modes/NIKON D3400_ISO_400_12bits_Lossy (type 2).NEF");
+}
+mod camera_d780_raw_modes {
+  super::camera_file_check!("Nikon", "D780", cam_nikon_d780_iso_100_14bits_lossless_nef, "raw_modes/NIKON D780_ISO_100_14bits_Lossless.NEF");
+  super::camera_file_check!("Nikon", "D780", cam_nikon_d780_iso_100_14bits_lossy__type_2__nef, "raw_modes/NIKON D780_ISO_100_14bits_Lossy (type 2).NEF");
+  super::camera_file_check!("Nikon", "D780", cam_nikon_d780_iso_100_12bits_lossless_nef, "raw_modes/NIKON D780_ISO_100_12bits_Lossless.NEF");
+  super::camera_file_check!("Nikon", "D780", cam_nikon_d780_iso_100_12bits_lossy__type_2__nef, "raw_modes/NIKON D780_ISO_100_12bits_Lossy (type 2).NEF");
+}
+mod camera_d2hs_raw_modes {
+  super::camera_file_check!("Nikon", "D2Hs", cam_nikon_d2hs_iso_200_12bits_uncompressed_nef, "raw_modes/NIKON D2Hs_ISO_200_12bits_Uncompressed.NEF");
+}
+mod camera_1_v1_raw_modes {
+  super::camera_file_check!("Nikon", "1 V1", cam_nikon_1_v1_iso_400_12bits_lossy__type_2__nef, "raw_modes/NIKON 1 V1_ISO_400_12bits_Lossy (type 2).NEF");
+  super::camera_file_check!("Nikon", "1 V1", cam_nikon_1_v1_iso_800_12bits_lossy__type_2__nef, "raw_modes/NIKON 1 V1_ISO_800_12bits_Lossy (type 2).NEF");
+}
+mod camera_d610_raw_modes {
+  super::camera_file_check!("Nikon", "D610", cam_nikon_d610_iso_400_14bits_lossy__type_2__nef, "raw_modes/NIKON D610_ISO_400_14bits_Lossy (type 2).NEF");
+  super::camera_file_check!("Nikon", "D610", cam_nikon_d610_iso_400_12bits_lossy__type_2__nef, "raw_modes/NIKON D610_ISO_400_12bits_Lossy (type 2).NEF");
+  super::camera_file_check!("Nikon", "D610", cam_nikon_d610_iso_400_14bits_lossless_nef, "raw_modes/NIKON D610_ISO_400_14bits_Lossless.NEF");
+  super::camera_file_check!("Nikon", "D610", cam_nikon_d610_iso_400_12bits_lossless_nef, "raw_modes/NIKON D610_ISO_400_12bits_Lossless.NEF");
+}
+mod camera_1_j3_raw_modes {
+  super::camera_file_check!("Nikon", "1 J3", cam_nikon_1_j3_iso_160_12bits_lossy__type_2__nef, "raw_modes/NIKON 1 J3_ISO_160_12bits_Lossy (type 2).NEF");
+}
+mod camera_d50_raw_modes {
+  super::camera_file_check!("Nikon", "D50", cam_nikon_d50_iso_200_12bits_lossy__type_1__nef, "raw_modes/NIKON D50_ISO_200_12bits_Lossy (type 1).NEF");
+}
+mod camera_d3x_raw_modes {
+  super::camera_file_check!("Nikon", "D3X", cam_nikon_d3x_iso_125_14bits_uncompressed_nef, "raw_modes/NIKON D3X_ISO_125_14bits_Uncompressed.NEF");
+  super::camera_file_check!("Nikon", "D3X", cam_nikon_d3x_iso_100_14bits_lossless_nef, "raw_modes/NIKON D3X_ISO_100_14bits_Lossless.NEF");
+}
+mod camera_d5500_raw_modes {
+  super::camera_file_check!("Nikon", "D5500", cam_nikon_d5500_iso_100_12bits_lossy__type_2__nef, "raw_modes/NIKON D5500_ISO_100_12bits_Lossy (type 2).NEF");
+  super::camera_file_check!("Nikon", "D5500", cam_nikon_d5500_iso_6400_14bits_lossy__type_2__nef, "raw_modes/NIKON D5500_ISO_6400_14bits_Lossy (type 2).NEF");
+  super::camera_file_check!("Nikon", "D5500", cam_nikon_d5500_iso_100_14bits_lossy__type_2__nef, "raw_modes/NIKON D5500_ISO_100_14bits_Lossy (type 2).NEF");
 }
 mod camera_d500_raw_modes {
   super::camera_file_check!("Nikon", "D500", cam_nikon_d500_large_iso_100_12bits_lossy__type_2__nef, "raw_modes/NIKON D500_Large_ISO_100_12bits_Lossy (type 2).NEF");
@@ -374,125 +386,17 @@ mod camera_d500_raw_modes {
   super::camera_file_check!("Nikon", "D500", cam_nikon_d500_medium_iso_100_12bits_lossless_nef, "raw_modes/NIKON D500_Medium_ISO_100_12bits_Lossless.NEF");
   super::camera_file_check!("Nikon", "D500", cam_nikon_d500_large_iso_100_12bits_lossless_nef, "raw_modes/NIKON D500_Large_ISO_100_12bits_Lossless.NEF");
 }
-mod camera_d50_raw_modes {
-  super::camera_file_check!("Nikon", "D50", cam_nikon_d50_iso_200_12bits_lossy__type_1__nef, "raw_modes/NIKON D50_ISO_200_12bits_Lossy (type 1).NEF");
+mod camera_coolpix_b700_raw_modes {
+  super::camera_file_check!("Nikon", "COOLPIX B700", cam_coolpix_b700_iso_100_12bits_uncompressed_nrw, "raw_modes/COOLPIX B700_ISO_100_12bits_Uncompressed.NRW");
 }
-mod camera_d5100_raw_modes {
-  super::camera_file_check!("Nikon", "D5100", cam_nikon_d5100_iso_500_14bits_lossless_nef, "raw_modes/NIKON D5100_ISO_500_14bits_Lossless.NEF");
-  super::camera_file_check!("Nikon", "D5100", cam_nikon_d5100_iso_500_14bits_lossy__type_2__nef, "raw_modes/NIKON D5100_ISO_500_14bits_Lossy (type 2).NEF");
-  super::camera_file_check!("Nikon", "D5100", cam_nikon_d5100_iso_500_14bits_uncompressed_nef, "raw_modes/NIKON D5100_ISO_500_14bits_Uncompressed.NEF");
+mod camera_coolpix_p7800_raw_modes {
+  super::camera_file_check!("Nikon", "Coolpix P7800", cam_coolpix_p7800_iso_80_12bits_uncompressed_nrw, "raw_modes/COOLPIX P7800_ISO_80_12bits_Uncompressed.NRW");
 }
-mod camera_d5200_raw_modes {
-  super::camera_file_check!("Nikon", "D5200", cam_nikon_d5200_iso_280_14bits_lossy__type_2__nef, "raw_modes/NIKON D5200_ISO_280_14bits_Lossy (type 2).NEF");
-  super::camera_file_check!("Nikon", "D5200", cam_nikon_d5200_iso_200_14bits_lossy__type_2__nef, "raw_modes/NIKON D5200_ISO_200_14bits_Lossy (type 2).NEF");
+mod camera_coolpix_p1000_raw_modes {
+  super::camera_file_check!("Nikon", "COOLPIX P1000", cam_coolpix_p1000_iso_100_12bits_uncompressed_nrw, "raw_modes/COOLPIX P1000_ISO_100_12bits_Uncompressed.NRW");
 }
-mod camera_d5300_raw_modes {
-  super::camera_file_check!("Nikon", "D5300", cam_nikon_d5300_iso_160_14bits_lossy__type_2__nef, "raw_modes/NIKON D5300_ISO_160_14bits_Lossy (type 2).NEF");
-}
-mod camera_d5500_raw_modes {
-  super::camera_file_check!("Nikon", "D5500", cam_nikon_d5500_iso_100_12bits_lossy__type_2__nef, "raw_modes/NIKON D5500_ISO_100_12bits_Lossy (type 2).NEF");
-  super::camera_file_check!("Nikon", "D5500", cam_nikon_d5500_iso_6400_14bits_lossy__type_2__nef, "raw_modes/NIKON D5500_ISO_6400_14bits_Lossy (type 2).NEF");
-  super::camera_file_check!("Nikon", "D5500", cam_nikon_d5500_iso_100_14bits_lossy__type_2__nef, "raw_modes/NIKON D5500_ISO_100_14bits_Lossy (type 2).NEF");
-}
-mod camera_d5600_raw_modes {
-  super::camera_file_check!("Nikon", "D5600", cam_nikon_d5600_iso_12800_12bits_lossy__type_2__nef, "raw_modes/NIKON D5600_ISO_12800_12bits_Lossy (type 2).NEF");
-  super::camera_file_check!("Nikon", "D5600", cam_nikon_d5600_iso_200_14bits_lossy__type_2__nef, "raw_modes/NIKON D5600_ISO_200_14bits_Lossy (type 2).NEF");
-  super::camera_file_check!("Nikon", "D5600", cam_nikon_d5600_iso_12800_14bits_lossy__type_2__nef, "raw_modes/NIKON D5600_ISO_12800_14bits_Lossy (type 2).NEF");
-  super::camera_file_check!("Nikon", "D5600", cam_nikon_d5600_iso_200_12bits_lossy__type_2__nef, "raw_modes/NIKON D5600_ISO_200_12bits_Lossy (type 2).NEF");
-}
-mod camera_d5_raw_modes {
-  super::camera_file_check!("Nikon", "D5", cam_nikon_d5_iso_400_14bits_lossy__type_2__nef, "raw_modes/NIKON D5_ISO_400_14bits_Lossy (type 2).NEF");
-  super::camera_file_check!("Nikon", "D5", cam_nikon_d5_iso_100_14bits_uncompressed_nef, "raw_modes/NIKON D5_ISO_100_14bits_Uncompressed.NEF");
-}
-mod camera_d600_raw_modes {
-  super::camera_file_check!("Nikon", "D600", cam_nikon_d600_iso_400_14bits_lossless_nef, "raw_modes/NIKON D600_ISO_400_14bits_Lossless.NEF");
-  super::camera_file_check!("Nikon", "D600", cam_nikon_d600_iso_400_12bits_lossy__type_2__nef, "raw_modes/NIKON D600_ISO_400_12bits_Lossy (type 2).NEF");
-  super::camera_file_check!("Nikon", "D600", cam_nikon_d600_iso_400_12bits_lossless_nef, "raw_modes/NIKON D600_ISO_400_12bits_Lossless.NEF");
-  super::camera_file_check!("Nikon", "D600", cam_nikon_d600_iso_400_14bits_lossy__type_2__nef, "raw_modes/NIKON D600_ISO_400_14bits_Lossy (type 2).NEF");
-}
-mod camera_d60_raw_modes {
-  super::camera_file_check!("Nikon", "D60", cam_nikon_d60_iso_100_12bits_lossy__type_1__nef, "raw_modes/NIKON D60_ISO_100_12bits_Lossy (type 1).NEF");
-}
-mod camera_d610_raw_modes {
-  super::camera_file_check!("Nikon", "D610", cam_nikon_d610_iso_400_14bits_lossy__type_2__nef, "raw_modes/NIKON D610_ISO_400_14bits_Lossy (type 2).NEF");
-  super::camera_file_check!("Nikon", "D610", cam_nikon_d610_iso_400_12bits_lossy__type_2__nef, "raw_modes/NIKON D610_ISO_400_12bits_Lossy (type 2).NEF");
-  super::camera_file_check!("Nikon", "D610", cam_nikon_d610_iso_400_14bits_lossless_nef, "raw_modes/NIKON D610_ISO_400_14bits_Lossless.NEF");
-  super::camera_file_check!("Nikon", "D610", cam_nikon_d610_iso_400_12bits_lossless_nef, "raw_modes/NIKON D610_ISO_400_12bits_Lossless.NEF");
-}
-mod camera_d7000_raw_modes {
-  super::camera_file_check!("Nikon", "D7000", cam_nikon_d7000_iso_100_14bits_lossy__type_2__nef, "raw_modes/NIKON D7000_ISO_100_14bits_Lossy (type 2).NEF");
-  super::camera_file_check!("Nikon", "D7000", cam_nikon_d7000_iso_hi_12800_14bits_lossy__type_2__nef, "raw_modes/NIKON D7000_ISO_Hi 12800_14bits_Lossy (type 2).NEF");
-  super::camera_file_check!("Nikon", "D7000", cam_nikon_d7000_iso_100_14bits_lossless_nef, "raw_modes/NIKON D7000_ISO_100_14bits_Lossless.NEF");
-  super::camera_file_check!("Nikon", "D7000", cam_nikon_d7000_iso_100_12bits_lossless_nef, "raw_modes/NIKON D7000_ISO_100_12bits_Lossless.NEF");
-  super::camera_file_check!("Nikon", "D7000", cam_nikon_d7000_iso_100_12bits_lossy__type_2__nef, "raw_modes/NIKON D7000_ISO_100_12bits_Lossy (type 2).NEF");
-}
-mod camera_d700_raw_modes {
-  super::camera_file_check!("Nikon", "D700", cam_nikon_d700_iso_100_14bits_lossy__type_2__nef, "raw_modes/NIKON D700_ISO_100_14bits_Lossy (type 2).NEF");
-  super::camera_file_check!("Nikon", "D700", cam_nikon_d700_iso_100_14bits_lossless_nef, "raw_modes/NIKON D700_ISO_100_14bits_Lossless.NEF");
-  super::camera_file_check!("Nikon", "D700", cam_nikon_d700_iso_100_14bits_uncompressed_nef, "raw_modes/NIKON D700_ISO_100_14bits_Uncompressed.NEF");
-  super::camera_file_check!("Nikon", "D700", cam_nikon_d700_iso_100_12bits_lossless_nef, "raw_modes/NIKON D700_ISO_100_12bits_Lossless.NEF");
-  super::camera_file_check!("Nikon", "D700", cam_nikon_d700_iso_100_12bits_uncompressed_nef, "raw_modes/NIKON D700_ISO_100_12bits_Uncompressed.NEF");
-  super::camera_file_check!("Nikon", "D700", cam_nikon_d700_iso_100_12bits_lossy__type_2__nef, "raw_modes/NIKON D700_ISO_100_12bits_Lossy (type 2).NEF");
-}
-mod camera_d70_raw_modes {
-  super::camera_file_check!("Nikon", "D70", cam_nikon_d70_iso_200_12bits_lossy__type_1__nef, "raw_modes/NIKON D70_ISO_200_12bits_Lossy (type 1).NEF");
-}
-mod camera_d70s_raw_modes {
-  super::camera_file_check!("Nikon", "D70s", cam_nikon_d70s_iso_200_12bits_lossy__type_1__nef, "raw_modes/NIKON D70s_ISO_200_12bits_Lossy (type 1).NEF");
-}
-mod camera_d7100_raw_modes {
-  super::camera_file_check!("Nikon", "D7100", cam_nikon_d7100_iso_200_14bits_lossy__type_2__nef, "raw_modes/NIKON D7100_ISO_200_14bits_Lossy (type 2).NEF");
-  super::camera_file_check!("Nikon", "D7100", cam_nikon_d7100_iso_200_12bits_lossless_nef, "raw_modes/NIKON D7100_ISO_200_12bits_Lossless.NEF");
-  super::camera_file_check!("Nikon", "D7100", cam_nikon_d7100_iso_200_14bits_lossless_nef, "raw_modes/NIKON D7100_ISO_200_14bits_Lossless.NEF");
-  super::camera_file_check!("Nikon", "D7100", cam_nikon_d7100_iso_200_12bits_lossy__type_2__nef, "raw_modes/NIKON D7100_ISO_200_12bits_Lossy (type 2).NEF");
-}
-mod camera_d7200_raw_modes {
-  super::camera_file_check!("Nikon", "D7200", cam_nikon_d7200_iso_1600_12bits_lossy__type_2__nef, "raw_modes/NIKON D7200_ISO_1600_12bits_Lossy (type 2).NEF");
-  super::camera_file_check!("Nikon", "D7200", cam_nikon_d7200_iso_1600_14bits_lossless_nef, "raw_modes/NIKON D7200_ISO_1600_14bits_Lossless.NEF");
-  super::camera_file_check!("Nikon", "D7200", cam_nikon_d7200_iso_1600_12bits_lossless_nef, "raw_modes/NIKON D7200_ISO_1600_12bits_Lossless.NEF");
-  super::camera_file_check!("Nikon", "D7200", cam_nikon_d7200_iso_1600_14bits_lossy__type_2__nef, "raw_modes/NIKON D7200_ISO_1600_14bits_Lossy (type 2).NEF");
-}
-mod camera_d7500_raw_modes {
-  super::camera_file_check!("Nikon", "D7500", cam_nikon_d7500_iso_100_14bits_lossy__type_2__nef, "raw_modes/NIKON D7500_ISO_100_14bits_Lossy (type 2).NEF");
-  super::camera_file_check!("Nikon", "D7500", cam_nikon_d7500_iso_100_12bits_lossless_nef, "raw_modes/NIKON D7500_ISO_100_12bits_Lossless.NEF");
-  super::camera_file_check!("Nikon", "D7500", cam_nikon_d7500_iso_100_14bits_lossless_nef, "raw_modes/NIKON D7500_ISO_100_14bits_Lossless.NEF");
-  super::camera_file_check!("Nikon", "D7500", cam_nikon_d7500_iso_100_12bits_lossy__type_2__nef, "raw_modes/NIKON D7500_ISO_100_12bits_Lossy (type 2).NEF");
-}
-mod camera_d750_raw_modes {
-  super::camera_file_check!("Nikon", "D750", cam_nikon_d750_iso_100_14bits_lossless_nef, "raw_modes/NIKON D750_ISO_100_14bits_Lossless.NEF");
-  super::camera_file_check!("Nikon", "D750", cam_nikon_d750_iso_100_12bits_lossy__type_2__nef, "raw_modes/NIKON D750_ISO_100_12bits_Lossy (type 2).NEF");
-  super::camera_file_check!("Nikon", "D750", cam_nikon_d750_iso_100_12bits_lossless_nef, "raw_modes/NIKON D750_ISO_100_12bits_Lossless.NEF");
-  super::camera_file_check!("Nikon", "D750", cam_nikon_d750_iso_100_14bits_lossy__type_2__nef, "raw_modes/NIKON D750_ISO_100_14bits_Lossy (type 2).NEF");
-}
-mod camera_d780_raw_modes {
-  super::camera_file_check!("Nikon", "D780", cam_nikon_d780_iso_100_14bits_lossless_nef, "raw_modes/NIKON D780_ISO_100_14bits_Lossless.NEF");
-  super::camera_file_check!("Nikon", "D780", cam_nikon_d780_iso_100_14bits_lossy__type_2__nef, "raw_modes/NIKON D780_ISO_100_14bits_Lossy (type 2).NEF");
-  super::camera_file_check!("Nikon", "D780", cam_nikon_d780_iso_100_12bits_lossless_nef, "raw_modes/NIKON D780_ISO_100_12bits_Lossless.NEF");
-  super::camera_file_check!("Nikon", "D780", cam_nikon_d780_iso_100_12bits_lossy__type_2__nef, "raw_modes/NIKON D780_ISO_100_12bits_Lossy (type 2).NEF");
-}
-mod camera_d800e_raw_modes {
-  super::camera_file_check!("Nikon", "D800E", cam_nikon_d800e_iso_560_14bits_uncompressed_nef, "raw_modes/NIKON D800E_ISO_560_14bits_Uncompressed.NEF");
-  super::camera_file_check!("Nikon", "D800E", cam_nikon_d800e_iso_100_14bits_lossless_nef, "raw_modes/NIKON D800E_ISO_100_14bits_Lossless.NEF");
-}
-mod camera_d800_raw_modes {
-  super::camera_file_check!("Nikon", "D800", cam_nikon_d800_iso_50_14bits_uncompressed_nef, "raw_modes/NIKON D800_ISO_50_14bits_Uncompressed.NEF");
-  super::camera_file_check!("Nikon", "D800", cam_nikon_d800_iso_50_12bits_lossy__type_2__nef, "raw_modes/NIKON D800_ISO_50_12bits_Lossy (type 2).NEF");
-  super::camera_file_check!("Nikon", "D800", cam_nikon_d800_iso_50_12bits_uncompressed_nef, "raw_modes/NIKON D800_ISO_50_12bits_Uncompressed.NEF");
-  super::camera_file_check!("Nikon", "D800", cam_nikon_d800_iso_50_12bits_lossless_nef, "raw_modes/NIKON D800_ISO_50_12bits_Lossless.NEF");
-  super::camera_file_check!("Nikon", "D800", cam_nikon_d800_iso_50_14bits_lossless_nef, "raw_modes/NIKON D800_ISO_50_14bits_Lossless.NEF");
-  super::camera_file_check!("Nikon", "D800", cam_nikon_d800_iso_50_14bits_lossy__type_2__nef, "raw_modes/NIKON D800_ISO_50_14bits_Lossy (type 2).NEF");
-}
-mod camera_d80_raw_modes {
-  super::camera_file_check!("Nikon", "D80", cam_nikon_d80_iso_100_12bits_lossy__type_1__nef, "raw_modes/NIKON D80_ISO_100_12bits_Lossy (type 1).NEF");
-}
-mod camera_d810_raw_modes {
-  super::camera_file_check!("Nikon", "D810", cam_nikon_d810_iso_100_14bits_lossy__type_2__nef, "raw_modes/NIKON D810_ISO_100_14bits_Lossy (type 2).NEF");
-  super::camera_file_check!("Nikon", "D810", cam_nikon_d810_iso_100_12bits_lossless_nef, "raw_modes/NIKON D810_ISO_100_12bits_Lossless.NEF");
-  super::camera_file_check!("Nikon", "D810", cam_nikon_d810_iso_100_12bits_lossy__type_2__nef, "raw_modes/NIKON D810_ISO_100_12bits_Lossy (type 2).NEF");
-  super::camera_file_check!("Nikon", "D810", cam_nikon_d810_iso_100_12bits_small_nef, "raw_modes/NIKON D810_ISO_100_12bits_Small.NEF");
-  super::camera_file_check!("Nikon", "D810", cam_nikon_d810_iso_100_14bits_uncompressed_nef, "raw_modes/NIKON D810_ISO_100_14bits_Uncompressed.NEF");
-  super::camera_file_check!("Nikon", "D810", cam_nikon_d810_iso_100_14bits_lossless_nef, "raw_modes/NIKON D810_ISO_100_14bits_Lossless.NEF");
-  super::camera_file_check!("Nikon", "D810", cam_nikon_d810_iso_100_12bits_uncompressed__reduced_to_12_bit__nef, "raw_modes/NIKON D810_ISO_100_12bits_Uncompressed (reduced to 12 bit).NEF");
+mod camera_e5700_raw_modes {
+  super::camera_file_check!("Nikon", "E5700", cam_e5700_iso_0_12bits_uncompressed_nef, "raw_modes/E5700_ISO_0_12bits_Uncompressed.NEF");
 }
 mod camera_d850_raw_modes {
   super::camera_file_check!("Nikon", "D850", cam_nikon_d850_medium_iso_64_12bits_lossless_nef, "raw_modes/NIKON D850_Medium_ISO_64_12bits_Lossless.NEF");
@@ -504,8 +408,161 @@ mod camera_d850_raw_modes {
   super::camera_file_check!("Nikon", "D850", cam_nikon_d850_small_iso_64_12bits_lossless_nef, "raw_modes/NIKON D850_Small_ISO_64_12bits_Lossless.NEF");
   super::camera_file_check!("Nikon", "D850", cam_nikon_d850_large_iso_64_12bits_lossless_nef, "raw_modes/NIKON D850_Large_ISO_64_12bits_Lossless.NEF");
 }
+mod camera_d2h_raw_modes {
+  super::camera_file_check!("Nikon", "D2H", cam_nikon_d2h_iso_200_12bits_lossy__type_1__nef, "raw_modes/NIKON D2H_ISO_200_12bits_Lossy (type 1).NEF");
+}
+mod camera_d7500_raw_modes {
+  super::camera_file_check!("Nikon", "D7500", cam_nikon_d7500_iso_100_14bits_lossy__type_2__nef, "raw_modes/NIKON D7500_ISO_100_14bits_Lossy (type 2).NEF");
+  super::camera_file_check!("Nikon", "D7500", cam_nikon_d7500_iso_100_12bits_lossless_nef, "raw_modes/NIKON D7500_ISO_100_12bits_Lossless.NEF");
+  super::camera_file_check!("Nikon", "D7500", cam_nikon_d7500_iso_100_14bits_lossless_nef, "raw_modes/NIKON D7500_ISO_100_14bits_Lossless.NEF");
+  super::camera_file_check!("Nikon", "D7500", cam_nikon_d7500_iso_100_12bits_lossy__type_2__nef, "raw_modes/NIKON D7500_ISO_100_12bits_Lossy (type 2).NEF");
+}
+mod camera_coolpix_a_raw_modes {
+  super::camera_file_check!("Nikon", "Coolpix A", cam_coolpix_a_iso_100_14bits_lossy__type_2__nef, "raw_modes/COOLPIX A_ISO_100_14bits_Lossy (type 2).NEF");
+}
+mod camera_d3300_raw_modes {
+  super::camera_file_check!("Nikon", "D3300", cam_nikon_d3300_iso_400_12bits_lossy__type_2__nef, "raw_modes/NIKON D3300_ISO_400_12bits_Lossy (type 2).NEF");
+}
+mod camera_d5000_raw_modes {
+  super::camera_file_check!("Nikon", "D5000", cam_nikon_d5000_iso_400_12bits_lossy__type_2__nef, "raw_modes/NIKON D5000_ISO_400_12bits_Lossy (type 2).NEF");
+  super::camera_file_check!("Nikon", "D5000", cam_nikon_d5000_iso_200_12bits_lossy__type_2__nef, "raw_modes/NIKON D5000_ISO_200_12bits_Lossy (type 2).NEF");
+}
+mod camera_d7100_raw_modes {
+  super::camera_file_check!("Nikon", "D7100", cam_nikon_d7100_iso_200_14bits_lossy__type_2__nef, "raw_modes/NIKON D7100_ISO_200_14bits_Lossy (type 2).NEF");
+  super::camera_file_check!("Nikon", "D7100", cam_nikon_d7100_iso_200_12bits_lossless_nef, "raw_modes/NIKON D7100_ISO_200_12bits_Lossless.NEF");
+  super::camera_file_check!("Nikon", "D7100", cam_nikon_d7100_iso_200_14bits_lossless_nef, "raw_modes/NIKON D7100_ISO_200_14bits_Lossless.NEF");
+  super::camera_file_check!("Nikon", "D7100", cam_nikon_d7100_iso_200_12bits_lossy__type_2__nef, "raw_modes/NIKON D7100_ISO_200_12bits_Lossy (type 2).NEF");
+}
+mod camera_1_s2_raw_modes {
+  super::camera_file_check!("Nikon", "1 S2", cam_nikon_1_s2_iso_720_12bits_lossy__type_2__nef, "raw_modes/NIKON 1 S2_ISO_720_12bits_Lossy (type 2).NEF");
+}
 mod camera_d90_raw_modes {
   super::camera_file_check!("Nikon", "D90", cam_nikon_d90_iso_250_12bits_lossy__type_2__nef, "raw_modes/NIKON D90_ISO_250_12bits_Lossy (type 2).NEF");
+}
+mod camera_1_aw1_raw_modes {
+  super::camera_file_check!("Nikon", "1 AW1", cam_nikon_1_aw1_iso_160_12bits_lossy__type_2__nef, "raw_modes/NIKON 1 AW1_ISO_160_12bits_Lossy (type 2).NEF");
+}
+mod camera_d5_raw_modes {
+  super::camera_file_check!("Nikon", "D5", cam_nikon_d5_iso_400_14bits_lossy__type_2__nef, "raw_modes/NIKON D5_ISO_400_14bits_Lossy (type 2).NEF");
+  super::camera_file_check!("Nikon", "D5", cam_nikon_d5_iso_100_14bits_uncompressed_nef, "raw_modes/NIKON D5_ISO_100_14bits_Uncompressed.NEF");
+}
+mod camera_coolpix_a1000_raw_modes {
+  super::camera_file_check!("Nikon", "COOLPIX A1000", cam_coolpix_a1000_iso_280_12bits_uncompressed_nrw, "raw_modes/COOLPIX A1000_ISO_280_12bits_Uncompressed.NRW");
+}
+mod camera_e8400_raw_modes {
+  super::camera_file_check!("Nikon", "E8400", cam_e8400_iso_100_12bits_uncompressed_nef, "raw_modes/E8400_ISO_100_12bits_Uncompressed.NEF");
+}
+mod camera_d100_raw_modes {
+  super::camera_file_check!("Nikon", "D100", cam_nikon_d100_iso_400_12bits_uncompressed_nef, "raw_modes/NIKON D100_ISO_400_12bits_Uncompressed.NEF");
+}
+mod camera_d810_raw_modes {
+  super::camera_file_check!("Nikon", "D810", cam_nikon_d810_iso_100_14bits_lossy__type_2__nef, "raw_modes/NIKON D810_ISO_100_14bits_Lossy (type 2).NEF");
+  super::camera_file_check!("Nikon", "D810", cam_nikon_d810_iso_100_12bits_lossless_nef, "raw_modes/NIKON D810_ISO_100_12bits_Lossless.NEF");
+  super::camera_file_check!("Nikon", "D810", cam_nikon_d810_iso_100_12bits_lossy__type_2__nef, "raw_modes/NIKON D810_ISO_100_12bits_Lossy (type 2).NEF");
+  super::camera_file_check!("Nikon", "D810", cam_nikon_d810_iso_100_12bits_small_nef, "raw_modes/NIKON D810_ISO_100_12bits_Small.NEF");
+  super::camera_file_check!("Nikon", "D810", cam_nikon_d810_iso_100_14bits_uncompressed_nef, "raw_modes/NIKON D810_ISO_100_14bits_Uncompressed.NEF");
+  super::camera_file_check!("Nikon", "D810", cam_nikon_d810_iso_100_14bits_lossless_nef, "raw_modes/NIKON D810_ISO_100_14bits_Lossless.NEF");
+  super::camera_file_check!("Nikon", "D810", cam_nikon_d810_iso_100_12bits_uncompressed__reduced_to_12_bit__nef, "raw_modes/NIKON D810_ISO_100_12bits_Uncompressed (reduced to 12 bit).NEF");
+}
+mod camera_1_j1_raw_modes {
+  super::camera_file_check!("Nikon", "1 J1", cam_nikon_1_j1_iso_100_12bits_lossy__type_2__nef, "raw_modes/NIKON 1 J1_ISO_100_12bits_Lossy (type 2).NEF");
+  super::camera_file_check!("Nikon", "1 J1", cam_nikon_1_j1_iso_200_12bits_lossy__type_2__nef, "raw_modes/NIKON 1 J1_ISO_200_12bits_Lossy (type 2).NEF");
+}
+mod camera_d7000_raw_modes {
+  super::camera_file_check!("Nikon", "D7000", cam_nikon_d7000_iso_100_14bits_lossy__type_2__nef, "raw_modes/NIKON D7000_ISO_100_14bits_Lossy (type 2).NEF");
+  super::camera_file_check!("Nikon", "D7000", cam_nikon_d7000_iso_hi_12800_14bits_lossy__type_2__nef, "raw_modes/NIKON D7000_ISO_Hi 12800_14bits_Lossy (type 2).NEF");
+  super::camera_file_check!("Nikon", "D7000", cam_nikon_d7000_iso_100_14bits_lossless_nef, "raw_modes/NIKON D7000_ISO_100_14bits_Lossless.NEF");
+  super::camera_file_check!("Nikon", "D7000", cam_nikon_d7000_iso_100_12bits_lossless_nef, "raw_modes/NIKON D7000_ISO_100_12bits_Lossless.NEF");
+  super::camera_file_check!("Nikon", "D7000", cam_nikon_d7000_iso_100_12bits_lossy__type_2__nef, "raw_modes/NIKON D7000_ISO_100_12bits_Lossy (type 2).NEF");
+}
+mod camera_1_v3_raw_modes {
+  super::camera_file_check!("Nikon", "1 V3", cam_nikon_1_v3_iso_160_12bits_lossy__type_2__nef, "raw_modes/NIKON 1 V3_ISO_160_12bits_Lossy (type 2).NEF");
+}
+mod camera_d5100_raw_modes {
+  super::camera_file_check!("Nikon", "D5100", cam_nikon_d5100_iso_500_14bits_lossless_nef, "raw_modes/NIKON D5100_ISO_500_14bits_Lossless.NEF");
+  super::camera_file_check!("Nikon", "D5100", cam_nikon_d5100_iso_500_14bits_lossy__type_2__nef, "raw_modes/NIKON D5100_ISO_500_14bits_Lossy (type 2).NEF");
+  super::camera_file_check!("Nikon", "D5100", cam_nikon_d5100_iso_500_14bits_uncompressed_nef, "raw_modes/NIKON D5100_ISO_500_14bits_Uncompressed.NEF");
+}
+mod camera_d60_raw_modes {
+  super::camera_file_check!("Nikon", "D60", cam_nikon_d60_iso_100_12bits_lossy__type_1__nef, "raw_modes/NIKON D60_ISO_100_12bits_Lossy (type 1).NEF");
+}
+mod camera_d3200_raw_modes {
+  super::camera_file_check!("Nikon", "D3200", cam_nikon_d3200_iso_800_12bits_lossy__type_2__nef, "raw_modes/NIKON D3200_ISO_800_12bits_Lossy (type 2).NEF");
+}
+mod camera_d750_raw_modes {
+  super::camera_file_check!("Nikon", "D750", cam_nikon_d750_iso_100_14bits_lossless_nef, "raw_modes/NIKON D750_ISO_100_14bits_Lossless.NEF");
+  super::camera_file_check!("Nikon", "D750", cam_nikon_d750_iso_100_12bits_lossy__type_2__nef, "raw_modes/NIKON D750_ISO_100_12bits_Lossy (type 2).NEF");
+  super::camera_file_check!("Nikon", "D750", cam_nikon_d750_iso_100_12bits_lossless_nef, "raw_modes/NIKON D750_ISO_100_12bits_Lossless.NEF");
+  super::camera_file_check!("Nikon", "D750", cam_nikon_d750_iso_100_14bits_lossy__type_2__nef, "raw_modes/NIKON D750_ISO_100_14bits_Lossy (type 2).NEF");
+}
+mod camera_d80_raw_modes {
+  super::camera_file_check!("Nikon", "D80", cam_nikon_d80_iso_100_12bits_lossy__type_1__nef, "raw_modes/NIKON D80_ISO_100_12bits_Lossy (type 1).NEF");
+}
+mod camera_d3000_raw_modes {
+  super::camera_file_check!("Nikon", "D3000", cam_nikon_d3000_iso_100_12bits_lossy__type_1__nef, "raw_modes/NIKON D3000_ISO_100_12bits_Lossy (type 1).NEF");
+}
+mod camera_d5300_raw_modes {
+  super::camera_file_check!("Nikon", "D5300", cam_nikon_d5300_iso_160_14bits_lossy__type_2__nef, "raw_modes/NIKON D5300_ISO_160_14bits_Lossy (type 2).NEF");
+}
+mod camera_coolpix_p340_raw_modes {
+  super::camera_file_check!("Nikon", "Coolpix P340", cam_coolpix_p340_iso_80_12bits_uncompressed_nrw, "raw_modes/COOLPIX P340_ISO_80_12bits_Uncompressed.NRW");
+}
+mod camera_1_j5_raw_modes {
+  super::camera_file_check!("Nikon", "1 J5", cam_nikon_1_j5_iso_6400_12bits_lossy__type_2__nef, "raw_modes/NIKON 1 J5_ISO_6400_12bits_Lossy (type 2).NEF");
+}
+mod camera_d4s_raw_modes {
+  super::camera_file_check!("Nikon", "D4S", cam_nikon_d4s_iso_360_12bits_small_nef, "raw_modes/NIKON D4S_ISO_360_12bits_Small.NEF");
+  super::camera_file_check!("Nikon", "D4S", cam_nikon_d4s_iso_360_14bits_lossy__type_2__nef, "raw_modes/NIKON D4S_ISO_360_14bits_Lossy (type 2).NEF");
+  super::camera_file_check!("Nikon", "D4S", cam_nikon_d4s_iso_280_14bits_uncompressed_nef, "raw_modes/NIKON D4S_ISO_280_14bits_Uncompressed.NEF");
+  super::camera_file_check!("Nikon", "D4S", cam_nikon_d4s_iso_320_14bits_lossless_nef, "raw_modes/NIKON D4S_ISO_320_14bits_Lossless.NEF");
+  super::camera_file_check!("Nikon", "D4S", cam_nikon_d4s_iso_280_12bits_lossy__type_2__nef, "raw_modes/NIKON D4S_ISO_280_12bits_Lossy (type 2).NEF");
+  super::camera_file_check!("Nikon", "D4S", cam_nikon_d4s_iso_320_12bits_uncompressed__reduced_to_12_bit__nef, "raw_modes/NIKON D4S_ISO_320_12bits_Uncompressed (reduced to 12 bit).NEF");
+  super::camera_file_check!("Nikon", "D4S", cam_nikon_d4s_iso_280_12bits_lossless_nef, "raw_modes/NIKON D4S_ISO_280_12bits_Lossless.NEF");
+}
+mod camera_d7200_raw_modes {
+  super::camera_file_check!("Nikon", "D7200", cam_nikon_d7200_iso_1600_12bits_lossy__type_2__nef, "raw_modes/NIKON D7200_ISO_1600_12bits_Lossy (type 2).NEF");
+  super::camera_file_check!("Nikon", "D7200", cam_nikon_d7200_iso_1600_14bits_lossless_nef, "raw_modes/NIKON D7200_ISO_1600_14bits_Lossless.NEF");
+  super::camera_file_check!("Nikon", "D7200", cam_nikon_d7200_iso_1600_12bits_lossless_nef, "raw_modes/NIKON D7200_ISO_1600_12bits_Lossless.NEF");
+  super::camera_file_check!("Nikon", "D7200", cam_nikon_d7200_iso_1600_14bits_lossy__type_2__nef, "raw_modes/NIKON D7200_ISO_1600_14bits_Lossy (type 2).NEF");
+}
+mod camera_d300_raw_modes {
+  super::camera_file_check!("Nikon", "D300", cam_nikon_d300_iso_200_12bits_lossy__type_2__nef, "raw_modes/NIKON D300_ISO_200_12bits_Lossy (type 2).NEF");
+  super::camera_file_check!("Nikon", "D300", cam_nikon_d300_iso_200_12bits_uncompressed_nef, "raw_modes/NIKON D300_ISO_200_12bits_Uncompressed.NEF");
+  super::camera_file_check!("Nikon", "D300", cam_nikon_d300_iso_200_12bits_lossless_nef, "raw_modes/NIKON D300_ISO_200_12bits_Lossless.NEF");
+  super::camera_file_check!("Nikon", "D300", cam_nikon_d300_iso_200_14bits_uncompressed_nef, "raw_modes/NIKON D300_ISO_200_14bits_Uncompressed.NEF");
+  super::camera_file_check!("Nikon", "D300", cam_nikon_d300_iso_200_14bits_lossy__type_2__nef, "raw_modes/NIKON D300_ISO_200_14bits_Lossy (type 2).NEF");
+  super::camera_file_check!("Nikon", "D300", cam_nikon_d300_iso_200_14bits_lossless_nef, "raw_modes/NIKON D300_ISO_200_14bits_Lossless.NEF");
+}
+mod camera_d1_raw_modes {
+  super::camera_file_check!("Nikon", "D1", cam_nikon_d1_iso_200_12bits_uncompressed_nef, "raw_modes/NIKON D1_ISO_200_12bits_Uncompressed.NEF");
+}
+mod camera_d200_raw_modes {
+  super::camera_file_check!("Nikon", "D200", cam_nikon_d200_iso_200_12bits_uncompressed_nef, "raw_modes/NIKON D200_ISO_200_12bits_Uncompressed.NEF");
+}
+mod camera_d1x_raw_modes {
+  super::camera_file_check!("Nikon", "D1X", cam_nikon_d1x_iso_200_12bits_uncompressed_nef, "raw_modes/NIKON D1X_ISO_200_12bits_Uncompressed.NEF");
+  super::camera_file_check!("Nikon", "D1X", cam_nikon_d1x_iso_125_12bits_lossy__type_1__nef, "raw_modes/NIKON D1X_ISO_125_12bits_Lossy (type 1).NEF");
+}
+mod camera_d70_raw_modes {
+  super::camera_file_check!("Nikon", "D70", cam_nikon_d70_iso_200_12bits_lossy__type_1__nef, "raw_modes/NIKON D70_ISO_200_12bits_Lossy (type 1).NEF");
+}
+mod camera_coolpix_p330_raw_modes {
+  super::camera_file_check!("Nikon", "Coolpix P330", cam_coolpix_p330_iso_80_12bits_uncompressed_nrw, "raw_modes/COOLPIX P330_ISO_80_12bits_Uncompressed.NRW");
+}
+mod camera_1_j2_raw_modes {
+  super::camera_file_check!("Nikon", "1 J2", cam_nikon_1_j2_iso_100_12bits_lossy__type_2__nef, "raw_modes/NIKON 1 J2_ISO_100_12bits_Lossy (type 2).NEF");
+}
+mod camera_d5200_raw_modes {
+  super::camera_file_check!("Nikon", "D5200", cam_nikon_d5200_iso_280_14bits_lossy__type_2__nef, "raw_modes/NIKON D5200_ISO_280_14bits_Lossy (type 2).NEF");
+  super::camera_file_check!("Nikon", "D5200", cam_nikon_d5200_iso_200_14bits_lossy__type_2__nef, "raw_modes/NIKON D5200_ISO_200_14bits_Lossy (type 2).NEF");
+}
+mod camera_d3s_raw_modes {
+  super::camera_file_check!("Nikon", "D3S", cam_nikon_d3s_iso_200_12bits_lossless_nef, "raw_modes/NIKON D3S_ISO_200_12bits_Lossless.NEF");
+  super::camera_file_check!("Nikon", "D3S", cam_nikon_d3s_iso_200_12bits_uncompressed_nef, "raw_modes/NIKON D3S_ISO_200_12bits_Uncompressed.NEF");
+  super::camera_file_check!("Nikon", "D3S", cam_nikon_d3s_iso_200_14bits_uncompressed_nef, "raw_modes/NIKON D3S_ISO_200_14bits_Uncompressed.NEF");
+  super::camera_file_check!("Nikon", "D3S", cam_nikon_d3s_iso_200_14bits_lossless_nef, "raw_modes/NIKON D3S_ISO_200_14bits_Lossless.NEF");
+  super::camera_file_check!("Nikon", "D3S", cam_nikon_d3s_iso_200_12bits_lossy__type_2__nef, "raw_modes/NIKON D3S_ISO_200_12bits_Lossy (type 2).NEF");
+  super::camera_file_check!("Nikon", "D3S", cam_nikon_d3s_iso_200_14bits_lossy__type_2__nef, "raw_modes/NIKON D3S_ISO_200_14bits_Lossy (type 2).NEF");
 }
 mod camera_df_raw_modes {
   super::camera_file_check!("Nikon", "Df", cam_nikon_df_iso_100_12bits_lossy__type_2__nef, "raw_modes/NIKON Df_ISO_100_12bits_Lossy (type 2).NEF");
@@ -515,32 +572,14 @@ mod camera_df_raw_modes {
   super::camera_file_check!("Nikon", "Df", cam_nikon_df_iso_100_12bits_lossless_nef, "raw_modes/NIKON Df_ISO_100_12bits_Lossless.NEF");
   super::camera_file_check!("Nikon", "Df", cam_nikon_df_iso_100_14bits_lossless_nef, "raw_modes/NIKON Df_ISO_100_14bits_Lossless.NEF");
 }
-mod camera_1_aw1_raw_modes {
-  super::camera_file_check!("Nikon", "1 AW1", cam_nikon_1_aw1_iso_160_12bits_lossy__type_2__nef, "raw_modes/NIKON 1 AW1_ISO_160_12bits_Lossy (type 2).NEF");
+mod camera_d800_raw_modes {
+  super::camera_file_check!("Nikon", "D800", cam_nikon_d800_iso_50_14bits_uncompressed_nef, "raw_modes/NIKON D800_ISO_50_14bits_Uncompressed.NEF");
+  super::camera_file_check!("Nikon", "D800", cam_nikon_d800_iso_50_12bits_lossy__type_2__nef, "raw_modes/NIKON D800_ISO_50_12bits_Lossy (type 2).NEF");
+  super::camera_file_check!("Nikon", "D800", cam_nikon_d800_iso_50_12bits_uncompressed_nef, "raw_modes/NIKON D800_ISO_50_12bits_Uncompressed.NEF");
+  super::camera_file_check!("Nikon", "D800", cam_nikon_d800_iso_50_12bits_lossless_nef, "raw_modes/NIKON D800_ISO_50_12bits_Lossless.NEF");
+  super::camera_file_check!("Nikon", "D800", cam_nikon_d800_iso_50_14bits_lossless_nef, "raw_modes/NIKON D800_ISO_50_14bits_Lossless.NEF");
+  super::camera_file_check!("Nikon", "D800", cam_nikon_d800_iso_50_14bits_lossy__type_2__nef, "raw_modes/NIKON D800_ISO_50_14bits_Lossy (type 2).NEF");
 }
-mod camera_1_j1_raw_modes {
-  super::camera_file_check!("Nikon", "1 J1", cam_nikon_1_j1_iso_100_12bits_lossy__type_2__nef, "raw_modes/NIKON 1 J1_ISO_100_12bits_Lossy (type 2).NEF");
-  super::camera_file_check!("Nikon", "1 J1", cam_nikon_1_j1_iso_200_12bits_lossy__type_2__nef, "raw_modes/NIKON 1 J1_ISO_200_12bits_Lossy (type 2).NEF");
-}
-mod camera_1_j2_raw_modes {
-  super::camera_file_check!("Nikon", "1 J2", cam_nikon_1_j2_iso_100_12bits_lossy__type_2__nef, "raw_modes/NIKON 1 J2_ISO_100_12bits_Lossy (type 2).NEF");
-}
-mod camera_1_j3_raw_modes {
-  super::camera_file_check!("Nikon", "1 J3", cam_nikon_1_j3_iso_160_12bits_lossy__type_2__nef, "raw_modes/NIKON 1 J3_ISO_160_12bits_Lossy (type 2).NEF");
-}
-mod camera_1_j5_raw_modes {
-  super::camera_file_check!("Nikon", "1 J5", cam_nikon_1_j5_iso_6400_12bits_lossy__type_2__nef, "raw_modes/NIKON 1 J5_ISO_6400_12bits_Lossy (type 2).NEF");
-}
-mod camera_1_s2_raw_modes {
-  super::camera_file_check!("Nikon", "1 S2", cam_nikon_1_s2_iso_720_12bits_lossy__type_2__nef, "raw_modes/NIKON 1 S2_ISO_720_12bits_Lossy (type 2).NEF");
-}
-mod camera_1_v1_raw_modes {
-  super::camera_file_check!("Nikon", "1 V1", cam_nikon_1_v1_iso_400_12bits_lossy__type_2__nef, "raw_modes/NIKON 1 V1_ISO_400_12bits_Lossy (type 2).NEF");
-  super::camera_file_check!("Nikon", "1 V1", cam_nikon_1_v1_iso_800_12bits_lossy__type_2__nef, "raw_modes/NIKON 1 V1_ISO_800_12bits_Lossy (type 2).NEF");
-}
-mod camera_1_v2_raw_modes {
-  super::camera_file_check!("Nikon", "1 V2", cam_nikon_1_v2_iso_200_12bits_lossy__type_2__nef, "raw_modes/NIKON 1 V2_ISO_200_12bits_Lossy (type 2).NEF");
-}
-mod camera_1_v3_raw_modes {
-  super::camera_file_check!("Nikon", "1 V3", cam_nikon_1_v3_iso_160_12bits_lossy__type_2__nef, "raw_modes/NIKON 1 V3_ISO_160_12bits_Lossy (type 2).NEF");
+mod camera_d3100_raw_modes {
+  super::camera_file_check!("Nikon", "D3100", cam_nikon_d3100_iso_220_12bits_lossy__type_2__nef, "raw_modes/NIKON D3100_ISO_220_12bits_Lossy (type 2).NEF");
 }

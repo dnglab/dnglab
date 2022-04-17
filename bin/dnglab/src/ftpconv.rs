@@ -4,8 +4,8 @@
 use clap::ArgMatches;
 use embedftp::config::{Config, FtpCallback};
 use embedftp::server::serve;
-use rawler::RawFile;
 use rawler::decoders::supported_extensions;
+use rawler::RawFile;
 use std::fs::File;
 use std::io::{BufWriter, Cursor};
 use std::path::PathBuf;
@@ -17,7 +17,6 @@ use crate::{
   dnggen::{ConvertParams, DngCompression},
   AppError, PKG_NAME, PKG_VERSION,
 };
-
 
 #[derive(Clone)]
 struct FtpState {

@@ -1,0 +1,17 @@
+make = "NIKON CORPORATION"
+model = "COOLPIX P1000"
+clean_make = "Nikon"
+clean_model = "Coolpix P1000"
+color_pattern = "RGGB"
+active_area = [0, 0, 0, 0]
+crop_area = [8, 7, 8, 7]
+hints = ["msb32"]
+
+[cameras.color_matrix]
+A = [1.6347, -0.9081, 0.1262, -0.0089, 0.7722, 0.2866, 0.0735, 0.0259, 0.5565]
+D65 = [1.4294, -0.6116, -0.1333, -0.1628, 1.0219, 0.1637, -0.0014, 0.1158, 0.5022]
+
+[[cameras.modes]]
+mode = "12bit"
+blackpoint = 200
+whitepoint = 4095

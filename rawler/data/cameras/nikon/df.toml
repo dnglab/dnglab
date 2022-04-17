@@ -3,9 +3,11 @@ model = "NIKON Df"
 clean_make = "Nikon"
 clean_model = "Df"
 color_pattern = "RGGB"
-active_area = [2, 0, 50, 0]
+active_area = [0, 0, 0, 0]
+crop_area = [6, 6, 6, 6]
 
 [cameras.color_matrix]
+A = [0.9033, -0.3555, -0.0287, -0.4881, 1.2214, 0.3022, -0.0459, 0.0926, 0.7932]
 D65 = [0.8598, -0.2848, -0.0857, -0.5618, 1.3606, 0.2195, -0.1002, 0.1773, 0.7137]
 
 [[cameras.modes]]
@@ -17,4 +19,3 @@ whitepoint = 15520
 mode = "12bit"
 blackpoint = 0
 whitepoint = 3880
-

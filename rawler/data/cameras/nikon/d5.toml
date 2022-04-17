@@ -4,12 +4,13 @@ clean_make = "Nikon"
 clean_model = "D5"
 color_pattern = "RGGB"
 active_area = [0, 0, 0, 0]
+crop_area = [8, 8, 8, 8]
 
 [cameras.color_matrix]
+A = [0.9792, -0.4494, -0.0473, -0.561, 1.3249, 0.2619, -0.0441, 0.1014, 0.729]
 D65 = [0.92, -0.3522, -0.0992, -0.5755, 1.3803, 0.2117, -0.0753, 0.1486, 0.6338]
 
 [[cameras.modes]]
 mode = "14bit"
 blackpoint = 400
 whitepoint = 15520
-

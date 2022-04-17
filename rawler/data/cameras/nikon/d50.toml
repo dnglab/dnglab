@@ -3,13 +3,14 @@ model = "NIKON D50"
 clean_make = "Nikon"
 clean_model = "D50"
 color_pattern = "BGGR"
-active_area = [0, 0, 2, 2]
+active_area = [0, 0, 0, 0]
+crop_area = [15, 7, 17, 7]
 
 [cameras.color_matrix]
-D65 = [0.7732, -0.2422, -0.0789, -0.8238, 1.5884, 0.2498, -0.0859, 0.0783, 0.733]
+A = [0.9505, -0.4311, 0.022, -0.6712, 1.4078, 0.2902, -0.0318, 0.042, 0.7267]
+D65 = [0.7732, -0.2421, -0.0789, -0.8238, 1.5883, 0.2498, -0.0859, 0.0783, 0.733]
 
 [[cameras.modes]]
 mode = "12bit"
 blackpoint = 0
 whitepoint = 4095
-

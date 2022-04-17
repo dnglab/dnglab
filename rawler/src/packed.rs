@@ -281,6 +281,51 @@ pub fn decode_12le(buf: &[u8], width: usize, height: usize, dummy: bool) -> PixU
   )
 }
 
+pub fn decode_12le_padded(buf: &[u8], width: usize, height: usize, stripesize: usize, dummy: bool) -> PixU16 {
+  decode_threaded(
+    width,
+    height,
+    dummy,
+    &(|out: &mut [u16], row| {
+      let inb = &buf[(row * stripesize)..];
+
+      for (o, i) in out.chunks_exact_mut(2).zip(inb.chunks_exact(3)) {
+        let g1: u16 = i[0] as u16;
+        let g2: u16 = i[1] as u16;
+        let g3: u16 = i[2] as u16;
+
+        o[0] = ((g2 & 0x0f) << 8) | g1;
+        o[1] = (g3 << 4) | (g2 >> 4);
+      }
+    }),
+  )
+}
+
+pub fn decode_14le_padded(buf: &[u8], width: usize, height: usize, stripesize: usize, dummy: bool) -> PixU16 {
+  decode_threaded(
+    width,
+    height,
+    dummy,
+    &(|out: &mut [u16], row| {
+      let inb = &buf[(row * stripesize)..];
+
+      for (o, i) in out.chunks_exact_mut(4).zip(inb.chunks_exact(7)) {
+        let g1: u16 = i[0] as u16;
+        let g2: u16 = i[1] as u16;
+        let g3: u16 = i[2] as u16;
+        let g4: u16 = i[3] as u16;
+        let g5: u16 = i[4] as u16;
+        let g6: u16 = i[5] as u16;
+        let g7: u16 = i[6] as u16;
+        o[0] = ((g2 & 0x3f) << 8) | g1;
+        o[1] = ((g4 & 0xf) << 10) | (g3 << 2) | (g2 >> 6);
+        o[2] = ((g6 & 0x3) << 12) | (g5 << 4) | (g4 >> 4);
+        o[3] = (g7 << 6) | (g6 >> 2);
+      }
+    }),
+  )
+}
+
 pub fn decode_12le_unpacked(buf: &[u8], width: usize, height: usize, dummy: bool) -> PixU16 {
   decode_threaded(
     width,
@@ -348,6 +393,21 @@ pub fn decode_14le_unpacked(buf: &[u8], width: usize, height: usize, dummy: bool
     dummy,
     &(|out: &mut [u16], row| {
       let inb = &buf[(row * width * 2)..];
+
+      for (i, bytes) in (0..width).zip(inb.chunks_exact(2)) {
+        out[i] = LEu16(bytes, 0) & 0x3fff;
+      }
+    }),
+  )
+}
+
+pub fn decode_14le_unpacked_padded(buf: &[u8], width: usize, height: usize, stripsize: usize, dummy: bool) -> PixU16 {
+  decode_threaded(
+    width,
+    height,
+    dummy,
+    &(|out: &mut [u16], row| {
+      let inb = &buf[(row * stripsize)..];
 
       for (i, bytes) in (0..width).zip(inb.chunks_exact(2)) {
         out[i] = LEu16(bytes, 0) & 0x3fff;
