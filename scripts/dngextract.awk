@@ -19,7 +19,7 @@ function map_illu(name) {
 function parse_matrix(idx) {
     matrix[idx] = substr($2, 0, 7);
     if(matrix[idx] == "0") { matrix[idx] = "0.0"; }
-    for(i = 2; i < NF;++i) {
+    for(i = 3; i <= NF;++i) {
         tmp = substr($i, 0, 7);
         if(tmp == "0") tmp = "0.0";
         matrix[idx] = matrix[idx] ", " tmp;
@@ -59,7 +59,7 @@ BEGIN {
 
 /^BlackLevel:/{
     blacklevel = "[" $2;
-    for(i = 2; i < NF;++i) {
+    for(i = 3; i <= NF;++i) {
         blacklevel = blacklevel ", " $i;
     }
     blacklevel = blacklevel "]";
