@@ -1,0 +1,21 @@
+make = "NIKON CORPORATION"
+model = "NIKON D3"
+clean_make = "Nikon"
+clean_model = "D3"
+color_pattern = "RGGB"
+active_area = [0, 0, 0, 0]
+crop_area = [13, 6, 15, 6]
+
+[cameras.color_matrix]
+A = [0.9336, -0.3405, 0.0014, -0.7321, 1.4779, 0.2764, -0.0914, 0.1171, 0.8248]
+D65 = [0.8139, -0.2171, -0.0664, -0.8748, 1.6541, 0.2296, -0.1924, 0.2008, 0.8093]
+
+[[cameras.modes]]
+mode = "12bit"
+blackpoint = 0
+whitepoint = 3972
+
+[[cameras.modes]]
+mode = "14bit"
+blackpoint = 0
+whitepoint = 15892

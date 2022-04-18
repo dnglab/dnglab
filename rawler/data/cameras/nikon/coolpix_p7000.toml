@@ -1,0 +1,17 @@
+make = "NIKON"
+model = "COOLPIX P7000"
+clean_make = "Nikon"
+clean_model = "Coolpix P7000"
+color_pattern = "RGGB"
+active_area = [0, 0, 0, 0]
+crop_area = [7, 2, 9, 4]
+hints = ["msb32"]
+
+[cameras.color_matrix]
+A = [1.2795, -0.5406, -0.0006, -0.2222, 1.0126, 0.2445, -0.0188, 0.0738, 0.4943]
+D65 = [1.1432, -0.3679, -0.1111, -0.3169, 1.1239, 0.2202, -0.0791, 0.138, 0.4455]
+
+[[cameras.modes]]
+mode = "12bit"
+blackpoint = 0
+whitepoint = 4095

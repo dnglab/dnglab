@@ -362,14 +362,22 @@ impl IFD {
   }
 
   pub fn contains_singlestrip_image(&self) -> bool {
-    true // FIXME
+    self.get_entry(TiffCommonTag::StripOffsets).map(Entry::count).unwrap_or(0) == 1
   }
 
   pub fn singlestrip_data<R: Read + Seek>(&self, reader: &mut R) -> Result<Vec<u8>> {
     assert!(self.contains_singlestrip_image());
 
-    let offset = self.get_entry(TiffCommonTag::StripOffsets).unwrap().value.force_usize(0);
-    let len = self.get_entry(TiffCommonTag::StripByteCounts).unwrap().value.force_usize(0);
+    let offset = self
+      .get_entry(TiffCommonTag::StripOffsets)
+      .ok_or_else(|| TiffError::General(("tag not found").to_string()))?
+      .value
+      .force_usize(0);
+    let len = self
+      .get_entry(TiffCommonTag::StripByteCounts)
+      .ok_or_else(|| TiffError::General(("tag not found").to_string()))?
+      .value
+      .force_usize(0);
 
     self.sub_buf(reader, offset, len)
   }

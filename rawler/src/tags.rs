@@ -18,7 +18,7 @@ macro_rules! tiff_tag_enum {
         Self::n(value).ok_or(format!("Unable to convert tag: {}, not defined in enum", value))
       }
     }
-    impl TiffTag for $e {}
+    impl crate::tags::TiffTag for $e {}
   };
 }
 pub(crate) use tiff_tag_enum;

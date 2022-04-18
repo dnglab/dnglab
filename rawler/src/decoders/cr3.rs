@@ -20,7 +20,6 @@ use crate::formats::tiff::reader::TiffReader;
 use crate::formats::tiff::{Entry, GenericTiffReader, Rational, Value};
 use crate::imgop::{Point, Rect};
 use crate::lens::{LensDescription, LensId, LensResolver};
-use crate::tags::TiffTag;
 use crate::{decoders::*, RawFile};
 use crate::{pumps::ByteStream, RawImage};
 

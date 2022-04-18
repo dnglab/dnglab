@@ -1,0 +1,21 @@
+make = "NIKON CORPORATION"
+model = "NIKON D850"
+clean_make = "NIKON CORPORATION"
+clean_model = "NIKON D850"
+color_pattern = "RGGB"
+active_area = [0, 0, 0, 0]
+crop_area = [16, 8, 16, 8] # TODO: This camera has Large/Medium/Small format with different crop
+
+[cameras.color_matrix]
+A = [1.1284, -0.4911, -0.0608, -0.6062, 1.4228, 0.196, -0.0877, 0.1605, 0.8117]
+D65 = [1.0405, -0.3755, -0.127, -0.5461, 1.3787, 0.1793, -0.104, 0.2015, 0.6785]
+
+[[cameras.modes]]
+mode = "12bit"
+blackpoint = 100
+whitepoint = 3880
+
+[[cameras.modes]]
+mode = "14bit"
+blackpoint = 400
+whitepoint = 15520

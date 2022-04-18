@@ -1,0 +1,21 @@
+make = "NIKON CORPORATION"
+model = "NIKON D610"
+clean_make = "Nikon"
+clean_model = "D610"
+color_pattern = "RGGB"
+active_area = [0, 0, 0, 0]
+crop_area = [8, 6, 10, 6]
+
+[cameras.color_matrix]
+A = [0.8508, -0.2966, 0.0171, -0.3991, 1.0849, 0.3635, -0.0467, 0.1053, 0.8072]
+D65 = [0.8178, -0.2245, -0.0609, -0.4857, 1.2394, 0.2776, -0.1207, 0.2086, 0.7298]
+
+[[cameras.modes]]
+mode = "14bit"
+blackpoint = 0
+whitepoint = 15520
+
+[[cameras.modes]]
+mode = "12bit"
+blackpoint = 0
+whitepoint = 3880

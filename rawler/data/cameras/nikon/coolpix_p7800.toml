@@ -1,0 +1,18 @@
+make = "NIKON"
+model = "COOLPIX P7800"
+clean_make = "Nikon"
+clean_model = "Coolpix P7800"
+
+color_pattern = "RGGB"
+active_area = [0, 0, 0, 0]
+crop_area = [16, 12, 16, 12]
+hints = ["unpacked", "big_endian"]
+
+[cameras.color_matrix]
+A = [1.1837, -0.6034, 0.0378, -0.1762, 0.9255, 0.2962, 0.0124, 0.0748, 0.5931]
+D65 = [1.0321, -0.392, -0.0931, -0.275, 1.1146, 0.1824, -0.0442, 0.1545, 0.5539]
+
+[[cameras.modes]]
+mode = "12bit"
+blackpoint = 3195
+whitepoint = 65000

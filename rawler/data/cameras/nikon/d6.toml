@@ -1,0 +1,21 @@
+make = "NIKON CORPORATION"
+model = "NIKON D6"
+clean_make = "Nikon"
+clean_model = "D6"
+color_pattern = "RGGB"
+active_area = [0, 0, 0, 0]
+crop_area = [8, 8, 8, 8]
+
+[cameras.color_matrix]
+A = [1.0069, -0.4889, -0.0308, -0.4631, 1.2025, 0.2957, -0.0149, 0.0673, 0.7522]
+D65 = [0.9028, -0.3423, -0.1035, -0.6321, 1.4265, 0.2217, -0.1013, 0.1683, 0.6928]
+
+[[cameras.modes]]
+mode = "12bit"
+blackpoint = 252
+whitepoint = 3880
+
+[[cameras.modes]]
+mode = "14bit"
+blackpoint = 1008
+whitepoint = 15520

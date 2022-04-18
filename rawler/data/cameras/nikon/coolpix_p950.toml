@@ -1,0 +1,17 @@
+make = "NIKON CORPORATION"
+model = "COOLPIX P950"
+clean_make = "Nikon"
+clean_model = "Coolpix P950"
+color_pattern = "RGGB"
+active_area = [0, 0, 0, 0]
+crop_area = [8, 7, 8, 7]
+hints = ["msb32"]
+
+[cameras.color_matrix]
+A = [1.5101, -0.8261, 0.1066, -0.0643, 0.8241, 0.2883, 0.055, 0.0456, 0.5677]
+D65 = [1.3307, -0.5641, -0.129, -0.2048, 1.0581, 0.1689, -0.0064, 0.1222, 0.5176]
+
+[[cameras.modes]]
+mode = "12bit"
+blackpoint = 200
+whitepoint = 4095

@@ -13,7 +13,6 @@ use crate::formats::tiff::*;
 use crate::packed::*;
 use crate::tags::ExifTag;
 use crate::tags::TiffCommonTag;
-use crate::tags::TiffTag;
 use crate::RawFile;
 use crate::RawImage;
 use crate::RawLoader;

@@ -186,7 +186,7 @@ pub fn raw_to_dng_internal<W: Write + Seek + Send>(rawfile: &mut RawFile, output
   root_ifd.add_tag(TiffCommonTag::Software, &params.software)?;
   root_ifd.add_tag(DngTag::DNGVersion, &DNG_VERSION_V1_4[..])?;
   root_ifd.add_tag(DngTag::DNGBackwardVersion, &DNG_VERSION_V1_4[..])?;
-  root_ifd.add_tag(TiffCommonTag::Make, rawimage.make.as_str())?;
+  root_ifd.add_tag(TiffCommonTag::Make, rawimage.clean_make.as_str())?;
   root_ifd.add_tag(TiffCommonTag::Model, rawimage.clean_model.as_str())?;
   let uq_model = format!("{} {}", rawimage.clean_make, rawimage.clean_model);
   root_ifd.add_tag(DngTag::UniqueCameraModel, uq_model.as_str())?;
