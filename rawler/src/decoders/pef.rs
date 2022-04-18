@@ -185,7 +185,10 @@ impl<'a> Decoder for PefDecoder<'a> {
 impl<'a> PefDecoder<'a> {
   fn get_wb(&self) -> Result<[f32; 4]> {
     match self.makernote.get_entry(PefMakernote::WhitePoint) {
-      Some(wb) => Ok([wb.force_u16(0) as f32, wb.force_u16(1) as f32, wb.force_u16(3) as f32, NAN]),
+      Some(wb) => {
+        let raw_wb = [wb.force_u16(0) as f32, wb.force_u16(1) as f32, wb.force_u16(2) as f32, wb.force_u16(3) as f32];
+        Ok(normalize_wb(raw_wb))
+      }
       None => Ok([NAN, NAN, NAN, NAN]),
     }
   }
@@ -312,6 +315,20 @@ impl<'a> PefDecoder<'a> {
     }
     Ok(PixU16::new(out, width, height))
   }
+}
+
+fn normalize_wb(raw_wb: [f32; 4]) -> [f32; 4] {
+  debug!("PEF raw wb: {:?}", raw_wb);
+  // We never have more then RGB colors so far (no RGBE etc.)
+  // So we combine G1 and G2 to get RGB wb.
+  let div = raw_wb[1];
+  let mut norm = raw_wb;
+  norm.iter_mut().for_each(|v| {
+    if v.is_normal() {
+      *v /= div
+    }
+  });
+  [norm[0], (norm[1] + norm[2]) / 2.0, norm[3], NAN]
 }
 
 crate::tags::tiff_tag_enum!(PefMakernote);

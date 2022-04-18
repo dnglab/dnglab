@@ -27,7 +27,7 @@ pub struct DevelopParams {
   pub white_level: Vec<u16>,
   pub black_level: Vec<u16>,
   pub pattern: BayerPattern,
-  pub wb_coeff: Vec<f32>,
+  pub wb_coeff: [f32; 4],
   pub active_area: Option<Rect>,
   pub crop_area: Option<Rect>,
   pub gamma: f32,
@@ -90,15 +90,6 @@ pub fn rescale<const N: usize>(pix: &[u16; N], black_level: &[f32; N], white_lev
   clip_oflow(&out)
 }
 
-/// Apply white balance coefficents
-pub fn apply_whitebalance<const N: usize>(pix: &[f32; N], coeff: &[f32; N]) -> [f32; N] {
-  let mut out = [f32::default(); N];
-  for i in 0..N {
-    out[i] = pix[i] * coeff[i];
-  }
-  out
-}
-
 /// Develop a RAW image to sRGB
 pub fn develop_raw_srgb(pixels: &[u16], params: &DevelopParams) -> Result<(Vec<f32>, Dim2)> {
   let black_level: [f32; 4] = match params.black_level.len() {
@@ -111,17 +102,7 @@ pub fn develop_raw_srgb(pixels: &[u16], params: &DevelopParams) -> Result<(Vec<f
     4 => Ok(collect_array(params.white_level.iter().map(|p| *p as f32))),
     c => Err(format!("White level sample count of {} is invalid", c)),
   }?;
-  let wb_coeff: [f32; 4] = match params.wb_coeff.len() {
-    1 => Ok(collect_array(iter::repeat(params.wb_coeff[0]))),
-    4 => Ok(collect_array(params.wb_coeff.iter().copied())),
-    3 => Ok(match params.pattern {
-      BayerPattern::RGGB | BayerPattern::BGGR => [params.wb_coeff[0], params.wb_coeff[1], params.wb_coeff[1], params.wb_coeff[2]],
-      BayerPattern::GBRG | BayerPattern::GRBG => [params.wb_coeff[0], params.wb_coeff[1], params.wb_coeff[2], params.wb_coeff[0]],
-      //BayerPattern::ERBG => todo!(),
-      //BayerPattern::RGEB => todo!(),
-    }),
-    c => Err(format!("AsShot wb_coeff sample count of {} is invalid", c)),
-  }?;
+  let wb_coeff: [f32; 4] = params.wb_coeff;
 
   //Color Space Conversion
   let xyz2cam = params

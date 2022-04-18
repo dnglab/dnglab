@@ -199,6 +199,14 @@ impl RawImage {
       }
     }
 
+    let pattern = match self.cfa.to_string().as_str() {
+      "RGGB" => BayerPattern::RGGB,
+      "BGGR" => BayerPattern::BGGR,
+      "GRBG" => BayerPattern::GRBG,
+      "GBRG" => BayerPattern::GBRG,
+      _ => panic!("Unsupported bayer pattern"),
+    };
+
     /*
     let active_area = Rect::new(
       Point::new(self.crops[3], self.crops[0]),
@@ -216,8 +224,8 @@ impl RawImage {
       }],
       white_level: self.whitelevels.into(),
       black_level: self.blacklevels.into(),
-      pattern: BayerPattern::RGGB,
-      wb_coeff: self.wb_coeffs.iter().map(|v| v / 1024.0).take(3).collect(),
+      pattern,
+      wb_coeff: self.wb_coeffs,
       active_area: self.active_area,
       crop_area: self.crop_area,
       gamma: 2.4,

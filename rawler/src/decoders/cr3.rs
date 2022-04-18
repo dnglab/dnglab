@@ -263,7 +263,7 @@ impl<'a> Decoder for Cr3Decoder<'a> {
       if 130 == entry.force_u16(3) {
         // Light Raw
         // WB is already applied, use 1.0
-        wb = [1024.0, 1024.0, 1024.0, 1024.0];
+        wb = [1.0, 1.0, 1.0, NAN];
       }
       if 131 == entry.force_u16(3) { // Standard Raw
          // Nothing special for Standard raw
@@ -455,7 +455,8 @@ impl<'a> Cr3Decoder<'a> {
         if let Some(levels) = rec8.get_entry(Cr3MakernoteTag::ColorData) {
           if let crate::formats::tiff::Value::Short(v) = &levels.value {
             if let Some(offset) = self.camera.param_usize("colordata_wbcoeffs") {
-              md.wb = Some([v[offset] as f32, v[offset + 1] as f32, v[offset + 3] as f32, NAN]);
+              let raw_wb = [v[offset] as f32, v[offset + 1] as f32, v[offset + 2] as f32, v[offset + 3] as f32];
+              md.wb = Some(normalize_wb(raw_wb));
             }
             if let Some(offset) = self.camera.param_usize("colordata_blacklevel") {
               debug!("Blacklevel offset: {:x}", offset);
@@ -590,6 +591,20 @@ impl Ctmd {
       Ok(None)
     }
   }
+}
+
+fn normalize_wb(raw_wb: [f32; 4]) -> [f32; 4] {
+  debug!("CR3 raw wb: {:?}", raw_wb);
+  // We never have more then RGB colors so far (no RGBE etc.)
+  // So we combine G1 and G2 to get RGB wb.
+  let div = raw_wb[1]; // G1 should be 1024 and we use this as divisor
+  let mut norm = raw_wb;
+  norm.iter_mut().for_each(|v| {
+    if v.is_normal() {
+      *v /= div
+    }
+  });
+  [norm[0], (norm[1] + norm[2]) / 2.0, norm[3], NAN]
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
