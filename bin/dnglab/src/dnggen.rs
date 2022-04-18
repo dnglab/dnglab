@@ -421,8 +421,18 @@ fn dng_put_raw(raw_ifd: &mut DirectoryWriter<'_, '_>, rawimage: &RawImage, param
 
   raw_ifd.add_tag(DngTag::WhiteLevel, white_level as u16)?;
   raw_ifd.add_tag(ExifTag::PlanarConfiguration, 1_u16)?;
-  raw_ifd.add_tag(DngTag::DefaultScale, [Rational::new(1, 1), Rational::new(1, 1)])?;
-  raw_ifd.add_tag(DngTag::BestQualityScale, Rational::new(1, 1))?;
+
+  raw_ifd.add_tag(
+    DngTag::DefaultScale,
+    [
+      Rational::new(rawimage.camera.default_scale[0][0], rawimage.camera.default_scale[0][1]),
+      Rational::new(rawimage.camera.default_scale[1][0], rawimage.camera.default_scale[1][1]),
+    ],
+  )?;
+  raw_ifd.add_tag(
+    DngTag::BestQualityScale,
+    Rational::new(rawimage.camera.best_quality_scale[0], rawimage.camera.best_quality_scale[1]),
+  )?;
 
   match rawimage.cpp {
     1 => {

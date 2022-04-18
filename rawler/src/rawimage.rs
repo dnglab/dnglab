@@ -17,6 +17,8 @@ use crate::{
 /// as all the needed metadata
 #[derive(Debug, Clone)]
 pub struct RawImage {
+  /// Camera definition
+  pub camera: Camera,
   /// camera make as encoded in the file
   pub make: String,
   /// camera model as encoded in the file
@@ -141,6 +143,7 @@ impl RawImage {
     let crop_area = cam.crop_area.map(|area| Rect::new_with_borders(Dim2::new(width, height), &area));
 
     RawImage {
+      camera: cam.clone(),
       make: cam.make.clone(),
       model: cam.model.clone(),
       clean_make: cam.clean_make.clone(),

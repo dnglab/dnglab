@@ -5,6 +5,8 @@ clean_model = "D1X"
 color_pattern = "BGGR"
 active_area = [0, 0, 0, 0]
 crop_area = [5, 6, 7, 10]
+default_scale = [[3, 4], [3, 2]]
+best_quality_scale = [4, 3]
 
 [cameras.color_matrix]
 A = [0.8782, -0.3307, -0.0369, -0.8013, 1.5872, 0.2248, -0.1397, 0.1883, 0.9065]

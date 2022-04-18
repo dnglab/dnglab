@@ -32,6 +32,8 @@ pub struct Camera {
   pub crop_area: Option<[usize; 4]>,
   pub bps: usize,
   pub highres_width: usize,
+  pub default_scale: [[u32; 2]; 2],
+  pub best_quality_scale: [u32; 2],
   pub hints: Vec<String>,
   pub params: HashMap<String, Value>,
 }
@@ -141,6 +143,29 @@ impl Camera {
         n @ "highres_width" => {
           self.highres_width = val.as_integer().unwrap_or_else(|| panic!("{} must be an integer", n)) as usize;
         }
+        n @ "default_scale" => {
+          let scale_vals = val.as_array().unwrap_or_else(|| panic!("{} must be an array", n));
+          let scale_h = scale_vals[0].as_array().expect("must be array");
+          let scale_v = scale_vals[1].as_array().expect("must be array");
+          let scale = [
+            [
+              scale_h[0].as_integer().expect("must be integer") as u32,
+              scale_h[1].as_integer().expect("must be integer") as u32,
+            ],
+            [
+              scale_v[0].as_integer().expect("must be integer") as u32,
+              scale_v[1].as_integer().expect("must be integer") as u32,
+            ],
+          ];
+          self.default_scale = scale;
+        }
+        n @ "best_quality_scale" => {
+          let scale_vals = val.as_array().unwrap_or_else(|| panic!("{} must be an array", n));
+          self.best_quality_scale = [
+            scale_vals[0].as_integer().expect("must be integer") as u32,
+            scale_vals[1].as_integer().expect("must be integer") as u32,
+          ];
+        }
         n @ "hints" => {
           self.hints = Vec::new();
           for hint in val.as_array().unwrap_or_else(|| panic!("{} must be an array", n)) {
@@ -183,6 +208,8 @@ impl Camera {
       crop_area: None,
       bps: 16,
       highres_width: usize::max_value(),
+      default_scale: [[1, 1], [1, 1]],
+      best_quality_scale: [1, 1],
       hints: Vec::new(),
       params: HashMap::new(),
       //orientation: Orientation::Unknown,
