@@ -1,5 +1,7 @@
 use std::fmt;
 
+use itertools::Itertools;
+
 use crate::formats::tiff::Value;
 
 pub const CFA_COLOR_R: usize = 0;
@@ -138,6 +140,11 @@ impl CFA {
       .cloned()
       .map(|v| v as u8)
       .collect()
+  }
+
+  /// Count of unique colors in pattern
+  pub fn unique_colors(&self) -> usize {
+    self.pattern.iter().flatten().unique().count()
   }
 
   /// Shift the pattern left and/or down. This is useful when cropping the image to get

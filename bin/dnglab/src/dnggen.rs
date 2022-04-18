@@ -157,7 +157,9 @@ pub fn raw_to_dng_internal<W: Write + Seek + Send>(rawfile: &mut RawFile, output
     rawimage.wb_coeffs[0], rawimage.wb_coeffs[1], rawimage.wb_coeffs[2], rawimage.wb_coeffs[3]
   );
 
-  let wb_coeff = wbcoeff_to_tiff_value(&rawimage.wb_coeffs);
+  // The count of elements depends on unique colors in CFA and can
+  // automatically added to the IFD.
+  let wb_coeff = wbcoeff_to_tiff_value(&rawimage);
 
   let mut dng = TiffWriter::new(output).unwrap();
   let mut root_ifd = dng.new_directory();
@@ -421,8 +423,18 @@ fn dng_put_raw(raw_ifd: &mut DirectoryWriter<'_, '_>, rawimage: &RawImage, param
 
   raw_ifd.add_tag(DngTag::WhiteLevel, white_level as u16)?;
   raw_ifd.add_tag(ExifTag::PlanarConfiguration, 1_u16)?;
-  raw_ifd.add_tag(DngTag::DefaultScale, [Rational::new(1, 1), Rational::new(1, 1)])?;
-  raw_ifd.add_tag(DngTag::BestQualityScale, Rational::new(1, 1))?;
+
+  raw_ifd.add_tag(
+    DngTag::DefaultScale,
+    [
+      Rational::new(rawimage.camera.default_scale[0][0], rawimage.camera.default_scale[0][1]),
+      Rational::new(rawimage.camera.default_scale[1][0], rawimage.camera.default_scale[1][1]),
+    ],
+  )?;
+  raw_ifd.add_tag(
+    DngTag::BestQualityScale,
+    Rational::new(rawimage.camera.best_quality_scale[0], rawimage.camera.best_quality_scale[1]),
+  )?;
 
   match rawimage.cpp {
     1 => {
@@ -670,13 +682,20 @@ fn blacklevel_to_tiff_value(blacklevel: &[u16; 4]) -> [SRational; 4] {
   ]
 }
 
-fn wbcoeff_to_tiff_value(wb_coeffs: &[f32; 4]) -> [Rational; 3] {
-  [
-    Rational::new_f32(1.0 / (wb_coeffs[0] / 1024.0), 1000000),
-    Rational::new_f32(1.0 / (wb_coeffs[1] / 1024.0), 1000000),
-    Rational::new_f32(1.0 / (wb_coeffs[2] / 1024.0), 1000000),
-    //Rational::new_f32(1.0 / (wb_coeffs[3] / 1024.0), 1000000),
-  ]
+/// DNG requires the WB values to be the reciprocal
+fn wbcoeff_to_tiff_value(rawimage: &RawImage) -> Vec<Rational> {
+  assert!([3, 4].contains(&rawimage.cfa.unique_colors()));
+  let wb = &rawimage.wb_coeffs;
+  let mut values = Vec::with_capacity(4);
+
+  values.push(Rational::new_f32(1.0 / wb[0], 100000));
+  values.push(Rational::new_f32(1.0 / wb[1], 100000));
+  values.push(Rational::new_f32(1.0 / wb[2], 100000));
+
+  if rawimage.cfa.unique_colors() == 4 {
+    values.push(Rational::new_f32(1.0 / wb[3], 100000));
+  }
+  values
 }
 
 fn matrix_to_tiff_value(xyz_to_cam: &[f32], d: i32) -> Vec<SRational> {

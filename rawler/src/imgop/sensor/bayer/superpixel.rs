@@ -1,11 +1,7 @@
 // SPDX-License-Identifier: LGPL-2.1
 // Copyright 2021 Daniel Vogelbacher <daniel@chaospixel.com>
 
-use crate::imgop::{
-  raw::{apply_whitebalance, rescale},
-  sensor::bayer::BayerPattern,
-  Dim2,
-};
+use crate::imgop::{raw::rescale, sensor::bayer::BayerPattern, Dim2};
 use rayon::prelude::*;
 
 /// Debayer image by using superpixel method.
@@ -29,13 +25,15 @@ pub fn debayer_superpixel(
       r1.chunks_exact(2)
         .zip(r2.chunks_exact(2))
         .map(|(a, b)| {
-          let scaled = rescale(&[a[0], a[1], b[0], b[1]], black_level, white_level);
-          let p = apply_whitebalance(&scaled, wb_coeff);
+          let p = rescale(&[a[0], a[1], b[0], b[1]], black_level, white_level);
+          let mul_r = wb_coeff[0];
+          let mul_g = wb_coeff[1];
+          let mul_b = wb_coeff[2];
           match pattern {
-            BayerPattern::RGGB => [p[0], (p[1] + p[2]) / 2.0, p[3]],
-            BayerPattern::BGGR => [p[3], (p[1] + p[2]) / 2.0, p[0]],
-            BayerPattern::GBRG => [p[2], (p[0] + p[3]) / 2.0, p[1]],
-            BayerPattern::GRBG => [p[1], (p[0] + p[3]) / 2.0, p[2]],
+            BayerPattern::RGGB => [mul_r * p[0], mul_g * (p[1] + p[2]) / 2.0, mul_b * p[3]],
+            BayerPattern::BGGR => [mul_r * p[3], mul_g * (p[1] + p[2]) / 2.0, mul_b * p[0]],
+            BayerPattern::GBRG => [mul_r * p[2], mul_g * (p[0] + p[3]) / 2.0, mul_b * p[1]],
+            BayerPattern::GRBG => [mul_r * p[1], mul_g * (p[0] + p[3]) / 2.0, mul_b * p[2]],
           }
         })
         .collect::<Vec<_>>()

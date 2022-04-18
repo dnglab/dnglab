@@ -194,7 +194,7 @@ impl<'a> Decoder for NefDecoder<'a> {
     };
 
     let mut cpp = 1;
-    let coeffs = self.get_wb()?;
+    let coeffs = normalize_wb(self.get_wb()?);
     debug!("WB coeff: {:?}", coeffs);
 
     assert_eq!(self.tiff.little_endian(), self.makernote.endian == Endian::Little);
@@ -254,7 +254,7 @@ impl<'a> Decoder for NefDecoder<'a> {
       img.crop_area = Some(crop);
     }
 
-    if let Some(blacklevels) = self.get_blacklevel()? {
+    if let Some(blacklevels) = self.get_blacklevel(bps)? {
       debug!("RAW Blacklevels: {:?}", blacklevels);
       img.blacklevels = blacklevels;
     }
@@ -297,9 +297,17 @@ impl<'a> Decoder for NefDecoder<'a> {
 }
 
 impl<'a> NefDecoder<'a> {
-  fn get_blacklevel(&self) -> Result<Option<[u16; 4]>> {
+  /// For older formats, we use the camera definitions and this here
+  /// is useless. But if we found here the levels in makernotes, we
+  /// use these instead. For 12 bit images, the blacklevels are still relative to
+  /// 14 bit image data. So we need to reduce them by 2 bits.
+  fn get_blacklevel(&self, bps: usize) -> Result<Option<[u16; 4]>> {
     if let Some(levels) = self.makernote.get_entry(NikonMakernote::BlackLevel) {
-      Ok(Some([levels.force_u16(0), levels.force_u16(1), levels.force_u16(2), levels.force_u16(3)]))
+      let mut blacklevel = [levels.force_u16(0), levels.force_u16(1), levels.force_u16(2), levels.force_u16(3)];
+      if bps == 12 {
+        blacklevel.iter_mut().for_each(|v| *v >>= 14 - 12);
+      }
+      Ok(Some(blacklevel))
     } else {
       Ok(None)
     }
@@ -322,7 +330,7 @@ impl<'a> NefDecoder<'a> {
     if self.camera.find_hint("nowb") {
       Ok([NAN, NAN, NAN, NAN])
     } else if let Some(levels) = self.makernote.get_entry(TiffCommonTag::NefWB0) {
-      Ok([levels.force_f32(0), 1.0, levels.force_f32(1), NAN])
+      Ok([levels.force_f32(0), 1.0, 1.0, levels.force_f32(1)])
     } else if let Some(levels) = self.makernote.get_entry(TiffCommonTag::NrwWB) {
       let data = levels.get_data();
       if data[0..3] == b"NRW"[..] {
@@ -330,11 +338,11 @@ impl<'a> NefDecoder<'a> {
         Ok([
           (LEu32(data, offset) << 2) as f32,
           (LEu32(data, offset + 4) + LEu32(data, offset + 8)) as f32,
+          (LEu32(data, offset + 4) + LEu32(data, offset + 8)) as f32,
           (LEu32(data, offset + 12) << 2) as f32,
-          NAN,
         ])
       } else {
-        Ok([BEu16(data, 1248) as f32, 256.0, BEu16(data, 1250) as f32, NAN])
+        Ok([BEu16(data, 1248) as f32, 256.0, 256.0, BEu16(data, 1250) as f32])
       }
     } else if let Some(levels) = self.makernote.get_entry(TiffCommonTag::NefWB1) {
       let mut version: u32 = 0;
@@ -345,18 +353,25 @@ impl<'a> NefDecoder<'a> {
       debug!("NEF Color balance version: 0x{:x}", version);
 
       match version {
-        0x100 => Ok([BEu16(buf, 36 * 2) as f32, BEu16(buf, 38 * 2) as f32, BEu16(buf, 37 * 2) as f32, NAN]),
+        0x100 => Ok([
+          BEu16(buf, 36 * 2) as f32,
+          BEu16(buf, 38 * 2) as f32,
+          BEu16(buf, 38 * 2) as f32,
+          BEu16(buf, 37 * 2) as f32,
+        ]),
         // Nikon D2H
-        0x102 => Ok([BEu16(buf, 5 * 2) as f32, BEu16(buf, 6 * 2) as f32, BEu16(buf, 8 * 2) as f32, NAN]),
+        0x102 => Ok([
+          BEu16(buf, 5 * 2) as f32,
+          BEu16(buf, 6 * 2) as f32,
+          BEu16(buf, 6 * 2) as f32,
+          BEu16(buf, 8 * 2) as f32,
+        ]),
         // Nikon D70
         0x103 => Ok([
           BEu16(buf, 10 * 2) as f32,
           BEu16(buf, 11 * 2) as f32,
+          BEu16(buf, 11 * 2) as f32,
           BEu16(buf, 12 * 2) as f32,
-          //levels.force_u16(10) as f32, // TODO: get_force, need bit cast?
-          //levels.force_u16(11) as f32,
-          //levels.force_u16(12) as f32,
-          NAN,
         ]),
         0x204 | 0x205 => {
           let serial = fetch_tiff_tag!(self.makernote, TiffCommonTag::NefSerial);
@@ -396,7 +411,12 @@ impl<'a> NefDecoder<'a> {
           }
 
           let off = if version == 0x204 { 6 } else { 14 };
-          Ok([BEu16(&buf, off) as f32, BEu16(&buf, off + 2) as f32, BEu16(&buf, off + 6) as f32, NAN])
+          Ok([
+            BEu16(&buf, off) as f32,
+            BEu16(&buf, off + 2) as f32,
+            BEu16(&buf, off + 4) as f32,
+            BEu16(&buf, off + 6) as f32,
+          ])
         }
         x => Err(RawlerError::unsupported(&self.camera, format!("NEF: Don't know about WB version 0x{:x}", x))),
       }
@@ -620,6 +640,20 @@ impl<'a> NefDecoder<'a> {
       }),
     )
   }
+}
+
+fn normalize_wb(raw_wb: [f32; 4]) -> [f32; 4] {
+  debug!("NEF raw wb: {:?}", raw_wb);
+  // We never have more then RGB colors so far (no RGBE etc.)
+  // So we combine G1 and G2 to get RGB wb.
+  let div = raw_wb[1];
+  let mut norm = raw_wb;
+  norm.iter_mut().for_each(|v| {
+    if v.is_normal() {
+      *v /= div
+    }
+  });
+  [norm[0], (norm[1] + norm[2]) / 2.0, norm[3], NAN]
 }
 
 crate::tags::tiff_tag_enum!(NikonMakernote);
