@@ -254,7 +254,7 @@ impl<'a> Decoder for NefDecoder<'a> {
       img.crop_area = Some(crop);
     }
 
-    if let Some(blacklevels) = self.get_blacklevel()? {
+    if let Some(blacklevels) = self.get_blacklevel(bps)? {
       debug!("RAW Blacklevels: {:?}", blacklevels);
       img.blacklevels = blacklevels;
     }
@@ -297,9 +297,17 @@ impl<'a> Decoder for NefDecoder<'a> {
 }
 
 impl<'a> NefDecoder<'a> {
-  fn get_blacklevel(&self) -> Result<Option<[u16; 4]>> {
+  /// For older formats, we use the camera definitions and this here
+  /// is useless. But if we found here the levels in makernotes, we
+  /// use these instead. For 12 bit images, the blacklevels are still relative to
+  /// 14 bit image data. So we need to reduce them by 2 bits.
+  fn get_blacklevel(&self, bps: usize) -> Result<Option<[u16; 4]>> {
     if let Some(levels) = self.makernote.get_entry(NikonMakernote::BlackLevel) {
-      Ok(Some([levels.force_u16(0), levels.force_u16(1), levels.force_u16(2), levels.force_u16(3)]))
+      let mut blacklevel = [levels.force_u16(0), levels.force_u16(1), levels.force_u16(2), levels.force_u16(3)];
+      if bps == 12 {
+        blacklevel.iter_mut().for_each(|v| *v >>= 14-12);
+      }
+      Ok(Some(blacklevel))
     } else {
       Ok(None)
     }
