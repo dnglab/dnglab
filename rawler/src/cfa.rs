@@ -147,6 +147,28 @@ impl CFA {
     self.pattern.iter().flatten().unique().count()
   }
 
+  /// Check if pattern is a RGGB or variant.
+  /// False for 4-color patterns like RGBE.
+  pub fn is_rgb(&self) -> bool {
+    self.name.chars().filter(|ch| !['R', 'G', 'B'].contains(ch)).count() == 0 && self.name.contains('R') && self.name.contains('G') && self.name.contains('B')
+  }
+
+  pub fn is_rgbe(&self) -> bool {
+    self.name.chars().filter(|ch| !['R', 'G', 'B', 'E'].contains(ch)).count() == 0
+      && self.name.contains('R')
+      && self.name.contains('G')
+      && self.name.contains('B')
+      && self.name.contains('E')
+  }
+
+  pub fn is_cygm(&self) -> bool {
+    self.name.chars().filter(|ch| !['C', 'Y', 'G', 'M'].contains(ch)).count() == 0
+      && self.name.contains('C')
+      && self.name.contains('Y')
+      && self.name.contains('G')
+      && self.name.contains('M')
+  }
+
   /// Shift the pattern left and/or down. This is useful when cropping the image to get
   /// the equivalent pattern of the crop when it's not a multiple of the pattern size.
   ///

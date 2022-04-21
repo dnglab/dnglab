@@ -120,7 +120,7 @@ impl<'a> DcrDecoder<'a> {
       }
     }
 
-    PixU16::new(out, width, height)
+    PixU16::new_with(out, width, height)
   }
 
   fn decode_segment(input: &mut ByteStream, size: usize) -> Vec<i32> {

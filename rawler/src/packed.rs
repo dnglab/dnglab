@@ -109,7 +109,7 @@ pub fn decode_12be_msb16(buf: &[u8], width: usize, height: usize, dummy: bool) -
     o[2] = (g3 << 4) | (g6 >> 4);
     o[3] = ((g6 & 0x0f) << 8) | g5;
   }
-  PixU16::new(out, width, height)
+  PixU16::new_with(out, width, height)
 }
 
 pub fn decode_12le_16bitaligned(buf: &[u8], width: usize, height: usize, dummy: bool) -> PixU16 {
@@ -158,7 +158,7 @@ pub fn decode_12be_msb32(buf: &[u8], width: usize, height: usize, dummy: bool) -
     o[6] = (g11 << 4) | (g10 >> 4);
     o[7] = ((g10 & 0x0f) << 8) | g9;
   }
-  PixU16::new(out, width, height)
+  PixU16::new_with(out, width, height)
 }
 
 pub fn decode_12le_wcontrol(buf: &[u8], width: usize, height: usize, dummy: bool) -> PixU16 {

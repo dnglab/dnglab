@@ -192,6 +192,22 @@ impl Rect {
     }
     None
   }
+
+  pub fn width(&self) -> usize {
+    self.d.w
+  }
+
+  pub fn height(&self) -> usize {
+    self.d.h
+  }
+
+  pub fn x(&self) -> usize {
+    self.p.x
+  }
+
+  pub fn y(&self) -> usize {
+    self.p.y
+  }
 }
 
 /// Crop image to specific area

@@ -267,7 +267,7 @@ impl<'a> OrfDecoder<'a> {
         }
       }
     }
-    PixU16::new(out, width, height)
+    PixU16::new_with(out, width, height)
   }
 
   fn get_blacks(&self) -> Result<[u16; 4]> {
