@@ -121,6 +121,6 @@ impl<'a> TfrDecoder<'a> {
     let mut out = alloc_image_ok!(width, height, dummy);
     let decompressor = LjpegDecompressor::new_full(src, true, false)?;
     decompressor.decode(&mut out, 0, width, width, height, dummy)?;
-    Ok(PixU16::new(out, width, height))
+    Ok(PixU16::new_with(out, width, height))
   }
 }

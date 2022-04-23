@@ -225,6 +225,7 @@ impl RawImage {
       white_level: self.whitelevels.into(),
       black_level: self.blacklevels.into(),
       pattern,
+      cfa: self.cfa.clone(),
       wb_coeff: self.wb_coeffs,
       active_area: self.active_area,
       crop_area: self.crop_area,

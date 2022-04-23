@@ -128,7 +128,7 @@ impl<'a> MosDecoder<'a> {
         let orow = if row & 1 == 1 { height - 1 - row / 2 } else { row / 2 };
         out[orow * width..(orow + 1) * width].copy_from_slice(line);
       }
-      Ok(PixU16::new(out, width, height))
+      Ok(PixU16::new_with(out, width, height))
     } else {
       Ok(ljpegout)
     }

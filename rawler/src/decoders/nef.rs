@@ -575,7 +575,7 @@ impl<'a> NefDecoder<'a> {
       }
     }
 
-    Ok(PixU16::new(out, width, height))
+    Ok(PixU16::new_with(out, width, height))
   }
 
   // Decodes 12 bit data in an YUY2-like pattern (2 Luma, 1 Chroma per 2 pixels).

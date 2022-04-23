@@ -343,7 +343,7 @@ impl<'a> ArwDecoder<'a> {
         row += 2
       }
     }
-    PixU16::new(out, width, height)
+    PixU16::new_with(out, width, height)
   }
 
   pub(crate) fn decode_arw2(buf: &[u8], width: usize, height: usize, curve: &LookupTable, dummy: bool) -> PixU16 {

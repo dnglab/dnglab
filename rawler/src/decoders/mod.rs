@@ -595,7 +595,7 @@ where
   out.chunks_mut(width).enumerate().for_each(|(row, line)| {
     closure(line, row);
   });
-  PixU16::new(out, width, height)
+  PixU16::new_with(out, width, height)
 }
 
 pub fn decode_threaded<F>(width: usize, height: usize, dummy: bool, closure: &F) -> PixU16
@@ -606,7 +606,7 @@ where
   out.par_chunks_mut(width).enumerate().for_each(|(row, line)| {
     closure(line, row);
   });
-  PixU16::new(out, width, height)
+  PixU16::new_with(out, width, height)
 }
 
 pub fn decode_threaded_multiline<F>(width: usize, height: usize, lines: usize, dummy: bool, closure: &F) -> PixU16
@@ -617,5 +617,5 @@ where
   out.par_chunks_mut(width * lines).enumerate().for_each(|(row, line)| {
     closure(line, row * lines);
   });
-  PixU16::new(out, width, height)
+  PixU16::new_with(out, width, height)
 }

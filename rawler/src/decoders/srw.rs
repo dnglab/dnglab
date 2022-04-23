@@ -201,7 +201,7 @@ impl<'a> SrwDecoder<'a> {
       }
     }
 
-    PixU16::new(out, width, height)
+    PixU16::new_with(out, width, height)
   }
 
   pub fn decode_srw2(buf: &[u8], width: usize, height: usize, dummy: bool) -> PixU16 {
@@ -265,7 +265,7 @@ impl<'a> SrwDecoder<'a> {
       }
     }
 
-    PixU16::new(out, width, height)
+    PixU16::new_with(out, width, height)
   }
 
   pub fn srw2_diff(pump: &mut BitPumpMSB, tbl: &[[u32; 2]; 1024]) -> i32 {
@@ -458,7 +458,7 @@ impl<'a> SrwDecoder<'a> {
       }
     }
 
-    PixU16::new(out, width, height)
+    PixU16::new_with(out, width, height)
   }
 
   fn get_wb(&self) -> Result<[f32; 4]> {

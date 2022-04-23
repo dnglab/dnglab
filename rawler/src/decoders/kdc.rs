@@ -144,6 +144,6 @@ impl<'a> KdcDecoder<'a> {
       }
     }
 
-    PixU16::new(out, width, height)
+    PixU16::new_with(out, width, height)
   }
 }

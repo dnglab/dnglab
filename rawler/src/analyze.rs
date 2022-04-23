@@ -261,6 +261,7 @@ pub fn raw_to_srgb<P: AsRef<Path>>(path: P, params: RawDecodeParams) -> Result<(
     RawImageData::Integer(buf) => buf,
     RawImageData::Float(_) => todo!(),
   };
+  assert_eq!(rawimage.cpp, 1);
   let (srgbf, dim) = develop_raw_srgb(&buf, &params)?;
   let output = rescale_f32_to_u16(&srgbf, 0, u16::MAX);
   Ok((output, dim))
