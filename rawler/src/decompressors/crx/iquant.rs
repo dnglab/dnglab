@@ -130,7 +130,7 @@ impl Tile {
 
   /// Make the QStep table out of the QP table
   fn make_qstep(&self, params: &CodecParams, qp_table: Vec<i32>) -> Result<Vec<QStep>> {
-    assert!(params.levels <= 3 && params.levels > 0);
+    debug_assert!(params.levels <= 3 && params.levels > 0);
     let qp_width = (self.plane_width >> 3) + if self.plane_width & 7 != 0 { 1 } else { 0 };
     let qp_height = (self.plane_height >> 1) + (self.plane_height & 1);
     let qp_height4 = (self.plane_height >> 2) + if self.plane_height & 3 > 0 { 1 } else { 0 };
@@ -168,7 +168,7 @@ impl Tile {
               row3_idx += 1;
             }
           }
-          assert_eq!(q_step.q_step_tbl.len(), qp_width * qp_height8);
+          debug_assert_eq!(q_step.q_step_tbl.len(), qp_width * qp_height8);
 
           q_steps.push(q_step);
         }
@@ -186,7 +186,7 @@ impl Tile {
               row1_idx += 1;
             }
           }
-          assert_eq!(q_step.q_step_tbl.len(), qp_width * qp_height4);
+          debug_assert_eq!(q_step.q_step_tbl.len(), qp_width * qp_height4);
           //eprintln!("4: {:?}, {:?}", q_step.q_step_tbl[405], q_step.q_step_tbl[8433]);
           q_steps.push(q_step);
         }
@@ -201,7 +201,7 @@ impl Tile {
               q_step.q_step_tbl.push(x);
             }
           }
-          assert_eq!(q_step.q_step_tbl.len(), qp_width * qp_height);
+          debug_assert_eq!(q_step.q_step_tbl.len(), qp_width * qp_height);
           q_steps.push(q_step);
         }
         _ => {

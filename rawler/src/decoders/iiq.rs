@@ -550,8 +550,8 @@ impl<'a> IiqDecoder<'a> {
             let mut col = cend - head[4];
             while col < img.width && col < cend && col < head[0] + head[2] - head[4] {
               let color = if nc > 2 {
-                assert!(row >= senscorr.sensor_margins.1);
-                assert!(col >= senscorr.sensor_margins.0);
+                debug_assert!(row >= senscorr.sensor_margins.1);
+                debug_assert!(col >= senscorr.sensor_margins.0);
                 cfa.color_at(row - senscorr.sensor_margins.1, col - senscorr.sensor_margins.0)
               } else {
                 0 // match all colors
@@ -587,8 +587,8 @@ impl<'a> IiqDecoder<'a> {
       let black = calib.blacklevel as i32;
       let (split_col, split_row) = self.split_offsets()?.expect("Must have split values");
       let (cblack, rblack) = q_blacklevel;
-      assert_eq!(cblack.len(), img.height * 2);
-      assert_eq!(rblack.len(), img.width * 2);
+      debug_assert_eq!(cblack.len(), img.height * 2);
+      debug_assert_eq!(rblack.len(), img.width * 2);
       img.for_each_index(|pix, row, col| {
         let qr = if row >= split_row { 1 } else { 0 };
         let qc = if col >= split_col { 1 } else { 0 };
@@ -926,7 +926,7 @@ impl<'a> IiqDecoder<'a> {
             }
           }
           let three_pixels = sum - val[max] as i32;
-          assert!(three_pixels >= 0);
+          debug_assert!(three_pixels >= 0);
           *img.at_mut(row, col) = ((three_pixels + 1) / 3) as u16;
           //image[row * width + col] = ((three_pixels + 1) / 3) as u16;
         }
@@ -1086,7 +1086,7 @@ impl<'a> IiqDecoder<'a> {
                 bit_check[i] = (idx as u32 >> 5) + bit_check[i] - 2;
               } else {
                 // Otherwise, just do a lookup.
-                assert!(idx < 32);
+                debug_assert!(idx < 32);
                 bit_check[i] = SV2_BIT_INDICATOR[idx];
                 pump.consume_bits(SV2_SKIP_BITS[idx] as u32);
               }

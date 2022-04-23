@@ -165,9 +165,9 @@ impl<'a> Decoder for Cr2Decoder<'a> {
           let mut out = alloc_image_plain!(width, height, dummy);
           if !dummy {
             let mut fieldwidths = Vec::new();
-            assert!(canoncol.value.force_usize(0) > 0);
-            assert!(canoncol.value.force_usize(1) > 0);
-            assert!(canoncol.value.force_usize(2) > 0);
+            debug_assert!(canoncol.value.force_usize(0) > 0);
+            debug_assert!(canoncol.value.force_usize(1) > 0);
+            debug_assert!(canoncol.value.force_usize(2) > 0);
             for _ in 0..canoncol.value.force_usize(0) {
               fieldwidths.push(canoncol.value.force_usize(1));
             }
@@ -613,7 +613,7 @@ impl<'a> Cr2Decoder<'a> {
       // Do horizontal interpolation.
       // [y1 Cb Cr ] [ y2 . . ] [y1 Cb Cr ] [ y2 . . ] ...
       if ljpeg.super_h() == 2 {
-        assert_eq!(slice.len() % width, 0);
+        debug_assert_eq!(slice.len() % width, 0);
         for row in 0..(slice.len() / width) {
           for col in (6..width).step_by(6) {
             let pix1 = row * width + col - 6;

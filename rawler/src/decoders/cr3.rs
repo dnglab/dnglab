@@ -483,7 +483,7 @@ impl<'a> Cr3Decoder<'a> {
   fn get_trak_index(&self, image_type: Cr3ImageType) -> Option<usize> {
     if let Some(cr3desc) = &self.bmff.filebox.moov.cr3desc {
       cr3desc.cctp.ccdts.iter().find(|ccdt| ccdt.image_type == image_type as u64).map(|rec| {
-        assert!(rec.trak_index > 0);
+        debug_assert!(rec.trak_index > 0);
         (rec.trak_index - 1) as usize
       })
     } else {
