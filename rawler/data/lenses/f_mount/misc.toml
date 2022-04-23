@@ -1,0 +1,143 @@
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "12 38 69 97 35 42 09 02"
+make = "Promaster"
+model = "Spectrum 7 100-400mm F4.5-6.7"
+focal_range = [[100, 1], [400, 1]]
+aperture_range = [[45, 10], [67, 10]]
+
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "00 54 56 56 30 30 00 00"
+make = "Coastal"
+model = "Optical Systems 60mm 1:4 UV-VIS-IR Macro Apo"
+focal_range = [[60, 1], [60, 1]]
+aperture_range = [[4, 1], [4, 1]]
+
+
+
+
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "BF 4E 26 26 1E 1E 01 04"
+make = "Irix"
+model = "15mm f/2.4 Firefly"
+focal_range = [[15, 1], [15, 1]]
+aperture_range = [[24, 10], [24, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "BF 3C 1B 1B 30 30 01 04"
+make = "Irix"
+model = "11mm f/4 Firefly"
+focal_range = [[11, 1], [11, 1]]
+aperture_range = [[4, 1], [4, 1]]
+
+
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "9A 4C 50 50 14 14 9C 06"
+make = "Yongnuo"
+model = "YN50mm F1.8N"
+focal_range = [[50, 1], [50, 1]]
+aperture_range = [[18, 10], [18, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "9F 48 48 48 24 24 A1 06"
+make = "Yongnuo"
+model = "YN40mm F2.8N"
+focal_range = [[40, 1], [40, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "9F 54 68 68 18 18 A2 06"
+make = "Yongnuo"
+model = "YN100mm F2N"
+focal_range = [[100, 1], [100, 1]]
+aperture_range = [[2, 1], [2, 1]]
+
+
+
+
+
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "02 40 44 5C 2C 34 02 00"
+make = "Exakta"
+model = "AF 35-70mm 1:3.5-4.5 MC"
+focal_range = [[35, 1], [70, 1]]
+aperture_range = [[35, 10], [45, 10]]
+
+
+
+
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "07 3E 30 43 2D 35 03 00"
+make = "Soligor"
+model = "AF Zoom 19-35mm 1:3.5-4.5 MC"
+focal_range = [[19, 1], [35, 1]]
+aperture_range = [[35, 10], [45, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "03 43 5C 81 35 35 02 00"
+make = "Soligor"
+model = "AF C/D Zoom UMCS 70-210mm 1:4.5"
+focal_range = [[70, 1], [210, 1]]
+aperture_range = [[45, 10], [45, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "12 4A 5C 81 31 3D 09 00"
+make = "Soligor"
+model = "AF C/D Auto Zoom+Macro 70-210mm 1:4-5.6 UMCS"
+focal_range = [[70, 1], [210, 1]]
+aperture_range = [[45, 10], [56, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "12 36 69 97 35 42 09 00"
+make = "Soligor"
+model = "AF Zoom 100-400mm 1:4.5-6.7 MC"
+focal_range = [[100, 1], [400, 1]]
+aperture_range = [[45, 10], [67, 10]]
+
+
+
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "00 00 48 48 53 53 00 01"
+make = "Loreo"
+model = "40mm F11-22 3D Lens in a Cap 9005"
+focal_range = [[40, 1], [40, 1]]
+aperture_range = [[11, 1], [22, 1]]
+
+
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "00 58 64 64 20 20 00 00"
+make = "Soligor"
+model = "C/D Macro MC 90mm f/2.5"
+focal_range = [[90, 1], [90, 1]]
+aperture_range = [[25, 10], [25, 10]]
+
+
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "4A 58 30 30 14 0C 4D 02"
+make = "Rokinon"
+model = "20mm f/1.8 ED AS UMC"
+focal_range = [[20, 1], [20, 1]]
+aperture_range = [[18, 10], [18, 10]]

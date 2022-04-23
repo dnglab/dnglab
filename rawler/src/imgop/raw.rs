@@ -181,6 +181,8 @@ pub fn develop_raw_srgb(pixels: &[u16], params: &DevelopParams) -> Result<(Vec<f
   }?;
   let wb_coeff: [f32; 4] = params.wb_coeff;
 
+  log::debug!("Develop raw, wb: {:?}, black: {:?}, white: {:?}", wb_coeff, black_level, white_level);
+
   //Color Space Conversion
   let xyz2cam = params
     .color_matrices

@@ -1,0 +1,47 @@
+[[lenses]]
+mount = "F-mount"
+nikon_id = "00 40 31 31 2C 2C 00 00"
+make = "Voigtlander"
+model = "Color Skopar 20mm F3.5 SLII Aspherical"
+focal_range = [[20, 1], [20, 1]]
+aperture_range = [[35, 10], [35, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "00 48 3C 3C 24 24 00 00"
+make = "Voigtlander"
+model = "Color Skopar 28mm F2.8 SL II"
+focal_range = [[28, 1], [28, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "00 54 48 48 18 18 00 00"
+make = "Voigtlander"
+model = "Ultron 40mm F2 SLII Aspherical"
+focal_range = [[40, 1], [40, 1]]
+aperture_range = [[2, 1], [2, 1]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "00 54 55 55 0C 0C 00 00"
+make = "Voigtlander"
+model = "Nokton 58mm F1.4 SLII"
+focal_range = [[58, 1], [58, 1]]
+aperture_range = [[14, 10], [14, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "00 40 64 64 2C 2C 00 00"
+make = "Voigtlander"
+model = "APO-Lanthar 90mm F3.5 SLII Close Focus"
+focal_range = [[90, 1], [90, 1]]
+aperture_range = [[35, 10], [35, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "07 40 30 45 2D 35 03 02.2"
+make = "Voigtlander"
+model = "Ultragon 19-35mm F3.5-4.5 VMV"
+focal_range = [[19, 1], [35, 1]]
+aperture_range = [[35, 10], [45, 10]]

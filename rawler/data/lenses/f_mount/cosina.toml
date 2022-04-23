@@ -1,0 +1,47 @@
+[[lenses]]
+mount = "F-mount"
+nikon_id = "06 3F 68 68 2C 2C 06 00"
+make = "Cosina"
+model = "AF 100mm F3.5 Macro"
+focal_range = [[100, 1], [100, 1]]
+aperture_range = [[35, 10], [35, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "07 36 3D 5F 2C 3C 03 00"
+make = "Cosina"
+model = "AF Zoom 28-80mm F3.5-5.6 MC Macro"
+focal_range = [[28, 1], [80, 1]]
+aperture_range = [[35, 10], [56, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "07 46 3D 6A 25 2F 03 00"
+make = "Cosina"
+model = "AF Zoom 28-105mm F2.8-3.8 MC"
+focal_range = [[28, 1], [105, 1]]
+aperture_range = [[28, 10], [38, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "12 36 5C 81 35 3D 09 00"
+make = "Cosina"
+model = "AF Zoom 70-210mm F4.5-5.6 MC Macro"
+focal_range = [[70, 1], [210, 1]]
+aperture_range = [[45, 10], [56, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "12 39 5C 8E 34 3D 08 02"
+make = "Cosina"
+model = "AF Zoom 70-300mm F4.5-5.6 MC Macro"
+focal_range = [[70, 1], [300, 1]]
+aperture_range = [[45, 10], [56, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "12 3B 68 8D 3D 43 09 02"
+make = "Cosina"
+model = "AF Zoom 100-300mm F5.6-6.7 MC Macro"
+focal_range = [[100, 1], [300, 1]]
+aperture_range = [[56, 10], [67, 10]]

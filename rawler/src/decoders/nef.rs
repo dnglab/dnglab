@@ -27,6 +27,8 @@ use crate::formats::tiff::IFD;
 use crate::imgop::Dim2;
 use crate::imgop::Point;
 use crate::imgop::Rect;
+use crate::lens::LensDescription;
+use crate::lens::LensResolver;
 use crate::packed::*;
 use crate::pixarray::PixU16;
 use crate::pumps::BitPump;
@@ -45,6 +47,11 @@ use super::Camera;
 use super::Decoder;
 use super::RawDecodeParams;
 use super::RawMetadata;
+
+mod decrypt;
+pub mod lensdata;
+
+const NIKON_F_MOUNT: &str = "F-mount";
 
 // NEF Huffman tables in order. First two are the normal huffman definitions.
 // Third one are weird shifts that are used in the lossy split encodings only
@@ -197,6 +204,8 @@ impl<'a> Decoder for NefDecoder<'a> {
     let coeffs = normalize_wb(self.get_wb()?);
     debug!("WB coeff: {:?}", coeffs);
 
+    let _ = self.get_lens_composite_id()?;
+
     assert_eq!(self.tiff.little_endian(), self.makernote.endian == Endian::Little);
 
     let image = if self.camera.model == "NIKON D100" {
@@ -273,12 +282,17 @@ impl<'a> Decoder for NefDecoder<'a> {
 
   fn raw_metadata(&self, _file: &mut RawFile, _params: RawDecodeParams) -> Result<RawMetadata> {
     let exif = Exif::new(self.tiff.root_ifd())?;
-    let mdata = RawMetadata::new(&self.camera, exif);
+    //let mdata = RawMetadata::new(&self.camera, exif);
+    let mdata = RawMetadata::new_with_lens(&self.camera, exif, self.get_lens_description()?.cloned());
     Ok(mdata)
   }
 
   fn full_image(&self, file: &mut RawFile) -> Result<Option<DynamicImage>> {
     let root_ifd = &self.tiff.root_ifd();
+    if !root_ifd.contains_singlestrip_image() {
+      // TODO: implement multistrip
+      return Ok(None);
+    }
     let buf = root_ifd
       .singlestrip_data(file.inner())
       .map_err(|e| RawlerError::General(format!("Failed to get strip data: {}", e)))?;
@@ -324,6 +338,26 @@ impl<'a> NefDecoder<'a> {
     } else {
       Ok(None)
     }
+  }
+
+  fn get_lens_composite_id(&self) -> Result<Option<String>> {
+    if let Some(lensdata) = lensdata::from_makernote(&self.makernote)? {
+      if let Some(lenstype) = self.makernote.get_entry(NikonMakernote::LensType) {
+        let comp = lensdata.composite_id(lenstype.force_u8(0));
+        log::debug!("NEF lens composite ID: {}", comp);
+        return Ok(Some(comp));
+      }
+    }
+    Ok(None)
+  }
+
+  /// Get lens description by analyzing TIFF tags and makernotes
+  fn get_lens_description(&self) -> Result<Option<&'static LensDescription>> {
+    if let Some(composite_id) = self.get_lens_composite_id()? {
+      let resolver = LensResolver::new().with_nikon_id(Some(composite_id)).with_mounts(&[NIKON_F_MOUNT.into()]);
+      return Ok(resolver.resolve());
+    }
+    Ok(None)
   }
 
   fn get_wb(&self) -> Result<[f32; 4]> {
@@ -663,12 +697,21 @@ crate::tags::tiff_tag_enum!(NikonMakernote);
 #[repr(u16)]
 pub enum NikonMakernote {
   MakernoteVersion = 0x0001,
+  NefWB0 = 0x000C,
   PreviewIFD = 0x0011,
+  NrwWB = 0x0014,
+  NefSerial = 0x001d,
   ImageSizeRaw = 0x003e,
   CropArea = 0x0045,
   BlackLevel = 0x003d,
+  LensType = 0x0083,
+  NefMeta1 = 0x008c,
+  NefMeta2 = 0x0096,
   ShotInfo = 0x0091,
   NefCompression = 0x0093,
+  NefWB1 = 0x0097,
+  LensData = 0x0098,
+  NefKey = 0x00a7,
 }
 
 /// Known NEF compression formats
