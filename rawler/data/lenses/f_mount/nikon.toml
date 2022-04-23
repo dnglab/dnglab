@@ -1,0 +1,2015 @@
+[[lenses]]
+mount = "F-mount"
+nikon_id = "01 58 50 50 14 14 02 00"
+make = "Nikon"
+model = "AF Nikkor 50mm f/1.8"
+focal_range = [[50, 1], [50, 1]]
+aperture_range = [[18, 10], [18, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "01 58 50 50 14 14 05 00"
+make = "Nikon"
+model = "AF Nikkor 50mm f/1.8"
+focal_range = [[50, 1], [50, 1]]
+aperture_range = [[18, 10], [18, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "02 42 44 5C 2A 34 02 00"
+make = "Nikon"
+model = "AF Zoom-Nikkor 35-70mm f/3.3-4.5"
+focal_range = [[35, 1], [70, 1]]
+aperture_range = [[33, 10], [45, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "02 42 44 5C 2A 34 08 00"
+make = "Nikon"
+model = "AF Zoom-Nikkor 35-70mm f/3.3-4.5"
+focal_range = [[35, 1], [70, 1]]
+aperture_range = [[33, 10], [45, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "03 48 5C 81 30 30 02 00"
+make = "Nikon"
+model = "AF Zoom-Nikkor 70-210mm f/4"
+focal_range = [[70, 1], [210, 1]]
+aperture_range = [[4, 1], [4, 1]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "04 48 3C 3C 24 24 03 00"
+make = "Nikon"
+model = "AF Nikkor 28mm f/2.8"
+focal_range = [[28, 1], [28, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "05 54 50 50 0C 0C 04 00"
+make = "Nikon"
+model = "AF Nikkor 50mm f/1.4"
+focal_range = [[50, 1], [50, 1]]
+aperture_range = [[14, 10], [14, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "06 54 53 53 24 24 06 00"
+make = "Nikon"
+model = "AF Micro-Nikkor 55mm f/2.8"
+focal_range = [[55, 1], [55, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "07 40 3C 62 2C 34 03 00"
+make = "Nikon"
+model = "AF Zoom-Nikkor 28-85mm f/3.5-4.5"
+focal_range = [[28, 1], [85, 1]]
+aperture_range = [[35, 10], [45, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "08 40 44 6A 2C 34 04 00"
+make = "Nikon"
+model = "AF Zoom-Nikkor 35-105mm f/3.5-4.5"
+focal_range = [[35, 1], [105, 1]]
+aperture_range = [[35, 10], [45, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "09 48 37 37 24 24 04 00"
+make = "Nikon"
+model = "AF Nikkor 24mm f/2.8"
+focal_range = [[24, 1], [24, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "0A 48 8E 8E 24 24 03 00"
+make = "Nikon"
+model = "AF Nikkor 300mm f/2.8 IF-ED"
+focal_range = [[300, 1], [300, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "0A 48 8E 8E 24 24 05 00"
+make = "Nikon"
+model = "AF Nikkor 300mm f/2.8 IF-ED N"
+focal_range = [[300, 1], [300, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "0B 48 7C 7C 24 24 05 00"
+make = "Nikon"
+model = "AF Nikkor 180mm f/2.8 IF-ED"
+focal_range = [[180, 1], [180, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "0D 40 44 72 2C 34 07 00"
+make = "Nikon"
+model = "AF Zoom-Nikkor 35-135mm f/3.5-4.5"
+focal_range = [[35, 1], [135, 1]]
+aperture_range = [[35, 10], [45, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "0E 48 5C 81 30 30 05 00"
+make = "Nikon"
+model = "AF Zoom-Nikkor 70-210mm f/4"
+focal_range = [[70, 1], [210, 1]]
+aperture_range = [[4, 1], [4, 1]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "0F 58 50 50 14 14 05 00"
+make = "Nikon"
+model = "AF Nikkor 50mm f/1.8 N"
+focal_range = [[50, 1], [50, 1]]
+aperture_range = [[18, 10], [18, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "10 48 8E 8E 30 30 08 00"
+make = "Nikon"
+model = "AF Nikkor 300mm f/4 IF-ED"
+focal_range = [[300, 1], [300, 1]]
+aperture_range = [[4, 1], [4, 1]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "11 48 44 5C 24 24 08 00"
+make = "Nikon"
+model = "AF Zoom-Nikkor 35-70mm f/2.8"
+focal_range = [[35, 1], [70, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "11 48 44 5C 24 24 15 00"
+make = "Nikon"
+model = "AF Zoom-Nikkor 35-70mm f/2.8"
+focal_range = [[35, 1], [70, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "12 48 5C 81 30 3C 09 00"
+make = "Nikon"
+model = "AF Nikkor 70-210mm f/4-5.6"
+focal_range = [[70, 1], [210, 1]]
+aperture_range = [[4, 1], [56, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "13 42 37 50 2A 34 0B 00"
+make = "Nikon"
+model = "AF Zoom-Nikkor 24-50mm f/3.3-4.5"
+focal_range = [[24, 1], [50, 1]]
+aperture_range = [[33, 10], [45, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "14 48 60 80 24 24 0B 00"
+make = "Nikon"
+model = "AF Zoom-Nikkor 80-200mm f/2.8 ED"
+focal_range = [[80, 1], [200, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "15 4C 62 62 14 14 0C 00"
+make = "Nikon"
+model = "AF Nikkor 85mm f/1.8"
+focal_range = [[85, 1], [85, 1]]
+aperture_range = [[18, 10], [18, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "17 3C A0 A0 30 30 0F 00"
+make = "Nikon"
+model = "Nikkor 500mm f/4 P ED IF"
+focal_range = [[500, 1], [500, 1]]
+aperture_range = [[4, 1], [4, 1]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "17 3C A0 A0 30 30 11 00"
+make = "Nikon"
+model = "Nikkor 500mm f/4 P ED IF"
+focal_range = [[500, 1], [500, 1]]
+aperture_range = [[4, 1], [4, 1]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "18 40 44 72 2C 34 0E 00"
+make = "Nikon"
+model = "AF Zoom-Nikkor 35-135mm f/3.5-4.5 N"
+focal_range = [[35, 1], [135, 1]]
+aperture_range = [[35, 10], [45, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "1A 54 44 44 18 18 11 00"
+make = "Nikon"
+model = "AF Nikkor 35mm f/2"
+focal_range = [[35, 1], [35, 1]]
+aperture_range = [[2, 1], [2, 1]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "1B 44 5E 8E 34 3C 10 00"
+make = "Nikon"
+model = "AF Zoom-Nikkor 75-300mm f/4.5-5.6"
+focal_range = [[75, 1], [300, 1]]
+aperture_range = [[45, 10], [56, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "1C 48 30 30 24 24 12 00"
+make = "Nikon"
+model = "AF Nikkor 20mm f/2.8"
+focal_range = [[20, 1], [20, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "1D 42 44 5C 2A 34 12 00"
+make = "Nikon"
+model = "AF Zoom-Nikkor 35-70mm f/3.3-4.5 N"
+focal_range = [[35, 1], [70, 1]]
+aperture_range = [[33, 10], [45, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "1E 54 56 56 24 24 13 00"
+make = "Nikon"
+model = "AF Micro-Nikkor 60mm f/2.8"
+focal_range = [[60, 1], [60, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "1F 54 6A 6A 24 24 14 00"
+make = "Nikon"
+model = "AF Micro-Nikkor 105mm f/2.8"
+focal_range = [[105, 1], [105, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "20 48 60 80 24 24 15 00"
+make = "Nikon"
+model = "AF Zoom-Nikkor 80-200mm f/2.8 ED"
+focal_range = [[80, 1], [200, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "21 40 3C 5C 2C 34 16 00"
+make = "Nikon"
+model = "AF Zoom-Nikkor 28-70mm f/3.5-4.5"
+focal_range = [[28, 1], [70, 1]]
+aperture_range = [[35, 10], [45, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "22 48 72 72 18 18 16 00"
+make = "Nikon"
+model = "AF DC-Nikkor 135mm f/2"
+focal_range = [[135, 1], [135, 1]]
+aperture_range = [[2, 1], [2, 1]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "23 30 BE CA 3C 48 17 00"
+make = "Nikon"
+model = "Zoom-Nikkor 1200-1700mm f/5.6-8 P ED IF"
+focal_range = [[1200, 1], [1700, 1]]
+aperture_range = [[56, 10], [8, 1]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "24 48 60 80 24 24 1A 02"
+make = "Nikon"
+model = "AF Zoom-Nikkor 80-200mm f/2.8D ED"
+focal_range = [[80, 1], [200, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "25 48 44 5C 24 24 1B 02"
+make = "Nikon"
+model = "AF Zoom-Nikkor 35-70mm f/2.8D"
+focal_range = [[35, 1], [70, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "25 48 44 5C 24 24 3A 02"
+make = "Nikon"
+model = "AF Zoom-Nikkor 35-70mm f/2.8D"
+focal_range = [[35, 1], [70, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "25 48 44 5C 24 24 52 02"
+make = "Nikon"
+model = "AF Zoom-Nikkor 35-70mm f/2.8D"
+focal_range = [[35, 1], [70, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "26 40 3C 5C 2C 34 1C 02"
+make = "Nikon"
+model = "AF Zoom-Nikkor 28-70mm f/3.5-4.5D"
+focal_range = [[28, 1], [70, 1]]
+aperture_range = [[35, 10], [45, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "27 48 8E 8E 24 24 1D 02"
+make = "Nikon"
+model = "AF-I Nikkor 300mm f/2.8D IF-ED"
+focal_range = [[300, 1], [300, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "27 48 8E 8E 24 24 F1 02"
+make = "Nikon"
+model = "AF-I Nikkor 300mm f/2.8D IF-ED + TC-14E"
+focal_range = [[300, 1], [300, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "27 48 8E 8E 24 24 E1 02"
+make = "Nikon"
+model = "AF-I Nikkor 300mm f/2.8D IF-ED + TC-17E"
+focal_range = [[300, 1], [300, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "27 48 8E 8E 24 24 F2 02"
+make = "Nikon"
+model = "AF-I Nikkor 300mm f/2.8D IF-ED + TC-20E"
+focal_range = [[300, 1], [300, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "28 3C A6 A6 30 30 1D 02"
+make = "Nikon"
+model = "AF-I Nikkor 600mm f/4D IF-ED"
+focal_range = [[600, 1], [600, 1]]
+aperture_range = [[4, 1], [4, 1]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "28 3C A6 A6 30 30 F1 02"
+make = "Nikon"
+model = "AF-I Nikkor 600mm f/4D IF-ED + TC-14E"
+focal_range = [[600, 1], [600, 1]]
+aperture_range = [[4, 1], [4, 1]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "28 3C A6 A6 30 30 E1 02"
+make = "Nikon"
+model = "AF-I Nikkor 600mm f/4D IF-ED + TC-17E"
+focal_range = [[600, 1], [600, 1]]
+aperture_range = [[4, 1], [4, 1]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "28 3C A6 A6 30 30 F2 02"
+make = "Nikon"
+model = "AF-I Nikkor 600mm f/4D IF-ED + TC-20E"
+focal_range = [[600, 1], [600, 1]]
+aperture_range = [[4, 1], [4, 1]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "2A 54 3C 3C 0C 0C 26 02"
+make = "Nikon"
+model = "AF Nikkor 28mm f/1.4D"
+focal_range = [[28, 1], [28, 1]]
+aperture_range = [[14, 10], [14, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "2B 3C 44 60 30 3C 1F 02"
+make = "Nikon"
+model = "AF Zoom-Nikkor 35-80mm f/4-5.6D"
+focal_range = [[35, 1], [80, 1]]
+aperture_range = [[4, 1], [56, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "2C 48 6A 6A 18 18 27 02"
+make = "Nikon"
+model = "AF DC-Nikkor 105mm f/2D"
+focal_range = [[105, 1], [105, 1]]
+aperture_range = [[2, 1], [2, 1]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "2D 48 80 80 30 30 21 02"
+make = "Nikon"
+model = "AF Micro-Nikkor 200mm f/4D IF-ED"
+focal_range = [[200, 1], [200, 1]]
+aperture_range = [[4, 1], [4, 1]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "2E 48 5C 82 30 3C 22 02"
+make = "Nikon"
+model = "AF Nikkor 70-210mm f/4-5.6D"
+focal_range = [[70, 1], [210, 1]]
+aperture_range = [[4, 1], [56, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "2E 48 5C 82 30 3C 28 02"
+make = "Nikon"
+model = "AF Nikkor 70-210mm f/4-5.6D"
+focal_range = [[70, 1], [210, 1]]
+aperture_range = [[4, 1], [56, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "2F 48 30 44 24 24 29 02.1"
+make = "Nikon"
+model = "AF Zoom-Nikkor 20-35mm f/2.8D IF"
+focal_range = [[20, 1], [35, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "30 48 98 98 24 24 24 02"
+make = "Nikon"
+model = "AF-I Nikkor 400mm f/2.8D IF-ED"
+focal_range = [[400, 1], [400, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "30 48 98 98 24 24 F1 02"
+make = "Nikon"
+model = "AF-I Nikkor 400mm f/2.8D IF-ED + TC-14E"
+focal_range = [[400, 1], [400, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "30 48 98 98 24 24 E1 02"
+make = "Nikon"
+model = "AF-I Nikkor 400mm f/2.8D IF-ED + TC-17E"
+focal_range = [[400, 1], [400, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "30 48 98 98 24 24 F2 02"
+make = "Nikon"
+model = "AF-I Nikkor 400mm f/2.8D IF-ED + TC-20E"
+focal_range = [[400, 1], [400, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "31 54 56 56 24 24 25 02"
+make = "Nikon"
+model = "AF Micro-Nikkor 60mm f/2.8D"
+focal_range = [[60, 1], [60, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "32 54 6A 6A 24 24 35 02.1"
+make = "Nikon"
+model = "AF Micro-Nikkor 105mm f/2.8D"
+focal_range = [[105, 1], [105, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "33 48 2D 2D 24 24 31 02"
+make = "Nikon"
+model = "AF Nikkor 18mm f/2.8D"
+focal_range = [[18, 1], [18, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "34 48 29 29 24 24 32 02"
+make = "Nikon"
+model = "AF Fisheye Nikkor 16mm f/2.8D"
+focal_range = [[16, 1], [16, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "35 3C A0 A0 30 30 33 02"
+make = "Nikon"
+model = "AF-I Nikkor 500mm f/4D IF-ED"
+focal_range = [[500, 1], [500, 1]]
+aperture_range = [[4, 1], [4, 1]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "35 3C A0 A0 30 30 F1 02"
+make = "Nikon"
+model = "AF-I Nikkor 500mm f/4D IF-ED + TC-14E"
+focal_range = [[500, 1], [500, 1]]
+aperture_range = [[4, 1], [4, 1]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "35 3C A0 A0 30 30 E1 02"
+make = "Nikon"
+model = "AF-I Nikkor 500mm f/4D IF-ED + TC-17E"
+focal_range = [[500, 1], [500, 1]]
+aperture_range = [[4, 1], [4, 1]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "35 3C A0 A0 30 30 F2 02"
+make = "Nikon"
+model = "AF-I Nikkor 500mm f/4D IF-ED + TC-20E"
+focal_range = [[500, 1], [500, 1]]
+aperture_range = [[4, 1], [4, 1]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "36 48 37 37 24 24 34 02"
+make = "Nikon"
+model = "AF Nikkor 24mm f/2.8D"
+focal_range = [[24, 1], [24, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "37 48 30 30 24 24 36 02"
+make = "Nikon"
+model = "AF Nikkor 20mm f/2.8D"
+focal_range = [[20, 1], [20, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "38 4C 62 62 14 14 37 02"
+make = "Nikon"
+model = "AF Nikkor 85mm f/1.8D"
+focal_range = [[85, 1], [85, 1]]
+aperture_range = [[18, 10], [18, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "3A 40 3C 5C 2C 34 39 02"
+make = "Nikon"
+model = "AF Zoom-Nikkor 28-70mm f/3.5-4.5D"
+focal_range = [[28, 1], [70, 1]]
+aperture_range = [[35, 10], [45, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "3B 48 44 5C 24 24 3A 02"
+make = "Nikon"
+model = "AF Zoom-Nikkor 35-70mm f/2.8D N"
+focal_range = [[35, 1], [70, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "3C 48 60 80 24 24 3B 02"
+make = "Nikon"
+model = "AF Zoom-Nikkor 80-200mm f/2.8D ED"
+focal_range = [[80, 1], [200, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "3D 3C 44 60 30 3C 3E 02"
+make = "Nikon"
+model = "AF Zoom-Nikkor 35-80mm f/4-5.6D"
+focal_range = [[35, 1], [80, 1]]
+aperture_range = [[4, 1], [56, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "3E 48 3C 3C 24 24 3D 02"
+make = "Nikon"
+model = "AF Nikkor 28mm f/2.8D"
+focal_range = [[28, 1], [28, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "3F 40 44 6A 2C 34 45 02"
+make = "Nikon"
+model = "AF Zoom-Nikkor 35-105mm f/3.5-4.5D"
+focal_range = [[35, 1], [105, 1]]
+aperture_range = [[35, 10], [45, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "41 48 7C 7C 24 24 43 02"
+make = "Nikon"
+model = "AF Nikkor 180mm f/2.8D IF-ED"
+focal_range = [[180, 1], [180, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "42 54 44 44 18 18 44 02"
+make = "Nikon"
+model = "AF Nikkor 35mm f/2D"
+focal_range = [[35, 1], [35, 1]]
+aperture_range = [[2, 1], [2, 1]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "43 54 50 50 0C 0C 46 02"
+make = "Nikon"
+model = "AF Nikkor 50mm f/1.4D"
+focal_range = [[50, 1], [50, 1]]
+aperture_range = [[14, 10], [14, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "44 44 60 80 34 3C 47 02"
+make = "Nikon"
+model = "AF Zoom-Nikkor 80-200mm f/4.5-5.6D"
+focal_range = [[80, 1], [200, 1]]
+aperture_range = [[45, 10], [56, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "45 40 3C 60 2C 3C 48 02"
+make = "Nikon"
+model = "AF Zoom-Nikkor 28-80mm f/3.5-5.6D"
+focal_range = [[28, 1], [80, 1]]
+aperture_range = [[35, 10], [56, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "46 3C 44 60 30 3C 49 02"
+make = "Nikon"
+model = "AF Zoom-Nikkor 35-80mm f/4-5.6D N"
+focal_range = [[35, 1], [80, 1]]
+aperture_range = [[4, 1], [56, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "47 42 37 50 2A 34 4A 02"
+make = "Nikon"
+model = "AF Zoom-Nikkor 24-50mm f/3.3-4.5D"
+focal_range = [[24, 1], [50, 1]]
+aperture_range = [[33, 10], [45, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "48 48 8E 8E 24 24 4B 02"
+make = "Nikon"
+model = "AF-S Nikkor 300mm f/2.8D IF-ED"
+focal_range = [[300, 1], [300, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "48 48 8E 8E 24 24 F1 02"
+make = "Nikon"
+model = "AF-S Nikkor 300mm f/2.8D IF-ED + TC-14E"
+focal_range = [[300, 1], [300, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "48 48 8E 8E 24 24 E1 02"
+make = "Nikon"
+model = "AF-S Nikkor 300mm f/2.8D IF-ED + TC-17E"
+focal_range = [[300, 1], [300, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "48 48 8E 8E 24 24 F2 02"
+make = "Nikon"
+model = "AF-S Nikkor 300mm f/2.8D IF-ED + TC-20E"
+focal_range = [[300, 1], [300, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "49 3C A6 A6 30 30 4C 02"
+make = "Nikon"
+model = "AF-S Nikkor 600mm f/4D IF-ED"
+focal_range = [[600, 1], [600, 1]]
+aperture_range = [[4, 1], [4, 1]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "49 3C A6 A6 30 30 F1 02"
+make = "Nikon"
+model = "AF-S Nikkor 600mm f/4D IF-ED + TC-14E"
+focal_range = [[600, 1], [600, 1]]
+aperture_range = [[4, 1], [4, 1]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "49 3C A6 A6 30 30 E1 02"
+make = "Nikon"
+model = "AF-S Nikkor 600mm f/4D IF-ED + TC-17E"
+focal_range = [[600, 1], [600, 1]]
+aperture_range = [[4, 1], [4, 1]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "49 3C A6 A6 30 30 F2 02"
+make = "Nikon"
+model = "AF-S Nikkor 600mm f/4D IF-ED + TC-20E"
+focal_range = [[600, 1], [600, 1]]
+aperture_range = [[4, 1], [4, 1]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "4A 54 62 62 0C 0C 4D 02"
+make = "Nikon"
+model = "AF Nikkor 85mm f/1.4D IF"
+focal_range = [[85, 1], [85, 1]]
+aperture_range = [[14, 10], [14, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "4B 3C A0 A0 30 30 4E 02"
+make = "Nikon"
+model = "AF-S Nikkor 500mm f/4D IF-ED"
+focal_range = [[500, 1], [500, 1]]
+aperture_range = [[4, 1], [4, 1]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "4B 3C A0 A0 30 30 F1 02"
+make = "Nikon"
+model = "AF-S Nikkor 500mm f/4D IF-ED + TC-14E"
+focal_range = [[500, 1], [500, 1]]
+aperture_range = [[4, 1], [4, 1]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "4B 3C A0 A0 30 30 E1 02"
+make = "Nikon"
+model = "AF-S Nikkor 500mm f/4D IF-ED + TC-17E"
+focal_range = [[500, 1], [500, 1]]
+aperture_range = [[4, 1], [4, 1]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "4B 3C A0 A0 30 30 F2 02"
+make = "Nikon"
+model = "AF-S Nikkor 500mm f/4D IF-ED + TC-20E"
+focal_range = [[500, 1], [500, 1]]
+aperture_range = [[4, 1], [4, 1]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "4C 40 37 6E 2C 3C 4F 02"
+make = "Nikon"
+model = "AF Zoom-Nikkor 24-120mm f/3.5-5.6D IF"
+focal_range = [[24, 1], [120, 1]]
+aperture_range = [[35, 10], [56, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "4D 40 3C 80 2C 3C 62 02"
+make = "Nikon"
+model = "AF Zoom-Nikkor 28-200mm f/3.5-5.6D IF"
+focal_range = [[28, 1], [200, 1]]
+aperture_range = [[35, 10], [56, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "4E 48 72 72 18 18 51 02"
+make = "Nikon"
+model = "AF DC-Nikkor 135mm f/2D"
+focal_range = [[135, 1], [135, 1]]
+aperture_range = [[2, 1], [2, 1]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "4F 40 37 5C 2C 3C 53 06"
+make = "Nikon"
+model = "IX-Nikkor 24-70mm f/3.5-5.6"
+focal_range = [[24, 1], [70, 1]]
+aperture_range = [[35, 10], [56, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "50 48 56 7C 30 3C 54 06"
+make = "Nikon"
+model = "IX-Nikkor 60-180mm f/4-5.6"
+focal_range = [[60, 1], [180, 1]]
+aperture_range = [[4, 1], [56, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "53 48 60 80 24 24 57 02"
+make = "Nikon"
+model = "AF Zoom-Nikkor 80-200mm f/2.8D ED"
+focal_range = [[80, 1], [200, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "53 48 60 80 24 24 60 02"
+make = "Nikon"
+model = "AF Zoom-Nikkor 80-200mm f/2.8D ED"
+focal_range = [[80, 1], [200, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "54 44 5C 7C 34 3C 58 02"
+make = "Nikon"
+model = "AF Zoom-Micro Nikkor 70-180mm f/4.5-5.6D ED"
+focal_range = [[70, 1], [180, 1]]
+aperture_range = [[45, 10], [56, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "54 44 5C 7C 34 3C 61 02"
+make = "Nikon"
+model = "AF Zoom-Micro Nikkor 70-180mm f/4.5-5.6D ED"
+focal_range = [[70, 1], [180, 1]]
+aperture_range = [[45, 10], [56, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "56 48 5C 8E 30 3C 5A 02"
+make = "Nikon"
+model = "AF Zoom-Nikkor 70-300mm f/4-5.6D ED"
+focal_range = [[70, 1], [300, 1]]
+aperture_range = [[4, 1], [56, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "59 48 98 98 24 24 5D 02"
+make = "Nikon"
+model = "AF-S Nikkor 400mm f/2.8D IF-ED"
+focal_range = [[400, 1], [400, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "59 48 98 98 24 24 F1 02"
+make = "Nikon"
+model = "AF-S Nikkor 400mm f/2.8D IF-ED + TC-14E"
+focal_range = [[400, 1], [400, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "59 48 98 98 24 24 E1 02"
+make = "Nikon"
+model = "AF-S Nikkor 400mm f/2.8D IF-ED + TC-17E"
+focal_range = [[400, 1], [400, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "59 48 98 98 24 24 F2 02"
+make = "Nikon"
+model = "AF-S Nikkor 400mm f/2.8D IF-ED + TC-20E"
+focal_range = [[400, 1], [400, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "5A 3C 3E 56 30 3C 5E 06"
+make = "Nikon"
+model = "IX-Nikkor 30-60mm f/4-5.6"
+focal_range = [[30, 1], [60, 1]]
+aperture_range = [[4, 1], [56, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "5B 44 56 7C 34 3C 5F 06"
+make = "Nikon"
+model = "IX-Nikkor 60-180mm f/4.5-5.6"
+focal_range = [[60, 1], [180, 1]]
+aperture_range = [[45, 10], [56, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "5D 48 3C 5C 24 24 63 02"
+make = "Nikon"
+model = "AF-S Zoom-Nikkor 28-70mm f/2.8D IF-ED"
+focal_range = [[28, 1], [70, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "5E 48 60 80 24 24 64 02"
+make = "Nikon"
+model = "AF-S Zoom-Nikkor 80-200mm f/2.8D IF-ED"
+focal_range = [[80, 1], [200, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "5F 40 3C 6A 2C 34 65 02"
+make = "Nikon"
+model = "AF Zoom-Nikkor 28-105mm f/3.5-4.5D IF"
+focal_range = [[28, 1], [105, 1]]
+aperture_range = [[35, 10], [45, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "60 40 3C 60 2C 3C 66 02"
+make = "Nikon"
+model = "AF Zoom-Nikkor 28-80mm f/3.5-5.6D"
+focal_range = [[28, 1], [80, 1]]
+aperture_range = [[35, 10], [56, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "61 44 5E 86 34 3C 67 02"
+make = "Nikon"
+model = "AF Zoom-Nikkor 75-240mm f/4.5-5.6D"
+focal_range = [[75, 1], [240, 1]]
+aperture_range = [[45, 10], [56, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "63 48 2B 44 24 24 68 02"
+make = "Nikon"
+model = "AF-S Nikkor 17-35mm f/2.8D IF-ED"
+focal_range = [[17, 1], [35, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "64 00 62 62 24 24 6A 02"
+make = "Nikon"
+model = "PC Micro-Nikkor 85mm f/2.8D"
+focal_range = [[85, 1], [85, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "65 44 60 98 34 3C 6B 0A"
+make = "Nikon"
+model = "AF VR Zoom-Nikkor 80-400mm f/4.5-5.6D ED"
+focal_range = [[80, 1], [400, 1]]
+aperture_range = [[45, 10], [56, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "66 40 2D 44 2C 34 6C 02"
+make = "Nikon"
+model = "AF Zoom-Nikkor 18-35mm f/3.5-4.5D IF-ED"
+focal_range = [[18, 1], [35, 1]]
+aperture_range = [[35, 10], [45, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "67 48 37 62 24 30 6D 02"
+make = "Nikon"
+model = "AF Zoom-Nikkor 24-85mm f/2.8-4D IF"
+focal_range = [[24, 1], [85, 1]]
+aperture_range = [[28, 10], [4, 1]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "68 42 3C 60 2A 3C 6E 06"
+make = "Nikon"
+model = "AF Zoom-Nikkor 28-80mm f/3.3-5.6G"
+focal_range = [[28, 1], [80, 1]]
+aperture_range = [[33, 10], [56, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "69 48 5C 8E 30 3C 6F 06"
+make = "Nikon"
+model = "AF Zoom-Nikkor 70-300mm f/4-5.6G"
+focal_range = [[70, 1], [300, 1]]
+aperture_range = [[4, 1], [56, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "6A 48 8E 8E 30 30 70 02"
+make = "Nikon"
+model = "AF-S Nikkor 300mm f/4D IF-ED"
+focal_range = [[300, 1], [300, 1]]
+aperture_range = [[4, 1], [4, 1]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "6B 48 24 24 24 24 71 02"
+make = "Nikon"
+model = "AF Nikkor ED 14mm f/2.8D"
+focal_range = [[14, 1], [14, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "6D 48 8E 8E 24 24 73 02"
+make = "Nikon"
+model = "AF-S Nikkor 300mm f/2.8D IF-ED II"
+focal_range = [[300, 1], [300, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "6E 48 98 98 24 24 74 02"
+make = "Nikon"
+model = "AF-S Nikkor 400mm f/2.8D IF-ED II"
+focal_range = [[400, 1], [400, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "6F 3C A0 A0 30 30 75 02"
+make = "Nikon"
+model = "AF-S Nikkor 500mm f/4D IF-ED II"
+focal_range = [[500, 1], [500, 1]]
+aperture_range = [[4, 1], [4, 1]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "70 3C A6 A6 30 30 76 02"
+make = "Nikon"
+model = "AF-S Nikkor 600mm f/4D IF-ED II"
+focal_range = [[600, 1], [600, 1]]
+aperture_range = [[4, 1], [4, 1]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "72 48 4C 4C 24 24 77 00"
+make = "Nikon"
+model = "Nikkor 45mm f/2.8 P"
+focal_range = [[45, 1], [45, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "74 40 37 62 2C 34 78 06"
+make = "Nikon"
+model = "AF-S Zoom-Nikkor 24-85mm f/3.5-4.5G IF-ED"
+focal_range = [[24, 1], [85, 1]]
+aperture_range = [[35, 10], [45, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "75 40 3C 68 2C 3C 79 06"
+make = "Nikon"
+model = "AF Zoom-Nikkor 28-100mm f/3.5-5.6G"
+focal_range = [[28, 1], [100, 1]]
+aperture_range = [[35, 10], [56, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "76 58 50 50 14 14 7A 02"
+make = "Nikon"
+model = "AF Nikkor 50mm f/1.8D"
+focal_range = [[50, 1], [50, 1]]
+aperture_range = [[18, 10], [18, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "77 48 5C 80 24 24 7B 0E"
+make = "Nikon"
+model = "AF-S VR Zoom-Nikkor 70-200mm f/2.8G IF-ED"
+focal_range = [[70, 1], [200, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "78 40 37 6E 2C 3C 7C 0E"
+make = "Nikon"
+model = "AF-S VR Zoom-Nikkor 24-120mm f/3.5-5.6G IF-ED"
+focal_range = [[24, 1], [120, 1]]
+aperture_range = [[35, 10], [56, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "79 40 3C 80 2C 3C 7F 06"
+make = "Nikon"
+model = "AF Zoom-Nikkor 28-200mm f/3.5-5.6G IF-ED"
+focal_range = [[28, 1], [200, 1]]
+aperture_range = [[35, 10], [56, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "7A 3C 1F 37 30 30 7E 06.1"
+make = "Nikon"
+model = "AF-S DX Zoom-Nikkor 12-24mm f/4G IF-ED"
+focal_range = [[12, 1], [24, 1]]
+aperture_range = [[4, 1], [4, 1]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "7B 48 80 98 30 30 80 0E"
+make = "Nikon"
+model = "AF-S VR Zoom-Nikkor 200-400mm f/4G IF-ED"
+focal_range = [[200, 1], [400, 1]]
+aperture_range = [[4, 1], [4, 1]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "7D 48 2B 53 24 24 82 06"
+make = "Nikon"
+model = "AF-S DX Zoom-Nikkor 17-55mm f/2.8G IF-ED"
+focal_range = [[17, 1], [55, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "7F 40 2D 5C 2C 34 84 06"
+make = "Nikon"
+model = "AF-S DX Zoom-Nikkor 18-70mm f/3.5-4.5G IF-ED"
+focal_range = [[18, 1], [70, 1]]
+aperture_range = [[35, 10], [45, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "80 48 1A 1A 24 24 85 06"
+make = "Nikon"
+model = "AF DX Fisheye-Nikkor 10.5mm f/2.8G ED"
+focal_range = [[105, 10], [105, 10]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "81 54 80 80 18 18 86 0E"
+make = "Nikon"
+model = "AF-S VR Nikkor 200mm f/2G IF-ED"
+focal_range = [[200, 1], [200, 1]]
+aperture_range = [[2, 1], [2, 1]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "82 48 8E 8E 24 24 87 0E"
+make = "Nikon"
+model = "AF-S VR Nikkor 300mm f/2.8G IF-ED"
+focal_range = [[300, 1], [300, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "83 00 B0 B0 5A 5A 88 04"
+make = "Nikon"
+model = "FSA-L2, EDG 65, 800mm F13 G"
+focal_range = [[800, 1], [800, 1]]
+aperture_range = [[13, 1], [13, 1]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "89 3C 53 80 30 3C 8B 06"
+make = "Nikon"
+model = "AF-S DX Zoom-Nikkor 55-200mm f/4-5.6G ED"
+focal_range = [[55, 1], [200, 1]]
+aperture_range = [[4, 1], [56, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "8A 54 6A 6A 24 24 8C 0E"
+make = "Nikon"
+model = "AF-S VR Micro-Nikkor 105mm f/2.8G IF-ED"
+focal_range = [[105, 1], [105, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "8B 40 2D 80 2C 3C 8D 0E"
+make = "Nikon"
+model = "AF-S DX VR Zoom-Nikkor 18-200mm f/3.5-5.6G IF-ED"
+focal_range = [[18, 1], [200, 1]]
+aperture_range = [[35, 10], [56, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "8B 40 2D 80 2C 3C FD 0E"
+make = "Nikon"
+model = "AF-S DX VR Zoom-Nikkor 18-200mm f/3.5-5.6G IF-ED [II]"
+focal_range = [[18, 1], [200, 1]]
+aperture_range = [[35, 10], [56, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "8C 40 2D 53 2C 3C 8E 06"
+make = "Nikon"
+model = "AF-S DX Zoom-Nikkor 18-55mm f/3.5-5.6G ED"
+focal_range = [[18, 1], [55, 1]]
+aperture_range = [[35, 10], [56, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "8D 44 5C 8E 34 3C 8F 0E"
+make = "Nikon"
+model = "AF-S VR Zoom-Nikkor 70-300mm f/4.5-5.6G IF-ED"
+focal_range = [[70, 1], [300, 1]]
+aperture_range = [[45, 10], [56, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "8F 40 2D 72 2C 3C 91 06"
+make = "Nikon"
+model = "AF-S DX Zoom-Nikkor 18-135mm f/3.5-5.6G IF-ED"
+focal_range = [[18, 1], [135, 1]]
+aperture_range = [[35, 10], [56, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "90 3B 53 80 30 3C 92 0E"
+make = "Nikon"
+model = "AF-S DX VR Zoom-Nikkor 55-200mm f/4-5.6G IF-ED"
+focal_range = [[55, 1], [200, 1]]
+aperture_range = [[4, 1], [56, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "92 48 24 37 24 24 94 06"
+make = "Nikon"
+model = "AF-S Zoom-Nikkor 14-24mm f/2.8G ED"
+focal_range = [[14, 1], [24, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "93 48 37 5C 24 24 95 06"
+make = "Nikon"
+model = "AF-S Zoom-Nikkor 24-70mm f/2.8G ED"
+focal_range = [[24, 1], [70, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "94 40 2D 53 2C 3C 96 06"
+make = "Nikon"
+model = "AF-S DX Zoom-Nikkor 18-55mm f/3.5-5.6G ED II"
+focal_range = [[18, 1], [55, 1]]
+aperture_range = [[35, 10], [56, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "95 4C 37 37 2C 2C 97 02"
+make = "Nikon"
+model = "PC-E Nikkor 24mm f/3.5D ED"
+focal_range = [[24, 1], [24, 1]]
+aperture_range = [[35, 10], [35, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "95 00 37 37 2C 2C 97 06"
+make = "Nikon"
+model = "PC-E Nikkor 24mm f/3.5D ED"
+focal_range = [[24, 1], [24, 1]]
+aperture_range = [[35, 10], [35, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "96 48 98 98 24 24 98 0E"
+make = "Nikon"
+model = "AF-S VR Nikkor 400mm f/2.8G ED"
+focal_range = [[400, 1], [400, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "97 3C A0 A0 30 30 99 0E"
+make = "Nikon"
+model = "AF-S VR Nikkor 500mm f/4G ED"
+focal_range = [[500, 1], [500, 1]]
+aperture_range = [[4, 1], [4, 1]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "98 3C A6 A6 30 30 9A 0E"
+make = "Nikon"
+model = "AF-S VR Nikkor 600mm f/4G ED"
+focal_range = [[600, 1], [600, 1]]
+aperture_range = [[4, 1], [4, 1]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "99 40 29 62 2C 3C 9B 0E"
+make = "Nikon"
+model = "AF-S DX VR Zoom-Nikkor 16-85mm f/3.5-5.6G ED"
+focal_range = [[16, 1], [85, 1]]
+aperture_range = [[35, 10], [56, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "9A 40 2D 53 2C 3C 9C 0E"
+make = "Nikon"
+model = "AF-S DX VR Zoom-Nikkor 18-55mm f/3.5-5.6G"
+focal_range = [[18, 1], [55, 1]]
+aperture_range = [[35, 10], [56, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "9B 54 4C 4C 24 24 9D 02"
+make = "Nikon"
+model = "PC-E Micro Nikkor 45mm f/2.8D ED"
+focal_range = [[45, 1], [45, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "9B 00 4C 4C 24 24 9D 06"
+make = "Nikon"
+model = "PC-E Micro Nikkor 45mm f/2.8D ED"
+focal_range = [[45, 1], [45, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "9C 54 56 56 24 24 9E 06"
+make = "Nikon"
+model = "AF-S Micro Nikkor 60mm f/2.8G ED"
+focal_range = [[60, 1], [60, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "9D 54 62 62 24 24 9F 02"
+make = "Nikon"
+model = "PC-E Micro Nikkor 85mm f/2.8D"
+focal_range = [[85, 1], [85, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "9D 00 62 62 24 24 9F 06"
+make = "Nikon"
+model = "PC-E Micro Nikkor 85mm f/2.8D"
+focal_range = [[85, 1], [85, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "9E 40 2D 6A 2C 3C A0 0E"
+make = "Nikon"
+model = "AF-S DX VR Zoom-Nikkor 18-105mm f/3.5-5.6G ED"
+focal_range = [[18, 1], [105, 1]]
+aperture_range = [[35, 10], [56, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "9F 58 44 44 14 14 A1 06"
+make = "Nikon"
+model = "AF-S DX Nikkor 35mm f/1.8G"
+focal_range = [[35, 1], [35, 1]]
+aperture_range = [[18, 10], [18, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "A0 54 50 50 0C 0C A2 06"
+make = "Nikon"
+model = "AF-S Nikkor 50mm f/1.4G"
+focal_range = [[50, 1], [50, 1]]
+aperture_range = [[14, 10], [14, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "A1 40 18 37 2C 34 A3 06"
+make = "Nikon"
+model = "AF-S DX Nikkor 10-24mm f/3.5-4.5G ED"
+focal_range = [[10, 1], [24, 1]]
+aperture_range = [[35, 10], [45, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "A1 40 2D 53 2C 3C CB 86"
+make = "Nikon"
+model = "AF-P DX Nikkor 18-55mm f/3.5-5.6G"
+focal_range = [[18, 1], [55, 1]]
+aperture_range = [[35, 10], [56, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "A2 48 5C 80 24 24 A4 0E"
+make = "Nikon"
+model = "AF-S Nikkor 70-200mm f/2.8G ED VR II"
+focal_range = [[70, 1], [200, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "A3 3C 29 44 30 30 A5 0E"
+make = "Nikon"
+model = "AF-S Nikkor 16-35mm f/4G ED VR"
+focal_range = [[16, 1], [35, 1]]
+aperture_range = [[4, 1], [4, 1]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "A4 54 37 37 0C 0C A6 06"
+make = "Nikon"
+model = "AF-S Nikkor 24mm f/1.4G ED"
+focal_range = [[24, 1], [24, 1]]
+aperture_range = [[14, 10], [14, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "A5 40 3C 8E 2C 3C A7 0E"
+make = "Nikon"
+model = "AF-S Nikkor 28-300mm f/3.5-5.6G ED VR"
+focal_range = [[28, 1], [300, 1]]
+aperture_range = [[35, 10], [56, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "A6 48 8E 8E 24 24 A8 0E"
+make = "Nikon"
+model = "AF-S Nikkor 300mm f/2.8G IF-ED VR II"
+focal_range = [[300, 1], [300, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "A7 4B 62 62 2C 2C A9 0E"
+make = "Nikon"
+model = "AF-S DX Micro Nikkor 85mm f/3.5G ED VR"
+focal_range = [[85, 1], [85, 1]]
+aperture_range = [[35, 10], [35, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "A8 48 80 98 30 30 AA 0E"
+make = "Nikon"
+model = "AF-S Zoom-Nikkor 200-400mm f/4G IF-ED VR II"
+focal_range = [[200, 1], [400, 1]]
+aperture_range = [[4, 1], [4, 1]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "A9 54 80 80 18 18 AB 0E"
+make = "Nikon"
+model = "AF-S Nikkor 200mm f/2G ED VR II"
+focal_range = [[200, 1], [200, 1]]
+aperture_range = [[2, 1], [2, 1]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "AA 3C 37 6E 30 30 AC 0E"
+make = "Nikon"
+model = "AF-S Nikkor 24-120mm f/4G ED VR"
+focal_range = [[24, 1], [120, 1]]
+aperture_range = [[4, 1], [4, 1]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "AC 38 53 8E 34 3C AE 0E"
+make = "Nikon"
+model = "AF-S DX Nikkor 55-300mm f/4.5-5.6G ED VR"
+focal_range = [[55, 1], [300, 1]]
+aperture_range = [[45, 10], [56, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "AD 3C 2D 8E 2C 3C AF 0E"
+make = "Nikon"
+model = "AF-S DX Nikkor 18-300mm f/3.5-5.6G ED VR"
+focal_range = [[18, 1], [300, 1]]
+aperture_range = [[35, 10], [56, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "AE 54 62 62 0C 0C B0 06"
+make = "Nikon"
+model = "AF-S Nikkor 85mm f/1.4G"
+focal_range = [[85, 1], [85, 1]]
+aperture_range = [[14, 10], [14, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "AF 54 44 44 0C 0C B1 06"
+make = "Nikon"
+model = "AF-S Nikkor 35mm f/1.4G"
+focal_range = [[35, 1], [35, 1]]
+aperture_range = [[14, 10], [14, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "B0 4C 50 50 14 14 B2 06"
+make = "Nikon"
+model = "AF-S Nikkor 50mm f/1.8G"
+focal_range = [[50, 1], [50, 1]]
+aperture_range = [[18, 10], [18, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "B1 48 48 48 24 24 B3 06"
+make = "Nikon"
+model = "AF-S DX Micro Nikkor 40mm f/2.8G"
+focal_range = [[40, 1], [40, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "B2 48 5C 80 30 30 B4 0E"
+make = "Nikon"
+model = "AF-S Nikkor 70-200mm f/4G ED VR"
+focal_range = [[70, 1], [200, 1]]
+aperture_range = [[4, 1], [4, 1]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "B3 4C 62 62 14 14 B5 06"
+make = "Nikon"
+model = "AF-S Nikkor 85mm f/1.8G"
+focal_range = [[85, 1], [85, 1]]
+aperture_range = [[18, 10], [18, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "B4 40 37 62 2C 34 B6 0E"
+make = "Nikon"
+model = "AF-S Zoom-Nikkor 24-85mm f/3.5-4.5G IF-ED VR"
+focal_range = [[24, 1], [85, 1]]
+aperture_range = [[35, 10], [45, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "B5 4C 3C 3C 14 14 B7 06"
+make = "Nikon"
+model = "AF-S Nikkor 28mm f/1.8G"
+focal_range = [[28, 1], [28, 1]]
+aperture_range = [[18, 10], [18, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "B6 3C B0 B0 3C 3C B8 0E"
+make = "Nikon"
+model = "AF-S VR Nikkor 800mm f/5.6E FL ED"
+focal_range = [[800, 1], [800, 1]]
+aperture_range = [[56, 10], [56, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "B6 3C B0 B0 3C 3C B8 4E"
+make = "Nikon"
+model = "AF-S VR Nikkor 800mm f/5.6E FL ED"
+focal_range = [[800, 1], [800, 1]]
+aperture_range = [[56, 10], [56, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "B7 44 60 98 34 3C B9 0E"
+make = "Nikon"
+model = "AF-S Nikkor 80-400mm f/4.5-5.6G ED VR"
+focal_range = [[80, 1], [400, 1]]
+aperture_range = [[45, 10], [56, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "B8 40 2D 44 2C 34 BA 06"
+make = "Nikon"
+model = "AF-S Nikkor 18-35mm f/3.5-4.5G ED"
+focal_range = [[18, 1], [35, 1]]
+aperture_range = [[35, 10], [45, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "A0 40 2D 74 2C 3C BB 0E"
+make = "Nikon"
+model = "AF-S DX Nikkor 18-140mm f/3.5-5.6G ED VR"
+focal_range = [[18, 1], [140, 1]]
+aperture_range = [[35, 10], [56, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "A1 54 55 55 0C 0C BC 06"
+make = "Nikon"
+model = "AF-S Nikkor 58mm f/1.4G"
+focal_range = [[58, 1], [58, 1]]
+aperture_range = [[14, 10], [14, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "A1 48 6E 8E 24 24 DB 4E"
+make = "Nikon"
+model = "AF-S Nikkor 120-300mm f/2.8E FL ED SR VR"
+focal_range = [[120, 1], [300, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "A2 40 2D 53 2C 3C BD 0E"
+make = "Nikon"
+model = "AF-S DX Nikkor 18-55mm f/3.5-5.6G VR II"
+focal_range = [[18, 1], [55, 1]]
+aperture_range = [[35, 10], [56, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "A4 40 2D 8E 2C 40 BF 0E"
+make = "Nikon"
+model = "AF-S DX Nikkor 18-300mm f/3.5-6.3G ED VR"
+focal_range = [[18, 1], [300, 1]]
+aperture_range = [[35, 10], [63, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "A5 4C 44 44 14 14 C0 06"
+make = "Nikon"
+model = "AF-S Nikkor 35mm f/1.8G ED"
+focal_range = [[35, 1], [35, 1]]
+aperture_range = [[18, 10], [18, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "A6 48 98 98 24 24 C1 0E"
+make = "Nikon"
+model = "AF-S Nikkor 400mm f/2.8E FL ED VR"
+focal_range = [[400, 1], [400, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "A7 3C 53 80 30 3C C2 0E"
+make = "Nikon"
+model = "AF-S DX Nikkor 55-200mm f/4-5.6G ED VR II"
+focal_range = [[55, 1], [200, 1]]
+aperture_range = [[4, 1], [56, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "A8 48 8E 8E 30 30 C3 4E"
+make = "Nikon"
+model = "AF-S Nikkor 300mm f/4E PF ED VR"
+focal_range = [[300, 1], [300, 1]]
+aperture_range = [[4, 1], [4, 1]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "A8 48 8E 8E 30 30 C3 0E"
+make = "Nikon"
+model = "AF-S Nikkor 300mm f/4E PF ED VR"
+focal_range = [[300, 1], [300, 1]]
+aperture_range = [[4, 1], [4, 1]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "A9 4C 31 31 14 14 C4 06"
+make = "Nikon"
+model = "AF-S Nikkor 20mm f/1.8G ED"
+focal_range = [[20, 1], [20, 1]]
+aperture_range = [[18, 10], [18, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "AA 48 37 5C 24 24 C5 4E"
+make = "Nikon"
+model = "AF-S Nikkor 24-70mm f/2.8E ED VR"
+focal_range = [[24, 1], [70, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "AA 48 37 5C 24 24 C5 0E"
+make = "Nikon"
+model = "AF-S Nikkor 24-70mm f/2.8E ED VR"
+focal_range = [[24, 1], [70, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "AB 3C A0 A0 30 30 C6 4E"
+make = "Nikon"
+model = "AF-S Nikkor 500mm f/4E FL ED VR"
+focal_range = [[500, 1], [500, 1]]
+aperture_range = [[4, 1], [4, 1]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "AC 3C A6 A6 30 30 C7 4E"
+make = "Nikon"
+model = "AF-S Nikkor 600mm f/4E FL ED VR"
+focal_range = [[600, 1], [600, 1]]
+aperture_range = [[4, 1], [4, 1]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "AD 48 28 60 24 30 C8 4E"
+make = "Nikon"
+model = "AF-S DX Nikkor 16-80mm f/2.8-4E ED VR"
+focal_range = [[16, 1], [80, 1]]
+aperture_range = [[28, 10], [4, 1]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "AD 48 28 60 24 30 C8 0E"
+make = "Nikon"
+model = "AF-S DX Nikkor 16-80mm f/2.8-4E ED VR"
+focal_range = [[16, 1], [80, 1]]
+aperture_range = [[28, 10], [4, 1]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "AE 3C 80 A0 3C 3C C9 4E"
+make = "Nikon"
+model = "AF-S Nikkor 200-500mm f/5.6E ED VR"
+focal_range = [[200, 1], [500, 1]]
+aperture_range = [[56, 10], [56, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "AE 3C 80 A0 3C 3C C9 0E"
+make = "Nikon"
+model = "AF-S Nikkor 200-500mm f/5.6E ED VR"
+focal_range = [[200, 1], [500, 1]]
+aperture_range = [[56, 10], [56, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "A0 40 2D 53 2C 3C CA 8E"
+make = "Nikon"
+model = "AF-P DX Nikkor 18-55mm f/3.5-5.6G"
+focal_range = [[18, 1], [55, 1]]
+aperture_range = [[35, 10], [56, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "A0 40 2D 53 2C 3C CA 0E"
+make = "Nikon"
+model = "AF-P DX Nikkor 18-55mm f/3.5-5.6G VR"
+focal_range = [[18, 1], [55, 1]]
+aperture_range = [[35, 10], [56, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "AF 4C 37 37 14 14 CC 06"
+make = "Nikon"
+model = "AF-S Nikkor 24mm f/1.8G ED"
+focal_range = [[24, 1], [24, 1]]
+aperture_range = [[18, 10], [18, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "A2 38 5C 8E 34 40 CD 86"
+make = "Nikon"
+model = "AF-P DX Nikkor 70-300mm f/4.5-6.3G VR"
+focal_range = [[70, 1], [300, 1]]
+aperture_range = [[45, 10], [63, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "A3 38 5C 8E 34 40 CE 8E"
+make = "Nikon"
+model = "AF-P DX Nikkor 70-300mm f/4.5-6.3G ED VR"
+focal_range = [[70, 1], [300, 1]]
+aperture_range = [[45, 10], [63, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "A3 38 5C 8E 34 40 CE 0E"
+make = "Nikon"
+model = "AF-P DX Nikkor 70-300mm f/4.5-6.3G ED"
+focal_range = [[70, 1], [300, 1]]
+aperture_range = [[45, 10], [63, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "A4 48 5C 80 24 24 CF 4E"
+make = "Nikon"
+model = "AF-S Nikkor 70-200mm f/2.8E FL ED VR"
+focal_range = [[70, 1], [200, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "A4 48 5C 80 24 24 CF 0E"
+make = "Nikon"
+model = "AF-S Nikkor 70-200mm f/2.8E FL ED VR"
+focal_range = [[70, 1], [200, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "A5 54 6A 6A 0C 0C D0 46"
+make = "Nikon"
+model = "AF-S Nikkor 105mm f/1.4E ED"
+focal_range = [[105, 1], [105, 1]]
+aperture_range = [[14, 10], [14, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "A5 54 6A 6A 0C 0C D0 06"
+make = "Nikon"
+model = "AF-S Nikkor 105mm f/1.4E ED"
+focal_range = [[105, 1], [105, 1]]
+aperture_range = [[14, 10], [14, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "A6 48 2F 2F 30 30 D1 46"
+make = "Nikon"
+model = "PC Nikkor 19mm f/4E ED"
+focal_range = [[19, 1], [19, 1]]
+aperture_range = [[4, 1], [4, 1]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "A6 48 2F 2F 30 30 D1 06"
+make = "Nikon"
+model = "PC Nikkor 19mm f/4E ED"
+focal_range = [[19, 1], [19, 1]]
+aperture_range = [[4, 1], [4, 1]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "A7 40 11 26 2C 34 D2 46"
+make = "Nikon"
+model = "AF-S Fisheye Nikkor 8-15mm f/3.5-4.5E ED"
+focal_range = [[8, 1], [15, 1]]
+aperture_range = [[35, 10], [45, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "A7 40 11 26 2C 34 D2 06"
+make = "Nikon"
+model = "AF-S Fisheye Nikkor 8-15mm f/3.5-4.5E ED"
+focal_range = [[8, 1], [15, 1]]
+aperture_range = [[35, 10], [45, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "A8 38 18 30 34 3C D3 8E"
+make = "Nikon"
+model = "AF-P DX Nikkor 10-20mm f/4.5-5.6G VR"
+focal_range = [[10, 1], [20, 1]]
+aperture_range = [[45, 10], [56, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "A8 38 18 30 34 3C D3 0E"
+make = "Nikon"
+model = "AF-P DX Nikkor 10-20mm f/4.5-5.6G VR"
+focal_range = [[10, 1], [20, 1]]
+aperture_range = [[45, 10], [56, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "A9 48 7C 98 30 30 D4 4E"
+make = "Nikon"
+model = "AF-S Nikkor 180-400mm f/4E TC1.4 FL ED VR"
+focal_range = [[180, 1], [400, 1]]
+aperture_range = [[4, 1], [4, 1]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "A9 48 7C 98 30 30 D4 0E"
+make = "Nikon"
+model = "AF-S Nikkor 180-400mm f/4E TC1.4 FL ED VR"
+focal_range = [[180, 1], [400, 1]]
+aperture_range = [[4, 1], [4, 1]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "AA 48 88 A4 3C 3C D5 4E"
+make = "Nikon"
+model = "AF-S Nikkor 180-400mm f/4E TC1.4 FL ED VR + 1.4x TC"
+focal_range = [[180, 1], [400, 1]]
+aperture_range = [[4, 1], [4, 1]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "AA 48 88 A4 3C 3C D5 0E"
+make = "Nikon"
+model = "AF-S Nikkor 180-400mm f/4E TC1.4 FL ED VR + 1.4x TC"
+focal_range = [[180, 1], [400, 1]]
+aperture_range = [[4, 1], [4, 1]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "AB 44 5C 8E 34 3C D6 CE"
+make = "Nikon"
+model = "AF-P Nikkor 70-300mm f/4.5-5.6E ED VR"
+focal_range = [[70, 1], [300, 1]]
+aperture_range = [[45, 10], [56, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "AB 44 5C 8E 34 3C D6 0E"
+make = "Nikon"
+model = "AF-P Nikkor 70-300mm f/4.5-5.6E ED VR"
+focal_range = [[70, 1], [300, 1]]
+aperture_range = [[45, 10], [56, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "AB 44 5C 8E 34 3C D6 4E"
+make = "Nikon"
+model = "AF-P Nikkor 70-300mm f/4.5-5.6E ED VR"
+focal_range = [[70, 1], [300, 1]]
+aperture_range = [[45, 10], [56, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "AC 54 3C 3C 0C 0C D7 46"
+make = "Nikon"
+model = "AF-S Nikkor 28mm f/1.4E ED"
+focal_range = [[28, 1], [28, 1]]
+aperture_range = [[14, 10], [14, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "AC 54 3C 3C 0C 0C D7 06"
+make = "Nikon"
+model = "AF-S Nikkor 28mm f/1.4E ED"
+focal_range = [[28, 1], [28, 1]]
+aperture_range = [[14, 10], [14, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "AD 3C A0 A0 3C 3C D8 0E"
+make = "Nikon"
+model = "AF-S Nikkor 500mm f/5.6E PF ED VR"
+focal_range = [[500, 1], [500, 1]]
+aperture_range = [[56, 10], [56, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "AD 3C A0 A0 3C 3C D8 4E"
+make = "Nikon"
+model = "AF-S Nikkor 500mm f/5.6E PF ED VR"
+focal_range = [[500, 1], [500, 1]]
+aperture_range = [[56, 10], [56, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "00 47 10 10 24 24 00 00"
+make = "Nikon"
+model = "Fisheye Nikkor 8mm f/2.8 AiS"
+focal_range = [[8, 1], [8, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "00 47 3C 3C 24 24 00 00"
+make = "Nikon"
+model = "Nikkor 28mm f/2.8 AiS"
+focal_range = [[28, 1], [28, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "00 54 44 44 0C 0C 00 00"
+make = "Nikon"
+model = "Nikkor 35mm f/1.4 AiS"
+focal_range = [[35, 1], [35, 1]]
+aperture_range = [[14, 10], [14, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "00 57 50 50 14 14 00 00"
+make = "Nikon"
+model = "Nikkor 50mm f/1.8 AI"
+focal_range = [[50, 1], [50, 1]]
+aperture_range = [[18, 10], [18, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "00 48 50 50 18 18 00 00"
+make = "Nikon"
+model = "Nikkor H 50mm f/2"
+focal_range = [[50, 1], [50, 1]]
+aperture_range = [[2, 1], [2, 1]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "00 48 68 68 24 24 00 00"
+make = "Nikon"
+model = "Series E 100mm f/2.8"
+focal_range = [[100, 1], [100, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "00 4C 6A 6A 20 20 00 00"
+make = "Nikon"
+model = "Nikkor 105mm f/2.5 AiS"
+focal_range = [[105, 1], [105, 1]]
+aperture_range = [[25, 10], [25, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "00 48 80 80 30 30 00 00"
+make = "Nikon"
+model = "Nikkor 200mm f/4 AiS"
+focal_range = [[200, 1], [200, 1]]
+aperture_range = [[4, 1], [4, 1]]

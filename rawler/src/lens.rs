@@ -28,6 +28,8 @@ pub struct LensResolver {
   lens_model: Option<String>,
   /// Lens ID, if known
   lens_id: Option<LensId>,
+  /// Nikon ID
+  nikon_id: Option<String>,
   /// Lens EXIF info, if known
   lens_info: Option<[Rational; 4]>,
   /// Camera make, if known
@@ -50,6 +52,8 @@ struct LensMatcher<'a> {
   lens_make: Option<&'a str>,
   /// Lens ID, if known
   lens_id: Option<LensId>,
+  /// Nikon ID
+  nikon_id: Option<String>,
   /// Lens EXIF info, if known
   lens_info: Option<[Rational; 4]>,
   /// Camera make, if known
@@ -100,6 +104,11 @@ impl LensResolver {
     self
   }
 
+  pub fn with_nikon_id(mut self, nikon_id: Option<String>) -> Self {
+    self.nikon_id = nikon_id;
+    self
+  }
+
   pub fn with_focal_len(mut self, focal_len: Option<Rational>) -> Self {
     self.focal_len = focal_len;
     self
@@ -130,6 +139,7 @@ impl LensResolver {
       lens_name: self.lens_keyname.as_deref(),
       lens_make: self.lens_make.as_deref(),
       lens_id: self.lens_id,
+      nikon_id: self.nikon_id.clone(),
       lens_info: self.lens_info,
       camera_make: self.camera_make.as_deref(),
       camera_model: self.camera_model.as_deref(),
@@ -176,6 +186,14 @@ impl LensResolver {
         return Some(db_entry);
       }
     }
+
+    // Nikon lens IDs are special, try this next
+    if let Some(nikon_id) = &self.nikon_id {
+      if let Some(db_entry) = LENSES_DB.iter().find(|entry| entry.identifiers.nikon_id == Some(nikon_id.clone())) {
+        return Some(db_entry);
+      }
+    }
+
     // If we have a lens id (common) then we can filter as much as possible
 
     let matches: Vec<&LensDescription> = LENSES_DB
@@ -251,12 +269,13 @@ pub type LensId = (u32, u32);
 pub struct LensIdentifier {
   pub name: Option<String>,
   pub id: Option<LensId>,
+  pub nikon_id: Option<String>,
 }
 
 impl LensIdentifier {
-  pub(crate) fn new(name: Option<String>, id: Option<LensId>) -> Self {
-    if name.is_some() || id.is_some() {
-      Self { name, id }
+  pub(crate) fn new(name: Option<String>, id: Option<LensId>, nikon_id: Option<String>) -> Self {
+    if name.is_some() || id.is_some() || nikon_id.is_some() {
+      Self { name, id, nikon_id }
     } else {
       panic!("LensIdentifier must contain a name or id");
     }
@@ -268,6 +287,7 @@ impl LensIdentifier {
 pub struct LensDescription {
   /// Identifiers
   pub identifiers: LensIdentifier,
+  /// Lens mount
   pub mount: String,
   /// Lens make
   pub lens_make: String,
@@ -296,6 +316,7 @@ fn build_lens_database() -> Option<Vec<LensDescription>> {
     let id_val1 = lens.get("lens_id").and_then(Value::as_integer).map(|v| v as u32);
     let id_val2 = lens.get("lens_subid").and_then(Value::as_integer).map(|v| v as u32);
     let id_id = id_val1.map(|id| (id, id_val2.unwrap_or(0)));
+    let nikon_id = lens.get("nikon_id").and_then(Value::as_str).map(String::from);
     let mount = lens.get("mount").and_then(|val| val.as_str()).expect(FAIL);
     let lens_make = lens.get("make")?.as_str()?.into();
     let lens_model = lens.get("model")?.as_str()?.into();
@@ -323,7 +344,7 @@ fn build_lens_database() -> Option<Vec<LensDescription>> {
       .collect();
     let lens_name = lens.get("name").map(|s| s.as_str().expect(FAIL));
     lenses.push(LensDescription {
-      identifiers: LensIdentifier::new(id_name, id_id),
+      identifiers: LensIdentifier::new(id_name, id_id, nikon_id),
       lens_name: lens_name.unwrap_or(&format!("{} {}", lens_make, lens_model)).into(),
       mount: String::from(mount),
       lens_make,

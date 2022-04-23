@@ -1,0 +1,327 @@
+[[lenses]]
+mount = "F-mount"
+nikon_id = "00 40 2B 2B 2C 2C 00 02"
+make = "Tokina"
+model = "AT-X 17 AF PRO (AF 17mm f/3.5)"
+focal_range = [[17, 1], [17, 1]]
+aperture_range = [[35, 10], [35, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "00 47 44 44 24 24 00 06"
+make = "Tokina"
+model = "AT-X M35 PRO DX (AF 35mm f/2.8 Macro)"
+focal_range = [[35, 1], [35, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "00 54 68 68 24 24 00 02"
+make = "Tokina"
+model = "AT-X M100 AF PRO D (AF 100mm f/2.8 Macro)"
+focal_range = [[100, 1], [100, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "27 48 8E 8E 30 30 1D 02"
+make = "Tokina"
+model = "AT-X 304 AF (AF 300mm f/4.0)"
+focal_range = [[300, 1], [300, 1]]
+aperture_range = [[40, 10], [40, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "00 54 8E 8E 24 24 00 02"
+make = "Tokina"
+model = "AT-X 300 AF PRO (AF 300mm f/2.8)"
+focal_range = [[300, 1], [300, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "12 3B 98 98 3D 3D 09 00"
+make = "Tokina"
+model = "AT-X 400 AF SD (AF 400mm f/5.6)"
+focal_range = [[400, 1], [400, 1]]
+aperture_range = [[56, 10], [56, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "00 40 18 2B 2C 34 00 06"
+make = "Tokina"
+model = "AT-X 107 AF DX Fisheye (AF 10-17mm f/3.5-4.5)"
+focal_range = [[10, 1], [17, 1]]
+aperture_range = [[35, 10], [45, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "00 48 1C 29 24 24 00 06"
+make = "Tokina"
+model = "AT-X 116 PRO DX (AF 11-16mm f/2.8)"
+focal_range = [[11, 1], [16, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "7A 48 1C 29 24 24 7E 06"
+make = "Tokina"
+model = "AT-X 116 PRO DX II (AF 11-16mm f/2.8)"
+focal_range = [[11, 1], [16, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "80 48 1C 29 24 24 7A 06"
+make = "Tokina"
+model = "atx-i 11-16mm F2.8 CF"
+focal_range = [[11, 1], [16, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "7A 48 1C 30 24 24 7E 06"
+make = "Tokina"
+model = "AT-X 11-20 F2.8 PRO DX (AF 11-20mm f/2.8)"
+focal_range = [[11, 1], [20, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "8B 48 1C 30 24 24 85 06"
+make = "Tokina"
+model = "AT-X 11-20 F2.8 PRO DX (AF 11-20mm f/2.8)"
+focal_range = [[11, 1], [20, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "00 3C 1F 37 30 30 00 06"
+make = "Tokina"
+model = "AT-X 124 AF PRO DX (AF 12-24mm f/4)"
+focal_range = [[12, 1], [24, 1]]
+aperture_range = [[4, 1], [4, 1]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "7A 3C 1F 37 30 30 7E 06.2"
+make = "Tokina"
+model = "AT-X 124 AF PRO DX II (AF 12-24mm f/4)"
+focal_range = [[12, 1], [24, 1]]
+aperture_range = [[4, 1], [4, 1]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "7A 3C 1F 3C 30 30 7E 06"
+make = "Tokina"
+model = "AT-X 12-28 PRO DX (AF 12-28mm f/4)"
+focal_range = [[12, 1], [28, 1]]
+aperture_range = [[4, 1], [4, 1]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "00 48 29 3C 24 24 00 06"
+make = "Tokina"
+model = "AT-X 16-28 AF PRO FX (AF 16-28mm f/2.8)"
+focal_range = [[16, 1], [28, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "00 48 29 50 24 24 00 06"
+make = "Tokina"
+model = "AT-X 165 PRO DX (AF 16-50mm f/2.8)"
+focal_range = [[16, 1], [50, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "00 40 2A 72 2C 3C 00 06"
+make = "Tokina"
+model = "AT-X 16.5-135 DX (AF 16.5-135mm F3.5-5.6)"
+focal_range = [[165, 10], [135, 1]]
+aperture_range = [[35, 10], [56, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "00 3C 2B 44 30 30 00 06"
+make = "Tokina"
+model = "AT-X 17-35 F4 PRO FX (AF 17-35mm f/4)"
+focal_range = [[17, 1], [35, 1]]
+aperture_range = [[4, 1], [4, 1]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "2F 40 30 44 2C 34 29 02.2"
+make = "Tokina"
+model = "AF 193 (AF 19-35mm f/3.5-4.5)"
+focal_range = [[19, 1], [35, 1]]
+aperture_range = [[35, 10], [45, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "2F 48 30 44 24 24 29 02.2"
+make = "Tokina"
+model = "AT-X 235 AF PRO (AF 20-35mm f/2.8)"
+focal_range = [[20, 1], [35, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "2F 40 30 44 2C 34 29 02.1"
+make = "Tokina"
+model = "AF 235 II (AF 20-35mm f/3.5-4.5)"
+focal_range = [[20, 1], [35, 1]]
+aperture_range = [[35, 10], [45, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "00 48 37 5C 24 24 00 06"
+make = "Tokina"
+model = "AT-X 24-70 F2.8 PRO FX (AF 24-70mm f/2.8)"
+focal_range = [[24, 1], [70, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "00 40 37 80 2C 3C 00 02"
+make = "Tokina"
+model = "AT-X 242 AF (AF 24-200mm f/3.5-5.6)"
+focal_range = [[24, 1], [200, 1]]
+aperture_range = [[35, 10], [56, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "25 48 3C 5C 24 24 1B 02.1"
+make = "Tokina"
+model = "AT-X 270 AF PRO II (AF 28-70mm f/2.6-2.8)"
+focal_range = [[28, 1], [70, 1]]
+aperture_range = [[26, 10], [28, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "25 48 3C 5C 24 24 1B 02.2"
+make = "Tokina"
+model = "AT-X 287 AF PRO SV (AF 28-70mm f/2.8)"
+focal_range = [[28, 1], [70, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "07 48 3C 5C 24 24 03 00"
+make = "Tokina"
+model = "AT-X 287 AF (AF 28-70mm f/2.8)"
+focal_range = [[28, 1], [70, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "07 47 3C 5C 25 35 03 00"
+make = "Tokina"
+model = "AF 287 SD (AF 28-70mm f/2.8-4.5)"
+focal_range = [[28, 1], [70, 1]]
+aperture_range = [[28, 10], [45, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "07 40 3C 5C 2C 35 03 00"
+make = "Tokina"
+model = "AF 270 II (AF 28-70mm f/3.5-4.5)"
+focal_range = [[28, 1], [70, 1]]
+aperture_range = [[35, 10], [45, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "00 48 3C 60 24 24 00 02"
+make = "Tokina"
+model = "AT-X 280 AF PRO (AF 28-80mm f/2.8)"
+focal_range = [[28, 1], [80, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "25 44 44 8E 34 42 1B 02"
+make = "Tokina"
+model = "AF 353 (AF 35-300mm f/4.5-6.7)"
+focal_range = [[35, 1], [300, 1]]
+aperture_range = [[45, 10], [67, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "00 48 50 72 24 24 00 06"
+make = "Tokina"
+model = "AT-X 535 PRO DX (AF 50-135mm f/2.8)"
+focal_range = [[50, 1], [135, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "00 3C 5C 80 30 30 00 0E"
+make = "Tokina"
+model = "AT-X 70-200 F4 FX VCM-S (AF 70-200mm f/4)"
+focal_range = [[70, 1], [200, 1]]
+aperture_range = [[4, 1], [4, 1]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "00 48 5C 80 30 30 00 0E"
+make = "Tokina"
+model = "AT-X 70-200 F4 FX VCM-S (AF 70-200mm f/4)"
+focal_range = [[70, 1], [200, 1]]
+aperture_range = [[4, 1], [4, 1]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "12 44 5E 8E 34 3C 09 00"
+make = "Tokina"
+model = "AF 730 (AF 75-300mm F4.5-5.6)"
+focal_range = [[75, 1], [300, 1]]
+aperture_range = [[45, 10], [56, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "14 54 60 80 24 24 0B 00"
+make = "Tokina"
+model = "AT-X 828 AF (AF 80-200mm f/2.8)"
+focal_range = [[80, 1], [200, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "24 54 60 80 24 24 1A 02"
+make = "Tokina"
+model = "AT-X 828 AF PRO (AF 80-200mm f/2.8)"
+focal_range = [[80, 1], [200, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "24 44 60 98 34 3C 1A 02"
+make = "Tokina"
+model = "AT-X 840 AF-II (AF 80-400mm f/4.5-5.6)"
+focal_range = [[80, 1], [400, 1]]
+aperture_range = [[45, 10], [56, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "00 44 60 98 34 3C 00 02"
+make = "Tokina"
+model = "AT-X 840 D (AF 80-400mm f/4.5-5.6)"
+focal_range = [[80, 1], [400, 1]]
+aperture_range = [[45, 10], [56, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "14 48 68 8E 30 30 0B 00"
+make = "Tokina"
+model = "AT-X 340 AF (AF 100-300mm f/4)"
+focal_range = [[100, 1], [300, 1]]
+aperture_range = [[4, 1], [4, 1]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "8C 48 29 3C 24 24 86 06"
+make = "Tokina"
+model = "opera 16-28mm F2.8 FF"
+focal_range = [[16, 1], [28, 1]]
+aperture_range = [[28, 10], [28, 10]]

@@ -1,0 +1,15 @@
+[[lenses]]
+mount = "F-mount"
+nikon_id = "A0 56 44 44 14 14 A2 06"
+make = "Sony"
+model = "FE 35mm F1.8"
+focal_range = [[35, 1], [35, 1]]
+aperture_range = [[18, 10], [18, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "A0 37 5C 8E 34 3C A2 06"
+make = "Sony"
+model = "FE 70-300mm F4.5-5.6 G OSS"
+focal_range = [[70, 1], [300, 1]]
+aperture_range = [[45, 10], [56, 10]]

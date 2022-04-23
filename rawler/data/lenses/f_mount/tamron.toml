@@ -1,0 +1,647 @@
+[[lenses]]
+mount = "F-mount"
+nikon_id = "00 47 25 25 24 24 00 02"
+make = "Tamron"
+model = "SP AF 14mm f/2.8 Aspherical (IF) (69E)"
+focal_range = [[14, 1], [14, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "C8 54 44 44 0D 0D DF 46"
+make = "Tamron"
+model = "SP 35mm f/1.4 Di USD (F045)"
+focal_range = [[35, 1], [35, 1]]
+aperture_range = [[14, 10], [14, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "E8 4C 44 44 14 14 DF 0E"
+make = "Tamron"
+model = "SP 35mm f/1.8 Di VC USD (F012)"
+focal_range = [[35, 1], [35, 1]]
+aperture_range = [[18, 10], [18, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "E7 4C 4C 4C 14 14 DF 0E"
+make = "Tamron"
+model = "SP 45mm f/1.8 Di VC USD (F013)"
+focal_range = [[45, 1], [45, 1]]
+aperture_range = [[18, 10], [18, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "F4 54 56 56 18 18 84 06"
+make = "Tamron"
+model = "SP AF 60mm f/2.0 Di II Macro 1:1 (G005)"
+focal_range = [[60, 1], [60, 1]]
+aperture_range = [[20, 10], [20, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "E5 4C 62 62 14 14 C9 4E"
+make = "Tamron"
+model = "SP 85mm f/1.8 Di VC USD (F016)"
+focal_range = [[85, 1], [85, 1]]
+aperture_range = [[18, 10], [18, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "1E 5D 64 64 20 20 13 00"
+make = "Tamron"
+model = "SP AF 90mm f/2.5 (52E)"
+focal_range = [[90, 1], [90, 1]]
+aperture_range = [[25, 10], [25, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "20 5A 64 64 20 20 14 00"
+make = "Tamron"
+model = "SP AF 90mm f/2.5 Macro (152E)"
+focal_range = [[90, 1], [90, 1]]
+aperture_range = [[25, 10], [25, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "22 53 64 64 24 24 E0 02"
+make = "Tamron"
+model = "SP AF 90mm f/2.8 Macro 1:1 (72E)"
+focal_range = [[90, 1], [90, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "32 53 64 64 24 24 35 02"
+make = "Tamron"
+model = "SP AF 90mm f/2.8 [Di] Macro 1:1 (172E/272E)"
+focal_range = [[90, 1], [90, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "F8 55 64 64 24 24 84 06"
+make = "Tamron"
+model = "SP AF 90mm f/2.8 Di Macro 1:1 (272NII)"
+focal_range = [[90, 1], [90, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "F8 54 64 64 24 24 DF 06"
+make = "Tamron"
+model = "SP AF 90mm f/2.8 Di Macro 1:1 (272NII)"
+focal_range = [[90, 1], [90, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "FE 54 64 64 24 24 DF 0E"
+make = "Tamron"
+model = "SP 90mm f/2.8 Di VC USD Macro 1:1 (F004)"
+focal_range = [[90, 1], [90, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "E4 54 64 64 24 24 DF 0E"
+make = "Tamron"
+model = "SP 90mm f/2.8 Di VC USD Macro 1:1 (F017)"
+focal_range = [[90, 1], [90, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "00 4C 7C 7C 2C 2C 00 02"
+make = "Tamron"
+model = "SP AF 180mm f/3.5 Di Model (B01)"
+focal_range = [[180, 1], [180, 1]]
+aperture_range = [[35, 10], [35, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "21 56 8E 8E 24 24 14 00"
+make = "Tamron"
+model = "SP AF 300mm f/2.8 LD-IF (60E)"
+focal_range = [[300, 1], [300, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "27 54 8E 8E 24 24 1D 02"
+make = "Tamron"
+model = "SP AF 300mm f/2.8 LD-IF (360E)"
+focal_range = [[300, 1], [300, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "E1 40 19 36 2C 35 DF 4E"
+make = "Tamron"
+model = "10-24mm f/3.5-4.5 Di II VC HLD (B023)"
+focal_range = [[10, 1], [24, 1]]
+aperture_range = [[35, 10], [45, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "F6 3F 18 37 2C 34 84 06"
+make = "Tamron"
+model = "SP AF 10-24mm f/3.5-4.5 Di II LD Aspherical (IF) (B001)"
+focal_range = [[10, 1], [24, 1]]
+aperture_range = [[35, 10], [45, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "F6 3F 18 37 2C 34 DF 06"
+make = "Tamron"
+model = "SP AF 10-24mm f/3.5-4.5 Di II LD Aspherical (IF) (B001)"
+focal_range = [[10, 1], [24, 1]]
+aperture_range = [[35, 10], [45, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "00 36 1C 2D 34 3C 00 06"
+make = "Tamron"
+model = "SP AF 11-18mm f/4.5-5.6 Di II LD Aspherical (IF) (A13)"
+focal_range = [[11, 1], [18, 1]]
+aperture_range = [[45, 10], [56, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "E9 48 27 3E 24 24 DF 0E"
+make = "Tamron"
+model = "SP 15-30mm f/2.8 Di VC USD (A012)"
+focal_range = [[15, 1], [30, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "CA 48 27 3E 24 24 DF 4E"
+make = "Tamron"
+model = "SP 15-30mm f/2.8 Di VC USD G2 (A041)"
+focal_range = [[15, 1], [30, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "EA 40 29 8E 2C 40 DF 0E"
+make = "Tamron"
+model = "16-300mm f/3.5-6.3 Di II VC PZD (B016)"
+focal_range = [[16, 1], [300, 1]]
+aperture_range = [[35, 10], [63, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "07 46 2B 44 24 30 03 02"
+make = "Tamron"
+model = "SP AF 17-35mm f/2.8-4 Di LD Aspherical (IF) (A05)"
+focal_range = [[17, 1], [35, 1]]
+aperture_range = [[28, 10], [4, 1]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "CB 3C 2B 44 24 31 DF 46"
+make = "Tamron"
+model = "17-35mm f/2.8-4 Di OSD (A037)"
+focal_range = [[17, 1], [35, 1]]
+aperture_range = [[28, 10], [4, 1]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "00 53 2B 50 24 24 00 06"
+make = "Tamron"
+model = "SP AF 17-50mm f/2.8 XR Di II LD Aspherical (IF) (A16)"
+focal_range = [[17, 1], [50, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "7C 54 2B 50 24 24 00 06"
+make = "Tamron"
+model = "SP AF 17-50mm f/2.8 XR Di II LD Aspherical (IF) (A16)"
+focal_range = [[17, 1], [50, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "00 54 2B 50 24 24 00 06"
+make = "Tamron"
+model = "SP AF 17-50mm f/2.8 XR Di II LD Aspherical (IF) (A16NII)"
+focal_range = [[17, 1], [50, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "FB 54 2B 50 24 24 84 06"
+make = "Tamron"
+model = "SP AF 17-50mm f/2.8 XR Di II LD Aspherical (IF) (A16NII)"
+focal_range = [[17, 1], [50, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "F3 54 2B 50 24 24 84 0E"
+make = "Tamron"
+model = "SP AF 17-50mm f/2.8 XR Di II VC LD Aspherical (IF) (B005)"
+focal_range = [[17, 1], [50, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "00 3F 2D 80 2B 40 00 06"
+make = "Tamron"
+model = "AF 18-200mm f/3.5-6.3 XR Di II LD Aspherical (IF) (A14)"
+focal_range = [[18, 1], [200, 1]]
+aperture_range = [[35, 10], [63, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "00 3F 2D 80 2C 40 00 06"
+make = "Tamron"
+model = "AF 18-200mm f/3.5-6.3 XR Di II LD Aspherical (IF) Macro (A14)"
+focal_range = [[18, 1], [200, 1]]
+aperture_range = [[35, 10], [63, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "EC 3E 3C 8E 2C 40 DF 0E"
+make = "Tamron"
+model = "28-300mm f/3.5-6.3 Di VC PZD A010"
+focal_range = [[28, 1], [300, 1]]
+aperture_range = [[35, 10], [63, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "00 40 2D 80 2C 40 00 06"
+make = "Tamron"
+model = "AF 18-200mm f/3.5-6.3 XR Di II LD Aspherical (IF) Macro (A14NII)"
+focal_range = [[18, 1], [200, 1]]
+aperture_range = [[35, 10], [63, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "FC 40 2D 80 2C 40 DF 06"
+make = "Tamron"
+model = "AF 18-200mm f/3.5-6.3 XR Di II LD Aspherical (IF) Macro (A14NII)"
+focal_range = [[18, 1], [200, 1]]
+aperture_range = [[35, 10], [63, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "E6 40 2D 80 2C 40 DF 0E"
+make = "Tamron"
+model = "18-200mm f/3.5-6.3 Di II VC (B018)"
+focal_range = [[18, 1], [200, 1]]
+aperture_range = [[35, 10], [63, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "00 40 2D 88 2C 40 62 06"
+make = "Tamron"
+model = "AF 18-250mm f/3.5-6.3 Di II LD Aspherical (IF) Macro (A18)"
+focal_range = [[18, 1], [250, 1]]
+aperture_range = [[35, 10], [63, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "00 40 2D 88 2C 40 00 06"
+make = "Tamron"
+model = "AF 18-250mm f/3.5-6.3 Di II LD Aspherical (IF) Macro (A18NII)"
+focal_range = [[18, 1], [250, 1]]
+aperture_range = [[35, 10], [63, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "F5 40 2C 8A 2C 40 40 0E"
+make = "Tamron"
+model = "AF 18-270mm f/3.5-6.3 Di II VC LD Aspherical (IF) Macro (B003)"
+focal_range = [[18, 1], [270, 1]]
+aperture_range = [[35, 10], [63, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "F0 3F 2D 8A 2C 40 DF 0E"
+make = "Tamron"
+model = "AF 18-270mm f/3.5-6.3 Di II VC PZD (B008)"
+focal_range = [[18, 1], [270, 1]]
+aperture_range = [[35, 10], [63, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "E0 40 2D 98 2C 41 DF 4E"
+make = "Tamron"
+model = "18-400mm f/3.5-6.3 Di II VC HLD (B028)"
+focal_range = [[18, 1], [400, 1]]
+aperture_range = [[35, 10], [63, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "07 40 2F 44 2C 34 03 02"
+make = "Tamron"
+model = "AF 19-35mm f/3.5-4.5 (A10)"
+focal_range = [[19, 1], [35, 1]]
+aperture_range = [[35, 10], [45, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "07 40 30 45 2D 35 03 02.1"
+make = "Tamron"
+model = "AF 19-35mm f/3.5-4.5 (A10)"
+focal_range = [[19, 1], [35, 1]]
+aperture_range = [[35, 10], [45, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "00 49 30 48 22 2B 00 02"
+make = "Tamron"
+model = "SP AF 20-40mm f/2.7-3.5 (166D)"
+focal_range = [[20, 1], [40, 1]]
+aperture_range = [[27, 10], [35, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "0E 4A 31 48 23 2D 0E 02"
+make = "Tamron"
+model = "SP AF 20-40mm f/2.7-3.5 (166D)"
+focal_range = [[20, 1], [40, 1]]
+aperture_range = [[27, 10], [35, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "FE 48 37 5C 24 24 DF 0E"
+make = "Tamron"
+model = "SP 24-70mm f/2.8 Di VC USD (A007)"
+focal_range = [[24, 1], [70, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "CE 47 37 5C 25 25 DF 4E"
+make = "Tamron"
+model = "SP 24-70mm f/2.8 Di VC USD G2 (A032)"
+focal_range = [[24, 1], [70, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "45 41 37 72 2C 3C 48 02"
+make = "Tamron"
+model = "SP AF 24-135mm f/3.5-5.6 AD Aspherical (IF) Macro (190D)"
+focal_range = [[24, 1], [135, 1]]
+aperture_range = [[35, 10], [56, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "33 54 3C 5E 24 24 62 02"
+make = "Tamron"
+model = "SP AF 28-75mm f/2.8 XR Di LD Aspherical (IF) Macro (A09)"
+focal_range = [[28, 1], [75, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "FA 54 3C 5E 24 24 84 06"
+make = "Tamron"
+model = "SP AF 28-75mm f/2.8 XR Di LD Aspherical (IF) Macro (A09NII)"
+focal_range = [[28, 1], [75, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "FA 54 3C 5E 24 24 DF 06"
+make = "Tamron"
+model = "SP AF 28-75mm f/2.8 XR Di LD Aspherical (IF) Macro (A09NII)"
+focal_range = [[28, 1], [75, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "10 3D 3C 60 2C 3C D2 02"
+make = "Tamron"
+model = "AF 28-80mm f/3.5-5.6 Aspherical (177D)"
+focal_range = [[28, 1], [80, 1]]
+aperture_range = [[35, 10], [56, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "45 3D 3C 60 2C 3C 48 02"
+make = "Tamron"
+model = "AF 28-80mm f/3.5-5.6 Aspherical (177D)"
+focal_range = [[28, 1], [80, 1]]
+aperture_range = [[35, 10], [56, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "00 48 3C 6A 24 24 00 02"
+make = "Tamron"
+model = "SP AF 28-105mm f/2.8 LD Aspherical IF (176D)"
+focal_range = [[28, 1], [105, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "4D 3E 3C 80 2E 3C 62 02"
+make = "Tamron"
+model = "AF 28-200mm f/3.8-5.6 XR Aspherical (IF) Macro (A03N)"
+focal_range = [[28, 1], [200, 1]]
+aperture_range = [[38, 10], [56, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "0B 3E 3D 7F 2F 3D 0E 00"
+make = "Tamron"
+model = "AF 28-200mm f/3.8-5.6 (71D)"
+focal_range = [[28, 1], [200, 1]]
+aperture_range = [[38, 10], [56, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "0B 3E 3D 7F 2F 3D 0E 02"
+make = "Tamron"
+model = "AF 28-200mm f/3.8-5.6D (171D)"
+focal_range = [[28, 1], [200, 1]]
+aperture_range = [[38, 10], [56, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "12 3D 3C 80 2E 3C DF 02"
+make = "Tamron"
+model = "AF 28-200mm f/3.8-5.6 AF Aspherical LD (IF) (271D)"
+focal_range = [[28, 1], [200, 1]]
+aperture_range = [[38, 10], [56, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "4D 41 3C 8E 2B 40 62 02"
+make = "Tamron"
+model = "AF 28-300mm f/3.5-6.3 XR Di LD Aspherical (IF) (A061)"
+focal_range = [[28, 1], [300, 1]]
+aperture_range = [[35, 10], [63, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "4D 41 3C 8E 2C 40 62 02"
+make = "Tamron"
+model = "AF 28-300mm f/3.5-6.3 XR LD Aspherical (IF) (185D)"
+focal_range = [[28, 1], [300, 1]]
+aperture_range = [[35, 10], [63, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "F9 40 3C 8E 2C 40 40 0E"
+make = "Tamron"
+model = "AF 28-300mm f/3.5-6.3 XR Di VC LD Aspherical (IF) Macro (A20)"
+focal_range = [[28, 1], [300, 1]]
+aperture_range = [[35, 10], [63, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "C9 3C 44 76 25 31 DF 4E"
+make = "Tamron"
+model = "35-150mm f/2.8-4 Di VC OSD (A043)"
+focal_range = [[35, 1], [150, 1]]
+aperture_range = [[28, 10], [4, 1]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "00 47 53 80 30 3C 00 06"
+make = "Tamron"
+model = "AF 55-200mm f/4-5.6 Di II LD (A15)"
+focal_range = [[55, 1], [200, 1]]
+aperture_range = [[4, 1], [56, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "F7 53 5C 80 24 24 84 06"
+make = "Tamron"
+model = "SP AF 70-200mm f/2.8 Di LD (IF) Macro (A001)"
+focal_range = [[70, 1], [200, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "FE 53 5C 80 24 24 84 06"
+make = "Tamron"
+model = "SP AF 70-200mm f/2.8 Di LD (IF) Macro (A001)"
+focal_range = [[70, 1], [200, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "F7 53 5C 80 24 24 40 06"
+make = "Tamron"
+model = "SP AF 70-200mm f/2.8 Di LD (IF) Macro (A001)"
+focal_range = [[70, 1], [200, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "FE 54 5C 80 24 24 DF 0E"
+make = "Tamron"
+model = "SP AF 70-200mm f/2.8 Di VC USD (A009)"
+focal_range = [[70, 1], [200, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "FE 54 5C 80 24 24 DF 0E"
+make = "Tamron"
+model = "SP 70-200mm f/2.8 Di VC USD (A009)"
+focal_range = [[70, 1], [200, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "E2 47 5C 80 24 24 DF 4E"
+make = "Tamron"
+model = "SP 70-200mm f/2.8 Di VC USD G2 (A025)"
+focal_range = [[70, 1], [200, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "69 48 5C 8E 30 3C 6F 02"
+make = "Tamron"
+model = "AF 70-300mm f/4-5.6 LD Macro 1:2 (572D/772D)"
+focal_range = [[70, 1], [300, 1]]
+aperture_range = [[4, 1], [56, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "69 47 5C 8E 30 3C 00 02"
+make = "Tamron"
+model = "AF 70-300mm f/4-5.6 Di LD Macro 1:2 (A17N)"
+focal_range = [[70, 1], [300, 1]]
+aperture_range = [[4, 1], [56, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "00 48 5C 8E 30 3C 00 06"
+make = "Tamron"
+model = "AF 70-300mm f/4-5.6 Di LD Macro 1:2 (A17NII)"
+focal_range = [[70, 1], [300, 1]]
+aperture_range = [[4, 1], [56, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "F1 47 5C 8E 30 3C DF 0E"
+make = "Tamron"
+model = "SP 70-300mm f/4-5.6 Di VC USD (A005)"
+focal_range = [[70, 1], [300, 1]]
+aperture_range = [[4, 1], [56, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "CF 47 5C 8E 31 3D DF 0E"
+make = "Tamron"
+model = "SP 70-300mm f/4-5.6 Di VC USD (A030)"
+focal_range = [[70, 1], [300, 1]]
+aperture_range = [[4, 1], [56, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "CC 44 68 98 34 41 DF 0E"
+make = "Tamron"
+model = "100-400mm f/4.5-6.3 Di VC USD"
+focal_range = [[100, 1], [400, 1]]
+aperture_range = [[45, 10], [63, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "EB 40 76 A6 38 40 DF 0E"
+make = "Tamron"
+model = "SP AF 150-600mm f/5-6.3 VC USD (A011)"
+focal_range = [[150, 1], [600, 1]]
+aperture_range = [[5, 1], [63, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "E3 40 76 A6 38 40 DF 4E"
+make = "Tamron"
+model = "SP 150-600mm f/5-6.3 Di VC USD G2"
+focal_range = [[150, 1], [600, 1]]
+aperture_range = [[5, 1], [63, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "20 3C 80 98 3D 3D 1E 02"
+make = "Tamron"
+model = "AF 200-400mm f/5.6 LD IF (75D)"
+focal_range = [[200, 1], [400, 1]]
+aperture_range = [[56, 10], [56, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "00 3E 80 A0 38 3F 00 02"
+make = "Tamron"
+model = "SP AF 200-500mm f/5-6.3 Di LD (IF) (A08)"
+focal_range = [[200, 1], [500, 1]]
+aperture_range = [[5, 1], [63, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "00 3F 80 A0 38 3F 00 02"
+make = "Tamron"
+model = "SP AF 200-500mm f/5-6.3 Di (A08)"
+focal_range = [[200, 1], [500, 1]]
+aperture_range = [[5, 1], [63, 10]]

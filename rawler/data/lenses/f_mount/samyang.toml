@@ -1,0 +1,79 @@
+[[lenses]]
+mount = "F-mount"
+nikon_id = "4A 40 11 11 2C 0C 4D 02"
+make = "Samyang"
+model = "8mm f/3.5 Fish-Eye CS"
+focal_range = [[8, 1], [8, 1]]
+aperture_range = [[35, 10], [35, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "4A 48 24 24 24 0C 4D 02.1"
+make = "Samyang"
+model = "10mm f/2.8 ED AS NCS CS"
+focal_range = [[10, 1], [10, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "4A 48 1E 1E 24 0C 4D 02"
+make = "Samyang"
+model = "12mm f/2.8 ED AS NCS Fish-Eye"
+focal_range = [[12, 1], [12, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "4A 48 24 24 24 0C 4D 02.2"
+make = "Samyang"
+model = "AE 14mm f/2.8 ED AS IF UMC"
+focal_range = [[14, 1], [14, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "4A 4C 24 24 1E 6C 4D 06"
+make = "Samyang"
+model = "14mm f/2.4 Premium"
+focal_range = [[14, 1], [14, 1]]
+aperture_range = [[24, 10], [24, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "4A 54 29 29 18 0C 4D 02"
+make = "Samyang"
+model = "16mm f/2.0 ED AS UMC CS"
+focal_range = [[16, 1], [16, 1]]
+aperture_range = [[20, 10], [20, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "4A 60 36 36 0C 0C 4D 02"
+make = "Samyang"
+model = "24mm f/1.4 ED AS UMC"
+focal_range = [[24, 1], [24, 1]]
+aperture_range = [[14, 10], [14, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "4A 60 44 44 0C 0C 4D 02"
+make = "Samyang"
+model = "35mm f/1.4 AS UMC"
+focal_range = [[35, 1], [35, 1]]
+aperture_range = [[14, 10], [14, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "4A 60 62 62 0C 0C 4D 02"
+make = "Samyang"
+model = "AE 85mm f/1.4 AS IF UMC"
+focal_range = [[85, 1], [85, 1]]
+aperture_range = [[14, 10], [14, 10]]
+
+[[lenses]]
+mount = "F-mount"
+nikon_id = "00 40 11 11 2C 2C 00 00"
+make = "Samyang"
+model = "8mm f/3.5 Fish-Eye"
+focal_range = [[8, 1], [8, 1]]
+aperture_range = [[35, 10], [35, 10]]
