@@ -46,7 +46,7 @@ impl<'mdat> RiceDecoder<'mdat> {
   // The maximum number of bits are 32
   #[inline(always)]
   pub(super) fn bitstream_get_bits(&mut self, bits: u32) -> Result<u32> {
-    assert!(bits <= 32);
+    debug_assert!(bits <= 32);
     Ok(self.bitpump.read(bits)?)
   }
 

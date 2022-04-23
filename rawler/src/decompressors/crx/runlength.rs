@@ -30,7 +30,7 @@ impl CodecParams {
   /// Get symbol run count for run-length decoding
   /// See T.87 Section A.7.1.2 Run-length coding
   pub(super) fn symbol_run_count(&self, param: &mut BandParam, remaining: u32) -> Result<u32> {
-    assert!(remaining > 1);
+    debug_assert!(remaining > 1);
     let mut run_cnt: u32 = 1;
     // See T.87 A.7.1.2 Code segment A.15
     // Bitstream 111110... means 5 lookups into J to decode final RUNcnt
