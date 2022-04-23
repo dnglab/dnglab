@@ -124,7 +124,7 @@ where
   T: Copy + Clone + Default + Send,
 {
   pub fn new_with(data: Vec<[T; 3]>, width: usize, height: usize) -> Self {
-    assert_eq!(data.len(), height * width);
+    debug_assert_eq!(data.len(), height * width);
     Self { data, width, height }
   }
 
@@ -235,12 +235,12 @@ where
     }
   }
 
-  /// Foo
+  /// Get a pixel from raw pointer
   /// # Safety
-  /// None
+  /// TODO
   #[inline(always)]
   pub unsafe fn at(&self, row: usize, col: usize) -> &[T; 3] {
-    assert!(row*col < self.height * self.width);
+    debug_assert!(row*col < self.height * self.width);
     &*self.ptr.add(row*self.width+col)
   }
 }
