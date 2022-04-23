@@ -46,7 +46,7 @@ pub fn demosaic_ppg(raw: &[f32], dim: Dim2, cfa_orig: CFA, roi: Rect) -> RgbF32 
   interpolate_rb_at_green(&mut rgb, &cfa_roi);
   interpolate_rb_at_non_green(&mut rgb, &cfa_roi);
 
-  eprintln!("Total debayer time: {:.5}s", now.elapsed().as_secs_f32());
+  log::debug!("PPG total debayer time: {:.5}s", now.elapsed().as_secs_f32());
   rgb
 }
 
