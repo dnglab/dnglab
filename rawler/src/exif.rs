@@ -113,13 +113,14 @@ impl Exif {
   /// Extend the EXIF info from this IFD. If the IFD contains a ExifIFD,
   /// extend from this IFD, too.
   pub fn extend_from_ifd(&mut self, ifd: &IFD) -> Result<()> {
+    let trim = |a: &String| -> String { a.trim().into() };
     for (tag, entry) in ifd.entries().iter() {
       // First try EXIF tags
       if let Ok(tag) = ExifTag::try_from(*tag) {
         match (tag, &entry.value) {
           (ExifTag::Orientation, Value::Short(data)) => self.orientation = data.get(0).cloned(),
-          (ExifTag::Copyright, Value::Ascii(data)) => self.copyright = data.strings().get(0).cloned(),
-          (ExifTag::Artist, Value::Ascii(data)) => self.artist = data.strings().get(0).cloned(),
+          (ExifTag::Copyright, Value::Ascii(data)) => self.copyright = data.strings().get(0).map(trim),
+          (ExifTag::Artist, Value::Ascii(data)) => self.artist = data.strings().get(0).map(trim),
           (ExifTag::ExposureTime, Value::Rational(data)) => self.exposure_time = data.get(0).cloned(),
           (ExifTag::FNumber, Value::Rational(data)) => self.fnumber = data.get(0).cloned(),
           (ExifTag::BrightnessValue, Value::Rational(data)) => self.brightness_value = data.get(0).cloned(),
@@ -154,9 +155,9 @@ impl Exif {
           (ExifTag::WhiteBalance, Value::Short(data)) => self.white_balance = data.get(0).cloned(),
           (ExifTag::SceneCaptureType, Value::Short(data)) => self.scene_capture_type = data.get(0).cloned(),
           (ExifTag::SubjectDistanceRange, Value::Short(data)) => self.subject_distance_range = data.get(0).cloned(),
-          (ExifTag::OwnerName, Value::Ascii(data)) => self.owner_name = data.strings().get(0).cloned(),
-          (ExifTag::SerialNumber, Value::Ascii(data)) => self.serial_number = data.strings().get(0).cloned(),
-          (ExifTag::LensSerialNumber, Value::Ascii(data)) => self.lens_serial_number = data.strings().get(0).cloned(),
+          (ExifTag::OwnerName, Value::Ascii(data)) => self.owner_name = data.strings().get(0).map(trim),
+          (ExifTag::SerialNumber, Value::Ascii(data)) => self.serial_number = data.strings().get(0).map(trim),
+          (ExifTag::LensSerialNumber, Value::Ascii(data)) => self.lens_serial_number = data.strings().get(0).map(trim),
           (tag, _value) => {
             log::debug!("Ignoring EXIF tag: {:?}", tag);
           }
