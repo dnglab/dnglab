@@ -151,7 +151,7 @@ impl HuffTable {
       match (decode, self.dng_bug) {
         // Special case: for -32768 no SSSS bits are stored
         (-32768, false) => {
-          assert!(bits > 16);
+          debug_assert!(bits > 16);
           pump.consume_bits(bits as u32 - 16);
         }
         _ => {

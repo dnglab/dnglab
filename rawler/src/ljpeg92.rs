@@ -767,7 +767,7 @@ impl<'a> LjpegCompressor<'a> {
     }
     encoded.write_u8(self.predictor.as_u8())?; // Ss, Predictor for lossless
     encoded.write_u8(0)?; // Se, ignored for lossless
-    assert!(self.point_transform <= 15);
+    debug_assert!(self.point_transform <= 15);
     encoded.write_u8(0x00 | (self.point_transform & 0xF))?; // Ah=0, Al=Point transform
     Ok(())
   }
@@ -786,7 +786,7 @@ impl<'a> LjpegCompressor<'a> {
       let ssss = lookup_ssss(*diff);
       let enc = self.comp_state[comp].hufftable[ssss as usize];
       let (bits, value) = (enc.len(), enc.get_lsb() as u64);
-      assert!(bits > 0);
+      debug_assert!(bits > 0);
       bitstream.write(bits, value)?;
       //inspector!("huff bits: {}, value: {:b}", bits, value);
 
@@ -795,7 +795,7 @@ impl<'a> LjpegCompressor<'a> {
       // in that case.  So we only need to output the diference value if
       // the number of bits is between 1 and 15. This also writes nothing
       // for ssss==0.
-      assert!(ssss <= 16);
+      debug_assert!(ssss <= 16);
       if (ssss & 15) != 0 {
         // sign encoding
         let diff = if *diff < 0 { *diff as i32 - 1 } else { *diff as i32 };
@@ -825,7 +825,7 @@ fn ljpeg92_diff<const NCOMP: usize, const PX: u8>(
   point_transform: u8, // Point transform
   bitdepth: u8,        // Bit depth
 ) {
-  assert_eq!(linesize % NCOMP, 0);
+  debug_assert_eq!(linesize % NCOMP, 0);
   let pixels = linesize / NCOMP; // How many pixels are in the line
   let samplecnt = pixels * NCOMP;
   let row_prev = &row_prev[..samplecnt]; // Hint for compiler: each slice has identical bounds (SIMD).

@@ -228,7 +228,7 @@ impl<'a> BitPump for BitPumpJPEG<'a> {
 
   #[inline(always)]
   fn consume_bits(&mut self, num: u32) {
-    assert!(num <= self.nbits);
+    debug_assert!(num <= self.nbits);
     self.nbits -= num;
     self.bits &= (1 << self.nbits) - 1;
   }

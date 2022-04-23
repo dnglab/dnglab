@@ -110,15 +110,15 @@ impl<'a> PlaneLineIter<'a> {
           .codec
           .idwt_53_filter_transform(self.tile, self.plane, &mut self.params, &mut self.iwt_transforms, self.codec.levels - 1)?;
         let line_data = self.iwt_transforms[self.codec.levels - 1].getline();
-        assert_eq!(line_data.len(), self.tile.plane_width);
+        debug_assert_eq!(line_data.len(), self.tile.plane_width);
         Ok(line_data)
       } else {
-        assert_eq!(self.plane.subbands.len(), 1);
+        debug_assert_eq!(self.plane.subbands.len(), 1);
         let param = &mut self.params[0];
         self.codec.decode_line(param)?;
         let line_data = param.decoded_buf();
-        assert_eq!(line_data.len(), param.subband_width as usize);
-        assert_eq!(line_data.len(), self.tile.plane_width);
+        debug_assert_eq!(line_data.len(), param.subband_width as usize);
+        debug_assert_eq!(line_data.len(), self.tile.plane_width);
         Ok(line_data)
       }
     } else {
@@ -189,7 +189,7 @@ impl CodecParams {
       Ok(bufs) => {
         for (tile_id, tile) in bufs.into_iter().enumerate() {
           let plane_count = tile.len();
-          assert_eq!(plane_count, 4);
+          debug_assert_eq!(plane_count, 4);
           // Convert vector of planes to excact count of 4 planes - or fail
           let planes: [Vec<PlaneLine>; 4] = tile
             .try_into()
@@ -216,7 +216,7 @@ impl CodecParams {
 
   /// Decode top line without a previous K buffer
   fn decode_top_line_no_ref_prev_line(&self, p: &mut BandParam) -> Result<()> {
-    assert_eq!(p.line_pos, 1);
+    debug_assert_eq!(p.line_pos, 1);
     let mut remaining = p.subband_width as u32;
     // Init coef a and c (real image pixel starts at 1)
     p.line_buf[0][p.line_pos - 1] = 0; // is [0] because at start line_pos is 1
@@ -263,7 +263,7 @@ impl CodecParams {
       p.line_k[p.line_pos - 1] = p.rice.k();
       p.line_pos += 1;
     }
-    assert!(p.line_pos < p.line_buf[1].len());
+    debug_assert!(p.line_pos < p.line_buf[1].len());
     p.line_buf[1][p.line_pos] = 0;
     Ok(())
   }
@@ -271,7 +271,7 @@ impl CodecParams {
   /// Decode nontop line with a previous K buffer
   fn decode_nontop_line_no_ref_prev_line(&self, p: &mut BandParam) -> Result<()> {
     //println!("Decode nontop {}", p.cur_line);
-    assert_eq!(p.line_pos, 1);
+    debug_assert_eq!(p.line_pos, 1);
     let mut remaining = p.subband_width as u32;
     while remaining > 1 {
       // Loop over full width of line (backwards)
@@ -287,7 +287,7 @@ impl CodecParams {
         }
       } else {
         if p.rice.bitstream_get_bits(1)? == 1 {
-          assert!(remaining != 1);
+          debug_assert!(remaining != 1);
           let n_syms = self.symbol_run_count(p, remaining)?;
 
           remaining = remaining.saturating_sub(n_syms);
@@ -333,7 +333,7 @@ impl CodecParams {
       p.line_k[p.line_pos - 1] = p.rice.k();
       p.line_pos += 1;
     }
-    assert!(p.line_pos < p.line_buf[1].len());
+    debug_assert!(p.line_pos < p.line_buf[1].len());
     Ok(())
   }
 
@@ -342,7 +342,7 @@ impl CodecParams {
   /// there is no previous line for coeffs b, c and d.
   /// So this decoding is a simplified version from decode_nontop_line().
   fn decode_top_line(&self, p: &mut BandParam) -> Result<()> {
-    assert_eq!(p.line_pos, 1);
+    debug_assert_eq!(p.line_pos, 1);
     let mut remaining = p.subband_width as u32;
     // Init coeff a (real image pixel starts at 1)
     p.line_buf[1][p.line_pos - 1] = 0; // is is [0] because at start line_pos is 1
@@ -377,7 +377,7 @@ impl CodecParams {
       p.line_buf[1][p.line_pos] = x + error_code_signed(bit_code);
       p.line_pos += 1;
     }
-    assert!(p.line_pos < p.line_buf[1].len());
+    debug_assert!(p.line_pos < p.line_buf[1].len());
     p.line_buf[1][p.line_pos] = p.coeff_a() + 1;
     Ok(())
   }
@@ -389,7 +389,7 @@ impl CodecParams {
   /// instead of a fixed one.
   /// The K parameter is used as q = n >> k where n is the sample to encode.
   fn decode_nontop_line(&self, p: &mut BandParam) -> Result<()> {
-    assert_eq!(p.line_pos, 1);
+    debug_assert_eq!(p.line_pos, 1);
     let mut remaining = p.subband_width as u32;
     // Init coeff a: a = b
     p.line_buf[1][p.line_pos - 1] = p.coeff_b();
@@ -439,7 +439,7 @@ impl CodecParams {
       p.line_buf[1][p.line_pos] = x + error_code_signed(bit_code);
       p.line_pos += 1;
     }
-    assert!(p.line_pos < p.line_buf[1].len());
+    debug_assert!(p.line_pos < p.line_buf[1].len());
     p.line_buf[1][p.line_pos] = p.coeff_a() + 1;
     Ok(())
   }
@@ -470,7 +470,7 @@ impl CodecParams {
 
   /// Decode a rounded line which is not a top line
   fn decode_top_line_rounded(&self, p: &mut BandParam) -> Result<()> {
-    assert_eq!(p.line_pos, 1);
+    debug_assert_eq!(p.line_pos, 1);
     let mut remaining = p.subband_width as u32;
     // Init coeff a (real image pixel starts at 1)
     p.line_buf[1][p.line_pos - 1] = 0; // is is [0] because at start line_pos is 1
@@ -506,7 +506,7 @@ impl CodecParams {
       p.line_buf[1][p.line_pos] += p.rounded_bits_mask * 2 * code + (code >> 31);
       p.line_pos += 1;
     }
-    assert!(p.line_pos < p.line_buf[1].len());
+    debug_assert!(p.line_pos < p.line_buf[1].len());
     p.line_buf[1][p.line_pos] = p.coeff_a() + 1;
     Ok(())
   }
@@ -519,7 +519,7 @@ impl CodecParams {
   /// The K parameter is used as q = n >> k where n is the sample to encode.
   #[allow(clippy::comparison_chain)]
   fn decode_nontop_line_rounded(&self, p: &mut BandParam) -> Result<()> {
-    assert_eq!(p.line_pos, 1);
+    debug_assert_eq!(p.line_pos, 1);
     let mut remaining = p.subband_width as u32;
     let mut value_reached = false;
     p.line_buf[0][p.line_pos - 1] = p.coeff_b();
@@ -555,7 +555,7 @@ impl CodecParams {
     if remaining == 1 {
       self.decode_symbol_rounded(p, true, false)?;
     }
-    assert!(p.line_pos < p.line_buf[1].len());
+    debug_assert!(p.line_pos < p.line_buf[1].len());
     p.line_buf[1][p.line_pos] = p.coeff_a() + 1;
     Ok(())
   }
@@ -582,7 +582,7 @@ impl CodecParams {
   /// For non-LL bands, decoding process differs a little bit
   /// because some value rounding is added.
   pub(super) fn decode_line(&self, param: &mut BandParam) -> Result<()> {
-    assert!(param.cur_line < param.subband_height);
+    debug_assert!(param.cur_line < param.subband_height);
     // We start at first real pixel value
     param.line_pos = 1;
     if param.cur_line == 0 {
@@ -632,7 +632,7 @@ pub(super) fn constrain(value: i32, min: i32, max: i32) -> i32 {
   } else {
     value
   };
-  assert!(res <= u16::MAX as i32);
+  debug_assert!(res <= u16::MAX as i32);
   res
    */
 }
@@ -716,10 +716,10 @@ fn integrate_cfa(codec: &CodecParams, tiles: &[Tile], cfa_buf: &mut [u16], tile_
   // 2x2 pixel for RGGB
   const CFA_DIM: usize = 2;
 
-  assert_ne!(plane_buf.len(), 0);
-  assert_ne!(cfa_buf.len(), 0);
-  assert!(codec.tile_cols > 0);
-  assert!(codec.tile_rows > 0);
+  debug_assert_ne!(plane_buf.len(), 0);
+  debug_assert_ne!(cfa_buf.len(), 0);
+  debug_assert!(codec.tile_cols > 0);
+  debug_assert!(codec.tile_rows > 0);
 
   if plane_id > 3 {
     return Err(CrxError::Overflow(format!(

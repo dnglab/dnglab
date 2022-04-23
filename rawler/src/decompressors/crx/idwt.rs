@@ -78,7 +78,7 @@ impl WaveletTransform {
 
   pub(super) fn getline(&mut self) -> &Vec<i32> {
     let result = &self.line_buf[(self.flt_tap_h as i32 - self.cur_h as i32 + 5) as usize % 5 + 3];
-    assert!(self.cur_h > 0);
+    debug_assert!(self.cur_h > 0);
     self.cur_h -= 1;
     result
   }
