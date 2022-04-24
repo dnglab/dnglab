@@ -263,6 +263,8 @@ impl<'a> Decoder for NefDecoder<'a> {
       img.crop_area = Some(crop);
     }
 
+    // If we find blacklevels in file, we override configuration
+    // or calculated blacklevels.
     if let Some(blacklevels) = self.get_blacklevel(bps)? {
       debug!("RAW Blacklevels: {:?}", blacklevels);
       img.blacklevels = blacklevels;

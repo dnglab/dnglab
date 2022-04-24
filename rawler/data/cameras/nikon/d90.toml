@@ -3,8 +3,8 @@ model = "NIKON D90"
 clean_make = "Nikon"
 clean_model = "D90"
 color_pattern = "GBRG"
-active_area = [0, 0, 0, 0]
-crop_area = [11, 10, 11, 10]
+active_area = [0, 0, 42, 0]
+crop_area = [11, 10, 53, 10]
 
 [cameras.color_matrix]
 A = [0.8437, -0.2581, 0.0132, -0.6948, 1.4143, 0.31, -0.1215, 0.1778, 0.83]

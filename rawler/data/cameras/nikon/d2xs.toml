@@ -3,8 +3,8 @@ model = "NIKON D2Xs"
 clean_make = "Nikon"
 clean_model = "D2Xs"
 color_pattern = "RGGB"
-active_area = [0, 0, 0, 0]
-crop_area = [16, 10, 8, 10]
+active_area = [0, 0, 8, 0]
+crop_area = [16, 10, 16, 10]
 
 [cameras.color_matrix]
 A = [1.0996, -0.3606, -0.0715, -0.7096, 1.441, 0.2947, -0.046, 0.0487, 0.7018]

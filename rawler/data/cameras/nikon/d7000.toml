@@ -3,8 +3,8 @@ model = "NIKON D7000"
 clean_make = "Nikon"
 clean_model = "D7000"
 color_pattern = "RGGB"
-active_area = [0, 0, 0, 0]
-crop_area = [8, 8, 12, 8]
+active_area = [0, 0, 44, 0]
+crop_area = [8, 8, 56, 8]
 
 [cameras.color_matrix]
 A = [0.8642, -0.3058, -0.0243, -0.3999, 1.1033, 0.3422, -0.0453, 0.1099, 0.7814]

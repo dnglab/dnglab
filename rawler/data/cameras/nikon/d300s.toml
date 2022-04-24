@@ -3,8 +3,8 @@ model = "NIKON D300S"
 clean_make = "Nikon"
 clean_model = "D300S"
 color_pattern = "RGGB"
-active_area = [0, 0, 0, 0]
-crop_area = [15, 10, 17, 10]
+active_area = [0, 0, 32, 0]
+crop_area = [15, 10, 49, 10]
 
 [cameras.color_matrix]
 A = [1.0354, -0.3401, 0.0054, -0.7111, 1.4628, 0.2702, -0.135, 0.2011, 0.8528]

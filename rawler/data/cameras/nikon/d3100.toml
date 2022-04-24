@@ -3,8 +3,8 @@ model = "NIKON D3100"
 clean_make = "Nikon"
 clean_model = "D3100"
 color_pattern = "GBRG"
-active_area = [0, 0, 0, 0]
-crop_area = [18, 6, 18, 6]
+active_area = [6, 0, 22, 0]
+crop_area = [24, 6, 40, 6]
 
 [cameras.color_matrix]
 A = [0.8306, -0.282, -0.041, -0.455, 1.1949, 0.2955, -0.0675, 0.1472, 0.8632]

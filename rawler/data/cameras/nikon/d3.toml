@@ -3,8 +3,8 @@ model = "NIKON D3"
 clean_make = "Nikon"
 clean_model = "D3"
 color_pattern = "RGGB"
-active_area = [0, 0, 0, 0]
-crop_area = [13, 6, 15, 6]
+active_area = [2, 0, 2, 0]
+crop_area = [15, 6, 17, 6]
 
 [cameras.color_matrix]
 A = [0.9336, -0.3405, 0.0014, -0.7321, 1.4779, 0.2764, -0.0914, 0.1171, 0.8248]

@@ -3,8 +3,8 @@ model = "NIKON D80"
 clean_make = "Nikon"
 clean_model = "D80"
 color_pattern = "GBRG"
-active_area = [0, 0, 0, 0]
-crop_area = [14, 9, 14, 10]
+active_area = [0, 0, 4, 4]
+crop_area = [14, 9, 18, 15]
 
 [cameras.color_matrix]
 A = [0.9875, -0.3671, -0.0203, -0.7719, 1.5276, 0.2626, -0.0648, 0.0723, 0.8706]
