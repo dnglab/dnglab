@@ -3,8 +3,8 @@ model = "NIKON D2H"
 clean_make = "Nikon"
 clean_model = "D2H"
 color_pattern = "GBRG"
-active_area = [0, 0, 0, 0]
-crop_area = [9, 8, 9, 8]
+active_area = [6, 0, 8, 0]
+crop_area = [15, 8, 17, 8]
 
 [cameras.color_matrix]
 A = [0.6562, -0.1792, -0.0314, -0.6967, 1.4736, 0.2402, -0.1709, 0.2719, 0.7642]

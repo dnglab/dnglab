@@ -3,8 +3,8 @@ model = "NIKON D40X"
 clean_make = "Nikon"
 clean_model = "D40X"
 color_pattern = "GBRG"
-active_area = [0, 0, 0, 0]
-crop_area = [14, 9, 14, 12]
+active_area = [0, 0, 4, 0]
+crop_area = [14, 9, 18, 12]
 
 [cameras.color_matrix]
 A = [1.0031, -0.3797, -0.0207, -0.7735, 1.5316, 0.2598, -0.0603, 0.0667, 0.8673]

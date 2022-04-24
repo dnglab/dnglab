@@ -4,7 +4,7 @@ clean_make = "Nikon"
 clean_model = "D810"
 color_pattern = "RGGB"
 active_area = [0, 0, 0, 0]
-crop_area = [12, 8, 0, 0]
+crop_area = [12, 8, 8, 8]
 
 [cameras.color_matrix]
 A = [1.0354, -0.4532, 0.0031, -0.5168, 1.2906, 0.2518, -0.0733, 0.1407, 0.8361]

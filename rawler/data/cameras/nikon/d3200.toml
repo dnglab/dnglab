@@ -3,8 +3,8 @@ model = "NIKON D3200"
 clean_make = "Nikon"
 clean_model = "D3200"
 color_pattern = "RGGB"
-active_area = [0, 0, 0, 0]
-crop_area = [8, 6, 10, 6]
+active_area = [0, 0, 46, 0]
+crop_area = [8, 6, 56, 6]
 
 [cameras.color_matrix]
 A = [0.7179, -0.1985, 0.0103, -0.4102, 1.0944, 0.3649, -0.0609, 0.1585, 0.8185]

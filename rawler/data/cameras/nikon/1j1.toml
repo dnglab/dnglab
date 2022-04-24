@@ -3,8 +3,8 @@ model = "NIKON 1 J1"
 clean_make = "Nikon"
 clean_model = "1 J1"
 color_pattern = "RGGB"
-active_area = [0, 0, 0, 0]
-crop_area = [12, 6, 20, 6]
+active_area = [0, 0, 0, 2]
+crop_area = [12, 6, 20, 8]
 
 [cameras.color_matrix]
 A = [0.9398, -0.351, 0.018, -0.375, 1.0884, 0.3311, -0.0022, 0.0872, 0.6669]

@@ -3,8 +3,8 @@ model = "NIKON D1X"
 clean_make = "Nikon"
 clean_model = "D1X"
 color_pattern = "BGGR"
-active_area = [0, 0, 0, 0]
-crop_area = [5, 6, 7, 10]
+active_area = [0, 0, 4, 0]
+crop_area = [5, 6, 11, 10]
 default_scale = [[3, 4], [3, 2]]
 best_quality_scale = [4, 3]
 

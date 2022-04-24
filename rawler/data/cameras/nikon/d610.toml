@@ -3,8 +3,8 @@ model = "NIKON D610"
 clean_make = "Nikon"
 clean_model = "D610"
 color_pattern = "RGGB"
-active_area = [0, 0, 0, 0]
-crop_area = [8, 6, 10, 6]
+active_area = [0, 0, 46, 0]
+crop_area = [8, 6, 56, 6]
 
 [cameras.color_matrix]
 A = [0.8508, -0.2966, 0.0171, -0.3991, 1.0849, 0.3635, -0.0467, 0.1053, 0.8072]

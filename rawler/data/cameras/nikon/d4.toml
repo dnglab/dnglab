@@ -3,8 +3,8 @@ model = "NIKON D4"
 clean_make = "Nikon"
 clean_model = "D4"
 color_pattern = "RGGB"
-active_area = [0, 0, 0, 0]
-crop_area = [6, 6, 6, 6]
+active_area = [2, 0, 50, 0]
+crop_area = [8, 6, 56, 6]
 
 [cameras.color_matrix]
 A = [0.9033, -0.3555, -0.0287, -0.4881, 1.2214, 0.3022, -0.0459, 0.0926, 0.7932]

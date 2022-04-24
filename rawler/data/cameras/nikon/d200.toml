@@ -3,8 +3,8 @@ model = "NIKON D200"
 clean_make = "Nikon"
 clean_model = "D200"
 color_pattern = "GRBG"
-active_area = [0, 0, 0, 0]
-crop_area = [15, 12, 13, 12]
+active_area = [0, 0, 4, 0]
+crop_area = [15, 12, 17, 12]
 
 [cameras.color_matrix]
 A = [0.9483, -0.3452, -0.0142, -0.7374, 1.4683, 0.2942, -0.0723, 0.0859, 0.8369]
