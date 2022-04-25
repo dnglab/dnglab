@@ -1,9 +1,8 @@
-use crate::{Result};
 use crate::bits::LEu16;
+use crate::Result;
 use crate::{decoders::nef::NikonMakernote, formats::tiff::IFD};
 
 const ERRMSG: &str = "Lens composite buffer error: EOF";
-
 
 #[derive(Default, Clone)]
 #[allow(dead_code)]
@@ -40,7 +39,6 @@ pub enum NefLensData {
 
 impl NefLensDataF {
   pub fn composite_id(&self, lens_type: u8) -> String {
-
     format!(
       "{:02X} {:02X} {:02X} {:02X} {:02X} {:02X} {:02X} {:02X}",
       self.lens_id_number,
@@ -50,7 +48,8 @@ impl NefLensDataF {
       self.max_aperture_at_min_focal,
       self.max_aperture_at_max_focal,
       self.mcu_version,
-      lens_type)
+      lens_type
+    )
   }
 }
 
@@ -174,38 +173,38 @@ fn parse_lensdata_0x4xx(version: u32, buf: &[u8], model_offset: usize) -> Result
 }
 
 fn parse_lensdata_0x800(version: u32, buf: &[u8]) -> Result<NefLensData> {
-    // This check comes from exiftool. If the buffer contains only zeros,
-    // we consider the block as unused. Hopefully we find another method...
-    let old_data_avail = !buf[0x04 .. 0x04+16].iter().all(|&x| x == 0);
-    let new_data_avail = !buf[0x30 .. 0x30+16].iter().all(|&x| x == 0);
-    if old_data_avail {
-        log::debug!("NEF lensdata 0x80X: Found old lensdata block");
-        Ok(NefLensData::FMount(NefLensDataF {
-            version,
-            exit_pupil_position: *buf.get(NefLensData800::ExitPupilPosition as usize).ok_or(ERRMSG)?,
-            af_aperture: *buf.get(NefLensData800::AFAperture as usize).ok_or(ERRMSG)?,
-            focus_position: *buf.get(NefLensData800::FocusPosition as usize).ok_or(ERRMSG)?,
-            focus_distance: *buf.get(NefLensData800::FocusDistance as usize).ok_or(ERRMSG)?,
-            lens_id_number: *buf.get(NefLensData800::LensIDNumber as usize).ok_or(ERRMSG)?,
-            lens_fstops: *buf.get(NefLensData800::LensFStops as usize).ok_or(ERRMSG)?,
-            min_focal_len: *buf.get(NefLensData800::MinFocalLength as usize).ok_or(ERRMSG)?,
-            max_focal_len: *buf.get(NefLensData800::MaxFocalLength as usize).ok_or(ERRMSG)?,
-            max_aperture_at_min_focal: *buf.get(NefLensData800::MaxApertureAtMinFocal as usize).ok_or(ERRMSG)?,
-            max_aperture_at_max_focal: *buf.get(NefLensData800::MaxApertureAtMaxFocal as usize).ok_or(ERRMSG)?,
-            mcu_version: *buf.get(NefLensData800::MCUVersion as usize).ok_or(ERRMSG)?,
-            effective_max_aperture: *buf.get(NefLensData800::EffectiveMaxAperture as usize).ok_or(ERRMSG)?,
-            lens_model: None,
-          }))
-    } else if new_data_avail {
-        log::debug!("NEF lensdata 0x80X: Found new lensdata block");
-        let mut data = NefLensDataZ { version, ..Default::default() };
-        data.lens_id = LEu16(buf, 0x30);
-        log::debug!("NEF lensdata 0x80X: lens_id: {}", data.lens_id);
+  // This check comes from exiftool. If the buffer contains only zeros,
+  // we consider the block as unused. Hopefully we find another method...
+  let old_data_avail = !buf[0x04..0x04 + 16].iter().all(|&x| x == 0);
+  let new_data_avail = !buf[0x30..0x30 + 16].iter().all(|&x| x == 0);
+  if old_data_avail {
+    log::debug!("NEF lensdata 0x80X: Found old lensdata block");
+    Ok(NefLensData::FMount(NefLensDataF {
+      version,
+      exit_pupil_position: *buf.get(NefLensData800::ExitPupilPosition as usize).ok_or(ERRMSG)?,
+      af_aperture: *buf.get(NefLensData800::AFAperture as usize).ok_or(ERRMSG)?,
+      focus_position: *buf.get(NefLensData800::FocusPosition as usize).ok_or(ERRMSG)?,
+      focus_distance: *buf.get(NefLensData800::FocusDistance as usize).ok_or(ERRMSG)?,
+      lens_id_number: *buf.get(NefLensData800::LensIDNumber as usize).ok_or(ERRMSG)?,
+      lens_fstops: *buf.get(NefLensData800::LensFStops as usize).ok_or(ERRMSG)?,
+      min_focal_len: *buf.get(NefLensData800::MinFocalLength as usize).ok_or(ERRMSG)?,
+      max_focal_len: *buf.get(NefLensData800::MaxFocalLength as usize).ok_or(ERRMSG)?,
+      max_aperture_at_min_focal: *buf.get(NefLensData800::MaxApertureAtMinFocal as usize).ok_or(ERRMSG)?,
+      max_aperture_at_max_focal: *buf.get(NefLensData800::MaxApertureAtMaxFocal as usize).ok_or(ERRMSG)?,
+      mcu_version: *buf.get(NefLensData800::MCUVersion as usize).ok_or(ERRMSG)?,
+      effective_max_aperture: *buf.get(NefLensData800::EffectiveMaxAperture as usize).ok_or(ERRMSG)?,
+      lens_model: None,
+    }))
+  } else if new_data_avail {
+    log::debug!("NEF lensdata 0x80X: Found new lensdata block");
+    let mut data = NefLensDataZ { version, ..Default::default() };
+    data.lens_id = LEu16(buf, 0x30);
+    log::debug!("NEF lensdata 0x80X: lens_id: {}", data.lens_id);
 
-        Ok(NefLensData::ZMount(data))
-    } else {
-        Err("NEF lens data 0x80X contains neither old and new data".into())
-    }
+    Ok(NefLensData::ZMount(data))
+  } else {
+    Err("NEF lens data 0x80X contains neither old and new data".into())
+  }
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]

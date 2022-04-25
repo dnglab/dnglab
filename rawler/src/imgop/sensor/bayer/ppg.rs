@@ -26,10 +26,7 @@ use crate::{
 pub fn demosaic_ppg(raw: &[f32], dim: Dim2, cfa_orig: CFA, roi: Rect) -> RgbF32 {
   // PPG can only applied to pure RGGB or variants.
   if !cfa_orig.is_rgb() {
-    panic!(
-      "CFA pattern '{}' is not a RGB pattern, can not demosaic with PPG",
-      cfa_orig
-    );
+    panic!("CFA pattern '{}' is not a RGB pattern, can not demosaic with PPG", cfa_orig);
   }
   // Measure time
   let now = Instant::now();
@@ -112,58 +109,52 @@ fn interpolate_green(img: &mut Rgb2D<f32>, shifted: &CFA) {
   // image. This is not possible in Rust without unsafe code.
   let dataptr = img.data_ptr();
 
-  img
-    .pixels_mut()
-    .par_chunks_exact_mut(w)
-    .enumerate()
-    .skip(3)
-    .take(h - 6)
-    .for_each(|(row, buf)| {
-      for (col, pixel) in buf.iter_mut().enumerate().skip(3).take(w - 6) {
-        if shifted.color_at(row, col) != CFA_COLOR_G {
-          let ch = shifted.color_at(row, col); // It's R or B
-          let x = pixel[ch];
-          let n_1 = unsafe { dataptr.at(row - 1, col)[CFA_COLOR_G] };
-          let n_2 = unsafe { dataptr.at(row - 2, col)[ch] };
-          let e_1 = unsafe { dataptr.at(row, col + 1)[CFA_COLOR_G] };
-          let e_2 = unsafe { dataptr.at(row, col + 2)[ch] };
-          let s_1 = unsafe { dataptr.at(row + 1, col)[CFA_COLOR_G] };
-          let s_2 = unsafe { dataptr.at(row + 2, col)[ch] };
-          let w_1 = unsafe { dataptr.at(row, col - 1)[CFA_COLOR_G] };
-          let w_2 = unsafe { dataptr.at(row, col - 2)[ch] };
+  img.pixels_mut().par_chunks_exact_mut(w).enumerate().skip(3).take(h - 6).for_each(|(row, buf)| {
+    for (col, pixel) in buf.iter_mut().enumerate().skip(3).take(w - 6) {
+      if shifted.color_at(row, col) != CFA_COLOR_G {
+        let ch = shifted.color_at(row, col); // It's R or B
+        let x = pixel[ch];
+        let n_1 = unsafe { dataptr.at(row - 1, col)[CFA_COLOR_G] };
+        let n_2 = unsafe { dataptr.at(row - 2, col)[ch] };
+        let e_1 = unsafe { dataptr.at(row, col + 1)[CFA_COLOR_G] };
+        let e_2 = unsafe { dataptr.at(row, col + 2)[ch] };
+        let s_1 = unsafe { dataptr.at(row + 1, col)[CFA_COLOR_G] };
+        let s_2 = unsafe { dataptr.at(row + 2, col)[ch] };
+        let w_1 = unsafe { dataptr.at(row, col - 1)[CFA_COLOR_G] };
+        let w_2 = unsafe { dataptr.at(row, col - 2)[ch] };
 
-          // Calculate the gradients for each direction.
-          let n = (x - n_2).abs() * 2.0 + (n_1 - s_1);
-          let e = (x - e_2).abs() * 2.0 + (w_1 - e_1);
-          let w = (x - w_2).abs() * 2.0 + (w_1 - e_1);
-          let s = (x - s_2).abs() * 2.0 + (n_1 - s_1);
+        // Calculate the gradients for each direction.
+        let n = (x - n_2).abs() * 2.0 + (n_1 - s_1);
+        let e = (x - e_2).abs() * 2.0 + (w_1 - e_1);
+        let w = (x - w_2).abs() * 2.0 + (w_1 - e_1);
+        let s = (x - s_2).abs() * 2.0 + (n_1 - s_1);
 
-          // Find the minimum value of the gradients.
-          let mut min = n;
-          if e < min {
-            min = e
-          };
-          if w < min {
-            min = w
-          };
-          if s < min {
-            min = s
-          };
+        // Find the minimum value of the gradients.
+        let mut min = n;
+        if e < min {
+          min = e
+        };
+        if w < min {
+          min = w
+        };
+        if s < min {
+          min = s
+        };
 
-          // The minimum gradient wins.
-          let p_green = if min == n {
-            (n_1 * 3.0 + s_1 + x - n_2) / 4.0
-          } else if min == e {
-            (e_1 * 3.0 + w_1 + x - e_2) / 4.0
-          } else if min == w {
-            (w_1 * 3.0 + e_1 + x - w_2) / 4.0
-          } else {
-            (s_1 * 3.0 + n_1 + x - s_2) / 4.0
-          };
-          pixel[CFA_COLOR_G] = p_green;
-        }
+        // The minimum gradient wins.
+        let p_green = if min == n {
+          (n_1 * 3.0 + s_1 + x - n_2) / 4.0
+        } else if min == e {
+          (e_1 * 3.0 + w_1 + x - e_2) / 4.0
+        } else if min == w {
+          (w_1 * 3.0 + e_1 + x - w_2) / 4.0
+        } else {
+          (s_1 * 3.0 + n_1 + x - s_2) / 4.0
+        };
+        pixel[CFA_COLOR_G] = p_green;
       }
-    });
+    }
+  });
 }
 
 /// PPG Demosaic: Interpolate R/B channel at G channels
@@ -179,36 +170,30 @@ fn interpolate_rb_at_green(img: &mut Rgb2D<f32>, shifted: &CFA) {
   // image. This is not possible in Rust without unsafe code.
   let dataptr = img.data_ptr();
 
-  img
-    .pixels_mut()
-    .par_chunks_exact_mut(w)
-    .enumerate()
-    .skip(3)
-    .take(h - 6)
-    .for_each(|(row, buf)| {
-      for (col, pixel) in buf.iter_mut().enumerate().skip(3).take(w - 6) {
-        if shifted.color_at(row, col) == CFA_COLOR_G {
-          let h_ch = shifted.color_at(row, col + 1); // horizontal corresponding channel
-          let v_ch = shifted.color_at(row + 1, col); // vertical corresponding channel
+  img.pixels_mut().par_chunks_exact_mut(w).enumerate().skip(3).take(h - 6).for_each(|(row, buf)| {
+    for (col, pixel) in buf.iter_mut().enumerate().skip(3).take(w - 6) {
+      if shifted.color_at(row, col) == CFA_COLOR_G {
+        let h_ch = shifted.color_at(row, col + 1); // horizontal corresponding channel
+        let v_ch = shifted.color_at(row + 1, col); // vertical corresponding channel
 
-          // Green samples in all directions
-          let g_x = pixel[CFA_COLOR_G];
-          let g_w = unsafe { dataptr.at(row, col - 1)[CFA_COLOR_G] };
-          let g_e = unsafe { dataptr.at(row, col + 1)[CFA_COLOR_G] };
-          let g_n = unsafe { dataptr.at(row - 1, col)[CFA_COLOR_G] };
-          let g_s = unsafe { dataptr.at(row + 1, col)[CFA_COLOR_G] };
-          // Horizontal samples for channel (R or B)
-          let h_w = unsafe { dataptr.at(row, col - 1).get_unchecked(h_ch) };
-          let h_e = unsafe { dataptr.at(row, col + 1).get_unchecked(h_ch) };
-          // Vertial samples for channel (R or B)
-          let v_n = unsafe { dataptr.at(row - 1, col).get_unchecked(v_ch) };
-          let v_s = unsafe { dataptr.at(row + 1, col).get_unchecked(v_ch) };
+        // Green samples in all directions
+        let g_x = pixel[CFA_COLOR_G];
+        let g_w = unsafe { dataptr.at(row, col - 1)[CFA_COLOR_G] };
+        let g_e = unsafe { dataptr.at(row, col + 1)[CFA_COLOR_G] };
+        let g_n = unsafe { dataptr.at(row - 1, col)[CFA_COLOR_G] };
+        let g_s = unsafe { dataptr.at(row + 1, col)[CFA_COLOR_G] };
+        // Horizontal samples for channel (R or B)
+        let h_w = unsafe { dataptr.at(row, col - 1).get_unchecked(h_ch) };
+        let h_e = unsafe { dataptr.at(row, col + 1).get_unchecked(h_ch) };
+        // Vertial samples for channel (R or B)
+        let v_n = unsafe { dataptr.at(row - 1, col).get_unchecked(v_ch) };
+        let v_s = unsafe { dataptr.at(row + 1, col).get_unchecked(v_ch) };
 
-          *unsafe { pixel.get_unchecked_mut(h_ch) } = hue_transit(g_w, g_x, g_e, *h_w, *h_e);
-          *unsafe { pixel.get_unchecked_mut(v_ch) } = hue_transit(g_n, g_x, g_s, *v_n, *v_s);
-        }
+        *unsafe { pixel.get_unchecked_mut(h_ch) } = hue_transit(g_w, g_x, g_e, *h_w, *h_e);
+        *unsafe { pixel.get_unchecked_mut(v_ch) } = hue_transit(g_n, g_x, g_s, *v_n, *v_s);
       }
-    });
+    }
+  });
 }
 
 /// PPG Demosaic: Interpolate R/B channel at non-G channels
@@ -224,53 +209,39 @@ fn interpolate_rb_at_non_green(img: &mut Rgb2D<f32>, shifted: &CFA) {
   // image. This is not possible in Rust without unsafe code.
   let dataptr = img.data_ptr();
 
-  img
-    .pixels_mut()
-    .par_chunks_exact_mut(w)
-    .enumerate()
-    .skip(3)
-    .take(h - 6)
-    .for_each(|(row, buf)| {
-      for (col, pixel) in buf.iter_mut().enumerate().skip(3).take(w - 6) {
-        if shifted.color_at(row, col) != CFA_COLOR_G {
-          let x_ch = shifted.color_at(row, col); // current
-          let y_ch = if x_ch == CFA_COLOR_R { CFA_COLOR_B } else { CFA_COLOR_R };
+  img.pixels_mut().par_chunks_exact_mut(w).enumerate().skip(3).take(h - 6).for_each(|(row, buf)| {
+    for (col, pixel) in buf.iter_mut().enumerate().skip(3).take(w - 6) {
+      if shifted.color_at(row, col) != CFA_COLOR_G {
+        let x_ch = shifted.color_at(row, col); // current
+        let y_ch = if x_ch == CFA_COLOR_R { CFA_COLOR_B } else { CFA_COLOR_R };
 
-          let y_ne_1 = unsafe { dataptr.at(row - 1, col + 1)[y_ch] };
-          let y_sw_1 = unsafe { dataptr.at(row + 1, col - 1)[y_ch] };
-          let x_ne_2 = unsafe { dataptr.at(row - 2, col + 2)[x_ch] };
-          let x_center = pixel[x_ch];
-          let x_sw_2 = unsafe { dataptr.at(row + 2, col - 2)[x_ch] };
-          let g_ne_1 = unsafe { dataptr.at(row - 1, col + 1)[CFA_COLOR_G] };
-          let g_center = pixel[CFA_COLOR_G];
-          let g_sw_1 = unsafe { dataptr.at(row + 1, col - 1)[CFA_COLOR_G] };
-          let y_nw_1 = unsafe { dataptr.at(row - 1, col - 1)[y_ch] };
-          let y_se_1 = unsafe { dataptr.at(row + 1, col + 1)[y_ch] };
-          let x_nw_2 = unsafe { dataptr.at(row - 2, col - 2)[x_ch] };
-          let x_se_2 = unsafe { dataptr.at(row + 2, col + 2)[x_ch] };
-          let g_nw_1 = unsafe { dataptr.at(row - 1, col - 1)[CFA_COLOR_G] };
-          let g_se_1 = unsafe { dataptr.at(row + 1, col + 1)[CFA_COLOR_G] };
+        let y_ne_1 = unsafe { dataptr.at(row - 1, col + 1)[y_ch] };
+        let y_sw_1 = unsafe { dataptr.at(row + 1, col - 1)[y_ch] };
+        let x_ne_2 = unsafe { dataptr.at(row - 2, col + 2)[x_ch] };
+        let x_center = pixel[x_ch];
+        let x_sw_2 = unsafe { dataptr.at(row + 2, col - 2)[x_ch] };
+        let g_ne_1 = unsafe { dataptr.at(row - 1, col + 1)[CFA_COLOR_G] };
+        let g_center = pixel[CFA_COLOR_G];
+        let g_sw_1 = unsafe { dataptr.at(row + 1, col - 1)[CFA_COLOR_G] };
+        let y_nw_1 = unsafe { dataptr.at(row - 1, col - 1)[y_ch] };
+        let y_se_1 = unsafe { dataptr.at(row + 1, col + 1)[y_ch] };
+        let x_nw_2 = unsafe { dataptr.at(row - 2, col - 2)[x_ch] };
+        let x_se_2 = unsafe { dataptr.at(row + 2, col + 2)[x_ch] };
+        let g_nw_1 = unsafe { dataptr.at(row - 1, col - 1)[CFA_COLOR_G] };
+        let g_se_1 = unsafe { dataptr.at(row + 1, col + 1)[CFA_COLOR_G] };
 
-          let ne = (y_ne_1 - y_sw_1).abs()
-            + (x_ne_2 - x_center).abs()
-            + (x_center - x_sw_2).abs()
-            + (g_ne_1 - g_center).abs()
-            + (g_center - g_sw_1).abs();
+        let ne = (y_ne_1 - y_sw_1).abs() + (x_ne_2 - x_center).abs() + (x_center - x_sw_2).abs() + (g_ne_1 - g_center).abs() + (g_center - g_sw_1).abs();
 
-          let nw = (y_nw_1 - y_se_1).abs()
-            + (x_nw_2 - x_center).abs()
-            + (x_center - x_se_2).abs()
-            + (g_nw_1 + g_center).abs()
-            + (g_center - g_se_1).abs();
+        let nw = (y_nw_1 - y_se_1).abs() + (x_nw_2 - x_center).abs() + (x_center - x_se_2).abs() + (g_nw_1 + g_center).abs() + (g_center - g_se_1).abs();
 
-          pixel[y_ch] = if ne < nw {
-            hue_transit(g_ne_1, g_center, g_sw_1, y_ne_1, y_sw_1)
-          } else {
-            hue_transit(g_nw_1, g_center, g_se_1, y_nw_1, y_se_1)
-          };
-        }
+        pixel[y_ch] = if ne < nw {
+          hue_transit(g_ne_1, g_center, g_sw_1, y_ne_1, y_sw_1)
+        } else {
+          hue_transit(g_nw_1, g_center, g_se_1, y_nw_1, y_se_1)
+        };
       }
-    });
+    }
+  });
 }
 
 /// PPG helper procedure to calculate hue transit

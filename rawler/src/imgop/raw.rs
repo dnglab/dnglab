@@ -114,15 +114,12 @@ fn correct_blacklevel(raw: &mut [f32], width: usize, height: usize, blacklevel: 
     // It's bayer data, so we have two lines for sure.
     let (line0, line1) = lines.split_at_mut(width);
     //line0.array_chunks_mut::<2>().zip(line1.array_chunks_mut::<2>()).for_each(|(a, b)| {
-    line0
-      .chunks_exact_mut(2)
-      .zip(line1.chunks_exact_mut(2))
-      .for_each(|(a, b)| {
-        a[0] = clip(a[0] - blacklevel[0]) / max[0];
-        a[1] = clip(a[1] - blacklevel[1]) / max[1];
-        b[0] = clip(b[0] - blacklevel[2]) / max[2];
-        b[1] = clip(b[1] - blacklevel[3]) / max[3];
-      });
+    line0.chunks_exact_mut(2).zip(line1.chunks_exact_mut(2)).for_each(|(a, b)| {
+      a[0] = clip(a[0] - blacklevel[0]) / max[0];
+      a[1] = clip(a[1] - blacklevel[1]) / max[1];
+      b[0] = clip(b[0] - blacklevel[2]) / max[2];
+      b[1] = clip(b[1] - blacklevel[3]) / max[3];
+    });
   });
 }
 
@@ -199,12 +196,7 @@ pub fn develop_raw_srgb(pixels: &[u16], params: &DevelopParams) -> Result<(Vec<f
 
   correct_blacklevel(&mut pixels, params.width, params.height, &black_level, &white_level);
 
-  let mut rgb = demosaic_ppg(
-    &pixels,
-    Dim2::new(params.width, params.height),
-    params.cfa.clone(),
-    active_area,
-  );
+  let mut rgb = demosaic_ppg(&pixels, Dim2::new(params.width, params.height), params.cfa.clone(), active_area);
 
   let w = active_area.d.w;
   let h = active_area.d.h;

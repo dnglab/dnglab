@@ -18,7 +18,7 @@ where
   }
 
   pub fn new(width: usize, height: usize) -> Self {
-    let data = vec![T::default(); width*height];
+    let data = vec![T::default(); width * height];
     Self { data, width, height }
   }
 
@@ -99,17 +99,6 @@ where
   }
 }
 
-
-
-
-
-
-
-
-
-
-
-
 #[derive(Clone)]
 pub struct Rgb2D<T> {
   pub width: usize,
@@ -129,7 +118,7 @@ where
   }
 
   pub fn new(width: usize, height: usize) -> Self {
-    let data = vec![<[T; 3]>::default(); width*height];
+    let data = vec![<[T; 3]>::default(); width * height];
     Self { data, width, height }
   }
 
@@ -215,8 +204,6 @@ where
   }
 }
 
-
-
 #[derive(Clone, Debug)]
 pub struct Rgb2DPtr<T> {
   ptr: *const [T; 3],
@@ -226,7 +213,7 @@ pub struct Rgb2DPtr<T> {
 impl<T> Rgb2DPtr<T>
 where
   T: Copy + Clone,
-  {
+{
   fn new(orig: &Rgb2D<T>) -> Self {
     Self {
       ptr: orig.data.as_slice().as_ptr(),
@@ -240,8 +227,8 @@ where
   /// TODO
   #[inline(always)]
   pub unsafe fn at(&self, row: usize, col: usize) -> &[T; 3] {
-    debug_assert!(row*col < self.height * self.width);
-    &*self.ptr.add(row*self.width+col)
+    debug_assert!(row * col < self.height * self.width);
+    &*self.ptr.add(row * self.width + col)
   }
 }
 

@@ -142,12 +142,7 @@ impl<'a> DngDecoder<'a> {
 
   fn get_wb(&self) -> Result<[f32; 4]> {
     if let Some(levels) = self.tiff.get_entry(TiffCommonTag::AsShotNeutral) {
-      Ok([
-        1.0 / levels.force_f32(0),
-        1.0 / levels.force_f32(1),
-        1.0 / levels.force_f32(2),
-        NAN,
-      ])
+      Ok([1.0 / levels.force_f32(0), 1.0 / levels.force_f32(1), 1.0 / levels.force_f32(2), NAN])
     } else {
       Ok([NAN, NAN, NAN, NAN])
     }
