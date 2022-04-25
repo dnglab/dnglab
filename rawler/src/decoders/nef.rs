@@ -17,6 +17,7 @@ use crate::bits::Endian;
 use crate::bits::LEu32;
 use crate::bits::LookupTable;
 use crate::decoders::decode_threaded;
+use crate::decoders::nef::lensdata::NefLensData;
 use crate::decompressors::ljpeg::huffman::HuffTable;
 use crate::exif::Exif;
 use crate::formats::tiff::ifd::OffsetMode;
@@ -52,6 +53,7 @@ mod decrypt;
 pub mod lensdata;
 
 const NIKON_F_MOUNT: &str = "F-mount";
+const NIKON_Z_MOUNT: &str = "Z-mount";
 
 // NEF Huffman tables in order. First two are the normal huffman definitions.
 // Third one are weird shifts that are used in the lossy split encodings only
@@ -173,11 +175,20 @@ impl<'a> Decoder for NefDecoder<'a> {
     let height = fetch_tiff_tag!(raw, TiffCommonTag::ImageLength).force_usize(0);
     let bps = fetch_tiff_tag!(raw, TiffCommonTag::BitsPerSample).force_usize(0);
     let compression = fetch_tiff_tag!(raw, TiffCommonTag::Compression).force_usize(0);
-    let nef_compression = self
-      .makernote
-      .get_entry(NikonMakernote::NefCompression)
-      .map(|entry| entry.force_u16(0))
-      .and_then(|value| NefCompression::try_from(value).ok());
+
+    let nef_compression = if let Some(z_makernote) = self.makernote.get_entry(NikonMakernote::Makernotes0x51) {
+      // For new Z models, a new tag 0x51 for makernotes appears. This contains
+      // The new-old NEFCompression tag. The old tag is unavailable in this models.
+      Some(NefCompression::try_from(crate::bits::LEu16(z_makernote.get_data(), 10)).map_err(RawlerError::from)?)
+    } else {
+      self
+        .makernote
+        .get_entry(NikonMakernote::NefCompression)
+        .map(|entry| entry.force_u16(0))
+        .map(NefCompression::try_from)
+        .transpose()
+        .map_err(RawlerError::from)?
+    };
     debug!("TIFF compression flag: {}, NEF compression mode: {:?}", compression, nef_compression);
 
     let offset = fetch_tiff_tag!(raw, TiffCommonTag::StripOffsets).force_usize(0);
@@ -187,14 +198,14 @@ impl<'a> Decoder for NefDecoder<'a> {
     // That's little bit hacky here. Some files like D500 using multiple strips.
     // Because the strips has no holes between and are perfectly aligned, we can process the whole
     // chunk at once, instead of iterating over every strip.
-    // It would be saver to process each strip offset, but it is not need for any known model so far.
+    // It would be safer to process each strip offset, but it is not need for any known model so far.
     let src: OptBuffer = if rows_per_strip == height {
       file.subview(offset as u64, size as u64)?.into()
     } else {
       let full_size: u32 = match fetch_tiff_tag!(raw, TiffCommonTag::StripByteCounts) {
         Value::Long(data) => data.iter().copied().sum(),
         _ => {
-          return Err(RawlerError::General("Foo".to_string()));
+          return Err("StripByteCounts is not of type LONG".into());
         }
       };
       file.subview(offset as u64, full_size as u64)?.into()
@@ -203,8 +214,6 @@ impl<'a> Decoder for NefDecoder<'a> {
     let mut cpp = 1;
     let coeffs = normalize_wb(self.get_wb()?);
     debug!("WB coeff: {:?}", coeffs);
-
-    let _ = self.get_lens_composite_id()?;
 
     assert_eq!(self.tiff.little_endian(), self.makernote.endian == Endian::Little);
 
@@ -223,7 +232,7 @@ impl<'a> Decoder for NefDecoder<'a> {
         decode_16be(&src, width, height, dummy)
       }
     } else if let Some(padding) = self.is_uncompressed(raw)? {
-      debug!("NEF uncompressed row padding: {}", padding);
+      debug!("NEF uncompressed row padding: {}, little-endian: {}", padding, self.tiff.little_endian());
       match bps {
         14 => {
           if (self.tiff.little_endian() || self.camera.find_hint("little_endian")) && !self.camera.find_hint("big_endian") {
@@ -342,22 +351,23 @@ impl<'a> NefDecoder<'a> {
     }
   }
 
-  fn get_lens_composite_id(&self) -> Result<Option<String>> {
-    if let Some(lensdata) = lensdata::from_makernote(&self.makernote)? {
-      if let Some(lenstype) = self.makernote.get_entry(NikonMakernote::LensType) {
-        let comp = lensdata.composite_id(lenstype.force_u8(0));
-        log::debug!("NEF lens composite ID: {}", comp);
-        return Ok(Some(comp));
-      }
-    }
-    Ok(None)
-  }
-
   /// Get lens description by analyzing TIFF tags and makernotes
   fn get_lens_description(&self) -> Result<Option<&'static LensDescription>> {
-    if let Some(composite_id) = self.get_lens_composite_id()? {
-      let resolver = LensResolver::new().with_nikon_id(Some(composite_id)).with_mounts(&[NIKON_F_MOUNT.into()]);
-      return Ok(resolver.resolve());
+    if let Some(lensdata) = lensdata::from_makernote(&self.makernote)? {
+      if let Some(lenstype) = self.makernote.get_entry(NikonMakernote::LensType) {
+        match lensdata {
+          NefLensData::FMount(oldv) => {
+            let composite_id = oldv.composite_id(lenstype.force_u8(0));
+            log::debug!("NEF lens composite ID: {}", composite_id);
+            let resolver = LensResolver::new().with_nikon_id(Some(composite_id)).with_mounts(&[NIKON_F_MOUNT.into()]);
+            return Ok(resolver.resolve());
+          }
+          NefLensData::ZMount(newv) => {
+            let resolver = LensResolver::new().with_lens_id((newv.lens_id as u32, 0)).with_mounts(&[NIKON_Z_MOUNT.into()]);
+            return Ok(resolver.resolve());
+          }
+        }
+      }
     }
     Ok(None)
   }
@@ -513,7 +523,6 @@ impl<'a> NefDecoder<'a> {
   }
 
   fn decode_compressed(&self, src: &OptBuffer, width: usize, height: usize, bps: usize, dummy: bool) -> Result<PixU16> {
-    //let metaifd = self.tiff.find_first_ifd_with_tag(LegacyTiffRootTag::NefMeta1).unwrap();
     let meta = if let Some(meta) = self.makernote.get_entry(TiffCommonTag::NefMeta2) {
       debug!("Found NefMeta2");
       meta
@@ -556,11 +565,16 @@ impl<'a> NefDecoder<'a> {
     for i in 0..points.len() {
       points[i] = i as u16;
     }
-    let mut max = if v0 == 68 && v1 == 64 {
-      1 << (bps - 2) // Special for D780, Z7
+
+    // Some models reports 14 bits, but the data is 12 bits.
+    // So we reduce the bps to calculate the max value which
+    // is needed in the next steps.
+    let real_bps = if v0 == 68 && v1 == 64 {
+      bps as u32 - 2 // Special for D780, Z7 and others
     } else {
-      1 << bps
+      bps as u32
     };
+    let mut max = 1 << real_bps;
 
     let csize = stream.get_u16() as usize;
     let mut split = 0_usize;
@@ -592,7 +606,6 @@ impl<'a> NefDecoder<'a> {
     let mut pump = BitPumpMSB::new(src);
     let mut random = pump.peek_bits(24);
 
-    let bps: u32 = bps as u32;
     for row in 0..height {
       if split > 0 && row == split {
         htable = Self::create_hufftable(huff_select + 1)?;
@@ -606,8 +619,8 @@ impl<'a> NefDecoder<'a> {
           pred_left1 += htable.huff_decode(&mut pump)?;
           pred_left2 += htable.huff_decode(&mut pump)?;
         }
-        out[row * width + col + 0] = curve.dither(clampbits(pred_left1, bps), &mut random);
-        out[row * width + col + 1] = curve.dither(clampbits(pred_left2, bps), &mut random);
+        out[row * width + col + 0] = curve.dither(clampbits(pred_left1, real_bps), &mut random);
+        out[row * width + col + 1] = curve.dither(clampbits(pred_left2, real_bps), &mut random);
       }
     }
 
@@ -706,6 +719,7 @@ pub enum NikonMakernote {
   ImageSizeRaw = 0x003e,
   CropArea = 0x0045,
   BlackLevel = 0x003d,
+  Makernotes0x51 = 0x0051,
   LensType = 0x0083,
   NefMeta1 = 0x008c,
   NefMeta2 = 0x0096,

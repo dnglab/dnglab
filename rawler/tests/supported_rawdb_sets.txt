@@ -137,3 +137,11 @@ cameras/Nikon/D3S/raw_modes
 cameras/Nikon/Df/raw_modes
 cameras/Nikon/D800/raw_modes
 cameras/Nikon/D3100/raw_modes
+cameras/Nikon/Z 5/raw_modes
+cameras/Nikon/NIKON Z 6_2/raw_modes
+cameras/Nikon/NIKON Z 7_2/raw_modes
+cameras/Nikon/Z 50/raw_modes
+cameras/Nikon/Z 6/raw_modes
+cameras/Nikon/NIKON Z fc/raw_modes
+cameras/Nikon/Z 7/raw_modes
+cameras/Nikon/NIKON Z 9/raw_modes

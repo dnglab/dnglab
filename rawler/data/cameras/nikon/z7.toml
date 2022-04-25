@@ -1,0 +1,19 @@
+make = "NIKON CORPORATION"
+model = "NIKON Z 7"
+clean_make = "Nikon"
+clean_model = "Z 7"
+color_pattern = "RGGB"
+active_area = [0, 0, 0, 0]
+crop_area = [16, 8, 16, 8]
+
+[cameras.color_matrix]
+A = [1.4496, -0.8028, 0.0682, -0.465, 1.2681, 0.2185, -0.021, 0.0781, 0.8334]
+D65 = [1.3705, -0.6004, -0.14, -0.5464, 1.3568, 0.2062, -0.094, 0.1706, 0.7618]
+
+[[cameras.modes]]
+mode = "12bit"
+whitepoint = 3880
+
+[[cameras.modes]]
+mode = "14bit"
+whitepoint = 15520
