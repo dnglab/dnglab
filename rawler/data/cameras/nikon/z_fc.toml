@@ -1,0 +1,19 @@
+make = "NIKON CORPORATION"
+model = "NIKON Z fc"
+clean_make = "Nikon"
+clean_model = "Z fc"
+color_pattern = "RGGB"
+active_area = [0, 0, 0, 0]
+crop_area = [16, 8, 16, 8]
+
+[cameras.color_matrix]
+A = [1.3247, -0.7357, 0.0658, -0.4296, 1.227, 0.2269, -0.0237, 0.08, 0.7992]
+D65 = [1.164, -0.4829, -0.1079, -0.5107, 1.3006, 0.2325, -0.0972, 0.1711, 0.738]
+
+[[cameras.modes]]
+mode = "12bit"
+whitepoint = 3880
+
+[[cameras.modes]]
+mode = "14bit"
+whitepoint = 15520

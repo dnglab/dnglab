@@ -1,0 +1,19 @@
+make = "NIKON CORPORATION"
+model = "NIKON Z 9"
+clean_make = "Nikon"
+clean_model = "Z 9"
+color_pattern = "RGGB"
+active_area = [0, 0, 0, 0]
+crop_area = [12, 8, 12, 8]
+
+[cameras.color_matrix]
+A = [1.4555, -0.8995, 0.0329, -0.3898, 1.1249, 0.3042, 0.0018, 0.0402, 0.8473]
+D65 = [1.3389, -0.6049, -0.1441, -0.4544, 1.2757, 0.1969, 0.0229, 0.0498, 0.739]
+
+[[cameras.modes]]
+mode = "12bit"
+whitepoint = 3880
+
+[[cameras.modes]]
+mode = "14bit"
+whitepoint = 15520

@@ -1,11 +1,13 @@
-use crate::Result;
+use crate::{Result};
+use crate::bits::LEu16;
 use crate::{decoders::nef::NikonMakernote, formats::tiff::IFD};
 
 const ERRMSG: &str = "Lens composite buffer error: EOF";
 
+
 #[derive(Default, Clone)]
 #[allow(dead_code)]
-pub struct NefLensData {
+pub struct NefLensDataF {
   version: u32,
   exit_pupil_position: u8,
   af_aperture: u8,
@@ -22,8 +24,23 @@ pub struct NefLensData {
   lens_model: Option<String>,
 }
 
-impl NefLensData {
+#[derive(Default, Clone)]
+#[allow(dead_code)]
+pub struct NefLensDataZ {
+  version: u32,
+  pub lens_id: u16,
+}
+
+#[derive(Clone)]
+#[allow(dead_code)]
+pub enum NefLensData {
+  FMount(NefLensDataF),
+  ZMount(NefLensDataZ),
+}
+
+impl NefLensDataF {
   pub fn composite_id(&self, lens_type: u8) -> String {
+
     format!(
       "{:02X} {:02X} {:02X} {:02X} {:02X} {:02X} {:02X} {:02X}",
       self.lens_id_number,
@@ -33,8 +50,7 @@ impl NefLensData {
       self.max_aperture_at_min_focal,
       self.max_aperture_at_max_focal,
       self.mcu_version,
-      lens_type,
-    )
+      lens_type)
   }
 }
 
@@ -48,33 +64,34 @@ pub(super) fn from_makernote(makernote: &IFD) -> Result<Option<NefLensData>> {
     }
 
     let lensdata = match version {
-      0x100 => parse_lensdata_0x100(version, &buf)?,
-      0x101 => parse_lensdata_0x101(version, &buf)?,
+      0x100 => NefLensData::FMount(parse_lensdata_0x100(version, &buf)?),
+      0x101 => NefLensData::FMount(parse_lensdata_0x101(version, &buf)?),
       0x201 | 0x202 | 0x203 => {
         super::decrypt::nef_decrypt(&mut buf, 4, makernote)?;
-        parse_lensdata_0x101(version, &buf)?
+        NefLensData::FMount(parse_lensdata_0x101(version, &buf)?)
       }
       0x204 => {
         super::decrypt::nef_decrypt(&mut buf, 4, makernote)?;
-        parse_lensdata_0x204(version, &buf)?
+        NefLensData::FMount(parse_lensdata_0x204(version, &buf)?)
       }
       0x400 => {
         super::decrypt::nef_decrypt(&mut buf, 4, makernote)?;
-        parse_lensdata_0x4xx(version, &buf, 0x18a)?
+        NefLensData::FMount(parse_lensdata_0x4xx(version, &buf, 0x18a)?)
       }
       0x401 => {
         super::decrypt::nef_decrypt(&mut buf, 4, makernote)?;
-        parse_lensdata_0x4xx(version, &buf, 0x18a)?
+        NefLensData::FMount(parse_lensdata_0x4xx(version, &buf, 0x18a)?)
       }
       0x402 => {
         super::decrypt::nef_decrypt(&mut buf, 4, makernote)?;
-        parse_lensdata_0x4xx(version, &buf, 0x18b)?
+        NefLensData::FMount(parse_lensdata_0x4xx(version, &buf, 0x18b)?)
       }
       0x403 => {
         super::decrypt::nef_decrypt(&mut buf, 4, makernote)?;
-        parse_lensdata_0x4xx(version, &buf, 0x2ac)?
+        NefLensData::FMount(parse_lensdata_0x4xx(version, &buf, 0x2ac)?)
       }
-      0x800 => {
+      0x800 | 0x801 | 0x802 // Z Models
+      => {
         super::decrypt::nef_decrypt(&mut buf, 4, makernote)?;
         parse_lensdata_0x800(version, &buf)?
       }
@@ -90,8 +107,8 @@ pub(super) fn from_makernote(makernote: &IFD) -> Result<Option<NefLensData>> {
   }
 }
 
-fn parse_lensdata_0x100(version: u32, buf: &[u8]) -> Result<NefLensData> {
-  Ok(NefLensData {
+fn parse_lensdata_0x100(version: u32, buf: &[u8]) -> Result<NefLensDataF> {
+  Ok(NefLensDataF {
     version,
     exit_pupil_position: 0,
     af_aperture: 0,
@@ -109,8 +126,8 @@ fn parse_lensdata_0x100(version: u32, buf: &[u8]) -> Result<NefLensData> {
   })
 }
 
-fn parse_lensdata_0x101(version: u32, buf: &[u8]) -> Result<NefLensData> {
-  Ok(NefLensData {
+fn parse_lensdata_0x101(version: u32, buf: &[u8]) -> Result<NefLensDataF> {
+  Ok(NefLensDataF {
     version,
     exit_pupil_position: *buf.get(NefLensData01::ExitPupilPosition as usize).ok_or(ERRMSG)?,
     af_aperture: *buf.get(NefLensData01::AFAperture as usize).ok_or(ERRMSG)?,
@@ -128,8 +145,8 @@ fn parse_lensdata_0x101(version: u32, buf: &[u8]) -> Result<NefLensData> {
   })
 }
 
-fn parse_lensdata_0x204(version: u32, buf: &[u8]) -> Result<NefLensData> {
-  Ok(NefLensData {
+fn parse_lensdata_0x204(version: u32, buf: &[u8]) -> Result<NefLensDataF> {
+  Ok(NefLensDataF {
     version,
     exit_pupil_position: *buf.get(NefLensData204::ExitPupilPosition as usize).ok_or(ERRMSG)?,
     af_aperture: *buf.get(NefLensData204::AFAperture as usize).ok_or(ERRMSG)?,
@@ -147,8 +164,8 @@ fn parse_lensdata_0x204(version: u32, buf: &[u8]) -> Result<NefLensData> {
   })
 }
 
-fn parse_lensdata_0x4xx(version: u32, buf: &[u8], model_offset: usize) -> Result<NefLensData> {
-  let mut data = NefLensData { version, ..Default::default() };
+fn parse_lensdata_0x4xx(version: u32, buf: &[u8], model_offset: usize) -> Result<NefLensDataF> {
+  let mut data = NefLensDataF { version, ..Default::default() };
   if buf.len() >= model_offset + 64 {
     let str = String::from_utf8_lossy(&buf[model_offset..model_offset + 64]);
     data.lens_model = Some(str.trim().into());
@@ -157,32 +174,38 @@ fn parse_lensdata_0x4xx(version: u32, buf: &[u8], model_offset: usize) -> Result
 }
 
 fn parse_lensdata_0x800(version: u32, buf: &[u8]) -> Result<NefLensData> {
-  if buf[0x03] != 0 {
-    log::debug!("Found old lens data");
-    Ok(NefLensData {
-      version,
-      exit_pupil_position: *buf.get(NefLensData800::ExitPupilPosition as usize).ok_or(ERRMSG)?,
-      af_aperture: *buf.get(NefLensData800::AFAperture as usize).ok_or(ERRMSG)?,
-      focus_position: *buf.get(NefLensData800::FocusPosition as usize).ok_or(ERRMSG)?,
-      focus_distance: *buf.get(NefLensData800::FocusDistance as usize).ok_or(ERRMSG)?,
-      lens_id_number: *buf.get(NefLensData800::LensIDNumber as usize).ok_or(ERRMSG)?,
-      lens_fstops: *buf.get(NefLensData800::LensFStops as usize).ok_or(ERRMSG)?,
-      min_focal_len: *buf.get(NefLensData800::MinFocalLength as usize).ok_or(ERRMSG)?,
-      max_focal_len: *buf.get(NefLensData800::MaxFocalLength as usize).ok_or(ERRMSG)?,
-      max_aperture_at_min_focal: *buf.get(NefLensData800::MaxApertureAtMinFocal as usize).ok_or(ERRMSG)?,
-      max_aperture_at_max_focal: *buf.get(NefLensData800::MaxApertureAtMaxFocal as usize).ok_or(ERRMSG)?,
-      mcu_version: *buf.get(NefLensData800::MCUVersion as usize).ok_or(ERRMSG)?,
-      effective_max_aperture: *buf.get(NefLensData800::EffectiveMaxAperture as usize).ok_or(ERRMSG)?,
-      lens_model: None,
-    })
-  } else {
-    log::debug!("Found new lens data");
-    todo!();
-    //let data = NefLensData::default();
-    // TODO: Add Z Lens decoding
-    // Some values here are u16 in little endian!
-    //Ok(data)
-  }
+    // This check comes from exiftool. If the buffer contains only zeros,
+    // we consider the block as unused. Hopefully we find another method...
+    let old_data_avail = !buf[0x04 .. 0x04+16].iter().all(|&x| x == 0);
+    let new_data_avail = !buf[0x30 .. 0x30+16].iter().all(|&x| x == 0);
+    if old_data_avail {
+        log::debug!("NEF lensdata 0x80X: Found old lensdata block");
+        Ok(NefLensData::FMount(NefLensDataF {
+            version,
+            exit_pupil_position: *buf.get(NefLensData800::ExitPupilPosition as usize).ok_or(ERRMSG)?,
+            af_aperture: *buf.get(NefLensData800::AFAperture as usize).ok_or(ERRMSG)?,
+            focus_position: *buf.get(NefLensData800::FocusPosition as usize).ok_or(ERRMSG)?,
+            focus_distance: *buf.get(NefLensData800::FocusDistance as usize).ok_or(ERRMSG)?,
+            lens_id_number: *buf.get(NefLensData800::LensIDNumber as usize).ok_or(ERRMSG)?,
+            lens_fstops: *buf.get(NefLensData800::LensFStops as usize).ok_or(ERRMSG)?,
+            min_focal_len: *buf.get(NefLensData800::MinFocalLength as usize).ok_or(ERRMSG)?,
+            max_focal_len: *buf.get(NefLensData800::MaxFocalLength as usize).ok_or(ERRMSG)?,
+            max_aperture_at_min_focal: *buf.get(NefLensData800::MaxApertureAtMinFocal as usize).ok_or(ERRMSG)?,
+            max_aperture_at_max_focal: *buf.get(NefLensData800::MaxApertureAtMaxFocal as usize).ok_or(ERRMSG)?,
+            mcu_version: *buf.get(NefLensData800::MCUVersion as usize).ok_or(ERRMSG)?,
+            effective_max_aperture: *buf.get(NefLensData800::EffectiveMaxAperture as usize).ok_or(ERRMSG)?,
+            lens_model: None,
+          }))
+    } else if new_data_avail {
+        log::debug!("NEF lensdata 0x80X: Found new lensdata block");
+        let mut data = NefLensDataZ { version, ..Default::default() };
+        data.lens_id = LEu16(buf, 0x30);
+        log::debug!("NEF lensdata 0x80X: lens_id: {}", data.lens_id);
+
+        Ok(NefLensData::ZMount(data))
+    } else {
+        Err("NEF lens data 0x80X contains neither old and new data".into())
+    }
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
