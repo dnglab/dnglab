@@ -497,12 +497,12 @@ impl<'a> ArwDecoder<'a> {
   }
 
   fn get_wb(&self, sr2: &IFD) -> Result<[f32; 4]> {
-    let grgb_levels = sr2.get_entry(SR2SubIFD::SonyGRBG);
+    let grbg_levels = sr2.get_entry(SR2SubIFD::SonyGRBG);
     let rggb_levels = sr2.get_entry(SR2SubIFD::SonyRGGB);
-    if let Some(levels) = grgb_levels {
-      Ok([levels.force_u32(1) as f32, levels.force_u32(0) as f32, levels.force_u32(2) as f32, NAN])
+    if let Some(levels) = grbg_levels {
+      Ok(normalize_wb([levels.force_u32(1) as f32, levels.force_u32(0) as f32, levels.force_u32(3) as f32, levels.force_u32(2) as f32]))
     } else if let Some(levels) = rggb_levels {
-      Ok([levels.force_u32(0) as f32, levels.force_u32(1) as f32, levels.force_u32(3) as f32, NAN])
+      Ok(normalize_wb([levels.force_u32(0) as f32, levels.force_u32(1) as f32, levels.force_u32(2) as f32, levels.force_u32(3) as f32]))
     } else {
       Err(RawlerError::General("ARW: Couldn't find GRGB or RGGB levels".to_string()))
     }
@@ -558,6 +558,21 @@ impl<'a> ArwDecoder<'a> {
     }
     out
   }
+}
+
+
+fn normalize_wb(raw_wb: [f32; 4]) -> [f32; 4] {
+  debug!("CR2 raw wb: {:?}", raw_wb);
+  // We never have more then RGB colors so far (no RGBE etc.)
+  // So we combine G1 and G2 to get RGB wb.
+  let div = raw_wb[1]; // G1 should be 1024 and we use this as divisor
+  let mut norm = raw_wb;
+  norm.iter_mut().for_each(|v| {
+    if v.is_normal() {
+      *v /= div
+    }
+  });
+  [norm[0], (norm[1] + norm[2]) / 2.0, norm[3], NAN]
 }
 
 crate::tags::tiff_tag_enum!(ArwMakernoteTag);
