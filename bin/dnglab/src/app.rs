@@ -23,6 +23,7 @@ pub fn create_app() -> App<'static, 'static> {
           (@arg thumbnail_checksum: --("thumbnail-checksum") "Write MD5 checksum of thumbnail pixels to STDOUT")
           (@arg srgb: --srgb "Write sRGB 16-bit TIFF to STDOUT")
           (@arg meta: --meta "Write metadata to STDOUT")
+          (@arg structure: --structure "Write file structure to STDOUT")
           (@arg summary: --summary "Write summary information for file to STDOUT")
           (@arg json: --json "Format metadata as JSON")
           (@arg yaml: --yaml "Format metadata as YAML")

@@ -27,6 +27,13 @@ impl<'a> DngDecoder<'a> {
   }
 }
 
+/// DNG format encapsulation for analyzer
+#[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DngFormat {
+  tiff: GenericTiffReader,
+}
+
 impl<'a> Decoder for DngDecoder<'a> {
   fn raw_image(&self, file: &mut RawFile, _params: RawDecodeParams, dummy: bool) -> Result<RawImage> {
     let raw = self.get_raw_ifd()?;
@@ -56,7 +63,7 @@ impl<'a> Decoder for DngDecoder<'a> {
   }
 
   fn format_dump(&self) -> FormatDump {
-    todo!()
+    FormatDump::Dng(DngFormat { tiff: self.tiff.clone() })
   }
 
   fn raw_metadata(&self, _file: &mut RawFile, _params: RawDecodeParams) -> Result<RawMetadata> {
