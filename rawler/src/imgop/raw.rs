@@ -188,32 +188,23 @@ pub fn develop_raw_srgb(pixels: &[u16], params: &DevelopParams) -> Result<(Vec<f
     .ok_or("Illuminant matrix D65 not found")?
     .matrix;
 
-  let active_area = params
-    .active_area
-    .unwrap_or_else(|| Rect::new_with_points(Point::zero(), Point::new(params.width, params.height)));
-
+  let raw_size = Rect::new_with_points(Point::zero(), Point::new(params.width, params.height));
+  let active_area = params.active_area.unwrap_or(raw_size);
+  let crop_area = params.crop_area.unwrap_or(raw_size);
   let mut pixels = raw_u16_to_float(pixels);
 
   correct_blacklevel(&mut pixels, params.width, params.height, &black_level, &white_level);
 
-  let mut rgb = demosaic_ppg(&pixels, Dim2::new(params.width, params.height), params.cfa.clone(), active_area);
-
-  let w = active_area.d.w;
-  let h = active_area.d.h;
-
-  //eprintln!("cam2rgb: {:?}", cam2rgb);
-  //let cropped_pixels = crop(pixels, Dim2::new(params.width, params.height), active_area);
-
-  //let (rgb, w, h) = debayer_superpixel(&cropped_pixels, params.pattern, active_area.d, &black_level, &white_level, &wb_coeff);
+  let rgb = demosaic_ppg(&pixels, Dim2::new(params.width, params.height), params.cfa.clone(), active_area);
+  let mut cropped_pixels = if raw_size != crop_area { rgb.crop(crop_area) } else { rgb };
 
   // Convert to sRGB from XYZ
-
-  rgb_to_srgb_with_wb(&mut rgb, &wb_coeff, xyz2cam, params.gamma);
+  rgb_to_srgb_with_wb(&mut cropped_pixels, &wb_coeff, xyz2cam, params.gamma);
 
   // Flatten into Vec<f32>
-  let srgb: Vec<f32> = rgb.into_inner().into_iter().flatten().collect();
+  let srgb: Vec<f32> = cropped_pixels.into_inner().into_iter().flatten().collect();
 
-  Ok((srgb, Dim2::new(w, h)))
+  Ok((srgb, crop_area.d))
 }
 
 /// Collect iterator into array
