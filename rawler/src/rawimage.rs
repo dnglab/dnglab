@@ -151,8 +151,7 @@ impl RawImage {
       width,
       height,
       cpp,
-      //bps: cam.bps,
-      bps: 16, // bps is used by Sony cameras to determine decoding, but the outbut has higher bps, so we can't re-use the value
+      bps: cam.real_bps,
       wb_coeffs,
       data: RawImageData::Integer(image),
       blacklevels: blacks,

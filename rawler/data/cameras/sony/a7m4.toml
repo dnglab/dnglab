@@ -1,0 +1,12 @@
+make = "SONY"
+model = "ILCE-7M4"
+clean_make = "Sony"
+clean_model = "ILCE-7M4"
+blackpoint = 512
+whitepoint = 16300
+color_pattern = "RGGB"
+active_area = [0, 0, 0, 0]
+bps = 8
+
+[cameras.color_matrix]
+D65 = [0.7374, -0.2389, -0.0551, -0.5435, 1.3162, 0.2519, -0.1006, 0.1795, 0.6552]

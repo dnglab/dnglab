@@ -1,0 +1,14 @@
+make = "SONY"
+model = "DSLR-A560"
+clean_make = "Sony"
+clean_model = "DSLR-A560"
+blackpoint = 512
+whitepoint = 16300
+color_pattern = "RGGB"
+active_area = [0, 0, 0, 0]
+crop_area = [8, 8, 8, 8]
+bps = 8
+
+[cameras.color_matrix]
+A = [0.7702, -0.3694, 0.0411, -0.4124, 1.1197, 0.337, -0.0219, 0.0739, 0.7934]
+D65 = [0.495, -0.058, -0.0103, -0.5228, 1.2542, 0.3029, -0.0709, 0.1435, 0.7371]

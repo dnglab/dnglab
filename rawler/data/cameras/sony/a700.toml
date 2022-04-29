@@ -1,0 +1,13 @@
+make = "SONY"
+model = "DSLR-A700"
+clean_make = "Sony"
+clean_model = "DSLR-A700"
+blackpoint = 512
+whitepoint = 16383
+color_pattern = "RGGB"
+active_area = [0, 0, 0, 0]
+crop_area = [4, 4, 12, 4]
+
+[cameras.color_matrix]
+A = [0.615, -0.1189, -0.0137, -0.7291, 1.4699, 0.2826, -0.1103, 0.1608, 0.7414]
+D65 = [0.5775, -0.0805, -0.0359, -0.8573, 1.6294, 0.2391, -0.1943, 0.2342, 0.7249]

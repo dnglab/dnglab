@@ -1,0 +1,14 @@
+make = "SONY"
+model = "DSC-HX99"
+clean_make = "SONY"
+clean_model = "DSC-HX99"
+blackpoint = 512
+whitepoint = 16300
+color_pattern = "RGGB"
+active_area = [0, 0, 0, 0]
+crop_area = [12, 18, 20, 18]
+bps = 8
+
+[cameras.color_matrix]
+A = [1.4883, -0.7877, -0.0463, -0.2977, 1.2186, 0.083, 0.0494, -0.0022, 0.5367]
+D65 = [1.3076, -0.5686, -0.1481, -0.4027, 1.2851, 0.1251, -0.0167, 0.0725, 0.4937]

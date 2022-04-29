@@ -99,6 +99,7 @@ impl IFD {
     let entry_count = reader.read_u16()?;
     let mut entries = BTreeMap::new();
     let mut sub = HashMap::new();
+    debug!("Parse entries");
     for _ in 0..entry_count {
       //let embedded = reader.read_u32()?;
       let tag = reader.read_u16()?;
@@ -140,8 +141,12 @@ impl IFD {
     for subs in sub_ifd_offsets {
       let mut ifds = Vec::new();
       for offset in subs.1 {
-        let ifd = Self::new(reader, apply_corr(offset, corr), base, corr, endian, sub_tags)?;
-        ifds.push(ifd);
+        match Self::new(reader, apply_corr(offset, corr), base, corr, endian, sub_tags) {
+          Ok(ifd) => ifds.push(ifd),
+          Err(err) => {
+            log::warn!("Error while processing TIFF sub-IFD for tag 0x{:X}, ignoring it: {}", subs.0, err);
+          }
+        };
       }
       sub.insert(subs.0, ifds);
     }
@@ -406,6 +411,11 @@ impl IFD {
 
           // Fujifilm has 12 extra bytes
           if data[0..8] == b"FUJIFILM"[..] {
+            off += 12;
+          }
+
+          // Sony has 12 extra bytes
+          if data[0..9] == b"SONY DSC "[..] {
             off += 12;
           }
 

@@ -1,0 +1,14 @@
+make = "SONY"
+model = "DSC-RX100"
+clean_make = "Sony"
+clean_model = "DSC-RX100"
+blackpoint = 800
+whitepoint = 16300
+color_pattern = "RGGB"
+active_area = [0, 0, 12, 0]
+crop_area = [12, 12, 20, 12]
+bps = 8
+
+[cameras.color_matrix]
+A = [0.9105, -0.3443, -0.0742, -0.303, 1.108, 0.2233, -0.008, 0.0639, 0.5008]
+D65 = [0.8651, -0.2754, -0.1057, -0.3464, 1.2207, 0.1373, -0.0568, 0.1398, 0.4434]

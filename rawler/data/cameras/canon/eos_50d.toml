@@ -3,7 +3,7 @@ model = "Canon EOS 50D"
 clean_make = "Canon"
 clean_model = "EOS 50D"
 color_pattern = "RGGB"
-bps = 14
+real_bps = 14
 active_area = [62,51,2,0]
 blackareav = [4, 50]
 blackareah = [0, 60]
@@ -17,10 +17,10 @@ colordata_wbcoeffs = 0x3f
 
 [[cameras.modes]]
 mode = "sRaw1"
-bps = 16
+real_bps = 16
 whitepoint = 53000
 
 [[cameras.modes]]
 mode = "sRaw2"
-bps = 16
+real_bps = 16
 whitepoint = 53000

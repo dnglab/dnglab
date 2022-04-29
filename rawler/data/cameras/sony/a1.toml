@@ -1,0 +1,12 @@
+make = "SONY"
+model = "ILCE-1"
+clean_make = "Sony"
+clean_model = "ILCE-1"
+blackpoint = 512
+whitepoint = 16300
+color_pattern = "RGGB"
+bps = 8
+
+[cameras.color_matrix]
+A = [0.8933, -0.4409, 0.02, -0.4637, 1.2364, 0.2554, -0.0304, 0.0803, 0.7616]
+D65 = [0.8161, -0.2947, -0.0739, -0.4811, 1.2668, 0.2389, -0.0437, 0.1229, 0.6524]

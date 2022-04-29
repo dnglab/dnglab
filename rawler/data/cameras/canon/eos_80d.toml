@@ -3,7 +3,7 @@ model = "Canon EOS 80D"
 clean_make = "Canon"
 clean_model = "EOS 80D"
 color_pattern = "RGGB"
-bps = 14
+real_bps = 14
 active_area = [264,34,2,0]
 blackareav = [4, 260]
 blackareah = [0, 30]
@@ -18,11 +18,11 @@ colordata_wbcoeffs = 0x3f
 [[cameras.modes]]
 mode = "sRaw1"
 hints = ["invert_sraw_wb", "sraw_new"]
-bps = 16
+real_bps = 16
 whitepoint = 58832
 
 [[cameras.modes]]
 mode = "sRaw2"
 hints = ["invert_sraw_wb", "sraw_new"]
-bps = 16
+real_bps = 16
 whitepoint = 58832

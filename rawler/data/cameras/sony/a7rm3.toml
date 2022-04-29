@@ -1,0 +1,12 @@
+make = "SONY"
+model = "ILCE-7RM3"
+clean_make = "Sony"
+clean_model = "ILCE-7RM3"
+blackpoint = 512
+whitepoint = 16380
+color_pattern = "RGGB"
+bps = 8
+
+[cameras.color_matrix]
+A = [0.7683, -0.3276, 0.0299, -0.363, 1.0892, 0.3161, -0.0162, 0.0671, 0.7133]
+D65 = [0.664, -0.1847, -0.0503, -0.5238, 1.301, 0.2474, -0.0993, 0.1673, 0.6527]

@@ -1,0 +1,14 @@
+make = "SONY"
+model = "ILCE-7M2"
+clean_make = "Sony"
+clean_model = "ILCE-7M2"
+blackpoint = 512
+whitepoint = 16300
+color_pattern = "RGGB"
+active_area = [0, 0, 26, 0]
+crop_area = [12, 12, 36, 12]
+bps = 8
+
+[cameras.color_matrix]
+A = [0.7491, -0.3027, 0.0351, -0.4231, 1.1579, 0.3031, -0.0818, 0.1721, 0.7466]
+D65 = [0.5271, -0.0712, -0.0347, -0.6153, 1.3653, 0.2763, -0.1601, 0.2366, 0.7242]

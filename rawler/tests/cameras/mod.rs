@@ -636,3 +636,304 @@ mod camera_z_7_raw_modes {
 mod camera_nikon_z_9_raw_modes {
   super::camera_file_check!("Nikon", "NIKON Z 9", cam_nikon_z_9_large_iso_64_14bits_lossless_nef, "raw_modes/NIKON Z 9_Large_ISO_64_14bits_Lossless.NEF");
 }
+mod camera_dsc_f828_raw_modes {
+  super::camera_file_check!("Sony", "DSC-F828", cam_dsc_f828_iso_64_14_14_14bits_uncompressed_srf, "raw_modes/DSC-F828_ISO_64_14 14 14bits_Uncompressed.SRF");
+}
+mod camera_dsc_hx95_raw_modes {
+  super::camera_file_check!("Sony", "DSC-HX95", cam_dsc_hx95_iso_100_12bits_sony_arw_compressed_arw, "raw_modes/DSC-HX95_ISO_100_12bits_Sony ARW Compressed.ARW");
+}
+mod camera_dsc_hx99_raw_modes {
+  super::camera_file_check!("Sony", "DSC-HX99", cam_dsc_hx99_iso_80_12bits_sony_arw_compressed_arw, "raw_modes/DSC-HX99_ISO_80_12bits_Sony ARW Compressed.ARW");
+}
+mod camera_dsc_r1_raw_modes {
+  super::camera_file_check!("Sony", "DSC-R1", cam_dsc_r1_iso_160_14bits_uncompressed_sr2, "raw_modes/DSC-R1_ISO_160_14bits_Uncompressed.SR2");
+}
+mod camera_dsc_rx0m2_raw_modes {
+  super::camera_file_check!("Sony", "DSC-RX0M2", cam_dsc_rx0m2_iso_400_12bits_sony_arw_compressed_arw, "raw_modes/DSC-RX0M2_ISO_400_12bits_Sony ARW Compressed.ARW");
+}
+mod camera_dsc_rx0_raw_modes {
+  super::camera_file_check!("Sony", "DSC-RX0", cam_dsc_rx0_iso_125_12bits_sony_arw_compressed_arw, "raw_modes/DSC-RX0_ISO_125_12bits_Sony ARW Compressed.ARW");
+}
+mod camera_dsc_rx100m2_raw_modes {
+  super::camera_file_check!("Sony", "DSC-RX100M2", cam_dsc_rx100m2_iso_100_12bits_sony_arw_compressed_arw, "raw_modes/DSC-RX100M2_ISO_100_12bits_Sony ARW Compressed.ARW");
+}
+mod camera_dsc_rx100m3_raw_modes {
+  super::camera_file_check!("Sony", "DSC-RX100M3", cam_dsc_rx100m3_iso_125_12bits_sony_arw_compressed_arw, "raw_modes/DSC-RX100M3_ISO_125_12bits_Sony ARW Compressed.ARW");
+}
+mod camera_dsc_rx100m4_raw_modes {
+  super::camera_file_check!("Sony", "DSC-RX100M4", cam_dsc_rx100m4_iso_125_12bits_sony_arw_compressed_arw, "raw_modes/DSC-RX100M4_ISO_125_12bits_Sony ARW Compressed.ARW");
+}
+mod camera_dsc_rx100m5a_raw_modes {
+  super::camera_file_check!("Sony", "DSC-RX100M5A", cam_dsc_rx100m5a_iso_125_12bits_sony_arw_compressed_arw, "raw_modes/DSC-RX100M5A_ISO_125_12bits_Sony ARW Compressed.ARW");
+}
+mod camera_dsc_rx100m5_raw_modes {
+  super::camera_file_check!("Sony", "DSC-RX100M5", cam_dsc_rx100m5_iso_125_12bits_sony_arw_compressed_arw, "raw_modes/DSC-RX100M5_ISO_125_12bits_Sony ARW Compressed.ARW");
+}
+mod camera_dsc_rx100m6_raw_modes {
+  super::camera_file_check!("Sony", "DSC-RX100M6", cam_dsc_rx100m6_iso_125_12bits_compressed_raw_arw, "raw_modes/DSC-RX100M6_ISO_125_12bits_Compressed RAW.ARW");
+}
+mod camera_dsc_rx100m7_raw_modes {
+  super::camera_file_check!("Sony", "DSC-RX100M7", cam_dsc_rx100m7_iso_100_12bits_sony_arw_compressed_arw, "raw_modes/DSC-RX100M7_ISO_100_12bits_Sony ARW Compressed.ARW");
+}
+mod camera_dsc_rx100_raw_modes {
+  super::camera_file_check!("Sony", "DSC-RX100", cam_dsc_rx100_iso_640_12bits_sony_arw_compressed_arw, "raw_modes/DSC-RX100_ISO_640_12bits_Sony ARW Compressed.ARW");
+}
+mod camera_dsc_rx10m2_raw_modes {
+  super::camera_file_check!("Sony", "DSC-RX10M2", cam_dsc_rx10m2_iso_1250_12bits_sony_arw_compressed_arw, "raw_modes/DSC-RX10M2_ISO_1250_12bits_Sony ARW Compressed.ARW");
+}
+mod camera_dsc_rx10m3_raw_modes {
+  super::camera_file_check!("Sony", "DSC-RX10M3", cam_dsc_rx10m3_iso_100_12bits_sony_arw_compressed_arw, "raw_modes/DSC-RX10M3_ISO_100_12bits_Sony ARW Compressed.ARW");
+}
+mod camera_dsc_rx10m4_raw_modes {
+  super::camera_file_check!("Sony", "DSC-RX10M4", cam_dsc_rx10m4_iso_100_12bits_sony_arw_compressed_arw, "raw_modes/DSC-RX10M4_ISO_100_12bits_Sony ARW Compressed.ARW");
+}
+mod camera_dsc_rx10_raw_modes {
+  super::camera_file_check!("Sony", "DSC-RX10", cam_dsc_rx10_iso_320_12bits_sony_arw_compressed_arw, "raw_modes/DSC-RX10_ISO_320_12bits_Sony ARW Compressed.ARW");
+}
+mod camera_dsc_rx1_raw_modes {
+  super::camera_file_check!("Sony", "DSC-RX1", cam_dsc_rx1_iso_100_14bits_sony_arw_compressed_arw, "raw_modes/DSC-RX1_ISO_100_14bits_Sony ARW Compressed.ARW");
+}
+mod camera_dsc_rx1rm2_raw_modes {
+  super::camera_file_check!("Sony", "DSC-RX1RM2", cam_dsc_rx1rm2_iso_100_14bits_compressed_raw_arw, "raw_modes/DSC-RX1RM2_ISO_100_14bits_Compressed RAW.ARW");
+  super::camera_file_check!("Sony", "DSC-RX1RM2", cam_dsc_rx1rm2_iso_100_14bits_uncompressed_raw_arw, "raw_modes/DSC-RX1RM2_ISO_100_14bits_Uncompressed RAW.ARW");
+}
+mod camera_dsc_rx1r_raw_modes {
+  super::camera_file_check!("Sony", "DSC-RX1R", cam_dsc_rx1r_iso_6400_14bits_sony_arw_compressed_arw, "raw_modes/DSC-RX1R_ISO_6400_14bits_Sony ARW Compressed.ARW");
+}
+mod camera_dslr_a100_raw_modes {
+  super::camera_file_check!("Sony", "DSLR-A100", cam_dslr_a100_iso_100_arw, "raw_modes/DSLR-A100_ISO_100.ARW");
+}
+mod camera_dslr_a200_raw_modes {
+  super::camera_file_check!("Sony", "DSLR-A200", cam_dslr_a200_iso_800_12bits_sony_arw_compressed_arw, "raw_modes/DSLR-A200_ISO_800_12bits_Sony ARW Compressed.ARW");
+}
+mod camera_dslr_a230_raw_modes {
+  super::camera_file_check!("Sony", "DSLR-A230", cam_dslr_a230_iso_200_12bits_sony_arw_compressed_arw, "raw_modes/DSLR-A230_ISO_200_12bits_Sony ARW Compressed.ARW");
+}
+mod camera_dslr_a290_raw_modes {
+  super::camera_file_check!("Sony", "DSLR-A290", cam_dslr_a290_iso_400_12bits_sony_arw_compressed_arw, "raw_modes/DSLR-A290_ISO_400_12bits_Sony ARW Compressed.ARW");
+}
+mod camera_dslr_a300_raw_modes {
+  super::camera_file_check!("Sony", "DSLR-A300", cam_dslr_a300_iso_400_12bits_sony_arw_compressed_arw, "raw_modes/DSLR-A300_ISO_400_12bits_Sony ARW Compressed.ARW");
+}
+mod camera_dslr_a330_raw_modes {
+  super::camera_file_check!("Sony", "DSLR-A330", cam_dslr_a330_iso_100_12bits_sony_arw_compressed_arw, "raw_modes/DSLR-A330_ISO_100_12bits_Sony ARW Compressed.ARW");
+}
+mod camera_dslr_a350_raw_modes {
+  super::camera_file_check!("Sony", "DSLR-A350", cam_dslr_a350_iso_200_12bits_sony_arw_compressed_arw, "raw_modes/DSLR-A350_ISO_200_12bits_Sony ARW Compressed.ARW");
+}
+mod camera_dslr_a380_raw_modes {
+  super::camera_file_check!("Sony", "DSLR-A380", cam_dslr_a380_iso_400_12bits_sony_arw_compressed_arw, "raw_modes/DSLR-A380_ISO_400_12bits_Sony ARW Compressed.ARW");
+}
+mod camera_dslr_a390_raw_modes {
+  super::camera_file_check!("Sony", "DSLR-A390", cam_dslr_a390_iso_100_12bits_sony_arw_compressed_arw, "raw_modes/DSLR-A390_ISO_100_12bits_Sony ARW Compressed.ARW");
+}
+mod camera_dslr_a450_raw_modes {
+  super::camera_file_check!("Sony", "DSLR-A450", cam_dslr_a450_iso_200_12bits_sony_arw_compressed_arw, "raw_modes/DSLR-A450_ISO_200_12bits_Sony ARW Compressed.ARW");
+}
+mod camera_dslr_a500_raw_modes {
+  super::camera_file_check!("Sony", "DSLR-A500", cam_dslr_a500_iso_500_12bits_sony_arw_compressed_arw, "raw_modes/DSLR-A500_ISO_500_12bits_Sony ARW Compressed.ARW");
+}
+mod camera_dslr_a550_raw_modes {
+  super::camera_file_check!("Sony", "DSLR-A550", cam_dslr_a550_iso_3200_12bits_sony_arw_compressed_arw, "raw_modes/DSLR-A550_ISO_3200_12bits_Sony ARW Compressed.ARW");
+}
+mod camera_dslr_a560_raw_modes {
+  super::camera_file_check!("Sony", "DSLR-A560", cam_dslr_a560_iso_200_12bits_sony_arw_compressed_arw, "raw_modes/DSLR-A560_ISO_200_12bits_Sony ARW Compressed.ARW");
+}
+mod camera_dslr_a580_raw_modes {
+  super::camera_file_check!("Sony", "DSLR-A580", cam_dslr_a580_iso_200_12bits_sony_arw_compressed_arw, "raw_modes/DSLR-A580_ISO_200_12bits_Sony ARW Compressed.ARW");
+}
+mod camera_dslr_a700_raw_modes {
+  super::camera_file_check!("Sony", "DSLR-A700", cam_dslr_a700_iso_200_8bits_sony_arw_compressed_arw, "raw_modes/DSLR-A700_ISO_200_8bits_Sony ARW Compressed.ARW");
+}
+mod camera_dslr_a850_raw_modes {
+  super::camera_file_check!("Sony", "DSLR-A850", cam_dslr_a850_iso_200_12bits_sony_arw_compressed_arw, "raw_modes/DSLR-A850_ISO_200_12bits_Sony ARW Compressed.ARW");
+}
+mod camera_dslr_a900_raw_modes {
+  super::camera_file_check!("Sony", "DSLR-A900", cam_dslr_a900_iso_100_12bits_sony_arw_compressed_arw, "raw_modes/DSLR-A900_ISO_100_12bits_Sony ARW Compressed.ARW");
+}
+mod camera_ilca_68_raw_modes {
+  super::camera_file_check!("Sony", "ILCA-68", cam_ilca_68_iso_250_12bits_sony_arw_compressed_arw, "raw_modes/ILCA-68_ISO_250_12bits_Sony ARW Compressed.ARW");
+}
+mod camera_ilca_77m2_raw_modes {
+  super::camera_file_check!("Sony", "ILCA-77M2", cam_ilca_77m2_iso_100_12bits_sony_arw_compressed_arw, "raw_modes/ILCA-77M2_ISO_100_12bits_Sony ARW Compressed.ARW");
+}
+mod camera_ilca_99m2_raw_modes {
+  super::camera_file_check!("Sony", "ILCA-99M2", cam_ilca_99m2_iso_100_12bits_sony_arw_compressed_arw, "raw_modes/ILCA-99M2_ISO_100_12bits_Sony ARW Compressed.ARW");
+}
+mod camera_ilce_1_raw_modes {
+  super::camera_file_check!("Sony", "ILCE-1", cam_ilce_1_iso_500_14bits_uncompressed_raw_arw, "raw_modes/ILCE-1_ISO_500_14bits_Uncompressed RAW.ARW");
+  super::camera_file_check!("Sony", "ILCE-1", cam_ilce_1_iso_500_14bits_lossless_compressed_raw_arw, "raw_modes/ILCE-1_ISO_500_14bits_Lossless Compressed RAW.ARW");
+  super::camera_file_check!("Sony", "ILCE-1", cam_ilce_1_iso_500_14bits_compressed_raw_arw, "raw_modes/ILCE-1_ISO_500_14bits_Compressed RAW.ARW");
+}
+mod camera_ilce_3000_raw_modes {
+  super::camera_file_check!("Sony", "ILCE-3000", cam_ilce_3000_iso_100_12bits_sony_arw_compressed_arw, "raw_modes/ILCE-3000_ISO_100_12bits_Sony ARW Compressed.ARW");
+}
+mod camera_ilce_3500_raw_modes {
+  super::camera_file_check!("Sony", "ILCE-3500", cam_ilce_3500_iso_100_12bits_sony_arw_compressed_arw, "raw_modes/ILCE-3500_ISO_100_12bits_Sony ARW Compressed.ARW");
+}
+mod camera_ilce_5000_raw_modes {
+  super::camera_file_check!("Sony", "ILCE-5000", cam_ilce_5000_iso_100_12bits_sony_arw_compressed_arw, "raw_modes/ILCE-5000_ISO_100_12bits_Sony ARW Compressed.ARW");
+}
+mod camera_ilce_5100_raw_modes {
+  super::camera_file_check!("Sony", "ILCE-5100", cam_ilce_5100_iso_100_12bits_sony_arw_compressed_arw, "raw_modes/ILCE-5100_ISO_100_12bits_Sony ARW Compressed.ARW");
+}
+mod camera_ilce_6000_raw_modes {
+  super::camera_file_check!("Sony", "ILCE-6000", cam_ilce_6000_iso_100_12bits_sony_arw_compressed_arw, "raw_modes/ILCE-6000_ISO_100_12bits_Sony ARW Compressed.ARW");
+}
+mod camera_ilce_6001_raw_modes {
+  super::camera_file_check!("Sony", "ILCE-6001", cam_ilce_6001_iso_100_12bits_sony_arw_compressed_arw, "raw_modes/ILCE-6001_ISO_100_12bits_Sony ARW Compressed.ARW");
+}
+mod camera_ilce_6100_raw_modes {
+  super::camera_file_check!("Sony", "ILCE-6100", cam_ilce_6100_iso_100_14bits_sony_arw_compressed_arw, "raw_modes/ILCE-6100_ISO_100_14bits_Sony ARW Compressed.ARW");
+}
+mod camera_ilce_6300_raw_modes {
+  super::camera_file_check!("Sony", "ILCE-6300", cam_ilce_6300_iso_100_14bits_sony_arw_compressed_arw, "raw_modes/ILCE-6300_ISO_100_14bits_Sony ARW Compressed.ARW");
+  super::camera_file_check!("Sony", "ILCE-6300", cam_ilce_6300_iso_100_12bits_sony_arw_compressed_arw, "raw_modes/ILCE-6300_ISO_100_12bits_Sony ARW Compressed.ARW");
+}
+mod camera_ilce_6400_raw_modes {
+  super::camera_file_check!("Sony", "ILCE-6400", cam_ilce_6400_iso_250_12bits_compressed_raw_arw, "raw_modes/ILCE-6400_ISO_250_12bits_Compressed RAW.ARW");
+  super::camera_file_check!("Sony", "ILCE-6400", cam_ilce_6400_iso_160_14bits_compressed_raw_arw, "raw_modes/ILCE-6400_ISO_160_14bits_Compressed RAW.ARW");
+}
+mod camera_ilce_6500_raw_modes {
+  super::camera_file_check!("Sony", "ILCE-6500", cam_ilce_6500_iso_100_14bits_compressed_raw_arw, "raw_modes/ILCE-6500_ISO_100_14bits_Compressed RAW.ARW");
+  super::camera_file_check!("Sony", "ILCE-6500", cam_ilce_6500_iso_100_12bits_compressed_raw_arw, "raw_modes/ILCE-6500_ISO_100_12bits_Compressed RAW.ARW");
+}
+mod camera_ilce_6600_raw_modes {
+  super::camera_file_check!("Sony", "ILCE-6600", cam_ilce_6600_iso_100_14bits_sony_arw_compressed_arw, "raw_modes/ILCE-6600_ISO_100_14bits_Sony ARW Compressed.ARW");
+}
+mod camera_ilce_7c_raw_modes {
+  super::camera_file_check!("Sony", "ILCE-7C", cam_ilce_7c_iso_12800_14bits_uncompressed_raw_arw, "raw_modes/ILCE-7C_ISO_12800_14bits_Uncompressed RAW.ARW");
+  super::camera_file_check!("Sony", "ILCE-7C", cam_ilce_7c_iso_2000_14bits_compressed_raw_arw, "raw_modes/ILCE-7C_ISO_2000_14bits_Compressed RAW.ARW");
+}
+mod camera_ilce_7m2_raw_modes {
+  super::camera_file_check!("Sony", "ILCE-7M2", cam_ilce_7m2_iso_100_14bits_uncompressed_arw, "raw_modes/ILCE-7M2_ISO_100_14bits_Uncompressed.ARW");
+  super::camera_file_check!("Sony", "ILCE-7M2", cam_ilce_7m2_iso_100_14bits_sony_arw_compressed_arw, "raw_modes/ILCE-7M2_ISO_100_14bits_Sony ARW Compressed.ARW");
+  super::camera_file_check!("Sony", "ILCE-7M2", cam_ilce_7m2_iso_100_12bits_sony_arw_compressed_arw, "raw_modes/ILCE-7M2_ISO_100_12bits_Sony ARW Compressed.ARW");
+}
+mod camera_ilce_7m3_raw_modes {
+  super::camera_file_check!("Sony", "ILCE-7M3", cam_ilce_7m3_iso_400_12bits_compressed_raw_arw, "raw_modes/ILCE-7M3_ISO_400_12bits_Compressed RAW.ARW");
+  super::camera_file_check!("Sony", "ILCE-7M3", cam_ilce_7m3_iso_400_14bits_uncompressed_raw_arw, "raw_modes/ILCE-7M3_ISO_400_14bits_Uncompressed RAW.ARW");
+  super::camera_file_check!("Sony", "ILCE-7M3", cam_ilce_7m3_iso_400_14bits_compressed_raw_arw, "raw_modes/ILCE-7M3_ISO_400_14bits_Compressed RAW.ARW");
+}
+mod camera_ilce_7m4_raw_modes {
+  super::camera_file_check!("Sony", "ILCE-7M4", cam_ilce_7m4_iso_100_14bits_compressed_raw_arw, "raw_modes/ILCE-7M4_ISO_100_14bits_Compressed RAW.ARW");
+  super::camera_file_check!("Sony", "ILCE-7M4", cam_ilce_7m4_iso_100_12bits_compressed_raw_arw, "raw_modes/ILCE-7M4_ISO_100_12bits_Compressed RAW.ARW");
+  super::camera_file_check!("Sony", "ILCE-7M4", cam_ilce_7m4_iso_100_14bits_lossless_compressed_raw_arw, "raw_modes/ILCE-7M4_ISO_100_14bits_Lossless Compressed RAW.ARW");
+  super::camera_file_check!("Sony", "ILCE-7M4", cam_ilce_7m4_iso_100_14bits_uncompressed_raw_arw, "raw_modes/ILCE-7M4_ISO_100_14bits_Uncompressed RAW.ARW");
+}
+mod camera_ilce_7_raw_modes {
+  super::camera_file_check!("Sony", "ILCE-7", cam_ilce_7_iso_200_14bits_sony_arw_compressed_arw, "raw_modes/ILCE-7_ISO_200_14bits_Sony ARW Compressed.ARW");
+}
+mod camera_ilce_7rm2_raw_modes {
+  super::camera_file_check!("Sony", "ILCE-7RM2", cam_ilce_7rm2_iso_100_12bits_compressed_raw_arw, "raw_modes/ILCE-7RM2_ISO_100_12bits_Compressed RAW.ARW");
+  super::camera_file_check!("Sony", "ILCE-7RM2", cam_ilce_7rm2_iso_100_12bits_uncompressed_raw_arw, "raw_modes/ILCE-7RM2_ISO_100_12bits_Uncompressed RAW.ARW");
+  super::camera_file_check!("Sony", "ILCE-7RM2", cam_ilce_7rm2_iso_100_14bits_uncompressed_raw_arw, "raw_modes/ILCE-7RM2_ISO_100_14bits_Uncompressed RAW.ARW");
+  super::camera_file_check!("Sony", "ILCE-7RM2", cam_ilce_7rm2_iso_100_14bits_compressed_raw_arw, "raw_modes/ILCE-7RM2_ISO_100_14bits_Compressed RAW.ARW");
+}
+mod camera_ilce_7rm3a_raw_modes {
+  super::camera_file_check!("Sony", "ILCE-7RM3A", cam_ilce_7rm3a_iso_200_14bits_uncompressed_raw_arw, "raw_modes/ILCE-7RM3A_ISO_200_14bits_Uncompressed RAW.ARW");
+  super::camera_file_check!("Sony", "ILCE-7RM3A", cam_ilce_7rm3a_iso_500_14bits_compressed_raw_arw, "raw_modes/ILCE-7RM3A_ISO_500_14bits_Compressed RAW.ARW");
+  super::camera_file_check!("Sony", "ILCE-7RM3A", cam_ilce_7rm3a_iso_250_14bits_compressed_raw_arw, "raw_modes/ILCE-7RM3A_ISO_250_14bits_Compressed RAW.ARW");
+}
+mod camera_ilce_7rm3_raw_modes {}
+mod camera_ilce_7rm4a_raw_modes {
+  super::camera_file_check!("Sony", "ILCE-7RM4A", cam_ilce_7rm4a_iso_250_14bits_uncompressed_raw_arw, "raw_modes/ILCE-7RM4A_ISO_250_14bits_Uncompressed RAW.ARW");
+  super::camera_file_check!("Sony", "ILCE-7RM4A", cam_ilce_7rm4a_iso_125_14bits_compressed_raw_arw, "raw_modes/ILCE-7RM4A_ISO_125_14bits_Compressed RAW.ARW");
+  super::camera_file_check!("Sony", "ILCE-7RM4A", cam_ilce_7rm4a_iso_1250_12bits_uncompressed_raw_arw, "raw_modes/ILCE-7RM4A_ISO_1250_12bits_Uncompressed RAW.ARW");
+  super::camera_file_check!("Sony", "ILCE-7RM4A", cam_ilce_7rm4a_iso_160_12bits_compressed_raw_arw, "raw_modes/ILCE-7RM4A_ISO_160_12bits_Compressed RAW.ARW");
+}
+mod camera_ilce_7rm4_raw_modes {
+  super::camera_file_check!("Sony", "ILCE-7RM4", cam_ilce_7rm4_iso_50_14bits_uncompressed_raw_arw, "raw_modes/ILCE-7RM4_ISO_50_14bits_Uncompressed RAW.ARW");
+  super::camera_file_check!("Sony", "ILCE-7RM4", cam_ilce_7rm4_iso_50_12bits_uncompressed_raw_arw, "raw_modes/ILCE-7RM4_ISO_50_12bits_Uncompressed RAW.ARW");
+  super::camera_file_check!("Sony", "ILCE-7RM4", cam_ilce_7rm4_iso_50_14bits_compressed_raw_arw, "raw_modes/ILCE-7RM4_ISO_50_14bits_Compressed RAW.ARW");
+  super::camera_file_check!("Sony", "ILCE-7RM4", cam_ilce_7rm4_iso_50_12bits_compressed_raw_arw, "raw_modes/ILCE-7RM4_ISO_50_12bits_Compressed RAW.ARW");
+}
+mod camera_ilce_7r_raw_modes {
+  super::camera_file_check!("Sony", "ILCE-7R", cam_ilce_7r_iso_50_14bits_sony_arw_compressed_arw, "raw_modes/ILCE-7R_ISO_50_14bits_Sony ARW Compressed.ARW");
+}
+mod camera_ilce_7sm2_raw_modes {
+  super::camera_file_check!("Sony", "ILCE-7SM2", cam_ilce_7sm2_iso_100_12bits_sony_arw_compressed_arw, "raw_modes/ILCE-7SM2_ISO_100_12bits_Sony ARW Compressed.ARW");
+}
+mod camera_ilce_7sm3_raw_modes {
+  super::camera_file_check!("Sony", "ILCE-7SM3", cam_ilce_7sm3_iso_80_14bits_uncompressed_raw_arw, "raw_modes/ILCE-7SM3_ISO_80_14bits_Uncompressed RAW.ARW");
+  super::camera_file_check!("Sony", "ILCE-7SM3", cam_ilce_7sm3_iso_2500_14bits_compressed_raw_arw, "raw_modes/ILCE-7SM3_ISO_2500_14bits_Compressed RAW.ARW");
+  super::camera_file_check!("Sony", "ILCE-7SM3", cam_ilce_7sm3_iso_80_14bits_compressed_raw_arw, "raw_modes/ILCE-7SM3_ISO_80_14bits_Compressed RAW.ARW");
+}
+mod camera_ilce_7s_raw_modes {
+  super::camera_file_check!("Sony", "ILCE-7S", cam_ilce_7s_iso_400_14bits_sony_arw_compressed_arw, "raw_modes/ILCE-7S_ISO_400_14bits_Sony ARW Compressed.ARW");
+}
+mod camera_ilce_9m2_raw_modes {
+  super::camera_file_check!("Sony", "ILCE-9M2", cam_ilce_9m2_iso_640_14bits_compressed_raw_arw, "raw_modes/ILCE-9M2_ISO_640_14bits_Compressed RAW.ARW");
+  super::camera_file_check!("Sony", "ILCE-9M2", cam_ilce_9m2_iso_800_14bits_uncompressed_raw_arw, "raw_modes/ILCE-9M2_ISO_800_14bits_Uncompressed RAW.ARW");
+  super::camera_file_check!("Sony", "ILCE-9M2", cam_ilce_9m2_iso_640_12bits_compressed_raw_arw, "raw_modes/ILCE-9M2_ISO_640_12bits_Compressed RAW.ARW");
+}
+mod camera_ilce_9_raw_modes {
+  super::camera_file_check!("Sony", "ILCE-9", cam_ilce_9_iso_100_14bits_uncompressed_raw_arw, "raw_modes/ILCE-9_ISO_100_14bits_Uncompressed RAW.ARW");
+  super::camera_file_check!("Sony", "ILCE-9", cam_ilce_9_iso_100_14bits_compressed_raw_arw, "raw_modes/ILCE-9_ISO_100_14bits_Compressed RAW.ARW");
+}
+mod camera_ilce_qx1_raw_modes {
+  super::camera_file_check!("Sony", "ILCE-QX1", cam_ilce_qx1_iso_100_12bits_sony_arw_compressed_arw, "raw_modes/ILCE-QX1_ISO_100_12bits_Sony ARW Compressed.ARW");
+}
+mod camera_nex_3n_raw_modes {
+  super::camera_file_check!("Sony", "NEX-3N", cam_nex_3n_iso_200_12bits_sony_arw_compressed_arw, "raw_modes/NEX-3N_ISO_200_12bits_Sony ARW Compressed.ARW");
+}
+mod camera_nex_3_raw_modes {
+  super::camera_file_check!("Sony", "NEX-3", cam_nex_3_iso_1600_12bits_sony_arw_compressed_arw, "raw_modes/NEX-3_ISO_1600_12bits_Sony ARW Compressed.ARW");
+}
+mod camera_nex_5n_raw_modes {
+  super::camera_file_check!("Sony", "NEX-5N", cam_nex_5n_iso_100_12bits_sony_arw_compressed_arw, "raw_modes/NEX-5N_ISO_100_12bits_Sony ARW Compressed.ARW");
+}
+mod camera_nex_5_raw_modes {
+  super::camera_file_check!("Sony", "NEX-5", cam_nex_5_iso_200_12bits_sony_arw_compressed_arw, "raw_modes/NEX-5_ISO_200_12bits_Sony ARW Compressed.ARW");
+}
+mod camera_nex_5r_raw_modes {
+  super::camera_file_check!("Sony", "NEX-5R", cam_nex_5r_iso_1600_12bits_sony_arw_compressed_arw, "raw_modes/NEX-5R_ISO_1600_12bits_Sony ARW Compressed.ARW");
+}
+mod camera_nex_5t_raw_modes {
+  super::camera_file_check!("Sony", "NEX-5T", cam_nex_5t_iso_100_12bits_sony_arw_compressed_arw, "raw_modes/NEX-5T_ISO_100_12bits_Sony ARW Compressed.ARW");
+}
+mod camera_nex_6_raw_modes {
+  super::camera_file_check!("Sony", "NEX-6", cam_nex_6_iso_200_12bits_sony_arw_compressed_arw, "raw_modes/NEX-6_ISO_200_12bits_Sony ARW Compressed.ARW");
+}
+mod camera_nex_7_raw_modes {
+  super::camera_file_check!("Sony", "NEX-7", cam_nex_7_iso_100_12bits_sony_arw_compressed_arw, "raw_modes/NEX-7_ISO_100_12bits_Sony ARW Compressed.ARW");
+}
+mod camera_nex_c3_raw_modes {
+  super::camera_file_check!("Sony", "NEX-C3", cam_nex_c3_iso_200_12bits_sony_arw_compressed_arw, "raw_modes/NEX-C3_ISO_200_12bits_Sony ARW Compressed.ARW");
+}
+mod camera_nex_f3_raw_modes {
+  super::camera_file_check!("Sony", "NEX-F3", cam_nex_f3_iso_200_12bits_sony_arw_compressed_arw, "raw_modes/NEX-F3_ISO_200_12bits_Sony ARW Compressed.ARW");
+}
+mod camera_slt_a33_raw_modes {
+  super::camera_file_check!("Sony", "SLT-A33", cam_slt_a33_iso_200_12bits_sony_arw_compressed_arw, "raw_modes/SLT-A33_ISO_200_12bits_Sony ARW Compressed.ARW");
+}
+mod camera_slt_a35_raw_modes {
+  super::camera_file_check!("Sony", "SLT-A35", cam_slt_a35_iso_400_12bits_sony_arw_compressed_arw, "raw_modes/SLT-A35_ISO_400_12bits_Sony ARW Compressed.ARW");
+}
+mod camera_slt_a37_raw_modes {
+  super::camera_file_check!("Sony", "SLT-A37", cam_slt_a37_iso_800_12bits_sony_arw_compressed_arw, "raw_modes/SLT-A37_ISO_800_12bits_Sony ARW Compressed.ARW");
+}
+mod camera_slt_a55_raw_modes {
+  super::camera_file_check!("Sony", "SLT-A55", cam_slt_a55v_iso_100_12bits_sony_arw_compressed_arw, "raw_modes/SLT-A55V_ISO_100_12bits_Sony ARW Compressed.ARW");
+}
+mod camera_slt_a57_raw_modes {
+  super::camera_file_check!("Sony", "SLT-A57", cam_slt_a57_iso_100_12bits_sony_arw_compressed_arw, "raw_modes/SLT-A57_ISO_100_12bits_Sony ARW Compressed.ARW");
+}
+mod camera_slt_a58_raw_modes {
+  super::camera_file_check!("Sony", "SLT-A58", cam_slt_a58_iso_100_12bits_sony_arw_compressed_arw, "raw_modes/SLT-A58_ISO_100_12bits_Sony ARW Compressed.ARW");
+}
+mod camera_slt_a65_raw_modes {
+  super::camera_file_check!("Sony", "SLT-A65", cam_slt_a65v_iso_100_12bits_sony_arw_compressed_arw, "raw_modes/SLT-A65V_ISO_100_12bits_Sony ARW Compressed.ARW");
+}
+mod camera_slt_a77_raw_modes {
+  super::camera_file_check!("Sony", "SLT-A77", cam_slt_a77v_iso_100_12bits_sony_arw_compressed_arw, "raw_modes/SLT-A77V_ISO_100_12bits_Sony ARW Compressed.ARW");
+}
+mod camera_slt_a99_raw_modes {
+  super::camera_file_check!("Sony", "SLT-A99", cam_slt_a99v_iso_100_12bits_sony_arw_compressed_arw, "raw_modes/SLT-A99V_ISO_100_12bits_Sony ARW Compressed.ARW");
+}
+mod camera_zv_1_raw_modes {
+  super::camera_file_check!("Sony", "ZV-1", cam_zv_1_iso_125_12bits_sony_arw_compressed_arw, "raw_modes/ZV-1_ISO_125_12bits_Sony ARW Compressed.ARW");
+}
+mod camera_zv_e10_raw_modes {
+  super::camera_file_check!("Sony", "ZV-E10", cam_zv_e10_iso_400_14bits_sony_arw_compressed_arw, "raw_modes/ZV-E10_ISO_400_14bits_Sony ARW Compressed.ARW");
+}

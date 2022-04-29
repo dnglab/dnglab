@@ -1,0 +1,12 @@
+make = "SONY"
+model = "ILCE-7RM4A"
+clean_make = "Sony"
+clean_model = "ILCE-7RM4A"
+blackpoint = 512
+whitepoint = 16380
+color_pattern = "RGGB"
+bps = 8
+
+[cameras.color_matrix]
+A = [0.9054, -0.4504, 0.0215, -0.4751, 1.2611, 0.2388, -0.0296, 0.0802, 0.6816]
+D65 = [0.7662, -0.2686, -0.066, -0.524, 1.2965, 0.253, -0.0796, 0.1508, 0.6167]

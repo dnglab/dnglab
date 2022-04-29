@@ -1,5 +1,7 @@
 use rayon::prelude::*;
 
+use crate::imgop::Rect;
+
 pub struct Pix2D<T> {
   pub width: usize,
   pub height: usize,
@@ -188,6 +190,20 @@ where
       .pixel_rows_mut()
       .enumerate()
       .for_each(|(row, rowbuf)| rowbuf.iter_mut().enumerate().for_each(|(col, v)| *v = op(*v, row, col)));
+  }
+
+  pub fn crop(&self, area: Rect) -> Self {
+    let mut output = Vec::with_capacity(area.d.h * area.d.w);
+    output.extend(
+      self
+        .pixels()
+        .chunks_exact(self.width)
+        .skip(area.p.y)
+        .take(area.d.h)
+        .flat_map(|row| row[area.p.x..area.p.x + area.d.w].iter())
+        .cloned(),
+    );
+    Self::new_with(output, area.d.w, area.d.h)
   }
 }
 

@@ -16,6 +16,7 @@ use crate::formats::tiff::Entry;
 use crate::formats::tiff::GenericTiffReader;
 use crate::formats::tiff::Value;
 use crate::formats::tiff::IFD;
+use crate::imgop::Dim2;
 use crate::imgop::Rect;
 use crate::lens::LensDescription;
 use crate::lens::LensResolver;
@@ -65,7 +66,7 @@ impl<'a> ArwDecoder<'a> {
     }
     .ok_or("File has not makernotes")?;
 
-    makernote.dump::<ExifTag>(0).iter().for_each(|line| eprintln!("DUMP: {}", line));
+    //makernote.dump::<ExifTag>(0).iter().for_each(|line| eprintln!("DUMP: {}", line));
 
     Ok(ArwDecoder {
       tiff,
@@ -93,15 +94,22 @@ impl<'a> Decoder for ArwDecoder<'a> {
     let offset = fetch_tiff_tag!(raw, TiffCommonTag::StripOffsets).force_usize(0);
     let count = fetch_tiff_tag!(raw, TiffCommonTag::StripByteCounts).force_usize(0);
     let compression = fetch_tiff_tag!(raw, TiffCommonTag::Compression).force_u32(0);
-    let crop = Rect::from_tiff(raw);
     let bps = if self.camera.bps != 0 {
       // TODO: bps should be 0 as default but for now it's init with 16 in cameras parser!
       self.camera.bps
     } else {
       fetch_tiff_tag!(raw, TiffCommonTag::BitsPerSample).force_usize(0)
     };
-    let mut white = self.camera.whitelevels[0];
-    let mut black = self.camera.blacklevels[0];
+
+    let params = self.get_params(file)?;
+    debug!("Params: {:?}", params);
+
+    //assert!(params.blacklevel.is_some());
+    //assert!(params.whitelevel.is_some()); // DSC-R1 is SR2 format and has no whitelevel
+
+    let mut white = params.whitelevel.unwrap_or(self.camera.whitelevels);
+    let mut black = params.blacklevel.unwrap_or(self.camera.blacklevels);
+
     let src = file.subview_until_eof(offset as u64).unwrap();
 
     let image = match compression {
@@ -135,8 +143,8 @@ impl<'a> Decoder for ArwDecoder<'a> {
                 We set these 12bit points by shifting down the 14bit points. It might make sense to
                 have a separate camera mode instead but since the values seem good we don't bother.
               */
-              white >>= 2;
-              black >>= 2;
+              white.iter_mut().for_each(|x| *x >>= 2);
+              black.iter_mut().for_each(|x| *x >>= 2);
               decode_12le(&src, width, height, dummy)
             }
             _ => return Err(RawlerError::General(format!("ARW2: Don't know how to decode images with {} bps", bps))),
@@ -146,22 +154,25 @@ impl<'a> Decoder for ArwDecoder<'a> {
       _ => return Err(RawlerError::General(format!("ARW: Don't know how to decode type {}", compression))),
     };
 
-    let params = self.get_params(file)?;
-    println!("Params: {:?}", params);
+    let crop = Rect::from_tiff(raw).or_else(|| self.camera.crop_area.map(|area| Rect::new_with_borders(Dim2::new(width, height), &area)));
 
-    assert!(params.blacklevel.is_some());
-    assert!(params.whitelevel.is_some());
+    //assert!(params.blacklevel.is_some());
+    //assert!(params.whitelevel.is_some());
     let cpp = 1;
 
     let mut img = RawImage::new(self.camera.clone(), width, height, cpp, params.wb, image.into_inner(), dummy);
-    img.blacklevels = params.blacklevel.unwrap_or([black, black, black, black]);
-    img.whitelevels = params.whitelevel.unwrap_or([white, white, white, white]);
 
-    img.blacklevels = [black, black, black, black];
-    img.whitelevels = [white, white, white, white];
+    img.blacklevels = black;
+    img.whitelevels = white;
+
+    //img.blacklevels = params.blacklevel.unwrap_or([black, black, black, black]);
+    //img.whitelevels = params.whitelevel.unwrap_or([white, white, white, white]);
+
+    //img.blacklevels = [black, black, black, black]; // TODO A700
+    //img.whitelevels = [white, white, white, white];
 
     img.crop_area = crop;
-    img.active_area = crop;
+    img.active_area = self.camera.active_area.map(|area| Rect::new_with_borders(Dim2::new(width, height), &area));
     Ok(img)
   }
 
@@ -248,7 +259,7 @@ impl<'a> ArwDecoder<'a> {
       return Err(RawlerError::General("ARW: Couldn't find the data IFD!".to_string()));
     }
     let raw = data[0];
-    let width = 3881;
+    let width = 3880;
     let height = 2608;
     let offset = fetch_tiff_tag!(raw, TiffCommonTag::SubIFDs).force_usize(0);
 
@@ -256,10 +267,19 @@ impl<'a> ArwDecoder<'a> {
     let image = ArwDecoder::decode_arw1(&src, width, height, dummy);
 
     // Get the WB the MRW way
-    let priv_offset = fetch_tiff_tag!(self.tiff, TiffCommonTag::DNGPrivateArea).force_u32(0) as usize;
-    let buf = file.subview_until_eof(priv_offset as u64).unwrap();
+    // DNGPrivateTag contains 4 bytes forming a LE u32 offset value.
+    let priv_offset = {
+      let entry = fetch_tiff_tag!(self.tiff, TiffCommonTag::DNGPrivateArea);
+      assert_eq!(entry.value_type(), 0x1);
+      LEu32(entry.get_data(), 0)
+    };
+    let buf = file.subview_until_eof(priv_offset as u64)?;
+    if BEu32(&buf, 0) != 0x4D5249 {
+      // MRI
+      return Err(format!("Invalid DNGPRIVATEDATA tag: 0x{:X}, expected 0x4D5249 ", BEu32(&buf, 0)).into());
+    }
     let mut currpos: usize = 8;
-    let mut wb_coeffs: [f32; 4] = [0.0, 0.0, 0.0, NAN];
+    let mut wb_coeffs: [f32; 4] = [1.0, 1.0, 1.0, NAN];
     // At most we read 20 bytes from currpos so check we don't step outside that
     while currpos + 20 < buf.len() {
       let tag: u32 = BEu32(&buf, currpos);
@@ -268,14 +288,15 @@ impl<'a> ArwDecoder<'a> {
         // WBG
         wb_coeffs[0] = LEu16(&buf, currpos + 12) as f32;
         wb_coeffs[1] = LEu16(&buf, currpos + 14) as f32;
-        wb_coeffs[2] = LEu16(&buf, currpos + 18) as f32;
+        wb_coeffs[2] = LEu16(&buf, currpos + 14) as f32;
+        wb_coeffs[3] = LEu16(&buf, currpos + 18) as f32;
         break;
       }
       currpos += len + 8;
     }
 
     let cpp = 1;
-    ok_image(self.camera.clone(), width, height, cpp, wb_coeffs, image.into_inner())
+    ok_image(self.camera.clone(), width, height, cpp, normalize_wb(wb_coeffs), image.into_inner())
   }
 
   fn image_srf(&self, file: &mut RawFile, dummy: bool) -> Result<RawImage> {
@@ -481,28 +502,50 @@ impl<'a> ArwDecoder<'a> {
 
   fn get_blacklevel(&self, sr2: &IFD) -> Option<[u16; 4]> {
     if let Some(entry) = sr2.get_entry(SR2SubIFD::BlackLevel2) {
-      return Some([entry.force_u16(0), entry.force_u16(1), entry.force_u16(2), entry.force_u16(3)]);
+      if entry.count() == 4 {
+        return Some([entry.force_u16(0), entry.force_u16(1), entry.force_u16(2), entry.force_u16(3)]);
+      } else {
+        return Some([entry.force_u16(0), entry.force_u16(0), entry.force_u16(0), entry.force_u16(0)]);
+      }
     }
     if let Some(entry) = sr2.get_entry(SR2SubIFD::BlackLevel1) {
-      return Some([entry.force_u16(0), entry.force_u16(1), entry.force_u16(2), entry.force_u16(3)]);
+      if entry.count() == 4 {
+        return Some([entry.force_u16(0), entry.force_u16(1), entry.force_u16(2), entry.force_u16(3)]);
+      } else {
+        return Some([entry.force_u16(0), entry.force_u16(0), entry.force_u16(0), entry.force_u16(0)]);
+      }
     }
     None
   }
 
   fn get_whitelevel(&self, sr2: &IFD) -> Option<[u16; 4]> {
     if let Some(entry) = sr2.get_entry(SR2SubIFD::WhiteLevel) {
-      return Some([entry.force_u16(0), entry.force_u16(1), entry.force_u16(2), 0]);
+      if entry.count() == 4 {
+        return Some([entry.force_u16(0), entry.force_u16(1), entry.force_u16(2), entry.force_u16(3)]);
+      } else {
+        return Some([entry.force_u16(0), entry.force_u16(0), entry.force_u16(0), entry.force_u16(0)]);
+      }
     }
     None
   }
 
   fn get_wb(&self, sr2: &IFD) -> Result<[f32; 4]> {
-    let grgb_levels = sr2.get_entry(SR2SubIFD::SonyGRBG);
+    let grbg_levels = sr2.get_entry(SR2SubIFD::SonyGRBG);
     let rggb_levels = sr2.get_entry(SR2SubIFD::SonyRGGB);
-    if let Some(levels) = grgb_levels {
-      Ok([levels.force_u32(1) as f32, levels.force_u32(0) as f32, levels.force_u32(2) as f32, NAN])
+    if let Some(levels) = grbg_levels {
+      Ok(normalize_wb([
+        levels.force_u32(1) as f32,
+        levels.force_u32(0) as f32,
+        levels.force_u32(3) as f32,
+        levels.force_u32(2) as f32,
+      ]))
     } else if let Some(levels) = rggb_levels {
-      Ok([levels.force_u32(0) as f32, levels.force_u32(1) as f32, levels.force_u32(3) as f32, NAN])
+      Ok(normalize_wb([
+        levels.force_u32(0) as f32,
+        levels.force_u32(1) as f32,
+        levels.force_u32(2) as f32,
+        levels.force_u32(3) as f32,
+      ]))
     } else {
       Err(RawlerError::General("ARW: Couldn't find GRGB or RGGB levels".to_string()))
     }
@@ -547,7 +590,8 @@ impl<'a> ArwDecoder<'a> {
     }
 
     let mut out = Vec::with_capacity(length + 4);
-    for i in 0..(length / 4 + 1) {
+    //for i in 0..(length / 4 + 1) {
+    for i in 0..(length / 4) {
       let p = i + 127;
       pad[p & 127] = pad[(p + 1) & 127] ^ pad[(p + 1 + 64) & 127];
       let output = LEu32(buf, offset + i * 4) ^ pad[p & 127];
@@ -558,6 +602,20 @@ impl<'a> ArwDecoder<'a> {
     }
     out
   }
+}
+
+fn normalize_wb(raw_wb: [f32; 4]) -> [f32; 4] {
+  debug!("CR2 raw wb: {:?}", raw_wb);
+  // We never have more then RGB colors so far (no RGBE etc.)
+  // So we combine G1 and G2 to get RGB wb.
+  let div = raw_wb[1]; // G1 should be 1024 and we use this as divisor
+  let mut norm = raw_wb;
+  norm.iter_mut().for_each(|v| {
+    if v.is_normal() {
+      *v /= div
+    }
+  });
+  [norm[0], (norm[1] + norm[2]) / 2.0, norm[3], NAN]
 }
 
 crate::tags::tiff_tag_enum!(ArwMakernoteTag);

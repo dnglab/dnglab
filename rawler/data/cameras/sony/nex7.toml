@@ -1,0 +1,14 @@
+make = "SONY"
+model = "NEX-7"
+clean_make = "Sony"
+clean_model = "NEX-7"
+blackpoint = 512
+whitepoint = 16300
+color_pattern = "RGGB"
+active_area = [0, 0, 26, 0]
+crop_area = [12, 12, 36, 12]
+bps = 8
+
+[cameras.color_matrix]
+A = [0.5644, -0.1547, -0.0028, -0.4237, 1.1032, 0.3701, -0.046, 0.1056, 0.7676]
+D65 = [0.5491, -0.1192, -0.0363, -0.4951, 1.2342, 0.2948, -0.0911, 0.1722, 0.7192]

@@ -1,0 +1,14 @@
+make = "SONY"
+model = "ZV-E10"
+clean_make = "SONY"
+clean_model = "ZV-E10"
+blackpoint = 512
+whitepoint = 16300
+color_pattern = "RGGB"
+active_area = [0, 0, 0, 0]
+crop_area = [12, 12, 36, 12]
+bps = 8
+
+[cameras.color_matrix]
+A = [0.7565, -0.4028, 0.0657, -0.3254, 1.0746, 0.2898, -0.014, 0.0571, 0.6635]
+D65 = [0.6355, -0.2067, -0.049, -0.3653, 1.1542, 0.24, -0.0406, 0.1258, 0.5506]

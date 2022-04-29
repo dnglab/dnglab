@@ -1,0 +1,14 @@
+make = "SONY"
+model = "NEX-6"
+clean_make = "Sony"
+clean_model = "NEX-6"
+blackpoint = 512
+whitepoint = 16300
+color_pattern = "RGGB"
+active_area = [0, 0, 0, 0]
+crop_area = [4, 6, 12, 6]
+bps = 8
+
+[cameras.color_matrix]
+A = [0.6442, -0.2082, 0.001, -0.4194, 1.1154, 0.3502, -0.0458, 0.0986, 0.7206]
+D65 = [0.6129, -0.1545, -0.0418, -0.493, 1.249, 0.2743, -0.0977, 0.1693, 0.6615]
