@@ -1,0 +1,12 @@
+make = "FUJIFILM"
+model = "FinePix S9500"
+clean_make = "Fujifilm"
+clean_model = "FinePix S9500"
+blackpoint = 0
+whitepoint = 16115
+color_pattern = "GBRG"
+active_area = [32, 0, 32, 0]
+hints = ["fuji_rotation"]
+
+[cameras.color_matrix]
+D65 = [1.0491, -0.3423, -0.1145, -0.7385, 1.5027, 0.2538, -0.1809, 0.2275, 0.8692]

@@ -1,0 +1,11 @@
+make = "FUJIFILM"
+model = "FinePix S5500"
+clean_make = "Fujifilm"
+clean_model = "FinePix S5500"
+blackpoint = 0
+whitepoint = 15880
+color_pattern = "RGGB"
+active_area = [0, 0, 0, 0]
+
+[cameras.color_matrix]
+D65 = [1.194, -0.4431, -0.1255, -0.6766, 1.4428, 0.2542, -0.0993, 0.1165, 0.7421]

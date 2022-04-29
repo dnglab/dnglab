@@ -1,0 +1,12 @@
+make = "FUJIFILM"
+model = "FinePix S6500fd"
+clean_make = "Fujifilm"
+clean_model = "FinePix S6500fd"
+blackpoint = 0
+whitepoint = 15564
+color_pattern = "GBRG"
+active_area = [64, 0, 64, 0]
+hints = ["fuji_rotation_alt"]
+
+[cameras.color_matrix]
+D65 = [1.2628, -0.4887, -0.1401, -0.6861, 1.4996, 0.1962, -0.2198, 0.2782, 0.7091]

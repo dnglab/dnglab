@@ -1,0 +1,11 @@
+make = "FUJIFILM"
+model = "FinePix S200EXR"
+clean_make = "Fujifilm"
+clean_model = "FinePix S200EXR"
+blackpoint = 519
+whitepoint = 16250
+color_pattern = "RGGB"
+active_area = [28, 0, 28, 0]
+
+[cameras.color_matrix]
+D65 = [1.1401, -0.4498, -0.1312, -0.5088, 1.2751, 0.2613, -0.0838, 0.1568, 0.5941]

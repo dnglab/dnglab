@@ -1,0 +1,11 @@
+make = "FUJIFILM"
+model = "X30"
+clean_make = "Fujifilm"
+clean_model = "X30"
+blackpoint = 257
+whitepoint = 4094
+color_pattern = "GBGGRGRGRBGBGBGGRGGRGGBGBGBRGRGRGGBG"
+active_area = [0, 0, 64, 0]
+
+[cameras.color_matrix]
+D65 = [1.2328, -0.5256, -0.1144, -0.4469, 1.2927, 0.1675, -0.0087, 0.1291, 0.4351]

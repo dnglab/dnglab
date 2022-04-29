@@ -1,0 +1,11 @@
+make = "FUJIFILM"
+model = "X20"
+clean_make = "Fujifilm"
+clean_model = "X20"
+blackpoint = 257
+whitepoint = 4094
+color_pattern = "GBGGRGRGRBGBGBGGRGGRGGBGBGBRGRGRGGBG"
+active_area = [0, 0, 64, 0]
+
+[cameras.color_matrix]
+D65 = [1.1768, -0.4971, -0.1133, -0.4904, 1.2927, 0.2183, -0.048, 0.1723, 0.4605]
