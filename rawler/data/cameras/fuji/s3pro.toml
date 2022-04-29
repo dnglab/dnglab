@@ -1,0 +1,12 @@
+make = "FUJIFILM"
+model = "FinePix S3Pro"
+clean_make = "Fujifilm"
+clean_model = "FinePix S3Pro"
+blackpoint = 0
+whitepoint = 16383
+color_pattern = "GBRG"
+active_area = [32, 2, 32, 2]
+hints = ["fuji_rotation_alt"]
+
+[cameras.color_matrix]
+D65 = [1.1807, -0.4612, -0.1294, -0.8927, 1.6968, 0.1988, -0.212, 0.2741, 0.8006]

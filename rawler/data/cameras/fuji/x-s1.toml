@@ -1,0 +1,11 @@
+make = "FUJIFILM"
+model = "X-S1"
+clean_make = "Fujifilm"
+clean_model = "X-S1"
+blackpoint = 256
+whitepoint = 4000
+color_pattern = "BGGR"
+active_area = [48, 0, 48, 0]
+
+[cameras.color_matrix]
+D65 = [1.3509, -0.6199, -0.1254, -0.443, 1.2733, 0.1865, -0.0331, 0.1441, 0.5022]

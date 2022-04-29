@@ -1,0 +1,12 @@
+make = "FUJIFILM"
+model = "FinePix S5600"
+clean_make = "Fujifilm"
+clean_model = "FinePix S5600"
+blackpoint = 0
+whitepoint = 15564
+color_pattern = "GBRG"
+active_area = [30, 0, 30, 0]
+hints = ["fuji_rotation"]
+
+[cameras.color_matrix]
+D65 = [0.9636, -0.2804, -0.0988, -0.7442, 1.504, 0.2589, -0.1803, 0.2311, 0.8621]
