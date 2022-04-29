@@ -1,0 +1,14 @@
+make = "SONY"
+model = "DSC-RX0"
+clean_make = "Sony"
+clean_model = "DSC-RX0"
+blackpoint = 800
+whitepoint = 16300
+color_pattern = "RGGB"
+active_area = [0, 0, 0, 0]
+crop_area = [12, 12, 20, 12]
+bps = 8
+
+[cameras.color_matrix]
+A = [1.061, -0.4761, -0.0215, -0.3192, 1.1711, 0.1657, -0.0264, 0.1026, 0.5904]
+D65 = [0.9396, -0.3507, -0.0843, -0.2497, 1.1111, 0.1572, -0.0343, 0.1355, 0.5089]

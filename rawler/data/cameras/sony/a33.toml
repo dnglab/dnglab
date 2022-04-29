@@ -1,0 +1,14 @@
+make = "SONY"
+model = "SLT-A33"
+clean_make = "Sony"
+clean_model = "SLT-A33"
+blackpoint = 512
+whitepoint = 16300
+color_pattern = "RGGB"
+active_area = [0, 0, 0, 0]
+crop_area = [8, 8, 8, 8]
+bps = 8
+
+[cameras.color_matrix]
+A = [0.5988, -0.1393, -0.0128, -0.4585, 1.1727, 0.3265, -0.0652, 0.1446, 0.7403]
+D65 = [0.6069, -0.1221, -0.0366, -0.5221, 1.2779, 0.2734, -0.1024, 0.2066, 0.6834]

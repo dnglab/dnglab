@@ -1,0 +1,14 @@
+make = "SONY"
+model = "ZV-1"
+clean_make = "SONY"
+clean_model = "ZV-1"
+blackpoint = 512
+whitepoint = 16300
+color_pattern = "RGGB"
+active_area = [0, 0, 0, 0]
+crop_area = [12, 12, 12, 12]
+bps = 8
+
+[cameras.color_matrix]
+A = [1.014, -0.5797, 0.0815, -0.2925, 1.0962, 0.2252, 0.0042, 0.0642, 0.6456]
+D65 = [0.828, -0.2987, -0.0703, -0.3531, 1.1645, 0.2133, -0.055, 0.1542, 0.5312]

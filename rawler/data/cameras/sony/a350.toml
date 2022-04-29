@@ -1,0 +1,14 @@
+make = "SONY"
+model = "DSLR-A350"
+clean_make = "Sony"
+clean_model = "DSLR-A350"
+blackpoint = 0
+whitepoint = 4095
+color_pattern = "RGGB"
+active_area = [0, 0, 0, 0]
+crop_area = [4, 8, 4, 8]
+bps = 8
+
+[cameras.color_matrix]
+A = [0.6459, -0.1991, -0.0211, -0.7683, 1.4944, 0.2987, -0.0408, 0.0428, 0.7224]
+D65 = [0.6038, -0.1484, -0.0579, -0.9145, 1.6746, 0.2512, -0.0875, 0.0746, 0.7218]

@@ -3,7 +3,7 @@ model = "Canon EOS 70D"
 clean_make = "Canon"
 clean_model = "EOS 70D"
 color_pattern = "RGGB"
-bps = 14
+real_bps = 14
 active_area = [72,38,0,0]
 blackareav = [4, 70]
 blackareah = [4, 36]
@@ -18,11 +18,11 @@ colordata_wbcoeffs = 0x3f
 [[cameras.modes]]
 mode = "sRaw1"
 hints = ["invert_sraw_wb", "sraw_new"]
-bps = 16
+real_bps = 16
 whitepoint = 53000
 
 [[cameras.modes]]
 mode = "sRaw2"
 hints = ["invert_sraw_wb", "sraw_new"]
-bps = 16
+real_bps = 16
 whitepoint = 53000

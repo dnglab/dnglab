@@ -1,0 +1,13 @@
+make = "SONY"
+model = "DSLR-A900"
+clean_make = "Sony"
+clean_model = "DSLR-A900"
+blackpoint = 128
+whitepoint = 4095
+color_pattern = "RGGB"
+active_area = [0, 0, 0, 0]
+crop_area = [12, 8, 20, 8]
+
+[cameras.color_matrix]
+A = [0.56, -0.1508, -0.016, -0.7208, 1.412, 0.343, -0.0919, 0.1251, 0.8534]
+D65 = [0.5209, -0.1072, -0.0397, -0.8845, 1.6121, 0.2919, -0.1618, 0.1802, 0.8654]

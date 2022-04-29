@@ -1,0 +1,14 @@
+make = "SONY"
+model = "DSLR-A500"
+clean_make = "Sony"
+clean_model = "DSLR-A500"
+blackpoint = 512
+whitepoint = 16300
+color_pattern = "RGGB"
+active_area = [0, 0, 0, 0]
+crop_area = [8, 7, 8, 3]
+bps = 8
+
+[cameras.color_matrix]
+A = [0.9548, -0.5128, 0.0467, -0.4471, 1.1739, 0.3117, -0.0177, 0.0673, 0.832]
+D65 = [0.6046, -0.1127, -0.0278, -0.5574, 1.3076, 0.2786, -0.0691, 0.1419, 0.7625]

@@ -1,0 +1,14 @@
+make = "SONY"
+model = "DSC-RX100M5"
+clean_make = "SONY"
+clean_model = "DSC-RX100M5"
+blackpoint = 800
+whitepoint = 16300
+color_pattern = "RGGB"
+active_area = [0, 0, 0, 0]
+crop_area = [12, 12, 20, 12]
+bps = 8
+
+[cameras.color_matrix]
+A = [0.7366, -0.3213, 0.038, -0.3609, 1.1127, 0.2852, -0.0218, 0.0694, 0.5821]
+D65 = [0.6596, -0.2079, -0.0562, -0.4782, 1.3016, 0.1933, -0.097, 0.1581, 0.5181]

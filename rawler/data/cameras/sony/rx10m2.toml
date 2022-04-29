@@ -1,0 +1,14 @@
+make = "SONY"
+model = "DSC-RX10M2"
+clean_make = "Sony"
+clean_model = "DSC-RX10M2"
+blackpoint = 800
+whitepoint = 16300
+color_pattern = "RGGB"
+active_area = [0, 0, 8, 0]
+crop_area = [12, 12, 20, 12]
+bps = 8
+
+[cameras.color_matrix]
+A = [0.6486, -0.1903, -0.0025, -0.3661, 1.1315, 0.2685, -0.07, 0.1611, 0.5382]
+D65 = [0.6679, -0.1825, -0.0745, -0.5047, 1.3256, 0.1953, -0.158, 0.2422, 0.5183]

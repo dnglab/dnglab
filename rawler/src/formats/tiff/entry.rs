@@ -84,8 +84,6 @@ impl Entry {
     let typ = reader.read_u16()?;
     let count = reader.read_u32()?;
 
-    debug!("Tag: {:#x}, Typ: {:#x}, count: {}", tag, typ, count);
-
     // If we don't know the type assume byte data (undefined)
     let compat_typ = if typ == 0 || typ > 12 { 7 } else { typ };
 
@@ -96,6 +94,10 @@ impl Entry {
       apply_corr(reader.read_u32()?, corr)
     };
 
+    debug!(
+      "Tag: {:#x}, Typ: {:#x}, count: {}, offset: {}, base: {}, corr: {}",
+      tag, typ, count, offset, base, corr
+    );
     reader.goto(base + offset)?;
     let entry = match typ {
       TYPE_BYTE => {

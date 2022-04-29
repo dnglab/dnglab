@@ -1,0 +1,12 @@
+make = "SONY"
+model = "DSC-RX100M6"
+clean_make = "SONY"
+clean_model = "DSC-RX100M6"
+blackpoint = 800
+whitepoint = 16300
+color_pattern = "RGGB"
+bps = 8
+
+[cameras.color_matrix]
+A = [0.8627, -0.4051, 0.0557, -0.2452, 1.0166, 0.2665, -0.0043, 0.0764, 0.5883]
+D65 = [0.7325, -0.2321, -0.0596, -0.3494, 1.1674, 0.2055, -0.0668, 0.1562, 0.5031]

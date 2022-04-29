@@ -1,0 +1,14 @@
+make = "SONY"
+model = "SLT-A35"
+clean_make = "Sony"
+clean_model = "SLT-A35"
+blackpoint = 512
+whitepoint = 16300
+color_pattern = "RGGB"
+active_area = [0, 0, 0, 0]
+crop_area = [8, 8, 8, 8]
+bps = 8
+
+[cameras.color_matrix]
+A = [0.6247, -0.2128, -0.011, -0.3884, 1.0696, 0.3696, -0.0388, 0.0927, 0.7231]
+D65 = [0.5986, -0.1618, -0.0415, -0.4557, 1.182, 0.312, -0.0681, 0.1404, 0.6971]

@@ -11,6 +11,7 @@ use std::{convert::TryInto, path::PathBuf};
 
 macro_rules! camera_file_check {
   ($make:expr, $model:expr, $test:ident, $file:expr) => {
+    #[allow(non_snake_case)]
     #[test]
     fn $test() -> std::result::Result<(), Box<dyn std::error::Error>> {
       //crate::init_test_logger();

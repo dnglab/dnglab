@@ -3,7 +3,7 @@ model = "Canon EOS 40D"
 clean_make = "Canon"
 clean_model = "EOS 40D"
 color_pattern = "RGGB"
-bps = 14
+real_bps = 14
 active_area = [30, 18, 6, 2] # LTRB
 #crop_area = [30, 18, 6, 2] # todo fix
 whitepoint = 13600
@@ -19,3 +19,4 @@ colordata_wbcoeffs = 0x3f
 [[cameras.modes]]
 mode = "sRaw2"
 hints = ["sraw_40d"]
+real_bps = 16

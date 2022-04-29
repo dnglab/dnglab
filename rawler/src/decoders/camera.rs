@@ -30,7 +30,10 @@ pub struct Camera {
   pub active_area: Option<[usize; 4]>,
   // Recommended area relative to sensor size
   pub crop_area: Option<[usize; 4]>,
+  // Hint/Replacement for EXIF BITDEPTH info
   pub bps: usize,
+  // The BPS of the output after decoding
+  pub real_bps: usize,
   pub highres_width: usize,
   pub default_scale: [[u32; 2]; 2],
   pub best_quality_scale: [u32; 2],
@@ -131,6 +134,9 @@ impl Camera {
         n @ "bps" => {
           self.bps = val.as_integer().unwrap_or_else(|| panic!("{} must be an integer", n)) as usize;
         }
+        n @ "real_bps" => {
+          self.real_bps = val.as_integer().unwrap_or_else(|| panic!("{} must be an integer", n)) as usize;
+        }
         n @ "filesize" => {
           self.filesize = val.as_integer().unwrap_or_else(|| panic!("{} must be an integer", n)) as usize;
         }
@@ -206,7 +212,8 @@ impl Camera {
       cfa: CFA::new(""),
       active_area: None,
       crop_area: None,
-      bps: 16,
+      bps: 0,
+      real_bps: 16,
       highres_width: usize::max_value(),
       default_scale: [[1, 1], [1, 1]],
       best_quality_scale: [1, 1],

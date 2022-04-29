@@ -1,0 +1,12 @@
+make = "SONY"
+model = "DSC-RX100M7"
+clean_make = "SONY"
+clean_model = "DSC-RX100M7"
+blackpoint = 800
+whitepoint = 16300
+color_pattern = "RGGB"
+bps = 8
+
+[cameras.color_matrix]
+A = [1.2129, -0.7065, 0.0755, -0.3743, 1.1594, 0.2442, -0.0012, 0.0647, 0.6561]
+D65 = [1.0315, -0.439, -0.0937, -0.4859, 1.2734, 0.2365, -0.0734, 0.1537, 0.5997]

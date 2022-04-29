@@ -1,0 +1,14 @@
+make = "SONY"
+model = "DSC-R1"
+clean_make = "Sony"
+clean_model = "DSC-R1"
+blackpoint = 511
+whitepoint = 16383
+color_pattern = "GRBG"
+active_area = [0, 0, 60, 0]
+crop_area = [16, 8, 80, 8]
+bps = 8
+
+[cameras.color_matrix]
+A = [1.0011, -0.4237, 0.0183, -0.6596, 1.3898, 0.2984, -0.094, 0.137, 0.7491]
+D65 = [0.8512, -0.2641, -0.0694, -0.8041, 1.567, 0.2526, -0.182, 0.2117, 0.7414]

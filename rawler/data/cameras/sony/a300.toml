@@ -1,0 +1,13 @@
+make = "SONY"
+model = "DSLR-A300"
+clean_make = "Sony"
+clean_model = "DSLR-A300"
+blackpoint = 0
+whitepoint = 4095
+color_pattern = "RGGB"
+active_area = [0, 0, 0, 0]
+crop_area = [4, 8, 4, 8]
+
+[cameras.color_matrix]
+A = [1.1085, -0.4387, -0.0219, -0.7253, 1.4836, 0.2615, -0.0415, 0.0458, 0.6948]
+D65 = [0.9847, -0.3091, -0.0929, -0.8485, 1.6346, 0.2225, -0.0714, 0.0595, 0.7103]

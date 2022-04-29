@@ -1,0 +1,12 @@
+make = "SONY"
+model = "DSC-RX10M4"
+clean_make = "Sony"
+clean_model = "DSC-RX10M4"
+blackpoint = 800
+whitepoint = 16380
+color_pattern = "RGGB"
+bps = 8
+
+[cameras.color_matrix]
+A = [0.8852, -0.3765, -0.0028, -0.3758, 1.2219, 0.1702, -0.0297, 0.1042, 0.6023]
+D65 = [0.7699, -0.2566, -0.0629, -0.2967, 1.127, 0.1928, -0.0378, 0.1286, 0.4807]
