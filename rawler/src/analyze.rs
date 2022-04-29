@@ -13,7 +13,7 @@ use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
 use crate::{
   buffer::Buffer,
-  decoders::{cr2::Cr2Format, cr3::Cr3Format, iiq::IiqFormat, nef::NefFormat, pef::PefFormat, tfr::TfrFormat, RawDecodeParams, RawMetadata},
+  decoders::{cr2::Cr2Format, cr3::Cr3Format, iiq::IiqFormat, nef::NefFormat, pef::PefFormat, tfr::TfrFormat, RawDecodeParams, RawMetadata, dng::DngFormat},
   formats::tiff::Rational,
   formats::tiff::SRational,
   imgop::{raw::develop_raw_srgb, rescale_f32_to_u16, Dim2, Rect},
@@ -142,6 +142,7 @@ pub enum FormatDump {
   Iiq(IiqFormat),
   Tfr(TfrFormat),
   Nef(NefFormat),
+  Dng(DngFormat),
 }
 
 fn file_metadata<P: AsRef<Path>>(path: P, rawfile: &mut RawFile) -> Result<FileMetadata> {
