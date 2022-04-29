@@ -1,0 +1,11 @@
+make = "Kodak"
+model = "DCS Pro SLR/n"
+clean_make = "Kodak"
+clean_model = "DCS Pro SLR/n"
+blackpoint = 0
+whitepoint = 3700
+color_pattern = "GRBG"
+active_area = [0, 0, 0, 0]
+
+[cameras.color_matrix]
+D65 = [0.5494, 0.2393, -0.0232, -0.6427, 1.385, 0.2846, -0.1876, 0.3997, 0.5445]

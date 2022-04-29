@@ -1,0 +1,12 @@
+make = "EASTMAN KODAK COMPANY"
+model = "KODAK EASYSHARE Z1015 IS DIGITAL CAMERA"
+clean_make = "Kodak"
+clean_model = "EasyShare Z1015 IS"
+blackpoint = 0
+whitepoint = 4095
+color_pattern = "BGGR"
+active_area = [0, 0, 0, 0]
+hints = ["easyshare_offset_hack"]
+
+[cameras.color_matrix]
+D65 = [1.1265, -0.4286, -0.0992, -0.4694, 1.2343, 0.2647, -0.109, 0.1523, 0.5447]
