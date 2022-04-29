@@ -391,7 +391,7 @@ impl HuffTableBuilder {
 
     while i > 16 {
       if self.bits[i] > 0 {
-        let mut j = i - 1;
+        let mut j = i - 2; // See K.3: J = I - 1; J  = J - 1;
         while self.bits[j] == 0 {
           j -= 1;
         }
