@@ -1,0 +1,11 @@
+make = "OLYMPUS IMAGING CORP."
+model = "STYLUS1,1s"
+clean_make = "Olympus"
+clean_model = "Stylus1"
+blackpoint = 200
+whitepoint = 3900
+color_pattern = "RGGB"
+active_area = [0, 0, 14, 0]
+
+[cameras.color_matrix]
+D65 = [0.836, -0.242, -0.088, -0.3928, 1.2353, 0.1739, -0.1381, 0.2416, 0.5173]

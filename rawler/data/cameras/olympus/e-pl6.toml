@@ -1,0 +1,11 @@
+make = "OLYMPUS IMAGING CORP."
+model = "E-PL6"
+clean_make = "Olympus"
+clean_model = "E-PL6"
+blackpoint = 254
+whitepoint = 4000
+color_pattern = "RGGB"
+active_area = [8, 8, 24, 8]
+
+[cameras.color_matrix]
+D65 = [0.838, -0.263, -0.0639, -0.2887, 1.0725, 0.2496, -0.0627, 0.1427, 0.5438]

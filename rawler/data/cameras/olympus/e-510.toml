@@ -1,0 +1,11 @@
+make = "OLYMPUS IMAGING CORP."
+model = "E-510"
+clean_make = "Olympus"
+clean_model = "E-510"
+blackpoint = 73
+whitepoint = 3500
+color_pattern = "RGGB"
+active_area = [0, 0, 0, 0]
+
+[cameras.color_matrix]
+D65 = [0.8785, -0.2529, -0.1033, -0.7639, 1.5624, 0.2112, -0.1783, 0.23, 0.7817]

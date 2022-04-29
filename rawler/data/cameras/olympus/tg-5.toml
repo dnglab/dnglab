@@ -1,0 +1,11 @@
+make = "OLYMPUS CORPORATION"
+model = "TG-5"
+clean_make = "OLYMPUS CORPORATION"
+clean_model = "TG-5"
+blackpoint = 256
+whitepoint = 4000
+color_pattern = "GRBG"
+active_area = [0, 0, 0, 0]
+
+[cameras.color_matrix]
+D65 = [1.0899, -0.3833, -0.1082, -0.2112, 1.0736, 0.1575, -0.0267, 0.1452, 0.5269]

@@ -1,0 +1,11 @@
+make = "OLYMPUS CORPORATION"
+model = "E-PL8"
+clean_make = "OLYMPUS CORPORATION"
+clean_model = "E-PL8"
+blackpoint = 254
+whitepoint = 4000
+color_pattern = "RGGB"
+active_area = [0, 0, 0, 0]
+
+[cameras.color_matrix]
+D65 = [0.9197, -0.319, -0.0659, -0.2606, 1.083, 0.2039, -0.0458, 0.125, 0.5458]
