@@ -1,0 +1,19 @@
+make = "Panasonic"
+model = "DMC-GX80"
+clean_make = "Panasonic"
+clean_model = "DMC-GX80"
+
+model_aliases = [
+  ["DMC-GX85", "DMC-GX85"],
+]
+
+blackpoint = 143
+whitepoint = 4095
+color_pattern = "BGGR"
+
+[cameras.color_matrix]
+D65 = [0.7771, -0.302, -0.0629, -0.4029, 1.195, 0.2345, -0.0821, 0.1977, 0.6119]
+
+[[cameras.modes]]
+mode = "4:3"
+active_area = [0, 0, 208, 0]

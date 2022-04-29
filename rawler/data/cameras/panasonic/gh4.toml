@@ -1,0 +1,26 @@
+make = "Panasonic"
+model = "DMC-GH4"
+clean_make = "Panasonic"
+clean_model = "DMC-GH4"
+blackpoint = 143
+whitepoint = 4095
+color_pattern = "BGGR"
+
+[cameras.color_matrix]
+D65 = [0.7122, -0.2108, -0.0512, -0.3155, 1.1201, 0.2231, -0.0541, 0.1423, 0.5045]
+
+[[cameras.modes]]
+mode = "1:1"
+active_area = [0, 0, 0, 0]
+
+[[cameras.modes]]
+mode = "4:3"
+active_area = [8, 8, 200, 8]
+
+[[cameras.modes]]
+mode = "3:2"
+active_area = [8, 8, 200, 8]
+
+[[cameras.modes]]
+mode = "16:9"
+active_area = [8, 8, 200, 8]

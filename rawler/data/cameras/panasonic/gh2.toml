@@ -1,0 +1,26 @@
+make = "Panasonic"
+model = "DMC-GH2"
+clean_make = "Panasonic"
+clean_model = "DMC-GH2"
+blackpoint = 15
+whitepoint = 3800
+color_pattern = "BGGR"
+
+[cameras.color_matrix]
+D65 = [0.778, -0.241, -0.0806, -0.3913, 1.1724, 0.2484, -0.1018, 0.239, 0.5298]
+
+[[cameras.modes]]
+mode = "1:1"
+active_area = [0, 0, 168, 0]
+
+[[cameras.modes]]
+mode = "4:3"
+active_area = [0, 0, 136, 0]
+
+[[cameras.modes]]
+mode = "3:2"
+active_area = [0, 0, 216, 0]
+
+[[cameras.modes]]
+mode = "16:9"
+active_area = [0, 0, 216, 0]

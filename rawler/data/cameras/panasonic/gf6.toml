@@ -1,0 +1,26 @@
+make = "Panasonic"
+model = "DMC-GF6"
+clean_make = "Panasonic"
+clean_model = "DMC-GF6"
+blackpoint = 143
+whitepoint = 3956
+color_pattern = "GRBG"
+
+[cameras.color_matrix]
+D65 = [0.813, -0.2801, -0.0946, -0.352, 1.1289, 0.2552, -0.1314, 0.2511, 0.5791]
+
+[[cameras.modes]]
+mode = "1:1"
+active_area = [0, 0, 32, 0]
+
+[[cameras.modes]]
+mode = "4:3"
+active_area = [0, 0, 208, 0]
+
+[[cameras.modes]]
+mode = "3:2"
+active_area = [0, 0, 208, 0]
+
+[[cameras.modes]]
+mode = "16:9"
+active_area = [0, 0, 208, 0]

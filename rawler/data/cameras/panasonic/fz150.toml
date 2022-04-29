@@ -1,0 +1,26 @@
+make = "Panasonic"
+model = "DMC-FZ150"
+clean_make = "Panasonic"
+clean_model = "DMC-FZ150"
+blackpoint = 142
+whitepoint = 3971
+color_pattern = "GBRG"
+
+[cameras.color_matrix]
+D65 = [1.1904, -0.4541, -0.1189, -0.2355, 1.0899, 0.1662, -0.0296, 0.1586, 0.4289]
+
+[[cameras.modes]]
+mode = "1:1"
+active_area = [0, 0, 16, 0]
+
+[[cameras.modes]]
+mode = "4:3"
+active_area = [0, 0, 128, 0]
+
+[[cameras.modes]]
+mode = "3:2"
+active_area = [0, 0, 128, 0]
+
+[[cameras.modes]]
+mode = "16:9"
+active_area = [0, 0, 128, 0]

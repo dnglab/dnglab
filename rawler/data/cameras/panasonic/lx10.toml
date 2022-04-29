@@ -1,0 +1,19 @@
+make = "Panasonic"
+model = "DMC-LX10"
+clean_make = "Panasonic"
+clean_model = "DMC-LX10"
+
+model_aliases = [
+  ["DMC-LX15", "DMC-LX15"],
+]
+
+blackpoint = 143
+whitepoint = 4095
+color_pattern = "GBRG"
+
+[cameras.color_matrix]
+D65 = [0.779, -0.2736, -0.0755, -0.3452, 1.187, 0.1769, -0.0628, 0.1647, 0.4898]
+
+[[cameras.modes]]
+mode = "3:2"
+active_area = [0, 0, 0, 0]

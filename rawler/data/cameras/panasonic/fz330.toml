@@ -1,0 +1,14 @@
+make = "Panasonic"
+model = "DMC-FZ330"
+clean_make = "Panasonic"
+clean_model = "DMC-FZ330"
+blackpoint = 142
+whitepoint = 4095
+color_pattern = "GBRG"
+
+[cameras.color_matrix]
+D65 = [0.8378, -0.2798, -0.0769, -0.3068, 1.141, 0.1877, -0.0538, 0.1792, 0.4623]
+
+[[cameras.modes]]
+mode = "4:3"
+active_area = [0, 0, 126, 0]

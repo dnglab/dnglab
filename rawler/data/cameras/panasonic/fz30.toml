@@ -1,0 +1,14 @@
+make = "Panasonic"
+model = "DMC-FZ30"
+clean_make = "Panasonic"
+clean_model = "DMC-FZ30"
+blackpoint = 0
+whitepoint = 3971
+color_pattern = "RGGB"
+
+[cameras.color_matrix]
+D65 = [1.0976, -0.4029, -0.1141, -0.7918, 1.5491, 0.26, -0.167, 0.2071, 0.8246]
+
+[[cameras.modes]]
+mode = "4:3"
+active_area = [0, 0, 16, 0]
