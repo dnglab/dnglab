@@ -1,0 +1,12 @@
+make = "ARRI"
+model = "ALEXA"
+clean_make = "ARRI"
+clean_model = "ALEXA"
+blackpoint = 0
+whitepoint = 4095
+color_pattern = "RGGB"
+#crops = [0,0,0,0]
+
+# we don't have a matrix so use sRGB
+[cameras.color_matrix]
+D65 = [3.24045, -1.53713, -0.49853, -0.96926,  1.87601, 0.04155, 0.05564, -0.20402,  1.05722]
