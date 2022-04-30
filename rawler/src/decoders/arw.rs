@@ -2,6 +2,7 @@ use std::cmp;
 use std::f32::NAN;
 use std::io::Cursor;
 
+use image::DynamicImage;
 use log::debug;
 
 use crate::alloc_image;
@@ -174,6 +175,22 @@ impl<'a> Decoder for ArwDecoder<'a> {
     img.crop_area = crop;
     img.active_area = self.camera.active_area.map(|area| Rect::new_with_borders(Dim2::new(width, height), &area));
     Ok(img)
+  }
+
+  /// Return the embedded JPEG preview
+  /// Exiftool docs says there is a tag 0x2002 including the image, but this tag
+  /// exists in none of the samples?! Instead, we can use the JPEG thumbnail
+  /// tags which exists for most samples.
+  fn full_image(&self, file: &mut RawFile) -> Result<Option<DynamicImage>> {
+    let root = self.tiff.root_ifd();
+    if let Some(preview_off) = root.get_entry(ExifTag::JPEGInterchangeFormat) {
+      if let Some(preview_len) = root.get_entry(ExifTag::JPEGInterchangeFormatLength) {
+        let buf = file.subview(preview_off.force_u64(0), preview_len.force_u64(0))?;
+        let img = image::load_from_memory_with_format(&buf, image::ImageFormat::Jpeg).unwrap();
+        return Ok(Some(img));
+      }
+    }
+    Ok(None)
   }
 
   fn format_dump(&self) -> crate::analyze::FormatDump {
