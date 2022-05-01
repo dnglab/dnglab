@@ -242,3 +242,8 @@ cameras/Epson/R-D1x/raw_modes
 cameras/Leaf/Aptus 22/raw_modes
 cameras/Leaf/Aptus 75/raw_modes
 cameras/Leaf/Credo 40/raw_modes
+cameras/Arri/Alexa 65/raw_modes
+cameras/Arri/Alexa LF/raw_modes
+cameras/Arri/Alexa Mini/raw_modes
+cameras/Arri/Alexa SXT/raw_modes
+cameras/Arri/Alexa XT/raw_modes
