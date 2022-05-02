@@ -1,0 +1,12 @@
+make = "Leaf"
+model = "Credo 80"
+clean_make = "Leaf"
+clean_model = "Credo 80"
+blackpoint = 0
+whitepoint = 65535
+color_pattern = "RGGB"
+active_area = [36, 6, 16, 46]
+
+[cameras.color_matrix]
+A = [0.7756, 0.0244, -0.0761, -0.53, 1.2774, 0.2832, -0.0881, 0.2622, 0.5858]
+D65 = [0.8035, 0.0435, -0.0962, -0.6001, 1.3872, 0.232, -0.1159, 0.3065, 0.5434]
