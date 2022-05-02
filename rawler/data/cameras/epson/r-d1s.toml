@@ -1,0 +1,11 @@
+make = "SEIKO EPSON CORP."
+model = "R-D1s"
+clean_make = "Epson"
+clean_model = "R-D1s"
+blackpoint = 63
+whitepoint = 4095
+color_pattern = "RGGB"
+active_area = [0, 0, 0, 0]
+
+[cameras.color_matrix]
+D65 = [0.6827, -0.1878, -0.0732, -0.8429, 1.6012, 0.2564, -0.0704, 0.0592, 0.7145]
