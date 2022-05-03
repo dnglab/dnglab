@@ -971,3 +971,30 @@ mod camera_alexa_sxt_raw_modes {
 mod camera_alexa_xt_raw_modes {
   super::camera_file_check!("Arri", "Alexa XT", cam_alexa_xt_ari, "raw_modes/Alexa_XT.ari");
 }
+mod camera_alpha_7_digital_raw_modes {
+  super::camera_file_check!("Minolta", "ALPHA-7 DIGITAL", cam_alpha_7_digital_iso_200_uncompressed_mrw, "raw_modes/ALPHA-7 DIGITAL_ISO_200_Uncompressed.MRW");
+}
+mod camera_dimage_7hi_raw_modes {
+  super::camera_file_check!("Minolta", "DiMAGE 7Hi", cam_dimage_7hi_iso_100_uncompressed_mrw, "raw_modes/DiMAGE 7Hi_ISO_100_Uncompressed.MRW");
+}
+mod camera_dimage_7i_raw_modes {
+  super::camera_file_check!("Minolta", "DiMAGE 7i", cam_dimage_7i_iso_100_uncompressed_mrw, "raw_modes/DiMAGE 7i_ISO_100_Uncompressed.MRW");
+}
+mod camera_dimage_7_raw_modes {
+  super::camera_file_check!("Minolta", "DiMAGE 7", cam_dimage_7_iso_100_uncompressed_mrw, "raw_modes/DiMAGE 7_ISO_100_Uncompressed.MRW");
+}
+mod camera_dimage_a1_raw_modes {
+  super::camera_file_check!("Minolta", "DiMAGE A1", cam_dimage_a1_iso_100_uncompressed_mrw, "raw_modes/DiMAGE A1_ISO_100_Uncompressed.MRW");
+}
+mod camera_dimage_a200_raw_modes {
+  super::camera_file_check!("Minolta", "DiMAGE A200", cam_dimage_a200_iso_200_uncompressed_mrw, "raw_modes/DiMAGE A200_ISO_200_Uncompressed.MRW");
+}
+mod camera_dimage_a2_raw_modes {
+  super::camera_file_check!("Minolta", "DiMAGE A2", cam_dimage_a2_iso_64_uncompressed_mrw, "raw_modes/DiMAGE A2_ISO_64_Uncompressed.MRW");
+}
+mod camera_dynax_7d_raw_modes {
+  super::camera_file_check!("Minolta", "Dynax 7D", cam_dynax_7d_iso_100_uncompressed_mrw, "raw_modes/DYNAX 7D_ISO_100_Uncompressed.MRW");
+}
+mod camera_maxxum_7d_raw_modes {
+  super::camera_file_check!("Minolta", "Maxxum 7D", cam_maxxum_7d_iso_200_uncompressed_mrw, "raw_modes/MAXXUM 7D_ISO_200_Uncompressed.MRW");
+}

@@ -1,0 +1,13 @@
+make = "KONICA MINOLTA"
+model = "DiMAGE A200"
+clean_make = "Minolta"
+clean_model = "DiMAGE A200"
+blackpoint = 0
+whitepoint = 3965
+color_pattern = "GBRG"
+active_area = [0, 0, 0, 0]
+hints = ["swapped_wb"]
+
+[cameras.color_matrix]
+A = [0.9678, -0.3757, -0.029, -0.6691, 1.38, 0.3215, -0.0718, 0.0954, 0.7673]
+D65 = [0.856, -0.2487, -0.0986, -0.8111, 1.5535, 0.2771, -0.1209, 0.1324, 0.7742]

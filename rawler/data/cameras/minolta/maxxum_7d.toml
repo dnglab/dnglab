@@ -1,0 +1,11 @@
+make = "KONICA MINOLTA"
+model = "MAXXUM 7D"
+clean_make = "Minolta"
+clean_model = "MAXXUM 7D"
+blackpoint = 0
+whitepoint = 4095
+color_pattern = "RGGB"
+
+[cameras.color_matrix]
+A = [1.2036, -0.4955, -0.0076, -0.7019, 1.4449, 0.2811, -0.0513, 0.0636, 0.6839]
+D65 = [1.0239, -0.3104, -0.1099, -0.8037, 1.5727, 0.2452, -0.0928, 0.0926, 0.6871]
