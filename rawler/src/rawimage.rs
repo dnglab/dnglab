@@ -214,7 +214,11 @@ impl RawImage {
     */
     debug!("RAW developing active area: {:?}", self.active_area);
 
-    let wb_coeff = if self.wb_coeffs[0].is_nan() { [1.0, 1.0, 1.0, f32::NAN] } else { self.wb_coeffs };
+    let wb_coeff = if self.wb_coeffs[0].is_nan() {
+      [1.0, 1.0, 1.0, f32::NAN]
+    } else {
+      self.wb_coeffs
+    };
 
     let params = DevelopParams {
       width: self.width,
