@@ -956,3 +956,18 @@ mod camera_credo_40_raw_modes {
   super::camera_file_check!("Leaf", "Credo 40", cam_credo_40_iso_100_iiq_sv2_iiq, "raw_modes/Credo 40_ISO_100_IIQ Sv2.IIQ");
   super::camera_file_check!("Leaf", "Credo 40", cam_credo_40_iso_100_iiq_l_iiq, "raw_modes/Credo 40_ISO_100_IIQ L.IIQ");
 }
+mod camera_alexa_65_raw_modes {
+  super::camera_file_check!("Arri", "Alexa 65", cam_alexa_65_ari, "raw_modes/Alexa_65.ari");
+}
+mod camera_alexa_lf_raw_modes {
+  super::camera_file_check!("Arri", "Alexa LF", cam_alexa_lf_ari, "raw_modes/Alexa_LF.ari");
+}
+mod camera_alexa_mini_raw_modes {
+  super::camera_file_check!("Arri", "Alexa Mini", cam_alexa_mini_ari, "raw_modes/Alexa_Mini.ari");
+}
+mod camera_alexa_sxt_raw_modes {
+  super::camera_file_check!("Arri", "Alexa SXT", cam_alexa_sxt_ari, "raw_modes/Alexa_SXT.ari");
+}
+mod camera_alexa_xt_raw_modes {
+  super::camera_file_check!("Arri", "Alexa XT", cam_alexa_xt_ari, "raw_modes/Alexa_XT.ari");
+}

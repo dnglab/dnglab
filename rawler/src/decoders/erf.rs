@@ -19,7 +19,6 @@ use crate::RawImage;
 use crate::RawLoader;
 use crate::Result;
 
-use super::ok_image;
 use super::Camera;
 use super::Decoder;
 use super::RawDecodeParams;
@@ -100,6 +99,6 @@ impl<'a> ErfDecoder<'a> {
     if let Some(levels) = self.makernote.get_entry(0x0401) {
       return Some([levels.force_u16(0), levels.force_u16(1), levels.force_u16(2), levels.force_u16(3)]);
     }
-    return None;
+    None
   }
 }

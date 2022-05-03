@@ -114,7 +114,7 @@ END {
     if(height != 0 && length(active_area) == 4) {
         printf("active_area = [%d, %d, %d, %d]\n", active_area[2], active_area[1], width - active_area[4], height - active_area[3]);
     }
-    if(height != 0 && length(crop_area) == 4) {
+    if(height != 0 && length(crop_area) == 4 && length(active_area) == 4) {
         printf("crop_area = [%d, %d, %d, %d]\n", active_area[2] + crop_area[1], active_area[1] + crop_area[2],
             width - (active_area[2] + crop_area[1] + crop_area[3]),
             height - (active_area[1] + crop_area[2] + crop_area[4]));
