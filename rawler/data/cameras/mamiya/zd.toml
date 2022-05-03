@@ -1,0 +1,13 @@
+make = "Mamiya-OP Co.,Ltd."
+model = "MAMIYA ZD"
+clean_make = "Mamiya"
+clean_model = "ZD"
+blackpoint = 0
+whitepoint = 4000
+color_pattern = "RGGB"
+active_area = [0, 0, 0, 0]
+#crop_area = [4, 4, 4, 4]
+
+[cameras.color_matrix]
+A = [0.6943, 0.3052, -0.1765, -0.7012, 1.4669, 0.2535, -0.2173, 0.4452, 0.654]
+D65 = [0.7645, 0.2579, -0.1363, -0.8689, 1.6717, 0.2014, -0.3712, 0.5941, 0.5961]
