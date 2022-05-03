@@ -145,7 +145,7 @@ pub fn raw_to_dng_internal<W: Write + Seek + Send>(rawfile: &mut RawFile, output
       };
       let (srgbf, dim) = develop_raw_srgb(buf, &params)?;
       let output = rescale_f32_to_u16(&srgbf, 0, u16::MAX);
-      let img = DynamicImage::ImageRgb16(ImageBuffer::from_raw(dim.w as u32, dim.h as u32, output).unwrap());
+      let img = DynamicImage::ImageRgb16(ImageBuffer::from_raw(dim.w as u32, dim.h as u32, output).expect("Invalid ImageBuffer size"));
       Some(img)
     }
   } else {

@@ -946,3 +946,13 @@ mod camera_r_d1s_raw_modes {
 mod camera_r_d1x_raw_modes {
   super::camera_file_check!("Epson", "R-D1x", cam_r_d1x_iso_200_12bits_erf, "raw_modes/R-D1x_ISO_200_12bits.ERF");
 }
+mod camera_aptus_22_raw_modes {
+  super::camera_file_check!("Leaf", "Aptus 22", cam_aptus_22_iso_25_16bits_mos, "raw_modes/Aptus 22_ISO_25_16bits.MOS");
+}
+mod camera_aptus_75_raw_modes {
+  super::camera_file_check!("Leaf", "Aptus 75", cam_aptus_75_iso_50_16bits_mos, "raw_modes/Aptus 75_ISO_50_16bits.MOS");
+}
+mod camera_credo_40_raw_modes {
+  super::camera_file_check!("Leaf", "Credo 40", cam_credo_40_iso_100_iiq_sv2_iiq, "raw_modes/Credo 40_ISO_100_IIQ Sv2.IIQ");
+  super::camera_file_check!("Leaf", "Credo 40", cam_credo_40_iso_100_iiq_l_iiq, "raw_modes/Credo 40_ISO_100_IIQ L.IIQ");
+}

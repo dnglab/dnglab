@@ -1,0 +1,13 @@
+make = "Leaf"
+model = "Leaf Aptus 22"
+clean_make = "Leaf"
+clean_model = "Aptus 22"
+blackpoint = 0
+whitepoint = 15000
+color_pattern = "RGGB"
+active_area = [0, 0, 0, 0]
+crop_area = [4, 4, 4, 4]
+
+[cameras.color_matrix]
+A = [0.8036, 0.1309, -0.1134, -0.6259, 1.3352, 0.3252, -0.1977, 0.4003, 0.6418]
+D65 = [0.8236, 0.1746, -0.1313, -0.8251, 1.5953, 0.2428, -0.3672, 0.5786, 0.5771]
