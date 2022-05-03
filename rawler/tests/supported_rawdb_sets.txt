@@ -239,3 +239,6 @@ cameras/Sony/ZV-E10/raw_modes
 cameras/Epson/R-D1/raw_modes
 cameras/Epson/R-D1s/raw_modes
 cameras/Epson/R-D1x/raw_modes
+cameras/Leaf/Aptus 22/raw_modes
+cameras/Leaf/Aptus 75/raw_modes
+cameras/Leaf/Credo 40/raw_modes
