@@ -998,3 +998,6 @@ mod camera_dynax_7d_raw_modes {
 mod camera_maxxum_7d_raw_modes {
   super::camera_file_check!("Minolta", "Maxxum 7D", cam_maxxum_7d_iso_200_uncompressed_mrw, "raw_modes/MAXXUM 7D_ISO_200_Uncompressed.MRW");
 }
+mod camera_zd_raw_modes {
+  super::camera_file_check!("Mamiya", "ZD", cam_mamiya_zd_mef, "raw_modes/MAMIYA_ZD.MEF");
+}

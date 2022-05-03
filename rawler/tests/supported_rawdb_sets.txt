@@ -256,3 +256,4 @@ cameras/Minolta/DiMAGE A200/raw_modes
 cameras/Minolta/DiMAGE A2/raw_modes
 cameras/Minolta/Dynax 7D/raw_modes
 cameras/Minolta/Maxxum 7D/raw_modes
+cameras/Mamiya/ZD/raw_modes
