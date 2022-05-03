@@ -111,12 +111,19 @@ impl<'a> Decoder for MrwDecoder<'a> {
     };
 
     let wb_coeffs = if self.camera.find_hint("swapped_wb") {
-      [self.wb_vals[2] as f32, self.wb_vals[0] as f32, self.wb_vals[1] as f32, f32::NAN]
+      [self.wb_vals[2] as f32, self.wb_vals[0] as f32, self.wb_vals[0] as f32, self.wb_vals[1] as f32]
     } else {
-      [self.wb_vals[0] as f32, self.wb_vals[1] as f32, self.wb_vals[3] as f32, f32::NAN]
+      [self.wb_vals[0] as f32, self.wb_vals[1] as f32, self.wb_vals[2] as f32, self.wb_vals[3] as f32]
     };
     let cpp = 1;
-    ok_image(self.camera.clone(), self.raw_width, self.raw_height, cpp, wb_coeffs, buffer.into_inner())
+    ok_image(
+      self.camera.clone(),
+      self.raw_width,
+      self.raw_height,
+      cpp,
+      normalize_wb(wb_coeffs),
+      buffer.into_inner(),
+    )
   }
 
   fn format_dump(&self) -> FormatDump {
@@ -128,4 +135,16 @@ impl<'a> Decoder for MrwDecoder<'a> {
     let mdata = RawMetadata::new(&self.camera, exif);
     Ok(mdata)
   }
+}
+
+fn normalize_wb(raw_wb: [f32; 4]) -> [f32; 4] {
+  log::debug!("MRW raw wb: {:?}", raw_wb);
+  let div = raw_wb[1]; // G1 should be 1024 and we use this as divisor
+  let mut norm = raw_wb;
+  norm.iter_mut().for_each(|v| {
+    if v.is_normal() {
+      *v /= div
+    }
+  });
+  [norm[0], (norm[1] + norm[2]) / 2.0, norm[3], f32::NAN]
 }
