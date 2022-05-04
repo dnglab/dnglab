@@ -214,18 +214,24 @@ impl RawImage {
     */
     debug!("RAW developing active area: {:?}", self.active_area);
 
+    let wb_coeff = if self.wb_coeffs[0].is_nan() {
+      [1.0, 1.0, 1.0, f32::NAN]
+    } else {
+      self.wb_coeffs
+    };
+
     let params = DevelopParams {
       width: self.width,
       height: self.height,
       color_matrices: vec![ColorMatrix {
-        illuminant: Illuminant::D65,
+        illuminant: Illuminant::D65, // TODO: need CAT
         matrix: xyz2cam,
       }],
       white_level: self.whitelevels.into(),
       black_level: self.blacklevels.into(),
       pattern,
       cfa: self.cfa.clone(),
-      wb_coeff: self.wb_coeffs,
+      wb_coeff,
       active_area: self.active_area,
       crop_area: self.crop_area,
       gamma: 2.4,
