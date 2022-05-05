@@ -1,0 +1,12 @@
+make = "Hasselblad"
+model = "Hasselblad H3D"
+clean_make = "Hasselblad"
+clean_model = "H4D-H3D"
+blackpoint = 0
+whitepoint = 62914
+color_pattern = "RGGB"
+active_area = [0, 0, 0, 0]
+crop_area = [4, 4, 4, 4]
+
+[cameras.color_matrix]
+D65 = [0.3857, 0.0452, -0.0046, -0.6008, 1.4477, 0.1596, -0.2627, 0.4481, 0.5718]

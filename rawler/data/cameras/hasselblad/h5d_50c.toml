@@ -1,0 +1,12 @@
+make = "Hasselblad"
+model = "Hasselblad H5D-50c"
+clean_make = "Hasselblad"
+clean_model = "H5D-50c"
+blackpoint = 0
+whitepoint = 62914
+color_pattern = "RGGB"
+active_area = [0, 0, 0, 0]
+crop_area = [4, 4, 4, 4]
+
+[cameras.color_matrix]
+D65 = [0.5002, -0.0878, 0.0111, -0.4856, 1.1929, 0.3338, -0.1183, 0.2041, 0.7022]

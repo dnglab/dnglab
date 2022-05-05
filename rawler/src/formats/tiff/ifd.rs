@@ -99,30 +99,39 @@ impl IFD {
     let entry_count = reader.read_u16()?;
     let mut entries = BTreeMap::new();
     let mut sub = HashMap::new();
+    let mut next_pos = reader.position()?;
     debug!("Parse entries");
     for _ in 0..entry_count {
+      reader.goto(next_pos)?;
+      next_pos += 12;
       //let embedded = reader.read_u32()?;
       let tag = reader.read_u16()?;
-      let entry = Entry::parse(&mut reader, base, corr, tag)?;
 
-      if sub_tags.contains(&tag) {
-        //let entry = Entry::parse(&mut reader, base, corr, tag)?;
-        match &entry.value {
-          Value::Long(offsets) => {
-            sub_ifd_offsets.insert(tag, offsets.clone());
-            //sub_ifd_offsets.extend_from_slice(&offsets);
+      match Entry::parse(&mut reader, base, corr, tag) {
+        Ok(entry) => {
+          if sub_tags.contains(&tag) {
+            //let entry = Entry::parse(&mut reader, base, corr, tag)?;
+            match &entry.value {
+              Value::Long(offsets) => {
+                sub_ifd_offsets.insert(tag, offsets.clone());
+                //sub_ifd_offsets.extend_from_slice(&offsets);
+              }
+              Value::Unknown(tag, offsets) => {
+                sub_ifd_offsets.insert(*tag, vec![offsets[0] as u32]);
+                //sub_ifd_offsets.extend_from_slice(&offsets);
+              }
+              val => {
+                debug!("Found IFD offset tag, but type mismatch: {:?}", val);
+                todo!()
+              }
+            }
           }
-          Value::Unknown(tag, offsets) => {
-            sub_ifd_offsets.insert(*tag, vec![offsets[0] as u32]);
-            //sub_ifd_offsets.extend_from_slice(&offsets);
-          }
-          val => {
-            debug!("Found IFD offset tag, but type mismatch: {:?}", val);
-            todo!()
-          }
+          entries.insert(entry.tag, entry);
+        }
+        Err(err) => {
+          log::warn!("Failed to parse TIFF tag 0x{:X}, skipping: {:?}", tag, err);
         }
       }
-      entries.insert(entry.tag, entry);
     }
 
     // Some TIFF writers skip the next ifd pointer
