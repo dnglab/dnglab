@@ -476,17 +476,15 @@ impl<'a> SrwDecoder<'a> {
     PixU16::new_with(out, width, height)
   }
 
-    /// Get lens description by analyzing TIFF tags and makernotes
-    fn get_lens_description(&self) -> Result<Option<&'static LensDescription>> {
-
-
-      if let Some(lens_id) = self.makernote.get_entry(SrwMakernote::LensModel) {
-        let lens_id = lens_id.force_u16(0);
-        let resolver = LensResolver::new().with_lens_id((lens_id.into(), 0)).with_mounts(&[NX_MOUNT.into()]);
-              return Ok(resolver.resolve());
-      }
-      Ok(None)
+  /// Get lens description by analyzing TIFF tags and makernotes
+  fn get_lens_description(&self) -> Result<Option<&'static LensDescription>> {
+    if let Some(lens_id) = self.makernote.get_entry(SrwMakernote::LensModel) {
+      let lens_id = lens_id.force_u16(0);
+      let resolver = LensResolver::new().with_lens_id((lens_id.into(), 0)).with_mounts(&[NX_MOUNT.into()]);
+      return Ok(resolver.resolve());
     }
+    Ok(None)
+  }
 
   fn get_wb(&self) -> Result<[f32; 4]> {
     let rggb_levels = fetch_tiff_tag!(self.makernote, SrwMakernote::SrwRGGBLevels);
