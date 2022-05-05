@@ -93,8 +93,8 @@ pub fn clip_euclidean_norm_avg<const N: usize>(pix: &[f32; N]) -> [f32; N] {
 #[clone(target = "[x86|x86_64]+avx+avx2")]
 #[clone(target = "x86+sse")]
 fn correct_blacklevel(raw: &mut [f32], width: usize, height: usize, blacklevel: &[f32; 4], whitelevel: &[f32; 4]) {
-  assert_eq!(width % 2, 0);
-  assert_eq!(height % 2, 0);
+  //assert_eq!(width % 2, 0, "width is {}", width);
+  //assert_eq!(height % 2, 0, "height is {}", height);
   // max value can be pre-computed for all channels.
   let max = [
     whitelevel[0] - blacklevel[0],
