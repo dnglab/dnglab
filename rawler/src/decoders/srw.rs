@@ -11,6 +11,9 @@ use crate::formats::tiff::ifd::OffsetMode;
 use crate::formats::tiff::reader::TiffReader;
 use crate::formats::tiff::GenericTiffReader;
 use crate::formats::tiff::IFD;
+use crate::lens::LensDescription;
+use crate::lens::LensId;
+use crate::lens::LensResolver;
 use crate::packed::decode_12be;
 use crate::packed::decode_12le;
 use crate::packed::decode_12le_unpacked;
@@ -21,6 +24,7 @@ use crate::pumps::BitPumpMSB;
 use crate::pumps::BitPumpMSB32;
 use crate::tags::ExifTag;
 use crate::tags::TiffCommonTag;
+use crate::OptBuffer;
 use crate::RawFile;
 use crate::RawImage;
 use crate::RawLoader;
@@ -28,10 +32,13 @@ use crate::RawlerError;
 use crate::Result;
 
 use super::ok_image;
+use super::ok_image_with_blacklevels;
 use super::Camera;
 use super::Decoder;
 use super::RawDecodeParams;
 use super::RawMetadata;
+
+const NX_MOUNT: &str = "NX-mount";
 
 #[derive(Debug, Clone)]
 pub struct SrwDecoder<'a> {
@@ -71,7 +78,7 @@ impl<'a> Decoder for SrwDecoder<'a> {
     let offset = fetch_tiff_tag!(raw, TiffCommonTag::StripOffsets).force_usize(0);
     let compression = fetch_tiff_tag!(raw, TiffCommonTag::Compression).force_u32(0);
     let bits = fetch_tiff_tag!(raw, TiffCommonTag::BitsPerSample).force_u32(0);
-    let src = file.subview_until_eof(offset as u64).unwrap();
+    let src: OptBuffer = file.subview_until_eof(offset as u64)?.into();
 
     let image = match compression {
       32769 => match bits {
@@ -108,7 +115,15 @@ impl<'a> Decoder for SrwDecoder<'a> {
       }
     };
     let cpp = 1;
-    ok_image(self.camera.clone(), width, height, cpp, self.get_wb()?, image.into_inner())
+    ok_image_with_blacklevels(
+      self.camera.clone(),
+      width,
+      height,
+      cpp,
+      self.get_wb()?,
+      self.get_blacklevel()?,
+      image.into_inner(),
+    )
   }
 
   fn format_dump(&self) -> FormatDump {
@@ -117,7 +132,7 @@ impl<'a> Decoder for SrwDecoder<'a> {
 
   fn raw_metadata(&self, _file: &mut RawFile, _params: RawDecodeParams) -> Result<RawMetadata> {
     let exif = Exif::new(self.tiff.root_ifd())?;
-    let mdata = RawMetadata::new(&self.camera, exif);
+    let mdata = RawMetadata::new_with_lens(&self.camera, exif, self.get_lens_description()?.cloned());
     Ok(mdata)
   }
 }
@@ -461,9 +476,21 @@ impl<'a> SrwDecoder<'a> {
     PixU16::new_with(out, width, height)
   }
 
+    /// Get lens description by analyzing TIFF tags and makernotes
+    fn get_lens_description(&self) -> Result<Option<&'static LensDescription>> {
+
+
+      if let Some(lens_id) = self.makernote.get_entry(SrwMakernote::LensModel) {
+        let lens_id = lens_id.force_u16(0);
+        let resolver = LensResolver::new().with_lens_id((lens_id.into(), 0)).with_mounts(&[NX_MOUNT.into()]);
+              return Ok(resolver.resolve());
+      }
+      Ok(None)
+    }
+
   fn get_wb(&self) -> Result<[f32; 4]> {
-    let rggb_levels = fetch_tiff_tag!(self.makernote, TiffCommonTag::SrwRGGBLevels);
-    let rggb_blacks = fetch_tiff_tag!(self.makernote, TiffCommonTag::SrwRGGBBlacks);
+    let rggb_levels = fetch_tiff_tag!(self.makernote, SrwMakernote::SrwRGGBLevels);
+    let rggb_blacks = fetch_tiff_tag!(self.makernote, SrwMakernote::SrwRGGBBlacks);
 
     if rggb_levels.count() != 4 || rggb_blacks.count() != 4 {
       Err(RawlerError::General("SRW: RGGB Levels and Blacks don't have 4 elements".to_string()))
@@ -476,4 +503,36 @@ impl<'a> SrwDecoder<'a> {
       ])
     }
   }
+
+  /// Extract blacklevel
+  /// Ironically, the data is already black level subtracted, but the
+  /// WB coeffs are not. So we can return 0 here. The black level
+  /// is subtracted in the get_wb() function.
+  fn get_blacklevel(&self) -> Result<[u16; 4]> {
+    Ok([0, 0, 0, 0])
+    /*
+     let rggb_blacks = fetch_tiff_tag!(self.makernote, SrwMakernote::SrwRGGBBlacks);
+     if rggb_blacks.count() != 4 {
+       Err(RawlerError::General("SRW: RGGB Blacks don't have 4 elements".to_string()))
+     } else {
+       Ok([
+         rggb_blacks.force_u16(0),
+         rggb_blacks.force_u16(1),
+         rggb_blacks.force_u16(2),
+         rggb_blacks.force_u16(3),
+       ])
+     }
+    */
+  }
+}
+
+crate::tags::tiff_tag_enum!(SrwMakernote);
+
+#[allow(non_camel_case_types)]
+#[derive(Debug, Copy, Clone, PartialEq, enumn::N)]
+#[repr(u16)]
+pub enum SrwMakernote {
+  LensModel = 0xA003,
+  SrwRGGBLevels = 0xA021,
+  SrwRGGBBlacks = 0xA028,
 }
