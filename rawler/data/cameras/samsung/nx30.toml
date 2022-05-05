@@ -1,0 +1,13 @@
+make = "SAMSUNG"
+model = "NX30"
+clean_make = "Samsung"
+clean_model = "NX30"
+blackpoint = 0
+whitepoint = 4095
+color_pattern = "GRBG"
+active_area = [0, 0, 0, 18]
+crop_area = [52, 28, 22, 38]
+
+[cameras.color_matrix]
+A = [0.8306, -0.3396, -0.0291, -0.4093, 1.1851, 0.254, -0.04, 0.1133, 0.5868]
+D65 = [0.7557, -0.2522, -0.0739, -0.4679, 1.2949, 0.1894, -0.084, 0.1777, 0.5311]

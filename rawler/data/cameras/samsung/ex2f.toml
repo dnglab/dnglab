@@ -1,0 +1,13 @@
+make = "SAMSUNG"
+model = "EX2F"
+clean_make = "Samsung"
+clean_model = "EX2F"
+blackpoint = 0
+whitepoint = 4095
+color_pattern = "RGGB"
+active_area = [0, 0, 106, 12]
+crop_area = [44, 34, 132, 24]
+
+[cameras.color_matrix]
+A = [1.0403, -0.4669, 0.0771, -0.1188, 0.8362, 0.3373, 0.0179, 0.0636, 0.5147]
+D65 = [1.0648, -0.3897, -0.1055, -0.2022, 1.0573, 0.1668, -0.0492, 0.1611, 0.4742]

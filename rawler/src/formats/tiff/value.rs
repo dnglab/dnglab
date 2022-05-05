@@ -282,7 +282,6 @@ pub struct SRational {
 
 impl SRational {
   pub fn new(n: i32, d: i32) -> Self {
-    assert!(d.is_positive());
     Self { n, d }
   }
 }

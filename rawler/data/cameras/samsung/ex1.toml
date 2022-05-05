@@ -1,0 +1,13 @@
+make = "SAMSUNG"
+model = "EX1"
+clean_make = "Samsung"
+clean_model = "EX1"
+blackpoint = 0
+whitepoint = 15600
+color_pattern = "RGGB"
+active_area = [0, 2, 6, 18]
+crop_area = [16, 18, 24, 26]
+
+[cameras.color_matrix]
+A = [0.9379, -0.3215, -0.0445, -0.2366, 1.0377, 0.2308, -0.0233, 0.0843, 0.4835]
+D65 = [0.8898, -0.2498, -0.0994, -0.3144, 1.1328, 0.2066, -0.076, 0.1381, 0.4576]

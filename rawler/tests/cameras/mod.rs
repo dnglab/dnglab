@@ -1034,3 +1034,57 @@ mod camera_hasselblad_x1d_raw_modes {
 mod camera_x1d_ii_50c_raw_modes {
   super::camera_file_check!("Hasselblad", "X1D II 50C", cam_x1d_ii_50c_iso_100_uncompressed_3fr, "raw_modes/X1D II 50C_ISO_100_Uncompressed.3FR");
 }
+mod camera_ex1_raw_modes {
+  super::camera_file_check!("Samsung", "EX1", cam_ex1_iso_80_packed_raw_srw, "raw_modes/EX1_ISO_80_Packed RAW.SRW");
+}
+mod camera_ex2f_raw_modes {
+  super::camera_file_check!("Samsung", "EX2F", cam_ex2f_iso_480_packed_raw_srw, "raw_modes/EX2F_ISO_480_Packed RAW.SRW");
+}
+mod camera_nx1000_raw_modes {
+  super::camera_file_check!("Samsung", "NX1000", cam_nx1000_iso_400_samsung_srw_compressed_srw, "raw_modes/NX1000_ISO_400_Samsung SRW Compressed.SRW");
+}
+mod camera_nx100_raw_modes {
+  super::camera_file_check!("Samsung", "NX100", cam_nx100_iso_100_samsung_srw_compressed_srw, "raw_modes/NX100_ISO_100_Samsung SRW Compressed.SRW");
+}
+mod camera_nx1100_raw_modes {
+  super::camera_file_check!("Samsung", "NX1100", cam_nx1100_iso_200_samsung_srw_compressed_srw, "raw_modes/NX1100_ISO_200_Samsung SRW Compressed.SRW");
+}
+mod camera_nx1_raw_modes {
+  super::camera_file_check!("Samsung", "NX1", cam_nx1_iso_400_packbits_srw, "raw_modes/NX1_ISO_400_PackBits.SRW");
+}
+mod camera_nx2000_raw_modes {
+  super::camera_file_check!("Samsung", "NX2000", cam_nx2000_iso_320_samsung_srw_compressed_srw, "raw_modes/NX2000_ISO_320_Samsung SRW Compressed.SRW");
+}
+mod camera_nx200_raw_modes {
+  super::camera_file_check!("Samsung", "NX200", cam_nx200_iso_200_samsung_srw_compressed_srw, "raw_modes/NX200_ISO_200_Samsung SRW Compressed.SRW");
+}
+mod camera_nx20_raw_modes {
+  super::camera_file_check!("Samsung", "NX20", cam_nx20_iso_200_samsung_srw_compressed_srw, "raw_modes/NX20_ISO_200_Samsung SRW Compressed.SRW");
+}
+mod camera_nx210_raw_modes {
+  super::camera_file_check!("Samsung", "NX210", cam_nx210_iso_100_samsung_srw_compressed_srw, "raw_modes/NX210_ISO_100_Samsung SRW Compressed.SRW");
+}
+mod camera_nx3000_raw_modes {
+  super::camera_file_check!("Samsung", "NX3000", cam_nx3000_iso_100_samsung_srw_compressed_2_srw, "raw_modes/NX3000_ISO_100_Samsung SRW Compressed 2.SRW");
+}
+mod camera_nx300m_raw_modes {
+  super::camera_file_check!("Samsung", "NX300M", cam_nx300m_iso_800_samsung_srw_compressed_srw, "raw_modes/NX300M_ISO_800_Samsung SRW Compressed.SRW");
+}
+mod camera_nx300_raw_modes {
+  super::camera_file_check!("Samsung", "NX300", cam_nx300_iso_100_samsung_srw_compressed_srw, "raw_modes/NX300_ISO_100_Samsung SRW Compressed.SRW");
+}
+mod camera_nx30_raw_modes {
+  super::camera_file_check!("Samsung", "NX30", cam_nx30_iso_800_samsung_srw_compressed_srw, "raw_modes/NX30_ISO_800_Samsung SRW Compressed.SRW");
+}
+mod camera_nx500_raw_modes {
+  super::camera_file_check!("Samsung", "NX500", cam_nx500_iso_100_14bits_normal_compression_srw, "raw_modes/NX500_ISO_100_14bits_normal_compression.SRW");
+  super::camera_file_check!("Samsung", "NX500", cam_nx500_iso_100_12bits_lossless_compression_srw, "raw_modes/NX500_ISO_100_12bits_lossless_compression.SRW");
+  super::camera_file_check!("Samsung", "NX500", cam_nx500_iso_100_12bits_normal_compression_srw, "raw_modes/NX500_ISO_100_12bits_normal_compression.SRW");
+  super::camera_file_check!("Samsung", "NX500", cam_nx500_iso_100_14bits_lossless_compression_srw, "raw_modes/NX500_ISO_100_14bits_lossless_compression.SRW");
+}
+mod camera_nx_mini_raw_modes {
+  super::camera_file_check!("Samsung", "NX mini", cam_nx_mini_iso_1000_samsung_srw_compressed_2_srw, "raw_modes/NX mini_ISO_1000_Samsung SRW Compressed 2.SRW");
+}
+mod camera_wb2000_raw_modes {
+  super::camera_file_check!("Samsung", "WB2000", cam_wb2000_iso_80_packed_raw_srw, "raw_modes/WB2000_ISO_80_Packed RAW.SRW");
+}

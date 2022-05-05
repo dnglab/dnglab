@@ -1,0 +1,13 @@
+make = "SAMSUNG"
+model = "NX3000"
+clean_make = "Samsung"
+clean_model = "NX3000"
+blackpoint = 0
+whitepoint = 4095
+color_pattern = "GRBG"
+active_area = [64, 18, 32, 24]
+crop_area = [96, 42, 32, 24]
+
+[cameras.color_matrix]
+A = [0.9174, -0.4272, -0.005, -0.4962, 1.3161, 0.1969, -0.0507, 0.1152, 0.6086]
+D65 = [0.806, -0.2933, -0.0761, -0.4504, 1.289, 0.1762, -0.063, 0.1489, 0.5227]

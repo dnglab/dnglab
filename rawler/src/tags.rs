@@ -99,8 +99,6 @@ pub enum TiffCommonTag {
   ExifIFDPointer = 0x8769,
   Makernote = 0x927C,
   SrwSensorAreas = 0xA010,
-  SrwRGGBLevels = 0xA021,
-  SrwRGGBBlacks = 0xA028,
   Cr2Id = 0xc5d8,
   DNGVersion = 0xC612,
   Linearization = 0xC618,
