@@ -1,0 +1,13 @@
+make = "SAMSUNG"
+model = "NX500"
+clean_make = "Samsung"
+clean_model = "NX500"
+blackpoint = 0
+whitepoint = 16100
+color_pattern = "GRBG"
+active_area = [0, 0, 16, 16]
+crop_area = [0, 0, 16, 16]
+
+[cameras.color_matrix]
+A = [1.3298, -0.6099, -0.0296, -0.5243, 1.6153, -0.1235, -0.0508, 0.122, 0.7758]
+D65 = [1.0686, -0.4042, -0.1052, -0.3595, 1.3238, 0.0276, -0.0464, 0.1259, 0.5931]

@@ -1,0 +1,14 @@
+make = "SAMSUNG"
+model = "WB2000"
+clean_make = "Samsung"
+clean_model = "WB2000"
+blackpoint = 0
+whitepoint = 3700
+color_pattern = "RGGB"
+active_area = [0, 2, 10, 1]
+crop_area = [36, 368, 44, 365]
+hints = ["little_endian"]
+
+[cameras.color_matrix]
+A = [1.2389, -0.4375, -0.038, -0.0566, 0.8728, 0.2203, 0.0308, 0.1234, 0.4957]
+D65 = [1.2093, -0.3557, -0.1155, -0.1, 0.9534, 0.1733, -0.0022, 0.1787, 0.4576]

@@ -1,0 +1,135 @@
+[[lenses]]
+mount = "NX-mount"
+lens_id = 1
+make = "Samsung"
+model = "NX 30mm F2 Pancake"
+focal_range = [[30, 1], [30, 1]]
+aperture_range = [[2, 1], [2, 1]]
+
+[[lenses]]
+mount = "NX-mount"
+lens_id = 2
+make = "Samsung"
+model = "NX 18-55mm F3.5-5.6 OIS"
+focal_range = [[18, 1], [55, 1]]
+aperture_range = [[35, 10], [56, 10]]
+
+[[lenses]]
+mount = "NX-mount"
+lens_id = 3
+make = "Samsung"
+model = "NX 50-200mm F4-5.6 ED OIS"
+focal_range = [[50, 1], [200, 1]]
+aperture_range = [[4, 1], [56, 10]]
+
+[[lenses]]
+mount = "NX-mount"
+lens_id = 4
+make = "Samsung"
+model = "NX 20-50mm F3.5-5.6 ED"
+focal_range = [[20, 1], [50, 1]]
+aperture_range = [[35, 10], [56, 10]]
+
+[[lenses]]
+mount = "NX-mount"
+lens_id = 5
+make = "Samsung"
+model = "NX 20mm F2.8 Pancake"
+focal_range = [[20, 1], [20, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "NX-mount"
+lens_id = 6
+make = "Samsung"
+model = "NX 18-200mm F3.5-6.3 ED OIS"
+focal_range = [[18, 1], [200, 1]]
+aperture_range = [[35, 10], [63, 10]]
+
+[[lenses]]
+mount = "NX-mount"
+lens_id = 7
+make = "Samsung"
+model = "NX 60mm F2.8 Macro ED OIS SSA"
+focal_range = [[60, 1], [60, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "NX-mount"
+lens_id = 8
+make = "Samsung"
+model = "NX 60mm F2.8 Macro ED OIS SSA"
+focal_range = [[60, 1], [60, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "NX-mount"
+lens_id = 9
+make = "Samsung"
+model = "NX 85mm F1.4 ED SSA"
+focal_range = [[85, 1], [785, 1]]
+aperture_range = [[14, 10], [14, 10]]
+
+[[lenses]]
+mount = "NX-mount"
+lens_id = 10
+make = "Samsung"
+model = "NX 45mm F1.8"
+focal_range = [[45, 1], [45, 1]]
+aperture_range = [[18, 10], [18, 10]]
+
+[[lenses]]
+mount = "NX-mount"
+lens_id = 11
+make = "Samsung"
+model = "NX 45mm F1.8 2D/3D"
+focal_range = [[45, 1], [45, 1]]
+aperture_range = [[18, 10], [18, 10]]
+
+[[lenses]]
+mount = "NX-mount"
+lens_id = 12
+make = "Samsung"
+model = "NX 12-24mm F4-5.6 ED"
+focal_range = [[12, 1], [24, 1]]
+aperture_range = [[4, 1], [56, 10]]
+
+[[lenses]]
+mount = "NX-mount"
+lens_id = 13
+make = "Samsung"
+model = "NX 16-50mm F2-2.8 S ED OIS"
+focal_range = [[16, 1], [50, 1]]
+aperture_range = [[2, 1], [28, 10]]
+
+[[lenses]]
+mount = "NX-mount"
+lens_id = 14
+make = "Samsung"
+model = "NX 10mm F3.5 Fisheye"
+focal_range = [[10, 1], [10, 1]]
+aperture_range = [[35, 10], [35, 10]]
+
+[[lenses]]
+mount = "NX-mount"
+lens_id = 15
+make = "Samsung"
+model = "NX 16-50mm F3.5-5.6 Power Zoom ED OIS"
+focal_range = [[16, 1], [50, 1]]
+aperture_range = [[35, 10], [56, 10]]
+
+[[lenses]]
+mount = "NX-mount"
+lens_id = 20
+make = "Samsung"
+model = "NX 50-150mm F2.8 S ED OIS"
+focal_range = [[50, 1], [150, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "NX-mount"
+lens_id = 21
+make = "Samsung"
+model = "NX 300mm F2.8 ED OIS"
+focal_range = [[300, 1], [300, 1]]
+aperture_range = [[28, 10], [28, 10]]
