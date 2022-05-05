@@ -375,7 +375,7 @@ impl<'a> SrwDecoder<'a> {
             pump.get_bits(12) as i32
           }
         } else {
-          0
+          scale // Keep value from previous iteration
         };
 
         // First we figure out which reference pixels mode we're in
