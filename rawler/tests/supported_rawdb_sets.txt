@@ -268,3 +268,20 @@ cameras/Hasselblad/Hasselblad H4D/raw_modes
 cameras/Hasselblad/Hasselblad H6D-100cMS/raw_modes
 cameras/Hasselblad/Hasselblad X1D/raw_modes
 cameras/Hasselblad/X1D II 50C/raw_modes
+cameras/Samsung/EX1/raw_modes
+cameras/Samsung/EX2F/raw_modes
+cameras/Samsung/NX1000/raw_modes
+cameras/Samsung/NX100/raw_modes
+cameras/Samsung/NX1100/raw_modes
+cameras/Samsung/NX1/raw_modes
+cameras/Samsung/NX2000/raw_modes
+cameras/Samsung/NX200/raw_modes
+cameras/Samsung/NX20/raw_modes
+cameras/Samsung/NX210/raw_modes
+cameras/Samsung/NX3000/raw_modes
+cameras/Samsung/NX300M/raw_modes
+cameras/Samsung/NX300/raw_modes
+cameras/Samsung/NX30/raw_modes
+cameras/Samsung/NX500/raw_modes
+cameras/Samsung/NX mini/raw_modes
+cameras/Samsung/WB2000/raw_modes
