@@ -257,3 +257,14 @@ cameras/Minolta/DiMAGE A2/raw_modes
 cameras/Minolta/Dynax 7D/raw_modes
 cameras/Minolta/Maxxum 7D/raw_modes
 cameras/Mamiya/ZD/raw_modes
+cameras/Hasselblad/CFV-50/raw_modes
+cameras/Hasselblad/CFV/raw_modes
+cameras/Hasselblad/H3D/raw_modes
+cameras/Hasselblad/H4D-50/raw_modes
+cameras/Hasselblad/H5D-40/raw_modes
+cameras/Hasselblad/H5D-50c/raw_modes
+cameras/Hasselblad/Hasselblad H4D-40/raw_modes
+cameras/Hasselblad/Hasselblad H4D/raw_modes
+cameras/Hasselblad/Hasselblad H6D-100cMS/raw_modes
+cameras/Hasselblad/Hasselblad X1D/raw_modes
+cameras/Hasselblad/X1D II 50C/raw_modes

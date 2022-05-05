@@ -1,5 +1,6 @@
 use std::f32::NAN;
 
+use image::{DynamicImage, ImageBuffer, Rgb};
 use log::debug;
 use serde::{Deserialize, Serialize};
 
@@ -8,14 +9,15 @@ use crate::decompressors::ljpeg::*;
 use crate::exif::Exif;
 use crate::formats::tiff::reader::TiffReader;
 use crate::formats::tiff::{Entry, GenericTiffReader, Rational, Value};
+use crate::imgop::{Dim2, Rect};
 use crate::lens::{LensDescription, LensResolver};
 use crate::packed::decode_16le;
 use crate::pixarray::PixU16;
-use crate::tags::{ExifTag, TiffCommonTag};
-use crate::Result;
+use crate::tags::{DngTag, ExifTag, TiffCommonTag};
 use crate::{alloc_image_ok, RawFile, RawImage, RawLoader};
+use crate::{RawlerError, Result};
 
-use super::{ok_image_with_black_white, Camera, Decoder, RawDecodeParams, RawMetadata};
+use super::{Camera, Decoder, RawDecodeParams, RawMetadata};
 
 /// 3FR format encapsulation for analyzer
 #[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize)]
@@ -57,7 +59,7 @@ impl<'a> Decoder for TfrDecoder<'a> {
 
     let black = match raw.get_entry(TiffCommonTag::BlackLevels) {
       Some(tag) => tag.force_u16(0),
-      None => self.camera.whitelevels[0],
+      None => self.camera.blacklevels[0],
     };
 
     let width = fetch_tiff_tag!(raw, TiffCommonTag::ImageWidth).force_usize(0);
@@ -72,10 +74,38 @@ impl<'a> Decoder for TfrDecoder<'a> {
       self.decode_compressed(&src, width, height, dummy)?
     };
 
+    let crop = Rect::from_tiff(raw).or_else(|| self.camera.crop_area.map(|area| Rect::new_with_borders(Dim2::new(width, height), &area)));
+
     //crate::devtools::dump_image_u16(&image.data, width, height, "/tmp/tfrdump.pnm");
 
     let cpp = 1;
-    ok_image_with_black_white(self.camera.clone(), width, height, cpp, self.get_wb()?, black, white, image.into_inner())
+
+    let mut img = RawImage::new(self.camera.clone(), width, height, cpp, self.get_wb()?, image.into_inner(), dummy);
+
+    img.blacklevels = [black, black, black, black];
+    img.whitelevels = [white, white, white, white];
+
+    img.crop_area = crop;
+
+    Ok(img)
+  }
+
+  fn full_image(&self, file: &mut RawFile) -> Result<Option<DynamicImage>> {
+    let root_ifd = &self.tiff.root_ifd();
+    let buf = root_ifd
+      .singlestrip_data(file.inner())
+      .map_err(|e| RawlerError::General(format!("Failed to get strip data: {}", e)))?;
+    let compression = root_ifd.get_entry(TiffCommonTag::Compression).ok_or("Missing tag")?.force_usize(0);
+    let width = fetch_tiff_tag!(root_ifd, TiffCommonTag::ImageWidth).force_usize(0);
+    let height = fetch_tiff_tag!(root_ifd, TiffCommonTag::ImageLength).force_usize(0);
+    if compression == 1 {
+      Ok(Some(DynamicImage::ImageRgb8(
+        ImageBuffer::<Rgb<u8>, Vec<u8>>::from_raw(width as u32, height as u32, buf).unwrap(),
+      )))
+    } else {
+      let img = image::load_from_memory_with_format(&buf, image::ImageFormat::Jpeg).unwrap();
+      Ok(Some(img))
+    }
   }
 
   fn format_dump(&self) -> FormatDump {
@@ -84,8 +114,24 @@ impl<'a> Decoder for TfrDecoder<'a> {
 
   fn raw_metadata(&self, _file: &mut RawFile, _params: RawDecodeParams) -> Result<RawMetadata> {
     let exif = Exif::new(self.tiff.root_ifd())?;
-    let mdata = RawMetadata::new_with_lens(&self.camera, exif, self.get_lens_description()?.cloned());
+    let mut mdata = RawMetadata::new_with_lens(&self.camera, exif, self.get_lens_description()?.cloned());
+    // Read Unique ID
+    if let Some(Entry {
+      value: Value::Byte(unique_id), ..
+    }) = self.tiff.root_ifd().get_entry(DngTag::RawDataUniqueID)
+    {
+      if let Ok(id) = unique_id.as_slice().try_into() {
+        mdata.unique_image_id = Some(u128::from_le_bytes(id));
+      }
+    }
     Ok(mdata)
+  }
+
+  fn xpacket(&self, _file: &mut RawFile, _params: RawDecodeParams) -> Result<Option<Vec<u8>>> {
+    match self.tiff.root_ifd().get_entry(TiffCommonTag::Xmp) {
+      Some(Entry { value: Value::Byte(buf), .. }) => Ok(Some(buf.clone())),
+      _ => Ok(None),
+    }
   }
 }
 

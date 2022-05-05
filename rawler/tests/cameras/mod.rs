@@ -1001,3 +1001,36 @@ mod camera_maxxum_7d_raw_modes {
 mod camera_zd_raw_modes {
   super::camera_file_check!("Mamiya", "ZD", cam_mamiya_zd_mef, "raw_modes/MAMIYA_ZD.MEF");
 }
+mod camera_cfv_50_raw_modes {
+  super::camera_file_check!("Hasselblad", "CFV-50", cam_hasselblad_cfv_50_iso_50_jpeg_fff, "raw_modes/Hasselblad CFV-50_ISO_50_JPEG.FFF");
+}
+mod camera_cfv_raw_modes {
+  super::camera_file_check!("Hasselblad", "CFV", cam_hasselblad_500_mech__iso_100_jpeg_3fr, "raw_modes/Hasselblad 500 mech._ISO_100_JPEG.3FR");
+}
+mod camera_h3d_raw_modes {
+  super::camera_file_check!("Hasselblad", "H3D", cam_hasselblad_h3d_iso_50_jpeg_3fr, "raw_modes/Hasselblad H3D_ISO_50_JPEG.3FR");
+}
+mod camera_h4d_50_raw_modes {
+  super::camera_file_check!("Hasselblad", "H4D-50", cam_hasselblad_h4d_50_iso_100_jpeg_fff, "raw_modes/Hasselblad H4D-50_ISO_100_JPEG.FFF");
+}
+mod camera_h5d_40_raw_modes {
+  super::camera_file_check!("Hasselblad", "H5D-40", cam_hasselblad_h5d_40_iso_100_jpeg_fff, "raw_modes/Hasselblad H5D-40_ISO_100_JPEG.FFF");
+}
+mod camera_h5d_50c_raw_modes {
+  super::camera_file_check!("Hasselblad", "H5D-50c", cam_hasselblad_h5d_50c_iso_100_jpeg_fff, "raw_modes/Hasselblad H5D-50c_ISO_100_JPEG.FFF");
+}
+mod camera_hasselblad_h4d_40_raw_modes {
+  super::camera_file_check!("Hasselblad", "Hasselblad H4D-40", cam_hasselblad_h4d_40_iso_100_jpeg_fff, "raw_modes/Hasselblad H4D-40_ISO_100_JPEG.FFF");
+}
+mod camera_hasselblad_h4d_raw_modes {
+  super::camera_file_check!("Hasselblad", "Hasselblad H4D", cam_hasselblad_h4d_iso_50_jpeg_3fr, "raw_modes/Hasselblad H4D_ISO_50_JPEG.3FR");
+}
+mod camera_hasselblad_h6d_100cms_raw_modes {
+  super::camera_file_check!("Hasselblad", "Hasselblad H6D-100cMS", cam_hasselblad_h6d_100cms_iso_64_jpeg_fff, "raw_modes/Hasselblad H6D-100cMS_ISO_64_JPEG.FFF");
+}
+mod camera_hasselblad_x1d_raw_modes {
+  super::camera_file_check!("Hasselblad", "Hasselblad X1D", cam_hasselblad_x1d_iso_1600_uncompressed_3fr, "raw_modes/Hasselblad X1D_ISO_1600_Uncompressed.3FR");
+}
+mod camera_x1d_ii_50c_raw_modes {
+  super::camera_file_check!("Hasselblad", "X1D II 50C", cam_x1d_ii_50c_iso_100_uncompressed_3fr, "raw_modes/X1D II 50C_ISO_100_Uncompressed.3FR");
+}

@@ -1,0 +1,12 @@
+make = "Hasselblad"
+model = "Hasselblad H6D-100cMS"
+clean_make = "Hasselblad"
+clean_model = "H6D-100cMS"
+blackpoint = 0
+whitepoint = 62914
+color_pattern = "RGGB"
+active_area = [0, 0, 0, 0]
+crop_area = [4, 4, 4, 4]
+
+[cameras.color_matrix]
+D65 = [0.5656, -0.0659, -0.0346, -0.3923, 1.2306, 0.1791, -0.1602, 0.3509, 0.5442]

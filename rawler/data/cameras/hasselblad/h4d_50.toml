@@ -1,0 +1,10 @@
+make = "Hasselblad"
+model = "Hasselblad H4D-50"
+clean_make = "Hasselblad"
+clean_model = "H4D-50"
+blackpoint = 0
+whitepoint = 65535
+color_pattern = "RGGB"
+
+[cameras.color_matrix]
+D65 = [0.528, -0.0614, 0.0039, -0.495, 1.2426, 0.2843, -0.0939, 0.2434, 0.5968]

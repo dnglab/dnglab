@@ -212,8 +212,8 @@ impl Rect {
   pub fn adapt(&self, master: &Self) -> Self {
     assert!(self.p.x >= master.p.x);
     assert!(self.p.y >= master.p.y);
-    assert!(self.d.w >= master.d.w);
-    assert!(self.d.h >= master.d.h);
+    assert!(self.d.w <= master.d.w);
+    assert!(self.d.h <= master.d.h);
     Self {
       p: Point::new(self.p.x - master.p.x, self.p.y - master.p.y),
       d: self.d,
