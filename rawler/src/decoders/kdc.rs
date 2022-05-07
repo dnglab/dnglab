@@ -68,7 +68,7 @@ impl<'a> Decoder for KdcDecoder<'a> {
         1 => Self::decode_dc120(&src, width, height, dummy),
         7 => {
           white = 0xFF << 1;
-          Self::decode_dc120_jpeg(&src, width, height, dummy)
+          Self::decode_dc120_jpeg(&src, width, height)
         }
         c => {
           return Err(RawlerError::unsupported(
@@ -157,11 +157,10 @@ impl<'a> KdcDecoder<'a> {
     PixU16::new_with(out, width, height)
   }
 
-  pub(crate) fn decode_dc120_jpeg(src: &[u8], width: usize, height: usize, dummy: bool) -> PixU16 {
-    //let mut out = alloc_image!(width, height, dummy);
+  pub(crate) fn decode_dc120_jpeg(src: &[u8], width: usize, height: usize) -> PixU16 {
     let mut out = PixU16::new(width, height);
 
-    let swapped_src: Vec<u8> = src.chunks_exact(2).map(|x| [x[1], x[0]]).flatten().collect();
+    let swapped_src: Vec<u8> = src.chunks_exact(2).flat_map(|x| [x[1], x[0]]).collect();
 
     let img = image::load_from_memory_with_format(&swapped_src, image::ImageFormat::Jpeg).unwrap();
 
