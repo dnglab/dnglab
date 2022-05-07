@@ -1,0 +1,13 @@
+make = "EASTMAN KODAK COMPANY"
+model = "KODAK P712 ZOOM DIGITAL CAMERA"
+clean_make = "Kodak"
+clean_model = "P712"
+blackpoint = 0
+whitepoint = 4030
+color_pattern = "BGGR"
+active_area = [0, 0, 0, 0]
+crop_area = [8, 3, 8, 3]
+
+[cameras.color_matrix]
+A = [1.1274, -0.5086, 0.0132, -0.3983, 1.1231, 0.3163, -0.0734, 0.1304, 0.6096]
+D65 = [0.9658, -0.3314, -0.0823, -0.5163, 1.2695, 0.2768, -0.1342, 0.1843, 0.6044]

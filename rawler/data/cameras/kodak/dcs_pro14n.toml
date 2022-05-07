@@ -1,0 +1,13 @@
+make = "Kodak"
+model = "DCS Pro 14N"
+clean_make = "Kodak"
+clean_model = "DCS Pro 14N"
+blackpoint = 0
+whitepoint = 3700
+color_pattern = "GRBG"
+active_area = [0, 0, 0, 0]
+crop_area = [8, 6, 8, 6]
+
+[cameras.color_matrix]
+A = [0.9181, 0.1395, -0.03, -0.6828, 1.4271, 0.2389, -0.1561, 0.3258, 0.6068]
+D65 = [0.7791, 0.3128, -0.0776, -0.8588, 1.6458, 0.2039, -0.2455, 0.4006, 0.6198]

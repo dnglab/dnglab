@@ -285,3 +285,18 @@ cameras/Samsung/NX30/raw_modes
 cameras/Samsung/NX500/raw_modes
 cameras/Samsung/NX mini/raw_modes
 cameras/Samsung/WB2000/raw_modes
+cameras/Kodak/DC120/raw_modes
+cameras/Kodak/DCS460D/raw_modes
+cameras/Kodak/DCS560C/raw_modes
+cameras/Kodak/DCS760C/raw_modes
+cameras/Kodak/DCS Pro 14N/raw_modes
+cameras/Kodak/DCS Pro 14nx/raw_modes
+cameras/Kodak/DCS Pro SLRc/raw_modes
+cameras/Kodak/DCS Pro SLRn/raw_modes
+cameras/Kodak/EasyShare Z981/raw_modes
+cameras/Kodak/EasyShare Z990/raw_modes
+cameras/Kodak/EOS DCS 1/raw_modes
+cameras/Kodak/EOS DCS 3/raw_modes
+cameras/Kodak/KODAK P712 ZOOM DIGITAL CAMERA/raw_modes
+cameras/Kodak/P880/raw_modes
+cameras/Kodak/Z1015 IS/raw_modes

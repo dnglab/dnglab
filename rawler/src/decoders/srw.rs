@@ -12,7 +12,6 @@ use crate::formats::tiff::reader::TiffReader;
 use crate::formats::tiff::GenericTiffReader;
 use crate::formats::tiff::IFD;
 use crate::lens::LensDescription;
-use crate::lens::LensId;
 use crate::lens::LensResolver;
 use crate::packed::decode_12be;
 use crate::packed::decode_12le;
@@ -31,7 +30,6 @@ use crate::RawLoader;
 use crate::RawlerError;
 use crate::Result;
 
-use super::ok_image;
 use super::ok_image_with_blacklevels;
 use super::Camera;
 use super::Decoder;

@@ -1,0 +1,13 @@
+make = "KODAK"
+model = "EOSDCS3C        FILE VERSION 3"
+clean_make = "Kodak"
+clean_model = "EOS DCS 3"
+blackpoint = 0
+whitepoint = 7855
+color_pattern = "GRBG"
+active_area = [2, 0, 2, 0]
+crop_area = [6, 4, 6, 4]
+
+[cameras.color_matrix]
+A = [1.4143, -0.7401, 0.0611, -0.1262, 1.0758, 0.0551, 0.3121, -0.0585, 0.1486]
+D65 = [0.9898, -0.27, -0.094, -0.2478, 1.2219, 0.0206, 0.1985, 0.0634, 0.1031]

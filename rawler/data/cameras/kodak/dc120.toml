@@ -1,0 +1,14 @@
+make = "Eastman Kodak Company"
+model = "Kodak DC120 ZOOM Digital Camera"
+clean_make = "Kodak"
+clean_model = "DC120"
+blackpoint = 0
+whitepoint = 255
+# sRGB for lack of a better one
+color_pattern = "GRBG"
+active_area = [0, 0, 0, 0]
+default_scale = [[80, 52], [1, 1]]
+crop_area = [8, 8, 8, 8]
+
+[cameras.color_matrix]
+D65 = [3.24045, -1.53713, -0.49853, -0.96926,  1.87601, 0.04155, 0.05564, -0.20402,  1.05722]
