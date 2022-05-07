@@ -31,7 +31,7 @@ pub struct KdcDecoder<'a> {
   #[allow(unused)]
   rawloader: &'a RawLoader,
   tiff: GenericTiffReader,
-  makernote: IFD,
+  makernote: Option<IFD>,
   camera: Camera,
 }
 
@@ -44,8 +44,7 @@ impl<'a> KdcDecoder<'a> {
     } else {
       warn!("KDC makernote not found");
       None
-    }
-    .ok_or("File has not makernotes")?;
+    };
 
     Ok(KdcDecoder {
       tiff,
@@ -63,9 +62,14 @@ impl<'a> Decoder for KdcDecoder<'a> {
       let height = 976;
       let raw = self.tiff.find_ifds_with_tag(TiffCommonTag::CFAPattern)[0];
       let off = fetch_tiff_tag!(raw, TiffCommonTag::StripOffsets).force_usize(0);
+      let mut white = self.camera.whitelevels[0];
       let src = file.subview_until_eof(off as u64).unwrap();
       let image = match fetch_tiff_tag!(raw, TiffCommonTag::Compression).force_usize(0) {
         1 => Self::decode_dc120(&src, width, height, dummy),
+        7 => {
+          white = 0xFF << 1;
+          Self::decode_dc120_jpeg(&src, width, height, dummy)
+        }
         c => {
           return Err(RawlerError::unsupported(
             &self.camera,
@@ -74,7 +78,9 @@ impl<'a> Decoder for KdcDecoder<'a> {
         }
       };
       let cpp = 1;
-      return ok_image(self.camera.clone(), width, height, cpp, [NAN, NAN, NAN, NAN], image.into_inner());
+      let mut img = RawImage::new(self.camera.clone(), width, height, cpp, [1.0, 1.0, 1.0, NAN], image.into_inner(), dummy);
+      img.whitelevels = [white, white, white, white];
+      return Ok(img);
     }
 
     let raw = self.tiff.find_first_ifd_with_tag(TiffCommonTag::KdcWidth).unwrap();
@@ -111,24 +117,28 @@ impl<'a> Decoder for KdcDecoder<'a> {
 
 impl<'a> KdcDecoder<'a> {
   fn get_wb(&self) -> Result<[f32; 4]> {
-    match self.makernote.get_entry(TiffCommonTag::KdcWB) {
-      Some(levels) => {
-        if levels.count() != 3 {
-          Err(RawlerError::General("KDC: Levels count is off".to_string()))
-        } else {
-          Ok([levels.force_f32(0), levels.force_f32(1), levels.force_f32(2), NAN])
+    if let Some(makernote) = self.makernote.as_ref() {
+      match makernote.get_entry(TiffCommonTag::KdcWB) {
+        Some(levels) => {
+          if levels.count() != 3 {
+            Err(format!("KDC: Levels count is off: {}", levels.count()).into())
+          } else {
+            Ok([levels.force_f32(0), levels.force_f32(1), levels.force_f32(2), NAN])
+          }
+        }
+        None => {
+          let levels = fetch_tiff_tag!(makernote, TiffCommonTag::KodakWB);
+          if ![734, 1502, 1512, 2288].contains(&levels.count()) {
+            Err(format!("KDC: Levels count is off: {}", levels.count()).into())
+          } else {
+            let r = BEu16(levels.get_data(), 148) as f32;
+            let b = BEu16(levels.get_data(), 150) as f32;
+            Ok([r / 256.0, 1.0, b / 256.0, NAN])
+          }
         }
       }
-      None => {
-        let levels = fetch_tiff_tag!(self.makernote, TiffCommonTag::KodakWB);
-        if levels.count() != 734 && levels.count() != 1502 {
-          Err(RawlerError::General("KDC: Levels count is off".to_string()))
-        } else {
-          let r = BEu16(levels.get_data(), 148) as f32;
-          let b = BEu16(levels.get_data(), 150) as f32;
-          Ok([r / 256.0, 1.0, b / 256.0, NAN])
-        }
-      }
+    } else {
+      Ok([NAN, NAN, NAN, NAN])
     }
   }
 
@@ -145,5 +155,32 @@ impl<'a> KdcDecoder<'a> {
     }
 
     PixU16::new_with(out, width, height)
+  }
+
+  pub(crate) fn decode_dc120_jpeg(src: &[u8], width: usize, height: usize, dummy: bool) -> PixU16 {
+    //let mut out = alloc_image!(width, height, dummy);
+    let mut out = PixU16::new(width, height);
+
+    let swapped_src: Vec<u8> = src.chunks_exact(2).map(|x| [x[1], x[0]]).flatten().collect();
+
+    let img = image::load_from_memory_with_format(&swapped_src, image::ImageFormat::Jpeg).unwrap();
+
+    assert_eq!(width, img.width() as usize);
+    assert_eq!(height, img.height() as usize * 2);
+    let buf = img.as_flat_samples_u8().unwrap();
+    let jpeg = buf.as_slice();
+
+    for irow in 0..img.height() as usize {
+      let row = irow * 2;
+      let iline = &jpeg[irow * width * 3..];
+      for col in (0..width).step_by(2) {
+        *out.at_mut(row + 0, col + 0) = (iline[col * 3 + 1] as u16) << 1;
+        *out.at_mut(row + 1, col + 1) = (iline[(col + 1) * 3 + 1] as u16) << 1;
+        *out.at_mut(row + 0, col + 1) = (iline[col * 3 + 0]) as u16 + (iline[(col + 1) * 3 + 0]) as u16;
+        *out.at_mut(row + 1, col + 0) = (iline[col * 3 + 2]) as u16 + (iline[(col + 1) * 3 + 2]) as u16;
+      }
+    }
+
+    out
   }
 }

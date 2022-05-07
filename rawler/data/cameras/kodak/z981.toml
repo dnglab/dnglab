@@ -1,0 +1,14 @@
+make = "EASTMAN KODAK COMPANY"
+model = "KODAK EasyShare Z981 Digital Camera"
+clean_make = "Kodak"
+clean_model = "EasyShare Z981"
+blackpoint = 0
+whitepoint = 4000
+color_pattern = "BGGR"
+active_area = [0, 0, 0, 0]
+crop_area = [8, 2, 8, 3]
+hints = ["easyshare_offset_hack"]
+
+[cameras.color_matrix]
+A = [1.3493, -0.6094, -0.048, -0.1155, 0.8622, 0.302, 0.0493, 0.0467, 0.4726]
+D65 = [1.2729, -0.4717, -0.1188, -0.1367, 0.9187, 0.2582, 0.0274, 0.086, 0.4411]

@@ -1088,3 +1088,49 @@ mod camera_nx_mini_raw_modes {
 mod camera_wb2000_raw_modes {
   super::camera_file_check!("Samsung", "WB2000", cam_wb2000_iso_80_packed_raw_srw, "raw_modes/WB2000_ISO_80_Packed RAW.SRW");
 }
+mod camera_dc120_raw_modes {
+  super::camera_file_check!("Kodak", "DC120", cam_kodak_dc120_zoom_digital_camera_jpeg_kdc, "raw_modes/Kodak DC120 ZOOM Digital Camera_JPEG.KDC");
+  super::camera_file_check!("Kodak", "DC120", cam_kodak_dc120_zoom_digital_camera_uncompressed_kdc, "raw_modes/Kodak DC120 ZOOM Digital Camera_Uncompressed.KDC");
+}
+mod camera_dcs460d_raw_modes {
+  super::camera_file_check!("Kodak", "DCS460D", cam_dcs460d_tiff, "raw_modes/DCS460D.TIFF");
+}
+mod camera_dcs560c_raw_modes {
+  super::camera_file_check!("Kodak", "DCS560C", cam_raw_kodak_dcs560c_tif, "raw_modes/RAW_KODAK_DCS560C.TIF");
+}
+mod camera_dcs760c_raw_modes {
+  super::camera_file_check!("Kodak", "DCS760C", cam_dcs760c_dcr, "raw_modes/DCS760C.DCR");
+}
+mod camera_dcs_pro_14n_raw_modes {
+  super::camera_file_check!("Kodak", "DCS Pro 14N", cam_dcs_pro_14n_iso_160_kodak_dcr_compressed_dcr, "raw_modes/DCS Pro 14N_ISO_160_Kodak DCR Compressed.DCR");
+}
+mod camera_dcs_pro_14nx_raw_modes {
+  super::camera_file_check!("Kodak", "DCS Pro 14nx", cam_dcs_pro_14nx_iso_160_kodak_dcr_compressed_dcr, "raw_modes/DCS Pro 14nx_ISO_160_Kodak DCR Compressed.DCR");
+}
+mod camera_dcs_pro_slrc_raw_modes {
+  super::camera_file_check!("Kodak", "DCS Pro SLRc", cam_dcs_pro_slrc_iso_160_kodak_dcr_compressed_dcr, "raw_modes/DCS Pro SLRc_ISO_160_Kodak DCR Compressed.DCR");
+}
+mod camera_dcs_pro_slrn_raw_modes {
+  super::camera_file_check!("Kodak", "DCS Pro SLRn", cam_dcs_pro_slrn_iso_160_kodak_dcr_compressed_dcr, "raw_modes/DCS Pro SLRn_ISO_160_Kodak DCR Compressed.DCR");
+}
+mod camera_easyshare_z981_raw_modes {
+  super::camera_file_check!("Kodak", "EasyShare Z981", cam_kodak_easyshare_z981_digital_camera_iso_100_jpeg_kdc, "raw_modes/KODAK EasyShare Z981 Digital Camera_ISO_100_JPEG.KDC");
+}
+mod camera_easyshare_z990_raw_modes {
+  super::camera_file_check!("Kodak", "EasyShare Z990", cam_kodak_easyshare_z990_digital_camera_iso_125_kdc, "raw_modes/KODAK EasyShare Z990 Digital Camera_ISO_125.KDC");
+}
+mod camera_eos_dcs_1_raw_modes {
+  super::camera_file_check!("Kodak", "EOS DCS 1", cam_raw_canon_dcs1_tif, "raw_modes/RAW_CANON_DCS1.TIF");
+}
+mod camera_eos_dcs_3_raw_modes {
+  super::camera_file_check!("Kodak", "EOS DCS 3", cam_eos_dcs_3_tif, "raw_modes/EOS DCS 3.TIF");
+}
+mod camera_kodak_p712_zoom_digital_camera_raw_modes {
+  super::camera_file_check!("Kodak", "KODAK P712 ZOOM DIGITAL CAMERA", cam_kodak_p712_zoom_digital_camera_iso_64_jpeg_kdc, "raw_modes/KODAK P712 ZOOM DIGITAL CAMERA_ISO_64_JPEG.KDC");
+}
+mod camera_p880_raw_modes {
+  super::camera_file_check!("Kodak", "P880", cam_kodak_p880_zoom_digital_camera_iso_50_jpeg_kdc, "raw_modes/KODAK P880 ZOOM DIGITAL CAMERA_ISO_50_JPEG.KDC");
+}
+mod camera_z1015_is_raw_modes {
+  super::camera_file_check!("Kodak", "Z1015 IS", cam_raw_kodak_easyshare_z1015_is_kdc, "raw_modes/RAW_KODAK_EASYSHARE_Z1015-IS.KDC");
+}

@@ -1,0 +1,13 @@
+make = "Kodak"
+model = "DCS760C"
+clean_make = "Kodak"
+clean_model = "DCS760C"
+blackpoint = 0
+whitepoint = 3500
+color_pattern = "GRBG"
+active_area = [0, 0, 0, 0]
+crop_area = [4, 4, 4, 4]
+
+[cameras.color_matrix]
+A = [2.212, -1.2779, 0.1755, -0.243, 1.1072, 0.0804, 0.2884, -0.0521, 0.2863]
+D65 = [1.6623, -0.6309, -0.1411, -0.4344, 1.3923, 0.0323, 0.2285, 0.0274, 0.2926]
