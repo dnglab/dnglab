@@ -1,0 +1,14 @@
+make = "OLYMPUS IMAGING CORP."
+model = "C7070WZ"
+clean_make = "Olympus"
+clean_model = "C7070WZ"
+blackpoint = 0
+whitepoint = 4095
+color_pattern = "RGGB"
+hints = ["interlaced"]
+active_area = [0, 0, 0, 0]
+crop_area = [11, 2, 5, 3]
+
+[cameras.color_matrix]
+A = [1.1496, -0.4922, -0.0234, -0.5988, 1.3406, 0.2871, -0.0781, 0.113, 0.6516]
+D65 = [1.0252, -0.3531, -0.1095, -0.7114, 1.485, 0.2436, -0.1451, 0.1723, 0.6365]

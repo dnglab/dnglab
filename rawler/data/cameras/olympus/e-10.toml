@@ -1,0 +1,13 @@
+make = "OLYMPUS OPTICAL CO.,LTD"
+model = "E-10"
+clean_make = "Olympus"
+clean_model = "E-10"
+blackpoint = 64
+whitepoint = 3604
+color_pattern = "BGGR"
+active_area = [0, 0, 0, 0]
+crop_area = [8, 2, 8, 2]
+
+[cameras.color_matrix]
+A = [1.5278, -0.709, -0.0038, -0.6867, 1.5094, 0.1851, -0.1124, 0.1476, 0.7298]
+D65 = [1.297, -0.4703, -0.1433, -0.7466, 1.5843, 0.1644, -0.2191, 0.2451, 0.6668]

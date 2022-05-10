@@ -1,0 +1,17 @@
+make = "OLYMPUS CORPORATION"
+model = "PEN-F"
+clean_make = "Olympus"
+clean_model = "PEN-F"
+blackpoint = 242
+whitepoint = 4000
+color_pattern = "RGGB"
+active_area = [0, 0, 0, 0]
+highres_width = 5201
+
+[cameras.color_matrix]
+A = [1.086, -0.4649, -0.0085, -0.3404, 1.1881, 0.1698, -0.0368, 0.1072, 0.6281]
+D65 = [0.9476, -0.3182, -0.0765, -0.2613, 1.0958, 0.1893, -0.0449, 0.1315, 0.5268]
+
+[[cameras.modes]]
+mode = "highres"
+color_pattern = "GRBG"

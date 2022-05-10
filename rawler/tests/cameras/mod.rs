@@ -1134,3 +1134,196 @@ mod camera_p880_raw_modes {
 mod camera_z1015_is_raw_modes {
   super::camera_file_check!("Kodak", "Z1015 IS", cam_raw_kodak_easyshare_z1015_is_kdc, "raw_modes/RAW_KODAK_EASYSHARE_Z1015-IS.KDC");
 }
+mod camera_c5050z_raw_modes {
+  super::camera_file_check!("Olympus", "C5050Z", cam_c5050z_iso_100_orf, "raw_modes/C5050Z_ISO_100.ORF");
+}
+mod camera_c5060wz_raw_modes {
+  super::camera_file_check!("Olympus", "C5060WZ", cam_c5060wz_iso_80_orf, "raw_modes/C5060WZ_ISO_80.ORF");
+}
+mod camera_c7070wz_raw_modes {
+  super::camera_file_check!("Olympus", "C7070WZ", cam_c7070wz_iso_80_orf, "raw_modes/C7070WZ_ISO_80.ORF");
+}
+mod camera_c8080wz_raw_modes {
+  super::camera_file_check!("Olympus", "C8080WZ", cam_c8080wz_iso_50_orf, "raw_modes/C8080WZ_ISO_50.ORF");
+}
+mod camera_e_10_raw_modes {
+  super::camera_file_check!("Olympus", "E-10", cam_e_10_iso_80_orf, "raw_modes/E-10_ISO_80.ORF");
+}
+mod camera_e_1_raw_modes {
+  super::camera_file_check!("Olympus", "E-1", cam_e_1_iso_100_orf, "raw_modes/E-1_ISO_100.ORF");
+}
+mod camera_e_20_raw_modes {
+  super::camera_file_check!("Olympus", "E-20", cam_e_20_iso_80_orf, "raw_modes/E-20_ISO_80.ORF");
+}
+mod camera_e_300_raw_modes {
+  super::camera_file_check!("Olympus", "E-300", cam_e_300_iso_400_orf, "raw_modes/E-300_ISO_400.ORF");
+}
+mod camera_e_30_raw_modes {
+  super::camera_file_check!("Olympus", "E-30", cam_e_30_iso_200_orf, "raw_modes/E-30_ISO_200.ORF");
+}
+mod camera_e_330_raw_modes {
+  super::camera_file_check!("Olympus", "E-330", cam_e_330_iso_100_orf, "raw_modes/E-330_ISO_100.ORF");
+}
+mod camera_e_3_raw_modes {
+  super::camera_file_check!("Olympus", "E-3", cam_e_3_iso_100_orf, "raw_modes/E-3_ISO_100.ORF");
+}
+mod camera_e_400_raw_modes {
+  super::camera_file_check!("Olympus", "E-400", cam_e_400_iso_200_orf, "raw_modes/E-400_ISO_200.ORF");
+}
+mod camera_e_410_raw_modes {
+  super::camera_file_check!("Olympus", "E-410", cam_e_410_iso_400_orf, "raw_modes/E-410_ISO_400.ORF");
+}
+mod camera_e_420_raw_modes {
+  super::camera_file_check!("Olympus", "E-420", cam_e_420_iso_100_orf, "raw_modes/E-420_ISO_100.ORF");
+}
+mod camera_e_450_raw_modes {
+  super::camera_file_check!("Olympus", "E-450", cam_e_450_iso_200_orf, "raw_modes/E-450_ISO_200.ORF");
+}
+mod camera_e_500_raw_modes {
+  super::camera_file_check!("Olympus", "E-500", cam_e_500_iso_400_orf, "raw_modes/E-500_ISO_400.ORF");
+}
+mod camera_e_510_raw_modes {
+  super::camera_file_check!("Olympus", "E-510", cam_e_510_iso_100_orf, "raw_modes/E-510_ISO_100.ORF");
+}
+mod camera_e_520_raw_modes {
+  super::camera_file_check!("Olympus", "E-520", cam_e_520_iso_400_orf, "raw_modes/E-520_ISO_400.ORF");
+}
+mod camera_e_5_raw_modes {
+  super::camera_file_check!("Olympus", "E-5", cam_e_5_iso_200_orf, "raw_modes/E-5_ISO_200.ORF");
+}
+mod camera_e_600_raw_modes {
+  super::camera_file_check!("Olympus", "E-600", cam_e_600_iso_100_orf, "raw_modes/E-600_ISO_100.ORF");
+}
+mod camera_e_620_raw_modes {
+  super::camera_file_check!("Olympus", "E-620", cam_e_620_iso_200_orf, "raw_modes/E-620_ISO_200.ORF");
+}
+mod camera_e_m10_mark_iii_raw_modes {
+  super::camera_file_check!("Olympus", "E-M10 Mark III", cam_e_m10_mark_iii_iso_100_orf, "raw_modes/E-M10 Mark III_ISO_100.ORF");
+}
+mod camera_e_m10markiiis_raw_modes {
+  super::camera_file_check!("Olympus", "E-M10MarkIIIS", cam_e_m10markiiis_iso_200_orf, "raw_modes/E-M10MarkIIIS_ISO_200.ORF");
+}
+mod camera_e_m10_mark_ii_raw_modes {
+  super::camera_file_check!("Olympus", "E-M10 Mark II", cam_e_m10markii_iso_3200_orf, "raw_modes/E-M10MarkII_ISO_3200.ORF");
+}
+mod camera_e_m10_mark_iv_raw_modes {
+  super::camera_file_check!("Olympus", "E-M10 Mark IV", cam_e_m10markiv_iso_100_stackedmode_no_orf, "raw_modes/E-M10MarkIV_ISO_100_StackedMode_No.ORF");
+}
+mod camera_e_m10_raw_modes {
+  super::camera_file_check!("Olympus", "E-M10", cam_e_m10_iso_200_orf, "raw_modes/E-M10_ISO_200.ORF");
+}
+mod camera_e_m1markiii_raw_modes {
+  super::camera_file_check!("Olympus", "E-M1MarkIII", cam_e_m1markiii_iso_200_stackedmode_no_orf, "raw_modes/E-M1MarkIII_ISO_200_StackedMode_No.ORF");
+  super::camera_file_check!("Olympus", "E-M1MarkIII", cam_e_m1markiii_iso_200_stackedmode_hand_held_high_resolution_orf, "raw_modes/E-M1MarkIII_ISO_200_StackedMode_Hand-held high resolution.ORF");
+  super::camera_file_check!("Olympus", "E-M1MarkIII", cam_e_m1markiii_iso_200_stackedmode_tripod_high_resolution_orf, "raw_modes/E-M1MarkIII_ISO_200_StackedMode_Tripod high resolution.ORF");
+}
+mod camera_e_m1markii_raw_modes {
+  super::camera_file_check!("Olympus", "E-M1MarkII", cam_olympus_em1mk2__hires_25mp_ori, "raw_modes/Olympus_EM1mk2__HIRES_25MP.ORI");
+  super::camera_file_check!("Olympus", "E-M1MarkII", cam_olympus_em1mk2__hires_50mp_ori, "raw_modes/Olympus_EM1mk2__HIRES_50MP.ORI");
+  super::camera_file_check!("Olympus", "E-M1MarkII", cam_olympus_em1mk2_standard_20mp_colorchecker_orf, "raw_modes/Olympus_EM1mk2_Standard_20MP_ColorChecker.ORF");
+  super::camera_file_check!("Olympus", "E-M1MarkII", cam_olympus_em1mk2_standard_20mp_orf, "raw_modes/Olympus_EM1mk2_Standard_20MP.ORF");
+  super::camera_file_check!("Olympus", "E-M1MarkII", cam_olympus_em1mk2__hires_25mp_orf, "raw_modes/Olympus_EM1mk2__HIRES_25MP.ORF");
+  super::camera_file_check!("Olympus", "E-M1MarkII", cam_olympus_em1mk2__hires_50mp_orf, "raw_modes/Olympus_EM1mk2__HIRES_50MP.ORF");
+}
+mod camera_e_m1_raw_modes {
+  super::camera_file_check!("Olympus", "E-M1", cam_e_m1_iso_200_orf, "raw_modes/E-M1_ISO_200.ORF");
+}
+mod camera_e_m1x_raw_modes {
+  super::camera_file_check!("Olympus", "E-M1X", cam_e_m1x_iso_1600_orf, "raw_modes/E-M1X_ISO_1600.ORF");
+}
+mod camera_e_m5_mark_iii_raw_modes {
+  super::camera_file_check!("Olympus", "E-M5 Mark III", cam_e_m5markiii_iso_200_orf, "raw_modes/E-M5MarkIII_ISO_200.ORF");
+}
+mod camera_e_m5_mark_ii_raw_modes {
+  super::camera_file_check!("Olympus", "E-M5 Mark II", cam_e_m5markii_iso_200_stackedmode_tripod_high_resolution_orf, "raw_modes/E-M5MarkII_ISO_200_StackedMode_Tripod high resolution.ORF");
+  super::camera_file_check!("Olympus", "E-M5 Mark II", cam_e_m5markii_iso_200_stackedmode_no_orf, "raw_modes/E-M5MarkII_ISO_200_StackedMode_No.ORF");
+}
+mod camera_e_m5_raw_modes {
+  super::camera_file_check!("Olympus", "E-M5", cam_e_m5_iso_200_orf, "raw_modes/E-M5_ISO_200.ORF");
+}
+mod camera_e_p1_raw_modes {
+  super::camera_file_check!("Olympus", "E-P1", cam_e_p1_iso_100_orf, "raw_modes/E-P1_ISO_100.ORF");
+  super::camera_file_check!("Olympus", "E-P1", cam_e_p1_iso_200_orf, "raw_modes/E-P1_ISO_200.ORF");
+}
+mod camera_e_p2_raw_modes {
+  super::camera_file_check!("Olympus", "E-P2", cam_e_p2_iso_800_orf, "raw_modes/E-P2_ISO_800.ORF");
+}
+mod camera_e_p3_raw_modes {
+  super::camera_file_check!("Olympus", "E-P3", cam_e_p3_iso_200_orf, "raw_modes/E-P3_ISO_200.ORF");
+}
+mod camera_e_p5_raw_modes {
+  super::camera_file_check!("Olympus", "E-P5", cam_e_p5_iso_200_orf, "raw_modes/E-P5_ISO_200.ORF");
+}
+mod camera_e_pl10_raw_modes {
+  super::camera_file_check!("Olympus", "E-PL10", cam_e_pl10_iso_1000_orf, "raw_modes/E-PL10_ISO_1000.ORF");
+}
+mod camera_e_pl1_raw_modes {
+  super::camera_file_check!("Olympus", "E-PL1", cam_e_pl1_iso_1600_orf, "raw_modes/E-PL1_ISO_1600.ORF");
+}
+mod camera_e_pl2_raw_modes {
+  super::camera_file_check!("Olympus", "E-PL2", cam_e_pl2_iso_200_orf, "raw_modes/E-PL2_ISO_200.ORF");
+}
+mod camera_e_pl3_raw_modes {
+  super::camera_file_check!("Olympus", "E-PL3", cam_e_pl3_iso_200_orf, "raw_modes/E-PL3_ISO_200.ORF");
+}
+mod camera_e_pl5_raw_modes {
+  super::camera_file_check!("Olympus", "E-PL5", cam_e_pl5_iso_320_orf, "raw_modes/E-PL5_ISO_320.ORF");
+}
+mod camera_e_pl6_raw_modes {
+  super::camera_file_check!("Olympus", "E-PL6", cam_e_pl6_iso_200_orf, "raw_modes/E-PL6_ISO_200.ORF");
+}
+mod camera_e_pl7_raw_modes {
+  super::camera_file_check!("Olympus", "E-PL7", cam_e_pl7_iso_200_orf, "raw_modes/E-PL7_ISO_200.ORF");
+}
+mod camera_e_pl8_raw_modes {
+  super::camera_file_check!("Olympus", "E-PL8", cam_e_pl8_iso_200_orf, "raw_modes/E-PL8_ISO_200.ORF");
+}
+mod camera_e_pl9_raw_modes {
+  super::camera_file_check!("Olympus", "E-PL9", cam_e_pl9_iso_200_orf, "raw_modes/E-PL9_ISO_200.ORF");
+}
+mod camera_e_pm1_raw_modes {
+  super::camera_file_check!("Olympus", "E-PM1", cam_e_pm1_iso_200_orf, "raw_modes/E-PM1_ISO_200.ORF");
+}
+mod camera_e_pm2_raw_modes {
+  super::camera_file_check!("Olympus", "E-PM2", cam_e_pm2_iso_200_orf, "raw_modes/E-PM2_ISO_200.ORF");
+}
+mod camera_pen_f_raw_modes {
+  super::camera_file_check!("Olympus", "PEN-F", cam_pen_f_iso_200_stackedmode_no_orf, "raw_modes/PEN-F_ISO_200_StackedMode_No.ORF");
+  super::camera_file_check!("Olympus", "PEN-F", cam_pen_f_iso_200_stackedmode_tripod_high_resolution_orf, "raw_modes/PEN-F_ISO_200_StackedMode_Tripod high resolution.ORF");
+}
+mod camera_sh_2_raw_modes {
+  super::camera_file_check!("Olympus", "SH-2", cam_sh_2_iso_125_orf, "raw_modes/SH-2_ISO_125.ORF");
+}
+mod camera_sp350_raw_modes {
+  super::camera_file_check!("Olympus", "SP350", cam_sp350_iso_100_orf, "raw_modes/SP350_ISO_100.ORF");
+}
+mod camera_sp500uz_raw_modes {
+  super::camera_file_check!("Olympus", "SP500UZ", cam_sp500uz_iso_100_orf, "raw_modes/SP500UZ_ISO_100.ORF");
+}
+mod camera_sp510uz_raw_modes {
+  super::camera_file_check!("Olympus", "SP510UZ", cam_sp510uz_iso_50_orf, "raw_modes/SP510UZ_ISO_50.ORF");
+}
+mod camera_sp565uz_raw_modes {
+  super::camera_file_check!("Olympus", "SP565UZ", cam_sp565uz_iso_64_orf, "raw_modes/SP565UZ_ISO_64.ORF");
+}
+mod camera_stylus1_raw_modes {
+  super::camera_file_check!("Olympus", "Stylus1", cam_stylus1_iso_100_orf, "raw_modes/STYLUS1_ISO_100.ORF");
+}
+mod camera_tg_4_raw_modes {
+  super::camera_file_check!("Olympus", "TG-4", cam_tg_4_iso_100_orf, "raw_modes/TG-4_ISO_100.ORF");
+}
+mod camera_tg_5_raw_modes {
+  super::camera_file_check!("Olympus", "TG-5", cam_tg_5_iso_100_orf, "raw_modes/TG-5_ISO_100.ORF");
+}
+mod camera_tg_6_raw_modes {
+  super::camera_file_check!("Olympus", "TG-6", cam_tg_6_iso_100_orf, "raw_modes/TG-6_ISO_100.ORF");
+}
+mod camera_xz_10_raw_modes {
+  super::camera_file_check!("Olympus", "XZ-10", cam_xz_10_iso_100_orf, "raw_modes/XZ-10_ISO_100.ORF");
+}
+mod camera_xz_1_raw_modes {
+  super::camera_file_check!("Olympus", "XZ-1", cam_xz_1_iso_100_orf, "raw_modes/XZ-1_ISO_100.ORF");
+}
+mod camera_xz_2_raw_modes {
+  super::camera_file_check!("Olympus", "XZ-2", cam_xz_2_iso_100_orf, "raw_modes/XZ-2_ISO_100.ORF");
+}

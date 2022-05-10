@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
   bits::Endian,
-  formats::tiff::{apply_corr, reader::ReadByteOrder, Rational, SRational, TiffAscii, Value},
+  formats::tiff::{apply_corr, reader::ReadByteOrder, Rational, SRational, TiffAscii, TiffError, Value},
 };
 
 use super::{reader::EndianReader, Result};
@@ -98,6 +98,13 @@ impl Entry {
       "Tag: {:#x}, Typ: {:#x}, count: {}, offset: {}, base: {}, corr: {}",
       tag, typ, count, offset, base, corr
     );
+
+    if offset == u32::MAX || base.checked_add(offset).is_none() {
+      // We hit an invalid offset, ignoring this tag
+      // This happens for Olympus E-P2 images in ImageProc IFD for example.
+      return Err(TiffError::Overflow(format!("Offset {} is invalid for tag 0x{:X}", offset, tag)));
+    }
+
     reader.goto(base + offset)?;
     let entry = match typ {
       TYPE_BYTE => {

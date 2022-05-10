@@ -30,6 +30,8 @@ pub struct LensResolver {
   lens_id: Option<LensId>,
   /// Nikon ID
   nikon_id: Option<String>,
+  /// Olympus ID
+  olympus_id: Option<String>,
   /// Lens EXIF info, if known
   lens_info: Option<[Rational; 4]>,
   /// Camera make, if known
@@ -54,6 +56,8 @@ struct LensMatcher<'a> {
   lens_id: Option<LensId>,
   /// Nikon ID
   nikon_id: Option<String>,
+  /// Olympus ID
+  olympus_id: Option<String>,
   /// Lens EXIF info, if known
   lens_info: Option<[Rational; 4]>,
   /// Camera make, if known
@@ -109,6 +113,11 @@ impl LensResolver {
     self
   }
 
+  pub fn with_olympus_id(mut self, olympus_id: Option<String>) -> Self {
+    self.olympus_id = olympus_id;
+    self
+  }
+
   pub fn with_focal_len(mut self, focal_len: Option<Rational>) -> Self {
     self.focal_len = focal_len;
     self
@@ -140,6 +149,7 @@ impl LensResolver {
       lens_make: self.lens_make.as_deref(),
       lens_id: self.lens_id,
       nikon_id: self.nikon_id.clone(),
+      olympus_id: self.olympus_id.clone(),
       lens_info: self.lens_info,
       camera_make: self.camera_make.as_deref(),
       camera_model: self.camera_model.as_deref(),
@@ -190,6 +200,13 @@ impl LensResolver {
     // Nikon lens IDs are special, try this next
     if let Some(nikon_id) = &self.nikon_id {
       if let Some(db_entry) = LENSES_DB.iter().find(|entry| entry.identifiers.nikon_id == Some(nikon_id.clone())) {
+        return Some(db_entry);
+      }
+    }
+
+    // Olympus lens IDs are special, try this next
+    if let Some(olympus_id) = &self.olympus_id {
+      if let Some(db_entry) = LENSES_DB.iter().find(|entry| entry.identifiers.olympus_id == Some(olympus_id.clone())) {
         return Some(db_entry);
       }
     }
@@ -270,12 +287,18 @@ pub struct LensIdentifier {
   pub name: Option<String>,
   pub id: Option<LensId>,
   pub nikon_id: Option<String>,
+  pub olympus_id: Option<String>,
 }
 
 impl LensIdentifier {
-  pub(crate) fn new(name: Option<String>, id: Option<LensId>, nikon_id: Option<String>) -> Self {
-    if name.is_some() || id.is_some() || nikon_id.is_some() {
-      Self { name, id, nikon_id }
+  pub(crate) fn new(name: Option<String>, id: Option<LensId>, nikon_id: Option<String>, olympus_id: Option<String>) -> Self {
+    if name.is_some() || id.is_some() || nikon_id.is_some() || olympus_id.is_some() {
+      Self {
+        name,
+        id,
+        nikon_id,
+        olympus_id,
+      }
     } else {
       panic!("LensIdentifier must contain a name or id");
     }
@@ -317,6 +340,7 @@ fn build_lens_database() -> Option<Vec<LensDescription>> {
     let id_val2 = lens.get("lens_subid").and_then(Value::as_integer).map(|v| v as u32);
     let id_id = id_val1.map(|id| (id, id_val2.unwrap_or(0)));
     let nikon_id = lens.get("nikon_id").and_then(Value::as_str).map(String::from);
+    let olympus_id = lens.get("olympus_id").and_then(Value::as_str).map(String::from);
     let mount = lens.get("mount").and_then(|val| val.as_str()).expect(FAIL);
     let lens_make = lens.get("make")?.as_str()?.into();
     let lens_model = lens.get("model")?.as_str()?.into();
@@ -344,7 +368,7 @@ fn build_lens_database() -> Option<Vec<LensDescription>> {
       .collect();
     let lens_name = lens.get("name").map(|s| s.as_str().expect(FAIL));
     lenses.push(LensDescription {
-      identifiers: LensIdentifier::new(id_name, id_id, nikon_id),
+      identifiers: LensIdentifier::new(id_name, id_id, nikon_id, olympus_id),
       lens_name: lens_name.unwrap_or(&format!("{} {}", lens_make, lens_model)).into(),
       mount: String::from(mount),
       lens_make,

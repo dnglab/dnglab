@@ -1,0 +1,14 @@
+make = "OLYMPUS CORPORATION"
+model = "C8080WZ"
+clean_make = "Olympus"
+clean_model = "C8080WZ"
+blackpoint = 0
+whitepoint = 4095
+color_pattern = "BGGR"
+hints = ["interlaced"]
+active_area = [0, 0, 0, 0]
+crop_area = [8, 2, 8, 3]
+
+[cameras.color_matrix]
+A = [1.0044, -0.4054, -0.0359, -0.6743, 1.3949, 0.3095, -0.0571, 0.0733, 0.7617]
+D65 = [0.8606, -0.2508, -0.1014, -0.8238, 1.5714, 0.2703, -0.0943, 0.0979, 0.776]

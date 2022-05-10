@@ -1,0 +1,215 @@
+[[lenses]]
+mount = "MFT-mount"
+olympus_id = "02 07 10"
+make = "Lumix"
+model = "G Vario 14-42mm F3.5-5.6 Asph. Mega OIS"
+focal_range = [[14, 1], [42, 1]]
+aperture_range = [[35, 10], [56, 10]]
+
+[[lenses]]
+mount = "MFT-mount"
+olympus_id = "02 01 10"
+make = "Lumix"
+model = "G Vario 14-45mm F3.5-5.6 Asph. Mega OIS"
+focal_range = [[14, 1], [45, 1]]
+aperture_range = [[35, 10], [56, 10]]
+
+[[lenses]]
+mount = "MFT-mount"
+olympus_id = "02 02 10"
+make = "Lumix"
+model = "G Vario 45-200mm F4.0-5.6 Mega OIS"
+focal_range = [[45, 1], [200, 1]]
+aperture_range = [[40, 10], [56, 10]]
+
+[[lenses]]
+mount = "MFT-mount"
+olympus_id = "02 03 10"
+make = "Lumix"
+model = "G Vario HD 14-140mm F4.0-5.8 Asph. Mega OIS"
+focal_range = [[14, 1], [140, 1]]
+aperture_range = [[40, 10], [58, 10]]
+
+[[lenses]]
+mount = "MFT-mount"
+olympus_id = "02 04 10"
+make = "Lumix"
+model = "G Vario 7-14mm F4.0 Asph."
+focal_range = [[7, 1], [14, 1]]
+aperture_range = [[40, 10], [40, 10]]
+
+[[lenses]]
+mount = "MFT-mount"
+olympus_id = "02 05 10"
+make = "Lumix"
+model = "G 20mm F1.7 Asph."
+focal_range = [[20, 1], [20, 1]]
+aperture_range = [[17, 10], [17, 10]]
+
+[[lenses]]
+mount = "MFT-mount"
+olympus_id = "02 08 10"
+make = "Lumix"
+model = "G Fisheye 8mm F3.5"
+focal_range = [[8, 1], [8, 1]]
+aperture_range = [[35, 10], [35, 10]]
+
+[[lenses]]
+mount = "MFT-mount"
+olympus_id = "02 09 10"
+make = "Lumix"
+model = "G Vario 100-300mm F4.0-5.6 Mega OIS"
+focal_range = [[100, 1], [300, 1]]
+aperture_range = [[40, 10], [56, 10]]
+
+[[lenses]]
+mount = "MFT-mount"
+olympus_id = "02 10 10"
+make = "Lumix"
+model = "G 14mm F2.5 Asph."
+focal_range = [[14, 1], [14, 1]]
+aperture_range = [[25, 10], [25, 10]]
+
+[[lenses]]
+mount = "MFT-mount"
+olympus_id = "02 11 10"
+make = "Lumix"
+model = "G 12.5mm F12 3D"
+focal_range = [[125, 10], [125, 10]]
+aperture_range = [[12, 1], [12, 1]]
+
+[[lenses]]
+mount = "MFT-mount"
+olympus_id = "02 13 10"
+make = "Lumix"
+model = "G X Vario PZ 45-175mm F4.0-5.6 Asph. Power OIS"
+focal_range = [[45, 1], [175, 1]]
+aperture_range = [[40, 10], [56, 10]]
+
+[[lenses]]
+mount = "MFT-mount"
+olympus_id = "02 14 10"
+make = "Lumix"
+model = "G X Vario PZ 14-42mm F3.5-5.6 Asph. Power OIS"
+focal_range = [[14, 1], [42, 1]]
+aperture_range = [[35, 10], [56, 10]]
+
+[[lenses]]
+mount = "MFT-mount"
+olympus_id = "02 15 10"
+make = "Lumix"
+model = "G X Vario 12-35mm F2.8 Asph. Power OIS"
+focal_range = [[12, 1], [35, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "MFT-mount"
+olympus_id = "02 16 10"
+make = "Lumix"
+model = "G Vario 45-150mm F4.0-5.6 Asph. Mega OIS"
+focal_range = [[45, 1], [150, 1]]
+aperture_range = [[40, 10], [56, 10]]
+
+[[lenses]]
+mount = "MFT-mount"
+olympus_id = "02 17 10"
+make = "Lumix"
+model = "G X Vario 35-100mm F2.8 Power OIS"
+focal_range = [[35, 1], [100, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "MFT-mount"
+olympus_id = "02 18 10"
+make = "Lumix"
+model = "G Vario 14-42mm F3.5-5.6 II Asph. Mega OIS"
+focal_range = [[14, 1], [42, 1]]
+aperture_range = [[35, 10], [56, 10]]
+
+[[lenses]]
+mount = "MFT-mount"
+olympus_id = "02 19 10"
+make = "Lumix"
+model = "G Vario 14-140mm F3.5-5.6 Asph. Power OIS"
+focal_range = [[14, 1], [140, 1]]
+aperture_range = [[35, 10], [56, 10]]
+
+[[lenses]]
+mount = "MFT-mount"
+olympus_id = "02 20 10"
+make = "Lumix"
+model = "G Vario 12-32mm F3.5-5.6 Asph. Mega OIS"
+focal_range = [[12, 1], [32, 1]]
+aperture_range = [[35, 10], [56, 10]]
+
+[[lenses]]
+mount = "MFT-mount"
+olympus_id = "02 23 10"
+make = "Lumix"
+model = "G Vario 35-100mm F4.0-5.6 Asph. Mega OIS"
+focal_range = [[35, 1], [100, 1]]
+aperture_range = [[40, 10], [56, 10]]
+
+[[lenses]]
+mount = "MFT-mount"
+olympus_id = "02 24 10"
+make = "Lumix"
+model = "G Macro 30mm F2.8 Asph. Mega OIS"
+focal_range = [[30, 1], [30, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "MFT-mount"
+olympus_id = "02 25 10"
+make = "Lumix"
+model = "G 42.5mm F1.7 Asph. Power OIS"
+focal_range = [[425, 10], [425, 10]]
+aperture_range = [[17, 10], [17, 10]]
+
+[[lenses]]
+mount = "MFT-mount"
+olympus_id = "02 26 10"
+make = "Lumix"
+model = "G 25mm F1.7 Asph."
+focal_range = [[25, 1], [25, 1]]
+aperture_range = [[17, 10], [17, 10]]
+
+[[lenses]]
+mount = "MFT-mount"
+olympus_id = "02 28 10"
+make = "Lumix"
+model = "G Vario 12-60mm F3.5-5.6 Asph. Power OIS"
+focal_range = [[12, 1], [60, 1]]
+aperture_range = [[35, 10], [56, 10]]
+
+[[lenses]]
+mount = "MFT-mount"
+olympus_id = "02 31 10"
+make = "Lumix"
+model = "G Vario 45-200mm F4.0-5.6 II"
+focal_range = [[45, 1], [200, 1]]
+aperture_range = [[40, 10], [56, 10]]
+
+[[lenses]]
+mount = "MFT-mount"
+olympus_id = "02 32 10"
+make = "Lumix"
+model = "G Vario 100-300mm F4.0-5.6 II"
+focal_range = [[100, 1], [300, 1]]
+aperture_range = [[40, 10], [56, 10]]
+
+[[lenses]]
+mount = "MFT-mount"
+olympus_id = "02 33 10"
+make = "Lumix"
+model = "G X Vario 12-35mm F2.8 II Asph. Power OIS"
+focal_range = [[12, 1], [35, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "MFT-mount"
+olympus_id = "02 34 10"
+make = "Lumix"
+model = "G Vario 35-100mm F2.8 II"
+focal_range = [[35, 1], [100, 1]]
+aperture_range = [[28, 10], [28, 10]]

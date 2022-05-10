@@ -1,0 +1,13 @@
+make = "OLYMPUS OPTICAL CO.,LTD"
+model = "E-20,E-20N,E-20P"
+clean_make = "Olympus"
+clean_model = "E-20"
+blackpoint = 0
+whitepoint = 4092
+color_pattern = "RGGB"
+active_area = [0, 0, 0, 0]
+crop_area = [2, 2, 2, 2]
+
+[cameras.color_matrix]
+A = [1.6014, -0.7793, 0.0104, -0.6329, 1.4215, 0.2288, -0.1264, 0.1705, 0.7772]
+D65 = [1.3414, -0.495, -0.1517, -0.7166, 1.5293, 0.196, -0.2325, 0.2664, 0.7212]

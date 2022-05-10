@@ -1,0 +1,479 @@
+[[lenses]]
+mount = "MFT-mount"
+olympus_id = "00 01 00"
+make = "Olympus"
+model = "Zuiko Digital ED 50mm F2.0 Macro"
+focal_range = [[50, 1], [50, 1]]
+aperture_range = [[20, 10], [20, 10]]
+
+[[lenses]]
+mount = "MFT-mount"
+olympus_id = "00 01 01"
+make = "Olympus"
+model = "Zuiko Digital 40-150mm F3.5-4.5"
+focal_range = [[40, 1], [150, 1]]
+aperture_range = [[35, 10], [45, 10]]
+
+[[lenses]]
+mount = "MFT-mount"
+olympus_id = "00 01 10"
+make = "Olympus"
+model = "M.Zuiko Digital ED 14-42mm F3.5-5.6"
+focal_range = [[14, 1], [42, 1]]
+aperture_range = [[35, 10], [56, 10]]
+
+[[lenses]]
+mount = "MFT-mount"
+olympus_id = "00 02 00"
+make = "Olympus"
+model = "Zuiko Digital ED 150mm F2.0"
+focal_range = [[150, 1], [150, 1]]
+aperture_range = [[20, 10], [20, 10]]
+
+[[lenses]]
+mount = "MFT-mount"
+olympus_id = "00 02 10"
+make = "Olympus"
+model = "M.Zuiko Digital 17mm F2.8 Pancake"
+focal_range = [[17, 1], [17, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "MFT-mount"
+olympus_id = "00 03 00"
+make = "Olympus"
+model = "Zuiko Digital ED 300mm F2.8"
+focal_range = [[300, 1], [300, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "MFT-mount"
+olympus_id = "00 03 10"
+make = "Olympus"
+model = "M.Zuiko Digital ED 14-150mm F4.0-5.6 [II]"
+focal_range = [[14, 1], [150, 1]]
+aperture_range = [[40, 10], [56, 10]]
+
+[[lenses]]
+mount = "MFT-mount"
+olympus_id = "00 04 10"
+make = "Olympus"
+model = "M.Zuiko Digital ED 9-18mm F4.0-5.6"
+focal_range = [[9, 1], [18, 1]]
+aperture_range = [[40, 10], [56, 10]]
+
+[[lenses]]
+mount = "MFT-mount"
+olympus_id = "00 05 00"
+make = "Olympus"
+model = "Zuiko Digital 14-54mm F2.8-3.5"
+focal_range = [[14, 1], [54, 1]]
+aperture_range = [[28, 10], [35, 10]]
+
+[[lenses]]
+mount = "MFT-mount"
+olympus_id = "00 05 01"
+make = "Olympus"
+model = "Zuiko Digital Pro ED 90-250mm F2.8"
+focal_range = [[90, 1], [250, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "MFT-mount"
+olympus_id = "00 05 10"
+make = "Olympus"
+model = "M.Zuiko Digital ED 14-42mm F3.5-5.6 L"
+focal_range = [[14, 1], [42, 1]]
+aperture_range = [[35, 10], [56, 10]]
+
+[[lenses]]
+mount = "MFT-mount"
+olympus_id = "00 06 00"
+make = "Olympus"
+model = "Zuiko Digital ED 50-200mm F2.8-3.5"
+focal_range = [[50, 1], [200, 1]]
+aperture_range = [[28, 10], [35, 10]]
+
+[[lenses]]
+mount = "MFT-mount"
+olympus_id = "00 06 01"
+make = "Olympus"
+model = "Zuiko Digital ED 8mm F3.5 Fisheye"
+focal_range = [[8, 1], [8, 1]]
+aperture_range = [[35, 10], [35, 10]]
+
+[[lenses]]
+mount = "MFT-mount"
+olympus_id = "00 06 10"
+make = "Olympus"
+model = "M.Zuiko Digital ED 40-150mm F4.0-5.6"
+focal_range = [[40, 1], [150, 1]]
+aperture_range = [[40, 10], [56, 10]]
+
+[[lenses]]
+mount = "MFT-mount"
+olympus_id = "00 07 00"
+make = "Olympus"
+model = "Zuiko Digital 11-22mm F2.8-3.5"
+focal_range = [[11, 1], [22, 1]]
+aperture_range = [[28, 10], [35, 10]]
+
+[[lenses]]
+mount = "MFT-mount"
+olympus_id = "00 07 01"
+make = "Olympus"
+model = "Zuiko Digital 18-180mm F3.5-6.3"
+focal_range = [[18, 1], [180, 1]]
+aperture_range = [[35, 10], [63, 10]]
+
+[[lenses]]
+mount = "MFT-mount"
+olympus_id = "00 07 10"
+make = "Olympus"
+model = "M.Zuiko Digital ED 12mm F2.0"
+focal_range = [[12, 1], [12, 1]]
+aperture_range = [[20, 10], [20, 10]]
+
+[[lenses]]
+mount = "MFT-mount"
+olympus_id = "00 08 01"
+make = "Olympus"
+model = "Zuiko Digital 70-300mm F4.0-5.6"
+focal_range = [[70, 1], [300, 1]]
+aperture_range = [[40, 10], [56, 10]]
+
+[[lenses]]
+mount = "MFT-mount"
+olympus_id = "00 08 10"
+make = "Olympus"
+model = "M.Zuiko Digital ED 75-300mm F4.8-6.7"
+focal_range = [[75, 1], [300, 1]]
+aperture_range = [[48, 10], [67, 10]]
+
+[[lenses]]
+mount = "MFT-mount"
+olympus_id = "00 09 10"
+make = "Olympus"
+model = "M.Zuiko Digital 14-42mm F3.5-5.6 II"
+focal_range = [[14, 1], [42, 1]]
+aperture_range = [[35, 10], [56, 10]]
+
+[[lenses]]
+mount = "MFT-mount"
+olympus_id = "00 10 01"
+make = "Kenko"
+model = "Tokina Reflex 300mm F6.3 MF Macro"
+focal_range = [[300, 1], [300, 1]]
+aperture_range = [[63, 10], [63, 10]]
+
+[[lenses]]
+mount = "MFT-mount"
+olympus_id = "00 10 10"
+make = "Olympus"
+model = "M.Zuiko Digital ED 12-50mm F3.5-6.3 EZ"
+focal_range = [[12, 1], [50, 1]]
+aperture_range = [[35, 10], [63, 10]]
+
+[[lenses]]
+mount = "MFT-mount"
+olympus_id = "00 11 10"
+make = "Olympus"
+model = "M.Zuiko Digital 45mm F1.8"
+focal_range = [[45, 1], [45, 1]]
+aperture_range = [[18, 10], [18, 10]]
+
+[[lenses]]
+mount = "MFT-mount"
+olympus_id = "00 12 10"
+make = "Olympus"
+model = "M.Zuiko Digital ED 60mm F2.8 Macro"
+focal_range = [[60, 1], [60, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "MFT-mount"
+olympus_id = "00 13 10"
+make = "Olympus"
+model = "M.Zuiko Digital 14-42mm F3.5-5.6 II R"
+focal_range = [[14, 1], [42, 1]]
+aperture_range = [[35, 10], [56, 10]]
+
+[[lenses]]
+mount = "MFT-mount"
+olympus_id = "00 14 10"
+make = "Olympus"
+model = "M.Zuiko Digital ED 40-150mm F4.0-5.6 R"
+focal_range = [[40, 1], [150, 1]]
+aperture_range = [[40, 10], [56, 10]]
+
+[[lenses]]
+mount = "MFT-mount"
+olympus_id = "00 14 10.1"
+make = "Olympus"
+model = "M.Zuiko Digital ED 14-150mm F4.0-5.6 II"
+focal_range = [[14, 1], [150, 1]]
+aperture_range = [[40, 10], [56, 10]]
+
+[[lenses]]
+mount = "MFT-mount"
+olympus_id = "00 15 00"
+make = "Olympus"
+model = "Zuiko Digital ED 7-14mm F4.0"
+focal_range = [[7, 1], [14, 1]]
+aperture_range = [[40, 10], [40, 10]]
+
+[[lenses]]
+mount = "MFT-mount"
+olympus_id = "00 15 10"
+make = "Olympus"
+model = "M.Zuiko Digital ED 75mm F1.8"
+focal_range = [[75, 1], [75, 1]]
+aperture_range = [[18, 10], [18, 10]]
+
+[[lenses]]
+mount = "MFT-mount"
+olympus_id = "00 16 10"
+make = "Olympus"
+model = "M.Zuiko Digital 17mm F1.8"
+focal_range = [[17, 1], [17, 1]]
+aperture_range = [[18, 10], [18, 10]]
+
+[[lenses]]
+mount = "MFT-mount"
+olympus_id = "00 17 00"
+make = "Olympus"
+model = "Zuiko Digital Pro ED 35-100mm F2.0"
+focal_range = [[35, 1], [100, 1]]
+aperture_range = [[20, 10], [20, 10]]
+
+[[lenses]]
+mount = "MFT-mount"
+olympus_id = "00 18 00"
+make = "Olympus"
+model = "Zuiko Digital 14-45mm F3.5-5.6"
+focal_range = [[14, 1], [45, 1]]
+aperture_range = [[35, 10], [56, 10]]
+
+[[lenses]]
+mount = "MFT-mount"
+olympus_id = "00 18 10"
+make = "Olympus"
+model = "M.Zuiko Digital ED 75-300mm F4.8-6.7 II"
+focal_range = [[75, 1], [300, 1]]
+aperture_range = [[48, 10], [67, 10]]
+
+[[lenses]]
+mount = "MFT-mount"
+olympus_id = "00 19 10"
+make = "Olympus"
+model = "M.Zuiko Digital ED 12-40mm F2.8 Pro"
+focal_range = [[12, 1], [40, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "MFT-mount"
+olympus_id = "00 20 00"
+make = "Olympus"
+model = "Zuiko Digital 35mm F3.5 Macro"
+focal_range = [[35, 1], [35, 1]]
+aperture_range = [[35, 10], [35, 10]]
+
+[[lenses]]
+mount = "MFT-mount"
+olympus_id = "00 20 10"
+make = "Olympus"
+model = "M.Zuiko Digital ED 40-150mm F2.8 Pro"
+focal_range = [[40, 1], [150, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "MFT-mount"
+olympus_id = "00 21 10"
+make = "Olympus"
+model = "M.Zuiko Digital ED 14-42mm F3.5-5.6 EZ"
+focal_range = [[14, 1], [42, 1]]
+aperture_range = [[35, 10], [56, 10]]
+
+[[lenses]]
+mount = "MFT-mount"
+olympus_id = "00 22 00"
+make = "Olympus"
+model = "Zuiko Digital 17.5-45mm F3.5-5.6"
+focal_range = [[175, 10], [45, 1]]
+aperture_range = [[35, 10], [56, 10]]
+
+[[lenses]]
+mount = "MFT-mount"
+olympus_id = "00 22 10"
+make = "Olympus"
+model = "M.Zuiko Digital 25mm F1.8"
+focal_range = [[25, 1], [25, 1]]
+aperture_range = [[18, 10], [18, 10]]
+
+[[lenses]]
+mount = "MFT-mount"
+olympus_id = "00 23 00"
+make = "Olympus"
+model = "Zuiko Digital ED 14-42mm F3.5-5.6"
+focal_range = [[14, 1], [42, 1]]
+aperture_range = [[35, 10], [56, 10]]
+
+[[lenses]]
+mount = "MFT-mount"
+olympus_id = "00 23 10"
+make = "Olympus"
+model = "M.Zuiko Digital ED 7-14mm F2.8 Pro"
+focal_range = [[7, 1], [14, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "MFT-mount"
+olympus_id = "00 24 00"
+make = "Olympus"
+model = "Zuiko Digital ED 40-150mm F4.0-5.6"
+focal_range = [[40, 1], [150, 1]]
+aperture_range = [[40, 10], [56, 10]]
+
+[[lenses]]
+mount = "MFT-mount"
+olympus_id = "00 24 10"
+make = "Olympus"
+model = "M.Zuiko Digital ED 300mm F4.0 IS Pro"
+focal_range = [[300, 1], [300, 1]]
+aperture_range = [[40, 10], [40, 10]]
+
+[[lenses]]
+mount = "MFT-mount"
+olympus_id = "00 25 10"
+make = "Olympus"
+model = "M.Zuiko Digital ED 8mm F1.8 Fisheye Pro"
+focal_range = [[8, 1], [8, 1]]
+aperture_range = [[18, 10], [18, 10]]
+
+[[lenses]]
+mount = "MFT-mount"
+olympus_id = "00 26 10"
+make = "Olympus"
+model = "M.Zuiko Digital ED 12-100mm F4.0 IS Pro"
+focal_range = [[12, 1], [100, 1]]
+aperture_range = [[40, 10], [40, 10]]
+
+[[lenses]]
+mount = "MFT-mount"
+olympus_id = "00 27 10"
+make = "Olympus"
+model = "M.Zuiko Digital ED 30mm F3.5 Macro"
+focal_range = [[30, 1], [30, 1]]
+aperture_range = [[35, 10], [35, 10]]
+
+[[lenses]]
+mount = "MFT-mount"
+olympus_id = "00 28 10"
+make = "Olympus"
+model = "M.Zuiko Digital ED 25mm F1.2 Pro"
+focal_range = [[25, 1], [25, 1]]
+aperture_range = [[12, 10], [12, 10]]
+
+[[lenses]]
+mount = "MFT-mount"
+olympus_id = "00 29 10"
+make = "Olympus"
+model = "M.Zuiko Digital ED 17mm F1.2 Pro"
+focal_range = [[17, 1], [17, 1]]
+aperture_range = [[12, 10], [12, 10]]
+
+[[lenses]]
+mount = "MFT-mount"
+olympus_id = "00 30 00"
+make = "Olympus"
+model = "Zuiko Digital ED 50-200mm F2.8-3.5 SWD"
+focal_range = [[50, 1], [200, 1]]
+aperture_range = [[28, 10], [35, 10]]
+
+[[lenses]]
+mount = "MFT-mount"
+olympus_id = "00 30 10"
+make = "Olympus"
+model = "M.Zuiko Digital ED 45mm F1.2 Pro"
+focal_range = [[45, 1], [45, 1]]
+aperture_range = [[12, 10], [12, 10]]
+
+[[lenses]]
+mount = "MFT-mount"
+olympus_id = "00 31 00"
+make = "Olympus"
+model = "Zuiko Digital ED 12-60mm F2.8-4.0 SWD"
+focal_range = [[12, 1], [60, 1]]
+aperture_range = [[28, 10], [40, 10]]
+
+[[lenses]]
+mount = "MFT-mount"
+olympus_id = "00 32 00"
+make = "Olympus"
+model = "Zuiko Digital ED 14-35mm F2.0 SWD"
+focal_range = [[14, 1], [35, 1]]
+aperture_range = [[20, 10], [20, 10]]
+
+[[lenses]]
+mount = "MFT-mount"
+olympus_id = "00 32 10"
+make = "Olympus"
+model = "M.Zuiko Digital ED 12-200mm F3.5-6.3"
+focal_range = [[12, 1], [200, 1]]
+aperture_range = [[35, 10], [63, 10]]
+
+[[lenses]]
+mount = "MFT-mount"
+olympus_id = "00 33 00"
+make = "Olympus"
+model = "Zuiko Digital 25mm F2.8"
+focal_range = [[25, 1], [25, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "MFT-mount"
+olympus_id = "00 33 10"
+make = "Olympus"
+model = "M.Zuiko Digital 150-400mm F4.5 TC1.25x IS Pro"
+focal_range = [[150, 1], [400, 1]]
+aperture_range = [[45, 10], [45, 10]]
+
+[[lenses]]
+mount = "MFT-mount"
+olympus_id = "00 34 00"
+make = "Olympus"
+model = "Zuiko Digital ED 9-18mm F4.0-5.6"
+focal_range = [[9, 1], [18, 1]]
+aperture_range = [[40, 10], [56, 10]]
+
+[[lenses]]
+mount = "MFT-mount"
+olympus_id = "00 34 10"
+make = "Olympus"
+model = "M.Zuiko Digital ED 12-45mm F4.0 Pro"
+focal_range = [[12, 1], [45, 1]]
+aperture_range = [[40, 10], [40, 10]]
+
+[[lenses]]
+mount = "MFT-mount"
+olympus_id = "00 35 00"
+make = "Olympus"
+model = "Zuiko Digital 14-54mm F2.8-3.5 II"
+focal_range = [[14, 1], [54, 1]]
+aperture_range = [[28, 10], [35, 10]]
+
+[[lenses]]
+mount = "MFT-mount"
+olympus_id = "00 35 10"
+make = "Olympus"
+model = "M.Zuiko 100-400mm F5.0-6.3"
+focal_range = [[100, 1], [400, 1]]
+aperture_range = [[50, 10], [63, 10]]
+
+[[lenses]]
+mount = "MFT-mount"
+olympus_id = "00 36 10"
+make = "Olympus"
+model = "M.Zuiko Digital ED 8-25mm F4 Pro"
+focal_range = [[8, 1], [25, 1]]
+aperture_range = [[4, 1], [4, 1]]

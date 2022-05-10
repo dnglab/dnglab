@@ -1,0 +1,191 @@
+[[lenses]]
+mount = "MFT-mount"
+olympus_id = "01 01 00"
+make = "Sigma"
+model = "18-50mm F3.5-5.6 DC"
+focal_range = [[18, 1], [50, 1]]
+aperture_range = [[35, 10], [56, 10]]
+
+[[lenses]]
+mount = "MFT-mount"
+olympus_id = "01 01 10"
+make = "Sigma"
+model = "30mm F2.8 EX DN"
+focal_range = [[30, 1], [30, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "MFT-mount"
+olympus_id = "01 02 00"
+make = "Sigma"
+model = "55-200mm F4.0-5.6 DC"
+focal_range = [[55, 1], [200, 1]]
+aperture_range = [[40, 10], [56, 10]]
+
+[[lenses]]
+mount = "MFT-mount"
+olympus_id = "01 02 10"
+make = "Sigma"
+model = "19mm F2.8 EX DN"
+focal_range = [[19, 1], [19, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "MFT-mount"
+olympus_id = "01 03 00"
+make = "Sigma"
+model = "18-125mm F3.5-5.6 DC"
+focal_range = [[18, 1], [125, 1]]
+aperture_range = [[35, 10], [56, 10]]
+
+[[lenses]]
+mount = "MFT-mount"
+olympus_id = "01 03 10"
+make = "Sigma"
+model = "30mm F2.8 DN | A"
+focal_range = [[30, 1], [30, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "MFT-mount"
+olympus_id = "01 04 00"
+make = "Sigma"
+model = "18-125mm F3.5-5.6 DC"
+focal_range = [[18, 1], [125, 1]]
+aperture_range = [[35, 10], [56, 10]]
+
+[[lenses]]
+mount = "MFT-mount"
+olympus_id = "01 04 10"
+make = "Sigma"
+model = "19mm F2.8 DN | A"
+focal_range = [[19, 1], [19, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "MFT-mount"
+olympus_id = "01 05 00"
+make = "Sigma"
+model = "30mm F1.4 EX DC HSM"
+focal_range = [[30, 1], [30, 1]]
+aperture_range = [[14, 10], [14, 10]]
+
+[[lenses]]
+mount = "MFT-mount"
+olympus_id = "01 05 10"
+make = "Sigma"
+model = "60mm F2.8 DN | A"
+focal_range = [[60, 1], [60, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "MFT-mount"
+olympus_id = "01 06 00"
+make = "Sigma"
+model = "APO 50-500mm F4.0-6.3 EX DG HSM"
+focal_range = [[50, 1], [500, 1]]
+aperture_range = [[40, 10], [63, 10]]
+
+[[lenses]]
+mount = "MFT-mount"
+olympus_id = "01 06 10"
+make = "Sigma"
+model = "30mm F1.4 DC DN | C"
+focal_range = [[30, 1], [30, 1]]
+aperture_range = [[14, 10], [14, 10]]
+
+[[lenses]]
+mount = "MFT-mount"
+olympus_id = "01 07 00"
+make = "Sigma"
+model = "Macro 105mm F2.8 EX DG"
+focal_range = [[105, 1], [105, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "MFT-mount"
+olympus_id = "01 07 10"
+make = "Sigma"
+model = "16mm F1.4 DC DN | C (017)"
+focal_range = [[16, 1], [16, 1]]
+aperture_range = [[14, 10], [14, 10]]
+
+[[lenses]]
+mount = "MFT-mount"
+olympus_id = "01 08 00"
+make = "Sigma"
+model = "APO Macro 150mm F2.8 EX DG HSM"
+focal_range = [[150, 1], [150, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "MFT-mount"
+olympus_id = "01 09 00"
+make = "Sigma"
+model = "18-50mm F2.8 EX DC Macro"
+focal_range = [[18, 1], [50, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "MFT-mount"
+olympus_id = "01 10 00"
+make = "Sigma"
+model = "24mm F1.8 EX DG Aspherical Macro"
+focal_range = [[24, 1], [24, 1]]
+aperture_range = [[18, 10], [18, 10]]
+
+[[lenses]]
+mount = "MFT-mount"
+olympus_id = "01 11 00"
+make = "Sigma"
+model = "APO 135-400mm F4.5-5.6 DG"
+focal_range = [[135, 1], [400, 1]]
+aperture_range = [[45, 10], [56, 10]]
+
+[[lenses]]
+mount = "MFT-mount"
+olympus_id = "01 12 00"
+make = "Sigma"
+model = "APO 300-800mm F5.6 EX DG HSM"
+focal_range = [[300, 1], [800, 1]]
+aperture_range = [[56, 10], [56, 10]]
+
+[[lenses]]
+mount = "MFT-mount"
+olympus_id = "01 13 00"
+make = "Sigma"
+model = "30mm F1.4 EX DC HSM"
+focal_range = [[30, 1], [30, 1]]
+aperture_range = [[14, 10], [14, 10]]
+
+[[lenses]]
+mount = "MFT-mount"
+olympus_id = "01 14 00"
+make = "Sigma"
+model = "APO 50-500mm F4.0-6.3 EX DG HSM"
+focal_range = [[50, 1], [500, 1]]
+aperture_range = [[40, 10], [63, 10]]
+
+[[lenses]]
+mount = "MFT-mount"
+olympus_id = "01 15 00"
+make = "Sigma"
+model = "10-20mm F4.0-5.6 EX DC HSM"
+focal_range = [[10, 1], [20, 1]]
+aperture_range = [[40, 10], [56, 10]]
+
+[[lenses]]
+mount = "MFT-mount"
+olympus_id = "01 16 00"
+make = "Sigma"
+model = "APO 70-200mm F2.8 II EX DG Macro HSM"
+focal_range = [[70, 1], [200, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "MFT-mount"
+olympus_id = "01 17 00"
+make = "Sigma"
+model = "50mm F1.4 EX DG HSM"
+focal_range = [[50, 1], [50, 1]]
+aperture_range = [[14, 10], [14, 10]]

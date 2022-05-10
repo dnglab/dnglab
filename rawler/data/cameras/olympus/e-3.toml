@@ -1,0 +1,13 @@
+make = "OLYMPUS IMAGING CORP."
+model = "E-3"
+clean_make = "Olympus"
+clean_model = "E-3"
+blackpoint = 0
+whitepoint = 4015
+color_pattern = "RGGB"
+active_area = [0, 0, 0, 0]
+crop_area = [54, 22, 18, 42]
+
+[cameras.color_matrix]
+A = [1.1004, -0.4441, -0.0232, -0.6299, 1.407, 0.2428, -0.087, 0.1459, 0.7422]
+D65 = [0.9487, -0.2875, -0.1115, -0.7533, 1.5606, 0.201, -0.1618, 0.21, 0.7389]
