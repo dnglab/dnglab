@@ -1,0 +1,18 @@
+make = "OLYMPUS CORPORATION"
+model = "E-M1MarkII"
+clean_make = "OLYMPUS CORPORATION"
+clean_model = "E-M1MarkII"
+blackpoint = 254
+whitepoint = 4000
+color_pattern = "RGGB"
+active_area = [0, 0, 0, 0]
+highres_width = 10000
+
+[cameras.color_matrix]
+A = [1.0881, -0.4662, -0.0158, -0.3528, 1.2064, 0.1622, -0.0322, 0.0955, 0.6189]
+D65 = [0.9383, -0.317, -0.0763, -0.2457, 1.0702, 0.202, -0.0384, 0.1236, 0.5552]
+
+[[cameras.modes]]
+mode = "highres"
+active_area = [0, 0, 10, 0]
+

@@ -1,0 +1,13 @@
+make = "OLYMPUS IMAGING CORP."
+model = "SH-2"
+clean_make = "OLYMPUS IMAGING CORP."
+clean_model = "SH-2"
+blackpoint = 0
+whitepoint = 4000
+color_pattern = "GRBG"
+active_area = [0, 0, 0, 0]
+crop_area = [7, 6, 9, 8]
+
+[cameras.color_matrix]
+A = [1.0759, -0.4534, -0.0363, -0.2229, 1.0227, 0.2329, -0.0039, 0.1035, 0.6008]
+D65 = [1.0156, -0.3425, -0.1077, -0.2611, 1.1177, 0.1624, -0.0385, 0.1592, 0.508]

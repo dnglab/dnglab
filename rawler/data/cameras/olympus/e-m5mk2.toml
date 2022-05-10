@@ -1,0 +1,18 @@
+make = "OLYMPUS IMAGING CORP."
+model = "E-M5MarkII"
+clean_make = "Olympus"
+clean_model = "E-M5 Mark II"
+blackpoint = 0
+whitepoint = 4000
+color_pattern = "RGGB"
+active_area = [0, 0, 0, 0]
+highres_width = 9280
+
+[cameras.color_matrix]
+A = [1.0666, -0.4647, 0.0038, -0.3405, 1.1699, 0.192, -0.0415, 0.1123, 0.6411]
+D65 = [0.9422, -0.3258, -0.0711, -0.2655, 1.0898, 0.2015, -0.0512, 0.1354, 0.5512]
+
+[[cameras.modes]]
+mode = "highres"
+color_pattern = "GRBG"
+

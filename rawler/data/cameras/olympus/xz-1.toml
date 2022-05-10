@@ -1,0 +1,13 @@
+make = "OLYMPUS IMAGING CORP."
+model = "XZ-1"
+clean_make = "Olympus"
+clean_model = "XZ-1"
+blackpoint = 0
+whitepoint = 3900
+color_pattern = "RGGB"
+active_area = [0, 0, 0, 1]
+crop_area = [8, 8, 24, 16]
+
+[cameras.color_matrix]
+A = [1.1283, -0.5046, -0.0307, -0.0843, 0.8485, 0.2822, 0.0272, 0.0824, 0.5672]
+D65 = [1.0901, -0.4095, -0.1074, -0.1141, 0.9208, 0.2293, -0.0062, 0.1417, 0.5158]

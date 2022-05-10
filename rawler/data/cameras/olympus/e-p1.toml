@@ -1,0 +1,13 @@
+make = "OLYMPUS IMAGING CORP."
+model = "E-P1"
+clean_make = "Olympus"
+clean_model = "E-P1"
+blackpoint = 64
+whitepoint = 4095
+color_pattern = "RGGB"
+active_area = [0, 0, 4, 0]
+crop_area = [28, 30, 40, 30]
+
+[cameras.color_matrix]
+A = [0.8873, -0.2728, -0.0574, -0.6505, 1.4211, 0.2498, -0.1065, 0.1726, 0.8029]
+D65 = [0.8343, -0.205, -0.1021, -0.7715, 1.5705, 0.2103, -0.1831, 0.238, 0.8235]

@@ -7,9 +7,16 @@ use crate::alloc_image;
 use crate::analyze::FormatDump;
 use crate::exif::Exif;
 use crate::formats::tiff::reader::TiffReader;
+use crate::formats::tiff::Entry;
 use crate::formats::tiff::GenericTiffReader;
+use crate::formats::tiff::Rational;
 use crate::formats::tiff::Value;
 use crate::formats::tiff::IFD;
+use crate::imgop::Dim2;
+use crate::imgop::Point;
+use crate::imgop::Rect;
+use crate::lens::LensDescription;
+use crate::lens::LensResolver;
 use crate::packed::*;
 use crate::pixarray::PixU16;
 use crate::pumps::BitPump;
@@ -23,12 +30,12 @@ use crate::RawLoader;
 use crate::RawlerError;
 use crate::Result;
 
-use super::ok_image;
-use super::ok_image_with_blacklevels;
 use super::Camera;
 use super::Decoder;
 use super::RawDecodeParams;
 use super::RawMetadata;
+
+const MFT_MOUNT: &str = "MFT-mount";
 
 #[derive(Debug, Clone)]
 pub struct OrfDecoder<'a> {
@@ -58,7 +65,19 @@ pub fn parse_makernote<R: Read + Seek>(reader: &mut R, exif_ifd: &IFD) -> Result
         //let endian = if data[off..off + 2] == b"II"[..] { Endian::Little } else { Endian::Big };
         //off += 4;
 
-        let mut mainifd = IFD::new(reader, offset + off as u32, exif_ifd.base, exif_ifd.corr, endian, &[])?;
+        let mut mainifd = IFD::new(reader, offset + off as u32, exif_ifd.base, exif_ifd.corr, endian, &[0x3000])?;
+
+        // Parse the Olympus Equipment section if it exists
+        if let Some(entry) = mainifd.get_entry_raw_with_len(OrfMakernotes::EquipmentIFD, reader, 4)? {
+          // The entry is of type UNDEFINED and count = 1. This tag contains a single 32 bit
+          // offset to the IFD.
+          let ioff = entry.get_force_u32(0);
+          log::debug!("Found EquipmentIFD at offset: {}", ioff);
+          // The IFD start at offset+ioff, but all offsets inside the IFD a relative to the main makernote IFD offset.
+          // So we use the main IFD as base offset, but start parsing IFD at ioff.
+          let ifd = IFD::new(reader, ioff, offset, 0, endian, &[])?;
+          mainifd.sub.insert(OrfMakernotes::EquipmentIFD.into(), vec![ifd]);
+        }
 
         if off == 12 {
           // Parse the Olympus ImgProc section if it exists
@@ -95,12 +114,12 @@ impl<'a> OrfDecoder<'a> {
     let makernote = if let Some(exif) = tiff.find_first_ifd_with_tag(ExifTag::MakerNotes) {
       parse_makernote(file.inner(), exif)?
     } else {
-      log::warn!("SRW makernote not found");
+      log::warn!("ORF makernote not found");
       None
     }
     .ok_or("File has not makernotes")?;
 
-    makernote.dump::<ExifTag>(0).iter().for_each(|line| eprintln!("DUMP: {}", line));
+    //makernote.dump::<ExifTag>(0).iter().for_each(|line| eprintln!("DUMP: {}", line));
 
     Ok(OrfDecoder {
       tiff,
@@ -129,32 +148,48 @@ impl<'a> Decoder for OrfDecoder<'a> {
       self.camera.clone()
     };
 
-    let src: OptBuffer = file.subview_until_eof(offset as u64).unwrap().into(); // TODO add size and check all samples
+    let src: OptBuffer = file.subview(offset as u64, size as u64).unwrap().into(); // TODO add size and check all samples
 
+    // These conditions are sorted in descending order.
+    // All ORF files comes with no hints about the used compression.
+    // But we need to differentiate between 12be-interlaced and
+    // 12be-msb32 because they are in the same size range.
     let image = if size >= width * height * 2 {
       if self.tiff.little_endian() {
+        log::debug!("ORF: decode_12le_unpacked_left_aligned");
         decode_12le_unpacked_left_aligned(&src, width, height, dummy)
       } else {
+        log::debug!("ORF: decode_12be_unpacked_left_aligned");
         decode_12be_unpacked_left_aligned(&src, width, height, dummy)
       }
     } else if size >= width * height / 10 * 16 {
+      log::debug!("ORF: decode_12le_wcontrol");
       decode_12le_wcontrol(&src, width, height, dummy)
     } else if size >= width * height * 12 / 8 {
-      if width < 3500 {
-        // The interlaced stuff is all old and smaller
+      if self.camera.find_hint("interlaced") {
+        log::debug!("ORF: decode_12be_interlaced");
         decode_12be_interlaced(&src, width, height, dummy)
       } else {
+        log::debug!("ORF: decode_12be_msb32");
+        //decode_12be_interlaced(&src, width, height, dummy)
         decode_12be_msb32(&src, width, height, dummy)
       }
     } else {
+      log::debug!("ORF: decode_compressed");
       OrfDecoder::decode_compressed(&src, width, height, dummy)
     };
 
     let cpp = 1;
-    match self.get_blacks() {
-      Ok(val) => ok_image_with_blacklevels(camera, width, height, cpp, self.get_wb()?, val, image.into_inner()),
-      Err(_) => ok_image(camera, width, height, cpp, self.get_wb()?, image.into_inner()),
+
+    let mut img = RawImage::new(camera, width, height, cpp, normalize_wb(self.get_wb()?), image.into_inner(), dummy);
+    if let Ok(black) = self.get_blacks() {
+      img.blacklevels = black;
     }
+    if let Some(crop) = self.get_crop()? {
+      img.crop_area = Some(crop);
+    }
+
+    Ok(img)
   }
 
   fn format_dump(&self) -> FormatDump {
@@ -163,7 +198,7 @@ impl<'a> Decoder for OrfDecoder<'a> {
 
   fn raw_metadata(&self, _file: &mut RawFile, __params: RawDecodeParams) -> Result<RawMetadata> {
     let exif = Exif::new(self.tiff.root_ifd())?;
-    let mdata = RawMetadata::new(&self.camera, exif);
+    let mdata = RawMetadata::new_with_lens(&self.camera, exif, self.get_lens_description()?.cloned());
     Ok(mdata)
   }
 }
@@ -280,25 +315,90 @@ impl<'a> OrfDecoder<'a> {
     Ok([blacks.force_u16(0), blacks.force_u16(1), blacks.force_u16(2), blacks.force_u16(3)])
   }
 
+  fn get_crop(&self) -> Result<Option<Rect>> {
+    let ifd = self.makernote.find_ifds_with_tag(OrfImageProcessing::CropLeft);
+    if ifd.is_empty() {
+      return Ok(None);
+    }
+    let crop_left = fetch_tiff_tag!(ifd[0], OrfImageProcessing::CropLeft).force_usize(0);
+    let crop_top = fetch_tiff_tag!(ifd[0], OrfImageProcessing::CropTop).force_usize(0);
+    let crop_width = fetch_tiff_tag!(ifd[0], OrfImageProcessing::CropWidth).force_usize(0);
+    let crop_height = fetch_tiff_tag!(ifd[0], OrfImageProcessing::CropHeight).force_usize(0);
+    Ok(Some(Rect::new(Point::new(crop_left, crop_top), Dim2::new(crop_width, crop_height))))
+  }
+
+  /// Get lens description by analyzing TIFF tags and makernotes
+  fn get_lens_description(&self) -> Result<Option<&'static LensDescription>> {
+    if let Some(ifd) = self.makernote.get_sub_ifds(OrfMakernotes::EquipmentIFD).and_then(|v| v.get(0)) {
+      match ifd.get_entry(OrfEquipmentTags::LensType) {
+        Some(Entry {
+          value: Value::Byte(settings), ..
+        }) => {
+          log::debug!("Lens type tag: {:?}", settings);
+          let make_id = settings[0];
+          let model_id = settings[2];
+          let submodel_id = settings[3];
+          let composite_id = format!("{:02X} {:02X} {:02X}", make_id, model_id, submodel_id);
+          log::debug!("ORF lens composite ID: {}", composite_id);
+          let resolver = LensResolver::new()
+            .with_olympus_id(Some(composite_id))
+            .with_focal_len(self.get_focal_len()?)
+            .with_mounts(&[MFT_MOUNT.into()]);
+          return Ok(resolver.resolve());
+        }
+        _ => {
+          log::warn!("Camera settings in makernote not found, no lens data available");
+        }
+      }
+    }
+    log::warn!("No lens data found");
+    Ok(None)
+  }
+
+  fn get_focal_len(&self) -> Result<Option<Rational>> {
+    if let Some(exif) = self.tiff.find_first_ifd_with_tag(ExifTag::MakerNotes) {
+      if let Some(Entry {
+        value: Value::Short(focal), ..
+      }) = exif.get_entry(ExifTag::FocalLength)
+      {
+        return Ok(focal.get(1).map(|v| Rational::new(*v as u32, 1)));
+      }
+    }
+    Ok(None)
+  }
+
   fn get_wb(&self) -> Result<[f32; 4]> {
     let redmul = self.makernote.get_entry(OrfMakernotes::OlympusRedMul);
     let bluemul = self.makernote.get_entry(OrfMakernotes::OlympusBlueMul);
     match (redmul, bluemul) {
-      (Some(redmul), Some(bluemul)) => Ok([redmul.force_u32(0) as f32, 256.0, bluemul.force_u32(0) as f32, NAN]),
+      (Some(redmul), Some(bluemul)) => Ok([redmul.force_u32(0) as f32, 256.0, 256.0, bluemul.force_u32(0) as f32]),
       _ => {
         let ifd = self.makernote.find_ifds_with_tag(OrfImageProcessing::OrfBlackLevels);
         if ifd.is_empty() {
           return Err(RawlerError::General("ORF: Couldn't find ImgProc IFD".to_string()));
         }
         let wbs = fetch_tiff_tag!(ifd[0], OrfImageProcessing::WB_RBLevels);
-        Ok([wbs.force_f32(0), 256.0, wbs.force_f32(1), NAN])
+        Ok([wbs.force_f32(0), 256.0, 256.0, wbs.force_f32(1)])
       }
     }
   }
 }
 
+fn normalize_wb(raw_wb: [f32; 4]) -> [f32; 4] {
+  log::debug!("ORF raw wb: {:?}", raw_wb);
+  let div = raw_wb[1];
+  let mut norm = raw_wb;
+  norm.iter_mut().for_each(|v| {
+    if v.is_normal() {
+      *v /= div
+    }
+  });
+  [norm[0], (norm[1] + norm[2]) / 2.0, norm[3], NAN]
+}
+
 crate::tags::tiff_tag_enum!(OrfMakernotes);
 crate::tags::tiff_tag_enum!(OrfImageProcessing);
+crate::tags::tiff_tag_enum!(OrfEquipmentTags);
 
 #[allow(non_camel_case_types)]
 #[derive(Debug, Copy, Clone, PartialEq, enumn::N)]
@@ -308,6 +408,7 @@ pub enum OrfMakernotes {
   RawInfo = 0x3000,
   OlympusRedMul = 0x1017,
   OlympusBlueMul = 0x1018,
+  EquipmentIFD = 0x2010,
 }
 
 #[allow(non_camel_case_types)]
@@ -317,4 +418,15 @@ pub enum OrfImageProcessing {
   ImageProcessingVersion = 0x0000,
   WB_RBLevels = 0x0100,
   OrfBlackLevels = 0x0600,
+  CropLeft = 0x0612,
+  CropTop = 0x0613,
+  CropWidth = 0x0614,
+  CropHeight = 0x0615,
+}
+
+#[allow(non_camel_case_types)]
+#[derive(Debug, Copy, Clone, PartialEq, enumn::N)]
+#[repr(u16)]
+pub enum OrfEquipmentTags {
+  LensType = 0x0201,
 }

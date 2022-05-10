@@ -120,16 +120,22 @@ impl IFD {
                 sub_ifd_offsets.insert(*tag, vec![offsets[0] as u32]);
                 //sub_ifd_offsets.extend_from_slice(&offsets);
               }
+              Value::Undefined(_) => {
+                sub_ifd_offsets.insert(tag, vec![entry.offset().unwrap() as u32]);
+              }
               val => {
-                debug!("Found IFD offset tag, but type mismatch: {:?}", val);
-                todo!()
+                log::info!(
+                  "Found IFD offset tag, but type mismatch: {:?}. Ignoring SubIFD parsing for tag 0x{:X}",
+                  val,
+                  tag
+                );
               }
             }
           }
           entries.insert(entry.tag, entry);
         }
         Err(err) => {
-          log::warn!("Failed to parse TIFF tag 0x{:X}, skipping: {:?}", tag, err);
+          log::info!("Failed to parse TIFF tag 0x{:X}, skipping: {:?}", tag, err);
         }
       }
     }

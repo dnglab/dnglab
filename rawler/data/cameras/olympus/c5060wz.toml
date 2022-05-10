@@ -1,0 +1,14 @@
+make = "OLYMPUS CORPORATION"
+model = "C5060WZ"
+clean_make = "Olympus"
+clean_model = "C5060WZ"
+blackpoint = 0
+whitepoint = 4095
+color_pattern = "RGGB"
+hints = ["interlaced"]
+active_area = [0, 0, 0, 0]
+crop_area = [8, 2, 8, 3]
+
+[cameras.color_matrix]
+A = [1.1025, -0.4139, -0.0743, -0.6922, 1.4707, 0.2385, -0.063, 0.0755, 0.7949]
+D65 = [1.0445, -0.3361, -0.1307, -0.7662, 1.5691, 0.2058, -0.1135, 0.1175, 0.7602]
