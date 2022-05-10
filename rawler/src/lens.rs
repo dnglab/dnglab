@@ -293,7 +293,12 @@ pub struct LensIdentifier {
 impl LensIdentifier {
   pub(crate) fn new(name: Option<String>, id: Option<LensId>, nikon_id: Option<String>, olympus_id: Option<String>) -> Self {
     if name.is_some() || id.is_some() || nikon_id.is_some() || olympus_id.is_some() {
-      Self { name, id, nikon_id, olympus_id }
+      Self {
+        name,
+        id,
+        nikon_id,
+        olympus_id,
+      }
     } else {
       panic!("LensIdentifier must contain a name or id");
     }

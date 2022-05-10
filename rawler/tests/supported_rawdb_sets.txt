@@ -300,3 +300,64 @@ cameras/Kodak/EOS DCS 3/raw_modes
 cameras/Kodak/KODAK P712 ZOOM DIGITAL CAMERA/raw_modes
 cameras/Kodak/P880/raw_modes
 cameras/Kodak/Z1015 IS/raw_modes
+cameras/Olympus/C5050Z/raw_modes
+cameras/Olympus/C5060WZ/raw_modes
+cameras/Olympus/C7070WZ/raw_modes
+cameras/Olympus/C8080WZ/raw_modes
+cameras/Olympus/E-10/raw_modes
+cameras/Olympus/E-1/raw_modes
+cameras/Olympus/E-20/raw_modes
+cameras/Olympus/E-300/raw_modes
+cameras/Olympus/E-30/raw_modes
+cameras/Olympus/E-330/raw_modes
+cameras/Olympus/E-3/raw_modes
+cameras/Olympus/E-400/raw_modes
+cameras/Olympus/E-410/raw_modes
+cameras/Olympus/E-420/raw_modes
+cameras/Olympus/E-450/raw_modes
+cameras/Olympus/E-500/raw_modes
+cameras/Olympus/E-510/raw_modes
+cameras/Olympus/E-520/raw_modes
+cameras/Olympus/E-5/raw_modes
+cameras/Olympus/E-600/raw_modes
+cameras/Olympus/E-620/raw_modes
+cameras/Olympus/E-M10 Mark III/raw_modes
+cameras/Olympus/E-M10MarkIIIS/raw_modes
+cameras/Olympus/E-M10 Mark II/raw_modes
+cameras/Olympus/E-M10 Mark IV/raw_modes
+cameras/Olympus/E-M10/raw_modes
+cameras/Olympus/E-M1MarkIII/raw_modes
+cameras/Olympus/E-M1MarkII/raw_modes
+cameras/Olympus/E-M1/raw_modes
+cameras/Olympus/E-M1X/raw_modes
+cameras/Olympus/E-M5 Mark III/raw_modes
+cameras/Olympus/E-M5 Mark II/raw_modes
+cameras/Olympus/E-M5/raw_modes
+cameras/Olympus/E-P1/raw_modes
+cameras/Olympus/E-P2/raw_modes
+cameras/Olympus/E-P3/raw_modes
+cameras/Olympus/E-P5/raw_modes
+cameras/Olympus/E-PL10/raw_modes
+cameras/Olympus/E-PL1/raw_modes
+cameras/Olympus/E-PL2/raw_modes
+cameras/Olympus/E-PL3/raw_modes
+cameras/Olympus/E-PL5/raw_modes
+cameras/Olympus/E-PL6/raw_modes
+cameras/Olympus/E-PL7/raw_modes
+cameras/Olympus/E-PL8/raw_modes
+cameras/Olympus/E-PL9/raw_modes
+cameras/Olympus/E-PM1/raw_modes
+cameras/Olympus/E-PM2/raw_modes
+cameras/Olympus/PEN-F/raw_modes
+cameras/Olympus/SH-2/raw_modes
+cameras/Olympus/SP350/raw_modes
+cameras/Olympus/SP500UZ/raw_modes
+cameras/Olympus/SP510UZ/raw_modes
+cameras/Olympus/SP565UZ/raw_modes
+cameras/Olympus/Stylus1/raw_modes
+cameras/Olympus/TG-4/raw_modes
+cameras/Olympus/TG-5/raw_modes
+cameras/Olympus/TG-6/raw_modes
+cameras/Olympus/XZ-10/raw_modes
+cameras/Olympus/XZ-1/raw_modes
+cameras/Olympus/XZ-2/raw_modes
