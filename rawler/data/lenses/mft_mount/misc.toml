@@ -1,0 +1,15 @@
+[[lenses]]
+mount = "MFT-mount"
+olympus_id = "05 01 10"
+make = "Tamron"
+model = "14-150mm F3.5-5.8 Di III"
+focal_range = [[14, 1], [150, 1]]
+aperture_range = [[35, 10], [58, 10]]
+
+[[lenses]]
+mount = "MFT-mount"
+olympus_id = "24 01 10"
+make = "Venus Optics"
+model = "Laowa 50mm F2.8 2x Macro"
+focal_range = [[50, 1], [50, 1]]
+aperture_range = [[28, 10], [28, 10]]
