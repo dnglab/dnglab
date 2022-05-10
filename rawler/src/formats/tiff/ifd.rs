@@ -156,7 +156,7 @@ impl IFD {
     for subs in sub_ifd_offsets {
       let mut ifds = Vec::new();
       for offset in subs.1 {
-        match Self::new(reader, apply_corr(offset, corr), base, corr, endian, sub_tags) {
+        match Self::new(reader, apply_corr(offset, corr), base, corr, endian, &[]) {
           Ok(ifd) => ifds.push(ifd),
           Err(err) => {
             log::warn!("Error while processing TIFF sub-IFD for tag 0x{:X}, ignoring it: {}", subs.0, err);
