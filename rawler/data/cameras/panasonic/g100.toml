@@ -1,0 +1,20 @@
+make = "Panasonic"
+model = "DC-G100"
+clean_make = "Panasonic"
+clean_model = "DC-G100"
+
+model_aliases = [
+  ["DC-G110", "DC-G110"],
+]
+
+blackpoint = 0
+whitepoint = 4095
+color_pattern = "BGGR"
+
+[cameras.color_matrix]
+A = [1.0298, -0.5719, 0.0794, -0.2932, 1.0855, 0.2391, -0.0095, 0.0718, 0.6037]
+D65 = [0.837, -0.2869, -0.071, -0.3389, 1.1372, 0.2298, -0.064, 0.1599, 0.4887]
+
+[[cameras.modes]]
+mode = "4:3"
+active_area = [0, 0, 208, 0]

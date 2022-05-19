@@ -1,0 +1,27 @@
+make = "Panasonic"
+model = "DMC-LX7"
+clean_make = "Panasonic"
+clean_model = "DMC-LX7"
+blackpoint = 142
+whitepoint = 3971
+color_pattern = "GRBG"
+
+[cameras.color_matrix]
+A = [1.1127, -0.5386, 0.041, -0.1849, 0.9339, 0.2962, 0.0066, 0.0807, 0.5378]
+D65 = [1.0148, -0.3743, -0.0991, -0.2837, 1.1366, 0.1659, -0.0701, 0.1893, 0.4899]
+
+[[cameras.modes]]
+mode = "1:1"
+active_area = [0, 0, 48, 0]
+
+[[cameras.modes]]
+mode = "4:3"
+active_area = [0, 0, 34, 0]
+
+[[cameras.modes]]
+mode = "3:2"
+active_area = [0, 0, 128, 0]
+
+[[cameras.modes]]
+mode = "16:9"
+active_area = [0, 0, 160, 0]

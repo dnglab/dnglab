@@ -1,0 +1,15 @@
+make = "Panasonic"
+model = "DMC-FZ300"
+clean_make = "Panasonic"
+clean_model = "DMC-FZ300"
+blackpoint = 143
+whitepoint = 4095
+color_pattern = "GBRG"
+
+[cameras.color_matrix]
+A = [0.9263, -0.3981, 0.0028, -0.3588, 1.1615, 0.2237, -0.0364, 0.1328, 0.5749]
+D65 = [0.8378, -0.2798, -0.0769, -0.3068, 1.141, 0.1877, -0.0538, 0.1792, 0.4623]
+
+[[cameras.modes]]
+mode = "4:3"
+active_area = [0, 0, 128, 0]

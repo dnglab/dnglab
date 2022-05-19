@@ -1,0 +1,27 @@
+make = "Panasonic"
+model = "DMC-GF1"
+clean_make = "Panasonic"
+clean_model = "DMC-GF1"
+blackpoint = 15
+whitepoint = 3986
+color_pattern = "GBRG"
+
+[cameras.color_matrix]
+A = [0.8329, -0.2548, -0.0472, -0.6882, 1.4563, 0.2514, -0.1226, 0.1911, 0.7837]
+D65 = [0.7888, -0.1902, -0.1011, -0.8106, 1.6085, 0.2099, -0.2353, 0.2866, 0.733]
+
+[[cameras.modes]]
+mode = "1:1"
+active_area = [0, 0, 44, 0]
+
+[[cameras.modes]]
+mode = "4:3"
+active_area = [0, 0, 44, 0]
+
+[[cameras.modes]]
+mode = "3:2"
+active_area = [0, 0, 44, 0]
+
+[[cameras.modes]]
+mode = "16:9"
+active_area = [0, 0, 44, 0]

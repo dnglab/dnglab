@@ -1,0 +1,15 @@
+make = "Panasonic"
+model = "DC-S5"
+clean_make = "Panasonic"
+clean_model = "DC-S5"
+blackpoint = 142
+whitepoint = 16380
+color_pattern = "RGGB"
+
+[cameras.color_matrix]
+A = [1.1598, -0.6406, 0.0627, -0.4876, 1.3241, 0.177, -0.0306, 0.0922, 0.6741]
+D65 = [0.9744, -0.3905, -0.0779, -0.4899, 1.2807, 0.2324, -0.0798, 0.163, 0.5827]
+
+[[cameras.modes]]
+mode = "3:2"
+active_area = [0, 0, 128, 0]

@@ -1,0 +1,23 @@
+make = "Panasonic"
+model = "DMC-FZ28"
+clean_make = "Panasonic"
+clean_model = "DMC-FZ28"
+blackpoint = 15
+whitepoint = 3986
+color_pattern = "BGGR"
+
+[cameras.color_matrix]
+A = [1.2346, -0.5884, 0.0233, -0.3747, 1.0806, 0.3402, -0.0239, 0.1145, 0.576]
+D65 = [1.0109, -0.3488, -0.0993, -0.5412, 1.2812, 0.2916, -0.1305, 0.214, 0.5543]
+
+[[cameras.modes]]
+mode = "4:3"
+active_area = [0, 0, 56, 0]
+
+[[cameras.modes]]
+mode = "3:2"
+active_area = [0, 0, 56, 0]
+
+[[cameras.modes]]
+mode = "16:9"
+active_area = [0, 0, 56, 0]

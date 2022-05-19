@@ -1,0 +1,27 @@
+make = "Panasonic"
+model = "DC-GH5S"
+clean_make = "Panasonic"
+clean_model = "DC-GH5S"
+blackpoint = 144
+whitepoint = 8000
+color_pattern = "RGGB"
+
+[cameras.color_matrix]
+A = [0.7718, -0.3541, 0.0141, -0.2768, 1.0432, 0.2711, -0.0242, 0.0926, 0.6051]
+D65 = [0.6929, -0.2355, -0.0708, -0.4192, 1.2534, 0.1828, -0.1097, 0.1989, 0.5195]
+
+[[cameras.modes]]
+mode = "4:3"
+active_area = [0, 0, 56, 0]
+
+[[cameras.modes]]
+mode = "1:1"
+active_area = [0, 0, 56, 0]
+
+[[cameras.modes]]
+mode = "16:9"
+active_area = [0, 0, 56, 0]
+
+[[cameras.modes]]
+mode = "3:2"
+active_area = [0, 0, 56, 0]

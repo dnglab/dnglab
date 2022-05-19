@@ -619,3 +619,15 @@ where
   });
   PixU16::new_with(out, width, height)
 }
+
+/// This is used for streams where not chunked at line boundaries.
+pub fn decode_threaded_chunked<F>(width: usize, height: usize, chunksize: usize, dummy: bool, closure: &F) -> PixU16
+where
+  F: Fn(&mut [u16], usize) + Sync,
+{
+  let mut out: Vec<u16> = alloc_image!(width, height, dummy);
+  out.par_chunks_mut(chunksize).enumerate().for_each(|(chunk_id, chunk)| {
+    closure(chunk, chunk_id);
+  });
+  PixU16::new_with(out, width, height)
+}

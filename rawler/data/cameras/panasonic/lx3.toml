@@ -1,0 +1,27 @@
+make = "Panasonic"
+model = "DMC-LX3"
+clean_make = "Panasonic"
+clean_model = "DMC-LX3"
+blackpoint = 15
+whitepoint = 3986
+color_pattern = "BGGR"
+
+[cameras.color_matrix]
+A = [0.9946, -0.4716, 0.043, -0.444, 1.1224, 0.3705, -0.0676, 0.1538, 0.6348]
+D65 = [0.8128, -0.2668, -0.0655, -0.6134, 1.3307, 0.3161, -0.1782, 0.2568, 0.6083]
+
+[[cameras.modes]]
+mode = "1:1"
+active_area = [0, 0, 74, 0]
+
+[[cameras.modes]]
+mode = "4:3"
+active_area = [0, 0, 58, 0]
+
+[[cameras.modes]]
+mode = "3:2"
+active_area = [0, 0, 44, 0]
+
+[[cameras.modes]]
+mode = "16:9"
+active_area = [0, 0, 70, 0]

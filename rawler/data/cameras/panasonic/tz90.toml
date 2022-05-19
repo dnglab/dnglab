@@ -1,0 +1,15 @@
+make = "Panasonic"
+model = "DC-TZ90"
+clean_make = "Panasonic"
+clean_model = "DC-TZ90"
+blackpoint = 139
+whitepoint = 4095
+color_pattern = "GBRG"
+
+[cameras.color_matrix]
+A = [0.9708, -0.4136, -0.0164, -0.3559, 1.1435, 0.2421, -0.0135, 0.1147, 0.5867]
+D65 = [0.9052, -0.3117, -0.0883, -0.3045, 1.1346, 0.1927, -0.0205, 0.152, 0.473]
+
+[[cameras.modes]]
+mode = "4:3"
+active_area = [0, 0, 64, 0]

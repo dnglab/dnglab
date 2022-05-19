@@ -1,0 +1,22 @@
+make = "Panasonic"
+model = "DC-G90"
+clean_make = "Panasonic"
+clean_model = "DC-G90"
+
+model_aliases = [
+  ["DC-G95", "DC-G95"],
+  ["DC-G91", "DC-G91"],
+]
+
+blackpoint = 140
+whitepoint = 4095
+color_pattern = "BGGR"
+
+[cameras.color_matrix]
+A = [1.1794, -0.6983, 0.1102, -0.2819, 1.0936, 0.2161, -0.0028, 0.0638, 0.5793]
+D65 = [0.9657, -0.3963, -0.0748, -0.3361, 1.1378, 0.2258, -0.0568, 0.1415, 0.5158]
+
+
+[[cameras.modes]]
+mode = "4:3"
+active_area = [0, 0, 208, 0]

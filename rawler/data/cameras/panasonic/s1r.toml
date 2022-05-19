@@ -1,0 +1,15 @@
+make = "Panasonic"
+model = "DC-S1R"
+clean_make = "Panasonic"
+clean_model = "DC-S1R"
+blackpoint = 142
+whitepoint = 16380
+color_pattern = "RGGB"
+
+[cameras.color_matrix]
+A = [1.4113, -0.8165, 0.0413, -0.5716, 1.5256, 0.031, -0.0048, 0.0467, 0.7624]
+D65 = [1.1822, -0.5321, -0.1249, -0.5958, 1.5114, 0.0766, -0.0614, 0.1264, 0.7043]
+
+[[cameras.modes]]
+mode = "3:2"
+active_area = [0, 0, 128, 0]

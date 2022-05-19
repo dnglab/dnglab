@@ -1,0 +1,28 @@
+make = "Panasonic"
+model = "DMC-G6"
+clean_make = "Panasonic"
+clean_model = "DMC-G6"
+blackpoint = 142
+whitepoint = 3971
+color_pattern = "BGGR"
+
+
+[cameras.color_matrix]
+A = [0.89, -0.3755, 0.027, -0.3407, 1.0753, 0.3068, -0.0599, 0.1555, 0.6269]
+D65 = [0.8294, -0.2891, -0.0651, -0.3869, 1.159, 0.2595, -0.1183, 0.2267, 0.5352]
+
+[[cameras.modes]]
+mode = "1:1"
+active_area = [0, 0, 0, 0]
+
+[[cameras.modes]]
+mode = "4:3"
+active_area = [0, 0, 194, 0]
+
+[[cameras.modes]]
+mode = "3:2"
+active_area = [0, 0, 194, 0]
+
+[[cameras.modes]]
+mode = "16:9"
+active_area = [0, 0, 194, 0]

@@ -1,0 +1,27 @@
+make = "Panasonic"
+model = "DMC-FZ200"
+clean_make = "Panasonic"
+clean_model = "DMC-FZ200"
+blackpoint = 142
+whitepoint = 3971
+color_pattern = "GBRG"
+
+[cameras.color_matrix]
+A = [0.8452, -0.35, 0.0533, -0.2458, 0.9488, 0.3493, -0.016, 0.0993, 0.549]
+D65 = [0.8112, -0.2563, -0.074, -0.373, 1.1784, 0.2197, -0.0941, 0.2075, 0.4933]
+
+[[cameras.modes]]
+mode = "1:1"
+active_area = [0, 0, 16, 0]
+
+[[cameras.modes]]
+mode = "4:3"
+active_area = [0, 0, 128, 4]
+
+[[cameras.modes]]
+mode = "3:2"
+active_area = [0, 0, 128, 0]
+
+[[cameras.modes]]
+mode = "16:9"
+active_area = [0, 0, 128, 0]

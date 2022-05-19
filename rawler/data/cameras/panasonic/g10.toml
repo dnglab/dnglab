@@ -1,0 +1,27 @@
+make = "Panasonic"
+model = "DMC-G10"
+clean_make = "Panasonic"
+clean_model = "DMC-G10"
+blackpoint = 15
+whitepoint = 3900
+color_pattern = "GBRG"
+
+[cameras.color_matrix]
+A = [1.0433, -0.455, -0.0301, -0.3842, 1.1107, 0.3148, -0.0349, 0.1097, 0.7668]
+D65 = [1.0113, -0.34, -0.1114, -0.4765, 1.2683, 0.2317, -0.0377, 0.1437, 0.671]
+
+[[cameras.modes]]
+mode = "4:3"
+active_area = [0, 0, 44, 0]
+
+[[cameras.modes]]
+mode = "1:1"
+active_area = [0, 0, 44, 0]
+
+[[cameras.modes]]
+mode = "16:9"
+active_area = [0, 0, 44, 0]
+
+[[cameras.modes]]
+mode = "3:2"
+active_area = [0, 0, 44, 0]

@@ -1,0 +1,27 @@
+make = "Panasonic"
+model = "DMC-GF5"
+clean_make = "Panasonic"
+clean_model = "DMC-GF5"
+blackpoint = 143
+whitepoint = 3956
+color_pattern = "GBRG"
+
+[cameras.color_matrix]
+A = [0.8404, -0.3597, 0.0312, -0.3368, 1.0478, 0.3357, -0.0498, 0.1353, 0.6882]
+D65 = [0.8228, -0.2945, -0.066, -0.3938, 1.1792, 0.243, -0.1094, 0.2278, 0.5793]
+
+[[cameras.modes]]
+mode = "1:1"
+active_area = [0, 0, 16, 0]
+
+[[cameras.modes]]
+mode = "4:3"
+active_area = [0, 0, 128, 0]
+
+[[cameras.modes]]
+mode = "3:2"
+active_area = [0, 0, 128, 0]
+
+[[cameras.modes]]
+mode = "16:9"
+active_area = [0, 0, 128, 0]
