@@ -196,7 +196,13 @@ impl<'a> Decoder for Rw2Decoder<'a> {
   }
 
   fn raw_metadata(&self, _file: &mut RawFile, _params: RawDecodeParams) -> Result<RawMetadata> {
-    let exif = Exif::new(self.tiff.root_ifd())?;
+    let mut exif = Exif::new(self.tiff.root_ifd())?;
+    if exif.iso_speed.unwrap_or(0) == 0 && exif.iso_speed_ratings.unwrap_or(0) == 0 && exif.recommended_exposure_index.unwrap_or(0) == 0 {
+      // Use ISO from PanasonicRaw IFD
+      if let Some(iso) = self.tiff.get_entry(PanasonicTag::ISO) {
+        exif.iso_speed_ratings = Some(iso.force_u16(0));
+      }
+    }
     let mdata = RawMetadata::new_with_lens(&self.camera, exif, self.get_lens_description()?.cloned());
     Ok(mdata)
   }
@@ -360,6 +366,7 @@ pub enum PanasonicTag {
   Compression = 0x000b,
   PanaWBsR = 0x0011,
   PanaWBsB = 0x0012,
+  ISO = 0x0017,
 
   BlackLevelRed = 0x001c,
   BlackLevelGreen = 0x001d,
