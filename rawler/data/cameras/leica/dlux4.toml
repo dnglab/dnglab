@@ -1,0 +1,15 @@
+make = "LEICA"
+model = "D-LUX 4"
+clean_make = "Leica"
+clean_model = "D-LUX 4"
+blackpoint = 0
+whitepoint = 3986
+color_pattern = "BGGR"
+
+[cameras.color_matrix]
+A = [0.9946, -0.4716, 0.043, -0.444, 1.1224, 0.3705, -0.0676, 0.1538, 0.6348]
+D65 = [0.8128, -0.2668, -0.0655, -0.6134, 1.3307, 0.3161, -0.1782, 0.2568, 0.6083]
+
+[[cameras.modes]]
+mode = "3:2"
+active_area = [0, 0, 0, 0]

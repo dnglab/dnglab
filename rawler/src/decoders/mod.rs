@@ -93,9 +93,9 @@ pub static CAMERAS_TOML: &str = include_str!(concat!(env!("OUT_DIR"), "/cameras.
 pub static SAMPLE: &str = "\nPlease submit samples at https://raw.pixls.us/";
 pub static BUG: &str = "\nPlease file a bug with a sample file at https://github.com/dnglab/dnglab/issues";
 
-const SUPPORTED_FILES_EXT: [&str; 26] = [
+const SUPPORTED_FILES_EXT: [&str; 27] = [
   "ARI", "ARW", "CR2", "CR3", "CRM", "CRW", "DCR", "DCS", "DNG", "ERF", "IIQ", "KDC", "MEF", "MOS", "MRW", "NEF", "NRW", "ORF", "PEF", "RAF", "RAW", "RW2",
-  "SRW", "3FR", "FFF", "X3F",
+  "RWL", "SRW", "3FR", "FFF", "X3F",
 ];
 
 /// Get list of supported file extensions. All names
@@ -475,6 +475,7 @@ impl RawLoader {
             "Kodak" => return use_decoder!(dcr::DcrDecoder, rawfile, tiff, self),
             "Panasonic" => return use_decoder!(rw2::Rw2Decoder, rawfile, tiff, self),
             "LEICA" => return use_decoder!(rw2::Rw2Decoder, rawfile, tiff, self),
+            "LEICA CAMERA AG" => return use_decoder!(rw2::Rw2Decoder, rawfile, tiff, self),
             //"FUJIFILM" => return use_decoder!(raf::RafDecoder, rawfile, tiff, self),
             "NIKON" => return use_decoder!(nrw::NrwDecoder, rawfile, tiff, self),
             "NIKON CORPORATION" => return use_decoder!(nef::NefDecoder, rawfile, tiff, self),
@@ -482,7 +483,7 @@ impl RawLoader {
               return Err(RawlerError::Unsupported {
                 what: format!("Couldn't find a decoder for make \"{}\"", x),
                 make: make.to_string(),
-                model: String::new(),
+                model: tiff.get_entry(TiffCommonTag::Model).and_then(|entry| entry.as_string().cloned()).unwrap_or_default(),
                 mode: String::new(),
               });
             }

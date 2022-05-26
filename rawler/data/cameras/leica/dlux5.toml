@@ -1,0 +1,27 @@
+make = "LEICA"
+model = "D-LUX 5"
+clean_make = "Leica"
+clean_model = "D-LUX 5"
+blackpoint = 150
+whitepoint = 3986
+color_pattern = "GRBG"
+
+[cameras.color_matrix]
+A = [1.2034, -0.6088, 0.003, -0.0465, 0.7861, 0.3136, 0.064, 0.0751, 0.544]
+D65 = [1.0909, -0.4295, -0.0948, -0.1333, 0.9306, 0.2399, 0.0022, 0.1738, 0.4582]
+
+[[cameras.modes]]
+mode = "16:9"
+active_area = [0, 0, 104, 4]
+
+[[cameras.modes]]
+mode = "4:3"
+active_area = [0, 0, 200, 4]
+
+[[cameras.modes]]
+mode = "3:2"
+active_area = [0, 0, 74, 4]
+
+[[cameras.modes]]
+mode = "1:1"
+active_area = [0, 0, 220, 4]

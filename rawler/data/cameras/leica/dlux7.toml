@@ -1,0 +1,27 @@
+make = "LEICA CAMERA AG"
+model = "D-Lux 7"
+clean_make = "Leica"
+clean_model = "D-Lux 7"
+blackpoint = 0
+whitepoint = 4095
+color_pattern = "BGGR"
+
+[cameras.color_matrix]
+A = [0.9994, -0.49, 0.0018, -0.4363, 1.3152, 0.1279, -0.0328, 0.0965, 0.5835]
+D65 = [0.8585, -0.3127, -0.0833, -0.4005, 1.225, 0.1953, -0.065, 0.1494, 0.4862]
+
+[[cameras.modes]]
+mode = "4:3"
+active_area = [10, 6, 60, 4]
+
+[[cameras.modes]]
+mode = "1:1"
+active_area = [0, 6, 130, 4]
+
+[[cameras.modes]]
+mode = "16:9"
+active_area = [10, 0, 90, 0]
+
+[[cameras.modes]]
+mode = "3:2"
+active_area = [4, 0, 90, 0]

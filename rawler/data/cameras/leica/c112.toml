@@ -1,0 +1,19 @@
+make = "LEICA"
+model = "C (Typ 112)"
+clean_make = "Leica"
+clean_model = "C (Typ 112)"
+blackpoint = 146
+whitepoint = 3956
+color_pattern = "RGGB"
+
+[cameras.color_matrix]
+A = [1.0884, -0.5276, 0.0776, -0.2257, 0.994, 0.2711, -0.01, 0.098, 0.6119]
+D65 = [0.9379, -0.3267, -0.0816, -0.3227, 1.156, 0.1881, -0.0926, 0.1928, 0.534]
+
+[[cameras.modes]]
+mode = "4:3"
+active_area = [0, 0, 130, 0]
+
+[[cameras.modes]]
+mode = "3:2"
+active_area = [0, 0, 130, 0]

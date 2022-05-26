@@ -1,0 +1,27 @@
+make = "LEICA"
+model = "V-LUX (Typ 114)"
+clean_make = "LEICA"
+clean_model = "V-LUX (Typ 114)"
+blackpoint = 143
+whitepoint = 3956
+color_pattern = "GBRG"
+
+[cameras.color_matrix]
+A = [0.8393, -0.3595, -0.0084, -0.396, 1.1894, 0.2333, -0.0445, 0.1208, 0.6062]
+D65 = [0.783, -0.2696, -0.0763, -0.3325, 1.1667, 0.1866, -0.0641, 0.1712, 0.4824]
+
+[[cameras.modes]]
+mode = "4:3"
+active_area = [0, 0, 162, 0]
+
+[[cameras.modes]]
+mode = "16:9"
+active_area = [0, 0, 0, 0]
+
+[[cameras.modes]]
+mode = "3:2"
+active_area = [0, 0, 0, 0]
+
+[[cameras.modes]]
+mode = "1:1"
+active_area = [0, 0, 34, 0]

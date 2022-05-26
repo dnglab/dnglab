@@ -1,0 +1,15 @@
+make = "LEICA"
+model = "D-LUX 3"
+clean_make = "Leica"
+clean_model = "D-LUX 3"
+blackpoint = 0
+whitepoint = 3986
+color_pattern = "BGGR"
+
+[cameras.color_matrix]
+A = [0.9781, -0.4779, 0.0376, -0.4711, 1.1427, 0.3777, -0.073, 0.1393, 0.7137]
+D65 = [0.8047, -0.281, -0.0624, -0.6449, 1.3519, 0.3272, -0.1701, 0.2146, 0.705]
+
+[[cameras.modes]]
+mode = "16:9"
+active_area = [18, 18, 66, 24]
