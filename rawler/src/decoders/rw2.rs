@@ -116,7 +116,9 @@ impl<'a> Decoder for Rw2Decoder<'a> {
 
     let compression = raw.get_entry(PanasonicTag::Compression).map(|entry| entry.force_u16(0)).unwrap_or_default(); // TODO BUG
                                                                                                                     //let compression = fetch_tiff_tag!(raw, PanasonicTag::Compression).force_u16(0);
-    let raw_format = fetch_tiff_tag!(raw, PanasonicTag::RawFormat).force_u16(0);
+
+    let raw_format = raw.get_entry(PanasonicTag::RawFormat).map(|entry| entry.force_u16(0)).unwrap_or_default(); // TODO BUG
+
     let bps = fetch_tiff_tag!(raw, PanasonicTag::BitsPerSample).force_u32(0);
     let multishot = raw.get_entry(PanasonicTag::Multishot).map(|entry| entry.force_u32(0) == 65536).unwrap_or(false);
 
@@ -317,6 +319,7 @@ impl<'a> Rw2Decoder<'a> {
   pub(crate) fn decode_panasonic(buf: &[u8], width: usize, height: usize, split: bool, raw_format: u16, bps: u32, dummy: bool) -> PixU16 {
     log::debug!("width: {}, height: {}, bps: {}", width, height, bps);
     match raw_format {
+      3 => decode_panasonic_v4(buf, width, height, split, dummy),
       4 => decode_panasonic_v4(buf, width, height, split, dummy),
       5 => decode_panasonic_v5(buf, width, height, bps, dummy),
       6 => decode_panasonic_v6(buf, width, height, bps, dummy),

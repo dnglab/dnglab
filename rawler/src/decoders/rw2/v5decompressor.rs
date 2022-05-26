@@ -1,5 +1,4 @@
 /// Ported from Libraw
-
 use crate::{
   decoders::*,
   pumps::{BitPump, BitPumpLSB},

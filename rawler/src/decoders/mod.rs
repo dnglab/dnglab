@@ -93,9 +93,9 @@ pub static CAMERAS_TOML: &str = include_str!(concat!(env!("OUT_DIR"), "/cameras.
 pub static SAMPLE: &str = "\nPlease submit samples at https://raw.pixls.us/";
 pub static BUG: &str = "\nPlease file a bug with a sample file at https://github.com/dnglab/dnglab/issues";
 
-const SUPPORTED_FILES_EXT: [&str; 25] = [
-  "ARI", "ARW", "CR2", "CR3", "CRM", "CRW", "DCR", "DCS", "DNG", "ERF", "IIQ", "KDC", "MEF", "MOS", "MRW", "NEF", "NRW", "ORF", "PEF", "RAF", "RW2", "SRW",
-  "3FR", "FFF", "X3F",
+const SUPPORTED_FILES_EXT: [&str; 26] = [
+  "ARI", "ARW", "CR2", "CR3", "CRM", "CRW", "DCR", "DCS", "DNG", "ERF", "IIQ", "KDC", "MEF", "MOS", "MRW", "NEF", "NRW", "ORF", "PEF", "RAF", "RAW", "RW2",
+  "SRW", "3FR", "FFF", "X3F",
 ];
 
 /// Get list of supported file extensions. All names
