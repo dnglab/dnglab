@@ -1,0 +1,23 @@
+make = "Panasonic"
+model = "DMC-FZ18"
+clean_make = "Panasonic"
+clean_model = "DMC-FZ18"
+blackpoint = 0
+whitepoint = 3986
+color_pattern = "BGGR"
+
+[cameras.color_matrix]
+A = [1.1813, -0.5165, 0.0259, -0.4292, 1.1413, 0.3304, -0.0317, 0.1261, 0.5773]
+D65 = [0.9932, -0.3059, -0.0936, -0.5809, 1.333, 0.2752, -0.1267, 0.2155, 0.5575]
+
+[[cameras.modes]]
+mode = "4:3"
+active_area = [10, 0, 30, 1]
+
+[[cameras.modes]]
+mode = "3:2"
+active_area = [9, 0, 31, 0]
+
+[[cameras.modes]]
+mode = "16:9"
+active_area = [9, 0, 31, 0]

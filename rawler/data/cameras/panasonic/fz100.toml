@@ -1,0 +1,27 @@
+make = "Panasonic"
+model = "DMC-FZ100"
+clean_make = "Panasonic"
+clean_model = "DMC-FZ100"
+blackpoint = 142
+whitepoint = 3986
+color_pattern = "GBRG"
+
+[cameras.color_matrix]
+A = [1.8481, -0.9335, -0.0326, -0.1155, 0.8936, 0.2639, 0.1226, 0.0924, 0.624]
+D65 = [1.6197, -0.6146, -0.1761, -0.2393, 1.0765, 0.1869, 0.0366, 0.2238, 0.5248]
+
+[[cameras.modes]]
+mode = "1:1"
+active_area = [0, 0, 16, 0]
+
+[[cameras.modes]]
+mode = "4:3"
+active_area = [0, 0, 128, 0]
+
+[[cameras.modes]]
+mode = "3:2"
+active_area = [0, 0, 128, 0]
+
+[[cameras.modes]]
+mode = "16:9"
+active_area = [0, 0, 128, 0]

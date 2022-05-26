@@ -1,0 +1,27 @@
+make = "Panasonic"
+model = "DMC-TZ70"
+clean_make = "Panasonic"
+clean_model = "DMC-TZ70"
+blackpoint = 143
+whitepoint = 3971
+color_pattern = "RGGB"
+
+[cameras.color_matrix]
+A = [0.9863, -0.4626, 0.0222, -0.2892, 1.0667, 0.2572, -0.0234, 0.1167, 0.5981]
+D65 = [0.8802, -0.3135, -0.0789, -0.3151, 1.1468, 0.1904, -0.055, 0.1745, 0.481]
+
+[[cameras.modes]]
+mode = "1:1"
+active_area = [0, 0, 16, 0]
+
+[[cameras.modes]]
+mode = "4:3"
+active_area = [0, 0, 128, 0]
+
+[[cameras.modes]]
+mode = "3:2"
+active_area = [0, 0, 128, 0]
+
+[[cameras.modes]]
+mode = "16:9"
+active_area = [0, 0, 128, 0]

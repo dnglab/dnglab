@@ -1327,3 +1327,588 @@ mod camera_xz_1_raw_modes {
 mod camera_xz_2_raw_modes {
   super::camera_file_check!("Olympus", "XZ-2", cam_xz_2_iso_100_orf, "raw_modes/XZ-2_ISO_100.ORF");
 }
+mod camera_dc_fz10002_raw_modes {
+  super::camera_file_check!("Panasonic", "DC-FZ10002", cam_dc_fz10002_iso_320_4fmt_3x2_rw2, "raw_modes/DC-FZ10002_ISO_320_4fmt_3x2.RW2");
+  super::camera_file_check!("Panasonic", "DC-FZ10002", cam_dc_fz10002_iso_250_4fmt_1x1_rw2, "raw_modes/DC-FZ10002_ISO_250_4fmt_1x1.RW2");
+  super::camera_file_check!("Panasonic", "DC-FZ10002", cam_dc_fz10002_iso_250_4fmt_4x3_rw2, "raw_modes/DC-FZ10002_ISO_250_4fmt_4x3.RW2");
+  super::camera_file_check!("Panasonic", "DC-FZ10002", cam_dc_fz10002_iso_250_4fmt_16x9_rw2, "raw_modes/DC-FZ10002_ISO_250_4fmt_16x9.RW2");
+}
+mod camera_dc_fz45_raw_modes {
+  super::camera_file_check!("Panasonic", "DC-FZ45", cam_dmc_fz45_iso_500_4fmt_4320x2880_rw2, "raw_modes/DMC-FZ45_ISO_500_4fmt_4320x2880.RW2");
+  super::camera_file_check!("Panasonic", "DC-FZ45", cam_dmc_fz45_iso_400_4fmt_4320x3240_rw2, "raw_modes/DMC-FZ45_ISO_400_4fmt_4320x3240.RW2");
+  super::camera_file_check!("Panasonic", "DC-FZ45", cam_dmc_fz45_iso_500_4fmt_3232x3234_rw2, "raw_modes/DMC-FZ45_ISO_500_4fmt_3232x3234.RW2");
+  super::camera_file_check!("Panasonic", "DC-FZ45", cam_dmc_fz45_iso_500_4fmt_4320x2436_rw2, "raw_modes/DMC-FZ45_ISO_500_4fmt_4320x2436.RW2");
+}
+mod camera_dc_fz80_raw_modes {
+  super::camera_file_check!("Panasonic", "DC-FZ80", cam_dc_fz80_iso_80_4fmt_1x1_rw2, "raw_modes/DC-FZ80_ISO_80_4fmt_1x1.RW2");
+  super::camera_file_check!("Panasonic", "DC-FZ80", cam_dc_fz80_iso_80_4fmt_4x3_rw2, "raw_modes/DC-FZ80_ISO_80_4fmt_4x3.RW2");
+  super::camera_file_check!("Panasonic", "DC-FZ80", cam_dc_fz80_iso_80_4fmt_3x2_rw2, "raw_modes/DC-FZ80_ISO_80_4fmt_3x2.RW2");
+  super::camera_file_check!("Panasonic", "DC-FZ80", cam_dc_fz80_iso_80_4fmt_16x9_rw2, "raw_modes/DC-FZ80_ISO_80_4fmt_16x9.RW2");
+}
+mod camera_dc_fz82_raw_modes {
+  super::camera_file_check!("Panasonic", "DC-FZ82", cam_dc_fz82_iso_80_4fmt_4x3_rw2, "raw_modes/DC-FZ82_ISO_80_4fmt_4x3.RW2");
+  super::camera_file_check!("Panasonic", "DC-FZ82", cam_dc_fz82_iso_80_4fmt_1x1_rw2, "raw_modes/DC-FZ82_ISO_80_4fmt_1x1.RW2");
+  super::camera_file_check!("Panasonic", "DC-FZ82", cam_dc_fz82_iso_80_4fmt_3x2_rw2, "raw_modes/DC-FZ82_ISO_80_4fmt_3x2.RW2");
+  super::camera_file_check!("Panasonic", "DC-FZ82", cam_dc_fz82_iso_80_4fmt_16x9_rw2, "raw_modes/DC-FZ82_ISO_80_4fmt_16x9.RW2");
+}
+mod camera_dc_g100_raw_modes {
+  super::camera_file_check!("Panasonic", "DC-G100", cam_dc_g100_iso_200_4fmt_16x9_rw2, "raw_modes/DC-G100_ISO_200_4fmt_16x9.RW2");
+  super::camera_file_check!("Panasonic", "DC-G100", cam_dc_g100_iso_200_4fmt_3x2_rw2, "raw_modes/DC-G100_ISO_200_4fmt_3x2.RW2");
+  super::camera_file_check!("Panasonic", "DC-G100", cam_dc_g100_iso_200_4fmt_1x1_rw2, "raw_modes/DC-G100_ISO_200_4fmt_1x1.RW2");
+  super::camera_file_check!("Panasonic", "DC-G100", cam_dc_g100_iso_200_4fmt_4x3_rw2, "raw_modes/DC-G100_ISO_200_4fmt_4x3.RW2");
+}
+mod camera_dc_g110_raw_modes {
+  super::camera_file_check!("Panasonic", "DC-G110", cam_dc_g110_iso_400_4fmt_1x1_rw2, "raw_modes/DC-G110_ISO_400_4fmt_1x1.RW2");
+  super::camera_file_check!("Panasonic", "DC-G110", cam_dc_g110_iso_400_4fmt_4x3_rw2, "raw_modes/DC-G110_ISO_400_4fmt_4x3.RW2");
+  super::camera_file_check!("Panasonic", "DC-G110", cam_dc_g110_iso_400_4fmt_16x9_rw2, "raw_modes/DC-G110_ISO_400_4fmt_16x9.RW2");
+  super::camera_file_check!("Panasonic", "DC-G110", cam_dc_g110_iso_400_4fmt_3x2_rw2, "raw_modes/DC-G110_ISO_400_4fmt_3x2.RW2");
+}
+mod camera_dc_g90_raw_modes {
+  super::camera_file_check!("Panasonic", "DC-G90", cam_dc_g90_iso_200_4fmt_4x3_rw2, "raw_modes/DC-G90_ISO_200_4fmt_4x3.RW2");
+}
+mod camera_dc_g91_raw_modes {
+  super::camera_file_check!("Panasonic", "DC-G91", cam_dc_g91_iso_200_4fmt_4x3_rw2, "raw_modes/DC-G91_ISO_200_4fmt_4x3.RW2");
+}
+mod camera_dc_g95_raw_modes {
+  super::camera_file_check!("Panasonic", "DC-G95", cam_dc_g95_iso_400_4fmt_16x9_rw2, "raw_modes/DC-G95_ISO_400_4fmt_16x9.RW2");
+  super::camera_file_check!("Panasonic", "DC-G95", cam_dc_g95_iso_400_4fmt_3x2_rw2, "raw_modes/DC-G95_ISO_400_4fmt_3x2.RW2");
+  super::camera_file_check!("Panasonic", "DC-G95", cam_dc_g95_iso_400_4fmt_4x3_rw2, "raw_modes/DC-G95_ISO_400_4fmt_4x3.RW2");
+  super::camera_file_check!("Panasonic", "DC-G95", cam_dc_g95_iso_400_4fmt_1x1_rw2, "raw_modes/DC-G95_ISO_400_4fmt_1x1.RW2");
+}
+mod camera_dc_g9_raw_modes {
+  super::camera_file_check!("Panasonic", "DC-G9", cam_dc_g9_iso_3200_4fmt_4x3_sh2_burst_rw2, "raw_modes/DC-G9_ISO_3200_4fmt_4x3_SH2-Burst.RW2");
+  super::camera_file_check!("Panasonic", "DC-G9", cam_dc_g9_iso_200_4fmt_1x1_rw2, "raw_modes/DC-G9_ISO_200_4fmt_1x1.RW2");
+  super::camera_file_check!("Panasonic", "DC-G9", cam_dc_g9_iso_200_4fmt_4x3_rw2, "raw_modes/DC-G9_ISO_200_4fmt_4x3.RW2");
+  super::camera_file_check!("Panasonic", "DC-G9", cam_dc_g9_iso_200_4fmt_16x9_rw2, "raw_modes/DC-G9_ISO_200_4fmt_16x9.RW2");
+  super::camera_file_check!("Panasonic", "DC-G9", cam_dc_g9_iso_200_5fmt_4x3_hires_secondary_rw2, "raw_modes/DC-G9_ISO_200_5fmt_4x3_hires_secondary.RW2");
+  super::camera_file_check!("Panasonic", "DC-G9", cam_dc_g9_iso_200_5fmt_80mp_hires_rw2, "raw_modes/DC-G9_ISO_200_5fmt_80mp_hires.RW2");
+  super::camera_file_check!("Panasonic", "DC-G9", cam_dc_g9_iso_200_4fmt_3x2_rw2, "raw_modes/DC-G9_ISO_200_4fmt_3x2.RW2");
+}
+mod camera_dc_gf10_raw_modes {
+  super::camera_file_check!("Panasonic", "DC-GF10", cam_dc_gf10_iso_200_panasonic_raw_1_4592x3448_rw2, "raw_modes/DC-GF10_ISO_200_Panasonic RAW 1_4592x3448.RW2");
+  super::camera_file_check!("Panasonic", "DC-GF10", cam_p1010137_rw2, "raw_modes/P1010137.RW2");
+  super::camera_file_check!("Panasonic", "DC-GF10", cam_p1010141_rw2, "raw_modes/P1010141.RW2");
+  super::camera_file_check!("Panasonic", "DC-GF10", cam_p1010140_rw2, "raw_modes/P1010140.RW2");
+}
+mod camera_dc_gh5m2_raw_modes {
+  super::camera_file_check!("Panasonic", "DC-GH5M2", cam_dc_gh5m2_iso_250_6fmt_3x2_rw2, "raw_modes/DC-GH5M2_ISO_250_6fmt_3x2.RW2");
+  super::camera_file_check!("Panasonic", "DC-GH5M2", cam_dc_gh5m2_iso_250_6fmt_16x9_rw2, "raw_modes/DC-GH5M2_ISO_250_6fmt_16x9.RW2");
+  super::camera_file_check!("Panasonic", "DC-GH5M2", cam_dc_gh5m2_iso_250_6fmt_4x3_rw2, "raw_modes/DC-GH5M2_ISO_250_6fmt_4x3.RW2");
+  super::camera_file_check!("Panasonic", "DC-GH5M2", cam_dc_gh5m2_iso_250_6fmt_1x1_rw2, "raw_modes/DC-GH5M2_ISO_250_6fmt_1x1.RW2");
+  super::camera_file_check!("Panasonic", "DC-GH5M2", cam_dc_gh5m2_colortarget_rw2, "raw_modes/DC-GH5M2_colortarget.RW2");
+}
+mod camera_dc_gh5_raw_modes {
+  super::camera_file_check!("Panasonic", "DC-GH5", cam_dc_gh5_iso_400_4fmt_16x9_rw2, "raw_modes/DC-GH5_ISO_400_4fmt_16x9.RW2");
+  super::camera_file_check!("Panasonic", "DC-GH5", cam_dc_gh5_iso_400_4fmt_1x1_rw2, "raw_modes/DC-GH5_ISO_400_4fmt_1x1.RW2");
+  super::camera_file_check!("Panasonic", "DC-GH5", cam_dc_gh5_iso_400_4fmt_4x3_rw2, "raw_modes/DC-GH5_ISO_400_4fmt_4x3.RW2");
+  super::camera_file_check!("Panasonic", "DC-GH5", cam_dc_gh5_iso_400_4fmt_3x2_rw2, "raw_modes/DC-GH5_ISO_400_4fmt_3x2.RW2");
+}
+mod camera_dc_gh5s_raw_modes {
+  super::camera_file_check!("Panasonic", "DC-GH5S", cam_p1022091_rw2, "raw_modes/P1022091.RW2");
+  super::camera_file_check!("Panasonic", "DC-GH5S", cam_dc_gh5s_iso_800_panasonic_raw_1_3840x2560_rw2, "raw_modes/DC-GH5S_ISO_800_Panasonic RAW 1_3840x2560.RW2");
+  super::camera_file_check!("Panasonic", "DC-GH5S", cam_dc_gh5s_iso_800_panasonic_raw_1_4016x2256_rw2, "raw_modes/DC-GH5S_ISO_800_Panasonic RAW 1_4016x2256.RW2");
+  super::camera_file_check!("Panasonic", "DC-GH5S", cam_dc_gh5s_iso_800_panasonic_raw_1_3680x2760_rw2, "raw_modes/DC-GH5S_ISO_800_Panasonic RAW 1_3680x2760.RW2");
+  super::camera_file_check!("Panasonic", "DC-GH5S", cam_p1022090_rw2, "raw_modes/P1022090.RW2");
+  super::camera_file_check!("Panasonic", "DC-GH5S", cam_p1022085_rw2, "raw_modes/P1022085.RW2");
+  super::camera_file_check!("Panasonic", "DC-GH5S", cam_dc_gh5s_iso_800_panasonic_raw_1_2752x2752_rw2, "raw_modes/DC-GH5S_ISO_800_Panasonic RAW 1_2752x2752.RW2");
+  super::camera_file_check!("Panasonic", "DC-GH5S", cam_p1022092_rw2, "raw_modes/P1022092.RW2");
+}
+mod camera_dc_gx7mk3_raw_modes {
+  super::camera_file_check!("Panasonic", "DC-GX7MK3", cam_dc_gx7mk3_iso_1600_panasonic_raw_1_5184x3888_rw2, "raw_modes/DC-GX7MK3_ISO_1600_Panasonic RAW 1_5184x3888.RW2");
+}
+mod camera_dc_gx800_raw_modes {
+  super::camera_file_check!("Panasonic", "DC-GX800", cam_dc_gx800_iso_200_4fmt_3x2_rw2, "raw_modes/DC-GX800_ISO_200_4fmt_3x2.RW2");
+  super::camera_file_check!("Panasonic", "DC-GX800", cam_dc_gx800_iso_200_4fmt_1x1_rw2, "raw_modes/DC-GX800_ISO_200_4fmt_1x1.RW2");
+  super::camera_file_check!("Panasonic", "DC-GX800", cam_dc_gx800_iso_200_4fmt_4x3_rw2, "raw_modes/DC-GX800_ISO_200_4fmt_4x3.RW2");
+  super::camera_file_check!("Panasonic", "DC-GX800", cam_dc_gx800_iso_200_4fmt_16x9_rw2, "raw_modes/DC-GX800_ISO_200_4fmt_16x9.RW2");
+}
+mod camera_dc_gx850_raw_modes {
+  super::camera_file_check!("Panasonic", "DC-GX850", cam_dc_gx850_iso_2000_4fmt_1x1_rw2, "raw_modes/DC-GX850_ISO_2000_4fmt_1x1.RW2");
+  super::camera_file_check!("Panasonic", "DC-GX850", cam_dc_gx850_iso_2000_4fmt_4x3_rw2, "raw_modes/DC-GX850_ISO_2000_4fmt_4x3.RW2");
+  super::camera_file_check!("Panasonic", "DC-GX850", cam_dc_gx850_iso_2000_4fmt_16x9_rw2, "raw_modes/DC-GX850_ISO_2000_4fmt_16x9.RW2");
+  super::camera_file_check!("Panasonic", "DC-GX850", cam_dc_gx850_iso_2000_4fmt_3x2_rw2, "raw_modes/DC-GX850_ISO_2000_4fmt_3x2.RW2");
+}
+mod camera_dc_gx880_raw_modes {
+  super::camera_file_check!("Panasonic", "DC-GX880", cam_dc_gx880_iso_1250_4fmt_16x9_rw2, "raw_modes/DC-GX880_ISO_1250_4fmt_16x9.RW2");
+  super::camera_file_check!("Panasonic", "DC-GX880", cam_dc_gx880_iso_1250_4fmt_3x2_rw2, "raw_modes/DC-GX880_ISO_1250_4fmt_3x2.RW2");
+  super::camera_file_check!("Panasonic", "DC-GX880", cam_dc_gx880_iso_1250_4fmt_1x1_rw2, "raw_modes/DC-GX880_ISO_1250_4fmt_1x1.RW2");
+  super::camera_file_check!("Panasonic", "DC-GX880", cam_dc_gx880_iso_1250_4fmt_4x3_rw2, "raw_modes/DC-GX880_ISO_1250_4fmt_4x3.RW2");
+}
+mod camera_dc_gx9_raw_modes {
+  super::camera_file_check!("Panasonic", "DC-GX9", cam_dc_gx9_iso_200_4fmt_16x9_rw2, "raw_modes/DC-GX9_ISO_200_4fmt_16x9.RW2");
+  super::camera_file_check!("Panasonic", "DC-GX9", cam_dc_gx9_iso_200_4fmt_3x2_rw2, "raw_modes/DC-GX9_ISO_200_4fmt_3x2.RW2");
+  super::camera_file_check!("Panasonic", "DC-GX9", cam_dc_gx9_iso_200_4fmt_4x3_rw2, "raw_modes/DC-GX9_ISO_200_4fmt_4x3.RW2");
+  super::camera_file_check!("Panasonic", "DC-GX9", cam_dc_gx9_iso_200_4fmt_1x1_rw2, "raw_modes/DC-GX9_ISO_200_4fmt_1x1.RW2");
+}
+mod camera_dc_lx100m2_raw_modes {
+  super::camera_file_check!("Panasonic", "DC-LX100M2", cam_dc_lx100m2_iso_200_panasonic_raw_1_4928x3288_rw2, "raw_modes/DC-LX100M2_ISO_200_Panasonic RAW 1_4928x3288.RW2");
+  super::camera_file_check!("Panasonic", "DC-LX100M2", cam_dc_lx100m2_iso_200_panasonic_raw_1_3552x3552_rw2, "raw_modes/DC-LX100M2_ISO_200_Panasonic RAW 1_3552x3552.RW2");
+  super::camera_file_check!("Panasonic", "DC-LX100M2", cam_dc_lx100m2_iso_200_panasonic_raw_1_4736x3552_rw2, "raw_modes/DC-LX100M2_ISO_200_Panasonic RAW 1_4736x3552.RW2");
+  super::camera_file_check!("Panasonic", "DC-LX100M2", cam_dc_lx100m2_iso_200_panasonic_raw_1_5152x2904_rw2, "raw_modes/DC-LX100M2_ISO_200_Panasonic RAW 1_5152x2904.RW2");
+}
+mod camera_dc_s1h_raw_modes {
+  super::camera_file_check!("Panasonic", "DC-S1H", cam_dc_s1h_iso_100_6fmt_6000x4000_rw2, "raw_modes/DC-S1H_ISO_100_6fmt_6000x4000.RW2");
+}
+mod camera_dc_s1_raw_modes {
+  super::camera_file_check!("Panasonic", "DC-S1", cam_dc_s1_iso_800_6fmt_6000x4000_rw2, "raw_modes/DC-S1_ISO_800_6fmt_6000x4000.RW2");
+}
+mod camera_dc_s1r_raw_modes {
+  super::camera_file_check!("Panasonic", "DC-S1R", cam_dc_s1r_iso_100_6fmt_8368x5584_rw2, "raw_modes/DC-S1R_ISO_100_6fmt_8368x5584.RW2");
+}
+mod camera_dc_s5_raw_modes {
+  super::camera_file_check!("Panasonic", "DC-S5", cam_dc_s5_iso_640_6fmt_6000x4000_rw2, "raw_modes/DC-S5_ISO_640_6fmt_6000x4000.RW2");
+  super::camera_file_check!("Panasonic", "DC-S5", cam_dc_s5_iso_640_7fmt_12000x8000_rw2, "raw_modes/DC-S5_ISO_640_7fmt_12000x8000.RW2");
+}
+mod camera_dc_tz200_raw_modes {
+  super::camera_file_check!("Panasonic", "DC-TZ200", cam_dc_tz202_iso_125_4fmt_1x1_rw2, "raw_modes/DC-TZ202_ISO_125_4fmt_1x1.RW2");
+  super::camera_file_check!("Panasonic", "DC-TZ200", cam_dc_tz202_iso_125_4fmt_4x3_rw2, "raw_modes/DC-TZ202_ISO_125_4fmt_4x3.RW2");
+  super::camera_file_check!("Panasonic", "DC-TZ200", cam_dc_tz202_iso_125_4fmt_16x9_rw2, "raw_modes/DC-TZ202_ISO_125_4fmt_16x9.RW2");
+}
+mod camera_dc_tz202_raw_modes {
+  super::camera_file_check!("Panasonic", "DC-TZ202", cam_dc_tz202_iso_200_4fmt_1x1_rw2, "raw_modes/DC-TZ202_ISO_200_4fmt_1x1.RW2");
+  super::camera_file_check!("Panasonic", "DC-TZ202", cam_dc_tz202_iso_200_4fmt_4x3_rw2, "raw_modes/DC-TZ202_ISO_200_4fmt_4x3.RW2");
+  super::camera_file_check!("Panasonic", "DC-TZ202", cam_dc_tz202_iso_200_4fmt_16x9_rw2, "raw_modes/DC-TZ202_ISO_200_4fmt_16x9.RW2");
+  super::camera_file_check!("Panasonic", "DC-TZ202", cam_dc_tz202_iso_200_4fmt_3x2_rw2, "raw_modes/DC-TZ202_ISO_200_4fmt_3x2.RW2");
+}
+mod camera_dc_tz90_raw_modes {
+  super::camera_file_check!("Panasonic", "DC-TZ90", cam_dc_tz90_iso_125_4fmt_5184x3888_rw2, "raw_modes/DC-TZ90_ISO_125_4fmt_5184x3888.RW2");
+  super::camera_file_check!("Panasonic", "DC-TZ90", cam_dc_tz90_iso_160_4fmt_5184x3888_rw2, "raw_modes/DC-TZ90_ISO_160_4fmt_5184x3888.RW2");
+  super::camera_file_check!("Panasonic", "DC-TZ90", cam_dc_tz90_iso_200_4fmt_5184x3888_rw2, "raw_modes/DC-TZ90_ISO_200_4fmt_5184x3888.RW2");
+  super::camera_file_check!("Panasonic", "DC-TZ90", cam_dc_tz90_iso_100_4fmt_5184x3888_rw2, "raw_modes/DC-TZ90_ISO_100_4fmt_5184x3888.RW2");
+}
+mod camera_dc_tz91_raw_modes {
+  super::camera_file_check!("Panasonic", "DC-TZ91", cam_dc_tz91_iso_80_4fmt_5184x3888_rw2, "raw_modes/DC-TZ91_ISO_80_4fmt_5184x3888.RW2");
+}
+mod camera_dc_tz95_raw_modes {
+  super::camera_file_check!("Panasonic", "DC-TZ95", cam_dc_tz95_iso_80_panasonic_raw_1_5184x3888_rw2, "raw_modes/DC-TZ95_ISO_80_Panasonic RAW 1_5184x3888.RW2");
+}
+mod camera_dc_tz96_raw_modes {
+  super::camera_file_check!("Panasonic", "DC-TZ96", cam_dc_tz96_iso_80_4fmt_1x1_rw2, "raw_modes/DC-TZ96_ISO_80_4fmt_1x1.RW2");
+  super::camera_file_check!("Panasonic", "DC-TZ96", cam_dc_tz96_iso_80_4fmt_4x3_rw2, "raw_modes/DC-TZ96_ISO_80_4fmt_4x3.RW2");
+  super::camera_file_check!("Panasonic", "DC-TZ96", cam_dc_tz96_iso_80_4fmt_16x9_rw2, "raw_modes/DC-TZ96_ISO_80_4fmt_16x9.RW2");
+  super::camera_file_check!("Panasonic", "DC-TZ96", cam_dc_tz96_iso_80_4fmt_3x2_rw2, "raw_modes/DC-TZ96_ISO_80_4fmt_3x2.RW2");
+}
+mod camera_dmc_cm1_raw_modes {
+  super::camera_file_check!("Panasonic", "DMC-CM1", cam_dmc_cm1_iso_125_panasonic_raw_1_5472x3648_rw2, "raw_modes/DMC-CM1_ISO_125_Panasonic RAW 1_5472x3648.RW2");
+  super::camera_file_check!("Panasonic", "DMC-CM1", cam_dmc_cm1_iso_125_panasonic_raw_1_3648x3648_rw2, "raw_modes/DMC-CM1_ISO_125_Panasonic RAW 1_3648x3648.RW2");
+  super::camera_file_check!("Panasonic", "DMC-CM1", cam_dmc_cm1_iso_125_panasonic_raw_1_5472x3080_rw2, "raw_modes/DMC-CM1_ISO_125_Panasonic RAW 1_5472x3080.RW2");
+  super::camera_file_check!("Panasonic", "DMC-CM1", cam_dmc_cm1_iso_125_panasonic_raw_1_4864x3648_rw2, "raw_modes/DMC-CM1_ISO_125_Panasonic RAW 1_4864x3648.RW2");
+}
+mod camera_dmc_fz1000_raw_modes {
+  super::camera_file_check!("Panasonic", "DMC-FZ1000", cam_dmc_fz1000_iso_640_4fmt_5472x3648_rw2, "raw_modes/DMC-FZ1000_ISO_640_4fmt_5472x3648.RW2");
+  super::camera_file_check!("Panasonic", "DMC-FZ1000", cam_dmc_fz1000_iso_800_4fmt_3648x3648_rw2, "raw_modes/DMC-FZ1000_ISO_800_4fmt_3648x3648.RW2");
+  super::camera_file_check!("Panasonic", "DMC-FZ1000", cam_dmc_fz1000_iso_640_4fmt_4864x3648_rw2, "raw_modes/DMC-FZ1000_ISO_640_4fmt_4864x3648.RW2");
+  super::camera_file_check!("Panasonic", "DMC-FZ1000", cam_dmc_fz1000_iso_640_4fmt_5472x3080_rw2, "raw_modes/DMC-FZ1000_ISO_640_4fmt_5472x3080.RW2");
+}
+mod camera_dmc_fz100_raw_modes {
+  super::camera_file_check!("Panasonic", "DMC-FZ100", cam_dmc_fz100_iso_320_panasonic_raw_1_4320x2880_rw2, "raw_modes/DMC-FZ100_ISO_320_Panasonic RAW 1_4320x2880.RW2");
+  super::camera_file_check!("Panasonic", "DMC-FZ100", cam_dmc_fz100_iso_800_panasonic_raw_1_4320x2432_rw2, "raw_modes/DMC-FZ100_ISO_800_Panasonic RAW 1_4320x2432.RW2");
+}
+mod camera_dmc_fz150_raw_modes {
+  super::camera_file_check!("Panasonic", "DMC-FZ150", cam_dmc_fz150_iso_100_panasonic_raw_1_4000x2248_rw2, "raw_modes/DMC-FZ150_ISO_100_Panasonic RAW 1_4000x2248.RW2");
+  super::camera_file_check!("Panasonic", "DMC-FZ150", cam_dmc_fz150_iso_100_panasonic_raw_1_4000x3000_rw2, "raw_modes/DMC-FZ150_ISO_100_Panasonic RAW 1_4000x3000.RW2");
+  super::camera_file_check!("Panasonic", "DMC-FZ150", cam_dmc_fz150_iso_100_panasonic_raw_1_4000x2672_rw2, "raw_modes/DMC-FZ150_ISO_100_Panasonic RAW 1_4000x2672.RW2");
+  super::camera_file_check!("Panasonic", "DMC-FZ150", cam_dmc_fz150_iso_100_panasonic_raw_1_2992x2992_rw2, "raw_modes/DMC-FZ150_ISO_100_Panasonic RAW 1_2992x2992.RW2");
+}
+mod camera_dmc_fz18_raw_modes {
+  super::camera_file_check!("Panasonic", "DMC-FZ18", cam_dmc_fz18_iso_100_2fmt_3264x2448_raw, "raw_modes/DMC-FZ18_ISO_100_2fmt_3264x2448.RAW");
+}
+mod camera_dmc_fz2000_raw_modes {
+  super::camera_file_check!("Panasonic", "DMC-FZ2000", cam_dmc_fz2000_iso_80_4fmt_3x2_rw2, "raw_modes/DMC-FZ2000_ISO_80_4fmt_3x2.RW2");
+  super::camera_file_check!("Panasonic", "DMC-FZ2000", cam_dmc_fz2000_iso_80_4fmt_16x9_rw2, "raw_modes/DMC-FZ2000_ISO_80_4fmt_16x9.RW2");
+  super::camera_file_check!("Panasonic", "DMC-FZ2000", cam_dmc_fz2000_iso_80_4fmt_4x3_rw2, "raw_modes/DMC-FZ2000_ISO_80_4fmt_4x3.RW2");
+  super::camera_file_check!("Panasonic", "DMC-FZ2000", cam_dmc_fz2000_iso_80_4fmt_1x1_rw2, "raw_modes/DMC-FZ2000_ISO_80_4fmt_1x1.RW2");
+}
+mod camera_dmc_fz200_raw_modes {
+  super::camera_file_check!("Panasonic", "DMC-FZ200", cam_dmc_fz200_iso_100_4fmt_2992x2992_rw2, "raw_modes/DMC-FZ200_ISO_100_4fmt_2992x2992.RW2");
+  super::camera_file_check!("Panasonic", "DMC-FZ200", cam_dmc_fz200_iso_100_4fmt_4000x3000_rw2, "raw_modes/DMC-FZ200_ISO_100_4fmt_4000x3000.RW2");
+  super::camera_file_check!("Panasonic", "DMC-FZ200", cam_dmc_fz200_iso_100_4fmt_4000x2672_rw2, "raw_modes/DMC-FZ200_ISO_100_4fmt_4000x2672.RW2");
+  super::camera_file_check!("Panasonic", "DMC-FZ200", cam_dmc_fz200_iso_100_4fmt_4000x2248_rw2, "raw_modes/DMC-FZ200_ISO_100_4fmt_4000x2248.RW2");
+}
+mod camera_dmc_fz2500_raw_modes {
+  super::camera_file_check!("Panasonic", "DMC-FZ2500", cam_dmc_fz2500_iso_125_4fmt_1x1_rw2, "raw_modes/DMC-FZ2500_ISO_125_4fmt_1x1.RW2");
+  super::camera_file_check!("Panasonic", "DMC-FZ2500", cam_dmc_fz2500_iso_125_4fmt_16x9_rw2, "raw_modes/DMC-FZ2500_ISO_125_4fmt_16x9.RW2");
+  super::camera_file_check!("Panasonic", "DMC-FZ2500", cam_dmc_fz2500_iso_125_4fmt_4x3_rw2, "raw_modes/DMC-FZ2500_ISO_125_4fmt_4x3.RW2");
+  super::camera_file_check!("Panasonic", "DMC-FZ2500", cam_dmc_fz2500_iso_125_4fmt_3x2_rw2, "raw_modes/DMC-FZ2500_ISO_125_4fmt_3x2.RW2");
+}
+mod camera_dmc_fz28_raw_modes {
+  super::camera_file_check!("Panasonic", "DMC-FZ28", cam_dmc_fz28_iso_400_4fmt_3648x2056_rw2, "raw_modes/DMC-FZ28_ISO_400_4fmt_3648x2056.RW2");
+  super::camera_file_check!("Panasonic", "DMC-FZ28", cam_dmc_fz28_iso_100_4fmt_3648x2736_rw2, "raw_modes/DMC-FZ28_ISO_100_4fmt_3648x2736.RW2");
+  super::camera_file_check!("Panasonic", "DMC-FZ28", cam_dmc_fz28_iso_400_4fmt_3648x2432_rw2, "raw_modes/DMC-FZ28_ISO_400_4fmt_3648x2432.RW2");
+}
+mod camera_dmc_fz300_raw_modes {
+  super::camera_file_check!("Panasonic", "DMC-FZ300", cam_dmc_fz300_iso_100_4fmt_3x2_rw2, "raw_modes/DMC-FZ300_ISO_100_4fmt_3x2.RW2");
+  super::camera_file_check!("Panasonic", "DMC-FZ300", cam_dmc_fz300_iso_100_4fmt_4x2_rw2, "raw_modes/DMC-FZ300_ISO_100_4fmt_4x2.RW2");
+  super::camera_file_check!("Panasonic", "DMC-FZ300", cam_dmc_fz300_iso_100_4fmt_16x9_rw2, "raw_modes/DMC-FZ300_ISO_100_4fmt_16x9.RW2");
+  super::camera_file_check!("Panasonic", "DMC-FZ300", cam_dmc_fz300_iso_100_4fmt_1x1_rw2, "raw_modes/DMC-FZ300_ISO_100_4fmt_1x1.RW2");
+}
+mod camera_dmc_fz30_raw_modes {
+  super::camera_file_check!("Panasonic", "DMC-FZ30", cam_dmc_fz30_iso_80_panasonic_raw_3_3264x2448_raw, "raw_modes/DMC-FZ30_ISO_80_Panasonic RAW 3_3264x2448.RAW");
+}
+mod camera_dmc_fz330_raw_modes {
+  super::camera_file_check!("Panasonic", "DMC-FZ330", cam_dmc_fz330_iso_100_4fmt_16x9_rw2, "raw_modes/DMC-FZ330_ISO_100_4fmt_16x9.RW2");
+  super::camera_file_check!("Panasonic", "DMC-FZ330", cam_dmc_fz330_iso_100_4fmt_3x2_rw2, "raw_modes/DMC-FZ330_ISO_100_4fmt_3x2.RW2");
+  super::camera_file_check!("Panasonic", "DMC-FZ330", cam_dmc_fz330_iso_100_4fmt_4x3_rw2, "raw_modes/DMC-FZ330_ISO_100_4fmt_4x3.RW2");
+  super::camera_file_check!("Panasonic", "DMC-FZ330", cam_dmc_fz330_iso_100_4fmt_1x1_rw2, "raw_modes/DMC-FZ330_ISO_100_4fmt_1x1.RW2");
+}
+mod camera_dmc_fz35_raw_modes {
+  super::camera_file_check!("Panasonic", "DMC-FZ35", cam_dmc_fz35_iso_80_panasonic_raw_1_4000x2672_rw2, "raw_modes/DMC-FZ35_ISO_80_Panasonic RAW 1_4000x2672.RW2");
+  super::camera_file_check!("Panasonic", "DMC-FZ35", cam_dmc_fz35_iso_80_panasonic_raw_1_4000x3000_rw2, "raw_modes/DMC-FZ35_ISO_80_Panasonic RAW 1_4000x3000.RW2");
+  super::camera_file_check!("Panasonic", "DMC-FZ35", cam_dmc_fz35_iso_80_panasonic_raw_1_4000x2248_rw2, "raw_modes/DMC-FZ35_ISO_80_Panasonic RAW 1_4000x2248.RW2");
+}
+mod camera_dmc_fz38_raw_modes {
+  super::camera_file_check!("Panasonic", "DMC-FZ38", cam_dmc_fz38_iso_80_panasonic_raw_1_4000x3000_rw2, "raw_modes/DMC-FZ38_ISO_80_Panasonic RAW 1_4000x3000.RW2");
+  super::camera_file_check!("Panasonic", "DMC-FZ38", cam_dmc_fz38_iso_80_panasonic_raw_1_4000x2672_rw2, "raw_modes/DMC-FZ38_ISO_80_Panasonic RAW 1_4000x2672.RW2");
+  super::camera_file_check!("Panasonic", "DMC-FZ38", cam_dmc_fz38_iso_80_panasonic_raw_1_4000x2248_rw2, "raw_modes/DMC-FZ38_ISO_80_Panasonic RAW 1_4000x2248.RW2");
+}
+mod camera_dmc_fz45_raw_modes {
+  super::camera_file_check!("Panasonic", "DMC-FZ45", cam_dmc_fz45_iso_500_panasonic_raw_1_4320x2436_rw2, "raw_modes/DMC-FZ45_ISO_500_Panasonic RAW 1_4320x2436.RW2");
+  super::camera_file_check!("Panasonic", "DMC-FZ45", cam_dmc_fz45_iso_500_panasonic_raw_1_3232x3234_rw2, "raw_modes/DMC-FZ45_ISO_500_Panasonic RAW 1_3232x3234.RW2");
+  super::camera_file_check!("Panasonic", "DMC-FZ45", cam_dmc_fz45_iso_400_panasonic_raw_1_4320x3240_rw2, "raw_modes/DMC-FZ45_ISO_400_Panasonic RAW 1_4320x3240.RW2");
+  super::camera_file_check!("Panasonic", "DMC-FZ45", cam_dmc_fz45_iso_500_panasonic_raw_1_4320x2880_rw2, "raw_modes/DMC-FZ45_ISO_500_Panasonic RAW 1_4320x2880.RW2");
+}
+mod camera_dmc_fz50_raw_modes {
+  super::camera_file_check!("Panasonic", "DMC-FZ50", cam_dmc_fz50_iso_100_panasonic_raw_3_3648x2424_raw, "raw_modes/DMC-FZ50_ISO_100_Panasonic RAW 3_3648x2424.RAW");
+  super::camera_file_check!("Panasonic", "DMC-FZ50", cam_dmc_fz50_iso_100_panasonic_raw_3_3648x2052_raw, "raw_modes/DMC-FZ50_ISO_100_Panasonic RAW 3_3648x2052.RAW");
+  super::camera_file_check!("Panasonic", "DMC-FZ50", cam_dmc_fz50_iso_100_panasonic_raw_3_3648x2736_raw, "raw_modes/DMC-FZ50_ISO_100_Panasonic RAW 3_3648x2736.RAW");
+}
+mod camera_dmc_fz70_raw_modes {
+  super::camera_file_check!("Panasonic", "DMC-FZ70", cam_dmc_fz70_iso_100_panasonic_raw_1_4608x3456_rw2, "raw_modes/DMC-FZ70_ISO_100_Panasonic RAW 1_4608x3456.RW2");
+}
+mod camera_dmc_fz72_raw_modes {
+  super::camera_file_check!("Panasonic", "DMC-FZ72", cam_dmc_fz72_iso_200_4fmt_4608x3456_rw2, "raw_modes/DMC-FZ72_ISO_200_4fmt_4608x3456.RW2");
+  super::camera_file_check!("Panasonic", "DMC-FZ72", cam_dmc_fz72_iso_100_4fmt_4608x3072_rw2, "raw_modes/DMC-FZ72_ISO_100_4fmt_4608x3072.RW2");
+  super::camera_file_check!("Panasonic", "DMC-FZ72", cam_dmc_fz72_iso_100_4fmt_3456x3456_rw2, "raw_modes/DMC-FZ72_ISO_100_4fmt_3456x3456.RW2");
+  super::camera_file_check!("Panasonic", "DMC-FZ72", cam_dmc_fz72_iso_100_4fmt_4608x2592_rw2, "raw_modes/DMC-FZ72_ISO_100_4fmt_4608x2592.RW2");
+  super::camera_file_check!("Panasonic", "DMC-FZ72", cam_dmc_fz72_iso_100_4fmt_4608x3456_rw2, "raw_modes/DMC-FZ72_ISO_100_4fmt_4608x3456.RW2");
+}
+mod camera_dmc_fz8_raw_modes {
+  super::camera_file_check!("Panasonic", "DMC-FZ8", cam_dmc_fz8_iso_100_panasonic_raw_1_3072x2304_raw, "raw_modes/DMC-FZ8_ISO_100_Panasonic RAW 1_3072x2304.RAW");
+}
+mod camera_dmc_g10_raw_modes {
+  super::camera_file_check!("Panasonic", "DMC-G10", cam_dmc_g10_iso_200_panasonic_raw_1_4000x2672_rw2, "raw_modes/DMC-G10_ISO_200_Panasonic RAW 1_4000x2672.RW2");
+  super::camera_file_check!("Panasonic", "DMC-G10", cam_dmc_g10_iso_200_panasonic_raw_1_4000x3000_rw2, "raw_modes/DMC-G10_ISO_200_Panasonic RAW 1_4000x3000.RW2");
+  super::camera_file_check!("Panasonic", "DMC-G10", cam_dmc_g10_iso_200_panasonic_raw_1_2992x2992_rw2, "raw_modes/DMC-G10_ISO_200_Panasonic RAW 1_2992x2992.RW2");
+  super::camera_file_check!("Panasonic", "DMC-G10", cam_dmc_g10_iso_200_panasonic_raw_1_4000x2248_rw2, "raw_modes/DMC-G10_ISO_200_Panasonic RAW 1_4000x2248.RW2");
+}
+mod camera_dmc_g1_raw_modes {
+  super::camera_file_check!("Panasonic", "DMC-G1", cam_dmc_g1_iso_100_panasonic_raw_1_4000x3000_rw2, "raw_modes/DMC-G1_ISO_100_Panasonic RAW 1_4000x3000.RW2");
+}
+mod camera_dmc_g2_raw_modes {
+  super::camera_file_check!("Panasonic", "DMC-G2", cam_dmc_g2_iso_400_4fmt_19x9_rw2, "raw_modes/DMC-G2_ISO_400_4fmt_19x9.RW2");
+}
+mod camera_dmc_g3_raw_modes {
+  super::camera_file_check!("Panasonic", "DMC-G3", cam_dmc_g3_iso_640_panasonic_raw_1_4576x2576_rw2, "raw_modes/DMC-G3_ISO_640_Panasonic RAW 1_4576x2576.RW2");
+  super::camera_file_check!("Panasonic", "DMC-G3", cam_dmc_g3_iso_640_panasonic_raw_1_4576x3056_rw2, "raw_modes/DMC-G3_ISO_640_Panasonic RAW 1_4576x3056.RW2");
+  super::camera_file_check!("Panasonic", "DMC-G3", cam_dmc_g3_iso_640_panasonic_raw_1_3424x3424_rw2, "raw_modes/DMC-G3_ISO_640_Panasonic RAW 1_3424x3424.RW2");
+  super::camera_file_check!("Panasonic", "DMC-G3", cam_dmc_g3_iso_640_panasonic_raw_1_4592x3448_rw2, "raw_modes/DMC-G3_ISO_640_Panasonic RAW 1_4592x3448.RW2");
+}
+mod camera_dmc_g5_raw_modes {
+  super::camera_file_check!("Panasonic", "DMC-G5", cam_dmc_g5_iso_160_panasonic_raw_1_4608x3456_rw2, "raw_modes/DMC-G5_ISO_160_Panasonic RAW 1_4608x3456.RW2");
+}
+mod camera_dmc_g6_raw_modes {
+  super::camera_file_check!("Panasonic", "DMC-G6", cam_dmc_g6_iso_160_panasonic_raw_1_3456x3456_rw2, "raw_modes/DMC-G6_ISO_160_Panasonic RAW 1_3456x3456.RW2");
+  super::camera_file_check!("Panasonic", "DMC-G6", cam_dmc_g6_iso_160_panasonic_raw_1_4608x3072_rw2, "raw_modes/DMC-G6_ISO_160_Panasonic RAW 1_4608x3072.RW2");
+  super::camera_file_check!("Panasonic", "DMC-G6", cam_dmc_g6_iso_160_panasonic_raw_1_4608x3456_rw2, "raw_modes/DMC-G6_ISO_160_Panasonic RAW 1_4608x3456.RW2");
+  super::camera_file_check!("Panasonic", "DMC-G6", cam_dmc_g6_iso_160_panasonic_raw_1_4608x2592_rw2, "raw_modes/DMC-G6_ISO_160_Panasonic RAW 1_4608x2592.RW2");
+}
+mod camera_dmc_g70_raw_modes {
+  super::camera_file_check!("Panasonic", "DMC-G70", cam_dmc_g70_iso_100_4fmt_4592x3448_rw2, "raw_modes/DMC-G70_ISO_100_4fmt_4592x3448.RW2");
+}
+mod camera_dmc_g7_raw_modes {
+  super::camera_file_check!("Panasonic", "DMC-G7", cam_dmc_g7_iso_200_4fmt_4x3_gbrg_rw2, "raw_modes/DMC-G7_ISO_200_4fmt_4x3_GBRG.RW2");
+  super::camera_file_check!("Panasonic", "DMC-G7", cam_dmc_g7_iso_200_4fmt_4x3_bggr_rw2, "raw_modes/DMC-G7_ISO_200_4fmt_4x3_BGGR.RW2");
+  super::camera_file_check!("Panasonic", "DMC-G7", cam_dmc_g7_iso_200_4fmt_16x9_rw2, "raw_modes/DMC-G7_ISO_200_4fmt_16x9.RW2");
+  super::camera_file_check!("Panasonic", "DMC-G7", cam_dmc_g7_iso_200_4fmt_1x1_rw2, "raw_modes/DMC-G7_ISO_200_4fmt_1x1.RW2");
+  super::camera_file_check!("Panasonic", "DMC-G7", cam_dmc_g7_iso_200_4fmt_4x3_rw2, "raw_modes/DMC-G7_ISO_200_4fmt_4x3.RW2");
+  super::camera_file_check!("Panasonic", "DMC-G7", cam_dmc_g7_iso_200_4fmt_3x2_rw2, "raw_modes/DMC-G7_ISO_200_4fmt_3x2.RW2");
+}
+mod camera_dmc_g80_raw_modes {
+  super::camera_file_check!("Panasonic", "DMC-G80", cam_dmc_g80_iso_200_4fmt_1x1_rw2, "raw_modes/DMC-G80_ISO_200_4fmt_1x1.RW2");
+  super::camera_file_check!("Panasonic", "DMC-G80", cam_dmc_g80_iso_200_4fmt_16x9_rw2, "raw_modes/DMC-G80_ISO_200_4fmt_16x9.RW2");
+  super::camera_file_check!("Panasonic", "DMC-G80", cam_dmc_g80_iso_200_4fmt_3x2_rw2, "raw_modes/DMC-G80_ISO_200_4fmt_3x2.RW2");
+}
+mod camera_dmc_g81_raw_modes {
+  super::camera_file_check!("Panasonic", "DMC-G81", cam_dmc_g81_iso_400_4fmt_3x2_rw2, "raw_modes/DMC-G81_ISO_400_4fmt_3x2.RW2");
+  super::camera_file_check!("Panasonic", "DMC-G81", cam_dmc_g81_iso_500_4fmt_16x9_rw2, "raw_modes/DMC-G81_ISO_500_4fmt_16x9.RW2");
+  super::camera_file_check!("Panasonic", "DMC-G81", cam_dmc_g81_iso_400_4fmt_4x3_rw2, "raw_modes/DMC-G81_ISO_400_4fmt_4x3.RW2");
+  super::camera_file_check!("Panasonic", "DMC-G81", cam_dmc_g81_iso_400_4fmt_1x1_rw2, "raw_modes/DMC-G81_ISO_400_4fmt_1x1.RW2");
+}
+mod camera_dmc_g85_raw_modes {
+  super::camera_file_check!("Panasonic", "DMC-G85", cam_dmc_g85_iso_320_4fmt_1x1_rw2, "raw_modes/DMC-G85_ISO_320_4fmt_1x1.RW2");
+  super::camera_file_check!("Panasonic", "DMC-G85", cam_dmc_g85_iso_320_4fmt_16x9_rw2, "raw_modes/DMC-G85_ISO_320_4fmt_16x9.RW2");
+  super::camera_file_check!("Panasonic", "DMC-G85", cam_dmc_g85_iso_320_4fmt_3x2_rw2, "raw_modes/DMC-G85_ISO_320_4fmt_3x2.RW2");
+  super::camera_file_check!("Panasonic", "DMC-G85", cam_dmc_g85_iso_250_4fmt_4x3_rw2, "raw_modes/DMC-G85_ISO_250_4fmt_4x3.RW2");
+}
+mod camera_dmc_gf1_raw_modes {
+  super::camera_file_check!("Panasonic", "DMC-GF1", cam_dmc_gf1_iso_100_panasonic_raw_1_4000x2248_rw2, "raw_modes/DMC-GF1_ISO_100_Panasonic RAW 1_4000x2248.RW2");
+  super::camera_file_check!("Panasonic", "DMC-GF1", cam_dmc_gf1_iso_100_panasonic_raw_1_2992x2992_rw2, "raw_modes/DMC-GF1_ISO_100_Panasonic RAW 1_2992x2992.RW2");
+  super::camera_file_check!("Panasonic", "DMC-GF1", cam_dmc_gf1_iso_100_panasonic_raw_1_4000x2672_rw2, "raw_modes/DMC-GF1_ISO_100_Panasonic RAW 1_4000x2672.RW2");
+  super::camera_file_check!("Panasonic", "DMC-GF1", cam_dmc_gf1_iso_100_panasonic_raw_1_4000x3000_rw2, "raw_modes/DMC-GF1_ISO_100_Panasonic RAW 1_4000x3000.RW2");
+}
+mod camera_dmc_gf2_raw_modes {
+  super::camera_file_check!("Panasonic", "DMC-GF2", cam_dmc_gf2_iso_100_panasonic_raw_1_4000x2248_rw2, "raw_modes/DMC-GF2_ISO_100_Panasonic RAW 1_4000x2248.RW2");
+  super::camera_file_check!("Panasonic", "DMC-GF2", cam_dmc_gf2_iso_100_panasonic_raw_1_2992x2992_rw2, "raw_modes/DMC-GF2_ISO_100_Panasonic RAW 1_2992x2992.RW2");
+  super::camera_file_check!("Panasonic", "DMC-GF2", cam_dmc_gf2_iso_100_panasonic_raw_1_4000x3000_rw2, "raw_modes/DMC-GF2_ISO_100_Panasonic RAW 1_4000x3000.RW2");
+  super::camera_file_check!("Panasonic", "DMC-GF2", cam_dmc_gf2_iso_100_panasonic_raw_1_4000x2672_rw2, "raw_modes/DMC-GF2_ISO_100_Panasonic RAW 1_4000x2672.RW2");
+}
+mod camera_dmc_gf3_raw_modes {
+  super::camera_file_check!("Panasonic", "DMC-GF3", cam_dmc_gf3_iso_160_panasonic_raw_1_4000x2248_rw2, "raw_modes/DMC-GF3_ISO_160_Panasonic RAW 1_4000x2248.RW2");
+  super::camera_file_check!("Panasonic", "DMC-GF3", cam_dmc_gf3_iso_160_panasonic_raw_1_4000x3000_rw2, "raw_modes/DMC-GF3_ISO_160_Panasonic RAW 1_4000x3000.RW2");
+  super::camera_file_check!("Panasonic", "DMC-GF3", cam_dmc_gf3_iso_160_panasonic_raw_1_4000x2672_rw2, "raw_modes/DMC-GF3_ISO_160_Panasonic RAW 1_4000x2672.RW2");
+  super::camera_file_check!("Panasonic", "DMC-GF3", cam_dmc_gf3_iso_160_panasonic_raw_1_2992x2992_rw2, "raw_modes/DMC-GF3_ISO_160_Panasonic RAW 1_2992x2992.RW2");
+}
+mod camera_dmc_gf5_raw_modes {
+  super::camera_file_check!("Panasonic", "DMC-GF5", cam_dmc_gf5_iso_160_panasonic_raw_1_4000x3000_rw2, "raw_modes/DMC-GF5_ISO_160_Panasonic RAW 1_4000x3000.RW2");
+  super::camera_file_check!("Panasonic", "DMC-GF5", cam_dmc_gf5_iso_160_panasonic_raw_1_4000x2672_rw2, "raw_modes/DMC-GF5_ISO_160_Panasonic RAW 1_4000x2672.RW2");
+  super::camera_file_check!("Panasonic", "DMC-GF5", cam_dmc_gf5_iso_160_panasonic_raw_1_2992x2992_rw2, "raw_modes/DMC-GF5_ISO_160_Panasonic RAW 1_2992x2992.RW2");
+  super::camera_file_check!("Panasonic", "DMC-GF5", cam_dmc_gf5_iso_160_panasonic_raw_1_4000x2248_rw2, "raw_modes/DMC-GF5_ISO_160_Panasonic RAW 1_4000x2248.RW2");
+}
+mod camera_dmc_gf6_raw_modes {
+  super::camera_file_check!("Panasonic", "DMC-GF6", cam_dmc_gf6_iso_160_panasonic_raw_1_4592x2584_rw2, "raw_modes/DMC-GF6_ISO_160_Panasonic RAW 1_4592x2584.RW2");
+  super::camera_file_check!("Panasonic", "DMC-GF6", cam_dmc_gf6_iso_160_panasonic_raw_1_3424x3424_rw2, "raw_modes/DMC-GF6_ISO_160_Panasonic RAW 1_3424x3424.RW2");
+  super::camera_file_check!("Panasonic", "DMC-GF6", cam_dmc_gf6_iso_160_panasonic_raw_1_4592x3448_rw2, "raw_modes/DMC-GF6_ISO_160_Panasonic RAW 1_4592x3448.RW2");
+  super::camera_file_check!("Panasonic", "DMC-GF6", cam_dmc_gf6_iso_160_panasonic_raw_1_4592x3064_rw2, "raw_modes/DMC-GF6_ISO_160_Panasonic RAW 1_4592x3064.RW2");
+}
+mod camera_dmc_gf7_raw_modes {
+  super::camera_file_check!("Panasonic", "DMC-GF7", cam_dmc_gf7_iso_200_panasonic_raw_1_4592x3064_rw2, "raw_modes/DMC-GF7_ISO_200_Panasonic RAW 1_4592x3064.RW2");
+  super::camera_file_check!("Panasonic", "DMC-GF7", cam_dmc_gf7_iso_200_panasonic_raw_1_3424x3424_rw2, "raw_modes/DMC-GF7_ISO_200_Panasonic RAW 1_3424x3424.RW2");
+  super::camera_file_check!("Panasonic", "DMC-GF7", cam_dmc_gf7_iso_200_panasonic_raw_1_4592x3448_rw2, "raw_modes/DMC-GF7_ISO_200_Panasonic RAW 1_4592x3448.RW2");
+  super::camera_file_check!("Panasonic", "DMC-GF7", cam_dmc_gf7_iso_200_panasonic_raw_1_4592x2584_rw2, "raw_modes/DMC-GF7_ISO_200_Panasonic RAW 1_4592x2584.RW2");
+}
+mod camera_dmc_gh1_raw_modes {
+  super::camera_file_check!("Panasonic", "DMC-GH1", cam_dmc_gh1_iso_100_panasonic_raw_1_4352x2448_rw2, "raw_modes/DMC-GH1_ISO_100_Panasonic RAW 1_4352x2448.RW2");
+  super::camera_file_check!("Panasonic", "DMC-GH1", cam_dmc_gh1_iso_100_panasonic_raw_1_4128x2752_rw2, "raw_modes/DMC-GH1_ISO_100_Panasonic RAW 1_4128x2752.RW2");
+  super::camera_file_check!("Panasonic", "DMC-GH1", cam_dmc_gh1_iso_100_panasonic_raw_1_4000x3000_rw2, "raw_modes/DMC-GH1_ISO_100_Panasonic RAW 1_4000x3000.RW2");
+  super::camera_file_check!("Panasonic", "DMC-GH1", cam_dmc_gh1_iso_100_panasonic_raw_1_2992x2992_rw2, "raw_modes/DMC-GH1_ISO_100_Panasonic RAW 1_2992x2992.RW2");
+}
+mod camera_dmc_gh2_raw_modes {
+  super::camera_file_check!("Panasonic", "DMC-GH2", cam_dmc_gh2_iso_160_panasonic_raw_1_4608x3456_rw2, "raw_modes/DMC-GH2_ISO_160_Panasonic RAW 1_4608x3456.RW2");
+}
+mod camera_dmc_gh3_raw_modes {
+  super::camera_file_check!("Panasonic", "DMC-GH3", cam_dmc_gh3_iso_400_panasonic_raw_1_4608x2592_rw2, "raw_modes/DMC-GH3_ISO_400_Panasonic RAW 1_4608x2592.RW2");
+  super::camera_file_check!("Panasonic", "DMC-GH3", cam_dmc_gh3_iso_400_panasonic_raw_1_4608x3456_rw2, "raw_modes/DMC-GH3_ISO_400_Panasonic RAW 1_4608x3456.RW2");
+  super::camera_file_check!("Panasonic", "DMC-GH3", cam_dmc_gh3_iso_400_panasonic_raw_1_4608x3072_rw2, "raw_modes/DMC-GH3_ISO_400_Panasonic RAW 1_4608x3072.RW2");
+  super::camera_file_check!("Panasonic", "DMC-GH3", cam_dmc_gh3_iso_400_panasonic_raw_1_3456x3456_rw2, "raw_modes/DMC-GH3_ISO_400_Panasonic RAW 1_3456x3456.RW2");
+}
+mod camera_dmc_gh4_raw_modes {
+  super::camera_file_check!("Panasonic", "DMC-GH4", cam_dmc_gh4_iso_400_panasonic_raw_1_3456x3456_rw2, "raw_modes/DMC-GH4_ISO_400_Panasonic RAW 1_3456x3456.RW2");
+  super::camera_file_check!("Panasonic", "DMC-GH4", cam_dmc_gh4_iso_400_panasonic_raw_1_4608x3072_rw2, "raw_modes/DMC-GH4_ISO_400_Panasonic RAW 1_4608x3072.RW2");
+  super::camera_file_check!("Panasonic", "DMC-GH4", cam_dmc_gh4_iso_400_panasonic_raw_1_4608x3456_rw2, "raw_modes/DMC-GH4_ISO_400_Panasonic RAW 1_4608x3456.RW2");
+  super::camera_file_check!("Panasonic", "DMC-GH4", cam_dmc_gh4_iso_400_panasonic_raw_1_4608x2592_rw2, "raw_modes/DMC-GH4_ISO_400_Panasonic RAW 1_4608x2592.RW2");
+}
+mod camera_dmc_gm1_raw_modes {
+  super::camera_file_check!("Panasonic", "DMC-GM1", cam_dmc_gm1_iso_200_4fmt_4592x3064_rw2, "raw_modes/DMC-GM1_ISO_200_4fmt_4592x3064.RW2");
+  super::camera_file_check!("Panasonic", "DMC-GM1", cam_dmc_gm1_iso_200_4fmt_3424x3424_rw2, "raw_modes/DMC-GM1_ISO_200_4fmt_3424x3424.RW2");
+  super::camera_file_check!("Panasonic", "DMC-GM1", cam_dmc_gm1_iso_200_4fmt_4592x3448_rw2, "raw_modes/DMC-GM1_ISO_200_4fmt_4592x3448.RW2");
+  super::camera_file_check!("Panasonic", "DMC-GM1", cam_dmc_gm1_iso_200_4fmt_4592x2584_rw2, "raw_modes/DMC-GM1_ISO_200_4fmt_4592x2584.RW2");
+}
+mod camera_dmc_gm1s_raw_modes {
+  super::camera_file_check!("Panasonic", "DMC-GM1S", cam_dmc_gm1s_iso_200_panasonic_raw_1_4592x3448_rw2, "raw_modes/DMC-GM1S_ISO_200_Panasonic RAW 1_4592x3448.RW2");
+}
+mod camera_dmc_gm5_raw_modes {
+  super::camera_file_check!("Panasonic", "DMC-GM5", cam_dmc_gm5_iso_400_panasonic_raw_1_4592x3064_rw2, "raw_modes/DMC-GM5_ISO_400_Panasonic RAW 1_4592x3064.RW2");
+  super::camera_file_check!("Panasonic", "DMC-GM5", cam_dmc_gm5_iso_400_panasonic_raw_1_3424x3424_rw2, "raw_modes/DMC-GM5_ISO_400_Panasonic RAW 1_3424x3424.RW2");
+  super::camera_file_check!("Panasonic", "DMC-GM5", cam_dmc_gm5_iso_400_panasonic_raw_1_4592x3448_rw2, "raw_modes/DMC-GM5_ISO_400_Panasonic RAW 1_4592x3448.RW2");
+  super::camera_file_check!("Panasonic", "DMC-GM5", cam_dmc_gm5_iso_400_panasonic_raw_1_4592x2584_rw2, "raw_modes/DMC-GM5_ISO_400_Panasonic RAW 1_4592x2584.RW2");
+}
+mod camera_dmc_gx1_raw_modes {
+  super::camera_file_check!("Panasonic", "DMC-GX1", cam_dmc_gx1_iso_320_panasonic_raw_1_4576x3056_rw2, "raw_modes/DMC-GX1_ISO_320_Panasonic RAW 1_4576x3056.RW2");
+}
+mod camera_dmc_gx7mk2_raw_modes {
+  super::camera_file_check!("Panasonic", "DMC-GX7MK2", cam_dmc_gx7mk2_iso_2500_4fmt_16x9_rw2, "raw_modes/DMC-GX7MK2_ISO_2500_4fmt_16x9.RW2");
+  super::camera_file_check!("Panasonic", "DMC-GX7MK2", cam_dmc_gx7mk2_iso_2500_4fmt_3x2_rw2, "raw_modes/DMC-GX7MK2_ISO_2500_4fmt_3x2.RW2");
+  super::camera_file_check!("Panasonic", "DMC-GX7MK2", cam_dmc_gx7mk2_iso_2500_4fmt_1x1_rw2, "raw_modes/DMC-GX7MK2_ISO_2500_4fmt_1x1.RW2");
+  super::camera_file_check!("Panasonic", "DMC-GX7MK2", cam_dmc_gx7mk2_iso_2500_4fmt_4x3_rw2, "raw_modes/DMC-GX7MK2_ISO_2500_4fmt_4x3.RW2");
+}
+mod camera_dmc_gx7_raw_modes {
+  super::camera_file_check!("Panasonic", "DMC-GX7", cam_dmc_gx7_iso_125_panasonic_raw_1_4592x2584_rw2, "raw_modes/DMC-GX7_ISO_125_Panasonic RAW 1_4592x2584.RW2");
+  super::camera_file_check!("Panasonic", "DMC-GX7", cam_dmc_gx7_iso_125_panasonic_raw_1_4592x3448_rw2, "raw_modes/DMC-GX7_ISO_125_Panasonic RAW 1_4592x3448.RW2");
+  super::camera_file_check!("Panasonic", "DMC-GX7", cam_dmc_gx7_iso_125_panasonic_raw_1_3424x3424_rw2, "raw_modes/DMC-GX7_ISO_125_Panasonic RAW 1_3424x3424.RW2");
+  super::camera_file_check!("Panasonic", "DMC-GX7", cam_dmc_gx7_iso_125_panasonic_raw_1_4592x3064_rw2, "raw_modes/DMC-GX7_ISO_125_Panasonic RAW 1_4592x3064.RW2");
+}
+mod camera_dmc_gx80_raw_modes {
+  super::camera_file_check!("Panasonic", "DMC-GX80", cam_dmc_gx80_iso_200_4fmt_16x9_rw2, "raw_modes/DMC-GX80_ISO_200_4fmt_16x9.RW2");
+  super::camera_file_check!("Panasonic", "DMC-GX80", cam_dmc_gx80_iso_200_4fmt_4x3_rw2, "raw_modes/DMC-GX80_ISO_200_4fmt_4x3.RW2");
+  super::camera_file_check!("Panasonic", "DMC-GX80", cam_dmc_gx80_iso_200_4fmt_1x1_rw2, "raw_modes/DMC-GX80_ISO_200_4fmt_1x1.RW2");
+  super::camera_file_check!("Panasonic", "DMC-GX80", cam_dmc_gx80_iso_200_4fmt_3x2_rw2, "raw_modes/DMC-GX80_ISO_200_4fmt_3x2.RW2");
+}
+mod camera_dmc_gx85_raw_modes {
+  super::camera_file_check!("Panasonic", "DMC-GX85", cam_dmc_gx85_iso_200_4fmt_16x9_rw2, "raw_modes/DMC-GX85_ISO_200_4fmt_16x9.RW2");
+  super::camera_file_check!("Panasonic", "DMC-GX85", cam_dmc_gx85_iso_200_4fmt_4x3_rw2, "raw_modes/DMC-GX85_ISO_200_4fmt_4x3.RW2");
+  super::camera_file_check!("Panasonic", "DMC-GX85", cam_dmc_gx85_iso_200_4fmt_1x1_rw2, "raw_modes/DMC-GX85_ISO_200_4fmt_1x1.RW2");
+  super::camera_file_check!("Panasonic", "DMC-GX85", cam_dmc_gx85_iso_200_4fmt_3x2_rw2, "raw_modes/DMC-GX85_ISO_200_4fmt_3x2.RW2");
+}
+mod camera_dmc_gx8_raw_modes {
+  super::camera_file_check!("Panasonic", "DMC-GX8", cam_dmc_gx8_iso_200_4fmt_16x9_rw2, "raw_modes/DMC-GX8_ISO_200_4fmt_16x9.RW2");
+  super::camera_file_check!("Panasonic", "DMC-GX8", cam_dmc_gx8_iso_200_4fmt_3x2_rw2, "raw_modes/DMC-GX8_ISO_200_4fmt_3x2.RW2");
+  super::camera_file_check!("Panasonic", "DMC-GX8", cam_dmc_gx8_iso_200_4fmt_1x1_rw2, "raw_modes/DMC-GX8_ISO_200_4fmt_1x1.RW2");
+  super::camera_file_check!("Panasonic", "DMC-GX8", cam_dmc_gx8_iso_200_4fmt_4x3_rw2, "raw_modes/DMC-GX8_ISO_200_4fmt_4x3.RW2");
+}
+mod camera_dmc_l10_raw_modes {
+  super::camera_file_check!("Panasonic", "DMC-L10", cam_dmc_l10_iso_100_3fmt_3648x2736_raw, "raw_modes/DMC-L10_ISO_100_3fmt_3648x2736.RAW");
+}
+mod camera_dmc_l1_raw_modes {
+  super::camera_file_check!("Panasonic", "DMC-L1", cam_dmc_l1_iso_100_panasonic_raw_4_3136x2352_raw, "raw_modes/DMC-L1_ISO_100_Panasonic RAW 4_3136x2352.RAW");
+}
+mod camera_dmc_lf1_raw_modes {
+  super::camera_file_check!("Panasonic", "DMC-LF1", cam_dmc_lf1_iso_80_4fmt_4000x2672_rw2, "raw_modes/DMC-LF1_ISO_80_4fmt_4000x2672.RW2");
+  super::camera_file_check!("Panasonic", "DMC-LF1", cam_dmc_lf1_iso_80_4fmt_4000x3000_rw2, "raw_modes/DMC-LF1_ISO_80_4fmt_4000x3000.RW2");
+}
+mod camera_dmc_lx100_raw_modes {
+  super::camera_file_check!("Panasonic", "DMC-LX100", cam_dmc_lx100_iso_500_panasonic_raw_1_4272x2856_rw2, "raw_modes/DMC-LX100_ISO_500_Panasonic RAW 1_4272x2856.RW2");
+  super::camera_file_check!("Panasonic", "DMC-LX100", cam_dmc_lx100_iso_500_panasonic_raw_1_3088x3088_rw2, "raw_modes/DMC-LX100_ISO_500_Panasonic RAW 1_3088x3088.RW2");
+  super::camera_file_check!("Panasonic", "DMC-LX100", cam_dmc_lx100_iso_500_panasonic_raw_1_4112x3088_rw2, "raw_modes/DMC-LX100_ISO_500_Panasonic RAW 1_4112x3088.RW2");
+  super::camera_file_check!("Panasonic", "DMC-LX100", cam_dmc_lx100_iso_500_panasonic_raw_1_4480x2520_rw2, "raw_modes/DMC-LX100_ISO_500_Panasonic RAW 1_4480x2520.RW2");
+}
+mod camera_dmc_lx10_raw_modes {
+  super::camera_file_check!("Panasonic", "DMC-LX10", cam_dmc_lx10_iso_160_3x2_rw2, "raw_modes/DMC-LX10_ISO_160_3x2.RW2");
+  super::camera_file_check!("Panasonic", "DMC-LX10", cam_dmc_lx10_iso_160_1x1_rw2, "raw_modes/DMC-LX10_ISO_160_1x1.RW2");
+  super::camera_file_check!("Panasonic", "DMC-LX10", cam_dmc_lx10_iso_160_4x3_rw2, "raw_modes/DMC-LX10_ISO_160_4x3.RW2");
+  super::camera_file_check!("Panasonic", "DMC-LX10", cam_dmc_lx10_iso_160_16x9_rw2, "raw_modes/DMC-LX10_ISO_160_16x9.RW2");
+}
+mod camera_dmc_lx15_raw_modes {
+  super::camera_file_check!("Panasonic", "DMC-LX15", cam_dmc_lx15_iso_125_4fmt_16x9_rw2, "raw_modes/DMC-LX15_ISO_125_4fmt_16x9.RW2");
+  super::camera_file_check!("Panasonic", "DMC-LX15", cam_dmc_lx15_iso_125_4fmt_3x2_rw2, "raw_modes/DMC-LX15_ISO_125_4fmt_3x2.RW2");
+  super::camera_file_check!("Panasonic", "DMC-LX15", cam_dmc_lx15_iso_125_4fmt_1x1_rw2, "raw_modes/DMC-LX15_ISO_125_4fmt_1x1.RW2");
+  super::camera_file_check!("Panasonic", "DMC-LX15", cam_dmc_lx15_iso_125_4fmt_4x3_rw2, "raw_modes/DMC-LX15_ISO_125_4fmt_4x3.RW2");
+}
+mod camera_dmc_lx1_raw_modes {
+  super::camera_file_check!("Panasonic", "DMC-LX1", cam_dmc_lx1_iso_100_panasonic_raw_3_3840x2160_raw, "raw_modes/DMC-LX1_ISO_100_Panasonic RAW 3_3840x2160.RAW");
+}
+mod camera_dmc_lx2_raw_modes {
+  super::camera_file_check!("Panasonic", "DMC-LX2", cam_dmc_lx2_iso_100_panasonic_raw_3_4224x2376_raw, "raw_modes/DMC-LX2_ISO_100_Panasonic RAW 3_4224x2376.RAW");
+}
+mod camera_dmc_lx3_raw_modes {
+  super::camera_file_check!("Panasonic", "DMC-LX3", cam_dmc_lx3_iso_400_4fmt_3968x2232_rw2, "raw_modes/DMC-LX3_ISO_400_4fmt_3968x2232.RW2");
+  super::camera_file_check!("Panasonic", "DMC-LX3", cam_dmc_lx3_iso_80_4fmt_2736x2736_rw2, "raw_modes/DMC-LX3_ISO_80_4fmt_2736x2736.RW2");
+  super::camera_file_check!("Panasonic", "DMC-LX3", cam_dmc_lx3_iso_400_4fmt_3648x2736_rw2, "raw_modes/DMC-LX3_ISO_400_4fmt_3648x2736.RW2");
+  super::camera_file_check!("Panasonic", "DMC-LX3", cam_dmc_lx3_iso_100_4fmt_3968x2232_rw2, "raw_modes/DMC-LX3_ISO_100_4fmt_3968x2232.RW2");
+}
+mod camera_dmc_lx5_raw_modes {
+  super::camera_file_check!("Panasonic", "DMC-LX5", cam_dmc_lx5_iso_80_panasonic_raw_1_3648x2736_rw2, "raw_modes/DMC-LX5_ISO_80_Panasonic RAW 1_3648x2736.RW2");
+  super::camera_file_check!("Panasonic", "DMC-LX5", cam_dmc_lx5_iso_80_panasonic_raw_1_2736x2736_rw2, "raw_modes/DMC-LX5_ISO_80_Panasonic RAW 1_2736x2736.RW2");
+  super::camera_file_check!("Panasonic", "DMC-LX5", cam_dmc_lx5_iso_80_panasonic_raw_1_3776x2520_rw2, "raw_modes/DMC-LX5_ISO_80_Panasonic RAW 1_3776x2520.RW2");
+  super::camera_file_check!("Panasonic", "DMC-LX5", cam_dmc_lx5_iso_80_panasonic_raw_1_3968x2232_rw2, "raw_modes/DMC-LX5_ISO_80_Panasonic RAW 1_3968x2232.RW2");
+}
+mod camera_dmc_lx7_raw_modes {
+  super::camera_file_check!("Panasonic", "DMC-LX7", cam_dmc_lx7_iso_100_panasonic_raw_1_3968x2232_rw2, "raw_modes/DMC-LX7_ISO_100_Panasonic RAW 1_3968x2232.RW2");
+  super::camera_file_check!("Panasonic", "DMC-LX7", cam_dmc_lx7_iso_100_panasonic_raw_1_3776x2520_rw2, "raw_modes/DMC-LX7_ISO_100_Panasonic RAW 1_3776x2520.RW2");
+  super::camera_file_check!("Panasonic", "DMC-LX7", cam_dmc_lx7_iso_100_panasonic_raw_1_3648x2736_rw2, "raw_modes/DMC-LX7_ISO_100_Panasonic RAW 1_3648x2736.RW2");
+  super::camera_file_check!("Panasonic", "DMC-LX7", cam_dmc_lx7_iso_100_panasonic_raw_1_2736x2736_rw2, "raw_modes/DMC-LX7_ISO_100_Panasonic RAW 1_2736x2736.RW2");
+}
+mod camera_dmc_tx1_raw_modes {
+  super::camera_file_check!("Panasonic", "DMC-TX1", cam_dmc_tx1_iso_125_4fmt_3x2_rw2, "raw_modes/DMC-TX1_ISO_125_4fmt_3x2.RW2");
+  super::camera_file_check!("Panasonic", "DMC-TX1", cam_dmc_tx1_iso_125_4fmt_4x3_rw2, "raw_modes/DMC-TX1_ISO_125_4fmt_4x3.RW2");
+  super::camera_file_check!("Panasonic", "DMC-TX1", cam_dmc_tx1_iso_125_4fmt_1x1_rw2, "raw_modes/DMC-TX1_ISO_125_4fmt_1x1.RW2");
+  super::camera_file_check!("Panasonic", "DMC-TX1", cam_dmc_tx1_iso_125_4fmt_16x9_rw2, "raw_modes/DMC-TX1_ISO_125_4fmt_16x9.RW2");
+}
+mod camera_dmc_tz100_raw_modes {
+  super::camera_file_check!("Panasonic", "DMC-TZ100", cam_dmc_tz100_iso_640_4fmt_1x1_rw2, "raw_modes/DMC-TZ100_ISO_640_4fmt_1x1.RW2");
+  super::camera_file_check!("Panasonic", "DMC-TZ100", cam_dmc_tz100_iso_640_4fmt_4x2_rw2, "raw_modes/DMC-TZ100_ISO_640_4fmt_4x2.RW2");
+  super::camera_file_check!("Panasonic", "DMC-TZ100", cam_dmc_tz100_iso_640_4fmt_16x9_rw2, "raw_modes/DMC-TZ100_ISO_640_4fmt_16x9.RW2");
+  super::camera_file_check!("Panasonic", "DMC-TZ100", cam_dmc_tz100_iso_640_4fmt_3x2_rw2, "raw_modes/DMC-TZ100_ISO_640_4fmt_3x2.RW2");
+}
+mod camera_dmc_tz101_raw_modes {
+  super::camera_file_check!("Panasonic", "DMC-TZ101", cam_dmc_tz101_iso_125_4fmt_5472x3648_rw2, "raw_modes/DMC-TZ101_ISO_125_4fmt_5472x3648.RW2");
+}
+mod camera_dmc_tz110_raw_modes {
+  super::camera_file_check!("Panasonic", "DMC-TZ110", cam_dmc_tz110_iso_200_4fmt_3x2_rw2, "raw_modes/DMC-TZ110_ISO_200_4fmt_3x2.RW2");
+  super::camera_file_check!("Panasonic", "DMC-TZ110", cam_dmc_tz110_iso_200_4fmt_1x1_rw2, "raw_modes/DMC-TZ110_ISO_200_4fmt_1x1.RW2");
+  super::camera_file_check!("Panasonic", "DMC-TZ110", cam_dmc_tz110_iso_200_4fmt_4x3_rw2, "raw_modes/DMC-TZ110_ISO_200_4fmt_4x3.RW2");
+  super::camera_file_check!("Panasonic", "DMC-TZ110", cam_dmc_tz110_iso_200_4fmt_16x9_rw2, "raw_modes/DMC-TZ110_ISO_200_4fmt_16x9.RW2");
+}
+mod camera_dmc_tz60_raw_modes {
+  super::camera_file_check!("Panasonic", "DMC-TZ60", cam_dmc_tz60_iso_200_panasonic_raw_1_4896x3672_rw2, "raw_modes/DMC-TZ60_ISO_200_Panasonic RAW 1_4896x3672.RW2");
+}
+mod camera_dmc_tz61_raw_modes {
+  super::camera_file_check!("Panasonic", "DMC-TZ61", cam_dmc_tz61_iso_400_panasonic_raw_1_3672x3672_rw2, "raw_modes/DMC-TZ61_ISO_400_Panasonic RAW 1_3672x3672.RW2");
+  super::camera_file_check!("Panasonic", "DMC-TZ61", cam_dmc_tz61_iso_400_panasonic_raw_1_4896x2754_rw2, "raw_modes/DMC-TZ61_ISO_400_Panasonic RAW 1_4896x2754.RW2");
+  super::camera_file_check!("Panasonic", "DMC-TZ61", cam_dmc_tz61_iso_400_panasonic_raw_1_4896x3672_rw2, "raw_modes/DMC-TZ61_ISO_400_Panasonic RAW 1_4896x3672.RW2");
+  super::camera_file_check!("Panasonic", "DMC-TZ61", cam_dmc_tz61_iso_400_panasonic_raw_1_4896x3264_rw2, "raw_modes/DMC-TZ61_ISO_400_Panasonic RAW 1_4896x3264.RW2");
+}
+mod camera_dmc_tz70_raw_modes {
+  super::camera_file_check!("Panasonic", "DMC-TZ70", cam_dmc_tz70_iso_80_panasonic_raw_1_4000x2248_rw2, "raw_modes/DMC-TZ70_ISO_80_Panasonic RAW 1_4000x2248.RW2");
+  super::camera_file_check!("Panasonic", "DMC-TZ70", cam_dmc_tz70_iso_80_panasonic_raw_1_2992x2992_rw2, "raw_modes/DMC-TZ70_ISO_80_Panasonic RAW 1_2992x2992.RW2");
+  super::camera_file_check!("Panasonic", "DMC-TZ70", cam_dmc_tz70_iso_80_panasonic_raw_1_4000x3000_rw2, "raw_modes/DMC-TZ70_ISO_80_Panasonic RAW 1_4000x3000.RW2");
+  super::camera_file_check!("Panasonic", "DMC-TZ70", cam_dmc_tz70_iso_80_panasonic_raw_1_4000x2672_rw2, "raw_modes/DMC-TZ70_ISO_80_Panasonic RAW 1_4000x2672.RW2");
+}
+mod camera_dmc_tz71_raw_modes {
+  super::camera_file_check!("Panasonic", "DMC-TZ71", cam_dmc_tz71_iso_80_panasonic_raw_1_4000x3000_rw2, "raw_modes/DMC-TZ71_ISO_80_Panasonic RAW 1_4000x3000.RW2");
+  super::camera_file_check!("Panasonic", "DMC-TZ71", cam_dmc_tz71_iso_80_panasonic_raw_1_4000x2672_rw2, "raw_modes/DMC-TZ71_ISO_80_Panasonic RAW 1_4000x2672.RW2");
+  super::camera_file_check!("Panasonic", "DMC-TZ71", cam_dmc_tz71_iso_80_panasonic_raw_1_2992x2992_rw2, "raw_modes/DMC-TZ71_ISO_80_Panasonic RAW 1_2992x2992.RW2");
+  super::camera_file_check!("Panasonic", "DMC-TZ71", cam_dmc_tz71_iso_80_panasonic_raw_1_4000x2248_rw2, "raw_modes/DMC-TZ71_ISO_80_Panasonic RAW 1_4000x2248.RW2");
+}
+mod camera_dmc_tz80_raw_modes {
+  super::camera_file_check!("Panasonic", "DMC-TZ80", cam_dmc_tz80_iso_1600_4fmt_3x2_rw2, "raw_modes/DMC-TZ80_ISO_1600_4fmt_3x2.RW2");
+  super::camera_file_check!("Panasonic", "DMC-TZ80", cam_dmc_tz80_iso_1600_4fmt_16x9_rw2, "raw_modes/DMC-TZ80_ISO_1600_4fmt_16x9.RW2");
+  super::camera_file_check!("Panasonic", "DMC-TZ80", cam_dmc_tz80_iso_1600_4fmt_4x3_rw2, "raw_modes/DMC-TZ80_ISO_1600_4fmt_4x3.RW2");
+  super::camera_file_check!("Panasonic", "DMC-TZ80", cam_dmc_tz80_iso_1600_4fmt_1x1_rw2, "raw_modes/DMC-TZ80_ISO_1600_4fmt_1x1.RW2");
+}
+mod camera_dmc_tz81_raw_modes {
+  super::camera_file_check!("Panasonic", "DMC-TZ81", cam_dmc_tz81_iso_80_4fmt_4x3_rw2, "raw_modes/DMC-TZ81_ISO_80_4fmt_4x3.RW2");
+  super::camera_file_check!("Panasonic", "DMC-TZ81", cam_dmc_tz81_iso_80_4fmt_1x1_rw2, "raw_modes/DMC-TZ81_ISO_80_4fmt_1x1.RW2");
+  super::camera_file_check!("Panasonic", "DMC-TZ81", cam_dmc_tz81_iso_80_4fmt_16x9_rw2, "raw_modes/DMC-TZ81_ISO_80_4fmt_16x9.RW2");
+  super::camera_file_check!("Panasonic", "DMC-TZ81", cam_dmc_tz81_iso_80_4fmt_3x2_rw2, "raw_modes/DMC-TZ81_ISO_80_4fmt_3x2.RW2");
+}
+mod camera_dmc_zs100_raw_modes {
+  super::camera_file_check!("Panasonic", "DMC-ZS100", cam_dmc_zs100_iso_125_4fmt_4x3_rw2, "raw_modes/DMC-ZS100_ISO_125_4fmt_4x3.RW2");
+  super::camera_file_check!("Panasonic", "DMC-ZS100", cam_dmc_zs100_iso_125_4fmt_1x1_rw2, "raw_modes/DMC-ZS100_ISO_125_4fmt_1x1.RW2");
+  super::camera_file_check!("Panasonic", "DMC-ZS100", cam_dmc_zs100_iso_125_4fmt_16x9_rw2, "raw_modes/DMC-ZS100_ISO_125_4fmt_16x9.RW2");
+  super::camera_file_check!("Panasonic", "DMC-ZS100", cam_dmc_zs100_iso_125_4fmt_3x2_rw2, "raw_modes/DMC-ZS100_ISO_125_4fmt_3x2.RW2");
+}
+mod camera_dmc_zs40_raw_modes {
+  super::camera_file_check!("Panasonic", "DMC-ZS40", cam_dmc_zs40_iso_100_panasonic_raw_1_4896x3672_rw2, "raw_modes/DMC-ZS40_ISO_100_Panasonic RAW 1_4896x3672.RW2");
+}
+mod camera_dmc_zs60_raw_modes {
+  super::camera_file_check!("Panasonic", "DMC-ZS60", cam_dmc_zs60_iso_400_panasonic_raw_1_4896x3672_rw2, "raw_modes/DMC-ZS60_ISO_400_Panasonic RAW 1_4896x3672.RW2");
+}
+mod camera_c_lux_raw_modes {
+  super::camera_file_check!("Leica", "C-Lux", cam_c_lux_iso_125_4fmt_5472x3648_rwl, "raw_modes/C-Lux_ISO_125_4fmt_5472x3648.RWL");
+}
+mod camera_c_typ_112_raw_modes {
+  super::camera_file_check!("Leica", "C Typ 112", cam_c_typ_112_iso_80_4fmt_3x2_rwl, "raw_modes/C Typ 112_ISO_80_4fmt_3x2.RWL");
+  super::camera_file_check!("Leica", "C Typ 112", cam_c_typ_112_iso_640_4fmt_4x3_rwl, "raw_modes/C Typ 112_ISO_640_4fmt_4x3.RWL");
+}
+mod camera_digilux_2_raw_modes {
+  super::camera_file_check!("Leica", "Digilux 2", cam_digilux_2_iso_100_raw, "raw_modes/DIGILUX 2_ISO_100.RAW");
+}
+mod camera_digilux_3_raw_modes {
+  super::camera_file_check!("Leica", "Digilux 3", cam_digilux_3_iso_100_raw, "raw_modes/DIGILUX 3_ISO_100.RAW");
+}
+mod camera_d_lux_3_raw_modes {
+  super::camera_file_check!("Leica", "D-LUX 3", cam_raw_leica_dlux3_raw, "raw_modes/RAW_LEICA_DLUX3.RAW");
+}
+mod camera_d_lux_4_raw_modes {
+  super::camera_file_check!("Leica", "D-LUX 4", cam_d_lux_4_iso_80_4fmt_3x2_rwl, "raw_modes/D-LUX 4_ISO_80_4fmt_3x2.RWL");
+}
+mod camera_d_lux_5_raw_modes {
+  super::camera_file_check!("Leica", "D-LUX 5", cam_d_lux_5_iso_80_4fmt_3x2_rwl, "raw_modes/D-LUX 5_ISO_80_4fmt_3x2.RWL");
+  super::camera_file_check!("Leica", "D-LUX 5", cam_d_lux_5_iso_80_4fmt_16x9_rwl, "raw_modes/D-LUX 5_ISO_80_4fmt_16x9.RWL");
+  super::camera_file_check!("Leica", "D-LUX 5", cam_d_lux_5_iso_80_4fmt_1x1_rwl, "raw_modes/D-LUX 5_ISO_80_4fmt_1x1.RWL");
+  super::camera_file_check!("Leica", "D-LUX 5", cam_d_lux_5_iso_80_4fmt_4x3_rwl, "raw_modes/D-LUX 5_ISO_80_4fmt_4x3.RWL");
+}
+mod camera_d_lux_7_raw_modes {
+  super::camera_file_check!("Leica", "D-LUX 7", cam_d_lux_7_iso_200_4fmt_4x3_rwl, "raw_modes/D-Lux 7_ISO_200_4fmt_4x3.RWL");
+}
+mod camera_d_lux_typ_109_raw_modes {
+  super::camera_file_check!("Leica", "D-LUX Typ 109", cam_d_lux_typ_109_iso_500_4fmt_16x9_rwl, "raw_modes/D-LUX Typ 109_ISO_500_4fmt_16x9.RWL");
+  super::camera_file_check!("Leica", "D-LUX Typ 109", cam_d_lux_typ_109_iso_500_4fmt_3x2_rwl, "raw_modes/D-LUX Typ 109_ISO_500_4fmt_3x2.RWL");
+  super::camera_file_check!("Leica", "D-LUX Typ 109", cam_d_lux_typ_109_iso_640_4fmt_1x1_rwl, "raw_modes/D-LUX Typ 109_ISO_640_4fmt_1x1.RWL");
+  super::camera_file_check!("Leica", "D-LUX Typ 109", cam_d_lux_typ_109_iso_640_4fmt_4x3_rwl, "raw_modes/D-LUX Typ 109_ISO_640_4fmt_4x3.RWL");
+}
+mod camera_v_lux_1_raw_modes {
+  super::camera_file_check!("Leica", "V-LUX 1", cam_v_lux_1_iso_100_raw, "raw_modes/V-LUX 1_ISO_100.RAW");
+}
+mod camera_v_lux_4_raw_modes {
+  super::camera_file_check!("Leica", "V-LUX 4", cam_v_lux_4_iso_100_4fmt_4000x3000_rwl, "raw_modes/V-LUX 4_ISO_100_4fmt_4000x3000.RWL");
+}
+mod camera_v_lux_5_raw_modes {
+  super::camera_file_check!("Leica", "V-LUX 5", cam_v_lux_5_iso_125_4fmt_5472x3648_rwl, "raw_modes/V-Lux 5_ISO_125_4fmt_5472x3648.RWL");
+}
+mod camera_v_lux_typ_114_raw_modes {
+  super::camera_file_check!("Leica", "V-LUX Typ 114", cam_v_lux_typ_114_iso_125_4fmt_3x2_rwl, "raw_modes/V-LUX Typ 114_ISO_125_4fmt_3x2.RWL");
+  super::camera_file_check!("Leica", "V-LUX Typ 114", cam_v_lux_typ_114_iso_125_4fmt_16x9_rwl, "raw_modes/V-LUX Typ 114_ISO_125_4fmt_16x9.RWL");
+  super::camera_file_check!("Leica", "V-LUX Typ 114", cam_v_lux_typ_114_iso_125_4fmt_1x1_rwl, "raw_modes/V-LUX Typ 114_ISO_125_4fmt_1x1.RWL");
+  super::camera_file_check!("Leica", "V-LUX Typ 114", cam_v_lux_typ_114_iso_125_4fmt_4x3_rwl, "raw_modes/V-LUX Typ 114_ISO_125_4fmt_4x3.RWL");
+}

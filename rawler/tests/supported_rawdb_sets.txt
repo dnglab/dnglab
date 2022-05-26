@@ -361,3 +361,119 @@ cameras/Olympus/TG-6/raw_modes
 cameras/Olympus/XZ-10/raw_modes
 cameras/Olympus/XZ-1/raw_modes
 cameras/Olympus/XZ-2/raw_modes
+cameras/Panasonic/DC-FZ10002/raw_modes
+cameras/Panasonic/DC-FZ45/raw_modes
+cameras/Panasonic/DC-FZ80/raw_modes
+cameras/Panasonic/DC-FZ82/raw_modes
+cameras/Panasonic/DC-G100/raw_modes
+cameras/Panasonic/DC-G110/raw_modes
+cameras/Panasonic/DC-G90/raw_modes
+cameras/Panasonic/DC-G91/raw_modes
+cameras/Panasonic/DC-G95/raw_modes
+cameras/Panasonic/DC-G9/raw_modes
+cameras/Panasonic/DC-GF10/raw_modes
+cameras/Panasonic/DC-GH5M2/raw_modes
+cameras/Panasonic/DC-GH5/raw_modes
+cameras/Panasonic/DC-GH5S/raw_modes
+cameras/Panasonic/DC-GX7MK3/raw_modes
+cameras/Panasonic/DC-GX800/raw_modes
+cameras/Panasonic/DC-GX850/raw_modes
+cameras/Panasonic/DC-GX880/raw_modes
+cameras/Panasonic/DC-GX9/raw_modes
+cameras/Panasonic/DC-LX100M2/raw_modes
+cameras/Panasonic/DC-S1H/raw_modes
+cameras/Panasonic/DC-S1/raw_modes
+cameras/Panasonic/DC-S1R/raw_modes
+cameras/Panasonic/DC-S5/raw_modes
+cameras/Panasonic/DC-TZ200/raw_modes
+cameras/Panasonic/DC-TZ202/raw_modes
+cameras/Panasonic/DC-TZ90/raw_modes
+cameras/Panasonic/DC-TZ91/raw_modes
+cameras/Panasonic/DC-TZ95/raw_modes
+cameras/Panasonic/DC-TZ96/raw_modes
+cameras/Panasonic/DMC-CM1/raw_modes
+cameras/Panasonic/DMC-FZ1000/raw_modes
+cameras/Panasonic/DMC-FZ100/raw_modes
+cameras/Panasonic/DMC-FZ150/raw_modes
+cameras/Panasonic/DMC-FZ18/raw_modes
+cameras/Panasonic/DMC-FZ2000/raw_modes
+cameras/Panasonic/DMC-FZ200/raw_modes
+cameras/Panasonic/DMC-FZ2500/raw_modes
+cameras/Panasonic/DMC-FZ28/raw_modes
+cameras/Panasonic/DMC-FZ300/raw_modes
+cameras/Panasonic/DMC-FZ30/raw_modes
+cameras/Panasonic/DMC-FZ330/raw_modes
+cameras/Panasonic/DMC-FZ35/raw_modes
+cameras/Panasonic/DMC-FZ38/raw_modes
+cameras/Panasonic/DMC-FZ45/raw_modes
+cameras/Panasonic/DMC-FZ50/raw_modes
+cameras/Panasonic/DMC-FZ70/raw_modes
+cameras/Panasonic/DMC-FZ72/raw_modes
+cameras/Panasonic/DMC-FZ8/raw_modes
+cameras/Panasonic/DMC-G10/raw_modes
+cameras/Panasonic/DMC-G1/raw_modes
+cameras/Panasonic/DMC-G2/raw_modes
+cameras/Panasonic/DMC-G3/raw_modes
+cameras/Panasonic/DMC-G5/raw_modes
+cameras/Panasonic/DMC-G6/raw_modes
+cameras/Panasonic/DMC-G70/raw_modes
+cameras/Panasonic/DMC-G7/raw_modes
+cameras/Panasonic/DMC-G80/raw_modes
+cameras/Panasonic/DMC-G81/raw_modes
+cameras/Panasonic/DMC-G85/raw_modes
+cameras/Panasonic/DMC-GF1/raw_modes
+cameras/Panasonic/DMC-GF2/raw_modes
+cameras/Panasonic/DMC-GF3/raw_modes
+cameras/Panasonic/DMC-GF5/raw_modes
+cameras/Panasonic/DMC-GF6/raw_modes
+cameras/Panasonic/DMC-GF7/raw_modes
+cameras/Panasonic/DMC-GH1/raw_modes
+cameras/Panasonic/DMC-GH2/raw_modes
+cameras/Panasonic/DMC-GH3/raw_modes
+cameras/Panasonic/DMC-GH4/raw_modes
+cameras/Panasonic/DMC-GM1/raw_modes
+cameras/Panasonic/DMC-GM1S/raw_modes
+cameras/Panasonic/DMC-GM5/raw_modes
+cameras/Panasonic/DMC-GX1/raw_modes
+cameras/Panasonic/DMC-GX7MK2/raw_modes
+cameras/Panasonic/DMC-GX7/raw_modes
+cameras/Panasonic/DMC-GX80/raw_modes
+cameras/Panasonic/DMC-GX85/raw_modes
+cameras/Panasonic/DMC-GX8/raw_modes
+cameras/Panasonic/DMC-L10/raw_modes
+cameras/Panasonic/DMC-L1/raw_modes
+cameras/Panasonic/DMC-LF1/raw_modes
+cameras/Panasonic/DMC-LX100/raw_modes
+cameras/Panasonic/DMC-LX10/raw_modes
+cameras/Panasonic/DMC-LX15/raw_modes
+cameras/Panasonic/DMC-LX1/raw_modes
+cameras/Panasonic/DMC-LX2/raw_modes
+cameras/Panasonic/DMC-LX3/raw_modes
+cameras/Panasonic/DMC-LX5/raw_modes
+cameras/Panasonic/DMC-LX7/raw_modes
+cameras/Panasonic/DMC-TX1/raw_modes
+cameras/Panasonic/DMC-TZ100/raw_modes
+cameras/Panasonic/DMC-TZ101/raw_modes
+cameras/Panasonic/DMC-TZ110/raw_modes
+cameras/Panasonic/DMC-TZ60/raw_modes
+cameras/Panasonic/DMC-TZ61/raw_modes
+cameras/Panasonic/DMC-TZ70/raw_modes
+cameras/Panasonic/DMC-TZ71/raw_modes
+cameras/Panasonic/DMC-TZ80/raw_modes
+cameras/Panasonic/DMC-TZ81/raw_modes
+cameras/Panasonic/DMC-ZS100/raw_modes
+cameras/Panasonic/DMC-ZS40/raw_modes
+cameras/Panasonic/DMC-ZS60/raw_modes
+cameras/Leica/C-Lux/raw_modes
+cameras/Leica/C Typ 112/raw_modes
+cameras/Leica/Digilux 2/raw_modes
+cameras/Leica/Digilux 3/raw_modes
+cameras/Leica/D-LUX 3/raw_modes
+cameras/Leica/D-LUX 4/raw_modes
+cameras/Leica/D-LUX 5/raw_modes
+cameras/Leica/D-LUX 7/raw_modes
+cameras/Leica/D-LUX Typ 109/raw_modes
+cameras/Leica/V-LUX 1/raw_modes
+cameras/Leica/V-LUX 4/raw_modes
+cameras/Leica/V-LUX 5/raw_modes
+cameras/Leica/V-LUX Typ 114/raw_modes

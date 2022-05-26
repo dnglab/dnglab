@@ -1,0 +1,15 @@
+make = "Panasonic"
+model = "DC-G9"
+clean_make = "Panasonic"
+clean_model = "DC-G9"
+blackpoint = 143
+whitepoint = 4095
+color_pattern = "RGGB"
+
+[cameras.color_matrix]
+A = [0.884, -0.403, 0.0594, -0.241, 0.9742, 0.3129, -0.008, 0.0672, 0.6014]
+D65 = [0.7685, -0.2375, -0.0634, -0.3687, 1.17, 0.2249, -0.0748, 0.1546, 0.5111]
+
+[[cameras.modes]]
+mode = "4:3"
+active_area = [0, 0, 0, 0]

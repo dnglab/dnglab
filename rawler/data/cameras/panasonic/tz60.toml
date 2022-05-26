@@ -1,0 +1,33 @@
+make = "Panasonic"
+model = "DMC-TZ60"
+clean_make = "Panasonic"
+clean_model = "DMC-TZ60"
+
+model_aliases = [
+  ["DMC-ZS40", "DMC-ZS40"],
+  ["DMC-ZS60", "DMC-ZS60"],
+]
+
+blackpoint = 145
+whitepoint = 3956
+color_pattern = "RGGB"
+
+[cameras.color_matrix]
+A = [0.9694, -0.4422, 0.0423, -0.2524, 0.9988, 0.2964, 0.0026, 0.1012, 0.5939]
+D65 = [0.8607, -0.2822, -0.0808, -0.3755, 1.193, 0.2049, -0.082, 0.206, 0.5224]
+
+[[cameras.modes]]
+mode = "1:1"
+active_area = [0, 0, 8, 0]
+
+[[cameras.modes]]
+mode = "4:3"
+active_area = [0, 0, 128, 0]
+
+[[cameras.modes]]
+mode = "3:2"
+active_area = [0, 0, 128, 0]
+
+[[cameras.modes]]
+mode = "16:9"
+active_area = [0, 0, 128, 0]

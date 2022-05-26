@@ -1,0 +1,12 @@
+make = "Panasonic"
+model = "DMC-FZ2000"
+clean_make = "Panasonic"
+clean_model = "DMC-FZ2000"
+blackpoint = 142
+whitepoint = 2095
+color_pattern = "GBRG"
+
+[cameras.color_matrix]
+A = [0.772, -0.3126, -0.0163, -0.3867, 1.1799, 0.2339, -0.0433, 0.1183, 0.5996]
+D65 = [0.7386, -0.2443, -0.0743, -0.3437, 1.1864, 0.1757, -0.0608, 0.166, 0.4766]
+

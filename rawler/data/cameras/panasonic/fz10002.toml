@@ -1,0 +1,33 @@
+make = "Panasonic"
+model = "DMC-FZ10002"
+clean_make = "Panasonic"
+clean_model = "DMC-FZ1000 II"
+blackpoint = 0
+whitepoint = 4095
+color_pattern = "GBRG"
+
+model_aliases = [
+  ["DC-FZ10002", "DC-FZ10002"],
+]
+
+
+[cameras.color_matrix]
+A = [1.0745, -0.6036, 0.0459, -0.2974, 1.1274, 0.1932, -0.0078, 0.0806, 0.5819]
+D65 = [0.9803, -0.4185, -0.0992, -0.4066, 1.2578, 0.1628, -0.0838, 0.1824, 0.5288]
+
+
+[[cameras.modes]]
+mode = "1:1"
+active_area = [0, 0, 32, 0]
+
+[[cameras.modes]]
+mode = "4:3"
+active_area = [0, 0, 160, 0]
+
+[[cameras.modes]]
+mode = "3:2"
+active_area = [0, 0, 0, 0]
+
+[[cameras.modes]]
+mode = "16:9"
+active_area = [0, 0, 0, 0]

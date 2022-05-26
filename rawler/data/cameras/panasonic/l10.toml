@@ -1,0 +1,16 @@
+make = "Panasonic"
+model = "DMC-L10"
+clean_make = "Panasonic"
+clean_model = "DMC-L10"
+blackpoint = 0
+whitepoint = 3986
+color_pattern = "GBRG"
+
+[cameras.color_matrix]
+A = [0.848, -0.2392, -0.0731, -0.6737, 1.4436, 0.2497, -0.1211, 0.1885, 0.7462]
+D65 = [0.8026, -0.1942, -0.105, -0.7919, 1.5904, 0.21, -0.2456, 0.3004, 0.704]
+
+[[cameras.modes]]
+mode = "4:3"
+active_area = [0, 0, 28, 1]
+

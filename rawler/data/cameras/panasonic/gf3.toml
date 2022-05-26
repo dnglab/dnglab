@@ -1,0 +1,27 @@
+make = "Panasonic"
+model = "DMC-GF3"
+clean_make = "Panasonic"
+clean_model = "DMC-GF3"
+blackpoint = 143
+whitepoint = 3956
+color_pattern = "GBRG"
+
+[cameras.color_matrix]
+A = [0.8881, -0.2735, -0.0864, -0.4505, 1.2138, 0.2675, -0.0602, 0.1511, 0.7893]
+D65 = [0.9051, -0.2468, -0.1204, -0.5212, 1.3276, 0.2121, -0.1197, 0.251, 0.689]
+
+[[cameras.modes]]
+mode = "1:1"
+active_area = [0, 0, 184, 0]
+
+[[cameras.modes]]
+mode = "4:3"
+active_area = [0, 0, 72, 0]
+
+[[cameras.modes]]
+mode = "3:2"
+active_area = [0, 0, 72, 0]
+
+[[cameras.modes]]
+mode = "16:9"
+active_area = [0, 0, 72, 0]

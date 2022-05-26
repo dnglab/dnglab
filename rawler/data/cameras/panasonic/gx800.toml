@@ -1,0 +1,20 @@
+make = "Panasonic"
+model = "DC-GX800"
+clean_make = "Panasonic"
+clean_model = "DC-GX800"
+
+model_aliases = [
+  ["DC-GX850", "DC-GX850"],
+]
+
+blackpoint = 143
+whitepoint = 4095
+color_pattern = "BGGR"
+
+[cameras.color_matrix]
+A = [0.8239, -0.3692, 0.0251, -0.3913, 1.1077, 0.3267, -0.0631, 0.1486, 0.7468]
+D65 = [0.761, -0.278, -0.0576, -0.4614, 1.2195, 0.2733, -0.1375, 0.2393, 0.649]
+
+[[cameras.modes]]
+mode = "4:3"
+active_area = [0, 0, 208, 0]

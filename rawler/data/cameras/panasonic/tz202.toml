@@ -1,0 +1,21 @@
+make = "Panasonic"
+model = "DC-TZ202"
+clean_make = "Panasonic"
+clean_model = "DC-TZ202"
+
+model_aliases = [
+  ["DC-TZ200", "DC-TZ200"],
+  ["DC-ZS200", "DC-ZS200"],
+]
+
+blackpoint = 141
+whitepoint = 4095
+color_pattern = "GBRG"
+
+[cameras.color_matrix]
+A = [0.8468, -0.3758, -0.0141, -0.3463, 1.1363, 0.2395, -0.0363, 0.1118, 0.6076]
+D65 = [0.779, -0.2736, -0.0755, -0.3452, 1.187, 0.1769, -0.0628, 0.1647, 0.4898]
+
+[[cameras.modes]]
+mode = "3:2"
+active_area = [0, 0, 0, 0]

@@ -1,0 +1,27 @@
+make = "Panasonic"
+model = "DMC-G3"
+clean_make = "Panasonic"
+clean_model = "DMC-G3"
+blackpoint = 143
+whitepoint = 3956
+color_pattern = "GRBG"
+
+[cameras.color_matrix]
+A = [0.6677, -0.2053, -0.0634, -0.3371, 1.0566, 0.3253, -0.0725, 0.1551, 0.6614]
+D65 = [0.6763, -0.1919, -0.0863, -0.3868, 1.1515, 0.2684, -0.1216, 0.2387, 0.5879]
+
+[[cameras.modes]]
+mode = "1:1"
+active_area = [0, 0, 200, 0]
+
+[[cameras.modes]]
+mode = "4:3"
+active_area = [0, 0, 152, 0]
+
+[[cameras.modes]]
+mode = "3:2"
+active_area = [0, 0, 168, 0]
+
+[[cameras.modes]]
+mode = "16:9"
+active_area = [0, 0, 168, 0]

@@ -1,0 +1,20 @@
+make = "Panasonic"
+model = "DMC-TZ80"
+clean_make = "Panasonic"
+clean_model = "DMC-TZ80"
+
+model_aliases = [
+  ["DMC-TZ81", "DMC-TZ81"],
+]
+
+blackpoint = 154
+whitepoint = 4095
+color_pattern = "GBRG"
+
+[cameras.color_matrix]
+A = [0.9036, -0.3699, -0.0251, -0.349, 1.141, 0.2371, -0.019, 0.1207, 0.5737]
+D65 = [0.855, -0.2908, -0.0842, -0.3195, 1.1529, 0.1881, -0.0338, 0.1603, 0.4631]
+
+[[cameras.modes]]
+mode = "4:3"
+active_area = [0, 0, 126, 0]

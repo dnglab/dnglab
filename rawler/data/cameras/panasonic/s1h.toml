@@ -1,0 +1,15 @@
+make = "Panasonic"
+model = "DC-S1H"
+clean_make = "Panasonic"
+clean_model = "DC-S1H"
+blackpoint = 142
+whitepoint = 16380
+color_pattern = "RGGB"
+
+[cameras.color_matrix]
+A = [1.1335, -0.6469, 0.0804, -0.4415, 1.2413, 0.2235, -0.0223, 0.0804, 0.6653]
+D65 = [0.9397, -0.3719, -0.0805, -0.5425, 1.3326, 0.2309, -0.0972, 0.1715, 0.6034]
+
+[[cameras.modes]]
+mode = "3:2"
+active_area = [0, 0, 128, 0]

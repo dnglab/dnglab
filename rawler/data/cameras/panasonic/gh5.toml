@@ -1,0 +1,15 @@
+make = "Panasonic"
+model = "DC-GH5"
+clean_make = "Panasonic"
+clean_model = "DC-GH5"
+blackpoint = 144
+whitepoint = 4095
+color_pattern = "RGGB"
+
+[cameras.color_matrix]
+A = [0.8471, -0.3191, -0.0133, -0.4102, 1.2327, 0.1974, -0.0411, 0.1065, 0.6206]
+D65 = [0.7641, -0.2336, -0.0605, -0.3218, 1.1299, 0.2187, -0.0485, 0.1338, 0.5121]
+
+[[cameras.modes]]
+mode = "4:3"
+active_area = [0, 0, 56, 0]

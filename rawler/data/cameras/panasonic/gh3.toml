@@ -1,0 +1,27 @@
+make = "Panasonic"
+model = "DMC-GH3"
+clean_make = "Panasonic"
+clean_model = "DMC-GH3"
+blackpoint = 142
+whitepoint = 3956
+color_pattern = "GBRG"
+
+[cameras.color_matrix]
+A = [0.6721, -0.2283, 0.0393, -0.2946, 0.9993, 0.3452, -0.0312, 0.0974, 0.5864]
+D65 = [0.6559, -0.1752, -0.0491, -0.3672, 1.1407, 0.2586, -0.0962, 0.1875, 0.513]
+
+[[cameras.modes]]
+mode = "1:1"
+active_area = [0, 0, 0, 0]
+
+[[cameras.modes]]
+mode = "4:3"
+active_area = [0, 0, 194, 0]
+
+[[cameras.modes]]
+mode = "3:2"
+active_area = [0, 0, 194, 0]
+
+[[cameras.modes]]
+mode = "16:9"
+active_area = [0, 0, 194, 0]
