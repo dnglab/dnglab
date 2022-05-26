@@ -1863,3 +1863,52 @@ mod camera_dmc_zs40_raw_modes {
 mod camera_dmc_zs60_raw_modes {
   super::camera_file_check!("Panasonic", "DMC-ZS60", cam_dmc_zs60_iso_400_panasonic_raw_1_4896x3672_rw2, "raw_modes/DMC-ZS60_ISO_400_Panasonic RAW 1_4896x3672.RW2");
 }
+mod camera_c_lux_raw_modes {
+  super::camera_file_check!("Leica", "C-Lux", cam_c_lux_iso_125_4fmt_5472x3648_rwl, "raw_modes/C-Lux_ISO_125_4fmt_5472x3648.RWL");
+}
+mod camera_c_typ_112_raw_modes {
+  super::camera_file_check!("Leica", "C Typ 112", cam_c_typ_112_iso_80_4fmt_3x2_rwl, "raw_modes/C Typ 112_ISO_80_4fmt_3x2.RWL");
+  super::camera_file_check!("Leica", "C Typ 112", cam_c_typ_112_iso_640_4fmt_4x3_rwl, "raw_modes/C Typ 112_ISO_640_4fmt_4x3.RWL");
+}
+mod camera_digilux_2_raw_modes {
+  super::camera_file_check!("Leica", "Digilux 2", cam_digilux_2_iso_100_raw, "raw_modes/DIGILUX 2_ISO_100.RAW");
+}
+mod camera_digilux_3_raw_modes {
+  super::camera_file_check!("Leica", "Digilux 3", cam_digilux_3_iso_100_raw, "raw_modes/DIGILUX 3_ISO_100.RAW");
+}
+mod camera_d_lux_3_raw_modes {
+  super::camera_file_check!("Leica", "D-LUX 3", cam_raw_leica_dlux3_raw, "raw_modes/RAW_LEICA_DLUX3.RAW");
+}
+mod camera_d_lux_4_raw_modes {
+  super::camera_file_check!("Leica", "D-LUX 4", cam_d_lux_4_iso_80_4fmt_3x2_rwl, "raw_modes/D-LUX 4_ISO_80_4fmt_3x2.RWL");
+}
+mod camera_d_lux_5_raw_modes {
+  super::camera_file_check!("Leica", "D-LUX 5", cam_d_lux_5_iso_80_4fmt_3x2_rwl, "raw_modes/D-LUX 5_ISO_80_4fmt_3x2.RWL");
+  super::camera_file_check!("Leica", "D-LUX 5", cam_d_lux_5_iso_80_4fmt_16x9_rwl, "raw_modes/D-LUX 5_ISO_80_4fmt_16x9.RWL");
+  super::camera_file_check!("Leica", "D-LUX 5", cam_d_lux_5_iso_80_4fmt_1x1_rwl, "raw_modes/D-LUX 5_ISO_80_4fmt_1x1.RWL");
+  super::camera_file_check!("Leica", "D-LUX 5", cam_d_lux_5_iso_80_4fmt_4x3_rwl, "raw_modes/D-LUX 5_ISO_80_4fmt_4x3.RWL");
+}
+mod camera_d_lux_7_raw_modes {
+  super::camera_file_check!("Leica", "D-LUX 7", cam_d_lux_7_iso_200_4fmt_4x3_rwl, "raw_modes/D-Lux 7_ISO_200_4fmt_4x3.RWL");
+}
+mod camera_d_lux_typ_109_raw_modes {
+  super::camera_file_check!("Leica", "D-LUX Typ 109", cam_d_lux_typ_109_iso_500_4fmt_16x9_rwl, "raw_modes/D-LUX Typ 109_ISO_500_4fmt_16x9.RWL");
+  super::camera_file_check!("Leica", "D-LUX Typ 109", cam_d_lux_typ_109_iso_500_4fmt_3x2_rwl, "raw_modes/D-LUX Typ 109_ISO_500_4fmt_3x2.RWL");
+  super::camera_file_check!("Leica", "D-LUX Typ 109", cam_d_lux_typ_109_iso_640_4fmt_1x1_rwl, "raw_modes/D-LUX Typ 109_ISO_640_4fmt_1x1.RWL");
+  super::camera_file_check!("Leica", "D-LUX Typ 109", cam_d_lux_typ_109_iso_640_4fmt_4x3_rwl, "raw_modes/D-LUX Typ 109_ISO_640_4fmt_4x3.RWL");
+}
+mod camera_v_lux_1_raw_modes {
+  super::camera_file_check!("Leica", "V-LUX 1", cam_v_lux_1_iso_100_raw, "raw_modes/V-LUX 1_ISO_100.RAW");
+}
+mod camera_v_lux_4_raw_modes {
+  super::camera_file_check!("Leica", "V-LUX 4", cam_v_lux_4_iso_100_4fmt_4000x3000_rwl, "raw_modes/V-LUX 4_ISO_100_4fmt_4000x3000.RWL");
+}
+mod camera_v_lux_5_raw_modes {
+  super::camera_file_check!("Leica", "V-LUX 5", cam_v_lux_5_iso_125_4fmt_5472x3648_rwl, "raw_modes/V-Lux 5_ISO_125_4fmt_5472x3648.RWL");
+}
+mod camera_v_lux_typ_114_raw_modes {
+  super::camera_file_check!("Leica", "V-LUX Typ 114", cam_v_lux_typ_114_iso_125_4fmt_3x2_rwl, "raw_modes/V-LUX Typ 114_ISO_125_4fmt_3x2.RWL");
+  super::camera_file_check!("Leica", "V-LUX Typ 114", cam_v_lux_typ_114_iso_125_4fmt_16x9_rwl, "raw_modes/V-LUX Typ 114_ISO_125_4fmt_16x9.RWL");
+  super::camera_file_check!("Leica", "V-LUX Typ 114", cam_v_lux_typ_114_iso_125_4fmt_1x1_rwl, "raw_modes/V-LUX Typ 114_ISO_125_4fmt_1x1.RWL");
+  super::camera_file_check!("Leica", "V-LUX Typ 114", cam_v_lux_typ_114_iso_125_4fmt_4x3_rwl, "raw_modes/V-LUX Typ 114_ISO_125_4fmt_4x3.RWL");
+}

@@ -464,3 +464,16 @@ cameras/Panasonic/DMC-TZ81/raw_modes
 cameras/Panasonic/DMC-ZS100/raw_modes
 cameras/Panasonic/DMC-ZS40/raw_modes
 cameras/Panasonic/DMC-ZS60/raw_modes
+cameras/Leica/C-Lux/raw_modes
+cameras/Leica/C Typ 112/raw_modes
+cameras/Leica/Digilux 2/raw_modes
+cameras/Leica/Digilux 3/raw_modes
+cameras/Leica/D-LUX 3/raw_modes
+cameras/Leica/D-LUX 4/raw_modes
+cameras/Leica/D-LUX 5/raw_modes
+cameras/Leica/D-LUX 7/raw_modes
+cameras/Leica/D-LUX Typ 109/raw_modes
+cameras/Leica/V-LUX 1/raw_modes
+cameras/Leica/V-LUX 4/raw_modes
+cameras/Leica/V-LUX 5/raw_modes
+cameras/Leica/V-LUX Typ 114/raw_modes

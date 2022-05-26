@@ -483,7 +483,10 @@ impl RawLoader {
               return Err(RawlerError::Unsupported {
                 what: format!("Couldn't find a decoder for make \"{}\"", x),
                 make: make.to_string(),
-                model: tiff.get_entry(TiffCommonTag::Model).and_then(|entry| entry.as_string().cloned()).unwrap_or_default(),
+                model: tiff
+                  .get_entry(TiffCommonTag::Model)
+                  .and_then(|entry| entry.as_string().cloned())
+                  .unwrap_or_default(),
                 mode: String::new(),
               });
             }
