@@ -1,0 +1,11 @@
+make = "FUJIFILM"
+model = "FinePix F770EXR"
+clean_make = "Fujifilm"
+clean_model = "FinePix F770EXR"
+blackpoint = 0
+whitepoint = 16383
+color_pattern = "RGGB"
+active_area = [16, 0, 16, 0]
+
+[cameras.color_matrix]
+D65 = [1.0004, -0.3219, -0.1201, -0.7036, 1.5047, 0.2107, -0.1863, 0.2565, 0.7736]

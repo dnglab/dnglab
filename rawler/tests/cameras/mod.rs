@@ -1912,3 +1912,222 @@ mod camera_v_lux_typ_114_raw_modes {
   super::camera_file_check!("Leica", "V-LUX Typ 114", cam_v_lux_typ_114_iso_125_4fmt_1x1_rwl, "raw_modes/V-LUX Typ 114_ISO_125_4fmt_1x1.RWL");
   super::camera_file_check!("Leica", "V-LUX Typ 114", cam_v_lux_typ_114_iso_125_4fmt_4x3_rwl, "raw_modes/V-LUX Typ 114_ISO_125_4fmt_4x3.RWL");
 }
+mod camera_dbp_for_gx680_raw_modes {
+  super::camera_file_check!("Fujifilm", "DBP for GX680", cam_dbp_for_gx680_iso_100_raf, "raw_modes/DBP for GX680_ISO_100.RAF");
+}
+mod camera_finepix_e550_raw_modes {
+  super::camera_file_check!("Fujifilm", "FinePix E550", cam_finepix_e550_iso_200_raf, "raw_modes/FinePix E550_ISO_200.RAF");
+}
+mod camera_finepix_e900_raw_modes {
+  super::camera_file_check!("Fujifilm", "FinePix E900", cam_finepix_e900_iso_80_raf, "raw_modes/FinePix E900_ISO_80.RAF");
+}
+mod camera_finepix_f550exr_raw_modes {
+  super::camera_file_check!("Fujifilm", "FinePix F550EXR", cam_finepix_f550exr_iso_400_raf, "raw_modes/FinePix F550EXR_ISO_400.RAF");
+}
+mod camera_finepix_f600exr_raw_modes {
+  super::camera_file_check!("Fujifilm", "FinePix F600EXR", cam_finepix_f600exr_iso_100_raf, "raw_modes/FinePix F600EXR_ISO_100.RAF");
+}
+mod camera_finepix_f700_raw_modes {
+  super::camera_file_check!("Fujifilm", "FinePix F700", cam_finepix_f700_iso_200_raf, "raw_modes/FinePix F700_ISO_200.RAF");
+}
+mod camera_finepix_f770exr_raw_modes {
+  super::camera_file_check!("Fujifilm", "FinePix F770EXR", cam_finepix_f770exr_iso_100_raf, "raw_modes/FinePix F770EXR_ISO_100.RAF");
+}
+mod camera_finepix_f900exr_raw_modes {
+  super::camera_file_check!("Fujifilm", "FinePix F900EXR", cam_finepix_f900exr_iso_400_raf, "raw_modes/FinePix F900EXR_ISO_400.RAF");
+}
+mod camera_finepix_hs10_hs11_raw_modes {
+  super::camera_file_check!("Fujifilm", "FinePix HS10 HS11", cam_finepix_hs10_hs11_iso_200_raf, "raw_modes/FinePix HS10 HS11_ISO_200.RAF");
+}
+mod camera_finepix_hs20exr_raw_modes {
+  super::camera_file_check!("Fujifilm", "FinePix HS20EXR", cam_finepix_hs20exr_iso_100_raf, "raw_modes/FinePix HS20EXR_ISO_100.RAF");
+}
+mod camera_finepix_hs30exr_raw_modes {
+  super::camera_file_check!("Fujifilm", "FinePix HS30EXR", cam_finepix_hs30exr_iso_400_raf, "raw_modes/FinePix HS30EXR_ISO_400.RAF");
+}
+mod camera_finepix_hs33exr_raw_modes {
+  super::camera_file_check!("Fujifilm", "FinePix HS33EXR", cam_finepix_hs33exr_iso_100_raf, "raw_modes/FinePix HS33EXR_ISO_100.RAF");
+}
+mod camera_finepix_hs50exr_raw_modes {
+  super::camera_file_check!("Fujifilm", "FinePix HS50EXR", cam_finepix_hs50exr_iso_100_raf, "raw_modes/FinePix HS50EXR_ISO_100.RAF");
+}
+mod camera_finepix_s100fs_raw_modes {
+  super::camera_file_check!("Fujifilm", "FinePix S100FS", cam_finepix_s100fs_iso_100_raf, "raw_modes/FinePix S100FS_ISO_100.RAF");
+}
+mod camera_finepix_s1_raw_modes {
+  super::camera_file_check!("Fujifilm", "FinePix S1", cam_finepix_s1_iso_200_raf, "raw_modes/FinePix S1_ISO_200.RAF");
+}
+mod camera_finepix_s200exr_raw_modes {
+  super::camera_file_check!("Fujifilm", "FinePix S200EXR", cam_finepix_s200exr_iso_100_raf, "raw_modes/FinePix S200EXR_ISO_100.RAF");
+}
+mod camera_finepix_s2pro_raw_modes {
+  super::camera_file_check!("Fujifilm", "FinePix S2Pro", cam_finepixs2pro_iso_100_raf, "raw_modes/FinePixS2Pro_ISO_100.RAF");
+}
+mod camera_finepix_s3pro_raw_modes {
+  super::camera_file_check!("Fujifilm", "FinePix S3Pro", cam_finepix_s3pro_iso_100_raf, "raw_modes/FinePix S3Pro_ISO_100.RAF");
+}
+mod camera_finepix_s5000_raw_modes {
+  super::camera_file_check!("Fujifilm", "FinePix S5000", cam_finepix_s5000_iso_200_raf, "raw_modes/FinePix S5000_ISO_200.RAF");
+}
+mod camera_finepix_s5200_raw_modes {
+  super::camera_file_check!("Fujifilm", "FinePix S5200", cam_finepix_s5200_iso_64_raf, "raw_modes/FinePix S5200_ISO_64.RAF");
+}
+mod camera_finepix_s5500_raw_modes {
+  super::camera_file_check!("Fujifilm", "FinePix S5500", cam_finepix_s5500_iso_100_raf, "raw_modes/FinePix S5500_ISO_100.RAF");
+}
+mod camera_finepix_s5600_raw_modes {
+  super::camera_file_check!("Fujifilm", "FinePix S5600", cam_finepix_s5600_iso_64_raf, "raw_modes/FinePix S5600_ISO_64.RAF");
+}
+mod camera_finepix_s5pro_raw_modes {
+  super::camera_file_check!("Fujifilm", "FinePix S5Pro", cam_finepix_s5pro_iso_100_raf, "raw_modes/FinePix S5Pro_ISO_100.RAF");
+}
+mod camera_finepix_s6500fd_raw_modes {
+  super::camera_file_check!("Fujifilm", "FinePix S6500fd", cam_finepix_s6500fd_iso_100_raf, "raw_modes/FinePix S6500fd_ISO_100.RAF");
+}
+mod camera_finepix_s7000_raw_modes {
+  super::camera_file_check!("Fujifilm", "FinePix S7000", cam_finepix_s7000_iso_200_raf, "raw_modes/FinePix S7000_ISO_200.RAF");
+}
+mod camera_finepix_s9500_raw_modes {
+  super::camera_file_check!("Fujifilm", "FinePix S9500", cam_finepix_s9500_iso_80_raf, "raw_modes/FinePix S9500_ISO_80.RAF");
+}
+mod camera_finepix_s9600_raw_modes {
+  super::camera_file_check!("Fujifilm", "FinePix S9600", cam_finepix_s9600_iso_200_raf, "raw_modes/FinePix S9600_ISO_200.RAF");
+}
+mod camera_finepix_x100_raw_modes {
+  super::camera_file_check!("Fujifilm", "FinePix X100", cam_finepix_x100_iso_400_raf, "raw_modes/FinePix X100_ISO_400.RAF");
+}
+mod camera_finepix_x10_raw_modes {
+  super::camera_file_check!("Fujifilm", "FinePix X10", cam_x10_iso_200_raf, "raw_modes/X10_ISO_200.RAF");
+}
+mod camera_gfx_100_raw_modes {
+  super::camera_file_check!("Fujifilm", "GFX 100", cam_gfx_100_iso_100_bitdepth_14_200_mib_raf, "raw_modes/GFX 100_ISO_100_Bitdepth_14_200 MiB.RAF");
+  super::camera_file_check!("Fujifilm", "GFX 100", cam_gfx_100_iso_100_bitdepth_16_200_mib_raf, "raw_modes/GFX 100_ISO_100_Bitdepth_16_200 MiB.RAF");
+}
+mod camera_gfx100s_raw_modes {
+  super::camera_file_check!("Fujifilm", "GFX100S", cam_fujifilm_gfx100s_16bits_uncompress_4_3_raf, "raw_modes/Fujifilm-GFX100S-16bits-uncompress-4_3.RAF");
+  super::camera_file_check!("Fujifilm", "GFX100S", cam_fujifilm_gfx100s_14bits_uncompress_4_3_raf, "raw_modes/Fujifilm-GFX100S-14bits-uncompress-4_3.RAF");
+}
+mod camera_gfx_50r_raw_modes {
+  super::camera_file_check!("Fujifilm", "GFX 50R", cam_gfx_50r_iso_100_bitdepth_14_112_mib_raf, "raw_modes/GFX 50R_ISO_100_Bitdepth_14_112 MiB.RAF");
+}
+mod camera_gfx50s_ii_raw_modes {
+  super::camera_file_check!("Fujifilm", "GFX50S II", cam_fuji_gfx50s_ii___uncompressed_raf, "raw_modes/Fuji_GFX50S_II_-_Uncompressed.RAF");
+}
+mod camera_gfx_50s_raw_modes {
+  super::camera_file_check!("Fujifilm", "GFX 50S", cam_gfx_50s_iso_100_bitdepth_14_111_mib_raf, "raw_modes/GFX 50S_ISO_100_Bitdepth_14_111 MiB.RAF");
+}
+mod camera_x100f_raw_modes {
+  super::camera_file_check!("Fujifilm", "X100F", cam_x100f_uncompressed_raw_temple_raf, "raw_modes/X100F_uncompressed_raw_Temple.RAF");
+}
+mod camera_x100s_raw_modes {
+  super::camera_file_check!("Fujifilm", "X100S", cam_x100s_iso_200_bitdepth_14_raf, "raw_modes/X100S_ISO_200_Bitdepth_14.RAF");
+}
+mod camera_x100t_raw_modes {
+  super::camera_file_check!("Fujifilm", "X100T", cam_x100t_iso_400_bitdepth_14_raf, "raw_modes/X100T_ISO_400_Bitdepth_14.RAF");
+}
+mod camera_x100v_raw_modes {
+  super::camera_file_check!("Fujifilm", "X100V", cam_x100v_iso_160_bitdepth_14_56_mib_raf, "raw_modes/X100V_ISO_160_Bitdepth_14_56 MiB.RAF");
+}
+mod camera_x20_raw_modes {
+  super::camera_file_check!("Fujifilm", "X20", cam_x20_iso_200_raf, "raw_modes/X20_ISO_200.RAF");
+}
+mod camera_x30_raw_modes {
+  super::camera_file_check!("Fujifilm", "X30", cam_x30_iso_100_raf, "raw_modes/X30_ISO_100.RAF");
+}
+mod camera_x70_raw_modes {
+  super::camera_file_check!("Fujifilm", "X70", cam_x70_iso_6400_raf, "raw_modes/X70_ISO_6400.RAF");
+}
+mod camera_x_a10_raw_modes {
+  super::camera_file_check!("Fujifilm", "X-A10", cam_x_a10_iso_200_raf, "raw_modes/X-A10_ISO_200.RAF");
+}
+mod camera_x_a1_raw_modes {
+  super::camera_file_check!("Fujifilm", "X-A1", cam_x_a1_iso_1000_raf, "raw_modes/X-A1_ISO_1000.RAF");
+}
+mod camera_x_a2_raw_modes {
+  super::camera_file_check!("Fujifilm", "X-A2", cam_x_a2_iso_200_raf, "raw_modes/X-A2_ISO_200.RAF");
+}
+mod camera_x_a3_raw_modes {
+  super::camera_file_check!("Fujifilm", "X-A3", cam_x_a3_iso_400_raf, "raw_modes/X-A3_ISO_400.RAF");
+}
+mod camera_x_a5_raw_modes {
+  super::camera_file_check!("Fujifilm", "X-A5", cam_x_a5_iso_200_raf, "raw_modes/X-A5_ISO_200.RAF");
+}
+mod camera_x_a7_raw_modes {
+  super::camera_file_check!("Fujifilm", "X-A7", cam_x_a7_iso_200_raf, "raw_modes/X-A7_ISO_200.RAF");
+}
+mod camera_x_e1_raw_modes {
+  super::camera_file_check!("Fujifilm", "X-E1", cam_x_e1_iso_500_raf, "raw_modes/X-E1_ISO_500.RAF");
+}
+mod camera_x_e2_raw_modes {
+  super::camera_file_check!("Fujifilm", "X-E2", cam_x_e2_iso_200_raf, "raw_modes/X-E2_ISO_200.RAF");
+}
+mod camera_x_e2s_raw_modes {
+  super::camera_file_check!("Fujifilm", "X-E2S", cam_x_e2s_iso_400_raf, "raw_modes/X-E2S_ISO_400.RAF");
+}
+mod camera_x_e3_raw_modes {
+  super::camera_file_check!("Fujifilm", "X-E3", cam_x_e3_iso_250_bitdepth_14_48_mib_raf, "raw_modes/X-E3_ISO_250_Bitdepth_14_48 MiB.RAF");
+}
+mod camera_x_e4_raw_modes {
+  super::camera_file_check!("Fujifilm", "X-E4", cam_fuji_xe4_32_uncompressed_raf, "raw_modes/fuji_xe4_32_uncompressed.RAF");
+}
+mod camera_xf10_raw_modes {
+  super::camera_file_check!("Fujifilm", "XF10", cam_xf10_iso_200_raf, "raw_modes/XF10_ISO_200.RAF");
+}
+mod camera_xf1_raw_modes {
+  super::camera_file_check!("Fujifilm", "XF1", cam_xf1_iso_1250_raf, "raw_modes/XF1_ISO_1250.RAF");
+}
+mod camera_x_h1_raw_modes {
+  super::camera_file_check!("Fujifilm", "X-H1", cam_fuji_xh1_uncompressed_raf, "raw_modes/fuji_xh1_uncompressed.RAF");
+}
+mod camera_x_m1_raw_modes {
+  super::camera_file_check!("Fujifilm", "X-M1", cam_x_m1_iso_200_raf, "raw_modes/X-M1_ISO_200.RAF");
+}
+mod camera_x_pro1_raw_modes {
+  super::camera_file_check!("Fujifilm", "X-Pro1", cam_x_pro1_iso_200_raf, "raw_modes/X-Pro1_ISO_200.RAF");
+}
+mod camera_x_pro2_raw_modes {
+  super::camera_file_check!("Fujifilm", "X-Pro2", cam_x_pro2_iso_500_bitdepth_14_48_mib_raf, "raw_modes/X-Pro2_ISO_500_Bitdepth_14_48 MiB.RAF");
+}
+mod camera_x_pro3_raw_modes {
+  super::camera_file_check!("Fujifilm", "X-Pro3", cam_x_pro3_iso_640_bitdepth_14_54_mib_raf, "raw_modes/X-Pro3_ISO_640_Bitdepth_14_54 MiB.RAF");
+}
+mod camera_xq1_raw_modes {
+  super::camera_file_check!("Fujifilm", "XQ1", cam_xq1_iso_400_raf, "raw_modes/XQ1_ISO_400.RAF");
+}
+mod camera_xq2_raw_modes {
+  super::camera_file_check!("Fujifilm", "XQ2", cam_xq2_iso_100_raf, "raw_modes/XQ2_ISO_100.RAF");
+}
+mod camera_x_s10_raw_modes {
+  super::camera_file_check!("Fujifilm", "X-S10", cam_fujifilm_x_s10_uncompressed_raf, "raw_modes/Fujifilm-X-S10-uncompressed.RAF");
+}
+mod camera_x_s1_raw_modes {
+  super::camera_file_check!("Fujifilm", "X-S1", cam_x_s1_iso_400_raf, "raw_modes/X-S1_ISO_400.RAF");
+}
+mod camera_x_t100_raw_modes {
+  super::camera_file_check!("Fujifilm", "X-T100", cam_x_t100_iso_200_raf, "raw_modes/X-T100_ISO_200.RAF");
+}
+mod camera_x_t10_raw_modes {
+  super::camera_file_check!("Fujifilm", "X-T10", cam_x_t10_iso_4000_raf, "raw_modes/X-T10_ISO_4000.RAF");
+}
+mod camera_x_t1_raw_modes {
+  super::camera_file_check!("Fujifilm", "X-T1", cam_x_t1_iso_200_raf, "raw_modes/X-T1_ISO_200.RAF");
+}
+mod camera_x_t200_raw_modes {
+  super::camera_file_check!("Fujifilm", "X-T200", cam_x_t200_iso_200_raf, "raw_modes/X-T200_ISO_200.RAF");
+}
+mod camera_x_t20_raw_modes {
+  super::camera_file_check!("Fujifilm", "X-T20", cam_x_t20_iso_200_bitdepth_14_48_mib_raf, "raw_modes/X-T20_ISO_200_Bitdepth_14_48 MiB.RAF");
+}
+mod camera_x_t2_raw_modes {
+  super::camera_file_check!("Fujifilm", "X-T2", cam_x_t2_iso_200_bitdepth_14_48_mib_raf, "raw_modes/X-T2_ISO_200_Bitdepth_14_48 MiB.RAF");
+}
+mod camera_x_t30_ii_raw_modes {}
+mod camera_x_t30_raw_modes {
+  super::camera_file_check!("Fujifilm", "X-T30", cam_x_t30_iso_100_bitdepth_14_54_mib_raf, "raw_modes/X-T30_ISO_100_Bitdepth_14_54 MiB.RAF");
+}
+mod camera_x_t3_raw_modes {
+  super::camera_file_check!("Fujifilm", "X-T3", cam_x_t3_iso_160_bitdepth_14_53_mib_raf, "raw_modes/X-T3_ISO_160_Bitdepth_14_53 MiB.RAF");
+}
+mod camera_x_t4_raw_modes {
+  super::camera_file_check!("Fujifilm", "X-T4", cam_x_t4_iso_160_bitdepth_14_55_mib_raf, "raw_modes/X-T4_ISO_160_Bitdepth_14_55 MiB.RAF");
+}

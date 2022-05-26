@@ -1,0 +1,11 @@
+make = "FUJIFILM"
+model = "FinePix HS33EXR"
+clean_make = "Fujifilm"
+clean_model = "FinePix HS33EXR"
+blackpoint = 256
+whitepoint = 3900
+color_pattern = "RGGB"
+active_area = [34, 0, 32, 0]
+
+[cameras.color_matrix]
+D65 = [1.369, -0.5358, -0.1474, -0.3369, 1.16, 0.1998, -0.0132, 0.1554, 0.4395]

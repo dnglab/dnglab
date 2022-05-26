@@ -1,11 +1,12 @@
 make = "FUJIFILM"
-model = "GFX 50S"
+model = "X-A10"
 clean_make = "Fujifilm"
-clean_model = "GFX 50S"
+clean_model = "X-A10"
 blackpoint = 0
 whitepoint = 16383
 color_pattern = "RGGB"
 active_area = [0, 0, 0, 0]
+hints = ["jpeg32"]
 
 [cameras.color_matrix]
-D65 = [1.1756, -0.4754, -0.0874, -0.3056, 1.1045, 0.2305, -0.0381, 0.1457, 0.6006]
+D65 = [1.2407, -0.5222, -0.1086, -0.2971, 1.1116, 0.212, -0.0294, 0.1029, 0.5284]

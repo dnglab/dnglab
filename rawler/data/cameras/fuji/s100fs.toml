@@ -1,0 +1,12 @@
+make = "FUJIFILM"
+model = "FinePix S100FS"
+clean_make = "Fujifilm"
+clean_model = "FinePix S100FS"
+blackpoint = 519
+whitepoint = 16250
+color_pattern = "GBRG"
+active_area = [28, 0, 28, 0]
+hints = ["fuji_rotation"]
+
+[cameras.color_matrix]
+D65 = [1.1401, -0.4498, -0.1312, -0.5088, 1.2751, 0.2613, -0.0838, 0.1568, 0.5941]

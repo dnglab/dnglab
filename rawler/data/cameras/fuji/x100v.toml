@@ -1,10 +1,10 @@
 make = "FUJIFILM"
-model = "X100S"
+model = "X100V"
 clean_make = "Fujifilm"
-clean_model = "X100S"
+clean_model = "X100V"
 blackpoint = 1024
 whitepoint = 16383
-color_pattern = "RBGBRGGGRGGBGGBGGRBRGRBGGGBGGRGGRGGB"
+color_pattern = "GGRGGBGGBGGRBRGRBGGGBGGRGGRGGBRBGBRG"
 crop_area = [4, 0, 52, 0]
 
 [cameras.color_matrix]

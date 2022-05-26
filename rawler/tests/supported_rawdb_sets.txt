@@ -477,3 +477,76 @@ cameras/Leica/V-LUX 1/raw_modes
 cameras/Leica/V-LUX 4/raw_modes
 cameras/Leica/V-LUX 5/raw_modes
 cameras/Leica/V-LUX Typ 114/raw_modes
+cameras/Fujifilm/DBP for GX680/raw_modes
+cameras/Fujifilm/FinePix E550/raw_modes
+cameras/Fujifilm/FinePix E900/raw_modes
+cameras/Fujifilm/FinePix F550EXR/raw_modes
+cameras/Fujifilm/FinePix F600EXR/raw_modes
+cameras/Fujifilm/FinePix F700/raw_modes
+cameras/Fujifilm/FinePix F770EXR/raw_modes
+cameras/Fujifilm/FinePix F900EXR/raw_modes
+cameras/Fujifilm/FinePix HS10 HS11/raw_modes
+cameras/Fujifilm/FinePix HS20EXR/raw_modes
+cameras/Fujifilm/FinePix HS30EXR/raw_modes
+cameras/Fujifilm/FinePix HS33EXR/raw_modes
+cameras/Fujifilm/FinePix HS50EXR/raw_modes
+cameras/Fujifilm/FinePix S100FS/raw_modes
+cameras/Fujifilm/FinePix S1/raw_modes
+cameras/Fujifilm/FinePix S200EXR/raw_modes
+cameras/Fujifilm/FinePix S2Pro/raw_modes
+cameras/Fujifilm/FinePix S3Pro/raw_modes
+cameras/Fujifilm/FinePix S5000/raw_modes
+cameras/Fujifilm/FinePix S5200/raw_modes
+cameras/Fujifilm/FinePix S5500/raw_modes
+cameras/Fujifilm/FinePix S5600/raw_modes
+cameras/Fujifilm/FinePix S5Pro/raw_modes
+cameras/Fujifilm/FinePix S6500fd/raw_modes
+cameras/Fujifilm/FinePix S7000/raw_modes
+cameras/Fujifilm/FinePix S9500/raw_modes
+cameras/Fujifilm/FinePix S9600/raw_modes
+cameras/Fujifilm/FinePix X100/raw_modes
+cameras/Fujifilm/FinePix X10/raw_modes
+cameras/Fujifilm/GFX 100/raw_modes
+cameras/Fujifilm/GFX100S/raw_modes
+cameras/Fujifilm/GFX 50R/raw_modes
+cameras/Fujifilm/GFX50S II/raw_modes
+cameras/Fujifilm/GFX 50S/raw_modes
+cameras/Fujifilm/X100F/raw_modes
+cameras/Fujifilm/X100S/raw_modes
+cameras/Fujifilm/X100T/raw_modes
+cameras/Fujifilm/X100V/raw_modes
+cameras/Fujifilm/X20/raw_modes
+cameras/Fujifilm/X30/raw_modes
+cameras/Fujifilm/X70/raw_modes
+cameras/Fujifilm/X-A10/raw_modes
+cameras/Fujifilm/X-A1/raw_modes
+cameras/Fujifilm/X-A2/raw_modes
+cameras/Fujifilm/X-A3/raw_modes
+cameras/Fujifilm/X-A5/raw_modes
+cameras/Fujifilm/X-A7/raw_modes
+cameras/Fujifilm/X-E1/raw_modes
+cameras/Fujifilm/X-E2/raw_modes
+cameras/Fujifilm/X-E2S/raw_modes
+cameras/Fujifilm/X-E3/raw_modes
+cameras/Fujifilm/X-E4/raw_modes
+cameras/Fujifilm/XF10/raw_modes
+cameras/Fujifilm/XF1/raw_modes
+cameras/Fujifilm/X-H1/raw_modes
+cameras/Fujifilm/X-M1/raw_modes
+cameras/Fujifilm/X-Pro1/raw_modes
+cameras/Fujifilm/X-Pro2/raw_modes
+cameras/Fujifilm/X-Pro3/raw_modes
+cameras/Fujifilm/XQ1/raw_modes
+cameras/Fujifilm/XQ2/raw_modes
+cameras/Fujifilm/X-S10/raw_modes
+cameras/Fujifilm/X-S1/raw_modes
+cameras/Fujifilm/X-T100/raw_modes
+cameras/Fujifilm/X-T10/raw_modes
+cameras/Fujifilm/X-T1/raw_modes
+cameras/Fujifilm/X-T200/raw_modes
+cameras/Fujifilm/X-T20/raw_modes
+cameras/Fujifilm/X-T2/raw_modes
+cameras/Fujifilm/X-T30 II/raw_modes
+cameras/Fujifilm/X-T30/raw_modes
+cameras/Fujifilm/X-T3/raw_modes
+cameras/Fujifilm/X-T4/raw_modes

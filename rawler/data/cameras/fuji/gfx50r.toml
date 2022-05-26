@@ -1,7 +1,7 @@
 make = "FUJIFILM"
-model = "GFX 50S"
+model = "GFX 50R"
 clean_make = "Fujifilm"
-clean_model = "GFX 50S"
+clean_model = "GFX 50R"
 blackpoint = 0
 whitepoint = 16383
 color_pattern = "RGGB"

@@ -5,7 +5,7 @@ clean_model = "X-E2"
 blackpoint = 1024
 whitepoint = 16383
 color_pattern = "RBGBRGGGRGGBGGBGGRBRGRBGGGBGGRGGRGGB"
-active_area = [4, 0, 52, 0]
+crop_area = [4, 0, 52, 0]
 
 [cameras.color_matrix]
 D65 = [0.8458, -0.2451, -0.0855, -0.4597, 1.2447, 0.2407, -0.1475, 0.2482, 0.6526]

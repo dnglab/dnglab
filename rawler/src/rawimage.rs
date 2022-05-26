@@ -203,7 +203,7 @@ impl RawImage {
       "BGGR" => BayerPattern::BGGR,
       "GRBG" => BayerPattern::GRBG,
       "GBRG" => BayerPattern::GBRG,
-      _ => panic!("Unsupported bayer pattern"),
+      _ => return Err("Unsupported bayer pattern".into()),
     };
 
     /*
