@@ -3,10 +3,11 @@ model = "XF10"
 clean_make = "Fujifilm"
 clean_model = "XF10"
 blackpoint = 257
-whitepoint = 4000
-color_pattern = "BGGR"
-active_area = [48, 0, 48, 0]
+whitepoint = 16383
+color_pattern = "RGGB"
 hints = ["jpeg32"]
+active_area = [0, 0, 0, 0]
 
 [cameras.color_matrix]
-D65 = [1.3509, -0.6199, -0.1254, -0.443, 1.2733, 0.1865, -0.0331, 0.1441, 0.5022]
+A = [1.4259, -0.8049, 0.1087, -0.2249, 0.9662, 0.3037, 0.0053, 0.0427, 0.6328]
+D65 = [1.1673, -0.476, -0.1041, -0.3988, 1.2058, 0.2166, -0.0771, 0.1417, 0.5569]

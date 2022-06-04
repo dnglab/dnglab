@@ -4,12 +4,14 @@ use log::debug;
 
 use crate::{
   decoders::*,
+  formats::tiff::Value,
   imgop::{
     raw::{ColorMatrix, DevelopParams},
     sensor::bayer::BayerPattern,
     xyz::{FlatColorMatrix, Illuminant},
     Dim2, Point, Rect,
   },
+  tags::TiffTag,
   CFA,
 };
 
@@ -60,6 +62,8 @@ pub struct RawImage {
   pub data: RawImageData,
 
   pub color_matrix: HashMap<Illuminant, FlatColorMatrix>,
+
+  pub dng_tags: HashMap<u16, Value>,
 }
 
 /// The actual image data, after decoding
@@ -163,6 +167,7 @@ impl RawImage {
       blackareas,
       orientation: Orientation::Normal, //cam.orientation, // TODO fixme
       color_matrix: cam.color_matrix,
+      dng_tags: HashMap::new(),
     }
   }
 
@@ -238,6 +243,12 @@ impl RawImage {
     };
 
     Ok(params)
+  }
+
+  /// Add a DNG tag override
+  pub fn add_dng_tag<T: TiffTag, V: Into<Value>>(&mut self, tag: T, value: V) {
+    let tag: u16 = tag.into();
+    self.dng_tags.insert(tag, value.into());
   }
 
   /// Outputs the inverted matrix that converts pixels in the camera colorspace into

@@ -8,4 +8,5 @@ color_pattern = "GBGGRGRGRBGBGBGGRGGRGGBGBGBRGRGRGGBG"
 active_area = [0, 0, 64, 0]
 
 [cameras.color_matrix]
+A = [1.2997, -0.6851, 0.0572, -0.4031, 1.1287, 0.3151, 0.0241, 0.0731, 0.5309]
 D65 = [1.1768, -0.4971, -0.1133, -0.4904, 1.2927, 0.2183, -0.048, 0.1723, 0.4605]

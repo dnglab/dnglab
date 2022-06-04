@@ -5,8 +5,9 @@ clean_model = "FinePix S1"
 blackpoint = 200
 whitepoint = 4095
 color_pattern = "RGGB"
-active_area = [0, 0, 0, 0]
 hints = ["jpeg32"]
+active_area = [0, 0, 0, 0]
 
 [cameras.color_matrix]
+A = [1.3564, -0.6721, 0.0263, -0.2155, 1.0316, 0.2135, 0.0164, 0.0821, 0.5853]
 D65 = [1.2297, -0.4882, -0.1202, -0.2106, 1.0691, 0.1623, -0.0088, 0.1312, 0.479]

@@ -4,9 +4,10 @@ clean_make = "Fujifilm"
 clean_model = "FinePix S5Pro"
 blackpoint = 0
 whitepoint = 16383
-color_pattern = "GBRG"
-active_area = [32, 2, 32, 2]
+color_pattern = "RGGB"
 hints = ["fuji_rotation_alt"]
+active_area = [0, 0, 2, 0]
 
 [cameras.color_matrix]
-D65 = [1.23, -0.511, -0.1304, -0.9117, 1.7143, 0.1998, -0.1947, 0.2448, 0.81]
+A = [1.4832, -0.7948, 0.0156, -0.7246, 1.4742, 0.2722, -0.1011, 0.1555, 0.8257]
+D65 = [1.2301, -0.5111, -0.1305, -0.9117, 1.7143, 0.1997, -0.1947, 0.2449, 0.81]

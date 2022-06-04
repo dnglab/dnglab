@@ -3,9 +3,10 @@ model = "X-S10"
 clean_make = "Fujifilm"
 clean_model = "X-S10"
 blackpoint = 256
-whitepoint = 4000
+whitepoint = 16382
 color_pattern = "GGRGGBGGBGGRBRGRBGGGBGGRGGRGGBRBGBRG"
-active_area = [48, 0, 48, 0]
+active_area = [0, 5, 132, 1]
 
 [cameras.color_matrix]
-D65 = [1.3509, -0.6199, -0.1254, -0.443, 1.2733, 0.1865, -0.0331, 0.1441, 0.5022]
+A = [1.6064, -0.9942, 0.112, -0.376, 1.2096, 0.1853, -0.0007, 0.0545, 0.6654]
+D65 = [1.3426, -0.6334, -0.1177, -0.4244, 1.2136, 0.2371, -0.058, 0.1303, 0.598]

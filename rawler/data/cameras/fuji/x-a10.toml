@@ -3,10 +3,10 @@ model = "X-A10"
 clean_make = "Fujifilm"
 clean_model = "X-A10"
 blackpoint = 0
-whitepoint = 16383
+whitepoint = 4096
 color_pattern = "RGGB"
-active_area = [0, 0, 0, 0]
 hints = ["jpeg32"]
 
 [cameras.color_matrix]
-D65 = [1.2407, -0.5222, -0.1086, -0.2971, 1.1116, 0.212, -0.0294, 0.1029, 0.5284]
+A = [1.4157, -0.7885, 0.044, -0.3477, 1.1409, 0.2355, -0.0315, 0.0784, 0.6655]
+D65 = [1.154, -0.4999, -0.0991, -0.2949, 1.0963, 0.2278, -0.0382, 0.1049, 0.5605]

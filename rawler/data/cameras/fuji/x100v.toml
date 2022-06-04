@@ -5,7 +5,8 @@ clean_model = "X100V"
 blackpoint = 1024
 whitepoint = 16383
 color_pattern = "GGRGGBGGBGGRBRGRBGGGBGGRGGRGGBRBGBRG"
-crop_area = [4, 0, 52, 0]
+active_area = [0, 5, 132, 1]
 
 [cameras.color_matrix]
-D65 = [1.0592, -0.4262, -0.1008, -0.3514, 1.1355, 0.2465, -0.087, 0.2025, 0.6386]
+A = [1.7835, -1.1702, 0.1616, -0.2581, 1.0513, 0.2395, 0.0196, 0.032, 0.6444]
+D65 = [1.3717, -0.649, -0.1154, -0.4348, 1.2266, 0.2335, -0.069, 0.1286, 0.6134]

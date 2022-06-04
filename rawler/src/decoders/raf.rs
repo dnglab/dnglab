@@ -1,43 +1,52 @@
 use byteorder::BigEndian;
+use byteorder::LittleEndian;
 use byteorder::ReadBytesExt;
 use image::DynamicImage;
 use std::collections::BTreeMap;
 use std::f32::NAN;
-use std::io::Cursor;
 use std::io::SeekFrom;
-use std::mem::swap;
+use std::mem::size_of;
 
 use crate::alloc_image_plain;
 use crate::analyze::FormatDump;
 use crate::bits::BEu32;
 use crate::bits::Endian;
-use crate::bits::LEu32;
-use crate::decoders::ok_image_with_blacklevels;
+use crate::decoders::raf::fuji_decompressor::decompress_fuji;
 use crate::exif::Exif;
 use crate::formats::tiff::ifd::OffsetMode;
 use crate::formats::tiff::*;
+use crate::imgop::Dim2;
+use crate::imgop::Point;
+use crate::imgop::Rect;
 use crate::packed::*;
 use crate::pixarray::PixU16;
+use crate::tags::DngTag;
 use crate::tags::ExifTag;
 use crate::tags::TiffCommonTag;
+use crate::OptBuffer;
 use crate::RawFile;
 use crate::RawImage;
 use crate::RawLoader;
 use crate::RawlerError;
 use crate::Result;
+use crate::CFA;
 
-use super::ok_image;
 use super::Camera;
 use super::Decoder;
 use super::RawDecodeParams;
 use super::RawMetadata;
 
+mod dbp;
+mod fuji_decompressor;
+
 /// RAF decoder
 #[derive(Debug, Clone)]
+#[allow(dead_code)]
 pub struct RafDecoder<'a> {
   #[allow(unused)]
   rawloader: &'a RawLoader,
   ifd: IFD,
+  makernotes: IFD,
   camera: Camera,
 }
 
@@ -56,6 +65,8 @@ pub fn is_raf(file: &mut RawFile) -> bool {
 const RAF_TAG_VIRTUAL_RAF_DATA: u16 = 0xfaaa;
 
 /// Parse a proprietary RAF data structure and return a virtual IFD.
+/// Unfortunately, Fujifilm forgot to add a type field to these
+/// tags, so we need to match by tag.
 pub fn parse_raf_format(file: &mut RawFile, offset: u32) -> Result<IFD> {
   let mut entries = BTreeMap::new();
   let stream = file.inner();
@@ -66,36 +77,46 @@ pub fn parse_raf_format(file: &mut RawFile, offset: u32) -> Result<IFD> {
   }
   for _ in 0..num {
     let tag = stream.read_u16::<BigEndian>()?;
-    let len = stream.read_u16::<BigEndian>()?;
-    if tag == TiffCommonTag::ImageWidth.into() {
-      let mut values = Vec::new();
-      for _ in 0..(len / 2) {
-        values.push(stream.read_u16::<BigEndian>()?);
-      }
-      entries.insert(
-        TiffCommonTag::ImageWidth.into(),
-        Entry {
-          tag: TiffCommonTag::ImageWidth.into(),
-          value: Value::Short(values),
+    let len = stream.read_u16::<BigEndian>()? as usize;
+    //eprintln!("RAF tag: 0x{:X}, len: {}", tag, len);
+
+    match RafTags::try_from(tag) {
+      Ok(RafTags::RawImageFullSize)
+      | Ok(RafTags::RawImageCropTopLeft)
+      | Ok(RafTags::RawImageCroppedSize)
+      | Ok(RafTags::RawImageAspectRatio)
+      | Ok(RafTags::WB_GRGBLevels) => {
+        let n = len / size_of::<u16>();
+        let entry = Entry {
+          tag,
+          value: Value::Short((0..n).map(|_| stream.read_u16::<BigEndian>()).collect::<std::io::Result<Vec<_>>>()?),
           embedded: None,
-        },
-      );
-    } else if tag == TiffCommonTag::RafOldWB.into() {
-      //assert_eq!(len, 4 * 2);
-      let mut values = Vec::new();
-      for _ in 0..(len / 2) {
-        values.push(stream.read_u16::<BigEndian>()?);
+        };
+        entries.insert(tag, entry);
       }
-      entries.insert(
-        TiffCommonTag::RafOldWB.into(),
-        Entry {
-          tag: TiffCommonTag::RafOldWB.into(),
-          value: Value::Short(values),
+      Ok(RafTags::FujiLayout) | Ok(RafTags::XTransLayout) => {
+        let n = len / size_of::<u8>();
+        let entry = Entry {
+          tag,
+          value: Value::Byte((0..n).map(|_| stream.read_u8()).collect::<std::io::Result<Vec<_>>>()?),
           embedded: None,
-        },
-      );
-    } else {
-      stream.seek(SeekFrom::Current(len as i64))?;
+        };
+        entries.insert(tag, entry);
+      }
+      // This one is in other byte-order...
+      Ok(RafTags::RAFData) => {
+        let n = len / size_of::<u32>();
+        let entry = Entry {
+          tag,
+          value: Value::Long((0..n).map(|_| stream.read_u32::<LittleEndian>()).collect::<std::io::Result<Vec<_>>>()?),
+          embedded: None,
+        };
+        entries.insert(tag, entry);
+      }
+      // Skip other tags
+      _ => {
+        stream.seek(SeekFrom::Current(len as i64))?;
+      }
     }
   }
   Ok(IFD {
@@ -115,7 +136,8 @@ pub fn parse_raf_format(file: &mut RawFile, offset: u32) -> Result<IFD> {
 fn parse_raf(file: &mut RawFile) -> Result<IFD> {
   const RAF_TIFF1_PTR_OFFSET: u64 = 84;
   const RAF_TIFF2_PTR_OFFSET: u64 = 100;
-  const RAF_BLOCK_PTR_OFFSET: u64 = 92;
+  const RAF_TAGS_PTR_OFFSET: u64 = 92;
+  //const RAF_BLOCK_PTR_OFFSET2: u64 = 120; TODO: ?!?
   log::debug!("parse RAF");
   file
     .inner()
@@ -129,25 +151,27 @@ fn parse_raf(file: &mut RawFile) -> Result<IFD> {
   // Main IFD
   let mut main = IFD::new_root(stream, offset + 12)?;
 
+  //main.dump::<TiffCommonTag>(10).iter().for_each(|line| eprintln!("MAIN: {}", line));
+
   // There is a second TIFF structure, the pointer is stored at offset 100.
   // If it is not a valid TIFF structure, the pointer itself is the RAF offset.
   stream.seek(SeekFrom::Start(RAF_TIFF2_PTR_OFFSET))?;
   let ioffset = stream.read_u32::<BigEndian>()?;
 
-  match IFD::new_root_with_correction(stream, 0, ioffset, 0, 10, &[RafIFD::FujiIFD.into()]) {
+  match IFD::new_root_with_correction(stream, 0, ioffset, 0, 10, &[FujiIFD::FujiIFD.into()]) {
     Ok(val) => {
       log::debug!("Found valid FujiIFD (0xF000)");
-      //val.dump::<RafIFD>(0).iter().for_each(|line| println!("RAF: {}", line));
-      main.sub.insert(RafIFD::FujiIFD as u16, vec![val]);
+      //val.dump::<FujiIFD>(10).iter().for_each(|line| eprintln!("FujiIFD: {}", line));
+      main.sub.insert(FujiIFD::FujiIFD as u16, vec![val]);
     }
     Err(_) => {
       // We fake an FujiIFD to pass the StripOffsets
       log::debug!("Unable to find FujiIFD (0xF000), let's fake it");
       let mut entries = BTreeMap::<u16, Entry>::new();
       entries.insert(
-        RafIFD::StripOffsets as u16,
+        FujiIFD::StripOffsets as u16,
         Entry {
-          tag: RafIFD::StripOffsets as u16,
+          tag: FujiIFD::StripOffsets as u16,
           value: Value::Long(vec![ioffset]), // The ioffset is absolute to the file start.
           embedded: Some(RAF_TIFF2_PTR_OFFSET as u32),
         },
@@ -162,14 +186,15 @@ fn parse_raf(file: &mut RawFile) -> Result<IFD> {
         sub: Default::default(),
         chain: Default::default(),
       };
-      main.sub.insert(RafIFD::FujiIFD as u16, vec![fake]);
+      main.sub.insert(FujiIFD::FujiIFD as u16, vec![fake]);
     }
   }
   // And we maybe have a RAF data block, try to parse it.
-  stream.seek(SeekFrom::Start(RAF_BLOCK_PTR_OFFSET))?;
+  stream.seek(SeekFrom::Start(RAF_TAGS_PTR_OFFSET))?;
   let raf_offset = stream.read_u32::<BigEndian>()?;
   match parse_raf_format(file, raf_offset) {
     Ok(val) => {
+      //val.dump::<RafTags>(10).iter().for_each(|line| eprintln!("RAFTAGS: {}", line));
       main.sub.insert(RAF_TAG_VIRTUAL_RAF_DATA, vec![val]);
     }
     Err(_) => {
@@ -184,27 +209,29 @@ impl<'a> RafDecoder<'a> {
   pub fn new(file: &mut RawFile, rawloader: &'a RawLoader) -> Result<RafDecoder<'a>> {
     let ifd = parse_raf(file)?;
     let camera = rawloader.check_supported(&ifd)?;
-    let makernote = if let Some(exif) = ifd.find_first_ifd_with_tag(ExifTag::MakerNotes) {
+    let makernotes = if let Some(exif) = ifd.find_first_ifd_with_tag(ExifTag::MakerNotes) {
       exif.parse_makernote(file.inner(), OffsetMode::Absolute, &[])?
     } else {
-      log::warn!("RAF makernote not found");
       None
     }
     .ok_or("File has not makernotes")?;
-
-    //makernote.dump::<RafMakernotes>(0).iter().for_each(|line| eprintln!("DUMP: {}", line)); // TODO: remove
-
-    Ok(RafDecoder { ifd, rawloader, camera })
+    //makernotes.dump::<RafMakernotes>(10).iter().for_each(|line| eprintln!("MKND: {}", line));
+    Ok(RafDecoder {
+      ifd,
+      makernotes,
+      rawloader,
+      camera,
+    })
   }
 }
 
 impl<'a> Decoder for RafDecoder<'a> {
   fn raw_image(&self, file: &mut RawFile, _params: RawDecodeParams, dummy: bool) -> Result<RawImage> {
-    let raw = self.ifd.find_first_ifd_with_tag(RafIFD::StripOffsets).ok_or("No StripOffsets found")?;
-    let (width, height) = if raw.has_entry(RafIFD::RawImageFullWidth) {
+    let raw = self.ifd.find_first_ifd_with_tag(FujiIFD::StripOffsets).ok_or("No StripOffsets found")?;
+    let (width, height) = if raw.has_entry(FujiIFD::RawImageFullWidth) {
       (
-        fetch_tiff_tag!(raw, RafIFD::RawImageFullWidth).force_usize(0),
-        fetch_tiff_tag!(raw, RafIFD::RawImageFullHeight).force_usize(0),
+        fetch_tiff_tag!(raw, FujiIFD::RawImageFullWidth).force_usize(0),
+        fetch_tiff_tag!(raw, FujiIFD::RawImageFullHeight).force_usize(0),
       )
     } else {
       let raf = &self
@@ -222,13 +249,27 @@ impl<'a> Decoder for RafDecoder<'a> {
       None => 16,
     };
 
-    // Strip offset is relative to IFD base
-    let offset = raw.base as u64 + fetch_tiff_tag!(raw, RafIFD::StripOffsets).force_u64(0);
-    let src = if raw.has_entry(RafIFD::StripByteCounts) {
-      let strip_count = fetch_tiff_tag!(raw, RafIFD::StripByteCounts).force_u64(0);
-      file.subview(offset, strip_count)?
+    // Rotation is only used for SuperCCD sensors, so we handle X-Trans CFA only here.
+    // Some cameras like X-T20 uses different CFA when compression is enabled, so we
+    // read the correct pattern from metadata.
+    let corrected_cfa = if let Some(cfa) = self.get_xtrans_cfa()? {
+      log::debug!(
+        "Found X-Trans CFA pattern in metadata, use this instead of camera config file. Pattern is: {}",
+        cfa
+      );
+      cfa
     } else {
-      file.subview_until_eof(offset)?
+      self.camera.cfa.clone()
+    };
+
+    // Strip offset is relative to IFD base
+    let offset = raw.base as u64 + fetch_tiff_tag!(raw, FujiIFD::StripOffsets).force_u64(0);
+    let src: OptBuffer = if raw.has_entry(FujiIFD::StripByteCounts) {
+      let strip_count = fetch_tiff_tag!(raw, FujiIFD::StripByteCounts).force_u64(0);
+      file.subview(offset, strip_count)?.into()
+    } else {
+      // Some models like DBP don't have a byte count, so we read until EOF
+      file.subview_until_eof(offset)?.into()
     };
 
     log::debug!("BPS: {}, width: {}, height: {}, offset: {}", bps, width, height, offset);
@@ -244,58 +285,104 @@ impl<'a> Decoder for RafDecoder<'a> {
         14 => decode_14be_msb32(&src, width, height, dummy),
         _ => return Err(RawlerError::unsupported(&self.camera, format!("RAF: Don't know how to decode bps {}", bps))),
       }
+    } else if self.camera.clean_model == "DBP for GX680" {
+      assert_eq!(bps, 16);
+      dbp::decode_dbp(&src, width, height, dummy)?
+    } else if src.len() < bps * width * height / 8 {
+      decompress_fuji(&src, width, height, bps, &corrected_cfa)?
     } else {
-      if src.len() < bps * width * height / 8 {
-        //PixU16::new(width, height)
-        return Err(RawlerError::unsupported(&self.camera, "RAF: Don't know how to decode compressed yet"));
-      } else {
-        match bps {
-          12 => decode_12le(&src, width, height, dummy),
-          14 => decode_14le_unpacked(&src, width, height, dummy),
-          16 => {
-            //deocde_dbp(&src, width, height, dummy) TODO
-
-            if self.ifd.endian == Endian::Little {
-              decode_16le(&src, width, height, dummy)
-            } else {
-              decode_16be(&src, width, height, dummy)
-            }
+      match bps {
+        12 => decode_12le(&src, width, height, dummy),
+        14 => decode_14le_unpacked(&src, width, height, dummy),
+        16 => {
+          if self.ifd.endian == Endian::Little {
+            decode_16le(&src, width, height, dummy)
+          } else {
+            decode_16be(&src, width, height, dummy)
           }
-          _ => {
-            return Err(RawlerError::unsupported(&self.camera, format!("RAF: Don't know how to decode bps {}", bps)));
-          }
+        }
+        _ => {
+          return Err(RawlerError::unsupported(&self.camera, format!("RAF: Don't know how to decode bps {}", bps)));
         }
       }
     };
 
-    let blacks = self.get_blacklevel()?.unwrap_or(self.camera.blacklevels);
+    let blacks = self.get_blacklevel()?.unwrap_or_else(|| Vec::from(self.camera.blacklevels));
     log::debug!("RAF Blacklevels: {:?}", blacks);
 
+    // For now, we put the rotated data into DNG. Much better solution
+    // would be to support staggered layouts, but this is not used much
+    // and complicated to implement, because we need rectangular CFA patterns like 2x4.
+    // The code path for staggered data is already implemented here, but remains unused.
+    let rotate_for_dng = false;
     let cpp = 1;
     if self.camera.find_hint("fuji_rotation") || self.camera.find_hint("fuji_rotation_alt") {
       log::debug!("Apply Fuji image rotation");
-      let (width, height, image) = self.rotate_image(image.pixels(), &self.camera, width, height, dummy)?;
+      let (rotated, dim) = if rotate_for_dng {
+        if self.camera.find_hint("fuji_rotation") {
+          fuji_raw_rotate(&image, dummy) // Only required for fuji_rotation
+        } else {
+          let dim = image.dim();
+          (image.into_inner(), dim)
+        }
+      } else {
+        self.rotate_image(image.pixels(), &self.camera, width, height, dummy)?
+      };
+      let mut image = RawImage::new(self.camera.clone(), dim.w, dim.h, cpp, normalize_wb(self.get_wb()?), rotated, dummy);
+      image.cfa = corrected_cfa;
+      image.blacklevels = [blacks[0]; 4]; // TODO
 
-      let mut image = RawImage::new(self.camera.clone(), width, height, cpp, normalize_wb(self.get_wb()?), image, dummy);
-      image.blacklevels = blacks;
-      if bps != 0 {
-        //image.bps = bps; // TODO
+      if rotate_for_dng {
+        image.add_dng_tag(TiffCommonTag::CFARepeatPatternDim, [2, 4]);
+        image.add_dng_tag(DngTag::CFALayout, 2_u16);
+        image.add_dng_tag(TiffCommonTag::CFAPattern, &[0_u8, 1, 2, 1, 2, 1, 0, 1][..]);
+
+        image.add_dng_tag(DngTag::BlackLevel, image.blacklevels[0]);
+        image.add_dng_tag(DngTag::BlackLevelRepeatDim, [1_u16, 1_u16]);
       }
+
       // Reset crops because we have rotated the data.
       image.active_area = None;
       image.crop_area = None;
       Ok(image)
     } else {
       //ok_image(self.camera.clone(), width, height, cpp, self.get_wb()?, image.into_inner())
-      ok_image_with_blacklevels(
+
+      // TODO: remove width height from new()!!!!
+      let mut image = RawImage::new(
         self.camera.clone(),
         image.width,
         image.height,
         cpp,
         normalize_wb(self.get_wb()?),
-        blacks,
         image.into_inner(),
-      )
+        dummy,
+      );
+
+      image.cfa = corrected_cfa;
+      image.blacklevels = [blacks[0]; 4]; // TODO
+      if self.camera.whitelevels[0] == u16::MAX {
+        match bps {
+          12 | 14 | 16 => {
+            let max_value: u16 = ((1_u32 << bps) - 1) as u16;
+            image.whitelevels = [max_value; 4];
+          }
+          _ => {}
+        }
+      }
+
+      // Overwrite crop if available in metadata
+      if let Some(crop) = self.get_crop()? {
+        image.crop_area = Some(crop);
+      }
+
+      // Ideally, someone would expect that area is at bayer pattern
+      // boundary. This is not the case, so we don't check this here.
+      // if let Some(_area) = image.active_area.as_ref() {
+      //   assert_eq!(area.d.w % image.cfa.width , 0);
+      //   assert_eq!(area.d.h % image.cfa.height , 0);
+      // }
+      Ok(image)
     }
   }
 
@@ -332,85 +419,10 @@ impl<'a> Decoder for RafDecoder<'a> {
   }
 }
 
-pub fn deocde_dbp(buf: &[u8], width: usize, height: usize, dummy: bool) -> PixU16 {
-  let mut out = vec![0_u16; width * height];
-
-  let mut cursor = Cursor::new(buf);
-
-  let nTiles = 8;
-  let tile_width = width / nTiles;
-  let tile_height = 3856;
-
-  log::error!("width: {}, height: {}, tile: {}", width, height, tile_width);
-
-  let mut tile = vec![0_u16; height * tile_width];
-
-  for tile_n in 0..nTiles {
-    cursor.read_u16_into::<BigEndian>(&mut tile).unwrap();
-    for scan_line in 0..height {
-      let off = scan_line * width + tile_n * tile_width;
-      out[off..off + tile_width].copy_from_slice(&tile[scan_line * tile_width..scan_line * tile_width + tile_width]);
-
-      //  memcpy(&raw_image[scan_line * raw_width + tile_n * tile_width],
-      //    &tile[scan_line * tile_width], tile_width * 2);
-    }
-  }
-
-  /*
-  for Fuji DBP for GX680, aka DX-2000
-    DBP_tile_width = 688;
-    DBP_tile_height = 3856;
-    DBP_n_tiles = 8;
-
-  {
-    int scan_line, tile_n;
-    int nTiles;
-
-    nTiles = 8;
-    tile_width = raw_width / nTiles;
-
-    ushort *tile;
-    tile = (ushort *)calloc(raw_height, tile_width * 2);
-
-    for (tile_n = 0; tile_n < nTiles; tile_n++)
-    {
-      read_shorts(tile, tile_width * raw_height);
-      for (scan_line = 0; scan_line < raw_height; scan_line++)
-      {
-        memcpy(&raw_image[scan_line * raw_width + tile_n * tile_width],
-               &tile[scan_line * tile_width], tile_width * 2);
-      }
-    }
-    free(tile);
-    fseek(ifp, -2, SEEK_CUR); // avoid EOF error
-  }
-  */
-
-  //let mut x = PixU16::new(width, height);
-  let mut x = PixU16::new(height, width);
-
-  let flip_index = |row: usize, col: usize| -> usize {
-    let irow = width - 1 - col;
-    let icol = height - 1 - row;
-    irow * height + icol
-  };
-
-  for row in 0..height {
-    for col in 0..width {
-      //*x.at_mut(row, col) = out[flip_index(row, col)];
-      //*x.at_mut(row, col) = out[(width - 1 - col) * height + (height - 1 - row)];
-      *x.at_mut(width - 1 - col, height - 1 - row) = out[row * width + col];
-    }
-  }
-
-  //x
-  PixU16::new_with(out, width, height)
-}
-
 impl<'a> RafDecoder<'a> {
   fn get_wb(&self) -> Result<[f32; 4]> {
-    let raw = self.ifd.find_first_ifd_with_tag(RafIFD::StripOffsets).ok_or("No StripOffsets found")?;
-    match raw.get_entry(RafIFD::WB_GRBLevels) {
+    let raw = self.ifd.find_first_ifd_with_tag(FujiIFD::StripOffsets).ok_or("No StripOffsets found")?;
+    match raw.get_entry(FujiIFD::WB_GRBLevels) {
       Some(levels) => Ok([levels.force_f32(1), levels.force_f32(0), levels.force_f32(0), levels.force_f32(2)]),
       None => {
         let raf = &self
@@ -425,17 +437,71 @@ impl<'a> RafDecoder<'a> {
     }
   }
 
-  fn get_blacklevel(&self) -> Result<Option<[u16; 4]>> {
-    if let Some(ifd) = self.ifd.get_sub_ifds(RafIFD::FujiIFD) {
+  fn get_blacklevel(&self) -> Result<Option<Vec<u16>>> {
+    if let Some(ifd) = self.ifd.get_sub_ifds(FujiIFD::FujiIFD) {
       let fuji = &ifd[0];
-      if let Some(black) = fuji.get_entry(RafIFD::BlackLevel) {
-        return Ok(Some([black.force_u16(0), black.force_u16(1), black.force_u16(2), black.force_u16(3)]));
+      if let Some(Entry { value: Value::Long(black), .. }) = fuji.get_entry_recursive(FujiIFD::BlackLevel) {
+        return Ok(Some(black.iter().copied().map(|v| v as u16).collect()));
+      } else {
+        log::debug!("Unable to find black level data");
       }
     }
     Ok(None)
   }
 
-  fn rotate_image(&self, src: &[u16], camera: &Camera, width: usize, height: usize, dummy: bool) -> Result<(usize, usize, Vec<u16>)> {
+  /// Get crop from metadata
+  /// Nearly all models have this parameter, except of FinePix HS10
+  fn get_crop(&self) -> Result<Option<Rect>> {
+    if let Some(raf) = &self.ifd.sub_ifds().get(&RAF_TAG_VIRTUAL_RAF_DATA).and_then(|ifds| ifds.get(0)) {
+      let crops = raf.get_entry(RafTags::RawImageCropTopLeft);
+      let size = raf.get_entry(RafTags::RawImageCroppedSize);
+      if let (Some(crops), Some(size)) = (crops, size) {
+        return Ok(Some(Rect::new(
+          Point::new(crops.force_usize(1), crops.force_usize(0)),
+          Dim2::new(size.force_usize(0), size.force_usize(1)),
+        )));
+      }
+    }
+    Ok(None)
+  }
+
+  /// Get the X-Trans CFA pattern
+  /// This is encoded in RAF metadata block in XTransLayout.
+  /// For unknown reason, the values are stored in reverse order and
+  /// also falsely reported by exiftoool.
+  fn get_xtrans_cfa(&self) -> Result<Option<CFA>> {
+    Ok(
+      if let Some(raf) = &self
+        .ifd
+        .sub_ifds()
+        .get(&RAF_TAG_VIRTUAL_RAF_DATA)
+        .and_then(|ifds| ifds.get(0).and_then(|ifd| ifd.get_entry(RafTags::XTransLayout)))
+      {
+        match &raf.value {
+          Value::Byte(data) => {
+            let patname: String = data
+              .iter()
+              .rev()
+              .map(|v| match v {
+                0 => 'R',
+                1 => 'G',
+                2 => 'B',
+                _ => 'X', // Unknown, let CFA::new() fail...
+              })
+              .collect();
+            Some(CFA::new(&patname))
+          }
+          _ => {
+            return Err("Invalid XTransLayout data type".into());
+          }
+        }
+      } else {
+        None
+      },
+    )
+  }
+
+  fn rotate_image(&self, src: &[u16], camera: &Camera, width: usize, height: usize, dummy: bool) -> Result<(Vec<u16>, Dim2)> {
     if let Some(active_area) = self.camera.active_area {
       let x = active_area[0];
       let y = active_area[1];
@@ -457,8 +523,9 @@ impl<'a> RafDecoder<'a> {
             }
           }
         }
-
-        Ok((rotatedwidth, rotatedheight, out))
+        // Do not replace with PixU16 as we need to propagate the true rotated
+        // dimensions, even in dummy mode.
+        Ok((out, Dim2::new(rotatedwidth, rotatedheight)))
       } else {
         let rotatedwidth = cropwidth + cropheight / 2;
         let rotatedheight = rotatedwidth - 1;
@@ -475,7 +542,7 @@ impl<'a> RafDecoder<'a> {
           }
         }
 
-        Ok((rotatedwidth, rotatedheight, out))
+        Ok((out, Dim2::new(rotatedwidth, rotatedheight)))
       }
     } else {
       Err(RawlerError::General("no active_area for fuji_rotate".to_string()))
@@ -498,7 +565,8 @@ fn normalize_wb(raw_wb: [f32; 4]) -> [f32; 4] {
 }
 
 crate::tags::tiff_tag_enum!(RafMakernotes);
-crate::tags::tiff_tag_enum!(RafIFD);
+crate::tags::tiff_tag_enum!(FujiIFD);
+crate::tags::tiff_tag_enum!(RafTags);
 
 /// Specific RAF Makernotes tags.
 /// These are only related to the Makernote IFD.
@@ -508,15 +576,96 @@ crate::tags::tiff_tag_enum!(RafIFD);
 pub enum RafMakernotes {
   Version = 0x0000,
   InternalSerialNumber = 0x0010,
-  Quality = 0x0100,
-  // TODO: more
+  Quality = 0x1000,
+  Sharpness = 0x1001,
+  WhiteBalance = 0x1002,
+  Saturation = 0x1003,
+  Contrast = 0x1004,
+  ColorTemperature = 0x1005,
+  Contrast2 = 0x1006,
+  WhiteBalanceFineTune = 0x100a,
+  NoiseReduction = 0x100b,
+  NoiseReduction2 = 0x100e,
+  FujiFlashMode = 0x1010,
+  FlashExposureComp = 0x1011,
+  Macro = 0x1020,
+  FocusMode = 0x1021,
+  AFMode = 0x1022,
+  FocusPixel = 0x1023,
+  PrioritySettings = 0x102b,
+  FocusSettings = 0x102d,
+  AFCSettings = 0x102e,
+  SlowSync = 0x1030,
+  PictureMode = 0x1031,
+  ExposureCount = 0x1032,
+  EXRAuto = 0x1033,
+  EXRMode = 0x1034,
+  ShadowTone = 0x1040,
+  HighlightTone = 0x1041,
+  DigitalZoom = 0x1044,
+  LensModulationOptimizer = 0x1045,
+  GrainEffect = 0x1047,
+  ColorChromeEffect = 0x1048,
+  BWAdjustment = 0x1049,
+  CropMode = 0x104d,
+  ColorChromeFXBlue = 0x104e,
+  ShutterType = 0x1050,
+  AutoBracketing = 0x1100,
+  SequenceNumber = 0x1101,
+  DriveSettings = 0x1103,
+  PixelShiftShots = 0x1105,
+  PixelShiftOffset = 0x1106,
+  PanoramaAngle = 0x1153,
+  PanoramaDirection = 0x1154,
+  AdvancedFilter = 0x1201,
+  ColorMode = 0x1210,
+  BlurWarning = 0x1300,
+  FocusWarning = 0x1301,
+  ExposureWarning = 0x1302,
+  GEImageSize = 0x1304,
+  DynamicRange = 0x1400,
+  FilmMode = 0x1401,
+  DynamicRangeSetting = 0x1402,
+  DevelopmentDynamicRange = 0x1403,
+  MinFocalLength = 0x1404,
+  MaxFocalLength = 0x1405,
+  MaxApertureAtMinFocal = 0x1406,
+  MaxApertureAtMaxFocal = 0x1407,
+  AutoDynamicRange = 0x140b,
+  ImageStabilization = 0x1422,
+  SceneRecognition = 0x1425,
+  Rating = 0x1431,
+  ImageGeneration = 0x1436,
+  ImageCount = 0x1438,
+  DRangePriority = 0x1443,
+  DRangePriorityAuto = 0x1444,
+  DRangePriorityFixed = 0x1445,
+  FlickerReduction = 0x1446,
+  VideoRecordingMode = 0x3803,
+  PeripheralLighting = 0x3804,
+  VideoCompression = 0x3806,
+  FrameRate = 0x3820,
+  FrameWidth = 0x3821,
+  FrameHeight = 0x3822,
+  FullHDHighSpeedRec = 0x3824,
+  FaceElementSelected = 0x4005,
+  FacesDetected = 0x4100,
+  FacePositions = 0x4103,
+  NumFaceElements = 0x4200,
+  FaceElementTypes = 0x4201,
+  FaceElementPositions = 0x4203,
+  FaceRecInfo = 0x4282,
+  FileSource = 0x8000,
+  OrderNumber = 0x8002,
+  FrameNumber = 0x8003,
+  Parallax = 0xb211,
 }
 
-/// These are only related to the Makernote IFD.
+/// These are only related to the additional FujiIFD in RAF files
 #[derive(Debug, Copy, Clone, PartialEq, enumn::N)]
 #[repr(u16)]
 #[allow(non_camel_case_types)]
-pub enum RafIFD {
+pub enum FujiIFD {
   FujiIFD = 0xf000,
   RawImageFullWidth = 0xf001,
   RawImageFullHeight = 0xf002,
@@ -530,4 +679,44 @@ pub enum RafIFD {
   WB_GRBLevels = 0xf00e,
   ChromaticAberrationParams = 0xf00f,
   VignettingParams = 0xf010,
+}
+
+/// These are only related to the additional RAF-tags in RAF files
+#[derive(Debug, Copy, Clone, PartialEq, enumn::N)]
+#[repr(u16)]
+#[allow(non_camel_case_types)]
+pub enum RafTags {
+  RawImageFullSize = 0x0100,
+  RawImageCropTopLeft = 0x0110,
+  RawImageCroppedSize = 0x0111,
+  RawImageAspectRatio = 0x0115,
+  RawImageSize = 0x0121,
+  FujiLayout = 0x0130,
+  XTransLayout = 0x0131,
+  WB_GRGBLevels = 0x2ff0,
+  RelativeExposure = 0x9200,
+  RawExposureBias = 0x9650,
+  RAFData = 0xc000,
+}
+
+pub fn fuji_raw_rotate(img: &PixU16, dummy: bool) -> (Vec<u16>, Dim2) {
+  let buf = alloc_image_plain!(img.height, img.width, dummy);
+  //let mut out = PixU16::new(img.height, img.width);
+
+  if !dummy {
+    let mut out = PixU16::new_with(buf, img.height, img.width);
+
+    for row in 0..img.height {
+      for col in 0..img.width {
+        //*x.at_mut(row, col) = out[flip_index(row, col)];
+        //*x.at_mut(row, col) = out[(width - 1 - col) * height + (height - 1 - row)];
+        //*out.at_mut(img.width - 1 - col, img.height - 1 - row) = *img.at(row, col); //   out[row * width + col];
+        *out.at_mut(col, row) = *img.at(row, col); //   out[row * width + col];
+      }
+    }
+    let dim = out.dim();
+    (out.into_inner(), dim)
+  } else {
+    (buf, Dim2::new(img.height, img.width))
+  }
 }

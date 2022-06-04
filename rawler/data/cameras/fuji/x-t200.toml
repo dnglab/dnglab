@@ -4,9 +4,10 @@ clean_make = "Fujifilm"
 clean_model = "X-T200"
 blackpoint = 1024
 whitepoint = 16383
-color_pattern = "RBGBRGGGRGGBGGBGGRBRGRBGGGBGGRGGRGGB"
-active_area = [0, 0, 128, 0]
+color_pattern = "RGGB"
 hints = ["jpeg32"]
+active_area = [0, 0, 0, 0]
 
 [cameras.color_matrix]
-D65 = [1.1434, -0.4948, -0.121, -0.3746, 1.2042, 0.1903, -0.0666, 0.1479, 0.5235]
+A = [2.2235, -1.5902, 0.0516, -0.3091, 1.1246, 0.2102, 0.0018, 0.047, 0.6638]
+D65 = [1.5055, -0.7391, -0.1274, -0.4062, 1.2071, 0.2238, -0.061, 0.1217, 0.6147]

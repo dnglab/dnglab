@@ -5,7 +5,8 @@ clean_model = "X-T10"
 blackpoint = 1024
 whitepoint = 16383
 color_pattern = "RBGBRGGGRGGBGGBGGRBRGRBGGGBGGRGGRGGB"
-crop_area = [4, 0, 52, 0]
+active_area = [0, 0, 52, 0]
 
 [cameras.color_matrix]
+A = [1.267, -0.66, 0.0088, -0.2824, 1.0665, 0.2495, -0.0842, 0.1988, 0.7109]
 D65 = [0.8458, -0.2451, -0.0855, -0.4597, 1.2447, 0.2407, -0.1475, 0.2482, 0.6526]

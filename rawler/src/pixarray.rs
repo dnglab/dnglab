@@ -1,6 +1,8 @@
+use std::cell::UnsafeCell;
+
 use rayon::prelude::*;
 
-use crate::imgop::Rect;
+use crate::imgop::{Dim2, Rect};
 
 pub struct Pix2D<T> {
   pub width: usize,
@@ -26,6 +28,10 @@ where
 
   pub fn into_inner(self) -> Vec<T> {
     self.data
+  }
+
+  pub fn dim(&self) -> Dim2 {
+    Dim2::new(self.width, self.height)
   }
 
   pub fn pixels(&self) -> &[T] {
@@ -86,6 +92,20 @@ where
       .enumerate()
       .for_each(|(row, rowbuf)| rowbuf.iter_mut().enumerate().for_each(|(col, v)| *v = op(*v, row, col)));
   }
+
+  pub fn crop(&self, area: Rect) -> Self {
+    let mut output = Vec::with_capacity(area.d.h * area.d.w);
+    output.extend(
+      self
+        .pixels()
+        .chunks_exact(self.width)
+        .skip(area.p.y)
+        .take(area.d.h)
+        .flat_map(|row| row[area.p.x..area.p.x + area.d.w].iter())
+        .cloned(),
+    );
+    Self::new_with(output, area.d.w, area.d.h)
+  }
 }
 
 impl<T> Default for Pix2D<T>
@@ -100,6 +120,32 @@ where
     }
   }
 }
+
+/// An ugly hack to get multiple mutable references to Pix2D
+pub struct SharedPix2D<T> {
+  pub inner: UnsafeCell<Pix2D<T>>,
+}
+
+impl<T> SharedPix2D<T> {
+  pub fn new(inner: Pix2D<T>) -> Self {
+    Self { inner: inner.into() }
+  }
+
+  /// Get inner Pix2D<> reference
+  ///
+  /// # Safety
+  /// Only use this inside Rayon parallel iterators.
+  #[allow(clippy::mut_from_ref)]
+  pub unsafe fn inner_mut(&self) -> &mut Pix2D<T> {
+    &mut *self.inner.get()
+  }
+
+  pub fn into_inner(self) -> Pix2D<T> {
+    self.inner.into_inner()
+  }
+}
+
+unsafe impl<T> Sync for SharedPix2D<T> where T: Copy + Default + Send {}
 
 #[derive(Clone)]
 pub struct Rgb2D<T> {

@@ -450,8 +450,16 @@ fn dng_put_raw(raw_ifd: &mut DirectoryWriter<'_, '_>, rawimage: &RawImage, param
         raw_ifd.add_tag(DngTag::MaskedAreas, &data)?;
       }
 
-      raw_ifd.add_tag(DngTag::BlackLevel, black_level)?;
-      raw_ifd.add_tag(DngTag::BlackLevelRepeatDim, [2_u16, 2_u16])?;
+      // TODO: we need to support more blacklevels, make it a Vec<SRational>
+      if (rawimage.cfa.width, rawimage.cfa.height) == (2, 2) {
+        raw_ifd.add_tag(DngTag::BlackLevel, black_level)?;
+        raw_ifd.add_tag(DngTag::BlackLevelRepeatDim, [2_u16, 2_u16])?;
+      } else {
+        // For others and X-Trans we use a single blacklevel for now
+        raw_ifd.add_tag(DngTag::BlackLevel, black_level[0])?;
+        raw_ifd.add_tag(DngTag::BlackLevelRepeatDim, [1_u16, 1_u16])?;
+      }
+
       raw_ifd.add_tag(TiffCommonTag::PhotometricInt, PhotometricInterpretation::CFA)?;
       raw_ifd.add_tag(TiffCommonTag::SamplesPerPixel, 1_u16)?;
       raw_ifd.add_tag(TiffCommonTag::BitsPerSample, [16_u16])?;
@@ -467,7 +475,6 @@ fn dng_put_raw(raw_ifd: &mut DirectoryWriter<'_, '_>, rawimage: &RawImage, param
       raw_ifd.add_tag(TiffCommonTag::CFAPattern, &cfa.flat_pattern()[..])?;
 
       //raw_ifd.add_tag(DngTag::CFAPlaneColor, [0u8, 1u8, 2u8])?; // RGB
-
       raw_ifd.add_tag(DngTag::CFALayout, 1_u16)?; // Square layout
 
       //raw_ifd.add_tag(LegacyTiffRootTag::CFAPattern, [0u8, 1u8, 1u8, 2u8])?; // RGGB
@@ -486,6 +493,10 @@ fn dng_put_raw(raw_ifd: &mut DirectoryWriter<'_, '_>, rawimage: &RawImage, param
     cpp => {
       panic!("Unsupported cpp: {}", cpp);
     }
+  }
+
+  for (tag, value) in rawimage.dng_tags.iter() {
+    raw_ifd.add_untyped_tag(*tag, value.clone())?;
   }
 
   //raw_ifd.add_tag(TiffRootTag::RowsPerStrip, rawimage.height as u16)?;

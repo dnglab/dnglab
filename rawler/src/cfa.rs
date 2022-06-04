@@ -8,6 +8,31 @@ pub const CFA_COLOR_R: usize = 0;
 pub const CFA_COLOR_G: usize = 1;
 pub const CFA_COLOR_B: usize = 2;
 
+use num_enum::TryFromPrimitive;
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq, PartialOrd, Ord, TryFromPrimitive)]
+#[repr(usize)]
+#[allow(non_camel_case_types)]
+pub enum CFAColor {
+  // see also DngDecoder
+  RED = 0,
+  GREEN = 1,
+  BLUE = 2,
+  CYAN = 3,
+  MAGENTA = 4,
+  YELLOW = 5,
+  WHITE = 6,
+  FUJI_GREEN = 7,
+  END, // keep it last!
+  UNKNOWN = 255,
+}
+
+impl Default for CFAColor {
+  fn default() -> Self {
+    Self::UNKNOWN
+  }
+}
+
 /// Representation of the color filter array pattern in raw cameras
 ///
 /// # Example
@@ -128,6 +153,11 @@ impl CFA {
   /// from inner loops without performance issues.
   pub fn color_at(&self, row: usize, col: usize) -> usize {
     self.pattern[(row + 48) % 48][(col + 48) % 48]
+  }
+
+  /// from inner loops without performance issues.
+  pub fn cfa_color_at(&self, row: usize, col: usize) -> CFAColor {
+    self.pattern[(row + 48) % 48][(col + 48) % 48].try_into().unwrap()
   }
 
   /// Get a flat pattern

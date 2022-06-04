@@ -1,10 +1,10 @@
 make = "FUJIFILM"
-model = "X-E4"
+model = "X-Pro3"
 clean_make = "Fujifilm"
-clean_model = "X-E4"
-blackpoint = 1023
+clean_model = "X-Pro3"
+blackpoint = 1024
 whitepoint = 16383
-color_pattern = "GGRGGBGGBGGRBRGRBGGGBGGRGGRGGBRBGBRG"
+color_pattern = "RBGBRGGGRGGBGGBGGRBRGRBGGGBGGRGGRGGB"
 active_area = [0, 5, 132, 1]
 
 [cameras.color_matrix]

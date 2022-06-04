@@ -5,8 +5,10 @@ clean_model = "FinePix S100FS"
 blackpoint = 519
 whitepoint = 16250
 color_pattern = "GBRG"
-active_area = [28, 0, 28, 0]
-hints = ["fuji_rotation"]
+hints = ["fuji_rotation_alt"]
+active_area = [0, 0, 0, 0]
+crop_area = [16, 10, 16, 10]
 
 [cameras.color_matrix]
-D65 = [1.1401, -0.4498, -0.1312, -0.5088, 1.2751, 0.2613, -0.0838, 0.1568, 0.5941]
+A = [1.2958, -0.6344, 0.0202, -0.4492, 1.1187, 0.381, -0.0658, 0.1223, 0.6067]
+D65 = [1.1521, -0.4355, -0.1065, -0.6524, 1.3768, 0.3059, -0.1466, 0.1984, 0.6045]

@@ -5,7 +5,8 @@ clean_model = "X70"
 blackpoint = 1024
 whitepoint = 16383
 color_pattern = "RBGBRGGGRGGBGGBGGRBRGRBGGGBGGRGGRGGB"
-crop_area = [4, 0, 52, 0]
+active_area = [4, 0, 52, 0]
 
 [cameras.color_matrix]
+A = [1.2688, -0.6851, 0.0469, -0.3833, 1.16, 0.254, -0.0406, 0.1143, 0.7752]
 D65 = [1.045, -0.4329, -0.0878, -0.3217, 1.1105, 0.2421, -0.0752, 0.1758, 0.6519]

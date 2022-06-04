@@ -1999,22 +1999,45 @@ mod camera_finepix_x100_raw_modes {
 mod camera_finepix_x10_raw_modes {
   super::camera_file_check!("Fujifilm", "FinePix X10", cam_x10_iso_200_raf, "raw_modes/X10_ISO_200.RAF");
 }
+mod camera_gfx_100_compressed {
+  super::camera_file_check!("Fujifilm", "GFX 100", cam_gfx_100_iso_100_bitdepth_16_124_mib_raf, "compressed/GFX 100_ISO_100_Bitdepth_16_124 MiB.RAF");
+  super::camera_file_check!("Fujifilm", "GFX 100", cam_gfx_100_iso_100_bitdepth_14_101_mib_raf, "compressed/GFX 100_ISO_100_Bitdepth_14_101 MiB.RAF");
+}
 mod camera_gfx_100_raw_modes {
   super::camera_file_check!("Fujifilm", "GFX 100", cam_gfx_100_iso_100_bitdepth_14_200_mib_raf, "raw_modes/GFX 100_ISO_100_Bitdepth_14_200 MiB.RAF");
   super::camera_file_check!("Fujifilm", "GFX 100", cam_gfx_100_iso_100_bitdepth_16_200_mib_raf, "raw_modes/GFX 100_ISO_100_Bitdepth_16_200 MiB.RAF");
+}
+mod camera_gfx100s_compressed {
+  super::camera_file_check!("Fujifilm", "GFX100S", cam_fujifilm_gfx100s_16bits_compress_4_3_raf, "compressed/Fujifilm-GFX100S-16bits-compress-4_3.RAF");
+  super::camera_file_check!("Fujifilm", "GFX100S", cam_fujifilm_gfx100s_16bits_losslesscompressed_4_3_raf, "compressed/Fujifilm-GFX100S-16bits-losslesscompressed-4_3.RAF");
+  super::camera_file_check!("Fujifilm", "GFX100S", cam_fujifilm_gfx100s_14bits_losslescompressed_4_3_raf, "compressed/Fujifilm-GFX100S-14bits-losslescompressed-4_3.RAF");
+  super::camera_file_check!("Fujifilm", "GFX100S", cam_fujifilm_gfx100s_14bits_compress_4_3_raf, "compressed/Fujifilm-GFX100S-14bits-compress-4_3.RAF");
 }
 mod camera_gfx100s_raw_modes {
   super::camera_file_check!("Fujifilm", "GFX100S", cam_fujifilm_gfx100s_16bits_uncompress_4_3_raf, "raw_modes/Fujifilm-GFX100S-16bits-uncompress-4_3.RAF");
   super::camera_file_check!("Fujifilm", "GFX100S", cam_fujifilm_gfx100s_14bits_uncompress_4_3_raf, "raw_modes/Fujifilm-GFX100S-14bits-uncompress-4_3.RAF");
 }
+mod camera_gfx_50r_compressed {
+  super::camera_file_check!("Fujifilm", "GFX 50R", cam_gfx_50r_iso_100_bitdepth_14_50_mib_raf, "compressed/GFX 50R_ISO_100_Bitdepth_14_50 MiB.RAF");
+}
 mod camera_gfx_50r_raw_modes {
   super::camera_file_check!("Fujifilm", "GFX 50R", cam_gfx_50r_iso_100_bitdepth_14_112_mib_raf, "raw_modes/GFX 50R_ISO_100_Bitdepth_14_112 MiB.RAF");
+}
+mod camera_gfx_50s_compressed {
+  super::camera_file_check!("Fujifilm", "GFX 50S", cam_gfx_50s_iso_100_bitdepth_14_48_mib_raf, "compressed/GFX 50S_ISO_100_Bitdepth_14_48 MiB.RAF");
+}
+mod camera_gfx50s_ii_compressed {
+  super::camera_file_check!("Fujifilm", "GFX50S II", cam_fuji_gfx50s_ii___compressed_raf, "compressed/Fuji_GFX50S_II_-_Compressed.RAF");
+  super::camera_file_check!("Fujifilm", "GFX50S II", cam_fuji_gfx50s_ii___lossless_compressed_raf, "compressed/Fuji_GFX50S_II_-_Lossless_Compressed.RAF");
 }
 mod camera_gfx50s_ii_raw_modes {
   super::camera_file_check!("Fujifilm", "GFX50S II", cam_fuji_gfx50s_ii___uncompressed_raf, "raw_modes/Fuji_GFX50S_II_-_Uncompressed.RAF");
 }
 mod camera_gfx_50s_raw_modes {
   super::camera_file_check!("Fujifilm", "GFX 50S", cam_gfx_50s_iso_100_bitdepth_14_111_mib_raf, "raw_modes/GFX 50S_ISO_100_Bitdepth_14_111 MiB.RAF");
+}
+mod camera_x100f_compressed {
+  super::camera_file_check!("Fujifilm", "X100F", cam_x100f_lossless_compressed_raw_temple_raf, "compressed/X100F_lossless_compressed_raw_Temple.RAF");
 }
 mod camera_x100f_raw_modes {
   super::camera_file_check!("Fujifilm", "X100F", cam_x100f_uncompressed_raw_temple_raf, "raw_modes/X100F_uncompressed_raw_Temple.RAF");
@@ -2024,6 +2047,9 @@ mod camera_x100s_raw_modes {
 }
 mod camera_x100t_raw_modes {
   super::camera_file_check!("Fujifilm", "X100T", cam_x100t_iso_400_bitdepth_14_raf, "raw_modes/X100T_ISO_400_Bitdepth_14.RAF");
+}
+mod camera_x100v_compressed {
+  super::camera_file_check!("Fujifilm", "X100V", cam_x100v_iso_160_bitdepth_14_31_mib_raf, "compressed/X100V_ISO_160_Bitdepth_14_31 MiB.RAF");
 }
 mod camera_x100v_raw_modes {
   super::camera_file_check!("Fujifilm", "X100V", cam_x100v_iso_160_bitdepth_14_56_mib_raf, "raw_modes/X100V_ISO_160_Bitdepth_14_56 MiB.RAF");
@@ -2064,8 +2090,15 @@ mod camera_x_e2_raw_modes {
 mod camera_x_e2s_raw_modes {
   super::camera_file_check!("Fujifilm", "X-E2S", cam_x_e2s_iso_400_raf, "raw_modes/X-E2S_ISO_400.RAF");
 }
+mod camera_x_e3_compressed {
+  super::camera_file_check!("Fujifilm", "X-E3", cam_x_e3_iso_250_bitdepth_14_27_mib_raf, "compressed/X-E3_ISO_250_Bitdepth_14_27 MiB.RAF");
+}
 mod camera_x_e3_raw_modes {
   super::camera_file_check!("Fujifilm", "X-E3", cam_x_e3_iso_250_bitdepth_14_48_mib_raf, "raw_modes/X-E3_ISO_250_Bitdepth_14_48 MiB.RAF");
+}
+mod camera_x_e4_compressed {
+  super::camera_file_check!("Fujifilm", "X-E4", cam_fuji_xe4_32_lossy_raf, "compressed/fuji_xe4_32_lossy.RAF");
+  super::camera_file_check!("Fujifilm", "X-E4", cam_fuji_xe4_32_lossless_raf, "compressed/fuji_xe4_32_lossless.RAF");
 }
 mod camera_x_e4_raw_modes {
   super::camera_file_check!("Fujifilm", "X-E4", cam_fuji_xe4_32_uncompressed_raf, "raw_modes/fuji_xe4_32_uncompressed.RAF");
@@ -2076,6 +2109,9 @@ mod camera_xf10_raw_modes {
 mod camera_xf1_raw_modes {
   super::camera_file_check!("Fujifilm", "XF1", cam_xf1_iso_1250_raf, "raw_modes/XF1_ISO_1250.RAF");
 }
+mod camera_x_h1_compressed {
+  super::camera_file_check!("Fujifilm", "X-H1", cam_fuji_xh1_compressed_raf, "compressed/fuji_xh1_compressed.RAF");
+}
 mod camera_x_h1_raw_modes {
   super::camera_file_check!("Fujifilm", "X-H1", cam_fuji_xh1_uncompressed_raf, "raw_modes/fuji_xh1_uncompressed.RAF");
 }
@@ -2085,8 +2121,14 @@ mod camera_x_m1_raw_modes {
 mod camera_x_pro1_raw_modes {
   super::camera_file_check!("Fujifilm", "X-Pro1", cam_x_pro1_iso_200_raf, "raw_modes/X-Pro1_ISO_200.RAF");
 }
+mod camera_x_pro2_compressed {
+  super::camera_file_check!("Fujifilm", "X-Pro2", cam_x_pro2_iso_500_bitdepth_14_26_mib_raf, "compressed/X-Pro2_ISO_500_Bitdepth_14_26 MiB.RAF");
+}
 mod camera_x_pro2_raw_modes {
   super::camera_file_check!("Fujifilm", "X-Pro2", cam_x_pro2_iso_500_bitdepth_14_48_mib_raf, "raw_modes/X-Pro2_ISO_500_Bitdepth_14_48 MiB.RAF");
+}
+mod camera_x_pro3_compressed {
+  super::camera_file_check!("Fujifilm", "X-Pro3", cam_x_pro3_iso_640_bitdepth_14_29_mib_raf, "compressed/X-Pro3_ISO_640_Bitdepth_14_29 MiB.RAF");
 }
 mod camera_x_pro3_raw_modes {
   super::camera_file_check!("Fujifilm", "X-Pro3", cam_x_pro3_iso_640_bitdepth_14_54_mib_raf, "raw_modes/X-Pro3_ISO_640_Bitdepth_14_54 MiB.RAF");
@@ -2096,6 +2138,10 @@ mod camera_xq1_raw_modes {
 }
 mod camera_xq2_raw_modes {
   super::camera_file_check!("Fujifilm", "XQ2", cam_xq2_iso_100_raf, "raw_modes/XQ2_ISO_100.RAF");
+}
+mod camera_x_s10_compressed {
+  super::camera_file_check!("Fujifilm", "X-S10", cam_fujifilm_x_s10_lossless_compressed_raf, "compressed/Fujifilm-X-S10-lossless-compressed.RAF");
+  super::camera_file_check!("Fujifilm", "X-S10", cam_fujifilm_x_s10_compressed_raf, "compressed/Fujifilm-X-S10-compressed.RAF");
 }
 mod camera_x_s10_raw_modes {
   super::camera_file_check!("Fujifilm", "X-S10", cam_fujifilm_x_s10_uncompressed_raf, "raw_modes/Fujifilm-X-S10-uncompressed.RAF");
@@ -2115,15 +2161,33 @@ mod camera_x_t1_raw_modes {
 mod camera_x_t200_raw_modes {
   super::camera_file_check!("Fujifilm", "X-T200", cam_x_t200_iso_200_raf, "raw_modes/X-T200_ISO_200.RAF");
 }
+mod camera_x_t20_compressed {
+  super::camera_file_check!("Fujifilm", "X-T20", cam_x_t20_iso_200_bitdepth_14_24_mib_raf, "compressed/X-T20_ISO_200_Bitdepth_14_24 MiB.RAF");
+}
 mod camera_x_t20_raw_modes {
   super::camera_file_check!("Fujifilm", "X-T20", cam_x_t20_iso_200_bitdepth_14_48_mib_raf, "raw_modes/X-T20_ISO_200_Bitdepth_14_48 MiB.RAF");
+}
+mod camera_x_t2_compressed {
+  super::camera_file_check!("Fujifilm", "X-T2", cam_x_t2_iso_400_bitdepth_14_22_mib_raf, "compressed/X-T2_ISO_400_Bitdepth_14_22 MiB.RAF");
 }
 mod camera_x_t2_raw_modes {
   super::camera_file_check!("Fujifilm", "X-T2", cam_x_t2_iso_200_bitdepth_14_48_mib_raf, "raw_modes/X-T2_ISO_200_Bitdepth_14_48 MiB.RAF");
 }
-mod camera_x_t30_ii_raw_modes {}
+mod camera_x_t30_compressed {
+  super::camera_file_check!("Fujifilm", "X-T30", cam_x_t30_iso_100_bitdepth_14_30_mib_raf, "compressed/X-T30_ISO_100_Bitdepth_14_30 MiB.RAF");
+}
+mod camera_x_t30_ii_compressed {
+  super::camera_file_check!("Fujifilm", "X-T30 II", cam_x_t30_ii_14_bits_lossy_raf, "compressed/X-T30-II-14-bits-lossy.RAF");
+  super::camera_file_check!("Fujifilm", "X-T30 II", cam_x_t30_ii_14_bits_lossless_raf, "compressed/X-T30-II-14-bits-lossless.RAF");
+}
+mod camera_x_t30_ii_raw_modes {
+  super::camera_file_check!("Fujifilm", "X-T30 II", cam_x_t30_ii_14_bits_uncompressed_raf, "raw_modes/X-T30-II-14-bits-uncompressed.RAF");
+}
 mod camera_x_t30_raw_modes {
   super::camera_file_check!("Fujifilm", "X-T30", cam_x_t30_iso_100_bitdepth_14_54_mib_raf, "raw_modes/X-T30_ISO_100_Bitdepth_14_54 MiB.RAF");
+}
+mod camera_x_t3_compressed {
+  super::camera_file_check!("Fujifilm", "X-T3", cam_x_t3_iso_160_bitdepth_14_26_mib_raf, "compressed/X-T3_ISO_160_Bitdepth_14_26 MiB.RAF");
 }
 mod camera_x_t3_raw_modes {
   super::camera_file_check!("Fujifilm", "X-T3", cam_x_t3_iso_160_bitdepth_14_53_mib_raf, "raw_modes/X-T3_ISO_160_Bitdepth_14_53 MiB.RAF");

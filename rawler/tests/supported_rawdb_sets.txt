@@ -506,14 +506,21 @@ cameras/Fujifilm/FinePix S9500/raw_modes
 cameras/Fujifilm/FinePix S9600/raw_modes
 cameras/Fujifilm/FinePix X100/raw_modes
 cameras/Fujifilm/FinePix X10/raw_modes
+cameras/Fujifilm/GFX 100/compressed
 cameras/Fujifilm/GFX 100/raw_modes
+cameras/Fujifilm/GFX100S/compressed
 cameras/Fujifilm/GFX100S/raw_modes
+cameras/Fujifilm/GFX 50R/compressed
 cameras/Fujifilm/GFX 50R/raw_modes
+cameras/Fujifilm/GFX 50S/compressed
+cameras/Fujifilm/GFX50S II/compressed
 cameras/Fujifilm/GFX50S II/raw_modes
 cameras/Fujifilm/GFX 50S/raw_modes
+cameras/Fujifilm/X100F/compressed
 cameras/Fujifilm/X100F/raw_modes
 cameras/Fujifilm/X100S/raw_modes
 cameras/Fujifilm/X100T/raw_modes
+cameras/Fujifilm/X100V/compressed
 cameras/Fujifilm/X100V/raw_modes
 cameras/Fujifilm/X20/raw_modes
 cameras/Fujifilm/X30/raw_modes
@@ -527,26 +534,37 @@ cameras/Fujifilm/X-A7/raw_modes
 cameras/Fujifilm/X-E1/raw_modes
 cameras/Fujifilm/X-E2/raw_modes
 cameras/Fujifilm/X-E2S/raw_modes
+cameras/Fujifilm/X-E3/compressed
 cameras/Fujifilm/X-E3/raw_modes
+cameras/Fujifilm/X-E4/compressed
 cameras/Fujifilm/X-E4/raw_modes
 cameras/Fujifilm/XF10/raw_modes
 cameras/Fujifilm/XF1/raw_modes
+cameras/Fujifilm/X-H1/compressed
 cameras/Fujifilm/X-H1/raw_modes
 cameras/Fujifilm/X-M1/raw_modes
 cameras/Fujifilm/X-Pro1/raw_modes
+cameras/Fujifilm/X-Pro2/compressed
 cameras/Fujifilm/X-Pro2/raw_modes
+cameras/Fujifilm/X-Pro3/compressed
 cameras/Fujifilm/X-Pro3/raw_modes
 cameras/Fujifilm/XQ1/raw_modes
 cameras/Fujifilm/XQ2/raw_modes
+cameras/Fujifilm/X-S10/compressed
 cameras/Fujifilm/X-S10/raw_modes
 cameras/Fujifilm/X-S1/raw_modes
 cameras/Fujifilm/X-T100/raw_modes
 cameras/Fujifilm/X-T10/raw_modes
 cameras/Fujifilm/X-T1/raw_modes
 cameras/Fujifilm/X-T200/raw_modes
+cameras/Fujifilm/X-T20/compressed
 cameras/Fujifilm/X-T20/raw_modes
+cameras/Fujifilm/X-T2/compressed
 cameras/Fujifilm/X-T2/raw_modes
+cameras/Fujifilm/X-T30/compressed
+cameras/Fujifilm/X-T30 II/compressed
 cameras/Fujifilm/X-T30 II/raw_modes
 cameras/Fujifilm/X-T30/raw_modes
+cameras/Fujifilm/X-T3/compressed
 cameras/Fujifilm/X-T3/raw_modes
 cameras/Fujifilm/X-T4/raw_modes

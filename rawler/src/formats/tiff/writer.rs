@@ -141,6 +141,18 @@ impl<'a, 'w> DirectoryWriter<'a, 'w> {
     Ok(())
   }
 
+  pub fn add_untyped_tag<V: Into<Value>>(&mut self, tag: u16, value: V) -> Result<()> {
+    self.entries.insert(
+      tag,
+      Entry {
+        tag,
+        value: value.into(),
+        embedded: None,
+      },
+    );
+    Ok(())
+  }
+
   pub fn add_tag_undefined<T: TiffTag>(&mut self, tag: T, data: Vec<u8>) -> Result<()> {
     let tag: u16 = tag.into();
     //let data = data.as_ref();

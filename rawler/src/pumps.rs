@@ -115,6 +115,28 @@ pub trait BitPump {
     let val = self.get_ibits(num);
     val.wrapping_shl(32 - num).wrapping_shr(32 - num)
   }
+
+  /// Count the leading zeroes block-wise in 31 bits
+  /// per block and returns the count.
+  /// All zero bits are consumed.
+  #[inline(always)]
+  fn consume_zerobits(&mut self) -> u32 {
+    // Take one bit less because leading_zeros() is undefined
+    // when all bits in register are zero.
+    const BITS_PER_LOOP: u32 = u32::BITS - 1;
+    let mut count = 0;
+    // Count-and-skip all the leading `0`s.
+    loop {
+      let batch: u32 = (self.peek_bits(BITS_PER_LOOP) << 1) | 0x1;
+      let n = batch.leading_zeros();
+      self.consume_bits(n);
+      count += n;
+      if n != BITS_PER_LOOP {
+        break;
+      }
+    }
+    count
+  }
 }
 
 impl<'a> BitPump for BitPumpLSB<'a> {
