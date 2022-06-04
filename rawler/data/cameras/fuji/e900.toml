@@ -1,0 +1,15 @@
+make = "FUJIFILM"
+model = "FinePix E900"
+clean_make = "Fujifilm"
+clean_model = "FinePix E900"
+blackpoint = 0
+whitepoint = 15564
+color_pattern = "GBRG"
+hints = ["fuji_rotation"]
+
+active_area = [0, 0, 0, 0]
+crop_area = [20, 7, 20, 7]
+
+[cameras.color_matrix]
+A = [0.9959, -0.3669, -0.0433, -0.5419, 1.2525, 0.3273, -0.1267, 0.184, 0.8407]
+D65 = [0.9183, -0.2526, -0.1078, -0.7461, 1.5071, 0.2574, -0.2023, 0.244, 0.8638]

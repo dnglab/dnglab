@@ -1,0 +1,15 @@
+make = "FUJIFILM"
+model = "FinePix HS10 HS11"
+clean_make = "Fujifilm"
+clean_model = "FinePix HS10 HS11"
+blackpoint = 50
+whitepoint = 3900
+color_pattern = "BGGR"
+hints = ["jpeg32"]
+
+active_area = [0, 0, 0, 0]
+crop_area = [0, 0, 16, 6]
+
+[cameras.color_matrix]
+A = [1.2397, -0.4533, -0.0514, -0.0873, 0.9115, 0.2093, 0.0217, 0.1135, 0.4851]
+D65 = [1.244, -0.3954, -0.1183, -0.1123, 0.9674, 0.1708, -0.0083, 0.1614, 0.4086]

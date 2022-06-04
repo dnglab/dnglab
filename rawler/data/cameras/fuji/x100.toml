@@ -1,0 +1,12 @@
+make = "FUJIFILM"
+model = "FinePix X100"
+clean_make = "Fujifilm"
+clean_model = "FinePix X100"
+blackpoint = 254
+whitepoint = 4000
+color_pattern = "RGGB"
+active_area = [68, 0, 70, 0]
+
+[cameras.color_matrix]
+A = [1.3589, -0.6494, -0.0148, -0.4182, 1.1567, 0.2988, -0.0277, 0.0888, 0.7616]
+D65 = [1.2161, -0.4457, -0.1069, -0.5034, 1.2874, 0.24, -0.0795, 0.1724, 0.6904]

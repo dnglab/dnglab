@@ -1,0 +1,12 @@
+make = "FUJIFILM"
+model = "DBP for GX680"
+clean_make = "Fujifilm"
+clean_model = "DBP for GX680"
+blackpoint = 128
+whitepoint = 4095
+color_pattern = "GBRG"
+active_area = [0, 0, 0, 0]
+hints = ["fuji_rotation_alt"]
+
+[cameras.color_matrix]
+D65 = [1.2407, -0.5222, -0.1086, -0.2971, 1.1116, 0.212, -0.0294, 0.1029, 0.5284]

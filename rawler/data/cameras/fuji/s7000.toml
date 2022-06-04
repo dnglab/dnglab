@@ -1,0 +1,14 @@
+make = "FUJIFILM"
+model = "FinePix S7000"
+clean_make = "Fujifilm"
+clean_model = "FinePix S7000"
+blackpoint = 0
+whitepoint = 15564
+color_pattern = "GBRG"
+hints = ["fuji_rotation"]
+active_area = [0, 0, 0, 0]
+crop_area = [20, 12, 20, 12]
+
+[cameras.color_matrix]
+A = [1.1722, -0.5492, -0.022, -0.5383, 1.2732, 0.298, -0.1296, 0.1807, 0.7597]
+D65 = [1.019, -0.3506, -0.1312, -0.7153, 1.5051, 0.2238, -0.2004, 0.2398, 0.7505]

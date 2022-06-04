@@ -184,7 +184,7 @@ impl<'a> Decoder for Rw2Decoder<'a> {
   fn full_image(&self, _file: &mut RawFile) -> Result<Option<DynamicImage>> {
     if let Some(data) = self.tiff.get_entry(PanasonicTag::JpegData) {
       let buf = data.get_data();
-      let img = image::load_from_memory_with_format(&buf, image::ImageFormat::Jpeg)
+      let img = image::load_from_memory_with_format(buf, image::ImageFormat::Jpeg)
         .map_err(|e| RawlerError::General(format!("Unable to load jpeg preview: {:?}", e)))?;
       return Ok(Some(img));
     }

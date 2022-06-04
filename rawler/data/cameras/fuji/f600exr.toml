@@ -1,0 +1,12 @@
+make = "FUJIFILM"
+model = "FinePix F600EXR"
+clean_make = "Fujifilm"
+clean_model = "FinePix F600EXR"
+blackpoint = 256
+whitepoint = 3900
+color_pattern = "RGGB"
+active_area = [34, 0, 32, 0]
+
+[cameras.color_matrix]
+A = [1.4143, -0.6562, -0.059, -0.2896, 1.0673, 0.2569, 0.0255, 0.0893, 0.5002]
+D65 = [1.369, -0.5358, -0.1474, -0.3369, 1.16, 0.1998, -0.0132, 0.1554, 0.4395]

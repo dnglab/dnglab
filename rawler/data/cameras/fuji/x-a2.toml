@@ -1,0 +1,12 @@
+make = "FUJIFILM"
+model = "X-A2"
+clean_make = "Fujifilm"
+clean_model = "X-A2"
+blackpoint = 256
+whitepoint = 4094
+color_pattern = "RGGB"
+active_area = [0, 0, 168, 0]
+
+[cameras.color_matrix]
+A = [1.2721, -0.69, 0.032, -0.3619, 1.1376, 0.2562, -0.0342, 0.0808, 0.6972]
+D65 = [1.0763, -0.456, -0.0917, -0.3346, 1.1311, 0.2322, -0.0475, 0.1135, 0.5843]

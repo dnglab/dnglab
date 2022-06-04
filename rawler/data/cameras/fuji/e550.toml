@@ -1,0 +1,16 @@
+make = "FUJIFILM"
+model = "FinePix E550"
+clean_make = "Fujifilm"
+clean_model = "FinePix E550"
+blackpoint = 0
+whitepoint = 15875
+color_pattern = "GBRG"
+hints = ["fuji_rotation"]
+active_area = [0, 0, 0, 0]
+
+#crop_area = [20, 12, 20, 12]
+
+
+[cameras.color_matrix]
+A = [1.2997, -0.6125, 0.0222, -0.5472, 1.2852, 0.2939, -0.0796, 0.1547, 0.7921]
+D65 = [1.1044, -0.3888, -0.112, -0.7248, 1.5167, 0.2208, -0.1531, 0.2276, 0.8069]

@@ -1,0 +1,12 @@
+make = "FUJIFILM"
+model = "X100V"
+clean_make = "Fujifilm"
+clean_model = "X100V"
+blackpoint = 1024
+whitepoint = 16383
+color_pattern = "GGRGGBGGBGGRBRGRBGGGBGGRGGRGGBRBGBRG"
+active_area = [0, 5, 132, 1]
+
+[cameras.color_matrix]
+A = [1.7835, -1.1702, 0.1616, -0.2581, 1.0513, 0.2395, 0.0196, 0.032, 0.6444]
+D65 = [1.3717, -0.649, -0.1154, -0.4348, 1.2266, 0.2335, -0.069, 0.1286, 0.6134]

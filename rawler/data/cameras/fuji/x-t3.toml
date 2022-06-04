@@ -1,0 +1,12 @@
+make = "FUJIFILM"
+model = "X-T3"
+clean_make = "Fujifilm"
+clean_model = "X-T3"
+blackpoint = 1024
+whitepoint = 16383
+color_pattern = "GGRGGBGGBGGRBRGRBGGGBGGRGGRGGBRBGBRG"
+active_area = [0, 5, 132, 1]
+
+[cameras.color_matrix]
+A = [1.6064, -0.9942, 0.112, -0.376, 1.2096, 0.1853, -0.0007, 0.0545, 0.6654]
+D65 = [1.3426, -0.6334, -0.1177, -0.4244, 1.2136, 0.2371, -0.058, 0.1303, 0.598]

@@ -1,0 +1,12 @@
+make = "FUJIFILM"
+model = "X-E3"
+clean_make = "Fujifilm"
+clean_model = "X-E3"
+blackpoint = 1023
+whitepoint = 16383
+color_pattern = "RBGBRGGGRGGBGGBGGRBRGRBGGGBGGRGGRGGB"
+active_area = [0, 0, 130, 0]
+
+[cameras.color_matrix]
+A = [1.339, -0.731, 0.0216, -0.3983, 1.1994, 0.2238, -0.0435, 0.1035, 0.6328]
+D65 = [1.1434, -0.4948, -0.121, -0.3746, 1.2042, 0.1903, -0.0666, 0.1479, 0.5235]

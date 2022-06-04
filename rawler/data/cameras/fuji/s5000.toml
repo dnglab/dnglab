@@ -1,0 +1,15 @@
+make = "FUJIFILM"
+model = "FinePix S5000"
+clean_make = "Fujifilm"
+clean_model = "FinePix S5000"
+blackpoint = 0
+whitepoint = 15866
+color_pattern = "GBRG"
+hints = ["fuji_rotation"]
+
+active_area = [0, 0, 0, 0]
+crop_area = [16, 8, 16, 8]
+
+[cameras.color_matrix]
+A = [0.9623, -0.3885, -0.0342, -0.549, 1.2863, 0.2947, -0.0959, 0.1637, 0.6933]
+D65 = [0.8754, -0.2733, -0.1019, -0.7204, 1.5069, 0.2276, -0.1702, 0.2334, 0.6982]

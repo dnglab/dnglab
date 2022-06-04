@@ -1,0 +1,14 @@
+make = "FUJIFILM"
+model = "FinePixS2Pro"
+clean_make = "Fujifilm"
+clean_model = "FinePix S2Pro"
+blackpoint = 126
+whitepoint = 4095
+color_pattern = "GBRG"
+hints = ["fuji_rotation_alt"]
+active_area = [0, 0, 0, 0]
+crop_area = [18, 7, 14, 8]
+
+[cameras.color_matrix]
+A = [1.4449, -0.7082, -0.0021, -0.7007, 1.4807, 0.2364, -0.0943, 0.1521, 0.7891]
+D65 = [1.2741, -0.4916, -0.142, -0.851, 1.6791, 0.1715, -0.1767, 0.2302, 0.7771]

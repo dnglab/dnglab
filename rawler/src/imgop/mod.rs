@@ -234,3 +234,16 @@ pub fn crop<T: Clone>(input: &[T], dim: Dim2, area: Rect) -> Vec<T> {
   );
   output
 }
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[test]
+  fn rect_from_points() -> std::result::Result<(), Box<dyn std::error::Error>> {
+    let rect1 = Rect::new(Point::new(0, 0), Dim2::new(1, 1));
+    let rect2 = Rect::new_with_points(Point::new(0, 0), Point::new(1, 1));
+    assert_eq!(rect1, rect2);
+    Ok(())
+  }
+}

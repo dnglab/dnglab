@@ -27,6 +27,22 @@ pub fn clamp(val: i32, min: i32, max: i32) -> i32 {
   res
 }
 
+/// Calculate the required bits to encode as many states.
+pub fn log2ceil(mut states: usize) -> usize {
+  let mut bits = 0;
+  if states > 0 {
+    states -= 1;
+    loop {
+      states >>= 1;
+      bits += 1;
+      if states == 0 {
+        break;
+      }
+    }
+  }
+  bits
+}
+
 #[derive(Debug, Copy, Clone, PartialEq, Serialize, Deserialize)]
 pub enum Endian {
   Big,
