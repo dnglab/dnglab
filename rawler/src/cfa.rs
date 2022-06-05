@@ -57,8 +57,9 @@ pub struct CFA {
   pub width: usize,
   /// Height of the repeating pattern
   pub height: usize,
-
-  pattern: [[usize; 48]; 48],
+  // Actual pattern. We use u8 here because usize would blow
+  // the stack usage and we don't need that much bits.
+  pattern: [[u8; 48]; 48],
 }
 
 impl Default for CFA {
@@ -99,7 +100,7 @@ impl CFA {
       144 => (12, 12),
       _ => panic!("Unknown CFA size \"{}\"", patname),
     };
-    let mut pattern: [[usize; 48]; 48] = [[0; 48]; 48];
+    let mut pattern: [[u8; 48]; 48] = [[0; 48]; 48];
 
     if width > 0 {
       // copy the pattern into the top left
@@ -138,7 +139,7 @@ impl CFA {
   /// This is useful if you need to remap RGB to R G1 G2 B.
   pub fn map_colors<F>(&self, op: F) -> Self
   where
-    F: Fn(usize, usize, usize) -> usize, // row, col, color -> new-color
+    F: Fn(usize, usize, u8) -> u8, // row, col, color -> new-color
   {
     let mut copy = self.clone();
     for row in 0..48 {
@@ -152,12 +153,12 @@ impl CFA {
   /// Get the color index at the given position. Designed to be fast so it can be called
   /// from inner loops without performance issues.
   pub fn color_at(&self, row: usize, col: usize) -> usize {
-    self.pattern[(row + 48) % 48][(col + 48) % 48]
+    self.pattern[(row + 48) % 48][(col + 48) % 48] as usize
   }
 
   /// from inner loops without performance issues.
   pub fn cfa_color_at(&self, row: usize, col: usize) -> CFAColor {
-    self.pattern[(row + 48) % 48][(col + 48) % 48].try_into().unwrap()
+    (self.pattern[(row + 48) % 48][(col + 48) % 48] as usize).try_into().unwrap()
   }
 
   /// Get a flat pattern
@@ -218,10 +219,10 @@ impl CFA {
   /// assert_eq!(shifted.color_at(1,1), 0);
   /// ```
   pub fn shift(&self, x: usize, y: usize) -> CFA {
-    let mut pattern: [[usize; 48]; 48] = [[0; 48]; 48];
+    let mut pattern: [[u8; 48]; 48] = [[0; 48]; 48];
     for row in 0..48 {
       for col in 0..48 {
-        pattern[row][col] = self.color_at(row + y, col + x);
+        pattern[row][col] = self.color_at(row + y, col + x) as u8;
       }
     }
 
