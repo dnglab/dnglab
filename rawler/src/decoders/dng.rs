@@ -56,7 +56,7 @@ impl<'a> Decoder for DngDecoder<'a> {
       cam.clean_model = known_cam.clean_model;
     }
 
-    let mut image = RawImage::new(cam, width, height, cpp, self.get_wb()?, image.into_inner(), false);
+    let mut image = RawImage::new(cam, cpp, self.get_wb()?, image, false);
     image.orientation = orientation;
 
     Ok(image)

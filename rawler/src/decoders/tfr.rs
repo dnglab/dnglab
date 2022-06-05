@@ -80,7 +80,7 @@ impl<'a> Decoder for TfrDecoder<'a> {
 
     let cpp = 1;
 
-    let mut img = RawImage::new(self.camera.clone(), width, height, cpp, self.get_wb()?, image.into_inner(), dummy);
+    let mut img = RawImage::new(self.camera.clone(), cpp, self.get_wb()?, image, dummy);
 
     img.blacklevels = [black, black, black, black];
     img.whitelevels = [white, white, white, white];

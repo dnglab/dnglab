@@ -235,7 +235,8 @@ impl<'a> Decoder for Cr2Decoder<'a> {
 
     let wb = self.get_wb(file, camera)?;
     debug!("CR2 WB: {:?}", wb);
-    let mut img = RawImage::new(camera.clone(), width, height, cpp, wb, image.into_inner(), dummy);
+    assert_eq!(image.width, width * cpp);
+    let mut img = RawImage::new(camera.clone(), cpp, wb, image, dummy);
 
     img.crop_area = Some(self.get_sensor_area(camera, width, height)?);
     if let Some(forced_area) = camera.crop_area {

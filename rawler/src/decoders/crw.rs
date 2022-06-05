@@ -75,19 +75,19 @@ impl<'a> CrwDecoder<'a> {
 
 impl<'a> Decoder for CrwDecoder<'a> {
   fn raw_image(&self, file: &mut RawFile, _params: RawDecodeParams, dummy: bool) -> Result<RawImage> {
-    let (width, height, image) = if self.camera.model == "Canon PowerShot Pro70" {
+    let image = if self.camera.model == "Canon PowerShot Pro70" {
       let src = file.subview_until_eof(26).unwrap();
-      (1552, 1024, decode_10le_lsb16(&src, 1552, 1024, dummy))
+      decode_10le_lsb16(&src, 1552, 1024, dummy)
     } else {
       let sensorinfo = fetch_ciff_tag!(self.ciff, CiffTag::SensorInfo);
       let width = sensorinfo.get_usize(1);
       let height = sensorinfo.get_usize(2);
-      (width, height, self.decode_compressed(file, width, height, dummy)?)
+      self.decode_compressed(file, width, height, dummy)?
     };
 
     let wb = self.get_wb()?;
     let cpp = 1;
-    ok_image(self.camera.clone(), width, height, cpp, wb, image.into_inner())
+    ok_image(self.camera.clone(), cpp, wb, image)
   }
 
   fn format_dump(&self) -> FormatDump {

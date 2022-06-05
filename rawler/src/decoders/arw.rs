@@ -161,7 +161,7 @@ impl<'a> Decoder for ArwDecoder<'a> {
     //assert!(params.whitelevel.is_some());
     let cpp = 1;
 
-    let mut img = RawImage::new(self.camera.clone(), width, height, cpp, params.wb, image.into_inner(), dummy);
+    let mut img = RawImage::new(self.camera.clone(), cpp, params.wb, image, dummy);
 
     img.blacklevels = black;
     img.whitelevels = white;
@@ -313,7 +313,7 @@ impl<'a> ArwDecoder<'a> {
     }
 
     let cpp = 1;
-    ok_image(self.camera.clone(), width, height, cpp, normalize_wb(wb_coeffs), image.into_inner())
+    ok_image(self.camera.clone(), cpp, normalize_wb(wb_coeffs), image)
   }
 
   fn image_srf(&self, file: &mut RawFile, dummy: bool) -> Result<RawImage> {
@@ -348,7 +348,7 @@ impl<'a> ArwDecoder<'a> {
       decode_16be(&image_data, width, height, dummy)
     };
     let cpp = 1;
-    ok_image(self.camera.clone(), width, height, cpp, [NAN, NAN, NAN, NAN], image.into_inner())
+    ok_image(self.camera.clone(), cpp, [NAN, NAN, NAN, NAN], image)
   }
 
   pub(crate) fn decode_arw1(buf: &[u8], width: usize, height: usize, dummy: bool) -> PixU16 {

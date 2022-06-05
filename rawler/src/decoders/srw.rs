@@ -113,15 +113,7 @@ impl<'a> Decoder for SrwDecoder<'a> {
       }
     };
     let cpp = 1;
-    ok_image_with_blacklevels(
-      self.camera.clone(),
-      width,
-      height,
-      cpp,
-      self.get_wb()?,
-      self.get_blacklevel()?,
-      image.into_inner(),
-    )
+    ok_image_with_blacklevels(self.camera.clone(), cpp, self.get_wb()?, self.get_blacklevel()?, image)
   }
 
   fn format_dump(&self) -> FormatDump {

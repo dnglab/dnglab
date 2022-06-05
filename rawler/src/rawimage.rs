@@ -11,6 +11,7 @@ use crate::{
     xyz::{FlatColorMatrix, Illuminant},
     Dim2, Point, Rect,
   },
+  pixarray::PixU16,
   tags::TiffTag,
   CFA,
 };
@@ -105,7 +106,7 @@ impl RawImage {
   }
 
   #[doc(hidden)]
-  pub fn new(cam: Camera, width: usize, height: usize, cpp: usize, wb_coeffs: [f32; 4], image: Vec<u16>, dummy: bool) -> RawImage {
+  pub fn new(cam: Camera, cpp: usize, wb_coeffs: [f32; 4], image: PixU16, dummy: bool) -> RawImage {
     /*
     let (width, height, image) = if let Some(crops) = &cam.crops {
       let crops = Rect::new_with_borders(Dim2::new(width, height), crops);
@@ -126,7 +127,9 @@ impl RawImage {
 
     let mut blackareas: Vec<Rect> = Vec::new();
 
-    let active_area = cam.active_area.map(|area| Rect::new_with_borders(Dim2::new(width, height), &area));
+    let active_area = cam
+      .active_area
+      .map(|area| Rect::new_with_borders(Dim2::new(image.width / cpp, image.height), &area));
 
     if let Some(active) = active_area {
       // Build black areas
@@ -139,25 +142,28 @@ impl RawImage {
     }
 
     let blacks = if !dummy {
-      Self::calc_black_levels(&cam, &blackareas, width, height, &image).unwrap_or(cam.blacklevels)
+      Self::calc_black_levels(&cam, &blackareas, image.width, image.height, image.pixels()).unwrap_or(cam.blacklevels)
     } else {
       cam.blacklevels
     };
 
-    let crop_area = cam.crop_area.map(|area| Rect::new_with_borders(Dim2::new(width, height), &area));
+    let crop_area = cam
+      .crop_area
+      .map(|area| Rect::new_with_borders(Dim2::new(image.width / cpp, image.height), &area));
 
+    assert_eq!(image.width % cpp, 0);
     RawImage {
       camera: cam.clone(),
       make: cam.make.clone(),
       model: cam.model.clone(),
       clean_make: cam.clean_make.clone(),
       clean_model: cam.clean_model.clone(),
-      width,
-      height,
+      width: image.width / cpp,
+      height: image.height,
       cpp,
       bps: cam.real_bps,
       wb_coeffs,
-      data: RawImageData::Integer(image),
+      data: RawImageData::Integer(image.into_inner()),
       blacklevels: blacks,
       whitelevels: cam.whitelevels,
       xyz_to_cam: cam.xyz_to_cam,

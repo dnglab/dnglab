@@ -164,7 +164,7 @@ impl<'a> Decoder for Rw2Decoder<'a> {
     let blacks = self.get_blacklevel()?.unwrap_or(self.camera.blacklevels);
     let cpp = 1;
 
-    let mut img = RawImage::new(self.camera.clone(), width, height, cpp, normalize_wb(self.get_wb()?), image.into_inner(), false);
+    let mut img = RawImage::new(self.camera.clone(), cpp, normalize_wb(self.get_wb()?), image, false);
 
     img.blacklevels = blacks;
     if let Some(cfa) = self.get_cfa()? {

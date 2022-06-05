@@ -65,7 +65,7 @@ impl<'a> Decoder for ErfDecoder<'a> {
     let image = decode_12be_wcontrol(&src, width, height, dummy);
     let cpp = 1;
 
-    let mut img = RawImage::new(self.camera.clone(), width, height, cpp, self.get_wb()?, image.into_inner(), dummy);
+    let mut img = RawImage::new(self.camera.clone(), cpp, self.get_wb()?, image, dummy);
     if let Some(blacklevel) = self.get_blacklevel() {
       img.blacklevels = blacklevel;
     }

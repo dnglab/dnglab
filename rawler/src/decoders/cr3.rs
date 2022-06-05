@@ -271,13 +271,17 @@ impl<'a> Decoder for Cr3Decoder<'a> {
     }
 
     let image = if !dummy {
-      decompress_crx_image(&buf, cmp1).map_err(|e| format!("Failed to decode raw: {}", e))?
+      PixU16::new_with(
+        decompress_crx_image(&buf, cmp1).map_err(|e| format!("Failed to decode raw: {}", e))?,
+        cmp1.f_width as usize,
+        cmp1.f_height as usize,
+      )
     } else {
-      Vec::new()
+      PixU16::new_uninit(cmp1.f_width as usize, cmp1.f_height as usize)
     };
 
     let cpp = 1;
-    let mut img = RawImage::new(self.camera.clone(), cmp1.f_width as usize, cmp1.f_height as usize, cpp, wb, image, dummy);
+    let mut img = RawImage::new(self.camera.clone(), cpp, wb, image, dummy);
     img.blacklevels = cr3md.blacklevels.unwrap_or([0, 0, 0, 0]);
     img.whitelevels = [whitelevel, whitelevel, whitelevel, whitelevel];
 

@@ -54,7 +54,7 @@ impl<'a> Decoder for AriDecoder<'a> {
     };
 
     let cpp = 1;
-    ok_image(self.camera.clone(), width, height, cpp, self.get_wb(file)?, image.into_inner())
+    ok_image(self.camera.clone(), cpp, self.get_wb(file)?, image)
   }
 
   fn format_dump(&self) -> crate::analyze::FormatDump {

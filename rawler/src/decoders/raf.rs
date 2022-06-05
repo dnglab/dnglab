@@ -328,15 +328,7 @@ impl<'a> Decoder for RafDecoder<'a> {
       } else {
         self.rotate_image(image.pixels(), &self.camera, width, height, dummy)?
       };
-      let mut image = RawImage::new(
-        self.camera.clone(),
-        rotated.width,
-        rotated.height,
-        cpp,
-        normalize_wb(self.get_wb()?),
-        rotated.into_inner(),
-        dummy,
-      );
+      let mut image = RawImage::new(self.camera.clone(), cpp, normalize_wb(self.get_wb()?), rotated, dummy);
       image.cfa = corrected_cfa;
       image.blacklevels = [blacks[0]; 4]; // TODO
 
@@ -357,15 +349,7 @@ impl<'a> Decoder for RafDecoder<'a> {
       //ok_image(self.camera.clone(), width, height, cpp, self.get_wb()?, image.into_inner())
 
       // TODO: remove width height from new()!!!!
-      let mut image = RawImage::new(
-        self.camera.clone(),
-        image.width,
-        image.height,
-        cpp,
-        normalize_wb(self.get_wb()?),
-        image.into_inner(),
-        dummy,
-      );
+      let mut image = RawImage::new(self.camera.clone(), cpp, normalize_wb(self.get_wb()?), image, dummy);
 
       image.cfa = corrected_cfa;
       image.blacklevels = [blacks[0]; 4]; // TODO

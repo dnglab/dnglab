@@ -131,7 +131,7 @@ impl<'a> Decoder for X3fDecoder<'a> {
     };
 
     let cpp = 3;
-    Ok(RawImage::new(camera, width, height, cpp, self.get_wb()?, image, dummy))
+    Ok(RawImage::new(camera, cpp, self.get_wb()?, image, dummy))
   }
 
   fn format_dump(&self) -> FormatDump {
@@ -148,7 +148,7 @@ impl<'a> X3fDecoder<'a> {
     Ok([NAN, NAN, NAN, NAN])
   }
 
-  fn decode_compressed(&self, _buf: &[u8], _width: usize, _height: usize, _dummy: bool) -> Result<Vec<u16>> {
+  fn decode_compressed(&self, _buf: &[u8], _width: usize, _height: usize, _dummy: bool) -> Result<PixU16> {
     Err("X3F decoding not implemented yet".into())
   }
 }

@@ -181,7 +181,7 @@ impl<'a> Decoder for OrfDecoder<'a> {
 
     let cpp = 1;
 
-    let mut img = RawImage::new(camera, width, height, cpp, normalize_wb(self.get_wb()?), image.into_inner(), dummy);
+    let mut img = RawImage::new(camera, cpp, normalize_wb(self.get_wb()?), image, dummy);
     if let Ok(black) = self.get_blacks() {
       img.blacklevels = black;
     }

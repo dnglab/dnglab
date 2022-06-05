@@ -265,7 +265,8 @@ impl<'a> Decoder for NefDecoder<'a> {
       return Err(RawlerError::unsupported(&self.camera, format!("NEF: Don't know compression {}", compression)));
     };
 
-    let mut img = RawImage::new(self.camera.clone(), width, height, cpp, coeffs, image.into_inner(), false);
+    assert_eq!(image.width, width * cpp);
+    let mut img = RawImage::new(self.camera.clone(), cpp, coeffs, image, false);
 
     if let Some(crop) = self.get_crop()? {
       debug!("RAW Crops: {:?}", crop);

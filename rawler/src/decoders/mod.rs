@@ -275,35 +275,18 @@ impl Orientation {
   }
 }
 
-pub fn ok_image(camera: Camera, width: usize, height: usize, cpp: usize, wb_coeffs: [f32; 4], image: Vec<u16>) -> Result<RawImage> {
-  Ok(RawImage::new(camera, width, height, cpp, wb_coeffs, image, false))
+pub fn ok_image(camera: Camera, cpp: usize, wb_coeffs: [f32; 4], image: PixU16) -> Result<RawImage> {
+  Ok(RawImage::new(camera, cpp, wb_coeffs, image, false))
 }
 
-pub fn ok_image_with_blacklevels(
-  camera: Camera,
-  width: usize,
-  height: usize,
-  cpp: usize,
-  wb_coeffs: [f32; 4],
-  blacks: [u16; 4],
-  image: Vec<u16>,
-) -> Result<RawImage> {
-  let mut img = RawImage::new(camera, width, height, cpp, wb_coeffs, image, false);
+pub fn ok_image_with_blacklevels(camera: Camera, cpp: usize, wb_coeffs: [f32; 4], blacks: [u16; 4], image: PixU16) -> Result<RawImage> {
+  let mut img = RawImage::new(camera, cpp, wb_coeffs, image, false);
   img.blacklevels = blacks;
   Ok(img)
 }
 
-pub fn ok_image_with_black_white(
-  camera: Camera,
-  width: usize,
-  height: usize,
-  cpp: usize,
-  wb_coeffs: [f32; 4],
-  black: u16,
-  white: u16,
-  image: Vec<u16>,
-) -> Result<RawImage> {
-  let mut img = RawImage::new(camera, width, height, cpp, wb_coeffs, image, false);
+pub fn ok_image_with_black_white(camera: Camera, cpp: usize, wb_coeffs: [f32; 4], black: u16, white: u16, image: PixU16) -> Result<RawImage> {
+  let mut img = RawImage::new(camera, cpp, wb_coeffs, image, false);
   img.blacklevels = [black, black, black, black];
   img.whitelevels = [white, white, white, white];
   Ok(img)

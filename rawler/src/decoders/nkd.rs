@@ -39,7 +39,7 @@ impl<'a> Decoder for NakedDecoder<'a> {
       }
     };
     let cpp = 1;
-    ok_image(self.camera.clone(), width, height, cpp, [NAN, NAN, NAN, NAN], image.into_inner())
+    ok_image(self.camera.clone(), cpp, [NAN, NAN, NAN, NAN], image)
   }
 
   fn format_dump(&self) -> FormatDump {
