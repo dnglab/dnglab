@@ -1,0 +1,85 @@
+---
+file:
+  fileSize: 19344848
+  fileName: XZ-10_ISO_100.ORF
+  digest: 7166304fba5245ce73285969a56befc3
+data:
+  metadata:
+    rawParams:
+      rawWidth: 3984
+      rawHeight: 2990
+      bitDepth: 16
+      crops:
+        p:
+          x: 8
+          y: 14
+        d:
+          w: 3968
+          h: 2976
+      blacklevels:
+        - 200
+        - 200
+        - 200
+        - 200
+      whitelevels:
+        - 3900
+        - 3900
+        - 3900
+        - 3900
+      wbCoeffs:
+        - 1.9804688
+        - 1.0
+        - 1.7109375
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 6
+        copyright: ""
+        artist: ""
+        lens_spec: ~
+        exposure_time: 10/20000
+        fnumber: 26/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 100
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: 1
+        exposure_bias: 0/10
+        date_time_original: "2016:01:24 15:48:29"
+        create_date: "2016:01:24 15:48:29"
+        modify_date: "2016:01:24 15:48:29"
+        exposure_program: 3
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: ~
+        max_aperture_value: 170/100
+        subject_distance: ~
+        metering_mode: 2
+        light_source: 0
+        flash: 16
+        focal_length: 190/10
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: XZ-10
+      make: Olympus
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

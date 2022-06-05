@@ -1,0 +1,106 @@
+---
+file:
+  fileSize: 20611072
+  fileName: ILCE-5000_ISO_100_12bits_Sony ARW Compressed.ARW
+  digest: 4662f3454e9ec27bcd29744cc3a3a96a
+data:
+  metadata:
+    rawParams:
+      rawWidth: 5504
+      rawHeight: 3656
+      bitDepth: 16
+      crops:
+        p:
+          x: 8
+          y: 12
+        d:
+          w: 5456
+          h: 3632
+      blacklevels:
+        - 512
+        - 512
+        - 512
+        - 512
+      whitelevels:
+        - 15360
+        - 15360
+        - 15360
+        - 15360
+      wbCoeffs:
+        - 2.703125
+        - 1.0
+        - 1.4101562
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ~
+        artist: ~
+        lens_spec:
+          - 55/1
+          - 210/1
+          - 45/10
+          - 63/10
+        exposure_time: 1/125
+        fnumber: 71/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 100
+        iso_speed: ~
+        recommended_exposure_index: 100
+        sensitivity_type: 2
+        exposure_bias: 10/10
+        date_time_original: "2017:02:01 11:36:20"
+        create_date: "2017:02:01 11:36:20"
+        modify_date: "2017:02:01 11:36:20"
+        exposure_program: 3
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: ~
+        max_aperture_value: 1272/256
+        subject_distance: ~
+        metering_mode: 5
+        light_source: 255
+        flash: 16
+        focal_length: 1030/10
+        image_number: ~
+        color_space: 65535
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 1
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: Sony
+        lens_model: E 55-210mm F4.5-6.3 OSS
+        gps: ~
+      model: ILCE-5000
+      make: Sony
+      lens:
+        identifiers:
+          name: ~
+          id:
+            - 32786
+            - 0
+          nikon_id: ~
+          olympus_id: ~
+        mount: e-mount
+        lens_make: Sony
+        lens_model: E 55-210mm F4.5-6.3 OSS
+        focal_range:
+          - 55/1
+          - 210/1
+        aperture_range:
+          - 45/10
+          - 63/10
+        lens_name: Sony E 55-210mm F4.5-6.3 OSS
+      unique_image_id: ~
+      rating: ~
+

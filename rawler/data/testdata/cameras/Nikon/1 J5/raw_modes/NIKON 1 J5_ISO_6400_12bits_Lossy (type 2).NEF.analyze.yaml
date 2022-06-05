@@ -1,0 +1,85 @@
+---
+file:
+  fileSize: 25294308
+  fileName: NIKON 1 J5_ISO_6400_12bits_Lossy (type 2).NEF
+  digest: 0f30d0871a1eb61d51b53aafb369fa08
+data:
+  metadata:
+    rawParams:
+      rawWidth: 5584
+      rawHeight: 3726
+      bitDepth: 16
+      crops:
+        p:
+          x: 8
+          y: 7
+        d:
+          w: 5568
+          h: 3712
+      blacklevels:
+        - 200
+        - 200
+        - 200
+        - 200
+      whitelevels:
+        - 3800
+        - 3800
+        - 3800
+        - 3800
+      wbCoeffs:
+        - 2.1835938
+        - 1.0
+        - 1.5195312
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ~
+        artist: ~
+        lens_spec: ~
+        exposure_time: 10/5000
+        fnumber: 0/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 6400
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: 2
+        exposure_bias: 0/6
+        date_time_original: "2015:10:27 10:31:19"
+        create_date: "2015:10:27 10:31:19"
+        modify_date: "2015:10:27 10:31:19"
+        exposure_program: 1
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: "89"
+        sub_sec_time_original: "89"
+        sub_sec_time_digitized: "89"
+        shutter_speed_value: ~
+        max_aperture_value: 0/10
+        subject_distance: ~
+        metering_mode: 2
+        light_source: 0
+        flash: 0
+        focal_length: 0/10
+        image_number: ~
+        color_space: ~
+        flash_energy: ~
+        exposure_mode: 1
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: 0
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: 1 J5
+      make: Nikon
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

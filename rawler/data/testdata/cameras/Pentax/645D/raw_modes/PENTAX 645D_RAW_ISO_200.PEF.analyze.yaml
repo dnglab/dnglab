@@ -1,0 +1,106 @@
+---
+file:
+  fileSize: 62811123
+  fileName: PENTAX 645D_RAW_ISO_200.PEF
+  digest: b40805248e6d0fa4214308d70466a5a4
+data:
+  metadata:
+    rawParams:
+      rawWidth: 7424
+      rawHeight: 5552
+      bitDepth: 16
+      crops:
+        p:
+          x: 80
+          y: 59
+        d:
+          w: 7264
+          h: 5440
+      blacklevels:
+        - 0
+        - 0
+        - 0
+        - 0
+      whitelevels:
+        - 15767
+        - 15767
+        - 15767
+        - 15767
+      wbCoeffs:
+        - 1.8554688
+        - 1.0
+        - 1.25
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ""
+        artist: ""
+        lens_spec:
+          - 55/1
+          - 55/1
+          - 28/10
+          - 28/10
+        exposure_time: 1/50
+        fnumber: 220/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 200
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: 0/10
+        date_time_original: "2018:03:06 12:23:15"
+        create_date: "2018:03:06 12:23:15"
+        modify_date: "2018:03:06 12:23:15"
+        exposure_program: 3
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: ~
+        max_aperture_value: ~
+        subject_distance: ~
+        metering_mode: 5
+        light_source: ~
+        flash: 16
+        focal_length: 5500/100
+        image_number: ~
+        color_space: ~
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: 3
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: Pentax
+        lens_model: "smc PENTAX-D FA 645 55mm F2.8 AL [IF] SDM AW"
+        gps: ~
+      model: 645D
+      make: Pentax
+      lens:
+        identifiers:
+          name: ~
+          id:
+            - 13
+            - 18
+          nikon_id: ~
+          olympus_id: ~
+        mount: k-mount
+        lens_make: Pentax
+        lens_model: "smc PENTAX-D FA 645 55mm F2.8 AL [IF] SDM AW"
+        focal_range:
+          - 55/1
+          - 55/1
+        aperture_range:
+          - 28/10
+          - 28/10
+        lens_name: "Pentax smc PENTAX-D FA 645 55mm F2.8 AL [IF] SDM AW"
+      unique_image_id: ~
+      rating: ~
+

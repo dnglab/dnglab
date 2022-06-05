@@ -1,0 +1,85 @@
+---
+file:
+  fileSize: 22483665
+  fileName: KODAK EasyShare Z990 Digital Camera_ISO_125.KDC
+  digest: 0485211f06710706a917902238f4b2be
+data:
+  metadata:
+    rawParams:
+      rawWidth: 4016
+      rawHeight: 3006
+      bitDepth: 16
+      crops:
+        p:
+          x: 8
+          y: 3
+        d:
+          w: 4000
+          h: 2999
+      blacklevels:
+        - 0
+        - 0
+        - 0
+        - 0
+      whitelevels:
+        - 4000
+        - 4000
+        - 4000
+        - 4000
+      wbCoeffs:
+        - 2.0
+        - 1.0
+        - 172.16406
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ~
+        artist: ~
+        lens_spec: ~
+        exposure_time: 1/100
+        fnumber: 40/10
+        aperture_value: 40/10
+        brightness_value: ~
+        iso_speed_ratings: 125
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: 0/10
+        date_time_original: "2018:10:05 10:33:11"
+        create_date: "2018:10:05 10:33:11"
+        modify_date: ~
+        exposure_program: 2
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: 660/100
+        max_aperture_value: 41/10
+        subject_distance: ~
+        metering_mode: 2
+        light_source: 1
+        flash: 16
+        focal_length: 411/10
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 1
+        scene_capture_type: 0
+        subject_distance_range: 1
+        owner_name: ~
+        serial_number: KVYNW120K1284
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: EasyShare Z990
+      make: Kodak
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

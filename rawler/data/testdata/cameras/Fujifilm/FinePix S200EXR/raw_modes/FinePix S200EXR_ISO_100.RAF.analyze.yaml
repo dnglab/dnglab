@@ -1,0 +1,85 @@
+---
+file:
+  fileSize: 25326928
+  fileName: FinePix S200EXR_ISO_100.RAF
+  digest: 98f1ee34f3ae0837ec774c578bc29118
+data:
+  metadata:
+    rawParams:
+      rawWidth: 2880
+      rawHeight: 2128
+      bitDepth: 16
+      crops:
+        p:
+          x: 36
+          y: 10
+        d:
+          w: 2108
+          h: 2808
+      blacklevels:
+        - 519
+        - 519
+        - 519
+        - 519
+      whitelevels:
+        - 16250
+        - 16250
+        - 16250
+        - 16250
+      wbCoeffs:
+        - 1.8958334
+        - 1.0
+        - 1.8720238
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ""
+        artist: ~
+        lens_spec: ~
+        exposure_time: 10/1050
+        fnumber: 450/100
+        aperture_value: 430/100
+        brightness_value: ~
+        iso_speed_ratings: 100
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: "-100/100"
+        date_time_original: "2019:08:11 10:41:52"
+        create_date: "2019:08:11 10:41:52"
+        modify_date: "2019:08:11 10:41:52"
+        exposure_program: 2
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: 676/100
+        max_aperture_value: 300/100
+        subject_distance: ~
+        metering_mode: 5
+        light_source: 0
+        flash: 16
+        focal_length: 710/100
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: 0
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: FinePix S200EXR
+      make: Fujifilm
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

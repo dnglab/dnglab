@@ -1,0 +1,106 @@
+---
+file:
+  fileSize: 37289984
+  fileName: ILCE-7R_ISO_50_14bits_Sony ARW Compressed.ARW
+  digest: 0f60141f564fbb212259c33680e2b0ed
+data:
+  metadata:
+    rawParams:
+      rawWidth: 7392
+      rawHeight: 4920
+      bitDepth: 16
+      crops:
+        p:
+          x: 4
+          y: 4
+        d:
+          w: 7360
+          h: 4912
+      blacklevels:
+        - 512
+        - 512
+        - 512
+        - 512
+      whitelevels:
+        - 15360
+        - 15360
+        - 15360
+        - 15360
+      wbCoeffs:
+        - 2.4257812
+        - 1.0
+        - 1.5078125
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ~
+        artist: ~
+        lens_spec:
+          - 28/1
+          - 70/1
+          - 35/10
+          - 56/10
+        exposure_time: 1/80
+        fnumber: 160/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 50
+        iso_speed: ~
+        recommended_exposure_index: 50
+        sensitivity_type: 2
+        exposure_bias: 0/10
+        date_time_original: "2016:04:21 14:28:59"
+        create_date: "2016:04:21 14:28:59"
+        modify_date: "2016:04:21 14:28:59"
+        exposure_program: 1
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: ~
+        max_aperture_value: 1024/256
+        subject_distance: ~
+        metering_mode: 5
+        light_source: 1
+        flash: 16
+        focal_length: 400/10
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 1
+        white_balance: 1
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: Sony
+        lens_model: FE 28-70mm F3.5-5.6 OSS
+        gps: ~
+      model: ILCE-7R
+      make: Sony
+      lens:
+        identifiers:
+          name: ~
+          id:
+            - 32813
+            - 0
+          nikon_id: ~
+          olympus_id: ~
+        mount: e-mount
+        lens_make: Sony
+        lens_model: FE 28-70mm F3.5-5.6 OSS
+        focal_range:
+          - 28/1
+          - 70/1
+        aperture_range:
+          - 35/10
+          - 56/10
+        lens_name: Sony FE 28-70mm F3.5-5.6 OSS
+      unique_image_id: ~
+      rating: ~
+

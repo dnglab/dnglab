@@ -1,0 +1,85 @@
+---
+file:
+  fileSize: 9928832
+  fileName: E-20_ISO_80.ORF
+  digest: c9c832c63204a3b6eb7b1e32bddd739a
+data:
+  metadata:
+    rawParams:
+      rawWidth: 2576
+      rawHeight: 1924
+      bitDepth: 16
+      crops:
+        p:
+          x: 2
+          y: 2
+        d:
+          w: 2572
+          h: 1920
+      blacklevels:
+        - 0
+        - 0
+        - 0
+        - 0
+      whitelevels:
+        - 4092
+        - 4092
+        - 4092
+        - 4092
+      wbCoeffs:
+        - 1.546875
+        - 1.0
+        - 1.4375
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ~
+        artist: ~
+        lens_spec: ~
+        exposure_time: 1/400
+        fnumber: 63/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 80
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: 0/10
+        date_time_original: "2005:01:06 18:21:08"
+        create_date: "2005:01:06 18:21:08"
+        modify_date: "2005:01:06 18:21:08"
+        exposure_program: 1
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: ~
+        max_aperture_value: 206/100
+        subject_distance: ~
+        metering_mode: 5
+        light_source: ~
+        flash: 0
+        focal_length: 290/10
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: ~
+        white_balance: ~
+        scene_capture_type: ~
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: E-20
+      make: Olympus
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

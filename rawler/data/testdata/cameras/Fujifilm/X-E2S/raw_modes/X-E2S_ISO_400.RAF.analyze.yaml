@@ -1,0 +1,89 @@
+---
+file:
+  fileSize: 33786880
+  fileName: X-E2S_ISO_400.RAF
+  digest: b48debd6de03f4cd650f22b4ca4ca10c
+data:
+  metadata:
+    rawParams:
+      rawWidth: 4992
+      rawHeight: 3296
+      bitDepth: 16
+      crops:
+        p:
+          x: 24
+          y: 16
+        d:
+          w: 3264
+          h: 4896
+      blacklevels:
+        - 1023
+        - 1023
+        - 1023
+        - 1023
+      whitelevels:
+        - 16383
+        - 16383
+        - 16383
+        - 16383
+      wbCoeffs:
+        - 1.8642384
+        - 1.0
+        - 1.5198675
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ""
+        artist: ~
+        lens_spec:
+          - 1800/100
+          - 5500/100
+          - 280/100
+          - 400/100
+        exposure_time: 10/2000
+        fnumber: 900/100
+        aperture_value: 630/100
+        brightness_value: ~
+        iso_speed_ratings: 400
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: 1
+        exposure_bias: 67/100
+        date_time_original: "2016:07:11 06:18:57"
+        create_date: "2016:07:11 06:18:57"
+        modify_date: "2016:07:11 06:18:57"
+        exposure_program: 3
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: 764/100
+        max_aperture_value: 300/100
+        subject_distance: ~
+        metering_mode: 5
+        light_source: 0
+        flash: 16
+        focal_length: 3150/100
+        image_number: ~
+        color_space: 65535
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: 0
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: 58A16547
+        lens_make: FUJIFILM
+        lens_model: XF18-55mmF2.8-4 R LM OIS
+        gps: ~
+      model: X-E2S
+      make: Fujifilm
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

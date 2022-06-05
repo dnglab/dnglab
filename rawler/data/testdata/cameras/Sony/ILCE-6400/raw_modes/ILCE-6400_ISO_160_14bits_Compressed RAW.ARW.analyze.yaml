@@ -1,0 +1,106 @@
+---
+file:
+  fileSize: 25094912
+  fileName: ILCE-6400_ISO_160_14bits_Compressed RAW.ARW
+  digest: e8d353e13856e1a514b00f1949c6af93
+data:
+  metadata:
+    rawParams:
+      rawWidth: 6048
+      rawHeight: 4024
+      bitDepth: 16
+      crops:
+        p:
+          x: 12
+          y: 12
+        d:
+          w: 6000
+          h: 4000
+      blacklevels:
+        - 512
+        - 512
+        - 512
+        - 512
+      whitelevels:
+        - 15360
+        - 15360
+        - 15360
+        - 15360
+      wbCoeffs:
+        - 2.609375
+        - 1.0
+        - 1.7109375
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ~
+        artist: ~
+        lens_spec:
+          - 18/1
+          - 135/1
+          - 35/10
+          - 56/10
+        exposure_time: 1/400
+        fnumber: 50/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 160
+        iso_speed: ~
+        recommended_exposure_index: 160
+        sensitivity_type: 2
+        exposure_bias: 0/10
+        date_time_original: "2019:04:14 15:55:19"
+        create_date: "2019:04:14 15:55:19"
+        modify_date: "2019:04:14 15:55:19"
+        exposure_program: 1
+        timezone_offset: ~
+        offset_time: "+01:00"
+        offset_time_original: "+01:00"
+        offset_time_digitized: "+01:00"
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: ~
+        max_aperture_value: 1188/256
+        subject_distance: ~
+        metering_mode: 5
+        light_source: 0
+        flash: 16
+        focal_length: 430/10
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 1
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: Sony
+        lens_model: E 18-135mm F3.5-5.6 OSS
+        gps: ~
+      model: ILCE-6400
+      make: SONY
+      lens:
+        identifiers:
+          name: ~
+          id:
+            - 32849
+            - 0
+          nikon_id: ~
+          olympus_id: ~
+        mount: e-mount
+        lens_make: Sony
+        lens_model: E 18-135mm F3.5-5.6 OSS
+        focal_range:
+          - 18/1
+          - 135/1
+        aperture_range:
+          - 35/10
+          - 56/10
+        lens_name: Sony E 18-135mm F3.5-5.6 OSS
+      unique_image_id: ~
+      rating: ~
+

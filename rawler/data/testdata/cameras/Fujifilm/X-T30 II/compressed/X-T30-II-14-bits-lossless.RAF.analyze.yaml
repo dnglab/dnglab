@@ -1,0 +1,89 @@
+---
+file:
+  fileSize: 27355248
+  fileName: X-T30-II-14-bits-lossless.RAF
+  digest: 066af11630b251bc0a662d89b5c1f371
+data:
+  metadata:
+    rawParams:
+      rawWidth: 6384
+      rawHeight: 4182
+      bitDepth: 16
+      crops:
+        p:
+          x: 6
+          y: 13
+        d:
+          w: 4160
+          h: 6240
+      blacklevels:
+        - 1022
+        - 1022
+        - 1022
+        - 1022
+      whitelevels:
+        - 16383
+        - 16383
+        - 16383
+        - 16383
+      wbCoeffs:
+        - 1.8807946
+        - 1.0
+        - 1.8344371
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ""
+        artist: ""
+        lens_spec:
+          - 1800/100
+          - 5500/100
+          - 280/100
+          - 400/100
+        exposure_time: 10/5000
+        fnumber: 400/100
+        aperture_value: 400/100
+        brightness_value: ~
+        iso_speed_ratings: 160
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: 1
+        exposure_bias: 0/100
+        date_time_original: "2021:12:31 13:47:05"
+        create_date: "2021:12:31 13:47:05"
+        modify_date: "2021:12:31 13:47:05"
+        exposure_program: 3
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: 903/100
+        max_aperture_value: 300/100
+        subject_distance: ~
+        metering_mode: 5
+        light_source: 0
+        flash: 0
+        focal_length: 5500/100
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: 0
+        owner_name: ~
+        serial_number: 1D016952
+        lens_serial_number: 1DC09456
+        lens_make: FUJIFILM
+        lens_model: XF18-55mmF2.8-4 R LM OIS
+        gps: ~
+      model: X-T30 II
+      make: Fujifilm
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

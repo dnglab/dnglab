@@ -1,0 +1,106 @@
+---
+file:
+  fileSize: 43286528
+  fileName: ILCE-7RM2_ISO_100_12bits_Compressed RAW.ARW
+  digest: 00557341abdbadd7f15cf3b0aa3fed87
+data:
+  metadata:
+    rawParams:
+      rawWidth: 8000
+      rawHeight: 5320
+      bitDepth: 16
+      crops:
+        p:
+          x: 8
+          y: 8
+        d:
+          w: 7952
+          h: 5304
+      blacklevels:
+        - 512
+        - 512
+        - 512
+        - 512
+      whitelevels:
+        - 15360
+        - 15360
+        - 15360
+        - 15360
+      wbCoeffs:
+        - 2.578125
+        - 1.0
+        - 1.4492188
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ""
+        artist: Kelvie Wong
+        lens_spec:
+          - 24/1
+          - 70/1
+          - 28/10
+          - 28/10
+        exposure_time: 1/6
+        fnumber: 130/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 100
+        iso_speed: ~
+        recommended_exposure_index: 100
+        sensitivity_type: 2
+        exposure_bias: 0/10
+        date_time_original: "2017:04:06 18:44:31"
+        create_date: "2017:04:06 18:44:31"
+        modify_date: "2017:04:06 18:44:31"
+        exposure_program: 1
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: ~
+        max_aperture_value: 760/256
+        subject_distance: ~
+        metering_mode: 5
+        light_source: 0
+        flash: 16
+        focal_length: 510/10
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 1
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: Sony
+        lens_model: FE 24-70mm F2.8 GM
+        gps: ~
+      model: ILCE-7RM2
+      make: Sony
+      lens:
+        identifiers:
+          name: ~
+          id:
+            - 32821
+            - 0
+          nikon_id: ~
+          olympus_id: ~
+        mount: e-mount
+        lens_make: Sony
+        lens_model: FE 24-70mm F2.8 GM
+        focal_range:
+          - 24/1
+          - 70/1
+        aperture_range:
+          - 28/10
+          - 28/10
+        lens_name: Sony FE 24-70mm F2.8 GM
+      unique_image_id: ~
+      rating: ~
+

@@ -1,0 +1,85 @@
+---
+file:
+  fileSize: 19768592
+  fileName: X10_ISO_200.RAF
+  digest: 91e775eff939f276b3e8b0a617fee911
+data:
+  metadata:
+    rawParams:
+      rawWidth: 2944
+      rawHeight: 2144
+      bitDepth: 16
+      crops:
+        p:
+          x: 64
+          y: 14
+        d:
+          w: 2116
+          h: 2816
+      blacklevels:
+        - 256
+        - 256
+        - 256
+        - 256
+      whitelevels:
+        - 4000
+        - 4000
+        - 4000
+        - 4000
+      wbCoeffs:
+        - 1.9283489
+        - 1.0
+        - 2.2274144
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ""
+        artist: ~
+        lens_spec: ~
+        exposure_time: 10/2400
+        fnumber: 500/100
+        aperture_value: 460/100
+        brightness_value: ~
+        iso_speed_ratings: 200
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: 1
+        exposure_bias: "-100/100"
+        date_time_original: "2012:06:13 13:18:56"
+        create_date: "2012:06:13 13:18:56"
+        modify_date: "2012:06:13 13:18:56"
+        exposure_program: 3
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: 790/100
+        max_aperture_value: 200/100
+        subject_distance: ~
+        metering_mode: 5
+        light_source: 0
+        flash: 16
+        focal_length: 860/100
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: 0
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: FinePix X10
+      make: Fujifilm
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

@@ -1,0 +1,85 @@
+---
+file:
+  fileSize: 13514752
+  fileName: ILCE-7SM3_ISO_2500_14bits_Compressed RAW.ARW
+  digest: 2b06661081f0888b478e568efebc1c76
+data:
+  metadata:
+    rawParams:
+      rawWidth: 4288
+      rawHeight: 2848
+      bitDepth: 16
+      crops:
+        p:
+          x: 12
+          y: 8
+        d:
+          w: 4240
+          h: 2832
+      blacklevels:
+        - 512
+        - 512
+        - 512
+        - 512
+      whitelevels:
+        - 15360
+        - 15360
+        - 15360
+        - 15360
+      wbCoeffs:
+        - 1.6279297
+        - 1.0
+        - 2.397461
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ~
+        artist: ~
+        lens_spec: ~
+        exposure_time: 1/200
+        fnumber: 71/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 2500
+        iso_speed: ~
+        recommended_exposure_index: 2500
+        sensitivity_type: 2
+        exposure_bias: 0/10
+        date_time_original: "2020:12:19 18:53:47"
+        create_date: "2020:12:19 18:53:47"
+        modify_date: "2020:12:19 18:53:47"
+        exposure_program: 1
+        timezone_offset: ~
+        offset_time: "+09:00"
+        offset_time_original: "+09:00"
+        offset_time_digitized: "+09:00"
+        sub_sec_time: "201"
+        sub_sec_time_original: "201"
+        sub_sec_time_digitized: "201"
+        shutter_speed_value: ~
+        max_aperture_value: 760/256
+        subject_distance: ~
+        metering_mode: 5
+        light_source: 0
+        flash: 16
+        focal_length: 240/10
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 1
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: ILCE-7SM3
+      make: Sony
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

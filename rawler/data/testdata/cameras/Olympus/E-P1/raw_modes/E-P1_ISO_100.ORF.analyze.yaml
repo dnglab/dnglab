@@ -1,0 +1,104 @@
+---
+file:
+  fileSize: 12857149
+  fileName: E-P1_ISO_100.ORF
+  digest: d618bc071fc7fa8e852d478d0be0b5ef
+data:
+  metadata:
+    rawParams:
+      rawWidth: 4100
+      rawHeight: 3084
+      bitDepth: 16
+      crops:
+        p:
+          x: 30
+          y: 30
+        d:
+          w: 4032
+          h: 3024
+      blacklevels:
+        - 0
+        - 0
+        - 0
+        - 0
+      whitelevels:
+        - 4095
+        - 4095
+        - 4095
+        - 4095
+      wbCoeffs:
+        - 1.796875
+        - 1.0
+        - 1.625
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ~
+        artist: ~
+        lens_spec:
+          - 12/1
+          - 40/1
+          - 28/10
+          - 28/10
+        exposure_time: 10/13
+        fnumber: 56/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 100
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: 0/10
+        date_time_original: "2022:01:08 16:47:59"
+        create_date: "2022:01:08 16:47:59"
+        modify_date: "2022:01:08 16:47:59"
+        exposure_program: 1
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: ~
+        max_aperture_value: 768/256
+        subject_distance: ~
+        metering_mode: 5
+        light_source: 0
+        flash: 8
+        focal_length: 31/1
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 1
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: Olympus
+        lens_model: M.Zuiko Digital ED 12-40mm F2.8 Pro
+        gps: ~
+      model: E-P1
+      make: Olympus
+      lens:
+        identifiers:
+          name: ~
+          id: ~
+          nikon_id: ~
+          olympus_id: 00 19 10
+        mount: MFT-mount
+        lens_make: Olympus
+        lens_model: M.Zuiko Digital ED 12-40mm F2.8 Pro
+        focal_range:
+          - 12/1
+          - 40/1
+        aperture_range:
+          - 28/10
+          - 28/10
+        lens_name: Olympus M.Zuiko Digital ED 12-40mm F2.8 Pro
+      unique_image_id: ~
+      rating: ~
+

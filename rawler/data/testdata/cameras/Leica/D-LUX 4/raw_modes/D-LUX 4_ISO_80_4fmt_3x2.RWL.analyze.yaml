@@ -1,0 +1,85 @@
+---
+file:
+  fileSize: 11673600
+  fileName: D-LUX 4_ISO_80_4fmt_3x2.RWL
+  digest: 9a38a127ec969d48c75622595d5cdb4e
+data:
+  metadata:
+    rawParams:
+      rawWidth: 3836
+      rawHeight: 2538
+      bitDepth: 16
+      crops:
+        p:
+          x: 8
+          y: 6
+        d:
+          w: 3776
+          h: 2520
+      blacklevels:
+        - 0
+        - 0
+        - 0
+        - 0
+      whitelevels:
+        - 3986
+        - 3986
+        - 3986
+        - 3986
+      wbCoeffs:
+        - 1.9353613
+        - 1.0
+        - 1.608365
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ~
+        artist: ~
+        lens_spec: ~
+        exposure_time: 10/1600
+        fnumber: 28/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 80
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: 0/100
+        date_time_original: "2009:04:12 14:23:22"
+        create_date: "2009:04:12 14:23:22"
+        modify_date: ~
+        exposure_program: 2
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: ~
+        max_aperture_value: 20/10
+        subject_distance: ~
+        metering_mode: 5
+        light_source: ~
+        flash: 16
+        focal_length: 51/10
+        image_number: ~
+        color_space: ~
+        flash_energy: ~
+        exposure_mode: ~
+        white_balance: ~
+        scene_capture_type: ~
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: D-LUX 4
+      make: Leica
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

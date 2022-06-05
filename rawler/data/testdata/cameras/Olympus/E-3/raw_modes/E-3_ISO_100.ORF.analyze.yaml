@@ -1,0 +1,104 @@
+---
+file:
+  fileSize: 9664842
+  fileName: E-3_ISO_100.ORF
+  digest: a3a7d3795600f53f7f275f7f2c380112
+data:
+  metadata:
+    rawParams:
+      rawWidth: 3720
+      rawHeight: 2800
+      bitDepth: 16
+      crops:
+        p:
+          x: 54
+          y: 22
+        d:
+          w: 3648
+          h: 2736
+      blacklevels:
+        - 65
+        - 65
+        - 65
+        - 65
+      whitelevels:
+        - 4015
+        - 4015
+        - 4015
+        - 4015
+      wbCoeffs:
+        - 2.015625
+        - 1.0
+        - 1.3984375
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ~
+        artist: ~
+        lens_spec:
+          - 12/1
+          - 60/1
+          - 28/10
+          - 40/10
+        exposure_time: 1/100
+        fnumber: 110/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 100
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: 0/10
+        date_time_original: "2008:03:09 08:22:53"
+        create_date: "2008:03:09 08:22:53"
+        modify_date: "2008:03:09 08:22:53"
+        exposure_program: 1
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: ~
+        max_aperture_value: 761/256
+        subject_distance: ~
+        metering_mode: 3
+        light_source: 0
+        flash: 8
+        focal_length: 12/1
+        image_number: ~
+        color_space: 65535
+        flash_energy: ~
+        exposure_mode: 1
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: Olympus
+        lens_model: Zuiko Digital ED 12-60mm F2.8-4.0 SWD
+        gps: ~
+      model: E-3
+      make: Olympus
+      lens:
+        identifiers:
+          name: ~
+          id: ~
+          nikon_id: ~
+          olympus_id: 00 31 00
+        mount: MFT-mount
+        lens_make: Olympus
+        lens_model: Zuiko Digital ED 12-60mm F2.8-4.0 SWD
+        focal_range:
+          - 12/1
+          - 60/1
+        aperture_range:
+          - 28/10
+          - 40/10
+        lens_name: Olympus Zuiko Digital ED 12-60mm F2.8-4.0 SWD
+      unique_image_id: ~
+      rating: ~
+

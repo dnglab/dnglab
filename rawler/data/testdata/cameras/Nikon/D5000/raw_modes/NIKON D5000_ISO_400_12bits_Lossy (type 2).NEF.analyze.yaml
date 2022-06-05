@@ -1,0 +1,104 @@
+---
+file:
+  fileSize: 10269709
+  fileName: NIKON D5000_ISO_400_12bits_Lossy (type 2).NEF
+  digest: 6a50e0783052e26a08744f735e7c23b1
+data:
+  metadata:
+    rawParams:
+      rawWidth: 4352
+      rawHeight: 2868
+      bitDepth: 16
+      crops:
+        p:
+          x: 11
+          y: 10
+        d:
+          w: 4288
+          h: 2848
+      blacklevels:
+        - 0
+        - 0
+        - 0
+        - 0
+      whitelevels:
+        - 3767
+        - 3767
+        - 3767
+        - 3767
+      wbCoeffs:
+        - 1.546875
+        - 1.0
+        - 1.4609375
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ~
+        artist: ~
+        lens_spec:
+          - 70/1
+          - 300/1
+          - 45/10
+          - 56/10
+        exposure_time: 10/5000
+        fnumber: 48/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 400
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: "-4/6"
+        date_time_original: "2013:07:08 09:56:21"
+        create_date: "2013:07:08 09:56:21"
+        modify_date: "2013:07:08 09:56:21"
+        exposure_program: 3
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: "50"
+        sub_sec_time_original: "50"
+        sub_sec_time_digitized: "50"
+        shutter_speed_value: ~
+        max_aperture_value: 45/10
+        subject_distance: ~
+        metering_mode: 2
+        light_source: 0
+        flash: 0
+        focal_length: 1250/10
+        image_number: ~
+        color_space: ~
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: 0
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: Nikon
+        lens_model: AF-S VR Zoom-Nikkor 70-300mm f/4.5-5.6G IF-ED
+        gps: ~
+      model: D5000
+      make: Nikon
+      lens:
+        identifiers:
+          name: ~
+          id: ~
+          nikon_id: 8D 44 5C 8E 34 3C 8F 0E
+          olympus_id: ~
+        mount: F-mount
+        lens_make: Nikon
+        lens_model: AF-S VR Zoom-Nikkor 70-300mm f/4.5-5.6G IF-ED
+        focal_range:
+          - 70/1
+          - 300/1
+        aperture_range:
+          - 45/10
+          - 56/10
+        lens_name: Nikon AF-S VR Zoom-Nikkor 70-300mm f/4.5-5.6G IF-ED
+      unique_image_id: ~
+      rating: ~
+

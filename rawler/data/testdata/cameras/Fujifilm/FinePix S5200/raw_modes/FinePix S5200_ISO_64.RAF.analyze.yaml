@@ -1,0 +1,79 @@
+---
+file:
+  fileSize: 11230736
+  fileName: FinePix S5200_ISO_64.RAF
+  digest: 8bbdb288a0372d44b0b77f06d3445475
+data:
+  metadata:
+    rawParams:
+      rawWidth: 3292
+      rawHeight: 3291
+      bitDepth: 16
+      crops: ~
+      blacklevels:
+        - 0
+        - 0
+        - 0
+        - 0
+      whitelevels:
+        - 15564
+        - 15564
+        - 15564
+        - 15564
+      wbCoeffs:
+        - 1.628125
+        - 1.0
+        - 1.184375
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ""
+        artist: ~
+        lens_spec: ~
+        exposure_time: 10/1250
+        fnumber: 640/100
+        aperture_value: 540/100
+        brightness_value: ~
+        iso_speed_ratings: 64
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: 0/100
+        date_time_original: "2010:01:04 15:29:35"
+        create_date: "2010:01:04 15:29:35"
+        modify_date: "2010:01:04 15:29:35"
+        exposure_program: 8
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: 705/100
+        max_aperture_value: 340/100
+        subject_distance: ~
+        metering_mode: 5
+        light_source: 0
+        flash: 16
+        focal_length: 1480/100
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 0
+        scene_capture_type: 1
+        subject_distance_range: 0
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: FinePix S5200
+      make: Fujifilm
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

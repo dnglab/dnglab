@@ -1,0 +1,104 @@
+---
+file:
+  fileSize: 67149293
+  fileName: E-M5MarkIII_ISO_200.ORF
+  digest: 856f97e02a8cfcbcb2510fff01b34034
+data:
+  metadata:
+    rawParams:
+      rawWidth: 10400
+      rawHeight: 7792
+      bitDepth: 16
+      crops:
+        p:
+          x: 8
+          y: 8
+        d:
+          w: 10368
+          h: 7776
+      blacklevels:
+        - 256
+        - 256
+        - 256
+        - 256
+      whitelevels:
+        - 4000
+        - 4000
+        - 4000
+        - 4000
+      wbCoeffs:
+        - 1.96875
+        - 1.0
+        - 2.1875
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ""
+        artist: ""
+        lens_spec:
+          - 12/1
+          - 100/1
+          - 40/10
+          - 40/10
+        exposure_time: 1/15
+        fnumber: 56/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 200
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: 1
+        exposure_bias: "-3/10"
+        date_time_original: "2019:11:24 19:20:00"
+        create_date: "2019:11:24 19:20:00"
+        modify_date: "2019:11:24 19:20:00"
+        exposure_program: 3
+        timezone_offset: ~
+        offset_time: "   :  "
+        offset_time_original: "   :  "
+        offset_time_digitized: "   :  "
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: ~
+        max_aperture_value: 1024/256
+        subject_distance: ~
+        metering_mode: 5
+        light_source: 0
+        flash: 16
+        focal_length: 57/1
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 1
+        white_balance: 1
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: Olympus
+        lens_model: M.Zuiko Digital ED 12-100mm F4.0 IS Pro
+        gps: ~
+      model: E-M5 Mark III
+      make: Olympus
+      lens:
+        identifiers:
+          name: ~
+          id: ~
+          nikon_id: ~
+          olympus_id: 00 26 10
+        mount: MFT-mount
+        lens_make: Olympus
+        lens_model: M.Zuiko Digital ED 12-100mm F4.0 IS Pro
+        focal_range:
+          - 12/1
+          - 100/1
+        aperture_range:
+          - 40/10
+          - 40/10
+        lens_name: Olympus M.Zuiko Digital ED 12-100mm F4.0 IS Pro
+      unique_image_id: ~
+      rating: ~
+

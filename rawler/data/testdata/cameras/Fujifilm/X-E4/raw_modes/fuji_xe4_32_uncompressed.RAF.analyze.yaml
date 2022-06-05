@@ -1,0 +1,89 @@
+---
+file:
+  fileSize: 57504064
+  fileName: fuji_xe4_32_uncompressed.RAF
+  digest: 5b162f07f5659001017eb04b73d2cd2e
+data:
+  metadata:
+    rawParams:
+      rawWidth: 6384
+      rawHeight: 4182
+      bitDepth: 16
+      crops:
+        p:
+          x: 6
+          y: 13
+        d:
+          w: 4160
+          h: 6240
+      blacklevels:
+        - 1022
+        - 1022
+        - 1022
+        - 1022
+      whitelevels:
+        - 16383
+        - 16383
+        - 16383
+        - 16383
+      wbCoeffs:
+        - 1.9668875
+        - 1.0
+        - 1.7847682
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ""
+        artist: ""
+        lens_spec:
+          - 2700/100
+          - 2700/100
+          - 280/100
+          - 280/100
+        exposure_time: 10/3400
+        fnumber: 560/100
+        aperture_value: 500/100
+        brightness_value: ~
+        iso_speed_ratings: 160
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: 1
+        exposure_bias: 0/100
+        date_time_original: "2021:03:24 16:28:23"
+        create_date: "2021:03:24 16:28:23"
+        modify_date: "2021:03:24 16:28:23"
+        exposure_program: 3
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: 840/100
+        max_aperture_value: 300/100
+        subject_distance: ~
+        metering_mode: 5
+        light_source: 0
+        flash: 0
+        focal_length: 2700/100
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: 0
+        owner_name: ~
+        serial_number: 1S001612
+        lens_serial_number: 1AA01277
+        lens_make: FUJIFILM
+        lens_model: XF27mmF2.8 R WR
+        gps: ~
+      model: X-E4
+      make: Fujifilm
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

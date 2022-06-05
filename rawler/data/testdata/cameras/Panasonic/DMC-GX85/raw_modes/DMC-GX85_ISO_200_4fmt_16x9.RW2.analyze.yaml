@@ -1,0 +1,104 @@
+---
+file:
+  fileSize: 19742720
+  fileName: DMC-GX85_ISO_200_4fmt_16x9.RW2
+  digest: 0e2da2174f1e722b8ec1f2fb89bd3d16
+data:
+  metadata:
+    rawParams:
+      rawWidth: 4816
+      rawHeight: 3464
+      bitDepth: 16
+      crops:
+        p:
+          x: 8
+          y: 8
+        d:
+          w: 4592
+          h: 3448
+      blacklevels:
+        - 128
+        - 128
+        - 128
+        - 128
+      whitelevels:
+        - 4095
+        - 4095
+        - 4095
+        - 4095
+      wbCoeffs:
+        - 2.3710938
+        - 1.0
+        - 1.625
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ~
+        artist: ~
+        lens_spec:
+          - 12/1
+          - 60/1
+          - 28/10
+          - 4/1
+        exposure_time: 10/6400
+        fnumber: 56/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 200
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: 0/100
+        date_time_original: "2018:04:28 13:50:04"
+        create_date: "2018:04:28 13:50:04"
+        modify_date: ~
+        exposure_program: 3
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: "445"
+        sub_sec_time_digitized: "445"
+        shutter_speed_value: ~
+        max_aperture_value: 925/256
+        subject_distance: ~
+        metering_mode: 5
+        light_source: ~
+        flash: 16
+        focal_length: 250/10
+        image_number: ~
+        color_space: ~
+        flash_energy: ~
+        exposure_mode: ~
+        white_balance: ~
+        scene_capture_type: ~
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: Leica
+        lens_model: DG Vario-Elmarit 12-60mm F2.8-4 Asph. Power OIS
+        gps: ~
+      model: DMC-GX85
+      make: Panasonic
+      lens:
+        identifiers:
+          name: ~
+          id: ~
+          nikon_id: ~
+          olympus_id: 02 30 10
+        mount: MFT-mount
+        lens_make: Leica
+        lens_model: DG Vario-Elmarit 12-60mm F2.8-4 Asph. Power OIS
+        focal_range:
+          - 12/1
+          - 60/1
+        aperture_range:
+          - 28/10
+          - 4/1
+        lens_name: Leica DG Vario-Elmarit 12-60mm F2.8-4 Asph. Power OIS
+      unique_image_id: ~
+      rating: ~
+

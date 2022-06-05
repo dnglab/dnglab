@@ -1,0 +1,85 @@
+---
+file:
+  fileSize: 16515072
+  fileName: SLT-A57_ISO_100_12bits_Sony ARW Compressed.ARW
+  digest: c1a7d115cbc27202e59050058ae6d620
+data:
+  metadata:
+    rawParams:
+      rawWidth: 4928
+      rawHeight: 3276
+      bitDepth: 16
+      crops:
+        p:
+          x: 4
+          y: 6
+        d:
+          w: 4912
+          h: 3264
+      blacklevels:
+        - 512
+        - 512
+        - 512
+        - 512
+      whitelevels:
+        - 15360
+        - 15360
+        - 15360
+        - 15360
+      wbCoeffs:
+        - 1.7929688
+        - 1.0
+        - 2.515625
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ~
+        artist: ~
+        lens_spec: ~
+        exposure_time: 1/100
+        fnumber: 28/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 100
+        iso_speed: ~
+        recommended_exposure_index: 100
+        sensitivity_type: 2
+        exposure_bias: 0/10
+        date_time_original: "2013:12:22 12:15:57"
+        create_date: "2013:12:22 12:15:57"
+        modify_date: "2013:12:22 12:15:57"
+        exposure_program: 3
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: ~
+        max_aperture_value: 392/256
+        subject_distance: ~
+        metering_mode: 5
+        light_source: 0
+        flash: 16
+        focal_length: 500/10
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: SLT-A57
+      make: Sony
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

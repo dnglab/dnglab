@@ -1,0 +1,104 @@
+---
+file:
+  fileSize: 18414080
+  fileName: DC-GH5S_ISO_800_Panasonic RAW 1_3840x2560.RW2
+  digest: 579e57a4f483ebc8755ea2c6e6cef59d
+data:
+  metadata:
+    rawParams:
+      rawWidth: 3888
+      rawHeight: 2576
+      bitDepth: 16
+      crops:
+        p:
+          x: 12
+          y: 8
+        d:
+          w: 3840
+          h: 2560
+      blacklevels:
+        - 509
+        - 509
+        - 509
+        - 509
+      whitelevels:
+        - 8000
+        - 8000
+        - 8000
+        - 8000
+      wbCoeffs:
+        - 2.6914062
+        - 1.0
+        - 1.828125
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ~
+        artist: ~
+        lens_spec:
+          - 7/1
+          - 14/1
+          - 28/10
+          - 28/10
+        exposure_time: 10/1000
+        fnumber: 45/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 800
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: 0/100
+        date_time_original: "2018:05:23 13:18:14"
+        create_date: "2018:05:23 13:18:14"
+        modify_date: ~
+        exposure_program: 1
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: "-08:00"
+        offset_time_digitized: "-08:00"
+        sub_sec_time: ~
+        sub_sec_time_original: "472"
+        sub_sec_time_digitized: "472"
+        shutter_speed_value: ~
+        max_aperture_value: 768/256
+        subject_distance: ~
+        metering_mode: 2
+        light_source: ~
+        flash: 16
+        focal_length: 140/10
+        image_number: ~
+        color_space: ~
+        flash_energy: ~
+        exposure_mode: ~
+        white_balance: ~
+        scene_capture_type: ~
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: Olympus
+        lens_model: M.Zuiko Digital ED 7-14mm F2.8 Pro
+        gps: ~
+      model: DC-GH5S
+      make: Panasonic
+      lens:
+        identifiers:
+          name: ~
+          id: ~
+          nikon_id: ~
+          olympus_id: 00 23 10
+        mount: MFT-mount
+        lens_make: Olympus
+        lens_model: M.Zuiko Digital ED 7-14mm F2.8 Pro
+        focal_range:
+          - 7/1
+          - 14/1
+        aperture_range:
+          - 28/10
+          - 28/10
+        lens_name: Olympus M.Zuiko Digital ED 7-14mm F2.8 Pro
+      unique_image_id: ~
+      rating: ~
+

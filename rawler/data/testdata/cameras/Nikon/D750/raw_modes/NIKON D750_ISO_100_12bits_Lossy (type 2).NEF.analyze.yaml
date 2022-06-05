@@ -1,0 +1,104 @@
+---
+file:
+  fileSize: 18031834
+  fileName: NIKON D750_ISO_100_12bits_Lossy (type 2).NEF
+  digest: 840ede8bad91e17da78ae7debfff98b9
+data:
+  metadata:
+    rawParams:
+      rawWidth: 6032
+      rawHeight: 4032
+      bitDepth: 16
+      crops:
+        p:
+          x: 8
+          y: 8
+        d:
+          w: 6016
+          h: 4016
+      blacklevels:
+        - 150
+        - 150
+        - 150
+        - 150
+      whitelevels:
+        - 3880
+        - 3880
+        - 3880
+        - 3880
+      wbCoeffs:
+        - 2.0703125
+        - 1.0
+        - 1.2148438
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ""
+        artist: grodovsky@gmail.com
+        lens_spec:
+          - 35/1
+          - 35/1
+          - 18/10
+          - 18/10
+        exposure_time: 10/300
+        fnumber: 18/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 100
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: 2
+        exposure_bias: 0/6
+        date_time_original: "2017:01:15 21:38:43"
+        create_date: "2017:01:15 21:38:43"
+        modify_date: "2017:01:15 21:38:43"
+        exposure_program: 3
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: "42"
+        sub_sec_time_original: "42"
+        sub_sec_time_digitized: "42"
+        shutter_speed_value: ~
+        max_aperture_value: 16/10
+        subject_distance: ~
+        metering_mode: 5
+        light_source: 0
+        flash: 15
+        focal_length: 350/10
+        image_number: ~
+        color_space: ~
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: 0
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: Tamron
+        lens_model: SP 35mm f/1.8 Di VC USD (F012)
+        gps: ~
+      model: D750
+      make: Nikon
+      lens:
+        identifiers:
+          name: ~
+          id: ~
+          nikon_id: E8 4C 44 44 14 14 DF 0E
+          olympus_id: ~
+        mount: F-mount
+        lens_make: Tamron
+        lens_model: SP 35mm f/1.8 Di VC USD (F012)
+        focal_range:
+          - 35/1
+          - 35/1
+        aperture_range:
+          - 18/10
+          - 18/10
+        lens_name: Tamron SP 35mm f/1.8 Di VC USD (F012)
+      unique_image_id: ~
+      rating: ~
+

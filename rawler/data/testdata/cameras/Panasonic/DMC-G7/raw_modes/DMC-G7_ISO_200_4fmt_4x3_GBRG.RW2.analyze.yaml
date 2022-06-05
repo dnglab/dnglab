@@ -1,0 +1,104 @@
+---
+file:
+  fileSize: 19598848
+  fileName: DMC-G7_ISO_200_4fmt_4x3_GBRG.RW2
+  digest: 5940d4cf8e75869afb2d358bbcc426b9
+data:
+  metadata:
+    rawParams:
+      rawWidth: 4816
+      rawHeight: 3464
+      bitDepth: 16
+      crops:
+        p:
+          x: 8
+          y: 8
+        d:
+          w: 4592
+          h: 3448
+      blacklevels:
+        - 126
+        - 127
+        - 127
+        - 126
+      whitelevels:
+        - 4095
+        - 4095
+        - 4095
+        - 4095
+      wbCoeffs:
+        - 2.1601562
+        - 1.0
+        - 2.203125
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ~
+        artist: ~
+        lens_spec:
+          - 25/1
+          - 25/1
+          - 17/10
+          - 17/10
+        exposure_time: 10/600
+        fnumber: 17/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 1000
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: 0/100
+        date_time_original: "2021:01:16 15:42:29"
+        create_date: "2021:01:16 15:42:29"
+        modify_date: ~
+        exposure_program: 3
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: "202"
+        sub_sec_time_digitized: "202"
+        shutter_speed_value: ~
+        max_aperture_value: 392/256
+        subject_distance: ~
+        metering_mode: 5
+        light_source: ~
+        flash: 16
+        focal_length: 250/10
+        image_number: ~
+        color_space: ~
+        flash_energy: ~
+        exposure_mode: ~
+        white_balance: ~
+        scene_capture_type: ~
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: Lumix
+        lens_model: G 25mm F1.7 Asph.
+        gps: ~
+      model: DMC-G7
+      make: Panasonic
+      lens:
+        identifiers:
+          name: ~
+          id: ~
+          nikon_id: ~
+          olympus_id: 02 26 10
+        mount: MFT-mount
+        lens_make: Lumix
+        lens_model: G 25mm F1.7 Asph.
+        focal_range:
+          - 25/1
+          - 25/1
+        aperture_range:
+          - 17/10
+          - 17/10
+        lens_name: Lumix G 25mm F1.7 Asph.
+      unique_image_id: ~
+      rating: ~
+

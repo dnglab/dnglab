@@ -1,0 +1,142 @@
+---
+file:
+  fileSize: 24587597
+  fileName: Canon EOS 850D_RAW_ISO_100_nocrop_nodual.CR3
+  digest: ed19ed7a64ad3bc54eab77b47942d3e0
+data:
+  metadata:
+    rawParams:
+      rawWidth: 6288
+      rawHeight: 4056
+      bitDepth: 16
+      crops:
+        p:
+          x: 276
+          y: 48
+        d:
+          w: 6000
+          h: 4000
+      blacklevels:
+        - 510
+        - 510
+        - 511
+        - 512
+      whitelevels:
+        - 11606
+        - 11606
+        - 11606
+        - 11606
+      wbCoeffs:
+        - 1.7841797
+        - 1.0
+        - 1.7626953
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: CC-0
+        artist: ""
+        lens_spec:
+          - 30/1
+          - 30/1
+          - 14/10
+          - 14/10
+        exposure_time: 1/1600
+        fnumber: 4/1
+        aperture_value: 262144/65536
+        brightness_value: ~
+        iso_speed_ratings: 100
+        iso_speed: ~
+        recommended_exposure_index: 100
+        sensitivity_type: 2
+        exposure_bias: 0/1
+        date_time_original: "2021:05:13 14:56:04"
+        create_date: "2021:05:13 14:56:04"
+        modify_date: "2021:05:13 14:56:04"
+        exposure_program: 3
+        timezone_offset: ~
+        offset_time: "-04:00"
+        offset_time_original: "-04:00"
+        offset_time_digitized: "-04:00"
+        sub_sec_time: "16"
+        sub_sec_time_original: "16"
+        sub_sec_time_digitized: "16"
+        shutter_speed_value: 696320/65536
+        max_aperture_value: ~
+        subject_distance: ~
+        metering_mode: 5
+        light_source: ~
+        flash: 0
+        focal_length: 30/1
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ""
+        serial_number: "032031000186"
+        lens_serial_number: "0000000000"
+        lens_make: Sigma
+        lens_model: 30mm f/1.4 DC HSM | A
+        gps:
+          gps_version_id:
+            - 2
+            - 3
+            - 0
+            - 0
+          gps_latitude_ref: ~
+          gps_latitude: ~
+          gps_longitude_ref: ~
+          gps_longitude: ~
+          gps_altitude_ref: ~
+          gps_altitude: ~
+          gps_timestamp: ~
+          gps_satellites: ~
+          gps_status: ~
+          gps_measure_mode: ~
+          gps_dop: ~
+          gps_speed_ref: ~
+          gps_speed: ~
+          gps_track_ref: ~
+          gps_track: ~
+          gps_img_direction_ref: ~
+          gps_img_direction: ~
+          gps_map_datum: ~
+          gps_dest_latitude_ref: ~
+          gps_dest_latitude: ~
+          gps_dest_longitude_ref: ~
+          gps_dest_longitude: ~
+          gps_dest_bearing_ref: ~
+          gps_dest_bearing: ~
+          gps_dest_distance_ref: ~
+          gps_dest_distance: ~
+          gps_processing_method: ~
+          gps_area_information: ~
+          gps_date_stamp: ~
+          gps_differential: ~
+          gps_h_positioning_error: ~
+      model: EOS Rebel T8i
+      make: Canon
+      lens:
+        identifiers:
+          name: 30mm F1.4 DC HSM | Art 013
+          id:
+            - 150
+            - 0
+          nikon_id: ~
+          olympus_id: ~
+        mount: ef-mount
+        lens_make: Sigma
+        lens_model: 30mm f/1.4 DC HSM | A
+        focal_range:
+          - 30/1
+          - 30/1
+        aperture_range:
+          - 14/10
+          - 14/10
+        lens_name: Sigma 30mm f/1.4 DC HSM | A
+      unique_image_id: 237386279932180478223253760489467750505
+      rating: ~
+

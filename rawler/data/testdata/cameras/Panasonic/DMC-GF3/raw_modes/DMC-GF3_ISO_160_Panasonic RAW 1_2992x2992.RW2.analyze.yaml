@@ -1,0 +1,85 @@
+---
+file:
+  fileSize: 11683840
+  fileName: DMC-GF3_ISO_160_Panasonic RAW 1_2992x2992.RW2
+  digest: 74f9db64a8d18510ef56aaf2c40d0472
+data:
+  metadata:
+    rawParams:
+      rawWidth: 3192
+      rawHeight: 3008
+      bitDepth: 16
+      crops:
+        p:
+          x: 8
+          y: 4
+        d:
+          w: 2992
+          h: 2992
+      blacklevels:
+        - 128
+        - 128
+        - 128
+        - 128
+      whitelevels:
+        - 3956
+        - 3956
+        - 3956
+        - 3956
+      wbCoeffs:
+        - 2.2150943
+        - 1.0
+        - 1.2301887
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ~
+        artist: ~
+        lens_spec: ~
+        exposure_time: 10/1250
+        fnumber: 28/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 160
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: 0/100
+        date_time_original: "2014:10:04 16:21:33"
+        create_date: "2014:10:04 16:21:33"
+        modify_date: ~
+        exposure_program: 3
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: ~
+        max_aperture_value: 392/256
+        subject_distance: ~
+        metering_mode: 5
+        light_source: ~
+        flash: 16
+        focal_length: 200/10
+        image_number: ~
+        color_space: ~
+        flash_energy: ~
+        exposure_mode: ~
+        white_balance: ~
+        scene_capture_type: ~
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: DMC-GF3
+      make: Panasonic
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

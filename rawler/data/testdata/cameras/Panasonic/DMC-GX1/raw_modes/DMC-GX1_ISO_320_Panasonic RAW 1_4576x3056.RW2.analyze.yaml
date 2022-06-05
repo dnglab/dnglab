@@ -1,0 +1,85 @@
+---
+file:
+  fileSize: 17126400
+  fileName: DMC-GX1_ISO_320_Panasonic RAW 1_4576x3056.RW2
+  digest: 6ce2e36196704f0b5595f5eea645c51c
+data:
+  metadata:
+    rawParams:
+      rawWidth: 4760
+      rawHeight: 3072
+      bitDepth: 16
+      crops:
+        p:
+          x: 8
+          y: 8
+        d:
+          w: 4576
+          h: 3056
+      blacklevels:
+        - 128
+        - 128
+        - 128
+        - 128
+      whitelevels:
+        - 3956
+        - 3956
+        - 3956
+        - 3956
+      wbCoeffs:
+        - 2.6603773
+        - 1.0
+        - 1.6943396
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ~
+        artist: ~
+        lens_spec: ~
+        exposure_time: 10/1000
+        fnumber: 18/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 320
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: 0/100
+        date_time_original: "2014:10:02 13:50:45"
+        create_date: "2014:10:02 13:50:45"
+        modify_date: ~
+        exposure_program: 3
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: ~
+        max_aperture_value: 434/256
+        subject_distance: ~
+        metering_mode: 5
+        light_source: ~
+        flash: 16
+        focal_length: 450/10
+        image_number: ~
+        color_space: ~
+        flash_energy: ~
+        exposure_mode: ~
+        white_balance: ~
+        scene_capture_type: ~
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: DMC-GX1
+      make: Panasonic
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

@@ -1,0 +1,85 @@
+---
+file:
+  fileSize: 16405504
+  fileName: V-LUX Typ 114_ISO_125_4fmt_1x1.RWL
+  digest: a955127747dc1acfd3827f246436a76a
+data:
+  metadata:
+    rawParams:
+      rawWidth: 3696
+      rawHeight: 3664
+      bitDepth: 16
+      crops:
+        p:
+          x: 8
+          y: 8
+        d:
+          w: 3648
+          h: 3648
+      blacklevels:
+        - 127
+        - 127
+        - 127
+        - 127
+      whitelevels:
+        - 3956
+        - 3956
+        - 3956
+        - 3956
+      wbCoeffs:
+        - 2.34375
+        - 1.0
+        - 1.9140625
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ~
+        artist: ~
+        lens_spec: ~
+        exposure_time: 10/500
+        fnumber: 80/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 125
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: 0/100
+        date_time_original: "2019:05:01 16:36:47"
+        create_date: "2019:05:01 16:36:47"
+        modify_date: ~
+        exposure_program: 3
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: "660"
+        sub_sec_time_digitized: "660"
+        shutter_speed_value: ~
+        max_aperture_value: 761/256
+        subject_distance: ~
+        metering_mode: 5
+        light_source: ~
+        flash: 16
+        focal_length: 912/100
+        image_number: ~
+        color_space: ~
+        flash_energy: ~
+        exposure_mode: ~
+        white_balance: ~
+        scene_capture_type: ~
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: V-LUX (Typ 114)
+      make: LEICA
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

@@ -1,0 +1,79 @@
+---
+file:
+  fileSize: 7218472
+  fileName: Alexa_SXT.ari
+  digest: acfdb296e4d3e13efc1c9a63cb6ad1bb
+data:
+  metadata:
+    rawParams:
+      rawWidth: 2880
+      rawHeight: 1620
+      bitDepth: 16
+      crops: ~
+      blacklevels:
+        - 0
+        - 0
+        - 0
+        - 0
+      whitelevels:
+        - 4095
+        - 4095
+        - 4095
+        - 4095
+      wbCoeffs:
+        - 1.64502
+        - 1.0
+        - 1.366699
+        - ~
+    rawMetadata:
+      exif:
+        orientation: ~
+        copyright: ~
+        artist: ~
+        lens_spec: ~
+        exposure_time: 2604/1000000
+        fnumber: ~
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: ~
+        iso_speed: ~
+        recommended_exposure_index: 800
+        sensitivity_type: 2
+        exposure_bias: ~
+        date_time_original: ~
+        create_date: ~
+        modify_date: ~
+        exposure_program: ~
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: ~
+        max_aperture_value: ~
+        subject_distance: ~
+        metering_mode: ~
+        light_source: ~
+        flash: ~
+        focal_length: 26266/1000
+        image_number: ~
+        color_space: ~
+        flash_energy: ~
+        exposure_mode: ~
+        white_balance: ~
+        scene_capture_type: ~
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: Fujinon Alura AZ15.5-45 T2.8
+        gps: ~
+      model: ALEXA
+      make: ARRI
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

@@ -1,0 +1,106 @@
+---
+file:
+  fileSize: 25965009
+  fileName: Canon EOS 5D Mark III_RAW_ISO_200.CR2
+  digest: 72fd6010a6fbad81c886266e08e08ae3
+data:
+  metadata:
+    rawParams:
+      rawWidth: 5920
+      rawHeight: 3950
+      bitDepth: 16
+      crops:
+        p:
+          x: 140
+          y: 96
+        d:
+          w: 5760
+          h: 3840
+      blacklevels:
+        - 2047
+        - 2047
+        - 2047
+        - 2047
+      whitelevels:
+        - 15321
+        - 15321
+        - 15321
+        - 15321
+      wbCoeffs:
+        - 1.6494141
+        - 1.0
+        - 2.165039
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ""
+        artist: Simon Harhues
+        lens_spec:
+          - 70/1
+          - 200/1
+          - 28/10
+          - 28/10
+        exposure_time: 1/125
+        fnumber: 28/10
+        aperture_value: 196608/65536
+        brightness_value: ~
+        iso_speed_ratings: 200
+        iso_speed: ~
+        recommended_exposure_index: 200
+        sensitivity_type: 2
+        exposure_bias: 0/1
+        date_time_original: "2017:01:05 13:52:55"
+        create_date: "2017:01:05 13:52:55"
+        modify_date: "2017:01:05 13:52:55"
+        exposure_program: 1
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: "96"
+        sub_sec_time_original: "96"
+        sub_sec_time_digitized: "96"
+        shutter_speed_value: 458752/65536
+        max_aperture_value: ~
+        subject_distance: ~
+        metering_mode: 5
+        light_source: ~
+        flash: 16
+        focal_length: 70/1
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 1
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ""
+        serial_number: "063024001964"
+        lens_serial_number: "0000413819"
+        lens_make: Canon
+        lens_model: EF 70-200mm f/2.8L IS II USM
+        gps: ~
+      model: EOS 5D Mark III
+      make: Canon
+      lens:
+        identifiers:
+          name: EF70-200mm f/2.8L IS II USM
+          id:
+            - 251
+            - 0
+          nikon_id: ~
+          olympus_id: ~
+        mount: ef-mount
+        lens_make: Canon
+        lens_model: EF 70-200mm f/2.8L IS II USM
+        focal_range:
+          - 70/1
+          - 200/1
+        aperture_range:
+          - 28/10
+          - 28/10
+        lens_name: Canon EF 70-200mm f/2.8L IS II USM
+      unique_image_id: ~
+      rating: ~
+

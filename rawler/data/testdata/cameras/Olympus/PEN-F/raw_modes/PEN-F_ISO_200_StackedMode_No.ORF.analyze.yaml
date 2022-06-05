@@ -1,0 +1,104 @@
+---
+file:
+  fileSize: 18658902
+  fileName: PEN-F_ISO_200_StackedMode_No.ORF
+  digest: d1607e6356fff5fea730800620c09e62
+data:
+  metadata:
+    rawParams:
+      rawWidth: 5200
+      rawHeight: 3904
+      bitDepth: 16
+      crops:
+        p:
+          x: 8
+          y: 8
+        d:
+          w: 5184
+          h: 3888
+      blacklevels:
+        - 255
+        - 255
+        - 255
+        - 255
+      whitelevels:
+        - 4000
+        - 4000
+        - 4000
+        - 4000
+      wbCoeffs:
+        - 1.640625
+        - 1.0
+        - 2.09375
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ""
+        artist: ""
+        lens_spec:
+          - 45/1
+          - 45/1
+          - 18/10
+          - 18/10
+        exposure_time: 16/10
+        fnumber: 45/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 200
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: 1
+        exposure_bias: 0/10
+        date_time_original: "2019:01:24 12:29:49"
+        create_date: "2019:01:24 12:29:49"
+        modify_date: "2019:01:24 12:29:49"
+        exposure_program: 1
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: ~
+        max_aperture_value: 434/256
+        subject_distance: ~
+        metering_mode: 5
+        light_source: 0
+        flash: 8
+        focal_length: 45/1
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 1
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: Olympus
+        lens_model: M.Zuiko Digital 45mm F1.8
+        gps: ~
+      model: PEN-F
+      make: Olympus
+      lens:
+        identifiers:
+          name: ~
+          id: ~
+          nikon_id: ~
+          olympus_id: 00 11 10
+        mount: MFT-mount
+        lens_make: Olympus
+        lens_model: M.Zuiko Digital 45mm F1.8
+        focal_range:
+          - 45/1
+          - 45/1
+        aperture_range:
+          - 18/10
+          - 18/10
+        lens_name: Olympus M.Zuiko Digital 45mm F1.8
+      unique_image_id: ~
+      rating: ~
+

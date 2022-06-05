@@ -1,0 +1,85 @@
+---
+file:
+  fileSize: 17510400
+  fileName: DMC-GH3_ISO_400_Panasonic RAW 1_4608x3072.RW2
+  digest: 8a74b3d32936b9c756136a113cd9af2e
+data:
+  metadata:
+    rawParams:
+      rawWidth: 4816
+      rawHeight: 3088
+      bitDepth: 16
+      crops:
+        p:
+          x: 8
+          y: 8
+        d:
+          w: 4608
+          h: 3072
+      blacklevels:
+        - 129
+        - 129
+        - 129
+        - 129
+      whitelevels:
+        - 3956
+        - 3956
+        - 3956
+        - 3956
+      wbCoeffs:
+        - 2.154717
+        - 1.0
+        - 2.064151
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ~
+        artist: ~
+        lens_spec: ~
+        exposure_time: 10/800
+        fnumber: 28/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 400
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: 0/100
+        date_time_original: "2018:05:10 09:36:41"
+        create_date: "2018:05:10 09:36:41"
+        modify_date: ~
+        exposure_program: 1
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: ~
+        max_aperture_value: 768/256
+        subject_distance: ~
+        metering_mode: 5
+        light_source: ~
+        flash: 16
+        focal_length: 350/10
+        image_number: ~
+        color_space: ~
+        flash_energy: ~
+        exposure_mode: ~
+        white_balance: ~
+        scene_capture_type: ~
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: DMC-GH3
+      make: Panasonic
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

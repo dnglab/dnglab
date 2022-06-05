@@ -1,0 +1,85 @@
+---
+file:
+  fileSize: 14712832
+  fileName: DSLR-A450_ISO_200_12bits_Sony ARW Compressed.ARW
+  digest: a4a594dc85d60cc7d967aa85edb405ce
+data:
+  metadata:
+    rawParams:
+      rawWidth: 4608
+      rawHeight: 3072
+      bitDepth: 16
+      crops:
+        p:
+          x: 8
+          y: 8
+        d:
+          w: 4592
+          h: 3056
+      blacklevels:
+        - 512
+        - 512
+        - 512
+        - 512
+      whitelevels:
+        - 15360
+        - 15360
+        - 15360
+        - 15360
+      wbCoeffs:
+        - 2.4492188
+        - 1.0
+        - 1.4765625
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 6
+        copyright: ~
+        artist: ~
+        lens_spec: ~
+        exposure_time: 1/250
+        fnumber: 63/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 200
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: 0/10
+        date_time_original: "2017:04:23 11:32:43"
+        create_date: "2017:04:23 11:32:43"
+        modify_date: "2017:04:23 11:32:43"
+        exposure_program: 2
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: ~
+        max_aperture_value: 531/100
+        subject_distance: ~
+        metering_mode: 5
+        light_source: 0
+        flash: 16
+        focal_length: 1000/10
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: DSLR-A450
+      make: Sony
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

@@ -1,0 +1,79 @@
+---
+file:
+  fileSize: 21495886
+  fileName: P20 Plus_IIQ L_ISO_50.IIQ
+  digest: 5e9c9fc6783eb6b048e2dc0c3bb61d85
+data:
+  metadata:
+    rawParams:
+      rawWidth: 4134
+      rawHeight: 4128
+      bitDepth: 16
+      crops: ~
+      blacklevels:
+        - 0
+        - 0
+        - 0
+        - 0
+      whitelevels:
+        - 65535
+        - 65535
+        - 65535
+        - 65535
+      wbCoeffs:
+        - 2.3149133
+        - 1.0
+        - 1.0318251
+        - ~
+    rawMetadata:
+      exif:
+        orientation: ~
+        copyright: ~
+        artist: ~
+        lens_spec: ~
+        exposure_time: 8000/1000000
+        fnumber: 680/100
+        aperture_value: 55311/10000
+        brightness_value: ~
+        iso_speed_ratings: 50
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: ~
+        date_time_original: "2021:02:15 17:29:12"
+        create_date: "2021:02:15 17:29:12"
+        modify_date: ~
+        exposure_program: ~
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: 696578/100000
+        max_aperture_value: ~
+        subject_distance: ~
+        metering_mode: ~
+        light_source: 0
+        flash: ~
+        focal_length: 800/10
+        image_number: ~
+        color_space: ~
+        flash_energy: ~
+        exposure_mode: ~
+        white_balance: 0
+        scene_capture_type: ~
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: P20+
+      make: Phase One A/S
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

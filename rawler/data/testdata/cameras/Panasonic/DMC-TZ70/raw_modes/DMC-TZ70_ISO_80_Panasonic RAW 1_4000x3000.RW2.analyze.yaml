@@ -1,0 +1,85 @@
+---
+file:
+  fileSize: 14978560
+  fileName: DMC-TZ70_ISO_80_Panasonic RAW 1_4000x3000.RW2
+  digest: d2550903511d7b0e64b5be90edc3db2a
+data:
+  metadata:
+    rawParams:
+      rawWidth: 4144
+      rawHeight: 3016
+      bitDepth: 16
+      crops:
+        p:
+          x: 8
+          y: 8
+        d:
+          w: 4000
+          h: 3000
+      blacklevels:
+        - 127
+        - 127
+        - 127
+        - 127
+      whitelevels:
+        - 3971
+        - 3971
+        - 3971
+        - 3971
+      wbCoeffs:
+        - 2.2727273
+        - 1.0
+        - 1.7007576
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ~
+        artist: ~
+        lens_spec: ~
+        exposure_time: 10/4000
+        fnumber: 33/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 80
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: "-33/100"
+        date_time_original: "2017:01:18 12:39:26"
+        create_date: "2017:01:18 12:39:26"
+        modify_date: ~
+        exposure_program: 2
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: ~
+        max_aperture_value: 441/128
+        subject_distance: ~
+        metering_mode: 3
+        light_source: ~
+        flash: 16
+        focal_length: 43/10
+        image_number: ~
+        color_space: ~
+        flash_energy: ~
+        exposure_mode: ~
+        white_balance: ~
+        scene_capture_type: ~
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: DMC-TZ70
+      make: Panasonic
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

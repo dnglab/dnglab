@@ -1,0 +1,106 @@
+---
+file:
+  fileSize: 32304719
+  fileName: PENTAX KP_RAW_ISO_400.PEF
+  digest: 5fbe6bfdb74b699dee2ce23482f2ce04
+data:
+  metadata:
+    rawParams:
+      rawWidth: 6112
+      rawHeight: 4060
+      bitDepth: 16
+      crops:
+        p:
+          x: 60
+          y: 44
+        d:
+          w: 6016
+          h: 4000
+      blacklevels:
+        - 128
+        - 128
+        - 128
+        - 128
+      whitelevels:
+        - 16254
+        - 16254
+        - 16254
+        - 16254
+      wbCoeffs:
+        - 2.4335938
+        - 1.0
+        - 1.7734375
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ""
+        artist: ""
+        lens_spec:
+          - 16/1
+          - 85/1
+          - 35/10
+          - 56/10
+        exposure_time: 1/125
+        fnumber: 180/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 400
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: 1
+        exposure_bias: 0/10
+        date_time_original: "2017:10:16 13:12:00"
+        create_date: "2017:10:16 13:12:00"
+        modify_date: "2017:10:16 13:12:00"
+        exposure_program: 3
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: ~
+        max_aperture_value: ~
+        subject_distance: ~
+        metering_mode: 5
+        light_source: ~
+        flash: 16
+        focal_length: 6800/100
+        image_number: ~
+        color_space: ~
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: 3
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: Pentax
+        lens_model: HD PENTAX-DA 16-85mm F3.5-5.6 ED DC WR
+        gps: ~
+      model: KP
+      make: Pentax
+      lens:
+        identifiers:
+          name: ~
+          id:
+            - 8
+            - 200
+          nikon_id: ~
+          olympus_id: ~
+        mount: k-mount
+        lens_make: Pentax
+        lens_model: HD PENTAX-DA 16-85mm F3.5-5.6 ED DC WR
+        focal_range:
+          - 16/1
+          - 85/1
+        aperture_range:
+          - 35/10
+          - 56/10
+        lens_name: Pentax HD PENTAX-DA 16-85mm F3.5-5.6 ED DC WR
+      unique_image_id: ~
+      rating: ~
+

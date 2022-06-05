@@ -1,0 +1,85 @@
+---
+file:
+  fileSize: 12245402
+  fileName: KODAK P712 ZOOM DIGITAL CAMERA_ISO_64_JPEG.KDC
+  digest: d71001ec2934eb97bb47b1b2419dc81e
+data:
+  metadata:
+    rawParams:
+      rawWidth: 3088
+      rawHeight: 2310
+      bitDepth: 16
+      crops:
+        p:
+          x: 8
+          y: 3
+        d:
+          w: 3072
+          h: 2304
+      blacklevels:
+        - 0
+        - 0
+        - 0
+        - 0
+      whitelevels:
+        - 4030
+        - 4030
+        - 4030
+        - 4030
+      wbCoeffs:
+        - 1.5234375
+        - 1.0
+        - 3.8085938
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ~
+        artist: ~
+        lens_spec: ~
+        exposure_time: 1/500
+        fnumber: 56/10
+        aperture_value: 500/100
+        brightness_value: ~
+        iso_speed_ratings: 64
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: 0/3
+        date_time_original: "2018:02:18 12:10:47"
+        create_date: "2018:02:18 12:10:47"
+        modify_date: "2018:02:18 12:10:47"
+        exposure_program: 2
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: 900/100
+        max_aperture_value: 28/10
+        subject_distance: ~
+        metering_mode: 5
+        light_source: 0
+        flash: 16
+        focal_length: 60/10
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: 0
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: P712
+      make: Kodak
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

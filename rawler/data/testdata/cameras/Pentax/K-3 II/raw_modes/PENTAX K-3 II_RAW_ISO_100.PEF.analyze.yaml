@@ -1,0 +1,106 @@
+---
+file:
+  fileSize: 38377846
+  fileName: PENTAX K-3 II_RAW_ISO_100.PEF
+  digest: bd18275cdd21086a569169da6740699a
+data:
+  metadata:
+    rawParams:
+      rawWidth: 6080
+      rawHeight: 4032
+      bitDepth: 16
+      crops:
+        p:
+          x: 16
+          y: 16
+        d:
+          w: 6016
+          h: 4000
+      blacklevels:
+        - 0
+        - 0
+        - 0
+        - 1
+      whitelevels:
+        - 16253
+        - 16253
+        - 16253
+        - 16253
+      wbCoeffs:
+        - 2.1953125
+        - 1.0
+        - 1.7617188
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ""
+        artist: Christian Kanzian
+        lens_spec:
+          - 55/1
+          - 55/1
+          - 14/10
+          - 14/10
+        exposure_time: 1/25
+        fnumber: 56/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 100
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: 1
+        exposure_bias: 0/10
+        date_time_original: "2017:04:17 17:04:33"
+        create_date: "2017:04:17 17:04:33"
+        modify_date: "2017:04:17 17:04:33"
+        exposure_program: 1
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: ~
+        max_aperture_value: ~
+        subject_distance: ~
+        metering_mode: 5
+        light_source: ~
+        flash: 16
+        focal_length: 5500/100
+        image_number: ~
+        color_space: ~
+        flash_energy: ~
+        exposure_mode: 1
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: 3
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: Pentax
+        lens_model: smc PENTAX-DA* 55mm F1.4 SDM
+        gps: ~
+      model: K-3 II
+      make: Pentax
+      lens:
+        identifiers:
+          name: ~
+          id:
+            - 8
+            - 226
+          nikon_id: ~
+          olympus_id: ~
+        mount: k-mount
+        lens_make: Pentax
+        lens_model: smc PENTAX-DA* 55mm F1.4 SDM
+        focal_range:
+          - 55/1
+          - 55/1
+        aperture_range:
+          - 14/10
+          - 14/10
+        lens_name: Pentax smc PENTAX-DA* 55mm F1.4 SDM
+      unique_image_id: ~
+      rating: ~
+

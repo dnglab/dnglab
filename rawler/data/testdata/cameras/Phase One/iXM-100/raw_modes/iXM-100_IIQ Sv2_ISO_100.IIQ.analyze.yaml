@@ -1,0 +1,79 @@
+---
+file:
+  fileSize: 97580203
+  fileName: iXM-100_IIQ Sv2_ISO_100.IIQ
+  digest: a664685d0e26d914fe4d7f6c03788e9c
+data:
+  metadata:
+    rawParams:
+      rawWidth: 11764
+      rawHeight: 8854
+      bitDepth: 16
+      crops: ~
+      blacklevels:
+        - 0
+        - 0
+        - 0
+        - 0
+      whitelevels:
+        - 65535
+        - 65535
+        - 65535
+        - 65535
+      wbCoeffs:
+        - 3.24
+        - 1.0
+        - 1.52
+        - ~
+    rawMetadata:
+      exif:
+        orientation: ~
+        copyright: ""
+        artist: ~
+        lens_spec: ~
+        exposure_time: 500000/1000000
+        fnumber: 1600/100
+        aperture_value: 80000/10000
+        brightness_value: ~
+        iso_speed_ratings: 100
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: 0/1000
+        date_time_original: "2019:11:17 00:23:15"
+        create_date: "2019:11:17 00:23:15"
+        modify_date: ~
+        exposure_program: 2
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: 100000/100000
+        max_aperture_value: ~
+        subject_distance: 10411/1000
+        metering_mode: ~
+        light_source: 1
+        flash: ~
+        focal_length: 800/10
+        image_number: ~
+        color_space: ~
+        flash_energy: ~
+        exposure_mode: ~
+        white_balance: 1
+        scene_capture_type: ~
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: iXM-100
+      make: Phase One
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

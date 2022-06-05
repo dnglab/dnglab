@@ -1,0 +1,89 @@
+---
+file:
+  fileSize: 30529744
+  fileName: X-Pro3_ISO_640_Bitdepth_14_29 MiB.RAF
+  digest: 08b2adefdf6a72d56c66241ae22759a8
+data:
+  metadata:
+    rawParams:
+      rawWidth: 6384
+      rawHeight: 4182
+      bitDepth: 16
+      crops:
+        p:
+          x: 6
+          y: 13
+        d:
+          w: 4160
+          h: 6240
+      blacklevels:
+        - 1022
+        - 1022
+        - 1022
+        - 1022
+      whitelevels:
+        - 16383
+        - 16383
+        - 16383
+        - 16383
+      wbCoeffs:
+        - 2.2284768
+        - 1.0
+        - 1.8509934
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ALL RIGHTS RESERVED
+        artist: FRANCISCO CRIBARI
+        lens_spec:
+          - 3500/100
+          - 3500/100
+          - 200/100
+          - 200/100
+        exposure_time: 10/1600
+        fnumber: 280/100
+        aperture_value: 300/100
+        brightness_value: ~
+        iso_speed_ratings: 640
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: 1
+        exposure_bias: 0/100
+        date_time_original: "2020:01:22 23:48:26"
+        create_date: "2020:01:22 23:48:26"
+        modify_date: "2020:01:22 23:48:26"
+        exposure_program: 3
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: 738/100
+        max_aperture_value: 200/100
+        subject_distance: ~
+        metering_mode: 5
+        light_source: 0
+        flash: 0
+        focal_length: 3500/100
+        image_number: ~
+        color_space: 65535
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: 0
+        owner_name: ~
+        serial_number: "94053881"
+        lens_serial_number: 67A11176
+        lens_make: FUJIFILM
+        lens_model: XF35mmF2 R WR
+        gps: ~
+      model: X-Pro3
+      make: Fujifilm
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

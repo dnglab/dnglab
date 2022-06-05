@@ -1,0 +1,106 @@
+---
+file:
+  fileSize: 169075898
+  fileName: PENTAX K-1 Mark II_RAW (pixel shift enabled)_ISO_125.PEF
+  digest: d02bea110964462fa414968477950d6f
+data:
+  metadata:
+    rawParams:
+      rawWidth: 7392
+      rawHeight: 4950
+      bitDepth: 16
+      crops:
+        p:
+          x: 14
+          y: 28
+        d:
+          w: 7360
+          h: 4912
+      blacklevels:
+        - 64
+        - 64
+        - 64
+        - 64
+      whitelevels:
+        - 16315
+        - 16315
+        - 16315
+        - 16315
+      wbCoeffs:
+        - 2.1171875
+        - 1.0
+        - 1.5859375
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ION RUIZ TERUEL
+        artist: ION RUIZ TERUEL
+        lens_spec:
+          - 24/1
+          - 70/1
+          - 28/10
+          - 28/10
+        exposure_time: 1/400
+        fnumber: 56/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 125
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: 1
+        exposure_bias: 0/10
+        date_time_original: "2019:08:20 17:35:29"
+        create_date: "2019:08:20 17:35:29"
+        modify_date: "2019:08:20 17:35:29"
+        exposure_program: 0
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: ~
+        max_aperture_value: ~
+        subject_distance: ~
+        metering_mode: 2
+        light_source: ~
+        flash: 16
+        focal_length: 7000/100
+        image_number: ~
+        color_space: ~
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: 3
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: Pentax
+        lens_model: HD PENTAX-D FA 24-70mm F2.8 ED SDM WR
+        gps: ~
+      model: PENTAX K-1 Mark II
+      make: "RICOH IMAGING COMPANY, LTD."
+      lens:
+        identifiers:
+          name: ~
+          id:
+            - 8
+            - 62
+          nikon_id: ~
+          olympus_id: ~
+        mount: k-mount
+        lens_make: Pentax
+        lens_model: HD PENTAX-D FA 24-70mm F2.8 ED SDM WR
+        focal_range:
+          - 24/1
+          - 70/1
+        aperture_range:
+          - 28/10
+          - 28/10
+        lens_name: Pentax HD PENTAX-D FA 24-70mm F2.8 ED SDM WR
+      unique_image_id: ~
+      rating: ~
+

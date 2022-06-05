@@ -1,0 +1,85 @@
+---
+file:
+  fileSize: 14127616
+  fileName: E-300_ISO_400.ORF
+  digest: 246e08da6b3aa1498332f015af99a77f
+data:
+  metadata:
+    rawParams:
+      rawWidth: 3360
+      rawHeight: 2504
+      bitDepth: 16
+      crops:
+        p:
+          x: 12
+          y: 28
+        d:
+          w: 3264
+          h: 2448
+      blacklevels:
+        - 63
+        - 63
+        - 63
+        - 63
+      whitelevels:
+        - 4095
+        - 4095
+        - 4095
+        - 4095
+      wbCoeffs:
+        - 1.9140625
+        - 1.0
+        - 1.1953125
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ~
+        artist: ~
+        lens_spec: ~
+        exposure_time: 1/800
+        fnumber: 56/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 400
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: "-7/10"
+        date_time_original: "2009:01:25 10:45:34"
+        create_date: "2009:01:25 10:45:34"
+        modify_date: "2009:01:25 10:45:34"
+        exposure_program: 3
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: ~
+        max_aperture_value: 925/256
+        subject_distance: ~
+        metering_mode: 3
+        light_source: 0
+        flash: 80
+        focal_length: 34/1
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 1
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: E-300
+      make: Olympus
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

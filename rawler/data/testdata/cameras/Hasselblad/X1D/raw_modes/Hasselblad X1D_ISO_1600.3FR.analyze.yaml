@@ -1,0 +1,79 @@
+---
+file:
+  fileSize: 110379008
+  fileName: Hasselblad X1D_ISO_1600.3FR
+  digest: 9f8a522c5c9ca6fdb1e2d78af671450c
+data:
+  metadata:
+    rawParams:
+      rawWidth: 8384
+      rawHeight: 6304
+      bitDepth: 16
+      crops: ~
+      blacklevels:
+        - 256
+        - 256
+        - 256
+        - 256
+      whitelevels:
+        - 65535
+        - 65535
+        - 65535
+        - 65535
+      wbCoeffs:
+        - 1.573761
+        - 1.0
+        - 2.5855408
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: Hasselblad X1D
+        artist: ~
+        lens_spec: ~
+        exposure_time: 1/20
+        fnumber: 4/1
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 1600
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: 0/1
+        date_time_original: "2017:12:01 14:42:14"
+        create_date: ~
+        modify_date: "2017:12:01 14:42:14"
+        exposure_program: 3
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: ~
+        max_aperture_value: ~
+        subject_distance: ~
+        metering_mode: 2
+        light_source: ~
+        flash: ~
+        focal_length: 45/1
+        image_number: ~
+        color_space: 0
+        flash_energy: ~
+        exposure_mode: ~
+        white_balance: ~
+        scene_capture_type: ~
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: X1D
+      make: Hasselblad
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

@@ -1,0 +1,85 @@
+---
+file:
+  fileSize: 33056896
+  fileName: COOLPIX B700_ISO_100_12bits_Uncompressed.NRW
+  digest: 4c3146783f48a0718b2a23b1e8fe3014
+data:
+  metadata:
+    rawParams:
+      rawWidth: 5200
+      rawHeight: 3902
+      bitDepth: 16
+      crops:
+        p:
+          x: 8
+          y: 7
+        d:
+          w: 5184
+          h: 3888
+      blacklevels:
+        - 200
+        - 200
+        - 200
+        - 200
+      whitelevels:
+        - 4000
+        - 4000
+        - 4000
+        - 4000
+      wbCoeffs:
+        - 1.4257812
+        - 1.0
+        - 1.8085938
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ""
+        artist: Evgeny
+        lens_spec: ~
+        exposure_time: 10/10000
+        fnumber: 33/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 100
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: 0/10
+        date_time_original: "2017:06:10 15:15:18"
+        create_date: "2017:06:10 15:15:18"
+        modify_date: "2017:06:10 15:15:18"
+        exposure_program: 2
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: ~
+        max_aperture_value: 34/10
+        subject_distance: ~
+        metering_mode: 5
+        light_source: 0
+        flash: 16
+        focal_length: 43/10
+        image_number: ~
+        color_space: ~
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: 0
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: Coolpix B700
+      make: Nikon
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

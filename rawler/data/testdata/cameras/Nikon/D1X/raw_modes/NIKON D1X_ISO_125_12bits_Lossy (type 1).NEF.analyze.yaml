@@ -1,0 +1,85 @@
+---
+file:
+  fileSize: 3886374
+  fileName: NIKON D1X_ISO_125_12bits_Lossy (type 1).NEF
+  digest: cc6f1671fd8bfc3914060eb818a14962
+data:
+  metadata:
+    rawParams:
+      rawWidth: 4028
+      rawHeight: 1324
+      bitDepth: 16
+      crops:
+        p:
+          x: 5
+          y: 6
+        d:
+          w: 4012
+          h: 1308
+      blacklevels:
+        - 0
+        - 0
+        - 0
+        - 0
+      whitelevels:
+        - 4095
+        - 4095
+        - 4095
+        - 4095
+      wbCoeffs:
+        - 2.1601562
+        - 1.0
+        - 1.2226562
+        - ~
+    rawMetadata:
+      exif:
+        orientation: ~
+        copyright: "Copyright,"
+        artist: ~
+        lens_spec: ~
+        exposure_time: 10/1800
+        fnumber: 110/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: ~
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: 0/6
+        date_time_original: "2004:07:30 12:23:24"
+        create_date: "2004:07:30 12:23:24"
+        modify_date: "2004:07:30 12:23:24"
+        exposure_program: 3
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: "51"
+        sub_sec_time_original: "51"
+        sub_sec_time_digitized: "51"
+        shutter_speed_value: ~
+        max_aperture_value: 50/10
+        subject_distance: ~
+        metering_mode: 5
+        light_source: ~
+        flash: ~
+        focal_length: 240/10
+        image_number: ~
+        color_space: ~
+        flash_energy: ~
+        exposure_mode: ~
+        white_balance: ~
+        scene_capture_type: ~
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: D1X
+      make: Nikon
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

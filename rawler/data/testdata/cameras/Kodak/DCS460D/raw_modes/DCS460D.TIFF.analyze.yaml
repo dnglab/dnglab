@@ -1,0 +1,79 @@
+---
+file:
+  fileSize: 6367232
+  fileName: DCS460D.TIFF
+  digest: a0c82d18c3311ca9428e36c59b3d173d
+data:
+  metadata:
+    rawParams:
+      rawWidth: 3072
+      rawHeight: 2048
+      bitDepth: 16
+      crops: ~
+      blacklevels:
+        - 7
+        - 7
+        - 7
+        - 7
+      whitelevels:
+        - 6664
+        - 6664
+        - 6664
+        - 6664
+      wbCoeffs:
+        - ~
+        - ~
+        - ~
+        - ~
+    rawMetadata:
+      exif:
+        orientation: ~
+        copyright: ~
+        artist: ~
+        lens_spec: ~
+        exposure_time: ~
+        fnumber: ~
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: ~
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: ~
+        date_time_original: ~
+        create_date: ~
+        modify_date: "1990:01:01 12:02:07"
+        exposure_program: ~
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: ~
+        max_aperture_value: ~
+        subject_distance: ~
+        metering_mode: ~
+        light_source: ~
+        flash: ~
+        focal_length: ~
+        image_number: ~
+        color_space: ~
+        flash_energy: ~
+        exposure_mode: ~
+        white_balance: ~
+        scene_capture_type: ~
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: DCS460D
+      make: Kodak
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

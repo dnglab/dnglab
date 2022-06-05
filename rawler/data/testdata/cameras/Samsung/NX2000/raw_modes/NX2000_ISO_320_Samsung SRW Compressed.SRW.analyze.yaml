@@ -1,0 +1,106 @@
+---
+file:
+  fileSize: 25748909
+  fileName: NX2000_ISO_320_Samsung SRW Compressed.SRW
+  digest: feeb98cbd12ba9c9de906fcc1f752e26
+data:
+  metadata:
+    rawParams:
+      rawWidth: 5536
+      rawHeight: 3714
+      bitDepth: 16
+      crops:
+        p:
+          x: 52
+          y: 28
+        d:
+          w: 5472
+          h: 3648
+      blacklevels:
+        - 0
+        - 0
+        - 0
+        - 0
+      whitelevels:
+        - 4095
+        - 4095
+        - 4095
+        - 4095
+      wbCoeffs:
+        - 2.3515625
+        - 1.0
+        - 1.6796875
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ~
+        artist: ~
+        lens_spec:
+          - 20/1
+          - 50/1
+          - 35/10
+          - 56/10
+        exposure_time: 1/60
+        fnumber: 50/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 200
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: 0/10
+        date_time_original: "2022:03:24 18:25:26"
+        create_date: ~
+        modify_date: "2022:03:24 18:25:26"
+        exposure_program: 2
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: ~
+        max_aperture_value: ~
+        subject_distance: ~
+        metering_mode: 5
+        light_source: 1
+        flash: 0
+        focal_length: 38/1
+        image_number: ~
+        color_space: 2
+        flash_energy: ~
+        exposure_mode: 2
+        white_balance: 1
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: Samsung
+        lens_model: NX 20-50mm F3.5-5.6 ED
+        gps: ~
+      model: NX2000
+      make: Samsung
+      lens:
+        identifiers:
+          name: ~
+          id:
+            - 4
+            - 0
+          nikon_id: ~
+          olympus_id: ~
+        mount: NX-mount
+        lens_make: Samsung
+        lens_model: NX 20-50mm F3.5-5.6 ED
+        focal_range:
+          - 20/1
+          - 50/1
+        aperture_range:
+          - 35/10
+          - 56/10
+        lens_name: Samsung NX 20-50mm F3.5-5.6 ED
+      unique_image_id: ~
+      rating: ~
+

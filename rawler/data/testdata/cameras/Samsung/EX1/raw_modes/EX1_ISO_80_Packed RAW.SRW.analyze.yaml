@@ -1,0 +1,85 @@
+---
+file:
+  fileSize: 21699313
+  fileName: EX1_ISO_80_Packed RAW.SRW
+  digest: 38172440ced4c36f1919b05e9b9d981e
+data:
+  metadata:
+    rawParams:
+      rawWidth: 3688
+      rawHeight: 2780
+      bitDepth: 16
+      crops:
+        p:
+          x: 16
+          y: 18
+        d:
+          w: 3648
+          h: 2736
+      blacklevels:
+        - 0
+        - 0
+        - 0
+        - 0
+      whitelevels:
+        - 15600
+        - 15600
+        - 15600
+        - 15600
+      wbCoeffs:
+        - 1.9023438
+        - 1.0
+        - 2.015625
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ~
+        artist: ~
+        lens_spec: ~
+        exposure_time: 1/1500
+        fnumber: 50/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 80
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: 0/10
+        date_time_original: "2010:12:29 14:20:09"
+        create_date: ~
+        modify_date: "2010:12:29 14:20:09"
+        exposure_program: 3
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: ~
+        max_aperture_value: ~
+        subject_distance: ~
+        metering_mode: 5
+        light_source: 0
+        flash: 0
+        focal_length: 0/0
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 3
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: EX1
+      make: Samsung
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

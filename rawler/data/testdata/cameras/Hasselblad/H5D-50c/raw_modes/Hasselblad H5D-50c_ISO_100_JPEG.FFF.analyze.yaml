@@ -1,0 +1,85 @@
+---
+file:
+  fileSize: 80127010
+  fileName: Hasselblad H5D-50c_ISO_100_JPEG.FFF
+  digest: 7e6af4685463d85e798b049f4f3a1a74
+data:
+  metadata:
+    rawParams:
+      rawWidth: 8374
+      rawHeight: 6304
+      bitDepth: 16
+      crops:
+        p:
+          x: 52
+          y: 100
+        d:
+          w: 8272
+          h: 6200
+      blacklevels:
+        - 256
+        - 256
+        - 256
+        - 256
+      whitelevels:
+        - 65535
+        - 65535
+        - 65535
+        - 65535
+      wbCoeffs:
+        - 2.5829773
+        - 1.0
+        - 1.4042816
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: Hasselblad H5D
+        artist: ~
+        lens_spec: ~
+        exposure_time: 1/90
+        fnumber: 8/1
+        aperture_value: 805306368/134217728
+        brightness_value: ~
+        iso_speed_ratings: 100
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: ~
+        date_time_original: "2015-11-14T14:20:36"
+        create_date: "2015-11-14T14:20:36"
+        modify_date: "2015:11:14 14:20:36"
+        exposure_program: 3
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: 871321773/134217728
+        max_aperture_value: 347393118/100000000
+        subject_distance: 1856/1000
+        metering_mode: 2
+        light_source: ~
+        flash: 0
+        focal_length: 150/1
+        image_number: ~
+        color_space: ~
+        flash_energy: ~
+        exposure_mode: ~
+        white_balance: ~
+        scene_capture_type: ~
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: H5D-50c
+      make: Hasselblad
+      lens: ~
+      unique_image_id: 90663814797270163221824534298227651120
+      rating: ~
+

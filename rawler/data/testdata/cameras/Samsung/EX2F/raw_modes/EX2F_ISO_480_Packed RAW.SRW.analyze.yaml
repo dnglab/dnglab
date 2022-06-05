@@ -1,0 +1,85 @@
+---
+file:
+  fileSize: 26412623
+  fileName: EX2F_ISO_480_Packed RAW.SRW
+  digest: 14f9b9d0cd122f7761605efa94ea3cfe
+data:
+  metadata:
+    rawParams:
+      rawWidth: 4176
+      rawHeight: 3058
+      bitDepth: 16
+      crops:
+        p:
+          x: 44
+          y: 34
+        d:
+          w: 4000
+          h: 3000
+      blacklevels:
+        - 0
+        - 0
+        - 0
+        - 0
+      whitelevels:
+        - 4095
+        - 4095
+        - 4095
+        - 4095
+      wbCoeffs:
+        - 1.265625
+        - 1.0
+        - 3.0703125
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ~
+        artist: ~
+        lens_spec: ~
+        exposure_time: 1/30
+        fnumber: 19/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 400
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: 0/10
+        date_time_original: "2014:08:21 22:00:02"
+        create_date: ~
+        modify_date: "2014:08:21 22:00:02"
+        exposure_program: 4
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: ~
+        max_aperture_value: ~
+        subject_distance: ~
+        metering_mode: 2
+        light_source: 0
+        flash: 0
+        focal_length: 0/6
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 4
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: EX2F
+      make: Samsung
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

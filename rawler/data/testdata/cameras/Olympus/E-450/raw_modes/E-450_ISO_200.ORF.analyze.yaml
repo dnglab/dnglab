@@ -1,0 +1,104 @@
+---
+file:
+  fileSize: 11125383
+  fileName: E-450_ISO_200.ORF
+  digest: 48848f1f2cb836c1a8806562c85a8f9c
+data:
+  metadata:
+    rawParams:
+      rawWidth: 3720
+      rawHeight: 2800
+      bitDepth: 16
+      crops:
+        p:
+          x: 54
+          y: 30
+        d:
+          w: 3648
+          h: 2736
+      blacklevels:
+        - 69
+        - 69
+        - 69
+        - 69
+      whitelevels:
+        - 4015
+        - 4015
+        - 4015
+        - 4015
+      wbCoeffs:
+        - 2.1328125
+        - 1.0
+        - 1.2265625
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ~
+        artist: ~
+        lens_spec:
+          - 14/1
+          - 42/1
+          - 35/10
+          - 56/10
+        exposure_time: 1/80
+        fnumber: 45/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 200
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: 0/10
+        date_time_original: "2015:01:24 16:21:02"
+        create_date: "2015:01:24 16:21:02"
+        modify_date: "2015:01:24 16:21:02"
+        exposure_program: 5
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: ~
+        max_aperture_value: 925/256
+        subject_distance: ~
+        metering_mode: 5
+        light_source: 0
+        flash: 24
+        focal_length: 18/1
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: Olympus
+        lens_model: Zuiko Digital ED 14-42mm F3.5-5.6
+        gps: ~
+      model: E-450
+      make: Olympus
+      lens:
+        identifiers:
+          name: ~
+          id: ~
+          nikon_id: ~
+          olympus_id: 00 23 00
+        mount: MFT-mount
+        lens_make: Olympus
+        lens_model: Zuiko Digital ED 14-42mm F3.5-5.6
+        focal_range:
+          - 14/1
+          - 42/1
+        aperture_range:
+          - 35/10
+          - 56/10
+        lens_name: Olympus Zuiko Digital ED 14-42mm F3.5-5.6
+      unique_image_id: ~
+      rating: ~
+

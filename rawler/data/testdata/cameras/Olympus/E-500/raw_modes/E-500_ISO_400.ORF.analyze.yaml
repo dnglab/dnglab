@@ -1,0 +1,85 @@
+---
+file:
+  fileSize: 14127616
+  fileName: E-500_ISO_400.ORF
+  digest: 05dce0c60c68384048b4b489e3a90f5f
+data:
+  metadata:
+    rawParams:
+      rawWidth: 3360
+      rawHeight: 2504
+      bitDepth: 16
+      crops:
+        p:
+          x: 18
+          y: 44
+        d:
+          w: 3264
+          h: 2448
+      blacklevels:
+        - 63
+        - 63
+        - 63
+        - 63
+      whitelevels:
+        - 3967
+        - 3967
+        - 3967
+        - 3967
+      wbCoeffs:
+        - 2.1171875
+        - 1.0
+        - 1.171875
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ~
+        artist: ~
+        lens_spec: ~
+        exposure_time: 1/200
+        fnumber: 45/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 400
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: 0/10
+        date_time_original: "0000:00:00 00:00:00"
+        create_date: "0000:00:00 00:00:00"
+        modify_date: "0000:00:00 00:00:00"
+        exposure_program: 3
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: ~
+        max_aperture_value: 925/256
+        subject_distance: ~
+        metering_mode: 5
+        light_source: 0
+        flash: 8
+        focal_length: 150/1
+        image_number: ~
+        color_space: 65535
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: E-500
+      make: Olympus
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

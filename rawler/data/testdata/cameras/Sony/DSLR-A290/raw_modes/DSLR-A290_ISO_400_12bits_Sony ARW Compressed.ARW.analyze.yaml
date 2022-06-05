@@ -1,0 +1,85 @@
+---
+file:
+  fileSize: 14286848
+  fileName: DSLR-A290_ISO_400_12bits_Sony ARW Compressed.ARW
+  digest: db050d5f05e036bf763d0207b48a52fd
+data:
+  metadata:
+    rawParams:
+      rawWidth: 4600
+      rawHeight: 3072
+      bitDepth: 16
+      crops:
+        p:
+          x: 4
+          y: 8
+        d:
+          w: 4592
+          h: 3056
+      blacklevels:
+        - 0
+        - 0
+        - 0
+        - 0
+      whitelevels:
+        - 15360
+        - 15360
+        - 15360
+        - 15360
+      wbCoeffs:
+        - 2.859375
+        - 1.0
+        - 1.4179688
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ~
+        artist: ~
+        lens_spec: ~
+        exposure_time: 1/50
+        fnumber: 56/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 400
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: 0/10
+        date_time_original: "2018:08:18 13:22:21"
+        create_date: "2018:08:18 13:22:21"
+        modify_date: "2018:08:18 13:22:21"
+        exposure_program: 1
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: ~
+        max_aperture_value: 497/100
+        subject_distance: ~
+        metering_mode: 5
+        light_source: 1
+        flash: 16
+        focal_length: 550/10
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 1
+        white_balance: 1
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: DSLR-A290
+      make: Sony
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

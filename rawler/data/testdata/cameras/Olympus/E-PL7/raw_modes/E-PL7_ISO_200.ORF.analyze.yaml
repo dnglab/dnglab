@@ -1,0 +1,104 @@
+---
+file:
+  fileSize: 15884894
+  fileName: E-PL7_ISO_200.ORF
+  digest: 5d75136e9c4d7de22c6f86b618b3d813
+data:
+  metadata:
+    rawParams:
+      rawWidth: 4640
+      rawHeight: 3472
+      bitDepth: 16
+      crops:
+        p:
+          x: 8
+          y: 8
+        d:
+          w: 4608
+          h: 3456
+      blacklevels:
+        - 254
+        - 254
+        - 254
+        - 254
+      whitelevels:
+        - 4000
+        - 4000
+        - 4000
+        - 4000
+      wbCoeffs:
+        - 2.0078125
+        - 1.0
+        - 1.8984375
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ""
+        artist: ""
+        lens_spec:
+          - 60/1
+          - 60/1
+          - 28/10
+          - 28/10
+        exposure_time: 1/640
+        fnumber: 56/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 200
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: 1
+        exposure_bias: 10/10
+        date_time_original: "2016:11:24 11:56:04"
+        create_date: "2016:11:24 11:56:04"
+        modify_date: "2016:11:24 11:56:04"
+        exposure_program: 3
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: ~
+        max_aperture_value: 761/256
+        subject_distance: ~
+        metering_mode: 5
+        light_source: 255
+        flash: 24
+        focal_length: 60/1
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 1
+        white_balance: 1
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: Olympus
+        lens_model: M.Zuiko Digital ED 60mm F2.8 Macro
+        gps: ~
+      model: E-PL7
+      make: Olympus
+      lens:
+        identifiers:
+          name: ~
+          id: ~
+          nikon_id: ~
+          olympus_id: 00 12 10
+        mount: MFT-mount
+        lens_make: Olympus
+        lens_model: M.Zuiko Digital ED 60mm F2.8 Macro
+        focal_range:
+          - 60/1
+          - 60/1
+        aperture_range:
+          - 28/10
+          - 28/10
+        lens_name: Olympus M.Zuiko Digital ED 60mm F2.8 Macro
+      unique_image_id: ~
+      rating: ~
+

@@ -1,0 +1,79 @@
+---
+file:
+  fileSize: 42714152
+  fileName: DBP for GX680_ISO_100.RAF
+  digest: afa424144f476dea921d864c8bd9e896
+data:
+  metadata:
+    rawParams:
+      rawWidth: 6608
+      rawHeight: 6607
+      bitDepth: 16
+      crops: ~
+      blacklevels:
+        - 128
+        - 128
+        - 128
+        - 128
+      whitelevels:
+        - 4095
+        - 4095
+        - 4095
+        - 4095
+      wbCoeffs:
+        - 2.4571428
+        - 1.0
+        - 1.7047619
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ""
+        artist: ~
+        lens_spec: ~
+        exposure_time: 1/2
+        fnumber: ~
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 100
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: ~
+        date_time_original: "2018:05:13 06:01:49"
+        create_date: "2018:05:13 06:01:49"
+        modify_date: "2018:05:13 06:01:49"
+        exposure_program: 1
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: 100/100
+        max_aperture_value: ~
+        subject_distance: ~
+        metering_mode: ~
+        light_source: 0
+        flash: 0
+        focal_length: ~
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 1
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: 0
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: DBP for GX680
+      make: Fujifilm
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

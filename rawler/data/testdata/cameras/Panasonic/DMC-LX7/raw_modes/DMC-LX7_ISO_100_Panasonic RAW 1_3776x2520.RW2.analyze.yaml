@@ -1,0 +1,85 @@
+---
+file:
+  fileSize: 11942400
+  fileName: DMC-LX7_ISO_100_Panasonic RAW 1_3776x2520.RW2
+  digest: 713e82d6a745f3417b30c3a76eb2860b
+data:
+  metadata:
+    rawParams:
+      rawWidth: 3920
+      rawHeight: 2536
+      bitDepth: 16
+      crops:
+        p:
+          x: 8
+          y: 8
+        d:
+          w: 3776
+          h: 2520
+      blacklevels:
+        - 128
+        - 128
+        - 128
+        - 128
+      whitelevels:
+        - 3971
+        - 3971
+        - 3971
+        - 3971
+      wbCoeffs:
+        - 1.9584906
+        - 1.0
+        - 1.8075472
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ~
+        artist: ~
+        lens_spec: ~
+        exposure_time: 10/16000
+        fnumber: 28/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 100
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: 0/100
+        date_time_original: "2017:10:03 14:22:27"
+        create_date: "2017:10:03 14:22:27"
+        modify_date: ~
+        exposure_program: 2
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: ~
+        max_aperture_value: 124/128
+        subject_distance: ~
+        metering_mode: 2
+        light_source: ~
+        flash: 16
+        focal_length: 47/10
+        image_number: ~
+        color_space: ~
+        flash_energy: ~
+        exposure_mode: ~
+        white_balance: ~
+        scene_capture_type: ~
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: DMC-LX7
+      make: Panasonic
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

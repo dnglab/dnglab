@@ -1,0 +1,85 @@
+---
+file:
+  fileSize: 12925440
+  fileName: DMC-GH1_ISO_100_Panasonic RAW 1_4352x2448.RW2
+  digest: a09d8070ada055f388d36ef91bfbd9d4
+data:
+  metadata:
+    rawParams:
+      rawWidth: 4396
+      rawHeight: 2464
+      bitDepth: 16
+      crops:
+        p:
+          x: 8
+          y: 4
+        d:
+          w: 4352
+          h: 2448
+      blacklevels:
+        - 0
+        - 0
+        - 0
+        - 0
+      whitelevels:
+        - 3986
+        - 3986
+        - 3986
+        - 3986
+      wbCoeffs:
+        - 2.539924
+        - 1.0
+        - 1.5513308
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ~
+        artist: ~
+        lens_spec: ~
+        exposure_time: 10/500
+        fnumber: 53/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 100
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: 0/100
+        date_time_original: "2017:04:07 08:55:17"
+        create_date: "2017:04:07 08:55:17"
+        modify_date: ~
+        exposure_program: 3
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: ~
+        max_aperture_value: 1239/256
+        subject_distance: ~
+        metering_mode: 5
+        light_source: ~
+        flash: 16
+        focal_length: 360/10
+        image_number: ~
+        color_space: ~
+        flash_energy: ~
+        exposure_mode: ~
+        white_balance: ~
+        scene_capture_type: ~
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: DMC-GH1
+      make: Panasonic
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

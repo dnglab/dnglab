@@ -1,0 +1,104 @@
+---
+file:
+  fileSize: 26030140
+  fileName: NIKON D500_Large_ISO_100_14bits_Lossless.NEF
+  digest: 0b3cfeff42bc949379750b4b75fb3354
+data:
+  metadata:
+    rawParams:
+      rawWidth: 5600
+      rawHeight: 3728
+      bitDepth: 16
+      crops:
+        p:
+          x: 16
+          y: 8
+        d:
+          w: 5568
+          h: 3712
+      blacklevels:
+        - 400
+        - 400
+        - 400
+        - 400
+      whitelevels:
+        - 15520
+        - 15520
+        - 15520
+        - 15520
+      wbCoeffs:
+        - 2.2177734
+        - 1.0
+        - 1.8012695
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: 153957 Photography
+        artist: Arne de Laat
+        lens_spec:
+          - 300/1
+          - 300/1
+          - 4/1
+          - 4/1
+        exposure_time: 10/500
+        fnumber: 100/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 100
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: 2
+        exposure_bias: 0/6
+        date_time_original: "2018:04:15 10:38:59"
+        create_date: "2018:04:15 10:38:59"
+        modify_date: "2018:04:15 10:38:59"
+        exposure_program: 1
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: "89"
+        sub_sec_time_original: "89"
+        sub_sec_time_digitized: "89"
+        shutter_speed_value: ~
+        max_aperture_value: 40/10
+        subject_distance: ~
+        metering_mode: 255
+        light_source: 0
+        flash: 0
+        focal_length: 3000/10
+        image_number: ~
+        color_space: ~
+        flash_energy: ~
+        exposure_mode: 1
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: 0
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: Nikon
+        lens_model: AF-S Nikkor 300mm f/4E PF ED VR
+        gps: ~
+      model: D500
+      make: Nikon
+      lens:
+        identifiers:
+          name: ~
+          id: ~
+          nikon_id: A8 48 8E 8E 30 30 C3 4E
+          olympus_id: ~
+        mount: F-mount
+        lens_make: Nikon
+        lens_model: AF-S Nikkor 300mm f/4E PF ED VR
+        focal_range:
+          - 300/1
+          - 300/1
+        aperture_range:
+          - 4/1
+          - 4/1
+        lens_name: Nikon AF-S Nikkor 300mm f/4E PF ED VR
+      unique_image_id: ~
+      rating: ~
+

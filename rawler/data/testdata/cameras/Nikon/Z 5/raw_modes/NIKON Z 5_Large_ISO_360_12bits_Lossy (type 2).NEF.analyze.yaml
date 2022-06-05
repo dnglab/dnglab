@@ -1,0 +1,106 @@
+---
+file:
+  fileSize: 22183585
+  fileName: NIKON Z 5_Large_ISO_360_12bits_Lossy (type 2).NEF
+  digest: 80751457478cde07012decf1d73cadbe
+data:
+  metadata:
+    rawParams:
+      rawWidth: 6040
+      rawHeight: 4032
+      bitDepth: 16
+      crops:
+        p:
+          x: 12
+          y: 8
+        d:
+          w: 6016
+          h: 4016
+      blacklevels:
+        - 252
+        - 252
+        - 252
+        - 252
+      whitelevels:
+        - 3880
+        - 3880
+        - 3880
+        - 3880
+      wbCoeffs:
+        - 1.6738281
+        - 1.0
+        - 1.5625
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ""
+        artist: Jonathan Lieb
+        lens_spec:
+          - 50/1
+          - 50/1
+          - 18/10
+          - 18/10
+        exposure_time: 10/6400
+        fnumber: 180/100
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 360
+        iso_speed: ~
+        recommended_exposure_index: 360
+        sensitivity_type: 2
+        exposure_bias: 0/6
+        date_time_original: "2020:10:25 11:12:06"
+        create_date: "2020:10:25 11:12:06"
+        modify_date: "2020:10:25 11:12:06"
+        exposure_program: 1
+        timezone_offset: ~
+        offset_time: "+02:00"
+        offset_time_original: "+02:00"
+        offset_time_digitized: "+02:00"
+        sub_sec_time: "08"
+        sub_sec_time_original: "08"
+        sub_sec_time_digitized: "08"
+        shutter_speed_value: ~
+        max_aperture_value: ~
+        subject_distance: ~
+        metering_mode: 5
+        light_source: 0
+        flash: 0
+        focal_length: 500/10
+        image_number: ~
+        color_space: ~
+        flash_energy: ~
+        exposure_mode: 1
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: 0
+        owner_name: ~
+        serial_number: "6009148"
+        lens_serial_number: "20043925"
+        lens_make: Nikon
+        lens_model: Nikkor Z 50mm f/1.8 S
+        gps: ~
+      model: Z 5
+      make: Nikon
+      lens:
+        identifiers:
+          name: ~
+          id:
+            - 9
+            - 0
+          nikon_id: ~
+          olympus_id: ~
+        mount: Z-mount
+        lens_make: Nikon
+        lens_model: Nikkor Z 50mm f/1.8 S
+        focal_range:
+          - 50/1
+          - 50/1
+        aperture_range:
+          - 18/10
+          - 18/10
+        lens_name: Nikon Nikkor Z 50mm f/1.8 S
+      unique_image_id: ~
+      rating: ~
+

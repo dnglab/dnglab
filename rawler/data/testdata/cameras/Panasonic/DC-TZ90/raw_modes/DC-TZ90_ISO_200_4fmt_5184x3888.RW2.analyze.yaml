@@ -1,0 +1,85 @@
+---
+file:
+  fileSize: 24161792
+  fileName: DC-TZ90_ISO_200_4fmt_5184x3888.RW2
+  digest: 4be638dd235c348547992f86b696f31c
+data:
+  metadata:
+    rawParams:
+      rawWidth: 5264
+      rawHeight: 3904
+      bitDepth: 16
+      crops:
+        p:
+          x: 8
+          y: 8
+        d:
+          w: 5184
+          h: 3888
+      blacklevels:
+        - 124
+        - 124
+        - 124
+        - 124
+      whitelevels:
+        - 4095
+        - 4095
+        - 4095
+        - 4095
+      wbCoeffs:
+        - 2.0429688
+        - 1.0
+        - 1.765625
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ~
+        artist: ~
+        lens_spec: ~
+        exposure_time: 10/800
+        fnumber: 47/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 200
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: 0/100
+        date_time_original: "2017:08:21 17:42:01"
+        create_date: "2017:08:21 17:42:01"
+        modify_date: ~
+        exposure_program: 3
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: "263"
+        sub_sec_time_digitized: "263"
+        shutter_speed_value: ~
+        max_aperture_value: 1024/256
+        subject_distance: ~
+        metering_mode: 3
+        light_source: ~
+        flash: 16
+        focal_length: 84/10
+        image_number: ~
+        color_space: ~
+        flash_energy: ~
+        exposure_mode: ~
+        white_balance: ~
+        scene_capture_type: ~
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: DC-TZ90
+      make: Panasonic
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

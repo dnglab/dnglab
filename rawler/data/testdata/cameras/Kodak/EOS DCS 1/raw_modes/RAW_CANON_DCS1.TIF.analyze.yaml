@@ -1,0 +1,85 @@
+---
+file:
+  fileSize: 6367232
+  fileName: RAW_CANON_DCS1.TIF
+  digest: b0f4505f2c06f1bf0a020895b709c0a6
+data:
+  metadata:
+    rawParams:
+      rawWidth: 3072
+      rawHeight: 2048
+      bitDepth: 16
+      crops:
+        p:
+          x: 6
+          y: 4
+        d:
+          w: 3060
+          h: 2040
+      blacklevels:
+        - 0
+        - 0
+        - 0
+        - 0
+      whitelevels:
+        - 7638
+        - 7638
+        - 7638
+        - 7638
+      wbCoeffs:
+        - ~
+        - ~
+        - ~
+        - ~
+    rawMetadata:
+      exif:
+        orientation: ~
+        copyright: ~
+        artist: ~
+        lens_spec: ~
+        exposure_time: ~
+        fnumber: ~
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: ~
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: ~
+        date_time_original: ~
+        create_date: ~
+        modify_date: "2007:12:25 16:00:06"
+        exposure_program: ~
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: ~
+        max_aperture_value: ~
+        subject_distance: ~
+        metering_mode: ~
+        light_source: ~
+        flash: ~
+        focal_length: ~
+        image_number: ~
+        color_space: ~
+        flash_energy: ~
+        exposure_mode: ~
+        white_balance: ~
+        scene_capture_type: ~
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: EOS DCS 1
+      make: Kodak
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

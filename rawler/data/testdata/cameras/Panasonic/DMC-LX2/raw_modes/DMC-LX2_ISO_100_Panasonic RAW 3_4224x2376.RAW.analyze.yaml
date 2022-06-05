@@ -1,0 +1,85 @@
+---
+file:
+  fileSize: 20516316
+  fileName: DMC-LX2_ISO_100_Panasonic RAW 3_4224x2376.RAW
+  digest: b377ffc696f8313ed5e107c982071a10
+data:
+  metadata:
+    rawParams:
+      rawWidth: 4290
+      rawHeight: 2391
+      bitDepth: 16
+      crops:
+        p:
+          x: 16
+          y: 7
+        d:
+          w: 4224
+          h: 2376
+      blacklevels:
+        - 0
+        - 0
+        - 0
+        - 0
+      whitelevels:
+        - 3986
+        - 3986
+        - 3986
+        - 3986
+      wbCoeffs:
+        - 2.365019
+        - 1.0
+        - 1.5361217
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ~
+        artist: ~
+        lens_spec: ~
+        exposure_time: 10/1250
+        fnumber: 49/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 100
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: 0/100
+        date_time_original: "2007:05:27 17:48:00"
+        create_date: "2007:05:27 17:48:00"
+        modify_date: ~
+        exposure_program: 2
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: ~
+        max_aperture_value: 30/10
+        subject_distance: ~
+        metering_mode: 5
+        light_source: ~
+        flash: 16
+        focal_length: 252/10
+        image_number: ~
+        color_space: ~
+        flash_energy: ~
+        exposure_mode: ~
+        white_balance: ~
+        scene_capture_type: ~
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: DMC-LX2
+      make: Panasonic
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

@@ -1,0 +1,104 @@
+---
+file:
+  fileSize: 16880027
+  fileName: NIKON D4S_ISO_360_14bits_Lossy (type 2).NEF
+  digest: 43ec68a16ae50fd5137087318cb99988
+data:
+  metadata:
+    rawParams:
+      rawWidth: 4936
+      rawHeight: 3288
+      bitDepth: 16
+      crops:
+        p:
+          x: 4
+          y: 4
+        d:
+          w: 4928
+          h: 3280
+      blacklevels:
+        - 768
+        - 768
+        - 768
+        - 768
+      whitelevels:
+        - 15520
+        - 15520
+        - 15520
+        - 15520
+      wbCoeffs:
+        - 2.2578125
+        - 1.0
+        - 1.2578125
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ""
+        artist: ""
+        lens_spec:
+          - 28/1
+          - 75/1
+          - 28/10
+          - 28/10
+        exposure_time: 10/8000
+        fnumber: 28/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 360
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: 2
+        exposure_bias: 0/6
+        date_time_original: "2018:01:13 16:14:16"
+        create_date: "2018:01:13 16:14:16"
+        modify_date: "2018:01:13 16:14:16"
+        exposure_program: 1
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: "89"
+        sub_sec_time_original: "89"
+        sub_sec_time_digitized: "89"
+        shutter_speed_value: ~
+        max_aperture_value: 30/10
+        subject_distance: ~
+        metering_mode: 5
+        light_source: 0
+        flash: 0
+        focal_length: 320/10
+        image_number: ~
+        color_space: ~
+        flash_energy: ~
+        exposure_mode: 1
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: 0
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: Tamron
+        lens_model: SP AF 28-75mm f/2.8 XR Di LD Aspherical (IF) Macro (A09NII)
+        gps: ~
+      model: D4S
+      make: Nikon
+      lens:
+        identifiers:
+          name: ~
+          id: ~
+          nikon_id: FA 54 3C 5E 24 24 DF 06
+          olympus_id: ~
+        mount: F-mount
+        lens_make: Tamron
+        lens_model: SP AF 28-75mm f/2.8 XR Di LD Aspherical (IF) Macro (A09NII)
+        focal_range:
+          - 28/1
+          - 75/1
+        aperture_range:
+          - 28/10
+          - 28/10
+        lens_name: Tamron SP AF 28-75mm f/2.8 XR Di LD Aspherical (IF) Macro (A09NII)
+      unique_image_id: ~
+      rating: ~
+

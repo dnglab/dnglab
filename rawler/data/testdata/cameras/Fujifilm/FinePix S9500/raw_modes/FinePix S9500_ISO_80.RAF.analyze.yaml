@@ -1,0 +1,79 @@
+---
+file:
+  fileSize: 19163072
+  fileName: FinePix S9500_ISO_80.RAF
+  digest: cc82d79852ea007cb697e0108e05cd51
+data:
+  metadata:
+    rawParams:
+      rawWidth: 4356
+      rawHeight: 4355
+      bitDepth: 16
+      crops: ~
+      blacklevels:
+        - 0
+        - 0
+        - 0
+        - 0
+      whitelevels:
+        - 15564
+        - 15564
+        - 15564
+        - 15564
+      wbCoeffs:
+        - 1.625
+        - 1.0
+        - 1.096875
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ""
+        artist: ~
+        lens_spec: ~
+        exposure_time: 10/5000
+        fnumber: 340/100
+        aperture_value: 350/100
+        brightness_value: ~
+        iso_speed_ratings: 80
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: 0/100
+        date_time_original: "2017:04:30 11:12:22"
+        create_date: "2017:04:30 11:12:22"
+        modify_date: "2017:04:30 11:12:22"
+        exposure_program: 3
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: 905/100
+        max_aperture_value: 300/100
+        subject_distance: ~
+        metering_mode: 5
+        light_source: 11
+        flash: 16
+        focal_length: 1080/100
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 1
+        scene_capture_type: 0
+        subject_distance_range: 0
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: FinePix S9500
+      make: Fujifilm
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

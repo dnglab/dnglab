@@ -1,0 +1,121 @@
+---
+file:
+  fileSize: 14185356
+  fileName: Canon EOS R_RAW_ISO_100_crop_nodual.CR3
+  digest: 53bbbcd287eb64f545ee389a338b0394
+data:
+  metadata:
+    rawParams:
+      rawWidth: 4352
+      rawHeight: 2850
+      bitDepth: 16
+      crops:
+        p:
+          x: 164
+          y: 58
+        d:
+          w: 4176
+          h: 2784
+      blacklevels:
+        - 511
+        - 510
+        - 511
+        - 510
+      whitelevels:
+        - 14008
+        - 14008
+        - 14008
+        - 14008
+      wbCoeffs:
+        - 1.9726562
+        - 1.0
+        - 1.546875
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: CC0
+        artist: Alex Esseling
+        lens_spec: ~
+        exposure_time: 1/10
+        fnumber: 11/1
+        aperture_value: 458752/65536
+        brightness_value: ~
+        iso_speed_ratings: 100
+        iso_speed: ~
+        recommended_exposure_index: 100
+        sensitivity_type: 2
+        exposure_bias: 0/1
+        date_time_original: "2021:05:11 09:25:19"
+        create_date: "2021:05:11 09:25:19"
+        modify_date: "2021:05:11 09:25:19"
+        exposure_program: 1
+        timezone_offset: ~
+        offset_time: "+01:00"
+        offset_time_original: "+01:00"
+        offset_time_digitized: "+01:00"
+        sub_sec_time: "49"
+        sub_sec_time_original: "49"
+        sub_sec_time_digitized: "49"
+        shutter_speed_value: 221184/65536
+        max_aperture_value: ~
+        subject_distance: ~
+        metering_mode: 6
+        light_source: ~
+        flash: 0
+        focal_length: 70/1
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 1
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ""
+        serial_number: "033021004689"
+        lens_serial_number: "0000000000"
+        lens_make: ~
+        lens_model: ~
+        gps:
+          gps_version_id:
+            - 2
+            - 3
+            - 0
+            - 0
+          gps_latitude_ref: ~
+          gps_latitude: ~
+          gps_longitude_ref: ~
+          gps_longitude: ~
+          gps_altitude_ref: 0
+          gps_altitude: ~
+          gps_timestamp: ~
+          gps_satellites: ""
+          gps_status: ""
+          gps_measure_mode: ""
+          gps_dop: ~
+          gps_speed_ref: ~
+          gps_speed: ~
+          gps_track_ref: ~
+          gps_track: ~
+          gps_img_direction_ref: ~
+          gps_img_direction: ~
+          gps_map_datum: ~
+          gps_dest_latitude_ref: ~
+          gps_dest_latitude: ~
+          gps_dest_longitude_ref: ~
+          gps_dest_longitude: ~
+          gps_dest_bearing_ref: ~
+          gps_dest_bearing: ~
+          gps_dest_distance_ref: ~
+          gps_dest_distance: ~
+          gps_processing_method: ~
+          gps_area_information: ~
+          gps_date_stamp: ~
+          gps_differential: ~
+          gps_h_positioning_error: ~
+      model: EOS R
+      make: Canon
+      lens: ~
+      unique_image_id: 253179484934357895979143271754778988178
+      rating: ~
+

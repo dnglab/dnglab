@@ -1,0 +1,85 @@
+---
+file:
+  fileSize: 23108096
+  fileName: V-Lux 5_ISO_125_4fmt_5472x3648.RWL
+  digest: 2a3fd9a1f1d283d7165c2ddbe17c1de4
+data:
+  metadata:
+    rawParams:
+      rawWidth: 5488
+      rawHeight: 3664
+      bitDepth: 16
+      crops:
+        p:
+          x: 8
+          y: 8
+        d:
+          w: 5472
+          h: 3648
+      blacklevels:
+        - 128
+        - 128
+        - 128
+        - 128
+      whitelevels:
+        - 3956
+        - 3956
+        - 3956
+        - 3956
+      wbCoeffs:
+        - 1.9414062
+        - 1.0
+        - 2.703125
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ~
+        artist: ~
+        lens_spec: ~
+        exposure_time: 10/1600
+        fnumber: 40/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 125
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: 0/100
+        date_time_original: "2019:08:16 23:58:34"
+        create_date: "2019:08:16 23:58:34"
+        modify_date: ~
+        exposure_program: 2
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: "+01:00"
+        offset_time_digitized: "+01:00"
+        sub_sec_time: ~
+        sub_sec_time_original: "587"
+        sub_sec_time_digitized: "587"
+        shutter_speed_value: ~
+        max_aperture_value: 1024/256
+        subject_distance: ~
+        metering_mode: 3
+        light_source: ~
+        flash: 16
+        focal_length: 14600/100
+        image_number: ~
+        color_space: ~
+        flash_energy: ~
+        exposure_mode: ~
+        white_balance: ~
+        scene_capture_type: ~
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: V-Lux 5
+      make: LEICA
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

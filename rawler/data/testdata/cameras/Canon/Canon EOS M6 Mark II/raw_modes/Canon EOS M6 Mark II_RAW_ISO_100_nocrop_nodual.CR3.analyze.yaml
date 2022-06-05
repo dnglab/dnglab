@@ -1,0 +1,142 @@
+---
+file:
+  fileSize: 36668435
+  fileName: Canon EOS M6 Mark II_RAW_ISO_100_nocrop_nodual.CR3
+  digest: 50fb0e01ddfb8bd24ba732d7a77c6e67
+data:
+  metadata:
+    rawParams:
+      rawWidth: 7128
+      rawHeight: 4732
+      bitDepth: 16
+      crops:
+        p:
+          x: 156
+          y: 84
+        d:
+          w: 6960
+          h: 4640
+      blacklevels:
+        - 512
+        - 512
+        - 512
+        - 512
+      whitelevels:
+        - 13036
+        - 13036
+        - 13036
+        - 13036
+      wbCoeffs:
+        - 1.7177734
+        - 1.0
+        - 1.6728516
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: CC-0
+        artist: ""
+        lens_spec:
+          - 32/1
+          - 32/1
+          - 14/10
+          - 14/10
+        exposure_time: 1/25
+        fnumber: 4/1
+        aperture_value: 262144/65536
+        brightness_value: ~
+        iso_speed_ratings: 100
+        iso_speed: ~
+        recommended_exposure_index: 100
+        sensitivity_type: 2
+        exposure_bias: 0/1
+        date_time_original: "2021:05:15 11:42:39"
+        create_date: "2021:05:15 11:42:39"
+        modify_date: "2021:05:15 11:42:39"
+        exposure_program: 1
+        timezone_offset: ~
+        offset_time: "+08:00"
+        offset_time_original: "+08:00"
+        offset_time_digitized: "+08:00"
+        sub_sec_time: "12"
+        sub_sec_time_original: "12"
+        sub_sec_time_digitized: "12"
+        shutter_speed_value: 303104/65536
+        max_aperture_value: ~
+        subject_distance: ~
+        metering_mode: 5
+        light_source: ~
+        flash: 0
+        focal_length: 32/1
+        image_number: ~
+        color_space: 65535
+        flash_energy: ~
+        exposure_mode: 1
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ""
+        serial_number: "018033001460"
+        lens_serial_number: 0000104d93
+        lens_make: Canon
+        lens_model: EF-M 32mm f/1.4 STM
+        gps:
+          gps_version_id:
+            - 2
+            - 3
+            - 0
+            - 0
+          gps_latitude_ref: ~
+          gps_latitude: ~
+          gps_longitude_ref: ~
+          gps_longitude: ~
+          gps_altitude_ref: ~
+          gps_altitude: ~
+          gps_timestamp: ~
+          gps_satellites: ~
+          gps_status: ~
+          gps_measure_mode: ~
+          gps_dop: ~
+          gps_speed_ref: ~
+          gps_speed: ~
+          gps_track_ref: ~
+          gps_track: ~
+          gps_img_direction_ref: ~
+          gps_img_direction: ~
+          gps_map_datum: ~
+          gps_dest_latitude_ref: ~
+          gps_dest_latitude: ~
+          gps_dest_longitude_ref: ~
+          gps_dest_longitude: ~
+          gps_dest_bearing_ref: ~
+          gps_dest_bearing: ~
+          gps_dest_distance_ref: ~
+          gps_dest_distance: ~
+          gps_processing_method: ~
+          gps_area_information: ~
+          gps_date_stamp: ~
+          gps_differential: ~
+          gps_h_positioning_error: ~
+      model: EOS M6 Mark II
+      make: Canon
+      lens:
+        identifiers:
+          name: EF-M32mm f/1.4 STM
+          id:
+            - 4159
+            - 0
+          nikon_id: ~
+          olympus_id: ~
+        mount: ef-mount
+        lens_make: Canon
+        lens_model: EF-M 32mm f/1.4 STM
+        focal_range:
+          - 32/1
+          - 32/1
+        aperture_range:
+          - 14/10
+          - 14/10
+        lens_name: Canon EF-M 32mm f/1.4 STM
+      unique_image_id: 169690164826670172588596793858886838282
+      rating: ~
+

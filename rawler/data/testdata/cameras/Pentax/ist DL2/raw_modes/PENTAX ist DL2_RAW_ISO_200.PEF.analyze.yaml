@@ -1,0 +1,106 @@
+---
+file:
+  fileSize: 10756156
+  fileName: PENTAX ist DL2_RAW_ISO_200.PEF
+  digest: b6da67afdb3d4874616fb3a372e3240f
+data:
+  metadata:
+    rawParams:
+      rawWidth: 3040
+      rawHeight: 2024
+      bitDepth: 16
+      crops:
+        p:
+          x: 16
+          y: 8
+        d:
+          w: 3008
+          h: 2008
+      blacklevels:
+        - 127
+        - 128
+        - 128
+        - 127
+      whitelevels:
+        - 3950
+        - 3950
+        - 3950
+        - 3950
+      wbCoeffs:
+        - 1.5742188
+        - 1.0
+        - 0.9296875
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ~
+        artist: ~
+        lens_spec:
+          - 18/1
+          - 200/1
+          - 35/10
+          - 63/10
+        exposure_time: 1/750
+        fnumber: 95/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 200
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: 0/10
+        date_time_original: "2009:06:11 11:11:51"
+        create_date: "2009:06:11 11:11:51"
+        modify_date: "2009:06:11 11:11:51"
+        exposure_program: 2
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: ~
+        max_aperture_value: ~
+        subject_distance: ~
+        metering_mode: 2
+        light_source: ~
+        flash: 16
+        focal_length: 24/1
+        image_number: ~
+        color_space: ~
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: 3
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: Tamron
+        lens_model: Tamron XR DiII 18-200mm F3.5-6.3 (A14)
+        gps: ~
+      model: "*ist DL2"
+      make: Pentax
+      lens:
+        identifiers:
+          name: ~
+          id:
+            - 4
+            - 249
+          nikon_id: ~
+          olympus_id: ~
+        mount: k-mount
+        lens_make: Tamron
+        lens_model: Tamron XR DiII 18-200mm F3.5-6.3 (A14)
+        focal_range:
+          - 18/1
+          - 200/1
+        aperture_range:
+          - 35/10
+          - 63/10
+        lens_name: Tamron Tamron XR DiII 18-200mm F3.5-6.3 (A14)
+      unique_image_id: ~
+      rating: ~
+

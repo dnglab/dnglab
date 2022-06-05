@@ -1,0 +1,79 @@
+---
+file:
+  fileSize: 15217883
+  fileName: Canon EOS 5D Mark IV_sRAW2_ISO_100.CR2
+  digest: cca5aaaa47cd9825d68974cee2e9d123
+data:
+  metadata:
+    rawParams:
+      rawWidth: 3360
+      rawHeight: 2240
+      bitDepth: 16
+      crops: ~
+      blacklevels:
+        - 511
+        - 511
+        - 511
+        - 511
+      whitelevels:
+        - 14008
+        - 14008
+        - 14008
+        - 14008
+      wbCoeffs:
+        - 1.9882812
+        - 1.0
+        - 1.4736328
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ""
+        artist: Lothar Kimmeringer
+        lens_spec: ~
+        exposure_time: 1/3200
+        fnumber: 28/10
+        aperture_value: 196608/65536
+        brightness_value: ~
+        iso_speed_ratings: 100
+        iso_speed: ~
+        recommended_exposure_index: 100
+        sensitivity_type: 2
+        exposure_bias: 0/1
+        date_time_original: "2017:01:26 09:37:10"
+        create_date: "2017:01:26 09:37:10"
+        modify_date: "2017:01:26 09:37:10"
+        exposure_program: 3
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: "27"
+        sub_sec_time_original: "27"
+        sub_sec_time_digitized: "27"
+        shutter_speed_value: 761856/65536
+        max_aperture_value: ~
+        subject_distance: ~
+        metering_mode: 6
+        light_source: ~
+        flash: 16
+        focal_length: 40/1
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ""
+        serial_number: "013021003973"
+        lens_serial_number: "0000000000"
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: EOS 5D Mark IV
+      make: Canon
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

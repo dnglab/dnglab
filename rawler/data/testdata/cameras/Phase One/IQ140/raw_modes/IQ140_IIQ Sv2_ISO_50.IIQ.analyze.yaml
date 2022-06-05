@@ -1,0 +1,98 @@
+---
+file:
+  fileSize: 23186121
+  fileName: IQ140_IIQ Sv2_ISO_50.IIQ
+  digest: e45425b577f3381fbe63eb2f03897627
+data:
+  metadata:
+    rawParams:
+      rawWidth: 7372
+      rawHeight: 5536
+      bitDepth: 16
+      crops: ~
+      blacklevels:
+        - 0
+        - 0
+        - 0
+        - 0
+      whitelevels:
+        - 65535
+        - 65535
+        - 65535
+        - 65535
+      wbCoeffs:
+        - 1.24841
+        - 1.0
+        - 1.4861
+        - ~
+    rawMetadata:
+      exif:
+        orientation: ~
+        copyright: ""
+        artist: ~
+        lens_spec:
+          - 150/1
+          - 150/1
+          - 35/10
+          - 35/10
+        exposure_time: 8000/1000000
+        fnumber: 1600/100
+        aperture_value: 80000/10000
+        brightness_value: ~
+        iso_speed_ratings: 50
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: 0/1000
+        date_time_original: "2017:12:04 14:38:15"
+        create_date: "2017:12:04 14:38:15"
+        modify_date: ~
+        exposure_program: 1
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: 696578/100000
+        max_aperture_value: ~
+        subject_distance: ~
+        metering_mode: ~
+        light_source: 4
+        flash: ~
+        focal_length: 1500/10
+        image_number: ~
+        color_space: ~
+        flash_energy: ~
+        exposure_mode: ~
+        white_balance: 4
+        scene_capture_type: ~
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: Schneider
+        lens_model: 150mm LS f/3.5
+        gps: ~
+      model: IQ140
+      make: Phase One
+      lens:
+        identifiers:
+          name: Schneider LS 150mm f/3.5
+          id: ~
+          nikon_id: ~
+          olympus_id: ~
+        mount: phaseone
+        lens_make: Schneider
+        lens_model: 150mm LS f/3.5
+        focal_range:
+          - 150/1
+          - 150/1
+        aperture_range:
+          - 35/10
+          - 35/10
+        lens_name: Schneider 150mm LS f/3.5
+      unique_image_id: ~
+      rating: ~
+

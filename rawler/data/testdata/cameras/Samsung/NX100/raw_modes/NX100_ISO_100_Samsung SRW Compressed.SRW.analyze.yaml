@@ -1,0 +1,106 @@
+---
+file:
+  fileSize: 27120224
+  fileName: NX100_ISO_100_Samsung SRW Compressed.SRW
+  digest: f87357fce9f31facf7964279c16eb5f0
+data:
+  metadata:
+    rawParams:
+      rawWidth: 4704
+      rawHeight: 3124
+      bitDepth: 16
+      crops:
+        p:
+          x: 22
+          y: 14
+        d:
+          w: 4592
+          h: 3056
+      blacklevels:
+        - 0
+        - 0
+        - 0
+        - 0
+      whitelevels:
+        - 3750
+        - 3750
+        - 3750
+        - 3750
+      wbCoeffs:
+        - 1.9824219
+        - 1.0307617
+        - 0.9992676
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ~
+        artist: ~
+        lens_spec:
+          - 30/1
+          - 30/1
+          - 2/1
+          - 2/1
+        exposure_time: 1/800
+        fnumber: 40/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 100
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: 0/10
+        date_time_original: "2012:05:17 15:02:01"
+        create_date: ~
+        modify_date: "2012:05:17 15:02:01"
+        exposure_program: 1
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: ~
+        max_aperture_value: ~
+        subject_distance: ~
+        metering_mode: 5
+        light_source: 255
+        flash: 16
+        focal_length: 300/10
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: ~
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: Samsung
+        lens_model: NX 30mm F2 Pancake
+        gps: ~
+      model: NX100
+      make: Samsung
+      lens:
+        identifiers:
+          name: ~
+          id:
+            - 1
+            - 0
+          nikon_id: ~
+          olympus_id: ~
+        mount: NX-mount
+        lens_make: Samsung
+        lens_model: NX 30mm F2 Pancake
+        focal_range:
+          - 30/1
+          - 30/1
+        aperture_range:
+          - 2/1
+          - 2/1
+        lens_name: Samsung NX 30mm F2 Pancake
+      unique_image_id: ~
+      rating: ~
+

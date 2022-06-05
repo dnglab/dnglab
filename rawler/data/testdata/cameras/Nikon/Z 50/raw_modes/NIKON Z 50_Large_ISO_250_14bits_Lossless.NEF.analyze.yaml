@@ -1,0 +1,106 @@
+---
+file:
+  fileSize: 31261568
+  fileName: NIKON Z 50_Large_ISO_250_14bits_Lossless.NEF
+  digest: 7f048f964fad837e5cb0125408f31dda
+data:
+  metadata:
+    rawParams:
+      rawWidth: 5600
+      rawHeight: 3728
+      bitDepth: 16
+      crops:
+        p:
+          x: 16
+          y: 8
+        d:
+          w: 5568
+          h: 3712
+      blacklevels:
+        - 1008
+        - 1008
+        - 1008
+        - 1008
+      whitelevels:
+        - 15520
+        - 15520
+        - 15520
+        - 15520
+      wbCoeffs:
+        - 1.921875
+        - 1.0
+        - 1.4882812
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ""
+        artist: ""
+        lens_spec:
+          - 16/1
+          - 50/1
+          - 35/10
+          - 63/10
+        exposure_time: 10/2500
+        fnumber: 800/100
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 250
+        iso_speed: ~
+        recommended_exposure_index: 250
+        sensitivity_type: 2
+        exposure_bias: 0/6
+        date_time_original: "2019:12:30 12:46:19"
+        create_date: "2019:12:30 12:46:19"
+        modify_date: "2019:12:30 12:46:19"
+        exposure_program: 1
+        timezone_offset: ~
+        offset_time: "+00:00"
+        offset_time_original: "+00:00"
+        offset_time_digitized: "+00:00"
+        sub_sec_time: "43"
+        sub_sec_time_original: "43"
+        sub_sec_time_digitized: "43"
+        shutter_speed_value: ~
+        max_aperture_value: ~
+        subject_distance: ~
+        metering_mode: 5
+        light_source: 0
+        flash: 16
+        focal_length: 200/10
+        image_number: ~
+        color_space: ~
+        flash_energy: ~
+        exposure_mode: 1
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: 0
+        owner_name: ~
+        serial_number: "6013942"
+        lens_serial_number: "20040934"
+        lens_make: Nikon
+        lens_model: Nikkor Z DX 16-50mm f/3.5-6.3 VR
+        gps: ~
+      model: Z 50
+      make: Nikon
+      lens:
+        identifiers:
+          name: ~
+          id:
+            - 11
+            - 0
+          nikon_id: ~
+          olympus_id: ~
+        mount: Z-mount
+        lens_make: Nikon
+        lens_model: Nikkor Z DX 16-50mm f/3.5-6.3 VR
+        focal_range:
+          - 16/1
+          - 50/1
+        aperture_range:
+          - 35/10
+          - 63/10
+        lens_name: Nikon Nikkor Z DX 16-50mm f/3.5-6.3 VR
+      unique_image_id: ~
+      rating: ~
+

@@ -1,0 +1,104 @@
+---
+file:
+  fileSize: 23595540
+  fileName: NIKON D600_ISO_400_12bits_Lossless.NEF
+  digest: d810395b6fe422930c66ef27f299fb20
+data:
+  metadata:
+    rawParams:
+      rawWidth: 6080
+      rawHeight: 4028
+      bitDepth: 16
+      crops:
+        p:
+          x: 8
+          y: 6
+        d:
+          w: 6016
+          h: 4016
+      blacklevels:
+        - 0
+        - 0
+        - 0
+        - 0
+      whitelevels:
+        - 3880
+        - 3880
+        - 3880
+        - 3880
+      wbCoeffs:
+        - 1.296875
+        - 1.0
+        - 2.4765625
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: Aceler
+        artist: Aceler
+        lens_spec:
+          - 50/1
+          - 50/1
+          - 14/10
+          - 14/10
+        exposure_time: 10/600
+        fnumber: 14/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 400
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: 2
+        exposure_bias: 0/6
+        date_time_original: "2017:01:17 19:40:02"
+        create_date: "2017:01:17 19:40:02"
+        modify_date: "2017:01:17 19:40:02"
+        exposure_program: 1
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: "60"
+        sub_sec_time_original: "60"
+        sub_sec_time_digitized: "60"
+        shutter_speed_value: ~
+        max_aperture_value: 10/10
+        subject_distance: ~
+        metering_mode: 3
+        light_source: 0
+        flash: 16
+        focal_length: 500/10
+        image_number: ~
+        color_space: ~
+        flash_energy: ~
+        exposure_mode: 1
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: 0
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: Nikon
+        lens_model: AF-S Nikkor 50mm f/1.4G
+        gps: ~
+      model: D600
+      make: Nikon
+      lens:
+        identifiers:
+          name: ~
+          id: ~
+          nikon_id: A0 54 50 50 0C 0C A2 06
+          olympus_id: ~
+        mount: F-mount
+        lens_make: Nikon
+        lens_model: AF-S Nikkor 50mm f/1.4G
+        focal_range:
+          - 50/1
+          - 50/1
+        aperture_range:
+          - 14/10
+          - 14/10
+        lens_name: Nikon AF-S Nikkor 50mm f/1.4G
+      unique_image_id: ~
+      rating: ~
+

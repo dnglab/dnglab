@@ -1,0 +1,104 @@
+---
+file:
+  fileSize: 13797971
+  fileName: NIKON D700_ISO_100_12bits_Lossless.NEF
+  digest: ab47d43fd31160c66c45e355c94de4ad
+data:
+  metadata:
+    rawParams:
+      rawWidth: 4288
+      rawHeight: 2844
+      bitDepth: 16
+      crops:
+        p:
+          x: 15
+          y: 6
+        d:
+          w: 4256
+          h: 2832
+      blacklevels:
+        - 0
+        - 0
+        - 0
+        - 0
+      whitelevels:
+        - 3972
+        - 3972
+        - 3972
+        - 3972
+      wbCoeffs:
+        - 1.8007812
+        - 1.0
+        - 1.3203125
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: Dominik Gedon
+        artist: Dominik Gedon
+        lens_spec:
+          - 20/1
+          - 20/1
+          - 18/10
+          - 18/10
+        exposure_time: 10/20
+        fnumber: 80/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: ~
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: 0/6
+        date_time_original: "2018:01:17 12:30:53"
+        create_date: "2018:01:17 12:30:53"
+        modify_date: "2018:01:17 12:30:53"
+        exposure_program: 4
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: "82"
+        sub_sec_time_original: "82"
+        sub_sec_time_digitized: "82"
+        shutter_speed_value: ~
+        max_aperture_value: 16/10
+        subject_distance: ~
+        metering_mode: 5
+        light_source: 0
+        flash: 0
+        focal_length: 200/10
+        image_number: ~
+        color_space: ~
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: 0
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: Nikon
+        lens_model: AF-S Nikkor 20mm f/1.8G ED
+        gps: ~
+      model: D700
+      make: Nikon
+      lens:
+        identifiers:
+          name: ~
+          id: ~
+          nikon_id: A9 4C 31 31 14 14 C4 06
+          olympus_id: ~
+        mount: F-mount
+        lens_make: Nikon
+        lens_model: AF-S Nikkor 20mm f/1.8G ED
+        focal_range:
+          - 20/1
+          - 20/1
+        aperture_range:
+          - 18/10
+          - 18/10
+        lens_name: Nikon AF-S Nikkor 20mm f/1.8G ED
+      unique_image_id: ~
+      rating: ~
+

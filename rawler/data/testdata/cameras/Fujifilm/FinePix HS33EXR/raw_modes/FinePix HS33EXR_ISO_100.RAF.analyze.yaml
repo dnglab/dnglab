@@ -1,0 +1,85 @@
+---
+file:
+  fileSize: 25421824
+  fileName: FinePix HS33EXR_ISO_100.RAF
+  digest: cb7fafc757b3d6ef93f786847359494a
+data:
+  metadata:
+    rawParams:
+      rawWidth: 3328
+      rawHeight: 2464
+      bitDepth: 16
+      crops:
+        p:
+          x: 42
+          y: 14
+        d:
+          w: 2436
+          h: 3248
+      blacklevels:
+        - 257
+        - 257
+        - 257
+        - 257
+      whitelevels:
+        - 3900
+        - 3900
+        - 3900
+        - 3900
+      wbCoeffs:
+        - 1.4226191
+        - 1.0
+        - 1.8154762
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ""
+        artist: ~
+        lens_spec: ~
+        exposure_time: 10/5000
+        fnumber: 560/100
+        aperture_value: 500/100
+        brightness_value: ~
+        iso_speed_ratings: 100
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: 1
+        exposure_bias: 0/100
+        date_time_original: "2017:12:28 02:44:43"
+        create_date: "2017:12:28 02:44:43"
+        modify_date: "2017:12:28 02:44:43"
+        exposure_program: 8
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: 902/100
+        max_aperture_value: 300/100
+        subject_distance: ~
+        metering_mode: 5
+        light_source: 0
+        flash: 16
+        focal_length: 730/100
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 0
+        scene_capture_type: 1
+        subject_distance_range: 0
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: FinePix HS33EXR
+      make: Fujifilm
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

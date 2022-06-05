@@ -1,0 +1,85 @@
+---
+file:
+  fileSize: 16947644
+  fileName: NIKON 1 V3_ISO_160_12bits_Lossy (type 2).NEF
+  digest: e73ffb3fd16396aa4cee5d27dce83ff9
+data:
+  metadata:
+    rawParams:
+      rawWidth: 5248
+      rawHeight: 3504
+      bitDepth: 16
+      crops:
+        p:
+          x: 8
+          y: 8
+        d:
+          w: 5232
+          h: 3488
+      blacklevels:
+        - 200
+        - 200
+        - 200
+        - 200
+      whitelevels:
+        - 4000
+        - 4000
+        - 4000
+        - 4000
+      wbCoeffs:
+        - 2.8398438
+        - 1.0
+        - 1.6953125
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ~
+        artist: ~
+        lens_spec: ~
+        exposure_time: 10/13
+        fnumber: 48/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 160
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: 2
+        exposure_bias: 0/6
+        date_time_original: "2018:10:05 13:49:43"
+        create_date: "2018:10:05 13:49:43"
+        modify_date: "2018:10:05 13:49:43"
+        exposure_program: 3
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: "28"
+        sub_sec_time_original: "28"
+        sub_sec_time_digitized: "28"
+        shutter_speed_value: ~
+        max_aperture_value: 45/10
+        subject_distance: ~
+        metering_mode: 5
+        light_source: 10
+        flash: 0
+        focal_length: 956/10
+        image_number: ~
+        color_space: ~
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 1
+        scene_capture_type: 0
+        subject_distance_range: 0
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: 1 V3
+      make: Nikon
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

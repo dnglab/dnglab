@@ -1,0 +1,85 @@
+---
+file:
+  fileSize: 10720132
+  fileName: C7070WZ_ISO_80.ORF
+  digest: 26f0aea25c722db1d60ff3201c5e1c9b
+data:
+  metadata:
+    rawParams:
+      rawWidth: 3088
+      rawHeight: 2309
+      bitDepth: 16
+      crops:
+        p:
+          x: 6
+          y: 0
+        d:
+          w: 3072
+          h: 2304
+      blacklevels:
+        - 0
+        - 0
+        - 0
+        - 0
+      whitelevels:
+        - 4095
+        - 4095
+        - 4095
+        - 4095
+      wbCoeffs:
+        - 1.859375
+        - 1.0
+        - 1.7304688
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ~
+        artist: ~
+        lens_spec: ~
+        exposure_time: 10/800
+        fnumber: 48/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 80
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: 0/10
+        date_time_original: "2006:12:27 17:55:13"
+        create_date: "2006:12:27 17:55:13"
+        modify_date: "2006:12:27 17:55:13"
+        exposure_program: 2
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: ~
+        max_aperture_value: 30/10
+        subject_distance: ~
+        metering_mode: 5
+        light_source: 0
+        flash: 16
+        focal_length: 229/10
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: C7070WZ
+      make: Olympus
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

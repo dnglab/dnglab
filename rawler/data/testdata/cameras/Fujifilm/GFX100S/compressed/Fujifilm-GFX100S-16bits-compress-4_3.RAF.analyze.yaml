@@ -1,0 +1,89 @@
+---
+file:
+  fileSize: 73013616
+  fileName: Fujifilm-GFX100S-16bits-compress-4_3.RAF
+  digest: 5ff60b8a0e6f5851c0cef02e7f8e8007
+data:
+  metadata:
+    rawParams:
+      rawWidth: 11808
+      rawHeight: 8754
+      bitDepth: 16
+      crops:
+        p:
+          x: 8
+          y: 7
+        d:
+          w: 8736
+          h: 11648
+      blacklevels:
+        - 255
+        - 255
+        - 255
+        - 255
+      whitelevels:
+        - 65535
+        - 65535
+        - 65535
+        - 65535
+      wbCoeffs:
+        - 1.692053
+        - 1.0
+        - 1.8708609
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ""
+        artist: ""
+        lens_spec:
+          - 4500/100
+          - 4500/100
+          - 280/100
+          - 280/100
+        exposure_time: 10/1700
+        fnumber: 400/100
+        aperture_value: 400/100
+        brightness_value: ~
+        iso_speed_ratings: 100
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: 1
+        exposure_bias: 0/100
+        date_time_original: "2021:04:16 17:53:20"
+        create_date: "2021:04:16 17:53:20"
+        modify_date: "2021:04:16 17:53:20"
+        exposure_program: 3
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: 740/100
+        max_aperture_value: 300/100
+        subject_distance: ~
+        metering_mode: 5
+        light_source: 1
+        flash: 0
+        focal_length: 4500/100
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 1
+        scene_capture_type: 0
+        subject_distance_range: 0
+        owner_name: ~
+        serial_number: "11005258"
+        lens_serial_number: 98A00466
+        lens_make: FUJIFILM
+        lens_model: GF45mmF2.8 R WR
+        gps: ~
+      model: GFX 100S
+      make: Fujifilm
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

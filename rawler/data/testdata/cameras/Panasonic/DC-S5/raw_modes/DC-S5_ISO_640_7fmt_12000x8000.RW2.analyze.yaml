@@ -1,0 +1,85 @@
+---
+file:
+  fileSize: 173061632
+  fileName: DC-S5_ISO_640_7fmt_12000x8000.RW2
+  digest: 3fe73432491e69674d41dd8af6a5a774
+data:
+  metadata:
+    rawParams:
+      rawWidth: 12096
+      rawHeight: 8018
+      bitDepth: 16
+      crops:
+        p:
+          x: 16
+          y: 8
+        d:
+          w: 12000
+          h: 8000
+      blacklevels:
+        - 509
+        - 509
+        - 509
+        - 509
+      whitelevels:
+        - 16380
+        - 16380
+        - 16380
+        - 16380
+      wbCoeffs:
+        - 1.9960938
+        - 1.0
+        - 1.921875
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ""
+        artist: ""
+        lens_spec: ~
+        exposure_time: 10/200
+        fnumber: 80/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 640
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: 0/100
+        date_time_original: "2020:09:22 15:15:32"
+        create_date: "2020:09:22 15:15:32"
+        modify_date: ~
+        exposure_program: 1
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: "+02:00"
+        offset_time_digitized: "+02:00"
+        sub_sec_time: ~
+        sub_sec_time_original: "448"
+        sub_sec_time_digitized: "448"
+        shutter_speed_value: ~
+        max_aperture_value: 1278/256
+        subject_distance: ~
+        metering_mode: 5
+        light_source: ~
+        flash: 16
+        focal_length: 600/10
+        image_number: ~
+        color_space: ~
+        flash_energy: ~
+        exposure_mode: ~
+        white_balance: ~
+        scene_capture_type: ~
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: WJ0HA002068
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: DC-S5
+      make: Panasonic
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

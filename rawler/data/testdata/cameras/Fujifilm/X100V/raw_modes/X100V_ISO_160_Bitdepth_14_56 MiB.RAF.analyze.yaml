@@ -1,0 +1,85 @@
+---
+file:
+  fileSize: 59201344
+  fileName: X100V_ISO_160_Bitdepth_14_56 MiB.RAF
+  digest: ecda53b35a11efe9c444fda07b2a83ae
+data:
+  metadata:
+    rawParams:
+      rawWidth: 6384
+      rawHeight: 4182
+      bitDepth: 16
+      crops:
+        p:
+          x: 6
+          y: 13
+        d:
+          w: 4160
+          h: 6240
+      blacklevels:
+        - 1022
+        - 1022
+        - 1022
+        - 1022
+      whitelevels:
+        - 16383
+        - 16383
+        - 16383
+        - 16383
+      wbCoeffs:
+        - 1.7450331
+        - 1.0
+        - 1.781457
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: CC0
+        artist: Massimo Bill Zannoni
+        lens_spec: ~
+        exposure_time: 10/3400
+        fnumber: 500/100
+        aperture_value: 460/100
+        brightness_value: ~
+        iso_speed_ratings: 160
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: 1
+        exposure_bias: 0/100
+        date_time_original: "2020:03:23 17:37:58"
+        create_date: "2020:03:23 17:37:58"
+        modify_date: "2020:03:23 17:37:58"
+        exposure_program: 3
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: 841/100
+        max_aperture_value: 200/100
+        subject_distance: ~
+        metering_mode: 5
+        light_source: 0
+        flash: 0
+        focal_length: 2300/100
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: 0
+        owner_name: ~
+        serial_number: 01M00093
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: X100V
+      make: Fujifilm
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

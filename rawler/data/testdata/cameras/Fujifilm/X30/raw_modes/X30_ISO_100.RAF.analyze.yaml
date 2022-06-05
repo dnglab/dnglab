@@ -1,0 +1,85 @@
+---
+file:
+  fileSize: 19278336
+  fileName: X30_ISO_100.RAF
+  digest: 513b73f3dd873468a1819d8c48b8e2b2
+data:
+  metadata:
+    rawParams:
+      rawWidth: 4096
+      rawHeight: 3012
+      bitDepth: 16
+      crops:
+        p:
+          x: 16
+          y: 6
+        d:
+          w: 3000
+          h: 4000
+      blacklevels:
+        - 256
+        - 256
+        - 256
+        - 256
+      whitelevels:
+        - 4094
+        - 4094
+        - 4094
+        - 4094
+      wbCoeffs:
+        - 1.7417219
+        - 1.0
+        - 1.9271523
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ""
+        artist: ~
+        lens_spec: ~
+        exposure_time: 10/8000
+        fnumber: 560/100
+        aperture_value: 500/100
+        brightness_value: ~
+        iso_speed_ratings: 100
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: 1
+        exposure_bias: 0/100
+        date_time_original: "2016:06:04 15:47:39"
+        create_date: "2016:06:04 15:47:39"
+        modify_date: "2016:06:04 15:47:39"
+        exposure_program: 1
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: 967/100
+        max_aperture_value: 200/100
+        subject_distance: ~
+        metering_mode: 3
+        light_source: 0
+        flash: 16
+        focal_length: 710/100
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 1
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: 0
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: X30
+      make: Fujifilm
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

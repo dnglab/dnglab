@@ -1,0 +1,85 @@
+---
+file:
+  fileSize: 1374208
+  fileName: EOS DCS 3.TIF
+  digest: 516171df06bd63766f540e92dd697d27
+data:
+  metadata:
+    rawParams:
+      rawWidth: 1280
+      rawHeight: 1024
+      bitDepth: 16
+      crops:
+        p:
+          x: 6
+          y: 4
+        d:
+          w: 1268
+          h: 1016
+      blacklevels:
+        - 0
+        - 0
+        - 0
+        - 0
+      whitelevels:
+        - 7855
+        - 7855
+        - 7855
+        - 7855
+      wbCoeffs:
+        - ~
+        - ~
+        - ~
+        - ~
+    rawMetadata:
+      exif:
+        orientation: ~
+        copyright: ~
+        artist: ~
+        lens_spec: ~
+        exposure_time: ~
+        fnumber: ~
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: ~
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: ~
+        date_time_original: ~
+        create_date: ~
+        modify_date: "1990:01:01 00:04:27"
+        exposure_program: ~
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: ~
+        max_aperture_value: ~
+        subject_distance: ~
+        metering_mode: ~
+        light_source: ~
+        flash: ~
+        focal_length: ~
+        image_number: ~
+        color_space: ~
+        flash_energy: ~
+        exposure_mode: ~
+        white_balance: ~
+        scene_capture_type: ~
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: EOS DCS 3
+      make: Kodak
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

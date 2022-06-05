@@ -1,0 +1,85 @@
+---
+file:
+  fileSize: 8089188
+  fileName: NIKON D1X_ISO_200_12bits_Uncompressed.NEF
+  digest: a4fd661f6db2ff8a4f3ed2a16afe0320
+data:
+  metadata:
+    rawParams:
+      rawWidth: 4028
+      rawHeight: 1324
+      bitDepth: 16
+      crops:
+        p:
+          x: 5
+          y: 6
+        d:
+          w: 4012
+          h: 1308
+      blacklevels:
+        - 0
+        - 0
+        - 0
+        - 0
+      whitelevels:
+        - 4095
+        - 4095
+        - 4095
+        - 4095
+      wbCoeffs:
+        - 2.3476562
+        - 1.0
+        - 1.140625
+        - ~
+    rawMetadata:
+      exif:
+        orientation: ~
+        copyright: "Copyright,"
+        artist: ~
+        lens_spec: ~
+        exposure_time: 10/1250
+        fnumber: 80/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: ~
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: 0/6
+        date_time_original: "2006:07:22 20:31:52"
+        create_date: "2006:07:22 20:31:52"
+        modify_date: "2006:07:22 20:31:52"
+        exposure_program: 1
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: "61"
+        sub_sec_time_original: "61"
+        sub_sec_time_digitized: "61"
+        shutter_speed_value: ~
+        max_aperture_value: 43/10
+        subject_distance: ~
+        metering_mode: 2
+        light_source: ~
+        flash: ~
+        focal_length: 700/10
+        image_number: ~
+        color_space: ~
+        flash_energy: ~
+        exposure_mode: ~
+        white_balance: ~
+        scene_capture_type: ~
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: D1X
+      make: Nikon
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

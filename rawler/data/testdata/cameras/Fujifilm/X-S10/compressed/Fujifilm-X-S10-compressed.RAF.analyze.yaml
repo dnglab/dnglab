@@ -1,0 +1,89 @@
+---
+file:
+  fileSize: 18675216
+  fileName: Fujifilm-X-S10-compressed.RAF
+  digest: b1328f59412648588700b0c3ec980a4e
+data:
+  metadata:
+    rawParams:
+      rawWidth: 6384
+      rawHeight: 4182
+      bitDepth: 16
+      crops:
+        p:
+          x: 6
+          y: 13
+        d:
+          w: 4160
+          h: 6240
+      blacklevels:
+        - 1022
+        - 1022
+        - 1022
+        - 1022
+      whitelevels:
+        - 16382
+        - 16382
+        - 16382
+        - 16382
+      wbCoeffs:
+        - 1.6953642
+        - 1.0
+        - 2.3509934
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ""
+        artist: ""
+        lens_spec:
+          - 1600/100
+          - 8000/100
+          - 400/100
+          - 400/100
+        exposure_time: 10/28
+        fnumber: 400/100
+        aperture_value: 400/100
+        brightness_value: ~
+        iso_speed_ratings: 160
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: 1
+        exposure_bias: 0/100
+        date_time_original: "2020:11:28 18:42:31"
+        create_date: "2020:11:28 18:42:31"
+        modify_date: "2020:11:28 18:42:31"
+        exposure_program: 2
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: 158/100
+        max_aperture_value: 400/100
+        subject_distance: ~
+        metering_mode: 5
+        light_source: 0
+        flash: 0
+        focal_length: 6980/100
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: 0
+        owner_name: ~
+        serial_number: 0D011594
+        lens_serial_number: 0CA10060
+        lens_make: FUJIFILM
+        lens_model: XF16-80mmF4 R OIS WR
+        gps: ~
+      model: X-S10
+      make: Fujifilm
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

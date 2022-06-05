@@ -1,0 +1,85 @@
+---
+file:
+  fileSize: 16244224
+  fileName: DMC-FZ30_ISO_80_Panasonic RAW 3_3264x2448.RAW
+  digest: ca0af1b0e7846530cb6c6fec72c1aa82
+data:
+  metadata:
+    rawParams:
+      rawWidth: 3304
+      rawHeight: 2458
+      bitDepth: 16
+      crops:
+        p:
+          x: 12
+          y: 4
+        d:
+          w: 3264
+          h: 2448
+      blacklevels:
+        - 0
+        - 0
+        - 0
+        - 0
+      whitelevels:
+        - 3971
+        - 3971
+        - 3971
+        - 3971
+      wbCoeffs:
+        - 1.5568181
+        - 1.0
+        - 1.5378788
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ~
+        artist: ~
+        lens_spec: ~
+        exposure_time: 10/300
+        fnumber: 28/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 80
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: 0/100
+        date_time_original: "2006:08:29 10:28:53"
+        create_date: "2006:08:29 10:28:53"
+        modify_date: ~
+        exposure_program: 2
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: ~
+        max_aperture_value: 30/10
+        subject_distance: ~
+        metering_mode: 5
+        light_source: ~
+        flash: 9
+        focal_length: 74/10
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: ~
+        white_balance: ~
+        scene_capture_type: ~
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: DMC-FZ30
+      make: Panasonic
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

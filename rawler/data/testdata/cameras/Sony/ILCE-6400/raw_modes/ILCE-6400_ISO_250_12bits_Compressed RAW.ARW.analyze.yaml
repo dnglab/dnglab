@@ -1,0 +1,106 @@
+---
+file:
+  fileSize: 24763136
+  fileName: ILCE-6400_ISO_250_12bits_Compressed RAW.ARW
+  digest: 29604f5cccbdada24086ffaa7e090c25
+data:
+  metadata:
+    rawParams:
+      rawWidth: 6048
+      rawHeight: 4024
+      bitDepth: 16
+      crops:
+        p:
+          x: 12
+          y: 12
+        d:
+          w: 6000
+          h: 4000
+      blacklevels:
+        - 512
+        - 512
+        - 512
+        - 512
+      whitelevels:
+        - 15360
+        - 15360
+        - 15360
+        - 15360
+      wbCoeffs:
+        - 2.75
+        - 1.0
+        - 1.6953125
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ~
+        artist: ~
+        lens_spec:
+          - 18/1
+          - 105/1
+          - 4/1
+          - 4/1
+        exposure_time: 1/250
+        fnumber: 40/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 250
+        iso_speed: ~
+        recommended_exposure_index: 250
+        sensitivity_type: 2
+        exposure_bias: 0/10
+        date_time_original: "2019:09:12 17:36:01"
+        create_date: "2019:09:12 17:36:01"
+        modify_date: "2019:09:12 17:36:01"
+        exposure_program: 1
+        timezone_offset: ~
+        offset_time: "-06:00"
+        offset_time_original: "-06:00"
+        offset_time_digitized: "-06:00"
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: ~
+        max_aperture_value: 1024/256
+        subject_distance: ~
+        metering_mode: 5
+        light_source: 10
+        flash: 16
+        focal_length: 1050/10
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 1
+        white_balance: 1
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: Sony
+        lens_model: E PZ 18-105mm F4 G OSS
+        gps: ~
+      model: ILCE-6400
+      make: SONY
+      lens:
+        identifiers:
+          name: ~
+          id:
+            - 32800
+            - 0
+          nikon_id: ~
+          olympus_id: ~
+        mount: e-mount
+        lens_make: Sony
+        lens_model: E PZ 18-105mm F4 G OSS
+        focal_range:
+          - 18/1
+          - 105/1
+        aperture_range:
+          - 4/1
+          - 4/1
+        lens_name: Sony E PZ 18-105mm F4 G OSS
+      unique_image_id: ~
+      rating: ~
+

@@ -1,0 +1,106 @@
+---
+file:
+  fileSize: 10287201
+  fileName: PENTAX ist DS_RAW_ISO_200.PEF
+  digest: e0f870c0d62cc01fb8f14d2dbba0130d
+data:
+  metadata:
+    rawParams:
+      rawWidth: 3040
+      rawHeight: 2024
+      bitDepth: 16
+      crops:
+        p:
+          x: 16
+          y: 8
+        d:
+          w: 3008
+          h: 2008
+      blacklevels:
+        - 128
+        - 128
+        - 128
+        - 128
+      whitelevels:
+        - 3950
+        - 3950
+        - 3950
+        - 3950
+      wbCoeffs:
+        - 1.6171875
+        - 1.0
+        - 0.98828125
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ~
+        artist: ~
+        lens_spec:
+          - 35/1
+          - 35/1
+          - 28/10
+          - 28/10
+        exposure_time: 1/8
+        fnumber: 56/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 200
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: 0/10
+        date_time_original: "2021:02:21 15:58:25"
+        create_date: "2021:02:21 15:58:25"
+        modify_date: "2021:02:21 15:58:25"
+        exposure_program: 1
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: ~
+        max_aperture_value: ~
+        subject_distance: ~
+        metering_mode: 5
+        light_source: ~
+        flash: 16
+        focal_length: 35/1
+        image_number: ~
+        color_space: ~
+        flash_energy: ~
+        exposure_mode: 1
+        white_balance: 1
+        scene_capture_type: 0
+        subject_distance_range: 1
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: Pentax
+        lens_model: smc PENTAX-DA 35mm F2.8 Macro Limited
+        gps: ~
+      model: "*ist DS"
+      make: Pentax
+      lens:
+        identifiers:
+          name: ~
+          id:
+            - 7
+            - 233
+          nikon_id: ~
+          olympus_id: ~
+        mount: k-mount
+        lens_make: Pentax
+        lens_model: smc PENTAX-DA 35mm F2.8 Macro Limited
+        focal_range:
+          - 35/1
+          - 35/1
+        aperture_range:
+          - 28/10
+          - 28/10
+        lens_name: Pentax smc PENTAX-DA 35mm F2.8 Macro Limited
+      unique_image_id: ~
+      rating: ~
+

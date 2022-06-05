@@ -1,0 +1,85 @@
+---
+file:
+  fileSize: 13107200
+  fileName: ILCE-7S_ISO_400_14bits_Sony ARW Compressed.ARW
+  digest: 25c539e38bbc7b0a5a73692f0a1fe08e
+data:
+  metadata:
+    rawParams:
+      rawWidth: 4288
+      rawHeight: 2848
+      bitDepth: 16
+      crops:
+        p:
+          x: 12
+          y: 12
+        d:
+          w: 4240
+          h: 2824
+      blacklevels:
+        - 512
+        - 512
+        - 512
+        - 512
+      whitelevels:
+        - 15360
+        - 15360
+        - 15360
+        - 15360
+      wbCoeffs:
+        - 2.8632812
+        - 1.0
+        - 1.3398438
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ~
+        artist: ~
+        lens_spec: ~
+        exposure_time: 1/250
+        fnumber: 0/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 400
+        iso_speed: ~
+        recommended_exposure_index: 400
+        sensitivity_type: 2
+        exposure_bias: 0/10
+        date_time_original: "2017:07:13 16:58:20"
+        create_date: "2017:07:13 16:58:20"
+        modify_date: "2017:07:13 16:58:20"
+        exposure_program: 1
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: ~
+        max_aperture_value: 0/10
+        subject_distance: ~
+        metering_mode: 5
+        light_source: 11
+        flash: 16
+        focal_length: 0/10
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 1
+        white_balance: 1
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: ILCE-7S
+      make: Sony
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

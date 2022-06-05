@@ -1,0 +1,85 @@
+---
+file:
+  fileSize: 19063552
+  fileName: DSC-HX99_ISO_80_12bits_Sony ARW Compressed.ARW
+  digest: 794b90d5fcd9658e5b13b23177301831
+data:
+  metadata:
+    rawParams:
+      rawWidth: 4928
+      rawHeight: 3708
+      bitDepth: 16
+      crops:
+        p:
+          x: 12
+          y: 18
+        d:
+          w: 4896
+          h: 3672
+      blacklevels:
+        - 800
+        - 800
+        - 800
+        - 800
+      whitelevels:
+        - 15360
+        - 15360
+        - 15360
+        - 15360
+      wbCoeffs:
+        - 1.8046875
+        - 1.0
+        - 2.0351562
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ~
+        artist: ~
+        lens_spec: ~
+        exposure_time: 1/400
+        fnumber: 45/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 80
+        iso_speed: ~
+        recommended_exposure_index: 80
+        sensitivity_type: 2
+        exposure_bias: 0/10
+        date_time_original: "2018:12:01 12:01:56"
+        create_date: "2018:12:01 12:01:56"
+        modify_date: "2018:12:01 12:01:56"
+        exposure_program: 2
+        timezone_offset: ~
+        offset_time: "+01:00"
+        offset_time_original: "+01:00"
+        offset_time_digitized: "+01:00"
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: ~
+        max_aperture_value: 1110/256
+        subject_distance: ~
+        metering_mode: 5
+        light_source: 0
+        flash: 16
+        focal_length: 864/100
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: DSC-HX99
+      make: SONY
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

@@ -1,0 +1,85 @@
+---
+file:
+  fileSize: 19430400
+  fileName: XQ2_ISO_100.RAF
+  digest: bcef856d95051a11a3f4e09aa6c5dc09
+data:
+  metadata:
+    rawParams:
+      rawWidth: 4096
+      rawHeight: 3012
+      bitDepth: 16
+      crops:
+        p:
+          x: 16
+          y: 6
+        d:
+          w: 3000
+          h: 4000
+      blacklevels:
+        - 256
+        - 256
+        - 256
+        - 256
+      whitelevels:
+        - 4094
+        - 4094
+        - 4094
+        - 4094
+      wbCoeffs:
+        - 1.7284768
+        - 1.0
+        - 2.062914
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ""
+        artist: ~
+        lens_spec: ~
+        exposure_time: 10/8000
+        fnumber: 500/100
+        aperture_value: 460/100
+        brightness_value: ~
+        iso_speed_ratings: 100
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: 1
+        exposure_bias: 0/100
+        date_time_original: "2017:09:04 18:33:01"
+        create_date: "2017:09:04 18:33:01"
+        modify_date: "2017:09:04 18:33:01"
+        exposure_program: 3
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: 961/100
+        max_aperture_value: 170/100
+        subject_distance: ~
+        metering_mode: 5
+        light_source: 0
+        flash: 16
+        focal_length: 1320/100
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: 0
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: XQ2
+      make: Fujifilm
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

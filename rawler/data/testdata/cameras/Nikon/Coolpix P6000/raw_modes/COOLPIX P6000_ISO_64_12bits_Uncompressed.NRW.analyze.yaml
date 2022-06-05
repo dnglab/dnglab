@@ -1,0 +1,85 @@
+---
+file:
+  fileSize: 21646458
+  fileName: COOLPIX P6000_ISO_64_12bits_Uncompressed.NRW
+  digest: 32739c2cde3c93ad2f2edd1a008e5363
+data:
+  metadata:
+    rawParams:
+      rawWidth: 4240
+      rawHeight: 3174
+      bitDepth: 16
+      crops:
+        p:
+          x: 9
+          y: 2
+        d:
+          w: 4224
+          h: 3168
+      blacklevels:
+        - 0
+        - 0
+        - 0
+        - 0
+      whitelevels:
+        - 4095
+        - 4095
+        - 4095
+        - 4095
+      wbCoeffs:
+        - 1.7482927
+        - 1.0
+        - 1.7170732
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ~
+        artist: ~
+        lens_spec: ~
+        exposure_time: 10/1765
+        fnumber: 45/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 64
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: 0/10
+        date_time_original: "2008:12:14 13:55:22"
+        create_date: "2008:12:14 13:55:22"
+        modify_date: "2008:12:14 13:55:22"
+        exposure_program: 2
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: ~
+        max_aperture_value: 29/10
+        subject_distance: ~
+        metering_mode: 5
+        light_source: 0
+        flash: 16
+        focal_length: 46/10
+        image_number: ~
+        color_space: ~
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: 0
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: Coolpix P6000
+      make: Nikon
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

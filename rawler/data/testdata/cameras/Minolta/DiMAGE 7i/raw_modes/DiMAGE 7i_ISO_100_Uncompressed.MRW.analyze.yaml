@@ -1,0 +1,79 @@
+---
+file:
+  fileSize: 9972352
+  fileName: DiMAGE 7i_ISO_100_Uncompressed.MRW
+  digest: 8203fbda6d6c0f31df289538b863c67f
+data:
+  metadata:
+    rawParams:
+      rawWidth: 2568
+      rawHeight: 1928
+      bitDepth: 16
+      crops: ~
+      blacklevels:
+        - 0
+        - 0
+        - 0
+        - 0
+      whitelevels:
+        - 3965
+        - 3965
+        - 3965
+        - 3965
+      wbCoeffs:
+        - 1.4375
+        - 1.0
+        - 1.4375
+        - ~
+    rawMetadata:
+      exif:
+        orientation: ~
+        copyright: ~
+        artist: ~
+        lens_spec: ~
+        exposure_time: ~
+        fnumber: ~
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: ~
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: ~
+        date_time_original: ~
+        create_date: ~
+        modify_date: "2005:03:24 14:56:52"
+        exposure_program: ~
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: ~
+        max_aperture_value: ~
+        subject_distance: ~
+        metering_mode: ~
+        light_source: ~
+        flash: ~
+        focal_length: ~
+        image_number: ~
+        color_space: ~
+        flash_energy: ~
+        exposure_mode: ~
+        white_balance: ~
+        scene_capture_type: ~
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: DiMAGE 7i
+      make: Minolta
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

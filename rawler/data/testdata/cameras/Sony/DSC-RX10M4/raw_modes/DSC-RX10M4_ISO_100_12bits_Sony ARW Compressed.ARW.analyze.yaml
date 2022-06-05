@@ -1,0 +1,85 @@
+---
+file:
+  fileSize: 21513216
+  fileName: DSC-RX10M4_ISO_100_12bits_Sony ARW Compressed.ARW
+  digest: 168097a52d97d879f9924c730c2cd856
+data:
+  metadata:
+    rawParams:
+      rawWidth: 5504
+      rawHeight: 3672
+      bitDepth: 16
+      crops:
+        p:
+          x: 12
+          y: 12
+        d:
+          w: 5472
+          h: 3648
+      blacklevels:
+        - 800
+        - 800
+        - 800
+        - 800
+      whitelevels:
+        - 15360
+        - 15360
+        - 15360
+        - 15360
+      wbCoeffs:
+        - 2.3671875
+        - 1.0
+        - 1.7773438
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: declik.org
+        artist: Denis Carre
+        lens_spec: ~
+        exposure_time: 1/200
+        fnumber: 35/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 100
+        iso_speed: ~
+        recommended_exposure_index: 100
+        sensitivity_type: 2
+        exposure_bias: 0/10
+        date_time_original: "2018:01:02 16:09:11"
+        create_date: "2018:01:02 16:09:11"
+        modify_date: "2018:01:02 16:09:11"
+        exposure_program: 2
+        timezone_offset: ~
+        offset_time: "+05:30"
+        offset_time_original: "+05:30"
+        offset_time_digitized: "+05:30"
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: ~
+        max_aperture_value: 926/256
+        subject_distance: ~
+        metering_mode: 5
+        light_source: 0
+        flash: 16
+        focal_length: 2219/100
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: DSC-RX10M4
+      make: Sony
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

@@ -1,0 +1,85 @@
+---
+file:
+  fileSize: 7614592
+  fileName: E-10_ISO_80.ORF
+  digest: 6411d0a7424b22d53a6a497e8862478c
+data:
+  metadata:
+    rawParams:
+      rawWidth: 2256
+      rawHeight: 1684
+      bitDepth: 16
+      crops:
+        p:
+          x: 8
+          y: 2
+        d:
+          w: 2240
+          h: 1680
+      blacklevels:
+        - 64
+        - 64
+        - 64
+        - 64
+      whitelevels:
+        - 3604
+        - 3604
+        - 3604
+        - 3604
+      wbCoeffs:
+        - 1.5
+        - 1.0
+        - 1.5859375
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ~
+        artist: ~
+        lens_spec: ~
+        exposure_time: 1/320
+        fnumber: 40/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 80
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: 0/10
+        date_time_original: "2003:07:19 13:30:49"
+        create_date: "2003:07:19 13:30:49"
+        modify_date: "2003:07:19 13:30:49"
+        exposure_program: 2
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: ~
+        max_aperture_value: 206/100
+        subject_distance: ~
+        metering_mode: 5
+        light_source: ~
+        flash: 1
+        focal_length: 360/10
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: ~
+        white_balance: ~
+        scene_capture_type: ~
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: E-10
+      make: Olympus
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

@@ -1,0 +1,104 @@
+---
+file:
+  fileSize: 10288341
+  fileName: E-410_ISO_400.ORF
+  digest: 28b79210013766d14c6def1c5f13a2d9
+data:
+  metadata:
+    rawParams:
+      rawWidth: 3720
+      rawHeight: 2800
+      bitDepth: 16
+      crops:
+        p:
+          x: 52
+          y: 44
+        d:
+          w: 3648
+          h: 2736
+      blacklevels:
+        - 73
+        - 73
+        - 73
+        - 73
+      whitelevels:
+        - 3500
+        - 3500
+        - 3500
+        - 3500
+      wbCoeffs:
+        - 1.921875
+        - 1.0
+        - 1.421875
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ~
+        artist: ~
+        lens_spec:
+          - 35/1
+          - 35/1
+          - 35/10
+          - 35/10
+        exposure_time: 1/250
+        fnumber: 63/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 400
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: 0/10
+        date_time_original: "2016:12:30 13:13:11"
+        create_date: "2016:12:30 13:13:11"
+        modify_date: "2016:12:30 13:13:11"
+        exposure_program: 3
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: ~
+        max_aperture_value: 925/256
+        subject_distance: ~
+        metering_mode: 5
+        light_source: 0
+        flash: 8
+        focal_length: 35/1
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: Olympus
+        lens_model: Zuiko Digital 35mm F3.5 Macro
+        gps: ~
+      model: E-410
+      make: Olympus
+      lens:
+        identifiers:
+          name: ~
+          id: ~
+          nikon_id: ~
+          olympus_id: 00 20 00
+        mount: MFT-mount
+        lens_make: Olympus
+        lens_model: Zuiko Digital 35mm F3.5 Macro
+        focal_range:
+          - 35/1
+          - 35/1
+        aperture_range:
+          - 35/10
+          - 35/10
+        lens_name: Olympus Zuiko Digital 35mm F3.5 Macro
+      unique_image_id: ~
+      rating: ~
+

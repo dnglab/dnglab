@@ -1,0 +1,85 @@
+---
+file:
+  fileSize: 8703357
+  fileName: NIKON D40X_ISO_250_12bits_Lossy (type 1).NEF
+  digest: 5d1b2f05187b1a7e5d2ac441fbb779fa
+data:
+  metadata:
+    rawParams:
+      rawWidth: 3904
+      rawHeight: 2616
+      bitDepth: 16
+      crops:
+        p:
+          x: 14
+          y: 9
+        d:
+          w: 3872
+          h: 2595
+      blacklevels:
+        - 0
+        - 0
+        - 0
+        - 0
+      whitelevels:
+        - 3880
+        - 3880
+        - 3880
+        - 3880
+      wbCoeffs:
+        - 1.8359375
+        - 1.0
+        - 1.2578125
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ~
+        artist: ~
+        lens_spec: ~
+        exposure_time: 10/600
+        fnumber: 50/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 250
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: 0/6
+        date_time_original: "2016:12:04 16:57:30"
+        create_date: "2016:12:04 16:57:30"
+        modify_date: "2016:12:04 16:57:30"
+        exposure_program: 2
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: "00"
+        sub_sec_time_original: "00"
+        sub_sec_time_digitized: "00"
+        shutter_speed_value: ~
+        max_aperture_value: 45/10
+        subject_distance: ~
+        metering_mode: 5
+        light_source: 0
+        flash: 0
+        focal_length: 520/10
+        image_number: ~
+        color_space: ~
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: 0
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: D40X
+      make: Nikon
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

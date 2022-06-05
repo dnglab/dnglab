@@ -1,0 +1,85 @@
+---
+file:
+  fileSize: 24210944
+  fileName: DC-GH5M2_ISO_250_6fmt_4x3.RW2
+  digest: a8731ecf20ed82c23279e406fc61ccbd
+data:
+  metadata:
+    rawParams:
+      rawWidth: 5264
+      rawHeight: 3904
+      bitDepth: 16
+      crops:
+        p:
+          x: 12
+          y: 8
+        d:
+          w: 5184
+          h: 3888
+      blacklevels:
+        - 129
+        - 130
+        - 130
+        - 129
+      whitelevels:
+        - 4088
+        - 4088
+        - 4088
+        - 4088
+      wbCoeffs:
+        - 2.421875
+        - 1.0
+        - 1.7578125
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ""
+        artist: ""
+        lens_spec: ~
+        exposure_time: 10/1250
+        fnumber: 45/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 250
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: 1
+        exposure_bias: 0/100
+        date_time_original: "2022:01:02 15:54:55"
+        create_date: "2022:01:02 15:54:55"
+        modify_date: ~
+        exposure_program: 1
+        timezone_offset: ~
+        offset_time: "+01:00"
+        offset_time_original: "+01:00"
+        offset_time_digitized: "+01:00"
+        sub_sec_time: "390"
+        sub_sec_time_original: "390"
+        sub_sec_time_digitized: "390"
+        shutter_speed_value: ~
+        max_aperture_value: 946/256
+        subject_distance: ~
+        metering_mode: 5
+        light_source: 0
+        flash: 16
+        focal_length: 270/10
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 1
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: WG1GA005398
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: DC-GH5 II
+      make: Panasonic
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

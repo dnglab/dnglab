@@ -1,0 +1,79 @@
+---
+file:
+  fileSize: 168398848
+  fileName: IQ4 150MP_IIQ L_ISO_100.IIQ
+  digest: fc3f4ac5f3c7a99581eec89627970630
+data:
+  metadata:
+    rawParams:
+      rawWidth: 14308
+      rawHeight: 10760
+      bitDepth: 16
+      crops: ~
+      blacklevels:
+        - 0
+        - 0
+        - 0
+        - 0
+      whitelevels:
+        - 65535
+        - 65535
+        - 65535
+        - 65535
+      wbCoeffs:
+        - 3.24
+        - 1.0
+        - 1.52
+        - ~
+    rawMetadata:
+      exif:
+        orientation: ~
+        copyright: ~
+        artist: ~
+        lens_spec: ~
+        exposure_time: 8000/1000000
+        fnumber: 560/100
+        aperture_value: 49709/10000
+        brightness_value: ~
+        iso_speed_ratings: 100
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: 0/1000
+        date_time_original: "2020:03:31 17:26:12"
+        create_date: "2020:03:31 17:26:12"
+        modify_date: ~
+        exposure_program: 2
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: 696578/100000
+        max_aperture_value: ~
+        subject_distance: ~
+        metering_mode: ~
+        light_source: 1
+        flash: ~
+        focal_length: 450/10
+        image_number: ~
+        color_space: ~
+        flash_energy: ~
+        exposure_mode: ~
+        white_balance: 1
+        scene_capture_type: ~
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: IQ4 150MP
+      make: Phase One
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

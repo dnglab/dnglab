@@ -1,0 +1,106 @@
+---
+file:
+  fileSize: 113224192
+  fileName: ILCE-1_ISO_500_14bits_Uncompressed RAW.ARW
+  digest: 90d511c8a599548a08a830387b67aed2
+data:
+  metadata:
+    rawParams:
+      rawWidth: 8672
+      rawHeight: 5784
+      bitDepth: 16
+      crops:
+        p:
+          x: 12
+          y: 12
+        d:
+          w: 8640
+          h: 5760
+      blacklevels:
+        - 512
+        - 512
+        - 512
+        - 512
+      whitelevels:
+        - 15360
+        - 15360
+        - 15360
+        - 15360
+      wbCoeffs:
+        - 2.368164
+        - 1.0
+        - 1.6318359
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: Ashic Mahtab
+        artist: Ashic Mahtab
+        lens_spec:
+          - 135/1
+          - 135/1
+          - 18/10
+          - 18/10
+        exposure_time: 1/160
+        fnumber: 80/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 500
+        iso_speed: ~
+        recommended_exposure_index: 500
+        sensitivity_type: 2
+        exposure_bias: 10/10
+        date_time_original: "2021:04:05 15:29:55"
+        create_date: "2021:04:05 15:29:55"
+        modify_date: "2021:04:05 15:29:55"
+        exposure_program: 3
+        timezone_offset: ~
+        offset_time: "+00:00"
+        offset_time_original: "+00:00"
+        offset_time_digitized: "+00:00"
+        sub_sec_time: "691"
+        sub_sec_time_original: "691"
+        sub_sec_time_digitized: "691"
+        shutter_speed_value: ~
+        max_aperture_value: 434/256
+        subject_distance: ~
+        metering_mode: 5
+        light_source: 0
+        flash: 16
+        focal_length: 1350/10
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: "04470536"
+        lens_serial_number: ~
+        lens_make: Sony
+        lens_model: FE 135mm F1.8 GM
+        gps: ~
+      model: ILCE-1
+      make: Sony
+      lens:
+        identifiers:
+          name: ~
+          id:
+            - 32850
+            - 0
+          nikon_id: ~
+          olympus_id: ~
+        mount: e-mount
+        lens_make: Sony
+        lens_model: FE 135mm F1.8 GM
+        focal_range:
+          - 135/1
+          - 135/1
+        aperture_range:
+          - 18/10
+          - 18/10
+        lens_name: Sony FE 135mm F1.8 GM
+      unique_image_id: ~
+      rating: ~
+

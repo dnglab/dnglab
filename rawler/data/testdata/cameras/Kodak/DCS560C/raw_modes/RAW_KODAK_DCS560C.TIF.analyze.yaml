@@ -1,0 +1,85 @@
+---
+file:
+  fileSize: 5544738
+  fileName: RAW_KODAK_DCS560C.TIF
+  digest: 72636040b90d6a0f56019cc775c1eade
+data:
+  metadata:
+    rawParams:
+      rawWidth: 3048
+      rawHeight: 2016
+      bitDepth: 16
+      crops:
+        p:
+          x: 0
+          y: 0
+        d:
+          w: 3048
+          h: 2016
+      blacklevels:
+        - 0
+        - 0
+        - 0
+        - 0
+      whitelevels:
+        - 4095
+        - 4095
+        - 4095
+        - 4095
+      wbCoeffs:
+        - ~
+        - ~
+        - ~
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 9
+        copyright: "!!!INVALID UTF8!!!"
+        artist: ""
+        lens_spec: ~
+        exposure_time: 1/250
+        fnumber: 71/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: ~
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: 0/10
+        date_time_original: "2006:10:09 11:01:11"
+        create_date: ~
+        modify_date: "2006:10:09 11:01:11"
+        exposure_program: 2
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: ~
+        max_aperture_value: 28/10
+        subject_distance: ~
+        metering_mode: 2
+        light_source: 0
+        flash: ~
+        focal_length: 24/1
+        image_number: 62525
+        color_space: ~
+        flash_energy: ~
+        exposure_mode: ~
+        white_balance: ~
+        scene_capture_type: ~
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: DCS560C
+      make: Kodak
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+
