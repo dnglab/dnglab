@@ -123,7 +123,7 @@ impl<'a> Decoder for PefDecoder<'a> {
     let cpp = 1;
     let wb = self.get_wb()?;
     debug!("Found WB: {:?}", wb);
-    ok_image_with_blacklevels(self.camera.clone(), width, height, cpp, wb, blacklevels, image.into_inner())
+    ok_image_with_blacklevels(self.camera.clone(), cpp, wb, blacklevels, image)
   }
 
   fn full_image(&self, file: &mut RawFile) -> Result<Option<DynamicImage>> {
@@ -313,7 +313,7 @@ impl<'a> PefDecoder<'a> {
         out[row * width + col + 1] = pred_left2 as u16;
       }
     }
-    Ok(PixU16::new_with(out, width, height))
+    Ok(out)
   }
 }
 

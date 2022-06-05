@@ -161,7 +161,7 @@ impl<'a> Decoder for ArwDecoder<'a> {
     //assert!(params.whitelevel.is_some());
     let cpp = 1;
 
-    let mut img = RawImage::new(self.camera.clone(), width, height, cpp, params.wb, image.into_inner(), dummy);
+    let mut img = RawImage::new(self.camera.clone(), cpp, params.wb, image, dummy);
 
     img.blacklevels = black;
     img.whitelevels = white;
@@ -313,7 +313,7 @@ impl<'a> ArwDecoder<'a> {
     }
 
     let cpp = 1;
-    ok_image(self.camera.clone(), width, height, cpp, normalize_wb(wb_coeffs), image.into_inner())
+    ok_image(self.camera.clone(), cpp, normalize_wb(wb_coeffs), image)
   }
 
   fn image_srf(&self, file: &mut RawFile, dummy: bool) -> Result<RawImage> {
@@ -327,7 +327,7 @@ impl<'a> ArwDecoder<'a> {
     let height = fetch_tiff_tag!(raw, TiffCommonTag::ImageLength).force_usize(0);
 
     let image = if dummy {
-      PixU16::default()
+      PixU16::new_uninit(width, height)
     } else {
       let buffer = file.as_vec().unwrap();
       let len = width * height * 2;
@@ -348,11 +348,11 @@ impl<'a> ArwDecoder<'a> {
       decode_16be(&image_data, width, height, dummy)
     };
     let cpp = 1;
-    ok_image(self.camera.clone(), width, height, cpp, [NAN, NAN, NAN, NAN], image.into_inner())
+    ok_image(self.camera.clone(), cpp, [NAN, NAN, NAN, NAN], image)
   }
 
   pub(crate) fn decode_arw1(buf: &[u8], width: usize, height: usize, dummy: bool) -> PixU16 {
-    let mut out: Vec<u16> = alloc_image!(width, height, dummy);
+    let mut out = alloc_image!(width, height, dummy);
     let mut pump = BitPumpMSB::new(buf);
 
     let mut sum: i32 = 0;
@@ -381,7 +381,7 @@ impl<'a> ArwDecoder<'a> {
         row += 2
       }
     }
-    PixU16::new_with(out, width, height)
+    out
   }
 
   pub(crate) fn decode_arw2(buf: &[u8], width: usize, height: usize, curve: &LookupTable, dummy: bool) -> PixU16 {

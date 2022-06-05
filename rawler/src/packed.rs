@@ -94,9 +94,9 @@ pub fn decode_12be(buf: &[u8], width: usize, height: usize, dummy: bool) -> PixU
 }
 
 pub fn decode_12be_msb16(buf: &[u8], width: usize, height: usize, dummy: bool) -> PixU16 {
-  let mut out: Vec<u16> = alloc_image!(width, height, dummy);
+  let mut out = alloc_image!(width, height, dummy);
 
-  for (o, i) in out.chunks_exact_mut(4).zip(buf.chunks_exact(6)) {
+  for (o, i) in out.pixels_mut().chunks_exact_mut(4).zip(buf.chunks_exact(6)) {
     let g1: u16 = i[0] as u16;
     let g2: u16 = i[1] as u16;
     let g3: u16 = i[2] as u16;
@@ -109,7 +109,7 @@ pub fn decode_12be_msb16(buf: &[u8], width: usize, height: usize, dummy: bool) -
     o[2] = (g3 << 4) | (g6 >> 4);
     o[3] = ((g6 & 0x0f) << 8) | g5;
   }
-  PixU16::new_with(out, width, height)
+  out
 }
 
 pub fn decode_12le_16bitaligned(buf: &[u8], width: usize, height: usize, dummy: bool) -> PixU16 {
@@ -133,9 +133,9 @@ pub fn decode_12le_16bitaligned(buf: &[u8], width: usize, height: usize, dummy: 
 }
 
 pub fn decode_12be_msb32(buf: &[u8], width: usize, height: usize, dummy: bool) -> PixU16 {
-  let mut out: Vec<u16> = alloc_image!(width, height, dummy);
+  let mut out = alloc_image!(width, height, dummy);
 
-  for (o, i) in out.chunks_exact_mut(8).zip(buf.chunks_exact(12)) {
+  for (o, i) in out.pixels_mut().chunks_exact_mut(8).zip(buf.chunks_exact(12)) {
     let g1: u16 = i[0] as u16;
     let g2: u16 = i[1] as u16;
     let g3: u16 = i[2] as u16;
@@ -161,15 +161,15 @@ pub fn decode_12be_msb32(buf: &[u8], width: usize, height: usize, dummy: bool) -
     o[6] = (g11 << 4) | (g10 >> 4);
     o[7] = ((g10 & 0x0f) << 8) | g9;
   }
-  PixU16::new_with(out, width, height)
+  out
 }
 
 /// This is packed by 32 bits in reverse order, so the concatenation
 /// of 14 bit pairs is byte index: 3, 2, 1, 0, 7, 6, 5, 4, ...
 pub fn decode_14be_msb32(buf: &[u8], width: usize, height: usize, dummy: bool) -> PixU16 {
-  let mut out: Vec<u16> = alloc_image!(width, height, dummy);
+  let mut out = alloc_image!(width, height, dummy);
 
-  for (o, i) in out.chunks_exact_mut(16).zip(buf.chunks_exact(28)) {
+  for (o, i) in out.pixels_mut().chunks_exact_mut(16).zip(buf.chunks_exact(28)) {
     let g1: u16 = i[0] as u16;
     let g2: u16 = i[1] as u16;
     let g3: u16 = i[2] as u16;
@@ -230,7 +230,7 @@ pub fn decode_14be_msb32(buf: &[u8], width: usize, height: usize, dummy: bool) -
     o[15] = ((g26 & 0x3f) << 8) | g25;
   }
 
-  PixU16::new_with(out, width, height)
+  out
 }
 
 pub fn decode_12le_wcontrol(buf: &[u8], width: usize, height: usize, dummy: bool) -> PixU16 {

@@ -75,19 +75,19 @@ impl<'a> CrwDecoder<'a> {
 
 impl<'a> Decoder for CrwDecoder<'a> {
   fn raw_image(&self, file: &mut RawFile, _params: RawDecodeParams, dummy: bool) -> Result<RawImage> {
-    let (width, height, image) = if self.camera.model == "Canon PowerShot Pro70" {
+    let image = if self.camera.model == "Canon PowerShot Pro70" {
       let src = file.subview_until_eof(26).unwrap();
-      (1552, 1024, decode_10le_lsb16(&src, 1552, 1024, dummy))
+      decode_10le_lsb16(&src, 1552, 1024, dummy)
     } else {
       let sensorinfo = fetch_ciff_tag!(self.ciff, CiffTag::SensorInfo);
       let width = sensorinfo.get_usize(1);
       let height = sensorinfo.get_usize(2);
-      (width, height, self.decode_compressed(file, width, height, dummy)?)
+      self.decode_compressed(file, width, height, dummy)?
     };
 
     let wb = self.get_wb()?;
     let cpp = 1;
-    ok_image(self.camera.clone(), width, height, cpp, wb, image.into_inner())
+    ok_image(self.camera.clone(), cpp, wb, image)
   }
 
   fn format_dump(&self) -> FormatDump {
@@ -175,7 +175,7 @@ impl<'a> CrwDecoder<'a> {
     let mut carry: i32 = 0;
     let mut base = [0_i32; 2];
     let mut pnum = 0;
-    for pixout in out.chunks_exact_mut(64) {
+    for pixout in out.pixels_mut().chunks_exact_mut(64) {
       // Decode a block of 64 differences
       let mut diffbuf = [0_i32; 64];
       let mut i: usize = 0;
@@ -223,7 +223,7 @@ impl<'a> CrwDecoder<'a> {
     if lowbits {
       let buffer = file.as_vec().unwrap();
       // Add the uncompressed 2 low bits to the decoded 8 high bits
-      for (i, o) in out.chunks_exact_mut(4).enumerate() {
+      for (i, o) in out.pixels_mut().chunks_exact_mut(4).enumerate() {
         let c = buffer[26 + i] as u16;
         o[0] = o[0] << 2 | (c) & 0x03;
         o[1] = o[1] << 2 | (c >> 2) & 0x03;
@@ -246,6 +246,6 @@ impl<'a> CrwDecoder<'a> {
         }
       }
     }
-    PixU16::new_with(out, width, height)
+    out
   }
 }

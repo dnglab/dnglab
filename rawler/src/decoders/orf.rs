@@ -181,7 +181,7 @@ impl<'a> Decoder for OrfDecoder<'a> {
 
     let cpp = 1;
 
-    let mut img = RawImage::new(camera, width, height, cpp, normalize_wb(self.get_wb()?), image.into_inner(), dummy);
+    let mut img = RawImage::new(camera, cpp, normalize_wb(self.get_wb()?), image, dummy);
     if let Ok(black) = self.get_blacks() {
       img.blacklevels = black;
     }
@@ -212,7 +212,7 @@ impl<'a> OrfDecoder<'a> {
    */
 
   pub fn decode_compressed(buf: &OptBuffer, width: usize, height: usize, dummy: bool) -> PixU16 {
-    let mut out: Vec<u16> = alloc_image!(width, height, dummy);
+    let mut out = alloc_image!(width, height, dummy);
 
     /* Build a table to quickly look up "high" value */
     let mut bittable: [u8; 4096] = [0; 4096];
@@ -302,7 +302,7 @@ impl<'a> OrfDecoder<'a> {
         }
       }
     }
-    PixU16::new_with(out, width, height)
+    out
   }
 
   fn get_blacks(&self) -> Result<[u16; 4]> {

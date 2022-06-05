@@ -71,7 +71,7 @@ impl<'a> Decoder for DcrDecoder<'a> {
     let image = DcrDecoder::decode_kodak65000(&src, &curve, width, height, dummy);
 
     let cpp = 1;
-    ok_image(self.camera.clone(), width, height, cpp, self.get_wb()?, image.into_inner())
+    ok_image(self.camera.clone(), cpp, self.get_wb()?, image)
   }
 
   fn format_dump(&self) -> FormatDump {
@@ -120,7 +120,7 @@ impl<'a> DcrDecoder<'a> {
       }
     }
 
-    PixU16::new_with(out, width, height)
+    out
   }
 
   fn decode_segment(input: &mut ByteStream, size: usize) -> Vec<i32> {

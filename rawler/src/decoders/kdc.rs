@@ -78,7 +78,7 @@ impl<'a> Decoder for KdcDecoder<'a> {
         }
       };
       let cpp = 1;
-      let mut img = RawImage::new(self.camera.clone(), width, height, cpp, [1.0, 1.0, 1.0, NAN], image.into_inner(), dummy);
+      let mut img = RawImage::new(self.camera.clone(), cpp, [1.0, 1.0, 1.0, NAN], image, dummy);
       img.whitelevels = [white, white, white, white];
       return Ok(img);
     }
@@ -101,7 +101,7 @@ impl<'a> Decoder for KdcDecoder<'a> {
     let src = file.subview_until_eof(off as u64).unwrap();
     let image = decode_12be(&src, width, height, dummy);
     let cpp = 1;
-    ok_image(self.camera.clone(), width, height, cpp, self.get_wb()?, image.into_inner())
+    ok_image(self.camera.clone(), cpp, self.get_wb()?, image)
   }
 
   fn format_dump(&self) -> FormatDump {
@@ -153,8 +153,7 @@ impl<'a> KdcDecoder<'a> {
         out[row * width + col] = src[row * width + ((col + shift) % 848)] as u16;
       }
     }
-
-    PixU16::new_with(out, width, height)
+    out
   }
 
   pub(crate) fn decode_dc120_jpeg(src: &[u8], width: usize, height: usize) -> PixU16 {

@@ -56,7 +56,7 @@ impl<'a> Decoder for DngDecoder<'a> {
       cam.clean_model = known_cam.clean_model;
     }
 
-    let mut image = RawImage::new(cam, width, height, cpp, self.get_wb()?, image.into_inner(), false);
+    let mut image = RawImage::new(cam, cpp, self.get_wb()?, image, false);
     image.orientation = orientation;
 
     Ok(image)
@@ -278,8 +278,8 @@ impl<'a> DngDecoder<'a> {
       let src = file.subview(offset, size).unwrap();
       let mut out = alloc_image_ok!(width, height, dummy);
       let decompressor = LjpegDecompressor::new(&src)?;
-      decompressor.decode(&mut out, 0, width, width, height, dummy)?;
-      Ok(PixU16::new_with(out, width, height))
+      decompressor.decode(out.pixels_mut(), 0, width, width, height, dummy)?;
+      Ok(out)
     } else if let Some(offsets) = raw.get_entry(TiffCommonTag::TileOffsets) {
       // They've gone with tiling
       let twidth = fetch_tiff_tag!(raw, TiffCommonTag::TileWidth).force_usize(0) * cpp;

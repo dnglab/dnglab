@@ -80,7 +80,7 @@ impl<'a> Decoder for TfrDecoder<'a> {
 
     let cpp = 1;
 
-    let mut img = RawImage::new(self.camera.clone(), width, height, cpp, self.get_wb()?, image.into_inner(), dummy);
+    let mut img = RawImage::new(self.camera.clone(), cpp, self.get_wb()?, image, dummy);
 
     img.blacklevels = [black, black, black, black];
     img.whitelevels = [white, white, white, white];
@@ -166,7 +166,7 @@ impl<'a> TfrDecoder<'a> {
   fn decode_compressed(&self, src: &[u8], width: usize, height: usize, dummy: bool) -> Result<PixU16> {
     let mut out = alloc_image_ok!(width, height, dummy);
     let decompressor = LjpegDecompressor::new_full(src, true, false)?;
-    decompressor.decode(&mut out, 0, width, width, height, dummy)?;
-    Ok(PixU16::new_with(out, width, height))
+    decompressor.decode(out.pixels_mut(), 0, width, width, height, dummy)?;
+    Ok(out)
   }
 }

@@ -275,35 +275,18 @@ impl Orientation {
   }
 }
 
-pub fn ok_image(camera: Camera, width: usize, height: usize, cpp: usize, wb_coeffs: [f32; 4], image: Vec<u16>) -> Result<RawImage> {
-  Ok(RawImage::new(camera, width, height, cpp, wb_coeffs, image, false))
+pub fn ok_image(camera: Camera, cpp: usize, wb_coeffs: [f32; 4], image: PixU16) -> Result<RawImage> {
+  Ok(RawImage::new(camera, cpp, wb_coeffs, image, false))
 }
 
-pub fn ok_image_with_blacklevels(
-  camera: Camera,
-  width: usize,
-  height: usize,
-  cpp: usize,
-  wb_coeffs: [f32; 4],
-  blacks: [u16; 4],
-  image: Vec<u16>,
-) -> Result<RawImage> {
-  let mut img = RawImage::new(camera, width, height, cpp, wb_coeffs, image, false);
+pub fn ok_image_with_blacklevels(camera: Camera, cpp: usize, wb_coeffs: [f32; 4], blacks: [u16; 4], image: PixU16) -> Result<RawImage> {
+  let mut img = RawImage::new(camera, cpp, wb_coeffs, image, false);
   img.blacklevels = blacks;
   Ok(img)
 }
 
-pub fn ok_image_with_black_white(
-  camera: Camera,
-  width: usize,
-  height: usize,
-  cpp: usize,
-  wb_coeffs: [f32; 4],
-  black: u16,
-  white: u16,
-  image: Vec<u16>,
-) -> Result<RawImage> {
-  let mut img = RawImage::new(camera, width, height, cpp, wb_coeffs, image, false);
+pub fn ok_image_with_black_white(camera: Camera, cpp: usize, wb_coeffs: [f32; 4], black: u16, white: u16, image: PixU16) -> Result<RawImage> {
+  let mut img = RawImage::new(camera, cpp, wb_coeffs, image, false);
   img.blacklevels = [black, black, black, black];
   img.whitelevels = [white, white, white, white];
   Ok(img)
@@ -595,33 +578,33 @@ pub fn decode_unthreaded<F>(width: usize, height: usize, dummy: bool, closure: &
 where
   F: Fn(&mut [u16], usize) + Sync,
 {
-  let mut out: Vec<u16> = alloc_image!(width, height, dummy);
-  out.chunks_mut(width).enumerate().for_each(|(row, line)| {
+  let mut out: PixU16 = alloc_image!(width, height, dummy);
+  out.pixels_mut().chunks_mut(width).enumerate().for_each(|(row, line)| {
     closure(line, row);
   });
-  PixU16::new_with(out, width, height)
+  out
 }
 
 pub fn decode_threaded<F>(width: usize, height: usize, dummy: bool, closure: &F) -> PixU16
 where
   F: Fn(&mut [u16], usize) + Sync,
 {
-  let mut out: Vec<u16> = alloc_image!(width, height, dummy);
-  out.par_chunks_mut(width).enumerate().for_each(|(row, line)| {
+  let mut out: PixU16 = alloc_image!(width, height, dummy);
+  out.pixels_mut().par_chunks_mut(width).enumerate().for_each(|(row, line)| {
     closure(line, row);
   });
-  PixU16::new_with(out, width, height)
+  out
 }
 
 pub fn decode_threaded_multiline<F>(width: usize, height: usize, lines: usize, dummy: bool, closure: &F) -> PixU16
 where
   F: Fn(&mut [u16], usize) + Sync,
 {
-  let mut out: Vec<u16> = alloc_image!(width, height, dummy);
-  out.par_chunks_mut(width * lines).enumerate().for_each(|(row, line)| {
+  let mut out: PixU16 = alloc_image!(width, height, dummy);
+  out.pixels_mut().par_chunks_mut(width * lines).enumerate().for_each(|(row, line)| {
     closure(line, row * lines);
   });
-  PixU16::new_with(out, width, height)
+  out
 }
 
 /// This is used for streams where not chunked at line boundaries.
@@ -629,9 +612,9 @@ pub fn decode_threaded_chunked<F>(width: usize, height: usize, chunksize: usize,
 where
   F: Fn(&mut [u16], usize) + Sync,
 {
-  let mut out: Vec<u16> = alloc_image!(width, height, dummy);
-  out.par_chunks_mut(chunksize).enumerate().for_each(|(chunk_id, chunk)| {
+  let mut out: PixU16 = alloc_image!(width, height, dummy);
+  out.pixels_mut().par_chunks_mut(chunksize).enumerate().for_each(|(chunk_id, chunk)| {
     closure(chunk, chunk_id);
   });
-  PixU16::new_with(out, width, height)
+  out
 }

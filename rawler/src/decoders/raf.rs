@@ -7,6 +7,7 @@ use std::f32::NAN;
 use std::io::SeekFrom;
 use std::mem::size_of;
 
+use crate::alloc_image;
 use crate::alloc_image_plain;
 use crate::analyze::FormatDump;
 use crate::bits::BEu32;
@@ -318,17 +319,16 @@ impl<'a> Decoder for RafDecoder<'a> {
     let cpp = 1;
     if self.camera.find_hint("fuji_rotation") || self.camera.find_hint("fuji_rotation_alt") {
       log::debug!("Apply Fuji image rotation");
-      let (rotated, dim) = if rotate_for_dng {
+      let rotated = if rotate_for_dng {
         if self.camera.find_hint("fuji_rotation") {
           fuji_raw_rotate(&image, dummy) // Only required for fuji_rotation
         } else {
-          let dim = image.dim();
-          (image.into_inner(), dim)
+          image
         }
       } else {
         self.rotate_image(image.pixels(), &self.camera, width, height, dummy)?
       };
-      let mut image = RawImage::new(self.camera.clone(), dim.w, dim.h, cpp, normalize_wb(self.get_wb()?), rotated, dummy);
+      let mut image = RawImage::new(self.camera.clone(), cpp, normalize_wb(self.get_wb()?), rotated, dummy);
       image.cfa = corrected_cfa;
       image.blacklevels = [blacks[0]; 4]; // TODO
 
@@ -349,15 +349,7 @@ impl<'a> Decoder for RafDecoder<'a> {
       //ok_image(self.camera.clone(), width, height, cpp, self.get_wb()?, image.into_inner())
 
       // TODO: remove width height from new()!!!!
-      let mut image = RawImage::new(
-        self.camera.clone(),
-        image.width,
-        image.height,
-        cpp,
-        normalize_wb(self.get_wb()?),
-        image.into_inner(),
-        dummy,
-      );
+      let mut image = RawImage::new(self.camera.clone(), cpp, normalize_wb(self.get_wb()?), image, dummy);
 
       image.cfa = corrected_cfa;
       image.blacklevels = [blacks[0]; 4]; // TODO
@@ -501,7 +493,7 @@ impl<'a> RafDecoder<'a> {
     )
   }
 
-  fn rotate_image(&self, src: &[u16], camera: &Camera, width: usize, height: usize, dummy: bool) -> Result<(Vec<u16>, Dim2)> {
+  fn rotate_image(&self, src: &[u16], camera: &Camera, width: usize, height: usize, dummy: bool) -> Result<PixU16> {
     if let Some(active_area) = self.camera.active_area {
       let x = active_area[0];
       let y = active_area[1];
@@ -512,7 +504,7 @@ impl<'a> RafDecoder<'a> {
         let rotatedwidth = cropheight + cropwidth / 2;
         let rotatedheight = rotatedwidth - 1;
 
-        let mut out: Vec<u16> = alloc_image_plain!(rotatedwidth, rotatedheight, dummy);
+        let mut out = alloc_image_plain!(rotatedwidth, rotatedheight, dummy);
         if !dummy {
           for row in 0..cropheight {
             let inb = &src[(row + y) * width + x..];
@@ -523,14 +515,12 @@ impl<'a> RafDecoder<'a> {
             }
           }
         }
-        // Do not replace with PixU16 as we need to propagate the true rotated
-        // dimensions, even in dummy mode.
-        Ok((out, Dim2::new(rotatedwidth, rotatedheight)))
+        Ok(out)
       } else {
         let rotatedwidth = cropwidth + cropheight / 2;
         let rotatedheight = rotatedwidth - 1;
 
-        let mut out: Vec<u16> = alloc_image_plain!(rotatedwidth, rotatedheight, dummy);
+        let mut out = alloc_image_plain!(rotatedwidth, rotatedheight, dummy);
         if !dummy {
           for row in 0..cropheight {
             let inb = &src[(row + y) * width + x..];
@@ -541,8 +531,7 @@ impl<'a> RafDecoder<'a> {
             }
           }
         }
-
-        Ok((out, Dim2::new(rotatedwidth, rotatedheight)))
+        Ok(out)
       }
     } else {
       Err(RawlerError::General("no active_area for fuji_rotate".to_string()))
@@ -699,24 +688,15 @@ pub enum RafTags {
   RAFData = 0xc000,
 }
 
-pub fn fuji_raw_rotate(img: &PixU16, dummy: bool) -> (Vec<u16>, Dim2) {
-  let buf = alloc_image_plain!(img.height, img.width, dummy);
-  //let mut out = PixU16::new(img.height, img.width);
-
-  if !dummy {
-    let mut out = PixU16::new_with(buf, img.height, img.width);
-
-    for row in 0..img.height {
-      for col in 0..img.width {
-        //*x.at_mut(row, col) = out[flip_index(row, col)];
-        //*x.at_mut(row, col) = out[(width - 1 - col) * height + (height - 1 - row)];
-        //*out.at_mut(img.width - 1 - col, img.height - 1 - row) = *img.at(row, col); //   out[row * width + col];
-        *out.at_mut(col, row) = *img.at(row, col); //   out[row * width + col];
-      }
+pub fn fuji_raw_rotate(img: &PixU16, dummy: bool) -> PixU16 {
+  let mut out = alloc_image!(img.height, img.width, dummy);
+  for row in 0..img.height {
+    for col in 0..img.width {
+      //*x.at_mut(row, col) = out[flip_index(row, col)];
+      //*x.at_mut(row, col) = out[(width - 1 - col) * height + (height - 1 - row)];
+      //*out.at_mut(img.width - 1 - col, img.height - 1 - row) = *img.at(row, col); //   out[row * width + col];
+      *out.at_mut(col, row) = *img.at(row, col); //   out[row * width + col];
     }
-    let dim = out.dim();
-    (out.into_inner(), dim)
-  } else {
-    (buf, Dim2::new(img.height, img.width))
   }
+  out
 }
