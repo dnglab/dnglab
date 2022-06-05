@@ -12,8 +12,8 @@ function process_rawfile() {
                 echo "Processing ${rawfile}";
                 echo "  analyze file: $analyze"
                 echo "  digest file:  $digest"
-                ./target/release/dnglab analyze --meta --yaml "$sample" > rawler/tests/testdata/"$analyze";
-                ./target/release/dnglab analyze --raw-checksum "$sample" > rawler/tests/testdata/"$digest";
+                ./target/release/dnglab analyze --meta --yaml "$sample" > rawler/data/testdata/"$analyze";
+                ./target/release/dnglab analyze --raw-checksum "$sample" > rawler/data/testdata/"$digest";
         #fi
         MAKE=`echo $rawfile | cut -d/ -f2`;
         MODEL=`echo $rawfile | cut -d/ -f3`;
@@ -23,7 +23,7 @@ function process_rawfile() {
 }
 
 
-cat rawler/tests/supported_rawdb_sets.txt | while read setdir; do mkdir -v -p "rawler/tests/testdata/$setdir"; done
+cat rawler/tests/supported_rawdb_sets.txt | while read setdir; do mkdir -v -p "rawler/data/testdata/$setdir"; done
 
 #find "$RAWDB" -type f -name RAWLER_SUPPORTED -printf "%h\n" | while read searchdir; do find "$searchdir" -type f -not -name "RAWLER_SUPPORTED" -and -not -name "*.txt" -exec realpath --relative-to $RAWDB '{}' \;; done > rawler/tests/testfiles.idx
 

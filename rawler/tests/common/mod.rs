@@ -31,7 +31,7 @@ pub(crate) fn check_camera_raw_file_conversion(make: &str, model: &str, sample: 
   camera_rawdb.push("cameras");
 
   let mut testfiles = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-  testfiles.push("tests/testdata");
+  testfiles.push("data/testdata");
 
   let base_path = testfiles.join("cameras").join(make).join(model);
 
