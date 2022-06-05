@@ -370,39 +370,3 @@ impl RawImage {
     self.cpp == 1 && !self.cfa.is_valid()
   }
 }
-
-#[macro_export]
-macro_rules! alloc_image_plain {
-  ($width:expr, $height:expr, $dummy: expr) => {{
-    if $width * $height > 500000000 || $width > 50000 || $height > 50000 {
-      panic!("rawloader: surely there's no such thing as a >500MP or >50000 px wide/tall image!");
-    }
-    if $dummy {
-      vec![0]
-    } else {
-      vec![0; $width * $height]
-    }
-  }};
-}
-
-#[macro_export]
-macro_rules! alloc_image {
-  ($width:expr, $height:expr, $dummy: expr) => {{
-    let out = crate::alloc_image_plain!($width, $height, $dummy);
-    if $dummy {
-      return crate::pixarray::PixU16::default();
-    }
-    out
-  }};
-}
-
-#[macro_export]
-macro_rules! alloc_image_ok {
-  ($width:expr, $height:expr, $dummy: expr) => {{
-    let out = crate::alloc_image_plain!($width, $height, $dummy);
-    if $dummy {
-      return Ok(crate::pixarray::PixU16::default());
-    }
-    out
-  }};
-}

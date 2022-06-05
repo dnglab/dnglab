@@ -313,7 +313,7 @@ impl<'a> PefDecoder<'a> {
         out[row * width + col + 1] = pred_left2 as u16;
       }
     }
-    Ok(PixU16::new_with(out, width, height))
+    Ok(out)
   }
 }
 

@@ -153,8 +153,7 @@ impl<'a> KdcDecoder<'a> {
         out[row * width + col] = src[row * width + ((col + shift) % 848)] as u16;
       }
     }
-
-    PixU16::new_with(out, width, height)
+    out
   }
 
   pub(crate) fn decode_dc120_jpeg(src: &[u8], width: usize, height: usize) -> PixU16 {

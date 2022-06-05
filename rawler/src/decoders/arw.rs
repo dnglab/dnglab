@@ -327,7 +327,7 @@ impl<'a> ArwDecoder<'a> {
     let height = fetch_tiff_tag!(raw, TiffCommonTag::ImageLength).force_usize(0);
 
     let image = if dummy {
-      PixU16::default()
+      PixU16::new_uninit(width, height)
     } else {
       let buffer = file.as_vec().unwrap();
       let len = width * height * 2;
@@ -352,7 +352,7 @@ impl<'a> ArwDecoder<'a> {
   }
 
   pub(crate) fn decode_arw1(buf: &[u8], width: usize, height: usize, dummy: bool) -> PixU16 {
-    let mut out: Vec<u16> = alloc_image!(width, height, dummy);
+    let mut out = alloc_image!(width, height, dummy);
     let mut pump = BitPumpMSB::new(buf);
 
     let mut sum: i32 = 0;
@@ -381,7 +381,7 @@ impl<'a> ArwDecoder<'a> {
         row += 2
       }
     }
-    PixU16::new_with(out, width, height)
+    out
   }
 
   pub(crate) fn decode_arw2(buf: &[u8], width: usize, height: usize, curve: &LookupTable, dummy: bool) -> PixU16 {

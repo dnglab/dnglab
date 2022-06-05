@@ -113,12 +113,12 @@ impl<'a> Decoder for Cr2Decoder<'a> {
       debug!("CR2 dimension: {},{}", width / cpp, height);
       let mut ljpegout = alloc_image_plain!(width, height, dummy);
 
-      decompressor.decode(&mut ljpegout, 0, width, width, height, dummy)?;
+      decompressor.decode(ljpegout.pixels_mut(), 0, width, width, height, dummy)?;
 
       //crate::devtools::dump_image_u16(&ljpegout, width, height, "/tmp/cr2_before_striped.pnm");
 
       // Linearize the output (applies only to D2000 as far as I can tell)
-      if camera.find_hint("linearization") {
+      if !dummy && camera.find_hint("linearization") {
         let table = {
           let linearization = fetch_tiff_tag!(raw, TiffCommonTag::GrayResponse);
           let mut t = [0_u16; 4096];
@@ -129,8 +129,8 @@ impl<'a> Decoder for Cr2Decoder<'a> {
         };
 
         let mut random = ljpegout[0] as u32;
-        for o in ljpegout.chunks_exact_mut(1) {
-          o[0] = table.dither(o[0], &mut random);
+        for p in ljpegout.pixels_mut().iter_mut() {
+          *p = table.dither(*p, &mut random);
         }
       }
 
@@ -157,7 +157,7 @@ impl<'a> Decoder for Cr2Decoder<'a> {
         debug!("Found Cr2StripeWidths tag: {:?}", canoncol.value);
         if canoncol.value.force_usize(0) == 0 {
           if cpp == 3 {
-            self.convert_to_rgb(file, camera, &decompressor, width, height, &mut ljpegout, dummy)?;
+            self.convert_to_rgb(file, camera, &decompressor, width, height, ljpegout.pixels_mut(), dummy)?;
             width /= 3;
           }
           (width, height, cpp, ljpegout)
@@ -223,7 +223,7 @@ impl<'a> Decoder for Cr2Decoder<'a> {
             }
           }
           if cpp == 3 {
-            self.convert_to_rgb(file, camera, &decompressor, width, height, &mut out, dummy)?;
+            self.convert_to_rgb(file, camera, &decompressor, width, height, out.pixels_mut(), dummy)?;
             width /= 3;
           }
           (width, height, cpp, out)
@@ -235,7 +235,7 @@ impl<'a> Decoder for Cr2Decoder<'a> {
 
     let wb = self.get_wb(file, camera)?;
     debug!("CR2 WB: {:?}", wb);
-    let mut img = RawImage::new(camera.clone(), width, height, cpp, wb, image, dummy);
+    let mut img = RawImage::new(camera.clone(), width, height, cpp, wb, image.into_inner(), dummy);
 
     img.crop_area = Some(self.get_sensor_area(camera, width, height)?);
     if let Some(forced_area) = camera.crop_area {

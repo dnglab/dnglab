@@ -26,5 +26,5 @@ pub(super) fn decode_dbp(buf: &[u8], width: usize, height: usize, dummy: bool) -
       out[off..off + tile_width].copy_from_slice(&tile_buffer[scan_line * tile_width..scan_line * tile_width + tile_width]);
     }
   }
-  Ok(PixU16::new_with(out, width, height))
+  Ok(out)
 }

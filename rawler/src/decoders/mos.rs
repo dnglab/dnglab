@@ -117,7 +117,7 @@ impl<'a> MosDecoder<'a> {
 
   pub(crate) fn do_decode(src: &[u8], interlaced: bool, width: usize, height: usize, dummy: bool) -> Result<PixU16> {
     if dummy {
-      return Ok(PixU16::default());
+      return Ok(PixU16::new_uninit(width, height));
     }
 
     let decompressor = LjpegDecompressor::new_full(src, true, true)?;
@@ -128,7 +128,7 @@ impl<'a> MosDecoder<'a> {
         let orow = if row & 1 == 1 { height - 1 - row / 2 } else { row / 2 };
         out[orow * width..(orow + 1) * width].copy_from_slice(line);
       }
-      Ok(PixU16::new_with(out, width, height))
+      Ok(out)
     } else {
       Ok(ljpegout)
     }

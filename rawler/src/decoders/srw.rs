@@ -137,7 +137,7 @@ impl<'a> Decoder for SrwDecoder<'a> {
 
 impl<'a> SrwDecoder<'a> {
   pub fn decode_srw1(buf: &[u8], loffsets: &[u8], width: usize, height: usize, dummy: bool) -> PixU16 {
-    let mut out: Vec<u16> = alloc_image!(width, height, dummy);
+    let mut out = alloc_image!(width, height, dummy);
 
     for row in 0..height {
       let mut len: [u32; 4] = [if row < 2 { 7 } else { 4 }; 4];
@@ -210,15 +210,15 @@ impl<'a> SrwDecoder<'a> {
     // locations would not match the CFA pattern
     for row in (0..height).step_by(2) {
       for col in (0..width).step_by(2) {
-        out.swap(row * width + col + 1, (row + 1) * width + col);
+        out.pixels_mut().swap(row * width + col + 1, (row + 1) * width + col);
       }
     }
 
-    PixU16::new_with(out, width, height)
+    out
   }
 
   pub fn decode_srw2(buf: &[u8], width: usize, height: usize, dummy: bool) -> PixU16 {
-    let mut out: Vec<u16> = alloc_image!(width, height, dummy);
+    let mut out = alloc_image!(width, height, dummy);
 
     // This format has a variable length encoding of how many bits are needed
     // to encode the difference between pixels, we use a table to process it
@@ -278,7 +278,7 @@ impl<'a> SrwDecoder<'a> {
       }
     }
 
-    PixU16::new_with(out, width, height)
+    out
   }
 
   pub fn srw2_diff(pump: &mut BitPumpMSB, tbl: &[[u32; 2]; 1024]) -> i32 {
@@ -304,7 +304,7 @@ impl<'a> SrwDecoder<'a> {
     // and Loring von Palleske (Samsung) for pointing to the open-source code of
     // Samsung's DNG converter at http://opensource.samsung.com/
 
-    let mut out: Vec<u16> = alloc_image!(width, height, dummy);
+    let mut out = alloc_image!(width, height, dummy);
     let mut pump = BitPumpMSB32::new(buf);
 
     // Process the initial metadata bits, we only really use initVal, width and
@@ -471,7 +471,7 @@ impl<'a> SrwDecoder<'a> {
       }
     }
 
-    PixU16::new_with(out, width, height)
+    out
   }
 
   /// Get lens description by analyzing TIFF tags and makernotes

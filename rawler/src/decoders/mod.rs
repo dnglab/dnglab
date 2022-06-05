@@ -595,33 +595,33 @@ pub fn decode_unthreaded<F>(width: usize, height: usize, dummy: bool, closure: &
 where
   F: Fn(&mut [u16], usize) + Sync,
 {
-  let mut out: Vec<u16> = alloc_image!(width, height, dummy);
-  out.chunks_mut(width).enumerate().for_each(|(row, line)| {
+  let mut out: PixU16 = alloc_image!(width, height, dummy);
+  out.pixels_mut().chunks_mut(width).enumerate().for_each(|(row, line)| {
     closure(line, row);
   });
-  PixU16::new_with(out, width, height)
+  out
 }
 
 pub fn decode_threaded<F>(width: usize, height: usize, dummy: bool, closure: &F) -> PixU16
 where
   F: Fn(&mut [u16], usize) + Sync,
 {
-  let mut out: Vec<u16> = alloc_image!(width, height, dummy);
-  out.par_chunks_mut(width).enumerate().for_each(|(row, line)| {
+  let mut out: PixU16 = alloc_image!(width, height, dummy);
+  out.pixels_mut().par_chunks_mut(width).enumerate().for_each(|(row, line)| {
     closure(line, row);
   });
-  PixU16::new_with(out, width, height)
+  out
 }
 
 pub fn decode_threaded_multiline<F>(width: usize, height: usize, lines: usize, dummy: bool, closure: &F) -> PixU16
 where
   F: Fn(&mut [u16], usize) + Sync,
 {
-  let mut out: Vec<u16> = alloc_image!(width, height, dummy);
-  out.par_chunks_mut(width * lines).enumerate().for_each(|(row, line)| {
+  let mut out: PixU16 = alloc_image!(width, height, dummy);
+  out.pixels_mut().par_chunks_mut(width * lines).enumerate().for_each(|(row, line)| {
     closure(line, row * lines);
   });
-  PixU16::new_with(out, width, height)
+  out
 }
 
 /// This is used for streams where not chunked at line boundaries.
@@ -629,9 +629,9 @@ pub fn decode_threaded_chunked<F>(width: usize, height: usize, chunksize: usize,
 where
   F: Fn(&mut [u16], usize) + Sync,
 {
-  let mut out: Vec<u16> = alloc_image!(width, height, dummy);
-  out.par_chunks_mut(chunksize).enumerate().for_each(|(chunk_id, chunk)| {
+  let mut out: PixU16 = alloc_image!(width, height, dummy);
+  out.pixels_mut().par_chunks_mut(chunksize).enumerate().for_each(|(chunk_id, chunk)| {
     closure(chunk, chunk_id);
   });
-  PixU16::new_with(out, width, height)
+  out
 }
