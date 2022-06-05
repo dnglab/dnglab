@@ -1,0 +1,85 @@
+---
+file:
+  fileSize: 10952704
+  fileName: DMC-LX3_ISO_400_4fmt_3968x2232.RW2
+  digest: 117368f0326eed74c6d10aca13850ebd
+data:
+  metadata:
+    rawParams:
+      rawWidth: 4060
+      rawHeight: 2250
+      bitDepth: 16
+      crops:
+        p:
+          x: 8
+          y: 6
+        d:
+          w: 3968
+          h: 2232
+      blacklevels:
+        - 0
+        - 0
+        - 0
+        - 0
+      whitelevels:
+        - 3986
+        - 3986
+        - 3986
+        - 3986
+      wbCoeffs:
+        - 1.1787072
+        - 1.0
+        - 2.6692016
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ~
+        artist: ~
+        lens_spec: ~
+        exposure_time: 10/50
+        fnumber: 26/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 400
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: 0/100
+        date_time_original: "2009:01:05 22:47:20"
+        create_date: "2009:01:05 22:47:20"
+        modify_date: ~
+        exposure_program: 2
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: ~
+        max_aperture_value: 20/10
+        subject_distance: ~
+        metering_mode: 2
+        light_source: ~
+        flash: 16
+        focal_length: 102/10
+        image_number: ~
+        color_space: ~
+        flash_energy: ~
+        exposure_mode: ~
+        white_balance: ~
+        scene_capture_type: ~
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: DMC-LX3
+      make: Panasonic
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

@@ -1,0 +1,85 @@
+---
+file:
+  fileSize: 25267103
+  fileName: WB2000_ISO_80_Packed RAW.SRW
+  digest: 61b2b1d21fb5263ed88cde004a21c1fc
+data:
+  metadata:
+    rawParams:
+      rawWidth: 3728
+      rawHeight: 2781
+      bitDepth: 16
+      crops:
+        p:
+          x: 36
+          y: 368
+        d:
+          w: 3648
+          h: 2048
+      blacklevels:
+        - 0
+        - 0
+        - 0
+        - 0
+      whitelevels:
+        - 3700
+        - 3700
+        - 3700
+        - 3700
+      wbCoeffs:
+        - 1.40625
+        - 1.0
+        - 1.6601562
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ~
+        artist: ~
+        lens_spec: ~
+        exposure_time: 1/125
+        fnumber: 66/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 80
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: 0/10
+        date_time_original: "2012:02:18 16:51:33"
+        create_date: ~
+        modify_date: "2012:02:18 16:51:33"
+        exposure_program: 1
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: ~
+        max_aperture_value: ~
+        subject_distance: ~
+        metering_mode: 3
+        light_source: 0
+        flash: 0
+        focal_length: 0/0
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 1
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: WB2000
+      make: Samsung
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

@@ -1,0 +1,85 @@
+---
+file:
+  fileSize: 14969856
+  fileName: DMC-LF1_ISO_80_4fmt_4000x3000.RW2
+  digest: 7b44716f183f6f7b28fdd1a7b3502d91
+data:
+  metadata:
+    rawParams:
+      rawWidth: 4144
+      rawHeight: 3016
+      bitDepth: 16
+      crops:
+        p:
+          x: 8
+          y: 8
+        d:
+          w: 4000
+          h: 3000
+      blacklevels:
+        - 128
+        - 127
+        - 127
+        - 127
+      whitelevels:
+        - 3971
+        - 3971
+        - 3971
+        - 3971
+      wbCoeffs:
+        - 1.8901515
+        - 1.0
+        - 1.8674242
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ~
+        artist: ~
+        lens_spec: ~
+        exposure_time: 10/8000
+        fnumber: 50/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 80
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: 0/100
+        date_time_original: "2015:02:17 23:13:14"
+        create_date: "2015:02:17 23:13:14"
+        modify_date: ~
+        exposure_program: 3
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: ~
+        max_aperture_value: 338/128
+        subject_distance: ~
+        metering_mode: 5
+        light_source: ~
+        flash: 16
+        focal_length: 80/10
+        image_number: ~
+        color_space: ~
+        flash_energy: ~
+        exposure_mode: ~
+        white_balance: ~
+        scene_capture_type: ~
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: DMC-LF1
+      make: Panasonic
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

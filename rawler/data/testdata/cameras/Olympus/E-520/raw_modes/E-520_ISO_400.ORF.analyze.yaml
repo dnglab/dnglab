@@ -1,0 +1,104 @@
+---
+file:
+  fileSize: 10075261
+  fileName: E-520_ISO_400.ORF
+  digest: 1ad202e293f4d7214ac07c835395649f
+data:
+  metadata:
+    rawParams:
+      rawWidth: 3720
+      rawHeight: 2800
+      bitDepth: 16
+      crops:
+        p:
+          x: 12
+          y: 46
+        d:
+          w: 3648
+          h: 2736
+      blacklevels:
+        - 69
+        - 69
+        - 69
+        - 68
+      whitelevels:
+        - 4015
+        - 4015
+        - 4015
+        - 4015
+      wbCoeffs:
+        - 1.8671875
+        - 1.0
+        - 1.4296875
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ~
+        artist: ~
+        lens_spec:
+          - 70/1
+          - 300/1
+          - 40/10
+          - 56/10
+        exposure_time: 1/180
+        fnumber: 67/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 400
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: 0/10
+        date_time_original: "2009:02:21 11:20:00"
+        create_date: "2009:02:21 11:20:00"
+        modify_date: "2009:02:21 11:20:00"
+        exposure_program: 3
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: ~
+        max_aperture_value: 1024/256
+        subject_distance: ~
+        metering_mode: 3
+        light_source: 0
+        flash: 24
+        focal_length: 81/1
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: Olympus
+        lens_model: Zuiko Digital 70-300mm F4.0-5.6
+        gps: ~
+      model: E-520
+      make: Olympus
+      lens:
+        identifiers:
+          name: ~
+          id: ~
+          nikon_id: ~
+          olympus_id: 00 08 01
+        mount: MFT-mount
+        lens_make: Olympus
+        lens_model: Zuiko Digital 70-300mm F4.0-5.6
+        focal_range:
+          - 70/1
+          - 300/1
+        aperture_range:
+          - 40/10
+          - 56/10
+        lens_name: Olympus Zuiko Digital 70-300mm F4.0-5.6
+      unique_image_id: ~
+      rating: ~
+

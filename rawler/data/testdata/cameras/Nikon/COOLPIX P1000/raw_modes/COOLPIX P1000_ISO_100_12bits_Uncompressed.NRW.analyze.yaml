@@ -1,0 +1,85 @@
+---
+file:
+  fileSize: 26472704
+  fileName: COOLPIX P1000_ISO_100_12bits_Uncompressed.NRW
+  digest: 4198bf2471f5493f95279829988c3c84
+data:
+  metadata:
+    rawParams:
+      rawWidth: 4624
+      rawHeight: 3470
+      bitDepth: 16
+      crops:
+        p:
+          x: 8
+          y: 7
+        d:
+          w: 4608
+          h: 3456
+      blacklevels:
+        - 200
+        - 200
+        - 200
+        - 200
+      whitelevels:
+        - 4095
+        - 4095
+        - 4095
+        - 4095
+      wbCoeffs:
+        - 1.6171875
+        - 1.0
+        - 1.640625
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: Photography By  Todd Heckert
+        artist: TODD HECKERT
+        lens_spec: ~
+        exposure_time: 10/600
+        fnumber: 80/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 100
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: 0/10
+        date_time_original: "2019:07:07 05:25:06"
+        create_date: "2019:07:07 05:25:06"
+        modify_date: "2019:07:07 05:25:06"
+        exposure_program: 1
+        timezone_offset: ~
+        offset_time: "-05:00"
+        offset_time_original: "-05:00"
+        offset_time_digitized: "-05:00"
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: ~
+        max_aperture_value: 30/10
+        subject_distance: ~
+        metering_mode: 5
+        light_source: 0
+        flash: 16
+        focal_length: 899/10
+        image_number: ~
+        color_space: ~
+        flash_energy: ~
+        exposure_mode: 1
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: 0
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: Coolpix P1000
+      make: Nikon
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

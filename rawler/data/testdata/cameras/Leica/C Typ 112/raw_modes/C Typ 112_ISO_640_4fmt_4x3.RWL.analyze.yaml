@@ -1,0 +1,85 @@
+---
+file:
+  fileSize: 14836224
+  fileName: C Typ 112_ISO_640_4fmt_4x3.RWL
+  digest: dfa9931abc0832682c62e15fe64e832c
+data:
+  metadata:
+    rawParams:
+      rawWidth: 4144
+      rawHeight: 3016
+      bitDepth: 16
+      crops:
+        p:
+          x: 8
+          y: 8
+        d:
+          w: 4000
+          h: 3000
+      blacklevels:
+        - 131
+        - 131
+        - 131
+        - 131
+      whitelevels:
+        - 3956
+        - 3956
+        - 3956
+        - 3956
+      wbCoeffs:
+        - 2.1698112
+        - 1.0
+        - 1.7018868
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ~
+        artist: ~
+        lens_spec: ~
+        exposure_time: 10/600
+        fnumber: 59/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 640
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: 0/100
+        date_time_original: "2019:03:06 11:15:14"
+        create_date: "2019:03:06 11:15:14"
+        modify_date: ~
+        exposure_program: 3
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: ~
+        max_aperture_value: 656/128
+        subject_distance: ~
+        metering_mode: 5
+        light_source: ~
+        flash: 25
+        focal_length: 428/10
+        image_number: ~
+        color_space: ~
+        flash_energy: ~
+        exposure_mode: ~
+        white_balance: ~
+        scene_capture_type: ~
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: C (Typ 112)
+      make: Leica
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

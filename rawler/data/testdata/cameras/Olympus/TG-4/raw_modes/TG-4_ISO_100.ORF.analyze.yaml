@@ -1,0 +1,85 @@
+---
+file:
+  fileSize: 16995888
+  fileName: TG-4_ISO_100.ORF
+  digest: 29531bdc0cde7803aae3c510b38a326a
+data:
+  metadata:
+    rawParams:
+      rawWidth: 4640
+      rawHeight: 3472
+      bitDepth: 16
+      crops:
+        p:
+          x: 8
+          y: 8
+        d:
+          w: 4608
+          h: 3456
+      blacklevels:
+        - 255
+        - 255
+        - 255
+        - 255
+      whitelevels:
+        - 4000
+        - 4000
+        - 4000
+        - 4000
+      wbCoeffs:
+        - 1.7890625
+        - 1.0
+        - 1.5859375
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ""
+        artist: ""
+        lens_spec: ~
+        exposure_time: 1/250
+        fnumber: 80/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 100
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: 1
+        exposure_bias: 0/10
+        date_time_original: "2016:01:17 13:13:00"
+        create_date: "2016:01:17 13:13:00"
+        modify_date: "2016:01:17 13:13:00"
+        exposure_program: 2
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: ~
+        max_aperture_value: 300/100
+        subject_distance: ~
+        metering_mode: 5
+        light_source: 0
+        flash: 16
+        focal_length: 450/100
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: TG-4
+      make: Olympus
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

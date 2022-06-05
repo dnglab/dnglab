@@ -1,0 +1,79 @@
+---
+file:
+  fileSize: 15445115
+  fileName: Canon EOS 5D Mark II_sRAW1_ISO_800.CR2
+  digest: 9aa33d313a93b9dba3252a5f0a272102
+data:
+  metadata:
+    rawParams:
+      rawWidth: 3872
+      rawHeight: 2574
+      bitDepth: 16
+      crops: ~
+      blacklevels:
+        - 1024
+        - 1024
+        - 1024
+        - 1024
+      whitelevels:
+        - 15312
+        - 15312
+        - 15312
+        - 15312
+      wbCoeffs:
+        - 1.96875
+        - 1.0
+        - 2.2802734
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ""
+        artist: ""
+        lens_spec: ~
+        exposure_time: 1/50
+        fnumber: 8/1
+        aperture_value: 393216/65536
+        brightness_value: ~
+        iso_speed_ratings: 800
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: 0/1
+        date_time_original: "2017:07:20 14:31:32"
+        create_date: "2017:07:20 14:31:32"
+        modify_date: "2017:07:20 14:31:32"
+        exposure_program: 1
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: "63"
+        sub_sec_time_original: "63"
+        sub_sec_time_digitized: "63"
+        shutter_speed_value: 368640/65536
+        max_aperture_value: ~
+        subject_distance: ~
+        metering_mode: 5
+        light_source: ~
+        flash: 16
+        focal_length: 28/1
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 1
+        white_balance: 1
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: EOS 5D Mark II
+      make: Canon
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

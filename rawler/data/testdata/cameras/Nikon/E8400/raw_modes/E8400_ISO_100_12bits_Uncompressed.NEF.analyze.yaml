@@ -1,0 +1,85 @@
+---
+file:
+  fileSize: 12671168
+  fileName: E8400_ISO_100_12bits_Uncompressed.NEF
+  digest: 75402b1f355626e6e8e907a80184f2c1
+data:
+  metadata:
+    rawParams:
+      rawWidth: 3280
+      rawHeight: 2454
+      bitDepth: 16
+      crops:
+        p:
+          x: 5
+          y: 1
+        d:
+          w: 3264
+          h: 2448
+      blacklevels:
+        - 0
+        - 0
+        - 0
+        - 0
+      whitelevels:
+        - 4095
+        - 4095
+        - 4095
+        - 4095
+      wbCoeffs:
+        - 2.2109375
+        - 1.0
+        - 1.578125
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ""
+        artist: ~
+        lens_spec: ~
+        exposure_time: 10/2500
+        fnumber: 49/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: ~
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: 0/10
+        date_time_original: "2017:12:14 13:41:53"
+        create_date: "2017:12:14 13:41:53"
+        modify_date: "2017:12:14 13:41:53"
+        exposure_program: 1
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: ~
+        max_aperture_value: 35/10
+        subject_distance: ~
+        metering_mode: 5
+        light_source: ~
+        flash: 16
+        focal_length: 216/10
+        image_number: ~
+        color_space: ~
+        flash_energy: ~
+        exposure_mode: ~
+        white_balance: ~
+        scene_capture_type: ~
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: E8400
+      make: Nikon
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

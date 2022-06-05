@@ -1,0 +1,85 @@
+---
+file:
+  fileSize: 69873664
+  fileName: DC-S1R_ISO_100_6fmt_8368x5584.RW2
+  digest: 035e1ff6b9e832c601fc2032945fc6f0
+data:
+  metadata:
+    rawParams:
+      rawWidth: 8448
+      rawHeight: 5632
+      bitDepth: 16
+      crops:
+        p:
+          x: 12
+          y: 24
+        d:
+          w: 8368
+          h: 5584
+      blacklevels:
+        - 510
+        - 510
+        - 510
+        - 510
+      whitelevels:
+        - 16380
+        - 16380
+        - 16380
+        - 16380
+      wbCoeffs:
+        - 1.9609375
+        - 1.0
+        - 1.5273438
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ""
+        artist: ""
+        lens_spec: ~
+        exposure_time: 10/2000
+        fnumber: 80/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 100
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: "-100/100"
+        date_time_original: "2019:12:31 14:36:42"
+        create_date: "2019:12:31 14:36:42"
+        modify_date: ~
+        exposure_program: 3
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: "+01:00"
+        offset_time_digitized: "+01:00"
+        sub_sec_time: ~
+        sub_sec_time_original: "098"
+        sub_sec_time_digitized: "098"
+        shutter_speed_value: ~
+        max_aperture_value: 1024/256
+        subject_distance: ~
+        metering_mode: 5
+        light_source: ~
+        flash: 16
+        focal_length: 350/10
+        image_number: ~
+        color_space: ~
+        flash_energy: ~
+        exposure_mode: ~
+        white_balance: ~
+        scene_capture_type: ~
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: WJ9CA001747
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: DC-S1R
+      make: Panasonic
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

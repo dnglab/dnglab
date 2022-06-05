@@ -1,0 +1,85 @@
+---
+file:
+  fileSize: 12880896
+  fileName: DCS Pro SLRn_ISO_160_Kodak DCR Compressed.DCR
+  digest: 39976c3aa734ed18d42b4e33bb661c62
+data:
+  metadata:
+    rawParams:
+      rawWidth: 4516
+      rawHeight: 3012
+      bitDepth: 16
+      crops:
+        p:
+          x: 8
+          y: 6
+        d:
+          w: 4500
+          h: 3000
+      blacklevels:
+        - 0
+        - 0
+        - 0
+        - 0
+      whitelevels:
+        - 4095
+        - 4095
+        - 4095
+        - 4095
+      wbCoeffs:
+        - ~
+        - ~
+        - ~
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: Juergen Hansen
+        artist: Juergen  Hansen
+        lens_spec: ~
+        exposure_time: 1/125
+        fnumber: 0/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: ~
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: 0/10
+        date_time_original: "2018:06:11 18:10:56"
+        create_date: ~
+        modify_date: "2018:06:11 18:10:56"
+        exposure_program: 1
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: ~
+        max_aperture_value: 0/10
+        subject_distance: ~
+        metering_mode: 4
+        light_source: 1
+        flash: ~
+        focal_length: 10/10
+        image_number: 5544
+        color_space: ~
+        flash_energy: ~
+        exposure_mode: ~
+        white_balance: ~
+        scene_capture_type: ~
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: DCS Pro SLR/n
+      make: Kodak
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

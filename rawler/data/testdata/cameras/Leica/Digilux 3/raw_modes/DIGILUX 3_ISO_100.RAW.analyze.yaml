@@ -1,0 +1,85 @@
+---
+file:
+  fileSize: 15041536
+  fileName: DIGILUX 3_ISO_100.RAW
+  digest: 427a24fd2ed6052c045ed0e9779c0b55
+data:
+  metadata:
+    rawParams:
+      rawWidth: 3177
+      rawHeight: 2367
+      bitDepth: 16
+      crops:
+        p:
+          x: 16
+          y: 7
+        d:
+          w: 3136
+          h: 2352
+      blacklevels:
+        - 0
+        - 0
+        - 0
+        - 0
+      whitelevels:
+        - 3986
+        - 3986
+        - 3986
+        - 3986
+      wbCoeffs:
+        - 2.190114
+        - 1.0
+        - 1.4182509
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 8
+        copyright: ~
+        artist: ~
+        lens_spec: ~
+        exposure_time: 10/200
+        fnumber: 30/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 100
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: "-33/100"
+        date_time_original: "2021:09:26 11:32:33"
+        create_date: "2021:09:26 11:32:33"
+        modify_date: ~
+        exposure_program: 2
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: ~
+        max_aperture_value: 30/10
+        subject_distance: ~
+        metering_mode: 5
+        light_source: ~
+        flash: 16
+        focal_length: 180/10
+        image_number: ~
+        color_space: ~
+        flash_energy: ~
+        exposure_mode: ~
+        white_balance: ~
+        scene_capture_type: ~
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: Digilux 3
+      make: Leica
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

@@ -1,0 +1,85 @@
+---
+file:
+  fileSize: 16941056
+  fileName: SLT-A37_ISO_800_12bits_Sony ARW Compressed.ARW
+  digest: 3076cb686b2dc57f0cdb116d8865b99c
+data:
+  metadata:
+    rawParams:
+      rawWidth: 4928
+      rawHeight: 3276
+      bitDepth: 16
+      crops:
+        p:
+          x: 4
+          y: 6
+        d:
+          w: 4912
+          h: 3264
+      blacklevels:
+        - 512
+        - 512
+        - 512
+        - 512
+      whitelevels:
+        - 15360
+        - 15360
+        - 15360
+        - 15360
+      wbCoeffs:
+        - 2.2460938
+        - 1.0
+        - 2.0625
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ~
+        artist: ~
+        lens_spec: ~
+        exposure_time: 1/13
+        fnumber: 45/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 800
+        iso_speed: ~
+        recommended_exposure_index: 800
+        sensitivity_type: 2
+        exposure_bias: 0/10
+        date_time_original: "2017:01:17 19:57:41"
+        create_date: "2017:01:17 19:57:41"
+        modify_date: "2017:01:17 19:57:41"
+        exposure_program: 1
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: ~
+        max_aperture_value: 1110/256
+        subject_distance: ~
+        metering_mode: 2
+        light_source: 0
+        flash: 16
+        focal_length: 300/10
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 1
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: SLT-A37
+      make: Sony
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

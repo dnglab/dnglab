@@ -1,0 +1,85 @@
+---
+file:
+  fileSize: 14975994
+  fileName: DSLR-A550_ISO_3200_12bits_Sony ARW Compressed.ARW
+  digest: f40ff633f34215205faf8d224c5bb1e2
+data:
+  metadata:
+    rawParams:
+      rawWidth: 4608
+      rawHeight: 3072
+      bitDepth: 16
+      crops:
+        p:
+          x: 8
+          y: 8
+        d:
+          w: 4592
+          h: 3056
+      blacklevels:
+        - 512
+        - 512
+        - 512
+        - 512
+      whitelevels:
+        - 15360
+        - 15360
+        - 15360
+        - 15360
+      wbCoeffs:
+        - 1.5195312
+        - 1.0
+        - 2.234375
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ~
+        artist: ~
+        lens_spec: ~
+        exposure_time: 1/50
+        fnumber: 45/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 3200
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: 0/10
+        date_time_original: "2010:07:06 21:45:36"
+        create_date: "2010:07:06 21:45:36"
+        modify_date: "2010:07:06 21:45:36"
+        exposure_program: 2
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: ~
+        max_aperture_value: 434/100
+        subject_distance: ~
+        metering_mode: 5
+        light_source: 0
+        flash: 16
+        focal_length: 350/10
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: DSLR-A550
+      make: Sony
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

@@ -1,3 +1,0 @@
-[submodule "rawler/tests/testdata"]
-	path = rawler/tests/testdata
-	url = https://github.com/dnglab/rawler-testdata.git

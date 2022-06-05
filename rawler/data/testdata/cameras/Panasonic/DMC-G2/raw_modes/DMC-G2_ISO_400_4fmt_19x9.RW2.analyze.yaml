@@ -1,0 +1,85 @@
+---
+file:
+  fileSize: 11055616
+  fileName: DMC-G2_ISO_400_4fmt_19x9.RW2
+  digest: 69e9f5ec1752f9cb4f9a8fad96a157d8
+data:
+  metadata:
+    rawParams:
+      rawWidth: 4060
+      rawHeight: 2264
+      bitDepth: 16
+      crops:
+        p:
+          x: 8
+          y: 4
+        d:
+          w: 4000
+          h: 2248
+      blacklevels:
+        - 0
+        - 0
+        - 0
+        - 0
+      whitelevels:
+        - 3900
+        - 3900
+        - 3900
+        - 3900
+      wbCoeffs:
+        - 1.6235741
+        - 1.0
+        - 1.7756654
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ~
+        artist: ~
+        lens_spec: ~
+        exposure_time: 10/200
+        fnumber: 36/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 400
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: 0/100
+        date_time_original: "2022:04:22 12:42:52"
+        create_date: "2022:04:22 12:42:52"
+        modify_date: ~
+        exposure_program: 2
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: ~
+        max_aperture_value: 949/256
+        subject_distance: ~
+        metering_mode: 5
+        light_source: ~
+        flash: 16
+        focal_length: 150/10
+        image_number: ~
+        color_space: ~
+        flash_energy: ~
+        exposure_mode: ~
+        white_balance: ~
+        scene_capture_type: ~
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: DMC-G2
+      make: Panasonic
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

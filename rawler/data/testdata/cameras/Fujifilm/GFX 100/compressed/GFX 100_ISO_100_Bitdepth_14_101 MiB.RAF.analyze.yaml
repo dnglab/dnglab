@@ -1,0 +1,89 @@
+---
+file:
+  fileSize: 105414880
+  fileName: GFX 100_ISO_100_Bitdepth_14_101 MiB.RAF
+  digest: 24582fc2f5c0fe91b7ae6df9471846f5
+data:
+  metadata:
+    rawParams:
+      rawWidth: 11808
+      rawHeight: 8754
+      bitDepth: 16
+      crops:
+        p:
+          x: 8
+          y: 7
+        d:
+          w: 8736
+          h: 11648
+      blacklevels:
+        - 62
+        - 62
+        - 62
+        - 62
+      whitelevels:
+        - 16383
+        - 16383
+        - 16383
+        - 16383
+      wbCoeffs:
+        - 1.8410596
+        - 1.0
+        - 1.7152318
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ""
+        artist: Matt Grayson
+        lens_spec:
+          - 3200/100
+          - 6400/100
+          - 400/100
+          - 400/100
+        exposure_time: 10/250
+        fnumber: 900/100
+        aperture_value: 630/100
+        brightness_value: ~
+        iso_speed_ratings: 100
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: 1
+        exposure_bias: 0/100
+        date_time_original: "2020:02:19 07:57:28"
+        create_date: "2020:02:19 07:57:28"
+        modify_date: "2020:02:19 07:57:28"
+        exposure_program: 1
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: 467/100
+        max_aperture_value: 400/100
+        subject_distance: ~
+        metering_mode: 5
+        light_source: 0
+        flash: 0
+        focal_length: 6400/100
+        image_number: ~
+        color_space: 65535
+        flash_energy: ~
+        exposure_mode: 1
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: 0
+        owner_name: ~
+        serial_number: 93A03197
+        lens_serial_number: 96C00062
+        lens_make: FUJIFILM
+        lens_model: GF32-64mmF4 R LM WR
+        gps: ~
+      model: GFX 100
+      make: Fujifilm
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

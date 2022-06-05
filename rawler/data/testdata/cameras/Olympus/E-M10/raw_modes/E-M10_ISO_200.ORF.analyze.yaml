@@ -1,0 +1,104 @@
+---
+file:
+  fileSize: 15258356
+  fileName: E-M10_ISO_200.ORF
+  digest: e67639aded2ce9534edf746c39dbb6c0
+data:
+  metadata:
+    rawParams:
+      rawWidth: 4640
+      rawHeight: 3472
+      bitDepth: 16
+      crops:
+        p:
+          x: 8
+          y: 8
+        d:
+          w: 4608
+          h: 3456
+      blacklevels:
+        - 254
+        - 254
+        - 254
+        - 254
+      whitelevels:
+        - 4000
+        - 4000
+        - 4000
+        - 4000
+      wbCoeffs:
+        - 1.984375
+        - 1.0
+        - 1.7265625
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: Ramiro Tellez Sanz
+        artist: "@urcindalo"
+        lens_spec:
+          - 40/1
+          - 150/1
+          - 40/10
+          - 56/10
+        exposure_time: 1/2000
+        fnumber: 44/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 200
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: 1
+        exposure_bias: 0/10
+        date_time_original: "2017:03:18 15:54:01"
+        create_date: "2017:03:18 15:54:01"
+        modify_date: "2017:03:18 15:54:01"
+        exposure_program: 3
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: ~
+        max_aperture_value: 1024/256
+        subject_distance: ~
+        metering_mode: 5
+        light_source: 0
+        flash: 8
+        focal_length: 58/1
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: Olympus
+        lens_model: M.Zuiko Digital ED 40-150mm F4.0-5.6 R
+        gps: ~
+      model: E-M10
+      make: Olympus
+      lens:
+        identifiers:
+          name: ~
+          id: ~
+          nikon_id: ~
+          olympus_id: 00 14 10
+        mount: MFT-mount
+        lens_make: Olympus
+        lens_model: M.Zuiko Digital ED 40-150mm F4.0-5.6 R
+        focal_range:
+          - 40/1
+          - 150/1
+        aperture_range:
+          - 40/10
+          - 56/10
+        lens_name: Olympus M.Zuiko Digital ED 40-150mm F4.0-5.6 R
+      unique_image_id: ~
+      rating: ~
+

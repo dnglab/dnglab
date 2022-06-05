@@ -1,0 +1,85 @@
+---
+file:
+  fileSize: 21734912
+  fileName: DMC-ZS40_ISO_100_Panasonic RAW 1_4896x3672.RW2
+  digest: 0dad8ba59e469b316718f6e70f9a4380
+data:
+  metadata:
+    rawParams:
+      rawWidth: 5040
+      rawHeight: 3688
+      bitDepth: 16
+      crops:
+        p:
+          x: 8
+          y: 8
+        d:
+          w: 4896
+          h: 3672
+      blacklevels:
+        - 128
+        - 128
+        - 128
+        - 128
+      whitelevels:
+        - 3956
+        - 3956
+        - 3956
+        - 3956
+      wbCoeffs:
+        - 2.154717
+        - 1.0
+        - 1.6377358
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ~
+        artist: ~
+        lens_spec: ~
+        exposure_time: 10/600
+        fnumber: 47/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 100
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: "-66/100"
+        date_time_original: "2017:07:11 20:23:29"
+        create_date: "2017:07:11 20:23:29"
+        modify_date: ~
+        exposure_program: 2
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: ~
+        max_aperture_value: 572/128
+        subject_distance: ~
+        metering_mode: 2
+        light_source: ~
+        flash: 9
+        focal_length: 141/10
+        image_number: ~
+        color_space: ~
+        flash_energy: ~
+        exposure_mode: ~
+        white_balance: ~
+        scene_capture_type: ~
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: DMC-ZS40
+      make: Panasonic
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

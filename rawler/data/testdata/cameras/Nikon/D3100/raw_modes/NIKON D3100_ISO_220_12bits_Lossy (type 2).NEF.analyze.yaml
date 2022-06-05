@@ -1,0 +1,104 @@
+---
+file:
+  fileSize: 11388395
+  fileName: NIKON D3100_ISO_220_12bits_Lossy (type 2).NEF
+  digest: 3935116291178a06a0a1db14500ec482
+data:
+  metadata:
+    rawParams:
+      rawWidth: 4672
+      rawHeight: 3084
+      bitDepth: 16
+      crops:
+        p:
+          x: 24
+          y: 6
+        d:
+          w: 4608
+          h: 3072
+      blacklevels:
+        - 0
+        - 0
+        - 0
+        - 0
+      whitelevels:
+        - 3880
+        - 3880
+        - 3880
+        - 3880
+      wbCoeffs:
+        - 2.2734375
+        - 1.0
+        - 1.2070312
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ~
+        artist: ~
+        lens_spec:
+          - 35/1
+          - 35/1
+          - 18/10
+          - 18/10
+        exposure_time: 10/5000
+        fnumber: 110/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 220
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: 0/6
+        date_time_original: "2019:08:25 12:24:06"
+        create_date: "2019:08:25 12:24:06"
+        modify_date: "2019:08:25 12:24:06"
+        exposure_program: 0
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: "40"
+        sub_sec_time_original: "40"
+        sub_sec_time_digitized: "40"
+        shutter_speed_value: ~
+        max_aperture_value: 16/10
+        subject_distance: ~
+        metering_mode: 5
+        light_source: 0
+        flash: 16
+        focal_length: 350/10
+        image_number: ~
+        color_space: ~
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 0
+        scene_capture_type: 1
+        subject_distance_range: 0
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: Nikon
+        lens_model: AF-S DX Nikkor 35mm f/1.8G
+        gps: ~
+      model: D3100
+      make: Nikon
+      lens:
+        identifiers:
+          name: ~
+          id: ~
+          nikon_id: 9F 58 44 44 14 14 A1 06
+          olympus_id: ~
+        mount: F-mount
+        lens_make: Nikon
+        lens_model: AF-S DX Nikkor 35mm f/1.8G
+        focal_range:
+          - 35/1
+          - 35/1
+        aperture_range:
+          - 18/10
+          - 18/10
+        lens_name: Nikon AF-S DX Nikkor 35mm f/1.8G
+      unique_image_id: ~
+      rating: ~
+

@@ -1,0 +1,85 @@
+---
+file:
+  fileSize: 85449414
+  fileName: Hasselblad H4D-50_ISO_100_JPEG.FFF
+  digest: f1cc31a300512b93afdd89801c68838e
+data:
+  metadata:
+    rawParams:
+      rawWidth: 8282
+      rawHeight: 6240
+      bitDepth: 16
+      crops:
+        p:
+          x: 54
+          y: 16
+        d:
+          w: 8176
+          h: 6132
+      blacklevels:
+        - 256
+        - 256
+        - 256
+        - 256
+      whitelevels:
+        - 32767
+        - 32767
+        - 32767
+        - 32767
+      wbCoeffs:
+        - 2.3007812
+        - 1.0
+        - 1.4595946
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 8
+        copyright: Hasselblad H4D
+        artist: ~
+        lens_spec: ~
+        exposure_time: 1/640
+        fnumber: 8/1
+        aperture_value: 805306368/134217728
+        brightness_value: ~
+        iso_speed_ratings: 100
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: ~
+        date_time_original: "2017-09-02T09:34:10"
+        create_date: "2017-09-02T09:34:10"
+        modify_date: "2017:09:02 09:34:10"
+        exposure_program: 3
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: 625584004/67108864
+        max_aperture_value: 4/1
+        subject_distance: 308/100
+        metering_mode: 3
+        light_source: ~
+        flash: 0
+        focal_length: 28/1
+        image_number: ~
+        color_space: ~
+        flash_energy: ~
+        exposure_mode: ~
+        white_balance: ~
+        scene_capture_type: ~
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: H4D-50
+      make: Hasselblad
+      lens: ~
+      unique_image_id: 76130780140434142462960463602639188784
+      rating: ~
+

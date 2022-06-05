@@ -1,0 +1,106 @@
+---
+file:
+  fileSize: 25296896
+  fileName: ILCE-6300_ISO_100_14bits_Sony ARW Compressed.ARW
+  digest: 7dc7c16a2965a48c004b09de2dbd7566
+data:
+  metadata:
+    rawParams:
+      rawWidth: 6048
+      rawHeight: 4024
+      bitDepth: 16
+      crops:
+        p:
+          x: 12
+          y: 12
+        d:
+          w: 6000
+          h: 4000
+      blacklevels:
+        - 512
+        - 512
+        - 512
+        - 512
+      whitelevels:
+        - 15360
+        - 15360
+        - 15360
+        - 15360
+      wbCoeffs:
+        - 2.7070312
+        - 1.0
+        - 1.7265625
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: Lior Segev
+        artist: Lior Segev
+        lens_spec:
+          - 30/1
+          - 30/1
+          - 14/10
+          - 14/10
+        exposure_time: 1/125
+        fnumber: 56/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 100
+        iso_speed: ~
+        recommended_exposure_index: 100
+        sensitivity_type: 2
+        exposure_bias: 0/10
+        date_time_original: "2017:01:26 07:33:13"
+        create_date: "2017:01:26 07:33:13"
+        modify_date: "2017:01:26 07:33:13"
+        exposure_program: 2
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: ~
+        max_aperture_value: 248/256
+        subject_distance: ~
+        metering_mode: 5
+        light_source: 0
+        flash: 16
+        focal_length: 300/10
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: Sigma
+        lens_model: 30mm F1.4 DC DN | C
+        gps: ~
+      model: ILCE-6300
+      make: SONY
+      lens:
+        identifiers:
+          name: ~
+          id:
+            - 50480
+            - 0
+          nikon_id: ~
+          olympus_id: ~
+        mount: e-mount
+        lens_make: Sigma
+        lens_model: 30mm F1.4 DC DN | C
+        focal_range:
+          - 30/1
+          - 30/1
+        aperture_range:
+          - 14/10
+          - 14/10
+        lens_name: Sigma 30mm F1.4 DC DN | C
+      unique_image_id: ~
+      rating: ~
+

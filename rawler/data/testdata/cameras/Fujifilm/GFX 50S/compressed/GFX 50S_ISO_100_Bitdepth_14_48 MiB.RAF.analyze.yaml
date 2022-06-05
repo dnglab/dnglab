@@ -1,0 +1,89 @@
+---
+file:
+  fileSize: 50106976
+  fileName: GFX 50S_ISO_100_Bitdepth_14_48 MiB.RAF
+  digest: cd157e3b4de831f88b72524423f80d51
+data:
+  metadata:
+    rawParams:
+      rawWidth: 9216
+      rawHeight: 6210
+      bitDepth: 16
+      crops:
+        p:
+          x: 12
+          y: 8
+        d:
+          w: 6192
+          h: 8256
+      blacklevels:
+        - 65
+        - 65
+        - 65
+        - 65
+      whitelevels:
+        - 16383
+        - 16383
+        - 16383
+        - 16383
+      wbCoeffs:
+        - 1.6986755
+        - 1.0
+        - 1.7152318
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: (c) Piero Rossi
+        artist: PIERO ROSSI INFO@FOTOLUX.CH
+        lens_spec:
+          - 6300/100
+          - 6300/100
+          - 280/100
+          - 280/100
+        exposure_time: 10/2800
+        fnumber: 1400/100
+        aperture_value: 760/100
+        brightness_value: ~
+        iso_speed_ratings: 100
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: 1
+        exposure_bias: 0/100
+        date_time_original: "2017:05:25 05:26:30"
+        create_date: "2017:05:25 05:26:30"
+        modify_date: "2017:05:25 05:26:30"
+        exposure_program: 3
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: 810/100
+        max_aperture_value: 300/100
+        subject_distance: ~
+        metering_mode: 5
+        light_source: 0
+        flash: 0
+        focal_length: 6300/100
+        image_number: ~
+        color_space: 65535
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: 0
+        owner_name: ~
+        serial_number: "71010410"
+        lens_serial_number: 75A02591
+        lens_make: FUJIFILM
+        lens_model: GF63mmF2.8 R WR
+        gps: ~
+      model: GFX 50S
+      make: Fujifilm
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

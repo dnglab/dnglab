@@ -1,0 +1,85 @@
+---
+file:
+  fileSize: 22810624
+  fileName: Hasselblad 500 mech._ISO_100_JPEG.3FR
+  digest: c58d64885342ccf32843a057a14649c5
+data:
+  metadata:
+    rawParams:
+      rawWidth: 4096
+      rawHeight: 4096
+      bitDepth: 16
+      crops:
+        p:
+          x: 8
+          y: 8
+        d:
+          w: 4080
+          h: 4080
+      blacklevels:
+        - 0
+        - 0
+        - 0
+        - 0
+      whitelevels:
+        - 32767
+        - 32767
+        - 32767
+        - 32767
+      wbCoeffs:
+        - 2.2009277
+        - 1.0
+        - 1.1634521
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 6
+        copyright: ~
+        artist: ~
+        lens_spec: ~
+        exposure_time: ~
+        fnumber: ~
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 100
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: ~
+        date_time_original: "2007:06:03 12:22:55"
+        create_date: ~
+        modify_date: "2007:06:03 12:22:55"
+        exposure_program: 0
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: ~
+        max_aperture_value: ~
+        subject_distance: ~
+        metering_mode: 0
+        light_source: ~
+        flash: ~
+        focal_length: 0/1
+        image_number: ~
+        color_space: ~
+        flash_energy: ~
+        exposure_mode: ~
+        white_balance: ~
+        scene_capture_type: ~
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: CFV
+      make: Hasselblad
+      lens: ~
+      unique_image_id: 65475881324469696138766309318484964144
+      rating: ~
+

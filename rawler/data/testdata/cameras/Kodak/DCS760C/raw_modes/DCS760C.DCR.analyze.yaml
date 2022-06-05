@@ -1,0 +1,85 @@
+---
+file:
+  fileSize: 7547392
+  fileName: DCS760C.DCR
+  digest: f67ad87b3dc9bb6c2c2af11c2453c183
+data:
+  metadata:
+    rawParams:
+      rawWidth: 3040
+      rawHeight: 2016
+      bitDepth: 16
+      crops:
+        p:
+          x: 4
+          y: 4
+        d:
+          w: 3032
+          h: 2008
+      blacklevels:
+        - 0
+        - 0
+        - 0
+        - 0
+      whitelevels:
+        - 3500
+        - 3500
+        - 3500
+        - 3500
+      wbCoeffs:
+        - ~
+        - ~
+        - ~
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 9
+        copyright: PHOTOGRAPHIE BEER
+        artist: ""
+        lens_spec: ~
+        exposure_time: 1/160
+        fnumber: 63/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: ~
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: 0/10
+        date_time_original: "2017:04:14 12:34:50"
+        create_date: ~
+        modify_date: "2017:04:14 12:34:50"
+        exposure_program: 2
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: ~
+        max_aperture_value: 28/10
+        subject_distance: ~
+        metering_mode: 4
+        light_source: 1
+        flash: ~
+        focal_length: 240/10
+        image_number: 37188
+        color_space: ~
+        flash_energy: ~
+        exposure_mode: ~
+        white_balance: ~
+        scene_capture_type: ~
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: DCS760C
+      make: Kodak
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

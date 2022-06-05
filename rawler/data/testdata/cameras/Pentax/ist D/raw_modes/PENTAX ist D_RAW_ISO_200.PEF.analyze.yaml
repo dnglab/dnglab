@@ -1,0 +1,85 @@
+---
+file:
+  fileSize: 13682035
+  fileName: PENTAX ist D_RAW_ISO_200.PEF
+  digest: f4f72769fd6c4c0a5779aebb394cd05d
+data:
+  metadata:
+    rawParams:
+      rawWidth: 3040
+      rawHeight: 2024
+      bitDepth: 16
+      crops:
+        p:
+          x: 19
+          y: 11
+        d:
+          w: 3008
+          h: 2008
+      blacklevels:
+        - 128
+        - 128
+        - 127
+        - 128
+      whitelevels:
+        - 4095
+        - 4095
+        - 4095
+        - 4095
+      wbCoeffs:
+        - 1.4140625
+        - 1.0
+        - 1.1132812
+        - ~
+    rawMetadata:
+      exif:
+        orientation: ~
+        copyright: ~
+        artist: ~
+        lens_spec: ~
+        exposure_time: 1/125
+        fnumber: 56/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 200
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: 0/10
+        date_time_original: "2011:05:24 07:08:30"
+        create_date: "2011:05:24 07:08:30"
+        modify_date: "2011:05:24 07:08:30"
+        exposure_program: 1
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: ~
+        max_aperture_value: ~
+        subject_distance: ~
+        metering_mode: 5
+        light_source: ~
+        flash: 16
+        focal_length: 0/1
+        image_number: ~
+        color_space: ~
+        flash_energy: ~
+        exposure_mode: 1
+        white_balance: 1
+        scene_capture_type: 0
+        subject_distance_range: 3
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: "*ist D"
+      make: Pentax
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

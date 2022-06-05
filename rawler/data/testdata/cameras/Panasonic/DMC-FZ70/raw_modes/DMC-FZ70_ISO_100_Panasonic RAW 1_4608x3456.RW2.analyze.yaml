@@ -1,0 +1,85 @@
+---
+file:
+  fileSize: 19781632
+  fileName: DMC-FZ70_ISO_100_Panasonic RAW 1_4608x3456.RW2
+  digest: ecbc62a00992f95ae2c27f189dab9a7d
+data:
+  metadata:
+    rawParams:
+      rawWidth: 4816
+      rawHeight: 3472
+      bitDepth: 16
+      crops:
+        p:
+          x: 8
+          y: 8
+        d:
+          w: 4608
+          h: 3456
+      blacklevels:
+        - 128
+        - 128
+        - 128
+        - 128
+      whitelevels:
+        - 3941
+        - 3941
+        - 3941
+        - 3941
+      wbCoeffs:
+        - 1.509434
+        - 1.0
+        - 2.037736
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 8
+        copyright: ~
+        artist: ~
+        lens_spec: ~
+        exposure_time: 10/1000
+        fnumber: 71/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 100
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: 0/100
+        date_time_original: "2018:01:27 16:04:50"
+        create_date: "2018:01:27 16:04:50"
+        modify_date: ~
+        exposure_program: 1
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: ~
+        max_aperture_value: 503/128
+        subject_distance: ~
+        metering_mode: 5
+        light_source: ~
+        flash: 16
+        focal_length: 951/100
+        image_number: ~
+        color_space: ~
+        flash_energy: ~
+        exposure_mode: ~
+        white_balance: ~
+        scene_capture_type: ~
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: DMC-FZ70
+      make: Panasonic
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

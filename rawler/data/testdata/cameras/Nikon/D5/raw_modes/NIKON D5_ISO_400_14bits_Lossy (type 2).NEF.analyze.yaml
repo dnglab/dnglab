@@ -1,0 +1,104 @@
+---
+file:
+  fileSize: 29971795
+  fileName: NIKON D5_ISO_400_14bits_Lossy (type 2).NEF
+  digest: 247422108e81471d66d8c37ff4d239d0
+data:
+  metadata:
+    rawParams:
+      rawWidth: 5584
+      rawHeight: 3728
+      bitDepth: 16
+      crops:
+        p:
+          x: 8
+          y: 8
+        d:
+          w: 5568
+          h: 3712
+      blacklevels:
+        - 400
+        - 400
+        - 400
+        - 400
+      whitelevels:
+        - 15520
+        - 15520
+        - 15520
+        - 15520
+      wbCoeffs:
+        - 2.4594727
+        - 1.0
+        - 1.4169922
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: "https://Lucnix.be"
+        artist: Luc Viatour
+        lens_spec:
+          - 14/1
+          - 24/1
+          - 28/10
+          - 28/10
+        exposure_time: 10/1250
+        fnumber: 56/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 400
+        iso_speed: ~
+        recommended_exposure_index: 400
+        sensitivity_type: 2
+        exposure_bias: 6/6
+        date_time_original: "2018:01:12 13:15:24"
+        create_date: "2018:01:12 13:15:24"
+        modify_date: "2018:01:12 13:15:24"
+        exposure_program: 3
+        timezone_offset: ~
+        offset_time: "+01:00"
+        offset_time_original: "+01:00"
+        offset_time_digitized: "+01:00"
+        sub_sec_time: "15"
+        sub_sec_time_original: "15"
+        sub_sec_time_digitized: "15"
+        shutter_speed_value: ~
+        max_aperture_value: 30/10
+        subject_distance: ~
+        metering_mode: 5
+        light_source: 0
+        flash: 0
+        focal_length: 140/10
+        image_number: ~
+        color_space: ~
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: 0
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: Nikon
+        lens_model: AF-S Zoom-Nikkor 14-24mm f/2.8G ED
+        gps: ~
+      model: D5
+      make: Nikon
+      lens:
+        identifiers:
+          name: ~
+          id: ~
+          nikon_id: 92 48 24 37 24 24 94 06
+          olympus_id: ~
+        mount: F-mount
+        lens_make: Nikon
+        lens_model: AF-S Zoom-Nikkor 14-24mm f/2.8G ED
+        focal_range:
+          - 14/1
+          - 24/1
+        aperture_range:
+          - 28/10
+          - 28/10
+        lens_name: Nikon AF-S Zoom-Nikkor 14-24mm f/2.8G ED
+      unique_image_id: ~
+      rating: ~
+

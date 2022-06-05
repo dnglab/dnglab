@@ -1,0 +1,89 @@
+---
+file:
+  fileSize: 26160640
+  fileName: X-A1_ISO_1000.RAF
+  digest: 09aac6d76dd6efa97d2240983adde10f
+data:
+  metadata:
+    rawParams:
+      rawWidth: 5120
+      rawHeight: 3288
+      bitDepth: 16
+      crops:
+        p:
+          x: 28
+          y: 12
+        d:
+          w: 3264
+          h: 4896
+      blacklevels:
+        - 255
+        - 255
+        - 255
+        - 255
+      whitelevels:
+        - 4094
+        - 4094
+        - 4094
+        - 4094
+      wbCoeffs:
+        - 1.1490066
+        - 1.0
+        - 3.0894039
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ""
+        artist: ~
+        lens_spec:
+          - 1600/100
+          - 5000/100
+          - 350/100
+          - 560/100
+        exposure_time: 10/300
+        fnumber: 400/100
+        aperture_value: 400/100
+        brightness_value: ~
+        iso_speed_ratings: 1000
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: 1
+        exposure_bias: 33/100
+        date_time_original: "2016:12:15 18:52:29"
+        create_date: "2016:12:15 18:52:29"
+        modify_date: "2016:12:15 18:52:29"
+        exposure_program: 3
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: 507/100
+        max_aperture_value: 360/100
+        subject_distance: ~
+        metering_mode: 5
+        light_source: 0
+        flash: 16
+        focal_length: 1600/100
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: 0
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: 33A60997
+        lens_make: FUJIFILM
+        lens_model: XC16-50mmF3.5-5.6 OIS
+        gps: ~
+      model: X-A1
+      make: Fujifilm
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

@@ -1,0 +1,106 @@
+---
+file:
+  fileSize: 175828391
+  fileName: PENTAX K-1_RAW (pixel shift enabled)_ISO_160.PEF
+  digest: 8e6834fb8ff30e2016b48045d91b79b8
+data:
+  metadata:
+    rawParams:
+      rawWidth: 7392
+      rawHeight: 4950
+      bitDepth: 16
+      crops:
+        p:
+          x: 14
+          y: 28
+        d:
+          w: 7360
+          h: 4912
+      blacklevels:
+        - 64
+        - 64
+        - 64
+        - 64
+      whitelevels:
+        - 16316
+        - 16316
+        - 16316
+        - 16316
+      wbCoeffs:
+        - 2.1484375
+        - 1.0
+        - 1.6132812
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ""
+        artist: ""
+        lens_spec:
+          - 35/1
+          - 35/1
+          - 24/10
+          - 24/10
+        exposure_time: 1/125
+        fnumber: 140/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 160
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: 1
+        exposure_bias: 0/10
+        date_time_original: "2018:03:23 13:22:08"
+        create_date: "2018:03:23 13:22:08"
+        modify_date: "2018:03:23 13:22:08"
+        exposure_program: 3
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: ~
+        max_aperture_value: ~
+        subject_distance: ~
+        metering_mode: 2
+        light_source: ~
+        flash: 16
+        focal_length: 3500/100
+        image_number: ~
+        color_space: ~
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: 3
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: Pentax
+        lens_model: smc PENTAX-DA 35mm F2.4 AL
+        gps: ~
+      model: PENTAX K-1
+      make: "RICOH IMAGING COMPANY, LTD."
+      lens:
+        identifiers:
+          name: ~
+          id:
+            - 7
+            - 214
+          nikon_id: ~
+          olympus_id: ~
+        mount: k-mount
+        lens_make: Pentax
+        lens_model: smc PENTAX-DA 35mm F2.4 AL
+        focal_range:
+          - 35/1
+          - 35/1
+        aperture_range:
+          - 24/10
+          - 24/10
+        lens_name: Pentax smc PENTAX-DA 35mm F2.4 AL
+      unique_image_id: ~
+      rating: ~
+

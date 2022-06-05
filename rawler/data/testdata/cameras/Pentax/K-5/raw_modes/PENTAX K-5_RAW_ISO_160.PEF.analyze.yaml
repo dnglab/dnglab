@@ -1,0 +1,106 @@
+---
+file:
+  fileSize: 18852928
+  fileName: PENTAX K-5_RAW_ISO_160.PEF
+  digest: 5b3b2900da67bd350f97a860af6399c2
+data:
+  metadata:
+    rawParams:
+      rawWidth: 4992
+      rawHeight: 3284
+      bitDepth: 16
+      crops:
+        p:
+          x: 22
+          y: 10
+        d:
+          w: 4928
+          h: 3264
+      blacklevels:
+        - 65
+        - 65
+        - 66
+        - 66
+      whitelevels:
+        - 15866
+        - 15866
+        - 15866
+        - 15866
+      wbCoeffs:
+        - 1.8164062
+        - 1.0
+        - 2.09375
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: MarcoScarselletti
+        artist: Marco-Scarselletti
+        lens_spec:
+          - 90/1
+          - 90/1
+          - 28/10
+          - 28/10
+        exposure_time: 3/10
+        fnumber: 28/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 160
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: 0/10
+        date_time_original: "2017:06:05 16:01:00"
+        create_date: "2017:06:05 16:01:00"
+        modify_date: "2017:06:05 16:01:00"
+        exposure_program: 1
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: ~
+        max_aperture_value: ~
+        subject_distance: ~
+        metering_mode: 2
+        light_source: ~
+        flash: 16
+        focal_length: 9000/100
+        image_number: ~
+        color_space: ~
+        flash_energy: ~
+        exposure_mode: 1
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: 1
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: Tamron
+        lens_model: Tamron SP AF 90mm F2.8 (172E)
+        gps: ~
+      model: K-5
+      make: Pentax
+      lens:
+        identifiers:
+          name: ~
+          id:
+            - 4
+            - 19
+          nikon_id: ~
+          olympus_id: ~
+        mount: k-mount
+        lens_make: Tamron
+        lens_model: Tamron SP AF 90mm F2.8 (172E)
+        focal_range:
+          - 90/1
+          - 90/1
+        aperture_range:
+          - 28/10
+          - 28/10
+        lens_name: Tamron Tamron SP AF 90mm F2.8 (172E)
+      unique_image_id: ~
+      rating: ~
+

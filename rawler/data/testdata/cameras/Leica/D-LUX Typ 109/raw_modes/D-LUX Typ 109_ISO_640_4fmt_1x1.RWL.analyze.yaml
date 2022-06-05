@@ -1,0 +1,85 @@
+---
+file:
+  fileSize: 12553216
+  fileName: D-LUX Typ 109_ISO_640_4fmt_1x1.RWL
+  digest: 6acf34c9930175242485cb5e46a838ea
+data:
+  metadata:
+    rawParams:
+      rawWidth: 3248
+      rawHeight: 3104
+      bitDepth: 16
+      crops:
+        p:
+          x: 8
+          y: 8
+        d:
+          w: 3088
+          h: 3088
+      blacklevels:
+        - 128
+        - 128
+        - 128
+        - 128
+      whitelevels:
+        - 4095
+        - 4095
+        - 4095
+        - 4095
+      wbCoeffs:
+        - 2.3945312
+        - 1.0
+        - 1.609375
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ~
+        artist: ~
+        lens_spec: ~
+        exposure_time: 10/800
+        fnumber: 25/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 640
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: 0/100
+        date_time_original: "2016:11:28 08:21:06"
+        create_date: "2016:11:28 08:21:06"
+        modify_date: ~
+        exposure_program: 3
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: "694"
+        sub_sec_time_digitized: "694"
+        shutter_speed_value: ~
+        max_aperture_value: 548/256
+        subject_distance: ~
+        metering_mode: 5
+        light_source: ~
+        flash: 16
+        focal_length: 125/10
+        image_number: ~
+        color_space: ~
+        flash_energy: ~
+        exposure_mode: ~
+        white_balance: ~
+        scene_capture_type: ~
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: D-LUX (Typ 109)
+      make: Leica
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

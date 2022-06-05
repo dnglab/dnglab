@@ -1,0 +1,85 @@
+---
+file:
+  fileSize: 17235968
+  fileName: SLT-A35_ISO_400_12bits_Sony ARW Compressed.ARW
+  digest: 26d29b1341661722b01e13461abd05f6
+data:
+  metadata:
+    rawParams:
+      rawWidth: 4928
+      rawHeight: 3280
+      bitDepth: 16
+      crops:
+        p:
+          x: 8
+          y: 8
+        d:
+          w: 4912
+          h: 3264
+      blacklevels:
+        - 512
+        - 512
+        - 512
+        - 512
+      whitelevels:
+        - 15360
+        - 15360
+        - 15360
+        - 15360
+      wbCoeffs:
+        - 2.6289062
+        - 1.0
+        - 1.5625
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ~
+        artist: ~
+        lens_spec: ~
+        exposure_time: 1/125
+        fnumber: 140/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 400
+        iso_speed: ~
+        recommended_exposure_index: 400
+        sensitivity_type: 2
+        exposure_bias: 0/10
+        date_time_original: "2015:05:09 12:27:52"
+        create_date: "2015:05:09 12:27:52"
+        modify_date: "2015:05:09 12:27:52"
+        exposure_program: 3
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: ~
+        max_aperture_value: 464/100
+        subject_distance: ~
+        metering_mode: 5
+        light_source: 0
+        flash: 16
+        focal_length: 450/10
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 2
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: SLT-A35
+      make: Sony
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

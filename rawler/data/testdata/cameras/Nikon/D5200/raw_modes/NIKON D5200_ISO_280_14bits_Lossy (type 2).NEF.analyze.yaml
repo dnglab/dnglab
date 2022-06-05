@@ -1,0 +1,85 @@
+---
+file:
+  fileSize: 34564844
+  fileName: NIKON D5200_ISO_280_14bits_Lossy (type 2).NEF
+  digest: 6e1a0fa3189c8fa08a3e30ed2f666a52
+data:
+  metadata:
+    rawParams:
+      rawWidth: 6036
+      rawHeight: 4020
+      bitDepth: 16
+      crops:
+        p:
+          x: 18
+          y: 10
+        d:
+          w: 6000
+          h: 4000
+      blacklevels:
+        - 0
+        - 0
+        - 0
+        - 0
+      whitelevels:
+        - 15892
+        - 15892
+        - 15892
+        - 15892
+      wbCoeffs:
+        - 2.4375
+        - 1.0
+        - 1.6992188
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ~
+        artist: ~
+        lens_spec: ~
+        exposure_time: 10/600
+        fnumber: 80/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 280
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: 2
+        exposure_bias: 0/6
+        date_time_original: "2018:04:24 16:21:18"
+        create_date: "2018:04:24 16:21:18"
+        modify_date: "2018:04:24 16:21:18"
+        exposure_program: 1
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: "60"
+        sub_sec_time_original: "60"
+        sub_sec_time_digitized: "60"
+        shutter_speed_value: ~
+        max_aperture_value: 40/10
+        subject_distance: ~
+        metering_mode: 3
+        light_source: 0
+        flash: 0
+        focal_length: 120/10
+        image_number: ~
+        color_space: ~
+        flash_energy: ~
+        exposure_mode: 1
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: 0
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: D5200
+      make: Nikon
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

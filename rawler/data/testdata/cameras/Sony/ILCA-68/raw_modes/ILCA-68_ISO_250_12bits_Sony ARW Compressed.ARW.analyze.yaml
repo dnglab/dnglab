@@ -1,0 +1,85 @@
+---
+file:
+  fileSize: 24936448
+  fileName: ILCA-68_ISO_250_12bits_Sony ARW Compressed.ARW
+  digest: 76441037a0b103e34c551b58853288a5
+data:
+  metadata:
+    rawParams:
+      rawWidth: 6048
+      rawHeight: 4016
+      bitDepth: 16
+      crops:
+        p:
+          x: 8
+          y: 8
+        d:
+          w: 6000
+          h: 4000
+      blacklevels:
+        - 512
+        - 512
+        - 512
+        - 512
+      whitelevels:
+        - 15360
+        - 15360
+        - 15360
+        - 15360
+      wbCoeffs:
+        - 2.4296875
+        - 1.0
+        - 1.6445312
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ~
+        artist: ~
+        lens_spec: ~
+        exposure_time: 1/400
+        fnumber: 56/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 250
+        iso_speed: ~
+        recommended_exposure_index: 250
+        sensitivity_type: 2
+        exposure_bias: 10/10
+        date_time_original: "2017:01:16 14:35:55"
+        create_date: "2017:01:16 14:35:55"
+        modify_date: "2017:01:16 14:35:55"
+        exposure_program: 4
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: ~
+        max_aperture_value: 1272/256
+        subject_distance: ~
+        metering_mode: 5
+        light_source: 0
+        flash: 16
+        focal_length: 2300/10
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: ILCA-68
+      make: Sony
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

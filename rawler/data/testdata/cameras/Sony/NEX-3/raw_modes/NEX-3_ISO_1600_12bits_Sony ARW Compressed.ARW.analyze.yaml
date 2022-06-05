@@ -1,0 +1,85 @@
+---
+file:
+  fileSize: 14713446
+  fileName: NEX-3_ISO_1600_12bits_Sony ARW Compressed.ARW
+  digest: c930dfcb79660d67d3439bb5f060a6bb
+data:
+  metadata:
+    rawParams:
+      rawWidth: 4608
+      rawHeight: 3072
+      bitDepth: 16
+      crops:
+        p:
+          x: 8
+          y: 8
+        d:
+          w: 4592
+          h: 3056
+      blacklevels:
+        - 512
+        - 512
+        - 512
+        - 512
+      whitelevels:
+        - 15360
+        - 15360
+        - 15360
+        - 15360
+      wbCoeffs:
+        - 1.6523438
+        - 1.0
+        - 2.0273438
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ~
+        artist: ~
+        lens_spec: ~
+        exposure_time: 1/30
+        fnumber: 56/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 1600
+        iso_speed: ~
+        recommended_exposure_index: 1600
+        sensitivity_type: 2
+        exposure_bias: "-3/10"
+        date_time_original: "2011:09:06 17:29:03"
+        create_date: "2011:09:06 17:29:03"
+        modify_date: "2011:09:06 17:29:03"
+        exposure_program: 2
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: ~
+        max_aperture_value: 497/100
+        subject_distance: ~
+        metering_mode: 5
+        light_source: 0
+        flash: 16
+        focal_length: 550/10
+        image_number: ~
+        color_space: 65535
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: NEX-3
+      make: Sony
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

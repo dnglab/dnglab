@@ -1,0 +1,85 @@
+---
+file:
+  fileSize: 73144108
+  fileName: Hasselblad H4D-40_ISO_100_JPEG.FFF
+  digest: e04a3132b8907140b28df35d0aedb6c0
+data:
+  metadata:
+    rawParams:
+      rawWidth: 7410
+      rawHeight: 5586
+      bitDepth: 16
+      crops:
+        p:
+          x: 54
+          y: 16
+        d:
+          w: 7304
+          h: 5478
+      blacklevels:
+        - 256
+        - 256
+        - 256
+        - 256
+      whitelevels:
+        - 65535
+        - 65535
+        - 65535
+        - 65535
+      wbCoeffs:
+        - 2.3471098
+        - 1.0
+        - 1.2595326
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: "\u001eElmar_Dam"
+        artist: ~
+        lens_spec: ~
+        exposure_time: 1/125
+        fnumber: 8/1
+        aperture_value: 805306368/134217728
+        brightness_value: ~
+        iso_speed_ratings: 100
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: ~
+        date_time_original: "2016-09-04T12:07:05"
+        create_date: "2016-09-04T12:07:05"
+        modify_date: "2016:09:04 12:07:05"
+        exposure_program: 1
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: 934931740/134217728
+        max_aperture_value: 347393118/100000000
+        subject_distance: 263/100
+        metering_mode: 2
+        light_source: ~
+        flash: 0
+        focal_length: 150/1
+        image_number: ~
+        color_space: ~
+        flash_energy: ~
+        exposure_mode: ~
+        white_balance: ~
+        scene_capture_type: ~
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: H4D-40
+      make: Hasselblad
+      lens: ~
+      unique_image_id: 86681527357286397213808827483253256752
+      rating: ~
+

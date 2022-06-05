@@ -1,0 +1,106 @@
+---
+file:
+  fileSize: 36896768
+  fileName: NX1_ISO_400_PackBits.SRW
+  digest: 7a8b2046c9276c4a1d2a2c498a8bbb2a
+data:
+  metadata:
+    rawParams:
+      rawWidth: 6496
+      rawHeight: 4336
+      bitDepth: 16
+      crops:
+        p:
+          x: 0
+          y: 0
+        d:
+          w: 6480
+          h: 4320
+      blacklevels:
+        - 0
+        - 0
+        - 0
+        - 0
+      whitelevels:
+        - 16100
+        - 16100
+        - 16100
+        - 16100
+      wbCoeffs:
+        - 1.7695312
+        - 0.96875
+        - 1.7265625
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ~
+        artist: ~
+        lens_spec:
+          - 16/1
+          - 50/1
+          - 2/1
+          - 28/10
+        exposure_time: 1/2500
+        fnumber: 80/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 400
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: 0/10
+        date_time_original: "2016:07:23 14:21:01"
+        create_date: ~
+        modify_date: "2016:07:23 14:21:01"
+        exposure_program: 4
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: ~
+        max_aperture_value: ~
+        subject_distance: ~
+        metering_mode: 5
+        light_source: 0
+        flash: 0
+        focal_length: 35/1
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 4
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: Samsung
+        lens_model: NX 16-50mm F2-2.8 S ED OIS
+        gps: ~
+      model: NX1
+      make: Samsung
+      lens:
+        identifiers:
+          name: ~
+          id:
+            - 13
+            - 0
+          nikon_id: ~
+          olympus_id: ~
+        mount: NX-mount
+        lens_make: Samsung
+        lens_model: NX 16-50mm F2-2.8 S ED OIS
+        focal_range:
+          - 16/1
+          - 50/1
+        aperture_range:
+          - 2/1
+          - 28/10
+        lens_name: Samsung NX 16-50mm F2-2.8 S ED OIS
+      unique_image_id: ~
+      rating: ~
+

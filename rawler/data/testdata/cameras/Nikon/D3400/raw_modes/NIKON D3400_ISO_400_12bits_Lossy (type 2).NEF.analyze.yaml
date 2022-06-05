@@ -1,0 +1,104 @@
+---
+file:
+  fileSize: 23097688
+  fileName: NIKON D3400_ISO_400_12bits_Lossy (type 2).NEF
+  digest: 2905d2129680490e1d19137282c0e8b5
+data:
+  metadata:
+    rawParams:
+      rawWidth: 6016
+      rawHeight: 4016
+      bitDepth: 16
+      crops:
+        p:
+          x: 8
+          y: 8
+        d:
+          w: 6000
+          h: 4000
+      blacklevels:
+        - 150
+        - 150
+        - 150
+        - 150
+      whitelevels:
+        - 3880
+        - 3880
+        - 3880
+        - 3880
+      wbCoeffs:
+        - 2.3203125
+        - 1.0
+        - 1.6445312
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ""
+        artist: ""
+        lens_spec:
+          - 18/1
+          - 55/1
+          - 35/10
+          - 56/10
+        exposure_time: 10/25000
+        fnumber: 50/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 400
+        iso_speed: ~
+        recommended_exposure_index: 400
+        sensitivity_type: 2
+        exposure_bias: 0/6
+        date_time_original: "2017:06:17 14:44:06"
+        create_date: "2017:06:17 14:44:06"
+        modify_date: "2017:06:17 14:44:06"
+        exposure_program: 3
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: "76"
+        sub_sec_time_original: "76"
+        sub_sec_time_digitized: "76"
+        shutter_speed_value: ~
+        max_aperture_value: 36/10
+        subject_distance: ~
+        metering_mode: 5
+        light_source: 0
+        flash: 16
+        focal_length: 180/10
+        image_number: ~
+        color_space: ~
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: 0
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: Nikon
+        lens_model: AF-P DX Nikkor 18-55mm f/3.5-5.6G
+        gps: ~
+      model: D3400
+      make: Nikon
+      lens:
+        identifiers:
+          name: ~
+          id: ~
+          nikon_id: A0 40 2D 53 2C 3C CA 8E
+          olympus_id: ~
+        mount: F-mount
+        lens_make: Nikon
+        lens_model: AF-P DX Nikkor 18-55mm f/3.5-5.6G
+        focal_range:
+          - 18/1
+          - 55/1
+        aperture_range:
+          - 35/10
+          - 56/10
+        lens_name: Nikon AF-P DX Nikkor 18-55mm f/3.5-5.6G
+      unique_image_id: ~
+      rating: ~
+

@@ -1,0 +1,85 @@
+---
+file:
+  fileSize: 53594112
+  fileName: Hasselblad H3D_ISO_50_JPEG.3FR
+  digest: f72b650ca27bee1344323b290bd47246
+data:
+  metadata:
+    rawParams:
+      rawWidth: 7262
+      rawHeight: 5456
+      bitDepth: 16
+      crops:
+        p:
+          x: 24
+          y: 20
+        d:
+          w: 7216
+          h: 5412
+      blacklevels:
+        - 0
+        - 0
+        - 0
+        - 0
+      whitelevels:
+        - 65535
+        - 65535
+        - 65535
+        - 65535
+      wbCoeffs:
+        - 2.4294434
+        - 1.0
+        - 1.4355469
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: Hasselblad H3D
+        artist: ~
+        lens_spec: ~
+        exposure_time: 1/500
+        fnumber: 48/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 50
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: ~
+        date_time_original: "2018:11:10 11:15:13"
+        create_date: ~
+        modify_date: "2018:11:10 11:15:13"
+        exposure_program: 3
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: ~
+        max_aperture_value: ~
+        subject_distance: ~
+        metering_mode: 254
+        light_source: ~
+        flash: ~
+        focal_length: 150/1
+        image_number: ~
+        color_space: ~
+        flash_energy: ~
+        exposure_mode: ~
+        white_balance: ~
+        scene_capture_type: ~
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: H4D-H3D
+      make: Hasselblad
+      lens: ~
+      unique_image_id: 87990005180086692191046566538288444208
+      rating: ~
+

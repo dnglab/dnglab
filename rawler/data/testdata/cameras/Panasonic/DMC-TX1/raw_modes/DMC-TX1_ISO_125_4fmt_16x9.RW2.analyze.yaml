@@ -1,0 +1,85 @@
+---
+file:
+  fileSize: 23578624
+  fileName: DMC-TX1_ISO_125_4fmt_16x9.RW2
+  digest: 0fe5b1c4ba4ee9d312ca0c20993333b7
+data:
+  metadata:
+    rawParams:
+      rawWidth: 5488
+      rawHeight: 3664
+      bitDepth: 16
+      crops:
+        p:
+          x: 8
+          y: 8
+        d:
+          w: 5472
+          h: 3648
+      blacklevels:
+        - 127
+        - 127
+        - 127
+        - 127
+      whitelevels:
+        - 4095
+        - 4095
+        - 4095
+        - 4095
+      wbCoeffs:
+        - 2.2382812
+        - 1.0
+        - 2.4960938
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ~
+        artist: ~
+        lens_spec: ~
+        exposure_time: 10/600
+        fnumber: 28/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 800
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: 0/100
+        date_time_original: "2019:04:24 17:38:47"
+        create_date: "2019:04:24 17:38:47"
+        modify_date: ~
+        exposure_program: 2
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: "443"
+        sub_sec_time_digitized: "443"
+        shutter_speed_value: ~
+        max_aperture_value: 761/256
+        subject_distance: ~
+        metering_mode: 5
+        light_source: ~
+        flash: 16
+        focal_length: 91/10
+        image_number: ~
+        color_space: ~
+        flash_energy: ~
+        exposure_mode: ~
+        white_balance: ~
+        scene_capture_type: ~
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: DMC-TX1
+      make: Panasonic
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

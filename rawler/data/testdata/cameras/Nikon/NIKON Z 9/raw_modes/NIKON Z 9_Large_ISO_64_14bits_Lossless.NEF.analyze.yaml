@@ -1,0 +1,106 @@
+---
+file:
+  fileSize: 57580695
+  fileName: NIKON Z 9_Large_ISO_64_14bits_Lossless.NEF
+  digest: a7b9971ff77bd13f127e79748e927ddd
+data:
+  metadata:
+    rawParams:
+      rawWidth: 8280
+      rawHeight: 5520
+      bitDepth: 16
+      crops:
+        p:
+          x: 12
+          y: 8
+        d:
+          w: 8256
+          h: 5504
+      blacklevels:
+        - 1008
+        - 1008
+        - 1008
+        - 1008
+      whitelevels:
+        - 15520
+        - 15520
+        - 15520
+        - 15520
+      wbCoeffs:
+        - 1.7109375
+        - 1.0
+        - 1.5429688
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: G Edward Johnson
+        artist: ""
+        lens_spec:
+          - 13/1
+          - 30/1
+          - 4/1
+          - 4/1
+        exposure_time: 10/3200
+        fnumber: 900/100
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 64
+        iso_speed: ~
+        recommended_exposure_index: 64
+        sensitivity_type: 2
+        exposure_bias: 0/6
+        date_time_original: "2022:02:05 13:45:03"
+        create_date: "2022:02:05 13:45:03"
+        modify_date: "2022:02:05 13:45:03"
+        exposure_program: 2
+        timezone_offset: ~
+        offset_time: "-05:00"
+        offset_time_original: "-05:00"
+        offset_time_digitized: "-05:00"
+        sub_sec_time: "04"
+        sub_sec_time_original: "04"
+        sub_sec_time_digitized: "04"
+        shutter_speed_value: ~
+        max_aperture_value: ~
+        subject_distance: ~
+        metering_mode: 2
+        light_source: 0
+        flash: 0
+        focal_length: 180/10
+        image_number: ~
+        color_space: ~
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: 0
+        owner_name: ~
+        serial_number: "3005326"
+        lens_serial_number: "20062648"
+        lens_make: Nikon
+        lens_model: Nikkor Z 14-30mm f/4 S
+        gps: ~
+      model: Z 9
+      make: Nikon
+      lens:
+        identifiers:
+          name: ~
+          id:
+            - 2
+            - 0
+          nikon_id: ~
+          olympus_id: ~
+        mount: Z-mount
+        lens_make: Nikon
+        lens_model: Nikkor Z 14-30mm f/4 S
+        focal_range:
+          - 13/1
+          - 30/1
+        aperture_range:
+          - 4/1
+          - 4/1
+        lens_name: Nikon Nikkor Z 14-30mm f/4 S
+      unique_image_id: ~
+      rating: ~
+

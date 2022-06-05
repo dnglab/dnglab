@@ -1,0 +1,85 @@
+---
+file:
+  fileSize: 140252758
+  fileName: Hasselblad H6D-100cMS_ISO_64_JPEG.FFF
+  digest: 276687d3e1a33466f833f54fefb511c9
+data:
+  metadata:
+    rawParams:
+      rawWidth: 12000
+      rawHeight: 8816
+      bitDepth: 16
+      crops:
+        p:
+          x: 68
+          y: 112
+        d:
+          w: 11600
+          h: 8700
+      blacklevels:
+        - 256
+        - 256
+        - 256
+        - 256
+      whitelevels:
+        - 65535
+        - 65535
+        - 65535
+        - 65535
+      wbCoeffs:
+        - 3.5569065
+        - 1.0
+        - 1.2767085
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: Hasselblad H6D
+        artist: ~
+        lens_spec: ~
+        exposure_time: 1/125
+        fnumber: 10/1
+        aperture_value: 891723282/134217728
+        brightness_value: ~
+        iso_speed_ratings: 64
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: "-6/1"
+        date_time_original: "2018-03-16T13:52:20"
+        create_date: "2018-03-16T13:52:20"
+        modify_date: "2018:03:16 13:52:20"
+        exposure_program: 1
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: 934931740/134217728
+        max_aperture_value: 4/1
+        subject_distance: 643/1000
+        metering_mode: 2
+        light_source: ~
+        flash: 0
+        focal_length: 120/1
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: ~
+        white_balance: ~
+        scene_capture_type: ~
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: H6D-100cMS
+      make: Hasselblad
+      lens: ~
+      unique_image_id: 93327361752878674051459699939480908336
+      rating: ~
+

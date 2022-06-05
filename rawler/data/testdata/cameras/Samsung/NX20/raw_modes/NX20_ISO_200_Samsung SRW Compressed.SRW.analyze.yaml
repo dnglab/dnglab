@@ -1,0 +1,106 @@
+---
+file:
+  fileSize: 38192032
+  fileName: NX20_ISO_200_Samsung SRW Compressed.SRW
+  digest: a2611ee833e940d1eb3807cca2f6d77a
+data:
+  metadata:
+    rawParams:
+      rawWidth: 5632
+      rawHeight: 3720
+      bitDepth: 16
+      crops:
+        p:
+          x: 81
+          y: 17
+        d:
+          w: 5472
+          h: 3648
+      blacklevels:
+        - 0
+        - 0
+        - 0
+        - 0
+      whitelevels:
+        - 3750
+        - 3750
+        - 3750
+        - 3750
+      wbCoeffs:
+        - 2.296875
+        - 1.0
+        - 1.7460938
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ~
+        artist: ~
+        lens_spec:
+          - 18/1
+          - 55/1
+          - 35/10
+          - 56/10
+        exposure_time: 1/500
+        fnumber: 35/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 200
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: 3/10
+        date_time_original: "2022:03:19 05:43:48"
+        create_date: ~
+        modify_date: "2022:03:19 05:43:48"
+        exposure_program: 1
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: ~
+        max_aperture_value: ~
+        subject_distance: ~
+        metering_mode: 2
+        light_source: 0
+        flash: 0
+        focal_length: 18/1
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 1
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: Samsung
+        lens_model: NX 18-55mm F3.5-5.6 OIS
+        gps: ~
+      model: NX20
+      make: Samsung
+      lens:
+        identifiers:
+          name: ~
+          id:
+            - 2
+            - 0
+          nikon_id: ~
+          olympus_id: ~
+        mount: NX-mount
+        lens_make: Samsung
+        lens_model: NX 18-55mm F3.5-5.6 OIS
+        focal_range:
+          - 18/1
+          - 55/1
+        aperture_range:
+          - 35/10
+          - 56/10
+        lens_name: Samsung NX 18-55mm F3.5-5.6 OIS
+      unique_image_id: ~
+      rating: ~
+

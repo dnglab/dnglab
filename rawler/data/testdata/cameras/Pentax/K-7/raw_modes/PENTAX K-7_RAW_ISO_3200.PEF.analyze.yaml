@@ -1,0 +1,106 @@
+---
+file:
+  fileSize: 20428636
+  fileName: PENTAX K-7_RAW_ISO_3200.PEF
+  digest: 2e64a84e978d7ec386a9d68ba2a6c24d
+data:
+  metadata:
+    rawParams:
+      rawWidth: 4736
+      rawHeight: 3136
+      bitDepth: 16
+      crops:
+        p:
+          x: 10
+          y: 10
+        d:
+          w: 4672
+          h: 3104
+      blacklevels:
+        - 0
+        - 0
+        - 0
+        - 0
+      whitelevels:
+        - 4095
+        - 4095
+        - 4095
+        - 4095
+      wbCoeffs:
+        - 1.2773438
+        - 1.0
+        - 3.4140625
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: sebastian.wagner@sebix.at
+        artist: Sebastian Wagner
+        lens_spec:
+          - 18/1
+          - 135/1
+          - 35/10
+          - 56/10
+        exposure_time: 1/30
+        fnumber: 56/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 3200
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: 0/10
+        date_time_original: "2017:01:12 19:31:05"
+        create_date: "2017:01:12 19:31:05"
+        modify_date: "2017:01:12 19:31:05"
+        exposure_program: 2
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: ~
+        max_aperture_value: ~
+        subject_distance: ~
+        metering_mode: 5
+        light_source: ~
+        flash: 16
+        focal_length: 13500/100
+        image_number: ~
+        color_space: ~
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: 2
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: Pentax
+        lens_model: "smc PENTAX-DA 18-135mm F3.5-5.6 ED AL [IF] DC WR"
+        gps: ~
+      model: K-7
+      make: Pentax
+      lens:
+        identifiers:
+          name: ~
+          id:
+            - 8
+            - 215
+          nikon_id: ~
+          olympus_id: ~
+        mount: k-mount
+        lens_make: Pentax
+        lens_model: "smc PENTAX-DA 18-135mm F3.5-5.6 ED AL [IF] DC WR"
+        focal_range:
+          - 18/1
+          - 135/1
+        aperture_range:
+          - 35/10
+          - 56/10
+        lens_name: "Pentax smc PENTAX-DA 18-135mm F3.5-5.6 ED AL [IF] DC WR"
+      unique_image_id: ~
+      rating: ~
+

@@ -1,0 +1,85 @@
+---
+file:
+  fileSize: 21052805
+  fileName: NX mini_ISO_1000_Samsung SRW Compressed 2.SRW
+  digest: 59f5c734ef55a58dc3e09551cd266313
+data:
+  metadata:
+    rawParams:
+      rawWidth: 5664
+      rawHeight: 3710
+      bitDepth: 16
+      crops:
+        p:
+          x: 132
+          y: 40
+        d:
+          w: 5472
+          h: 3648
+      blacklevels:
+        - 0
+        - 0
+        - 0
+        - 0
+      whitelevels:
+        - 4000
+        - 4000
+        - 4000
+        - 4000
+      wbCoeffs:
+        - 2.0039062
+        - 1.0
+        - 2.9453125
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ~
+        artist: ~
+        lens_spec: ~
+        exposure_time: 1/30
+        fnumber: 35/10
+        aperture_value: 35/10
+        brightness_value: ~
+        iso_speed_ratings: 1000
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: 0/10
+        date_time_original: "2020:02:17 19:43:22"
+        create_date: "2020:02:17 19:43:22"
+        modify_date: "2020:02:17 19:43:22"
+        exposure_program: 2
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: 1/30
+        max_aperture_value: 362/100
+        subject_distance: ~
+        metering_mode: 5
+        light_source: 0
+        flash: 0
+        focal_length: 9/1
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: NX mini
+      make: Samsung
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

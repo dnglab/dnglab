@@ -1,0 +1,104 @@
+---
+file:
+  fileSize: 24272896
+  fileName: DC-G9_ISO_200_4fmt_4x3.RW2
+  digest: a6960de2803d439eb441480c0bd61b2a
+data:
+  metadata:
+    rawParams:
+      rawWidth: 5264
+      rawHeight: 3904
+      bitDepth: 16
+      crops:
+        p:
+          x: 12
+          y: 8
+        d:
+          w: 5184
+          h: 3888
+      blacklevels:
+        - 128
+        - 129
+        - 129
+        - 128
+      whitelevels:
+        - 4095
+        - 4095
+        - 4095
+        - 4095
+      wbCoeffs:
+        - 2.2539062
+        - 1.0
+        - 1.8945312
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ~
+        artist: ~
+        lens_spec:
+          - 12/1
+          - 60/1
+          - 28/10
+          - 4/1
+        exposure_time: 10/600
+        fnumber: 80/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 200
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: 0/100
+        date_time_original: "2019:06:18 08:21:09"
+        create_date: "2019:06:18 08:21:09"
+        modify_date: ~
+        exposure_program: 3
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: "-05:00"
+        offset_time_digitized: "-05:00"
+        sub_sec_time: ~
+        sub_sec_time_original: "940"
+        sub_sec_time_digitized: "940"
+        shutter_speed_value: ~
+        max_aperture_value: 946/256
+        subject_distance: ~
+        metering_mode: 5
+        light_source: ~
+        flash: 16
+        focal_length: 280/10
+        image_number: ~
+        color_space: ~
+        flash_energy: ~
+        exposure_mode: ~
+        white_balance: ~
+        scene_capture_type: ~
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: Leica
+        lens_model: DG Vario-Elmarit 12-60mm F2.8-4 Asph. Power OIS
+        gps: ~
+      model: DC-G9
+      make: Panasonic
+      lens:
+        identifiers:
+          name: ~
+          id: ~
+          nikon_id: ~
+          olympus_id: 02 30 10
+        mount: MFT-mount
+        lens_make: Leica
+        lens_model: DG Vario-Elmarit 12-60mm F2.8-4 Asph. Power OIS
+        focal_range:
+          - 12/1
+          - 60/1
+        aperture_range:
+          - 28/10
+          - 4/1
+        lens_name: Leica DG Vario-Elmarit 12-60mm F2.8-4 Asph. Power OIS
+      unique_image_id: ~
+      rating: ~
+

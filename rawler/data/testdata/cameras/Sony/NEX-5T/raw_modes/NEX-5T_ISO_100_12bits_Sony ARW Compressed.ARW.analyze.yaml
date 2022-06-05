@@ -1,0 +1,106 @@
+---
+file:
+  fileSize: 17235968
+  fileName: NEX-5T_ISO_100_12bits_Sony ARW Compressed.ARW
+  digest: 9bf1f4f5199d265377c4f40164f8e8dd
+data:
+  metadata:
+    rawParams:
+      rawWidth: 4928
+      rawHeight: 3276
+      bitDepth: 16
+      crops:
+        p:
+          x: 4
+          y: 6
+        d:
+          w: 4912
+          h: 3264
+      blacklevels:
+        - 512
+        - 512
+        - 512
+        - 512
+      whitelevels:
+        - 15360
+        - 15360
+        - 15360
+        - 15360
+      wbCoeffs:
+        - 2.6523438
+        - 1.0
+        - 1.609375
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ~
+        artist: ~
+        lens_spec:
+          - 16/1
+          - 50/1
+          - 35/10
+          - 56/10
+        exposure_time: 1/250
+        fnumber: 71/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 100
+        iso_speed: ~
+        recommended_exposure_index: 100
+        sensitivity_type: 2
+        exposure_bias: 0/10
+        date_time_original: "2017:07:12 15:44:04"
+        create_date: "2017:07:12 15:44:04"
+        modify_date: "2017:07:12 15:44:04"
+        exposure_program: 2
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: ~
+        max_aperture_value: 1272/256
+        subject_distance: ~
+        metering_mode: 5
+        light_source: 0
+        flash: 16
+        focal_length: 360/10
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: Sony
+        lens_model: E PZ 16-50mm F3.5-5.6 OSS
+        gps: ~
+      model: NEX-5T
+      make: Sony
+      lens:
+        identifiers:
+          name: ~
+          id:
+            - 32793
+            - 0
+          nikon_id: ~
+          olympus_id: ~
+        mount: e-mount
+        lens_make: Sony
+        lens_model: E PZ 16-50mm F3.5-5.6 OSS
+        focal_range:
+          - 16/1
+          - 50/1
+        aperture_range:
+          - 35/10
+          - 56/10
+        lens_name: Sony E PZ 16-50mm F3.5-5.6 OSS
+      unique_image_id: ~
+      rating: ~
+

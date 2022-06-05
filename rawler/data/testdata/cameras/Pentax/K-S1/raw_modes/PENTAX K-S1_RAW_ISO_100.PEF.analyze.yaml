@@ -1,0 +1,106 @@
+---
+file:
+  fileSize: 21463813
+  fileName: PENTAX K-S1_RAW_ISO_100.PEF
+  digest: 55df52be36cdff7cd7a27650db804acc
+data:
+  metadata:
+    rawParams:
+      rawWidth: 5504
+      rawHeight: 3664
+      bitDepth: 16
+      crops:
+        p:
+          x: 10
+          y: 4
+        d:
+          w: 5472
+          h: 3648
+      blacklevels:
+        - 16
+        - 16
+        - 16
+        - 16
+      whitelevels:
+        - 4062
+        - 4062
+        - 4062
+        - 4062
+      wbCoeffs:
+        - 2.1914062
+        - 1.0
+        - 1.6523438
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: DovioFlavio
+        artist: FLAVIO_Dovio
+        lens_spec:
+          - 17/1
+          - 50/1
+          - 28/10
+          - 28/10
+        exposure_time: 1/800
+        fnumber: 28/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 100
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: 1
+        exposure_bias: 0/10
+        date_time_original: "2021:02:14 16:27:52"
+        create_date: "2021:02:14 16:27:52"
+        modify_date: "2021:02:14 16:27:52"
+        exposure_program: 3
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: ~
+        max_aperture_value: ~
+        subject_distance: ~
+        metering_mode: 5
+        light_source: ~
+        flash: 16
+        focal_length: 4500/100
+        image_number: ~
+        color_space: ~
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: 3
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: Tamron
+        lens_model: Tamron AF 17-50mm F2.8 XR Di-II LD (Model A16)
+        gps: ~
+      model: K-S1
+      make: Pentax
+      lens:
+        identifiers:
+          name: ~
+          id:
+            - 7
+            - 230
+          nikon_id: ~
+          olympus_id: ~
+        mount: k-mount
+        lens_make: Tamron
+        lens_model: Tamron AF 17-50mm F2.8 XR Di-II LD (Model A16)
+        focal_range:
+          - 17/1
+          - 50/1
+        aperture_range:
+          - 28/10
+          - 28/10
+        lens_name: Tamron Tamron AF 17-50mm F2.8 XR Di-II LD (Model A16)
+      unique_image_id: ~
+      rating: ~
+

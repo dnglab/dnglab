@@ -1,0 +1,79 @@
+---
+file:
+  fileSize: 13252480
+  fileName: FinePix F700_ISO_200.RAF
+  digest: ba8344b00c02eac294f3c226f3482657
+data:
+  metadata:
+    rawParams:
+      rawWidth: 2556
+      rawHeight: 2555
+      bitDepth: 16
+      crops: ~
+      blacklevels:
+        - 0
+        - 0
+        - 0
+        - 0
+      whitelevels:
+        - 16383
+        - 16383
+        - 16383
+        - 16383
+      wbCoeffs:
+        - 1.825
+        - 1.0
+        - 1.375
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ""
+        artist: ~
+        lens_spec: ~
+        exposure_time: 10/8000
+        fnumber: 360/100
+        aperture_value: 370/100
+        brightness_value: ~
+        iso_speed_ratings: 200
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: 0/100
+        date_time_original: "2007:01:06 14:20:22"
+        create_date: "2007:01:06 14:20:22"
+        modify_date: "2007:01:06 14:20:22"
+        exposure_program: 4
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: 970/100
+        max_aperture_value: 300/100
+        subject_distance: ~
+        metering_mode: 5
+        light_source: 0
+        flash: 9
+        focal_length: 850/100
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: 0
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: FinePix F700
+      make: Fujifilm
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

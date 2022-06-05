@@ -1,0 +1,79 @@
+---
+file:
+  fileSize: 19161008
+  fileName: FinePix E900_ISO_80.RAF
+  digest: ce7c317c9681995326bc402a0563e4e5
+data:
+  metadata:
+    rawParams:
+      rawWidth: 4356
+      rawHeight: 4355
+      bitDepth: 16
+      crops: ~
+      blacklevels:
+        - 0
+        - 0
+        - 0
+        - 0
+      whitelevels:
+        - 15564
+        - 15564
+        - 15564
+        - 15564
+      wbCoeffs:
+        - 1.64375
+        - 1.0
+        - 1.15
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ""
+        artist: ~
+        lens_spec: ~
+        exposure_time: 10/2000
+        fnumber: 500/100
+        aperture_value: 460/100
+        brightness_value: ~
+        iso_speed_ratings: 80
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: 0/100
+        date_time_original: "2007:05:20 11:26:08"
+        create_date: "2007:05:20 11:26:08"
+        modify_date: "2007:05:20 11:26:08"
+        exposure_program: 2
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: 767/100
+        max_aperture_value: 300/100
+        subject_distance: ~
+        metering_mode: 5
+        light_source: 0
+        flash: 16
+        focal_length: 720/100
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: 0
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: FinePix E900
+      make: Fujifilm
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

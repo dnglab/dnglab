@@ -1,0 +1,106 @@
+---
+file:
+  fileSize: 47494144
+  fileName: NIKON Z 6_Large_ISO_100_14bits_Packed 14 bits.NEF
+  digest: 79ad192a00526f161f65840a114c94ca
+data:
+  metadata:
+    rawParams:
+      rawWidth: 6064
+      rawHeight: 4040
+      bitDepth: 16
+      crops:
+        p:
+          x: 8
+          y: 8
+        d:
+          w: 6048
+          h: 4024
+      blacklevels:
+        - 1008
+        - 1008
+        - 1008
+        - 1008
+      whitelevels:
+        - 15520
+        - 15520
+        - 15520
+        - 15520
+      wbCoeffs:
+        - 1.1894531
+        - 1.0
+        - 2.1210938
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: (CC-BY-SA 4.0) Ludger Heide
+        artist: Ludger Heide
+        lens_spec:
+          - 24/1
+          - 70/1
+          - 4/1
+          - 4/1
+        exposure_time: 10/10
+        fnumber: 670/100
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 100
+        iso_speed: ~
+        recommended_exposure_index: 100
+        sensitivity_type: 2
+        exposure_bias: 0/6
+        date_time_original: "2019:11:29 17:13:55"
+        create_date: "2019:11:29 17:13:55"
+        modify_date: "2019:11:29 17:13:55"
+        exposure_program: 3
+        timezone_offset: ~
+        offset_time: "+01:00"
+        offset_time_original: "+01:00"
+        offset_time_digitized: "+01:00"
+        sub_sec_time: "99"
+        sub_sec_time_original: "99"
+        sub_sec_time_digitized: "99"
+        shutter_speed_value: ~
+        max_aperture_value: ~
+        subject_distance: ~
+        metering_mode: 5
+        light_source: 0
+        flash: 0
+        focal_length: 520/10
+        image_number: ~
+        color_space: ~
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: 0
+        owner_name: ~
+        serial_number: "6035906"
+        lens_serial_number: "20123114"
+        lens_make: Nikon
+        lens_model: Nikkor Z 24-70mm f/4 S
+        gps: ~
+      model: Z 6
+      make: Nikon
+      lens:
+        identifiers:
+          name: ~
+          id:
+            - 1
+            - 0
+          nikon_id: ~
+          olympus_id: ~
+        mount: Z-mount
+        lens_make: Nikon
+        lens_model: Nikkor Z 24-70mm f/4 S
+        focal_range:
+          - 24/1
+          - 70/1
+        aperture_range:
+          - 4/1
+          - 4/1
+        lens_name: Nikon Nikkor Z 24-70mm f/4 S
+      unique_image_id: ~
+      rating: ~
+

@@ -1,0 +1,85 @@
+---
+file:
+  fileSize: 21560478
+  fileName: NIKON D5500_ISO_100_12bits_Lossy (type 2).NEF
+  digest: 711a587c62074cd73ef6bc90e7e72d90
+data:
+  metadata:
+    rawParams:
+      rawWidth: 6016
+      rawHeight: 4016
+      bitDepth: 16
+      crops:
+        p:
+          x: 8
+          y: 8
+        d:
+          w: 6000
+          h: 4000
+      blacklevels:
+        - 150
+        - 150
+        - 150
+        - 150
+      whitelevels:
+        - 3972
+        - 3972
+        - 3972
+        - 3972
+      wbCoeffs:
+        - 1.4765625
+        - 1.0
+        - 1.78125
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ""
+        artist: ""
+        lens_spec: ~
+        exposure_time: 10/20
+        fnumber: 35/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 100
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: 2
+        exposure_bias: 0/6
+        date_time_original: "2017:06:03 18:45:32"
+        create_date: "2017:06:03 18:45:32"
+        modify_date: "2017:06:03 18:45:32"
+        exposure_program: 1
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: "57"
+        sub_sec_time_original: "57"
+        sub_sec_time_digitized: "57"
+        shutter_speed_value: ~
+        max_aperture_value: 37/10
+        subject_distance: ~
+        metering_mode: 5
+        light_source: 0
+        flash: 16
+        focal_length: 400/10
+        image_number: ~
+        color_space: ~
+        flash_energy: ~
+        exposure_mode: 1
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: 0
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: D5500
+      make: Nikon
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

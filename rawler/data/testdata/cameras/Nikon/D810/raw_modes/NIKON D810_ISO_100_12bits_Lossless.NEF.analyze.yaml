@@ -1,0 +1,104 @@
+---
+file:
+  fileSize: 33037530
+  fileName: NIKON D810_ISO_100_12bits_Lossless.NEF
+  digest: 8ebe56d8bf888c386397c8a535fae21f
+data:
+  metadata:
+    rawParams:
+      rawWidth: 7380
+      rawHeight: 4928
+      bitDepth: 16
+      crops:
+        p:
+          x: 12
+          y: 8
+        d:
+          w: 7360
+          h: 4912
+      blacklevels:
+        - 150
+        - 150
+        - 150
+        - 150
+      whitelevels:
+        - 3880
+        - 3880
+        - 3880
+        - 3880
+      wbCoeffs:
+        - 2.1601562
+        - 1.0
+        - 1.1835938
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: Wolfgang Goetz
+        artist: Wolfgang Goetz
+        lens_spec:
+          - 50/1
+          - 50/1
+          - 14/10
+          - 14/10
+        exposure_time: 10/600
+        fnumber: 80/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 100
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: 2
+        exposure_bias: 0/6
+        date_time_original: "2017:12:05 23:50:07"
+        create_date: "2017:12:05 23:50:07"
+        modify_date: "2017:12:05 23:50:07"
+        exposure_program: 1
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: "55"
+        sub_sec_time_original: "55"
+        sub_sec_time_digitized: "55"
+        shutter_speed_value: ~
+        max_aperture_value: 10/10
+        subject_distance: ~
+        metering_mode: 5
+        light_source: 0
+        flash: 15
+        focal_length: 500/10
+        image_number: ~
+        color_space: ~
+        flash_energy: ~
+        exposure_mode: 1
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: 0
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: Nikon
+        lens_model: AF-S Nikkor 50mm f/1.4G
+        gps: ~
+      model: D810
+      make: Nikon
+      lens:
+        identifiers:
+          name: ~
+          id: ~
+          nikon_id: A0 54 50 50 0C 0C A2 06
+          olympus_id: ~
+        mount: F-mount
+        lens_make: Nikon
+        lens_model: AF-S Nikkor 50mm f/1.4G
+        focal_range:
+          - 50/1
+          - 50/1
+        aperture_range:
+          - 14/10
+          - 14/10
+        lens_name: Nikon AF-S Nikkor 50mm f/1.4G
+      unique_image_id: ~
+      rating: ~
+

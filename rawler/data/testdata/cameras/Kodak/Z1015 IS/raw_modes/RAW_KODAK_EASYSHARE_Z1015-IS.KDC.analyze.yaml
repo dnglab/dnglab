@@ -1,0 +1,85 @@
+---
+file:
+  fileSize: 19869916
+  fileName: RAW_KODAK_EASYSHARE_Z1015-IS.KDC
+  digest: 68e75d067e3d534a206c1255b38c048e
+data:
+  metadata:
+    rawParams:
+      rawWidth: 3664
+      rawHeight: 2742
+      bitDepth: 16
+      crops:
+        p:
+          x: 8
+          y: 2
+        d:
+          w: 3648
+          h: 2737
+      blacklevels:
+        - 0
+        - 0
+        - 0
+        - 0
+      whitelevels:
+        - 4095
+        - 4095
+        - 4095
+        - 4095
+      wbCoeffs:
+        - 1.640625
+        - 1.0
+        - 3.640625
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ~
+        artist: ~
+        lens_spec: ~
+        exposure_time: 1/100
+        fnumber: 35/10
+        aperture_value: 36/10
+        brightness_value: ~
+        iso_speed_ratings: 100
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: 0/10
+        date_time_original: "2009:08:14 19:07:19"
+        create_date: "2009:08:14 19:07:19"
+        modify_date: ~
+        exposure_program: 2
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: 660/100
+        max_aperture_value: 36/10
+        subject_distance: ~
+        metering_mode: 6
+        light_source: 0
+        flash: 16
+        focal_length: 50/10
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 1
+        scene_capture_type: 0
+        subject_distance_range: 0
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: EasyShare Z1015 IS
+      make: Kodak
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

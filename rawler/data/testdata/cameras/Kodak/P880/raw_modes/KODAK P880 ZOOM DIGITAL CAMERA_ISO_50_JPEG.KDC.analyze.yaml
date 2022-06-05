@@ -1,0 +1,85 @@
+---
+file:
+  fileSize: 13828802
+  fileName: KODAK P880 ZOOM DIGITAL CAMERA_ISO_50_JPEG.KDC
+  digest: 316cda23987242c48858bbc3db8bf84c
+data:
+  metadata:
+    rawParams:
+      rawWidth: 3280
+      rawHeight: 2454
+      bitDepth: 16
+      crops:
+        p:
+          x: 8
+          y: 3
+        d:
+          w: 3264
+          h: 2448
+      blacklevels:
+        - 0
+        - 0
+        - 0
+        - 0
+      whitelevels:
+        - 4095
+        - 4095
+        - 4095
+        - 4095
+      wbCoeffs:
+        - 1.5664062
+        - 1.0
+        - 1.4140625
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ~
+        artist: ~
+        lens_spec: ~
+        exposure_time: 10/12500
+        fnumber: 32/10
+        aperture_value: 333/100
+        brightness_value: ~
+        iso_speed_ratings: 50
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: 0/3
+        date_time_original: "2018:02:18 12:38:08"
+        create_date: "2018:02:18 12:38:08"
+        modify_date: "2018:02:18 12:38:08"
+        exposure_program: 2
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: 1033/100
+        max_aperture_value: 30/10
+        subject_distance: ~
+        metering_mode: 5
+        light_source: 0
+        flash: 24
+        focal_length: 50/10
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: 0
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: P880
+      make: Kodak
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

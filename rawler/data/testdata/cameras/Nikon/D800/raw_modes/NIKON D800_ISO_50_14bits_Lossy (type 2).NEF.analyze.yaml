@@ -1,0 +1,104 @@
+---
+file:
+  fileSize: 36419684
+  fileName: NIKON D800_ISO_50_14bits_Lossy (type 2).NEF
+  digest: ea30da894f9d04af08c9045e8fc9e54b
+data:
+  metadata:
+    rawParams:
+      rawWidth: 7424
+      rawHeight: 4924
+      bitDepth: 16
+      crops:
+        p:
+          x: 8
+          y: 6
+        d:
+          w: 7360
+          h: 4912
+      blacklevels:
+        - 0
+        - 0
+        - 0
+        - 0
+      whitelevels:
+        - 15520
+        - 15520
+        - 15520
+        - 15520
+      wbCoeffs:
+        - 2.1914062
+        - 1.0
+        - 1.3398438
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: pascal@obry.net
+        artist: Pascal Obry
+        lens_spec:
+          - 24/1
+          - 70/1
+          - 28/10
+          - 28/10
+        exposure_time: 10/80
+        fnumber: 140/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: ~
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: 2
+        exposure_bias: 12/6
+        date_time_original: "2016:09:10 18:16:16"
+        create_date: "2016:09:10 18:16:16"
+        modify_date: "2016:09:10 18:16:16"
+        exposure_program: 1
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: "60"
+        sub_sec_time_original: "60"
+        sub_sec_time_digitized: "60"
+        shutter_speed_value: ~
+        max_aperture_value: 30/10
+        subject_distance: ~
+        metering_mode: 5
+        light_source: 0
+        flash: 16
+        focal_length: 240/10
+        image_number: ~
+        color_space: ~
+        flash_energy: ~
+        exposure_mode: 1
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: 0
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: Nikon
+        lens_model: AF-S Zoom-Nikkor 24-70mm f/2.8G ED
+        gps: ~
+      model: D800
+      make: Nikon
+      lens:
+        identifiers:
+          name: ~
+          id: ~
+          nikon_id: 93 48 37 5C 24 24 95 06
+          olympus_id: ~
+        mount: F-mount
+        lens_make: Nikon
+        lens_model: AF-S Zoom-Nikkor 24-70mm f/2.8G ED
+        focal_range:
+          - 24/1
+          - 70/1
+        aperture_range:
+          - 28/10
+          - 28/10
+        lens_name: Nikon AF-S Zoom-Nikkor 24-70mm f/2.8G ED
+      unique_image_id: ~
+      rating: ~
+

@@ -1,0 +1,89 @@
+---
+file:
+  fileSize: 50404864
+  fileName: X-T20_ISO_200_Bitdepth_14_48 MiB.RAF
+  digest: a02b3a37722f3aa6a5ff777306171e63
+data:
+  metadata:
+    rawParams:
+      rawWidth: 6160
+      rawHeight: 4032
+      bitDepth: 16
+      crops:
+        p:
+          x: 16
+          y: 16
+        d:
+          w: 4000
+          h: 6000
+      blacklevels:
+        - 1022
+        - 1022
+        - 1022
+        - 1022
+      whitelevels:
+        - 16383
+        - 16383
+        - 16383
+        - 16383
+      wbCoeffs:
+        - 1.9668875
+        - 1.0
+        - 1.8443708
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ""
+        artist: ""
+        lens_spec:
+          - 1800/100
+          - 5500/100
+          - 280/100
+          - 400/100
+        exposure_time: 10/4200
+        fnumber: 710/100
+        aperture_value: 570/100
+        brightness_value: ~
+        iso_speed_ratings: 200
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: 1
+        exposure_bias: 0/100
+        date_time_original: "2017:03:08 15:24:42"
+        create_date: "2017:03:08 15:24:42"
+        modify_date: "2017:03:08 15:24:42"
+        exposure_program: 2
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: 872/100
+        max_aperture_value: 300/100
+        subject_distance: ~
+        metering_mode: 5
+        light_source: 0
+        flash: 0
+        focal_length: 5270/100
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: 0
+        owner_name: ~
+        serial_number: 7AA00782
+        lens_serial_number: 7aA00658
+        lens_make: FUJIFILM
+        lens_model: XF18-55mmF2.8-4 R LM OIS
+        gps: ~
+      model: X-T20
+      make: Fujifilm
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

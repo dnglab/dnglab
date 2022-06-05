@@ -1,0 +1,89 @@
+---
+file:
+  fileSize: 34522544
+  fileName: Fuji_GFX50S_II_-_Compressed.RAF
+  digest: c8f5af54d2aa0609bc22e72365179edc
+data:
+  metadata:
+    rawParams:
+      rawWidth: 8472
+      rawHeight: 6210
+      bitDepth: 16
+      crops:
+        p:
+          x: 12
+          y: 8
+        d:
+          w: 6192
+          h: 8256
+      blacklevels:
+        - 64
+        - 64
+        - 64
+        - 64
+      whitelevels:
+        - 16383
+        - 16383
+        - 16383
+        - 16383
+      wbCoeffs:
+        - 1.7582781
+        - 1.0
+        - 2.0066226
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ANDY MCGARTY
+        artist: ANDY MCGARTY
+        lens_spec:
+          - 11000/100
+          - 11000/100
+          - 200/100
+          - 200/100
+        exposure_time: 10/750
+        fnumber: 200/100
+        aperture_value: 200/100
+        brightness_value: ~
+        iso_speed_ratings: 100
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: 1
+        exposure_bias: 0/100
+        date_time_original: "2021:12:13 13:27:00"
+        create_date: "2021:12:13 13:27:00"
+        modify_date: "2021:12:13 13:27:00"
+        exposure_program: 3
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: 628/100
+        max_aperture_value: 200/100
+        subject_distance: ~
+        metering_mode: 5
+        light_source: 0
+        flash: 0
+        focal_length: 11000/100
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: 0
+        owner_name: ~
+        serial_number: "14000929"
+        lens_serial_number: 17C00986
+        lens_make: FUJIFILM
+        lens_model: GF110mmF2 R LM WR
+        gps: ~
+      model: GFX 50S II
+      make: Fujifilm
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

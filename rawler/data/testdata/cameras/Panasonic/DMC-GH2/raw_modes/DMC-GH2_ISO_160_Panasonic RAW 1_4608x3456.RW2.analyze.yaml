@@ -1,0 +1,85 @@
+---
+file:
+  fileSize: 19520000
+  fileName: DMC-GH2_ISO_160_Panasonic RAW 1_4608x3456.RW2
+  digest: 14650b8a5dc35fd4d841a28032b2fbc0
+data:
+  metadata:
+    rawParams:
+      rawWidth: 4760
+      rawHeight: 3472
+      bitDepth: 16
+      crops:
+        p:
+          x: 8
+          y: 4
+        d:
+          w: 4608
+          h: 3456
+      blacklevels:
+        - 0
+        - 0
+        - 0
+        - 0
+      whitelevels:
+        - 3800
+        - 3800
+        - 3800
+        - 3800
+      wbCoeffs:
+        - 2.3726237
+        - 1.0
+        - 1.6730038
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ~
+        artist: ~
+        lens_spec: ~
+        exposure_time: 10/20000
+        fnumber: 50/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 160
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: 0/100
+        date_time_original: "2018:04:25 15:08:32"
+        create_date: "2018:04:25 15:08:32"
+        modify_date: ~
+        exposure_program: 2
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: ~
+        max_aperture_value: 761/256
+        subject_distance: ~
+        metering_mode: 5
+        light_source: ~
+        flash: 16
+        focal_length: 300/10
+        image_number: ~
+        color_space: ~
+        flash_energy: ~
+        exposure_mode: ~
+        white_balance: ~
+        scene_capture_type: ~
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: DMC-GH2
+      make: Panasonic
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

@@ -1,0 +1,104 @@
+---
+file:
+  fileSize: 24172544
+  fileName: DC-G110_ISO_400_4fmt_3x2.RW2
+  digest: 6a5e7d9d417997afe219ec3549dffa7f
+data:
+  metadata:
+    rawParams:
+      rawWidth: 5264
+      rawHeight: 3904
+      bitDepth: 16
+      crops:
+        p:
+          x: 8
+          y: 8
+        d:
+          w: 5184
+          h: 3888
+      blacklevels:
+        - 129
+        - 129
+        - 129
+        - 129
+      whitelevels:
+        - 4095
+        - 4095
+        - 4095
+        - 4095
+      wbCoeffs:
+        - 1.9804688
+        - 1.0
+        - 2.3125
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ~
+        artist: ~
+        lens_spec:
+          - 12/1
+          - 32/1
+          - 35/10
+          - 56/10
+        exposure_time: 10/800
+        fnumber: 56/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 400
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: 0/100
+        date_time_original: "2021:01:19 12:41:52"
+        create_date: "2021:01:19 12:41:52"
+        modify_date: ~
+        exposure_program: 3
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: "+01:00"
+        offset_time_digitized: "+01:00"
+        sub_sec_time: ~
+        sub_sec_time_original: "269"
+        sub_sec_time_digitized: "269"
+        shutter_speed_value: ~
+        max_aperture_value: 1273/256
+        subject_distance: ~
+        metering_mode: 3
+        light_source: ~
+        flash: 16
+        focal_length: 320/10
+        image_number: ~
+        color_space: ~
+        flash_energy: ~
+        exposure_mode: ~
+        white_balance: ~
+        scene_capture_type: ~
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: WF0JB002607
+        lens_serial_number: ~
+        lens_make: Lumix
+        lens_model: G Vario 12-32mm F3.5-5.6 Asph. Mega OIS
+        gps: ~
+      model: DC-G110
+      make: Panasonic
+      lens:
+        identifiers:
+          name: ~
+          id: ~
+          nikon_id: ~
+          olympus_id: 02 20 10
+        mount: MFT-mount
+        lens_make: Lumix
+        lens_model: G Vario 12-32mm F3.5-5.6 Asph. Mega OIS
+        focal_range:
+          - 12/1
+          - 32/1
+        aperture_range:
+          - 35/10
+          - 56/10
+        lens_name: Lumix G Vario 12-32mm F3.5-5.6 Asph. Mega OIS
+      unique_image_id: ~
+      rating: ~
+

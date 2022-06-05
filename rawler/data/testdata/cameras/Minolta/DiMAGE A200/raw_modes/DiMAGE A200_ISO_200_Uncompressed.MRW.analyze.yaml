@@ -1,0 +1,79 @@
+---
+file:
+  fileSize: 12139540
+  fileName: DiMAGE A200_ISO_200_Uncompressed.MRW
+  digest: 4ca467f9b13b291431e93ef74635e9aa
+data:
+  metadata:
+    rawParams:
+      rawWidth: 3280
+      rawHeight: 2454
+      bitDepth: 16
+      crops: ~
+      blacklevels:
+        - 0
+        - 0
+        - 0
+        - 0
+      whitelevels:
+        - 3965
+        - 3965
+        - 3965
+        - 3965
+      wbCoeffs:
+        - 1.882353
+        - 1.0
+        - 1.6313726
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ~
+        artist: ~
+        lens_spec: ~
+        exposure_time: ~
+        fnumber: ~
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: ~
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: ~
+        date_time_original: ~
+        create_date: ~
+        modify_date: "2010:06:22 20:15:31"
+        exposure_program: ~
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: ~
+        max_aperture_value: ~
+        subject_distance: ~
+        metering_mode: ~
+        light_source: ~
+        flash: ~
+        focal_length: ~
+        image_number: ~
+        color_space: ~
+        flash_energy: ~
+        exposure_mode: ~
+        white_balance: ~
+        scene_capture_type: ~
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: DiMAGE A200
+      make: Minolta
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

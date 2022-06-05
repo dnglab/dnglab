@@ -1,0 +1,85 @@
+---
+file:
+  fileSize: 7457792
+  fileName: C5050Z_ISO_100.ORF
+  digest: 008c997a8aa33059f567c1fbeb645cd9
+data:
+  metadata:
+    rawParams:
+      rawWidth: 2576
+      rawHeight: 1925
+      bitDepth: 16
+      crops:
+        p:
+          x: 8
+          y: 2
+        d:
+          w: 2560
+          h: 1920
+      blacklevels:
+        - 0
+        - 0
+        - 0
+        - 0
+      whitelevels:
+        - 4095
+        - 4095
+        - 4095
+        - 4095
+      wbCoeffs:
+        - 1.3671875
+        - 1.0
+        - 1.609375
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 8
+        copyright: ~
+        artist: ~
+        lens_spec: ~
+        exposure_time: 10/8000
+        fnumber: 45/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 100
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: 0/10
+        date_time_original: "2005:05:29 11:50:06"
+        create_date: "2005:05:29 11:50:06"
+        modify_date: "2005:05:29 11:50:06"
+        exposure_program: 2
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: ~
+        max_aperture_value: 30/10
+        subject_distance: ~
+        metering_mode: 3
+        light_source: 0
+        flash: 24
+        focal_length: 121/10
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: C5050Z
+      make: Olympus
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

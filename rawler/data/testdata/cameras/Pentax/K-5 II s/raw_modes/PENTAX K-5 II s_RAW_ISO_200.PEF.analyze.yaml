@@ -1,0 +1,85 @@
+---
+file:
+  fileSize: 15493595
+  fileName: PENTAX K-5 II s_RAW_ISO_200.PEF
+  digest: e80519084563601f6394dfb4c3e85a77
+data:
+  metadata:
+    rawParams:
+      rawWidth: 4992
+      rawHeight: 3284
+      bitDepth: 16
+      crops:
+        p:
+          x: 22
+          y: 10
+        d:
+          w: 4928
+          h: 3264
+      blacklevels:
+        - 67
+        - 67
+        - 67
+        - 67
+      whitelevels:
+        - 16253
+        - 16253
+        - 16253
+        - 16253
+      wbCoeffs:
+        - 1.6210938
+        - 1.0
+        - 2.3828125
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ""
+        artist: JAKOB FRIELINGSDORF
+        lens_spec: ~
+        exposure_time: 1/10
+        fnumber: 40/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 200
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: 0/10
+        date_time_original: "2017:03:21 22:32:45"
+        create_date: "2017:03:21 22:32:45"
+        modify_date: "2017:03:21 22:32:45"
+        exposure_program: 3
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: ~
+        max_aperture_value: ~
+        subject_distance: ~
+        metering_mode: 2
+        light_source: ~
+        flash: 16
+        focal_length: 5000/100
+        image_number: ~
+        color_space: ~
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: 3
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: K-5 II s
+      make: Pentax
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

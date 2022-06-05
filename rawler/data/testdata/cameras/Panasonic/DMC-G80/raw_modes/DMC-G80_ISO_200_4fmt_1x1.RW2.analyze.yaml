@@ -1,0 +1,104 @@
+---
+file:
+  fileSize: 19672064
+  fileName: DMC-G80_ISO_200_4fmt_1x1.RW2
+  digest: 9e56a32a1742ac9e6bd042aecf37211b
+data:
+  metadata:
+    rawParams:
+      rawWidth: 4816
+      rawHeight: 3464
+      bitDepth: 16
+      crops:
+        p:
+          x: 8
+          y: 8
+        d:
+          w: 4592
+          h: 3448
+      blacklevels:
+        - 128
+        - 128
+        - 128
+        - 128
+      whitelevels:
+        - 4095
+        - 4095
+        - 4095
+        - 4095
+      wbCoeffs:
+        - 2.484375
+        - 1.0
+        - 1.5742188
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ~
+        artist: ~
+        lens_spec:
+          - 60/1
+          - 60/1
+          - 28/10
+          - 28/10
+        exposure_time: 10/80
+        fnumber: 40/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 200
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: 0/100
+        date_time_original: "2017:12:23 09:23:12"
+        create_date: "2017:12:23 09:23:12"
+        modify_date: ~
+        exposure_program: 3
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: "136"
+        sub_sec_time_digitized: "136"
+        shutter_speed_value: ~
+        max_aperture_value: 761/256
+        subject_distance: ~
+        metering_mode: 5
+        light_source: ~
+        flash: 16
+        focal_length: 600/10
+        image_number: ~
+        color_space: ~
+        flash_energy: ~
+        exposure_mode: ~
+        white_balance: ~
+        scene_capture_type: ~
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: Sigma
+        lens_model: 60mm F2.8 DN | A
+        gps: ~
+      model: DMC-G80
+      make: Panasonic
+      lens:
+        identifiers:
+          name: ~
+          id: ~
+          nikon_id: ~
+          olympus_id: 01 05 10
+        mount: MFT-mount
+        lens_make: Sigma
+        lens_model: 60mm F2.8 DN | A
+        focal_range:
+          - 60/1
+          - 60/1
+        aperture_range:
+          - 28/10
+          - 28/10
+        lens_name: Sigma 60mm F2.8 DN | A
+      unique_image_id: ~
+      rating: ~
+

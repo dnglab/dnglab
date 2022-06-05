@@ -1,0 +1,104 @@
+---
+file:
+  fileSize: 38427598
+  fileName: NIKON D850_Large_ISO_64_12bits_Lossy (type 2).NEF
+  digest: cf29b4e296f3f8ff8fae5233dc7314b0
+data:
+  metadata:
+    rawParams:
+      rawWidth: 8288
+      rawHeight: 5520
+      bitDepth: 16
+      crops:
+        p:
+          x: 16
+          y: 8
+        d:
+          w: 8256
+          h: 5504
+      blacklevels:
+        - 100
+        - 100
+        - 100
+        - 100
+      whitelevels:
+        - 3880
+        - 3880
+        - 3880
+        - 3880
+      wbCoeffs:
+        - 1.9003906
+        - 1.0
+        - 1.3754883
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ""
+        artist: ""
+        lens_spec:
+          - 35/1
+          - 35/1
+          - 14/10
+          - 14/10
+        exposure_time: 10/1600
+        fnumber: 90/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 64
+        iso_speed: ~
+        recommended_exposure_index: 64
+        sensitivity_type: 2
+        exposure_bias: 0/6
+        date_time_original: "2017:10:15 17:35:20"
+        create_date: "2017:10:15 17:35:20"
+        modify_date: "2017:10:15 17:35:20"
+        exposure_program: 3
+        timezone_offset: ~
+        offset_time: "+01:00"
+        offset_time_original: "+01:00"
+        offset_time_digitized: "+01:00"
+        sub_sec_time: "41"
+        sub_sec_time_original: "41"
+        sub_sec_time_digitized: "41"
+        shutter_speed_value: ~
+        max_aperture_value: 10/10
+        subject_distance: ~
+        metering_mode: 255
+        light_source: 9
+        flash: 0
+        focal_length: 350/10
+        image_number: ~
+        color_space: ~
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 1
+        scene_capture_type: 0
+        subject_distance_range: 0
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: Sigma
+        lens_model: 35mm F1.4 DG HSM
+        gps: ~
+      model: NIKON D850
+      make: NIKON CORPORATION
+      lens:
+        identifiers:
+          name: ~
+          id: ~
+          nikon_id: 91 54 44 44 0C 0C 4B 06
+          olympus_id: ~
+        mount: F-mount
+        lens_make: Sigma
+        lens_model: 35mm F1.4 DG HSM
+        focal_range:
+          - 35/1
+          - 35/1
+        aperture_range:
+          - 14/10
+          - 14/10
+        lens_name: Sigma 35mm F1.4 DG HSM
+      unique_image_id: ~
+      rating: ~
+

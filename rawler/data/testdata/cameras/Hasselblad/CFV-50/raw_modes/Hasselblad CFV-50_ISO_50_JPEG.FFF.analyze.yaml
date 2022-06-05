@@ -1,0 +1,85 @@
+---
+file:
+  fileSize: 79439514
+  fileName: Hasselblad CFV-50_ISO_50_JPEG.FFF
+  digest: 6b2f9c2786b9e7b3d2e4a6a308666b60
+data:
+  metadata:
+    rawParams:
+      rawWidth: 8282
+      rawHeight: 6240
+      bitDepth: 16
+      crops:
+        p:
+          x: 54
+          y: 16
+        d:
+          w: 8176
+          h: 6132
+      blacklevels:
+        - 256
+        - 256
+        - 256
+        - 256
+      whitelevels:
+        - 65535
+        - 65535
+        - 65535
+        - 65535
+      wbCoeffs:
+        - 2.3007812
+        - 1.0
+        - 1.4595946
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ~
+        artist: ~
+        lens_spec: ~
+        exposure_time: 1/4
+        fnumber: ~
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 50
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: ~
+        date_time_original: "2017-04-01T15:26:37"
+        create_date: "2017-04-01T15:26:37"
+        modify_date: "2017:04:01 15:26:37"
+        exposure_program: 0
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: 536870912/268435456
+        max_aperture_value: 1/1
+        subject_distance: ~
+        metering_mode: 0
+        light_source: ~
+        flash: ~
+        focal_length: 0/1
+        image_number: ~
+        color_space: ~
+        flash_energy: ~
+        exposure_mode: ~
+        white_balance: ~
+        scene_capture_type: ~
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: CFV-50
+      make: Hasselblad
+      lens: ~
+      unique_image_id: 64100247175511625243648218948829786928
+      rating: ~
+

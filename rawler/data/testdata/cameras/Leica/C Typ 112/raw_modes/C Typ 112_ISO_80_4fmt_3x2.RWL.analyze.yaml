@@ -1,0 +1,85 @@
+---
+file:
+  fileSize: 13082112
+  fileName: C Typ 112_ISO_80_4fmt_3x2.RWL
+  digest: cc0db1b4b3e2898129f48fb479582073
+data:
+  metadata:
+    rawParams:
+      rawWidth: 4144
+      rawHeight: 2688
+      bitDepth: 16
+      crops:
+        p:
+          x: 8
+          y: 8
+        d:
+          w: 4000
+          h: 2672
+      blacklevels:
+        - 127
+        - 127
+        - 127
+        - 127
+      whitelevels:
+        - 3956
+        - 3956
+        - 3956
+        - 3956
+      wbCoeffs:
+        - 2.0719697
+        - 1.0
+        - 1.75
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 6
+        copyright: ~
+        artist: ~
+        lens_spec: ~
+        exposure_time: 10/5000
+        fnumber: 59/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 80
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: "-66/100"
+        date_time_original: "2021:10:29 14:30:17"
+        create_date: "2021:10:29 14:30:17"
+        modify_date: ~
+        exposure_program: 2
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: ~
+        max_aperture_value: 656/128
+        subject_distance: ~
+        metering_mode: 2
+        light_source: ~
+        flash: 16
+        focal_length: 428/10
+        image_number: ~
+        color_space: ~
+        flash_energy: ~
+        exposure_mode: ~
+        white_balance: ~
+        scene_capture_type: ~
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: C (Typ 112)
+      make: Leica
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

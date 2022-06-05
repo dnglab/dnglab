@@ -1,0 +1,106 @@
+---
+file:
+  fileSize: 77598464
+  fileName: NIKON Z 7_Large_ISO_64_12bits_Uncompressed (reduced to 12 bit).NEF
+  digest: e12ecff5b30c26ad9d4efe418170803c
+data:
+  metadata:
+    rawParams:
+      rawWidth: 8288
+      rawHeight: 5520
+      bitDepth: 16
+      crops:
+        p:
+          x: 16
+          y: 8
+        d:
+          w: 8256
+          h: 5504
+      blacklevels:
+        - 252
+        - 252
+        - 252
+        - 252
+      whitelevels:
+        - 3880
+        - 3880
+        - 3880
+        - 3880
+      wbCoeffs:
+        - 1.6777344
+        - 1.0
+        - 1.3964844
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ""
+        artist: ""
+        lens_spec:
+          - 24/1
+          - 70/1
+          - 4/1
+          - 4/1
+        exposure_time: 10/4000
+        fnumber: 560/100
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 64
+        iso_speed: ~
+        recommended_exposure_index: 64
+        sensitivity_type: 2
+        exposure_bias: 2/6
+        date_time_original: "2018:09:29 09:55:56"
+        create_date: "2018:09:29 09:55:56"
+        modify_date: "2018:09:29 09:55:56"
+        exposure_program: 3
+        timezone_offset: ~
+        offset_time: "+02:00"
+        offset_time_original: "+02:00"
+        offset_time_digitized: "+02:00"
+        sub_sec_time: "90"
+        sub_sec_time_original: "90"
+        sub_sec_time_digitized: "90"
+        shutter_speed_value: ~
+        max_aperture_value: ~
+        subject_distance: ~
+        metering_mode: 5
+        light_source: 0
+        flash: 0
+        focal_length: 560/10
+        image_number: ~
+        color_space: ~
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: 0
+        owner_name: ~
+        serial_number: "6003311"
+        lens_serial_number: "20007777"
+        lens_make: Nikon
+        lens_model: Nikkor Z 24-70mm f/4 S
+        gps: ~
+      model: Z 7
+      make: Nikon
+      lens:
+        identifiers:
+          name: ~
+          id:
+            - 1
+            - 0
+          nikon_id: ~
+          olympus_id: ~
+        mount: Z-mount
+        lens_make: Nikon
+        lens_model: Nikkor Z 24-70mm f/4 S
+        focal_range:
+          - 24/1
+          - 70/1
+        aperture_range:
+          - 4/1
+          - 4/1
+        lens_name: Nikon Nikkor Z 24-70mm f/4 S
+      unique_image_id: ~
+      rating: ~
+

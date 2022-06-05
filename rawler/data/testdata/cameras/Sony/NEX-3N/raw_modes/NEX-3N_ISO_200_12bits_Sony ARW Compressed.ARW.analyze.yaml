@@ -1,0 +1,85 @@
+---
+file:
+  fileSize: 16941056
+  fileName: NEX-3N_ISO_200_12bits_Sony ARW Compressed.ARW
+  digest: 19dbb2c302154b135dfffebbab195d2b
+data:
+  metadata:
+    rawParams:
+      rawWidth: 4928
+      rawHeight: 3276
+      bitDepth: 16
+      crops:
+        p:
+          x: 4
+          y: 6
+        d:
+          w: 4912
+          h: 3264
+      blacklevels:
+        - 512
+        - 512
+        - 512
+        - 512
+      whitelevels:
+        - 15360
+        - 15360
+        - 15360
+        - 15360
+      wbCoeffs:
+        - 2.9140625
+        - 1.0
+        - 1.5625
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ~
+        artist: ~
+        lens_spec: ~
+        exposure_time: 1/400
+        fnumber: 160/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 200
+        iso_speed: ~
+        recommended_exposure_index: 200
+        sensitivity_type: 2
+        exposure_bias: 0/10
+        date_time_original: "2019:09:14 14:29:13"
+        create_date: "2019:09:14 14:29:13"
+        modify_date: "2019:09:14 14:29:13"
+        exposure_program: 2
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: ~
+        max_aperture_value: 760/256
+        subject_distance: ~
+        metering_mode: 5
+        light_source: 0
+        flash: 24
+        focal_length: 190/10
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: NEX-3N
+      make: Sony
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

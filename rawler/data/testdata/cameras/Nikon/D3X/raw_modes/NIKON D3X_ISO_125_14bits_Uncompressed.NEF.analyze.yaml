@@ -1,0 +1,85 @@
+---
+file:
+  fileSize: 49918144
+  fileName: NIKON D3X_ISO_125_14bits_Uncompressed.NEF
+  digest: 371705f5626ca527744e89d4b1456219
+data:
+  metadata:
+    rawParams:
+      rawWidth: 6080
+      rawHeight: 4044
+      bitDepth: 16
+      crops:
+        p:
+          x: 15
+          y: 6
+        d:
+          w: 6048
+          h: 4032
+      blacklevels:
+        - 0
+        - 0
+        - 0
+        - 0
+      whitelevels:
+        - 15892
+        - 15892
+        - 15892
+        - 15892
+      wbCoeffs:
+        - 2.15625
+        - 1.0
+        - 1.4179688
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: Cassidy Photography
+        artist: Robert L.Cassidy
+        lens_spec: ~
+        exposure_time: 10/600
+        fnumber: 110/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 125
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: 0/6
+        date_time_original: "2017:01:08 20:39:51"
+        create_date: "2017:01:08 20:39:51"
+        modify_date: "2017:01:08 20:39:51"
+        exposure_program: 1
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: "05"
+        sub_sec_time_original: "05"
+        sub_sec_time_digitized: "05"
+        shutter_speed_value: ~
+        max_aperture_value: 0/10
+        subject_distance: ~
+        metering_mode: 5
+        light_source: 9
+        flash: 0
+        focal_length: 10000/10
+        image_number: ~
+        color_space: ~
+        flash_energy: ~
+        exposure_mode: 1
+        white_balance: 1
+        scene_capture_type: 0
+        subject_distance_range: 0
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: D3X
+      make: Nikon
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

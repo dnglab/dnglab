@@ -1,0 +1,79 @@
+---
+file:
+  fileSize: 54142397
+  fileName: IQ150_IIQ L_ISO_400.IIQ
+  digest: 4c160d9e48b16070a4b8a87d1f407bf7
+data:
+  metadata:
+    rawParams:
+      rawWidth: 8372
+      rawHeight: 6316
+      bitDepth: 16
+      crops: ~
+      blacklevels:
+        - 0
+        - 0
+        - 0
+        - 0
+      whitelevels:
+        - 65535
+        - 65535
+        - 65535
+        - 65535
+      wbCoeffs:
+        - 2.6
+        - 1.0
+        - 1.35
+        - ~
+    rawMetadata:
+      exif:
+        orientation: ~
+        copyright: ""
+        artist: ~
+        lens_spec: ~
+        exposure_time: 625/1000000
+        fnumber: 2000/100
+        aperture_value: 86439/10000
+        brightness_value: ~
+        iso_speed_ratings: 400
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: 0/1000
+        date_time_original: "2021:01:25 12:03:57"
+        create_date: "2021:01:25 12:03:57"
+        modify_date: ~
+        exposure_program: 1
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: 1064386/100000
+        max_aperture_value: ~
+        subject_distance: ~
+        metering_mode: ~
+        light_source: 4
+        flash: ~
+        focal_length: 800/10
+        image_number: ~
+        color_space: ~
+        flash_energy: ~
+        exposure_mode: ~
+        white_balance: 4
+        scene_capture_type: ~
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: IQ150
+      make: Phase One
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

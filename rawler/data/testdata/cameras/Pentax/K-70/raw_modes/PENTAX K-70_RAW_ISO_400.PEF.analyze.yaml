@@ -1,0 +1,106 @@
+---
+file:
+  fileSize: 28663115
+  fileName: PENTAX K-70_RAW_ISO_400.PEF
+  digest: b727607f7e5c64196c3231e5b869bbdf
+data:
+  metadata:
+    rawParams:
+      rawWidth: 6080
+      rawHeight: 4064
+      bitDepth: 16
+      crops:
+        p:
+          x: 66
+          y: 32
+        d:
+          w: 6000
+          h: 4000
+      blacklevels:
+        - 64
+        - 64
+        - 64
+        - 64
+      whitelevels:
+        - 16315
+        - 16315
+        - 16315
+        - 16315
+      wbCoeffs:
+        - 1.9414062
+        - 1.0
+        - 2.1210938
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: Daniel Aleksandrow
+        artist: Daniel Aleksandrow
+        lens_spec:
+          - 18/1
+          - 135/1
+          - 35/10
+          - 56/10
+        exposure_time: 1/25
+        fnumber: 56/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 400
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: 1
+        exposure_bias: 0/10
+        date_time_original: "2017:02:25 12:22:20"
+        create_date: "2017:02:25 12:22:20"
+        modify_date: "2017:02:25 12:22:20"
+        exposure_program: 3
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: ~
+        max_aperture_value: ~
+        subject_distance: ~
+        metering_mode: 5
+        light_source: ~
+        flash: 16
+        focal_length: 1800/100
+        image_number: ~
+        color_space: ~
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: 2
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: Pentax
+        lens_model: "smc PENTAX-DA 18-135mm F3.5-5.6 ED AL [IF] DC WR"
+        gps: ~
+      model: PENTAX K-70
+      make: "RICOH IMAGING COMPANY, LTD."
+      lens:
+        identifiers:
+          name: ~
+          id:
+            - 8
+            - 215
+          nikon_id: ~
+          olympus_id: ~
+        mount: k-mount
+        lens_make: Pentax
+        lens_model: "smc PENTAX-DA 18-135mm F3.5-5.6 ED AL [IF] DC WR"
+        focal_range:
+          - 18/1
+          - 135/1
+        aperture_range:
+          - 35/10
+          - 56/10
+        lens_name: "Pentax smc PENTAX-DA 18-135mm F3.5-5.6 ED AL [IF] DC WR"
+      unique_image_id: ~
+      rating: ~
+

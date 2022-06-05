@@ -1,0 +1,106 @@
+---
+file:
+  fileSize: 25631488
+  fileName: ILCE-7M3_ISO_400_12bits_Compressed RAW.ARW
+  digest: bb74b32b85548ca1a28fd1037b019f9c
+data:
+  metadata:
+    rawParams:
+      rawWidth: 6048
+      rawHeight: 4024
+      bitDepth: 16
+      crops:
+        p:
+          x: 12
+          y: 12
+        d:
+          w: 6000
+          h: 4000
+      blacklevels:
+        - 512
+        - 512
+        - 512
+        - 512
+      whitelevels:
+        - 15360
+        - 15360
+        - 15360
+        - 15360
+      wbCoeffs:
+        - 2.1914062
+        - 1.0
+        - 1.78125
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ~
+        artist: ~
+        lens_spec:
+          - 16/1
+          - 35/1
+          - 28/10
+          - 28/10
+        exposure_time: 1/50
+        fnumber: 40/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 400
+        iso_speed: ~
+        recommended_exposure_index: 400
+        sensitivity_type: 2
+        exposure_bias: 0/10
+        date_time_original: "2018:03:13 16:38:58"
+        create_date: "2018:03:13 16:38:58"
+        modify_date: "2018:03:13 16:38:58"
+        exposure_program: 1
+        timezone_offset: ~
+        offset_time: "+01:00"
+        offset_time_original: "+01:00"
+        offset_time_digitized: "+01:00"
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: ~
+        max_aperture_value: 760/256
+        subject_distance: ~
+        metering_mode: 5
+        light_source: 0
+        flash: 16
+        focal_length: 320/10
+        image_number: ~
+        color_space: 65535
+        flash_energy: ~
+        exposure_mode: 1
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: Sony
+        lens_model: FE 16-35mm F2.8 GM
+        gps: ~
+      model: ILCE-7M3
+      make: Sony
+      lens:
+        identifiers:
+          name: ~
+          id:
+            - 32831
+            - 0
+          nikon_id: ~
+          olympus_id: ~
+        mount: e-mount
+        lens_make: Sony
+        lens_model: FE 16-35mm F2.8 GM
+        focal_range:
+          - 16/1
+          - 35/1
+        aperture_range:
+          - 28/10
+          - 28/10
+        lens_name: Sony FE 16-35mm F2.8 GM
+      unique_image_id: ~
+      rating: ~
+

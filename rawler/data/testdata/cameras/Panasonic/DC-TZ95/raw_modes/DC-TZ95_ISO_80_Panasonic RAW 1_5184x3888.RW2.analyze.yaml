@@ -1,0 +1,85 @@
+---
+file:
+  fileSize: 24188416
+  fileName: DC-TZ95_ISO_80_Panasonic RAW 1_5184x3888.RW2
+  digest: 6f45b5f005de37ce17112abcef0b2945
+data:
+  metadata:
+    rawParams:
+      rawWidth: 5264
+      rawHeight: 3904
+      bitDepth: 16
+      crops:
+        p:
+          x: 8
+          y: 8
+        d:
+          w: 5184
+          h: 3888
+      blacklevels:
+        - 125
+        - 125
+        - 125
+        - 126
+      whitelevels:
+        - 4095
+        - 4095
+        - 4095
+        - 4095
+      wbCoeffs:
+        - 2.0117188
+        - 1.0
+        - 1.90625
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ~
+        artist: ~
+        lens_spec: ~
+        exposure_time: 10/2000
+        fnumber: 64/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 80
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: "-100/100"
+        date_time_original: "2021:06:28 15:54:02"
+        create_date: "2021:06:28 15:54:02"
+        modify_date: ~
+        exposure_program: 8
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: "+01:00"
+        offset_time_digitized: "+01:00"
+        sub_sec_time: ~
+        sub_sec_time_original: "252"
+        sub_sec_time_digitized: "252"
+        shutter_speed_value: ~
+        max_aperture_value: 1371/256
+        subject_distance: ~
+        metering_mode: 5
+        light_source: ~
+        flash: 16
+        focal_length: 1290/10
+        image_number: ~
+        color_space: ~
+        flash_energy: ~
+        exposure_mode: ~
+        white_balance: ~
+        scene_capture_type: ~
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: WS1BA001125
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: DC-TZ95
+      make: Panasonic
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

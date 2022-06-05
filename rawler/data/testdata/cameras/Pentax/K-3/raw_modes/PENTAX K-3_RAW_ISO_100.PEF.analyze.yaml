@@ -1,0 +1,106 @@
+---
+file:
+  fileSize: 31417805
+  fileName: PENTAX K-3_RAW_ISO_100.PEF
+  digest: ffafbf8e89eba8780804f43282b71f2a
+data:
+  metadata:
+    rawParams:
+      rawWidth: 6080
+      rawHeight: 4032
+      bitDepth: 16
+      crops:
+        p:
+          x: 16
+          y: 16
+        d:
+          w: 6016
+          h: 4000
+      blacklevels:
+        - 1
+        - 1
+        - 0
+        - 1
+      whitelevels:
+        - 16315
+        - 16315
+        - 16315
+        - 16315
+      wbCoeffs:
+        - 2.2304688
+        - 1.0
+        - 1.484375
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: Sebastian Witt
+        artist: Sebastian Witt
+        lens_spec:
+          - 35/1
+          - 35/1
+          - 14/10
+          - 14/10
+        exposure_time: 1/60
+        fnumber: 80/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 100
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: 1
+        exposure_bias: 0/10
+        date_time_original: "2017:02:07 20:17:17"
+        create_date: "2017:02:07 20:17:17"
+        modify_date: "2017:02:07 20:17:17"
+        exposure_program: 3
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: ~
+        max_aperture_value: ~
+        subject_distance: ~
+        metering_mode: 2
+        light_source: ~
+        flash: 9
+        focal_length: 3500/100
+        image_number: ~
+        color_space: ~
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: 3
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: Sigma
+        lens_model: Sigma 35mm F1.4 DG HSM
+        gps: ~
+      model: K-3
+      make: Pentax
+      lens:
+        identifiers:
+          name: ~
+          id:
+            - 8
+            - 29
+          nikon_id: ~
+          olympus_id: ~
+        mount: k-mount
+        lens_make: Sigma
+        lens_model: Sigma 35mm F1.4 DG HSM
+        focal_range:
+          - 35/1
+          - 35/1
+        aperture_range:
+          - 14/10
+          - 14/10
+        lens_name: Sigma Sigma 35mm F1.4 DG HSM
+      unique_image_id: ~
+      rating: ~
+

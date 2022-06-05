@@ -1,0 +1,85 @@
+---
+file:
+  fileSize: 18001356
+  fileName: DMC-FZ50_ISO_100_Panasonic RAW 3_3648x2424.RAW
+  digest: a846ed2a50d25d43c40e221151c2ba12
+data:
+  metadata:
+    rawParams:
+      rawWidth: 3690
+      rawHeight: 2439
+      bitDepth: 16
+      crops:
+        p:
+          x: 16
+          y: 7
+        d:
+          w: 3648
+          h: 2424
+      blacklevels:
+        - 0
+        - 0
+        - 0
+        - 0
+      whitelevels:
+        - 3986
+        - 3986
+        - 3986
+        - 3986
+      wbCoeffs:
+        - 1.3346008
+        - 1.0
+        - 2.673004
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ~
+        artist: ~
+        lens_spec: ~
+        exposure_time: 20/10
+        fnumber: 80/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 100
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: 0/100
+        date_time_original: "2018:02:10 21:13:55"
+        create_date: "2018:02:10 21:13:55"
+        modify_date: ~
+        exposure_program: 1
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: ~
+        max_aperture_value: 30/10
+        subject_distance: ~
+        metering_mode: 5
+        light_source: ~
+        flash: 16
+        focal_length: 129/10
+        image_number: ~
+        color_space: ~
+        flash_energy: ~
+        exposure_mode: ~
+        white_balance: ~
+        scene_capture_type: ~
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: DMC-FZ50
+      make: Panasonic
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

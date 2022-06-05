@@ -1,0 +1,85 @@
+---
+file:
+  fileSize: 25447984
+  fileName: FinePix F770EXR_ISO_100.RAF
+  digest: 51dc060d212f56e9640c212416a0a0bb
+data:
+  metadata:
+    rawParams:
+      rawWidth: 3328
+      rawHeight: 2464
+      bitDepth: 16
+      crops:
+        p:
+          x: 42
+          y: 14
+        d:
+          w: 2436
+          h: 3248
+      blacklevels:
+        - 256
+        - 256
+        - 256
+        - 256
+      whitelevels:
+        - 3900
+        - 3900
+        - 3900
+        - 3900
+      wbCoeffs:
+        - 1.5178572
+        - 1.0
+        - 1.9642857
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ""
+        artist: ~
+        lens_spec: ~
+        exposure_time: 10/9000
+        fnumber: 350/100
+        aperture_value: 360/100
+        brightness_value: ~
+        iso_speed_ratings: 100
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: 1
+        exposure_bias: 0/100
+        date_time_original: "2012:04:08 09:05:36"
+        create_date: "2012:04:08 09:05:36"
+        modify_date: "2012:04:08 09:05:36"
+        exposure_program: 2
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: 989/100
+        max_aperture_value: 360/100
+        subject_distance: ~
+        metering_mode: 5
+        light_source: 0
+        flash: 16
+        focal_length: 460/100
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: 0
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: FinePix F770EXR
+      make: Fujifilm
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

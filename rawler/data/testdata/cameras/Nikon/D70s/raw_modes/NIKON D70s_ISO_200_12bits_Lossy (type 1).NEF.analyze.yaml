@@ -1,0 +1,104 @@
+---
+file:
+  fileSize: 5193213
+  fileName: NIKON D70s_ISO_200_12bits_Lossy (type 1).NEF
+  digest: 540b35968bdeccdc7822737d769b2b77
+data:
+  metadata:
+    rawParams:
+      rawWidth: 3040
+      rawHeight: 2014
+      bitDepth: 16
+      crops:
+        p:
+          x: 15
+          y: 7
+        d:
+          w: 3008
+          h: 2000
+      blacklevels:
+        - 0
+        - 0
+        - 0
+        - 0
+      whitelevels:
+        - 4095
+        - 4095
+        - 4095
+        - 4095
+      wbCoeffs:
+        - 2.3007812
+        - 1.0
+        - 1.4296875
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ~
+        artist: ~
+        lens_spec:
+          - 18/1
+          - 250/1
+          - 35/10
+          - 63/10
+        exposure_time: 10/2000
+        fnumber: 80/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: ~
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: 0/6
+        date_time_original: "2010:03:03 07:46:08"
+        create_date: "2010:03:03 07:46:08"
+        modify_date: "2010:03:03 07:46:08"
+        exposure_program: 3
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: "10"
+        sub_sec_time_original: "10"
+        sub_sec_time_digitized: "10"
+        shutter_speed_value: ~
+        max_aperture_value: 43/10
+        subject_distance: ~
+        metering_mode: 5
+        light_source: 0
+        flash: 0
+        focal_length: 350/10
+        image_number: ~
+        color_space: ~
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: 0
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: Tamron
+        lens_model: AF 18-250mm f/3.5-6.3 Di II LD Aspherical (IF) Macro (A18)
+        gps: ~
+      model: D70s
+      make: Nikon
+      lens:
+        identifiers:
+          name: ~
+          id: ~
+          nikon_id: 00 40 2D 88 2C 40 62 06
+          olympus_id: ~
+        mount: F-mount
+        lens_make: Tamron
+        lens_model: AF 18-250mm f/3.5-6.3 Di II LD Aspherical (IF) Macro (A18)
+        focal_range:
+          - 18/1
+          - 250/1
+        aperture_range:
+          - 35/10
+          - 63/10
+        lens_name: Tamron AF 18-250mm f/3.5-6.3 Di II LD Aspherical (IF) Macro (A18)
+      unique_image_id: ~
+      rating: ~
+

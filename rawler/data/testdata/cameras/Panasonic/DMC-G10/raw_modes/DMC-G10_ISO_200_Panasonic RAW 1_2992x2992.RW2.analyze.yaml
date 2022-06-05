@@ -1,0 +1,85 @@
+---
+file:
+  fileSize: 11365888
+  fileName: DMC-G10_ISO_200_Panasonic RAW 1_2992x2992.RW2
+  digest: cbe595cdcf48a57dfe0e3a3dae0a377e
+data:
+  metadata:
+    rawParams:
+      rawWidth: 3052
+      rawHeight: 3008
+      bitDepth: 16
+      crops:
+        p:
+          x: 8
+          y: 4
+        d:
+          w: 2992
+          h: 2992
+      blacklevels:
+        - 0
+        - 0
+        - 0
+        - 0
+      whitelevels:
+        - 3900
+        - 3900
+        - 3900
+        - 3900
+      wbCoeffs:
+        - 1.8745247
+        - 1.0
+        - 1.4486692
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ~
+        artist: ~
+        lens_spec: ~
+        exposure_time: 10/1600
+        fnumber: 100/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 200
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: "-200/100"
+        date_time_original: "2020:07:20 15:34:48"
+        create_date: "2020:07:20 15:34:48"
+        modify_date: ~
+        exposure_program: 3
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: ~
+        max_aperture_value: 929/256
+        subject_distance: ~
+        metering_mode: 2
+        light_source: ~
+        flash: 16
+        focal_length: 140/10
+        image_number: ~
+        color_space: ~
+        flash_energy: ~
+        exposure_mode: ~
+        white_balance: ~
+        scene_capture_type: ~
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: DMC-G10
+      make: Panasonic
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

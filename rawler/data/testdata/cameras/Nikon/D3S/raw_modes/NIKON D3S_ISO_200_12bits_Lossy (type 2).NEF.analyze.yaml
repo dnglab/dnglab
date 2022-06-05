@@ -1,0 +1,104 @@
+---
+file:
+  fileSize: 11593381
+  fileName: NIKON D3S_ISO_200_12bits_Lossy (type 2).NEF
+  digest: 398e197d62632a53fd20fc7ccfdc2d88
+data:
+  metadata:
+    rawParams:
+      rawWidth: 4288
+      rawHeight: 2844
+      bitDepth: 16
+      crops:
+        p:
+          x: 15
+          y: 6
+        d:
+          w: 4256
+          h: 2832
+      blacklevels:
+        - 0
+        - 0
+        - 0
+        - 0
+      whitelevels:
+        - 3880
+        - 3880
+        - 3880
+        - 3880
+      wbCoeffs:
+        - 1.6992188
+        - 1.0
+        - 1.5664062
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: Michael Rasmussen
+        artist: Michael Rasmussen
+        lens_spec:
+          - 50/1
+          - 50/1
+          - 14/10
+          - 14/10
+        exposure_time: 10/1600
+        fnumber: 56/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 200
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: 0/6
+        date_time_original: "2022:02:13 14:51:12"
+        create_date: "2022:02:13 14:51:12"
+        modify_date: "2022:02:13 14:51:12"
+        exposure_program: 3
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: "81"
+        sub_sec_time_original: "81"
+        sub_sec_time_digitized: "81"
+        shutter_speed_value: ~
+        max_aperture_value: 10/10
+        subject_distance: ~
+        metering_mode: 5
+        light_source: 0
+        flash: 0
+        focal_length: 500/10
+        image_number: ~
+        color_space: ~
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: 0
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: Nikon
+        lens_model: AF Nikkor 50mm f/1.4D
+        gps: ~
+      model: D3S
+      make: Nikon
+      lens:
+        identifiers:
+          name: ~
+          id: ~
+          nikon_id: 43 54 50 50 0C 0C 46 02
+          olympus_id: ~
+        mount: F-mount
+        lens_make: Nikon
+        lens_model: AF Nikkor 50mm f/1.4D
+        focal_range:
+          - 50/1
+          - 50/1
+        aperture_range:
+          - 14/10
+          - 14/10
+        lens_name: Nikon AF Nikkor 50mm f/1.4D
+      unique_image_id: ~
+      rating: ~
+

@@ -1,0 +1,104 @@
+---
+file:
+  fileSize: 23139221
+  fileName: NIKON D7100_ISO_200_12bits_Lossless.NEF
+  digest: 361e4363754afbe2bc0fe6287132a772
+data:
+  metadata:
+    rawParams:
+      rawWidth: 6036
+      rawHeight: 4020
+      bitDepth: 16
+      crops:
+        p:
+          x: 18
+          y: 10
+        d:
+          w: 6000
+          h: 4000
+      blacklevels:
+        - 0
+        - 0
+        - 0
+        - 0
+      whitelevels:
+        - 3972
+        - 3972
+        - 3972
+        - 3972
+      wbCoeffs:
+        - 2.2695312
+        - 1.0
+        - 1.6992188
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ""
+        artist: CHRIS RUFF
+        lens_spec:
+          - 18/1
+          - 135/1
+          - 35/10
+          - 56/10
+        exposure_time: 10/5000
+        fnumber: 80/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 200
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: 2
+        exposure_bias: 0/6
+        date_time_original: "2017:10:22 16:04:05"
+        create_date: "2017:10:22 16:04:05"
+        modify_date: "2017:10:22 16:04:05"
+        exposure_program: 0
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: "80"
+        sub_sec_time_original: "80"
+        sub_sec_time_digitized: "80"
+        shutter_speed_value: ~
+        max_aperture_value: 50/10
+        subject_distance: ~
+        metering_mode: 5
+        light_source: 0
+        flash: 16
+        focal_length: 1350/10
+        image_number: ~
+        color_space: ~
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: 0
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: Nikon
+        lens_model: AF-S DX Zoom-Nikkor 18-135mm f/3.5-5.6G IF-ED
+        gps: ~
+      model: D7100
+      make: Nikon
+      lens:
+        identifiers:
+          name: ~
+          id: ~
+          nikon_id: 8F 40 2D 72 2C 3C 91 06
+          olympus_id: ~
+        mount: F-mount
+        lens_make: Nikon
+        lens_model: AF-S DX Zoom-Nikkor 18-135mm f/3.5-5.6G IF-ED
+        focal_range:
+          - 18/1
+          - 135/1
+        aperture_range:
+          - 35/10
+          - 56/10
+        lens_name: Nikon AF-S DX Zoom-Nikkor 18-135mm f/3.5-5.6G IF-ED
+      unique_image_id: ~
+      rating: ~
+

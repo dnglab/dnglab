@@ -1,0 +1,85 @@
+---
+file:
+  fileSize: 14948864
+  fileName: DMC-FZ150_ISO_100_Panasonic RAW 1_4000x3000.RW2
+  digest: ad79dbd70c25ad8a0f56a9a851425978
+data:
+  metadata:
+    rawParams:
+      rawWidth: 4144
+      rawHeight: 3016
+      bitDepth: 16
+      crops:
+        p:
+          x: 8
+          y: 8
+        d:
+          w: 4000
+          h: 3000
+      blacklevels:
+        - 130
+        - 130
+        - 130
+        - 130
+      whitelevels:
+        - 3956
+        - 3956
+        - 3956
+        - 3956
+      wbCoeffs:
+        - 1.8226415
+        - 1.0
+        - 1.7962264
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ~
+        artist: ~
+        lens_spec: ~
+        exposure_time: 10/1250
+        fnumber: 36/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 100
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: 0/100
+        date_time_original: "2018:07:02 21:07:03"
+        create_date: "2018:07:02 21:07:03"
+        modify_date: ~
+        exposure_program: 2
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: ~
+        max_aperture_value: 380/128
+        subject_distance: ~
+        metering_mode: 5
+        light_source: ~
+        flash: 16
+        focal_length: 45/10
+        image_number: ~
+        color_space: ~
+        flash_energy: ~
+        exposure_mode: ~
+        white_balance: ~
+        scene_capture_type: ~
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: DMC-FZ150
+      make: Panasonic
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

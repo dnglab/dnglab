@@ -1,0 +1,85 @@
+---
+file:
+  fileSize: 15913984
+  fileName: DCS Pro 14N_ISO_160_Kodak DCR Compressed.DCR
+  digest: 546a2d6d3a05665f951d839fc9464fc5
+data:
+  metadata:
+    rawParams:
+      rawWidth: 4516
+      rawHeight: 3012
+      bitDepth: 16
+      crops:
+        p:
+          x: 8
+          y: 6
+        d:
+          w: 4500
+          h: 3000
+      blacklevels:
+        - 0
+        - 0
+        - 0
+        - 0
+      whitelevels:
+        - 3700
+        - 3700
+        - 3700
+        - 3700
+      wbCoeffs:
+        - ~
+        - ~
+        - ~
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ""
+        artist: ""
+        lens_spec: ~
+        exposure_time: 1/350
+        fnumber: 80/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: ~
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: 0/10
+        date_time_original: "2015:07:14 13:19:21"
+        create_date: ~
+        modify_date: "2015:07:14 13:19:21"
+        exposure_program: 3
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: ~
+        max_aperture_value: 28/10
+        subject_distance: ~
+        metering_mode: 4
+        light_source: 0
+        flash: ~
+        focal_length: 240/10
+        image_number: 31
+        color_space: ~
+        flash_energy: ~
+        exposure_mode: ~
+        white_balance: ~
+        scene_capture_type: ~
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: DCS Pro 14N
+      make: Kodak
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

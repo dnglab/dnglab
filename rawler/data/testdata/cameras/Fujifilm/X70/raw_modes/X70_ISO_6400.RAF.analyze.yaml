@@ -1,0 +1,85 @@
+---
+file:
+  fileSize: 33852416
+  fileName: X70_ISO_6400.RAF
+  digest: 7e7b24637fe31ab29b866df8a4e0b45e
+data:
+  metadata:
+    rawParams:
+      rawWidth: 4992
+      rawHeight: 3296
+      bitDepth: 16
+      crops:
+        p:
+          x: 24
+          y: 16
+        d:
+          w: 3264
+          h: 4896
+      blacklevels:
+        - 1020
+        - 1020
+        - 1020
+        - 1020
+      whitelevels:
+        - 16383
+        - 16383
+        - 16383
+        - 16383
+      wbCoeffs:
+        - 1.307947
+        - 1.0
+        - 2.615894
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ""
+        artist: ~
+        lens_spec: ~
+        exposure_time: 10/130
+        fnumber: 280/100
+        aperture_value: 300/100
+        brightness_value: ~
+        iso_speed_ratings: 6400
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: 1
+        exposure_bias: 0/100
+        date_time_original: "2017:02:08 18:21:17"
+        create_date: "2017:02:08 18:21:17"
+        modify_date: "2017:02:08 18:21:17"
+        exposure_program: 3
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: 378/100
+        max_aperture_value: 300/100
+        subject_distance: ~
+        metering_mode: 5
+        light_source: 0
+        flash: 16
+        focal_length: 1850/100
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: 0
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: X70
+      make: Fujifilm
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

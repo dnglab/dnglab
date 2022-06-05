@@ -1,0 +1,85 @@
+---
+file:
+  fileSize: 15237120
+  fileName: SLT-A33_ISO_200_12bits_Sony ARW Compressed.ARW
+  digest: dd5eb4645c11b256f4de37c1e95a3b9a
+data:
+  metadata:
+    rawParams:
+      rawWidth: 4608
+      rawHeight: 3072
+      bitDepth: 16
+      crops:
+        p:
+          x: 8
+          y: 8
+        d:
+          w: 4592
+          h: 3056
+      blacklevels:
+        - 512
+        - 512
+        - 512
+        - 512
+      whitelevels:
+        - 15360
+        - 15360
+        - 15360
+        - 15360
+      wbCoeffs:
+        - 2.2890625
+        - 1.0
+        - 1.4726562
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ~
+        artist: ~
+        lens_spec: ~
+        exposure_time: 1/30
+        fnumber: 180/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 200
+        iso_speed: ~
+        recommended_exposure_index: 200
+        sensitivity_type: 2
+        exposure_bias: 0/10
+        date_time_original: "2011:08:27 13:29:19"
+        create_date: "2011:08:27 13:29:19"
+        modify_date: "2011:08:27 13:29:19"
+        exposure_program: 3
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: ~
+        max_aperture_value: 400/100
+        subject_distance: ~
+        metering_mode: 5
+        light_source: 0
+        flash: 16
+        focal_length: 240/10
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 2
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: SLT-A33
+      make: Sony
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

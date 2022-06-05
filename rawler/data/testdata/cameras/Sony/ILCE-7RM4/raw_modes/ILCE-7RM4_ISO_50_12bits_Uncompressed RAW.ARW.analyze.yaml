@@ -1,0 +1,106 @@
+---
+file:
+  fileSize: 123111424
+  fileName: ILCE-7RM4_ISO_50_12bits_Uncompressed RAW.ARW
+  digest: 116bd2488ba2e1ab5e2c299e19cd5281
+data:
+  metadata:
+    rawParams:
+      rawWidth: 9600
+      rawHeight: 6376
+      bitDepth: 16
+      crops:
+        p:
+          x: 32
+          y: 20
+        d:
+          w: 9504
+          h: 6336
+      blacklevels:
+        - 512
+        - 512
+        - 512
+        - 512
+      whitelevels:
+        - 15360
+        - 15360
+        - 15360
+        - 15360
+      wbCoeffs:
+        - 3.0039062
+        - 1.0
+        - 1.5351562
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ~
+        artist: ~
+        lens_spec:
+          - 24/1
+          - 70/1
+          - 4/1
+          - 4/1
+        exposure_time: 8/1
+        fnumber: 220/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 50
+        iso_speed: ~
+        recommended_exposure_index: 50
+        sensitivity_type: 2
+        exposure_bias: 0/10
+        date_time_original: "2019:10:13 07:06:39"
+        create_date: "2019:10:13 07:06:39"
+        modify_date: "2019:10:13 07:06:39"
+        exposure_program: 3
+        timezone_offset: ~
+        offset_time: "+02:00"
+        offset_time_original: "+02:00"
+        offset_time_digitized: "+02:00"
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: ~
+        max_aperture_value: 1024/256
+        subject_distance: ~
+        metering_mode: 5
+        light_source: 0
+        flash: 16
+        focal_length: 250/10
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: Sony
+        lens_model: FE 24-70mm F4 ZA OSS
+        gps: ~
+      model: ILCE-7RM4
+      make: Sony
+      lens:
+        identifiers:
+          name: ~
+          id:
+            - 32795
+            - 0
+          nikon_id: ~
+          olympus_id: ~
+        mount: e-mount
+        lens_make: Sony
+        lens_model: FE 24-70mm F4 ZA OSS
+        focal_range:
+          - 24/1
+          - 70/1
+        aperture_range:
+          - 4/1
+          - 4/1
+        lens_name: Sony FE 24-70mm F4 ZA OSS
+      unique_image_id: ~
+      rating: ~
+

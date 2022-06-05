@@ -1,0 +1,85 @@
+---
+file:
+  fileSize: 116500820
+  fileName: iXM-RS150F_IIQ Sv2_ISO_160.IIQ
+  digest: 3e50a3e9aa0ef43e8cc544f4eaf4e1fb
+data:
+  metadata:
+    rawParams:
+      rawWidth: 14308
+      rawHeight: 10760
+      bitDepth: 16
+      crops:
+        p:
+          x: 102
+          y: 106
+        d:
+          w: 14204
+          h: 10652
+      blacklevels:
+        - 0
+        - 0
+        - 0
+        - 0
+      whitelevels:
+        - 65535
+        - 65535
+        - 65535
+        - 65535
+      wbCoeffs:
+        - 3.24972
+        - 1.0
+        - 1.6596577
+        - ~
+    rawMetadata:
+      exif:
+        orientation: ~
+        copyright: ~
+        artist: ~
+        lens_spec: ~
+        exposure_time: 800/1000000
+        fnumber: 560/100
+        aperture_value: 49709/10000
+        brightness_value: ~
+        iso_speed_ratings: 160
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: 0/1000
+        date_time_original: "2021:07:21 16:57:27"
+        create_date: "2021:07:21 16:57:27"
+        modify_date: ~
+        exposure_program: 2
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: 1028771/100000
+        max_aperture_value: ~
+        subject_distance: ~
+        metering_mode: ~
+        light_source: 1
+        flash: ~
+        focal_length: 400/10
+        image_number: ~
+        color_space: ~
+        flash_energy: ~
+        exposure_mode: ~
+        white_balance: 1
+        scene_capture_type: ~
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: iXM-RS150F
+      make: Phase One
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

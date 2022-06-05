@@ -1,0 +1,100 @@
+---
+file:
+  fileSize: 13124350
+  fileName: Canon EOS 50D_sRAW1_ISO_100.CR2
+  digest: 7cc0f17c7d8f9eb1798d5a62c0564638
+data:
+  metadata:
+    rawParams:
+      rawWidth: 3344
+      rawHeight: 2178
+      bitDepth: 16
+      crops: ~
+      blacklevels:
+        - 0
+        - 0
+        - 0
+        - 0
+      whitelevels:
+        - 0
+        - 0
+        - 0
+        - 0
+      wbCoeffs:
+        - 1.96875
+        - 1.0
+        - 1.5283203
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ""
+        artist: "Photographer: Krzysztof Karczewski"
+        lens_spec:
+          - 18/1
+          - 55/1
+          - 35/10
+          - 56/10
+        exposure_time: 1/60
+        fnumber: 8/1
+        aperture_value: 393216/65536
+        brightness_value: ~
+        iso_speed_ratings: 100
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: "-1/2"
+        date_time_original: "2017:10:09 12:15:43"
+        create_date: "2017:10:09 12:15:43"
+        modify_date: "2017:10:09 12:15:43"
+        exposure_program: 3
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: "73"
+        sub_sec_time_original: "73"
+        sub_sec_time_digitized: "73"
+        shutter_speed_value: 393216/65536
+        max_aperture_value: ~
+        subject_distance: ~
+        metering_mode: 5
+        light_source: ~
+        flash: 16
+        focal_length: 35/1
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: Canon
+        lens_model: EF-S 18-55mm f/3.5-5.6 IS STM
+        gps: ~
+      model: EOS 50D
+      make: Canon
+      lens:
+        identifiers:
+          name: ~
+          id:
+            - 4146
+            - 0
+          nikon_id: ~
+          olympus_id: ~
+        mount: ef-mount
+        lens_make: Canon
+        lens_model: EF-S 18-55mm f/3.5-5.6 IS STM
+        focal_range:
+          - 18/1
+          - 55/1
+        aperture_range:
+          - 35/10
+          - 56/10
+        lens_name: Canon EF-S 18-55mm f/3.5-5.6 IS STM
+      unique_image_id: ~
+      rating: ~
+

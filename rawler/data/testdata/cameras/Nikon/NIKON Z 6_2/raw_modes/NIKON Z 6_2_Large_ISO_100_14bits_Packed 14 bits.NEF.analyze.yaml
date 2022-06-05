@@ -1,0 +1,106 @@
+---
+file:
+  fileSize: 47216128
+  fileName: NIKON Z 6_2_Large_ISO_100_14bits_Packed 14 bits.NEF
+  digest: ad08c8a7a0e0411937b15737dd5ea5f6
+data:
+  metadata:
+    rawParams:
+      rawWidth: 6064
+      rawHeight: 4040
+      bitDepth: 16
+      crops:
+        p:
+          x: 8
+          y: 8
+        d:
+          w: 6048
+          h: 4024
+      blacklevels:
+        - 1008
+        - 1008
+        - 1008
+        - 1008
+      whitelevels:
+        - 15520
+        - 15520
+        - 15520
+        - 15520
+      wbCoeffs:
+        - 1.7265625
+        - 1.0
+        - 1.3359375
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: CC BY-NC-SA 4.0
+        artist: "Christopher Cameron: cc@ccameron.com"
+        lens_spec:
+          - 24/1
+          - 200/1
+          - 4/1
+          - 63/10
+        exposure_time: 10/400
+        fnumber: 600/100
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 100
+        iso_speed: ~
+        recommended_exposure_index: 100
+        sensitivity_type: 2
+        exposure_bias: 0/6
+        date_time_original: "2020:11:14 09:34:10"
+        create_date: "2020:11:14 09:34:10"
+        modify_date: "2020:11:14 09:34:10"
+        exposure_program: 3
+        timezone_offset: ~
+        offset_time: "-06:00"
+        offset_time_original: "-06:00"
+        offset_time_digitized: "-06:00"
+        sub_sec_time: "92"
+        sub_sec_time_original: "92"
+        sub_sec_time_digitized: "92"
+        shutter_speed_value: ~
+        max_aperture_value: ~
+        subject_distance: ~
+        metering_mode: 5
+        light_source: 9
+        flash: 0
+        focal_length: 700/10
+        image_number: ~
+        color_space: ~
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 1
+        scene_capture_type: 0
+        subject_distance_range: 0
+        owner_name: ~
+        serial_number: "3003171"
+        lens_serial_number: "20016055"
+        lens_make: Nikon
+        lens_model: Nikkor Z 24-200mm f/4-6.3 VR
+        gps: ~
+      model: Z 6 2
+      make: Nikon
+      lens:
+        identifiers:
+          name: ~
+          id:
+            - 18
+            - 0
+          nikon_id: ~
+          olympus_id: ~
+        mount: Z-mount
+        lens_make: Nikon
+        lens_model: Nikkor Z 24-200mm f/4-6.3 VR
+        focal_range:
+          - 24/1
+          - 200/1
+        aperture_range:
+          - 4/1
+          - 63/10
+        lens_name: Nikon Nikkor Z 24-200mm f/4-6.3 VR
+      unique_image_id: ~
+      rating: ~
+

@@ -1,0 +1,85 @@
+---
+file:
+  fileSize: 13953441
+  fileName: NIKON 1 S2_ISO_720_12bits_Lossy (type 2).NEF
+  digest: be6b73fb8584f7044bdffd4cb9d63a75
+data:
+  metadata:
+    rawParams:
+      rawWidth: 4608
+      rawHeight: 3080
+      bitDepth: 16
+      crops:
+        p:
+          x: 8
+          y: 4
+        d:
+          w: 4592
+          h: 3072
+      blacklevels:
+        - 200
+        - 200
+        - 200
+        - 200
+      whitelevels:
+        - 4095
+        - 4095
+        - 4095
+        - 4095
+      wbCoeffs:
+        - 2.515625
+        - 1.0
+        - 1.4179688
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 6
+        copyright: ~
+        artist: ~
+        lens_spec: ~
+        exposure_time: 10/1000
+        fnumber: 56/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 720
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: 2
+        exposure_bias: 0/6
+        date_time_original: "2015:01:03 09:27:59"
+        create_date: "2015:01:03 09:27:59"
+        modify_date: "2015:01:03 09:27:59"
+        exposure_program: 1
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: "01"
+        sub_sec_time_original: "01"
+        sub_sec_time_digitized: "01"
+        shutter_speed_value: ~
+        max_aperture_value: 50/10
+        subject_distance: ~
+        metering_mode: 5
+        light_source: 0
+        flash: 0
+        focal_length: 275/10
+        image_number: ~
+        color_space: ~
+        flash_energy: ~
+        exposure_mode: 1
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: 0
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: 1 S2
+      make: Nikon
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

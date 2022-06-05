@@ -1,0 +1,106 @@
+---
+file:
+  fileSize: 11119678
+  fileName: PENTAX K100D_RAW_ISO_200.PEF
+  digest: 495a98eb3ccda516bc53e75874cea52c
+data:
+  metadata:
+    rawParams:
+      rawWidth: 3040
+      rawHeight: 2024
+      bitDepth: 16
+      crops:
+        p:
+          x: 16
+          y: 8
+        d:
+          w: 3008
+          h: 2008
+      blacklevels:
+        - 128
+        - 127
+        - 127
+        - 127
+      whitelevels:
+        - 3950
+        - 3950
+        - 3950
+        - 3950
+      wbCoeffs:
+        - 1.5
+        - 1.0
+        - 0.9609375
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ~
+        artist: ~
+        lens_spec:
+          - 70/1
+          - 70/1
+          - 24/10
+          - 24/10
+        exposure_time: 1/2500
+        fnumber: 40/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 200
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: 0/10
+        date_time_original: "2018:01:20 11:50:16"
+        create_date: "2018:01:20 11:50:16"
+        modify_date: "2018:01:20 11:50:16"
+        exposure_program: 1
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: ~
+        max_aperture_value: ~
+        subject_distance: ~
+        metering_mode: 5
+        light_source: ~
+        flash: 16
+        focal_length: 70/1
+        image_number: ~
+        color_space: ~
+        flash_energy: ~
+        exposure_mode: 1
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: 3
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: Pentax
+        lens_model: smc PENTAX-DA 70mm F2.4 Limited
+        gps: ~
+      model: K100D
+      make: Pentax
+      lens:
+        identifiers:
+          name: ~
+          id:
+            - 7
+            - 243
+          nikon_id: ~
+          olympus_id: ~
+        mount: k-mount
+        lens_make: Pentax
+        lens_model: smc PENTAX-DA 70mm F2.4 Limited
+        focal_range:
+          - 70/1
+          - 70/1
+        aperture_range:
+          - 24/10
+          - 24/10
+        lens_name: Pentax smc PENTAX-DA 70mm F2.4 Limited
+      unique_image_id: ~
+      rating: ~
+

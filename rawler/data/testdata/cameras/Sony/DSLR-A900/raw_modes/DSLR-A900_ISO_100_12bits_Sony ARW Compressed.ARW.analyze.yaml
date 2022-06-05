@@ -1,0 +1,85 @@
+---
+file:
+  fileSize: 37835264
+  fileName: DSLR-A900_ISO_100_12bits_Sony ARW Compressed.ARW
+  digest: 3e2ff826317181388ad9abd11594b4be
+data:
+  metadata:
+    rawParams:
+      rawWidth: 6080
+      rawHeight: 4048
+      bitDepth: 16
+      crops:
+        p:
+          x: 12
+          y: 8
+        d:
+          w: 6048
+          h: 4032
+      blacklevels:
+        - 128
+        - 128
+        - 128
+        - 128
+      whitelevels:
+        - 3840
+        - 3840
+        - 3840
+        - 3840
+      wbCoeffs:
+        - 2.8085938
+        - 1.0
+        - 1.265625
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ~
+        artist: ~
+        lens_spec: ~
+        exposure_time: 1/125
+        fnumber: 80/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 100
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: 0/10
+        date_time_original: "2008:12:22 16:37:58"
+        create_date: "2008:12:22 16:37:58"
+        modify_date: "2008:12:22 16:37:58"
+        exposure_program: 3
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: ~
+        max_aperture_value: 300/100
+        subject_distance: ~
+        metering_mode: 5
+        light_source: 0
+        flash: 16
+        focal_length: 400/10
+        image_number: ~
+        color_space: 65535
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: DSLR-A900
+      make: Sony
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

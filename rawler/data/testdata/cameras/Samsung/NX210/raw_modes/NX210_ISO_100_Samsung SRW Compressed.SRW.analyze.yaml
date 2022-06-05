@@ -1,0 +1,106 @@
+---
+file:
+  fileSize: 34221984
+  fileName: NX210_ISO_100_Samsung SRW Compressed.SRW
+  digest: ee9a5c84176a927d9e241f74d0f6a2bf
+data:
+  metadata:
+    rawParams:
+      rawWidth: 5632
+      rawHeight: 3720
+      bitDepth: 16
+      crops:
+        p:
+          x: 81
+          y: 17
+        d:
+          w: 5472
+          h: 3648
+      blacklevels:
+        - 0
+        - 0
+        - 0
+        - 0
+      whitelevels:
+        - 3750
+        - 3750
+        - 3750
+        - 3750
+      wbCoeffs:
+        - 2.3867188
+        - 1.0
+        - 1.765625
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ~
+        artist: ~
+        lens_spec:
+          - 60/1
+          - 60/1
+          - 28/10
+          - 28/10
+        exposure_time: 1/640
+        fnumber: 56/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 100
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: 0/10
+        date_time_original: "2012:11:09 12:55:19"
+        create_date: ~
+        modify_date: "2012:11:09 12:55:19"
+        exposure_program: 2
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: ~
+        max_aperture_value: ~
+        subject_distance: ~
+        metering_mode: 2
+        light_source: 0
+        flash: 0
+        focal_length: 60/1
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 2
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: Samsung
+        lens_model: NX 60mm F2.8 Macro ED OIS SSA
+        gps: ~
+      model: NX210
+      make: Samsung
+      lens:
+        identifiers:
+          name: ~
+          id:
+            - 7
+            - 0
+          nikon_id: ~
+          olympus_id: ~
+        mount: NX-mount
+        lens_make: Samsung
+        lens_model: NX 60mm F2.8 Macro ED OIS SSA
+        focal_range:
+          - 60/1
+          - 60/1
+        aperture_range:
+          - 28/10
+          - 28/10
+        lens_name: Samsung NX 60mm F2.8 Macro ED OIS SSA
+      unique_image_id: ~
+      rating: ~
+

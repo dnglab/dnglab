@@ -1,0 +1,85 @@
+---
+file:
+  fileSize: 21048832
+  fileName: DSC-RX10_ISO_320_12bits_Sony ARW Compressed.ARW
+  digest: bb683454917d7c2f1d218d4eaacde57b
+data:
+  metadata:
+    rawParams:
+      rawWidth: 5504
+      rawHeight: 3672
+      bitDepth: 16
+      crops:
+        p:
+          x: 12
+          y: 12
+        d:
+          w: 5472
+          h: 3648
+      blacklevels:
+        - 800
+        - 800
+        - 800
+        - 800
+      whitelevels:
+        - 15360
+        - 15360
+        - 15360
+        - 15360
+      wbCoeffs:
+        - 2.90625
+        - 1.0
+        - 1.546875
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ~
+        artist: ~
+        lens_spec: ~
+        exposure_time: 1/100
+        fnumber: 28/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 320
+        iso_speed: ~
+        recommended_exposure_index: 320
+        sensitivity_type: 2
+        exposure_bias: 0/10
+        date_time_original: "2017:03:30 18:55:56"
+        create_date: "2017:03:30 18:55:56"
+        modify_date: "2017:03:30 18:55:56"
+        exposure_program: 3
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: ~
+        max_aperture_value: 760/256
+        subject_distance: ~
+        metering_mode: 5
+        light_source: 0
+        flash: 16
+        focal_length: 7330/100
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: DSC-RX10
+      make: Sony
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

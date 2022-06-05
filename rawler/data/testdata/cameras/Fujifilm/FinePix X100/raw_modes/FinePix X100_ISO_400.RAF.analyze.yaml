@@ -1,0 +1,85 @@
+---
+file:
+  fileSize: 19940464
+  fileName: FinePix X100_ISO_400.RAF
+  digest: 13786df7a93620fc4fdff614178cd018
+data:
+  metadata:
+    rawParams:
+      rawWidth: 4448
+      rawHeight: 2870
+      bitDepth: 16
+      crops:
+        p:
+          x: 79
+          y: 11
+        d:
+          w: 2848
+          h: 4288
+      blacklevels:
+        - 254
+        - 254
+        - 254
+        - 254
+      whitelevels:
+        - 4000
+        - 4000
+        - 4000
+        - 4000
+      wbCoeffs:
+        - 1.5430464
+        - 1.0
+        - 1.4569536
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ""
+        artist: ~
+        lens_spec: ~
+        exposure_time: 10/4000
+        fnumber: 710/100
+        aperture_value: 566/100
+        brightness_value: ~
+        iso_speed_ratings: 400
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: 1
+        exposure_bias: 0/100
+        date_time_original: "2014:07:21 16:50:55"
+        create_date: "2014:07:21 16:50:55"
+        modify_date: "2014:07:21 16:50:55"
+        exposure_program: 2
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: 865/100
+        max_aperture_value: 200/100
+        subject_distance: ~
+        metering_mode: 5
+        light_source: 0
+        flash: 16
+        focal_length: 2300/100
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: 0
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: FinePix X100
+      make: Fujifilm
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

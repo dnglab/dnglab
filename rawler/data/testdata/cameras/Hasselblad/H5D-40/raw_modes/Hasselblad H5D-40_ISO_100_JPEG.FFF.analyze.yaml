@@ -1,0 +1,85 @@
+---
+file:
+  fileSize: 69826305
+  fileName: Hasselblad H5D-40_ISO_100_JPEG.FFF
+  digest: 0316177a607f8dded2322ab88745a66c
+data:
+  metadata:
+    rawParams:
+      rawWidth: 7410
+      rawHeight: 5586
+      bitDepth: 16
+      crops:
+        p:
+          x: 54
+          y: 16
+        d:
+          w: 7304
+          h: 5478
+      blacklevels:
+        - 256
+        - 256
+        - 256
+        - 256
+      whitelevels:
+        - 65535
+        - 65535
+        - 65535
+        - 65535
+      wbCoeffs:
+        - 2.4660797
+        - 1.0
+        - 1.2957764
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: Hasselblad H5D
+        artist: ~
+        lens_spec: ~
+        exposure_time: 1/90
+        fnumber: 8/1
+        aperture_value: 805306368/134217728
+        brightness_value: ~
+        iso_speed_ratings: 100
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: ~
+        date_time_original: "2015-11-14T14:26:58"
+        create_date: "2015-11-14T14:26:58"
+        modify_date: "2015:11:14 14:26:58"
+        exposure_program: 3
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: 871321773/134217728
+        max_aperture_value: 347393118/100000000
+        subject_distance: 1856/1000
+        metering_mode: 2
+        light_source: ~
+        flash: 0
+        focal_length: 150/1
+        image_number: ~
+        color_space: ~
+        flash_energy: ~
+        exposure_mode: ~
+        white_balance: ~
+        scene_capture_type: ~
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: H5D-40
+      make: Hasselblad
+      lens: ~
+      unique_image_id: 89407197827866320330333806248963617328
+      rating: ~
+

@@ -1,0 +1,85 @@
+---
+file:
+  fileSize: 14609971
+  fileName: NIKON 1 J3_ISO_160_12bits_Lossy (type 2).NEF
+  digest: b0b1494e534d9e7ac3ac3ecc88915067
+data:
+  metadata:
+    rawParams:
+      rawWidth: 4620
+      rawHeight: 3084
+      bitDepth: 16
+      crops:
+        p:
+          x: 6
+          y: 6
+        d:
+          w: 4608
+          h: 3072
+      blacklevels:
+        - 0
+        - 0
+        - 0
+        - 0
+      whitelevels:
+        - 3300
+        - 3300
+        - 3300
+        - 3300
+      wbCoeffs:
+        - 2.1289062
+        - 1.0
+        - 1.6914062
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ~
+        artist: ~
+        lens_spec: ~
+        exposure_time: 10/10000
+        fnumber: 50/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 160
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: 2
+        exposure_bias: 0/6
+        date_time_original: "2014:01:01 15:49:18"
+        create_date: "2014:01:01 15:49:18"
+        modify_date: "2014:01:01 15:49:18"
+        exposure_program: 0
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: "21"
+        sub_sec_time_original: "21"
+        sub_sec_time_digitized: "21"
+        shutter_speed_value: ~
+        max_aperture_value: 36/10
+        subject_distance: ~
+        metering_mode: 5
+        light_source: 0
+        flash: 0
+        focal_length: 100/10
+        image_number: ~
+        color_space: ~
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 0
+        scene_capture_type: 1
+        subject_distance_range: 0
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: 1 J3
+      make: Nikon
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

@@ -1,0 +1,104 @@
+---
+file:
+  fileSize: 42534422
+  fileName: NIKON D800E_ISO_100_14bits_Lossless.NEF
+  digest: d1261dc33f221a0f8559225c81d19d6d
+data:
+  metadata:
+    rawParams:
+      rawWidth: 7424
+      rawHeight: 4924
+      bitDepth: 16
+      crops:
+        p:
+          x: 8
+          y: 6
+        d:
+          w: 7360
+          h: 4912
+      blacklevels:
+        - 0
+        - 0
+        - 0
+        - 0
+      whitelevels:
+        - 15520
+        - 15520
+        - 15520
+        - 15520
+      wbCoeffs:
+        - 1.8398438
+        - 1.0
+        - 1.4335938
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: "Erik Haak/Chasa:Imago/Pano:Meister"
+        artist: Erik Haak
+        lens_spec:
+          - 24/1
+          - 70/1
+          - 28/10
+          - 28/10
+        exposure_time: 10/5000
+        fnumber: 63/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 100
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: 2
+        exposure_bias: 0/6
+        date_time_original: "2018:04:27 13:55:43"
+        create_date: "2018:04:27 13:55:43"
+        modify_date: "2018:04:27 13:55:43"
+        exposure_program: 3
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: "00"
+        sub_sec_time_original: "00"
+        sub_sec_time_digitized: "00"
+        shutter_speed_value: ~
+        max_aperture_value: 30/10
+        subject_distance: ~
+        metering_mode: 5
+        light_source: 0
+        flash: 16
+        focal_length: 700/10
+        image_number: ~
+        color_space: ~
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: 0
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: Tamron
+        lens_model: SP 24-70mm f/2.8 Di VC USD (A007)
+        gps: ~
+      model: D800E
+      make: Nikon
+      lens:
+        identifiers:
+          name: ~
+          id: ~
+          nikon_id: FE 48 37 5C 24 24 DF 0E
+          olympus_id: ~
+        mount: F-mount
+        lens_make: Tamron
+        lens_model: SP 24-70mm f/2.8 Di VC USD (A007)
+        focal_range:
+          - 24/1
+          - 70/1
+        aperture_range:
+          - 28/10
+          - 28/10
+        lens_name: Tamron SP 24-70mm f/2.8 Di VC USD (A007)
+      unique_image_id: ~
+      rating: ~
+

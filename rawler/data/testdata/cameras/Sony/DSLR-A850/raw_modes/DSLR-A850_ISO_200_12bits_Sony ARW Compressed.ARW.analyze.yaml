@@ -1,0 +1,85 @@
+---
+file:
+  fileSize: 37573120
+  fileName: DSLR-A850_ISO_200_12bits_Sony ARW Compressed.ARW
+  digest: 8063810da230dc4dd567842ebbaf117e
+data:
+  metadata:
+    rawParams:
+      rawWidth: 6080
+      rawHeight: 4048
+      bitDepth: 16
+      crops:
+        p:
+          x: 12
+          y: 8
+        d:
+          w: 6048
+          h: 4032
+      blacklevels:
+        - 128
+        - 128
+        - 128
+        - 128
+      whitelevels:
+        - 3840
+        - 3840
+        - 3840
+        - 3840
+      wbCoeffs:
+        - 2.8242188
+        - 1.0
+        - 1.2382812
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ~
+        artist: ~
+        lens_spec: ~
+        exposure_time: 1/1500
+        fnumber: 28/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 200
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: 0/10
+        date_time_original: "2010:06:09 20:18:14"
+        create_date: "2010:06:09 20:18:14"
+        modify_date: "2010:06:09 20:18:14"
+        exposure_program: 1
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: ~
+        max_aperture_value: 300/100
+        subject_distance: ~
+        metering_mode: 2
+        light_source: 0
+        flash: 16
+        focal_length: 700/10
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 1
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: DSLR-A850
+      make: Sony
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

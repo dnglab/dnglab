@@ -1,0 +1,104 @@
+---
+file:
+  fileSize: 24168621
+  fileName: NIKON D7200_ISO_1600_12bits_Lossless.NEF
+  digest: fd82aaefd2f76336534659014f2c17d6
+data:
+  metadata:
+    rawParams:
+      rawWidth: 6016
+      rawHeight: 4016
+      bitDepth: 16
+      crops:
+        p:
+          x: 8
+          y: 8
+        d:
+          w: 6000
+          h: 4000
+      blacklevels:
+        - 150
+        - 150
+        - 150
+        - 150
+      whitelevels:
+        - 3972
+        - 3972
+        - 3972
+        - 3972
+      wbCoeffs:
+        - 1.5507812
+        - 1.0
+        - 2.7695312
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ""
+        artist: ""
+        lens_spec:
+          - 18/1
+          - 105/1
+          - 35/10
+          - 56/10
+        exposure_time: 10/500
+        fnumber: 56/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 1600
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: 2
+        exposure_bias: 0/6
+        date_time_original: "2017:01:12 22:17:30"
+        create_date: "2017:01:12 22:17:30"
+        modify_date: "2017:01:12 22:17:30"
+        exposure_program: 2
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: "55"
+        sub_sec_time_original: "55"
+        sub_sec_time_digitized: "55"
+        shutter_speed_value: ~
+        max_aperture_value: 50/10
+        subject_distance: ~
+        metering_mode: 5
+        light_source: 0
+        flash: 16
+        focal_length: 900/10
+        image_number: ~
+        color_space: ~
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: 0
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: Nikon
+        lens_model: AF-S DX VR Zoom-Nikkor 18-105mm f/3.5-5.6G ED
+        gps: ~
+      model: D7200
+      make: Nikon
+      lens:
+        identifiers:
+          name: ~
+          id: ~
+          nikon_id: 9E 40 2D 6A 2C 3C A0 0E
+          olympus_id: ~
+        mount: F-mount
+        lens_make: Nikon
+        lens_model: AF-S DX VR Zoom-Nikkor 18-105mm f/3.5-5.6G ED
+        focal_range:
+          - 18/1
+          - 105/1
+        aperture_range:
+          - 35/10
+          - 56/10
+        lens_name: Nikon AF-S DX VR Zoom-Nikkor 18-105mm f/3.5-5.6G ED
+      unique_image_id: ~
+      rating: ~
+

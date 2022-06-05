@@ -1,0 +1,85 @@
+---
+file:
+  fileSize: 12781061
+  fileName: NIKON 1 AW1_ISO_160_12bits_Lossy (type 2).NEF
+  digest: a1c28c1c03e6da66c55ca8e4d4cb2d64
+data:
+  metadata:
+    rawParams:
+      rawWidth: 4620
+      rawHeight: 3084
+      bitDepth: 16
+      crops:
+        p:
+          x: 6
+          y: 6
+        d:
+          w: 4608
+          h: 3072
+      blacklevels:
+        - 0
+        - 0
+        - 0
+        - 0
+      whitelevels:
+        - 3300
+        - 3300
+        - 3300
+        - 3300
+      wbCoeffs:
+        - 2.3046875
+        - 1.0
+        - 1.5625
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ~
+        artist: ~
+        lens_spec: ~
+        exposure_time: 10/6400
+        fnumber: 71/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 160
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: 2
+        exposure_bias: 0/6
+        date_time_original: "2016:11:16 12:23:30"
+        create_date: "2016:11:16 12:23:30"
+        modify_date: "2016:11:16 12:23:30"
+        exposure_program: 3
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: "89"
+        sub_sec_time_original: "89"
+        sub_sec_time_digitized: "89"
+        shutter_speed_value: ~
+        max_aperture_value: 30/10
+        subject_distance: ~
+        metering_mode: 5
+        light_source: 0
+        flash: 0
+        focal_length: 100/10
+        image_number: ~
+        color_space: ~
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: 0
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: 1 AW1
+      make: Nikon
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

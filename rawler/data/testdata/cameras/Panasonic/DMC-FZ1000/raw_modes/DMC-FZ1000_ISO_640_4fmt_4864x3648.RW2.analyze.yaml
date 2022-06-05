@@ -1,0 +1,85 @@
+---
+file:
+  fileSize: 21585920
+  fileName: DMC-FZ1000_ISO_640_4fmt_4864x3648.RW2
+  digest: 9893e3c83a0e6a0c070c35b322852101
+data:
+  metadata:
+    rawParams:
+      rawWidth: 5040
+      rawHeight: 3664
+      bitDepth: 16
+      crops:
+        p:
+          x: 8
+          y: 8
+        d:
+          w: 4864
+          h: 3648
+      blacklevels:
+        - 127
+        - 127
+        - 127
+        - 127
+      whitelevels:
+        - 4095
+        - 4095
+        - 4095
+        - 4095
+      wbCoeffs:
+        - 1.5117188
+        - 1.0
+        - 3.0
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ~
+        artist: ~
+        lens_spec: ~
+        exposure_time: 10/600
+        fnumber: 28/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 640
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: 0/100
+        date_time_original: "2017:03:25 16:33:18"
+        create_date: "2017:03:25 16:33:18"
+        modify_date: ~
+        exposure_program: 3
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: "398"
+        sub_sec_time_digitized: "398"
+        shutter_speed_value: ~
+        max_aperture_value: 761/256
+        subject_distance: ~
+        metering_mode: 5
+        light_source: ~
+        flash: 16
+        focal_length: 912/100
+        image_number: ~
+        color_space: ~
+        flash_energy: ~
+        exposure_mode: ~
+        white_balance: ~
+        scene_capture_type: ~
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: DMC-FZ1000
+      make: Panasonic
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

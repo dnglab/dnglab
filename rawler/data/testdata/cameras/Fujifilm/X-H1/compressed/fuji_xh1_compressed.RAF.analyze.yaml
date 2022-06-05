@@ -1,0 +1,89 @@
+---
+file:
+  fileSize: 28640656
+  fileName: fuji_xh1_compressed.RAF
+  digest: dc99398cfc7afe307b869f73c38f9219
+data:
+  metadata:
+    rawParams:
+      rawWidth: 6048
+      rawHeight: 4038
+      bitDepth: 16
+      crops:
+        p:
+          x: 16
+          y: 21
+        d:
+          w: 4000
+          h: 6000
+      blacklevels:
+        - 1023
+        - 1023
+        - 1023
+        - 1023
+      whitelevels:
+        - 16383
+        - 16383
+        - 16383
+        - 16383
+      wbCoeffs:
+        - 1.9602649
+        - 1.0
+        - 1.8410596
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ""
+        artist: ""
+        lens_spec:
+          - 2300/100
+          - 2300/100
+          - 200/100
+          - 200/100
+        exposure_time: 10/14000
+        fnumber: 560/100
+        aperture_value: 500/100
+        brightness_value: ~
+        iso_speed_ratings: 800
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: 1
+        exposure_bias: 0/100
+        date_time_original: "2018:04:23 18:00:52"
+        create_date: "2018:04:23 18:00:52"
+        modify_date: "2018:04:23 18:00:52"
+        exposure_program: 2
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: 1047/100
+        max_aperture_value: 200/100
+        subject_distance: ~
+        metering_mode: 5
+        light_source: 1
+        flash: 0
+        focal_length: 2300/100
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 1
+        scene_capture_type: 0
+        subject_distance_range: 0
+        owner_name: ~
+        serial_number: 81A54343
+        lens_serial_number: 76A51704
+        lens_make: FUJIFILM
+        lens_model: XF23mmF2 R WR
+        gps: ~
+      model: X-H1
+      make: Fujifilm
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

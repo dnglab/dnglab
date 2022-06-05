@@ -1,0 +1,79 @@
+---
+file:
+  fileSize: 9986661
+  fileName: R-D1x_ISO_200_12bits.ERF
+  digest: 0439f6aa26aeaf32355890f61e7e6739
+data:
+  metadata:
+    rawParams:
+      rawWidth: 3040
+      rawHeight: 2024
+      bitDepth: 16
+      crops: ~
+      blacklevels:
+        - 65
+        - 64
+        - 63
+        - 60
+      whitelevels:
+        - 4095
+        - 4095
+        - 4095
+        - 4095
+      wbCoeffs:
+        - 2.1558683
+        - 1.0
+        - 1.7845222
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ~
+        artist: ~
+        lens_spec: ~
+        exposure_time: 1/30
+        fnumber: ~
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 200
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: 0/10
+        date_time_original: "2019:03:05 13:05:32"
+        create_date: "2019:03:05 13:05:32"
+        modify_date: "2019:03:05 13:05:32"
+        exposure_program: 1
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: ~
+        max_aperture_value: ~
+        subject_distance: ~
+        metering_mode: 2
+        light_source: 0
+        flash: 32
+        focal_length: ~
+        image_number: ~
+        color_space: 65535
+        flash_energy: ~
+        exposure_mode: 1
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: R-D1x
+      make: Epson
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

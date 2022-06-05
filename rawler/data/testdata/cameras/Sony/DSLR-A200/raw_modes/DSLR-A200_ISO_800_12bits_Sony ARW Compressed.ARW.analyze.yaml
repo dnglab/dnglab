@@ -1,0 +1,85 @@
+---
+file:
+  fileSize: 11418600
+  fileName: DSLR-A200_ISO_800_12bits_Sony ARW Compressed.ARW
+  digest: 6c998b6d407fc8f451f31ca7ab88b5fa
+data:
+  metadata:
+    rawParams:
+      rawWidth: 3880
+      rawHeight: 2608
+      bitDepth: 16
+      crops:
+        p:
+          x: 4
+          y: 8
+        d:
+          w: 3872
+          h: 2592
+      blacklevels:
+        - 4
+        - 4
+        - 4
+        - 4
+      whitelevels:
+        - 15360
+        - 15360
+        - 15360
+        - 15360
+      wbCoeffs:
+        - 1.3476562
+        - 1.0
+        - 3.125
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ~
+        artist: ~
+        lens_spec: ~
+        exposure_time: 1/25
+        fnumber: 45/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 800
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: 0/10
+        date_time_original: "2017:11:17 22:44:20"
+        create_date: "2017:11:17 22:44:20"
+        modify_date: "2017:11:17 22:44:20"
+        exposure_program: 6
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: ~
+        max_aperture_value: 434/100
+        subject_distance: ~
+        metering_mode: 5
+        light_source: 0
+        flash: 16
+        focal_length: 800/10
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: DSLR-A200
+      make: Sony
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

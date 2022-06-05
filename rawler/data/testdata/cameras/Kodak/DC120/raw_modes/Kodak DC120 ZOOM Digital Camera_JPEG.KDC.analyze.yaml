@@ -1,0 +1,85 @@
+---
+file:
+  fileSize: 135688
+  fileName: Kodak DC120 ZOOM Digital Camera_JPEG.KDC
+  digest: 4766fb151115f91fca098ada11f94a60
+data:
+  metadata:
+    rawParams:
+      rawWidth: 848
+      rawHeight: 976
+      bitDepth: 16
+      crops:
+        p:
+          x: 8
+          y: 8
+        d:
+          w: 832
+          h: 960
+      blacklevels:
+        - 0
+        - 0
+        - 0
+        - 0
+      whitelevels:
+        - 510
+        - 510
+        - 510
+        - 510
+      wbCoeffs:
+        - 1.0
+        - 1.0
+        - 1.0
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: Kodak DC120 ZOOM Digital Camera
+        artist: ~
+        lens_spec: ~
+        exposure_time: 248/100000
+        fnumber: 94/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: ~
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: ~
+        date_time_original: "1997:04:23 07:59:33"
+        create_date: ~
+        modify_date: "1997:04:23 07:59:33"
+        exposure_program: 2
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: ~
+        max_aperture_value: ~
+        subject_distance: 82/10
+        metering_mode: ~
+        light_source: ~
+        flash: 24
+        focal_length: 37/1
+        image_number: ~
+        color_space: ~
+        flash_energy: ~
+        exposure_mode: ~
+        white_balance: ~
+        scene_capture_type: ~
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: DC120
+      make: Kodak
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

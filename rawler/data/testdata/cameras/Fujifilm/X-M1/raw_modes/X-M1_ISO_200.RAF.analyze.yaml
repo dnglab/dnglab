@@ -1,0 +1,89 @@
+---
+file:
+  fileSize: 26089324
+  fileName: X-M1_ISO_200.RAF
+  digest: 753c6b308f725f8a889b148c540fdb28
+data:
+  metadata:
+    rawParams:
+      rawWidth: 5120
+      rawHeight: 3288
+      bitDepth: 16
+      crops:
+        p:
+          x: 28
+          y: 12
+        d:
+          w: 3264
+          h: 4896
+      blacklevels:
+        - 255
+        - 255
+        - 255
+        - 255
+      whitelevels:
+        - 4094
+        - 4094
+        - 4094
+        - 4094
+      wbCoeffs:
+        - 1.8311259
+        - 1.0
+        - 1.8741722
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ""
+        artist: ~
+        lens_spec:
+          - 1800/100
+          - 13500/100
+          - 350/100
+          - 560/100
+        exposure_time: 10/120
+        fnumber: 400/100
+        aperture_value: 400/100
+        brightness_value: ~
+        iso_speed_ratings: 200
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: 1
+        exposure_bias: "-67/100"
+        date_time_original: "2016:04:21 19:46:19"
+        create_date: "2016:04:21 19:46:19"
+        modify_date: "2016:04:21 19:46:19"
+        exposure_program: 3
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: 362/100
+        max_aperture_value: 360/100
+        subject_distance: ~
+        metering_mode: 1
+        light_source: 0
+        flash: 16
+        focal_length: 2540/100
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: 0
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: FUJIFILM
+        lens_model: XF18-135mmF3.5-5.6R LM OIS WR
+        gps: ~
+      model: X-M1
+      make: Fujifilm
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

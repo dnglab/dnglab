@@ -1,0 +1,85 @@
+---
+file:
+  fileSize: 16058749
+  fileName: COOLPIX P7000_ISO_800_12bits_Uncompressed.NRW
+  digest: 4558c7f8a6514b59cfa8a717619c4110
+data:
+  metadata:
+    rawParams:
+      rawWidth: 3664
+      rawHeight: 2742
+      bitDepth: 16
+      crops:
+        p:
+          x: 7
+          y: 2
+        d:
+          w: 3648
+          h: 2736
+      blacklevels:
+        - 0
+        - 0
+        - 0
+        - 0
+      whitelevels:
+        - 4095
+        - 4095
+        - 4095
+        - 4095
+      wbCoeffs:
+        - 1.6829746
+        - 1.0
+        - 2.2191782
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ~
+        artist: ~
+        lens_spec: ~
+        exposure_time: 481/100
+        fnumber: 28/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 800
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: 0/10
+        date_time_original: "2014:08:08 21:56:44"
+        create_date: "2014:08:08 21:56:44"
+        modify_date: "2014:08:08 21:56:44"
+        exposure_program: 3
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: ~
+        max_aperture_value: 30/10
+        subject_distance: ~
+        metering_mode: 6
+        light_source: 0
+        flash: 16
+        focal_length: 60/10
+        image_number: ~
+        color_space: ~
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: 0
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: Coolpix P7000
+      make: Nikon
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

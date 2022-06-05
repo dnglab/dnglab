@@ -1,0 +1,85 @@
+---
+file:
+  fileSize: 10721280
+  fileName: SP510UZ_ISO_50.ORF
+  digest: fb7b74a93fc78210ca75dc420c907303
+data:
+  metadata:
+    rawParams:
+      rawWidth: 3088
+      rawHeight: 2309
+      bitDepth: 16
+      crops:
+        p:
+          x: 6
+          y: 0
+        d:
+          w: 3072
+          h: 2304
+      blacklevels:
+        - 0
+        - 0
+        - 0
+        - 0
+      whitelevels:
+        - 4095
+        - 4095
+        - 4095
+        - 4095
+      wbCoeffs:
+        - 1.796875
+        - 1.0
+        - 1.5351562
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ~
+        artist: ~
+        lens_spec: ~
+        exposure_time: 10/1250
+        fnumber: 45/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 50
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: 0/10
+        date_time_original: "2007:10:21 12:01:48"
+        create_date: "2007:10:21 12:01:48"
+        modify_date: "2007:10:21 12:01:48"
+        exposure_program: 2
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: ~
+        max_aperture_value: 297/100
+        subject_distance: ~
+        metering_mode: 5
+        light_source: 0
+        flash: 16
+        focal_length: 63/10
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: SP510UZ
+      make: OLYMPUS IMAGING CORP.
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

@@ -1,0 +1,79 @@
+---
+file:
+  fileSize: 12150304
+  fileName: DiMAGE A2_ISO_64_Uncompressed.MRW
+  digest: 69fdd6ccfba5a6f55cf1b60ef3ec0ed2
+data:
+  metadata:
+    rawParams:
+      rawWidth: 3272
+      rawHeight: 2456
+      bitDepth: 16
+      crops: ~
+      blacklevels:
+        - 0
+        - 0
+        - 0
+        - 0
+      whitelevels:
+        - 3965
+        - 3965
+        - 3965
+        - 3965
+      wbCoeffs:
+        - 2.0039062
+        - 1.0
+        - 1.4375
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ~
+        artist: ~
+        lens_spec: ~
+        exposure_time: ~
+        fnumber: ~
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: ~
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: ~
+        date_time_original: ~
+        create_date: ~
+        modify_date: "2021:03:09 12:14:27"
+        exposure_program: ~
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: ~
+        max_aperture_value: ~
+        subject_distance: ~
+        metering_mode: ~
+        light_source: ~
+        flash: ~
+        focal_length: ~
+        image_number: ~
+        color_space: ~
+        flash_energy: ~
+        exposure_mode: ~
+        white_balance: ~
+        scene_capture_type: ~
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: DiMAGE A2
+      make: Minolta
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

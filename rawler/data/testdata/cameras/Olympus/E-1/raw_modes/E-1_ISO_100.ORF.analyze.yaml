@@ -1,0 +1,85 @@
+---
+file:
+  fileSize: 10661632
+  fileName: E-1_ISO_100.ORF
+  digest: e8112d83469305d1acf6d9a3a7ee6239
+data:
+  metadata:
+    rawParams:
+      rawWidth: 2624
+      rawHeight: 1966
+      bitDepth: 16
+      crops:
+        p:
+          x: 32
+          y: 23
+        d:
+          w: 2560
+          h: 1920
+      blacklevels:
+        - 65
+        - 65
+        - 65
+        - 65
+      whitelevels:
+        - 4095
+        - 4095
+        - 4095
+        - 4095
+      wbCoeffs:
+        - 1.6875
+        - 1.0
+        - 1.1171875
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ~
+        artist: ~
+        lens_spec: ~
+        exposure_time: 1/200
+        fnumber: 63/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 100
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: 0/10
+        date_time_original: "2006:12:10 11:20:15"
+        create_date: "2006:12:10 11:20:15"
+        modify_date: "2006:12:10 11:20:15"
+        exposure_program: 2
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: ~
+        max_aperture_value: 761/256
+        subject_distance: ~
+        metering_mode: 5
+        light_source: 0
+        flash: 0
+        focal_length: 14/1
+        image_number: ~
+        color_space: 65535
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: E-1
+      make: Olympus
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

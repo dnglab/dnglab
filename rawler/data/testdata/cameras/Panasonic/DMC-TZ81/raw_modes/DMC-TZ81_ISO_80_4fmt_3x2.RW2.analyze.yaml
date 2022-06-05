@@ -1,0 +1,85 @@
+---
+file:
+  fileSize: 21964800
+  fileName: DMC-TZ81_ISO_80_4fmt_3x2.RW2
+  digest: f0374eafcb17a98c8354c0dcc03cf62b
+data:
+  metadata:
+    rawParams:
+      rawWidth: 5040
+      rawHeight: 3688
+      bitDepth: 16
+      crops:
+        p:
+          x: 8
+          y: 8
+        d:
+          w: 4896
+          h: 3672
+      blacklevels:
+        - 127
+        - 127
+        - 127
+        - 128
+      whitelevels:
+        - 4095
+        - 4095
+        - 4095
+        - 4095
+      wbCoeffs:
+        - 2.0859375
+        - 1.0
+        - 1.7382812
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ~
+        artist: ~
+        lens_spec: ~
+        exposure_time: 10/2000
+        fnumber: 56/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 80
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: 0/100
+        date_time_original: "2017:06:14 16:16:22"
+        create_date: "2017:06:14 16:16:22"
+        modify_date: ~
+        exposure_program: 3
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: "837"
+        sub_sec_time_digitized: "837"
+        shutter_speed_value: ~
+        max_aperture_value: 1232/256
+        subject_distance: ~
+        metering_mode: 5
+        light_source: ~
+        flash: 16
+        focal_length: 242/10
+        image_number: ~
+        color_space: ~
+        flash_energy: ~
+        exposure_mode: ~
+        white_balance: ~
+        scene_capture_type: ~
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: DMC-TZ81
+      make: Panasonic
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+
