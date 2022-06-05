@@ -490,7 +490,7 @@ impl<'a> IiqDecoder<'a> {
     let cfa = self
       .camera
       .cfa
-      .map_colors(|row, _col, color| if color == cfa::CFA_COLOR_G && (row & 1 == 1) { 3 } else { color });
+      .map_colors(|row, _col, color| if (color as usize) == cfa::CFA_COLOR_G && (row & 1 == 1) { 3 } else { color });
 
     for flat in senscorr.flats.iter() {
       let nc = match flat.typ {
