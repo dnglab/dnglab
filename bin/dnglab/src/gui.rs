@@ -4,7 +4,7 @@
 use clap::ArgMatches;
 //use log::debug;
 
-pub async fn gui(_options: Option<&ArgMatches<'_>>) -> anyhow::Result<()> {
+pub async fn gui(_options: &ArgMatches) -> anyhow::Result<()> {
   println!("GUI is not available yet");
   Ok(())
 }

@@ -17,6 +17,10 @@ lazy_static! {
   static ref LENSES_DB: Vec<LensDescription> = build_lens_database().expect(FAIL);
 }
 
+pub fn get_lenses() -> &'static Vec<LensDescription> {
+  &LENSES_DB
+}
+
 /// Resolver for Lens information
 #[derive(Default, Debug, Clone)]
 pub struct LensResolver {

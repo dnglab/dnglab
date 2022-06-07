@@ -22,9 +22,8 @@ mod filemap;
 mod ftpconv;
 mod gui;
 mod jobs;
-mod metadata;
+mod lenses;
 
-use clap::AppSettings;
 use fern::colors::{Color, ColoredLevelConfig};
 use thiserror::Error;
 use tokio::runtime::Builder;
@@ -50,8 +49,8 @@ fn main() -> anyhow::Result<()> {
 /// We initialize the fern logger here, create a Clap command line
 /// parser and check for the correct environment.
 async fn main_async() -> anyhow::Result<()> {
-  let app = app::create_app().setting(AppSettings::ArgRequiredElseHelp);
-  let matches = app.get_matches_safe().unwrap_or_else(|e| e.exit());
+  let app = app::create_app();
+  let matches = app.try_get_matches().unwrap_or_else(|e| e.exit());
 
   let colors = ColoredLevelConfig::new().debug(Color::Magenta);
   fern::Dispatch::new()
@@ -82,13 +81,13 @@ async fn main_async() -> anyhow::Result<()> {
     .expect("Invalid fern configuration, exiting");
 
   match matches.subcommand() {
-    ("analyze", Some(sc)) => analyze::analyze(sc).await,
-    ("metadata", Some(sc)) => metadata::metadata(sc).await,
-    ("convert", Some(sc)) => convert::convert(sc).await,
-    ("extract", Some(sc)) => extract::extract(sc).await,
-    ("ftpconvert", Some(sc)) => ftpconv::ftpconvert(sc).await,
-    ("cameras", Some(sc)) => cameras::cameras(sc).await,
-    ("gui", sc) => gui::gui(sc).await,
+    Some(("analyze", sc)) => analyze::analyze(sc).await,
+    Some(("convert", sc)) => convert::convert(sc).await,
+    Some(("extract", sc)) => extract::extract(sc).await,
+    Some(("ftpserver", sc)) => ftpconv::ftpserver(sc).await,
+    Some(("lenses", sc)) => lenses::lenses(sc).await,
+    Some(("cameras", sc)) => cameras::cameras(sc).await,
+    Some(("gui", sc)) => gui::gui(sc).await,
     _ => panic!("Unknown subcommand was used"),
   }
 }

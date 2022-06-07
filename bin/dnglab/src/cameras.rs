@@ -14,7 +14,7 @@ struct CameraRemarks {
 }
 
 /// Print list of supported cameras
-pub async fn cameras(options: &ArgMatches<'_>) -> anyhow::Result<()> {
+pub async fn cameras(options: &ArgMatches) -> anyhow::Result<()> {
   let cameras = global_loader().get_cameras();
 
   let mut map = BTreeMap::<String, BTreeMap<String, CameraRemarks>>::new();
@@ -24,9 +24,8 @@ pub async fn cameras(options: &ArgMatches<'_>) -> anyhow::Result<()> {
     let model = make.entry(key.1.clone()).or_default();
     if !key.2.is_empty() {
       model.modes.push(key.2.clone());
-    } else {
-      model.modes.push("all".into());
     }
+
     if let Some(cam) = cameras.get(key) {
       if let Some(remark) = &cam.remark {
         model.remarks.push(remark.clone());
@@ -45,7 +44,11 @@ pub async fn cameras(options: &ArgMatches<'_>) -> anyhow::Result<()> {
 
     for make in map {
       for model in make.1 {
-        let modes = model.1.modes.iter().sorted().join(", ");
+        let modes = if model.1.modes.is_empty() {
+          "all".into()
+        } else {
+          model.1.modes.iter().sorted().join(", ")
+        };
         let remarks = model.1.remarks.iter().join(", ");
 
         println!("|{:max_make$}  | {:max_model$} | ✅ Yes | {} | {} |", make.0, model.0, modes, remarks);
@@ -57,7 +60,11 @@ pub async fn cameras(options: &ArgMatches<'_>) -> anyhow::Result<()> {
       println!("{:-<80}", "");
       println!("{}: ({} total)", make.0, make.1.len());
       for model in make.1 {
-        let modes = model.1.modes.iter().sorted().join(", ");
+        let modes = if model.1.modes.is_empty() {
+          "all".into()
+        } else {
+          model.1.modes.iter().sorted().join(", ")
+        };
         let remarks = model.1.remarks.iter().join(", ");
         if remarks.is_empty() {
           println!("{:max_make$}  {:max_model$}  {}", make.0, model.0, modes);
