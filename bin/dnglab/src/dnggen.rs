@@ -23,6 +23,7 @@ use rawler::{
 };
 use rayon::prelude::*;
 use std::path::{Path, PathBuf};
+use std::str::FromStr;
 use std::{
   fs::File,
   io::{BufReader, BufWriter, Seek, Write},
@@ -76,12 +77,32 @@ pub enum DngCompression {
   // Lossy
 }
 
+#[derive(Clone, Debug)]
+pub enum CropMode {
+  Best,
+  ActiveArea,
+  None,
+}
+
+impl FromStr for CropMode {
+  type Err = String;
+
+  fn from_str(mode: &str) -> std::result::Result<Self, Self::Err> {
+    Ok(match mode {
+      "best" => Self::Best,
+      "activearea" => Self::ActiveArea,
+      "none" => Self::None,
+      _ => return Err(format!("Unknown CropMode value: {}", mode)),
+    })
+  }
+}
+
 /// Parameters for DNG conversion
 #[derive(Clone, Debug)]
 pub struct ConvertParams {
   pub embedded: bool,
   pub compression: DngCompression,
-  pub crop: bool,
+  pub crop: CropMode,
   pub predictor: u8,
   pub preview: bool,
   pub thumbnail: bool,
@@ -405,27 +426,37 @@ fn dng_put_raw(raw_ifd: &mut DirectoryWriter<'_, '_>, rawimage: &RawImage, param
   let black_level = blacklevel_to_tiff_value(&rawimage.blacklevels);
   let white_level = rawimage.whitelevels[0]; // TODO: use defaults if not available!
 
+  let full_size = Rect::new(Point::new(0, 0), Dim2::new(rawimage.width, rawimage.height));
+
   // Active area or uncropped
-  let active_area = if !params.crop {
-    Some(Rect::new(Point::new(0, 0), Dim2::new(rawimage.width, rawimage.height)))
-  } else {
-    rawimage.active_area
+  let active_area: Rect = match params.crop {
+    CropMode::ActiveArea | CropMode::Best => rawimage.active_area.unwrap_or(full_size),
+    CropMode::None => full_size,
   };
 
   raw_ifd.add_tag(TiffCommonTag::NewSubFileType, 0_u16)?; // Raw
   raw_ifd.add_tag(TiffCommonTag::ImageWidth, rawimage.width as u32)?;
   raw_ifd.add_tag(TiffCommonTag::ImageLength, rawimage.height as u32)?;
-  if let Some(area) = active_area {
-    let data = rect_to_dng_area(&area);
-    raw_ifd.add_tag(DngTag::ActiveArea, data)?;
-  }
 
-  if let Some(crop) = rawimage.crop_area {
-    let active = active_area.unwrap_or(Rect::new(Point::zero(), rawimage.dim()));
-    assert!(crop.p.x >= active.p.x);
-    assert!(crop.p.y >= active.p.y);
-    raw_ifd.add_tag(DngTag::DefaultCropOrigin, [(crop.p.x - active.p.x) as u16, (crop.p.y - active.p.y) as u16])?;
-    raw_ifd.add_tag(DngTag::DefaultCropSize, [crop.d.w as u16, crop.d.h as u16])?;
+  raw_ifd.add_tag(DngTag::ActiveArea, rect_to_dng_area(&active_area))?;
+
+  match params.crop {
+    CropMode::ActiveArea => {
+      let crop = active_area;
+      raw_ifd.add_tag(DngTag::DefaultCropOrigin, [(crop.p.x) as u16, (crop.p.y) as u16])?;
+      raw_ifd.add_tag(DngTag::DefaultCropSize, [crop.d.w as u16, crop.d.h as u16])?;
+    }
+    CropMode::Best => {
+      let crop = rawimage.crop_area.unwrap_or(active_area);
+      assert!(crop.p.x >= active_area.p.x);
+      assert!(crop.p.y >= active_area.p.y);
+      raw_ifd.add_tag(
+        DngTag::DefaultCropOrigin,
+        [(crop.p.x - active_area.p.x) as u16, (crop.p.y - active_area.p.y) as u16],
+      )?;
+      raw_ifd.add_tag(DngTag::DefaultCropSize, [crop.d.w as u16, crop.d.h as u16])?;
+    }
+    CropMode::None => {}
   }
 
   raw_ifd.add_tag(DngTag::WhiteLevel, white_level as u16)?;
@@ -464,12 +495,7 @@ fn dng_put_raw(raw_ifd: &mut DirectoryWriter<'_, '_>, rawimage: &RawImage, param
       raw_ifd.add_tag(TiffCommonTag::SamplesPerPixel, 1_u16)?;
       raw_ifd.add_tag(TiffCommonTag::BitsPerSample, [16_u16])?;
 
-      let cfa = if let Some(area) = active_area {
-        info!("CFA pattern is shifted as active area is not at CFA boundary"); // TODO false
-        rawimage.cfa.shift(area.p.x, area.p.y)
-      } else {
-        rawimage.cfa.clone()
-      };
+      let cfa = rawimage.cfa.shift(active_area.p.x, active_area.p.y);
 
       raw_ifd.add_tag(TiffCommonTag::CFARepeatPatternDim, [cfa.width as u16, cfa.height as u16])?;
       raw_ifd.add_tag(TiffCommonTag::CFAPattern, &cfa.flat_pattern()[..])?;

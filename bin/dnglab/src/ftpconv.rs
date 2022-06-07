@@ -9,10 +9,11 @@ use rawler::RawFile;
 use std::fs::File;
 use std::io::{BufWriter, Cursor};
 use std::path::PathBuf;
+use std::str::FromStr;
 use tokio::runtime::Handle;
 
 use crate::app::convert_bool;
-use crate::dnggen::raw_to_dng_internal;
+use crate::dnggen::{raw_to_dng_internal, CropMode};
 use crate::{
   dnggen::{ConvertParams, DngCompression},
   AppError, PKG_NAME, PKG_VERSION,
@@ -51,13 +52,13 @@ impl FtpCallback for FtpState {
 }
 
 /// Entry point for Clap sub command `ftpconvert`
-pub async fn ftpconvert(options: &ArgMatches<'_>) -> anyhow::Result<()> {
+pub async fn ftpserver(options: &ArgMatches) -> anyhow::Result<()> {
   let mut config = Config::new("foo").unwrap();
 
   let params = ConvertParams {
     predictor: options.value_of("predictor").unwrap_or("1").parse::<u8>().unwrap(),
     embedded: convert_bool(options.value_of("embedded"), true).unwrap(),
-    crop: convert_bool(options.value_of("crop"), true).unwrap(),
+    crop: CropMode::from_str(options.value_of("crop").unwrap()).unwrap(),
     preview: convert_bool(options.value_of("preview"), true).unwrap(),
     thumbnail: convert_bool(options.value_of("thumbnail"), true).unwrap(),
     compression: match options.value_of("compression") {

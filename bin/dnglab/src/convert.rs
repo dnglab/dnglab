@@ -6,9 +6,11 @@ use futures::future::join_all;
 use rawler::decoders::supported_extensions;
 use std::fs::create_dir_all;
 use std::path::PathBuf;
+use std::str::FromStr;
 use std::time::Instant;
 
 use crate::app::convert_bool;
+use crate::dnggen::CropMode;
 use crate::filemap::{FileMap, MapMode};
 use crate::jobs::raw2dng::{JobResult, Raw2DngJob};
 use crate::jobs::Job;
@@ -18,7 +20,7 @@ use crate::{
 };
 
 /// Entry point for Clap sub command `convert`
-pub async fn convert(options: &ArgMatches<'_>) -> anyhow::Result<()> {
+pub async fn convert(options: &ArgMatches) -> anyhow::Result<()> {
   let now = Instant::now();
   let in_path = PathBuf::from(options.value_of("INPUT").expect("INPUT not available"));
   let out_path = PathBuf::from(options.value_of("OUTPUT").expect("OUTPUT not available"));
@@ -87,7 +89,7 @@ pub async fn convert(options: &ArgMatches<'_>) -> anyhow::Result<()> {
 }
 
 /// Convert given raw file to dng file
-fn generate_job(entry: &FileMap, options: &ArgMatches<'_>) -> Result<Vec<Raw2DngJob>> {
+fn generate_job(entry: &FileMap, options: &ArgMatches) -> Result<Vec<Raw2DngJob>> {
   let (do_batch, index) = match options.value_of("index") {
     Some(index) => {
       if index.to_lowercase().eq("all") {
@@ -108,7 +110,7 @@ fn generate_job(entry: &FileMap, options: &ArgMatches<'_>) -> Result<Vec<Raw2Dng
     let params = ConvertParams {
       predictor: options.value_of("predictor").unwrap_or("1").parse::<u8>().unwrap(),
       embedded: convert_bool(options.value_of("embedded"), true).unwrap(),
-      crop: convert_bool(options.value_of("crop"), true).unwrap(),
+      crop: CropMode::from_str(options.value_of("crop").unwrap()).unwrap(),
       preview: convert_bool(options.value_of("preview"), true).unwrap(),
       thumbnail: convert_bool(options.value_of("thumbnail"), true).unwrap(),
       compression: match options.value_of("compression") {

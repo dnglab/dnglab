@@ -20,7 +20,7 @@ use crate::{AppError, Result};
 const SUPPORTED_FILE_EXT: [&str; 1] = ["DNG"];
 
 /// Entry point for Clap sub command `extract`
-pub async fn extract(options: &ArgMatches<'_>) -> anyhow::Result<()> {
+pub async fn extract(options: &ArgMatches) -> anyhow::Result<()> {
   let now = Instant::now();
   let in_path = PathBuf::from(options.value_of("INPUT").expect("INPUT not available"));
   let out_path = PathBuf::from(options.value_of("OUTPUT").expect("OUTPUT not available"));
@@ -97,7 +97,7 @@ pub async fn extract(options: &ArgMatches<'_>) -> anyhow::Result<()> {
 }
 
 /// Convert given raw file to dng file
-fn generate_job(entry: &FileMap, options: &ArgMatches<'_>, use_orig_filename: bool) -> Result<ExtractRawJob> {
+fn generate_job(entry: &FileMap, options: &ArgMatches, use_orig_filename: bool) -> Result<ExtractRawJob> {
   let mut in_file = BufReader::new(File::open(&entry.src)?);
   let file = GenericTiffReader::new(&mut in_file, 0, 0, None, &[]).map_err(|e| AppError::General(e.to_string()))?;
 
