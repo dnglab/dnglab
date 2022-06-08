@@ -16,33 +16,33 @@ inspector = []
 samplecheck = []
 
 [dependencies]
-bitstream-io = "1.0.0"
+bitstream-io = "1"
 byteorder = "1"
 enumn = "0.1"
-hex = "0.4.3"
+hex = "0.4"
 image = "0.24"
-num_enum = "0.5.7"
+num_enum = "0.5"
 itertools = "0.10"
 lazy_static = "1"
-libc = "0.2.0"
-libflate = "1.1.0"
+libc = "0.2"
+libflate = "1.1"
 log = "0.4"
-md5 = "0.7.0"
+md5 = "0.7"
 rayon = "1"
 serde = {version = "1.0", features = ["derive"]}
 serde_json = "1.0"
-thiserror = "1.0.25"
+thiserror = "1.0"
 toml = "0.5"
 uuid = {version = "1.0", features = ["serde", "v4"]}
-tokio = { version = "1.11.0", features = ["full"] }
-async-trait = "0.1.51"
+tokio = { version = "1.11", features = ["full"] }
+async-trait = "0.1"
 futures = "0.3"
-multiversion = "0.6.1"
+multiversion = "0.6"
 backtrace = "0.3"
 
 [dev-dependencies]
 serde_yaml = "0.8"
-env_logger = "0.9.0"
+env_logger = "0.9"
 criterion = {version = "0.3", features = ["html_reports"]}
 
 [build-dependencies]
