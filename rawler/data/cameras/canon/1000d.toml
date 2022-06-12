@@ -1,0 +1,20 @@
+make = "Canon"
+model = "Canon EOS 1000D"
+clean_make = "Canon"
+clean_model = "EOS 1000D"
+
+model_aliases = [
+  ["Canon EOS DIGITAL REBEL XS", "Rebel XS"],
+  ["Canon EOS REBEL XS", "Rebel XS"],
+  ["Canon EOS Kiss Digital F", "Kiss F"],
+  ["Canon EOS Kiss F", "Kiss F"],
+]
+
+hints = ["invalid_blacklevel"]
+color_pattern = "RGGB"
+blackareav = [0, 41]
+active_area = [42, 18, 0, 2]
+
+[cameras.color_matrix]
+A = [0.7599, -0.2192, -0.0386, -0.6082, 1.2908, 0.3584, -0.0068, 0.0963, 0.7356] # TODO check both
+D65 = [0.6772, -0.0114, -0.0977, -0.7818, 1.5123, 0.2927, -0.1244, 0.1437, 0.7533]

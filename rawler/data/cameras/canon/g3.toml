@@ -1,0 +1,15 @@
+make = "Canon"
+model = "Canon PowerShot G3"
+clean_make = "Canon"
+clean_model = "PowerShot G3"
+whitepoint = 4095
+color_pattern = "RGGB"
+active_area = [12,6,52,2]
+blackareav = [2326,50]
+
+[cameras.params]
+wb_offset = 60
+
+[cameras.color_matrix]
+A = [1.0899, -0.4654, -0.0172, -0.6668, 1.3907, 0.3058, -0.1456, 0.2032, 0.8278]
+D65 = [0.9326, -0.2882, -0.1084, -0.794, 1.5447, 0.2677, -0.262, 0.309, 0.774]

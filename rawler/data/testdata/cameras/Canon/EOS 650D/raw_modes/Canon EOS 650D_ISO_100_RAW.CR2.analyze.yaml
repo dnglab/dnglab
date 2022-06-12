@@ -1,0 +1,86 @@
+---
+file:
+  fileSize: 21269745
+  fileName: Canon EOS 650D_ISO_100_RAW.CR2
+  digest: 10b036c0f8efa83543b104d33fd0128d
+data:
+  metadata:
+    rawParams:
+      rawWidth: 5280
+      rawHeight: 3528
+      bitDepth: 16
+      crops:
+        p:
+          x: 84
+          y: 64
+        d:
+          w: 5184
+          h: 3456
+      blacklevels:
+        levels:
+          - 2047/1
+          - 2047/1
+          - 2047/1
+          - 2047/1
+        cpp: 1
+        width: 2
+        height: 2
+      whitelevels:
+        - 12277
+      wbCoeffs:
+        - 2.1074219
+        - 1.0
+        - 1.6621094
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ""
+        artist: ""
+        lens_spec: ~
+        exposure_time: 1/320
+        fnumber: 5/1
+        aperture_value: 303104/65536
+        brightness_value: ~
+        iso_speed_ratings: 100
+        iso_speed: ~
+        recommended_exposure_index: 100
+        sensitivity_type: 2
+        exposure_bias: "-2/1"
+        date_time_original: "2014:09:27 18:25:23"
+        create_date: "2014:09:27 18:25:23"
+        modify_date: "2014:09:27 18:25:23"
+        exposure_program: 3
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: "93"
+        sub_sec_time_original: "93"
+        sub_sec_time_digitized: "93"
+        shutter_speed_value: 548864/65536
+        max_aperture_value: ~
+        subject_distance: ~
+        metering_mode: 6
+        light_source: ~
+        flash: 16
+        focal_length: 24/1
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ""
+        serial_number: "073053009450"
+        lens_serial_number: "0000000000"
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: EOS 650D
+      make: Canon
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

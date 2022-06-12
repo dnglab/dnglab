@@ -1,0 +1,15 @@
+# CRW
+make = "Canon"
+model = "PowerShot A620"
+clean_make = "Canon"
+clean_model = "PowerShot A620"
+whitepoint = 1023
+color_pattern = "RGGB"
+active_area = [36,12,4,0]
+filesize = 9219600
+raw_width = 3152
+raw_height = 2340
+blackareav = [0,30]
+
+[cameras.color_matrix]
+D65 = [1.5265, -0.6193, -0.1558, -0.4125, 1.2116, 0.2010, -0.0888, 0.1639, 0.5220]

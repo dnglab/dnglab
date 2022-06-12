@@ -1,0 +1,20 @@
+make = "Canon"
+model = "Canon EOS 1200D"
+clean_make = "Canon"
+clean_model = "EOS 1200D"
+
+model_aliases = [
+  ["Canon EOS DIGITAL REBEL T5", "Rebel T5"],
+  ["Canon EOS REBEL T5", "Rebel T5"],
+  ["Canon EOS Kiss Digital X70", "Kiss X70"],
+  ["Canon EOS Kiss X70", "Kiss X70"],
+]
+
+color_pattern = "GBRG"
+blackareav = [0, 140]
+blackareah = [4, 44]
+active_area = [142, 51, 0, 0]
+
+[cameras.color_matrix]
+A = [0.7164, -0.1916, -0.0431, -0.3361, 1.06, 0.32, -0.0272, 0.1058, 0.6442]
+D65 = [0.6461, -0.0907, -0.0882, -0.43, 1.2184, 0.2378, -0.0819, 0.1944, 0.5931]

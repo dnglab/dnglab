@@ -1,0 +1,122 @@
+---
+file:
+  fileSize: 15784172
+  fileName: Canon PowerShot G7 X Mark III_CRAW_ISO_200_nocrop_nodual.CR3
+  digest: db3f76ff4ee584d7012b5498f7195ac5
+data:
+  metadata:
+    rawParams:
+      rawWidth: 5632
+      rawHeight: 3710
+      bitDepth: 16
+      crops:
+        p:
+          x: 132
+          y: 40
+        d:
+          w: 5472
+          h: 3648
+      blacklevels:
+        levels:
+          - 2048/1
+          - 2048/1
+          - 2048/1
+          - 2048/1
+        cpp: 1
+        width: 2
+        height: 2
+      whitelevels:
+        - 14335
+      wbCoeffs:
+        - 1.9208984
+        - 1.0
+        - 2.178711
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: CC-0
+        artist: Andreas Kreitenmeyer
+        lens_spec: ~
+        exposure_time: 1/60
+        fnumber: 25/10
+        aperture_value: 172032/65536
+        brightness_value: ~
+        iso_speed_ratings: 200
+        iso_speed: ~
+        recommended_exposure_index: 200
+        sensitivity_type: 2
+        exposure_bias: 0/1
+        date_time_original: "2021:05:25 16:03:07"
+        create_date: "2021:05:25 16:03:07"
+        modify_date: "2021:05:25 16:03:07"
+        exposure_program: 2
+        timezone_offset: ~
+        offset_time: "+01:00"
+        offset_time_original: "+01:00"
+        offset_time_digitized: "+01:00"
+        sub_sec_time: "44"
+        sub_sec_time_original: "44"
+        sub_sec_time_digitized: "44"
+        shutter_speed_value: 393216/65536
+        max_aperture_value: ~
+        subject_distance: ~
+        metering_mode: 5
+        light_source: ~
+        flash: 0
+        focal_length: 15602/1000
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ""
+        serial_number: "883052001087"
+        lens_serial_number: "0000000000"
+        lens_make: ~
+        lens_model: ~
+        gps:
+          gps_version_id:
+            - 2
+            - 3
+            - 0
+            - 0
+          gps_latitude_ref: ~
+          gps_latitude: ~
+          gps_longitude_ref: ~
+          gps_longitude: ~
+          gps_altitude_ref: ~
+          gps_altitude: ~
+          gps_timestamp: ~
+          gps_satellites: ~
+          gps_status: ~
+          gps_measure_mode: ~
+          gps_dop: ~
+          gps_speed_ref: ~
+          gps_speed: ~
+          gps_track_ref: ~
+          gps_track: ~
+          gps_img_direction_ref: ~
+          gps_img_direction: ~
+          gps_map_datum: ~
+          gps_dest_latitude_ref: ~
+          gps_dest_latitude: ~
+          gps_dest_longitude_ref: ~
+          gps_dest_longitude: ~
+          gps_dest_bearing_ref: ~
+          gps_dest_bearing: ~
+          gps_dest_distance_ref: ~
+          gps_dest_distance: ~
+          gps_processing_method: ~
+          gps_area_information: ~
+          gps_date_stamp: ~
+          gps_differential: ~
+          gps_h_positioning_error: ~
+      model: PowerShot G7 X Mark III
+      make: Canon
+      lens: ~
+      unique_image_id: 204010196756811463216053891539304554280
+      rating: ~
+

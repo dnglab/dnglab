@@ -1,0 +1,12 @@
+make = "Canon"
+model = "Canon PowerShot Pro1"
+clean_make = "Canon"
+clean_model = "PowerShot Pro1"
+whitepoint = 4095
+color_pattern = "RGGB"
+hints = ["wb_mangle"]
+blackareav = [3294,50]
+
+[cameras.color_matrix]
+A = [1.2248, -0.6026, 0.044, -0.6091, 1.3201, 0.324, -0.047, 0.0647, 0.7059]
+D65 = [1.0062, -0.3522, -0.1, -0.7643, 1.5117, 0.273, -0.0765, 0.0817, 0.7322]

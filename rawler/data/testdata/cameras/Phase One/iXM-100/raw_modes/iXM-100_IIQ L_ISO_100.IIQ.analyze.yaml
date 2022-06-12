@@ -11,14 +11,15 @@ data:
       bitDepth: 16
       crops: ~
       blacklevels:
-        - 0
-        - 0
-        - 0
-        - 0
+        levels:
+          - 0/1
+          - 0/1
+          - 0/1
+          - 0/1
+        cpp: 1
+        width: 2
+        height: 2
       whitelevels:
-        - 65535
-        - 65535
-        - 65535
         - 65535
       wbCoeffs:
         - 3.24

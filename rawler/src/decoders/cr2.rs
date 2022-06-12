@@ -38,11 +38,17 @@ use crate::RawImage;
 use crate::RawLoader;
 use crate::RawlerError;
 
+use super::BlackLevel;
 use super::Camera;
 use super::Decoder;
 use super::RawDecodeParams;
 use super::RawMetadata;
 use super::Result;
+use super::WhiteLevel;
+
+mod colordata;
+
+pub(crate) use colordata::parse_colordata;
 
 const CANON_EF_MOUNT: &str = "ef-mount";
 const CANON_CN_MOUNT: &str = "cn-mount";
@@ -89,7 +95,8 @@ impl<'a> Decoder for Cr2Decoder<'a> {
         (raw, fetch_tiff_tag!(raw, TiffCommonTag::StripOffsets).force_usize(0))
       } else if let Some(raw) = self.tiff.find_first_ifd(TiffCommonTag::CFAPattern) {
         (raw, fetch_tiff_tag!(raw, TiffCommonTag::StripOffsets).force_usize(0))
-      } else if let Some(off) = self.tiff.root_ifd().get_entry(TiffCommonTag::Cr2OldOffset) {
+      } else if let Some(off) = self.makernote.as_ref().and_then(|md| md.get_entry(TiffCommonTag::Cr2OldOffset)) {
+        // Old Canon TIF files contains the offset in makernote tags
         (self.tiff.root_ifd(), off.value.force_usize(0))
       } else {
         return Err(RawlerError::General("CR2: Couldn't find raw info".to_string()));
@@ -102,7 +109,7 @@ impl<'a> Decoder for Cr2Decoder<'a> {
       .and_then(|len| file.subview(offset as u64, len - offset as u64))
       .map_err(|e| RawlerError::General(format!("I/O error: failed to read raw data from file: {}", e)))?;
 
-    let (width, height, cpp, image) = {
+    let (cpp, image) = {
       let decompressor = LjpegDecompressor::new(&src)?;
       let ljpegwidth = decompressor.width();
       let mut width = ljpegwidth;
@@ -112,8 +119,9 @@ impl<'a> Decoder for Cr2Decoder<'a> {
       debug!("CR2 final cpp: {}", cpp);
       debug!("CR2 dimension: {},{}", width / cpp, height);
       let mut ljpegout = alloc_image_plain!(width, height, dummy);
-
-      decompressor.decode(ljpegout.pixels_mut(), 0, width, width, height, dummy)?;
+      if !dummy {
+        decompressor.decode(ljpegout.pixels_mut(), 0, width, width, height, dummy)?;
+      }
 
       //crate::devtools::dump_image_u16(&ljpegout, width, height, "/tmp/cr2_before_striped.pnm");
 
@@ -158,9 +166,17 @@ impl<'a> Decoder for Cr2Decoder<'a> {
         if canoncol.value.force_usize(0) == 0 {
           if cpp == 3 {
             self.convert_to_rgb(file, camera, &decompressor, width, height, ljpegout.pixels_mut(), dummy)?;
-            width /= 3;
+            //width /= 3;
           }
-          (width, height, cpp, ljpegout)
+          ljpegout.update_dimension(Dim2::new(width, height));
+          (cpp, ljpegout)
+          /*
+          if camera.find_hint("double_line") {
+            (width, height, cpp, PixU16::new_with(ljpegout.into_inner(), width, height))
+          } else {
+            (width, height, cpp, ljpegout)
+          }
+           */
         } else {
           let mut out = alloc_image_plain!(width, height, dummy);
           if !dummy {
@@ -224,36 +240,47 @@ impl<'a> Decoder for Cr2Decoder<'a> {
           }
           if cpp == 3 {
             self.convert_to_rgb(file, camera, &decompressor, width, height, out.pixels_mut(), dummy)?;
-            width /= 3;
+            //width /= 3;
           }
-          (width, height, cpp, out)
+          (cpp, out)
+          //(width, height, cpp, out)
         }
       } else {
-        (width, height, cpp, ljpegout)
+        ljpegout.update_dimension(Dim2::new(width, height));
+        (cpp, ljpegout)
+        // (width, height, cpp, PixU16::new_with(ljpegout.into_inner(), width, height))
       }
     };
 
     let wb = self.get_wb(file, camera)?;
     debug!("CR2 WB: {:?}", wb);
-    assert_eq!(image.width, width * cpp);
-    let mut img = RawImage::new(camera.clone(), cpp, wb, image, dummy);
+    //assert_eq!(image.width, width * cpp);
 
-    img.crop_area = Some(self.get_sensor_area(camera, width, height)?);
-    if let Some(forced_area) = camera.crop_area {
-      let area = Rect::new_with_borders(Dim2::new(width, height), &forced_area);
-      debug!("Metadata says crop area is: {:?}, overriding with forced: {:?}", img.crop_area, area);
-      img.crop_area = Some(area);
+    let blacklevel = self.get_blacklevel(camera, cpp)?;
+    let whitelevel = self.get_whitelevel(cpp)?;
+
+    let mut img = RawImage::new(camera.clone(), image, cpp, wb, blacklevel, whitelevel, dummy);
+
+    if let Some(file_crop) = self.get_sensor_area()? {
+      assert!(
+        img.crop_area.is_none(),
+        "Camera {} has embedded crop params, remove crop from config file!",
+        self.camera.clean_make
+      );
+      img.crop_area = Some(file_crop);
+    } else {
+      //panic!("Camera {} has no embedded crops, but all CR2 should contain them?!", self.camera.clean_make);
+      // 1D and D2000C has no crops!
     }
 
-    img.blacklevels = self.get_blacklevel(file, camera)?;
-    img.whitelevels = self.get_whitelevel(file, camera)?;
     if cpp == 3 {
-      img.cpp = 3;
-      img.crop_area = None;
-      //img.blacklevels = [0, 0, 0, 0];
-      //img.whitelevels = [65535, 65535, 65535, 65535];
+      // We have a sRAW or mRAW: the active_area from camera config is invalid now!
+      // We just apply the crop_area that comes from metadata, which is correct.
+      img.active_area = img.crop_area;
     }
 
+    debug!("Blacklevel: {:?}", img.blacklevel);
+    debug!("Whitelevel: {:?}", img.whitelevel);
     debug!("Black areas: {:?}", img.blackareas);
     debug!("Active area: {:?}", img.active_area);
     debug!("Crop area: {:?}", img.crop_area);
@@ -327,6 +354,7 @@ impl<'a> Cr2Decoder<'a> {
 
     let exif = Self::new_exif_ifd(file, &tiff, rawloader)?;
     let makernote = Self::new_makernote(file, &tiff, &exif, rawloader)?;
+
     let mode = Self::get_mode(&makernote)?;
 
     debug!("sRaw quality: {:?}", mode);
@@ -505,22 +533,10 @@ impl<'a> Cr2Decoder<'a> {
 
   /// Get the white balance coefficents from COLORDATA tag
   /// The offsets are different, so we take the offset from camera params.
-  fn get_wb(&self, rawfile: &mut RawFile, cam: &Camera) -> Result<[f32; 4]> {
-    if let Some(levels) = self
-      .makernote
-      .as_ref()
-      .and_then(|mn| mn.get_entry_raw(Cr2MakernoteTag::ColorData, rawfile.inner()).transpose())
-      .transpose()?
-    {
-      if let Some(offset) = cam.param_usize("colordata_wbcoeffs") {
-        let raw_wb = [
-          levels.get_force_u16(offset) as f32,
-          levels.get_force_u16(offset + 1) as f32,
-          levels.get_force_u16(offset + 2) as f32,
-          levels.get_force_u16(offset + 3) as f32,
-        ];
-        return Ok(normalize_wb(raw_wb));
-      }
+  fn get_wb(&self, rawfile: &mut RawFile, _cam: &Camera) -> Result<[f32; 4]> {
+    if let Some(colordata) = self.makernote.as_ref().and_then(|mn| mn.get_entry(Cr2MakernoteTag::ColorData)) {
+      let raw_wb = colordata::parse_colordata(colordata)?.wb;
+      return Ok(normalize_wb(raw_wb));
     }
 
     // TODO: check if these tags belongs to RootIFD or makernote
@@ -541,49 +557,37 @@ impl<'a> Cr2Decoder<'a> {
 
   /// Get the black level from COLORDATA tag
   /// The offsets are different, so we take the offset from camera params.
-  fn get_blacklevel(&self, rawfile: &mut RawFile, cam: &Camera) -> Result<[u16; 4]> {
-    if let Some(levels) = self
-      .makernote
-      .as_ref()
-      .and_then(|mn| mn.get_entry_raw(Cr2MakernoteTag::ColorData, rawfile.inner()).transpose())
-      .transpose()?
-    {
-      if let Some(offset) = cam.param_usize("colordata_blacklevel") {
-        return Ok([
-          levels.get_force_u16(offset),
-          levels.get_force_u16(offset),
-          levels.get_force_u16(offset),
-          levels.get_force_u16(offset),
-        ]);
+  fn get_blacklevel(&self, cam: &Camera, cpp: usize) -> Result<Option<BlackLevel>> {
+    if let Some(colordata) = self.makernote.as_ref().and_then(|mn| mn.get_entry(Cr2MakernoteTag::ColorData)) {
+      if let Some(blacklevel) = colordata::parse_colordata(colordata)?.blacklevel {
+        match cpp {
+          1 => return Ok(Some(BlackLevel::new(&blacklevel, cam.cfa.width, cam.cfa.height, cpp))),
+          3 => {
+            let avg = blacklevel.into_iter().sum::<u16>() / 4;
+            let levels: [u16; 3] = [avg, avg, avg];
+            return Ok(Some(BlackLevel::new(&levels, 1, 1, cpp)));
+          }
+          _ => unreachable!(),
+        }
       }
     }
-    Ok(cam.blacklevels)
+    Ok(None)
   }
 
   /// Get the white level from COLORDATA tag
   /// The offsets are different, so we take the offset from camera params.
-  fn get_whitelevel(&self, rawfile: &mut RawFile, cam: &Camera) -> Result<[u16; 4]> {
-    if let Some(levels) = self
-      .makernote
-      .as_ref()
-      .and_then(|mn| mn.get_entry_raw(Cr2MakernoteTag::ColorData, rawfile.inner()).transpose())
-      .transpose()?
-    {
-      if let Some(offset) = cam.param_usize("colordata_whitelevel") {
-        return Ok([
-          levels.get_force_u16(offset),
-          levels.get_force_u16(offset),
-          levels.get_force_u16(offset),
-          levels.get_force_u16(offset),
-        ]);
+  fn get_whitelevel(&self, cpp: usize) -> Result<Option<WhiteLevel>> {
+    if let Some(colordata) = self.makernote.as_ref().and_then(|mn| mn.get_entry(Cr2MakernoteTag::ColorData)) {
+      if let Some(whitelevel) = colordata::parse_colordata(colordata)?.specular_whitelevel {
+        return Ok(Some(vec![whitelevel; cpp]));
       }
     }
-    Ok(cam.whitelevels)
+    Ok(None)
   }
 
   /// Get the SENSOR information, if available
   /// If not, fall back to sensor dimension reported by width/hight values.
-  fn get_sensor_area(&self, _cam: &Camera, width: usize, height: usize) -> Result<Rect> {
+  fn get_sensor_area(&self) -> Result<Option<Rect>> {
     if let Some(sensorinfo) = self.makernote.as_ref().and_then(|mn| mn.get_entry(Cr2MakernoteTag::SensorInfo)) {
       match &sensorinfo.value {
         Value::Short(v) => {
@@ -594,12 +598,12 @@ impl<'a> Cr2Decoder<'a> {
           let top = v[6] as usize;
           let right = v[7] as usize;
           let bottom = v[8] as usize;
-          Ok(Rect::new_with_points(Point::new(left, top), Point::new(right + 1, bottom + 1)))
+          Ok(Some(Rect::new_with_points(Point::new(left, top), Point::new(right + 1, bottom + 1))))
         }
         _ => Err(RawlerError::General("Makernote contains invalid type for SensorInfo tag".to_string())),
       }
     } else {
-      Ok(Rect::new(Point::zero(), Dim2::new(width, height)))
+      Ok(None)
     }
   }
 

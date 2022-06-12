@@ -1,0 +1,107 @@
+---
+file:
+  fileSize: 12841893
+  fileName: Canon EOS 5D_ISO_400.CR2
+  digest: 6de7025112be71654ad5ea71a4f9054d
+data:
+  metadata:
+    rawParams:
+      rawWidth: 4476
+      rawHeight: 2954
+      bitDepth: 16
+      crops:
+        p:
+          x: 100
+          y: 39
+        d:
+          w: 4368
+          h: 2912
+      blacklevels:
+        levels:
+          - 128/1
+          - 128/1
+          - 128/1
+          - 128/1
+        cpp: 1
+        width: 2
+        height: 2
+      whitelevels:
+        - 3692
+      wbCoeffs:
+        - 2.1074219
+        - 1.0
+        - 1.3496094
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ~
+        artist: ~
+        lens_spec:
+          - 50/1
+          - 50/1
+          - 14/10
+          - 14/10
+        exposure_time: 1/1250
+        fnumber: 32/10
+        aperture_value: 221184/65536
+        brightness_value: ~
+        iso_speed_ratings: 400
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: 0/1
+        date_time_original: "2013:06:08 11:14:40"
+        create_date: "2013:06:08 11:14:40"
+        modify_date: "2013:06:08 11:14:40"
+        exposure_program: 3
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: 679936/65536
+        max_aperture_value: ~
+        subject_distance: ~
+        metering_mode: 0
+        light_source: ~
+        flash: 16
+        focal_length: 50/1
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: Canon
+        lens_model: EF 50mm f/1.4 USM
+        gps: ~
+      model: EOS 5D
+      make: Canon
+      lens:
+        identifiers:
+          name: EF50mm f/1.4 USM
+          id:
+            - 198
+            - 0
+          nikon_id: ~
+          olympus_id: ~
+        mount: ef-mount
+        lens_make: Canon
+        lens_model: EF 50mm f/1.4 USM
+        focal_range:
+          - 50/1
+          - 50/1
+        aperture_range:
+          - 14/10
+          - 14/10
+        lens_name: Canon EF 50mm f/1.4 USM
+      unique_image_id: ~
+      rating: ~
+

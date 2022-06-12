@@ -1,0 +1,16 @@
+# CRW
+make = "Canon"
+model = "Canon EOS 10D"
+clean_make = "Canon"
+clean_model = "EOS 10D"
+blackpoint = 124
+whitepoint = 4000
+color_pattern = "RGGB"
+active_area = [64, 12, 0, 0]
+
+[cameras.color_matrix]
+A = [0.912, -0.3127, -0.0453, -0.6868, 1.4138, 0.3011, -0.1708, 0.2368, 0.9501]
+D65 = [0.825, -0.2044, -0.1127, -0.8092, 1.5606, 0.2664, -0.2893, 0.3453, 0.8348]
+
+[cameras.params]
+wb_offset = 1

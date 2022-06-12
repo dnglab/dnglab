@@ -1,0 +1,15 @@
+# CRW
+make = "Canon"
+model = "PowerShot A720 IS"
+clean_make = "Canon"
+clean_model = "PowerShot A720 IS"
+whitepoint = 1023
+color_pattern = "GBRG"
+active_area = [6,5,32,3]
+filesize = 10341600
+raw_width = 3336
+raw_height = 2480
+blackareav = [3306,30]
+
+[cameras.color_matrix]
+D65 = [1.4573, -0.5482, -0.1546, -0.1266, 0.9799, 0.1468, -0.1040, 0.1912, 0.3810]

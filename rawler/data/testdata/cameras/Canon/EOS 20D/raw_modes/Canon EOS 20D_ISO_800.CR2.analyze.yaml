@@ -1,0 +1,83 @@
+---
+file:
+  fileSize: 7489116
+  fileName: Canon EOS 20D_ISO_800.CR2
+  digest: 519f5ec7a64078b6c0719a08bba343b7
+data:
+  metadata:
+    rawParams:
+      rawWidth: 3596
+      rawHeight: 2360
+      bitDepth: 16
+      crops:
+        p:
+          x: 84
+          y: 19
+        d:
+          w: 3504
+          h: 2336
+      blacklevels:
+        levels:
+          - 126/1
+        cpp: 1
+        width: 1
+        height: 1
+      whitelevels:
+        - 4095
+      wbCoeffs:
+        - 1.5506994
+        - 1.0
+        - 2.1739511
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ~
+        artist: ~
+        lens_spec: ~
+        exposure_time: 1/125
+        fnumber: 28/10
+        aperture_value: 194698/65536
+        brightness_value: ~
+        iso_speed_ratings: 800
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: 0/2
+        date_time_original: "2017:01:31 02:14:26"
+        create_date: "2017:01:31 02:14:26"
+        modify_date: "2017:01:31 02:14:26"
+        exposure_program: 3
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: 456510/65536
+        max_aperture_value: ~
+        subject_distance: ~
+        metering_mode: 5
+        light_source: ~
+        flash: 16
+        focal_length: 75/1
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: EOS 20D
+      make: Canon
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

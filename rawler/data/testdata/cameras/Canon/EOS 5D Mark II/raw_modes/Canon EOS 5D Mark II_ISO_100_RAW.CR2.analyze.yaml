@@ -1,0 +1,107 @@
+---
+file:
+  fileSize: 29077314
+  fileName: Canon EOS 5D Mark II_ISO_100_RAW.CR2
+  digest: 5a0a1dd4cfc0b9f8bf2f3f399a314184
+data:
+  metadata:
+    rawParams:
+      rawWidth: 5792
+      rawHeight: 3804
+      bitDepth: 16
+      crops:
+        p:
+          x: 168
+          y: 56
+        d:
+          w: 5616
+          h: 3744
+      blacklevels:
+        levels:
+          - 1023/1
+          - 1023/1
+          - 1023/1
+          - 1023/1
+        cpp: 1
+        width: 2
+        height: 2
+      whitelevels:
+        - 15312
+      wbCoeffs:
+        - 2.4267578
+        - 1.0
+        - 1.5517578
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ""
+        artist: ""
+        lens_spec:
+          - 50/1
+          - 50/1
+          - 18/10
+          - 18/10
+        exposure_time: 16/10
+        fnumber: 8/1
+        aperture_value: 393216/65536
+        brightness_value: ~
+        iso_speed_ratings: 100
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: 0/1
+        date_time_original: "2017:03:14 17:56:40"
+        create_date: "2017:03:14 17:56:40"
+        modify_date: "2017:03:14 17:56:40"
+        exposure_program: 1
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: "57"
+        sub_sec_time_original: "57"
+        sub_sec_time_digitized: "57"
+        shutter_speed_value: "-45056/65536"
+        max_aperture_value: ~
+        subject_distance: ~
+        metering_mode: 5
+        light_source: ~
+        flash: 16
+        focal_length: 50/1
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 1
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: Canon
+        lens_model: EF 50mm f/1.8 STM
+        gps: ~
+      model: EOS 5D Mark II
+      make: Canon
+      lens:
+        identifiers:
+          name: EF50mm f/1.8 STM
+          id:
+            - 4156
+            - 0
+          nikon_id: ~
+          olympus_id: ~
+        mount: ef-mount
+        lens_make: Canon
+        lens_model: EF 50mm f/1.8 STM
+        focal_range:
+          - 50/1
+          - 50/1
+        aperture_range:
+          - 18/10
+          - 18/10
+        lens_name: Canon EF 50mm f/1.8 STM
+      unique_image_id: ~
+      rating: ~
+

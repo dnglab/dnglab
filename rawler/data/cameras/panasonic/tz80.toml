@@ -7,7 +7,7 @@ model_aliases = [
   ["DMC-TZ81", "DMC-TZ81"],
 ]
 
-blackpoint = 154
+#blackpoint = 154
 whitepoint = 4095
 color_pattern = "GBRG"
 

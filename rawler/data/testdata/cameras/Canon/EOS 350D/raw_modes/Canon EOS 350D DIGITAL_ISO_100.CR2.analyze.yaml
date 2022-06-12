@@ -1,0 +1,83 @@
+---
+file:
+  fileSize: 10586467
+  fileName: Canon EOS 350D DIGITAL_ISO_100.CR2
+  digest: d91cb6cc045c55144479aa3dac049f37
+data:
+  metadata:
+    rawParams:
+      rawWidth: 3516
+      rawHeight: 2328
+      bitDepth: 16
+      crops:
+        p:
+          x: 52
+          y: 19
+        d:
+          w: 3456
+          h: 2304
+      blacklevels:
+        levels:
+          - 0/1
+        cpp: 1
+        width: 1
+        height: 1
+      whitelevels:
+        - 4095
+      wbCoeffs:
+        - 2.1316307
+        - 1.0009823
+        - 1.7239686
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ~
+        artist: ~
+        lens_spec: ~
+        exposure_time: 1/30
+        fnumber: 45/10
+        aperture_value: 284416/65536
+        brightness_value: ~
+        iso_speed_ratings: 100
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: 0/2
+        date_time_original: "2008:05:23 14:51:02"
+        create_date: "2008:05:23 14:51:02"
+        modify_date: "2008:05:23 14:51:02"
+        exposure_program: 2
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: 321578/65536
+        max_aperture_value: ~
+        subject_distance: ~
+        metering_mode: 5
+        light_source: ~
+        flash: 16
+        focal_length: 160/1
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: EOS 350D
+      make: Canon
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

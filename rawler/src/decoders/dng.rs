@@ -56,7 +56,10 @@ impl<'a> Decoder for DngDecoder<'a> {
       cam.clean_model = known_cam.clean_model;
     }
 
-    let mut image = RawImage::new(cam, cpp, self.get_wb()?, image, false);
+    let blacklevel = self.get_blacklevels(raw)?;
+    let whitelevel = self.get_whitelevels(raw)?;
+
+    let mut image = RawImage::new(cam, image, cpp, self.get_wb()?, blacklevel, whitelevel, dummy);
     image.orientation = orientation;
 
     Ok(image)
@@ -105,9 +108,6 @@ impl<'a> DngDecoder<'a> {
     let model = fetch_tiff_tag!(self.tiff, TiffCommonTag::Model).get_string()?.to_owned();
     let mode = String::from("dng");
 
-    let blacklevels = self.get_blacklevels(raw)?;
-    let whitelevels = self.get_whitelevels(raw)?;
-
     let active_area = self.get_active_area(raw, width, height);
     let crop_area = if let Some(crops) = self.get_crop(raw) {
       if let Some(active_area) = &active_area {
@@ -125,7 +125,7 @@ impl<'a> DngDecoder<'a> {
     let linear = fetch_tiff_tag!(raw, TiffCommonTag::PhotometricInt).force_usize(0) == 34892;
     let cfa = if linear { CFA::default() } else { self.get_cfa(raw)? };
     let color_matrix = self.get_color_matrix()?;
-    let bps = raw.get_entry(TiffCommonTag::BitsPerSample).map(|v| v.force_usize(0)).unwrap_or(16);
+    let real_bps = raw.get_entry(TiffCommonTag::BitsPerSample).map(|v| v.force_usize(0)).unwrap_or(16);
 
     Ok(Camera {
       clean_make: make.clone(),
@@ -133,8 +133,8 @@ impl<'a> DngDecoder<'a> {
       make,
       model,
       mode,
-      whitelevels,
-      blacklevels,
+      whitelevel: None,
+      blacklevel: None,
       blackareah: None,
       blackareav: None,
       xyz_to_cam: Default::default(),
@@ -142,7 +142,7 @@ impl<'a> DngDecoder<'a> {
       cfa,
       active_area,
       crop_area,
-      bps,
+      real_bps,
       ..Default::default()
     })
   }
@@ -155,27 +155,25 @@ impl<'a> DngDecoder<'a> {
     }
   }
 
-  fn get_blacklevels(&self, raw: &IFD) -> Result<[u16; 4]> {
+  fn get_blacklevels(&self, raw: &IFD) -> Result<Option<BlackLevel>> {
+    // TODO: sanity checks, count checks etc.
     if let Some(levels) = raw.get_entry(TiffCommonTag::BlackLevels) {
-      if levels.count() < 4 {
-        let black = levels.force_f32(0) as u16;
-        Ok([black, black, black, black])
-      } else {
-        Ok([
-          levels.force_f32(0) as u16,
-          levels.force_f32(1) as u16,
-          levels.force_f32(2) as u16,
-          levels.force_f32(3) as u16,
-        ])
-      }
-    } else {
-      Ok([0, 0, 0, 0])
+      let data: Vec<u16> = (0..levels.count()).map(|i| levels.force_u32(i as usize) as u16).collect();
+      let repeat = raw
+        .get_entry(DngTag::BlackLevelRepeatDim)
+        .map(|entry| (entry.force_usize(0), entry.force_usize(1)))
+        .unwrap_or((1, 1));
+      let cpp = raw.get_entry(TiffCommonTag::SamplesPerPixel).map(|entry| entry.force_usize(0)).unwrap_or(1);
+      return Ok(Some(BlackLevel::new(&data, repeat.1, repeat.0, cpp)));
     }
+    Ok(None)
   }
 
-  fn get_whitelevels(&self, raw: &IFD) -> Result<[u16; 4]> {
-    let level = fetch_tiff_tag!(raw, TiffCommonTag::WhiteLevel).force_u32(0) as u16;
-    Ok([level, level, level, level])
+  fn get_whitelevels(&self, raw: &IFD) -> Result<Option<WhiteLevel>> {
+    if let Some(levels) = raw.get_entry(TiffCommonTag::WhiteLevel) {
+      return Ok(Some((0..levels.count()).map(|i| levels.force_u32(i as usize) as u16).collect()));
+    }
+    Ok(None)
   }
 
   fn get_cfa(&self, raw: &IFD) -> Result<CFA> {

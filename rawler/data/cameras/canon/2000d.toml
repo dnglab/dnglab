@@ -1,0 +1,15 @@
+make = "Canon"
+model = "Canon EOS 2000D"
+clean_make = "Canon"
+clean_model = "EOS 2000D"
+color_pattern = "GBRG"
+active_area = [88, 47, 0, 0]
+
+model_aliases = [
+  ["Canon EOS REBEL T7", "Rebel T7"],
+  ["Canon EOS Rebel T7", "Rebel T7"]
+]
+
+[cameras.color_matrix]
+A = [0.9488, -0.3999, -0.0193, -0.3863, 1.1393, 0.2826, -0.0273, 0.1161, 0.6066]
+D65 = [0.83, -0.211, -0.112, -0.4917, 1.2694, 0.2482, -0.0938, 0.2141, 0.5666]

@@ -1,0 +1,77 @@
+---
+file:
+  fileSize: 8591234
+  fileName: Canon EOS D60_ISO_100.CRW
+  digest: 050ddbf83a45874b91a682bf65c2ab56
+data:
+  metadata:
+    rawParams:
+      rawWidth: 3152
+      rawHeight: 2068
+      bitDepth: 16
+      crops: ~
+      blacklevels:
+        levels:
+          - 0/1
+        cpp: 1
+        width: 1
+        height: 1
+      whitelevels:
+        - 4000
+      wbCoeffs:
+        - 2.6240106
+        - 0.9986807
+        - 1.0976254
+        - ~
+    rawMetadata:
+      exif:
+        orientation: ~
+        copyright: ~
+        artist: ~
+        lens_spec: ~
+        exposure_time: ~
+        fnumber: ~
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: ~
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: ~
+        date_time_original: ~
+        create_date: ~
+        modify_date: ~
+        exposure_program: ~
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: ~
+        max_aperture_value: ~
+        subject_distance: ~
+        metering_mode: ~
+        light_source: ~
+        flash: ~
+        focal_length: ~
+        image_number: ~
+        color_space: ~
+        flash_energy: ~
+        exposure_mode: ~
+        white_balance: ~
+        scene_capture_type: ~
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: EOS D60
+      make: Canon
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

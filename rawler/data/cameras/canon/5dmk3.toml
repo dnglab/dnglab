@@ -1,0 +1,22 @@
+make = "Canon"
+model = "Canon EOS 5D Mark III"
+clean_make = "Canon"
+clean_model = "EOS 5D Mark III"
+color_pattern = "RGGB"
+active_area = [122,80,2,0]
+blackareav = [0, 120]
+blackareah = [6, 78]
+
+[cameras.color_matrix]
+A = [0.7234, -0.1413, -0.06, -0.3631, 1.115, 0.285, -0.0382, 0.1335, 0.6437]
+D65 = [0.6722, -0.0635, -0.0963, -0.4287, 1.246, 0.2028, -0.0908, 0.2162, 0.5668]
+
+[[cameras.modes]]
+mode = "sRaw1"
+hints = ["invert_sraw_wb", "sraw_new"]
+whitepoint = 55128
+
+[[cameras.modes]]
+mode = "sRaw2"
+hints = ["invert_sraw_wb", "sraw_new"]
+whitepoint = 55128

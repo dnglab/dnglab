@@ -1,0 +1,14 @@
+make = "Canon"
+model = "Canon PowerShot SX150 IS"
+clean_make = "Canon"
+clean_model = "PowerShot SX150 IS"
+whitepoint = 4095
+color_pattern = "GBRG"
+filesize = 21936096
+raw_width = 4464
+raw_height = 3276
+blackareav = [4396, 60]
+active_area = [25, 10, 73, 12]
+
+[cameras.color_matrix]
+D65 = [1.3481, -0.4867, -0.1063, -0.2074, 0.9960, 0.2472, -0.0170, 0.1474, 0.3894]

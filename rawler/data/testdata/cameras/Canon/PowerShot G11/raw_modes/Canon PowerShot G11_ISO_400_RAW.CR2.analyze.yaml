@@ -1,0 +1,86 @@
+---
+file:
+  fileSize: 12322820
+  fileName: Canon PowerShot G11_ISO_400_RAW.CR2
+  digest: 164371e46da2f59eac060d0ab724d131
+data:
+  metadata:
+    rawParams:
+      rawWidth: 3744
+      rawHeight: 2784
+      bitDepth: 16
+      crops:
+        p:
+          x: 24
+          y: 28
+        d:
+          w: 3648
+          h: 2736
+      blacklevels:
+        levels:
+          - 128/1
+          - 128/1
+          - 128/1
+          - 128/1
+        cpp: 1
+        width: 2
+        height: 2
+      whitelevels:
+        - 4095
+      wbCoeffs:
+        - 1.7614679
+        - 1.0
+        - 2.107798
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ~
+        artist: ~
+        lens_spec: ~
+        exposure_time: 1/320
+        fnumber: 80/10
+        aperture_value: 192/32
+        brightness_value: ~
+        iso_speed_ratings: 400
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: 6/3
+        date_time_original: "2018:09:10 12:28:56"
+        create_date: "2018:09:10 12:28:56"
+        modify_date: "2018:09:10 12:28:56"
+        exposure_program: ~
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: 266/32
+        max_aperture_value: 95/32
+        subject_distance: ~
+        metering_mode: 3
+        light_source: ~
+        flash: 16
+        focal_length: 6100/1000
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 1
+        white_balance: 1
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: PowerShot G11
+      make: Canon
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

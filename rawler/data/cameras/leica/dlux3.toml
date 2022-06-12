@@ -2,7 +2,7 @@ make = "LEICA"
 model = "D-LUX 3"
 clean_make = "Leica"
 clean_model = "D-LUX 3"
-blackpoint = 0
+#blackpoint = 0
 whitepoint = 3986
 color_pattern = "BGGR"
 

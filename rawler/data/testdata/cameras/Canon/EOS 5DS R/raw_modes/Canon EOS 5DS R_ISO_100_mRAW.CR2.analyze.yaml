@@ -1,0 +1,108 @@
+---
+file:
+  fileSize: 44726139
+  fileName: Canon EOS 5DS R_ISO_100_mRAW.CR2
+  digest: aed59aed8a0c25c7abf39265b183dcec
+data:
+  metadata:
+    rawParams:
+      rawWidth: 6480
+      rawHeight: 4320
+      bitDepth: 16
+      crops:
+        p:
+          x: 0
+          y: 0
+        d:
+          w: 6480
+          h: 4320
+      blacklevels:
+        levels:
+          - 2047/1
+          - 2047/1
+          - 2047/1
+        cpp: 3
+        width: 1
+        height: 1
+      whitelevels:
+        - 52000
+        - 52000
+        - 52000
+      wbCoeffs:
+        - 1.6757812
+        - 1.0
+        - 2.6601562
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: Eckhart Pedersen
+        artist: Eckhhart Pedersen
+        lens_spec:
+          - 100/1
+          - 100/1
+          - 28/10
+          - 28/10
+        exposure_time: 1/1
+        fnumber: 11/1
+        aperture_value: 458752/65536
+        brightness_value: ~
+        iso_speed_ratings: 100
+        iso_speed: ~
+        recommended_exposure_index: 100
+        sensitivity_type: 2
+        exposure_bias: 0/1
+        date_time_original: "2019:01:22 19:31:08"
+        create_date: "2019:01:22 19:31:08"
+        modify_date: "2019:01:22 19:31:08"
+        exposure_program: 1
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: "00"
+        sub_sec_time_original: "00"
+        sub_sec_time_digitized: "00"
+        shutter_speed_value: 0/65536
+        max_aperture_value: ~
+        subject_distance: ~
+        metering_mode: 5
+        light_source: ~
+        flash: 16
+        focal_length: 100/1
+        image_number: ~
+        color_space: 65535
+        flash_energy: ~
+        exposure_mode: 1
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ""
+        serial_number: "083022000039"
+        lens_serial_number: "0000027311"
+        lens_make: Canon
+        lens_model: EF 100mm f/2.8L Macro IS USM
+        gps: ~
+      model: EOS 5DS R
+      make: Canon
+      lens:
+        identifiers:
+          name: ~
+          id:
+            - 254
+            - 0
+          nikon_id: ~
+          olympus_id: ~
+        mount: ef-mount
+        lens_make: Canon
+        lens_model: EF 100mm f/2.8L Macro IS USM
+        focal_range:
+          - 100/1
+          - 100/1
+        aperture_range:
+          - 28/10
+          - 28/10
+        lens_name: Canon EF 100mm f/2.8L Macro IS USM
+      unique_image_id: ~
+      rating: ~
+

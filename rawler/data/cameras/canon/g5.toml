@@ -1,0 +1,15 @@
+make = "Canon"
+model = "Canon PowerShot G5"
+clean_make = "Canon"
+clean_model = "PowerShot G5"
+whitepoint = 4095
+color_pattern = "RGGB"
+active_area = [12,6,44,2]
+blackareav = [2632,40]
+
+[cameras.params]
+wb_offset = 60
+
+[cameras.color_matrix]
+A = [1.5457, -0.7339, 0.0248, -0.4556, 1.2507, 0.2287, -0.0947, 0.1851, 0.5501]
+D65 = [0.9869, -0.2972, -0.0942, -0.7314, 1.5098, 0.2369, -0.1898, 0.2536, 0.7282]

@@ -1,0 +1,12 @@
+make = "Canon"
+model = "Canon PowerShot S120"
+clean_make = "Canon"
+clean_model = "PowerShot S120"
+whitepoint = 4000
+color_pattern = "RGGB"
+blackareav = [0, 74]
+active_area = [120, 28, 48, 14]
+
+[cameras.color_matrix]
+A = [1.0392, -0.5112, 0.0132, -0.2477, 1.0648, 0.2109, -0.0488, 0.1587, 0.5753]
+D65 = [0.6961, -0.1685, -0.0695, -0.4625, 1.2945, 0.1836, -0.1114, 0.2152, 0.5518]

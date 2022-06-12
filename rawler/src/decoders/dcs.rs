@@ -54,7 +54,7 @@ impl<'a> Decoder for DcsDecoder<'a> {
 
     let image = decode_8bit_wtable(&src, &table, width, height, dummy);
     let cpp = 1;
-    ok_image(self.camera.clone(), cpp, [NAN, NAN, NAN, NAN], image)
+    ok_image(self.camera.clone(), cpp, [NAN, NAN, NAN, NAN], image, dummy)
   }
 
   fn format_dump(&self) -> FormatDump {

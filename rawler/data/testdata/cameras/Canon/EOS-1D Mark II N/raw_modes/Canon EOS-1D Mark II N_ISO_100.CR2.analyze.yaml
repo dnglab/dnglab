@@ -1,0 +1,86 @@
+---
+file:
+  fileSize: 10529524
+  fileName: Canon EOS-1D Mark II N_ISO_100.CR2
+  digest: 91d6bb1073a9a7249b195059014052c3
+data:
+  metadata:
+    rawParams:
+      rawWidth: 3596
+      rawHeight: 2360
+      bitDepth: 16
+      crops:
+        p:
+          x: 84
+          y: 19
+        d:
+          w: 3504
+          h: 2336
+      blacklevels:
+        levels:
+          - 128/1
+          - 128/1
+          - 128/1
+          - 128/1
+        cpp: 1
+        width: 2
+        height: 2
+      whitelevels:
+        - 3700
+      wbCoeffs:
+        - 2.1601562
+        - 1.0
+        - 1.2597656
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ~
+        artist: ~
+        lens_spec: ~
+        exposure_time: 1/250
+        fnumber: 8/1
+        aperture_value: 393216/65536
+        brightness_value: ~
+        iso_speed_ratings: 100
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: 0/1
+        date_time_original: "2017:04:23 11:21:17"
+        create_date: "2017:04:23 11:21:17"
+        modify_date: "2017:04:23 11:21:17"
+        exposure_program: 3
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: 524288/65536
+        max_aperture_value: ~
+        subject_distance: ~
+        metering_mode: 5
+        light_source: ~
+        flash: 16
+        focal_length: 50/1
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: EOS-1D Mark II N
+      make: Canon
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

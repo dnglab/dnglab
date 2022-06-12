@@ -1,0 +1,107 @@
+---
+file:
+  fileSize: 26798010
+  fileName: Canon EOS 800D_ISO_100_RAW.CR2
+  digest: 81d9dc6a8f77521b7a6c6558d417d502
+data:
+  metadata:
+    rawParams:
+      rawWidth: 6288
+      rawHeight: 4056
+      bitDepth: 16
+      crops:
+        p:
+          x: 276
+          y: 48
+        d:
+          w: 6000
+          h: 4000
+      blacklevels:
+        levels:
+          - 511/1
+          - 511/1
+          - 511/1
+          - 511/1
+        cpp: 1
+        width: 2
+        height: 2
+      whitelevels:
+        - 11892
+      wbCoeffs:
+        - 1.9462891
+        - 1.0
+        - 1.5302734
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ""
+        artist: Morten Broens-Pedersen
+        lens_spec:
+          - 50/1
+          - 50/1
+          - 18/10
+          - 18/10
+        exposure_time: 1/1250
+        fnumber: 4/1
+        aperture_value: 262144/65536
+        brightness_value: ~
+        iso_speed_ratings: 100
+        iso_speed: ~
+        recommended_exposure_index: 100
+        sensitivity_type: 2
+        exposure_bias: 0/1
+        date_time_original: "2017:07:20 22:48:58"
+        create_date: "2017:07:20 22:48:58"
+        modify_date: "2017:07:20 22:48:58"
+        exposure_program: 3
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: "06"
+        sub_sec_time_original: "06"
+        sub_sec_time_digitized: "06"
+        shutter_speed_value: 679936/65536
+        max_aperture_value: ~
+        subject_distance: ~
+        metering_mode: 5
+        light_source: ~
+        flash: 16
+        focal_length: 50/1
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ""
+        serial_number: "045021001144"
+        lens_serial_number: "0000000000"
+        lens_make: Canon
+        lens_model: EF 50mm f/1.8 II
+        gps: ~
+      model: EOS 800D
+      make: Canon
+      lens:
+        identifiers:
+          name: ~
+          id:
+            - 29
+            - 0
+          nikon_id: ~
+          olympus_id: ~
+        mount: ef-mount
+        lens_make: Canon
+        lens_model: EF 50mm f/1.8 II
+        focal_range:
+          - 50/1
+          - 50/1
+        aperture_range:
+          - 18/10
+          - 18/10
+        lens_name: Canon EF 50mm f/1.8 II
+      unique_image_id: ~
+      rating: ~
+

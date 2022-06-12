@@ -1,0 +1,12 @@
+make = "Canon"
+model = "Canon PowerShot SX60 HS"
+clean_make = "Canon"
+clean_model = "PowerShot SX60 HS"
+whitepoint = 4000
+color_pattern = "RGGB"
+blackareav = [0, 70]
+active_area = [96, 16, 0, 0]
+
+[cameras.color_matrix]
+A = [1.5686, -0.8326, -0.0246, -0.1888, 1.0463, 0.1645, 0.0286, 0.0708, 0.6145]
+D65 = [1.3161, -0.5451, -0.1344, -0.1989, 1.0654, 0.1531, -0.0047, 0.1271, 0.4955]

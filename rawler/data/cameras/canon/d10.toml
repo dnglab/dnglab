@@ -1,0 +1,15 @@
+# CRW
+make = "Canon"
+model = "Canon PowerShot D10"
+clean_make = "Canon"
+clean_model = "PowerShot D10"
+whitepoint = 4095
+color_pattern = "GBRG"
+active_area = [25,22,81,8]
+filesize = 18763488
+raw_width = 4104
+raw_height = 3048
+blackareav = [4074, 28]
+
+[cameras.color_matrix]
+D65 = [0.9427, -0.3036, -0.0959, -0.2581, 1.0671, 0.1911, -0.1039, 0.1982, 0.4430]

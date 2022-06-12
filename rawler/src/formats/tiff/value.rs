@@ -242,6 +242,10 @@ impl Rational {
   pub fn new_f64(n: f64, d: u32) -> Self {
     Self::new((n * d as f64) as u32, d)
   }
+
+  pub fn as_f32(&self) -> f32 {
+    self.n as f32 / self.d as f32
+  }
 }
 
 impl Serialize for Rational {

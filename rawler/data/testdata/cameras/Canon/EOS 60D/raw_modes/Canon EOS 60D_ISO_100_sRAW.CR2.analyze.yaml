@@ -1,0 +1,87 @@
+---
+file:
+  fileSize: 11955913
+  fileName: Canon EOS 60D_ISO_100_sRAW.CR2
+  digest: 40d2ef34e6a0ab55aa4db06fd54e8965
+data:
+  metadata:
+    rawParams:
+      rawWidth: 2592
+      rawHeight: 1728
+      bitDepth: 16
+      crops:
+        p:
+          x: 0
+          y: 0
+        d:
+          w: 2592
+          h: 1728
+      blacklevels:
+        levels:
+          - 2047/1
+          - 2047/1
+          - 2047/1
+        cpp: 3
+        width: 1
+        height: 1
+      whitelevels:
+        - 65535
+        - 65535
+        - 65535
+      wbCoeffs:
+        - 2.1376953
+        - 1.0
+        - 1.5371094
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: Copywrite Carlo Vaccari
+        artist: Carlo Vaccari
+        lens_spec: ~
+        exposure_time: 1/125
+        fnumber: 0/1
+        aperture_value: 2147483648/1
+        brightness_value: ~
+        iso_speed_ratings: 100
+        iso_speed: ~
+        recommended_exposure_index: 100
+        sensitivity_type: 2
+        exposure_bias: 0/1
+        date_time_original: "2017:01:27 12:52:05"
+        create_date: "2017:01:27 12:52:05"
+        modify_date: "2017:01:27 12:52:05"
+        exposure_program: 3
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: "89"
+        sub_sec_time_original: "89"
+        sub_sec_time_digitized: "89"
+        shutter_speed_value: 458752/65536
+        max_aperture_value: ~
+        subject_distance: ~
+        metering_mode: 2
+        light_source: ~
+        flash: 16
+        focal_length: 50/1
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 1
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ""
+        serial_number: "0370211666"
+        lens_serial_number: "0000000000"
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: EOS 60D
+      make: Canon
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

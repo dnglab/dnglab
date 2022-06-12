@@ -1,0 +1,13 @@
+make = "Canon"
+model = "Canon PowerShot G7 X CRW"
+clean_make = "Canon"
+clean_model = "PowerShot G7 X"
+blackpoint = 511
+whitepoint = 4000
+color_pattern = "RGGB"
+filesize = 31342080
+raw_width = 5632
+raw_height = 3710
+
+[cameras.color_matrix]
+D65 = [0.9602, -0.3823, -0.0937, -0.2984, 1.1495, 0.1675, -0.0407, 0.1415, 0.5049]

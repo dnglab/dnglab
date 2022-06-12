@@ -1,0 +1,86 @@
+---
+file:
+  fileSize: 27110065
+  fileName: Canon EOS 5D Mark II_ISO_800_RAW.CR2
+  digest: 406d324ecca52cc1198fdef3cd7f2259
+data:
+  metadata:
+    rawParams:
+      rawWidth: 5792
+      rawHeight: 3804
+      bitDepth: 16
+      crops:
+        p:
+          x: 168
+          y: 56
+        d:
+          w: 5616
+          h: 3744
+      blacklevels:
+        levels:
+          - 1024/1
+          - 1024/1
+          - 1023/1
+          - 1023/1
+        cpp: 1
+        width: 2
+        height: 2
+      whitelevels:
+        - 15312
+      wbCoeffs:
+        - 1.96875
+        - 1.0
+        - 2.2802734
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ""
+        artist: ""
+        lens_spec: ~
+        exposure_time: 1/50
+        fnumber: 8/1
+        aperture_value: 393216/65536
+        brightness_value: ~
+        iso_speed_ratings: 800
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: 0/1
+        date_time_original: "2017:07:20 14:31:26"
+        create_date: "2017:07:20 14:31:26"
+        modify_date: "2017:07:20 14:31:26"
+        exposure_program: 1
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: "30"
+        sub_sec_time_original: "30"
+        sub_sec_time_digitized: "30"
+        shutter_speed_value: 368640/65536
+        max_aperture_value: ~
+        subject_distance: ~
+        metering_mode: 5
+        light_source: ~
+        flash: 16
+        focal_length: 28/1
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 1
+        white_balance: 1
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: EOS 5D Mark II
+      make: Canon
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

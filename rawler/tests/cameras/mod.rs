@@ -1,130 +1,551 @@
 use crate::common::camera_file_check;
+mod camera_eos_1000d_raw_modes {
+  super::camera_file_check!("Canon", "EOS 1000D", cam_canon_eos_1000d_iso_200_raw_cr2, "raw_modes/Canon EOS 1000D_ISO_200_RAW.CR2");
+}
+mod camera_eos_100d_raw_modes {
+  super::camera_file_check!("Canon", "EOS 100D", cam_canon_eos_100d_iso_100_raw_cr2, "raw_modes/Canon EOS 100D_ISO_100_RAW.CR2");
+}
+mod camera_eos_10d_raw_modes {
+  super::camera_file_check!("Canon", "EOS 10D", cam_canon_eos_10d_iso_100_decodertablenum2_crw, "raw_modes/Canon EOS 10D_ISO_100_DecoderTableNum2.CRW");
+  super::camera_file_check!("Canon", "EOS 10D", cam_canon_eos_10d_iso_200_decodertablenum2_crw, "raw_modes/Canon EOS 10D_ISO_200_DecoderTableNum2.CRW");
+  super::camera_file_check!("Canon", "EOS 10D", cam_eos_10d_crw, "raw_modes/EOS 10D.CRW");
+}
+mod camera_eos_1100d_raw_modes {
+  super::camera_file_check!("Canon", "EOS 1100D", cam_canon_eos_1100d_iso_160_raw_cr2, "raw_modes/Canon EOS 1100D_ISO_160_RAW.CR2");
+}
+mod camera_eos_1200d_raw_modes {
+  super::camera_file_check!("Canon", "EOS 1200D", cam_canon_eos_1200d_iso_100_raw_cr2, "raw_modes/Canon EOS 1200D_ISO_100_RAW.CR2");
+}
+mod camera_eos_1300d_raw_modes {
+  super::camera_file_check!("Canon", "EOS 1300D", cam_canon_eos_1300d_iso_100_raw_cr2, "raw_modes/Canon EOS 1300D_ISO_100_RAW.CR2");
+}
+mod camera_eos_1d_mark_iii_raw_modes {
+  super::camera_file_check!("Canon", "EOS-1D Mark III", cam_canon_eos_1d_mark_iii_iso_1000_raw_cr2, "raw_modes/Canon EOS-1D Mark III_ISO_1000_RAW.CR2");
+}
+mod camera_eos_1d_mark_ii_n_raw_modes {
+  super::camera_file_check!("Canon", "EOS-1D Mark II N", cam_canon_eos_1d_mark_ii_n_iso_100_cr2, "raw_modes/Canon EOS-1D Mark II N_ISO_100.CR2");
+}
+mod camera_eos_1d_mark_ii_raw_modes {
+  super::camera_file_check!("Canon", "EOS-1D Mark II", cam_canon_eos_1d_mark_ii_iso_100_cr2, "raw_modes/Canon EOS-1D Mark II_ISO_100.CR2");
+}
+mod camera_eos_1d_mark_iv_raw_modes {
+  super::camera_file_check!("Canon", "EOS-1D Mark IV", cam_canon_eos_1d_mark_iv_iso_400_raw_cr2, "raw_modes/Canon EOS-1D Mark IV_ISO_400_RAW.CR2");
+  super::camera_file_check!("Canon", "EOS-1D Mark IV", cam_canon_eos_1d_mark_iv_iso_400_mraw_cr2, "raw_modes/Canon EOS-1D Mark IV_ISO_400_mRAW.CR2");
+  super::camera_file_check!("Canon", "EOS-1D Mark IV", cam_canon_eos_1d_mark_iv_iso_400_sraw_cr2, "raw_modes/Canon EOS-1D Mark IV_ISO_400_sRAW.CR2");
+}
+mod camera_eos_1d_raw_modes {
+  super::camera_file_check!("Canon", "EOS-1D", cam_canon_eos_1d_iso_200_tif, "raw_modes/Canon EOS-1D_ISO_200.TIF");
+}
+mod camera_eos_1ds_mark_iii_raw_modes {
+  super::camera_file_check!("Canon", "EOS-1Ds Mark III", cam_canon_eos_1ds_mark_iii_iso_100_raw_cr2, "raw_modes/Canon EOS-1Ds Mark III_ISO_100_RAW.CR2");
+}
+mod camera_eos_1ds_mark_ii_raw_modes {
+  super::camera_file_check!("Canon", "EOS-1Ds Mark II", cam_canon_eos_1ds_mark_ii_iso_640_cr2, "raw_modes/Canon EOS-1Ds Mark II_ISO_640.CR2");
+}
+mod camera_eos_1ds_raw_modes {
+  super::camera_file_check!("Canon", "EOS-1Ds", cam_canon_eos_1ds_iso_100_tif, "raw_modes/Canon EOS-1DS_ISO_100.TIF");
+}
 mod camera_eos_1d_x_mark_iii_raw_modes {
   super::camera_file_check!("Canon", "EOS-1D X Mark III", cam_canon_eos_1d_x_mark_iii_raw_iso_100_nocrop_nodual_cr3, "raw_modes/Canon EOS-1D X Mark III_RAW_ISO_100_nocrop_nodual.CR3");
   super::camera_file_check!("Canon", "EOS-1D X Mark III", cam_canon_eos_1d_x_mark_iii_craw_iso_100_nocrop_nodual_cr3, "raw_modes/Canon EOS-1D X Mark III_CRAW_ISO_100_nocrop_nodual.CR3");
+}
+mod camera_eos_1d_x_mark_ii_raw_modes {
+  super::camera_file_check!("Canon", "EOS-1D X Mark II", cam_canon_eos_1d_x_mark_ii_iso_500_mraw_cr2, "raw_modes/Canon EOS-1D X Mark II_ISO_500_mRAW.CR2");
+  super::camera_file_check!("Canon", "EOS-1D X Mark II", cam_canon_eos_1d_x_mark_ii_iso_500_sraw_cr2, "raw_modes/Canon EOS-1D X Mark II_ISO_500_sRAW.CR2");
+  super::camera_file_check!("Canon", "EOS-1D X Mark II", cam_canon_eos_1d_x_mark_ii_iso_500_raw_cr2, "raw_modes/Canon EOS-1D X Mark II_ISO_500_RAW.CR2");
+}
+mod camera_eos_1d_x_raw_modes {
+  super::camera_file_check!("Canon", "EOS-1D X", cam_canon_eos_1d_x_iso_1600_raw_cr2, "raw_modes/Canon EOS-1D X_ISO_1600_RAW.CR2");
+}
+mod camera_eos_2000d_raw_modes {
+  super::camera_file_check!("Canon", "EOS 2000D", cam_canon_eos_2000d_iso_400_raw_cr2, "raw_modes/Canon EOS 2000D_ISO_400_RAW.CR2");
+}
+mod camera_eos_200d_raw_modes {
+  super::camera_file_check!("Canon", "EOS 200D", cam_canon_eos_200d_iso_100_raw_cr2, "raw_modes/Canon EOS 200D_ISO_100_RAW.CR2");
+}
+mod camera_eos_20d_raw_modes {
+  super::camera_file_check!("Canon", "EOS 20D", cam_canon_eos_20d_iso_800_cr2, "raw_modes/Canon EOS 20D_ISO_800.CR2");
+}
+mod camera_eos_250d_raw_modes {
+  super::camera_file_check!("Canon", "EOS 250D", cam_canon_eos_250d_craw_iso_100_nocrop_nodual_cr3, "raw_modes/Canon EOS 250D_CRAW_ISO_100_nocrop_nodual.CR3");
+  super::camera_file_check!("Canon", "EOS 250D", cam_canon_eos_250d_raw_iso_100_nocrop_nodual_cr3, "raw_modes/Canon EOS 250D_RAW_ISO_100_nocrop_nodual.CR3");
+}
+mod camera_eos_300d_raw_modes {
+  super::camera_file_check!("Canon", "EOS 300D", cam_canon_eos_300d_digital_iso_100_crw, "raw_modes/Canon EOS 300D DIGITAL_ISO_100.CRW");
+  super::camera_file_check!("Canon", "EOS 300D", cam_eos_300d_crw, "raw_modes/EOS 300D.CRW");
+}
+mod camera_eos_30d_raw_modes {
+  super::camera_file_check!("Canon", "EOS 30D", cam_canon_eos_30d_iso_100_cr2, "raw_modes/Canon EOS 30D_ISO_100.CR2");
+}
+mod camera_eos_350d_raw_modes {
+  super::camera_file_check!("Canon", "EOS 350D", cam_canon_eos_350d_digital_iso_100_cr2, "raw_modes/Canon EOS 350D DIGITAL_ISO_100.CR2");
+}
+mod camera_eos_4000d_raw_modes {
+  super::camera_file_check!("Canon", "EOS 4000D", cam_canon_eos_4000d_iso_100_raw_cr2, "raw_modes/Canon EOS 4000D_ISO_100_RAW.CR2");
+}
+mod camera_eos_400d_raw_modes {
+  super::camera_file_check!("Canon", "EOS 400D", cam_canon_eos_400d_digital_iso_100_cr2, "raw_modes/Canon EOS 400D DIGITAL_ISO_100.CR2");
+}
+mod camera_eos_40d_raw_modes {
+  super::camera_file_check!("Canon", "EOS 40D", cam_canon_eos_40d_iso_100_raw_cr2, "raw_modes/Canon EOS 40D_ISO_100_RAW.CR2");
+  super::camera_file_check!("Canon", "EOS 40D", cam_canon_eos_40d_iso_100_sraw_cr2, "raw_modes/Canon EOS 40D_ISO_100_sRAW.CR2");
+}
+mod camera_eos_450d_raw_modes {
+  super::camera_file_check!("Canon", "EOS 450D", cam_canon_eos_450d_iso_400_raw_cr2, "raw_modes/Canon EOS 450D_ISO_400_RAW.CR2");
+}
+mod camera_eos_500d_raw_modes {
+  super::camera_file_check!("Canon", "EOS 500D", cam_canon_eos_500d_iso_200_raw_cr2, "raw_modes/Canon EOS 500D_ISO_200_RAW.CR2");
+}
+mod camera_eos_50d_raw_modes {
+  super::camera_file_check!("Canon", "EOS 50D", cam_canon_eos_50d_iso_100_raw_cr2, "raw_modes/Canon EOS 50D_ISO_100_RAW.CR2");
+  super::camera_file_check!("Canon", "EOS 50D", cam_canon_eos_50d_iso_100_sraw_cr2, "raw_modes/Canon EOS 50D_ISO_100_sRAW.CR2");
+  super::camera_file_check!("Canon", "EOS 50D", cam_canon_eos_50d_iso_100_mraw_cr2, "raw_modes/Canon EOS 50D_ISO_100_mRAW.CR2");
+}
+mod camera_eos_550d_raw_modes {
+  super::camera_file_check!("Canon", "EOS 550D", cam_canon_eos_550d_iso_100_raw_cr2, "raw_modes/Canon EOS 550D_ISO_100_RAW.CR2");
 }
 mod camera_eos_5d_mark_iii_raw_modes {
   super::camera_file_check!("Canon", "EOS 5D Mark III", cam_canon_eos_5d_mark_iii_sraw1_iso_200_cr2, "raw_modes/Canon EOS 5D Mark III_sRAW1_ISO_200.CR2");
   super::camera_file_check!("Canon", "EOS 5D Mark III", cam_canon_eos_5d_mark_iii_sraw2_iso_200_cr2, "raw_modes/Canon EOS 5D Mark III_sRAW2_ISO_200.CR2");
   super::camera_file_check!("Canon", "EOS 5D Mark III", cam_canon_eos_5d_mark_iii_raw_iso_200_cr2, "raw_modes/Canon EOS 5D Mark III_RAW_ISO_200.CR2");
 }
-mod camera_canon_eos_m50_raw_modes {
-  super::camera_file_check!("Canon", "Canon EOS M50", cam_canon_eos_m50_raw_iso_100_nocrop_nodual_cr3, "raw_modes/Canon EOS M50_RAW_ISO_100_nocrop_nodual.CR3");
-  super::camera_file_check!("Canon", "Canon EOS M50", cam_canon_eos_m50_craw_iso_100_nocrop_nodual_cr3, "raw_modes/Canon EOS M50_CRAW_ISO_100_nocrop_nodual.CR3");
+mod camera_eos_5d_mark_ii_raw_modes {
+  super::camera_file_check!("Canon", "EOS 5D Mark II", cam_canon_eos_5d_mark_ii_iso_800_mraw_cr2, "raw_modes/Canon EOS 5D Mark II_ISO_800_mRAW.CR2");
+  super::camera_file_check!("Canon", "EOS 5D Mark II", cam_canon_eos_5d_mark_ii_iso_100_raw_cr2, "raw_modes/Canon EOS 5D Mark II_ISO_100_RAW.CR2");
+  super::camera_file_check!("Canon", "EOS 5D Mark II", cam_canon_eos_5d_mark_ii_iso_800_raw_cr2, "raw_modes/Canon EOS 5D Mark II_ISO_800_RAW.CR2");
+  super::camera_file_check!("Canon", "EOS 5D Mark II", cam_canon_eos_5d_mark_ii_iso_800_sraw_cr2, "raw_modes/Canon EOS 5D Mark II_ISO_800_sRAW.CR2");
 }
 mod camera_eos_5d_mark_iv_raw_modes {
-  super::camera_file_check!("Canon", "EOS 5D Mark IV", cam_canon_eos_5d_mark_iv_sraw1_iso_100_cr2, "raw_modes/Canon EOS 5D Mark IV_sRAW1_ISO_100.CR2");
-  super::camera_file_check!("Canon", "EOS 5D Mark IV", cam_canon_eos_5d_mark_iv_raw_iso_100_cr2, "raw_modes/Canon EOS 5D Mark IV_RAW_ISO_100.CR2");
-  super::camera_file_check!("Canon", "EOS 5D Mark IV", cam_canon_eos_5d_mark_iv_sraw2_iso_100_cr2, "raw_modes/Canon EOS 5D Mark IV_sRAW2_ISO_100.CR2");
+  super::camera_file_check!("Canon", "EOS 5D Mark IV", cam_canon_eos_5d_mark_iv_iso_100_sraw_cr2, "raw_modes/Canon EOS 5D Mark IV_ISO_100_sRAW.CR2");
+  super::camera_file_check!("Canon", "EOS 5D Mark IV", cam_canon_eos_5d_mark_iv_iso_100_mraw_cr2, "raw_modes/Canon EOS 5D Mark IV_ISO_100_mRAW.CR2");
+  super::camera_file_check!("Canon", "EOS 5D Mark IV", cam_canon_eos_5d_mark_iv_iso_100_raw_cr2, "raw_modes/Canon EOS 5D Mark IV_ISO_100_RAW.CR2");
 }
-mod camera_canon_eos_r_raw_modes {
-  super::camera_file_check!("Canon", "Canon EOS R", cam_canon_eos_r_raw_iso_100_crop_dual_cr3, "raw_modes/Canon EOS R_RAW_ISO_100_crop_dual.CR3");
-  super::camera_file_check!("Canon", "Canon EOS R", cam_canon_eos_r_raw_iso_100_nocrop_nodual_cr3, "raw_modes/Canon EOS R_RAW_ISO_100_nocrop_nodual.CR3");
-  super::camera_file_check!("Canon", "Canon EOS R", cam_canon_eos_r_craw_iso_100_nocrop_nodual_cr3, "raw_modes/Canon EOS R_CRAW_ISO_100_nocrop_nodual.CR3");
-  super::camera_file_check!("Canon", "Canon EOS R", cam_canon_eos_r_raw_iso_100_crop_nodual_cr3, "raw_modes/Canon EOS R_RAW_ISO_100_crop_nodual.CR3");
-  super::camera_file_check!("Canon", "Canon EOS R", cam_canon_eos_r_craw_iso_100_crop_nodual_cr3, "raw_modes/Canon EOS R_CRAW_ISO_100_crop_nodual.CR3");
-  super::camera_file_check!("Canon", "Canon EOS R", cam_canon_eos_r_raw_iso_100_nocrop_dual_cr3, "raw_modes/Canon EOS R_RAW_ISO_100_nocrop_dual.CR3");
-  super::camera_file_check!("Canon", "Canon EOS R", cam_canon_eos_r_craw_iso_100_crop_dual_cr3, "raw_modes/Canon EOS R_CRAW_ISO_100_crop_dual.CR3");
-  super::camera_file_check!("Canon", "Canon EOS R", cam_canon_eos_r_craw_iso_100_nocrop_dual_cr3, "raw_modes/Canon EOS R_CRAW_ISO_100_nocrop_dual.CR3");
+mod camera_eos_5d_raw_modes {
+  super::camera_file_check!("Canon", "EOS 5D", cam_canon_eos_5d_iso_400_cr2, "raw_modes/Canon EOS 5D_ISO_400.CR2");
 }
-mod camera_canon_powershot_sx70_hs_raw_modes {
-  super::camera_file_check!("Canon", "Canon PowerShot SX70 HS", cam_canon_powershot_sx70_hs_raw_iso_100_nocrop_nodual_cr3, "raw_modes/Canon PowerShot SX70 HS_RAW_ISO_100_nocrop_nodual.CR3");
-  super::camera_file_check!("Canon", "Canon PowerShot SX70 HS", cam_canon_powershot_sx70_hs_craw_iso_100_nocrop_nodual_cr3, "raw_modes/Canon PowerShot SX70 HS_CRAW_ISO_100_nocrop_nodual.CR3");
+mod camera_eos_5ds_raw_modes {
+  super::camera_file_check!("Canon", "EOS 5DS", cam_canon_eos_5ds_iso_1000_mraw_cr2, "raw_modes/Canon EOS 5DS_ISO_1000_mRAW.CR2");
+  super::camera_file_check!("Canon", "EOS 5DS", cam_canon_eos_5ds_iso_1000_sraw_cr2, "raw_modes/Canon EOS 5DS_ISO_1000_sRAW.CR2");
+  super::camera_file_check!("Canon", "EOS 5DS", cam_canon_eos_5ds_iso_1000_raw_cr2, "raw_modes/Canon EOS 5DS_ISO_1000_RAW.CR2");
+}
+mod camera_eos_5ds_r_raw_modes {
+  super::camera_file_check!("Canon", "EOS 5DS R", cam_canon_eos_5ds_r_iso_100_mraw_cr2, "raw_modes/Canon EOS 5DS R_ISO_100_mRAW.CR2");
+  super::camera_file_check!("Canon", "EOS 5DS R", cam_canon_eos_5ds_r_iso_100_sraw_cr2, "raw_modes/Canon EOS 5DS R_ISO_100_sRAW.CR2");
+  super::camera_file_check!("Canon", "EOS 5DS R", cam_canon_eos_5ds_r_iso_100_raw_cr2, "raw_modes/Canon EOS 5DS R_ISO_100_RAW.CR2");
+}
+mod camera_eos_600d_raw_modes {
+  super::camera_file_check!("Canon", "EOS 600D", cam_canon_eos_600d_iso_200_raw_cr2, "raw_modes/Canon EOS 600D_ISO_200_RAW.CR2");
+}
+mod camera_eos_60d_raw_modes {
+  super::camera_file_check!("Canon", "EOS 60D", cam_canon_eos_60d_iso_100_mraw_cr2, "raw_modes/Canon EOS 60D_ISO_100_mRAW.CR2");
+  super::camera_file_check!("Canon", "EOS 60D", cam_canon_eos_60d_iso_100_sraw_cr2, "raw_modes/Canon EOS 60D_ISO_100_sRAW.CR2");
+  super::camera_file_check!("Canon", "EOS 60D", cam_canon_eos_60d_iso_100_raw_cr2, "raw_modes/Canon EOS 60D_ISO_100_RAW.CR2");
+}
+mod camera_eos_650d_raw_modes {
+  super::camera_file_check!("Canon", "EOS 650D", cam_canon_eos_650d_iso_100_raw_cr2, "raw_modes/Canon EOS 650D_ISO_100_RAW.CR2");
+}
+mod camera_eos_6d_mark_ii_raw_modes {
+  super::camera_file_check!("Canon", "EOS 6D Mark II", cam_canon_eos_6d_mark_ii_iso_100_raw_cr2, "raw_modes/Canon EOS 6D Mark II_ISO_100_RAW.CR2");
+  super::camera_file_check!("Canon", "EOS 6D Mark II", cam_canon_eos_6d_mark_ii_iso_100_sraw_cr2, "raw_modes/Canon EOS 6D Mark II_ISO_100_sRAW.CR2");
+  super::camera_file_check!("Canon", "EOS 6D Mark II", cam_canon_eos_6d_mark_ii_iso_100_mraw_cr2, "raw_modes/Canon EOS 6D Mark II_ISO_100_mRAW.CR2");
+}
+mod camera_eos_6d_raw_modes {
+  super::camera_file_check!("Canon", "EOS 6D", cam_canon_eos_6d_iso_100_raw_cr2, "raw_modes/Canon EOS 6D_ISO_100_RAW.CR2");
+  super::camera_file_check!("Canon", "EOS 6D", cam_canon_eos_6d_iso_400_raw_cr2, "raw_modes/Canon EOS 6D_ISO_400_RAW.CR2");
+  super::camera_file_check!("Canon", "EOS 6D", cam_canon_eos_6d_iso_100_sraw_cr2, "raw_modes/Canon EOS 6D_ISO_100_sRAW.CR2");
+  super::camera_file_check!("Canon", "EOS 6D", cam_canon_eos_6d_iso_100_mraw_cr2, "raw_modes/Canon EOS 6D_ISO_100_mRAW.CR2");
+}
+mod camera_eos_700d_raw_modes {
+  super::camera_file_check!("Canon", "EOS 700D", cam_canon_eos_700d_iso_200_raw_cr2, "raw_modes/Canon EOS 700D_ISO_200_RAW.CR2");
+}
+mod camera_eos_70d_raw_modes {
+  super::camera_file_check!("Canon", "EOS 70D", cam_canon_eos_70d_iso_100_mraw_cr2, "raw_modes/Canon EOS 70D_ISO_100_mRAW.CR2");
+  super::camera_file_check!("Canon", "EOS 70D", cam_canon_eos_70d_iso_100_sraw_cr2, "raw_modes/Canon EOS 70D_ISO_100_sRAW.CR2");
+  super::camera_file_check!("Canon", "EOS 70D", cam_canon_eos_70d_iso_100_raw_cr2, "raw_modes/Canon EOS 70D_ISO_100_RAW.CR2");
+}
+mod camera_eos_750d_raw_modes {
+  super::camera_file_check!("Canon", "EOS 750D", cam_canon_eos_750d_iso_100_raw_cr2, "raw_modes/Canon EOS 750D_ISO_100_RAW.CR2");
+}
+mod camera_eos_760d_raw_modes {
+  super::camera_file_check!("Canon", "EOS 760D", cam_canon_eos_760d_iso_200_raw_cr2, "raw_modes/Canon EOS 760D_ISO_200_RAW.CR2");
+}
+mod camera_eos_77d_raw_modes {
+  super::camera_file_check!("Canon", "EOS 77D", cam_canon_eos_77d_iso_3200_raw_cr2, "raw_modes/Canon EOS 77D_ISO_3200_RAW.CR2");
+}
+mod camera_eos_7d_mark_ii_raw_modes {
+  super::camera_file_check!("Canon", "EOS 7D Mark II", cam_canon_eos_7d_mark_ii_iso_100_sraw_cr2, "raw_modes/Canon EOS 7D Mark II_ISO_100_sRAW.CR2");
+  super::camera_file_check!("Canon", "EOS 7D Mark II", cam_canon_eos_7d_mark_ii_iso_100_mraw_cr2, "raw_modes/Canon EOS 7D Mark II_ISO_100_mRAW.CR2");
+  super::camera_file_check!("Canon", "EOS 7D Mark II", cam_canon_eos_7d_mark_ii_iso_100_raw_cr2, "raw_modes/Canon EOS 7D Mark II_ISO_100_RAW.CR2");
+}
+mod camera_eos_7d_raw_modes {
+  super::camera_file_check!("Canon", "EOS 7D", cam_canon_eos_7d_iso_1250_sraw_cr2, "raw_modes/Canon EOS 7D_ISO_1250_sRAW.CR2");
+  super::camera_file_check!("Canon", "EOS 7D", cam_canon_eos_7d_iso_1250_mraw_cr2, "raw_modes/Canon EOS 7D_ISO_1250_mRAW.CR2");
+  super::camera_file_check!("Canon", "EOS 7D", cam_canon_eos_7d_iso_1250_raw_cr2, "raw_modes/Canon EOS 7D_ISO_1250_RAW.CR2");
+  super::camera_file_check!("Canon", "EOS 7D", cam_canon_eos_7d_iso_100_raw_cr2, "raw_modes/Canon EOS 7D_ISO_100_RAW.CR2");
+}
+mod camera_eos_800d_raw_modes {
+  super::camera_file_check!("Canon", "EOS 800D", cam_canon_eos_800d_iso_100_raw_cr2, "raw_modes/Canon EOS 800D_ISO_100_RAW.CR2");
 }
 mod camera_eos_80d_raw_modes {
-  super::camera_file_check!("Canon", "EOS 80D", cam_canon_eos_80d_sraw2_iso_100_cr2, "raw_modes/Canon EOS 80D_sRAW2_ISO_100.CR2");
-  super::camera_file_check!("Canon", "EOS 80D", cam_canon_eos_80d_raw_iso_100_cr2, "raw_modes/Canon EOS 80D_RAW_ISO_100.CR2");
-  super::camera_file_check!("Canon", "EOS 80D", cam_canon_eos_80d_sraw1_iso_100_cr2, "raw_modes/Canon EOS 80D_sRAW1_ISO_100.CR2");
-}
-mod camera_canon_powershot_g7_x_mark_iii_raw_modes {
-  super::camera_file_check!("Canon", "Canon PowerShot G7 X Mark III", cam_canon_powershot_g7_x_mark_iii_raw_iso_200_nocrop_nodual_cr3, "raw_modes/Canon PowerShot G7 X Mark III_RAW_ISO_200_nocrop_nodual.CR3");
-  super::camera_file_check!("Canon", "Canon PowerShot G7 X Mark III", cam_canon_powershot_g7_x_mark_iii_craw_iso_200_nocrop_nodual_cr3, "raw_modes/Canon PowerShot G7 X Mark III_CRAW_ISO_200_nocrop_nodual.CR3");
-}
-mod camera_eos_d2000c_raw_modes {
-  super::camera_file_check!("Canon", "EOS D2000C", cam_canon_d2000c_raw_iso_200_tif, "raw_modes/Canon D2000C_RAW_ISO_200.TIF");
+  super::camera_file_check!("Canon", "EOS 80D", cam_canon_eos_80d_iso_100_sraw_cr2, "raw_modes/Canon EOS 80D_ISO_100_sRAW.CR2");
+  super::camera_file_check!("Canon", "EOS 80D", cam_canon_eos_80d_iso_100_raw_cr2, "raw_modes/Canon EOS 80D_ISO_100_RAW.CR2");
+  super::camera_file_check!("Canon", "EOS 80D", cam_canon_eos_80d_iso_100_mraw_cr2, "raw_modes/Canon EOS 80D_ISO_100_mRAW.CR2");
 }
 mod camera_eos_850d_raw_modes {
   super::camera_file_check!("Canon", "EOS 850D", cam_canon_eos_850d_craw_iso_100_nocrop_nodual_cr3, "raw_modes/Canon EOS 850D_CRAW_ISO_100_nocrop_nodual.CR3");
   super::camera_file_check!("Canon", "EOS 850D", cam_canon_eos_850d_raw_iso_100_nocrop_nodual_cr3, "raw_modes/Canon EOS 850D_RAW_ISO_100_nocrop_nodual.CR3");
 }
-mod camera_eos_20d_raw_modes {
-  super::camera_file_check!("Canon", "EOS 20D", cam_canon_eos_20d_raw_iso_800_cr2, "raw_modes/Canon EOS 20D_RAW_ISO_800.CR2");
-}
-mod camera_canon_eos_m50m2_raw_modes {
-  super::camera_file_check!("Canon", "Canon EOS M50m2", cam_canon_eos_m50m2_raw_iso_100_nocrop_nodual_cr3, "raw_modes/Canon EOS M50m2_RAW_ISO_100_nocrop_nodual.CR3");
-  super::camera_file_check!("Canon", "Canon EOS M50m2", cam_canon_eos_m50m2_craw_iso_100_nocrop_nodual_cr3, "raw_modes/Canon EOS M50m2_CRAW_ISO_100_nocrop_nodual.CR3");
-}
-mod camera_eos_30d_raw_modes {
-  super::camera_file_check!("Canon", "EOS 30D", cam_canon_eos_30d_raw_iso_100_cr2, "raw_modes/Canon EOS 30D_RAW_ISO_100.CR2");
-}
-mod camera_canon_eos_m6_mark_ii_raw_modes {
-  super::camera_file_check!("Canon", "Canon EOS M6 Mark II", cam_canon_eos_m6_mark_ii_raw_iso_100_nocrop_nodual_cr3, "raw_modes/Canon EOS M6 Mark II_RAW_ISO_100_nocrop_nodual.CR3");
-  super::camera_file_check!("Canon", "Canon EOS M6 Mark II", cam_canon_eos_m6_mark_ii_craw_iso_100_nocrop_nodual_cr3, "raw_modes/Canon EOS M6 Mark II_CRAW_ISO_100_nocrop_nodual.CR3");
-}
-mod camera_canon_powershot_g5_x_mark_ii_raw_modes {
-  super::camera_file_check!("Canon", "Canon PowerShot G5 X Mark II", cam_canon_powershot_g5_x_mark_ii_craw_iso_200_nocrop_nodual_cr3, "raw_modes/Canon PowerShot G5 X Mark II_CRAW_ISO_200_nocrop_nodual.CR3");
-  super::camera_file_check!("Canon", "Canon PowerShot G5 X Mark II", cam_canon_powershot_g5_x_mark_ii_raw_iso_200_nocrop_nodual_cr3, "raw_modes/Canon PowerShot G5 X Mark II_RAW_ISO_200_nocrop_nodual.CR3");
-}
 mod camera_eos_90d_raw_modes {
   super::camera_file_check!("Canon", "EOS 90D", cam_canon_eos_90d_raw_iso_100_nocrop_nodual_cr3, "raw_modes/Canon EOS 90D_RAW_ISO_100_nocrop_nodual.CR3");
   super::camera_file_check!("Canon", "EOS 90D", cam_canon_eos_90d_craw_iso_100_nocrop_nodual_cr3, "raw_modes/Canon EOS 90D_CRAW_ISO_100_nocrop_nodual.CR3");
 }
-mod camera_eos_250d_raw_modes {
-  super::camera_file_check!("Canon", "EOS 250D", cam_canon_eos_250d_craw_iso_100_nocrop_nodual_cr3, "raw_modes/Canon EOS 250D_CRAW_ISO_100_nocrop_nodual.CR3");
-  super::camera_file_check!("Canon", "EOS 250D", cam_canon_eos_250d_raw_iso_100_nocrop_nodual_cr3, "raw_modes/Canon EOS 250D_RAW_ISO_100_nocrop_nodual.CR3");
+mod camera_eos_d2000c_raw_modes {
+  super::camera_file_check!("Canon", "EOS D2000C", cam_canon_d2000c_raw_iso_200_tif, "raw_modes/Canon D2000C_RAW_ISO_200.TIF");
 }
-mod camera_eos_70d_raw_modes {
-  super::camera_file_check!("Canon", "EOS 70D", cam_canon_eos_70d_sraw2_iso_100_cr2, "raw_modes/Canon EOS 70D_sRAW2_ISO_100.CR2");
-  super::camera_file_check!("Canon", "EOS 70D", cam_canon_eos_70d_raw_iso_100_cr2, "raw_modes/Canon EOS 70D_RAW_ISO_100.CR2");
-  super::camera_file_check!("Canon", "EOS 70D", cam_canon_eos_70d_sraw1_iso_100_cr2, "raw_modes/Canon EOS 70D_sRAW1_ISO_100.CR2");
+mod camera_eos_d30_raw_modes {
+  super::camera_file_check!("Canon", "EOS D30", cam_canon_eos_d30_iso_1600_crw, "raw_modes/Canon EOS D30_ISO_1600.CRW");
 }
-mod camera_eos_5d_mark_ii_raw_modes {
-  super::camera_file_check!("Canon", "EOS 5D Mark II", cam_canon_eos_5d_mark_ii_raw_iso_800_cr2, "raw_modes/Canon EOS 5D Mark II_RAW_ISO_800.CR2");
-  super::camera_file_check!("Canon", "EOS 5D Mark II", cam_canon_eos_5d_mark_ii_sraw2_iso_800_cr2, "raw_modes/Canon EOS 5D Mark II_sRAW2_ISO_800.CR2");
-  super::camera_file_check!("Canon", "EOS 5D Mark II", cam_canon_eos_5d_mark_ii_sraw1_iso_800_cr2, "raw_modes/Canon EOS 5D Mark II_sRAW1_ISO_800.CR2");
+mod camera_eos_d60_raw_modes {
+  super::camera_file_check!("Canon", "EOS D60", cam_canon_eos_d60_iso_100_crw, "raw_modes/Canon EOS D60_ISO_100.CRW");
 }
-mod camera_canon_eos_m200_raw_modes {
-  super::camera_file_check!("Canon", "Canon EOS M200", cam_canon_eos_m200_craw_iso_100_nocrop_nodual_cr3, "raw_modes/Canon EOS M200_CRAW_ISO_100_nocrop_nodual.CR3");
-  super::camera_file_check!("Canon", "Canon EOS M200", cam_canon_eos_m200_raw_iso_100_nocrop_nodual_cr3, "raw_modes/Canon EOS M200_RAW_ISO_100_nocrop_nodual.CR3");
+mod camera_eos_digital_rebel_raw_modes {
+  super::camera_file_check!("Canon", "EOS Digital Rebel", cam_canon_eos_digital_rebel_iso_1600_crw, "raw_modes/Canon EOS DIGITAL REBEL_ISO_1600.CRW");
 }
-mod camera_eos_60d_raw_modes {
-  super::camera_file_check!("Canon", "EOS 60D", cam_canon_eos_60d_raw_iso_100_cr2, "raw_modes/Canon EOS 60D_RAW_ISO_100.CR2");
-  super::camera_file_check!("Canon", "EOS 60D", cam_canon_eos_60d_sraw1_iso_100_cr2, "raw_modes/Canon EOS 60D_sRAW1_ISO_100.CR2");
-  super::camera_file_check!("Canon", "EOS 60D", cam_canon_eos_60d_sraw2_iso_100_cr2, "raw_modes/Canon EOS 60D_sRAW2_ISO_100.CR2");
+mod camera_eos_digital_rebel_xsi_raw_modes {
+  super::camera_file_check!("Canon", "EOS Digital Rebel XSi", cam_canon_eos_digital_rebel_xsi_iso_400_raw_cr2, "raw_modes/Canon EOS DIGITAL REBEL XSi_ISO_400_RAW.CR2");
 }
-mod camera_eos_5d_raw_modes {
-  super::camera_file_check!("Canon", "EOS 5D", cam_canon_5d_raw_iso_400_cr2, "raw_modes/Canon 5D_RAW_ISO_400.CR2");
+mod camera_eos_digital_rebel_xs_raw_modes {
+  super::camera_file_check!("Canon", "EOS Digital Rebel XS", cam_canon_eos_digital_rebel_xs_iso_100_raw_cr2, "raw_modes/Canon EOS DIGITAL REBEL XS_ISO_100_RAW.CR2");
 }
-mod camera_canon_eos_r5_raw_modes {
-  super::camera_file_check!("Canon", "Canon EOS R5", cam_canon_eos_r5_craw_iso_100_nocrop_nodual_cr3, "raw_modes/Canon EOS R5_CRAW_ISO_100_nocrop_nodual.CR3");
-  super::camera_file_check!("Canon", "Canon EOS R5", cam_canon_eos_r5_raw_iso_100_crop_dual_cr3, "raw_modes/Canon EOS R5_RAW_ISO_100_crop_dual.CR3");
-  super::camera_file_check!("Canon", "Canon EOS R5", cam_canon_eos_r5_raw_iso_100_nocrop_dual_cr3, "raw_modes/Canon EOS R5_RAW_ISO_100_nocrop_dual.CR3");
-  super::camera_file_check!("Canon", "Canon EOS R5", cam_canon_eos_r5_craw_iso_100_nocrop_dual_cr3, "raw_modes/Canon EOS R5_CRAW_ISO_100_nocrop_dual.CR3");
-  super::camera_file_check!("Canon", "Canon EOS R5", cam_canon_eos_r5_craw_iso_100_crop_dual_cr3, "raw_modes/Canon EOS R5_CRAW_ISO_100_crop_dual.CR3");
-  super::camera_file_check!("Canon", "Canon EOS R5", cam_canon_eos_r5_craw_iso_100_crop_nodual_cr3, "raw_modes/Canon EOS R5_CRAW_ISO_100_crop_nodual.CR3");
-  super::camera_file_check!("Canon", "Canon EOS R5", cam_canon_eos_r5_raw_iso_100_crop_nodual_cr3, "raw_modes/Canon EOS R5_RAW_ISO_100_crop_nodual.CR3");
-  super::camera_file_check!("Canon", "Canon EOS R5", cam_canon_eos_r5_raw_iso_100_nocrop_nodual_cr3, "raw_modes/Canon EOS R5_RAW_ISO_100_nocrop_nodual.CR3");
+mod camera_eos_digital_rebel_xti_raw_modes {
+  super::camera_file_check!("Canon", "EOS Digital Rebel XTi", cam_canon_eos_digital_rebel_xti_iso_400_cr2, "raw_modes/Canon EOS DIGITAL REBEL XTi_ISO_400.CR2");
 }
-mod camera_eos_40d_raw_modes {
-  super::camera_file_check!("Canon", "EOS 40D", cam_canon_eos_40d_sraw_iso_100_cr2, "raw_modes/Canon EOS 40D_sRAW_ISO_100.CR2");
-  super::camera_file_check!("Canon", "EOS 40D", cam_canon_eos_40d_raw_iso_100_cr2, "raw_modes/Canon EOS 40D_RAW_ISO_100.CR2");
+mod camera_eos_digital_rebel_xt_raw_modes {
+  super::camera_file_check!("Canon", "EOS Digital Rebel XT", cam_canon_eos_digital_rebel_xt_iso_100_cr2, "raw_modes/Canon EOS DIGITAL REBEL XT_ISO_100.CR2");
 }
-mod camera_eos_50d_raw_modes {
-  super::camera_file_check!("Canon", "EOS 50D", cam_canon_eos_50d_sraw2_iso_100_cr2, "raw_modes/Canon EOS 50D_sRAW2_ISO_100.CR2");
-  super::camera_file_check!("Canon", "EOS 50D", cam_canon_eos_50d_sraw1_iso_100_cr2, "raw_modes/Canon EOS 50D_sRAW1_ISO_100.CR2");
-  super::camera_file_check!("Canon", "EOS 50D", cam_canon_eos_50d_raw_iso_100_cr2, "raw_modes/Canon EOS 50D_RAW_ISO_100.CR2");
+mod camera_eos_kiss_digital_n_raw_modes {
+  super::camera_file_check!("Canon", "EOS Kiss Digital N", cam_canon_eos_kiss_digital_n_iso_100_cr2, "raw_modes/Canon EOS Kiss Digital N_ISO_100.CR2");
 }
-mod camera_canon_eos_rp_raw_modes {
-  super::camera_file_check!("Canon", "Canon EOS RP", cam_canon_eos_rp_craw_iso_100_crop_nodual_cr3, "raw_modes/Canon EOS RP_CRAW_ISO_100_crop_nodual.CR3");
-  super::camera_file_check!("Canon", "Canon EOS RP", cam_canon_eos_rp_raw_iso_100_nocrop_nodual_cr3, "raw_modes/Canon EOS RP_RAW_ISO_100_nocrop_nodual.CR3");
-  super::camera_file_check!("Canon", "Canon EOS RP", cam_canon_eos_rp_craw_iso_100_nocrop_nodual_cr3, "raw_modes/Canon EOS RP_CRAW_ISO_100_nocrop_nodual.CR3");
-  super::camera_file_check!("Canon", "Canon EOS RP", cam_canon_eos_rp_raw_iso_100_crop_nodual_cr3, "raw_modes/Canon EOS RP_RAW_ISO_100_crop_nodual.CR3");
+mod camera_eos_kiss_x3_raw_modes {
+  super::camera_file_check!("Canon", "EOS Kiss X3", cam_canon_eos_kiss_x3_iso_400_raw_cr2, "raw_modes/Canon EOS Kiss X3_ISO_400_RAW.CR2");
 }
-mod camera_canon_eos_r6_raw_modes {
-  super::camera_file_check!("Canon", "Canon EOS R6", cam_canon_eos_r6_raw_iso_100_nocrop_nodual_cr3, "raw_modes/Canon EOS R6_RAW_ISO_100_nocrop_nodual.CR3");
-  super::camera_file_check!("Canon", "Canon EOS R6", cam_canon_eos_r6_craw_iso_100_nocrop_nodual_cr3, "raw_modes/Canon EOS R6_CRAW_ISO_100_nocrop_nodual.CR3");
-  super::camera_file_check!("Canon", "Canon EOS R6", cam_canon_eos_r6_raw_iso_100_crop_nodual_cr3, "raw_modes/Canon EOS R6_RAW_ISO_100_crop_nodual.CR3");
-  super::camera_file_check!("Canon", "Canon EOS R6", cam_canon_eos_r6_craw_iso_100_crop_nodual_cr3, "raw_modes/Canon EOS R6_CRAW_ISO_100_crop_nodual.CR3");
+mod camera_eos_kiss_x4_raw_modes {
+  super::camera_file_check!("Canon", "EOS Kiss X4", cam_canon_eos_kiss_x4_iso_100_raw_cr2, "raw_modes/Canon EOS Kiss X4_ISO_100_RAW.CR2");
+}
+mod camera_eos_kiss_x80_raw_modes {
+  super::camera_file_check!("Canon", "EOS Kiss X80", cam_canon_eos_kiss_x80_iso_100_raw_cr2, "raw_modes/Canon EOS Kiss X80_ISO_100_RAW.CR2");
+}
+mod camera_eos_kiss_x9_raw_modes {
+  super::camera_file_check!("Canon", "EOS Kiss X9", cam_canon_eos_kiss_x9_iso_6400_raw_cr2, "raw_modes/Canon EOS Kiss X9_ISO_6400_RAW.CR2");
+}
+mod camera_eos_m100_raw_modes {
+  super::camera_file_check!("Canon", "EOS M100", cam_canon_eos_m100_iso_640_raw_cr2, "raw_modes/Canon EOS M100_ISO_640_RAW.CR2");
+}
+mod camera_eos_m10_raw_modes {
+  super::camera_file_check!("Canon", "EOS M10", cam_canon_eos_m10_iso_200_raw_cr2, "raw_modes/Canon EOS M10_ISO_200_RAW.CR2");
+}
+mod camera_eos_m200_raw_modes {
+  super::camera_file_check!("Canon", "EOS M200", cam_canon_eos_m200_craw_iso_100_nocrop_nodual_cr3, "raw_modes/Canon EOS M200_CRAW_ISO_100_nocrop_nodual.CR3");
+  super::camera_file_check!("Canon", "EOS M200", cam_canon_eos_m200_raw_iso_100_nocrop_nodual_cr3, "raw_modes/Canon EOS M200_RAW_ISO_100_nocrop_nodual.CR3");
+}
+mod camera_eos_m2_raw_modes {
+  super::camera_file_check!("Canon", "EOS M2", cam_canon_eos_m2_iso_500_raw_cr2, "raw_modes/Canon EOS M2_ISO_500_RAW.CR2");
+}
+mod camera_eos_m3_raw_modes {
+  super::camera_file_check!("Canon", "EOS M3", cam_canon_eos_m3_iso_5000_raw_cr2, "raw_modes/Canon EOS M3_ISO_5000_RAW.CR2");
+}
+mod camera_eos_m50m2_raw_modes {
+  super::camera_file_check!("Canon", "EOS M50m2", cam_canon_eos_m50m2_raw_iso_100_nocrop_nodual_cr3, "raw_modes/Canon EOS M50m2_RAW_ISO_100_nocrop_nodual.CR3");
+  super::camera_file_check!("Canon", "EOS M50m2", cam_canon_eos_m50m2_craw_iso_100_nocrop_nodual_cr3, "raw_modes/Canon EOS M50m2_CRAW_ISO_100_nocrop_nodual.CR3");
+}
+mod camera_eos_m50_raw_modes {
+  super::camera_file_check!("Canon", "EOS M50", cam_canon_eos_m50_raw_iso_100_nocrop_nodual_cr3, "raw_modes/Canon EOS M50_RAW_ISO_100_nocrop_nodual.CR3");
+  super::camera_file_check!("Canon", "EOS M50", cam_canon_eos_m50_craw_iso_100_nocrop_nodual_cr3, "raw_modes/Canon EOS M50_CRAW_ISO_100_nocrop_nodual.CR3");
+}
+mod camera_eos_m5_raw_modes {
+  super::camera_file_check!("Canon", "EOS M5", cam_canon_eos_m5_iso_100_raw_cr2, "raw_modes/Canon EOS M5_ISO_100_RAW.CR2");
+}
+mod camera_eos_m6_mark_ii_raw_modes {
+  super::camera_file_check!("Canon", "EOS M6 Mark II", cam_canon_eos_m6_mark_ii_raw_iso_100_nocrop_nodual_cr3, "raw_modes/Canon EOS M6 Mark II_RAW_ISO_100_nocrop_nodual.CR3");
+  super::camera_file_check!("Canon", "EOS M6 Mark II", cam_canon_eos_m6_mark_ii_craw_iso_100_nocrop_nodual_cr3, "raw_modes/Canon EOS M6 Mark II_CRAW_ISO_100_nocrop_nodual.CR3");
+}
+mod camera_eos_m6_raw_modes {
+  super::camera_file_check!("Canon", "EOS M6", cam_canon_eos_m6_iso_100_raw_cr2, "raw_modes/Canon EOS M6_ISO_100_RAW.CR2");
+}
+mod camera_eos_m_raw_modes {
+  super::camera_file_check!("Canon", "EOS M", cam_canon_eos_m_iso_1600_raw_cr2, "raw_modes/Canon EOS M_ISO_1600_RAW.CR2");
+}
+mod camera_eos_r5_raw_modes {
+  super::camera_file_check!("Canon", "EOS R5", cam_canon_eos_r5_craw_iso_100_nocrop_nodual_cr3, "raw_modes/Canon EOS R5_CRAW_ISO_100_nocrop_nodual.CR3");
+  super::camera_file_check!("Canon", "EOS R5", cam_canon_eos_r5_raw_iso_100_crop_dual_cr3, "raw_modes/Canon EOS R5_RAW_ISO_100_crop_dual.CR3");
+  super::camera_file_check!("Canon", "EOS R5", cam_canon_eos_r5_raw_iso_100_nocrop_dual_cr3, "raw_modes/Canon EOS R5_RAW_ISO_100_nocrop_dual.CR3");
+  super::camera_file_check!("Canon", "EOS R5", cam_canon_eos_r5_craw_iso_100_nocrop_dual_cr3, "raw_modes/Canon EOS R5_CRAW_ISO_100_nocrop_dual.CR3");
+  super::camera_file_check!("Canon", "EOS R5", cam_canon_eos_r5_craw_iso_100_crop_dual_cr3, "raw_modes/Canon EOS R5_CRAW_ISO_100_crop_dual.CR3");
+  super::camera_file_check!("Canon", "EOS R5", cam_canon_eos_r5_craw_iso_100_crop_nodual_cr3, "raw_modes/Canon EOS R5_CRAW_ISO_100_crop_nodual.CR3");
+  super::camera_file_check!("Canon", "EOS R5", cam_canon_eos_r5_raw_iso_100_crop_nodual_cr3, "raw_modes/Canon EOS R5_RAW_ISO_100_crop_nodual.CR3");
+  super::camera_file_check!("Canon", "EOS R5", cam_canon_eos_r5_raw_iso_100_nocrop_nodual_cr3, "raw_modes/Canon EOS R5_RAW_ISO_100_nocrop_nodual.CR3");
+}
+mod camera_eos_r6_raw_modes {
+  super::camera_file_check!("Canon", "EOS R6", cam_canon_eos_r6_raw_iso_100_nocrop_nodual_cr3, "raw_modes/Canon EOS R6_RAW_ISO_100_nocrop_nodual.CR3");
+  super::camera_file_check!("Canon", "EOS R6", cam_canon_eos_r6_craw_iso_100_nocrop_nodual_cr3, "raw_modes/Canon EOS R6_CRAW_ISO_100_nocrop_nodual.CR3");
+  super::camera_file_check!("Canon", "EOS R6", cam_canon_eos_r6_raw_iso_100_crop_nodual_cr3, "raw_modes/Canon EOS R6_RAW_ISO_100_crop_nodual.CR3");
+  super::camera_file_check!("Canon", "EOS R6", cam_canon_eos_r6_craw_iso_100_crop_nodual_cr3, "raw_modes/Canon EOS R6_CRAW_ISO_100_crop_nodual.CR3");
+}
+mod camera_eos_rebel_sl1_raw_modes {
+  super::camera_file_check!("Canon", "EOS Rebel SL1", cam_canon_eos_rebel_sl1_iso_400_raw_cr2, "raw_modes/Canon EOS REBEL SL1_ISO_400_RAW.CR2");
+}
+mod camera_eos_rebel_sl2_raw_modes {
+  super::camera_file_check!("Canon", "EOS Rebel SL2", cam_canon_eos_rebel_sl2_iso_400_raw_cr2, "raw_modes/Canon EOS Rebel SL2_ISO_400_RAW.CR2");
+}
+mod camera_eos_rebel_sl3_raw_modes {
+  super::camera_file_check!("Canon", "EOS Rebel SL3", cam_eos_rebel_sl3_cr3, "raw_modes/EOS Rebel SL3.CR3");
+}
+mod camera_eos_rebel_t100_raw_modes {
+  super::camera_file_check!("Canon", "EOS Rebel T100", cam_canon_eos_rebel_t100_iso_100_raw_cr2, "raw_modes/Canon EOS Rebel T100_ISO_100_RAW.CR2");
+}
+mod camera_eos_rebel_t1i_raw_modes {
+  super::camera_file_check!("Canon", "EOS Rebel T1i", cam_canon_eos_rebel_t1i_iso_1600_raw_cr2, "raw_modes/Canon EOS REBEL T1i_ISO_1600_RAW.CR2");
+}
+mod camera_eos_rebel_t2i_raw_modes {
+  super::camera_file_check!("Canon", "EOS Rebel T2i", cam_canon_eos_rebel_t2i_iso_1600_raw_cr2, "raw_modes/Canon EOS REBEL T2i_ISO_1600_RAW.CR2");
+}
+mod camera_eos_rebel_t3i_raw_modes {
+  super::camera_file_check!("Canon", "EOS Rebel T3i", cam_canon_eos_rebel_t3i_iso_100_raw_cr2, "raw_modes/Canon EOS REBEL T3i_ISO_100_RAW.CR2");
+}
+mod camera_eos_rebel_t3_raw_modes {
+  super::camera_file_check!("Canon", "EOS Rebel T3", cam_canon_eos_rebel_t3_iso_800_raw_cr2, "raw_modes/Canon EOS REBEL T3_ISO_800_RAW.CR2");
+}
+mod camera_eos_rebel_t4i_raw_modes {
+  super::camera_file_check!("Canon", "EOS Rebel T4i", cam_canon_eos_rebel_t4i_iso_100_raw_cr2, "raw_modes/Canon EOS REBEL T4i_ISO_100_RAW.CR2");
+}
+mod camera_eos_rebel_t5i_raw_modes {
+  super::camera_file_check!("Canon", "EOS Rebel T5i", cam_canon_eos_rebel_t5i_iso_400_raw_cr2, "raw_modes/Canon EOS REBEL T5i_ISO_400_RAW.CR2");
+}
+mod camera_eos_rebel_t5_raw_modes {
+  super::camera_file_check!("Canon", "EOS Rebel T5", cam_canon_eos_rebel_t5_iso_800_raw_cr2, "raw_modes/Canon EOS REBEL T5_ISO_800_RAW.CR2");
+}
+mod camera_eos_rebel_t6i_raw_modes {
+  super::camera_file_check!("Canon", "EOS Rebel T6i", cam_canon_eos_rebel_t6i_iso_100_raw_cr2, "raw_modes/Canon EOS Rebel T6i_ISO_100_RAW.CR2");
+}
+mod camera_eos_rebel_t6_raw_modes {
+  super::camera_file_check!("Canon", "EOS Rebel T6", cam_canon_eos_rebel_t6_iso_200_raw_cr2, "raw_modes/Canon EOS Rebel T6_ISO_200_RAW.CR2");
+}
+mod camera_eos_rebel_t6s_raw_modes {
+  super::camera_file_check!("Canon", "EOS Rebel T6s", cam_canon_eos_rebel_t6s_iso_200_raw_cr2, "raw_modes/Canon EOS Rebel T6s_ISO_200_RAW.CR2");
+}
+mod camera_eos_rebel_t7i_raw_modes {
+  super::camera_file_check!("Canon", "EOS REBEL T7i", cam_canon_eos_rebel_t7i_iso_800_raw_cr2, "raw_modes/Canon EOS REBEL T7i_ISO_800_RAW.CR2");
+}
+mod camera_eos_rebel_t7_raw_modes {
+  super::camera_file_check!("Canon", "EOS Rebel T7", cam_canon_eos_rebel_t7_iso_200_raw_cr2, "raw_modes/Canon EOS Rebel T7_ISO_200_RAW.CR2");
+}
+mod camera_eos_rp_raw_modes {
+  super::camera_file_check!("Canon", "EOS RP", cam_canon_eos_rp_craw_iso_100_crop_nodual_cr3, "raw_modes/Canon EOS RP_CRAW_ISO_100_crop_nodual.CR3");
+  super::camera_file_check!("Canon", "EOS RP", cam_canon_eos_rp_raw_iso_100_nocrop_nodual_cr3, "raw_modes/Canon EOS RP_RAW_ISO_100_nocrop_nodual.CR3");
+  super::camera_file_check!("Canon", "EOS RP", cam_canon_eos_rp_craw_iso_100_nocrop_nodual_cr3, "raw_modes/Canon EOS RP_CRAW_ISO_100_nocrop_nodual.CR3");
+  super::camera_file_check!("Canon", "EOS RP", cam_canon_eos_rp_raw_iso_100_crop_nodual_cr3, "raw_modes/Canon EOS RP_RAW_ISO_100_crop_nodual.CR3");
+}
+mod camera_eos_r_raw_modes {
+  super::camera_file_check!("Canon", "EOS R", cam_canon_eos_r_raw_iso_100_crop_dual_cr3, "raw_modes/Canon EOS R_RAW_ISO_100_crop_dual.CR3");
+  super::camera_file_check!("Canon", "EOS R", cam_canon_eos_r_raw_iso_100_nocrop_nodual_cr3, "raw_modes/Canon EOS R_RAW_ISO_100_nocrop_nodual.CR3");
+  super::camera_file_check!("Canon", "EOS R", cam_canon_eos_r_craw_iso_100_nocrop_nodual_cr3, "raw_modes/Canon EOS R_CRAW_ISO_100_nocrop_nodual.CR3");
+  super::camera_file_check!("Canon", "EOS R", cam_canon_eos_r_raw_iso_100_crop_nodual_cr3, "raw_modes/Canon EOS R_RAW_ISO_100_crop_nodual.CR3");
+  super::camera_file_check!("Canon", "EOS R", cam_canon_eos_r_craw_iso_100_crop_nodual_cr3, "raw_modes/Canon EOS R_CRAW_ISO_100_crop_nodual.CR3");
+  super::camera_file_check!("Canon", "EOS R", cam_canon_eos_r_raw_iso_100_nocrop_dual_cr3, "raw_modes/Canon EOS R_RAW_ISO_100_nocrop_dual.CR3");
+  super::camera_file_check!("Canon", "EOS R", cam_canon_eos_r_craw_iso_100_crop_dual_cr3, "raw_modes/Canon EOS R_CRAW_ISO_100_crop_dual.CR3");
+  super::camera_file_check!("Canon", "EOS R", cam_canon_eos_r_craw_iso_100_nocrop_dual_cr3, "raw_modes/Canon EOS R_CRAW_ISO_100_nocrop_dual.CR3");
+}
+mod camera_ixus900ti_raw_modes {
+  super::camera_file_check!("Canon", "IXUS900Ti", cam_canon_ixus900ti_crw, "raw_modes/Canon IXUS900Ti.CRW");
+}
+mod camera_powershot_a480_raw_modes {
+  super::camera_file_check!("Canon", "PowerShot A480", cam_powershot_a480_crw, "raw_modes/PowerShot A480.CRW");
+}
+mod camera_powershot_a540_raw_modes {
+  super::camera_file_check!("Canon", "PowerShot A540", cam_canon_powershot_a540_crw, "raw_modes/Canon PowerShot A540.CRW");
+}
+mod camera_powershot_a550_raw_modes {
+  super::camera_file_check!("Canon", "PowerShot A550", cam_powershot_a550_crw, "raw_modes/PowerShot A550.CRW");
+}
+mod camera_powershot_a570_is_raw_modes {
+  super::camera_file_check!("Canon", "PowerShot A570 IS", cam_powershot_a570_is_crw, "raw_modes/PowerShot A570 IS.CRW");
+}
+mod camera_powershot_a610_raw_modes {
+  super::camera_file_check!("Canon", "PowerShot A610", cam_canon_powershot_a610_crw, "raw_modes/Canon PowerShot A610.CRW");
+}
+mod camera_powershot_a620_raw_modes {
+  super::camera_file_check!("Canon", "PowerShot A620", cam_powershot_a620_crw, "raw_modes/Powershot A620.CRW");
+}
+mod camera_powershot_a630_raw_modes {
+  super::camera_file_check!("Canon", "PowerShot A630", cam_canon_powershot_a630_crw, "raw_modes/Canon PowerShot A630.CRW");
+}
+mod camera_powershot_a640_raw_modes {
+  super::camera_file_check!("Canon", "PowerShot A640", cam_powershot_a640_crw, "raw_modes/Powershot A640.CRW");
+}
+mod camera_powershot_a650_raw_modes {
+  super::camera_file_check!("Canon", "PowerShot A650", cam_canon_powershot_a650_crw, "raw_modes/Canon Powershot A650.CRW");
+}
+mod camera_powershot_a710_is_raw_modes {
+  super::camera_file_check!("Canon", "PowerShot A710 IS", cam_canon_powershot_a710_is_crw, "raw_modes/Canon PowerShot A710 IS.CRW");
+}
+mod camera_powershot_a720_is_raw_modes {
+  super::camera_file_check!("Canon", "PowerShot A720 IS", cam_powershot_a720is_crw, "raw_modes/Powershot A720IS.CRW");
+}
+mod camera_powershot_d10_raw_modes {
+  super::camera_file_check!("Canon", "PowerShot D10", cam_powershot_d10_crw, "raw_modes/PowerShot D10.CRW");
+}
+mod camera_powershot_elph_130_is_raw_modes {
+  super::camera_file_check!("Canon", "PowerShot ELPH 130 IS", cam_canon_powershot_elph_130_is_crw, "raw_modes/Canon PowerShot ELPH 130 IS.CRW");
+}
+mod camera_powershot_g10_raw_modes {
+  super::camera_file_check!("Canon", "PowerShot G10", cam_canon_powershot_g10_iso_80_raw_cr2, "raw_modes/Canon PowerShot G10_ISO_80_RAW.CR2");
+}
+mod camera_powershot_g11_raw_modes {
+  super::camera_file_check!("Canon", "PowerShot G11", cam_canon_powershot_g11_iso_400_raw_cr2, "raw_modes/Canon PowerShot G11_ISO_400_RAW.CR2");
+}
+mod camera_powershot_g12_raw_modes {
+  super::camera_file_check!("Canon", "PowerShot G12", cam_canon_powershot_g12_iso_200_raw_cr2, "raw_modes/Canon PowerShot G12_ISO_200_RAW.CR2");
+}
+mod camera_powershot_g15_raw_modes {
+  super::camera_file_check!("Canon", "PowerShot G15", cam_canon_powershot_g15_iso_80_raw_cr2, "raw_modes/Canon PowerShot G15_ISO_80_RAW.CR2");
+}
+mod camera_powershot_g16_raw_modes {
+  super::camera_file_check!("Canon", "PowerShot G16", cam_canon_powershot_g16_iso_80_raw_cr2, "raw_modes/Canon PowerShot G16_ISO_80_RAW.CR2");
+}
+mod camera_powershot_g1_raw_modes {
+  super::camera_file_check!("Canon", "PowerShot G1", cam_canon_powershot_g1_iso_50_crw, "raw_modes/Canon PowerShot G1_ISO_50.CRW");
+}
+mod camera_powershot_g1_x_mark_iii_raw_modes {
+  super::camera_file_check!("Canon", "PowerShot G1 X Mark III", cam_canon_powershot_g1_x_mark_iii_iso_100_raw_cr2, "raw_modes/Canon PowerShot G1 X Mark III_ISO_100_RAW.CR2");
+}
+mod camera_powershot_g1_x_mark_ii_raw_modes {
+  super::camera_file_check!("Canon", "PowerShot G1 X Mark II", cam_canon_powershot_g1_x_mark_ii_iso_100_raw_cr2, "raw_modes/Canon PowerShot G1 X Mark II_ISO_100_RAW.CR2");
+}
+mod camera_powershot_g1_x_raw_modes {
+  super::camera_file_check!("Canon", "PowerShot G1 X", cam_canon_powershot_g1_x_iso_100_raw_cr2, "raw_modes/Canon PowerShot G1 X_ISO_100_RAW.CR2");
+}
+mod camera_powershot_g2_raw_modes {
+  super::camera_file_check!("Canon", "PowerShot G2", cam_canon_powershot_g2_iso_100_crw, "raw_modes/Canon PowerShot G2_ISO_100.CRW");
+}
+mod camera_powershot_g3_raw_modes {
+  super::camera_file_check!("Canon", "PowerShot G3", cam_canon_powershot_g3_iso_50_crw, "raw_modes/Canon PowerShot G3_ISO_50.CRW");
+}
+mod camera_powershot_g3_x_raw_modes {
+  super::camera_file_check!("Canon", "PowerShot G3 X", cam_canon_powershot_g3_x_iso_200_raw_cr2, "raw_modes/Canon PowerShot G3 X_ISO_200_RAW.CR2");
+}
+mod camera_powershot_g5_raw_modes {
+  super::camera_file_check!("Canon", "PowerShot G5", cam_canon_powershot_g5_iso_100_crw, "raw_modes/Canon PowerShot G5_ISO_100.CRW");
+}
+mod camera_powershot_g5_x_mark_ii_raw_modes {
+  super::camera_file_check!("Canon", "PowerShot G5 X Mark II", cam_canon_powershot_g5_x_mark_ii_craw_iso_200_nocrop_nodual_cr3, "raw_modes/Canon PowerShot G5 X Mark II_CRAW_ISO_200_nocrop_nodual.CR3");
+  super::camera_file_check!("Canon", "PowerShot G5 X Mark II", cam_canon_powershot_g5_x_mark_ii_raw_iso_200_nocrop_nodual_cr3, "raw_modes/Canon PowerShot G5 X Mark II_RAW_ISO_200_nocrop_nodual.CR3");
+}
+mod camera_powershot_g5_x_raw_modes {
+  super::camera_file_check!("Canon", "PowerShot G5 X", cam_canon_powershot_g5_x_iso_400_raw_cr2, "raw_modes/Canon PowerShot G5 X_ISO_400_RAW.CR2");
+}
+mod camera_powershot_g6_raw_modes {
+  super::camera_file_check!("Canon", "PowerShot G6", cam_canon_powershot_g6_iso_100_crw, "raw_modes/Canon PowerShot G6_ISO_100.CRW");
+}
+mod camera_powershot_g7_x_mark_iii_raw_modes {
+  super::camera_file_check!("Canon", "PowerShot G7 X Mark III", cam_canon_powershot_g7_x_mark_iii_raw_iso_200_nocrop_nodual_cr3, "raw_modes/Canon PowerShot G7 X Mark III_RAW_ISO_200_nocrop_nodual.CR3");
+  super::camera_file_check!("Canon", "PowerShot G7 X Mark III", cam_canon_powershot_g7_x_mark_iii_craw_iso_200_nocrop_nodual_cr3, "raw_modes/Canon PowerShot G7 X Mark III_CRAW_ISO_200_nocrop_nodual.CR3");
+}
+mod camera_powershot_g7_x_mark_ii_raw_modes {
+  super::camera_file_check!("Canon", "PowerShot G7 X Mark II", cam_canon_powershot_g7_x_mark_ii_iso_125_raw_cr2, "raw_modes/Canon PowerShot G7 X Mark II_ISO_125_RAW.CR2");
+}
+mod camera_powershot_g7_x_raw_modes {
+  super::camera_file_check!("Canon", "PowerShot G7 X", cam_canon_powershot_g7_x_iso_125_raw_cr2, "raw_modes/Canon PowerShot G7 X_ISO_125_RAW.CR2");
+  super::camera_file_check!("Canon", "PowerShot G7 X", cam_powershot_g7_x_crw, "raw_modes/PowerShot G7 X.CRW");
+}
+mod camera_powershot_g9_raw_modes {
+  super::camera_file_check!("Canon", "PowerShot G9", cam_canon_powershot_g9_iso_80_raw_cr2, "raw_modes/Canon PowerShot G9_ISO_80_RAW.CR2");
+}
+mod camera_powershot_g9_x_mark_ii_raw_modes {
+  super::camera_file_check!("Canon", "PowerShot G9 X Mark II", cam_canon_powershot_g9_x_mark_ii_iso_125_raw_cr2, "raw_modes/Canon PowerShot G9 X Mark II_ISO_125_RAW.CR2");
+}
+mod camera_powershot_g9_x_raw_modes {
+  super::camera_file_check!("Canon", "PowerShot G9 X", cam_canon_powershot_g9_x_iso_640_raw_cr2, "raw_modes/Canon PowerShot G9 X_ISO_640_RAW.CR2");
+}
+mod camera_powershot_pro1_raw_modes {
+  super::camera_file_check!("Canon", "PowerShot Pro1", cam_canon_powershot_pro1_iso_50_crw, "raw_modes/Canon PowerShot Pro1_ISO_50.CRW");
+}
+mod camera_powershot_s100_raw_modes {
+  super::camera_file_check!("Canon", "PowerShot S100", cam_canon_powershot_s100_iso_80_raw_cr2, "raw_modes/Canon PowerShot S100_ISO_80_RAW.CR2");
+}
+mod camera_powershot_s100v_raw_modes {
+  super::camera_file_check!("Canon", "PowerShot S100V", cam_canon_powershot_s100v_iso_200_raw_cr2, "raw_modes/Canon PowerShot S100V_ISO_200_RAW.CR2");
+}
+mod camera_powershot_s110_raw_modes {
+  super::camera_file_check!("Canon", "PowerShot S110", cam_canon_powershot_s110_iso_100_raw_cr2, "raw_modes/Canon PowerShot S110_ISO_100_RAW.CR2");
+}
+mod camera_powershot_s120_raw_modes {
+  super::camera_file_check!("Canon", "PowerShot S120", cam_canon_powershot_s120_iso_250_raw_cr2, "raw_modes/Canon PowerShot S120_ISO_250_RAW.CR2");
+}
+mod camera_powershot_s2_is_raw_modes {
+  super::camera_file_check!("Canon", "PowerShot S2 IS", cam_canon_powershot_s2_is_crw, "raw_modes/Canon PowerShot S2 IS.CRW");
+}
+mod camera_powershot_s30_raw_modes {
+  super::camera_file_check!("Canon", "PowerShot S30", cam_canon_powershot_s30_iso_50_crw, "raw_modes/Canon PowerShot S30_ISO_50.CRW");
+}
+mod camera_powershot_s3is_raw_modes {
+  super::camera_file_check!("Canon", "PowerShot S3IS", cam_canon_powershot_s3is_crw, "raw_modes/Canon PowerShot S3IS.CRW");
+  super::camera_file_check!("Canon", "PowerShot S3IS", cam_powershot_s3is_crw, "raw_modes/PowerShot S3IS.CRW");
+}
+mod camera_powershot_s40_raw_modes {
+  super::camera_file_check!("Canon", "PowerShot S40", cam_canon_powershot_s40_iso_50_crw, "raw_modes/Canon PowerShot S40_ISO_50.CRW");
+}
+mod camera_powershot_s45_raw_modes {
+  super::camera_file_check!("Canon", "PowerShot S45", cam_canon_powershot_s45_iso_50_crw, "raw_modes/Canon PowerShot S45_ISO_50.CRW");
+}
+mod camera_powershot_s50_raw_modes {
+  super::camera_file_check!("Canon", "PowerShot S50", cam_canon_powershot_s50_iso_50_crw, "raw_modes/Canon PowerShot S50_ISO_50.CRW");
+}
+mod camera_powershot_s5_is_raw_modes {
+  super::camera_file_check!("Canon", "PowerShot S5 IS", cam_canon_powershot_s5_is_crw, "raw_modes/Canon PowerShot S5 IS.CRW");
+}
+mod camera_powershot_s60_raw_modes {
+  super::camera_file_check!("Canon", "PowerShot S60", cam_canon_powershot_s60_iso_50_crw, "raw_modes/Canon PowerShot S60_ISO_50.CRW");
+}
+mod camera_powershot_s70_raw_modes {
+  super::camera_file_check!("Canon", "PowerShot S70", cam_canon_powershot_s70_iso_100_crw, "raw_modes/Canon PowerShot S70_ISO_100.CRW");
+}
+mod camera_powershot_s90_raw_modes {
+  super::camera_file_check!("Canon", "PowerShot S90", cam_canon_powershot_s90_iso_80_raw_cr2, "raw_modes/Canon PowerShot S90_ISO_80_RAW.CR2");
+}
+mod camera_powershot_s95_raw_modes {
+  super::camera_file_check!("Canon", "PowerShot S95", cam_canon_powershot_s95_iso_400_raw_cr2, "raw_modes/Canon PowerShot S95_ISO_400_RAW.CR2");
+}
+mod camera_powershot_sd750_raw_modes {
+  super::camera_file_check!("Canon", "PowerShot SD750", cam_canon_powershot_sd750_crw, "raw_modes/Canon PowerShot SD750.CRW");
+}
+mod camera_powershot_sx110_is_raw_modes {
+  super::camera_file_check!("Canon", "PowerShot SX110 IS", cam_powershot_sx110_is_crw, "raw_modes/PowerShot SX110 IS.CRW");
+}
+mod camera_powershot_sx160_is_raw_modes {
+  super::camera_file_check!("Canon", "PowerShot SX160 IS", cam_canon_powershot_sx160_is_crw, "raw_modes/Canon PowerShot SX160 IS.CRW");
+}
+mod camera_powershot_sx1_is_raw_modes {
+  super::camera_file_check!("Canon", "PowerShot SX1 IS", cam_canon_powershot_sx1_is_iso_80_raw_cr2, "raw_modes/Canon PowerShot SX1 IS_ISO_80_RAW.CR2");
+}
+mod camera_powershot_sx260_hs_raw_modes {
+  super::camera_file_check!("Canon", "PowerShot SX260 HS", cam_powershot_sx260_hs_crw, "raw_modes/PowerShot SX260 HS.CRW");
+}
+mod camera_powershot_sx40_hs_raw_modes {
+  super::camera_file_check!("Canon", "PowerShot SX40 HS", cam_crw_6036_cr2, "raw_modes/CRW_6036.CR2");
+}
+mod camera_powershot_sx50_hs_raw_modes {
+  super::camera_file_check!("Canon", "PowerShot SX50 HS", cam_canon_powershot_sx50_hs_iso_80_raw_cr2, "raw_modes/Canon PowerShot SX50 HS_ISO_80_RAW.CR2");
+}
+mod camera_powershot_sx60_hs_raw_modes {
+  super::camera_file_check!("Canon", "PowerShot SX60 HS", cam_canon_powershot_sx60_hs_iso_100_raw_cr2, "raw_modes/Canon PowerShot SX60 HS_ISO_100_RAW.CR2");
+  super::camera_file_check!("Canon", "PowerShot SX60 HS", cam_raw_canon_powershot_sx60_hs_cr2, "raw_modes/RAW_CANON_POWERSHOT_SX60-HS.CR2");
+}
+mod camera_powershot_sx70_hs_raw_modes {
+  super::camera_file_check!("Canon", "PowerShot SX70 HS", cam_canon_powershot_sx70_hs_raw_iso_100_nocrop_nodual_cr3, "raw_modes/Canon PowerShot SX70 HS_RAW_ISO_100_nocrop_nodual.CR3");
+  super::camera_file_check!("Canon", "PowerShot SX70 HS", cam_canon_powershot_sx70_hs_craw_iso_100_nocrop_nodual_cr3, "raw_modes/Canon PowerShot SX70 HS_CRAW_ISO_100_nocrop_nodual.CR3");
+}
+mod camera_sx150is_raw_modes {
+  super::camera_file_check!("Canon", "SX150IS", cam_sx150is_crw, "raw_modes/SX150IS.CRW");
 }
 mod camera_ist_dl2_raw_modes {
   super::camera_file_check!("Pentax", "ist DL2", cam_pentax_ist_dl2_raw_iso_200_pef, "raw_modes/PENTAX ist DL2_RAW_ISO_200.PEF");

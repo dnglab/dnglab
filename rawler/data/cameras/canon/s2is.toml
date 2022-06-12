@@ -1,0 +1,9 @@
+make = "Canon"
+model = "Canon PowerShot S2 IS"
+clean_make = "Canon"
+clean_model = "PowerShot S2 IS"
+color_pattern = "RGGB"
+active_area = [14, 10, 46, 2]
+
+[cameras.color_matrix]
+Daylight = [1.0416, -0.2728, -0.1887, -0.3553, 1.2627, 0.0969, -0.011, 0.1506, 0.5078]

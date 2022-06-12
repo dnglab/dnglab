@@ -1,0 +1,107 @@
+---
+file:
+  fileSize: 23440801
+  fileName: Canon EOS REBEL T1i_ISO_1600_RAW.CR2
+  digest: 418312c500961434064dd64e7410931a
+data:
+  metadata:
+    rawParams:
+      rawWidth: 4832
+      rawHeight: 3204
+      bitDepth: 16
+      crops:
+        p:
+          x: 72
+          y: 31
+        d:
+          w: 4752
+          h: 3168
+      blacklevels:
+        levels:
+          - 1023/1
+          - 1023/1
+          - 1024/1
+          - 1024/1
+        cpp: 1
+        width: 2
+        height: 2
+      whitelevels:
+        - 14512
+      wbCoeffs:
+        - 2.1289062
+        - 1.0
+        - 1.3564453
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ""
+        artist: ""
+        lens_spec:
+          - 50/1
+          - 50/1
+          - 18/10
+          - 18/10
+        exposure_time: 1/1600
+        fnumber: 14/1
+        aperture_value: 499712/65536
+        brightness_value: ~
+        iso_speed_ratings: 1600
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: 0/1
+        date_time_original: "2016:05:14 18:56:27"
+        create_date: "2016:05:14 18:56:27"
+        modify_date: "2016:05:14 18:56:27"
+        exposure_program: 2
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: "79"
+        sub_sec_time_original: "79"
+        sub_sec_time_digitized: "79"
+        shutter_speed_value: 696320/65536
+        max_aperture_value: ~
+        subject_distance: ~
+        metering_mode: 5
+        light_source: ~
+        flash: 16
+        focal_length: 50/1
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: Canon
+        lens_model: EF 50mm f/1.8 II
+        gps: ~
+      model: Rebel T1i
+      make: Canon
+      lens:
+        identifiers:
+          name: ~
+          id:
+            - 29
+            - 0
+          nikon_id: ~
+          olympus_id: ~
+        mount: ef-mount
+        lens_make: Canon
+        lens_model: EF 50mm f/1.8 II
+        focal_range:
+          - 50/1
+          - 50/1
+        aperture_range:
+          - 18/10
+          - 18/10
+        lens_name: Canon EF 50mm f/1.8 II
+      unique_image_id: ~
+      rating: ~
+

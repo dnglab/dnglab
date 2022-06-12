@@ -139,6 +139,8 @@ impl Rect {
 
   // left, top, right, bottom
   pub fn new_with_points(p1: Point, p2: Point) -> Self {
+    assert!(p1.x <= p2.x);
+    assert!(p1.y <= p2.y);
     Self {
       p: p1,
       d: Dim2 {

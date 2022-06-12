@@ -1,0 +1,19 @@
+make = "Canon"
+model = "Canon EOS 500D"
+clean_make = "Canon"
+clean_model = "EOS 500D"
+
+model_aliases = [
+  ["Canon EOS DIGITAL REBEL T1i", "Rebel T1i"],
+  ["Canon EOS REBEL T1i", "Rebel T1i"],
+  ["Canon EOS Kiss Digital X3", "Kiss X3"],
+  ["Canon EOS Kiss X3", "Kiss X3"],
+]
+
+color_pattern = "RGGB"
+blackareav = [0, 58]
+active_area = [62, 26, 0, 0]
+
+[cameras.color_matrix]
+A = [0.566, -0.0436, -0.0088, -0.5034, 1.2093, 0.3347, -0.0926, 0.2289, 0.6588]
+D65 = [0.4763, 0.0712, -0.0646, -0.6821, 1.4399, 0.264, -0.1921, 0.3276, 0.6561]

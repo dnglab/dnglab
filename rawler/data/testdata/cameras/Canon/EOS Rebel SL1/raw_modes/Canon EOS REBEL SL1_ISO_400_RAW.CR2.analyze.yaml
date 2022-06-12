@@ -1,0 +1,107 @@
+---
+file:
+  fileSize: 22665686
+  fileName: Canon EOS REBEL SL1_ISO_400_RAW.CR2
+  digest: 4961835a0bc0c16fbe128233cbc9d599
+data:
+  metadata:
+    rawParams:
+      rawWidth: 5280
+      rawHeight: 3528
+      bitDepth: 16
+      crops:
+        p:
+          x: 84
+          y: 64
+        d:
+          w: 5184
+          h: 3456
+      blacklevels:
+        levels:
+          - 2047/1
+          - 2047/1
+          - 2048/1
+          - 2049/1
+        cpp: 1
+        width: 2
+        height: 2
+      whitelevels:
+        - 15092
+      wbCoeffs:
+        - 1.8486328
+        - 1.0
+        - 1.8027344
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: Ian Harmon
+        artist: Ian Harmon
+        lens_spec:
+          - 24/1
+          - 24/1
+          - 28/10
+          - 28/10
+        exposure_time: 1/180
+        fnumber: 56/10
+        aperture_value: 327680/65536
+        brightness_value: ~
+        iso_speed_ratings: 400
+        iso_speed: ~
+        recommended_exposure_index: 400
+        sensitivity_type: 2
+        exposure_bias: "-1/2"
+        date_time_original: "2017:03:22 16:35:43"
+        create_date: "2017:03:22 16:35:43"
+        modify_date: "2017:03:22 16:35:43"
+        exposure_program: 3
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: "00"
+        sub_sec_time_original: "00"
+        sub_sec_time_digitized: "00"
+        shutter_speed_value: 491520/65536
+        max_aperture_value: ~
+        subject_distance: ~
+        metering_mode: 5
+        light_source: ~
+        flash: 16
+        focal_length: 24/1
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ""
+        serial_number: "422073005148"
+        lens_serial_number: 000010ceee
+        lens_make: Canon
+        lens_model: EF-S 24mm f/2.8 STM
+        gps: ~
+      model: Rebel SL1
+      make: Canon
+      lens:
+        identifiers:
+          name: EF-S24mm f/2.8 STM
+          id:
+            - 4154
+            - 0
+          nikon_id: ~
+          olympus_id: ~
+        mount: ef-mount
+        lens_make: Canon
+        lens_model: EF-S 24mm f/2.8 STM
+        focal_range:
+          - 24/1
+          - 24/1
+        aperture_range:
+          - 28/10
+          - 28/10
+        lens_name: Canon EF-S 24mm f/2.8 STM
+      unique_image_id: ~
+      rating: ~
+

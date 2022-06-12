@@ -71,7 +71,7 @@ impl<'a> Decoder for DcrDecoder<'a> {
     let image = DcrDecoder::decode_kodak65000(&src, &curve, width, height, dummy);
 
     let cpp = 1;
-    ok_image(self.camera.clone(), cpp, self.get_wb()?, image)
+    ok_image(self.camera.clone(), cpp, self.get_wb()?, image, dummy)
   }
 
   fn format_dump(&self) -> FormatDump {

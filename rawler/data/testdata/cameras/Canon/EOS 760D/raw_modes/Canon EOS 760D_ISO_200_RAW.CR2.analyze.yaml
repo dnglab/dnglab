@@ -1,0 +1,107 @@
+---
+file:
+  fileSize: 25935108
+  fileName: Canon EOS 760D_ISO_200_RAW.CR2
+  digest: ef6c4de7a4440731f761c700a447eefe
+data:
+  metadata:
+    rawParams:
+      rawWidth: 6096
+      rawHeight: 4056
+      bitDepth: 16
+      crops:
+        p:
+          x: 84
+          y: 46
+        d:
+          w: 6000
+          h: 4000
+      blacklevels:
+        levels:
+          - 2047/1
+          - 2047/1
+          - 2047/1
+          - 2047/1
+        cpp: 1
+        width: 2
+        height: 2
+      whitelevels:
+        - 12277
+      wbCoeffs:
+        - 2.040039
+        - 1.0
+        - 1.7568359
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ""
+        artist: ""
+        lens_spec:
+          - 17/1
+          - 70/1
+          - 28/10
+          - 4/1
+        exposure_time: 1/800
+        fnumber: 4/1
+        aperture_value: 262144/65536
+        brightness_value: ~
+        iso_speed_ratings: 200
+        iso_speed: ~
+        recommended_exposure_index: 200
+        sensitivity_type: 2
+        exposure_bias: 0/1
+        date_time_original: "2015:07:10 18:54:26"
+        create_date: "2015:07:10 18:54:26"
+        modify_date: "2015:07:10 18:54:26"
+        exposure_program: 3
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: "00"
+        sub_sec_time_original: "00"
+        sub_sec_time_digitized: "00"
+        shutter_speed_value: 630784/65536
+        max_aperture_value: ~
+        subject_distance: ~
+        metering_mode: 5
+        light_source: ~
+        flash: 16
+        focal_length: 70/1
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ""
+        serial_number: "033032001640"
+        lens_serial_number: "0000000000"
+        lens_make: Sigma
+        lens_model: 17-70mm f/2.8-4 DC Macro OS HSM
+        gps: ~
+      model: EOS 760D
+      make: Canon
+      lens:
+        identifiers:
+          name: ~
+          id:
+            - 143
+            - 0
+          nikon_id: ~
+          olympus_id: ~
+        mount: ef-mount
+        lens_make: Sigma
+        lens_model: 17-70mm f/2.8-4 DC Macro OS HSM
+        focal_range:
+          - 17/1
+          - 70/1
+        aperture_range:
+          - 28/10
+          - 4/1
+        lens_name: Sigma 17-70mm f/2.8-4 DC Macro OS HSM
+      unique_image_id: ~
+      rating: ~
+

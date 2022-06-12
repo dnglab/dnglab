@@ -2,7 +2,7 @@ make = "Panasonic"
 model = "DMC-TZ61"
 clean_make = "Panasonic"
 clean_model = "DMC-TZ61"
-blackpoint = 145
+#blackpoint = 145
 whitepoint = 3971
 color_pattern = "RGGB"
 

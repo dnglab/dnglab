@@ -9,22 +9,14 @@ data:
       rawWidth: 3048
       rawHeight: 2016
       bitDepth: 16
-      crops:
-        p:
-          x: 0
-          y: 0
-        d:
-          w: 3048
-          h: 2016
+      crops: ~
       blacklevels:
-        - 0
-        - 0
-        - 0
-        - 0
+        levels:
+          - 0/1
+        cpp: 1
+        width: 1
+        height: 1
       whitelevels:
-        - 4095
-        - 4095
-        - 4095
         - 4095
       wbCoeffs:
         - ~

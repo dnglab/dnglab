@@ -1,0 +1,17 @@
+# CRW
+make = "Canon"
+model = "Canon PowerShot S70"
+clean_make = "Canon"
+clean_model = "PowerShot S70"
+whitepoint = 4095
+color_pattern = "RGGB"
+active_area = [44,12,4,4]
+hints = ["wb_mangle"]
+blackareav = [0,40]
+
+[cameras.params]
+wb_offset = 48
+
+[cameras.color_matrix]
+A = [1.2155, -0.614, 0.0388, -0.5537, 1.2581, 0.3343, -0.0569, 0.0834, 0.7498]
+D65 = [0.9976, -0.381, -0.0832, -0.7115, 1.4463, 0.2906, -0.0902, 0.0989, 0.7889]

@@ -1,0 +1,12 @@
+make = "Canon"
+model = "Canon PowerShot G9 X Mark II"
+clean_make = "Canon"
+clean_model = "PowerShot G9 X Mark II"
+color_pattern = "RGGB"
+blackareav = [0, 70]
+blackareah = [0, 15]
+active_area = [96, 17, 0, 0]
+
+[cameras.color_matrix]
+A = [1.2216, -0.665, 0.0271, -0.3245, 1.1715, 0.1714, -0.0119, 0.0888, 0.6204]
+D65 = [1.0056, -0.4131, -0.0944, -0.2576, 1.1143, 0.1625, -0.0238, 0.1294, 0.5179]

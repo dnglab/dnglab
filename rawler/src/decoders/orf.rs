@@ -30,6 +30,7 @@ use crate::RawLoader;
 use crate::RawlerError;
 use crate::Result;
 
+use super::BlackLevel;
 use super::Camera;
 use super::Decoder;
 use super::RawDecodeParams;
@@ -181,10 +182,9 @@ impl<'a> Decoder for OrfDecoder<'a> {
 
     let cpp = 1;
 
-    let mut img = RawImage::new(camera, cpp, normalize_wb(self.get_wb()?), image, dummy);
-    if let Ok(black) = self.get_blacks() {
-      img.blacklevels = black;
-    }
+    let blacklevel = self.get_blacklevel()?;
+    let whitelevel = None;
+    let mut img = RawImage::new(camera, image, cpp, normalize_wb(self.get_wb()?), blacklevel, whitelevel, dummy);
     if let Some(crop) = self.get_crop()? {
       img.crop_area = Some(crop);
     }
@@ -305,14 +305,16 @@ impl<'a> OrfDecoder<'a> {
     out
   }
 
-  fn get_blacks(&self) -> Result<[u16; 4]> {
+  fn get_blacklevel(&self) -> Result<Option<BlackLevel>> {
     let ifd = self.makernote.find_ifds_with_tag(OrfImageProcessing::OrfBlackLevels);
     if ifd.is_empty() {
-      return Err(RawlerError::General("ORF: Couldn't find ImgProc IFD".to_string()));
+      log::info!("ORF: Couldn't find ImgProc IFD, unable to read blacklevel");
+      return Ok(None);
     }
 
     let blacks = fetch_tiff_tag!(ifd[0], OrfImageProcessing::OrfBlackLevels);
-    Ok([blacks.force_u16(0), blacks.force_u16(1), blacks.force_u16(2), blacks.force_u16(3)])
+    let levels = [blacks.force_u16(0), blacks.force_u16(1), blacks.force_u16(2), blacks.force_u16(3)];
+    Ok(Some(BlackLevel::new(&levels, self.camera.cfa.width, self.camera.cfa.height, 1)))
   }
 
   fn get_crop(&self) -> Result<Option<Rect>> {

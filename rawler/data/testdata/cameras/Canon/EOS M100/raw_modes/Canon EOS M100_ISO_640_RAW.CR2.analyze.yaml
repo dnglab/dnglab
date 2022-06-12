@@ -1,0 +1,107 @@
+---
+file:
+  fileSize: 34798284
+  fileName: Canon EOS M100_ISO_640_RAW.CR2
+  digest: c8010ebb393873bba3ed799592a726c3
+data:
+  metadata:
+    rawParams:
+      rawWidth: 6288
+      rawHeight: 4056
+      bitDepth: 16
+      crops:
+        p:
+          x: 276
+          y: 48
+        d:
+          w: 6000
+          h: 4000
+      blacklevels:
+        levels:
+          - 2048/1
+          - 2048/1
+          - 2048/1
+          - 2048/1
+        cpp: 1
+        width: 2
+        height: 2
+      whitelevels:
+        - 10749
+      wbCoeffs:
+        - 1.6347656
+        - 1.0
+        - 1.2744141
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ""
+        artist: ""
+        lens_spec:
+          - 28/1
+          - 135/1
+          - 35/10
+          - 56/10
+        exposure_time: 1/1250
+        fnumber: 140/10
+        aperture_value: 244/32
+        brightness_value: ~
+        iso_speed_ratings: 640
+        iso_speed: ~
+        recommended_exposure_index: 640
+        sensitivity_type: 2
+        exposure_bias: "-2/3"
+        date_time_original: "2019:06:02 08:32:26"
+        create_date: "2019:06:02 08:32:26"
+        modify_date: "2019:06:02 08:32:26"
+        exposure_program: 2
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: "44"
+        sub_sec_time_original: "44"
+        sub_sec_time_digitized: "44"
+        shutter_speed_value: 329/32
+        max_aperture_value: ~
+        subject_distance: ~
+        metering_mode: 5
+        light_source: ~
+        flash: 16
+        focal_length: 135/1
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 1
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ""
+        serial_number: "492050000241"
+        lens_serial_number: "0000000000"
+        lens_make: Canon
+        lens_model: EF 28-135mm f/3.5-5.6 IS
+        gps: ~
+      model: EOS M100
+      make: Canon
+      lens:
+        identifiers:
+          name: ~
+          id:
+            - 178
+            - 0
+          nikon_id: ~
+          olympus_id: ~
+        mount: ef-mount
+        lens_make: Canon
+        lens_model: EF 28-135mm f/3.5-5.6 IS
+        focal_range:
+          - 28/1
+          - 135/1
+        aperture_range:
+          - 35/10
+          - 56/10
+        lens_name: Canon EF 28-135mm f/3.5-5.6 IS
+      unique_image_id: ~
+      rating: ~
+

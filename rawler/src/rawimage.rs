@@ -1,10 +1,11 @@
 use std::collections::HashMap;
 
 use log::debug;
+use serde::{Deserialize, Serialize};
 
 use crate::{
   decoders::*,
-  formats::tiff::Value,
+  formats::tiff::{Rational, Value},
   imgop::{
     raw::{ColorMatrix, DevelopParams},
     sensor::bayer::BayerPattern,
@@ -15,6 +16,69 @@ use crate::{
   tags::TiffTag,
   CFA,
 };
+
+pub type WhiteLevel = Vec<u16>;
+
+#[derive(Clone, PartialEq, Serialize, Deserialize)]
+pub struct BlackLevel {
+  pub levels: Vec<Rational>,
+  pub cpp: usize,
+  pub width: usize,
+  pub height: usize,
+}
+
+impl Default for BlackLevel {
+  fn default() -> Self {
+    Self {
+      levels: [Rational::from(0_u32)].into(),
+      width: 1,
+      height: 1,
+      cpp: 1,
+    }
+  }
+}
+
+impl std::fmt::Debug for BlackLevel {
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    let levels: Vec<f32> = self.levels.iter().map(|x| x.as_f32()).collect();
+    f.write_fmt(format_args!("RepeatDim: {}:{}, cpp: {}, {:?}", self.height, self.width, self.cpp, levels))
+  }
+}
+
+impl BlackLevel {
+  pub fn new(levels: &[u16], width: usize, height: usize, cpp: usize) -> Self {
+    assert_eq!(levels.len(), width * height * cpp);
+    Self {
+      levels: levels.iter().map(|x| Rational::from(*x)).collect(),
+      width,
+      height,
+      cpp,
+    }
+  }
+
+  pub fn sample_count(&self) -> usize {
+    self.cpp * self.width * self.height
+  }
+
+  // TODO: write test
+  pub fn shift(&self, x: usize, y: usize) -> Self {
+    if self.sample_count() == 1 {
+      self.clone()
+    } else {
+      let mut trans = self.clone();
+      let (w, h, cpp) = (trans.width, trans.height, trans.cpp);
+      for yn in 0..h {
+        for xn in 0..w {
+          let ys = (yn + y) % h;
+          let xs = (xn + x) % w;
+          trans.levels[yn * w * cpp + xn * cpp..yn * w * cpp + xn * cpp + cpp]
+            .copy_from_slice(&self.levels[ys * w * cpp + xs * cpp..ys * w * cpp + xs * cpp + cpp]);
+        }
+      }
+      trans
+    }
+  }
+}
 
 /// All the data needed to process this raw image, including the image data itself as well
 /// as all the needed metadata
@@ -41,9 +105,9 @@ pub struct RawImage {
   /// whitebalance coefficients encoded in the file in RGBE order
   pub wb_coeffs: [f32; 4],
   /// image whitelevels in RGBE order
-  pub whitelevels: [u16; 4],
+  pub whitelevel: WhiteLevel,
   /// image blacklevels in RGBE order
-  pub blacklevels: [u16; 4],
+  pub blacklevel: BlackLevel,
   /// matrix to convert XYZ to camera RGBE
   pub xyz_to_cam: [[f32; 3]; 4],
   /// color filter array
@@ -77,81 +141,103 @@ pub enum RawImageData {
 }
 
 impl RawImage {
-  pub fn calc_black_levels(cam: &Camera, blackareas: &[Rect], width: usize, _height: usize, image: &[u16]) -> Option<[u16; 4]> {
-    let mut avg = [0 as f32; 4];
-    let mut count = [0 as f32; 4];
+  pub fn calc_black_levels(cfa: &CFA, blackareas: &[Rect], width: usize, _height: usize, image: &[u16]) -> Option<BlackLevel> {
+    let x = cfa.width * cfa.height;
+    if x == 0 {
+      return None;
+    }
+    assert!(!image.is_empty());
 
-    for area in blackareas {
-      for row in area.p.y..area.p.y + area.d.h {
-        for col in area.p.x..area.p.x + area.d.w {
-          let color = cam.cfa.color_at(row, col);
-          avg[color] += image[row * width + col] as f32;
-          count[color] += 1.0;
-        }
-      }
+    #[derive(Clone, Copy)]
+    struct Sample {
+      avg: f32,
+      count: usize,
     }
 
-    if cam.blackareav.is_some() || cam.blackareah.is_some() {
-      let blacklevels = [
-        (avg[0] / count[0]) as u16,
-        (avg[1] / count[1]) as u16,
-        (avg[2] / count[2]) as u16,
-        (avg[3] / count[3]) as u16,
-      ];
+    if !blackareas.is_empty() {
+      let mut samples = vec![Sample { avg: 0.0, count: 0 }; x];
+
+      for area in blackareas {
+        for row in area.p.y..area.p.y + area.d.h {
+          for col in area.p.x..area.p.x + area.d.w {
+            //let color = cfa.color_at(row, col);
+            let color = (row % cfa.height) * cfa.width + (col % cfa.width);
+            samples[color].avg += image[row * width + col] as f32;
+            samples[color].count += 1;
+          }
+        }
+      }
+
+      let blacklevels: Vec<u16> = samples.into_iter().map(|s| (s.avg / s.count as f32) as u16).collect();
+
       debug!("Calculated blacklevels: {:?}", blacklevels);
-      Some(blacklevels)
+      // TODO: support other then RGGB levels
+      assert_eq!(cfa.width * cfa.height, 4);
+      Some(BlackLevel::new(&[blacklevels[0], blacklevels[1], blacklevels[2], blacklevels[3]], 2, 2, 1))
     } else {
       None
     }
   }
 
   #[doc(hidden)]
-  pub fn new(cam: Camera, cpp: usize, wb_coeffs: [f32; 4], image: PixU16, dummy: bool) -> RawImage {
-    /*
-    let (width, height, image) = if let Some(crops) = &cam.crops {
-      let crops = Rect::new_with_borders(Dim2::new(width, height), crops);
-      if !dummy {
-        let mut croppedimage = Vec::with_capacity(crops.d.h * crops.d.w * cpp);
-        for row in crops.p.y..(crops.p.y + crops.d.h) {
-          let start = row * width * cpp + crops.p.x;
-          croppedimage.extend_from_slice(&image[start..start + crops.d.w * cpp]);
-        }
-        (crops.d.w, crops.d.h, croppedimage)
-      } else {
-        (crops.d.w, crops.d.h, image)
-      }
-    } else {
-      (width, height, image)
-    };
-    */
+  pub fn new(
+    cam: Camera,
+    image: PixU16,
+    cpp: usize,
+    wb_coeffs: [f32; 4],
+    blacklevel: Option<BlackLevel>,
+    whitelevel: Option<WhiteLevel>,
+    dummy: bool,
+  ) -> RawImage {
+    assert_eq!(image.width % cpp, 0);
+    assert_eq!(dummy, !image.is_initialized());
+    let sample_width = image.width;
+    let pixel_width = image.width / cpp;
 
     let mut blackareas: Vec<Rect> = Vec::new();
 
-    let active_area = cam
-      .active_area
-      .map(|area| Rect::new_with_borders(Dim2::new(image.width / cpp, image.height), &area));
+    let active_area = cam.active_area.map(|area| Rect::new_with_borders(Dim2::new(pixel_width, image.height), &area));
 
-    if let Some(active) = active_area {
+    let blackarea_base = active_area.unwrap_or_else(|| Rect::new(Point::zero(), Dim2::new(sample_width, image.height)));
+
+    // For now, we only use masked areas when cpp is 1. For color images (RGB)
+    // like Canon SRAW, we ignore it (it isn't provided anyway).
+    if cpp == 1 {
       // Build black areas
+      // First value (.0) is start and (.1) is length!
       if let Some(ah) = cam.blackareah {
-        blackareas.push(Rect::new_with_points(Point::new(active.p.x, ah.0), Point::new(active.p.x + active.d.w, ah.1)));
+        blackareas.push(Rect::new_with_points(
+          Point::new(blackarea_base.p.x, ah.0),
+          Point::new(blackarea_base.p.x + blackarea_base.d.w, ah.0 + ah.1),
+        ));
       }
       if let Some(av) = cam.blackareav {
-        blackareas.push(Rect::new_with_points(Point::new(av.0, active.p.y), Point::new(av.1, active.p.y + active.d.h)));
+        blackareas.push(Rect::new_with_points(
+          Point::new(av.0, blackarea_base.p.y),
+          Point::new(av.0 + av.1, blackarea_base.p.y + blackarea_base.d.h),
+        ));
       }
     }
 
-    let blacks = if !dummy {
-      Self::calc_black_levels(&cam, &blackareas, image.width, image.height, image.pixels()).unwrap_or(cam.blacklevels)
-    } else {
-      cam.blacklevels
-    };
+    let blacklevel = cam
+      .make_blacklevel(cpp)
+      .or_else(|| if cam.find_hint("invalid_blacklevel") { None } else { blacklevel })
+      .or_else(|| {
+        if dummy {
+          Some(BlackLevel::default())
+        } else {
+          Self::calc_black_levels(&cam.cfa, &blackareas, image.width, image.height, image.pixels())
+        }
+      })
+      .unwrap_or_else(|| panic!("Need blacklevel in config: {}", cam.clean_model));
 
-    let crop_area = cam
-      .crop_area
-      .map(|area| Rect::new_with_borders(Dim2::new(image.width / cpp, image.height), &area));
+    let whitelevel = cam
+      .make_whitelevel(cpp)
+      .or(whitelevel)
+      .unwrap_or_else(|| panic!("Need whitelvel in config: {}", cam.clean_model));
 
-    assert_eq!(image.width % cpp, 0);
+    let crop_area = cam.crop_area.map(|area| Rect::new_with_borders(Dim2::new(pixel_width, image.height), &area));
+
     RawImage {
       camera: cam.clone(),
       make: cam.make.clone(),
@@ -164,8 +250,8 @@ impl RawImage {
       bps: cam.real_bps,
       wb_coeffs,
       data: RawImageData::Integer(image.into_inner()),
-      blacklevels: blacks,
-      whitelevels: cam.whitelevels,
+      blacklevel,
+      whitelevel,
       xyz_to_cam: cam.xyz_to_cam,
       cfa: cam.cfa.clone(),
       active_area,
@@ -238,8 +324,8 @@ impl RawImage {
         illuminant: Illuminant::D65, // TODO: need CAT
         matrix: xyz2cam,
       }],
-      white_level: self.whitelevels.into(),
-      black_level: self.blacklevels.into(),
+      whitelevel: self.whitelevel.clone(),
+      blacklevel: self.blacklevel.clone(),
       pattern,
       cfa: self.cfa.clone(),
       wb_coeff,
@@ -374,5 +460,26 @@ impl RawImage {
   /// Checks if the image is monochrome
   pub fn is_monochrome(&self) -> bool {
     self.cpp == 1 && !self.cfa.is_valid()
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[test]
+  fn blacklevel_shift() -> std::result::Result<(), Box<dyn std::error::Error>> {
+    let black = BlackLevel::new(&[1, 2, 3, 4], 2, 2, 1).shift(1, 1);
+    assert_eq!(black.levels, vec![4_u16, 3, 2, 1].into_iter().map(Rational::from).collect::<Vec<Rational>>());
+
+    let black = BlackLevel::new(&[1, 1, 1, 2, 2, 2, 3, 3, 3, 4, 4, 4], 2, 2, 3).shift(3, 3);
+    assert_eq!(
+      black.levels,
+      vec![4_u16, 4, 4, 3, 3, 3, 2, 2, 2, 1, 1, 1]
+        .into_iter()
+        .map(Rational::from)
+        .collect::<Vec<Rational>>()
+    );
+    Ok(())
   }
 }

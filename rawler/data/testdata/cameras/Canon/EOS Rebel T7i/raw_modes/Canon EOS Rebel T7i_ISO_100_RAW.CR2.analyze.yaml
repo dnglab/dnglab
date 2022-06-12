@@ -1,0 +1,107 @@
+---
+file:
+  fileSize: 32529768
+  fileName: Canon EOS Rebel T7i_ISO_100_RAW.CR2
+  digest: 54202f3d601240c9d5b6c1dc5118a491
+data:
+  metadata:
+    rawParams:
+      rawWidth: 6288
+      rawHeight: 4056
+      bitDepth: 16
+      crops:
+        p:
+          x: 276
+          y: 48
+        d:
+          w: 6000
+          h: 4000
+      blacklevels:
+        levels:
+          - 511/1
+          - 511/1
+          - 511/1
+          - 511/1
+        cpp: 1
+        width: 2
+        height: 2
+      whitelevels:
+        - 11892
+      wbCoeffs:
+        - 1.7744141
+        - 1.0
+        - 1.9179688
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ""
+        artist: ""
+        lens_spec:
+          - 85/1
+          - 85/1
+          - 18/10
+          - 18/10
+        exposure_time: 1/800
+        fnumber: 18/10
+        aperture_value: 106496/65536
+        brightness_value: ~
+        iso_speed_ratings: 100
+        iso_speed: ~
+        recommended_exposure_index: 100
+        sensitivity_type: 2
+        exposure_bias: 0/1
+        date_time_original: "2019:09:25 15:01:44"
+        create_date: "2019:09:25 15:01:44"
+        modify_date: "2019:09:25 15:01:44"
+        exposure_program: 1
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: "80"
+        sub_sec_time_original: "80"
+        sub_sec_time_digitized: "80"
+        shutter_speed_value: 630784/65536
+        max_aperture_value: ~
+        subject_distance: ~
+        metering_mode: 5
+        light_source: ~
+        flash: 16
+        focal_length: 85/1
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 1
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ""
+        serial_number: "222071016384"
+        lens_serial_number: 000007df05
+        lens_make: Canon
+        lens_model: EF 85mm f/1.8 USM
+        gps: ~
+      model: EOS Rebel T7i
+      make: Canon
+      lens:
+        identifiers:
+          name: EF85mm f/1.8 USM
+          id:
+            - 155
+            - 0
+          nikon_id: ~
+          olympus_id: ~
+        mount: ef-mount
+        lens_make: Canon
+        lens_model: EF 85mm f/1.8 USM
+        focal_range:
+          - 85/1
+          - 85/1
+        aperture_range:
+          - 18/10
+          - 18/10
+        lens_name: Canon EF 85mm f/1.8 USM
+      unique_image_id: ~
+      rating: ~
+

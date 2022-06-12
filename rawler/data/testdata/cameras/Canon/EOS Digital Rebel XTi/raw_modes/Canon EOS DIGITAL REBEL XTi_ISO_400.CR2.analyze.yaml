@@ -1,0 +1,107 @@
+---
+file:
+  fileSize: 13058514
+  fileName: Canon EOS DIGITAL REBEL XTi_ISO_400.CR2
+  digest: 5ced17fa1800f92d583f17eb82cd2a48
+data:
+  metadata:
+    rawParams:
+      rawWidth: 3948
+      rawHeight: 2622
+      bitDepth: 16
+      crops:
+        p:
+          x: 52
+          y: 23
+        d:
+          w: 3888
+          h: 2592
+      blacklevels:
+        levels:
+          - 255/1
+          - 256/1
+          - 256/1
+          - 256/1
+        cpp: 1
+        width: 2
+        height: 2
+      whitelevels:
+        - 4058
+      wbCoeffs:
+        - 2.3164062
+        - 1.0
+        - 1.4404297
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ~
+        artist: ~
+        lens_spec:
+          - 18/1
+          - 55/1
+          - 35/10
+          - 56/10
+        exposure_time: 1/320
+        fnumber: 50/10
+        aperture_value: 304340/65536
+        brightness_value: ~
+        iso_speed_ratings: 400
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: 0/3
+        date_time_original: "2013:12:21 13:26:35"
+        create_date: "2013:12:21 13:26:35"
+        modify_date: "2013:12:21 13:26:35"
+        exposure_program: 3
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: 545386/65536
+        max_aperture_value: ~
+        subject_distance: ~
+        metering_mode: 1
+        light_source: ~
+        flash: 16
+        focal_length: 42/1
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: Canon
+        lens_model: "EF-S 18-55mm f/3.5-5.6 [II]"
+        gps: ~
+      model: Rebel XTi
+      make: Canon
+      lens:
+        identifiers:
+          name: ~
+          id:
+            - 45
+            - 0
+          nikon_id: ~
+          olympus_id: ~
+        mount: ef-mount
+        lens_make: Canon
+        lens_model: "EF-S 18-55mm f/3.5-5.6 [II]"
+        focal_range:
+          - 18/1
+          - 55/1
+        aperture_range:
+          - 35/10
+          - 56/10
+        lens_name: "Canon EF-S 18-55mm f/3.5-5.6 [II]"
+      unique_image_id: ~
+      rating: ~
+

@@ -1,0 +1,24 @@
+make = "Canon"
+model = "Canon EOS 6D Mark II"
+clean_make = "Canon"
+clean_model = "EOS 6D Mark II"
+color_pattern = "RGGB"
+hints = ["double_line"]
+blackareav = [0, 110]
+blackareah = [0, 40]
+active_area = [120, 44, 0, 0]
+
+[cameras.color_matrix]
+A = [0.7295, -0.1664, -0.0669, -0.4871, 1.2238, 0.298, -0.0585, 0.1356, 0.6696]
+D65 = [0.6875, -0.097, -0.0932, -0.4691, 1.2459, 0.2501, -0.0874, 0.1953, 0.5809]
+
+[[cameras.modes]]
+mode = "sRaw1"
+hints = ["invert_sraw_wb", "sraw_new"]
+active_area = [0, 3, 0, 0]
+whitepoint = 65000
+
+[[cameras.modes]]
+mode = "sRaw2"
+hints = ["invert_sraw_wb", "sraw_new"]
+whitepoint = 65000

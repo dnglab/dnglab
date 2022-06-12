@@ -1,0 +1,20 @@
+make = "Canon"
+model = "Canon EOS 600D"
+clean_make = "Canon"
+clean_model = "EOS 600D"
+
+model_aliases = [
+  ["Canon EOS DIGITAL REBEL T3i", "Rebel T3i"],
+  ["Canon EOS REBEL T3i", "Rebel T3i"],
+  ["Canon EOS Kiss Digital X5", "Kiss X5"],
+  ["Canon EOS Kiss X5", "Kiss X5"],
+]
+
+color_pattern = "GBRG"
+blackareav = [0, 140]
+blackareah = [4, 44]
+active_area = [142, 51, 0, 0]
+
+[cameras.color_matrix]
+A = [0.7164, -0.1916, -0.0431, -0.3361, 1.06, 0.32, -0.0272, 0.1058, 0.6442]
+D65 = [0.6461, -0.0907, -0.0882, -0.43, 1.2184, 0.2378, -0.0819, 0.1944, 0.5931]

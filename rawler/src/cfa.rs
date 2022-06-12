@@ -77,6 +77,9 @@ impl CFA {
         0 => 'R',
         1 => 'G',
         2 => 'B',
+        3 => 'C',
+        4 => 'M',
+        5 => 'Y',
         _ => 'U',
       });
     }
@@ -110,8 +113,9 @@ impl CFA {
           b'G' => 1,
           b'B' => 2,
           b'E' => 3,
-          b'M' => 1,
-          b'Y' => 3,
+          b'M' => 4,
+          b'Y' => 5,
+          b'C' => 3,
           _ => {
             let unknown_char = patname[i..].chars().next().unwrap();
             panic!("Unknown CFA color \"{}\" in pattern \"{}\"", unknown_char, patname)
@@ -233,7 +237,9 @@ impl CFA {
           0 => "R",
           1 => "G",
           2 => "B",
-          3 => "E",
+          3 => "C",
+          4 => "M",
+          5 => "Y",
           x => panic!("Unknown CFA color \"{}\"", x),
         });
       }

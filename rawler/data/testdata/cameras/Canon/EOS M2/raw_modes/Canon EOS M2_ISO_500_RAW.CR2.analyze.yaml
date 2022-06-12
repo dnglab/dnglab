@@ -1,0 +1,107 @@
+---
+file:
+  fileSize: 23505202
+  fileName: Canon EOS M2_ISO_500_RAW.CR2
+  digest: 8df514b35369825446150dafd3894743
+data:
+  metadata:
+    rawParams:
+      rawWidth: 5280
+      rawHeight: 3528
+      bitDepth: 16
+      crops:
+        p:
+          x: 84
+          y: 64
+        d:
+          w: 5184
+          h: 3456
+      blacklevels:
+        levels:
+          - 2047/1
+          - 2047/1
+          - 2049/1
+          - 2049/1
+        cpp: 1
+        width: 2
+        height: 2
+      whitelevels:
+        - 15092
+      wbCoeffs:
+        - 1.5195312
+        - 1.0
+        - 2.6875
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ""
+        artist: ""
+        lens_spec:
+          - 22/1
+          - 22/1
+          - 2/1
+          - 2/10
+        exposure_time: 1/40
+        fnumber: 28/10
+        aperture_value: 196608/65536
+        brightness_value: ~
+        iso_speed_ratings: 500
+        iso_speed: ~
+        recommended_exposure_index: 500
+        sensitivity_type: 2
+        exposure_bias: 0/1
+        date_time_original: "2021:12:31 22:44:13"
+        create_date: "2021:12:31 22:44:13"
+        modify_date: "2021:12:31 22:44:13"
+        exposure_program: 7
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: "10"
+        sub_sec_time_original: "10"
+        sub_sec_time_digitized: "10"
+        shutter_speed_value: 352256/65536
+        max_aperture_value: ~
+        subject_distance: ~
+        metering_mode: 5
+        light_source: ~
+        flash: 16
+        focal_length: 22/1
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ""
+        serial_number: "211072102075"
+        lens_serial_number: 000005ae2c
+        lens_make: Canon
+        lens_model: EF-M 22mm f/2 STM
+        gps: ~
+      model: EOS M2
+      make: Canon
+      lens:
+        identifiers:
+          name: EF-M22mm f/2 STM
+          id:
+            - 4145
+            - 0
+          nikon_id: ~
+          olympus_id: ~
+        mount: ef-mount
+        lens_make: Canon
+        lens_model: EF-M 22mm f/2 STM
+        focal_range:
+          - 22/1
+          - 22/1
+        aperture_range:
+          - 2/1
+          - 2/10
+        lens_name: Canon EF-M 22mm f/2 STM
+      unique_image_id: ~
+      rating: ~
+

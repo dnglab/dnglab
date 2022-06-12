@@ -423,9 +423,6 @@ fn fill_exif_ifd(exif_ifd: &mut DirectoryWriter, exif: &Exif) -> Result<()> {
 ///
 /// Encode raw image data as new raw IFD with NewSubFileType 0
 fn dng_put_raw(raw_ifd: &mut DirectoryWriter<'_, '_>, rawimage: &RawImage, params: &ConvertParams) -> Result<()> {
-  let black_level = blacklevel_to_tiff_value(&rawimage.blacklevels);
-  let white_level = rawimage.whitelevels[0]; // TODO: use defaults if not available!
-
   let full_size = Rect::new(Point::new(0, 0), Dim2::new(rawimage.width, rawimage.height));
 
   // Active area or uncropped
@@ -443,7 +440,12 @@ fn dng_put_raw(raw_ifd: &mut DirectoryWriter<'_, '_>, rawimage: &RawImage, param
   match params.crop {
     CropMode::ActiveArea => {
       let crop = active_area;
-      raw_ifd.add_tag(DngTag::DefaultCropOrigin, [(crop.p.x) as u16, (crop.p.y) as u16])?;
+      assert!(crop.p.x >= active_area.p.x);
+      assert!(crop.p.y >= active_area.p.y);
+      raw_ifd.add_tag(
+        DngTag::DefaultCropOrigin,
+        [(crop.p.x - active_area.p.x) as u16, (crop.p.y - active_area.p.y) as u16],
+      )?;
       raw_ifd.add_tag(DngTag::DefaultCropSize, [crop.d.w as u16, crop.d.h as u16])?;
     }
     CropMode::Best => {
@@ -459,7 +461,6 @@ fn dng_put_raw(raw_ifd: &mut DirectoryWriter<'_, '_>, rawimage: &RawImage, param
     CropMode::None => {}
   }
 
-  raw_ifd.add_tag(DngTag::WhiteLevel, white_level as u16)?;
   raw_ifd.add_tag(ExifTag::PlanarConfiguration, 1_u16)?;
 
   raw_ifd.add_tag(
@@ -474,23 +475,29 @@ fn dng_put_raw(raw_ifd: &mut DirectoryWriter<'_, '_>, rawimage: &RawImage, param
     Rational::new(rawimage.camera.best_quality_scale[0], rawimage.camera.best_quality_scale[1]),
   )?;
 
+  // Whitelevel
+  assert_eq!(rawimage.whitelevel.len(), rawimage.cpp, "Whitelevel sample count must match cpp");
+  raw_ifd.add_tag(DngTag::WhiteLevel, &rawimage.whitelevel)?;
+
+  // Blacklevel
+  let blacklevel = rawimage.blacklevel.shift(active_area.p.x, active_area.p.y);
+
+  raw_ifd.add_tag(DngTag::BlackLevelRepeatDim, [blacklevel.height as u16, blacklevel.width as u16])?;
+
+  assert!(blacklevel.sample_count() == rawimage.cpp || blacklevel.sample_count() == rawimage.cfa.width * rawimage.cfa.height * rawimage.cpp);
+  if blacklevel.levels.iter().all(|x| x.d == 1) {
+    let payload: Vec<u16> = blacklevel.levels.iter().map(|x| x.n as u16).collect();
+    raw_ifd.add_tag(DngTag::BlackLevel, &payload)?;
+  } else {
+    raw_ifd.add_tag(DngTag::BlackLevel, blacklevel.levels.as_slice())?;
+  }
+
   match rawimage.cpp {
     1 => {
       if !rawimage.blackareas.is_empty() {
         let data: Vec<u16> = rawimage.blackareas.iter().flat_map(rect_to_dng_area).collect();
         raw_ifd.add_tag(DngTag::MaskedAreas, &data)?;
       }
-
-      // TODO: we need to support more blacklevels, make it a Vec<SRational>
-      if (rawimage.cfa.width, rawimage.cfa.height) == (2, 2) {
-        raw_ifd.add_tag(DngTag::BlackLevel, black_level)?;
-        raw_ifd.add_tag(DngTag::BlackLevelRepeatDim, [2_u16, 2_u16])?;
-      } else {
-        // For others and X-Trans we use a single blacklevel for now
-        raw_ifd.add_tag(DngTag::BlackLevel, black_level[0])?;
-        raw_ifd.add_tag(DngTag::BlackLevelRepeatDim, [1_u16, 1_u16])?;
-      }
-
       raw_ifd.add_tag(TiffCommonTag::PhotometricInt, PhotometricInterpretation::CFA)?;
       raw_ifd.add_tag(TiffCommonTag::SamplesPerPixel, 1_u16)?;
       raw_ifd.add_tag(TiffCommonTag::BitsPerSample, [16_u16])?;
@@ -508,8 +515,6 @@ fn dng_put_raw(raw_ifd: &mut DirectoryWriter<'_, '_>, rawimage: &RawImage, param
       //raw_ifd.add_tag(DngTag::CFAPlaneColor, [0u8, 1u8, 2u8])?; // RGGB
     }
     3 => {
-      raw_ifd.add_tag(DngTag::BlackLevel, &black_level[0..3])?;
-      raw_ifd.add_tag(DngTag::BlackLevelRepeatDim, [1_u16, 1_u16])?;
       raw_ifd.add_tag(TiffCommonTag::PhotometricInt, PhotometricInterpretation::LinearRaw)?;
       raw_ifd.add_tag(TiffCommonTag::SamplesPerPixel, 3_u16)?;
       raw_ifd.add_tag(TiffCommonTag::BitsPerSample, [16_u16, 16_u16, 16_u16])?;
@@ -715,15 +720,6 @@ fn dng_put_preview(ifd: &mut DirectoryWriter<'_, '_>, img: &DynamicImage) -> Res
   ifd.add_tag(TiffCommonTag::StripByteCounts, [data_len as u32])?;
 
   Ok(())
-}
-
-fn blacklevel_to_tiff_value(blacklevel: &[u16; 4]) -> [SRational; 4] {
-  [
-    SRational::new(blacklevel[0] as i32, 1),
-    SRational::new(blacklevel[1] as i32, 1),
-    SRational::new(blacklevel[2] as i32, 1),
-    SRational::new(blacklevel[3] as i32, 1),
-  ]
 }
 
 /// DNG requires the WB values to be the reciprocal

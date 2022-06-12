@@ -2,7 +2,7 @@ make = "Panasonic"
 model = "DMC-GH4"
 clean_make = "Panasonic"
 clean_model = "DMC-GH4"
-blackpoint = 143
+#blackpoint = 143
 whitepoint = 4095
 color_pattern = "BGGR"
 

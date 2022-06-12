@@ -1,0 +1,18 @@
+make = "Canon"
+model = "Canon EOS 450D"
+clean_make = "Canon"
+clean_model = "EOS 450D"
+
+model_aliases = [
+  ["Canon EOS DIGITAL REBEL XSi", "Rebel XSi"],
+  ["Canon EOS REBEL XSi", "Rebel XSi"],
+  ["Canon EOS Kiss Digital X2", "Kiss X2"],
+  ["Canon EOS Kiss X2", "Kiss X2"],
+]
+
+color_pattern = "RGGB"
+active_area = [22, 18, 0, 2]
+
+[cameras.color_matrix]
+A = [0.6694, -0.1429, -0.0292, -0.5762, 1.2806, 0.3334, -0.1022, 0.1789, 0.7442]
+D65 = [0.5784, -0.0261, -0.0821, -0.7539, 1.5064, 0.2673, -0.1982, 0.2681, 0.7427]

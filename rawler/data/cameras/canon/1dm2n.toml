@@ -1,0 +1,12 @@
+make = "Canon"
+model = "Canon EOS-1D Mark II N"
+clean_make = "Canon"
+clean_model = "EOS-1D Mark II N"
+whitepoint = 3700
+color_pattern = "RGGB"
+blackareav = [0, 72]
+active_area = [74, 12, 0, 0]
+
+[cameras.color_matrix]
+A = [0.7217, -0.159, -0.0328, -0.6635, 1.3903, 0.3024, -0.0902, 0.1206, 0.8113]
+D65 = [0.6241, -0.0466, -0.0822, -0.818, 1.5825, 0.25, -0.1801, 0.1937, 0.8042]

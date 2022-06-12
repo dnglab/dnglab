@@ -47,12 +47,25 @@ where
     }
   }
 
+  pub fn is_initialized(&self) -> bool {
+    self.initialized
+  }
+
   pub fn into_inner(self) -> Vec<T> {
     self.data
   }
 
   pub fn dim(&self) -> Dim2 {
     Dim2::new(self.width, self.height)
+  }
+
+  pub fn update_dimension(&mut self, dim: Dim2) {
+    if self.width * self.height == dim.w * dim.h {
+      self.width = dim.w;
+      self.height = dim.h;
+    } else {
+      panic!("Can not change dimension: mismatch with old dimension: {:?} vs. {:?}", self.dim(), dim);
+    }
   }
 
   pub fn pixels(&self) -> &[T] {

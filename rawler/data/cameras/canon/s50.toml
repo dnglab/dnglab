@@ -1,0 +1,17 @@
+# CRW
+make = "Canon"
+model = "Canon PowerShot S50"
+clean_make = "Canon"
+clean_model = "PowerShot S50"
+whitepoint = 4095
+color_pattern = "RGGB"
+active_area = [12,6,44,2]
+blackareav = [2632,40]
+
+[cameras.params]
+wb_offset = 60
+
+[cameras.color_matrix]
+A = [1.0191, -0.4276, 0.0059, -0.5606, 1.278, 0.3182, -0.0989, 0.1613, 0.6658]
+D65 = [0.8979, -0.2658, -0.0871, -0.7721, 1.55, 0.2357, -0.1773, 0.2366, 0.6634]
+

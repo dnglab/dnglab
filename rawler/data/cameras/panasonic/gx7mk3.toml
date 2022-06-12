@@ -2,7 +2,7 @@ make = "Panasonic"
 model = "DC-GX7MK3"
 clean_make = "Panasonic"
 clean_model = "DC-GX7 III"
-blackpoint = 143
+#blackpoint = 143
 whitepoint = 4095
 color_pattern = "BGGR"
 

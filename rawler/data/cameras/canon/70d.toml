@@ -1,0 +1,25 @@
+make = "Canon"
+model = "Canon EOS 70D"
+clean_make = "Canon"
+clean_model = "EOS 70D"
+color_pattern = "RGGB"
+real_bps = 14
+active_area = [72,38,0,0]
+blackareav = [4, 70]
+blackareah = [4, 36]
+
+[cameras.color_matrix]
+A = [0.7546, -0.1435, -0.0929, -0.3846, 1.1488, 0.2692, -0.0332, 0.1209, 0.637]
+D65 = [0.7034, -0.0804, -0.1014, -0.442, 1.2564, 0.2058, -0.0851, 0.1994, 0.5758]
+
+[[cameras.modes]]
+mode = "sRaw1"
+hints = ["invert_sraw_wb", "sraw_new"]
+real_bps = 16
+whitepoint = 53000
+
+[[cameras.modes]]
+mode = "sRaw2"
+hints = ["invert_sraw_wb", "sraw_new"]
+real_bps = 16
+whitepoint = 53000

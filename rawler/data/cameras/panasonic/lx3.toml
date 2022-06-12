@@ -2,7 +2,7 @@ make = "Panasonic"
 model = "DMC-LX3"
 clean_make = "Panasonic"
 clean_model = "DMC-LX3"
-blackpoint = 15
+#blackpoint = 15
 whitepoint = 3986
 color_pattern = "BGGR"
 

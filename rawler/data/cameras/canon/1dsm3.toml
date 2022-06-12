@@ -1,0 +1,11 @@
+make = "Canon"
+model = "Canon EOS-1Ds Mark III"
+clean_make = "Canon"
+clean_model = "EOS-1Ds Mark III"
+color_pattern = "RGGB"
+blackareav = [0, 60]
+active_area = [62, 20, 10, 2]
+
+[cameras.color_matrix]
+A = [0.6705, -0.1154, -0.0458, -0.6783, 1.4191, 0.2848, -0.0853, 0.1159, 0.749]
+D65 = [0.5858, -0.0211, -0.093, -0.8254, 1.6018, 0.2354, -0.1732, 0.1888, 0.7448]

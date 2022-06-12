@@ -1,0 +1,13 @@
+make = "Canon"
+model = "Canon EOS M10"
+clean_make = "Canon"
+clean_model = "EOS M10"
+whitepoint = 16000
+color_pattern = "RGGB"
+blackareav = [0, 60]
+blackareah = [0, 40]
+active_area = [72, 52, 0, 0]
+
+[cameras.color_matrix]
+A = [0.9599, -0.3684, -0.0398, -0.3364, 1.1398, 0.2237, -0.0709, 0.1722, 0.6487]
+D65 = [0.64, -0.048, -0.0888, -0.5294, 1.3416, 0.2047, -0.1296, 0.2203, 0.6137]

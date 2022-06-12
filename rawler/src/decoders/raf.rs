@@ -21,6 +21,7 @@ use crate::imgop::Point;
 use crate::imgop::Rect;
 use crate::packed::*;
 use crate::pixarray::PixU16;
+use crate::rawimage::BlackLevel;
 use crate::tags::DngTag;
 use crate::tags::ExifTag;
 use crate::tags::TiffCommonTag;
@@ -290,7 +291,11 @@ impl<'a> Decoder for RafDecoder<'a> {
       assert_eq!(bps, 16);
       dbp::decode_dbp(&src, width, height, dummy)?
     } else if src.len() < bps * width * height / 8 {
-      decompress_fuji(&src, width, height, bps, &corrected_cfa)?
+      if !dummy {
+        decompress_fuji(&src, width, height, bps, &corrected_cfa)?
+      } else {
+        alloc_image_plain!(width, height, dummy)
+      }
     } else {
       match bps {
         12 => decode_12le(&src, width, height, dummy),
@@ -308,8 +313,8 @@ impl<'a> Decoder for RafDecoder<'a> {
       }
     };
 
-    let blacks = self.get_blacklevel()?.unwrap_or_else(|| Vec::from(self.camera.blacklevels));
-    log::debug!("RAF Blacklevels: {:?}", blacks);
+    let blacklevel = self.get_blacklevel()?;
+    log::debug!("RAF Blacklevels: {:?}", blacklevel);
 
     // For now, we put the rotated data into DNG. Much better solution
     // would be to support staggered layouts, but this is not used much
@@ -328,17 +333,20 @@ impl<'a> Decoder for RafDecoder<'a> {
       } else {
         self.rotate_image(image.pixels(), &self.camera, width, height, dummy)?
       };
-      let mut image = RawImage::new(self.camera.clone(), cpp, normalize_wb(self.get_wb()?), rotated, dummy);
-      image.cfa = corrected_cfa;
-      image.blacklevels = [blacks[0]; 4]; // TODO
+
+      let mut camera = self.camera.clone();
+      camera.cfa = corrected_cfa;
+
+      let mut image = RawImage::new(self.camera.clone(), rotated, cpp, normalize_wb(self.get_wb()?), blacklevel, None, dummy);
 
       if rotate_for_dng {
         image.add_dng_tag(TiffCommonTag::CFARepeatPatternDim, [2, 4]);
         image.add_dng_tag(DngTag::CFALayout, 2_u16);
         image.add_dng_tag(TiffCommonTag::CFAPattern, &[0_u8, 1, 2, 1, 2, 1, 0, 1][..]);
 
-        image.add_dng_tag(DngTag::BlackLevel, image.blacklevels[0]);
-        image.add_dng_tag(DngTag::BlackLevelRepeatDim, [1_u16, 1_u16]);
+        todo!();
+        //image.add_dng_tag(DngTag::BlackLevel, image.blacklevel[0]);
+        //image.add_dng_tag(DngTag::BlackLevelRepeatDim, [1_u16, 1_u16]);
       }
 
       // Reset crops because we have rotated the data.
@@ -348,20 +356,21 @@ impl<'a> Decoder for RafDecoder<'a> {
     } else {
       //ok_image(self.camera.clone(), width, height, cpp, self.get_wb()?, image.into_inner())
 
-      // TODO: remove width height from new()!!!!
-      let mut image = RawImage::new(self.camera.clone(), cpp, normalize_wb(self.get_wb()?), image, dummy);
-
-      image.cfa = corrected_cfa;
-      image.blacklevels = [blacks[0]; 4]; // TODO
-      if self.camera.whitelevels[0] == u16::MAX {
+      let mut camera = self.camera.clone();
+      camera.cfa = corrected_cfa;
+      let whitelevel = if self.camera.whitelevel.is_none() {
         match bps {
           12 | 14 | 16 => {
             let max_value: u16 = ((1_u32 << bps) - 1) as u16;
-            image.whitelevels = [max_value; 4];
+            Some(vec![max_value; cpp])
           }
-          _ => {}
+          _ => None,
         }
-      }
+      } else {
+        None
+      };
+
+      let mut image = RawImage::new(camera, image, cpp, normalize_wb(self.get_wb()?), blacklevel, whitelevel, dummy);
 
       // Overwrite crop if available in metadata
       if let Some(crop) = self.get_crop()? {
@@ -429,11 +438,12 @@ impl<'a> RafDecoder<'a> {
     }
   }
 
-  fn get_blacklevel(&self) -> Result<Option<Vec<u16>>> {
+  fn get_blacklevel(&self) -> Result<Option<BlackLevel>> {
     if let Some(ifd) = self.ifd.get_sub_ifds(FujiIFD::FujiIFD) {
       let fuji = &ifd[0];
       if let Some(Entry { value: Value::Long(black), .. }) = fuji.get_entry_recursive(FujiIFD::BlackLevel) {
-        return Ok(Some(black.iter().copied().map(|v| v as u16).collect()));
+        let levels: Vec<u16> = black.iter().copied().map(|v| v as u16).collect();
+        return Ok(Some(BlackLevel::new(&levels, self.camera.cfa.width, self.camera.cfa.height, 1)));
       } else {
         log::debug!("Unable to find black level data");
       }

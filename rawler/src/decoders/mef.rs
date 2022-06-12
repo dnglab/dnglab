@@ -43,7 +43,7 @@ impl<'a> Decoder for MefDecoder<'a> {
 
     let image = decode_12be(&src, width, height, dummy);
     let cpp = 1;
-    ok_image(self.camera.clone(), cpp, [NAN, NAN, NAN, NAN], image)
+    ok_image(self.camera.clone(), cpp, [NAN, NAN, NAN, NAN], image, dummy)
   }
 
   fn format_dump(&self) -> FormatDump {

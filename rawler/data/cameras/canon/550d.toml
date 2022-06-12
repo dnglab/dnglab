@@ -1,0 +1,20 @@
+make = "Canon"
+model = "Canon EOS 550D"
+clean_make = "Canon"
+clean_model = "EOS 550D"
+
+model_aliases = [
+  ["Canon EOS DIGITAL REBEL T2i", "Rebel T2i"],
+  ["Canon EOS REBEL T2i", "Rebel T2i"],
+  ["Canon EOS Kiss Digital X4", "Kiss X4"],
+  ["Canon EOS Kiss X4", "Kiss X4"],
+]
+
+color_pattern = "GBRG"
+blackareav = [0, 140]
+blackareah = [4, 44]
+active_area = [142, 51, 0, 0]
+
+[cameras.color_matrix]
+A = [0.7755, -0.2449, -0.0349, -0.3106, 1.0222, 0.3362, -0.0156, 0.0986, 0.6409]
+D65 = [0.6941, -0.1164, -0.0857, -0.3825, 1.1597, 0.2534, -0.0416, 0.154, 0.6039]

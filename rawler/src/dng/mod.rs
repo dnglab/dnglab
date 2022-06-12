@@ -21,8 +21,6 @@ pub const DNG_VERSION_V1_6: [u8; 4] = [1, 6, 0, 0];
 ///
 /// DNG ActiveArea  is:
 ///  Top, Left, Bottom, Right
-/// RawImage.crop is:
-/// Top, Right, Bottom, Left
 pub fn rect_to_dng_area(area: &Rect) -> [u16; 4] {
   [
     area.p.y as u16,

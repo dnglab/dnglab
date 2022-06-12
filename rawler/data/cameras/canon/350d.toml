@@ -1,0 +1,24 @@
+make = "Canon"
+model = "Canon EOS 350D DIGITAL"
+clean_make = "Canon"
+clean_model = "EOS 350D"
+
+model_aliases = [
+  ["Canon EOS 350D Digital", "EOS 350D"],
+  ["Canon EOS DIGITAL REBEL XT", "Rebel XT"],
+  ["Canon EOS REBEL XT", "Rebel XT"],
+  ["Canon EOS Kiss Digital N", "Kiss N"],
+  ["Canon EOS Kiss N", "Kiss N"],
+]
+
+whitepoint = 4095
+color_pattern = "RGGB"
+blackareav = [0, 40]
+active_area = [42, 14, 0, 0]
+
+[cameras.params]
+wb_offset = 25
+
+[cameras.color_matrix]
+A = [0.616, -0.0945, -0.0745, -0.6847, 1.3563, 0.3684, -0.0802, 0.1086, 0.7554]
+D65 = [0.6019, -0.0617, -0.0966, -0.8645, 1.5882, 0.2975, -0.153, 0.1719, 0.7642]

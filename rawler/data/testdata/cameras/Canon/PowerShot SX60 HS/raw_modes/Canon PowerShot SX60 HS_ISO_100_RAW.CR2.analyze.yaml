@@ -1,0 +1,86 @@
+---
+file:
+  fileSize: 24341230
+  fileName: Canon PowerShot SX60 HS_ISO_100_RAW.CR2
+  digest: 7efbd56b1a282210885ef1c7acac5584
+data:
+  metadata:
+    rawParams:
+      rawWidth: 4768
+      rawHeight: 3516
+      bitDepth: 16
+      crops:
+        p:
+          x: 124
+          y: 38
+        d:
+          w: 4608
+          h: 3456
+      blacklevels:
+        levels:
+          - 128/1
+          - 128/1
+          - 128/1
+          - 128/1
+        cpp: 1
+        width: 2
+        height: 2
+      whitelevels:
+        - 4000
+      wbCoeffs:
+        - 1.6921465
+        - 1.0
+        - 1.6712042
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ""
+        artist: ""
+        lens_spec: ~
+        exposure_time: 1/160
+        fnumber: 45/10
+        aperture_value: 139/32
+        brightness_value: ~
+        iso_speed_ratings: 100
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: 4
+        exposure_bias: 0/3
+        date_time_original: "2021:10:30 11:35:35"
+        create_date: "2021:10:30 11:35:35"
+        modify_date: "2021:10:30 11:35:35"
+        exposure_program: ~
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: 234/32
+        max_aperture_value: 139/32
+        subject_distance: ~
+        metering_mode: 5
+        light_source: ~
+        flash: 16
+        focal_length: 10621/1000
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ""
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: PowerShot SX60 HS
+      make: Canon
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

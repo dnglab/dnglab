@@ -1,0 +1,104 @@
+---
+file:
+  fileSize: 11679288
+  fileName: Canon EOS DIGITAL REBEL XS_ISO_100_RAW.CR2
+  digest: 9bbe58fd545a48a56f2cdb5b3335adf7
+data:
+  metadata:
+    rawParams:
+      rawWidth: 3948
+      rawHeight: 2622
+      bitDepth: 16
+      crops:
+        p:
+          x: 52
+          y: 23
+        d:
+          w: 3888
+          h: 2592
+      blacklevels:
+        levels:
+          - 0/1
+        cpp: 1
+        width: 1
+        height: 1
+      whitelevels:
+        - 14000
+      wbCoeffs:
+        - 2.0078125
+        - 1.0
+        - 1.640625
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 8
+        copyright: ~
+        artist: ~
+        lens_spec:
+          - 18/1
+          - 55/1
+          - 35/10
+          - 56/10
+        exposure_time: 1/800
+        fnumber: 56/10
+        aperture_value: 327680/65536
+        brightness_value: ~
+        iso_speed_ratings: 100
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: 1/3
+        date_time_original: "2010:07:23 11:00:15"
+        create_date: "2010:07:23 11:00:15"
+        modify_date: "2010:07:23 11:00:15"
+        exposure_program: 4
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: "02"
+        sub_sec_time_original: "02"
+        sub_sec_time_digitized: "02"
+        shutter_speed_value: 630784/65536
+        max_aperture_value: ~
+        subject_distance: ~
+        metering_mode: 5
+        light_source: ~
+        flash: 16
+        focal_length: 55/1
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: Canon
+        lens_model: EF-S 18-55mm f/3.5-5.6 IS
+        gps: ~
+      model: Rebel XS
+      make: Canon
+      lens:
+        identifiers:
+          name: EF-S18-55mm f/3.5-5.6 IS
+          id:
+            - 48
+            - 0
+          nikon_id: ~
+          olympus_id: ~
+        mount: ef-mount
+        lens_make: Canon
+        lens_model: EF-S 18-55mm f/3.5-5.6 IS
+        focal_range:
+          - 18/1
+          - 55/1
+        aperture_range:
+          - 35/10
+          - 56/10
+        lens_name: Canon EF-S 18-55mm f/3.5-5.6 IS
+      unique_image_id: ~
+      rating: ~
+

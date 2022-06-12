@@ -1,0 +1,86 @@
+---
+file:
+  fileSize: 13804693
+  fileName: Canon PowerShot SX50 HS_ISO_80_RAW.CR2
+  digest: 8cfec961a2ea4a8ecb045da58a802ba1
+data:
+  metadata:
+    rawParams:
+      rawWidth: 4176
+      rawHeight: 3062
+      bitDepth: 16
+      crops:
+        p:
+          x: 132
+          y: 40
+        d:
+          w: 4000
+          h: 3000
+      blacklevels:
+        levels:
+          - 128/1
+          - 128/1
+          - 128/1
+          - 128/1
+        cpp: 1
+        width: 2
+        height: 2
+      whitelevels:
+        - 4000
+      wbCoeffs:
+        - 1.6961094
+        - 1.0
+        - 1.6876972
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: CC0
+        artist: Dmitrii Samsonov
+        lens_spec: ~
+        exposure_time: 1/320
+        fnumber: 65/10
+        aperture_value: 173/32
+        brightness_value: ~
+        iso_speed_ratings: 80
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: 4
+        exposure_bias: 0/3
+        date_time_original: "2019:05:16 10:44:04"
+        create_date: "2019:05:16 10:44:04"
+        modify_date: "2019:05:16 10:44:04"
+        exposure_program: ~
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: 266/32
+        max_aperture_value: 173/32
+        subject_distance: ~
+        metering_mode: 5
+        light_source: ~
+        flash: 16
+        focal_length: 215000/1000
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 1
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ""
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: PowerShot SX50 HS
+      make: Canon
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

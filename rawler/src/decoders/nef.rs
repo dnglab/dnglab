@@ -44,6 +44,7 @@ use crate::RawLoader;
 use crate::RawlerError;
 use crate::Result;
 
+use super::BlackLevel;
 use super::Camera;
 use super::Decoder;
 use super::RawDecodeParams;
@@ -266,23 +267,19 @@ impl<'a> Decoder for NefDecoder<'a> {
     };
 
     assert_eq!(image.width, width * cpp);
-    let mut img = RawImage::new(self.camera.clone(), cpp, coeffs, image, false);
+    let blacklevel = self.get_blacklevel(bps)?;
+    let whitelevel = None;
+    let mut img = RawImage::new(self.camera.clone(), image, cpp, coeffs, blacklevel, whitelevel, dummy);
 
     if let Some(crop) = self.get_crop()? {
       debug!("RAW Crops: {:?}", crop);
       img.crop_area = Some(crop);
     }
 
-    // If we find blacklevels in file, we override configuration
-    // or calculated blacklevels.
-    if let Some(blacklevels) = self.get_blacklevel(bps)? {
-      debug!("RAW Blacklevels: {:?}", blacklevels);
-      img.blacklevels = blacklevels;
-    }
-
     if cpp == 3 {
-      img.blacklevels = [0, 0, 0, 0];
-      img.whitelevels = [65535, 65535, 65535, 65535];
+      // Reset levels to defaults (0)
+      img.blacklevel = BlackLevel::default();
+      img.whitelevel = vec![65535; cpp];
     }
 
     Ok(img)
@@ -327,13 +324,13 @@ impl<'a> NefDecoder<'a> {
   /// is useless. But if we found here the levels in makernotes, we
   /// use these instead. For 12 bit images, the blacklevels are still relative to
   /// 14 bit image data. So we need to reduce them by 2 bits.
-  fn get_blacklevel(&self, bps: usize) -> Result<Option<[u16; 4]>> {
+  fn get_blacklevel(&self, bps: usize) -> Result<Option<BlackLevel>> {
     if let Some(levels) = self.makernote.get_entry(NikonMakernote::BlackLevel) {
-      let mut blacklevel = [levels.force_u16(0), levels.force_u16(1), levels.force_u16(2), levels.force_u16(3)];
+      let mut black = [levels.force_u16(0), levels.force_u16(1), levels.force_u16(2), levels.force_u16(3)];
       if bps == 12 {
-        blacklevel.iter_mut().for_each(|v| *v >>= 14 - 12);
+        black.iter_mut().for_each(|v| *v >>= 14 - 12);
       }
-      Ok(Some(blacklevel))
+      Ok(Some(BlackLevel::new(&black, self.camera.cfa.width, self.camera.cfa.height, 1)))
     } else {
       Ok(None)
     }

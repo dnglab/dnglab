@@ -1,0 +1,83 @@
+---
+file:
+  fileSize: 7456886
+  fileName: Canon EOS DIGITAL REBEL XT_ISO_100.CR2
+  digest: c9783470a58a38d76a21401533c9746e
+data:
+  metadata:
+    rawParams:
+      rawWidth: 3516
+      rawHeight: 2328
+      bitDepth: 16
+      crops:
+        p:
+          x: 52
+          y: 19
+        d:
+          w: 3456
+          h: 2304
+      blacklevels:
+        levels:
+          - 0/1
+        cpp: 1
+        width: 1
+        height: 1
+      whitelevels:
+        - 4095
+      wbCoeffs:
+        - 1.6564885
+        - 1.0
+        - 2.1030533
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 8
+        copyright: ~
+        artist: ~
+        lens_spec: ~
+        exposure_time: 1/640
+        fnumber: 56/10
+        aperture_value: 325770/65536
+        brightness_value: ~
+        iso_speed_ratings: 100
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: 0/2
+        date_time_original: "2008:05:25 18:32:29"
+        create_date: "2008:05:25 18:32:29"
+        modify_date: "2008:05:25 18:32:29"
+        exposure_program: 1
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: 610922/65536
+        max_aperture_value: ~
+        subject_distance: ~
+        metering_mode: 5
+        light_source: ~
+        flash: 16
+        focal_length: 10/1
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 1
+        white_balance: 1
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: Rebel XT
+      make: Canon
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

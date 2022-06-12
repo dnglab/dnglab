@@ -1,0 +1,86 @@
+---
+file:
+  fileSize: 10663261
+  fileName: Canon PowerShot G12_ISO_200_RAW.CR2
+  digest: 07c3ab67442175a0afb549db83a2439a
+data:
+  metadata:
+    rawParams:
+      rawWidth: 3744
+      rawHeight: 2784
+      bitDepth: 16
+      crops:
+        p:
+          x: 72
+          y: 24
+        d:
+          w: 3648
+          h: 2736
+      blacklevels:
+        levels:
+          - 128/1
+          - 128/1
+          - 128/1
+          - 128/1
+        cpp: 1
+        width: 2
+        height: 2
+      whitelevels:
+        - 4000
+      wbCoeffs:
+        - 1.6681665
+        - 1.0
+        - 2.1619797
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ~
+        artist: ~
+        lens_spec: ~
+        exposure_time: 1/640
+        fnumber: 80/10
+        aperture_value: 192/32
+        brightness_value: ~
+        iso_speed_ratings: 200
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: 4
+        exposure_bias: "-2/3"
+        date_time_original: "2017:09:20 11:08:33"
+        create_date: "2017:09:20 11:08:33"
+        modify_date: "2017:09:20 11:08:33"
+        exposure_program: ~
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: 298/32
+        max_aperture_value: 95/32
+        subject_distance: ~
+        metering_mode: 5
+        light_source: ~
+        flash: 16
+        focal_length: 6100/1000
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 1
+        white_balance: 1
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: PowerShot G12
+      make: Canon
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

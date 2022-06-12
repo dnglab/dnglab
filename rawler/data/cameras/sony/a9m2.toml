@@ -2,8 +2,8 @@ make = "SONY"
 model = "ILCE-9M2"
 clean_make = "Sony"
 clean_model = "ILCE-9M2"
-blackpoint = 512
-whitepoint = 16383
+##blackpoint = 512
+#whitepoint = 16383
 color_pattern = "RGGB"
 bps = 8
 

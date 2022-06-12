@@ -1,0 +1,107 @@
+---
+file:
+  fileSize: 26616327
+  fileName: Canon EOS 4000D_ISO_100_RAW.CR2
+  digest: 97ac761dcc9fa9f32102806deb57efd1
+data:
+  metadata:
+    rawParams:
+      rawWidth: 5344
+      rawHeight: 3516
+      bitDepth: 16
+      crops:
+        p:
+          x: 152
+          y: 56
+        d:
+          w: 5184
+          h: 3456
+      blacklevels:
+        levels:
+          - 2045/1
+          - 2046/1
+          - 2046/1
+          - 2046/1
+        cpp: 1
+        width: 2
+        height: 2
+      whitelevels:
+        - 12279
+      wbCoeffs:
+        - 1.9619141
+        - 1.0
+        - 1.5849609
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ""
+        artist: Dr. Thomas Feuerabend
+        lens_spec:
+          - 18/1
+          - 55/1
+          - 35/10
+          - 56/10
+        exposure_time: 1/200
+        fnumber: 56/10
+        aperture_value: 327680/65536
+        brightness_value: ~
+        iso_speed_ratings: 100
+        iso_speed: ~
+        recommended_exposure_index: 100
+        sensitivity_type: 2
+        exposure_bias: 0/1
+        date_time_original: "2019:06:17 18:54:07"
+        create_date: "2019:06:17 18:54:07"
+        modify_date: "2019:06:17 18:54:07"
+        exposure_program: 3
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: "00"
+        sub_sec_time_original: "00"
+        sub_sec_time_digitized: "00"
+        shutter_speed_value: 499712/65536
+        max_aperture_value: ~
+        subject_distance: ~
+        metering_mode: 5
+        light_source: ~
+        flash: 16
+        focal_length: 55/1
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ""
+        serial_number: "153070012918"
+        lens_serial_number: "0000954614"
+        lens_make: Canon
+        lens_model: EF-S 18-55mm f/3.5-5.6 III
+        gps: ~
+      model: Canon EOS 4000D
+      make: Canon
+      lens:
+        identifiers:
+          name: ~
+          id:
+            - 53
+            - 0
+          nikon_id: ~
+          olympus_id: ~
+        mount: ef-mount
+        lens_make: Canon
+        lens_model: EF-S 18-55mm f/3.5-5.6 III
+        focal_range:
+          - 18/1
+          - 55/1
+        aperture_range:
+          - 35/10
+          - 56/10
+        lens_name: Canon EF-S 18-55mm f/3.5-5.6 III
+      unique_image_id: ~
+      rating: ~
+

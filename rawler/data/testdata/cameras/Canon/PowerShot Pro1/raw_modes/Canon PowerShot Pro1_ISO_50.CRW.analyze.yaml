@@ -1,0 +1,77 @@
+---
+file:
+  fileSize: 8163966
+  fileName: Canon PowerShot Pro1_ISO_50.CRW
+  digest: 182c00dd2c6e4e4f6f096b51367008c2
+data:
+  metadata:
+    rawParams:
+      rawWidth: 3344
+      rawHeight: 2484
+      bitDepth: 16
+      crops: ~
+      blacklevels:
+        levels:
+          - 0/1
+        cpp: 1
+        width: 1
+        height: 1
+      whitelevels:
+        - 4095
+      wbCoeffs:
+        - .inf
+        - 0.0
+        - .inf
+        - ~
+    rawMetadata:
+      exif:
+        orientation: ~
+        copyright: ~
+        artist: ~
+        lens_spec: ~
+        exposure_time: ~
+        fnumber: ~
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: ~
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: ~
+        date_time_original: ~
+        create_date: ~
+        modify_date: ~
+        exposure_program: ~
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: ~
+        max_aperture_value: ~
+        subject_distance: ~
+        metering_mode: ~
+        light_source: ~
+        flash: ~
+        focal_length: ~
+        image_number: ~
+        color_space: ~
+        flash_energy: ~
+        exposure_mode: ~
+        white_balance: ~
+        scene_capture_type: ~
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: PowerShot Pro1
+      make: Canon
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

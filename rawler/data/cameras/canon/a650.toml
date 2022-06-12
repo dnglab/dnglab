@@ -1,0 +1,15 @@
+# CRW
+make = "Canon"
+model = "PowerShot A650"
+clean_make = "Canon"
+clean_model = "PowerShot A650"
+whitepoint = 1023
+color_pattern = "RGGB"
+active_area = [48,12,24,12]
+filesize = 15636240
+raw_width = 4104
+raw_height = 3048
+blackareav = [0, 45]
+
+[cameras.color_matrix]
+D65 = [0.9427, -0.3036, -0.0959, -0.2581, 1.0671, 0.1911, -0.1039, 0.1982, 0.4430]

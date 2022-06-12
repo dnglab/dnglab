@@ -19,6 +19,7 @@ use crate::RawImage;
 use crate::RawLoader;
 use crate::Result;
 
+use super::BlackLevel;
 use super::Camera;
 use super::Decoder;
 use super::RawDecodeParams;
@@ -65,10 +66,8 @@ impl<'a> Decoder for ErfDecoder<'a> {
     let image = decode_12be_wcontrol(&src, width, height, dummy);
     let cpp = 1;
 
-    let mut img = RawImage::new(self.camera.clone(), cpp, self.get_wb()?, image, dummy);
-    if let Some(blacklevel) = self.get_blacklevel() {
-      img.blacklevels = blacklevel;
-    }
+    let blacklevel = self.get_blacklevel(cpp);
+    let img = RawImage::new(self.camera.clone(), image, cpp, self.get_wb()?, blacklevel, None, dummy);
     Ok(img)
   }
 
@@ -95,9 +94,10 @@ impl<'a> ErfDecoder<'a> {
     }
   }
 
-  fn get_blacklevel(&self) -> Option<[u16; 4]> {
+  fn get_blacklevel(&self, cpp: usize) -> Option<BlackLevel> {
     if let Some(levels) = self.makernote.get_entry(0x0401) {
-      return Some([levels.force_u16(0), levels.force_u16(1), levels.force_u16(2), levels.force_u16(3)]);
+      let levels = [levels.force_u16(0), levels.force_u16(1), levels.force_u16(2), levels.force_u16(3)];
+      return Some(BlackLevel::new(&levels, self.camera.cfa.width, self.camera.cfa.height, cpp));
     }
     None
   }

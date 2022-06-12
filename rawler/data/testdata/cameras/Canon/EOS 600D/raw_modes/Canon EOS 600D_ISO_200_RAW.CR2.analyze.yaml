@@ -1,0 +1,107 @@
+---
+file:
+  fileSize: 23715742
+  fileName: Canon EOS 600D_ISO_200_RAW.CR2
+  digest: f76a2af47bc5025c2ff7fb88e339c557
+data:
+  metadata:
+    rawParams:
+      rawWidth: 5344
+      rawHeight: 3516
+      bitDepth: 16
+      crops:
+        p:
+          x: 152
+          y: 56
+        d:
+          w: 5184
+          h: 3456
+      blacklevels:
+        levels:
+          - 2047/1
+          - 2047/1
+          - 2048/1
+          - 2048/1
+        cpp: 1
+        width: 2
+        height: 2
+      whitelevels:
+        - 15094
+      wbCoeffs:
+        - 2.0732422
+        - 1.0
+        - 1.6679688
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: All Rights Reserved
+        artist: "Mathias F. Grassmann: \nGraas@web.de"
+        lens_spec:
+          - 90/1
+          - 90/1
+          - 28/10
+          - 28/10
+        exposure_time: 1/1000
+        fnumber: 5/1
+        aperture_value: 303104/65536
+        brightness_value: ~
+        iso_speed_ratings: 200
+        iso_speed: ~
+        recommended_exposure_index: 200
+        sensitivity_type: 2
+        exposure_bias: 0/1
+        date_time_original: "2017:07:14 08:39:52"
+        create_date: "2017:07:14 08:39:52"
+        modify_date: "2017:07:14 08:39:52"
+        exposure_program: 3
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: "00"
+        sub_sec_time_original: "00"
+        sub_sec_time_digitized: "00"
+        shutter_speed_value: 655360/65536
+        max_aperture_value: ~
+        subject_distance: ~
+        metering_mode: 5
+        light_source: ~
+        flash: 16
+        focal_length: 90/1
+        image_number: ~
+        color_space: 65535
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ""
+        serial_number: "043022015995"
+        lens_serial_number: "0000000000"
+        lens_make: Tamron
+        lens_model: "SP 90mm F/2.8 Di VC USD Macro 1:1 F004"
+        gps: ~
+      model: EOS 600D
+      make: Canon
+      lens:
+        identifiers:
+          name: "TAMRON SP 90mm F/2.8 Di VC USD MACRO1:1 F004"
+          id:
+            - 254
+            - 0
+          nikon_id: ~
+          olympus_id: ~
+        mount: ef-mount
+        lens_make: Tamron
+        lens_model: "SP 90mm F/2.8 Di VC USD Macro 1:1 F004"
+        focal_range:
+          - 90/1
+          - 90/1
+        aperture_range:
+          - 28/10
+          - 28/10
+        lens_name: "Tamron SP 90mm F/2.8 Di VC USD Macro 1:1 F004"
+      unique_image_id: ~
+      rating: ~
+
