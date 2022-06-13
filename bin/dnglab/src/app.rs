@@ -97,7 +97,7 @@ pub fn create_app() -> Command<'static> {
       Command::new("cameras")
         .about("List supported cameras")
         .arg_required_else_help(false)
-        .arg(arg!(--md "Markdown format output")),
+        .arg(arg!(markdown: --md "Markdown format output")),
     )
     .subcommand(
       Command::new("lenses")
