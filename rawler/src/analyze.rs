@@ -108,7 +108,8 @@ pub struct RawParams {
   pub raw_width: usize,
   pub raw_height: usize,
   pub bit_depth: usize,
-  pub crops: Option<Rect>,
+  pub crop_area: Option<Rect>,
+  pub active_area: Option<Rect>,
   pub blacklevels: BlackLevel,
   pub whitelevels: Vec<u16>,
   pub wb_coeffs: (Option<f32>, Option<f32>, Option<f32>, Option<f32>),
@@ -119,8 +120,9 @@ impl From<&RawImage> for RawParams {
     Self {
       raw_width: rawimage.width,
       raw_height: rawimage.height,
-      bit_depth: 16,
-      crops: rawimage.crop_area,
+      bit_depth: rawimage.bps,
+      crop_area: rawimage.crop_area,
+      active_area: rawimage.active_area,
       blacklevels: rawimage.blacklevel.clone(),
       whitelevels: rawimage.whitelevel.clone(),
       wb_coeffs: rawimage

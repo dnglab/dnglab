@@ -9,13 +9,14 @@ data:
       rawWidth: 8282
       rawHeight: 6240
       bitDepth: 16
-      crops:
+      cropArea:
         p:
           x: 54
           y: 16
         d:
           w: 8176
           h: 6132
+      activeArea: ~
       blacklevels:
         levels:
           - 256/1
