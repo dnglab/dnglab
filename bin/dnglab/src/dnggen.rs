@@ -431,6 +431,9 @@ fn dng_put_raw(raw_ifd: &mut DirectoryWriter<'_, '_>, rawimage: &RawImage, param
     CropMode::None => full_size,
   };
 
+  assert!(active_area.p.x + active_area.d.w <= rawimage.width);
+  assert!(active_area.p.y + active_area.d.h <= rawimage.height);
+
   raw_ifd.add_tag(TiffCommonTag::NewSubFileType, 0_u16)?; // Raw
   raw_ifd.add_tag(TiffCommonTag::ImageWidth, rawimage.width as u32)?;
   raw_ifd.add_tag(TiffCommonTag::ImageLength, rawimage.height as u32)?;
