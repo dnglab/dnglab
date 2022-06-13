@@ -18,11 +18,11 @@ data:
           h: 2272
       activeArea:
         p:
-          x: 156
-          y: 108
+          x: 144
+          y: 96
         d:
-          w: 3408
-          h: 2272
+          w: 3430
+          h: 2286
       blacklevels:
         levels:
           - 512/1
