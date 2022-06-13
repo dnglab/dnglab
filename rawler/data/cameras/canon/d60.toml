@@ -1,0 +1,16 @@
+# CRW
+make = "Canon"
+model = "Canon EOS D60"
+clean_make = "Canon"
+clean_model = "EOS D60"
+whitepoint = 4000
+color_pattern = "RGGB"
+blackareav = [0,60]
+active_area = [64, 12, 0, 0]
+
+[cameras.params]
+wb_offset = 1
+
+[cameras.color_matrix]
+A = [0.6385, -0.1668, -0.0631, -0.6948, 1.3734, 0.3595, -0.1629, 0.223, 0.896]
+D65 = [0.6211, -0.1358, -0.0896, -0.8557, 1.5766, 0.3012, -0.3001, 0.3507, 0.8567]

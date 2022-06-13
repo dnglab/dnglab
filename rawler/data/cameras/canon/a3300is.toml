@@ -1,0 +1,15 @@
+# CRW
+make = "Canon"
+model = "PowerShot A3300 IS"
+clean_make = "Canon"
+clean_model = "PowerShot A3300 IS"
+blackpoint = 127
+whitepoint = 4095
+color_pattern = "GBRG"
+active_area = [16,16,56,8]
+filesize = 24724224
+raw_width = 4704
+raw_height = 3504
+
+[cameras.color_matrix]
+D65 = [130.1431, -46.9837, -10.2652, -20.0195, 96.1551, 23.8645, -1.6441, 14.2319, 37.5979]

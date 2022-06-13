@@ -274,7 +274,7 @@ impl<'a> Decoder for IiqDecoder<'a> {
       .get_wb(file, wb_offset)
       .map_err(|ioerr| RawlerError::with_io_error("read IIQ white balance", &file.path, ioerr))?;
 
-    ok_image_with_blacklevels(self.camera.clone(), cpp, wb, blacklevel, image)
+    ok_image_with_blacklevels(self.camera.clone(), cpp, wb, blacklevel, image, dummy)
   }
 
   fn format_dump(&self) -> FormatDump {

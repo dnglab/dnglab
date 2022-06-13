@@ -1,0 +1,9 @@
+make = "Canon"
+model = "Canon EOS M6 Mark II"
+clean_make = "Canon"
+clean_model = "EOS M6 Mark II"
+color_pattern = "RGGB"
+
+[cameras.color_matrix]
+A = [1.4683, -0.7448, -0.0905, -0.4609, 1.3134, 0.1588, -0.0324, 0.1195, 0.6559]
+D65 = [1.1498, -0.3759, -0.1516, -0.5073, 1.2954, 0.2349, -0.0892, 0.1867, 0.6118]

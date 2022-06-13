@@ -1,0 +1,86 @@
+---
+file:
+  fileSize: 14752560
+  fileName: Canon PowerShot S120_ISO_250_RAW.CR2
+  digest: a0425aa19ce043713df56268a0075fda
+data:
+  metadata:
+    rawParams:
+      rawWidth: 4192
+      rawHeight: 3062
+      bitDepth: 16
+      crops:
+        p:
+          x: 132
+          y: 40
+        d:
+          w: 4000
+          h: 3000
+      blacklevels:
+        levels:
+          - 128/1
+          - 128/1
+          - 128/1
+          - 128/1
+        cpp: 1
+        width: 2
+        height: 2
+      whitelevels:
+        - 4000
+      wbCoeffs:
+        - 2.1617646
+        - 1.0
+        - 1.632353
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ""
+        artist: "bathory, gabor"
+        lens_spec: ~
+        exposure_time: 1/20
+        fnumber: 18/10
+        aperture_value: 54/32
+        brightness_value: ~
+        iso_speed_ratings: 250
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: 4
+        exposure_bias: 1/3
+        date_time_original: "2016:07:22 23:38:14"
+        create_date: "2016:07:22 23:38:14"
+        modify_date: "2016:07:22 23:38:14"
+        exposure_program: ~
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: 138/32
+        max_aperture_value: 54/32
+        subject_distance: ~
+        metering_mode: 5
+        light_source: ~
+        flash: 16
+        focal_length: 5200/1000
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 1
+        white_balance: 1
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: Bathory Gabor
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: PowerShot S120
+      make: Canon
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

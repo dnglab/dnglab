@@ -2,7 +2,7 @@ make = "LEICA CAMERA AG"
 model = "C-Lux"
 clean_make = "Leica"
 clean_model = "C-Lux"
-blackpoint = 140
+#blackpoint = 140
 whitepoint = 4095
 color_pattern = "GBRG"
 

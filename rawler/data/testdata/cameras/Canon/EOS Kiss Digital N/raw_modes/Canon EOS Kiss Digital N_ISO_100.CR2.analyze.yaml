@@ -1,0 +1,83 @@
+---
+file:
+  fileSize: 7548200
+  fileName: Canon EOS Kiss Digital N_ISO_100.CR2
+  digest: 3b8b1b87e144562c52b7360e2fb2a6f8
+data:
+  metadata:
+    rawParams:
+      rawWidth: 3516
+      rawHeight: 2328
+      bitDepth: 16
+      crops:
+        p:
+          x: 52
+          y: 19
+        d:
+          w: 3456
+          h: 2304
+      blacklevels:
+        levels:
+          - 0/1
+        cpp: 1
+        width: 1
+        height: 1
+      whitelevels:
+        - 4095
+      wbCoeffs:
+        - 2.4416094
+        - 1.0
+        - 1.4730128
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 8
+        copyright: ~
+        artist: ~
+        lens_spec: ~
+        exposure_time: 1/100
+        fnumber: 11/1
+        aperture_value: 453435/65536
+        brightness_value: ~
+        iso_speed_ratings: 100
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: 1/3
+        date_time_original: "2017:02:25 17:32:15"
+        create_date: "2017:02:25 17:32:15"
+        modify_date: "2017:02:25 17:32:15"
+        exposure_program: 3
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: 435412/65536
+        max_aperture_value: ~
+        subject_distance: ~
+        metering_mode: 1
+        light_source: ~
+        flash: 16
+        focal_length: 50/1
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: Kiss N
+      make: Canon
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

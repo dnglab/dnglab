@@ -17,14 +17,12 @@ data:
           w: 6016
           h: 4016
       blacklevels:
-        - 0
-        - 0
-        - 0
-        - 0
+        levels:
+          - 0/1
+        cpp: 1
+        width: 1
+        height: 1
       whitelevels:
-        - 15520
-        - 15520
-        - 15520
         - 15520
       wbCoeffs:
         - 1.8632812

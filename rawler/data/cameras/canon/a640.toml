@@ -1,0 +1,15 @@
+# CRW
+make = "Canon"
+model = "PowerShot A640"
+clean_make = "Canon"
+clean_model = "PowerShot A640"
+whitepoint = 1023
+color_pattern = "RGGB"
+active_area = [12, 6,52,6]
+filesize = 12945240
+raw_width = 3736
+raw_height = 2772
+blackareav = [3686,50]
+
+[cameras.color_matrix]
+D65 = [1.3124, -0.5329, -0.1390, -0.3602, 1.1658, 0.1944, -0.1612, 0.2863, 0.4885]

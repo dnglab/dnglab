@@ -1,0 +1,15 @@
+# CRW
+make = "Canon"
+model = "PowerShot S3 IS"
+clean_make = "Canon"
+clean_model = "PowerShot S3 IS"
+whitepoint = 1023
+color_pattern = "RGGB"
+active_area = [44,8,4,0]
+filesize = 7710960
+raw_width = 2888
+raw_height = 2136
+blackareav = [0,40]
+
+[cameras.color_matrix]
+D65 = [1.4062, -0.5199, -0.1446, -0.4712, 1.2470, 0.2243, -0.1286, 0.2028, 0.4836]

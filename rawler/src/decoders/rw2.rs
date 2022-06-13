@@ -34,6 +34,7 @@ use self::v5decompressor::decode_panasonic_v5;
 use self::v6decompressor::decode_panasonic_v6;
 use self::v7decompressor::decode_panasonic_v7;
 
+use super::BlackLevel;
 use super::Camera;
 use super::Decoder;
 use super::RawDecodeParams;
@@ -161,15 +162,14 @@ impl<'a> Decoder for Rw2Decoder<'a> {
       multishot
     );
 
-    let blacks = self.get_blacklevel()?.unwrap_or(self.camera.blacklevels);
     let cpp = 1;
-
-    let mut img = RawImage::new(self.camera.clone(), cpp, normalize_wb(self.get_wb()?), image, false);
-
-    img.blacklevels = blacks;
+    let blacklevel = self.get_blacklevel()?;
+    let mut camera = self.camera.clone();
     if let Some(cfa) = self.get_cfa()? {
-      img.cfa = cfa;
+      camera.cfa = cfa;
     }
+
+    let mut img = RawImage::new(camera, image, cpp, normalize_wb(self.get_wb()?), blacklevel, None, dummy);
 
     if let Some(area) = self.get_active_area()? {
       img.active_area = Some(area);
@@ -239,12 +239,12 @@ impl<'a> Rw2Decoder<'a> {
     }
   }
 
-  fn get_blacklevel(&self) -> Result<Option<[u16; 4]>> {
+  fn get_blacklevel(&self) -> Result<Option<BlackLevel>> {
     if self.tiff.has_entry(PanasonicTag::BlackLevelRed) {
       let r = fetch_tiff_tag!(self.tiff, PanasonicTag::BlackLevelRed).force_u16(0);
       let g = fetch_tiff_tag!(self.tiff, PanasonicTag::BlackLevelGreen).force_u16(0);
       let b = fetch_tiff_tag!(self.tiff, PanasonicTag::BlackLevelBlue).force_u16(0);
-      Ok(Some([r, g, g, b]))
+      Ok(Some(BlackLevel::new(&[r, g, g, b], self.camera.cfa.width, self.camera.cfa.height, 1)))
     } else {
       Ok(None)
     }

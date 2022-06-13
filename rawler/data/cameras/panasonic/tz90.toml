@@ -2,7 +2,7 @@ make = "Panasonic"
 model = "DC-TZ90"
 clean_make = "Panasonic"
 clean_model = "DC-TZ90"
-blackpoint = 139
+#blackpoint = 139
 whitepoint = 4095
 color_pattern = "GBRG"
 

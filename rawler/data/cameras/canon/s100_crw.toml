@@ -1,0 +1,14 @@
+make = "Canon"
+model = "Canon PowerShot S100 CRW"
+clean_make = "Canon"
+clean_model = "PowerShot S100"
+whitepoint = 4000
+color_pattern = "GBRG"
+blackareav = [0, 100]
+blackareah = [3062, 60]
+filesize = 19493760
+raw_width = 4160
+raw_height = 3124
+
+[cameras.color_matrix]
+D65 = [0.7968, -0.2565, -0.0636, -0.2873, 1.0697, 0.2513, 0.0180, 0.0667, 0.4211]

@@ -1,0 +1,9 @@
+make = "Canon"
+model = "Canon PowerShot G7 X Mark III"
+clean_make = "Canon"
+clean_model = "PowerShot G7 X Mark III"
+color_pattern = "RGGB"
+
+[cameras.color_matrix]
+A = [1.4076, -0.93, 0.1481, -0.1849, 0.9861, 0.233, 0.0229, 0.0399, 0.5916]
+D65 = [1.1629, -0.5713, -0.0914, -0.2706, 1.109, 0.1842, -0.0206, 0.1225, 0.5515]

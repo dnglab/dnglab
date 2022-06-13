@@ -1,0 +1,11 @@
+make = "Canon"
+model = "Canon PowerShot G10"
+clean_make = "Canon"
+clean_model = "PowerShot G10"
+whitepoint = 4095
+color_pattern = "GBRG"
+active_area = [12, 13, 36, 12]
+
+[cameras.color_matrix]
+A = [1.3591, -0.6592, 0.0324, -0.344, 1.0533, 0.3374, -0.0169, 0.1008, 0.5612]
+D65 = [1.1093, -0.3906, -0.1028, -0.5047, 1.2492, 0.2879, -0.1003, 0.175, 0.5561]

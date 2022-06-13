@@ -17,7 +17,7 @@ use crate::tags::{DngTag, ExifTag, TiffCommonTag};
 use crate::{alloc_image_ok, RawFile, RawImage, RawLoader};
 use crate::{RawlerError, Result};
 
-use super::{Camera, Decoder, RawDecodeParams, RawMetadata};
+use super::{BlackLevel, Camera, Decoder, RawDecodeParams, RawMetadata};
 
 /// 3FR format encapsulation for analyzer
 #[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize)]
@@ -52,15 +52,11 @@ impl<'a> Decoder for TfrDecoder<'a> {
   fn raw_image(&self, file: &mut RawFile, _params: RawDecodeParams, dummy: bool) -> Result<RawImage> {
     let raw = self.tiff.find_first_ifd_with_tag(TiffCommonTag::WhiteLevel).unwrap();
 
-    let white = match raw.get_entry(TiffCommonTag::WhiteLevel) {
-      Some(tag) => tag.force_u16(0),
-      None => self.camera.whitelevels[0],
-    };
+    let whitelevel = raw.get_entry(TiffCommonTag::WhiteLevel).map(|tag| vec![tag.force_u16(0)]);
 
-    let black = match raw.get_entry(TiffCommonTag::BlackLevels) {
-      Some(tag) => tag.force_u16(0),
-      None => self.camera.blacklevels[0],
-    };
+    let blacklevel = raw
+      .get_entry(TiffCommonTag::BlackLevels)
+      .map(|tag| BlackLevel::new(&[tag.force_u16(0)], 1, 1, 1));
 
     let width = fetch_tiff_tag!(raw, TiffCommonTag::ImageWidth).force_usize(0);
     let height = fetch_tiff_tag!(raw, TiffCommonTag::ImageLength).force_usize(0);
@@ -80,10 +76,7 @@ impl<'a> Decoder for TfrDecoder<'a> {
 
     let cpp = 1;
 
-    let mut img = RawImage::new(self.camera.clone(), cpp, self.get_wb()?, image, dummy);
-
-    img.blacklevels = [black, black, black, black];
-    img.whitelevels = [white, white, white, white];
+    let mut img = RawImage::new(self.camera.clone(), image, cpp, self.get_wb()?, blacklevel, whitelevel, dummy);
 
     img.crop_area = crop;
 

@@ -2,7 +2,7 @@ make = "LEICA"
 model = "DIGILUX 2"
 clean_make = "Leica"
 clean_model = "Digilux 2"
-blackpoint = 0
+#blackpoint = 0
 whitepoint = 4095
 color_pattern = "RGGB"
 

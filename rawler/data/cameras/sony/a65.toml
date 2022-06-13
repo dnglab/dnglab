@@ -7,8 +7,8 @@ model_aliases = [
   ["SLT-A65V", "SLT-A65V"],
 ]
 
-blackpoint = 512
-whitepoint = 16300
+##blackpoint = 512
+#whitepoint = 16300
 color_pattern = "RGGB"
 active_area = [0, 0, 30, 0]
 crop_area = [12, 12, 36, 12]

@@ -116,7 +116,7 @@ impl<'a> Decoder for MrwDecoder<'a> {
       [self.wb_vals[0] as f32, self.wb_vals[1] as f32, self.wb_vals[2] as f32, self.wb_vals[3] as f32]
     };
     let cpp = 1;
-    ok_image(self.camera.clone(), cpp, normalize_wb(wb_coeffs), buffer)
+    ok_image(self.camera.clone(), cpp, normalize_wb(wb_coeffs), buffer, dummy)
   }
 
   fn format_dump(&self) -> FormatDump {

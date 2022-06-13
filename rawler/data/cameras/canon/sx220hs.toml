@@ -1,0 +1,15 @@
+# CRW
+make = "Canon"
+model = "Canon PowerShot SX220 HS"
+clean_make = "Canon"
+clean_model = "PowerShot SX220 HS"
+whitepoint = 4095
+color_pattern = "RGGB"
+active_area = [96,16,8,0]
+filesize = 19131120
+raw_width = 4168
+raw_height = 3060
+blackareav = [0, 94]
+
+[cameras.color_matrix]
+D65 = [1.2432, -0.4753, -0.1247, -0.2110, 1.0691, 0.1629, -0.0412, 0.1623, 0.4926]

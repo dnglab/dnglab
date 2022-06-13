@@ -281,9 +281,11 @@ impl<'a> Decoder for Cr3Decoder<'a> {
     };
 
     let cpp = 1;
-    let mut img = RawImage::new(self.camera.clone(), cpp, wb, image, dummy);
-    img.blacklevels = cr3md.blacklevels.unwrap_or([0, 0, 0, 0]);
-    img.whitelevels = [whitelevel, whitelevel, whitelevel, whitelevel];
+    let blacklevel = cr3md
+      .blacklevels
+      .map(|x| BlackLevel::new(&x, self.camera.cfa.width, self.camera.cfa.height, cpp));
+    let whitelevel = vec![whitelevel];
+    let mut img = RawImage::new(self.camera.clone(), image, cpp, wb, blacklevel, Some(whitelevel), dummy);
 
     // IAD1 box contains sensor information
     // We use the sensor crop from IAD1 as recommended image crop.
@@ -308,11 +310,15 @@ impl<'a> Decoder for Cr3Decoder<'a> {
             ));
 
             // Won't work!
+            // For uncropped files this is fine, but for 1.6 crop files, the dimension is okay but
+            // the start point is invalid (too large).
             let _rect = Rect::new_with_points(
               Point::new(big.active_area_left_offset as usize, big.active_area_top_offset as usize),
               Point::new((big.active_area_right_offset - 1) as usize, (big.active_area_bottom_offset - 1) as usize),
             );
-            //img.active_area = Some(rect);
+            log::debug!("Interal active area: {:?}", _rect);
+
+            //img.active_area = Some(_rect);
             img.active_area = img.crop_area;
 
             let blackarea_h = Rect::new_with_points(
@@ -456,7 +462,13 @@ impl<'a> Cr3Decoder<'a> {
         md.ctmd_rec7_makernotes = Some(rec7);
       }
       if let Some(rec8) = ctmd.get_as_tiff(8, CR3_CTMD_BLOCK_MAKERNOTES)? {
-        if let Some(levels) = rec8.get_entry(Cr3MakernoteTag::ColorData) {
+        if let Some(colordata) = rec8.get_entry(Cr3MakernoteTag::ColorData) {
+          let colordata = cr2::parse_colordata(colordata)?;
+          //rec8.root_ifd().dump::<TiffCommonTag>(10).iter().for_each(|line| eprintln!("MKD: {}", line));
+          md.wb = Some(normalize_wb(colordata.wb));
+          md.blacklevels = colordata.blacklevel;
+          md.whitelevel = colordata.specular_whitelevel;
+          /*
           if let crate::formats::tiff::Value::Short(v) = &levels.value {
             if let Some(offset) = self.camera.param_usize("colordata_wbcoeffs") {
               let raw_wb = [v[offset] as f32, v[offset + 1] as f32, v[offset + 2] as f32, v[offset + 3] as f32];
@@ -470,6 +482,7 @@ impl<'a> Cr3Decoder<'a> {
               md.whitelevel = Some(v[offset]);
             }
           }
+           */
         }
         md.ctmd_rec8 = Some(rec8);
       }

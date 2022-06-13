@@ -5,7 +5,7 @@ clean_model = "DC-GX880"
 
 
 
-blackpoint = 143
+#blackpoint = 143
 whitepoint = 4095
 color_pattern = "BGGR"
 

@@ -1,0 +1,10 @@
+make = "Canon"
+model = "Canon EOS RP"
+clean_make = "Canon"
+clean_model = "EOS RP"
+color_pattern = "RGGB"
+hints = ["bogus_blackarea"]
+
+[cameras.color_matrix]
+A = [0.9665, -0.4042, -0.0053, -0.399, 1.1404, 0.2962, -0.022, 0.0939, 0.6291]
+D65 = [0.8608, -0.2097, -0.1178, -0.5425, 1.3265, 0.2383, -0.1149, 0.2238, 0.568]

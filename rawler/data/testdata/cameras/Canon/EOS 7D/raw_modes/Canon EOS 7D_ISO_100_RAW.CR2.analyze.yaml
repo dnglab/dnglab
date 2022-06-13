@@ -1,0 +1,107 @@
+---
+file:
+  fileSize: 25812218
+  fileName: Canon EOS 7D_ISO_100_RAW.CR2
+  digest: f6c20040639491d7a85ca98962b72651
+data:
+  metadata:
+    rawParams:
+      rawWidth: 5360
+      rawHeight: 3516
+      bitDepth: 16
+      crops:
+        p:
+          x: 168
+          y: 56
+        d:
+          w: 5184
+          h: 3456
+      blacklevels:
+        levels:
+          - 2047/1
+          - 2047/1
+          - 2048/1
+          - 2048/1
+        cpp: 1
+        width: 2
+        height: 2
+      whitelevels:
+        - 12279
+      wbCoeffs:
+        - 2.3701172
+        - 1.0
+        - 1.3076172
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: Tony Brown
+        artist: Tony Brown
+        lens_spec:
+          - 40/1
+          - 40/1
+          - 28/10
+          - 28/10
+        exposure_time: 25/10
+        fnumber: 8/1
+        aperture_value: 393216/65536
+        brightness_value: ~
+        iso_speed_ratings: 100
+        iso_speed: ~
+        recommended_exposure_index: 100
+        sensitivity_type: 2
+        exposure_bias: 0/1
+        date_time_original: "2017:03:14 18:20:20"
+        create_date: "2017:03:14 18:20:20"
+        modify_date: "2017:03:14 18:20:20"
+        exposure_program: 1
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: "25"
+        sub_sec_time_original: "25"
+        sub_sec_time_digitized: "25"
+        shutter_speed_value: "-90112/65536"
+        max_aperture_value: ~
+        subject_distance: ~
+        metering_mode: 5
+        light_source: ~
+        flash: 16
+        focal_length: 40/1
+        image_number: ~
+        color_space: 65535
+        flash_energy: ~
+        exposure_mode: 1
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ""
+        serial_number: "1380812011"
+        lens_serial_number: ~
+        lens_make: Canon
+        lens_model: EF 40mm f/2.8 STM
+        gps: ~
+      model: EOS 7D
+      make: Canon
+      lens:
+        identifiers:
+          name: ~
+          id:
+            - 4144
+            - 0
+          nikon_id: ~
+          olympus_id: ~
+        mount: ef-mount
+        lens_make: Canon
+        lens_model: EF 40mm f/2.8 STM
+        focal_range:
+          - 40/1
+          - 40/1
+        aperture_range:
+          - 28/10
+          - 28/10
+        lens_name: Canon EF 40mm f/2.8 STM
+      unique_image_id: ~
+      rating: ~
+

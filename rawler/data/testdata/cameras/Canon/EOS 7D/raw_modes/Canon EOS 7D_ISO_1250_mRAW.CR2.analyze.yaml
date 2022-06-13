@@ -1,0 +1,108 @@
+---
+file:
+  fileSize: 16253693
+  fileName: Canon EOS 7D_ISO_1250_mRAW.CR2
+  digest: 52c020d42f4fb13b6dd5c46d5c77d1ed
+data:
+  metadata:
+    rawParams:
+      rawWidth: 3888
+      rawHeight: 2592
+      bitDepth: 16
+      crops:
+        p:
+          x: 0
+          y: 0
+        d:
+          w: 3888
+          h: 2592
+      blacklevels:
+        levels:
+          - 2047/1
+          - 2047/1
+          - 2047/1
+        cpp: 3
+        width: 1
+        height: 1
+      whitelevels:
+        - 30000
+        - 30000
+        - 30000
+      wbCoeffs:
+        - 2.1152344
+        - 1.0
+        - 1.4882812
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ""
+        artist: Kees Guequierre
+        lens_spec:
+          - 15/1
+          - 85/1
+          - 35/10
+          - 56/10
+        exposure_time: 1/25
+        fnumber: 35/10
+        aperture_value: 237568/65536
+        brightness_value: ~
+        iso_speed_ratings: 1250
+        iso_speed: ~
+        recommended_exposure_index: 1250
+        sensitivity_type: 2
+        exposure_bias: 0/1
+        date_time_original: "2016:12:22 20:01:55"
+        create_date: "2016:12:22 20:01:55"
+        modify_date: "2016:12:22 20:01:55"
+        exposure_program: 2
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: "00"
+        sub_sec_time_original: "00"
+        sub_sec_time_digitized: "00"
+        shutter_speed_value: 303104/65536
+        max_aperture_value: ~
+        subject_distance: ~
+        metering_mode: 5
+        light_source: ~
+        flash: 16
+        focal_length: 15/1
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 1
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ""
+        serial_number: "1130703009"
+        lens_serial_number: ~
+        lens_make: Canon
+        lens_model: EF-S 15-85mm f/3.5-5.6 IS USM
+        gps: ~
+      model: EOS 7D
+      make: Canon
+      lens:
+        identifiers:
+          name: ~
+          id:
+            - 488
+            - 0
+          nikon_id: ~
+          olympus_id: ~
+        mount: ef-mount
+        lens_make: Canon
+        lens_model: EF-S 15-85mm f/3.5-5.6 IS USM
+        focal_range:
+          - 15/1
+          - 85/1
+        aperture_range:
+          - 35/10
+          - 56/10
+        lens_name: Canon EF-S 15-85mm f/3.5-5.6 IS USM
+      unique_image_id: ~
+      rating: ~
+

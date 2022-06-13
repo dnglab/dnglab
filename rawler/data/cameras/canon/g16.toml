@@ -1,0 +1,12 @@
+make = "Canon"
+model = "Canon PowerShot G16"
+clean_make = "Canon"
+clean_model = "PowerShot G16"
+whitepoint = 4000
+color_pattern = "RGGB"
+blackareav = [0, 80]
+active_area = [120, 18, 48, 13]
+
+[cameras.color_matrix]
+A = [0.9249, -0.4361, 0.0549, -0.2474, 0.9924, 0.2983, -0.0142, 0.0935, 0.6104]
+D65 = [0.802, -0.2687, -0.0682, -0.3704, 1.1879, 0.2052, -0.0965, 0.1921, 0.5556]

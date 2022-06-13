@@ -1,0 +1,86 @@
+---
+file:
+  fileSize: 12304199
+  fileName: Canon PowerShot SX1 IS_ISO_80_RAW.CR2
+  digest: 9102c00b22f99210b7e9b81257ca7136
+data:
+  metadata:
+    rawParams:
+      rawWidth: 4152
+      rawHeight: 2772
+      bitDepth: 16
+      crops:
+        p:
+          x: 344
+          y: 24
+        d:
+          w: 3648
+          h: 2736
+      blacklevels:
+        levels:
+          - 128/1
+          - 128/1
+          - 128/1
+          - 128/1
+        cpp: 1
+        width: 2
+        height: 2
+      whitelevels:
+        - 4095
+      wbCoeffs:
+        - 1.7868481
+        - 1.0
+        - 2.0147393
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ~
+        artist: ~
+        lens_spec: ~
+        exposure_time: 1/320
+        fnumber: 80/10
+        aperture_value: 192/32
+        brightness_value: ~
+        iso_speed_ratings: 80
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: 0/3
+        date_time_original: "2009:07:30 14:06:09"
+        create_date: "2009:07:30 14:06:09"
+        modify_date: "2009:07:30 14:06:09"
+        exposure_program: ~
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: 266/32
+        max_aperture_value: 149/32
+        subject_distance: ~
+        metering_mode: 2
+        light_source: ~
+        flash: 16
+        focal_length: 46497/1000
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 1
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: PowerShot SX1 IS
+      make: Canon
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

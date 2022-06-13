@@ -17,6 +17,7 @@ use crate::{
   formats::tiff::Rational,
   formats::tiff::SRational,
   imgop::{raw::develop_raw_srgb, rescale_f32_to_u16, Dim2, Rect},
+  rawimage::BlackLevel,
   RawFile, RawImage, RawImageData, RawlerError, Result,
 };
 
@@ -108,8 +109,8 @@ pub struct RawParams {
   pub raw_height: usize,
   pub bit_depth: usize,
   pub crops: Option<Rect>,
-  pub blacklevels: [u16; 4],
-  pub whitelevels: [u16; 4],
+  pub blacklevels: BlackLevel,
+  pub whitelevels: Vec<u16>,
   pub wb_coeffs: (Option<f32>, Option<f32>, Option<f32>, Option<f32>),
 }
 
@@ -120,8 +121,8 @@ impl From<&RawImage> for RawParams {
       raw_height: rawimage.height,
       bit_depth: 16,
       crops: rawimage.crop_area,
-      blacklevels: rawimage.blacklevels,
-      whitelevels: rawimage.whitelevels,
+      blacklevels: rawimage.blacklevel.clone(),
+      whitelevels: rawimage.whitelevel.clone(),
       wb_coeffs: rawimage
         .wb_coeffs
         .iter()

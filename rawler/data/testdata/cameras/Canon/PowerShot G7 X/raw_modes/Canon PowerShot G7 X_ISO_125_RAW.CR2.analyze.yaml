@@ -1,0 +1,86 @@
+---
+file:
+  fileSize: 18057432
+  fileName: Canon PowerShot G7 X_ISO_125_RAW.CR2
+  digest: a429898f1539fed77872fda372945ebd
+data:
+  metadata:
+    rawParams:
+      rawWidth: 5632
+      rawHeight: 3710
+      bitDepth: 16
+      crops:
+        p:
+          x: 132
+          y: 40
+        d:
+          w: 5472
+          h: 3648
+      blacklevels:
+        levels:
+          - 512/1
+          - 512/1
+          - 512/1
+          - 512/1
+        cpp: 1
+        width: 2
+        height: 2
+      whitelevels:
+        - 4000
+      wbCoeffs:
+        - 2.1104784
+        - 1.0
+        - 1.7152619
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ""
+        artist: ""
+        lens_spec: ~
+        exposure_time: 1/60
+        fnumber: 40/10
+        aperture_value: 128/32
+        brightness_value: ~
+        iso_speed_ratings: 125
+        iso_speed: ~
+        recommended_exposure_index: 125
+        sensitivity_type: 2
+        exposure_bias: 0/3
+        date_time_original: "2017:03:26 13:47:08"
+        create_date: "2017:03:26 13:47:08"
+        modify_date: "2017:03:26 13:47:08"
+        exposure_program: ~
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: 189/32
+        max_aperture_value: 54/32
+        subject_distance: ~
+        metering_mode: 5
+        light_source: ~
+        flash: 16
+        focal_length: 8800/1000
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 1
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ""
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: PowerShot G7 X
+      make: Canon
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

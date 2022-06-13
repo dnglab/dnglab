@@ -1,0 +1,23 @@
+make = "Canon"
+model = "Canon EOS 50D"
+clean_make = "Canon"
+clean_model = "EOS 50D"
+color_pattern = "GBRG"
+real_bps = 14
+active_area = [62,51,2,0]
+blackareav = [4, 42]
+blackareah = [0, 60]
+
+[cameras.color_matrix]
+A = [0.5852, -0.0578, -0.0042, -0.4691, 1.1696, 0.3427, -0.0886, 0.2323, 0.6879]
+D65 = [0.492, 0.0616, -0.0593, -0.6494, 1.3965, 0.2784, -0.1774, 0.3178, 0.7004]
+
+[[cameras.modes]]
+mode = "sRaw1"
+real_bps = 16
+whitepoint = 53000
+
+[[cameras.modes]]
+mode = "sRaw2"
+real_bps = 16
+whitepoint = 53000

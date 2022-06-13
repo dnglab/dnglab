@@ -1,0 +1,107 @@
+---
+file:
+  fileSize: 36522435
+  fileName: Canon EOS M6_ISO_100_RAW.CR2
+  digest: 359ba2d2b169b24c06a87515d28d1d2d
+data:
+  metadata:
+    rawParams:
+      rawWidth: 6288
+      rawHeight: 4056
+      bitDepth: 16
+      crops:
+        p:
+          x: 276
+          y: 48
+        d:
+          w: 6000
+          h: 4000
+      blacklevels:
+        levels:
+          - 512/1
+          - 512/1
+          - 512/1
+          - 512/1
+        cpp: 1
+        width: 2
+        height: 2
+      whitelevels:
+        - 11892
+      wbCoeffs:
+        - 1.4628906
+        - 1.0
+        - 1.3955078
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ""
+        artist: Martin Straeten
+        lens_spec:
+          - 22/1
+          - 22/1
+          - 2/1
+          - 2/10
+        exposure_time: 1/320
+        fnumber: 20/10
+        aperture_value: 64/32
+        brightness_value: ~
+        iso_speed_ratings: 100
+        iso_speed: ~
+        recommended_exposure_index: 100
+        sensitivity_type: 2
+        exposure_bias: 0/3
+        date_time_original: "2017:05:06 18:12:07"
+        create_date: "2017:05:06 18:12:07"
+        modify_date: "2017:05:06 18:12:07"
+        exposure_program: 3
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: "74"
+        sub_sec_time_original: "74"
+        sub_sec_time_digitized: "74"
+        shutter_speed_value: 266/32
+        max_aperture_value: ~
+        subject_distance: ~
+        metering_mode: 5
+        light_source: ~
+        flash: 16
+        focal_length: 22/1
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: Martin Straeten
+        serial_number: "433050001372"
+        lens_serial_number: 00004079b0
+        lens_make: Canon
+        lens_model: EF-M 22mm f/2 STM
+        gps: ~
+      model: Canon EOS M6
+      make: Canon
+      lens:
+        identifiers:
+          name: EF-M22mm f/2 STM
+          id:
+            - 4145
+            - 0
+          nikon_id: ~
+          olympus_id: ~
+        mount: ef-mount
+        lens_make: Canon
+        lens_model: EF-M 22mm f/2 STM
+        focal_range:
+          - 22/1
+          - 22/1
+        aperture_range:
+          - 2/1
+          - 2/10
+        lens_name: Canon EF-M 22mm f/2 STM
+      unique_image_id: ~
+      rating: ~
+

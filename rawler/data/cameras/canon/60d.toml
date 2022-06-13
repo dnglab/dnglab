@@ -1,0 +1,23 @@
+make = "Canon"
+model = "Canon EOS 60D"
+clean_make = "Canon"
+clean_model = "EOS 60D"
+color_pattern = "GBRG"
+real_bps = 14
+active_area = [142,51,0,0]
+blackareav = [2, 140]
+blackareah = [10, 48]
+
+[cameras.color_matrix]
+A = [0.7428, -0.1897, -0.0491, -0.3505, 1.0963, 0.2929, -0.0337, 0.1242, 0.6413]
+D65 = [0.6719, -0.0994, -0.0925, -0.4408, 1.2426, 0.2211, -0.0887, 0.2129, 0.6051]
+
+[[cameras.modes]]
+mode = "sRaw1"
+real_bps = 16
+whitepoint = 65535
+
+[[cameras.modes]]
+mode = "sRaw2"
+real_bps = 16
+whitepoint = 65535

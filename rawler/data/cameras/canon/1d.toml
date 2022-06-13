@@ -1,0 +1,11 @@
+make = "Canon"
+model = "Canon EOS-1D"
+clean_make = "Canon"
+clean_model = "EOS-1D"
+blackpoint = 0
+whitepoint = 3588
+color_pattern = "GRBG"
+hints = ["double_line"]
+
+[cameras.color_matrix]
+D65 = [0.6806, -0.0179, -0.1020, -0.8097, 1.6415, 0.1687, -0.3267, 0.4236, 0.7690]

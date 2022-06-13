@@ -1,0 +1,20 @@
+make = "Canon"
+model = "Canon EOS 5D Mark II"
+clean_make = "Canon"
+clean_model = "EOS 5D Mark II"
+color_pattern = "GBRG"
+active_area = [158,51,0,0]
+blackareav = [0, 156]
+blackareah = [2, 48]
+
+[cameras.color_matrix]
+A = [0.5309, -0.0229, -0.0336, -0.6241, 1.3265, 0.3337, -0.0817, 0.1215, 0.6664]
+D65 = [0.4716, 0.0603, -0.083, -0.7798, 1.5474, 0.248, -0.1496, 0.1937, 0.6651]
+
+[[cameras.modes]]
+mode = "sRaw1"
+whitepoint = 64948
+
+[[cameras.modes]]
+mode = "sRaw2"
+whitepoint = 64948

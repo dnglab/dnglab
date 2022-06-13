@@ -1,0 +1,107 @@
+---
+file:
+  fileSize: 39002329
+  fileName: Canon EOS Rebel T7_ISO_200_RAW.CR2
+  digest: 98cf68a0aa69c44ca471300f7b7b6aec
+data:
+  metadata:
+    rawParams:
+      rawWidth: 6096
+      rawHeight: 4051
+      bitDepth: 16
+      crops:
+        p:
+          x: 88
+          y: 47
+        d:
+          w: 6000
+          h: 4000
+      blacklevels:
+        levels:
+          - 2045/1
+          - 2046/1
+          - 2046/1
+          - 2045/1
+        cpp: 1
+        width: 2
+        height: 2
+      whitelevels:
+        - 15092
+      wbCoeffs:
+        - 2.3925781
+        - 1.0
+        - 1.5927734
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ""
+        artist: ""
+        lens_spec:
+          - 18/1
+          - 55/1
+          - 35/10
+          - 56/10
+        exposure_time: 1/400
+        fnumber: 4/1
+        aperture_value: 262144/65536
+        brightness_value: ~
+        iso_speed_ratings: 200
+        iso_speed: ~
+        recommended_exposure_index: 200
+        sensitivity_type: 2
+        exposure_bias: 0/1
+        date_time_original: "2019:07:29 15:39:31"
+        create_date: "2019:07:29 15:39:31"
+        modify_date: "2019:07:29 15:39:31"
+        exposure_program: 1
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: "91"
+        sub_sec_time_original: "91"
+        sub_sec_time_digitized: "91"
+        shutter_speed_value: 565248/65536
+        max_aperture_value: ~
+        subject_distance: ~
+        metering_mode: 5
+        light_source: ~
+        flash: 16
+        focal_length: 27/1
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 1
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ""
+        serial_number: "142072029808"
+        lens_serial_number: "0000624167"
+        lens_make: Canon
+        lens_model: EF-S 18-55mm f/3.5-5.6 IS II
+        gps: ~
+      model: Rebel T7
+      make: Canon
+      lens:
+        identifiers:
+          name: ~
+          id:
+            - 52
+            - 0
+          nikon_id: ~
+          olympus_id: ~
+        mount: ef-mount
+        lens_make: Canon
+        lens_model: EF-S 18-55mm f/3.5-5.6 IS II
+        focal_range:
+          - 18/1
+          - 55/1
+        aperture_range:
+          - 35/10
+          - 56/10
+        lens_name: Canon EF-S 18-55mm f/3.5-5.6 IS II
+      unique_image_id: ~
+      rating: ~
+

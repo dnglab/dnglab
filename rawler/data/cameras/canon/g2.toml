@@ -1,0 +1,14 @@
+# CRW
+make = "Canon"
+model = "Canon PowerShot G2"
+clean_make = "Canon"
+clean_model = "PowerShot G2"
+whitepoint = 1023
+color_pattern = "RGGB"
+active_area = [12,6,52,2]
+hints = ["nolowbits"]
+blackareav = [2326,50]
+
+[cameras.color_matrix]
+A = [1.0745, -0.45, -0.0146, -0.6812, 1.4094, 0.2999, -0.1481, 0.2054, 0.8234]
+D65 = [0.9194, -0.2787, -0.1059, -0.8098, 1.5657, 0.2608, -0.261, 0.3064, 0.7867]

@@ -1,0 +1,86 @@
+---
+file:
+  fileSize: 24642233
+  fileName: Canon EOS REBEL T2i_ISO_1600_RAW.CR2
+  digest: 7b9544f1f9993abebc895c0fd02e637f
+data:
+  metadata:
+    rawParams:
+      rawWidth: 5344
+      rawHeight: 3516
+      bitDepth: 16
+      crops:
+        p:
+          x: 152
+          y: 56
+        d:
+          w: 5184
+          h: 3456
+      blacklevels:
+        levels:
+          - 2046/1
+          - 2046/1
+          - 2050/1
+          - 2050/1
+        cpp: 1
+        width: 2
+        height: 2
+      whitelevels:
+        - 15094
+      wbCoeffs:
+        - 1.8417969
+        - 1.0
+        - 2.1113281
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ""
+        artist: Glenn Armstrong
+        lens_spec: ~
+        exposure_time: 1/160
+        fnumber: 35/10
+        aperture_value: 237568/65536
+        brightness_value: ~
+        iso_speed_ratings: 1600
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: 0/1
+        date_time_original: "2013:01:19 16:01:54"
+        create_date: "2013:01:19 16:01:54"
+        modify_date: "2013:01:19 16:01:54"
+        exposure_program: 1
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: "50"
+        sub_sec_time_original: "50"
+        sub_sec_time_digitized: "50"
+        shutter_speed_value: 483328/65536
+        max_aperture_value: ~
+        subject_distance: ~
+        metering_mode: 5
+        light_source: ~
+        flash: 16
+        focal_length: 50/1
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 1
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: Rebel T2i
+      make: Canon
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

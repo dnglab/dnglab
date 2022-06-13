@@ -62,7 +62,7 @@ impl<'a> Decoder for MosDecoder<'a> {
     };
 
     let cpp = 1;
-    ok_image(self.camera.clone(), cpp, self.get_wb()?, image)
+    ok_image(self.camera.clone(), cpp, self.get_wb()?, image, dummy)
   }
 
   fn format_dump(&self) -> FormatDump {

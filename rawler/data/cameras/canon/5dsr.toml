@@ -1,0 +1,23 @@
+make = "Canon"
+model = "Canon EOS 5DS R"
+clean_make = "Canon"
+clean_model = "EOS 5DS R"
+color_pattern = "RGGB"
+blackareav = [0, 150]
+blackareah = [4, 56]
+active_area = [160, 64, 0, 0]
+hints = ["double_line"]
+
+[cameras.color_matrix]
+A = [0.6848, -0.1661, -0.0221, -0.3904, 1.0931, 0.3434, -0.047, 0.1251, 0.6039]
+D65 = [0.625, -0.0711, -0.0808, -0.5153, 1.2794, 0.2636, -0.1249, 0.2198, 0.561]
+
+[[cameras.modes]]
+mode = "sRaw1"
+hints = ["invert_sraw_wb", "sraw_new"]
+whitepoint = 52000 # seems to be incorrect for ISO 50
+
+[[cameras.modes]]
+mode = "sRaw2"
+hints = ["invert_sraw_wb", "sraw_new"]
+whitepoint = 52000 # seems to be incorrect for ISO 50

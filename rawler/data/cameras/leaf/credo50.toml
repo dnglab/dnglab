@@ -2,7 +2,7 @@ make = "Leaf"
 model = "Credo 50"
 clean_make = "Leaf"
 clean_model = "Credo 50"
-blackpoint = 0
+#blackpoint = 0
 whitepoint = 65535
 color_pattern = "RGGB"
 

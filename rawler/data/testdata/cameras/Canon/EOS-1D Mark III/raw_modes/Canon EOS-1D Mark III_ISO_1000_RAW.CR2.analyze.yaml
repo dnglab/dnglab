@@ -1,0 +1,107 @@
+---
+file:
+  fileSize: 14312777
+  fileName: Canon EOS-1D Mark III_ISO_1000_RAW.CR2
+  digest: 02fcb9d59d497dd22c327c5f7a8974ee
+data:
+  metadata:
+    rawParams:
+      rawWidth: 3984
+      rawHeight: 2622
+      bitDepth: 16
+      crops:
+        p:
+          x: 88
+          y: 25
+        d:
+          w: 3888
+          h: 2592
+      blacklevels:
+        levels:
+          - 1024/1
+          - 1024/1
+          - 1024/1
+          - 1024/1
+        cpp: 1
+        width: 2
+        height: 2
+      whitelevels:
+        - 15100
+      wbCoeffs:
+        - 1.9663461
+        - 1.0
+        - 1.4961538
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ~
+        artist: ~
+        lens_spec:
+          - 80/1
+          - 200/1
+          - 28/10
+          - 28/10
+        exposure_time: 1/200
+        fnumber: 28/10
+        aperture_value: 196608/65536
+        brightness_value: ~
+        iso_speed_ratings: 1000
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: 0/1
+        date_time_original: "2017:11:27 18:15:14"
+        create_date: "2017:11:27 18:15:14"
+        modify_date: "2017:11:27 18:15:14"
+        exposure_program: 1
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: "43"
+        sub_sec_time_original: "43"
+        sub_sec_time_digitized: "43"
+        shutter_speed_value: 499712/65536
+        max_aperture_value: ~
+        subject_distance: ~
+        metering_mode: 2
+        light_source: ~
+        flash: 16
+        focal_length: 200/1
+        image_number: ~
+        color_space: 65535
+        flash_energy: ~
+        exposure_mode: 1
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: Canon
+        lens_model: EF 80-200mm f/2.8L
+        gps: ~
+      model: EOS-1D Mark III
+      make: Canon
+      lens:
+        identifiers:
+          name: ~
+          id:
+            - 21
+            - 0
+          nikon_id: ~
+          olympus_id: ~
+        mount: ef-mount
+        lens_make: Canon
+        lens_model: EF 80-200mm f/2.8L
+        focal_range:
+          - 80/1
+          - 200/1
+        aperture_range:
+          - 28/10
+          - 28/10
+        lens_name: Canon EF 80-200mm f/2.8L
+      unique_image_id: ~
+      rating: ~
+

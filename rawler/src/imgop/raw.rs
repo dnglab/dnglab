@@ -10,6 +10,7 @@ use crate::imgop::matrix::{multiply, normalize, pseudo_inverse};
 use crate::imgop::xyz::SRGB_TO_XYZ_D65;
 use crate::imgop::Rect;
 use crate::pixarray::RgbF32;
+use crate::rawimage::{BlackLevel, WhiteLevel};
 use crate::CFA;
 use std::iter;
 
@@ -29,8 +30,8 @@ pub struct DevelopParams {
   pub width: usize,
   pub height: usize,
   pub color_matrices: Vec<ColorMatrix>,
-  pub white_level: Vec<u16>,
-  pub black_level: Vec<u16>,
+  pub whitelevel: WhiteLevel,
+  pub blacklevel: BlackLevel,
   pub pattern: BayerPattern,
   pub cfa: CFA,
   pub wb_coeff: [f32; 4],
@@ -166,14 +167,14 @@ fn rgb_to_srgb_with_wb(rgb: &mut RgbF32, wb_coeff: &[f32; 4], xyz2cam: [[f32; 3]
 
 /// Develop a RAW image to sRGB
 pub fn develop_raw_srgb(pixels: &[u16], params: &DevelopParams) -> Result<(Vec<f32>, Dim2)> {
-  let black_level: [f32; 4] = match params.black_level.len() {
-    1 => Ok(collect_array(iter::repeat(params.black_level[0] as f32))),
-    4 => Ok(collect_array(params.black_level.iter().map(|p| *p as f32))),
+  let black_level: [f32; 4] = match params.blacklevel.levels.len() {
+    1 => Ok(collect_array(iter::repeat(params.blacklevel.levels[0].as_f32()))),
+    4 => Ok(collect_array(params.blacklevel.levels.iter().map(|p| p.as_f32()))),
     c => Err(format!("Black level sample count of {} is invalid", c)),
   }?;
-  let white_level: [f32; 4] = match params.white_level.len() {
-    1 => Ok(collect_array(iter::repeat(params.white_level[0] as f32))),
-    4 => Ok(collect_array(params.white_level.iter().map(|p| *p as f32))),
+  let white_level: [f32; 4] = match params.whitelevel.len() {
+    1 => Ok(collect_array(iter::repeat(params.whitelevel[0] as f32))),
+    4 => Ok(collect_array(params.whitelevel.iter().map(|p| *p as f32))),
     c => Err(format!("White level sample count of {} is invalid", c)),
   }?;
   let wb_coeff: [f32; 4] = params.wb_coeff;

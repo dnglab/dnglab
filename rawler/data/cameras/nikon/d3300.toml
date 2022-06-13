@@ -12,5 +12,5 @@ D65 = [0.6988, -0.1384, -0.0714, -0.5631, 1.341, 0.2447, -0.1485, 0.2204, 0.7318
 
 [[cameras.modes]]
 mode = "12bit"
-blackpoint = 150
+#blackpoint = 150
 whitepoint = 3880

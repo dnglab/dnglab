@@ -2,7 +2,7 @@ make = "LEICA"
 model = "C (Typ 112)"
 clean_make = "Leica"
 clean_model = "C (Typ 112)"
-blackpoint = 146
+#blackpoint = 146
 whitepoint = 3956
 color_pattern = "RGGB"
 

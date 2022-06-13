@@ -131,7 +131,7 @@ impl<'a> Decoder for X3fDecoder<'a> {
     };
 
     let cpp = 3;
-    Ok(RawImage::new(camera, cpp, self.get_wb()?, image, dummy))
+    Ok(RawImage::new(camera, image, cpp, self.get_wb()?, None, None, dummy))
   }
 
   fn format_dump(&self) -> FormatDump {

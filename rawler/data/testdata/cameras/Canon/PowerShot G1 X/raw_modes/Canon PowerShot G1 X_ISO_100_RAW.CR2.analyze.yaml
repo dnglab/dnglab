@@ -1,0 +1,86 @@
+---
+file:
+  fileSize: 20882638
+  fileName: Canon PowerShot G1 X_ISO_100_RAW.CR2
+  digest: 4c92e17aea139fc798fa9a611515b25b
+data:
+  metadata:
+    rawParams:
+      rawWidth: 4496
+      rawHeight: 3366
+      bitDepth: 16
+      crops:
+        p:
+          x: 108
+          y: 76
+        d:
+          w: 4352
+          h: 3264
+      blacklevels:
+        levels:
+          - 512/1
+          - 512/1
+          - 512/1
+          - 512/1
+        cpp: 1
+        width: 2
+        height: 2
+      whitelevels:
+        - 16000
+      wbCoeffs:
+        - 1.8940042
+        - 1.0
+        - 1.6477516
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ""
+        artist: ""
+        lens_spec: ~
+        exposure_time: 1/250
+        fnumber: 80/10
+        aperture_value: 192/32
+        brightness_value: ~
+        iso_speed_ratings: 100
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: 4
+        exposure_bias: 0/3
+        date_time_original: "2017:07:14 10:41:50"
+        create_date: "2017:07:14 10:41:50"
+        modify_date: "2017:07:14 10:41:50"
+        exposure_program: ~
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: 255/32
+        max_aperture_value: 128/32
+        subject_distance: ~
+        metering_mode: 2
+        light_source: ~
+        flash: 16
+        focal_length: 22060/1000
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ""
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: PowerShot G1 X
+      make: Canon
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

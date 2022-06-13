@@ -62,13 +62,13 @@ impl<'a> Decoder for KdcDecoder<'a> {
       let height = 976;
       let raw = self.tiff.find_ifds_with_tag(TiffCommonTag::CFAPattern)[0];
       let off = fetch_tiff_tag!(raw, TiffCommonTag::StripOffsets).force_usize(0);
-      let mut white = self.camera.whitelevels[0];
+      let mut white = self.camera.whitelevel.clone().expect("KDC needs a whitelevel in camera config")[0];
       let src = file.subview_until_eof(off as u64).unwrap();
       let image = match fetch_tiff_tag!(raw, TiffCommonTag::Compression).force_usize(0) {
         1 => Self::decode_dc120(&src, width, height, dummy),
         7 => {
           white = 0xFF << 1;
-          Self::decode_dc120_jpeg(&src, width, height)
+          Self::decode_dc120_jpeg(&src, width, height, dummy)
         }
         c => {
           return Err(RawlerError::unsupported(
@@ -78,8 +78,8 @@ impl<'a> Decoder for KdcDecoder<'a> {
         }
       };
       let cpp = 1;
-      let mut img = RawImage::new(self.camera.clone(), cpp, [1.0, 1.0, 1.0, NAN], image, dummy);
-      img.whitelevels = [white, white, white, white];
+      let whitelevel = Some(vec![white; cpp]);
+      let img = RawImage::new(self.camera.clone(), image, cpp, [1.0, 1.0, 1.0, NAN], None, whitelevel, dummy);
       return Ok(img);
     }
 
@@ -101,7 +101,7 @@ impl<'a> Decoder for KdcDecoder<'a> {
     let src = file.subview_until_eof(off as u64).unwrap();
     let image = decode_12be(&src, width, height, dummy);
     let cpp = 1;
-    ok_image(self.camera.clone(), cpp, self.get_wb()?, image)
+    ok_image(self.camera.clone(), cpp, self.get_wb()?, image, dummy)
   }
 
   fn format_dump(&self) -> FormatDump {
@@ -156,8 +156,8 @@ impl<'a> KdcDecoder<'a> {
     out
   }
 
-  pub(crate) fn decode_dc120_jpeg(src: &[u8], width: usize, height: usize) -> PixU16 {
-    let mut out = PixU16::new(width, height);
+  pub(crate) fn decode_dc120_jpeg(src: &[u8], width: usize, height: usize, dummy: bool) -> PixU16 {
+    let mut out = alloc_image!(width, height, dummy);
 
     let swapped_src: Vec<u8> = src.chunks_exact(2).flat_map(|x| [x[1], x[0]]).collect();
 

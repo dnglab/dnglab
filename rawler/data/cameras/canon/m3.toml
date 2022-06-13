@@ -1,0 +1,13 @@
+make = "Canon"
+model = "Canon EOS M3"
+clean_make = "Canon"
+clean_model = "EOS M3"
+whitepoint = 16000
+color_pattern = "RGGB"
+blackareav = [2, 68]
+blackareah = [2, 30]
+active_area = [72, 34, 0, 0]
+
+[cameras.color_matrix]
+A = [0.6671, -0.1668, -0.0272, -0.3729, 1.0665, 0.3552, -0.0409, 0.1271, 0.6293]
+D65 = [0.6362, -0.0823, -0.0847, -0.4426, 1.2109, 0.2616, -0.0743, 0.1857, 0.5635]

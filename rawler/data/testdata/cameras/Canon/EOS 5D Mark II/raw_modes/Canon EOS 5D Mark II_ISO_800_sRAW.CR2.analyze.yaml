@@ -1,0 +1,87 @@
+---
+file:
+  fileSize: 11425647
+  fileName: Canon EOS 5D Mark II_ISO_800_sRAW.CR2
+  digest: 51a11dee71e93e02dc5397c3c51bf4ae
+data:
+  metadata:
+    rawParams:
+      rawWidth: 2808
+      rawHeight: 1872
+      bitDepth: 16
+      crops:
+        p:
+          x: 12
+          y: 8
+        d:
+          w: 2784
+          h: 1856
+      blacklevels:
+        levels:
+          - 1023/1
+          - 1023/1
+          - 1023/1
+        cpp: 3
+        width: 1
+        height: 1
+      whitelevels:
+        - 64948
+        - 64948
+        - 64948
+      wbCoeffs:
+        - 1.96875
+        - 1.0
+        - 2.2802734
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ""
+        artist: ""
+        lens_spec: ~
+        exposure_time: 1/50
+        fnumber: 8/1
+        aperture_value: 393216/65536
+        brightness_value: ~
+        iso_speed_ratings: 800
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: 0/1
+        date_time_original: "2017:07:20 14:31:40"
+        create_date: "2017:07:20 14:31:40"
+        modify_date: "2017:07:20 14:31:40"
+        exposure_program: 1
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: "55"
+        sub_sec_time_original: "55"
+        sub_sec_time_digitized: "55"
+        shutter_speed_value: 368640/65536
+        max_aperture_value: ~
+        subject_distance: ~
+        metering_mode: 5
+        light_source: ~
+        flash: 16
+        focal_length: 28/1
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 1
+        white_balance: 1
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: EOS 5D Mark II
+      make: Canon
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

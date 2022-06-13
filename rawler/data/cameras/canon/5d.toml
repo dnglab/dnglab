@@ -1,0 +1,13 @@
+make = "Canon"
+model = "Canon EOS 5D"
+clean_make = "Canon"
+clean_model = "EOS 5D"
+color_pattern = "RGGB"
+active_area = [90,34,0,0]
+blackareav = [0, 88]
+blackareah = [2, 30]
+whitepoint = 3692
+
+[cameras.color_matrix]
+A = [0.7284, -0.1569, -0.0425, -0.6726, 1.4016, 0.2993, -0.0926, 0.1258, 0.7774]
+D65 = [0.6347, -0.0479, -0.0972, -0.8297, 1.5954, 0.248, -0.1967, 0.2132, 0.7649]

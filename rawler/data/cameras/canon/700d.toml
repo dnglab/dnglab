@@ -1,0 +1,20 @@
+make = "Canon"
+model = "Canon EOS 700D"
+clean_make = "Canon"
+clean_model = "EOS 700D"
+
+model_aliases = [
+  ["Canon EOS DIGITAL REBEL T5i", "Rebel T5i"],
+  ["Canon EOS REBEL T5i", "Rebel T5i"],
+  ["Canon EOS Kiss Digital X7i", "Kiss X7i"],
+  ["Canon EOS Kiss X7i", "Kiss X7i"],
+]
+
+color_pattern = "RGGB"
+blackareav = [0, 70]
+blackareah = [4, 50]
+active_area = [72, 52, 0, 0]
+
+[cameras.color_matrix]
+A = [0.6985, -0.1611, -0.0397, -0.3596, 1.0749, 0.3295, -0.0349, 0.1136, 0.6512]
+D65 = [0.6602, -0.0841, -0.0939, -0.4472, 1.2458, 0.2247, -0.0975, 0.2039, 0.6148]

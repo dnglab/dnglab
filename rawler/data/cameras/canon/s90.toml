@@ -1,0 +1,12 @@
+make = "Canon"
+model = "Canon PowerShot S90"
+clean_make = "Canon"
+clean_model = "PowerShot S90"
+whitepoint = 4095
+color_pattern = "RGGB"
+active_area = [8, 16, 52, 8]
+blackareav = [3694, 50]
+
+[cameras.color_matrix]
+A = [2.038, -1.4279, 0.0975, 0.0145, 0.7942, 0.2325, 0.0374, 0.0172, 0.5441]
+D65 = [1.2374, -0.5016, -0.1049, -0.1677, 0.9902, 0.2078, -0.0083, 0.0852, 0.4683]

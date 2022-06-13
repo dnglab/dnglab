@@ -17,12 +17,12 @@ data:
           w: 2456
           h: 1632
       blacklevels:
-        - 0
-        - 0
-        - 0
-        - 0
+        levels:
+          - 0/1
+        cpp: 1
+        width: 1
+        height: 1
       whitelevels:
-        - 65535
         - 65535
         - 65535
         - 65535

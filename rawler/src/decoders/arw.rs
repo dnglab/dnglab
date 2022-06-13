@@ -29,6 +29,7 @@ use crate::pixarray::PixU16;
 use crate::pumps::BitPump;
 use crate::pumps::BitPumpLSB;
 use crate::pumps::BitPumpMSB;
+use crate::rawimage::BlackLevel;
 use crate::tags::ExifTag;
 use crate::tags::TiffCommonTag;
 use crate::RawFile;
@@ -95,9 +96,8 @@ impl<'a> Decoder for ArwDecoder<'a> {
     let offset = fetch_tiff_tag!(raw, TiffCommonTag::StripOffsets).force_usize(0);
     let count = fetch_tiff_tag!(raw, TiffCommonTag::StripByteCounts).force_usize(0);
     let compression = fetch_tiff_tag!(raw, TiffCommonTag::Compression).force_u32(0);
-    let bps = if self.camera.bps != 0 {
-      // TODO: bps should be 0 as default but for now it's init with 16 in cameras parser!
-      self.camera.bps
+    let bps = if let Some(forced_bps) = &self.camera.bps {
+      *forced_bps
     } else {
       fetch_tiff_tag!(raw, TiffCommonTag::BitsPerSample).force_usize(0)
     };
@@ -108,8 +108,8 @@ impl<'a> Decoder for ArwDecoder<'a> {
     //assert!(params.blacklevel.is_some());
     //assert!(params.whitelevel.is_some()); // DSC-R1 is SR2 format and has no whitelevel
 
-    let mut white = params.whitelevel.unwrap_or(self.camera.whitelevels);
-    let mut black = params.blacklevel.unwrap_or(self.camera.blacklevels);
+    let mut white = params.whitelevel.map(|x| x[0]);
+    let mut black = params.blacklevel;
 
     let src = file.subview_until_eof(offset as u64).unwrap();
 
@@ -144,8 +144,11 @@ impl<'a> Decoder for ArwDecoder<'a> {
                 We set these 12bit points by shifting down the 14bit points. It might make sense to
                 have a separate camera mode instead but since the values seem good we don't bother.
               */
-              white.iter_mut().for_each(|x| *x >>= 2);
-              black.iter_mut().for_each(|x| *x >>= 2);
+              white = white.map(|x| x >> 2);
+              black = black.map(|mut x| {
+                x.iter_mut().for_each(|x| *x >>= 2);
+                x
+              });
               decode_12le(&src, width, height, dummy)
             }
             _ => return Err(RawlerError::General(format!("ARW2: Don't know how to decode images with {} bps", bps))),
@@ -160,17 +163,10 @@ impl<'a> Decoder for ArwDecoder<'a> {
     //assert!(params.blacklevel.is_some());
     //assert!(params.whitelevel.is_some());
     let cpp = 1;
+    let blacklevel = black.map(|black| BlackLevel::new(&black, self.camera.cfa.width, self.camera.cfa.height, cpp));
+    let whitelevel = white.map(|white| vec![white; cpp]);
 
-    let mut img = RawImage::new(self.camera.clone(), cpp, params.wb, image, dummy);
-
-    img.blacklevels = black;
-    img.whitelevels = white;
-
-    //img.blacklevels = params.blacklevel.unwrap_or([black, black, black, black]);
-    //img.whitelevels = params.whitelevel.unwrap_or([white, white, white, white]);
-
-    //img.blacklevels = [black, black, black, black]; // TODO A700
-    //img.whitelevels = [white, white, white, white];
+    let mut img = RawImage::new(self.camera.clone(), image, cpp, params.wb, blacklevel, whitelevel, dummy);
 
     img.crop_area = crop;
     img.active_area = self.camera.active_area.map(|area| Rect::new_with_borders(Dim2::new(width, height), &area));
@@ -313,7 +309,7 @@ impl<'a> ArwDecoder<'a> {
     }
 
     let cpp = 1;
-    ok_image(self.camera.clone(), cpp, normalize_wb(wb_coeffs), image)
+    ok_image(self.camera.clone(), cpp, normalize_wb(wb_coeffs), image, dummy)
   }
 
   fn image_srf(&self, file: &mut RawFile, dummy: bool) -> Result<RawImage> {
@@ -348,7 +344,7 @@ impl<'a> ArwDecoder<'a> {
       decode_16be(&image_data, width, height, dummy)
     };
     let cpp = 1;
-    ok_image(self.camera.clone(), cpp, [NAN, NAN, NAN, NAN], image)
+    ok_image(self.camera.clone(), cpp, [NAN, NAN, NAN, NAN], image, dummy)
   }
 
   pub(crate) fn decode_arw1(buf: &[u8], width: usize, height: usize, dummy: bool) -> PixU16 {

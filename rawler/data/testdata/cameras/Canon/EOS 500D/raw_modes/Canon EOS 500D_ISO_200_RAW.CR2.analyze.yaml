@@ -1,0 +1,107 @@
+---
+file:
+  fileSize: 19156997
+  fileName: Canon EOS 500D_ISO_200_RAW.CR2
+  digest: 552cd284d1304e152246ace0c74e565b
+data:
+  metadata:
+    rawParams:
+      rawWidth: 4832
+      rawHeight: 3204
+      bitDepth: 16
+      crops:
+        p:
+          x: 72
+          y: 31
+        d:
+          w: 4752
+          h: 3168
+      blacklevels:
+        levels:
+          - 1023/1
+          - 1024/1
+          - 1024/1
+          - 1024/1
+        cpp: 1
+        width: 2
+        height: 2
+      whitelevels:
+        - 14512
+      wbCoeffs:
+        - 2.2958984
+        - 1.0
+        - 1.3496094
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: "Copyright: Christophe COURTOIS"
+        artist: "Photographer: Christophe COURTOIS"
+        lens_spec:
+          - 35/1
+          - 35/1
+          - 2/1
+          - 2/1
+        exposure_time: 1/50
+        fnumber: 16/1
+        aperture_value: 524288/65536
+        brightness_value: ~
+        iso_speed_ratings: 200
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: 0/1
+        date_time_original: "2016:08:02 19:23:02"
+        create_date: "2016:08:02 19:23:02"
+        modify_date: "2016:08:02 19:23:02"
+        exposure_program: 3
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: "99"
+        sub_sec_time_original: "99"
+        sub_sec_time_digitized: "99"
+        shutter_speed_value: 368640/65536
+        max_aperture_value: ~
+        subject_distance: ~
+        metering_mode: 5
+        light_source: ~
+        flash: 16
+        focal_length: 35/1
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: Canon
+        lens_model: EF 35mm f/2
+        gps: ~
+      model: EOS 500D
+      make: Canon
+      lens:
+        identifiers:
+          name: ~
+          id:
+            - 11
+            - 0
+          nikon_id: ~
+          olympus_id: ~
+        mount: ef-mount
+        lens_make: Canon
+        lens_model: EF 35mm f/2
+        focal_range:
+          - 35/1
+          - 35/1
+        aperture_range:
+          - 2/1
+          - 2/1
+        lens_name: Canon EF 35mm f/2
+      unique_image_id: ~
+      rating: ~
+

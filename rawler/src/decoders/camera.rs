@@ -6,6 +6,9 @@ use crate::CFA;
 
 use std::collections::HashMap;
 
+use super::BlackLevel;
+use super::WhiteLevel;
+
 /// Contains sanitized information about the raw image's properties
 #[derive(Debug, Clone, Default)]
 pub struct Camera {
@@ -19,8 +22,8 @@ pub struct Camera {
   pub raw_width: usize,
   pub raw_height: usize,
   //pub orientation: Orientation,
-  pub whitelevels: [u16; 4],
-  pub blacklevels: [u16; 4],
+  pub whitelevel: Option<Vec<u16>>,
+  pub blacklevel: Option<Vec<u16>>,
   pub blackareah: Option<(usize, usize)>,
   pub blackareav: Option<(usize, usize)>,
   pub xyz_to_cam: [[f32; 3]; 4],
@@ -31,7 +34,7 @@ pub struct Camera {
   // Recommended area relative to sensor size
   pub crop_area: Option<[usize; 4]>,
   // Hint/Replacement for EXIF BITDEPTH info
-  pub bps: usize,
+  pub bps: Option<usize>,
   // The BPS of the output after decoding
   pub real_bps: usize,
   pub highres_width: usize,
@@ -58,6 +61,30 @@ impl Camera {
     self.params.get(name).and_then(|p| p.as_str())
   }
 
+  pub fn make_blacklevel(&self, cpp: usize) -> Option<BlackLevel> {
+    self.blacklevel.as_ref().map(|x| {
+      if x.len() == 1 {
+        BlackLevel::new(&vec![x[0]; cpp], 1, 1, cpp)
+      } else if x.len() == self.cfa.width * self.cfa.height * cpp {
+        BlackLevel::new(x, self.cfa.width, self.cfa.height, cpp)
+      } else {
+        panic!("Invalid blacklevel data")
+      }
+    })
+  }
+
+  pub fn make_whitelevel(&self, cpp: usize) -> Option<WhiteLevel> {
+    self.whitelevel.as_ref().map(|x| {
+      if x.len() == 1 {
+        vec![x[0]; cpp]
+      } else if x.len() == cpp {
+        x.clone()
+      } else {
+        panic!("Invalid whitelevel data")
+      }
+    })
+  }
+
   pub fn update_from_toml(&mut self, ct: &toml::value::Table) {
     for (name, val) in ct {
       match name.as_ref() {
@@ -81,11 +108,11 @@ impl Camera {
         }
         n @ "whitepoint" => {
           let white = val.as_integer().unwrap_or_else(|| panic!("{} must be an integer", n)) as u16;
-          self.whitelevels = [white, white, white, white];
+          self.whitelevel = Some(vec![white]);
         }
         n @ "blackpoint" => {
           let black = val.as_integer().unwrap_or_else(|| panic!("{} must be an integer", n)) as u16;
-          self.blacklevels = [black, black, black, black];
+          self.blacklevel = Some(vec![black]);
         }
         n @ "blackareah" => {
           let vals = val.as_array().unwrap_or_else(|| panic!("{} must be an array", n));
@@ -132,7 +159,7 @@ impl Camera {
           self.cfa = CFA::new(val.as_str().unwrap_or_else(|| panic!("{} must be a string", n)));
         }
         n @ "bps" => {
-          self.bps = val.as_integer().unwrap_or_else(|| panic!("{} must be an integer", n)) as usize;
+          self.bps = Some(val.as_integer().unwrap_or_else(|| panic!("{} must be an integer", n)) as usize);
         }
         n @ "real_bps" => {
           self.real_bps = val.as_integer().unwrap_or_else(|| panic!("{} must be an integer", n)) as usize;
@@ -203,8 +230,8 @@ impl Camera {
       filesize: 0,
       raw_width: 0,
       raw_height: 0,
-      whitelevels: [u16::MAX; 4],
-      blacklevels: [0; 4],
+      whitelevel: None,
+      blacklevel: None,
       blackareah: None,
       blackareav: None,
       xyz_to_cam: [[0.0; 3]; 4],
@@ -212,7 +239,7 @@ impl Camera {
       cfa: CFA::new(""),
       active_area: None,
       crop_area: None,
-      bps: 0,
+      bps: None,
       real_bps: 16,
       highres_width: usize::max_value(),
       default_scale: [[1, 1], [1, 1]],

@@ -1,0 +1,14 @@
+# CRW
+make = "Canon"
+model = "Canon PowerShot S30"
+clean_make = "Canon"
+clean_model = "PowerShot S30"
+whitepoint = 1023
+color_pattern = "RGGB"
+active_area = [4,8,52,2]
+hints = ["nolowbits"]
+blackareav = [2094,50]
+
+[cameras.color_matrix]
+A = [1.2994, -0.6269, 0.022, -0.6794, 1.4578, 0.2391, -0.1337, 0.1824, 0.8313]
+D65 = [1.0744, -0.3813, -0.1142, -0.7962, 1.5966, 0.2075, -0.2492, 0.2805, 0.7744]

@@ -5,7 +5,7 @@ use serde::Deserialize;
 use serde::Serialize;
 use std::f32::NAN;
 
-use super::ok_image_with_blacklevels;
+use super::BlackLevel;
 use super::Camera;
 use super::Decoder;
 use super::RawDecodeParams;
@@ -119,11 +119,12 @@ impl<'a> Decoder for PefDecoder<'a> {
       _ => return Err(RawlerError::unsupported(&self.camera, "PEF: No compression tag found")),
     };
 
-    let blacklevels = self.get_blacklevels()?.unwrap_or(self.camera.blacklevels);
     let cpp = 1;
     let wb = self.get_wb()?;
+    let blacklevel = self.get_blacklevel()?;
+    let whitelevel = None;
     debug!("Found WB: {:?}", wb);
-    ok_image_with_blacklevels(self.camera.clone(), cpp, wb, blacklevels, image)
+    Ok(RawImage::new(self.camera.clone(), image, cpp, wb, blacklevel, whitelevel, dummy))
   }
 
   fn full_image(&self, file: &mut RawFile) -> Result<Option<DynamicImage>> {
@@ -193,9 +194,12 @@ impl<'a> PefDecoder<'a> {
     }
   }
 
-  fn get_blacklevels(&self) -> Result<Option<[u16; 4]>> {
+  fn get_blacklevel(&self) -> Result<Option<BlackLevel>> {
     match self.makernote.get_entry(PefMakernote::BlackPoint) {
-      Some(levels) => Ok(Some([levels.force_u16(0), levels.force_u16(1), levels.force_u16(2), levels.force_u16(3)])),
+      Some(data) => {
+        let levels = [data.force_u16(0), data.force_u16(1), data.force_u16(2), data.force_u16(3)];
+        Ok(Some(BlackLevel::new(&levels, self.camera.cfa.width, self.camera.cfa.height, 1)))
+      }
       None => Ok(None),
     }
   }

@@ -2,7 +2,7 @@ make = "Panasonic"
 model = "DC-S1"
 clean_make = "Panasonic"
 clean_model = "DC-S1"
-blackpoint = 142
+#blackpoint = 142
 whitepoint = 16380
 color_pattern = "RGGB"
 

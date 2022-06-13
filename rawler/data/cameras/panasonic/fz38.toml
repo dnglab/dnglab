@@ -7,7 +7,7 @@ model_aliases = [
   ["DMC-FZ35", "DMC-FZ35"],
 ]
 
-blackpoint = 143
+#blackpoint = 143
 whitepoint = 3986
 color_pattern = "BGGR"
 

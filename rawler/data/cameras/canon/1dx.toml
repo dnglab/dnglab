@@ -1,0 +1,12 @@
+make = "Canon"
+model = "Canon EOS-1D X"
+clean_make = "Canon"
+clean_model = "EOS-1D X"
+color_pattern = "RGGB"
+blackareav = [0, 120]
+blackareah = [0, 98]
+active_area = [126, 100, 0, 2]
+
+[cameras.color_matrix]
+A = [0.7151, -0.1143, -0.079, -0.3998, 1.14, 0.2975, -0.0477, 0.1398, 0.769]
+D65 = [0.6847, -0.0614, -0.1014, -0.4669, 1.2737, 0.2139, -0.1197, 0.2488, 0.6846]

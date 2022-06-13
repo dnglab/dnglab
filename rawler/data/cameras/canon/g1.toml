@@ -1,0 +1,14 @@
+# CRW
+make = "Canon"
+model = "Canon PowerShot G1"
+clean_make = "Canon"
+clean_model = "PowerShot G1"
+whitepoint = 1023
+color_pattern = "GMYC"
+active_area = [4,8,52,2]
+hints = ["nolowbits"]
+blackareav = [2094,50]
+
+[cameras.color_matrix]
+A = [-0.4194, 0.8516, 0.277, 0.4745, -0.1228, 0.406, -0.4529, 0.8983, 0.6526, -0.1032, 0.9664, 0.1108]
+D65 = [-0.5686, 1.03, 0.2223, 0.4725, -0.1157, 0.4383, -0.6128, 1.0783, 0.6163, -0.2688, 1.2093, 0.0604]

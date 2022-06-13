@@ -1,0 +1,108 @@
+---
+file:
+  fileSize: 28971919
+  fileName: Canon EOS 6D Mark II_ISO_100_mRAW.CR2
+  digest: a7e07000843c487bce86ebe355b6f466
+data:
+  metadata:
+    rawParams:
+      rawWidth: 4680
+      rawHeight: 3132
+      bitDepth: 16
+      crops:
+        p:
+          x: 0
+          y: 12
+        d:
+          w: 4680
+          h: 3120
+      blacklevels:
+        levels:
+          - 513/1
+          - 513/1
+          - 513/1
+        cpp: 3
+        width: 1
+        height: 1
+      whitelevels:
+        - 65000
+        - 65000
+        - 65000
+      wbCoeffs:
+        - 2.0361328
+        - 1.0
+        - 1.7744141
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ""
+        artist: ""
+        lens_spec:
+          - 18/1
+          - 35/1
+          - 18/10
+          - 18/10
+        exposure_time: 1/100
+        fnumber: 8/1
+        aperture_value: 393216/65536
+        brightness_value: ~
+        iso_speed_ratings: 100
+        iso_speed: ~
+        recommended_exposure_index: 100
+        sensitivity_type: 2
+        exposure_bias: 0/1
+        date_time_original: "2017:08:05 10:09:13"
+        create_date: "2017:08:05 10:09:13"
+        modify_date: "2017:08:05 10:09:13"
+        exposure_program: 1
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: "46"
+        sub_sec_time_original: "46"
+        sub_sec_time_digitized: "46"
+        shutter_speed_value: 434176/65536
+        max_aperture_value: ~
+        subject_distance: ~
+        metering_mode: 5
+        light_source: ~
+        flash: 16
+        focal_length: 35/1
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 1
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ""
+        serial_number: "023021000923"
+        lens_serial_number: "0000000000"
+        lens_make: Sigma
+        lens_model: 18-35mm f/1.8 DC HSM | A
+        gps: ~
+      model: EOS 6D Mark II
+      make: Canon
+      lens:
+        identifiers:
+          name: ~
+          id:
+            - 150
+            - 0
+          nikon_id: ~
+          olympus_id: ~
+        mount: ef-mount
+        lens_make: Sigma
+        lens_model: 18-35mm f/1.8 DC HSM | A
+        focal_range:
+          - 18/1
+          - 35/1
+        aperture_range:
+          - 18/10
+          - 18/10
+        lens_name: Sigma 18-35mm f/1.8 DC HSM | A
+      unique_image_id: ~
+      rating: ~
+

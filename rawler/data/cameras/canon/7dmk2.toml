@@ -1,0 +1,21 @@
+make = "Canon"
+model = "Canon EOS 7D Mark II"
+clean_make = "Canon"
+clean_model = "EOS 7D Mark II"
+color_pattern = "RGGB"
+blackareav = [4, 64]
+active_area = [72, 38, 0, 0]
+
+[cameras.color_matrix]
+A = [0.7795, -0.2196, -0.0251, -0.3391, 1.0273, 0.3632, -0.0373, 0.1283, 0.6613]
+D65 = [0.7268, -0.1082, -0.0969, -0.4186, 1.1839, 0.2663, -0.0825, 0.2029, 0.5839]
+
+[[cameras.modes]]
+mode = "sRaw1"
+hints = ["invert_sraw_wb", "sraw_new"]
+whitepoint = 30000
+
+[[cameras.modes]]
+mode = "sRaw2"
+hints = ["invert_sraw_wb", "sraw_new"]
+whitepoint = 30000

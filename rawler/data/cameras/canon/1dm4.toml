@@ -1,0 +1,19 @@
+make = "Canon"
+model = "Canon EOS-1D Mark IV"
+clean_make = "Canon"
+clean_model = "EOS-1D Mark IV"
+color_pattern = "GBRG"
+blackareav = [0, 140]
+active_area = [142, 45, 62, 0]
+
+[cameras.color_matrix]
+A = [0.9966, -0.4682, -0.0136, -0.28, 1.0398, 0.279, 0.0065, 0.0935, 0.643]
+D65 = [0.6014, -0.022, -0.0795, -0.4109, 1.2014, 0.2361, -0.0561, 0.1824, 0.5787]
+
+[[cameras.modes]]
+mode = "sRaw1"
+whitepoint = 65535
+
+[[cameras.modes]]
+mode = "sRaw2"
+whitepoint = 65535

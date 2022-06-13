@@ -2,7 +2,7 @@ make = "Panasonic"
 model = "DMC-FZ10002"
 clean_make = "Panasonic"
 clean_model = "DMC-FZ1000 II"
-blackpoint = 0
+#blackpoint = 0
 whitepoint = 4095
 color_pattern = "GBRG"
 

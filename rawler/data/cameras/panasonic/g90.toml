@@ -8,7 +8,7 @@ model_aliases = [
   ["DC-G91", "DC-G91"],
 ]
 
-blackpoint = 140
+#blackpoint = 140
 whitepoint = 4095
 color_pattern = "BGGR"
 

@@ -1,0 +1,12 @@
+make = "Canon"
+model = "Canon EOS 77D"
+clean_make = "Canon"
+clean_model = "Canon EOS 77D"
+color_pattern = "RGGB"
+blackareav = [0,260]
+blackareah = [0,30]
+active_area = [264, 34, 0, 0]
+
+[cameras.color_matrix]
+A = [0.7952, -0.1689, -0.0575, -0.3746, 1.0825, 0.3378, -0.0405, 0.1362, 0.612]
+D65 = [0.7377, -0.0742, -0.0998, -0.4235, 1.1981, 0.2549, -0.0673, 0.1918, 0.5538]

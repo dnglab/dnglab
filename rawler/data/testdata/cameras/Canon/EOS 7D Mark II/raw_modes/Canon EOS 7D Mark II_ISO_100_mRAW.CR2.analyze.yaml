@@ -1,0 +1,108 @@
+---
+file:
+  fileSize: 14774007
+  fileName: Canon EOS 7D Mark II_ISO_100_mRAW.CR2
+  digest: 86676d2f1c73a4466c526000ccd8395b
+data:
+  metadata:
+    rawParams:
+      rawWidth: 4104
+      rawHeight: 2736
+      bitDepth: 16
+      crops:
+        p:
+          x: 0
+          y: 0
+        d:
+          w: 4104
+          h: 2736
+      blacklevels:
+        levels:
+          - 2047/1
+          - 2047/1
+          - 2047/1
+        cpp: 3
+        width: 1
+        height: 1
+      whitelevels:
+        - 30000
+        - 30000
+        - 30000
+      wbCoeffs:
+        - 2.1201172
+        - 1.0
+        - 1.5654297
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ""
+        artist: goued120
+        lens_spec:
+          - 50/1
+          - 50/1
+          - 14/10
+          - 14/10
+        exposure_time: 1/200
+        fnumber: 4/1
+        aperture_value: 262144/65536
+        brightness_value: ~
+        iso_speed_ratings: 100
+        iso_speed: ~
+        recommended_exposure_index: 100
+        sensitivity_type: 2
+        exposure_bias: 0/1
+        date_time_original: "2017:02:05 15:34:51"
+        create_date: "2017:02:05 15:34:51"
+        modify_date: "2017:02:05 15:34:51"
+        exposure_program: 1
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: "85"
+        sub_sec_time_original: "85"
+        sub_sec_time_digitized: "85"
+        shutter_speed_value: 499712/65536
+        max_aperture_value: ~
+        subject_distance: ~
+        metering_mode: 5
+        light_source: ~
+        flash: 9
+        focal_length: 50/1
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 1
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ""
+        serial_number: "133052001933"
+        lens_serial_number: "0000000000"
+        lens_make: Canon
+        lens_model: EF 50mm f/1.4 USM
+        gps: ~
+      model: EOS 7D Mark II
+      make: Canon
+      lens:
+        identifiers:
+          name: EF50mm f/1.4 USM
+          id:
+            - 198
+            - 0
+          nikon_id: ~
+          olympus_id: ~
+        mount: ef-mount
+        lens_make: Canon
+        lens_model: EF 50mm f/1.4 USM
+        focal_range:
+          - 50/1
+          - 50/1
+        aperture_range:
+          - 14/10
+          - 14/10
+        lens_name: Canon EF 50mm f/1.4 USM
+      unique_image_id: ~
+      rating: ~
+

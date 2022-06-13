@@ -2,7 +2,7 @@ make = "Panasonic"
 model = "DMC-G10"
 clean_make = "Panasonic"
 clean_model = "DMC-G10"
-blackpoint = 15
+#blackpoint = 15
 whitepoint = 3900
 color_pattern = "GBRG"
 

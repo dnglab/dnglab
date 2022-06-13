@@ -1,0 +1,86 @@
+---
+file:
+  fileSize: 36403731
+  fileName: Canon PowerShot G1 X Mark III_ISO_100_RAW.CR2
+  digest: 7f5b3a9b95a9379f6e2d64e7969a8073
+data:
+  metadata:
+    rawParams:
+      rawWidth: 6288
+      rawHeight: 4056
+      bitDepth: 16
+      crops:
+        p:
+          x: 276
+          y: 48
+        d:
+          w: 6000
+          h: 4000
+      blacklevels:
+        levels:
+          - 512/1
+          - 512/1
+          - 512/1
+          - 512/1
+        cpp: 1
+        width: 2
+        height: 2
+      whitelevels:
+        - 11892
+      wbCoeffs:
+        - 1.6708984
+        - 1.0
+        - 1.1738281
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: Yvan BRODIER
+        artist: Yvan BRODIER
+        lens_spec: ~
+        exposure_time: 1/125
+        fnumber: 28/10
+        aperture_value: 95/32
+        brightness_value: ~
+        iso_speed_ratings: 100
+        iso_speed: ~
+        recommended_exposure_index: 100
+        sensitivity_type: 2
+        exposure_bias: "-3/3"
+        date_time_original: "2018:07:19 10:18:29"
+        create_date: "2018:07:19 10:18:29"
+        modify_date: "2018:07:19 10:18:29"
+        exposure_program: 3
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: "29"
+        sub_sec_time_original: "29"
+        sub_sec_time_digitized: "29"
+        shutter_speed_value: 223/32
+        max_aperture_value: 95/32
+        subject_distance: ~
+        metering_mode: 5
+        light_source: ~
+        flash: 16
+        focal_length: 15000/1000
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 2
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ""
+        serial_number: "658051000157"
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: PowerShot G1 X Mark III
+      make: Canon
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

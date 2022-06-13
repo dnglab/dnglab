@@ -1,0 +1,107 @@
+---
+file:
+  fileSize: 15200326
+  fileName: Canon EOS DIGITAL REBEL XSi_ISO_400_RAW.CR2
+  digest: 4fd73ed79607e35997eb9623b69439a6
+data:
+  metadata:
+    rawParams:
+      rawWidth: 4312
+      rawHeight: 2876
+      bitDepth: 16
+      crops:
+        p:
+          x: 32
+          y: 23
+        d:
+          w: 4272
+          h: 2848
+      blacklevels:
+        levels:
+          - 1023/1
+          - 1022/1
+          - 1025/1
+          - 1024/1
+        cpp: 1
+        width: 2
+        height: 2
+      whitelevels:
+        - 15319
+      wbCoeffs:
+        - 1.9541016
+        - 1.0
+        - 1.6787109
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ~
+        artist: ~
+        lens_spec:
+          - 18/1
+          - 55/1
+          - 35/10
+          - 56/10
+        exposure_time: 1/125
+        fnumber: 56/10
+        aperture_value: 327680/65536
+        brightness_value: ~
+        iso_speed_ratings: 400
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: 0/1
+        date_time_original: "2017:03:22 17:46:50"
+        create_date: "2017:03:22 17:46:50"
+        modify_date: "2017:03:22 17:46:50"
+        exposure_program: 3
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: "03"
+        sub_sec_time_original: "03"
+        sub_sec_time_digitized: "03"
+        shutter_speed_value: 458752/65536
+        max_aperture_value: ~
+        subject_distance: ~
+        metering_mode: 2
+        light_source: ~
+        flash: 16
+        focal_length: 28/1
+        image_number: ~
+        color_space: 65535
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: Canon
+        lens_model: EF-S 18-55mm f/3.5-5.6 IS
+        gps: ~
+      model: Rebel XSi
+      make: Canon
+      lens:
+        identifiers:
+          name: EF-S18-55mm f/3.5-5.6 IS
+          id:
+            - 48
+            - 0
+          nikon_id: ~
+          olympus_id: ~
+        mount: ef-mount
+        lens_make: Canon
+        lens_model: EF-S 18-55mm f/3.5-5.6 IS
+        focal_range:
+          - 18/1
+          - 55/1
+        aperture_range:
+          - 35/10
+          - 56/10
+        lens_name: Canon EF-S 18-55mm f/3.5-5.6 IS
+      unique_image_id: ~
+      rating: ~
+

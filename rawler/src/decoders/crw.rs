@@ -87,7 +87,7 @@ impl<'a> Decoder for CrwDecoder<'a> {
 
     let wb = self.get_wb()?;
     let cpp = 1;
-    ok_image(self.camera.clone(), cpp, wb, image)
+    ok_image(self.camera.clone(), cpp, wb, image, dummy)
   }
 
   fn format_dump(&self) -> FormatDump {
@@ -95,7 +95,9 @@ impl<'a> Decoder for CrwDecoder<'a> {
   }
 
   fn raw_metadata(&self, _file: &mut RawFile, __params: RawDecodeParams) -> Result<RawMetadata> {
-    todo!()
+    // TODO: Add EXIF info
+    let exif = Exif::default();
+    Ok(RawMetadata::new(&self.camera, exif))
   }
 }
 
@@ -103,35 +105,41 @@ impl<'a> CrwDecoder<'a> {
   fn get_wb(&self) -> Result<[f32; 4]> {
     if let Some(levels) = self.ciff.find_entry(CiffTag::WhiteBalance) {
       let offset = self.camera.param_usize("wb_offset").unwrap_or(0);
-      return Ok([levels.get_f32(offset + 0), levels.get_f32(offset + 1), levels.get_f32(offset + 3), NAN]);
+      return Ok(normalize_wb([
+        levels.get_f32(offset + 0),
+        levels.get_f32(offset + 1),
+        levels.get_f32(offset + 2),
+        levels.get_f32(offset + 3),
+      ]));
     }
     if !self.camera.find_hint("nocinfo2") {
       if let Some(cinfo) = self.ciff.find_entry(CiffTag::ColorInfo2) {
         return Ok(if cinfo.get_u32(0) > 512 {
-          [cinfo.get_f32(62), cinfo.get_f32(63), cinfo.get_f32(60), cinfo.get_f32(61)]
+          normalize_wb([cinfo.get_f32(62), cinfo.get_f32(63), cinfo.get_f32(60), cinfo.get_f32(61)])
+        // RGBE???
         } else {
-          [cinfo.get_f32(51), (cinfo.get_f32(50) + cinfo.get_f32(53)) / 2.0, cinfo.get_f32(52), NAN]
+          normalize_wb([cinfo.get_f32(51), cinfo.get_f32(50), cinfo.get_f32(53), cinfo.get_f32(52)])
         });
       }
     }
     if let Some(cinfo) = self.ciff.find_entry(CiffTag::ColorInfo1) {
       if cinfo.count == 768 {
         // D30
-        return Ok([
+        return Ok(normalize_wb([
           1024.0 / (cinfo.get_force_u16(36) as f32),
           1024.0 / (cinfo.get_force_u16(37) as f32),
+          1024.0 / (cinfo.get_force_u16(38) as f32),
           1024.0 / (cinfo.get_force_u16(39) as f32),
-          NAN,
-        ]);
+        ]));
       }
       let off = self.camera.param_usize("wb_offset").unwrap_or(0);
       let key: [u16; 2] = if self.camera.find_hint("wb_mangle") { [0x410, 0x45f3] } else { [0, 0] };
-      return Ok([
+      return Ok(normalize_wb([
         (cinfo.get_force_u16(off + 1) ^ key[1]) as f32,
         (cinfo.get_force_u16(off + 0) ^ key[0]) as f32,
+        (cinfo.get_force_u16(off + 0) ^ key[0]) as f32,
         (cinfo.get_force_u16(off + 2) ^ key[0]) as f32,
-        NAN,
-      ]);
+      ]));
     }
     Ok([NAN, NAN, NAN, NAN])
   }
@@ -248,4 +256,18 @@ impl<'a> CrwDecoder<'a> {
     }
     out
   }
+}
+
+fn normalize_wb(raw_wb: [f32; 4]) -> [f32; 4] {
+  debug!("CRW raw wb: {:?}", raw_wb);
+  // We never have more then RGB colors so far (no RGBE etc.)
+  // So we combine G1 and G2 to get RGB wb.
+  let div = raw_wb[1];
+  let mut norm = raw_wb;
+  norm.iter_mut().for_each(|v| {
+    if v.is_normal() {
+      *v /= div
+    }
+  });
+  [norm[0], (norm[1] + norm[2]) / 2.0, norm[3], NAN]
 }

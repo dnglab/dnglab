@@ -2,8 +2,8 @@ make = "Hasselblad"
 model = "Hasselblad X1D"
 clean_make = "Hasselblad"
 clean_model = "X1D"
-blackpoint = 0
-whitepoint = 65535
+#blackpoint = 0
+#whitepoint = 65535
 color_pattern = "RGGB"
 hints = ["uncompressed"]
 

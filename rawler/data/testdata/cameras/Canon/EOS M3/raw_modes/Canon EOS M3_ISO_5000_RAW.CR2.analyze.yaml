@@ -1,0 +1,86 @@
+---
+file:
+  fileSize: 40945952
+  fileName: Canon EOS M3_ISO_5000_RAW.CR2
+  digest: 18dd327039dc4bfe0201b86ed46b670e
+data:
+  metadata:
+    rawParams:
+      rawWidth: 6096
+      rawHeight: 4056
+      bitDepth: 16
+      crops:
+        p:
+          x: 84
+          y: 46
+        d:
+          w: 6000
+          h: 4000
+      blacklevels:
+        levels:
+          - 2048/1
+          - 2048/1
+          - 2048/1
+          - 2048/1
+        cpp: 1
+        width: 2
+        height: 2
+      whitelevels:
+        - 16000
+      wbCoeffs:
+        - 1.3944387
+        - 1.0
+        - 2.6107106
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ""
+        artist: ""
+        lens_spec: ~
+        exposure_time: 1/80
+        fnumber: 0/1
+        aperture_value: 2147483648/1
+        brightness_value: ~
+        iso_speed_ratings: 5000
+        iso_speed: ~
+        recommended_exposure_index: 5000
+        sensitivity_type: 2
+        exposure_bias: 0/3
+        date_time_original: "2017:01:20 17:34:55"
+        create_date: "2017:01:20 17:34:55"
+        modify_date: "2017:01:20 17:34:55"
+        exposure_program: 3
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: "00"
+        sub_sec_time_original: "00"
+        sub_sec_time_digitized: "00"
+        shutter_speed_value: 202/32
+        max_aperture_value: ~
+        subject_distance: ~
+        metering_mode: 3
+        light_source: ~
+        flash: 16
+        focal_length: 0/1
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ""
+        serial_number: "043040002117"
+        lens_serial_number: "0000000000"
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: EOS M3
+      make: Canon
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

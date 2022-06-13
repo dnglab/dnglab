@@ -1,0 +1,107 @@
+---
+file:
+  fileSize: 22336066
+  fileName: Canon EOS REBEL T5i_ISO_400_RAW.CR2
+  digest: 501343d1e76b64619d10a62604f90dbd
+data:
+  metadata:
+    rawParams:
+      rawWidth: 5280
+      rawHeight: 3528
+      bitDepth: 16
+      crops:
+        p:
+          x: 84
+          y: 64
+        d:
+          w: 5184
+          h: 3456
+      blacklevels:
+        levels:
+          - 2047/1
+          - 2047/1
+          - 2048/1
+          - 2048/1
+        cpp: 1
+        width: 2
+        height: 2
+      whitelevels:
+        - 15966
+      wbCoeffs:
+        - 2.0810547
+        - 1.0
+        - 1.4951172
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ""
+        artist: ""
+        lens_spec:
+          - 50/1
+          - 50/1
+          - 18/10
+          - 18/10
+        exposure_time: 1/1250
+        fnumber: 18/10
+        aperture_value: 106496/65536
+        brightness_value: ~
+        iso_speed_ratings: 400
+        iso_speed: ~
+        recommended_exposure_index: 400
+        sensitivity_type: 2
+        exposure_bias: 0/1
+        date_time_original: "2017:09:29 06:21:02"
+        create_date: "2017:09:29 06:21:02"
+        modify_date: "2017:09:29 06:21:02"
+        exposure_program: 3
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: "22"
+        sub_sec_time_original: "22"
+        sub_sec_time_digitized: "22"
+        shutter_speed_value: 679936/65536
+        max_aperture_value: ~
+        subject_distance: ~
+        metering_mode: 2
+        light_source: ~
+        flash: 16
+        focal_length: 50/1
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ""
+        serial_number: "222032011224"
+        lens_serial_number: 00002634d1
+        lens_make: Canon
+        lens_model: EF 50mm f/1.8 STM
+        gps: ~
+      model: Rebel T5i
+      make: Canon
+      lens:
+        identifiers:
+          name: EF50mm f/1.8 STM
+          id:
+            - 4156
+            - 0
+          nikon_id: ~
+          olympus_id: ~
+        mount: ef-mount
+        lens_make: Canon
+        lens_model: EF 50mm f/1.8 STM
+        focal_range:
+          - 50/1
+          - 50/1
+        aperture_range:
+          - 18/10
+          - 18/10
+        lens_name: Canon EF 50mm f/1.8 STM
+      unique_image_id: ~
+      rating: ~
+

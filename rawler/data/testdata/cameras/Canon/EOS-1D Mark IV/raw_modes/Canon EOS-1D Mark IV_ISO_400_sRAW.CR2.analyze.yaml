@@ -1,0 +1,108 @@
+---
+file:
+  fileSize: 11923978
+  fileName: Canon EOS-1D Mark IV_ISO_400_sRAW.CR2
+  digest: 89354a43f1bf1bcb4707baa46a1ac87d
+data:
+  metadata:
+    rawParams:
+      rawWidth: 2448
+      rawHeight: 1632
+      bitDepth: 16
+      crops:
+        p:
+          x: 0
+          y: 0
+        d:
+          w: 2448
+          h: 1632
+      blacklevels:
+        levels:
+          - 2047/1
+          - 2047/1
+          - 2047/1
+        cpp: 3
+        width: 1
+        height: 1
+      whitelevels:
+        - 65535
+        - 65535
+        - 65535
+      wbCoeffs:
+        - 2.1289062
+        - 1.0
+        - 1.6308594
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ""
+        artist: ""
+        lens_spec:
+          - 16/1
+          - 35/1
+          - 28/10
+          - 28/10
+        exposure_time: 1/160
+        fnumber: 9/1
+        aperture_value: 417792/65536
+        brightness_value: ~
+        iso_speed_ratings: 400
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: "-1/3"
+        date_time_original: "2020:12:30 17:08:54"
+        create_date: "2020:12:30 17:08:54"
+        modify_date: "2020:12:30 17:08:54"
+        exposure_program: 3
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: "92"
+        sub_sec_time_original: "92"
+        sub_sec_time_digitized: "92"
+        shutter_speed_value: 483328/65536
+        max_aperture_value: ~
+        subject_distance: ~
+        metering_mode: 5
+        light_source: ~
+        flash: 16
+        focal_length: 16/1
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: Canon
+        lens_model: EF 16-35mm f/2.8L II USM
+        gps: ~
+      model: EOS-1D Mark IV
+      make: Canon
+      lens:
+        identifiers:
+          name: EF16-35mm f/2.8L II USM
+          id:
+            - 246
+            - 0
+          nikon_id: ~
+          olympus_id: ~
+        mount: ef-mount
+        lens_make: Canon
+        lens_model: EF 16-35mm f/2.8L II USM
+        focal_range:
+          - 16/1
+          - 35/1
+        aperture_range:
+          - 28/10
+          - 28/10
+        lens_name: Canon EF 16-35mm f/2.8L II USM
+      unique_image_id: ~
+      rating: ~
+

@@ -1,0 +1,22 @@
+make = "Canon"
+model = "Canon EOS-1D X Mark II"
+clean_make = "Canon"
+clean_model = "Canon EOS-1D X Mark II"
+color_pattern = "RGGB"
+active_area = [72, 38, 0, 0]
+blackareav = [0, 70]
+blackareah = [0, 36]
+
+[cameras.color_matrix]
+A = [0.8101, -0.2023, -0.0221, -0.3652, 1.0819, 0.3276, -0.0491, 0.1461, 0.6583]
+D65 = [0.7596, -0.0978, -0.0967, -0.4808, 1.2571, 0.2503, -0.1398, 0.2567, 0.5752]
+
+[[cameras.modes]]
+mode = "sRaw1"
+hints = ["invert_sraw_wb", "sraw_new"]
+whitepoint = 65535
+
+[[cameras.modes]]
+mode = "sRaw2"
+hints = ["invert_sraw_wb", "sraw_new"]
+whitepoint = 65535

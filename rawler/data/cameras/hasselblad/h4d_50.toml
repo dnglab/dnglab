@@ -2,8 +2,8 @@ make = "Hasselblad"
 model = "Hasselblad H4D-50"
 clean_make = "Hasselblad"
 clean_model = "H4D-50"
-blackpoint = 0
-whitepoint = 65535
+#blackpoint = 0
+#whitepoint = 65535
 color_pattern = "RGGB"
 
 [cameras.color_matrix]

@@ -2,8 +2,8 @@ make = "SONY"
 model = "DSC-RX100M7"
 clean_make = "SONY"
 clean_model = "DSC-RX100M7"
-blackpoint = 800
-whitepoint = 16300
+##blackpoint = 800
+#whitepoint = 16300
 color_pattern = "RGGB"
 bps = 8
 
