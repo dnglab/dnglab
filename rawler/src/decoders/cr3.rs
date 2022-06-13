@@ -309,17 +309,22 @@ impl<'a> Decoder for Cr3Decoder<'a> {
               Point::new((big.crop_right_offset + 1) as usize, (big.crop_bottom_offset + 1) as usize),
             ));
 
-            // Won't work!
-            // For uncropped files this is fine, but for 1.6 crop files, the dimension is okay but
-            // the start point is invalid (too large).
-            let _rect = Rect::new_with_points(
-              Point::new(big.active_area_left_offset as usize, big.active_area_top_offset as usize),
-              Point::new((big.active_area_right_offset - 1) as usize, (big.active_area_bottom_offset - 1) as usize),
-            );
-            log::debug!("Interal active area: {:?}", _rect);
-
-            //img.active_area = Some(_rect);
-            img.active_area = img.crop_area;
+            // For uncropped files this is fine, but for 1.6 crop files, the dimension is wrong.
+            // For example, R5 crop is total height of 3510, but active_area_bottom_offset is 3512.
+            let rect = {
+              // Limit the offsets to image bounds.
+              // Probably broken firmware, glitches in sensor size calculation or I'm just making
+              // wrong asumptions...
+              let right = usize::min(cmp1.f_width as usize, (big.active_area_right_offset - 1) as usize);
+              let bottom = usize::min(cmp1.f_height as usize, (big.active_area_bottom_offset - 1) as usize);
+              Rect::new_with_points(
+                Point::new(big.active_area_left_offset as usize, big.active_area_top_offset as usize),
+                Point::new(right, bottom),
+              )
+            };
+            log::debug!("IAD1 active area: {:?}", rect);
+            img.active_area = Some(rect);
+            //img.active_area = img.crop_area;
 
             let blackarea_h = Rect::new_with_points(
               Point::new(big.lob_left_offset as usize, big.lob_top_offset as usize),
