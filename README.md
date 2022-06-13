@@ -28,10 +28,30 @@ For a list of supported cameras please see [SUPPORTED_CAMERAS.md](SUPPORTED_CAME
 
 |Manufacturer | Format | Supported                         | Remarks                                |
 |-------------|--------|-----------------------------------|----------------------------------------|
+|ARRI         | ARI    | ✅ Yes                            |                                        |
 |Canon        | CR3    | ✅ Yes                            | [CR3_STATE.md](CR3_STATE.md)           |
 |Canon        | CR2    | ✅ Yes                            |                                        |
+|Canon        | CRW    | ✅ Yes                            |                                        |
+|Epson        | ERF    | ✅ Yes                            |                                        |
+|Fujifilm     | RAF    | ✅ Yes                            |                                        |
+|Hasselblad   | 3FR    | ✅ Yes                            |                                        |
+|Kodak        | KDC    | ✅ Yes                            |                                        |
+|Kodak        | DCS    | ✅ Yes                            |                                        |
+|Kodak        | DCR    | ✅ Yes                            |                                        |
+|Leaf         | IIQ    | ✅ Yes                            |                                        |
+|Leaf         | MOS    | ✅ Yes                            |                                        |
+|Mamiya       | MEF    | ✅ Yes                            |                                        |
+|Minolta      | MRW    | ✅ Yes                            |                                        |
+|Nikon        | NEF    | ✅ Yes                            |                                        |
+|Nikon        | NRW    | ✅ Yes                            |                                        |
+|Olympus      | ORF    | ✅ Yes                            |                                        |
+|Panasonic/Leica| RW2  | ✅ Yes                            |                                        |
 |Pentax/Ricoh | PEF    | ✅ Yes                            |                                        |
-
+|Phase One    | IIQ    | ✅ Yes                            |                                        |
+|Samsung      | SRW    | ✅ Yes                            |                                        |
+|Sony         | ARW    | ✅ Yes                            |                                        |
+|Sony         | SRF    | ✅ Yes                            |                                        |
+|Sony         | SR2    | ✅ Yes                            |                                        |
 
 ### Supported DNG features
 
