@@ -6,6 +6,7 @@ use image::{imageops::FilterType, DynamicImage, ImageBuffer};
 use log::{debug, error, info};
 use rawler::exif::Exif;
 use rawler::formats::tiff::{Rational, SRational};
+use rawler::imgop::xyz::Illuminant;
 use rawler::tags::{ExifGpsTag, TiffTag};
 use rawler::{
   decoders::RawDecodeParams,
@@ -223,19 +224,22 @@ pub fn raw_to_dng_internal<W: Write + Seek + Send>(rawfile: &mut RawFile, output
   root_ifd.add_tag(ExifTag::ModifyDate, chrono::Local::now().format("%Y:%m:%d %H:%M:%S").to_string())?;
 
   // Add matrix and illumninant
-  for (i, (ill, matrix)) in rawimage.color_matrix.iter().enumerate() {
-    let dng_matrix = matrix_to_tiff_value(matrix, 10_000);
-    let dng_matrix_ill: u16 = (*ill).into();
-    match i {
-      0 => {
-        root_ifd.add_tag(DngTag::CalibrationIlluminant1, dng_matrix_ill)?;
-        root_ifd.add_tag(DngTag::ColorMatrix1, &dng_matrix[..])?;
-      }
-      1 => {
-        root_ifd.add_tag(DngTag::CalibrationIlluminant2, dng_matrix_ill)?;
-        root_ifd.add_tag(DngTag::ColorMatrix2, &dng_matrix[..])?;
-      }
-      _ => unreachable!(),
+  let mut available_matrices = rawimage.color_matrix.clone();
+  if let Some(first_key) = available_matrices.keys().next().cloned() {
+    let first_matrix = available_matrices
+      .remove_entry(&Illuminant::A)
+      .or_else(|| available_matrices.remove_entry(&Illuminant::A))
+      .or_else(|| available_matrices.remove_entry(&first_key))
+      .expect("No matrix found");
+    root_ifd.add_tag(DngTag::CalibrationIlluminant1, u16::from(first_matrix.0))?;
+    root_ifd.add_tag(DngTag::ColorMatrix1, &first_matrix.1[..])?;
+
+    if let Some(second_matrix) = available_matrices
+      .remove_entry(&Illuminant::D65)
+      .or_else(|| available_matrices.remove_entry(&Illuminant::D50))
+    {
+      root_ifd.add_tag(DngTag::CalibrationIlluminant2, u16::from(second_matrix.0))?;
+      root_ifd.add_tag(DngTag::ColorMatrix2, &second_matrix.1[..])?;
     }
   }
 
