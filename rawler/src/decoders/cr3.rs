@@ -83,8 +83,7 @@ impl<'a> Cr3Decoder<'a> {
   /// Construct new CR3 or CRM deocder
   pub fn new(_rawfile: &mut RawFile, bmff: Bmff, rawloader: &'a RawLoader) -> Result<Cr3Decoder<'a>> {
     if let Some(Cr3DescBox { cmt1, cmt2, cmt3, cmt4, .. }) = bmff.filebox.moov.cr3desc.as_ref() {
-      let _mode = Self::get_mode(cmt3.tiff.root_ifd())?;
-      let mode = ""; // We don't need multiple modes
+      let mode = Self::get_mode(cmt3.tiff.root_ifd())?;
       let camera = rawloader.check_supported_with_mode(cmt1.tiff.root_ifd(), mode)?;
       let decoder = Cr3Decoder {
         camera,
