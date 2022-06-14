@@ -4,12 +4,12 @@ clean_make = "Canon"
 clean_model = "EOS-1D X Mark III"
 color_pattern = "RGGB"
 
-[cameras.params]
-# ColorData10
-colordata_blacklevel = 0x157
-colordata_whitelevel = 0x32b
-colordata_wbcoeffs = 0x55
-
 [cameras.color_matrix]
 A = [1.0968, -0.4933, 0.0126, -0.3738, 1.1155, 0.2969, -0.0177, 0.1024, 0.6636]
 D65 = [0.8971, -0.2022, -0.1242, -0.5405, 1.3249, 0.238, -0.128, 0.2483, 0.6072]
+
+[[cameras.modes]]
+mode = "raw"
+
+[[cameras.modes]]
+mode = "craw"

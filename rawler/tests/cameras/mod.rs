@@ -284,6 +284,7 @@ mod camera_eos_r5_raw_modes {
   super::camera_file_check!("Canon", "EOS R5", cam_canon_eos_r5_craw_iso_100_crop_nodual_cr3, "raw_modes/Canon EOS R5_CRAW_ISO_100_crop_nodual.CR3");
   super::camera_file_check!("Canon", "EOS R5", cam_canon_eos_r5_raw_iso_100_crop_nodual_cr3, "raw_modes/Canon EOS R5_RAW_ISO_100_crop_nodual.CR3");
   super::camera_file_check!("Canon", "EOS R5", cam_canon_eos_r5_raw_iso_100_nocrop_nodual_cr3, "raw_modes/Canon EOS R5_RAW_ISO_100_nocrop_nodual.CR3");
+  super::camera_file_check!("Canon", "EOS R5", cam_standardraw_iso400_tungsten_clog_neutral_bt2020_crm, "raw_modes/StandardRaw_ISO400_Tungsten_CLOG_Neutral_BT2020.CRM");
 }
 mod camera_eos_r6_raw_modes {
   super::camera_file_check!("Canon", "EOS R6", cam_canon_eos_r6_raw_iso_100_nocrop_nodual_cr3, "raw_modes/Canon EOS R6_RAW_ISO_100_nocrop_nodual.CR3");
