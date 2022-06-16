@@ -22,13 +22,15 @@ pub fn create_app() -> Command<'static> {
         .default_value("1"),
     )
     .arg(
-      arg!(preview: --"dng-preview" <preview> "DNG preview image generator")
+      arg!(preview: --"dng-preview" <preview> "DNG include preview image")
         .required(false)
+        .default_value("true")
         .validator(validate_bool),
     )
     .arg(
-      arg!(thumbnail: --"dng-thumbnail" <thumbnail> "DNG thumbnail image generator")
+      arg!(thumbnail: --"dng-thumbnail" <thumbnail> "DNG include thumbnail image")
         .required(false)
+        .default_value("true")
         .validator(validate_bool),
     )
     .arg(

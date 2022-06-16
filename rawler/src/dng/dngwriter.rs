@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: LGPL-2.1
 // Copyright 2021 Daniel Vogelbacher <daniel@chaospixel.com>
 
+use crate::dng::{DNG_VERSION_V1_1, DNG_VERSION_V1_6};
 use crate::exif::Exif;
 use crate::formats::tiff::{Rational, SRational};
 use crate::imgop::xyz::Illuminant;
@@ -14,7 +15,7 @@ use crate::{
   RawFile, RawImage,
 };
 use crate::{
-  dng::{original_compress, original_digest, DNG_VERSION_V1_4},
+  dng::{original_compress, original_digest},
   ljpeg92::LjpegCompressor,
   tags::{DngTag, ExifTag, TiffCommonTag},
   RawImageData,
@@ -198,8 +199,8 @@ pub fn raw_to_dng_internal<W: Write + Seek + Send>(rawfile: &mut RawFile, output
     root_ifd.add_tag(TiffCommonTag::Artist, artist)?;
   }
   root_ifd.add_tag(TiffCommonTag::Software, &params.software)?;
-  root_ifd.add_tag(DngTag::DNGVersion, &DNG_VERSION_V1_4[..])?;
-  root_ifd.add_tag(DngTag::DNGBackwardVersion, &DNG_VERSION_V1_4[..])?;
+  root_ifd.add_tag(DngTag::DNGVersion, &DNG_VERSION_V1_6[..])?;
+  root_ifd.add_tag(DngTag::DNGBackwardVersion, &DNG_VERSION_V1_1[..])?;
   root_ifd.add_tag(TiffCommonTag::Make, rawimage.clean_make.as_str())?;
   root_ifd.add_tag(TiffCommonTag::Model, rawimage.clean_model.as_str())?;
   let uq_model = format!("{} {}", rawimage.clean_make, rawimage.clean_model);
@@ -215,14 +216,14 @@ pub fn raw_to_dng_internal<W: Write + Seek + Send>(rawfile: &mut RawFile, output
       .or_else(|| available_matrices.remove_entry(&first_key))
       .expect("No matrix found");
     root_ifd.add_tag(DngTag::CalibrationIlluminant1, u16::from(first_matrix.0))?;
-    root_ifd.add_tag(DngTag::ColorMatrix1, &first_matrix.1[..])?;
+    root_ifd.add_tag(DngTag::ColorMatrix1, matrix_to_tiff_value(&first_matrix.1, 10_000).as_slice())?;
 
     if let Some(second_matrix) = available_matrices
       .remove_entry(&Illuminant::D65)
       .or_else(|| available_matrices.remove_entry(&Illuminant::D50))
     {
       root_ifd.add_tag(DngTag::CalibrationIlluminant2, u16::from(second_matrix.0))?;
-      root_ifd.add_tag(DngTag::ColorMatrix2, &second_matrix.1[..])?;
+      root_ifd.add_tag(DngTag::ColorMatrix2, matrix_to_tiff_value(&second_matrix.1, 10_000).as_slice())?;
     }
   }
 

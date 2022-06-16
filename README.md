@@ -66,29 +66,51 @@ dnglab-convert
 Convert raw image(s) into dng format
 
 USAGE:
-    dnglab convert [FLAGS] [OPTIONS] <INPUT> <OUTPUT>
-
-FLAGS:
-    -d                 Sets the level of debugging information
-    -h, --help         Prints help information
-    -f, --override     Override existing files
-    -r, --recursive    Process input directory recursive
-    -V, --version      Prints version information
-    -v, --verbose      Print more messages
-
-OPTIONS:
-        --artist <artist>                  Set the artist tag
-    -c, --compression <compression>        'lossless' or 'none' [default: lossless]
-        --crop <crop>                      Apply crop to ActiveArea [default: yes]
-        --dng-embedded <embedded>          Embed the raw file into DNG [default: yes]
-        --image-index <index>              Select a specific image index (or 'all') if file is a image container
-        --ljpeg92-predictor <predictor>    LJPEG-92 predictor (1-7)
-        --dng-preview <preview>            Include a DNG preview image [default: yes]
-        --dng-thumbnail <thumbnail>        Include a DNG thumbnail image [default: yes]
+    dnglab convert [OPTIONS] <INPUT> <OUTPUT>
 
 ARGS:
     <INPUT>     Input file or directory
     <OUTPUT>    Output file or existing directory
+
+OPTIONS:
+        --artist <artist>
+            Set the artist tag
+
+    -c, --compression <compression>
+            Compression for raw image [default: lossless] [possible values: lossless, none]
+
+        --crop <crop>
+            DNG default crop [default: best] [possible values: best, activearea, none]
+
+    -d
+            turns on debugging mode
+
+        --dng-preview <preview>
+            DNG include preview image [default: true]
+
+        --dng-thumbnail <thumbnail>
+            DNG include thumbnail image [default: true]
+
+        --embed-raw <embedded>
+            Embed the raw file into DNG [default: true]
+
+    -f, --override
+            Override existing files
+
+    -h, --help
+            Print help information
+
+        --image-index <index>
+            Select a specific image index (or 'all') if file is a image container [default: 0]
+
+        --ljpeg92-predictor <predictor>
+            LJPEG-92 predictor [default: 1] [possible values: 1, 2, 3, 4, 5, 6, 7]
+
+    -r, --recursive
+            Process input directory recursive
+
+    -v
+            Print more messages
 ````
 
 ### analyze subcommand
@@ -98,21 +120,29 @@ dnglab-analyze
 Analyze raw image
 
 USAGE:
-    dnglab analyze [FLAGS] <FILE>
-
-FLAGS:
-    -d               Sets the level of debugging information
-    -h, --help       Prints help information
-        --json       Format metadata as JSON
-        --meta       Write metadata to STDOUT
-        --pixel      Write uncompressed pixel data to STDOUT
-        --summary    Write summary information for file to STDOUT
-    -V, --version    Prints version information
-    -v, --verbose    Print more messages
-        --yaml       Format metadata as YAML
+    dnglab analyze [OPTIONS] <FILE>
 
 ARGS:
     <FILE>    Input file
+
+OPTIONS:
+    -d                          turns on debugging mode
+        --full-pixel            Write uncompressed full pixel data to STDOUT
+    -h, --help                  Print help information
+        --json                  Format metadata as JSON
+        --meta                  Write metadata to STDOUT
+        --preview-checksum      Write MD5 checksum of preview pixels to STDOUT
+        --preview-pixel         Write uncompressed preview pixel data to STDOUT
+        --raw-checksum          Write MD5 checksum of raw pixels to STDOUT
+        --raw-pixel
+        --srgb                  Write sRGB 16-bit TIFF to STDOUT
+        --structure             Write file structure to STDOUT
+        --summary               Write summary information for file to STDOUT
+        --thumbnail-checksum    Write MD5 checksum of thumbnail pixels to STDOUT
+        --thumbnail-pixel       Write uncompressed preview pixel data to STDOUT
+    -v                          Print more messages
+        --yaml                  Format metadata as YAML
+
 ````
 
 With **analyze**, you can get a full dump of the internal file structure
@@ -122,7 +152,7 @@ For example, to get the *cfa_layout* from the CMP1 box for CR3 files, you can
 write:
 
 ````
-find /cr3samples/ -type f -name "*.CR3" -exec dnglab analyze --meta '{}' --json \; | \
+find /cr3samples/ -type f -name "*.CR3" -exec dnglab analyze --structure '{}' --json \; | \
   jq ". | { file: .file.fileName, cfa_layout: .format.cr3.moov.trak[1].mdia.minf.stbl.stsd.craw.cmp1.cfa_layout}"
 ````
 
@@ -146,20 +176,20 @@ dnglab-extract
 Extract embedded original Raw from DNG
 
 USAGE:
-    dnglab extract [FLAGS] <INPUT> <OUTPUT>
-
-FLAGS:
-    -d                  Sets the level of debugging information
-    -h, --help          Prints help information
-    -f, --override      Override existing files
-    -r, --recursive     Process input directory recursive
-        --skipchecks    Skip integrity checks
-    -V, --version       Prints version information
-    -v, --verbose       Print more messages
+    dnglab extract [OPTIONS] <FILE> <INPUT> <OUTPUT>
 
 ARGS:
+    <FILE>      Input file
     <INPUT>     Input file or directory
     <OUTPUT>    Output file or existing directory
+
+OPTIONS:
+    -d                  turns on debugging mode
+    -f, --override      Override existing files
+    -h, --help          Print help information
+    -r, --recursive     Process input directory recursive
+        --skipchecks    Skip integrity checks
+    -v                  Print more messages
 ````
 
 
