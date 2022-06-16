@@ -13,11 +13,9 @@ use std::str::FromStr;
 use tokio::runtime::Handle;
 
 use crate::app::convert_bool;
-use crate::dnggen::{raw_to_dng_internal, CropMode};
-use crate::{
-  dnggen::{ConvertParams, DngCompression},
-  AppError, PKG_NAME, PKG_VERSION,
-};
+use crate::{AppError, PKG_NAME, PKG_VERSION};
+use rawler::dng::dngwriter::{raw_to_dng_internal, CropMode};
+use rawler::dng::dngwriter::{ConvertParams, DngCompression};
 
 #[derive(Clone)]
 struct FtpState {
@@ -58,6 +56,7 @@ pub async fn ftpserver(options: &ArgMatches) -> anyhow::Result<()> {
   let params = ConvertParams {
     predictor: options.value_of("predictor").unwrap_or("1").parse::<u8>().unwrap(),
     embedded: convert_bool(options.value_of("embedded"), true).unwrap(),
+    photometric_conversion: Default::default(),
     crop: CropMode::from_str(options.value_of("crop").unwrap()).unwrap(),
     preview: convert_bool(options.value_of("preview"), true).unwrap(),
     thumbnail: convert_bool(options.value_of("thumbnail"), true).unwrap(),

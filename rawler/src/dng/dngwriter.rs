@@ -1,27 +1,27 @@
 // SPDX-License-Identifier: LGPL-2.1
 // Copyright 2021 Daniel Vogelbacher <daniel@chaospixel.com>
 
-use core::panic;
-use image::{imageops::FilterType, DynamicImage, ImageBuffer};
-use log::{debug, error, info};
-use rawler::exif::Exif;
-use rawler::formats::tiff::{Rational, SRational};
-use rawler::imgop::xyz::Illuminant;
-use rawler::tags::{ExifGpsTag, TiffTag};
-use rawler::{
+use crate::exif::Exif;
+use crate::formats::tiff::{Rational, SRational};
+use crate::imgop::xyz::Illuminant;
+use crate::tags::{ExifGpsTag, TiffTag};
+use crate::Result;
+use crate::{
   decoders::RawDecodeParams,
-  dng::rect_to_dng_area,
-  formats::tiff::{CompressionMethod, DirectoryWriter, PhotometricInterpretation, PreviewColorSpace, TiffError, TiffWriter, Value},
-  imgop::{raw::develop_raw_srgb, rescale_f32_to_u16, Dim2, Point, Rect},
+  formats::tiff::{CompressionMethod, DirectoryWriter, PhotometricInterpretation, PreviewColorSpace, TiffWriter, Value},
+  imgop::{raw::develop_raw_srgb, rescale_f32_to_u16},
   tiles::ImageTiler,
-  RawFile, RawImage, RawlerError,
+  RawFile, RawImage,
 };
-use rawler::{
+use crate::{
   dng::{original_compress, original_digest, DNG_VERSION_V1_4},
   ljpeg92::LjpegCompressor,
   tags::{DngTag, ExifTag, TiffCommonTag},
   RawImageData,
 };
+use core::panic;
+use image::{imageops::FilterType, DynamicImage, ImageBuffer};
+use log::{debug, error, info};
 use rayon::prelude::*;
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
@@ -33,38 +33,8 @@ use std::{
   time::Instant,
   u16, usize,
 };
-use thiserror::Error;
 
-#[derive(Error, Debug)]
-pub enum DngError {
-  #[error("{}", _0)]
-  DecoderFail(String),
-
-  #[error("{}", what)]
-  Unsupported { what: String, model: String, make: String, mode: String },
-
-  #[error("{}", _0)]
-  TiffFail(#[from] TiffError),
-}
-
-impl From<String> for DngError {
-  fn from(what: String) -> Self {
-    Self::DecoderFail(what)
-  }
-}
-
-impl From<RawlerError> for DngError {
-  fn from(err: RawlerError) -> Self {
-    match err {
-      RawlerError::Unsupported { what, model, make, mode } => Self::Unsupported { what, model, make, mode },
-      RawlerError::General(what) => Self::DecoderFail(what),
-      RawlerError::IOErr(what) => Self::DecoderFail(what),
-    }
-  }
-}
-
-/// Result type for dnggen
-type Result<T> = std::result::Result<T, DngError>;
+mod raw_writer;
 
 /// Quality of preview images
 const PREVIEW_JPEG_QUALITY: f32 = 0.75;
@@ -78,7 +48,19 @@ pub enum DngCompression {
   // Lossy
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Copy, Debug)]
+pub enum DngPhotometricCoversion {
+  Original,
+  Linear,
+}
+
+impl Default for DngPhotometricCoversion {
+  fn default() -> Self {
+    Self::Original
+  }
+}
+
+#[derive(Clone, Copy, Debug)]
 pub enum CropMode {
   Best,
   ActiveArea,
@@ -103,6 +85,7 @@ impl FromStr for CropMode {
 pub struct ConvertParams {
   pub embedded: bool,
   pub compression: DngCompression,
+  pub photometric_conversion: DngPhotometricCoversion,
   pub crop: CropMode,
   pub predictor: u8,
   pub preview: bool,
@@ -123,7 +106,7 @@ pub fn raw_to_dng(path: &Path, raw_file: File, dng_file: &mut File, orig_filenam
 /// Convert a raw input file into DNG
 pub fn raw_to_dng_internal<W: Write + Seek + Send>(rawfile: &mut RawFile, output: &mut W, orig_filename: String, params: &ConvertParams) -> Result<()> {
   // Get decoder or return
-  let decoder = rawler::get_decoder(rawfile)?;
+  let decoder = crate::get_decoder(rawfile)?;
 
   // Compress original if requested
   let orig_compress_handle = if params.embedded {
@@ -427,130 +410,21 @@ fn fill_exif_ifd(exif_ifd: &mut DirectoryWriter, exif: &Exif) -> Result<()> {
 ///
 /// Encode raw image data as new raw IFD with NewSubFileType 0
 fn dng_put_raw(raw_ifd: &mut DirectoryWriter<'_, '_>, rawimage: &RawImage, params: &ConvertParams) -> Result<()> {
-  let full_size = Rect::new(Point::new(0, 0), Dim2::new(rawimage.width, rawimage.height));
+  match params.photometric_conversion {
+    DngPhotometricCoversion::Original => raw_writer::write_rawimage(raw_ifd, rawimage, params)?,
 
-  // Active area or uncropped
-  let active_area: Rect = match params.crop {
-    CropMode::ActiveArea | CropMode::Best => rawimage.active_area.unwrap_or(full_size),
-    CropMode::None => full_size,
-  };
-
-  assert!(active_area.p.x + active_area.d.w <= rawimage.width);
-  assert!(active_area.p.y + active_area.d.h <= rawimage.height);
-
-  raw_ifd.add_tag(TiffCommonTag::NewSubFileType, 0_u16)?; // Raw
-  raw_ifd.add_tag(TiffCommonTag::ImageWidth, rawimage.width as u32)?;
-  raw_ifd.add_tag(TiffCommonTag::ImageLength, rawimage.height as u32)?;
-
-  raw_ifd.add_tag(DngTag::ActiveArea, rect_to_dng_area(&active_area))?;
-
-  match params.crop {
-    CropMode::ActiveArea => {
-      let crop = active_area;
-      assert!(crop.p.x >= active_area.p.x);
-      assert!(crop.p.y >= active_area.p.y);
-      raw_ifd.add_tag(
-        DngTag::DefaultCropOrigin,
-        [(crop.p.x - active_area.p.x) as u16, (crop.p.y - active_area.p.y) as u16],
-      )?;
-      raw_ifd.add_tag(DngTag::DefaultCropSize, [crop.d.w as u16, crop.d.h as u16])?;
-    }
-    CropMode::Best => {
-      let crop = rawimage.crop_area.unwrap_or(active_area);
-      assert!(crop.p.x >= active_area.p.x);
-      assert!(crop.p.y >= active_area.p.y);
-      raw_ifd.add_tag(
-        DngTag::DefaultCropOrigin,
-        [(crop.p.x - active_area.p.x) as u16, (crop.p.y - active_area.p.y) as u16],
-      )?;
-      raw_ifd.add_tag(DngTag::DefaultCropSize, [crop.d.w as u16, crop.d.h as u16])?;
-    }
-    CropMode::None => {}
-  }
-
-  raw_ifd.add_tag(ExifTag::PlanarConfiguration, 1_u16)?;
-
-  raw_ifd.add_tag(
-    DngTag::DefaultScale,
-    [
-      Rational::new(rawimage.camera.default_scale[0][0], rawimage.camera.default_scale[0][1]),
-      Rational::new(rawimage.camera.default_scale[1][0], rawimage.camera.default_scale[1][1]),
-    ],
-  )?;
-  raw_ifd.add_tag(
-    DngTag::BestQualityScale,
-    Rational::new(rawimage.camera.best_quality_scale[0], rawimage.camera.best_quality_scale[1]),
-  )?;
-
-  // Whitelevel
-  assert_eq!(rawimage.whitelevel.len(), rawimage.cpp, "Whitelevel sample count must match cpp");
-  raw_ifd.add_tag(DngTag::WhiteLevel, &rawimage.whitelevel)?;
-
-  // Blacklevel
-  let blacklevel = rawimage.blacklevel.shift(active_area.p.x, active_area.p.y);
-
-  raw_ifd.add_tag(DngTag::BlackLevelRepeatDim, [blacklevel.height as u16, blacklevel.width as u16])?;
-
-  assert!(blacklevel.sample_count() == rawimage.cpp || blacklevel.sample_count() == rawimage.cfa.width * rawimage.cfa.height * rawimage.cpp);
-  if blacklevel.levels.iter().all(|x| x.d == 1) {
-    let payload: Vec<u16> = blacklevel.levels.iter().map(|x| x.n as u16).collect();
-    raw_ifd.add_tag(DngTag::BlackLevel, &payload)?;
-  } else {
-    raw_ifd.add_tag(DngTag::BlackLevel, blacklevel.levels.as_slice())?;
-  }
-
-  match rawimage.cpp {
-    1 => {
-      if !rawimage.blackareas.is_empty() {
-        let data: Vec<u16> = rawimage.blackareas.iter().flat_map(rect_to_dng_area).collect();
-        raw_ifd.add_tag(DngTag::MaskedAreas, &data)?;
+    DngPhotometricCoversion::Linear => {
+      if rawimage.cpp == 3 {
+        raw_writer::write_rawimage(raw_ifd, rawimage, params)?;
+      } else {
+        let rawimage = rawimage.linearize()?;
+        raw_writer::write_rawimage(raw_ifd, &rawimage, params)?;
       }
-      raw_ifd.add_tag(TiffCommonTag::PhotometricInt, PhotometricInterpretation::CFA)?;
-      raw_ifd.add_tag(TiffCommonTag::SamplesPerPixel, 1_u16)?;
-      raw_ifd.add_tag(TiffCommonTag::BitsPerSample, [16_u16])?;
-
-      let cfa = rawimage.cfa.shift(active_area.p.x, active_area.p.y);
-
-      raw_ifd.add_tag(TiffCommonTag::CFARepeatPatternDim, [cfa.width as u16, cfa.height as u16])?;
-      raw_ifd.add_tag(TiffCommonTag::CFAPattern, &cfa.flat_pattern()[..])?;
-
-      //raw_ifd.add_tag(DngTag::CFAPlaneColor, [0u8, 1u8, 2u8])?; // RGB
-      raw_ifd.add_tag(DngTag::CFALayout, 1_u16)?; // Square layout
-
-      //raw_ifd.add_tag(LegacyTiffRootTag::CFAPattern, [0u8, 1u8, 1u8, 2u8])?; // RGGB
-      //raw_ifd.add_tag(LegacyTiffRootTag::CFARepeatPatternDim, [2u16, 2u16])?;
-      //raw_ifd.add_tag(DngTag::CFAPlaneColor, [0u8, 1u8, 2u8])?; // RGGB
-    }
-    3 => {
-      raw_ifd.add_tag(TiffCommonTag::PhotometricInt, PhotometricInterpretation::LinearRaw)?;
-      raw_ifd.add_tag(TiffCommonTag::SamplesPerPixel, 3_u16)?;
-      raw_ifd.add_tag(TiffCommonTag::BitsPerSample, [16_u16, 16_u16, 16_u16])?;
-
-      //raw_ifd.add_tag(DngTag::CFAPlaneColor, [1u8, 2u8, 0u8])?; //
-    }
-    cpp => {
-      panic!("Unsupported cpp: {}", cpp);
     }
   }
 
   for (tag, value) in rawimage.dng_tags.iter() {
     raw_ifd.add_untyped_tag(*tag, value.clone())?;
-  }
-
-  //raw_ifd.add_tag(TiffRootTag::RowsPerStrip, rawimage.height as u16)?;
-
-  //raw_ifd.add_tag(DngTag::DefaultCropOrigin, &default_crop[..])?;
-  //raw_ifd.add_tag(DngTag::DefaultCropSize, &default_size[..])?;
-
-  match params.compression {
-    DngCompression::Uncompressed => {
-      raw_ifd.add_tag(TiffCommonTag::Compression, CompressionMethod::None)?;
-      dng_put_raw_uncompressed(raw_ifd, rawimage)?;
-    }
-    DngCompression::Lossless => {
-      raw_ifd.add_tag(TiffCommonTag::Compression, CompressionMethod::ModernJPEG)?;
-      dng_put_raw_ljpeg(raw_ifd, rawimage, params.predictor)?;
-    }
   }
 
   Ok(())

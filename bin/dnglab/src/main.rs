@@ -16,7 +16,6 @@ mod analyze;
 mod app;
 mod cameras;
 mod convert;
-mod dnggen;
 mod extract;
 mod filemap;
 mod ftpconv;

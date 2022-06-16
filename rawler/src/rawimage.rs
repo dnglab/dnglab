@@ -3,6 +3,7 @@ use std::collections::HashMap;
 use log::debug;
 use serde::{Deserialize, Serialize};
 
+use crate::Result;
 use crate::{
   decoders::*,
   formats::tiff::{Rational, Value},
@@ -283,7 +284,7 @@ impl RawImage {
     }
   }
 
-  pub fn develop_params(&self) -> Result<DevelopParams, String> {
+  pub fn develop_params(&self) -> Result<DevelopParams> {
     let mut xyz2cam: [[f32; 3]; 4] = [[0.0; 3]; 4];
     //let color_matrix = self.color_matrix.get(&Illuminant::D65).unwrap(); // TODO fixme
     let color_matrix = self.color_matrix.values().next().unwrap(); // TODO fixme
@@ -341,6 +342,10 @@ impl RawImage {
   pub fn add_dng_tag<T: TiffTag, V: Into<Value>>(&mut self, tag: T, value: V) {
     let tag: u16 = tag.into();
     self.dng_tags.insert(tag, value.into());
+  }
+
+  pub fn linearize(&self) -> Result<Self> {
+    todo!()
   }
 
   /// Outputs the inverted matrix that converts pixels in the camera colorspace into

@@ -19,6 +19,7 @@ samplecheck = []
 bitstream-io = "1"
 byteorder = "1"
 enumn = "0.1"
+chrono = "0.4"
 hex = "0.4"
 image = "0.24"
 num_enum = "0.5"

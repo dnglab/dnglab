@@ -2,12 +2,13 @@
 // Copyright 2021 Daniel Vogelbacher <daniel@chaospixel.com>
 
 use super::Job;
-use crate::{
-  dnggen::{raw_to_dng, ConvertParams, DngError},
-  AppError, Result,
-};
+use crate::{AppError, Result};
 use async_trait::async_trait;
 use log::debug;
+use rawler::{
+  dng::dngwriter::{raw_to_dng, ConvertParams},
+  RawlerError,
+};
 use std::{fmt::Display, fs::File};
 use std::{path::PathBuf, time::Instant};
 use tokio::task::spawn_blocking;
@@ -74,10 +75,10 @@ impl Raw2DngJob {
       }
       Err(err) => {
         match &err {
-          DngError::DecoderFail(what) => {
+          RawlerError::General(what) => {
             log::error!("Error while decoding: {} in file {}\nPlease report this issue!", what, orig_filename);
           }
-          DngError::Unsupported { what, model, make, mode } => {
+          RawlerError::Unsupported { what, model, make, mode } => {
             log::error!(
               "Unsupported file: \"{}\"\n{}: make: \"{}\", model: \"{}\", mode: \"{}\"\nPlease report this issue at 'https://github.com/dnglab/dnglab/issues'!",
               orig_filename,
@@ -87,12 +88,8 @@ impl Raw2DngJob {
               mode,
             );
           }
-          DngError::TiffFail(what) => {
-            log::error!(
-              "Error while processing TIFF tags: {} in file {}\nPlease report this issue!",
-              what,
-              orig_filename
-            );
+          RawlerError::IOErr(e) => {
+            log::error!("I/O error: {:?}", e);
           }
         }
         Err(AppError::General(err.to_string()))
