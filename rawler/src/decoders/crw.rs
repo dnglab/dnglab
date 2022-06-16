@@ -85,7 +85,18 @@ impl<'a> Decoder for CrwDecoder<'a> {
       self.decode_compressed(file, width, height, dummy)?
     };
 
-    let wb = self.get_wb()?;
+    let wb = {
+      let wb_raw = self.get_wb()?;
+      match self.camera.cfa.unique_colors() {
+        3 => normalize_wb(wb_raw),
+        4 => {
+          let maxval = wb_raw.into_iter().map(|v| v as i32).min().unwrap_or(0) as f32;
+          [wb_raw[0] / maxval, wb_raw[1] / maxval, wb_raw[2] / maxval, wb_raw[3] / maxval]
+        }
+        _ => unreachable!(),
+      }
+    };
+
     let cpp = 1;
     ok_image(self.camera.clone(), cpp, wb, image, dummy)
   }
@@ -105,41 +116,41 @@ impl<'a> CrwDecoder<'a> {
   fn get_wb(&self) -> Result<[f32; 4]> {
     if let Some(levels) = self.ciff.find_entry(CiffTag::WhiteBalance) {
       let offset = self.camera.param_usize("wb_offset").unwrap_or(0);
-      return Ok(normalize_wb([
+      return Ok([
         levels.get_f32(offset + 0),
         levels.get_f32(offset + 1),
         levels.get_f32(offset + 2),
         levels.get_f32(offset + 3),
-      ]));
+      ]);
     }
     if !self.camera.find_hint("nocinfo2") {
       if let Some(cinfo) = self.ciff.find_entry(CiffTag::ColorInfo2) {
         return Ok(if cinfo.get_u32(0) > 512 {
-          normalize_wb([cinfo.get_f32(62), cinfo.get_f32(63), cinfo.get_f32(60), cinfo.get_f32(61)])
+          [cinfo.get_f32(62), cinfo.get_f32(63), cinfo.get_f32(60), cinfo.get_f32(61)]
         // RGBE???
         } else {
-          normalize_wb([cinfo.get_f32(51), cinfo.get_f32(50), cinfo.get_f32(53), cinfo.get_f32(52)])
+          [cinfo.get_f32(51), cinfo.get_f32(50), cinfo.get_f32(53), cinfo.get_f32(52)]
         });
       }
     }
     if let Some(cinfo) = self.ciff.find_entry(CiffTag::ColorInfo1) {
       if cinfo.count == 768 {
         // D30
-        return Ok(normalize_wb([
+        return Ok([
           1024.0 / (cinfo.get_force_u16(36) as f32),
           1024.0 / (cinfo.get_force_u16(37) as f32),
           1024.0 / (cinfo.get_force_u16(38) as f32),
           1024.0 / (cinfo.get_force_u16(39) as f32),
-        ]));
+        ]);
       }
       let off = self.camera.param_usize("wb_offset").unwrap_or(0);
       let key: [u16; 2] = if self.camera.find_hint("wb_mangle") { [0x410, 0x45f3] } else { [0, 0] };
-      return Ok(normalize_wb([
+      return Ok([
         (cinfo.get_force_u16(off + 1) ^ key[1]) as f32,
         (cinfo.get_force_u16(off + 0) ^ key[0]) as f32,
         (cinfo.get_force_u16(off + 0) ^ key[0]) as f32,
         (cinfo.get_force_u16(off + 2) ^ key[0]) as f32,
-      ]));
+      ]);
     }
     Ok([NAN, NAN, NAN, NAN])
   }
