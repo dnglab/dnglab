@@ -92,7 +92,12 @@ pub fn create_app() -> Command<'static> {
         .name("ftpserver")
         .arg(arg!(ftp_port: --port <port> "FTP listen port").required(false).default_value("2121"))
         .arg(arg!(ftp_listen: --listen <addr> "FTP listen address").required(false).default_value("0.0.0.0"))
-        .arg(arg!(keep_orig: --"keep-original" "Keep original raw"))
+        .arg(
+          arg!(keep_orig: --"keep-original" <keep> "Keep original raw")
+            .required(false)
+            .default_value("true")
+            .validator(validate_bool),
+        )
         .arg(arg!(<OUTPUT> "Output file or existing directory")),
     )
     .subcommand(
