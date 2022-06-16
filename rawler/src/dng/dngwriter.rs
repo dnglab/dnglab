@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: LGPL-2.1
 // Copyright 2021 Daniel Vogelbacher <daniel@chaospixel.com>
 
+use crate::dng::{DNG_VERSION_V1_1, DNG_VERSION_V1_6};
 use crate::exif::Exif;
 use crate::formats::tiff::{Rational, SRational};
 use crate::imgop::xyz::Illuminant;
@@ -14,7 +15,7 @@ use crate::{
   RawFile, RawImage,
 };
 use crate::{
-  dng::{original_compress, original_digest, DNG_VERSION_V1_4},
+  dng::{original_compress, original_digest},
   ljpeg92::LjpegCompressor,
   tags::{DngTag, ExifTag, TiffCommonTag},
   RawImageData,
@@ -198,8 +199,8 @@ pub fn raw_to_dng_internal<W: Write + Seek + Send>(rawfile: &mut RawFile, output
     root_ifd.add_tag(TiffCommonTag::Artist, artist)?;
   }
   root_ifd.add_tag(TiffCommonTag::Software, &params.software)?;
-  root_ifd.add_tag(DngTag::DNGVersion, &DNG_VERSION_V1_4[..])?;
-  root_ifd.add_tag(DngTag::DNGBackwardVersion, &DNG_VERSION_V1_4[..])?;
+  root_ifd.add_tag(DngTag::DNGVersion, &DNG_VERSION_V1_6[..])?;
+  root_ifd.add_tag(DngTag::DNGBackwardVersion, &DNG_VERSION_V1_1[..])?;
   root_ifd.add_tag(TiffCommonTag::Make, rawimage.clean_make.as_str())?;
   root_ifd.add_tag(TiffCommonTag::Model, rawimage.clean_model.as_str())?;
   let uq_model = format!("{} {}", rawimage.clean_make, rawimage.clean_model);
