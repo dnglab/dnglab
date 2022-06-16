@@ -216,14 +216,14 @@ pub fn raw_to_dng_internal<W: Write + Seek + Send>(rawfile: &mut RawFile, output
       .or_else(|| available_matrices.remove_entry(&first_key))
       .expect("No matrix found");
     root_ifd.add_tag(DngTag::CalibrationIlluminant1, u16::from(first_matrix.0))?;
-    root_ifd.add_tag(DngTag::ColorMatrix1, &first_matrix.1[..])?;
+    root_ifd.add_tag(DngTag::ColorMatrix1, matrix_to_tiff_value(&first_matrix.1, 10_000).as_slice())?;
 
     if let Some(second_matrix) = available_matrices
       .remove_entry(&Illuminant::D65)
       .or_else(|| available_matrices.remove_entry(&Illuminant::D50))
     {
       root_ifd.add_tag(DngTag::CalibrationIlluminant2, u16::from(second_matrix.0))?;
-      root_ifd.add_tag(DngTag::ColorMatrix2, &second_matrix.1[..])?;
+      root_ifd.add_tag(DngTag::ColorMatrix2, matrix_to_tiff_value(&second_matrix.1, 10_000).as_slice())?;
     }
   }
 
