@@ -34,7 +34,7 @@ pub fn create_app() -> Command<'static> {
     .arg(
       arg!(embedded: --"embed-raw" <embedded> "Embed the raw file into DNG")
         .required(false)
-        .default_value("false")
+        .default_value("true")
         .validator(validate_bool),
     )
     .arg(arg!(--"artist" <artist> "Set the artist tag").required(false))

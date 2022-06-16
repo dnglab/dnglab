@@ -1224,6 +1224,7 @@ dependencies = [
  "backtrace",
  "bitstream-io",
  "byteorder",
+ "chrono 0.4.19",
  "criterion",
  "enumn",
  "env_logger",
