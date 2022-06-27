@@ -1,0 +1,15 @@
+make = "Canon"
+model = "Canon EOS R7"
+clean_make = "Canon"
+clean_model = "EOS R7"
+color_pattern = "RGGB"
+
+[cameras.color_matrix]
+A = [1.2649, -0.646, -0.0013, -0.3506, 1.0855, 0.3061, -0.01, 0.0741, 0.7311]
+D65 = [1.0424, -0.3138, -0.13, -0.4221, 1.1938, 0.2584, -0.0547, 0.1658, 0.6183]
+
+[[cameras.modes]]
+mode = "raw"
+
+[[cameras.modes]]
+mode = "craw"
