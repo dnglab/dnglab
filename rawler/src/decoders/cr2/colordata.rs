@@ -120,6 +120,8 @@ pub(crate) fn parse_colordata(colordata: &Entry) -> Result<ColorData> {
         32 | 33 => ColorData::new(data, version, 0x55, Some(0x157), Some(0x32a), Some(0x32b)),
         // 34 (R3)
         34 => ColorData::new(data, version, 0x69, Some(0x16b), Some(0x280), Some(0x281)),
+        // 48 (R7/R10)
+        48 => ColorData::new(data, version, 0x69, Some(0x16b), Some(0x281), Some(0x282)),
 
         _ => return Err(format!("Unknown COLORDATA version: {}", data[0]).into()),
       })
