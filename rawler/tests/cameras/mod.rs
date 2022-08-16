@@ -2549,6 +2549,11 @@ mod camera_x_h1_compressed {
 mod camera_x_h1_raw_modes {
   super::camera_file_check!("Fujifilm", "X-H1", cam_fuji_xh1_uncompressed_raf, "raw_modes/fuji_xh1_uncompressed.RAF");
 }
+mod camera_x_h2s_raw_modes {
+  super::camera_file_check!("Fujifilm", "X-H2S", cam_fujifilm_x_h2s_14bit_lossy_raf, "raw_modes/Fujifilm_X-H2S_14bit_lossy.raf");
+  super::camera_file_check!("Fujifilm", "X-H2S", cam_fujifilm_x_h2s_14bit_uncompressed_raf, "raw_modes/Fujifilm_X-H2S_14bit_uncompressed.raf");
+  super::camera_file_check!("Fujifilm", "X-H2S", cam_fujifilm_x_h2s_14bit_lossless_raf, "raw_modes/Fujifilm_X-H2S_14bit_lossless.raf");
+}
 mod camera_x_m1_raw_modes {
   super::camera_file_check!("Fujifilm", "X-M1", cam_x_m1_iso_200_raf, "raw_modes/X-M1_ISO_200.RAF");
 }

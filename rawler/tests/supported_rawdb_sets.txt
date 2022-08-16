@@ -675,6 +675,7 @@ cameras/Fujifilm/XF10/raw_modes
 cameras/Fujifilm/XF1/raw_modes
 cameras/Fujifilm/X-H1/compressed
 cameras/Fujifilm/X-H1/raw_modes
+cameras/Fujifilm/X-H2S/raw_modes
 cameras/Fujifilm/X-M1/raw_modes
 cameras/Fujifilm/X-Pro1/raw_modes
 cameras/Fujifilm/X-Pro2/compressed
