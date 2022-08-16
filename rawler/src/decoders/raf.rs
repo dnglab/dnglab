@@ -374,6 +374,7 @@ impl<'a> Decoder for RafDecoder<'a> {
 
       // Overwrite crop if available in metadata
       if let Some(crop) = self.get_crop()? {
+        log::debug!("RAW file metadata contains crop info, overriding toml definitions");
         image.crop_area = Some(crop);
       }
 
