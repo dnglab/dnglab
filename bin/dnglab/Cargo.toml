@@ -17,7 +17,7 @@ chrono = "0.4"
 clap = { version = "3.1.18", features = ["cargo"] }
 fern = {version = "0.6", features = ["colored"]}
 log = "0.4"
-prettytable-rs = "^0.8"
+prettytable-rs = "^0.9"
 rawler = {path = "../../rawler"}
 embedftp = {path = "../../embedftp"}
 image = "0.24"
