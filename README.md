@@ -9,6 +9,32 @@ Command line tool to convert camera RAW files to Digital Negative Format (DNG).
  It is currently in alpha state, so don't expect a polished and bugfree application.
  Please report bugs in our [issue tracker](https://github.com/dnglab/dnglab/issues).
 
+
+## Installation
+
+There are pre-built binary packages for each release which can be downloaded from
+the asset section under [latest release](https://github.com/dnglab/dnglab/releases/latest).
+The **.deb** packages are for Debian based systems (amd64 and arm64), which can be installed
+with `dpkg -i dnglab_x.x.x_amd64.deb`. For non-Debian systems, you can use the single-binary file,
+for example `./dnglab_linux_x64 convert IMG_1234.CR2 IMG_1234.dng`.
+
+Windows is not officially supported, but the release assets contains a **dnglab-win-x64_vx.x.x.zip**
+file with pre-built Windows binary. Please be aware that this build is untested.
+
+## Build from source
+Dnglab is written in Rust, so you can compile it by your own on your target machine.
+You need the Rust toolchain installed on your machine, see https://rustup.rs/ for that.
+Once the toolchain is installed, you can simply compile Dnglab with:
+
+````
+git checkout https://github.com/dnglab/dnglab.git
+cd dnglab
+cargo build --release
+````
+
+The dnglab binary is found at `./target/release/dnglab`.
+
+
 ## Examples
 
 **Convert a single file:**
