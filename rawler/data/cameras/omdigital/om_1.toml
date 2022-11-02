@@ -1,0 +1,18 @@
+make = "OM Digital Solutions"
+model = "OM-1"
+clean_make = "OM Digital Solutions"
+clean_model = "OM-1"
+whitepoint = 4000
+color_pattern = "RGGB"
+active_area = [0, 0, 0, 0]
+crop_area = [12, 12, 24, 12]
+highres_width = 8180
+
+[cameras.color_matrix]
+A = [1.1345, -0.6856, 0.0888, -0.2931, 1.0978, 0.224, 0.0075, 0.0408, 0.7003]
+D65 = [0.9488, -0.3984, -0.0714, -0.2887, 1.0945, 0.2229, -0.0137, 0.096, 0.5786]
+
+[[cameras.modes]]
+mode = "highres"
+active_area = [0, 0, 10, 0]
+crop_area = [0, 0, 10, 0]
