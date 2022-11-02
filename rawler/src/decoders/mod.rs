@@ -450,6 +450,7 @@ impl RawLoader {
             "OLYMPUS IMAGING CORP." => return use_decoder!(orf::OrfDecoder, rawfile, tiff, self),
             "OLYMPUS CORPORATION" => return use_decoder!(orf::OrfDecoder, rawfile, tiff, self),
             "OLYMPUS OPTICAL CO.,LTD" => return use_decoder!(orf::OrfDecoder, rawfile, tiff, self),
+            "OM Digital Solutions" => return use_decoder!(orf::OrfDecoder, rawfile, tiff, self),
             "SAMSUNG" => return use_decoder!(srw::SrwDecoder, rawfile, tiff, self),
             "SEIKO EPSON CORP." => return use_decoder!(erf::ErfDecoder, rawfile, tiff, self),
             "EASTMAN KODAK COMPANY" => return use_decoder!(kdc::KdcDecoder, rawfile, tiff, self),

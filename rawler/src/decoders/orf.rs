@@ -61,6 +61,11 @@ pub fn parse_makernote<R: Read + Seek>(reader: &mut R, exif_ifd: &IFD) -> Result
             off += 4;
           }
         }
+        // OM Digital Solutions put their name in front of the TIFF structure, too
+        if data[0..9] == b"OM SYSTEM"[..] {
+          off += 16;
+          assert_eq!(data[12..14], b"II"[..]);
+        }
         let endian = exif_ifd.endian;
         //assert!(data[off..off + 2] == b"II"[..] || data[off..off + 2] == b"MM"[..], "ORF: must contain endian marker in makernote IFD");
         //let endian = if data[off..off + 2] == b"II"[..] { Endian::Little } else { Endian::Big };
@@ -80,7 +85,8 @@ pub fn parse_makernote<R: Read + Seek>(reader: &mut R, exif_ifd: &IFD) -> Result
           mainifd.sub.insert(OrfMakernotes::EquipmentIFD.into(), vec![ifd]);
         }
 
-        if off == 12 {
+        // For Olympus or OM-System models
+        if off == 12 || off == 16 {
           // Parse the Olympus ImgProc section if it exists
           let ioff = if let Some(entry) = mainifd.get_entry_raw_with_len(OrfMakernotes::ImageProcessingIFD, reader, 4)? {
             // The entry is of type UNDEFINED and count = 1. This tag contains a single 32 bit
@@ -138,6 +144,7 @@ impl<'a> Decoder for OrfDecoder<'a> {
     let height = fetch_tiff_tag!(raw, TiffCommonTag::ImageLength).force_usize(0);
     let offset = fetch_tiff_tag!(raw, TiffCommonTag::StripOffsets).force_usize(0);
     let counts = fetch_tiff_tag!(raw, TiffCommonTag::StripByteCounts);
+
     let mut size: usize = 0;
     for i in 0..counts.count() {
       size += counts.force_u32(i as usize) as usize;
@@ -150,6 +157,15 @@ impl<'a> Decoder for OrfDecoder<'a> {
     };
 
     let src: OptBuffer = file.subview(offset as u64, size as u64).unwrap().into(); // TODO add size and check all samples
+
+    log::debug!(
+      "ORF raw image size: {}, dim: {}x{}, total mp: {}, strip counts: {}",
+      size,
+      width,
+      height,
+      width * height,
+      counts.count()
+    );
 
     // These conditions are sorted in descending order.
     // All ORF files comes with no hints about the used compression.
@@ -176,7 +192,7 @@ impl<'a> Decoder for OrfDecoder<'a> {
         decode_12be_msb32(&src, width, height, dummy)
       }
     } else {
-      log::debug!("ORF: decode_compressed");
+      log::debug!("ORF: fallback to decode_compressed");
       OrfDecoder::decode_compressed(&src, width, height, dummy)
     };
 
