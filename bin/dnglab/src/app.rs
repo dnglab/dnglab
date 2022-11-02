@@ -117,7 +117,6 @@ pub fn create_app() -> Command<'static> {
       Command::new("extract")
         .about("Extract embedded original Raw from DNG")
         .arg_required_else_help(true)
-        .arg(arg!(<FILE> "Input file"))
         .arg(arg!(skipchecks: --skipchecks "Skip integrity checks"))
         .arg(arg!(-r --recursive "Process input directory recursive"))
         .arg(arg!(-f --override "Override existing files"))
