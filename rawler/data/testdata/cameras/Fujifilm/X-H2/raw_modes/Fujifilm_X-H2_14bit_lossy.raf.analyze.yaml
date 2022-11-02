@@ -1,0 +1,129 @@
+---
+file:
+  fileSize: 28948064
+  fileName: Fujifilm_X-H2_14bit_lossy.raf
+  digest: f6e594a305c68a2df5cb07cae09d33d8
+data:
+  metadata:
+    rawParams:
+      rawWidth: 7872
+      rawHeight: 5196
+      bitDepth: 16
+      cropArea:
+        p:
+          x: 12
+          y: 21
+        d:
+          w: 5152
+          h: 7728
+      activeArea:
+        p:
+          x: 0
+          y: 5
+        d:
+          w: 7752
+          h: 5184
+      blacklevels:
+        levels:
+          - 1020/1
+          - 1020/1
+          - 1020/1
+          - 1020/1
+          - 1020/1
+          - 1020/1
+          - 1020/1
+          - 1020/1
+          - 1020/1
+          - 1020/1
+          - 1020/1
+          - 1020/1
+          - 1020/1
+          - 1020/1
+          - 1020/1
+          - 1020/1
+          - 1020/1
+          - 1020/1
+          - 1020/1
+          - 1020/1
+          - 1020/1
+          - 1020/1
+          - 1020/1
+          - 1020/1
+          - 1020/1
+          - 1020/1
+          - 1020/1
+          - 1020/1
+          - 1020/1
+          - 1020/1
+          - 1020/1
+          - 1020/1
+          - 1020/1
+          - 1020/1
+          - 1020/1
+          - 1020/1
+        cpp: 1
+        width: 6
+        height: 6
+      whitelevels:
+        - 16383
+      wbCoeffs:
+        - 2.02649
+        - 1.0
+        - 2.1225166
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 6
+        copyright: ""
+        artist: ""
+        lens_spec:
+          - 2300/100
+          - 2300/100
+          - 140/100
+          - 140/100
+        exposure_time: 10/2500
+        fnumber: 140/100
+        aperture_value: 100/100
+        brightness_value: ~
+        iso_speed_ratings: 125
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: 1
+        exposure_bias: 0/100
+        date_time_original: "2022:10:04 09:25:03"
+        create_date: "2022:10:04 09:25:03"
+        modify_date: "2022:10:04 09:25:03"
+        exposure_program: 1
+        timezone_offset: ~
+        offset_time: "+01:00"
+        offset_time_original: "+01:00"
+        offset_time_digitized: "+01:00"
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: 797/100
+        max_aperture_value: 100/100
+        subject_distance: ~
+        metering_mode: 5
+        light_source: 0
+        flash: 0
+        focal_length: 2300/100
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 1
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: 0
+        owner_name: ~
+        serial_number: 2C002941
+        lens_serial_number: "00000101"
+        lens_make: "VILTROX "
+        lens_model: "23mmF1.4XM  "
+        gps: ~
+      model: X-H2
+      make: Fujifilm
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

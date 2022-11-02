@@ -1,0 +1,12 @@
+make = "FUJIFILM"
+model = "X-H2"
+clean_make = "Fujifilm"
+clean_model = "X-H2"
+whitepoint = 16383
+color_pattern = "GGRGGBGGBGGRBRGRGBGGBGGRGGRGGBRBGBRG"
+active_area = [0, 5, 120, 7]
+crop_area = [6, 13, 126, 15]
+
+[cameras.color_matrix]
+A = [1.324, -0.8203, 0.1401, -0.2281, 0.9572, 0.3184, 0.0329, 0.0141, 0.679]
+D65 = [1.1809, -0.5358, -0.1141, -0.4248, 1.2164, 0.2343, -0.0514, 0.1097, 0.5848]
