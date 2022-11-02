@@ -1,0 +1,112 @@
+---
+file:
+  fileSize: 68535168
+  fileName: OM-5_ISO_100_16bits_tripod_hires.ORF
+  digest: 0d9b7fe7f6a60616057d327e8902aad4
+data:
+  metadata:
+    rawParams:
+      rawWidth: 10400
+      rawHeight: 7792
+      bitDepth: 16
+      cropArea:
+        p:
+          x: 8
+          y: 8
+        d:
+          w: 10368
+          h: 7776
+      activeArea:
+        p:
+          x: 0
+          y: 0
+        d:
+          w: 10400
+          h: 7792
+      blacklevels:
+        levels:
+          - 256/1
+          - 256/1
+          - 256/1
+          - 256/1
+        cpp: 1
+        width: 2
+        height: 2
+      whitelevels:
+        - 4000
+      wbCoeffs:
+        - 2.03125
+        - 1.0
+        - 2.1484375
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: CC-0
+        artist: Alex
+        lens_spec:
+          - 12/1
+          - 35/1
+          - 28/10
+          - 28/10
+        exposure_time: 1/3
+        fnumber: 56/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 100
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: 1
+        exposure_bias: 0/10
+        date_time_original: "2023:09:24 13:14:17"
+        create_date: "2023:09:24 13:14:17"
+        modify_date: "2023:09:24 13:14:17"
+        exposure_program: 3
+        timezone_offset: ~
+        offset_time: "+09:00"
+        offset_time_original: "+09:00"
+        offset_time_digitized: "+09:00"
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: ~
+        max_aperture_value: 768/256
+        subject_distance: ~
+        metering_mode: 5
+        light_source: 0
+        flash: 16
+        focal_length: 22/1
+        image_number: ~
+        color_space: 65535
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: Lumix
+        lens_model: G X Vario 12-35mm F2.8 Asph. Power OIS
+        gps: ~
+      model: OM-5
+      make: OM Digital Solutions
+      lens:
+        identifiers:
+          name: ~
+          id: ~
+          nikon_id: ~
+          olympus_id: 02 15 10
+        mount: MFT-mount
+        lens_make: Lumix
+        lens_model: G X Vario 12-35mm F2.8 Asph. Power OIS
+        focal_range:
+          - 12/1
+          - 35/1
+        aperture_range:
+          - 28/10
+          - 28/10
+        lens_name: Lumix G X Vario 12-35mm F2.8 Asph. Power OIS
+      unique_image_id: ~
+      rating: ~
+
