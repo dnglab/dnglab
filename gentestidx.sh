@@ -8,13 +8,13 @@ function process_rawfile() {
         digest=${rawfile}".digest.txt"
         #dir=`dirname rawler/tests/testdata/"$analyze"`;
         #mkdir -p "$dir";
-        #if [ ! -f rawler/tests/testdata/"$analyze" ]; then
+        if [ ! -f rawler/data/testdata/"$analyze" ]; then
                 echo "Processing ${rawfile}";
                 echo "  analyze file: $analyze"
                 echo "  digest file:  $digest"
                 ./target/release/dnglab analyze --meta --yaml "$sample" > rawler/data/testdata/"$analyze";
                 ./target/release/dnglab analyze --raw-checksum "$sample" > rawler/data/testdata/"$digest";
-        #fi
+        fi
         MAKE=`echo $rawfile | cut -d/ -f2`;
         MODEL=`echo $rawfile | cut -d/ -f3`;
         TESTNAME=`basename "${rawfile@L}" | sed -e 's,[[:space:][:punct:]],_,g' -e 's,_+,_,g'`;
