@@ -37,6 +37,9 @@ The core set must consists of these shoots:
 If your camera supports *burst mode*:
  * **Burst** mode: ISO 100 with 3-5 frames maximum (keep the size small)
 
+ If your camera supports *dual pixel mode*:
+ * **Dual Pixel** mode: ISO 100, one shot with *RAW*, another with *CRAW* compression
+
 If your camera supports *HEIF* format:
  * **HEIF** mode: ISO 100
 
