@@ -15,7 +15,7 @@
 |Canon                        | Canon EOS 2000D                         | ✅ Yes | all |  |
 |Canon                        | Canon EOS 200D                          | ✅ Yes | all |  |
 |Canon                        | Canon EOS 20D                           | ✅ Yes | all |  |
-|Canon                        | Canon EOS 250D                          | ✅ Yes | all |  |
+|Canon                        | Canon EOS 250D                          | ✅ Yes | craw, raw |  |
 |Canon                        | Canon EOS 3000D                         | ✅ Yes | all |  |
 |Canon                        | Canon EOS 300D DIGITAL                  | ✅ Yes | all |  |
 |Canon                        | Canon EOS 30D                           | ✅ Yes | all |  |
@@ -49,8 +49,8 @@
 |Canon                        | Canon EOS 8000D                         | ✅ Yes | all |  |
 |Canon                        | Canon EOS 800D                          | ✅ Yes | all |  |
 |Canon                        | Canon EOS 80D                           | ✅ Yes | sRaw1, sRaw2 |  |
-|Canon                        | Canon EOS 850D                          | ✅ Yes | all |  |
-|Canon                        | Canon EOS 90D                           | ✅ Yes | all |  |
+|Canon                        | Canon EOS 850D                          | ✅ Yes | craw, raw |  |
+|Canon                        | Canon EOS 90D                           | ✅ Yes | craw, raw |  |
 |Canon                        | Canon EOS D30                           | ✅ Yes | all |  |
 |Canon                        | Canon EOS D60                           | ✅ Yes | all |  |
 |Canon                        | Canon EOS DIGITAL REBEL                 | ✅ Yes | all |  |
@@ -69,7 +69,7 @@
 |Canon                        | Canon EOS DIGITAL REBEL XSi             | ✅ Yes | all |  |
 |Canon                        | Canon EOS DIGITAL REBEL XT              | ✅ Yes | all |  |
 |Canon                        | Canon EOS DIGITAL REBEL XTi             | ✅ Yes | all |  |
-|Canon                        | Canon EOS KISS M                        | ✅ Yes | all |  |
+|Canon                        | Canon EOS KISS M                        | ✅ Yes | craw, raw |  |
 |Canon                        | Canon EOS Kiss                          | ✅ Yes | all |  |
 |Canon                        | Canon EOS Kiss Digital                  | ✅ Yes | all |  |
 |Canon                        | Canon EOS Kiss Digital F                | ✅ Yes | all |  |
@@ -105,17 +105,19 @@
 |Canon                        | Canon EOS M10                           | ✅ Yes | all |  |
 |Canon                        | Canon EOS M100                          | ✅ Yes | all |  |
 |Canon                        | Canon EOS M2                            | ✅ Yes | all |  |
-|Canon                        | Canon EOS M200                          | ✅ Yes | all |  |
+|Canon                        | Canon EOS M200                          | ✅ Yes | craw, raw |  |
 |Canon                        | Canon EOS M3                            | ✅ Yes | all |  |
 |Canon                        | Canon EOS M5                            | ✅ Yes | all |  |
-|Canon                        | Canon EOS M50                           | ✅ Yes | all |  |
-|Canon                        | Canon EOS M50m2                         | ✅ Yes | all |  |
+|Canon                        | Canon EOS M50                           | ✅ Yes | craw, raw |  |
+|Canon                        | Canon EOS M50m2                         | ✅ Yes | craw, raw |  |
 |Canon                        | Canon EOS M6                            | ✅ Yes | all |  |
-|Canon                        | Canon EOS M6 Mark II                    | ✅ Yes | all |  |
-|Canon                        | Canon EOS R                             | ✅ Yes | all |  |
-|Canon                        | Canon EOS R3                            | ✅ Yes | all |  |
-|Canon                        | Canon EOS R5                            | ✅ Yes | all | support for CRM raw movie frame extraction |
-|Canon                        | Canon EOS R6                            | ✅ Yes | all |  |
+|Canon                        | Canon EOS M6 Mark II                    | ✅ Yes | craw, raw |  |
+|Canon                        | Canon EOS R                             | ✅ Yes | craw, raw |  |
+|Canon                        | Canon EOS R3                            | ✅ Yes | craw, raw |  |
+|Canon                        | Canon EOS R5                            | ✅ Yes | craw, crm, raw | support for CRM raw movie frame extraction, support for CRM raw movie frame extraction, support for CRM raw movie frame extraction, support for CRM raw movie frame extraction |
+|Canon                        | Canon EOS R6                            | ✅ Yes | craw, raw |  |
+|Canon                        | Canon EOS R6m2                          | ✅ Yes | craw, raw |  |
+|Canon                        | Canon EOS R7                            | ✅ Yes | craw, raw |  |
 |Canon                        | Canon EOS REBEL                         | ✅ Yes | all |  |
 |Canon                        | Canon EOS REBEL SL1                     | ✅ Yes | all |  |
 |Canon                        | Canon EOS REBEL T1i                     | ✅ Yes | all |  |
@@ -133,16 +135,16 @@
 |Canon                        | Canon EOS REBEL XSi                     | ✅ Yes | all |  |
 |Canon                        | Canon EOS REBEL XT                      | ✅ Yes | all |  |
 |Canon                        | Canon EOS REBEL XTi                     | ✅ Yes | all |  |
-|Canon                        | Canon EOS RP                            | ✅ Yes | all |  |
+|Canon                        | Canon EOS RP                            | ✅ Yes | craw, raw |  |
 |Canon                        | Canon EOS Rebel SL2                     | ✅ Yes | all |  |
-|Canon                        | Canon EOS Rebel SL3                     | ✅ Yes | all |  |
+|Canon                        | Canon EOS Rebel SL3                     | ✅ Yes | craw, raw |  |
 |Canon                        | Canon EOS Rebel T100                    | ✅ Yes | all |  |
 |Canon                        | Canon EOS Rebel T6                      | ✅ Yes | all |  |
 |Canon                        | Canon EOS Rebel T6i                     | ✅ Yes | all |  |
 |Canon                        | Canon EOS Rebel T6s                     | ✅ Yes | all |  |
 |Canon                        | Canon EOS Rebel T7                      | ✅ Yes | all |  |
 |Canon                        | Canon EOS Rebel T7i                     | ✅ Yes | all |  |
-|Canon                        | Canon EOS Rebel T8i                     | ✅ Yes | all |  |
+|Canon                        | Canon EOS Rebel T8i                     | ✅ Yes | craw, raw |  |
 |Canon                        | Canon EOS-1D                            | ✅ Yes | all |  |
 |Canon                        | Canon EOS-1D Mark II                    | ✅ Yes | all |  |
 |Canon                        | Canon EOS-1D Mark II N                  | ✅ Yes | all |  |
@@ -150,7 +152,7 @@
 |Canon                        | Canon EOS-1D Mark IV                    | ✅ Yes | sRaw1, sRaw2 |  |
 |Canon                        | Canon EOS-1D X                          | ✅ Yes | all |  |
 |Canon                        | Canon EOS-1D X Mark II                  | ✅ Yes | sRaw1, sRaw2 |  |
-|Canon                        | Canon EOS-1D X Mark III                 | ✅ Yes | all |  |
+|Canon                        | Canon EOS-1D X Mark III                 | ✅ Yes | craw, raw |  |
 |Canon                        | Canon EOS-1DS                           | ✅ Yes | all |  |
 |Canon                        | Canon EOS-1Ds Mark II                   | ✅ Yes | all |  |
 |Canon                        | Canon EOS-1Ds Mark III                  | ✅ Yes | all |  |
@@ -169,12 +171,12 @@
 |Canon                        | Canon PowerShot G3 X                    | ✅ Yes | all |  |
 |Canon                        | Canon PowerShot G5                      | ✅ Yes | all |  |
 |Canon                        | Canon PowerShot G5 X                    | ✅ Yes | all |  |
-|Canon                        | Canon PowerShot G5 X Mark II            | ✅ Yes | all |  |
+|Canon                        | Canon PowerShot G5 X Mark II            | ✅ Yes | craw, raw |  |
 |Canon                        | Canon PowerShot G6                      | ✅ Yes | all |  |
 |Canon                        | Canon PowerShot G7 X                    | ✅ Yes | all |  |
 |Canon                        | Canon PowerShot G7 X CRW                | ✅ Yes | all |  |
 |Canon                        | Canon PowerShot G7 X Mark II            | ✅ Yes | all |  |
-|Canon                        | Canon PowerShot G7 X Mark III           | ✅ Yes | all |  |
+|Canon                        | Canon PowerShot G7 X Mark III           | ✅ Yes | craw, raw |  |
 |Canon                        | Canon PowerShot G9                      | ✅ Yes | all |  |
 |Canon                        | Canon PowerShot G9 X                    | ✅ Yes | all |  |
 |Canon                        | Canon PowerShot G9 X Mark II            | ✅ Yes | all |  |
@@ -200,7 +202,7 @@
 |Canon                        | Canon PowerShot SX40 HS                 | ✅ Yes | all |  |
 |Canon                        | Canon PowerShot SX50 HS                 | ✅ Yes | all |  |
 |Canon                        | Canon PowerShot SX60 HS                 | ✅ Yes | all |  |
-|Canon                        | Canon PowerShot SX70 HS                 | ✅ Yes | all |  |
+|Canon                        | Canon PowerShot SX70 HS                 | ✅ Yes | craw, raw |  |
 |Canon                        | Canon PowerShot SX710 HS                | ✅ Yes | all |  |
 |Canon                        | EOS D2000C                              | ✅ Yes | all |  |
 |Canon                        | PowerShot A3300 IS                      | ✅ Yes | all |  |
@@ -263,6 +265,8 @@
 |FUJIFILM                     | X-E3                                    | ✅ Yes | all |  |
 |FUJIFILM                     | X-E4                                    | ✅ Yes | all |  |
 |FUJIFILM                     | X-H1                                    | ✅ Yes | all |  |
+|FUJIFILM                     | X-H2                                    | ✅ Yes | all |  |
+|FUJIFILM                     | X-H2S                                   | ✅ Yes | all |  |
 |FUJIFILM                     | X-M1                                    | ✅ Yes | all |  |
 |FUJIFILM                     | X-Pro1                                  | ✅ Yes | all |  |
 |FUJIFILM                     | X-Pro2                                  | ✅ Yes | all |  |
@@ -279,6 +283,7 @@
 |FUJIFILM                     | X-T30                                   | ✅ Yes | all |  |
 |FUJIFILM                     | X-T30 II                                | ✅ Yes | all |  |
 |FUJIFILM                     | X-T4                                    | ✅ Yes | all |  |
+|FUJIFILM                     | X-T5                                    | ✅ Yes | all |  |
 |FUJIFILM                     | X10                                     | ✅ Yes | all |  |
 |FUJIFILM                     | X100F                                   | ✅ Yes | all |  |
 |FUJIFILM                     | X100S                                   | ✅ Yes | all |  |
@@ -301,6 +306,7 @@
 |Hasselblad                   | Hasselblad H6D-100cMS                   | ✅ Yes | all |  |
 |Hasselblad                   | Hasselblad X1D                          | ✅ Yes | all |  |
 |Hasselblad                   | X1D II 50C                              | ✅ Yes | all |  |
+|Hasselblad                   | X2D 100C                                | ✅ Yes | all |  |
 |KODAK                        | DCS460D         FILE VERSION 3          | ✅ Yes | all |  |
 |KODAK                        | EOSDCS1B        FILE VERSION 3          | ✅ Yes | all |  |
 |KODAK                        | EOSDCS3C        FILE VERSION 3          | ✅ Yes | all |  |
@@ -486,6 +492,7 @@
 |OLYMPUS OPTICAL CO.,LTD      | C5050Z                                  | ✅ Yes | all |  |
 |OLYMPUS OPTICAL CO.,LTD      | E-10                                    | ✅ Yes | all |  |
 |OLYMPUS OPTICAL CO.,LTD      | E-20,E-20N,E-20P                        | ✅ Yes | all |  |
+|OM Digital Solutions         | OM-1                                    | ✅ Yes | highres |  |
 |PENTAX                       | PENTAX 645D                             | ✅ Yes | all |  |
 |PENTAX                       | PENTAX K-5                              | ✅ Yes | all |  |
 |PENTAX                       | PENTAX K-5 II                           | ✅ Yes | all |  |
@@ -518,7 +525,6 @@
 |Panasonic                    | DC-GH5                                  | ✅ Yes | 4:3 |  |
 |Panasonic                    | DC-GH5M2                                | ✅ Yes | 4:3 |  |
 |Panasonic                    | DC-GH5S                                 | ✅ Yes | 16:9, 1:1, 3:2, 4:3 |  |
-|Panasonic                    | DC-GH6                                  | ✅ Yes | 4:3 |  |
 |Panasonic                    | DC-GX7MK3                               | ✅ Yes | 16:9, 1:1, 3:2, 4:3 |  |
 |Panasonic                    | DC-GX800                                | ✅ Yes | 4:3 |  |
 |Panasonic                    | DC-GX850                                | ✅ Yes | 4:3 |  |
@@ -633,15 +639,12 @@
 |RICOH IMAGING COMPANY, LTD.  | PENTAX K-S1                             | ✅ Yes | all |  |
 |RICOH IMAGING COMPANY, LTD.  | PENTAX K-S2                             | ✅ Yes | all |  |
 |RICOH IMAGING COMPANY, LTD.  | PENTAX KP                               | ✅ Yes | all |  |
-|SAMSUNG                      | EK-GN120                                | ✅ Yes | all |  |
 |SAMSUNG                      | EX1                                     | ✅ Yes | all |  |
 |SAMSUNG                      | EX2F                                    | ✅ Yes | all |  |
 |SAMSUNG                      | NX mini                                 | ✅ Yes | all |  |
 |SAMSUNG                      | NX1                                     | ✅ Yes | all |  |
-|SAMSUNG                      | NX10                                    | ✅ Yes | all |  |
 |SAMSUNG                      | NX100                                   | ✅ Yes | all |  |
 |SAMSUNG                      | NX1000                                  | ✅ Yes | all |  |
-|SAMSUNG                      | NX11                                    | ✅ Yes | all |  |
 |SAMSUNG                      | NX1100                                  | ✅ Yes | all |  |
 |SAMSUNG                      | NX20                                    | ✅ Yes | all |  |
 |SAMSUNG                      | NX200                                   | ✅ Yes | all |  |
@@ -720,6 +723,7 @@
 |SONY                         | ILCE-7RM3A                              | ✅ Yes | all |  |
 |SONY                         | ILCE-7RM4                               | ✅ Yes | all |  |
 |SONY                         | ILCE-7RM4A                              | ✅ Yes | all |  |
+|SONY                         | ILCE-7RM5                               | ✅ Yes | all |  |
 |SONY                         | ILCE-7S                                 | ✅ Yes | all |  |
 |SONY                         | ILCE-7SM2                               | ✅ Yes | all |  |
 |SONY                         | ILCE-7SM3                               | ✅ Yes | all |  |
@@ -751,4 +755,3 @@
 |SONY                         | SLT-A99V                                | ✅ Yes | all |  |
 |SONY                         | ZV-1                                    | ✅ Yes | all |  |
 |SONY                         | ZV-E10                                  | ✅ Yes | all |  |
-
