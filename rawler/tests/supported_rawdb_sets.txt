@@ -704,4 +704,5 @@ cameras/Fujifilm/X-T3/compressed
 cameras/Fujifilm/X-T3/raw_modes
 cameras/Fujifilm/X-T4/raw_modes
 cameras/Fujifilm/X-T4/compressed
+cameras/Fujifilm/X-T5/raw_modes
 cameras/OM/OM-1/raw_modes
