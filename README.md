@@ -219,6 +219,9 @@ OPTIONS:
 ````
 
 
+## Contribute samples
+Please see our guide: [CONTRIBUTE_SAMPLES.md](CONTRIBUTE_SAMPLES.md).
+
 ## FAQ
 
 ### Why a DNG tool if there is already something from Adobe?
