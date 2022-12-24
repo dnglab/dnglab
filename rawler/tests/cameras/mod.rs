@@ -304,6 +304,10 @@ mod camera_eos_r7_raw_modes {
   super::camera_file_check!("Canon", "EOS R7", cam_canon_eos_r7_craw_iso_800_nodual_cr3, "raw_modes/Canon EOS R7_CRAW_ISO_800_nodual.CR3");
   super::camera_file_check!("Canon", "EOS R7", cam_canon_eos_r7_raw_iso_32000_dual_cr3, "raw_modes/Canon EOS R7_RAW_ISO_32000_dual.CR3");
 }
+mod camera_eos_r10_raw_modes {
+  super::camera_file_check!("Canon", "EOS R10", cam_canon_eos_r10_raw_cr3, "raw_modes/Canon_EOS_R10_RAW.CR3");
+  super::camera_file_check!("Canon", "EOS R10", cam_incomplete, "raw_modes/INCOMPLETE");
+}
 mod camera_eos_rebel_sl1_raw_modes {
   super::camera_file_check!("Canon", "EOS Rebel SL1", cam_canon_eos_rebel_sl1_iso_400_raw_cr2, "raw_modes/Canon EOS REBEL SL1_ISO_400_RAW.CR2");
 }

@@ -1,0 +1,150 @@
+---
+file:
+  fileSize: 31010650
+  fileName: Canon_EOS_R10_RAW.CR3
+  digest: 7fbe9207bae149e5707888ad44fef6c8
+data:
+  metadata:
+    rawParams:
+      rawWidth: 6192
+      rawHeight: 4060
+      bitDepth: 16
+      cropArea:
+        p:
+          x: 168
+          y: 52
+        d:
+          w: 6000
+          h: 4000
+      activeArea:
+        p:
+          x: 156
+          y: 40
+        d:
+          w: 6022
+          h: 4014
+      blacklevels:
+        levels:
+          - 2048/1
+          - 2048/1
+          - 2048/1
+          - 2048/1
+        cpp: 1
+        width: 2
+        height: 2
+      whitelevels:
+        - 12735
+      wbCoeffs:
+        - 1.7871094
+        - 1.0
+        - 1.6708984
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ""
+        artist: ""
+        lens_spec:
+          - 50/1
+          - 50/1
+          - 18/10
+          - 18/10
+        exposure_time: 1/100
+        fnumber: 18/10
+        aperture_value: 106496/65536
+        brightness_value: ~
+        iso_speed_ratings: 1600
+        iso_speed: ~
+        recommended_exposure_index: 1600
+        sensitivity_type: 2
+        exposure_bias: 0/1
+        date_time_original: "2022:08:19 19:19:28"
+        create_date: "2022:08:19 19:19:28"
+        modify_date: "2022:08:19 19:19:28"
+        exposure_program: 1
+        timezone_offset: ~
+        offset_time: "-05:00"
+        offset_time_original: "-05:00"
+        offset_time_digitized: "-05:00"
+        sub_sec_time: "66"
+        sub_sec_time_original: "66"
+        sub_sec_time_digitized: "66"
+        shutter_speed_value: 434176/65536
+        max_aperture_value: ~
+        subject_distance: ~
+        metering_mode: 3
+        light_source: ~
+        flash: 0
+        focal_length: 50/1
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 1
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ""
+        serial_number: "022031004996"
+        lens_serial_number: "0000130987"
+        lens_make: Canon
+        lens_model: EF 50mm f/1.8 STM
+        gps:
+          gps_version_id:
+            - 2
+            - 3
+            - 0
+            - 0
+          gps_latitude_ref: ~
+          gps_latitude: ~
+          gps_longitude_ref: ~
+          gps_longitude: ~
+          gps_altitude_ref: ~
+          gps_altitude: ~
+          gps_timestamp: ~
+          gps_satellites: ~
+          gps_status: ~
+          gps_measure_mode: ~
+          gps_dop: ~
+          gps_speed_ref: ~
+          gps_speed: ~
+          gps_track_ref: ~
+          gps_track: ~
+          gps_img_direction_ref: ~
+          gps_img_direction: ~
+          gps_map_datum: ~
+          gps_dest_latitude_ref: ~
+          gps_dest_latitude: ~
+          gps_dest_longitude_ref: ~
+          gps_dest_longitude: ~
+          gps_dest_bearing_ref: ~
+          gps_dest_bearing: ~
+          gps_dest_distance_ref: ~
+          gps_dest_distance: ~
+          gps_processing_method: ~
+          gps_area_information: ~
+          gps_date_stamp: ~
+          gps_differential: ~
+          gps_h_positioning_error: ~
+      model: EOS R10
+      make: Canon
+      lens:
+        identifiers:
+          name: EF50mm f/1.8 STM
+          id:
+            - 4156
+            - 0
+          nikon_id: ~
+          olympus_id: ~
+        mount: ef-mount
+        lens_make: Canon
+        lens_model: EF 50mm f/1.8 STM
+        focal_range:
+          - 50/1
+          - 50/1
+        aperture_range:
+          - 18/10
+          - 18/10
+        lens_name: Canon EF 50mm f/1.8 STM
+      unique_image_id: 326055679477067473421394595525021444359
+      rating: ~
+
