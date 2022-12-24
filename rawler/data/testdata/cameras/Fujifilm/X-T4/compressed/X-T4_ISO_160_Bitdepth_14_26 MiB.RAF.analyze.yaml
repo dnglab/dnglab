@@ -1,0 +1,129 @@
+---
+file:
+  fileSize: 26971008
+  fileName: X-T4_ISO_160_Bitdepth_14_26 MiB.RAF
+  digest: 8720401b5aee4bd401ae0f683bef3d11
+data:
+  metadata:
+    rawParams:
+      rawWidth: 6384
+      rawHeight: 4182
+      bitDepth: 16
+      cropArea:
+        p:
+          x: 6
+          y: 13
+        d:
+          w: 4160
+          h: 6240
+      activeArea:
+        p:
+          x: 0
+          y: 5
+        d:
+          w: 6252
+          h: 4176
+      blacklevels:
+        levels:
+          - 1022/1
+          - 1022/1
+          - 1022/1
+          - 1022/1
+          - 1022/1
+          - 1022/1
+          - 1022/1
+          - 1022/1
+          - 1022/1
+          - 1022/1
+          - 1022/1
+          - 1022/1
+          - 1022/1
+          - 1022/1
+          - 1022/1
+          - 1022/1
+          - 1022/1
+          - 1022/1
+          - 1022/1
+          - 1022/1
+          - 1022/1
+          - 1022/1
+          - 1022/1
+          - 1022/1
+          - 1022/1
+          - 1022/1
+          - 1022/1
+          - 1022/1
+          - 1022/1
+          - 1022/1
+          - 1022/1
+          - 1022/1
+          - 1022/1
+          - 1022/1
+          - 1022/1
+          - 1022/1
+        cpp: 1
+        width: 6
+        height: 6
+      whitelevels:
+        - 16383
+      wbCoeffs:
+        - 1.9304636
+        - 1.0
+        - 2.1192052
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ""
+        artist: ""
+        lens_spec:
+          - 1600/100
+          - 5500/100
+          - 280/100
+          - 280/100
+        exposure_time: 10/1250
+        fnumber: 360/100
+        aperture_value: 370/100
+        brightness_value: ~
+        iso_speed_ratings: 160
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: 1
+        exposure_bias: 0/100
+        date_time_original: "2020:05:08 11:19:04"
+        create_date: "2020:05:08 11:19:04"
+        modify_date: "2020:05:08 11:19:04"
+        exposure_program: 1
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: 700/100
+        max_aperture_value: 300/100
+        subject_distance: ~
+        metering_mode: 5
+        light_source: 0
+        flash: 0
+        focal_length: 1600/100
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 1
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: 0
+        owner_name: ~
+        serial_number: 0BQ00325
+        lens_serial_number: 98C01491
+        lens_make: FUJIFILM
+        lens_model: XF16-55mmF2.8 R LM WR
+        gps: ~
+      model: X-T4
+      make: Fujifilm
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+
