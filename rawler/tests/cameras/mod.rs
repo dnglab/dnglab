@@ -2639,6 +2639,10 @@ mod camera_x_t3_raw_modes {
 mod camera_x_t4_raw_modes {
   super::camera_file_check!("Fujifilm", "X-T4", cam_x_t4_iso_160_bitdepth_14_55_mib_raf, "raw_modes/X-T4_ISO_160_Bitdepth_14_55 MiB.RAF");
 }
+mod camera_x_t4_compressed {
+  super::camera_file_check!("Fujifilm", "X-T4", cam_x_t4_iso_160_bitdepth_14_26_mib_raf, "compressed/X-T4_ISO_160_Bitdepth_14_26 MiB.RAF");
+  super::camera_file_check!("Fujifilm", "X-T4", cam_x_t4_iso_160_bitdepth_14_27_mib_raf, "compressed/X-T4_ISO_160_Bitdepth_14_27 MiB.RAF");
+}
 mod camera_om_1_raw_modes {
   super::camera_file_check!("OM", "OM-1", cam_om_1_iso_200_16bits_normal_orf, "raw_modes/OM-1_ISO_200_16bits_normal.ORF");
   super::camera_file_check!("OM", "OM-1", cam_om_1_iso_200_16bits_handheld_hires_orf, "raw_modes/OM-1_ISO_200_16bits_handheld_hires.ORF");
