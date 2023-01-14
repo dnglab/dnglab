@@ -1,0 +1,88 @@
+---
+file:
+  fileSize: 42364928
+  fileName: Sony_7RM5_Lossless_S_LJPEG.ARW
+  digest: 78011a6688ac5153ae97907a43b5585b
+data:
+  metadata:
+    rawParams:
+      rawWidth: 5120
+      rawHeight: 3584
+      bitDepth: 16
+      cropArea:
+        p:
+          x: 16
+          y: 10
+        d:
+          w: 4752
+          h: 3168
+      activeArea: ~
+      blacklevels:
+        levels:
+          - 2048/1
+          - 2048/1
+          - 2048/1
+        cpp: 3
+        width: 1
+        height: 1
+      whitelevels:
+        - 15360
+        - 15360
+        - 15360
+      wbCoeffs:
+        - 1.0
+        - 1.0
+        - 1.0
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ~
+        artist: ~
+        lens_spec: ~
+        exposure_time: 1/2000
+        fnumber: 12/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 100
+        iso_speed: ~
+        recommended_exposure_index: 100
+        sensitivity_type: 2
+        exposure_bias: 0/10
+        date_time_original: "2022:12:17 16:03:47"
+        create_date: "2022:12:17 16:03:47"
+        modify_date: "2022:12:17 16:03:47"
+        exposure_program: 1
+        timezone_offset: ~
+        offset_time: "+08:00"
+        offset_time_original: "+08:00"
+        offset_time_digitized: "+08:00"
+        sub_sec_time: "469"
+        sub_sec_time_original: "469"
+        sub_sec_time_digitized: "469"
+        shutter_speed_value: ~
+        max_aperture_value: 134/256
+        subject_distance: ~
+        metering_mode: 5
+        light_source: 0
+        flash: 16
+        focal_length: 500/10
+        image_number: ~
+        color_space: 65535
+        flash_energy: ~
+        exposure_mode: 1
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: ILCE-7RM5
+      make: Sony
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+
