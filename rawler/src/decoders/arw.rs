@@ -17,6 +17,8 @@ use crate::formats::tiff::Entry;
 use crate::formats::tiff::GenericTiffReader;
 use crate::formats::tiff::Value;
 use crate::formats::tiff::IFD;
+use crate::imgop::yuv::interpolate_yuv;
+use crate::imgop::yuv::ycbcr_to_rgb;
 use crate::imgop::Dim2;
 use crate::imgop::Rect;
 use crate::lens::LensDescription;
@@ -112,6 +114,7 @@ impl<'a> Decoder for ArwDecoder<'a> {
     let mut black = params.blacklevel;
 
     let src = file.subview_until_eof(offset as u64).unwrap();
+    let mut cpp = 1;
 
     let image = match compression {
       1 => {
@@ -122,7 +125,9 @@ impl<'a> Decoder for ArwDecoder<'a> {
         }
       }
       7 => {
+        cpp = fetch_tiff_tag!(raw, TiffCommonTag::SamplesPerPixel).force_usize(0);
         // Starting with A-1, image is compressed in tiles with LJPEG92.
+        // Data is RGGB for bayer readout and YCbCr for reduced resolution files.
         ArwDecoder::decode_ljpeg(&self.camera, file, raw, dummy)?
       }
       32767 => {
@@ -160,13 +165,19 @@ impl<'a> Decoder for ArwDecoder<'a> {
 
     let crop = Rect::from_tiff(raw).or_else(|| self.camera.crop_area.map(|area| Rect::new_with_borders(Dim2::new(width, height), &area)));
 
-    //assert!(params.blacklevel.is_some());
-    //assert!(params.whitelevel.is_some());
-    let cpp = 1;
-    let blacklevel = black.map(|black| BlackLevel::new(&black, self.camera.cfa.width, self.camera.cfa.height, cpp));
+    let blacklevel = black.map(|black| match cpp {
+      1 => BlackLevel::new(&black, self.camera.cfa.width, self.camera.cfa.height, cpp),
+      3 => BlackLevel::new(&[black[0] << 2, black[0] << 2, black[0] << 2], 1, 1, cpp),
+      _ => panic!("Unsupported cpp == {}", cpp),
+    });
     let whitelevel = white.map(|white| vec![white; cpp]);
 
     let mut img = RawImage::new(self.camera.clone(), image, cpp, params.wb, blacklevel, whitelevel, dummy);
+
+    if cpp == 3 {
+      // For debayer images, we assume WB coeffs already applied
+      img.wb_coeffs = [1.0, 1.0, 1.0, NAN];
+    }
 
     img.crop_area = crop;
     img.active_area = self.camera.active_area.map(|area| Rect::new_with_borders(Dim2::new(width, height), &area));
@@ -424,6 +435,7 @@ impl<'a> ArwDecoder<'a> {
   /// decompressed line has the bayer pattern: RGGBRGGBRGGB...
   /// So we need to decompress first, then unpack the bayer pattern from one line
   /// into two lines.
+  /// For resolution-reduced files (cpp=3), pixels are encoded in YCbCr color space.
   pub(crate) fn decode_ljpeg(camera: &Camera, file: &mut RawFile, raw: &IFD, dummy: bool) -> Result<PixU16> {
     let offsets = raw.get_entry(TiffCommonTag::TileOffsets).ok_or("Unable to find TileOffsets")?;
     let width = fetch_tiff_tag!(raw, TiffCommonTag::ImageWidth).force_usize(0);
@@ -433,12 +445,9 @@ impl<'a> ArwDecoder<'a> {
     let cpp = fetch_tiff_tag!(raw, TiffCommonTag::SamplesPerPixel).force_usize(0);
     let coltiles = (width - 1) / twidth + 1;
     let rowtiles = (height - 1) / tlength + 1;
-    if cpp != 1 {
-      return Err(RawlerError::unsupported(
-        camera,
-        format!("NRW files with LJPEG compression and unsupported cpp: {}", cpp),
-      ));
-    }
+
+    log::debug!("LJPEG tile parameters: width: {}, length: {}, cpp: {}", twidth, tlength, cpp);
+
     if coltiles * rowtiles != offsets.count() as usize {
       return Err(RawlerError::unsupported(
         camera,
@@ -447,41 +456,85 @@ impl<'a> ArwDecoder<'a> {
     }
     let buffer = file.as_vec().unwrap();
 
-    Ok(decode_threaded_multiline(
-      width,
-      height,
-      tlength,
-      dummy,
-      &(|strip: &mut [u16], row| {
-        let row = row / tlength;
-        for col in 0..coltiles {
-          let offset = offsets.force_usize(row * coltiles + col);
-          let src = &buffer[offset..];
-          let decompressor = LjpegDecompressor::new(src).unwrap();
-          let cpp = 4;
-          let w = 256;
-          let h = 256;
-          let mut data = vec![0; h * w * cpp];
+    if cpp == 3 {
+      let mut image = decode_threaded_multiline(
+        width * cpp,
+        height,
+        tlength,
+        dummy,
+        &(|strip: &mut [u16], row| {
+          let row = row / tlength;
+          for col in 0..coltiles {
+            let offset = offsets.force_usize(row * coltiles + col);
+            let src = &buffer[offset..];
+            let decompressor = LjpegDecompressor::new(src).unwrap();
+            let cpp = 3;
+            let w = 512;
+            let h = 512;
+            let mut data = vec![0; h * w * cpp];
 
-          // FIXME: instead of unwrap() we need to propagate the error
-          decompressor.decode(&mut data, 0, w * cpp, w * cpp, h, dummy).unwrap();
+            // FIXME: instead of unwrap() we need to propagate the error
+            decompressor.decode_sony(&mut data, 0, w * cpp, w * cpp, h, dummy).unwrap();
 
-          let mut strip = &mut *strip;
-          for line in data.chunks_exact(1024) {
-            for (i, chunk) in line.chunks_exact(4).enumerate() {
-              // Unpack chunks of RGGB pixel data into two output lines
-              // so the first line is RGRGRG and the second one is GBGBGB.
-              strip[col * twidth + i * 2 + 0] = chunk[0];
-              strip[col * twidth + i * 2 + 1] = chunk[1];
-              strip[width + col * twidth + i * 2 + 0] = chunk[2];
-              strip[width + col * twidth + i * 2 + 1] = chunk[3];
+            interpolate_yuv(decompressor.super_h(), decompressor.super_v(), w * cpp, h, &mut data);
+
+            let mut strip = &mut *strip;
+
+            for line in data.chunks_exact(w * cpp) {
+              let base = col * twidth * cpp;
+              strip[base..base + w * cpp].copy_from_slice(line);
+
+              // Now move output strip by one row.
+              strip = &mut strip[width * cpp..];
             }
-            // Now move output strip by two rows.
-            strip = &mut strip[width * 2..];
           }
-        }
-      }),
-    ))
+        }),
+      );
+      // Convert YC'bC'r data to RGB.
+      ycbcr_to_rgb(&mut image.data);
+      Ok(image)
+    } else if cpp == 1 {
+      Ok(decode_threaded_multiline(
+        width,
+        height,
+        tlength,
+        dummy,
+        &(|strip: &mut [u16], row| {
+          let row = row / tlength;
+          for col in 0..coltiles {
+            let offset = offsets.force_usize(row * coltiles + col);
+            let src = &buffer[offset..];
+            let decompressor = LjpegDecompressor::new(src).unwrap();
+            let cpp = 4;
+            let w = 256;
+            let h = 256;
+            let mut data = vec![0; h * w * cpp];
+
+            // FIXME: instead of unwrap() we need to propagate the error
+            decompressor.decode(&mut data, 0, w * cpp, w * cpp, h, dummy).unwrap();
+
+            let mut strip = &mut *strip;
+            for line in data.chunks_exact(1024) {
+              for (i, chunk) in line.chunks_exact(4).enumerate() {
+                // Unpack chunks of RGGB pixel data into two output lines
+                // so the first line is RGRGRG and the second one is GBGBGB.
+                strip[col * twidth + i * 2 + 0] = chunk[0];
+                strip[col * twidth + i * 2 + 1] = chunk[1];
+                strip[width + col * twidth + i * 2 + 0] = chunk[2];
+                strip[width + col * twidth + i * 2 + 1] = chunk[3];
+              }
+              // Now move output strip by two rows.
+              strip = &mut strip[width * 2..];
+            }
+          }
+        }),
+      ))
+    } else {
+      Err(RawlerError::unsupported(
+        camera,
+        format!("NRW files with LJPEG compression and unsupported cpp: {}", cpp),
+      ))
+    }
   }
 
   fn get_params(&self, file: &mut RawFile) -> Result<ArwImageParams> {

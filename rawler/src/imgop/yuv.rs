@@ -30,44 +30,42 @@ pub fn ycbcr_to_rgb(buf: &mut [u16]) {
   })
 }
 
-
-
 /// Interpolate YCbCr (YUV) data
 pub fn interpolate_yuv(super_h: usize, super_v: usize, width: usize, _height: usize, image: &mut [u16]) {
-    if super_h == 1 && super_v == 1 {
-      return; // No interpolation needed
-    }
-    // Iterate over a block of 3 rows, smaller chunks are okay
-    // but must always a multiple of row width.
-    image.par_chunks_mut(width * 3).for_each(|slice| {
-      // Do horizontal interpolation.
-      // [y1 Cb Cr ] [ y2 . . ] [y1 Cb Cr ] [ y2 . . ] ...
-      if super_h == 2 {
-        debug_assert_eq!(slice.len() % width, 0);
-        for row in 0..(slice.len() / width) {
-          for col in (6..width).step_by(6) {
-            let pix1 = row * width + col - 6;
-            let pix2 = pix1 + 3;
-            let pix3 = row * width + col;
-            slice[pix2 + 1] = ((slice[pix1 + 1] as i32 + slice[pix3 + 1] as i32 + 1) / 2) as u16;
-            slice[pix2 + 2] = ((slice[pix1 + 2] as i32 + slice[pix3 + 2] as i32 + 1) / 2) as u16;
-          }
-        }
-      }
-      // Do vertical interpolation
-      //          pixel n      pixel n+1       pixel n+2    pixel n+3       ...
-      // row i  : [y1 Cb  Cr ] [ y2 Cb*  Cr* ] [y1 Cb  Cr ] [ y2 Cb*  Cr* ] ...
-      // row i+1: [y3 Cb* Cr*] [ y4 Cb** Cr**] [y3 Cb* Cr*] [ y4 Cb** Cr**] ...
-      // row i+2: [y1 Cb  Cr ] [ y2 Cb*  Cr* ] [y1 Cb  Cr ] [ y2 Cb*  Cr* ] ...
-      // row i+3: [y3 Cb* Cr*] [ y4 Cb** Cr**] [y3 Cb* Cr*] [ y4 Cb** Cr**] ...
-      if super_v == 2 && slice.len() == width * 3 {
-        for col in (0..width).step_by(3) {
-          let pix1 = col;
-          let pix2 = width + col;
-          let pix3 = 2 * width + col;
+  if super_h == 1 && super_v == 1 {
+    return; // No interpolation needed
+  }
+  // Iterate over a block of 3 rows, smaller chunks are okay
+  // but must always a multiple of row width.
+  image.par_chunks_mut(width * 3).for_each(|slice| {
+    // Do horizontal interpolation.
+    // [y1 Cb Cr ] [ y2 . . ] [y1 Cb Cr ] [ y2 . . ] ...
+    if super_h == 2 {
+      debug_assert_eq!(slice.len() % width, 0);
+      for row in 0..(slice.len() / width) {
+        for col in (6..width).step_by(6) {
+          let pix1 = row * width + col - 6;
+          let pix2 = pix1 + 3;
+          let pix3 = row * width + col;
           slice[pix2 + 1] = ((slice[pix1 + 1] as i32 + slice[pix3 + 1] as i32 + 1) / 2) as u16;
           slice[pix2 + 2] = ((slice[pix1 + 2] as i32 + slice[pix3 + 2] as i32 + 1) / 2) as u16;
         }
       }
-    });
+    }
+    // Do vertical interpolation
+    //          pixel n      pixel n+1       pixel n+2    pixel n+3       ...
+    // row i  : [y1 Cb  Cr ] [ y2 Cb*  Cr* ] [y1 Cb  Cr ] [ y2 Cb*  Cr* ] ...
+    // row i+1: [y3 Cb* Cr*] [ y4 Cb** Cr**] [y3 Cb* Cr*] [ y4 Cb** Cr**] ...
+    // row i+2: [y1 Cb  Cr ] [ y2 Cb*  Cr* ] [y1 Cb  Cr ] [ y2 Cb*  Cr* ] ...
+    // row i+3: [y3 Cb* Cr*] [ y4 Cb** Cr**] [y3 Cb* Cr*] [ y4 Cb** Cr**] ...
+    if super_v == 2 && slice.len() == width * 3 {
+      for col in (0..width).step_by(3) {
+        let pix1 = col;
+        let pix2 = width + col;
+        let pix3 = 2 * width + col;
+        slice[pix2 + 1] = ((slice[pix1 + 1] as i32 + slice[pix3 + 1] as i32 + 1) / 2) as u16;
+        slice[pix2 + 2] = ((slice[pix1 + 2] as i32 + slice[pix3 + 2] as i32 + 1) / 2) as u16;
+      }
+    }
+  });
 }
