@@ -613,7 +613,7 @@ impl<'a> Cr2Decoder<'a> {
       return; // No interpolation needed
     }
     // Iterate over a block of 3 rows, smaller chunks are okay
-    // but mus always a multiple of row width.
+    // but must always a multiple of row width.
     image.par_chunks_mut(width * 3).for_each(|slice| {
       // Do horizontal interpolation.
       // [y1 Cb Cr ] [ y2 . . ] [y1 Cb Cr ] [ y2 . . ] ...
