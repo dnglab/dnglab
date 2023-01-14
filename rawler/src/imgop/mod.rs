@@ -8,6 +8,7 @@ pub mod sensor;
 pub mod spline;
 pub mod srgb;
 pub mod xyz;
+pub mod yuv;
 
 use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
