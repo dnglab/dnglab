@@ -1289,6 +1289,12 @@ mod camera_ilce_7rm5_raw_modes {
   super::camera_file_check!("Sony", "ILCE-7RM5", cam_sony_7rm5_s35_lossy_arw, "raw_modes/Sony_7RM5_S35_Lossy.ARW");
   super::camera_file_check!("Sony", "ILCE-7RM5", cam_sony_7rm5_s35_uncompressed_arw, "raw_modes/Sony_7RM5_S35_Uncompressed.ARW");
 }
+mod camera_ilce_7rm5_yuv {
+  super::camera_file_check!("Sony", "ILCE-7RM5", cam_sony_7rm5_lossless_s_ljpeg_arw, "yuv/Sony_7RM5_Lossless_S_LJPEG.ARW");
+  super::camera_file_check!("Sony", "ILCE-7RM5", cam_sony_7rm5_s35_lossless_m_ljpeg_arw, "yuv/Sony_7RM5_S35_Lossless_M_LJPEG.ARW");
+  super::camera_file_check!("Sony", "ILCE-7RM5", cam_sony_7rm5_s35_lossless_s_ljpeg_arw, "yuv/Sony_7RM5_S35_Lossless_S_LJPEG.ARW");
+  super::camera_file_check!("Sony", "ILCE-7RM5", cam_sony_7rm5_lossless_m_ljpeg_arw, "yuv/Sony_7RM5_Lossless_M_LJPEG.ARW");
+}
 mod camera_ilce_7r_raw_modes {
   super::camera_file_check!("Sony", "ILCE-7R", cam_ilce_7r_iso_50_14bits_sony_arw_compressed_arw, "raw_modes/ILCE-7R_ISO_50_14bits_Sony ARW Compressed.ARW");
 }
