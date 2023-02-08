@@ -27,7 +27,7 @@ You need the Rust toolchain installed on your machine, see https://rustup.rs/ fo
 Once the toolchain is installed, you can simply compile Dnglab with:
 
 ````
-git checkout https://github.com/dnglab/dnglab.git
+git clone https://github.com/dnglab/dnglab.git
 cd dnglab
 cargo build --release
 ````
