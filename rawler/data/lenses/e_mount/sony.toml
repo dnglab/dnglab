@@ -158,7 +158,7 @@ lens_id = 32803
 make = "Sony"
 model = "E 18-50mm F4-5.6"
 focal_range = [[18, 1], [50, 1]]
-aperture_range = [[4, 10], [56, 10]]
+aperture_range = [[4, 1], [56, 10]]
 
 [[lenses]]
 mount = "e-mount"
@@ -463,7 +463,7 @@ lens_id = 32864
 make = "Sony"
 model = "FE 28-60mm F4-5.6"
 focal_range = [[28, 1], [60, 1]]
-aperture_range = [[4, 10], [56, 10]]
+aperture_range = [[4, 1], [56, 10]]
 
 [[lenses]]
 mount = "e-mount"

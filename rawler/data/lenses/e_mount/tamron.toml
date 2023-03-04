@@ -76,7 +76,7 @@ lens_id = 49466
 make = "Tamron"
 model = "150-500mm F5-6.7 Di III VC VXD"
 focal_range = [[150, 1], [500, 1]]
-aperture_range = [[5, 10], [67, 10]]
+aperture_range = [[5, 1], [67, 10]]
 
 [[lenses]]
 mount = "e-mount"

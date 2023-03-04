@@ -1612,7 +1612,7 @@ lens_id = 4145
 make = "Canon"
 model = "EF-M 22mm f/2 STM"
 focal_range = [[22, 1], [22, 1]]
-aperture_range = [[2, 1], [2, 10]]
+aperture_range = [[2, 1], [2, 1]]
 
 [[lenses]]
 mount = "ef-mount"
