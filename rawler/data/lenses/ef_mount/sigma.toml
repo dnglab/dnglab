@@ -52,7 +52,7 @@ lens_id = 8
 make = "Sigma"
 model = "70-300mm f/4-5.6 [APO] DG Macro"
 focal_range = [[70, 1], [300, 1]]
-aperture_range = [[4, 10], [56, 10]]
+aperture_range = [[4, 1], [56, 10]]
 
 [[lenses]]
 mount = "ef-mount"
@@ -60,7 +60,7 @@ lens_id = 9
 make = "Sigma"
 model = "55-200mm f/4-5.6 DC"
 focal_range = [[55, 1], [200, 1]]
-aperture_range = [[4, 10], [56, 10]]
+aperture_range = [[4, 1], [56, 10]]
 
 [[lenses]]
 mount = "ef-mount"
@@ -204,7 +204,7 @@ lens_id = 137
 make = "Sigma"
 model = "50-200mm f/4-5.6 DC OS HSM"
 focal_range = [[50, 1], [200, 1]]
-aperture_range = [[4, 10], [56, 10]]
+aperture_range = [[4, 1], [56, 10]]
 
 [[lenses]]
 mount = "ef-mount"
@@ -292,7 +292,7 @@ lens_id = 137
 make = "Sigma"
 model = "70-300mm f/4-5.6 DG OS"
 focal_range = [[70, 1], [300, 1]]
-aperture_range = [[4, 10], [56, 10]]
+aperture_range = [[4, 1], [56, 10]]
 
 [[lenses]]
 mount = "ef-mount"
@@ -365,7 +365,7 @@ lens_id = 152
 make = "Sigma"
 model = "10-20mm f/4-5.6"
 focal_range = [[10, 1], [20, 1]]
-aperture_range = [[4, 10], [56, 10]]
+aperture_range = [[4, 1], [56, 10]]
 
 [[lenses]]
 mount = "ef-mount"
@@ -389,7 +389,7 @@ lens_id = 153
 make = "Sigma"
 model = "50-500mm f/4-6.3 APO HSM EX"
 focal_range = [[50, 1], [500, 1]]
-aperture_range = [[4, 10], [63, 10]]
+aperture_range = [[4, 1], [63, 10]]
 
 [[lenses]]
 mount = "ef-mount"
@@ -525,7 +525,7 @@ lens_id = 172
 make = "Sigma"
 model = "150-600mm f/5-6.3 DG OS HSM | S"
 focal_range = [[150, 1], [600, 1]]
-aperture_range = [[5, 10], [63, 10]]
+aperture_range = [[5, 1], [63, 10]]
 
 [[lenses]]
 mount = "ef-mount"
@@ -589,7 +589,7 @@ lens_id = 174
 make = "Sigma"
 model = "150-500mm f/5-6.3 APO DG OS HSM"
 focal_range = [[150, 1], [500, 1]]
-aperture_range = [[5, 10], [63, 10]]
+aperture_range = [[5, 1], [63, 10]]
 
 [[lenses]]
 mount = "ef-mount"
@@ -686,7 +686,7 @@ lens_id = 181
 make = "Sigma"
 model = "150-600mm f/5-6.3 DG OS HSM | S + 1.4x"
 focal_range = [[150, 1], [600, 1]]
-aperture_range = [[5, 10], [63, 10]]
+aperture_range = [[5, 1], [63, 10]]
 
 [[lenses]]
 mount = "ef-mount"
@@ -694,7 +694,7 @@ lens_id = 182
 make = "Sigma"
 model = "150-600mm f/5-6.3 DG OS HSM | S + 2x"
 focal_range = [[150, 1], [600, 1]]
-aperture_range = [[5, 10], [63, 10]]
+aperture_range = [[5, 1], [63, 10]]
 
 [[lenses]]
 mount = "ef-mount"
@@ -727,7 +727,7 @@ lens_id = 183
 make = "Sigma"
 model = "150-600mm f/5-6.3 DG OS HSM | C"
 focal_range = [[150, 1], [600, 1]]
-aperture_range = [[5, 10], [63, 10]]
+aperture_range = [[5, 1], [63, 10]]
 
 [[lenses]]
 mount = "ef-mount"
@@ -735,7 +735,7 @@ lens_id = 183
 make = "Sigma"
 model = "150-600mm f/5-6.3 DG OS HSM | S"
 focal_range = [[150, 1], [600, 1]]
-aperture_range = [[5, 10], [63, 10]]
+aperture_range = [[5, 1], [63, 10]]
 
 [[lenses]]
 mount = "ef-mount"
@@ -743,7 +743,7 @@ lens_id = 183
 make = "Sigma"
 model = "100-400mm f/5-6.3 DG OS HSM"
 focal_range = [[100, 1], [400, 1]]
-aperture_range = [[5, 10], [63, 10]]
+aperture_range = [[5, 1], [63, 10]]
 
 [[lenses]]
 mount = "ef-mount"
@@ -913,7 +913,7 @@ lens_id = 368
 make = "Sigma"
 model = "150-600mm f/5-6.3 DG OS HSM | S"
 focal_range = [[150, 1], [600, 1]]
-aperture_range = [[5, 10], [63, 10]]
+aperture_range = [[5, 1], [63, 10]]
 
 [[lenses]]
 mount = "ef-mount"
@@ -985,7 +985,7 @@ lens_id = 624
 make = "Sigma"
 model = "150-600mm f/5-6.3 | C"
 focal_range = [[150, 1], [600, 1]]
-aperture_range = [[5, 10], [63, 10]]
+aperture_range = [[5, 1], [63, 10]]
 
 [[lenses]]
 mount = "ef-mount"

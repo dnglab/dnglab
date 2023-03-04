@@ -164,7 +164,7 @@ lens_id = 156
 make = "Tamron"
 model = "SP 70-300mm f/4-5.6 Di VC USD (A005)"
 focal_range = [[70, 1], [300, 1]]
-aperture_range = [[4, 10], [56, 10]]
+aperture_range = [[4, 1], [56, 10]]
 
 [[lenses]]
 mount = "ef-mount"
@@ -368,7 +368,7 @@ lens_id = 747
 make = "Tamron"
 model = "SP 150-600mm f/5-6.3 Di VC USD G2"
 focal_range = [[150, 1], [600, 1]]
-aperture_range = [[5, 10], [63, 10]]
+aperture_range = [[5, 1], [63, 10]]
 
 [[lenses]]
 mount = "ef-mount"
@@ -384,7 +384,7 @@ lens_id = 748
 make = "Tamron"
 model = "70-210mm f/4 Di VC USD (A034) + 2x"
 focal_range = [[70, 1], [210, 1]]
-aperture_range = [[4, 1], [4, 10]]
+aperture_range = [[4, 1], [4, 1]]
 
 [[lenses]]
 mount = "ef-mount"

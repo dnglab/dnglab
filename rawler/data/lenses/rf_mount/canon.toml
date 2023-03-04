@@ -86,7 +86,7 @@ lens_subid = 265
 make = "Canon"
 model = "RF 24-240mm F4-6.3 IS USM"
 focal_range = [[24, 1], [240, 1]]
-aperture_range = [[4, 10], [63, 10]]
+aperture_range = [[4, 1], [63, 10]]
 
 [[lenses]]
 mount = "rf-mount"
@@ -105,7 +105,7 @@ lens_subid = 267
 make = "Canon"
 model = "RF 85mm F2 MACRO IS STM"
 focal_range = [[85, 1], [85, 1]]
-aperture_range = [[2, 1], [2, 10]]
+aperture_range = [[2, 1], [2, 1]]
 
 [[lenses]]
 mount = "rf-mount"
@@ -171,7 +171,7 @@ lens_subid = 274
 make = "Canon"
 model = "RF 24-105mm F4-7.1 IS STM"
 focal_range = [[24, 1], [105, 1]]
-aperture_range = [[4, 10], [71, 10]]
+aperture_range = [[4, 1], [71, 10]]
 
 [[lenses]]
 mount = "rf-mount"
@@ -240,7 +240,7 @@ lens_subid = 283
 make = "Canon"
 model = "RF 100-400mm F5.6-8 IS USM"
 focal_range = [[100, 1], [400, 1]]
-aperture_range = [[56, 10], [8, 10]]
+aperture_range = [[56, 10], [8, 1]]
 
 [[lenses]]
 mount = "rf-mount"
