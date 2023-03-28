@@ -48,7 +48,7 @@ data:
           - 22/1
           - 22/1
           - 2/1
-          - 2/10
+          - 2/1
         exposure_time: 1/320
         fnumber: 20/10
         aperture_value: 64/32
@@ -107,7 +107,7 @@ data:
           - 22/1
         aperture_range:
           - 2/1
-          - 2/10
+          - 2/1
         lens_name: Canon EF-M 22mm f/2 STM
       unique_image_id: ~
       rating: ~

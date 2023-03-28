@@ -48,7 +48,7 @@ data:
           - 100/1
           - 400/1
           - 56/10
-          - 8/10
+          - 8/1
         exposure_time: 1/8000
         fnumber: 8/1
         aperture_value: 393216/65536
@@ -143,7 +143,7 @@ data:
           - 400/1
         aperture_range:
           - 56/10
-          - 8/10
+          - 8/1
         lens_name: Canon RF 100-400mm F5.6-8 IS USM
       unique_image_id: 124437758721848577790728901620081641241
       rating: ~
