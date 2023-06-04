@@ -1,0 +1,108 @@
+---
+file:
+  fileSize: 29044736
+  fileName: ILME-FX30_ISO_125.ARW
+  digest: efb34b081032d50a9da99a6ad483c0ce
+data:
+  metadata:
+    rawParams:
+      rawWidth: 6272
+      rawHeight: 4168
+      bitDepth: 16
+      cropArea:
+        p:
+          x: 26
+          y: 20
+        d:
+          w: 6192
+          h: 4128
+      activeArea: ~
+      blacklevels:
+        levels:
+          - 512/1
+          - 512/1
+          - 512/1
+          - 512/1
+        cpp: 1
+        width: 2
+        height: 2
+      whitelevels:
+        - 15360
+      wbCoeffs:
+        - 2.540039
+        - 1.0
+        - 1.6992188
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ~
+        artist: ~
+        lens_spec:
+          - 17/1
+          - 70/1
+          - 28/10
+          - 28/10
+        exposure_time: 1/400
+        fnumber: 28/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 125
+        iso_speed: ~
+        recommended_exposure_index: 125
+        sensitivity_type: 2
+        exposure_bias: 0/10
+        date_time_original: "2023:04:08 17:14:59"
+        create_date: "2023:04:08 17:14:59"
+        modify_date: "2023:04:08 17:14:59"
+        exposure_program: 1
+        timezone_offset: ~
+        offset_time: "-08:00"
+        offset_time_original: "-08:00"
+        offset_time_digitized: "-08:00"
+        sub_sec_time: "946"
+        sub_sec_time_original: "946"
+        sub_sec_time_digitized: "946"
+        shutter_speed_value: ~
+        max_aperture_value: 760/256
+        subject_distance: ~
+        metering_mode: 5
+        light_source: 0
+        flash: 32
+        focal_length: 700/10
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 1
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: Tamron
+        lens_model: 17-70mm F2.8 Di III-A VC RXD
+        gps: ~
+      model: ILME-FX30
+      make: Sony
+      lens:
+        identifiers:
+          name: ~
+          id:
+            - 49465
+            - 0
+          nikon_id: ~
+          olympus_id: ~
+        mount: e-mount
+        lens_make: Tamron
+        lens_model: 17-70mm F2.8 Di III-A VC RXD
+        focal_range:
+          - 17/1
+          - 70/1
+        aperture_range:
+          - 28/10
+          - 28/10
+        lens_name: Tamron 17-70mm F2.8 Di III-A VC RXD
+      unique_image_id: ~
+      rating: ~
+
