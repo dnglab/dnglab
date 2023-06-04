@@ -1478,6 +1478,9 @@ mod camera_hasselblad_h6d_100cms_raw_modes {
 mod camera_hasselblad_x1d_raw_modes {
   super::camera_file_check!("Hasselblad", "Hasselblad X1D", cam_hasselblad_x1d_iso_1600_uncompressed_3fr, "raw_modes/Hasselblad X1D_ISO_1600_Uncompressed.3FR");
 }
+mod camera_hasselblad_x2d_100c_raw_modes {
+  super::camera_file_check!("Hasselblad", "Hasselblad X2D 100C", cam_x2d_100c_iso_64_3fr, "raw_modes/X2D 100C_ISO_64.3FR");
+}
 mod camera_x1d_ii_50c_raw_modes {
   super::camera_file_check!("Hasselblad", "X1D II 50C", cam_x1d_ii_50c_iso_100_uncompressed_3fr, "raw_modes/X1D II 50C_ISO_100_Uncompressed.3FR");
 }
