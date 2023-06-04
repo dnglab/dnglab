@@ -1,0 +1,15 @@
+make = "NIKON CORPORATION"
+model = "NIKON Z 8"
+clean_make = "Nikon"
+clean_model = "Z 8"
+color_pattern = "RGGB"
+active_area = [0, 0, 0, 0]
+crop_area = [12, 8, 12, 8]
+
+[cameras.color_matrix]
+A = [1.3998, -0.8092, 0.0284, -0.4723, 1.2772, 0.2159, -0.0164, 0.0624, 0.8674]
+D65 = [1.1423, -0.4564, -0.1123, -0.4816, 1.2895, 0.2119, -0.021, 0.1061, 0.7282]
+
+[[cameras.modes]]
+mode = "14bit"
+whitepoint = 15892
