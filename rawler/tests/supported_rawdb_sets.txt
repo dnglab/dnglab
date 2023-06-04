@@ -77,6 +77,7 @@ cameras/Canon/EOS M6/raw_modes
 cameras/Canon/EOS M/raw_modes
 cameras/Canon/EOS R5/raw_modes
 cameras/Canon/EOS R6/raw_modes
+cameras/Canon/EOS R6 Mark II/raw_modes
 cameras/Canon/EOS R7/raw_modes
 cameras/Canon/EOS Rebel SL1/raw_modes
 cameras/Canon/EOS Rebel SL2/raw_modes

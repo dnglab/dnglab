@@ -1,0 +1,15 @@
+make = "Canon"
+model = "Canon EOS R6m2"
+clean_make = "Canon"
+clean_model = "EOS R6 Mark II"
+color_pattern = "RGGB"
+
+[cameras.color_matrix]
+A = [1.1292, -0.5791, 0.0292, -0.323, 1.0487, 0.3185, -0.0083, 0.0959, 0.7099]
+D65 = [0.9539, -0.2795, -0.1224, -0.4175, 1.1998, 0.2458, -0.0465, 0.1755, 0.6048]
+
+[[cameras.modes]]
+mode = "raw"
+
+[[cameras.modes]]
+mode = "craw"
