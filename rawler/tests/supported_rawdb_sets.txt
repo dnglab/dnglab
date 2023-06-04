@@ -319,6 +319,7 @@ cameras/Sony/DSLR-A900/raw_modes
 cameras/Sony/ILCA-68/raw_modes
 cameras/Sony/ILCA-77M2/raw_modes
 cameras/Sony/ILCA-99M2/raw_modes
+cameras/Sony/ILME-FX30/raw_modes
 cameras/Sony/ILCE-1/raw_modes
 cameras/Sony/ILCE-3000/raw_modes
 cameras/Sony/ILCE-3500/raw_modes

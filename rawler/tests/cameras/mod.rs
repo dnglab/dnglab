@@ -1194,6 +1194,9 @@ mod camera_ilca_77m2_raw_modes {
 mod camera_ilca_99m2_raw_modes {
   super::camera_file_check!("Sony", "ILCA-99M2", cam_ilca_99m2_iso_100_12bits_sony_arw_compressed_arw, "raw_modes/ILCA-99M2_ISO_100_12bits_Sony ARW Compressed.ARW");
 }
+mod camera_ilme_fx30_raw_modes {
+  super::camera_file_check!("Sony", "ILME-FX30", cam_ilme_fx30_iso_125_arw, "raw_modes/ILME-FX30_ISO_125.ARW");
+}
 mod camera_ilce_1_raw_modes {
   super::camera_file_check!("Sony", "ILCE-1", cam_ilce_1_iso_500_14bits_uncompressed_raw_arw, "raw_modes/ILCE-1_ISO_500_14bits_Uncompressed RAW.ARW");
   super::camera_file_check!("Sony", "ILCE-1", cam_ilce_1_iso_500_14bits_lossless_compressed_raw_arw, "raw_modes/ILCE-1_ISO_500_14bits_Lossless Compressed RAW.ARW");
