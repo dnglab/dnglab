@@ -1,0 +1,9 @@
+make = "Hasselblad"
+model = "X2D 100C"
+clean_make = "Hasselblad"
+clean_model = "X2D 100C"
+color_pattern = "RGGB"
+hints = ["uncompressed"]
+
+[cameras.color_matrix]
+D65 = [0.6468, -0.1899, -0.0545, -0.4526, 1.2267, 0.2542, -0.0388, 0.1276, 0.6096]

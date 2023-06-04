@@ -1,0 +1,84 @@
+---
+file:
+  fileSize: 213311488
+  fileName: X2D 100C_ISO_64.3FR
+  digest: 5721f34d8a8075dd182aaa0a521b0c93
+data:
+  metadata:
+    rawParams:
+      rawWidth: 11904
+      rawHeight: 8842
+      bitDepth: 16
+      cropArea:
+        p:
+          x: 128
+          y: 96
+        d:
+          w: 11656
+          h: 8742
+      activeArea: ~
+      blacklevels:
+        levels:
+          - 4096/1
+        cpp: 1
+        width: 1
+        height: 1
+      whitelevels:
+        - 65535
+      wbCoeffs:
+        - 2.630371
+        - 1.0
+        - 1.5908203
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ""
+        artist: ~
+        lens_spec: ~
+        exposure_time: 1/60
+        fnumber: 13/1
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 64
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: 0/1
+        date_time_original: "2023:05:03 12:45:20"
+        create_date: ~
+        modify_date: "2023:05:03 12:45:20"
+        exposure_program: 3
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: ~
+        max_aperture_value: 264/100
+        subject_distance: ~
+        metering_mode: 2
+        light_source: ~
+        flash: 0
+        focal_length: 38/1
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: ~
+        white_balance: ~
+        scene_capture_type: ~
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: X2D 100C
+      make: Hasselblad
+      lens: ~
+      unique_image_id: 72137557629150672681393169410429301040
+      rating: ~
+
