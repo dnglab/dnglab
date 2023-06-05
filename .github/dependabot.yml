@@ -3,7 +3,7 @@ updates:
   - package-ecosystem: "cargo"
     directory: "/rawler"
     labels:
-      - "improvement"
+      - "dependency"
     assignees:
       - "cytrinox"
     schedule:
