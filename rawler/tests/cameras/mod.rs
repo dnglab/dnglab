@@ -2142,6 +2142,12 @@ mod camera_dmc_gf7_raw_modes {
   super::camera_file_check!("Panasonic", "DMC-GF7", cam_dmc_gf7_iso_200_panasonic_raw_1_4592x3448_rw2, "raw_modes/DMC-GF7_ISO_200_Panasonic RAW 1_4592x3448.RW2");
   super::camera_file_check!("Panasonic", "DMC-GF7", cam_dmc_gf7_iso_200_panasonic_raw_1_4592x2584_rw2, "raw_modes/DMC-GF7_ISO_200_Panasonic RAW 1_4592x2584.RW2");
 }
+mod camera_dmc_gf8_raw_modes {
+  super::camera_file_check!("Panasonic", "DMC-GF8", cam_dmc_gf8_iso_200_4fmt_4592x3064_rw2, "raw_modes/DMC-GF8_ISO_200_4fmt_4592x3064.RW2");
+  super::camera_file_check!("Panasonic", "DMC-GF8", cam_dmc_gf8_iso_200_4fmt_4592x2584_rw2, "raw_modes/DMC-GF8_ISO_200_4fmt_4592x2584.RW2");
+  super::camera_file_check!("Panasonic", "DMC-GF8", cam_dmc_gf8_iso_200_4fmt_4592x3448_rw2, "raw_modes/DMC-GF8_ISO_200_4fmt_4592x3448.RW2");
+  super::camera_file_check!("Panasonic", "DMC-GF8", cam_dmc_gf8_iso_200_4fmt_3424x3424_rw2, "raw_modes/DMC-GF8_ISO_200_4fmt_3424x3424.RW2");
+}
 mod camera_dmc_gh1_raw_modes {
   super::camera_file_check!("Panasonic", "DMC-GH1", cam_dmc_gh1_iso_100_panasonic_raw_1_4352x2448_rw2, "raw_modes/DMC-GH1_ISO_100_Panasonic RAW 1_4352x2448.RW2");
   super::camera_file_check!("Panasonic", "DMC-GH1", cam_dmc_gh1_iso_100_panasonic_raw_1_4128x2752_rw2, "raw_modes/DMC-GH1_ISO_100_Panasonic RAW 1_4128x2752.RW2");

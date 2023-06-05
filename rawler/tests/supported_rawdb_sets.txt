@@ -566,6 +566,7 @@ cameras/Panasonic/DMC-GF3/raw_modes
 cameras/Panasonic/DMC-GF5/raw_modes
 cameras/Panasonic/DMC-GF6/raw_modes
 cameras/Panasonic/DMC-GF7/raw_modes
+cameras/Panasonic/DMC-GF8/raw_modes
 cameras/Panasonic/DMC-GH1/raw_modes
 cameras/Panasonic/DMC-GH2/raw_modes
 cameras/Panasonic/DMC-GH3/raw_modes
