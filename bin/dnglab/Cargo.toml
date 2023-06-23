@@ -14,7 +14,7 @@ repository = "https://github.com/dnglab/dnglab"
 byteorder = "1"
 anyhow = "1.0"
 chrono = "0.4"
-clap = { version = "3.1.18", features = ["cargo"] }
+clap = { version = "4.3.6", features = ["cargo"] }
 fern = {version = "0.6", features = ["colored"]}
 log = "0.4"
 prettytable-rs = "^0.10"
