@@ -1,0 +1,10 @@
+make = "SONY"
+model = "ILCE-6700"
+clean_make = "Sony"
+clean_model = "ILCE-6700"
+color_pattern = "RGGB"
+bps = 8
+
+[cameras.color_matrix]
+A = [0.793, -0.406, 0.0417, -0.374, 1.1119, 0.3015, -0.0202, 0.0741, 0.6896]
+D65 = [0.6972, -0.2408, -0.06, -0.433, 1.2101, 0.2515, -0.0388, 0.1277, 0.5847]
