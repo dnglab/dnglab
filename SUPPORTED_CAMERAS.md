@@ -712,6 +712,7 @@
 |SONY                         | ILCE-6400                               | ✅ Yes | all |  |
 |SONY                         | ILCE-6500                               | ✅ Yes | all |  |
 |SONY                         | ILCE-6600                               | ✅ Yes | all |  |
+|SONY                         | ILCE-6700                               | ✅ Yes | all |  |
 |SONY                         | ILCE-7                                  | ✅ Yes | all |  |
 |SONY                         | ILCE-7C                                 | ✅ Yes | all |  |
 |SONY                         | ILCE-7M2                                | ✅ Yes | all |  |
