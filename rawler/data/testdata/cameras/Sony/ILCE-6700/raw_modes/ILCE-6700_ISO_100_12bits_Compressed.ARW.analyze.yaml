@@ -1,0 +1,108 @@
+---
+file:
+  fileSize: 28626944
+  fileName: ILCE-6700_ISO_100_12bits_Compressed.ARW
+  digest: 6bce9942507b95448847958819ab0906
+data:
+  metadata:
+    rawParams:
+      rawWidth: 6272
+      rawHeight: 4168
+      bitDepth: 16
+      cropArea:
+        p:
+          x: 26
+          y: 20
+        d:
+          w: 6192
+          h: 4128
+      activeArea: ~
+      blacklevels:
+        levels:
+          - 512/1
+          - 512/1
+          - 512/1
+          - 512/1
+        cpp: 1
+        width: 2
+        height: 2
+      whitelevels:
+        - 15360
+      wbCoeffs:
+        - 2.7871094
+        - 1.0
+        - 1.5712891
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ~
+        artist: ~
+        lens_spec:
+          - 18/1
+          - 50/1
+          - 28/10
+          - 28/10
+        exposure_time: 1/640
+        fnumber: 56/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 100
+        iso_speed: ~
+        recommended_exposure_index: 100
+        sensitivity_type: 2
+        exposure_bias: 0/10
+        date_time_original: "2023:07:26 10:41:14"
+        create_date: "2023:07:26 10:41:14"
+        modify_date: "2023:07:26 10:41:14"
+        exposure_program: 3
+        timezone_offset: ~
+        offset_time: "+01:00"
+        offset_time_original: "+01:00"
+        offset_time_digitized: "+01:00"
+        sub_sec_time: "085"
+        sub_sec_time_original: "085"
+        sub_sec_time_digitized: "085"
+        shutter_speed_value: ~
+        max_aperture_value: 760/256
+        subject_distance: ~
+        metering_mode: 5
+        light_source: 0
+        flash: 16
+        focal_length: 309/10
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: Sigma
+        lens_model: 18-50mm F2.8 DC DN | C
+        gps: ~
+      model: ILCE-6700
+      make: Sony
+      lens:
+        identifiers:
+          name: ~
+          id:
+            - 50531
+            - 0
+          nikon_id: ~
+          olympus_id: ~
+        mount: e-mount
+        lens_make: Sigma
+        lens_model: 18-50mm F2.8 DC DN | C
+        focal_range:
+          - 18/1
+          - 50/1
+        aperture_range:
+          - 28/10
+          - 28/10
+        lens_name: Sigma 18-50mm F2.8 DC DN | C
+      unique_image_id: ~
+      rating: ~
+
