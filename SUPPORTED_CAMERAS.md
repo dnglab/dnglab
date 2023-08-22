@@ -115,6 +115,7 @@
 |Canon                        | Canon EOS R                             | ✅ Yes | craw, raw |  |
 |Canon                        | Canon EOS R3                            | ✅ Yes | craw, raw |  |
 |Canon                        | Canon EOS R5                            | ✅ Yes | craw, crm, raw | support for CRM raw movie frame extraction, support for CRM raw movie frame extraction, support for CRM raw movie frame extraction, support for CRM raw movie frame extraction |
+|Canon                        | Canon EOS R50                           | ✅ Yes | craw, raw |  |
 |Canon                        | Canon EOS R6                            | ✅ Yes | craw, raw |  |
 |Canon                        | Canon EOS R6m2                          | ✅ Yes | craw, raw |  |
 |Canon                        | Canon EOS R7                            | ✅ Yes | craw, raw |  |
@@ -427,6 +428,7 @@
 |NIKON CORPORATION            | NIKON Z 6_2                             | ✅ Yes | 12bit, 14bit |  |
 |NIKON CORPORATION            | NIKON Z 7                               | ✅ Yes | 12bit, 14bit |  |
 |NIKON CORPORATION            | NIKON Z 7_2                             | ✅ Yes | 12bit, 14bit |  |
+|NIKON CORPORATION            | NIKON Z 8                               | ✅ Yes | 14bit |  |
 |NIKON CORPORATION            | NIKON Z 9                               | ✅ Yes | 12bit, 14bit |  |
 |NIKON CORPORATION            | NIKON Z fc                              | ✅ Yes | 12bit, 14bit |  |
 |OLYMPUS CORPORATION          | C5060WZ                                 | ✅ Yes | all |  |
@@ -579,6 +581,7 @@
 |Panasonic                    | DMC-GF5                                 | ✅ Yes | 16:9, 1:1, 3:2, 4:3 |  |
 |Panasonic                    | DMC-GF6                                 | ✅ Yes | 16:9, 1:1, 3:2, 4:3 |  |
 |Panasonic                    | DMC-GF7                                 | ✅ Yes | 16:9, 1:1, 3:2, 4:3 |  |
+|Panasonic                    | DMC-GF8                                 | ✅ Yes | 16:9, 1:1, 3:2, 4:3 |  |
 |Panasonic                    | DMC-GH1                                 | ✅ Yes | 16:9, 1:1, 3:2, 4:3 |  |
 |Panasonic                    | DMC-GH2                                 | ✅ Yes | 16:9, 1:1, 3:2, 4:3 |  |
 |Panasonic                    | DMC-GH3                                 | ✅ Yes | 16:9, 1:1, 3:2, 4:3 |  |
@@ -731,6 +734,7 @@
 |SONY                         | ILCE-9                                  | ✅ Yes | all |  |
 |SONY                         | ILCE-9M2                                | ✅ Yes | all |  |
 |SONY                         | ILCE-QX1                                | ✅ Yes | all |  |
+|SONY                         | ILME-FX30                               | ✅ Yes | all |  |
 |SONY                         | NEX-3                                   | ✅ Yes | all |  |
 |SONY                         | NEX-3N                                  | ✅ Yes | all |  |
 |SONY                         | NEX-5                                   | ✅ Yes | all |  |
