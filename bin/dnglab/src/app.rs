@@ -12,13 +12,13 @@ pub fn create_app() -> Command<'static> {
     .arg(
       arg!(compression: -c --"compression" <compression> "Compression for raw image")
         .required(false)
-        .possible_values(&["lossless", "none"])
+        .possible_values(["lossless", "none"])
         .default_value("lossless"),
     )
     .arg(
       arg!(predictor: --"ljpeg92-predictor" <predictor> "LJPEG-92 predictor")
         .required(false)
-        .possible_values(&["1", "2", "3", "4", "5", "6", "7"])
+        .possible_values(["1", "2", "3", "4", "5", "6", "7"])
         .default_value("1"),
     )
     .arg(
@@ -48,7 +48,7 @@ pub fn create_app() -> Command<'static> {
     .arg(
       arg!(--"crop" <crop> "DNG default crop")
         .required(false)
-        .possible_values(&["best", "activearea", "none"])
+        .possible_values(["best", "activearea", "none"])
         .default_value("best"),
     )
     .arg(arg!(-r --recursive "Process input directory recursive"))

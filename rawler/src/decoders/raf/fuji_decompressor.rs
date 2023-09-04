@@ -95,7 +95,7 @@ impl Strip {
   // where vertically does this block start?
   fn offset_y(&self, line: usize) -> usize {
     debug_assert!(line < (self.height() as usize));
-    Self::line_height() as usize * line
+    Self::line_height() * line
   }
 
   // where horizontally does this block start?
@@ -151,7 +151,7 @@ impl Header {
       || self.blocks_in_row > 0x10
       || self.blocks_in_row == 0
       || self.blocks_in_row as u16 != self.raw_rounded_width / self.block_size
-      || self.blocks_in_row as u16 != div_round_up(self.raw_width, self.block_size as u16)
+      || self.blocks_in_row as u16 != div_round_up(self.raw_width, self.block_size)
       || self.total_lines > 0x800
       || self.total_lines == 0
       || (self.total_lines as usize) != (self.raw_height as usize) / Strip::line_height()
@@ -406,7 +406,7 @@ impl CompressedBlock {
     let mut grad_odd: [GradientList; 3] = Default::default();
 
     if header.is_lossless() {
-      let max_diff = 2.max((params.qtables[0].total_values + 0x20) >> 6) as i32;
+      let max_diff = 2.max((params.qtables[0].total_values + 0x20) >> 6);
       for j in 0..3 {
         debug_assert_eq!(grad_even[j].lossless_grads.len(), 41);
         debug_assert_eq!(grad_odd[j].lossless_grads.len(), 41);
@@ -420,7 +420,7 @@ impl CompressedBlock {
     } else {
       // init static grads for lossy only - main ones are done per line
       for k in 0..3 {
-        let max_diff = 2.max((params.qtables[k + 1].total_values + 0x20) >> 6) as i32;
+        let max_diff = 2.max((params.qtables[k + 1].total_values + 0x20) >> 6);
 
         for j in 0..3 {
           for i in 0..5 {
@@ -734,10 +734,10 @@ impl QTable {
   /// Build a quantization table based on 5 quantization points.
   fn build_table(header: &Header, qp: &[i32; 5]) -> Vec<i32> {
     let mut qtable = vec![0; 2 * (1 << (header.raw_bits as usize))];
-    let mut cur_val = -(qp[4] as i32);
+    let mut cur_val = -qp[4];
 
     for qt in qtable.iter_mut() {
-      if cur_val > qp[4] as i32 {
+      if cur_val > qp[4] {
         break;
       }
       *qt = match cur_val {
@@ -798,7 +798,7 @@ impl Params {
       panic!("Invalid FUJI header");
     }
     let min_value = 0x40;
-    let max_value = ((1 << header.raw_bits) - 1) as i32;
+    let max_value = (1 << header.raw_bits) - 1;
     let max_bits: usize = 4 * log2ceil(max_value as usize + 1);
     let line_width = if header.raw_type == 16 {
       (header.block_size as usize * 2) / 3
@@ -916,7 +916,7 @@ fn read_code(pump: &mut BitPumpMSB, params: &Params, gradient: &mut Gradient, q_
     1 + pump.get_bits(q_table.raw_bits as u32) as i32
   };
   // Validate code
-  if code < 0 || code >= q_table.total_values as i32 {
+  if code < 0 || code >= q_table.total_values {
     panic!("Invalid code: {}", code);
   }
   // Adjust code
@@ -972,20 +972,20 @@ fn fuji_decode_sample_even(pump: &mut BitPumpMSB, params: &Params, linebuf: &mut
     rd + rc + 2 * rb
   };
 
-  let code = read_code(pump, params, &mut gradients[grad.abs() as usize], qtable);
+  let code = read_code(pump, params, &mut gradients[grad.unsigned_abs() as usize], qtable);
 
   // Adjustments specific to even positions
   if grad < 0 {
-    interp_val = (interp_val >> 2) - code * (2 * qtable.q_base as i32 + 1);
+    interp_val = (interp_val >> 2) - code * (2 * qtable.q_base + 1);
   } else {
-    interp_val = (interp_val >> 2) + code * (2 * qtable.q_base as i32 + 1);
+    interp_val = (interp_val >> 2) + code * (2 * qtable.q_base + 1);
   };
 
   // Generic adjustments
-  if interp_val < -(qtable.q_base as i32) {
-    interp_val += (qtable.total_values * (2 * qtable.q_base + 1)) as i32;
-  } else if interp_val > qtable.q_base as i32 + params.max_value {
-    interp_val -= (qtable.total_values * (2 * qtable.q_base + 1)) as i32;
+  if interp_val < -qtable.q_base {
+    interp_val += qtable.total_values * (2 * qtable.q_base + 1);
+  } else if interp_val > qtable.q_base + params.max_value {
+    interp_val -= qtable.total_values * (2 * qtable.q_base + 1);
   }
 
   if interp_val >= 0 {
@@ -1032,20 +1032,20 @@ fn fuji_decode_sample_odd(pump: &mut BitPumpMSB, params: &Params, linebuf: &mut 
     (ra + rg) >> 1
   };
 
-  let code = read_code(pump, params, &mut gradients[grad.abs() as usize], qtable);
+  let code = read_code(pump, params, &mut gradients[grad.unsigned_abs() as usize], qtable);
 
   // Adjustments specific to odd positions
   if grad < 0 {
-    interp_val -= code * (2 * qtable.q_base as i32 + 1);
+    interp_val -= code * (2 * qtable.q_base + 1);
   } else {
-    interp_val += code * (2 * qtable.q_base as i32 + 1);
+    interp_val += code * (2 * qtable.q_base + 1);
   }
 
   // Generic adjustments
-  if interp_val < -(qtable.q_base as i32) {
-    interp_val += (qtable.total_values * (2 * qtable.q_base + 1)) as i32;
-  } else if interp_val > qtable.q_base as i32 + params.max_value {
-    interp_val -= (qtable.total_values * (2 * qtable.q_base + 1)) as i32;
+  if interp_val < -qtable.q_base {
+    interp_val += qtable.total_values * (2 * qtable.q_base + 1);
+  } else if interp_val > qtable.q_base + params.max_value {
+    interp_val -= qtable.total_values * (2 * qtable.q_base + 1);
   }
 
   if interp_val >= 0 {

@@ -106,7 +106,7 @@ impl<'a, 'w> DirectoryWriter<'a, 'w> {
         self.tiff.pad_word_boundary()?;
         let offset = self.tiff.position()?;
         value.write(self.tiff.writer)?;
-        embedded.replace(offset as u32);
+        embedded.replace(offset);
       } else {
         embedded.replace(value.as_embedded()?);
       }

@@ -504,7 +504,7 @@ impl RawLoader {
   }
 
   /// Check support
-  fn check_supported_with_everything<'a>(&'a self, make: &str, model: &str, mode: &str) -> Result<Camera> {
+  fn check_supported_with_everything(&self, make: &str, model: &str, mode: &str) -> Result<Camera> {
     match self.cameras.get(&(make.to_string(), model.to_string(), mode.to_string())) {
       Some(cam) => Ok(cam.clone()),
       None => Err(RawlerError::Unsupported {

@@ -205,7 +205,7 @@ pub fn extract_raw_pixels<P: AsRef<Path>>(path: P, params: RawDecodeParams) -> R
 pub fn raw_pixels_digest<P: AsRef<Path>>(path: P, params: RawDecodeParams) -> Result<[u8; 16]> {
   let (_, _, _, pixels) = extract_raw_pixels(path, params)?;
   let v: Vec<u8> = pixels.iter().flat_map(|p| p.to_le_bytes()).collect();
-  Ok(md5::compute(&v).into())
+  Ok(md5::compute(v).into())
 }
 
 pub fn extract_full_pixels<P: AsRef<Path>>(path: P, _params: RawDecodeParams) -> Result<DynamicImage> {

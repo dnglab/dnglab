@@ -303,7 +303,7 @@ impl IFD {
     self.entries.get(&tag.into()).or_else(|| self.get_entry_subs(tag))
   }
 
-  pub fn get_entry_raw<'a, T: TiffTag, R: Read + Seek>(&'a self, tag: T, file: &mut R) -> Result<Option<RawEntry>> {
+  pub fn get_entry_raw<T: TiffTag, R: Read + Seek>(&self, tag: T, file: &mut R) -> Result<Option<RawEntry>> {
     if let Some(entry) = self.get_entry(tag) {
       return Ok(Some(RawEntry {
         entry,
@@ -315,7 +315,7 @@ impl IFD {
   }
 
   /// Get the data of a tag by just reading as many `len` bytes from offet.
-  pub fn get_entry_raw_with_len<'a, T: TiffTag, R: Read + Seek>(&'a self, tag: T, file: &mut R, len: usize) -> Result<Option<RawEntry>> {
+  pub fn get_entry_raw_with_len<T: TiffTag, R: Read + Seek>(&self, tag: T, file: &mut R, len: usize) -> Result<Option<RawEntry>> {
     if let Some(entry) = self.get_entry(tag) {
       return Ok(Some(RawEntry {
         entry,

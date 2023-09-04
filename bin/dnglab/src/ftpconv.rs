@@ -26,7 +26,7 @@ struct FtpState {
 impl FtpCallback for FtpState {
   fn stor_file(&self, path: PathBuf, data: Vec<u8>) -> Option<Vec<u8>> {
     if let Some(ext) = path.extension().map(|ext| ext.to_string_lossy()) {
-      if is_ext_supported(&ext) {
+      if is_ext_supported(ext) {
         let mut filebuf = RawFile::new(&path, Cursor::new(data.clone())); // TODO: prevent clone
 
         let params = self.params.clone();

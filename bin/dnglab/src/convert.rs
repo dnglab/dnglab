@@ -42,7 +42,7 @@ pub async fn convert(options: &ArgMatches) -> anyhow::Result<()> {
     MapMode::Dir(sd) => {
       let list = sd.file_list(recursive, |file| {
         if let Some(ext) = file.extension().map(|ext| ext.to_string_lossy()) {
-          is_ext_supported(&ext)
+          is_ext_supported(ext)
         } else {
           false
         }

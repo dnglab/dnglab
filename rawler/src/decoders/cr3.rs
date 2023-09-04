@@ -139,7 +139,7 @@ impl<'a> Cr3Decoder<'a> {
   /// Each sample (for movie files) have their own CTMD records
   fn read_ctmd(&self, rawfile: &mut RawFile, sample_idx: u32) -> Result<Option<Ctmd>> {
     let ctmd_trak = &self.bmff.filebox.moov.traks[3];
-    let (offset, size) = ctmd_trak.mdia.minf.stbl.get_sample_offset(sample_idx as u32 + 1).unwrap();
+    let (offset, size) = ctmd_trak.mdia.minf.stbl.get_sample_offset(sample_idx + 1).unwrap();
     debug!("CR3 CTMD mdat offset for sample_idx {}: {}, len: {}", sample_idx, offset, size);
     let buf = rawfile
       .subview(offset as u64, size as u64)
@@ -578,7 +578,7 @@ impl Ctmd {
 
   pub fn get_as_tiff(&self, record: u16, tag: u16) -> Result<Option<GenericTiffReader>> {
     if let Some(block) = self.records.get(&record).and_then(|rec| rec.blocks.get(&tag)) {
-      Ok(Some(GenericTiffReader::new_with_buffer(&block, 0, 0, Some(0))?))
+      Ok(Some(GenericTiffReader::new_with_buffer(block, 0, 0, Some(0))?))
     } else {
       warn!("Unable to find CTMD record {}, tag 0x{:X}", record, tag);
       Ok(None)

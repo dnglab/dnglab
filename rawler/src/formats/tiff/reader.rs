@@ -42,7 +42,7 @@ pub trait TiffReader {
     None
   }
 
-  fn get_entry_raw<'a, T: TiffTag, R: Read + Seek>(&'a self, tag: T, file: &mut R) -> Result<Option<RawEntry>> {
+  fn get_entry_raw<T: TiffTag, R: Read + Seek>(&self, tag: T, file: &mut R) -> Result<Option<RawEntry>> {
     for ifd in &self.file().chain {
       if let Some(entry) = ifd.get_entry_raw(tag, file)? {
         return Ok(Some(entry));

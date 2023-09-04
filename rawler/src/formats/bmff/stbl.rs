@@ -60,7 +60,7 @@ impl<R: Read + Seek> ReadBox<&mut R> for StblBox {
 
     let mut vendors = Vec::new();
 
-    let mut current = reader.seek(SeekFrom::Current(0))?;
+    let mut current = reader.stream_position()?;
 
     while current < header.end_offset() {
       // get box?
@@ -93,7 +93,7 @@ impl<R: Read + Seek> ReadBox<&mut R> for StblBox {
         }
       }
 
-      current = reader.seek(SeekFrom::Current(0))?;
+      current = reader.stream_position()?;
     }
 
     reader.seek(SeekFrom::Start(header.end_offset()))?;

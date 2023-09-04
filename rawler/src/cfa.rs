@@ -73,7 +73,7 @@ impl CFA {
   pub fn new_from_tag(pat: &Value) -> CFA {
     let mut patname = String::new();
     for i in 0..pat.count() {
-      patname.push(match pat.force_u32(i as usize) {
+      patname.push(match pat.force_u32(i) {
         0 => 'R',
         1 => 'G',
         2 => 'B',
@@ -173,7 +173,6 @@ impl CFA {
       .take(self.height)
       .flat_map(|v| v.iter().take(self.width))
       .cloned()
-      .map(|v| v as u8)
       .collect()
   }
 

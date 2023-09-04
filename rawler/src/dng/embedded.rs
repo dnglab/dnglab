@@ -29,7 +29,7 @@ pub fn original_compress(uncomp_data: &[u8]) -> Result<Vec<u8>> {
     let mut compr_data = Cursor::new(Vec::<u8>::with_capacity(uncomp_data.len()));
 
     let raw_fork_size: u32 = uncomp_data.len() as u32;
-    let raw_fork_blocks: u32 = ((raw_fork_size + (COMPRESS_BLOCK_SIZE - 1)) / COMPRESS_BLOCK_SIZE) as u32;
+    let raw_fork_blocks: u32 = (raw_fork_size + (COMPRESS_BLOCK_SIZE - 1)) / COMPRESS_BLOCK_SIZE;
 
     compr_data.write_all(&raw_fork_size.to_be_bytes())?; // Fork 1
     compr_data.seek(SeekFrom::Current((raw_fork_blocks + 1) as i64 * 4))?; // skip index
@@ -78,7 +78,7 @@ pub fn original_decompress(comp_data: &[u8]) -> Result<Vec<u8>> {
     let mut comp_data = Cursor::new(comp_data);
 
     let raw_fork_size: u32 = comp_data.read_u32::<BigEndian>()?;
-    let raw_fork_blocks: u32 = ((raw_fork_size + (COMPRESS_BLOCK_SIZE - 1)) / COMPRESS_BLOCK_SIZE) as u32;
+    let raw_fork_blocks: u32 = (raw_fork_size + (COMPRESS_BLOCK_SIZE - 1)) / COMPRESS_BLOCK_SIZE;
 
     let mut index_list: Vec<usize> = Vec::with_capacity(raw_fork_blocks as usize + 1);
 

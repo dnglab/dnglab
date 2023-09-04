@@ -128,7 +128,7 @@ impl TryFrom<Rational> for f32 {
   type Error = TryFromIntError;
 
   fn try_from(value: Rational) -> std::result::Result<Self, Self::Error> {
-    Ok(((value.n as f32) / (value.d as f32)) as f32) // TODO
+    Ok((value.n as f32) / (value.d as f32)) // TODO
   }
 }
 
@@ -208,7 +208,7 @@ impl TryFrom<SRational> for f32 {
   type Error = TryFromIntError;
 
   fn try_from(value: SRational) -> std::result::Result<Self, Self::Error> {
-    Ok(((value.n as f32) / (value.d as f32)) as f32) // TODO
+    Ok((value.n as f32) / (value.d as f32)) // TODO
   }
 }
 
@@ -748,7 +748,7 @@ impl Value {
       Value::SLong(v) => v.get(idx).map(ToOwned::to_owned).map(|x| x as f32),
       Value::Rational(v) => v.get(idx).map(ToOwned::to_owned).map(TryInto::try_into).transpose()?,
       Value::SRational(v) => v.get(idx).map(ToOwned::to_owned).map(TryInto::try_into).transpose()?,
-      Value::Float(v) => v.get(idx).map(ToOwned::to_owned).map(|x| x as f32),
+      Value::Float(v) => v.get(idx).map(ToOwned::to_owned),
       Value::Double(v) => v.get(idx).map(ToOwned::to_owned).map(|x| x as f32),
       Value::Ascii(_) => return Err(ValueConvertError(())),
       Value::Undefined(_) => return Err(ValueConvertError(())),
@@ -820,7 +820,7 @@ impl Value {
     } else {
       match self {
         Self::Byte(v) => Ok(
-          (*v.get(0).unwrap_or(&0) as u32)
+          (*v.first().unwrap_or(&0) as u32)
             | ((*v.get(1).unwrap_or(&0) as u32) << 8)
             | ((*v.get(2).unwrap_or(&0) as u32) << 16)
             | ((*v.get(3).unwrap_or(&0) as u32) << 24),
@@ -829,7 +829,7 @@ impl Value {
           //let cstr = CString::new(v.as_str()).unwrap();
           let v = v.as_vec_with_nul();
           Ok(
-            (*v.get(0).unwrap_or(&0) as u32)
+            (*v.first().unwrap_or(&0) as u32)
               | ((*v.get(1).unwrap_or(&0) as u32) << 8)
               | ((*v.get(2).unwrap_or(&0) as u32) << 16)
               | ((*v.get(3).unwrap_or(&0) as u32) << 24),
@@ -838,13 +838,13 @@ impl Value {
         Self::Short(v) => Ok((v[0] as u32) | (*v.get(1).unwrap_or(&0) as u32) << 16),
         Self::Long(v) => Ok(v[0]),
         Self::SByte(v) => Ok(
-          (*v.get(0).unwrap_or(&0) as u32)
+          (*v.first().unwrap_or(&0) as u32)
             | ((*v.get(1).unwrap_or(&0) as u32) << 8)
             | ((*v.get(2).unwrap_or(&0) as u32) << 16)
             | ((*v.get(3).unwrap_or(&0) as u32) << 24),
         ),
         Self::Undefined(v) => Ok(
-          (*v.get(0).unwrap_or(&0) as u32)
+          (*v.first().unwrap_or(&0) as u32)
             | ((*v.get(1).unwrap_or(&0) as u32) << 8)
             | ((*v.get(2).unwrap_or(&0) as u32) << 16)
             | ((*v.get(3).unwrap_or(&0) as u32) << 24),
@@ -853,7 +853,7 @@ impl Value {
         Self::SLong(v) => Ok(v[0] as u32),
         Self::Float(v) => Ok(v[0] as u32),
         Self::Unknown(_, v) => Ok(
-          (*v.get(0).unwrap_or(&0) as u32)
+          (*v.first().unwrap_or(&0) as u32)
             | ((*v.get(1).unwrap_or(&0) as u32) << 8)
             | ((*v.get(2).unwrap_or(&0) as u32) << 16)
             | ((*v.get(3).unwrap_or(&0) as u32) << 24),
@@ -1094,7 +1094,7 @@ impl From<&String> for Value {
 
 impl From<String> for Value {
   fn from(value: String) -> Self {
-    Value::Ascii(TiffAscii::new(&value))
+    Value::Ascii(TiffAscii::new(value))
   }
 }
 

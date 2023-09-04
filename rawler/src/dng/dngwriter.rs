@@ -526,7 +526,7 @@ fn dng_put_raw_uncompressed(raw_ifd: &mut DirectoryWriter<'_, '_>, rawimage: &Ra
       for strip in data.chunks(rows_per_strip * rawimage.width * rawimage.cpp) {
         let offset = raw_ifd.write_data_u16_be(strip)?;
         strip_offsets.push(offset);
-        strip_sizes.push((strip.len() * size_of::<u16>()) as u32);
+        strip_sizes.push(std::mem::size_of_val(strip) as u32);
         strip_rows.push((strip.len() / (rawimage.width * rawimage.cpp)) as u32);
       }
 
@@ -546,8 +546,8 @@ fn dng_put_raw_uncompressed(raw_ifd: &mut DirectoryWriter<'_, '_>, rawimage: &Ra
 fn dng_put_thumbnail(ifd: &mut DirectoryWriter<'_, '_>, img: &DynamicImage) -> Result<()> {
   let thumb_img = img.resize(240, 120, FilterType::Nearest).to_rgb8();
 
-  ifd.add_tag(TiffCommonTag::ImageWidth, thumb_img.width() as u32)?;
-  ifd.add_tag(TiffCommonTag::ImageLength, thumb_img.height() as u32)?;
+  ifd.add_tag(TiffCommonTag::ImageWidth, thumb_img.width())?;
+  ifd.add_tag(TiffCommonTag::ImageLength, thumb_img.height())?;
   ifd.add_tag(TiffCommonTag::Compression, CompressionMethod::None)?;
   ifd.add_tag(TiffCommonTag::BitsPerSample, 8_u16)?;
   ifd.add_tag(TiffCommonTag::SampleFormat, [1_u16, 1, 1])?;
@@ -561,7 +561,7 @@ fn dng_put_thumbnail(ifd: &mut DirectoryWriter<'_, '_>, img: &DynamicImage) -> R
 
   ifd.add_tag(TiffCommonTag::StripOffsets, offset)?;
   ifd.add_tag(TiffCommonTag::StripByteCounts, thumb_img.len() as u32)?;
-  ifd.add_tag(TiffCommonTag::RowsPerStrip, thumb_img.height() as u32)?;
+  ifd.add_tag(TiffCommonTag::RowsPerStrip, thumb_img.height())?;
 
   Ok(())
 }
@@ -572,13 +572,13 @@ fn dng_put_preview(ifd: &mut DirectoryWriter<'_, '_>, img: &DynamicImage) -> Res
   debug!("preview downscale: {} s", now.elapsed().as_secs_f32());
 
   ifd.add_tag(TiffCommonTag::NewSubFileType, 1_u16)?;
-  ifd.add_tag(TiffCommonTag::ImageWidth, preview_img.width() as u32)?;
-  ifd.add_tag(TiffCommonTag::ImageLength, preview_img.height() as u32)?;
+  ifd.add_tag(TiffCommonTag::ImageWidth, preview_img.width())?;
+  ifd.add_tag(TiffCommonTag::ImageLength, preview_img.height())?;
   ifd.add_tag(TiffCommonTag::Compression, CompressionMethod::ModernJPEG)?;
   ifd.add_tag(TiffCommonTag::BitsPerSample, 8_u16)?;
   ifd.add_tag(TiffCommonTag::SampleFormat, [1_u16, 1, 1])?;
   ifd.add_tag(TiffCommonTag::PhotometricInt, PhotometricInterpretation::YCbCr)?;
-  ifd.add_tag(TiffCommonTag::RowsPerStrip, preview_img.height() as u32)?;
+  ifd.add_tag(TiffCommonTag::RowsPerStrip, preview_img.height())?;
   ifd.add_tag(TiffCommonTag::SamplesPerPixel, 3_u16)?;
   ifd.add_tag(DngTag::PreviewColorSpace, PreviewColorSpace::SRgb)?; // ??
 
@@ -599,7 +599,7 @@ fn dng_put_preview(ifd: &mut DirectoryWriter<'_, '_>, img: &DynamicImage) -> Res
   debug!("writing preview: {} s", now.elapsed().as_secs_f32());
 
   ifd.add_value(TiffCommonTag::StripOffsets, Value::Long(vec![offset]))?;
-  ifd.add_tag(TiffCommonTag::StripByteCounts, [data_len as u32])?;
+  ifd.add_tag(TiffCommonTag::StripByteCounts, [data_len])?;
 
   Ok(())
 }

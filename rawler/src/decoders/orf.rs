@@ -147,7 +147,7 @@ impl<'a> Decoder for OrfDecoder<'a> {
 
     let mut size: usize = 0;
     for i in 0..counts.count() {
-      size += counts.force_u32(i as usize) as usize;
+      size += counts.force_u32(i) as usize;
     }
 
     let camera = if width >= self.camera.highres_width {
@@ -274,7 +274,7 @@ impl<'a> OrfDecoder<'a> {
             pump.consume_bits((high + 4) as u32);
           }
 
-          acarry[s][0] = ((high << nbits) | pump.get_ibits(nbits)) as i32;
+          acarry[s][0] = (high << nbits) | pump.get_ibits(nbits);
           let diff = (acarry[s][0] ^ sign) + acarry[s][1];
           acarry[s][1] = (diff * 3 + acarry[s][1]) >> 5;
           acarry[s][2] = if acarry[s][0] > 16 { 0 } else { acarry[s][2] + 1 };

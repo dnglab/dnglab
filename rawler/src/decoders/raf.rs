@@ -125,7 +125,7 @@ pub fn parse_raf_format(file: &mut RawFile, offset: u32) -> Result<IFD> {
     entries,
     endian: Endian::Big,
     offset: 0,
-    base: offset as u32,
+    base: offset,
     corr: 0,
     next_ifd: 0,
     sub: Default::default(),

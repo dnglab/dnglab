@@ -68,11 +68,11 @@ const fn build_num_bits_tbl() -> [u16; 256] {
 /// This utilizes the caching table which should be faster than
 /// calculating it manually.
 fn lookup_ssss(diff: i16) -> u16 {
-  let diff_abs = (diff as i32).abs() as usize; // Convert to i32 because abs() can be overflow i16
+  let diff_abs = (diff as i32).unsigned_abs() as usize; // Convert to i32 because abs() can be overflow i16
   if diff_abs >= 256 {
     NUM_BITS_TBL[(diff_abs >> 8) & 0xFF] + 8
   } else {
-    NUM_BITS_TBL[(diff_abs & 0xFF)]
+    NUM_BITS_TBL[diff_abs & 0xFF]
   }
   // manual way:
   // let ssss = if diff == 0 { 0 } else { 32 - (diff as i32).abs().leading_zeros() };
@@ -287,7 +287,7 @@ impl HuffTableBuilder {
     // K2
     for i in 0..18 {
       if self.codesize[i] > 0 {
-        self.bits[self.codesize[i] as usize] += 1;
+        self.bits[self.codesize[i]] += 1;
       }
     } // end of K2
 
@@ -425,7 +425,7 @@ impl HuffTableBuilder {
       if let Some(code) = self.huffsym[ssss] {
         let enc = &self.huffcode[code];
         inspector!("ssss: {}, enc.bits: {}", ssss, enc.bits);
-        table[ssss as usize] = BitArray16::from_lsb(enc.bits as usize, enc.enc);
+        table[ssss] = BitArray16::from_lsb(enc.bits as usize, enc.enc);
       }
     }
 
@@ -1219,7 +1219,7 @@ mod tests {
   fn encode_predictor1_2comp_padding() -> std::result::Result<(), Box<dyn std::error::Error>> {
     crate::init_test_logger();
     let input_image = vec![1, 2, 5, 6, 3, 7, 0, 0, 7, 8, 3, 4, 6, 2, 0, 0];
-    let expected_image = vec![1, 2, 5, 6, 3, 7, 7, 8, 3, 4, 6, 2];
+    let expected_image = [1, 2, 5, 6, 3, 7, 7, 8, 3, 4, 6, 2];
     let h = 2;
     let w = 3;
     let c = 2;

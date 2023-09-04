@@ -452,7 +452,7 @@ impl<'a> IiqDecoder<'a> {
           // we already have a 0 point at [0] by default initialization
           for i in 0..7 {
             control_points[qr][qc][1 + i].x = coord_x[i];
-            control_points[qr][qc][1 + i].y = (coord_x[i] * coord_y[qr * (2 * 7) + (qc * 7) + i] as usize) / 10_000;
+            control_points[qr][qc][1 + i].y = (coord_x[i] * coord_y[qr * (2 * 7) + (qc * 7) + i]) / 10_000;
           }
           control_points[qr][qc][8] = Point::new(65535, 65535);
         }
@@ -728,7 +728,7 @@ impl<'a> IiqDecoder<'a> {
 
   fn wb_offset(&self) -> Result<u64> {
     match self.makernotes.get(&IiqTag::WhiteBalance.into()) {
-      Some(mode) => Ok((mode.1.force_u64(0) + 8) as u64),
+      Some(mode) => Ok(mode.1.force_u64(0) + 8),
       _ => Err(RawlerError::General("Unable to find whitebalance offset in IIQ makernotes".to_string())),
     }
   }
@@ -970,7 +970,7 @@ impl<'a> IiqDecoder<'a> {
     match self.lens_model()? {
       Some(model) => {
         let resolver = LensResolver::new().with_camera(&self.camera).with_lens_keyname(Some(model));
-        return Ok(resolver.resolve());
+        Ok(resolver.resolve())
       }
       None => Ok(None),
     }

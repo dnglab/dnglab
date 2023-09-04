@@ -114,7 +114,7 @@ pub(crate) fn parse_colordata(colordata: &Entry) -> Result<ColorData> {
         // 17 (EOS R)
         // 18 (EOS RP/250D)
         // 19 (90D/850D/M6mkII/M200)
-        16 | 17 | 18 | 19 => ColorData::new(data, version, 0x47, Some(0x149), Some(0x31c), Some(0x31d)),
+        16..=19 => ColorData::new(data, version, 0x47, Some(0x149), Some(0x31c), Some(0x31d)),
         // 32 (1DXmkIII)
         // 33 (R5/R6)
         32 | 33 => ColorData::new(data, version, 0x55, Some(0x157), Some(0x32a), Some(0x32b)),
