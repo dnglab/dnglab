@@ -1,61 +1,77 @@
-# DNGLab - A camera RAW to DNG file format converter
+# *DNGLab* – A Camera RAW to DNG File Format Converter
 
 [![CI](https://github.com/dnglab/dnglab/actions/workflows/ci.yaml/badge.svg)](https://github.com/dnglab/dnglab/actions/workflows/ci.yaml)
 [![Matrix](https://img.shields.io/matrix/dnglab:matrix.org?server_fqdn=matrix.org)](https://app.element.io/#/room/#dnglab:matrix.org)
 
-Command line tool to convert camera RAW files to Digital Negative Format (DNG).
+Command line tool to convert [camera RAW files](https://en.wikipedia.org/wiki/Raw_image_format) to [Digital Negative](https://en.wikipedia.org/wiki/Digital_Negative) Format (`DNG`).
 
-
- It is currently in alpha state, so don't expect a polished and bugfree application.
- Please report bugs in our [issue tracker](https://github.com/dnglab/dnglab/issues).
-
+> It is currently in alpha state, so don't expect a polished and bug free
+application.
+Please report bugs in our [issue tracker](https://github.com/dnglab/dnglab/issues).
 
 ## Installation
 
-There are pre-built binary packages for each release which can be downloaded from
-the asset section under [latest release](https://github.com/dnglab/dnglab/releases/latest).
-The **.deb** packages are for Debian based systems (amd64 and arm64), which can be installed
-with `dpkg -i dnglab_x.x.x_amd64.deb`. For non-Debian systems, you can use the single-binary file,
-for example `./dnglab_linux_x64 convert IMG_1234.CR2 IMG_1234.dng`.
+There are pre-built binary packages for each release which can be downloaded
+from the asset section under [latest release](https://github.com/dnglab/dnglab/releases/latest).
 
-Windows is not officially supported, but the release assets contains a **dnglab-win-x64_vx.x.x.zip**
-file with pre-built Windows binary. Please be aware that this build is untested.
+The `.deb` packages are for Debian based systems (`amd64` and `arm64`) and
+can be installed with:
 
-## Build from source
-Dnglab is written in Rust, so you can compile it by your own on your target machine.
-You need the Rust toolchain installed on your machine, see https://rustup.rs/ for that.
-Once the toolchain is installed, you can simply compile Dnglab with:
+```
+dpkg -i dnglab_x.x.x_amd64.deb
+```
 
-````
+For non-Debian systems, you can use the single-binary file,
+for example
+
+```
+./dnglab_linux_x64 convert IMG_1234.CR2 IMG_1234.dng`
+```
+
+Windows is not officially supported, but the release assets contains a
+`dnglab-win-x64_vx.x.x.zip` file with pre-built Windows binary. Please be aware
+that this build is untested.
+
+## Build From Source
+
+*DNGlab* is written in Rust, so you can compile it by your own on your target
+machine. You need the Rust toolchain installed on your machine, see [`rustup.rs`](https://rustup.rs/)
+for that.
+
+Once the toolchain is installed, you can simply compile *DNGLab* with:
+
+```
 git clone https://github.com/dnglab/dnglab.git
 cd dnglab
 cargo build --release
-````
+```
 
-The dnglab binary is found at `./target/release/dnglab`.
-
+The `dnglab` binary is found at `./target/release/dnglab`.
 
 ## Examples
 
 **Convert a single file:**
 
-    dnglab convert IMG_1234.CR3 IMG_1234.DNG
+```
+dnglab convert IMG_1234.CR3 IMG_1234.DNG
+```
 
-**Convert whole directory:**
+**Convert a whole directory:**
 
-    dnglab convert ~/DCIM/100EOS ~/filmrolls/photos-france
+```
+dnglab convert ~/DCIM/100EOS ~/filmrolls/photos-france
+```
 
+## Supported Cameras & File Formats
 
-## Supported cameras and file formats
+For a list of supported cameras please see [supported cameras](SUPPORTED_CAMERAS.md).
 
-For a list of supported cameras please see [SUPPORTED_CAMERAS.md](SUPPORTED_CAMERAS.md).
-
-### Supported raw file formats
+### Supported RAW File Formats
 
 |Manufacturer | Format | Supported                         | Remarks                                |
 |-------------|--------|-----------------------------------|----------------------------------------|
 |ARRI         | ARI    | ✅ Yes                            |                                        |
-|Canon        | CR3    | ✅ Yes                            | [CR3_STATE.md](CR3_STATE.md)           |
+|Canon        | CR3    | ✅ Yes                            | [State of CR3 support](CR3_STATE.md)   |
 |Canon        | CR2    | ✅ Yes                            |                                        |
 |Canon        | CRW    | ✅ Yes                            |                                        |
 |Epson        | ERF    | ✅ Yes                            |                                        |
@@ -79,15 +95,15 @@ For a list of supported cameras please see [SUPPORTED_CAMERAS.md](SUPPORTED_CAME
 |Sony         | SRF    | ✅ Yes                            |                                        |
 |Sony         | SR2    | ✅ Yes                            |                                        |
 
-### Supported DNG features
+### Supported DNG Features
 
- * DNG lossless compression (LJPEG-92)
+* [x] DNG lossless compression (`LJPEG-92`)
 
-## Command line help
+## Command Line Help
 
-### convert subcommand
+### `convert` Subcommand
 
-````
+```
 dnglab-convert
 Convert raw image(s) into dng format
 
@@ -137,11 +153,11 @@ OPTIONS:
 
     -v
             Print more messages
-````
+```
 
-### analyze subcommand
+### `analyze` Subcommand
 
-````
+```
 dnglab-analyze
 Analyze raw image
 
@@ -168,16 +184,16 @@ OPTIONS:
         --thumbnail-pixel       Write uncompressed preview pixel data to STDOUT
     -v                          Print more messages
         --yaml                  Format metadata as YAML
+```
 
-````
+With `analyze`, you can get a full dump of the internal file structure as
+`YAML` or `JSON`. With `JSON` output, it's possible to filter and transform the
+data, e.g. with [`jq`](https://jqlang.github.io/jq/).
 
-With **analyze**, you can get a full dump of the internal file structure
-as YAML or JSON. With JSON output, it's possible to filter and transform
-the data with **jq**.
 For example, to get the *cfa_layout* from the CMP1 box for CR3 files, you can
-write:
+use:
 
-````
+```
 find /cr3samples/ -type f -name "*.CR3" -exec dnglab analyze --structure '{}' --json \; | \
   jq ". | { file: .file.fileName, cfa_layout: .format.cr3.moov.trak[1].mdia.minf.stbl.stsd.craw.cmp1.cfa_layout}"
 ````
@@ -195,9 +211,9 @@ The output is:
 }
 ```
 
-### extract subcommand
+### `extract` Subcommand
 
-````
+```
 dnglab-extract
 Extract embedded original Raw from DNG
 
@@ -216,37 +232,44 @@ OPTIONS:
     -r, --recursive     Process input directory recursive
         --skipchecks    Skip integrity checks
     -v                  Print more messages
-````
+```
 
+## Contributing Samples
 
-## Contribute samples
-Please see our guide: [CONTRIBUTE_SAMPLES.md](CONTRIBUTE_SAMPLES.md).
+Please see [our guide](CONTRIBUTING_SAMPLES.md).
 
 ## FAQ
 
 ### Why a DNG tool if there is already something from Adobe?
-The DNG converter from Adobe is free (at cost), but not free in terms of free software. Nobody can add or fix camera support except of Adobe. And it has no support for Linux. That's why I've started writing my own little DNG swiss army knife.
+
+The *DNG Converter* from Adobe is free (no cost), but not free in terms of free
+software. Nobody can add or fix camera support except of Adobe.
+
+And it has no support for Linux. That's why I've started writing my own little
+DNG swiss army knife.
 
 ### Why should I use DNG instead of RAW?
+
 Never ask. If you need DNG you will know.
 
-
 ### Will camera/format (...) be added?
+
 Well, depends on developer resources.
 
 ### Is a GUI in planning?
+
 Yes, DNGLab should get a GUI in near future.
 
 ## Credits
 
-Special thanks goes to:
+Special thanks go to:
 
- * Darktable developer team [www.darktable.org](https://www.darktable.org)
- * Laurent Clévy [CR3 documentation](https://github.com/lclevy/canon_cr3)
- * Kostya Shishkov
- * Hubert Kowalski
- * Rawloader development team [rawloader](https://github.com/pedrocr/rawloader)
- * All volunteers who have contributed samples.
+* the [darktable](https://www.darktable.org) developers
+* Laurent Clévy for the [`CR3` documentation](https://github.com/lclevy/canon_cr3)
+* Kostya Shishkov
+* Hubert Kowalski
+* the [Rawloader](https://github.com/pedrocr/rawloader) developers
+* all volunteers who have contributed samples
 
 Without the support and engagement from these people the development of
-dnglab would not have been possible.
+*DNGlab* would not have been possible.

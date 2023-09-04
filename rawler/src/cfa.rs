@@ -167,13 +167,7 @@ impl CFA {
 
   /// Get a flat pattern
   pub fn flat_pattern(&self) -> Vec<u8> {
-    self
-      .pattern
-      .iter()
-      .take(self.height)
-      .flat_map(|v| v.iter().take(self.width))
-      .cloned()
-      .collect()
+    self.pattern.iter().take(self.height).flat_map(|v| v.iter().take(self.width)).cloned().collect()
   }
 
   /// Count of unique colors in pattern

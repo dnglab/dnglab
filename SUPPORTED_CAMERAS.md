@@ -1,4 +1,4 @@
-# Supported cameras
+# Supported Cameras
 
 | Make  | Model        | State   | Modes     | Remarks   |
 |-------|--------------|---------|-----------|-----------|

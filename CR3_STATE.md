@@ -17,7 +17,8 @@ CR3 is fully supported.
 | CR3 Filmroll         | ✅ Yes                                   | Filmrolls using encoding type 3                                             |
 
 
-# Roll files
+## Roll files
+
 Some models can write roll files, including up to 70 images in a single CR3 file. dnglab is able to extract all images from a roll.
 A single specific image can be extracted with:
 
