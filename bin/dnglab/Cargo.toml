@@ -7,9 +7,6 @@ description = "Camera RAW to DNG file format converter"
 license = "LGPL-2.1"
 repository = "https://github.com/dnglab/dnglab"
 
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
 byteorder = "1"
 anyhow = "1.0"
@@ -27,8 +24,8 @@ serde_yaml = "0.9.25"
 rayon = "1"
 itertools = "0.11"
 thiserror = "1.0.25"
-tokio = { version = "1.20.3", features = ["full"] }
-async-trait = "0.1.51"
+tokio = { version = "1.32.0", features = ["full"] }
+async-trait = "0.1.73"
 futures = "0.3"
 hex = "0.4.3"
 
