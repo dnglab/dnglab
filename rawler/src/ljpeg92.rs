@@ -72,7 +72,7 @@ fn lookup_ssss(diff: i16) -> u16 {
   if diff_abs >= 256 {
     NUM_BITS_TBL[(diff_abs >> 8) & 0xFF] + 8
   } else {
-    NUM_BITS_TBL[(diff_abs & 0xFF)]
+    NUM_BITS_TBL[diff_abs & 0xFF]
   }
   // manual way:
   // let ssss = if diff == 0 { 0 } else { 32 - (diff as i32).abs().leading_zeros() };

@@ -16,7 +16,7 @@ use std::{
 };
 
 fn print_output<T: Serialize + ?Sized>(obj: &T, options: &ArgMatches) -> anyhow::Result<()> {
-  if options.is_present("yaml") {
+  if options.get_flag("yaml") {
     let yaml = serde_yaml::to_string(obj)?;
     println!("{}", yaml);
   } else {
@@ -28,39 +28,39 @@ fn print_output<T: Serialize + ?Sized>(obj: &T, options: &ArgMatches) -> anyhow:
 
 /// Analyze a given image
 pub async fn analyze(options: &ArgMatches) -> anyhow::Result<()> {
-  let in_file = options.value_of("FILE").expect("FILE not available");
+  let in_file: &PathBuf = options.get_one("FILE").expect("FILE not available");
 
-  debug!("Infile: {}", in_file);
+  debug!("Infile: {:?}", in_file);
 
-  if options.is_present("meta") {
+  if options.get_flag("meta") {
     let analyze = analyze_metadata(&PathBuf::from(in_file)).unwrap();
     print_output(&analyze, options)?;
-  } else if options.is_present("structure") {
+  } else if options.get_flag("structure") {
     let analyze = analyze_file_structure(&PathBuf::from(in_file)).unwrap();
     print_output(&analyze, options)?;
-  } else if options.is_present("raw_checksum") {
+  } else if options.get_flag("raw_checksum") {
     let digest = raw_pixels_digest(&PathBuf::from(in_file), RawDecodeParams::default()).unwrap();
     println!("{}", hex::encode(&digest));
-  } else if options.is_present("raw_pixel") {
+  } else if options.get_flag("raw_pixel") {
     let (width, height, cpp, buf) = extract_raw_pixels(&PathBuf::from(in_file), RawDecodeParams::default()).unwrap();
     if cpp == 3 {
       dump_ppm16(width, height, &buf)?;
     } else {
       dump_pgm(width, height, &buf)?;
     }
-  } else if options.is_present("preview_pixel") {
+  } else if options.get_flag("preview_pixel") {
     let preview = extract_preview_pixels(&PathBuf::from(in_file), RawDecodeParams::default()).unwrap();
     let rgb = preview.into_rgb8();
     dump_rgb8_ppm8(rgb.width() as usize, rgb.height() as usize, rgb.as_flat_samples().samples)?;
-  } else if options.is_present("thumbnail_pixel") {
+  } else if options.get_flag("thumbnail_pixel") {
     let thumbnail = extract_thumbnail_pixels(&PathBuf::from(in_file), RawDecodeParams::default()).unwrap();
     let rgb = thumbnail.into_rgb8();
     dump_rgb8_ppm8(rgb.width() as usize, rgb.height() as usize, rgb.as_flat_samples().samples)?;
-  } else if options.is_present("full_pixel") {
+  } else if options.get_flag("full_pixel") {
     let full = extract_full_pixels(&PathBuf::from(in_file), RawDecodeParams::default()).unwrap();
     let rgb = full.into_rgb8();
     dump_rgb8_ppm8(rgb.width() as usize, rgb.height() as usize, rgb.as_flat_samples().samples)?;
-  } else if options.is_present("srgb") {
+  } else if options.get_flag("srgb") {
     let (buf, dim) = raw_to_srgb(&PathBuf::from(in_file), RawDecodeParams::default()).unwrap();
     dump_ppm16(dim.w, dim.h, &buf)?;
   }

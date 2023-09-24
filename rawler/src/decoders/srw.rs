@@ -156,7 +156,7 @@ impl<'a> SrwDecoder<'a> {
 
         // First decode even pixels
         for c in (0..16).step_by(2) {
-          let l = len[(c >> 3)];
+          let l = len[c >> 3];
           let adj = pump.get_ibits_sextended(l);
           let predictor = if dir {
             // Upward prediction

@@ -6,32 +6,29 @@ use futures::future::join_all;
 use rawler::decoders::supported_extensions;
 use std::fs::create_dir_all;
 use std::path::PathBuf;
-use std::str::FromStr;
+
 use std::time::Instant;
 
-use crate::app::convert_bool;
 use crate::filemap::{FileMap, MapMode};
 use crate::jobs::raw2dng::{JobResult, Raw2DngJob};
 use crate::jobs::Job;
 use crate::{AppError, Result, PKG_NAME, PKG_VERSION};
-use rawler::dng::dngwriter::CropMode;
-use rawler::dng::dngwriter::{ConvertParams, DngCompression};
+use rawler::dng::dngwriter::{ConvertParams};
 
 /// Entry point for Clap sub command `convert`
 pub async fn convert(options: &ArgMatches) -> anyhow::Result<()> {
   let now = Instant::now();
-  let in_path = PathBuf::from(options.value_of("INPUT").expect("INPUT not available"));
-  let out_path = PathBuf::from(options.value_of("OUTPUT").expect("OUTPUT not available"));
-  let recursive = options.is_present("recursive");
 
-  let proc = MapMode::new(&in_path, &out_path)?;
+  let recursive = options.get_flag("recursive");
+
+  let proc = {
+    let in_path: &PathBuf = options.get_one("INPUT").expect("INPUT not available");
+    let out_path: &PathBuf = options.get_one("OUTPUT").expect("OUTPUT not available");
+    MapMode::new(&in_path, &out_path)?
+  };
 
   // List of jobs
   let mut jobs: Vec<Raw2DngJob> = Vec::new();
-
-  // drop pathes to prevent use
-  drop(in_path);
-  drop(out_path);
 
   match proc {
     // We have only one input file, so output must be a file, too.
@@ -53,7 +50,7 @@ pub async fn convert(options: &ArgMatches) -> anyhow::Result<()> {
     }
   }
 
-  let verbose = options.is_present("verbose");
+  let verbose = options.get_flag("verbose");
 
   let mut results: Vec<JobResult> = Vec::new();
   for chunks in jobs.chunks(8) {
@@ -88,7 +85,7 @@ pub async fn convert(options: &ArgMatches) -> anyhow::Result<()> {
 
 /// Convert given raw file to dng file
 fn generate_job(entry: &FileMap, options: &ArgMatches) -> Result<Vec<Raw2DngJob>> {
-  let (do_batch, index) = match options.value_of("index") {
+  let (do_batch, index) = match options.get_one::<String>("index") {
     Some(index) => {
       if index.to_lowercase().eq("all") {
         (true, 0)
@@ -106,22 +103,14 @@ fn generate_job(entry: &FileMap, options: &ArgMatches) -> Result<Vec<Raw2DngJob>
   for i in 0..batch_count {
     // Params for conversion process
     let params = ConvertParams {
-      predictor: options.value_of("predictor").unwrap_or("1").parse::<u8>().unwrap(),
-      embedded: convert_bool(options.value_of("embedded"), true).unwrap(),
+      predictor: *options.get_one("predictor").expect("predictor has no default"),
+      embedded: options.get_flag("embedded"),
       photometric_conversion: Default::default(),
-      crop: CropMode::from_str(options.value_of("crop").unwrap()).unwrap(),
-      preview: convert_bool(options.value_of("preview"), true).unwrap(),
-      thumbnail: convert_bool(options.value_of("thumbnail"), true).unwrap(),
-      compression: match options.value_of("compression") {
-        Some("lossless") => DngCompression::Lossless,
-        Some("none") => DngCompression::Uncompressed,
-        Some(s) => {
-          println!("Unknown compression: {}", s);
-          return Err(AppError::InvalidArgs);
-        }
-        None => DngCompression::Lossless,
-      },
-      artist: options.value_of("artist").map(String::from),
+      crop: *options.get_one("crop").expect("crop has no default"),
+      preview: options.get_flag("preview"),
+      thumbnail: options.get_flag("thumbnail"),
+      compression: *options.get_one("compression").expect("compression has no default"),
+      artist: options.get_one("artist").cloned(),
       software: format!("{} {}", PKG_NAME, PKG_VERSION),
       index: if do_batch { i } else { index },
     };
@@ -140,7 +129,7 @@ fn generate_job(entry: &FileMap, options: &ArgMatches) -> Result<Vec<Raw2DngJob>
       Some(parent) => {
         if !parent.exists() {
           create_dir_all(parent)?;
-          if options.is_present("verbose") {
+          if options.get_flag("verbose") {
             println!("Creating output directory '{}'", parent.display());
           }
         }
@@ -153,7 +142,7 @@ fn generate_job(entry: &FileMap, options: &ArgMatches) -> Result<Vec<Raw2DngJob>
     jobs.push(Raw2DngJob {
       input: PathBuf::from(&entry.src),
       output,
-      replace: options.is_present("override"),
+      replace: options.get_flag("override"),
       params,
     });
   }

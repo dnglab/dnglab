@@ -22,7 +22,7 @@ pub async fn lenses(options: &ArgMatches) -> anyhow::Result<()> {
   let max_make = map.keys().map(|k| k.1.len()).max().unwrap_or(0);
   let max_model = map.values().flatten().map(|k| k.len()).max().unwrap_or(0);
 
-  if options.is_present("markdown") {
+  if options.get_flag("markdown") {
     println!("# Supported lenses\n");
 
     println!("| Mount | Make  | Model        |");

@@ -632,7 +632,7 @@ impl<'a> ArwDecoder<'a> {
     let mut out = vec![0_u16; curve[5] + 1];
     for i in 0..5 {
       for j in (curve[i] + 1)..(curve[i + 1] + 1) {
-        out[j] = out[(j - 1)] + (1 << i);
+        out[j] = out[j - 1] + (1 << i);
       }
     }
 
@@ -713,7 +713,7 @@ const fn sony_tag9cxx_decipher_table() -> [u8; 256] {
     if i >= 249 {
       tbl[i] = i as u8;
     } else {
-      tbl[(i * i * i % 249)] = i as u8;
+      tbl[i * i * i % 249] = i as u8;
     }
     i += 1;
     if i >= tbl.len() {

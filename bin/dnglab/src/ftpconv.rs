@@ -9,13 +9,12 @@ use rawler::RawFile;
 use std::fs::File;
 use std::io::{BufWriter, Cursor};
 use std::path::PathBuf;
-use std::str::FromStr;
+
 use tokio::runtime::Handle;
 
-use crate::app::convert_bool;
-use crate::{AppError, PKG_NAME, PKG_VERSION};
-use rawler::dng::dngwriter::{raw_to_dng_internal, CropMode};
-use rawler::dng::dngwriter::{ConvertParams, DngCompression};
+use crate::{PKG_NAME, PKG_VERSION};
+use rawler::dng::dngwriter::ConvertParams;
+use rawler::dng::dngwriter::{raw_to_dng_internal};
 
 #[derive(Clone)]
 struct FtpState {
@@ -54,35 +53,27 @@ pub async fn ftpserver(options: &ArgMatches) -> anyhow::Result<()> {
   let mut config = Config::new("foo").unwrap();
 
   let params = ConvertParams {
-    predictor: options.value_of("predictor").unwrap_or("1").parse::<u8>().unwrap(),
-    embedded: convert_bool(options.value_of("embedded"), true).unwrap(),
+    predictor: *options.get_one("predictor").expect("predictor has no default"),
+    embedded: options.get_flag("embedded"),
     photometric_conversion: Default::default(),
-    crop: CropMode::from_str(options.value_of("crop").unwrap()).unwrap(),
-    preview: convert_bool(options.value_of("preview"), true).unwrap(),
-    thumbnail: convert_bool(options.value_of("thumbnail"), true).unwrap(),
-    compression: match options.value_of("compression") {
-      Some("lossless") => DngCompression::Lossless,
-      Some("none") => DngCompression::Uncompressed,
-      Some(s) => {
-        println!("Unknown compression: {}", s);
-        return Err(AppError::InvalidArgs.into());
-      }
-      None => DngCompression::Lossless,
-    },
-    artist: options.value_of("artist").map(String::from),
+    crop: *options.get_one("crop").expect("crop has no default"),
+    preview: options.get_flag("preview"),
+    thumbnail: options.get_flag("thumbnail"),
+    compression: *options.get_one("compression").expect("compression has no default"),
+    artist: options.get_one("artist").cloned(),
     software: format!("{} {}", PKG_NAME, PKG_VERSION),
     index: 0,
   };
-  let keep_orig = options.value_of("keep_orig").unwrap_or("yes") == "yes";
+  let keep_orig = options.get_flag("keep_orig");
 
   let state = FtpState { params, keep_orig };
 
-  config.server_port = options.value_of("ftp_port").unwrap_or("2121").parse().unwrap();
-  config.server_addr = options.value_of("ftp_listen").unwrap_or("127.0.0.1").parse().unwrap();
+  config.server_port = *options.get_one("ftp_port").unwrap_or(&2121);
+  config.server_addr = options.get_one::<String>("ftp_listen").unwrap_or(&"127.0.0.1".to_string()).parse().unwrap();
 
-  let out_path = PathBuf::from(options.value_of("OUTPUT").expect("OUTPUT not available"));
+  let out_path: &PathBuf = options.get_one("OUTPUT").expect("OUTPUT not available");
 
-  serve(Handle::current(), out_path, config, state).await.unwrap();
+  serve(Handle::current(), out_path.to_path_buf(), config, state).await.unwrap();
 
   Ok(())
 }

@@ -25,7 +25,7 @@ use image::{imageops::FilterType, DynamicImage, ImageBuffer};
 use log::{debug, error, info};
 use rayon::prelude::*;
 use std::path::{Path, PathBuf};
-use std::str::FromStr;
+
 use std::{
   fs::File,
   io::{BufReader, BufWriter, Seek, Write},
@@ -39,7 +39,7 @@ mod raw_writer;
 
 /// Quality of preview images
 const PREVIEW_JPEG_QUALITY: f32 = 0.75;
-#[derive(Clone, Debug)]
+#[derive(Clone, Copy, Debug)]
 /// Compression mode for DNG
 pub enum DngCompression {
   /// No compression is applied
@@ -47,6 +47,34 @@ pub enum DngCompression {
   /// Lossless JPEG-92 compression
   Lossless,
   // Lossy
+}
+
+/*
+impl FromStr for DngCompression {
+  type Err = String;
+
+  fn from_str(mode: &str) -> std::result::Result<Self, Self::Err> {
+    Ok(match mode {
+      "uncompressed" => Self::Uncompressed,
+      "lossless" => Self::Lossless,
+      _ => return Err(format!("Unknown DngCompression value: {}", mode)),
+    })
+  }
+}
+*/
+
+#[cfg(feature = "clap")]
+impl clap::ValueEnum for DngCompression {
+  fn value_variants<'a>() -> &'a [Self] {
+    &[Self::Lossless, Self::Uncompressed]
+  }
+
+  fn to_possible_value(&self) -> Option<clap::builder::PossibleValue> {
+    Some(match self {
+      Self::Uncompressed => clap::builder::PossibleValue::new("uncompressed"),
+      Self::Lossless => clap::builder::PossibleValue::new("lossless"),
+    })
+  }
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -68,6 +96,22 @@ pub enum CropMode {
   None,
 }
 
+#[cfg(feature = "clap")]
+impl clap::ValueEnum for CropMode {
+  fn value_variants<'a>() -> &'a [Self] {
+    &[Self::Best, Self::ActiveArea, Self::None]
+  }
+
+  fn to_possible_value(&self) -> Option<clap::builder::PossibleValue> {
+    Some(match self {
+      Self::Best => clap::builder::PossibleValue::new("best"),
+      Self::ActiveArea => clap::builder::PossibleValue::new("activearea"),
+      Self::None => clap::builder::PossibleValue::new("none"),
+    })
+  }
+}
+
+/*
 impl FromStr for CropMode {
   type Err = String;
 
@@ -80,6 +124,7 @@ impl FromStr for CropMode {
     })
   }
 }
+ */
 
 /// Parameters for DNG conversion
 #[derive(Clone, Debug)]
