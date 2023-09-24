@@ -36,7 +36,7 @@ pub async fn cameras(options: &ArgMatches) -> anyhow::Result<()> {
   let max_make = map.keys().map(|k| k.len()).max().unwrap_or(0);
   let max_model = map.values().flat_map(|v| v.keys()).map(|k| k.len()).max().unwrap_or(0);
 
-  if options.is_present("markdown") {
+  if options.get_flag("markdown") {
     println!("# Supported cameras\n");
 
     println!("| Make  | Model        | State   | Modes     | Remarks   |");

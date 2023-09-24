@@ -56,7 +56,7 @@ async fn main_async() -> anyhow::Result<()> {
     .chain(std::io::stderr())
     //.level(log::LevelFilter::Debug)
     .level({
-      match matches.occurrences_of("debug") {
+      match matches.get_count("debug") {
         0 => log::LevelFilter::Error,
         1 => log::LevelFilter::Warn,
         2 => log::LevelFilter::Info,
