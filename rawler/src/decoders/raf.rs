@@ -461,7 +461,7 @@ impl<'a> RafDecoder<'a> {
       if let (Some(crops), Some(size)) = (crops, size) {
         return Ok(Some(Rect::new(
           Point::new(crops.force_usize(1), crops.force_usize(0)),
-          Dim2::new(size.force_usize(0), size.force_usize(1)),
+          Dim2::new(size.force_usize(1), size.force_usize(0)),
         )));
       }
     }
