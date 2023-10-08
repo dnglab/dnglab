@@ -59,7 +59,7 @@ impl<R: Read + Seek> ReadBox<&mut R> for CtmdBox {
       //current = reader.seek(SeekFrom::Current(0))?;
     }
 
-    assert!(reader.seek(SeekFrom::Current(0))? == header.end_offset());
+    assert!(reader.stream_position()? == header.end_offset());
 
     reader.seek(SeekFrom::Start(header.end_offset()))?;
 

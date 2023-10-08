@@ -13,7 +13,7 @@ use crate::{
   tags::{ExifTag, TiffCommonTag, TiffTag},
 };
 use byteorder::{LittleEndian, ReadBytesExt};
-use log::{debug, warn};
+use log::{debug};
 use serde::{Deserialize, Serialize};
 use std::{
   collections::{BTreeMap, HashMap},
@@ -145,7 +145,10 @@ impl IFD {
     let next_ifd = match reader.read_u32() {
       Ok(ptr) => ptr,
       Err(e) => {
-        warn!("TIFF IFD reader failed to get next IFD pointer, fallback to 0. Error was: {}", e);
+        debug!(
+          "TIFF IFD reader failed to get next IFD pointer, fallback to 0 and continue. Original error was: {}",
+          e
+        );
         0
       }
     };

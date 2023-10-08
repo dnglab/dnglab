@@ -424,7 +424,7 @@ impl CodecParams {
         // for not end of the line - use one symbol ahead to estimate next K
         if remaining > 1 {
           let delta: i32 = (p.coeff_d() - p.coeff_b()) << 1;
-          bit_code = (bit_code + delta.abs() as u32) >> 1;
+          bit_code = (bit_code + delta.unsigned_abs()) >> 1;
         }
         p.rice.update_k_param(bit_code, PREDICT_K_MAX);
         p.line_pos += 1;
@@ -459,7 +459,7 @@ impl CodecParams {
       } else {
         code = -((p.coeff_b() - p.coeff_d() + p.rounded_bits_mask) >> p.rounded_bits);
       }
-      p.rice.update_k_param((bit_code + 2 * code.abs() as u32) >> 1, PREDICT_K_MAX);
+      p.rice.update_k_param((bit_code + 2 * code.unsigned_abs()) >> 1, PREDICT_K_MAX);
     } else {
       p.rice.update_k_param(bit_code, PREDICT_K_MAX);
     }

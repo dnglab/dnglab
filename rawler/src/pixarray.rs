@@ -378,9 +378,9 @@ macro_rules! alloc_image_plain {
       panic!("rawler: surely there's no such thing as a >500MP or >50000 px wide/tall image!");
     }
     if $dummy {
-      crate::pixarray::PixU16::new_uninit($width, $height)
+      $crate::pixarray::PixU16::new_uninit($width, $height)
     } else {
-      crate::pixarray::PixU16::new($width, $height)
+      $crate::pixarray::PixU16::new($width, $height)
     }
   }};
 }
@@ -389,9 +389,9 @@ macro_rules! alloc_image_plain {
 macro_rules! alloc_image {
   ($width:expr, $height:expr, $dummy: expr) => {{
     if $dummy {
-      return crate::pixarray::PixU16::new_uninit($width, $height);
+      return $crate::pixarray::PixU16::new_uninit($width, $height);
     } else {
-      crate::alloc_image_plain!($width, $height, $dummy)
+      $crate::alloc_image_plain!($width, $height, $dummy)
     }
   }};
 }
@@ -400,9 +400,9 @@ macro_rules! alloc_image {
 macro_rules! alloc_image_ok {
   ($width:expr, $height:expr, $dummy: expr) => {{
     if $dummy {
-      return Ok(crate::pixarray::PixU16::new_uninit($width, $height));
+      return Ok($crate::pixarray::PixU16::new_uninit($width, $height));
     } else {
-      crate::alloc_image_plain!($width, $height, $dummy)
+      $crate::alloc_image_plain!($width, $height, $dummy)
     }
   }};
 }

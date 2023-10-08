@@ -20,7 +20,7 @@ impl Cmt1Box {
 
 impl<R: Read + Seek> ReadBox<&mut R> for Cmt1Box {
   fn read_box(reader: &mut R, header: BoxHeader) -> Result<Self> {
-    let current = reader.seek(SeekFrom::Current(0))?;
+    let current = reader.stream_position()?;
     let data_len = header.end_offset() - current;
     let mut data = vec![0; data_len as usize];
     reader.read_exact(&mut data)?;

@@ -6,10 +6,10 @@ use crate::{AppError, Result};
 use async_trait::async_trait;
 use log::debug;
 use rawler::{
-  dng::dngwriter::{raw_to_dng, ConvertParams},
+  dng::convert::{convert_raw_file, ConvertParams},
   RawlerError,
 };
-use std::{fmt::Display, fs::File};
+use std::{fmt::Display, fs::File, io::BufWriter};
 use std::{path::PathBuf, time::Instant};
 use tokio::task::spawn_blocking;
 
@@ -61,12 +61,11 @@ impl Raw2DngJob {
       .to_string_lossy()
       .to_string();
 
-    let raw_file = File::open(&self.input)?;
-    let mut dng_file = File::create(&self.output)?;
+    let mut dng = BufWriter::new(File::create(&self.output)?);
 
-    match raw_to_dng(&self.input, raw_file, &mut dng_file, orig_filename.clone(), &self.params) {
+    match convert_raw_file(&self.input, &mut dng, &self.params) {
       Ok(_) => {
-        drop(dng_file);
+        drop(dng);
         Ok(JobResult {
           job: self.clone(),
           duration: 0.0,

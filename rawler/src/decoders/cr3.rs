@@ -578,7 +578,7 @@ impl Ctmd {
 
   pub fn get_as_tiff(&self, record: u16, tag: u16) -> Result<Option<GenericTiffReader>> {
     if let Some(block) = self.records.get(&record).and_then(|rec| rec.blocks.get(&tag)) {
-      Ok(Some(GenericTiffReader::new_with_buffer(&block, 0, 0, Some(0))?))
+      Ok(Some(GenericTiffReader::new_with_buffer(block, 0, 0, Some(0))?))
     } else {
       warn!("Unable to find CTMD record {}, tag 0x{:X}", record, tag);
       Ok(None)

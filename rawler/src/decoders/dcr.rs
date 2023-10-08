@@ -63,7 +63,7 @@ impl<'a> Decoder for DcrDecoder<'a> {
     let curve = {
       let mut points = Vec::new();
       for i in 0..linearization.count() {
-        points.push(linearization.force_u32(i as usize) as u16);
+        points.push(linearization.force_u32(i) as u16);
       }
       LookupTable::new(&points)
     };

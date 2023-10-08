@@ -2,10 +2,7 @@
 // Originally written by Guillaume Gomez under MIT license
 // Copyright 2021 Daniel Vogelbacher <daniel@chaospixel.com>
 
-use std::{
-  net::IpAddr,
-  path::{Path, PathBuf},
-};
+use std::{net::IpAddr, path::Path, rc::Rc};
 
 /// Server configuration
 #[derive(Clone)]
@@ -20,8 +17,8 @@ pub struct Config {
 /// This callback provides filtering for specific FTP
 /// commands, for example to inject a custom STOR handler.
 pub trait FtpCallback {
-  fn stor_file(&self, _path: PathBuf, data: Vec<u8>) -> Option<Vec<u8>> {
-    Some(data) // unhandled
+  fn stor_file(&self, _path: &Path, _data: Rc<[u8]>) -> std::io::Result<bool> {
+    Ok(false)
   }
 }
 

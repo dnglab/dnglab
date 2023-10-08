@@ -5,7 +5,7 @@ use std::path::PathBuf;
 
 use clap::{arg, builder::ValueParser, command, value_parser, ArgAction, Command};
 use log::debug;
-use rawler::dng::dngwriter::{CropMode, DngCompression};
+use rawler::dng::{CropMode, DngCompression};
 
 pub fn create_app() -> Command {
   debug!("Creating CLAP app configuration");
@@ -58,7 +58,6 @@ pub fn create_app() -> Command {
         .value_parser(value_parser!(CropMode))
         .default_value("best"),
     )
-    .arg(arg!(-r --recursive "Process input directory recursive").action(ArgAction::SetTrue))
     .arg(arg!(-f --override "Override existing files").action(ArgAction::SetTrue));
 
   let app = command!()
@@ -90,6 +89,7 @@ pub fn create_app() -> Command {
       convert_base
         .clone()
         .name("convert")
+        .arg(arg!(-r --recursive "Process input directory recursive").action(ArgAction::SetTrue))
         .arg(arg!(<INPUT> "Input file or directory").value_parser(clap::value_parser!(PathBuf)))
         .arg(arg!(<OUTPUT> "Output file or existing directory").value_parser(clap::value_parser!(PathBuf))),
     )

@@ -39,7 +39,7 @@ impl<R: Read + Seek> ReadBox<&mut R> for StsdBox {
 
     reader.read_u32::<BigEndian>()?; // FIXME XXX entry_count
 
-    let mut current = reader.seek(SeekFrom::Current(0))?;
+    let mut current = reader.stream_position()?;
 
     while current < header.end_offset() {
       // get box?
@@ -63,7 +63,7 @@ impl<R: Read + Seek> ReadBox<&mut R> for StsdBox {
         }
       }
 
-      current = reader.seek(SeekFrom::Current(0))?;
+      current = reader.stream_position()?;
     }
 
     reader.seek(SeekFrom::Start(header.end_offset()))?;

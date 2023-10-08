@@ -259,7 +259,7 @@ impl Tile {
               line_buf[1][line_pos] = x + error_code_signed(qp);
               if width > 0 {
                 delta_h = d - b;
-                rice.update_k_param((qp + 2 * delta_h.abs() as u32) >> 1, 7);
+                rice.update_k_param((qp + 2 * delta_h.unsigned_abs()) >> 1, 7);
               } else {
                 rice.update_k_param(qp, 7);
               }

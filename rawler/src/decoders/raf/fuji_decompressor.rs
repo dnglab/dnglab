@@ -972,7 +972,7 @@ fn fuji_decode_sample_even(pump: &mut BitPumpMSB, params: &Params, linebuf: &mut
     rd + rc + 2 * rb
   };
 
-  let code = read_code(pump, params, &mut gradients[grad.abs() as usize], qtable);
+  let code = read_code(pump, params, &mut gradients[grad.unsigned_abs() as usize], qtable);
 
   // Adjustments specific to even positions
   if grad < 0 {
@@ -1032,7 +1032,7 @@ fn fuji_decode_sample_odd(pump: &mut BitPumpMSB, params: &Params, linebuf: &mut 
     (ra + rg) >> 1
   };
 
-  let code = read_code(pump, params, &mut gradients[grad.abs() as usize], qtable);
+  let code = read_code(pump, params, &mut gradients[grad.unsigned_abs() as usize], qtable);
 
   // Adjustments specific to odd positions
   if grad < 0 {
