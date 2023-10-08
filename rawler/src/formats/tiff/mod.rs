@@ -16,7 +16,7 @@ pub use entry::Entry;
 pub use ifd::IFD;
 pub use reader::GenericTiffReader;
 pub use value::{IntoTiffValue, Rational, SRational, TiffAscii, Value};
-pub use writer::{DirectoryWriter, TiffWriter, WriteAndSeek};
+pub use writer::{DirectoryWriter, TiffWriter};
 
 const TIFF_MAGIC: u16 = 42;
 
@@ -172,11 +172,6 @@ mod tests {
 
   use super::*;
 
-  fn _transfer_entry(_in_tiff: &GenericTiffReader, out_tiff: &mut DirectoryWriter) {
-    out_tiff.add_tag(34, "Foo").unwrap();
-    //out_tiff.add_entry(in_tiff.get_first_entry(23).unwrap());
-  }
-
   #[test]
   fn encode_tiff_test() -> std::result::Result<(), Box<dyn std::error::Error>> {
     let mut buf = Cursor::new(Vec::new());
@@ -184,15 +179,15 @@ mod tests {
     let mut dir = tiff.new_directory();
 
     let offset = {
-      let mut dir2 = dir.new_directory();
-      dir2.add_tag(32_u16, 23_u16)?;
-      dir2.build()?
+      let mut dir2 = tiff.new_directory();
+      dir2.add_tag(32_u16, 23_u16);
+      dir2.build(&mut tiff)?
     };
 
-    dir.add_tag(TiffCommonTag::ActiveArea, offset as u16)?;
-    dir.add_tag(TiffCommonTag::ActiveArea, [23_u16, 45_u16])?;
-    dir.add_tag(TiffCommonTag::ActiveArea, &[23_u16, 45_u16][..])?;
-    dir.add_tag(TiffCommonTag::ActiveArea, "Fobbar")?;
+    dir.add_tag(TiffCommonTag::ActiveArea, offset as u16);
+    dir.add_tag(TiffCommonTag::ActiveArea, [23_u16, 45_u16]);
+    dir.add_tag(TiffCommonTag::ActiveArea, &[23_u16, 45_u16][..]);
+    dir.add_tag(TiffCommonTag::ActiveArea, "Fobbar");
 
     Ok(())
   }
@@ -202,27 +197,24 @@ mod tests {
     let mut output = Cursor::new(Vec::new());
     let mut tiff = TiffWriter::new(&mut output)?;
 
-    let ifd_offset = {
-      let mut dir = tiff.new_directory();
+    let mut dir = tiff.new_directory();
 
-      let offset = {
-        let mut dir2 = dir.new_directory();
-        dir2.add_tag(32_u16, 23_u16)?;
-        dir2.build()?
-      };
-
-      dir.add_tag(TiffCommonTag::ExifIFDPointer, offset)?;
-
-      dir.add_tag(TiffCommonTag::ActiveArea, [9_u16, 10_u16, 11_u16, 12, 13, 14])?;
-      dir.add_tag(TiffCommonTag::BlackLevels, [9_u16, 10_u16])?;
-      dir.add_tag(TiffCommonTag::WhiteLevel, [11_u16])?;
-      dir.add_tag(TiffCommonTag::BitsPerSample, [12_u32])?;
-      dir.add_tag(TiffCommonTag::ResolutionUnit, [-5_i32])?;
-      dir.add_tag(TiffCommonTag::Artist, "AT")?;
-      dir.build()?
+    let offset = {
+      let mut dir2 = tiff.new_directory();
+      dir2.add_tag(32_u16, 23_u16);
+      dir2.build(&mut tiff)?
     };
 
-    tiff.build(ifd_offset)?;
+    dir.add_tag(TiffCommonTag::ExifIFDPointer, offset);
+
+    dir.add_tag(TiffCommonTag::ActiveArea, [9_u16, 10_u16, 11_u16, 12, 13, 14]);
+    dir.add_tag(TiffCommonTag::BlackLevels, [9_u16, 10_u16]);
+    dir.add_tag(TiffCommonTag::WhiteLevel, [11_u16]);
+    dir.add_tag(TiffCommonTag::BitsPerSample, [12_u32]);
+    dir.add_tag(TiffCommonTag::ResolutionUnit, [-5_i32]);
+    dir.add_tag(TiffCommonTag::Artist, "AT");
+
+    tiff.build(dir)?;
 
     //assert!(TiffReader::is_tiff(&mut output) == true);
 

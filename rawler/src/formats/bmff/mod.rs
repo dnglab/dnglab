@@ -68,7 +68,7 @@ pub struct BoxHeader {
 
 impl BoxHeader {
   pub fn parse<R: Read + Seek>(mut reader: R) -> Result<Self> {
-    let start = reader.seek(SeekFrom::Current(0))?;
+    let start = reader.stream_position()?;
     let mut size = reader.read_u32::<BigEndian>()? as u64;
     let typ = reader.read_u32::<BigEndian>()?.into();
     if size == 1 {
@@ -81,7 +81,7 @@ impl BoxHeader {
       uuid = Some(Uuid::from_bytes(buf));
     }
 
-    let current = reader.seek(SeekFrom::Current(0))?;
+    let current = reader.stream_position()?;
     Ok(BoxHeader {
       size,
       typ,
@@ -183,7 +183,7 @@ impl FileBox {
         }
       }
 
-      current = file.seek(SeekFrom::Current(0))?;
+      current = file.stream_position()?;
     }
 
     Ok(Self {

@@ -294,7 +294,7 @@ impl<'a> LjpegDecompressor<'a> {
     }
 
     if self.sof.components[0].super_h == 2 && self.sof.components[0].super_v == 2 {
-      return decode_ljpeg_420(self, out, width, height);
+      decode_ljpeg_420(self, out, width, height)
     } else if self.sof.components[0].super_h == 2 && self.sof.components[0].super_v == 1 {
       return decode_ljpeg_422(self, out, width, height);
     } else if self.sof.components[0].super_h == 1 && self.sof.components[0].super_v == 1 {

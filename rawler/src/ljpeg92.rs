@@ -68,7 +68,7 @@ const fn build_num_bits_tbl() -> [u16; 256] {
 /// This utilizes the caching table which should be faster than
 /// calculating it manually.
 fn lookup_ssss(diff: i16) -> u16 {
-  let diff_abs = (diff as i32).abs() as usize; // Convert to i32 because abs() can be overflow i16
+  let diff_abs = (diff as i32).unsigned_abs() as usize; // Convert to i32 because abs() can be overflow i16
   if diff_abs >= 256 {
     NUM_BITS_TBL[(diff_abs >> 8) & 0xFF] + 8
   } else {
@@ -963,7 +963,6 @@ mod tests {
     bs.flush()?;
     bs.write(16, 0b0)?;
     bs.flush()?;
-    drop(bs);
     assert_eq!(buf[0], 0b10000000);
     assert_eq!(buf[1], 0b01011101);
     assert_eq!(buf[2], 0b01000000);
@@ -1219,7 +1218,7 @@ mod tests {
   fn encode_predictor1_2comp_padding() -> std::result::Result<(), Box<dyn std::error::Error>> {
     crate::init_test_logger();
     let input_image = vec![1, 2, 5, 6, 3, 7, 0, 0, 7, 8, 3, 4, 6, 2, 0, 0];
-    let expected_image = vec![1, 2, 5, 6, 3, 7, 7, 8, 3, 4, 6, 2];
+    let expected_image = [1, 2, 5, 6, 3, 7, 7, 8, 3, 4, 6, 2];
     let h = 2;
     let w = 3;
     let c = 2;

@@ -5,16 +5,16 @@ use clap::ArgMatches;
 use embedftp::config::{Config, FtpCallback};
 use embedftp::server::serve;
 use rawler::decoders::supported_extensions;
-use rawler::RawFile;
+use std::ffi::OsStr;
 use std::fs::File;
 use std::io::{BufWriter, Cursor};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
+use std::rc::Rc;
 
 use tokio::runtime::Handle;
 
 use crate::{PKG_NAME, PKG_VERSION};
-use rawler::dng::dngwriter::ConvertParams;
-use rawler::dng::dngwriter::{raw_to_dng_internal};
+use rawler::dng::convert::{convert_raw_stream, ConvertParams};
 
 #[derive(Clone)]
 struct FtpState {
@@ -23,34 +23,24 @@ struct FtpState {
 }
 
 impl FtpCallback for FtpState {
-  fn stor_file(&self, path: PathBuf, data: Vec<u8>) -> Option<Vec<u8>> {
+  fn stor_file(&self, path: &Path, data: Rc<[u8]>) -> std::io::Result<bool> {
     if let Some(ext) = path.extension().map(|ext| ext.to_string_lossy()) {
-      if is_ext_supported(&ext) {
-        let mut filebuf = RawFile::new(&path, Cursor::new(data.clone())); // TODO: prevent clone
-
-        let params = self.params.clone();
-        let orig_filename = path.file_name().unwrap().to_str().unwrap();
-
+      if is_ext_supported(ext) {
+        let raw_stream = Cursor::new(data);
+        let original_filename = path.file_name().and_then(OsStr::to_str).unwrap_or_default();
         let out_path = path.with_extension("dng");
-        let mut buf_file = BufWriter::new(File::create(out_path).unwrap());
-
-        raw_to_dng_internal(&mut filebuf, &mut buf_file, orig_filename.into(), &params).unwrap();
-
-        if self.keep_orig {
-          return Some(data);
-        } else {
-          return None;
-        }
+        let mut dng = BufWriter::new(File::create(out_path)?);
+        convert_raw_stream(raw_stream, &mut dng, original_filename, &self.params).map_err(|err| std::io::Error::new(std::io::ErrorKind::Other, err))?;
+        return Ok(!self.keep_orig);
       }
     }
-
-    Some(data)
+    Ok(false)
   }
 }
 
 /// Entry point for Clap sub command `ftpconvert`
 pub async fn ftpserver(options: &ArgMatches) -> anyhow::Result<()> {
-  let mut config = Config::new("foo").unwrap();
+  let mut config = Config::new("foo").unwrap(); // TODO: Needs cleanup
 
   let params = ConvertParams {
     predictor: *options.get_one("predictor").expect("predictor has no default"),
@@ -69,11 +59,11 @@ pub async fn ftpserver(options: &ArgMatches) -> anyhow::Result<()> {
   let state = FtpState { params, keep_orig };
 
   config.server_port = *options.get_one("ftp_port").unwrap_or(&2121);
-  config.server_addr = options.get_one::<String>("ftp_listen").unwrap_or(&"127.0.0.1".to_string()).parse().unwrap();
+  config.server_addr = options.get_one::<String>("ftp_listen").unwrap_or(&"127.0.0.1".to_string()).parse()?;
 
   let out_path: &PathBuf = options.get_one("OUTPUT").expect("OUTPUT not available");
 
-  serve(Handle::current(), out_path.to_path_buf(), config, state).await.unwrap();
+  serve(Handle::current(), out_path.to_path_buf(), config, state).await?;
 
   Ok(())
 }

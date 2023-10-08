@@ -26,7 +26,7 @@ pub async fn extract(options: &ArgMatches) -> anyhow::Result<()> {
   let proc = {
     let in_path: &PathBuf = options.get_one("INPUT").expect("INPUT not available");
     let out_path: &PathBuf = options.get_one("OUTPUT").expect("OUTPUT not available");
-    MapMode::new(&in_path, &out_path)?
+    MapMode::new(in_path, out_path)?
   };
 
   let recursive = options.get_flag("recursive");
@@ -44,7 +44,7 @@ pub async fn extract(options: &ArgMatches) -> anyhow::Result<()> {
       eprintln!("Scanning directory, please wait...");
       let list = sd.file_list(recursive, |file| {
         if let Some(ext) = file.extension().map(|ext| ext.to_string_lossy()) {
-          is_ext_supported(&ext)
+          is_ext_supported(ext)
         } else {
           false
         }

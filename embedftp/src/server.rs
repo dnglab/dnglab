@@ -20,7 +20,7 @@ use crate::config::{Config, FtpCallback};
 /// Start the server processing loop
 pub async fn serve<T>(handle: Handle, server_root: PathBuf, config: Config, env: T) -> io::Result<()>
 where
-  T: FtpCallback + Clone + Send + 'static,
+  T: FtpCallback + Clone + Send + Sync + 'static,
 {
   let port = config.server_port;
   let addr = SocketAddr::new(config.server_addr, port);
@@ -38,7 +38,7 @@ where
 /// Handle a single client connection
 async fn handle_client<T>(addr: SocketAddr, stream: TcpStream, handle: Handle, server_root: PathBuf, config: Config, env: T)
 where
-  T: FtpCallback + Clone + Send,
+  T: FtpCallback + Clone + Send + Sync + 'static,
 {
   match client(stream, handle, server_root, config, env).await {
     Err(err) => {

@@ -13,7 +13,7 @@ use crate::filemap::{FileMap, MapMode};
 use crate::jobs::raw2dng::{JobResult, Raw2DngJob};
 use crate::jobs::Job;
 use crate::{AppError, Result, PKG_NAME, PKG_VERSION};
-use rawler::dng::dngwriter::{ConvertParams};
+use rawler::dng::convert::ConvertParams;
 
 /// Entry point for Clap sub command `convert`
 pub async fn convert(options: &ArgMatches) -> anyhow::Result<()> {
@@ -24,7 +24,7 @@ pub async fn convert(options: &ArgMatches) -> anyhow::Result<()> {
   let proc = {
     let in_path: &PathBuf = options.get_one("INPUT").expect("INPUT not available");
     let out_path: &PathBuf = options.get_one("OUTPUT").expect("OUTPUT not available");
-    MapMode::new(&in_path, &out_path)?
+    MapMode::new(in_path, out_path)?
   };
 
   // List of jobs
@@ -39,7 +39,7 @@ pub async fn convert(options: &ArgMatches) -> anyhow::Result<()> {
     MapMode::Dir(sd) => {
       let list = sd.file_list(recursive, |file| {
         if let Some(ext) = file.extension().map(|ext| ext.to_string_lossy()) {
-          is_ext_supported(&ext)
+          is_ext_supported(ext)
         } else {
           false
         }

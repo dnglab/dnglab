@@ -27,7 +27,7 @@ impl<R: Read + Seek> ReadBox<&mut R> for Cdi1Box {
 
     let mut iad1 = None;
 
-    let mut current = reader.seek(SeekFrom::Current(0))?;
+    let mut current = reader.stream_position()?;
 
     while current < header.end_offset() {
       // get box?
@@ -45,7 +45,7 @@ impl<R: Read + Seek> ReadBox<&mut R> for Cdi1Box {
         }
       }
 
-      current = reader.seek(SeekFrom::Current(0))?;
+      current = reader.stream_position()?;
     }
 
     reader.seek(SeekFrom::Start(header.end_offset()))?;

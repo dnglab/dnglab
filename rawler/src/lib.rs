@@ -50,6 +50,16 @@
   clippy::upper_case_acronyms,
   clippy::eq_op,
   clippy::needless_range_loop,
+  clippy::manual_range_patterns,
+  clippy::unnecessary_cast,
+  clippy::get_first,
+  clippy::only_used_in_recursion,
+  //clippy::seek_from_current, // TODO
+  clippy::needless_lifetimes,
+  //clippy::cast_abs_to_unsigned,
+  //clippy::needless_return,
+  //clippy::derivable_impls,
+  //clippy::useless_vec,
 )]
 
 use decoders::Camera;
@@ -146,9 +156,9 @@ impl From<Vec<u8>> for OptBuffer {
   }
 }
 
-pub trait ReadTrait: Read + Seek + Send {}
+pub trait ReadTrait: Read + Seek {}
 
-impl<T: Read + Seek + Send> ReadTrait for T {}
+impl<T: Read + Seek> ReadTrait for T {}
 
 pub struct RawFile {
   pub path: PathBuf,

@@ -970,7 +970,7 @@ impl<'a> IiqDecoder<'a> {
     match self.lens_model()? {
       Some(model) => {
         let resolver = LensResolver::new().with_camera(&self.camera).with_lens_keyname(Some(model));
-        return Ok(resolver.resolve());
+        Ok(resolver.resolve())
       }
       None => Ok(None),
     }
