@@ -13,7 +13,7 @@ use crate::{
   tags::{ExifTag, TiffCommonTag, TiffTag},
 };
 use byteorder::{LittleEndian, ReadBytesExt};
-use log::{debug};
+use log::debug;
 use serde::{Deserialize, Serialize};
 use std::{
   collections::{BTreeMap, HashMap},

@@ -823,7 +823,7 @@ impl Value {
   pub fn as_embedded(&self) -> Result<u32> {
     if self.count() == 0 {
       // TODO: is zero count allowed?
-      return Err(TiffError::General("Entry as count == 0".into()));
+      return Err(TiffError::General("IFD entry count is 0!".into()));
     }
     if self.byte_size() > 4 {
       Err(TiffError::Overflow("Invalid data".to_string()))

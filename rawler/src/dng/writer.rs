@@ -417,15 +417,15 @@ where
   }
 
   pub fn close(mut self) -> Result<()> {
-    //let raw_ifd_offset = self.raw_ifd.build(&mut self.dng).unwrap();
-
     if !self.exif_ifd.is_empty() {
       let exif_ifd_offset = self.exif_ifd.build(&mut self.dng)?;
       self.root_ifd.add_tag(TiffCommonTag::ExifIFDPointer, exif_ifd_offset);
     }
 
     // Add SubIFDs
-    self.root_ifd.add_tag(TiffCommonTag::SubIFDs, &self.subs);
+    if !self.subs.is_empty() {
+      self.root_ifd.add_tag(TiffCommonTag::SubIFDs, &self.subs);
+    }
 
     self.dng.build(self.root_ifd)?;
     Ok(())
@@ -683,24 +683,47 @@ fn fill_exif_ifd(exif_ifd: &mut DirectoryWriter, exif: &Exif) -> Result<()> {
 
 #[cfg(test)]
 mod tests {
-  use std::{
-    fs::File,
-    io::{BufReader, BufWriter},
-  };
 
-  use crate::{
-    decoders::RawDecodeParams,
-    dng::{DNG_VERSION_V1_4, PREVIEW_JPEG_QUALITY},
-    RawFile,
-  };
+  use std::io::Cursor;
+
+  use crate::dng::DNG_VERSION_V1_4;
 
   use super::*;
 
   #[test]
-  fn build_test() -> std::result::Result<(), Box<dyn std::error::Error>> {
-    let mut rawfile = RawFile::new("/tmp/foo.cr3", File::open("/tmp/foo.cr3").unwrap());
+  fn build_empty_dng() -> std::result::Result<(), Box<dyn std::error::Error>> {
+    let mut buf = Cursor::new(Vec::new());
+    let mut dng = DngWriter::new(&mut buf, DNG_VERSION_V1_4)?;
+    dng.root_ifd_mut().add_tag(TiffCommonTag::Artist, "Test");
+    dng.close()?;
+    let expected_output = [
+      73, 73, 42, 0, 36, 0, 0, 0, 1, 0, 0, 144, 7, 0, 4, 0, 0, 0, 48, 50, 50, 48, 0, 0, 0, 0, 0, 0, 84, 101, 115, 116, 0, 0, 0, 0, 4, 0, 59, 1, 2, 0, 5, 0, 0,
+      0, 28, 0, 0, 0, 105, 135, 4, 0, 1, 0, 0, 0, 8, 0, 0, 0, 18, 198, 1, 0, 4, 0, 0, 0, 1, 6, 0, 0, 19, 198, 1, 0, 4, 0, 0, 0, 1, 4, 0, 0, 0, 0, 0, 0,
+    ];
+    assert_eq!(expected_output, buf.into_inner().as_slice());
+    Ok(())
+  }
 
-    let original_thread = std::thread::spawn(|| OriginalCompressed::compress(&mut BufReader::new(File::open("/tmp/foo.cr3").unwrap())));
+  #[cfg(feature = "samplecheck")]
+  #[test]
+  fn convert_canon_cr3_to_dng() -> std::result::Result<(), Box<dyn std::error::Error>> {
+    use crate::{
+      decoders::RawDecodeParams,
+      dng::{DNG_VERSION_V1_4, PREVIEW_JPEG_QUALITY},
+      RawFile,
+    };
+    use std::{
+      fs::File,
+      io::{BufReader, BufWriter},
+      path::PathBuf,
+    };
+
+    let mut rawdb = PathBuf::from(std::env::var("RAWLER_RAWDB").expect("RAWLER_RAWDB variable must be set in order to run RAW test!"));
+    rawdb.push("cameras/Canon/EOS R5/raw_modes/Canon EOS R5_RAW_ISO_100_nocrop_nodual.CR3");
+
+    let mut rawfile = RawFile::new(rawdb.clone(), File::open(rawdb.clone()).unwrap());
+
+    let original_thread = std::thread::spawn(|| OriginalCompressed::compress(&mut BufReader::new(File::open(rawdb).unwrap())));
 
     let decoder = crate::get_decoder(&mut rawfile)?;
 
@@ -712,8 +735,8 @@ mod tests {
 
     let predictor = 1;
 
-    //let buf = BufWriter::new(Cursor::new(Vec::new()));
-    let buf = BufWriter::new(File::create("/tmp/foo.dng")?);
+    let buf = BufWriter::new(Cursor::new(Vec::new()));
+    //let buf = BufWriter::new(File::create("/tmp/dng_writer_simple_test.dng")?);
     let mut dng = DngWriter::new(buf, DNG_VERSION_V1_4)?;
     let mut raw = dng.subframe(0);
     raw.raw_image(
@@ -738,7 +761,7 @@ mod tests {
 
     let original = original_thread.join().unwrap()?;
 
-    dng.original_file(&original, "test.cr3")?;
+    dng.original_file(&original, "test.CR3")?;
 
     dng.close()?;
 
