@@ -24,7 +24,7 @@ clap = { version = "4.4.0", optional = true }
 chrono = "0.4"
 hex = "0.4"
 image = "0.24"
-num_enum = "0.6"
+num_enum = "0.7"
 itertools = "0.11"
 lazy_static = "1"
 libc = "0.2"
