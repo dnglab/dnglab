@@ -22,22 +22,14 @@ const SUPPORTED_FILE_EXT: [&str; 1] = ["DNG"];
 /// Entry point for Clap sub command `extract`
 pub async fn extract(options: &ArgMatches) -> anyhow::Result<()> {
   let now = Instant::now();
-  let in_path = PathBuf::from(options.value_of("INPUT").expect("INPUT not available"));
-  let out_path = PathBuf::from(options.value_of("OUTPUT").expect("OUTPUT not available"));
-  let recursive = options.is_present("recursive");
 
-  //if !out_path.exists() {
-  //  return Err(AppError::General(format!("Output path not exists")).into());
-  //}
-  //if !out_path.is_dir() {
-  //  return Err(AppError::General(format!("Output path must be directory")).into());
-  //}
+  let proc = {
+    let in_path: &PathBuf = options.get_one("INPUT").expect("INPUT not available");
+    let out_path: &PathBuf = options.get_one("OUTPUT").expect("OUTPUT not available");
+    MapMode::new(in_path, out_path)?
+  };
 
-  let proc = MapMode::new(&in_path, &out_path)?;
-
-  // drop pathes to prevent use
-  drop(in_path);
-  drop(out_path);
+  let recursive = options.get_flag("recursive");
 
   let mut jobs = Vec::new();
 
@@ -63,7 +55,7 @@ pub async fn extract(options: &ArgMatches) -> anyhow::Result<()> {
     }
   }
 
-  let verbose = options.is_present("verbose");
+  let verbose = options.get_flag("verbose");
 
   let mut results: Vec<JobResult> = Vec::new();
   for chunks in jobs.chunks(8) {
@@ -120,8 +112,8 @@ fn generate_job(entry: &FileMap, options: &ArgMatches, use_orig_filename: bool) 
   Ok(ExtractRawJob {
     input: PathBuf::from(&entry.src),
     output,
-    replace: options.is_present("override"),
-    skip_checks: options.is_present("skipchecks"),
+    replace: options.get_flag("override"),
+    skip_checks: options.get_flag("skipchecks"),
   })
 }
 

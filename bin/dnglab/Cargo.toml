@@ -2,7 +2,7 @@
 authors = ["Daniel Vogelbacher <daniel@chaospixel.com>"]
 edition = "2021"
 name = "dnglab"
-version = "0.5.2"
+version = "0.6.0"
 description = "Camera RAW to DNG file format converter"
 license = "LGPL-2.1"
 repository = "https://github.com/dnglab/dnglab"
@@ -11,11 +11,11 @@ repository = "https://github.com/dnglab/dnglab"
 byteorder = "1"
 anyhow = "1.0"
 chrono = "0.4"
-clap = { version = "3.2.25", features = ["cargo"] }
+clap = { version = "4.4", features = ["cargo", "string"] }
 fern = {version = "0.6", features = ["colored"]}
 log = "0.4"
 prettytable-rs = "^0.10"
-rawler = {path = "../../rawler"}
+rawler = {path = "../../rawler", features = ["clap"]}
 embedftp = {path = "../../embedftp"}
 image = "0.24"
 serde = { version = "1.0", features = ["derive"] }

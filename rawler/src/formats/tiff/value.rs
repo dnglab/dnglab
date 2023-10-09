@@ -3,9 +3,9 @@
 
 use byteorder::{NativeEndian, WriteBytesExt};
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
-use std::{convert::Infallible, ffi::CString, fmt::Display, num::TryFromIntError};
+use std::{convert::Infallible, ffi::CString, fmt::Display, io::Write, num::TryFromIntError};
 
-use super::{Result, TiffError, WriteAndSeek};
+use super::{Result, TiffError};
 
 /// Type to represent tiff values of type `RATIONAL`
 #[derive(Clone, Debug, Default, Copy)]
@@ -24,11 +24,12 @@ impl PartialEq for Rational {
 
 impl Eq for Rational {}
 
+#[allow(clippy::incorrect_partial_ord_impl_on_ord_type)]
 impl PartialOrd for Rational {
   fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
     let n1: u64 = self.n as u64 * other.d as u64;
     let n2: u64 = self.d as u64 * other.n as u64;
-    n1.partial_cmp(&n2)
+    Some(n1.cmp(&n2))
   }
 }
 
@@ -300,6 +301,7 @@ impl PartialEq for SRational {
 
 impl Eq for SRational {}
 
+#[allow(clippy::incorrect_partial_ord_impl_on_ord_type)]
 impl PartialOrd for SRational {
   fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
     let n1: i64 = self.n as i64 * other.d as i64;
@@ -390,6 +392,14 @@ pub enum Value {
 }
 
 impl Value {
+  pub fn long(v: u32) -> Self {
+    Self::from(v)
+  }
+
+  pub fn short(v: u16) -> Self {
+    Self::from(v)
+  }
+
   pub fn as_string(&self) -> Option<&String> {
     match self {
       Self::Ascii(v) => Some(&v.strings()[0]),
@@ -813,7 +823,7 @@ impl Value {
   pub fn as_embedded(&self) -> Result<u32> {
     if self.count() == 0 {
       // TODO: is zero count allowed?
-      return Err(TiffError::General("Entry as count == 0".into()));
+      return Err(TiffError::General("IFD entry count is 0!".into()));
     }
     if self.byte_size() > 4 {
       Err(TiffError::Overflow("Invalid data".to_string()))
@@ -865,7 +875,7 @@ impl Value {
     }
   }
 
-  pub fn write(&self, w: &mut dyn WriteAndSeek) -> Result<()> {
+  pub fn write(&self, w: &mut dyn Write) -> Result<()> {
     match self {
       Self::Byte(val) => {
         w.write_all(val)?;

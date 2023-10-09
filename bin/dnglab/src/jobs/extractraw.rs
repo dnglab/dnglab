@@ -6,13 +6,13 @@ use crate::{AppError, Result};
 use async_trait::async_trait;
 use log::debug;
 use rawler::{
-  dng::{original_decompress, original_digest},
-  formats::tiff::{reader::TiffReader, Entry, GenericTiffReader, Value},
+  dng::original::{OriginalCompressed, OriginalDigest},
+  formats::tiff::{reader::TiffReader, GenericTiffReader, Value},
   tags::DngTag,
 };
 use std::{
   fmt::Display,
-  io::{BufReader, BufWriter, Write},
+  io::{BufReader, BufWriter, Cursor, Write},
 };
 use std::{fs::File, path::PathBuf, time::Instant};
 
@@ -66,33 +66,18 @@ impl ExtractRawJob {
     }
     if let Some(orig_data) = file.get_entry(DngTag::OriginalRawFileData) {
       if let Value::Undefined(val) = &orig_data.value {
-        let comp = original_decompress(val).map_err(|e| AppError::General(e.to_string()))?;
-        if let Some(Entry {
-          value: Value::Byte(orig_digest),
-          ..
-        }) = file.get_entry(DngTag::OriginalRawFileDigest)
-        {
-          let new_digest = original_digest(val);
-          debug!("Original calculated original data digest: {:x?}", orig_digest);
-          debug!("Fresh calculated original data digest: {:x?}", new_digest);
-          if !orig_digest.eq(&new_digest) {
-            if self.skip_checks {
-              eprintln!("Warning: digest verification for embedded data failed, output file may be corrupt!");
-            } else {
-              return Err(AppError::General("Embedded digest mismatch".into()));
-            }
-          }
-        } else {
-          return Err(AppError::General("No embedded raw digest found".into()));
-        }
+        let digest = file
+          .get_entry(DngTag::OriginalRawFileDigest)
+          .map(|entry| entry.value.get_data().as_slice())
+          .and_then(|data| OriginalDigest::try_from(data).ok());
 
-        let raw_file = File::create(&self.output)?;
-        let mut out_file = BufWriter::new(raw_file);
-        out_file.write_all(&comp)?;
-        out_file.flush()?;
+        let original = OriginalCompressed::new(&mut Cursor::new(val), digest)?;
+        let mut stream = BufWriter::new(File::create(&self.output)?);
+        original.decompress(&mut stream, !self.skip_checks)?;
+        stream.flush()?;
         Ok(JobResult {
           job: self.clone(),
-          duration: 0.0,
+          duration: 0.0, // TODO: fixme
           error: None,
         })
       } else {

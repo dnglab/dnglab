@@ -963,7 +963,6 @@ mod tests {
     bs.flush()?;
     bs.write(16, 0b0)?;
     bs.flush()?;
-    drop(bs);
     assert_eq!(buf[0], 0b10000000);
     assert_eq!(buf[1], 0b01011101);
     assert_eq!(buf[2], 0b01000000);

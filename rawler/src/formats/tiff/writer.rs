@@ -1,35 +1,31 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2021 Daniel Vogelbacher <daniel@chaospixel.com>
 
+use super::{Entry, Result, TiffError, Value, TIFF_MAGIC};
+use crate::tags::TiffTag;
+use byteorder::{LittleEndian, NativeEndian, WriteBytesExt};
 use std::{
   collections::BTreeMap,
   io::{Seek, SeekFrom, Write},
 };
 
-use byteorder::{LittleEndian, NativeEndian, WriteBytesExt};
-
-use crate::tags::TiffTag;
-
-use super::{Entry, Result, TiffError, Value, TIFF_MAGIC};
-
-pub struct TiffWriter<'w> {
+pub struct TiffWriter<W> {
   ifd_location: u64,
-  pub writer: &'w mut (dyn WriteAndSeek + Send),
+  pub writer: W,
 }
 
-pub trait WriteAndSeek: Write + Seek {}
-
-impl<T> WriteAndSeek for T where T: Write + Seek {}
-
-impl<'w> TiffWriter<'w> {
-  pub fn new<T: WriteAndSeek + Send>(writer: &'w mut T) -> Result<Self> {
+impl<W> TiffWriter<W>
+where
+  W: Write + Seek,
+{
+  pub fn new(writer: W) -> Result<Self> {
     let mut tmp = Self { writer, ifd_location: 0 };
     tmp.write_header()?;
     Ok(tmp)
   }
 
-  pub fn new_directory(&mut self) -> DirectoryWriter<'_, 'w> {
-    DirectoryWriter::new(self)
+  pub fn new_directory(&self) -> DirectoryWriter {
+    DirectoryWriter::new()
   }
 
   fn write_header(&mut self) -> Result<()> {
@@ -46,6 +42,28 @@ impl<'w> TiffWriter<'w> {
     Ok(())
   }
 
+  pub fn write_data(&mut self, data: &[u8]) -> Result<u32>
+  where
+    W: Seek + Write,
+  {
+    self.pad_word_boundary()?;
+    let offset = self.position()?;
+    self.writer.write_all(data)?;
+    Ok(offset)
+  }
+
+  pub fn write_data_u16_be(&mut self, data: &[u16]) -> Result<u32>
+  where
+    W: Seek + Write,
+  {
+    self.pad_word_boundary()?;
+    let offset = self.position()?;
+    for v in data {
+      self.writer.write_u16::<LittleEndian>(*v)?; // TODO bug?
+    }
+    Ok(offset)
+  }
+
   pub(crate) fn pad_word_boundary(&mut self) -> Result<()> {
     if self.position()? % 4 != 0 {
       let padding = [0, 0, 0];
@@ -55,80 +73,32 @@ impl<'w> TiffWriter<'w> {
     Ok(())
   }
 
-  pub fn build(self, ifd0_offset: u32) -> Result<()> {
+  pub fn build(mut self, root_ifd: DirectoryWriter) -> Result<()> {
+    let ifd0_offset = root_ifd.build(&mut self)?;
     self.writer.seek(SeekFrom::Start(self.ifd_location))?;
     self.writer.write_u32::<NativeEndian>(ifd0_offset)?;
     Ok(())
   }
+}
 
+impl<W> TiffWriter<W>
+where
+  W: Seek,
+{
   pub fn position(&mut self) -> Result<u32> {
     Ok(self.writer.stream_position().map(|v| v as u32)?) // TODO: try_from?
   }
 }
 
-pub struct DirectoryWriter<'a, 'w> {
-  pub tiff: &'a mut TiffWriter<'w>,
+#[derive(Default)]
+pub struct DirectoryWriter {
   // We use BTreeMap to make sure tags are written in correct order
   entries: BTreeMap<u16, Entry>,
   next_ifd: u32,
 }
 
-impl<'a, 'w> DirectoryWriter<'a, 'w> {
-  pub fn new(tiff: &'a mut TiffWriter<'w>) -> Self {
-    Self {
-      tiff,
-      entries: BTreeMap::new(),
-      next_ifd: 0,
-    }
-  }
-
-  pub fn new_directory(&mut self) -> DirectoryWriter<'_, 'w> {
-    DirectoryWriter::new(self.tiff)
-  }
-
-  pub fn entry_count(&self) -> u16 {
-    self.entries.len() as u16
-  }
-
-  pub fn build(mut self) -> Result<u32> {
-    if self.entries.is_empty() {
-      return Err(TiffError::General("IFD is empty, not allowed by TIFF specification".to_string()));
-    }
-    for &mut Entry {
-      ref mut value,
-      ref mut embedded,
-      ..
-    } in self.entries.values_mut()
-    {
-      let data_bytes = 4;
-
-      if value.byte_size() > data_bytes {
-        self.tiff.pad_word_boundary()?;
-        let offset = self.tiff.position()?;
-        value.write(self.tiff.writer)?;
-        embedded.replace(offset);
-      } else {
-        embedded.replace(value.as_embedded()?);
-      }
-    }
-
-    self.tiff.pad_word_boundary()?;
-    let offset = self.tiff.position()?;
-
-    self.tiff.writer.write_all(&self.entry_count().to_ne_bytes())?;
-
-    for (tag, entry) in self.entries {
-      self.tiff.writer.write_u16::<NativeEndian>(tag)?;
-      self.tiff.writer.write_u16::<NativeEndian>(entry.value_type())?;
-      self.tiff.writer.write_u32::<NativeEndian>(entry.count())?;
-      self.tiff.writer.write_u32::<NativeEndian>(entry.embedded.unwrap())?;
-    }
-    self.tiff.writer.write_u32::<NativeEndian>(self.next_ifd)?; // Next IFD
-
-    Ok(offset)
-  }
-
-  pub fn add_tag<T: TiffTag, V: Into<Value>>(&mut self, tag: T, value: V) -> Result<()> {
+impl DirectoryWriter {
+  pub fn add_tag<T: TiffTag, V: Into<Value>>(&mut self, tag: T, value: V) {
     let tag: u16 = tag.into();
     self.entries.insert(
       tag,
@@ -138,7 +108,6 @@ impl<'a, 'w> DirectoryWriter<'a, 'w> {
         embedded: None,
       },
     );
-    Ok(())
   }
 
   pub fn add_untyped_tag<V: Into<Value>>(&mut self, tag: u16, value: V) -> Result<()> {
@@ -155,8 +124,8 @@ impl<'a, 'w> DirectoryWriter<'a, 'w> {
 
   pub fn add_tag_undefined<T: TiffTag>(&mut self, tag: T, data: Vec<u8>) -> Result<()> {
     let tag: u16 = tag.into();
-    //let data = data.as_ref();
-    //let offset = self.write_data(data)?;
+    // let data = data.as_ref();
+    // let offset = self.write_data(data)?;
     self.entries.insert(
       tag,
       Entry {
@@ -168,31 +137,70 @@ impl<'a, 'w> DirectoryWriter<'a, 'w> {
     Ok(())
   }
 
-  pub fn add_value<T: TiffTag>(&mut self, tag: T, value: Value) -> Result<()> {
+  pub fn add_value<T: TiffTag>(&mut self, tag: T, value: Value) {
     let tag: u16 = tag.into();
     self.entries.insert(tag, Entry { tag, value, embedded: None });
-    Ok(())
   }
 
-  /*
-  pub fn add_entry(&mut self, entry: Entry) {
-    self.ifd.insert(tag.into(), entry);
+  pub fn entry_count(&self) -> u16 {
+    self.entries.len() as u16
   }
-   */
+}
 
-  pub fn write_data(&mut self, data: &[u8]) -> Result<u32> {
-    self.tiff.pad_word_boundary()?;
-    let offset = self.tiff.position()?;
-    self.tiff.writer.write_all(data)?;
-    Ok(offset)
-  }
-
-  pub fn write_data_u16_be(&mut self, data: &[u16]) -> Result<u32> {
-    self.tiff.pad_word_boundary()?;
-    let offset = self.tiff.position()?;
-    for v in data {
-      self.tiff.writer.write_u16::<LittleEndian>(*v)?; // TODO bug?
+impl DirectoryWriter {
+  pub fn new() -> Self {
+    Self {
+      entries: BTreeMap::new(),
+      next_ifd: 0,
     }
+  }
+
+  pub fn is_empty(&self) -> bool {
+    self.entries.is_empty()
+  }
+
+  pub fn build<W>(mut self, tiff: &mut TiffWriter<W>) -> Result<u32>
+  where
+    W: Seek + Write,
+  {
+    if self.entries.is_empty() {
+      return Err(TiffError::General("IFD is empty, not allowed by TIFF specification".to_string()));
+    }
+    for &mut Entry {
+      ref mut value,
+      ref mut embedded,
+      ..
+    } in self.entries.values_mut()
+    {
+      let data_bytes = 4;
+
+      if value.byte_size() > data_bytes {
+        tiff.pad_word_boundary()?;
+        let offset = tiff.position()?;
+        value.write(&mut tiff.writer)?;
+        embedded.replace(offset as u32);
+      } else {
+        embedded.replace(value.as_embedded()?);
+      }
+    }
+
+    tiff.pad_word_boundary()?;
+    let offset = tiff.position()?;
+
+    tiff.writer.write_all(&self.entry_count().to_ne_bytes())?;
+
+    for (tag, entry) in self.entries {
+      tiff.writer.write_u16::<NativeEndian>(tag)?;
+      tiff.writer.write_u16::<NativeEndian>(entry.value_type())?;
+      tiff.writer.write_u32::<NativeEndian>(entry.count())?;
+      tiff.writer.write_u32::<NativeEndian>(entry.embedded.unwrap())?;
+    }
+    tiff.writer.write_u32::<NativeEndian>(self.next_ifd)?; // Next IFD
+
     Ok(offset)
   }
+
+  // pub fn add_entry(&mut self, entry: Entry) {
+  // self.ifd.insert(tag.into(), entry);
+  // }
 }
