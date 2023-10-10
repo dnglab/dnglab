@@ -14,8 +14,8 @@ data:
           x: 12
           y: 21
         d:
-          w: 5152
-          h: 7728
+          w: 7728
+          h: 5152
       activeArea:
         p:
           x: 0

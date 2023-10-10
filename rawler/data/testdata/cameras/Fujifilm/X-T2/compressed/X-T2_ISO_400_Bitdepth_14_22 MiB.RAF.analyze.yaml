@@ -14,8 +14,8 @@ data:
           x: 16
           y: 21
         d:
-          w: 4000
-          h: 6000
+          w: 6000
+          h: 4000
       activeArea:
         p:
           x: 0
