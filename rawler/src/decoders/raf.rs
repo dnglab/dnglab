@@ -374,7 +374,7 @@ impl<'a> Decoder for RafDecoder<'a> {
 
       // Overwrite crop if available in metadata
       if let Some(crop) = self.get_crop()? {
-        log::debug!("RAW file metadata contains crop info, overriding toml definitions");
+        log::debug!("RAW file metadata contains crop info, overriding toml definitions: {:?}", crop);
         image.crop_area = Some(crop);
       }
 
@@ -461,7 +461,7 @@ impl<'a> RafDecoder<'a> {
       if let (Some(crops), Some(size)) = (crops, size) {
         return Ok(Some(Rect::new(
           Point::new(crops.force_usize(1), crops.force_usize(0)),
-          Dim2::new(size.force_usize(0), size.force_usize(1)),
+          Dim2::new(size.force_usize(1), size.force_usize(0)),
         )));
       }
     }
