@@ -14,8 +14,8 @@ data:
           x: 6
           y: 13
         d:
-          w: 4160
-          h: 6240
+          w: 6240
+          h: 4160
       activeArea:
         p:
           x: 0

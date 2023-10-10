@@ -14,8 +14,8 @@ data:
           x: 8
           y: 7
         d:
-          w: 3264
-          h: 4896
+          w: 4896
+          h: 3264
       activeArea: ~
       blacklevels:
         levels:
