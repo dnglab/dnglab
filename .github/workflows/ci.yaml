@@ -25,6 +25,21 @@ jobs:
       - run: cargo test
       - run: cargo check
 
+  build-all-features:
+    name: Rust all-features ${{matrix.rust}}
+    runs-on: ubuntu-20.04
+    strategy: 
+      fail-fast: false
+      matrix: 
+        rust: [stable]
+    steps:
+      - uses: actions/checkout@v2
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{matrix.rust}}
+      - run: cargo build --all-features
+      - run: cargo check --all-features
+
   samplecheck:
     name: Testdata validation with Rust ${{matrix.rust}}
     runs-on: testdata-avail
