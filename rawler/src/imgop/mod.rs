@@ -238,6 +238,22 @@ pub fn crop<T: Clone>(input: &[T], dim: Dim2, area: Rect) -> Vec<T> {
   output
 }
 
+pub fn scale_u16_to_double(x: u16) -> f32 {
+  x as f32 / u16::MAX as f32
+}
+
+pub fn scale_double_to_u16(x: f32) -> u16 {
+  (x.abs() * u16::MAX as f32) as u16
+}
+
+pub fn scale_u8_to_double(x: u8) -> f32 {
+  x as f32 / u8::MAX as f32
+}
+
+pub fn scale_double_to_u8(x: f32) -> u8 {
+  (x.abs() * u8::MAX as f32) as u8
+}
+
 #[cfg(test)]
 mod tests {
   use super::*;

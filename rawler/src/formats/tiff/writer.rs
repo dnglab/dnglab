@@ -101,6 +101,11 @@ pub struct DirectoryWriter {
 }
 
 impl DirectoryWriter {
+  pub fn remove_tag<T: TiffTag>(&mut self, tag: T) {
+    let tag: u16 = tag.into();
+    self.entries.remove(&tag);
+  }
+
   pub fn add_tag<T: TiffTag, V: Into<Value>>(&mut self, tag: T, value: V) {
     let tag: u16 = tag.into();
     self.entries.insert(

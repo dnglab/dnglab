@@ -614,4 +614,11 @@ pub enum DngTag {
   OriginalDefaultCropSize = 51091,
   NewRawImageDigest = 51111,
   RawToPreviewGain = 51112,
+  // 1.6.0
+  CalibrationIlluminant3 = 52529,
+  ColorMatrix3 = 52531,
+  CameraCalibration3 = 52530,
+  ReductionMatrix3 = 52538,
+  ProfileHueSatMapData3 = 52537,
+  ForwardMatrix3 = 52532,
 }

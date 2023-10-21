@@ -1348,7 +1348,7 @@ dependencies = [
  "glob",
  "hex",
  "image",
- "itertools 0.10.3",
+ "itertools 0.11.0",
  "lazy_static 1.4.0",
  "libc",
  "libflate",

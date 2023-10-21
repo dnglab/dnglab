@@ -9,7 +9,7 @@ use log::debug;
 use rayon::prelude::*;
 
 use crate::{
-  decoders::RawMetadata,
+  decoders::{Camera, RawMetadata},
   dng::rect_to_dng_area,
   exif::Exif,
   formats::tiff::{
@@ -18,9 +18,11 @@ use crate::{
   },
   imgop::{Dim2, Point, Rect},
   ljpeg92::LjpegCompressor,
+  pixarray::PixU16,
+  rawimage::BlackLevel,
   tags::{ExifGpsTag, ExifTag, TiffTag},
   tiles::ImageTiler,
-  RawImage, RawImageData,
+  RawImage, RawImageData, CFA,
 };
 use crate::{
   formats::tiff::SRational,
@@ -63,6 +65,40 @@ where
 
     ifd.add_tag(TiffCommonTag::NewSubFileType, subtype);
     Self { ifd, writer }
+  }
+
+  pub fn ifd(&mut self) -> &DirectoryWriter {
+    &self.ifd
+  }
+
+  pub fn ifd_mut(&mut self) -> &mut DirectoryWriter {
+    &mut self.ifd
+  }
+
+  pub fn rgb_image_u8(&mut self, data: &[u8], width: usize, height: usize, compression: DngCompression, predictor: u8) -> Result<()> {
+    let cpp = 3;
+    let rawimagedata = PixU16::new_with(data.iter().copied().map(u16::from).collect(), width * cpp, height);
+    let mut cam = Camera::new();
+    cam.cfa = CFA::new("RGGB");
+
+    let wb_coeffs = [1.0, 1.0, 1.0, 1.0];
+    let blacklevel = Some(BlackLevel::new(&[0, 0, 0], 1, 1, 3));
+    let whitelevel = Some(vec![0xFF, 0xFF, 0xFF]);
+    let rawimage = RawImage::new(cam, rawimagedata, cpp, wb_coeffs, blacklevel, whitelevel, false);
+    self.raw_image(&rawimage, CropMode::None, compression, DngPhotometricConversion::Original, predictor)
+  }
+
+  pub fn rgb_image_u16(&mut self, data: &[u16], width: usize, height: usize, compression: DngCompression, predictor: u8) -> Result<()> {
+    let cpp = 3;
+    let rawimagedata = PixU16::new_with(data.iter().copied().map(u16::from).collect(), width * cpp, height);
+    let mut cam = Camera::new();
+    cam.cfa = CFA::new("RGGB");
+
+    let wb_coeffs = [1.0, 1.0, 1.0, 1.0];
+    let blacklevel = Some(BlackLevel::new(&[0, 0, 0], 1, 1, 3));
+    let whitelevel = Some(vec![0xFFFF, 0xFFFF, 0xFFFF]);
+    let rawimage = RawImage::new(cam, rawimagedata, cpp, wb_coeffs, blacklevel, whitelevel, false);
+    self.raw_image(&rawimage, CropMode::None, compression, DngPhotometricConversion::Original, predictor)
   }
 
   pub fn image(&mut self, _image: &RawImageData, _width: u16, _height: u16) -> Result<()> {
