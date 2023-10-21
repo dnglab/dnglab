@@ -22,6 +22,7 @@ mod ftpconv;
 mod gui;
 mod jobs;
 mod lenses;
+mod makedng;
 
 use fern::colors::{Color, ColoredLevelConfig};
 use thiserror::Error;
@@ -82,6 +83,7 @@ async fn main_async() -> anyhow::Result<()> {
   match matches.subcommand() {
     Some(("analyze", sc)) => analyze::analyze(sc).await,
     Some(("convert", sc)) => convert::convert(sc).await,
+    Some(("makedng", sc)) => makedng::makedng(sc).await,
     Some(("extract", sc)) => extract::extract(sc).await,
     Some(("ftpserver", sc)) => ftpconv::ftpserver(sc).await,
     Some(("lenses", sc)) => lenses::lenses(sc).await,

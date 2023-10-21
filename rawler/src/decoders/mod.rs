@@ -171,6 +171,7 @@ pub trait Decoder: Send {
     Ok(None)
   }
 
+  // TODO: clarify preview and full image
   fn preview_image(&self, _file: &mut RawFile) -> Result<Option<DynamicImage>> {
     warn!("Decoder has no preview image support");
     Ok(None)

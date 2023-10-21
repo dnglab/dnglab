@@ -7,6 +7,10 @@ use clap::{arg, builder::ValueParser, command, value_parser, ArgAction, Command}
 use log::debug;
 use rawler::dng::{CropMode, DngCompression};
 
+use crate::makedng::{
+  CalibrationIlluminantArgParser, ColorMatrixArgParser, DngVersion, InputSourceUsageMap, LinearizationTableArgParser, WhiteBalanceInput, WhitePointArgParser,
+};
+
 pub fn create_app() -> Command {
   debug!("Creating CLAP app configuration");
 
@@ -124,6 +128,89 @@ pub fn create_app() -> Command {
         .about("List supported lenses")
         .arg_required_else_help(false)
         .arg(arg!(--md "Markdown format output")),
+    )
+    .subcommand(
+      Command::new("makedng")
+        .about("Lowlevel command to make a DNG file")
+        .arg_required_else_help(true)
+        .arg(arg!(OUTPUT: -o --"output" <OUTPUT> "Output DNG file path").value_parser(clap::value_parser!(PathBuf)))
+        .arg(
+          arg!(inputs: -i --"input" <INPUT> "Input files (raw, preview, exif, ...), index for map starts with 0")
+            .required(true)
+            .value_parser(clap::value_parser!(PathBuf))
+            .num_args(1..),
+        )
+        .arg(
+          arg!(map: --map <MAP> "Input usage map")
+            .required(false)
+            .num_args(1..)
+            .default_values(["0:raw", "0:preview", "0:thumbnail", "0:exif", "0:xmp"])
+            .value_parser(value_parser!(InputSourceUsageMap)),
+        )
+        /*
+        .arg(
+          arg!(dng_version: --"dng-version" <VERSION> "DNG specification version")
+            .required(false)
+            .default_value("1.6")
+            .value_parser(value_parser!(DngVersion)),
+        )
+         */
+        .arg(
+          arg!(dng_backward_version: --"dng-backward-version" <VERSION> "DNG specification version")
+            .required(false)
+            .default_value("1.4")
+            .value_parser(value_parser!(DngVersion)),
+        )
+        .arg(
+          arg!(matrix1: --matrix1 <MATRIX> "Matrix 1")
+            .required(false)
+            .requires("illuminant1")
+            .value_parser(ColorMatrixArgParser),
+        )
+        .arg(
+          arg!(matrix2: --matrix2 <MATRIX> "Matrix 2")
+            .required(false)
+            .requires("illuminant2")
+            .value_parser(ColorMatrixArgParser),
+        )
+        .arg(
+          arg!(matrix3: --matrix3 <MATRIX> "Matrix 3")
+            .required(false)
+            .requires("illuminant3")
+            .value_parser(ColorMatrixArgParser),
+        )
+        .arg(
+          arg!(illuminant1: --illuminant1 <ILLUMINANT> "Illuminant 1")
+            .required(false)
+            .value_parser(CalibrationIlluminantArgParser),
+        )
+        .arg(
+          arg!(illuminant2: --illuminant2 <ILLUMINANT> "Illuminant 2")
+            .required(false)
+            .value_parser(CalibrationIlluminantArgParser),
+        )
+        .arg(
+          arg!(illuminant3: --illuminant3 <ILLUMINANT> "Illuminant 3")
+            .required(false)
+            .value_parser(CalibrationIlluminantArgParser),
+        )
+        .arg(
+          arg!(linearization: --linearization <TABLE> "Linearization table")
+            .required(false)
+            .value_parser(LinearizationTableArgParser {}),
+        )
+        .arg(
+          arg!(as_shot_neutral: --wb <"R,G,B"> "Whitebalance as-shot")
+            .required(false)
+            .conflicts_with("as_shot_white_xy")
+            .value_parser(value_parser!(WhiteBalanceInput)),
+        )
+        .arg(
+          arg!(as_shot_white_xy: --"white-xy" <"x,y"> "Whitebalance as-shot encoded as xy chromaticity coordinates")
+            .required(false)
+            .value_parser(WhitePointArgParser),
+        )
+        .arg(arg!(-f --override "Override existing files")),
     )
     .subcommand(Command::new("gui").about("Start GUI (not implemented)").arg_required_else_help(false))
     .subcommand(

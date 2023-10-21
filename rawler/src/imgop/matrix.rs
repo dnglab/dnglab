@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: LGPL-2.1
 // Copyright 2021 Daniel Vogelbacher <daniel@chaospixel.com>
 
+pub const IDENTITY_MATRIX_3: [[f32; 3]; 3] = [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]];
+
 /// Multiply two matrices a and b
 pub fn multiply<const X: usize, const A: usize, const B: usize>(a: &[[f32; X]; A], b: &[[f32; B]; X]) -> [[f32; B]; A] {
   let mut r = [[0.0; B]; A];
