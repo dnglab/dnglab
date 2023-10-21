@@ -275,7 +275,6 @@ impl HuffTableBuilder {
         }
       }
     }
-    inspector!("ITER SIZE: {}", ccc);
     #[cfg(feature = "inspector")]
     for (i, codesize) in self.codesize.iter().enumerate() {
       inspector!("codesize[{}]={}", i, codesize);
@@ -677,7 +676,7 @@ impl<'a> LjpegCompressor<'a> {
     }
 
     #[cfg(feature = "inspector")]
-    for comp in self.components() {
+    for comp in 0..self.components {
       inspector!("Huffman table {}", comp);
       for i in 0..17 {
         inspector!("scan: self.huffman[{}].hist[{}]={}", comp, i, self.comp_state[comp].histogram[i]);
