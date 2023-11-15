@@ -237,6 +237,11 @@ Well, depends on developer resources.
 ### Is a GUI in planning?
 Yes, DNGLab should get a GUI in near future.
 
+### How can I donate to this project?
+I don't have any sponsoring or donation account like Patreon or Paypal. 
+If you want to surprise me, please have a look at my [Amazon wish list](https://www.amazon.de/hz/wishlist/ls/DJ87KTFQUK8D?ref_=wl_share).
+
+
 ## Credits
 
 Special thanks goes to:
