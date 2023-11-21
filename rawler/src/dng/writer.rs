@@ -203,13 +203,13 @@ where
     self.ifd.add_tag(
       DngTag::DefaultScale,
       [
-        Rational::new(rawimage.camera.default_scale[0][0], rawimage.camera.default_scale[0][1]),
-        Rational::new(rawimage.camera.default_scale[1][0], rawimage.camera.default_scale[1][1]),
+        Rational::new(rawimage.camera.default_scale.0[0][0], rawimage.camera.default_scale.0[0][1]),
+        Rational::new(rawimage.camera.default_scale.0[1][0], rawimage.camera.default_scale.0[1][1]),
       ],
     );
     self.ifd.add_tag(
       DngTag::BestQualityScale,
-      Rational::new(rawimage.camera.best_quality_scale[0], rawimage.camera.best_quality_scale[1]),
+      Rational::new(rawimage.camera.best_quality_scale.0[0], rawimage.camera.best_quality_scale.0[1]),
     );
 
     // Whitelevel
