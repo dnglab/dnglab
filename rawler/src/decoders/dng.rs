@@ -2,6 +2,7 @@ use std::cmp;
 use std::f32::NAN;
 
 use crate::alloc_image_ok;
+use crate::alloc_image_plain;
 use crate::bits::LookupTable;
 use crate::cfa::*;
 use crate::decoders::*;
@@ -104,9 +105,22 @@ impl<'a> DngDecoder<'a> {
   }
 
   fn make_camera(&self, raw: &IFD, width: usize, height: usize) -> Result<Camera> {
-    let make = fetch_tiff_tag!(self.tiff, TiffCommonTag::Make).get_string()?.to_owned();
-    let model = fetch_tiff_tag!(self.tiff, TiffCommonTag::Model).get_string()?.to_owned();
     let mode = String::from("dng");
+
+    let make = self
+      .tiff
+      .root_ifd()
+      .get_entry(TiffCommonTag::Make)
+      .and_then(|x| x.as_string())
+      .cloned()
+      .unwrap_or_default();
+    let model = self
+      .tiff
+      .root_ifd()
+      .get_entry(TiffCommonTag::Model)
+      .and_then(|x| x.as_string())
+      .cloned()
+      .unwrap_or_default();
 
     let active_area = self.get_active_area(raw, width, height);
     let crop_area = if let Some(crops) = self.get_crop(raw) {
@@ -298,11 +312,40 @@ impl<'a> DngDecoder<'a> {
           for col in 0..coltiles {
             let offset = offsets.force_usize(row * coltiles + col);
             let src = &buffer[offset..];
-            let decompressor = LjpegDecompressor::new(src).unwrap();
-            let bwidth = cmp::min(width, (col + 1) * twidth) - col * twidth;
-            let blength = cmp::min(height, (row + 1) * tlength) - row * tlength;
-            // FIXME: instead of unwrap() we need to propagate the error
-            decompressor.decode(strip, col * twidth, width, bwidth, blength, dummy).unwrap();
+            let decompressor = LjpegDecompressor::new(src)?;
+            // If SOF width & height matches tile dimension, we can decode directly to strip
+            if decompressor.width() == twidth && decompressor.height() == tlength {
+              // Calculate output width & length for current tile (right or bottom tile may have smaller dimension)
+              let owidth = cmp::min(width, (col + 1) * twidth) - col * twidth;
+              let olength = cmp::min(height, (row + 1) * tlength) - row * tlength;
+              decompressor.decode(strip, col * twidth, width, owidth, olength, dummy)?;
+            }
+            // If SOF has other dimension but still same pixel count, we can decode
+            // by using a temporary tile buffer. This is the case if RGGB data is encoded
+            // by two input lines into one output line.
+            // Encoded data is aligned like this:
+            //   RGRGRGRGRGRGRGRGRGGBGBGBGBGBGBGBGBGB
+            //   RGRGRGRGRGRGRGRGRGGBGBGBGBGBGBGBGBGB
+            else if decompressor.width() * decompressor.height() == twidth * tlength {
+              // cps is already included in all values, so just compare them.
+              let mut tile = alloc_image_plain!(decompressor.width(), decompressor.height(), dummy);
+              decompressor.decode(tile.pixels_mut(), 0, width, decompressor.width(), decompressor.height(), dummy)?;
+              // Copy lines from temporary tile to strip buffer
+              for (i, pix) in tile.pixels().chunks_exact(twidth).enumerate() {
+                let start = (i * width) + (col * twidth);
+                strip[start..start + twidth].copy_from_slice(pix);
+              }
+            } else {
+              return Err(format!(
+                "ljpeg92 decoding failed: tile dimensions {}x{} not matching SOF dimensions {}x{}, dng cps: {}, sof cps: {}",
+                twidth,
+                tlength,
+                decompressor.width(),
+                decompressor.height(),
+                cpp,
+                decompressor.components(),
+              ));
+            }
           }
           Ok(())
         }),
@@ -312,41 +355,4 @@ impl<'a> DngDecoder<'a> {
       Err(RawlerError::General("DNG: didn't find tiles or strips".to_string()))
     }
   }
-}
-
-pub fn decode_tiles(file: &mut RawFile, raw: &IFD, dummy: bool) -> Result<PixU16> {
-  let width = fetch_tiff_tag!(raw, TiffCommonTag::ImageWidth).force_usize(0);
-  let height = fetch_tiff_tag!(raw, TiffCommonTag::ImageLength).force_usize(0);
-  let cpp = fetch_tiff_tag!(raw, TiffCommonTag::SamplesPerPixel).force_usize(0);
-
-  let offsets = raw.get_entry(TiffCommonTag::TileOffsets).unwrap();
-
-  // They've gone with tiling
-  let twidth = fetch_tiff_tag!(raw, TiffCommonTag::TileWidth).force_usize(0) * cpp;
-  let tlength = fetch_tiff_tag!(raw, TiffCommonTag::TileLength).force_usize(0);
-  let coltiles = (width - 1) / twidth + 1;
-  let rowtiles = (height - 1) / tlength + 1;
-  if coltiles * rowtiles != offsets.count() as usize {
-    return Err(format_args!("DNG: trying to decode {} tiles from {} offsets", coltiles * rowtiles, offsets.count()).into());
-  }
-  let buffer = file.as_vec().unwrap();
-
-  Ok(decode_threaded_multiline(
-    width,
-    height,
-    tlength,
-    dummy,
-    &(|strip: &mut [u16], row| {
-      let row = row / tlength;
-      for col in 0..coltiles {
-        let offset = offsets.force_usize(row * coltiles + col);
-        let src = &buffer[offset..];
-        let decompressor = LjpegDecompressor::new(src).unwrap();
-        let bwidth = cmp::min(width, (col + 1) * twidth) - col * twidth;
-        let blength = cmp::min(height, (row + 1) * tlength) - row * tlength;
-        // FIXME: instead of unwrap() we need to propagate the error
-        decompressor.decode(strip, col * twidth, width, bwidth, blength, dummy).unwrap();
-      }
-    }),
-  ))
 }
