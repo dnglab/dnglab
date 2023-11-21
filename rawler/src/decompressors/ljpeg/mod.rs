@@ -329,7 +329,7 @@ impl<'a> LjpegDecompressor<'a> {
     let htable1 = &self.dhts[self.sof.components[0].dc_tbl_num];
     let htable2 = &self.dhts[self.sof.components[1].dc_tbl_num];
     let bpred = 1 << (self.sof.precision - self.point_transform - 1);
-    Ok(decode_threaded_multiline(
+    decode_threaded_multiline(
       width,
       height,
       8,
@@ -338,9 +338,10 @@ impl<'a> LjpegDecompressor<'a> {
         let block = block / 8;
         let offset = offsets[block];
         let nlines = strip.len() / width;
-        decode_leaf_strip(&self.buffer[offset..], strip, width, nlines, htable1, htable2, bpred).unwrap();
+        decode_leaf_strip(&self.buffer[offset..], strip, width, nlines, htable1, htable2, bpred)?;
+        Ok(())
       }),
-    ))
+    )
   }
 
   pub fn width(&self) -> usize {

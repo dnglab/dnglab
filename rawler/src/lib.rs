@@ -279,6 +279,9 @@ pub enum RawlerError {
   General(String),
 
   #[error("{}", _0)]
+  DecoderFailed(String),
+
+  #[error("{}", _0)]
   IOErr(String),
 }
 
