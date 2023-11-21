@@ -183,12 +183,13 @@ impl<'a> LjpegDecompressor<'a> {
     }
 
     log::debug!(
-      "LJPEGDecompressor: super_h: {}, super_v: {}, pred: {}, pt: {}, prec: {}",
+      "LJPEGDecompressor: super_h: {}, super_v: {}, pred: {}, pt: {}, prec: {}, cps: {}",
       sof.components[0].super_h,
       sof.components[0].super_v,
       pred,
       pt,
-      sof.precision
+      sof.precision,
+      sof.cps,
     );
 
     if sof.components[0].super_h == 2 && sof.components[0].super_v == 2 {
