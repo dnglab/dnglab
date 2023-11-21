@@ -19,6 +19,7 @@ use crate::alloc_image_ok;
 use crate::analyze::FormatDump;
 use crate::exif::Exif;
 use crate::formats::ciff;
+use crate::formats::jfif;
 use crate::formats::tiff::reader::TiffReader;
 use crate::formats::tiff::GenericTiffReader;
 use crate::formats::tiff::IFD;
@@ -438,6 +439,31 @@ impl RawLoader {
     if ciff::is_ciff(rawfile) {
       let dec = Box::new(crw::CrwDecoder::new(rawfile, self)?);
       return Ok(dec as Box<dyn Decoder>);
+    }
+    if jfif::is_jfif(rawfile) {
+      reset_file!(rawfile);
+    }
+
+    if jfif::is_exif(rawfile) {
+      reset_file!(rawfile);
+      let exif = jfif::Jfif::new(rawfile)?;
+
+      if let Some(make) = exif
+        .exif_ifd()
+        .and_then(|ifd| ifd.get_entry(TiffCommonTag::Make))
+        .and_then(|entry| entry.value.as_string().map(|s| s.as_str().trim_end()))
+      {
+
+        match make {
+          "Konica Minolta Photo Imaging, Inc." => {
+            let dec = Box::new(mrw::MrwDecoder::new_jfif(rawfile, exif, self)?);
+            return Ok(dec as Box<dyn Decoder>);
+          }
+          _ => {
+            log::warn!("Unknown make for EXIF file: {}", make);
+          }
+        }
+      }
     }
 
     if x3f::is_x3f(rawfile) {
