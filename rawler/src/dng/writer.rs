@@ -375,8 +375,12 @@ where
     if let Some(id) = &metadata.unique_image_id {
       self.root_ifd.add_tag(DngTag::RawDataUniqueID, id.to_le_bytes());
     }
+    self.load_exif(&metadata.exif)?;
+    Ok(())
+  }
 
-    fill_exif_ifd(&mut self.exif_ifd, &metadata.exif)?;
+  pub fn load_exif(&mut self, exif: &Exif) -> Result<()> {
+    fill_exif_ifd(&mut self.exif_ifd, exif)?;
     Ok(())
   }
 

@@ -65,6 +65,7 @@
 use decoders::Camera;
 use decoders::Decoder;
 use decoders::RawDecodeParams;
+use formats::jfif::JfifError;
 use lazy_static::lazy_static;
 
 pub mod analyze;
@@ -341,6 +342,12 @@ impl From<String> for RawlerError {
 
 impl From<TiffError> for RawlerError {
   fn from(err: TiffError) -> Self {
+    Self::General(err.to_string())
+  }
+}
+
+impl From<JfifError> for RawlerError {
+  fn from(err: JfifError) -> Self {
     Self::General(err.to_string())
   }
 }
