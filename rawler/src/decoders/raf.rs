@@ -4,6 +4,7 @@ use byteorder::ReadBytesExt;
 use image::DynamicImage;
 use std::collections::BTreeMap;
 use std::f32::NAN;
+use std::io::Cursor;
 use std::io::SeekFrom;
 use std::mem::size_of;
 
@@ -14,6 +15,7 @@ use crate::bits::BEu32;
 use crate::bits::Endian;
 use crate::decoders::raf::fuji_decompressor::decompress_fuji;
 use crate::exif::Exif;
+use crate::formats::jfif::Jfif;
 use crate::formats::tiff::ifd::OffsetMode;
 use crate::formats::tiff::*;
 use crate::imgop::Dim2;
@@ -405,14 +407,25 @@ impl<'a> Decoder for RafDecoder<'a> {
     Ok(mdata)
   }
 
+  fn xpacket(&self, file: &mut RawFile, _params: RawDecodeParams) -> Result<Option<Vec<u8>>> {
+    let jpeg_buf = self.read_embedded_jpeg(file)?;
+    let mut cur = Cursor::new(jpeg_buf);
+    let jfif = Jfif::parse(&mut cur).unwrap();
+    match jfif.xpacket().cloned() {
+      Some(xpacket) => {
+        log::debug!("Found XPacket data in embedded JPEG preview");
+        Ok(Some(xpacket))
+      }
+      None => {
+        log::debug!("Found no XPacket data");
+        Ok(None)
+      }
+    }
+  }
+
   fn full_image(&self, file: &mut RawFile) -> Result<Option<DynamicImage>> {
-    // The offset and len of JPEG preview is in the RAF structure
-    let buf = file.subview(0, 84 + 8)?;
-    let jpeg_off = BEu32(&buf, 84) as u64;
-    let jpeg_len = BEu32(&buf, 84 + 4) as u64;
-    log::debug!("JPEG off: {}, len: {}", jpeg_off, jpeg_len);
-    let jpeg = file.subview(jpeg_off, jpeg_len)?;
-    let img = image::load_from_memory_with_format(&jpeg, image::ImageFormat::Jpeg).unwrap();
+    let jpeg_buf = self.read_embedded_jpeg(file)?;
+    let img = image::load_from_memory_with_format(&jpeg_buf, image::ImageFormat::Jpeg).unwrap();
     Ok(Some(img))
   }
 
@@ -502,6 +515,15 @@ impl<'a> RafDecoder<'a> {
         None
       },
     )
+  }
+
+  fn read_embedded_jpeg(&self, file: &mut RawFile) -> Result<Vec<u8>> {
+    // The offset and len of JPEG preview is in the RAF structure
+    let buf = file.subview(0, 84 + 8)?;
+    let jpeg_off = BEu32(&buf, 84) as u64;
+    let jpeg_len = BEu32(&buf, 84 + 4) as u64;
+    log::debug!("JPEG off: {}, len: {}", jpeg_off, jpeg_len);
+    Ok(file.subview(jpeg_off, jpeg_len)?)
   }
 
   fn rotate_image(&self, src: &[u16], camera: &Camera, width: usize, height: usize, dummy: bool) -> Result<PixU16> {
