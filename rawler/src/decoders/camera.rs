@@ -38,10 +38,28 @@ pub struct Camera {
   // The BPS of the output after decoding
   pub real_bps: usize,
   pub highres_width: usize,
-  pub default_scale: [[u32; 2]; 2],
-  pub best_quality_scale: [u32; 2],
+  pub default_scale: DefaultScale,
+  pub best_quality_scale: BestQualityScale,
   pub hints: Vec<String>,
   pub params: HashMap<String, Value>,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct DefaultScale(pub [[u32; 2]; 2]);
+
+impl Default for DefaultScale {
+  fn default() -> Self {
+    Self([[1, 1], [1, 1]])
+  }
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct BestQualityScale(pub [u32; 2]);
+
+impl Default for BestQualityScale {
+  fn default() -> Self {
+    Self([1, 1])
+  }
 }
 
 impl Camera {
@@ -190,14 +208,14 @@ impl Camera {
               scale_v[1].as_integer().expect("must be integer") as u32,
             ],
           ];
-          self.default_scale = scale;
+          self.default_scale = DefaultScale(scale);
         }
         n @ "best_quality_scale" => {
           let scale_vals = val.as_array().unwrap_or_else(|| panic!("{} must be an array", n));
-          self.best_quality_scale = [
+          self.best_quality_scale = BestQualityScale([
             scale_vals[0].as_integer().expect("must be integer") as u32,
             scale_vals[1].as_integer().expect("must be integer") as u32,
-          ];
+          ]);
         }
         n @ "hints" => {
           self.hints = Vec::new();
@@ -242,8 +260,8 @@ impl Camera {
       bps: None,
       real_bps: 16,
       highres_width: usize::max_value(),
-      default_scale: [[1, 1], [1, 1]],
-      best_quality_scale: [1, 1],
+      default_scale: DefaultScale::default(),
+      best_quality_scale: BestQualityScale::default(),
       hints: Vec::new(),
       params: HashMap::new(),
       //orientation: Orientation::Unknown,
