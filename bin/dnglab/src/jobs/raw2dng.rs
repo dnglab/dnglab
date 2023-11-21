@@ -87,6 +87,9 @@ impl Raw2DngJob {
               mode,
             );
           }
+          RawlerError::DecoderFailed(msg) => {
+            log::error!("Failed to decode file: {}", msg);
+          }
           RawlerError::IOErr(e) => {
             log::error!("I/O error: {:?}", e);
           }

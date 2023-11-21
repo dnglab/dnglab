@@ -288,7 +288,7 @@ impl<'a> DngDecoder<'a> {
         return Err(format_args!("DNG: trying to decode {} tiles from {} offsets", coltiles * rowtiles, offsets.count()).into());
       }
       let buffer = file.as_vec().unwrap();
-      Ok(decode_threaded_multiline(
+      decode_threaded_multiline(
         width,
         height,
         tlength,
@@ -304,8 +304,10 @@ impl<'a> DngDecoder<'a> {
             // FIXME: instead of unwrap() we need to propagate the error
             decompressor.decode(strip, col * twidth, width, bwidth, blength, dummy).unwrap();
           }
+          Ok(())
         }),
-      ))
+      )
+      .map_err(RawlerError::DecoderFailed)
     } else {
       Err(RawlerError::General("DNG: didn't find tiles or strips".to_string()))
     }

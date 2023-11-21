@@ -488,13 +488,14 @@ impl<'a> ArwDecoder<'a> {
               strip = &mut strip[width * cpp..];
             }
           }
+          Ok(())
         }),
-      );
+      )?;
       // Convert YC'bC'r data to RGB.
       ycbcr_to_rgb(&mut image.data);
       Ok(image)
     } else if cpp == 1 {
-      Ok(decode_threaded_multiline(
+      decode_threaded_multiline(
         width,
         height,
         tlength,
@@ -510,8 +511,7 @@ impl<'a> ArwDecoder<'a> {
             let h = 256;
             let mut data = vec![0; h * w * cpp];
 
-            // FIXME: instead of unwrap() we need to propagate the error
-            decompressor.decode(&mut data, 0, w * cpp, w * cpp, h, dummy).unwrap();
+            decompressor.decode(&mut data, 0, w * cpp, w * cpp, h, dummy)?;
 
             let mut strip = &mut *strip;
             for line in data.chunks_exact(1024) {
@@ -527,8 +527,10 @@ impl<'a> ArwDecoder<'a> {
               strip = &mut strip[width * 2..];
             }
           }
+          Ok(())
         }),
-      ))
+      )
+      .map_err(RawlerError::DecoderFailed)
     } else {
       Err(RawlerError::unsupported(
         camera,

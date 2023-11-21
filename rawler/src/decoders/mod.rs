@@ -15,6 +15,7 @@ use std::panic::AssertUnwindSafe;
 use std::path::Path;
 use toml::Value;
 
+use crate::alloc_image_ok;
 use crate::analyze::FormatDump;
 use crate::exif::Exif;
 use crate::formats::ciff;
@@ -581,7 +582,7 @@ where
   F: Fn(&mut [u16], usize) + Sync,
 {
   let mut out: PixU16 = alloc_image!(width, height, dummy);
-  out.pixels_mut().chunks_mut(width).enumerate().for_each(|(row, line)| {
+  out.pixels_mut().chunks_exact_mut(width).enumerate().for_each(|(row, line)| {
     closure(line, row);
   });
   out
@@ -592,21 +593,24 @@ where
   F: Fn(&mut [u16], usize) + Sync,
 {
   let mut out: PixU16 = alloc_image!(width, height, dummy);
-  out.pixels_mut().par_chunks_mut(width).enumerate().for_each(|(row, line)| {
+  out.pixels_mut().par_chunks_exact_mut(width).enumerate().for_each(|(row, line)| {
     closure(line, row);
   });
   out
 }
 
-pub fn decode_threaded_multiline<F>(width: usize, height: usize, lines: usize, dummy: bool, closure: &F) -> PixU16
+pub fn decode_threaded_multiline<F>(width: usize, height: usize, lines: usize, dummy: bool, closure: &F) -> std::result::Result<PixU16, String>
 where
-  F: Fn(&mut [u16], usize) + Sync,
+  F: Fn(&mut [u16], usize) -> std::result::Result<(), String> + Sync,
 {
-  let mut out: PixU16 = alloc_image!(width, height, dummy);
-  out.pixels_mut().par_chunks_mut(width * lines).enumerate().for_each(|(row, line)| {
-    closure(line, row * lines);
-  });
+  let mut out: PixU16 = alloc_image_ok!(width, height, dummy);
   out
+    .pixels_mut()
+    .par_chunks_mut(width * lines)
+    .enumerate()
+    .map(|(row, line)| closure(line, row * lines))
+    .collect::<std::result::Result<Vec<()>, _>>()?;
+  Ok(out)
 }
 
 /// This is used for streams where not chunked at line boundaries.
