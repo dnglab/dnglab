@@ -3,12 +3,17 @@
 
 use std::path::PathBuf;
 
-use clap::{arg, builder::ValueParser, command, value_parser, ArgAction, Command};
+use clap::{
+  arg,
+  builder::{NonEmptyStringValueParser, ValueParser},
+  command, value_parser, ArgAction, Command,
+};
 use log::debug;
 use rawler::dng::{CropMode, DngCompression};
 
 use crate::makedng::{
-  CalibrationIlluminantArgParser, ColorMatrixArgParser, DngVersion, InputSourceUsageMap, LinearizationTableArgParser, WhiteBalanceInput, WhitePointArgParser,
+  CalibrationIlluminantArgParser, ColorMatrixArgParser, DngColorimetricReference, DngVersion, InputSourceUsageMap, LinearizationTableArgParser,
+  WhiteBalanceInput, WhitePointArgParser,
 };
 
 pub fn create_app() -> Command {
@@ -50,7 +55,11 @@ pub fn create_app() -> Command {
         .default_value("true")
         .default_missing_value("true"),
     )
-    .arg(arg!(--"artist" <artist> "Set the artist tag").required(false))
+    .arg(
+      arg!(--"artist" <artist> "Set the artist tag")
+        .required(false)
+        .value_parser(NonEmptyStringValueParser::new()),
+    )
     .arg(
       arg!(index: --"image-index" <index> "Select a specific image index (or 'all') if file is a image container")
         .required(false)
@@ -141,7 +150,7 @@ pub fn create_app() -> Command {
             .num_args(1..),
         )
         .arg(
-          arg!(map: --map <MAP> "Input usage map")
+          arg!(map: --map <map> "Input usage map")
             .required(false)
             .num_args(1..)
             .default_values(["0:raw", "0:preview", "0:thumbnail", "0:exif", "0:xmp"])
@@ -156,10 +165,36 @@ pub fn create_app() -> Command {
         )
          */
         .arg(
-          arg!(dng_backward_version: --"dng-backward-version" <VERSION> "DNG specification version")
+          arg!(dng_backward_version: --"dng-backward-version" <version> "DNG specification version")
             .required(false)
             .default_value("1.4")
             .value_parser(value_parser!(DngVersion)),
+        )
+        .arg(
+          arg!(colorimetric_reference: --"colorimetric-reference" <reference> "Reference for XYZ values")
+            .required(false)
+            .default_value("scene")
+            .value_parser(value_parser!(DngColorimetricReference)),
+        )
+        .arg(
+          arg!(unique_camera_model: --"unique-camera-model" <id> "Unique camera model")
+            .required(false)
+            .value_parser(NonEmptyStringValueParser::new()),
+        )
+        .arg(
+          arg!(artist: --"artist" <artist> "Set the Artist tag")
+            .required(false)
+            .value_parser(NonEmptyStringValueParser::new()),
+        )
+        .arg(
+          arg!(make: --"make" <make> "Set the Make tag")
+            .required(false)
+            .value_parser(NonEmptyStringValueParser::new()),
+        )
+        .arg(
+          arg!(model: --"model" <model> "Set the Model tag")
+            .required(false)
+            .value_parser(NonEmptyStringValueParser::new()),
         )
         .arg(
           arg!(matrix1: --matrix1 <MATRIX> "Matrix 1")

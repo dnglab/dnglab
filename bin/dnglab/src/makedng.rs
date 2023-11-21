@@ -9,6 +9,8 @@ use itertools::Itertools;
 use rawler::decoders::RawDecodeParams;
 use rawler::dng::writer::DngWriter;
 use rawler::dng::{self, CropMode, DngCompression, DngPhotometricConversion, DNG_VERSION_V1_6};
+use rawler::exif::Exif;
+use rawler::formats::jfif::{is_exif, is_jfif, Jfif};
 use rawler::formats::tiff::{self, Rational, SRational};
 use rawler::imgop::gamma::{apply_gamma, invert_gamma};
 
@@ -59,7 +61,26 @@ pub async fn makedng(options: &ArgMatches) -> anyhow::Result<()> {
     .as_dng_value();
 
   let mut dng = DngWriter::new(&mut stream, backward_version)?;
-  dng.root_ifd_mut().add_tag(TiffCommonTag::Artist, "Test");
+
+  if let Some(artist) = options.get_one::<String>("artist") {
+    dng.root_ifd_mut().add_tag(TiffCommonTag::Artist, artist);
+  }
+
+  if let Some(make) = options.get_one::<String>("make") {
+    dng.root_ifd_mut().add_tag(TiffCommonTag::Make, make);
+  }
+
+  if let Some(model) = options.get_one::<String>("model") {
+    dng.root_ifd_mut().add_tag(TiffCommonTag::Model, model);
+  }
+
+  if let Some(unique_camera_model) = options.get_one::<String>("unique_camera_model") {
+    dng.root_ifd_mut().add_tag(DngTag::UniqueCameraModel, unique_camera_model);
+  }
+
+  if let Some(colorimetric_reference) = options.get_one::<DngColorimetricReference>("colorimetric_reference") {
+    dng.root_ifd_mut().add_tag(DngTag::ColorimetricReference, colorimetric_reference.as_dng_value());
+  }
 
   if let Ok(raw_input) = get_input_path(&inputs, &maps, InputUsage::Raw) {
     let mut rawfile = RawFile::new(raw_input, BufReader::new(File::open(raw_input)?));
@@ -112,6 +133,8 @@ pub async fn makedng(options: &ArgMatches) -> anyhow::Result<()> {
       }
       //rawframe.
     }
+  } else {
+    eprintln!("No raw input file found");
   }
 
   if let Ok(preview_input) = get_input_path(&inputs, &maps, InputUsage::Preview) {
@@ -124,18 +147,12 @@ pub async fn makedng(options: &ArgMatches) -> anyhow::Result<()> {
       }
     } else {
       let image = image::open(preview_input)?;
-      match &image {
-        DynamicImage::ImageRgb8(img) => {
-          let buf = img.as_raw().as_slice();
-          let mut frame = dng.subframe(1);
-          frame.rgb_image_u8(buf, img.width() as usize, img.height() as usize, DngCompression::Lossless, 1)?;
-          frame.finalize()?;
-        }
-        _ => {
-          todo!()
-        }
-      }
+      let mut frame = dng.subframe(1);
+      frame.preview(&image, 0.7)?;
+      frame.finalize()?;
     }
+  } else {
+    eprintln!("No preview input file found");
   }
 
   if let Ok(thumbnail_input) = get_input_path(&inputs, &maps, InputUsage::Thumbnail) {
@@ -148,21 +165,44 @@ pub async fn makedng(options: &ArgMatches) -> anyhow::Result<()> {
       let image = image::open(thumbnail_input)?;
       dng.thumbnail(&image)?;
     }
+  } else {
+    eprintln!("No thumbnail input file found");
   }
 
   if let Ok(exif_input) = get_input_path(&inputs, &maps, InputUsage::Exif) {
     let mut rawfile = RawFile::new(exif_input, BufReader::new(File::open(exif_input)?));
-    if let Ok(decoder) = get_decoder(&mut rawfile) {
+    // First, prefer JFIF decoder for preview files
+    if is_jfif(&mut rawfile) || is_exif(&mut rawfile) {
+      rawfile.seek_to_start()?;
+      let jfif = Jfif::new(&mut rawfile)?;
+      if let Some(exif_ifd) = jfif.exif_ifd() {
+        let exif = Exif::new(exif_ifd)?;
+        dng.load_exif(&exif)?;
+      }
+    } else if let Ok(decoder) = get_decoder(&mut rawfile) {
       dng.load_metadata(&decoder.raw_metadata(&mut rawfile, RawDecodeParams::default())?)?;
+    } else {
+      log::warn!("Unable to decode exif file from {:?}", exif_input);
     }
+  } else {
+    eprintln!("No EXIF input file found");
   }
 
   if let Ok(xmp_input) = get_input_path(&inputs, &maps, InputUsage::Xmp) {
     let mut rawfile = RawFile::new(xmp_input, BufReader::new(File::open(xmp_input)?));
-    if let Ok(decoder) = get_decoder(&mut rawfile) {
+
+    if is_jfif(&mut rawfile) || is_exif(&mut rawfile) {
+      rawfile.seek_to_start()?;
+      let jfif = Jfif::new(&mut rawfile)?;
+      if let Some(xpacket) = jfif.xpacket() {
+        dng.xpacket(xpacket)?;
+      }
+    } else if let Ok(decoder) = get_decoder(&mut rawfile) {
       if let Some(xpacket) = decoder.xpacket(&mut rawfile, RawDecodeParams::default())? {
         dng.xpacket(xpacket)?;
       }
+    } else {
+      log::warn!("Unable to decode XMP file from {:?}", xmp_input);
     }
   }
 
@@ -549,7 +589,11 @@ impl clap::builder::TypedValueParser for CalibrationIlluminantArgParser {
   }
 
   fn possible_values(&self) -> Option<Box<dyn Iterator<Item = clap::builder::PossibleValue> + '_>> {
-    Some(Box::new(["D50", "D65"].into_iter().map(clap::builder::PossibleValue::from)))
+    Some(Box::new(
+      ["Unknown", "A", "B", "C", "D50", "D55", "D65", "D75"]
+        .into_iter()
+        .map(clap::builder::PossibleValue::from),
+    ))
   }
 }
 
@@ -592,6 +636,34 @@ impl clap::ValueEnum for DngVersion {
       Self::V1_4 => clap::builder::PossibleValue::new("1.4"),
       Self::V1_5 => clap::builder::PossibleValue::new("1.5"),
       Self::V1_6 => clap::builder::PossibleValue::new("1.6"),
+    })
+  }
+}
+
+#[derive(Clone, Debug)]
+pub enum DngColorimetricReference {
+  Scene,
+  Output,
+}
+
+impl DngColorimetricReference {
+  fn as_dng_value(&self) -> tiff::Value {
+    match self {
+      Self::Scene => 0_u16.into(),
+      Self::Output => 1_u16.into(),
+    }
+  }
+}
+
+impl clap::ValueEnum for DngColorimetricReference {
+  fn value_variants<'a>() -> &'a [Self] {
+    &[Self::Scene, Self::Output]
+  }
+
+  fn to_possible_value(&self) -> Option<clap::builder::PossibleValue> {
+    Some(match self {
+      Self::Scene => clap::builder::PossibleValue::new("scene"),
+      Self::Output => clap::builder::PossibleValue::new("output"),
     })
   }
 }
