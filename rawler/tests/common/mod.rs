@@ -7,7 +7,10 @@ use rawler::{
   analyze::{analyze_metadata, extract_raw_pixels, AnalyzerResult},
   decoders::RawDecodeParams,
 };
-use std::{convert::TryInto, path::PathBuf};
+use std::{
+  convert::TryInto,
+  path::{Path, PathBuf},
+};
 
 macro_rules! camera_file_check {
   ($make:expr, $model:expr, $test:ident, $file:expr) => {
@@ -21,6 +24,19 @@ macro_rules! camera_file_check {
 }
 
 pub(crate) use camera_file_check;
+
+pub(crate) fn rawdb_path() -> PathBuf {
+  PathBuf::from(std::env::var("RAWLER_RAWDB").expect("RAWLER_RAWDB variable must be set in order to run RAW test!"))
+}
+
+pub(crate) fn rawdb_file(path: impl AsRef<Path>) -> PathBuf {
+  let rawdb = rawdb_path();
+  rawdb.join(path)
+}
+
+pub(crate) fn check_md5_equal(digest: [u8; 16], expected: &str) {
+  assert_eq!(hex::encode(digest), expected);
+}
 
 /// Generic function to check camera raw files against
 /// pre-generated stats and pixel files.
