@@ -4,3 +4,4 @@
 pub mod bmff;
 pub mod ciff;
 pub mod tiff;
+pub mod jfif;
