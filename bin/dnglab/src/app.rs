@@ -1,11 +1,10 @@
 // SPDX-License-Identifier: LGPL-2.1
 // Copyright 2021 Daniel Vogelbacher <daniel@chaospixel.com>
 
-use std::path::PathBuf;
-
 use clap::{arg, builder::ValueParser, command, value_parser, ArgAction, Command};
 use log::debug;
 use rawler::dng::{CropMode, DngCompression};
+use std::path::PathBuf;
 
 use crate::makedng::{
   CalibrationIlluminantArgParser, ColorMatrixArgParser, DngVersion, InputSourceUsageMap, LinearizationTableArgParser, WhiteBalanceInput, WhitePointArgParser,

@@ -117,7 +117,7 @@ impl<'a> PlaneLineIter<'a> {
         let param = &mut self.params[0];
         self.codec.decode_line(param)?;
         let line_data = param.decoded_buf();
-        debug_assert_eq!(line_data.len(), param.subband_width as usize);
+        debug_assert_eq!(line_data.len(), { param.subband_width });
         debug_assert_eq!(line_data.len(), self.tile.plane_width);
         Ok(line_data)
       }

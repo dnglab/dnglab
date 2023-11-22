@@ -1,16 +1,13 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2021 Daniel Vogelbacher <daniel@chaospixel.com>
 
+use super::{Entry, Result, TiffError, Value, TIFF_MAGIC};
+use crate::tags::TiffTag;
+use byteorder::{LittleEndian, NativeEndian, WriteBytesExt};
 use std::{
   collections::BTreeMap,
   io::{Seek, SeekFrom, Write},
 };
-
-use byteorder::{LittleEndian, NativeEndian, WriteBytesExt};
-
-use crate::tags::TiffTag;
-
-use super::{Entry, Result, TiffError, Value, TIFF_MAGIC};
 
 pub struct TiffWriter<W> {
   ifd_location: u64,
@@ -132,8 +129,8 @@ impl DirectoryWriter {
 
   pub fn add_tag_undefined<T: TiffTag>(&mut self, tag: T, data: Vec<u8>) -> Result<()> {
     let tag: u16 = tag.into();
-    //let data = data.as_ref();
-    //let offset = self.write_data(data)?;
+    // let data = data.as_ref();
+    // let offset = self.write_data(data)?;
     self.entries.insert(
       tag,
       Entry {
@@ -208,9 +205,7 @@ impl DirectoryWriter {
     Ok(offset)
   }
 
-  /*
-  pub fn add_entry(&mut self, entry: Entry) {
-    self.ifd.insert(tag.into(), entry);
-  }
-   */
+  // pub fn add_entry(&mut self, entry: Entry) {
+  // self.ifd.insert(tag.into(), entry);
+  // }
 }

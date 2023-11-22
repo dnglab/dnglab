@@ -286,7 +286,7 @@ impl HuffTableBuilder {
     // K2
     for i in 0..18 {
       if self.codesize[i] > 0 {
-        self.bits[self.codesize[i] as usize] += 1;
+        self.bits[self.codesize[i]] += 1;
       }
     } // end of K2
 
@@ -424,7 +424,7 @@ impl HuffTableBuilder {
       if let Some(code) = self.huffsym[ssss] {
         let enc = &self.huffcode[code];
         inspector!("ssss: {}, enc.bits: {}", ssss, enc.bits);
-        table[ssss as usize] = BitArray16::from_lsb(enc.bits as usize, enc.enc);
+        table[ssss] = BitArray16::from_lsb(enc.bits as usize, enc.enc);
       }
     }
 

@@ -3,12 +3,13 @@
 
 use clap::ArgMatches;
 use log::debug;
-use rawler::analyze::{
-  analyze_file_structure, analyze_metadata, extract_full_pixels, extract_preview_pixels, extract_raw_pixels, extract_thumbnail_pixels, raw_as_pgm,
-  raw_pixels_digest, rgb8_as_ppm8,
+use rawler::{
+  analyze::{
+    analyze_file_structure, analyze_metadata, extract_full_pixels, extract_preview_pixels, extract_raw_pixels, extract_thumbnail_pixels, raw_as_pgm,
+    raw_as_ppm16, raw_pixels_digest, raw_to_srgb, rgb8_as_ppm8,
+  },
+  decoders::RawDecodeParams,
 };
-use rawler::analyze::{raw_as_ppm16, raw_to_srgb};
-use rawler::decoders::RawDecodeParams;
 use serde::Serialize;
 use std::{
   io::{BufWriter, Write},

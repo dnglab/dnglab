@@ -145,7 +145,7 @@ pub(crate) fn decode_panasonic_v6(buf: &[u8], width: usize, height: usize, bps: 
             epixel = ((epixel as i32).wrapping_add(0x7ffffff1) >> 0x1f) as u16;
             //epixel = static_cast<int>(epixel + 0x7ffffff1) >> 0x1f;
             //out(row, col) = epixel & 0x3fff;
-            out[pix] = (epixel & pixel_mask) as u16;
+            out[pix] = epixel & pixel_mask;
           }
         }
 

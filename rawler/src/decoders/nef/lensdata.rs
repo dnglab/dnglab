@@ -65,7 +65,7 @@ pub(super) fn from_makernote(makernote: &IFD) -> Result<Option<NefLensData>> {
     let lensdata = match version {
       0x100 => NefLensData::FMount(parse_lensdata_0x100(version, &buf)?),
       0x101 => NefLensData::FMount(parse_lensdata_0x101(version, &buf)?),
-      0x201 | 0x202 | 0x203 => {
+      0x201..=0x203 => {
         super::decrypt::nef_decrypt(&mut buf, 4, makernote)?;
         NefLensData::FMount(parse_lensdata_0x101(version, &buf)?)
       }
@@ -89,7 +89,7 @@ pub(super) fn from_makernote(makernote: &IFD) -> Result<Option<NefLensData>> {
         super::decrypt::nef_decrypt(&mut buf, 4, makernote)?;
         NefLensData::FMount(parse_lensdata_0x4xx(version, &buf, 0x2ac)?)
       }
-      0x800 | 0x801 | 0x802 // Z Models
+      0x800..=0x802 // Z Models
       => {
         super::decrypt::nef_decrypt(&mut buf, 4, makernote)?;
         parse_lensdata_0x800(version, &buf)?

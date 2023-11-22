@@ -136,7 +136,7 @@ impl Tile {
     let qp_height4 = (self.plane_height >> 2) + if self.plane_height & 3 > 0 { 1 } else { 0 };
     let qp_height8 = (self.plane_height >> 3) + if self.plane_height & 7 > 0 { 1 } else { 0 };
 
-    let mut q_steps = Vec::with_capacity(params.levels as usize);
+    let mut q_steps = Vec::with_capacity(params.levels);
 
     let q_lookup = |quant_val: i32| -> u32 {
       if quant_val / 6 >= 6 {

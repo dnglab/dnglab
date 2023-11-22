@@ -174,15 +174,15 @@ pub fn decode_sony_ljpeg_420(ljpeg: &LjpegDecompressor, out: &mut [u16], width: 
       };
       // Calculate 4 Y samples, 1 Cb sample, 1 Cr sample
       let y1 = (py1 as i32) + htable1.huff_decode(&mut pump)?;
-      let y2 = (y1 as i32) + htable1.huff_decode(&mut pump)?;
+      let y2 = y1 + htable1.huff_decode(&mut pump)?;
       let y3 = if col == 0 {
         // y1 is sample above current row, column 0
-        (y1 as i32) + htable1.huff_decode(&mut pump)?
+        y1 + htable1.huff_decode(&mut pump)?
       } else {
         // py3 is previous sample in same line
         (py3 as i32) + htable1.huff_decode(&mut pump)?
       };
-      let y4 = (y3 as i32) + htable1.huff_decode(&mut pump)?;
+      let y4 = y3 + htable1.huff_decode(&mut pump)?;
 
       // Cb and Cr components
       let cb = (pcb as i32) + htable2.huff_decode(&mut pump)?;
@@ -236,9 +236,9 @@ pub fn decode_ljpeg_420(ljpeg: &LjpegDecompressor, out: &mut [u16], width: usize
       let (py, pcb, pcr) = (out[pos], out[pos + 1], out[pos + 2]);
 
       let y1 = (py as i32) + htable1.huff_decode(&mut pump)?;
-      let y2 = (y1 as i32) + htable1.huff_decode(&mut pump)?;
-      let y3 = (y2 as i32) + htable1.huff_decode(&mut pump)?;
-      let y4 = (y3 as i32) + htable1.huff_decode(&mut pump)?;
+      let y2 = y1 + htable1.huff_decode(&mut pump)?;
+      let y3 = y2 + htable1.huff_decode(&mut pump)?;
+      let y4 = y3 + htable1.huff_decode(&mut pump)?;
       let cb = (pcb as i32) + htable2.huff_decode(&mut pump)?;
       let cr = (pcr as i32) + htable3.huff_decode(&mut pump)?;
       set_yuv_420(out, row, col, width, y1, y2, y3, y4, cb, cr);
@@ -300,7 +300,7 @@ pub fn decode_ljpeg_422(ljpeg: &LjpegDecompressor, out: &mut [u16], width: usize
       let (py, pcb, pcr) = (out[pos], out[pos + 1], out[pos + 2]);
 
       let y1 = (py as i32) + htable1.huff_decode(&mut pump)?;
-      let y2 = (y1 as i32) + htable1.huff_decode(&mut pump)?;
+      let y2 = y1 + htable1.huff_decode(&mut pump)?;
       let cb = (pcb as i32) + htable2.huff_decode(&mut pump)?;
       let cr = (pcr as i32) + htable3.huff_decode(&mut pump)?;
 

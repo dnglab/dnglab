@@ -73,7 +73,7 @@ impl CFA {
   pub fn new_from_tag(pat: &Value) -> CFA {
     let mut patname = String::new();
     for i in 0..pat.count() {
-      patname.push(match pat.force_u32(i as usize) {
+      patname.push(match pat.force_u32(i) {
         0 => 'R',
         1 => 'G',
         2 => 'B',
@@ -167,14 +167,7 @@ impl CFA {
 
   /// Get a flat pattern
   pub fn flat_pattern(&self) -> Vec<u8> {
-    self
-      .pattern
-      .iter()
-      .take(self.height)
-      .flat_map(|v| v.iter().take(self.width))
-      .cloned()
-      .map(|v| v as u8)
-      .collect()
+    self.pattern.iter().take(self.height).flat_map(|v| v.iter().take(self.width)).cloned().collect()
   }
 
   /// Count of unique colors in pattern

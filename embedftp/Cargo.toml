@@ -10,10 +10,10 @@ license = "MIT"
 [dependencies]
 tokio = { version = "1", features = ["full"] }
 tokio-util = { version = "0.7", features = ["full"] }
-bytes = "1.1"
-futures = "0.3.17"
-chrono = "0.4.19"
-glob = "0.3.0"
+bytes = "1.5"
+futures = "0.3"
+chrono = "0.4"
+glob = "0.3"
 log = "0.4"
 
 [dev-dependencies]

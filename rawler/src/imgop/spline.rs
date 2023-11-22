@@ -103,8 +103,8 @@ impl Spline {
     for (i, s) in self.segments.iter().enumerate() {
       for x in self.xcp[i]..=self.xcp[i + 1] {
         let diff = (x - self.xcp[i]) as f32;
-        let diff_2 = (diff * diff) as f32;
-        let diff_3 = (diff * diff * diff) as f32;
+        let diff_2 = diff * diff;
+        let diff_3 = diff * diff * diff;
 
         let interpolated = s.a + s.b * diff + s.c * diff_2 + s.d * diff_3;
 

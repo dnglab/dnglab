@@ -136,7 +136,7 @@ impl<'a> TfrDecoder<'a> {
       let lens_model = exif.get_entry(ExifTag::LensModel).and_then(|entry| entry.as_string());
       let focal_len = match exif.get_entry(ExifTag::FocalLength) {
         Some(Entry { value: Value::Rational(x), .. }) => x.get(0).cloned(),
-        Some(Entry { value: Value::Short(x), .. }) => x.get(0).copied().map(Rational::from),
+        Some(Entry { value: Value::Short(x), .. }) => x.first().copied().map(Rational::from),
         _ => None,
       };
       let resolver = LensResolver::new()

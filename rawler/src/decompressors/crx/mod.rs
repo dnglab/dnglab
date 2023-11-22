@@ -153,17 +153,17 @@ impl CodecParams {
     assert!(tile_rows > 0);
 
     let params = Self {
-      sample_precision: cmp1.n_bits as u8 + INCR_BIT_TABLE[4 * cmp1.enc_type as usize + 2] + 1,
+      sample_precision: cmp1.n_bits + INCR_BIT_TABLE[4 * cmp1.enc_type as usize + 2] + 1,
       image_width: cmp1.f_width as usize,
       image_height: cmp1.f_height as usize,
-      plane_count: cmp1.n_planes as u8,
+      plane_count: cmp1.n_planes,
       // 3 bands per level + one last LL
       // only 1 band for zero levels (uncompressed)
-      subband_count: 3 * cmp1.image_levels as u8 + 1,
+      subband_count: 3 * cmp1.image_levels + 1,
       levels: cmp1.image_levels as usize,
       n_bits: cmp1.n_bits,
       median_bits: cmp1.median_bits,
-      enc_type: cmp1.enc_type as u8,
+      enc_type: cmp1.enc_type,
       tile_cols,
       tile_rows,
       tile_width: cmp1.tile_width as usize,
