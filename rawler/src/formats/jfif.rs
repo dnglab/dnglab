@@ -175,12 +175,8 @@ impl<R: Read + Seek> ReadSegment<&mut R> for App1 {
       reader.read_exact(&mut xmp_str)?;
       if xmp_str == APP1_XMP_MARKER.as_bytes() {
         log::debug!("Found APP1 XMP marker");
-        //let zero_byte = reader.read_u8()?;
-        //assert_eq!(zero_byte, 0);
         let mut xpacket = vec![0; len as usize - xmp_str.len() - 2];
-
         reader.read_exact(&mut xpacket)?;
-        //dump_buf("/tmp/dump.1",&xpacket);
         reader.seek(SeekFrom::Start(pos + len))?;
         return Ok(Self {
           len,
@@ -190,12 +186,11 @@ impl<R: Read + Seek> ReadSegment<&mut R> for App1 {
         reader.seek(SeekFrom::Current(-(xmp_str.len() as i64)))?;
       }
     }
-    log::debug!("Found APP1: UNKNOWN");
     reader.seek(SeekFrom::Start(pos + len))?;
-    return Ok(Self {
+    Ok(Self {
       len,
       payload: Payload::Unknown,
-    });
+    })
   }
 }
 
@@ -301,7 +296,7 @@ pub fn is_jfif(file: &mut RawFile) -> bool {
         //panic!("Failed: {:x} {:x} {:x} {:x}", buf[0], buf[1], buf[2], buf[3]);
       }
       result
-    },
+    }
     Err(err) => {
       log::error!("is_jfif(): {:?}", err);
       false

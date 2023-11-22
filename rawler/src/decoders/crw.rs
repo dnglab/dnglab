@@ -65,7 +65,7 @@ impl<'a> CrwDecoder<'a> {
 
     let makemodel = fetch_ciff_tag!(ciff, CiffTag::MakeModel).get_strings();
     if makemodel.len() < 2 {
-      return Err(RawlerError::General("CRW: MakeModel tag needs to have 2 strings".to_string()));
+      return Err(RawlerError::DecoderFailed("CRW: MakeModel tag needs to have 2 strings".to_string()));
     }
     let camera = rawloader.check_supported_with_everything(&makemodel[0], &makemodel[1], "")?;
 
@@ -178,7 +178,7 @@ impl<'a> CrwDecoder<'a> {
     let lowbits = !self.camera.find_hint("nolowbits");
     let dectable = fetch_ciff_tag!(self.ciff, CiffTag::DecoderTable).get_usize(0);
     if dectable > 2 {
-      return Err(RawlerError::General(format!("CRW: Unknown decoder table {}", dectable)));
+      return Err(RawlerError::DecoderFailed(format!("CRW: Unknown decoder table {}", dectable)));
     }
     Ok(Self::do_decode(file, lowbits, dectable, width, height, dummy))
   }

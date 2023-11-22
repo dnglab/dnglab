@@ -14,7 +14,7 @@ use rawler::formats::jfif::{is_exif, is_jfif, Jfif};
 use rawler::formats::tiff::{self, Rational, SRational};
 use rawler::imgop::gamma::{apply_gamma, invert_gamma};
 
-use rawler::imgop::xyz::{self, xy_whitepoint_to_wb_coeff, Illuminant, CIE_1931_WHITE_POINT_D50, XYZ_TO_SRGB_D50};
+use rawler::imgop::xyz::{self, Illuminant};
 use rawler::imgop::{scale_double_to_u16, scale_u16_to_double, scale_u8_to_double};
 use rawler::tags::{DngTag, TiffCommonTag};
 use rawler::{get_decoder, RawFile};
@@ -35,22 +35,25 @@ fn get_input_path<'a>(inputs: &'a [&PathBuf], maps: &[&InputSourceUsageMap], usa
 }
 
 /// Entry point for Clap sub command `makedng`
-pub async fn makedng(options: &ArgMatches) -> anyhow::Result<()> {
+pub async fn makedng(options: &ArgMatches) -> crate::Result<()> {
   let _now = Instant::now();
 
   let inputs: Vec<&PathBuf> = options.get_many("inputs").expect("inputs are required").collect();
   let maps: Vec<&InputSourceUsageMap> = options.get_many("map").unwrap_or_default().collect();
+  let max_used_map_input = maps.iter().map(|x| x.source).max().unwrap_or(0);
 
-  if maps.iter().map(|x| x.source).max().unwrap_or(0) >= inputs.len() {
-    panic!("LIMIT");
+  if max_used_map_input >= inputs.len() {
+    return Err(crate::AppError::InvalidCmdSwitch(format!(
+      "--map argument indicies ({}) exceed number of input files ({})",
+      max_used_map_input,
+      inputs.len()
+    )));
   }
-  //eprintln!("Inputs: {:?}", inputs);
-  //eprintln!("Maps: {:?}", maps);
 
   let dest_path: &PathBuf = options.get_one("OUTPUT").expect("Output path is required");
 
   if dest_path.exists() && !options.get_flag("override") {
-    panic!("Destination exists");
+    return Err(crate::AppError::AlreadyExists(dest_path.to_owned()));
   }
 
   let mut stream = BufWriter::new(File::create(dest_path)?);
@@ -129,9 +132,10 @@ pub async fn makedng(options: &ArgMatches) -> anyhow::Result<()> {
           frame.finalize()?;
         }
 
-        _ => todo!(),
+        _ => {
+          return Err(crate::AppError::General("Input format is not supported".to_owned()));
+        }
       }
-      //rawframe.
     }
   } else {
     eprintln!("No raw input file found");
@@ -242,11 +246,13 @@ pub async fn makedng(options: &ArgMatches) -> anyhow::Result<()> {
     dng.root_ifd_mut().remove_tag(DngTag::AsShotNeutral);
   }
 
-  // TODO: debugging
-  let _xyz = xy_whitepoint_to_wb_coeff(CIE_1931_WHITE_POINT_D50.0, CIE_1931_WHITE_POINT_D50.1, &XYZ_TO_SRGB_D50);
+  // Debugging
+  // let _xyz = xy_whitepoint_to_wb_coeff(CIE_1931_WHITE_POINT_D50.0, CIE_1931_WHITE_POINT_D50.1, &XYZ_TO_SRGB_D50);
   //eprintln!("XYZ: {:?}", xyz);
 
   dng.close()?;
+
+  println!("File saved to: {}", dest_path.display());
 
   Ok(())
 }

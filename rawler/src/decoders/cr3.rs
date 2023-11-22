@@ -143,7 +143,7 @@ impl<'a> Cr3Decoder<'a> {
     debug!("CR3 CTMD mdat offset for sample_idx {}: {}, len: {}", sample_idx, offset, size);
     let buf = rawfile
       .subview(offset as u64, size as u64)
-      .map_err(|e| RawlerError::General(format!("I/O error while reading CR3 CTMD: {:?}", e)))?;
+      .map_err(|e| RawlerError::with_io_error("CR3: failed to read CTMD", &rawfile.path, e))?;
     let mut substream = ByteStream::new(&buf, Endian::Little);
     let ctmd = Ctmd::new(&mut substream);
     Ok(Some(ctmd))
@@ -230,7 +230,7 @@ impl<'a> Decoder for Cr3Decoder<'a> {
   fn raw_image(&self, file: &mut RawFile, params: RawDecodeParams, dummy: bool) -> Result<RawImage> {
     let sample_idx = params.image_index;
     if sample_idx >= self.raw_image_count()? {
-      return Err(RawlerError::General(format!(
+      return Err(RawlerError::DecoderFailed(format!(
         "Raw image index {} out of range ({})",
         sample_idx,
         self.raw_image_count()?
@@ -249,7 +249,7 @@ impl<'a> Decoder for Cr3Decoder<'a> {
     // Raw data buffer
     let buf = file
       .subview(offset as u64, size as u64)
-      .map_err(|e| RawlerError::General(format!("I/O error while reading CR3 raw image: {:?}", e)))?;
+      .map_err(|e| RawlerError::with_io_error("CR3: failed to read raw data", &file.path, e))?;
 
     let cmp1 = self.cmp1_box(raw_trak_id).ok_or(format!("CMP1 box not found for trak {}", raw_trak_id))?;
     debug!("cmp1 mdat hdr size: {}", cmp1.mdat_hdr_size);
@@ -356,19 +356,19 @@ impl<'a> Decoder for Cr3Decoder<'a> {
   /// Extract preview image embedded in CR3
   fn full_image(&self, file: &mut RawFile) -> Result<Option<DynamicImage>> {
     if rawler_ignore_previews() {
-      return Err(RawlerError::General("Unable to extract preview image".into()));
+      return Err(RawlerError::DecoderFailed("Unable to extract preview image".into()));
     }
     let offset = self.bmff.filebox.moov.traks[0].mdia.minf.stbl.co64.as_ref().expect("co64 box").entries[0] as usize;
     let size = self.bmff.filebox.moov.traks[0].mdia.minf.stbl.stsz.sample_sizes[0] as usize;
     debug!("JPEG preview mdat offset: {}, len: {}", offset, size);
     let buf = file
       .subview(offset as u64, size as u64)
-      .map_err(|e| RawlerError::General(format!("I/O error while reading CR3 full image: {:?}", e)))?;
+      .map_err(|e| RawlerError::with_io_error("CR3: failed to read full image data", &file.path, e))?;
     match image::load_from_memory_with_format(&buf, image::ImageFormat::Jpeg) {
       Ok(img) => Ok(Some(img)),
       Err(e) => {
         debug!("TRAK 0 contains no JPEG preview, is it PQ/HEIF? Error: {}", e);
-        Err(RawlerError::General(
+        Err(RawlerError::DecoderFailed(
           "Unable to extract preview image from CR3 HDR-PQ file. Please see 'https://github.com/dnglab/dnglab/issues/7'".into(),
         ))
       }
@@ -448,7 +448,7 @@ impl<'a> Cr3Decoder<'a> {
       let size = xpacket_box.header.size - xpacket_box.header.header_len;
       let buf = rawfile
         .subview(offset, size)
-        .map_err(|e| RawlerError::General(format!("I/O error while reading CR3 XPACKET: {:?}", e)))?;
+        .map_err(|e| RawlerError::with_io_error("CR3: failed to read XPACKET", &rawfile.path, e))?;
       md.xpacket = Some(buf);
     }
 

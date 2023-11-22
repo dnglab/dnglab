@@ -20,7 +20,7 @@ use crate::{AppError, Result};
 const SUPPORTED_FILE_EXT: [&str; 1] = ["DNG"];
 
 /// Entry point for Clap sub command `extract`
-pub async fn extract(options: &ArgMatches) -> anyhow::Result<()> {
+pub async fn extract(options: &ArgMatches) -> crate::Result<()> {
   let now = Instant::now();
 
   let proc = {

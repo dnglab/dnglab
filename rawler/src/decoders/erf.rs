@@ -86,7 +86,7 @@ impl<'a> ErfDecoder<'a> {
   fn get_wb(&self) -> Result<[f32; 4]> {
     let levels = fetch_tiff_tag!(self.makernote, TiffCommonTag::EpsonWB);
     if levels.count() != 256 {
-      Err(RawlerError::General("ERF: Levels count is off".to_string()))
+      Err(RawlerError::DecoderFailed("ERF: Levels count is off".to_string()))
     } else {
       let r = BEu16(levels.get_data(), 48) as f32;
       let b = BEu16(levels.get_data(), 50) as f32;

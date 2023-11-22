@@ -273,17 +273,17 @@ impl From<Cursor<Vec<u8>>> for RawFile {
 
 #[derive(Error, Debug)]
 pub enum RawlerError {
-  #[error("File is unsupported: {}, model \"{}\", make: \"{}\", mode: \"{}\"", what, model, make, mode)]
+  #[error(
+    "File is unsupported: {}, model '{}', make: '{}', mode: '{}'\nPlease report this issue at 'https://github.com/dnglab/dnglab/issues'!",
+    what,
+    model,
+    make,
+    mode
+  )]
   Unsupported { what: String, model: String, make: String, mode: String },
 
-  #[error("{}", _0)]
-  General(String),
-
-  #[error("{}", _0)]
+  #[error("Decoder failed: {}", _0)]
   DecoderFailed(String),
-
-  #[error("{}", _0)]
-  IOErr(String),
 }
 
 pub type Result<T> = std::result::Result<T, RawlerError>;
@@ -299,7 +299,7 @@ impl RawlerError {
   }
 
   pub fn with_io_error(context: impl AsRef<str>, path: impl AsRef<Path>, error: std::io::Error) -> Self {
-    Self::General(format!(
+    Self::DecoderFailed(format!(
       "I/O error in context '{}', {} on file: {}",
       context.as_ref(),
       error,
@@ -312,43 +312,43 @@ impl From<std::io::Error> for RawlerError {
   fn from(err: std::io::Error) -> Self {
     log::error!("I/O error: {}", err.to_string());
     log::error!("Backtrace:\n{:?}", backtrace::Backtrace::new());
-    Self::IOErr(format!("I/O Error: {}", err))
+    Self::DecoderFailed(format!("I/O Error without context: {}", err))
   }
 }
 
 impl From<&String> for RawlerError {
   fn from(str: &String) -> Self {
-    Self::General(str.clone())
+    Self::DecoderFailed(str.clone())
   }
 }
 
 impl From<&str> for RawlerError {
   fn from(str: &str) -> Self {
-    Self::General(str.to_string())
+    Self::DecoderFailed(str.to_string())
   }
 }
 
 impl From<std::fmt::Arguments<'_>> for RawlerError {
   fn from(fmt: std::fmt::Arguments) -> Self {
-    Self::General(fmt.to_string())
+    Self::DecoderFailed(fmt.to_string())
   }
 }
 
 impl From<String> for RawlerError {
   fn from(str: String) -> Self {
-    Self::General(str)
+    Self::DecoderFailed(str)
   }
 }
 
 impl From<TiffError> for RawlerError {
   fn from(err: TiffError) -> Self {
-    Self::General(err.to_string())
+    Self::DecoderFailed(err.to_string())
   }
 }
 
 impl From<JfifError> for RawlerError {
   fn from(err: JfifError) -> Self {
-    Self::General(err.to_string())
+    Self::DecoderFailed(err.to_string())
   }
 }
 

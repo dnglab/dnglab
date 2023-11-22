@@ -481,7 +481,7 @@ impl<'a> SrwDecoder<'a> {
     let rggb_blacks = fetch_tiff_tag!(self.makernote, SrwMakernote::SrwRGGBBlacks);
 
     if rggb_levels.count() != 4 || rggb_blacks.count() != 4 {
-      Err(RawlerError::General("SRW: RGGB Levels and Blacks don't have 4 elements".to_string()))
+      Err(RawlerError::DecoderFailed("SRW: RGGB Levels and Blacks don't have 4 elements".to_string()))
     } else {
       Ok([
         (rggb_levels.force_u32(0) as f32 - rggb_blacks.force_u32(0) as f32) / 4096.0,

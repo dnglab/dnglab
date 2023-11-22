@@ -7,7 +7,7 @@ use clap::ArgMatches;
 use rawler::lens::get_lenses;
 
 /// Print list of supported lenses
-pub async fn lenses(options: &ArgMatches) -> anyhow::Result<()> {
+pub async fn lenses(options: &ArgMatches) -> crate::Result<()> {
   let lenses = get_lenses();
 
   let mut map = BTreeMap::<(String, String), Vec<String>>::new();

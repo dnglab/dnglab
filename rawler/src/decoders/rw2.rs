@@ -185,7 +185,7 @@ impl<'a> Decoder for Rw2Decoder<'a> {
     if let Some(data) = self.tiff.get_entry(PanasonicTag::JpegData) {
       let buf = data.get_data();
       let img = image::load_from_memory_with_format(buf, image::ImageFormat::Jpeg)
-        .map_err(|e| RawlerError::General(format!("Unable to load jpeg preview: {:?}", e)))?;
+        .map_err(|e| RawlerError::DecoderFailed(format!("Unable to load jpeg preview: {:?}", e)))?;
       return Ok(Some(img));
     }
     Ok(None)
@@ -220,7 +220,7 @@ impl<'a> Rw2Decoder<'a> {
       let b = fetch_tiff_tag!(self.tiff, PanasonicTag::PanaWBs2B).force_u32(0) as f32;
       Ok([r, g, g, b])
     } else {
-      Err(RawlerError::General("Couldn't find WB".to_string()))
+      Err(RawlerError::DecoderFailed("RW2: Couldn't find WB".to_string()))
     }
   }
 

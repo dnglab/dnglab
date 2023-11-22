@@ -304,7 +304,7 @@ impl<'a> Decoder for NefDecoder<'a> {
     }
     let buf = root_ifd
       .singlestrip_data(file.inner())
-      .map_err(|e| RawlerError::General(format!("Failed to get strip data: {}", e)))?;
+      .map_err(|e| RawlerError::DecoderFailed(format!("Failed to get strip data: {}", e)))?;
     let compression = root_ifd.get_entry(TiffCommonTag::Compression).ok_or("Missing tag")?.force_usize(0);
     let width = fetch_tiff_tag!(root_ifd, TiffCommonTag::ImageWidth).force_usize(0);
     let height = fetch_tiff_tag!(root_ifd, TiffCommonTag::ImageLength).force_usize(0);
@@ -465,7 +465,7 @@ impl<'a> NefDecoder<'a> {
         x => Err(RawlerError::unsupported(&self.camera, format!("NEF: Don't know about WB version 0x{:x}", x))),
       }
     } else {
-      Err(RawlerError::General("NEF: Don't know how to fetch WB".to_string()))
+      Err(RawlerError::DecoderFailed("NEF: Don't know how to fetch WB".to_string()))
     }
   }
 

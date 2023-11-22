@@ -50,7 +50,7 @@ impl Display for JobResult {
 impl Raw2DngJob {
   fn internal_exec(&self) -> Result<JobResult> {
     if self.output.exists() && !self.replace {
-      return Err(AppError::DestExists(self.output.display().to_string()));
+      return Err(AppError::AlreadyExists(self.output.clone()));
     }
     // File name for embedding
     let orig_filename = self
@@ -74,27 +74,14 @@ impl Raw2DngJob {
       }
       Err(err) => {
         match &err {
-          RawlerError::General(what) => {
-            log::error!("Error while decoding: {} in file {}\nPlease report this issue!", what, orig_filename);
-          }
-          RawlerError::Unsupported { what, model, make, mode } => {
-            log::error!(
-              "Unsupported file: \"{}\"\n{}: make: \"{}\", model: \"{}\", mode: \"{}\"\nPlease report this issue at 'https://github.com/dnglab/dnglab/issues'!",
-              orig_filename,
-              what,
-              make,
-              model,
-              mode,
-            );
+          RawlerError::Unsupported { .. } => {
+            log::error!("Unsupported file: \"{}\"\n{}", orig_filename, err.to_string());
           }
           RawlerError::DecoderFailed(msg) => {
             log::error!("Failed to decode file: {}", msg);
           }
-          RawlerError::IOErr(e) => {
-            log::error!("I/O error: {:?}", e);
-          }
         }
-        Err(AppError::General(err.to_string()))
+        Err(err.into())
       }
     }
   }
