@@ -146,6 +146,10 @@ pub fn create_app() -> Command {
         .arg(
           arg!(inputs: -i --"input" <INPUT> "Input files (raw, preview, exif, ...), index for map starts with 0")
             .required(true)
+            .long_help(
+              "Input files to merge into a single DNG file. Usually only a single input file is used.
+If multiple input files are given, --map should be used to specifiy how to interpret each intput file.",
+            )
             .value_parser(clap::value_parser!(PathBuf))
             .num_args(1..),
         )
@@ -154,6 +158,11 @@ pub fn create_app() -> Command {
             .required(false)
             .num_args(1..)
             .default_values(["0:raw", "0:preview", "0:thumbnail", "0:exif", "0:xmp"])
+            .long_help(
+              "When multiple input files given, each input file should be mapped to a specific type of data.
+First input file starts with index 0. Possible types are 'raw', 'preview', 'thumbnail', 'exif', 'xmp'.
+Input files which are not mapped are ignored.",
+            )
             .value_parser(value_parser!(InputSourceUsageMap)),
         )
         /*
