@@ -45,7 +45,7 @@ impl<'a> Decoder for DngDecoder<'a> {
     let image = match fetch_tiff_tag!(raw, TiffCommonTag::Compression).force_u32(0) {
       1 => self.decode_uncompressed(file, raw, width * cpp, height, dummy)?,
       7 => self.decode_compressed(file, raw, width * cpp, height, cpp, dummy)?,
-      c => return Err(RawlerError::General(format!("Don't know how to read DNGs with compression {}", c))),
+      c => return Err(RawlerError::DecoderFailed(format!("Don't know how to read DNGs with compression {}", c))),
     };
 
     let orientation = Orientation::from_tiff(self.tiff.root_ifd());
@@ -352,7 +352,7 @@ impl<'a> DngDecoder<'a> {
       )
       .map_err(RawlerError::DecoderFailed)
     } else {
-      Err(RawlerError::General("DNG: didn't find tiles or strips".to_string()))
+      Err(RawlerError::DecoderFailed("DNG: didn't find tiles or strips".to_string()))
     }
   }
 }

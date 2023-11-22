@@ -16,7 +16,7 @@ use crate::{AppError, Result, PKG_NAME, PKG_VERSION};
 use rawler::dng::convert::ConvertParams;
 
 /// Entry point for Clap sub command `convert`
-pub async fn convert(options: &ArgMatches) -> anyhow::Result<()> {
+pub async fn convert(options: &ArgMatches) -> crate::Result<()> {
   let now = Instant::now();
 
   let recursive = options.get_flag("recursive");

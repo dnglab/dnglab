@@ -99,7 +99,7 @@ impl<'a> Decoder for Cr2Decoder<'a> {
         // Old Canon TIF files contains the offset in makernote tags
         (self.tiff.root_ifd(), off.value.force_usize(0))
       } else {
-        return Err(RawlerError::General("CR2: Couldn't find raw info".to_string()));
+        return Err(RawlerError::DecoderFailed("CR2: Couldn't find raw info".to_string()));
       }
     };
 
@@ -107,7 +107,7 @@ impl<'a> Decoder for Cr2Decoder<'a> {
     let src = file
       .stream_len()
       .and_then(|len| file.subview(offset as u64, len - offset as u64))
-      .map_err(|e| RawlerError::General(format!("I/O error: failed to read raw data from file: {}", e)))?;
+      .map_err(|e| RawlerError::with_io_error("CR2: failed to read raw data", &file.path, e))?;
 
     let (cpp, image) = {
       let decompressor = LjpegDecompressor::new(&src)?;
@@ -303,7 +303,7 @@ impl<'a> Decoder for Cr2Decoder<'a> {
     let root_ifd = &self.tiff.root_ifd();
     let buf = root_ifd
       .singlestrip_data(file.inner())
-      .map_err(|e| RawlerError::General(format!("Failed to get strip data: {}", e)))?;
+      .map_err(|e| RawlerError::DecoderFailed(format!("Failed to get strip data: {}", e)))?;
     let compression = root_ifd.get_entry(TiffCommonTag::Compression).ok_or("Missing tag")?.force_usize(0);
     let width = fetch_tiff_tag!(root_ifd, TiffCommonTag::ImageWidth).force_usize(0);
     let height = fetch_tiff_tag!(root_ifd, TiffCommonTag::ImageLength).force_usize(0);
@@ -333,8 +333,8 @@ impl<'a> Cr2Decoder<'a> {
         Ok(Some(1)) => Ok(Cr2Mode::Sraw1),
         Ok(Some(2)) => Ok(Cr2Mode::Sraw2),
         Ok(None) => Ok(Cr2Mode::Raw),
-        Ok(Some(v)) => Err(RawlerError::General(format!("Unknown sraw quality value found: {}", v))),
-        Err(_) => Err(RawlerError::General("Unknown sraw quality value".to_string())),
+        Ok(Some(v)) => Err(RawlerError::DecoderFailed(format!("Unknown sraw quality value found: {}", v))),
+        Err(_) => Err(RawlerError::DecoderFailed("Unknown sraw quality value".to_string())),
       }
     } else {
       Ok(Cr2Mode::Raw)
@@ -349,7 +349,7 @@ impl<'a> Cr2Decoder<'a> {
     // Parse the TIFF again, with custom settings
     file
       .seek_to_start()
-      .map_err(|e| RawlerError::General(format!("I/O error while reading raw file: {:?}", e)))?;
+      .map_err(|e| RawlerError::with_io_error("CR2: failed to read raw data", &file.path, e))?;
     let tiff = GenericTiffReader::new(file.inner(), 0, 0, None, &[33424])?;
 
     let exif = Self::new_exif_ifd(file, &tiff, rawloader)?;
@@ -372,7 +372,7 @@ impl<'a> Cr2Decoder<'a> {
       .as_ref()
       .and_then(|mn| mn.get_entry(Cr2MakernoteTag::ModelId).and_then(|v| v.get_u32(0).transpose()))
       .transpose()
-      .map_err(|_| RawlerError::General("invalid model id".to_string()))?;
+      .map_err(|_| RawlerError::DecoderFailed("CR2: invalid model id".to_string()))?;
     Ok(Cr2Decoder {
       tiff,
       rawloader,
@@ -600,7 +600,7 @@ impl<'a> Cr2Decoder<'a> {
           let bottom = v[8] as usize;
           Ok(Some(Rect::new_with_points(Point::new(left, top), Point::new(right + 1, bottom + 1))))
         }
-        _ => Err(RawlerError::General("Makernote contains invalid type for SensorInfo tag".to_string())),
+        _ => Err(RawlerError::DecoderFailed("Makernote contains invalid type for SensorInfo tag".to_string())),
       }
     } else {
       Ok(None)

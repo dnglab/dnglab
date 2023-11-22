@@ -107,7 +107,7 @@ pub fn parse_makernote<R: Read + Seek>(reader: &mut R, exif_ifd: &IFD) -> Result
         }
         Ok(Some(mainifd))
       }
-      _ => Err(RawlerError::General("EXIF makernote has unknown type".to_string())),
+      _ => Err(RawlerError::DecoderFailed("EXIF makernote has unknown type".to_string())),
     }
   } else {
     Ok(None)
@@ -393,7 +393,7 @@ impl<'a> OrfDecoder<'a> {
       _ => {
         let ifd = self.makernote.find_ifds_with_tag(OrfImageProcessing::OrfBlackLevels);
         if ifd.is_empty() {
-          return Err(RawlerError::General("ORF: Couldn't find ImgProc IFD".to_string()));
+          return Err(RawlerError::DecoderFailed("ORF: Couldn't find ImgProc IFD".to_string()));
         }
         let wbs = fetch_tiff_tag!(ifd[0], OrfImageProcessing::WB_RBLevels);
         Ok([wbs.force_f32(0), 256.0, 256.0, wbs.force_f32(1)])

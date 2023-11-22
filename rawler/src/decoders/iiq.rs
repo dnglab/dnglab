@@ -239,7 +239,7 @@ impl<'a> Decoder for IiqDecoder<'a> {
     debug!("RAW IIQ Format: {:?}", fmt);
 
     if width == 0 || height == 0 {
-      return Err(RawlerError::General("IIQ: couldn't find width and height".to_string()));
+      return Err(RawlerError::DecoderFailed("IIQ: couldn't find width and height".to_string()));
     }
 
     let data = file
@@ -621,7 +621,7 @@ impl<'a> IiqDecoder<'a> {
         width.1.force_usize(0), //
         height.1.force_usize(0),
       )),
-      _ => Err(RawlerError::General("Unable to find width/height in IIQ makernotes".to_string())),
+      _ => Err(RawlerError::DecoderFailed("Unable to find width/height in IIQ makernotes".to_string())),
     }
   }
 
@@ -702,7 +702,7 @@ impl<'a> IiqDecoder<'a> {
         let code = mode.1.force_u32(0);
         Ok(IiqCompression::from(code as usize))
       }
-      _ => Err(RawlerError::General("Unable to find compression mode in IIQ makernotes".to_string())),
+      _ => Err(RawlerError::DecoderFailed("Unable to find compression mode in IIQ makernotes".to_string())),
     }
   }
 
@@ -712,7 +712,7 @@ impl<'a> IiqDecoder<'a> {
         (mode.1.force_u64(0) + 8), //
         mode.0,
       )),
-      _ => Err(RawlerError::General("Unable to find data offset in IIQ makernotes".to_string())),
+      _ => Err(RawlerError::DecoderFailed("Unable to find data offset in IIQ makernotes".to_string())),
     }
   }
 
@@ -722,21 +722,21 @@ impl<'a> IiqDecoder<'a> {
         (mode.1.force_u64(0) + 8), //
         mode.0,
       )),
-      _ => Err(RawlerError::General("Unable to find strip offset in IIQ makernotes".to_string())),
+      _ => Err(RawlerError::DecoderFailed("Unable to find strip offset in IIQ makernotes".to_string())),
     }
   }
 
   fn wb_offset(&self) -> Result<u64> {
     match self.makernotes.get(&IiqTag::WhiteBalance.into()) {
       Some(mode) => Ok((mode.1.force_u64(0) + 8) as u64),
-      _ => Err(RawlerError::General("Unable to find whitebalance offset in IIQ makernotes".to_string())),
+      _ => Err(RawlerError::DecoderFailed("Unable to find whitebalance offset in IIQ makernotes".to_string())),
     }
   }
 
   fn blacklevel(&self) -> Result<u16> {
     match self.makernotes.get(&IiqTag::BlackLevel.into()) {
       Some(mode) => Ok(mode.1.force_u16(0)),
-      _ => Err(RawlerError::General("Unable to find lacklevel in IIQ makernotes".to_string())),
+      _ => Err(RawlerError::DecoderFailed("Unable to find lacklevel in IIQ makernotes".to_string())),
     }
   }
 

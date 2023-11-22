@@ -39,7 +39,7 @@ impl FtpCallback for FtpState {
 }
 
 /// Entry point for Clap sub command `ftpconvert`
-pub async fn ftpserver(options: &ArgMatches) -> anyhow::Result<()> {
+pub async fn ftpserver(options: &ArgMatches) -> crate::Result<()> {
   let mut config = Config::new("foo").unwrap(); // TODO: Needs cleanup
 
   let params = ConvertParams {

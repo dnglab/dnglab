@@ -87,7 +87,7 @@ impl<'a> Decoder for TfrDecoder<'a> {
     let root_ifd = &self.tiff.root_ifd();
     let buf = root_ifd
       .singlestrip_data(file.inner())
-      .map_err(|e| RawlerError::General(format!("Failed to get strip data: {}", e)))?;
+      .map_err(|e| RawlerError::DecoderFailed(format!("Failed to get strip data: {}", e)))?;
     let compression = root_ifd.get_entry(TiffCommonTag::Compression).ok_or("Missing tag")?.force_usize(0);
     let width = fetch_tiff_tag!(root_ifd, TiffCommonTag::ImageWidth).force_usize(0);
     let height = fetch_tiff_tag!(root_ifd, TiffCommonTag::ImageLength).force_usize(0);

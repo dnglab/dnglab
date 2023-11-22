@@ -81,14 +81,14 @@ impl MapMode {
   /// Construct new ProcessMode from given input and output
   pub fn new(input: &Path, output: &Path) -> Result<MapMode> {
     if !input.exists() {
-      return Err(AppError::NotExists(input.display().to_string()));
+      return Err(AppError::NotFound(input.to_owned()));
     }
     let input_md = input.metadata()?;
     if input_md.is_file() {
       Ok(MapMode::File(FileMap::new(&input.canonicalize()?, output)))
     } else if input_md.is_dir() {
       if !output.exists() {
-        return Err(AppError::NotExists(output.display().to_string()));
+        return Err(AppError::NotFound(output.to_owned()));
       }
       let output_md = output.metadata()?;
       if !output_md.is_dir() {

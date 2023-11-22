@@ -369,7 +369,7 @@ impl RawLoader {
         $file
           .inner()
           .seek(SeekFrom::Start(0))
-          .map_err(|e| RawlerError::General(format!("I/O error while trying decoders: {:?}", e)))?
+          .map_err(|e| RawlerError::with_io_error("get_decoder(): failed to seek", &rawfile.path, e))?;
       };
     }
 
@@ -540,7 +540,7 @@ impl RawLoader {
 
     match panic::catch_unwind(AssertUnwindSafe(|| self.decode_unsafe(rawfile, params, dummy))) {
       Ok(val) => val,
-      Err(_) => Err(RawlerError::General(format!("Caught a panic while decoding.{}", BUG))),
+      Err(_) => Err(RawlerError::DecoderFailed(format!("Caught a panic while decoding.{}", BUG))),
     }
   }
 
@@ -572,7 +572,7 @@ impl RawLoader {
   pub fn decode_unwrapped(&self, rawfile: &mut RawFile) -> Result<RawImageData> {
     match panic::catch_unwind(AssertUnwindSafe(|| unwrapped::decode_unwrapped(rawfile))) {
       Ok(val) => val,
-      Err(_) => Err(RawlerError::General(format!("Caught a panic while decoding.{}", BUG))),
+      Err(_) => Err(RawlerError::DecoderFailed(format!("Caught a panic while decoding.{}", BUG))),
     }
   }
 }

@@ -146,7 +146,7 @@ fn parse_raf(file: &mut RawFile) -> Result<IFD> {
   file
     .inner()
     .seek(SeekFrom::Start(0))
-    .map_err(|e| RawlerError::General(format!("I/O error while trying decoders: {:?}", e)))?;
+    .map_err(|e| RawlerError::with_io_error("RAF: failed to seek", &file.path, e))?;
 
   let stream = file.inner();
   stream.seek(SeekFrom::Start(RAF_TIFF1_PTR_OFFSET))?;
@@ -567,7 +567,7 @@ impl<'a> RafDecoder<'a> {
         Ok(out)
       }
     } else {
-      Err(RawlerError::General("no active_area for fuji_rotate".to_string()))
+      Err(RawlerError::DecoderFailed("no active_area for fuji_rotate".to_string()))
     }
   }
 }

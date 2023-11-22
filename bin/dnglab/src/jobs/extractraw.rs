@@ -53,7 +53,7 @@ impl Display for JobResult {
 impl ExtractRawJob {
   fn internal_exec(&self) -> Result<JobResult> {
     if self.output.exists() && !self.replace {
-      return Err(AppError::DestExists(self.output.display().to_string()));
+      return Err(AppError::AlreadyExists(self.output.clone()));
     }
     let dng_file = File::open(&self.input)?;
 

@@ -14,7 +14,7 @@ struct CameraRemarks {
 }
 
 /// Print list of supported cameras
-pub async fn cameras(options: &ArgMatches) -> anyhow::Result<()> {
+pub async fn cameras(options: &ArgMatches) -> crate::Result<()> {
   let cameras = global_loader().get_cameras();
 
   let mut map = BTreeMap::<String, BTreeMap<String, CameraRemarks>>::new();

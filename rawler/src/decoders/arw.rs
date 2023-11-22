@@ -156,11 +156,11 @@ impl<'a> Decoder for ArwDecoder<'a> {
               });
               decode_12le(&src, width, height, dummy)
             }
-            _ => return Err(RawlerError::General(format!("ARW2: Don't know how to decode images with {} bps", bps))),
+            _ => return Err(RawlerError::DecoderFailed(format!("ARW2: Don't know how to decode images with {} bps", bps))),
           }
         }
       }
-      _ => return Err(RawlerError::General(format!("ARW: Don't know how to decode type {}", compression))),
+      _ => return Err(RawlerError::DecoderFailed(format!("ARW: Don't know how to decode type {}", compression))),
     };
 
     let crop = Rect::from_tiff(raw).or_else(|| self.camera.crop_area.map(|area| Rect::new_with_borders(Dim2::new(width, height), &area)));
@@ -280,7 +280,7 @@ impl<'a> ArwDecoder<'a> {
     // wonderfullness of the Tiff-based ARW format, let's shoot from the hip
     let data = self.tiff.find_ifds_with_tag(TiffCommonTag::SubIFDs);
     if data.is_empty() {
-      return Err(RawlerError::General("ARW: Couldn't find the data IFD!".to_string()));
+      return Err(RawlerError::DecoderFailed("ARW: Couldn't find the data IFD!".to_string()));
     }
     let raw = data[0];
     let width = 3880;
@@ -326,7 +326,7 @@ impl<'a> ArwDecoder<'a> {
   fn image_srf(&self, file: &mut RawFile, dummy: bool) -> Result<RawImage> {
     let data = self.tiff.find_ifds_with_tag(TiffCommonTag::ImageWidth);
     if data.is_empty() {
-      return Err(RawlerError::General("ARW: Couldn't find the data IFD!".to_string()));
+      return Err(RawlerError::DecoderFailed("ARW: Couldn't find the data IFD!".to_string()));
     }
     let raw = data[0];
 
@@ -615,7 +615,7 @@ impl<'a> ArwDecoder<'a> {
         levels.force_u32(3) as f32,
       ]))
     } else {
-      Err(RawlerError::General("ARW: Couldn't find GRGB or RGGB levels".to_string()))
+      Err(RawlerError::DecoderFailed("ARW: Couldn't find GRGB or RGGB levels".to_string()))
     }
   }
 

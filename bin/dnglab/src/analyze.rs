@@ -15,7 +15,7 @@ use std::{
   path::PathBuf,
 };
 
-fn print_output<T: Serialize + ?Sized>(obj: &T, options: &ArgMatches) -> anyhow::Result<()> {
+fn print_output<T: Serialize + ?Sized>(obj: &T, options: &ArgMatches) -> crate::Result<()> {
   if options.get_flag("yaml") {
     let yaml = serde_yaml::to_string(obj)?;
     println!("{}", yaml);
@@ -27,7 +27,7 @@ fn print_output<T: Serialize + ?Sized>(obj: &T, options: &ArgMatches) -> anyhow:
 }
 
 /// Analyze a given image
-pub async fn analyze(options: &ArgMatches) -> anyhow::Result<()> {
+pub async fn analyze(options: &ArgMatches) -> crate::Result<()> {
   let in_file: &PathBuf = options.get_one("FILE").expect("FILE not available");
 
   debug!("Infile: {:?}", in_file);

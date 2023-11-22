@@ -24,7 +24,18 @@ mod jobs;
 mod lenses;
 mod makedng;
 
+use std::{
+  net::AddrParseError,
+  path::PathBuf,
+  process::{ExitCode, Termination},
+};
+
 use fern::colors::{Color, ColoredLevelConfig};
+use image::ImageError;
+use rawler::{
+  formats::{jfif::JfifError, tiff::TiffError},
+  RawlerError,
+};
 use thiserror::Error;
 use tokio::runtime::Builder;
 //use log::debug;
@@ -33,7 +44,7 @@ const PKG_VERSION: &str = env!("CARGO_PKG_VERSION");
 const PKG_NAME: &str = env!("CARGO_PKG_NAME");
 const STACK_SIZE_MIB: usize = 4;
 
-fn main() -> anyhow::Result<()> {
+fn main() -> AppResult {
   let runtime = Builder::new_multi_thread()
     .enable_all()
     .thread_name("dnglab-tokio-worker")
@@ -41,14 +52,18 @@ fn main() -> anyhow::Result<()> {
     .build()
     .unwrap();
 
-  runtime.block_on(main_async())
+  let result = runtime.block_on(main_async());
+  if let Err(err) = &result {
+    eprintln!("Error: {}", err);
+  }
+  AppResult(result)
 }
 
 /// Main entry function
 ///
 /// We initialize the fern logger here, create a Clap command line
 /// parser and check for the correct environment.
-async fn main_async() -> anyhow::Result<()> {
+async fn main_async() -> crate::Result<()> {
   let app = app::create_app();
   let matches = app.try_get_matches().unwrap_or_else(|e| e.exit());
 
@@ -95,22 +110,82 @@ async fn main_async() -> anyhow::Result<()> {
 
 #[derive(Error, Debug)]
 pub enum AppError {
-  #[error("Invalid arguments")]
-  InvalidArgs,
+  #[error("{}", _0)]
+  General(String),
   #[error("Invalid arguments: {}", _0)]
   InvalidCmdSwitch(String),
   #[error("I/O error: {}", _0)]
   Io(#[from] std::io::Error),
-  #[error("Path not exists: {}", _0)]
-  NotExists(String),
-  #[error("Destination already exists: {}", _0)]
-  DestExists(String),
-  #[error("Invalid format: {}", _0)]
-  InvalidFormat(String),
+  #[error("Not found: {}", _0.display())]
+  NotFound(PathBuf),
+  #[error("Already exists: {}", _0.display())]
+  AlreadyExists(PathBuf),
   #[error("Decoder failed: {}", _0)]
-  DecoderFail(String),
-  #[error("{}", _0)]
-  General(String),
+  DecoderFailed(String),
+  #[error(transparent)]
+  Other(#[from] anyhow::Error),
+}
+
+impl From<serde_json::Error> for AppError {
+  fn from(value: serde_json::Error) -> Self {
+    anyhow::Error::new(value).into()
+  }
+}
+
+impl From<serde_yaml::Error> for AppError {
+  fn from(value: serde_yaml::Error) -> Self {
+    anyhow::Error::new(value).into()
+  }
+}
+
+impl From<AddrParseError> for AppError {
+  fn from(value: AddrParseError) -> Self {
+    anyhow::Error::new(value).into()
+  }
+}
+
+impl From<RawlerError> for AppError {
+  fn from(value: RawlerError) -> Self {
+    match value {
+      RawlerError::DecoderFailed(err) => Self::DecoderFailed(err),
+      RawlerError::Unsupported { .. } => Self::General(value.to_string()),
+    }
+  }
+}
+
+impl From<ImageError> for AppError {
+  fn from(value: ImageError) -> Self {
+    anyhow::Error::new(value).into()
+  }
+}
+
+impl From<JfifError> for AppError {
+  fn from(value: JfifError) -> Self {
+    anyhow::Error::new(value).into()
+  }
+}
+
+impl From<TiffError> for AppError {
+  fn from(value: TiffError) -> Self {
+    anyhow::Error::new(value).into()
+  }
 }
 
 pub type Result<T> = std::result::Result<T, AppError>;
+
+pub struct AppResult(Result<()>);
+
+impl Termination for AppResult {
+  fn report(self) -> ExitCode {
+    match self.0 {
+      Ok(_) => ExitCode::SUCCESS,
+      Err(AppError::InvalidCmdSwitch(_)) => ExitCode::from(1),
+      Err(AppError::DecoderFailed(_)) => ExitCode::from(2),
+      Err(AppError::General(_)) => ExitCode::from(3),
+      Err(AppError::Io(_)) => ExitCode::from(4),
+      Err(AppError::NotFound(_)) => ExitCode::from(5),
+      Err(AppError::AlreadyExists(_)) => ExitCode::from(6),
+      Err(AppError::Other(_)) => ExitCode::from(99),
+    }
+  }
+}

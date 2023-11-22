@@ -127,6 +127,9 @@ pub(crate) fn parse_colordata(colordata: &Entry) -> Result<ColorData> {
       })
     }
 
-    _ => Err(RawlerError::General(format!("Invalid COLORDATA tag: type {}", colordata.value_type_name()))),
+    _ => Err(RawlerError::DecoderFailed(format!(
+      "Invalid COLORDATA tag: type {}",
+      colordata.value_type_name()
+    ))),
   }
 }
