@@ -332,7 +332,7 @@ impl RawImage {
       wb_coeff,
       active_area: self.active_area,
       crop_area: self.crop_area,
-      gamma: 2.4,
+      //gamma: 2.4,
     };
 
     Ok(params)

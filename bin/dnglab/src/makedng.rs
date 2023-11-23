@@ -14,6 +14,7 @@ use rawler::formats::jfif::{is_exif, is_jfif, Jfif};
 use rawler::formats::tiff::{self, Rational, SRational};
 use rawler::imgop::gamma::{apply_gamma, invert_gamma};
 
+use rawler::imgop::srgb::{srgb_apply_gamma, srgb_invert_gamma};
 use rawler::imgop::xyz::{self, Illuminant};
 use rawler::imgop::{scale_double_to_u16, scale_u16_to_double, scale_u8_to_double};
 use rawler::tags::{DngTag, TiffCommonTag};
@@ -334,66 +335,104 @@ impl clap::builder::TypedValueParser for LinearizationTableArgParser {
     let val = inner.parse_ref(cmd, arg, value)?;
 
     Ok(match val.as_str() {
-      "sRGB_8bit_gamma2.0" => (0..=u8::MAX)
+      "8bit_sRGB" => (0..=u8::MAX).map(scale_u8_to_double).map(srgb_apply_gamma).map(scale_double_to_u16).collect(),
+      "8bit_sRGB_invert" => (0..=u8::MAX).map(scale_u8_to_double).map(srgb_invert_gamma).map(scale_double_to_u16).collect(),
+
+      "16bit_sRGB" => (0..=u16::MAX).map(scale_u16_to_double).map(srgb_apply_gamma).map(scale_double_to_u16).collect(),
+      "16bit_sRGB_invert" => (0..=u16::MAX)
+        .map(scale_u16_to_double)
+        .map(srgb_invert_gamma)
+        .map(scale_double_to_u16)
+        .collect(),
+
+      "8bit_gamma1.8" => (0..=u8::MAX)
+        .map(scale_u8_to_double)
+        .map(|v| apply_gamma(v, 1.8))
+        .map(scale_double_to_u16)
+        .collect(),
+      "8bit_gamma1.8_invert" => (0..=u8::MAX)
+        .map(scale_u8_to_double)
+        .map(|v| invert_gamma(v, 1.8))
+        .map(scale_double_to_u16)
+        .collect(),
+
+      "8bit_gamma2.0" => (0..=u8::MAX)
         .map(scale_u8_to_double)
         .map(|v| apply_gamma(v, 2.0))
         .map(scale_double_to_u16)
         .collect(),
-      "sRGB_8bit_gamma2.0_invert" => (0..=u8::MAX)
+      "8bit_gamma2.0_invert" => (0..=u8::MAX)
         .map(scale_u8_to_double)
         .map(|v| invert_gamma(v, 2.0))
         .map(scale_double_to_u16)
         .collect(),
-      "sRGB_8bit_gamma2.2" => (0..=u8::MAX)
+
+      "8bit_gamma2.2" => (0..=u8::MAX)
         .map(scale_u8_to_double)
         .map(|v| apply_gamma(v, 2.2))
         .map(scale_double_to_u16)
         .collect(),
-      "sRGB_8bit_gamma2.2_invert" => (0..=u8::MAX)
+      "8bit_gamma2.2_invert" => (0..=u8::MAX)
         .map(scale_u8_to_double)
         .map(|v| invert_gamma(v, 2.2))
         .map(scale_double_to_u16)
         .collect(),
-      "sRGB_8bit_gamma2.4" => (0..=u8::MAX)
+
+      "8bit_gamma2.4" => (0..=u8::MAX)
         .map(scale_u8_to_double)
         .map(|v| apply_gamma(v, 2.4))
         .map(scale_double_to_u16)
         .collect(),
-      "sRGB_8bit_gamma2.4_invert" => (0..=u8::MAX)
+      "8bit_gamma2.4_invert" => (0..=u8::MAX)
         .map(scale_u8_to_double)
         .map(|v| invert_gamma(v, 2.4))
         .map(scale_double_to_u16)
         .collect(),
-      "sRGB_16bit_gamma2.0" => (0..=u16::MAX)
+
+      "16bit_gamma1.8" => (0..=u16::MAX)
+        .map(scale_u16_to_double)
+        .map(|v| apply_gamma(v, 1.8))
+        .map(scale_double_to_u16)
+        .collect(),
+      "16bit_gamma1.8_invert" => (0..=u16::MAX)
+        .map(scale_u16_to_double)
+        .map(|v| invert_gamma(v, 1.8))
+        .map(scale_double_to_u16)
+        .collect(),
+
+      "16bit_gamma2.0" => (0..=u16::MAX)
         .map(scale_u16_to_double)
         .map(|v| apply_gamma(v, 2.0))
         .map(scale_double_to_u16)
         .collect(),
-      "sRGB_16bit_gamma2.0_invert" => (0..=u16::MAX)
+      "16bit_gamma2.0_invert" => (0..=u16::MAX)
         .map(scale_u16_to_double)
         .map(|v| invert_gamma(v, 2.0))
         .map(scale_double_to_u16)
         .collect(),
-      "sRGB_16bit_gamma2.2" => (0..=u16::MAX)
+
+      "16bit_gamma2.2" => (0..=u16::MAX)
         .map(scale_u16_to_double)
         .map(|v| apply_gamma(v, 2.2))
         .map(scale_double_to_u16)
         .collect(),
-      "sRGB_16bit_gamma2.2_invert" => (0..=u16::MAX)
+      "16bit_gamma2.2_invert" => (0..=u16::MAX)
         .map(scale_u16_to_double)
         .map(|v| invert_gamma(v, 2.2))
         .map(scale_double_to_u16)
         .collect(),
-      "sRGB_16bit_gamma2.4" => (0..=u16::MAX)
+
+      "16bit_gamma2.4" => (0..=u16::MAX)
         .map(scale_u16_to_double)
         .map(|v| apply_gamma(v, 2.4))
         .map(scale_double_to_u16)
         .collect(),
-      "sRGB_16bit_gamma2.4_invert" => (0..=u16::MAX)
+      "16bit_gamma2.4_invert" => (0..=u16::MAX)
         .map(scale_u16_to_double)
         .map(|v| invert_gamma(v, 2.4))
         .map(scale_double_to_u16)
         .collect(),
+
       _ => match val.split(',').map(str::trim).map(str::parse::<u16>).collect::<std::result::Result<Vec<_>, _>>() {
         Ok(items) => items,
         Err(fail) => {
@@ -412,18 +451,26 @@ impl clap::builder::TypedValueParser for LinearizationTableArgParser {
   fn possible_values(&self) -> Option<Box<dyn Iterator<Item = clap::builder::PossibleValue> + '_>> {
     Some(Box::new(
       [
-        "sRGB_8bit_gamma2.0",
-        "sRGB_8bit_gamma2.2",
-        "sRGB_8bit_gamma2.4",
-        "sRGB_8bit_gamma2.0_invert",
-        "sRGB_8bit_gamma2.2_invert",
-        "sRGB_8bit_gamma2.4_invert",
-        "sRGB_16bit_gamma2.0",
-        "sRGB_16bit_gamma2.2",
-        "sRGB_16bit_gamma2.4",
-        "sRGB_16bit_gamma2.0_invert",
-        "sRGB_16bit_gamma2.2_invert",
-        "sRGB_16bit_gamma2.4_invert",
+        "8bit_sRGB",
+        "8bit_sRGB_invert",
+        "16bit_sRGB",
+        "16bit_sRGB_invert",
+        "8bit_gamma1.8",
+        "8bit_gamma1.8_invert",
+        "8bit_gamma2.0",
+        "8bit_gamma2.0_invert",
+        "8bit_gamma2.2",
+        "8bit_gamma2.2_invert",
+        "8bit_gamma2.4",
+        "8bit_gamma2.4_invert",
+        "16bit_gamma1.8",
+        "16bit_gamma1.8_invert",
+        "16bit_gamma2.0",
+        "16bit_gamma2.0_invert",
+        "16bit_gamma2.2",
+        "16bit_gamma2.2_invert",
+        "16bit_gamma2.4",
+        "16bit_gamma2.4_invert",
         "custom table (comma seperated)",
       ]
       .into_iter()
