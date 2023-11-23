@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: LGPL-2.1
 // Copyright 2021 Daniel Vogelbacher <daniel@chaospixel.com>
 
-use super::gamma::apply_gamma;
 use super::sensor::bayer::ppg::demosaic_ppg;
 use super::sensor::bayer::BayerPattern;
 use super::xyz::Illuminant;
@@ -37,7 +36,7 @@ pub struct DevelopParams {
   pub wb_coeff: [f32; 4],
   pub active_area: Option<Rect>,
   pub crop_area: Option<Rect>,
-  pub gamma: f32,
+  //pub gamma: f32,
 }
 
 /// CLip only underflow values < 0.0
@@ -145,7 +144,7 @@ pub fn rescale<const N: usize>(pix: &[u16; N], black_level: &[f32; N], white_lev
 #[multiversion]
 #[clone(target = "[x86|x86_64]+avx+avx2")]
 #[clone(target = "x86+sse")]
-fn rgb_to_srgb_with_wb(rgb: &mut RgbF32, wb_coeff: &[f32; 4], xyz2cam: [[f32; 3]; 4], gamma: f32) {
+fn rgb_to_srgb_with_wb(rgb: &mut RgbF32, wb_coeff: &[f32; 4], xyz2cam: [[f32; 3]; 4]) {
   let rgb2cam = normalize(multiply(&xyz2cam, &SRGB_TO_XYZ_D65));
   let cam2rgb = pseudo_inverse(rgb2cam);
 
@@ -160,7 +159,7 @@ fn rgb_to_srgb_with_wb(rgb: &mut RgbF32, wb_coeff: &[f32; 4], xyz2cam: [[f32; 3]
       cam2rgb[2][0] * r + cam2rgb[2][1] * g + cam2rgb[2][2] * b,
     ];
     let mut clippd = clip_euclidean_norm_avg(&srgb);
-    clippd.iter_mut().for_each(|p| *p = apply_gamma(*p, gamma));
+    clippd.iter_mut().for_each(|p| *p = super::srgb::srgb_apply_gamma(*p));
     clippd
   });
 }
@@ -200,7 +199,7 @@ pub fn develop_raw_srgb(pixels: &[u16], params: &DevelopParams) -> Result<(Vec<f
   let mut cropped_pixels = if raw_size.d != crop_area.d { rgb.crop(crop_area) } else { rgb };
 
   // Convert to sRGB from XYZ
-  rgb_to_srgb_with_wb(&mut cropped_pixels, &wb_coeff, xyz2cam, params.gamma);
+  rgb_to_srgb_with_wb(&mut cropped_pixels, &wb_coeff, xyz2cam);
 
   // Flatten into Vec<f32>
   let srgb: Vec<f32> = cropped_pixels.into_inner().into_iter().flatten().collect();
