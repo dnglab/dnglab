@@ -17,7 +17,7 @@ samplecheck = []
 clap = ["dep:clap"]
 
 [dependencies]
-bitstream-io = "1"
+bitstream-io = "2"
 byteorder = "1"
 enumn = "0.1"
 clap = { version = "4.4.0", optional = true }
