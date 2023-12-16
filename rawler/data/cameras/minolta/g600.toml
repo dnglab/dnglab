@@ -1,0 +1,17 @@
+make = "Konica Minolta Photo Imaging, Inc."
+model = "DiMAGE G600"
+clean_make = "Konica Minolta"
+clean_model = "DiMAGE G600"
+blackpoint = 0
+whitepoint = 65353
+color_pattern = "RGGB"
+active_area = [16, 12, 16, 12]
+raw_width = 2848
+raw_height = 2136
+
+[cameras.params]
+offset_corr = 14
+
+[cameras.color_matrix]
+A = [1.1235, -0.4957, 0.0074, -0.6536, 1.401, 0.2778, -0.1482, 0.2109, 0.8323]
+D65 = [0.9258, -0.2879, -0.1008, -0.8076, 1.5847, 0.2351, -0.2806, 0.328, 0.7821]
