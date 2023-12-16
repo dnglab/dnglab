@@ -34,6 +34,24 @@ pub struct ConvertParams {
   pub index: usize,
 }
 
+impl Default for ConvertParams {
+  fn default() -> Self {
+      Self {
+        embedded: true,
+        compression: DngCompression::Lossless,
+        photometric_conversion: DngPhotometricConversion::Original,
+        apply_scaling: false,
+        crop: CropMode::Best,
+        predictor: 1,
+        preview: true,
+        thumbnail: true,
+        artist: None,
+        software: "DNGLab".into(),
+        index: 0,
+    }
+  }
+}
+
 /// Convert a raw input file into DNG
 ///
 /// We don't accept a DNG file path here, because we don't know
