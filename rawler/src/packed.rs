@@ -16,6 +16,20 @@ pub fn decode_8bit_wtable(buf: &[u8], tbl: &LookupTable, width: usize, height: u
   )
 }
 
+pub fn decode_8bit(buf: &[u8], width: usize, height: usize, dummy: bool) -> PixU16 {
+  decode_threaded(
+    width,
+    height,
+    dummy,
+    &(|out: &mut [u16], row| {
+      let inb = &buf[(row * width)..];
+      for (o, i) in out.iter_mut().zip(inb.iter()) {
+        *o = *i as u16;
+      }
+    }),
+  )
+}
+
 pub fn decode_10le_lsb16(buf: &[u8], width: usize, height: usize, dummy: bool) -> PixU16 {
   decode_threaded(
     width,
@@ -72,6 +86,7 @@ pub fn decode_10le(buf: &[u8], width: usize, height: usize, dummy: bool) -> PixU
     }),
   )
 }
+
 
 pub fn decode_12be(buf: &[u8], width: usize, height: usize, dummy: bool) -> PixU16 {
   decode_threaded(

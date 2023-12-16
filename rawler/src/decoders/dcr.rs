@@ -19,7 +19,7 @@ use crate::RawImage;
 use crate::RawLoader;
 use crate::Result;
 
-use super::ok_image;
+use super::ok_cfa_image;
 use super::Camera;
 use super::Decoder;
 use super::RawDecodeParams;
@@ -71,7 +71,7 @@ impl<'a> Decoder for DcrDecoder<'a> {
     let image = DcrDecoder::decode_kodak65000(&src, &curve, width, height, dummy);
 
     let cpp = 1;
-    ok_image(self.camera.clone(), cpp, self.get_wb()?, image, dummy)
+    ok_cfa_image(self.camera.clone(), cpp, self.get_wb()?, image, dummy)
   }
 
   fn format_dump(&self) -> FormatDump {

@@ -16,8 +16,8 @@ use crate::{
   decoders::{cr2::Cr2Format, cr3::Cr3Format, dng::DngFormat, iiq::IiqFormat, nef::NefFormat, pef::PefFormat, tfr::TfrFormat, RawDecodeParams, RawMetadata},
   formats::tiff::Rational,
   formats::tiff::SRational,
-  imgop::{raw::develop_raw_srgb, rescale_f32_to_u16, Dim2, Rect},
-  rawimage::BlackLevel,
+  imgop::{raw::develop_raw_srgb, Dim2, Rect, convert_from_f32_scaled_u16},
+  rawimage::{BlackLevel, WhiteLevel},
   RawFile, RawImage, RawImageData, RawlerError, Result,
 };
 
@@ -111,7 +111,7 @@ pub struct RawParams {
   pub crop_area: Option<Rect>,
   pub active_area: Option<Rect>,
   pub blacklevels: BlackLevel,
-  pub whitelevels: Vec<u16>,
+  pub whitelevels: WhiteLevel,
   pub wb_coeffs: (Option<f32>, Option<f32>, Option<f32>, Option<f32>),
 }
 
@@ -261,13 +261,9 @@ pub fn raw_to_srgb<P: AsRef<Path>>(path: P, params: RawDecodeParams) -> Result<(
   //decoder.decode_metadata(&mut rawfile)?;
   let rawimage = decoder.raw_image(&mut rawfile, params, false)?;
   let params = rawimage.develop_params()?;
-  let buf = match rawimage.data {
-    RawImageData::Integer(buf) => buf,
-    RawImageData::Float(_) => todo!(),
-  };
   assert_eq!(rawimage.cpp, 1);
-  let (srgbf, dim) = develop_raw_srgb(&buf, &params)?;
-  let output = rescale_f32_to_u16(&srgbf, 0, u16::MAX);
+  let (srgbf, dim) = develop_raw_srgb(&rawimage.data, &params)?;
+  let output = convert_from_f32_scaled_u16(&srgbf, 0, u16::MAX);
   Ok((output, dim))
 }
 

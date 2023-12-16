@@ -113,6 +113,7 @@ fn generate_job(entry: &FileMap, options: &ArgMatches) -> Result<Vec<Raw2DngJob>
       artist: options.get_one("artist").cloned(),
       software: format!("{} {}", PKG_NAME, PKG_VERSION),
       index: if do_batch { i } else { index },
+      apply_scaling: false,
     };
 
     let mut output = PathBuf::from(&entry.dest);

@@ -55,14 +55,26 @@ where
     Ok(offset)
   }
 
-  pub fn write_data_u16_be(&mut self, data: &[u16]) -> Result<u32>
+  pub fn write_data_u16_le(&mut self, data: &[u16]) -> Result<u32>
   where
     W: Seek + Write,
   {
     self.pad_word_boundary()?;
     let offset = self.position()?;
     for v in data {
-      self.writer.write_u16::<LittleEndian>(*v)?; // TODO bug?
+      self.writer.write_u16::<LittleEndian>(*v)?;
+    }
+    Ok(offset)
+  }
+
+  pub fn write_data_f32_le(&mut self, data: &[f32]) -> Result<u32>
+  where
+    W: Seek + Write,
+  {
+    self.pad_word_boundary()?;
+    let offset = self.position()?;
+    for v in data {
+      self.writer.write_f32::<LittleEndian>(*v)?;
     }
     Ok(offset)
   }

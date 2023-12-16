@@ -405,6 +405,35 @@ impl IFD {
     self.sub_buf(reader, offset, len)
   }
 
+  pub fn strip_data<R: Read + Seek>(&self, reader: &mut R) -> Result<Vec<Vec<u8>>> {
+    if !self.has_entry(TiffCommonTag::StripOffsets) {
+      return Err(TiffError::General("IFD contains no strip data".into()));
+    }
+    let offsets = if let Some(Entry { value: Value::Long(data), .. }) = self.get_entry(TiffCommonTag::StripOffsets) {
+      data
+    } else {
+      return Err(TiffError::General("Invalid datatype for StripOffsets".to_string()));
+    };
+    let sizes = if let Some(Entry { value: Value::Long(data), .. }) = self.get_entry(TiffCommonTag::StripByteCounts) {
+      data
+    } else {
+      return Err(TiffError::General("Invalid datatype for StripByteCounts".to_string()));
+    };
+
+    if offsets.len() != sizes.len() {
+      return Err(TiffError::General(format!(
+        "Can't get data from strips: offsets has len {} but sizes has len {}",
+        offsets.len(),
+        sizes.len()
+      )));
+    }
+    let mut subviews = Vec::with_capacity(offsets.len());
+    for (offset, size) in offsets.iter().zip(sizes.iter()) {
+      subviews.push(self.sub_buf(reader, *offset as usize, *size as usize)?);
+    }
+    Ok(subviews)
+  }
+
   pub fn parse_makernote<R: Read + Seek>(&self, reader: &mut R, offset_mode: OffsetMode, sub_tags: &[u16]) -> Result<Option<IFD>> {
     if let Some(exif) = self.get_entry(ExifTag::MakerNotes) {
       let offset = exif.offset().unwrap() as u32;

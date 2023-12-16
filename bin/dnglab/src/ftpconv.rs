@@ -53,6 +53,7 @@ pub async fn ftpserver(options: &ArgMatches) -> crate::Result<()> {
     artist: options.get_one("artist").cloned(),
     software: format!("{} {}", PKG_NAME, PKG_VERSION),
     index: 0,
+    apply_scaling: false,
   };
   let keep_orig = options.get_flag("keep_orig");
 

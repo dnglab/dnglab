@@ -1,6 +1,6 @@
 use std::f32::NAN;
 
-use super::{ok_image, Camera, Decoder, RawDecodeParams, RawMetadata};
+use super::{ok_cfa_image, Camera, Decoder, RawDecodeParams, RawMetadata};
 use crate::analyze::FormatDump;
 use crate::exif::Exif;
 use crate::packed::{decode_10le_lsb16, decode_12be_msb16, decode_12le_16bitaligned};
@@ -39,7 +39,7 @@ impl<'a> Decoder for NakedDecoder<'a> {
       }
     };
     let cpp = 1;
-    ok_image(self.camera.clone(), cpp, [NAN, NAN, NAN, NAN], image, dummy)
+    ok_cfa_image(self.camera.clone(), cpp, [NAN, NAN, NAN, NAN], image, dummy)
   }
 
   fn format_dump(&self) -> FormatDump {

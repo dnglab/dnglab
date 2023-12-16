@@ -1,4 +1,5 @@
 use std::{
+  borrow::Cow,
   io::{self, Seek, Write},
   mem::size_of,
   time::Instant,
@@ -19,7 +20,7 @@ use crate::{
   imgop::{Dim2, Point, Rect},
   ljpeg92::LjpegCompressor,
   pixarray::PixU16,
-  rawimage::BlackLevel,
+  rawimage::{BlackLevel, RawPhotometricInterpretation, WhiteLevel},
   tags::{ExifGpsTag, ExifTag, TiffTag},
   tiles::ImageTiler,
   RawImage, RawImageData, CFA,
@@ -82,9 +83,10 @@ where
     cam.cfa = CFA::new("RGGB");
 
     let wb_coeffs = [1.0, 1.0, 1.0, 1.0];
-    let blacklevel = Some(BlackLevel::new(&[0, 0, 0], 1, 1, 3));
-    let whitelevel = Some(vec![0xFF, 0xFF, 0xFF]);
-    let rawimage = RawImage::new(cam, rawimagedata, cpp, wb_coeffs, blacklevel, whitelevel, false);
+    let blacklevel = Some(BlackLevel::new(&[0_u32, 0, 0], 1, 1, 3));
+    let whitelevel = Some(WhiteLevel::new_bits(8, cpp));
+    let photometric = RawPhotometricInterpretation::LinearRaw;
+    let rawimage = RawImage::new(cam, rawimagedata, cpp, wb_coeffs, photometric, blacklevel, whitelevel, false);
     self.raw_image(&rawimage, CropMode::None, compression, DngPhotometricConversion::Original, predictor)
   }
 
@@ -95,9 +97,10 @@ where
     cam.cfa = CFA::new("RGGB");
 
     let wb_coeffs = [1.0, 1.0, 1.0, 1.0];
-    let blacklevel = Some(BlackLevel::new(&[0, 0, 0], 1, 1, 3));
-    let whitelevel = Some(vec![0xFFFF, 0xFFFF, 0xFFFF]);
-    let rawimage = RawImage::new(cam, rawimagedata, cpp, wb_coeffs, blacklevel, whitelevel, false);
+    let blacklevel = Some(BlackLevel::new(&[0_u32, 0, 0], 1, 1, 3));
+    let whitelevel = Some(WhiteLevel::new_bits(16, cpp));
+    let photometric = RawPhotometricInterpretation::LinearRaw;
+    let rawimage = RawImage::new(cam, rawimagedata, cpp, wb_coeffs, photometric, blacklevel, whitelevel, false);
     self.raw_image(&rawimage, CropMode::None, compression, DngPhotometricConversion::Original, predictor)
   }
 
@@ -113,15 +116,16 @@ where
     photometric_conversion: DngPhotometricConversion,
     predictor: u8,
   ) -> Result<()> {
+
     match photometric_conversion {
-      DngPhotometricConversion::Original => self.write_rawimage(rawimage, cropmode, compression, predictor)?,
+      DngPhotometricConversion::Original => self.write_rawimage(Cow::Borrowed(rawimage), cropmode, compression, predictor)?,
 
       DngPhotometricConversion::Linear => {
         if rawimage.cpp == 3 {
-          self.write_rawimage(rawimage, cropmode, compression, predictor)?;
+          self.write_rawimage(Cow::Borrowed(rawimage), cropmode, compression, predictor)?;
         } else {
           let rawimage = rawimage.linearize().unwrap(); // TODO: implement me
-          self.write_rawimage(&rawimage, cropmode, compression, predictor)?;
+          self.write_rawimage(Cow::Borrowed(&rawimage), cropmode, compression, predictor)?;
         }
       }
     }
@@ -133,27 +137,36 @@ where
     Ok(())
   }
 
-  fn write_rawimage(&mut self, rawimage: &RawImage, cropmode: CropMode, compression: DngCompression, predictor: u8) -> Result<()> {
-    self.writer.as_shot_neutral(&wbcoeff_to_tiff_value(rawimage));
+  fn write_rawimage(&mut self, mut rawimage: Cow<RawImage>, cropmode: CropMode, compression: DngCompression, predictor: u8) -> Result<()> {
+    if compression == DngCompression::Lossless && matches!(rawimage.data, RawImageData::Float(_)) {
+      // Lossless (LJPEG92) can only be used for 16 bit integer data.
+      // If we have floats, convert them.
+      rawimage.to_mut().data.force_integer();
+      rawimage.to_mut().whitelevel.0.iter_mut().for_each(|x| *x = u16::MAX as u32);
+      rawimage.to_mut().bps = 16; // Reset bps as intgers are scaled to u16 range.
+    }
 
-    // Add matrix and illumninant
-    let mut available_matrices = rawimage.color_matrix.clone();
-    if let Some(first_key) = available_matrices.keys().next().cloned() {
-      let first_matrix = available_matrices
-        .remove_entry(&Illuminant::A)
-        .or_else(|| available_matrices.remove_entry(&Illuminant::A))
-        .or_else(|| available_matrices.remove_entry(&first_key))
-        .expect("No matrix found");
-      self
-        .writer
-        .color_matrix(1, first_matrix.0, matrix_to_tiff_value(&first_matrix.1, 10_000).as_slice());
-      if let Some(second_matrix) = available_matrices
-        .remove_entry(&Illuminant::D65)
-        .or_else(|| available_matrices.remove_entry(&Illuminant::D50))
-      {
+    if rawimage.cpp > 1 || matches!(rawimage.photometric, RawPhotometricInterpretation::Cfa(_)) {
+      self.writer.as_shot_neutral(&wbcoeff_to_tiff_value(&rawimage));
+      // Add matrix and illumninant
+      let mut available_matrices = rawimage.color_matrix.clone();
+      if let Some(first_key) = available_matrices.keys().next().cloned() {
+        let first_matrix = available_matrices
+          .remove_entry(&Illuminant::A)
+          .or_else(|| available_matrices.remove_entry(&Illuminant::A))
+          .or_else(|| available_matrices.remove_entry(&first_key))
+          .expect("No matrix found");
         self
           .writer
-          .color_matrix(2, second_matrix.0, matrix_to_tiff_value(&second_matrix.1, 10_000).as_slice());
+          .color_matrix(1, first_matrix.0, matrix_to_tiff_value(&first_matrix.1, 10_000).as_slice());
+        if let Some(second_matrix) = available_matrices
+          .remove_entry(&Illuminant::D65)
+          .or_else(|| available_matrices.remove_entry(&Illuminant::D50))
+        {
+          self
+            .writer
+            .color_matrix(2, second_matrix.0, matrix_to_tiff_value(&second_matrix.1, 10_000).as_slice());
+        }
       }
     }
 
@@ -213,8 +226,16 @@ where
     );
 
     // Whitelevel
-    assert_eq!(rawimage.whitelevel.len(), rawimage.cpp, "Whitelevel sample count must match cpp");
-    self.ifd.add_tag(DngTag::WhiteLevel, &rawimage.whitelevel);
+    assert_eq!(rawimage.whitelevel.0.len(), rawimage.cpp, "Whitelevel sample count must match cpp");
+
+    if rawimage.whitelevel.0.iter().all(|x| *x <= (u16::MAX as u32)) {
+      // Add as u16
+      self
+        .ifd
+        .add_tag(DngTag::WhiteLevel, &rawimage.whitelevel.0.iter().map(|x| *x as u16).collect::<Vec<u16>>());
+    } else {
+      self.ifd.add_tag(DngTag::WhiteLevel, &rawimage.whitelevel.0);
+    }
 
     // Blacklevel
     let blacklevel = rawimage.blacklevel.shift(active_area.p.x, active_area.p.y);
@@ -223,59 +244,56 @@ where
       .ifd
       .add_tag(DngTag::BlackLevelRepeatDim, [blacklevel.height as u16, blacklevel.width as u16]);
 
-    assert!(blacklevel.sample_count() == rawimage.cpp || blacklevel.sample_count() == rawimage.cfa.width * rawimage.cfa.height * rawimage.cpp);
     if blacklevel.levels.iter().all(|x| x.d == 1) {
-      let payload: Vec<u16> = blacklevel.levels.iter().map(|x| x.n as u16).collect();
-      self.ifd.add_tag(DngTag::BlackLevel, &payload);
+      let payload: Vec<u32> = blacklevel.levels.iter().map(|x| x.n as u32).collect();
+      if payload.iter().all(|x| *x <= (u16::MAX as u32)) {
+        // Add as u16
+        self
+          .ifd
+          .add_tag(DngTag::BlackLevel, &payload.into_iter().map(|x| x as u16).collect::<Vec<u16>>());
+      } else {
+        // Add as u32
+        self.ifd.add_tag(DngTag::BlackLevel, &payload);
+      }
     } else {
+      // Add as RATIONAL
       self.ifd.add_tag(DngTag::BlackLevel, blacklevel.levels.as_slice());
     }
 
-    match rawimage.cpp {
-      1 => {
-        if !rawimage.blackareas.is_empty() {
-          let data: Vec<u16> = rawimage.blackareas.iter().flat_map(rect_to_dng_area).collect();
-          self.ifd.add_tag(DngTag::MaskedAreas, &data);
-        }
-        self.ifd.add_tag(TiffCommonTag::PhotometricInt, PhotometricInterpretation::CFA);
-        self.ifd.add_tag(TiffCommonTag::SamplesPerPixel, 1_u16);
-        self.ifd.add_tag(TiffCommonTag::BitsPerSample, [16_u16]);
+    if !rawimage.blackareas.is_empty() {
+      let data: Vec<u16> = rawimage.blackareas.iter().flat_map(rect_to_dng_area).collect();
+      self.ifd.add_tag(DngTag::MaskedAreas, &data);
+    }
 
-        let cfa = rawimage.cfa.shift(active_area.p.x, active_area.p.y);
+    self.ifd.add_tag(TiffCommonTag::SamplesPerPixel, rawimage.cpp as u16);
 
+    match &rawimage.photometric {
+      RawPhotometricInterpretation::BlackIsZero => {
+        assert_eq!(rawimage.cpp, 1);
+        self.ifd.add_tag(TiffCommonTag::PhotometricInt, PhotometricInterpretation::BlackIsZero);
+      }
+      RawPhotometricInterpretation::Cfa(cfa) => {
+        assert_eq!(rawimage.cpp, 1);
+        let cfa = cfa.shift(active_area.p.x, active_area.p.y);
         self.ifd.add_tag(TiffCommonTag::CFARepeatPatternDim, [cfa.width as u16, cfa.height as u16]);
         self.ifd.add_tag(TiffCommonTag::CFAPattern, &cfa.flat_pattern()[..]);
-
-        //raw_ifd.add_tag(DngTag::CFAPlaneColor, [0u8, 1u8, 2u8])?; // RGB
-
-        //raw_ifd.add_tag(DngTag::CFAPlaneColor, [1u8, 4u8, 3u8, 5u8])?; // RGB
-
+        self.ifd.add_tag(TiffCommonTag::PhotometricInt, PhotometricInterpretation::CFA);
+        self.ifd.add_tag(DngTag::CFAPlaneColor, [0u8, 1u8, 2u8]); // RGB
         self.ifd.add_tag(DngTag::CFALayout, 1_u16); // Square layout
-
-        //raw_ifd.add_tag(LegacyTiffRootTag::CFAPattern, [0u8, 1u8, 1u8, 2u8])?; // RGGB
-        //raw_ifd.add_tag(LegacyTiffRootTag::CFARepeatPatternDim, [2u16, 2u16])?;
-        //raw_ifd.add_tag(DngTag::CFAPlaneColor, [0u8, 1u8, 2u8])?; // RGGB
       }
-      3 => {
+      RawPhotometricInterpretation::LinearRaw => {
         self.ifd.add_tag(TiffCommonTag::PhotometricInt, PhotometricInterpretation::LinearRaw);
-        self.ifd.add_tag(TiffCommonTag::SamplesPerPixel, 3_u16);
-        self.ifd.add_tag(TiffCommonTag::BitsPerSample, [16_u16, 16_u16, 16_u16]);
-
-        //raw_ifd.add_tag(DngTag::CFAPlaneColor, [1u8, 2u8, 0u8])?; //
-      }
-      cpp => {
-        panic!("Unsupported cpp: {}", cpp);
       }
     }
 
     match compression {
       DngCompression::Uncompressed => {
         self.ifd.add_tag(TiffCommonTag::Compression, CompressionMethod::None);
-        dng_put_raw_uncompressed(&mut self.ifd, self.writer, rawimage)?;
+        dng_put_raw_uncompressed(&mut self.ifd, self.writer, &rawimage)?;
       }
       DngCompression::Lossless => {
         self.ifd.add_tag(TiffCommonTag::Compression, CompressionMethod::ModernJPEG);
-        dng_put_raw_ljpeg(&mut self.ifd, self.writer, rawimage, predictor)?;
+        dng_put_raw_ljpeg(&mut self.ifd, self.writer, &rawimage, predictor)?;
       }
     }
 
@@ -522,18 +540,43 @@ where
 
 /// DNG requires the WB values to be the reciprocal
 fn wbcoeff_to_tiff_value(rawimage: &RawImage) -> Vec<Rational> {
-  assert!([3, 4].contains(&rawimage.cfa.unique_colors()));
   let wb = &rawimage.wb_coeffs;
-  let mut values = Vec::with_capacity(4);
+  match &rawimage.photometric {
+    RawPhotometricInterpretation::BlackIsZero => {
+      vec![Rational::new(1, 1)] // TODO: is this useful?
+    }
+    RawPhotometricInterpretation::Cfa(cfa) => {
+      assert!([1, 3, 4].contains(&cfa.unique_colors()));
 
-  values.push(Rational::new_f32(1.0 / wb[0], 100000));
-  values.push(Rational::new_f32(1.0 / wb[1], 100000));
-  values.push(Rational::new_f32(1.0 / wb[2], 100000));
+      let mut values = Vec::with_capacity(4);
 
-  if rawimage.cfa.unique_colors() == 4 {
-    values.push(Rational::new_f32(1.0 / wb[3], 100000));
+      values.push(Rational::new_f32(1.0 / wb[0], 100000));
+      values.push(Rational::new_f32(1.0 / wb[1], 100000));
+      values.push(Rational::new_f32(1.0 / wb[2], 100000));
+
+      if cfa.unique_colors() == 4 {
+        values.push(Rational::new_f32(1.0 / wb[3], 100000));
+      }
+      values
+    }
+    RawPhotometricInterpretation::LinearRaw => {
+      //assert_eq!(rawimage.cpp, 3);
+
+      match rawimage.cpp {
+        1 => {
+          vec![Rational::new(1, 1)]
+        }
+        3 => {
+          let mut values = Vec::with_capacity(3);
+          values.push(Rational::new_f32(1.0 / wb[0], 100000));
+          values.push(Rational::new_f32(1.0 / wb[1], 100000));
+          values.push(Rational::new_f32(1.0 / wb[2], 100000));
+          values
+        }
+        _ => todo!(),
+      }
+    }
   }
-  values
 }
 
 fn matrix_to_tiff_value(xyz_to_cam: &[f32], d: i32) -> Vec<SRational> {
@@ -567,19 +610,26 @@ where
       //let tiled_data = TiledData::new(&data, rawimage.width, rawimage.height, rawimage.cpp);
 
       // Only merge two lines into one for higher predictors, if image is CFA
-      let realign = if (4..=7).contains(&predictor) && rawimage.cfa.width == 2 && rawimage.cfa.height == 2 {
-        2
-      } else {
-        1
-      };
 
       let tiled_data: Vec<Vec<u16>> = ImageTiler::new(data, rawimage.width, rawimage.height, rawimage.cpp, tile_w, tile_h).collect();
 
-      let j_height = tile_h;
-      let (j_width, components) = if rawimage.cpp == 3 {
-        (tile_w, 3) /* RGB LinearRaw */
-      } else {
-        (tile_w / 2, 2) /* CFA */
+      let (j_width, j_height, components, realign) = match &rawimage.photometric {
+        RawPhotometricInterpretation::BlackIsZero => {
+          assert_eq!(rawimage.cpp, 1);
+          (tile_w, tile_h, 1, 1)
+        }
+        RawPhotometricInterpretation::Cfa(cfa) => {
+          assert_eq!(rawimage.cpp, 1);
+          let realign = if (4..=7).contains(&predictor) && cfa.width == 2 && cfa.height == 2 {
+            2
+          } else {
+            1
+          };
+          (tile_w / 2, tile_h, 2, realign)
+        }
+        RawPhotometricInterpretation::LinearRaw => {
+          (tile_w, tile_h, rawimage.cpp, 1) /* RGB LinearRaw */
+        }
       };
 
       debug!("LJPEG compression: bit depth: {}", rawimage.bps);
@@ -610,7 +660,8 @@ where
     tile_sizes.push((tile.len() * size_of::<u8>()) as u32);
   });
 
-  //let offs = raw_ifd.write_data(&lj92_data)?;
+  raw_ifd.add_tag(TiffCommonTag::BitsPerSample, &vec![rawimage.bps as u16; rawimage.cpp]);
+  raw_ifd.add_tag(TiffCommonTag::SampleFormat, [1_u16, 1, 1]);
   raw_ifd.add_tag(TiffCommonTag::TileOffsets, &tile_offsets);
   raw_ifd.add_tag(TiffCommonTag::TileByteCounts, &tile_sizes);
   //raw_ifd.add_tag(LegacyTiffRootTag::TileWidth, lj92_data.1 as u16)?; // FIXME
@@ -629,30 +680,37 @@ fn dng_put_raw_uncompressed<W>(raw_ifd: &mut DirectoryWriter, writer: &mut DngWr
 where
   W: Write + Seek,
 {
+  let mut strip_offsets: Vec<u32> = Vec::new();
+  let mut strip_sizes: Vec<u32> = Vec::new();
+  let mut strip_rows: Vec<u32> = Vec::new();
+
+  // 8 Strips
+  let rows_per_strip = rawimage.height / 8;
   match rawimage.data {
     RawImageData::Integer(ref data) => {
-      let mut strip_offsets: Vec<u32> = Vec::new();
-      let mut strip_sizes: Vec<u32> = Vec::new();
-      let mut strip_rows: Vec<u32> = Vec::new();
-
-      // 8 Strips
-      let rows_per_strip = rawimage.height / 8;
-
       for strip in data.chunks(rows_per_strip * rawimage.width * rawimage.cpp) {
-        let offset = writer.dng.write_data_u16_be(strip)?;
+        let offset = writer.dng.write_data_u16_le(strip)?;
         strip_offsets.push(offset);
         strip_sizes.push(std::mem::size_of_val(strip) as u32);
         strip_rows.push((strip.len() / (rawimage.width * rawimage.cpp)) as u32);
       }
-
-      raw_ifd.add_tag(TiffCommonTag::StripOffsets, &strip_offsets);
-      raw_ifd.add_tag(TiffCommonTag::StripByteCounts, &strip_sizes);
-      raw_ifd.add_tag(TiffCommonTag::RowsPerStrip, &strip_rows);
+      raw_ifd.add_tag(TiffCommonTag::SampleFormat, [1_u16, 1, 1]); // Unsigned Integer
+      raw_ifd.add_tag(TiffCommonTag::BitsPerSample, &vec![16_u16; rawimage.cpp]);
     }
-    RawImageData::Float(ref _data) => {
-      panic!("invalid format");
+    RawImageData::Float(ref data) => {
+      for strip in data.chunks(rows_per_strip * rawimage.width * rawimage.cpp) {
+        let offset = writer.dng.write_data_f32_le(strip)?;
+        strip_offsets.push(offset);
+        strip_sizes.push(std::mem::size_of_val(strip) as u32);
+        strip_rows.push((strip.len() / (rawimage.width * rawimage.cpp)) as u32);
+      }
+      raw_ifd.add_tag(TiffCommonTag::SampleFormat, [3_u16, 3, 3]); // IEEE Float
+      raw_ifd.add_tag(TiffCommonTag::BitsPerSample, &vec![32_u16; rawimage.cpp]);
     }
   };
+  raw_ifd.add_tag(TiffCommonTag::StripOffsets, &strip_offsets);
+  raw_ifd.add_tag(TiffCommonTag::StripByteCounts, &strip_sizes);
+  raw_ifd.add_tag(TiffCommonTag::RowsPerStrip, &strip_rows);
 
   Ok(())
 }

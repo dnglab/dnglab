@@ -24,6 +24,7 @@ use super::Camera;
 use super::Decoder;
 use super::RawDecodeParams;
 use super::RawMetadata;
+use super::RawPhotometricInterpretation;
 
 #[derive(Debug, Clone)]
 pub struct ErfDecoder<'a> {
@@ -67,7 +68,8 @@ impl<'a> Decoder for ErfDecoder<'a> {
     let cpp = 1;
 
     let blacklevel = self.get_blacklevel(cpp);
-    let img = RawImage::new(self.camera.clone(), image, cpp, self.get_wb()?, blacklevel, None, dummy);
+    let photometric = RawPhotometricInterpretation::Cfa(self.camera.cfa.clone());
+    let img = RawImage::new(self.camera.clone(), image, cpp, self.get_wb()?, photometric, blacklevel, None, dummy);
     Ok(img)
   }
 

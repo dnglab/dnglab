@@ -2,15 +2,14 @@
 // Copyright 2021 Daniel Vogelbacher <daniel@chaospixel.com>
 
 use super::sensor::bayer::ppg::demosaic_ppg;
-use super::sensor::bayer::BayerPattern;
 use super::xyz::Illuminant;
 use super::{Dim2, Point, Result};
 use crate::imgop::matrix::{multiply, normalize, pseudo_inverse};
 use crate::imgop::xyz::SRGB_TO_XYZ_D65;
 use crate::imgop::Rect;
-use crate::pixarray::RgbF32;
-use crate::rawimage::{BlackLevel, WhiteLevel};
-use crate::CFA;
+use crate::pixarray::{Pix2D, Rgb2D, RgbF32};
+use crate::rawimage::{BlackLevel, RawPhotometricInterpretation, WhiteLevel};
+use crate::{RawImageData, CFA};
 use std::iter;
 
 use multiversion::multiversion;
@@ -28,11 +27,12 @@ pub struct ColorMatrix {
 pub struct DevelopParams {
   pub width: usize,
   pub height: usize,
+  pub cpp: usize,
   pub color_matrices: Vec<ColorMatrix>,
   pub whitelevel: WhiteLevel,
   pub blacklevel: BlackLevel,
-  pub pattern: BayerPattern,
-  pub cfa: CFA,
+  //pub pattern: Option<BayerPattern>,
+  pub photometric: RawPhotometricInterpretation,
   pub wb_coeff: [f32; 4],
   pub active_area: Option<Rect>,
   pub crop_area: Option<Rect>,
@@ -56,15 +56,17 @@ pub fn clip<const N: usize>(pix: &[f32; N]) -> [f32; N] {
 
 /// Clip into range of lower and upper bound
 pub fn clip_range<const N: usize>(pix: &[f32; N], lower: f32, upper: f32) -> [f32; N] {
-  pix.map(|p| {
-    if p < lower {
-      lower
-    } else if p > upper {
-      upper
-    } else {
-      p
-    }
-  })
+  pix.map(|p| clip_value(p, lower, upper))
+}
+
+pub fn clip_value(p: f32, lower: f32, upper: f32) -> f32 {
+  if p < lower {
+    lower
+  } else if p > upper {
+    upper
+  } else {
+    p
+  }
 }
 
 /// Clip pixel with N components by:
@@ -87,12 +89,94 @@ pub fn clip_euclidean_norm_avg<const N: usize>(pix: &[f32; N]) -> [f32; N] {
 }
 
 /// Correct data by blacklevel and whitelevel on CFA (bayer) data.
+///
+/// The output is between 0.0 .. 1.0.
+///
 /// This version is optimized vor vectorization, so please check
 /// modifications on godbolt before committing.
 #[multiversion]
 #[clone(target = "[x86|x86_64]+avx+avx2")]
 #[clone(target = "x86+sse")]
-fn correct_blacklevel(raw: &mut [f32], width: usize, _height: usize, blacklevel: &[f32; 4], whitelevel: &[f32; 4]) {
+fn correct_blacklevel_channels<const CH: usize>(raw: &mut [f32], blacklevel: &[f32; CH], whitelevel: &[f32; CH]) {
+  // max value can be pre-computed for all channels.
+  let mut max = *whitelevel;
+  max.iter_mut().enumerate().for_each(|(i, x)| *x -= blacklevel[i]);
+
+  let clip = |v: f32| {
+    if v.is_sign_negative() {
+      0.0
+    } else {
+      v
+    }
+  };
+  if CH == 1 {
+    let max = max[0];
+    let blacklevel = blacklevel[0];
+    raw.iter_mut().for_each(|p| *p = clip(*p - blacklevel) / max);
+  } else {
+    raw.chunks_exact_mut(CH).for_each(|block| {
+      for i in 0..CH {
+        block[i] = clip(block[i] - blacklevel[i]) / max[i];
+      }
+    });
+  }
+}
+
+/// Correct data by blacklevel and whitelevel on CFA (bayer) data.
+///
+/// The output is between 0.0 .. 1.0.
+///
+/// This version is optimized vor vectorization, so please check
+/// modifications on godbolt before committing.
+#[multiversion]
+#[clone(target = "[x86|x86_64]+avx+avx2")]
+#[clone(target = "x86+sse")]
+pub fn correct_blacklevel(raw: &mut [f32], blacklevel: &[f32], whitelevel: &[f32]) {
+  match (blacklevel.len(), whitelevel.len()) {
+    (1, 1) => correct_blacklevel_channels::<1>(
+      raw,
+      blacklevel.try_into().expect("Array size mismatch"),
+      whitelevel.try_into().expect("Array size mismatch"),
+    ),
+    (3, 3) => correct_blacklevel_channels::<3>(
+      raw,
+      blacklevel.try_into().expect("Array size mismatch"),
+      whitelevel.try_into().expect("Array size mismatch"),
+    ),
+    (a, b) if a == b => {
+      // max value can be pre-computed for all channels.
+      let mut max = whitelevel.to_vec();
+      max.iter_mut().enumerate().for_each(|(i, x)| *x -= blacklevel[i]);
+
+      let clip = |v: f32| {
+        if v.is_sign_negative() {
+          0.0
+        } else {
+          v
+        }
+      };
+
+      let ch = blacklevel.len();
+      raw.chunks_exact_mut(ch).for_each(|block| {
+        for i in 0..ch {
+          block[i] = clip(block[i] - blacklevel[i]) / max[i];
+        }
+      });
+    }
+    _ => panic!("Blacklevel ({}) and Whitelevel ({})count mismatch", blacklevel.len(), whitelevel.len()),
+  }
+}
+
+/// Correct data by blacklevel and whitelevel on CFA (bayer) data.
+///
+/// The output is between 0.0 .. 1.0.
+///
+/// This version is optimized vor vectorization, so please check
+/// modifications on godbolt before committing.
+#[multiversion]
+#[clone(target = "[x86|x86_64]+avx+avx2")]
+#[clone(target = "x86+sse")]
+pub fn correct_blacklevel_cfa(raw: &mut [f32], width: usize, _height: usize, blacklevel: &[f32; 4], whitelevel: &[f32; 4]) {
   //assert_eq!(width % 2, 0, "width is {}", width);
   //assert_eq!(height % 2, 0, "height is {}", height);
   // max value can be pre-computed for all channels.
@@ -121,13 +205,6 @@ fn correct_blacklevel(raw: &mut [f32], width: usize, _height: usize, blacklevel:
       b[1] = clip(b[1] - blacklevel[3]) / max[3];
     });
   });
-}
-
-#[multiversion]
-#[clone(target = "[x86|x86_64]+avx+avx2")]
-#[clone(target = "x86+sse")]
-fn raw_u16_to_float(pix: &[u16]) -> Vec<f32> {
-  pix.iter().copied().map(f32::from).collect()
 }
 
 /// Rescale raw pixels by removing black level and scale to white level
@@ -164,16 +241,15 @@ fn rgb_to_srgb_with_wb(rgb: &mut RgbF32, wb_coeff: &[f32; 4], xyz2cam: [[f32; 3]
   });
 }
 
-/// Develop a RAW image to sRGB
-pub fn develop_raw_srgb(pixels: &[u16], params: &DevelopParams) -> Result<(Vec<f32>, Dim2)> {
+fn develop_raw_cfa_srgb(pixels: &RawImageData, params: &DevelopParams, cfa: &CFA) -> Result<(Vec<f32>, Dim2)> {
   let black_level: [f32; 4] = match params.blacklevel.levels.len() {
     1 => Ok(collect_array(iter::repeat(params.blacklevel.levels[0].as_f32()))),
     4 => Ok(collect_array(params.blacklevel.levels.iter().map(|p| p.as_f32()))),
     c => Err(format!("Black level sample count of {} is invalid", c)),
   }?;
-  let white_level: [f32; 4] = match params.whitelevel.len() {
-    1 => Ok(collect_array(iter::repeat(params.whitelevel[0] as f32))),
-    4 => Ok(collect_array(params.whitelevel.iter().map(|p| *p as f32))),
+  let white_level: [f32; 4] = match params.whitelevel.0.len() {
+    1 => Ok(collect_array(iter::repeat(params.whitelevel.0[0] as f32))),
+    4 => Ok(collect_array(params.whitelevel.0.iter().map(|p| *p as f32))),
     c => Err(format!("White level sample count of {} is invalid", c)),
   }?;
   let wb_coeff: [f32; 4] = params.wb_coeff;
@@ -191,11 +267,11 @@ pub fn develop_raw_srgb(pixels: &[u16], params: &DevelopParams) -> Result<(Vec<f
   let raw_size = Rect::new_with_points(Point::zero(), Point::new(params.width, params.height));
   let active_area = params.active_area.unwrap_or(raw_size);
   let crop_area = params.crop_area.unwrap_or(active_area).adapt(&active_area);
-  let mut pixels = raw_u16_to_float(pixels);
+  let mut pixels = pixels.as_f32();
 
-  correct_blacklevel(&mut pixels, params.width, params.height, &black_level, &white_level);
+  correct_blacklevel_cfa(pixels.to_mut(), params.width, params.height, &black_level, &white_level);
+  let rgb = demosaic_ppg(&pixels, Dim2::new(params.width, params.height), cfa.clone(), active_area);
 
-  let rgb = demosaic_ppg(&pixels, Dim2::new(params.width, params.height), params.cfa.clone(), active_area);
   let mut cropped_pixels = if raw_size.d != crop_area.d { rgb.crop(crop_area) } else { rgb };
 
   // Convert to sRGB from XYZ
@@ -203,10 +279,63 @@ pub fn develop_raw_srgb(pixels: &[u16], params: &DevelopParams) -> Result<(Vec<f
 
   // Flatten into Vec<f32>
   let srgb: Vec<f32> = cropped_pixels.into_inner().into_iter().flatten().collect();
-
   assert_eq!(srgb.len(), crop_area.d.w * crop_area.d.h * 3);
-
   Ok((srgb, crop_area.d))
+}
+
+fn develop_linearraw_srgb(pixels: &RawImageData, params: &DevelopParams) -> Result<(Vec<f32>, Dim2)> {
+  let raw_size = Rect::new_with_points(Point::zero(), Point::new(params.width, params.height));
+  let active_area = params.active_area.unwrap_or(raw_size);
+  let crop_area = params.crop_area.unwrap_or(active_area).adapt(&active_area);
+  let mut pixels = pixels.as_f32();
+  correct_blacklevel(pixels.to_mut(), &params.blacklevel.as_vec(), &params.whitelevel.as_vec());
+
+  match params.cpp {
+    1 => {
+      let clipped: Vec<f32> = pixels.iter().map(|x| clip_value(*x, 0.0, 1.0)).map(super::srgb::srgb_apply_gamma).collect();
+      let rgb = Pix2D::new_with(clipped, params.width, params.height);
+      let cropped_pixels = if raw_size.d != crop_area.d { rgb.crop(crop_area) } else { rgb };
+      let srgb = cropped_pixels.into_inner();
+      Ok((srgb, crop_area.d))
+    }
+    3 => {
+      assert_eq!(params.blacklevel.levels.len(), params.cpp);
+      let wb_coeff: [f32; 4] = params.wb_coeff;
+      log::debug!("Develop raw, wb: {:?}", wb_coeff);
+      let x = pixels.chunks_exact(3).map(|x| [x[0], x[1], x[2]]).collect();
+      let rgb: Rgb2D<f32> = Rgb2D::new_with(x, params.width, params.height);
+
+      let mut cropped_pixels = if raw_size.d != crop_area.d { rgb.crop(crop_area) } else { rgb };
+
+      //Color Space Conversion
+      let xyz2cam = params
+        .color_matrices
+        .iter()
+        .find(|m| m.illuminant == Illuminant::D65)
+        .ok_or("Illuminant matrix D65 not found")?
+        .matrix;
+
+      // Convert to sRGB from XYZ
+      rgb_to_srgb_with_wb(&mut cropped_pixels, &wb_coeff, xyz2cam);
+
+      // Flatten into Vec<f32>
+      let srgb: Vec<f32> = cropped_pixels.into_inner().into_iter().flatten().collect();
+
+      assert_eq!(srgb.len(), crop_area.d.w * crop_area.d.h * 3);
+
+      Ok((srgb, crop_area.d))
+    }
+    _ => todo!(),
+  }
+}
+
+/// Develop a RAW image to sRGB
+pub fn develop_raw_srgb(pixels: &RawImageData, params: &DevelopParams) -> Result<(Vec<f32>, Dim2)> {
+  match &params.photometric {
+    RawPhotometricInterpretation::BlackIsZero => todo!(),
+    RawPhotometricInterpretation::Cfa(cfa) => develop_raw_cfa_srgb(pixels, params, cfa),
+    RawPhotometricInterpretation::LinearRaw => develop_linearraw_srgb(pixels, params),
+  }
 }
 
 /// Collect iterator into array

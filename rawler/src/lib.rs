@@ -53,6 +53,7 @@
   clippy::manual_range_patterns,
   clippy::unnecessary_cast,
   clippy::get_first,
+  clippy::vec_init_then_push,
   clippy::only_used_in_recursion,
   //clippy::seek_from_current, // TODO
   clippy::needless_lifetimes,
@@ -215,6 +216,21 @@ impl RawFile {
     self.file.seek(SeekFrom::Start(offset))?;
     self.file.read_to_end(&mut buf)?;
     Ok(buf)
+  }
+
+  /// Helper for TIFF based files to get multiple strips at once.
+  pub fn subviews_from_strips(&mut self, offsets: &[u32], sizes: &[u32]) -> std::io::Result<Vec<Vec<u8>>> {
+    if offsets.len() != sizes.len() {
+      return Err(std::io::Error::new(std::io::ErrorKind::Other, format!("Can't get subviews from strips: offsets has len {} but sizes has len {}", offsets.len(), sizes.len())));
+    }
+    let mut subviews = Vec::with_capacity(offsets.len());
+    for (offset, size) in offsets.iter().zip(sizes.iter()) {
+      let mut buf = vec![0; *size as usize];
+      self.file.seek(SeekFrom::Start(*offset as u64))?;
+      self.file.read_exact(&mut buf)?;
+      subviews.push(buf);
+    }
+    Ok(subviews)
   }
 
   pub fn as_vec(&mut self) -> std::io::Result<Vec<u8>> {

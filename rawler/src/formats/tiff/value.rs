@@ -822,8 +822,8 @@ impl Value {
 
   pub fn as_embedded(&self) -> Result<u32> {
     if self.count() == 0 {
-      // TODO: is zero count allowed?
-      return Err(TiffError::General("IFD entry count is 0!".into()));
+      panic!("Embedded TIFF value data must not be empty");
+      //return Err(TiffError::General("Embedded data is empty".into()));
     }
     if self.byte_size() > 4 {
       Err(TiffError::Overflow("Invalid data".to_string()))

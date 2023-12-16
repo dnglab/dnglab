@@ -17,7 +17,7 @@ use crate::tags::{DngTag, ExifTag, TiffCommonTag};
 use crate::{alloc_image_ok, RawFile, RawImage, RawLoader};
 use crate::{RawlerError, Result};
 
-use super::{BlackLevel, Camera, Decoder, RawDecodeParams, RawMetadata};
+use super::{BlackLevel, Camera, Decoder, RawDecodeParams, RawMetadata, WhiteLevel, RawPhotometricInterpretation};
 
 /// 3FR format encapsulation for analyzer
 #[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize)]
@@ -52,7 +52,7 @@ impl<'a> Decoder for TfrDecoder<'a> {
   fn raw_image(&self, file: &mut RawFile, _params: RawDecodeParams, dummy: bool) -> Result<RawImage> {
     let raw = self.tiff.find_first_ifd_with_tag(TiffCommonTag::WhiteLevel).unwrap();
 
-    let whitelevel = raw.get_entry(TiffCommonTag::WhiteLevel).map(|tag| vec![tag.force_u16(0)]);
+    let whitelevel = raw.get_entry(TiffCommonTag::WhiteLevel).map(|tag| WhiteLevel::new(vec![tag.force_u16(0) as u32]));
 
     let blacklevel = raw
       .get_entry(TiffCommonTag::BlackLevels)
@@ -75,8 +75,8 @@ impl<'a> Decoder for TfrDecoder<'a> {
     //crate::devtools::dump_image_u16(&image.data, width, height, "/tmp/tfrdump.pnm");
 
     let cpp = 1;
-
-    let mut img = RawImage::new(self.camera.clone(), image, cpp, self.get_wb()?, blacklevel, whitelevel, dummy);
+    let photometric = RawPhotometricInterpretation::Cfa(self.camera.cfa.clone());
+    let mut img = RawImage::new(self.camera.clone(), image, cpp, self.get_wb()?, photometric, blacklevel, whitelevel, dummy);
 
     img.crop_area = crop;
 

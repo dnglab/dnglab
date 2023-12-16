@@ -22,8 +22,8 @@ pub struct Camera {
   pub raw_width: usize,
   pub raw_height: usize,
   //pub orientation: Orientation,
-  pub whitelevel: Option<Vec<u16>>,
-  pub blacklevel: Option<Vec<u16>>,
+  pub whitelevel: Option<Vec<u32>>,
+  pub blacklevel: Option<Vec<u32>>,
   pub blackareah: Option<(usize, usize)>,
   pub blackareav: Option<(usize, usize)>,
   pub xyz_to_cam: [[f32; 3]; 4],
@@ -94,9 +94,9 @@ impl Camera {
   pub fn make_whitelevel(&self, cpp: usize) -> Option<WhiteLevel> {
     self.whitelevel.as_ref().map(|x| {
       if x.len() == 1 {
-        vec![x[0]; cpp]
+        WhiteLevel(vec![x[0] as u32; cpp])
       } else if x.len() == cpp {
-        x.clone()
+        WhiteLevel(x.clone())
       } else {
         panic!("Invalid whitelevel data")
       }
@@ -125,11 +125,11 @@ impl Camera {
           self.remark = Some(val.as_str().unwrap_or_else(|| panic!("{} must be a string", n)).to_string());
         }
         n @ "whitepoint" => {
-          let white = val.as_integer().unwrap_or_else(|| panic!("{} must be an integer", n)) as u16;
+          let white = val.as_integer().unwrap_or_else(|| panic!("{} must be an integer", n)) as u32;
           self.whitelevel = Some(vec![white]);
         }
         n @ "blackpoint" => {
-          let black = val.as_integer().unwrap_or_else(|| panic!("{} must be an integer", n)) as u16;
+          let black = val.as_integer().unwrap_or_else(|| panic!("{} must be an integer", n)) as u32;
           self.blacklevel = Some(vec![black]);
         }
         n @ "blackareah" => {

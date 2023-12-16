@@ -20,7 +20,9 @@ use crate::RawLoader;
 use crate::RawlerError;
 use crate::Result;
 
-use super::ok_image;
+use super::RawPhotometricInterpretation;
+use super::WhiteLevel;
+use super::ok_cfa_image;
 use super::Camera;
 use super::Decoder;
 use super::RawDecodeParams;
@@ -78,8 +80,9 @@ impl<'a> Decoder for KdcDecoder<'a> {
         }
       };
       let cpp = 1;
-      let whitelevel = Some(vec![white; cpp]);
-      let img = RawImage::new(self.camera.clone(), image, cpp, [1.0, 1.0, 1.0, NAN], None, whitelevel, dummy);
+      let whitelevel = Some(WhiteLevel::new(vec![white; cpp]));
+      let photometric = RawPhotometricInterpretation::Cfa(self.camera.cfa.clone());
+      let img = RawImage::new(self.camera.clone(), image, cpp, [1.0, 1.0, 1.0, NAN], photometric, None, whitelevel, dummy);
       return Ok(img);
     }
 
@@ -101,7 +104,7 @@ impl<'a> Decoder for KdcDecoder<'a> {
     let src = file.subview_until_eof(off as u64).unwrap();
     let image = decode_12be(&src, width, height, dummy);
     let cpp = 1;
-    ok_image(self.camera.clone(), cpp, self.get_wb()?, image, dummy)
+    ok_cfa_image(self.camera.clone(), cpp, self.get_wb()?, image, dummy)
   }
 
   fn format_dump(&self) -> FormatDump {

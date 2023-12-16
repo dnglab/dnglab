@@ -43,6 +43,21 @@ macro_rules! fetch_tiff_tag {
   };
 }
 
+#[allow(unused_macros)]
+macro_rules! fetch_tiff_tag_variant {
+  ($ifd:expr, $tag:expr, $variant:path) => {
+    if let $variant(tmp) = $ifd
+      .get_entry($tag)
+      .map(|entry| &entry.value)
+      .ok_or(format!("Couldn't find tag {}", stringify!($tag)))?
+    {
+      tmp
+    } else {
+      return Err(format!("fetch_tiff_tag_variant!(): tag {} has unepxected datatype", stringify!($tag)).into());
+    }
+  };
+}
+
 /*
 macro_rules! fetch_ifd {
   ($tiff:expr, $tag:expr) => {
@@ -277,20 +292,50 @@ impl Orientation {
   }
 }
 
-pub fn ok_image(camera: Camera, cpp: usize, wb_coeffs: [f32; 4], image: PixU16, dummy: bool) -> Result<RawImage> {
-  Ok(RawImage::new(camera, image, cpp, wb_coeffs, None, None, dummy))
+pub fn ok_cfa_image(camera: Camera, cpp: usize, wb_coeffs: [f32; 4], image: PixU16, dummy: bool) -> Result<RawImage> {
+  assert_eq!(cpp, 1);
+  Ok(RawImage::new(
+    camera.clone(),
+    image,
+    cpp,
+    wb_coeffs,
+    RawPhotometricInterpretation::Cfa(camera.cfa.clone()),
+    None,
+    None,
+    dummy,
+  ))
 }
 
-pub fn ok_image_with_blacklevels(camera: Camera, cpp: usize, wb_coeffs: [f32; 4], blacks: [u16; 4], image: PixU16, dummy: bool) -> Result<RawImage> {
+pub fn ok_cfa_image_with_blacklevels(camera: Camera, cpp: usize, wb_coeffs: [f32; 4], blacks: [u32; 4], image: PixU16, dummy: bool) -> Result<RawImage> {
+  assert_eq!(cpp, 1);
   let blacklevel = BlackLevel::new(&blacks, camera.cfa.width, camera.cfa.height, cpp);
-  let img = RawImage::new(camera, image, cpp, wb_coeffs, Some(blacklevel), None, dummy);
+  let img = RawImage::new(
+    camera.clone(),
+    image,
+    cpp,
+    wb_coeffs,
+    RawPhotometricInterpretation::Cfa(camera.cfa.clone()),
+    Some(blacklevel),
+    None,
+    dummy,
+  );
   Ok(img)
 }
 
-pub fn ok_image_with_black_white(camera: Camera, cpp: usize, wb_coeffs: [f32; 4], black: u16, white: u16, image: PixU16, dummy: bool) -> Result<RawImage> {
+pub fn ok_cfa_image_with_black_white(camera: Camera, cpp: usize, wb_coeffs: [f32; 4], black: u32, white: u32, image: PixU16, dummy: bool) -> Result<RawImage> {
+  assert_eq!(cpp, 1);
   let blacklevel = BlackLevel::new(&vec![black; cpp], 1, 1, cpp);
-  let whitelevel = vec![white; cpp];
-  let img = RawImage::new(camera, image, cpp, wb_coeffs, Some(blacklevel), Some(whitelevel), dummy);
+  let whitelevel = WhiteLevel::new(vec![white; cpp]);
+  let img = RawImage::new(
+    camera.clone(),
+    image,
+    cpp,
+    wb_coeffs,
+    RawPhotometricInterpretation::Cfa(camera.cfa.clone()),
+    Some(blacklevel),
+    Some(whitelevel),
+    dummy,
+  );
   Ok(img)
 }
 

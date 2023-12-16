@@ -131,7 +131,8 @@ impl<'a> Decoder for X3fDecoder<'a> {
     };
 
     let cpp = 3;
-    Ok(RawImage::new(camera, image, cpp, self.get_wb()?, None, None, dummy))
+    let photometric = RawPhotometricInterpretation::LinearRaw;
+    Ok(RawImage::new(camera, image, cpp, self.get_wb()?, photometric, None, None, dummy))
   }
 
   fn format_dump(&self) -> FormatDump {
