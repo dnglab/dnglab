@@ -11,9 +11,9 @@ use image::{DynamicImage, ImageBuffer};
 use crate::{
   decoders::{Decoder, RawDecodeParams},
   dng::{original::OriginalCompressed, writer::DngWriter, DNG_VERSION_V1_4, PREVIEW_JPEG_QUALITY},
-  imgop::{raw::develop_raw_srgb, rescale_f32_to_u16},
+  imgop::{convert_from_f32_scaled_u16, raw::develop_raw_srgb},
   tags::{ExifTag, TiffCommonTag},
-  RawFile, RawImage, RawImageData,
+  RawFile, RawImage,
 };
 
 use super::{CropMode, DngCompression, DngPhotometricConversion};
@@ -24,6 +24,7 @@ pub struct ConvertParams {
   pub embedded: bool,
   pub compression: DngCompression,
   pub photometric_conversion: DngPhotometricConversion,
+  pub apply_scaling: bool,
   pub crop: CropMode,
   pub predictor: u8,
   pub preview: bool,
@@ -83,7 +84,7 @@ where
 {
   let decoder = crate::get_decoder(&mut rawfile)?;
   let raw_params = RawDecodeParams { image_index: params.index };
-  let rawimage = decoder.raw_image(&mut rawfile, raw_params.clone(), false)?;
+  let mut rawimage = decoder.raw_image(&mut rawfile, raw_params.clone(), false)?;
   let metadata = decoder.raw_metadata(&mut rawfile, raw_params.clone())?;
 
   log::info!(
@@ -93,6 +94,10 @@ where
     rawimage.clean_model,
     decoder.raw_image_count()?
   );
+
+  if params.apply_scaling {
+    rawimage.apply_scaling()?;
+  }
 
   log::debug!("wb coeff: {:?}", rawimage.wb_coeffs);
 
@@ -152,13 +157,13 @@ fn generate_preview(rawfile: &mut RawFile, decoder: &dyn Decoder, rawimage: &Raw
     None => {
       log::warn!("Preview image not found, try to generate sRGB from RAW");
       let params = rawimage.develop_params()?;
-      let buf = match &rawimage.data {
-        RawImageData::Integer(buf) => buf,
-        RawImageData::Float(_) => todo!(),
+      let (srgbf, dim) = develop_raw_srgb(&rawimage.data, &params)?;
+      let output = convert_from_f32_scaled_u16(&srgbf, 0, u16::MAX);
+      let image = if srgbf.len() == dim.w * dim.h {
+        DynamicImage::ImageLuma16(ImageBuffer::from_raw(dim.w as u32, dim.h as u32, output).expect("Invalid ImageBuffer size"))
+      } else {
+        DynamicImage::ImageRgb16(ImageBuffer::from_raw(dim.w as u32, dim.h as u32, output).expect("Invalid ImageBuffer size"))
       };
-      let (srgbf, dim) = develop_raw_srgb(buf, &params)?;
-      let output = rescale_f32_to_u16(&srgbf, 0, u16::MAX);
-      let image = DynamicImage::ImageRgb16(ImageBuffer::from_raw(dim.w as u32, dim.h as u32, output).expect("Invalid ImageBuffer size"));
       Ok(image)
     }
   }

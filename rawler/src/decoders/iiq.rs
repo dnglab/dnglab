@@ -23,7 +23,7 @@ use crate::analyze::FormatDump;
 use crate::bits::*;
 use crate::cfa;
 use crate::decoders::decode_threaded;
-use crate::decoders::ok_image_with_blacklevels;
+use crate::decoders::ok_cfa_image_with_blacklevels;
 use crate::exif::Exif;
 use crate::formats::tiff;
 use crate::formats::tiff::reader::TiffReader;
@@ -274,7 +274,7 @@ impl<'a> Decoder for IiqDecoder<'a> {
       .get_wb(file, wb_offset)
       .map_err(|ioerr| RawlerError::with_io_error("read IIQ white balance", &file.path, ioerr))?;
 
-    ok_image_with_blacklevels(self.camera.clone(), cpp, wb, blacklevel, image, dummy)
+    ok_cfa_image_with_blacklevels(self.camera.clone(), cpp, wb, blacklevel, image, dummy)
   }
 
   fn format_dump(&self) -> FormatDump {

@@ -24,6 +24,8 @@ use crate::imgop::Rect;
 use crate::packed::*;
 use crate::pixarray::PixU16;
 use crate::rawimage::BlackLevel;
+use crate::rawimage::RawPhotometricInterpretation;
+use crate::rawimage::WhiteLevel;
 use crate::tags::DngTag;
 use crate::tags::ExifTag;
 use crate::tags::TiffCommonTag;
@@ -338,8 +340,8 @@ impl<'a> Decoder for RafDecoder<'a> {
 
       let mut camera = self.camera.clone();
       camera.cfa = corrected_cfa;
-
-      let mut image = RawImage::new(self.camera.clone(), rotated, cpp, normalize_wb(self.get_wb()?), blacklevel, None, dummy);
+      let photometric = RawPhotometricInterpretation::Cfa(camera.cfa);
+      let mut image = RawImage::new(self.camera.clone(), rotated, cpp, normalize_wb(self.get_wb()?), photometric, blacklevel, None, dummy);
 
       if rotate_for_dng {
         image.add_dng_tag(TiffCommonTag::CFARepeatPatternDim, [2, 4]);
@@ -363,16 +365,16 @@ impl<'a> Decoder for RafDecoder<'a> {
       let whitelevel = if self.camera.whitelevel.is_none() {
         match bps {
           12 | 14 | 16 => {
-            let max_value: u16 = ((1_u32 << bps) - 1) as u16;
-            Some(vec![max_value; cpp])
+            let max_value: u32 = (1_u32 << bps) - 1;
+            Some(WhiteLevel::new(vec![max_value; cpp]))
           }
           _ => None,
         }
       } else {
         None
       };
-
-      let mut image = RawImage::new(camera, image, cpp, normalize_wb(self.get_wb()?), blacklevel, whitelevel, dummy);
+      let photometric = RawPhotometricInterpretation::Cfa(camera.cfa.clone());
+      let mut image = RawImage::new(camera, image, cpp, normalize_wb(self.get_wb()?), photometric, blacklevel, whitelevel, dummy);
 
       // Overwrite crop if available in metadata
       if let Some(crop) = self.get_crop()? {

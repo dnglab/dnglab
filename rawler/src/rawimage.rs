@@ -1,15 +1,18 @@
+use std::borrow::Cow;
 use std::collections::HashMap;
 
+use itertools::Itertools;
 use log::debug;
 use serde::{Deserialize, Serialize};
 
+use crate::imgop::raw::{correct_blacklevel, correct_blacklevel_cfa};
+use crate::imgop::{convert_from_f32_scaled_u16, convert_to_f32_unscaled};
 use crate::Result;
 use crate::{
   decoders::*,
   formats::tiff::{Rational, Value},
   imgop::{
     raw::{ColorMatrix, DevelopParams},
-    sensor::bayer::BayerPattern,
     xyz::{FlatColorMatrix, Illuminant},
     Dim2, Point, Rect,
   },
@@ -18,7 +21,40 @@ use crate::{
   CFA,
 };
 
-pub type WhiteLevel = Vec<u16>;
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct WhiteLevel(pub Vec<u32>);
+
+impl Default for WhiteLevel {
+  fn default() -> Self {
+    Self(vec![u16::MAX as u32; 1])
+  }
+}
+
+impl WhiteLevel {
+  pub fn new(level: impl Into<Vec<u32>>) -> Self {
+    Self(level.into())
+  }
+
+  pub fn new_bits(bits: u32, cpp: usize) -> Self {
+    if bits > 32 {
+      panic!("Whitelevel can only be calculated for max. 32 bits, but {} bits given", bits);
+    }
+    let level: u32 = (1 << bits) - 1;
+    Self(vec![level; cpp])
+  }
+
+  pub fn as_vec(&self) -> Vec<f32> {
+    self.0.iter().cloned().map(|x| x as f32).collect_vec()
+  }
+
+  pub fn as_bayer_array(&self) -> [f32; 4] {
+    if self.0.len() == 4 {
+      [self.0[0] as f32, self.0[1] as f32, self.0[2] as f32, self.0[3] as f32]
+    } else {
+      [self.0[0] as f32, self.0[0] as f32, self.0[0] as f32, self.0[0] as f32]
+    }
+  }
+}
 
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
 pub struct BlackLevel {
@@ -47,13 +83,53 @@ impl std::fmt::Debug for BlackLevel {
 }
 
 impl BlackLevel {
-  pub fn new(levels: &[u16], width: usize, height: usize, cpp: usize) -> Self {
+  pub fn new<T>(levels: &[T], width: usize, height: usize, cpp: usize) -> Self
+  where
+    T: Copy + Into<Rational>,
+  {
     assert_eq!(levels.len(), width * height * cpp);
     Self {
-      levels: levels.iter().map(|x| Rational::from(*x)).collect(),
+      levels: levels.iter().map(|x| (*x).into()).collect(),
       width,
       height,
       cpp,
+    }
+  }
+
+  pub fn zero(width: usize, height: usize, cpp: usize) -> Self {
+    if width == 0 || height == 0 || cpp == 0 {
+      panic!(
+        "Blacklevel::zero() must not be called with zero value arguments: width: {}, height: {}, cpp: {}",
+        width, height, cpp
+      );
+    }
+    Self {
+      levels: vec![0_u16; cpp * width * height].iter().map(|x| Rational::from(*x)).collect(),
+      width,
+      height,
+      cpp,
+    }
+  }
+
+  pub fn as_vec(&self) -> Vec<f32> {
+    self.levels.iter().map(Rational::as_f32).collect_vec()
+  }
+
+  pub fn as_bayer_array(&self) -> [f32; 4] {
+    if self.levels.len() == 4 {
+      [
+        self.levels[0].as_f32(),
+        self.levels[1].as_f32(),
+        self.levels[2].as_f32(),
+        self.levels[3].as_f32(),
+      ]
+    } else {
+      [
+        self.levels[0].as_f32(),
+        self.levels[0].as_f32(),
+        self.levels[0].as_f32(),
+        self.levels[0].as_f32(),
+      ]
     }
   }
 
@@ -79,6 +155,15 @@ impl BlackLevel {
       trans
     }
   }
+}
+
+#[allow(clippy::large_enum_variant)]
+#[derive(Debug, Clone, PartialEq)]
+pub enum RawPhotometricInterpretation {
+  BlackIsZero,
+  // Defined by DNG
+  Cfa(CFA),
+  LinearRaw,
 }
 
 /// All the data needed to process this raw image, including the image data itself as well
@@ -110,9 +195,9 @@ pub struct RawImage {
   /// image blacklevels in RGBE order
   pub blacklevel: BlackLevel,
   /// matrix to convert XYZ to camera RGBE
-  pub xyz_to_cam: [[f32; 3]; 4],
-  /// color filter array
-  pub cfa: CFA,
+  pub xyz_to_cam: [[f32; 3]; 4], // TODO: deprecated, use color_matrix
+  /// Photometric interpretation
+  pub photometric: RawPhotometricInterpretation,
   /// how much to crop the image to get all the usable (non-black) area
   pub active_area: Option<Rect>,
   /// how much to crop the image to get all the recommended area
@@ -139,6 +224,21 @@ pub enum RawImageData {
   Integer(Vec<u16>),
   /// Some formats are directly encoded as f32, most notably some DNGs
   Float(Vec<f32>),
+}
+
+impl RawImageData {
+  pub fn as_f32<'a>(&'a self) -> Cow<'a, Vec<f32>> {
+    match self {
+      Self::Integer(data) => Cow::Owned(convert_to_f32_unscaled(data)),
+      Self::Float(data) => Cow::Borrowed(data),
+    }
+  }
+
+  pub fn force_integer(&mut self) {
+    if let Self::Float(data) = self {
+      *self = Self::Integer(convert_from_f32_scaled_u16(data, 0, u16::MAX));
+    }
+  }
 }
 
 impl RawImage {
@@ -186,6 +286,7 @@ impl RawImage {
     image: PixU16,
     cpp: usize,
     wb_coeffs: [f32; 4],
+    photometric: RawPhotometricInterpretation,
     blacklevel: Option<BlackLevel>,
     whitelevel: Option<WhiteLevel>,
     dummy: bool,
@@ -230,7 +331,7 @@ impl RawImage {
           Self::calc_black_levels(&cam.cfa, &blackareas, image.width, image.height, image.pixels())
         }
       })
-      .unwrap_or_else(|| panic!("Need blacklevel in config: {}", cam.clean_model));
+      .unwrap_or_else(|| BlackLevel::zero(1, 1, cpp));
 
     let whitelevel = cam
       .make_whitelevel(cpp)
@@ -254,7 +355,7 @@ impl RawImage {
       blacklevel,
       whitelevel,
       xyz_to_cam: cam.xyz_to_cam,
-      cfa: cam.cfa.clone(),
+      photometric,
       active_area,
       crop_area,
       blackareas,
@@ -284,10 +385,42 @@ impl RawImage {
     }
   }
 
+  /// Apply blacklevel and whitelevel scaling, replacing raw image data
+  /// with floating point values in range 0.0 .. 1.0.
+  /// Internal blacklevel and whitelevel is reset to 0.0 and 1.0 to match image data.
+  pub fn apply_scaling(&mut self) -> crate::Result<()> {
+    let mut pixels = self.data.as_f32();
+    match &self.photometric {
+      RawPhotometricInterpretation::BlackIsZero => todo!(),
+      RawPhotometricInterpretation::Cfa(_) => {
+        correct_blacklevel_cfa(
+          pixels.to_mut(),
+          self.width,
+          self.height,
+          &self.blacklevel.as_bayer_array(),
+          &self.whitelevel.as_bayer_array(),
+        );
+        self.data = RawImageData::Float(pixels.into_owned());
+      }
+      RawPhotometricInterpretation::LinearRaw => {
+        correct_blacklevel(pixels.to_mut(), &self.blacklevel.as_vec(), &self.whitelevel.as_vec());
+        self.data = RawImageData::Float(pixels.into_owned());
+      }
+    }
+    self.blacklevel.levels.iter_mut().for_each(|x| *x = Rational::new(0, 1));
+    self.whitelevel.0.iter_mut().for_each(|x| *x = 1);
+    Ok(())
+  }
+
   pub fn develop_params(&self) -> Result<DevelopParams> {
     let mut xyz2cam: [[f32; 3]; 4] = [[0.0; 3]; 4];
     //let color_matrix = self.color_matrix.get(&Illuminant::D65).unwrap(); // TODO fixme
-    let color_matrix = self.color_matrix.values().next().unwrap(); // TODO fixme
+    let color_matrix = self
+      .color_matrix
+      .values()
+      .next()
+      .cloned()
+      .unwrap_or(vec![1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]); // TODO: invalid
     assert_eq!(color_matrix.len() % 3, 0); // this is not so nice...
     let components = color_matrix.len() / 3;
     for i in 0..components {
@@ -295,14 +428,6 @@ impl RawImage {
         xyz2cam[i][j] = color_matrix[i * 3 + j];
       }
     }
-
-    let pattern = match self.cfa.to_string().as_str() {
-      "RGGB" => BayerPattern::RGGB,
-      "BGGR" => BayerPattern::BGGR,
-      "GRBG" => BayerPattern::GRBG,
-      "GBRG" => BayerPattern::GBRG,
-      _ => return Err("Unsupported bayer pattern".into()),
-    };
 
     /*
     let active_area = Rect::new(
@@ -327,9 +452,10 @@ impl RawImage {
       }],
       whitelevel: self.whitelevel.clone(),
       blacklevel: self.blacklevel.clone(),
-      pattern,
-      cfa: self.cfa.clone(),
+      //pattern,
+      photometric: self.photometric.clone(),
       wb_coeff,
+      cpp: self.cpp,
       active_area: self.active_area,
       crop_area: self.crop_area,
       //gamma: 2.4,
@@ -464,7 +590,8 @@ impl RawImage {
 
   /// Checks if the image is monochrome
   pub fn is_monochrome(&self) -> bool {
-    self.cpp == 1 && !self.cfa.is_valid()
+    self.photometric == RawPhotometricInterpretation::BlackIsZero
+    //self.cpp == 1 && !self.cfa.is_valid()
   }
 }
 
@@ -474,10 +601,10 @@ mod tests {
 
   #[test]
   fn blacklevel_shift() -> std::result::Result<(), Box<dyn std::error::Error>> {
-    let black = BlackLevel::new(&[1, 2, 3, 4], 2, 2, 1).shift(1, 1);
+    let black = BlackLevel::new(&[1_u16, 2, 3, 4], 2, 2, 1).shift(1, 1);
     assert_eq!(black.levels, vec![4_u16, 3, 2, 1].into_iter().map(Rational::from).collect::<Vec<Rational>>());
 
-    let black = BlackLevel::new(&[1, 1, 1, 2, 2, 2, 3, 3, 3, 4, 4, 4], 2, 2, 3).shift(3, 3);
+    let black = BlackLevel::new(&[1_u16, 1, 1, 2, 2, 2, 3, 3, 3, 4, 4, 4], 2, 2, 3).shift(3, 3);
     assert_eq!(
       black.levels,
       vec![4_u16, 4, 4, 3, 3, 3, 2, 2, 2, 1, 1, 1]

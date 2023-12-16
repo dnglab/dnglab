@@ -283,8 +283,9 @@ impl<'a> Decoder for Cr3Decoder<'a> {
     let blacklevel = cr3md
       .blacklevels
       .map(|x| BlackLevel::new(&x, self.camera.cfa.width, self.camera.cfa.height, cpp));
-    let whitelevel = vec![whitelevel];
-    let mut img = RawImage::new(self.camera.clone(), image, cpp, wb, blacklevel, Some(whitelevel), dummy);
+    let whitelevel = WhiteLevel(vec![whitelevel as u32]);
+    let photometric = RawPhotometricInterpretation::Cfa(self.camera.cfa.clone());
+    let mut img = RawImage::new(self.camera.clone(), image, cpp, wb, photometric, blacklevel, Some(whitelevel), dummy);
 
     // IAD1 box contains sensor information
     // We use the sensor crop from IAD1 as recommended image crop.

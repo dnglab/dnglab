@@ -32,6 +32,8 @@ use crate::pumps::BitPump;
 use crate::pumps::BitPumpLSB;
 use crate::pumps::BitPumpMSB;
 use crate::rawimage::BlackLevel;
+use crate::rawimage::RawPhotometricInterpretation;
+use crate::rawimage::WhiteLevel;
 use crate::tags::ExifTag;
 use crate::tags::TiffCommonTag;
 use crate::RawFile;
@@ -40,7 +42,7 @@ use crate::RawLoader;
 use crate::RawlerError;
 use crate::Result;
 
-use super::ok_image;
+use super::ok_cfa_image;
 use super::Camera;
 use super::Decoder;
 use super::RawDecodeParams;
@@ -170,9 +172,11 @@ impl<'a> Decoder for ArwDecoder<'a> {
       3 => BlackLevel::new(&[black[0] << 2, black[0] << 2, black[0] << 2], 1, 1, cpp),
       _ => panic!("Unsupported cpp == {}", cpp),
     });
-    let whitelevel = white.map(|white| vec![white; cpp]);
+    let whitelevel = white.map(|white| WhiteLevel(vec![white as u32; cpp]));
 
-    let mut img = RawImage::new(self.camera.clone(), image, cpp, params.wb, blacklevel, whitelevel, dummy);
+    let photometric = RawPhotometricInterpretation::Cfa(self.camera.cfa.clone());
+
+    let mut img = RawImage::new(self.camera.clone(), image, cpp, params.wb, photometric, blacklevel, whitelevel, dummy);
 
     if cpp == 3 {
       // For debayer images, we assume WB coeffs already applied
@@ -320,7 +324,7 @@ impl<'a> ArwDecoder<'a> {
     }
 
     let cpp = 1;
-    ok_image(self.camera.clone(), cpp, normalize_wb(wb_coeffs), image, dummy)
+    ok_cfa_image(self.camera.clone(), cpp, normalize_wb(wb_coeffs), image, dummy)
   }
 
   fn image_srf(&self, file: &mut RawFile, dummy: bool) -> Result<RawImage> {
@@ -355,7 +359,7 @@ impl<'a> ArwDecoder<'a> {
       decode_16be(&image_data, width, height, dummy)
     };
     let cpp = 1;
-    ok_image(self.camera.clone(), cpp, [NAN, NAN, NAN, NAN], image, dummy)
+    ok_cfa_image(self.camera.clone(), cpp, [NAN, NAN, NAN, NAN], image, dummy)
   }
 
   pub(crate) fn decode_arw1(buf: &[u8], width: usize, height: usize, dummy: bool) -> PixU16 {

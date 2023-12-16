@@ -27,6 +27,7 @@ use crate::packed::*;
 use crate::pixarray::PixU16;
 use crate::pumps::BitPumpMSB;
 use crate::pumps::ByteStream;
+use crate::rawimage::RawPhotometricInterpretation;
 use crate::tags::ExifTag;
 use crate::tags::TiffCommonTag;
 use crate::RawFile;
@@ -124,7 +125,8 @@ impl<'a> Decoder for PefDecoder<'a> {
     let blacklevel = self.get_blacklevel()?;
     let whitelevel = None;
     debug!("Found WB: {:?}", wb);
-    Ok(RawImage::new(self.camera.clone(), image, cpp, wb, blacklevel, whitelevel, dummy))
+    let photometric = RawPhotometricInterpretation::Cfa(self.camera.cfa.clone());
+    Ok(RawImage::new(self.camera.clone(), image, cpp, wb, photometric, blacklevel, whitelevel, dummy))
   }
 
   fn full_image(&self, file: &mut RawFile) -> Result<Option<DynamicImage>> {

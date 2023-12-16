@@ -30,7 +30,7 @@ use crate::RawLoader;
 use crate::RawlerError;
 use crate::Result;
 
-use super::ok_image_with_blacklevels;
+use super::ok_cfa_image_with_blacklevels;
 use super::Camera;
 use super::Decoder;
 use super::RawDecodeParams;
@@ -113,7 +113,7 @@ impl<'a> Decoder for SrwDecoder<'a> {
       }
     };
     let cpp = 1;
-    ok_image_with_blacklevels(self.camera.clone(), cpp, self.get_wb()?, self.get_blacklevel()?, image, dummy)
+    ok_cfa_image_with_blacklevels(self.camera.clone(), cpp, self.get_wb()?, self.get_blacklevel()?, image, dummy)
   }
 
   fn format_dump(&self) -> FormatDump {
@@ -496,7 +496,7 @@ impl<'a> SrwDecoder<'a> {
   /// Ironically, the data is already black level subtracted, but the
   /// WB coeffs are not. So we can return 0 here. The black level
   /// is subtracted in the get_wb() function.
-  fn get_blacklevel(&self) -> Result<[u16; 4]> {
+  fn get_blacklevel(&self) -> Result<[u32; 4]> {
     Ok([0, 0, 0, 0])
     /*
      let rggb_blacks = fetch_tiff_tag!(self.makernote, SrwMakernote::SrwRGGBBlacks);

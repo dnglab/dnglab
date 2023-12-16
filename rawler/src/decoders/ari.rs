@@ -10,7 +10,7 @@ use crate::RawImage;
 use crate::RawLoader;
 use crate::Result;
 
-use super::ok_image;
+use super::ok_cfa_image;
 use super::Camera;
 use super::Decoder;
 use super::RawDecodeParams;
@@ -54,7 +54,7 @@ impl<'a> Decoder for AriDecoder<'a> {
     };
 
     let cpp = 1;
-    ok_image(self.camera.clone(), cpp, self.get_wb(file)?, image, dummy)
+    ok_cfa_image(self.camera.clone(), cpp, self.get_wb(file)?, image, dummy)
   }
 
   fn format_dump(&self) -> crate::analyze::FormatDump {

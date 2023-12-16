@@ -18,6 +18,7 @@ use crate::lens::LensResolver;
 use crate::packed::decode_12le_unpacked_left_aligned;
 use crate::packed::decode_12le_wcontrol;
 use crate::pixarray::PixU16;
+use crate::rawimage::RawPhotometricInterpretation;
 use crate::tags::tiff_tag_enum;
 use crate::tags::ExifTag;
 use crate::tags::TiffCommonTag;
@@ -168,8 +169,8 @@ impl<'a> Decoder for Rw2Decoder<'a> {
     if let Some(cfa) = self.get_cfa()? {
       camera.cfa = cfa;
     }
-
-    let mut img = RawImage::new(camera, image, cpp, normalize_wb(self.get_wb()?), blacklevel, None, dummy);
+    let photometric = RawPhotometricInterpretation::Cfa(camera.cfa.clone());
+    let mut img = RawImage::new(camera, image, cpp, normalize_wb(self.get_wb()?), photometric, blacklevel, None, dummy);
 
     if let Some(area) = self.get_active_area()? {
       img.active_area = Some(area);

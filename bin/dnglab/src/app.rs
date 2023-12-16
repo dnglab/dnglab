@@ -23,7 +23,6 @@ pub fn create_app() -> Command {
     .about("Convert raw image(s) into dng format")
     .arg(
       arg!(compression: -c --"compression" <compression> "Compression for raw image")
-        .action(ArgAction::SetTrue)
         .required(false)
         .value_parser(value_parser!(DngCompression))
         .default_value("lossless"),
@@ -43,10 +42,10 @@ pub fn create_app() -> Command {
     )
     .arg(
       arg!(thumbnail: --"dng-thumbnail" <thumbnail> "DNG include thumbnail image")
-        .action(ArgAction::SetTrue)
+        .value_parser(ValueParser::bool())
         .required(false)
         .default_value("true")
-        .value_parser(ValueParser::bool()),
+        .default_missing_value("true"),
     )
     .arg(
       arg!(embedded: --"embed-raw" <embedded> "Embed the raw file into DNG")

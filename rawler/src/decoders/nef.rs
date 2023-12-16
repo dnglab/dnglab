@@ -35,6 +35,8 @@ use crate::pixarray::PixU16;
 use crate::pumps::BitPump;
 use crate::pumps::BitPumpMSB;
 use crate::pumps::ByteStream;
+use crate::rawimage::RawPhotometricInterpretation;
+use crate::rawimage::WhiteLevel;
 use crate::tags::ExifTag;
 use crate::tags::TiffCommonTag;
 use crate::OptBuffer;
@@ -269,7 +271,8 @@ impl<'a> Decoder for NefDecoder<'a> {
     assert_eq!(image.width, width * cpp);
     let blacklevel = self.get_blacklevel(bps)?;
     let whitelevel = None;
-    let mut img = RawImage::new(self.camera.clone(), image, cpp, coeffs, blacklevel, whitelevel, dummy);
+    let photometric = RawPhotometricInterpretation::Cfa(self.camera.cfa.clone());
+    let mut img = RawImage::new(self.camera.clone(), image, cpp, coeffs, photometric, blacklevel, whitelevel, dummy);
 
     if let Some(crop) = self.get_crop()? {
       debug!("RAW Crops: {:?}", crop);
@@ -279,7 +282,7 @@ impl<'a> Decoder for NefDecoder<'a> {
     if cpp == 3 {
       // Reset levels to defaults (0)
       img.blacklevel = BlackLevel::default();
-      img.whitelevel = vec![65535; cpp];
+      img.whitelevel = WhiteLevel::new(vec![65535; cpp]);
     }
 
     Ok(img)

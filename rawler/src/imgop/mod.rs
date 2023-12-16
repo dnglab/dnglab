@@ -10,7 +10,7 @@ pub mod srgb;
 pub mod xyz;
 pub mod yuv;
 
-use rayon::prelude::*;
+use multiversion::multiversion;
 use serde::{Deserialize, Serialize};
 
 use crate::{formats::tiff::IFD, tags::DngTag};
@@ -57,24 +57,6 @@ impl Dim2 {
 
   pub fn is_empty(&self) -> bool {
     self.w == 0 && self.h == 0
-  }
-}
-
-/// Rescale to u16 value
-pub fn rescale_f32_to_u16(input: &[f32], black: u16, white: u16) -> Vec<u16> {
-  if black == 0 {
-    input.par_iter().map(|p| (p * white as f32) as u16).collect()
-  } else {
-    input.par_iter().map(|p| (p * (white - black) as f32) as u16 + black).collect()
-  }
-}
-
-/// Rescale to u8 value
-pub fn rescale_f32_to_u8(input: &[f32], black: u8, white: u8) -> Vec<u8> {
-  if black == 0 {
-    input.par_iter().map(|p| (p * white as f32) as u8).collect()
-  } else {
-    input.par_iter().map(|p| (p * (white - black) as f32) as u8 + black).collect()
   }
 }
 
@@ -252,6 +234,84 @@ pub fn scale_u8_to_double(x: u8) -> f32 {
 
 pub fn scale_double_to_u8(x: f32) -> u8 {
   (x.abs() * u8::MAX as f32) as u8
+}
+
+/*
+/// Rescale to u16 value
+#[multiversion]
+#[clone(target = "[x86|x86_64]+avx+avx2")]
+#[clone(target = "x86+sse")]
+pub fn rescale_f32_to_u16(input: &[f32], black: u16, white: u16) -> Vec<u16> {
+  if black == 0 {
+    input.par_iter().map(|p| (p * white as f32) as u16).collect()
+  } else {
+    input.par_iter().map(|p| (p * (white - black) as f32) as u16 + black).collect()
+  }
+}
+
+/// Rescale to u8 value
+#[multiversion]
+#[clone(target = "[x86|x86_64]+avx+avx2")]
+#[clone(target = "x86+sse")]
+pub fn rescale_f32_to_u8(input: &[f32], black: u8, white: u8) -> Vec<u8> {
+  if black == 0 {
+    input.par_iter().map(|p| (p * white as f32) as u8).collect()
+  } else {
+    input.par_iter().map(|p| (p * (white - black) as f32) as u8 + black).collect()
+  }
+}
+ */
+
+#[multiversion]
+#[clone(target = "[x86|x86_64]+avx+avx2")]
+#[clone(target = "x86+sse")]
+pub fn convert_to_f32_unscaled<T>(pix: &[T]) -> Vec<f32>
+where
+  T: Copy,
+  f32: From<T>,
+{
+  pix.iter().copied().map(f32::from).collect()
+}
+
+#[multiversion]
+#[clone(target = "[x86|x86_64]+avx+avx2")]
+#[clone(target = "x86+sse")]
+pub fn convert_to_f32_scaled<T>(pix: &[T], black: T, white: T) -> Vec<f32>
+where
+  T: Copy + Eq + PartialEq + Default + std::ops::Sub<T, Output = T>,
+  f32: From<T>,
+{
+  if black == T::default() {
+    pix.iter().copied().map(f32::from).map(|x| x / f32::from(white)).collect()
+  } else {
+    pix
+      .iter()
+      .copied()
+      .map(|x| x - black)
+      .map(f32::from)
+      .map(|x| x / f32::from(white - black))
+      .collect()
+  }
+}
+
+#[multiversion]
+#[clone(target = "[x86|x86_64]+avx+avx2")]
+#[clone(target = "x86+sse")]
+pub fn convert_from_f32_unscaled_u16(pix: &[f32]) -> Vec<u16>
+{
+  pix.iter().copied().map(|x| x as u16).collect()
+}
+
+/// Rescale to u8 value
+#[multiversion]
+#[clone(target = "[x86|x86_64]+avx+avx2")]
+#[clone(target = "x86+sse")]
+pub fn convert_from_f32_scaled_u16(input: &[f32], black: u16, white: u16) -> Vec<u16> {
+  if black == u16::default() {
+    input.iter().map(|p| ((p * f32::from(white)) as u16)).collect()
+  } else {
+    input.iter().map(|p| ((p * f32::from(white - black)) as u16) + black).collect()
+  }
 }
 
 #[cfg(test)]

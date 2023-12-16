@@ -103,7 +103,7 @@ impl FromStr for CropMode {
 
 /// Quality of preview images
 const PREVIEW_JPEG_QUALITY: f32 = 0.75;
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 /// Compression mode for DNG
 pub enum DngCompression {
   /// No compression is applied

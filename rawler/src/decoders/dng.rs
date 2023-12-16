@@ -1,12 +1,19 @@
 use std::cmp;
 use std::f32::NAN;
 
+use image::ImageBuffer;
+use image::Rgb;
+
 use crate::alloc_image_ok;
 use crate::alloc_image_plain;
+use crate::bits::Endian;
 use crate::bits::LookupTable;
 use crate::cfa::*;
 use crate::decoders::*;
 use crate::decompressors::ljpeg::*;
+use crate::formats::tiff::Entry;
+use crate::formats::tiff::Rational;
+use crate::formats::tiff::Value;
 use crate::imgop::xyz::FlatColorMatrix;
 use crate::imgop::xyz::Illuminant;
 use crate::imgop::Point;
@@ -41,6 +48,8 @@ impl<'a> Decoder for DngDecoder<'a> {
     let width = fetch_tiff_tag!(raw, TiffCommonTag::ImageWidth).force_usize(0);
     let height = fetch_tiff_tag!(raw, TiffCommonTag::ImageLength).force_usize(0);
     let cpp = fetch_tiff_tag!(raw, TiffCommonTag::SamplesPerPixel).force_usize(0);
+    let bits = fetch_tiff_tag!(raw, TiffCommonTag::BitsPerSample).force_u32(0);
+
 
     let image = match fetch_tiff_tag!(raw, TiffCommonTag::Compression).force_u32(0) {
       1 => self.decode_uncompressed(file, raw, width * cpp, height, dummy)?,
@@ -58,9 +67,16 @@ impl<'a> Decoder for DngDecoder<'a> {
     }
 
     let blacklevel = self.get_blacklevels(raw)?;
-    let whitelevel = self.get_whitelevels(raw)?;
+    let whitelevel = self.get_whitelevels(raw)?.or(Some(WhiteLevel::new_bits(bits, cpp)));
 
-    let mut image = RawImage::new(cam, image, cpp, self.get_wb()?, blacklevel, whitelevel, dummy);
+    let photometric = match fetch_tiff_tag!(raw, TiffCommonTag::PhotometricInt).force_u32(0) {
+      1 => RawPhotometricInterpretation::BlackIsZero,
+      32803 => RawPhotometricInterpretation::Cfa(cam.cfa.clone()),
+      34892 => RawPhotometricInterpretation::LinearRaw,
+      _ => todo!(),
+    };
+
+    let mut image = RawImage::new(cam, image, cpp, self.get_wb()?, photometric, blacklevel, whitelevel, dummy);
     image.orientation = orientation;
 
     Ok(image)
@@ -83,6 +99,57 @@ impl<'a> Decoder for DngDecoder<'a> {
     let exif = Exif::new(self.tiff.root_ifd())?;
     let mdata = RawMetadata::new(&cam, exif);
     Ok(mdata)
+  }
+
+  fn thumbnail_image(&self, file: &mut RawFile) -> Result<Option<DynamicImage>> {
+    if let Some(thumb_ifd) = Some(self.tiff.root_ifd()).filter(|ifd| ifd.get_entry(TiffCommonTag::NewSubFileType).map(|entry| entry.force_u16(0)) == Some(1)) {
+      let buf = thumb_ifd
+        .strip_data(file.inner())
+        .map_err(|e| RawlerError::DecoderFailed(format!("Failed to get strip data: {}", e)))?
+        .into_iter()
+        .flatten()
+        .collect();
+      let compression = thumb_ifd.get_entry(TiffCommonTag::Compression).ok_or("Missing tag")?.force_usize(0);
+      let width = fetch_tiff_tag!(thumb_ifd, TiffCommonTag::ImageWidth).force_usize(0);
+      let height = fetch_tiff_tag!(thumb_ifd, TiffCommonTag::ImageLength).force_usize(0);
+      if compression == 1 {
+        return Ok(Some(DynamicImage::ImageRgb8(
+          ImageBuffer::<Rgb<u8>, Vec<u8>>::from_raw(width as u32, height as u32, buf).unwrap(), // TODO: remove unwraps
+        )));
+      } else {
+        let img = image::load_from_memory_with_format(&buf, image::ImageFormat::Jpeg).unwrap();
+        return Ok(Some(img));
+      }
+    }
+    Ok(None)
+  }
+
+  fn full_image(&self, file: &mut RawFile) -> Result<Option<DynamicImage>> {
+    if let Some(sub_ifds) = self.tiff.root_ifd().get_sub_ifds(TiffCommonTag::SubIFDs) {
+      let first_ifd = sub_ifds
+        .iter()
+        .find(|ifd| ifd.get_entry(TiffCommonTag::NewSubFileType).map(|entry| entry.force_u16(0)) == Some(1));
+      if let Some(preview_ifd) = first_ifd {
+        let buf = preview_ifd
+          .strip_data(file.inner())
+          .map_err(|e| RawlerError::DecoderFailed(format!("Failed to get strip data: {}", e)))?
+          .into_iter()
+          .flatten()
+          .collect();
+        let compression = preview_ifd.get_entry(TiffCommonTag::Compression).ok_or("Missing tag")?.force_usize(0);
+        let width = fetch_tiff_tag!(preview_ifd, TiffCommonTag::ImageWidth).force_usize(0);
+        let height = fetch_tiff_tag!(preview_ifd, TiffCommonTag::ImageLength).force_usize(0);
+        if compression == 1 {
+          return Ok(Some(DynamicImage::ImageRgb8(
+            ImageBuffer::<Rgb<u8>, Vec<u8>>::from_raw(width as u32, height as u32, buf).unwrap(), // TODO: remove unwraps
+          )));
+        } else {
+          let img = image::load_from_memory_with_format(&buf, image::ImageFormat::Jpeg).unwrap();
+          return Ok(Some(img));
+        }
+      }
+    }
+    Ok(None)
   }
 }
 
@@ -170,22 +237,41 @@ impl<'a> DngDecoder<'a> {
   }
 
   fn get_blacklevels(&self, raw: &IFD) -> Result<Option<BlackLevel>> {
-    // TODO: sanity checks, count checks etc.
-    if let Some(levels) = raw.get_entry(TiffCommonTag::BlackLevels) {
-      let data: Vec<u16> = (0..levels.count()).map(|i| levels.force_u32(i as usize) as u16).collect();
-      let repeat = raw
-        .get_entry(DngTag::BlackLevelRepeatDim)
-        .map(|entry| (entry.force_usize(0), entry.force_usize(1)))
-        .unwrap_or((1, 1));
-      let cpp = raw.get_entry(TiffCommonTag::SamplesPerPixel).map(|entry| entry.force_usize(0)).unwrap_or(1);
-      return Ok(Some(BlackLevel::new(&data, repeat.1, repeat.0, cpp)));
+    let cpp = raw.get_entry(TiffCommonTag::SamplesPerPixel).map(|entry| entry.force_usize(0)).unwrap_or(1);
+    if let Some(entry) = raw.get_entry(TiffCommonTag::BlackLevels) {
+      let levels = match &entry.value {
+        Value::Short(black) => black.iter().copied().map(Rational::from).collect(),
+        Value::Long(black) => black.iter().copied().map(Rational::from).collect(),
+        Value::Rational(black) => black.clone(),
+        _ => return Err(format!("Unsupported BlackLevel type: {}", entry.value_type_name()).into()),
+      };
+      let mut repeat = (1, 1);
+      if let Some(Entry {
+        value: Value::Short(value), ..
+      }) = raw.get_entry(DngTag::BlackLevelRepeatDim)
+      {
+        if value.len() == 2 {
+          repeat = (value[0] as usize, value[1] as usize);
+        } else {
+          // Pentax K-3 Mark III Monochrome is known to has invalid tag
+          log::warn!("File has BlackLevelRepeatDim tag but with invalid length: {}", value.len());
+        }
+      }
+      Ok(Some(BlackLevel::new(&levels, repeat.1, repeat.0, cpp)))
+    } else {
+      Ok(None)
     }
-    Ok(None)
   }
 
   fn get_whitelevels(&self, raw: &IFD) -> Result<Option<WhiteLevel>> {
+    let cpp = fetch_tiff_tag!(raw, TiffCommonTag::SamplesPerPixel).force_usize(0);
     if let Some(levels) = raw.get_entry(TiffCommonTag::WhiteLevel) {
-      return Ok(Some((0..levels.count()).map(|i| levels.force_u32(i as usize) as u16).collect()));
+      let mut whitelevels = WhiteLevel((0..levels.count()).map(|i| levels.force_u32(i as usize)).collect());
+      // Fixes a bug where only a single whitelevel value is given.
+      if whitelevels.0.len() == 1 && cpp > 1 {
+        whitelevels.0 = vec![whitelevels.0[0]; cpp];
+      }
+      return Ok(Some(whitelevels));
     }
     Ok(None)
   }
@@ -255,16 +341,15 @@ impl<'a> DngDecoder<'a> {
   }
 
   pub fn decode_uncompressed(&self, file: &mut RawFile, raw: &IFD, width: usize, height: usize, dummy: bool) -> Result<PixU16> {
-    let offset = fetch_tiff_tag!(raw, TiffCommonTag::StripOffsets).force_u64(0);
-    let size = fetch_tiff_tag!(raw, TiffCommonTag::StripByteCounts).force_u64(0);
-    let src = file.subview(offset, size).unwrap();
-
-    match fetch_tiff_tag!(raw, TiffCommonTag::BitsPerSample).force_u32(0) {
-      16 => Ok(decode_16le(&src, width, height, dummy)),
-      12 => Ok(decode_12be(&src, width, height, dummy)),
-      10 => Ok(decode_10le(&src, width, height, dummy)),
-      8 => {
-        // It's 8 bit so there will be linearization involved surely!
+    let src: Vec<u8> = raw.strip_data(file.inner())?.into_iter().flatten().collect();
+    match (raw.endian, fetch_tiff_tag!(raw, TiffCommonTag::BitsPerSample).force_u32(0)) {
+      (Endian::Big, 16) => Ok(decode_16be(&src, width, height, dummy)),
+      (Endian::Little, 16) => Ok(decode_16le(&src, width, height, dummy)),
+      (Endian::Big, 12) => Ok(decode_12be(&src, width, height, dummy)),
+      //(Endian::Little, 12) => Ok(decode_12le(&src, width, height, dummy)), Not supported by DNG spec
+      //(Endian::Little, 10) => Ok(decode_10le(&src, width, height, dummy)), // Not supported by DNG spec
+      // TODO: implement 10 bit BE
+      (_, 8) if raw.has_entry(TiffCommonTag::Linearization) => {
         let linearization = fetch_tiff_tag!(self.tiff, TiffCommonTag::Linearization);
         let curve = {
           let mut points = vec![0_u16; 256];
@@ -275,7 +360,8 @@ impl<'a> DngDecoder<'a> {
         };
         Ok(decode_8bit_wtable(&src, &curve, width, height, dummy))
       }
-      bps => Err(format_args!("DNG: Don't know about {} bps images", bps).into()),
+      (_, 8) => Ok(decode_8bit(&src, width, height, dummy)),
+      (_, bps) => Err(format_args!("DNG: Don't know about {} bps images", bps).into()),
     }
   }
 

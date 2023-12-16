@@ -31,6 +31,7 @@ use crate::imgop::Point;
 use crate::imgop::Rect;
 use crate::lens::LensDescription;
 use crate::lens::LensResolver;
+use crate::rawimage::RawPhotometricInterpretation;
 use crate::tags::ExifTag;
 use crate::tags::TiffCommonTag;
 use crate::RawFile;
@@ -259,7 +260,9 @@ impl<'a> Decoder for Cr2Decoder<'a> {
     let blacklevel = self.get_blacklevel(camera, cpp)?;
     let whitelevel = self.get_whitelevel(cpp)?;
 
-    let mut img = RawImage::new(camera.clone(), image, cpp, wb, blacklevel, whitelevel, dummy);
+    let photometric = if cpp == 3 { RawPhotometricInterpretation::LinearRaw } else { RawPhotometricInterpretation::Cfa(camera.cfa.clone()) };
+
+    let mut img = RawImage::new(camera.clone(), image, cpp, wb, photometric, blacklevel, whitelevel, dummy);
 
     if let Some(file_crop) = self.get_sensor_area()? {
       assert!(
@@ -579,7 +582,7 @@ impl<'a> Cr2Decoder<'a> {
   fn get_whitelevel(&self, cpp: usize) -> Result<Option<WhiteLevel>> {
     if let Some(colordata) = self.makernote.as_ref().and_then(|mn| mn.get_entry(Cr2MakernoteTag::ColorData)) {
       if let Some(whitelevel) = colordata::parse_colordata(colordata)?.specular_whitelevel {
-        return Ok(Some(vec![whitelevel; cpp]));
+        return Ok(Some(WhiteLevel(vec![whitelevel as u32; cpp])));
       }
     }
     Ok(None)
