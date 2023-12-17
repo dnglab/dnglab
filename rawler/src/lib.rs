@@ -221,7 +221,14 @@ impl RawFile {
   /// Helper for TIFF based files to get multiple strips at once.
   pub fn subviews_from_strips(&mut self, offsets: &[u32], sizes: &[u32]) -> std::io::Result<Vec<Vec<u8>>> {
     if offsets.len() != sizes.len() {
-      return Err(std::io::Error::new(std::io::ErrorKind::Other, format!("Can't get subviews from strips: offsets has len {} but sizes has len {}", offsets.len(), sizes.len())));
+      return Err(std::io::Error::new(
+        std::io::ErrorKind::Other,
+        format!(
+          "Can't get subviews from strips: offsets has len {} but sizes has len {}",
+          offsets.len(),
+          sizes.len()
+        ),
+      ));
     }
     let mut subviews = Vec::with_capacity(offsets.len());
     for (offset, size) in offsets.iter().zip(sizes.iter()) {

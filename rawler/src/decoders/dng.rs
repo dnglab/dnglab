@@ -50,7 +50,6 @@ impl<'a> Decoder for DngDecoder<'a> {
     let cpp = fetch_tiff_tag!(raw, TiffCommonTag::SamplesPerPixel).force_usize(0);
     let bits = fetch_tiff_tag!(raw, TiffCommonTag::BitsPerSample).force_u32(0);
 
-
     let image = match fetch_tiff_tag!(raw, TiffCommonTag::Compression).force_u32(0) {
       1 => self.decode_uncompressed(file, raw, width * cpp, height, dummy)?,
       7 => self.decode_compressed(file, raw, width * cpp, height, cpp, dummy)?,

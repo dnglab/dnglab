@@ -20,13 +20,13 @@ use crate::RawLoader;
 use crate::RawlerError;
 use crate::Result;
 
-use super::RawPhotometricInterpretation;
-use super::WhiteLevel;
 use super::ok_cfa_image;
 use super::Camera;
 use super::Decoder;
 use super::RawDecodeParams;
 use super::RawMetadata;
+use super::RawPhotometricInterpretation;
+use super::WhiteLevel;
 
 #[derive(Debug, Clone)]
 pub struct KdcDecoder<'a> {

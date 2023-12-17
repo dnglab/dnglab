@@ -36,18 +36,18 @@ pub struct ConvertParams {
 
 impl Default for ConvertParams {
   fn default() -> Self {
-      Self {
-        embedded: true,
-        compression: DngCompression::Lossless,
-        photometric_conversion: DngPhotometricConversion::Original,
-        apply_scaling: false,
-        crop: CropMode::Best,
-        predictor: 1,
-        preview: true,
-        thumbnail: true,
-        artist: None,
-        software: "DNGLab".into(),
-        index: 0,
+    Self {
+      embedded: true,
+      compression: DngCompression::Lossless,
+      photometric_conversion: DngPhotometricConversion::Original,
+      apply_scaling: false,
+      crop: CropMode::Best,
+      predictor: 1,
+      preview: true,
+      thumbnail: true,
+      artist: None,
+      software: "DNGLab".into(),
+      index: 0,
     }
   }
 }

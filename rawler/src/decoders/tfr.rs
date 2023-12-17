@@ -17,7 +17,7 @@ use crate::tags::{DngTag, ExifTag, TiffCommonTag};
 use crate::{alloc_image_ok, RawFile, RawImage, RawLoader};
 use crate::{RawlerError, Result};
 
-use super::{BlackLevel, Camera, Decoder, RawDecodeParams, RawMetadata, WhiteLevel, RawPhotometricInterpretation};
+use super::{BlackLevel, Camera, Decoder, RawDecodeParams, RawMetadata, RawPhotometricInterpretation, WhiteLevel};
 
 /// 3FR format encapsulation for analyzer
 #[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize)]
@@ -52,7 +52,9 @@ impl<'a> Decoder for TfrDecoder<'a> {
   fn raw_image(&self, file: &mut RawFile, _params: RawDecodeParams, dummy: bool) -> Result<RawImage> {
     let raw = self.tiff.find_first_ifd_with_tag(TiffCommonTag::WhiteLevel).unwrap();
 
-    let whitelevel = raw.get_entry(TiffCommonTag::WhiteLevel).map(|tag| WhiteLevel::new(vec![tag.force_u16(0) as u32]));
+    let whitelevel = raw
+      .get_entry(TiffCommonTag::WhiteLevel)
+      .map(|tag| WhiteLevel::new(vec![tag.force_u16(0) as u32]));
 
     let blacklevel = raw
       .get_entry(TiffCommonTag::BlackLevels)

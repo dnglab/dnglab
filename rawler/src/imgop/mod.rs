@@ -297,8 +297,7 @@ where
 #[multiversion]
 #[clone(target = "[x86|x86_64]+avx+avx2")]
 #[clone(target = "x86+sse")]
-pub fn convert_from_f32_unscaled_u16(pix: &[f32]) -> Vec<u16>
-{
+pub fn convert_from_f32_unscaled_u16(pix: &[f32]) -> Vec<u16> {
   pix.iter().copied().map(|x| x as u16).collect()
 }
 

@@ -16,7 +16,7 @@ use crate::{
   decoders::{cr2::Cr2Format, cr3::Cr3Format, dng::DngFormat, iiq::IiqFormat, nef::NefFormat, pef::PefFormat, tfr::TfrFormat, RawDecodeParams, RawMetadata},
   formats::tiff::Rational,
   formats::tiff::SRational,
-  imgop::{raw::develop_raw_srgb, Dim2, Rect, convert_from_f32_scaled_u16},
+  imgop::{convert_from_f32_scaled_u16, raw::develop_raw_srgb, Dim2, Rect},
   rawimage::{BlackLevel, WhiteLevel},
   RawFile, RawImage, RawImageData, RawlerError, Result,
 };

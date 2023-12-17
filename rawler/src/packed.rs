@@ -87,7 +87,6 @@ pub fn decode_10le(buf: &[u8], width: usize, height: usize, dummy: bool) -> PixU
   )
 }
 
-
 pub fn decode_12be(buf: &[u8], width: usize, height: usize, dummy: bool) -> PixU16 {
   decode_threaded(
     width,

@@ -341,7 +341,16 @@ impl<'a> Decoder for RafDecoder<'a> {
       let mut camera = self.camera.clone();
       camera.cfa = corrected_cfa;
       let photometric = RawPhotometricInterpretation::Cfa(camera.cfa);
-      let mut image = RawImage::new(self.camera.clone(), rotated, cpp, normalize_wb(self.get_wb()?), photometric, blacklevel, None, dummy);
+      let mut image = RawImage::new(
+        self.camera.clone(),
+        rotated,
+        cpp,
+        normalize_wb(self.get_wb()?),
+        photometric,
+        blacklevel,
+        None,
+        dummy,
+      );
 
       if rotate_for_dng {
         image.add_dng_tag(TiffCommonTag::CFARepeatPatternDim, [2, 4]);

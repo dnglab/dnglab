@@ -116,7 +116,6 @@ where
     photometric_conversion: DngPhotometricConversion,
     predictor: u8,
   ) -> Result<()> {
-
     match photometric_conversion {
       DngPhotometricConversion::Original => self.write_rawimage(Cow::Borrowed(rawimage), cropmode, compression, predictor)?,
 

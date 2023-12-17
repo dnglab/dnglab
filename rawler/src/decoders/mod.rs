@@ -453,7 +453,6 @@ impl RawLoader {
         .and_then(|ifd| ifd.get_entry(TiffCommonTag::Make))
         .and_then(|entry| entry.value.as_string().map(|s| s.as_str().trim_end()))
       {
-
         match make {
           "Konica Minolta Photo Imaging, Inc." => {
             let dec = Box::new(mrw::MrwDecoder::new_jfif(rawfile, exif, self)?);

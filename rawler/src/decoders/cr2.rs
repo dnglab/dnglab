@@ -260,7 +260,11 @@ impl<'a> Decoder for Cr2Decoder<'a> {
     let blacklevel = self.get_blacklevel(camera, cpp)?;
     let whitelevel = self.get_whitelevel(cpp)?;
 
-    let photometric = if cpp == 3 { RawPhotometricInterpretation::LinearRaw } else { RawPhotometricInterpretation::Cfa(camera.cfa.clone()) };
+    let photometric = if cpp == 3 {
+      RawPhotometricInterpretation::LinearRaw
+    } else {
+      RawPhotometricInterpretation::Cfa(camera.cfa.clone())
+    };
 
     let mut img = RawImage::new(camera.clone(), image, cpp, wb, photometric, blacklevel, whitelevel, dummy);
 
