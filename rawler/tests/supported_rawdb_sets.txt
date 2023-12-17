@@ -340,6 +340,7 @@ cameras/Sony/ILCE-7C/raw_modes
 cameras/Sony/ILCE-7M2/raw_modes
 cameras/Sony/ILCE-7M3/raw_modes
 cameras/Sony/ILCE-7M4/raw_modes
+cameras/Sony/ILCE-7M4/resolutions
 cameras/Sony/ILCE-7/raw_modes
 cameras/Sony/ILCE-7RM2/raw_modes
 cameras/Sony/ILCE-7RM3A/raw_modes

@@ -1,0 +1,115 @@
+---
+file:
+  fileSize: 22585344
+  fileName: ILCE-7M4_DSC06680_APS-C-LossLess-Small.ARW
+  digest: 4102d3d1ac8be306cdb056b773f16c8d
+data:
+  metadata:
+    rawParams:
+      rawWidth: 3584
+      rawHeight: 2560
+      bitDepth: 16
+      cropArea:
+        p:
+          x: 32
+          y: 22
+        d:
+          w: 3504
+          h: 2336
+      activeArea:
+        p:
+          x: 0
+          y: 0
+        d:
+          w: 3584
+          h: 2560
+      blacklevels:
+        levels:
+          - 2048/1
+          - 2048/1
+          - 2048/1
+        cpp: 3
+        width: 1
+        height: 1
+      whitelevels:
+        - 15360
+        - 15360
+        - 15360
+      wbCoeffs:
+        - 1.0
+        - 1.0
+        - 1.0
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ~
+        artist: ~
+        lens_spec:
+          - 50/1
+          - 50/1
+          - 25/10
+          - 25/10
+        exposure_time: 1/80
+        fnumber: 56/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 640
+        iso_speed: ~
+        recommended_exposure_index: 640
+        sensitivity_type: 2
+        exposure_bias: 0/10
+        date_time_original: "2023:10:19 16:18:22"
+        create_date: "2023:10:19 16:18:22"
+        modify_date: "2023:10:19 16:18:22"
+        exposure_program: 3
+        timezone_offset: ~
+        offset_time: "+02:00"
+        offset_time_original: "+02:00"
+        offset_time_digitized: "+02:00"
+        sub_sec_time: "162"
+        sub_sec_time_original: "162"
+        sub_sec_time_digitized: "162"
+        shutter_speed_value: ~
+        max_aperture_value: 676/256
+        subject_distance: ~
+        metering_mode: 5
+        light_source: 0
+        flash: 16
+        focal_length: 500/10
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: Sony
+        lens_model: FE 50mm F2.5 G
+        gps: ~
+      model: ILCE-7M4
+      make: Sony
+      lens:
+        identifiers:
+          name: ~
+          id:
+            - 32868
+            - 0
+          nikon_id: ~
+          olympus_id: ~
+        mount: e-mount
+        lens_make: Sony
+        lens_model: FE 50mm F2.5 G
+        focal_range:
+          - 50/1
+          - 50/1
+        aperture_range:
+          - 25/10
+          - 25/10
+        lens_name: Sony FE 50mm F2.5 G
+      unique_image_id: ~
+      rating: ~
+
