@@ -1,0 +1,84 @@
+---
+file:
+  fileSize: 12170688
+  fileName: Minolta_DiMAGE_G600_1.MRW
+  digest: c0dc9542c296305886bb6d24717f3b30
+data:
+  metadata:
+    rawParams:
+      rawWidth: 2848
+      rawHeight: 2136
+      bitDepth: 16
+      cropArea: ~
+      activeArea:
+        p:
+          x: 16
+          y: 12
+        d:
+          w: 2816
+          h: 2112
+      blacklevels:
+        levels:
+          - 0/1
+        cpp: 1
+        width: 1
+        height: 1
+      whitelevels:
+        - 65353
+      wbCoeffs:
+        - 1.7148438
+        - 1.0
+        - 1.2070312
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ~
+        artist: ~
+        lens_spec: ~
+        exposure_time: 1/200
+        fnumber: 47/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 100
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: "-15/10"
+        date_time_original: "2003:04:06 15:43:34"
+        create_date: "2003:04:06 15:43:34"
+        modify_date: ~
+        exposure_program: ~
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: ~
+        max_aperture_value: 30/10
+        subject_distance: ~
+        metering_mode: 2
+        light_source: 0
+        flash: 16
+        focal_length: 800/100
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: 0
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: DiMAGE G600
+      make: Konica Minolta
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

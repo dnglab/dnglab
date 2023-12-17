@@ -1476,6 +1476,10 @@ mod camera_dimage_a200_raw_modes {
 mod camera_dimage_a2_raw_modes {
   super::camera_file_check!("Minolta", "DiMAGE A2", cam_dimage_a2_iso_64_uncompressed_mrw, "raw_modes/DiMAGE A2_ISO_64_Uncompressed.MRW");
 }
+mod camera_dimage_g600_raw_modes {
+  super::camera_file_check!("Minolta", "DiMAGE G600", cam_minolta_dimage_g600_1_mrw, "raw_modes/Minolta_DiMAGE_G600_1.MRW");
+  super::camera_file_check!("Minolta", "DiMAGE G600", cam_minolta_dimage_g600_2_mrw, "raw_modes/Minolta_DiMAGE_G600_2.MRW");
+}
 mod camera_dynax_7d_raw_modes {
   super::camera_file_check!("Minolta", "Dynax 7D", cam_dynax_7d_iso_100_uncompressed_mrw, "raw_modes/DYNAX 7D_ISO_100_Uncompressed.MRW");
 }
