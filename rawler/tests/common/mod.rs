@@ -3,6 +3,8 @@
 
 //#[cfg(feature = "samplecheck")]
 use md5::Digest;
+use rawler::dng::convert::convert_raw_file;
+use rawler::dng::convert::ConvertParams;
 use rawler::{
   analyze::{analyze_metadata, extract_raw_pixels, AnalyzerResult},
   decoders::RawDecodeParams,
@@ -82,5 +84,15 @@ pub(crate) fn check_camera_raw_file_conversion(make: &str, model: &str, sample: 
   let v: Vec<u8> = buf.iter().flat_map(|p| p.to_le_bytes()).collect();
   let new_digest = md5::compute(v);
   assert_eq!(old_digest, new_digest, "Old and new raw pixel digest not match!");
+
+  // Convert to DNG with default params
+  let params = ConvertParams {
+    embedded: false,
+    apply_scaling: false,
+    ..Default::default()
+  };
+  let mut dng = std::io::Cursor::new(Vec::new());
+  convert_raw_file(&raw_file, &mut dng, &params)?;
+
   Ok(())
 }
