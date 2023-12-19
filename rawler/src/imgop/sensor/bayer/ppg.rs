@@ -8,7 +8,7 @@ use std::{ops::Add, time::Instant};
 use crate::{
   cfa::{CFA, CFA_COLOR_B, CFA_COLOR_G, CFA_COLOR_R},
   imgop::{Dim2, Rect},
-  pixarray::{Rgb2D, RgbF32},
+  pixarray::RgbF32,
 };
 
 /// PPG demosaic a raw image (f32 values)
@@ -58,7 +58,7 @@ pub fn demosaic_ppg(raw: &[f32], dim: Dim2, cfa_orig: CFA, roi: Rect) -> RgbF32 
 #[multiversion]
 #[clone(target = "[x86|x86_64]+avx+avx2")]
 #[clone(target = "x86+sse")]
-fn interpolate_borders(input: &mut Rgb2D<f32>, shifted: &CFA) {
+fn interpolate_borders(input: &mut RgbF32, shifted: &CFA) {
   let w = input.width;
   let h = input.height;
   // Iterate over all rows
@@ -100,7 +100,7 @@ fn interpolate_borders(input: &mut Rgb2D<f32>, shifted: &CFA) {
 #[multiversion]
 #[clone(target = "[x86|x86_64]+avx+avx2")]
 #[clone(target = "x86+sse")]
-fn interpolate_green(img: &mut Rgb2D<f32>, shifted: &CFA) {
+fn interpolate_green(img: &mut RgbF32, shifted: &CFA) {
   let w = img.width;
   let h = img.height;
 
@@ -161,7 +161,7 @@ fn interpolate_green(img: &mut Rgb2D<f32>, shifted: &CFA) {
 #[multiversion]
 #[clone(target = "[x86|x86_64]+avx+avx2")]
 #[clone(target = "x86+sse")]
-fn interpolate_rb_at_green(img: &mut Rgb2D<f32>, shifted: &CFA) {
+fn interpolate_rb_at_green(img: &mut RgbF32, shifted: &CFA) {
   let w = img.width;
   let h = img.height;
 
@@ -200,7 +200,7 @@ fn interpolate_rb_at_green(img: &mut Rgb2D<f32>, shifted: &CFA) {
 #[multiversion]
 #[clone(target = "[x86|x86_64]+avx+avx2")]
 #[clone(target = "x86+sse")]
-fn interpolate_rb_at_non_green(img: &mut Rgb2D<f32>, shifted: &CFA) {
+fn interpolate_rb_at_non_green(img: &mut RgbF32, shifted: &CFA) {
   let w = img.width;
   let h = img.height;
 
