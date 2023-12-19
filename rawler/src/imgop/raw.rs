@@ -7,7 +7,7 @@ use super::{Dim2, Point, Result};
 use crate::imgop::matrix::{multiply, normalize, pseudo_inverse};
 use crate::imgop::xyz::SRGB_TO_XYZ_D65;
 use crate::imgop::Rect;
-use crate::pixarray::{Pix2D, Rgb2D, RgbF32};
+use crate::pixarray::{Pix2D, RgbF32};
 use crate::rawimage::{BlackLevel, RawPhotometricInterpretation, WhiteLevel};
 use crate::{RawImageData, CFA};
 use std::iter;
@@ -303,7 +303,7 @@ fn develop_linearraw_srgb(pixels: &RawImageData, params: &DevelopParams) -> Resu
       let wb_coeff: [f32; 4] = params.wb_coeff;
       log::debug!("Develop raw, wb: {:?}", wb_coeff);
       let x = pixels.chunks_exact(3).map(|x| [x[0], x[1], x[2]]).collect();
-      let rgb: Rgb2D<f32> = Rgb2D::new_with(x, params.width, params.height);
+      let rgb: RgbF32 = RgbF32::new_with(x, params.width, params.height);
 
       let mut cropped_pixels = if raw_size.d != crop_area.d { rgb.crop(crop_area) } else { rgb };
 

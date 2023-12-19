@@ -223,54 +223,56 @@ impl<T> SharedPix2D<T> {
 unsafe impl<T> Sync for SharedPix2D<T> where T: Copy + Default + Send {}
 
 #[derive(Clone)]
-pub struct Rgb2D<T> {
+pub struct Color2D<T, const N: usize> {
   pub width: usize,
   pub height: usize,
-  pub data: Vec<[T; 3]>,
+  pub data: Vec<[T; N]>,
 }
 
-pub type RgbF32 = Rgb2D<f32>;
+pub type RgbF32 = Color2D<f32, 3>;
+pub type Ch4F32 = Color2D<f32, 4>;
 
-impl<T> Rgb2D<T>
+impl<T, const N: usize> Color2D<T, N>
 where
   T: Copy + Clone + Default + Send,
+  [T; N]: Default,
 {
-  pub fn new_with(data: Vec<[T; 3]>, width: usize, height: usize) -> Self {
+  pub fn new_with(data: Vec<[T; N]>, width: usize, height: usize) -> Self {
     debug_assert_eq!(data.len(), height * width);
     Self { data, width, height }
   }
 
   pub fn new(width: usize, height: usize) -> Self {
-    let data = vec![<[T; 3]>::default(); width * height];
+    let data = vec![<[T; N]>::default(); width * height];
     Self { data, width, height }
   }
 
-  pub fn into_inner(self) -> Vec<[T; 3]> {
+  pub fn into_inner(self) -> Vec<[T; N]> {
     self.data
   }
 
-  pub fn data_ptr(&self) -> Rgb2DPtr<T> {
-    Rgb2DPtr::new(self)
+  pub fn data_ptr(&self) -> Color2DPtr<T, N> {
+    Color2DPtr::new(self)
   }
 
-  pub fn pixels(&self) -> &[[T; 3]] {
+  pub fn pixels(&self) -> &[[T; N]] {
     &self.data
   }
 
-  pub fn pixels_mut(&mut self) -> &mut [[T; 3]] {
+  pub fn pixels_mut(&mut self) -> &mut [[T; N]] {
     &mut self.data
   }
 
-  pub fn pixel_rows(&self) -> std::slice::ChunksExact<[T; 3]> {
+  pub fn pixel_rows(&self) -> std::slice::ChunksExact<[T; N]> {
     self.data.chunks_exact(self.width)
   }
 
-  pub fn pixel_rows_mut(&mut self) -> std::slice::ChunksExactMut<[T; 3]> {
+  pub fn pixel_rows_mut(&mut self) -> std::slice::ChunksExactMut<[T; N]> {
     self.data.chunks_exact_mut(self.width)
   }
 
   #[inline(always)]
-  pub fn at(&self, row: usize, col: usize) -> &[T; 3] {
+  pub fn at(&self, row: usize, col: usize) -> &[T; N] {
     #[cfg(debug_assertions)]
     {
       &self.data[row * self.width + col]
@@ -282,7 +284,7 @@ where
   }
 
   #[inline(always)]
-  pub fn at_mut(&mut self, row: usize, col: usize) -> &mut [T; 3] {
+  pub fn at_mut(&mut self, row: usize, col: usize) -> &mut [T; N] {
     #[cfg(debug_assertions)]
     {
       &mut self.data[row * self.width + col]
@@ -296,7 +298,7 @@ where
   #[inline(always)]
   pub fn for_each<F>(&mut self, op: F)
   where
-    F: Fn([T; 3]) -> [T; 3] + Send + Sync,
+    F: Fn([T; N]) -> [T; N] + Send + Sync,
   {
     self.data.par_iter_mut().for_each(|v| *v = op(*v));
   }
@@ -305,7 +307,7 @@ where
   #[inline(always)]
   pub fn for_each_index<F>(&mut self, op: F)
   where
-    F: Fn([T; 3], usize, usize) -> [T; 3],
+    F: Fn([T; N], usize, usize) -> [T; N],
   {
     self
       .pixel_rows_mut()
@@ -328,7 +330,7 @@ where
   }
 }
 
-impl<T> Default for Rgb2D<T>
+impl<T, const N: usize> Default for Color2D<T, N>
 where
   T: Default,
 {
@@ -342,16 +344,16 @@ where
 }
 
 #[derive(Clone, Debug)]
-pub struct Rgb2DPtr<T> {
-  ptr: *const [T; 3],
+pub struct Color2DPtr<T, const N: usize> {
+  ptr: *const [T; N],
   pub width: usize,
   pub height: usize,
 }
-impl<T> Rgb2DPtr<T>
+impl<T, const N: usize> Color2DPtr<T, N>
 where
   T: Copy + Clone,
 {
-  fn new(orig: &Rgb2D<T>) -> Self {
+  fn new(orig: &Color2D<T, N>) -> Self {
     Self {
       ptr: orig.data.as_slice().as_ptr(),
       width: orig.width,
@@ -363,13 +365,13 @@ where
   /// # Safety
   /// TODO
   #[inline(always)]
-  pub unsafe fn at(&self, row: usize, col: usize) -> &[T; 3] {
+  pub unsafe fn at(&self, row: usize, col: usize) -> &[T; N] {
     debug_assert!(row * col < self.height * self.width);
     &*self.ptr.add(row * self.width + col)
   }
 }
 
-unsafe impl<T> Sync for Rgb2DPtr<T> {}
+unsafe impl<T, const N: usize> Sync for Color2DPtr<T, N> {}
 
 #[macro_export]
 macro_rules! alloc_image_plain {
