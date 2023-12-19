@@ -174,7 +174,11 @@ impl<'a> Decoder for ArwDecoder<'a> {
     });
     let whitelevel = white.map(|white| WhiteLevel(vec![white as u32; cpp]));
 
-    let photometric = RawPhotometricInterpretation::Cfa(self.camera.cfa.clone());
+    let photometric = match cpp {
+      1 => RawPhotometricInterpretation::Cfa(self.camera.cfa.clone()),
+      3 => RawPhotometricInterpretation::LinearRaw,
+      _ => todo!(),
+    };
 
     let mut img = RawImage::new(self.camera.clone(), image, cpp, params.wb, photometric, blacklevel, whitelevel, dummy);
 

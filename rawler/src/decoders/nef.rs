@@ -271,7 +271,11 @@ impl<'a> Decoder for NefDecoder<'a> {
     assert_eq!(image.width, width * cpp);
     let blacklevel = self.get_blacklevel(bps)?;
     let whitelevel = None;
-    let photometric = RawPhotometricInterpretation::Cfa(self.camera.cfa.clone());
+    let photometric = match cpp {
+      1 => RawPhotometricInterpretation::Cfa(self.camera.cfa.clone()),
+      3 => RawPhotometricInterpretation::LinearRaw,
+      _ => todo!(),
+    };
     let mut img = RawImage::new(self.camera.clone(), image, cpp, coeffs, photometric, blacklevel, whitelevel, dummy);
 
     if let Some(crop) = self.get_crop()? {
