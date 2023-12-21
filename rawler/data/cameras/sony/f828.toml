@@ -5,6 +5,7 @@ clean_model = "DSC-F828"
 blackpoint = 495
 whitepoint = 16383
 color_pattern = "ERBG"
+plane_color = "RGBE"
 active_area = [5, 0, 67, 0]
 crop_area = [16, 6, 80, 6]
 
