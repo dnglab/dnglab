@@ -20,6 +20,7 @@ use crate::RawLoader;
 use crate::Result;
 
 use super::BlackLevel;
+use super::CFAConfig;
 use super::Camera;
 use super::Decoder;
 use super::RawDecodeParams;
@@ -68,7 +69,7 @@ impl<'a> Decoder for ErfDecoder<'a> {
     let cpp = 1;
 
     let blacklevel = self.get_blacklevel(cpp);
-    let photometric = RawPhotometricInterpretation::Cfa(self.camera.cfa.clone());
+    let photometric = RawPhotometricInterpretation::Cfa(CFAConfig::new_from_camera(&self.camera));
     let img = RawImage::new(self.camera.clone(), image, cpp, self.get_wb()?, photometric, blacklevel, None, dummy);
     Ok(img)
   }

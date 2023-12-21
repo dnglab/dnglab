@@ -5,6 +5,7 @@ use itertools::Itertools;
 use log::debug;
 use serde::{Deserialize, Serialize};
 
+use crate::cfa::PlaneColor;
 use crate::imgop::raw::{correct_blacklevel, correct_blacklevel_cfa};
 use crate::imgop::{convert_from_f32_scaled_u16, convert_to_f32_unscaled};
 use crate::Result;
@@ -162,8 +163,30 @@ impl BlackLevel {
 pub enum RawPhotometricInterpretation {
   BlackIsZero,
   // Defined by DNG
-  Cfa(CFA),
+  Cfa(CFAConfig),
   LinearRaw,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct CFAConfig {
+  pub cfa: CFA,
+  pub colors: PlaneColor,
+}
+
+impl CFAConfig {
+  pub fn new(cfa: &CFA, colors: &PlaneColor) -> Self {
+    Self {
+      cfa: cfa.clone(),
+      colors: colors.clone(),
+    }
+  }
+
+  pub fn new_from_camera(cam: &Camera) -> Self {
+    Self {
+      cfa: cam.cfa.clone(),
+      colors: cam.plane_color.clone(),
+    }
+  }
 }
 
 /// All the data needed to process this raw image, including the image data itself as well
@@ -437,11 +460,7 @@ impl RawImage {
     */
     debug!("RAW developing active area: {:?}", self.active_area);
 
-    let wb_coeff = if self.wb_coeffs[0].is_nan() {
-      [1.0, 1.0, 1.0, f32::NAN]
-    } else {
-      self.wb_coeffs
-    };
+    let wb_coeff = if self.wb_coeffs[0].is_nan() { [1.0, 1.0, 1.0, 1.0] } else { self.wb_coeffs };
 
     let params = DevelopParams {
       width: self.width,

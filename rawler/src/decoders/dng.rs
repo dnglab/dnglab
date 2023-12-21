@@ -70,7 +70,7 @@ impl<'a> Decoder for DngDecoder<'a> {
 
     let photometric = match fetch_tiff_tag!(raw, TiffCommonTag::PhotometricInt).force_u32(0) {
       1 => RawPhotometricInterpretation::BlackIsZero,
-      32803 => RawPhotometricInterpretation::Cfa(cam.cfa.clone()),
+      32803 => RawPhotometricInterpretation::Cfa(CFAConfig::new_from_camera(&cam)),
       34892 => RawPhotometricInterpretation::LinearRaw,
       _ => todo!(),
     };

@@ -284,7 +284,7 @@ impl<'a> Decoder for Cr3Decoder<'a> {
       .blacklevels
       .map(|x| BlackLevel::new(&x, self.camera.cfa.width, self.camera.cfa.height, cpp));
     let whitelevel = WhiteLevel(vec![whitelevel as u32]);
-    let photometric = RawPhotometricInterpretation::Cfa(self.camera.cfa.clone());
+    let photometric = RawPhotometricInterpretation::Cfa(CFAConfig::new_from_camera(&self.camera));
     let mut img = RawImage::new(self.camera.clone(), image, cpp, wb, photometric, blacklevel, Some(whitelevel), dummy);
 
     // IAD1 box contains sensor information

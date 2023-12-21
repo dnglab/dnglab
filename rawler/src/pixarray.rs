@@ -303,6 +303,14 @@ where
     self.data.par_iter_mut().for_each(|v| *v = op(*v));
   }
 
+  #[inline(always)]
+  pub fn for_each_row<F>(&mut self, op: F)
+  where
+    F: Fn(usize, &mut [[T; N]]) + Send + Sync,
+  {
+    self.data.par_chunks_exact_mut(self.width).enumerate().for_each(|(row, data)| op(row, data));
+  }
+
   // TODO: use par_iterator
   #[inline(always)]
   pub fn for_each_index<F>(&mut self, op: F)

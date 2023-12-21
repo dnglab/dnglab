@@ -24,6 +24,7 @@ use crate::imgop::Rect;
 use crate::packed::*;
 use crate::pixarray::PixU16;
 use crate::rawimage::BlackLevel;
+use crate::rawimage::CFAConfig;
 use crate::rawimage::RawPhotometricInterpretation;
 use crate::rawimage::WhiteLevel;
 use crate::tags::DngTag;
@@ -340,7 +341,7 @@ impl<'a> Decoder for RafDecoder<'a> {
 
       let mut camera = self.camera.clone();
       camera.cfa = corrected_cfa;
-      let photometric = RawPhotometricInterpretation::Cfa(camera.cfa);
+      let photometric = RawPhotometricInterpretation::Cfa(CFAConfig::new_from_camera(&camera));
       let mut image = RawImage::new(
         self.camera.clone(),
         rotated,
@@ -382,7 +383,7 @@ impl<'a> Decoder for RafDecoder<'a> {
       } else {
         None
       };
-      let photometric = RawPhotometricInterpretation::Cfa(camera.cfa.clone());
+      let photometric = RawPhotometricInterpretation::Cfa(CFAConfig::new_from_camera(&camera));
       let mut image = RawImage::new(camera, image, cpp, normalize_wb(self.get_wb()?), photometric, blacklevel, whitelevel, dummy);
 
       // Overwrite crop if available in metadata

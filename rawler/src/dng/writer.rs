@@ -271,13 +271,13 @@ where
         assert_eq!(rawimage.cpp, 1);
         self.ifd.add_tag(TiffCommonTag::PhotometricInt, PhotometricInterpretation::BlackIsZero);
       }
-      RawPhotometricInterpretation::Cfa(cfa) => {
+      RawPhotometricInterpretation::Cfa(config) => {
         assert_eq!(rawimage.cpp, 1);
-        let cfa = cfa.shift(active_area.p.x, active_area.p.y);
+        let cfa = config.cfa.shift(active_area.p.x, active_area.p.y);
         self.ifd.add_tag(TiffCommonTag::CFARepeatPatternDim, [cfa.width as u16, cfa.height as u16]);
         self.ifd.add_tag(TiffCommonTag::CFAPattern, &cfa.flat_pattern()[..]);
         self.ifd.add_tag(TiffCommonTag::PhotometricInt, PhotometricInterpretation::CFA);
-        self.ifd.add_tag(DngTag::CFAPlaneColor, [0u8, 1u8, 2u8]); // RGB
+        self.ifd.add_tag(DngTag::CFAPlaneColor, &config.colors);
         self.ifd.add_tag(DngTag::CFALayout, 1_u16); // Square layout
       }
       RawPhotometricInterpretation::LinearRaw => {
@@ -544,8 +544,8 @@ fn wbcoeff_to_tiff_value(rawimage: &RawImage) -> Vec<Rational> {
     RawPhotometricInterpretation::BlackIsZero => {
       vec![Rational::new(1, 1)] // TODO: is this useful?
     }
-    RawPhotometricInterpretation::Cfa(cfa) => {
-      assert!([1, 3, 4].contains(&cfa.unique_colors()));
+    RawPhotometricInterpretation::Cfa(config) => {
+      assert!([1, 3, 4].contains(&config.cfa.unique_colors()));
 
       let mut values = Vec::with_capacity(4);
 
@@ -553,7 +553,7 @@ fn wbcoeff_to_tiff_value(rawimage: &RawImage) -> Vec<Rational> {
       values.push(Rational::new_f32(1.0 / wb[1], 100000));
       values.push(Rational::new_f32(1.0 / wb[2], 100000));
 
-      if cfa.unique_colors() == 4 {
+      if config.cfa.unique_colors() == 4 {
         values.push(Rational::new_f32(1.0 / wb[3], 100000));
       }
       values
@@ -617,9 +617,9 @@ where
           assert_eq!(rawimage.cpp, 1);
           (tile_w, tile_h, 1, 1)
         }
-        RawPhotometricInterpretation::Cfa(cfa) => {
+        RawPhotometricInterpretation::Cfa(config) => {
           assert_eq!(rawimage.cpp, 1);
-          let realign = if (4..=7).contains(&predictor) && cfa.width == 2 && cfa.height == 2 {
+          let realign = if (4..=7).contains(&predictor) && config.cfa.width == 2 && config.cfa.height == 2 {
             2
           } else {
             1

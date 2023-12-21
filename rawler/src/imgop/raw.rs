@@ -1,13 +1,16 @@
 // SPDX-License-Identifier: LGPL-2.1
 // Copyright 2021 Daniel Vogelbacher <daniel@chaospixel.com>
 
-use super::sensor::bayer::ppg::demosaic_ppg;
 use super::xyz::Illuminant;
 use super::{Dim2, Point, Result};
+use crate::cfa::PlaneColor;
 use crate::imgop::matrix::{multiply, normalize, pseudo_inverse};
+use crate::imgop::sensor::bayer::bilinear::Bilinear4Channel;
+use crate::imgop::sensor::bayer::ppg::PPGDemosaic;
+use crate::imgop::sensor::bayer::Demosaic;
 use crate::imgop::xyz::SRGB_TO_XYZ_D65;
 use crate::imgop::Rect;
-use crate::pixarray::{Pix2D, RgbF32};
+use crate::pixarray::{Color2D, Pix2D, RgbF32};
 use crate::rawimage::{BlackLevel, RawPhotometricInterpretation, WhiteLevel};
 use crate::{RawImageData, CFA};
 use std::iter;
@@ -207,15 +210,67 @@ pub fn correct_blacklevel_cfa(raw: &mut [f32], width: usize, _height: usize, bla
   });
 }
 
-/// Rescale raw pixels by removing black level and scale to white level
-/// Clip negative values to zero.
-/// TODO: remove this old code, only used by superbayer
-pub fn rescale<const N: usize>(pix: &[u16; N], black_level: &[f32; N], white_level: &[f32; N]) -> [f32; N] {
-  let mut out = [f32::default(); N];
-  for i in 0..N {
-    out[i] = (pix[i] as f32 - black_level[i]) / (white_level[i] - black_level[i]);
-  }
-  clip_negative(&out)
+#[multiversion]
+#[clone(target = "[x86|x86_64]+avx+avx2")]
+#[clone(target = "x86+sse")]
+fn map_3ch_to_rgb(src: &Color2D<f32, 3>, wb_coeff: &[f32; 4], xyz2cam: [[f32; 3]; 4]) -> RgbF32 {
+  let rgb2cam = normalize(multiply(&xyz2cam, &SRGB_TO_XYZ_D65));
+  let cam2rgb = pseudo_inverse(rgb2cam);
+
+  let mut out = Vec::with_capacity(src.data.len());
+
+  src
+    .pixels()
+    .par_iter()
+    .map(|pix| {
+      // We apply wb coeffs on the fly
+      let r = pix[0] * wb_coeff[0];
+      let g = pix[1] * wb_coeff[1];
+      let b = pix[2] * wb_coeff[2];
+      let srgb = [
+        cam2rgb[0][0] * r + cam2rgb[0][1] * g + cam2rgb[0][2] * b,
+        cam2rgb[1][0] * r + cam2rgb[1][1] * g + cam2rgb[1][2] * b,
+        cam2rgb[2][0] * r + cam2rgb[2][1] * g + cam2rgb[2][2] * b,
+      ];
+      let mut clippd = clip_euclidean_norm_avg(&srgb);
+      clippd.iter_mut().for_each(|p| *p = super::srgb::srgb_apply_gamma(*p));
+      clippd
+    })
+    .collect_into_vec(&mut out);
+
+  RgbF32::new_with(out, src.width, src.height)
+}
+
+#[multiversion]
+#[clone(target = "[x86|x86_64]+avx+avx2")]
+#[clone(target = "x86+sse")]
+fn map_4ch_to_rgb(src: &Color2D<f32, 4>, wb_coeff: &[f32; 4], xyz2cam: [[f32; 3]; 4]) -> RgbF32 {
+  let rgb2cam = normalize(multiply(&xyz2cam, &SRGB_TO_XYZ_D65));
+  let cam2rgb = pseudo_inverse(rgb2cam);
+
+  let mut out = Vec::with_capacity(src.data.len());
+
+  src
+    .pixels()
+    .par_iter()
+    .map(|pix| {
+      // We apply wb coeffs on the fly
+      let ch0 = pix[0] * wb_coeff[0];
+      let ch1 = pix[1] * wb_coeff[1];
+      let ch2 = pix[2] * wb_coeff[2];
+      let ch3 = pix[3] * wb_coeff[3];
+      let srgb = [
+        cam2rgb[0][0] * ch0 + cam2rgb[0][1] * ch1 + cam2rgb[0][2] * ch2 + cam2rgb[0][3] * ch3,
+        cam2rgb[1][0] * ch0 + cam2rgb[1][1] * ch1 + cam2rgb[1][2] * ch2 + cam2rgb[1][3] * ch3,
+        cam2rgb[2][0] * ch0 + cam2rgb[2][1] * ch1 + cam2rgb[2][2] * ch2 + cam2rgb[2][3] * ch3,
+      ];
+      let mut clippd = clip_euclidean_norm_avg(&srgb);
+      clippd.par_iter_mut().for_each(|p| *p = super::srgb::srgb_apply_gamma(*p));
+      clippd
+    })
+    .collect_into_vec(&mut out);
+
+  RgbF32::new_with(out, src.width, src.height)
 }
 
 #[multiversion]
@@ -241,7 +296,7 @@ fn rgb_to_srgb_with_wb(rgb: &mut RgbF32, wb_coeff: &[f32; 4], xyz2cam: [[f32; 3]
   });
 }
 
-fn develop_raw_cfa_srgb(pixels: &RawImageData, params: &DevelopParams, cfa: &CFA) -> Result<(Vec<f32>, Dim2)> {
+fn develop_raw_cfa_srgb(pixels: &RawImageData, params: &DevelopParams, cfa: &CFA, colors: &PlaneColor) -> Result<(Vec<f32>, Dim2)> {
   let black_level: [f32; 4] = match params.blacklevel.levels.len() {
     1 => Ok(collect_array(iter::repeat(params.blacklevel.levels[0].as_f32()))),
     4 => Ok(collect_array(params.blacklevel.levels.iter().map(|p| p.as_f32()))),
@@ -266,21 +321,35 @@ fn develop_raw_cfa_srgb(pixels: &RawImageData, params: &DevelopParams, cfa: &CFA
 
   let raw_size = Rect::new_with_points(Point::zero(), Point::new(params.width, params.height));
   let active_area = params.active_area.unwrap_or(raw_size);
-  let crop_area = params.crop_area.unwrap_or(active_area).adapt(&active_area);
+  let crop_area = params.crop_area.unwrap_or(active_area);
   let mut pixels = pixels.as_f32();
+  //let mut pixels = Pix2D::new_with(pixels.as_f32().to_vec(), params.width, params.height);
 
   correct_blacklevel_cfa(pixels.to_mut(), params.width, params.height, &black_level, &white_level);
-  let rgb = demosaic_ppg(&pixels, Dim2::new(params.width, params.height), cfa.clone(), active_area);
-
-  let mut cropped_pixels = if raw_size.d != crop_area.d { rgb.crop(crop_area) } else { rgb };
-
-  // Convert to sRGB from XYZ
-  rgb_to_srgb_with_wb(&mut cropped_pixels, &wb_coeff, xyz2cam);
+  let (rgb, dim) = if cfa.is_rgb() {
+    let demosaicer = PPGDemosaic::new();
+    let color_3ch = demosaicer.demosaic(&pixels, Dim2::new(params.width, params.height), cfa, colors, active_area);
+    let cropped = if raw_size.d != crop_area.d { color_3ch.crop(crop_area) } else { color_3ch };
+    (map_3ch_to_rgb(&cropped, &wb_coeff, xyz2cam), crop_area.d)
+  } else {
+    /*
+    let sp_crop = Rect::new(
+      Point::new(crop_area.x() >> 1, crop_area.y() >> 1),
+      Dim2::new(crop_area.width() >> 1, crop_area.height() >> 1),
+    );
+    let sp = Superpixel4Channel::new();
+    let color_4ch = sp.demosaic(&pixels, Dim2::new(params.width, params.height), cfa, colors, active_area);
+    */
+    let bl = Bilinear4Channel::new();
+    let color_4ch = bl.demosaic(&pixels, Dim2::new(params.width, params.height), cfa, colors, active_area);
+    let cropped = if raw_size.d != crop_area.d { color_4ch.crop(crop_area) } else { color_4ch };
+    (map_4ch_to_rgb(&cropped, &wb_coeff, xyz2cam), crop_area.d)
+  };
 
   // Flatten into Vec<f32>
-  let srgb: Vec<f32> = cropped_pixels.into_inner().into_iter().flatten().collect();
-  assert_eq!(srgb.len(), crop_area.d.w * crop_area.d.h * 3);
-  Ok((srgb, crop_area.d))
+  let srgb: Vec<f32> = rgb.into_inner().into_iter().flatten().collect();
+  //assert_eq!(srgb.len(), crop_area.d.w * crop_area.d.h * 3);
+  Ok((srgb, dim))
 }
 
 fn develop_linearraw_srgb(pixels: &RawImageData, params: &DevelopParams) -> Result<(Vec<f32>, Dim2)> {
@@ -333,7 +402,7 @@ fn develop_linearraw_srgb(pixels: &RawImageData, params: &DevelopParams) -> Resu
 pub fn develop_raw_srgb(pixels: &RawImageData, params: &DevelopParams) -> Result<(Vec<f32>, Dim2)> {
   match &params.photometric {
     RawPhotometricInterpretation::BlackIsZero => todo!(),
-    RawPhotometricInterpretation::Cfa(cfa) => develop_raw_cfa_srgb(pixels, params, cfa),
+    RawPhotometricInterpretation::Cfa(config) => develop_raw_cfa_srgb(pixels, params, &config.cfa, &config.colors),
     RawPhotometricInterpretation::LinearRaw => develop_linearraw_srgb(pixels, params),
   }
 }

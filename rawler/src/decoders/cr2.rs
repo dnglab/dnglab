@@ -31,6 +31,7 @@ use crate::imgop::Point;
 use crate::imgop::Rect;
 use crate::lens::LensDescription;
 use crate::lens::LensResolver;
+use crate::rawimage::CFAConfig;
 use crate::rawimage::RawPhotometricInterpretation;
 use crate::tags::ExifTag;
 use crate::tags::TiffCommonTag;
@@ -261,7 +262,7 @@ impl<'a> Decoder for Cr2Decoder<'a> {
     let whitelevel = self.get_whitelevel(cpp)?;
 
     let photometric = match cpp {
-      1 => RawPhotometricInterpretation::Cfa(self.camera.cfa.clone()),
+      1 => RawPhotometricInterpretation::Cfa(CFAConfig::new_from_camera(&self.camera)),
       3 => RawPhotometricInterpretation::LinearRaw,
       _ => todo!(),
     };
