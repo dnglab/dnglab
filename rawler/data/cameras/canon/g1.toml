@@ -5,6 +5,7 @@ clean_make = "Canon"
 clean_model = "PowerShot G1"
 whitepoint = 1023
 color_pattern = "GMYC"
+plane_color = "GMCY"
 active_area = [4,8,52,2]
 hints = ["nolowbits"]
 blackareav = [2094,50]
