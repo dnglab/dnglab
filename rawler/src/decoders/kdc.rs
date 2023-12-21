@@ -21,6 +21,7 @@ use crate::RawlerError;
 use crate::Result;
 
 use super::ok_cfa_image;
+use super::CFAConfig;
 use super::Camera;
 use super::Decoder;
 use super::RawDecodeParams;
@@ -81,7 +82,7 @@ impl<'a> Decoder for KdcDecoder<'a> {
       };
       let cpp = 1;
       let whitelevel = Some(WhiteLevel::new(vec![white; cpp]));
-      let photometric = RawPhotometricInterpretation::Cfa(self.camera.cfa.clone());
+      let photometric = RawPhotometricInterpretation::Cfa(CFAConfig::new_from_camera(&self.camera));
       let img = RawImage::new(self.camera.clone(), image, cpp, [1.0, 1.0, 1.0, NAN], photometric, None, whitelevel, dummy);
       return Ok(img);
     }

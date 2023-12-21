@@ -35,6 +35,7 @@ use crate::pixarray::PixU16;
 use crate::pumps::BitPump;
 use crate::pumps::BitPumpMSB;
 use crate::pumps::ByteStream;
+use crate::rawimage::CFAConfig;
 use crate::rawimage::RawPhotometricInterpretation;
 use crate::rawimage::WhiteLevel;
 use crate::tags::ExifTag;
@@ -272,7 +273,7 @@ impl<'a> Decoder for NefDecoder<'a> {
     let blacklevel = self.get_blacklevel(bps)?;
     let whitelevel = None;
     let photometric = match cpp {
-      1 => RawPhotometricInterpretation::Cfa(self.camera.cfa.clone()),
+      1 => RawPhotometricInterpretation::Cfa(CFAConfig::new_from_camera(&self.camera)),
       3 => RawPhotometricInterpretation::LinearRaw,
       _ => todo!(),
     };

@@ -2,7 +2,7 @@ use std::fmt;
 
 use itertools::Itertools;
 
-use crate::formats::tiff::Value;
+use crate::formats::tiff::{self, Value};
 
 pub const CFA_COLOR_R: usize = 0;
 pub const CFA_COLOR_G: usize = 1;
@@ -11,7 +11,7 @@ pub const CFA_COLOR_B: usize = 2;
 use num_enum::TryFromPrimitive;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq, PartialOrd, Ord, TryFromPrimitive)]
-#[repr(usize)]
+#[repr(u8)]
 #[allow(non_camel_case_types)]
 pub enum CFAColor {
   // see also DngDecoder
@@ -30,6 +30,24 @@ pub enum CFAColor {
 impl Default for CFAColor {
   fn default() -> Self {
     Self::UNKNOWN
+  }
+}
+
+impl TryFrom<char> for CFAColor {
+  type Error = String;
+  fn try_from(value: char) -> Result<Self, Self::Error> {
+    Ok(match value {
+      'R' => Self::RED,
+      'G' => Self::GREEN,
+      'B' => Self::BLUE,
+      'E' => Self::CYAN,
+      'M' => Self::MAGENTA,
+      'Y' => Self::YELLOW,
+      'C' => Self::CYAN,
+      _ => {
+        return Err(format!("Unknown CFA color \"{}\"", value));
+      }
+    })
   }
 }
 
@@ -107,20 +125,8 @@ impl CFA {
 
     if width > 0 {
       // copy the pattern into the top left
-      for (i, c) in patname.bytes().enumerate() {
-        pattern[i / width][i % width] = match c {
-          b'R' => 0,
-          b'G' => 1,
-          b'B' => 2,
-          b'E' => 3,
-          b'M' => 4,
-          b'Y' => 5,
-          b'C' => 3,
-          _ => {
-            let unknown_char = patname[i..].chars().next().unwrap();
-            panic!("Unknown CFA color \"{}\" in pattern \"{}\"", unknown_char, patname)
-          }
-        };
+      for (i, c) in patname.chars().enumerate() {
+        pattern[i / width][i % width] = CFAColor::try_from(c).expect("Invalid CFA pattern") as u8;
       }
 
       // extend the pattern into the full matrix
@@ -162,7 +168,7 @@ impl CFA {
 
   /// from inner loops without performance issues.
   pub fn cfa_color_at(&self, row: usize, col: usize) -> CFAColor {
-    (self.pattern[(row + 48) % 48][(col + 48) % 48] as usize).try_into().unwrap()
+    (self.pattern[(row + 48) % 48][(col + 48) % 48]).try_into().unwrap()
   }
 
   /// Get a flat pattern
@@ -289,5 +295,77 @@ impl fmt::Display for CFA {
 impl fmt::Debug for CFA {
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
     write!(f, "CFA {{ {} }}", self.name)
+  }
+}
+
+#[derive(Clone, Eq, PartialEq)]
+pub struct PlaneColor {
+  pub colors: Vec<CFAColor>,
+}
+
+impl PlaneColor {
+  pub fn new(patname: &str) -> Self {
+    let mut colors = vec![CFAColor::default(); patname.len()];
+    for (i, c) in patname.chars().enumerate() {
+      colors[i] = CFAColor::try_from(c).expect("Invalid CFA color");
+    }
+    Self { colors }
+  }
+
+  pub fn plane_colors<const N: usize>(&self) -> [CFAColor; N] {
+    self.colors.clone().try_into().expect("PlaneColor has invalid length")
+  }
+
+  /// Build a lookup table for all possible colors (up to 255).
+  /// The value is the plane/channel number.
+  pub fn plane_lookup_table(&self) -> [usize; 256] {
+    let mut map = [255; 256];
+    self.colors.iter().enumerate().for_each(|(plane, color)| {
+      map[*color as usize] = plane;
+    });
+    map
+  }
+
+  pub fn plane_count(&self) -> usize {
+    self.colors.len()
+  }
+
+  /// Returns the first occourence for given color.
+  pub fn cfa_index(cfa: &CFA, color: CFAColor) -> usize {
+    for row in 0..cfa.height {
+      for col in 0..cfa.width {
+        if cfa.cfa_color_at(row, col) == color {
+          return row * cfa.width + col;
+        }
+      }
+    }
+    panic!("CFAColor {:?} is not included in CFA {:?}", color, cfa);
+  }
+}
+
+impl From<&PlaneColor> for tiff::Value {
+  fn from(value: &PlaneColor) -> Self {
+    Self::Byte(value.colors.iter().map(|x| *x as u8).collect())
+  }
+}
+
+impl<T> From<T> for PlaneColor
+where
+  T: Into<Vec<CFAColor>>,
+{
+  fn from(value: T) -> Self {
+    Self { colors: value.into() }
+  }
+}
+
+impl Default for PlaneColor {
+  fn default() -> Self {
+    Self::from([CFAColor::RED, CFAColor::GREEN, CFAColor::BLUE])
+  }
+}
+
+impl fmt::Debug for PlaneColor {
+  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    write!(f, "PlaneColors {{ {:?} }}", self.colors)
   }
 }

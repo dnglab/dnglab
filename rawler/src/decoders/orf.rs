@@ -21,6 +21,7 @@ use crate::packed::*;
 use crate::pixarray::PixU16;
 use crate::pumps::BitPump;
 use crate::pumps::BitPumpMSB;
+use crate::rawimage::CFAConfig;
 use crate::rawimage::RawPhotometricInterpretation;
 use crate::tags::ExifTag;
 use crate::tags::TiffCommonTag;
@@ -201,7 +202,7 @@ impl<'a> Decoder for OrfDecoder<'a> {
 
     let blacklevel = self.get_blacklevel()?;
     let whitelevel = None;
-    let photometric = RawPhotometricInterpretation::Cfa(self.camera.cfa.clone());
+    let photometric = RawPhotometricInterpretation::Cfa(CFAConfig::new_from_camera(&self.camera));
     let mut img = RawImage::new(camera, image, cpp, normalize_wb(self.get_wb()?), photometric, blacklevel, whitelevel, dummy);
     if let Some(crop) = self.get_crop()? {
       img.crop_area = Some(crop);

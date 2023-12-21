@@ -1,5 +1,6 @@
 use toml::Value;
 
+use crate::cfa::PlaneColor;
 use crate::imgop::xyz::FlatColorMatrix;
 use crate::imgop::xyz::Illuminant;
 use crate::CFA;
@@ -29,6 +30,7 @@ pub struct Camera {
   pub xyz_to_cam: [[f32; 3]; 4],
   pub color_matrix: HashMap<Illuminant, FlatColorMatrix>,
   pub cfa: CFA,
+  pub plane_color: PlaneColor,
   // Active area relative to sensor size
   pub active_area: Option<[usize; 4]>,
   // Recommended area relative to sensor size
@@ -176,6 +178,9 @@ impl Camera {
         n @ "color_pattern" => {
           self.cfa = CFA::new(val.as_str().unwrap_or_else(|| panic!("{} must be a string", n)));
         }
+        n @ "plane_color" => {
+          self.plane_color = PlaneColor::new(val.as_str().unwrap_or_else(|| panic!("{} must be a string", n)));
+        }
         n @ "bps" => {
           self.bps = Some(val.as_integer().unwrap_or_else(|| panic!("{} must be an integer", n)) as usize);
         }
@@ -255,6 +260,7 @@ impl Camera {
       xyz_to_cam: [[0.0; 3]; 4],
       color_matrix: HashMap::new(),
       cfa: CFA::new(""),
+      plane_color: PlaneColor::default(),
       active_area: None,
       crop_area: None,
       bps: None,

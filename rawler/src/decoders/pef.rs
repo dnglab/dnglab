@@ -27,6 +27,7 @@ use crate::packed::*;
 use crate::pixarray::PixU16;
 use crate::pumps::BitPumpMSB;
 use crate::pumps::ByteStream;
+use crate::rawimage::CFAConfig;
 use crate::rawimage::RawPhotometricInterpretation;
 use crate::tags::ExifTag;
 use crate::tags::TiffCommonTag;
@@ -125,7 +126,7 @@ impl<'a> Decoder for PefDecoder<'a> {
     let blacklevel = self.get_blacklevel()?;
     let whitelevel = None;
     debug!("Found WB: {:?}", wb);
-    let photometric = RawPhotometricInterpretation::Cfa(self.camera.cfa.clone());
+    let photometric = RawPhotometricInterpretation::Cfa(CFAConfig::new_from_camera(&self.camera));
     Ok(RawImage::new(self.camera.clone(), image, cpp, wb, photometric, blacklevel, whitelevel, dummy))
   }
 

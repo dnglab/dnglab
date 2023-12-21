@@ -32,6 +32,7 @@ use crate::pumps::BitPump;
 use crate::pumps::BitPumpLSB;
 use crate::pumps::BitPumpMSB;
 use crate::rawimage::BlackLevel;
+use crate::rawimage::CFAConfig;
 use crate::rawimage::RawPhotometricInterpretation;
 use crate::rawimage::WhiteLevel;
 use crate::tags::ExifTag;
@@ -175,7 +176,7 @@ impl<'a> Decoder for ArwDecoder<'a> {
     let whitelevel = white.map(|white| WhiteLevel(vec![white as u32; cpp]));
 
     let photometric = match cpp {
-      1 => RawPhotometricInterpretation::Cfa(self.camera.cfa.clone()),
+      1 => RawPhotometricInterpretation::Cfa(CFAConfig::new_from_camera(&self.camera)),
       3 => RawPhotometricInterpretation::LinearRaw,
       _ => todo!(),
     };

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: LGPL-2.1
 // Copyright 2021 Daniel Vogelbacher <daniel@chaospixel.com>
 
+pub mod bilinear;
 pub mod ppg;
 pub mod superpixel;
 
@@ -8,10 +9,14 @@ use multiversion::multiversion;
 use rayon::prelude::*;
 
 use crate::{
-  cfa::CFA,
+  cfa::{PlaneColor, CFA},
   imgop::{Dim2, Rect},
-  pixarray::RgbF32,
+  pixarray::{Color2D, RgbF32},
 };
+
+pub trait Demosaic<T, const N: usize> {
+  fn demosaic(&self, pixels: &[T], dim: Dim2, cfa: &CFA, colors: &PlaneColor, roi: Rect) -> Color2D<T, N>;
+}
 
 /// Extend a single pixel component from bayer pattern to RGB
 ///
@@ -19,12 +24,12 @@ use crate::{
 #[multiversion]
 #[clone(target = "[x86|x86_64]+avx+avx2")]
 #[clone(target = "x86+sse")]
-fn expand_bayer_rgb(raw: &[f32], dim: Dim2, cfa_orig: CFA, roi: Rect) -> RgbF32 {
+fn expand_bayer_rgb(raw: &[f32], dim: Dim2, cfa: &CFA, roi: Rect) -> RgbF32 {
   // The ROI changes the pattern if not perfectly aligned on the origin pattern
-  let cfa_roi = cfa_orig.shift(roi.x(), roi.y());
+  let cfa_roi = cfa.shift(roi.x(), roi.y());
   let mut out = RgbF32::new(roi.width(), roi.height());
   out.pixels_mut().par_chunks_exact_mut(roi.width()).enumerate().for_each(|(row_out, buf)| {
-    assert_eq!(roi.width() % cfa_orig.width, 0); // Area must be bound to CFA bounds
+    assert_eq!(roi.width() % cfa.width, 0); // Area must be bound to CFA bounds
     let row_in = roi.p.y + row_out;
     let start_in = row_in * dim.w + roi.p.x;
     let line = &raw[start_in..start_in + roi.width()];
@@ -37,7 +42,7 @@ fn expand_bayer_rgb(raw: &[f32], dim: Dim2, cfa_orig: CFA, roi: Rect) -> RgbF32 
 
 /// Bayer matrix pattern
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
-pub enum BayerPattern {
+pub enum RgbBayerPattern {
   RGGB,
   BGGR,
   GBRG,
