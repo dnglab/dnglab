@@ -54,12 +54,12 @@ pub struct Exif {
   pub owner_name: Option<String>,
   pub serial_number: Option<String>,
   pub lens_serial_number: Option<String>,
-  pub dng_opcode_list_1: Option<Vec<u8>>,
-  pub dng_opcode_list_2: Option<Vec<u8>>,
-  pub dng_opcode_list_3: Option<Vec<u8>>,
   pub lens_make: Option<String>,
   pub lens_model: Option<String>,
   pub gps: Option<ExifGPS>,
+  pub dng_opcode_list_1: Option<Vec<u8>>,
+  pub dng_opcode_list_2: Option<Vec<u8>>,
+  pub dng_opcode_list_3: Option<Vec<u8>>,
 }
 
 #[derive(Debug, Default, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
@@ -165,13 +165,6 @@ impl Exif {
             log::debug!("Ignoring EXIF tag: {:?}", tag);
           }
         }
-      } else if let Ok(tag) = DngTag::try_from(*tag) {
-        match (tag, &entry.value) {
-          (DngTag::OpcodeList1, Value::Undefined(data)) => self.dng_opcode_list_1 = Some(data.clone()),
-          (DngTag::OpcodeList2, Value::Undefined(data)) => self.dng_opcode_list_2 = Some(data.clone()),
-          (DngTag::OpcodeList3, Value::Undefined(data)) => self.dng_opcode_list_3 = Some(data.clone()),
-          (_tag, _value) => {}
-        }
       }
     }
     Ok(())
@@ -224,6 +217,21 @@ impl Exif {
               log::debug!("Ignoring EXIF tag: {:?}", tag);
             }
           }
+        }
+      }
+    }
+    Ok(())
+  }
+
+  /// Extend the EXIF info from the IFD containing the raw image.
+  pub fn extend_from_raw_ifd(&mut self, ifd: &IFD) -> Result<()> {
+    for (tag, entry) in ifd.entries().iter() {
+      if let Ok(tag) = DngTag::try_from(*tag) {
+        match (tag, &entry.value) {
+          (DngTag::OpcodeList1, Value::Undefined(data)) => self.dng_opcode_list_1 = Some(data.clone()),
+          (DngTag::OpcodeList2, Value::Undefined(data)) => self.dng_opcode_list_2 = Some(data.clone()),
+          (DngTag::OpcodeList3, Value::Undefined(data)) => self.dng_opcode_list_3 = Some(data.clone()),
+          (_tag, _value) => {}
         }
       }
     }

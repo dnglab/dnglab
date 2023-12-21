@@ -95,7 +95,8 @@ impl<'a> Decoder for DngDecoder<'a> {
       cam.clean_make = known_cam.clean_make;
       cam.clean_model = known_cam.clean_model;
     }
-    let exif = Exif::new(self.tiff.root_ifd())?;
+    let mut exif = Exif::new(self.tiff.root_ifd())?;
+    exif.extend_from_raw_ifd(raw)?;
     let mdata = RawMetadata::new(&cam, exif);
     Ok(mdata)
   }
