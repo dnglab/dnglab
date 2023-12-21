@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use crate::{
   formats::tiff::{Rational, Result, SRational, Value, IFD},
   lens::LensDescription,
-  tags::{ExifGpsTag, ExifTag},
+  tags::{DngTag, ExifGpsTag, ExifTag},
 };
 
 use std::convert::TryInto;
@@ -54,6 +54,9 @@ pub struct Exif {
   pub owner_name: Option<String>,
   pub serial_number: Option<String>,
   pub lens_serial_number: Option<String>,
+  pub dng_opcode_list_1: Option<Vec<u8>>,
+  pub dng_opcode_list_2: Option<Vec<u8>>,
+  pub dng_opcode_list_3: Option<Vec<u8>>,
   pub lens_make: Option<String>,
   pub lens_model: Option<String>,
   pub gps: Option<ExifGPS>,
@@ -161,6 +164,13 @@ impl Exif {
           (tag, _value) => {
             log::debug!("Ignoring EXIF tag: {:?}", tag);
           }
+        }
+      } else if let Ok(tag) = DngTag::try_from(*tag) {
+        match (tag, &entry.value) {
+          (DngTag::OpcodeList1, Value::Undefined(data)) => self.dng_opcode_list_1 = Some(data.clone()),
+          (DngTag::OpcodeList2, Value::Undefined(data)) => self.dng_opcode_list_2 = Some(data.clone()),
+          (DngTag::OpcodeList3, Value::Undefined(data)) => self.dng_opcode_list_3 = Some(data.clone()),
+          (_tag, _value) => {}
         }
       }
     }
