@@ -18,7 +18,7 @@ fn build_completions() -> std::io::Result<()> {
   let mut cmd = dnglab_lib::app::create_app().name("dnglab");
   // Generate shell completions.
   for shell in [Bash, Elvish, Fish, PowerShell, Zsh] {
-    generate_to(shell, &mut cmd, "dnglab", &outdir).unwrap();
+    generate_to(shell, &mut cmd, "dnglab", &outdir).expect("completions build failed");
   }
   Ok(())
 }
