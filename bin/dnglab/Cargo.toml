@@ -47,6 +47,7 @@ into Digital Negatives (DNG)."""
 section = "graphics"
 priority = "optional"
 assets = [
+    ["target/release/dnglab", "usr/bin/", "755"],
     ["manpages/*", "usr/share/man/man1/", "644"],
     ["completions/*.bash", "usr/share/bash-completion/completions/", "644"]
 ]
