@@ -1,0 +1,28 @@
+.ie \n(.g .ds Aq \(aq
+.el .ds Aq '
+.TH dnglab-extract 1  "dnglab-extract " 
+.SH NAME
+dnglab\-extract \- Extract embedded original Raw from DNG
+.SH SYNOPSIS
+\fBdnglab\-extract\fR [\fB\-\-skipchecks\fR] [\fB\-r\fR|\fB\-\-recursive\fR] [\fB\-f\fR|\fB\-\-override\fR] [\fB\-h\fR|\fB\-\-help\fR] <\fIINPUT\fR> <\fIOUTPUT\fR> 
+.SH DESCRIPTION
+Extract embedded original Raw from DNG
+.SH OPTIONS
+.TP
+\fB\-\-skipchecks\fR
+Skip integrity checks
+.TP
+\fB\-r\fR, \fB\-\-recursive\fR
+Process input directory recursive
+.TP
+\fB\-f\fR, \fB\-\-override\fR
+Override existing files
+.TP
+\fB\-h\fR, \fB\-\-help\fR
+Print help
+.TP
+<\fIINPUT\fR>
+Input file or directory
+.TP
+<\fIOUTPUT\fR>
+Output file or existing directory

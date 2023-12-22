@@ -31,6 +31,12 @@ tokio = { version = "1.20.3", features = ["full"] }
 async-trait = "0.1.51"
 futures = "0.3"
 hex = "0.4.3"
+dnglab_lib = { path = "dnglab-lib" }
+
+[build-dependencies]
+clap_mangen = "0.2.15"
+clap_complete = "4.4.4"
+dnglab_lib = { path = "dnglab-lib" }
 
 [package.metadata.deb]
 maintainer = "Daniel Vogelbacher <daniel@chaospixel.com>"
@@ -40,3 +46,8 @@ Utility for converting digital camera RAW format files\
 into Digital Negatives (DNG)."""
 section = "graphics"
 priority = "optional"
+assets = [
+    ["manpages/*", "usr/share/man/man1/", "644"],
+    ["completions/*.bash", "usr/share/bash-completion/completions/", "644"]
+]
+

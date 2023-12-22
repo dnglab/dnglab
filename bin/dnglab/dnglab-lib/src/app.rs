@@ -19,7 +19,7 @@ use crate::makedng::{
 pub fn create_app() -> Command {
   debug!("Creating CLAP app configuration");
 
-  let convert_base = Command::new("")
+  let convert_base = Command::new("dnglab")
     .about("Convert raw image(s) into dng format")
     .arg(
       arg!(compression: -c --"compression" <compression> "Compression for raw image")
@@ -72,7 +72,7 @@ pub fn create_app() -> Command {
     )
     .arg(arg!(-f --override "Override existing files").action(ArgAction::SetTrue));
 
-  let app = command!()
+  command!()
     .about("DNGLab - A camera raw utility and DNG converter")
     .subcommand_required(true)
     .arg_required_else_help(true)
@@ -265,6 +265,5 @@ Input files which are not mapped are ignored.",
         .arg(arg!(-f --override "Override existing files").action(ArgAction::SetTrue))
         .arg(arg!(<INPUT> "Input file or directory").value_parser(clap::value_parser!(PathBuf)))
         .arg(arg!(<OUTPUT> "Output file or existing directory").value_parser(clap::value_parser!(PathBuf))),
-    );
-  app
+    )
 }
