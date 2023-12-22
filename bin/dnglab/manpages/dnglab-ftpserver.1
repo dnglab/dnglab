@@ -1,0 +1,76 @@
+.ie \n(.g .ds Aq \(aq
+.el .ds Aq '
+.TH dnglab-ftpserver 1  "dnglab-ftpserver " 
+.SH NAME
+dnglab\-ftpserver \- Convert raw image(s) into dng format
+.SH SYNOPSIS
+\fBdnglab\-ftpserver\fR [\fB\-c\fR|\fB\-\-compression\fR] [\fB\-\-ljpeg92\-predictor\fR] [\fB\-\-dng\-preview\fR] [\fB\-\-dng\-thumbnail\fR] [\fB\-\-embed\-raw\fR] [\fB\-\-artist\fR] [\fB\-\-image\-index\fR] [\fB\-\-crop\fR] [\fB\-f\fR|\fB\-\-override\fR] [\fB\-\-port\fR] [\fB\-\-listen\fR] [\fB\-\-keep\-original\fR] [\fB\-h\fR|\fB\-\-help\fR] <\fIOUTPUT\fR> 
+.SH DESCRIPTION
+Convert raw image(s) into dng format
+.SH OPTIONS
+.TP
+\fB\-c\fR, \fB\-\-compression\fR=\fIcompression\fR [default: lossless]
+Compression for raw image
+.br
+
+.br
+[\fIpossible values: \fRlossless, uncompressed]
+.TP
+\fB\-\-ljpeg92\-predictor\fR=\fIpredictor\fR [default: 1]
+LJPEG\-92 predictor
+.TP
+\fB\-\-dng\-preview\fR=\fIpreview\fR [default: true]
+DNG include preview image
+.br
+
+.br
+[\fIpossible values: \fRtrue, false]
+.TP
+\fB\-\-dng\-thumbnail\fR=\fIthumbnail\fR [default: true]
+DNG include thumbnail image
+.br
+
+.br
+[\fIpossible values: \fRtrue, false]
+.TP
+\fB\-\-embed\-raw\fR=\fIembedded\fR [default: true]
+Embed the raw file into DNG
+.br
+
+.br
+[\fIpossible values: \fRtrue, false]
+.TP
+\fB\-\-artist\fR=\fIartist\fR
+Set the artist tag
+.TP
+\fB\-\-image\-index\fR=\fIindex\fR [default: 0]
+Select a specific image index (or \*(Aqall\*(Aq) if file is a image container
+.TP
+\fB\-\-crop\fR=\fIcrop\fR [default: best]
+DNG default crop
+.br
+
+.br
+[\fIpossible values: \fRbest, activearea, none]
+.TP
+\fB\-f\fR, \fB\-\-override\fR
+Override existing files
+.TP
+\fB\-\-port\fR=\fIport\fR [default: 2121]
+FTP listen port
+.TP
+\fB\-\-listen\fR=\fIaddr\fR [default: 0.0.0.0]
+FTP listen address
+.TP
+\fB\-\-keep\-original\fR=\fIkeep\fR [default: true]
+Keep original raw
+.br
+
+.br
+[\fIpossible values: \fRtrue, false]
+.TP
+\fB\-h\fR, \fB\-\-help\fR
+Print help
+.TP
+<\fIOUTPUT\fR>
+Output file or existing directory

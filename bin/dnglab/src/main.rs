@@ -12,36 +12,13 @@
   clippy::large_enum_variant
 )]
 
-mod analyze;
-mod app;
-mod cameras;
-mod convert;
-mod extract;
-mod filemap;
-mod ftpconv;
-mod gui;
-mod jobs;
-mod lenses;
-mod makedng;
+use std::process::{ExitCode, Termination};
 
-use std::{
-  net::AddrParseError,
-  path::PathBuf,
-  process::{ExitCode, Termination},
-};
-
+use dnglab_lib::*;
 use fern::colors::{Color, ColoredLevelConfig};
-use image::ImageError;
-use rawler::{
-  formats::{jfif::JfifError, tiff::TiffError},
-  RawlerError,
-};
-use thiserror::Error;
 use tokio::runtime::Builder;
 //use log::debug;
 
-const PKG_VERSION: &str = env!("CARGO_PKG_VERSION");
-const PKG_NAME: &str = env!("CARGO_PKG_NAME");
 const STACK_SIZE_MIB: usize = 4;
 
 fn main() -> AppResult {
@@ -63,7 +40,7 @@ fn main() -> AppResult {
 ///
 /// We initialize the fern logger here, create a Clap command line
 /// parser and check for the correct environment.
-async fn main_async() -> crate::Result<()> {
+async fn main_async() -> dnglab_lib::Result<()> {
   let app = app::create_app();
   let matches = app.try_get_matches().unwrap_or_else(|e| e.exit());
 
@@ -107,71 +84,6 @@ async fn main_async() -> crate::Result<()> {
     _ => panic!("Unknown subcommand was used"),
   }
 }
-
-#[derive(Error, Debug)]
-pub enum AppError {
-  #[error("{}", _0)]
-  General(String),
-  #[error("Invalid arguments: {}", _0)]
-  InvalidCmdSwitch(String),
-  #[error("I/O error: {}", _0)]
-  Io(#[from] std::io::Error),
-  #[error("Not found: {}", _0.display())]
-  NotFound(PathBuf),
-  #[error("Already exists: {}", _0.display())]
-  AlreadyExists(PathBuf),
-  #[error("Decoder failed: {}", _0)]
-  DecoderFailed(String),
-  #[error(transparent)]
-  Other(#[from] anyhow::Error),
-}
-
-impl From<serde_json::Error> for AppError {
-  fn from(value: serde_json::Error) -> Self {
-    anyhow::Error::new(value).into()
-  }
-}
-
-impl From<serde_yaml::Error> for AppError {
-  fn from(value: serde_yaml::Error) -> Self {
-    anyhow::Error::new(value).into()
-  }
-}
-
-impl From<AddrParseError> for AppError {
-  fn from(value: AddrParseError) -> Self {
-    anyhow::Error::new(value).into()
-  }
-}
-
-impl From<RawlerError> for AppError {
-  fn from(value: RawlerError) -> Self {
-    match value {
-      RawlerError::DecoderFailed(err) => Self::DecoderFailed(err),
-      RawlerError::Unsupported { .. } => Self::General(value.to_string()),
-    }
-  }
-}
-
-impl From<ImageError> for AppError {
-  fn from(value: ImageError) -> Self {
-    anyhow::Error::new(value).into()
-  }
-}
-
-impl From<JfifError> for AppError {
-  fn from(value: JfifError) -> Self {
-    anyhow::Error::new(value).into()
-  }
-}
-
-impl From<TiffError> for AppError {
-  fn from(value: TiffError) -> Self {
-    anyhow::Error::new(value).into()
-  }
-}
-
-pub type Result<T> = std::result::Result<T, AppError>;
 
 pub struct AppResult(Result<()>);
 

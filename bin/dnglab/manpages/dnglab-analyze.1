@@ -1,0 +1,55 @@
+.ie \n(.g .ds Aq \(aq
+.el .ds Aq '
+.TH dnglab-analyze 1  "dnglab-analyze " 
+.SH NAME
+dnglab\-analyze \- Analyze raw image
+.SH SYNOPSIS
+\fBdnglab\-analyze\fR [\fB\-\-raw\-pixel\fR] [\fB\-\-full\-pixel\fR] [\fB\-\-preview\-pixel\fR] [\fB\-\-thumbnail\-pixel\fR] [\fB\-\-raw\-checksum\fR] [\fB\-\-preview\-checksum\fR] [\fB\-\-thumbnail\-checksum\fR] [\fB\-\-srgb\fR] [\fB\-\-meta\fR] [\fB\-\-structure\fR] [\fB\-\-summary\fR] [\fB\-\-json\fR] [\fB\-\-yaml\fR] [\fB\-h\fR|\fB\-\-help\fR] <\fIFILE\fR> 
+.SH DESCRIPTION
+Analyze raw image
+.SH OPTIONS
+.TP
+\fB\-\-raw\-pixel\fR
+
+.TP
+\fB\-\-full\-pixel\fR
+Write uncompressed full pixel data to STDOUT
+.TP
+\fB\-\-preview\-pixel\fR
+Write uncompressed preview pixel data to STDOUT
+.TP
+\fB\-\-thumbnail\-pixel\fR
+Write uncompressed preview pixel data to STDOUT
+.TP
+\fB\-\-raw\-checksum\fR
+Write MD5 checksum of raw pixels to STDOUT
+.TP
+\fB\-\-preview\-checksum\fR
+Write MD5 checksum of preview pixels to STDOUT
+.TP
+\fB\-\-thumbnail\-checksum\fR
+Write MD5 checksum of thumbnail pixels to STDOUT
+.TP
+\fB\-\-srgb\fR
+Write sRGB 16\-bit TIFF to STDOUT
+.TP
+\fB\-\-meta\fR
+Write metadata to STDOUT
+.TP
+\fB\-\-structure\fR
+Write file structure to STDOUT
+.TP
+\fB\-\-summary\fR
+Write summary information for file to STDOUT
+.TP
+\fB\-\-json\fR
+Format metadata as JSON
+.TP
+\fB\-\-yaml\fR
+Format metadata as YAML
+.TP
+\fB\-h\fR, \fB\-\-help\fR
+Print help
+.TP
+<\fIFILE\fR>
+Input file

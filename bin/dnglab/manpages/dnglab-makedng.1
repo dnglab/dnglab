@@ -1,0 +1,113 @@
+.ie \n(.g .ds Aq \(aq
+.el .ds Aq '
+.TH dnglab-makedng 1  "dnglab-makedng " 
+.SH NAME
+dnglab\-makedng \- Lowlevel command to make a DNG file
+.SH SYNOPSIS
+\fBdnglab\-makedng\fR [\fB\-o\fR|\fB\-\-output\fR] <\fB\-i\fR|\fB\-\-input\fR> [\fB\-\-map\fR] [\fB\-\-dng\-backward\-version\fR] [\fB\-\-colorimetric\-reference\fR] [\fB\-\-unique\-camera\-model\fR] [\fB\-\-artist\fR] [\fB\-\-make\fR] [\fB\-\-model\fR] [\fB\-\-matrix1\fR] [\fB\-\-matrix2\fR] [\fB\-\-matrix3\fR] [\fB\-\-illuminant1\fR] [\fB\-\-illuminant2\fR] [\fB\-\-illuminant3\fR] [\fB\-\-linearization\fR] [\fB\-\-wb\fR] [\fB\-\-white\-xy\fR] [\fB\-f\fR|\fB\-\-override\fR] [\fB\-h\fR|\fB\-\-help\fR] 
+.SH DESCRIPTION
+Lowlevel command to make a DNG file
+.SH OPTIONS
+.TP
+\fB\-o\fR, \fB\-\-output\fR=\fIOUTPUT\fR
+Output DNG file path
+.TP
+\fB\-i\fR, \fB\-\-input\fR=\fIINPUT\fR
+Input files to merge into a single DNG file. Usually only a single input file is used.
+If multiple input files are given, \-\-map should be used to specifiy how to interpret each intput file.
+.TP
+\fB\-\-map\fR=\fImap\fR [default: 0:raw,0:preview,0:thumbnail,0:exif,0:xmp]
+When multiple input files given, each input file should be mapped to a specific type of data.
+First input file starts with index 0. Possible types are \*(Aqraw\*(Aq, \*(Aqpreview\*(Aq, \*(Aqthumbnail\*(Aq, \*(Aqexif\*(Aq, \*(Aqxmp\*(Aq.
+Input files which are not mapped are ignored.
+.TP
+\fB\-\-dng\-backward\-version\fR=\fIversion\fR [default: 1.4]
+DNG specification version
+.br
+
+.br
+[\fIpossible values: \fR1.0, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6]
+.TP
+\fB\-\-colorimetric\-reference\fR=\fIreference\fR [default: scene]
+Reference for XYZ values
+.br
+
+.br
+[\fIpossible values: \fRscene, output]
+.TP
+\fB\-\-unique\-camera\-model\fR=\fIid\fR
+Unique camera model
+.TP
+\fB\-\-artist\fR=\fIartist\fR
+Set the Artist tag
+.TP
+\fB\-\-make\fR=\fImake\fR
+Set the Make tag
+.TP
+\fB\-\-model\fR=\fImodel\fR
+Set the Model tag
+.TP
+\fB\-\-matrix1\fR=\fIMATRIX\fR
+Matrix 1
+.br
+
+.br
+[\fIpossible values: \fRXYZ_sRGB_D50, XYZ_sRGB_D65, XYZ_AdobeRGB_D50, XYZ_AdobeRGB_D65, custom 3x3 matrix (comma seperated)]
+.TP
+\fB\-\-matrix2\fR=\fIMATRIX\fR
+Matrix 2
+.br
+
+.br
+[\fIpossible values: \fRXYZ_sRGB_D50, XYZ_sRGB_D65, XYZ_AdobeRGB_D50, XYZ_AdobeRGB_D65, custom 3x3 matrix (comma seperated)]
+.TP
+\fB\-\-matrix3\fR=\fIMATRIX\fR
+Matrix 3
+.br
+
+.br
+[\fIpossible values: \fRXYZ_sRGB_D50, XYZ_sRGB_D65, XYZ_AdobeRGB_D50, XYZ_AdobeRGB_D65, custom 3x3 matrix (comma seperated)]
+.TP
+\fB\-\-illuminant1\fR=\fIILLUMINANT\fR
+Illuminant 1
+.br
+
+.br
+[\fIpossible values: \fRUnknown, A, B, C, D50, D55, D65, D75]
+.TP
+\fB\-\-illuminant2\fR=\fIILLUMINANT\fR
+Illuminant 2
+.br
+
+.br
+[\fIpossible values: \fRUnknown, A, B, C, D50, D55, D65, D75]
+.TP
+\fB\-\-illuminant3\fR=\fIILLUMINANT\fR
+Illuminant 3
+.br
+
+.br
+[\fIpossible values: \fRUnknown, A, B, C, D50, D55, D65, D75]
+.TP
+\fB\-\-linearization\fR=\fITABLE\fR
+Linearization table
+.br
+
+.br
+[\fIpossible values: \fR8bit_sRGB, 8bit_sRGB_invert, 16bit_sRGB, 16bit_sRGB_invert, 8bit_gamma1.8, 8bit_gamma1.8_invert, 8bit_gamma2.0, 8bit_gamma2.0_invert, 8bit_gamma2.2, 8bit_gamma2.2_invert, 8bit_gamma2.4, 8bit_gamma2.4_invert, 16bit_gamma1.8, 16bit_gamma1.8_invert, 16bit_gamma2.0, 16bit_gamma2.0_invert, 16bit_gamma2.2, 16bit_gamma2.2_invert, 16bit_gamma2.4, 16bit_gamma2.4_invert, custom table (comma seperated)]
+.TP
+\fB\-\-wb\fR=\fIR,G,B\fR
+Whitebalance as\-shot
+.TP
+\fB\-\-white\-xy\fR=\fIx,y\fR
+Whitebalance as\-shot encoded as xy chromaticity coordinates
+.br
+
+.br
+[\fIpossible values: \fRD50, D65, custom x,y value (comma seperated)]
+.TP
+\fB\-f\fR, \fB\-\-override\fR
+Override existing files
+.TP
+\fB\-h\fR, \fB\-\-help\fR
+Print help (see a summary with \*(Aq\-h\*(Aq)
