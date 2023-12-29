@@ -16,7 +16,7 @@ use crate::{
   decoders::{cr2::Cr2Format, cr3::Cr3Format, dng::DngFormat, iiq::IiqFormat, nef::NefFormat, pef::PefFormat, tfr::TfrFormat, RawDecodeParams, RawMetadata},
   formats::tiff::Rational,
   formats::tiff::SRational,
-  imgop::{convert_from_f32_scaled_u16, raw::develop_raw_srgb, Dim2, Rect},
+  imgop::{develop::RawDevelop, Rect},
   rawimage::{BlackLevel, WhiteLevel},
   RawFile, RawImage, RawImageData, RawlerError, Result,
 };
@@ -247,7 +247,7 @@ pub fn extract_thumbnail_pixels<P: AsRef<Path>>(path: P, _params: RawDecodeParam
   }
 }
 
-pub fn raw_to_srgb<P: AsRef<Path>>(path: P, params: RawDecodeParams) -> Result<(Vec<u16>, Dim2)> {
+pub fn raw_to_srgb<P: AsRef<Path>>(path: P, params: RawDecodeParams) -> Result<DynamicImage> {
   let mut raw_file = BufReader::new(File::open(&path).map_err(|e| RawlerError::with_io_error("load buffer", &path, e))?);
 
   // Read whole raw file
@@ -260,11 +260,9 @@ pub fn raw_to_srgb<P: AsRef<Path>>(path: P, params: RawDecodeParams) -> Result<(
   let decoder = crate::get_decoder(&mut rawfile)?;
   //decoder.decode_metadata(&mut rawfile)?;
   let rawimage = decoder.raw_image(&mut rawfile, params, false)?;
-  let params = rawimage.develop_params()?;
+  let dev = RawDevelop::default();
   assert_eq!(rawimage.cpp, 1);
-  let (srgbf, dim) = develop_raw_srgb(&rawimage.data, &params)?;
-  let output = convert_from_f32_scaled_u16(&srgbf, 0, u16::MAX);
-  Ok((output, dim))
+  Ok(dev.develop_intermediate(&rawimage)?.to_dynamic_image().unwrap())
 }
 
 /// Dump raw pixel data as PGM

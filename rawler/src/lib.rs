@@ -57,6 +57,7 @@
   clippy::only_used_in_recursion,
   //clippy::seek_from_current, // TODO
   clippy::needless_lifetimes,
+  clippy::type_complexity,
   //clippy::cast_abs_to_unsigned,
   //clippy::needless_return,
   //clippy::derivable_impls,

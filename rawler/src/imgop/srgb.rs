@@ -36,6 +36,11 @@ pub fn srgb_apply_gamma(v: f32) -> f32 {
   }
 }
 
+/// Apply sRGB gamma
+pub fn srgb_apply_gamma_n<const N: usize>(v: [f32; N]) -> [f32; N] {
+  v.map(srgb_apply_gamma)
+}
+
 /// Invert sRGB gamma correction
 pub fn srgb_invert_gamma(v: f32) -> f32 {
   if v <= SRGB_CROSSOVER_POINT * LINEAR_GAIN {

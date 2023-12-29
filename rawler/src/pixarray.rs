@@ -2,7 +2,7 @@ use std::cell::UnsafeCell;
 
 use rayon::prelude::*;
 
-use crate::imgop::{Dim2, Rect};
+use crate::imgop::{Dim2, Point, Rect};
 
 pub struct Pix2D<T> {
   pub width: usize,
@@ -12,6 +12,7 @@ pub struct Pix2D<T> {
 }
 
 pub type PixU16 = Pix2D<u16>;
+pub type PixF32 = Pix2D<f32>;
 
 impl<T> Pix2D<T>
 where
@@ -57,6 +58,10 @@ where
 
   pub fn dim(&self) -> Dim2 {
     Dim2::new(self.width, self.height)
+  }
+
+  pub fn rect(&self) -> Rect {
+    Rect::new(Point::default(), Dim2::new(self.width, self.height))
   }
 
   pub fn update_dimension(&mut self, dim: Dim2) {
@@ -251,6 +256,18 @@ where
     self.data
   }
 
+  pub fn dim(&self) -> Dim2 {
+    Dim2::new(self.width, self.height)
+  }
+
+  pub fn rect(&self) -> Rect {
+    Rect::new(Point::default(), Dim2::new(self.width, self.height))
+  }
+
+  pub fn flatten(&self) -> Vec<T> {
+    self.data.iter().flatten().copied().collect::<Vec<T>>()
+  }
+
   pub fn data_ptr(&self) -> Color2DPtr<T, N> {
     Color2DPtr::new(self)
   }
@@ -325,6 +342,8 @@ where
 
   pub fn crop(&self, area: Rect) -> Self {
     let mut output = Vec::with_capacity(area.d.h * area.d.w);
+    assert!(area.p.y + area.d.h <= self.height);
+    assert!(area.p.x + area.d.w <= self.width);
     output.extend(
       self
         .pixels()
