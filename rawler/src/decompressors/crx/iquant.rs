@@ -138,9 +138,23 @@ impl Tile {
 
     let mut q_steps = Vec::with_capacity(params.levels as usize);
 
+    // Lookup function into Q_STEP_TBL
     let q_lookup = |quant_val: i32| -> u32 {
+      //eprintln!("quant_val: {quant_val}");
       if quant_val / 6 >= 6 {
-        Q_STEP_TBL[quant_val as usize % 6] * (1 << (quant_val / 6 + 26))
+        // Original code uses obscure calculation:
+        //
+        //   Q_STEP_TBL[quant_val as usize % 6] * (1 << (quant_val as u32 / 6 + 26))
+        //
+        // But this branch is only selected when (quant_val / 6) is >= 6, so the bit shift count
+        // is always 6 + 26 = 32 or even higher!
+        // The shl operand is a 32 bit value, so maximum count for shift is 31. x86 processors do mask
+        // the shift count to 0x1F, so this calculation would lead to 0 - which produces
+        // artifacts in decompressed image.
+        //
+        // To fix these artifacts and shl overflow, we skip the multiplication
+        // and use wrapping_shl() which auto-apply bit masking.
+        Q_STEP_TBL[quant_val as usize % 6].wrapping_shl(quant_val as u32 / 6 + 26)
       } else {
         Q_STEP_TBL[quant_val as usize % 6] >> (6 - quant_val / 6)
       }
