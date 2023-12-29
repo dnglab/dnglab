@@ -6,7 +6,7 @@ use clap::ArgMatches;
 
 use image::DynamicImage;
 use itertools::Itertools;
-use rawler::decoders::RawDecodeParams;
+use rawler::decoders::{RawDecodeParams, RawMetadata};
 use rawler::dng::writer::DngWriter;
 use rawler::dng::{self, CropMode, DngCompression, DngPhotometricConversion, DNG_VERSION_V1_6};
 use rawler::exif::Exif;
@@ -182,7 +182,7 @@ pub async fn makedng(options: &ArgMatches) -> crate::Result<()> {
       let jfif = Jfif::new(&mut rawfile)?;
       if let Some(exif_ifd) = jfif.exif_ifd() {
         let exif = Exif::new(exif_ifd)?;
-        dng.load_exif(&exif)?;
+        RawMetadata::fill_exif_ifd(&exif, dng.exif_ifd_mut())?; // TODO: missing GPS and Root data
       }
     } else if let Ok(decoder) = get_decoder(&mut rawfile) {
       dng.load_metadata(&decoder.raw_metadata(&mut rawfile, RawDecodeParams::default())?)?;

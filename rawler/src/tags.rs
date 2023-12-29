@@ -75,6 +75,7 @@ pub enum TiffCommonTag {
   PanaOffsets = 0x0118,
   GrayResponse = 0x0123,
   Software = 0x0131,
+  Predictor = 0x013D,
   TileWidth = 0x0142,
   TileLength = 0x0143,
   TileOffsets = 0x0144,

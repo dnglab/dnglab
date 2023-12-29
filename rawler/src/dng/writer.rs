@@ -12,16 +12,15 @@ use rayon::prelude::*;
 use crate::{
   decoders::{Camera, RawMetadata},
   dng::rect_to_dng_area,
-  exif::Exif,
   formats::tiff::{
-    writer::{DirectoryWriter, TiffWriter},
+    writer::{transfer_entry, DirectoryWriter, TiffWriter},
     CompressionMethod, PhotometricInterpretation, PreviewColorSpace, Rational, TiffError, Value,
   },
   imgop::{Dim2, Point, Rect},
   ljpeg92::LjpegCompressor,
   pixarray::PixU16,
   rawimage::{BlackLevel, RawPhotometricInterpretation, WhiteLevel},
-  tags::{ExifGpsTag, ExifTag, TiffTag},
+  tags::ExifTag,
   tiles::ImageTiler,
   RawImage, RawImageData, CFA,
 };
@@ -356,9 +355,7 @@ where
     root_ifd.add_tag(DngTag::DNGBackwardVersion, backward_version);
     root_ifd.add_tag(DngTag::DNGVersion, DNG_VERSION_V1_6);
     // Add EXIF version 0220
-    exif_ifd
-      .add_tag_undefined(ExifTag::ExifVersion, vec![48, 50, 50, 48])
-      .expect("Failed to add EXIF version tag");
+    exif_ifd.add_tag_undefined(ExifTag::ExifVersion, vec![48, 50, 50, 48]);
 
     Ok(Self {
       dng,
@@ -387,80 +384,19 @@ where
   }
 
   pub fn load_metadata(&mut self, metadata: &RawMetadata) -> Result<()> {
-    self.fill_exif_root(&metadata.exif)?;
+    metadata.write_exif_tags(&mut self.dng, &mut self.root_ifd, &mut self.exif_ifd)?;
+
+    // DNG has a lens info tag that is identical to the LensSpec tag in EXIF IFD
+    transfer_entry(&mut self.root_ifd, DngTag::LensInfo, &metadata.exif.lens_spec)?;
 
     if let Some(id) = &metadata.unique_image_id {
       self.root_ifd.add_tag(DngTag::RawDataUniqueID, id.to_le_bytes());
     }
-    self.load_exif(&metadata.exif)?;
-    Ok(())
-  }
-
-  pub fn load_exif(&mut self, exif: &Exif) -> Result<()> {
-    fill_exif_ifd(&mut self.exif_ifd, exif)?;
     Ok(())
   }
 
   pub fn xpacket(&mut self, xpacket: impl AsRef<[u8]>) -> Result<()> {
     self.root_ifd.add_tag(ExifTag::ApplicationNotes, xpacket.as_ref());
-
-    Ok(())
-  }
-
-  fn fill_exif_root(&mut self, exif: &Exif) -> Result<()> {
-    transfer_entry(&mut self.root_ifd, ExifTag::Orientation, &exif.orientation)?;
-    transfer_entry(&mut self.root_ifd, ExifTag::ModifyDate, &exif.modify_date)?;
-    transfer_entry(&mut self.root_ifd, ExifTag::Copyright, &exif.copyright)?;
-    transfer_entry(&mut self.root_ifd, ExifTag::Artist, &exif.artist)?;
-
-    // DNG has a lens info tag that is identical to the LensSpec tag in EXIF IFD
-    transfer_entry(&mut self.root_ifd, DngTag::LensInfo, &exif.lens_spec)?;
-
-    if let Some(gps) = &exif.gps {
-      let gps_offset = {
-        let mut gps_ifd = DirectoryWriter::new();
-        transfer_entry(&mut gps_ifd, ExifGpsTag::GPSVersionID, &gps.gps_version_id)?;
-        transfer_entry(&mut gps_ifd, ExifGpsTag::GPSLatitudeRef, &gps.gps_latitude_ref)?;
-        transfer_entry(&mut gps_ifd, ExifGpsTag::GPSLatitude, &gps.gps_latitude)?;
-        transfer_entry(&mut gps_ifd, ExifGpsTag::GPSLongitudeRef, &gps.gps_longitude_ref)?;
-        transfer_entry(&mut gps_ifd, ExifGpsTag::GPSLongitude, &gps.gps_longitude)?;
-        transfer_entry(&mut gps_ifd, ExifGpsTag::GPSAltitudeRef, &gps.gps_altitude_ref)?;
-        transfer_entry(&mut gps_ifd, ExifGpsTag::GPSAltitude, &gps.gps_altitude)?;
-        transfer_entry(&mut gps_ifd, ExifGpsTag::GPSTimeStamp, &gps.gps_timestamp)?;
-        transfer_entry(&mut gps_ifd, ExifGpsTag::GPSSatellites, &gps.gps_satellites)?;
-        transfer_entry(&mut gps_ifd, ExifGpsTag::GPSStatus, &gps.gps_status)?;
-        transfer_entry(&mut gps_ifd, ExifGpsTag::GPSMeasureMode, &gps.gps_measure_mode)?;
-        transfer_entry(&mut gps_ifd, ExifGpsTag::GPSDOP, &gps.gps_dop)?;
-        transfer_entry(&mut gps_ifd, ExifGpsTag::GPSSpeedRef, &gps.gps_speed_ref)?;
-        transfer_entry(&mut gps_ifd, ExifGpsTag::GPSSpeed, &gps.gps_speed)?;
-        transfer_entry(&mut gps_ifd, ExifGpsTag::GPSTrackRef, &gps.gps_track_ref)?;
-        transfer_entry(&mut gps_ifd, ExifGpsTag::GPSTrack, &gps.gps_track)?;
-        transfer_entry(&mut gps_ifd, ExifGpsTag::GPSImgDirectionRef, &gps.gps_img_direction_ref)?;
-        transfer_entry(&mut gps_ifd, ExifGpsTag::GPSImgDirection, &gps.gps_img_direction)?;
-        transfer_entry(&mut gps_ifd, ExifGpsTag::GPSMapDatum, &gps.gps_map_datum)?;
-        transfer_entry(&mut gps_ifd, ExifGpsTag::GPSDestLatitudeRef, &gps.gps_dest_latitude_ref)?;
-        transfer_entry(&mut gps_ifd, ExifGpsTag::GPSDestLatitude, &gps.gps_dest_latitude)?;
-        transfer_entry(&mut gps_ifd, ExifGpsTag::GPSDestLongitudeRef, &gps.gps_dest_longitude_ref)?;
-        transfer_entry(&mut gps_ifd, ExifGpsTag::GPSDestLongitude, &gps.gps_dest_longitude)?;
-        transfer_entry(&mut gps_ifd, ExifGpsTag::GPSDestBearingRef, &gps.gps_dest_bearing_ref)?;
-        transfer_entry(&mut gps_ifd, ExifGpsTag::GPSDestBearing, &gps.gps_dest_bearing)?;
-        transfer_entry(&mut gps_ifd, ExifGpsTag::GPSDestDistanceRef, &gps.gps_dest_distance_ref)?;
-        transfer_entry(&mut gps_ifd, ExifGpsTag::GPSDestDistance, &gps.gps_dest_distance)?;
-        transfer_entry_undefined(&mut gps_ifd, ExifGpsTag::GPSProcessingMethod, &gps.gps_processing_method)?;
-        transfer_entry_undefined(&mut gps_ifd, ExifGpsTag::GPSAreaInformation, &gps.gps_area_information)?;
-        transfer_entry(&mut gps_ifd, ExifGpsTag::GPSDateStamp, &gps.gps_date_stamp)?;
-        transfer_entry(&mut gps_ifd, ExifGpsTag::GPSDifferential, &gps.gps_differential)?;
-        transfer_entry(&mut gps_ifd, ExifGpsTag::GPSHPositioningError, &gps.gps_h_positioning_error)?;
-        if gps_ifd.entry_count() > 0 {
-          Some(gps_ifd.build(&mut self.dng)?)
-        } else {
-          None
-        }
-      };
-      if let Some(gps_offset) = gps_offset {
-        self.root_ifd.add_tag(ExifTag::GPSInfo, [gps_offset]);
-      }
-    }
 
     Ok(())
   }
@@ -492,7 +428,7 @@ where
     let mut buf = std::io::Cursor::new(Vec::new());
     original.write_to_stream(&mut buf)?;
 
-    self.root_ifd.add_tag_undefined(DngTag::OriginalRawFileData, buf.into_inner())?;
+    self.root_ifd.add_tag_undefined(DngTag::OriginalRawFileData, buf.into_inner());
     self.root_ifd.add_tag(DngTag::OriginalRawFileName, filename.as_ref());
     if let Some(digest) = original.digest() {
       self.root_ifd.add_tag(DngTag::OriginalRawFileDigest, digest);
@@ -534,6 +470,14 @@ where
 
   pub fn root_ifd_mut(&mut self) -> &mut DirectoryWriter {
     &mut self.root_ifd
+  }
+
+  pub fn exif_ifd(&mut self) -> &DirectoryWriter {
+    &self.exif_ifd
+  }
+
+  pub fn exif_ifd_mut(&mut self) -> &mut DirectoryWriter {
+    &mut self.exif_ifd
   }
 }
 
@@ -710,70 +654,6 @@ where
   raw_ifd.add_tag(TiffCommonTag::StripOffsets, &strip_offsets);
   raw_ifd.add_tag(TiffCommonTag::StripByteCounts, &strip_sizes);
   raw_ifd.add_tag(TiffCommonTag::RowsPerStrip, &strip_rows);
-
-  Ok(())
-}
-
-fn transfer_entry<T, V>(raw_ifd: &mut DirectoryWriter, tag: T, entry: &Option<V>) -> Result<()>
-where
-  T: TiffTag,
-  V: Into<Value> + Clone,
-{
-  if let Some(entry) = entry {
-    raw_ifd.add_tag(tag, entry.clone());
-  }
-  Ok(())
-}
-
-fn transfer_entry_undefined<T>(raw_ifd: &mut DirectoryWriter, tag: T, entry: &Option<Vec<u8>>) -> Result<()>
-where
-  T: TiffTag,
-{
-  if let Some(entry) = entry {
-    raw_ifd.add_tag_undefined(tag, entry.clone())?;
-  }
-  Ok(())
-}
-
-fn fill_exif_ifd(exif_ifd: &mut DirectoryWriter, exif: &Exif) -> Result<()> {
-  transfer_entry(exif_ifd, ExifTag::FNumber, &exif.fnumber)?;
-  transfer_entry(exif_ifd, ExifTag::ApertureValue, &exif.aperture_value)?;
-  transfer_entry(exif_ifd, ExifTag::BrightnessValue, &exif.brightness_value)?;
-  transfer_entry(exif_ifd, ExifTag::RecommendedExposureIndex, &exif.recommended_exposure_index)?;
-  transfer_entry(exif_ifd, ExifTag::ExposureTime, &exif.exposure_time)?;
-  transfer_entry(exif_ifd, ExifTag::ISOSpeedRatings, &exif.iso_speed_ratings)?;
-  transfer_entry(exif_ifd, ExifTag::ISOSpeed, &exif.iso_speed)?;
-  transfer_entry(exif_ifd, ExifTag::SensitivityType, &exif.sensitivity_type)?;
-  transfer_entry(exif_ifd, ExifTag::ExposureProgram, &exif.exposure_program)?;
-  transfer_entry(exif_ifd, ExifTag::TimeZoneOffset, &exif.timezone_offset)?;
-  transfer_entry(exif_ifd, ExifTag::DateTimeOriginal, &exif.date_time_original)?;
-  transfer_entry(exif_ifd, ExifTag::CreateDate, &exif.create_date)?;
-  transfer_entry(exif_ifd, ExifTag::OffsetTime, &exif.offset_time)?;
-  transfer_entry(exif_ifd, ExifTag::OffsetTimeOriginal, &exif.offset_time_original)?;
-  transfer_entry(exif_ifd, ExifTag::OffsetTimeDigitized, &exif.offset_time_digitized)?;
-  transfer_entry(exif_ifd, ExifTag::SubSecTime, &exif.sub_sec_time)?;
-  transfer_entry(exif_ifd, ExifTag::SubSecTimeOriginal, &exif.sub_sec_time_original)?;
-  transfer_entry(exif_ifd, ExifTag::SubSecTimeDigitized, &exif.sub_sec_time_digitized)?;
-  transfer_entry(exif_ifd, ExifTag::ShutterSpeedValue, &exif.shutter_speed_value)?;
-  transfer_entry(exif_ifd, ExifTag::MaxApertureValue, &exif.max_aperture_value)?;
-  transfer_entry(exif_ifd, ExifTag::SubjectDistance, &exif.subject_distance)?;
-  transfer_entry(exif_ifd, ExifTag::MeteringMode, &exif.metering_mode)?;
-  transfer_entry(exif_ifd, ExifTag::LightSource, &exif.light_source)?;
-  transfer_entry(exif_ifd, ExifTag::Flash, &exif.flash)?;
-  transfer_entry(exif_ifd, ExifTag::FocalLength, &exif.focal_length)?;
-  transfer_entry(exif_ifd, ExifTag::ImageNumber, &exif.image_number)?;
-  transfer_entry(exif_ifd, ExifTag::ColorSpace, &exif.color_space)?;
-  transfer_entry(exif_ifd, ExifTag::FlashEnergy, &exif.flash_energy)?;
-  transfer_entry(exif_ifd, ExifTag::ExposureMode, &exif.exposure_mode)?;
-  transfer_entry(exif_ifd, ExifTag::WhiteBalance, &exif.white_balance)?;
-  transfer_entry(exif_ifd, ExifTag::SceneCaptureType, &exif.scene_capture_type)?;
-  transfer_entry(exif_ifd, ExifTag::SubjectDistanceRange, &exif.subject_distance_range)?;
-  transfer_entry(exif_ifd, ExifTag::OwnerName, &exif.owner_name)?;
-  transfer_entry(exif_ifd, ExifTag::SerialNumber, &exif.serial_number)?;
-  transfer_entry(exif_ifd, ExifTag::LensSerialNumber, &exif.lens_serial_number)?;
-  transfer_entry(exif_ifd, ExifTag::LensSpecification, &exif.lens_spec)?;
-  transfer_entry(exif_ifd, ExifTag::LensMake, &exif.lens_make)?;
-  transfer_entry(exif_ifd, ExifTag::LensModel, &exif.lens_model)?;
 
   Ok(())
 }

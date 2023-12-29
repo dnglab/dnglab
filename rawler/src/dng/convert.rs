@@ -6,12 +6,12 @@ use std::{
   thread::JoinHandle,
 };
 
-use image::{DynamicImage, ImageBuffer};
+use image::DynamicImage;
 
 use crate::{
   decoders::{Decoder, RawDecodeParams},
   dng::{original::OriginalCompressed, writer::DngWriter, DNG_VERSION_V1_4, PREVIEW_JPEG_QUALITY},
-  imgop::{convert_from_f32_scaled_u16, raw::develop_raw_srgb},
+  imgop::develop::RawDevelop,
   tags::{ExifTag, TiffCommonTag},
   RawFile, RawImage,
 };
@@ -174,6 +174,9 @@ fn generate_preview(rawfile: &mut RawFile, decoder: &dyn Decoder, rawimage: &Raw
     Some(image) => Ok(image),
     None => {
       log::warn!("Preview image not found, try to generate sRGB from RAW");
+      let dev = RawDevelop::default();
+      let image = dev.develop_intermediate(rawimage)?;
+      /*
       let params = rawimage.develop_params()?;
       let (srgbf, dim) = develop_raw_srgb(&rawimage.data, &params)?;
       let output = convert_from_f32_scaled_u16(&srgbf, 0, u16::MAX);
@@ -182,7 +185,8 @@ fn generate_preview(rawfile: &mut RawFile, decoder: &dyn Decoder, rawimage: &Raw
       } else {
         DynamicImage::ImageRgb16(ImageBuffer::from_raw(dim.w as u32, dim.h as u32, output).expect("Invalid ImageBuffer size"))
       };
-      Ok(image)
+       */
+      Ok(image.to_dynamic_image().unwrap())
     }
   }
 }

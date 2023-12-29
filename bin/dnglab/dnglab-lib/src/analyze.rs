@@ -61,8 +61,9 @@ pub async fn analyze(options: &ArgMatches) -> crate::Result<()> {
     let rgb = full.into_rgb8();
     dump_rgb8_ppm8(rgb.width() as usize, rgb.height() as usize, rgb.as_flat_samples().samples)?;
   } else if options.get_flag("srgb") {
-    let (buf, dim) = raw_to_srgb(PathBuf::from(in_file), RawDecodeParams::default()).unwrap();
-    dump_ppm16(dim.w, dim.h, &buf)?;
+    // TODO: only RGB output is supported
+    let image = raw_to_srgb(PathBuf::from(in_file), RawDecodeParams::default()).unwrap();
+    dump_ppm16(image.width() as usize, image.height() as usize, image.as_flat_samples_u16().unwrap().samples)?;
   }
   Ok(())
 }
