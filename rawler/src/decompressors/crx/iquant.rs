@@ -171,8 +171,13 @@ impl Tile {
             let mut row2_idx = qp_width * std::cmp::min(4 * qp_row + 2, qp_height - 1);
             let mut row3_idx = qp_width * std::cmp::min(4 * qp_row + 3, qp_height - 1);
             for _qp_col in 0..qp_width {
-              let mut quant_val = qp_table[row0_idx] + qp_table[row1_idx] + qp_table[row2_idx] + qp_table[row3_idx];
-              quant_val = ((quant_val.is_negative() as i32) * 3 + quant_val) >> 2;
+              let qp_sum = qp_table[row0_idx] + qp_table[row1_idx] + qp_table[row2_idx] + qp_table[row3_idx];
+              let quant_val = if qp_sum.is_negative() {
+                (qp_sum + 3) / 4 // Round?
+              } else {
+                qp_sum / 4
+              };
+
               let x = q_lookup(quant_val);
               //eprintln!("QSTEP 8: {:?}", x);
               q_step.q_step_tbl.push(x);
