@@ -1,0 +1,114 @@
+---
+file:
+  fileSize: 73400320
+  fileName: ILCE-7CM2_ISO_100_14bits_Uncompressed RAW.ARW
+  digest: fb65c0d105456a42933b76b8532b70f8
+data:
+  metadata:
+    rawParams:
+      rawWidth: 7040
+      rawHeight: 4688
+      bitDepth: 16
+      cropArea:
+        p:
+          x: 12
+          y: 8
+        d:
+          w: 7008
+          h: 4672
+      activeArea:
+        p:
+          x: 0
+          y: 0
+        d:
+          w: 7040
+          h: 4688
+      blacklevels:
+        levels:
+          - 512/1
+          - 512/1
+          - 512/1
+          - 512/1
+        cpp: 1
+        width: 2
+        height: 2
+      whitelevels:
+        - 15360
+      wbCoeffs:
+        - 2.3164062
+        - 1.0
+        - 1.6513672
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ~
+        artist: ~
+        lens_spec:
+          - 24/1
+          - 70/1
+          - 4/1
+          - 4/1
+        exposure_time: 1/100
+        fnumber: 71/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 100
+        iso_speed: ~
+        recommended_exposure_index: 100
+        sensitivity_type: 2
+        exposure_bias: 0/10
+        date_time_original: "2023:10:02 18:18:37"
+        create_date: "2023:10:02 18:18:37"
+        modify_date: "2023:10:02 18:18:37"
+        exposure_program: 2
+        timezone_offset: ~
+        offset_time: "+02:00"
+        offset_time_original: "+02:00"
+        offset_time_digitized: "+02:00"
+        sub_sec_time: "146"
+        sub_sec_time_original: "146"
+        sub_sec_time_digitized: "146"
+        shutter_speed_value: ~
+        max_aperture_value: 1024/256
+        subject_distance: ~
+        metering_mode: 5
+        light_source: 0
+        flash: 16
+        focal_length: 240/10
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: Sony
+        lens_model: FE 24-70mm F4 ZA OSS
+        gps: ~
+      model: ILCE-7CM2
+      make: Sony
+      lens:
+        identifiers:
+          name: ~
+          id:
+            - 32795
+            - 0
+          nikon_id: ~
+          olympus_id: ~
+        mount: e-mount
+        lens_make: Sony
+        lens_model: FE 24-70mm F4 ZA OSS
+        focal_range:
+          - 24/1
+          - 70/1
+        aperture_range:
+          - 4/1
+          - 4/1
+        lens_name: Sony FE 24-70mm F4 ZA OSS
+      unique_image_id: ~
+      rating: ~
+
