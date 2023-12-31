@@ -1276,6 +1276,13 @@ mod camera_ilce_7c_raw_modes {
   super::camera_file_check!("Sony", "ILCE-7C", cam_ilce_7c_iso_12800_14bits_uncompressed_raw_arw, "raw_modes/ILCE-7C_ISO_12800_14bits_Uncompressed RAW.ARW");
   super::camera_file_check!("Sony", "ILCE-7C", cam_ilce_7c_iso_2000_14bits_compressed_raw_arw, "raw_modes/ILCE-7C_ISO_2000_14bits_Compressed RAW.ARW");
 }
+mod camera_ilce_7cm2_raw_modes {
+  super::camera_file_check!("Sony", "ILCE-7CM2", cam_ilce_7cm2_iso_100_14bits_jpeg_arw, "raw_modes/ILCE-7CM2_ISO_100_14bits_JPEG.ARW");
+  super::camera_file_check!("Sony", "ILCE-7CM2", cam_ilce_7cm2_iso_100_14bits_uncompressed_arw, "raw_modes/ILCE-7CM2_ISO_100_14bits_Uncompressed.ARW");
+  super::camera_file_check!("Sony", "ILCE-7CM2", cam_ilce_7cm2_iso_100_14bits_sony_arw_compressed_arw, "raw_modes/ILCE-7CM2_ISO_100_14bits_Sony ARW Compressed.ARW");
+  super::camera_file_check!("Sony", "ILCE-7CM2", cam_ilce_7cm2_iso_100_14bits_uncompressed_raw_arw, "raw_modes/ILCE-7CM2_ISO_100_14bits_Uncompressed RAW.ARW");
+  super::camera_file_check!("Sony", "ILCE-7CM2", cam_ilce_7cm2_iso_100_14bits_compressed_raw_arw, "raw_modes/ILCE-7CM2_ISO_100_14bits_Compressed RAW.ARW");
+}
 mod camera_ilce_7m2_raw_modes {
   super::camera_file_check!("Sony", "ILCE-7M2", cam_ilce_7m2_iso_100_14bits_uncompressed_arw, "raw_modes/ILCE-7M2_ISO_100_14bits_Uncompressed.ARW");
   super::camera_file_check!("Sony", "ILCE-7M2", cam_ilce_7m2_iso_100_14bits_sony_arw_compressed_arw, "raw_modes/ILCE-7M2_ISO_100_14bits_Sony ARW Compressed.ARW");

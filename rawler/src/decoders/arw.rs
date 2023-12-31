@@ -682,7 +682,7 @@ impl<'a> ArwDecoder<'a> {
 }
 
 fn normalize_wb(raw_wb: [f32; 4]) -> [f32; 4] {
-  debug!("CR2 raw wb: {:?}", raw_wb);
+  debug!("ARW raw wb: {:?}", raw_wb);
   // We never have more then RGB colors so far (no RGBE etc.)
   // So we combine G1 and G2 to get RGB wb.
   let div = raw_wb[1]; // G1 should be 1024 and we use this as divisor
