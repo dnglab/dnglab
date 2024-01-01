@@ -1,0 +1,115 @@
+---
+file:
+  fileSize: 48979968
+  fileName: ILCE-7CR_Fullframe_M_ISO_125_15bits_JPEG.ARW
+  digest: 2c861eb1fd08e376a2bb1367ac6c06a2
+data:
+  metadata:
+    rawParams:
+      rawWidth: 6656
+      rawHeight: 4608
+      bitDepth: 16
+      cropArea:
+        p:
+          x: 20
+          y: 12
+        d:
+          w: 6240
+          h: 4160
+      activeArea:
+        p:
+          x: 0
+          y: 0
+        d:
+          w: 6656
+          h: 4608
+      blacklevels:
+        levels:
+          - 2048/1
+          - 2048/1
+          - 2048/1
+        cpp: 3
+        width: 1
+        height: 1
+      whitelevels:
+        - 15360
+        - 15360
+        - 15360
+      wbCoeffs:
+        - 1.0
+        - 1.0
+        - 1.0
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: CCO
+        artist: Alexandre De Melas
+        lens_spec:
+          - 24/1
+          - 70/1
+          - 28/10
+          - 28/10
+        exposure_time: 1/100
+        fnumber: 50/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 125
+        iso_speed: ~
+        recommended_exposure_index: 125
+        sensitivity_type: 2
+        exposure_bias: 0/10
+        date_time_original: "2023:11:28 11:10:32"
+        create_date: "2023:11:28 11:10:32"
+        modify_date: "2023:11:28 11:10:32"
+        exposure_program: 1
+        timezone_offset: ~
+        offset_time: "+01:00"
+        offset_time_original: "+01:00"
+        offset_time_digitized: "+01:00"
+        sub_sec_time: "904"
+        sub_sec_time_original: "904"
+        sub_sec_time_digitized: "904"
+        shutter_speed_value: ~
+        max_aperture_value: 760/256
+        subject_distance: ~
+        metering_mode: 5
+        light_source: 0
+        flash: 16
+        focal_length: 495/10
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 1
+        white_balance: 1
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: Sigma
+        lens_model: 24-70mm F2.8 DG DN | A
+        gps: ~
+      model: ILCE-7CR
+      make: Sony
+      lens:
+        identifiers:
+          name: ~
+          id:
+            - 50517
+            - 0
+          nikon_id: ~
+          olympus_id: ~
+        mount: e-mount
+        lens_make: Sigma
+        lens_model: 24-70mm F2.8 DG DN | A
+        focal_range:
+          - 24/1
+          - 70/1
+        aperture_range:
+          - 28/10
+          - 28/10
+        lens_name: Sigma 24-70mm F2.8 DG DN | A
+      unique_image_id: ~
+      rating: ~
+

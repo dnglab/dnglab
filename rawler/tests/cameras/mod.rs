@@ -1272,6 +1272,17 @@ mod camera_ilce_6700_raw_modes {
   super::camera_file_check!("Sony", "ILCE-6700", cam_ilce_6700_iso_100_14bits_lossless_compressed_arw, "raw_modes/ILCE-6700_ISO_100_14bits_Lossless_Compressed.ARW");
   super::camera_file_check!("Sony", "ILCE-6700", cam_ilce_6700_iso_100_12bits_compressed_arw, "raw_modes/ILCE-6700_ISO_100_12bits_Compressed.ARW");
 }
+mod camera_ilce_7cr_raw_modes {
+  super::camera_file_check!("Sony", "ILCE-7CR", cam_ilce_7cr_apsc_s_iso_125_15bits_jpeg_arw, "raw_modes/ILCE-7CR_APSC_S_ISO_125_15bits_JPEG.ARW");
+  super::camera_file_check!("Sony", "ILCE-7CR", cam_ilce_7cr_fullframe_m_iso_125_15bits_jpeg_arw, "raw_modes/ILCE-7CR_Fullframe_M_ISO_125_15bits_JPEG.ARW");
+  super::camera_file_check!("Sony", "ILCE-7CR", cam_ilce_7cr_fullframe_iso_125_14bits_uncompressed_arw, "raw_modes/ILCE-7CR_Fullframe_ISO_125_14bits_Uncompressed.ARW");
+  super::camera_file_check!("Sony", "ILCE-7CR", cam_ilce_7cr_apsc_iso_125_14bits_sony_arw_compressed_arw, "raw_modes/ILCE-7CR_APSC_ISO_125_14bits_Sony ARW Compressed.ARW");
+  super::camera_file_check!("Sony", "ILCE-7CR", cam_ilce_7cr_apsc_iso_125_14bits_uncompressed_arw, "raw_modes/ILCE-7CR_APSC_ISO_125_14bits_Uncompressed.ARW");
+  super::camera_file_check!("Sony", "ILCE-7CR", cam_ilce_7cr_fullframe_l_iso_125_14bits_jpeg_arw, "raw_modes/ILCE-7CR_Fullframe_L_ISO_125_14bits_JPEG.ARW");
+  super::camera_file_check!("Sony", "ILCE-7CR", cam_ilce_7cr_apsc_m_iso_125_14bits_jpeg_arw, "raw_modes/ILCE-7CR_APSC_M_ISO_125_14bits_JPEG.ARW");
+  super::camera_file_check!("Sony", "ILCE-7CR", cam_ilce_7cr_fullframe_iso_125_14bits_sony_arw_compressed_arw, "raw_modes/ILCE-7CR_Fullframe_ISO_125_14bits_Sony ARW Compressed.ARW");
+  super::camera_file_check!("Sony", "ILCE-7CR", cam_ilce_7cr_fullframe_s_iso_125_15bits_jpeg_arw, "raw_modes/ILCE-7CR_Fullframe_S_ISO_125_15bits_JPEG.ARW");
+}
 mod camera_ilce_7c_raw_modes {
   super::camera_file_check!("Sony", "ILCE-7C", cam_ilce_7c_iso_12800_14bits_uncompressed_raw_arw, "raw_modes/ILCE-7C_ISO_12800_14bits_Uncompressed RAW.ARW");
   super::camera_file_check!("Sony", "ILCE-7C", cam_ilce_7c_iso_2000_14bits_compressed_raw_arw, "raw_modes/ILCE-7C_ISO_2000_14bits_Compressed RAW.ARW");
