@@ -23,3 +23,22 @@ fn dnglab_366_monochrome_dng_support() -> std::result::Result<(), Box<dyn std::e
   convert_raw_file(&path, &mut dng, &ConvertParams::default())?;
   Ok(())
 }
+
+#[test]
+fn dnglab_376_canon_crx_craw_qstep_shl_bug() -> std::result::Result<(), Box<dyn std::error::Error>> {
+  {
+    let path = rawdb_file("issues/dnglab_376/Canon_EOS_R6M2_CRAW_ISO_25600.CR3");
+    let digest = raw_pixels_digest(&path, RawDecodeParams::default())?;
+    check_md5_equal(digest, "66c9fcb6541c90bdfb06d876be5984ec");
+    let mut dng = Cursor::new(Vec::new());
+    convert_raw_file(&path, &mut dng, &ConvertParams::default())?;
+  }
+  {
+    let path = rawdb_file("issues/dnglab_376/_MGC9382.CR3");
+    let digest = raw_pixels_digest(&path, RawDecodeParams::default())?;
+    check_md5_equal(digest, "aef96546a58e5265fb2f7b9e7498cbd0");
+    let mut dng = Cursor::new(Vec::new());
+    convert_raw_file(&path, &mut dng, &ConvertParams::default())?;
+  }
+  Ok(())
+}
