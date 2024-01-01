@@ -336,6 +336,7 @@ cameras/Sony/ILCE-6400/raw_modes
 cameras/Sony/ILCE-6500/raw_modes
 cameras/Sony/ILCE-6600/raw_modes
 cameras/Sony/ILCE-6700/raw_modes
+cameras/Sony/ILCE-7CR/raw_modes
 cameras/Sony/ILCE-7C/raw_modes
 cameras/Sony/ILCE-7CM2/raw_modes
 cameras/Sony/ILCE-7M2/raw_modes
