@@ -628,9 +628,6 @@ impl<'a> LjpegCompressor<'a> {
   }
 
   /// Scan frequency for Huff table
-  #[multiversion]
-  #[clone(target = "[x86|x86_64]+avx+avx2")]
-  #[clone(target = "x86+sse")]
   fn scan_frequency(&mut self) -> Result<()> {
     let mut cache = vec![0; self.resolution() * self.components];
 
@@ -811,10 +808,7 @@ impl<'a> LjpegCompressor<'a> {
 /// value. This function is optimized for one and two component input
 /// as this the case for most image data.
 /// `linesize` is the count of values including padding data at the end
-#[multiversion]
-#[clone(target = "x86+sse")]
-#[clone(target = "[x86|x86_64]+avx+avx2")]
-#[clone(target = "[x86|x86_64]+avx+avx2+fma+bmi1+bmi2")]
+#[multiversion(targets("x86_64+avx+avx2+fma+bmi1+bmi2", "x86_64+avx+avx2", "x86+sse", "aarch64+neon"))]
 //#[clone(target = "[x86|x86_64]+avx+avx2+fma+bmi1+bmi2+avx512f+avx512bw")]
 fn ljpeg92_diff<const NCOMP: usize, const PX: u8>(
   row_prev: &[u16],    // Previous row (for index 0 it's the same reference as row_curr)

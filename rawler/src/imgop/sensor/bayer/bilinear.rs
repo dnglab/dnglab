@@ -21,15 +21,13 @@ impl Bilinear4Channel {
 impl Demosaic<f32, 4> for Bilinear4Channel {
   /// Debayer image by using bilinear method.
   fn demosaic(&self, pixels: &[f32], dim: Dim2, cfa: &CFA, colors: &PlaneColor, roi: Rect) -> Color2D<f32, 4> {
-    self.demosaic_4ch(pixels, dim, cfa, colors, roi)
+    Self::demosaic_4ch(pixels, dim, cfa, colors, roi)
   }
 }
 
 impl Bilinear4Channel {
-  #[multiversion]
-  #[clone(target = "[x86|x86_64]+avx+avx2")]
-  #[clone(target = "x86+sse")]
-  fn demosaic_4ch(&self, pixels: &[f32], dim: Dim2, cfa: &CFA, colors: &PlaneColor, roi: Rect) -> Color2D<f32, 4> {
+  #[multiversion(targets("x86_64+avx+avx2", "x86+sse", "aarch64+neon"))]
+  fn demosaic_4ch(pixels: &[f32], dim: Dim2, cfa: &CFA, colors: &PlaneColor, roi: Rect) -> Color2D<f32, 4> {
     if colors.plane_count() != 4 {
       panic!("Demosaic for 4 channels needs 4 color planes, but {} given", colors.plane_count());
     }
