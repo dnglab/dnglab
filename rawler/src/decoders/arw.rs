@@ -356,11 +356,11 @@ impl<'a> ArwDecoder<'a> {
       // Replicate the dcraw contortions to get the "decryption" key
       let offset = (buffer[key_off] as usize) * 4;
       let first_key = BEu32(&buffer, key_off + offset);
-      let head = ArwDecoder::sony_decrypt(&buffer, head_off, 40, first_key);
+      let head = ArwDecoder::sony_decrypt(&buffer, head_off, 40, first_key)?;
       let second_key = LEu32(&head, 22);
 
       // "Decrypt" the whole image buffer
-      let image_data = ArwDecoder::sony_decrypt(&buffer, off, len, second_key);
+      let image_data = ArwDecoder::sony_decrypt(&buffer, off, len, second_key)?;
       decode_16be(&image_data, width, height, dummy)
     };
     let cpp = 1;
@@ -565,9 +565,9 @@ impl<'a> ArwDecoder<'a> {
       LEu32(tag, 0)
     };
     let buffer = file.as_vec().unwrap();
-    let decrypted_buf = ArwDecoder::sony_decrypt(&buffer, sony_offset as usize, sony_length, sony_key);
+    let decrypted_buf = ArwDecoder::sony_decrypt(&buffer, sony_offset as usize, sony_length, sony_key)?;
 
-    let decrypted_tiff = IFD::new(&mut Cursor::new(decrypted_buf), 0, 0, -(sony_offset as i32), Endian::Little, &[]).unwrap();
+    let decrypted_tiff = IFD::new(&mut Cursor::new(decrypted_buf), 0, 0, -(sony_offset as i32), Endian::Little, &[])?;
 
     let wb = self.get_wb(&decrypted_tiff)?;
 
@@ -650,7 +650,10 @@ impl<'a> ArwDecoder<'a> {
     LookupTable::new(&out)
   }
 
-  pub(crate) fn sony_decrypt(buf: &[u8], offset: usize, length: usize, key: u32) -> Vec<u8> {
+  pub(crate) fn sony_decrypt(buf: &[u8], offset: usize, length: usize, key: u32) -> crate::Result<Vec<u8>> {
+    if buf.len() < offset + 4 * (length / 4) {
+      return Err(RawlerError::DecoderFailed("sony_decrypt() failed: buffer to short".into()));
+    }
     let mut pad: [u32; 128] = [0_u32; 128];
     let mut mkey = key;
     // Initialize the decryption pad from the key
@@ -677,7 +680,7 @@ impl<'a> ArwDecoder<'a> {
       out.push(((output >> 16) & 0xff) as u8);
       out.push(((output >> 24) & 0xff) as u8);
     }
-    out
+    Ok(out)
   }
 }
 

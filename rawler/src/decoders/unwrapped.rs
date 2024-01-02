@@ -76,7 +76,7 @@ pub fn decode_unwrapped(file: &mut RawFile) -> Result<RawImageData> {
         panic!("Trying an SRF style image that's too big");
       }
 
-      let image_data = arw::ArwDecoder::sony_decrypt(data, 0, length, key);
+      let image_data = arw::ArwDecoder::sony_decrypt(data, 0, length, key)?;
       Ok(RawImageData::Integer(decode_16be(&image_data, width, height, false).into_inner()))
     }
     24 => Ok(RawImageData::Integer(
