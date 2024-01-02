@@ -263,9 +263,7 @@ pub fn rescale_f32_to_u8(input: &[f32], black: u8, white: u8) -> Vec<u8> {
 }
  */
 
-#[multiversion]
-#[clone(target = "[x86|x86_64]+avx+avx2")]
-#[clone(target = "x86+sse")]
+#[multiversion(targets("x86_64+avx+avx2", "x86+sse", "aarch64+neon"))]
 pub fn convert_to_f32_unscaled<T>(pix: &[T]) -> Vec<f32>
 where
   T: Copy,
@@ -274,9 +272,7 @@ where
   pix.iter().copied().map(f32::from).collect()
 }
 
-#[multiversion]
-#[clone(target = "[x86|x86_64]+avx+avx2")]
-#[clone(target = "x86+sse")]
+#[multiversion(targets("x86_64+avx+avx2", "x86+sse", "aarch64+neon"))]
 pub fn convert_to_f32_scaled<T>(pix: &[T], black: T, white: T) -> Vec<f32>
 where
   T: Copy + Eq + PartialEq + Default + std::ops::Sub<T, Output = T>,
@@ -295,17 +291,13 @@ where
   }
 }
 
-#[multiversion]
-#[clone(target = "[x86|x86_64]+avx+avx2")]
-#[clone(target = "x86+sse")]
+#[multiversion(targets("x86_64+avx+avx2", "x86+sse", "aarch64+neon"))]
 pub fn convert_from_f32_unscaled_u16(pix: &[f32]) -> Vec<u16> {
   pix.iter().copied().map(|x| x as u16).collect()
 }
 
 /// Rescale to u8 value
-#[multiversion]
-#[clone(target = "[x86|x86_64]+avx+avx2")]
-#[clone(target = "x86+sse")]
+#[multiversion(targets("x86_64+avx+avx2", "x86+sse", "aarch64+neon"))]
 pub fn convert_from_f32_scaled_u16(input: &[f32], black: u16, white: u16) -> Vec<u16> {
   if black == u16::default() {
     input.iter().map(|p| ((p * f32::from(white)) as u16)).collect()

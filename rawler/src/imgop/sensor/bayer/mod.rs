@@ -21,9 +21,7 @@ pub trait Demosaic<T, const N: usize> {
 /// Extend a single pixel component from bayer pattern to RGB
 ///
 /// The other channels (missing colors) are set to 0.0.
-#[multiversion]
-#[clone(target = "[x86|x86_64]+avx+avx2")]
-#[clone(target = "x86+sse")]
+#[multiversion(targets("x86_64+avx+avx2", "x86+sse", "aarch64+neon"))]
 fn expand_bayer_rgb(raw: &[f32], dim: Dim2, cfa: &CFA, roi: Rect) -> RgbF32 {
   // The ROI changes the pattern if not perfectly aligned on the origin pattern
   let cfa_roi = cfa.shift(roi.x(), roi.y());

@@ -90,9 +90,7 @@ pub fn clip_euclidean_norm_avg<const N: usize>(pix: &[f32; N]) -> [f32; N] {
 ///
 /// This version is optimized vor vectorization, so please check
 /// modifications on godbolt before committing.
-#[multiversion]
-#[clone(target = "[x86|x86_64]+avx+avx2")]
-#[clone(target = "x86+sse")]
+#[multiversion(targets("x86_64+avx+avx2", "x86+sse", "aarch64+neon"))]
 fn correct_blacklevel_channels<const CH: usize>(raw: &mut [f32], blacklevel: &[f32; CH], whitelevel: &[f32; CH]) {
   // max value can be pre-computed for all channels.
   let mut max = *whitelevel;
@@ -124,9 +122,7 @@ fn correct_blacklevel_channels<const CH: usize>(raw: &mut [f32], blacklevel: &[f
 ///
 /// This version is optimized vor vectorization, so please check
 /// modifications on godbolt before committing.
-#[multiversion]
-#[clone(target = "[x86|x86_64]+avx+avx2")]
-#[clone(target = "x86+sse")]
+#[multiversion(targets("x86_64+avx+avx2", "x86+sse", "aarch64+neon"))]
 pub fn correct_blacklevel(raw: &mut [f32], blacklevel: &[f32], whitelevel: &[f32]) {
   match (blacklevel.len(), whitelevel.len()) {
     (1, 1) => correct_blacklevel_channels::<1>(
@@ -169,9 +165,7 @@ pub fn correct_blacklevel(raw: &mut [f32], blacklevel: &[f32], whitelevel: &[f32
 ///
 /// This version is optimized vor vectorization, so please check
 /// modifications on godbolt before committing.
-#[multiversion]
-#[clone(target = "[x86|x86_64]+avx+avx2")]
-#[clone(target = "x86+sse")]
+#[multiversion(targets("x86_64+avx+avx2", "x86+sse", "aarch64+neon"))]
 pub fn correct_blacklevel_cfa(raw: &mut [f32], width: usize, _height: usize, blacklevel: &[f32; 4], whitelevel: &[f32; 4]) {
   //assert_eq!(width % 2, 0, "width is {}", width);
   //assert_eq!(height % 2, 0, "height is {}", height);
@@ -203,9 +197,7 @@ pub fn correct_blacklevel_cfa(raw: &mut [f32], width: usize, _height: usize, bla
   });
 }
 
-#[multiversion]
-#[clone(target = "[x86|x86_64]+avx+avx2")]
-#[clone(target = "x86+sse")]
+#[multiversion(targets("x86_64+avx+avx2", "x86+sse", "aarch64+neon"))]
 pub(crate) fn map_3ch_to_rgb(src: &Color2D<f32, 3>, wb_coeff: &[f32; 4], xyz2cam: [[f32; 3]; 4]) -> RgbF32 {
   let rgb2cam = normalize(multiply(&xyz2cam, &SRGB_TO_XYZ_D65));
   let cam2rgb = pseudo_inverse(rgb2cam);
@@ -232,9 +224,7 @@ pub(crate) fn map_3ch_to_rgb(src: &Color2D<f32, 3>, wb_coeff: &[f32; 4], xyz2cam
   RgbF32::new_with(out, src.width, src.height)
 }
 
-#[multiversion]
-#[clone(target = "[x86|x86_64]+avx+avx2")]
-#[clone(target = "x86+sse")]
+#[multiversion(targets("x86_64+avx+avx2", "x86+sse", "aarch64+neon"))]
 pub(crate) fn map_4ch_to_rgb(src: &Color2D<f32, 4>, wb_coeff: &[f32; 4], xyz2cam: [[f32; 3]; 4]) -> RgbF32 {
   let rgb2cam = normalize(multiply(&xyz2cam, &SRGB_TO_XYZ_D65));
   let cam2rgb = pseudo_inverse(rgb2cam);

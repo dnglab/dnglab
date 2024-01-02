@@ -71,9 +71,7 @@ impl Demosaic<f32, 3> for PPGDemosaic {
 /// Basically, for each pixel position, we iterate around it and collect
 /// all channel values. Then apply interpolation to calculate the missing
 /// two channel colors for the origin pixel position.
-#[multiversion]
-#[clone(target = "[x86|x86_64]+avx+avx2")]
-#[clone(target = "x86+sse")]
+#[multiversion(targets("x86_64+avx+avx2", "x86+sse", "aarch64+neon"))]
 fn interpolate_borders(input: &mut RgbF32, shifted: &CFA) {
   let w = input.width;
   let h = input.height;
@@ -113,9 +111,7 @@ fn interpolate_borders(input: &mut RgbF32, shifted: &CFA) {
 
 /// PPG Demosaic: Interpolate missing G channels
 /// After this procedure, all green values are known.
-#[multiversion]
-#[clone(target = "[x86|x86_64]+avx+avx2")]
-#[clone(target = "x86+sse")]
+#[multiversion(targets("x86_64+avx+avx2", "x86+sse", "aarch64+neon"))]
 fn interpolate_green(img: &mut RgbF32, shifted: &CFA) {
   let w = img.width;
   let h = img.height;
@@ -174,9 +170,7 @@ fn interpolate_green(img: &mut RgbF32, shifted: &CFA) {
 }
 
 /// PPG Demosaic: Interpolate R/B channel at G channels
-#[multiversion]
-#[clone(target = "[x86|x86_64]+avx+avx2")]
-#[clone(target = "x86+sse")]
+#[multiversion(targets("x86_64+avx+avx2", "x86+sse", "aarch64+neon"))]
 fn interpolate_rb_at_green(img: &mut RgbF32, shifted: &CFA) {
   let w = img.width;
   let h = img.height;
@@ -213,9 +207,7 @@ fn interpolate_rb_at_green(img: &mut RgbF32, shifted: &CFA) {
 }
 
 /// PPG Demosaic: Interpolate R/B channel at non-G channels
-#[multiversion]
-#[clone(target = "[x86|x86_64]+avx+avx2")]
-#[clone(target = "x86+sse")]
+#[multiversion(targets("x86_64+avx+avx2", "x86+sse", "aarch64+neon"))]
 fn interpolate_rb_at_non_green(img: &mut RgbF32, shifted: &CFA) {
   let w = img.width;
   let h = img.height;
