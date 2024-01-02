@@ -117,7 +117,14 @@ fn generate_job(entry: &FileMap, options: &ArgMatches) -> Result<Vec<Raw2DngJob>
     };
 
     let mut output = PathBuf::from(&entry.dest);
-    if !output.set_extension("dng") {
+
+    let has_dng_ext = if let Some(ext) = output.extension() {
+      ext.eq_ignore_ascii_case("dng")
+    } else {
+      false
+    };
+
+    if !has_dng_ext && !output.set_extension("dng") {
       return Err(AppError::General("Unable to rename target to dng".into()));
     }
 
