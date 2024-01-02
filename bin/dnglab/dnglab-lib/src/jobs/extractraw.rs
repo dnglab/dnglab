@@ -12,6 +12,7 @@ use rawler::{
 };
 use std::{
   fmt::Display,
+  fs::remove_file,
   io::{BufReader, BufWriter, Cursor, Write},
 };
 use std::{fs::File, path::PathBuf, time::Instant};
@@ -73,7 +74,13 @@ impl ExtractRawJob {
 
         let original = OriginalCompressed::new(&mut Cursor::new(val), digest)?;
         let mut stream = BufWriter::new(File::create(&self.output)?);
-        original.decompress(&mut stream, !self.skip_checks)?;
+        if let Err(err) = original.decompress(&mut stream, !self.skip_checks) {
+          drop(original);
+          if let Err(err) = remove_file(&self.output) {
+            log::error!("Failed to delete original file after decompress error: {:?}", err);
+          }
+          return Err(err.into());
+        }
         stream.flush()?;
         Ok(JobResult {
           job: self.clone(),

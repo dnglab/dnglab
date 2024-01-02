@@ -19,10 +19,10 @@ use rawler::imgop::xyz::{self, Illuminant};
 use rawler::imgop::{scale_double_to_u16, scale_u16_to_double, scale_u8_to_double};
 use rawler::tags::{DngTag, TiffCommonTag};
 use rawler::{get_decoder, RawFile};
-use std::fs::File;
+use std::fs::{remove_file, File};
 use std::io::{BufReader, BufWriter};
 use std::num::ParseFloatError;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use std::str::FromStr;
 use std::time::Instant;
@@ -35,8 +35,22 @@ fn get_input_path<'a>(inputs: &'a [&PathBuf], maps: &[&InputSourceUsageMap], usa
     .ok_or_else(|| std::io::Error::new(std::io::ErrorKind::InvalidInput, format!("No input found for '{:?}'", usage)))
 }
 
-/// Entry point for Clap sub command `makedng`
 pub async fn makedng(options: &ArgMatches) -> crate::Result<()> {
+  let dest_path: &PathBuf = options.get_one("OUTPUT").expect("Output path is required");
+
+  match makedng_internal(options, dest_path).await {
+    Ok(_) => Ok(()),
+    Err(err) => {
+      if let Err(err) = remove_file(dest_path) {
+        log::error!("Failed to delete DNG file after decompress error: {:?}", err);
+      }
+      Err(err)
+    }
+  }
+}
+
+/// Entry point for Clap sub command `makedng`
+pub async fn makedng_internal(options: &ArgMatches, dest_path: &Path) -> crate::Result<()> {
   let _now = Instant::now();
 
   let inputs: Vec<&PathBuf> = options.get_many("inputs").expect("inputs are required").collect();
@@ -50,8 +64,6 @@ pub async fn makedng(options: &ArgMatches) -> crate::Result<()> {
       inputs.len()
     )));
   }
-
-  let dest_path: &PathBuf = options.get_one("OUTPUT").expect("Output path is required");
 
   if dest_path.exists() && !options.get_flag("override") {
     return Err(crate::AppError::AlreadyExists(dest_path.to_owned()));

@@ -9,7 +9,11 @@ use rawler::{
   dng::convert::{convert_raw_file, ConvertParams},
   RawlerError,
 };
-use std::{fmt::Display, fs::File, io::BufWriter};
+use std::{
+  fmt::Display,
+  fs::{remove_file, File},
+  io::BufWriter,
+};
 use std::{path::PathBuf, time::Instant};
 use tokio::task::spawn_blocking;
 
@@ -80,6 +84,10 @@ impl Raw2DngJob {
           RawlerError::DecoderFailed(msg) => {
             log::error!("Failed to decode file: {}", msg);
           }
+        }
+        drop(dng);
+        if let Err(err) = remove_file(&self.output) {
+          log::error!("Failed to delete DNG file after decoder error: {:?}", err);
         }
         Err(err.into())
       }
