@@ -205,6 +205,13 @@ impl Rect {
       d: self.d,
     }
   }
+
+  pub fn scale(&mut self, scale: f32) {
+    self.d.w = ((self.d.w as f32) * scale) as usize;
+    self.d.h = ((self.d.h as f32) * scale) as usize;
+    self.p.x = ((self.p.x as f32) * scale) as usize;
+    self.p.y = ((self.p.y as f32) * scale) as usize;
+  }
 }
 
 /// Crop image to specific area

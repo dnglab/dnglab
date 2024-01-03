@@ -4,6 +4,7 @@ use rayon::prelude::*;
 
 use crate::imgop::{Dim2, Point, Rect};
 
+#[derive(Clone)]
 pub struct Pix2D<T> {
   pub width: usize,
   pub height: usize,

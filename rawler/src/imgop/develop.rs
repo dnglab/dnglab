@@ -32,6 +32,7 @@ pub enum ProcessingStep {
 
 pub struct RawDevelopBuilder {}
 
+#[derive(Clone)]
 pub enum Intermediate {
   Monochrome(PixF32),
   ThreeColor(Color2D<f32, 3>),
@@ -144,10 +145,10 @@ impl RawDevelop {
             };
             if config.cfa.is_rgb() {
               let ppg = PPGDemosaic::new();
-              Intermediate::ThreeColor(ppg.demosaic(pixels.pixels(), pixels.dim(), &config.cfa, &config.colors, roi))
+              Intermediate::ThreeColor(ppg.demosaic(&pixels, &config.cfa, &config.colors, roi))
             } else if config.cfa.unique_colors() == 4 {
               let linear = Bilinear4Channel::new();
-              Intermediate::FourColor(linear.demosaic(pixels.pixels(), pixels.dim(), &config.cfa, &config.colors, roi))
+              Intermediate::FourColor(linear.demosaic(&pixels, &config.cfa, &config.colors, roi))
             } else {
               todo!()
             }
@@ -175,10 +176,22 @@ impl RawDevelop {
         }
       }
 
+      // Some old images may not provide WB coeffs. Assume 1.0 in this case.
+      let mut wb = if rawimage.wb_coeffs[0].is_nan() {
+        [1.0, 1.0, 1.0, 1.0]
+      } else {
+        rawimage.wb_coeffs
+      };
+      if !self.steps.contains(&ProcessingStep::WhiteBalance) {
+        wb = [1.0, 1.0, 1.0, 1.0];
+      }
+
+      log::debug!("wb: {:?}, coeff: {:?}", wb, xyz2cam);
+
       intermediate = match intermediate {
-        Intermediate::Monochrome(_) => todo!(),
-        Intermediate::ThreeColor(pixels) => Intermediate::ThreeColor(map_3ch_to_rgb(&pixels, &rawimage.wb_coeffs, xyz2cam)),
-        Intermediate::FourColor(pixels) => Intermediate::ThreeColor(map_4ch_to_rgb(&pixels, &rawimage.wb_coeffs, rawimage.xyz_to_cam)),
+        Intermediate::Monochrome(_) => intermediate,
+        Intermediate::ThreeColor(pixels) => Intermediate::ThreeColor(map_3ch_to_rgb(&pixels, &wb, xyz2cam)),
+        Intermediate::FourColor(pixels) => Intermediate::ThreeColor(map_4ch_to_rgb(&pixels, &wb, xyz2cam)),
       };
     }
 
@@ -188,6 +201,10 @@ impl RawDevelop {
           // If active area crop was already applied during demosaic, we need to
           // adapt default crop to active area crop.
           crop = crop.adapt(&rawimage.active_area.unwrap_or(crop));
+        }
+        if intermediate.dim().w == rawimage.active_area.map(|area| area.d).unwrap_or(rawimage.dim()).w / 2 {
+          // Superpixel debayer used
+          crop.scale(0.5);
         }
         // Only apply crop if dimensions differ.
         if crop.d != intermediate.dim() {
