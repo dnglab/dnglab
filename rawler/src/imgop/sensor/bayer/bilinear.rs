@@ -2,8 +2,8 @@ use multiversion::multiversion;
 
 use crate::{
   cfa::PlaneColor,
-  imgop::{Dim2, Rect},
-  pixarray::{Color2D, Pix2D},
+  imgop::Rect,
+  pixarray::{Color2D, PixF32},
   CFA,
 };
 
@@ -20,24 +20,26 @@ impl Bilinear4Channel {
 
 impl Demosaic<f32, 4> for Bilinear4Channel {
   /// Debayer image by using bilinear method.
-  fn demosaic(&self, pixels: &[f32], dim: Dim2, cfa: &CFA, colors: &PlaneColor, roi: Rect) -> Color2D<f32, 4> {
-    Self::demosaic_4ch(pixels, dim, cfa, colors, roi)
+  fn demosaic(&self, pixels: &PixF32, cfa: &CFA, colors: &PlaneColor, roi: Rect) -> Color2D<f32, 4> {
+    Self::demosaic_4ch(pixels, cfa, colors, roi)
   }
 }
 
 impl Bilinear4Channel {
   #[multiversion(targets("x86_64+avx+avx2", "x86+sse", "aarch64+neon"))]
-  fn demosaic_4ch(pixels: &[f32], dim: Dim2, cfa: &CFA, colors: &PlaneColor, roi: Rect) -> Color2D<f32, 4> {
+  fn demosaic_4ch(pixels: &PixF32, cfa: &CFA, colors: &PlaneColor, roi: Rect) -> Color2D<f32, 4> {
     if colors.plane_count() != 4 {
       panic!("Demosaic for 4 channels needs 4 color planes, but {} given", colors.plane_count());
     }
     log::debug!("Bilinear debayer ROI: {:?}", roi);
+
+    let cfa = cfa.shift(roi.p.x, roi.p.y);
     let plane_map = colors.plane_lookup_table();
     let ch = |row: usize, col: usize| -> usize { plane_map[cfa.color_at(row, col)] };
 
-    let pixels = Pix2D::new_with(pixels.to_vec(), dim.w, dim.h); // TODO: prevent to_vec(), add Pix2D as input argument
-
-    let mut out = Color2D::new(dim.w, dim.h);
+    let pixels = pixels.crop(roi);
+    let dim = pixels.dim();
+    let mut out = Color2D::new(pixels.dim().w, pixels.dim().h);
 
     // Process edges
     out.at_mut(0, 0)[ch(0, 0)] = *pixels.at(0, 0);
@@ -50,10 +52,10 @@ impl Bilinear4Channel {
     out.at_mut(0, dim.w - 1)[ch(1, dim.w - 1)] = *pixels.at(1, dim.w - 1);
     out.at_mut(0, dim.w - 1)[ch(1, dim.w - 2)] = *pixels.at(1, dim.w - 2);
 
-    out.at_mut(dim.h - 1, 0)[ch(0, 0)] = *pixels.at(0, 0);
-    out.at_mut(dim.h - 1, 0)[ch(0, 1)] = *pixels.at(0, 1);
-    out.at_mut(dim.h - 1, 0)[ch(1, 0)] = *pixels.at(1, 0);
-    out.at_mut(dim.h - 1, 0)[ch(1, 1)] = *pixels.at(1, 1);
+    out.at_mut(dim.h - 1, 0)[ch(dim.h - 1, 0)] = *pixels.at(dim.h - 1, 0);
+    out.at_mut(dim.h - 1, 0)[ch(dim.h - 1, 1)] = *pixels.at(dim.h - 1, 1);
+    out.at_mut(dim.h - 1, 0)[ch(dim.h - 2, 0)] = *pixels.at(dim.h - 2, 0);
+    out.at_mut(dim.h - 1, 0)[ch(dim.h - 2, 1)] = *pixels.at(dim.h - 2, 1);
 
     out.at_mut(dim.h - 1, dim.w - 1)[ch(dim.h - 1, dim.w - 1)] = *pixels.at(dim.h - 1, dim.w - 1);
     out.at_mut(dim.h - 1, dim.w - 1)[ch(dim.h - 1, dim.w - 2)] = *pixels.at(dim.h - 1, dim.w - 2);
@@ -70,7 +72,7 @@ impl Bilinear4Channel {
       // Bottom line
       out.at_mut(dim.h - 1, i)[ch(dim.h - 1, i)] = *pixels.at(dim.h - 1, i);
       out.at_mut(dim.h - 1, i)[ch(dim.h - 1, i + 1)] = (*pixels.at(dim.h - 1, i - 1) + *pixels.at(dim.h - 1, i + 1)) / 2.0;
-      out.at_mut(dim.h - 1, i)[ch(dim.h - 2, i)] = *pixels.at(1, i);
+      out.at_mut(dim.h - 1, i)[ch(dim.h - 2, i)] = *pixels.at(dim.h - 2, i);
       out.at_mut(dim.h - 1, i)[ch(dim.h - 2, i + 1)] = (*pixels.at(dim.h - 2, i - 1) + *pixels.at(dim.h - 2, i + 1)) / 2.0;
     }
 
