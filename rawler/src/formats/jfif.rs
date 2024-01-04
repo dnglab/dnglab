@@ -147,7 +147,7 @@ impl<R: Read + Seek> ReadSegment<&mut R> for App1 {
       let mut exif_str = [0; 6];
       reader.read_exact(&mut exif_str)?;
       if exif_str == APP1_EXIF_MARKER {
-        let ifd = IFD::new_root(reader, pos as u32 + 2 + 6).unwrap();
+        let ifd = IFD::new_root(reader, pos as u32 + 2 + 6);
         reader.seek(SeekFrom::Start(pos + len))?;
 
         /*
@@ -160,10 +160,14 @@ impl<R: Read + Seek> ReadSegment<&mut R> for App1 {
         }
          */
 
-        return Ok(Self {
-          len,
-          payload: Payload::Exif(ifd),
-        });
+        if let Ok(ifd) = ifd {
+          return Ok(Self {
+            len,
+            payload: Payload::Exif(ifd),
+          });
+        }
+
+        return Err(JfifError::General("Something wrong here".to_string()));
       } else {
         reader.seek(SeekFrom::Current(-(exif_str.len() as i64)))?;
       }
