@@ -1,0 +1,93 @@
+---
+file:
+  fileSize: 31109991
+  fileName: NIKON Z f_ISO_160_14bits_Lossless.NRW
+  digest: 913b098ead6b065c7cc8702a3adf45f5
+data:
+  metadata:
+    rawParams:
+      rawWidth: 6064
+      rawHeight: 4040
+      bitDepth: 16
+      cropArea:
+        p:
+          x: 8
+          y: 4
+        d:
+          w: 6048
+          h: 4032
+      activeArea:
+        p:
+          x: 0
+          y: 0
+        d:
+          w: 6064
+          h: 4040
+      blacklevels:
+        levels:
+          - 1008/1
+          - 1008/1
+          - 1008/1
+          - 1008/1
+        cpp: 1
+        width: 2
+        height: 2
+      whitelevels:
+        - 15892
+      wbCoeffs:
+        - 1.8652344
+        - 1.0
+        - 1.2050781
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: www.jonathanhrovath.com
+        artist: Jonathan Hrovath
+        lens_spec: ~
+        exposure_time: 10/600
+        fnumber: 560/100
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 160
+        iso_speed: ~
+        recommended_exposure_index: 160
+        sensitivity_type: 2
+        exposure_bias: 0/6
+        date_time_original: "2023:10:18 17:18:20"
+        create_date: "2023:10:18 17:18:20"
+        modify_date: "2023:10:18 17:18:20"
+        exposure_program: 1
+        timezone_offset: ~
+        offset_time: "-04:00"
+        offset_time_original: "-04:00"
+        offset_time_digitized: "-04:00"
+        sub_sec_time: "79"
+        sub_sec_time_original: "79"
+        sub_sec_time_digitized: "79"
+        shutter_speed_value: ~
+        max_aperture_value: ~
+        subject_distance: ~
+        metering_mode: 5
+        light_source: 0
+        flash: 0
+        focal_length: 1500/10
+        image_number: ~
+        color_space: ~
+        flash_energy: ~
+        exposure_mode: 1
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: 0
+        owner_name: ~
+        serial_number: "3000292"
+        lens_serial_number: "21000170"
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: NIKON Z f
+      make: NIKON CORPORATION
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

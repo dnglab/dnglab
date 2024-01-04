@@ -195,6 +195,10 @@ impl<'a> Decoder for NefDecoder<'a> {
     };
     debug!("TIFF compression flag: {}, NEF compression mode: {:?}", compression, nef_compression);
 
+    if matches!(nef_compression, Some(NefCompression::HighEfficency)) || matches!(nef_compression, Some(NefCompression::HighEfficencyStar)) {
+      return Err(RawlerError::DecoderFailed(format!("NEF compression {:?} is not supported", nef_compression)));
+    }
+
     let offset = fetch_tiff_tag!(raw, TiffCommonTag::StripOffsets).force_usize(0);
     let size = fetch_tiff_tag!(raw, TiffCommonTag::StripByteCounts).force_usize(0);
     let rows_per_strip = fetch_tiff_tag!(raw, TiffCommonTag::RowsPerStrip).get_usize(0).ok().flatten().unwrap_or(height);

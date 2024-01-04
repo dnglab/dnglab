@@ -279,6 +279,7 @@ cameras/Nikon/NIKON Z 6_2/raw_modes
 cameras/Nikon/NIKON Z 7_2/raw_modes
 cameras/Nikon/Z 50/raw_modes
 cameras/Nikon/Z 6/raw_modes
+cameras/Nikon/NIKON Z f/raw_modes
 cameras/Nikon/NIKON Z fc/raw_modes
 cameras/Nikon/Z 7/raw_modes
 cameras/Nikon/NIKON Z 9/raw_modes
