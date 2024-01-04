@@ -99,6 +99,7 @@ cameras/Canon/EOS Rebel T7/raw_modes
 cameras/Canon/EOS RP/raw_modes
 cameras/Canon/EOS R/raw_modes
 cameras/Canon/IXUS900Ti/raw_modes
+cameras/Canon/IXY 220F/raw_modes
 cameras/Canon/PowerShot A480/raw_modes
 cameras/Canon/PowerShot A540/raw_modes
 cameras/Canon/PowerShot A550/raw_modes

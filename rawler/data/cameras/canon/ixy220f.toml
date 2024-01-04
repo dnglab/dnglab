@@ -1,0 +1,16 @@
+make = "Canon"
+model = "Canon IXY 220F"
+clean_make = "Canon"
+clean_model = "IXY 220F"
+whitepoint = 4095
+color_pattern = "RGGB"
+active_area = [96,17,8,1]
+filesize = 25230816
+raw_width = 4784
+raw_height = 3516
+blackareav = [0, 94]
+
+[cameras.color_matrix]
+Daylight = [0.54480, -0.1740, -0.0803, -0.0750, 0.44044, 0.01136, -0.0058, 0.07158, 0.11891]
+D65 = [0.5307, -0.1727, -0.0741,  -0.0846, 0.4464, 0.0142, -0.0022, 0.0786, 0.1405]
+

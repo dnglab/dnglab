@@ -397,6 +397,9 @@ mod camera_eos_r_raw_modes {
 mod camera_ixus900ti_raw_modes {
   super::camera_file_check!("Canon", "IXUS900Ti", cam_canon_ixus900ti_crw, "raw_modes/Canon IXUS900Ti.CRW");
 }
+mod camera_ixy_220f_raw_modes {
+  super::camera_file_check!("Canon", "IXY 220F", cam_canon_ixy_220f_crw, "raw_modes/canon_ixy_220f.CRW");
+}
 mod camera_powershot_a480_raw_modes {
   super::camera_file_check!("Canon", "PowerShot A480", cam_powershot_a480_crw, "raw_modes/PowerShot A480.CRW");
 }
