@@ -167,7 +167,7 @@ impl<R: Read + Seek> ReadSegment<&mut R> for App1 {
           });
         }
 
-        return Err(JfifError::General("Something wrong here".to_string()));
+        return Err(JfifError::General("Failed to read exif".into()));
       } else {
         reader.seek(SeekFrom::Current(-(exif_str.len() as i64)))?;
       }
