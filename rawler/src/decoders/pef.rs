@@ -126,7 +126,11 @@ impl<'a> Decoder for PefDecoder<'a> {
     let blacklevel = self.get_blacklevel()?;
     let whitelevel = None;
     debug!("Found WB: {:?}", wb);
-    let photometric = RawPhotometricInterpretation::Cfa(CFAConfig::new_from_camera(&self.camera));
+    let photometric = if self.camera.cfa.is_valid() {
+      RawPhotometricInterpretation::Cfa(CFAConfig::new_from_camera(&self.camera))
+    } else {
+      RawPhotometricInterpretation::LinearRaw
+    };
     Ok(RawImage::new(self.camera.clone(), image, cpp, wb, photometric, blacklevel, whitelevel, dummy))
   }
 
@@ -200,8 +204,14 @@ impl<'a> PefDecoder<'a> {
   fn get_blacklevel(&self) -> Result<Option<BlackLevel>> {
     match self.makernote.get_entry(PefMakernote::BlackPoint) {
       Some(data) => {
-        let levels = [data.force_u16(0), data.force_u16(1), data.force_u16(2), data.force_u16(3)];
-        Ok(Some(BlackLevel::new(&levels, self.camera.cfa.width, self.camera.cfa.height, 1)))
+        if self.camera.cfa.is_valid() {
+          let levels = [data.force_u16(0), data.force_u16(1), data.force_u16(2), data.force_u16(3)];
+          Ok(Some(BlackLevel::new(&levels, self.camera.cfa.width, self.camera.cfa.height, 1)))
+        } else {
+          // Monochrome PEF like K-3
+          let levels = [data.force_u16(0)];
+          Ok(Some(BlackLevel::new(&levels, 1, 1, 1)))
+        }
       }
       None => Ok(None),
     }

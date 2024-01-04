@@ -271,6 +271,7 @@ where
         self.ifd.add_tag(TiffCommonTag::PhotometricInt, PhotometricInterpretation::BlackIsZero);
       }
       RawPhotometricInterpretation::Cfa(config) => {
+        assert!(config.cfa.is_valid());
         assert_eq!(rawimage.cpp, 1);
         let cfa = config.cfa.shift(active_area.p.x, active_area.p.y);
         self.ifd.add_tag(TiffCommonTag::CFARepeatPatternDim, [cfa.width as u16, cfa.height as u16]);
@@ -366,7 +367,10 @@ where
   }
 
   pub fn as_shot_neutral(&mut self, wb: impl AsRef<[Rational]>) {
-    self.root_ifd.add_tag(DngTag::AsShotNeutral, wb.as_ref());
+    // Only write tag if wb is valid
+    if wb.as_ref()[0].n != 0 {
+      self.root_ifd.add_tag(DngTag::AsShotNeutral, wb.as_ref());
+    }
   }
 
   pub fn color_matrix(&mut self, slot: usize, illu: Illuminant, matrix: impl AsRef<[SRational]>) {

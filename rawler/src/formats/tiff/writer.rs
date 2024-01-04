@@ -219,7 +219,7 @@ impl DirectoryWriter {
     for &mut Entry {
       ref mut value,
       ref mut embedded,
-      ..
+      ref tag,
     } in self.entries.values_mut()
     {
       let data_bytes = 4;
@@ -230,6 +230,9 @@ impl DirectoryWriter {
         value.write(&mut tiff.writer)?;
         embedded.replace(offset as u32);
       } else {
+        if value.count() == 0 {
+          panic!("TIFF value is empty, tag: {:?}", tag);
+        }
         embedded.replace(value.as_embedded()?);
       }
     }
