@@ -1,0 +1,93 @@
+---
+file:
+  fileSize: 17117184
+  fileName: ZV-E1_ISO_200_14bits.ARW
+  digest: e84c7cb87aa6f9dcab20070704a30c30
+data:
+  metadata:
+    rawParams:
+      rawWidth: 4608
+      rawHeight: 3072
+      bitDepth: 16
+      cropArea:
+        p:
+          x: 12
+          y: 8
+        d:
+          w: 4240
+          h: 2832
+      activeArea:
+        p:
+          x: 0
+          y: 0
+        d:
+          w: 4608
+          h: 3072
+      blacklevels:
+        levels:
+          - 512/1
+          - 512/1
+          - 512/1
+          - 512/1
+        cpp: 1
+        width: 2
+        height: 2
+      whitelevels:
+        - 15360
+      wbCoeffs:
+        - 2.4882812
+        - 1.0
+        - 1.4736328
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ~
+        artist: ~
+        lens_spec: ~
+        exposure_time: 1/800
+        fnumber: 80/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 200
+        iso_speed: ~
+        recommended_exposure_index: 200
+        sensitivity_type: 2
+        exposure_bias: 0/10
+        date_time_original: "2023:08:19 12:53:58"
+        create_date: "2023:08:19 12:53:58"
+        modify_date: "2023:08:19 12:53:58"
+        exposure_program: 1
+        timezone_offset: ~
+        offset_time: "+01:00"
+        offset_time_original: "+01:00"
+        offset_time_digitized: "+01:00"
+        sub_sec_time: "187"
+        sub_sec_time_original: "187"
+        sub_sec_time_digitized: "187"
+        shutter_speed_value: ~
+        max_aperture_value: 434/256
+        subject_distance: ~
+        metering_mode: 5
+        light_source: 0
+        flash: 16
+        focal_length: 200/10
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 1
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: ZV-E1
+      make: SONY
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+
