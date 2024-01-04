@@ -1,0 +1,12 @@
+make = "OM Digital Solutions"
+model = "TG-7"
+clean_make = "OM Digital Solutions"
+clean_model = "TG-7"
+whitepoint = 4000
+color_pattern = "GRBG"
+active_area = [0, 0, 6, 0]
+crop_area = [8, 8, 32, 8]
+
+[cameras.color_matrix]
+A = [1.1639, -0.4924, -0.0113, -0.2585, 1.0857, 0.1983, -0.0157, 0.1043, 0.6335]
+D65 = [1.0899, -0.3833, -0.1082, -0.2112, 1.0736, 0.1575, -0.0267, 0.1452, 0.5269]
