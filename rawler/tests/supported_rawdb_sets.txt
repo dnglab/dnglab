@@ -637,6 +637,7 @@ cameras/Fujifilm/FinePix HS30EXR/raw_modes
 cameras/Fujifilm/FinePix HS33EXR/raw_modes
 cameras/Fujifilm/FinePix HS50EXR/raw_modes
 cameras/Fujifilm/FinePix S100FS/raw_modes
+cameras/Fujifilm/FinePix SL1000/raw_modes
 cameras/Fujifilm/FinePix S1/raw_modes
 cameras/Fujifilm/FinePix S200EXR/raw_modes
 cameras/Fujifilm/FinePix S2Pro/raw_modes

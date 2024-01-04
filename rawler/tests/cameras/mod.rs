@@ -2480,6 +2480,9 @@ mod camera_finepix_hs50exr_raw_modes {
 mod camera_finepix_s100fs_raw_modes {
   super::camera_file_check!("Fujifilm", "FinePix S100FS", cam_finepix_s100fs_iso_100_raf, "raw_modes/FinePix S100FS_ISO_100.RAF");
 }
+mod camera_finepix_sl1000_raw_modes {
+  super::camera_file_check!("Fujifilm", "FinePix SL1000", cam_finepix_sl1000_iso_100_12bits_raf, "raw_modes/FinePix SL1000_ISO_100_12bits.RAF");
+}
 mod camera_finepix_s1_raw_modes {
   super::camera_file_check!("Fujifilm", "FinePix S1", cam_finepix_s1_iso_200_raf, "raw_modes/FinePix S1_ISO_200.RAF");
 }

@@ -1,0 +1,93 @@
+---
+file:
+  fileSize: 24816408
+  fileName: FinePix SL1000_ISO_100_12bits.RAF
+  digest: 9029222bce30b678486d202df46c4d42
+data:
+  metadata:
+    rawParams:
+      rawWidth: 4624
+      rawHeight: 3470
+      bitDepth: 16
+      cropArea:
+        p:
+          x: 0
+          y: 0
+        d:
+          w: 4624
+          h: 3470
+      activeArea:
+        p:
+          x: 0
+          y: 0
+        d:
+          w: 4624
+          h: 3470
+      blacklevels:
+        levels:
+          - 200/1
+          - 200/1
+          - 200/1
+          - 200/1
+        cpp: 1
+        width: 2
+        height: 2
+      whitelevels:
+        - 4095
+      wbCoeffs:
+        - 1.5273438
+        - 1.0
+        - 1.9335938
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ""
+        artist: ~
+        lens_spec: ~
+        exposure_time: 10/4000
+        fnumber: 840/100
+        aperture_value: 610/100
+        brightness_value: ~
+        iso_speed_ratings: 100
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: 1
+        exposure_bias: "-70/100"
+        date_time_original: "2022:07:03 09:12:51"
+        create_date: "2022:07:03 09:12:51"
+        modify_date: "2022:07:03 09:12:51"
+        exposure_program: 3
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: 860/100
+        max_aperture_value: 307/100
+        subject_distance: ~
+        metering_mode: 5
+        light_source: 0
+        flash: 16
+        focal_length: 430/100
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: 0
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+      model: FinePix SL1000
+      make: FUJIFILM
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

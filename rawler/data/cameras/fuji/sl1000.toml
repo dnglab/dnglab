@@ -1,0 +1,13 @@
+make = "FUJIFILM"
+model = "FinePix SL1000"
+clean_make = "FUJIFILM"
+clean_model = "FinePix SL1000"
+whitepoint = 4095
+color_pattern = "RGGB"
+active_area = [0, 0, 0, 0]
+crop_area = [8, 7, 8, 7]
+hints = ["jpeg32"]
+
+[cameras.color_matrix]
+A = [1.3562, -0.6728, 0.0798, -0.1328, 0.9244, 0.2468, 0.024, 0.0784, 0.5548]
+D65 = [1.1705, -0.4262, -0.1107, -0.2282, 1.0791, 0.1709, -0.0555, 0.1713, 0.4945]
