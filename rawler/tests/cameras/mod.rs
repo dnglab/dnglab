@@ -2682,6 +2682,11 @@ mod camera_x_s10_compressed {
 mod camera_x_s10_raw_modes {
   super::camera_file_check!("Fujifilm", "X-S10", cam_fujifilm_x_s10_uncompressed_raf, "raw_modes/Fujifilm-X-S10-uncompressed.RAF");
 }
+mod camera_x_s20_raw_modes {
+  super::camera_file_check!("Fujifilm", "X-S20", cam_x_s20_iso_160_14bits_lossy_raf, "raw_modes/X-S20_ISO_160_14bits_Lossy.RAF");
+  super::camera_file_check!("Fujifilm", "X-S20", cam_x_s20_iso_160_14bits_lossless_raf, "raw_modes/X-S20_ISO_160_14bits_Lossless.RAF");
+  super::camera_file_check!("Fujifilm", "X-S20", cam_x_s20_iso_160_14bits_uncompressed_raf, "raw_modes/X-S20_ISO_160_14bits_uncompressed.RAF");
+}
 mod camera_x_s1_raw_modes {
   super::camera_file_check!("Fujifilm", "X-S1", cam_x_s1_iso_400_raf, "raw_modes/X-S1_ISO_400.RAF");
 }

@@ -700,6 +700,7 @@ cameras/Fujifilm/XQ1/raw_modes
 cameras/Fujifilm/XQ2/raw_modes
 cameras/Fujifilm/X-S10/compressed
 cameras/Fujifilm/X-S10/raw_modes
+cameras/Fujifilm/X-S20/raw_modes
 cameras/Fujifilm/X-S1/raw_modes
 cameras/Fujifilm/X-T100/raw_modes
 cameras/Fujifilm/X-T10/raw_modes
