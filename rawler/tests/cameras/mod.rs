@@ -619,6 +619,9 @@ mod camera_k_m_raw_modes {
 mod camera_k_r_raw_modes {
   super::camera_file_check!("Pentax", "K-r", cam_pentax_k_r_raw_iso_200_pef, "raw_modes/PENTAX K-r_RAW_ISO_200.PEF");
 }
+mod camera_kf_raw_modes {
+  super::camera_file_check!("Pentax", "Kf", cam_pentax_kf_iso_200_14bits_pef, "raw_modes/PENTAX KF_ISO_200_14bits.PEF");
+}
 mod camera_k_5_ii_s_raw_modes {
   super::camera_file_check!("Pentax", "K-5 II s", cam_pentax_k_5_ii_s_raw_iso_200_pef, "raw_modes/PENTAX K-5 II s_RAW_ISO_200.PEF");
 }

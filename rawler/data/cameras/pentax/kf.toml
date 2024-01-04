@@ -1,0 +1,12 @@
+make = "RICOH IMAGING COMPANY, LTD."
+model = "PENTAX KF"
+clean_make = "Ricoh"
+clean_model = "PENTAX KF"
+whitepoint = 16319
+color_pattern = "RGGB"
+active_area = [58, 28, 0, 12]
+crop_area = [66, 32, 14, 32]
+
+[cameras.color_matrix]
+A = [0.9924, -0.4631, 0.0135, -0.4397, 1.2147, 0.2537, -0.0376, 0.0886, 0.6752]
+D65 = [0.8766, -0.3149, -0.0747, -0.3976, 1.1943, 0.2292, -0.0517, 0.1259, 0.5552]
