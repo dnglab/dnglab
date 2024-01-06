@@ -613,6 +613,12 @@ mod camera_k_7_raw_modes {
 mod camera_k_3_ii_raw_modes {
   super::camera_file_check!("Pentax", "K-3 II", cam_pentax_k_3_ii_raw_iso_100_pef, "raw_modes/PENTAX K-3 II_RAW_ISO_100.PEF");
 }
+mod camera_k_3_iii_raw_modes {
+  super::camera_file_check!("Pentax", "K-3 III", cam_pentax_k_3_mark_iii_iso_800_14bits_pixelshift_without_motion_corr_pef, "raw_modes/PENTAX K-3 Mark III_ISO_800_14bits_pixelshift_without_motion_corr.PEF");
+  super::camera_file_check!("Pentax", "K-3 III", cam_pentax_k_3_mark_iii_iso_800_14bits_pixelshift_with_motion_corr_pef, "raw_modes/PENTAX K-3 Mark III_ISO_800_14bits_pixelshift_with_motion_corr.PEF");
+  super::camera_file_check!("Pentax", "K-3 III", cam_pentax_k_3_mark_iii_iso_800_14bits_automode_pef, "raw_modes/PENTAX K-3 Mark III_ISO_800_14bits_automode.PEF");
+  super::camera_file_check!("Pentax", "K-3 III", cam_pentax_k_3_mark_iii_iso_800_14bits_hdr_advanced_pef, "raw_modes/PENTAX K-3 Mark III_ISO_800_14bits_hdr_advanced.PEF");
+}
 mod camera_k_70_raw_modes {
   super::camera_file_check!("Pentax", "K-70", cam_pentax_k_70_raw_iso_400_pef, "raw_modes/PENTAX K-70_RAW_ISO_400.PEF");
 }

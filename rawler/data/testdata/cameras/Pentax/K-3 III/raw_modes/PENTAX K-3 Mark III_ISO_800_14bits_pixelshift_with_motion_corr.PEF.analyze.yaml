@@ -1,0 +1,114 @@
+---
+file:
+  fileSize: 121040554
+  fileName: PENTAX K-3 Mark III_ISO_800_14bits_pixelshift_with_motion_corr.PEF
+  digest: 28a7278ecebc90e2cc670f655a3c3625
+data:
+  metadata:
+    rawParams:
+      rawWidth: 6304
+      rawHeight: 4224
+      bitDepth: 16
+      cropArea:
+        p:
+          x: 54
+          y: 58
+        d:
+          w: 6192
+          h: 4128
+      activeArea:
+        p:
+          x: 26
+          y: 34
+        d:
+          w: 6224
+          h: 4160
+      blacklevels:
+        levels:
+          - 256/1
+          - 256/1
+          - 256/1
+          - 256/1
+        cpp: 1
+        width: 2
+        height: 2
+      whitelevels:
+        - 16375
+      wbCoeffs:
+        - 2.484375
+        - 1.0
+        - 1.8203125
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ""
+        artist: ""
+        lens_spec:
+          - 18/1
+          - 200/1
+          - 35/10
+          - 63/10
+        exposure_time: 1/50
+        fnumber: 50/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 800
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: 1
+        exposure_bias: 0/10
+        date_time_original: "2022:08:03 20:56:16"
+        create_date: "2022:08:03 20:56:16"
+        modify_date: "2022:08:03 20:56:16"
+        exposure_program: 3
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: "173"
+        sub_sec_time_digitized: "173"
+        shutter_speed_value: ~
+        max_aperture_value: ~
+        subject_distance: ~
+        metering_mode: 5
+        light_source: ~
+        flash: 16
+        focal_length: 1800/100
+        image_number: ~
+        color_space: ~
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: 2
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: Sigma
+        lens_model: Sigma 18-200mm F3.5-6.3 DC Macro HSM
+        gps: ~
+      model: PENTAX K-3 Mark III
+      make: Ricoh
+      lens:
+        identifiers:
+          name: ~
+          id:
+            - 8
+            - 33
+          nikon_id: ~
+          olympus_id: ~
+        mount: k-mount
+        lens_make: Sigma
+        lens_model: Sigma 18-200mm F3.5-6.3 DC Macro HSM
+        focal_range:
+          - 18/1
+          - 200/1
+        aperture_range:
+          - 35/10
+          - 63/10
+        lens_name: Sigma Sigma 18-200mm F3.5-6.3 DC Macro HSM
+      unique_image_id: ~
+      rating: ~
+
