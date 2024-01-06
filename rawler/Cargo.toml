@@ -19,7 +19,7 @@ build = "data/join.rs"
 [features]
 # This is a developer feature, it enabled deep inspection of algorithm execution stages
 clap = ["dep:clap"]
-default = ["samplecheck"]
+#default = ["samplecheck"]
 inspector = []
 samplecheck = []
 
