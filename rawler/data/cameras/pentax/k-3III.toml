@@ -1,0 +1,12 @@
+make = "RICOH IMAGING COMPANY, LTD."
+model = "PENTAX K-3 Mark III"
+clean_make = "Ricoh"
+clean_model = "PENTAX K-3 Mark III"
+whitepoint = 16375
+color_pattern = "RGGB"
+active_area = [26, 34, 54, 30]
+crop_area = [54, 58, 58, 38]
+
+[cameras.color_matrix]
+A = [1.1154, -0.6711, 0.0521, -0.4126, 1.1956, 0.2451, -0.029, 0.0795, 0.6802]
+D65 = [0.9251, -0.3817, -0.1069, -0.4627, 1.2667, 0.2175, -0.0798, 0.166, 0.5633]

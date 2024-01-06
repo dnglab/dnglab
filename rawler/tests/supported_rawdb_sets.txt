@@ -168,6 +168,7 @@ cameras/Pentax/ist DL/raw_modes
 cameras/Pentax/K-3/raw_modes
 cameras/Pentax/K-7/raw_modes
 cameras/Pentax/K-3 II/raw_modes
+cameras/Pentax/K-3 III/raw_modes
 cameras/Pentax/K-70/raw_modes
 cameras/Pentax/K-m/raw_modes
 cameras/Pentax/K-r/raw_modes
