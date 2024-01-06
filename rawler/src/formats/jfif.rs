@@ -228,9 +228,12 @@ impl Jfif {
           offset: pos,
           app0: App0::read_segment(&mut reader, symbol)?,
         },
-        0xFFE1 => Segment::APP1 {
-          offset: pos,
-          app1: App1::read_segment(&mut reader, symbol)?,
+        0xFFE1 => match App1::read_segment(&mut reader, symbol) {
+          Ok(app1) => Segment::APP1 { offset: pos, app1 },
+          Err(err) => {
+            log::warn!("Failed to read APP1 (EXIF) segement, maybe corrupt: {:?}", err);
+            continue;
+          }
         },
         0xFFDA => Segment::SOS {
           offset: pos,
