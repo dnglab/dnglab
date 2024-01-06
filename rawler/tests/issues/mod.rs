@@ -1,9 +1,13 @@
+use std::fs::File;
+use std::io::BufReader;
 use std::io::Cursor;
 
 use crate::common::check_md5_equal;
 use crate::common::rawdb_file;
 use rawler::dng::convert::convert_raw_file;
 use rawler::dng::convert::ConvertParams;
+use rawler::formats::jfif::Jfif;
+use rawler::RawFile;
 use rawler::{analyze::raw_pixels_digest, decoders::RawDecodeParams};
 
 #[test]
@@ -40,5 +44,15 @@ fn dnglab_376_canon_crx_craw_qstep_shl_bug() -> std::result::Result<(), Box<dyn 
     let mut dng = Cursor::new(Vec::new());
     convert_raw_file(&path, &mut dng, &ConvertParams::default())?;
   }
+  Ok(())
+}
+
+#[test]
+fn dnglab_386_catch_jpeg_exif_tiff_ifd_error() -> std::result::Result<(), Box<dyn std::error::Error>> {
+  let path = rawdb_file("issues/dnglab_386/jpeg_ifd_error.jpg");
+  let mut rawfile = RawFile::new(&path, BufReader::new(File::open(&path)?));
+  rawfile.seek_to_start()?;
+  let jfif = Jfif::new(&mut rawfile)?;
+  assert!(jfif.exif_ifd().is_none());
   Ok(())
 }
