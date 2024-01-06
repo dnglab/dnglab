@@ -9,6 +9,9 @@ Command line tool to convert camera RAW files to Digital Negative Format (DNG).
  It is currently in alpha state, so don't expect a polished and bugfree application.
  Please report bugs in our [issue tracker](https://github.com/dnglab/dnglab/issues).
 
+ Rawler crate is now published to crates.io, but please notice that the API is not yet stable
+ and thus rawler is not following SemVer.
+
 
 ## Installation
 
@@ -218,6 +221,107 @@ OPTIONS:
     -v                  Print more messages
 ````
 
+### makedng subcommand
+````
+Lowlevel command to make a DNG file
+
+Usage: dnglab makedng [OPTIONS] --input <INPUT>...
+
+Options:
+  -d...
+          turns on debugging mode
+
+  -o, --output <OUTPUT>
+          Output DNG file path
+
+  -i, --input <INPUT>...
+          Input files to merge into a single DNG file. Usually only a single input file is used.
+          If multiple input files are given, --map should be used to specifiy how to interpret each intput file.
+
+  -v
+          Print more messages
+
+      --map <map>...
+          When multiple input files given, each input file should be mapped to a specific type of data.
+          First input file starts with index 0. Possible types are 'raw', 'preview', 'thumbnail', 'exif', 'xmp'.
+          Input files which are not mapped are ignored.
+
+          [default: 0:raw 0:preview 0:thumbnail 0:exif 0:xmp]
+
+      --dng-backward-version <version>
+          DNG specification version
+
+          [default: 1.4]
+          [possible values: 1.0, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6]
+
+      --colorimetric-reference <reference>
+          Reference for XYZ values
+
+          [default: scene]
+          [possible values: scene, output]
+
+      --unique-camera-model <id>
+          Unique camera model
+
+      --artist <artist>
+          Set the Artist tag
+
+      --make <make>
+          Set the Make tag
+
+      --model <model>
+          Set the Model tag
+
+      --matrix1 <MATRIX>
+          Matrix 1
+
+          [possible values: XYZ_sRGB_D50, XYZ_sRGB_D65, XYZ_AdobeRGB_D50, XYZ_AdobeRGB_D65, "custom 3x3 matrix (comma seperated)"]
+
+      --matrix2 <MATRIX>
+          Matrix 2
+
+          [possible values: XYZ_sRGB_D50, XYZ_sRGB_D65, XYZ_AdobeRGB_D50, XYZ_AdobeRGB_D65, "custom 3x3 matrix (comma seperated)"]
+
+      --matrix3 <MATRIX>
+          Matrix 3
+
+          [possible values: XYZ_sRGB_D50, XYZ_sRGB_D65, XYZ_AdobeRGB_D50, XYZ_AdobeRGB_D65, "custom 3x3 matrix (comma seperated)"]
+
+      --illuminant1 <ILLUMINANT>
+          Illuminant 1
+
+          [possible values: Unknown, A, B, C, D50, D55, D65, D75]
+
+      --illuminant2 <ILLUMINANT>
+          Illuminant 2
+
+          [possible values: Unknown, A, B, C, D50, D55, D65, D75]
+
+      --illuminant3 <ILLUMINANT>
+          Illuminant 3
+
+          [possible values: Unknown, A, B, C, D50, D55, D65, D75]
+
+      --linearization <TABLE>
+          Linearization table
+
+          [possible values: 8bit_sRGB, 8bit_sRGB_invert, 16bit_sRGB, 16bit_sRGB_invert, 8bit_gamma1.8, 8bit_gamma1.8_invert, 8bit_gamma2.0, 8bit_gamma2.0_invert, 8bit_gamma2.2, 8bit_gamma2.2_invert, 8bit_gamma2.4, 8bit_gamma2.4_invert, 16bit_gamma1.8, 16bit_gamma1.8_invert, 16bit_gamma2.0, 16bit_gamma2.0_invert, 16bit_gamma2.2, 16bit_gamma2.2_invert, 16bit_gamma2.4, 16bit_gamma2.4_invert, "custom table (comma seperated)"]
+
+      --wb <R,G,B>
+          Whitebalance as-shot
+
+      --white-xy <x,y>
+          Whitebalance as-shot encoded as xy chromaticity coordinates
+
+          [possible values: D50, D65, "custom x,y value (comma seperated)"]
+
+  -f, --override
+          Override existing files
+
+  -h, --help
+          Print help (see a summary with '-h')
+
+````
 
 ## Contribute samples
 Please see our guide: [CONTRIBUTE_SAMPLES.md](CONTRIBUTE_SAMPLES.md).
@@ -238,7 +342,7 @@ Well, depends on developer resources.
 Yes, DNGLab should get a GUI in near future.
 
 ### How can I donate to this project?
-I don't have any sponsoring or donation account like Patreon or Paypal. 
+I don't have any sponsoring or donation account like Patreon or Paypal.
 If you want to surprise me, please have a look at my [Amazon wish list](https://www.amazon.de/hz/wishlist/ls/DJ87KTFQUK8D?ref_=wl_share).
 
 
