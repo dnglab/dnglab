@@ -1,9 +1,15 @@
 [package]
 authors = ["Daniel Vogelbacher <daniel@chaospixel.com>", "Pedro Côrte-Real <pedro@pedrocr.net>"]
 categories = ["multimedia::images"]
+description = "A library to extract images and metadata from camera raw formats"
+readme = "README.md"
 edition = "2021"
+homepage = "https://github.com/dnglab/dnglab"
+keywords = ["camera", "raw"]
 license = "LGPL-2.1"
 name = "rawler"
+repository = "https://github.com/dnglab/dnglab"
+rust-version = "1.70"
 version = "0.6.0"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -12,49 +18,49 @@ build = "data/join.rs"
 
 [features]
 # This is a developer feature, it enabled deep inspection of algorithm execution stages
+clap = ["dep:clap"]
+default = ["samplecheck"]
 inspector = []
 samplecheck = []
-clap = ["dep:clap"]
 
 [dependencies]
+async-trait = "0.1"
+backtrace = "0.3"
 bitstream-io = "2"
 byteorder = "1"
-enumn = "0.1"
-clap = { version = "4.4.0", optional = true }
 chrono = "0.4"
+clap = {version = "4.4.0", optional = true}
+enumn = "0.1"
+futures = "0.3"
 hex = "0.4"
 image = "0.24"
-num_enum = "0.7"
 itertools = "0.12"
 lazy_static = "1"
 libc = "0.2"
 libflate = "2.0"
-weezl = "0.1.7"
 log = "0.4"
 md5 = "0.7"
+multiversion = "0.7"
+num_enum = "0.7"
 rayon = "1"
 serde = {version = "1.0", features = ["derive"]}
 serde_json = "1.0"
 thiserror = "1.0"
+tokio = {version = "1.20", features = ["full"]}
 toml = "0.8"
 uuid = {version = "1.0", features = ["serde", "v4"]}
-tokio = { version = "1.20", features = ["full"] }
-async-trait = "0.1"
-futures = "0.3"
-multiversion = "0.7"
-backtrace = "0.3"
+weezl = "0.1.7"
 
 [dev-dependencies]
-serde_yaml = "0.8"
-env_logger = "0.9"
 criterion = {version = "0.5", features = ["html_reports"]}
+env_logger = "0.9"
+serde_yaml = "0.8"
 
 [build-dependencies]
 glob = "0.3"
-toml = "0.8"
 rustc_version = "0.4"
+toml = "0.8"
 
 [[bench]]
-name = "perf"
 harness = false
-
+name = "perf"
