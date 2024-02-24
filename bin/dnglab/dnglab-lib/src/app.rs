@@ -135,7 +135,7 @@ pub fn create_app() -> Command {
       Command::new("lenses")
         .about("List supported lenses")
         .arg_required_else_help(false)
-        .arg(arg!(--md "Markdown format output")),
+        .arg(arg!(markdown: --md "Markdown format output").action(ArgAction::SetTrue)),
     )
     .subcommand(
       Command::new("makedng")
