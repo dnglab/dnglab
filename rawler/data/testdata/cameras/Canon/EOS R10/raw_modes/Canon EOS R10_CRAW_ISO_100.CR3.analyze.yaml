@@ -1,0 +1,129 @@
+---
+file:
+  fileSize: 14025050
+  fileName: Canon EOS R10_CRAW_ISO_100.CR3
+  digest: 95a5ecabc7f7bcf8a34fc7e1bea617a2
+data:
+  metadata:
+    rawParams:
+      rawWidth: 6192
+      rawHeight: 4060
+      bitDepth: 16
+      cropArea:
+        p:
+          x: 168
+          y: 52
+        d:
+          w: 6000
+          h: 4000
+      activeArea:
+        p:
+          x: 156
+          y: 40
+        d:
+          w: 6022
+          h: 4014
+      blacklevels:
+        levels:
+          - 512/1
+          - 512/1
+          - 512/1
+          - 512/1
+        cpp: 1
+        width: 2
+        height: 2
+      whitelevels:
+        - 12735
+      wbCoeffs:
+        - 1.9140625
+        - 1.0
+        - 1.6152344
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 8
+        copyright: ""
+        artist: CC-0
+        lens_spec: ~
+        exposure_time: 1/125
+        fnumber: 10/1
+        aperture_value: 434176/65536
+        brightness_value: ~
+        iso_speed_ratings: 100
+        iso_speed: ~
+        recommended_exposure_index: 100
+        sensitivity_type: 2
+        exposure_bias: 0/1
+        date_time_original: "2024:02:05 16:03:30"
+        create_date: "2024:02:05 16:03:30"
+        modify_date: "2024:02:05 16:03:30"
+        exposure_program: 3
+        timezone_offset: ~
+        offset_time: "+01:00"
+        offset_time_original: "+01:00"
+        offset_time_digitized: "+01:00"
+        sub_sec_time: "49"
+        sub_sec_time_original: "49"
+        sub_sec_time_digitized: "49"
+        shutter_speed_value: 458752/65536
+        max_aperture_value: ~
+        subject_distance: ~
+        metering_mode: 5
+        light_source: ~
+        flash: 0
+        focal_length: 17/1
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ""
+        serial_number: "203033001230"
+        lens_serial_number: "0000000000"
+        lens_make: ~
+        lens_model: ~
+        gps:
+          gps_version_id:
+            - 2
+            - 3
+            - 0
+            - 0
+          gps_latitude_ref: ~
+          gps_latitude: ~
+          gps_longitude_ref: ~
+          gps_longitude: ~
+          gps_altitude_ref: ~
+          gps_altitude: ~
+          gps_timestamp: ~
+          gps_satellites: ""
+          gps_status: V
+          gps_measure_mode: ~
+          gps_dop: ~
+          gps_speed_ref: ~
+          gps_speed: ~
+          gps_track_ref: ~
+          gps_track: ~
+          gps_img_direction_ref: ~
+          gps_img_direction: ~
+          gps_map_datum: WGS-84
+          gps_dest_latitude_ref: ~
+          gps_dest_latitude: ~
+          gps_dest_longitude_ref: ~
+          gps_dest_longitude: ~
+          gps_dest_bearing_ref: ~
+          gps_dest_bearing: ~
+          gps_dest_distance_ref: ~
+          gps_dest_distance: ~
+          gps_processing_method: ~
+          gps_area_information: ~
+          gps_date_stamp: ~
+          gps_differential: ~
+          gps_h_positioning_error: ~
+      model: EOS R10
+      make: Canon
+      lens: ~
+      unique_image_id: 6776535552259026436364563907007097232
+      rating: ~
+

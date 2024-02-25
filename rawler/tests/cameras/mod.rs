@@ -314,6 +314,15 @@ mod camera_eos_r7_raw_modes {
   super::camera_file_check!("Canon", "EOS R7", cam_canon_eos_r7_craw_iso_800_nodual_cr3, "raw_modes/Canon EOS R7_CRAW_ISO_800_nodual.CR3");
   super::camera_file_check!("Canon", "EOS R7", cam_canon_eos_r7_raw_iso_32000_dual_cr3, "raw_modes/Canon EOS R7_RAW_ISO_32000_dual.CR3");
 }
+mod camera_eos_r10_raw_modes {
+  super::camera_file_check!("Canon", "EOS R10", cam_canon_eos_r10_raw_iso_800_cr3, "raw_modes/Canon EOS R10_RAW_ISO_800.CR3");
+  super::camera_file_check!("Canon", "EOS R10", cam_canon_eos_r10_craw_iso_800_cr3, "raw_modes/Canon EOS R10_CRAW_ISO_800.CR3");
+  super::camera_file_check!("Canon", "EOS R10", cam_canon_eos_r10_craw_iso_32000_cr3, "raw_modes/Canon EOS R10_CRAW_ISO_32000.CR3");
+  super::camera_file_check!("Canon", "EOS R10", cam_canon_eos_r10_raw_iso_32000_cr3, "raw_modes/Canon EOS R10_RAW_ISO_32000.CR3");
+  super::camera_file_check!("Canon", "EOS R10", cam_canon_eos_r10_burst_iso_100_cr3, "raw_modes/Canon EOS R10_BURST_ISO_100.CR3");
+  super::camera_file_check!("Canon", "EOS R10", cam_canon_eos_r10_raw_iso_100_cr3, "raw_modes/Canon EOS R10_RAW_ISO_100.CR3");
+  super::camera_file_check!("Canon", "EOS R10", cam_canon_eos_r10_craw_iso_100_cr3, "raw_modes/Canon EOS R10_CRAW_ISO_100.CR3");
+}
 mod camera_eos_r50_raw_modes {
   super::camera_file_check!("Canon", "EOS R50", cam_canon_r50_iso800_craw_ms_cr3, "raw_modes/Canon_R50_ISO800_CRAW_ms.CR3");
   super::camera_file_check!("Canon", "EOS R50", cam_canon_r50_iso100_raw_ms_cr3, "raw_modes/Canon_R50_ISO100_RAW_ms.CR3");
