@@ -146,6 +146,14 @@ impl Camera {
           if let Some(color_matrix) = val.as_table() {
             for (illu_str, matrix) in color_matrix.into_iter() {
               let illu = Illuminant::new_from_str(illu_str).unwrap();
+              if illu_str == "D65" || illu_str == "D50" {
+                let mut legacy_xyz_to_cam: [[f32; 3]; 4] = [[0.0; 3]; 4];
+                let matrix_vals = matrix.as_array().unwrap_or_else(|| panic!("color matrix must be an array"));
+                for (i, val) in matrix_vals.iter().enumerate() {
+                  legacy_xyz_to_cam[i/3][i%3] = (val.as_float().unwrap() * 10000.0) as f32;
+                }
+                self.xyz_to_cam = legacy_xyz_to_cam;
+              }
               let xyz_to_cam = matrix
                 .as_array()
                 .expect("color matrix must be array")
