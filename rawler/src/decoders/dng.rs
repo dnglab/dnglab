@@ -342,12 +342,14 @@ impl<'a> DngDecoder<'a> {
   pub fn decode_uncompressed(&self, file: &mut RawFile, raw: &IFD, width: usize, height: usize, dummy: bool) -> Result<PixU16> {
     let src: Vec<u8> = raw.strip_data(file.inner())?.into_iter().flatten().collect();
     match (raw.endian, fetch_tiff_tag!(raw, TiffCommonTag::BitsPerSample).force_u32(0)) {
+      // 16 bits, encoding depends on TIFF endianess
       (Endian::Big, 16) => Ok(decode_16be(&src, width, height, dummy)),
       (Endian::Little, 16) => Ok(decode_16le(&src, width, height, dummy)),
-      (Endian::Big, 12) => Ok(decode_12be(&src, width, height, dummy)),
-      //(Endian::Little, 12) => Ok(decode_12le(&src, width, height, dummy)), Not supported by DNG spec
-      //(Endian::Little, 10) => Ok(decode_10le(&src, width, height, dummy)), // Not supported by DNG spec
-      // TODO: implement 10 bit BE
+      // 12 Bits, DNG spec says it must be always encoded as big-endian
+      (_, 12) => Ok(decode_12be(&src, width, height, dummy)),
+      // TODO: implement 10 bit BE, but no real world samples so far
+      //(_, 10) => Ok(decode_10be(&src, width, height, dummy)),
+      // 8 bits with linearization table
       (_, 8) if raw.has_entry(TiffCommonTag::Linearization) => {
         let linearization = fetch_tiff_tag!(self.tiff, TiffCommonTag::Linearization);
         let curve = {
