@@ -347,8 +347,8 @@ impl<'a> DngDecoder<'a> {
       (Endian::Little, 16) => Ok(decode_16le(&src, width, height, dummy)),
       // 12 Bits, DNG spec says it must be always encoded as big-endian
       (_, 12) => Ok(decode_12be(&src, width, height, dummy)),
-      // TODO: implement 10 bit BE, but no real world samples so far
-      //(_, 10) => Ok(decode_10be(&src, width, height, dummy)),
+      // 10 Bits, DNG spec says it must be always encoded as big-endian
+      (_, 10) => Ok(decode_10be(&src, width, height, dummy)),
       // 8 bits with linearization table
       (_, 8) if raw.has_entry(TiffCommonTag::Linearization) => {
         let linearization = fetch_tiff_tag!(self.tiff, TiffCommonTag::Linearization);
@@ -361,8 +361,12 @@ impl<'a> DngDecoder<'a> {
         };
         Ok(decode_8bit_wtable(&src, &curve, width, height, dummy))
       }
+      // 8 bits
       (_, 8) => Ok(decode_8bit(&src, width, height, dummy)),
-      (_, bps) => Err(format_args!("DNG: Don't know about {} bps images", bps).into()),
+      // Generic MSB decoder for exotic packed bit sizes
+      (_, bps) if bps > 0 && bps < 16 => Ok(decode_generic_msb(&src, width, height, bps, dummy)),
+      // Unhandled bits
+      (_, bps) => Err(format_args!("DNG: Don't know how to handle DNG with {} bps", bps).into()),
     }
   }
 

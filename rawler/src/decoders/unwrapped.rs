@@ -31,7 +31,7 @@ pub fn decode_unwrapped(file: &mut RawFile) -> Result<RawImageData> {
       Ok(RawImageData::Integer(decode_8bit_wtable(data, &table, width, height, false).into_inner()))
     }
     1 => Ok(RawImageData::Integer(decode_10le_lsb16(data, width, height, false).into_inner())),
-    2 => Ok(RawImageData::Integer(decode_10le(data, width, height, false).into_inner())),
+    2 => Ok(RawImageData::Integer(decode_10be(data, width, height, false).into_inner())),
     3 => Ok(RawImageData::Integer(decode_12be(data, width, height, false).into_inner())),
     4 => Ok(RawImageData::Integer(decode_12be_msb16(data, width, height, false).into_inner())),
     5 => Ok(RawImageData::Integer(decode_12le_16bitaligned(data, width, height, false).into_inner())),
