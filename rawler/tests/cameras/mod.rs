@@ -2410,6 +2410,15 @@ mod camera_dmc_zs40_raw_modes {
 mod camera_dmc_zs60_raw_modes {
   super::camera_file_check!("Panasonic", "DMC-ZS60", cam_dmc_zs60_iso_400_panasonic_raw_1_4896x3672_rw2, "raw_modes/DMC-ZS60_ISO_400_Panasonic RAW 1_4896x3672.RW2");
 }
+mod camera_sigma_fp_cinemadng {
+  super::camera_file_check!("Sigma", "SIGMA fp", cam_sigma_fp_6k_14bit_dng, "cinemadng/SIGMA_FP_6k_14bit.DNG");
+  super::camera_file_check!("Sigma", "SIGMA fp", cam_sigma_fp_653_20240229_000001_2k_8bit_dng, "cinemadng/SIGMA_FP_653_20240229_000001_2k_8bit.DNG");
+  super::camera_file_check!("Sigma", "SIGMA fp", cam_sigma_fp_648_20240229_000001_4k_10bit_dng, "cinemadng/SIGMA_FP_648_20240229_000001_4k_10bit.DNG");
+  super::camera_file_check!("Sigma", "SIGMA fp", cam_sigma_fp_647_20240229_000001_4k_12bit_dng, "cinemadng/SIGMA_FP_647_20240229_000001_4k_12bit.DNG");
+  super::camera_file_check!("Sigma", "SIGMA fp", cam_sigma_fp_652_20240229_000001_2k_10bit_dng, "cinemadng/SIGMA_FP_652_20240229_000001_2k_10bit.DNG");
+  super::camera_file_check!("Sigma", "SIGMA fp", cam_sigma_fp_650_20240229_000001_4k_8bit_dng, "cinemadng/SIGMA_FP_650_20240229_000001_4k_8bit.DNG");
+  super::camera_file_check!("Sigma", "SIGMA fp", cam_sigma_fp_651_20240229_000001_2k_12bit_dng, "cinemadng/SIGMA_FP_651_20240229_000001_2k_12bit.DNG");
+}
 mod camera_c_lux_raw_modes {
   super::camera_file_check!("Leica", "C-Lux", cam_c_lux_iso_125_4fmt_5472x3648_rwl, "raw_modes/C-Lux_ISO_125_4fmt_5472x3648.RWL");
 }

@@ -617,6 +617,7 @@ cameras/Panasonic/DMC-TZ81/raw_modes
 cameras/Panasonic/DMC-ZS100/raw_modes
 cameras/Panasonic/DMC-ZS40/raw_modes
 cameras/Panasonic/DMC-ZS60/raw_modes
+cameras/Sigma/SIGMA fp/cinemadng
 cameras/Leica/C-Lux/raw_modes
 cameras/Leica/C Typ 112/raw_modes
 cameras/Leica/Digilux 2/raw_modes
