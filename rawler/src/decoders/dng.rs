@@ -1,12 +1,14 @@
 use std::cmp;
 use std::f32::NAN;
 
+use image::EncodableLayout;
 use image::ImageBuffer;
 use image::Rgb;
 
 use crate::alloc_image_ok;
 use crate::alloc_image_plain;
 use crate::bits::Endian;
+use crate::bits::LEu32;
 use crate::bits::LookupTable;
 use crate::cfa::*;
 use crate::decoders::*;
@@ -50,11 +52,18 @@ impl<'a> Decoder for DngDecoder<'a> {
     let cpp = fetch_tiff_tag!(raw, TiffCommonTag::SamplesPerPixel).force_usize(0);
     let bits = fetch_tiff_tag!(raw, TiffCommonTag::BitsPerSample).force_u32(0);
 
-    let image = match fetch_tiff_tag!(raw, TiffCommonTag::Compression).force_u32(0) {
+    let mut image = match fetch_tiff_tag!(raw, TiffCommonTag::Compression).force_u32(0) {
       1 => self.decode_uncompressed(file, raw, width * cpp, height, dummy)?,
       7 => self.decode_compressed(file, raw, width * cpp, height, cpp, dummy)?,
       c => return Err(RawlerError::DecoderFailed(format!("Don't know how to read DNGs with compression {}", c))),
     };
+
+    if let Some(lintable) = raw.get_entry(TiffCommonTag::Linearization) {
+      if bits != 8 && fetch_tiff_tag!(raw, TiffCommonTag::Compression).force_u32(0) != 1 {
+        // 8 bit uncompressed data is already read delinearized
+        apply_linearization(&mut image, &lintable.value, bits);
+      }
+    }
 
     let orientation = Orientation::from_tiff(self.tiff.root_ifd());
 
@@ -205,7 +214,12 @@ impl<'a> DngDecoder<'a> {
     let linear = fetch_tiff_tag!(raw, TiffCommonTag::PhotometricInt).force_usize(0) == 34892;
     let cfa = if linear { CFA::default() } else { self.get_cfa(raw)? };
     let color_matrix = self.get_color_matrix()?;
-    let real_bps = raw.get_entry(TiffCommonTag::BitsPerSample).map(|v| v.force_usize(0)).unwrap_or(16);
+    let real_bps = if raw.has_entry(TiffCommonTag::Linearization) {
+      // If DNG contains linearization table, output is always 16 bits
+      16
+    } else {
+      raw.get_entry(TiffCommonTag::BitsPerSample).map(|v| v.force_usize(0)).unwrap_or(16)
+    };
 
     Ok(Camera {
       clean_make: make.clone(),
@@ -444,6 +458,23 @@ impl<'a> DngDecoder<'a> {
       .map_err(RawlerError::DecoderFailed)
     } else {
       Err(RawlerError::DecoderFailed("DNG: didn't find tiles or strips".to_string()))
+    }
+  }
+}
+
+fn apply_linearization(image: &mut PixU16, tbl: &Value, bits: u32) {
+  match tbl {
+    Value::Short(points) => {
+      let table = LookupTable::new_with_bits(points, bits);
+      image.pixel_rows_mut().for_each(|row| {
+        let mut random = LEu32(row.as_bytes(), 0);
+        row.iter_mut().for_each(|p| {
+          *p = table.dither(*p, &mut random);
+        })
+      });
+    }
+    _ => {
+      panic!("Unsupported linear table");
     }
   }
 }
