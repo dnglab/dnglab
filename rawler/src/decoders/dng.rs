@@ -96,7 +96,8 @@ impl<'a> Decoder for DngDecoder<'a> {
       cam.clean_model = known_cam.clean_model;
     }
     let exif = Exif::new(self.tiff.root_ifd())?;
-    let mdata = RawMetadata::new(&cam, exif);
+    let dng_opcode_lists: DngOpcodeLists = self.get_dng_opcode_lists(raw);
+    let mdata = RawMetadata::new_with_dng_opcode_lists(&cam, exif, Some(dng_opcode_lists));
     Ok(mdata)
   }
 
@@ -337,6 +338,21 @@ impl<'a> DngDecoder<'a> {
     // TODO: add 3
 
     Ok(result)
+  }
+
+  fn get_dng_opcode_list(&self, raw: &IFD, tag: DngTag) -> Option<Vec<u8>> {
+    match &raw.get_entry(tag)?.value {
+      Value::Undefined(data) => Some(data.clone()),
+      _ => None
+    }
+  }
+
+  fn get_dng_opcode_lists(&self, raw: &IFD) -> DngOpcodeLists {
+    DngOpcodeLists {
+      list_1: self.get_dng_opcode_list(raw, DngTag::OpcodeList1),
+      list_2: self.get_dng_opcode_list(raw, DngTag::OpcodeList2),
+      list_3: self.get_dng_opcode_list(raw, DngTag::OpcodeList3),
+    }
   }
 
   pub fn decode_uncompressed(&self, file: &mut RawFile, raw: &IFD, width: usize, height: usize, dummy: bool) -> Result<PixU16> {

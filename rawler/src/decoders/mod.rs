@@ -130,6 +130,13 @@ pub struct RawDecodeParams {
   pub image_index: usize,
 }
 
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+pub struct DngOpcodeLists {
+  pub list_1: Option<Vec<u8>>,
+  pub list_2: Option<Vec<u8>>,
+  pub list_3: Option<Vec<u8>>,
+}
+
 #[derive(Default, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 pub struct RawMetadata {
   pub exif: Exif,
@@ -138,6 +145,7 @@ pub struct RawMetadata {
   pub lens: Option<LensDescription>,
   pub unique_image_id: Option<u128>,
   pub rating: Option<u32>,
+  pub dng_opcode_lists: Option<DngOpcodeLists>,
 }
 
 impl RawMetadata {
@@ -149,6 +157,19 @@ impl RawMetadata {
       unique_image_id: None,
       lens: None,
       rating: None,
+      dng_opcode_lists: None,
+    }
+  }
+
+  pub(crate) fn new_with_dng_opcode_lists(camera: &Camera, exif: Exif, dng_opcode_lists: Option<DngOpcodeLists>) -> Self {
+    Self {
+      exif,
+      model: camera.clean_model.clone(),
+      make: camera.clean_make.clone(),
+      unique_image_id: None,
+      lens: None,
+      rating: None,
+      dng_opcode_lists,
     }
   }
 
@@ -163,6 +184,7 @@ impl RawMetadata {
       unique_image_id: None,
       lens,
       rating: None,
+      dng_opcode_lists: None,
     }
   }
 }
