@@ -1,4 +1,10 @@
-use crate::{alloc_image, bits::*, decoders::decode_threaded, pixarray::PixU16};
+use crate::{
+  alloc_image,
+  bits::*,
+  decoders::decode_threaded,
+  pixarray::PixU16,
+  pumps::{BitPump, BitPumpLSB, BitPumpMSB},
+};
 
 pub fn decode_8bit_wtable(buf: &[u8], tbl: &LookupTable, width: usize, height: usize, dummy: bool) -> PixU16 {
   decode_threaded(
@@ -63,7 +69,7 @@ pub fn decode_10le_lsb16(buf: &[u8], width: usize, height: usize, dummy: bool) -
   )
 }
 
-pub fn decode_10le(buf: &[u8], width: usize, height: usize, dummy: bool) -> PixU16 {
+pub fn decode_10be(buf: &[u8], width: usize, height: usize, dummy: bool) -> PixU16 {
   decode_threaded(
     width,
     height,
@@ -80,7 +86,7 @@ pub fn decode_10le(buf: &[u8], width: usize, height: usize, dummy: bool) -> PixU
 
         o[0] = g1 << 2 | g2 >> 6;
         o[1] = (g2 & 0x3f) << 4 | g3 >> 4;
-        o[2] = (g3 & 0x0f) << 6 | g3 >> 2;
+        o[2] = (g3 & 0x0f) << 6 | g4 >> 2;
         o[3] = (g4 & 0x03) << 8 | g5;
       }
     }),
@@ -560,4 +566,26 @@ pub fn decode_16be(buf: &[u8], width: usize, height: usize, dummy: bool) -> PixU
       }
     }),
   )
+}
+
+pub fn decode_generic_msb(buf: &[u8], width: usize, height: usize, bits: u32, dummy: bool) -> PixU16 {
+  assert!(bits <= 16);
+  let mut pix: PixU16 = alloc_image!(width, height, dummy);
+  assert!(8 * buf.len() >= width * height * bits as usize, "buf has not enough bits");
+  let mut pump = BitPumpMSB::new(buf);
+  for p in pix.pixels_mut() {
+    *p = pump.get_bits(bits) as u16;
+  }
+  pix
+}
+
+pub fn decode_generic_lsb(buf: &[u8], width: usize, height: usize, bits: u32, dummy: bool) -> PixU16 {
+  assert!(bits <= 16);
+  let mut pix: PixU16 = alloc_image!(width, height, dummy);
+  assert!(8 * buf.len() >= width * height * bits as usize, "buf has not enough bits");
+  let mut pump = BitPumpLSB::new(buf);
+  for p in pix.pixels_mut() {
+    *p = pump.get_bits(bits) as u16;
+  }
+  pix
 }
