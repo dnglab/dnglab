@@ -128,9 +128,11 @@ where
       }
     }
 
+    /*
     for (tag, value) in rawimage.dng_tags.iter() {
       self.ifd.add_untyped_tag(*tag, value.clone())?;
     }
+     */
 
     Ok(())
   }
@@ -296,9 +298,11 @@ where
       }
     }
 
+    /*
     for (tag, value) in rawimage.dng_tags.iter() {
       self.ifd.add_untyped_tag(*tag, value.clone())?;
     }
+     */
 
     Ok(())
   }

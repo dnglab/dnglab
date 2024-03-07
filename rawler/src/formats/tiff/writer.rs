@@ -163,7 +163,7 @@ impl DirectoryWriter {
     );
   }
 
-  pub fn add_untyped_tag<V: Into<Value>>(&mut self, tag: u16, value: V) -> Result<()> {
+  pub fn add_untyped_tag<V: Into<Value>>(&mut self, tag: u16, value: V) {
     self.entries.insert(
       tag,
       Entry {
@@ -172,7 +172,20 @@ impl DirectoryWriter {
         embedded: None,
       },
     );
-    Ok(())
+  }
+
+  pub fn copy<'a>(&mut self, iter: impl Iterator<Item = (&'a u16, &'a Value)>) {
+    for entry in iter {
+      if !self.entries.contains_key(entry.0) {
+        self.add_untyped_tag(*entry.0, entry.1.clone());
+      }
+    }
+  }
+
+  pub fn copy_with_override<'a>(&mut self, iter: impl Iterator<Item = (&'a u16, &'a Value)>) {
+    for entry in iter {
+      self.add_untyped_tag(*entry.0, entry.1.clone());
+    }
   }
 
   pub fn add_tag_undefined<T: TiffTag>(&mut self, tag: T, data: Vec<u8>) {
