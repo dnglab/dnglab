@@ -58,7 +58,7 @@ pub struct Exif {
   pub lens_model: Option<String>,
   pub gps: Option<ExifGPS>,
   pub user_comment: Option<String>,
-  pub makernotes: Option<Vec<u8>>,
+  //pub makernotes: Option<Vec<u8>>,
 }
 
 #[derive(Debug, Default, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
@@ -161,7 +161,7 @@ impl Exif {
           (ExifTag::SerialNumber, Value::Ascii(data)) => self.serial_number = data.strings().get(0).map(trim),
           (ExifTag::LensSerialNumber, Value::Ascii(data)) => self.lens_serial_number = data.strings().get(0).map(trim),
           (ExifTag::UserComment, Value::Ascii(data)) => self.user_comment = data.strings().get(0).map(trim),
-          (ExifTag::MakerNotes, Value::Undefined(data)) => self.makernotes = Some(data.clone()),
+          //(ExifTag::MakerNotes, Value::Undefined(data)) => self.makernotes = Some(data.clone()),
           (tag, _value) => {
             log::debug!("Ignoring EXIF tag: {:?}", tag);
           }
