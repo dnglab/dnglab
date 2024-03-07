@@ -89,6 +89,7 @@ data:
         lens_make: Olympus
         lens_model: M.Zuiko Digital 25mm F1.8
         gps: ~
+        user_comment: ~
       model: E-PL10
       make: OLYMPUS CORPORATION
       lens:

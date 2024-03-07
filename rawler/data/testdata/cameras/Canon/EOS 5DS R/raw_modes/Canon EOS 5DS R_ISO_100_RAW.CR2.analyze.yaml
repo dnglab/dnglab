@@ -89,6 +89,7 @@ data:
         lens_make: Canon
         lens_model: EF 100mm f/2.8L Macro IS USM
         gps: ~
+        user_comment: ~
       model: EOS 5DS R
       make: Canon
       lens:

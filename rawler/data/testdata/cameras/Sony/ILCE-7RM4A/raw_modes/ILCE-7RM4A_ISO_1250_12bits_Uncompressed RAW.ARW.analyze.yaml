@@ -83,6 +83,7 @@ data:
         lens_make: Sony
         lens_model: FE 24-105mm F4 G OSS
         gps: ~
+        user_comment: ~
       model: ILCE-7RM4A
       make: Sony
       lens:

@@ -89,6 +89,7 @@ data:
         lens_make: Nikon
         lens_model: AF-P DX Nikkor 18-55mm f/3.5-5.6G
         gps: ~
+        user_comment: ~
       model: D3400
       make: Nikon
       lens:

@@ -125,6 +125,7 @@ data:
           gps_date_stamp: ~
           gps_differential: ~
           gps_h_positioning_error: ~
+        user_comment: ~
       model: EOS R50
       make: Canon
       lens:

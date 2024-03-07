@@ -121,6 +121,7 @@ data:
         lens_make: FUJIFILM
         lens_model: XF50mmF2 R WR
         gps: ~
+        user_comment: ~
       model: X-E3
       make: Fujifilm
       lens: ~

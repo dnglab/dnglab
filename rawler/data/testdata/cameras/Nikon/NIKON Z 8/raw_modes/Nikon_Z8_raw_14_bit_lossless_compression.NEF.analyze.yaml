@@ -89,6 +89,7 @@ data:
         lens_make: Nikon
         lens_model: Nikkor Z 14-24mm f/2.8 S
         gps: ~
+        user_comment: ~
       model: Z 8
       make: Nikon
       lens:

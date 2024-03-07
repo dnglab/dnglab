@@ -89,6 +89,7 @@ data:
         lens_make: Samsung
         lens_model: NX 60mm F2.8 Macro ED OIS SSA
         gps: ~
+        user_comment: ~
       model: NX200
       make: Samsung
       lens:

@@ -82,6 +82,7 @@ data:
         lens_make: ~
         lens_model: ~
         gps: ~
+        user_comment: ~
       model: DCS760C
       make: Kodak
       lens: ~

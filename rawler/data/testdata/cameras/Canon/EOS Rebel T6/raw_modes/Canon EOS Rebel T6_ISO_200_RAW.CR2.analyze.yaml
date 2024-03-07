@@ -89,6 +89,7 @@ data:
         lens_make: Canon
         lens_model: EF 50mm f/1.8 STM
         gps: ~
+        user_comment: ~
       model: Rebel T6
       make: Canon
       lens:

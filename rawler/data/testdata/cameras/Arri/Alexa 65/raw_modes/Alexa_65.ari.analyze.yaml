@@ -70,6 +70,7 @@ data:
         lens_make: ~
         lens_model: Prime 50  5020981
         gps: ~
+        user_comment: ~
       model: ALEXA 65
       make: ARRI
       lens: ~

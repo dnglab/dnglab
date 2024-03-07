@@ -76,6 +76,7 @@ data:
         lens_make: ~
         lens_model: ~
         gps: ~
+        user_comment: ~
       model: H4D-50
       make: Hasselblad
       lens: ~

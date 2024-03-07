@@ -86,6 +86,7 @@ data:
         lens_make: Nikon
         lens_model: AF-S DX Zoom-Nikkor 18-135mm f/3.5-5.6G IF-ED
         gps: ~
+        user_comment: ~
       model: D7100
       make: Nikon
       lens:

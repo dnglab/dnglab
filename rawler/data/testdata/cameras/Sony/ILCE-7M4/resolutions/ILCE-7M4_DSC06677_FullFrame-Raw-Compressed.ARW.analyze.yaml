@@ -89,6 +89,7 @@ data:
         lens_make: Sony
         lens_model: FE 50mm F2.5 G
         gps: ~
+        user_comment: ~
       model: ILCE-7M4
       make: Sony
       lens:

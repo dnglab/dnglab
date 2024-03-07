@@ -89,6 +89,7 @@ data:
         lens_make: Samsung
         lens_model: NX 50-150mm F2.8 S ED OIS
         gps: ~
+        user_comment: ~
       model: NX300
       make: Samsung
       lens:

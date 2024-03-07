@@ -70,6 +70,7 @@ data:
         lens_make: ~
         lens_model: ~
         gps: ~
+        user_comment: ~
       model: FinePix S100FS
       make: Fujifilm
       lens: ~

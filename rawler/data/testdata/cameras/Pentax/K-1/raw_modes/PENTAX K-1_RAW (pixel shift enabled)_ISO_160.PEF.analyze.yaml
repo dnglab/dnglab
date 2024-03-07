@@ -89,6 +89,7 @@ data:
         lens_make: Pentax
         lens_model: smc PENTAX-DA 35mm F2.4 AL
         gps: ~
+        user_comment: ~
       model: PENTAX K-1
       make: "RICOH IMAGING COMPANY, LTD."
       lens:

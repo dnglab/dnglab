@@ -121,6 +121,7 @@ data:
         lens_make: FUJIFILM
         lens_model: XF10-24mmF4 R OIS
         gps: ~
+        user_comment: ~
       model: X-Pro1
       make: Fujifilm
       lens: ~

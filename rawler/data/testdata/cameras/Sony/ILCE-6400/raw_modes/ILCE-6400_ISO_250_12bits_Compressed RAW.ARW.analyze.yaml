@@ -89,6 +89,7 @@ data:
         lens_make: Sony
         lens_model: E PZ 18-105mm F4 G OSS
         gps: ~
+        user_comment: ~
       model: ILCE-6400
       make: SONY
       lens:

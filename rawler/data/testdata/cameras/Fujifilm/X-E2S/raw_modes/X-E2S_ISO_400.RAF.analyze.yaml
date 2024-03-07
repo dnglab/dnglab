@@ -121,6 +121,7 @@ data:
         lens_make: FUJIFILM
         lens_model: XF18-55mmF2.8-4 R LM OIS
         gps: ~
+        user_comment: ~
       model: X-E2S
       make: Fujifilm
       lens: ~

@@ -83,6 +83,7 @@ data:
         lens_make: Tamron
         lens_model: 17-70mm F2.8 Di III-A VC RXD
         gps: ~
+        user_comment: ~
       model: ILME-FX30
       make: Sony
       lens:

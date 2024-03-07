@@ -76,6 +76,7 @@ data:
         lens_make: ~
         lens_model: ~
         gps: ~
+        user_comment: ~
       model: DiMAGE 7i
       make: Minolta
       lens: ~

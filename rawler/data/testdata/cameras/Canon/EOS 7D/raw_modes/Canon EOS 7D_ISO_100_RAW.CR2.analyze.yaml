@@ -89,6 +89,7 @@ data:
         lens_make: Canon
         lens_model: EF 40mm f/2.8 STM
         gps: ~
+        user_comment: ~
       model: EOS 7D
       make: Canon
       lens:

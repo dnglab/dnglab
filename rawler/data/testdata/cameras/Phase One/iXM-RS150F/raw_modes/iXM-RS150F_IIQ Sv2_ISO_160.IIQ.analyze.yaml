@@ -85,6 +85,7 @@ data:
         lens_make: ~
         lens_model: ~
         gps: ~
+        user_comment: ~
       model: iXM-RS150F
       make: Phase One
       lens: ~

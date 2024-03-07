@@ -89,6 +89,7 @@ data:
         lens_make: Canon
         lens_model: EF 24-105mm f/4L IS USM
         gps: ~
+        user_comment: ~
       model: EOS 6D
       make: Canon
       lens:

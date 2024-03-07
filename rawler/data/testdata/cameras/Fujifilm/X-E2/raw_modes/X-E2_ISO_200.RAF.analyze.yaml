@@ -121,6 +121,7 @@ data:
         lens_make: FUJIFILM
         lens_model: XF23mmF1.4 R
         gps: ~
+        user_comment: ~
       model: X-E2
       make: Fujifilm
       lens: ~
