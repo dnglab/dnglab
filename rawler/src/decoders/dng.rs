@@ -159,6 +159,10 @@ impl<'a> Decoder for DngDecoder<'a> {
     }
     Ok(None)
   }
+
+  fn format_hint(&self) -> FormatHint {
+    FormatHint::DNG
+  }
 }
 
 impl<'a> DngDecoder<'a> {

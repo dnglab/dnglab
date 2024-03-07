@@ -139,6 +139,10 @@ impl<'a> Decoder for X3fDecoder<'a> {
     todo!()
   }
 
+  fn format_hint(&self) -> FormatHint {
+    FormatHint::X3F
+  }
+
   fn raw_metadata(&self, _file: &mut RawFile, _params: RawDecodeParams) -> Result<RawMetadata> {
     todo!()
   }

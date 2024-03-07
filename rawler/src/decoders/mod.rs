@@ -130,6 +130,40 @@ pub struct RawDecodeParams {
   pub image_index: usize,
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+pub enum FormatHint {
+  Unknown,
+  CR2,
+  CR3,
+  CRW,
+  NEF,
+  ARW,
+  RAF,
+  RW2,
+  ARI,
+  DNG,
+  DCR,
+  DCS,
+  ERF,
+  IIQ,
+  KDC,
+  MEF,
+  MOS,
+  MRW,
+  NRW,
+  ORF,
+  PEF,
+  SRW,
+  TFR,
+  X3F,
+}
+
+impl Default for FormatHint {
+  fn default() -> Self {
+    Self::Unknown
+  }
+}
+
 #[derive(Default, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 pub struct RawMetadata {
   pub exif: Exif,
@@ -200,6 +234,7 @@ pub trait Decoder: Send {
   }
 
   fn format_dump(&self) -> FormatDump;
+  fn format_hint(&self) -> FormatHint;
 }
 
 /// Possible orientations of an image

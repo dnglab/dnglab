@@ -50,6 +50,7 @@ use crate::Result;
 use super::BlackLevel;
 use super::Camera;
 use super::Decoder;
+use super::FormatHint;
 use super::RawDecodeParams;
 use super::RawMetadata;
 
@@ -328,6 +329,10 @@ impl<'a> Decoder for NefDecoder<'a> {
       let img = image::load_from_memory_with_format(&buf, image::ImageFormat::Jpeg).unwrap();
       Ok(Some(img))
     }
+  }
+
+  fn format_hint(&self) -> FormatHint {
+    FormatHint::NEF
   }
 }
 

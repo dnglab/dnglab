@@ -22,6 +22,7 @@ use std::io::Cursor;
 use super::ok_cfa_image;
 use super::Camera;
 use super::Decoder;
+use super::FormatHint;
 use super::RawDecodeParams;
 use super::RawMetadata;
 
@@ -232,6 +233,10 @@ impl<'a> Decoder for MrwDecoder<'a> {
     let exif = Exif::new(&self.tiff)?;
     let mdata = RawMetadata::new(&self.camera, exif);
     Ok(mdata)
+  }
+
+  fn format_hint(&self) -> FormatHint {
+    FormatHint::MRW
   }
 
   /*

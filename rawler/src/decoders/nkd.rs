@@ -1,6 +1,6 @@
 use std::f32::NAN;
 
-use super::{ok_cfa_image, Camera, Decoder, RawDecodeParams, RawMetadata};
+use super::{ok_cfa_image, Camera, Decoder, FormatHint, RawDecodeParams, RawMetadata};
 use crate::analyze::FormatDump;
 use crate::exif::Exif;
 use crate::packed::{decode_10le_lsb16, decode_12be_msb16, decode_12le_16bitaligned};
@@ -50,5 +50,9 @@ impl<'a> Decoder for NakedDecoder<'a> {
     let exif = Exif::default();
     let mdata = RawMetadata::new(&self.camera, exif);
     Ok(mdata)
+  }
+
+  fn format_hint(&self) -> FormatHint {
+    FormatHint::Unknown
   }
 }

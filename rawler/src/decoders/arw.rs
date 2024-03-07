@@ -46,6 +46,7 @@ use crate::Result;
 use super::ok_cfa_image;
 use super::Camera;
 use super::Decoder;
+use super::FormatHint;
 use super::RawDecodeParams;
 use super::RawMetadata;
 
@@ -218,6 +219,10 @@ impl<'a> Decoder for ArwDecoder<'a> {
     exif.extend_from_ifd(self.get_exif()?)?; // TODO: is this required?
     let mdata = RawMetadata::new_with_lens(&self.camera, exif, self.get_lens_description()?.cloned());
     Ok(mdata)
+  }
+
+  fn format_hint(&self) -> FormatHint {
+    FormatHint::ARW
   }
 }
 

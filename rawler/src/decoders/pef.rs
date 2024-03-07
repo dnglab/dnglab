@@ -8,6 +8,7 @@ use std::f32::NAN;
 use super::BlackLevel;
 use super::Camera;
 use super::Decoder;
+use super::FormatHint;
 use super::RawDecodeParams;
 use super::RawMetadata;
 use crate::alloc_image_ok;
@@ -187,6 +188,10 @@ impl<'a> Decoder for PefDecoder<'a> {
     let exif = Exif::new(self.tiff.root_ifd())?;
     let mdata = RawMetadata::new_with_lens(&self.camera, exif, self.get_lens_description()?.cloned());
     Ok(mdata)
+  }
+
+  fn format_hint(&self) -> FormatHint {
+    FormatHint::PEF
   }
 }
 
