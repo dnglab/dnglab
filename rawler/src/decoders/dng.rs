@@ -160,6 +160,81 @@ impl<'a> Decoder for DngDecoder<'a> {
     Ok(None)
   }
 
+  fn ifd(&self, wk_ifd: WellKnownIFD) -> Result<Option<Rc<IFD>>> {
+    Ok(match wk_ifd {
+      WellKnownIFD::Root => Some(Rc::new(self.tiff.root_ifd().clone())),
+      WellKnownIFD::Raw => Some(Rc::new(self.get_raw_ifd()?.clone())),
+      WellKnownIFD::Exif => self
+        .tiff
+        .root_ifd()
+        .get_sub_ifds(ExifTag::ExifOffset)
+        .and_then(|list| list.get(0))
+        .cloned()
+        .map(Rc::new),
+      WellKnownIFD::ExifGps => self
+        .tiff
+        .root_ifd()
+        .get_sub_ifds(ExifTag::GPSInfo)
+        .and_then(|list| list.get(0))
+        .cloned()
+        .map(Rc::new),
+      WellKnownIFD::VirtualDngRawTags => {
+        let mut ifd = IFD::default();
+        IFD::copy_tag(&mut ifd, self.get_raw_ifd()?, DngTag::OpcodeList1);
+        IFD::copy_tag(&mut ifd, self.get_raw_ifd()?, DngTag::OpcodeList2);
+        IFD::copy_tag(&mut ifd, self.get_raw_ifd()?, DngTag::OpcodeList3);
+        IFD::copy_tag(&mut ifd, self.get_raw_ifd()?, DngTag::NoiseProfile);
+        IFD::copy_tag(&mut ifd, self.get_raw_ifd()?, DngTag::BayerGreenSplit);
+        IFD::copy_tag(&mut ifd, self.get_raw_ifd()?, DngTag::ChromaBlurRadius);
+        IFD::copy_tag(&mut ifd, self.get_raw_ifd()?, DngTag::AntiAliasStrength);
+        IFD::copy_tag(&mut ifd, self.get_raw_ifd()?, DngTag::NoiseReductionApplied);
+        IFD::copy_tag(&mut ifd, self.get_raw_ifd()?, DngTag::ProfileGainTableMap);
+        Some(Rc::new(ifd))
+      }
+      WellKnownIFD::VirtualDngRootTags => {
+        let mut ifd = IFD::default();
+        IFD::copy_tag(&mut ifd, self.tiff.root_ifd(), DngTag::ProfileEmbedPolicy);
+        IFD::copy_tag(&mut ifd, self.tiff.root_ifd(), DngTag::ProfileHueSatMapData1);
+        IFD::copy_tag(&mut ifd, self.tiff.root_ifd(), DngTag::ProfileHueSatMapData2);
+        IFD::copy_tag(&mut ifd, self.tiff.root_ifd(), DngTag::ProfileHueSatMapData3);
+        IFD::copy_tag(&mut ifd, self.tiff.root_ifd(), DngTag::ProfileHueSatMapDims);
+        IFD::copy_tag(&mut ifd, self.tiff.root_ifd(), DngTag::ProfileHueSatMapData1);
+        IFD::copy_tag(&mut ifd, self.tiff.root_ifd(), DngTag::ProfileHueSatMapData2);
+        IFD::copy_tag(&mut ifd, self.tiff.root_ifd(), DngTag::ProfileHueSatMapData3);
+        IFD::copy_tag(&mut ifd, self.tiff.root_ifd(), DngTag::ProfileHueSatMapEncoding);
+        IFD::copy_tag(&mut ifd, self.tiff.root_ifd(), DngTag::ProfileLookTableData);
+        IFD::copy_tag(&mut ifd, self.tiff.root_ifd(), DngTag::ProfileLookTableDims);
+        IFD::copy_tag(&mut ifd, self.tiff.root_ifd(), DngTag::ProfileLookTableEncoding);
+        IFD::copy_tag(&mut ifd, self.tiff.root_ifd(), DngTag::ProfileName);
+        IFD::copy_tag(&mut ifd, self.tiff.root_ifd(), DngTag::ProfileCopyright);
+        IFD::copy_tag(&mut ifd, self.tiff.root_ifd(), DngTag::ProfileToneCurve);
+        IFD::copy_tag(&mut ifd, self.tiff.root_ifd(), DngTag::DNGPrivateData);
+        IFD::copy_tag(&mut ifd, self.tiff.root_ifd(), DngTag::MakerNoteSafety);
+        IFD::copy_tag(&mut ifd, self.tiff.root_ifd(), DngTag::AnalogBalance);
+        IFD::copy_tag(&mut ifd, self.tiff.root_ifd(), DngTag::BaselineExposure);
+        IFD::copy_tag(&mut ifd, self.tiff.root_ifd(), DngTag::BaselineNoise);
+        IFD::copy_tag(&mut ifd, self.tiff.root_ifd(), DngTag::BaselineSharpness);
+        IFD::copy_tag(&mut ifd, self.tiff.root_ifd(), DngTag::LinearResponseLimit);
+        IFD::copy_tag(&mut ifd, self.tiff.root_ifd(), DngTag::CameraSerialNumber);
+        IFD::copy_tag(&mut ifd, self.tiff.root_ifd(), DngTag::AsShotICCProfile);
+        IFD::copy_tag(&mut ifd, self.tiff.root_ifd(), DngTag::AsShotPreProfileMatrix);
+        IFD::copy_tag(&mut ifd, self.tiff.root_ifd(), DngTag::CurrentICCProfile);
+        IFD::copy_tag(&mut ifd, self.tiff.root_ifd(), DngTag::CurrentPreProfileMatrix);
+        IFD::copy_tag(&mut ifd, self.tiff.root_ifd(), DngTag::AsShotProfileName);
+        IFD::copy_tag(&mut ifd, self.tiff.root_ifd(), DngTag::DefaultBlackRender);
+        IFD::copy_tag(&mut ifd, self.tiff.root_ifd(), DngTag::BaselineExposureOffset);
+        IFD::copy_tag(&mut ifd, self.tiff.root_ifd(), DngTag::DepthFormat);
+        IFD::copy_tag(&mut ifd, self.tiff.root_ifd(), DngTag::DepthNear);
+        IFD::copy_tag(&mut ifd, self.tiff.root_ifd(), DngTag::DepthFar);
+        IFD::copy_tag(&mut ifd, self.tiff.root_ifd(), DngTag::DepthUnits);
+        IFD::copy_tag(&mut ifd, self.tiff.root_ifd(), DngTag::DepthMeasureType);
+        IFD::copy_tag(&mut ifd, self.tiff.root_ifd(), DngTag::RGBTables);
+        Some(Rc::new(ifd))
+      }
+      _ => return Ok(None),
+    })
+  }
+
   fn format_hint(&self) -> FormatHint {
     FormatHint::DNG
   }
