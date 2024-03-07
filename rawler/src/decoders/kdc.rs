@@ -24,6 +24,7 @@ use super::ok_cfa_image;
 use super::CFAConfig;
 use super::Camera;
 use super::Decoder;
+use super::FormatHint;
 use super::RawDecodeParams;
 use super::RawMetadata;
 use super::RawPhotometricInterpretation;
@@ -116,6 +117,10 @@ impl<'a> Decoder for KdcDecoder<'a> {
     let exif = Exif::new(self.tiff.root_ifd())?;
     let mdata = RawMetadata::new(&self.camera, exif);
     Ok(mdata)
+  }
+
+  fn format_hint(&self) -> FormatHint {
+    FormatHint::KDC
   }
 }
 

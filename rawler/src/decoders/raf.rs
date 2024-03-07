@@ -40,6 +40,7 @@ use crate::CFA;
 
 use super::Camera;
 use super::Decoder;
+use super::FormatHint;
 use super::RawDecodeParams;
 use super::RawMetadata;
 
@@ -443,6 +444,10 @@ impl<'a> Decoder for RafDecoder<'a> {
 
   fn format_dump(&self) -> FormatDump {
     todo!()
+  }
+
+  fn format_hint(&self) -> FormatHint {
+    FormatHint::RAF
   }
 }
 

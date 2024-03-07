@@ -39,6 +39,7 @@ use self::v7decompressor::decode_panasonic_v7;
 use super::BlackLevel;
 use super::Camera;
 use super::Decoder;
+use super::FormatHint;
 use super::RawDecodeParams;
 use super::RawMetadata;
 
@@ -207,6 +208,10 @@ impl<'a> Decoder for Rw2Decoder<'a> {
     }
     let mdata = RawMetadata::new_with_lens(&self.camera, exif, self.get_lens_description()?.cloned());
     Ok(mdata)
+  }
+
+  fn format_hint(&self) -> FormatHint {
+    FormatHint::RW2
   }
 }
 

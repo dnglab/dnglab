@@ -375,6 +375,10 @@ impl<'a> Decoder for Cr3Decoder<'a> {
       }
     }
   }
+
+  fn format_hint(&self) -> FormatHint {
+    FormatHint::CR3
+  }
 }
 
 impl<'a> Cr3Decoder<'a> {
