@@ -1,8 +1,8 @@
+use instant::Instant;
 use std::{
   borrow::Cow,
   io::{self, Seek, Write},
   mem::size_of,
-  time::Instant,
 };
 
 use image::{imageops::FilterType, DynamicImage};

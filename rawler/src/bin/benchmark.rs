@@ -1,7 +1,7 @@
+use instant::Instant;
 use std::env;
 use std::fs::File;
 use std::path::PathBuf;
-use std::time::Instant;
 
 use rawler::decoders::RawDecodeParams;
 use rawler::RawFile;

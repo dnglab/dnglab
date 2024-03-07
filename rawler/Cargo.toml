@@ -1,5 +1,8 @@
 [package]
-authors = ["Daniel Vogelbacher <daniel@chaospixel.com>", "Pedro Côrte-Real <pedro@pedrocr.net>"]
+authors = [
+  "Daniel Vogelbacher <daniel@chaospixel.com>",
+  "Pedro Côrte-Real <pedro@pedrocr.net>",
+]
 categories = ["multimedia::images"]
 description = "A library to extract images and metadata from camera raw formats"
 readme = "README.md"
@@ -22,6 +25,8 @@ clap = ["dep:clap"]
 #default = ["samplecheck"]
 inspector = []
 samplecheck = []
+stdweb = ["instant/stdweb"]
+wasm-bindgen = ["instant/wasm-bindgen"]
 
 [dependencies]
 async-trait = "0.1"
@@ -29,7 +34,7 @@ backtrace = "0.3"
 bitstream-io = "2"
 byteorder = "1"
 chrono = "0.4"
-clap = {version = "4.4.0", optional = true}
+clap = { version = "4.4.0", optional = true }
 enumn = "0.1"
 futures = "0.3"
 hex = "0.4"
@@ -43,16 +48,16 @@ md5 = "0.7"
 multiversion = "0.7"
 num_enum = "0.7"
 rayon = "1"
-serde = {version = "1.0", features = ["derive"]}
+serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 thiserror = "1.0"
-tokio = {version = "1.20", features = ["full"]}
 toml = "0.8"
-uuid = {version = "1.0", features = ["serde", "v4"]}
+uuid = { version = "1.0", features = ["serde", "v4"] }
 weezl = "0.1.7"
+instant = { version = "0.1", features = ["wasm-bindgen", "inaccurate"] }
 
 [dev-dependencies]
-criterion = {version = "0.5", features = ["html_reports"]}
+criterion = { version = "0.5", features = ["html_reports"] }
 env_logger = "0.9"
 serde_yaml = "0.8"
 

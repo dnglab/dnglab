@@ -11,10 +11,11 @@ use super::{
 };
 use crate::decompressors::crx::{idwt::WaveletTransform, mdat::parse_header, rice::RiceDecoder};
 use bitstream_io::BitReader;
+use instant::Instant;
 use itertools::izip;
 use log::debug;
 use rayon::prelude::*;
-use std::{convert::TryInto, io::Cursor, time::Instant};
+use std::{convert::TryInto, io::Cursor};
 
 /// Maximum value for K during Adaptive Golomb-Rice for K prediction
 pub(super) const PREDICT_K_MAX: u32 = 15;

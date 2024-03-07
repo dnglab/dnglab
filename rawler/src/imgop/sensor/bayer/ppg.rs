@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: LGPL-2.1
 // Copyright 2022 Daniel Vogelbacher <daniel@chaospixel.com>
 
+use instant::Instant;
 use multiversion::multiversion;
 use rayon::prelude::*;
-use std::{ops::Add, time::Instant};
+use std::ops::Add;
 
 use crate::{
   cfa::{PlaneColor, CFA, CFA_COLOR_B, CFA_COLOR_G, CFA_COLOR_R},

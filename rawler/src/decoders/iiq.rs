@@ -195,7 +195,7 @@ fn new_makernote(file: &mut RawFile, moffset: u64) -> std::io::Result<HashMap<u3
     //println!("Tag 0x{:x}, typ: {}, count: {}, data: {}", tag, typ, byte_count, data);
     match typ {
       // Sensor calibration file, it's like a TIFF file and stored with ASCII type
-      1 if tag == IiqTag::SensorCorrection.into() => {
+      1 if tag == IiqTag::SensorCorrection as u32 => {
         entries.insert(tag, (byte_count, tiff::Value::Long(vec![data as u32 + moffset as u32])));
       }
       // Others should be just ASCII strings
