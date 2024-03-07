@@ -89,6 +89,7 @@ data:
         lens_make: Nikon
         lens_model: AF-S VR Zoom-Nikkor 70-300mm f/4.5-5.6G IF-ED
         gps: ~
+        user_comment: ~
       model: D3400
       make: Nikon
       lens:

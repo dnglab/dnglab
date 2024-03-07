@@ -89,6 +89,7 @@ data:
         lens_make: Olympus
         lens_model: M.Zuiko Digital ED 12-100mm F4.0 IS Pro
         gps: ~
+        user_comment: ~
       model: E-M5 Mark III
       make: Olympus
       lens:

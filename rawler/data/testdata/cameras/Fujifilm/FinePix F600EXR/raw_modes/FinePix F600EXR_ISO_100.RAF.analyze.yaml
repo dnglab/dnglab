@@ -85,6 +85,7 @@ data:
         lens_make: ~
         lens_model: ~
         gps: ~
+        user_comment: ~
       model: FinePix F600EXR
       make: Fujifilm
       lens: ~

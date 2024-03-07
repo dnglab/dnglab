@@ -89,6 +89,7 @@ data:
         lens_make: Pentax
         lens_model: "smc PENTAX-D FA 645 55mm F2.8 AL [IF] SDM AW"
         gps: ~
+        user_comment: ~
       model: 645Z
       make: Pentax
       lens:

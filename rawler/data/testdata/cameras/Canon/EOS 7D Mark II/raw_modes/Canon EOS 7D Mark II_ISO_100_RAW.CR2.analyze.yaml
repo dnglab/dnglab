@@ -89,6 +89,7 @@ data:
         lens_make: Canon
         lens_model: EF 50mm f/1.4 USM
         gps: ~
+        user_comment: ~
       model: EOS 7D Mark II
       make: Canon
       lens:

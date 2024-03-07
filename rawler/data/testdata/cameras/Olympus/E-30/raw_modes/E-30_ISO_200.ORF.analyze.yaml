@@ -89,6 +89,7 @@ data:
         lens_make: Olympus
         lens_model: Zuiko Digital 14-54mm F2.8-3.5
         gps: ~
+        user_comment: ~
       model: E-30
       make: Olympus
       lens:

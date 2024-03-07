@@ -121,6 +121,7 @@ data:
         lens_make: FUJIFILM
         lens_model: XF35mmF1.4 R
         gps: ~
+        user_comment: ~
       model: X-T2
       make: Fujifilm
       lens: ~

@@ -86,6 +86,7 @@ data:
         lens_make: Tamron
         lens_model: AF 18-250mm f/3.5-6.3 Di II LD Aspherical (IF) Macro (A18)
         gps: ~
+        user_comment: ~
       model: D70s
       make: Nikon
       lens:

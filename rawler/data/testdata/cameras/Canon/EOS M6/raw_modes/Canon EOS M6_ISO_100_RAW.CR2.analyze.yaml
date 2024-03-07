@@ -89,6 +89,7 @@ data:
         lens_make: Canon
         lens_model: EF-M 22mm f/2 STM
         gps: ~
+        user_comment: ~
       model: Canon EOS M6
       make: Canon
       lens:

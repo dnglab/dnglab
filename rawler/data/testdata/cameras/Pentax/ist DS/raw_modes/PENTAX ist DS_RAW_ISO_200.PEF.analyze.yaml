@@ -89,6 +89,7 @@ data:
         lens_make: Pentax
         lens_model: smc PENTAX-DA 35mm F2.8 Macro Limited
         gps: ~
+        user_comment: ~
       model: "*ist DS"
       make: Pentax
       lens:

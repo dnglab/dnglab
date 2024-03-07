@@ -89,6 +89,7 @@ data:
         lens_make: FUJIFILM
         lens_model: GF32-64mmF4 R LM WR
         gps: ~
+        user_comment: ~
       model: GFX 100
       make: Fujifilm
       lens: ~

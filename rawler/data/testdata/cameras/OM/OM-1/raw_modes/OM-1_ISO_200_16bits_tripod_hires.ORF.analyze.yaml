@@ -89,6 +89,7 @@ data:
         lens_make: Olympus
         lens_model: M.Zuiko Digital ED 7-14mm F2.8 Pro
         gps: ~
+        user_comment: ~
       model: OM-1
       make: OM Digital Solutions
       lens:

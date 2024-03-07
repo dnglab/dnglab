@@ -89,6 +89,7 @@ data:
         lens_make: Canon
         lens_model: EF-S 24mm f/2.8 STM
         gps: ~
+        user_comment: ~
       model: Canon EOS M5
       make: Canon
       lens:

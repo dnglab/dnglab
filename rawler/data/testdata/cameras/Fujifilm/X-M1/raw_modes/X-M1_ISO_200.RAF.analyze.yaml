@@ -121,6 +121,7 @@ data:
         lens_make: FUJIFILM
         lens_model: XF18-135mmF3.5-5.6R LM OIS WR
         gps: ~
+        user_comment: ~
       model: X-M1
       make: Fujifilm
       lens: ~

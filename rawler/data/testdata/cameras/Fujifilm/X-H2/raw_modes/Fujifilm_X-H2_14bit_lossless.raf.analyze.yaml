@@ -121,6 +121,7 @@ data:
         lens_make: "VILTROX "
         lens_model: "23mmF1.4XM  "
         gps: ~
+        user_comment: ~
       model: X-H2
       make: Fujifilm
       lens: ~

@@ -89,6 +89,7 @@ data:
         lens_make: Nikon
         lens_model: Nikkor Z 24-70mm f/2.8 S
         gps: ~
+        user_comment: ~
       model: Z 7 2
       make: Nikon
       lens:

@@ -89,6 +89,7 @@ data:
         lens_make: FUJIFILM
         lens_model: XC15-45mmF3.5-5.6 OIS PZ
         gps: ~
+        user_comment: ~
       model: X-T200
       make: Fujifilm
       lens: ~

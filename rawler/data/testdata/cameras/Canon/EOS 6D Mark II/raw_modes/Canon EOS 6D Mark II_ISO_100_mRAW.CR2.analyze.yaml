@@ -90,6 +90,7 @@ data:
         lens_make: Sigma
         lens_model: 18-35mm f/1.8 DC HSM | A
         gps: ~
+        user_comment: ~
       model: EOS 6D Mark II
       make: Canon
       lens:

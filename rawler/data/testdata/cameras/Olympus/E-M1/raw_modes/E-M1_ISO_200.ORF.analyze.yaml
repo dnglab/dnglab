@@ -89,6 +89,7 @@ data:
         lens_make: Olympus
         lens_model: M.Zuiko Digital ED 12mm F2.0
         gps: ~
+        user_comment: ~
       model: E-M1
       make: Olympus
       lens:

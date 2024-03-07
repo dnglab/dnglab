@@ -89,6 +89,7 @@ data:
         lens_make: Tamron
         lens_model: "SP 90mm F/2.8 Di VC USD Macro 1:1 F004"
         gps: ~
+        user_comment: ~
       model: EOS 600D
       make: Canon
       lens:

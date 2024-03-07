@@ -121,6 +121,7 @@ data:
         lens_make: FUJIFILM
         lens_model: XF18mmF2 R
         gps: ~
+        user_comment: ~
       model: X-T5
       make: Fujifilm
       lens: ~

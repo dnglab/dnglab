@@ -89,6 +89,7 @@ data:
         lens_make: Sigma
         lens_model: Sigma 18-250mm F3.5-6.3 DC Macro HSM
         gps: ~
+        user_comment: ~
       model: PENTAX KF
       make: Ricoh
       lens:

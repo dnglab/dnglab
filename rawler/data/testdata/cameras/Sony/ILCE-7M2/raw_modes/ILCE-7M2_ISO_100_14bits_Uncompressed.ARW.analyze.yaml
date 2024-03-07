@@ -89,6 +89,7 @@ data:
         lens_make: Zeiss
         lens_model: Batis 25mm F2
         gps: ~
+        user_comment: ~
       model: ILCE-7M2
       make: Sony
       lens:

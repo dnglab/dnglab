@@ -121,6 +121,7 @@ data:
         lens_make: FUJIFILM
         lens_model: XF16-80mmF4 R OIS WR
         gps: ~
+        user_comment: ~
       model: X-H2S
       make: Fujifilm
       lens: ~

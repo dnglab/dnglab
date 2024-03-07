@@ -89,6 +89,7 @@ data:
         lens_make: Pentax
         lens_model: "smc PENTAX-DA* 50-135mm F2.8 ED [IF] SDM"
         gps: ~
+        user_comment: ~
       model: K-S2
       make: Pentax
       lens:

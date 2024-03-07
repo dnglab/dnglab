@@ -83,6 +83,7 @@ data:
         lens_make: Schneider
         lens_model: 150mm LS f/3.5
         gps: ~
+        user_comment: ~
       model: IQ140
       make: Phase One
       lens:

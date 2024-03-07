@@ -89,6 +89,7 @@ data:
         lens_make: Sony
         lens_model: FE 24-70mm F2.8 GM
         gps: ~
+        user_comment: ~
       model: ILCE-7RM2
       make: Sony
       lens:

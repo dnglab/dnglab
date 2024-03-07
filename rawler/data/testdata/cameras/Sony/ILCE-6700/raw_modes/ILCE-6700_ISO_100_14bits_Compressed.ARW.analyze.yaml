@@ -83,6 +83,7 @@ data:
         lens_make: Sigma
         lens_model: 18-50mm F2.8 DC DN | C
         gps: ~
+        user_comment: ~
       model: ILCE-6700
       make: Sony
       lens:

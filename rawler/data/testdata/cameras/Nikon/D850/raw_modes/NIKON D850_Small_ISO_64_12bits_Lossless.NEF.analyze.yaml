@@ -89,6 +89,7 @@ data:
         lens_make: Sigma
         lens_model: 35mm F1.4 DG HSM
         gps: ~
+        user_comment: ~
       model: NIKON D850
       make: NIKON CORPORATION
       lens:
