@@ -415,14 +415,15 @@ impl<'a> DngDecoder<'a> {
         &(|strip: &mut [u16], row| {
           let row = row / tlength;
           for col in 0..coltiles {
+            // Calculate output width & length for current tile (right or bottom tile may have smaller dimension)
+            let owidth = cmp::min(width, (col + 1) * twidth) - col * twidth;
+            let olength = cmp::min(height, (row + 1) * tlength) - row * tlength;
             let offset = offsets.force_usize(row * coltiles + col);
             let src = &buffer[offset..];
             let decompressor = LjpegDecompressor::new(src)?;
+
             // If SOF width & height matches tile dimension, we can decode directly to strip
             if decompressor.width() == twidth && decompressor.height() == tlength {
-              // Calculate output width & length for current tile (right or bottom tile may have smaller dimension)
-              let owidth = cmp::min(width, (col + 1) * twidth) - col * twidth;
-              let olength = cmp::min(height, (row + 1) * tlength) - row * tlength;
               decompressor.decode(strip, col * twidth, width, owidth, olength, dummy)?;
             }
             // If SOF has other dimension but still same pixel count, we can decode
@@ -434,11 +435,14 @@ impl<'a> DngDecoder<'a> {
             else if decompressor.width() * decompressor.height() == twidth * tlength {
               // cps is already included in all values, so just compare them.
               let mut tile = alloc_image_plain!(decompressor.width(), decompressor.height(), dummy);
-              decompressor.decode(tile.pixels_mut(), 0, width, decompressor.width(), decompressor.height(), dummy)?;
-              // Copy lines from temporary tile to strip buffer
-              for (i, pix) in tile.pixels().chunks_exact(twidth).enumerate() {
+              // The stripwidth is of same width as the temporary tile.
+              let stripwidth = decompressor.width();
+              decompressor.decode(tile.pixels_mut(), 0, stripwidth, decompressor.width(), decompressor.height(), dummy)?;
+              // Copy lines from temporary tile to strip buffer, but limit it if destination strip
+              // is smaller than temporary tile (right/bottom tiles).
+              for (i, pix) in tile.pixels().chunks_exact(twidth).enumerate().take(olength) {
                 let start = (i * width) + (col * twidth);
-                strip[start..start + twidth].copy_from_slice(pix);
+                strip[start..start + owidth].copy_from_slice(&pix[0..owidth]);
               }
             } else {
               return Err(format!(
