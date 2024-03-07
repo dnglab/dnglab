@@ -309,6 +309,8 @@ impl crate::decoders::RawMetadata {
     transfer_entry(exif_ifd, ExifTag::LensSpecification, &exif.lens_spec)?;
     transfer_entry(exif_ifd, ExifTag::LensMake, &exif.lens_make)?;
     transfer_entry(exif_ifd, ExifTag::LensModel, &exif.lens_model)?;
+    transfer_entry(exif_ifd, ExifTag::UserComment, &exif.user_comment)?;
+    transfer_entry(exif_ifd, ExifTag::MakerNotes, &exif.makernotes.as_ref().map(|x| Value::Undefined(x.clone())))?;
 
     Ok(())
   }
