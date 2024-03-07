@@ -24,7 +24,7 @@ impl PartialEq for Rational {
 
 impl Eq for Rational {}
 
-#[allow(clippy::incorrect_partial_ord_impl_on_ord_type)]
+#[allow(clippy::non_canonical_partial_ord_impl)]
 impl PartialOrd for Rational {
   fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
     let n1: u64 = self.n as u64 * other.d as u64;
@@ -301,7 +301,7 @@ impl PartialEq for SRational {
 
 impl Eq for SRational {}
 
-#[allow(clippy::incorrect_partial_ord_impl_on_ord_type)]
+#[allow(clippy::non_canonical_partial_ord_impl)]
 impl PartialOrd for SRational {
   fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
     let n1: i64 = self.n as i64 * other.d as i64;
