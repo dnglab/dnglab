@@ -33,7 +33,7 @@ clap = {version = "4.4.0", optional = true}
 enumn = "0.1"
 futures = "0.3"
 hex = "0.4"
-image = "0.24"
+image = "0.25"
 itertools = "0.12"
 lazy_static = "1"
 libc = "0.2"
