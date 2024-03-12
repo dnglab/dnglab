@@ -515,9 +515,9 @@ impl<'a> RafDecoder<'a> {
               .iter()
               .rev()
               .map(|v| match v {
-                0 => 'R',
+                0 => 'B',
                 1 => 'G',
-                2 => 'B',
+                2 => 'R',
                 _ => 'X', // Unknown, let CFA::new() fail...
               })
               .collect();
