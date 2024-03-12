@@ -90,6 +90,7 @@ data:
         lens_make: Sigma
         lens_model: 24-70mm F2.8 DG DN | A
         gps: ~
+        user_comment: ~
       model: ILCE-7CR
       make: Sony
       lens:

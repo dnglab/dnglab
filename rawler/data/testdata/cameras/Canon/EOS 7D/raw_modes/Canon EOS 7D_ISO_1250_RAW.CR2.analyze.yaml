@@ -89,6 +89,7 @@ data:
         lens_make: Canon
         lens_model: EF-S 15-85mm f/3.5-5.6 IS USM
         gps: ~
+        user_comment: ~
       model: EOS 7D
       make: Canon
       lens:

@@ -89,6 +89,7 @@ data:
         lens_make: Olympus
         lens_model: Zuiko Digital 70-300mm F4.0-5.6
         gps: ~
+        user_comment: ~
       model: E-520
       make: Olympus
       lens:

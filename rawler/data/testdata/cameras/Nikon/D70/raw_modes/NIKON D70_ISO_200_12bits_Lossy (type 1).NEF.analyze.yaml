@@ -86,6 +86,7 @@ data:
         lens_make: Nikon
         lens_model: AF Nikkor 50mm f/1.8D
         gps: ~
+        user_comment: ~
       model: D70
       make: Nikon
       lens:

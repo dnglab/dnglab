@@ -79,6 +79,7 @@ data:
         lens_make: ~
         lens_model: ~
         gps: ~
+        user_comment: ~
       model: IQ4 150MP
       make: Phase One
       lens: ~

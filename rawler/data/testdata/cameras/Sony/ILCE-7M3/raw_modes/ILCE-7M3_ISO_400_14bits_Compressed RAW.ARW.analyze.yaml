@@ -89,6 +89,7 @@ data:
         lens_make: Sony
         lens_model: FE 16-35mm F2.8 GM
         gps: ~
+        user_comment: ~
       model: ILCE-7M3
       make: Sony
       lens:

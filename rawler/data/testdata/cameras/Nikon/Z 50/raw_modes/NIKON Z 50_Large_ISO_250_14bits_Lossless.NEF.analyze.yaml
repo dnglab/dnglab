@@ -89,6 +89,7 @@ data:
         lens_make: Nikon
         lens_model: Nikkor Z DX 16-50mm f/3.5-6.3 VR
         gps: ~
+        user_comment: ~
       model: Z 50
       make: Nikon
       lens:

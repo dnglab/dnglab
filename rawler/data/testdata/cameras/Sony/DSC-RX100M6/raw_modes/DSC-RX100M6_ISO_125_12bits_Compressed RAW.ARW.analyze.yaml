@@ -79,6 +79,7 @@ data:
         lens_make: ~
         lens_model: ~
         gps: ~
+        user_comment: ~
       model: DSC-RX100M6
       make: SONY
       lens: ~

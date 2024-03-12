@@ -89,6 +89,7 @@ data:
         lens_make: FUJIFILM
         lens_model: GF110mmF2 R LM WR
         gps: ~
+        user_comment: ~
       model: GFX 50S II
       make: Fujifilm
       lens: ~

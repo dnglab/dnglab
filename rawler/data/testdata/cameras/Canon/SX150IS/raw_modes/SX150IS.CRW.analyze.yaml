@@ -76,6 +76,7 @@ data:
         lens_make: ~
         lens_model: ~
         gps: ~
+        user_comment: ~
       model: PowerShot SX150 IS
       make: Canon
       lens: ~

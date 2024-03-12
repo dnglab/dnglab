@@ -83,6 +83,7 @@ data:
         lens_make: Sony
         lens_model: FE 55mm F1.8 ZA
         gps: ~
+        user_comment: ~
       model: ILCE-9
       make: Sony
       lens:

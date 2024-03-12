@@ -89,6 +89,7 @@ data:
         lens_make: Olympus
         lens_model: M.Zuiko Digital ED 60mm F2.8 Macro
         gps: ~
+        user_comment: ~
       model: E-PL6
       make: Olympus
       lens:

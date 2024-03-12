@@ -89,6 +89,7 @@ data:
         lens_make: Canon
         lens_model: EF 28-135mm f/3.5-5.6 IS
         gps: ~
+        user_comment: ~
       model: Kiss X3
       make: Canon
       lens:

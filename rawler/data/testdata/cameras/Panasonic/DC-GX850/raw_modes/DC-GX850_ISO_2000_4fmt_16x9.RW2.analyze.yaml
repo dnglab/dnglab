@@ -89,6 +89,7 @@ data:
         lens_make: Lumix
         lens_model: G X Vario 12-35mm F2.8 Asph. Power OIS
         gps: ~
+        user_comment: ~
       model: DC-GX850
       make: Panasonic
       lens:

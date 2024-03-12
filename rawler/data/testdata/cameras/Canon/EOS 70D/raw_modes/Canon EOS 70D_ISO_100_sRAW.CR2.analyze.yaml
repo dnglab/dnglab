@@ -90,6 +90,7 @@ data:
         lens_make: Canon
         lens_model: EF-S 18-135mm f/3.5-5.6 IS STM
         gps: ~
+        user_comment: ~
       model: EOS 70D
       make: Canon
       lens:

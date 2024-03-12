@@ -89,6 +89,7 @@ data:
         lens_make: Nikon
         lens_model: AF-S DX Nikkor 18-140mm f/3.5-5.6G ED VR
         gps: ~
+        user_comment: ~
       model: D5500
       make: Nikon
       lens:

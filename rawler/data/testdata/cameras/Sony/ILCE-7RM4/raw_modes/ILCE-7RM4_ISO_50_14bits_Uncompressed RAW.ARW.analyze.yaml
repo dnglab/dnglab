@@ -89,6 +89,7 @@ data:
         lens_make: Sony
         lens_model: FE 24-70mm F4 ZA OSS
         gps: ~
+        user_comment: ~
       model: ILCE-7RM4
       make: Sony
       lens:

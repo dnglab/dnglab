@@ -110,6 +110,10 @@ impl<'a> Decoder for CrwDecoder<'a> {
     let exif = Exif::default();
     Ok(RawMetadata::new(&self.camera, exif))
   }
+
+  fn format_hint(&self) -> FormatHint {
+    FormatHint::CRW
+  }
 }
 
 impl<'a> CrwDecoder<'a> {

@@ -43,6 +43,7 @@ use crate::RawlerError;
 use super::BlackLevel;
 use super::Camera;
 use super::Decoder;
+use super::FormatHint;
 use super::RawDecodeParams;
 use super::RawMetadata;
 use super::Result;
@@ -323,6 +324,10 @@ impl<'a> Decoder for Cr2Decoder<'a> {
       let img = image::load_from_memory_with_format(&buf, image::ImageFormat::Jpeg).unwrap();
       Ok(Some(img))
     }
+  }
+
+  fn format_hint(&self) -> FormatHint {
+    FormatHint::CR2
   }
 }
 

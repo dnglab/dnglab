@@ -164,6 +164,13 @@ fn apply_corr(offset: u32, corr: i32) -> u32 {
 
 pub struct DirReader {}
 
+fn read_from_file<R: Read + Seek>(file: &mut R, offset: u32, size: usize) -> Result<Vec<u8>> {
+  file.seek(SeekFrom::Start(offset as u64))?;
+  let mut buf = vec![0; size];
+  file.read_exact(&mut buf)?;
+  Ok(buf)
+}
+
 #[cfg(test)]
 mod tests {
   use std::io::{Cursor, Seek, SeekFrom};
@@ -241,11 +248,4 @@ mod tests {
 
     Ok(())
   }
-}
-
-fn read_from_file<R: Read + Seek>(file: &mut R, offset: u32, size: usize) -> Result<Vec<u8>> {
-  file.seek(SeekFrom::Start(offset as u64))?;
-  let mut buf = vec![0; size];
-  file.read_exact(&mut buf)?;
-  Ok(buf)
 }

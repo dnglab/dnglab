@@ -89,6 +89,7 @@ data:
         lens_make: Pentax
         lens_model: HD PENTAX-D FA 24-70mm F2.8 ED SDM WR
         gps: ~
+        user_comment: ~
       model: PENTAX K-1 Mark II
       make: "RICOH IMAGING COMPANY, LTD."
       lens:

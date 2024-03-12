@@ -89,6 +89,7 @@ data:
         lens_make: Leica
         lens_model: DG Vario-Elmarit 12-60mm F2.8-4 Asph. Power OIS
         gps: ~
+        user_comment: ~
       model: DC-GH5
       make: Panasonic
       lens:

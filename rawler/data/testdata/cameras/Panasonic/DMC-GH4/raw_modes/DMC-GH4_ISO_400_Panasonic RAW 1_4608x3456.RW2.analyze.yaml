@@ -89,6 +89,7 @@ data:
         lens_make: Lumix
         lens_model: G X Vario 35-100mm F2.8 Power OIS
         gps: ~
+        user_comment: ~
       model: DMC-GH4
       make: Panasonic
       lens:

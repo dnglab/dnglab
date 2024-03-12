@@ -314,6 +314,15 @@ mod camera_eos_r7_raw_modes {
   super::camera_file_check!("Canon", "EOS R7", cam_canon_eos_r7_craw_iso_800_nodual_cr3, "raw_modes/Canon EOS R7_CRAW_ISO_800_nodual.CR3");
   super::camera_file_check!("Canon", "EOS R7", cam_canon_eos_r7_raw_iso_32000_dual_cr3, "raw_modes/Canon EOS R7_RAW_ISO_32000_dual.CR3");
 }
+mod camera_eos_r10_raw_modes {
+  super::camera_file_check!("Canon", "EOS R10", cam_canon_eos_r10_raw_iso_800_cr3, "raw_modes/Canon EOS R10_RAW_ISO_800.CR3");
+  super::camera_file_check!("Canon", "EOS R10", cam_canon_eos_r10_craw_iso_800_cr3, "raw_modes/Canon EOS R10_CRAW_ISO_800.CR3");
+  super::camera_file_check!("Canon", "EOS R10", cam_canon_eos_r10_craw_iso_32000_cr3, "raw_modes/Canon EOS R10_CRAW_ISO_32000.CR3");
+  super::camera_file_check!("Canon", "EOS R10", cam_canon_eos_r10_raw_iso_32000_cr3, "raw_modes/Canon EOS R10_RAW_ISO_32000.CR3");
+  super::camera_file_check!("Canon", "EOS R10", cam_canon_eos_r10_burst_iso_100_cr3, "raw_modes/Canon EOS R10_BURST_ISO_100.CR3");
+  super::camera_file_check!("Canon", "EOS R10", cam_canon_eos_r10_raw_iso_100_cr3, "raw_modes/Canon EOS R10_RAW_ISO_100.CR3");
+  super::camera_file_check!("Canon", "EOS R10", cam_canon_eos_r10_craw_iso_100_cr3, "raw_modes/Canon EOS R10_CRAW_ISO_100.CR3");
+}
 mod camera_eos_r50_raw_modes {
   super::camera_file_check!("Canon", "EOS R50", cam_canon_r50_iso800_craw_ms_cr3, "raw_modes/Canon_R50_ISO800_CRAW_ms.CR3");
   super::camera_file_check!("Canon", "EOS R50", cam_canon_r50_iso100_raw_ms_cr3, "raw_modes/Canon_R50_ISO100_RAW_ms.CR3");
@@ -2409,6 +2418,15 @@ mod camera_dmc_zs40_raw_modes {
 }
 mod camera_dmc_zs60_raw_modes {
   super::camera_file_check!("Panasonic", "DMC-ZS60", cam_dmc_zs60_iso_400_panasonic_raw_1_4896x3672_rw2, "raw_modes/DMC-ZS60_ISO_400_Panasonic RAW 1_4896x3672.RW2");
+}
+mod camera_sigma_fp_cinemadng {
+  super::camera_file_check!("Sigma", "SIGMA fp", cam_sigma_fp_6k_14bit_dng, "cinemadng/SIGMA_FP_6k_14bit.DNG");
+  super::camera_file_check!("Sigma", "SIGMA fp", cam_sigma_fp_653_20240229_000001_2k_8bit_dng, "cinemadng/SIGMA_FP_653_20240229_000001_2k_8bit.DNG");
+  super::camera_file_check!("Sigma", "SIGMA fp", cam_sigma_fp_648_20240229_000001_4k_10bit_dng, "cinemadng/SIGMA_FP_648_20240229_000001_4k_10bit.DNG");
+  super::camera_file_check!("Sigma", "SIGMA fp", cam_sigma_fp_647_20240229_000001_4k_12bit_dng, "cinemadng/SIGMA_FP_647_20240229_000001_4k_12bit.DNG");
+  super::camera_file_check!("Sigma", "SIGMA fp", cam_sigma_fp_652_20240229_000001_2k_10bit_dng, "cinemadng/SIGMA_FP_652_20240229_000001_2k_10bit.DNG");
+  super::camera_file_check!("Sigma", "SIGMA fp", cam_sigma_fp_650_20240229_000001_4k_8bit_dng, "cinemadng/SIGMA_FP_650_20240229_000001_4k_8bit.DNG");
+  super::camera_file_check!("Sigma", "SIGMA fp", cam_sigma_fp_651_20240229_000001_2k_12bit_dng, "cinemadng/SIGMA_FP_651_20240229_000001_2k_12bit.DNG");
 }
 mod camera_c_lux_raw_modes {
   super::camera_file_check!("Leica", "C-Lux", cam_c_lux_iso_125_4fmt_5472x3648_rwl, "raw_modes/C-Lux_ISO_125_4fmt_5472x3648.RWL");

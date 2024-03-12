@@ -17,7 +17,7 @@ use crate::tags::{DngTag, ExifTag, TiffCommonTag};
 use crate::{alloc_image_ok, RawFile, RawImage, RawLoader};
 use crate::{RawlerError, Result};
 
-use super::{BlackLevel, CFAConfig, Camera, Decoder, RawDecodeParams, RawMetadata, RawPhotometricInterpretation, WhiteLevel};
+use super::{BlackLevel, CFAConfig, Camera, Decoder, FormatHint, RawDecodeParams, RawMetadata, RawPhotometricInterpretation, WhiteLevel};
 
 /// 3FR format encapsulation for analyzer
 #[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize)]
@@ -105,6 +105,10 @@ impl<'a> Decoder for TfrDecoder<'a> {
 
   fn format_dump(&self) -> FormatDump {
     FormatDump::Tfr(TfrFormat { tiff: self.tiff.clone() })
+  }
+
+  fn format_hint(&self) -> FormatHint {
+    FormatHint::TFR
   }
 
   fn raw_metadata(&self, _file: &mut RawFile, _params: RawDecodeParams) -> Result<RawMetadata> {

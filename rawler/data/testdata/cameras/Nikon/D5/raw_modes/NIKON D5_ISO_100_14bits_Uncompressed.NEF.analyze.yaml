@@ -89,6 +89,7 @@ data:
         lens_make: Nikon
         lens_model: AF-S Nikkor 105mm f/1.4E ED
         gps: ~
+        user_comment: ~
       model: D5
       make: Nikon
       lens:

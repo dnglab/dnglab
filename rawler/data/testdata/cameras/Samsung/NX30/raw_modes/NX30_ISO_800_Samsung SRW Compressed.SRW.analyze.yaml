@@ -89,6 +89,7 @@ data:
         lens_make: Samsung
         lens_model: NX 30mm F2 Pancake
         gps: ~
+        user_comment: ~
       model: NX30
       make: Samsung
       lens:

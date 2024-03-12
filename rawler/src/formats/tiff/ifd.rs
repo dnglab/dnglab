@@ -181,6 +181,16 @@ impl IFD {
     })
   }
 
+  pub fn copy_tag(dst: &mut Self, src: &Self, tag: impl Into<u16>) {
+    if let Some(entry) = src.get_entry(tag.into()) {
+      dst.entries.insert(entry.tag, entry.clone());
+    }
+  }
+
+  pub fn value_iter(&self) -> impl Iterator<Item = (&u16, &Value)> {
+    self.entries().iter().map(|(tag, entry)| (tag, &entry.value))
+  }
+
   /*
   pub fn new<R: Read + Seek>(reader: &mut R, offset: u32, base: u32, corr: i32, endian: Endian, sub_tags: &[u16]) -> Result<Self> {
     reader.seek(SeekFrom::Start((base + offset) as u64))?;

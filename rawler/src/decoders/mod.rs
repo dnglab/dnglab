@@ -13,6 +13,7 @@ use std::io::SeekFrom;
 use std::panic;
 use std::panic::AssertUnwindSafe;
 use std::path::Path;
+use std::rc::Rc;
 use toml::Value;
 
 use crate::alloc_image_ok;
@@ -130,6 +131,51 @@ pub struct RawDecodeParams {
   pub image_index: usize,
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+pub enum WellKnownIFD {
+  Root,
+  Raw,
+  Preview,
+  Exif,
+  ExifGps,
+  VirtualDngRootTags,
+  VirtualDngRawTags,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+pub enum FormatHint {
+  Unknown,
+  CR2,
+  CR3,
+  CRW,
+  NEF,
+  ARW,
+  RAF,
+  RW2,
+  ARI,
+  DNG,
+  DCR,
+  DCS,
+  ERF,
+  IIQ,
+  KDC,
+  MEF,
+  MOS,
+  MRW,
+  NRW,
+  ORF,
+  PEF,
+  SRW,
+  TFR,
+  X3F,
+}
+
+impl Default for FormatHint {
+  fn default() -> Self {
+    Self::Unknown
+  }
+}
+
 #[derive(Default, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 pub struct RawMetadata {
   pub exif: Exif,
@@ -200,6 +246,12 @@ pub trait Decoder: Send {
   }
 
   fn format_dump(&self) -> FormatDump;
+
+  fn ifd(&self, _wk_ifd: WellKnownIFD) -> Result<Option<Rc<IFD>>> {
+    Ok(None)
+  }
+
+  fn format_hint(&self) -> FormatHint;
 }
 
 /// Possible orientations of an image

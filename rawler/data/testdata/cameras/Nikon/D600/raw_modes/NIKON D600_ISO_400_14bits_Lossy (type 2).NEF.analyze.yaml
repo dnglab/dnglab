@@ -86,6 +86,7 @@ data:
         lens_make: Nikon
         lens_model: AF-S Nikkor 50mm f/1.4G
         gps: ~
+        user_comment: ~
       model: D600
       make: Nikon
       lens:

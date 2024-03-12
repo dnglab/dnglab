@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: LGPL-2.1
 // Copyright 2021 Daniel Vogelbacher <daniel@chaospixel.com>
 
+use std::iter::repeat;
+
 use byteorder::{BigEndian, ByteOrder, LittleEndian};
 use serde::{Deserialize, Serialize};
 
@@ -175,6 +177,17 @@ impl LookupTable {
       tbl[i] = (center, base, delta);
     }
     LookupTable { table: tbl }
+  }
+
+  pub fn new_with_bits(table: &[u16], bits: u32) -> LookupTable {
+    if table.len() >= 1 << bits {
+      Self::new(table)
+    } else {
+      let mut expanded = Vec::with_capacity(1 << bits);
+      expanded.extend_from_slice(table);
+      expanded.extend(repeat(table.last().expect("Need one element")).take((1 << bits) - table.len()));
+      Self::new(&expanded)
+    }
   }
 
   //  pub fn lookup(&self, value: u16) -> u16 {

@@ -89,6 +89,7 @@ data:
         lens_make: Canon
         lens_model: EF-S 55-250mm f/4-5.6 IS II
         gps: ~
+        user_comment: ~
       model: EOS 550D
       make: Canon
       lens:

@@ -89,6 +89,7 @@ data:
         lens_make: Samsung
         lens_model: NX 16-50mm F2-2.8 S ED OIS
         gps: ~
+        user_comment: ~
       model: NX1
       make: Samsung
       lens:

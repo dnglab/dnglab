@@ -89,6 +89,7 @@ data:
         lens_make: Lumix
         lens_model: G Vario 14-42mm F3.5-5.6 Asph. Mega OIS
         gps: ~
+        user_comment: ~
       model: DMC-G70
       make: Panasonic
       lens:

@@ -89,6 +89,7 @@ data:
         lens_make: Tamron
         lens_model: 28-75mm F2.8 Di III VXD G2
         gps: ~
+        user_comment: ~
       model: ILME-FX3
       make: SONY
       lens:
