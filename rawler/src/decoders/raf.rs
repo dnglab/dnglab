@@ -286,31 +286,31 @@ impl<'a> Decoder for RafDecoder<'a> {
       // Some fuji SuperCCD cameras include a second raw image next to the first one
       // that is identical but darker to the first. The two combined can produce
       // a higher dynamic range image. Right now we're ignoring it.
-      decode_16le_skiplines(&src, width, height, dummy)
+            decode_16le_skiplines(&src, width, height, dummy)
     } else if self.camera.find_hint("jpeg32") {
-      match bps {
+            match bps {
         12 => decode_12be_msb32(&src, width, height, dummy),
         14 => decode_14be_msb32(&src, width, height, dummy),
         _ => return Err(RawlerError::unsupported(&self.camera, format!("RAF: Don't know how to decode bps {}", bps))),
       }
     } else if self.camera.clean_model == "DBP for GX680" {
-      assert_eq!(bps, 16);
+            assert_eq!(bps, 16);
       dbp::decode_dbp(&src, width, height, dummy)?
     } else if src.len() < bps * width * height / 8 {
-      if !dummy {
-        decompress_fuji(&src, width, height, bps, &corrected_cfa)?
+            if !dummy {
+                decompress_fuji(&src, width, height, bps, &corrected_cfa)?
       } else {
-        alloc_image_plain!(width, height, dummy)
+                alloc_image_plain!(width, height, dummy)
       }
     } else {
-      match bps {
+            match bps {
         12 => decode_12le(&src, width, height, dummy),
         14 => decode_14le_unpacked(&src, width, height, dummy),
         16 => {
           if self.ifd.endian == Endian::Little {
-            decode_16le(&src, width, height, dummy)
+                        decode_16le(&src, width, height, dummy)
           } else {
-            decode_16be(&src, width, height, dummy)
+                        decode_16be(&src, width, height, dummy)
           }
         }
         _ => {
@@ -332,12 +332,12 @@ impl<'a> Decoder for RafDecoder<'a> {
       log::debug!("Apply Fuji image rotation");
       let rotated = if rotate_for_dng {
         if self.camera.find_hint("fuji_rotation") {
-          fuji_raw_rotate(&image, dummy) // Only required for fuji_rotation
+                    fuji_raw_rotate(&image, dummy) // Only required for fuji_rotation
         } else {
-          image
+                    image
         }
       } else {
-        self.rotate_image(image.pixels(), &self.camera, width, height, dummy)?
+                self.rotate_image(image.pixels(), &self.camera, width, height, dummy)?
       };
 
       let mut camera = self.camera.clone();
@@ -370,7 +370,7 @@ impl<'a> Decoder for RafDecoder<'a> {
       Ok(image)
     } else {
       //ok_image(self.camera.clone(), width, height, cpp, self.get_wb()?, image.into_inner())
-
+      
       let mut camera = self.camera.clone();
       camera.cfa = corrected_cfa;
       let whitelevel = if self.camera.whitelevel.is_none() {
@@ -503,26 +503,26 @@ impl<'a> RafDecoder<'a> {
   /// For unknown reason, the values are stored in reverse order and
   /// also falsely reported by exiftoool.
   fn get_xtrans_cfa(&self) -> Result<Option<CFA>> {
-    Ok(
+        Ok(
       if let Some(raf) = &self
         .ifd
         .sub_ifds()
         .get(&RAF_TAG_VIRTUAL_RAF_DATA)
         .and_then(|ifds| ifds.get(0).and_then(|ifd| ifd.get_entry(RafTags::XTransLayout)))
       {
-        match &raf.value {
+                match &raf.value {
           Value::Byte(data) => {
             let patname: String = data
               .iter()
               .rev()
               .map(|v| match v {
-                0 => 'R',
+                0 => 'B',
                 1 => 'G',
-                2 => 'B',
+                2 => 'R',
                 _ => 'X', // Unknown, let CFA::new() fail...
               })
               .collect();
-            Some(CFA::new(&patname))
+                        Some(CFA::new(&patname))
           }
           _ => {
             return Err("Invalid XTransLayout data type".into());

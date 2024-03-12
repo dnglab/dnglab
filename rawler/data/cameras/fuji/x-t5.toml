@@ -3,7 +3,7 @@ model = "X-T5"
 clean_make = "Fujifilm"
 clean_model = "X-T5"
 whitepoint = 16383
-color_pattern = "GGRGGBGGBGGRBRGRGBGGBGGRGGRGGBRBGBRG"
+color_pattern = "GGRGGBGGBGGRBRGRBGGGBGGRGGRGGBRBGBRG"
 active_area = [0, 5, 120, 7]
 
 [cameras.color_matrix]
