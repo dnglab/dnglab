@@ -486,11 +486,13 @@ impl<'a> RafDecoder<'a> {
   /// Nearly all models have this parameter, except of FinePix HS10
   fn get_crop(&self) -> Result<Option<Rect>> {
     if let Some(raf) = &self.ifd.sub_ifds().get(&RAF_TAG_VIRTUAL_RAF_DATA).and_then(|ifds| ifds.get(0)) {
-      let crops = raf.get_entry(RafTags::RawImageCropTopLeft);
+      //let crops = raf.get_entry(RafTags::RawImageCropTopLeft);
       let size = raf.get_entry(RafTags::RawImageCroppedSize);
-      if let (Some(crops), Some(size)) = (crops, size) {
+//      if let (Some(crops), Some(size)) = (crops, size) {
+      if let Some(size) = size {
         return Ok(Some(Rect::new(
-          Point::new(crops.force_usize(1), crops.force_usize(0)),
+//          Point::new(crops.force_usize(1), crops.force_usize(0)),
+          Point::new(0, 0),
           Dim2::new(size.force_usize(1), size.force_usize(0)),
         )));
       }
@@ -516,9 +518,9 @@ impl<'a> RafDecoder<'a> {
               .iter()
               .rev()
               .map(|v| match v {
-                0 => 'B',
+                0 => 'R',
                 1 => 'G',
-                2 => 'R',
+                2 => 'B',
                 _ => 'X', // Unknown, let CFA::new() fail...
               })
               .collect();
