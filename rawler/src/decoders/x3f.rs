@@ -4,7 +4,7 @@ use std::io::Cursor;
 use crate::bits::*;
 use crate::decoders::*;
 
-pub fn is_x3f(file: &mut RawFile) -> bool {
+pub fn is_x3f(file: &RawSource) -> bool {
   match file.subview(0, 4) {
     Ok(buf) => buf[0..4] == b"FOVb"[..],
     Err(_) => false,
@@ -38,7 +38,7 @@ struct X3fImage {
 }
 
 impl X3fFile {
-  fn new(file: &mut RawFile) -> Result<X3fFile> {
+  fn new(file: &RawSource) -> Result<X3fFile> {
     let buf = file.as_vec().unwrap();
     let offset = LEu32(&buf, buf.len() - 4) as usize;
     let data = &buf[offset..];
@@ -95,7 +95,7 @@ pub struct X3fDecoder<'a> {
 }
 
 impl<'a> X3fDecoder<'a> {
-  pub fn new(file: &mut RawFile, rawloader: &'a RawLoader) -> Result<X3fDecoder<'a>> {
+  pub fn new(file: &RawSource, rawloader: &'a RawLoader) -> Result<X3fDecoder<'a>> {
     let dir = X3fFile::new(file).unwrap();
 
     Ok(X3fDecoder { rawloader, dir })
@@ -103,7 +103,7 @@ impl<'a> X3fDecoder<'a> {
 }
 
 impl<'a> Decoder for X3fDecoder<'a> {
-  fn raw_image(&self, file: &mut RawFile, _params: RawDecodeParams, dummy: bool) -> Result<RawImage> {
+  fn raw_image(&self, file: &RawSource, _params: RawDecodeParams, dummy: bool) -> Result<RawImage> {
     let buffer = file.as_vec().unwrap();
     let caminfo = self
       .dir
@@ -143,7 +143,7 @@ impl<'a> Decoder for X3fDecoder<'a> {
     FormatHint::X3F
   }
 
-  fn raw_metadata(&self, _file: &mut RawFile, _params: RawDecodeParams) -> Result<RawMetadata> {
+  fn raw_metadata(&self, _file: &RawSource, _params: RawDecodeParams) -> Result<RawMetadata> {
     todo!()
   }
 }

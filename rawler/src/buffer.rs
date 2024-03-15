@@ -1,44 +1,51 @@
-use std::io::Read;
-
-use crate::RawlerError;
-use crate::Result;
+use std::ops::Deref;
 
 /// Buffer to hold an image in memory with enough extra space at the end for speed optimizations
-#[derive(Debug, Clone)]
-pub struct Buffer {
-  // TODO: delete buffer impl
-  pub buf: Vec<u8>,
+pub struct PaddedBuf<'a> {
+  buf: PaddedBufImpl<'a>,
   size: usize,
 }
 
-impl Buffer {
-  /// Creates a new buffer from anything that can be read
-  pub fn new(reader: &mut dyn Read) -> Result<Buffer> {
-    let mut buffer = Vec::new();
-    if let Err(err) = reader.read_to_end(&mut buffer) {
-      return Err(RawlerError::with_io_error("Buffer::new()", "<internal_buf>", err));
+pub enum PaddedBufImpl<'a> {
+  Owned(Vec<u8>),
+  Ref(&'a [u8]),
+}
+
+impl<'a> PaddedBuf<'a> {
+  pub fn new_owned(buf: Vec<u8>, size: usize) -> Self {
+    Self {
+      buf: PaddedBufImpl::Owned(buf),
+      size,
     }
-    let size = buffer.len();
-    //buffer.extend([0;16].iter().cloned());
-    Ok(Buffer { buf: buffer, size })
   }
 
-  pub fn raw_buf(&self) -> &[u8] {
-    &self.buf[..self.size]
-  }
-
-  pub fn get_range(&self, offset: usize, len: usize) -> &[u8] {
-    &self.buf[offset..offset + len]
+  pub fn new_ref(buf: &'a [u8], size: usize) -> Self {
+    Self {
+      buf: PaddedBufImpl::Ref(buf),
+      size,
+    }
   }
 
   pub fn size(&self) -> usize {
     self.size
   }
+
+  pub fn buf(&'a self) -> &'a [u8] {
+    self
+  }
+
+  pub fn real_size(&self) -> usize {
+    self.buf().len()
+  }
 }
 
-impl From<Vec<u8>> for Buffer {
-  fn from(buf: Vec<u8>) -> Self {
-    let size = buf.len();
-    Self { buf, size }
+impl<'a> Deref for PaddedBuf<'a> {
+  type Target = [u8];
+
+  fn deref(&self) -> &Self::Target {
+    match &self.buf {
+      PaddedBufImpl::Owned(x) => x.as_ref(),
+      PaddedBufImpl::Ref(x) => x,
+    }
   }
 }
