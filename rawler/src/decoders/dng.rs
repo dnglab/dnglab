@@ -18,6 +18,7 @@ use crate::formats::tiff::Rational;
 use crate::formats::tiff::Value;
 use crate::imgop::xyz::FlatColorMatrix;
 use crate::imgop::xyz::Illuminant;
+use crate::imgop::Dim2;
 use crate::imgop::Point;
 use crate::imgop::Rect;
 use crate::packed::*;
@@ -387,8 +388,8 @@ impl<'a> DngDecoder<'a> {
     if let Some(crops) = raw.get_entry(DngTag::DefaultCropOrigin) {
       let p = Point::new(crops.force_usize(0), crops.force_usize(1));
       if let Some(size) = raw.get_entry(DngTag::DefaultCropSize) {
-        let s = Point::new(size.force_usize(0), size.force_usize(1));
-        return Some(Rect::new_with_points(p, s));
+        let d = Dim2::new(size.force_usize(0), size.force_usize(1));
+        return Some(Rect::new(p, d));
       }
     }
     None
