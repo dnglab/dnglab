@@ -52,7 +52,7 @@ data:
         exposure_time: 10/250
         fnumber: 900/100
         aperture_value: 630/100
-        brightness_value: ~
+        brightness_value: 196/100
         iso_speed_ratings: 100
         iso_speed: ~
         recommended_exposure_index: ~

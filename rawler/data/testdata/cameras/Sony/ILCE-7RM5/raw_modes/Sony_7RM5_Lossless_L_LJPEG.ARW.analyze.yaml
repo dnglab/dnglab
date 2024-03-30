@@ -42,7 +42,7 @@ data:
         exposure_time: 1/2000
         fnumber: 12/10
         aperture_value: ~
-        brightness_value: ~
+        brightness_value: 18644/2560
         iso_speed_ratings: 100
         iso_speed: ~
         recommended_exposure_index: 100
