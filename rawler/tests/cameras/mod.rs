@@ -616,6 +616,9 @@ mod camera_ist_dl_raw_modes {
 mod camera_k_3_raw_modes {
   super::camera_file_check!("Pentax", "K-3", cam_pentax_k_3_raw_iso_100_pef, "raw_modes/PENTAX K-3_RAW_ISO_100.PEF");
 }
+mod camera_k_3_iii_monochrome_raw_modes {
+  super::camera_file_check!("Pentax", "K-3 III Monochrome", cam_pentax_k_3_mark_iii_monochrome_iso_200_14bits_pef, "raw_modes/PENTAX K-3 Mark III Monochrome_ISO_200_14bits.PEF");
+}
 mod camera_k_7_raw_modes {
   super::camera_file_check!("Pentax", "K-7", cam_pentax_k_7_raw_iso_3200_pef, "raw_modes/PENTAX K-7_RAW_ISO_3200.PEF");
 }
@@ -2796,4 +2799,7 @@ mod camera_om_5_raw_modes {
   super::camera_file_check!("OM", "OM-5", cam_om_5_iso_100_16bits_tripod_hires_orf, "raw_modes/OM-5_ISO_100_16bits_tripod_hires.ORF");
   super::camera_file_check!("OM", "OM-5", cam_om_5_iso_100_16bits_normal_orf, "raw_modes/OM-5_ISO_100_16bits_normal.ORF");
   super::camera_file_check!("OM", "OM-5", cam_om_5_iso_100_16bits_handheld_hires_orf, "raw_modes/OM-5_ISO_100_16bits_handheld_hires.ORF");
+}
+mod camera_tg_7_raw_modes {
+  super::camera_file_check!("OM", "TG-7", cam_tg_7_iso_100_16bits_orf, "raw_modes/TG-7_ISO_100_16bits.ORF");
 }
