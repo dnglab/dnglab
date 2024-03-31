@@ -1,0 +1,94 @@
+---
+file:
+  fileSize: 22483626
+  fileName: Nikon_Z30_Lossless_12bit.NEF
+  digest: 233418beee831ff518d02a0dd2a9d761
+data:
+  metadata:
+    rawParams:
+      rawWidth: 5600
+      rawHeight: 3728
+      bitDepth: 16
+      cropArea:
+        p:
+          x: 16
+          y: 8
+        d:
+          w: 5568
+          h: 3712
+      activeArea:
+        p:
+          x: 0
+          y: 0
+        d:
+          w: 5600
+          h: 3728
+      blacklevels:
+        levels:
+          - 252/1
+          - 252/1
+          - 252/1
+          - 252/1
+        cpp: 1
+        width: 2
+        height: 2
+      whitelevels:
+        - 3972
+      wbCoeffs:
+        - 1.9785156
+        - 1.0
+        - 1.4296875
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ""
+        artist: ""
+        lens_spec: ~
+        exposure_time: 10/4000
+        fnumber: 200/100
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 100
+        iso_speed: ~
+        recommended_exposure_index: 100
+        sensitivity_type: 2
+        exposure_bias: 0/6
+        date_time_original: "2022:12:06 15:23:11"
+        create_date: "2022:12:06 15:23:11"
+        modify_date: "2022:12:06 15:23:11"
+        exposure_program: 3
+        timezone_offset: ~
+        offset_time: "+02:00"
+        offset_time_original: "+02:00"
+        offset_time_digitized: "+02:00"
+        sub_sec_time: "35"
+        sub_sec_time_original: "35"
+        sub_sec_time_digitized: "35"
+        shutter_speed_value: ~
+        max_aperture_value: ~
+        subject_distance: ~
+        metering_mode: 5
+        light_source: 0
+        flash: 0
+        focal_length: 400/10
+        image_number: ~
+        color_space: ~
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: 0
+        owner_name: ~
+        serial_number: "6004290"
+        lens_serial_number: "20032460"
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+        user_comment: ~
+      model: Z 30
+      make: Nikon
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

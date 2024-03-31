@@ -1089,6 +1089,10 @@ mod camera_nikon_z_7_2_raw_modes {
   super::camera_file_check!("Nikon", "NIKON Z 7_2", cam_nikon_z_7_2_large_iso_100_14bits_lossy__type_2__nef, "raw_modes/NIKON Z 7_2_Large_ISO_100_14bits_Lossy (type 2).NEF");
   super::camera_file_check!("Nikon", "NIKON Z 7_2", cam_nikon_z_7_2_large_iso_100_12bits_lossless_nef, "raw_modes/NIKON Z 7_2_Large_ISO_100_12bits_Lossless.NEF");
 }
+mod camera_z_30_raw_modes {
+  super::camera_file_check!("Nikon", "Z 30", cam_nikon_z30_lossless_12bit_nef, "raw_modes/Nikon_Z30_Lossless_12bit.NEF");
+  super::camera_file_check!("Nikon", "Z 30", cam_nikon_z30_lossless_14bit_nef, "raw_modes/Nikon_Z30_Lossless_14bit.NEF");
+}
 mod camera_z_50_raw_modes {
   super::camera_file_check!("Nikon", "Z 50", cam_nikon_z_50_large_iso_250_14bits_lossless_nef, "raw_modes/NIKON Z 50_Large_ISO_250_14bits_Lossless.NEF");
   super::camera_file_check!("Nikon", "Z 50", cam_nikon_z_50_large_iso_250_12bits_lossless_nef, "raw_modes/NIKON Z 50_Large_ISO_250_12bits_Lossless.NEF");
