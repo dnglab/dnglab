@@ -365,6 +365,7 @@ cameras/Sony/ILCE-7SM2/raw_modes
 cameras/Sony/ILCE-7SM3/raw_modes
 cameras/Sony/ILCE-7S/raw_modes
 cameras/Sony/ILCE-9M2/raw_modes
+cameras/Sony/ILCE-9M3/raw_modes
 cameras/Sony/ILCE-9/raw_modes
 cameras/Sony/ILCE-QX1/raw_modes
 cameras/Sony/NEX-3N/raw_modes
