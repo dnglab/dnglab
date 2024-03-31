@@ -1418,6 +1418,17 @@ mod camera_ilce_9m2_raw_modes {
   super::camera_file_check!("Sony", "ILCE-9M2", cam_ilce_9m2_iso_800_14bits_uncompressed_raw_arw, "raw_modes/ILCE-9M2_ISO_800_14bits_Uncompressed RAW.ARW");
   super::camera_file_check!("Sony", "ILCE-9M2", cam_ilce_9m2_iso_640_12bits_compressed_raw_arw, "raw_modes/ILCE-9M2_ISO_640_12bits_Compressed RAW.ARW");
 }
+mod camera_ilce_9m3_raw_modes {
+  super::camera_file_check!("Sony", "ILCE-9M3", cam_sony_ilce_9m3_14bits_lossless_m_arw, "raw_modes/Sony_ILCE_9M3_14bits_lossless_M.ARW");
+  super::camera_file_check!("Sony", "ILCE-9M3", cam_sony_ilce_9m3_14bits_apsc_14bits_lossy_arw, "raw_modes/Sony_ILCE_9M3_14bits_APSC_14bits_lossy.ARW");
+  super::camera_file_check!("Sony", "ILCE-9M3", cam_sony_ilce_9m3_14bits_uncompressed_arw, "raw_modes/Sony_ILCE_9M3_14bits_uncompressed.ARW");
+  super::camera_file_check!("Sony", "ILCE-9M3", cam_sony_ilce_9m3_14bits_lossless_l_arw, "raw_modes/Sony_ILCE_9M3_14bits_lossless_L.ARW");
+  super::camera_file_check!("Sony", "ILCE-9M3", cam_sony_ilce_9m3_14bits_apsc_14bits_lossless_m_arw, "raw_modes/Sony_ILCE_9M3_14bits_APSC_14bits_lossless_M.ARW");
+  super::camera_file_check!("Sony", "ILCE-9M3", cam_sony_ilce_9m3_14bits_lossless_s_arw, "raw_modes/Sony_ILCE_9M3_14bits_lossless_S.ARW");
+  super::camera_file_check!("Sony", "ILCE-9M3", cam_sony_ilce_9m3_14bits_lossy_arw, "raw_modes/Sony_ILCE_9M3_14bits_lossy.ARW");
+  super::camera_file_check!("Sony", "ILCE-9M3", cam_sony_ilce_9m3_14bits_apsc_14bits_lossless_s_arw, "raw_modes/Sony_ILCE_9M3_14bits_APSC_14bits_lossless_S.ARW");
+  super::camera_file_check!("Sony", "ILCE-9M3", cam_sony_ilce_9m3_14bits_apsc_14bits_uncompressed_arw, "raw_modes/Sony_ILCE_9M3_14bits_APSC_14bits_uncompressed.ARW");
+}
 mod camera_ilce_9_raw_modes {
   super::camera_file_check!("Sony", "ILCE-9", cam_ilce_9_iso_100_14bits_uncompressed_raw_arw, "raw_modes/ILCE-9_ISO_100_14bits_Uncompressed RAW.ARW");
   super::camera_file_check!("Sony", "ILCE-9", cam_ilce_9_iso_100_14bits_compressed_raw_arw, "raw_modes/ILCE-9_ISO_100_14bits_Compressed RAW.ARW");
