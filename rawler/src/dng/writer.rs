@@ -635,8 +635,8 @@ where
   let mut strip_sizes: Vec<u32> = Vec::new();
   let mut strip_rows: Vec<u32> = Vec::new();
 
-  // 8 Strips
-  let rows_per_strip = rawimage.height / 8;
+  let rows_per_strip = if rawimage.height > 1000 { 256 } else { rawimage.height };
+
   match rawimage.data {
     RawImageData::Integer(ref data) => {
       for strip in data.chunks(rows_per_strip * rawimage.width * rawimage.cpp) {
