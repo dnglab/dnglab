@@ -121,8 +121,11 @@ where
   log::debug!("wb coeff: {:?}", rawimage.wb_coeffs);
 
   let mut dng = DngWriter::new(dng, DNG_VERSION_V1_4)?;
+
   // Write RAW image for subframe type 0
-  let mut raw = dng.subframe(0);
+  // If no thumbnail should be written to root IFD, we need to put the raw image into
+  // root IFD instead.
+  let mut raw = if params.thumbnail { dng.subframe(0) } else { dng.subframe_on_root(0) };
   raw.raw_image(&rawimage, params.crop, params.compression, params.photometric_conversion, params.predictor)?;
   // Check for DNG raw IFD related tags
   if let Some(dng_raw_ifd) = decoder.ifd(WellKnownIFD::VirtualDngRawTags)? {
