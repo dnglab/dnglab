@@ -612,7 +612,7 @@ where
   });
 
   raw_ifd.add_tag(TiffCommonTag::BitsPerSample, &vec![rawimage.bps as u16; rawimage.cpp]);
-  raw_ifd.add_tag(TiffCommonTag::SampleFormat, [1_u16, 1, 1]);
+  raw_ifd.add_tag(TiffCommonTag::SampleFormat, &vec![1_u16; rawimage.cpp]);
   raw_ifd.add_tag(TiffCommonTag::TileOffsets, &tile_offsets);
   raw_ifd.add_tag(TiffCommonTag::TileByteCounts, &tile_sizes);
   //raw_ifd.add_tag(LegacyTiffRootTag::TileWidth, lj92_data.1 as u16)?; // FIXME
@@ -645,7 +645,7 @@ where
         strip_sizes.push(std::mem::size_of_val(strip) as u32);
         strip_rows.push((strip.len() / (rawimage.width * rawimage.cpp)) as u32);
       }
-      raw_ifd.add_tag(TiffCommonTag::SampleFormat, [1_u16, 1, 1]); // Unsigned Integer
+      raw_ifd.add_tag(TiffCommonTag::SampleFormat, &vec![1_u16; rawimage.cpp]); // Unsigned Integer
       raw_ifd.add_tag(TiffCommonTag::BitsPerSample, &vec![16_u16; rawimage.cpp]);
     }
     RawImageData::Float(ref data) => {
@@ -655,7 +655,7 @@ where
         strip_sizes.push(std::mem::size_of_val(strip) as u32);
         strip_rows.push((strip.len() / (rawimage.width * rawimage.cpp)) as u32);
       }
-      raw_ifd.add_tag(TiffCommonTag::SampleFormat, [3_u16, 3, 3]); // IEEE Float
+      raw_ifd.add_tag(TiffCommonTag::SampleFormat, &vec![3_u16; rawimage.cpp]); // Unsigned Integer// IEEE Float
       raw_ifd.add_tag(TiffCommonTag::BitsPerSample, &vec![32_u16; rawimage.cpp]);
     }
   };
