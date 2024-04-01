@@ -25,9 +25,9 @@ data:
           h: 4608
       blacklevels:
         levels:
-          - 2048/1
-          - 2048/1
-          - 2048/1
+          - 1024/1
+          - 1024/1
+          - 1024/1
         cpp: 3
         width: 1
         height: 1
