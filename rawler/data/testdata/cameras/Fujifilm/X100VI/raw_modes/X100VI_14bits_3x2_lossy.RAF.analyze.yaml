@@ -1,0 +1,126 @@
+---
+file:
+  fileSize: 29851616
+  fileName: X100VI_14bits_3x2_lossy.RAF
+  digest: bbf859a954c930337c73d3f53cff4221
+data:
+  metadata:
+    rawParams:
+      rawWidth: 7872
+      rawHeight: 5196
+      bitDepth: 16
+      cropArea:
+        p:
+          x: 12
+          y: 21
+        d:
+          w: 7728
+          h: 5152
+      activeArea:
+        p:
+          x: 0
+          y: 12
+        d:
+          w: 7752
+          h: 5172
+      blacklevels:
+        levels:
+          - 1023/1
+          - 1023/1
+          - 1023/1
+          - 1023/1
+          - 1023/1
+          - 1023/1
+          - 1023/1
+          - 1023/1
+          - 1023/1
+          - 1023/1
+          - 1023/1
+          - 1023/1
+          - 1023/1
+          - 1023/1
+          - 1023/1
+          - 1023/1
+          - 1023/1
+          - 1023/1
+          - 1023/1
+          - 1023/1
+          - 1023/1
+          - 1023/1
+          - 1023/1
+          - 1023/1
+          - 1023/1
+          - 1023/1
+          - 1023/1
+          - 1023/1
+          - 1023/1
+          - 1023/1
+          - 1023/1
+          - 1023/1
+          - 1023/1
+          - 1023/1
+          - 1023/1
+          - 1023/1
+        cpp: 1
+        width: 6
+        height: 6
+      whitelevels:
+        - 16383
+      wbCoeffs:
+        - 2.2582781
+        - 1.0
+        - 1.4834437
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 8
+        copyright: ""
+        artist: ""
+        lens_spec: ~
+        exposure_time: 10/1100
+        fnumber: 280/100
+        aperture_value: 300/100
+        brightness_value: 471/100
+        iso_speed_ratings: 125
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: 1
+        exposure_bias: 0/100
+        date_time_original: "2024:03:02 17:00:51"
+        create_date: "2024:03:02 17:00:51"
+        modify_date: "2024:03:02 17:00:51"
+        exposure_program: 2
+        timezone_offset: ~
+        offset_time: "+00:00"
+        offset_time_original: "+00:00"
+        offset_time_digitized: "+00:00"
+        sub_sec_time: "17"
+        sub_sec_time_original: "17"
+        sub_sec_time_digitized: "17"
+        shutter_speed_value: 682/100
+        max_aperture_value: 200/100
+        subject_distance: ~
+        metering_mode: 5
+        light_source: 0
+        flash: 0
+        focal_length: 2300/100
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: 0
+        owner_name: ~
+        serial_number: 4A001612
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+        user_comment: ~
+      model: X100VI
+      make: Fujifilm
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

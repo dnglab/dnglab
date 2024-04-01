@@ -682,6 +682,7 @@ cameras/Fujifilm/X100S/raw_modes
 cameras/Fujifilm/X100T/raw_modes
 cameras/Fujifilm/X100V/compressed
 cameras/Fujifilm/X100V/raw_modes
+cameras/Fujifilm/X100VI/raw_modes
 cameras/Fujifilm/X20/raw_modes
 cameras/Fujifilm/X30/raw_modes
 cameras/Fujifilm/X70/raw_modes

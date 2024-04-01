@@ -319,7 +319,7 @@ impl<'a> Decoder for RafDecoder<'a> {
       }
     };
 
-    let blacklevel = self.get_blacklevel()?;
+    let blacklevel = self.get_blacklevel(&corrected_cfa)?;
     log::debug!("RAF Blacklevels: {:?}", blacklevel);
 
     // For now, we put the rotated data into DNG. Much better solution
@@ -469,12 +469,12 @@ impl<'a> RafDecoder<'a> {
     }
   }
 
-  fn get_blacklevel(&self) -> Result<Option<BlackLevel>> {
+  fn get_blacklevel(&self, cfa: &CFA) -> Result<Option<BlackLevel>> {
     if let Some(ifd) = self.ifd.get_sub_ifds(FujiIFD::FujiIFD) {
       let fuji = &ifd[0];
       if let Some(Entry { value: Value::Long(black), .. }) = fuji.get_entry_recursive(FujiIFD::BlackLevel) {
         let levels: Vec<u16> = black.iter().copied().map(|v| v as u16).collect();
-        return Ok(Some(BlackLevel::new(&levels, self.camera.cfa.width, self.camera.cfa.height, 1)));
+        return Ok(Some(BlackLevel::new(&levels, cfa.width, cfa.height, 1)));
       } else {
         log::debug!("Unable to find black level data");
       }
