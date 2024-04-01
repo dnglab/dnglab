@@ -204,6 +204,7 @@ cameras/Phase One/IQ150/raw_modes
 cameras/Phase One/iXM-RS150F/raw_modes
 cameras/Phase One/P65/raw_modes
 cameras/Phase One/P20/raw_modes
+cameras/Phase One/P25/raw_modes
 cameras/Nikon/D3500/raw_modes
 cameras/Nikon/1 V2/raw_modes
 cameras/Nikon/D40X/raw_modes
