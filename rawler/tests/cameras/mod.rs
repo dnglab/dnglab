@@ -2061,6 +2061,9 @@ mod camera_dmc_cm1_raw_modes {
   super::camera_file_check!("Panasonic", "DMC-CM1", cam_dmc_cm1_iso_125_panasonic_raw_1_5472x3080_rw2, "raw_modes/DMC-CM1_ISO_125_Panasonic RAW 1_5472x3080.RW2");
   super::camera_file_check!("Panasonic", "DMC-CM1", cam_dmc_cm1_iso_125_panasonic_raw_1_4864x3648_rw2, "raw_modes/DMC-CM1_ISO_125_Panasonic RAW 1_4864x3648.RW2");
 }
+mod camera_dmc_fx150_raw_modes {
+  super::camera_file_check!("Panasonic", "DMC-FX150", cam_dmc_fx150_4x3_rw2, "raw_modes/DMC-FX150_4x3.RW2");
+}
 mod camera_dmc_fz1000_raw_modes {
   super::camera_file_check!("Panasonic", "DMC-FZ1000", cam_dmc_fz1000_iso_640_4fmt_5472x3648_rw2, "raw_modes/DMC-FZ1000_ISO_640_4fmt_5472x3648.RW2");
   super::camera_file_check!("Panasonic", "DMC-FZ1000", cam_dmc_fz1000_iso_800_4fmt_3648x3648_rw2, "raw_modes/DMC-FZ1000_ISO_800_4fmt_3648x3648.RW2");
