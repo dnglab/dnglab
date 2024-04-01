@@ -1,0 +1,115 @@
+---
+file:
+  fileSize: 21900287
+  fileName: NX3300_12bits.SRW
+  digest: 1cad96d16fdcaac1106313d103236239
+data:
+  metadata:
+    rawParams:
+      rawWidth: 5600
+      rawHeight: 3714
+      bitDepth: 16
+      cropArea:
+        p:
+          x: 96
+          y: 42
+        d:
+          w: 5472
+          h: 3648
+      activeArea:
+        p:
+          x: 64
+          y: 18
+        d:
+          w: 5504
+          h: 3672
+      blacklevels:
+        levels:
+          - 0/1
+          - 0/1
+          - 0/1
+          - 0/1
+        cpp: 1
+        width: 2
+        height: 2
+      whitelevels:
+        - 4095
+      wbCoeffs:
+        - 2.4726562
+        - 1.0
+        - 1.9179688
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ~
+        artist: ~
+        lens_spec:
+          - 16/1
+          - 50/1
+          - 35/10
+          - 56/10
+        exposure_time: 1/30
+        fnumber: 56/10
+        aperture_value: 56/10
+        brightness_value: ~
+        iso_speed_ratings: 100
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: 0/10
+        date_time_original: "2023:09:30 18:03:25"
+        create_date: "2023:09:30 18:03:25"
+        modify_date: "2023:09:30 18:03:25"
+        exposure_program: 3
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: 1/30
+        max_aperture_value: 498/100
+        subject_distance: ~
+        metering_mode: 5
+        light_source: 0
+        flash: 0
+        focal_length: 50/1
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: Samsung
+        lens_model: NX 16-50mm F3.5-5.6 Power Zoom ED OIS
+        gps: ~
+        user_comment: ~
+      model: NX3300
+      make: Samsung
+      lens:
+        identifiers:
+          name: ~
+          id:
+            - 15
+            - 0
+          nikon_id: ~
+          olympus_id: ~
+        mount: NX-mount
+        lens_make: Samsung
+        lens_model: NX 16-50mm F3.5-5.6 Power Zoom ED OIS
+        focal_range:
+          - 16/1
+          - 50/1
+        aperture_range:
+          - 35/10
+          - 56/10
+        lens_name: Samsung NX 16-50mm F3.5-5.6 Power Zoom ED OIS
+      unique_image_id: ~
+      rating: ~
+
