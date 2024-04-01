@@ -666,6 +666,7 @@ cameras/Fujifilm/FinePix X100/raw_modes
 cameras/Fujifilm/FinePix X10/raw_modes
 cameras/Fujifilm/GFX 100/compressed
 cameras/Fujifilm/GFX 100/raw_modes
+cameras/Fujifilm/GFX 100 II/raw_modes
 cameras/Fujifilm/GFX100S/compressed
 cameras/Fujifilm/GFX100S/raw_modes
 cameras/Fujifilm/GFX 50R/compressed
