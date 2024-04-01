@@ -2643,6 +2643,11 @@ mod camera_x100v_compressed {
 mod camera_x100v_raw_modes {
   super::camera_file_check!("Fujifilm", "X100V", cam_x100v_iso_160_bitdepth_14_56_mib_raf, "raw_modes/X100V_ISO_160_Bitdepth_14_56 MiB.RAF");
 }
+mod camera_x100vi_raw_modes {
+  super::camera_file_check!("Fujifilm", "X100VI", cam_x100vi_14bits_3x2_uncompressed_raf, "raw_modes/X100VI_14bits_3x2_uncompressed.RAF");
+  super::camera_file_check!("Fujifilm", "X100VI", cam_x100vi_14bits_3x2_lossless_raf, "raw_modes/X100VI_14bits_3x2_lossless.RAF");
+  super::camera_file_check!("Fujifilm", "X100VI", cam_x100vi_14bits_3x2_lossy_raf, "raw_modes/X100VI_14bits_3x2_lossy.RAF");
+}
 mod camera_x20_raw_modes {
   super::camera_file_check!("Fujifilm", "X20", cam_x20_iso_200_raf, "raw_modes/X20_ISO_200.RAF");
 }
