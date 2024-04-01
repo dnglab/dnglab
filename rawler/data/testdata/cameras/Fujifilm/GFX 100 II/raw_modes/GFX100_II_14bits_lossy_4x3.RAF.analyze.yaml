@@ -1,0 +1,98 @@
+---
+file:
+  fileSize: 62158752
+  fileName: GFX100_II_14bits_lossy_4x3.RAF
+  digest: 5fa238b803a7df21e7d14d56f8324d49
+data:
+  metadata:
+    rawParams:
+      rawWidth: 11808
+      rawHeight: 8754
+      bitDepth: 16
+      cropArea:
+        p:
+          x: 8
+          y: 7
+        d:
+          w: 11648
+          h: 8736
+      activeArea:
+        p:
+          x: 0
+          y: 2
+        d:
+          w: 11664
+          h: 8748
+      blacklevels:
+        levels:
+          - 1024/1
+          - 1024/1
+          - 1024/1
+          - 1024/1
+        cpp: 1
+        width: 2
+        height: 2
+      whitelevels:
+        - 16383
+      wbCoeffs:
+        - 1.8741722
+        - 1.0
+        - 1.6258278
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ""
+        artist: ""
+        lens_spec:
+          - 6300/100
+          - 6300/100
+          - 280/100
+          - 280/100
+        exposure_time: 10/1050
+        fnumber: 400/100
+        aperture_value: 400/100
+        brightness_value: 429/100
+        iso_speed_ratings: 250
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: 1
+        exposure_bias: 0/100
+        date_time_original: "2024:01:09 17:37:57"
+        create_date: "2024:01:09 17:37:57"
+        modify_date: "2024:01:09 17:37:57"
+        exposure_program: 3
+        timezone_offset: ~
+        offset_time: "+01:00"
+        offset_time_original: "+01:00"
+        offset_time_digitized: "+01:00"
+        sub_sec_time: "01"
+        sub_sec_time_original: "01"
+        sub_sec_time_digitized: "01"
+        shutter_speed_value: 671/100
+        max_aperture_value: 300/100
+        subject_distance: ~
+        metering_mode: 5
+        light_source: 0
+        flash: 0
+        focal_length: 6300/100
+        image_number: ~
+        color_space: 65535
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 1
+        scene_capture_type: 0
+        subject_distance_range: 0
+        owner_name: ~
+        serial_number: "33000054"
+        lens_serial_number: 75A00261
+        lens_make: FUJIFILM
+        lens_model: GF63mmF2.8 R WR
+        gps: ~
+        user_comment: ~
+      model: GFX 100 II
+      make: Fujifilm
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+
