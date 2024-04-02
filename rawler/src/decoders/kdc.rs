@@ -12,9 +12,9 @@ use crate::formats::tiff::GenericTiffReader;
 use crate::formats::tiff::IFD;
 use crate::packed::decode_12be;
 use crate::pixarray::PixU16;
+use crate::rawsource::RawSource;
 use crate::tags::ExifTag;
 use crate::tags::TiffCommonTag;
-use crate::RawFile;
 use crate::RawImage;
 use crate::RawLoader;
 use crate::RawlerError;
@@ -40,11 +40,11 @@ pub struct KdcDecoder<'a> {
 }
 
 impl<'a> KdcDecoder<'a> {
-  pub fn new(file: &mut RawFile, tiff: GenericTiffReader, rawloader: &'a RawLoader) -> Result<KdcDecoder<'a>> {
+  pub fn new(file: &RawSource, tiff: GenericTiffReader, rawloader: &'a RawLoader) -> Result<KdcDecoder<'a>> {
     let camera = rawloader.check_supported(tiff.root_ifd())?;
 
     let makernote = if let Some(exif) = tiff.find_first_ifd_with_tag(ExifTag::MakerNotes) {
-      exif.parse_makernote(file.inner(), OffsetMode::Absolute, &[])?
+      exif.parse_makernote(&mut file.reader(), OffsetMode::Absolute, &[])?
     } else {
       warn!("KDC makernote not found");
       None
@@ -60,7 +60,7 @@ impl<'a> KdcDecoder<'a> {
 }
 
 impl<'a> Decoder for KdcDecoder<'a> {
-  fn raw_image(&self, file: &mut RawFile, _params: RawDecodeParams, dummy: bool) -> Result<RawImage> {
+  fn raw_image(&self, file: &RawSource, _params: RawDecodeParams, dummy: bool) -> Result<RawImage> {
     if self.camera.model == "Kodak DC120 ZOOM Digital Camera" {
       let width = 848;
       let height = 976;
@@ -69,10 +69,10 @@ impl<'a> Decoder for KdcDecoder<'a> {
       let mut white = self.camera.whitelevel.clone().expect("KDC needs a whitelevel in camera config")[0];
       let src = file.subview_until_eof(off as u64).unwrap();
       let image = match fetch_tiff_tag!(raw, TiffCommonTag::Compression).force_usize(0) {
-        1 => Self::decode_dc120(&src, width, height, dummy),
+        1 => Self::decode_dc120(src, width, height, dummy),
         7 => {
           white = 0xFF << 1;
-          Self::decode_dc120_jpeg(&src, width, height, dummy)
+          Self::decode_dc120_jpeg(src, width, height, dummy)
         }
         c => {
           return Err(RawlerError::unsupported(
@@ -104,7 +104,7 @@ impl<'a> Decoder for KdcDecoder<'a> {
     }
 
     let src = file.subview_until_eof(off as u64).unwrap();
-    let image = decode_12be(&src, width, height, dummy);
+    let image = decode_12be(src, width, height, dummy);
     let cpp = 1;
     ok_cfa_image(self.camera.clone(), cpp, self.get_wb()?, image, dummy)
   }
@@ -113,7 +113,7 @@ impl<'a> Decoder for KdcDecoder<'a> {
     todo!()
   }
 
-  fn raw_metadata(&self, _file: &mut RawFile, _params: RawDecodeParams) -> Result<RawMetadata> {
+  fn raw_metadata(&self, _file: &RawSource, _params: RawDecodeParams) -> Result<RawMetadata> {
     let exif = Exif::new(self.tiff.root_ifd())?;
     let mdata = RawMetadata::new(&self.camera, exif);
     Ok(mdata)

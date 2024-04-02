@@ -50,6 +50,7 @@ tokio = {version = "1.20", features = ["full"]}
 toml = "0.8"
 uuid = {version = "1.0", features = ["serde", "v4"]}
 weezl = "0.1.7"
+memmap2 = "0.9.4"
 
 [dev-dependencies]
 criterion = {version = "0.5", features = ["html_reports"]}

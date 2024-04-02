@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::{bits::*, RawFile};
+use crate::{bits::*, rawsource::RawSource};
 
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub enum CiffTag {
@@ -38,7 +38,7 @@ pub struct CiffIFD {
   subifds: Vec<CiffIFD>,
 }
 
-pub fn is_ciff(file: &mut RawFile) -> bool {
+pub fn is_ciff(file: &RawSource) -> bool {
   match file.subview(0, 14) {
     Ok(buf) => buf[6..14] == b"HEAPCCDR"[..],
     Err(_) => false,
@@ -46,7 +46,7 @@ pub fn is_ciff(file: &mut RawFile) -> bool {
 }
 
 impl CiffIFD {
-  pub fn new_file(file: &mut RawFile) -> Result<CiffIFD, String> {
+  pub fn new_file(file: &RawSource) -> Result<CiffIFD, String> {
     let data = file.as_vec().unwrap();
 
     CiffIFD::new(&data, LEu32(&data, 2) as usize, data.len(), 1)
