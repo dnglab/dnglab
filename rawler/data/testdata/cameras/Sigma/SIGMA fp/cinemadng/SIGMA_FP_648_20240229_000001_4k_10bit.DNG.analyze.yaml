@@ -14,8 +14,8 @@ data:
           x: 8
           y: 5
         d:
-          w: 3832
-          h: 2155
+          w: 3840
+          h: 2160
       activeArea:
         p:
           x: 0
@@ -48,7 +48,7 @@ data:
         exposure_time: 1/50
         fnumber: 0/10
         aperture_value: 0/65534
-        brightness_value: ~
+        brightness_value: "-233017/65534"
         iso_speed_ratings: 3200
         iso_speed: ~
         recommended_exposure_index: 3200

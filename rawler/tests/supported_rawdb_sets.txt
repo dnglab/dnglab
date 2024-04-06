@@ -204,6 +204,7 @@ cameras/Phase One/IQ150/raw_modes
 cameras/Phase One/iXM-RS150F/raw_modes
 cameras/Phase One/P65/raw_modes
 cameras/Phase One/P20/raw_modes
+cameras/Phase One/P25/raw_modes
 cameras/Nikon/D3500/raw_modes
 cameras/Nikon/1 V2/raw_modes
 cameras/Nikon/D40X/raw_modes
@@ -280,6 +281,7 @@ cameras/Nikon/D3100/raw_modes
 cameras/Nikon/Z 5/raw_modes
 cameras/Nikon/NIKON Z 6_2/raw_modes
 cameras/Nikon/NIKON Z 7_2/raw_modes
+cameras/Nikon/Z 30/raw_modes
 cameras/Nikon/Z 50/raw_modes
 cameras/Nikon/Z 6/raw_modes
 cameras/Nikon/NIKON Z f/raw_modes
@@ -432,6 +434,7 @@ cameras/Samsung/NX200/raw_modes
 cameras/Samsung/NX20/raw_modes
 cameras/Samsung/NX210/raw_modes
 cameras/Samsung/NX3000/raw_modes
+cameras/Samsung/NX3300/raw_modes
 cameras/Samsung/NX300M/raw_modes
 cameras/Samsung/NX300/raw_modes
 cameras/Samsung/NX30/raw_modes
@@ -507,6 +510,7 @@ cameras/Olympus/SP350/raw_modes
 cameras/Olympus/SP500UZ/raw_modes
 cameras/Olympus/SP510UZ/raw_modes
 cameras/Olympus/SP565UZ/raw_modes
+cameras/Olympus/SP570UZ/raw_modes
 cameras/Olympus/Stylus1/raw_modes
 cameras/Olympus/TG-4/raw_modes
 cameras/Olympus/TG-5/raw_modes
@@ -545,6 +549,7 @@ cameras/Panasonic/DC-TZ91/raw_modes
 cameras/Panasonic/DC-TZ95/raw_modes
 cameras/Panasonic/DC-TZ96/raw_modes
 cameras/Panasonic/DMC-CM1/raw_modes
+cameras/Panasonic/DMC-FX150/raw_modes
 cameras/Panasonic/DMC-FZ1000/raw_modes
 cameras/Panasonic/DMC-FZ100/raw_modes
 cameras/Panasonic/DMC-FZ150/raw_modes
@@ -664,6 +669,7 @@ cameras/Fujifilm/FinePix X100/raw_modes
 cameras/Fujifilm/FinePix X10/raw_modes
 cameras/Fujifilm/GFX 100/compressed
 cameras/Fujifilm/GFX 100/raw_modes
+cameras/Fujifilm/GFX 100 II/raw_modes
 cameras/Fujifilm/GFX100S/compressed
 cameras/Fujifilm/GFX100S/raw_modes
 cameras/Fujifilm/GFX 50R/compressed
@@ -678,6 +684,7 @@ cameras/Fujifilm/X100S/raw_modes
 cameras/Fujifilm/X100T/raw_modes
 cameras/Fujifilm/X100V/compressed
 cameras/Fujifilm/X100V/raw_modes
+cameras/Fujifilm/X100VI/raw_modes
 cameras/Fujifilm/X20/raw_modes
 cameras/Fujifilm/X30/raw_modes
 cameras/Fujifilm/X70/raw_modes

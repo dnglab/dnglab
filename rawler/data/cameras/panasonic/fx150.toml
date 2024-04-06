@@ -1,0 +1,13 @@
+make = "Panasonic"
+model = "DMC-FX150"
+clean_make = "Panasonic"
+clean_model = "DMC-FX150"
+whitepoint = 3986
+color_pattern = "BGGR"
+
+[cameras.color_matrix]
+A = [1.0669, -0.4715, 0.0083, -0.4339, 1.1185, 0.3634, -0.0621, 0.1527, 0.5906]
+D65 = [0.9082, -0.2907, -0.0925, -0.6119, 1.3377, 0.3058, -0.1797, 0.2641, 0.5609]
+
+[[cameras.modes]]
+mode = "4:3"

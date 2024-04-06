@@ -84,7 +84,7 @@ data:
         exposure_time: 10/600
         fnumber: 320/100
         aperture_value: 340/100
-        brightness_value: ~
+        brightness_value: "-115/100"
         iso_speed_ratings: 4000
         iso_speed: ~
         recommended_exposure_index: ~

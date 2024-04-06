@@ -1,0 +1,94 @@
+---
+file:
+  fileSize: 15161544
+  fileName: Olympus_SP570UZ_12bit.ORF
+  digest: 1f150ffee88f29252837cddd35586e3f
+data:
+  metadata:
+    rawParams:
+      rawWidth: 3664
+      rawHeight: 2741
+      bitDepth: 16
+      cropArea:
+        p:
+          x: 6
+          y: 0
+        d:
+          w: 3648
+          h: 2736
+      activeArea:
+        p:
+          x: 0
+          y: 0
+        d:
+          w: 3664
+          h: 2741
+      blacklevels:
+        levels:
+          - 0/1
+          - 0/1
+          - 0/1
+          - 0/1
+        cpp: 1
+        width: 2
+        height: 2
+      whitelevels:
+        - 4095
+      wbCoeffs:
+        - 1.7617188
+        - 1.0
+        - 1.5898438
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ~
+        artist: ~
+        lens_spec: ~
+        exposure_time: 10/2000
+        fnumber: 40/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 200
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: 0/10
+        date_time_original: "2022:05:11 15:07:38"
+        create_date: "2022:05:11 15:07:38"
+        modify_date: "2022:05:11 15:07:38"
+        exposure_program: 1
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: ~
+        max_aperture_value: 297/100
+        subject_distance: ~
+        metering_mode: 5
+        light_source: 0
+        flash: 16
+        focal_length: 977/100
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 1
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+        user_comment: ~
+      model: SP570UZ
+      make: OLYMPUS IMAGING CORP.
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

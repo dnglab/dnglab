@@ -53,26 +53,31 @@ where
   B: Write + Seek,
 {
   writer: &'w mut DngWriter<B>,
-  ifd: DirectoryWriter,
+  ifd: Option<DirectoryWriter>,
 }
 
 impl<'w, B> SubFrameWriter<'w, B>
 where
   B: Write + Seek,
 {
-  pub fn new(writer: &'w mut DngWriter<B>, subtype: u16) -> Self {
-    let mut ifd = DirectoryWriter::new();
-
-    ifd.add_tag(TiffCommonTag::NewSubFileType, subtype);
+  pub fn new(writer: &'w mut DngWriter<B>, subtype: u16, use_root: bool) -> Self {
+    let ifd = if use_root {
+      writer.root_ifd_mut().add_tag(TiffCommonTag::NewSubFileType, subtype);
+      None
+    } else {
+      let mut ifd = DirectoryWriter::new();
+      ifd.add_tag(TiffCommonTag::NewSubFileType, subtype);
+      Some(ifd)
+    };
     Self { ifd, writer }
   }
 
   pub fn ifd(&mut self) -> &DirectoryWriter {
-    &self.ifd
+    self.ifd.as_ref().unwrap_or(self.writer.root_ifd())
   }
 
   pub fn ifd_mut(&mut self) -> &mut DirectoryWriter {
-    &mut self.ifd
+    self.ifd.as_mut().unwrap_or(self.writer.root_ifd_mut())
   }
 
   pub fn rgb_image_u8(&mut self, data: &[u8], width: usize, height: usize, compression: DngCompression, predictor: u8) -> Result<()> {
@@ -182,45 +187,45 @@ where
     assert!(active_area.p.y + active_area.d.h <= rawimage.height);
 
     //self.ifd.add_tag(TiffCommonTag::NewSubFileType, 0_u16)?; // Raw
-    self.ifd.add_tag(TiffCommonTag::ImageWidth, rawimage.width as u32);
-    self.ifd.add_tag(TiffCommonTag::ImageLength, rawimage.height as u32);
+    self.ifd_mut().add_tag(TiffCommonTag::ImageWidth, rawimage.width as u32);
+    self.ifd_mut().add_tag(TiffCommonTag::ImageLength, rawimage.height as u32);
 
-    self.ifd.add_tag(DngTag::ActiveArea, rect_to_dng_area(&active_area));
+    self.ifd_mut().add_tag(DngTag::ActiveArea, rect_to_dng_area(&active_area));
 
     match cropmode {
       CropMode::ActiveArea => {
         let crop = active_area;
         assert!(crop.p.x >= active_area.p.x);
         assert!(crop.p.y >= active_area.p.y);
-        self.ifd.add_tag(
+        self.ifd_mut().add_tag(
           DngTag::DefaultCropOrigin,
           [(crop.p.x - active_area.p.x) as u16, (crop.p.y - active_area.p.y) as u16],
         );
-        self.ifd.add_tag(DngTag::DefaultCropSize, [crop.d.w as u16, crop.d.h as u16]);
+        self.ifd_mut().add_tag(DngTag::DefaultCropSize, [crop.d.w as u16, crop.d.h as u16]);
       }
       CropMode::Best => {
         let crop = rawimage.crop_area.unwrap_or(active_area);
         assert!(crop.p.x >= active_area.p.x);
         assert!(crop.p.y >= active_area.p.y);
-        self.ifd.add_tag(
+        self.ifd_mut().add_tag(
           DngTag::DefaultCropOrigin,
           [(crop.p.x - active_area.p.x) as u16, (crop.p.y - active_area.p.y) as u16],
         );
-        self.ifd.add_tag(DngTag::DefaultCropSize, [crop.d.w as u16, crop.d.h as u16]);
+        self.ifd_mut().add_tag(DngTag::DefaultCropSize, [crop.d.w as u16, crop.d.h as u16]);
       }
       CropMode::None => {}
     }
 
-    self.ifd.add_tag(ExifTag::PlanarConfiguration, 1_u16);
+    self.ifd_mut().add_tag(ExifTag::PlanarConfiguration, 1_u16);
 
-    self.ifd.add_tag(
+    self.ifd_mut().add_tag(
       DngTag::DefaultScale,
       [
         Rational::new(rawimage.camera.default_scale.0[0][0], rawimage.camera.default_scale.0[0][1]),
         Rational::new(rawimage.camera.default_scale.0[1][0], rawimage.camera.default_scale.0[1][1]),
       ],
     );
-    self.ifd.add_tag(
+    self.ifd_mut().add_tag(
       DngTag::BestQualityScale,
       Rational::new(rawimage.camera.best_quality_scale.0[0], rawimage.camera.best_quality_scale.0[1]),
     );
@@ -231,17 +236,17 @@ where
     if rawimage.whitelevel.0.iter().all(|x| *x <= (u16::MAX as u32)) {
       // Add as u16
       self
-        .ifd
+        .ifd_mut()
         .add_tag(DngTag::WhiteLevel, &rawimage.whitelevel.0.iter().map(|x| *x as u16).collect::<Vec<u16>>());
     } else {
-      self.ifd.add_tag(DngTag::WhiteLevel, &rawimage.whitelevel.0);
+      self.ifd_mut().add_tag(DngTag::WhiteLevel, &rawimage.whitelevel.0);
     }
 
     // Blacklevel
     let blacklevel = rawimage.blacklevel.shift(active_area.p.x, active_area.p.y);
 
     self
-      .ifd
+      .ifd_mut()
       .add_tag(DngTag::BlackLevelRepeatDim, [blacklevel.height as u16, blacklevel.width as u16]);
 
     if blacklevel.levels.iter().all(|x| x.d == 1) {
@@ -249,52 +254,54 @@ where
       if payload.iter().all(|x| *x <= (u16::MAX as u32)) {
         // Add as u16
         self
-          .ifd
+          .ifd_mut()
           .add_tag(DngTag::BlackLevel, &payload.into_iter().map(|x| x as u16).collect::<Vec<u16>>());
       } else {
         // Add as u32
-        self.ifd.add_tag(DngTag::BlackLevel, &payload);
+        self.ifd_mut().add_tag(DngTag::BlackLevel, &payload);
       }
     } else {
       // Add as RATIONAL
-      self.ifd.add_tag(DngTag::BlackLevel, blacklevel.levels.as_slice());
+      self.ifd_mut().add_tag(DngTag::BlackLevel, blacklevel.levels.as_slice());
     }
 
     if !rawimage.blackareas.is_empty() {
       let data: Vec<u16> = rawimage.blackareas.iter().flat_map(rect_to_dng_area).collect();
-      self.ifd.add_tag(DngTag::MaskedAreas, &data);
+      self.ifd_mut().add_tag(DngTag::MaskedAreas, &data);
     }
 
-    self.ifd.add_tag(TiffCommonTag::SamplesPerPixel, rawimage.cpp as u16);
+    self.ifd_mut().add_tag(TiffCommonTag::SamplesPerPixel, rawimage.cpp as u16);
 
     match &rawimage.photometric {
       RawPhotometricInterpretation::BlackIsZero => {
         assert_eq!(rawimage.cpp, 1);
-        self.ifd.add_tag(TiffCommonTag::PhotometricInt, PhotometricInterpretation::BlackIsZero);
+        self.ifd_mut().add_tag(TiffCommonTag::PhotometricInt, PhotometricInterpretation::BlackIsZero);
       }
       RawPhotometricInterpretation::Cfa(config) => {
         assert!(config.cfa.is_valid());
         assert_eq!(rawimage.cpp, 1);
         let cfa = config.cfa.shift(active_area.p.x, active_area.p.y);
-        self.ifd.add_tag(TiffCommonTag::CFARepeatPatternDim, [cfa.width as u16, cfa.height as u16]);
-        self.ifd.add_tag(TiffCommonTag::CFAPattern, &cfa.flat_pattern()[..]);
-        self.ifd.add_tag(TiffCommonTag::PhotometricInt, PhotometricInterpretation::CFA);
-        self.ifd.add_tag(DngTag::CFAPlaneColor, &config.colors);
-        self.ifd.add_tag(DngTag::CFALayout, 1_u16); // Square layout
+        self
+          .ifd_mut()
+          .add_tag(TiffCommonTag::CFARepeatPatternDim, [cfa.width as u16, cfa.height as u16]);
+        self.ifd_mut().add_tag(TiffCommonTag::CFAPattern, &cfa.flat_pattern()[..]);
+        self.ifd_mut().add_tag(TiffCommonTag::PhotometricInt, PhotometricInterpretation::CFA);
+        self.ifd_mut().add_tag(DngTag::CFAPlaneColor, &config.colors);
+        self.ifd_mut().add_tag(DngTag::CFALayout, 1_u16); // Square layout
       }
       RawPhotometricInterpretation::LinearRaw => {
-        self.ifd.add_tag(TiffCommonTag::PhotometricInt, PhotometricInterpretation::LinearRaw);
+        self.ifd_mut().add_tag(TiffCommonTag::PhotometricInt, PhotometricInterpretation::LinearRaw);
       }
     }
 
     match compression {
       DngCompression::Uncompressed => {
-        self.ifd.add_tag(TiffCommonTag::Compression, CompressionMethod::None);
-        dng_put_raw_uncompressed(&mut self.ifd, self.writer, &rawimage)?;
+        self.ifd_mut().add_tag(TiffCommonTag::Compression, CompressionMethod::None);
+        dng_put_raw_uncompressed(self, &rawimage)?;
       }
       DngCompression::Lossless => {
-        self.ifd.add_tag(TiffCommonTag::Compression, CompressionMethod::ModernJPEG);
-        dng_put_raw_ljpeg(&mut self.ifd, self.writer, &rawimage, predictor)?;
+        self.ifd_mut().add_tag(TiffCommonTag::Compression, CompressionMethod::ModernJPEG);
+        dng_put_raw_ljpeg(self, &rawimage, predictor)?;
       }
     }
 
@@ -312,15 +319,15 @@ where
     let preview_img = DynamicImage::ImageRgb8(img.resize(1024, 768, FilterType::Nearest).to_rgb8());
     debug!("preview downscale: {} s", now.elapsed().as_secs_f32());
 
-    self.ifd.add_tag(TiffCommonTag::ImageWidth, Value::long(preview_img.width()));
-    self.ifd.add_tag(TiffCommonTag::ImageLength, Value::long(preview_img.height()));
-    self.ifd.add_tag(TiffCommonTag::Compression, CompressionMethod::ModernJPEG);
-    self.ifd.add_tag(TiffCommonTag::BitsPerSample, 8_u16);
-    self.ifd.add_tag(TiffCommonTag::SampleFormat, [1_u16, 1, 1]);
-    self.ifd.add_tag(TiffCommonTag::PhotometricInt, PhotometricInterpretation::YCbCr);
-    self.ifd.add_tag(TiffCommonTag::RowsPerStrip, Value::long(preview_img.height()));
-    self.ifd.add_tag(TiffCommonTag::SamplesPerPixel, 3_u16);
-    self.ifd.add_tag(DngTag::PreviewColorSpace, PreviewColorSpace::SRgb); // ??
+    self.ifd_mut().add_tag(TiffCommonTag::ImageWidth, Value::long(preview_img.width()));
+    self.ifd_mut().add_tag(TiffCommonTag::ImageLength, Value::long(preview_img.height()));
+    self.ifd_mut().add_tag(TiffCommonTag::Compression, CompressionMethod::ModernJPEG);
+    self.ifd_mut().add_tag(TiffCommonTag::BitsPerSample, 8_u16);
+    self.ifd_mut().add_tag(TiffCommonTag::SampleFormat, [1_u16, 1, 1]);
+    self.ifd_mut().add_tag(TiffCommonTag::PhotometricInt, PhotometricInterpretation::YCbCr);
+    self.ifd_mut().add_tag(TiffCommonTag::RowsPerStrip, Value::long(preview_img.height()));
+    self.ifd_mut().add_tag(TiffCommonTag::SamplesPerPixel, 3_u16);
+    self.ifd_mut().add_tag(DngTag::PreviewColorSpace, PreviewColorSpace::SRgb); // ??
 
     //ifd.add_tag(TiffRootTag::XResolution, Rational { n: 1, d: 1 })?;
     //ifd.add_tag(TiffRootTag::YResolution, Rational { n: 1, d: 1 })?;
@@ -335,15 +342,17 @@ where
     let data_len = self.writer.dng.position()? - offset;
     debug!("writing preview: {} s", now.elapsed().as_secs_f32());
 
-    self.ifd.add_value(TiffCommonTag::StripOffsets, Value::Long(vec![offset]));
-    self.ifd.add_tag(TiffCommonTag::StripByteCounts, Value::Long(vec![data_len]));
+    self.ifd_mut().add_value(TiffCommonTag::StripOffsets, Value::Long(vec![offset]));
+    self.ifd_mut().add_tag(TiffCommonTag::StripByteCounts, Value::Long(vec![data_len]));
 
     Ok(())
   }
 
   pub fn finalize(self) -> Result<()> {
-    let offset = self.ifd.build(&mut self.writer.dng)?;
-    self.writer.subs.push(offset);
+    if let Some(ifd) = self.ifd {
+      let offset = ifd.build(&mut self.writer.dng)?;
+      self.writer.subs.push(offset);
+    }
     Ok(())
   }
 }
@@ -445,7 +454,11 @@ where
   }
 
   pub fn subframe(&mut self, id: u16) -> SubFrameWriter<B> {
-    SubFrameWriter::new(self, id)
+    SubFrameWriter::new(self, id, false)
+  }
+
+  pub fn subframe_on_root(&mut self, id: u16) -> SubFrameWriter<B> {
+    SubFrameWriter::new(self, id, true)
   }
 
   /// Write thumbnail image into DNG
@@ -547,7 +560,7 @@ fn matrix_to_tiff_value(xyz_to_cam: &[f32], d: i32) -> Vec<SRational> {
 /// GBGB
 /// RGRG
 /// GBGB
-fn dng_put_raw_ljpeg<W>(raw_ifd: &mut DirectoryWriter, writer: &mut DngWriter<W>, rawimage: &RawImage, predictor: u8) -> Result<()>
+fn dng_put_raw_ljpeg<W>(subframe: &mut SubFrameWriter<W>, rawimage: &RawImage, predictor: u8) -> Result<()>
 where
   W: Seek + Write,
 {
@@ -606,19 +619,19 @@ where
   let mut tile_sizes: Vec<u32> = Vec::new();
 
   lj92_data.iter().for_each(|tile| {
-    let offs = writer.dng.write_data(tile).unwrap();
+    let offs = subframe.writer.dng.write_data(tile).unwrap();
     tile_offsets.push(offs);
     tile_sizes.push((tile.len() * size_of::<u8>()) as u32);
   });
 
-  raw_ifd.add_tag(TiffCommonTag::BitsPerSample, &vec![rawimage.bps as u16; rawimage.cpp]);
-  raw_ifd.add_tag(TiffCommonTag::SampleFormat, [1_u16, 1, 1]);
-  raw_ifd.add_tag(TiffCommonTag::TileOffsets, &tile_offsets);
-  raw_ifd.add_tag(TiffCommonTag::TileByteCounts, &tile_sizes);
-  //raw_ifd.add_tag(LegacyTiffRootTag::TileWidth, lj92_data.1 as u16)?; // FIXME
-  //raw_ifd.add_tag(LegacyTiffRootTag::TileLength, lj92_data.2 as u16)?;
-  raw_ifd.add_tag(TiffCommonTag::TileWidth, tile_w as u16); // FIXME
-  raw_ifd.add_tag(TiffCommonTag::TileLength, tile_h as u16);
+  subframe
+    .ifd_mut()
+    .add_tag(TiffCommonTag::BitsPerSample, &vec![rawimage.bps as u16; rawimage.cpp]);
+  subframe.ifd_mut().add_tag(TiffCommonTag::SampleFormat, &vec![1_u16; rawimage.cpp]);
+  subframe.ifd_mut().add_tag(TiffCommonTag::TileOffsets, &tile_offsets);
+  subframe.ifd_mut().add_tag(TiffCommonTag::TileByteCounts, &tile_sizes);
+  subframe.ifd_mut().add_tag(TiffCommonTag::TileWidth, tile_w as u16);
+  subframe.ifd_mut().add_tag(TiffCommonTag::TileLength, tile_h as u16);
 
   Ok(())
 }
@@ -627,7 +640,7 @@ where
 ///
 /// This uses unsigned 16 bit values for storage
 /// Data is split into multiple strips
-fn dng_put_raw_uncompressed<W>(raw_ifd: &mut DirectoryWriter, writer: &mut DngWriter<W>, rawimage: &RawImage) -> Result<()>
+fn dng_put_raw_uncompressed<W>(subframe: &mut SubFrameWriter<W>, rawimage: &RawImage) -> Result<()>
 where
   W: Write + Seek,
 {
@@ -635,33 +648,33 @@ where
   let mut strip_sizes: Vec<u32> = Vec::new();
   let mut strip_rows: Vec<u32> = Vec::new();
 
-  // 8 Strips
-  let rows_per_strip = rawimage.height / 8;
+  let rows_per_strip = if rawimage.height > 1000 { 256 } else { rawimage.height };
+
   match rawimage.data {
     RawImageData::Integer(ref data) => {
       for strip in data.chunks(rows_per_strip * rawimage.width * rawimage.cpp) {
-        let offset = writer.dng.write_data_u16_le(strip)?;
+        let offset = subframe.writer.dng.write_data_u16_le(strip)?;
         strip_offsets.push(offset);
         strip_sizes.push(std::mem::size_of_val(strip) as u32);
         strip_rows.push((strip.len() / (rawimage.width * rawimage.cpp)) as u32);
       }
-      raw_ifd.add_tag(TiffCommonTag::SampleFormat, [1_u16, 1, 1]); // Unsigned Integer
-      raw_ifd.add_tag(TiffCommonTag::BitsPerSample, &vec![16_u16; rawimage.cpp]);
+      subframe.ifd_mut().add_tag(TiffCommonTag::SampleFormat, &vec![1_u16; rawimage.cpp]); // Unsigned Integer
+      subframe.ifd_mut().add_tag(TiffCommonTag::BitsPerSample, &vec![16_u16; rawimage.cpp]);
     }
     RawImageData::Float(ref data) => {
       for strip in data.chunks(rows_per_strip * rawimage.width * rawimage.cpp) {
-        let offset = writer.dng.write_data_f32_le(strip)?;
+        let offset = subframe.writer.dng.write_data_f32_le(strip)?;
         strip_offsets.push(offset);
         strip_sizes.push(std::mem::size_of_val(strip) as u32);
         strip_rows.push((strip.len() / (rawimage.width * rawimage.cpp)) as u32);
       }
-      raw_ifd.add_tag(TiffCommonTag::SampleFormat, [3_u16, 3, 3]); // IEEE Float
-      raw_ifd.add_tag(TiffCommonTag::BitsPerSample, &vec![32_u16; rawimage.cpp]);
+      subframe.ifd_mut().add_tag(TiffCommonTag::SampleFormat, &vec![3_u16; rawimage.cpp]); // Unsigned Integer// IEEE Float
+      subframe.ifd_mut().add_tag(TiffCommonTag::BitsPerSample, &vec![32_u16; rawimage.cpp]);
     }
   };
-  raw_ifd.add_tag(TiffCommonTag::StripOffsets, &strip_offsets);
-  raw_ifd.add_tag(TiffCommonTag::StripByteCounts, &strip_sizes);
-  raw_ifd.add_tag(TiffCommonTag::RowsPerStrip, &strip_rows);
+  subframe.ifd_mut().add_tag(TiffCommonTag::StripOffsets, &strip_offsets);
+  subframe.ifd_mut().add_tag(TiffCommonTag::StripByteCounts, &strip_sizes);
+  subframe.ifd_mut().add_tag(TiffCommonTag::RowsPerStrip, &strip_rows);
 
   Ok(())
 }

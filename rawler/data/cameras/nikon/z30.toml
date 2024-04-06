@@ -1,0 +1,19 @@
+make = "NIKON CORPORATION"
+model = "NIKON Z 30"
+clean_make = "Nikon"
+clean_model = "Z 30"
+color_pattern = "RGGB"
+active_area = [0, 0, 0, 0]
+crop_area = [16, 8, 16, 8]
+
+[cameras.color_matrix]
+A = [1.1924, -0.638, 0.0632, -0.3999, 1.173, 0.2577, -0.0297, 0.0908, 0.8341]
+D65 = [1.0339, -0.3822, -0.089, -0.4183, 1.2023, 0.2436, -0.0671, 0.1638, 0.7049]
+
+[[cameras.modes]]
+mode = "12bit"
+whitepoint = 3972
+
+[[cameras.modes]]
+mode = "14bit"
+whitepoint = 15892

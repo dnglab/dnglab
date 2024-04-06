@@ -287,6 +287,7 @@ impl crate::decoders::RawMetadata {
     transfer_entry(exif_ifd, ExifTag::FNumber, &exif.fnumber)?;
     transfer_entry(exif_ifd, ExifTag::ApertureValue, &exif.aperture_value)?;
     transfer_entry(exif_ifd, ExifTag::BrightnessValue, &exif.brightness_value)?;
+    transfer_entry(exif_ifd, ExifTag::ExposureBiasValue, &exif.exposure_bias)?;
     transfer_entry(exif_ifd, ExifTag::RecommendedExposureIndex, &exif.recommended_exposure_index)?;
     transfer_entry(exif_ifd, ExifTag::ExposureTime, &exif.exposure_time)?;
     transfer_entry(exif_ifd, ExifTag::ISOSpeedRatings, &exif.iso_speed_ratings)?;
