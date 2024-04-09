@@ -35,6 +35,7 @@ use self::v4decompressor::decode_panasonic_v4;
 use self::v5decompressor::decode_panasonic_v5;
 use self::v6decompressor::decode_panasonic_v6;
 use self::v7decompressor::decode_panasonic_v7;
+use self::v8decompressor::decode_panasonic_v8;
 
 use super::BlackLevel;
 use super::Camera;
@@ -47,6 +48,7 @@ pub(crate) mod v4decompressor;
 pub(crate) mod v5decompressor;
 pub(crate) mod v6decompressor;
 pub(crate) mod v7decompressor;
+pub(crate) mod v8decompressor;
 
 #[derive(Debug, Clone)]
 pub struct Rw2Decoder<'a> {
@@ -135,14 +137,16 @@ impl<'a> Decoder for Rw2Decoder<'a> {
         let offset = fetch_tiff_tag!(raw, TiffCommonTag::PanaOffsets).force_usize(0);
         //let size = fetch_tiff_tag!(raw, TiffCommonTag::StripByteCounts).force_usize(0);
         //let src: OptBuffer = file.subview(offset as u64, size as u64).unwrap().into(); // TODO add size and check all samples
+        log::debug!("PanaOffset: {}", offset);
         let src: OptBuffer = file.subview_until_eof(offset as u64).unwrap().into(); // TODO add size and check all samples
-        Rw2Decoder::decode_panasonic(&src, width, height, split, raw_format, bps, dummy)
+        Rw2Decoder::decode_panasonic(file, &src, width, height, split, raw_format, bps, self.tiff.root_ifd(), dummy)
       } else {
         let raw = self.tiff.find_first_ifd_with_tag(TiffCommonTag::StripOffsets).unwrap();
         width = fetch_tiff_tag!(raw, TiffCommonTag::PanaWidth).force_usize(0);
         height = fetch_tiff_tag!(raw, TiffCommonTag::PanaLength).force_usize(0);
         let offset = fetch_tiff_tag!(raw, TiffCommonTag::StripOffsets).force_usize(0);
         //let size = fetch_tiff_tag!(raw, TiffCommonTag::StripByteCounts).force_usize(0);
+        log::debug!("StripOffset: {}", offset);
         let src: OptBuffer = file.subview_until_eof(offset as u64).unwrap().into(); // TODO add size and check all samples
 
         if src.len() >= width * height * 2 {
@@ -150,7 +154,7 @@ impl<'a> Decoder for Rw2Decoder<'a> {
         } else if src.len() >= width * height * 3 / 2 {
           decode_12le_wcontrol(&src, width, height, dummy)
         } else {
-          Rw2Decoder::decode_panasonic(&src, width, height, split, raw_format, bps, dummy)
+          Rw2Decoder::decode_panasonic(file, &src, width, height, split, raw_format, bps, self.tiff.root_ifd(), dummy)
         }
       }
     };
@@ -329,7 +333,7 @@ impl<'a> Rw2Decoder<'a> {
     }
   }
 
-  pub(crate) fn decode_panasonic(buf: &[u8], width: usize, height: usize, split: bool, raw_format: u16, bps: u32, dummy: bool) -> PixU16 {
+  pub(crate) fn decode_panasonic(file: &mut RawFile, buf: &[u8], width: usize, height: usize, split: bool, raw_format: u16, bps: u32, ifd: &IFD, dummy: bool) -> PixU16 {
     log::debug!("width: {}, height: {}, bps: {}", width, height, bps);
     match raw_format {
       3 => decode_panasonic_v4(buf, width, height, split, dummy),
@@ -337,6 +341,7 @@ impl<'a> Rw2Decoder<'a> {
       5 => decode_panasonic_v5(buf, width, height, bps, dummy),
       6 => decode_panasonic_v6(buf, width, height, bps, dummy),
       7 => decode_panasonic_v7(buf, width, height, bps, dummy),
+      8 => decode_panasonic_v8(file, width, height, bps, ifd, dummy).unwrap(), // TODO
       _ => todo!("Format {} is not implemented", raw_format), // TODO: return error
     }
   }
@@ -388,6 +393,26 @@ pub enum PanasonicTag {
   CropLeft = 0x0030,
   CropBottom = 0x0031,
   CropRight = 0x0032,
+
+  CF2StripHeight = 0x0037,
+  CF2Unknown1 = 0x0039, // Gamma table CF2_GammaSlope?
+  CF2Unknown2 = 0x003a, // Gamma table CF2_GammaPoint?
+  CF2ClipVal = 0x003b, // CF2_GammaClipVal
+  CF2HufInitVal0 = 0x003c,
+  CF2HufInitVal1 = 0x003d,
+  CF2HufInitVal2 = 0x003e,
+  CF2HufInitVal3 = 0x003f,
+  CF2HufTable = 0x0040,
+  CF2HufShiftDown = 0x0041,
+  CF2NumberOfStripsH = 0x0042,
+  CF2NumberOfStripsV = 0x0043,
+  CF2StripByteOffsets = 0x0044,
+  CF2StripLineOffsets = 0x0045,
+  CF2StripDataSize = 0x0046,
+  CF2StripWidths = 0x0047,
+  CF2StripHeights = 0x0048,
+  CF2StripWidth = 0x0064,
+
   CameraIFD = 0x0120,
   Multishot = 0x0121,
 }
