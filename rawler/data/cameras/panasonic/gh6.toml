@@ -1,0 +1,22 @@
+make = "Panasonic"
+model = "DC-GH6"
+clean_make = "Panasonic"
+clean_model = "DC-GH6"
+whitepoint = 65535
+color_pattern = "RGGB"
+
+[cameras.color_matrix]
+A = [0.9619, -0.6021, 0.0569, -0.2909, 1.0935, 0.2266, -0.0149, 0.0883, 0.6246]
+D65 = [0.7949, -0.3491, -0.071, -0.3435, 1.1681, 0.1977, -0.0503, 0.1622, 0.5065]
+
+[[cameras.modes]]
+mode = "4:3"
+
+[[cameras.modes]]
+mode = "1:1"
+
+[[cameras.modes]]
+mode = "16:9"
+
+[[cameras.modes]]
+mode = "3:2"

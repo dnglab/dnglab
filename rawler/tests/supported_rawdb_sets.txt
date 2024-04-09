@@ -533,6 +533,7 @@ cameras/Panasonic/DC-GF10/raw_modes
 cameras/Panasonic/DC-GH5M2/raw_modes
 cameras/Panasonic/DC-GH5/raw_modes
 cameras/Panasonic/DC-GH5S/raw_modes
+cameras/Panasonic/DC-GH6/raw_modes
 cameras/Panasonic/DC-GX7MK3/raw_modes
 cameras/Panasonic/DC-GX800/raw_modes
 cameras/Panasonic/DC-GX850/raw_modes
