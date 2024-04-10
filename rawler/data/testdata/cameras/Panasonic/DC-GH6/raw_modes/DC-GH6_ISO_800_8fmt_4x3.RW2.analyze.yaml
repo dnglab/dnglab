@@ -1,0 +1,94 @@
+---
+file:
+  fileSize: 41047552
+  fileName: DC-GH6_ISO_800_8fmt_4x3.RW2
+  digest: 33e83c53ad84329a63c8c43feb579401
+data:
+  metadata:
+    rawParams:
+      rawWidth: 5792
+      rawHeight: 4352
+      bitDepth: 16
+      cropArea:
+        p:
+          x: 8
+          y: 8
+        d:
+          w: 5776
+          h: 4336
+      activeArea:
+        p:
+          x: 8
+          y: 8
+        d:
+          w: 5776
+          h: 4336
+      blacklevels:
+        levels:
+          - 2048/1
+          - 2048/1
+          - 2048/1
+          - 2048/1
+        cpp: 1
+        width: 2
+        height: 2
+      whitelevels:
+        - 65535
+      wbCoeffs:
+        - 2.8867188
+        - 1.0
+        - 1.953125
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ""
+        artist: ""
+        lens_spec: ~
+        exposure_time: 10/8000
+        fnumber: 110/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 800
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: 1
+        exposure_bias: 0/100
+        date_time_original: "2022:03:19 03:40:09"
+        create_date: "2022:03:19 03:40:09"
+        modify_date: ~
+        exposure_program: 1
+        timezone_offset: ~
+        offset_time: "-05:00"
+        offset_time_original: "-05:00"
+        offset_time_digitized: "-05:00"
+        sub_sec_time: "006"
+        sub_sec_time_original: "006"
+        sub_sec_time_digitized: "006"
+        shutter_speed_value: ~
+        max_aperture_value: 768/256
+        subject_distance: ~
+        metering_mode: 5
+        light_source: 0
+        flash: 16
+        focal_length: 640/10
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 1
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: WG2AA006999
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+        user_comment: ~
+      model: DC-GH6
+      make: Panasonic
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

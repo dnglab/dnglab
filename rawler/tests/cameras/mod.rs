@@ -1418,6 +1418,17 @@ mod camera_ilce_9m2_raw_modes {
   super::camera_file_check!("Sony", "ILCE-9M2", cam_ilce_9m2_iso_800_14bits_uncompressed_raw_arw, "raw_modes/ILCE-9M2_ISO_800_14bits_Uncompressed RAW.ARW");
   super::camera_file_check!("Sony", "ILCE-9M2", cam_ilce_9m2_iso_640_12bits_compressed_raw_arw, "raw_modes/ILCE-9M2_ISO_640_12bits_Compressed RAW.ARW");
 }
+mod camera_ilce_9m3_raw_modes {
+  super::camera_file_check!("Sony", "ILCE-9M3", cam_sony_ilce_9m3_14bits_lossless_m_arw, "raw_modes/Sony_ILCE_9M3_14bits_lossless_M.ARW");
+  super::camera_file_check!("Sony", "ILCE-9M3", cam_sony_ilce_9m3_14bits_apsc_14bits_lossy_arw, "raw_modes/Sony_ILCE_9M3_14bits_APSC_14bits_lossy.ARW");
+  super::camera_file_check!("Sony", "ILCE-9M3", cam_sony_ilce_9m3_14bits_uncompressed_arw, "raw_modes/Sony_ILCE_9M3_14bits_uncompressed.ARW");
+  super::camera_file_check!("Sony", "ILCE-9M3", cam_sony_ilce_9m3_14bits_lossless_l_arw, "raw_modes/Sony_ILCE_9M3_14bits_lossless_L.ARW");
+  super::camera_file_check!("Sony", "ILCE-9M3", cam_sony_ilce_9m3_14bits_apsc_14bits_lossless_m_arw, "raw_modes/Sony_ILCE_9M3_14bits_APSC_14bits_lossless_M.ARW");
+  super::camera_file_check!("Sony", "ILCE-9M3", cam_sony_ilce_9m3_14bits_lossless_s_arw, "raw_modes/Sony_ILCE_9M3_14bits_lossless_S.ARW");
+  super::camera_file_check!("Sony", "ILCE-9M3", cam_sony_ilce_9m3_14bits_lossy_arw, "raw_modes/Sony_ILCE_9M3_14bits_lossy.ARW");
+  super::camera_file_check!("Sony", "ILCE-9M3", cam_sony_ilce_9m3_14bits_apsc_14bits_lossless_s_arw, "raw_modes/Sony_ILCE_9M3_14bits_APSC_14bits_lossless_S.ARW");
+  super::camera_file_check!("Sony", "ILCE-9M3", cam_sony_ilce_9m3_14bits_apsc_14bits_uncompressed_arw, "raw_modes/Sony_ILCE_9M3_14bits_APSC_14bits_uncompressed.ARW");
+}
 mod camera_ilce_9_raw_modes {
   super::camera_file_check!("Sony", "ILCE-9", cam_ilce_9_iso_100_14bits_uncompressed_raw_arw, "raw_modes/ILCE-9_ISO_100_14bits_Uncompressed RAW.ARW");
   super::camera_file_check!("Sony", "ILCE-9", cam_ilce_9_iso_100_14bits_compressed_raw_arw, "raw_modes/ILCE-9_ISO_100_14bits_Compressed RAW.ARW");
@@ -1979,6 +1990,10 @@ mod camera_dc_gh5s_raw_modes {
   super::camera_file_check!("Panasonic", "DC-GH5S", cam_p1022085_rw2, "raw_modes/P1022085.RW2");
   super::camera_file_check!("Panasonic", "DC-GH5S", cam_dc_gh5s_iso_800_panasonic_raw_1_2752x2752_rw2, "raw_modes/DC-GH5S_ISO_800_Panasonic RAW 1_2752x2752.RW2");
   super::camera_file_check!("Panasonic", "DC-GH5S", cam_p1022092_rw2, "raw_modes/P1022092.RW2");
+}
+mod camera_dc_gh6_raw_modes {
+  super::camera_file_check!("Panasonic", "DC-GH6", cam_dc_gh6_iso_800_8fmt_1x1_hires_rw2, "raw_modes/DC-GH6_ISO_800_8fmt_1x1_hires.RW2");
+  super::camera_file_check!("Panasonic", "DC-GH6", cam_dc_gh6_iso_800_8fmt_4x3_rw2, "raw_modes/DC-GH6_ISO_800_8fmt_4x3.RW2");
 }
 mod camera_dc_gx7mk3_raw_modes {
   super::camera_file_check!("Panasonic", "DC-GX7MK3", cam_dc_gx7mk3_iso_1600_panasonic_raw_1_5184x3888_rw2, "raw_modes/DC-GX7MK3_ISO_1600_Panasonic RAW 1_5184x3888.RW2");
@@ -2823,6 +2838,11 @@ mod camera_om_1_raw_modes {
   super::camera_file_check!("OM", "OM-1", cam_om_1_iso_200_16bits_normal_orf, "raw_modes/OM-1_ISO_200_16bits_normal.ORF");
   super::camera_file_check!("OM", "OM-1", cam_om_1_iso_200_16bits_handheld_hires_orf, "raw_modes/OM-1_ISO_200_16bits_handheld_hires.ORF");
   super::camera_file_check!("OM", "OM-1", cam_om_1_iso_200_16bits_tripod_hires_orf, "raw_modes/OM-1_ISO_200_16bits_tripod_hires.ORF");
+}
+mod camera_om_1_mark_ii_raw_modes {
+  super::camera_file_check!("OM", "OM-1 Mark II", cam_om_1_mark_ii_16bits_normal_orf, "raw_modes/OM-1-Mark-II_16bits_normal.ORF");
+  super::camera_file_check!("OM", "OM-1 Mark II", cam_om_1_mark_ii_16bits_handheld_hires_orf, "raw_modes/OM-1-Mark-II_16bits_handheld_hires.ORF");
+  super::camera_file_check!("OM", "OM-1 Mark II", cam_om_1_mark_ii_16bits_tripod_hires_orf, "raw_modes/OM-1-Mark-II_16bits_tripod_hires.ORF");
 }
 mod camera_om_5_raw_modes {
   super::camera_file_check!("OM", "OM-5", cam_om_5_iso_100_16bits_tripod_hires_orf, "raw_modes/OM-5_ISO_100_16bits_tripod_hires.ORF");

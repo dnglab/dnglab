@@ -365,6 +365,7 @@ cameras/Sony/ILCE-7SM2/raw_modes
 cameras/Sony/ILCE-7SM3/raw_modes
 cameras/Sony/ILCE-7S/raw_modes
 cameras/Sony/ILCE-9M2/raw_modes
+cameras/Sony/ILCE-9M3/raw_modes
 cameras/Sony/ILCE-9/raw_modes
 cameras/Sony/ILCE-QX1/raw_modes
 cameras/Sony/NEX-3N/raw_modes
@@ -532,6 +533,7 @@ cameras/Panasonic/DC-GF10/raw_modes
 cameras/Panasonic/DC-GH5M2/raw_modes
 cameras/Panasonic/DC-GH5/raw_modes
 cameras/Panasonic/DC-GH5S/raw_modes
+cameras/Panasonic/DC-GH6/raw_modes
 cameras/Panasonic/DC-GX7MK3/raw_modes
 cameras/Panasonic/DC-GX800/raw_modes
 cameras/Panasonic/DC-GX850/raw_modes
@@ -737,5 +739,6 @@ cameras/Fujifilm/X-T4/raw_modes
 cameras/Fujifilm/X-T4/compressed
 cameras/Fujifilm/X-T5/raw_modes
 cameras/OM/OM-1/raw_modes
+cameras/OM/OM-1 Mark II/raw_modes
 cameras/OM/OM-5/raw_modes
 cameras/OM/TG-7/raw_modes

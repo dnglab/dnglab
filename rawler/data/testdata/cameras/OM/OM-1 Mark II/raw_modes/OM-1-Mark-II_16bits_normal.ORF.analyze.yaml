@@ -1,0 +1,113 @@
+---
+file:
+  fileSize: 22436792
+  fileName: OM-1-Mark-II_16bits_normal.ORF
+  digest: 7bf9b1f9c01ad364d343c38a16b45ff9
+data:
+  metadata:
+    rawParams:
+      rawWidth: 5220
+      rawHeight: 3912
+      bitDepth: 16
+      cropArea:
+        p:
+          x: 12
+          y: 12
+        d:
+          w: 5184
+          h: 3888
+      activeArea:
+        p:
+          x: 0
+          y: 0
+        d:
+          w: 5220
+          h: 3912
+      blacklevels:
+        levels:
+          - 255/1
+          - 254/1
+          - 254/1
+          - 255/1
+        cpp: 1
+        width: 2
+        height: 2
+      whitelevels:
+        - 4095
+      wbCoeffs:
+        - 2.28125
+        - 1.0
+        - 1.8125
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: (c) Dirk Bergstrom - CC BY-SA 4.0
+        artist: Dirk Bergstrom
+        lens_spec:
+          - 12/1
+          - 40/1
+          - 28/10
+          - 28/10
+        exposure_time: 1/60
+        fnumber: 80/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 200
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: 1
+        exposure_bias: 0/10
+        date_time_original: "2024:02:28 10:23:46"
+        create_date: "2024:02:28 10:23:46"
+        modify_date: "2024:02:28 10:23:46"
+        exposure_program: 3
+        timezone_offset: ~
+        offset_time: "-08:00"
+        offset_time_original: "-08:00"
+        offset_time_digitized: "-08:00"
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: ~
+        max_aperture_value: 768/256
+        subject_distance: ~
+        metering_mode: 5
+        light_source: 0
+        flash: 8
+        focal_length: 25/1
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: Olympus
+        lens_model: M.Zuiko Digital ED 12-40mm F2.8 Pro
+        gps: ~
+        user_comment: ~
+      model: OM-1 Mark II
+      make: OM Digital Solutions
+      lens:
+        identifiers:
+          name: ~
+          id: ~
+          nikon_id: ~
+          olympus_id: 00 19 10
+        mount: MFT-mount
+        lens_make: Olympus
+        lens_model: M.Zuiko Digital ED 12-40mm F2.8 Pro
+        focal_range:
+          - 12/1
+          - 40/1
+        aperture_range:
+          - 28/10
+          - 28/10
+        lens_name: Olympus M.Zuiko Digital ED 12-40mm F2.8 Pro
+      unique_image_id: ~
+      rating: ~
+
