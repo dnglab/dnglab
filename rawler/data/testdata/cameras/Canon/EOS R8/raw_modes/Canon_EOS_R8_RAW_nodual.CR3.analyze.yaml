@@ -1,0 +1,151 @@
+---
+file:
+  fileSize: 28784786
+  fileName: Canon_EOS_R8_RAW_nodual.CR3
+  digest: 0d5acc418b8c493c6b93484c37c6f9c3
+data:
+  metadata:
+    rawParams:
+      rawWidth: 6188
+      rawHeight: 4120
+      bitDepth: 16
+      cropArea:
+        p:
+          x: 168
+          y: 108
+        d:
+          w: 6000
+          h: 4000
+      activeArea:
+        p:
+          x: 156
+          y: 96
+        d:
+          w: 6022
+          h: 4020
+      blacklevels:
+        levels:
+          - 512/1
+          - 512/1
+          - 512/1
+          - 512/1
+        cpp: 1
+        width: 2
+        height: 2
+      whitelevels:
+        - 12735
+      wbCoeffs:
+        - 1.8515625
+        - 1.0
+        - 1.5878906
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ""
+        artist: ""
+        lens_spec:
+          - 24/1
+          - 105/1
+          - 4/1
+          - 4/1
+        exposure_time: 1/100
+        fnumber: 16/1
+        aperture_value: 524288/65536
+        brightness_value: ~
+        iso_speed_ratings: 200
+        iso_speed: ~
+        recommended_exposure_index: 200
+        sensitivity_type: 2
+        exposure_bias: 0/1
+        date_time_original: "2023:05:20 15:48:57"
+        create_date: "2023:05:20 15:48:57"
+        modify_date: "2023:05:20 15:48:57"
+        exposure_program: 1
+        timezone_offset: ~
+        offset_time: "-04:00"
+        offset_time_original: "-04:00"
+        offset_time_digitized: "-04:00"
+        sub_sec_time: "34"
+        sub_sec_time_original: "34"
+        sub_sec_time_digitized: "34"
+        shutter_speed_value: 434176/65536
+        max_aperture_value: ~
+        subject_distance: ~
+        metering_mode: 5
+        light_source: ~
+        flash: 0
+        focal_length: 42/1
+        image_number: ~
+        color_space: 65535
+        flash_energy: ~
+        exposure_mode: 1
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ""
+        serial_number: "052022000182"
+        lens_serial_number: "4803003544"
+        lens_make: Canon
+        lens_model: EF 24-105mm f/4L IS II USM
+        gps:
+          gps_version_id:
+            - 2
+            - 3
+            - 0
+            - 0
+          gps_latitude_ref: ~
+          gps_latitude: ~
+          gps_longitude_ref: ~
+          gps_longitude: ~
+          gps_altitude_ref: ~
+          gps_altitude: ~
+          gps_timestamp: ~
+          gps_satellites: ~
+          gps_status: ~
+          gps_measure_mode: ~
+          gps_dop: ~
+          gps_speed_ref: ~
+          gps_speed: ~
+          gps_track_ref: ~
+          gps_track: ~
+          gps_img_direction_ref: ~
+          gps_img_direction: ~
+          gps_map_datum: ~
+          gps_dest_latitude_ref: ~
+          gps_dest_latitude: ~
+          gps_dest_longitude_ref: ~
+          gps_dest_longitude: ~
+          gps_dest_bearing_ref: ~
+          gps_dest_bearing: ~
+          gps_dest_distance_ref: ~
+          gps_dest_distance: ~
+          gps_processing_method: ~
+          gps_area_information: ~
+          gps_date_stamp: ~
+          gps_differential: ~
+          gps_h_positioning_error: ~
+        user_comment: ~
+      model: EOS R8
+      make: Canon
+      lens:
+        identifiers:
+          name: ~
+          id:
+            - 752
+            - 0
+          nikon_id: ~
+          olympus_id: ~
+        mount: ef-mount
+        lens_make: Canon
+        lens_model: EF 24-105mm f/4L IS II USM
+        focal_range:
+          - 24/1
+          - 105/1
+        aperture_range:
+          - 4/1
+          - 4/1
+        lens_name: Canon EF 24-105mm f/4L IS II USM
+      unique_image_id: 6042869899892154234243763395183837439
+      rating: ~
+
