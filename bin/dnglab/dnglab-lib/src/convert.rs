@@ -12,7 +12,7 @@ use std::time::Instant;
 use crate::filemap::{FileMap, MapMode};
 use crate::jobs::raw2dng::{JobResult, Raw2DngJob};
 use crate::jobs::Job;
-use crate::{AppError, Result, PKG_NAME, PKG_VERSION};
+use crate::{AppError, Result, PKG_VERSION};
 use rawler::dng::convert::ConvertParams;
 
 /// Entry point for Clap sub command `convert`
@@ -111,7 +111,7 @@ fn generate_job(entry: &FileMap, options: &ArgMatches) -> Result<Vec<Raw2DngJob>
       thumbnail: options.get_flag("thumbnail"),
       compression: *options.get_one("compression").expect("compression has no default"),
       artist: options.get_one("artist").cloned(),
-      software: format!("{} {}", PKG_NAME, PKG_VERSION),
+      software: format!("{} {}", "DNGLab", PKG_VERSION),
       index: if do_batch { i } else { index },
       apply_scaling: false,
     };
