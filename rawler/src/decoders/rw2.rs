@@ -333,7 +333,17 @@ impl<'a> Rw2Decoder<'a> {
     }
   }
 
-  pub(crate) fn decode_panasonic(file: &mut RawFile, buf: &[u8], width: usize, height: usize, split: bool, raw_format: u16, bps: u32, ifd: &IFD, dummy: bool) -> PixU16 {
+  pub(crate) fn decode_panasonic(
+    file: &mut RawFile,
+    buf: &[u8],
+    width: usize,
+    height: usize,
+    split: bool,
+    raw_format: u16,
+    bps: u32,
+    ifd: &IFD,
+    dummy: bool,
+  ) -> PixU16 {
     log::debug!("width: {}, height: {}, bps: {}", width, height, bps);
     match raw_format {
       3 => decode_panasonic_v4(buf, width, height, split, dummy),
@@ -342,7 +352,7 @@ impl<'a> Rw2Decoder<'a> {
       6 => decode_panasonic_v6(buf, width, height, bps, dummy),
       7 => decode_panasonic_v7(buf, width, height, bps, dummy),
       8 => decode_panasonic_v8(file, width, height, bps, ifd, dummy).unwrap(), // TODO
-      _ => todo!("Format {} is not implemented", raw_format), // TODO: return error
+      _ => todo!("Format {} is not implemented", raw_format),                  // TODO: return error
     }
   }
 }
@@ -397,7 +407,7 @@ pub enum PanasonicTag {
   CF2StripHeight = 0x0037,
   CF2Unknown1 = 0x0039, // Gamma table CF2_GammaSlope?
   CF2Unknown2 = 0x003a, // Gamma table CF2_GammaPoint?
-  CF2ClipVal = 0x003b, // CF2_GammaClipVal
+  CF2ClipVal = 0x003b,  // CF2_GammaClipVal
   CF2HufInitVal0 = 0x003c,
   CF2HufInitVal1 = 0x003d,
   CF2HufInitVal2 = 0x003e,
