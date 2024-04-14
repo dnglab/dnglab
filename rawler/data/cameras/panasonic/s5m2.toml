@@ -1,0 +1,18 @@
+make = "Panasonic"
+model = "DC-S5M2"
+clean_make = "Panasonic"
+clean_model = "DC-S5M2"
+whitepoint = 16383
+color_pattern = "RGGB"
+
+model_aliases = [
+    ["DC-S5M2X", "DC-S5M2X"],
+]
+
+[cameras.color_matrix]
+A = [1.3022, -0.817, 0.1348, -0.3478, 1.0901, 0.2974, 0.0031, 0.0471, 0.7057]
+D65 = [1.0308, -0.4206, -0.0783, -0.4088, 1.2102, 0.2229, -0.0125, 0.1051, 0.5912]
+
+[[cameras.modes]]
+mode = "3:2"
+
