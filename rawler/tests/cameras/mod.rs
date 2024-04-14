@@ -316,6 +316,7 @@ mod camera_eos_r7_raw_modes {
 }
 mod camera_eos_r8_raw_modes {
   super::camera_file_check!("Canon", "EOS R8", cam_canon_eos_r8_craw_dual_cr3, "raw_modes/Canon_EOS_R8_CRAW_dual.CR3");
+  super::camera_file_check!("Canon", "EOS R8", cam_canon_eos_r8_burst_cr3, "raw_modes/Canon_EOS_R8_BURST.CR3");
   super::camera_file_check!("Canon", "EOS R8", cam_canon_eos_r8_raw_dual_cr3, "raw_modes/Canon_EOS_R8_RAW_dual.CR3");
   super::camera_file_check!("Canon", "EOS R8", cam_canon_eos_r8_craw_nodual_cr3, "raw_modes/Canon_EOS_R8_CRAW_nodual.CR3");
   super::camera_file_check!("Canon", "EOS R8", cam_canon_eos_r8_raw_nodual_cr3, "raw_modes/Canon_EOS_R8_RAW_nodual.CR3");
