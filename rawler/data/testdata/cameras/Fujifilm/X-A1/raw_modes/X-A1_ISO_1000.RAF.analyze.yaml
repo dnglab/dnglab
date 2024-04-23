@@ -52,7 +52,7 @@ data:
         exposure_time: 10/300
         fnumber: 400/100
         aperture_value: 400/100
-        brightness_value: ~
+        brightness_value: 171/100
         iso_speed_ratings: 1000
         iso_speed: ~
         recommended_exposure_index: ~
@@ -89,6 +89,7 @@ data:
         lens_make: FUJIFILM
         lens_model: XC16-50mmF3.5-5.6 OIS
         gps: ~
+        user_comment: ~
       model: X-A1
       make: Fujifilm
       lens: ~

@@ -9,10 +9,11 @@ use std::{
 use image::DynamicImage;
 
 use crate::{
-  decoders::{Decoder, RawDecodeParams},
+  decoders::{Decoder, RawDecodeParams, WellKnownIFD},
   dng::{original::OriginalCompressed, writer::DngWriter, DNG_VERSION_V1_4, PREVIEW_JPEG_QUALITY},
+  formats::tiff::Entry,
   imgop::develop::RawDevelop,
-  tags::{ExifTag, TiffCommonTag},
+  tags::{DngTag, ExifTag, TiffCommonTag},
   RawFile, RawImage,
 };
 
@@ -120,10 +121,18 @@ where
   log::debug!("wb coeff: {:?}", rawimage.wb_coeffs);
 
   let mut dng = DngWriter::new(dng, DNG_VERSION_V1_4)?;
+
   // Write RAW image for subframe type 0
-  let mut raw = dng.subframe(0);
+  // If no thumbnail should be written to root IFD, we need to put the raw image into
+  // root IFD instead.
+  let mut raw = if params.thumbnail { dng.subframe(0) } else { dng.subframe_on_root(0) };
   raw.raw_image(&rawimage, params.crop, params.compression, params.photometric_conversion, params.predictor)?;
+  // Check for DNG raw IFD related tags
+  if let Some(dng_raw_ifd) = decoder.ifd(WellKnownIFD::VirtualDngRawTags)? {
+    raw.ifd_mut().copy(dng_raw_ifd.value_iter());
+  }
   raw.finalize()?;
+
   // Write preview and thumbnail if requested
   if params.preview || params.thumbnail {
     match generate_preview(&mut rawfile, decoder.as_ref(), &rawimage) {
@@ -143,6 +152,37 @@ where
   // Write metadata
   dng.load_base_tags(&rawimage)?;
   dng.load_metadata(&metadata)?;
+
+  // Check for DNG root IFD related tags
+  if let Some(dng_root_ifd) = decoder.ifd(WellKnownIFD::VirtualDngRootTags)? {
+    dng.root_ifd_mut().copy(dng_root_ifd.value_iter());
+  }
+
+  // Check for TIFF root IFD related tags
+  if let Some(tiff_root) = decoder.ifd(WellKnownIFD::Root)? {
+    dng.root_ifd_mut().copy(tiff_root.value_iter().filter(|(tag, _)| {
+      [
+        // Tags from CinemaDNG files
+        TiffCommonTag::TimeCodes as u16,
+        TiffCommonTag::FrameFrate as u16,
+        TiffCommonTag::TStop as u16,
+      ]
+      .contains(tag)
+    }));
+  }
+
+  // Remove makernotes from EXIF if MakerNoteSafety is not 1 (safe)
+  if let Some(Entry {
+    value: crate::formats::tiff::Value::Short(v),
+    ..
+  }) = decoder
+    .ifd(WellKnownIFD::VirtualDngRootTags)?
+    .and_then(|ifd| ifd.get_entry(DngTag::MakerNoteSafety).cloned())
+  {
+    if v.get(0).copied().unwrap_or(0) == 0 {
+      dng.exif_ifd_mut().remove_tag(ExifTag::MakerNotes);
+    }
+  }
 
   if let Some(xpacket) = decoder.xpacket(&mut rawfile, RawDecodeParams::default())? {
     dng.xpacket(&xpacket)?;

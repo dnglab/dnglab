@@ -52,7 +52,7 @@ data:
         exposure_time: 1/250
         fnumber: 40/10
         aperture_value: ~
-        brightness_value: ~
+        brightness_value: 15114/2560
         iso_speed_ratings: 250
         iso_speed: ~
         recommended_exposure_index: 250
@@ -89,6 +89,7 @@ data:
         lens_make: Sony
         lens_model: E PZ 18-105mm F4 G OSS
         gps: ~
+        user_comment: ~
       model: ILCE-6400
       make: SONY
       lens:

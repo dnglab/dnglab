@@ -89,6 +89,7 @@ data:
         lens_make: Olympus
         lens_model: M.Zuiko Digital ED 12-40mm F2.8 Pro
         gps: ~
+        user_comment: ~
       model: E-M1MarkIII
       make: OLYMPUS CORPORATION
       lens:

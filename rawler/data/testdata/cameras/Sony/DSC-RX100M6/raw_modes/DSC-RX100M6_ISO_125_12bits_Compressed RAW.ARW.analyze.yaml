@@ -42,7 +42,7 @@ data:
         exposure_time: 1/80
         fnumber: 71/10
         aperture_value: ~
-        brightness_value: ~
+        brightness_value: 17444/2560
         iso_speed_ratings: 125
         iso_speed: ~
         recommended_exposure_index: 125
@@ -79,6 +79,7 @@ data:
         lens_make: ~
         lens_model: ~
         gps: ~
+        user_comment: ~
       model: DSC-RX100M6
       make: SONY
       lens: ~

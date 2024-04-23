@@ -89,6 +89,7 @@ data:
         lens_make: Tamron
         lens_model: Tamron AF 17-50mm F2.8 XR Di-II LD (Model A16)
         gps: ~
+        user_comment: ~
       model: K-S1
       make: Pentax
       lens:

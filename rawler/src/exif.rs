@@ -20,7 +20,7 @@ pub struct Exif {
   pub exposure_time: Option<Rational>,
   pub fnumber: Option<Rational>,
   pub aperture_value: Option<Rational>,
-  pub brightness_value: Option<Rational>,
+  pub brightness_value: Option<SRational>,
   pub iso_speed_ratings: Option<u16>,
   pub iso_speed: Option<u32>,
   pub recommended_exposure_index: Option<u32>,
@@ -57,6 +57,8 @@ pub struct Exif {
   pub lens_make: Option<String>,
   pub lens_model: Option<String>,
   pub gps: Option<ExifGPS>,
+  pub user_comment: Option<String>,
+  //pub makernotes: Option<Vec<u8>>,
 }
 
 #[derive(Debug, Default, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
@@ -123,7 +125,7 @@ impl Exif {
           (ExifTag::Artist, Value::Ascii(data)) => self.artist = data.strings().get(0).map(trim),
           (ExifTag::ExposureTime, Value::Rational(data)) => self.exposure_time = data.get(0).cloned(),
           (ExifTag::FNumber, Value::Rational(data)) => self.fnumber = data.get(0).cloned(),
-          (ExifTag::BrightnessValue, Value::Rational(data)) => self.brightness_value = data.get(0).cloned(),
+          (ExifTag::BrightnessValue, Value::SRational(data)) => self.brightness_value = data.get(0).cloned(),
           (ExifTag::ApertureValue, Value::Rational(data)) => self.aperture_value = data.get(0).cloned(),
           (ExifTag::ISOSpeedRatings, Value::Short(data)) => self.iso_speed_ratings = data.get(0).cloned(),
           (ExifTag::ISOSpeed, Value::Long(data)) => self.iso_speed = data.get(0).cloned(),
@@ -158,6 +160,8 @@ impl Exif {
           (ExifTag::OwnerName, Value::Ascii(data)) => self.owner_name = data.strings().get(0).map(trim),
           (ExifTag::SerialNumber, Value::Ascii(data)) => self.serial_number = data.strings().get(0).map(trim),
           (ExifTag::LensSerialNumber, Value::Ascii(data)) => self.lens_serial_number = data.strings().get(0).map(trim),
+          (ExifTag::UserComment, Value::Ascii(data)) => self.user_comment = data.strings().get(0).map(trim),
+          //(ExifTag::MakerNotes, Value::Undefined(data)) => self.makernotes = Some(data.clone()),
           (tag, _value) => {
             log::debug!("Ignoring EXIF tag: {:?}", tag);
           }

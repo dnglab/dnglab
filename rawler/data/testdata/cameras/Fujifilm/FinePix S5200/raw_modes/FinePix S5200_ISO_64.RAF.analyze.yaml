@@ -33,7 +33,7 @@ data:
         exposure_time: 10/1250
         fnumber: 640/100
         aperture_value: 540/100
-        brightness_value: ~
+        brightness_value: 891/100
         iso_speed_ratings: 64
         iso_speed: ~
         recommended_exposure_index: ~
@@ -70,6 +70,7 @@ data:
         lens_make: ~
         lens_model: ~
         gps: ~
+        user_comment: ~
       model: FinePix S5200
       make: Fujifilm
       lens: ~

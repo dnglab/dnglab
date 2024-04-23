@@ -89,6 +89,7 @@ data:
         lens_make: Tamron
         lens_model: Tamron SP AF 90mm F2.8 (172E)
         gps: ~
+        user_comment: ~
       model: K-5
       make: Pentax
       lens:

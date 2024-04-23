@@ -89,6 +89,7 @@ data:
         lens_make: Canon
         lens_model: EF 85mm f/1.8 USM
         gps: ~
+        user_comment: ~
       model: EOS 6D
       make: Canon
       lens:

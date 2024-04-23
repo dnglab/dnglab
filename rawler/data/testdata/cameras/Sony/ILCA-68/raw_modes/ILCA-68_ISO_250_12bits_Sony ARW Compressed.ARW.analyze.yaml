@@ -48,7 +48,7 @@ data:
         exposure_time: 1/400
         fnumber: 56/10
         aperture_value: ~
-        brightness_value: ~
+        brightness_value: 21474/2560
         iso_speed_ratings: 250
         iso_speed: ~
         recommended_exposure_index: 250
@@ -85,6 +85,7 @@ data:
         lens_make: ~
         lens_model: ~
         gps: ~
+        user_comment: ~
       model: ILCA-68
       make: Sony
       lens: ~

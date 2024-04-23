@@ -52,7 +52,7 @@ data:
         exposure_time: 10/750
         fnumber: 200/100
         aperture_value: 200/100
-        brightness_value: ~
+        brightness_value: 336/100
         iso_speed_ratings: 100
         iso_speed: ~
         recommended_exposure_index: ~
@@ -89,6 +89,7 @@ data:
         lens_make: FUJIFILM
         lens_model: GF110mmF2 R LM WR
         gps: ~
+        user_comment: ~
       model: GFX 50S II
       make: Fujifilm
       lens: ~

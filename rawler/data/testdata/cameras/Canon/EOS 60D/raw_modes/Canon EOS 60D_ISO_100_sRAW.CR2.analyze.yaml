@@ -86,6 +86,7 @@ data:
         lens_make: ~
         lens_model: ~
         gps: ~
+        user_comment: ~
       model: EOS 60D
       make: Canon
       lens: ~

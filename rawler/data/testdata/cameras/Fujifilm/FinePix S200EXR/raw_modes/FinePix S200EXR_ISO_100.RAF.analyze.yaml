@@ -45,7 +45,7 @@ data:
         exposure_time: 10/1050
         fnumber: 450/100
         aperture_value: 430/100
-        brightness_value: ~
+        brightness_value: 606/100
         iso_speed_ratings: 100
         iso_speed: ~
         recommended_exposure_index: ~
@@ -82,6 +82,7 @@ data:
         lens_make: ~
         lens_model: ~
         gps: ~
+        user_comment: ~
       model: FinePix S200EXR
       make: Fujifilm
       lens: ~

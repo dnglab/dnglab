@@ -52,7 +52,7 @@ data:
         exposure_time: 1/125
         fnumber: 28/10
         aperture_value: ~
-        brightness_value: ~
+        brightness_value: "-9716/2560"
         iso_speed_ratings: 20000
         iso_speed: ~
         recommended_exposure_index: 20000
@@ -89,6 +89,7 @@ data:
         lens_make: Tamron
         lens_model: 28-75mm F2.8 Di III VXD G2
         gps: ~
+        user_comment: ~
       model: ILME-FX3
       make: SONY
       lens:

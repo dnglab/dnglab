@@ -89,6 +89,7 @@ data:
         lens_make: Olympus
         lens_model: M.Zuiko Digital ED 14-42mm F3.5-5.6 EZ
         gps: ~
+        user_comment: ~
       model: E-M10 Mark II
       make: Olympus
       lens:

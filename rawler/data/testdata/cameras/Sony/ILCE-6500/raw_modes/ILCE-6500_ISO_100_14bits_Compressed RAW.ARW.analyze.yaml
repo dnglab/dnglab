@@ -52,7 +52,7 @@ data:
         exposure_time: 1/200
         fnumber: 80/10
         aperture_value: ~
-        brightness_value: ~
+        brightness_value: 21284/2560
         iso_speed_ratings: 100
         iso_speed: ~
         recommended_exposure_index: 100
@@ -89,6 +89,7 @@ data:
         lens_make: Sony
         lens_model: E 20mm F2.8
         gps: ~
+        user_comment: ~
       model: ILCE-6500
       make: SONY
       lens:

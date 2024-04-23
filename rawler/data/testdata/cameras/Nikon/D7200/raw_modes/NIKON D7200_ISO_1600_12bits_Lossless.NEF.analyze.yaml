@@ -89,6 +89,7 @@ data:
         lens_make: Nikon
         lens_model: AF-S DX VR Zoom-Nikkor 18-105mm f/3.5-5.6G ED
         gps: ~
+        user_comment: ~
       model: D7200
       make: Nikon
       lens:

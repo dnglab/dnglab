@@ -46,7 +46,7 @@ data:
         exposure_time: 1/250
         fnumber: 63/10
         aperture_value: ~
-        brightness_value: ~
+        brightness_value: 14934/2560
         iso_speed_ratings: 800
         iso_speed: ~
         recommended_exposure_index: 800
@@ -83,6 +83,7 @@ data:
         lens_make: Sony
         lens_model: FE 200-600mm F5.6-6.3 G OSS
         gps: ~
+        user_comment: ~
       model: ILCE-9M2
       make: Sony
       lens:

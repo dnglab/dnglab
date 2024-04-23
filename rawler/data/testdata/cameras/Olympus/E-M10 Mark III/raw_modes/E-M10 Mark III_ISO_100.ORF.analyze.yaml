@@ -89,6 +89,7 @@ data:
         lens_make: Olympus
         lens_model: M.Zuiko Digital 17mm F1.8
         gps: ~
+        user_comment: ~
       model: E-M10 Mark III
       make: OLYMPUS CORPORATION
       lens:

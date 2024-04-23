@@ -89,6 +89,7 @@ data:
         lens_make: Nikon
         lens_model: AF-S Zoom-Nikkor 14-24mm f/2.8G ED
         gps: ~
+        user_comment: ~
       model: D5
       make: Nikon
       lens:

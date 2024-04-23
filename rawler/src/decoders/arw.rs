@@ -46,6 +46,7 @@ use crate::Result;
 use super::ok_cfa_image;
 use super::Camera;
 use super::Decoder;
+use super::FormatHint;
 use super::RawDecodeParams;
 use super::RawMetadata;
 
@@ -170,7 +171,8 @@ impl<'a> Decoder for ArwDecoder<'a> {
 
     let blacklevel = black.map(|black| match cpp {
       1 => BlackLevel::new(&black, self.camera.cfa.width, self.camera.cfa.height, cpp),
-      3 => BlackLevel::new(&[black[0] << 2, black[0] << 2, black[0] << 2], 1, 1, cpp),
+      // For YUV data, the blacklevel needs to be multiplicated by 2
+      3 => BlackLevel::new(&[black[0] * 2, black[0] * 2, black[0] * 2], 1, 1, cpp),
       _ => panic!("Unsupported cpp == {}", cpp),
     });
     let whitelevel = white.map(|white| WhiteLevel(vec![white as u32; cpp]));
@@ -218,6 +220,10 @@ impl<'a> Decoder for ArwDecoder<'a> {
     exif.extend_from_ifd(self.get_exif()?)?; // TODO: is this required?
     let mdata = RawMetadata::new_with_lens(&self.camera, exif, self.get_lens_description()?.cloned());
     Ok(mdata)
+  }
+
+  fn format_hint(&self) -> FormatHint {
+    FormatHint::ARW
   }
 }
 

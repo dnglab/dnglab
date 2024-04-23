@@ -1,12 +1,14 @@
 use std::cmp;
 use std::f32::NAN;
 
+use image::EncodableLayout;
 use image::ImageBuffer;
 use image::Rgb;
 
 use crate::alloc_image_ok;
 use crate::alloc_image_plain;
 use crate::bits::Endian;
+use crate::bits::LEu32;
 use crate::bits::LookupTable;
 use crate::cfa::*;
 use crate::decoders::*;
@@ -16,6 +18,7 @@ use crate::formats::tiff::Rational;
 use crate::formats::tiff::Value;
 use crate::imgop::xyz::FlatColorMatrix;
 use crate::imgop::xyz::Illuminant;
+use crate::imgop::Dim2;
 use crate::imgop::Point;
 use crate::imgop::Rect;
 use crate::packed::*;
@@ -50,11 +53,18 @@ impl<'a> Decoder for DngDecoder<'a> {
     let cpp = fetch_tiff_tag!(raw, TiffCommonTag::SamplesPerPixel).force_usize(0);
     let bits = fetch_tiff_tag!(raw, TiffCommonTag::BitsPerSample).force_u32(0);
 
-    let image = match fetch_tiff_tag!(raw, TiffCommonTag::Compression).force_u32(0) {
+    let mut image = match fetch_tiff_tag!(raw, TiffCommonTag::Compression).force_u32(0) {
       1 => self.decode_uncompressed(file, raw, width * cpp, height, dummy)?,
       7 => self.decode_compressed(file, raw, width * cpp, height, cpp, dummy)?,
       c => return Err(RawlerError::DecoderFailed(format!("Don't know how to read DNGs with compression {}", c))),
     };
+
+    if let Some(lintable) = raw.get_entry(TiffCommonTag::Linearization) {
+      if bits != 8 && fetch_tiff_tag!(raw, TiffCommonTag::Compression).force_u32(0) != 1 {
+        // 8 bit uncompressed data is already read delinearized
+        apply_linearization(&mut image, &lintable.value, bits);
+      }
+    }
 
     let orientation = Orientation::from_tiff(self.tiff.root_ifd());
 
@@ -150,6 +160,85 @@ impl<'a> Decoder for DngDecoder<'a> {
     }
     Ok(None)
   }
+
+  fn ifd(&self, wk_ifd: WellKnownIFD) -> Result<Option<Rc<IFD>>> {
+    Ok(match wk_ifd {
+      WellKnownIFD::Root => Some(Rc::new(self.tiff.root_ifd().clone())),
+      WellKnownIFD::Raw => Some(Rc::new(self.get_raw_ifd()?.clone())),
+      WellKnownIFD::Exif => self
+        .tiff
+        .root_ifd()
+        .get_sub_ifds(ExifTag::ExifOffset)
+        .and_then(|list| list.get(0))
+        .cloned()
+        .map(Rc::new),
+      WellKnownIFD::ExifGps => self
+        .tiff
+        .root_ifd()
+        .get_sub_ifds(ExifTag::GPSInfo)
+        .and_then(|list| list.get(0))
+        .cloned()
+        .map(Rc::new),
+      WellKnownIFD::VirtualDngRawTags => {
+        let mut ifd = IFD::default();
+        IFD::copy_tag(&mut ifd, self.get_raw_ifd()?, DngTag::OpcodeList1);
+        IFD::copy_tag(&mut ifd, self.get_raw_ifd()?, DngTag::OpcodeList2);
+        IFD::copy_tag(&mut ifd, self.get_raw_ifd()?, DngTag::OpcodeList3);
+        IFD::copy_tag(&mut ifd, self.get_raw_ifd()?, DngTag::NoiseProfile);
+        IFD::copy_tag(&mut ifd, self.get_raw_ifd()?, DngTag::BayerGreenSplit);
+        IFD::copy_tag(&mut ifd, self.get_raw_ifd()?, DngTag::ChromaBlurRadius);
+        IFD::copy_tag(&mut ifd, self.get_raw_ifd()?, DngTag::AntiAliasStrength);
+        IFD::copy_tag(&mut ifd, self.get_raw_ifd()?, DngTag::NoiseReductionApplied);
+        IFD::copy_tag(&mut ifd, self.get_raw_ifd()?, DngTag::ProfileGainTableMap);
+        Some(Rc::new(ifd))
+      }
+      WellKnownIFD::VirtualDngRootTags => {
+        let mut ifd = IFD::default();
+        IFD::copy_tag(&mut ifd, self.tiff.root_ifd(), DngTag::ProfileEmbedPolicy);
+        IFD::copy_tag(&mut ifd, self.tiff.root_ifd(), DngTag::ProfileHueSatMapData1);
+        IFD::copy_tag(&mut ifd, self.tiff.root_ifd(), DngTag::ProfileHueSatMapData2);
+        IFD::copy_tag(&mut ifd, self.tiff.root_ifd(), DngTag::ProfileHueSatMapData3);
+        IFD::copy_tag(&mut ifd, self.tiff.root_ifd(), DngTag::ProfileHueSatMapDims);
+        IFD::copy_tag(&mut ifd, self.tiff.root_ifd(), DngTag::ProfileHueSatMapData1);
+        IFD::copy_tag(&mut ifd, self.tiff.root_ifd(), DngTag::ProfileHueSatMapData2);
+        IFD::copy_tag(&mut ifd, self.tiff.root_ifd(), DngTag::ProfileHueSatMapData3);
+        IFD::copy_tag(&mut ifd, self.tiff.root_ifd(), DngTag::ProfileHueSatMapEncoding);
+        IFD::copy_tag(&mut ifd, self.tiff.root_ifd(), DngTag::ProfileLookTableData);
+        IFD::copy_tag(&mut ifd, self.tiff.root_ifd(), DngTag::ProfileLookTableDims);
+        IFD::copy_tag(&mut ifd, self.tiff.root_ifd(), DngTag::ProfileLookTableEncoding);
+        IFD::copy_tag(&mut ifd, self.tiff.root_ifd(), DngTag::ProfileName);
+        IFD::copy_tag(&mut ifd, self.tiff.root_ifd(), DngTag::ProfileCopyright);
+        IFD::copy_tag(&mut ifd, self.tiff.root_ifd(), DngTag::ProfileToneCurve);
+        IFD::copy_tag(&mut ifd, self.tiff.root_ifd(), DngTag::DNGPrivateData);
+        IFD::copy_tag(&mut ifd, self.tiff.root_ifd(), DngTag::MakerNoteSafety);
+        IFD::copy_tag(&mut ifd, self.tiff.root_ifd(), DngTag::AnalogBalance);
+        IFD::copy_tag(&mut ifd, self.tiff.root_ifd(), DngTag::BaselineExposure);
+        IFD::copy_tag(&mut ifd, self.tiff.root_ifd(), DngTag::BaselineNoise);
+        IFD::copy_tag(&mut ifd, self.tiff.root_ifd(), DngTag::BaselineSharpness);
+        IFD::copy_tag(&mut ifd, self.tiff.root_ifd(), DngTag::LinearResponseLimit);
+        IFD::copy_tag(&mut ifd, self.tiff.root_ifd(), DngTag::CameraSerialNumber);
+        IFD::copy_tag(&mut ifd, self.tiff.root_ifd(), DngTag::AsShotICCProfile);
+        IFD::copy_tag(&mut ifd, self.tiff.root_ifd(), DngTag::AsShotPreProfileMatrix);
+        IFD::copy_tag(&mut ifd, self.tiff.root_ifd(), DngTag::CurrentICCProfile);
+        IFD::copy_tag(&mut ifd, self.tiff.root_ifd(), DngTag::CurrentPreProfileMatrix);
+        IFD::copy_tag(&mut ifd, self.tiff.root_ifd(), DngTag::AsShotProfileName);
+        IFD::copy_tag(&mut ifd, self.tiff.root_ifd(), DngTag::DefaultBlackRender);
+        IFD::copy_tag(&mut ifd, self.tiff.root_ifd(), DngTag::BaselineExposureOffset);
+        IFD::copy_tag(&mut ifd, self.tiff.root_ifd(), DngTag::DepthFormat);
+        IFD::copy_tag(&mut ifd, self.tiff.root_ifd(), DngTag::DepthNear);
+        IFD::copy_tag(&mut ifd, self.tiff.root_ifd(), DngTag::DepthFar);
+        IFD::copy_tag(&mut ifd, self.tiff.root_ifd(), DngTag::DepthUnits);
+        IFD::copy_tag(&mut ifd, self.tiff.root_ifd(), DngTag::DepthMeasureType);
+        IFD::copy_tag(&mut ifd, self.tiff.root_ifd(), DngTag::RGBTables);
+        Some(Rc::new(ifd))
+      }
+      _ => return Ok(None),
+    })
+  }
+
+  fn format_hint(&self) -> FormatHint {
+    FormatHint::DNG
+  }
 }
 
 impl<'a> DngDecoder<'a> {
@@ -205,7 +294,12 @@ impl<'a> DngDecoder<'a> {
     let linear = fetch_tiff_tag!(raw, TiffCommonTag::PhotometricInt).force_usize(0) == 34892;
     let cfa = if linear { CFA::default() } else { self.get_cfa(raw)? };
     let color_matrix = self.get_color_matrix()?;
-    let real_bps = raw.get_entry(TiffCommonTag::BitsPerSample).map(|v| v.force_usize(0)).unwrap_or(16);
+    let real_bps = if raw.has_entry(TiffCommonTag::Linearization) {
+      // If DNG contains linearization table, output is always 16 bits
+      16
+    } else {
+      raw.get_entry(TiffCommonTag::BitsPerSample).map(|v| v.force_usize(0)).unwrap_or(16)
+    };
 
     Ok(Camera {
       clean_make: make.clone(),
@@ -294,8 +388,8 @@ impl<'a> DngDecoder<'a> {
     if let Some(crops) = raw.get_entry(DngTag::DefaultCropOrigin) {
       let p = Point::new(crops.force_usize(0), crops.force_usize(1));
       if let Some(size) = raw.get_entry(DngTag::DefaultCropSize) {
-        let s = Point::new(size.force_usize(0), size.force_usize(1));
-        return Some(Rect::new_with_points(p, s));
+        let d = Dim2::new(size.force_usize(0), size.force_usize(1));
+        return Some(Rect::new(p, d));
       }
     }
     None
@@ -401,14 +495,15 @@ impl<'a> DngDecoder<'a> {
         &(|strip: &mut [u16], row| {
           let row = row / tlength;
           for col in 0..coltiles {
+            // Calculate output width & length for current tile (right or bottom tile may have smaller dimension)
+            let owidth = cmp::min(width, (col + 1) * twidth) - col * twidth;
+            let olength = cmp::min(height, (row + 1) * tlength) - row * tlength;
             let offset = offsets.force_usize(row * coltiles + col);
             let src = &buffer[offset..];
             let decompressor = LjpegDecompressor::new(src)?;
+
             // If SOF width & height matches tile dimension, we can decode directly to strip
             if decompressor.width() == twidth && decompressor.height() == tlength {
-              // Calculate output width & length for current tile (right or bottom tile may have smaller dimension)
-              let owidth = cmp::min(width, (col + 1) * twidth) - col * twidth;
-              let olength = cmp::min(height, (row + 1) * tlength) - row * tlength;
               decompressor.decode(strip, col * twidth, width, owidth, olength, dummy)?;
             }
             // If SOF has other dimension but still same pixel count, we can decode
@@ -420,11 +515,14 @@ impl<'a> DngDecoder<'a> {
             else if decompressor.width() * decompressor.height() == twidth * tlength {
               // cps is already included in all values, so just compare them.
               let mut tile = alloc_image_plain!(decompressor.width(), decompressor.height(), dummy);
-              decompressor.decode(tile.pixels_mut(), 0, width, decompressor.width(), decompressor.height(), dummy)?;
-              // Copy lines from temporary tile to strip buffer
-              for (i, pix) in tile.pixels().chunks_exact(twidth).enumerate() {
+              // The stripwidth is of same width as the temporary tile.
+              let stripwidth = decompressor.width();
+              decompressor.decode(tile.pixels_mut(), 0, stripwidth, decompressor.width(), decompressor.height(), dummy)?;
+              // Copy lines from temporary tile to strip buffer, but limit it if destination strip
+              // is smaller than temporary tile (right/bottom tiles).
+              for (i, pix) in tile.pixels().chunks_exact(twidth).enumerate().take(olength) {
                 let start = (i * width) + (col * twidth);
-                strip[start..start + twidth].copy_from_slice(pix);
+                strip[start..start + owidth].copy_from_slice(&pix[0..owidth]);
               }
             } else {
               return Err(format!(
@@ -444,6 +542,23 @@ impl<'a> DngDecoder<'a> {
       .map_err(RawlerError::DecoderFailed)
     } else {
       Err(RawlerError::DecoderFailed("DNG: didn't find tiles or strips".to_string()))
+    }
+  }
+}
+
+fn apply_linearization(image: &mut PixU16, tbl: &Value, bits: u32) {
+  match tbl {
+    Value::Short(points) => {
+      let table = LookupTable::new_with_bits(points, bits);
+      image.pixel_rows_mut().for_each(|row| {
+        let mut random = LEu32(row.as_bytes(), 0);
+        row.iter_mut().for_each(|p| {
+          *p = table.dither(*p, &mut random);
+        })
+      });
+    }
+    _ => {
+      panic!("Unsupported linear table");
     }
   }
 }

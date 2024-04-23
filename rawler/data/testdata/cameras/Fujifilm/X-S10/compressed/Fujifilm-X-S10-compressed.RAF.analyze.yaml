@@ -84,7 +84,7 @@ data:
         exposure_time: 10/28
         fnumber: 400/100
         aperture_value: 400/100
-        brightness_value: ~
+        brightness_value: 36/100
         iso_speed_ratings: 160
         iso_speed: ~
         recommended_exposure_index: ~
@@ -121,6 +121,7 @@ data:
         lens_make: FUJIFILM
         lens_model: XF16-80mmF4 R OIS WR
         gps: ~
+        user_comment: ~
       model: X-S10
       make: Fujifilm
       lens: ~

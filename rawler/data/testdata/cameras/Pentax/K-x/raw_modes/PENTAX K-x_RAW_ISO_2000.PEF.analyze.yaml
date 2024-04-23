@@ -89,6 +89,7 @@ data:
         lens_make: Pentax
         lens_model: smc PENTAX-DA L 18-55mm F3.5-5.6
         gps: ~
+        user_comment: ~
       model: K-x
       make: Pentax
       lens:

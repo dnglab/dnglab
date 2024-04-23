@@ -89,6 +89,7 @@ data:
         lens_make: Pentax
         lens_model: smc PENTAX-FA 35mm F2 AL
         gps: ~
+        user_comment: ~
       model: K-5 II
       make: Pentax
       lens:

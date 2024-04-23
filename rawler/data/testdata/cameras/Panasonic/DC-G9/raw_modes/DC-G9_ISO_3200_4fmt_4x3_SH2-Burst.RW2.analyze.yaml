@@ -89,6 +89,7 @@ data:
         lens_make: Lumix
         lens_model: G 25mm F1.7 Asph.
         gps: ~
+        user_comment: ~
       model: DC-G9
       make: Panasonic
       lens:

@@ -23,8 +23,25 @@ pub struct HuffTable {
 
   // The max number of bits in a huffman code and the table that converts those
   // bits into how many bits to consume and the decoded length and shift
-  nbits: u32,
-  hufftable: Vec<(u8, u8, u8)>,
+  pub nbits: u32,
+
+  // Fast lookup for self.peek_bits(nbits). This contains the huffval
+  // for all combinations of <code>+<extrabits>
+  // This is: (bits, len, shift) where:
+  //  bits: the actual count of bits to represent the code
+  //  len: extra bits for difference encoding
+  //  shift: special shift value for some Nikon models
+  //
+  // The huffman code (e.g. 0b1111111110) is the vector index inself, extended
+  // with all possible extra bit values. For example:
+  //   nbits = 4
+  //   code = 0b110
+  //   bits: 3
+  //   len: 1
+  // Then the array contains the values:
+  //   [0b110 0] = (3, 1, 0)
+  //   [0b110 1] = (3, 1, 0)
+  pub hufftable: Vec<(u8, u8, u8)>,
 
   // A pregenerated table that goes straight to decoding a diff without first
   // finding a length, fetching bits, and sign extending them. The table is
@@ -113,7 +130,9 @@ impl HuffTable {
     let mut h = 0;
     let mut pos = 0;
     for len in 0..self.nbits {
+      // Fill for each number of huffman codes of length i (=len+1)
       for _ in 0..self.bits[len as usize + 1] {
+        // Fill for all possible extra bits, payload is always the same for fast lookup bases on peek_bits(self.nbits)
         for _ in 0..(1 << (self.nbits - len - 1)) {
           self.hufftable[h] = (len as u8 + 1, self.huffval[pos] as u8, self.shiftval[pos] as u8);
           h += 1;

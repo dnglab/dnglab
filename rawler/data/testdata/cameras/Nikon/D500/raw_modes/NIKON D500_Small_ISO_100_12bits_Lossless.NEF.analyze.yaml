@@ -89,6 +89,7 @@ data:
         lens_make: Nikon
         lens_model: AF-S Nikkor 300mm f/4E PF ED VR
         gps: ~
+        user_comment: ~
       model: D500
       make: Nikon
       lens:

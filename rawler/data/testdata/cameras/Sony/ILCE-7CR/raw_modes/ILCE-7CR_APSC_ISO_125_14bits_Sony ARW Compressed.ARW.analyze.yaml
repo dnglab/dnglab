@@ -52,7 +52,7 @@ data:
         exposure_time: 1/100
         fnumber: 50/10
         aperture_value: ~
-        brightness_value: ~
+        brightness_value: 14634/2560
         iso_speed_ratings: 125
         iso_speed: ~
         recommended_exposure_index: 125
@@ -89,6 +89,7 @@ data:
         lens_make: Sigma
         lens_model: 24-70mm F2.8 DG DN | A
         gps: ~
+        user_comment: ~
       model: ILCE-7CR
       make: Sony
       lens:

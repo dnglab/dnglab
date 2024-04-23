@@ -84,7 +84,7 @@ data:
         exposure_time: 10/200
         fnumber: 280/100
         aperture_value: 300/100
-        brightness_value: ~
+        brightness_value: 162/100
         iso_speed_ratings: 200
         iso_speed: ~
         recommended_exposure_index: ~
@@ -121,6 +121,7 @@ data:
         lens_make: FUJIFILM
         lens_model: XF35mmF1.4 R
         gps: ~
+        user_comment: ~
       model: X-T2
       make: Fujifilm
       lens: ~

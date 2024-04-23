@@ -1,0 +1,10 @@
+make = "SONY"
+model = "ILCE-9M3"
+clean_make = "Sony"
+clean_model = "ILCE-9M3"
+color_pattern = "RGGB"
+bps = 8
+
+[cameras.color_matrix]
+A = [1.2059, -0.7647, 0.1737, -0.2825, 0.9927, 0.3391, 0.0126, 0.0346, 0.7026]
+D65 = [0.9811, -0.3908, -0.0752, -0.3704, 1.1577, 0.2417, -0.0073, 0.095, 0.598]

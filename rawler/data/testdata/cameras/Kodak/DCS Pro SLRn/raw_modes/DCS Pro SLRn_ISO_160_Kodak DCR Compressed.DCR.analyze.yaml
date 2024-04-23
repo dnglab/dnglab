@@ -82,6 +82,7 @@ data:
         lens_make: ~
         lens_model: ~
         gps: ~
+        user_comment: ~
       model: DCS Pro SLR/n
       make: Kodak
       lens: ~

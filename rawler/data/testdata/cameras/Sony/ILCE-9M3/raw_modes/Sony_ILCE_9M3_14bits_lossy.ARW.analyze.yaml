@@ -1,0 +1,109 @@
+---
+file:
+  fileSize: 29077504
+  fileName: Sony_ILCE_9M3_14bits_lossy.ARW
+  digest: a4114e47cc1b6543aa71556b8eb34152
+data:
+  metadata:
+    rawParams:
+      rawWidth: 6048
+      rawHeight: 4020
+      bitDepth: 16
+      cropArea:
+        p:
+          x: 8
+          y: 10
+        d:
+          w: 6000
+          h: 4000
+      activeArea: ~
+      blacklevels:
+        levels:
+          - 512/1
+          - 512/1
+          - 512/1
+          - 512/1
+        cpp: 1
+        width: 2
+        height: 2
+      whitelevels:
+        - 15360
+      wbCoeffs:
+        - 2.1396484
+        - 1.0
+        - 1.6835938
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ""
+        artist: Nico Orru
+        lens_spec:
+          - 55/1
+          - 55/1
+          - 18/10
+          - 18/10
+        exposure_time: 1/50
+        fnumber: 18/10
+        aperture_value: ~
+        brightness_value: 444/2560
+        iso_speed_ratings: 1000
+        iso_speed: ~
+        recommended_exposure_index: 1000
+        sensitivity_type: 2
+        exposure_bias: 0/10
+        date_time_original: "2024:03:26 12:47:24"
+        create_date: "2024:03:26 12:47:24"
+        modify_date: "2024:03:26 12:47:24"
+        exposure_program: 1
+        timezone_offset: ~
+        offset_time: "+00:00"
+        offset_time_original: "+00:00"
+        offset_time_digitized: "+00:00"
+        sub_sec_time: "654"
+        sub_sec_time_original: "654"
+        sub_sec_time_digitized: "654"
+        shutter_speed_value: ~
+        max_aperture_value: 434/256
+        subject_distance: ~
+        metering_mode: 5
+        light_source: 255
+        flash: 16
+        focal_length: 550/10
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 1
+        white_balance: 1
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: Sony
+        lens_model: FE 55mm F1.8 ZA
+        gps: ~
+        user_comment: ~
+      model: ILCE-9M3
+      make: Sony
+      lens:
+        identifiers:
+          name: ~
+          id:
+            - 32808
+            - 0
+          nikon_id: ~
+          olympus_id: ~
+        mount: e-mount
+        lens_make: Sony
+        lens_model: FE 55mm F1.8 ZA
+        focal_range:
+          - 55/1
+          - 55/1
+        aperture_range:
+          - 18/10
+          - 18/10
+        lens_name: Sony FE 55mm F1.8 ZA
+      unique_image_id: ~
+      rating: ~
+

@@ -46,7 +46,7 @@ data:
         exposure_time: 1/400
         fnumber: 40/10
         aperture_value: ~
-        brightness_value: ~
+        brightness_value: 20734/2560
         iso_speed_ratings: 100
         iso_speed: ~
         recommended_exposure_index: 100
@@ -83,6 +83,7 @@ data:
         lens_make: Sony
         lens_model: FE 55mm F1.8 ZA
         gps: ~
+        user_comment: ~
       model: ILCE-9
       make: Sony
       lens:

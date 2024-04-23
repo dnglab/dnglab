@@ -163,7 +163,7 @@ impl DirectoryWriter {
     );
   }
 
-  pub fn add_untyped_tag<V: Into<Value>>(&mut self, tag: u16, value: V) -> Result<()> {
+  pub fn add_untyped_tag<V: Into<Value>>(&mut self, tag: u16, value: V) {
     self.entries.insert(
       tag,
       Entry {
@@ -172,7 +172,20 @@ impl DirectoryWriter {
         embedded: None,
       },
     );
-    Ok(())
+  }
+
+  pub fn copy<'a>(&mut self, iter: impl Iterator<Item = (&'a u16, &'a Value)>) {
+    for entry in iter {
+      if !self.entries.contains_key(entry.0) {
+        self.add_untyped_tag(*entry.0, entry.1.clone());
+      }
+    }
+  }
+
+  pub fn copy_with_override<'a>(&mut self, iter: impl Iterator<Item = (&'a u16, &'a Value)>) {
+    for entry in iter {
+      self.add_untyped_tag(*entry.0, entry.1.clone());
+    }
   }
 
   pub fn add_tag_undefined<T: TiffTag>(&mut self, tag: T, data: Vec<u8>) {
@@ -274,6 +287,7 @@ impl crate::decoders::RawMetadata {
     transfer_entry(exif_ifd, ExifTag::FNumber, &exif.fnumber)?;
     transfer_entry(exif_ifd, ExifTag::ApertureValue, &exif.aperture_value)?;
     transfer_entry(exif_ifd, ExifTag::BrightnessValue, &exif.brightness_value)?;
+    transfer_entry(exif_ifd, ExifTag::ExposureBiasValue, &exif.exposure_bias)?;
     transfer_entry(exif_ifd, ExifTag::RecommendedExposureIndex, &exif.recommended_exposure_index)?;
     transfer_entry(exif_ifd, ExifTag::ExposureTime, &exif.exposure_time)?;
     transfer_entry(exif_ifd, ExifTag::ISOSpeedRatings, &exif.iso_speed_ratings)?;
@@ -309,6 +323,8 @@ impl crate::decoders::RawMetadata {
     transfer_entry(exif_ifd, ExifTag::LensSpecification, &exif.lens_spec)?;
     transfer_entry(exif_ifd, ExifTag::LensMake, &exif.lens_make)?;
     transfer_entry(exif_ifd, ExifTag::LensModel, &exif.lens_model)?;
+    transfer_entry(exif_ifd, ExifTag::UserComment, &exif.user_comment)?;
+    //transfer_entry(exif_ifd, ExifTag::MakerNotes, &exif.makernotes.as_ref().map(|x| Value::Undefined(x.clone())))?;
 
     Ok(())
   }

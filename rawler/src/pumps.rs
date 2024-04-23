@@ -348,3 +348,53 @@ impl<'a> ByteStream<'a> {
     Ok(skip_count + 1)
   }
 }
+
+/// This pump is for bitstreams where values are stored in LSB bit order.
+/// During refill, bits are converted from LSB to MSB so peaking
+/// is done by reading in MSB mode.
+///
+/// Input bitstream is:     1011 0101 0010 1110...
+/// Output for peek(10) is: 1010 1101 01
+#[derive(Debug, Copy, Clone)]
+pub struct BitPumpReverseBitsMSB<'a> {
+  buffer: &'a [u8],
+  pos: usize,
+  bits: u64,
+  nbits: u32,
+}
+
+impl<'a> BitPumpReverseBitsMSB<'a> {
+  pub fn new(src: &'a [u8]) -> Self {
+    Self {
+      buffer: src,
+      pos: 0,
+      bits: 0,
+      nbits: 0,
+    }
+  }
+}
+
+impl<'a> BitPump for BitPumpReverseBitsMSB<'a> {
+  #[inline(always)]
+  fn peek_bits(&mut self, num: u32) -> u32 {
+    debug_assert!(num <= 32);
+    if num > self.nbits {
+      let mut raw: [u8; 4] = BEu32(self.buffer, self.pos).to_ne_bytes();
+      raw[0] = raw[0].reverse_bits();
+      raw[1] = raw[1].reverse_bits();
+      raw[2] = raw[2].reverse_bits();
+      raw[3] = raw[3].reverse_bits();
+      let inbits: u64 = u32::from_ne_bytes(raw) as u64;
+      self.bits = (self.bits << 32) | inbits;
+      self.pos += 4;
+      self.nbits += 32;
+    }
+    (self.bits >> (self.nbits - num)) as u32
+  }
+
+  #[inline(always)]
+  fn consume_bits(&mut self, num: u32) {
+    self.nbits -= num;
+    self.bits &= (1 << self.nbits) - 1;
+  }
+}

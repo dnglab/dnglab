@@ -89,6 +89,7 @@ data:
         lens_make: Canon
         lens_model: EF 16-35mm f/2.8L II USM
         gps: ~
+        user_comment: ~
       model: EOS-1D Mark IV
       make: Canon
       lens:

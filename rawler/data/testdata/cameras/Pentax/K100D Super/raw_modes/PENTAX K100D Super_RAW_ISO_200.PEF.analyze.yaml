@@ -89,6 +89,7 @@ data:
         lens_make: Pentax
         lens_model: smc PENTAX-FA 31mm F1.8 AL Limited
         gps: ~
+        user_comment: ~
       model: K100D Super
       make: Pentax
       lens:

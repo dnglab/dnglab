@@ -46,7 +46,7 @@ data:
         exposure_time: 1/50
         fnumber: 56/10
         aperture_value: ~
-        brightness_value: ~
+        brightness_value: 15394/2560
         iso_speed_ratings: 200
         iso_speed: ~
         recommended_exposure_index: 200
@@ -83,6 +83,7 @@ data:
         lens_make: Sony
         lens_model: FE 50mm F1.8
         gps: ~
+        user_comment: ~
       model: ILCE-7RM3A
       make: Sony
       lens:

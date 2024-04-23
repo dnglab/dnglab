@@ -85,6 +85,7 @@ data:
         lens_make: ~
         lens_model: ~
         gps: ~
+        user_comment: ~
       model: PowerShot G1 X Mark III
       make: Canon
       lens: ~

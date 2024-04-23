@@ -46,7 +46,7 @@ data:
         exposure_time: 10/200
         fnumber: 560/100
         aperture_value: 500/100
-        brightness_value: ~
+        brightness_value: 240/100
         iso_speed_ratings: 400
         iso_speed: ~
         recommended_exposure_index: ~
@@ -83,6 +83,7 @@ data:
         lens_make: FUJIFILM
         lens_model: XF27mmF2.8
         gps: ~
+        user_comment: ~
       model: X-A3
       make: Fujifilm
       lens: ~

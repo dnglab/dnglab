@@ -48,7 +48,7 @@ data:
         exposure_time: 1/100
         fnumber: 56/10
         aperture_value: ~
-        brightness_value: ~
+        brightness_value: 437/100
         iso_speed_ratings: 500
         iso_speed: ~
         recommended_exposure_index: ~
@@ -85,6 +85,7 @@ data:
         lens_make: ~
         lens_model: ~
         gps: ~
+        user_comment: ~
       model: DSLR-A500
       make: Sony
       lens: ~

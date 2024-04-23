@@ -89,6 +89,7 @@ data:
         lens_make: Nikon
         lens_model: Nikkor Z 14-30mm f/4 S
         gps: ~
+        user_comment: ~
       model: Z 9
       make: Nikon
       lens:

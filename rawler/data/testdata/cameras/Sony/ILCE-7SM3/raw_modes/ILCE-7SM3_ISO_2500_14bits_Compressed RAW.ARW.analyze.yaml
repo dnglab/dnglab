@@ -42,7 +42,7 @@ data:
         exposure_time: 1/200
         fnumber: 71/10
         aperture_value: ~
-        brightness_value: ~
+        brightness_value: 12354/2560
         iso_speed_ratings: 2500
         iso_speed: ~
         recommended_exposure_index: 2500
@@ -79,6 +79,7 @@ data:
         lens_make: ~
         lens_model: ~
         gps: ~
+        user_comment: ~
       model: ILCE-7SM3
       make: Sony
       lens: ~

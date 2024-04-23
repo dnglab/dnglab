@@ -19,9 +19,9 @@ data:
       activeArea: ~
       blacklevels:
         levels:
-          - 2048/1
-          - 2048/1
-          - 2048/1
+          - 1024/1
+          - 1024/1
+          - 1024/1
         cpp: 3
         width: 1
         height: 1
@@ -43,7 +43,7 @@ data:
         exposure_time: 1/2000
         fnumber: 12/10
         aperture_value: ~
-        brightness_value: ~
+        brightness_value: 18634/2560
         iso_speed_ratings: 100
         iso_speed: ~
         recommended_exposure_index: 100
@@ -80,6 +80,7 @@ data:
         lens_make: ~
         lens_model: ~
         gps: ~
+        user_comment: ~
       model: ILCE-7RM5
       make: Sony
       lens: ~

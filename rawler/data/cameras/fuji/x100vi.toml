@@ -1,0 +1,10 @@
+make = "FUJIFILM"
+model = "X100VI"
+clean_make = "Fujifilm"
+clean_model = "X100VI"
+whitepoint = 16383
+active_area = [0, 12, 120, 12]
+
+[cameras.color_matrix]
+D65 = [1.1809, -0.5358, -0.1141, -0.4248, 1.2164, 0.2343, -0.0514, 0.1097, 0.5848]
+# TODO: A matrix

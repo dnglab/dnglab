@@ -52,7 +52,7 @@ data:
         exposure_time: 1/100
         fnumber: 63/10
         aperture_value: ~
-        brightness_value: ~
+        brightness_value: 20534/2560
         iso_speed_ratings: 100
         iso_speed: ~
         recommended_exposure_index: 100
@@ -89,6 +89,7 @@ data:
         lens_make: Sony
         lens_model: FE 24-70mm F4 ZA OSS
         gps: ~
+        user_comment: ~
       model: ILCE-7CM2
       make: Sony
       lens:

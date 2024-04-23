@@ -52,7 +52,7 @@ data:
         exposure_time: 1/6
         fnumber: 130/10
         aperture_value: ~
-        brightness_value: ~
+        brightness_value: 14444/2560
         iso_speed_ratings: 100
         iso_speed: ~
         recommended_exposure_index: 100
@@ -89,6 +89,7 @@ data:
         lens_make: Sony
         lens_model: FE 24-70mm F2.8 GM
         gps: ~
+        user_comment: ~
       model: ILCE-7RM2
       make: Sony
       lens:

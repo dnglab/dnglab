@@ -1,0 +1,94 @@
+---
+file:
+  fileSize: 38572544
+  fileName: DC-S5M2X_3x2_12bits_burst.RW2
+  digest: ee418db5612e3248d055b8600bc14153
+data:
+  metadata:
+    rawParams:
+      rawWidth: 6008
+      rawHeight: 4008
+      bitDepth: 16
+      cropArea:
+        p:
+          x: 4
+          y: 4
+        d:
+          w: 6000
+          h: 4000
+      activeArea:
+        p:
+          x: 4
+          y: 4
+        d:
+          w: 6000
+          h: 4000
+      blacklevels:
+        levels:
+          - 512/1
+          - 512/1
+          - 512/1
+          - 512/1
+        cpp: 1
+        width: 2
+        height: 2
+      whitelevels:
+        - 16383
+      wbCoeffs:
+        - 2.0117188
+        - 1.0
+        - 1.7382812
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ""
+        artist: ""
+        lens_spec: ~
+        exposure_time: 10/2000
+        fnumber: 90/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 100
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: 1
+        exposure_bias: 0/100
+        date_time_original: "2023:09:12 12:40:59"
+        create_date: "2023:09:12 12:40:59"
+        modify_date: ~
+        exposure_program: 1
+        timezone_offset: ~
+        offset_time: "-08:00"
+        offset_time_original: "-08:00"
+        offset_time_digitized: "-08:00"
+        sub_sec_time: "216"
+        sub_sec_time_original: "216"
+        sub_sec_time_digitized: "216"
+        shutter_speed_value: ~
+        max_aperture_value: 1364/256
+        subject_distance: ~
+        metering_mode: 5
+        light_source: 0
+        flash: 16
+        focal_length: 3860/10
+        image_number: ~
+        color_space: ~
+        flash_energy: ~
+        exposure_mode: 1
+        white_balance: ~
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: WJ3DA003705
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+        user_comment: ~
+      model: DC-S5M2X
+      make: Panasonic
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

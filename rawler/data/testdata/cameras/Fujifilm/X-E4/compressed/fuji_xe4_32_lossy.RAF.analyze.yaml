@@ -84,7 +84,7 @@ data:
         exposure_time: 10/3000
         fnumber: 560/100
         aperture_value: 500/100
-        brightness_value: ~
+        brightness_value: 799/100
         iso_speed_ratings: 160
         iso_speed: ~
         recommended_exposure_index: ~
@@ -121,6 +121,7 @@ data:
         lens_make: FUJIFILM
         lens_model: XF27mmF2.8 R WR
         gps: ~
+        user_comment: ~
       model: X-E4
       make: Fujifilm
       lens: ~

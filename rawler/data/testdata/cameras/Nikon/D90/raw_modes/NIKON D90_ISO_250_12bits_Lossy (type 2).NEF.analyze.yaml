@@ -86,6 +86,7 @@ data:
         lens_make: Tokina
         lens_model: AT-X 11-20 F2.8 PRO DX (AF 11-20mm f/2.8)
         gps: ~
+        user_comment: ~
       model: D90
       make: Nikon
       lens:

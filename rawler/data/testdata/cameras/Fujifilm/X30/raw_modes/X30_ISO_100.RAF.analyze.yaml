@@ -80,7 +80,7 @@ data:
         exposure_time: 10/8000
         fnumber: 560/100
         aperture_value: 500/100
-        brightness_value: ~
+        brightness_value: 880/100
         iso_speed_ratings: 100
         iso_speed: ~
         recommended_exposure_index: ~
@@ -117,6 +117,7 @@ data:
         lens_make: ~
         lens_model: ~
         gps: ~
+        user_comment: ~
       model: X30
       make: Fujifilm
       lens: ~

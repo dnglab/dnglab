@@ -112,6 +112,9 @@ pub enum TiffCommonTag {
   Cr2StripeWidths = 0xC640,
   ActiveArea = 0xC68D,
   MaskedAreas = 0xC68E,
+  TimeCodes = 0xC763,
+  FrameFrate = 0xC764,
+  TStop = 0xC772,
   RafRawSubIFD = 0xF000,
   RafImageWidth = 0xF001,
   RafImageLength = 0xF002,
@@ -615,11 +618,28 @@ pub enum DngTag {
   OriginalDefaultCropSize = 51091,
   NewRawImageDigest = 51111,
   RawToPreviewGain = 51112,
+  // 1.5.0
+  DepthFormat = 51177,
+  DepthNear = 51178,
+  DepthFar = 51179,
+  DepthUnits = 51180,
+  DepthMeasureType = 51181,
+  EnhanceParams = 51182,
+
   // 1.6.0
+  ProfileGainTableMap = 52525,
+  SemanticName = 52526,
+  SemanticInstanceID = 52528,
+  MaskSubArea = 52536,
+  RGBTables = 52543,
+
   CalibrationIlluminant3 = 52529,
   ColorMatrix3 = 52531,
   CameraCalibration3 = 52530,
   ReductionMatrix3 = 52538,
   ProfileHueSatMapData3 = 52537,
   ForwardMatrix3 = 52532,
+  IlluminantData1 = 52533,
+  IlluminantData2 = 52534,
+  IlluminantData3 = 52535,
 }

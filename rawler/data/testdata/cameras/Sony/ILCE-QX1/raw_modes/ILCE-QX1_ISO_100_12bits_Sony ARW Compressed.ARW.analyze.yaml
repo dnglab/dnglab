@@ -52,7 +52,7 @@ data:
         exposure_time: 1/80
         fnumber: 50/10
         aperture_value: ~
-        brightness_value: ~
+        brightness_value: 16554/2560
         iso_speed_ratings: 100
         iso_speed: ~
         recommended_exposure_index: 100
@@ -89,6 +89,7 @@ data:
         lens_make: Sony
         lens_model: E PZ 16-50mm F3.5-5.6 OSS
         gps: ~
+        user_comment: ~
       model: ILCE-QX1
       make: SONY
       lens:

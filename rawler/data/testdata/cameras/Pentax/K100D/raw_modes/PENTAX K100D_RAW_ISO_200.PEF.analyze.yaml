@@ -89,6 +89,7 @@ data:
         lens_make: Pentax
         lens_model: smc PENTAX-DA 70mm F2.4 Limited
         gps: ~
+        user_comment: ~
       model: K100D
       make: Pentax
       lens:

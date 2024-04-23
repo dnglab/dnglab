@@ -89,6 +89,7 @@ data:
         lens_make: Canon
         lens_model: EF 24-105mm f/3.5-5.6 IS STM
         gps: ~
+        user_comment: ~
       model: EOS Rebel SL2
       make: Canon
       lens:

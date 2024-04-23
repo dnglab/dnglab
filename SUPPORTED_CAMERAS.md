@@ -113,6 +113,7 @@
 |Canon                               | Canon EOS M6                            | ✅ Yes | all |  |
 |Canon                               | Canon EOS M6 Mark II                    | ✅ Yes | craw, raw |  |
 |Canon                               | Canon EOS R                             | ✅ Yes | craw, raw |  |
+|Canon                               | Canon EOS R10                           | ✅ Yes | craw, raw |  |
 |Canon                               | Canon EOS R3                            | ✅ Yes | craw, raw |  |
 |Canon                               | Canon EOS R5                            | ✅ Yes | craw, crm, raw | support for CRM raw movie frame extraction, support for CRM raw movie frame extraction, support for CRM raw movie frame extraction, support for CRM raw movie frame extraction |
 |Canon                               | Canon EOS R50                           | ✅ Yes | craw, raw |  |
@@ -255,6 +256,7 @@
 |FUJIFILM                            | GFX 100                                 | ✅ Yes | all |  |
 |FUJIFILM                            | GFX 50R                                 | ✅ Yes | all |  |
 |FUJIFILM                            | GFX 50S                                 | ✅ Yes | all |  |
+|FUJIFILM                            | GFX100 II                               | ✅ Yes | all |  |
 |FUJIFILM                            | GFX100S                                 | ✅ Yes | all |  |
 |FUJIFILM                            | GFX50S II                               | ✅ Yes | all |  |
 |FUJIFILM                            | X-A1                                    | ✅ Yes | all |  |
@@ -294,6 +296,7 @@
 |FUJIFILM                            | X100S                                   | ✅ Yes | all |  |
 |FUJIFILM                            | X100T                                   | ✅ Yes | all |  |
 |FUJIFILM                            | X100V                                   | ✅ Yes | all |  |
+|FUJIFILM                            | X100VI                                  | ✅ Yes | all |  |
 |FUJIFILM                            | X20                                     | ✅ Yes | all |  |
 |FUJIFILM                            | X30                                     | ✅ Yes | all |  |
 |FUJIFILM                            | X70                                     | ✅ Yes | all |  |
@@ -301,7 +304,9 @@
 |FUJIFILM                            | XF10                                    | ✅ Yes | all |  |
 |FUJIFILM                            | XQ1                                     | ✅ Yes | all |  |
 |FUJIFILM                            | XQ2                                     | ✅ Yes | all |  |
+|Hasselblad                          | CFV 100C/907X                           | ✅ Yes | all |  |
 |Hasselblad                          | Hasselblad 500 mech.                    | ✅ Yes | all |  |
+|Hasselblad                          | Hasselblad CFV 100C                     | ✅ Yes | all |  |
 |Hasselblad                          | Hasselblad CFV-50                       | ✅ Yes | all |  |
 |Hasselblad                          | Hasselblad H3D                          | ✅ Yes | all |  |
 |Hasselblad                          | Hasselblad H4D-40                       | ✅ Yes | all |  |
@@ -310,6 +315,7 @@
 |Hasselblad                          | Hasselblad H5D-50c                      | ✅ Yes | all |  |
 |Hasselblad                          | Hasselblad H6D-100cMS                   | ✅ Yes | all |  |
 |Hasselblad                          | Hasselblad X1D                          | ✅ Yes | all |  |
+|Hasselblad                          | Hasselblad X2D 100C                     | ✅ Yes | all |  |
 |Hasselblad                          | X1D II 50C                              | ✅ Yes | all |  |
 |Hasselblad                          | X2D 100C                                | ✅ Yes | all |  |
 |KODAK                               | DCS460D         FILE VERSION 3          | ✅ Yes | all |  |
@@ -427,6 +433,7 @@
 |NIKON CORPORATION                   | NIKON D850                              | ✅ Yes | 12bit, 14bit |  |
 |NIKON CORPORATION                   | NIKON D90                               | ✅ Yes | 12bit |  |
 |NIKON CORPORATION                   | NIKON Df                                | ✅ Yes | 12bit, 14bit |  |
+|NIKON CORPORATION                   | NIKON Z 30                              | ✅ Yes | 12bit, 14bit |  |
 |NIKON CORPORATION                   | NIKON Z 5                               | ✅ Yes | 12bit, 14bit |  |
 |NIKON CORPORATION                   | NIKON Z 50                              | ✅ Yes | 12bit, 14bit |  |
 |NIKON CORPORATION                   | NIKON Z 6                               | ✅ Yes | 12bit, 14bit |  |
@@ -492,6 +499,7 @@
 |OLYMPUS IMAGING CORP.               | SP500UZ                                 | ✅ Yes | all |  |
 |OLYMPUS IMAGING CORP.               | SP510UZ                                 | ✅ Yes | all |  |
 |OLYMPUS IMAGING CORP.               | SP565UZ                                 | ✅ Yes | all |  |
+|OLYMPUS IMAGING CORP.               | SP570UZ                                 | ✅ Yes | all |  |
 |OLYMPUS IMAGING CORP.               | STYLUS1                                 | ✅ Yes | all |  |
 |OLYMPUS IMAGING CORP.               | STYLUS1,1s                              | ✅ Yes | all |  |
 |OLYMPUS IMAGING CORP.               | XZ-1                                    | ✅ Yes | all |  |
@@ -501,6 +509,7 @@
 |OLYMPUS OPTICAL CO.,LTD             | E-10                                    | ✅ Yes | all |  |
 |OLYMPUS OPTICAL CO.,LTD             | E-20,E-20N,E-20P                        | ✅ Yes | all |  |
 |OM Digital Solutions                | OM-1                                    | ✅ Yes | highres |  |
+|OM Digital Solutions                | OM-1MarkII                              | ✅ Yes | highres |  |
 |OM Digital Solutions                | OM-5                                    | ✅ Yes | highres |  |
 |OM Digital Solutions                | TG-7                                    | ✅ Yes | all |  |
 |PENTAX                              | PENTAX 645D                             | ✅ Yes | all |  |
@@ -531,10 +540,12 @@
 |Panasonic                           | DC-G90                                  | ✅ Yes | 4:3 |  |
 |Panasonic                           | DC-G91                                  | ✅ Yes | 4:3 |  |
 |Panasonic                           | DC-G95                                  | ✅ Yes | 4:3 |  |
+|Panasonic                           | DC-G9M2                                 | ✅ Yes | 4:3 |  |
 |Panasonic                           | DC-GF10                                 | ✅ Yes | 16:9, 1:1, 3:2, 4:3 |  |
 |Panasonic                           | DC-GH5                                  | ✅ Yes | 4:3 |  |
 |Panasonic                           | DC-GH5M2                                | ✅ Yes | 4:3 |  |
 |Panasonic                           | DC-GH5S                                 | ✅ Yes | 16:9, 1:1, 3:2, 4:3 |  |
+|Panasonic                           | DC-GH6                                  | ✅ Yes | 16:9, 1:1, 3:2, 4:3 |  |
 |Panasonic                           | DC-GX7MK3                               | ✅ Yes | 16:9, 1:1, 3:2, 4:3 |  |
 |Panasonic                           | DC-GX800                                | ✅ Yes | 4:3 |  |
 |Panasonic                           | DC-GX850                                | ✅ Yes | 4:3 |  |
@@ -546,14 +557,18 @@
 |Panasonic                           | DC-S1R                                  | ✅ Yes | 3:2 |  |
 |Panasonic                           | DC-S5                                   | ✅ Yes | 3:2 |  |
 |Panasonic                           | DC-S5M2                                 | ✅ Yes | 3:2 |  |
+|Panasonic                           | DC-S5M2X                                | ✅ Yes | 3:2 |  |
 |Panasonic                           | DC-TZ200                                | ✅ Yes | 3:2 |  |
 |Panasonic                           | DC-TZ202                                | ✅ Yes | 3:2 |  |
 |Panasonic                           | DC-TZ90                                 | ✅ Yes | 4:3 |  |
 |Panasonic                           | DC-TZ91                                 | ✅ Yes | 4:3 |  |
 |Panasonic                           | DC-TZ95                                 | ✅ Yes | 4:3 |  |
+|Panasonic                           | DC-TZ95D                                | ✅ Yes | 4:3 |  |
 |Panasonic                           | DC-TZ96                                 | ✅ Yes | 4:3 |  |
 |Panasonic                           | DC-ZS200                                | ✅ Yes | 3:2 |  |
+|Panasonic                           | DC-ZS80                                 | ✅ Yes | 4:3 |  |
 |Panasonic                           | DMC-CM1                                 | ✅ Yes | 16:9, 1:1, 3:2, 4:3 |  |
+|Panasonic                           | DMC-FX150                               | ✅ Yes | 16:9, 3:2, 4:3 |  |
 |Panasonic                           | DMC-FZ100                               | ✅ Yes | 16:9, 1:1, 3:2, 4:3 |  |
 |Panasonic                           | DMC-FZ1000                              | ✅ Yes | 16:9, 1:1, 3:2, 4:3 |  |
 |Panasonic                           | DMC-FZ10002                             | ✅ Yes | 16:9, 1:1, 3:2, 4:3 |  |
@@ -639,6 +654,7 @@
 |Phase One A/S                       | IQ3 100MP                               | ✅ Yes | all |  |
 |Phase One A/S                       | IQ3 100MP Trichr                        | ✅ Yes | all |  |
 |Phase One A/S                       | P20+                                    | ✅ Yes | all |  |
+|Phase One A/S                       | P25+                                    | ✅ Yes | all |  |
 |Phase One A/S                       | P30                                     | ✅ Yes | all |  |
 |Phase One A/S                       | P65+                                    | ✅ Yes | all |  |
 |Phase One A/S                       | iXU180                                  | ✅ Yes | all |  |
@@ -647,6 +663,7 @@
 |RICOH IMAGING COMPANY, LTD.         | PENTAX K-1 Mark II                      | ✅ Yes | all |  |
 |RICOH IMAGING COMPANY, LTD.         | PENTAX K-3                              | ✅ Yes | all |  |
 |RICOH IMAGING COMPANY, LTD.         | PENTAX K-3 II                           | ✅ Yes | all |  |
+|RICOH IMAGING COMPANY, LTD.         | PENTAX K-3 Mark III                     | ✅ Yes | all |  |
 |RICOH IMAGING COMPANY, LTD.         | PENTAX K-3 Mark III Monochrome          | ✅ Yes | all |  |
 |RICOH IMAGING COMPANY, LTD.         | PENTAX K-70                             | ✅ Yes | all |  |
 |RICOH IMAGING COMPANY, LTD.         | PENTAX K-S1                             | ✅ Yes | all |  |
@@ -668,6 +685,7 @@
 |SAMSUNG                             | NX300                                   | ✅ Yes | all |  |
 |SAMSUNG                             | NX3000                                  | ✅ Yes | all |  |
 |SAMSUNG                             | NX300M                                  | ✅ Yes | all |  |
+|SAMSUNG                             | NX3300                                  | ✅ Yes | all |  |
 |SAMSUNG                             | NX500                                   | ✅ Yes | all |  |
 |SAMSUNG                             | WB2000                                  | ✅ Yes | all |  |
 |SEIKO EPSON CORP.                   | R-D1                                    | ✅ Yes | all |  |
@@ -746,6 +764,7 @@
 |SONY                                | ILCE-7SM3                               | ✅ Yes | all |  |
 |SONY                                | ILCE-9                                  | ✅ Yes | all |  |
 |SONY                                | ILCE-9M2                                | ✅ Yes | all |  |
+|SONY                                | ILCE-9M3                                | ✅ Yes | all |  |
 |SONY                                | ILCE-QX1                                | ✅ Yes | all |  |
 |SONY                                | ILME-FX3                                | ✅ Yes | all |  |
 |SONY                                | ILME-FX30                               | ✅ Yes | all |  |

@@ -89,6 +89,7 @@ data:
         lens_make: Tamron
         lens_model: Tamron XR DiII 18-200mm F3.5-6.3 (A14)
         gps: ~
+        user_comment: ~
       model: "*ist DL2"
       make: Pentax
       lens:

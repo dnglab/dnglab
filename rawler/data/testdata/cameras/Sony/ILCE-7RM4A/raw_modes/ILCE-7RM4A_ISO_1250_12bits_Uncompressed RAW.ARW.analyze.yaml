@@ -46,7 +46,7 @@ data:
         exposure_time: 13/10
         fnumber: 40/10
         aperture_value: ~
-        brightness_value: ~
+        brightness_value: "-13266/2560"
         iso_speed_ratings: 1250
         iso_speed: ~
         recommended_exposure_index: 1250
@@ -83,6 +83,7 @@ data:
         lens_make: Sony
         lens_model: FE 24-105mm F4 G OSS
         gps: ~
+        user_comment: ~
       model: ILCE-7RM4A
       make: Sony
       lens:

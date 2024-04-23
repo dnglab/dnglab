@@ -52,7 +52,7 @@ data:
         exposure_time: 10/1700
         fnumber: 400/100
         aperture_value: 400/100
-        brightness_value: ~
+        brightness_value: 626/100
         iso_speed_ratings: 100
         iso_speed: ~
         recommended_exposure_index: ~
@@ -89,6 +89,7 @@ data:
         lens_make: FUJIFILM
         lens_model: GF45mmF2.8 R WR
         gps: ~
+        user_comment: ~
       model: GFX 100S
       make: Fujifilm
       lens: ~

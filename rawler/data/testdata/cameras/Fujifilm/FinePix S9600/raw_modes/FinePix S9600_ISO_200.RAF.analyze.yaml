@@ -33,7 +33,7 @@ data:
         exposure_time: 10/2100
         fnumber: 380/100
         aperture_value: 390/100
-        brightness_value: ~
+        brightness_value: 588/100
         iso_speed_ratings: 200
         iso_speed: ~
         recommended_exposure_index: ~
@@ -70,6 +70,7 @@ data:
         lens_make: ~
         lens_model: ~
         gps: ~
+        user_comment: ~
       model: FinePix S9600
       make: Fujifilm
       lens: ~

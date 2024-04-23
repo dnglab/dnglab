@@ -89,6 +89,7 @@ data:
         lens_make: Olympus
         lens_model: Zuiko Digital 35mm F3.5 Macro
         gps: ~
+        user_comment: ~
       model: E-410
       make: Olympus
       lens:

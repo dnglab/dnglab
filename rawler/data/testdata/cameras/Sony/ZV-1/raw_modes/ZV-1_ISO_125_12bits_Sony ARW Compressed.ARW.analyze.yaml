@@ -48,7 +48,7 @@ data:
         exposure_time: 1/80
         fnumber: 40/10
         aperture_value: ~
-        brightness_value: ~
+        brightness_value: 15644/2560
         iso_speed_ratings: 125
         iso_speed: ~
         recommended_exposure_index: 125
@@ -85,6 +85,7 @@ data:
         lens_make: ~
         lens_model: ~
         gps: ~
+        user_comment: ~
       model: ZV-1
       make: SONY
       lens: ~

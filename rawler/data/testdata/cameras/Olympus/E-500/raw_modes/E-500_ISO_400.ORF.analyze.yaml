@@ -82,6 +82,7 @@ data:
         lens_make: ~
         lens_model: ~
         gps: ~
+        user_comment: ~
       model: E-500
       make: Olympus
       lens: ~
