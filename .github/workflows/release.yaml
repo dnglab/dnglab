@@ -30,7 +30,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-20.04, windows-latest]
+        os: [ubuntu-20.04, windows-latest, macos-latest]
         include:
         - os: ubuntu-20.04
           install-deps: |
@@ -50,6 +50,11 @@ jobs:
         - os: windows-latest
           build-cmd: cargo build --release
           pkg-cmd: cd target/release/ && 7z a dnglab-win-x64_${GITHUB_REF#refs/*/}.zip dnglab.exe
+          package-files: target/release/dnglab*.zip
+
+        - os: macos-latest
+          build-cmd: cargo build --release
+          pkg-cmd: cd target/release/ && 7z a dnglab-macos-arm64_${GITHUB_REF#refs/*/}.zip dnglab
           package-files: target/release/dnglab*.zip
 
     steps:
