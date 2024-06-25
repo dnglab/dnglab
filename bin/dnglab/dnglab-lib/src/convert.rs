@@ -116,7 +116,13 @@ fn generate_job(entry: &FileMap, options: &ArgMatches) -> Result<Vec<Raw2DngJob>
       apply_scaling: false,
     };
 
+    let input = PathBuf::from(&entry.src);
     let mut output = PathBuf::from(&entry.dest);
+
+    // If output is a directry
+    if input.is_file() && output.exists() && output.is_dir() {
+      output.push(entry.src.file_name().unwrap());
+    }
 
     let has_dng_ext = if let Some(ext) = output.extension() {
       ext.eq_ignore_ascii_case("dng")
@@ -148,7 +154,7 @@ fn generate_job(entry: &FileMap, options: &ArgMatches) -> Result<Vec<Raw2DngJob>
     }
 
     jobs.push(Raw2DngJob {
-      input: PathBuf::from(&entry.src),
+      input,
       output,
       replace: options.get_flag("override"),
       params,
