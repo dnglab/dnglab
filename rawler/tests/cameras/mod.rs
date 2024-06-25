@@ -1969,6 +1969,10 @@ mod camera_dc_g9_raw_modes {
   super::camera_file_check!("Panasonic", "DC-G9", cam_dc_g9_iso_200_5fmt_80mp_hires_rw2, "raw_modes/DC-G9_ISO_200_5fmt_80mp_hires.RW2");
   super::camera_file_check!("Panasonic", "DC-G9", cam_dc_g9_iso_200_4fmt_3x2_rw2, "raw_modes/DC-G9_ISO_200_4fmt_3x2.RW2");
 }
+mod camera_dc_g9m2_raw_modes {
+  super::camera_file_check!("Panasonic", "DC-G9M2", cam_dc_g9m2_iso_100_8fmt_5776x4336_rw2, "raw_modes/DC-G9M2_ISO_100_8fmt_5776x4336.RW2");
+  super::camera_file_check!("Panasonic", "DC-G9M2", cam_dc_g9m2_iso_100_8fmt_11552x8672_rw2, "raw_modes/DC-G9M2_ISO_100_8fmt_11552x8672.RW2");
+}
 mod camera_dc_gf10_raw_modes {
   super::camera_file_check!("Panasonic", "DC-GF10", cam_dc_gf10_iso_200_panasonic_raw_1_4592x3448_rw2, "raw_modes/DC-GF10_ISO_200_Panasonic RAW 1_4592x3448.RW2");
   super::camera_file_check!("Panasonic", "DC-GF10", cam_p1010137_rw2, "raw_modes/P1010137.RW2");
