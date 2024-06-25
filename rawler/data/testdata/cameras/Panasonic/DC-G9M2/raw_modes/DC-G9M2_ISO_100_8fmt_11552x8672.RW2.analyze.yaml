@@ -1,0 +1,94 @@
+---
+file:
+  fileSize: 146310656
+  fileName: DC-G9M2_ISO_100_8fmt_11552x8672.RW2
+  digest: 53102e5088edfe0a78453506918806c8
+data:
+  metadata:
+    rawParams:
+      rawWidth: 11560
+      rawHeight: 8680
+      bitDepth: 16
+      cropArea:
+        p:
+          x: 4
+          y: 4
+        d:
+          w: 11552
+          h: 8672
+      activeArea:
+        p:
+          x: 4
+          y: 4
+        d:
+          w: 11552
+          h: 8672
+      blacklevels:
+        levels:
+          - 2048/1
+          - 2048/1
+          - 2048/1
+          - 2048/1
+        cpp: 1
+        width: 2
+        height: 2
+      whitelevels:
+        - 65535
+      wbCoeffs:
+        - 2.65625
+        - 1.0
+        - 1.421875
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ""
+        artist: ""
+        lens_spec: ~
+        exposure_time: 10/4000
+        fnumber: 56/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 100
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: 1
+        exposure_bias: 0/100
+        date_time_original: "2023:11:17 13:47:24"
+        create_date: "2023:11:17 13:47:24"
+        modify_date: ~
+        exposure_program: 3
+        timezone_offset: ~
+        offset_time: "-05:00"
+        offset_time_original: "-05:00"
+        offset_time_digitized: "-05:00"
+        sub_sec_time: "418"
+        sub_sec_time_original: "418"
+        sub_sec_time_digitized: "418"
+        shutter_speed_value: ~
+        max_aperture_value: 768/256
+        subject_distance: ~
+        metering_mode: 5
+        light_source: 0
+        flash: 16
+        focal_length: 260/10
+        image_number: ~
+        color_space: ~
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: ~
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: WE3JA003849
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+        user_comment: ~
+      model: DC-G9 II
+      make: Panasonic
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+
