@@ -2859,6 +2859,11 @@ mod camera_x_t5_raw_modes {
   super::camera_file_check!("Fujifilm", "X-T5", cam_x_t5_iso_125_bitdepth_14_lossless_raf, "raw_modes/X-T5_ISO_125_Bitdepth_14_lossless.RAF");
   super::camera_file_check!("Fujifilm", "X-T5", cam_x_t5_iso_125_bitdepth_14_uncompressed_raf, "raw_modes/X-T5_ISO_125_Bitdepth_14_uncompressed.RAF");
 }
+mod camera_x_t50_raw_modes {
+  super::camera_file_check!("Fujifilm", "X-T50", cam_xt50_14bit_uncompressed_raf, "raw_modes/XT50_14bit_uncompressed.RAF");
+  super::camera_file_check!("Fujifilm", "X-T50", cam_xt50_14bit_lossless_raf, "raw_modes/XT50_14bit_lossless.RAF");
+  super::camera_file_check!("Fujifilm", "X-T50", cam_xt50_14bit_lossy_raf, "raw_modes/XT50_14bit_lossy.RAF");
+}
 mod camera_om_1_raw_modes {
   super::camera_file_check!("OM", "OM-1", cam_om_1_iso_200_16bits_normal_orf, "raw_modes/OM-1_ISO_200_16bits_normal.ORF");
   super::camera_file_check!("OM", "OM-1", cam_om_1_iso_200_16bits_handheld_hires_orf, "raw_modes/OM-1_ISO_200_16bits_handheld_hires.ORF");
