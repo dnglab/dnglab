@@ -60,7 +60,7 @@ impl<'w, B> SubFrameWriter<'w, B>
 where
   B: Write + Seek,
 {
-  pub fn new(writer: &'w mut DngWriter<B>, subtype: u16, use_root: bool) -> Self {
+  pub fn new(writer: &'w mut DngWriter<B>, subtype: u32, use_root: bool) -> Self {
     let ifd = if use_root {
       writer.root_ifd_mut().add_tag(TiffCommonTag::NewSubFileType, subtype);
       None
@@ -322,7 +322,7 @@ where
     self.ifd_mut().add_tag(TiffCommonTag::ImageWidth, Value::long(preview_img.width()));
     self.ifd_mut().add_tag(TiffCommonTag::ImageLength, Value::long(preview_img.height()));
     self.ifd_mut().add_tag(TiffCommonTag::Compression, CompressionMethod::ModernJPEG);
-    self.ifd_mut().add_tag(TiffCommonTag::BitsPerSample, 8_u16);
+    self.ifd_mut().add_tag(TiffCommonTag::BitsPerSample, [8_u16, 8, 8]);
     self.ifd_mut().add_tag(TiffCommonTag::SampleFormat, [1_u16, 1, 1]);
     self.ifd_mut().add_tag(TiffCommonTag::PhotometricInt, PhotometricInterpretation::YCbCr);
     self.ifd_mut().add_tag(TiffCommonTag::RowsPerStrip, Value::long(preview_img.height()));
@@ -453,22 +453,22 @@ where
     Ok(())
   }
 
-  pub fn subframe(&mut self, id: u16) -> SubFrameWriter<B> {
+  pub fn subframe(&mut self, id: u32) -> SubFrameWriter<B> {
     SubFrameWriter::new(self, id, false)
   }
 
-  pub fn subframe_on_root(&mut self, id: u16) -> SubFrameWriter<B> {
+  pub fn subframe_on_root(&mut self, id: u32) -> SubFrameWriter<B> {
     SubFrameWriter::new(self, id, true)
   }
 
   /// Write thumbnail image into DNG
   pub fn thumbnail(&mut self, img: &DynamicImage) -> Result<()> {
     let thumb_img = img.resize(240, 120, FilterType::Nearest).to_rgb8();
-    self.root_ifd.add_tag(TiffCommonTag::NewSubFileType, 1_u16);
+    self.root_ifd.add_tag(TiffCommonTag::NewSubFileType, 1_u32);
     self.root_ifd.add_tag(TiffCommonTag::ImageWidth, thumb_img.width() as u32);
     self.root_ifd.add_tag(TiffCommonTag::ImageLength, thumb_img.height() as u32);
     self.root_ifd.add_tag(TiffCommonTag::Compression, CompressionMethod::None);
-    self.root_ifd.add_tag(TiffCommonTag::BitsPerSample, 8_u16);
+    self.root_ifd.add_tag(TiffCommonTag::BitsPerSample, [8_u16, 8, 8]);
     self.root_ifd.add_tag(TiffCommonTag::SampleFormat, [1_u16, 1, 1]);
     self.root_ifd.add_tag(TiffCommonTag::PhotometricInt, PhotometricInterpretation::RGB);
     self.root_ifd.add_tag(TiffCommonTag::SamplesPerPixel, 3_u16);
