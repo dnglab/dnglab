@@ -111,7 +111,7 @@ impl<'a> Decoder for DngDecoder<'a> {
   }
 
   fn thumbnail_image(&self, file: &mut RawFile) -> Result<Option<DynamicImage>> {
-    if let Some(thumb_ifd) = Some(self.tiff.root_ifd()).filter(|ifd| ifd.get_entry(TiffCommonTag::NewSubFileType).map(|entry| entry.force_u16(0)) == Some(1)) {
+    if let Some(thumb_ifd) = Some(self.tiff.root_ifd()).filter(|ifd| ifd.get_entry(TiffCommonTag::NewSubFileType).map(|entry| entry.force_u32(0)) == Some(1)) {
       let buf = thumb_ifd
         .strip_data(file.inner())
         .map_err(|e| RawlerError::DecoderFailed(format!("Failed to get strip data: {}", e)))?
@@ -137,7 +137,7 @@ impl<'a> Decoder for DngDecoder<'a> {
     if let Some(sub_ifds) = self.tiff.root_ifd().get_sub_ifds(TiffCommonTag::SubIFDs) {
       let first_ifd = sub_ifds
         .iter()
-        .find(|ifd| ifd.get_entry(TiffCommonTag::NewSubFileType).map(|entry| entry.force_u16(0)) == Some(1));
+        .find(|ifd| ifd.get_entry(TiffCommonTag::NewSubFileType).map(|entry| entry.force_u32(0)) == Some(1));
       if let Some(preview_ifd) = first_ifd {
         let buf = preview_ifd
           .strip_data(file.inner())
