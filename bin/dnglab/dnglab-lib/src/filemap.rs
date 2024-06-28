@@ -84,6 +84,7 @@ impl MapMode {
       return Err(AppError::NotFound(input.to_owned()));
     }
     let input_md = input.metadata()?;
+
     if input_md.is_file() {
       Ok(MapMode::File(FileMap::new(&input.canonicalize()?, output)))
     } else if input_md.is_dir() {

@@ -582,7 +582,7 @@ dependencies = [
 
 [[package]]
 name = "dnglab"
-version = "0.6.1"
+version = "0.6.2"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -611,7 +611,7 @@ dependencies = [
 
 [[package]]
 name = "dnglab_lib"
-version = "0.6.0"
+version = "0.6.2"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -1752,7 +1752,7 @@ dependencies = [
 
 [[package]]
 name = "rawler"
-version = "0.6.1"
+version = "0.6.2"
 dependencies = [
  "async-trait",
  "backtrace",
