@@ -1,0 +1,151 @@
+---
+file:
+  fileSize: 50323034
+  fileName: Canon EOS R5 C_RAW_ISO_800_nocrop_nodual_ES.CR3
+  digest: 8fbfd2ecb72fd678c121a1b409300b78
+data:
+  metadata:
+    rawParams:
+      rawWidth: 8352
+      rawHeight: 5586
+      bitDepth: 16
+      cropArea:
+        p:
+          x: 144
+          y: 112
+        d:
+          w: 8192
+          h: 5464
+      activeArea:
+        p:
+          x: 132
+          y: 100
+        d:
+          w: 8214
+          h: 5478
+      blacklevels:
+        levels:
+          - 2047/1
+          - 2046/1
+          - 2047/1
+          - 2047/1
+        cpp: 1
+        width: 2
+        height: 2
+      whitelevels:
+        - 14888
+      wbCoeffs:
+        - 2.4033203
+        - 1.0
+        - 1.7148438
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: CC-0
+        artist: CC-0
+        lens_spec:
+          - 24/1
+          - 70/1
+          - 28/10
+          - 28/10
+        exposure_time: 1/640
+        fnumber: 28/10
+        aperture_value: 196608/65536
+        brightness_value: ~
+        iso_speed_ratings: 800
+        iso_speed: ~
+        recommended_exposure_index: 800
+        sensitivity_type: 2
+        exposure_bias: 0/1
+        date_time_original: "2024:07:12 15:33:53"
+        create_date: "2024:07:12 15:33:53"
+        modify_date: "2024:07:12 15:33:53"
+        exposure_program: 1
+        timezone_offset: ~
+        offset_time: "+08:00"
+        offset_time_original: "+08:00"
+        offset_time_digitized: "+08:00"
+        sub_sec_time: "43"
+        sub_sec_time_original: "43"
+        sub_sec_time_digitized: "43"
+        shutter_speed_value: 614400/65536
+        max_aperture_value: ~
+        subject_distance: ~
+        metering_mode: 5
+        light_source: ~
+        flash: 0
+        focal_length: 41/1
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 1
+        white_balance: 1
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ""
+        serial_number: "655439100379"
+        lens_serial_number: "1360001929"
+        lens_make: Canon
+        lens_model: EF 24-70mm f/2.8L II USM
+        gps:
+          gps_version_id:
+            - 2
+            - 3
+            - 0
+            - 0
+          gps_latitude_ref: ~
+          gps_latitude: ~
+          gps_longitude_ref: ~
+          gps_longitude: ~
+          gps_altitude_ref: ~
+          gps_altitude: ~
+          gps_timestamp: ~
+          gps_satellites: ~
+          gps_status: ~
+          gps_measure_mode: ~
+          gps_dop: ~
+          gps_speed_ref: ~
+          gps_speed: ~
+          gps_track_ref: ~
+          gps_track: ~
+          gps_img_direction_ref: ~
+          gps_img_direction: ~
+          gps_map_datum: ~
+          gps_dest_latitude_ref: ~
+          gps_dest_latitude: ~
+          gps_dest_longitude_ref: ~
+          gps_dest_longitude: ~
+          gps_dest_bearing_ref: ~
+          gps_dest_bearing: ~
+          gps_dest_distance_ref: ~
+          gps_dest_distance: ~
+          gps_processing_method: ~
+          gps_area_information: ~
+          gps_date_stamp: ~
+          gps_differential: ~
+          gps_h_positioning_error: ~
+        user_comment: ~
+      model: EOS R5 C
+      make: Canon
+      lens:
+        identifiers:
+          name: EF24-70mm f/2.8L II USM
+          id:
+            - 495
+            - 0
+          nikon_id: ~
+          olympus_id: ~
+        mount: ef-mount
+        lens_make: Canon
+        lens_model: EF 24-70mm f/2.8L II USM
+        focal_range:
+          - 24/1
+          - 70/1
+        aperture_range:
+          - 28/10
+          - 28/10
+        lens_name: Canon EF 24-70mm f/2.8L II USM
+      unique_image_id: 179187789339452670855878061280107691623
+      rating: ~
+
