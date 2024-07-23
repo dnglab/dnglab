@@ -33,36 +33,36 @@ pub async fn analyze(options: &ArgMatches) -> crate::Result<()> {
   debug!("Infile: {:?}", in_file);
 
   if options.get_flag("meta") {
-    let analyze = analyze_metadata(PathBuf::from(in_file)).unwrap();
+    let analyze = analyze_metadata(PathBuf::from(in_file))?;
     print_output(&analyze, options)?;
   } else if options.get_flag("structure") {
-    let analyze = analyze_file_structure(PathBuf::from(in_file)).unwrap();
+    let analyze = analyze_file_structure(PathBuf::from(in_file))?;
     print_output(&analyze, options)?;
   } else if options.get_flag("raw_checksum") {
-    let digest = raw_pixels_digest(PathBuf::from(in_file), RawDecodeParams::default()).unwrap();
+    let digest = raw_pixels_digest(PathBuf::from(in_file), RawDecodeParams::default())?;
     println!("{}", hex::encode(digest));
   } else if options.get_flag("raw_pixel") {
-    let (width, height, cpp, buf) = extract_raw_pixels(PathBuf::from(in_file), RawDecodeParams::default()).unwrap();
+    let (width, height, cpp, buf) = extract_raw_pixels(PathBuf::from(in_file), RawDecodeParams::default())?;
     if cpp == 3 {
       dump_ppm16(width, height, &buf)?;
     } else {
       dump_pgm(width, height, &buf)?;
     }
   } else if options.get_flag("preview_pixel") {
-    let preview = extract_preview_pixels(PathBuf::from(in_file), RawDecodeParams::default()).unwrap();
+    let preview = extract_preview_pixels(PathBuf::from(in_file), RawDecodeParams::default())?;
     let rgb = preview.into_rgb8();
     dump_rgb8_ppm8(rgb.width() as usize, rgb.height() as usize, rgb.as_flat_samples().samples)?;
   } else if options.get_flag("thumbnail_pixel") {
-    let thumbnail = extract_thumbnail_pixels(PathBuf::from(in_file), RawDecodeParams::default()).unwrap();
+    let thumbnail = extract_thumbnail_pixels(PathBuf::from(in_file), RawDecodeParams::default())?;
     let rgb = thumbnail.into_rgb8();
     dump_rgb8_ppm8(rgb.width() as usize, rgb.height() as usize, rgb.as_flat_samples().samples)?;
   } else if options.get_flag("full_pixel") {
-    let full = extract_full_pixels(PathBuf::from(in_file), RawDecodeParams::default()).unwrap();
+    let full = extract_full_pixels(PathBuf::from(in_file), RawDecodeParams::default())?;
     let rgb = full.into_rgb8();
     dump_rgb8_ppm8(rgb.width() as usize, rgb.height() as usize, rgb.as_flat_samples().samples)?;
   } else if options.get_flag("srgb") {
     // TODO: only RGB output is supported
-    let image = raw_to_srgb(PathBuf::from(in_file), RawDecodeParams::default()).unwrap();
+    let image = raw_to_srgb(PathBuf::from(in_file), RawDecodeParams::default())?;
     dump_ppm16(image.width() as usize, image.height() as usize, image.as_flat_samples_u16().unwrap().samples)?;
   }
   Ok(())

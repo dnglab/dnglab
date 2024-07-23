@@ -182,8 +182,12 @@ impl FileBox {
           }
         }
       }
-
-      current = file.stream_position()?;
+      if file.stream_position()? != current {
+        current = file.stream_position()?;
+      } else {
+        // If parsing has not moved cursor, we probably have a corrupt file or it's not a BMFF at all.
+        return Err(BmffError::Parse("Unable to find valid BMFF box, corrupt file?".into()));
+      }
     }
 
     Ok(Self {
