@@ -290,12 +290,34 @@ impl<'a> ByteStream<'a> {
   }
 
   #[inline(always)]
+  pub fn peek_i8(&self) -> i8 {
+    self.buffer[self.pos] as i8
+  }
+  #[inline(always)]
+  pub fn get_i8(&mut self) -> i8 {
+    let val = self.peek_i8();
+    self.pos += 1;
+    val
+  }
+
+  #[inline(always)]
   pub fn peek_u16(&self) -> u16 {
     self.endian.read_u16(self.buffer, self.pos)
   }
   #[inline(always)]
   pub fn get_u16(&mut self) -> u16 {
     let val = self.peek_u16();
+    self.pos += 2;
+    val
+  }
+
+  #[inline(always)]
+  pub fn peek_i16(&self) -> i16 {
+    self.endian.read_i16(self.buffer, self.pos)
+  }
+  #[inline(always)]
+  pub fn get_i16(&mut self) -> i16 {
+    let val = self.peek_i16();
     self.pos += 2;
     val
   }

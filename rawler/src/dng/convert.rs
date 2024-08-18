@@ -184,7 +184,7 @@ where
     }
   }
 
-  if let Some(xpacket) = decoder.xpacket(&mut rawfile, RawDecodeParams::default())? {
+  if let Some(xpacket) = decoder.xpacket(&mut rawfile, raw_params.clone())? {
     dng.xpacket(&xpacket)?;
   }
 
