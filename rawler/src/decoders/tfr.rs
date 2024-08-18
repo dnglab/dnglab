@@ -137,7 +137,7 @@ impl<'a> Decoder for TfrDecoder<'a> {
 impl<'a> TfrDecoder<'a> {
   /// Get lens description by analyzing TIFF tags and makernotes
   fn get_lens_description(&self) -> Result<Option<&'static LensDescription>> {
-    if let Some(exif) = self.tiff.root_ifd().get_sub_ifds(TiffCommonTag::ExifIFDPointer).and_then(|list| list.get(0)) {
+    if let Some(exif) = self.tiff.root_ifd().get_sub_ifd(TiffCommonTag::ExifIFDPointer) {
       let lens_make = exif.get_entry(ExifTag::LensMake).and_then(|entry| entry.as_string());
       let lens_model = exif.get_entry(ExifTag::LensModel).and_then(|entry| entry.as_string());
       let focal_len = match exif.get_entry(ExifTag::FocalLength) {

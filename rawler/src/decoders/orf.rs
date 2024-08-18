@@ -355,7 +355,7 @@ impl<'a> OrfDecoder<'a> {
 
   /// Get lens description by analyzing TIFF tags and makernotes
   fn get_lens_description(&self) -> Result<Option<&'static LensDescription>> {
-    if let Some(ifd) = self.makernote.get_sub_ifds(OrfMakernotes::EquipmentIFD).and_then(|v| v.get(0)) {
+    if let Some(ifd) = self.makernote.get_sub_ifd(OrfMakernotes::EquipmentIFD) {
       match ifd.get_entry(OrfEquipmentTags::LensType) {
         Some(Entry {
           value: Value::Byte(settings), ..

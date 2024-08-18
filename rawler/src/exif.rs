@@ -103,11 +103,12 @@ impl Exif {
   pub fn new(root_or_exif: &IFD) -> Result<Self> {
     let mut ins = Self::default();
     ins.extend_from_ifd(root_or_exif)?;
-    if let Some((_, exif_ifd)) = root_or_exif.sub_ifds().iter().find(|(tag, _)| **tag == ExifTag::ExifOffset as u16) {
-      ins.extend_from_ifd(&exif_ifd[0])?;
+    if let Some(exif_ifd) = root_or_exif.get_sub_ifd(ExifTag::ExifOffset) {
+      ins.extend_from_ifd(exif_ifd)?;
     }
-    if let Some((_, gps_ifd)) = root_or_exif.sub_ifds().iter().find(|(tag, _)| **tag == ExifTag::GPSInfo as u16) {
-      ins.extend_from_gps_ifd(&gps_ifd[0])?;
+    // Search for GPSInfo tag, usually it is located in IFD0
+    if let Some(gpsinfo_ifd) = root_or_exif.get_sub_ifd(ExifTag::GPSInfo) {
+      ins.extend_from_gps_ifd(gpsinfo_ifd)?;
     }
     Ok(ins)
   }
@@ -215,7 +216,7 @@ impl Exif {
             (ExifGpsTag::GPSDifferential, Value::Short(data)) => gps.gps_differential = data.get(0).cloned(),
             (ExifGpsTag::GPSHPositioningError, Value::Rational(data)) => gps.gps_h_positioning_error = data.get(0).cloned(),
             (tag, _value) => {
-              log::debug!("Ignoring EXIF tag: {:?}", tag);
+              log::debug!("Ignoring EXIF GPS tag: {:?}", tag);
             }
           }
         }

@@ -88,7 +88,52 @@ data:
         lens_serial_number: ~
         lens_make: Sony
         lens_model: FE 24-70mm F4 ZA OSS
-        gps: ~
+        gps:
+          gps_version_id:
+            - 2
+            - 3
+            - 0
+            - 0
+          gps_latitude_ref: N
+          gps_latitude:
+            - 47/1
+            - 21/1
+            - 35669/1000
+          gps_longitude_ref: E
+          gps_longitude:
+            - 8/1
+            - 28/1
+            - 38978/1000
+          gps_altitude_ref: ~
+          gps_altitude: ~
+          gps_timestamp:
+            - 16/1
+            - 20/1
+            - 25000/1000
+          gps_satellites: ~
+          gps_status: A
+          gps_measure_mode: "2"
+          gps_dop: ~
+          gps_speed_ref: ~
+          gps_speed: ~
+          gps_track_ref: ~
+          gps_track: ~
+          gps_img_direction_ref: ~
+          gps_img_direction: ~
+          gps_map_datum: WGS-84
+          gps_dest_latitude_ref: ~
+          gps_dest_latitude: ~
+          gps_dest_longitude_ref: ~
+          gps_dest_longitude: ~
+          gps_dest_bearing_ref: ~
+          gps_dest_bearing: ~
+          gps_dest_distance_ref: ~
+          gps_dest_distance: ~
+          gps_processing_method: ~
+          gps_area_information: ~
+          gps_date_stamp: "2023:10:02"
+          gps_differential: 0
+          gps_h_positioning_error: ~
         user_comment: ~
       model: ILCE-7CM2
       make: Sony
