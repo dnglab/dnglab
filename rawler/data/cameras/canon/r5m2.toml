@@ -1,0 +1,19 @@
+make = "Canon"
+model = "Canon EOS R5m2"
+clean_make = "Canon"
+clean_model = "EOS R5 II"
+color_pattern = "RGGB"
+remark = "support for CRM raw movie frame extraction"
+
+[cameras.color_matrix]
+A = [1.1261, -0.5701, 0.0384, -0.3524, 1.0833, 0.311, -0.0024, 0.0612, 0.7273]
+D65 = [0.9396, -0.2598, -0.1207, -0.4408, 1.2296, 0.2369, -0.0505, 0.1575, 0.6077]
+
+[[cameras.modes]]
+mode = "raw"
+
+[[cameras.modes]]
+mode = "craw"
+
+[[cameras.modes]]
+mode = "crm"
