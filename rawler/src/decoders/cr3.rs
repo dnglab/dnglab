@@ -138,15 +138,38 @@ impl<'a> Cr3Decoder<'a> {
   /// Read CTMD records for given sample
   /// Each sample (for movie files) have their own CTMD records
   fn read_ctmd(&self, rawfile: &mut RawFile, sample_idx: u32) -> Result<Option<Ctmd>> {
-    let ctmd_trak = &self.bmff.filebox.moov.traks[3];
-    let (offset, size) = ctmd_trak.mdia.minf.stbl.get_sample_offset(sample_idx as u32 + 1).unwrap();
-    debug!("CR3 CTMD mdat offset for sample_idx {}: {}, len: {}", sample_idx, offset, size);
-    let buf = rawfile
-      .subview(offset as u64, size as u64)
-      .map_err(|e| RawlerError::with_io_error("CR3: failed to read CTMD", &rawfile.path, e))?;
-    let mut substream = ByteStream::new(&buf, Endian::Little);
-    let ctmd = Ctmd::new(&mut substream);
-    Ok(Some(ctmd))
+    // Search for a trak which has a CTMD box (there should be only one)
+    if let Some(ctmd_trak_index) = self
+      .bmff
+      .filebox
+      .moov
+      .traks
+      .iter()
+      .enumerate()
+      .find(|(_, trak)| trak.mdia.minf.stbl.stsd.ctmd.is_some())
+      .map(|(id, _)| id)
+    {
+      log::debug!("CTMD trak_index: {}", ctmd_trak_index);
+      let ctmd_trak = &self.bmff.filebox.moov.traks[ctmd_trak_index];
+      let (offset, size) = ctmd_trak
+        .mdia
+        .minf
+        .stbl
+        .get_sample_offset(sample_idx as u32 + 1)
+        .ok_or_else(|| RawlerError::DecoderFailed(format!("CTMD sample index {} out of bound", sample_idx)))?;
+      debug!("CR3 CTMD mdat offset for sample_idx {}: {}, len: {}", sample_idx, offset, size);
+      let buf = rawfile
+        .subview(offset as u64, size as u64)
+        .map_err(|e| RawlerError::with_io_error("CR3: failed to read CTMD", &rawfile.path, e))?;
+
+      //dump_buf("/tmp/ctmd.buf", &buf);
+      let mut substream = ByteStream::new(&buf, Endian::Little);
+      let ctmd = Ctmd::new(&mut substream);
+      Ok(Some(ctmd))
+    } else {
+      log::warn!("No CTMD trak found");
+      Ok(None)
+    }
   }
 }
 
@@ -238,6 +261,13 @@ impl<'a> Decoder for Cr3Decoder<'a> {
     }
 
     let cr3md = self.read_cr3_metadata(file, &params)?;
+
+    if let Some(cr3desc) = &self.bmff.filebox.moov.cr3desc {
+      for item in cr3desc.cctp.ccdts.iter() {
+        log::debug!("CCDT: trak {} type {} dual {}", item.trak_index, item.image_type, item.dual_pixel);
+      }
+    }
+
     let raw_trak_id = rawler_crx_raw_trak()
       .or_else(|| self.get_trak_index(Cr3ImageType::CrxBix))
       .ok_or("Unable to find trak index")?;
@@ -532,8 +562,10 @@ struct CtmdRecord {
   pub rec_type: u16,
   pub reserved1: u8,
   pub reserved2: u8,
-  pub reserved3: u16,
-  pub reserved4: u16,
+  pub reserved3: u8,
+  pub reserved4: u8,
+  pub reserved5: i8,
+  pub reserved6: i8,
   pub payload: Vec<u8>,
   pub blocks: HashMap<u16, Vec<u8>>,
 }
@@ -542,38 +574,53 @@ impl Ctmd {
   pub fn new(data: &mut ByteStream) -> Self {
     let mut records = HashMap::new();
 
-    while data.remaining_bytes() > 0 {
+    while data.remaining_bytes() >= 12 {
       let size = data.get_u32();
       let mut rec = CtmdRecord {
         rec_size: size,
         rec_type: data.get_u16(),
         reserved1: data.get_u8(),
         reserved2: data.get_u8(),
-        reserved3: data.get_u16(),
-        reserved4: data.get_u16(),
+        reserved3: data.get_u8(),
+        reserved4: data.get_u8(),
+        reserved5: data.get_i8(),
+        reserved6: data.get_i8(),
         payload: data.get_bytes(size as usize - 12),
         blocks: HashMap::new(),
       };
       debug!(
-        "CTMD Rec {}:  {}, {}, {}, {}",
-        rec.rec_type, rec.reserved1, rec.reserved2, rec.reserved3, rec.reserved4
+        "CTMD Rec {:02}:  {}, {}, {}, {}, {}, {}",
+        rec.rec_type, rec.reserved1, rec.reserved2, rec.reserved3, rec.reserved4, rec.reserved5, rec.reserved6
       );
-      if [7, 8, 9].contains(&rec.rec_type) {
+      //dump_buf(&format!("/tmp/ctmd_rec{}.bin", rec.rec_type), rec.payload.as_slice());
+      if [7, 8, 9, 10, 11, 12].contains(&rec.rec_type) {
         let mut bs = ByteStream::new(rec.payload.as_slice(), Endian::Little);
         let mut _block_id = 0;
-        while bs.remaining_bytes() > 0 {
-          let sz = bs.get_u32();
+        while bs.remaining_bytes() >= (4 + 2 + 2) {
+          let sz = bs.get_u32() as usize;
           let tag = bs.get_u16();
           let _uk = bs.get_u16();
-          let data = bs.get_bytes(sz as usize - 8);
-          //dump_buf(&format!("/tmp/ctmd_rec{}_block{}_tag0x{:X}_uk{:X}.bin", rec.rec_type, block_id, tag, uk), data.as_slice());
-          if [CR3_CTMD_BLOCK_EXIFIFD, CR3_CTMD_BLOCK_MAKERNOTES].contains(&tag) {
-            assert_eq!(rec.blocks.contains_key(&tag), false, "Double tag found?!");
-            rec.blocks.insert(tag, data);
+          if sz >= 8 && bs.remaining_bytes() >= (sz - 8) {
+            log::debug!("CTMD BLOCK: size {}, tag {}, remaining: {}", sz, tag, bs.remaining_bytes());
+            let data = bs.get_bytes(sz as usize - 8);
+            //dump_buf(&format!("/tmp/ctmd_rec{}_block{}_tag0x{:X}_uk{:X}.bin", rec.rec_type, block_id, tag, uk), data.as_slice());
+            if [CR3_CTMD_BLOCK_EXIFIFD, CR3_CTMD_BLOCK_MAKERNOTES].contains(&tag) {
+              assert_eq!(rec.blocks.contains_key(&tag), false, "Double tag found?!");
+              rec.blocks.insert(tag, data);
+            }
+            _block_id += 1;
+          } else {
+            log::debug!(
+              "CTMD BLOCK: size {}, tag {}, remaining: {} - is invalid, maybe not a block",
+              sz,
+              tag,
+              bs.remaining_bytes()
+            );
+            break;
           }
-          _block_id += 1;
         }
       } else {
+        log::debug!("CTMD record type {} unknown, ignoring.", rec.rec_type);
         //dump_buf(&format!("/tmp/ctmd_rec{}.bin", rec.rec_type), rec.payload.as_slice());
       }
       records.insert(rec.rec_type, rec);
