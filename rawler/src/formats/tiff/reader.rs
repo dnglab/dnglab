@@ -4,7 +4,7 @@
 use super::{apply_corr, entry::RawEntry, file::TiffFile, Entry, Result, TiffError, IFD};
 use crate::{
   bits::Endian,
-  tags::{TiffCommonTag, TiffTag},
+  tags::{ExifTag, TiffCommonTag, TiffTag},
 };
 use byteorder::{BigEndian, LittleEndian, ReadBytesExt};
 use serde::{Deserialize, Serialize};
@@ -22,8 +22,14 @@ pub trait TiffReader {
     self.root_ifd().endian
   }
 
-  fn sub_ifd_tags(&self) -> Vec<u16> {
-    vec![TiffCommonTag::SubIFDs.into(), TiffCommonTag::ExifIFDPointer.into()]
+  /// Returns a list of well-known tags representing SubIFDs.
+  fn wellknown_sub_ifd_tags(&self) -> Vec<u16> {
+    vec![
+      TiffCommonTag::SubIFDs.into(),
+      TiffCommonTag::ExifIFDPointer.into(),
+      ExifTag::GPSInfo.into(),
+      ExifTag::IccProfile.into(),
+    ]
   }
 
   fn root_ifd(&self) -> &IFD {
@@ -143,7 +149,7 @@ pub trait TiffReader {
     let mut chain = Vec::new();
     while next_ifd != 0 {
       // TODO: check if offset is in range
-      let mut multi_sub_tags = self.sub_ifd_tags(); // TODO: cleanup
+      let mut multi_sub_tags = self.wellknown_sub_ifd_tags();
       multi_sub_tags.extend_from_slice(sub_tags);
       let ifd = IFD::new(reader, next_ifd, self.file().base, self.file().corr, endian, &multi_sub_tags)?;
       if ifd.entries.is_empty() {

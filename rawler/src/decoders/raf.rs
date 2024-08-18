@@ -408,10 +408,10 @@ impl<'a> Decoder for RafDecoder<'a> {
     // Fuji RAF has all EXIF tags we need and there is no LensID or something
     // we can lookup. So this is an exception, we just pass the information.
     // TODO: better imeplement LensData::from_exif()?
-    if let Some(ifd) = self.ifd.get_sub_ifds(TiffCommonTag::ExifIFDPointer) {
-      exif.lens_make = ifd[0].get_entry(ExifTag::LensMake).and_then(|entry| entry.as_string().cloned());
-      exif.lens_model = ifd[0].get_entry(ExifTag::LensModel).and_then(|entry| entry.as_string().cloned());
-      exif.lens_spec = ifd[0].get_entry(ExifTag::LensSpecification).and_then(|entry| match &entry.value {
+    if let Some(ifd) = self.ifd.get_sub_ifd(TiffCommonTag::ExifIFDPointer) {
+      exif.lens_make = ifd.get_entry(ExifTag::LensMake).and_then(|entry| entry.as_string().cloned());
+      exif.lens_model = ifd.get_entry(ExifTag::LensModel).and_then(|entry| entry.as_string().cloned());
+      exif.lens_spec = ifd.get_entry(ExifTag::LensSpecification).and_then(|entry| match &entry.value {
         Value::Rational(data) => Some([data[0], data[1], data[2], data[3]]),
         _ => None,
       });
@@ -470,8 +470,7 @@ impl<'a> RafDecoder<'a> {
   }
 
   fn get_blacklevel(&self, cfa: &CFA) -> Result<Option<BlackLevel>> {
-    if let Some(ifd) = self.ifd.get_sub_ifds(FujiIFD::FujiIFD) {
-      let fuji = &ifd[0];
+    if let Some(fuji) = self.ifd.get_sub_ifd(FujiIFD::FujiIFD) {
       if let Some(Entry { value: Value::Long(black), .. }) = fuji.get_entry_recursive(FujiIFD::BlackLevel) {
         let levels: Vec<u16> = black.iter().copied().map(|v| v as u16).collect();
         return Ok(Some(BlackLevel::new(&levels, cfa.width, cfa.height, 1)));

@@ -134,7 +134,7 @@ impl<'a> Decoder for DngDecoder<'a> {
   }
 
   fn full_image(&self, file: &mut RawFile) -> Result<Option<DynamicImage>> {
-    if let Some(sub_ifds) = self.tiff.root_ifd().get_sub_ifds(TiffCommonTag::SubIFDs) {
+    if let Some(sub_ifds) = self.tiff.root_ifd().get_sub_ifd_all(TiffCommonTag::SubIFDs) {
       let first_ifd = sub_ifds
         .iter()
         .find(|ifd| ifd.get_entry(TiffCommonTag::NewSubFileType).map(|entry| entry.force_u32(0)) == Some(1));
@@ -168,14 +168,14 @@ impl<'a> Decoder for DngDecoder<'a> {
       WellKnownIFD::Exif => self
         .tiff
         .root_ifd()
-        .get_sub_ifds(ExifTag::ExifOffset)
+        .get_sub_ifd_all(ExifTag::ExifOffset)
         .and_then(|list| list.get(0))
         .cloned()
         .map(Rc::new),
       WellKnownIFD::ExifGps => self
         .tiff
         .root_ifd()
-        .get_sub_ifds(ExifTag::GPSInfo)
+        .get_sub_ifd_all(ExifTag::GPSInfo)
         .and_then(|list| list.get(0))
         .cloned()
         .map(Rc::new),
