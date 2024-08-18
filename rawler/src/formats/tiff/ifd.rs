@@ -339,8 +339,25 @@ impl IFD {
     Ok(None)
   }
 
-  pub fn get_sub_ifds<T: TiffTag>(&self, tag: T) -> Option<&Vec<IFD>> {
+  pub fn get_sub_ifd_all<T: TiffTag>(&self, tag: T) -> Option<&Vec<IFD>> {
     self.sub.get(&tag.into())
+  }
+
+  pub fn get_sub_ifd<T: TiffTag>(&self, tag: T) -> Option<&IFD> {
+    if let Some(ifds) = self.get_sub_ifd_all(tag) {
+      if ifds.len() == 1 {
+        ifds.get(0)
+      } else {
+        log::warn!(
+          "get_sub_ifd() for tag {:?} found more IFDs than expected: {}. Fallback to first IFD!",
+          tag,
+          ifds.len()
+        );
+        ifds.get(0)
+      }
+    } else {
+      None
+    }
   }
 
   pub fn find_ifds_with_tag<T: TiffTag>(&self, tag: T) -> Vec<&IFD> {

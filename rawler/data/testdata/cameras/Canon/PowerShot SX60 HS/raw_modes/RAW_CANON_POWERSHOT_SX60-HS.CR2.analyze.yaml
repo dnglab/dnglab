@@ -84,7 +84,49 @@ data:
         lens_serial_number: ~
         lens_make: ~
         lens_model: ~
-        gps: ~
+        gps:
+          gps_version_id:
+            - 2
+            - 3
+            - 0
+            - 0
+          gps_latitude_ref: N
+          gps_latitude:
+            - 41/1
+            - 21/1
+            - 4832/100
+          gps_longitude_ref: E
+          gps_longitude:
+            - 2/1
+            - 10/1
+            - 309/100
+          gps_altitude_ref: 0
+          gps_altitude: 2266551/10000
+          gps_timestamp: ~
+          gps_satellites: ~
+          gps_status: ~
+          gps_measure_mode: ~
+          gps_dop: ~
+          gps_speed_ref: ~
+          gps_speed: ~
+          gps_track_ref: ~
+          gps_track: ~
+          gps_img_direction_ref: ~
+          gps_img_direction: ~
+          gps_map_datum: WGS-84
+          gps_dest_latitude_ref: ~
+          gps_dest_latitude: ~
+          gps_dest_longitude_ref: ~
+          gps_dest_longitude: ~
+          gps_dest_bearing_ref: ~
+          gps_dest_bearing: ~
+          gps_dest_distance_ref: ~
+          gps_dest_distance: ~
+          gps_processing_method: ~
+          gps_area_information: ~
+          gps_date_stamp: "2015:08:09"
+          gps_differential: ~
+          gps_h_positioning_error: ~
         user_comment: ~
       model: PowerShot SX60 HS
       make: Canon

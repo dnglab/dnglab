@@ -84,7 +84,52 @@ data:
         lens_serial_number: ~
         lens_make: ~
         lens_model: ~
-        gps: ~
+        gps:
+          gps_version_id:
+            - 2
+            - 3
+            - 0
+            - 0
+          gps_latitude_ref: N
+          gps_latitude:
+            - 52/1
+            - 9/1
+            - 41935/1000
+          gps_longitude_ref: E
+          gps_longitude:
+            - 23/1
+            - 0/1
+            - 41589/1000
+          gps_altitude_ref: 0
+          gps_altitude: 14634/100
+          gps_timestamp:
+            - 18/1
+            - 35/1
+            - 12000/1000
+          gps_satellites: ~
+          gps_status: A
+          gps_measure_mode: "3"
+          gps_dop: 11061/10000
+          gps_speed_ref: K
+          gps_speed: 1406/1000
+          gps_track_ref: T
+          gps_track: 30217/100
+          gps_img_direction_ref: ~
+          gps_img_direction: ~
+          gps_map_datum: WGS-84
+          gps_dest_latitude_ref: ~
+          gps_dest_latitude: ~
+          gps_dest_longitude_ref: ~
+          gps_dest_longitude: ~
+          gps_dest_bearing_ref: ~
+          gps_dest_bearing: ~
+          gps_dest_distance_ref: ~
+          gps_dest_distance: ~
+          gps_processing_method: ~
+          gps_area_information: ~
+          gps_date_stamp: "2020:06:06"
+          gps_differential: 0
+          gps_h_positioning_error: ~
         user_comment: ~
       model: SLT-A77V
       make: Sony

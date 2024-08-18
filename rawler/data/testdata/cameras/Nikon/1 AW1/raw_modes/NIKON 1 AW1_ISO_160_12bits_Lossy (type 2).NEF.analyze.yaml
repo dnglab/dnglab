@@ -81,7 +81,52 @@ data:
         lens_serial_number: ~
         lens_make: ~
         lens_model: ~
-        gps: ~
+        gps:
+          gps_version_id:
+            - 2
+            - 3
+            - 0
+            - 0
+          gps_latitude_ref: N
+          gps_latitude:
+            - 38/1
+            - 466436/10000
+            - 0/1
+          gps_longitude_ref: W
+          gps_longitude:
+            - 9/1
+            - 54557/10000
+            - 0/1
+          gps_altitude_ref: ~
+          gps_altitude: ~
+          gps_timestamp:
+            - 10/1
+            - 23/1
+            - 3200/100
+          gps_satellites: "12"
+          gps_status: ~
+          gps_measure_mode: ~
+          gps_dop: ~
+          gps_speed_ref: ~
+          gps_speed: ~
+          gps_track_ref: ~
+          gps_track: ~
+          gps_img_direction_ref: M
+          gps_img_direction: 19700/100
+          gps_map_datum: WGS-84
+          gps_dest_latitude_ref: ~
+          gps_dest_latitude: ~
+          gps_dest_longitude_ref: ~
+          gps_dest_longitude: ~
+          gps_dest_bearing_ref: ~
+          gps_dest_bearing: ~
+          gps_dest_distance_ref: ~
+          gps_dest_distance: ~
+          gps_processing_method: ~
+          gps_area_information: ~
+          gps_date_stamp: "2016:11:16"
+          gps_differential: ~
+          gps_h_positioning_error: ~
         user_comment: ~
       model: 1 AW1
       make: Nikon
