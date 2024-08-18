@@ -286,6 +286,18 @@ mod camera_eos_r5_raw_modes {
   super::camera_file_check!("Canon", "EOS R5", cam_canon_eos_r5_raw_iso_100_nocrop_nodual_cr3, "raw_modes/Canon EOS R5_RAW_ISO_100_nocrop_nodual.CR3");
   super::camera_file_check!("Canon", "EOS R5", cam_standardraw_iso400_tungsten_clog_neutral_bt2020_crm, "raw_modes/StandardRaw_ISO400_Tungsten_CLOG_Neutral_BT2020.CRM");
 }
+mod camera_eos_r5_mark_ii_raw_modes {
+  super::camera_file_check!("Canon", "EOS R5 Mark II", cam_canon_eos_r5m2_raw_iso_640_nocrop_cr3, "raw_modes/Canon EOS R5m2_RAW_ISO_640_nocrop.CR3");
+  super::camera_file_check!("Canon", "EOS R5 Mark II", cam_canon_eos_r5m2_raw_iso_65535_nocrop_es_cr3, "raw_modes/Canon EOS R5m2_RAW_ISO_65535_nocrop_ES.CR3");
+  super::camera_file_check!("Canon", "EOS R5 Mark II", cam_canon_eos_r5m2_raw_iso_125_nocrop_dustdata_cr3, "raw_modes/Canon EOS R5m2_RAW_ISO_125_nocrop_DUSTDATA.CR3");
+  super::camera_file_check!("Canon", "EOS R5 Mark II", cam_canon_eos_r5m2_raw_iso_125_crop_cr3, "raw_modes/Canon EOS R5m2_RAW_ISO_125_crop.CR3");
+  super::camera_file_check!("Canon", "EOS R5 Mark II", cam_canon_eos_r5m2_craw_iso_640_nocrop_cr3, "raw_modes/Canon EOS R5m2_CRAW_ISO_640_nocrop.CR3");
+  super::camera_file_check!("Canon", "EOS R5 Mark II", cam_canon_eos_r5m2_craw_iso_125_crop_cr3, "raw_modes/Canon EOS R5m2_CRAW_ISO_125_crop.CR3");
+}
+mod camera_eos_r5_mark_ii_crm_movie_modes {
+  super::camera_file_check!("Canon", "EOS R5 Mark II", cam_r5mk2_lightraw_crm, "crm_movie_modes/R5MK2_LightRaw.CRM");
+  super::camera_file_check!("Canon", "EOS R5 Mark II", cam_r5mk2_standardraw_crm, "crm_movie_modes/R5MK2_StandardRaw.CRM");
+}
 mod camera_eos_r5_c_raw_modes {
   super::camera_file_check!("Canon", "EOS R5 C", cam_canon_eos_r5_c_craw_iso_65535_nocrop_nodual_ms_cr3, "raw_modes/Canon EOS R5 C_CRAW_ISO_65535_nocrop_nodual_MS.CR3");
   super::camera_file_check!("Canon", "EOS R5 C", cam_canon_eos_r5_c_raw_iso_100_nocrop_nodual_ms_burst_cr3, "raw_modes/Canon EOS R5 C_RAW_ISO_100_nocrop_nodual_MS_BURST.CR3");
