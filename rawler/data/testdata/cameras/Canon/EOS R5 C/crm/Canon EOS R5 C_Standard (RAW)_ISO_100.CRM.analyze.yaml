@@ -1,0 +1,148 @@
+---
+file:
+  fileSize: 1993198728
+  fileName: Canon EOS R5 C_Standard (RAW)_ISO_100.CRM
+  digest: ac94654f0df24f42d198c872edc02001
+data:
+  metadata:
+    rawParams:
+      rawWidth: 8224
+      rawHeight: 4336
+      bitDepth: 16
+      cropArea:
+        p:
+          x: 16
+          y: 8
+        d:
+          w: 8192
+          h: 4320
+      activeArea:
+        p:
+          x: 16
+          y: 8
+        d:
+          w: 8192
+          h: 4320
+      blacklevels:
+        levels:
+          - 0/1
+        cpp: 1
+        width: 1
+        height: 1
+      whitelevels:
+        - 65535
+      wbCoeffs:
+        - ~
+        - ~
+        - ~
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ""
+        artist: ""
+        lens_spec:
+          - 70/1
+          - 200/1
+          - 28/10
+          - 28/10
+        exposure_time: 1/50
+        fnumber: 28/10
+        aperture_value: 2304/768
+        brightness_value: ~
+        iso_speed_ratings: 100
+        iso_speed: ~
+        recommended_exposure_index: 100
+        sensitivity_type: 2
+        exposure_bias: 0/100
+        date_time_original: "2023:04:20 21:41:40"
+        create_date: "2023:04:20 21:41:40"
+        modify_date: "2023:04:20 21:41:40"
+        exposure_program: 1
+        timezone_offset: ~
+        offset_time: "+08:00"
+        offset_time_original: "+08:00"
+        offset_time_digitized: "+08:00"
+        sub_sec_time: "26"
+        sub_sec_time_original: "26"
+        sub_sec_time_digitized: "26"
+        shutter_speed_value: 4334/768
+        max_aperture_value: ~
+        subject_distance: ~
+        metering_mode: 2
+        light_source: ~
+        flash: 0
+        focal_length: 700/10
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 1
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ""
+        serial_number: "655519400209"
+        lens_serial_number: "8720000533"
+        lens_make: Canon
+        lens_model: RF 70-200mm F2.8L IS USM
+        gps:
+          gps_version_id:
+            - 2
+            - 3
+            - 0
+            - 0
+          gps_latitude_ref: ~
+          gps_latitude: ~
+          gps_longitude_ref: ~
+          gps_longitude: ~
+          gps_altitude_ref: ~
+          gps_altitude: ~
+          gps_timestamp: ~
+          gps_satellites: ~
+          gps_status: ~
+          gps_measure_mode: ~
+          gps_dop: ~
+          gps_speed_ref: ~
+          gps_speed: ~
+          gps_track_ref: ~
+          gps_track: ~
+          gps_img_direction_ref: ~
+          gps_img_direction: ~
+          gps_map_datum: ~
+          gps_dest_latitude_ref: ~
+          gps_dest_latitude: ~
+          gps_dest_longitude_ref: ~
+          gps_dest_longitude: ~
+          gps_dest_bearing_ref: ~
+          gps_dest_bearing: ~
+          gps_dest_distance_ref: ~
+          gps_dest_distance: ~
+          gps_processing_method: ~
+          gps_area_information: ~
+          gps_date_stamp: ~
+          gps_differential: ~
+          gps_h_positioning_error: ~
+        user_comment: ~
+      model: EOS R5 C
+      make: Canon
+      lens:
+        identifiers:
+          name: RF70-200mm F2.8 L IS USM
+          id:
+            - 61182
+            - 266
+          nikon_id: ~
+          olympus_id: ~
+        mount: rf-mount
+        lens_make: Canon
+        lens_model: RF 70-200mm F2.8L IS USM
+        focal_range:
+          - 70/1
+          - 200/1
+        aperture_range:
+          - 28/10
+          - 28/10
+        lens_name: Canon RF 70-200mm F2.8L IS USM
+      unique_image_id: 267338395743086803297490183568139042440
+      rating: ~
+
