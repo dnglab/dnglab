@@ -192,6 +192,9 @@ impl<'a> Decoder for ArwDecoder<'a> {
 
     img.crop_area = crop;
     img.active_area = self.camera.active_area.map(|area| Rect::new_with_borders(Dim2::new(width, height), &area));
+    log::debug!("raw dim: {}x{}", width, height);
+    log::debug!("crop_area: {:?}", img.crop_area);
+    log::debug!("active_area: {:?}", img.active_area);
     Ok(img)
   }
 
