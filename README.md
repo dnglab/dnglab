@@ -182,7 +182,7 @@ write:
 
 ````
 find /cr3samples/ -type f -name "*.CR3" -exec dnglab analyze --structure '{}' --json \; | \
-  jq ". | { file: .file.fileName, cfa_layout: .format.cr3.moov.trak[1].mdia.minf.stbl.stsd.craw.cmp1.cfa_layout}"
+  jq ". | { file: .file.fileName, cfa_layout: .data.fileStructure.cr3.filebox.moov.trak[2].mdia.minf.stbl.stsd.craw.cfa_layout}"
 ````
 
 The output is:
