@@ -334,7 +334,7 @@ pub enum ExifTag {
   UIC2Tag = 0x835d,
   UIC3Tag = 0x835e,
   UIC4Tag = 0x835f,
-  PtcNaa = 0x83bb,
+  IptcNaa = 0x83bb,
   IntergraphPacketData = 0x847e,
   IntergraphFlagRegisters = 0x847f,
   IntergraphMatrix = 0x8480,
