@@ -44,7 +44,11 @@ data:
         orientation: 1
         copyright: ""
         artist: ""
-        lens_spec: ~
+        lens_spec:
+          - 135/1
+          - 135/1
+          - 18/10
+          - 18/10
         exposure_time: 1/200
         fnumber: 18/10
         aperture_value: 106496/65536
@@ -82,8 +86,8 @@ data:
         owner_name: ""
         serial_number: "143302103530"
         lens_serial_number: "3014000013"
-        lens_make: ~
-        lens_model: ~
+        lens_make: Canon
+        lens_model: RF 135mm F1.8L IS USM
         gps:
           gps_version_id:
             - 2
@@ -124,7 +128,24 @@ data:
         user_comment: ~
       model: EOS R5 II
       make: Canon
-      lens: ~
+      lens:
+        identifiers:
+          name: RF135mm F1.8 L IS USM
+          id:
+            - 61182
+            - 303
+          nikon_id: ~
+          olympus_id: ~
+        mount: rf-mount
+        lens_make: Canon
+        lens_model: RF 135mm F1.8L IS USM
+        focal_range:
+          - 135/1
+          - 135/1
+        aperture_range:
+          - 18/10
+          - 18/10
+        lens_name: Canon RF 135mm F1.8L IS USM
       unique_image_id: 222622705153098383031807626105318852993
       rating: ~
 
