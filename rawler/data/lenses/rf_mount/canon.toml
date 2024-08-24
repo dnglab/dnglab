@@ -288,3 +288,13 @@ make = "Canon"
 model = "RF-S 18-150mm F3.5-6.3 IS STM"
 focal_range = [[18, 1], [150, 1]]
 aperture_range = [[5, 1], [63, 10]]
+
+[[lenses]]
+mount = "rf-mount"
+key = "RF135mm F1.8 L IS USM"
+lens_id = 61182
+lens_subid = 303
+make = "Canon"
+model = "RF 135mm F1.8L IS USM"
+focal_range = [[135, 1], [135, 1]]
+aperture_range = [[18, 10], [18, 10]]
