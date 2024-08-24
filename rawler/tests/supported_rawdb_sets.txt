@@ -396,6 +396,7 @@ cameras/Sony/SLT-A99/raw_modes
 cameras/Sony/ZV-1/raw_modes
 cameras/Sony/ZV-E1/raw_modes
 cameras/Sony/ZV-E10/raw_modes
+cameras/Sony/ZV-E10M2/raw_modes
 cameras/Epson/R-D1/raw_modes
 cameras/Epson/R-D1s/raw_modes
 cameras/Epson/R-D1x/raw_modes
