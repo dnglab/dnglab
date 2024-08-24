@@ -2126,6 +2126,16 @@ mod camera_dc_tz96_raw_modes {
   super::camera_file_check!("Panasonic", "DC-TZ96", cam_dc_tz96_iso_80_4fmt_16x9_rw2, "raw_modes/DC-TZ96_ISO_80_4fmt_16x9.RW2");
   super::camera_file_check!("Panasonic", "DC-TZ96", cam_dc_tz96_iso_80_4fmt_3x2_rw2, "raw_modes/DC-TZ96_ISO_80_4fmt_3x2.RW2");
 }
+mod camera_dc_tz220d_raw_modes {
+  super::camera_file_check!("Panasonic", "DC-TZ220D", cam_panasonic_dc_tz220d_iso100_3x2_1_rw2, "raw_modes/panasonic_dc-tz220d_iso100_3x2_1.RW2");
+  super::camera_file_check!("Panasonic", "DC-TZ220D", cam_panasonic_dc_tz220d_iso100_16x9_2_rw2, "raw_modes/panasonic_dc-tz220d_iso100_16x9_2.RW2");
+  super::camera_file_check!("Panasonic", "DC-TZ220D", cam_panasonic_dc_tz220d_iso100_4x3_2_rw2, "raw_modes/panasonic_dc-tz220d_iso100_4x3_2.RW2");
+  super::camera_file_check!("Panasonic", "DC-TZ220D", cam_panasonic_dc_tz220d_iso100_1x1_2_rw2, "raw_modes/panasonic_dc-tz220d_iso100_1x1_2.RW2");
+  super::camera_file_check!("Panasonic", "DC-TZ220D", cam_panasonic_dc_tz220d_iso100_1x1_1_rw2, "raw_modes/panasonic_dc-tz220d_iso100_1x1_1.RW2");
+  super::camera_file_check!("Panasonic", "DC-TZ220D", cam_panasonic_dc_tz220d_iso100_16x9_1_rw2, "raw_modes/panasonic_dc-tz220d_iso100_16x9_1.RW2");
+  super::camera_file_check!("Panasonic", "DC-TZ220D", cam_panasonic_dc_tz220d_iso100_4x3_1_rw2, "raw_modes/panasonic_dc-tz220d_iso100_4x3_1.RW2");
+  super::camera_file_check!("Panasonic", "DC-TZ220D", cam_panasonic_dc_tz220d_iso100_3x2_2_rw2, "raw_modes/panasonic_dc-tz220d_iso100_3x2_2.RW2");
+}
 mod camera_dmc_cm1_raw_modes {
   super::camera_file_check!("Panasonic", "DMC-CM1", cam_dmc_cm1_iso_125_panasonic_raw_1_5472x3648_rw2, "raw_modes/DMC-CM1_ISO_125_Panasonic RAW 1_5472x3648.RW2");
   super::camera_file_check!("Panasonic", "DMC-CM1", cam_dmc_cm1_iso_125_panasonic_raw_1_3648x3648_rw2, "raw_modes/DMC-CM1_ISO_125_Panasonic RAW 1_3648x3648.RW2");

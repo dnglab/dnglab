@@ -4,8 +4,15 @@ clean_make = "Panasonic"
 clean_model = "DC-TZ202"
 
 model_aliases = [
+  ["DC-TZ202D", "DC-TZ202D"],
   ["DC-TZ200", "DC-TZ200"],
+  ["DC-TZ220", "DC-TZ220"],
   ["DC-ZS200", "DC-ZS200"],
+  ["DC-ZS220", "DC-ZS220"],
+  ["DC-TZ200D", "DC-TZ200D"],
+  ["DC-TZ220D", "DC-TZ220D"],
+  ["DC-ZS200D", "DC-ZS200D"],
+  ["DC-ZS220D", "DC-ZS220D"],
 ]
 
 #blackpoint = 141
