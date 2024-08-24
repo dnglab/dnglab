@@ -560,6 +560,7 @@ cameras/Panasonic/DC-TZ90/raw_modes
 cameras/Panasonic/DC-TZ91/raw_modes
 cameras/Panasonic/DC-TZ95/raw_modes
 cameras/Panasonic/DC-TZ96/raw_modes
+cameras/Panasonic/DC-TZ220D/raw_modes
 cameras/Panasonic/DMC-CM1/raw_modes
 cameras/Panasonic/DMC-FX150/raw_modes
 cameras/Panasonic/DMC-FZ1000/raw_modes
