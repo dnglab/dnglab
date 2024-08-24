@@ -113,10 +113,14 @@
 |Canon                               | Canon EOS M6                            | ✅ Yes | all |  |
 |Canon                               | Canon EOS M6 Mark II                    | ✅ Yes | craw, raw |  |
 |Canon                               | Canon EOS R                             | ✅ Yes | craw, raw |  |
+|Canon                               | Canon EOS R1                            | ✅ Yes | craw, raw |  |
 |Canon                               | Canon EOS R10                           | ✅ Yes | craw, raw |  |
+|Canon                               | Canon EOS R100                          | ✅ Yes | craw, raw |  |
 |Canon                               | Canon EOS R3                            | ✅ Yes | craw, raw |  |
 |Canon                               | Canon EOS R5                            | ✅ Yes | craw, crm, raw | support for CRM raw movie frame extraction, support for CRM raw movie frame extraction, support for CRM raw movie frame extraction, support for CRM raw movie frame extraction |
+|Canon                               | Canon EOS R5 C                          | ✅ Yes | craw, crm, raw | support for CRM raw movie frame extraction, support for CRM raw movie frame extraction, support for CRM raw movie frame extraction, support for CRM raw movie frame extraction |
 |Canon                               | Canon EOS R50                           | ✅ Yes | craw, raw |  |
+|Canon                               | Canon EOS R5m2                          | ✅ Yes | craw, crm, raw | support for CRM raw movie frame extraction, support for CRM raw movie frame extraction, support for CRM raw movie frame extraction, support for CRM raw movie frame extraction |
 |Canon                               | Canon EOS R6                            | ✅ Yes | craw, raw |  |
 |Canon                               | Canon EOS R6m2                          | ✅ Yes | craw, raw |  |
 |Canon                               | Canon EOS R7                            | ✅ Yes | craw, raw |  |
@@ -291,6 +295,7 @@
 |FUJIFILM                            | X-T30 II                                | ✅ Yes | all |  |
 |FUJIFILM                            | X-T4                                    | ✅ Yes | all |  |
 |FUJIFILM                            | X-T5                                    | ✅ Yes | all |  |
+|FUJIFILM                            | X-T50                                   | ✅ Yes | all |  |
 |FUJIFILM                            | X10                                     | ✅ Yes | all |  |
 |FUJIFILM                            | X100F                                   | ✅ Yes | all |  |
 |FUJIFILM                            | X100S                                   | ✅ Yes | all |  |
@@ -546,6 +551,7 @@
 |Panasonic                           | DC-GH5M2                                | ✅ Yes | 4:3 |  |
 |Panasonic                           | DC-GH5S                                 | ✅ Yes | 16:9, 1:1, 3:2, 4:3 |  |
 |Panasonic                           | DC-GH6                                  | ✅ Yes | 16:9, 1:1, 3:2, 4:3 |  |
+|Panasonic                           | DC-GH7                                  | ✅ Yes | 16:9, 1:1, 3:2, 4:3 |  |
 |Panasonic                           | DC-GX7MK3                               | ✅ Yes | 16:9, 1:1, 3:2, 4:3 |  |
 |Panasonic                           | DC-GX800                                | ✅ Yes | 4:3 |  |
 |Panasonic                           | DC-GX850                                | ✅ Yes | 4:3 |  |
@@ -558,14 +564,22 @@
 |Panasonic                           | DC-S5                                   | ✅ Yes | 3:2 |  |
 |Panasonic                           | DC-S5M2                                 | ✅ Yes | 3:2 |  |
 |Panasonic                           | DC-S5M2X                                | ✅ Yes | 3:2 |  |
+|Panasonic                           | DC-S9                                   | ✅ Yes | 3:2 |  |
 |Panasonic                           | DC-TZ200                                | ✅ Yes | 3:2 |  |
+|Panasonic                           | DC-TZ200D                               | ✅ Yes | 3:2 |  |
 |Panasonic                           | DC-TZ202                                | ✅ Yes | 3:2 |  |
+|Panasonic                           | DC-TZ202D                               | ✅ Yes | 3:2 |  |
+|Panasonic                           | DC-TZ220                                | ✅ Yes | 3:2 |  |
+|Panasonic                           | DC-TZ220D                               | ✅ Yes | 3:2 |  |
 |Panasonic                           | DC-TZ90                                 | ✅ Yes | 4:3 |  |
 |Panasonic                           | DC-TZ91                                 | ✅ Yes | 4:3 |  |
 |Panasonic                           | DC-TZ95                                 | ✅ Yes | 4:3 |  |
 |Panasonic                           | DC-TZ95D                                | ✅ Yes | 4:3 |  |
 |Panasonic                           | DC-TZ96                                 | ✅ Yes | 4:3 |  |
 |Panasonic                           | DC-ZS200                                | ✅ Yes | 3:2 |  |
+|Panasonic                           | DC-ZS200D                               | ✅ Yes | 3:2 |  |
+|Panasonic                           | DC-ZS220                                | ✅ Yes | 3:2 |  |
+|Panasonic                           | DC-ZS220D                               | ✅ Yes | 3:2 |  |
 |Panasonic                           | DC-ZS80                                 | ✅ Yes | 4:3 |  |
 |Panasonic                           | DMC-CM1                                 | ✅ Yes | 16:9, 1:1, 3:2, 4:3 |  |
 |Panasonic                           | DMC-FX150                               | ✅ Yes | 16:9, 3:2, 4:3 |  |
@@ -794,4 +808,5 @@
 |SONY                                | ZV-1                                    | ✅ Yes | all |  |
 |SONY                                | ZV-E1                                   | ✅ Yes | all |  |
 |SONY                                | ZV-E10                                  | ✅ Yes | all |  |
+|SONY                                | ZV-E10M2                                | ✅ Yes | all |  |
 
