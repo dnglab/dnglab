@@ -56,3 +56,10 @@ fn dnglab_386_catch_jpeg_exif_tiff_ifd_error() -> std::result::Result<(), Box<dy
   assert!(jfif.exif_ifd().is_none());
   Ok(())
 }
+
+#[test]
+fn dnglab_477_jpeg_quantization_table_with_zero_value() -> std::result::Result<(), Box<dyn std::error::Error>> {
+  let image = image::open(rawdb_file("issues/dnglab_477/dnglab_477.jpg"))?;
+  let _ = image.to_rgb8();
+  Ok(())
+}
