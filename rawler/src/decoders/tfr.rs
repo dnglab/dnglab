@@ -85,7 +85,10 @@ impl<'a> Decoder for TfrDecoder<'a> {
     Ok(img)
   }
 
-  fn full_image(&self, file: &mut RawFile) -> Result<Option<DynamicImage>> {
+  fn full_image(&self, file: &mut RawFile, params: RawDecodeParams) -> Result<Option<DynamicImage>> {
+    if params.image_index != 0 {
+      return Ok(None);
+    }
     let root_ifd = &self.tiff.root_ifd();
     let buf = root_ifd
       .singlestrip_data(file.inner())

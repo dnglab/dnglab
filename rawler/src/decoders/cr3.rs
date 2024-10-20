@@ -385,7 +385,10 @@ impl<'a> Decoder for Cr3Decoder<'a> {
   }
 
   /// Extract preview image embedded in CR3
-  fn full_image(&self, file: &mut RawFile) -> Result<Option<DynamicImage>> {
+  fn full_image(&self, file: &mut RawFile, params: RawDecodeParams) -> Result<Option<DynamicImage>> {
+    if params.image_index != 0 {
+      return Ok(None);
+    }
     if rawler_ignore_previews() {
       return Err(RawlerError::DecoderFailed("Unable to extract preview image".into()));
     }

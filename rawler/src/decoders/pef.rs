@@ -135,7 +135,10 @@ impl<'a> Decoder for PefDecoder<'a> {
     Ok(RawImage::new(self.camera.clone(), image, cpp, wb, photometric, blacklevel, whitelevel, dummy))
   }
 
-  fn full_image(&self, file: &mut RawFile) -> Result<Option<DynamicImage>> {
+  fn full_image(&self, file: &mut RawFile, params: RawDecodeParams) -> Result<Option<DynamicImage>> {
+    if params.image_index != 0 {
+      return Ok(None);
+    }
     let size = self.makernote.get_entry(PefMakernote::PreviewImageSize);
     let length = self.makernote.get_entry(PefMakernote::PreviewImageLength);
     let start = self.makernote.get_entry(PefMakernote::PreviewImageStart);

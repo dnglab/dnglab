@@ -436,7 +436,10 @@ impl<'a> Decoder for RafDecoder<'a> {
     }
   }
 
-  fn full_image(&self, file: &mut RawFile) -> Result<Option<DynamicImage>> {
+  fn full_image(&self, file: &mut RawFile, params: RawDecodeParams) -> Result<Option<DynamicImage>> {
+    if params.image_index != 0 {
+      return Ok(None);
+    }
     let jpeg_buf = self.read_embedded_jpeg(file)?;
     let img = image::load_from_memory_with_format(&jpeg_buf, image::ImageFormat::Jpeg).unwrap();
     Ok(Some(img))
