@@ -28,9 +28,9 @@ jobs:
   build-all-features:
     name: Rust all-features ${{matrix.rust}}
     runs-on: ubuntu-20.04
-    strategy: 
+    strategy:
       fail-fast: false
-      matrix: 
+      matrix:
         rust: [stable]
     steps:
       - uses: actions/checkout@v2
@@ -72,7 +72,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - run: cargo build --release
       - name: Upload build artifact
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: dnglab.exe
           path: 'target/release/dnglab.exe'
@@ -85,7 +85,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - run: cargo build --release
       - name: Upload build artifact
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: dnglab_x64
           path: 'target/release/dnglab'
@@ -106,7 +106,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - run: cargo build --release
       - name: Upload build artifact
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: dnglab_arm64
           path: 'target/release/dnglab'
