@@ -135,7 +135,7 @@ where
 
   // Write preview and thumbnail if requested
   if params.preview || params.thumbnail {
-    match generate_preview(&mut rawfile, decoder.as_ref(), &rawimage) {
+    match generate_preview(&mut rawfile, decoder.as_ref(), &rawimage, raw_params.clone()) {
       Ok(image) => {
         if params.preview {
           let mut preview = dng.subframe(1);
@@ -209,8 +209,8 @@ where
   Ok(())
 }
 
-fn generate_preview(rawfile: &mut RawFile, decoder: &dyn Decoder, rawimage: &RawImage) -> crate::Result<DynamicImage> {
-  match decoder.full_image(rawfile)? {
+fn generate_preview(rawfile: &mut RawFile, decoder: &dyn Decoder, rawimage: &RawImage, params: RawDecodeParams) -> crate::Result<DynamicImage> {
+  match decoder.full_image(rawfile, params)? {
     Some(image) => Ok(image),
     None => {
       log::warn!("Preview image not found, try to generate sRGB from RAW");

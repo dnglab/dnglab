@@ -188,7 +188,10 @@ impl<'a> Decoder for Rw2Decoder<'a> {
     Ok(img)
   }
 
-  fn full_image(&self, _file: &mut RawFile) -> Result<Option<DynamicImage>> {
+  fn full_image(&self, _file: &mut RawFile, params: RawDecodeParams) -> Result<Option<DynamicImage>> {
+    if params.image_index != 0 {
+      return Ok(None);
+    }
     if let Some(data) = self.tiff.get_entry(PanasonicTag::JpegData) {
       let buf = data.get_data();
       let img = image::load_from_memory_with_format(buf, image::ImageFormat::Jpeg)

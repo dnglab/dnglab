@@ -229,18 +229,18 @@ pub trait Decoder: Send {
   }
 
   // TODO: extend with decode params for image index
-  fn thumbnail_image(&self, _file: &mut RawFile) -> Result<Option<DynamicImage>> {
+  fn thumbnail_image(&self, _file: &mut RawFile, _params: RawDecodeParams) -> Result<Option<DynamicImage>> {
     warn!("Decoder has no thumbnail image support, fallback to preview image");
     Ok(None)
   }
 
   // TODO: clarify preview and full image
-  fn preview_image(&self, _file: &mut RawFile) -> Result<Option<DynamicImage>> {
+  fn preview_image(&self, _file: &mut RawFile, _params: RawDecodeParams) -> Result<Option<DynamicImage>> {
     warn!("Decoder has no preview image support");
     Ok(None)
   }
 
-  fn full_image(&self, _file: &mut RawFile) -> Result<Option<DynamicImage>> {
+  fn full_image(&self, _file: &mut RawFile, _params: RawDecodeParams) -> Result<Option<DynamicImage>> {
     warn!("Decoder has no full image support");
     Ok(None)
   }

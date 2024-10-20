@@ -306,7 +306,10 @@ impl<'a> Decoder for Cr2Decoder<'a> {
     Ok(self.xpacket.clone())
   }
 
-  fn full_image(&self, file: &mut RawFile) -> Result<Option<DynamicImage>> {
+  fn full_image(&self, file: &mut RawFile, params: RawDecodeParams) -> Result<Option<DynamicImage>> {
+    if params.image_index != 0 {
+      return Ok(None);
+    }
     // For CR2, there is a full resolution image in IFD0.
     // This is compressed with old-JPEG compression (Compression = 6)
     let root_ifd = &self.tiff.root_ifd();

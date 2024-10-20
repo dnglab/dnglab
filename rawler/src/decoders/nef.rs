@@ -309,7 +309,10 @@ impl<'a> Decoder for NefDecoder<'a> {
     Ok(mdata)
   }
 
-  fn full_image(&self, file: &mut RawFile) -> Result<Option<DynamicImage>> {
+  fn full_image(&self, file: &mut RawFile, params: RawDecodeParams) -> Result<Option<DynamicImage>> {
+    if params.image_index != 0 {
+      return Ok(None);
+    }
     let root_ifd = &self.tiff.root_ifd();
     if !root_ifd.contains_singlestrip_image() {
       // TODO: implement multistrip
