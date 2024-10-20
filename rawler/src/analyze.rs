@@ -212,34 +212,34 @@ pub fn extract_full_pixels<P: AsRef<Path>>(path: P, _params: RawDecodeParams) ->
   let input = BufReader::new(File::open(&path).map_err(|e| RawlerError::with_io_error("load buffer", &path, e))?);
   let mut rawfile = RawFile::new(path, input);
   let decoder = crate::get_decoder(&mut rawfile)?;
-  match decoder.full_image(&mut rawfile)? {
+  match decoder.full_image(&mut rawfile, RawDecodeParams::default())? {
     Some(preview) => Ok(preview),
     None => Err("Unable to extract full image from RAW".into()),
   }
 }
 
-pub fn extract_preview_pixels<P: AsRef<Path>>(path: P, _params: RawDecodeParams) -> Result<DynamicImage> {
+pub fn extract_preview_pixels<P: AsRef<Path>>(path: P, params: RawDecodeParams) -> Result<DynamicImage> {
   let input = BufReader::new(File::open(&path).map_err(|e| RawlerError::with_io_error("load buffer", &path, e))?);
   let mut rawfile = RawFile::new(path, input);
   let decoder = crate::get_decoder(&mut rawfile)?;
-  match decoder.preview_image(&mut rawfile)? {
+  match decoder.preview_image(&mut rawfile, params.clone())? {
     Some(preview) => Ok(preview),
-    None => match decoder.full_image(&mut rawfile)? {
+    None => match decoder.full_image(&mut rawfile, params)? {
       Some(preview) => Ok(preview),
       None => Err("Unable to extract preview image from RAW".into()),
     },
   }
 }
 
-pub fn extract_thumbnail_pixels<P: AsRef<Path>>(path: P, _params: RawDecodeParams) -> Result<DynamicImage> {
+pub fn extract_thumbnail_pixels<P: AsRef<Path>>(path: P, params: RawDecodeParams) -> Result<DynamicImage> {
   let input = BufReader::new(File::open(&path).map_err(|e| RawlerError::with_io_error("load buffer", &path, e))?);
   let mut rawfile = RawFile::new(path, input);
   let decoder = crate::get_decoder(&mut rawfile)?;
-  match decoder.thumbnail_image(&mut rawfile)? {
+  match decoder.thumbnail_image(&mut rawfile, params.clone())? {
     Some(thumbnail) => Ok(thumbnail),
-    None => match decoder.preview_image(&mut rawfile)? {
+    None => match decoder.preview_image(&mut rawfile, params.clone())? {
       Some(thumbnail) => Ok(thumbnail),
-      None => match decoder.full_image(&mut rawfile)? {
+      None => match decoder.full_image(&mut rawfile, params.clone())? {
         Some(thumbnail) => Ok(thumbnail),
         None => Err("Unable to extract thumbnail image from RAW".into()),
       },

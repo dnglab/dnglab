@@ -110,7 +110,10 @@ impl<'a> Decoder for DngDecoder<'a> {
     Ok(mdata)
   }
 
-  fn thumbnail_image(&self, file: &mut RawFile) -> Result<Option<DynamicImage>> {
+  fn thumbnail_image(&self, file: &mut RawFile, params: RawDecodeParams) -> Result<Option<DynamicImage>> {
+    if params.image_index != 0 {
+      return Ok(None);
+    }
     if let Some(thumb_ifd) = Some(self.tiff.root_ifd()).filter(|ifd| ifd.get_entry(TiffCommonTag::NewSubFileType).map(|entry| entry.force_u32(0)) == Some(1)) {
       let buf = thumb_ifd
         .strip_data(file.inner())
@@ -133,7 +136,10 @@ impl<'a> Decoder for DngDecoder<'a> {
     Ok(None)
   }
 
-  fn full_image(&self, file: &mut RawFile) -> Result<Option<DynamicImage>> {
+  fn full_image(&self, file: &mut RawFile, params: RawDecodeParams) -> Result<Option<DynamicImage>> {
+    if params.image_index != 0 {
+      return Ok(None);
+    }
     if let Some(sub_ifds) = self.tiff.root_ifd().get_sub_ifd_all(TiffCommonTag::SubIFDs) {
       let first_ifd = sub_ifds
         .iter()

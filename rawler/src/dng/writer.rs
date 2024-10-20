@@ -728,7 +728,7 @@ mod tests {
 
     let rawimage = decoder.raw_image(&mut rawfile, RawDecodeParams::default(), false)?;
 
-    let full_image = decoder.full_image(&mut rawfile)?.unwrap();
+    let full_image = decoder.full_image(&mut rawfile, RawDecodeParams::default())?.unwrap();
 
     let metadata = decoder.raw_metadata(&mut rawfile, RawDecodeParams::default())?;
 
