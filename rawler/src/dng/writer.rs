@@ -5,7 +5,7 @@ use std::{
   time::Instant,
 };
 
-use image::{imageops::FilterType, DynamicImage};
+use image::{codecs::jpeg::JpegEncoder, imageops::FilterType, DynamicImage};
 use log::debug;
 use rayon::prelude::*;
 
@@ -336,8 +336,9 @@ where
     let now = Instant::now();
     let offset = self.writer.dng.position()?;
     // TODO: improve offsets?
+    let jpeg_encoder = JpegEncoder::new_with_quality(&mut self.writer.dng.writer, (quality * 100.0).max(100.0) as u8);
     preview_img
-      .write_to(&mut self.writer.dng.writer, image::ImageOutputFormat::Jpeg((quality * u8::MAX as f32) as u8))
+      .write_with_encoder(jpeg_encoder)
       .map_err(|err| io::Error::new(io::ErrorKind::Other, format!("Failed to write jpeg preview: {:?}", err)))?;
     let data_len = self.writer.dng.position()? - offset;
     debug!("writing preview: {} s", now.elapsed().as_secs_f32());
