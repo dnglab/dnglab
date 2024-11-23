@@ -41,7 +41,8 @@ fn main() -> AppResult {
 /// We initialize the fern logger here, create a Clap command line
 /// parser and check for the correct environment.
 async fn main_async() -> dnglab_lib::Result<()> {
-  let app = app::create_app();
+  // Override version and name, as we don't want these information from dnglab-lib but from this binary.
+  let app = app::create_app().version(env!("CARGO_PKG_VERSION")).name(env!("CARGO_PKG_NAME"));
   let matches = app.try_get_matches().unwrap_or_else(|e| e.exit());
 
   let colors = ColoredLevelConfig::new().debug(Color::Magenta);
@@ -99,5 +100,15 @@ impl Termination for AppResult {
       Err(AppError::AlreadyExists(_)) => ExitCode::from(6),
       Err(AppError::Other(_)) => ExitCode::from(99),
     }
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[test]
+  fn check_version() {
+    assert_eq!(app::create_app().get_version(), Some(env!("CARGO_PKG_VERSION")));
   }
 }
