@@ -3,3 +3,4 @@
 
 pub mod crx;
 pub mod ljpeg;
+pub mod radc;
