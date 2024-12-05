@@ -1,0 +1,79 @@
+---
+file:
+  fileSize: 118492
+  fileName: Apple_QuickTake_100_480x640.qtk
+  digest: b903e3c3352db306e9732c43812b94c6
+data:
+  metadata:
+    rawParams:
+      rawWidth: 640
+      rawHeight: 480
+      bitDepth: 16
+      cropArea: ~
+      activeArea: ~
+      blacklevels:
+        levels:
+          - 0/1
+        cpp: 1
+        width: 1
+        height: 1
+      whitelevels:
+        - 1023
+      wbCoeffs:
+        - ~
+        - ~
+        - ~
+        - ~
+    rawMetadata:
+      exif:
+        orientation: ~
+        copyright: ~
+        artist: ~
+        lens_spec: ~
+        exposure_time: ~
+        fnumber: ~
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: ~
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: ~
+        date_time_original: ~
+        create_date: ~
+        modify_date: ~
+        exposure_program: ~
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: ~
+        max_aperture_value: ~
+        subject_distance: ~
+        metering_mode: ~
+        light_source: ~
+        flash: ~
+        focal_length: ~
+        image_number: ~
+        color_space: ~
+        flash_energy: ~
+        exposure_mode: ~
+        white_balance: ~
+        scene_capture_type: ~
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+        user_comment: ~
+      model: QuickTake 100
+      make: Apple
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

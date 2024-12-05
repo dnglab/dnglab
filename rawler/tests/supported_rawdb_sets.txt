@@ -1,3 +1,5 @@
+cameras/Apple/QuickTake 100/raw_modes
+cameras/Apple/QuickTake 150/raw_modes
 cameras/Canon/EOS 1000D/raw_modes
 cameras/Canon/EOS 100D/raw_modes
 cameras/Canon/EOS 10D/raw_modes
