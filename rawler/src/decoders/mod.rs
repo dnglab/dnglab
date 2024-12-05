@@ -90,6 +90,7 @@ pub mod nkd;
 pub mod nrw;
 pub mod orf;
 pub mod pef;
+pub mod qtk;
 pub mod raf;
 pub mod rw2;
 pub mod srw;
@@ -111,9 +112,9 @@ pub static CAMERAS_TOML: &str = include_str!(concat!(env!("OUT_DIR"), "/cameras.
 pub static SAMPLE: &str = "\nPlease submit samples at https://raw.pixls.us/";
 pub static BUG: &str = "\nPlease file a bug with a sample file at https://github.com/dnglab/dnglab/issues";
 
-const SUPPORTED_FILES_EXT: [&str; 27] = [
+const SUPPORTED_FILES_EXT: [&str; 28] = [
   "ARI", "ARW", "CR2", "CR3", "CRM", "CRW", "DCR", "DCS", "DNG", "ERF", "IIQ", "KDC", "MEF", "MOS", "MRW", "NEF", "NRW", "ORF", "PEF", "RAF", "RAW", "RW2",
-  "RWL", "SRW", "3FR", "FFF", "X3F",
+  "RWL", "SRW", "3FR", "FFF", "X3F", "QTK",
 ];
 
 /// Get list of supported file extensions. All names
@@ -165,6 +166,7 @@ pub enum FormatHint {
   NRW,
   ORF,
   PEF,
+  QTK,
   SRW,
   TFR,
   X3F,
@@ -485,6 +487,11 @@ impl RawLoader {
 
     if ari::is_ari(rawfile) {
       let dec = Box::new(ari::AriDecoder::new(rawfile, self)?);
+      return Ok(dec as Box<dyn Decoder>);
+    }
+
+    if qtk::is_qtk(rawfile) {
+      let dec = Box::new(qtk::QtkDecoder::new(rawfile, self)?);
       return Ok(dec as Box<dyn Decoder>);
     }
 
