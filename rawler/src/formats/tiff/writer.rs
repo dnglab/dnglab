@@ -174,6 +174,10 @@ impl DirectoryWriter {
     );
   }
 
+  pub fn contains<T: TiffTag>(&self, tag: T) -> bool {
+    self.entries.contains_key(&tag.into())
+  }
+
   pub fn copy<'a>(&mut self, iter: impl Iterator<Item = (&'a u16, &'a Value)>) {
     for entry in iter {
       if !self.entries.contains_key(entry.0) {
