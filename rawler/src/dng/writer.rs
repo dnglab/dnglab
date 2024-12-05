@@ -152,7 +152,7 @@ where
     }
 
     if rawimage.cpp > 1 || matches!(rawimage.photometric, RawPhotometricInterpretation::Cfa(_)) {
-      self.writer.as_shot_neutral(&wbcoeff_to_tiff_value(&rawimage));
+      self.writer.as_shot_neutral(wbcoeff_to_tiff_value(&rawimage));
       // Add matrix and illumninant
       let mut available_matrices = rawimage.color_matrix.clone();
       if let Some(first_key) = available_matrices.keys().next().cloned() {

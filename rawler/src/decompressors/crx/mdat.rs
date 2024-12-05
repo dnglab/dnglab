@@ -133,6 +133,7 @@ pub struct TileQPData {
 }
 
 #[derive(Debug, Clone)]
+#[allow(unused)]
 pub struct Plane {
   // Header fields
   pub ind: u16,
@@ -194,6 +195,7 @@ impl Plane {
 ///
 /// Two indicators are known: 0xFF03 and 0xFF13
 #[derive(Debug, Clone, Default)]
+#[allow(unused)]
 pub struct Subband {
   /// Indicator, 0xFF03 for version 1, 0xFF13 for version 2
   pub ind: u16,

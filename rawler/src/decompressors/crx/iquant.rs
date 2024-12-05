@@ -21,6 +21,7 @@ pub(super) const Q_STEP_TBL: [u32; 6] = [0x28, 0x2D, 0x33, 0x39, 0x40, 0x48];
 
 /// Holds the QStep information for a tile
 #[derive(Clone, Debug)]
+#[allow(unused)]
 pub struct QStep {
   /// QStep tables for each compression level
   pub q_step_tbl: Vec<u32>,

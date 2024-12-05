@@ -3,7 +3,6 @@ use log::debug;
 use log::warn;
 use serde::Deserialize;
 use serde::Serialize;
-use std::f32::NAN;
 
 use super::BlackLevel;
 use super::Camera;
@@ -205,7 +204,7 @@ impl<'a> PefDecoder<'a> {
         let raw_wb = [wb.force_u16(0) as f32, wb.force_u16(1) as f32, wb.force_u16(2) as f32, wb.force_u16(3) as f32];
         Ok(normalize_wb(raw_wb))
       }
-      None => Ok([NAN, NAN, NAN, NAN]),
+      None => Ok([f32::NAN, f32::NAN, f32::NAN, f32::NAN]),
     }
   }
 
@@ -353,7 +352,7 @@ fn normalize_wb(raw_wb: [f32; 4]) -> [f32; 4] {
       *v /= div
     }
   });
-  [norm[0], (norm[1] + norm[2]) / 2.0, norm[3], NAN]
+  [norm[0], (norm[1] + norm[2]) / 2.0, norm[3], f32::NAN]
 }
 
 crate::tags::tiff_tag_enum!(PefMakernote);
