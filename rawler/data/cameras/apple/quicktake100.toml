@@ -1,0 +1,10 @@
+make = "Apple"
+model = "QuickTake 100"
+clean_make = "Apple"
+clean_model = "QuickTake 100"
+blackpoint = 0
+whitepoint = 1023
+color_pattern = "GRBG"
+
+[cameras.color_matrix]
+D65 = [2.1392,-0.5653,-0.3353,0.2406,0.8010,-0.0415,0.7166,0.1427,0.2078]
