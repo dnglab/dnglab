@@ -94,6 +94,11 @@ where
     self.data.chunks_exact_mut(self.width)
   }
 
+  pub fn par_pixel_rows_mut(&mut self) -> rayon::slice::ChunksExactMut<'_, T> {
+    debug_assert!(self.initialized);
+    self.data.par_chunks_exact_mut(self.width)
+  }
+
   #[inline(always)]
   pub fn at(&self, row: usize, col: usize) -> &T {
     debug_assert!(self.initialized);
