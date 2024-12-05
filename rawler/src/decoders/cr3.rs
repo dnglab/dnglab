@@ -4,7 +4,6 @@
 use image::DynamicImage;
 use log::{debug, warn};
 use std::convert::{TryFrom, TryInto};
-use std::f32::NAN;
 use std::fmt::Debug;
 
 use crate::bits::Endian;
@@ -284,7 +283,7 @@ impl<'a> Decoder for Cr3Decoder<'a> {
     let cmp1 = self.cmp1_box(raw_trak_id).ok_or(format!("CMP1 box not found for trak {}", raw_trak_id))?;
     debug!("cmp1 mdat hdr size: {}", cmp1.mdat_hdr_size);
 
-    let mut wb = cr3md.wb.unwrap_or([NAN, NAN, NAN, NAN]);
+    let mut wb = cr3md.wb.unwrap_or([f32::NAN, f32::NAN, f32::NAN, f32::NAN]);
     let whitelevel = cr3md.whitelevel.unwrap_or(u16::MAX);
 
     // Special handling for CRM movie files
@@ -292,7 +291,7 @@ impl<'a> Decoder for Cr3Decoder<'a> {
       if 130 == entry.force_u16(3) {
         // Light Raw
         // WB is already applied, use 1.0
-        wb = [1.0, 1.0, 1.0, NAN];
+        wb = [1.0, 1.0, 1.0, f32::NAN];
       }
       if 131 == entry.force_u16(3) { // Standard Raw
          // Nothing special for Standard raw
@@ -680,7 +679,7 @@ fn normalize_wb(raw_wb: [f32; 4]) -> [f32; 4] {
       *v /= div
     }
   });
-  [norm[0], (norm[1] + norm[2]) / 2.0, norm[3], NAN]
+  [norm[0], (norm[1] + norm[2]) / 2.0, norm[3], f32::NAN]
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]

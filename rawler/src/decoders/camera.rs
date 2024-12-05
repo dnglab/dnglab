@@ -265,7 +265,7 @@ impl Camera {
       crop_area: None,
       bps: None,
       real_bps: 16,
-      highres_width: usize::max_value(),
+      highres_width: usize::MAX,
       default_scale: DefaultScale::default(),
       best_quality_scale: BestQualityScale::default(),
       hints: Vec::new(),

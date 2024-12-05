@@ -12,7 +12,6 @@ use rayon::slice::ParallelSliceMut;
 use serde::Deserialize;
 use serde::Serialize;
 use std::convert::TryFrom;
-use std::f32::NAN;
 
 use crate::alloc_image_plain;
 use crate::analyze::FormatDump;
@@ -541,10 +540,10 @@ impl<'a> Cr2Decoder<'a> {
         levels.get_force_u16(offset) as f32,
         (levels.get_force_u16(offset + 1) as f32 + levels.get_force_u16(offset + 2) as f32) / 2.0,
         levels.get_force_u16(offset + 3) as f32,
-        NAN,
+        f32::NAN,
       ]);
     }
-    Ok([NAN, NAN, NAN, NAN])
+    Ok([f32::NAN, f32::NAN, f32::NAN, f32::NAN])
   }
 
   /// Get the white balance coefficents from COLORDATA tag
@@ -561,13 +560,13 @@ impl<'a> Cr2Decoder<'a> {
         levels.get_force_u32(3) as f32,
         levels.get_force_u32(2) as f32,
         levels.get_force_u32(4) as f32,
-        NAN,
+        f32::NAN,
       ])
     } else if let Some(levels) = self.tiff.get_entry(TiffCommonTag::Cr2OldWB) {
-      Ok([levels.force_f32(0), levels.force_f32(1), levels.force_f32(2), NAN])
+      Ok([levels.force_f32(0), levels.force_f32(1), levels.force_f32(2), f32::NAN])
     } else {
       // At least the D2000 has no WB
-      Ok([NAN, NAN, NAN, NAN])
+      Ok([f32::NAN, f32::NAN, f32::NAN, f32::NAN])
     }
   }
 
@@ -811,7 +810,7 @@ fn normalize_wb(raw_wb: [f32; 4]) -> [f32; 4] {
       *v /= div
     }
   });
-  [norm[0], (norm[1] + norm[2]) / 2.0, norm[3], NAN]
+  [norm[0], (norm[1] + norm[2]) / 2.0, norm[3], f32::NAN]
 }
 
 crate::tags::tiff_tag_enum!(Cr2MakernoteTag);

@@ -1,5 +1,3 @@
-use std::f32::NAN;
-
 use crate::bits::*;
 use crate::exif::Exif;
 use crate::formats::tiff::Rational;
@@ -87,7 +85,7 @@ impl<'a> Decoder for AriDecoder<'a> {
 impl<'a> AriDecoder<'a> {
   fn get_wb(&self, file: &mut RawFile) -> Result<[f32; 4]> {
     let buffer = file.subview(0, 100 + 12).unwrap();
-    Ok([LEf32(&buffer, 100), LEf32(&buffer, 104), LEf32(&buffer, 108), NAN])
+    Ok([LEf32(&buffer, 100), LEf32(&buffer, 104), LEf32(&buffer, 108), f32::NAN])
   }
 }
 

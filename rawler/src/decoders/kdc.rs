@@ -1,5 +1,3 @@
-use std::f32::NAN;
-
 use log::warn;
 
 use crate::alloc_image;
@@ -84,7 +82,7 @@ impl<'a> Decoder for KdcDecoder<'a> {
       let cpp = 1;
       let whitelevel = Some(WhiteLevel::new(vec![white; cpp]));
       let photometric = RawPhotometricInterpretation::Cfa(CFAConfig::new_from_camera(&self.camera));
-      let img = RawImage::new(self.camera.clone(), image, cpp, [1.0, 1.0, 1.0, NAN], photometric, None, whitelevel, dummy);
+      let img = RawImage::new(self.camera.clone(), image, cpp, [1.0, 1.0, 1.0, f32::NAN], photometric, None, whitelevel, dummy);
       return Ok(img);
     }
 
@@ -132,7 +130,7 @@ impl<'a> KdcDecoder<'a> {
           if levels.count() != 3 {
             Err(format!("KDC: Levels count is off: {}", levels.count()).into())
           } else {
-            Ok([levels.force_f32(0), levels.force_f32(1), levels.force_f32(2), NAN])
+            Ok([levels.force_f32(0), levels.force_f32(1), levels.force_f32(2), f32::NAN])
           }
         }
         None => {
@@ -142,12 +140,12 @@ impl<'a> KdcDecoder<'a> {
           } else {
             let r = BEu16(levels.get_data(), 148) as f32;
             let b = BEu16(levels.get_data(), 150) as f32;
-            Ok([r / 256.0, 1.0, b / 256.0, NAN])
+            Ok([r / 256.0, 1.0, b / 256.0, f32::NAN])
           }
         }
       }
     } else {
-      Ok([NAN, NAN, NAN, NAN])
+      Ok([f32::NAN, f32::NAN, f32::NAN, f32::NAN])
     }
   }
 

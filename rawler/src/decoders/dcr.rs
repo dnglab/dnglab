@@ -1,5 +1,4 @@
 use std::cmp;
-use std::f32::NAN;
 
 use crate::alloc_image;
 use crate::analyze::FormatDump;
@@ -99,10 +98,10 @@ impl<'a> DcrDecoder<'a> {
         2048.0 / BEu16(levels, 40) as f32,
         2048.0 / BEu16(levels, 42) as f32,
         2048.0 / BEu16(levels, 44) as f32,
-        NAN,
+        f32::NAN,
       ])
     } else {
-      Ok([NAN, NAN, NAN, NAN])
+      Ok([f32::NAN, f32::NAN, f32::NAN, f32::NAN])
     }
   }
 

@@ -1,5 +1,3 @@
-use std::f32::NAN;
-
 use image::DynamicImage;
 use image::ImageBuffer;
 use image::Rgb;
@@ -392,7 +390,7 @@ impl<'a> NefDecoder<'a> {
 
   fn get_wb(&self) -> Result<[f32; 4]> {
     if self.camera.find_hint("nowb") {
-      Ok([NAN, NAN, NAN, NAN])
+      Ok([f32::NAN, f32::NAN, f32::NAN, f32::NAN])
     } else if let Some(levels) = self.makernote.get_entry(TiffCommonTag::NefWB0) {
       Ok([levels.force_f32(0), 1.0, 1.0, levels.force_f32(1)])
     } else if let Some(levels) = self.makernote.get_entry(TiffCommonTag::NrwWB) {
@@ -720,7 +718,7 @@ fn normalize_wb(raw_wb: [f32; 4]) -> [f32; 4] {
       *v /= div
     }
   });
-  [norm[0], (norm[1] + norm[2]) / 2.0, norm[3], NAN]
+  [norm[0], (norm[1] + norm[2]) / 2.0, norm[3], f32::NAN]
 }
 
 crate::tags::tiff_tag_enum!(NikonMakernote);

@@ -1,5 +1,3 @@
-use std::f32::NAN;
-
 use log::warn;
 
 use crate::analyze::FormatDump;
@@ -98,7 +96,7 @@ impl<'a> ErfDecoder<'a> {
     } else {
       let r = BEu16(levels.get_data(), 48) as f32;
       let b = BEu16(levels.get_data(), 50) as f32;
-      Ok([r * 508.0 * 1.078 / 65536.0, 1.0, b * 382.0 * 1.173 / 65536.0, NAN])
+      Ok([r * 508.0 * 1.078 / 65536.0, 1.0, b * 382.0 * 1.173 / 65536.0, f32::NAN])
     }
   }
 

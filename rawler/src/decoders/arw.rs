@@ -1,5 +1,4 @@
 use std::cmp;
-use std::f32::NAN;
 use std::io::Cursor;
 
 use image::DynamicImage;
@@ -187,7 +186,7 @@ impl<'a> Decoder for ArwDecoder<'a> {
 
     if cpp == 3 {
       // For debayer images, we assume WB coeffs already applied
-      img.wb_coeffs = [1.0, 1.0, 1.0, NAN];
+      img.wb_coeffs = [1.0, 1.0, 1.0, f32::NAN];
     }
 
     img.crop_area = crop;
@@ -324,7 +323,7 @@ impl<'a> ArwDecoder<'a> {
       return Err(format!("Invalid DNGPRIVATEDATA tag: 0x{:X}, expected 0x4D5249 ", BEu32(&buf, 0)).into());
     }
     let mut currpos: usize = 8;
-    let mut wb_coeffs: [f32; 4] = [1.0, 1.0, 1.0, NAN];
+    let mut wb_coeffs: [f32; 4] = [1.0, 1.0, 1.0, f32::NAN];
     // At most we read 20 bytes from currpos so check we don't step outside that
     while currpos + 20 < buf.len() {
       let tag: u32 = BEu32(&buf, currpos);
@@ -376,7 +375,7 @@ impl<'a> ArwDecoder<'a> {
       decode_16be(&image_data, width, height, dummy)
     };
     let cpp = 1;
-    ok_cfa_image(self.camera.clone(), cpp, [NAN, NAN, NAN, NAN], image, dummy)
+    ok_cfa_image(self.camera.clone(), cpp, [f32::NAN, f32::NAN, f32::NAN, f32::NAN], image, dummy)
   }
 
   pub(crate) fn decode_arw1(buf: &[u8], width: usize, height: usize, dummy: bool) -> PixU16 {
@@ -707,7 +706,7 @@ fn normalize_wb(raw_wb: [f32; 4]) -> [f32; 4] {
       *v /= div
     }
   });
-  [norm[0], (norm[1] + norm[2]) / 2.0, norm[3], NAN]
+  [norm[0], (norm[1] + norm[2]) / 2.0, norm[3], f32::NAN]
 }
 
 crate::tags::tiff_tag_enum!(ArwMakernoteTag);

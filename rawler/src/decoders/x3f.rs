@@ -1,4 +1,3 @@
-use std::f32::NAN;
 use std::io::Cursor;
 
 use crate::bits::*;
@@ -150,7 +149,7 @@ impl<'a> Decoder for X3fDecoder<'a> {
 
 impl<'a> X3fDecoder<'a> {
   fn get_wb(&self) -> Result<[f32; 4]> {
-    Ok([NAN, NAN, NAN, NAN])
+    Ok([f32::NAN, f32::NAN, f32::NAN, f32::NAN])
   }
 
   fn decode_compressed(&self, _buf: &[u8], _width: usize, _height: usize, _dummy: bool) -> Result<PixU16> {

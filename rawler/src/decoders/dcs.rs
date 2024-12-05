@@ -1,5 +1,3 @@
-use std::f32::NAN;
-
 use crate::analyze::FormatDump;
 use crate::bits::LookupTable;
 use crate::exif::Exif;
@@ -55,7 +53,7 @@ impl<'a> Decoder for DcsDecoder<'a> {
 
     let image = decode_8bit_wtable(&src, &table, width, height, dummy);
     let cpp = 1;
-    ok_cfa_image(self.camera.clone(), cpp, [NAN, NAN, NAN, NAN], image, dummy)
+    ok_cfa_image(self.camera.clone(), cpp, [f32::NAN, f32::NAN, f32::NAN, f32::NAN], image, dummy)
   }
 
   fn format_dump(&self) -> FormatDump {
