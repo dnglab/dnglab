@@ -15,7 +15,6 @@ use log::warn;
 use serde::Deserialize;
 use serde::Serialize;
 use std::collections::HashMap;
-use std::f32::NAN;
 use std::io::SeekFrom;
 use std::mem::size_of;
 
@@ -426,7 +425,7 @@ impl<'a> IiqDecoder<'a> {
       let (split_col, split_row) = self.split_offsets()?.expect("Must have split values");
       debug!("Split col: {}, row: {}", split_col, split_row);
 
-      let mut qmul = [[NAN; 2]; 2];
+      let mut qmul = [[f32::NAN; 2]; 2];
       qmul[0][0] = 1.0 + multipliers[4];
       qmul[0][1] = 1.0 + multipliers[10];
       qmul[1][0] = 1.0 + multipliers[14];
@@ -830,7 +829,7 @@ impl<'a> IiqDecoder<'a> {
             0x0419 => {
               stream.seek(SeekFrom::Start(offset + tag_offset))?;
               assert!(len as usize >= 8 * size_of::<f32>());
-              let mut data = [NAN; 8];
+              let mut data = [f32::NAN; 8];
               for entry in data.iter_mut() {
                 *entry = stream.read_f32::<LittleEndian>()?;
               }
@@ -839,7 +838,7 @@ impl<'a> IiqDecoder<'a> {
             0x041a => {
               stream.seek(SeekFrom::Start(offset + tag_offset))?;
               assert_eq!(len as usize, 4 * size_of::<f32>());
-              let mut data = [NAN; 4];
+              let mut data = [f32::NAN; 4];
               for entry in data.iter_mut() {
                 *entry = stream.read_f32::<LittleEndian>()?;
               }
@@ -856,7 +855,7 @@ impl<'a> IiqDecoder<'a> {
             }
             0x041e => {
               stream.seek(SeekFrom::Start(offset + tag_offset))?;
-              let mut data = [NAN; 19];
+              let mut data = [f32::NAN; 19];
               for entry in data.iter_mut() {
                 *entry = stream.read_f32::<LittleEndian>()?;
               }
@@ -967,7 +966,7 @@ impl<'a> IiqDecoder<'a> {
     let mut buffer = vec![0; 3 * 4];
     file.inner().seek(SeekFrom::Start(wb_offset))?;
     file.inner().read_exact(&mut buffer)?;
-    Ok([LEf32(&buffer, 0), LEf32(&buffer, 4), LEf32(&buffer, 8), NAN])
+    Ok([LEf32(&buffer, 0), LEf32(&buffer, 4), LEf32(&buffer, 8), f32::NAN])
   }
 
   /// Get lens description by analyzing TIFF tags and makernotes

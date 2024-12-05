@@ -1,5 +1,4 @@
 use std::cmp;
-use std::f32::NAN;
 use std::io::Read;
 use std::io::Seek;
 
@@ -419,7 +418,7 @@ fn normalize_wb(raw_wb: [f32; 4]) -> [f32; 4] {
       *v /= div
     }
   });
-  [norm[0], (norm[1] + norm[2]) / 2.0, norm[3], NAN]
+  [norm[0], (norm[1] + norm[2]) / 2.0, norm[3], f32::NAN]
 }
 
 crate::tags::tiff_tag_enum!(OrfMakernotes);

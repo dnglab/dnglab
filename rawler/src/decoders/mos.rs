@@ -1,5 +1,3 @@
-use std::f32::NAN;
-
 use crate::alloc_image_ok;
 use crate::analyze::FormatDump;
 use crate::decompressors::ljpeg::LjpegDecompressor;
@@ -92,17 +90,17 @@ impl<'a> MosDecoder<'a> {
         if let Some(endpos) = data.iter().position(|&x| x == 0) {
           let nums = String::from_utf8_lossy(&data[0..endpos])
             .split_terminator('\n')
-            .map(|x| x.parse::<f32>().unwrap_or(NAN))
+            .map(|x| x.parse::<f32>().unwrap_or(f32::NAN))
             .collect::<Vec<f32>>();
           if nums.len() == 4 {
-            return Ok([nums[0] / nums[1], nums[0] / nums[2], nums[0] / nums[3], NAN]);
+            return Ok([nums[0] / nums[1], nums[0] / nums[2], nums[0] / nums[3], f32::NAN]);
           }
         }
         break;
       }
       pos += 1;
     }
-    Ok([NAN, NAN, NAN, NAN])
+    Ok([f32::NAN, f32::NAN, f32::NAN, f32::NAN])
   }
 
   fn xmp_tag(tiff: &GenericTiffReader, tag: &str) -> Result<String> {

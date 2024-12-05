@@ -1,5 +1,4 @@
 use crate::analyze::FormatDump;
-use std::f32::NAN;
 
 use crate::exif::Exif;
 use crate::formats::tiff::reader::TiffReader;
@@ -44,7 +43,7 @@ impl<'a> Decoder for MefDecoder<'a> {
 
     let image = decode_12be(&src, width, height, dummy);
     let cpp = 1;
-    ok_cfa_image(self.camera.clone(), cpp, [NAN, NAN, NAN, NAN], image, dummy)
+    ok_cfa_image(self.camera.clone(), cpp, [f32::NAN, f32::NAN, f32::NAN, f32::NAN], image, dummy)
   }
 
   fn format_dump(&self) -> FormatDump {

@@ -1,6 +1,5 @@
 use log::warn;
 use std::cmp;
-use std::f32::NAN;
 
 use crate::alloc_image;
 use crate::analyze::FormatDump;
@@ -492,7 +491,7 @@ impl<'a> SrwDecoder<'a> {
         (rggb_levels.force_u32(0) as f32 - rggb_blacks.force_u32(0) as f32) / 4096.0,
         (rggb_levels.force_u32(1) as f32 - rggb_blacks.force_u32(1) as f32) / 4096.0,
         (rggb_levels.force_u32(3) as f32 - rggb_blacks.force_u32(3) as f32) / 4096.0,
-        NAN,
+        f32::NAN,
       ])
     }
   }

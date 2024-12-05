@@ -114,7 +114,7 @@ where
   let dir = read_dir(input)?;
   for entry in dir {
     let entry = entry?;
-    let in_md = fs::metadata(&entry.path())?;
+    let in_md = fs::metadata(entry.path())?;
     if in_md.is_file() {
       if filter(&entry.path()) {
         result.push(entry.path());
