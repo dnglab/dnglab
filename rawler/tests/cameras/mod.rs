@@ -1,4 +1,11 @@
 use crate::common::camera_file_check;
+mod camera_quicktake_100_raw_modes {
+  super::camera_file_check!("Apple", "QuickTake 100", cam_apple_quicktake_100_320x240_qtk, "raw_modes/Apple_QuickTake_100_320x240.qtk");
+  super::camera_file_check!("Apple", "QuickTake 100", cam_apple_quicktake_100_480x640_qtk, "raw_modes/Apple_QuickTake_100_480x640.qtk");
+}
+mod camera_quicktake_150_raw_modes {
+  super::camera_file_check!("Apple", "QuickTake 150", cam_apple_quicktake_150_480x640_qtk, "raw_modes/Apple_QuickTake_150_480x640.qtk");
+}
 mod camera_eos_1000d_raw_modes {
   super::camera_file_check!("Canon", "EOS 1000D", cam_canon_eos_1000d_iso_200_raw_cr2, "raw_modes/Canon EOS 1000D_ISO_200_RAW.CR2");
 }
