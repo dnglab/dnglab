@@ -59,13 +59,13 @@ impl<'a> KdcDecoder<'a> {
 
 impl<'a> Decoder for KdcDecoder<'a> {
   fn raw_image(&self, file: &mut RawFile, _params: RawDecodeParams, dummy: bool) -> Result<RawImage> {
-    if self.camera.model == "Kodak DC120 ZOOM Digital Camera" {
+    if self.camera.clean_model == "DC120" {
       let width = 848;
       let height = 976;
       let raw = self.tiff.find_ifds_with_tag(TiffCommonTag::CFAPattern)[0];
       let off = fetch_tiff_tag!(raw, TiffCommonTag::StripOffsets).force_usize(0);
       let mut white = self.camera.whitelevel.clone().expect("KDC needs a whitelevel in camera config")[0];
-      let src = file.subview_until_eof(off as u64).unwrap();
+      let src = file.subview_until_eof(off as u64)?;
       let image = match fetch_tiff_tag!(raw, TiffCommonTag::Compression).force_usize(0) {
         1 => Self::decode_dc120(&src, width, height, dummy),
         7 => {
@@ -101,7 +101,7 @@ impl<'a> Decoder for KdcDecoder<'a> {
       off = if off < 0x15000 { 0x15000 } else { 0x17000 };
     }
 
-    let src = file.subview_until_eof(off as u64).unwrap();
+    let src = file.subview_until_eof(off as u64)?;
     let image = decode_12be(&src, width, height, dummy);
     let cpp = 1;
     ok_cfa_image(self.camera.clone(), cpp, self.get_wb()?, image, dummy)
