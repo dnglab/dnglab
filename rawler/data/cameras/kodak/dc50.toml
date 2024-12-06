@@ -1,0 +1,13 @@
+make = "Eastman Kodak Company"
+model = "Kodak Digital Science DC50 Zoom Camera"
+clean_make = "Kodak"
+clean_model = "DC50"
+blackpoint = 0
+whitepoint = 16383
+raw_width = 768
+raw_height = 512
+color_pattern = "GRBG"
+crop_area = [6, 4, 6, 4]
+
+[cameras.color_matrix]
+D65 = [2.1392,-0.5653,-0.3353,0.2406,0.8010,-0.0415,0.7166,0.1427,0.2078]

@@ -6,12 +6,15 @@ use crate::bits::BEu16;
 use crate::exif::Exif;
 use crate::formats::tiff::ifd::OffsetMode;
 use crate::formats::tiff::reader::TiffReader;
+use crate::formats::tiff::Entry;
 use crate::formats::tiff::GenericTiffReader;
+use crate::formats::tiff::Value;
 use crate::formats::tiff::IFD;
 use crate::packed::decode_12be;
 use crate::pixarray::PixU16;
 use crate::tags::ExifTag;
 use crate::tags::TiffCommonTag;
+use crate::OptBuffer;
 use crate::RawFile;
 use crate::RawImage;
 use crate::RawLoader;
@@ -79,6 +82,27 @@ impl<'a> Decoder for KdcDecoder<'a> {
           ))
         }
       };
+      let cpp = 1;
+      let whitelevel = Some(WhiteLevel::new(vec![white; cpp]));
+      let photometric = RawPhotometricInterpretation::Cfa(CFAConfig::new_from_camera(&self.camera));
+      let img = RawImage::new(self.camera.clone(), image, cpp, [1.0, 1.0, 1.0, f32::NAN], photometric, None, whitelevel, dummy);
+      return Ok(img);
+    }
+
+    if self.camera.clean_model == "DC50" {
+      let raw = self.tiff.find_ifds_with_tag(TiffCommonTag::CFAPattern)[0];
+      let width = self.camera.raw_width;
+      let height = self.camera.raw_height;
+      let off = fetch_tiff_tag!(raw, TiffCommonTag::StripOffsets).force_usize(0);
+      let white = self.camera.whitelevel.clone().expect("KDC needs a whitelevel in camera config")[0];
+      let cbpp = match raw.get_entry(ExifTag::CompressedBitsPerPixel) {
+        Some(Entry {
+          value: Value::Rational(data), ..
+        }) if data[0].n == 243 => 2,
+        _ => 3,
+      };
+      let src: OptBuffer = file.subview_until_eof(off as u64)?.into();
+      let image = crate::decompressors::radc::decompress(&src, width, height, cbpp, dummy)?;
       let cpp = 1;
       let whitelevel = Some(WhiteLevel::new(vec![white; cpp]));
       let photometric = RawPhotometricInterpretation::Cfa(CFAConfig::new_from_camera(&self.camera));
