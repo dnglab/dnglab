@@ -1722,6 +1722,9 @@ mod camera_dc120_raw_modes {
   super::camera_file_check!("Kodak", "DC120", cam_kodak_dc120_zoom_digital_camera_jpeg_kdc, "raw_modes/Kodak DC120 ZOOM Digital Camera_JPEG.KDC");
   super::camera_file_check!("Kodak", "DC120", cam_kodak_dc120_zoom_digital_camera_uncompressed_kdc, "raw_modes/Kodak DC120 ZOOM Digital Camera_Uncompressed.KDC");
 }
+mod camera_dc50_raw_modes {
+  super::camera_file_check!("Kodak", "DC50", cam_kodak_dc50_compressed_kdc, "raw_modes/Kodak_DC50_compressed.KDC");
+}
 mod camera_dcs460d_raw_modes {
   super::camera_file_check!("Kodak", "DCS460D", cam_dcs460d_tiff, "raw_modes/DCS460D.TIFF");
 }
