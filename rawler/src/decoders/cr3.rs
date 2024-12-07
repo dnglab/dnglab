@@ -41,6 +41,8 @@ pub struct Cr3Decoder<'a> {
   cmt3: GenericTiffReader,
   // GPS
   cmt4: GenericTiffReader,
+  // Metadata cache
+  md_cache: DecoderCache<Cr3Metadata>,
 }
 
 #[allow(dead_code)]
@@ -92,6 +94,7 @@ impl<'a> Cr3Decoder<'a> {
         cmt3: cmt3.tiff.clone(),
         cmt4: cmt4.tiff.clone(),
         bmff,
+        md_cache: DecoderCache::new(),
       };
       Ok(decoder)
     } else {
@@ -438,6 +441,9 @@ impl<'a> Cr3Decoder<'a> {
   }
 
   fn read_cr3_metadata(&self, rawfile: &mut RawFile, params: &RawDecodeParams) -> Result<Cr3Metadata> {
+    if let Some(md) = self.md_cache.get(params) {
+      return Ok(md);
+    }
     let mut md = Cr3Metadata::default();
 
     let resolver = LensResolver::new()
@@ -535,6 +541,7 @@ impl<'a> Cr3Decoder<'a> {
     debug!("CR3 blacklevels: {:?}", md.blacklevels);
     debug!("CR3 whitelevel: {:?}", md.whitelevel);
 
+    self.md_cache.set(params, md.clone());
     Ok(md)
   }
 

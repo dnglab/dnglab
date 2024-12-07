@@ -14,6 +14,7 @@ use std::panic;
 use std::panic::AssertUnwindSafe;
 use std::path::Path;
 use std::rc::Rc;
+use std::sync::Arc;
 use toml::Value;
 
 use crate::alloc_image_ok;
@@ -127,9 +128,34 @@ pub trait Readable: std::io::Read + std::io::Seek {}
 
 pub type ReadableBoxed = Box<dyn Readable>;
 
-#[derive(Default, Clone, Debug)]
+#[derive(Default, Clone, Debug, Hash, Eq, PartialEq)]
 pub struct RawDecodeParams {
   pub image_index: usize,
+}
+
+#[derive(Default, Debug, Clone)]
+struct DecoderCache<T>
+where
+  T: Default + Clone,
+{
+  cache: Arc<std::sync::RwLock<HashMap<RawDecodeParams, T>>>,
+}
+
+impl<T> DecoderCache<T>
+where
+  T: Default + Clone,
+{
+  fn new() -> Self {
+    Self::default()
+  }
+
+  fn get(&self, params: &RawDecodeParams) -> Option<T> {
+    self.cache.read().expect("DecoderCache is poisoned").get(params).cloned()
+  }
+
+  fn set(&self, params: &RawDecodeParams, value: T) {
+    self.cache.write().expect("DecoderCache is poisoned").insert(params.clone(), value);
+  }
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
