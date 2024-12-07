@@ -12,14 +12,14 @@ use crate::analyze::FormatDump;
 use crate::bits::BEu16;
 use crate::bits::Endian;
 use crate::bits::LookupTable;
+use crate::buffer::PaddedBuf;
 use crate::exif::Exif;
 use crate::pixarray::PixU16;
 use crate::pumps::BitPump;
 use crate::pumps::BitPumpMSB;
 use crate::pumps::ByteStream;
-use crate::OptBuffer;
+use crate::rawsource::RawSource;
 use crate::Orientation;
-use crate::RawFile;
 use crate::RawImage;
 use crate::RawLoader;
 use crate::Result;
@@ -38,7 +38,7 @@ pub struct QtkDecoder<'a> {
   camera: Camera,
 }
 
-pub fn is_qtk(file: &mut RawFile) -> bool {
+pub fn is_qtk(file: &RawSource) -> bool {
   match file.subview(0, 4) {
     Ok(buf) => buf[0..4] == b"qktk"[..] || buf[0..4] == b"qktn"[..],
     Err(_) => false,
@@ -46,8 +46,8 @@ pub fn is_qtk(file: &mut RawFile) -> bool {
 }
 
 impl<'a> QtkDecoder<'a> {
-  pub fn new(file: &mut RawFile, rawloader: &'a RawLoader) -> Result<QtkDecoder<'a>> {
-    match file.subview(0, 4)?.as_slice() {
+  pub fn new(file: &RawSource, rawloader: &'a RawLoader) -> Result<QtkDecoder<'a>> {
+    match file.subview(0, 4)? {
       b"qktk" => {
         let make = "Apple";
         let model = "QuickTake 100";
@@ -67,7 +67,7 @@ impl<'a> QtkDecoder<'a> {
           Ok(QtkDecoder { rawloader, camera })
         }
       }
-      sig @ _ => Err(crate::RawlerError::DecoderFailed(format!(
+      sig => Err(crate::RawlerError::DecoderFailed(format!(
         "Unable to use QTK decoder on file with signature: '{:?}'",
         sig
       ))),
@@ -76,10 +76,10 @@ impl<'a> QtkDecoder<'a> {
 }
 
 impl<'a> Decoder for QtkDecoder<'a> {
-  fn raw_image(&self, file: &mut RawFile, _params: RawDecodeParams, dummy: bool) -> Result<RawImage> {
+  fn raw_image(&self, file: &RawSource, _params: &RawDecodeParams, dummy: bool) -> Result<RawImage> {
     const META_OFFSET: u64 = 544;
     let meta = file.subview(META_OFFSET, 16)?;
-    let mut stream = ByteStream::new(&meta, Endian::Big);
+    let mut stream = ByteStream::new(meta, Endian::Big);
     let mut height = stream.get_u16() as usize;
     let mut width = stream.get_u16() as usize;
     let _zero = stream.get_u32();
@@ -90,7 +90,7 @@ impl<'a> Decoder for QtkDecoder<'a> {
     if height > width {
       swap(&mut width, &mut height);
       let info = file.subview(offset - 6, 6)?;
-      orientation = if BEu16(&info, 0).not() & 3 > 0 {
+      orientation = if BEu16(info, 0).not() & 3 > 0 {
         Orientation::Rotate90
       } else {
         Orientation::Rotate270
@@ -100,9 +100,9 @@ impl<'a> Decoder for QtkDecoder<'a> {
 
     log::debug!("QTK file w: {}, h: {}, hint: {}", width, height, hint);
 
-    let src: OptBuffer = file.subview_until_eof(offset as u64)?.into();
+    let src = file.subview_until_eof_padded(offset as u64)?;
 
-    let image = match file.subview(0, 4)?.as_slice() {
+    let image = match file.subview(0, 4)? {
       b"qktk" => Self::decompress_quicktake_100(self, &src, width, height, dummy)?,
       b"qktn" => Self::decompress_quicktake_150(self, &src, width, height, dummy)?,
       _ => unreachable!(),
@@ -119,7 +119,7 @@ impl<'a> Decoder for QtkDecoder<'a> {
     todo!()
   }
 
-  fn raw_metadata(&self, _file: &mut RawFile, _params: RawDecodeParams) -> Result<RawMetadata> {
+  fn raw_metadata(&self, _file: &RawSource, _params: &RawDecodeParams) -> Result<RawMetadata> {
     let meta = RawMetadata::new(&self.camera, Exif::default());
     Ok(meta)
   }
@@ -134,7 +134,7 @@ impl<'a> QtkDecoder<'a> {
     Ok([f32::NAN, f32::NAN, f32::NAN, f32::NAN])
   }
 
-  pub fn decompress_quicktake_150(&self, src: &OptBuffer, width: usize, height: usize, dummy: bool) -> Result<PixU16> {
+  pub fn decompress_quicktake_150(&self, src: &PaddedBuf, width: usize, height: usize, dummy: bool) -> Result<PixU16> {
     // Model 150 always compress with cbpp=3
     let cbpp = 3;
     crate::decompressors::radc::decompress(src, width, height, cbpp, dummy)

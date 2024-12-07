@@ -12,11 +12,12 @@ use std::{fmt::Display, mem::size_of};
 
 use crate::{
   bits::{log2ceil, Endian},
+  buffer::PaddedBuf,
   cfa::CFAColor,
   imgop::Dim2,
   pixarray::{PixU16, SharedPix2D},
   pumps::{BitPump, BitPumpMSB, ByteStream},
-  OptBuffer, Result, CFA,
+  Result, CFA,
 };
 
 /// A single gradient with two points
@@ -161,12 +162,12 @@ impl Header {
 }
 
 impl Strip {
-  fn decompress_strip(&self, src: &OptBuffer, header: &Header, params: &Params, q_bases: Option<&[u8]>, out: &mut PixU16) {
+  fn decompress_strip(&self, src: &PaddedBuf, header: &Header, params: &Params, q_bases: Option<&[u8]>, out: &mut PixU16) {
     let mut info_block = CompressedBlock::new(header, params);
     log::debug!("Fuji strip offset: {}, len: {}", self.offset, self.size);
 
     let mut pump = if self.offset + self.size == src.len() {
-      BitPumpMSB::new(&src[self.offset..]) // use extra bytes from OptBuffer
+      BitPumpMSB::new(&src[self.offset..]) // use extra bytes from PaddedBuf
     } else {
       let extra_bytes = 16;
       BitPumpMSB::new(&src[self.offset..self.offset + self.size + extra_bytes])
@@ -247,12 +248,12 @@ impl Strip {
   }
 }
 
-/// We need an OptBuffer here, because the buffer is divided
+/// We need PaddedBuf here, because the buffer is divided
 /// into multiple strips and each strip is feed into a BitPump.
 /// Each pump need as litte bit more overhead at the end.
-/// For the final strip, we need the extra bytes from OptBuffer
+/// For the final strip, we need the extra bytes from PaddedBuf
 /// to prevent out-of-range errors in BitPump.
-pub(super) fn decompress_fuji(buf: &OptBuffer, width: usize, height: usize, _bps: usize, corrected_cfa: &CFA) -> Result<PixU16> {
+pub(super) fn decompress_fuji(buf: &PaddedBuf, width: usize, height: usize, _bps: usize, corrected_cfa: &CFA) -> Result<PixU16> {
   let mut stream = ByteStream::new(buf, Endian::Big);
   let header = Header {
     signature: stream.get_u16(),

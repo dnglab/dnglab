@@ -34,9 +34,9 @@ use crate::rawimage::BlackLevel;
 use crate::rawimage::CFAConfig;
 use crate::rawimage::RawPhotometricInterpretation;
 use crate::rawimage::WhiteLevel;
+use crate::rawsource::RawSource;
 use crate::tags::ExifTag;
 use crate::tags::TiffCommonTag;
-use crate::RawFile;
 use crate::RawImage;
 use crate::RawLoader;
 use crate::RawlerError;
@@ -62,11 +62,11 @@ pub struct ArwDecoder<'a> {
 }
 
 impl<'a> ArwDecoder<'a> {
-  pub fn new(file: &mut RawFile, tiff: GenericTiffReader, rawloader: &'a RawLoader) -> Result<ArwDecoder<'a>> {
+  pub fn new(file: &RawSource, tiff: GenericTiffReader, rawloader: &'a RawLoader) -> Result<ArwDecoder<'a>> {
     let camera = rawloader.check_supported(tiff.root_ifd())?;
 
     let makernote = if let Some(exif) = tiff.find_first_ifd_with_tag(ExifTag::MakerNotes) {
-      exif.parse_makernote(file.inner(), OffsetMode::Absolute, &[])?
+      exif.parse_makernote(&mut file.reader(), OffsetMode::Absolute, &[])?
     } else {
       log::warn!("ARW makernote not found");
       None
@@ -85,7 +85,7 @@ impl<'a> ArwDecoder<'a> {
 }
 
 impl<'a> Decoder for ArwDecoder<'a> {
-  fn raw_image(&self, file: &mut RawFile, _params: RawDecodeParams, dummy: bool) -> Result<RawImage> {
+  fn raw_image(&self, file: &RawSource, _params: &RawDecodeParams, dummy: bool) -> Result<RawImage> {
     let data = self.tiff.find_ifds_with_tag(TiffCommonTag::StripOffsets);
     if data.is_empty() {
       if self.camera.model == "DSLR-A100" {
@@ -122,9 +122,9 @@ impl<'a> Decoder for ArwDecoder<'a> {
     let image = match compression {
       1 => {
         if self.camera.model == "DSC-R1" {
-          decode_14be_unpacked(&src, width, height, dummy)
+          decode_14be_unpacked(src, width, height, dummy)
         } else {
-          decode_16le(&src, width, height, dummy)
+          decode_16le(src, width, height, dummy)
         }
       }
       7 => {
@@ -136,12 +136,12 @@ impl<'a> Decoder for ArwDecoder<'a> {
       32767 => {
         if (width * height * bps) != count * 8 {
           height += 8;
-          ArwDecoder::decode_arw1(&src, width, height, dummy)
+          ArwDecoder::decode_arw1(src, width, height, dummy)
         } else {
           match bps {
             8 => {
               let curve = ArwDecoder::get_curve(raw)?;
-              ArwDecoder::decode_arw2(&src, width, height, &curve, dummy)
+              ArwDecoder::decode_arw2(src, width, height, &curve, dummy)
             }
             12 => {
               /*
@@ -157,7 +157,7 @@ impl<'a> Decoder for ArwDecoder<'a> {
                 x.iter_mut().for_each(|x| *x >>= 2);
                 x
               });
-              decode_12le(&src, width, height, dummy)
+              decode_12le(src, width, height, dummy)
             }
             _ => return Err(RawlerError::DecoderFailed(format!("ARW2: Don't know how to decode images with {} bps", bps))),
           }
@@ -201,7 +201,7 @@ impl<'a> Decoder for ArwDecoder<'a> {
   /// Exiftool docs says there is a tag 0x2002 including the image, but this tag
   /// exists in none of the samples?! Instead, we can use the JPEG thumbnail
   /// tags which exists for most samples.
-  fn full_image(&self, file: &mut RawFile, params: RawDecodeParams) -> Result<Option<DynamicImage>> {
+  fn full_image(&self, file: &RawSource, params: &RawDecodeParams) -> Result<Option<DynamicImage>> {
     if params.image_index != 0 {
       return Ok(None);
     }
@@ -209,7 +209,7 @@ impl<'a> Decoder for ArwDecoder<'a> {
     if let Some(preview_off) = root.get_entry(ExifTag::JPEGInterchangeFormat) {
       if let Some(preview_len) = root.get_entry(ExifTag::JPEGInterchangeFormatLength) {
         let buf = file.subview(preview_off.force_u64(0), preview_len.force_u64(0))?;
-        let img = image::load_from_memory_with_format(&buf, image::ImageFormat::Jpeg).unwrap();
+        let img = image::load_from_memory_with_format(buf, image::ImageFormat::Jpeg).unwrap();
         return Ok(Some(img));
       }
     }
@@ -220,7 +220,7 @@ impl<'a> Decoder for ArwDecoder<'a> {
     todo!()
   }
 
-  fn raw_metadata(&self, _file: &mut RawFile, _params: RawDecodeParams) -> Result<RawMetadata> {
+  fn raw_metadata(&self, _file: &RawSource, _params: &RawDecodeParams) -> Result<RawMetadata> {
     let mut exif = Exif::new(self.tiff.root_ifd())?;
     exif.extend_from_ifd(self.get_exif()?)?; // TODO: is this required?
     let mdata = RawMetadata::new_with_lens(&self.camera, exif, self.get_lens_description()?.cloned());
@@ -294,7 +294,7 @@ impl<'a> ArwDecoder<'a> {
     Ok(None)
   }
 
-  fn image_a100(&self, file: &mut RawFile, dummy: bool) -> Result<RawImage> {
+  fn image_a100(&self, file: &RawSource, dummy: bool) -> Result<RawImage> {
     // We've caught the elusive A100 in the wild, a transitional format
     // between the simple sanity of the MRW custom format and the wordly
     // wonderfullness of the Tiff-based ARW format, let's shoot from the hip
@@ -308,7 +308,7 @@ impl<'a> ArwDecoder<'a> {
     let offset = fetch_tiff_tag!(raw, TiffCommonTag::SubIFDs).force_usize(0);
 
     let src = file.subview_until_eof(offset as u64).unwrap();
-    let image = ArwDecoder::decode_arw1(&src, width, height, dummy);
+    let image = ArwDecoder::decode_arw1(src, width, height, dummy);
 
     // Get the WB the MRW way
     // DNGPrivateTag contains 4 bytes forming a LE u32 offset value.
@@ -318,22 +318,22 @@ impl<'a> ArwDecoder<'a> {
       LEu32(entry.get_data(), 0)
     };
     let buf = file.subview_until_eof(priv_offset as u64)?;
-    if BEu32(&buf, 0) != 0x4D5249 {
+    if BEu32(buf, 0) != 0x4D5249 {
       // MRI
-      return Err(format!("Invalid DNGPRIVATEDATA tag: 0x{:X}, expected 0x4D5249 ", BEu32(&buf, 0)).into());
+      return Err(format!("Invalid DNGPRIVATEDATA tag: 0x{:X}, expected 0x4D5249 ", BEu32(buf, 0)).into());
     }
     let mut currpos: usize = 8;
     let mut wb_coeffs: [f32; 4] = [1.0, 1.0, 1.0, f32::NAN];
     // At most we read 20 bytes from currpos so check we don't step outside that
     while currpos + 20 < buf.len() {
-      let tag: u32 = BEu32(&buf, currpos);
-      let len: usize = LEu32(&buf, currpos + 4) as usize;
+      let tag: u32 = BEu32(buf, currpos);
+      let len: usize = LEu32(buf, currpos + 4) as usize;
       if tag == 0x574247 {
         // WBG
-        wb_coeffs[0] = LEu16(&buf, currpos + 12) as f32;
-        wb_coeffs[1] = LEu16(&buf, currpos + 14) as f32;
-        wb_coeffs[2] = LEu16(&buf, currpos + 14) as f32;
-        wb_coeffs[3] = LEu16(&buf, currpos + 18) as f32;
+        wb_coeffs[0] = LEu16(buf, currpos + 12) as f32;
+        wb_coeffs[1] = LEu16(buf, currpos + 14) as f32;
+        wb_coeffs[2] = LEu16(buf, currpos + 14) as f32;
+        wb_coeffs[3] = LEu16(buf, currpos + 18) as f32;
         break;
       }
       currpos += len + 8;
@@ -343,7 +343,7 @@ impl<'a> ArwDecoder<'a> {
     ok_cfa_image(self.camera.clone(), cpp, normalize_wb(wb_coeffs), image, dummy)
   }
 
-  fn image_srf(&self, file: &mut RawFile, dummy: bool) -> Result<RawImage> {
+  fn image_srf(&self, file: &RawSource, dummy: bool) -> Result<RawImage> {
     let data = self.tiff.find_ifds_with_tag(TiffCommonTag::ImageWidth);
     if data.is_empty() {
       return Err(RawlerError::DecoderFailed("ARW: Couldn't find the data IFD!".to_string()));
@@ -456,7 +456,7 @@ impl<'a> ArwDecoder<'a> {
   /// So we need to decompress first, then unpack the bayer pattern from one line
   /// into two lines.
   /// For resolution-reduced files (cpp=3), pixels are encoded in YCbCr color space.
-  pub(crate) fn decode_ljpeg(camera: &Camera, file: &mut RawFile, raw: &IFD, dummy: bool) -> Result<PixU16> {
+  pub(crate) fn decode_ljpeg(camera: &Camera, file: &RawSource, raw: &IFD, dummy: bool) -> Result<PixU16> {
     let offsets = raw.get_entry(TiffCommonTag::TileOffsets).ok_or("Unable to find TileOffsets")?;
     let width = fetch_tiff_tag!(raw, TiffCommonTag::ImageWidth).force_usize(0);
     let height = fetch_tiff_tag!(raw, TiffCommonTag::ImageLength).force_usize(0);
@@ -559,12 +559,12 @@ impl<'a> ArwDecoder<'a> {
     }
   }
 
-  fn get_params(&self, file: &mut RawFile) -> Result<ArwImageParams> {
+  fn get_params(&self, file: &RawSource) -> Result<ArwImageParams> {
     let priv_offset = {
       let tag = fetch_tiff_tag!(self.tiff, TiffCommonTag::DNGPrivateArea).get_data();
       LEu32(tag, 0)
     };
-    let priv_tiff = IFD::new(file.inner(), priv_offset, 0, 0, Endian::Little, &[])?;
+    let priv_tiff = IFD::new(&mut file.reader(), priv_offset, 0, 0, Endian::Little, &[])?;
 
     //priv_tiff.dump::<ExifTag>(0).iter().for_each(|line| println!("DUMPXX: {}", line));
 

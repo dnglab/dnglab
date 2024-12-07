@@ -15,7 +15,7 @@ use crate::{
   formats::tiff::IFD,
   pixarray::{PixU16, SharedPix2D},
   pumps::{BitPump, BitPumpReverseBitsMSB, ByteStream},
-  RawFile,
+  rawsource::RawSource,
 };
 
 #[derive(Clone, Debug)]
@@ -353,7 +353,7 @@ fn make_gammatable(params: &CF2Params) -> Option<Vec<u16>> {
 }
 
 /// Decode Panasonic V8 bitstreams
-pub(crate) fn decode_panasonic_v8(rawfile: &mut RawFile, width: usize, height: usize, _bps: u32, ifd: &IFD, dummy: bool) -> Result<PixU16> {
+pub(crate) fn decode_panasonic_v8(rawfile: &RawSource, width: usize, height: usize, _bps: u32, ifd: &IFD, dummy: bool) -> Result<PixU16> {
   let out = alloc_image_ok!(width, height, dummy);
 
   let params = CF2Params::new(ifd)?;

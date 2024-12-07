@@ -11,8 +11,9 @@ use crate::imgop::{Dim2, Rect};
 use crate::lens::{LensDescription, LensResolver};
 use crate::packed::decode_16le;
 use crate::pixarray::PixU16;
+use crate::rawsource::RawSource;
 use crate::tags::{DngTag, ExifTag, TiffCommonTag};
-use crate::{alloc_image_ok, RawFile, RawImage, RawLoader};
+use crate::{alloc_image_ok, RawImage, RawLoader};
 use crate::{RawlerError, Result};
 
 use super::{BlackLevel, CFAConfig, Camera, Decoder, FormatHint, RawDecodeParams, RawMetadata, RawPhotometricInterpretation, WhiteLevel};
@@ -33,10 +34,10 @@ pub struct TfrDecoder<'a> {
 }
 
 impl<'a> TfrDecoder<'a> {
-  pub fn new(_file: &mut RawFile, tiff: GenericTiffReader, rawloader: &'a RawLoader) -> Result<TfrDecoder<'a>> {
+  pub fn new(_file: &RawSource, tiff: GenericTiffReader, rawloader: &'a RawLoader) -> Result<TfrDecoder<'a>> {
     debug!("3FR decoder choosen");
     let camera = rawloader.check_supported(tiff.root_ifd())?;
-    //let makernotes = new_makernote(file, 8).map_err(|ioerr| RawlerError::with_io_error("load 3FR makernotes", &file.path, ioerr))?;
+    //let makernotes = new_makernote(file, 8).map_err(|ioerr| RawlerError::with_io_error("load 3FR makernotes", file.path(), ioerr))?;
     Ok(TfrDecoder {
       camera,
       tiff,
@@ -47,7 +48,7 @@ impl<'a> TfrDecoder<'a> {
 }
 
 impl<'a> Decoder for TfrDecoder<'a> {
-  fn raw_image(&self, file: &mut RawFile, _params: RawDecodeParams, dummy: bool) -> Result<RawImage> {
+  fn raw_image(&self, file: &RawSource, _params: &RawDecodeParams, dummy: bool) -> Result<RawImage> {
     let raw = self.tiff.find_first_ifd_with_tag(TiffCommonTag::WhiteLevel).unwrap();
 
     let whitelevel = raw
@@ -65,9 +66,9 @@ impl<'a> Decoder for TfrDecoder<'a> {
     let src = file.subview_until_eof(offset as u64).unwrap();
 
     let image = if self.camera.find_hint("uncompressed") {
-      decode_16le(&src, width, height, dummy)
+      decode_16le(src, width, height, dummy)
     } else {
-      self.decode_compressed(&src, width, height, dummy)?
+      self.decode_compressed(src, width, height, dummy)?
     };
 
     let crop = Rect::from_tiff(raw).or_else(|| self.camera.crop_area.map(|area| Rect::new_with_borders(Dim2::new(width, height), &area)));
@@ -83,23 +84,23 @@ impl<'a> Decoder for TfrDecoder<'a> {
     Ok(img)
   }
 
-  fn full_image(&self, file: &mut RawFile, params: RawDecodeParams) -> Result<Option<DynamicImage>> {
+  fn full_image(&self, file: &RawSource, params: &RawDecodeParams) -> Result<Option<DynamicImage>> {
     if params.image_index != 0 {
       return Ok(None);
     }
     let root_ifd = &self.tiff.root_ifd();
     let buf = root_ifd
-      .singlestrip_data(file.inner())
+      .singlestrip_data_rawsource(file)
       .map_err(|e| RawlerError::DecoderFailed(format!("Failed to get strip data: {}", e)))?;
     let compression = root_ifd.get_entry(TiffCommonTag::Compression).ok_or("Missing tag")?.force_usize(0);
     let width = fetch_tiff_tag!(root_ifd, TiffCommonTag::ImageWidth).force_usize(0);
     let height = fetch_tiff_tag!(root_ifd, TiffCommonTag::ImageLength).force_usize(0);
     if compression == 1 {
       Ok(Some(DynamicImage::ImageRgb8(
-        ImageBuffer::<Rgb<u8>, Vec<u8>>::from_raw(width as u32, height as u32, buf).unwrap(),
+        ImageBuffer::<Rgb<u8>, Vec<u8>>::from_raw(width as u32, height as u32, buf.to_vec()).unwrap(),
       )))
     } else {
-      let img = image::load_from_memory_with_format(&buf, image::ImageFormat::Jpeg).unwrap();
+      let img = image::load_from_memory_with_format(buf, image::ImageFormat::Jpeg).unwrap();
       Ok(Some(img))
     }
   }
@@ -112,7 +113,7 @@ impl<'a> Decoder for TfrDecoder<'a> {
     FormatHint::TFR
   }
 
-  fn raw_metadata(&self, _file: &mut RawFile, _params: RawDecodeParams) -> Result<RawMetadata> {
+  fn raw_metadata(&self, _file: &RawSource, _params: &RawDecodeParams) -> Result<RawMetadata> {
     let exif = Exif::new(self.tiff.root_ifd())?;
     let mut mdata = RawMetadata::new_with_lens(&self.camera, exif, self.get_lens_description()?.cloned());
     // Read Unique ID
@@ -127,7 +128,7 @@ impl<'a> Decoder for TfrDecoder<'a> {
     Ok(mdata)
   }
 
-  fn xpacket(&self, _file: &mut RawFile, _params: RawDecodeParams) -> Result<Option<Vec<u8>>> {
+  fn xpacket(&self, _file: &RawSource, _params: &RawDecodeParams) -> Result<Option<Vec<u8>>> {
     match self.tiff.root_ifd().get_entry(TiffCommonTag::Xmp) {
       Some(Entry { value: Value::Byte(buf), .. }) => Ok(Some(buf.clone())),
       _ => Ok(None),

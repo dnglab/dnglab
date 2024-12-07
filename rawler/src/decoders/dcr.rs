@@ -11,9 +11,8 @@ use crate::formats::tiff::GenericTiffReader;
 use crate::formats::tiff::IFD;
 use crate::pixarray::PixU16;
 use crate::pumps::ByteStream;
+use crate::rawsource::RawSource;
 use crate::tags::TiffCommonTag;
-use crate::OptBuffer;
-use crate::RawFile;
 use crate::RawImage;
 use crate::RawLoader;
 use crate::Result;
@@ -35,11 +34,11 @@ pub struct DcrDecoder<'a> {
 }
 
 impl<'a> DcrDecoder<'a> {
-  pub fn new(file: &mut RawFile, tiff: GenericTiffReader, rawloader: &'a RawLoader) -> Result<DcrDecoder<'a>> {
+  pub fn new(file: &RawSource, tiff: GenericTiffReader, rawloader: &'a RawLoader) -> Result<DcrDecoder<'a>> {
     let camera = rawloader.check_supported(tiff.root_ifd())?;
 
     let kodak_ifd = fetch_tiff_tag!(tiff, TiffCommonTag::KodakIFD);
-    let makernote = IFD::new(file.inner(), kodak_ifd.force_u32(0), 0, 0, tiff.get_endian(), &[])?;
+    let makernote = IFD::new(&mut file.reader(), kodak_ifd.force_u32(0), 0, 0, tiff.get_endian(), &[])?;
 
     Ok(DcrDecoder {
       tiff,
@@ -51,13 +50,13 @@ impl<'a> DcrDecoder<'a> {
 }
 
 impl<'a> Decoder for DcrDecoder<'a> {
-  fn raw_image(&self, file: &mut RawFile, _params: RawDecodeParams, dummy: bool) -> Result<RawImage> {
+  fn raw_image(&self, file: &RawSource, _params: &RawDecodeParams, dummy: bool) -> Result<RawImage> {
     let raw = self.tiff.find_first_ifd_with_tag(TiffCommonTag::CFAPattern).unwrap();
     let width = fetch_tiff_tag!(raw, TiffCommonTag::ImageWidth).force_usize(0);
     let height = fetch_tiff_tag!(raw, TiffCommonTag::ImageLength).force_usize(0);
     let offset = fetch_tiff_tag!(raw, TiffCommonTag::StripOffsets).force_usize(0);
 
-    let src: OptBuffer = file.subview_until_eof(offset as u64).unwrap().into(); // TODO add size and check all samples
+    let src = file.subview_until_eof_padded(offset as u64)?; // TODO add size and check all samples
 
     let linearization = fetch_tiff_tag!(self.makernote, TiffCommonTag::DcrLinearization);
     let curve = {
@@ -78,7 +77,7 @@ impl<'a> Decoder for DcrDecoder<'a> {
     todo!()
   }
 
-  fn raw_metadata(&self, _file: &mut RawFile, __params: RawDecodeParams) -> Result<RawMetadata> {
+  fn raw_metadata(&self, _file: &RawSource, __params: &RawDecodeParams) -> Result<RawMetadata> {
     let exif = Exif::new(self.tiff.root_ifd())?;
     let mdata = RawMetadata::new(&self.camera, exif);
     Ok(mdata)
