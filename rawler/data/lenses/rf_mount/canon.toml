@@ -298,3 +298,13 @@ make = "Canon"
 model = "RF 135mm F1.8L IS USM"
 focal_range = [[135, 1], [135, 1]]
 aperture_range = [[18, 10], [18, 10]]
+
+[[lenses]]
+mount = "rf-mount"
+key = "RF200-800mm F6.3-9 IS USM"
+lens_id = 61182
+lens_subid = 309
+make = "Canon"
+model = "RF 200-800mm F6.3-9 IS USM"
+focal_range = [[200, 1], [800, 1]]
+aperture_range = [[63, 10], [9, 1]]
