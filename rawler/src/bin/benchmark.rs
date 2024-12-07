@@ -1,10 +1,9 @@
 use std::env;
-use std::fs::File;
 use std::path::PathBuf;
 use std::time::Instant;
 
 use rawler::decoders::RawDecodeParams;
-use rawler::RawFile;
+use rawler::rawsource::RawSource;
 
 fn usage() {
   println!("benchmark <file>");
@@ -26,33 +25,20 @@ fn main() {
   let file = &args[1];
   println!("Loading file \"{}\"", file);
 
-  let f = match File::open(file) {
-    Ok(val) => val,
-    Err(e) => {
-      error(&e.to_string());
-      return;
-    }
-  };
-
-  let mut rawfile = RawFile {
-    path: PathBuf::new(),
-    file: Box::new(f),
-    start_offset: 0,
-  };
-
+  let rawfile = RawSource::new(&PathBuf::from(file)).expect("failed to load raw file");
   let rawloader = rawler::RawLoader::new();
 
   let from_time = Instant::now();
   {
     for _ in 0..ITERATIONS {
-      let decoder = match rawloader.get_decoder(&mut rawfile) {
+      let decoder = match rawloader.get_decoder(&rawfile) {
         Ok(val) => val,
         Err(e) => {
           error(&e.to_string());
           return;
         }
       };
-      match decoder.raw_image(&mut rawfile, RawDecodeParams::default(), false) {
+      match decoder.raw_image(&rawfile, &RawDecodeParams::default(), false) {
         Ok(_) => {}
         Err(e) => error(&e.to_string()),
       }

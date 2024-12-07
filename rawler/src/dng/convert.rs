@@ -1,8 +1,8 @@
 use std::{
   ffi::OsStr,
-  fs::File,
-  io::{BufReader, Cursor, Read, Seek, Write},
-  path::{Path, PathBuf},
+  io::{Cursor, Seek, Write},
+  path::Path,
+  sync::Arc,
   thread::JoinHandle,
 };
 
@@ -13,8 +13,9 @@ use crate::{
   dng::{original::OriginalCompressed, writer::DngWriter, DNG_VERSION_V1_4, PREVIEW_JPEG_QUALITY},
   formats::tiff::Entry,
   imgop::develop::RawDevelop,
+  rawsource::RawSource,
   tags::{DngTag, ExifTag, TiffCommonTag},
-  RawFile, RawImage,
+  RawImage,
 };
 
 use super::{CropMode, DngCompression, DngPhotometricConversion};
@@ -60,39 +61,38 @@ impl Default for ConvertParams {
 /// This is up to the caller.
 pub fn convert_raw_file<W: Write + Seek + Send>(raw: &Path, dng: &mut W, params: &ConvertParams) -> crate::Result<()> {
   let original_filename = raw.file_name().and_then(OsStr::to_str).unwrap_or_default();
-  let raw_stream = BufReader::new(File::open(raw)?); // TODO: add path hint to error?
-  let rawfile = RawFile::new(PathBuf::from(raw), raw_stream);
+  //let raw_stream = BufReader::new(File::open(raw)?); // TODO: add path hint to error?
+  //let rawfile = RawFile::new(PathBuf::from(raw), raw_stream);
+
+  let rawfile = Arc::new(RawSource::new(raw)?);
 
   let original_compress_thread = if params.embedded {
-    let mut original_stream = BufReader::new(File::open(raw)?);
-    Some(std::thread::spawn(move || OriginalCompressed::compress(&mut original_stream)))
+    let orig_source = rawfile.clone();
+    Some(std::thread::spawn(move || OriginalCompressed::compress(&mut orig_source.reader())))
   } else {
     None
   };
 
-  internal_convert(rawfile, dng, original_filename, original_compress_thread, params)
+  internal_convert(&rawfile, dng, original_filename, original_compress_thread, params)
 }
 
 /// Convert a raw input file into DNG
-pub fn convert_raw_stream<W, R>(raw_stream: R, dng: &mut W, original_filename: impl AsRef<str>, params: &ConvertParams) -> crate::Result<()>
+pub fn convert_raw_source<W>(raw_source: &RawSource, dng: &mut W, original_filename: impl AsRef<str>, params: &ConvertParams) -> crate::Result<()>
 where
   W: Write + Seek + Send,
-  R: Read + Seek + 'static,
 {
-  let mut rawfile = RawFile::new(PathBuf::from(original_filename.as_ref()), raw_stream);
-
   let original_compress_thread = if params.embedded {
-    let mut original_stream = Cursor::new(rawfile.as_vec()?);
+    let mut original_stream = Cursor::new(raw_source.as_vec()?);
     Some(std::thread::spawn(move || OriginalCompressed::compress(&mut original_stream)))
   } else {
     None
   };
 
-  internal_convert(rawfile, dng, original_filename, original_compress_thread, params)
+  internal_convert(raw_source, dng, original_filename, original_compress_thread, params)
 }
 
 fn internal_convert<W>(
-  mut rawfile: RawFile,
+  rawfile: &RawSource,
   dng: &mut W,
   original_filename: impl AsRef<str>,
   original_compress_thread: Option<JoinHandle<Result<OriginalCompressed, std::io::Error>>>,
@@ -101,10 +101,10 @@ fn internal_convert<W>(
 where
   W: Write + Seek + Send,
 {
-  let decoder = crate::get_decoder(&mut rawfile)?;
+  let decoder = crate::get_decoder(rawfile)?;
   let raw_params = RawDecodeParams { image_index: params.index };
-  let mut rawimage = decoder.raw_image(&mut rawfile, raw_params.clone(), false)?;
-  let metadata = decoder.raw_metadata(&mut rawfile, raw_params.clone())?;
+  let mut rawimage = decoder.raw_image(rawfile, &raw_params, false)?;
+  let metadata = decoder.raw_metadata(rawfile, &raw_params)?;
 
   log::info!(
     "DNG conversion: '{}', make: {}, model: {}, raw-image-count: {}",
@@ -135,7 +135,7 @@ where
 
   // Write preview and thumbnail if requested
   if params.preview || params.thumbnail {
-    match generate_preview(&mut rawfile, decoder.as_ref(), &rawimage, raw_params.clone()) {
+    match generate_preview(rawfile, decoder.as_ref(), &rawimage, &raw_params) {
       Ok(image) => {
         if params.preview {
           let mut preview = dng.subframe(1);
@@ -187,7 +187,7 @@ where
     }
   }
 
-  if let Some(xpacket) = decoder.xpacket(&mut rawfile, raw_params.clone())? {
+  if let Some(xpacket) = decoder.xpacket(rawfile, &raw_params)? {
     dng.xpacket(&xpacket)?;
   }
 
@@ -212,7 +212,7 @@ where
   Ok(())
 }
 
-fn generate_preview(rawfile: &mut RawFile, decoder: &dyn Decoder, rawimage: &RawImage, params: RawDecodeParams) -> crate::Result<DynamicImage> {
+fn generate_preview(rawfile: &RawSource, decoder: &dyn Decoder, rawimage: &RawImage, params: &RawDecodeParams) -> crate::Result<DynamicImage> {
   match decoder.full_image(rawfile, params)? {
     Some(image) => Ok(image),
     None => {

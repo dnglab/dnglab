@@ -4,6 +4,7 @@ use byteorder::ReadBytesExt;
 use image::DynamicImage;
 use std::collections::BTreeMap;
 use std::io::Cursor;
+use std::io::Seek;
 use std::io::SeekFrom;
 use std::mem::size_of;
 
@@ -26,11 +27,10 @@ use crate::rawimage::BlackLevel;
 use crate::rawimage::CFAConfig;
 use crate::rawimage::RawPhotometricInterpretation;
 use crate::rawimage::WhiteLevel;
+use crate::rawsource::RawSource;
 use crate::tags::DngTag;
 use crate::tags::ExifTag;
 use crate::tags::TiffCommonTag;
-use crate::OptBuffer;
-use crate::RawFile;
 use crate::RawImage;
 use crate::RawLoader;
 use crate::RawlerError;
@@ -58,7 +58,7 @@ pub struct RafDecoder<'a> {
 }
 
 /// Check if file has RAF signature
-pub fn is_raf(file: &mut RawFile) -> bool {
+pub fn is_raf(file: &RawSource) -> bool {
   match file.subview(0, 8) {
     Ok(buf) => buf[0..8] == b"FUJIFILM"[..],
     Err(_) => false,
@@ -74,9 +74,9 @@ const RAF_TAG_VIRTUAL_RAF_DATA: u16 = 0xfaaa;
 /// Parse a proprietary RAF data structure and return a virtual IFD.
 /// Unfortunately, Fujifilm forgot to add a type field to these
 /// tags, so we need to match by tag.
-pub fn parse_raf_format(file: &mut RawFile, offset: u32) -> Result<IFD> {
+pub fn parse_raf_format(file: &RawSource, offset: u32) -> Result<IFD> {
   let mut entries = BTreeMap::new();
-  let stream = file.inner();
+  let stream = &mut file.reader();
   stream.seek(SeekFrom::Start(offset as u64))?;
   let num = stream.read_u32::<BigEndian>()?; // Directory entries in this IFD
   if num > 4000 {
@@ -140,18 +140,13 @@ pub fn parse_raf_format(file: &mut RawFile, offset: u32) -> Result<IFD> {
 
 /// RAF format contains multiple TIFF and TIFF-like structures.
 /// This creates a IFD with all other IFDs found collected as SubIFDs.
-fn parse_raf(file: &mut RawFile) -> Result<IFD> {
+fn parse_raf(file: &RawSource) -> Result<IFD> {
   const RAF_TIFF1_PTR_OFFSET: u64 = 84;
   const RAF_TIFF2_PTR_OFFSET: u64 = 100;
   const RAF_TAGS_PTR_OFFSET: u64 = 92;
   //const RAF_BLOCK_PTR_OFFSET2: u64 = 120; TODO: ?!?
   log::debug!("parse RAF");
-  file
-    .inner()
-    .seek(SeekFrom::Start(0))
-    .map_err(|e| RawlerError::with_io_error("RAF: failed to seek", &file.path, e))?;
-
-  let stream = file.inner();
+  let stream = &mut file.reader();
   stream.seek(SeekFrom::Start(RAF_TIFF1_PTR_OFFSET))?;
   let offset = stream.read_u32::<BigEndian>()?;
 
@@ -213,11 +208,11 @@ fn parse_raf(file: &mut RawFile) -> Result<IFD> {
 }
 
 impl<'a> RafDecoder<'a> {
-  pub fn new(file: &mut RawFile, rawloader: &'a RawLoader) -> Result<RafDecoder<'a>> {
+  pub fn new(file: &RawSource, rawloader: &'a RawLoader) -> Result<RafDecoder<'a>> {
     let ifd = parse_raf(file)?;
     let camera = rawloader.check_supported(&ifd)?;
     let makernotes = if let Some(exif) = ifd.find_first_ifd_with_tag(ExifTag::MakerNotes) {
-      exif.parse_makernote(file.inner(), OffsetMode::Absolute, &[])?
+      exif.parse_makernote(&mut file.reader(), OffsetMode::Absolute, &[])?
     } else {
       None
     }
@@ -233,7 +228,7 @@ impl<'a> RafDecoder<'a> {
 }
 
 impl<'a> Decoder for RafDecoder<'a> {
-  fn raw_image(&self, file: &mut RawFile, _params: RawDecodeParams, dummy: bool) -> Result<RawImage> {
+  fn raw_image(&self, file: &RawSource, _params: &RawDecodeParams, dummy: bool) -> Result<RawImage> {
     let raw = self.ifd.find_first_ifd_with_tag(FujiIFD::StripOffsets).ok_or("No StripOffsets found")?;
     let (width, height) = if raw.has_entry(FujiIFD::RawImageFullWidth) {
       (
@@ -271,12 +266,12 @@ impl<'a> Decoder for RafDecoder<'a> {
 
     // Strip offset is relative to IFD base
     let offset = raw.base as u64 + fetch_tiff_tag!(raw, FujiIFD::StripOffsets).force_u64(0);
-    let src: OptBuffer = if raw.has_entry(FujiIFD::StripByteCounts) {
+    let src = if raw.has_entry(FujiIFD::StripByteCounts) {
       let strip_count = fetch_tiff_tag!(raw, FujiIFD::StripByteCounts).force_u64(0);
-      file.subview(offset, strip_count)?.into()
+      file.subview_padded(offset, strip_count)?
     } else {
       // Some models like DBP don't have a byte count, so we read until EOF
-      file.subview_until_eof(offset)?.into()
+      file.subview_until_eof_padded(offset)?
     };
 
     log::debug!("BPS: {}, width: {}, height: {}, offset: {}", bps, width, height, offset);
@@ -402,7 +397,7 @@ impl<'a> Decoder for RafDecoder<'a> {
     }
   }
 
-  fn raw_metadata(&self, _file: &mut RawFile, _params: RawDecodeParams) -> Result<RawMetadata> {
+  fn raw_metadata(&self, _file: &RawSource, _params: &RawDecodeParams) -> Result<RawMetadata> {
     let mut exif = Exif::new(&self.ifd)?;
     // Fuji RAF has all EXIF tags we need and there is no LensID or something
     // we can lookup. So this is an exception, we just pass the information.
@@ -419,7 +414,7 @@ impl<'a> Decoder for RafDecoder<'a> {
     Ok(mdata)
   }
 
-  fn xpacket(&self, file: &mut RawFile, _params: RawDecodeParams) -> Result<Option<Vec<u8>>> {
+  fn xpacket(&self, file: &RawSource, _params: &RawDecodeParams) -> Result<Option<Vec<u8>>> {
     let jpeg_buf = self.read_embedded_jpeg(file)?;
     let mut cur = Cursor::new(jpeg_buf);
     let jfif = Jfif::parse(&mut cur).unwrap();
@@ -435,12 +430,12 @@ impl<'a> Decoder for RafDecoder<'a> {
     }
   }
 
-  fn full_image(&self, file: &mut RawFile, params: RawDecodeParams) -> Result<Option<DynamicImage>> {
+  fn full_image(&self, file: &RawSource, params: &RawDecodeParams) -> Result<Option<DynamicImage>> {
     if params.image_index != 0 {
       return Ok(None);
     }
     let jpeg_buf = self.read_embedded_jpeg(file)?;
-    let img = image::load_from_memory_with_format(&jpeg_buf, image::ImageFormat::Jpeg).unwrap();
+    let img = image::load_from_memory_with_format(jpeg_buf, image::ImageFormat::Jpeg).unwrap();
     Ok(Some(img))
   }
 
@@ -535,11 +530,11 @@ impl<'a> RafDecoder<'a> {
     )
   }
 
-  fn read_embedded_jpeg(&self, file: &mut RawFile) -> Result<Vec<u8>> {
+  fn read_embedded_jpeg<'b>(&self, file: &'b RawSource) -> Result<&'b [u8]> {
     // The offset and len of JPEG preview is in the RAF structure
     let buf = file.subview(0, 84 + 8)?;
-    let jpeg_off = BEu32(&buf, 84) as u64;
-    let jpeg_len = BEu32(&buf, 84 + 4) as u64;
+    let jpeg_off = BEu32(buf, 84) as u64;
+    let jpeg_len = BEu32(buf, 84 + 4) as u64;
     log::debug!("JPEG off: {}, len: {}", jpeg_off, jpeg_len);
     Ok(file.subview(jpeg_off, jpeg_len)?)
   }

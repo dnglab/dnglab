@@ -9,10 +9,10 @@ use rayon::iter::ParallelIterator;
 
 use crate::alloc_image_ok;
 use crate::bits::LookupTable;
+use crate::buffer::PaddedBuf;
 use crate::pixarray::PixU16;
 use crate::pumps::BitPump;
 use crate::pumps::BitPumpMSB;
-use crate::OptBuffer;
 use crate::Result;
 
 #[rustfmt::skip]
@@ -81,7 +81,7 @@ impl HuffDecoder {
 /// Decompress a RADC buffer
 ///
 /// cbpp is Compressed Bits Per Pixel
-pub fn decompress(src: &OptBuffer, width: usize, height: usize, cbpp: u8, dummy: bool) -> Result<PixU16> {
+pub fn decompress(src: &PaddedBuf, width: usize, height: usize, cbpp: u8, dummy: bool) -> Result<PixU16> {
   log::debug!("RADC decompress with cbpp: {}, width: {}, height: {}", cbpp, width, height);
   let mut out = alloc_image_ok!(width, height, dummy);
 

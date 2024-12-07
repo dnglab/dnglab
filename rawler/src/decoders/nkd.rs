@@ -2,8 +2,9 @@ use super::{ok_cfa_image, Camera, Decoder, FormatHint, RawDecodeParams, RawMetad
 use crate::analyze::FormatDump;
 use crate::exif::Exif;
 use crate::packed::{decode_10le_lsb16, decode_12be_msb16, decode_12le_16bitaligned};
+use crate::rawsource::RawSource;
 use crate::Result;
-use crate::{RawFile, RawImage, RawLoader, RawlerError};
+use crate::{RawImage, RawLoader, RawlerError};
 
 #[derive(Debug, Clone)]
 pub struct NakedDecoder<'a> {
@@ -19,7 +20,7 @@ impl<'a> NakedDecoder<'a> {
 }
 
 impl<'a> Decoder for NakedDecoder<'a> {
-  fn raw_image(&self, file: &mut RawFile, _params: RawDecodeParams, dummy: bool) -> Result<RawImage> {
+  fn raw_image(&self, file: &RawSource, _params: &RawDecodeParams, dummy: bool) -> Result<RawImage> {
     let data = file.as_vec().unwrap();
     let buffer = &data;
     let width = self.camera.raw_width;
@@ -44,7 +45,7 @@ impl<'a> Decoder for NakedDecoder<'a> {
     todo!()
   }
 
-  fn raw_metadata(&self, _file: &mut RawFile, _params: RawDecodeParams) -> Result<RawMetadata> {
+  fn raw_metadata(&self, _file: &RawSource, _params: &RawDecodeParams) -> Result<RawMetadata> {
     let exif = Exif::default();
     let mdata = RawMetadata::new(&self.camera, exif);
     Ok(mdata)

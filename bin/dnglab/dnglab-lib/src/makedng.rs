@@ -14,13 +14,14 @@ use rawler::formats::jfif::{is_exif, is_jfif, Jfif};
 use rawler::formats::tiff::{self, Rational, SRational};
 use rawler::imgop::gamma::{apply_gamma, invert_gamma};
 
+use rawler::get_decoder;
 use rawler::imgop::srgb::{srgb_apply_gamma, srgb_invert_gamma};
 use rawler::imgop::xyz::{self, Illuminant};
 use rawler::imgop::{scale_double_to_u16, scale_u16_to_double, scale_u8_to_double};
+use rawler::rawsource::RawSource;
 use rawler::tags::{DngTag, TiffCommonTag};
-use rawler::{get_decoder, RawFile};
 use std::fs::{remove_file, File};
-use std::io::{BufReader, BufWriter};
+use std::io::BufWriter;
 use std::num::ParseFloatError;
 use std::path::{Path, PathBuf};
 
@@ -99,9 +100,9 @@ pub async fn makedng_internal(options: &ArgMatches, dest_path: &Path) -> crate::
   }
 
   if let Ok(raw_input) = get_input_path(&inputs, &maps, InputUsage::Raw) {
-    let mut rawfile = RawFile::new(raw_input, BufReader::new(File::open(raw_input)?));
-    if let Ok(decoder) = get_decoder(&mut rawfile) {
-      let rawimage = decoder.raw_image(&mut rawfile, RawDecodeParams::default(), false)?;
+    let rawfile = RawSource::new(raw_input)?;
+    if let Ok(decoder) = get_decoder(&rawfile) {
+      let rawimage = decoder.raw_image(&rawfile, &RawDecodeParams::default(), false)?;
       let mut rawframe = dng.subframe(0);
       rawframe.raw_image(&rawimage, CropMode::Best, DngCompression::Lossless, DngPhotometricConversion::Original, 1)?;
       rawframe.finalize()?;
@@ -155,9 +156,9 @@ pub async fn makedng_internal(options: &ArgMatches, dest_path: &Path) -> crate::
   }
 
   if let Ok(preview_input) = get_input_path(&inputs, &maps, InputUsage::Preview) {
-    let mut rawfile = RawFile::new(preview_input, BufReader::new(File::open(preview_input)?));
-    if let Ok(decoder) = get_decoder(&mut rawfile) {
-      if let Some(preview) = decoder.full_image(&mut rawfile, RawDecodeParams::default())? {
+    let rawfile = RawSource::new(preview_input)?;
+    if let Ok(decoder) = get_decoder(&rawfile) {
+      if let Some(preview) = decoder.full_image(&rawfile, &RawDecodeParams::default())? {
         let mut frame = dng.subframe(1);
         frame.preview(&preview, 0.7)?;
         frame.finalize()?;
@@ -173,9 +174,9 @@ pub async fn makedng_internal(options: &ArgMatches, dest_path: &Path) -> crate::
   }
 
   if let Ok(thumbnail_input) = get_input_path(&inputs, &maps, InputUsage::Thumbnail) {
-    let mut rawfile = RawFile::new(thumbnail_input, BufReader::new(File::open(thumbnail_input)?));
-    if let Ok(decoder) = get_decoder(&mut rawfile) {
-      if let Some(preview) = decoder.full_image(&mut rawfile, RawDecodeParams::default())? {
+    let rawfile = RawSource::new(thumbnail_input)?;
+    if let Ok(decoder) = get_decoder(&rawfile) {
+      if let Some(preview) = decoder.full_image(&rawfile, &RawDecodeParams::default())? {
         dng.thumbnail(&preview)?;
       }
     } else {
@@ -187,17 +188,16 @@ pub async fn makedng_internal(options: &ArgMatches, dest_path: &Path) -> crate::
   }
 
   if let Ok(exif_input) = get_input_path(&inputs, &maps, InputUsage::Exif) {
-    let mut rawfile = RawFile::new(exif_input, BufReader::new(File::open(exif_input)?));
+    let rawfile = RawSource::new(exif_input)?;
     // First, prefer JFIF decoder for preview files
-    if is_jfif(&mut rawfile) || is_exif(&mut rawfile) {
-      rawfile.seek_to_start()?;
-      let jfif = Jfif::new(&mut rawfile)?;
+    if is_jfif(&rawfile) || is_exif(&rawfile) {
+      let jfif = Jfif::new(&rawfile)?;
       if let Some(exif_ifd) = jfif.exif_ifd() {
         let exif = Exif::new(exif_ifd)?;
         RawMetadata::fill_exif_ifd(&exif, dng.exif_ifd_mut())?; // TODO: missing GPS and Root data
       }
-    } else if let Ok(decoder) = get_decoder(&mut rawfile) {
-      dng.load_metadata(&decoder.raw_metadata(&mut rawfile, RawDecodeParams::default())?)?;
+    } else if let Ok(decoder) = get_decoder(&rawfile) {
+      dng.load_metadata(&decoder.raw_metadata(&rawfile, &RawDecodeParams::default())?)?;
     } else {
       log::warn!("Unable to decode exif file from {:?}", exif_input);
     }
@@ -206,16 +206,15 @@ pub async fn makedng_internal(options: &ArgMatches, dest_path: &Path) -> crate::
   }
 
   if let Ok(xmp_input) = get_input_path(&inputs, &maps, InputUsage::Xmp) {
-    let mut rawfile = RawFile::new(xmp_input, BufReader::new(File::open(xmp_input)?));
+    let rawfile = RawSource::new(xmp_input)?;
 
-    if is_jfif(&mut rawfile) || is_exif(&mut rawfile) {
-      rawfile.seek_to_start()?;
-      let jfif = Jfif::new(&mut rawfile)?;
+    if is_jfif(&rawfile) || is_exif(&rawfile) {
+      let jfif = Jfif::new(&rawfile)?;
       if let Some(xpacket) = jfif.xpacket() {
         dng.xpacket(xpacket)?;
       }
-    } else if let Ok(decoder) = get_decoder(&mut rawfile) {
-      if let Some(xpacket) = decoder.xpacket(&mut rawfile, RawDecodeParams::default())? {
+    } else if let Ok(decoder) = get_decoder(&rawfile) {
+      if let Some(xpacket) = decoder.xpacket(&rawfile, &RawDecodeParams::default())? {
         dng.xpacket(xpacket)?;
       }
     } else {

@@ -7,8 +7,8 @@ use crate::formats::tiff::GenericTiffReader;
 use crate::packed::decode_16be;
 use crate::packed::decode_16le;
 use crate::pixarray::PixU16;
+use crate::rawsource::RawSource;
 use crate::tags::TiffCommonTag;
-use crate::RawFile;
 use crate::RawImage;
 use crate::RawLoader;
 use crate::RawlerError;
@@ -30,7 +30,7 @@ pub struct MosDecoder<'a> {
 }
 
 impl<'a> MosDecoder<'a> {
-  pub fn new(_file: &mut RawFile, tiff: GenericTiffReader, rawloader: &'a RawLoader) -> Result<MosDecoder<'a>> {
+  pub fn new(_file: &RawSource, tiff: GenericTiffReader, rawloader: &'a RawLoader) -> Result<MosDecoder<'a>> {
     let make = Self::xmp_tag(&tiff, "Make")?;
     let model_full = Self::xmp_tag(&tiff, "Model")?;
     let model = model_full.split_terminator('(').next().unwrap();
@@ -41,7 +41,7 @@ impl<'a> MosDecoder<'a> {
 }
 
 impl<'a> Decoder for MosDecoder<'a> {
-  fn raw_image(&self, file: &mut RawFile, _params: RawDecodeParams, dummy: bool) -> Result<RawImage> {
+  fn raw_image(&self, file: &RawSource, _params: &RawDecodeParams, dummy: bool) -> Result<RawImage> {
     let raw = self.tiff.find_first_ifd_with_tag(TiffCommonTag::TileOffsets).unwrap();
     let width = fetch_tiff_tag!(raw, TiffCommonTag::ImageWidth).force_usize(0);
     let height = fetch_tiff_tag!(raw, TiffCommonTag::ImageLength).force_usize(0);
@@ -51,12 +51,12 @@ impl<'a> Decoder for MosDecoder<'a> {
     let image = match fetch_tiff_tag!(raw, TiffCommonTag::Compression).force_usize(0) {
       1 => {
         if self.tiff.little_endian() {
-          decode_16le(&src, width, height, dummy)
+          decode_16le(src, width, height, dummy)
         } else {
-          decode_16be(&src, width, height, dummy)
+          decode_16be(src, width, height, dummy)
         }
       }
-      7 | 99 => self.decode_compressed(&self.camera, &src, width, height, dummy)?,
+      7 | 99 => self.decode_compressed(&self.camera, src, width, height, dummy)?,
       x => return Err(RawlerError::unsupported(&self.camera, format!("MOS: unsupported compression {}", x))),
     };
 
@@ -68,7 +68,7 @@ impl<'a> Decoder for MosDecoder<'a> {
     todo!()
   }
 
-  fn raw_metadata(&self, _file: &mut RawFile, _params: RawDecodeParams) -> Result<RawMetadata> {
+  fn raw_metadata(&self, _file: &RawSource, _params: &RawDecodeParams) -> Result<RawMetadata> {
     let exif = Exif::new(self.tiff.root_ifd())?;
     let mdata = RawMetadata::new(&self.camera, exif);
     Ok(mdata)

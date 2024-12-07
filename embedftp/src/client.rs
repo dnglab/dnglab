@@ -13,8 +13,8 @@ use std::fs::{create_dir, read_dir, remove_dir_all, remove_file, File};
 use std::io::{self, Write};
 use std::net::{IpAddr, SocketAddr};
 use std::path::{Component, Path, PathBuf, StripPrefixError};
-use std::rc::Rc;
 use std::result;
+use std::sync::Arc;
 use tokio::io::AsyncWriteExt;
 use tokio::net::tcp::{OwnedReadHalf, OwnedWriteHalf};
 use tokio::net::{TcpListener, TcpStream};
@@ -631,7 +631,7 @@ where
       let data = self.receive_data().await?;
       info!("Received file: {:?}, {} bytes", path, data.len());
       self.close_data_connection();
-      match self.put_file(path, data).await {
+      match self.put_file(path, Arc::new(data)).await {
         Ok(_) => {
           self.send(Answer::new(ResultCode::ClosingDataConnection, "Transfer done")).await?;
         }
@@ -648,13 +648,12 @@ where
   }
 
   /// Put file directly or delegate to a filter
-  async fn put_file(&mut self, path: PathBuf, content: Vec<u8>) -> Result<()> {
+  async fn put_file(&mut self, path: PathBuf, content: Arc<Vec<u8>>) -> Result<()> {
     let path = PathBuf::from(&self.server_root).join(path.iter().skip(1).collect::<PathBuf>());
-    let data: Rc<[u8]> = Rc::from(Box::from(content));
-    let handled = self.env.stor_file(&path, data.clone())?;
+    let handled = self.env.stor_file(&path, content.clone())?;
     if !handled {
       let mut file = File::create(path)?;
-      file.write_all(&data)?;
+      file.write_all(&content)?;
     }
     Ok(())
   }

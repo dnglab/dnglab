@@ -18,11 +18,10 @@ use crate::packed::decode_12le_wcontrol;
 use crate::pixarray::PixU16;
 use crate::rawimage::CFAConfig;
 use crate::rawimage::RawPhotometricInterpretation;
+use crate::rawsource::RawSource;
 use crate::tags::tiff_tag_enum;
 use crate::tags::ExifTag;
 use crate::tags::TiffCommonTag;
-use crate::OptBuffer;
-use crate::RawFile;
 use crate::RawImage;
 use crate::RawLoader;
 use crate::RawlerError;
@@ -58,7 +57,7 @@ pub struct Rw2Decoder<'a> {
 }
 
 impl<'a> Rw2Decoder<'a> {
-  pub fn new(_file: &mut RawFile, tiff: GenericTiffReader, rawloader: &'a RawLoader) -> Result<Rw2Decoder<'a>> {
+  pub fn new(_file: &RawSource, tiff: GenericTiffReader, rawloader: &'a RawLoader) -> Result<Rw2Decoder<'a>> {
     let raw = {
       let data = tiff.find_ifds_with_tag(TiffCommonTag::PanaOffsets);
       if !data.is_empty() {
@@ -105,7 +104,7 @@ impl<'a> Rw2Decoder<'a> {
 }
 
 impl<'a> Decoder for Rw2Decoder<'a> {
-  fn raw_image(&self, file: &mut RawFile, _params: RawDecodeParams, dummy: bool) -> Result<RawImage> {
+  fn raw_image(&self, file: &RawSource, _params: &RawDecodeParams, dummy: bool) -> Result<RawImage> {
     let width;
     let height;
 
@@ -134,9 +133,8 @@ impl<'a> Decoder for Rw2Decoder<'a> {
         height = fetch_tiff_tag!(raw, TiffCommonTag::PanaLength).force_usize(0);
         let offset = fetch_tiff_tag!(raw, TiffCommonTag::PanaOffsets).force_usize(0);
         //let size = fetch_tiff_tag!(raw, TiffCommonTag::StripByteCounts).force_usize(0);
-        //let src: OptBuffer = file.subview(offset as u64, size as u64).unwrap().into(); // TODO add size and check all samples
         log::debug!("PanaOffset: {}", offset);
-        let src: OptBuffer = file.subview_until_eof(offset as u64).unwrap().into(); // TODO add size and check all samples
+        let src = file.subview_until_eof_padded(offset as u64)?; // TODO add size and check all samples
         Rw2Decoder::decode_panasonic(file, &src, width, height, split, raw_format, bps, self.tiff.root_ifd(), dummy)
       } else {
         let raw = self.tiff.find_first_ifd_with_tag(TiffCommonTag::StripOffsets).unwrap();
@@ -145,7 +143,7 @@ impl<'a> Decoder for Rw2Decoder<'a> {
         let offset = fetch_tiff_tag!(raw, TiffCommonTag::StripOffsets).force_usize(0);
         //let size = fetch_tiff_tag!(raw, TiffCommonTag::StripByteCounts).force_usize(0);
         log::debug!("StripOffset: {}", offset);
-        let src: OptBuffer = file.subview_until_eof(offset as u64).unwrap().into(); // TODO add size and check all samples
+        let src = file.subview_until_eof_padded(offset as u64)?; // TODO add size and check all samples
 
         if src.len() >= width * height * 2 {
           decode_12le_unpacked_left_aligned(&src, width, height, dummy)
@@ -186,7 +184,7 @@ impl<'a> Decoder for Rw2Decoder<'a> {
     Ok(img)
   }
 
-  fn full_image(&self, _file: &mut RawFile, params: RawDecodeParams) -> Result<Option<DynamicImage>> {
+  fn full_image(&self, _file: &RawSource, params: &RawDecodeParams) -> Result<Option<DynamicImage>> {
     if params.image_index != 0 {
       return Ok(None);
     }
@@ -203,7 +201,7 @@ impl<'a> Decoder for Rw2Decoder<'a> {
     todo!()
   }
 
-  fn raw_metadata(&self, _file: &mut RawFile, _params: RawDecodeParams) -> Result<RawMetadata> {
+  fn raw_metadata(&self, _file: &RawSource, _params: &RawDecodeParams) -> Result<RawMetadata> {
     let mut exif = Exif::new(self.tiff.root_ifd())?;
     if exif.iso_speed.unwrap_or(0) == 0 && exif.iso_speed_ratings.unwrap_or(0) == 0 && exif.recommended_exposure_index.unwrap_or(0) == 0 {
       // Use ISO from PanasonicRaw IFD
@@ -335,7 +333,7 @@ impl<'a> Rw2Decoder<'a> {
   }
 
   pub(crate) fn decode_panasonic(
-    file: &mut RawFile,
+    file: &RawSource,
     buf: &[u8],
     width: usize,
     height: usize,
