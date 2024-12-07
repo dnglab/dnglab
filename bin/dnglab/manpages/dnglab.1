@@ -4,16 +4,20 @@
 .SH NAME
 dnglab \- DNGLab \- A camera raw utility and DNG converter
 .SH SYNOPSIS
-\fBdnglab\fR [\fB\-d \fR]... [\fB\-v \fR] [\fB\-h\fR|\fB\-\-help\fR] [\fB\-V\fR|\fB\-\-version\fR] <\fIsubcommands\fR>
+\fBdnglab\fR [\fB\-d\fR|\fB\-\-loglevel\fR] [\fB\-v \fR] [\fB\-h\fR|\fB\-\-help\fR] [\fB\-V\fR|\fB\-\-version\fR] <\fIsubcommands\fR>
 .SH DESCRIPTION
 DNGLab \- A camera raw utility and DNG converter
 .SH OPTIONS
 .TP
-\fB\-d\fR
-turns on debugging mode
+\fB\-d\fR, \fB\-\-loglevel\fR=\fIlevel\fR [default: warn]
+Log level
+.br
+
+.br
+[\fIpossible values: \fRerror, warn, info, debug, trace]
 .TP
 \fB\-v\fR
-Print more messages
+Print status for every file
 .TP
 \fB\-h\fR, \fB\-\-help\fR
 Print help
