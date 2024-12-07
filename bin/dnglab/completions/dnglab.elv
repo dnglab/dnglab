@@ -18,8 +18,9 @@ set edit:completion:arg-completer[dnglab] = {|@words|
     }
     var completions = [
         &'dnglab'= {
-            cand -d 'turns on debugging mode'
-            cand -v 'Print more messages'
+            cand -d 'Log level'
+            cand --loglevel 'Log level'
+            cand -v 'Print status for every file'
             cand -h 'Print help'
             cand --help 'Print help'
             cand -V 'Print version'
@@ -35,6 +36,8 @@ set edit:completion:arg-completer[dnglab] = {|@words|
             cand help 'Print this message or the help of the given subcommand(s)'
         }
         &'dnglab;analyze'= {
+            cand -d 'Log level'
+            cand --loglevel 'Log level'
             cand --raw-pixel 'raw-pixel'
             cand --full-pixel 'Write uncompressed full pixel data to STDOUT'
             cand --preview-pixel 'Write uncompressed preview pixel data to STDOUT'
@@ -48,8 +51,7 @@ set edit:completion:arg-completer[dnglab] = {|@words|
             cand --summary 'Write summary information for file to STDOUT'
             cand --json 'Format metadata as JSON'
             cand --yaml 'Format metadata as YAML'
-            cand -d 'turns on debugging mode'
-            cand -v 'Print more messages'
+            cand -v 'Print status for every file'
             cand -h 'Print help'
             cand --help 'Print help'
         }
@@ -63,12 +65,13 @@ set edit:completion:arg-completer[dnglab] = {|@words|
             cand --artist 'Set the artist tag'
             cand --image-index 'Select a specific image index (or ''all'') if file is a image container'
             cand --crop 'DNG default crop'
+            cand -d 'Log level'
+            cand --loglevel 'Log level'
             cand -f 'Override existing files'
             cand --override 'Override existing files'
             cand -r 'Process input directory recursive'
             cand --recursive 'Process input directory recursive'
-            cand -d 'turns on debugging mode'
-            cand -v 'Print more messages'
+            cand -v 'Print status for every file'
             cand -h 'Print help'
             cand --help 'Print help'
         }
@@ -85,24 +88,27 @@ set edit:completion:arg-completer[dnglab] = {|@words|
             cand --port 'FTP listen port'
             cand --listen 'FTP listen address'
             cand --keep-original 'Keep original raw'
+            cand -d 'Log level'
+            cand --loglevel 'Log level'
             cand -f 'Override existing files'
             cand --override 'Override existing files'
-            cand -d 'turns on debugging mode'
-            cand -v 'Print more messages'
+            cand -v 'Print status for every file'
             cand -h 'Print help'
             cand --help 'Print help'
         }
         &'dnglab;cameras'= {
+            cand -d 'Log level'
+            cand --loglevel 'Log level'
             cand --md 'Markdown format output'
-            cand -d 'turns on debugging mode'
-            cand -v 'Print more messages'
+            cand -v 'Print status for every file'
             cand -h 'Print help'
             cand --help 'Print help'
         }
         &'dnglab;lenses'= {
+            cand -d 'Log level'
+            cand --loglevel 'Log level'
             cand --md 'Markdown format output'
-            cand -d 'turns on debugging mode'
-            cand -v 'Print more messages'
+            cand -v 'Print status for every file'
             cand -h 'Print help'
             cand --help 'Print help'
         }
@@ -127,27 +133,30 @@ set edit:completion:arg-completer[dnglab] = {|@words|
             cand --linearization 'Linearization table'
             cand --wb 'Whitebalance as-shot'
             cand --white-xy 'Whitebalance as-shot encoded as xy chromaticity coordinates'
+            cand -d 'Log level'
+            cand --loglevel 'Log level'
             cand -f 'Override existing files'
             cand --override 'Override existing files'
-            cand -d 'turns on debugging mode'
-            cand -v 'Print more messages'
+            cand -v 'Print status for every file'
             cand -h 'Print help (see more with ''--help'')'
             cand --help 'Print help (see more with ''--help'')'
         }
         &'dnglab;gui'= {
-            cand -d 'turns on debugging mode'
-            cand -v 'Print more messages'
+            cand -d 'Log level'
+            cand --loglevel 'Log level'
+            cand -v 'Print status for every file'
             cand -h 'Print help'
             cand --help 'Print help'
         }
         &'dnglab;extract'= {
+            cand -d 'Log level'
+            cand --loglevel 'Log level'
             cand --skipchecks 'Skip integrity checks'
             cand -r 'Process input directory recursive'
             cand --recursive 'Process input directory recursive'
             cand -f 'Override existing files'
             cand --override 'Override existing files'
-            cand -d 'turns on debugging mode'
-            cand -v 'Print more messages'
+            cand -v 'Print status for every file'
             cand -h 'Print help'
             cand --help 'Print help'
         }
