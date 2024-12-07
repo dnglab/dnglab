@@ -89,211 +89,34 @@ pub mod packed;
 pub mod pixarray;
 pub mod pumps;
 pub mod rawimage;
+pub mod rawsource;
 pub mod tags;
 pub mod tiles;
 
 #[doc(hidden)]
-pub use buffer::Buffer;
 pub use cfa::CFA;
 pub use decoders::Orientation;
 #[doc(hidden)]
 pub use decoders::RawLoader;
 use formats::tiff::TiffError;
-use md5::Digest;
 pub use rawimage::RawImage;
 pub use rawimage::RawImageData;
+use rawsource::RawSource;
 
 lazy_static! {
   static ref LOADER: RawLoader = decoders::RawLoader::new();
 }
 
-use std::fs::File;
-use std::io::BufReader;
-use std::io::Cursor;
 use std::io::Read;
 use std::io::Seek;
-use std::io::SeekFrom;
 use std::path::Path;
-use std::path::PathBuf;
 use thiserror::Error;
 
 pub(crate) const ISSUE_HINT: &str = "Please open an issue at https://github.com/dnglab/dnglab/issues and provide this message (optionally the RAW file, if you can license it under CC0-license).";
 
-pub struct OptBuffer {
-  buf: Vec<u8>,
-  size: usize,
-}
-
-impl OptBuffer {
-  pub fn new(buf: Vec<u8>) -> Self {
-    let mut padded = buf;
-    let size = padded.len();
-    padded.extend([0; 16].iter().cloned()); // Pad for optimizations
-    Self { buf: padded, size }
-  }
-
-  pub fn as_slice(&self) -> &[u8] {
-    self.buf.as_slice()
-  }
-
-  pub fn len(&self) -> usize {
-    self.size
-  }
-
-  pub fn is_empty(&self) -> bool {
-    self.size == 0
-  }
-}
-
-impl std::ops::Deref for OptBuffer {
-  type Target = [u8];
-
-  fn deref(&self) -> &Self::Target {
-    self.as_slice()
-  }
-}
-
-impl From<Vec<u8>> for OptBuffer {
-  fn from(data: Vec<u8>) -> Self {
-    Self::new(data)
-  }
-}
-
 pub trait ReadTrait: Read + Seek {}
 
 impl<T: Read + Seek> ReadTrait for T {}
-
-pub struct RawFile {
-  pub path: PathBuf,
-  pub file: Box<dyn ReadTrait>,
-  pub start_offset: u64,
-}
-
-impl RawFile {
-  pub fn new<T>(path: impl AsRef<Path>, mut input: T) -> Self
-  where
-    T: ReadTrait + 'static,
-  {
-    let start_offset = input.stream_position().expect("Stream position failed");
-    Self {
-      path: PathBuf::from(path.as_ref()),
-      file: Box::new(input),
-      start_offset,
-    }
-  }
-
-  pub fn seek_to_start(&mut self) -> std::io::Result<()> {
-    self.file.seek(SeekFrom::Start(self.start_offset))?;
-    Ok(())
-  }
-
-  /// Calculate digest for file
-  pub fn digest(&mut self) -> std::io::Result<Digest> {
-    Ok(md5::compute(self.as_vec()?))
-  }
-
-  pub fn with_box(mut file: Box<dyn ReadTrait>) -> Self {
-    let start_offset = file.stream_position().expect("Stream position failed");
-    Self {
-      path: PathBuf::new(),
-      file,
-      start_offset,
-    }
-  }
-
-  pub fn inner(&mut self) -> &mut Box<dyn ReadTrait> {
-    &mut self.file
-  }
-
-  pub fn subview(&mut self, offset: u64, size: u64) -> std::io::Result<Vec<u8>> {
-    let mut buf = vec![0; size as usize];
-    self.file.seek(SeekFrom::Start(offset))?;
-    self.file.read_exact(&mut buf)?;
-    Ok(buf)
-  }
-
-  pub fn subview_until_eof(&mut self, offset: u64) -> std::io::Result<Vec<u8>> {
-    let mut buf = Vec::new();
-    self.file.seek(SeekFrom::Start(offset))?;
-    self.file.read_to_end(&mut buf)?;
-    Ok(buf)
-  }
-
-  /// Helper for TIFF based files to get multiple strips at once.
-  pub fn subviews_from_strips(&mut self, offsets: &[u32], sizes: &[u32]) -> std::io::Result<Vec<Vec<u8>>> {
-    if offsets.len() != sizes.len() {
-      return Err(std::io::Error::new(
-        std::io::ErrorKind::Other,
-        format!(
-          "Can't get subviews from strips: offsets has len {} but sizes has len {}",
-          offsets.len(),
-          sizes.len()
-        ),
-      ));
-    }
-    let mut subviews = Vec::with_capacity(offsets.len());
-    for (offset, size) in offsets.iter().zip(sizes.iter()) {
-      let mut buf = vec![0; *size as usize];
-      self.file.seek(SeekFrom::Start(*offset as u64))?;
-      self.file.read_exact(&mut buf)?;
-      subviews.push(buf);
-    }
-    Ok(subviews)
-  }
-
-  pub fn as_vec(&mut self) -> std::io::Result<Vec<u8>> {
-    let old_pos = self.file.stream_position()?;
-    self.file.seek(SeekFrom::Start(self.start_offset))?;
-    let mut buf = Vec::new();
-    self.file.read_to_end(&mut buf)?;
-    self.file.seek(SeekFrom::Start(old_pos))?;
-    Ok(buf)
-  }
-
-  pub fn stream_len(&mut self) -> std::io::Result<u64> {
-    let old_pos = self.file.stream_position()?;
-    let len = self.file.seek(SeekFrom::End(0))?;
-
-    // Avoid seeking a third time when we were already at the end of the
-    // stream. The branch is usually way cheaper than a seek operation.
-    if old_pos != len {
-      self.file.seek(SeekFrom::Start(old_pos))?;
-    }
-
-    Ok(len)
-  }
-}
-
-impl From<Buffer> for RawFile {
-  fn from(buf: Buffer) -> Self {
-    Self {
-      path: PathBuf::new(),
-      file: Box::new(Cursor::new(buf.buf)),
-      start_offset: 0,
-    }
-  }
-}
-
-impl From<BufReader<File>> for RawFile {
-  fn from(mut buf: BufReader<File>) -> Self {
-    let start_offset = buf.stream_position().expect("Stream position failed");
-    Self {
-      path: PathBuf::new(), // TODO
-      file: Box::new(buf),
-      start_offset,
-    }
-  }
-}
-
-impl From<Cursor<Vec<u8>>> for RawFile {
-  fn from(buf: Cursor<Vec<u8>>) -> Self {
-    Self {
-      path: PathBuf::new(),
-      file: Box::new(buf),
-      start_offset: 0,
-    }
-  }
-}
 
 #[derive(Error, Debug)]
 pub enum RawlerError {
@@ -399,7 +222,7 @@ pub fn decode_file<P: AsRef<Path>>(path: P) -> Result<RawImage> {
 ///   Err(e) => ... some appropriate action when the file is unreadable ...
 /// };
 /// ```
-pub fn decode(rawfile: &mut RawFile, params: RawDecodeParams) -> Result<RawImage> {
+pub fn decode(rawfile: &RawSource, params: &RawDecodeParams) -> Result<RawImage> {
   LOADER.decode(rawfile, params, false)
 }
 
@@ -412,17 +235,17 @@ pub fn force_initialization() {
 // Used for fuzzing targets that just want to test the actual decoders instead of the full formats
 // with all their TIFF and other crazyness
 #[doc(hidden)]
-pub fn decode_unwrapped(rawfile: &mut RawFile) -> Result<RawImageData> {
+pub fn decode_unwrapped(rawfile: &RawSource) -> Result<RawImageData> {
   LOADER.decode_unwrapped(rawfile)
 }
 
 // Used for fuzzing everything but the decoders themselves
 #[doc(hidden)]
-pub fn decode_dummy(rawfile: &mut RawFile) -> Result<RawImage> {
-  LOADER.decode(rawfile, RawDecodeParams::default(), true)
+pub fn decode_dummy(rawfile: &RawSource) -> Result<RawImage> {
+  LOADER.decode(rawfile, &RawDecodeParams::default(), true)
 }
 
-pub fn get_decoder(rawfile: &mut RawFile) -> Result<Box<dyn Decoder>> {
+pub fn get_decoder(rawfile: &RawSource) -> Result<Box<dyn Decoder>> {
   LOADER.get_decoder(rawfile)
 }
 

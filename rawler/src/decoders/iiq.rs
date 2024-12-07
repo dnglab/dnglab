@@ -15,6 +15,8 @@ use log::warn;
 use serde::Deserialize;
 use serde::Serialize;
 use std::collections::HashMap;
+use std::io::Read;
+use std::io::Seek;
 use std::io::SeekFrom;
 use std::mem::size_of;
 
@@ -34,7 +36,7 @@ use crate::lens::LensResolver;
 use crate::pixarray::PixU16;
 use crate::pumps::BitPump;
 use crate::pumps::BitPumpMSB32;
-use crate::RawFile;
+use crate::rawsource::RawSource;
 use crate::RawImage;
 use crate::RawLoader;
 use crate::RawlerError;
@@ -156,10 +158,10 @@ pub struct IiqDecoder<'a> {
 }
 
 impl<'a> IiqDecoder<'a> {
-  pub fn new(file: &mut RawFile, tiff: GenericTiffReader, rawloader: &'a RawLoader) -> Result<IiqDecoder<'a>> {
+  pub fn new(file: &RawSource, tiff: GenericTiffReader, rawloader: &'a RawLoader) -> Result<IiqDecoder<'a>> {
     debug!("IIQ decoder choosen");
     let camera = rawloader.check_supported(tiff.root_ifd())?;
-    let makernotes = new_makernote(file, 8).map_err(|ioerr| RawlerError::with_io_error("load IIQ makernotes", &file.path, ioerr))?;
+    let makernotes = new_makernote(file, 8).map_err(|ioerr| RawlerError::with_io_error("load IIQ makernotes", file.path(), ioerr))?;
     Ok(IiqDecoder {
       camera,
       tiff,
@@ -169,12 +171,12 @@ impl<'a> IiqDecoder<'a> {
   }
 }
 
-fn new_makernote(file: &mut RawFile, moffset: u64) -> std::io::Result<HashMap<u32, (usize, tiff::Value)>> {
+fn new_makernote(file: &RawSource, moffset: u64) -> std::io::Result<HashMap<u32, (usize, tiff::Value)>> {
   // All makernote offsets are not absolute to file, but to start of makernote data.
   // The makernote data starts straight after the TIFF header (8 bytes).
   // If this may change in future, offsets must be revalidated.
   assert_eq!(moffset, 8);
-  let stream = file.inner();
+  let stream = &mut file.reader();
   stream.seek(SeekFrom::Start(moffset + 8))?; // Skip first 8 bytes of makernote
   let ifd = stream.read_u32::<LittleEndian>()? as u64;
   stream.seek(SeekFrom::Start(moffset + ifd))?;
@@ -225,7 +227,7 @@ fn new_makernote(file: &mut RawFile, moffset: u64) -> std::io::Result<HashMap<u3
 }
 
 impl<'a> Decoder for IiqDecoder<'a> {
-  fn raw_image(&self, file: &mut RawFile, _params: RawDecodeParams, dummy: bool) -> Result<RawImage> {
+  fn raw_image(&self, file: &RawSource, _params: &RawDecodeParams, dummy: bool) -> Result<RawImage> {
     let fmt = self.compression_mode()?;
 
     let wb_offset = self.wb_offset()?;
@@ -244,19 +246,19 @@ impl<'a> Decoder for IiqDecoder<'a> {
 
     let data = file
       .subview(data_offset, data_len as u64)
-      .map_err(|ioerr| RawlerError::with_io_error("load IIQ data", &file.path, ioerr))?;
+      .map_err(|ioerr| RawlerError::with_io_error("load IIQ data", file.path(), ioerr))?;
     let strips = file
       .subview(strips_offset, strips_len as u64)
-      .map_err(|ioerr| RawlerError::with_io_error("load IIQ strips", &file.path, ioerr))?;
+      .map_err(|ioerr| RawlerError::with_io_error("load IIQ strips", file.path(), ioerr))?;
 
     let mut image = match fmt {
       IiqCompression::Raw1 => todo!(),
       IiqCompression::Raw2 => todo!(),
-      IiqCompression::Uncompressed => Self::decode_uncompressed(&data, width, height, 14, dummy),
-      IiqCompression::IIQ_L => Self::decode_compressed(&data, &strips, width, height, 14, dummy),
-      IiqCompression::IIQ_L16 => Self::decode_compressed(&data, &strips, width, height, 16, dummy),
-      IiqCompression::IIQ_S => Self::decode_nonlinear(&data, &strips, width, height, 14, dummy),
-      IiqCompression::IIQ_Sv2 => Self::decode_compressed_sv2(&data, &strips, width, height, 14, dummy),
+      IiqCompression::Uncompressed => Self::decode_uncompressed(data, width, height, 14, dummy),
+      IiqCompression::IIQ_L => Self::decode_compressed(data, strips, width, height, 14, dummy),
+      IiqCompression::IIQ_L16 => Self::decode_compressed(data, strips, width, height, 16, dummy),
+      IiqCompression::IIQ_S => Self::decode_nonlinear(data, strips, width, height, 14, dummy),
+      IiqCompression::IIQ_Sv2 => Self::decode_compressed_sv2(data, strips, width, height, 14, dummy),
     };
 
     let black = self.blacklevel().unwrap_or(0);
@@ -264,7 +266,7 @@ impl<'a> Decoder for IiqDecoder<'a> {
     if !dummy {
       let senscorr = self
         .new_sensor_correction(file, black)
-        .map_err(|ioerr| RawlerError::with_io_error("read IIQ sensor calibration data", &file.path, ioerr))?;
+        .map_err(|ioerr| RawlerError::with_io_error("read IIQ sensor calibration data", file.path(), ioerr))?;
       self.correct_raw(&mut image, &senscorr)?;
     }
 
@@ -272,7 +274,7 @@ impl<'a> Decoder for IiqDecoder<'a> {
     let cpp = 1;
     let wb = self
       .get_wb(file, wb_offset)
-      .map_err(|ioerr| RawlerError::with_io_error("read IIQ white balance", &file.path, ioerr))?;
+      .map_err(|ioerr| RawlerError::with_io_error("read IIQ white balance", file.path(), ioerr))?;
 
     ok_cfa_image_with_blacklevels(self.camera.clone(), cpp, wb, blacklevel, image, dummy)
   }
@@ -284,7 +286,7 @@ impl<'a> Decoder for IiqDecoder<'a> {
     })
   }
 
-  fn raw_metadata(&self, _file: &mut RawFile, _params: RawDecodeParams) -> Result<RawMetadata> {
+  fn raw_metadata(&self, _file: &RawSource, _params: &RawDecodeParams) -> Result<RawMetadata> {
     let exif = Exif::new(self.tiff.root_ifd())?;
     let mdata = RawMetadata::new_with_lens(&self.camera, exif, self.get_lens_description()?.cloned());
     Ok(mdata)
@@ -675,13 +677,13 @@ impl<'a> IiqDecoder<'a> {
     }
   }
 
-  fn split_blacks(&self, file: &mut RawFile) -> std::io::Result<Option<(Vec<i16>, Vec<i16>)>> {
+  fn split_blacks(&self, file: &RawSource) -> std::io::Result<Option<(Vec<i16>, Vec<i16>)>> {
     let black_col = self.makernotes.get(&IiqTag::BlackCol.into());
     let black_row = self.makernotes.get(&IiqTag::BlackRow.into());
 
     match (black_col, black_row) {
       (Some(black_col), Some(black_row)) => {
-        let stream = file.inner();
+        let stream = &mut file.reader();
         let (len, offset) = (black_col.0, black_col.1.force_u64(0));
         stream.seek(SeekFrom::Start(offset + 8))?;
         let mut cols = vec![0; len / 2]; // u16 size
@@ -759,7 +761,7 @@ impl<'a> IiqDecoder<'a> {
     }
   }
 
-  fn new_sensor_correction(&self, file: &mut RawFile, blacklevel: u16) -> std::io::Result<SensorCalibration> {
+  fn new_sensor_correction(&self, file: &RawSource, blacklevel: u16) -> std::io::Result<SensorCalibration> {
     let q_blacklevel = self.split_blacks(file)?;
     let sensor_margins = self.sensor_margins().unwrap_or((0, 0));
 
@@ -767,7 +769,7 @@ impl<'a> IiqDecoder<'a> {
       Some((_len, offset)) => {
         let offset = offset.force_u64(0);
         debug!("Sensor correction data offset: {}", offset);
-        let stream = file.inner();
+        let mut stream = file.reader();
         stream.seek(SeekFrom::Start(offset + 8))?;
         let bytes_to_entries = stream.read_u32::<LittleEndian>()? as u64;
         stream.seek(SeekFrom::Start(offset + bytes_to_entries))?;
@@ -962,11 +964,9 @@ impl<'a> IiqDecoder<'a> {
   }
 
   /// Extract white balance parameters
-  fn get_wb(&self, file: &mut RawFile, wb_offset: u64) -> std::io::Result<[f32; 4]> {
-    let mut buffer = vec![0; 3 * 4];
-    file.inner().seek(SeekFrom::Start(wb_offset))?;
-    file.inner().read_exact(&mut buffer)?;
-    Ok([LEf32(&buffer, 0), LEf32(&buffer, 4), LEf32(&buffer, 8), f32::NAN])
+  fn get_wb(&self, file: &RawSource, wb_offset: u64) -> std::io::Result<[f32; 4]> {
+    let buffer = file.subview(wb_offset, 3 * 4)?;
+    Ok([LEf32(buffer, 0), LEf32(buffer, 4), LEf32(buffer, 8), f32::NAN])
   }
 
   /// Get lens description by analyzing TIFF tags and makernotes

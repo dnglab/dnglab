@@ -32,7 +32,7 @@ pub struct DngDecoder<'a> {
 }
 
 impl<'a> DngDecoder<'a> {
-  pub fn new(_file: &mut RawFile, tiff: GenericTiffReader, rawloader: &'a RawLoader) -> Result<DngDecoder<'a>> {
+  pub fn new(_file: &RawSource, tiff: GenericTiffReader, rawloader: &'a RawLoader) -> Result<DngDecoder<'a>> {
     Ok(DngDecoder { tiff, rawloader })
   }
 }
@@ -45,7 +45,7 @@ pub struct DngFormat {
 }
 
 impl<'a> Decoder for DngDecoder<'a> {
-  fn raw_image(&self, file: &mut RawFile, _params: RawDecodeParams, dummy: bool) -> Result<RawImage> {
+  fn raw_image(&self, file: &RawSource, _params: &RawDecodeParams, dummy: bool) -> Result<RawImage> {
     let raw = self.get_raw_ifd()?;
     let width = fetch_tiff_tag!(raw, TiffCommonTag::ImageWidth).force_usize(0);
     let height = fetch_tiff_tag!(raw, TiffCommonTag::ImageLength).force_usize(0);
@@ -94,7 +94,7 @@ impl<'a> Decoder for DngDecoder<'a> {
     FormatDump::Dng(DngFormat { tiff: self.tiff.clone() })
   }
 
-  fn raw_metadata(&self, _file: &mut RawFile, _params: RawDecodeParams) -> Result<RawMetadata> {
+  fn raw_metadata(&self, _file: &RawSource, _params: &RawDecodeParams) -> Result<RawMetadata> {
     let raw = self.get_raw_ifd()?;
     let width = fetch_tiff_tag!(raw, TiffCommonTag::ImageWidth).force_usize(0);
     let height = fetch_tiff_tag!(raw, TiffCommonTag::ImageLength).force_usize(0);
@@ -109,13 +109,10 @@ impl<'a> Decoder for DngDecoder<'a> {
     Ok(mdata)
   }
 
-  fn thumbnail_image(&self, file: &mut RawFile, params: RawDecodeParams) -> Result<Option<DynamicImage>> {
-    if params.image_index != 0 {
-      return Ok(None);
-    }
-    if let Some(thumb_ifd) = Some(self.tiff.root_ifd()).filter(|ifd| ifd.get_entry(TiffCommonTag::NewSubFileType).map(|entry| entry.force_u32(0)) == Some(1)) {
+  fn thumbnail_image(&self, file: &RawSource, _params: &RawDecodeParams) -> Result<Option<DynamicImage>> {
+    if let Some(thumb_ifd) = Some(self.tiff.root_ifd()).filter(|ifd| ifd.get_entry(TiffCommonTag::NewSubFileType).map(|entry| entry.force_u16(0)) == Some(1)) {
       let buf = thumb_ifd
-        .strip_data(file.inner())
+        .strip_data(&mut file.reader())
         .map_err(|e| RawlerError::DecoderFailed(format!("Failed to get strip data: {}", e)))?
         .into_iter()
         .flatten()
@@ -135,7 +132,7 @@ impl<'a> Decoder for DngDecoder<'a> {
     Ok(None)
   }
 
-  fn full_image(&self, file: &mut RawFile, params: RawDecodeParams) -> Result<Option<DynamicImage>> {
+  fn full_image(&self, file: &RawSource, params: &RawDecodeParams) -> Result<Option<DynamicImage>> {
     if params.image_index != 0 {
       return Ok(None);
     }
@@ -145,7 +142,7 @@ impl<'a> Decoder for DngDecoder<'a> {
         .find(|ifd| ifd.get_entry(TiffCommonTag::NewSubFileType).map(|entry| entry.force_u32(0)) == Some(1));
       if let Some(preview_ifd) = first_ifd {
         let buf = preview_ifd
-          .strip_data(file.inner())
+          .strip_data(&mut file.reader())
           .map_err(|e| RawlerError::DecoderFailed(format!("Failed to get strip data: {}", e)))?
           .into_iter()
           .flatten()
@@ -444,16 +441,23 @@ impl<'a> DngDecoder<'a> {
     Ok(result)
   }
 
-  pub fn decode_uncompressed(&self, file: &mut RawFile, raw: &IFD, width: usize, height: usize, dummy: bool) -> Result<PixU16> {
-    let src: Vec<u8> = raw.strip_data(file.inner())?.into_iter().flatten().collect();
+  pub fn decode_uncompressed(&self, file: &RawSource, raw: &IFD, width: usize, height: usize, dummy: bool) -> Result<PixU16> {
+    let strips: Vec<&[u8]> = raw.strip_data_rawsource(file)?;
+    let strips_continous: Vec<u8>;
+    let src = if strips.len() == 1 {
+      strips[0]
+    } else {
+      strips_continous = strips.into_iter().flatten().copied().collect();
+      &strips_continous
+    };
     match (raw.endian, fetch_tiff_tag!(raw, TiffCommonTag::BitsPerSample).force_u32(0)) {
       // 16 bits, encoding depends on TIFF endianess
-      (Endian::Big, 16) => Ok(decode_16be(&src, width, height, dummy)),
-      (Endian::Little, 16) => Ok(decode_16le(&src, width, height, dummy)),
+      (Endian::Big, 16) => Ok(decode_16be(src, width, height, dummy)),
+      (Endian::Little, 16) => Ok(decode_16le(src, width, height, dummy)),
       // 12 Bits, DNG spec says it must be always encoded as big-endian
-      (_, 12) => Ok(decode_12be(&src, width, height, dummy)),
+      (_, 12) => Ok(decode_12be(src, width, height, dummy)),
       // 10 Bits, DNG spec says it must be always encoded as big-endian
-      (_, 10) => Ok(decode_10be(&src, width, height, dummy)),
+      (_, 10) => Ok(decode_10be(src, width, height, dummy)),
       // 8 bits with linearization table
       (_, 8) if raw.has_entry(TiffCommonTag::Linearization) => {
         let linearization = fetch_tiff_tag!(self.tiff, TiffCommonTag::Linearization);
@@ -464,18 +468,18 @@ impl<'a> DngDecoder<'a> {
           }
           LookupTable::new(&points)
         };
-        Ok(decode_8bit_wtable(&src, &curve, width, height, dummy))
+        Ok(decode_8bit_wtable(src, &curve, width, height, dummy))
       }
       // 8 bits
-      (_, 8) => Ok(decode_8bit(&src, width, height, dummy)),
+      (_, 8) => Ok(decode_8bit(src, width, height, dummy)),
       // Generic MSB decoder for exotic packed bit sizes
-      (_, bps) if bps > 0 && bps < 16 => Ok(decode_generic_msb(&src, width, height, bps, dummy)),
+      (_, bps) if bps > 0 && bps < 16 => Ok(decode_generic_msb(src, width, height, bps, dummy)),
       // Unhandled bits
       (_, bps) => Err(format_args!("DNG: Don't know how to handle DNG with {} bps", bps).into()),
     }
   }
 
-  pub fn decode_compressed(&self, file: &mut RawFile, raw: &IFD, width: usize, height: usize, cpp: usize, dummy: bool) -> Result<PixU16> {
+  pub fn decode_compressed(&self, file: &RawSource, raw: &IFD, width: usize, height: usize, cpp: usize, dummy: bool) -> Result<PixU16> {
     if let Some(offsets) = raw.get_entry(TiffCommonTag::StripOffsets) {
       // We're in a normal offset situation
       if offsets.count() != 1 {
@@ -485,7 +489,7 @@ impl<'a> DngDecoder<'a> {
       let size = fetch_tiff_tag!(raw, TiffCommonTag::StripByteCounts).force_u64(0);
       let src = file.subview(offset, size).unwrap();
       let mut out = alloc_image_ok!(width, height, dummy);
-      let decompressor = LjpegDecompressor::new(&src)?;
+      let decompressor = LjpegDecompressor::new(src)?;
       decompressor.decode(out.pixels_mut(), 0, width, width, height, dummy)?;
       Ok(out)
     } else if let Some(offsets) = raw.get_entry(TiffCommonTag::TileOffsets) {

@@ -4,6 +4,7 @@ use std::io::Seek;
 
 use crate::alloc_image;
 use crate::analyze::FormatDump;
+use crate::buffer::PaddedBuf;
 use crate::exif::Exif;
 use crate::formats::tiff::reader::TiffReader;
 use crate::formats::tiff::Entry;
@@ -22,10 +23,9 @@ use crate::pumps::BitPump;
 use crate::pumps::BitPumpMSB;
 use crate::rawimage::CFAConfig;
 use crate::rawimage::RawPhotometricInterpretation;
+use crate::rawsource::RawSource;
 use crate::tags::ExifTag;
 use crate::tags::TiffCommonTag;
-use crate::OptBuffer;
-use crate::RawFile;
 use crate::RawImage;
 use crate::RawLoader;
 use crate::RawlerError;
@@ -117,11 +117,11 @@ pub fn parse_makernote<R: Read + Seek>(reader: &mut R, exif_ifd: &IFD) -> Result
 }
 
 impl<'a> OrfDecoder<'a> {
-  pub fn new(file: &mut RawFile, tiff: GenericTiffReader, rawloader: &'a RawLoader) -> Result<OrfDecoder<'a>> {
+  pub fn new(file: &RawSource, tiff: GenericTiffReader, rawloader: &'a RawLoader) -> Result<OrfDecoder<'a>> {
     let camera = rawloader.check_supported(tiff.root_ifd())?;
 
     let makernote = if let Some(exif) = tiff.find_first_ifd_with_tag(ExifTag::MakerNotes) {
-      parse_makernote(file.inner(), exif)?
+      parse_makernote(&mut file.reader(), exif)?
     } else {
       log::warn!("ORF makernote not found");
       None
@@ -140,7 +140,7 @@ impl<'a> OrfDecoder<'a> {
 }
 
 impl<'a> Decoder for OrfDecoder<'a> {
-  fn raw_image(&self, file: &mut RawFile, _params: RawDecodeParams, dummy: bool) -> Result<RawImage> {
+  fn raw_image(&self, file: &RawSource, _params: &RawDecodeParams, dummy: bool) -> Result<RawImage> {
     let raw = self.tiff.find_first_ifd_with_tag(TiffCommonTag::StripOffsets).unwrap();
     let width = fetch_tiff_tag!(raw, TiffCommonTag::ImageWidth).force_usize(0);
     let height = fetch_tiff_tag!(raw, TiffCommonTag::ImageLength).force_usize(0);
@@ -158,7 +158,7 @@ impl<'a> Decoder for OrfDecoder<'a> {
       self.camera.clone()
     };
 
-    let src: OptBuffer = file.subview(offset as u64, size as u64).unwrap().into(); // TODO add size and check all samples
+    let src = file.subview_padded(offset as u64, size as u64)?; // TODO add size and check all samples
 
     log::debug!(
       "ORF raw image size: {}, dim: {}x{}, total mp: {}, strip counts: {}",
@@ -215,7 +215,7 @@ impl<'a> Decoder for OrfDecoder<'a> {
     todo!()
   }
 
-  fn raw_metadata(&self, _file: &mut RawFile, __params: RawDecodeParams) -> Result<RawMetadata> {
+  fn raw_metadata(&self, _file: &RawSource, __params: &RawDecodeParams) -> Result<RawMetadata> {
     let exif = Exif::new(self.tiff.root_ifd())?;
     let mdata = RawMetadata::new_with_lens(&self.camera, exif, self.get_lens_description()?.cloned());
     Ok(mdata)
@@ -234,7 +234,7 @@ impl<'a> OrfDecoder<'a> {
    * is based on the output of all previous pixel (bar the first four)
    */
 
-  pub fn decode_compressed(buf: &OptBuffer, width: usize, height: usize, dummy: bool) -> PixU16 {
+  pub fn decode_compressed(buf: &PaddedBuf, width: usize, height: usize, dummy: bool) -> PixU16 {
     let mut out = alloc_image!(width, height, dummy);
 
     /* Build a table to quickly look up "high" value */

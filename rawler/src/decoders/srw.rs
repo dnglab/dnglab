@@ -20,10 +20,9 @@ use crate::pixarray::PixU16;
 use crate::pumps::BitPump;
 use crate::pumps::BitPumpMSB;
 use crate::pumps::BitPumpMSB32;
+use crate::rawsource::RawSource;
 use crate::tags::ExifTag;
 use crate::tags::TiffCommonTag;
-use crate::OptBuffer;
-use crate::RawFile;
 use crate::RawImage;
 use crate::RawLoader;
 use crate::RawlerError;
@@ -48,11 +47,11 @@ pub struct SrwDecoder<'a> {
 }
 
 impl<'a> SrwDecoder<'a> {
-  pub fn new(file: &mut RawFile, tiff: GenericTiffReader, rawloader: &'a RawLoader) -> Result<SrwDecoder<'a>> {
+  pub fn new(file: &RawSource, tiff: GenericTiffReader, rawloader: &'a RawLoader) -> Result<SrwDecoder<'a>> {
     let camera = rawloader.check_supported(tiff.root_ifd())?;
 
     let makernote = if let Some(exif) = tiff.find_first_ifd_with_tag(ExifTag::MakerNotes) {
-      exif.parse_makernote(file.inner(), OffsetMode::RelativeToIFD, &[])?
+      exif.parse_makernote(&mut file.reader(), OffsetMode::RelativeToIFD, &[])?
     } else {
       warn!("SRW makernote not found");
       None
@@ -69,14 +68,14 @@ impl<'a> SrwDecoder<'a> {
 }
 
 impl<'a> Decoder for SrwDecoder<'a> {
-  fn raw_image(&self, file: &mut RawFile, _params: RawDecodeParams, dummy: bool) -> Result<RawImage> {
+  fn raw_image(&self, file: &RawSource, _params: &RawDecodeParams, dummy: bool) -> Result<RawImage> {
     let raw = self.tiff.find_first_ifd_with_tag(TiffCommonTag::StripOffsets).unwrap();
     let width = fetch_tiff_tag!(raw, TiffCommonTag::ImageWidth).force_usize(0);
     let height = fetch_tiff_tag!(raw, TiffCommonTag::ImageLength).force_usize(0);
     let offset = fetch_tiff_tag!(raw, TiffCommonTag::StripOffsets).force_usize(0);
     let compression = fetch_tiff_tag!(raw, TiffCommonTag::Compression).force_u32(0);
     let bits = fetch_tiff_tag!(raw, TiffCommonTag::BitsPerSample).force_u32(0);
-    let src: OptBuffer = file.subview_until_eof(offset as u64)?.into();
+    let src = file.subview_until_eof_padded(offset as u64)?;
 
     let image = match compression {
       32769 => match bits {
@@ -100,7 +99,7 @@ impl<'a> Decoder for SrwDecoder<'a> {
           let coffset = x.force_usize(0);
           assert!(coffset > 0, "Surely this can't be the start of the file");
           let loffsets = file.subview_until_eof(coffset as u64).unwrap();
-          SrwDecoder::decode_srw1(&src, &loffsets, width, height, dummy)
+          SrwDecoder::decode_srw1(&src, loffsets, width, height, dummy)
         }
       },
       32772 => SrwDecoder::decode_srw2(&src, width, height, dummy),
@@ -120,7 +119,7 @@ impl<'a> Decoder for SrwDecoder<'a> {
     todo!()
   }
 
-  fn raw_metadata(&self, _file: &mut RawFile, _params: RawDecodeParams) -> Result<RawMetadata> {
+  fn raw_metadata(&self, _file: &RawSource, _params: &RawDecodeParams) -> Result<RawMetadata> {
     let exif = Exif::new(self.tiff.root_ifd())?;
     let mdata = RawMetadata::new_with_lens(&self.camera, exif, self.get_lens_description()?.cloned());
     Ok(mdata)

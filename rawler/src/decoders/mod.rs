@@ -6,10 +6,7 @@ use rayon::iter::ParallelIterator;
 use rayon::slice::ParallelSliceMut;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use std::fs::File;
 use std::hash::Hash;
-use std::io::BufReader;
-use std::io::SeekFrom;
 use std::panic;
 use std::panic::AssertUnwindSafe;
 use std::path::Path;
@@ -27,8 +24,8 @@ use crate::formats::tiff::GenericTiffReader;
 use crate::formats::tiff::IFD;
 use crate::lens::LensDescription;
 use crate::pixarray::PixU16;
+use crate::rawsource::RawSource;
 use crate::tags::DngTag;
-use crate::RawFile;
 use crate::Result;
 
 macro_rules! fetch_ciff_tag {
@@ -242,7 +239,7 @@ impl RawMetadata {
 }
 
 pub trait Decoder: Send {
-  fn raw_image(&self, file: &mut RawFile, params: RawDecodeParams, dummy: bool) -> Result<RawImage>;
+  fn raw_image(&self, file: &RawSource, params: &RawDecodeParams, dummy: bool) -> Result<RawImage>;
 
   fn raw_image_count(&self) -> Result<usize> {
     Ok(1)
@@ -250,25 +247,25 @@ pub trait Decoder: Send {
 
   /// Gives the metadata for a Raw. This is not the original data but
   /// a generalized set of metadata attributes.
-  fn raw_metadata(&self, file: &mut RawFile, params: RawDecodeParams) -> Result<RawMetadata>;
+  fn raw_metadata(&self, file: &RawSource, params: &RawDecodeParams) -> Result<RawMetadata>;
 
-  fn xpacket(&self, _file: &mut RawFile, _params: RawDecodeParams) -> Result<Option<Vec<u8>>> {
+  fn xpacket(&self, _file: &RawSource, _params: &RawDecodeParams) -> Result<Option<Vec<u8>>> {
     Ok(None)
   }
 
   // TODO: extend with decode params for image index
-  fn thumbnail_image(&self, _file: &mut RawFile, _params: RawDecodeParams) -> Result<Option<DynamicImage>> {
+  fn thumbnail_image(&self, _file: &RawSource, _params: &RawDecodeParams) -> Result<Option<DynamicImage>> {
     warn!("Decoder has no thumbnail image support, fallback to preview image");
     Ok(None)
   }
 
   // TODO: clarify preview and full image
-  fn preview_image(&self, _file: &mut RawFile, _params: RawDecodeParams) -> Result<Option<DynamicImage>> {
+  fn preview_image(&self, _file: &RawSource, _params: &RawDecodeParams) -> Result<Option<DynamicImage>> {
     warn!("Decoder has no preview image support");
     Ok(None)
   }
 
-  fn full_image(&self, _file: &mut RawFile, _params: RawDecodeParams) -> Result<Option<DynamicImage>> {
+  fn full_image(&self, _file: &RawSource, _params: &RawDecodeParams) -> Result<Option<DynamicImage>> {
     warn!("Decoder has no full image support");
     Ok(None)
   }
@@ -489,18 +486,7 @@ impl RawLoader {
   }
 
   /// Returns a decoder for a given buffer
-  pub fn get_decoder<'b>(&'b self, rawfile: &mut RawFile) -> Result<Box<dyn Decoder + 'b>> {
-    macro_rules! reset_file {
-      ($file:ident) => {
-        $file
-          .inner()
-          .seek(SeekFrom::Start(0))
-          .map_err(|e| RawlerError::with_io_error("get_decoder(): failed to seek", &rawfile.path, e))?;
-      };
-    }
-
-    //let buffer = rawfile.get_buf().unwrap();
-
+  pub fn get_decoder<'b>(&'b self, rawfile: &RawSource) -> Result<Box<dyn Decoder + 'b>> {
     if mrw::is_mrw(rawfile) {
       let dec = Box::new(mrw::MrwDecoder::new(rawfile, self)?);
       return Ok(dec as Box<dyn Decoder>);
@@ -525,14 +511,9 @@ impl RawLoader {
       let dec = Box::new(crw::CrwDecoder::new(rawfile, self)?);
       return Ok(dec as Box<dyn Decoder>);
     }
-    if jfif::is_jfif(rawfile) {
-      reset_file!(rawfile);
-    }
 
     if jfif::is_exif(rawfile) {
-      reset_file!(rawfile);
       let exif = jfif::Jfif::new(rawfile)?;
-
       if let Some(make) = exif
         .exif_ifd()
         .and_then(|ifd| ifd.get_entry(TiffCommonTag::Make))
@@ -555,8 +536,7 @@ impl RawLoader {
       return Ok(dec as Box<dyn Decoder>);
     }
 
-    reset_file!(rawfile);
-    match Bmff::new(rawfile.inner()) {
+    match Bmff::new(&mut rawfile.reader()) {
       Ok(bmff) => {
         if bmff.compatible_brand("crx ") {
           return Ok(Box::new(cr3::Cr3Decoder::new(rawfile, bmff, self)?));
@@ -567,8 +547,7 @@ impl RawLoader {
       }
     }
 
-    reset_file!(rawfile);
-    match GenericTiffReader::new(rawfile.inner(), 0, 0, None, &[]) {
+    match GenericTiffReader::new(&mut rawfile.reader(), 0, 0, None, &[]) {
       Ok(tiff) => {
         debug!("File is is TIFF file!");
 
@@ -684,13 +663,13 @@ impl RawLoader {
     self.check_supported_with_mode(ifd0, "")
   }
 
-  fn decode_unsafe(&self, rawfile: &mut RawFile, params: RawDecodeParams, dummy: bool) -> Result<RawImage> {
+  fn decode_unsafe(&self, rawfile: &RawSource, params: &RawDecodeParams, dummy: bool) -> Result<RawImage> {
     let decoder = self.get_decoder(rawfile)?;
     decoder.raw_image(rawfile, params, dummy)
   }
 
   /// Decodes an input into a RawImage
-  pub fn decode(&self, rawfile: &mut RawFile, params: RawDecodeParams, dummy: bool) -> Result<RawImage> {
+  pub fn decode(&self, rawfile: &RawSource, params: &RawDecodeParams, dummy: bool) -> Result<RawImage> {
     //let buffer = Buffer::new(reader)?;
 
     match panic::catch_unwind(AssertUnwindSafe(|| self.decode_unsafe(rawfile, params, dummy))) {
@@ -701,30 +680,21 @@ impl RawLoader {
 
   /// Decodes a file into a RawImage
   pub fn decode_file(&self, path: &Path) -> Result<RawImage> {
-    let file = match File::open(path) {
-      Ok(val) => val,
-      Err(e) => return Err(RawlerError::with_io_error("decode_file()", path, e)),
-    };
-    let mut buffered_file = RawFile::from(BufReader::new(file));
-    self.decode(&mut buffered_file, RawDecodeParams::default(), false)
+    let rawfile = RawSource::new(path)?;
+    self.decode(&rawfile, &RawDecodeParams::default(), false)
   }
 
   /// Decodes a file into a RawImage
   pub fn raw_image_count_file(&self, path: &Path) -> Result<usize> {
-    let file = match File::open(path) {
-      Ok(val) => val,
-      Err(e) => return Err(RawlerError::with_io_error("raw_image_count_file()", path, e)),
-    };
-    let buffered_file = BufReader::new(file);
-    //let buffer = Buffer::new(&mut buffered_file)?;
-    let decoder = self.get_decoder(&mut buffered_file.into())?;
+    let rawfile = RawSource::new(path).map_err(|err| RawlerError::with_io_error("raw_image_count_file()", path, err))?;
+    let decoder = self.get_decoder(&rawfile)?;
     decoder.raw_image_count()
   }
 
   // Decodes an unwrapped input (just the image data with minimal metadata) into a RawImage
   // This is only useful for fuzzing really
   #[doc(hidden)]
-  pub fn decode_unwrapped(&self, rawfile: &mut RawFile) -> Result<RawImageData> {
+  pub fn decode_unwrapped(&self, rawfile: &RawSource) -> Result<RawImageData> {
     match panic::catch_unwind(AssertUnwindSafe(|| unwrapped::decode_unwrapped(rawfile))) {
       Ok(val) => val,
       Err(_) => Err(RawlerError::DecoderFailed(format!("Caught a panic while decoding.{}", BUG))),

@@ -709,7 +709,7 @@ mod tests {
     use crate::{
       decoders::RawDecodeParams,
       dng::{DNG_VERSION_V1_4, PREVIEW_JPEG_QUALITY},
-      RawFile,
+      rawsource::RawSource,
     };
     use std::{
       fs::File,
@@ -720,17 +720,17 @@ mod tests {
     let mut rawdb = PathBuf::from(std::env::var("RAWLER_RAWDB").expect("RAWLER_RAWDB variable must be set in order to run RAW test!"));
     rawdb.push("cameras/Canon/EOS R5/raw_modes/Canon EOS R5_RAW_ISO_100_nocrop_nodual.CR3");
 
-    let mut rawfile = RawFile::new(rawdb.clone(), File::open(rawdb.clone()).unwrap());
+    let rawfile = RawSource::new(&rawdb)?;
 
     let original_thread = std::thread::spawn(|| OriginalCompressed::compress(&mut BufReader::new(File::open(rawdb).unwrap())));
 
-    let decoder = crate::get_decoder(&mut rawfile)?;
+    let decoder = crate::get_decoder(&rawfile)?;
 
-    let rawimage = decoder.raw_image(&mut rawfile, RawDecodeParams::default(), false)?;
+    let rawimage = decoder.raw_image(&rawfile, &RawDecodeParams::default(), false)?;
 
-    let full_image = decoder.full_image(&mut rawfile, RawDecodeParams::default())?.unwrap();
+    let full_image = decoder.full_image(&rawfile, &RawDecodeParams::default())?.unwrap();
 
-    let metadata = decoder.raw_metadata(&mut rawfile, RawDecodeParams::default())?;
+    let metadata = decoder.raw_metadata(&rawfile, &RawDecodeParams::default())?;
 
     let predictor = 1;
 
@@ -754,7 +754,7 @@ mod tests {
 
     dng.load_metadata(&metadata)?;
 
-    if let Some(xpacket) = decoder.xpacket(&mut rawfile, RawDecodeParams::default())? {
+    if let Some(xpacket) = decoder.xpacket(&rawfile, &RawDecodeParams::default())? {
       dng.xpacket(xpacket)?;
     }
 

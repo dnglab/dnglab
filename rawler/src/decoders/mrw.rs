@@ -11,8 +11,8 @@ use crate::formats::tiff::IFD;
 use crate::packed::decode_12be;
 use crate::packed::decode_12be_unpacked;
 use crate::packed::decode_16le;
+use crate::rawsource::RawSource;
 use crate::tags::TiffCommonTag;
-use crate::RawFile;
 use crate::RawImage;
 use crate::RawLoader;
 use crate::RawlerError;
@@ -28,10 +28,10 @@ use super::RawMetadata;
 
 const MRW_MAGIC: u32 = 0x004D524D; // !memcmp (head,"\0MRM",4))?
 
-pub fn is_mrw(file: &mut RawFile) -> bool {
+pub fn is_mrw(file: &RawSource) -> bool {
   match file.subview(0, 4) {
     Ok(buf) => {
-      if BEu32(&buf, 0) == MRW_MAGIC {
+      if BEu32(buf, 0) == MRW_MAGIC {
         true
       } else {
         log::debug!("MRW: File MAGIC not found");
@@ -60,7 +60,7 @@ pub struct MrwDecoder<'a> {
 }
 
 impl<'a> MrwDecoder<'a> {
-  pub fn new(file: &mut RawFile, rawloader: &'a RawLoader) -> Result<MrwDecoder<'a>> {
+  pub fn new(file: &RawSource, rawloader: &'a RawLoader) -> Result<MrwDecoder<'a>> {
     if is_mrw(file) {
       Self::new_mrw(file, rawloader)
     } else if is_exif(file) {
@@ -69,13 +69,13 @@ impl<'a> MrwDecoder<'a> {
     } else {
       Err(crate::RawlerError::DecoderFailed(format!(
         "MRW decoder can't decode given file: {}",
-        file.path.display()
+        file.path().display()
       )))
     }
   }
 
   /// Makernotes for MRW starts with "MLY" ASCII string
-  fn get_mly_wb(ifd: &IFD, rawfile: &mut RawFile, data_offset: u64) -> Result<[u16; 4]> {
+  fn get_mly_wb(ifd: &IFD, rawfile: &RawSource, data_offset: u64) -> Result<[u16; 4]> {
     if let Some(makernotes) = ifd.get_entry_recursive(TiffCommonTag::Makernote) {
       debug_assert_eq!(makernotes.get_data()[0..3], [b'M', b'L', b'Y']);
       if makernotes.get_data().get(0..3) == Some(b"MLY") {
@@ -105,7 +105,7 @@ impl<'a> MrwDecoder<'a> {
     Ok([1, 1, 1, 1])
   }
 
-  pub fn new_jfif(file: &mut RawFile, jfif: Jfif, rawloader: &'a RawLoader) -> Result<MrwDecoder<'a>> {
+  pub fn new_jfif(file: &RawSource, jfif: Jfif, rawloader: &'a RawLoader) -> Result<MrwDecoder<'a>> {
     let tiff = jfif
       .exif_ifd()
       .ok_or(RawlerError::DecoderFailed("No EXIF IFD found in JFIF file".to_string()))?
@@ -144,7 +144,7 @@ impl<'a> MrwDecoder<'a> {
     })
   }
 
-  fn new_mrw(file: &mut RawFile, rawloader: &'a RawLoader) -> Result<MrwDecoder<'a>> {
+  fn new_mrw(file: &RawSource, rawloader: &'a RawLoader) -> Result<MrwDecoder<'a>> {
     let full = file.as_vec()?;
     let buf = &full;
     let data_offset: usize = (BEu32(buf, 4) + 8) as usize;
@@ -205,15 +205,15 @@ impl<'a> MrwDecoder<'a> {
 }
 
 impl<'a> Decoder for MrwDecoder<'a> {
-  fn raw_image(&self, file: &mut RawFile, _params: RawDecodeParams, dummy: bool) -> Result<RawImage> {
+  fn raw_image(&self, file: &RawSource, _params: &RawDecodeParams, dummy: bool) -> Result<RawImage> {
     let src = file.subview_until_eof(self.data_offset as u64)?;
 
     let buffer = if self.bits == 16 {
-      decode_16le(&src, self.raw_width, self.raw_height, dummy)
+      decode_16le(src, self.raw_width, self.raw_height, dummy)
     } else if self.packed {
-      decode_12be(&src, self.raw_width, self.raw_height, dummy)
+      decode_12be(src, self.raw_width, self.raw_height, dummy)
     } else {
-      decode_12be_unpacked(&src, self.raw_width, self.raw_height, dummy)
+      decode_12be_unpacked(src, self.raw_width, self.raw_height, dummy)
     };
 
     let wb_coeffs = if self.camera.find_hint("swapped_wb") {
@@ -229,7 +229,7 @@ impl<'a> Decoder for MrwDecoder<'a> {
     todo!()
   }
 
-  fn raw_metadata(&self, _file: &mut RawFile, _params: RawDecodeParams) -> Result<RawMetadata> {
+  fn raw_metadata(&self, _file: &RawSource, _params: &RawDecodeParams) -> Result<RawMetadata> {
     let exif = Exif::new(&self.tiff)?;
     let mdata = RawMetadata::new(&self.camera, exif);
     Ok(mdata)
@@ -241,7 +241,7 @@ impl<'a> Decoder for MrwDecoder<'a> {
 
   /*
   /// File is EXIF structure, but contains no valid JPEG image, so this is useless...
-  fn full_image(&self, file: &mut RawFile) -> Result<Option<image::DynamicImage>> {
+  fn full_image(&self, file: &RawSource) -> Result<Option<image::DynamicImage>> {
     if is_mrw(file) {
       Ok(None)
     } else if is_exif(file) {

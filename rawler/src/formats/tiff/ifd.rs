@@ -10,6 +10,7 @@ use super::{
 };
 use crate::{
   bits::Endian,
+  rawsource::RawSource,
   tags::{ExifTag, TiffCommonTag, TiffTag},
 };
 use byteorder::{LittleEndian, ReadBytesExt};
@@ -432,6 +433,23 @@ impl IFD {
     self.sub_buf(reader, offset, len)
   }
 
+  pub fn singlestrip_data_rawsource<'a>(&self, rawsource: &'a RawSource) -> Result<&'a [u8]> {
+    assert!(self.contains_singlestrip_image());
+
+    let offset = self
+      .get_entry(TiffCommonTag::StripOffsets)
+      .ok_or_else(|| TiffError::General(("tag not found").to_string()))?
+      .value
+      .force_u32(0);
+    let len = self
+      .get_entry(TiffCommonTag::StripByteCounts)
+      .ok_or_else(|| TiffError::General(("tag not found").to_string()))?
+      .value
+      .force_usize(0);
+
+    Ok(rawsource.subview((self.base + offset) as u64, len as u64)?)
+  }
+
   pub fn strip_data<R: Read + Seek>(&self, reader: &mut R) -> Result<Vec<Vec<u8>>> {
     if !self.has_entry(TiffCommonTag::StripOffsets) {
       return Err(TiffError::General("IFD contains no strip data".into()));
@@ -457,6 +475,54 @@ impl IFD {
     let mut subviews = Vec::with_capacity(offsets.len());
     for (offset, size) in offsets.iter().zip(sizes.iter()) {
       subviews.push(self.sub_buf(reader, *offset as usize, *size as usize)?);
+    }
+    Ok(subviews)
+  }
+
+  pub fn strip_data_rawsource<'a>(&self, rawsource: &'a RawSource) -> Result<Vec<&'a [u8]>> {
+    if !self.has_entry(TiffCommonTag::StripOffsets) {
+      return Err(TiffError::General("IFD contains no strip data".into()));
+    }
+    let offsets = if let Some(Entry { value: Value::Long(data), .. }) = self.get_entry(TiffCommonTag::StripOffsets) {
+      data
+    } else {
+      return Err(TiffError::General("Invalid datatype for StripOffsets".to_string()));
+    };
+    let sizes = if let Some(Entry { value: Value::Long(data), .. }) = self.get_entry(TiffCommonTag::StripByteCounts) {
+      data
+    } else {
+      return Err(TiffError::General("Invalid datatype for StripByteCounts".to_string()));
+    };
+
+    if offsets.len() != sizes.len() {
+      return Err(TiffError::General(format!(
+        "Can't get data from strips: offsets has len {} but sizes has len {}",
+        offsets.len(),
+        sizes.len()
+      )));
+    }
+    let mut subviews = Vec::with_capacity(offsets.len());
+
+    // Check if all slices are continous - if yes, we can return one single large buffer.
+    let (continous, end) =
+      offsets.iter().zip(sizes.iter()).fold(
+        (true, offsets[0]),
+        |acc, val| {
+          if acc.0 && acc.1 == *val.0 {
+            (true, acc.1 + *val.1)
+          } else {
+            (false, 0)
+          }
+        },
+      );
+
+    if continous {
+      subviews.push(rawsource.subview((self.base + offsets[0]) as u64, (end - offsets[0]) as u64)?);
+    } else {
+      for (offset, size) in offsets.iter().zip(sizes.iter()) {
+        //subviews.push(self.sub_buf(reader, *offset as usize, *size as usize)?);
+        subviews.push(rawsource.subview((self.base + *offset) as u64, *size as u64)?);
+      }
     }
     Ok(subviews)
   }

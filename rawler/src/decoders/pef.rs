@@ -29,9 +29,9 @@ use crate::pumps::BitPumpMSB;
 use crate::pumps::ByteStream;
 use crate::rawimage::CFAConfig;
 use crate::rawimage::RawPhotometricInterpretation;
+use crate::rawsource::RawSource;
 use crate::tags::ExifTag;
 use crate::tags::TiffCommonTag;
-use crate::RawFile;
 use crate::RawImage;
 use crate::RawLoader;
 use crate::RawlerError;
@@ -49,13 +49,13 @@ pub struct PefDecoder<'a> {
 }
 
 impl<'a> PefDecoder<'a> {
-  pub fn new(file: &mut RawFile, tiff: GenericTiffReader, rawloader: &'a RawLoader) -> Result<PefDecoder<'a>> {
+  pub fn new(file: &RawSource, tiff: GenericTiffReader, rawloader: &'a RawLoader) -> Result<PefDecoder<'a>> {
     debug!("PEF decoder choosen");
 
     let camera = rawloader.check_supported(tiff.root_ifd())?;
 
     let makernote = if let Some(exif) = tiff.find_first_ifd_with_tag(ExifTag::MakerNotes) {
-      exif.parse_makernote(file.inner(), OffsetMode::Absolute, &[])?
+      exif.parse_makernote(&mut file.reader(), OffsetMode::Absolute, &[])?
     } else {
       warn!("PEF makernote not found");
       None
@@ -95,7 +95,7 @@ impl<'a> Decoder for PefDecoder<'a> {
     FormatDump::Pef(PefFormat { tiff: self.tiff.clone() })
   }
 
-  fn raw_image(&self, file: &mut RawFile, _params: RawDecodeParams, dummy: bool) -> Result<RawImage> {
+  fn raw_image(&self, file: &RawSource, _params: &RawDecodeParams, dummy: bool) -> Result<RawImage> {
     //for (i, ifd) in self.tiff.chains().iter().enumerate() {
     //  eprintln!("IFD {}", i);
     //  for line in ifd.dump::<crate::tags::LegacyTiffRootTag>(10) {
@@ -114,9 +114,9 @@ impl<'a> Decoder for PefDecoder<'a> {
     let src = file.subview_until_eof(offset as u64).unwrap();
 
     let image = match fetch_tiff_tag!(raw, TiffCommonTag::Compression).get_u32(0) {
-      Ok(Some(1)) => decode_16be(&src, width, height, dummy),
-      Ok(Some(32773)) => decode_12be(&src, width, height, dummy),
-      Ok(Some(65535)) => self.decode_compressed(&src, width, height, dummy)?,
+      Ok(Some(1)) => decode_16be(src, width, height, dummy),
+      Ok(Some(32773)) => decode_12be(src, width, height, dummy),
+      Ok(Some(65535)) => self.decode_compressed(src, width, height, dummy)?,
       Ok(Some(c)) => return Err(RawlerError::unsupported(&self.camera, format!("PEF: Don't know how to read compression {}", c))),
       _ => return Err(RawlerError::unsupported(&self.camera, "PEF: No compression tag found")),
     };
@@ -134,7 +134,7 @@ impl<'a> Decoder for PefDecoder<'a> {
     Ok(RawImage::new(self.camera.clone(), image, cpp, wb, photometric, blacklevel, whitelevel, dummy))
   }
 
-  fn full_image(&self, file: &mut RawFile, params: RawDecodeParams) -> Result<Option<DynamicImage>> {
+  fn full_image(&self, file: &RawSource, params: &RawDecodeParams) -> Result<Option<DynamicImage>> {
     if params.image_index != 0 {
       return Ok(None);
     }
@@ -150,12 +150,12 @@ impl<'a> Decoder for PefDecoder<'a> {
         let offset = start.force_u32(0);
         if len > 0 && offset > 0 {
           let buf = file.subview((self.makernote_offset + offset) as u64, len as u64).unwrap();
-          match image::load_from_memory_with_format(&buf, image::ImageFormat::Jpeg) {
+          match image::load_from_memory_with_format(buf, image::ImageFormat::Jpeg) {
             Ok(img) => Some(img),
             Err(_) => {
               // Test offset without correction
               let buf = file.subview(offset as u64, len as u64).unwrap();
-              let img = image::load_from_memory_with_format(&buf, image::ImageFormat::Jpeg).unwrap();
+              let img = image::load_from_memory_with_format(buf, image::ImageFormat::Jpeg).unwrap();
               Some(img)
             }
           }
@@ -186,7 +186,7 @@ impl<'a> Decoder for PefDecoder<'a> {
     todo!()
   }
 
-  fn raw_metadata(&self, _file: &mut RawFile, _params: RawDecodeParams) -> Result<RawMetadata> {
+  fn raw_metadata(&self, _file: &RawSource, _params: &RawDecodeParams) -> Result<RawMetadata> {
     let exif = Exif::new(self.tiff.root_ifd())?;
     let mdata = RawMetadata::new_with_lens(&self.camera, exif, self.get_lens_description()?.cloned());
     Ok(mdata)
