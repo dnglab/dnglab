@@ -21,8 +21,9 @@ Register-ArgumentCompleter -Native -CommandName 'dnglab' -ScriptBlock {
 
     $completions = @(switch ($command) {
         'dnglab' {
-            [CompletionResult]::new('-d', 'd', [CompletionResultType]::ParameterName, 'turns on debugging mode')
-            [CompletionResult]::new('-v', 'v', [CompletionResultType]::ParameterName, 'Print more messages')
+            [CompletionResult]::new('-d', 'd', [CompletionResultType]::ParameterName, 'Log level')
+            [CompletionResult]::new('--loglevel', 'loglevel', [CompletionResultType]::ParameterName, 'Log level')
+            [CompletionResult]::new('-v', 'v', [CompletionResultType]::ParameterName, 'Print status for every file')
             [CompletionResult]::new('-h', 'h', [CompletionResultType]::ParameterName, 'Print help')
             [CompletionResult]::new('--help', 'help', [CompletionResultType]::ParameterName, 'Print help')
             [CompletionResult]::new('-V', 'V ', [CompletionResultType]::ParameterName, 'Print version')
@@ -39,6 +40,8 @@ Register-ArgumentCompleter -Native -CommandName 'dnglab' -ScriptBlock {
             break
         }
         'dnglab;analyze' {
+            [CompletionResult]::new('-d', 'd', [CompletionResultType]::ParameterName, 'Log level')
+            [CompletionResult]::new('--loglevel', 'loglevel', [CompletionResultType]::ParameterName, 'Log level')
             [CompletionResult]::new('--raw-pixel', 'raw-pixel', [CompletionResultType]::ParameterName, 'raw-pixel')
             [CompletionResult]::new('--full-pixel', 'full-pixel', [CompletionResultType]::ParameterName, 'Write uncompressed full pixel data to STDOUT')
             [CompletionResult]::new('--preview-pixel', 'preview-pixel', [CompletionResultType]::ParameterName, 'Write uncompressed preview pixel data to STDOUT')
@@ -52,8 +55,7 @@ Register-ArgumentCompleter -Native -CommandName 'dnglab' -ScriptBlock {
             [CompletionResult]::new('--summary', 'summary', [CompletionResultType]::ParameterName, 'Write summary information for file to STDOUT')
             [CompletionResult]::new('--json', 'json', [CompletionResultType]::ParameterName, 'Format metadata as JSON')
             [CompletionResult]::new('--yaml', 'yaml', [CompletionResultType]::ParameterName, 'Format metadata as YAML')
-            [CompletionResult]::new('-d', 'd', [CompletionResultType]::ParameterName, 'turns on debugging mode')
-            [CompletionResult]::new('-v', 'v', [CompletionResultType]::ParameterName, 'Print more messages')
+            [CompletionResult]::new('-v', 'v', [CompletionResultType]::ParameterName, 'Print status for every file')
             [CompletionResult]::new('-h', 'h', [CompletionResultType]::ParameterName, 'Print help')
             [CompletionResult]::new('--help', 'help', [CompletionResultType]::ParameterName, 'Print help')
             break
@@ -68,12 +70,13 @@ Register-ArgumentCompleter -Native -CommandName 'dnglab' -ScriptBlock {
             [CompletionResult]::new('--artist', 'artist', [CompletionResultType]::ParameterName, 'Set the artist tag')
             [CompletionResult]::new('--image-index', 'image-index', [CompletionResultType]::ParameterName, 'Select a specific image index (or ''all'') if file is a image container')
             [CompletionResult]::new('--crop', 'crop', [CompletionResultType]::ParameterName, 'DNG default crop')
+            [CompletionResult]::new('-d', 'd', [CompletionResultType]::ParameterName, 'Log level')
+            [CompletionResult]::new('--loglevel', 'loglevel', [CompletionResultType]::ParameterName, 'Log level')
             [CompletionResult]::new('-f', 'f', [CompletionResultType]::ParameterName, 'Override existing files')
             [CompletionResult]::new('--override', 'override', [CompletionResultType]::ParameterName, 'Override existing files')
             [CompletionResult]::new('-r', 'r', [CompletionResultType]::ParameterName, 'Process input directory recursive')
             [CompletionResult]::new('--recursive', 'recursive', [CompletionResultType]::ParameterName, 'Process input directory recursive')
-            [CompletionResult]::new('-d', 'd', [CompletionResultType]::ParameterName, 'turns on debugging mode')
-            [CompletionResult]::new('-v', 'v', [CompletionResultType]::ParameterName, 'Print more messages')
+            [CompletionResult]::new('-v', 'v', [CompletionResultType]::ParameterName, 'Print status for every file')
             [CompletionResult]::new('-h', 'h', [CompletionResultType]::ParameterName, 'Print help')
             [CompletionResult]::new('--help', 'help', [CompletionResultType]::ParameterName, 'Print help')
             break
@@ -91,26 +94,29 @@ Register-ArgumentCompleter -Native -CommandName 'dnglab' -ScriptBlock {
             [CompletionResult]::new('--port', 'port', [CompletionResultType]::ParameterName, 'FTP listen port')
             [CompletionResult]::new('--listen', 'listen', [CompletionResultType]::ParameterName, 'FTP listen address')
             [CompletionResult]::new('--keep-original', 'keep-original', [CompletionResultType]::ParameterName, 'Keep original raw')
+            [CompletionResult]::new('-d', 'd', [CompletionResultType]::ParameterName, 'Log level')
+            [CompletionResult]::new('--loglevel', 'loglevel', [CompletionResultType]::ParameterName, 'Log level')
             [CompletionResult]::new('-f', 'f', [CompletionResultType]::ParameterName, 'Override existing files')
             [CompletionResult]::new('--override', 'override', [CompletionResultType]::ParameterName, 'Override existing files')
-            [CompletionResult]::new('-d', 'd', [CompletionResultType]::ParameterName, 'turns on debugging mode')
-            [CompletionResult]::new('-v', 'v', [CompletionResultType]::ParameterName, 'Print more messages')
+            [CompletionResult]::new('-v', 'v', [CompletionResultType]::ParameterName, 'Print status for every file')
             [CompletionResult]::new('-h', 'h', [CompletionResultType]::ParameterName, 'Print help')
             [CompletionResult]::new('--help', 'help', [CompletionResultType]::ParameterName, 'Print help')
             break
         }
         'dnglab;cameras' {
+            [CompletionResult]::new('-d', 'd', [CompletionResultType]::ParameterName, 'Log level')
+            [CompletionResult]::new('--loglevel', 'loglevel', [CompletionResultType]::ParameterName, 'Log level')
             [CompletionResult]::new('--md', 'md', [CompletionResultType]::ParameterName, 'Markdown format output')
-            [CompletionResult]::new('-d', 'd', [CompletionResultType]::ParameterName, 'turns on debugging mode')
-            [CompletionResult]::new('-v', 'v', [CompletionResultType]::ParameterName, 'Print more messages')
+            [CompletionResult]::new('-v', 'v', [CompletionResultType]::ParameterName, 'Print status for every file')
             [CompletionResult]::new('-h', 'h', [CompletionResultType]::ParameterName, 'Print help')
             [CompletionResult]::new('--help', 'help', [CompletionResultType]::ParameterName, 'Print help')
             break
         }
         'dnglab;lenses' {
+            [CompletionResult]::new('-d', 'd', [CompletionResultType]::ParameterName, 'Log level')
+            [CompletionResult]::new('--loglevel', 'loglevel', [CompletionResultType]::ParameterName, 'Log level')
             [CompletionResult]::new('--md', 'md', [CompletionResultType]::ParameterName, 'Markdown format output')
-            [CompletionResult]::new('-d', 'd', [CompletionResultType]::ParameterName, 'turns on debugging mode')
-            [CompletionResult]::new('-v', 'v', [CompletionResultType]::ParameterName, 'Print more messages')
+            [CompletionResult]::new('-v', 'v', [CompletionResultType]::ParameterName, 'Print status for every file')
             [CompletionResult]::new('-h', 'h', [CompletionResultType]::ParameterName, 'Print help')
             [CompletionResult]::new('--help', 'help', [CompletionResultType]::ParameterName, 'Print help')
             break
@@ -136,29 +142,32 @@ Register-ArgumentCompleter -Native -CommandName 'dnglab' -ScriptBlock {
             [CompletionResult]::new('--linearization', 'linearization', [CompletionResultType]::ParameterName, 'Linearization table')
             [CompletionResult]::new('--wb', 'wb', [CompletionResultType]::ParameterName, 'Whitebalance as-shot')
             [CompletionResult]::new('--white-xy', 'white-xy', [CompletionResultType]::ParameterName, 'Whitebalance as-shot encoded as xy chromaticity coordinates')
+            [CompletionResult]::new('-d', 'd', [CompletionResultType]::ParameterName, 'Log level')
+            [CompletionResult]::new('--loglevel', 'loglevel', [CompletionResultType]::ParameterName, 'Log level')
             [CompletionResult]::new('-f', 'f', [CompletionResultType]::ParameterName, 'Override existing files')
             [CompletionResult]::new('--override', 'override', [CompletionResultType]::ParameterName, 'Override existing files')
-            [CompletionResult]::new('-d', 'd', [CompletionResultType]::ParameterName, 'turns on debugging mode')
-            [CompletionResult]::new('-v', 'v', [CompletionResultType]::ParameterName, 'Print more messages')
+            [CompletionResult]::new('-v', 'v', [CompletionResultType]::ParameterName, 'Print status for every file')
             [CompletionResult]::new('-h', 'h', [CompletionResultType]::ParameterName, 'Print help (see more with ''--help'')')
             [CompletionResult]::new('--help', 'help', [CompletionResultType]::ParameterName, 'Print help (see more with ''--help'')')
             break
         }
         'dnglab;gui' {
-            [CompletionResult]::new('-d', 'd', [CompletionResultType]::ParameterName, 'turns on debugging mode')
-            [CompletionResult]::new('-v', 'v', [CompletionResultType]::ParameterName, 'Print more messages')
+            [CompletionResult]::new('-d', 'd', [CompletionResultType]::ParameterName, 'Log level')
+            [CompletionResult]::new('--loglevel', 'loglevel', [CompletionResultType]::ParameterName, 'Log level')
+            [CompletionResult]::new('-v', 'v', [CompletionResultType]::ParameterName, 'Print status for every file')
             [CompletionResult]::new('-h', 'h', [CompletionResultType]::ParameterName, 'Print help')
             [CompletionResult]::new('--help', 'help', [CompletionResultType]::ParameterName, 'Print help')
             break
         }
         'dnglab;extract' {
+            [CompletionResult]::new('-d', 'd', [CompletionResultType]::ParameterName, 'Log level')
+            [CompletionResult]::new('--loglevel', 'loglevel', [CompletionResultType]::ParameterName, 'Log level')
             [CompletionResult]::new('--skipchecks', 'skipchecks', [CompletionResultType]::ParameterName, 'Skip integrity checks')
             [CompletionResult]::new('-r', 'r', [CompletionResultType]::ParameterName, 'Process input directory recursive')
             [CompletionResult]::new('--recursive', 'recursive', [CompletionResultType]::ParameterName, 'Process input directory recursive')
             [CompletionResult]::new('-f', 'f', [CompletionResultType]::ParameterName, 'Override existing files')
             [CompletionResult]::new('--override', 'override', [CompletionResultType]::ParameterName, 'Override existing files')
-            [CompletionResult]::new('-d', 'd', [CompletionResultType]::ParameterName, 'turns on debugging mode')
-            [CompletionResult]::new('-v', 'v', [CompletionResultType]::ParameterName, 'Print more messages')
+            [CompletionResult]::new('-v', 'v', [CompletionResultType]::ParameterName, 'Print status for every file')
             [CompletionResult]::new('-h', 'h', [CompletionResultType]::ParameterName, 'Print help')
             [CompletionResult]::new('--help', 'help', [CompletionResultType]::ParameterName, 'Print help')
             break

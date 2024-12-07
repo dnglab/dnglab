@@ -15,8 +15,9 @@ _dnglab() {
 
     local context curcontext="$curcontext" state line
     _arguments "${_arguments_options[@]}" \
-'*-d[turns on debugging mode]' \
-'-v[Print more messages]' \
+'-d+[Log level]:level:(error warn info debug trace)' \
+'--loglevel=[Log level]:level:(error warn info debug trace)' \
+'-v[Print status for every file]' \
 '-h[Print help]' \
 '--help[Print help]' \
 '-V[Print version]' \
@@ -32,6 +33,8 @@ _dnglab() {
         case $line[1] in
             (analyze)
 _arguments "${_arguments_options[@]}" \
+'-d+[Log level]:level:(error warn info debug trace)' \
+'--loglevel=[Log level]:level:(error warn info debug trace)' \
 '--raw-pixel[]' \
 '--full-pixel[Write uncompressed full pixel data to STDOUT]' \
 '--preview-pixel[Write uncompressed preview pixel data to STDOUT]' \
@@ -45,8 +48,7 @@ _arguments "${_arguments_options[@]}" \
 '--summary[Write summary information for file to STDOUT]' \
 '--json[Format metadata as JSON]' \
 '--yaml[Format metadata as YAML]' \
-'*-d[turns on debugging mode]' \
-'-v[Print more messages]' \
+'-v[Print status for every file]' \
 '-h[Print help]' \
 '--help[Print help]' \
 ':FILE -- Input file:_files' \
@@ -63,12 +65,13 @@ _arguments "${_arguments_options[@]}" \
 '--artist=[Set the artist tag]:artist: ' \
 '--image-index=[Select a specific image index (or '\''all'\'') if file is a image container]:index: ' \
 '--crop=[DNG default crop]:crop:(best activearea none)' \
+'-d+[Log level]:level:(error warn info debug trace)' \
+'--loglevel=[Log level]:level:(error warn info debug trace)' \
 '-f[Override existing files]' \
 '--override[Override existing files]' \
 '-r[Process input directory recursive]' \
 '--recursive[Process input directory recursive]' \
-'*-d[turns on debugging mode]' \
-'-v[Print more messages]' \
+'-v[Print status for every file]' \
 '-h[Print help]' \
 '--help[Print help]' \
 ':INPUT -- Input file or directory:_files' \
@@ -89,10 +92,11 @@ _arguments "${_arguments_options[@]}" \
 '--port=[FTP listen port]:port: ' \
 '--listen=[FTP listen address]:addr: ' \
 '--keep-original=[Keep original raw]:keep:(true false)' \
+'-d+[Log level]:level:(error warn info debug trace)' \
+'--loglevel=[Log level]:level:(error warn info debug trace)' \
 '-f[Override existing files]' \
 '--override[Override existing files]' \
-'*-d[turns on debugging mode]' \
-'-v[Print more messages]' \
+'-v[Print status for every file]' \
 '-h[Print help]' \
 '--help[Print help]' \
 ':OUTPUT -- Output file or existing directory:_files' \
@@ -100,18 +104,20 @@ _arguments "${_arguments_options[@]}" \
 ;;
 (cameras)
 _arguments "${_arguments_options[@]}" \
+'-d+[Log level]:level:(error warn info debug trace)' \
+'--loglevel=[Log level]:level:(error warn info debug trace)' \
 '--md[Markdown format output]' \
-'*-d[turns on debugging mode]' \
-'-v[Print more messages]' \
+'-v[Print status for every file]' \
 '-h[Print help]' \
 '--help[Print help]' \
 && ret=0
 ;;
 (lenses)
 _arguments "${_arguments_options[@]}" \
+'-d+[Log level]:level:(error warn info debug trace)' \
+'--loglevel=[Log level]:level:(error warn info debug trace)' \
 '--md[Markdown format output]' \
-'*-d[turns on debugging mode]' \
-'-v[Print more messages]' \
+'-v[Print status for every file]' \
 '-h[Print help]' \
 '--help[Print help]' \
 && ret=0
@@ -138,31 +144,34 @@ _arguments "${_arguments_options[@]}" \
 '--linearization=[Linearization table]:TABLE:(8bit_sRGB 8bit_sRGB_invert 16bit_sRGB 16bit_sRGB_invert 8bit_gamma1.8 8bit_gamma1.8_invert 8bit_gamma2.0 8bit_gamma2.0_invert 8bit_gamma2.2 8bit_gamma2.2_invert 8bit_gamma2.4 8bit_gamma2.4_invert 16bit_gamma1.8 16bit_gamma1.8_invert 16bit_gamma2.0 16bit_gamma2.0_invert 16bit_gamma2.2 16bit_gamma2.2_invert 16bit_gamma2.4 16bit_gamma2.4_invert custom table (comma seperated))' \
 '(--white-xy)--wb=[Whitebalance as-shot]:R,G,B: ' \
 '--white-xy=[Whitebalance as-shot encoded as xy chromaticity coordinates]:x,y:(D50 D65 custom x,y value (comma seperated))' \
+'-d+[Log level]:level:(error warn info debug trace)' \
+'--loglevel=[Log level]:level:(error warn info debug trace)' \
 '-f[Override existing files]' \
 '--override[Override existing files]' \
-'*-d[turns on debugging mode]' \
-'-v[Print more messages]' \
+'-v[Print status for every file]' \
 '-h[Print help (see more with '\''--help'\'')]' \
 '--help[Print help (see more with '\''--help'\'')]' \
 && ret=0
 ;;
 (gui)
 _arguments "${_arguments_options[@]}" \
-'*-d[turns on debugging mode]' \
-'-v[Print more messages]' \
+'-d+[Log level]:level:(error warn info debug trace)' \
+'--loglevel=[Log level]:level:(error warn info debug trace)' \
+'-v[Print status for every file]' \
 '-h[Print help]' \
 '--help[Print help]' \
 && ret=0
 ;;
 (extract)
 _arguments "${_arguments_options[@]}" \
+'-d+[Log level]:level:(error warn info debug trace)' \
+'--loglevel=[Log level]:level:(error warn info debug trace)' \
 '--skipchecks[Skip integrity checks]' \
 '-r[Process input directory recursive]' \
 '--recursive[Process input directory recursive]' \
 '-f[Override existing files]' \
 '--override[Override existing files]' \
-'*-d[turns on debugging mode]' \
-'-v[Print more messages]' \
+'-v[Print status for every file]' \
 '-h[Print help]' \
 '--help[Print help]' \
 ':INPUT -- Input file or directory:_files' \

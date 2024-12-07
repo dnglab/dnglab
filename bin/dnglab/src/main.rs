@@ -14,6 +14,7 @@
 
 use std::process::{ExitCode, Termination};
 
+use app::LogLevel;
 use dnglab_lib::*;
 use fern::colors::{Color, ColoredLevelConfig};
 use tokio::runtime::Builder;
@@ -45,19 +46,19 @@ async fn main_async() -> dnglab_lib::Result<()> {
   let app = app::create_app().version(env!("CARGO_PKG_VERSION")).name(env!("CARGO_PKG_NAME"));
   let matches = app.try_get_matches().unwrap_or_else(|e| e.exit());
 
+  let loglevel = match matches.get_one::<LogLevel>("loglevel").unwrap_or(&LogLevel::Warn) {
+    LogLevel::Error => log::LevelFilter::Error,
+    LogLevel::Warn => log::LevelFilter::Warn,
+    LogLevel::Info => log::LevelFilter::Info,
+    LogLevel::Debug => log::LevelFilter::Debug,
+    LogLevel::Trace => log::LevelFilter::Trace,
+  };
+
   let colors = ColoredLevelConfig::new().debug(Color::Magenta);
   fern::Dispatch::new()
     .chain(std::io::stderr())
     //.level(log::LevelFilter::Debug)
-    .level({
-      match matches.get_count("debug") {
-        0 => log::LevelFilter::Error,
-        1 => log::LevelFilter::Warn,
-        2 => log::LevelFilter::Info,
-        3 => log::LevelFilter::Debug,
-        _ => log::LevelFilter::Trace,
-      }
-    })
+    .level(loglevel)
     .format(move |out, message, record| {
       out.finish(format_args!(
         //"{}[{:6}][{}] {} ({}:{})",
