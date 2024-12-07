@@ -117,7 +117,7 @@ use std::path::Path;
 use std::path::PathBuf;
 use thiserror::Error;
 
-pub(crate) const ISSUE_HINT: &str = "Please open an issue at https://github.com/dnglab/dnglab/issues and provide the RAW file.";
+pub(crate) const ISSUE_HINT: &str = "Please open an issue at https://github.com/dnglab/dnglab/issues and provide this message (optionally the RAW file, if you can license it under CC0-license).";
 
 pub struct OptBuffer {
   buf: Vec<u8>,
