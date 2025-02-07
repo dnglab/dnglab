@@ -308,3 +308,13 @@ make = "Canon"
 model = "RF 200-800mm F6.3-9 IS USM"
 focal_range = [[200, 1], [800, 1]]
 aperture_range = [[63, 10], [9, 1]]
+
+[[lenses]]
+mount = "rf-mount"
+key = "RF-S10-18mm F4.5-6.3 IS STM"
+lens_id = 61182
+lens_subid = 315
+make = "Canon"
+model = "RF-S 10-18mm F4.5-6.3 IS STM"
+focal_range = [[10, 1], [18, 1]]
+aperture_range = [[45, 10], [63,10]]
