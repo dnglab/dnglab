@@ -1,7 +1,7 @@
 make = "Canon"
 model = "Canon EOS R5m2"
 clean_make = "Canon"
-clean_model = "EOS R5 II"
+clean_model = "EOS R5 Mark II"
 color_pattern = "RGGB"
 remark = "support for CRM raw movie frame extraction"
 
