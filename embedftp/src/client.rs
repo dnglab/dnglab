@@ -473,7 +473,9 @@ where
     let mut addr = self.local_addr;
     addr.set_port(port);
 
-    match &addr.ip() {
+    // If it's a IPv4 address but mapped into v6 as defined in IETF RFC 4291 section 2.5.5.2,
+    // use the canonical value.
+    match &addr.ip().to_canonical() {
       IpAddr::V4(v4addr) => {
         let listener = TcpListener::bind(&addr).await?;
         let port = listener.local_addr()?.port();
