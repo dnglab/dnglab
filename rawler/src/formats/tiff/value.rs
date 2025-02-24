@@ -1198,6 +1198,18 @@ impl From<&[u32]> for Value {
   }
 }
 
+impl From<Vec<i16>> for Value {
+  fn from(value: Vec<i16>) -> Self {
+    Value::SShort(value)
+  }
+}
+
+impl From<&Vec<i16>> for Value {
+  fn from(value: &Vec<i16>) -> Self {
+    Value::SShort(value.clone())
+  }
+}
+
 impl From<&Vec<u32>> for Value {
   fn from(value: &Vec<u32>) -> Self {
     Value::Long(value.clone())
