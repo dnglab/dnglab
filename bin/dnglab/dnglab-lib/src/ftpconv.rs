@@ -4,16 +4,18 @@
 use clap::ArgMatches;
 use embedftp::config::{Config, FtpCallback};
 use embedftp::server::serve;
-use rawler::decoders::supported_extensions;
+use rawler::decoders::{supported_extensions, RawDecodeParams};
 use rawler::rawsource::RawSource;
 use std::ffi::OsStr;
 use std::fs::File;
 use std::io::BufWriter;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
+use std::time::SystemTime;
 
 use tokio::runtime::Handle;
 
+use crate::jobs::raw2dng::copy_mtime_from_rawsource;
 use crate::{PKG_NAME, PKG_VERSION};
 use rawler::dng::convert::{convert_raw_source, ConvertParams};
 
@@ -32,6 +34,11 @@ impl FtpCallback for FtpState {
         let out_path = path.with_extension("dng");
         let mut dng = BufWriter::new(File::create(out_path)?);
         convert_raw_source(&rawfile, &mut dng, original_filename, &self.params).map_err(|err| std::io::Error::new(std::io::ErrorKind::Other, err))?;
+        if self.params.keep_mtime {
+          if let Err(err) = copy_mtime_from_rawsource(&rawfile, &dng.into_inner().expect("Get inner() failed"), None, &self.params) {
+            log::warn!("Failed to set mtime, continue anyway: {}", err);
+          }
+        }
         return Ok(!self.keep_orig);
       }
     }
@@ -55,6 +62,7 @@ pub async fn ftpserver(options: &ArgMatches) -> crate::Result<()> {
     software: format!("{} {}", PKG_NAME, PKG_VERSION),
     index: 0,
     apply_scaling: false,
+    keep_mtime: options.get_flag("keep_mtime"),
   };
   let keep_orig = options.get_flag("keep_orig");
 
