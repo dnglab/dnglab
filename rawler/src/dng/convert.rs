@@ -34,6 +34,7 @@ pub struct ConvertParams {
   pub artist: Option<String>,
   pub software: String,
   pub index: usize,
+  pub keep_mtime: bool,
 }
 
 impl Default for ConvertParams {
@@ -50,6 +51,7 @@ impl Default for ConvertParams {
       artist: None,
       software: "DNGLab".into(),
       index: 0,
+      keep_mtime: false,
     }
   }
 }
