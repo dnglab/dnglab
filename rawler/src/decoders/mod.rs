@@ -1,3 +1,6 @@
+use chrono::FixedOffset;
+use chrono::NaiveDateTime;
+use chrono::TimeZone;
 use image::DynamicImage;
 use log::debug;
 use log::warn;
@@ -11,7 +14,9 @@ use std::panic;
 use std::panic::AssertUnwindSafe;
 use std::path::Path;
 use std::rc::Rc;
+use std::str::FromStr;
 use std::sync::Arc;
+use std::time::SystemTime;
 use toml::Value;
 
 use crate::alloc_image_ok;
@@ -235,6 +240,54 @@ impl RawMetadata {
       lens,
       rating: None,
     }
+  }
+
+  pub fn last_modified(&self) -> Result<Option<SystemTime>> {
+    let mtime = self
+      .exif
+      .modify_date
+      .as_ref()
+      .map(|mtime| NaiveDateTime::parse_from_str(mtime, "%Y:%m:%d %H:%M:%S"))
+      .transpose()
+      .map_err(|err| RawlerError::DecoderFailed(err.to_string()))?;
+    if let Some(mtime) = mtime {
+      // Probe for available timezone information
+      let tz = if let Some(offset) = self.exif.timezone_offset.as_ref().and_then(|x| x.get(1)) {
+        if let Some(tz) = FixedOffset::east_opt(*offset as i32 * 3600) {
+          Some(tz)
+        } else {
+          log::warn!("TZ Offset overflow");
+          None
+        }
+      } else if let Some(offset) = &self.exif.offset_time {
+        match FixedOffset::from_str(offset) {
+          Ok(tz) => Some(tz),
+          Err(err) => {
+            log::warn!("Invalid fixed offset: {}", err);
+            None
+          }
+        }
+      } else {
+        None
+      };
+      // Any timezone? Then correct...
+      if let Some(tz) = tz {
+        let x = tz
+          .from_local_datetime(&mtime)
+          .earliest()
+          .ok_or(RawlerError::DecoderFailed(format!("Failed to convert datetime to local: {:?}", mtime)))?;
+        return Ok(Some(x.into()));
+      } else {
+        match chrono::Local.from_local_datetime(&mtime).earliest() {
+          Some(ts) => return Ok(Some(ts.into())),
+          None => {
+            log::warn!("Failed to convert ts to local time");
+          }
+        }
+      }
+    }
+
+    Ok(None)
   }
 }
 

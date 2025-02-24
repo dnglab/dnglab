@@ -85,6 +85,13 @@ pub fn create_app() -> Command {
         .value_parser(NonEmptyStringValueParser::new()),
     )
     .arg(
+      arg!(keep_mtime: --"keep-mtime" <keepmtime> "Keep mtime, read from EXIF with fallback to original file mtime")
+        .value_parser(ValueParser::bool())
+        .required(false)
+        .default_value("false")
+        .default_missing_value("false"),
+    )
+    .arg(
       arg!(index: --"image-index" <index> "Select a specific image index (or 'all') if file is a image container")
         .required(false)
         .default_value("0"),

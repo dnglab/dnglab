@@ -4,15 +4,19 @@
 use super::Job;
 use crate::{AppError, Result};
 use async_trait::async_trait;
+use chrono::Local;
 use log::debug;
 use rawler::{
+  decoders::RawDecodeParams,
   dng::convert::{convert_raw_file, ConvertParams},
+  rawsource::RawSource,
   RawlerError,
 };
 use std::{
   fmt::Display,
   fs::{remove_file, File},
   io::BufWriter,
+  time::SystemTime,
 };
 use std::{path::PathBuf, time::Instant};
 use tokio::task::spawn_blocking;
@@ -51,6 +55,18 @@ impl Display for JobResult {
   }
 }
 
+pub(crate) fn copy_mtime_from_rawsource(rawfile: &RawSource, file: &File, fallback: Option<SystemTime>, params: &ConvertParams) -> Result<()> {
+  let decoder = rawler::get_decoder(rawfile)?;
+  let raw_params = RawDecodeParams { image_index: params.index };
+  let metadata = decoder.raw_metadata(rawfile, &raw_params)?;
+  if let Some(ts) = metadata.last_modified()?.or(fallback) {
+    file.set_modified(ts)?;
+    let datetime: chrono::DateTime<Local> = ts.into();
+    log::debug!("Set mtime for DNG file to {}", datetime.format("%d/%m/%Y %T"));
+  }
+  Ok(())
+}
+
 impl Raw2DngJob {
   fn internal_exec(&self) -> Result<JobResult> {
     if self.output.exists() && !self.replace {
@@ -69,7 +85,13 @@ impl Raw2DngJob {
 
     match convert_raw_file(&self.input, &mut dng, &self.params) {
       Ok(_) => {
-        drop(dng);
+        let file = dng.into_inner().expect("Can't access DNG inner file");
+        if self.params.keep_mtime {
+          let file_mtime = std::fs::metadata(&self.input).and_then(|md| md.modified()).ok();
+          let rawfile = RawSource::new(&self.input)?;
+          copy_mtime_from_rawsource(&rawfile, &file, file_mtime, &self.params)?;
+        }
+        drop(file);
         Ok(JobResult {
           job: self.clone(),
           duration: 0.0,

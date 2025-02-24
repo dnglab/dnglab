@@ -114,6 +114,7 @@ fn generate_job(entry: &FileMap, options: &ArgMatches) -> Result<Vec<Raw2DngJob>
       software: format!("{} {}", "DNGLab", PKG_VERSION),
       index: if do_batch { i } else { index },
       apply_scaling: false,
+      keep_mtime: options.get_flag("keep_mtime"),
     };
 
     let input = PathBuf::from(&entry.src);
