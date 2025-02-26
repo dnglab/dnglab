@@ -120,16 +120,10 @@ impl<T: Read + Seek> ReadTrait for T {}
 
 #[derive(Error, Debug)]
 pub enum RawlerError {
-  #[error(
-    "File is unsupported: {}, model '{}', make: '{}', mode: '{}'\nPlease report this issue at 'https://github.com/dnglab/dnglab/issues'!",
-    what,
-    model,
-    make,
-    mode
-  )]
+  #[error("Error: {}, model '{}', make: '{}', mode: '{}'", what, model, make, mode)]
   Unsupported { what: String, model: String, make: String, mode: String },
 
-  #[error("Decoder failed: {}", _0)]
+  #[error("Failed to decode image, possibly corrupt image. Origin error was: {}", _0)]
   DecoderFailed(String),
 }
 

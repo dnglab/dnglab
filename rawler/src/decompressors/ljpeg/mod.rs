@@ -210,12 +210,16 @@ impl<'a> LjpegDecompressor<'a> {
 
   fn get_next_marker(input: &mut ByteStream, allowskip: bool) -> Result<u8, String> {
     if !allowskip {
-      if input.get_u8() != 0xff {
-        return Err("ljpeg: (noskip) expected marker not found".to_string());
+      let fill = input.get_u8();
+      if fill != m(Marker::Fill) {
+        return Err(format!("ljpeg get_next_marker() (noskip) expected fill marker 0XFF but got 0x{:X}", fill));
       }
       let mark = input.get_u8();
       if mark == m(Marker::Stuff) || mark == m(Marker::Fill) {
-        return Err("ljpeg: (noskip) expected marker but found stuff or fill".to_string());
+        return Err(format!(
+          "ljpeg get_next_marker() (noskip) expected marker but found STUFF or FILL (0x{:X})",
+          mark
+        ));
       }
       return Ok(mark);
     }
