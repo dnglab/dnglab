@@ -223,7 +223,7 @@ impl LensResolver {
         self
           .lens_id
           .as_ref()
-          .map_or(true, |id| entry.identifiers.id.as_ref().map_or(false, |entry_id| *entry_id == *id))
+          .map_or(true, |id| entry.identifiers.id.as_ref().is_some_and(|entry_id| *entry_id == *id))
       })
       .filter(|entry| self.lens_make.as_ref().map_or(true, |make| entry.lens_make == *make))
       .filter(|entry| self.lens_model.as_ref().map_or(true, |model| entry.lens_model == *model))

@@ -30,7 +30,7 @@ impl OriginalCompressed {
     let start = stream.stream_position()?;
 
     let raw_fork_size: u32 = stream.read_u32::<BigEndian>()?;
-    let raw_fork_blocks: u32 = (raw_fork_size + (COMPRESS_BLOCK_SIZE - 1)) / COMPRESS_BLOCK_SIZE;
+    let raw_fork_blocks: u32 = raw_fork_size.div_ceil(COMPRESS_BLOCK_SIZE); // (raw_fork_size + (COMPRESS_BLOCK_SIZE - 1)) / COMPRESS_BLOCK_SIZE
 
     let mut index_list: Vec<u32> = Vec::with_capacity(raw_fork_blocks as usize + 1);
 
@@ -102,7 +102,7 @@ impl OriginalCompressed {
     stream.seek(SeekFrom::Current((uncomp_len as i64).neg()))?;
 
     let raw_fork_size = u32::try_from(uncomp_len).map_err(|e| io::Error::new(io::ErrorKind::InvalidInput, e))?;
-    let raw_fork_blocks = (raw_fork_size + (COMPRESS_BLOCK_SIZE - 1)) / COMPRESS_BLOCK_SIZE;
+    let raw_fork_blocks = raw_fork_size.div_ceil(COMPRESS_BLOCK_SIZE); // (raw_fork_size + (COMPRESS_BLOCK_SIZE - 1)) / COMPRESS_BLOCK_SIZE
     let mut forks = Vec::with_capacity(raw_fork_blocks as usize);
 
     let mut ctx = md5::Context::new();

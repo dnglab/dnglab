@@ -56,7 +56,7 @@ pub struct BitPumpPanasonic<'a> {
 }
 
 impl<'a> BitPumpPanasonic<'a> {
-  pub fn new(src: &'a [u8], split: bool) -> BitPumpPanasonic {
+  pub fn new(src: &'a [u8], split: bool) -> BitPumpPanasonic<'a> {
     BitPumpPanasonic {
       buffer: src,
       pos: 0,
