@@ -466,6 +466,7 @@ impl<'a> ArwDecoder<'a> {
     let coltiles = (width - 1) / twidth + 1;
     let rowtiles = (height - 1) / tlength + 1;
 
+    log::debug!("Sony ARW LJPEG raw: width: {}, height: {}, cpp: {}", width, height, cpp);
     log::debug!("LJPEG tile parameters: width: {}, length: {}, cpp: {}", twidth, tlength, cpp);
 
     if coltiles * rowtiles != offsets.count() as usize {
@@ -474,7 +475,7 @@ impl<'a> ArwDecoder<'a> {
         format!("ARW LJPEG: trying to decode {} tiles from {} offsets", coltiles * rowtiles, offsets.count()),
       ));
     }
-    let buffer = file.as_vec().unwrap();
+    let buffer = file.as_vec()?;
 
     if cpp == 3 {
       let mut image = decode_threaded_multiline(
@@ -485,17 +486,17 @@ impl<'a> ArwDecoder<'a> {
         &(|strip: &mut [u16], row| {
           let row = row / tlength;
           for col in 0..coltiles {
+            log::debug!("Decode tile: row({}), col({})", row, col);
             let offset = offsets.force_usize(row * coltiles + col);
             let src = &buffer[offset..];
-            let decompressor = LjpegDecompressor::new(src).unwrap();
+            let decompressor =
+              LjpegDecompressor::new(src).map_err(|err| format!("Creating LJPEG decompressor for ARW LJPEG tile ({row},{col}) failed: {err}"))?;
             let cpp = 3;
             let w = 512;
             let h = 512;
             let mut data = vec![0; h * w * cpp];
 
-            // FIXME: instead of unwrap() we need to propagate the error
-            decompressor.decode_sony(&mut data, 0, w * cpp, w * cpp, h, dummy).unwrap();
-
+            decompressor.decode_sony(&mut data, 0, w * cpp, w * cpp, h, dummy)?;
             interpolate_yuv(decompressor.super_h(), decompressor.super_v(), w * cpp, h, &mut data);
 
             let mut strip = &mut *strip;

@@ -20,8 +20,8 @@ pub struct ImageTiler<'a, T> {
 impl<'a, T> ImageTiler<'a, T> {
   pub fn new(data: &'a [T], width: usize, height: usize, cpp: usize, tw: usize, th: usize) -> Self {
     assert!(data.len() >= height * width * cpp);
-    let tcols = (width + (tw - 1)) / tw;
-    let trows = (height + (th - 1)) / th;
+    let tcols = width.div_ceil(tw);
+    let trows = height.div_ceil(th);
     Self {
       data,
       width,

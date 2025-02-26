@@ -512,7 +512,7 @@ impl<'a> NefDecoder<'a> {
     let size = fetch_tiff_tag!(raw, TiffCommonTag::StripByteCounts).force_usize(0);
 
     fn div_round_up(a: usize, b: usize) -> usize {
-      (a + b - 1) / b
+      a.div_ceil(b) // (a + b - 1) / b
     }
 
     let req_pixels = width * height;

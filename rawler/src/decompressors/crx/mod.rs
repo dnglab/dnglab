@@ -146,8 +146,8 @@ impl CodecParams {
     //let tile_rows: usize = (cmp1.f_height / cmp1.tile_height) as usize;
 
     // Rounding for unbalanced sizes
-    let tile_cols: usize = ((cmp1.f_width + cmp1.tile_width - 1) / cmp1.tile_width) as usize;
-    let tile_rows: usize = ((cmp1.f_height + cmp1.tile_height - 1) / cmp1.tile_height) as usize;
+    let tile_cols: usize = cmp1.f_width.div_ceil(cmp1.tile_width) as usize;
+    let tile_rows: usize = cmp1.f_height.div_ceil(cmp1.tile_height) as usize;
 
     assert!(tile_cols > 0);
     assert!(tile_rows > 0);
