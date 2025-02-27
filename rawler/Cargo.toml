@@ -40,7 +40,7 @@ libc = "0.2"
 libflate = "2.0"
 log = "0.4"
 md5 = "0.7"
-multiversion = "0.7"
+multiversion = "0.8"
 num_enum = "0.7"
 rayon = "1"
 serde = {version = "1.0", features = ["derive"]}
