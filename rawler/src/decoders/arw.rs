@@ -253,6 +253,7 @@ impl<'a> ArwDecoder<'a> {
       debug!("Lens Id tag: {}", lens_id);
 
       let resolver = LensResolver::new()
+        .with_camera(&self.camera)
         .with_lens_id((lens_id as u32, 0))
         .with_mounts(&[SONY_E_MOUNT.into(), SONY_A_MOUNT.into()]);
       return Ok(resolver.resolve());
@@ -270,6 +271,7 @@ impl<'a> ArwDecoder<'a> {
         debug!("Lens Id tag: {}", lens_id);
 
         let resolver = LensResolver::new()
+          .with_camera(&self.camera)
           .with_lens_id((lens_id as u32, 0))
           .with_mounts(&[SONY_E_MOUNT.into(), SONY_A_MOUNT.into()]);
         return Ok(resolver.resolve());
@@ -287,6 +289,7 @@ impl<'a> ArwDecoder<'a> {
       debug!("Lens Id tag: {}", lens_id);
 
       let resolver = LensResolver::new()
+        .with_camera(&self.camera)
         .with_lens_id((lens_id as u32, 0))
         .with_mounts(&[SONY_E_MOUNT.into(), SONY_A_MOUNT.into()]);
       return Ok(resolver.resolve());
