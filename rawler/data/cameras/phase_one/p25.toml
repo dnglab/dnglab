@@ -1,11 +1,14 @@
 make = "Phase One A/S"
-model = "P25+"
+model = "P25"
 clean_make = "Phase One A/S"
-clean_model = "P25+"
+clean_model = "P25"
 whitepoint = 65535
 color_pattern = "GBRG"
 active_area = [26, 20, 10, 10]
 crop_area = [36, 31, 18, 21]
+model_aliases = [
+  ["P25+", "P25+"],
+]
 
 [cameras.color_matrix]
 A = [0.3311, 0.0333, 0.0008, -0.7783, 1.6217, 0.1561, -0.1919, 0.3244, 0.8188]

@@ -1,8 +1,8 @@
 ---
 file:
-  fileSize: 24891373
+  fileSize: 24360775
   fileName: P25_4x3_L.IIQ
-  digest: 080c40b957be8fab81d4999d113dae85
+  digest: 627b81878c4cf2aecd4631148d433518
 data:
   metadata:
     rawParams:
@@ -35,9 +35,9 @@ data:
       whitelevels:
         - 65535
       wbCoeffs:
-        - 1.83
+        - 3.2549665
         - 1.0
-        - 1.42
+        - 1.051439
         - ~
     rawMetadata:
       exif:
@@ -45,19 +45,19 @@ data:
         copyright: ~
         artist: ~
         lens_spec: ~
-        exposure_time: 3125/1000000
-        fnumber: 1200/100
-        aperture_value: 71699/10000
+        exposure_time: 2500/1000000
+        fnumber: 680/100
+        aperture_value: 55311/10000
         brightness_value: ~
-        iso_speed_ratings: 100
+        iso_speed_ratings: 50
         iso_speed: ~
         recommended_exposure_index: ~
         sensitivity_type: ~
         exposure_bias: 0/1000
-        date_time_original: "2010:07:23 11:06:09"
-        create_date: "2010:07:23 11:06:09"
+        date_time_original: "2024:05:26 10:47:38"
+        create_date: "2024:05:26 10:47:38"
         modify_date: ~
-        exposure_program: 3
+        exposure_program: 0
         timezone_offset: ~
         offset_time: ~
         offset_time_original: ~
@@ -65,18 +65,18 @@ data:
         sub_sec_time: ~
         sub_sec_time_original: ~
         sub_sec_time_digitized: ~
-        shutter_speed_value: 832193/100000
+        shutter_speed_value: 864386/100000
         max_aperture_value: ~
         subject_distance: ~
         metering_mode: ~
-        light_source: 1
+        light_source: 0
         flash: ~
         focal_length: 800/10
         image_number: ~
         color_space: ~
         flash_energy: ~
         exposure_mode: ~
-        white_balance: 1
+        white_balance: 0
         scene_capture_type: ~
         subject_distance_range: ~
         owner_name: ~
@@ -86,7 +86,7 @@ data:
         lens_model: ~
         gps: ~
         user_comment: ~
-      model: P25+
+      model: P25
       make: Phase One A/S
       lens: ~
       unique_image_id: ~
