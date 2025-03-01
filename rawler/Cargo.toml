@@ -3,13 +3,13 @@ authors = ["Daniel Vogelbacher <daniel@chaospixel.com>", "Pedro Côrte-Real <ped
 categories = ["multimedia::images"]
 description = "A library to extract images and metadata from camera raw formats"
 readme = "README.md"
-edition = "2021"
+edition = "2024"
 homepage = "https://github.com/dnglab/dnglab"
 keywords = ["camera", "raw"]
 license = "LGPL-2.1"
 name = "rawler"
 repository = "https://github.com/dnglab/dnglab"
-rust-version = "1.80"
+rust-version = "1.85"
 version = "0.6.3"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
