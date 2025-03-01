@@ -4,10 +4,14 @@ New raw image formats or cameras can only be integrated when a full set of raw s
 exists. You can help to speed up support for your new camera if you contribute a full set of samples.
 Please see the specific manufacturer section for further instructions.
 
-# Important notes
+# Important notes on how to properly shoot samples
 For every sample set, the scene must be properly exposed during daylight. The ideal scene is a landscape
 where many colors are visible, like a blue sky with white clouds, green grass and flowers/trees. Don't capture
-people, cars or any other private property.
+people, cars or any other private property. Here are some ideas:
+
+ * Landscape with trees and/or plants
+ * Fruit basket with bananas, grapes, etc.
+ * A street with colorful houses (keep in mind: no people, cars etc.)
 
 **No color checker cards, please. They won't work well for visual checks.**
 
