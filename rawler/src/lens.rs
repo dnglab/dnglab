@@ -24,7 +24,7 @@ pub fn get_lenses() -> &'static Vec<LensDescription> {
 /// Resolver for Lens information
 #[derive(Default, Debug, Clone)]
 pub struct LensResolver {
-  /// Name of the lens model, if known
+  /// Unique lens keyname, if known
   lens_keyname: Option<String>,
   /// Name of the lens make, if known
   lens_make: Option<String>,
@@ -84,6 +84,11 @@ impl LensResolver {
   pub fn with_camera(mut self, camera: &Camera) -> Self {
     self.camera_make = Some(camera.clean_make.clone());
     self.camera_model = Some(camera.clean_model.clone());
+    // For cameras with fixed lens, an optional camera param can be specified
+    // which is the key into the lens database.
+    if let Some(key) = camera.param_str("fixed_lens_key").map(String::from) {
+      self.lens_keyname = Some(key);
+    }
     self
   }
 
@@ -186,6 +191,9 @@ impl LensResolver {
       };
       if second_try.is_none() {
         log::warn!("No lens definition found in database, search parameters: {}. {}", self, crate::ISSUE_HINT);
+        if std::env::var("RAWLER_FAIL_NO_LENS").ok().map(|val| val == "1").unwrap_or(false) {
+          panic!("No lens definition found in database, search parameters: {}.", self);
+        }
       }
       second_try
     }
@@ -272,7 +280,7 @@ impl Display for LensResolver {
       s.push(format!("Keyname: '{}'", name));
     }
     if let Some(name) = &self.lens_make {
-      s.push(format!("Make: '{}Ä", name));
+      s.push(format!("Make: '{}", name));
     }
     if let Some(name) = &self.lens_model {
       s.push(format!("Model: '{}'", name));
