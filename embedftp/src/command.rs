@@ -88,7 +88,7 @@ impl Command {
           return Err("Invalid address/port".into());
         }
 
-        let port = (addr[4] as u16) << 8 | (addr[5] as u16);
+        let port = ((addr[4] as u16) << 8) | (addr[5] as u16);
         // TODO: check if the port isn't already used already by another connection...
         if port <= 1024 {
           return Err("Port can't be less than 10025".into());

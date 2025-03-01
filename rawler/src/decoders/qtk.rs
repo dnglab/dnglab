@@ -228,7 +228,7 @@ impl<'a> QtkDecoder<'a> {
 
     let tbl = LookupTable::new_with_bits(&CURVE, 10);
     out.par_pixel_rows_mut().enumerate().for_each(|(row, line)| {
-      let mut random = (pix[row + 2][2] as u32) << 16 | (pix[row + 2][3]) as u32;
+      let mut random = ((pix[row + 2][2] as u32) << 16) | (pix[row + 2][3]) as u32;
       for (x, p) in line.iter_mut().zip(pix[row + 2][2..width + 2].iter()) {
         *x = tbl.dither(*p as u16, &mut random);
         //*x = CURVE[*p as usize]; // no dither

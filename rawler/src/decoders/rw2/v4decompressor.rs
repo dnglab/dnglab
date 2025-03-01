@@ -36,7 +36,7 @@ pub(crate) fn decode_panasonic_v4(buf: &[u8], width: usize, height: usize, split
           } else {
             nonz[i & 1] = pump.get_bits(8) as i32;
             if nonz[i & 1] != 0 || i > 11 {
-              pred[i & 1] = nonz[i & 1] << 4 | (pump.get_bits(4) as i32);
+              pred[i & 1] = (nonz[i & 1] << 4) | (pump.get_bits(4) as i32);
             }
           }
           out[i] = pred[i & 1] as u16;
@@ -72,7 +72,7 @@ impl<'a> BitPump for BitPumpPanasonic<'a> {
       self.nbits += 0x4000 * 8;
       self.pos += 0x4000;
     }
-    let mut byte = (self.nbits - num) >> 3 ^ 0x3ff0;
+    let mut byte = ((self.nbits - num) >> 3) ^ 0x3ff0;
     if self.split {
       byte = (byte + 0x4000 - 0x2008) % 0x4000;
     }

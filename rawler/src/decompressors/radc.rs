@@ -64,7 +64,7 @@ impl HuffDecoder {
     }
     for c in 0..256 {
       cache[18][c].bitcnt = 8 - cbpp;
-      cache[18][c].value = ((c as u8) >> cbpp << cbpp) | 1 << (cbpp - 1);
+      cache[18][c].value = ((c as u8) >> cbpp << cbpp) | (1 << (cbpp - 1));
     }
     Self { cache }
   }
