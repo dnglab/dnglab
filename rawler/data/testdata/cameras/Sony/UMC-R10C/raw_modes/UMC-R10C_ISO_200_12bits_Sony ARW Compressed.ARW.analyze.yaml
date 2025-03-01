@@ -1,0 +1,103 @@
+---
+file:
+  fileSize: 20904960
+  fileName: UMC-R10C_ISO_200_12bits_Sony ARW Compressed.ARW
+  digest: 652a8fdbddd1d12df5527b88c0f2db5d
+data:
+  metadata:
+    rawParams:
+      rawWidth: 5504
+      rawHeight: 3656
+      bitDepth: 16
+      cropArea: ~
+      activeArea: ~
+      blacklevels:
+        levels:
+          - 512/1
+          - 512/1
+          - 512/1
+          - 512/1
+        cpp: 1
+        width: 2
+        height: 2
+      whitelevels:
+        - 15360
+      wbCoeffs:
+        - 2.8789062
+        - 1.0
+        - 1.4804688
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ~
+        artist: ~
+        lens_spec:
+          - 16/1
+          - 16/1
+          - 28/10
+          - 28/10
+        exposure_time: 1/1000
+        fnumber: 56/10
+        aperture_value: ~
+        brightness_value: 25524/2560
+        iso_speed_ratings: 200
+        iso_speed: ~
+        recommended_exposure_index: 200
+        sensitivity_type: 2
+        exposure_bias: 0/10
+        date_time_original: "2024:05:01 12:00:13"
+        create_date: "2024:05:01 12:00:13"
+        modify_date: "2024:05:01 12:00:13"
+        exposure_program: 3
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: ~
+        max_aperture_value: 760/256
+        subject_distance: ~
+        metering_mode: 5
+        light_source: 0
+        flash: 16
+        focal_length: 160/10
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: Sony
+        lens_model: E 16mm F2.8
+        gps: ~
+        user_comment: ~
+      model: UMC-R10C
+      make: Sony
+      lens:
+        identifiers:
+          name: ~
+          id:
+            - 32784
+            - 0
+          nikon_id: ~
+          olympus_id: ~
+        mount: e-mount
+        lens_make: Sony
+        lens_model: E 16mm F2.8
+        focal_range:
+          - 16/1
+          - 16/1
+        aperture_range:
+          - 28/10
+          - 28/10
+        lens_name: Sony E 16mm F2.8
+      unique_image_id: ~
+      rating: ~
+
