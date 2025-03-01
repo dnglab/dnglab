@@ -277,6 +277,7 @@ impl<'a> Rw2Decoder<'a> {
           );
           log::debug!("RW2 lens composite ID: {}", composite_id);
           let resolver = LensResolver::new()
+            .with_camera(&self.camera)
             .with_olympus_id(Some(composite_id))
             .with_focal_len(self.get_focal_len()?)
             .with_mounts(&[MFT_MOUNT.into()]);
