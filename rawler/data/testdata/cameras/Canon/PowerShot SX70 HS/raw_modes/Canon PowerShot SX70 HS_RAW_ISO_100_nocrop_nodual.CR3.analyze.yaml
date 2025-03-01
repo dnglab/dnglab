@@ -44,7 +44,11 @@ data:
         orientation: 1
         copyright: CC-0
         artist: ""
-        lens_spec: ~
+        lens_spec:
+          - 38/10
+          - 247/1
+          - 34/10
+          - 65/10
         exposure_time: 6/10
         fnumber: 8/1
         aperture_value: 393216/65536
@@ -82,8 +86,8 @@ data:
         owner_name: ""
         serial_number: "852052000129"
         lens_serial_number: "0000000000"
-        lens_make: ~
-        lens_model: ~
+        lens_make: Canon
+        lens_model: PowerShot SX70 HS
         gps:
           gps_version_id:
             - 2
@@ -124,7 +128,22 @@ data:
         user_comment: ~
       model: PowerShot SX70 HS
       make: Canon
-      lens: ~
+      lens:
+        identifiers:
+          name: canon_powershot_sx70hs_lens
+          id: ~
+          nikon_id: ~
+          olympus_id: ~
+        mount: fixed
+        lens_make: Canon
+        lens_model: PowerShot SX70 HS
+        focal_range:
+          - 38/10
+          - 247/1
+        aperture_range:
+          - 34/10
+          - 65/10
+        lens_name: Canon PowerShot SX70 HS
       unique_image_id: 160641590480834242587348364450635388982
       rating: ~
 
