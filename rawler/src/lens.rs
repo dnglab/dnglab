@@ -218,26 +218,26 @@ impl LensResolver {
 
     let matches: Vec<&LensDescription> = LENSES_DB
       .iter()
-      .filter(|entry| self.mounts.as_ref().map_or(true, |mounts| mounts.contains(&entry.mount)))
+      .filter(|entry| self.mounts.as_ref().is_none_or(|mounts| mounts.contains(&entry.mount)))
       .filter(|entry| {
         self
           .lens_id
           .as_ref()
-          .map_or(true, |id| entry.identifiers.id.as_ref().is_some_and(|entry_id| *entry_id == *id))
+          .is_none_or(|id| entry.identifiers.id.as_ref().is_some_and(|entry_id| *entry_id == *id))
       })
-      .filter(|entry| self.lens_make.as_ref().map_or(true, |make| entry.lens_make == *make))
-      .filter(|entry| self.lens_model.as_ref().map_or(true, |model| entry.lens_model == *model))
+      .filter(|entry| self.lens_make.as_ref().is_none_or(|make| entry.lens_make == *make))
+      .filter(|entry| self.lens_model.as_ref().is_none_or(|model| entry.lens_model == *model))
       .filter(|entry| {
         self
           .focal_len
           .as_ref()
-          .map_or(true, |focal| *focal >= entry.focal_range[0] && *focal <= entry.focal_range[1])
+          .is_none_or(|focal| *focal >= entry.focal_range[0] && *focal <= entry.focal_range[1])
       })
       .filter(|entry| {
         self
           .aperture
           .as_ref()
-          .map_or(true, |ap| *ap >= entry.aperture_range[0] || *ap <= entry.aperture_range[1])
+          .is_none_or(|ap| *ap >= entry.aperture_range[0] || *ap <= entry.aperture_range[1])
       })
       .collect();
     match matches.len() {

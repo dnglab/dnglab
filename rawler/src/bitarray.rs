@@ -88,7 +88,7 @@ impl<T: BitStorage> BitArray<T> {
       panic!("BitArray is full");
     } else {
       self.nbits += 1;
-      self.storage = self.storage | T::from(bit) << (T::bit_size() - self.nbits);
+      self.storage = self.storage | (T::from(bit) << (T::bit_size() - self.nbits));
     }
   }
 

@@ -673,9 +673,9 @@ impl<'a> ArwDecoder<'a> {
       mkey = mkey.wrapping_mul(48828125).wrapping_add(1);
       pad[p] = mkey;
     }
-    pad[3] = pad[3] << 1 | (pad[0] ^ pad[2]) >> 31;
+    pad[3] = (pad[3] << 1) | ((pad[0] ^ pad[2]) >> 31);
     for p in 4..127 {
-      pad[p] = (pad[p - 4] ^ pad[p - 2]) << 1 | (pad[p - 3] ^ pad[p - 1]) >> 31;
+      pad[p] = ((pad[p - 4] ^ pad[p - 2]) << 1) | ((pad[p - 3] ^ pad[p - 1]) >> 31);
     }
     for p in 0..127 {
       pad[p] = u32::from_be(pad[p]);

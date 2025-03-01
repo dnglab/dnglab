@@ -96,7 +96,7 @@ where
 
   pub fn rgb_image_u16(&mut self, data: &[u16], width: usize, height: usize, compression: DngCompression, predictor: u8) -> Result<()> {
     let cpp = 3;
-    let rawimagedata = PixU16::new_with(data.iter().copied().map(u16::from).collect(), width * cpp, height);
+    let rawimagedata = PixU16::new_with(data.to_vec(), width * cpp, height);
     let mut cam = Camera::new();
     cam.cfa = CFA::new("RGGB");
 
