@@ -6,8 +6,8 @@
 // crx.cpp and documentation done by Laurent Clévy (https://github.com/lclevy/canon_cr3).
 
 use super::{
-  mdat::{Plane, Tile},
   BandParam, CodecParams, CrxError, Result,
+  mdat::{Plane, Tile},
 };
 use crate::decompressors::crx::{idwt::WaveletTransform, mdat::parse_header, rice::RiceDecoder};
 use bitstream_io::BitReader;
@@ -250,7 +250,7 @@ impl CodecParams {
 
         let bit_code = p.rice.adaptive_rice_decode(true, PREDICT_K_ESCAPE, PREDICT_K_ESCBITS, PREDICT_K_MAX)?;
         p.line_buf[1][p.line_pos] = error_code_signed(bit_code + 1); // Caution: + 1
-                                                                     //println!("code: {}", p.line_buf[1][p.line_pos]);
+        //println!("code: {}", p.line_buf[1][p.line_pos]);
       }
       p.line_k[p.line_pos - 1] = p.rice.k();
       p.line_pos += 1;
@@ -431,7 +431,7 @@ impl CodecParams {
       }
       remaining = remaining.saturating_sub(1);
     } // end while length > 1
-      // Remaining pixel?
+    // Remaining pixel?
     if remaining == 1 {
       let x = med(p.coeff_a(), p.coeff_b(), p.coeff_c());
       let bit_code = p.rice.adaptive_rice_decode(true, PREDICT_K_ESCAPE, PREDICT_K_ESCBITS, PREDICT_K_MAX)?;
@@ -551,7 +551,7 @@ impl CodecParams {
       }
       remaining = remaining.saturating_sub(1);
     } // end while length > 1
-      // Remaining pixel?
+    // Remaining pixel?
     if remaining == 1 {
       self.decode_symbol_rounded(p, true, false)?;
     }

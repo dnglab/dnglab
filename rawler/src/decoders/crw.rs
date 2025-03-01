@@ -1,3 +1,4 @@
+use crate::RawImage;
 use crate::alloc_image;
 use crate::decoders::*;
 use crate::decompressors::ljpeg::huffman::*;
@@ -5,7 +6,6 @@ use crate::formats::ciff::*;
 use crate::packed::*;
 use crate::pumps::BitPump;
 use crate::pumps::BitPumpJPEG;
-use crate::RawImage;
 
 const CRW_FIRST_TREE: [[u8; 29]; 3] = [
   [

@@ -13,8 +13,8 @@ use std::path::PathBuf;
 use std::time::Instant;
 
 use crate::filemap::{FileMap, MapMode};
-use crate::jobs::extractraw::{ExtractRawJob, JobResult};
 use crate::jobs::Job;
+use crate::jobs::extractraw::{ExtractRawJob, JobResult};
 use crate::{AppError, Result};
 
 const SUPPORTED_FILE_EXT: [&str; 1] = ["DNG"];

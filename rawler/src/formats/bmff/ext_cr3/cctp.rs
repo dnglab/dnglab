@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 use std::io::{Read, Seek, SeekFrom};
 
 use super::{
-  super::{read_box_header_ext, BmffError, BoxHeader, FourCC, ReadBox, Result},
+  super::{BmffError, BoxHeader, FourCC, ReadBox, Result, read_box_header_ext},
   ccdt::CcdtBox,
 };
 

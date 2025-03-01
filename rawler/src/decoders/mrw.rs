@@ -1,30 +1,30 @@
 use byteorder::ReadBytesExt;
 
+use crate::RawImage;
+use crate::RawLoader;
+use crate::RawlerError;
+use crate::Result;
 use crate::analyze::FormatDump;
 use crate::bits::BEu16;
 use crate::bits::BEu32;
 use crate::exif::Exif;
-use crate::formats::jfif::is_exif;
 use crate::formats::jfif::Jfif;
 use crate::formats::jfif::Segment;
+use crate::formats::jfif::is_exif;
 use crate::formats::tiff::IFD;
 use crate::packed::decode_12be;
 use crate::packed::decode_12be_unpacked;
 use crate::packed::decode_16le;
 use crate::rawsource::RawSource;
 use crate::tags::TiffCommonTag;
-use crate::RawImage;
-use crate::RawLoader;
-use crate::RawlerError;
-use crate::Result;
 use std::io::Cursor;
 
-use super::ok_cfa_image;
 use super::Camera;
 use super::Decoder;
 use super::FormatHint;
 use super::RawDecodeParams;
 use super::RawMetadata;
+use super::ok_cfa_image;
 
 const MRW_MAGIC: u32 = 0x004D524D; // !memcmp (head,"\0MRM",4))?
 

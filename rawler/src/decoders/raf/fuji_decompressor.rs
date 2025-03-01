@@ -11,13 +11,13 @@ use rayon::prelude::*;
 use std::{fmt::Display, mem::size_of};
 
 use crate::{
-  bits::{log2ceil, Endian},
+  CFA, Result,
+  bits::{Endian, log2ceil},
   buffer::PaddedBuf,
   cfa::CFAColor,
   imgop::Dim2,
   pixarray::{PixU16, SharedPix2D},
   pumps::{BitPump, BitPumpMSB, ByteStream},
-  Result, CFA,
 };
 
 /// A single gradient with two points

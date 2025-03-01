@@ -223,7 +223,7 @@ impl<T> SharedPix2D<T> {
   /// Only use this inside Rayon parallel iterators.
   #[allow(clippy::mut_from_ref)]
   pub unsafe fn inner_mut(&self) -> &mut Pix2D<T> {
-    &mut *self.inner.get()
+    unsafe { &mut *self.inner.get() }
   }
 
   pub fn into_inner(self) -> Pix2D<T> {
@@ -399,8 +399,10 @@ where
   /// TODO
   #[inline(always)]
   pub unsafe fn at(&self, row: usize, col: usize) -> &[T; N] {
-    debug_assert!(row * col < self.height * self.width);
-    &*self.ptr.add(row * self.width + col)
+    unsafe {
+      debug_assert!(row * col < self.height * self.width);
+      &*self.ptr.add(row * self.width + col)
+    }
   }
 }
 

@@ -6,9 +6,9 @@
 // crx.cpp and documentation done by Laurent Clévy (https://github.com/lclevy/canon_cr3).
 
 use super::{
+  BandParam, CodecParams, CrxError, Result,
   decoder::constrain,
   mdat::{Subband, Tile},
-  BandParam, CodecParams, CrxError, Result,
 };
 use crate::decompressors::crx::{decoder::error_code_signed, rice::RiceDecoder};
 use bitstream_io::BitReader;
@@ -267,7 +267,7 @@ impl Tile {
           } else {
             // For all other rows
             line_buf[1][line_pos - 1] = line_buf[0][line_pos]; // init coeff a = b
-                                                               // delta_h = b-c
+            // delta_h = b-c
             let mut delta_h = line_buf[0][line_pos] - line_buf[0][line_pos - 1];
             for width in (0..qp_width).rev() {
               let a = line_buf[1][line_pos - 1];

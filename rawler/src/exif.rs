@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 use crate::{
-  formats::tiff::{Rational, Result, SRational, Value, IFD},
+  formats::tiff::{IFD, Rational, Result, SRational, Value},
   lens::LensDescription,
   tags::{ExifGpsTag, ExifTag},
 };

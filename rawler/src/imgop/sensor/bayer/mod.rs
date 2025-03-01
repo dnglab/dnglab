@@ -9,7 +9,7 @@ use multiversion::multiversion;
 use rayon::prelude::*;
 
 use crate::{
-  cfa::{PlaneColor, CFA},
+  cfa::{CFA, PlaneColor},
   imgop::{Dim2, Rect},
   pixarray::{Color2D, Pix2D, RgbF32},
 };

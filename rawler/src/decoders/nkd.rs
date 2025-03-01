@@ -1,9 +1,9 @@
-use super::{ok_cfa_image, Camera, Decoder, FormatHint, RawDecodeParams, RawMetadata};
+use super::{Camera, Decoder, FormatHint, RawDecodeParams, RawMetadata, ok_cfa_image};
+use crate::Result;
 use crate::analyze::FormatDump;
 use crate::exif::Exif;
 use crate::packed::{decode_10le_lsb16, decode_12be_msb16, decode_12le_16bitaligned};
 use crate::rawsource::RawSource;
-use crate::Result;
 use crate::{RawImage, RawLoader, RawlerError};
 
 #[derive(Debug, Clone)]

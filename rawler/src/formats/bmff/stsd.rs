@@ -3,10 +3,10 @@
 // Copyright 2021 Daniel Vogelbacher <daniel@chaospixel.com>
 
 use super::{
+  BoxHeader, FourCC, ReadBox, Result,
   ext_cr3::{craw::CrawBox, ctmd::CtmdBox},
   read_box_header_ext,
   vendor::VendorBox,
-  BoxHeader, FourCC, ReadBox, Result,
 };
 use byteorder::{BigEndian, ReadBytesExt};
 use log::debug;

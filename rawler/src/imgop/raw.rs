@@ -2,9 +2,9 @@
 // Copyright 2021 Daniel Vogelbacher <daniel@chaospixel.com>
 
 use super::xyz::Illuminant;
+use crate::imgop::Rect;
 use crate::imgop::matrix::{multiply, normalize, pseudo_inverse};
 use crate::imgop::xyz::SRGB_TO_XYZ_D65;
-use crate::imgop::Rect;
 use crate::pixarray::{Color2D, RgbF32};
 use crate::rawimage::{BlackLevel, RawPhotometricInterpretation, WhiteLevel};
 
@@ -97,11 +97,7 @@ fn correct_blacklevel_channels<const CH: usize>(raw: &mut [f32], blacklevel: &[f
   max.iter_mut().enumerate().for_each(|(i, x)| *x -= blacklevel[i]);
 
   let clip = |v: f32| {
-    if v.is_sign_negative() {
-      0.0
-    } else {
-      v
-    }
+    if v.is_sign_negative() { 0.0 } else { v }
   };
   if CH == 1 {
     let max = max[0];
@@ -141,11 +137,7 @@ pub fn correct_blacklevel(raw: &mut [f32], blacklevel: &[f32], whitelevel: &[f32
       max.iter_mut().enumerate().for_each(|(i, x)| *x -= blacklevel[i]);
 
       let clip = |v: f32| {
-        if v.is_sign_negative() {
-          0.0
-        } else {
-          v
-        }
+        if v.is_sign_negative() { 0.0 } else { v }
       };
 
       let ch = blacklevel.len();
@@ -177,11 +169,7 @@ pub fn correct_blacklevel_cfa(raw: &mut [f32], width: usize, _height: usize, bla
     whitelevel[3] - blacklevel[3],
   ];
   let clip = |v: f32| {
-    if v.is_sign_negative() {
-      0.0
-    } else {
-      v
-    }
+    if v.is_sign_negative() { 0.0 } else { v }
   };
   // Process two bayer lines at once.
   raw.par_chunks_exact_mut(width * 2).for_each(|lines| {

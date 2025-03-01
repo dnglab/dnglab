@@ -9,13 +9,13 @@ use std::{
 use image::DynamicImage;
 
 use crate::{
+  RawImage,
   decoders::{Decoder, RawDecodeParams, WellKnownIFD},
-  dng::{original::OriginalCompressed, writer::DngWriter, DNG_VERSION_V1_4, PREVIEW_JPEG_QUALITY},
+  dng::{DNG_VERSION_V1_4, PREVIEW_JPEG_QUALITY, original::OriginalCompressed, writer::DngWriter},
   formats::tiff::Entry,
   imgop::develop::RawDevelop,
   rawsource::RawSource,
   tags::{DngTag, ExifTag, TiffCommonTag},
-  RawImage,
 };
 
 use super::{CropMode, DngCompression, DngPhotometricConversion};

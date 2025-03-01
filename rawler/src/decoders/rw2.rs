@@ -1,13 +1,18 @@
 use image::DynamicImage;
 
+use crate::CFA;
+use crate::RawImage;
+use crate::RawLoader;
+use crate::RawlerError;
+use crate::Result;
 use crate::analyze::FormatDump;
 use crate::exif::Exif;
-use crate::formats::tiff::reader::TiffReader;
 use crate::formats::tiff::Entry;
 use crate::formats::tiff::GenericTiffReader;
+use crate::formats::tiff::IFD;
 use crate::formats::tiff::Rational;
 use crate::formats::tiff::Value;
-use crate::formats::tiff::IFD;
+use crate::formats::tiff::reader::TiffReader;
 use crate::imgop::Dim2;
 use crate::imgop::Point;
 use crate::imgop::Rect;
@@ -19,14 +24,9 @@ use crate::pixarray::PixU16;
 use crate::rawimage::CFAConfig;
 use crate::rawimage::RawPhotometricInterpretation;
 use crate::rawsource::RawSource;
-use crate::tags::tiff_tag_enum;
 use crate::tags::ExifTag;
 use crate::tags::TiffCommonTag;
-use crate::RawImage;
-use crate::RawLoader;
-use crate::RawlerError;
-use crate::Result;
-use crate::CFA;
+use crate::tags::tiff_tag_enum;
 
 use self::v4decompressor::decode_panasonic_v4;
 use self::v5decompressor::decode_panasonic_v5;
@@ -118,7 +118,7 @@ impl<'a> Decoder for Rw2Decoder<'a> {
     };
 
     let compression = raw.get_entry(PanasonicTag::Compression).map(|entry| entry.force_u16(0)).unwrap_or_default(); // TODO BUG
-                                                                                                                    //let compression = fetch_tiff_tag!(raw, PanasonicTag::Compression).force_u16(0);
+    //let compression = fetch_tiff_tag!(raw, PanasonicTag::Compression).force_u16(0);
 
     let raw_format = raw.get_entry(PanasonicTag::RawFormat).map(|entry| entry.force_u16(0)).unwrap_or_default(); // TODO BUG
 

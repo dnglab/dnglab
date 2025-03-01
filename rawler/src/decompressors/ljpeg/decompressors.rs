@@ -1,5 +1,5 @@
-use super::huffman::*;
 use super::LjpegDecompressor;
+use super::huffman::*;
 use crate::pumps::BitPumpJPEG;
 use crate::pumps::BitPumpMSB32;
 

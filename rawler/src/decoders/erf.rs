@@ -1,21 +1,21 @@
 use log::warn;
 
+use crate::RawlerError;
 use crate::analyze::FormatDump;
 use crate::rawsource::RawSource;
-use crate::RawlerError;
 
-use crate::bits::BEu16;
-use crate::exif::Exif;
-use crate::formats::tiff::ifd::OffsetMode;
-use crate::formats::tiff::reader::TiffReader;
-use crate::formats::tiff::GenericTiffReader;
-use crate::formats::tiff::IFD;
-use crate::packed::decode_12be_wcontrol;
-use crate::tags::ExifTag;
-use crate::tags::TiffCommonTag;
 use crate::RawImage;
 use crate::RawLoader;
 use crate::Result;
+use crate::bits::BEu16;
+use crate::exif::Exif;
+use crate::formats::tiff::GenericTiffReader;
+use crate::formats::tiff::IFD;
+use crate::formats::tiff::ifd::OffsetMode;
+use crate::formats::tiff::reader::TiffReader;
+use crate::packed::decode_12be_wcontrol;
+use crate::tags::ExifTag;
+use crate::tags::TiffCommonTag;
 
 use super::BlackLevel;
 use super::CFAConfig;

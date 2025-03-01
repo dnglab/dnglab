@@ -10,9 +10,9 @@ use std::path::PathBuf;
 use std::time::Instant;
 
 use crate::filemap::{FileMap, MapMode};
-use crate::jobs::raw2dng::{JobResult, Raw2DngJob};
 use crate::jobs::Job;
-use crate::{AppError, Result, PKG_VERSION};
+use crate::jobs::raw2dng::{JobResult, Raw2DngJob};
+use crate::{AppError, PKG_VERSION, Result};
 use rawler::dng::convert::ConvertParams;
 
 /// Entry point for Clap sub command `convert`
