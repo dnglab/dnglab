@@ -1,0 +1,7 @@
+[[lenses]]
+mount = "fixed"
+make = "Canon"
+model = "PowerShot SX70 HS"
+focal_range = [[38, 10], [247, 1]]
+aperture_range = [[34, 10], [65, 10]]
+key = "canon_powershot_sx70hs_lens"
