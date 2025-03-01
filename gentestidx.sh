@@ -41,7 +41,7 @@ cargo build --release;
 echo "use crate::common::camera_file_check;" > "rawler/tests/cameras/mod.rs";
 cat rawler/tests/supported_rawdb_sets.txt | grep -v "^$" | while read setdir; do
 	echo "Processing: $setdir";
-	modname="camera_"`echo $setdir | cut -d'/' -f3- | sed -e 's,[^[:alnum:]]\+,_,g'`;
+	modname="camera_"`echo $setdir | cut -d'/' -f3- | sed -e 's/\+/plus/g' | sed -e 's,[^[:alnum:]]\+,_,g'`;
 	echo "mod ${modname@L} {" >> "rawler/tests/cameras/mod.rs";
 	find "$RAWDB/$setdir" -type f -not -name "*.txt" -exec realpath --relative-to $RAWDB '{}' \; | while read rawfile; do
 		process_rawfile "$rawfile";
