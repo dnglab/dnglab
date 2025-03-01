@@ -262,6 +262,7 @@ impl<'a> Decoder for IiqDecoder<'a> {
     };
 
     let black = self.blacklevel().unwrap_or(0);
+    log::debug!("Blacklevel: {}", black);
 
     if !dummy {
       let senscorr = self
@@ -270,6 +271,7 @@ impl<'a> Decoder for IiqDecoder<'a> {
       self.correct_raw(&mut image, &senscorr)?;
     }
 
+    // Reset blacklevel, as the pixels are already scaled by decoder and sensor correction!
     let blacklevel = [0, 0, 0, 0];
     let cpp = 1;
     let wb = self
@@ -601,6 +603,9 @@ impl<'a> IiqDecoder<'a> {
         let x = pix as i32 - black + (cblack[row * 2 + qc] as i32) + (rblack[col * 2 + qr] as i32);
         clamp(x, 0, 0xffff) as u16
       });
+    } else {
+      log::debug!("No q_blacklevel correction available, just apply basic blacklevel correction");
+      img.for_each(|pix| clamp(pix as i32 - calib.blacklevel as i32, 0, 0xffff) as u16);
     }
     Ok(())
   }

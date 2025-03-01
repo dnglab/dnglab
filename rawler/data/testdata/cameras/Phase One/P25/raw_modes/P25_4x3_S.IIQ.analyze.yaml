@@ -1,8 +1,8 @@
 ---
 file:
-  fileSize: 16337405
+  fileSize: 16274783
   fileName: P25_4x3_S.IIQ
-  digest: 077be9e506e1e51e23cf15c1f83c89dc
+  digest: be3768c802789429f664921ad729a0dd
 data:
   metadata:
     rawParams:
@@ -35,9 +35,9 @@ data:
       whitelevels:
         - 65535
       wbCoeffs:
-        - 1.83
+        - 3.2532558
         - 1.0
-        - 1.42
+        - 1.0509821
         - ~
     rawMetadata:
       exif:
@@ -46,18 +46,18 @@ data:
         artist: ~
         lens_spec: ~
         exposure_time: 2500/1000000
-        fnumber: 1200/100
-        aperture_value: 71699/10000
+        fnumber: 680/100
+        aperture_value: 55311/10000
         brightness_value: ~
-        iso_speed_ratings: 100
+        iso_speed_ratings: 50
         iso_speed: ~
         recommended_exposure_index: ~
         sensitivity_type: ~
         exposure_bias: 0/1000
-        date_time_original: "2010:07:23 11:05:30"
-        create_date: "2010:07:23 11:05:30"
+        date_time_original: "2024:05:26 10:48:56"
+        create_date: "2024:05:26 10:48:56"
         modify_date: ~
-        exposure_program: 3
+        exposure_program: 0
         timezone_offset: ~
         offset_time: ~
         offset_time_original: ~
@@ -69,14 +69,14 @@ data:
         max_aperture_value: ~
         subject_distance: ~
         metering_mode: ~
-        light_source: 1
+        light_source: 0
         flash: ~
         focal_length: 800/10
         image_number: ~
         color_space: ~
         flash_energy: ~
         exposure_mode: ~
-        white_balance: 1
+        white_balance: 0
         scene_capture_type: ~
         subject_distance_range: ~
         owner_name: ~
@@ -86,7 +86,7 @@ data:
         lens_model: ~
         gps: ~
         user_comment: ~
-      model: P25+
+      model: P25
       make: Phase One A/S
       lens: ~
       unique_image_id: ~
