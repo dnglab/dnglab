@@ -1565,6 +1565,9 @@ mod camera_zv_e10m2_raw_modes {
   super::camera_file_check!("Sony", "ZV-E10M2", cam_zv_e10m2_iso_400_12bits_compressed_raw_arw, "raw_modes/ZV-E10M2_ISO_400_12bits_Compressed RAW.ARW");
   super::camera_file_check!("Sony", "ZV-E10M2", cam_zv_e10m2_iso_400_12bits_lossless_compressed_raw_arw, "raw_modes/ZV-E10M2_ISO_400_12bits_Lossless Compressed RAW.ARW");
 }
+mod camera_umc_r10c_raw_modes {
+  super::camera_file_check!("Sony", "UMC-R10C", cam_umc_r10c_iso_200_12bits_sony_arw_compressed_arw, "raw_modes/UMC-R10C_ISO_200_12bits_Sony ARW Compressed.ARW");
+}
 mod camera_r_d1_raw_modes {
   super::camera_file_check!("Epson", "R-D1", cam_r_d1_iso_400_12bits_erf, "raw_modes/R-D1_ISO_400_12bits.ERF");
 }
