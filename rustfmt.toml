@@ -1,7 +1,7 @@
 #brace_style = "SameLineWhere"
 #comment_width = 160
 #wrap_comments = true
-edition = "2021"
+edition = "2024"
 #enum_discrim_align_threshold = 30
 force_explicit_abi = true
 #format_strings = true
