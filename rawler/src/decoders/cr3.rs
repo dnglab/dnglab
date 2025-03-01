@@ -448,6 +448,7 @@ impl<'a> Cr3Decoder<'a> {
 
     let resolver = LensResolver::new()
       .with_lens_keyname(self.read_lens_name()?)
+      .with_camera(&self.camera) // must follow with_lens_keyname() as it my override key
       .with_lens_id(self.read_lens_id()?)
       .with_mounts(&[CANON_CN_MOUNT.into(), CANON_EF_MOUNT.into(), CANON_RF_MOUNT.into()]);
     md.lens_description = resolver.resolve();
