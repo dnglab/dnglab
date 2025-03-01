@@ -1,9 +1,9 @@
 use toml::Value;
 
+use crate::CFA;
 use crate::cfa::PlaneColor;
 use crate::imgop::xyz::FlatColorMatrix;
 use crate::imgop::xyz::Illuminant;
-use crate::CFA;
 
 use std::collections::HashMap;
 

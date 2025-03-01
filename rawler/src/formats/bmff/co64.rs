@@ -6,7 +6,7 @@ use byteorder::{BigEndian, ReadBytesExt};
 use serde::{Deserialize, Serialize};
 use std::io::{Read, Seek, SeekFrom};
 
-use super::{read_box_header_ext, BoxHeader, FourCC, ReadBox, Result};
+use super::{BoxHeader, FourCC, ReadBox, Result, read_box_header_ext};
 
 #[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize)]
 pub struct Co64Box {

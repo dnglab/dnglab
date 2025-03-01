@@ -6,8 +6,8 @@
 // crx.cpp and documentation done by Laurent Clévy (https://github.com/lclevy/canon_cr3).
 
 use super::{
-  mdat::{Plane, Tile},
   BandParam, CodecParams, Result,
+  mdat::{Plane, Tile},
 };
 
 /// This structure holds the inverse transformation state

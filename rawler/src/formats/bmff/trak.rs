@@ -2,7 +2,7 @@
 // Copyright 2020 Alfred Gutierrez
 // Copyright 2021 Daniel Vogelbacher <daniel@chaospixel.com>
 
-use super::{mdia::MdiaBox, tkhd::TkhdBox, vendor::VendorBox, BmffError, BoxHeader, FourCC, ReadBox, Result};
+use super::{BmffError, BoxHeader, FourCC, ReadBox, Result, mdia::MdiaBox, tkhd::TkhdBox, vendor::VendorBox};
 use log::debug;
 use serde::{Deserialize, Serialize};
 use std::io::{Read, Seek, SeekFrom};

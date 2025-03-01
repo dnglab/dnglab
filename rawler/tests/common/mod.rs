@@ -3,10 +3,10 @@
 
 //#[cfg(feature = "samplecheck")]
 use md5::Digest;
-use rawler::dng::convert::convert_raw_file;
 use rawler::dng::convert::ConvertParams;
+use rawler::dng::convert::convert_raw_file;
 use rawler::{
-  analyze::{analyze_metadata, extract_raw_pixels, AnalyzerResult},
+  analyze::{AnalyzerResult, analyze_metadata, extract_raw_pixels},
   decoders::RawDecodeParams,
 };
 use std::{

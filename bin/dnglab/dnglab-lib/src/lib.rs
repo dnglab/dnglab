@@ -2,8 +2,8 @@ use std::{net::AddrParseError, path::PathBuf};
 
 use image::ImageError;
 use rawler::{
-  formats::{jfif::JfifError, tiff::TiffError},
   RawlerError,
+  formats::{jfif::JfifError, tiff::TiffError},
 };
 use thiserror::Error;
 //use log::debug;

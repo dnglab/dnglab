@@ -5,21 +5,21 @@ use itertools::Itertools;
 use log::debug;
 use serde::{Deserialize, Serialize};
 
+use crate::Result;
 use crate::cfa::PlaneColor;
 use crate::imgop::raw::{correct_blacklevel, correct_blacklevel_cfa};
 use crate::imgop::{convert_from_f32_scaled_u16, convert_to_f32_unscaled};
-use crate::Result;
 use crate::{
+  CFA,
   decoders::*,
   formats::tiff::{Rational, Value},
   imgop::{
+    Dim2, Point, Rect,
     raw::{ColorMatrix, DevelopParams},
     xyz::{FlatColorMatrix, Illuminant},
-    Dim2, Point, Rect,
   },
   pixarray::PixU16,
   tags::TiffTag,
-  CFA,
 };
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

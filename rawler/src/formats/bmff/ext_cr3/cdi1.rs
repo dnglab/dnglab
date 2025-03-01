@@ -2,7 +2,7 @@
 // Copyright 2021 Daniel Vogelbacher <daniel@chaospixel.com>
 
 use super::{
-  super::{read_box_header_ext, BmffError, BoxHeader, FourCC, ReadBox, Result},
+  super::{BmffError, BoxHeader, FourCC, ReadBox, Result, read_box_header_ext},
   iad1::Iad1Box,
 };
 use log::debug;

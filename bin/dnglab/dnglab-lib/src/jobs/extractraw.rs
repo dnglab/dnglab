@@ -7,7 +7,7 @@ use async_trait::async_trait;
 use log::debug;
 use rawler::{
   dng::original::{OriginalCompressed, OriginalDigest},
-  formats::tiff::{reader::TiffReader, GenericTiffReader, Value},
+  formats::tiff::{GenericTiffReader, Value, reader::TiffReader},
   tags::DngTag,
 };
 use std::{

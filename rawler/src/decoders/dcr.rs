@@ -1,28 +1,28 @@
 use std::cmp;
 
+use crate::RawImage;
+use crate::RawLoader;
+use crate::Result;
 use crate::alloc_image;
 use crate::analyze::FormatDump;
 use crate::bits::BEu16;
 use crate::bits::Endian;
 use crate::bits::LookupTable;
 use crate::exif::Exif;
-use crate::formats::tiff::reader::TiffReader;
 use crate::formats::tiff::GenericTiffReader;
 use crate::formats::tiff::IFD;
+use crate::formats::tiff::reader::TiffReader;
 use crate::pixarray::PixU16;
 use crate::pumps::ByteStream;
 use crate::rawsource::RawSource;
 use crate::tags::TiffCommonTag;
-use crate::RawImage;
-use crate::RawLoader;
-use crate::Result;
 
-use super::ok_cfa_image;
 use super::Camera;
 use super::Decoder;
 use super::FormatHint;
 use super::RawDecodeParams;
 use super::RawMetadata;
+use super::ok_cfa_image;
 
 #[derive(Debug, Clone)]
 pub struct DcrDecoder<'a> {

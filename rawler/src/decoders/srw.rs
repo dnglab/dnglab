@@ -1,15 +1,19 @@
 use log::warn;
 use std::cmp;
 
+use crate::RawImage;
+use crate::RawLoader;
+use crate::RawlerError;
+use crate::Result;
 use crate::alloc_image;
 use crate::analyze::FormatDump;
-use crate::bits::clampbits;
 use crate::bits::LEu32;
+use crate::bits::clampbits;
 use crate::exif::Exif;
-use crate::formats::tiff::ifd::OffsetMode;
-use crate::formats::tiff::reader::TiffReader;
 use crate::formats::tiff::GenericTiffReader;
 use crate::formats::tiff::IFD;
+use crate::formats::tiff::ifd::OffsetMode;
+use crate::formats::tiff::reader::TiffReader;
 use crate::lens::LensDescription;
 use crate::lens::LensResolver;
 use crate::packed::decode_12be;
@@ -23,17 +27,13 @@ use crate::pumps::BitPumpMSB32;
 use crate::rawsource::RawSource;
 use crate::tags::ExifTag;
 use crate::tags::TiffCommonTag;
-use crate::RawImage;
-use crate::RawLoader;
-use crate::RawlerError;
-use crate::Result;
 
-use super::ok_cfa_image_with_blacklevels;
 use super::Camera;
 use super::Decoder;
 use super::FormatHint;
 use super::RawDecodeParams;
 use super::RawMetadata;
+use super::ok_cfa_image_with_blacklevels;
 
 const NX_MOUNT: &str = "NX-mount";
 
@@ -108,7 +108,7 @@ impl<'a> Decoder for SrwDecoder<'a> {
         return Err(RawlerError::unsupported(
           &self.camera,
           format!("SRW: Don't know how to handle compression {}", x),
-        ))
+        ));
       }
     };
     let cpp = 1;
@@ -166,11 +166,7 @@ impl<'a> SrwDecoder<'a> {
             out[img_up + col + c]
           } else {
             // Left to right prediction
-            if col == 0 {
-              128
-            } else {
-              out[img + col - 2]
-            }
+            if col == 0 { 128 } else { out[img + col - 2] }
           };
           if col + c < width {
             // No point in decoding pixels outside the image
@@ -186,11 +182,7 @@ impl<'a> SrwDecoder<'a> {
             out[img_up2 + col + c]
           } else {
             // Left to right prediction
-            if col == 0 {
-              128
-            } else {
-              out[img + col - 1]
-            }
+            if col == 0 { 128 } else { out[img + col - 1] }
           };
           if col + c < width {
             // No point in decoding pixels outside the image
@@ -362,11 +354,7 @@ impl<'a> SrwDecoder<'a> {
         scale = if (optflags & OPT_QP) == 0 && (col & 63) == 0 {
           let scalevals: [i32; 3] = [0, -2, 2];
           let i = pump.get_bits(2) as usize;
-          if i < 3 {
-            scale + scalevals[i]
-          } else {
-            pump.get_bits(12) as i32
-          }
+          if i < 3 { scale + scalevals[i] } else { pump.get_bits(12) as i32 }
         } else {
           scale // Keep value from previous iteration
         };

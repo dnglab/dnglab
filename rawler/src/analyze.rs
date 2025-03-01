@@ -8,13 +8,13 @@ use md5::Digest;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
 use crate::{
-  decoders::{cr2::Cr2Format, cr3::Cr3Format, dng::DngFormat, iiq::IiqFormat, nef::NefFormat, pef::PefFormat, tfr::TfrFormat, RawDecodeParams, RawMetadata},
+  RawImage, RawImageData, RawlerError, Result,
+  decoders::{RawDecodeParams, RawMetadata, cr2::Cr2Format, cr3::Cr3Format, dng::DngFormat, iiq::IiqFormat, nef::NefFormat, pef::PefFormat, tfr::TfrFormat},
   formats::tiff::Rational,
   formats::tiff::SRational,
-  imgop::{develop::RawDevelop, Rect},
+  imgop::{Rect, develop::RawDevelop},
   rawimage::{BlackLevel, WhiteLevel},
   rawsource::RawSource,
-  RawImage, RawImageData, RawlerError, Result,
 };
 
 #[derive(Debug, Clone, PartialEq)]

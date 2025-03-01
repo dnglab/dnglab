@@ -6,7 +6,7 @@ use rayon::prelude::*;
 use std::{ops::Add, time::Instant};
 
 use crate::{
-  cfa::{PlaneColor, CFA, CFA_COLOR_B, CFA_COLOR_G, CFA_COLOR_R},
+  cfa::{CFA, CFA_COLOR_B, CFA_COLOR_G, CFA_COLOR_R, PlaneColor},
   imgop::Rect,
   pixarray::{Color2D, PixF32, RgbF32},
 };

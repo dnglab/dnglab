@@ -1,10 +1,10 @@
 use multiversion::multiversion;
 
 use crate::{
+  CFA,
   cfa::PlaneColor,
   imgop::Rect,
   pixarray::{Color2D, PixF32},
-  CFA,
 };
 
 use super::Demosaic;

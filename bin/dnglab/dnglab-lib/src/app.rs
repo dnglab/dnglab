@@ -4,9 +4,9 @@
 use std::path::PathBuf;
 
 use clap::{
-  arg,
+  ArgAction, Command, arg,
   builder::{NonEmptyStringValueParser, ValueParser},
-  command, value_parser, ArgAction, Command,
+  command, value_parser,
 };
 use log::debug;
 use rawler::dng::{CropMode, DngCompression};

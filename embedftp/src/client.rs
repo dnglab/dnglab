@@ -3,13 +3,13 @@
 // Copyright 2021 Daniel Vogelbacher <daniel@chaospixel.com>
 
 use chrono::{Datelike, Timelike, Utc};
-use futures::stream::SplitSink;
 use futures::TryStreamExt;
+use futures::stream::SplitSink;
 use futures::{SinkExt, StreamExt};
 use glob::glob;
 use log::{debug, error, info, warn};
 use std::ffi::OsString;
-use std::fs::{create_dir, read_dir, remove_dir_all, remove_file, File};
+use std::fs::{File, create_dir, read_dir, remove_dir_all, remove_file};
 use std::io::{self, Write};
 use std::net::{IpAddr, SocketAddr};
 use std::path::{Component, Path, PathBuf, StripPrefixError};

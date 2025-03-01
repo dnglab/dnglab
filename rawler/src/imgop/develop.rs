@@ -3,20 +3,19 @@ use std::io;
 use image::{DynamicImage, ImageBuffer};
 
 use crate::{
+  RawImage,
   decoders::RawMetadata,
   formats::tiff::{DirectoryWriter, TiffWriter},
   pixarray::{Color2D, PixF32},
   rawimage::RawPhotometricInterpretation,
   tags::{ExifTag, TiffCommonTag},
-  RawImage,
 };
 
 use super::{
-  convert_from_f32_scaled_u16,
+  Dim2, Rect, convert_from_f32_scaled_u16,
   raw::{map_3ch_to_rgb, map_4ch_to_rgb},
-  sensor::bayer::{bilinear::Bilinear4Channel, ppg::PPGDemosaic, Demosaic},
+  sensor::bayer::{Demosaic, bilinear::Bilinear4Channel, ppg::PPGDemosaic},
   xyz::Illuminant,
-  Dim2, Rect,
 };
 
 #[derive(PartialEq, Eq, Debug, Clone, Copy)]
