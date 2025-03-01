@@ -795,6 +795,10 @@ mod camera_p25_raw_modes {
   super::camera_file_check!("Phase One", "P25", cam_p25_4x3_s_iiq, "raw_modes/P25_4x3_S.IIQ");
   super::camera_file_check!("Phase One", "P25", cam_p25_4x3_l_iiq, "raw_modes/P25_4x3_L.IIQ");
 }
+mod camera_p25_raw_modes {
+  super::camera_file_check!("Phase One", "P25+", cam_p25__s_4x3_iiq, "raw_modes/P25+_S_4x3.IIQ");
+  super::camera_file_check!("Phase One", "P25+", cam_p25__l_4x3_iiq, "raw_modes/P25+_L_4x3.IIQ");
+}
 mod camera_d3500_raw_modes {
   super::camera_file_check!("Nikon", "D3500", cam_nikon_d3500_iso_100_12bits_lossy__type_2__nef, "raw_modes/NIKON D3500_ISO_100_12bits_Lossy (type 2).NEF");
 }
