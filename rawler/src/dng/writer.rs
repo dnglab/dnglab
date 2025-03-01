@@ -718,7 +718,7 @@ mod tests {
     };
 
     let mut rawdb = PathBuf::from(std::env::var("RAWLER_RAWDB").expect("RAWLER_RAWDB variable must be set in order to run RAW test!"));
-    rawdb.push("cameras/Canon/EOS R5/raw_modes/Canon EOS R5_RAW_ISO_100_nocrop_nodual.CR3");
+    rawdb.push("cameras/Canon/EOS R6/raw_modes/Canon EOS R6_RAW_ISO_100_nocrop_nodual.CR3");
 
     let rawfile = RawSource::new(&rawdb)?;
 
