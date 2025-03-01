@@ -1,0 +1,94 @@
+---
+file:
+  fileSize: 41943894
+  fileName: P45+_L_4x3.IIQ
+  digest: f9338bb7256e5a28f3c3147715bb4e98
+data:
+  metadata:
+    rawParams:
+      rawWidth: 7308
+      rawHeight: 5494
+      bitDepth: 16
+      cropArea:
+        p:
+          x: 56
+          y: 38
+        d:
+          w: 7216
+          h: 5412
+      activeArea:
+        p:
+          x: 40
+          y: 22
+        d:
+          w: 7248
+          h: 5444
+      blacklevels:
+        levels:
+          - 0/1
+          - 0/1
+          - 0/1
+          - 0/1
+        cpp: 1
+        width: 2
+        height: 2
+      whitelevels:
+        - 65535
+      wbCoeffs:
+        - 2.3580668
+        - 1.0
+        - 1.2522442
+        - ~
+    rawMetadata:
+      exif:
+        orientation: ~
+        copyright: ~
+        artist: ~
+        lens_spec: ~
+        exposure_time: 1562/1000000
+        fnumber: 800/100
+        aperture_value: 60000/10000
+        brightness_value: ~
+        iso_speed_ratings: 50
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: ~
+        date_time_original: "2024:05:28 13:42:01"
+        create_date: "2024:05:28 13:42:01"
+        modify_date: ~
+        exposure_program: ~
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: 932193/100000
+        max_aperture_value: ~
+        subject_distance: ~
+        metering_mode: ~
+        light_source: 0
+        flash: ~
+        focal_length: 800/10
+        image_number: ~
+        color_space: ~
+        flash_energy: ~
+        exposure_mode: ~
+        white_balance: 0
+        scene_capture_type: ~
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+        user_comment: ~
+      model: P45+
+      make: Phase One A/S
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

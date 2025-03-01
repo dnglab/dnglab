@@ -1,0 +1,15 @@
+make = "Phase One A/S"
+model = "P45"
+clean_make = "Phase One A/S"
+clean_model = "P45"
+whitepoint = 65535
+color_pattern = "GRBG"
+active_area = [40, 22, 20, 28]
+crop_area = [56, 38, 36, 44]
+model_aliases = [
+  ["P45+", "P45+"],
+]
+
+[cameras.color_matrix]
+A = [0.6469, -0.148, 0.0583, -0.513, 1.3435, 0.1832, -0.1503, 0.3446, 0.6389]
+D65 = [0.5053, -0.0024, -0.0117, -0.5685, 1.4077, 0.1703, -0.2619, 0.4491, 0.585]
