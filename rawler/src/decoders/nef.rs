@@ -375,11 +375,17 @@ impl<'a> NefDecoder<'a> {
           NefLensData::FMount(oldv) => {
             let composite_id = oldv.composite_id(lenstype.force_u8(0));
             log::debug!("NEF lens composite ID: {}", composite_id);
-            let resolver = LensResolver::new().with_nikon_id(Some(composite_id)).with_mounts(&[NIKON_F_MOUNT.into()]);
+            let resolver = LensResolver::new()
+              .with_nikon_id(Some(composite_id))
+              .with_camera(&self.camera)
+              .with_mounts(&[NIKON_F_MOUNT.into()]);
             return Ok(resolver.resolve());
           }
           NefLensData::ZMount(newv) => {
-            let resolver = LensResolver::new().with_lens_id((newv.lens_id as u32, 0)).with_mounts(&[NIKON_Z_MOUNT.into()]);
+            let resolver = LensResolver::new()
+              .with_lens_id((newv.lens_id as u32, 0))
+              .with_camera(&self.camera)
+              .with_mounts(&[NIKON_Z_MOUNT.into()]);
             return Ok(resolver.resolve());
           }
         }

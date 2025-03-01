@@ -461,7 +461,10 @@ impl<'a> SrwDecoder<'a> {
   fn get_lens_description(&self) -> Result<Option<&'static LensDescription>> {
     if let Some(lens_id) = self.makernote.get_entry(SrwMakernote::LensModel) {
       let lens_id = lens_id.force_u16(0);
-      let resolver = LensResolver::new().with_lens_id((lens_id.into(), 0)).with_mounts(&[NX_MOUNT.into()]);
+      let resolver = LensResolver::new()
+        .with_lens_id((lens_id.into(), 0))
+        .with_camera(&self.camera)
+        .with_mounts(&[NX_MOUNT.into()]);
       return Ok(resolver.resolve());
     }
     Ok(None)

@@ -445,6 +445,7 @@ impl<'a> Cr2Decoder<'a> {
         debug!("Lens Info tag: {}", lens_info);
         let resolver = LensResolver::new()
           .with_lens_keyname(exif_lens_name)
+          .with_camera(&self.camera) // must follow with_lens_keyname() as it my override key
           .with_lens_id((lens_info as u32, 0))
           .with_focal_len(self.get_focal_len()?)
           .with_mounts(&[CANON_CN_MOUNT.into(), CANON_EF_MOUNT.into()]);
