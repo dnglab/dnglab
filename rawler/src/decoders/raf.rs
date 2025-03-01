@@ -8,6 +8,11 @@ use std::io::Seek;
 use std::io::SeekFrom;
 use std::mem::size_of;
 
+use crate::CFA;
+use crate::RawImage;
+use crate::RawLoader;
+use crate::RawlerError;
+use crate::Result;
 use crate::alloc_image;
 use crate::alloc_image_plain;
 use crate::analyze::FormatDump;
@@ -31,11 +36,6 @@ use crate::rawsource::RawSource;
 use crate::tags::DngTag;
 use crate::tags::ExifTag;
 use crate::tags::TiffCommonTag;
-use crate::RawImage;
-use crate::RawLoader;
-use crate::RawlerError;
-use crate::Result;
-use crate::CFA;
 
 use super::Camera;
 use super::Decoder;

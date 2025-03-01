@@ -2,11 +2,10 @@
 // Copyright 2021 Daniel Vogelbacher <daniel@chaospixel.com>
 
 use super::{
-  apply_corr,
+  Entry, Result, TiffError, Value, apply_corr,
   entry::RawEntry,
   read_from_file,
   reader::{EndianReader, ReadByteOrder},
-  Entry, Result, TiffError, Value,
 };
 use crate::{
   bits::Endian,
@@ -508,11 +507,7 @@ impl IFD {
       offsets.iter().zip(sizes.iter()).fold(
         (true, offsets[0]),
         |acc, val| {
-          if acc.0 && acc.1 == *val.0 {
-            (true, acc.1 + *val.1)
-          } else {
-            (false, 0)
-          }
+          if acc.0 && acc.1 == *val.0 { (true, acc.1 + *val.1) } else { (false, 0) }
         },
       );
 

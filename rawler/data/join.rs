@@ -8,7 +8,7 @@ use self::glob::glob;
 extern crate toml;
 use toml::Value;
 extern crate rustc_version;
-use rustc_version::{version, Version};
+use rustc_version::{Version, version};
 
 fn main() {
   join_cameras();

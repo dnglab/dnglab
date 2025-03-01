@@ -19,19 +19,19 @@ use std::sync::Arc;
 use std::time::SystemTime;
 use toml::Value;
 
+use crate::Result;
 use crate::alloc_image_ok;
 use crate::analyze::FormatDump;
 use crate::exif::Exif;
 use crate::formats::ciff;
 use crate::formats::jfif;
-use crate::formats::tiff::reader::TiffReader;
 use crate::formats::tiff::GenericTiffReader;
 use crate::formats::tiff::IFD;
+use crate::formats::tiff::reader::TiffReader;
 use crate::lens::LensDescription;
 use crate::pixarray::PixU16;
 use crate::rawsource::RawSource;
 use crate::tags::DngTag;
-use crate::Result;
 
 macro_rules! fetch_ciff_tag {
   ($tiff:expr, $tag:expr) => {
@@ -103,11 +103,11 @@ pub mod x3f;
 
 pub use camera::Camera;
 
+use crate::RawlerError;
 use crate::alloc_image;
 use crate::formats::bmff::Bmff;
 use crate::tags::ExifTag;
 use crate::tags::TiffCommonTag;
-use crate::RawlerError;
 
 pub use super::rawimage::*;
 

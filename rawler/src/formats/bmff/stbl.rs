@@ -2,7 +2,7 @@
 // Copyright 2020 Alfred Gutierrez
 // Copyright 2021 Daniel Vogelbacher <daniel@chaospixel.com>
 
-use super::{co64::Co64Box, stsc::StscBox, stsd::StsdBox, stsz::StszBox, stts::SttsBox, vendor::VendorBox, BmffError, BoxHeader, FourCC, ReadBox, Result};
+use super::{BmffError, BoxHeader, FourCC, ReadBox, Result, co64::Co64Box, stsc::StscBox, stsd::StsdBox, stsz::StszBox, stts::SttsBox, vendor::VendorBox};
 use log::debug;
 use serde::{Deserialize, Serialize};
 use std::io::{Read, Seek, SeekFrom};

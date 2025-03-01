@@ -7,13 +7,13 @@
 use rayon::iter::IndexedParallelIterator;
 use rayon::iter::ParallelIterator;
 
+use crate::Result;
 use crate::alloc_image_ok;
 use crate::bits::LookupTable;
 use crate::buffer::PaddedBuf;
 use crate::pixarray::PixU16;
 use crate::pumps::BitPump;
 use crate::pumps::BitPumpMSB;
-use crate::Result;
 
 #[rustfmt::skip]
 const HUFF_INIT: [(u8, i8); 130] = [

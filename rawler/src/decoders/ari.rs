@@ -1,18 +1,18 @@
+use crate::RawImage;
+use crate::RawLoader;
+use crate::Result;
 use crate::bits::*;
 use crate::exif::Exif;
 use crate::formats::tiff::Rational;
 use crate::packed::*;
 use crate::rawsource::RawSource;
-use crate::RawImage;
-use crate::RawLoader;
-use crate::Result;
 
-use super::ok_cfa_image;
 use super::Camera;
 use super::Decoder;
 use super::FormatHint;
 use super::RawDecodeParams;
 use super::RawMetadata;
+use super::ok_cfa_image;
 
 pub fn is_ari(file: &RawSource) -> bool {
   match file.subview(0, 4) {

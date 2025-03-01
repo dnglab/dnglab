@@ -7,6 +7,10 @@ use rayon::iter::ParallelIterator;
 use std::mem::swap;
 use std::ops::Not;
 
+use crate::Orientation;
+use crate::RawImage;
+use crate::RawLoader;
+use crate::Result;
 use crate::alloc_image_ok;
 use crate::analyze::FormatDump;
 use crate::bits::BEu16;
@@ -19,17 +23,13 @@ use crate::pumps::BitPump;
 use crate::pumps::BitPumpMSB;
 use crate::pumps::ByteStream;
 use crate::rawsource::RawSource;
-use crate::Orientation;
-use crate::RawImage;
-use crate::RawLoader;
-use crate::Result;
 
-use super::ok_cfa_image;
 use super::Camera;
 use super::Decoder;
 use super::FormatHint;
 use super::RawDecodeParams;
 use super::RawMetadata;
+use super::ok_cfa_image;
 
 #[derive(Debug, Clone)]
 pub struct QtkDecoder<'a> {

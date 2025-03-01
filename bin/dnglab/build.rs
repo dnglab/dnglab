@@ -3,8 +3,8 @@ use std::path::PathBuf;
 use clap_mangen::Man;
 
 use clap_complete::{
-  generate_to,
   Shell::{Bash, Elvish, Fish, PowerShell, Zsh},
+  generate_to,
 };
 
 fn main() -> std::io::Result<()> {

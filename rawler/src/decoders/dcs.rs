@@ -1,21 +1,21 @@
-use crate::analyze::FormatDump;
-use crate::bits::LookupTable;
-use crate::exif::Exif;
-use crate::formats::tiff::reader::TiffReader;
-use crate::formats::tiff::GenericTiffReader;
-use crate::packed::decode_8bit_wtable;
-use crate::rawsource::RawSource;
-use crate::tags::TiffCommonTag;
 use crate::RawImage;
 use crate::RawLoader;
 use crate::Result;
+use crate::analyze::FormatDump;
+use crate::bits::LookupTable;
+use crate::exif::Exif;
+use crate::formats::tiff::GenericTiffReader;
+use crate::formats::tiff::reader::TiffReader;
+use crate::packed::decode_8bit_wtable;
+use crate::rawsource::RawSource;
+use crate::tags::TiffCommonTag;
 
-use super::ok_cfa_image;
 use super::Camera;
 use super::Decoder;
 use super::FormatHint;
 use super::RawDecodeParams;
 use super::RawMetadata;
+use super::ok_cfa_image;
 
 #[derive(Debug, Clone)]
 pub struct DcsDecoder<'a> {

@@ -4,20 +4,19 @@
 use clap::ArgMatches;
 use embedftp::config::{Config, FtpCallback};
 use embedftp::server::serve;
-use rawler::decoders::{supported_extensions, RawDecodeParams};
+use rawler::decoders::supported_extensions;
 use rawler::rawsource::RawSource;
 use std::ffi::OsStr;
 use std::fs::File;
 use std::io::BufWriter;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
-use std::time::SystemTime;
 
 use tokio::runtime::Handle;
 
 use crate::jobs::raw2dng::copy_mtime_from_rawsource;
 use crate::{PKG_NAME, PKG_VERSION};
-use rawler::dng::convert::{convert_raw_source, ConvertParams};
+use rawler::dng::convert::{ConvertParams, convert_raw_source};
 
 #[derive(Clone)]
 struct FtpState {

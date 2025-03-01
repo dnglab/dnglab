@@ -2,7 +2,7 @@
 // Copyright 2020 Alfred Gutierrez
 // Copyright 2021 Daniel Vogelbacher <daniel@chaospixel.com>
 
-use super::{dinf::DinfBox, stbl::StblBox, vendor::VendorBox, vmhd::VmhdBox, BmffError, BoxHeader, FourCC, ReadBox, Result};
+use super::{BmffError, BoxHeader, FourCC, ReadBox, Result, dinf::DinfBox, stbl::StblBox, vendor::VendorBox, vmhd::VmhdBox};
 use log::debug;
 use serde::{Deserialize, Serialize};
 use std::io::{Read, Seek, SeekFrom};

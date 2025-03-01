@@ -1,6 +1,6 @@
 use crate::{
-  formats::tiff::{Entry, Value},
   RawlerError, Result,
+  formats::tiff::{Entry, Value},
 };
 
 #[derive(Debug, Clone)]

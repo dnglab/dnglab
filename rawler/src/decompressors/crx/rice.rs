@@ -103,10 +103,6 @@ impl<'mdat> RiceDecoder<'mdat> {
       new_k -= 1;
     }
 
-    if k_max > 0 {
-      std::cmp::min(new_k, k_max)
-    } else {
-      new_k
-    }
+    if k_max > 0 { std::cmp::min(new_k, k_max) } else { new_k }
   }
 }

@@ -8,10 +8,10 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
   bits::Endian,
-  formats::tiff::{apply_corr, reader::ReadByteOrder, Rational, SRational, TiffAscii, TiffError, Value},
+  formats::tiff::{Rational, SRational, TiffAscii, TiffError, Value, apply_corr, reader::ReadByteOrder},
 };
 
-use super::{reader::EndianReader, Result};
+use super::{Result, reader::EndianReader};
 
 const TYPE_BYTE: u16 = 1;
 const TYPE_ASCII: u16 = 2;

@@ -1,25 +1,25 @@
+use crate::RawImage;
+use crate::RawLoader;
+use crate::RawlerError;
+use crate::Result;
 use crate::alloc_image_ok;
 use crate::analyze::FormatDump;
 use crate::decompressors::ljpeg::LjpegDecompressor;
 use crate::exif::Exif;
-use crate::formats::tiff::reader::TiffReader;
 use crate::formats::tiff::GenericTiffReader;
+use crate::formats::tiff::reader::TiffReader;
 use crate::packed::decode_16be;
 use crate::packed::decode_16le;
 use crate::pixarray::PixU16;
 use crate::rawsource::RawSource;
 use crate::tags::TiffCommonTag;
-use crate::RawImage;
-use crate::RawLoader;
-use crate::RawlerError;
-use crate::Result;
 
-use super::ok_cfa_image;
 use super::Camera;
 use super::Decoder;
 use super::FormatHint;
 use super::RawDecodeParams;
 use super::RawMetadata;
+use super::ok_cfa_image;
 
 #[derive(Debug, Clone)]
 pub struct MosDecoder<'a> {

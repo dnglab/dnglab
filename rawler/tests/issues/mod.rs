@@ -2,8 +2,8 @@ use std::io::Cursor;
 
 use crate::common::check_md5_equal;
 use crate::common::rawdb_file;
-use rawler::dng::convert::convert_raw_file;
 use rawler::dng::convert::ConvertParams;
+use rawler::dng::convert::convert_raw_file;
 use rawler::formats::jfif::Jfif;
 use rawler::rawsource::RawSource;
 use rawler::{analyze::raw_pixels_digest, decoders::RawDecodeParams};

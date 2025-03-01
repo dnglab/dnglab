@@ -10,8 +10,8 @@ use rayon::iter::{IntoParallelIterator, ParallelIterator};
 
 use crate::{
   alloc_image_ok,
-  bits::{clamp, Endian},
-  decoders::{rw2::PanasonicTag, Result},
+  bits::{Endian, clamp},
+  decoders::{Result, rw2::PanasonicTag},
   formats::tiff::IFD,
   pixarray::{PixU16, SharedPix2D},
   pumps::{BitPump, BitPumpReverseBitsMSB, ByteStream},
@@ -422,11 +422,7 @@ fn decode_strip(buf: &[u8], params: &CF2Params, strip_id: usize, out: &mut PixU1
         if sign == 1 {
           val
         } else if ssss > 0 {
-          if shift_down != 0 {
-            val + (-1 << ssss)
-          } else {
-            val + (-1 << ssss) + 1
-          }
+          if shift_down != 0 { val + (-1 << ssss) } else { val + (-1 << ssss) + 1 }
         } else {
           0
         }

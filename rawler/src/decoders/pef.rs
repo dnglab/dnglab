@@ -10,17 +10,21 @@ use super::Decoder;
 use super::FormatHint;
 use super::RawDecodeParams;
 use super::RawMetadata;
+use crate::RawImage;
+use crate::RawLoader;
+use crate::RawlerError;
+use crate::Result;
 use crate::alloc_image_ok;
 use crate::analyze::FormatDump;
 use crate::bits::Endian;
 use crate::decompressors::ljpeg::huffman::*;
 use crate::exif::Exif;
-use crate::formats::tiff::ifd::OffsetMode;
-use crate::formats::tiff::reader::TiffReader;
 use crate::formats::tiff::Entry;
 use crate::formats::tiff::GenericTiffReader;
-use crate::formats::tiff::Value;
 use crate::formats::tiff::IFD;
+use crate::formats::tiff::Value;
+use crate::formats::tiff::ifd::OffsetMode;
+use crate::formats::tiff::reader::TiffReader;
 use crate::lens::LensDescription;
 use crate::lens::LensResolver;
 use crate::packed::*;
@@ -32,10 +36,6 @@ use crate::rawimage::RawPhotometricInterpretation;
 use crate::rawsource::RawSource;
 use crate::tags::ExifTag;
 use crate::tags::TiffCommonTag;
-use crate::RawImage;
-use crate::RawLoader;
-use crate::RawlerError;
-use crate::Result;
 
 #[derive(Debug, Clone)]
 pub struct PefDecoder<'a> {

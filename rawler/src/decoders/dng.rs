@@ -4,6 +4,7 @@ use image::EncodableLayout;
 use image::ImageBuffer;
 use image::Rgb;
 
+use crate::RawImage;
 use crate::alloc_image_ok;
 use crate::alloc_image_plain;
 use crate::bits::Endian;
@@ -15,15 +16,14 @@ use crate::decompressors::ljpeg::*;
 use crate::formats::tiff::Entry;
 use crate::formats::tiff::Rational;
 use crate::formats::tiff::Value;
-use crate::imgop::xyz::FlatColorMatrix;
-use crate::imgop::xyz::Illuminant;
 use crate::imgop::Dim2;
 use crate::imgop::Point;
 use crate::imgop::Rect;
+use crate::imgop::xyz::FlatColorMatrix;
+use crate::imgop::xyz::Illuminant;
 use crate::packed::*;
 use crate::tags::DngTag;
 use crate::tags::TiffCommonTag;
-use crate::RawImage;
 
 #[derive(Debug, Clone)]
 pub struct DngDecoder<'a> {

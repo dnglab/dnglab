@@ -13,7 +13,7 @@ use crate::packed::decode_16le;
 use crate::pixarray::PixU16;
 use crate::rawsource::RawSource;
 use crate::tags::{DngTag, ExifTag, TiffCommonTag};
-use crate::{alloc_image_ok, RawImage, RawLoader};
+use crate::{RawImage, RawLoader, alloc_image_ok};
 use crate::{RawlerError, Result};
 
 use super::{BlackLevel, CFAConfig, Camera, Decoder, FormatHint, RawDecodeParams, RawMetadata, RawPhotometricInterpretation, WhiteLevel};

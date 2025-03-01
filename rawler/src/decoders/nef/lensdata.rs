@@ -1,5 +1,5 @@
-use crate::bits::LEu16;
 use crate::Result;
+use crate::bits::LEu16;
 use crate::{decoders::nef::NikonMakernote, formats::tiff::IFD};
 
 const ERRMSG: &str = "Lens composite buffer error: EOF";

@@ -280,11 +280,7 @@ impl Display for LensResolver {
     if let Some(name) = &self.focal_len {
       s.push(format!("Focal len: '{}'", name));
     }
-    if s.is_empty() {
-      f.write_str("<EMPTY>")
-    } else {
-      f.write_str(&s.join(", "))
-    }
+    if s.is_empty() { f.write_str("<EMPTY>") } else { f.write_str(&s.join(", ")) }
   }
 }
 

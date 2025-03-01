@@ -1,26 +1,25 @@
 use log::warn;
 
-use crate::alloc_image;
-use crate::analyze::FormatDump;
-use crate::bits::BEu16;
-use crate::exif::Exif;
-use crate::formats::tiff::ifd::OffsetMode;
-use crate::formats::tiff::reader::TiffReader;
-use crate::formats::tiff::Entry;
-use crate::formats::tiff::GenericTiffReader;
-use crate::formats::tiff::Value;
-use crate::formats::tiff::IFD;
-use crate::packed::decode_12be;
-use crate::pixarray::PixU16;
-use crate::tags::ExifTag;
-use crate::tags::TiffCommonTag;
 use crate::RawImage;
 use crate::RawLoader;
 use crate::RawSource;
 use crate::RawlerError;
 use crate::Result;
+use crate::alloc_image;
+use crate::analyze::FormatDump;
+use crate::bits::BEu16;
+use crate::exif::Exif;
+use crate::formats::tiff::Entry;
+use crate::formats::tiff::GenericTiffReader;
+use crate::formats::tiff::IFD;
+use crate::formats::tiff::Value;
+use crate::formats::tiff::ifd::OffsetMode;
+use crate::formats::tiff::reader::TiffReader;
+use crate::packed::decode_12be;
+use crate::pixarray::PixU16;
+use crate::tags::ExifTag;
+use crate::tags::TiffCommonTag;
 
-use super::ok_cfa_image;
 use super::CFAConfig;
 use super::Camera;
 use super::Decoder;
@@ -29,6 +28,7 @@ use super::RawDecodeParams;
 use super::RawMetadata;
 use super::RawPhotometricInterpretation;
 use super::WhiteLevel;
+use super::ok_cfa_image;
 
 #[derive(Debug, Clone)]
 pub struct KdcDecoder<'a> {
@@ -78,7 +78,7 @@ impl<'a> Decoder for KdcDecoder<'a> {
           return Err(RawlerError::unsupported(
             &self.camera,
             format!("KDC: DC120: Don't know how to handle compression type {}", c),
-          ))
+          ));
         }
       };
       let cpp = 1;

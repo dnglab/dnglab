@@ -2,7 +2,7 @@
 // Copyright 2020 Alfred Gutierrez
 // Copyright 2021 Daniel Vogelbacher <daniel@chaospixel.com>
 
-use super::{ext_cr3::cr3desc::Cr3DescBox, mvhd::MvhdBox, trak::TrakBox, vendor::VendorBox, BmffError, BoxHeader, FourCC, ReadBox, Result};
+use super::{BmffError, BoxHeader, FourCC, ReadBox, Result, ext_cr3::cr3desc::Cr3DescBox, mvhd::MvhdBox, trak::TrakBox, vendor::VendorBox};
 use log::debug;
 use serde::{Deserialize, Serialize};
 use std::io::{Read, Seek, SeekFrom};

@@ -5,16 +5,17 @@ use std::{
   time::Instant,
 };
 
-use image::{codecs::jpeg::JpegEncoder, imageops::FilterType, DynamicImage};
+use image::{DynamicImage, codecs::jpeg::JpegEncoder, imageops::FilterType};
 use log::debug;
 use rayon::prelude::*;
 
 use crate::{
+  CFA, RawImage, RawImageData,
   decoders::{Camera, RawMetadata},
   dng::rect_to_dng_area,
   formats::tiff::{
-    writer::{transfer_entry, DirectoryWriter, TiffWriter},
     CompressionMethod, PhotometricInterpretation, PreviewColorSpace, Rational, TiffError, Value,
+    writer::{DirectoryWriter, TiffWriter, transfer_entry},
   },
   imgop::{Dim2, Point, Rect},
   ljpeg92::LjpegCompressor,
@@ -22,7 +23,6 @@ use crate::{
   rawimage::{BlackLevel, RawPhotometricInterpretation, WhiteLevel},
   tags::ExifTag,
   tiles::ImageTiler,
-  RawImage, RawImageData, CFA,
 };
 use crate::{
   formats::tiff::SRational,
@@ -30,7 +30,7 @@ use crate::{
   tags::{DngTag, TiffCommonTag},
 };
 
-use super::{original::OriginalCompressed, CropMode, DngCompression, DngPhotometricConversion, DNG_VERSION_V1_6};
+use super::{CropMode, DNG_VERSION_V1_6, DngCompression, DngPhotometricConversion, original::OriginalCompressed};
 
 pub type DngError = TiffError;
 

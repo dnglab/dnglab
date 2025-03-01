@@ -2,7 +2,7 @@
 // Copyright 2020 Alfred Gutierrez
 // Copyright 2021 Daniel Vogelbacher <daniel@chaospixel.com>
 
-use super::{read_box_header_ext, BoxHeader, FourCC, ReadBox, Result};
+use super::{BoxHeader, FourCC, ReadBox, Result, read_box_header_ext};
 use serde::{Deserialize, Serialize};
 use std::io::{Read, Seek, SeekFrom};
 

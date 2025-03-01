@@ -1,26 +1,26 @@
 // SPDX-License-Identifier: LGPL-2.1
 // Copyright 2021 Daniel Vogelbacher <daniel@chaospixel.com>
 
-use clap::builder::{NonEmptyStringValueParser, TypedValueParser};
 use clap::ArgMatches;
+use clap::builder::{NonEmptyStringValueParser, TypedValueParser};
 
 use image::DynamicImage;
 use itertools::Itertools;
 use rawler::decoders::{RawDecodeParams, RawMetadata};
 use rawler::dng::writer::DngWriter;
-use rawler::dng::{self, CropMode, DngCompression, DngPhotometricConversion, DNG_VERSION_V1_6};
+use rawler::dng::{self, CropMode, DNG_VERSION_V1_6, DngCompression, DngPhotometricConversion};
 use rawler::exif::Exif;
-use rawler::formats::jfif::{is_exif, is_jfif, Jfif};
+use rawler::formats::jfif::{Jfif, is_exif, is_jfif};
 use rawler::formats::tiff::{self, Rational, SRational};
 use rawler::imgop::gamma::{apply_gamma, invert_gamma};
 
 use rawler::get_decoder;
 use rawler::imgop::srgb::{srgb_apply_gamma, srgb_invert_gamma};
 use rawler::imgop::xyz::{self, Illuminant};
-use rawler::imgop::{scale_double_to_u16, scale_u16_to_double, scale_u8_to_double};
+use rawler::imgop::{scale_double_to_u16, scale_u8_to_double, scale_u16_to_double};
 use rawler::rawsource::RawSource;
 use rawler::tags::{DngTag, TiffCommonTag};
-use std::fs::{remove_file, File};
+use std::fs::{File, remove_file};
 use std::io::BufWriter;
 use std::num::ParseFloatError;
 use std::path::{Path, PathBuf};

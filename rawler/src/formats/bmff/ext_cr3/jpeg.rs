@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2021 Daniel Vogelbacher <daniel@chaospixel.com>
 
-use super::super::{read_box_header_ext, BoxHeader, FourCC, ReadBox, Result};
+use super::super::{BoxHeader, FourCC, ReadBox, Result, read_box_header_ext};
 use serde::{Deserialize, Serialize};
 use std::io::{Read, Seek, SeekFrom};
 

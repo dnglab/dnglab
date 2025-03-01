@@ -11,16 +11,16 @@ use crate::decoders::*;
 use crate::decompressors::crx::decompress_crx_image;
 use crate::envparams::{rawler_crx_raw_trak, rawler_ignore_previews};
 use crate::exif::ExifGPS;
+use crate::formats::bmff::FileBox;
 use crate::formats::bmff::ext_cr3::cmp1::Cmp1Box;
 use crate::formats::bmff::ext_cr3::cr3desc::Cr3DescBox;
 use crate::formats::bmff::ext_cr3::iad1::{Iad1Box, Iad1Type};
 use crate::formats::bmff::trak::TrakBox;
-use crate::formats::bmff::FileBox;
 use crate::formats::tiff::reader::TiffReader;
 use crate::formats::tiff::{Entry, GenericTiffReader, Rational, Value};
 use crate::imgop::{Point, Rect};
 use crate::lens::{LensDescription, LensId, LensResolver};
-use crate::{pumps::ByteStream, RawImage};
+use crate::{RawImage, pumps::ByteStream};
 
 const CANON_CN_MOUNT: &str = "cn-mount";
 const CANON_EF_MOUNT: &str = "ef-mount";
@@ -297,7 +297,7 @@ impl<'a> Decoder for Cr3Decoder<'a> {
         wb = [1.0, 1.0, 1.0, f32::NAN];
       }
       if 131 == entry.force_u16(3) { // Standard Raw
-         // Nothing special for Standard raw
+        // Nothing special for Standard raw
       }
     }
 

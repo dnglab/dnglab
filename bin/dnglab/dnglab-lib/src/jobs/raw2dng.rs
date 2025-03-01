@@ -7,14 +7,14 @@ use async_trait::async_trait;
 use chrono::Local;
 use log::debug;
 use rawler::{
-  decoders::RawDecodeParams,
-  dng::convert::{convert_raw_file, ConvertParams},
-  rawsource::RawSource,
   RawlerError,
+  decoders::RawDecodeParams,
+  dng::convert::{ConvertParams, convert_raw_file},
+  rawsource::RawSource,
 };
 use std::{
   fmt::Display,
-  fs::{remove_file, File},
+  fs::{File, remove_file},
   io::BufWriter,
   time::SystemTime,
 };
