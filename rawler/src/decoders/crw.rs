@@ -246,10 +246,10 @@ impl<'a> CrwDecoder<'a> {
       // Add the uncompressed 2 low bits to the decoded 8 high bits
       for (i, o) in out.pixels_mut().chunks_exact_mut(4).enumerate() {
         let c = buffer[26 + i] as u16;
-        o[0] = o[0] << 2 | (c) & 0x03;
-        o[1] = o[1] << 2 | (c >> 2) & 0x03;
-        o[2] = o[2] << 2 | (c >> 4) & 0x03;
-        o[3] = o[3] << 2 | (c >> 6) & 0x03;
+        o[0] = (o[0] << 2) | (c) & 0x03;
+        o[1] = (o[1] << 2) | (c >> 2) & 0x03;
+        o[2] = (o[2] << 2) | (c >> 4) & 0x03;
+        o[3] = (o[3] << 2) | (c >> 6) & 0x03;
         if width == 2672 {
           // No idea why this is needed, probably some broken camera
           if o[0] < 512 {

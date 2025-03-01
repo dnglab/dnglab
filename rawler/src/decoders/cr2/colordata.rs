@@ -34,7 +34,7 @@ impl ColorData {
 pub(crate) fn parse_colordata(colordata: &Entry) -> Result<ColorData> {
   match &colordata.value {
     Value::Undefined(undef) => {
-      let transmuted: Vec<u16> = undef.chunks(2).map(|v| (v[1] as u16) << 8 | (v[0] as u16)).collect();
+      let transmuted: Vec<u16> = undef.chunks(2).map(|v| ((v[1] as u16) << 8) | (v[0] as u16)).collect();
       let data = &transmuted;
       let version: i16 = data[0] as i16;
 

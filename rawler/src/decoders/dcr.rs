@@ -138,7 +138,7 @@ impl<'a> DcrDecoder<'a> {
     let mut bitbuf: u64 = 0;
     let mut bits: usize = 0;
     if (size & 7) == 4 {
-      bitbuf = (input.get_u8() as u64) << 8 | (input.get_u8() as u64);
+      bitbuf = ((input.get_u8() as u64) << 8) | (input.get_u8() as u64);
       bits = 16;
     }
 
