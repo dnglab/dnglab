@@ -44,7 +44,11 @@ data:
         orientation: 1
         copyright: ""
         artist: ""
-        lens_spec: ~
+        lens_spec:
+          - 38/10
+          - 247/1
+          - 34/10
+          - 65/10
         exposure_time: 1/160
         fnumber: 45/10
         aperture_value: 139/32
@@ -82,8 +86,8 @@ data:
         owner_name: ""
         serial_number: ~
         lens_serial_number: ~
-        lens_make: ~
-        lens_model: ~
+        lens_make: Canon
+        lens_model: PowerShot SX60 HS
         gps:
           gps_version_id:
             - 2
@@ -124,7 +128,22 @@ data:
         user_comment: ~
       model: PowerShot SX60 HS
       make: Canon
-      lens: ~
+      lens:
+        identifiers:
+          name: canon_powershot_sx60hs_lens
+          id: ~
+          nikon_id: ~
+          olympus_id: ~
+        mount: fixed
+        lens_make: Canon
+        lens_model: PowerShot SX60 HS
+        focal_range:
+          - 38/10
+          - 247/1
+        aperture_range:
+          - 34/10
+          - 65/10
+        lens_name: Canon PowerShot SX60 HS
       unique_image_id: ~
       rating: ~
 
