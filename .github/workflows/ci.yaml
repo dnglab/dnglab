@@ -49,6 +49,7 @@ jobs:
         rust: [1.85.0]
     env:
       RAWLER_RAWDB: /opt/rawdb2
+      RAYON_NUM_THREADS: 4
     steps:
       - uses: actions/checkout@v2
       - uses: dtolnay/rust-toolchain@master
