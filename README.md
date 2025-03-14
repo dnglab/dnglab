@@ -106,7 +106,7 @@ OPTIONS:
             Set the artist tag
 
     -c, --compression <compression>
-            Compression for raw image [default: lossless] [possible values: lossless, none]
+            Compression for raw image [default: lossless] [possible values: lossless, uncompressed]
 
         --crop <crop>
             DNG default crop [default: best] [possible values: best, activearea, none]
