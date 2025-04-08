@@ -27,7 +27,7 @@ serde_yaml = "0.8"
 rayon = "1"
 itertools = "0.13"
 thiserror = "1.0.25"
-tokio = { version = "1.20.3", features = ["full"] }
+tokio = { version = "1.43.1", features = ["full"] }
 async-trait = "0.1.51"
 futures = "0.3"
 hex = "0.4.3"
