@@ -560,6 +560,7 @@ cameras/Panasonic/DC-S1R/raw_modes
 cameras/Panasonic/DC-S5/raw_modes
 cameras/Panasonic/DC-S5M2/raw_modes
 cameras/Panasonic/DC-S5M2X/raw_modes
+cameras/Panasonic/DC-S9/raw_modes
 cameras/Panasonic/DC-TZ200/raw_modes
 cameras/Panasonic/DC-TZ202/raw_modes
 cameras/Panasonic/DC-TZ90/raw_modes
