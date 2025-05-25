@@ -30,9 +30,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-20.04, windows-latest, macos-latest]
+        os: [ubuntu-24.04, windows-latest, macos-latest]
         include:
-        - os: ubuntu-20.04
+        - os: ubuntu-24.04
           install-deps: |
               cargo install cargo-deb
               sudo apt-get update
