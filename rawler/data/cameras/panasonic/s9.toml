@@ -1,0 +1,14 @@
+make = "Panasonic"
+model = "DC-S9"
+clean_make = "Panasonic"
+clean_model = "DC-S9"
+whitepoint = 4095
+color_pattern = "RGGB"
+
+[cameras.color_matrix]
+A = [1.2599, -0.7524, 0.072, -0.4116, 1.1989, 0.2399, -0.0184, 0.076, 0.698]
+D65 = [0.9983, -0.389, -0.0841, -0.418, 1.2164, 0.2263, -0.0249, 0.1139, 0.5766]
+
+[[cameras.modes]]
+mode = "3:2"
+

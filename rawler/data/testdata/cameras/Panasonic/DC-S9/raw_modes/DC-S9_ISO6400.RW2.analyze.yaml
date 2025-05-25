@@ -1,0 +1,94 @@
+---
+file:
+  fileSize: 31167488
+  fileName: DC-S9_ISO6400.RW2
+  digest: c8e4f1591ee85c1a888fab5877dc36b2
+data:
+  metadata:
+    rawParams:
+      rawWidth: 6016
+      rawHeight: 4016
+      bitDepth: 16
+      cropArea:
+        p:
+          x: 8
+          y: 8
+        d:
+          w: 6000
+          h: 4000
+      activeArea:
+        p:
+          x: 8
+          y: 8
+        d:
+          w: 6000
+          h: 4000
+      blacklevels:
+        levels:
+          - 128/1
+          - 128/1
+          - 128/1
+          - 128/1
+        cpp: 1
+        width: 2
+        height: 2
+      whitelevels:
+        - 4095
+      wbCoeffs:
+        - 2.0820312
+        - 1.0
+        - 1.7109375
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: CC-0
+        artist: Ivan Blazhko
+        lens_spec: ~
+        exposure_time: 10/10000
+        fnumber: 160/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 6400
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: 1
+        exposure_bias: 0/100
+        date_time_original: "2025:04:13 08:14:08"
+        create_date: "2025:04:13 08:14:08"
+        modify_date: ~
+        exposure_program: 3
+        timezone_offset: ~
+        offset_time: "+00:00"
+        offset_time_original: "+00:00"
+        offset_time_digitized: "+00:00"
+        sub_sec_time: "869"
+        sub_sec_time_original: "869"
+        sub_sec_time_digitized: "869"
+        shutter_speed_value: ~
+        max_aperture_value: 768/256
+        subject_distance: ~
+        metering_mode: 5
+        light_source: 0
+        flash: 16
+        focal_length: 450/10
+        image_number: ~
+        color_space: ~
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: ~
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: WG4FA007973
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+        user_comment: ~
+      model: DC-S9
+      make: Panasonic
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+
