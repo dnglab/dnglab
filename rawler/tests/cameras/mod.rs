@@ -2849,6 +2849,14 @@ mod camera_x_h2_raw_modes {
 mod camera_x_m1_raw_modes {
   super::camera_file_check!("Fujifilm", "X-M1", cam_x_m1_iso_200_raf, "raw_modes/X-M1_ISO_200.RAF");
 }
+mod camera_x_m5_raw_modes {
+  super::camera_file_check!("Fujifilm", "X-M5", cam_fujifilm_x_m5_iso100_lossy_compressed2_raf, "raw_modes/fujifilm_X-M5_ISO100_lossy_compressed2.RAF");
+  super::camera_file_check!("Fujifilm", "X-M5", cam_fujifilm_x_m5_iso100_lossless_compressed_raf, "raw_modes/fujifilm_X-M5_ISO100_lossless_compressed.RAF");
+  super::camera_file_check!("Fujifilm", "X-M5", cam_fujifilm_x_m5_iso100_uncompressed2_raf, "raw_modes/fujifilm_X-M5_ISO100_uncompressed2.RAF");
+  super::camera_file_check!("Fujifilm", "X-M5", cam_fujifilm_x_m5_iso100_lossy_compressed_raf, "raw_modes/fujifilm_X-M5_ISO100_lossy_compressed.RAF");
+  super::camera_file_check!("Fujifilm", "X-M5", cam_fujifilm_x_m5_iso100_lossless_compressed2_raf, "raw_modes/fujifilm_X-M5_ISO100_lossless_compressed2.RAF");
+  super::camera_file_check!("Fujifilm", "X-M5", cam_fujifilm_x_m5_iso100_uncompressed_raf, "raw_modes/fujifilm_X-M5_ISO100_uncompressed.RAF");
+}
 mod camera_x_pro1_raw_modes {
   super::camera_file_check!("Fujifilm", "X-Pro1", cam_x_pro1_iso_200_raf, "raw_modes/X-Pro1_ISO_200.RAF");
 }
