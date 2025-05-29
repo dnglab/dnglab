@@ -21,6 +21,7 @@ use crate::formats::tiff::Value;
 use crate::formats::tiff::ifd::OffsetMode;
 use crate::formats::tiff::reader::TiffReader;
 use crate::imgop::Dim2;
+use crate::imgop::Point;
 use crate::imgop::Rect;
 use crate::imgop::yuv::interpolate_yuv;
 use crate::imgop::yuv::ycbcr_to_rgb;
@@ -166,8 +167,6 @@ impl<'a> Decoder for ArwDecoder<'a> {
       _ => return Err(RawlerError::DecoderFailed(format!("ARW: Don't know how to decode type {}", compression))),
     };
 
-    let crop = Rect::from_tiff(raw).or_else(|| self.camera.crop_area.map(|area| Rect::new_with_borders(Dim2::new(width, height), &area)));
-
     let blacklevel = black.map(|black| match cpp {
       1 => BlackLevel::new(&black, self.camera.cfa.width, self.camera.cfa.height, cpp),
       // For YUV data, the blacklevel needs to be multiplicated by 2
@@ -189,8 +188,14 @@ impl<'a> Decoder for ArwDecoder<'a> {
       img.wb_coeffs = [1.0, 1.0, 1.0, f32::NAN];
     }
 
-    img.crop_area = crop;
-    img.active_area = self.camera.active_area.map(|area| Rect::new_with_borders(Dim2::new(width, height), &area));
+    if let Some(raw_image_size) = self.get_raw_image_size(raw)? {
+      log::debug!("Found SONYRAWIMAGESIZE tag, using as active_area");
+      img.active_area = Some(raw_image_size);
+    } else {
+      img.active_area = self.camera.active_area.map(|area| Rect::new_with_borders(Dim2::new(width, height), &area));
+    }
+    img.crop_area = Rect::from_tiff(raw).or_else(|| self.camera.crop_area.map(|area| Rect::new_with_borders(Dim2::new(width, height), &area)));
+
     log::debug!("raw dim: {}x{}", width, height);
     log::debug!("crop_area: {:?}", img.crop_area);
     log::debug!("active_area: {:?}", img.active_area);
@@ -696,6 +701,14 @@ impl<'a> ArwDecoder<'a> {
       out.push(((output >> 24) & 0xff) as u8);
     }
     Ok(out)
+  }
+
+  fn get_raw_image_size(&self, raw_ifd: &IFD) -> Result<Option<Rect>> {
+    if let Some(entry) = raw_ifd.get_entry(ExifTag::SonyRawImageSize) {
+      Ok(Some(Rect::new(Point::default(), Dim2::new(entry.force_usize(0), entry.force_usize(1)))))
+    } else {
+      Ok(None)
+    }
   }
 }
 
