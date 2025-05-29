@@ -14,7 +14,7 @@ _dnglab() {
     fi
 
     local context curcontext="$curcontext" state line
-    _arguments "${_arguments_options[@]}" \
+    _arguments "${_arguments_options[@]}" : \
 '-d+[Log level]:level:(error warn info debug trace)' \
 '--loglevel=[Log level]:level:(error warn info debug trace)' \
 '-v[Print status for every file]' \
@@ -32,7 +32,7 @@ _dnglab() {
         curcontext="${curcontext%:*:*}:dnglab-command-$line[1]:"
         case $line[1] in
             (analyze)
-_arguments "${_arguments_options[@]}" \
+_arguments "${_arguments_options[@]}" : \
 '-d+[Log level]:level:(error warn info debug trace)' \
 '--loglevel=[Log level]:level:(error warn info debug trace)' \
 '--raw-pixel[]' \
@@ -55,15 +55,16 @@ _arguments "${_arguments_options[@]}" \
 && ret=0
 ;;
 (convert)
-_arguments "${_arguments_options[@]}" \
+_arguments "${_arguments_options[@]}" : \
 '-c+[Compression for raw image]:compression:(lossless uncompressed)' \
 '--compression=[Compression for raw image]:compression:(lossless uncompressed)' \
-'--ljpeg92-predictor=[LJPEG-92 predictor]:predictor: ' \
+'--ljpeg92-predictor=[LJPEG-92 predictor]:predictor:_default' \
 '--dng-preview=[DNG include preview image]:preview:(true false)' \
 '--dng-thumbnail=[DNG include thumbnail image]:thumbnail:(true false)' \
 '--embed-raw=[Embed the raw file into DNG]:embedded:(true false)' \
-'--artist=[Set the artist tag]:artist: ' \
-'--image-index=[Select a specific image index (or '\''all'\'') if file is a image container]:index: ' \
+'--artist=[Set the artist tag]:artist:_default' \
+'--keep-mtime=[Keep mtime, read from EXIF with fallback to original file mtime]:keepmtime:(true false)' \
+'--image-index=[Select a specific image index (or '\''all'\'') if file is a image container]:index:_default' \
 '--crop=[DNG default crop]:crop:(best activearea none)' \
 '-d+[Log level]:level:(error warn info debug trace)' \
 '--loglevel=[Log level]:level:(error warn info debug trace)' \
@@ -79,18 +80,19 @@ _arguments "${_arguments_options[@]}" \
 && ret=0
 ;;
 (ftpserver)
-_arguments "${_arguments_options[@]}" \
+_arguments "${_arguments_options[@]}" : \
 '-c+[Compression for raw image]:compression:(lossless uncompressed)' \
 '--compression=[Compression for raw image]:compression:(lossless uncompressed)' \
-'--ljpeg92-predictor=[LJPEG-92 predictor]:predictor: ' \
+'--ljpeg92-predictor=[LJPEG-92 predictor]:predictor:_default' \
 '--dng-preview=[DNG include preview image]:preview:(true false)' \
 '--dng-thumbnail=[DNG include thumbnail image]:thumbnail:(true false)' \
 '--embed-raw=[Embed the raw file into DNG]:embedded:(true false)' \
-'--artist=[Set the artist tag]:artist: ' \
-'--image-index=[Select a specific image index (or '\''all'\'') if file is a image container]:index: ' \
+'--artist=[Set the artist tag]:artist:_default' \
+'--keep-mtime=[Keep mtime, read from EXIF with fallback to original file mtime]:keepmtime:(true false)' \
+'--image-index=[Select a specific image index (or '\''all'\'') if file is a image container]:index:_default' \
 '--crop=[DNG default crop]:crop:(best activearea none)' \
-'--port=[FTP listen port]:port: ' \
-'--listen=[FTP listen address]:addr: ' \
+'--port=[FTP listen port]:port:_default' \
+'--listen=[FTP listen address]:addr:_default' \
 '--keep-original=[Keep original raw]:keep:(true false)' \
 '-d+[Log level]:level:(error warn info debug trace)' \
 '--loglevel=[Log level]:level:(error warn info debug trace)' \
@@ -103,7 +105,7 @@ _arguments "${_arguments_options[@]}" \
 && ret=0
 ;;
 (cameras)
-_arguments "${_arguments_options[@]}" \
+_arguments "${_arguments_options[@]}" : \
 '-d+[Log level]:level:(error warn info debug trace)' \
 '--loglevel=[Log level]:level:(error warn info debug trace)' \
 '--md[Markdown format output]' \
@@ -113,7 +115,7 @@ _arguments "${_arguments_options[@]}" \
 && ret=0
 ;;
 (lenses)
-_arguments "${_arguments_options[@]}" \
+_arguments "${_arguments_options[@]}" : \
 '-d+[Log level]:level:(error warn info debug trace)' \
 '--loglevel=[Log level]:level:(error warn info debug trace)' \
 '--md[Markdown format output]' \
@@ -123,18 +125,18 @@ _arguments "${_arguments_options[@]}" \
 && ret=0
 ;;
 (makedng)
-_arguments "${_arguments_options[@]}" \
+_arguments "${_arguments_options[@]}" : \
 '-o+[Output DNG file path]:OUTPUT:_files' \
 '--output=[Output DNG file path]:OUTPUT:_files' \
 '-i+[Input files (raw, preview, exif, ...), index for map starts with 0]:INPUT:_files' \
 '--input=[Input files (raw, preview, exif, ...), index for map starts with 0]:INPUT:_files' \
-'--map=[Input usage map]:map: ' \
+'--map=[Input usage map]:map:_default' \
 '--dng-backward-version=[DNG specification version]:version:(1.0 1.1 1.2 1.3 1.4 1.5 1.6)' \
 '--colorimetric-reference=[Reference for XYZ values]:reference:(scene output)' \
-'--unique-camera-model=[Unique camera model]:id: ' \
-'--artist=[Set the Artist tag]:artist: ' \
-'--make=[Set the Make tag]:make: ' \
-'--model=[Set the Model tag]:model: ' \
+'--unique-camera-model=[Unique camera model]:id:_default' \
+'--artist=[Set the Artist tag]:artist:_default' \
+'--make=[Set the Make tag]:make:_default' \
+'--model=[Set the Model tag]:model:_default' \
 '--matrix1=[Matrix 1]:MATRIX:(XYZ_sRGB_D50 XYZ_sRGB_D65 XYZ_AdobeRGB_D50 XYZ_AdobeRGB_D65 custom 3x3 matrix (comma seperated))' \
 '--matrix2=[Matrix 2]:MATRIX:(XYZ_sRGB_D50 XYZ_sRGB_D65 XYZ_AdobeRGB_D50 XYZ_AdobeRGB_D65 custom 3x3 matrix (comma seperated))' \
 '--matrix3=[Matrix 3]:MATRIX:(XYZ_sRGB_D50 XYZ_sRGB_D65 XYZ_AdobeRGB_D50 XYZ_AdobeRGB_D65 custom 3x3 matrix (comma seperated))' \
@@ -142,7 +144,7 @@ _arguments "${_arguments_options[@]}" \
 '--illuminant2=[Illuminant 2]:ILLUMINANT:(Unknown A B C D50 D55 D65 D75)' \
 '--illuminant3=[Illuminant 3]:ILLUMINANT:(Unknown A B C D50 D55 D65 D75)' \
 '--linearization=[Linearization table]:TABLE:(8bit_sRGB 8bit_sRGB_invert 16bit_sRGB 16bit_sRGB_invert 8bit_gamma1.8 8bit_gamma1.8_invert 8bit_gamma2.0 8bit_gamma2.0_invert 8bit_gamma2.2 8bit_gamma2.2_invert 8bit_gamma2.4 8bit_gamma2.4_invert 16bit_gamma1.8 16bit_gamma1.8_invert 16bit_gamma2.0 16bit_gamma2.0_invert 16bit_gamma2.2 16bit_gamma2.2_invert 16bit_gamma2.4 16bit_gamma2.4_invert custom table (comma seperated))' \
-'(--white-xy)--wb=[Whitebalance as-shot]:R,G,B: ' \
+'(--white-xy)--wb=[Whitebalance as-shot]:R,G,B:_default' \
 '--white-xy=[Whitebalance as-shot encoded as xy chromaticity coordinates]:x,y:(D50 D65 custom x,y value (comma seperated))' \
 '-d+[Log level]:level:(error warn info debug trace)' \
 '--loglevel=[Log level]:level:(error warn info debug trace)' \
@@ -154,7 +156,7 @@ _arguments "${_arguments_options[@]}" \
 && ret=0
 ;;
 (gui)
-_arguments "${_arguments_options[@]}" \
+_arguments "${_arguments_options[@]}" : \
 '-d+[Log level]:level:(error warn info debug trace)' \
 '--loglevel=[Log level]:level:(error warn info debug trace)' \
 '-v[Print status for every file]' \
@@ -163,7 +165,7 @@ _arguments "${_arguments_options[@]}" \
 && ret=0
 ;;
 (extract)
-_arguments "${_arguments_options[@]}" \
+_arguments "${_arguments_options[@]}" : \
 '-d+[Log level]:level:(error warn info debug trace)' \
 '--loglevel=[Log level]:level:(error warn info debug trace)' \
 '--skipchecks[Skip integrity checks]' \
@@ -179,7 +181,7 @@ _arguments "${_arguments_options[@]}" \
 && ret=0
 ;;
 (help)
-_arguments "${_arguments_options[@]}" \
+_arguments "${_arguments_options[@]}" : \
 ":: :_dnglab__help_commands" \
 "*::: :->help" \
 && ret=0
@@ -191,39 +193,39 @@ _arguments "${_arguments_options[@]}" \
         curcontext="${curcontext%:*:*}:dnglab-help-command-$line[1]:"
         case $line[1] in
             (analyze)
-_arguments "${_arguments_options[@]}" \
+_arguments "${_arguments_options[@]}" : \
 && ret=0
 ;;
 (convert)
-_arguments "${_arguments_options[@]}" \
+_arguments "${_arguments_options[@]}" : \
 && ret=0
 ;;
 (ftpserver)
-_arguments "${_arguments_options[@]}" \
+_arguments "${_arguments_options[@]}" : \
 && ret=0
 ;;
 (cameras)
-_arguments "${_arguments_options[@]}" \
+_arguments "${_arguments_options[@]}" : \
 && ret=0
 ;;
 (lenses)
-_arguments "${_arguments_options[@]}" \
+_arguments "${_arguments_options[@]}" : \
 && ret=0
 ;;
 (makedng)
-_arguments "${_arguments_options[@]}" \
+_arguments "${_arguments_options[@]}" : \
 && ret=0
 ;;
 (gui)
-_arguments "${_arguments_options[@]}" \
+_arguments "${_arguments_options[@]}" : \
 && ret=0
 ;;
 (extract)
-_arguments "${_arguments_options[@]}" \
+_arguments "${_arguments_options[@]}" : \
 && ret=0
 ;;
 (help)
-_arguments "${_arguments_options[@]}" \
+_arguments "${_arguments_options[@]}" : \
 && ret=0
 ;;
         esac
@@ -255,60 +257,30 @@ _dnglab__analyze_commands() {
     local commands; commands=()
     _describe -t commands 'dnglab analyze commands' commands "$@"
 }
-(( $+functions[_dnglab__help__analyze_commands] )) ||
-_dnglab__help__analyze_commands() {
-    local commands; commands=()
-    _describe -t commands 'dnglab help analyze commands' commands "$@"
-}
 (( $+functions[_dnglab__cameras_commands] )) ||
 _dnglab__cameras_commands() {
     local commands; commands=()
     _describe -t commands 'dnglab cameras commands' commands "$@"
-}
-(( $+functions[_dnglab__help__cameras_commands] )) ||
-_dnglab__help__cameras_commands() {
-    local commands; commands=()
-    _describe -t commands 'dnglab help cameras commands' commands "$@"
 }
 (( $+functions[_dnglab__convert_commands] )) ||
 _dnglab__convert_commands() {
     local commands; commands=()
     _describe -t commands 'dnglab convert commands' commands "$@"
 }
-(( $+functions[_dnglab__help__convert_commands] )) ||
-_dnglab__help__convert_commands() {
-    local commands; commands=()
-    _describe -t commands 'dnglab help convert commands' commands "$@"
-}
 (( $+functions[_dnglab__extract_commands] )) ||
 _dnglab__extract_commands() {
     local commands; commands=()
     _describe -t commands 'dnglab extract commands' commands "$@"
-}
-(( $+functions[_dnglab__help__extract_commands] )) ||
-_dnglab__help__extract_commands() {
-    local commands; commands=()
-    _describe -t commands 'dnglab help extract commands' commands "$@"
 }
 (( $+functions[_dnglab__ftpserver_commands] )) ||
 _dnglab__ftpserver_commands() {
     local commands; commands=()
     _describe -t commands 'dnglab ftpserver commands' commands "$@"
 }
-(( $+functions[_dnglab__help__ftpserver_commands] )) ||
-_dnglab__help__ftpserver_commands() {
-    local commands; commands=()
-    _describe -t commands 'dnglab help ftpserver commands' commands "$@"
-}
 (( $+functions[_dnglab__gui_commands] )) ||
 _dnglab__gui_commands() {
     local commands; commands=()
     _describe -t commands 'dnglab gui commands' commands "$@"
-}
-(( $+functions[_dnglab__help__gui_commands] )) ||
-_dnglab__help__gui_commands() {
-    local commands; commands=()
-    _describe -t commands 'dnglab help gui commands' commands "$@"
 }
 (( $+functions[_dnglab__help_commands] )) ||
 _dnglab__help_commands() {
@@ -325,6 +297,36 @@ _dnglab__help_commands() {
     )
     _describe -t commands 'dnglab help commands' commands "$@"
 }
+(( $+functions[_dnglab__help__analyze_commands] )) ||
+_dnglab__help__analyze_commands() {
+    local commands; commands=()
+    _describe -t commands 'dnglab help analyze commands' commands "$@"
+}
+(( $+functions[_dnglab__help__cameras_commands] )) ||
+_dnglab__help__cameras_commands() {
+    local commands; commands=()
+    _describe -t commands 'dnglab help cameras commands' commands "$@"
+}
+(( $+functions[_dnglab__help__convert_commands] )) ||
+_dnglab__help__convert_commands() {
+    local commands; commands=()
+    _describe -t commands 'dnglab help convert commands' commands "$@"
+}
+(( $+functions[_dnglab__help__extract_commands] )) ||
+_dnglab__help__extract_commands() {
+    local commands; commands=()
+    _describe -t commands 'dnglab help extract commands' commands "$@"
+}
+(( $+functions[_dnglab__help__ftpserver_commands] )) ||
+_dnglab__help__ftpserver_commands() {
+    local commands; commands=()
+    _describe -t commands 'dnglab help ftpserver commands' commands "$@"
+}
+(( $+functions[_dnglab__help__gui_commands] )) ||
+_dnglab__help__gui_commands() {
+    local commands; commands=()
+    _describe -t commands 'dnglab help gui commands' commands "$@"
+}
 (( $+functions[_dnglab__help__help_commands] )) ||
 _dnglab__help__help_commands() {
     local commands; commands=()
@@ -335,15 +337,15 @@ _dnglab__help__lenses_commands() {
     local commands; commands=()
     _describe -t commands 'dnglab help lenses commands' commands "$@"
 }
-(( $+functions[_dnglab__lenses_commands] )) ||
-_dnglab__lenses_commands() {
-    local commands; commands=()
-    _describe -t commands 'dnglab lenses commands' commands "$@"
-}
 (( $+functions[_dnglab__help__makedng_commands] )) ||
 _dnglab__help__makedng_commands() {
     local commands; commands=()
     _describe -t commands 'dnglab help makedng commands' commands "$@"
+}
+(( $+functions[_dnglab__lenses_commands] )) ||
+_dnglab__lenses_commands() {
+    local commands; commands=()
+    _describe -t commands 'dnglab lenses commands' commands "$@"
 }
 (( $+functions[_dnglab__makedng_commands] )) ||
 _dnglab__makedng_commands() {
