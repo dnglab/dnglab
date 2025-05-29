@@ -101,3 +101,27 @@ make = "Voigtlander"
 model = "APO-LANTHAR 35mm F2 Aspherical"
 focal_range = [[35, 1], [35, 1]]
 aperture_range = [[2, 1], [2, 1]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 51007
+make = "Voigtlander"
+model = "NOKTON 50mm F1 Aspherical"
+focal_range = [[50, 1], [50, 1]]
+aperture_range = [[1, 1], [1, 1]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 51008
+make = "Voigtlander"
+model = "NOKTON 75mm F1.5 Aspherical"
+focal_range = [[75, 1], [75, 1]]
+aperture_range = [[15, 10], [15, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 51009
+make = "Voigtlander"
+model = "NOKTON 28mm F1.5 Aspherical"
+focal_range = [[28, 1], [28, 1]]
+aperture_range = [[15, 10], [15, 10]]
