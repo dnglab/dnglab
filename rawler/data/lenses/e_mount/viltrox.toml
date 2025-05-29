@@ -21,3 +21,11 @@ make = "Viltrox"
 model = "56mm F1.4 E"
 focal_range = [[56, 1], [56, 1]]
 aperture_range = [[14, 10], [14, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 61761
+make = "Viltrox"
+model = "28mm F4.5 FE"
+focal_range = [[28, 1], [28, 1]]
+aperture_range = [[45, 10], [45, 10]]

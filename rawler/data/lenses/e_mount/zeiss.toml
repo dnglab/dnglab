@@ -101,3 +101,19 @@ make = "Zeiss"
 model = "Loxia 25mm F2.4"
 focal_range = [[25, 1], [25, 1]]
 aperture_range = [[24, 10], [24, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 51072
+make = "Zeiss"
+model = "Otus ML 50mm F1.4"
+focal_range = [[50, 1], [50, 1]]
+aperture_range = [[14, 10], [14, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 51073
+make = "Zeiss"
+model = "Otus ML 85mm F1.4"
+focal_range = [[85, 1], [85, 1]]
+aperture_range = [[14, 10], [14, 10]]

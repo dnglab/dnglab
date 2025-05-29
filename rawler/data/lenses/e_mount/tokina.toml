@@ -21,3 +21,11 @@ make = "Tokina"
 model = "FiRIN 100mm F2.8 FE MACRO"
 focal_range = [[100, 1], [100, 1]]
 aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 49714
+make = "Tokina"
+model = "atx-m 11-18mm F2.8 E"
+focal_range = [[11, 1], [18, 1]]
+aperture_range = [[28, 10], [28, 10]]

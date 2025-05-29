@@ -592,3 +592,67 @@ make = "Sony"
 model = "FE 600mm F4 GM OSS + 2X Teleconverter"
 focal_range = [[600, 1], [600, 1]]
 aperture_range = [[4, 1], [4, 1]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 33085
+make = "Sony"
+model = "FE 70-200mm F2.8 GM OSS II + 1.4X Teleconverter"
+focal_range = [[70, 1], [200, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 33086
+make = "Sony"
+model = "FE 70-200mm F2.8 GM OSS II + 2X Teleconverter"
+focal_range = [[70, 1], [200, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 33087
+make = "Sony"
+model = "FE 70-200mm F4 Macro G OSS II + 1.4X Teleconverter"
+focal_range = [[70, 1], [200, 1]]
+aperture_range = [[4, 1], [4, 1]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 33088
+make = "Sony"
+model = "FE 70-200mm F4 Macro G OSS II + 2X Teleconverter"
+focal_range = [[70, 1], [200, 1]]
+aperture_range = [[4, 1], [4, 1]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 33089
+make = "Sony"
+model = "FE 300mm F2.8 GM OSS + 1.4X Teleconverter"
+focal_range = [[300, 1], [300, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 33090
+make = "Sony"
+model = "FE 300mm F2.8 GM OSS + 2X Teleconverter"
+focal_range = [[300, 1], [300, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 33091
+make = "Sony"
+model = "FE 400-800mm F6.3-8 G OSS + 1.4X Teleconverter"
+focal_range = [[400, 1], [800, 1]]
+aperture_range = [[63, 10], [8, 1]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 33092
+make = "Sony"
+model = "FE 400-800mm F6.3-8 G OSS + 2X Teleconverter"
+focal_range = [[400, 1], [800, 1]]
+aperture_range = [[63, 10], [8, 1]]

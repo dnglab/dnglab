@@ -109,3 +109,27 @@ make = "Tamron"
 model = "28-75mm F2.8 Di III VXD G2"
 focal_range = [[28, 1], [75, 1]]
 aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 49471
+make = "Tamron"
+model = "50-400mm F4.5-6.3 Di III VC VXD"
+focal_range = [[50, 1], [400, 1]]
+aperture_range = [[45, 10], [63, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 49472
+make = "Tamron"
+model = "20-40mm F2.8 Di III VXD"
+focal_range = [[20, 1], [40, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 49473
+make = "Tamron"
+model = "Tamron 17-50mm F4 Di III VXD2"
+focal_range = [[17, 1], [50, 1]]
+aperture_range = [[4, 1], [4, 1]]

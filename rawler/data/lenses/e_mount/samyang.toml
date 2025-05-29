@@ -141,3 +141,11 @@ make = "Samyang"
 model = "AF 50mm F1.4 II"
 focal_range = [[50, 1], [50, 1]]
 aperture_range = [[14, 10], [14, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 51518
+make = "Samyang"
+model = "Samyang AF 135mm F1.8"
+focal_range = [[135, 1], [135, 1]]
+aperture_range = [[18, 10], [18, 10]]
