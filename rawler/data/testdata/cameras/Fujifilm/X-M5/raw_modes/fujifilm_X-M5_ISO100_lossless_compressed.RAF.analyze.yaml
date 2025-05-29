@@ -1,0 +1,130 @@
+---
+file:
+  fileSize: 34590960
+  fileName: fujifilm_X-M5_ISO100_lossless_compressed.RAF
+  digest: c1cae7e39d97787a244036b9fcfd53fe
+data:
+  metadata:
+    rawParams:
+      rawWidth: 6336
+      rawHeight: 4182
+      bitDepth: 16
+      cropArea:
+        p:
+          x: 6
+          y: 13
+        d:
+          w: 6240
+          h: 4160
+      activeArea:
+        p:
+          x: 0
+          y: 5
+        d:
+          w: 6252
+          h: 4176
+      blacklevels:
+        levels:
+          - 1023/1
+          - 1023/1
+          - 1023/1
+          - 1023/1
+          - 1023/1
+          - 1023/1
+          - 1023/1
+          - 1023/1
+          - 1023/1
+          - 1023/1
+          - 1023/1
+          - 1023/1
+          - 1023/1
+          - 1023/1
+          - 1023/1
+          - 1023/1
+          - 1023/1
+          - 1023/1
+          - 1023/1
+          - 1023/1
+          - 1023/1
+          - 1023/1
+          - 1023/1
+          - 1023/1
+          - 1023/1
+          - 1023/1
+          - 1023/1
+          - 1023/1
+          - 1023/1
+          - 1023/1
+          - 1023/1
+          - 1023/1
+          - 1023/1
+          - 1023/1
+          - 1023/1
+          - 1023/1
+        cpp: 1
+        width: 6
+        height: 6
+      whitelevels:
+        - 16383
+      wbCoeffs:
+        - 2.0331125
+        - 1.0
+        - 1.7284768
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ""
+        artist: ""
+        lens_spec:
+          - 1800/100
+          - 5500/100
+          - 280/100
+          - 400/100
+        exposure_time: 10/420
+        fnumber: 400/100
+        aperture_value: 400/100
+        brightness_value: 509/100
+        iso_speed_ratings: 100
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: 1
+        exposure_bias: 0/100
+        date_time_original: "2025:03:08 17:35:40"
+        create_date: "2025:03:08 17:35:40"
+        modify_date: "2025:03:08 17:35:40"
+        exposure_program: 2
+        timezone_offset: ~
+        offset_time: "+08:00"
+        offset_time_original: "+08:00"
+        offset_time_digitized: "+08:00"
+        sub_sec_time: "97"
+        sub_sec_time_original: "97"
+        sub_sec_time_digitized: "97"
+        shutter_speed_value: 549/100
+        max_aperture_value: 300/100
+        subject_distance: ~
+        metering_mode: 5
+        light_source: 0
+        flash: 0
+        focal_length: 5500/100
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: 0
+        owner_name: ~
+        serial_number: 4D045596
+        lens_serial_number: 2AC22939
+        lens_make: FUJIFILM
+        lens_model: XF18-55mmF2.8-4 R LM OIS
+        gps: ~
+        user_comment: ~
+      model: X-M5
+      make: Fujifilm
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+
