@@ -16,7 +16,13 @@ data:
         d:
           w: 3936
           h: 2632
-      activeArea: ~
+      activeArea:
+        p:
+          x: 0
+          y: 0
+        d:
+          w: 3952
+          h: 2648
       blacklevels:
         levels:
           - 512/1
