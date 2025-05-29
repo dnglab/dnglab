@@ -289,6 +289,7 @@ pub enum ExifTag {
   ChromaticAberrationCorrParams = 0x7035,
   DistortionCorrection = 0x7036,
   DistortionCorrParams = 0x7037,
+  SonyRawImageSize = 0x7038,
   SonyCropTopLeft = 0x74c7,
   SonyCropSize = 0x74c8,
   ImageID = 0x800d,
