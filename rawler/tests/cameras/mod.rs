@@ -2073,6 +2073,12 @@ mod camera_dc_gh6_raw_modes {
   super::camera_file_check!("Panasonic", "DC-GH6", cam_dc_gh6_iso_800_8fmt_1x1_hires_rw2, "raw_modes/DC-GH6_ISO_800_8fmt_1x1_hires.RW2");
   super::camera_file_check!("Panasonic", "DC-GH6", cam_dc_gh6_iso_800_8fmt_4x3_rw2, "raw_modes/DC-GH6_ISO_800_8fmt_4x3.RW2");
 }
+mod camera_dc_gh7_raw_modes {
+  super::camera_file_check!("Panasonic", "DC-GH7", cam_dc_gh7_iso_100_8fmt_3x2_rw2, "raw_modes/DC-GH7_ISO_100_8fmt_3x2.RW2");
+  super::camera_file_check!("Panasonic", "DC-GH7", cam_dc_gh7_iso_100_8fmt_4x3_rw2, "raw_modes/DC-GH7_ISO_100_8fmt_4x3.RW2");
+  super::camera_file_check!("Panasonic", "DC-GH7", cam_dc_gh7_iso_100_8fmt_1x1_rw2, "raw_modes/DC-GH7_ISO_100_8fmt_1x1.RW2");
+  super::camera_file_check!("Panasonic", "DC-GH7", cam_dc_gh7_iso_100_8fmt_16x9_rw2, "raw_modes/DC-GH7_ISO_100_8fmt_16x9.RW2");
+}
 mod camera_dc_gx7mk3_raw_modes {
   super::camera_file_check!("Panasonic", "DC-GX7MK3", cam_dc_gx7mk3_iso_1600_panasonic_raw_1_5184x3888_rw2, "raw_modes/DC-GX7MK3_ISO_1600_Panasonic RAW 1_5184x3888.RW2");
 }
