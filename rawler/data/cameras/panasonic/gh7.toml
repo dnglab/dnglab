@@ -1,0 +1,22 @@
+make = "Panasonic"
+model = "DC-GH7"
+clean_make = "Panasonic"
+clean_model = "DC-GH7"
+whitepoint = 65535
+color_pattern = "RGGB"
+
+[cameras.color_matrix]
+A = [0.9858, -0.6012, 0.0868, -0.2993, 1.0167, 0.3295, -0.0141, 0.1371, 0.7194]
+D65 = [0.8573, -0.3575, -0.0678, -0.4252, 1.2079, 0.2451, -0.0808, 0.2524, 0.5936]
+
+[[cameras.modes]]
+mode = "4:3"
+
+[[cameras.modes]]
+mode = "1:1"
+
+[[cameras.modes]]
+mode = "16:9"
+
+[[cameras.modes]]
+mode = "3:2"

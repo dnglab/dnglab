@@ -1,0 +1,94 @@
+---
+file:
+  fileSize: 40815104
+  fileName: DC-GH7_ISO_100_8fmt_4x3.RW2
+  digest: 2915966ac172ea7c170fbebc992b6755
+data:
+  metadata:
+    rawParams:
+      rawWidth: 5792
+      rawHeight: 4352
+      bitDepth: 16
+      cropArea:
+        p:
+          x: 8
+          y: 8
+        d:
+          w: 5776
+          h: 4336
+      activeArea:
+        p:
+          x: 8
+          y: 8
+        d:
+          w: 5776
+          h: 4336
+      blacklevels:
+        levels:
+          - 2048/1
+          - 2048/1
+          - 2048/1
+          - 2048/1
+        cpp: 1
+        width: 2
+        height: 2
+      whitelevels:
+        - 65535
+      wbCoeffs:
+        - 2.5703125
+        - 1.0
+        - 1.4492188
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: MARC ANGELE
+        artist: MARC ANGELE
+        lens_spec: ~
+        exposure_time: 10/5000
+        fnumber: 56/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 100
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: 1
+        exposure_bias: 0/100
+        date_time_original: "2025:06:02 08:53:33"
+        create_date: "2025:06:02 08:53:33"
+        modify_date: ~
+        exposure_program: 2
+        timezone_offset: ~
+        offset_time: "+01:00"
+        offset_time_original: "+01:00"
+        offset_time_digitized: "+01:00"
+        sub_sec_time: "777"
+        sub_sec_time_original: "777"
+        sub_sec_time_digitized: "777"
+        shutter_speed_value: ~
+        max_aperture_value: 768/256
+        subject_distance: ~
+        metering_mode: 5
+        light_source: 0
+        flash: 16
+        focal_length: 120/10
+        image_number: ~
+        color_space: ~
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: ~
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: WF4JA001016
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+        user_comment: ~
+      model: DC-GH7
+      make: Panasonic
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+
