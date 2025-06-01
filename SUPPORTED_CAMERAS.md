@@ -6,6 +6,8 @@
 |ARRI                                | ALEXA                                   | ✅ Yes | all |  |
 |ARRI                                | ALEXA65                                 | ✅ Yes | all |  |
 |ARRI                                | ALEXALF                                 | ✅ Yes | all |  |
+|Apple                               | QuickTake 100                           | ✅ Yes | all |  |
+|Apple                               | QuickTake 150                           | ✅ Yes | all |  |
 |Canon                               | Canon EOS 1000D                         | ✅ Yes | all |  |
 |Canon                               | Canon EOS 100D                          | ✅ Yes | all |  |
 |Canon                               | Canon EOS 10D                           | ✅ Yes | all |  |
@@ -113,7 +115,6 @@
 |Canon                               | Canon EOS M6                            | ✅ Yes | all |  |
 |Canon                               | Canon EOS M6 Mark II                    | ✅ Yes | craw, raw |  |
 |Canon                               | Canon EOS R                             | ✅ Yes | craw, raw |  |
-|Canon                               | Canon EOS R1                            | ✅ Yes | craw, raw |  |
 |Canon                               | Canon EOS R10                           | ✅ Yes | craw, raw |  |
 |Canon                               | Canon EOS R100                          | ✅ Yes | craw, raw |  |
 |Canon                               | Canon EOS R3                            | ✅ Yes | craw, raw |  |
@@ -228,6 +229,7 @@
 |EASTMAN KODAK COMPANY               | KODAK P712 ZOOM DIGITAL CAMERA          | ✅ Yes | all |  |
 |EASTMAN KODAK COMPANY               | KODAK P880 ZOOM DIGITAL CAMERA          | ✅ Yes | all |  |
 |Eastman Kodak Company               | Kodak DC120 ZOOM Digital Camera         | ✅ Yes | all |  |
+|Eastman Kodak Company               | Kodak Digital Science DC50 Zoom Camera  | ✅ Yes | all |  |
 |FUJIFILM                            | DBP for GX680                           | ✅ Yes | all |  |
 |FUJIFILM                            | FinePix E550                            | ✅ Yes | all |  |
 |FUJIFILM                            | FinePix E900                            | ✅ Yes | all |  |
@@ -278,6 +280,7 @@
 |FUJIFILM                            | X-H2                                    | ✅ Yes | all |  |
 |FUJIFILM                            | X-H2S                                   | ✅ Yes | all |  |
 |FUJIFILM                            | X-M1                                    | ✅ Yes | all |  |
+|FUJIFILM                            | X-M5                                    | ✅ Yes | all |  |
 |FUJIFILM                            | X-Pro1                                  | ✅ Yes | all |  |
 |FUJIFILM                            | X-Pro2                                  | ✅ Yes | all |  |
 |FUJIFILM                            | X-Pro3                                  | ✅ Yes | all |  |
@@ -449,6 +452,7 @@
 |NIKON CORPORATION                   | NIKON Z 9                               | ✅ Yes | 12bit, 14bit |  |
 |NIKON CORPORATION                   | NIKON Z f                               | ✅ Yes | 14bit |  |
 |NIKON CORPORATION                   | NIKON Z fc                              | ✅ Yes | 12bit, 14bit |  |
+|NIKON CORPORATION                   | NIKON Z50_2                             | ✅ Yes | 14bit |  |
 |OLYMPUS CORPORATION                 | C5060WZ                                 | ✅ Yes | all |  |
 |OLYMPUS CORPORATION                 | C8080WZ                                 | ✅ Yes | all |  |
 |OLYMPUS CORPORATION                 | E-1                                     | ✅ Yes | all |  |
@@ -551,7 +555,6 @@
 |Panasonic                           | DC-GH5M2                                | ✅ Yes | 4:3 |  |
 |Panasonic                           | DC-GH5S                                 | ✅ Yes | 16:9, 1:1, 3:2, 4:3 |  |
 |Panasonic                           | DC-GH6                                  | ✅ Yes | 16:9, 1:1, 3:2, 4:3 |  |
-|Panasonic                           | DC-GH7                                  | ✅ Yes | 16:9, 1:1, 3:2, 4:3 |  |
 |Panasonic                           | DC-GX7MK3                               | ✅ Yes | 16:9, 1:1, 3:2, 4:3 |  |
 |Panasonic                           | DC-GX800                                | ✅ Yes | 4:3 |  |
 |Panasonic                           | DC-GX850                                | ✅ Yes | 4:3 |  |
@@ -668,8 +671,11 @@
 |Phase One A/S                       | IQ3 100MP                               | ✅ Yes | all |  |
 |Phase One A/S                       | IQ3 100MP Trichr                        | ✅ Yes | all |  |
 |Phase One A/S                       | P20+                                    | ✅ Yes | all |  |
+|Phase One A/S                       | P25                                     | ✅ Yes | all |  |
 |Phase One A/S                       | P25+                                    | ✅ Yes | all |  |
 |Phase One A/S                       | P30                                     | ✅ Yes | all |  |
+|Phase One A/S                       | P45                                     | ✅ Yes | all |  |
+|Phase One A/S                       | P45+                                    | ✅ Yes | all |  |
 |Phase One A/S                       | P65+                                    | ✅ Yes | all |  |
 |Phase One A/S                       | iXU180                                  | ✅ Yes | all |  |
 |RICOH IMAGING COMPANY, LTD.         | PENTAX 645Z                             | ✅ Yes | all |  |
@@ -805,6 +811,7 @@
 |SONY                                | SLT-A77V                                | ✅ Yes | all |  |
 |SONY                                | SLT-A99                                 | ✅ Yes | all |  |
 |SONY                                | SLT-A99V                                | ✅ Yes | all |  |
+|SONY                                | UMC-R10C                                | ✅ Yes | all |  |
 |SONY                                | ZV-1                                    | ✅ Yes | all |  |
 |SONY                                | ZV-E1                                   | ✅ Yes | all |  |
 |SONY                                | ZV-E10                                  | ✅ Yes | all |  |
