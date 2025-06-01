@@ -1,4 +1,5 @@
-use criterion::{Criterion, black_box, criterion_group, criterion_main};
+use criterion::{Criterion, criterion_group, criterion_main};
+use std::hint::black_box;
 use rawler::ljpeg92::LjpegCompressor;
 
 fn generate_data(w: usize, h: usize, ncomp: usize) -> Vec<u16> {

@@ -38,7 +38,7 @@ impl<'mdat> RiceDecoder<'mdat> {
   /// All 0-bits are consumed.
   #[inline(always)]
   pub(super) fn bitstream_zeros(&mut self) -> Result<u32> {
-    Ok(self.bitpump.read_unary1()?)
+    Ok(self.bitpump.read_unary::<1>()?)
   }
 
   /// Return the requested bits
@@ -47,7 +47,7 @@ impl<'mdat> RiceDecoder<'mdat> {
   #[inline(always)]
   pub(super) fn bitstream_get_bits(&mut self, bits: u32) -> Result<u32> {
     debug_assert!(bits <= 32);
-    Ok(self.bitpump.read(bits)?)
+    Ok(self.bitpump.read_var(bits)?)
   }
 
   /// Golomb-Rice decoding
