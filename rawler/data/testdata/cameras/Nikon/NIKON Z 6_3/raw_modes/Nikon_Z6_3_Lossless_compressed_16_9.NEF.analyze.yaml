@@ -1,0 +1,151 @@
+---
+file:
+  fileSize: 28255075
+  fileName: Nikon_Z6_3_Lossless_compressed_16_9.NEF
+  digest: cd3b335f3b03fd93d3ae3d67fc755eef
+data:
+  metadata:
+    rawParams:
+      rawWidth: 6064
+      rawHeight: 3416
+      bitDepth: 16
+      cropArea:
+        p:
+          x: 8
+          y: 8
+        d:
+          w: 6048
+          h: 3400
+      activeArea:
+        p:
+          x: 0
+          y: 0
+        d:
+          w: 6064
+          h: 3416
+      blacklevels:
+        levels:
+          - 1008/1
+          - 1008/1
+          - 1008/1
+          - 1008/1
+        cpp: 1
+        width: 2
+        height: 2
+      whitelevels:
+        - 15892
+      wbCoeffs:
+        - 1.859375
+        - 1.0
+        - 1.6367188
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ""
+        artist: ""
+        lens_spec:
+          - 24/1
+          - 200/1
+          - 4/1
+          - 63/10
+        exposure_time: 10/1000
+        fnumber: 900/100
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 200
+        iso_speed: ~
+        recommended_exposure_index: 200
+        sensitivity_type: 2
+        exposure_bias: 0/6
+        date_time_original: "2024:06:29 15:37:26"
+        create_date: "2024:06:29 15:37:26"
+        modify_date: "2024:06:29 15:37:26"
+        exposure_program: 0
+        timezone_offset: ~
+        offset_time: "-04:00"
+        offset_time_original: "-04:00"
+        offset_time_digitized: "-04:00"
+        sub_sec_time: "09"
+        sub_sec_time_original: "09"
+        sub_sec_time_digitized: "09"
+        shutter_speed_value: ~
+        max_aperture_value: ~
+        subject_distance: ~
+        metering_mode: 5
+        light_source: 0
+        flash: 0
+        focal_length: 860/10
+        image_number: ~
+        color_space: ~
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: 0
+        owner_name: ~
+        serial_number: "3001011"
+        lens_serial_number: "20194128"
+        lens_make: Nikon
+        lens_model: Nikkor Z 24-200mm f/4-6.3 VR
+        gps:
+          gps_version_id:
+            - 2
+            - 3
+            - 0
+            - 0
+          gps_latitude_ref: ~
+          gps_latitude: ~
+          gps_longitude_ref: ~
+          gps_longitude: ~
+          gps_altitude_ref: ~
+          gps_altitude: ~
+          gps_timestamp: ~
+          gps_satellites: ~
+          gps_status: ~
+          gps_measure_mode: ~
+          gps_dop: ~
+          gps_speed_ref: ~
+          gps_speed: ~
+          gps_track_ref: ~
+          gps_track: ~
+          gps_img_direction_ref: ~
+          gps_img_direction: ~
+          gps_map_datum: ~
+          gps_dest_latitude_ref: ~
+          gps_dest_latitude: ~
+          gps_dest_longitude_ref: ~
+          gps_dest_longitude: ~
+          gps_dest_bearing_ref: ~
+          gps_dest_bearing: ~
+          gps_dest_distance_ref: ~
+          gps_dest_distance: ~
+          gps_processing_method: ~
+          gps_area_information: ~
+          gps_date_stamp: ~
+          gps_differential: ~
+          gps_h_positioning_error: ~
+        user_comment: ~
+      model: Z 6 3
+      make: Nikon
+      lens:
+        identifiers:
+          name: ~
+          id:
+            - 18
+            - 0
+          nikon_id: ~
+          olympus_id: ~
+        mount: Z-mount
+        lens_make: Nikon
+        lens_model: Nikkor Z 24-200mm f/4-6.3 VR
+        focal_range:
+          - 24/1
+          - 200/1
+        aperture_range:
+          - 4/1
+          - 63/10
+        lens_name: Nikon Nikkor Z 24-200mm f/4-6.3 VR
+      unique_image_id: ~
+      rating: ~
+

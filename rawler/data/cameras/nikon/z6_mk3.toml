@@ -1,0 +1,14 @@
+make = "NIKON CORPORATION"
+model = "NIKON Z6_3"
+clean_make = "Nikon"
+clean_model = "Z 6 3"
+color_pattern = "RGGB"
+active_area = [0, 0, 0, 0]
+
+[cameras.color_matrix]
+A = [1.3528, -0.7602, 0.0739, -0.4587, 1.2543, 0.228, -0.0273, 0.088, 0.8666]
+D65 = [1.1206, -0.4286, -0.0941, -0.4879, 1.2847, 0.2251, -0.0745, 0.1654, 0.7374]
+
+[[cameras.modes]]
+mode = "14bit"
+whitepoint = 15892
