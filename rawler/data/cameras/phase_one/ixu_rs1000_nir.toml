@@ -1,0 +1,11 @@
+make = "Phase One A/S"
+model = "iXU-RS1000 NIR"
+clean_make = "Phase One"
+clean_model = "iXU-RS1000 NIR"
+whitepoint = 65535
+color_pattern = "RGGB"
+active_area = [148, 120, 220, 24]
+
+[cameras.color_matrix]
+# matrix not verified, but no other available
+D65 = [0.8035, 0.0435, -0.0962, -0.6001, 1.3872, 0.2320, -0.1159, 0.3065, 0.5434]
