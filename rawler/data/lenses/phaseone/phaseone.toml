@@ -5,3 +5,11 @@ model = "150mm LS f/3.5"
 make = "Schneider"
 focal_range = [[150, 1], [150, 1]]
 aperture_range = [[35, 10], [35, 10]]
+
+[[lenses]]
+mount = "phaseone"
+key = "Rodenstock RS 50mm-Ar"
+model = "RS 50mm-Ar"
+make = "Rodenstock"
+focal_range = [[50, 1], [50, 1]]
+aperture_range = [[4, 1], [4, 1]]
