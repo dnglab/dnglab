@@ -783,6 +783,9 @@ mod camera_iq150_raw_modes {
 mod camera_ixm_rs150f_raw_modes {
   super::camera_file_check!("Phase One", "iXM-RS150F", cam_ixm_rs150f_iiq_sv2_iso_160_iiq, "raw_modes/iXM-RS150F_IIQ Sv2_ISO_160.IIQ");
 }
+mod camera_ixu_rs1000_nir_raw_modes {
+  super::camera_file_check!("Phase One", "iXU-RS1000 NIR", cam_ixu_rs1000_iiq, "raw_modes/iXU-RS1000.IIQ");
+}
 mod camera_p65_raw_modes {
   super::camera_file_check!("Phase One", "P65", cam_p65_plus_iiq_l_iso_200_iiq, "raw_modes/P65 Plus_IIQ L_ISO_200.IIQ");
   super::camera_file_check!("Phase One", "P65", cam_p65_plus_iiq_s_iso_200_iiq, "raw_modes/P65 Plus_IIQ S_ISO_200.IIQ");

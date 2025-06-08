@@ -1,0 +1,107 @@
+---
+file:
+  fileSize: 100404539
+  fileName: iXU-RS1000.IIQ
+  digest: 54d92d22c8b59bb253d6205875d81c31
+data:
+  metadata:
+    rawParams:
+      rawWidth: 11976
+      rawHeight: 8852
+      bitDepth: 16
+      cropArea: ~
+      activeArea:
+        p:
+          x: 148
+          y: 120
+        d:
+          w: 11608
+          h: 8708
+      blacklevels:
+        levels:
+          - 0/1
+          - 0/1
+          - 0/1
+          - 0/1
+        cpp: 1
+        width: 2
+        height: 2
+      whitelevels:
+        - 65535
+      wbCoeffs:
+        - 3.04
+        - 1.0
+        - 1.38
+        - ~
+    rawMetadata:
+      exif:
+        orientation: ~
+        copyright: ""
+        artist: ~
+        lens_spec:
+          - 50/1
+          - 50/1
+          - 4/1
+          - 4/1
+        exposure_time: 1000/1000000
+        fnumber: 560/100
+        aperture_value: 49709/10000
+        brightness_value: ~
+        iso_speed_ratings: 100
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: "-2999/1000"
+        date_time_original: "2025:04:27 08:53:49"
+        create_date: "2025:04:27 08:53:49"
+        modify_date: ~
+        exposure_program: 11
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: 996578/100000
+        max_aperture_value: ~
+        subject_distance: ~
+        metering_mode: ~
+        light_source: 1
+        flash: ~
+        focal_length: 500/10
+        image_number: ~
+        color_space: ~
+        flash_energy: ~
+        exposure_mode: ~
+        white_balance: 1
+        scene_capture_type: ~
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: Rodenstock
+        lens_model: RS 50mm-Ar
+        gps: ~
+        user_comment: ~
+      model: iXU-RS1000 NIR
+      make: Phase One
+      lens:
+        identifiers:
+          name: Rodenstock RS 50mm-Ar
+          id: ~
+          nikon_id: ~
+          olympus_id: ~
+        mount: phaseone
+        lens_make: Rodenstock
+        lens_model: RS 50mm-Ar
+        focal_range:
+          - 50/1
+          - 50/1
+        aperture_range:
+          - 4/1
+          - 4/1
+        lens_name: Rodenstock RS 50mm-Ar
+      unique_image_id: ~
+      rating: ~
+

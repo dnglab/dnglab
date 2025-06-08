@@ -210,6 +210,7 @@ cameras/Phase One/P30/raw_modes
 cameras/Phase One/IQ3 100MP Trichr/raw_modes
 cameras/Phase One/IQ150/raw_modes
 cameras/Phase One/iXM-RS150F/raw_modes
+cameras/Phase One/iXU-RS1000 NIR/raw_modes
 cameras/Phase One/P65/raw_modes
 cameras/Phase One/P20/raw_modes
 cameras/Phase One/P25/raw_modes
