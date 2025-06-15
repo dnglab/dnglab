@@ -1,0 +1,10 @@
+make = "FUJIFILM"
+model = "GFX100S II"
+clean_make = "Fujifilm"
+clean_model = "GFX 100S II"
+color_pattern = "RGGB"
+active_area = [0, 0, 144, 4]
+
+[cameras.color_matrix]
+A = [1.5656, -1.0088, 0.1263, -0.2871, 1.0498, 0.2752, 0.0065, 0.0436, 0.6714]
+D65 = [1.2806, -0.5779, -0.111, -0.3546, 1.1507, 0.2318, -0.0177, 0.0996, 0.5715]
