@@ -2761,6 +2761,14 @@ mod camera_gfx100s_raw_modes {
   super::camera_file_check!("Fujifilm", "GFX100S", cam_fujifilm_gfx100s_16bits_uncompress_4_3_raf, "raw_modes/Fujifilm-GFX100S-16bits-uncompress-4_3.RAF");
   super::camera_file_check!("Fujifilm", "GFX100S", cam_fujifilm_gfx100s_14bits_uncompress_4_3_raf, "raw_modes/Fujifilm-GFX100S-14bits-uncompress-4_3.RAF");
 }
+mod camera_gfx_100s_ii_raw_modes {
+  super::camera_file_check!("Fujifilm", "GFX 100S II", cam_gfx100sii_14bit_lossless_raf, "raw_modes/GFX100SII_14bit_lossless.RAF");
+  super::camera_file_check!("Fujifilm", "GFX 100S II", cam_gfx100sii_14bit_uncompressed_raf, "raw_modes/GFX100SII_14bit_uncompressed.RAF");
+  super::camera_file_check!("Fujifilm", "GFX 100S II", cam_gfx100sii_16bit_lossless_raf, "raw_modes/GFX100SII_16bit_lossless.RAF");
+  super::camera_file_check!("Fujifilm", "GFX 100S II", cam_gfx100sii_14bit_lossy_raf, "raw_modes/GFX100SII_14bit_lossy.RAF");
+  super::camera_file_check!("Fujifilm", "GFX 100S II", cam_gfx100sii_16bit_lossy_raf, "raw_modes/GFX100SII_16bit_lossy.RAF");
+  super::camera_file_check!("Fujifilm", "GFX 100S II", cam_gfx100sii_16bit_uncompressed_raf, "raw_modes/GFX100SII_16bit_uncompressed.RAF");
+}
 mod camera_gfx_50r_compressed {
   super::camera_file_check!("Fujifilm", "GFX 50R", cam_gfx_50r_iso_100_bitdepth_14_50_mib_raf, "compressed/GFX 50R_ISO_100_Bitdepth_14_50 MiB.RAF");
 }
