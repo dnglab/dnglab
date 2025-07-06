@@ -5,8 +5,8 @@ use byteorder::{NativeEndian, WriteBytesExt};
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::{convert::Infallible, ffi::CString, fmt::Display, io::Write, num::TryFromIntError};
 use std::iter::Sum;
-use std::ops::Add;
 use num_integer::lcm;
+use std::ops;
 
 use super::{Result, TiffError};
 
@@ -56,46 +56,47 @@ impl Display for SRational {
   }
 }
 
-impl Add for Rational {
-  type Output = Self;
-
-  fn add(self, rhs: Self) -> Self::Output {
-    if self.d == rhs.d {
-      return Self::new(self.n + rhs.n, self.d);
-    }
-
-    let lcm = lcm(self.d, rhs.d);
-    let lhs_n = self.n * (lcm / self.d);
-    let rhs_n = rhs.n * (lcm / rhs.d);
-
-    Self::new(lhs_n + rhs_n, lcm)
+impl_op_ex!(+ |lhs: &Rational, rhs: &Rational| -> Rational {
+  if lhs.d == rhs.d {
+    return Rational::new(lhs.n + rhs.n, lhs.d);
   }
-}
+
+  let lcm = lcm(lhs.d, rhs.d);
+  let lhs_n = lhs.n * (lcm / lhs.d);
+  let rhs_n = rhs.n * (lcm / rhs.d);
+
+  Rational::new(lhs_n + rhs_n, lcm)
+});
+
+impl_op_ex!(+ |lhs: &SRational, rhs: &SRational| -> SRational {
+  if lhs.d == rhs.d {
+    return SRational::new(lhs.n + rhs.n, lhs.d);
+  }
+
+  let lcm = lcm(lhs.d, rhs.d);
+  let lhs_n = lhs.n * (lcm / lhs.d);
+  let rhs_n = rhs.n * (lcm / rhs.d);
+
+  SRational::new(lhs_n + rhs_n, lcm)
+});
 
 impl Sum for Rational {
   fn sum<I: Iterator<Item=Self>>(iter: I) -> Self {
     iter.fold(Self{n: 0, d: 1}, |acc, x| acc + x)
   }
 }
-
-impl Add for SRational {
-  type Output = Self;
-
-  fn add(self, rhs: Self) -> Self::Output {
-    if self.d == rhs.d {
-      return Self::new(self.n + rhs.n, self.d);
-    }
-
-    let lcm = lcm(self.d, rhs.d);
-    let lhs_n = self.n * (lcm / self.d);
-    let rhs_n = rhs.n * (lcm / rhs.d);
-
-    Self::new(lhs_n + rhs_n, lcm)
+impl<'a> Sum<&'a Rational> for Rational {
+  fn sum<I: Iterator<Item=&'a Self>>(iter: I) -> Self {
+    iter.fold(Self{n: 0, d: 1}, |acc, x| acc + x)
   }
 }
-
 impl Sum for SRational {
   fn sum<I: Iterator<Item=Self>>(iter: I) -> Self {
+    iter.fold(Self{n: 0, d: 1}, |acc, x| acc + x)
+  }
+}
+impl<'a> Sum<&'a SRational> for SRational {
+  fn sum<I: Iterator<Item=&'a Self>>(iter: I) -> Self {
     iter.fold(Self{n: 0, d: 1}, |acc, x| acc + x)
   }
 }
