@@ -1395,4 +1395,20 @@ mod tests {
     let b = SRational::new(-300, 10);
     assert!(a < b);
   }
+
+  #[test]
+  fn rational_sum() {
+    let a = Rational::new(1, 2);
+    let b = Rational::new(1, 4);
+
+    assert_eq!([a, b].iter().sum::<Rational>(), Rational::new(3, 4));
+  }
+
+  #[test]
+  fn srational_sum() {
+    let a = SRational::new(1, 2);
+    let b = SRational::new(-3, 4);
+
+    assert_eq!([a, b].iter().sum::<SRational>(), SRational::new(-1, 4));
+  }
 }
