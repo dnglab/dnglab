@@ -13,3 +13,6 @@ mode = "raw"
 
 [[cameras.modes]]
 mode = "craw"
+
+[[cameras.modes]]
+mode = "crm"

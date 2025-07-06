@@ -1,0 +1,130 @@
+---
+file:
+  fileSize: 387705964
+  fileName: Canon_1DX_MK3_CRM_ISO_800_RAW.CRM
+  digest: 989fc46de28c57f5e55fa678791180ba
+data:
+  metadata:
+    rawParams:
+      rawWidth: 5496
+      rawHeight: 2904
+      bitDepth: 16
+      cropArea:
+        p:
+          x: 12
+          y: 9
+        d:
+          w: 5472
+          h: 2886
+      activeArea:
+        p:
+          x: 12
+          y: 9
+        d:
+          w: 5472
+          h: 2886
+      blacklevels:
+        levels:
+          - 1024/1
+          - 1024/1
+          - 1024/1
+          - 1024/1
+        cpp: 1
+        width: 2
+        height: 2
+      whitelevels:
+        - 14888
+      wbCoeffs:
+        - 1.6816406
+        - 1.0
+        - 1.8056641
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: CC-0
+        artist: ""
+        lens_spec: ~
+        exposure_time: 1/30
+        fnumber: 0/1
+        aperture_value: 2147483648/1
+        brightness_value: ~
+        iso_speed_ratings: 800
+        iso_speed: ~
+        recommended_exposure_index: 800
+        sensitivity_type: 2
+        exposure_bias: 0/1
+        date_time_original: "2025:07:02 10:02:13"
+        create_date: "2025:07:02 10:02:13"
+        modify_date: "2025:07:02 10:02:13"
+        exposure_program: 1
+        timezone_offset: ~
+        offset_time: "+01:00"
+        offset_time_original: "+01:00"
+        offset_time_digitized: "+01:00"
+        sub_sec_time: "98"
+        sub_sec_time_original: "98"
+        sub_sec_time_digitized: "98"
+        shutter_speed_value: 327680/65536
+        max_aperture_value: ~
+        subject_distance: ~
+        metering_mode: 2
+        light_source: ~
+        flash: 0
+        focal_length: 0/1
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 1
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ""
+        serial_number: "033032001176"
+        lens_serial_number: "0000000000"
+        lens_make: ~
+        lens_model: ~
+        gps:
+          gps_version_id:
+            - 2
+            - 3
+            - 0
+            - 0
+          gps_latitude_ref: ~
+          gps_latitude: ~
+          gps_longitude_ref: ~
+          gps_longitude: ~
+          gps_altitude_ref: ~
+          gps_altitude: ~
+          gps_timestamp: ~
+          gps_satellites: ~
+          gps_status: ~
+          gps_measure_mode: ~
+          gps_dop: ~
+          gps_speed_ref: ~
+          gps_speed: ~
+          gps_track_ref: ~
+          gps_track: ~
+          gps_img_direction_ref: ~
+          gps_img_direction: ~
+          gps_map_datum: ~
+          gps_dest_latitude_ref: ~
+          gps_dest_latitude: ~
+          gps_dest_longitude_ref: ~
+          gps_dest_longitude: ~
+          gps_dest_bearing_ref: ~
+          gps_dest_bearing: ~
+          gps_dest_distance_ref: ~
+          gps_dest_distance: ~
+          gps_processing_method: ~
+          gps_area_information: ~
+          gps_date_stamp: ~
+          gps_differential: ~
+          gps_h_positioning_error: ~
+        user_comment: ~
+      model: EOS-1D X Mark III
+      make: Canon
+      lens: ~
+      unique_image_id: 114168144909350797302523421517834111
+      rating: ~
+
