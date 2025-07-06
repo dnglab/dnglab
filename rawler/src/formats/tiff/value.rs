@@ -4,6 +4,9 @@
 use byteorder::{NativeEndian, WriteBytesExt};
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::{convert::Infallible, ffi::CString, fmt::Display, io::Write, num::TryFromIntError};
+use std::iter::Sum;
+use std::ops::Add;
+use num_integer::lcm;
 
 use super::{Result, TiffError};
 
@@ -50,6 +53,50 @@ impl Display for Rational {
 impl Display for SRational {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
     f.write_fmt(format_args!("{}/{}", self.n, self.d))
+  }
+}
+
+impl Add for Rational {
+  type Output = Self;
+
+  fn add(self, rhs: Self) -> Self::Output {
+    if self.d == rhs.d {
+      return Self::new(self.n + rhs.n, self.d);
+    }
+
+    let lcm = lcm(self.d, rhs.d);
+    let lhs_n = self.n * (lcm / self.d);
+    let rhs_n = rhs.n * (lcm / rhs.d);
+
+    Self::new(lhs_n + rhs_n, lcm)
+  }
+}
+
+impl Sum for Rational {
+  fn sum<I: Iterator<Item=Self>>(iter: I) -> Self {
+    iter.fold(Self{n: 0, d: 1}, |acc, x| acc + x)
+  }
+}
+
+impl Add for SRational {
+  type Output = Self;
+
+  fn add(self, rhs: Self) -> Self::Output {
+    if self.d == rhs.d {
+      return Self::new(self.n + rhs.n, self.d);
+    }
+
+    let lcm = lcm(self.d, rhs.d);
+    let lhs_n = self.n * (lcm / self.d);
+    let rhs_n = rhs.n * (lcm / rhs.d);
+
+    Self::new(lhs_n + rhs_n, lcm)
+  }
+}
+
+impl Sum for SRational {
+  fn sum<I: Iterator<Item=Self>>(iter: I) -> Self {
+    iter.fold(Self{n: 0, d: 1}, |acc, x| acc + x)
   }
 }
 

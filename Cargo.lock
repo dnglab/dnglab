@@ -1778,6 +1778,7 @@ dependencies = [
  "md5",
  "memmap2",
  "multiversion",
+ "num-integer",
  "num_enum",
  "rayon",
  "rustc_version",
