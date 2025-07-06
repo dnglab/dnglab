@@ -56,6 +56,12 @@ mod camera_eos_1d_x_mark_iii_raw_modes {
   super::camera_file_check!("Canon", "EOS-1D X Mark III", cam_canon_eos_1d_x_mark_iii_raw_iso_100_nocrop_nodual_cr3, "raw_modes/Canon EOS-1D X Mark III_RAW_ISO_100_nocrop_nodual.CR3");
   super::camera_file_check!("Canon", "EOS-1D X Mark III", cam_canon_eos_1d_x_mark_iii_craw_iso_100_nocrop_nodual_cr3, "raw_modes/Canon EOS-1D X Mark III_CRAW_ISO_100_nocrop_nodual.CR3");
 }
+mod camera_eos_1d_x_mark_iii_crm {
+  super::camera_file_check!("Canon", "EOS-1D X Mark III", cam_canon_1dx_mk3_crm_iso_800_raw_crm, "crm/Canon_1DX_MK3_CRM_ISO_800_RAW.CRM");
+  super::camera_file_check!("Canon", "EOS-1D X Mark III", cam_canon_1dx_mk3_crm_iso_800_lite_raw_crm, "crm/Canon_1DX_MK3_CRM_ISO_800_LITE_RAW.CRM");
+  super::camera_file_check!("Canon", "EOS-1D X Mark III", cam_canon_1dx_mk3_crm_iso_100_lite_raw_crm, "crm/Canon_1DX_MK3_CRM_ISO_100_LITE_RAW.CRM");
+  super::camera_file_check!("Canon", "EOS-1D X Mark III", cam_canon_1dx_mk3_crm_iso_max_lite_raw_crm, "crm/Canon_1DX_MK3_CRM_ISO_MAX_LITE_RAW.CRM");
+}
 mod camera_eos_1d_x_mark_ii_raw_modes {
   super::camera_file_check!("Canon", "EOS-1D X Mark II", cam_canon_eos_1d_x_mark_ii_iso_500_mraw_cr2, "raw_modes/Canon EOS-1D X Mark II_ISO_500_mRAW.CR2");
   super::camera_file_check!("Canon", "EOS-1D X Mark II", cam_canon_eos_1d_x_mark_ii_iso_500_sraw_cr2, "raw_modes/Canon EOS-1D X Mark II_ISO_500_sRAW.CR2");
