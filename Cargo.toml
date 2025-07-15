@@ -6,6 +6,11 @@ members = [
 ]
 resolver = "2"
 
+
+[profile.bench]
+debug = true
+lto = "fat"
+
 [profile.release]
 opt-level = 3
 overflow-checks = false
