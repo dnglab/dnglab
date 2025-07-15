@@ -231,6 +231,17 @@ impl From<u32> for Rational {
   }
 }
 
+impl From<f32> for Rational {
+  fn from(value: f32) -> Self {
+    if value.is_sign_negative() {
+      panic!("Can not convert {} to Rational type", value);
+    }
+    let ratio = num::rational::Ratio::from_float(value).expect("Failed to convert float");
+    // TODO: This is a workaround, need to implement better routine
+    Self::new(ratio.numer().try_into().unwrap(), ratio.denom().try_into().unwrap())
+  }
+}
+
 impl Rational {
   pub fn new(n: u32, d: u32) -> Self {
     Self { n, d }
