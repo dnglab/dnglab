@@ -5,13 +5,33 @@ use rayon::prelude::*;
 
 use crate::{
   decoders::decode_threaded_prealloc,
+  formats::tiff::Rational,
   imgop::{Dim2, Point, Rect},
 };
 
-pub trait SubPixel: Default + Clone + Copy + Send + Sync {}
+pub trait SubPixel: Default + std::fmt::Debug + Clone + Copy + Send + Sync + Into<Rational> {
+  fn as_f32(self) -> f32;
+  fn as_u16(self) -> u16;
+}
 
-impl SubPixel for u16 {}
-impl SubPixel for f32 {}
+impl SubPixel for u16 {
+  fn as_f32(self) -> f32 {
+    self as f32
+  }
+
+  fn as_u16(self) -> u16 {
+    self as u16
+  }
+}
+impl SubPixel for f32 {
+  fn as_f32(self) -> f32 {
+    self as f32
+  }
+
+  fn as_u16(self) -> u16 {
+    self as u16
+  }
+}
 
 pub type LineMut<'a, T> = &'a mut [T];
 

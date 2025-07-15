@@ -20,12 +20,25 @@ macro_rules! camera_file_check {
     #[test]
     fn $test() -> std::result::Result<(), Box<dyn std::error::Error>> {
       //crate::init_test_logger();
-      crate::common::check_camera_raw_file_conversion($make, $model, $file)
+      crate::common::check_sample_raw_file_conversion("cameras", $make, $model, $file)
     }
   };
 }
 
 pub(crate) use camera_file_check;
+
+macro_rules! simple_file_check {
+  ($test:ident, $file:expr, $checksum:expr) => {
+    #[allow(non_snake_case)]
+    #[test]
+    fn $test() -> std::result::Result<(), Box<dyn std::error::Error>> {
+      //crate::init_test_logger();
+      crate::common::check_sample_file($file, $checksum)
+    }
+  };
+}
+
+pub(crate) use simple_file_check;
 
 pub(crate) fn rawdb_path() -> PathBuf {
   PathBuf::from(std::env::var("RAWLER_RAWDB").expect("RAWLER_RAWDB variable must be set in order to run RAW test!"))
@@ -42,16 +55,16 @@ pub(crate) fn check_md5_equal(digest: [u8; 16], expected: &str) {
 
 /// Generic function to check camera raw files against
 /// pre-generated stats and pixel files.
-pub(crate) fn check_camera_raw_file_conversion(make: &str, model: &str, sample: &str) -> std::result::Result<(), Box<dyn std::error::Error>> {
+pub(crate) fn check_sample_raw_file_conversion(category: &str, make: &str, model: &str, sample: &str) -> std::result::Result<(), Box<dyn std::error::Error>> {
   let rawdb = PathBuf::from(std::env::var("RAWLER_RAWDB").expect("RAWLER_RAWDB variable must be set in order to run RAW test!"));
 
   let mut camera_rawdb = rawdb.clone();
-  camera_rawdb.push("cameras");
+  camera_rawdb.push(category);
 
   let mut testfiles = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
   testfiles.push("data/testdata");
 
-  let base_path = testfiles.join("cameras").join(make).join(model);
+  let base_path = testfiles.join(category).join(make).join(model);
 
   let raw_file = camera_rawdb.join(make).join(model).join(sample);
   let filename = raw_file.file_name().map(|name| name.to_os_string()).expect("Filename must by OS string compatible");
@@ -79,6 +92,38 @@ pub(crate) fn check_camera_raw_file_conversion(make: &str, model: &str, sample: 
 
   // Validate pixel data
   let old_digest_str = std::fs::read_to_string(digest_file)?;
+  let old_digest = Digest(TryInto::<[u8; 16]>::try_into(hex::decode(old_digest_str.trim()).expect("Malformed MD5 digest")).expect("Must be [u8; 16]"));
+  let (_, _, _cpp, buf) = extract_raw_pixels(&raw_file, &RawDecodeParams::default()).unwrap();
+  let v: Vec<u8> = buf.iter().flat_map(|p| p.to_le_bytes()).collect();
+  let new_digest = md5::compute(v);
+  assert_eq!(old_digest, new_digest, "Old and new raw pixel digest not match!");
+
+  // Convert to DNG with default params
+  let params = ConvertParams {
+    embedded: false,
+    apply_scaling: false,
+    ..Default::default()
+  };
+  let mut dng = std::io::Cursor::new(Vec::new());
+  convert_raw_file(&raw_file, &mut dng, &params)?;
+
+  Ok(())
+}
+
+/// Generic function to check camera raw files against
+/// pre-generated stats and pixel files.
+pub(crate) fn check_sample_file(sample: &str, checksum: &str) -> std::result::Result<(), Box<dyn std::error::Error>> {
+  let rawdb = PathBuf::from(std::env::var("RAWLER_RAWDB").expect("RAWLER_RAWDB variable must be set in order to run RAW test!"));
+
+  let camera_rawdb = rawdb.clone();
+
+  let raw_file = camera_rawdb.join(sample);
+  //let filename = raw_file.file_name().map(|name| name.to_os_string()).expect("Filename must by OS string compatible");
+
+  assert!(raw_file.exists(), "Raw file {:?} not found", raw_file);
+
+  // Validate pixel data
+  let old_digest_str = checksum;
   let old_digest = Digest(TryInto::<[u8; 16]>::try_into(hex::decode(old_digest_str.trim()).expect("Malformed MD5 digest")).expect("Must be [u8; 16]"));
   let (_, _, _cpp, buf) = extract_raw_pixels(&raw_file, &RawDecodeParams::default()).unwrap();
   let v: Vec<u8> = buf.iter().flat_map(|p| p.to_le_bytes()).collect();
