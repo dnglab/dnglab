@@ -11,10 +11,10 @@ use rayon::prelude::*;
 use crate::{
   cfa::{CFA, PlaneColor},
   imgop::{Dim2, Rect},
-  pixarray::{Color2D, Pix2D, RgbF32},
+  pixarray::{Color2D, Pix2D, RgbF32, SubPixel},
 };
 
-pub trait Demosaic<T, const N: usize> {
+pub trait Demosaic<T: SubPixel, const N: usize> {
   fn demosaic(&self, pixels: &Pix2D<T>, cfa: &CFA, colors: &PlaneColor, roi: Rect) -> Color2D<T, N>;
 }
 
