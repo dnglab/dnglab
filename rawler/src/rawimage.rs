@@ -9,6 +9,7 @@ use crate::Result;
 use crate::cfa::PlaneColor;
 use crate::imgop::raw::{correct_blacklevel, correct_blacklevel_cfa};
 use crate::imgop::{convert_from_f32_scaled_u16, convert_to_f32_unscaled};
+use crate::pixarray::SubPixel;
 use crate::{
   CFA,
   decoders::*,
@@ -265,7 +266,10 @@ impl RawImageData {
 }
 
 impl RawImage {
-  pub fn calc_black_levels(cfa: &CFA, blackareas: &[Rect], width: usize, _height: usize, image: &[u16]) -> Option<BlackLevel> {
+  pub fn calc_black_levels<T>(cfa: &CFA, blackareas: &[Rect], width: usize, _height: usize, image: &[T]) -> Option<BlackLevel>
+  where
+    T: SubPixel,
+  {
     let x = cfa.width * cfa.height;
     if x == 0 {
       return None;
@@ -286,13 +290,13 @@ impl RawImage {
           for col in area.p.x..area.p.x + area.d.w {
             //let color = cfa.color_at(row, col);
             let color = (row % cfa.height) * cfa.width + (col % cfa.width);
-            samples[color].avg += image[row * width + col] as f32;
+            samples[color].avg += image[row * width + col].as_f32();
             samples[color].count += 1;
           }
         }
       }
 
-      let blacklevels: Vec<u16> = samples.into_iter().map(|s| (s.avg / s.count as f32) as u16).collect();
+      let blacklevels: Vec<f32> = samples.into_iter().map(|s| (s.avg / s.count as f32)).collect();
 
       debug!("Calculated blacklevels: {:?}", blacklevels);
       // TODO: support other then RGGB levels
@@ -351,7 +355,7 @@ impl RawImage {
         if dummy {
           Some(BlackLevel::default())
         } else {
-          Self::calc_black_levels(&cam.cfa, &blackareas, image.width, image.height, image.pixels())
+          Self::calc_black_levels::<u16>(&cam.cfa, &blackareas, image.width, image.height, image.pixels())
         }
       })
       .unwrap_or_else(|| BlackLevel::zero(1, 1, cpp));
@@ -438,8 +442,10 @@ impl RawImage {
         if dummy {
           Some(BlackLevel::default())
         } else {
-          todo!()
-          //Self::calc_black_levels(&cam.cfa, &blackareas, image.width, image.height, image.pixels())
+          match &image {
+            RawImageData::Integer(pix) => Self::calc_black_levels(&cam.cfa, &blackareas, sample_width, height, pix),
+            RawImageData::Float(pix) => Self::calc_black_levels(&cam.cfa, &blackareas, sample_width, height, pix),
+          }
         }
       })
       .unwrap_or_else(|| BlackLevel::zero(1, 1, cpp));

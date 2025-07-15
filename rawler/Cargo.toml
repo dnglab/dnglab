@@ -9,7 +9,7 @@ keywords = ["camera", "raw"]
 license = "LGPL-2.1"
 name = "rawler"
 repository = "https://github.com/dnglab/dnglab"
-rust-version = "1.85"
+rust-version = "1.87"
 version = "0.7.0"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -40,6 +40,7 @@ libc = "0.2"
 libflate = "2.0"
 log = "0.4"
 md5 = "0.7"
+num = "0.4"
 multiversion = "0.8"
 num_enum = "0.7"
 rayon = "1"

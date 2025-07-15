@@ -595,6 +595,11 @@ pub(crate) fn plain_image_from_ifd(ifd: &IFD, rawsource: &RawSource) -> Result<R
           )));
         }
       }
+
+      // We need to crop first, before we do stuff like deinterleaving.
+      // Padded pixels on output by LJPEG compression will corrupt deinterleave.
+      pixbuf = pixbuf.into_crop(Rect::new(Point::zero(), Dim2::new(tiff_width * cpp, tiff_height)));
+
       return Ok(RawImageData::Float(pixbuf.into_inner()));
     }
     _ => unimplemented!("other sample-formats"),
