@@ -263,7 +263,7 @@ where
       }
 
       debug_assert_eq!(ch_a.len(), ch_b.len());
-      debug_assert_eq!(ch_a.len(), line.len());
+      debug_assert_eq!(ch_a.len() + ch_b.len(), line.len());
       debug_assert_eq!(line_width, line.len());
       line.chunks_exact_mut(2).zip(ch_a.iter().zip(ch_b.iter())).for_each(|(dst, (a, b))| {
         dst[0] = *a;
