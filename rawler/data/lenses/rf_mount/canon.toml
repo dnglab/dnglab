@@ -318,3 +318,13 @@ make = "Canon"
 model = "RF-S 10-18mm F4.5-6.3 IS STM"
 focal_range = [[10, 1], [18, 1]]
 aperture_range = [[45, 10], [63,10]]
+
+[[lenses]]
+mount = "rf-mount"
+key = "RF28mm F2.8 STM"
+lens_id = 61182
+lens_subid = 313
+make = "Canon"
+model = "RF 28mm F2.8 STM"
+focal_range = [[28, 1], [28, 1]]
+aperture_range = [[28, 10], [28,10]]
