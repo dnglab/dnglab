@@ -37,6 +37,7 @@ pub enum CompressionMethod {
   PackBits = 0x8005,
   // DNG Extensions
   LossyJPEG = 34892,
+  JPEGXL = 52546,
 }
 
 impl ExtractFromIFD for CompressionMethod {

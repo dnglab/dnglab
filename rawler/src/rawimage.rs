@@ -396,7 +396,7 @@ impl RawImage {
   pub fn new_with_data(
     cam: Camera,
     image: RawImageData,
-    width: usize,
+    sample_width: usize,
     height: usize,
     cpp: usize,
     wb_coeffs: [f32; 4],
@@ -407,8 +407,7 @@ impl RawImage {
   ) -> RawImage {
     //assert_eq!(image.width % cpp, 0);
     //assert_eq!(dummy, !image.is_initialized());
-    let sample_width = width;
-    let pixel_width = width / cpp;
+    let pixel_width = sample_width / cpp;
 
     let mut blackareas: Vec<Rect> = Vec::new();
 

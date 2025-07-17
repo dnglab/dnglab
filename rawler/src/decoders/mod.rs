@@ -32,6 +32,7 @@ use crate::decompressors::Decompressor;
 use crate::decompressors::LineIteratorMut;
 use crate::decompressors::jpeg::JpegDecompressor;
 use crate::decompressors::jpeg::LJpegDecompressor;
+use crate::decompressors::jpegxl::JpegXLDecompressor;
 use crate::decompressors::packed::PackedDecompressor;
 use crate::exif::Exif;
 use crate::formats::ciff;
@@ -547,6 +548,8 @@ pub(crate) fn plain_image_from_ifd(ifd: &IFD, rawsource: &RawSource) -> Result<R
         (CompressionMethod::LossyJPEG, DataMode::Tiles) => {
           decode_tiles::<u16>(&mut pixbuf, rawsource, ifd, JpegDecompressor::new())?;
         }
+        (CompressionMethod::JPEGXL, DataMode::Strips) => decode_strips::<u16>(&mut pixbuf, rawsource, ifd, JpegXLDecompressor::new())?,
+        (CompressionMethod::JPEGXL, DataMode::Tiles) => decode_tiles::<u16>(&mut pixbuf, rawsource, ifd, JpegXLDecompressor::new())?,
         _ => {
           return Err(RawlerError::DecoderFailed(format!(
             "Unsupported compression method: {:?}, storage: {:?}",

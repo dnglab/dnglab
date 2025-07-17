@@ -1,5 +1,8 @@
+use std::io::Cursor;
+
 use image::ImageBuffer;
 use image::Rgb;
+use jxl_oxide::JxlImage;
 
 use crate::RawImage;
 use crate::cfa::*;
@@ -61,7 +64,18 @@ impl<'a> Decoder for DngDecoder<'a> {
     };
 
     let raw_data = plain_image_from_ifd(raw, file)?;
-    let mut image = RawImage::new_with_data(cam, raw_data, width, height, cpp, self.get_wb()?, photometric, blacklevel, whitelevel, dummy);
+    let mut image = RawImage::new_with_data(
+      cam,
+      raw_data,
+      width * cpp,
+      height,
+      cpp,
+      self.get_wb()?,
+      photometric,
+      blacklevel,
+      whitelevel,
+      dummy,
+    );
     image.orientation = orientation;
     Ok(image)
   }
@@ -104,6 +118,15 @@ impl<'a> Decoder for DngDecoder<'a> {
             .map_err(|err| (RawlerError::DecoderFailed(format!("Create RGB thumbnail from strip failed: {:?}", err))))?;
           return Ok(Some(img));
         }
+        52546 => {
+          let image = JxlImage::builder().read(Cursor::new(buf)).expect("Failed to read image header");
+          let frame = image.render_frame(0).unwrap();
+          let all_ch = frame.image_all_channels();
+          let pixbuf = all_ch.buf();
+          return Ok(Some(DynamicImage::ImageRgb32F(
+            ImageBuffer::<Rgb<f32>, Vec<f32>>::from_raw(all_ch.width() as u32, all_ch.height() as u32, pixbuf.to_vec()).unwrap(),
+          )));
+        }
         _ => unimplemented!(),
       }
     }
@@ -136,6 +159,15 @@ impl<'a> Decoder for DngDecoder<'a> {
             let img = image::load_from_memory_with_format(&buf, image::ImageFormat::Jpeg)
               .map_err(|err| (RawlerError::DecoderFailed(format!("Create RGB thumbnail from strip failed: {:?}", err))))?;
             return Ok(Some(img));
+          }
+          52546 => {
+            let image = JxlImage::builder().read(Cursor::new(buf)).expect("Failed to read image header");
+            let frame = image.render_frame(0).unwrap();
+            let all_ch = frame.image_all_channels();
+            let pixbuf = all_ch.buf();
+            return Ok(Some(DynamicImage::ImageRgb32F(
+              ImageBuffer::<Rgb<f32>, Vec<f32>>::from_raw(all_ch.width() as u32, all_ch.height() as u32, pixbuf.to_vec()).unwrap(),
+            )));
           }
           _ => unimplemented!(),
         }
