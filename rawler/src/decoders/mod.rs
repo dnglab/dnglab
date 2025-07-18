@@ -2,6 +2,9 @@ use chrono::FixedOffset;
 use chrono::NaiveDateTime;
 use chrono::TimeZone;
 use image::DynamicImage;
+use image::ImageBuffer;
+use image::Luma;
+use image::Rgb;
 use log::debug;
 use log::warn;
 use multiversion::multiversion;
@@ -28,6 +31,7 @@ use crate::alloc_image_plain;
 use crate::analyze::FormatDump;
 use crate::bits::LEu32;
 use crate::bits::LookupTable;
+use crate::bits::scale_u16;
 use crate::decompressors::Decompressor;
 use crate::decompressors::LineIteratorMut;
 use crate::decompressors::deflate::DeflateDecompressor;
@@ -42,6 +46,7 @@ use crate::formats::tiff::CompressionMethod;
 use crate::formats::tiff::ExtractFromIFD;
 use crate::formats::tiff::GenericTiffReader;
 use crate::formats::tiff::IFD;
+use crate::formats::tiff::PhotometricInterpretation;
 use crate::formats::tiff::SampleFormat;
 use crate::formats::tiff::Value;
 use crate::formats::tiff::ifd::DataMode;
@@ -497,6 +502,59 @@ pub(crate) fn ok_cfa_image_with_black_white(camera: Camera, cpp: usize, wb_coeff
 }
    */
 
+pub(crate) fn dynamic_image_from_ifd(ifd: &IFD, rawsource: &RawSource) -> Result<DynamicImage> {
+  let tiff_width = fetch_tiff_tag!(ifd, TiffCommonTag::ImageWidth).force_usize(0);
+  let tiff_height = fetch_tiff_tag!(ifd, TiffCommonTag::ImageLength).force_usize(0);
+  let cpp = fetch_tiff_tag!(ifd, TiffCommonTag::SamplesPerPixel).force_usize(0);
+  let bits = fetch_tiff_tag!(ifd, TiffCommonTag::BitsPerSample).force_u32(0);
+  let image = plain_image_from_ifd(ifd, rawsource)?;
+  match image {
+    RawImageData::Integer(samples) => match bits {
+      8 => {
+        let buf: Vec<u8> = samples.into_iter().map(|p| p as u8).collect();
+        match cpp {
+          1 => Ok(DynamicImage::ImageLuma8(
+            ImageBuffer::<Luma<u8>, Vec<u8>>::from_raw(tiff_width as u32, tiff_height as u32, buf.to_vec())
+              .ok_or(RawlerError::DecoderFailed(format!("Create RGB thumbnail from strip failed")))?,
+          )),
+          3 => Ok(DynamicImage::ImageRgb8(
+            ImageBuffer::<Rgb<u8>, Vec<u8>>::from_raw(tiff_width as u32, tiff_height as u32, buf.to_vec())
+              .ok_or(RawlerError::DecoderFailed(format!("Create RGB thumbnail from strip failed")))?,
+          )),
+          _ => unimplemented!(),
+        }
+      }
+      9..=16 => {
+        let samples = if bits == 16 {
+          samples
+        } else {
+          samples.into_par_iter().map(|p| scale_u16(p, bits)).collect()
+        };
+        match cpp {
+          1 => Ok(DynamicImage::ImageLuma16(
+            ImageBuffer::<Luma<u16>, Vec<u16>>::from_raw((tiff_width) as u32, tiff_height as u32, samples)
+              .ok_or(RawlerError::DecoderFailed(format!("Create Y image failed")))?,
+          )),
+          3 => Ok(DynamicImage::ImageRgb16(
+            ImageBuffer::<Rgb<u16>, Vec<u16>>::from_raw((tiff_width) as u32, tiff_height as u32, samples)
+              .ok_or(RawlerError::DecoderFailed(format!("Create RGB image failed")))?,
+          )),
+          _ => unimplemented!(),
+        }
+      }
+      _ => unimplemented!(),
+    },
+    RawImageData::Float(samples) => match cpp {
+      3 => Ok(DynamicImage::ImageRgb32F(
+        // This may not work, rescaling required.
+        ImageBuffer::<Rgb<f32>, Vec<f32>>::from_raw(tiff_width as u32, tiff_height as u32, samples)
+          .ok_or(RawlerError::DecoderFailed(format!("Create RGB image failed")))?,
+      )),
+      _ => unimplemented!(),
+    },
+  }
+}
+
 pub(crate) fn plain_image_from_ifd(ifd: &IFD, rawsource: &RawSource) -> Result<RawImageData> {
   let endian = ifd.endian;
   let tiff_width = fetch_tiff_tag!(ifd, TiffCommonTag::ImageWidth).force_usize(0);
@@ -505,6 +563,7 @@ pub(crate) fn plain_image_from_ifd(ifd: &IFD, rawsource: &RawSource) -> Result<R
   let bits = fetch_tiff_tag!(ifd, TiffCommonTag::BitsPerSample).force_u32(0);
   let sample_format = SampleFormat::extract(ifd)?.unwrap_or(SampleFormat::Uint);
   let compression = CompressionMethod::extract(ifd)?.unwrap_or(CompressionMethod::None);
+  let pi = PhotometricInterpretation::extract(ifd)?.unwrap_or(PhotometricInterpretation::BlackIsZero);
 
   log::debug!(
     "TIFF image: {}x{}, cpp={}, bits={}, compression={:?}, sample_format={:?}, data_mode={:?}, endian={:?}",
@@ -538,10 +597,18 @@ pub(crate) fn plain_image_from_ifd(ifd: &IFD, rawsource: &RawSource) -> Result<R
           decode_tiles::<u16>(&mut pixbuf, rawsource, ifd, PackedDecompressor::new(bits, endian))?;
         }
         (CompressionMethod::ModernJPEG, DataMode::Strips) => {
-          decode_strips::<u16>(&mut pixbuf, rawsource, ifd, LJpegDecompressor::new())?;
+          if (pi == PhotometricInterpretation::YCbCr && bits == 8) || (pi == PhotometricInterpretation::BlackIsZero && bits == 8) {
+            decode_strips::<u16>(&mut pixbuf, rawsource, ifd, JpegDecompressor::new())?;
+          } else {
+            decode_strips::<u16>(&mut pixbuf, rawsource, ifd, LJpegDecompressor::new())?;
+          }
         }
         (CompressionMethod::ModernJPEG, DataMode::Tiles) => {
-          decode_tiles::<u16>(&mut pixbuf, rawsource, ifd, LJpegDecompressor::new())?;
+          if (pi == PhotometricInterpretation::YCbCr && bits == 8) || (pi == PhotometricInterpretation::BlackIsZero && bits == 8) {
+            decode_tiles::<u16>(&mut pixbuf, rawsource, ifd, JpegDecompressor::new())?;
+          } else {
+            decode_tiles::<u16>(&mut pixbuf, rawsource, ifd, LJpegDecompressor::new())?;
+          }
         }
         (CompressionMethod::LossyJPEG, DataMode::Strips) => {
           decode_strips::<u16>(&mut pixbuf, rawsource, ifd, JpegDecompressor::new())?;
@@ -549,8 +616,8 @@ pub(crate) fn plain_image_from_ifd(ifd: &IFD, rawsource: &RawSource) -> Result<R
         (CompressionMethod::LossyJPEG, DataMode::Tiles) => {
           decode_tiles::<u16>(&mut pixbuf, rawsource, ifd, JpegDecompressor::new())?;
         }
-        (CompressionMethod::JPEGXL, DataMode::Strips) => decode_strips::<u16>(&mut pixbuf, rawsource, ifd, JpegXLDecompressor::new())?,
-        (CompressionMethod::JPEGXL, DataMode::Tiles) => decode_tiles::<u16>(&mut pixbuf, rawsource, ifd, JpegXLDecompressor::new())?,
+        (CompressionMethod::JPEGXL, DataMode::Strips) => decode_strips::<u16>(&mut pixbuf, rawsource, ifd, JpegXLDecompressor::new(bits))?,
+        (CompressionMethod::JPEGXL, DataMode::Tiles) => decode_tiles::<u16>(&mut pixbuf, rawsource, ifd, JpegXLDecompressor::new(bits))?,
         _ => {
           return Err(RawlerError::DecoderFailed(format!(
             "Unsupported compression method: {:?}, storage: {:?}",

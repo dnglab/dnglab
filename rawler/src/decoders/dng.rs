@@ -1,9 +1,3 @@
-use std::io::Cursor;
-
-use image::ImageBuffer;
-use image::Rgb;
-use jxl_oxide::JxlImage;
-
 use crate::RawImage;
 use crate::cfa::*;
 use crate::decoders::*;
@@ -101,36 +95,10 @@ impl<'a> Decoder for DngDecoder<'a> {
 
   fn thumbnail_image(&self, file: &RawSource, _params: &RawDecodeParams) -> Result<Option<DynamicImage>> {
     if let Some(thumb_ifd) = Some(self.tiff.root_ifd()).filter(|ifd| ifd.get_entry(TiffCommonTag::NewSubFileType).map(|entry| entry.force_u16(0)) == Some(1)) {
-      let (_strips, cont) = thumb_ifd.strip_data(file)?;
-      let buf = cont.ok_or(RawlerError::DecoderFailed(format!("thumbnail_image() needs a continous strip buffer")))?;
-      let compression = thumb_ifd.get_entry(TiffCommonTag::Compression).ok_or("Missing tag")?.force_usize(0);
-      let width = fetch_tiff_tag!(thumb_ifd, TiffCommonTag::ImageWidth).force_usize(0);
-      let height = fetch_tiff_tag!(thumb_ifd, TiffCommonTag::ImageLength).force_usize(0);
-      match compression {
-        1 => {
-          return Ok(Some(DynamicImage::ImageRgb8(
-            ImageBuffer::<Rgb<u8>, Vec<u8>>::from_raw(width as u32, height as u32, buf.to_vec())
-              .ok_or(RawlerError::DecoderFailed(format!("Create RGB thumbnail from strip failed")))?,
-          )));
-        }
-        7 => {
-          let img = image::load_from_memory_with_format(&buf, image::ImageFormat::Jpeg)
-            .map_err(|err| (RawlerError::DecoderFailed(format!("Create RGB thumbnail from strip failed: {:?}", err))))?;
-          return Ok(Some(img));
-        }
-        52546 => {
-          let image = JxlImage::builder().read(Cursor::new(buf)).expect("Failed to read image header");
-          let frame = image.render_frame(0).unwrap();
-          let all_ch = frame.image_all_channels();
-          let pixbuf = all_ch.buf();
-          return Ok(Some(DynamicImage::ImageRgb32F(
-            ImageBuffer::<Rgb<f32>, Vec<f32>>::from_raw(all_ch.width() as u32, all_ch.height() as u32, pixbuf.to_vec()).unwrap(),
-          )));
-        }
-        _ => unimplemented!(),
-      }
+      Ok(Some(dynamic_image_from_ifd(thumb_ifd, file)?))
+    } else {
+      Ok(None)
     }
-    Ok(None)
   }
 
   fn full_image(&self, file: &RawSource, params: &RawDecodeParams) -> Result<Option<DynamicImage>> {
@@ -142,35 +110,7 @@ impl<'a> Decoder for DngDecoder<'a> {
         .iter()
         .find(|ifd| ifd.get_entry(TiffCommonTag::NewSubFileType).map(|entry| entry.force_u32(0)) == Some(1));
       if let Some(preview_ifd) = first_ifd {
-        let (_strips, cont) = preview_ifd.strip_data(file)?;
-        let buf = cont.ok_or(RawlerError::DecoderFailed(format!("thumbnail_image() needs a continous strip buffer")))?;
-
-        let compression = preview_ifd.get_entry(TiffCommonTag::Compression).ok_or("Missing tag")?.force_usize(0);
-        let width = fetch_tiff_tag!(preview_ifd, TiffCommonTag::ImageWidth).force_usize(0);
-        let height = fetch_tiff_tag!(preview_ifd, TiffCommonTag::ImageLength).force_usize(0);
-        match compression {
-          1 => {
-            return Ok(Some(DynamicImage::ImageRgb8(
-              ImageBuffer::<Rgb<u8>, Vec<u8>>::from_raw(width as u32, height as u32, buf.to_vec())
-                .ok_or(RawlerError::DecoderFailed(format!("Create RGB thumbnail from strip failed")))?,
-            )));
-          }
-          7 => {
-            let img = image::load_from_memory_with_format(&buf, image::ImageFormat::Jpeg)
-              .map_err(|err| (RawlerError::DecoderFailed(format!("Create RGB thumbnail from strip failed: {:?}", err))))?;
-            return Ok(Some(img));
-          }
-          52546 => {
-            let image = JxlImage::builder().read(Cursor::new(buf)).expect("Failed to read image header");
-            let frame = image.render_frame(0).unwrap();
-            let all_ch = frame.image_all_channels();
-            let pixbuf = all_ch.buf();
-            return Ok(Some(DynamicImage::ImageRgb32F(
-              ImageBuffer::<Rgb<f32>, Vec<f32>>::from_raw(all_ch.width() as u32, all_ch.height() as u32, pixbuf.to_vec()).unwrap(),
-            )));
-          }
-          _ => unimplemented!(),
-        }
+        return Ok(Some(dynamic_image_from_ifd(preview_ifd, file)?));
       }
     }
     Ok(None)
