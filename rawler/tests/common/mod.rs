@@ -13,6 +13,7 @@ use std::{
   convert::TryInto,
   path::{Path, PathBuf},
 };
+use zerocopy::IntoBytes;
 
 macro_rules! camera_file_check {
   ($make:expr, $model:expr, $test:ident, $file:expr) => {
@@ -93,9 +94,12 @@ pub(crate) fn check_sample_raw_file_conversion(category: &str, make: &str, model
   // Validate pixel data
   let old_digest_str = std::fs::read_to_string(digest_file)?;
   let old_digest = Digest(TryInto::<[u8; 16]>::try_into(hex::decode(old_digest_str.trim()).expect("Malformed MD5 digest")).expect("Must be [u8; 16]"));
-  let (_, _, _cpp, buf) = extract_raw_pixels(&raw_file, &RawDecodeParams::default()).unwrap();
-  let v: Vec<u8> = buf.iter().flat_map(|p| p.to_le_bytes()).collect();
-  let new_digest = md5::compute(v);
+  let image = extract_raw_pixels(&raw_file, &RawDecodeParams::default()).unwrap();
+  let byte_buf = match &image.data {
+    rawler::RawImageData::Integer(samples) => samples.as_slice().as_bytes(),
+    rawler::RawImageData::Float(samples) => samples.as_slice().as_bytes(),
+  };
+  let new_digest = md5::compute(byte_buf);
   assert_eq!(old_digest, new_digest, "Old and new raw pixel digest not match!");
 
   // Convert to DNG with default params
@@ -125,9 +129,12 @@ pub(crate) fn check_sample_file(sample: &str, checksum: &str) -> std::result::Re
   // Validate pixel data
   let old_digest_str = checksum;
   let old_digest = Digest(TryInto::<[u8; 16]>::try_into(hex::decode(old_digest_str.trim()).expect("Malformed MD5 digest")).expect("Must be [u8; 16]"));
-  let (_, _, _cpp, buf) = extract_raw_pixels(&raw_file, &RawDecodeParams::default()).unwrap();
-  let v: Vec<u8> = buf.iter().flat_map(|p| p.to_le_bytes()).collect();
-  let new_digest = md5::compute(v);
+  let image = extract_raw_pixels(&raw_file, &RawDecodeParams::default()).unwrap();
+  let byte_buf = match &image.data {
+    rawler::RawImageData::Integer(samples) => samples.as_slice().as_bytes(),
+    rawler::RawImageData::Float(samples) => samples.as_slice().as_bytes(),
+  };
+  let new_digest = md5::compute(byte_buf);
   assert_eq!(old_digest, new_digest, "Old and new raw pixel digest not match!");
 
   // Convert to DNG with default params

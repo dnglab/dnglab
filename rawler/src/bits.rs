@@ -256,6 +256,7 @@ impl LookupTable {
 /// - `STORAGE_WIDTH`: Total number of bits used to store the floating-point value.
 /// - `FRACTION_WIDTH`: Number of bits used for the fraction (mantissa).
 /// - `EXPONENT_WIDTH`: Number of bits used for the exponent.
+/// - `STORAGE_BYTES`: Number of bytes required (rounded up) for storage.
 /// - `SIGN_BITS`: Number of bits used for the sign (always 1).
 /// - `PRECISION`: Number of significant bits in the mantissa (fraction width + 1 for the implicit bit).
 /// - `EXPONENT_MAX`: Maximum value of the exponent (before bias).
@@ -263,10 +264,12 @@ impl LookupTable {
 /// - `FRACTION_POS`: Bit position where the fraction starts (always 0).
 /// - `EXPONENT_POS`: Bit position where the exponent starts.
 /// - `SIGN_BIT_POS`: Bit position of the sign bit (highest bit).
-trait FloatingPointParameters {
+pub(crate) trait FloatingPointParameters {
   const STORAGE_WIDTH: usize;
   const FRACTION_WIDTH: usize;
   const EXPONENT_WIDTH: usize;
+
+  const STORAGE_BYTES: usize = Self::STORAGE_WIDTH.div_ceil(u8::BITS as usize);
 
   const SIGN_BITS: usize = 1;
   const PRECISION: usize = Self::FRACTION_WIDTH + 1;
@@ -285,7 +288,7 @@ trait FloatingPointParameters {
 /// - `EXPONENT_WIDTH`: The number of bits allocated for the exponent part.
 ///
 /// This struct can be used to represent custom floating-point or fixed-point binary formats.
-struct BinaryN<const STORAGE_WITH: usize, const FRACTION_WIDTH: usize, const EXPONENT_WIDTH: usize> {}
+pub(crate) struct BinaryN<const STORAGE_WITH: usize, const FRACTION_WIDTH: usize, const EXPONENT_WIDTH: usize> {}
 
 impl<const STORAGE_WITH: usize, const FRACTION_WIDTH: usize, const EXPONENT_WIDTH: usize> FloatingPointParameters
   for BinaryN<STORAGE_WITH, FRACTION_WIDTH, EXPONENT_WIDTH>
@@ -299,11 +302,11 @@ impl<const STORAGE_WITH: usize, const FRACTION_WIDTH: usize, const EXPONENT_WIDT
   const SIGN_BITS: usize = 1;
 }
 
-type Binary16 = BinaryN<16, 10, 5>;
-type Binary24 = BinaryN<24, 16, 7>;
-type Binary32 = BinaryN<32, 23, 8>;
+pub(crate) type Binary16 = BinaryN<16, 10, 5>;
+pub(crate) type Binary24 = BinaryN<24, 16, 7>;
+pub(crate) type Binary32 = BinaryN<32, 23, 8>;
 
-fn extend_binary_floating_point<NARROW: FloatingPointParameters, WIDE: FloatingPointParameters>(value: u32) -> u32 {
+pub(crate) fn extend_binary_floating_point<NARROW: FloatingPointParameters, WIDE: FloatingPointParameters>(value: u32) -> u32 {
   let sign = (value >> NARROW::SIGN_BIT_POS) & 1;
   let narrow_exponent = (value >> NARROW::EXPONENT_POS) & ((1 << NARROW::EXPONENT_WIDTH) - 1);
   let narrow_fraction = value & ((1 << NARROW::FRACTION_WIDTH) - 1);
@@ -349,15 +352,18 @@ mod tests {
     assert_eq!(Binary16::EXPONENT_MAX, 15);
     assert_eq!(Binary16::EXPONENT_POS, 10);
     assert_eq!(Binary16::SIGN_BIT_POS, 15);
+    assert_eq!(Binary16::STORAGE_BYTES, 2);
 
     assert_eq!(Binary24::PRECISION, 17);
     assert_eq!(Binary24::EXPONENT_MAX, 63);
     assert_eq!(Binary24::EXPONENT_POS, 16);
     assert_eq!(Binary24::SIGN_BIT_POS, 23);
+    assert_eq!(Binary24::STORAGE_BYTES, 3);
 
     assert_eq!(Binary32::PRECISION, 24);
     assert_eq!(Binary32::EXPONENT_MAX, 127);
     assert_eq!(Binary32::EXPONENT_POS, 23);
     assert_eq!(Binary32::SIGN_BIT_POS, 31);
+    assert_eq!(Binary32::STORAGE_BYTES, 4);
   }
 }
