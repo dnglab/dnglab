@@ -50,6 +50,12 @@ pub fn log2ceil(mut states: usize) -> usize {
   bits
 }
 
+#[inline]
+pub fn scale_u16(p: u16, bits: u32) -> u16 {
+  let max = ((1_u32 << bits) - 1) as u16;
+  ((p as f32 / max as f32) * u16::MAX as f32) as u16
+}
+
 #[derive(Debug, Copy, Clone, PartialEq, Serialize, Deserialize)]
 pub enum Endian {
   Big,

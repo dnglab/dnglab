@@ -43,7 +43,7 @@ impl<'a> Decompressor<'a, u16> for JpegDecompressor {
       image::DynamicImage::ImageRgb8(image_buffer) => {
         for (dst, src) in lines.zip(image_buffer.chunks_exact(line_width).skip(skip_rows)) {
           for (dst, src) in dst.iter_mut().zip(src.iter()) {
-            *dst = *src as u16;
+            *dst = *src as u16; // Only change storage format, you MUST NOT scale up!
           }
         }
       }
