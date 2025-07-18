@@ -274,7 +274,7 @@ impl<'a> DngDecoder<'a> {
           Some(e) => e.force_u32(0) & 1 != 0,
           None => false,
         };
-        !subsampled && (compression == 7 || compression == 1 || compression == 0x884c || compression == 52546)
+        !subsampled && (compression == 7 || compression == 8 || compression == 1 || compression == 0x884c || compression == 52546)
       })
       .collect::<Vec<&IFD>>();
     if let Some(first) = ifds.first() {
