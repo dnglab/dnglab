@@ -30,6 +30,7 @@ use crate::bits::LEu32;
 use crate::bits::LookupTable;
 use crate::decompressors::Decompressor;
 use crate::decompressors::LineIteratorMut;
+use crate::decompressors::deflate::DeflateDecompressor;
 use crate::decompressors::jpeg::JpegDecompressor;
 use crate::decompressors::jpeg::LJpegDecompressor;
 use crate::decompressors::jpegxl::JpegXLDecompressor;
@@ -590,6 +591,10 @@ pub(crate) fn plain_image_from_ifd(ifd: &IFD, rawsource: &RawSource) -> Result<R
         (CompressionMethod::None, DataMode::Tiles) => {
           decode_tiles::<f32>(&mut pixbuf, rawsource, ifd, PackedDecompressor::new(bits, endian))?;
         }
+        (CompressionMethod::Deflate, DataMode::Tiles) => {
+          let predictor = fetch_tiff_tag!(ifd, TiffCommonTag::Predictor).force_u16(0);
+          decode_tiles::<f32>(&mut pixbuf, rawsource, ifd, DeflateDecompressor::new(cpp, predictor, bits, endian))?;
+        }
         _ => {
           return Err(RawlerError::DecoderFailed(format!(
             "Unsupported compression method: {:?}, storage: {:?}",
@@ -602,6 +607,8 @@ pub(crate) fn plain_image_from_ifd(ifd: &IFD, rawsource: &RawSource) -> Result<R
       // We need to crop first, before we do stuff like deinterleaving.
       // Padded pixels on output by LJPEG compression will corrupt deinterleave.
       pixbuf = pixbuf.into_crop(Rect::new(Point::zero(), Dim2::new(tiff_width * cpp, tiff_height)));
+
+      // TODO: other corrections (see u16 code above)?
 
       return Ok(RawImageData::Float(pixbuf.into_inner()));
     }
