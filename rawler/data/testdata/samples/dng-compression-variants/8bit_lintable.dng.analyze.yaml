@@ -1,0 +1,94 @@
+---
+file:
+  fileSize: 2190336
+  fileName: 8bit_lintable.dng
+  digest: b87d31fca1d42315b5705e09ec27d261
+data:
+  metadata:
+    rawParams:
+      rawWidth: 1936
+      rawHeight: 1090
+      bitDepth: 16
+      cropArea:
+        p:
+          x: 8
+          y: 5
+        d:
+          w: 1920
+          h: 1080
+      activeArea:
+        p:
+          x: 0
+          y: 0
+        d:
+          w: 1936
+          h: 1090
+      blacklevels:
+        levels:
+          - 262184/1024
+          - 262184/1024
+          - 262184/1024
+          - 262184/1024
+        cpp: 1
+        width: 2
+        height: 2
+      whitelevels:
+        - 4095
+      wbCoeffs:
+        - 1.9726561
+        - 1.0
+        - 1.671875
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ""
+        artist: ""
+        lens_spec: ~
+        exposure_time: 1/50
+        fnumber: 0/10
+        aperture_value: 0/65534
+        brightness_value: "-232057/65534"
+        iso_speed_ratings: 3200
+        iso_speed: ~
+        recommended_exposure_index: 3200
+        sensitivity_type: 2
+        exposure_bias: 0/10
+        date_time_original: "2024:02:29 19:10:21"
+        create_date: "2024:02:29 19:10:21"
+        modify_date: "2024:02:29 19:10:21"
+        exposure_program: 1
+        timezone_offset: ~
+        offset_time: "-04:00"
+        offset_time_original: "-04:00"
+        offset_time_digitized: "-04:00"
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: 365946/65535
+        max_aperture_value: 0/65534
+        subject_distance: 0/10
+        metering_mode: 5
+        light_source: 0
+        flash: 48
+        focal_length: 0/10
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 1
+        white_balance: 1
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: "91415977"
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+        user_comment: ~
+      model: SIGMA fp
+      make: SIGMA
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

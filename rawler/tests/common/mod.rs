@@ -21,25 +21,25 @@ macro_rules! camera_file_check {
     #[test]
     fn $test() -> std::result::Result<(), Box<dyn std::error::Error>> {
       //crate::init_test_logger();
-      crate::common::check_sample_raw_file_conversion("cameras", $make, $model, $file)
+      crate::common::check_camera_raw_file_conversion("cameras", $make, $model, $file)
     }
   };
 }
 
 pub(crate) use camera_file_check;
 
-macro_rules! simple_file_check {
-  ($test:ident, $file:expr, $checksum:expr) => {
+macro_rules! sample_file_check {
+  ($sampleset:expr, $test:ident, $file:expr) => {
     #[allow(non_snake_case)]
     #[test]
     fn $test() -> std::result::Result<(), Box<dyn std::error::Error>> {
       //crate::init_test_logger();
-      crate::common::check_sample_file($file, $checksum)
+      crate::common::check_sample_raw_file_conversion($sampleset, $file)
     }
   };
 }
 
-pub(crate) use simple_file_check;
+pub(crate) use sample_file_check;
 
 pub(crate) fn rawdb_path() -> PathBuf {
   PathBuf::from(std::env::var("RAWLER_RAWDB").expect("RAWLER_RAWDB variable must be set in order to run RAW test!"))
@@ -56,7 +56,7 @@ pub(crate) fn check_md5_equal(digest: [u8; 16], expected: &str) {
 
 /// Generic function to check camera raw files against
 /// pre-generated stats and pixel files.
-pub(crate) fn check_sample_raw_file_conversion(category: &str, make: &str, model: &str, sample: &str) -> std::result::Result<(), Box<dyn std::error::Error>> {
+pub(crate) fn check_camera_raw_file_conversion(category: &str, make: &str, model: &str, sample: &str) -> std::result::Result<(), Box<dyn std::error::Error>> {
   let rawdb = PathBuf::from(std::env::var("RAWLER_RAWDB").expect("RAWLER_RAWDB variable must be set in order to run RAW test!"));
 
   let mut camera_rawdb = rawdb.clone();
@@ -116,18 +116,43 @@ pub(crate) fn check_sample_raw_file_conversion(category: &str, make: &str, model
 
 /// Generic function to check camera raw files against
 /// pre-generated stats and pixel files.
-pub(crate) fn check_sample_file(sample: &str, checksum: &str) -> std::result::Result<(), Box<dyn std::error::Error>> {
+pub(crate) fn check_sample_raw_file_conversion(sampleset: &str, sample: &str) -> std::result::Result<(), Box<dyn std::error::Error>> {
   let rawdb = PathBuf::from(std::env::var("RAWLER_RAWDB").expect("RAWLER_RAWDB variable must be set in order to run RAW test!"));
 
-  let camera_rawdb = rawdb.clone();
+  let mut camera_rawdb = rawdb.clone();
+  camera_rawdb.push("samples");
 
-  let raw_file = camera_rawdb.join(sample);
-  //let filename = raw_file.file_name().map(|name| name.to_os_string()).expect("Filename must by OS string compatible");
+  let mut testfiles = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+  testfiles.push("data/testdata/samples");
+
+  let base_path = testfiles.join(sampleset);
+
+  let raw_file = camera_rawdb.join(sampleset).join(sample);
+  let filename = raw_file.file_name().map(|name| name.to_os_string()).expect("Filename must by OS string compatible");
+  let mut orig_analyze_file = filename.clone();
+  let mut orig_digest_file = filename.clone();
+  orig_analyze_file.push(".analyze.yaml");
+  orig_digest_file.push(".digest.txt");
+  let stats_file = base_path.join(sample).with_file_name(orig_analyze_file);
+  let digest_file = base_path.join(sample).with_file_name(orig_digest_file);
+
+  //let pixel_file = base_path.join(&sample).with_extension("pixel");
+
+  //eprintln!("{:?}", stats_file);
 
   assert!(raw_file.exists(), "Raw file {:?} not found", raw_file);
+  assert!(stats_file.exists(), "Stats file {:?} not found", stats_file);
+
+  // Validate stats file
+  let new_stats = analyze_metadata(PathBuf::from(&raw_file)).unwrap();
+  let old_stats = std::fs::read_to_string(&stats_file)?;
+
+  let old_stats: AnalyzerResult = serde_yaml::from_str(&old_stats)?;
+
+  assert_eq!(old_stats, new_stats);
 
   // Validate pixel data
-  let old_digest_str = checksum;
+  let old_digest_str = std::fs::read_to_string(digest_file)?;
   let old_digest = Digest(TryInto::<[u8; 16]>::try_into(hex::decode(old_digest_str.trim()).expect("Malformed MD5 digest")).expect("Must be [u8; 16]"));
   let image = extract_raw_pixels(&raw_file, &RawDecodeParams::default()).unwrap();
   let byte_buf = match &image.data {

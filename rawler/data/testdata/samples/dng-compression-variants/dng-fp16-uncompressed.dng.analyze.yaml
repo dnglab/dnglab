@@ -1,0 +1,130 @@
+---
+file:
+  fileSize: 48846956
+  fileName: dng-fp16-uncompressed.dng
+  digest: 17f5fb8ece2a0ec86fb35a38049d0a10
+data:
+  metadata:
+    rawParams:
+      rawWidth: 5920
+      rawHeight: 3950
+      bitDepth: 16
+      cropArea:
+        p:
+          x: 122
+          y: 80
+        d:
+          w: 5796
+          h: 3870
+      activeArea:
+        p:
+          x: 122
+          y: 80
+        d:
+          w: 5796
+          h: 3870
+      blacklevels:
+        levels:
+          - 2047/1
+          - 2048/1
+          - 2047/1
+          - 2047/1
+        cpp: 1
+        width: 2
+        height: 2
+      whitelevels:
+        - 15488
+      wbCoeffs:
+        - 1.6494138
+        - 1.0
+        - 2.165041
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ""
+        artist: Simon Harhues
+        lens_spec: ~
+        exposure_time: 1/125
+        fnumber: 28/10
+        aperture_value: 196608/65536
+        brightness_value: ~
+        iso_speed_ratings: 200
+        iso_speed: ~
+        recommended_exposure_index: 200
+        sensitivity_type: 2
+        exposure_bias: 0/1
+        date_time_original: "2017:01:05 13:52:55"
+        create_date: "2017:01:05 13:52:55"
+        modify_date: "2020:11:21 16:29:53"
+        exposure_program: 1
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: "96"
+        sub_sec_time_original: "96"
+        sub_sec_time_digitized: "96"
+        shutter_speed_value: 458752/65536
+        max_aperture_value: ~
+        subject_distance: ~
+        metering_mode: 5
+        light_source: ~
+        flash: 16
+        focal_length: 70/1
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 1
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ""
+        serial_number: "063024001964"
+        lens_serial_number: "0000413819"
+        lens_make: ~
+        lens_model: ~
+        gps:
+          gps_version_id:
+            - 2
+            - 3
+            - 0
+            - 0
+          gps_latitude_ref: ~
+          gps_latitude: ~
+          gps_longitude_ref: ~
+          gps_longitude: ~
+          gps_altitude_ref: ~
+          gps_altitude: ~
+          gps_timestamp: ~
+          gps_satellites: ~
+          gps_status: ~
+          gps_measure_mode: ~
+          gps_dop: ~
+          gps_speed_ref: ~
+          gps_speed: ~
+          gps_track_ref: ~
+          gps_track: ~
+          gps_img_direction_ref: ~
+          gps_img_direction: ~
+          gps_map_datum: ~
+          gps_dest_latitude_ref: ~
+          gps_dest_latitude: ~
+          gps_dest_longitude_ref: ~
+          gps_dest_longitude: ~
+          gps_dest_bearing_ref: ~
+          gps_dest_bearing: ~
+          gps_dest_distance_ref: ~
+          gps_dest_distance: ~
+          gps_processing_method: ~
+          gps_area_information: ~
+          gps_date_stamp: ~
+          gps_differential: ~
+          gps_h_positioning_error: ~
+        user_comment: ~
+      model: EOS 5D Mark III
+      make: Canon
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

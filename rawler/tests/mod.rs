@@ -6,3 +6,5 @@ mod common;
 mod dng;
 #[cfg(feature = "samplecheck")]
 mod issues;
+#[cfg(feature = "samplecheck")]
+mod samples;
