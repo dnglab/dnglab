@@ -1,0 +1,136 @@
+---
+file:
+  fileSize: 24000080
+  fileName: dng_jpegxl_lossy_16bit_mosaic_tiles.dng
+  digest: ec30ba59fe40b6a6d8d860e61a1093e0
+data:
+  metadata:
+    rawParams:
+      rawWidth: 8256
+      rawHeight: 5504
+      bitDepth: 16
+      cropArea:
+        p:
+          x: 33
+          y: 25
+        d:
+          w: 8192
+          h: 5464
+      activeArea:
+        p:
+          x: 21
+          y: 13
+        d:
+          w: 8214
+          h: 5478
+      blacklevels:
+        levels:
+          - 445440/256
+        cpp: 1
+        width: 1
+        height: 1
+      whitelevels:
+        - 65535
+      wbCoeffs:
+        - 1.9355837
+        - 1.0
+        - 1.5683814
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: Daniel Vogelbacher (www.chaospixel.com)
+        artist: Daniel Vogelbacher
+        lens_spec: ~
+        exposure_time: 1/800
+        fnumber: 8/1
+        aperture_value: 6/1
+        brightness_value: ~
+        iso_speed_ratings: 640
+        iso_speed: ~
+        recommended_exposure_index: 640
+        sensitivity_type: 2
+        exposure_bias: "-1/3"
+        date_time_original: "2025:05:10 13:28:27"
+        create_date: "2025:05:10 13:28:27"
+        modify_date: "2025:07:11 11:53:30"
+        exposure_program: 3
+        timezone_offset: ~
+        offset_time: "+02:00"
+        offset_time_original: "+01:00"
+        offset_time_digitized: "+01:00"
+        sub_sec_time: ~
+        sub_sec_time_original: "44"
+        sub_sec_time_digitized: "44"
+        shutter_speed_value: 9643856/1000000
+        max_aperture_value: ~
+        subject_distance: ~
+        metering_mode: 5
+        light_source: ~
+        flash: 0
+        focal_length: 35/1
+        image_number: ~
+        color_space: 65535
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: Daniel Vogelbacher
+        serial_number: "148302302661"
+        lens_serial_number: "0803001156"
+        lens_make: ~
+        lens_model: ~
+        gps:
+          gps_version_id:
+            - 2
+            - 3
+            - 0
+            - 0
+          gps_latitude_ref: N
+          gps_latitude:
+            - 49/1
+            - 15143000/10000000
+            - 0/1
+          gps_longitude_ref: E
+          gps_longitude:
+            - 7/1
+            - 545618000/10000000
+            - 0/1
+          gps_altitude_ref: 0
+          gps_altitude: 27850/100
+          gps_timestamp:
+            - 12/1
+            - 29/1
+            - 55000/1000
+          gps_satellites: ~
+          gps_status: A
+          gps_measure_mode: ~
+          gps_dop: ~
+          gps_speed_ref: ~
+          gps_speed: ~
+          gps_track_ref: ~
+          gps_track: ~
+          gps_img_direction_ref: ~
+          gps_img_direction: ~
+          gps_map_datum: WGS-84
+          gps_dest_latitude_ref: ~
+          gps_dest_latitude: ~
+          gps_dest_longitude_ref: ~
+          gps_dest_longitude: ~
+          gps_dest_bearing_ref: ~
+          gps_dest_bearing: ~
+          gps_dest_distance_ref: ~
+          gps_dest_distance: ~
+          gps_processing_method: ~
+          gps_area_information: ~
+          gps_date_stamp: "2025:05:10"
+          gps_differential: ~
+          gps_h_positioning_error: ~
+        user_comment: ~
+      model: EOS R5 Mark II
+      make: Canon
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+
