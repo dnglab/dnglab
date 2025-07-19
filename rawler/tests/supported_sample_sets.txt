@@ -1,0 +1,1 @@
+samples/dng-compression-variants
