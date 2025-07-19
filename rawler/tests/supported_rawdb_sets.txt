@@ -15,6 +15,7 @@ cameras/Canon/EOS-1Ds Mark III/raw_modes
 cameras/Canon/EOS-1Ds Mark II/raw_modes
 cameras/Canon/EOS-1Ds/raw_modes
 cameras/Canon/EOS-1D X Mark III/raw_modes
+cameras/Canon/EOS-1D X Mark III/crm
 cameras/Canon/EOS-1D X Mark II/raw_modes
 cameras/Canon/EOS-1D X/raw_modes
 cameras/Canon/EOS 2000D/raw_modes

@@ -26,6 +26,12 @@ pub enum OffsetMode {
   RelativeToIFD,
 }
 
+#[derive(Debug)]
+pub enum DataMode {
+  Strips,
+  Tiles,
+}
+
 #[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize)]
 pub struct IFD {
   pub offset: u32,
@@ -415,23 +421,6 @@ impl IFD {
     self.get_entry(TiffCommonTag::StripOffsets).map(Entry::count).unwrap_or(0) == 1
   }
 
-  pub fn singlestrip_data<R: Read + Seek>(&self, reader: &mut R) -> Result<Vec<u8>> {
-    assert!(self.contains_singlestrip_image());
-
-    let offset = self
-      .get_entry(TiffCommonTag::StripOffsets)
-      .ok_or_else(|| TiffError::General(("tag not found").to_string()))?
-      .value
-      .force_usize(0);
-    let len = self
-      .get_entry(TiffCommonTag::StripByteCounts)
-      .ok_or_else(|| TiffError::General(("tag not found").to_string()))?
-      .value
-      .force_usize(0);
-
-    self.sub_buf(reader, offset, len)
-  }
-
   pub fn singlestrip_data_rawsource<'a>(&self, rawsource: &'a RawSource) -> Result<&'a [u8]> {
     assert!(self.contains_singlestrip_image());
 
@@ -449,7 +438,10 @@ impl IFD {
     Ok(rawsource.subview((self.base + offset) as u64, len as u64)?)
   }
 
-  pub fn strip_data<R: Read + Seek>(&self, reader: &mut R) -> Result<Vec<Vec<u8>>> {
+  /// Return byte slices to strip data.
+  /// If there exists a single strip only or if all strips are continous,
+  /// the second return value contains the whole strip data in a single slice.
+  pub fn strip_data<'a>(&self, rawsource: &'a RawSource) -> Result<(Vec<&'a [u8]>, Option<&'a [u8]>)> {
     if !self.has_entry(TiffCommonTag::StripOffsets) {
       return Err(TiffError::General("IFD contains no strip data".into()));
     }
@@ -471,39 +463,9 @@ impl IFD {
         sizes.len()
       )));
     }
-    let mut subviews = Vec::with_capacity(offsets.len());
-    for (offset, size) in offsets.iter().zip(sizes.iter()) {
-      subviews.push(self.sub_buf(reader, *offset as usize, *size as usize)?);
-    }
-    Ok(subviews)
-  }
 
-  pub fn strip_data_rawsource<'a>(&self, rawsource: &'a RawSource) -> Result<Vec<&'a [u8]>> {
-    if !self.has_entry(TiffCommonTag::StripOffsets) {
-      return Err(TiffError::General("IFD contains no strip data".into()));
-    }
-    let offsets = if let Some(Entry { value: Value::Long(data), .. }) = self.get_entry(TiffCommonTag::StripOffsets) {
-      data
-    } else {
-      return Err(TiffError::General("Invalid datatype for StripOffsets".to_string()));
-    };
-    let sizes = if let Some(Entry { value: Value::Long(data), .. }) = self.get_entry(TiffCommonTag::StripByteCounts) {
-      data
-    } else {
-      return Err(TiffError::General("Invalid datatype for StripByteCounts".to_string()));
-    };
-
-    if offsets.len() != sizes.len() {
-      return Err(TiffError::General(format!(
-        "Can't get data from strips: offsets has len {} but sizes has len {}",
-        offsets.len(),
-        sizes.len()
-      )));
-    }
-    let mut subviews = Vec::with_capacity(offsets.len());
-
-    // Check if all slices are continous - if yes, we can return one single large buffer.
-    let (continous, end) =
+    // Check if all slices are continous
+    let (is_continous, end_off) =
       offsets.iter().zip(sizes.iter()).fold(
         (true, offsets[0]),
         |acc, val| {
@@ -511,15 +473,49 @@ impl IFD {
         },
       );
 
-    if continous {
-      subviews.push(rawsource.subview((self.base + offsets[0]) as u64, (end - offsets[0]) as u64)?);
-    } else {
-      for (offset, size) in offsets.iter().zip(sizes.iter()) {
-        //subviews.push(self.sub_buf(reader, *offset as usize, *size as usize)?);
-        subviews.push(rawsource.subview((self.base + *offset) as u64, *size as u64)?);
-      }
+    let mut subviews = Vec::with_capacity(offsets.len());
+    for (offset, size) in offsets.iter().zip(sizes.iter()) {
+      subviews.push(rawsource.subview((self.base + *offset) as u64, *size as u64)?);
     }
-    Ok(subviews)
+
+    let continous = if is_continous {
+      Some(rawsource.subview((self.base + offsets[0]) as u64, (end_off - offsets[0]) as u64)?)
+    } else {
+      None
+    };
+
+    Ok((subviews, continous))
+  }
+
+  pub fn tile_data<'a>(&self, rawsource: &'a RawSource) -> Result<Vec<&'a [u8]>> {
+    let offsets = if let Some(Entry { value: Value::Long(data), .. }) = self.get_entry(TiffCommonTag::TileOffsets) {
+      data
+    } else {
+      return Err(TiffError::General("Invalid datatype for TileOffsets".to_string()));
+    };
+
+    let byte_counts = if let Some(Entry { value: Value::Long(data), .. }) = self.get_entry(TiffCommonTag::TileByteCounts) {
+      data
+    } else {
+      return Err(TiffError::General("Invalid datatype for TileByteCounts".to_string()));
+    };
+
+    let mut tile_slices = Vec::with_capacity(offsets.len());
+    offsets.iter().zip(byte_counts.iter()).for_each(|(offset, size)| {
+      tile_slices.push(rawsource.subview(*offset as u64, *size as u64).map_err(TiffError::Io));
+    });
+    Ok(tile_slices.into_iter().collect::<Result<Vec<_>>>()?)
+  }
+
+  /// Check for the data mode (Strips or Tiles)
+  pub fn data_mode(&self) -> Result<DataMode> {
+    if self.has_entry(TiffCommonTag::StripOffsets) {
+      Ok(DataMode::Strips)
+    } else if self.has_entry(TiffCommonTag::TileOffsets) {
+      Ok(DataMode::Tiles)
+    } else {
+      Err(TiffError::General("IFD has no StripOffsets or TileOffsets tag".into()))
+    }
   }
 
   pub fn parse_makernote<R: Read + Seek>(&self, reader: &mut R, offset_mode: OffsetMode, sub_tags: &[u16]) -> Result<Option<IFD>> {

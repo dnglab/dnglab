@@ -21,18 +21,37 @@ pub use writer::{DirectoryWriter, TiffWriter};
 const TIFF_MAGIC: u16 = 42;
 
 #[allow(clippy::upper_case_acronyms)]
+#[derive(Debug, Copy, Clone, PartialEq, enumn::N)]
+#[repr(u16)]
 pub enum CompressionMethod {
   None = 1,
   Huffman = 2,
   Fax3 = 3,
   Fax4 = 4,
   LZW = 5,
-  JPEG = 6,
+  OldJPEG = 6, // TODO: RENAME
   // "Extended JPEG" or "new JPEG" style
   ModernJPEG = 7,
   Deflate = 8,
   OldDeflate = 0x80B2,
   PackBits = 0x8005,
+  // DNG Extensions
+  LossyJPEG = 34892,
+  JPEGXL = 52546,
+}
+
+impl ExtractFromIFD for CompressionMethod {
+  fn extract(ifd: &IFD) -> Result<Option<Self>> {
+    let tag = TiffCommonTag::Compression;
+    if let Some(entry) = ifd.get_entry(tag) {
+      let x = entry.value.force_u16(0);
+      Ok(Some(
+        Self::n(x).ok_or_else(|| TiffError::General(format!("Unknown value {} for {:?}", x, tag)))?,
+      ))
+    } else {
+      Ok(None)
+    }
+  }
 }
 
 impl From<CompressionMethod> for Value {
@@ -42,6 +61,8 @@ impl From<CompressionMethod> for Value {
 }
 
 #[allow(clippy::upper_case_acronyms)]
+#[derive(Debug, Copy, Clone, PartialEq, enumn::N)]
+#[repr(u16)]
 pub enum PhotometricInterpretation {
   WhiteIsZero = 0,
   BlackIsZero = 1,
@@ -56,12 +77,28 @@ pub enum PhotometricInterpretation {
   LinearRaw = 34892,
 }
 
+impl ExtractFromIFD for PhotometricInterpretation {
+  fn extract(ifd: &IFD) -> Result<Option<Self>> {
+    let tag = TiffCommonTag::PhotometricInt;
+    if let Some(entry) = ifd.get_entry(tag) {
+      let x = entry.value.force_u16(0);
+      Ok(Some(
+        Self::n(x).ok_or_else(|| TiffError::General(format!("Unknown value {} for {:?}", x, tag)))?,
+      ))
+    } else {
+      Ok(None)
+    }
+  }
+}
+
 impl From<PhotometricInterpretation> for Value {
   fn from(value: PhotometricInterpretation) -> Self {
     Value::Short(vec![value as u16])
   }
 }
 
+#[derive(Debug, Copy, Clone, PartialEq, enumn::N)]
+#[repr(u16)]
 pub enum PreviewColorSpace {
   Unknown = 0,
   GrayGamma = 1,
@@ -70,15 +107,45 @@ pub enum PreviewColorSpace {
   ProPhotoRGB = 5,
 }
 
+impl ExtractFromIFD for PreviewColorSpace {
+  fn extract(ifd: &IFD) -> Result<Option<Self>> {
+    let tag = DngTag::PreviewColorSpace;
+    if let Some(entry) = ifd.get_entry(tag) {
+      let x = entry.value.force_u16(0);
+      Ok(Some(
+        Self::n(x).ok_or_else(|| TiffError::General(format!("Unknown value {} for {:?}", x, tag)))?,
+      ))
+    } else {
+      Ok(None)
+    }
+  }
+}
+
 impl From<PreviewColorSpace> for Value {
   fn from(value: PreviewColorSpace) -> Self {
     Value::Long(vec![value as u32])
   }
 }
 
+#[derive(Debug, Copy, Clone, PartialEq, enumn::N)]
+#[repr(u16)]
 pub enum PlanarConfiguration {
   Chunky = 1,
   Planar = 2,
+}
+
+impl ExtractFromIFD for PlanarConfiguration {
+  fn extract(ifd: &IFD) -> Result<Option<Self>> {
+    let tag = ExifTag::PlanarConfiguration;
+    if let Some(entry) = ifd.get_entry(tag) {
+      let x = entry.value.force_u16(0);
+      Ok(Some(
+        Self::n(x).ok_or_else(|| TiffError::General(format!("Unknown value {} for {:?}", x, tag)))?,
+      ))
+    } else {
+      Ok(None)
+    }
+  }
 }
 
 impl From<PlanarConfiguration> for Value {
@@ -87,9 +154,25 @@ impl From<PlanarConfiguration> for Value {
   }
 }
 
+#[derive(Debug, Copy, Clone, PartialEq, enumn::N)]
+#[repr(u16)]
 pub enum Predictor {
   None = 1,
   Horizontal = 2,
+}
+
+impl ExtractFromIFD for Predictor {
+  fn extract(ifd: &IFD) -> Result<Option<Self>> {
+    let tag = TiffCommonTag::Predictor;
+    if let Some(entry) = ifd.get_entry(tag) {
+      let x = entry.value.force_u16(0);
+      Ok(Some(
+        Self::n(x).ok_or_else(|| TiffError::General(format!("Unknown value {} for {:?}", x, tag)))?,
+      ))
+    } else {
+      Ok(None)
+    }
+  }
 }
 
 impl From<Predictor> for Value {
@@ -99,10 +182,26 @@ impl From<Predictor> for Value {
 }
 
 /// Type to represent resolution units
+#[derive(Debug, Copy, Clone, PartialEq, enumn::N)]
+#[repr(u16)]
 pub enum ResolutionUnit {
   None = 1,
   Inch = 2,
   Centimeter = 3,
+}
+
+impl ExtractFromIFD for ResolutionUnit {
+  fn extract(ifd: &IFD) -> Result<Option<Self>> {
+    let tag = TiffCommonTag::Predictor;
+    if let Some(entry) = ifd.get_entry(tag) {
+      let x = entry.value.force_u16(0);
+      Ok(Some(
+        Self::n(x).ok_or_else(|| TiffError::General(format!("Unknown value {} for {:?}", x, tag)))?,
+      ))
+    } else {
+      Ok(None)
+    }
+  }
 }
 
 impl From<ResolutionUnit> for Value {
@@ -112,6 +211,8 @@ impl From<ResolutionUnit> for Value {
 }
 
 #[allow(clippy::upper_case_acronyms)]
+#[derive(Debug, Copy, Clone, PartialEq, enumn::N)]
+#[repr(u16)]
 pub enum SampleFormat {
   Uint = 1,
   Int = 2,
@@ -123,6 +224,27 @@ impl From<SampleFormat> for Value {
   fn from(value: SampleFormat) -> Self {
     Value::Short(vec![value as u16])
   }
+}
+
+impl ExtractFromIFD for SampleFormat {
+  fn extract(ifd: &IFD) -> Result<Option<Self>> {
+    let tag = TiffCommonTag::SampleFormat;
+    if let Some(entry) = ifd.get_entry(tag) {
+      let x = entry.value.force_u16(0);
+      Ok(Some(
+        Self::n(x).ok_or_else(|| TiffError::General(format!("Unknown value {} for {:?}", x, tag)))?,
+      ))
+    } else {
+      Ok(None)
+    }
+  }
+}
+
+pub trait ExtractFromIFD
+where
+  Self: Sized,
+{
+  fn extract(ifd: &IFD) -> Result<Option<Self>>;
 }
 
 /// Error variants for compressor
@@ -145,6 +267,8 @@ pub enum TiffError {
 
 /// Result type for Compressor results
 pub type Result<T> = std::result::Result<T, TiffError>;
+
+use crate::tags::{DngTag, ExifTag, TiffCommonTag};
 
 /*
 impl From<Value> for Entry {

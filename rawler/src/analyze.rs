@@ -6,6 +6,7 @@ use image::DynamicImage;
 use itertools::Itertools;
 use md5::Digest;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
+use zerocopy::IntoBytes;
 
 use crate::{
   RawImage, RawImageData, RawlerError, Result,
@@ -184,20 +185,20 @@ pub fn analyze_file_structure<P: AsRef<Path>>(path: P) -> Result<AnalyzerResult>
   Ok(result)
 }
 
-pub fn extract_raw_pixels<P: AsRef<Path>>(path: P, params: &RawDecodeParams) -> Result<(usize, usize, usize, Vec<u16>)> {
+pub fn extract_raw_pixels<P: AsRef<Path>>(path: P, params: &RawDecodeParams) -> Result<RawImage> {
   let rawfile = RawSource::new(path.as_ref())?;
   let decoder = crate::get_decoder(&rawfile)?;
   let rawimage = decoder.raw_image(&rawfile, params, false)?;
-  match rawimage.data {
-    RawImageData::Integer(buf) => Ok((rawimage.width, rawimage.height, rawimage.cpp, buf)),
-    RawImageData::Float(_) => todo!(),
-  }
+  Ok(rawimage)
 }
 
 pub fn raw_pixels_digest<P: AsRef<Path>>(path: P, params: &RawDecodeParams) -> Result<[u8; 16]> {
-  let (_, _, _, pixels) = extract_raw_pixels(path, params)?;
-  let v: Vec<u8> = pixels.iter().flat_map(|p| p.to_le_bytes()).collect();
-  Ok(md5::compute(v).into())
+  let rawimage = extract_raw_pixels(path, params)?;
+  let byte_buf = match &rawimage.data {
+    RawImageData::Integer(items) => items.as_slice().as_bytes(),
+    RawImageData::Float(items) => items.as_slice().as_bytes(),
+  };
+  Ok(md5::compute(byte_buf).into())
 }
 
 pub fn extract_full_pixels<P: AsRef<Path>>(path: P, params: &RawDecodeParams) -> Result<DynamicImage> {

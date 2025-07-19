@@ -42,11 +42,19 @@ pub async fn analyze(options: &ArgMatches) -> crate::Result<()> {
     let digest = raw_pixels_digest(PathBuf::from(in_file), &RawDecodeParams::default())?;
     println!("{}", hex::encode(digest));
   } else if options.get_flag("raw_pixel") {
-    let (width, height, cpp, buf) = extract_raw_pixels(PathBuf::from(in_file), &RawDecodeParams::default())?;
-    if cpp == 3 {
-      dump_ppm16(width, height, &buf)?;
+    let mut image = extract_raw_pixels(PathBuf::from(in_file), &RawDecodeParams::default())?;
+    if let rawler::RawImageData::Float(_) = &image.data {
+      image.apply_scaling()?;
+      image.data.force_integer();
+    }
+    if let rawler::RawImageData::Integer(samples) = &image.data {
+      if image.cpp == 3 {
+        dump_ppm16(image.width, image.height, &samples)?;
+      } else {
+        dump_pgm(image.width, image.height, &samples)?;
+      }
     } else {
-      dump_pgm(width, height, &buf)?;
+      unreachable!()
     }
   } else if options.get_flag("preview_pixel") {
     let preview = extract_preview_pixels(PathBuf::from(in_file), &RawDecodeParams::default())?;
