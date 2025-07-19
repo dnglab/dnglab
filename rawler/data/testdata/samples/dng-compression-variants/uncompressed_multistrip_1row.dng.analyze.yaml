@@ -1,0 +1,139 @@
+---
+file:
+  fileSize: 31997694
+  fileName: uncompressed_multistrip_1row.dng
+  digest: 6ce77f9182b0b143950ecac53e04a7a9
+data:
+  metadata:
+    rawParams:
+      rawWidth: 5328
+      rawHeight: 3000
+      bitDepth: 16
+      cropArea:
+        p:
+          x: 8
+          y: 8
+        d:
+          w: 5312
+          h: 2984
+      activeArea:
+        p:
+          x: 0
+          y: 0
+        d:
+          w: 5328
+          h: 3000
+      blacklevels:
+        levels:
+          - 0/1
+          - 0/1
+          - 0/1
+          - 0/1
+        cpp: 1
+        width: 2
+        height: 2
+      whitelevels:
+        - 1023
+      wbCoeffs:
+        - 1.6650406
+        - 1.0
+        - 1.281602
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ~
+        artist: ~
+        lens_spec: ~
+        exposure_time: 1/70
+        fnumber: 19/10
+        aperture_value: 1851999/1000000
+        brightness_value: ~
+        iso_speed_ratings: 50
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: ~
+        date_time_original: "2017:03:16 15:24:07"
+        create_date: ~
+        modify_date: "2017:03:16 14:24:06"
+        exposure_program: ~
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: "044"
+        sub_sec_time_digitized: ~
+        shutter_speed_value: 6129283/1000000
+        max_aperture_value: ~
+        subject_distance: ~
+        metering_mode: ~
+        light_source: ~
+        flash: ~
+        focal_length: 430/100
+        image_number: ~
+        color_space: ~
+        flash_energy: ~
+        exposure_mode: ~
+        white_balance: ~
+        scene_capture_type: ~
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps:
+          gps_version_id:
+            - 2
+            - 3
+            - 0
+            - 0
+          gps_latitude_ref: N
+          gps_latitude:
+            - 59/1
+            - 558452/10000
+            - 0/1
+          gps_longitude_ref: E
+          gps_longitude:
+            - 10/1
+            - 454217/10000
+            - 0/1
+          gps_altitude_ref: ~
+          gps_altitude: ~
+          gps_timestamp:
+            - 14/1
+            - 24/1
+            - 7/1
+          gps_satellites: ~
+          gps_status: ~
+          gps_measure_mode: ~
+          gps_dop: ~
+          gps_speed_ref: ~
+          gps_speed: ~
+          gps_track_ref: ~
+          gps_track: ~
+          gps_img_direction_ref: ~
+          gps_img_direction: ~
+          gps_map_datum: ~
+          gps_dest_latitude_ref: ~
+          gps_dest_latitude: ~
+          gps_dest_longitude_ref: ~
+          gps_dest_longitude: ~
+          gps_dest_bearing_ref: ~
+          gps_dest_bearing: ~
+          gps_dest_distance_ref: ~
+          gps_dest_distance: ~
+          gps_processing_method: ~
+          gps_area_information: ~
+          gps_date_stamp: "2017:03:16"
+          gps_differential: ~
+          gps_h_positioning_error: ~
+        user_comment: ~
+      model: SM-G920F
+      make: samsung
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

@@ -1,0 +1,85 @@
+---
+file:
+  fileSize: 10575296
+  fileName: uncompressed_multistrip_16row.dng
+  digest: 066896fae5fe8b74d6e20c0487caf496
+data:
+  metadata:
+    rawParams:
+      rawWidth: 3920
+      rawHeight: 2638
+      bitDepth: 16
+      cropArea:
+        p:
+          x: 2
+          y: 2
+        d:
+          w: 3916
+          h: 2634
+      activeArea: ~
+      blacklevels:
+        levels:
+          - 0/1
+        cpp: 1
+        width: 1
+        height: 1
+      whitelevels:
+        - 16383
+      wbCoeffs:
+        - 2.0458984
+        - 1.0
+        - 1.2905273
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ""
+        artist: ""
+        lens_spec: ~
+        exposure_time: 4000/1000000
+        fnumber: ~
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 160
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: 0/65536
+        date_time_original: "2018:07:08 10:30:28"
+        create_date: "2018:07:08 10:30:28"
+        modify_date: ~
+        exposure_program: 3
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: 524288/65536
+        max_aperture_value: 131072/65536
+        subject_distance: ~
+        metering_mode: 2
+        light_source: 0
+        flash: 24
+        focal_length: 35000/1000
+        image_number: ~
+        color_space: ~
+        flash_energy: ~
+        exposure_mode: ~
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+        user_comment: ~
+      model: M8 Digital Camera
+      make: Leica Camera AG
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+
