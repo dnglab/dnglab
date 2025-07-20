@@ -118,10 +118,10 @@
 |Canon                               | Canon EOS R10                           | ✅ Yes | craw, raw |  |
 |Canon                               | Canon EOS R100                          | ✅ Yes | craw, raw |  |
 |Canon                               | Canon EOS R3                            | ✅ Yes | craw, raw |  |
-|Canon                               | Canon EOS R5                            | ✅ Yes | craw, crm, raw | support for CRM raw movie frame extraction, support for CRM raw movie frame extraction, support for CRM raw movie frame extraction, support for CRM raw movie frame extraction |
-|Canon                               | Canon EOS R5 C                          | ✅ Yes | craw, crm, raw | support for CRM raw movie frame extraction, support for CRM raw movie frame extraction, support for CRM raw movie frame extraction, support for CRM raw movie frame extraction |
+|Canon                               | Canon EOS R5                            | ✅ Yes | craw, crm, raw | support for CRM raw movie frame extraction |
+|Canon                               | Canon EOS R5 C                          | ✅ Yes | craw, crm, raw | support for CRM raw movie frame extraction |
 |Canon                               | Canon EOS R50                           | ✅ Yes | craw, raw |  |
-|Canon                               | Canon EOS R5m2                          | ✅ Yes | craw, crm, raw | support for CRM raw movie frame extraction, support for CRM raw movie frame extraction, support for CRM raw movie frame extraction, support for CRM raw movie frame extraction |
+|Canon                               | Canon EOS R5m2                          | ✅ Yes | craw, crm, raw | support for CRM raw movie frame extraction |
 |Canon                               | Canon EOS R6                            | ✅ Yes | craw, raw |  |
 |Canon                               | Canon EOS R6m2                          | ✅ Yes | craw, raw |  |
 |Canon                               | Canon EOS R7                            | ✅ Yes | craw, raw |  |
