@@ -72,7 +72,7 @@ impl OriginalCompressed {
       ctx.consume(&buf);
     }
 
-    let new_digest = ctx.compute().into();
+    let new_digest = ctx.finalize().into();
 
     debug!("Encoded calculated original data digest: {:x?}", self.digest);
     debug!("New calculated original data digest: {:x?}", new_digest);
@@ -118,7 +118,7 @@ impl OriginalCompressed {
       //chunks.push(ForkBlock::compress(&buf)?);
     }
     let chunks = forks.par_iter().flat_map(ForkBlock::compress).collect();
-    let digest = Some(ctx.compute().into());
+    let digest = Some(ctx.finalize().into());
 
     Ok(Self { raw_fork_size, chunks, digest })
   }
