@@ -24,47 +24,43 @@ inspector = []
 samplecheck = []
 
 [dependencies]
-async-trait = "0.1"
 backtrace = "0.3"
 bitstream-io = "4.1"
 byteorder = "1"
 chrono = "0.4"
-clap = {version = "4.4.0", optional = true}
+clap = { version = "4.4.0", optional = true }
 enumn = "0.1"
-futures = "0.3"
 hex = "0.4"
-image = "0.25"
+image = { version = "0.25", default-features = false, features = ["jpeg"] }
 itertools = "0.14"
 lazy_static = "1"
-libc = "0.2"
 jxl-oxide = "0.12.2"
 libflate = "2.0"
 log = "0.4"
-md5 = "0.7"
+md5 = "0.8"
 num = "0.4"
 multiversion = "0.8"
 num_enum = "0.7"
 rayon = "1"
-zerocopy = {version = "0.8.26", features = ["derive"]}
-serde = {version = "1.0", features = ["derive"]}
-serde_json = "1.0"
+zerocopy = { version = "0.8.26", features = ["derive"] }
+serde = { version = "1.0", features = ["derive"] }
 thiserror = "2.0"
-tokio = {version = "1.43", features = ["full"]}
 toml = "0.8"
-uuid = {version = "1.0", features = ["serde", "v4"]}
+uuid = { version = "1.0", features = ["serde", "v4"] }
 weezl = "0.1.7"
 memmap2 = "0.9.4"
 
 [dev-dependencies]
-criterion = {version = "0.6", features = ["html_reports"]}
+criterion = { version = "0.7", features = ["html_reports"] }
 env_logger = "0.11"
-serde_yaml = "0.8"
+serde_yaml = "=0.8" # TODO - breaks camera tests, update to 0.9 when fixed
 anyhow = "1.0"
 
 [build-dependencies]
 glob = "0.3"
 rustc_version = "0.4"
-toml = "0.8"
+toml = "=0.8" # TODO - Updating breaks `join.rs` build script with message - Error parsing "data/cameras/apple/quicktake100.toml": message: "unexpected content, expected nothing",
+
 
 
 

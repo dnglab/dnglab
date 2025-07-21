@@ -8,19 +8,16 @@ version = "0.7.0"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-byteorder = "1"
 anyhow = "1.0"
 chrono = "0.4"
 clap = { version = "4.4", features = ["cargo", "string"] }
-fern = {version = "0.7", features = ["colored"]}
 log = "0.4"
-prettytable-rs = "^0.10"
-rawler = {path = "../../../rawler", features = ["clap"]}
-embedftp = {path = "../../../embedftp"}
-image = "0.25"
+rawler = { path = "../../../rawler", features = ["clap"] }
+embedftp = { path = "../../../embedftp" }
+image = { version = "0.25" }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
-serde_yaml = "0.8"
+serde_yaml = "=0.8" # TODO - breaks camera tests, update to 0.9 when fixed
 rayon = "1"
 itertools = "0.14"
 thiserror = "2.0"
