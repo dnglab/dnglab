@@ -6,6 +6,7 @@ use crate::RawSource;
 use crate::RawlerError;
 use crate::Result;
 use crate::alloc_image;
+use crate::alloc_image_ok;
 use crate::analyze::FormatDump;
 use crate::bits::BEu16;
 use crate::exif::Exif;
@@ -72,7 +73,7 @@ impl<'a> Decoder for KdcDecoder<'a> {
         1 => Self::decode_dc120(src, width, height, dummy),
         7 => {
           white = 0xFF << 1;
-          Self::decode_dc120_jpeg(src, width, height, dummy)
+          Self::decode_dc120_jpeg(src, width, height, dummy)?
         }
         c => {
           return Err(RawlerError::unsupported(
@@ -109,7 +110,10 @@ impl<'a> Decoder for KdcDecoder<'a> {
       return Ok(img);
     }
 
-    let raw = self.tiff.find_first_ifd_with_tag(TiffCommonTag::KdcWidth).unwrap();
+    let raw = self
+      .tiff
+      .find_first_ifd_with_tag(TiffCommonTag::KdcWidth)
+      .ok_or_else(|| RawlerError::DecoderFailed(format!("Failed to find a IFD with KdcWidth tag")))?;
 
     let width = fetch_tiff_tag!(raw, TiffCommonTag::KdcWidth).force_usize(0) + 80;
     let height = fetch_tiff_tag!(raw, TiffCommonTag::KdcLength).force_usize(0) + 70;
@@ -186,12 +190,13 @@ impl<'a> KdcDecoder<'a> {
     out
   }
 
-  pub(crate) fn decode_dc120_jpeg(src: &[u8], width: usize, height: usize, dummy: bool) -> PixU16 {
-    let mut out = alloc_image!(width, height, dummy);
+  pub(crate) fn decode_dc120_jpeg(src: &[u8], width: usize, height: usize, dummy: bool) -> Result<PixU16> {
+    let mut out = alloc_image_ok!(width, height, dummy);
 
     let swapped_src: Vec<u8> = src.chunks_exact(2).flat_map(|x| [x[1], x[0]]).collect();
 
-    let img = image::load_from_memory_with_format(&swapped_src, image::ImageFormat::Jpeg).unwrap();
+    let img = image::load_from_memory_with_format(&swapped_src, image::ImageFormat::Jpeg)
+      .map_err(|err| RawlerError::DecoderFailed(format!("Failed to read JPEG image: {:?}", err)))?;
 
     assert_eq!(width, img.width() as usize);
     assert_eq!(height, img.height() as usize * 2);
@@ -209,6 +214,6 @@ impl<'a> KdcDecoder<'a> {
       }
     }
 
-    out
+    Ok(out)
   }
 }

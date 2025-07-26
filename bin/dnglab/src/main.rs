@@ -28,7 +28,7 @@ fn main() -> AppResult {
     .thread_name("dnglab-tokio-worker")
     .thread_stack_size(STACK_SIZE_MIB * 1024 * 1024)
     .build()
-    .unwrap();
+    .expect("Failed to build tokio runtime");
 
   let result = runtime.block_on(main_async());
   if let Err(err) = &result {

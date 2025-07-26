@@ -1,5 +1,4 @@
 use crate::RawImage;
-use crate::alloc_image;
 use crate::decoders::*;
 use crate::decompressors::ljpeg::huffman::*;
 use crate::formats::ciff::*;
@@ -59,7 +58,7 @@ pub struct CrwDecoder<'a> {
 
 impl<'a> CrwDecoder<'a> {
   pub fn new(file: &RawSource, rawloader: &'a RawLoader) -> Result<CrwDecoder<'a>> {
-    let ciff = CiffIFD::new_file(file).unwrap();
+    let ciff = CiffIFD::new_file(file)?;
 
     let makemodel = fetch_ciff_tag!(ciff, CiffTag::MakeModel).get_strings();
     if makemodel.len() < 2 {
@@ -74,7 +73,7 @@ impl<'a> CrwDecoder<'a> {
 impl<'a> Decoder for CrwDecoder<'a> {
   fn raw_image(&self, file: &RawSource, _params: &RawDecodeParams, dummy: bool) -> Result<RawImage> {
     let image = if self.camera.model == "Canon PowerShot Pro70" {
-      let src = file.subview_until_eof(26).unwrap();
+      let src = file.subview_until_eof(26)?;
       decode_10le_lsb16(src, 1552, 1024, dummy)
     } else {
       let sensorinfo = fetch_ciff_tag!(self.ciff, CiffTag::SensorInfo);
@@ -182,15 +181,15 @@ impl<'a> CrwDecoder<'a> {
     if dectable > 2 {
       return Err(RawlerError::DecoderFailed(format!("CRW: Unknown decoder table {}", dectable)));
     }
-    Ok(Self::do_decode(file, lowbits, dectable, width, height, dummy))
+    Self::do_decode(file, lowbits, dectable, width, height, dummy)
   }
 
-  pub(crate) fn do_decode(file: &RawSource, lowbits: bool, dectable: usize, width: usize, height: usize, dummy: bool) -> PixU16 {
-    let mut out = alloc_image!(width, height, dummy);
+  pub(crate) fn do_decode(file: &RawSource, lowbits: bool, dectable: usize, width: usize, height: usize, dummy: bool) -> Result<PixU16> {
+    let mut out = alloc_image_ok!(width, height, dummy);
 
     let htables = Self::create_hufftables(dectable);
     let offset = 540 + (lowbits as usize) * height * width / 4;
-    let src = file.subview_until_eof(offset as u64).unwrap();
+    let src = file.subview_until_eof(offset as u64)?;
     let mut pump = BitPumpJPEG::new(src);
 
     let mut carry: i32 = 0;
@@ -242,7 +241,7 @@ impl<'a> CrwDecoder<'a> {
     }
 
     if lowbits {
-      let buffer = file.as_vec().unwrap();
+      let buffer = file.as_vec()?;
       // Add the uncompressed 2 low bits to the decoded 8 high bits
       for (i, o) in out.pixels_mut().chunks_exact_mut(4).enumerate() {
         let c = buffer[26 + i] as u16;
@@ -267,7 +266,7 @@ impl<'a> CrwDecoder<'a> {
         }
       }
     }
-    out
+    Ok(out)
   }
 }
 

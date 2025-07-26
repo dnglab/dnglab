@@ -49,7 +49,10 @@ impl<'a> TfrDecoder<'a> {
 
 impl<'a> Decoder for TfrDecoder<'a> {
   fn raw_image(&self, file: &RawSource, _params: &RawDecodeParams, dummy: bool) -> Result<RawImage> {
-    let raw = self.tiff.find_first_ifd_with_tag(TiffCommonTag::WhiteLevel).unwrap();
+    let raw = self
+      .tiff
+      .find_first_ifd_with_tag(TiffCommonTag::WhiteLevel)
+      .ok_or_else(|| RawlerError::DecoderFailed(format!("Failed to find a IFD with WhilteLevel tag")))?;
 
     let whitelevel = raw
       .get_entry(TiffCommonTag::WhiteLevel)
@@ -63,7 +66,7 @@ impl<'a> Decoder for TfrDecoder<'a> {
     let height = fetch_tiff_tag!(raw, TiffCommonTag::ImageLength).force_usize(0);
     let offset = fetch_tiff_tag!(raw, TiffCommonTag::StripOffsets).force_usize(0);
 
-    let src = file.subview_until_eof(offset as u64).unwrap();
+    let src = file.subview_until_eof(offset as u64)?;
 
     let image = if self.camera.find_hint("uncompressed") {
       decode_16le(src, width, height, dummy)
@@ -100,7 +103,8 @@ impl<'a> Decoder for TfrDecoder<'a> {
         ImageBuffer::<Rgb<u8>, Vec<u8>>::from_raw(width as u32, height as u32, buf.to_vec()).unwrap(),
       )))
     } else {
-      let img = image::load_from_memory_with_format(buf, image::ImageFormat::Jpeg).unwrap();
+      let img = image::load_from_memory_with_format(buf, image::ImageFormat::Jpeg)
+        .map_err(|err| RawlerError::DecoderFailed(format!("Failed to read JPEG: {:?}", err)))?;
       Ok(Some(img))
     }
   }

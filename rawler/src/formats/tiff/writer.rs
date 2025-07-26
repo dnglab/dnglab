@@ -263,7 +263,9 @@ impl DirectoryWriter {
       tiff.writer.write_u16::<NativeEndian>(tag)?;
       tiff.writer.write_u16::<NativeEndian>(entry.value_type())?;
       tiff.writer.write_u32::<NativeEndian>(entry.count())?;
-      tiff.writer.write_u32::<NativeEndian>(entry.embedded.unwrap())?;
+      tiff
+        .writer
+        .write_u32::<NativeEndian>(entry.embedded.expect("embedded attribute must contain a value"))?;
     }
     tiff.writer.write_u32::<NativeEndian>(self.next_ifd)?; // Next IFD
 

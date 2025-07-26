@@ -87,20 +87,20 @@ mod tests {
     buf.extend(b"PWD");
     let result = codec.decode(&mut buf);
     assert!(result.is_ok());
-    let command = result.unwrap();
+    let command = result.expect("Codec failed");
     assert!(command.is_none());
 
     buf.extend(b"\r\n");
     let result = codec.decode(&mut buf);
     assert!(result.is_ok());
-    let command = result.unwrap();
+    let command = result.expect("Codec failed");
     assert_eq!(command, Some(Command::Pwd));
 
     let mut buf = BytesMut::new();
     buf.extend(b"LIST /tmp\r\n");
     let result = codec.decode(&mut buf);
     assert!(result.is_ok());
-    let command = result.unwrap();
+    let command = result.expect("Codec failed");
     assert_eq!(command, Some(Command::List(Some(PathBuf::from("/tmp")))));
   }
 }

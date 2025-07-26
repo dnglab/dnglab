@@ -21,7 +21,7 @@ impl<'a> NakedDecoder<'a> {
 
 impl<'a> Decoder for NakedDecoder<'a> {
   fn raw_image(&self, file: &RawSource, _params: &RawDecodeParams, dummy: bool) -> Result<RawImage> {
-    let data = file.as_vec().unwrap();
+    let data = file.as_vec()?;
     let buffer = &data;
     let width = self.camera.raw_width;
     let height = self.camera.raw_height;

@@ -136,22 +136,22 @@ pub fn decode_unwrapped(file: &RawSource) -> Result<RawImageData> {
       ))
     }
     39 => Ok(RawImageData::Integer(
-      crw::CrwDecoder::do_decode(file, false, 0, width, height, false).into_inner(),
+      crw::CrwDecoder::do_decode(file, false, 0, width, height, false).unwrap().into_inner(),
     )),
     40 => Ok(RawImageData::Integer(
-      crw::CrwDecoder::do_decode(file, false, 1, width, height, false).into_inner(),
+      crw::CrwDecoder::do_decode(file, false, 1, width, height, false).unwrap().into_inner(),
     )),
     41 => Ok(RawImageData::Integer(
-      crw::CrwDecoder::do_decode(file, false, 2, width, height, false).into_inner(),
+      crw::CrwDecoder::do_decode(file, false, 2, width, height, false).unwrap().into_inner(),
     )),
     42 => Ok(RawImageData::Integer(
-      crw::CrwDecoder::do_decode(file, true, 0, width, height, false).into_inner(),
+      crw::CrwDecoder::do_decode(file, true, 0, width, height, false).unwrap().into_inner(),
     )),
     43 => Ok(RawImageData::Integer(
-      crw::CrwDecoder::do_decode(file, true, 1, width, height, false).into_inner(),
+      crw::CrwDecoder::do_decode(file, true, 1, width, height, false).unwrap().into_inner(),
     )),
     44 => Ok(RawImageData::Integer(
-      crw::CrwDecoder::do_decode(file, true, 2, width, height, false).into_inner(),
+      crw::CrwDecoder::do_decode(file, true, 2, width, height, false).unwrap().into_inner(),
     )),
     45 => Ok(RawImageData::Integer(
       mos::MosDecoder::do_decode(data, false, width, height, false).unwrap().into_inner(),

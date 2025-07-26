@@ -111,7 +111,7 @@ impl<'a> Decoder for PefDecoder<'a> {
     let height = fetch_tiff_tag!(raw, TiffCommonTag::ImageLength).force_usize(0);
     let offset = fetch_tiff_tag!(raw, TiffCommonTag::StripOffsets).force_usize(0);
 
-    let src = file.subview_until_eof(offset as u64).unwrap();
+    let src = file.subview_until_eof(offset as u64)?;
 
     let image = match fetch_tiff_tag!(raw, TiffCommonTag::Compression).get_u32(0) {
       Ok(Some(1)) => decode_16be(src, width, height, dummy),
@@ -149,13 +149,14 @@ impl<'a> Decoder for PefDecoder<'a> {
         let len = length.force_u32(0);
         let offset = start.force_u32(0);
         if len > 0 && offset > 0 {
-          let buf = file.subview((self.makernote_offset + offset) as u64, len as u64).unwrap();
+          let buf = file.subview((self.makernote_offset + offset) as u64, len as u64)?;
           match image::load_from_memory_with_format(buf, image::ImageFormat::Jpeg) {
             Ok(img) => Some(img),
             Err(_) => {
               // Test offset without correction
-              let buf = file.subview(offset as u64, len as u64).unwrap();
-              let img = image::load_from_memory_with_format(buf, image::ImageFormat::Jpeg).unwrap();
+              let buf = file.subview(offset as u64, len as u64)?;
+              let img = image::load_from_memory_with_format(buf, image::ImageFormat::Jpeg)
+                .map_err(|err| RawlerError::DecoderFailed(format!("Failed to read JPEG: {:?}", err)))?;
               Some(img)
             }
           }

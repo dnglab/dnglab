@@ -333,7 +333,7 @@ mod tests {
     let cpp = 1;
     let tiles = vec.into_tiles_iter_mut(6, cpp, 2, 2);
     assert!(tiles.is_ok());
-    let tiles = tiles.unwrap();
+    let tiles = tiles.expect("Tiling failed");
 
     tiles.par_bridge().for_each(|tile| {
       tile.into_iter_mut().for_each(|line| {
@@ -359,7 +359,7 @@ mod tests {
     let tiles = vec.into_tiles_iter_mut(6, cpp, 2, 2);
     assert!(tiles.is_ok());
 
-    let tiles = tiles.unwrap();
+    let tiles = tiles.expect("Tiling failed");
 
     tiles.par_bridge().for_each(|tile| {
       tile.into_iter_mut().for_each(|line| {
@@ -385,7 +385,7 @@ mod tests {
     let cpp = 1;
     let tiles = vec.into_tiles_iter_mut(6, cpp, 2, 2);
     assert!(tiles.is_ok());
-    let tiles = tiles.unwrap();
+    let tiles = tiles.expect("Tiling failed");
 
     let tiles: Vec<Tile<u16>> = tiles.collect();
 
