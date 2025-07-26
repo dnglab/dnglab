@@ -69,7 +69,10 @@ impl<'a> SrwDecoder<'a> {
 
 impl<'a> Decoder for SrwDecoder<'a> {
   fn raw_image(&self, file: &RawSource, _params: &RawDecodeParams, dummy: bool) -> Result<RawImage> {
-    let raw = self.tiff.find_first_ifd_with_tag(TiffCommonTag::StripOffsets).unwrap();
+    let raw = self
+      .tiff
+      .find_first_ifd_with_tag(TiffCommonTag::StripOffsets)
+      .ok_or_else(|| RawlerError::DecoderFailed(format!("Failed to find a IFD with StripOffsets tag")))?;
     let width = fetch_tiff_tag!(raw, TiffCommonTag::ImageWidth).force_usize(0);
     let height = fetch_tiff_tag!(raw, TiffCommonTag::ImageLength).force_usize(0);
     let offset = fetch_tiff_tag!(raw, TiffCommonTag::StripOffsets).force_usize(0);
@@ -98,7 +101,7 @@ impl<'a> Decoder for SrwDecoder<'a> {
         Some(x) => {
           let coffset = x.force_usize(0);
           assert!(coffset > 0, "Surely this can't be the start of the file");
-          let loffsets = file.subview_until_eof(coffset as u64).unwrap();
+          let loffsets = file.subview_until_eof(coffset as u64)?;
           SrwDecoder::decode_srw1(&src, loffsets, width, height, dummy)
         }
       },

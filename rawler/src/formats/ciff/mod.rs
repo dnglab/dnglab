@@ -47,7 +47,7 @@ pub fn is_ciff(file: &RawSource) -> bool {
 
 impl CiffIFD {
   pub fn new_file(file: &RawSource) -> Result<CiffIFD, String> {
-    let data = file.as_vec().unwrap();
+    let data = file.as_vec().map_err(|err| format!("Failed to read whole file: {:?}", err))?;
 
     CiffIFD::new(&data, LEu32(&data, 2) as usize, data.len(), 1)
   }

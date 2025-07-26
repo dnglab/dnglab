@@ -32,7 +32,7 @@ impl Config {
   pub fn new<P: AsRef<Path>>(_file_path: P) -> Option<Config> {
     Some(Self {
       server_port: 8054,
-      server_addr: "::1".parse().unwrap(),
+      server_addr: "::1".parse().expect("Failed to parse IPv6 addr"),
       users: vec![User {
         name: "anonymous".into(),
         password: "anonymous@example.com".into(),

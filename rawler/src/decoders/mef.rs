@@ -1,5 +1,6 @@
 use crate::RawImage;
 use crate::RawLoader;
+use crate::RawlerError;
 use crate::Result;
 use crate::analyze::FormatDump;
 use crate::exif::Exif;
@@ -33,11 +34,14 @@ impl<'a> MefDecoder<'a> {
 
 impl<'a> Decoder for MefDecoder<'a> {
   fn raw_image(&self, file: &RawSource, _params: &RawDecodeParams, dummy: bool) -> Result<RawImage> {
-    let raw = &self.tiff.find_first_ifd_with_tag(TiffCommonTag::CFAPattern).unwrap();
+    let raw = &self
+      .tiff
+      .find_first_ifd_with_tag(TiffCommonTag::CFAPattern)
+      .ok_or_else(|| RawlerError::DecoderFailed(format!("Failed to find a IFD with CFAPattern tag")))?;
     let width = fetch_tiff_tag!(raw, TiffCommonTag::ImageWidth).force_usize(0);
     let height = fetch_tiff_tag!(raw, TiffCommonTag::ImageLength).force_usize(0);
     let offset = fetch_tiff_tag!(raw, TiffCommonTag::StripOffsets).force_usize(0);
-    let src = file.subview_until_eof(offset as u64).unwrap();
+    let src = file.subview_until_eof(offset as u64)?;
 
     let image = decode_12be(src, width, height, dummy);
     let cpp = 1;

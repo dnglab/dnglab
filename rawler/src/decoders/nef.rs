@@ -145,7 +145,9 @@ pub struct NefDecoder<'a> {
 
 impl<'a> NefDecoder<'a> {
   pub fn new(file: &RawSource, tiff: GenericTiffReader, rawloader: &'a RawLoader) -> Result<NefDecoder<'a>> {
-    let raw = tiff.find_first_ifd_with_tag(TiffCommonTag::CFAPattern).unwrap();
+    let raw = tiff
+      .find_first_ifd_with_tag(TiffCommonTag::CFAPattern)
+      .ok_or_else(|| RawlerError::DecoderFailed(format!("Failed to find a IFD with CFAPattern tag")))?;
     let bps = fetch_tiff_tag!(raw, TiffCommonTag::BitsPerSample).force_usize(0);
 
     // Make sure we always use a 12/14 bit mode to get correct white/blackpoints
@@ -173,7 +175,10 @@ impl<'a> NefDecoder<'a> {
 
 impl<'a> Decoder for NefDecoder<'a> {
   fn raw_image(&self, file: &RawSource, _params: &RawDecodeParams, dummy: bool) -> Result<RawImage> {
-    let raw = self.tiff.find_first_ifd_with_tag(TiffCommonTag::CFAPattern).unwrap();
+    let raw = self
+      .tiff
+      .find_first_ifd_with_tag(TiffCommonTag::CFAPattern)
+      .ok_or_else(|| RawlerError::DecoderFailed(format!("Failed to find a IFD with CFAPattern tag")))?;
     let mut width = fetch_tiff_tag!(raw, TiffCommonTag::ImageWidth).force_usize(0);
     let height = fetch_tiff_tag!(raw, TiffCommonTag::ImageLength).force_usize(0);
     let bps = fetch_tiff_tag!(raw, TiffCommonTag::BitsPerSample).force_usize(0);
@@ -324,10 +329,12 @@ impl<'a> Decoder for NefDecoder<'a> {
     let height = fetch_tiff_tag!(root_ifd, TiffCommonTag::ImageLength).force_usize(0);
     if compression == 1 {
       Ok(Some(DynamicImage::ImageRgb8(
-        ImageBuffer::<Rgb<u8>, Vec<u8>>::from_raw(width as u32, height as u32, buf.to_vec()).unwrap(),
+        ImageBuffer::<Rgb<u8>, Vec<u8>>::from_raw(width as u32, height as u32, buf.to_vec())
+          .ok_or_else(|| RawlerError::DecoderFailed(format!("Failed to read image")))?,
       )))
     } else {
-      let img = image::load_from_memory_with_format(buf, image::ImageFormat::Jpeg).unwrap();
+      let img = image::load_from_memory_with_format(buf, image::ImageFormat::Jpeg)
+        .map_err(|err| RawlerError::DecoderFailed(format!("Failed to read JPEG image: {:?}", err)))?;
       Ok(Some(img))
     }
   }

@@ -417,7 +417,7 @@ impl<'a> Decoder for RafDecoder<'a> {
   fn xpacket(&self, file: &RawSource, _params: &RawDecodeParams) -> Result<Option<Vec<u8>>> {
     let jpeg_buf = self.read_embedded_jpeg(file)?;
     let mut cur = Cursor::new(jpeg_buf);
-    let jfif = Jfif::parse(&mut cur).unwrap();
+    let jfif = Jfif::parse(&mut cur)?;
     match jfif.xpacket().cloned() {
       Some(xpacket) => {
         log::debug!("Found XPacket data in embedded JPEG preview");
@@ -435,7 +435,8 @@ impl<'a> Decoder for RafDecoder<'a> {
       return Ok(None);
     }
     let jpeg_buf = self.read_embedded_jpeg(file)?;
-    let img = image::load_from_memory_with_format(jpeg_buf, image::ImageFormat::Jpeg).unwrap();
+    let img = image::load_from_memory_with_format(jpeg_buf, image::ImageFormat::Jpeg)
+      .map_err(|err| RawlerError::DecoderFailed(format!("Failed to read JPEG: {:?}", err)))?;
     Ok(Some(img))
   }
 

@@ -209,7 +209,10 @@ impl<'a> DngDecoder<'a> {
       .find_ifds_with_tag(TiffCommonTag::Compression)
       .into_iter()
       .filter(|ifd| {
-        let compression = (**ifd).get_entry(TiffCommonTag::Compression).unwrap().force_u32(0);
+        let compression = (**ifd)
+          .get_entry(TiffCommonTag::Compression)
+          .expect("This IFD must contains this tag")
+          .force_u32(0);
         let subsampled = match (**ifd).get_entry(TiffCommonTag::NewSubFileType) {
           Some(e) => e.force_u32(0) & 1 != 0,
           None => false,

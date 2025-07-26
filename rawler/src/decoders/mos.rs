@@ -42,11 +42,14 @@ impl<'a> MosDecoder<'a> {
 
 impl<'a> Decoder for MosDecoder<'a> {
   fn raw_image(&self, file: &RawSource, _params: &RawDecodeParams, dummy: bool) -> Result<RawImage> {
-    let raw = self.tiff.find_first_ifd_with_tag(TiffCommonTag::TileOffsets).unwrap();
+    let raw = self
+      .tiff
+      .find_first_ifd_with_tag(TiffCommonTag::TileOffsets)
+      .ok_or_else(|| RawlerError::DecoderFailed(format!("Failed to find a IFD with TileOffsets tag")))?;
     let width = fetch_tiff_tag!(raw, TiffCommonTag::ImageWidth).force_usize(0);
     let height = fetch_tiff_tag!(raw, TiffCommonTag::ImageLength).force_usize(0);
     let offset = fetch_tiff_tag!(raw, TiffCommonTag::TileOffsets).force_usize(0);
-    let src = file.subview_until_eof(offset as u64).unwrap();
+    let src = file.subview_until_eof(offset as u64)?;
 
     let image = match fetch_tiff_tag!(raw, TiffCommonTag::Compression).force_usize(0) {
       1 => {
