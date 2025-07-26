@@ -276,7 +276,12 @@ impl<'a> Decoder for Cr3Decoder<'a> {
 
     // Load trak with raw MDAT section
     let moov_trak = self.moov_trak(raw_trak_id).ok_or(format!("Unable to get MOOV trak {}", raw_trak_id))?;
-    let (offset, size) = moov_trak.mdia.minf.stbl.get_sample_offset(sample_idx as u32 + 1).unwrap();
+    let (offset, size) = moov_trak
+      .mdia
+      .minf
+      .stbl
+      .get_sample_offset(sample_idx as u32 + 1)
+      .ok_or_else(|| RawlerError::DecoderFailed(format!("stbl sample not found")))?;
     debug!("RAW mdat offset: {}, len: {}", offset, size);
     // Raw data buffer
     let buf = file

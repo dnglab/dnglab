@@ -978,7 +978,7 @@ impl RawLoader {
     }
 
     // If all else fails see if we match by filesize to one of those CHDK style files
-    let data = rawfile.as_vec().unwrap();
+    let data = rawfile.as_vec()?;
     if let Some(cam) = self.naked.get(&data.len()) {
       return Ok(Box::new(nkd::NakedDecoder::new(cam.clone(), self)?));
     }

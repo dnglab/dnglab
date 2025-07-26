@@ -63,7 +63,9 @@ impl<'a> Rw2Decoder<'a> {
       if !data.is_empty() {
         data[0]
       } else {
-        tiff.find_first_ifd_with_tag(TiffCommonTag::StripOffsets).unwrap()
+        tiff
+          .find_first_ifd_with_tag(TiffCommonTag::StripOffsets)
+          .ok_or_else(|| RawlerError::DecoderFailed(format!("Failed to find a IFD with StripOffsets tag")))?
       }
     };
 
@@ -113,7 +115,13 @@ impl<'a> Decoder for Rw2Decoder<'a> {
       if !data.is_empty() {
         (data[0], true)
       } else {
-        (self.tiff.find_first_ifd_with_tag(TiffCommonTag::StripOffsets).unwrap(), false)
+        (
+          self
+            .tiff
+            .find_first_ifd_with_tag(TiffCommonTag::StripOffsets)
+            .ok_or_else(|| RawlerError::DecoderFailed(format!("Failed to find a IFD with StripOffsets tag")))?,
+          false,
+        )
       }
     };
 
@@ -135,9 +143,12 @@ impl<'a> Decoder for Rw2Decoder<'a> {
         //let size = fetch_tiff_tag!(raw, TiffCommonTag::StripByteCounts).force_usize(0);
         log::debug!("PanaOffset: {}", offset);
         let src = file.subview_until_eof_padded(offset as u64)?; // TODO add size and check all samples
-        Rw2Decoder::decode_panasonic(file, &src, width, height, split, raw_format, bps, self.tiff.root_ifd(), dummy)
+        Rw2Decoder::decode_panasonic(file, &src, width, height, split, raw_format, bps, self.tiff.root_ifd(), dummy)?
       } else {
-        let raw = self.tiff.find_first_ifd_with_tag(TiffCommonTag::StripOffsets).unwrap();
+        let raw = self
+          .tiff
+          .find_first_ifd_with_tag(TiffCommonTag::StripOffsets)
+          .ok_or_else(|| RawlerError::DecoderFailed(format!("Failed to find a IFD with StripOffsets tag")))?;
         width = fetch_tiff_tag!(raw, TiffCommonTag::PanaWidth).force_usize(0);
         height = fetch_tiff_tag!(raw, TiffCommonTag::PanaLength).force_usize(0);
         let offset = fetch_tiff_tag!(raw, TiffCommonTag::StripOffsets).force_usize(0);
@@ -150,7 +161,7 @@ impl<'a> Decoder for Rw2Decoder<'a> {
         } else if src.len() >= width * height * 3 / 2 {
           decode_12le_wcontrol(&src, width, height, dummy)
         } else {
-          Rw2Decoder::decode_panasonic(file, &src, width, height, split, raw_format, bps, self.tiff.root_ifd(), dummy)
+          Rw2Decoder::decode_panasonic(file, &src, width, height, split, raw_format, bps, self.tiff.root_ifd(), dummy)?
         }
       }
     };
@@ -343,17 +354,17 @@ impl<'a> Rw2Decoder<'a> {
     bps: u32,
     ifd: &IFD,
     dummy: bool,
-  ) -> PixU16 {
+  ) -> Result<PixU16> {
     log::debug!("width: {}, height: {}, bps: {}", width, height, bps);
-    match raw_format {
+    Ok(match raw_format {
       3 => decode_panasonic_v4(buf, width, height, split, dummy),
       4 => decode_panasonic_v4(buf, width, height, split, dummy),
       5 => decode_panasonic_v5(buf, width, height, bps, dummy),
       6 => decode_panasonic_v6(buf, width, height, bps, dummy),
       7 => decode_panasonic_v7(buf, width, height, bps, dummy),
-      8 => decode_panasonic_v8(file, width, height, bps, ifd, dummy).unwrap(), // TODO
-      _ => todo!("Format {} is not implemented", raw_format),                  // TODO: return error
-    }
+      8 => decode_panasonic_v8(file, width, height, bps, ifd, dummy)?,
+      _ => todo!("Format {} is not implemented", raw_format), // TODO: return error
+    })
   }
 }
 

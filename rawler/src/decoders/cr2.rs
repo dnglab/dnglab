@@ -317,10 +317,12 @@ impl<'a> Decoder for Cr2Decoder<'a> {
     let height = fetch_tiff_tag!(root_ifd, TiffCommonTag::ImageLength).force_usize(0);
     if compression == 1 {
       Ok(Some(DynamicImage::ImageRgb8(
-        ImageBuffer::<Rgb<u8>, Vec<u8>>::from_raw(width as u32, height as u32, buf.to_vec()).unwrap(),
+        ImageBuffer::<Rgb<u8>, Vec<u8>>::from_raw(width as u32, height as u32, buf.to_vec())
+          .ok_or_else(|| RawlerError::DecoderFailed(format!("Failed to read uncompressed image")))?,
       )))
     } else {
-      let img = image::load_from_memory_with_format(buf, image::ImageFormat::Jpeg).unwrap();
+      let img = image::load_from_memory_with_format(buf, image::ImageFormat::Jpeg)
+        .map_err(|err| RawlerError::DecoderFailed(format!("Failed to read JPEG image: {:?}", err)))?;
       Ok(Some(img))
     }
   }

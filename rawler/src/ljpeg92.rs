@@ -1070,7 +1070,7 @@ mod tests {
     let w = 16;
     let c = 1;
     let input_image = vec![0xfffe; w * h * c];
-    let enc = LjpegCompressor::new(&input_image, w, h, c, 14, 1, 0, 0).unwrap();
+    let enc = LjpegCompressor::new(&input_image, w, h, c, 14, 1, 0, 0).expect("Compressor failed");
     let _ = enc.encode();
   }
 

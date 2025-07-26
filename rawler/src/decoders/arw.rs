@@ -214,7 +214,8 @@ impl<'a> Decoder for ArwDecoder<'a> {
     if let Some(preview_off) = root.get_entry(ExifTag::JPEGInterchangeFormat) {
       if let Some(preview_len) = root.get_entry(ExifTag::JPEGInterchangeFormatLength) {
         let buf = file.subview(preview_off.force_u64(0), preview_len.force_u64(0))?;
-        let img = image::load_from_memory_with_format(buf, image::ImageFormat::Jpeg).unwrap();
+        let img = image::load_from_memory_with_format(buf, image::ImageFormat::Jpeg)
+          .map_err(|err| RawlerError::DecoderFailed(format!("Failed to read JPEG image: {:?}", err)))?;
         return Ok(Some(img));
       }
     }
@@ -315,7 +316,7 @@ impl<'a> ArwDecoder<'a> {
     let height = 2608;
     let offset = fetch_tiff_tag!(raw, TiffCommonTag::SubIFDs).force_usize(0);
 
-    let src = file.subview_until_eof(offset as u64).unwrap();
+    let src = file.subview_until_eof(offset as u64)?;
     let image = ArwDecoder::decode_arw1(src, width, height, dummy);
 
     // Get the WB the MRW way
@@ -364,7 +365,7 @@ impl<'a> ArwDecoder<'a> {
     let image = if dummy {
       PixU16::new_uninit(width, height)
     } else {
-      let buffer = file.as_vec().unwrap();
+      let buffer = file.as_vec()?;
       let len = width * height * 2;
 
       // Constants taken from dcraw
@@ -534,7 +535,7 @@ impl<'a> ArwDecoder<'a> {
           for col in 0..coltiles {
             let offset = offsets.force_usize(row * coltiles + col);
             let src = &buffer[offset..];
-            let decompressor = LjpegDecompressor::new(src).unwrap();
+            let decompressor = LjpegDecompressor::new(src)?;
             let cpp = 4;
             let w = 256;
             let h = 256;
@@ -584,7 +585,7 @@ impl<'a> ArwDecoder<'a> {
       let tag = fetch_tiff_tag!(priv_tiff, TiffCommonTag::SonyKey).get_data();
       LEu32(tag, 0)
     };
-    let buffer = file.as_vec().unwrap();
+    let buffer = file.as_vec()?;
     let decrypted_buf = ArwDecoder::sony_decrypt(&buffer, sony_offset as usize, sony_length, sony_key)?;
 
     let decrypted_tiff = IFD::new(&mut Cursor::new(decrypted_buf), 0, 0, -(sony_offset as i32), Endian::Little, &[])?;

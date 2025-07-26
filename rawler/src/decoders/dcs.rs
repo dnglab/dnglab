@@ -1,5 +1,6 @@
 use crate::RawImage;
 use crate::RawLoader;
+use crate::RawlerError;
 use crate::Result;
 use crate::analyze::FormatDump;
 use crate::bits::LookupTable;
@@ -35,7 +36,10 @@ impl<'a> DcsDecoder<'a> {
 
 impl<'a> Decoder for DcsDecoder<'a> {
   fn raw_image(&self, file: &RawSource, _params: &RawDecodeParams, dummy: bool) -> Result<RawImage> {
-    let raw = self.tiff.find_ifd_with_new_subfile_type(0).unwrap();
+    let raw = self
+      .tiff
+      .find_ifd_with_new_subfile_type(0)
+      .ok_or_else(|| RawlerError::DecoderFailed(format!("Failed to find IFD with subfile type 0")))?;
     let width = fetch_tiff_tag!(raw, TiffCommonTag::ImageWidth).force_usize(0);
     let height = fetch_tiff_tag!(raw, TiffCommonTag::ImageLength).force_usize(0);
     let offset = fetch_tiff_tag!(raw, TiffCommonTag::StripOffsets).force_usize(0);

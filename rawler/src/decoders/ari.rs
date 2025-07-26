@@ -30,7 +30,7 @@ pub struct AriDecoder<'a> {
 
 impl<'a> AriDecoder<'a> {
   pub fn new(file: &RawSource, rawloader: &'a RawLoader) -> Result<AriDecoder<'a>> {
-    let buffer = file.subview(668, 30).unwrap();
+    let buffer = file.subview(668, 30)?;
     let model = String::from_utf8_lossy(buffer).split_terminator('\0').next().unwrap_or("").to_string();
     let camera = rawloader.check_supported_with_everything("ARRI", &model, "")?;
     Ok(AriDecoder { rawloader, camera })
