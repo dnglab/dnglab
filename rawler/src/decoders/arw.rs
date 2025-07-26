@@ -117,7 +117,7 @@ impl<'a> Decoder for ArwDecoder<'a> {
     let mut white = params.whitelevel.map(|x| x[0]);
     let mut black = params.blacklevel;
 
-    let src = file.subview_until_eof(offset as u64).unwrap();
+    let src = file.subview_until_eof(offset as u64)?;
     let mut cpp = 1;
 
     let image = match compression {
