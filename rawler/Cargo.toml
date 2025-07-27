@@ -55,6 +55,7 @@ criterion = { version = "0.7", features = ["html_reports"] }
 env_logger = "0.11"
 serde_yaml = "=0.8" # TODO - breaks camera tests, update to 0.9 when fixed
 anyhow = "1.0"
+approx = "0.5.1"
 
 [build-dependencies]
 glob = "0.3"

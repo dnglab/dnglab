@@ -16,6 +16,14 @@ pub fn multiply<const X: usize, const A: usize, const B: usize>(a: &[[f32; X]; A
   r
 }
 
+pub fn multiply_row1(a: &[[f32; 3]; 3], b: &[f32; 3]) -> [f32; 3] {
+  [
+    a[0][0] * b[0] + a[0][1] * b[1] + a[0][2] * b[2],
+    a[1][0] * b[0] + a[1][1] * b[1] + a[1][2] * b[2],
+    a[2][0] * b[0] + a[2][1] * b[1] + a[2][2] * b[2],
+  ]
+}
+
 /// Normalize a matrix so that the sum of each row equals to 1.0
 pub fn normalize<const N: usize, const M: usize>(rgb2cam: [[f32; N]; M]) -> [[f32; N]; M] {
   let mut result = [[0.0; N]; M];
