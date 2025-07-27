@@ -140,6 +140,28 @@ pub const XYZ_TO_PROFOTORGB_D50: [[f32; 3]; 3] = [
   [0.0000000, 0.0000000, 1.2118128],
 ];
 
+pub const CIE_1931_TRISTIMULUS_A: [f32; 3] = [1.09850, 1.00000, 0.35585]; // X, Y, Z
+
+pub const CIE_1931_TRISTIMULUS_B: [f32; 3] = [0.99072, 1.00000, 0.85223]; // X, Y, Z
+
+pub const CIE_1931_TRISTIMULUS_C: [f32; 3] = [0.98074, 1.00000, 1.18232]; // X, Y, Z
+
+pub const CIE_1931_TRISTIMULUS_D50: [f32; 3] = [0.96422, 1.00000, 0.82521]; // X, Y, Z
+
+pub const CIE_1931_TRISTIMULUS_D55: [f32; 3] = [0.95682, 1.00000, 0.92149]; // X, Y, Z
+
+pub const CIE_1931_TRISTIMULUS_D65: [f32; 3] = [0.95047, 1.00000, 1.08883]; // X, Y, Z
+
+pub const CIE_1931_TRISTIMULUS_D75: [f32; 3] = [0.94972, 1.00000, 1.22638]; // X, Y, Z
+
+pub const CIE_1931_TRISTIMULUS_E: [f32; 3] = [1.00000, 1.00000, 1.00000]; // X, Y, Z
+
+pub const CIE_1931_TRISTIMULUS_F2: [f32; 3] = [0.99186, 1.00000, 0.67393]; // X, Y, Z
+
+pub const CIE_1931_TRISTIMULUS_F7: [f32; 3] = [0.95041, 1.00000, 1.08747]; // X, Y, Z
+
+pub const CIE_1931_TRISTIMULUS_F11: [f32; 3] = [1.00962, 1.00000, 0.64350]; // X, Y, Z
+
 /// incandescent / tungsten
 pub const CIE_1931_WHITE_POINT_A: (f32, f32) = (0.44757, 0.40745);
 /// obsolete, direct sunlight at noon
