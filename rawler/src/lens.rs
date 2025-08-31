@@ -152,7 +152,7 @@ impl LensResolver {
     self
   }
 
-  fn lens_matcher(&self) -> LensMatcher {
+  fn lens_matcher(&self) -> LensMatcher<'_> {
     LensMatcher {
       lens_name: self.lens_keyname.as_deref(),
       lens_make: self.lens_make.as_deref(),

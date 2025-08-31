@@ -121,12 +121,12 @@ where
     &mut self.data
   }
 
-  pub fn pixel_rows(&self) -> std::slice::ChunksExact<T> {
+  pub fn pixel_rows(&self) -> std::slice::ChunksExact<'_, T> {
     debug_assert!(self.initialized);
     self.data.chunks_exact(self.width)
   }
 
-  pub fn pixel_rows_mut(&mut self) -> std::slice::ChunksExactMut<T> {
+  pub fn pixel_rows_mut(&mut self) -> std::slice::ChunksExactMut<'_, T> {
     debug_assert!(self.initialized);
     self.data.chunks_exact_mut(self.width)
   }
@@ -406,11 +406,11 @@ where
     &mut self.data
   }
 
-  pub fn pixel_rows(&self) -> std::slice::ChunksExact<[T; N]> {
+  pub fn pixel_rows(&self) -> std::slice::ChunksExact<'_, [T; N]> {
     self.data.chunks_exact(self.width)
   }
 
-  pub fn pixel_rows_mut(&mut self) -> std::slice::ChunksExactMut<[T; N]> {
+  pub fn pixel_rows_mut(&mut self) -> std::slice::ChunksExactMut<'_, [T; N]> {
     self.data.chunks_exact_mut(self.width)
   }
 
