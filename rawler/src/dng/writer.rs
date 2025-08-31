@@ -454,11 +454,11 @@ where
     Ok(())
   }
 
-  pub fn subframe(&mut self, id: u32) -> SubFrameWriter<B> {
+  pub fn subframe(&mut self, id: u32) -> SubFrameWriter<'_, B> {
     SubFrameWriter::new(self, id, false)
   }
 
-  pub fn subframe_on_root(&mut self, id: u32) -> SubFrameWriter<B> {
+  pub fn subframe_on_root(&mut self, id: u32) -> SubFrameWriter<'_, B> {
     SubFrameWriter::new(self, id, true)
   }
 

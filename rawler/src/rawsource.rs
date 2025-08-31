@@ -76,7 +76,7 @@ impl RawSource {
     ))
   }
 
-  pub fn subview_padded(&self, offset: u64, size: u64) -> std::io::Result<PaddedBuf> {
+  pub fn subview_padded(&self, offset: u64, size: u64) -> std::io::Result<PaddedBuf<'_>> {
     if offset + size <= self.len() as u64 {
       if offset + size + 16 <= self.len() as u64 {
         self.subview(offset, size + 16).map(|buf| PaddedBuf::new_ref(buf, size as usize))
@@ -101,7 +101,7 @@ impl RawSource {
     ))
   }
 
-  pub fn subview_until_eof_padded(&self, offset: u64) -> std::io::Result<PaddedBuf> {
+  pub fn subview_until_eof_padded(&self, offset: u64) -> std::io::Result<PaddedBuf<'_>> {
     if offset < self.len() as u64 {
       let mut buf = Vec::with_capacity((self.len() - offset as usize + 16) as usize);
       buf.extend_from_slice(self.subview_until_eof(offset)?);
