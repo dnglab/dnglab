@@ -18,6 +18,13 @@ use crate::{
   rawsource::RawSource,
 };
 
+/// Defines the offsets for the start of a strip.
+#[derive(Clone, Debug)]
+struct StripLineOffset {
+  cols: u16,
+  rows: u16,
+}
+
 #[derive(Clone, Debug)]
 struct CF2Params {
   /// Unknown value, it's labeled as strip_height but don't match any height
@@ -73,7 +80,7 @@ struct CF2Params {
   strip_byte_offsets: Vec<u32>,
 
   /// Starting column offset in a output line
-  strip_line_offsets: Vec<u32>,
+  strip_line_offsets: Vec<StripLineOffset>,
 
   /// Size in bits of compressed bitstream
   strip_data_size: Vec<u32>,
@@ -123,7 +130,12 @@ impl CF2Params {
     let strip_line_offsets = {
       let mut bs = ByteStream::new(fetch_tiff_tag!(ifd, PanasonicTag::CF2StripLineOffsets).get_data(), Endian::Little);
       let count = bs.get_u16();
-      (0..count).map(|_| bs.get_u32()).collect()
+      (0..count)
+        .map(|_| StripLineOffset {
+          cols: bs.get_u16(),
+          rows: bs.get_u16(),
+        })
+        .collect()
     };
     let strip_data_size = {
       let mut bs = ByteStream::new(fetch_tiff_tag!(ifd, PanasonicTag::CF2StripDataSize).get_data(), Endian::Little);
@@ -359,19 +371,22 @@ pub(crate) fn decode_panasonic_v8(rawfile: &RawSource, width: usize, height: usi
   let params = CF2Params::new(ifd)?;
   log::debug!("pana8: params: {:?}", params);
 
-  assert_eq!(params.strip_widths.iter().map(|x| *x as i32).sum::<i32>() as usize, width);
-  assert_eq!(params.num_of_strips_v, 1, "multiple v strips not supported");
+  assert_eq!(
+    params.strip_widths.iter().map(|x| *x as i32).sum::<i32>() as usize / params.num_of_strips_v as usize,
+    width
+  );
 
   // Shared output buffer, we need to write from multiple rayon threads to output image.
   let shared_pix = SharedPix2D::new(out);
 
-  let mut bitstreams = Vec::with_capacity(params.num_of_strips_h as usize);
-  for strip_id in 0..params.num_of_strips_h as usize {
+  let total_strip_count = (params.num_of_strips_h * params.num_of_strips_v) as usize;
+  let mut bitstreams = Vec::with_capacity(total_strip_count);
+  for strip_id in 0..total_strip_count {
     bitstreams.push(rawfile.subview(params.strip_byte_offsets[strip_id] as u64, (params.strip_data_size[strip_id] as u64 + 7) / 8)?);
   }
 
-  // Parallel decode multiplce strips
-  (0..params.num_of_strips_h as usize).into_par_iter().for_each(|strip_id| {
+  // Parallel decode multiple strips
+  (0..total_strip_count).into_par_iter().for_each(|strip_id| {
     let buf = &bitstreams[strip_id];
     decode_strip(buf, &params, strip_id, unsafe { shared_pix.inner_mut() });
   });
@@ -386,7 +401,6 @@ fn decode_strip(buf: &[u8], params: &CF2Params, strip_id: usize, out: &mut PixU1
   let halfheight = height >> 1;
   let halfwidth = width >> 1;
   let doublewidth = halfwidth * 4;
-  let left_margin = params.strip_line_offsets[strip_id] as usize;
   let mut linebuf = vec![0_u16; doublewidth];
 
   // for (i, item) in params.huf_table.iter().enumerate() {
@@ -461,7 +475,9 @@ fn decode_strip(buf: &[u8], params: &CF2Params, strip_id: usize, out: &mut PixU1
     // Line buffer contains two rows packed into one row with double width.
     assert_eq!(linebuf.len(), 2 * width);
     for col in (0..width).step_by(2) {
-      let dest_row = curr_row * 2;
+      let row_offset = params.strip_line_offsets[strip_id].rows as usize;
+      let left_margin = params.strip_line_offsets[strip_id].cols as usize;
+      let dest_row = row_offset + (curr_row * 2);
       if let Some(gamma_table) = &state.gamma_table {
         debug_assert!(!gamma_table.is_empty());
         *out.at_mut(dest_row + 0, left_margin + col + 0) = gamma_table[linebuf[2 * col + 0] as usize];
