@@ -1,0 +1,94 @@
+---
+file:
+  fileSize: 62853120
+  fileName: DC-S1RM2_3x2_eshutter.RW2
+  digest: 6c149d7492b8443b89da857456fd3366
+data:
+  metadata:
+    rawParams:
+      rawWidth: 8152
+      rawHeight: 5432
+      bitDepth: 16
+      cropArea:
+        p:
+          x: 4
+          y: 4
+        d:
+          w: 8144
+          h: 5424
+      activeArea:
+        p:
+          x: 4
+          y: 4
+        d:
+          w: 8144
+          h: 5424
+      blacklevels:
+        levels:
+          - 512/1
+          - 512/1
+          - 512/1
+          - 512/1
+        cpp: 1
+        width: 2
+        height: 2
+      whitelevels:
+        - 16380
+      wbCoeffs:
+        - 2.1875
+        - 1.0
+        - 1.6875
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ""
+        artist: ""
+        lens_spec: ~
+        exposure_time: 10/1000
+        fnumber: 140/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 80
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: 1
+        exposure_bias: 0/100
+        date_time_original: "2025:04:26 13:46:19"
+        create_date: "2025:04:26 13:46:19"
+        modify_date: ~
+        exposure_program: 3
+        timezone_offset: ~
+        offset_time: "-07:00"
+        offset_time_original: "-07:00"
+        offset_time_digitized: "-07:00"
+        sub_sec_time: "489"
+        sub_sec_time_original: "489"
+        sub_sec_time_digitized: "489"
+        shutter_speed_value: ~
+        max_aperture_value: 1024/256
+        subject_distance: ~
+        metering_mode: 5
+        light_source: 0
+        flash: 16
+        focal_length: 270/10
+        image_number: ~
+        color_space: ~
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: ~
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: WJ5BA004426
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+        user_comment: ~
+      model: DC-S1RM2
+      make: Panasonic
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+
