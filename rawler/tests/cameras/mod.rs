@@ -2136,6 +2136,18 @@ mod camera_dc_s1_raw_modes {
 mod camera_dc_s1r_raw_modes {
   super::camera_file_check!("Panasonic", "DC-S1R", cam_dc_s1r_iso_100_6fmt_8368x5584_rw2, "raw_modes/DC-S1R_ISO_100_6fmt_8368x5584.RW2");
 }
+mod camera_dc_s1rm2_raw_modes {
+  super::camera_file_check!("Panasonic", "DC-S1RM2", cam_dc_s1rm2_2x1_rw2, "raw_modes/DC-S1RM2_2x1.RW2");
+  super::camera_file_check!("Panasonic", "DC-S1RM2", cam_dc_s1rm2_65x24_rw2, "raw_modes/DC-S1RM2_65x24.RW2");
+  super::camera_file_check!("Panasonic", "DC-S1RM2", cam_dc_s1rm2_12bit_burst_electronic_rw2, "raw_modes/DC-S1RM2_12bit_burst_electronic.RW2");
+  super::camera_file_check!("Panasonic", "DC-S1RM2", cam_dc_s1rm2_1x1_rw2, "raw_modes/DC-S1RM2_1x1.RW2");
+  super::camera_file_check!("Panasonic", "DC-S1RM2", cam_dc_s1rm2_4x3_rw2, "raw_modes/DC-S1RM2_4x3.RW2");
+  super::camera_file_check!("Panasonic", "DC-S1RM2", cam_dc_s1rm2_3x2_multi_exposure_rw2, "raw_modes/DC-S1RM2_3x2_multi_exposure.RW2");
+  super::camera_file_check!("Panasonic", "DC-S1RM2", cam_dc_s1rm2_3x2_eshutter_rw2, "raw_modes/DC-S1RM2_3x2_eshutter.RW2");
+  super::camera_file_check!("Panasonic", "DC-S1RM2", cam_dc_s1rm2_hires_standard_rw2, "raw_modes/DC-S1RM2_hires_standard.RW2");
+  super::camera_file_check!("Panasonic", "DC-S1RM2", cam_dc_s1rm2_live_composite_mode_rw2, "raw_modes/DC-S1RM2_live_composite_mode.RW2");
+  super::camera_file_check!("Panasonic", "DC-S1RM2", cam_dc_s1rm2_16x9_rw2, "raw_modes/DC-S1RM2_16x9.RW2");
+}
 mod camera_dc_s5_raw_modes {
   super::camera_file_check!("Panasonic", "DC-S5", cam_dc_s5_iso_640_6fmt_6000x4000_rw2, "raw_modes/DC-S5_ISO_640_6fmt_6000x4000.RW2");
   super::camera_file_check!("Panasonic", "DC-S5", cam_dc_s5_iso_640_7fmt_12000x8000_rw2, "raw_modes/DC-S5_ISO_640_7fmt_12000x8000.RW2");
