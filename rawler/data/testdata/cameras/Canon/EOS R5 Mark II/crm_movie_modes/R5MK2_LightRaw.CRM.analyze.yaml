@@ -44,7 +44,11 @@ data:
         orientation: 1
         copyright: ""
         artist: ""
-        lens_spec: ~
+        lens_spec:
+          - 28/1
+          - 28/1
+          - 28/10
+          - 28/10
         exposure_time: 0/0
         fnumber: 0/0
         aperture_value: 286720/65536
@@ -82,8 +86,8 @@ data:
         owner_name: ""
         serial_number: "143302103530"
         lens_serial_number: "3612001682"
-        lens_make: ~
-        lens_model: ~
+        lens_make: Canon
+        lens_model: RF 28mm F2.8 STM
         gps:
           gps_version_id:
             - 2
@@ -124,7 +128,24 @@ data:
         user_comment: ~
       model: EOS R5 Mark II
       make: Canon
-      lens: ~
+      lens:
+        identifiers:
+          name: RF28mm F2.8 STM
+          id:
+            - 61182
+            - 313
+          nikon_id: ~
+          olympus_id: ~
+        mount: rf-mount
+        lens_make: Canon
+        lens_model: RF 28mm F2.8 STM
+        focal_range:
+          - 28/1
+          - 28/1
+        aperture_range:
+          - 28/10
+          - 28/10
+        lens_name: Canon RF 28mm F2.8 STM
       unique_image_id: 222622705153098383031807626094947518840
       rating: ~
 
