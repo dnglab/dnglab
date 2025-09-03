@@ -727,6 +727,7 @@
 |SONY                                | DSC-RX100M5A                            | ✅ Yes | all |  |
 |SONY                                | DSC-RX100M6                             | ✅ Yes | all |  |
 |SONY                                | DSC-RX100M7                             | ✅ Yes | all |  |
+|SONY                                | DSC-RX100M7A                            | ✅ Yes | all |  |
 |SONY                                | DSC-RX10M2                              | ✅ Yes | all |  |
 |SONY                                | DSC-RX10M3                              | ✅ Yes | all |  |
 |SONY                                | DSC-RX10M4                              | ✅ Yes | all |  |
