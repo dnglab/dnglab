@@ -70,6 +70,16 @@ aperture_range = [[28, 10], [28, 10]]
 
 [[lenses]]
 mount = "rf-mount"
+key = "RF28-70mm F2.8 IS STM"
+lens_id = 61182
+lens_subid = 318
+make = "Canon"
+model = "RF 24-70mm F2.8L IS STM"
+focal_range = [[24, 1], [70, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "rf-mount"
 key = "RF15-35mm F2.8 L IS USM"
 lens_id = 61182
 lens_subid = 264
