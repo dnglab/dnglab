@@ -118,6 +118,22 @@ pub trait ReadTrait: Read + Seek {}
 
 impl<T: Read + Seek> ReadTrait for T {}
 
+// Function wrappers for macros to support import pattern
+#[doc(hidden)]
+pub fn alloc_image_plain(width: usize, height: usize, dummy: bool) -> pixarray::PixU16 {
+  alloc_image_plain!(width, height, dummy)
+}
+
+#[doc(hidden)]
+pub fn alloc_image_f32_plain(width: usize, height: usize, dummy: bool) -> pixarray::PixF32 {
+  alloc_image_f32_plain!(width, height, dummy)
+}
+
+#[doc(hidden)]
+pub fn alloc_image_ok(width: usize, height: usize, dummy: bool) -> pixarray::PixU16 {
+  alloc_image_ok!(width, height, dummy)
+}
+
 #[derive(Error, Debug)]
 pub enum RawlerError {
   #[error("Error: {}, model '{}', make: '{}', mode: '{}'", what, model, make, mode)]
