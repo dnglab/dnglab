@@ -229,30 +229,49 @@ impl Demosaic<f32, 3> for XTransSuperpixelDemosaic {
   /// within a 6x6 block of the original sensor data.
   /// The resulting image is 1/36th the size (1/6 width, 1/6 height).
   fn demosaic(&self, pixels: &PixF32, cfa: &CFA, colors: &PlaneColor, roi: Rect) -> Color2D<f32, 3> {
-    // ROI width/height must be a multiple of 6 for this algorithm.
-    let roi = Rect::new(roi.p, Dim2::new(roi.width() / 6 * 6, roi.height() / 6 * 6));
     let dim = pixels.dim();
+    
+    // Ensure ROI is within image bounds and adjust to multiple of 6
+    let safe_roi = Rect::new(
+      roi.p, 
+      Dim2::new(
+        (roi.width().min(dim.w - roi.p.x) / 6) * 6,
+        (roi.height().min(dim.h - roi.p.y) / 6) * 6
+      )
+    );
+    
+    if safe_roi.width() == 0 || safe_roi.height() == 0 {
+      // Return a minimal 1x1 image if ROI is too small
+      return Color2D::new_with(vec![[0.0, 0.0, 0.0]], 1, 1);
+    }
 
     // The CFA pattern must be shifted according to the ROI's top-left corner.
-    let cfa = cfa.shift(roi.p.x, roi.p.y);
+    let cfa = cfa.shift(safe_roi.p.x, safe_roi.p.y);
 
     // This lookup table maps a CFAColor (R,G,B) to its correct output channel index (0,1,2).
     let plane_map = colors.plane_lookup_table();
 
     // Get a slice of the image corresponding to the ROI's starting row.
-    let window = &pixels[roi.y() * dim.w..];
+    let start_idx = safe_roi.y() * dim.w;
+    let end_idx = (safe_roi.y() + safe_roi.height()) * dim.w;
+    if end_idx > pixels.len() {
+      // Fallback for bounds issues
+      return Color2D::new_with(vec![[0.0, 0.0, 0.0]], 1, 1);
+    }
+    
+    let window = &pixels.data[start_idx..end_idx];
 
     let out_data: Vec<[f32; 3]> = window
       .par_chunks_exact(dim.w * 6) // Process 6 rows at a time
-      .take(roi.height() / 6) // Process roi.height() / 6 blocks of rows
+      .take(safe_roi.height() / 6) // Process roi.height() / 6 blocks of rows
       .flat_map(|six_rows_slice| {
         // six_rows_slice contains 6 full rows of the original image.
         // We process them in 6-pixel wide chunks.
         let rows: Vec<_> = (0..6)
-          .map(|i| &six_rows_slice[i * dim.w + roi.x()..i * dim.w + roi.x() + roi.width()])
+          .map(|i| &six_rows_slice[i * dim.w + safe_roi.x()..i * dim.w + safe_roi.x() + safe_roi.width()])
           .collect();
 
-        (0..roi.width() / 6)
+        (0..safe_roi.width() / 6)
           .map(|block_x| {
             let mut sums = [0.0f32; 3];
             let mut counts = [0u32; 3];
@@ -285,6 +304,6 @@ impl Demosaic<f32, 3> for XTransSuperpixelDemosaic {
       })
       .collect();
 
-    Color2D::new_with(out_data, roi.width() / 6, roi.height() / 6)
+    Color2D::new_with(out_data, safe_roi.width() / 6, safe_roi.height() / 6)
   }
 }
