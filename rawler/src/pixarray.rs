@@ -4,6 +4,42 @@ use rayon::prelude::*;
 
 use crate::imgop::{Dim2, Point, Rect};
 
+/// Trait for types that can be used as subpixels in image processing
+pub trait SubPixel: Copy + Default + Send + Sync + 'static {
+  fn as_f32(self) -> f32;
+  fn as_u16(self) -> u16;
+}
+
+impl SubPixel for u16 {
+  fn as_f32(self) -> f32 {
+    self as f32
+  }
+  fn as_u16(self) -> u16 {
+    self
+  }
+}
+
+impl SubPixel for f32 {
+  fn as_f32(self) -> f32 {
+    self
+  }
+  fn as_u16(self) -> u16 {
+    self as u16
+  }
+}
+
+impl SubPixel for u8 {
+  fn as_f32(self) -> f32 {
+    self as f32
+  }
+  fn as_u16(self) -> u16 {
+    self as u16
+  }
+}
+
+/// Type alias for mutable line access
+pub type LineMut<'a, T> = &'a mut [T];
+
 #[derive(Clone)]
 pub struct Pix2D<T> {
   pub width: usize,
@@ -421,6 +457,36 @@ where
 
 unsafe impl<T, const N: usize> Sync for Color2DPtr<T, N> {}
 
+/// Deinterleave a 2x2 interleaved buffer
+pub fn deinterleave2x2(input: &PixU16) -> crate::Result<PixU16> {
+  if input.width % 2 != 0 || input.height % 2 != 0 {
+    return Err("deinterleave2x2: input dimensions must be even".into());
+  }
+  
+  let new_width = input.width / 2;
+  let new_height = input.height / 2;
+  let mut output = PixU16::new(new_width * 2, new_height * 2);
+  
+  // Copy the data with deinterleaving
+  for row in 0..new_height {
+    for col in 0..new_width {
+      let src_row = row * 2;
+      let src_col = col * 2;
+      
+      // Top-left quadrant (R)
+      output.data[row * new_width + col] = input.data[src_row * input.width + src_col];
+      // Top-right quadrant (G1)
+      output.data[row * new_width + col + new_width * new_height] = input.data[src_row * input.width + src_col + 1];
+      // Bottom-left quadrant (G2)
+      output.data[row * new_width + col + new_width * new_height * 2] = input.data[(src_row + 1) * input.width + src_col];
+      // Bottom-right quadrant (B)
+      output.data[row * new_width + col + new_width * new_height * 3] = input.data[(src_row + 1) * input.width + src_col + 1];
+    }
+  }
+  
+  Ok(output)
+}
+
 #[macro_export]
 macro_rules! alloc_image_plain {
   ($width:expr, $height:expr, $dummy: expr) => {{
@@ -453,6 +519,20 @@ macro_rules! alloc_image_ok {
       return Ok($crate::pixarray::PixU16::new_uninit($width, $height));
     } else {
       $crate::alloc_image_plain!($width, $height, $dummy)
+    }
+  }};
+}
+
+#[macro_export]
+macro_rules! alloc_image_f32_plain {
+  ($width:expr, $height:expr, $dummy: expr) => {{
+    if $width * $height > 500000000 || $width > 50000 || $height > 50000 {
+      panic!("rawler: surely there's no such thing as a >500MP or >50000 px wide/tall image!");
+    }
+    if $dummy {
+      $crate::pixarray::PixF32::new_uninit($width, $height)
+    } else {
+      $crate::pixarray::PixF32::new($width, $height)
     }
   }};
 }
