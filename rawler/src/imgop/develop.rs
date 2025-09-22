@@ -145,34 +145,18 @@ impl RawDevelop {
             if config.cfa.is_rgb() {
               // Check if this is an X-Trans sensor (6x6 pattern = 36 character CFA name)
               if config.cfa.name.len() == 36 {
-                // X-Trans sensor detected - use simple RGB sampling instead of interpolation
+                // X-Trans sensor detected - use grayscale output to avoid color artifacts
                 // PPG algorithm is not compatible with X-Trans 6x6 pattern
-                log::warn!("X-Trans sensor detected ({}), using simple RGB sampling instead of interpolation", config.cfa.name);
+                log::warn!("X-Trans sensor detected ({}), using grayscale output until proper X-Trans demosaicing is implemented", config.cfa.name);
                 
-                // Create RGB by sampling the CFA pattern directly without interpolation
+                // Create grayscale image from raw data
                 let roi_pixels = if self.steps.contains(&ProcessingStep::CropActiveArea) {
                   pixels.crop(rawimage.active_area.unwrap_or(pixels.rect()))
                 } else {
                   pixels.clone()
                 };
                 
-                // Sample RGB values directly from CFA pattern
-                let mut rgb_data = Vec::new();
-                for y in 0..roi_pixels.height {
-                  for x in 0..roi_pixels.width {
-                    let raw_value = roi_pixels.data[y * roi_pixels.width + x];
-                    let color_index = config.cfa.color_at(y, x);
-                    let mut rgb = [0.0f32; 3];
-                    rgb[color_index] = raw_value;
-                    rgb_data.push(rgb);
-                  }
-                }
-                
-                Intermediate::ThreeColor(Color2D::<f32, 3>::new_with(
-                  rgb_data,
-                  roi_pixels.width,
-                  roi_pixels.height,
-                ))
+                Intermediate::Monochrome(roi_pixels)
               } else {
                 // Regular Bayer sensor - use PPG demosaicing
                 let ppg = PPGDemosaic::new();
