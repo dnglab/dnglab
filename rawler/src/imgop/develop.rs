@@ -173,9 +173,7 @@ impl RawDevelop {
                 log::info!("X-Trans pattern (6x6) detected. Applying X-Trans demosaicing ({:?}).", self.demosaic_algorithm);
                 match self.demosaic_algorithm {
                   DemosaicAlgorithm::Quality => {
-                    // Temporarily force Speed to test it
-                    log::info!("Temporarily forcing Speed algorithm for testing");
-                    let xtrans_demosaic = XTransSuperpixelDemosaic::new();
+                    let xtrans_demosaic = XTransDemosaic::new();
                     Intermediate::ThreeColor(xtrans_demosaic.demosaic(pixels, &config.cfa, &config.colors, roi))
                   }
                   DemosaicAlgorithm::Speed => {
