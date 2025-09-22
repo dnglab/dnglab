@@ -196,6 +196,10 @@ where
     );
     Self::new_with(output, area.d.w, area.d.h)
   }
+
+  pub fn into_crop(self, area: Rect) -> Self {
+    self.crop(area)
+  }
 }
 
 /*

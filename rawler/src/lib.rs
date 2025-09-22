@@ -130,8 +130,12 @@ pub fn alloc_image_f32_plain(width: usize, height: usize, dummy: bool) -> pixarr
 }
 
 #[doc(hidden)]
-pub fn alloc_image_ok(width: usize, height: usize, dummy: bool) -> pixarray::PixU16 {
-  alloc_image_ok!(width, height, dummy)
+pub fn alloc_image_ok(width: usize, height: usize, dummy: bool) -> Result<pixarray::PixU16> {
+  if dummy {
+    Ok(pixarray::PixU16::new_uninit(width, height))
+  } else {
+    Ok(alloc_image_plain!(width, height, dummy))
+  }
 }
 
 #[derive(Error, Debug)]
