@@ -143,8 +143,24 @@ impl RawDevelop {
               pixels.rect()
             };
             if config.cfa.is_rgb() {
-              let ppg = PPGDemosaic::new();
-              Intermediate::ThreeColor(ppg.demosaic(pixels, &config.cfa, &config.colors, roi))
+              // Check if this is an X-Trans sensor (6x6 pattern = 36 character CFA name)
+              if config.cfa.name.len() == 36 {
+                // X-Trans sensor detected - skip demosaicing to avoid green artifacts
+                // PPG algorithm is not compatible with X-Trans 6x6 pattern
+                log::warn!("X-Trans sensor detected ({}), skipping demosaicing to prevent artifacts", config.cfa.name);
+                
+                // Return raw data as monochrome to avoid color artifacts
+                let roi_pixels = if self.steps.contains(&ProcessingStep::CropActiveArea) {
+                  pixels.crop(rawimage.active_area.unwrap_or(pixels.rect()))
+                } else {
+                  pixels.clone()
+                };
+                Intermediate::Monochrome(roi_pixels)
+              } else {
+                // Regular Bayer sensor - use PPG demosaicing
+                let ppg = PPGDemosaic::new();
+                Intermediate::ThreeColor(ppg.demosaic(pixels, &config.cfa, &config.colors, roi))
+              }
             } else if config.cfa.unique_colors() == 4 {
               let linear = Bilinear4Channel::new();
               Intermediate::FourColor(linear.demosaic(pixels, &config.cfa, &config.colors, roi))
