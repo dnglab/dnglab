@@ -143,32 +143,13 @@ impl RawDevelop {
               pixels.rect()
             };
             if config.cfa.is_rgb() {
-              // Check if this is an X-Trans sensor (6x6 pattern = 36 chars)
-              if config.cfa.name.len() == 36 {
-                // X-Trans sensor: Skip demosaicing and create grayscale output
-                // This avoids the green hue issue with PPG algorithm
-                log::warn!("X-Trans sensor detected, outputting grayscale to avoid demosaicing artifacts");
-                
-                // Convert to grayscale by using raw values directly
-                let cropped = if self.steps.contains(&ProcessingStep::CropActiveArea) {
-                  pixels.crop(rawimage.active_area.unwrap_or(pixels.rect()))
-                } else {
-                  pixels.clone()
-                };
-                
-                Intermediate::Monochrome(cropped)
-              } else {
-                // Regular Bayer sensor: use PPG
-                let ppg = PPGDemosaic::new();
-                Intermediate::ThreeColor(ppg.demosaic(pixels, &config.cfa, &config.colors, roi))
-              }
+              let ppg = PPGDemosaic::new();
+              Intermediate::ThreeColor(ppg.demosaic(pixels, &config.cfa, &config.colors, roi))
             } else if config.cfa.unique_colors() == 4 {
               let linear = Bilinear4Channel::new();
               Intermediate::FourColor(linear.demosaic(pixels, &config.cfa, &config.colors, roi))
             } else {
-              // Unsupported CFA pattern - skip demosaicing to avoid crashes
-              log::warn!("Unsupported CFA pattern with {} unique colors, skipping demosaicing", config.cfa.unique_colors());
-              intermediate
+              todo!()
             }
           } else {
             intermediate
