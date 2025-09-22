@@ -145,17 +145,34 @@ impl RawDevelop {
             if config.cfa.is_rgb() {
               // Check if this is an X-Trans sensor (6x6 pattern = 36 character CFA name)
               if config.cfa.name.len() == 36 {
-                // X-Trans sensor detected - skip demosaicing to avoid green artifacts
+                // X-Trans sensor detected - use simple RGB sampling instead of interpolation
                 // PPG algorithm is not compatible with X-Trans 6x6 pattern
-                log::warn!("X-Trans sensor detected ({}), skipping demosaicing to prevent artifacts", config.cfa.name);
+                log::warn!("X-Trans sensor detected ({}), using simple RGB sampling instead of interpolation", config.cfa.name);
                 
-                // Return raw data as monochrome to avoid color artifacts
+                // Create RGB by sampling the CFA pattern directly without interpolation
                 let roi_pixels = if self.steps.contains(&ProcessingStep::CropActiveArea) {
                   pixels.crop(rawimage.active_area.unwrap_or(pixels.rect()))
                 } else {
                   pixels.clone()
                 };
-                Intermediate::Monochrome(roi_pixels)
+                
+                // Sample RGB values directly from CFA pattern
+                let mut rgb_data = Vec::new();
+                for y in 0..roi_pixels.height {
+                  for x in 0..roi_pixels.width {
+                    let raw_value = roi_pixels.data[y * roi_pixels.width + x];
+                    let color_index = config.cfa.color_at(y, x);
+                    let mut rgb = [0.0f32; 3];
+                    rgb[color_index] = raw_value;
+                    rgb_data.push(rgb);
+                  }
+                }
+                
+                Intermediate::ThreeColor(Color2D::<f32, 3>::new_with(
+                  rgb_data,
+                  roi_pixels.width,
+                  roi_pixels.height,
+                ))
               } else {
                 // Regular Bayer sensor - use PPG demosaicing
                 let ppg = PPGDemosaic::new();
