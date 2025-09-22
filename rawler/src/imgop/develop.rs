@@ -136,7 +136,7 @@ impl RawDevelop {
     if self.steps.contains(&ProcessingStep::Demosaic) {
       intermediate = match &rawimage.photometric {
         RawPhotometricInterpretation::Cfa(config) => {
-          if let Intermediate::Monochrome(pixels) = intermediate {
+          if let Intermediate::Monochrome(ref pixels) = intermediate {
             let roi = if self.steps.contains(&ProcessingStep::CropActiveArea) {
               rawimage.active_area.unwrap_or(pixels.rect())
             } else {
@@ -152,11 +152,11 @@ impl RawDevelop {
               } else {
                 // Regular Bayer sensor: use PPG
                 let ppg = PPGDemosaic::new();
-                Intermediate::ThreeColor(ppg.demosaic(&pixels, &config.cfa, &config.colors, roi))
+                Intermediate::ThreeColor(ppg.demosaic(pixels, &config.cfa, &config.colors, roi))
               }
             } else if config.cfa.unique_colors() == 4 {
               let linear = Bilinear4Channel::new();
-              Intermediate::FourColor(linear.demosaic(&pixels, &config.cfa, &config.colors, roi))
+              Intermediate::FourColor(linear.demosaic(pixels, &config.cfa, &config.colors, roi))
             } else {
               // Unsupported CFA pattern - skip demosaicing to avoid crashes
               log::warn!("Unsupported CFA pattern with {} unique colors, skipping demosaicing", config.cfa.unique_colors());
