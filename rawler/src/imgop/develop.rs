@@ -170,7 +170,6 @@ impl RawDevelop {
             if config.cfa.is_rgb() {
               // Check if this is an X-Trans sensor (6x6 pattern) 
               if config.cfa.width == 6 && config.cfa.height == 6 {
-                if config.cfa.width == 6 && config.cfa.height == 6 {
                 log::info!("X-Trans pattern (6x6) detected. Applying X-Trans demosaicing ({}).", 
                           if self.demosaic_algorithm == DemosaicAlgorithm::Quality { "Quality" } else { "Speed" });
                 // Temporarily force Quality algorithm for both cases to test if Speed is the issue
