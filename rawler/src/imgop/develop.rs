@@ -150,6 +150,17 @@ impl RawDevelop {
     if self.steps.contains(&ProcessingStep::Demosaic) {
       intermediate = match &rawimage.photometric {
         RawPhotometricInterpretation::Cfa(config) => {
+          // Log detailed CFA information for debugging
+          log::info!(
+            "Demosaicing check for '{} {}': CFA name='{}', width={}, height={}, is_rgb={}",
+            rawimage.clean_make,
+            rawimage.clean_model,
+            config.cfa.name,
+            config.cfa.width,
+            config.cfa.height,
+            config.cfa.is_rgb()
+          );
+
           if let Intermediate::Monochrome(ref pixels) = intermediate {
             let roi = if self.steps.contains(&ProcessingStep::CropActiveArea) {
               rawimage.active_area.unwrap_or(pixels.rect())

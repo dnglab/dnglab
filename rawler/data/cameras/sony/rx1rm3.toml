@@ -1,0 +1,14 @@
+make = "SONY"
+model = "DSC-RX1RM3"
+clean_make = "Sony"
+clean_model = "DSC-RX1RM3"
+##blackpoint = 512
+#whitepoint = 16300
+color_pattern = "RGGB"
+active_area = [0, 0, 16, 0]
+crop_area = [8, 8, 40, 8]
+bps = 8
+
+[cameras.color_matrix]
+A = [0.6985, -0.2168, -0.0419, -0.5016, 1.3246, 0.1928, -0.0408, 0.0981, 0.7177]
+D65 = [0.6629, -0.19, -0.0483, -0.4618, 1.2349, 0.255, -0.0622, 0.1381, 0.6514]
