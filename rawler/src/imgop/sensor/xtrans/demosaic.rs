@@ -254,7 +254,7 @@ impl Demosaic<f32, 3> for XTransSuperpixelDemosaic {
     // Get a slice of the image corresponding to the ROI's starting row.
     let start_idx = safe_roi.y() * dim.w;
     let end_idx = (safe_roi.y() + safe_roi.height()) * dim.w;
-    if end_idx > pixels.len() {
+    if end_idx > pixels.data.len() {
       // Fallback for bounds issues
       return Color2D::new_with(vec![[0.0, 0.0, 0.0]], 1, 1);
     }
