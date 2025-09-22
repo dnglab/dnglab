@@ -145,16 +145,18 @@ impl RawDevelop {
             if config.cfa.is_rgb() {
               // Check if this is an X-Trans sensor (6x6 pattern = 36 chars)
               if config.cfa.name.len() == 36 {
-                // X-Trans sensor: Use simple expansion instead of demosaicing
-                // TODO: Implement proper X-Trans demosaicing algorithm
-                log::warn!("X-Trans sensor detected, using simple RGB expansion (not interpolated)");
-                use super::sensor::bayer::expand_bayer_rgb;
-                let rgb_pixels = expand_bayer_rgb(&pixels.data, pixels.dim(), &config.cfa, roi);
-                Intermediate::ThreeColor(Color2D::<f32, 3>::new_with(
-                  rgb_pixels.pixels().iter().map(|p| [p[0], p[1], p[2]]).collect(),
-                  rgb_pixels.width,
-                  rgb_pixels.height,
-                ))
+                // X-Trans sensor: Skip demosaicing and create grayscale output
+                // This avoids the green hue issue with PPG algorithm
+                log::warn!("X-Trans sensor detected, outputting grayscale to avoid demosaicing artifacts");
+                
+                // Convert to grayscale by using raw values directly
+                let cropped = if self.steps.contains(&ProcessingStep::CropActiveArea) {
+                  pixels.crop(rawimage.active_area.unwrap_or(pixels.rect()))
+                } else {
+                  pixels.clone()
+                };
+                
+                Intermediate::Monochrome(cropped)
               } else {
                 // Regular Bayer sensor: use PPG
                 let ppg = PPGDemosaic::new();
