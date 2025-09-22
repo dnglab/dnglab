@@ -145,11 +145,10 @@ impl RawDevelop {
             if config.cfa.is_rgb() {
               // Check if this is an X-Trans sensor (6x6 pattern = 36 chars)
               if config.cfa.name.len() == 36 {
-                // X-Trans sensor: use bilinear interpolation as a temporary fix
+                // X-Trans sensor: Skip demosaicing to avoid color artifacts
                 // TODO: Implement proper X-Trans demosaicing algorithm
-                log::warn!("X-Trans sensor detected, using bilinear demosaicing as fallback");
-                let linear = Bilinear4Channel::new();
-                Intermediate::FourColor(linear.demosaic(&pixels, &config.cfa, &config.colors, roi))
+                log::warn!("X-Trans sensor detected, skipping demosaicing (proper X-Trans demosaicing not yet implemented)");
+                intermediate
               } else {
                 // Regular Bayer sensor: use PPG
                 let ppg = PPGDemosaic::new();
@@ -159,7 +158,9 @@ impl RawDevelop {
               let linear = Bilinear4Channel::new();
               Intermediate::FourColor(linear.demosaic(&pixels, &config.cfa, &config.colors, roi))
             } else {
-              todo!()
+              // Unsupported CFA pattern - skip demosaicing to avoid crashes
+              log::warn!("Unsupported CFA pattern with {} unique colors, skipping demosaicing", config.cfa.unique_colors());
+              intermediate
             }
           } else {
             intermediate
