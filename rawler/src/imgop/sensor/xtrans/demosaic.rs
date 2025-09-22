@@ -229,97 +229,67 @@ impl Demosaic<f32, 3> for XTransSuperpixelDemosaic {
   /// within a 6x6 block of the original sensor data.
   /// The resulting image is 1/36th the size (1/6 width, 1/6 height).
   fn demosaic(&self, pixels: &PixF32, cfa: &CFA, colors: &PlaneColor, roi: Rect) -> Color2D<f32, 3> {
+    log::debug!("X-Trans Superpixel: Processing ROI: {:?}, CFA size: {}x{}", roi, cfa.width, cfa.height);
+    
+    // ROI width/height must be a multiple of 6 for this algorithm.
+    let roi = Rect::new(roi.p, Dim2::new(roi.width() / 6 * 6, roi.height() / 6 * 6));
     let dim = pixels.dim();
-    
-    // Ensure ROI is within image bounds and adjust to multiple of 6
-    let safe_roi = Rect::new(
-      roi.p, 
-      Dim2::new(
-        (roi.width().min(dim.w - roi.p.x) / 6) * 6,
-        (roi.height().min(dim.h - roi.p.y) / 6) * 6
-      )
-    );
-    
-    if safe_roi.width() == 0 || safe_roi.height() == 0 {
-      // Return a minimal image matching the original ROI size
-      return Color2D::new_with(vec![[0.0, 0.0, 0.0]; roi.width() * roi.height()], roi.width(), roi.height());
-    }
 
     // The CFA pattern must be shifted according to the ROI's top-left corner.
-    let cfa = cfa.shift(safe_roi.p.x, safe_roi.p.y);
+    let cfa = cfa.shift(roi.p.x, roi.p.y);
+
+    // This lookup table maps a CFAColor (R,G,B) to its correct output channel index (0,1,2).
+    let plane_map = colors.plane_lookup_table();
+    
+    log::debug!("X-Trans Superpixel: Output will be {}x{} (downsampled from {}x{})", 
+               roi.width() / 6, roi.height() / 6, roi.width(), roi.height());
 
     // Get a slice of the image corresponding to the ROI's starting row.
-    let start_idx = safe_roi.y() * dim.w;
-    let end_idx = (safe_roi.y() + safe_roi.height()) * dim.w;
-    if end_idx > pixels.data.len() {
-      // Fallback for bounds issues
-      return Color2D::new_with(vec![[0.0, 0.0, 0.0]; roi.width() * roi.height()], roi.width(), roi.height());
-    }
-    
-    let window = &pixels.data[start_idx..end_idx];
+    let window = &pixels[roi.y() * dim.w..];
 
-    // Create output data that matches the original ROI dimensions
-    let mut out_data = vec![[0.0f32; 3]; roi.width() * roi.height()];
+    let out_data: Vec<[f32; 3]> = window
+      .par_chunks_exact(dim.w * 6) // Process 6 rows at a time
+      .take(roi.height() / 6) // Process roi.height() / 6 blocks of rows
+      .flat_map(|six_rows_slice| {
+        // six_rows_slice contains 6 full rows of the original image.
+        // We process them in 6-pixel wide chunks.
+        let rows: Vec<_> = (0..6)
+          .map(|i| &six_rows_slice[i * dim.w + roi.x()..i * dim.w + roi.x() + roi.width()])
+          .collect();
 
-    // Process in 6x6 superpixel blocks
-    for block_y in 0..(safe_roi.height() / 6) {
-      for block_x in 0..(safe_roi.width() / 6) {
-        let mut sums = [0.0f32; 3];
-        let mut counts = [0u32; 3];
+        (0..roi.width() / 6)
+          .map(|block_x| {
+            let mut sums = [0.0f32; 3];
+            let mut counts = [0u32; 3];
 
-        // Collect values from the 6x6 block
-        for y_offset in 0..6 {
-          for x_offset in 0..6 {
-            let src_y = safe_roi.y() + block_y * 6 + y_offset;
-            let src_x = safe_roi.x() + block_x * 6 + x_offset;
-            
-            if src_y < dim.h && src_x < dim.w {
-              let pixel_idx = src_y * dim.w + src_x;
-              if pixel_idx < pixels.data.len() {
-                let pixel_value = pixels.data[pixel_idx];
-                
+            for y_offset in 0..6 {
+              for x_offset in 0..6 {
                 // Get the color (R, G, or B) at this position from the shifted CFA.
                 let cfa_color_val = cfa.color_at(y_offset, x_offset);
-                
-                if cfa_color_val == CFA_COLOR_R {
-                  sums[0] += pixel_value; // Red channel
-                  counts[0] += 1;
-                } else if cfa_color_val == CFA_COLOR_G {
-                  sums[1] += pixel_value; // Green channel
-                  counts[1] += 1;
-                } else if cfa_color_val == CFA_COLOR_B {
-                  sums[2] += pixel_value; // Blue channel
-                  counts[2] += 1;
+                if cfa_color_val < 3 {
+                  // Ensure it's R, G, or B
+                  // Use the plane_map to find the correct output channel for this color.
+                  let plane_index = plane_map[cfa_color_val as usize];
+                  if plane_index < 3 {
+                    let pixel_value = rows[y_offset][block_x * 6 + x_offset];
+                    sums[plane_index] += pixel_value;
+                    counts[plane_index] += 1;
+                  }
                 }
               }
             }
-          }
-        }
 
-        // Calculate averages for this superpixel
-        let r = if counts[0] > 0 { sums[0] / counts[0] as f32 } else { 0.0 };
-        let g = if counts[1] > 0 { sums[1] / counts[1] as f32 } else { 0.0 };
-        let b = if counts[2] > 0 { sums[2] / counts[2] as f32 } else { 0.0 };
-        let superpixel_color = [r, g, b];
+            // The sums are now in the correct R, G, B order thanks to plane_map.
+            let r = if counts[0] > 0 { sums[0] / counts[0] as f32 } else { 0.0 };
+            let g = if counts[1] > 0 { sums[1] / counts[1] as f32 } else { 0.0 };
+            let b = if counts[2] > 0 { sums[2] / counts[2] as f32 } else { 0.0 };
 
-        // Fill the corresponding 6x6 block in the output with this color
-        for y_offset in 0..6 {
-          for x_offset in 0..6 {
-            let out_y = block_y * 6 + y_offset;
-            let out_x = block_x * 6 + x_offset;
-            
-            // Make sure we don't go beyond the safe ROI bounds
-            if out_y < safe_roi.height() && out_x < safe_roi.width() {
-              let out_idx = out_y * roi.width() + out_x;
-              if out_idx < out_data.len() {
-                out_data[out_idx] = superpixel_color;
-              }
-            }
-          }
-        }
-      }
-    }
+            [r, g, b]
+          })
+          .collect::<Vec<_>>()
+      })
+      .collect();
 
-    Color2D::new_with(out_data, roi.width(), roi.height())
+    Color2D::new_with(out_data, roi.width() / 6, roi.height() / 6)
   }
 }
