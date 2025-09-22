@@ -279,13 +279,7 @@ impl Demosaic<f32, 3> for XTransSuperpixelDemosaic {
                 let pixel_value = pixels.data[pixel_idx];
                 
                 // Get the color (R, G, or B) at this position from the shifted CFA.
-                let cfa_color_val = cfa.color_at(x_offset, y_offset);
-                
-                // Debug: log CFA pattern for first block
-                if block_y == 0 && block_x == 0 && y_offset < 3 && x_offset < 3 {
-                  log::debug!("CFA[{}, {}] = {} (pixel value: {:.2})", 
-                             y_offset, x_offset, cfa_color_val, pixel_value);
-                }
+                let cfa_color_val = cfa.color_at(y_offset, x_offset);
                 
                 if cfa_color_val == CFA_COLOR_R {
                   sums[0] += pixel_value; // Red channel
@@ -307,12 +301,6 @@ impl Demosaic<f32, 3> for XTransSuperpixelDemosaic {
         let g = if counts[1] > 0 { sums[1] / counts[1] as f32 } else { 0.0 };
         let b = if counts[2] > 0 { sums[2] / counts[2] as f32 } else { 0.0 };
         let superpixel_color = [r, g, b];
-        
-        // Debug: log the first few superpixel colors
-        if block_y < 3 && block_x < 3 {
-          log::debug!("Superpixel [{}, {}]: R={:.2}, G={:.2}, B={:.2} (counts: R={}, G={}, B={})", 
-                     block_y, block_x, r, g, b, counts[0], counts[1], counts[2]);
-        }
 
         // Fill the corresponding 6x6 block in the output with this color
         for y_offset in 0..6 {

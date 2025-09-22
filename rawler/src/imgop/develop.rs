@@ -172,9 +172,16 @@ impl RawDevelop {
               if config.cfa.width == 6 && config.cfa.height == 6 {
                 log::info!("X-Trans pattern (6x6) detected. Applying X-Trans demosaicing ({}).", 
                           if self.demosaic_algorithm == DemosaicAlgorithm::Quality { "Quality" } else { "Speed" });
-                // Temporarily force Quality algorithm for both cases to test if Speed is the issue
-                let xtrans_demosaic = XTransDemosaic::new();
-                Intermediate::ThreeColor(xtrans_demosaic.demosaic(pixels, &config.cfa, &config.colors, roi))
+                match self.demosaic_algorithm {
+                  DemosaicAlgorithm::Quality => {
+                    let xtrans_demosaic = XTransDemosaic::new();
+                    Intermediate::ThreeColor(xtrans_demosaic.demosaic(pixels, &config.cfa, &config.colors, roi))
+                  }
+                  DemosaicAlgorithm::Speed => {
+                    let xtrans_demosaic = XTransSuperpixelDemosaic::new();
+                    Intermediate::ThreeColor(xtrans_demosaic.demosaic(pixels, &config.cfa, &config.colors, roi))
+                  }
+                }
               } else {
                 log::info!("RGB Bayer-like pattern detected. Applying Bayer demosaicing.");
                 match self.demosaic_algorithm {
