@@ -248,9 +248,6 @@ impl Demosaic<f32, 3> for XTransSuperpixelDemosaic {
     // The CFA pattern must be shifted according to the ROI's top-left corner.
     let cfa = cfa.shift(safe_roi.p.x, safe_roi.p.y);
 
-    // This lookup table maps a CFAColor (R,G,B) to its correct output channel index (0,1,2).
-    let plane_map = colors.plane_lookup_table();
-
     // Get a slice of the image corresponding to the ROI's starting row.
     let start_idx = safe_roi.y() * dim.w;
     let end_idx = (safe_roi.y() + safe_roi.height()) * dim.w;
@@ -283,11 +280,15 @@ impl Demosaic<f32, 3> for XTransSuperpixelDemosaic {
                 
                 // Get the color (R, G, or B) at this position from the shifted CFA.
                 let cfa_color_val = cfa.color_at(x_offset, y_offset);
-                if cfa_color_val < 3 {
-                  // Use the plane_map to find the correct output channel for this color.
-                  let plane_index = plane_map[cfa_color_val as usize];
-                  sums[plane_index] += pixel_value;
-                  counts[plane_index] += 1;
+                if cfa_color_val == CFA_COLOR_R {
+                  sums[0] += pixel_value; // Red channel
+                  counts[0] += 1;
+                } else if cfa_color_val == CFA_COLOR_G {
+                  sums[1] += pixel_value; // Green channel
+                  counts[1] += 1;
+                } else if cfa_color_val == CFA_COLOR_B {
+                  sums[2] += pixel_value; // Blue channel
+                  counts[2] += 1;
                 }
               }
             }
