@@ -150,17 +150,6 @@ impl RawDevelop {
     if self.steps.contains(&ProcessingStep::Demosaic) {
       intermediate = match &rawimage.photometric {
         RawPhotometricInterpretation::Cfa(config) => {
-          // Log detailed CFA information for debugging
-          log::info!(
-            "Demosaicing check for '{} {}': CFA name='{}', width={}, height={}, is_rgb={}",
-            rawimage.clean_make,
-            rawimage.clean_model,
-            config.cfa.name,
-            config.cfa.width,
-            config.cfa.height,
-            config.cfa.is_rgb()
-          );
-
           if let Intermediate::Monochrome(ref pixels) = intermediate {
             let roi = if self.steps.contains(&ProcessingStep::CropActiveArea) {
               rawimage.active_area.unwrap_or(pixels.rect())
@@ -170,8 +159,6 @@ impl RawDevelop {
             if config.cfa.is_rgb() {
               // Check if this is an X-Trans sensor (6x6 pattern) 
               if config.cfa.width == 6 && config.cfa.height == 6 {
-                log::info!("X-Trans pattern (6x6) detected. Applying X-Trans demosaicing ({}).", 
-                          if self.demosaic_algorithm == DemosaicAlgorithm::Quality { "Quality" } else { "Speed" });
                 match self.demosaic_algorithm {
                   DemosaicAlgorithm::Quality => {
                     let xtrans_demosaic = XTransDemosaic::new();
@@ -183,7 +170,6 @@ impl RawDevelop {
                   }
                 }
               } else {
-                log::info!("RGB Bayer-like pattern detected. Applying Bayer demosaicing.");
                 match self.demosaic_algorithm {
                   DemosaicAlgorithm::Quality => {
                     let ppg = PPGDemosaic::new();
