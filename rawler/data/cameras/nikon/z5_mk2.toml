@@ -1,0 +1,14 @@
+make = "NIKON CORPORATION"
+model = "NIKON Z5_2"
+clean_make = "Nikon"
+clean_model = "Z 5 II"
+color_pattern = "RGGB"
+active_area = [0, 0, 0, 0]
+
+[cameras.color_matrix]
+A = [1.2583, -0.6925, 0.1406, -0.3319, 1.0489, 0.3286, -0.0088, 0.0801, 0.8495]
+D65 = [1.3133, -0.5542, -0.128, -0.4325, 1.2543, 0.1972, 0.0034, 0.0792, 0.7662]
+
+[[cameras.modes]]
+mode = "14bit"
+whitepoint = 15892
