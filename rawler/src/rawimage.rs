@@ -363,7 +363,7 @@ impl RawImage {
     let whitelevel = cam
       .make_whitelevel(cpp)
       .or(whitelevel)
-      .unwrap_or_else(|| panic!("Need whitelvel in config: {}", cam.clean_model));
+      .unwrap_or_else(|| panic!("Need whitelevel in config: {}", cam.clean_model));
 
     let crop_area = cam.crop_area.map(|area| Rect::new_with_borders(Dim2::new(pixel_width, image.height), &area));
 
