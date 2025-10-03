@@ -1,0 +1,130 @@
+---
+file:
+  fileSize: 40819024
+  fileName: X-E5_lossless_14bit.RAF
+  digest: 0c3d9728a0f4ffa9592b80b87cddfa01
+data:
+  metadata:
+    rawParams:
+      rawWidth: 7872
+      rawHeight: 5196
+      bitDepth: 16
+      cropArea:
+        p:
+          x: 12
+          y: 21
+        d:
+          w: 7728
+          h: 5152
+      activeArea:
+        p:
+          x: 0
+          y: 5
+        d:
+          w: 7752
+          h: 5184
+      blacklevels:
+        levels:
+          - 1023/1
+          - 1023/1
+          - 1023/1
+          - 1023/1
+          - 1023/1
+          - 1023/1
+          - 1023/1
+          - 1023/1
+          - 1023/1
+          - 1023/1
+          - 1023/1
+          - 1023/1
+          - 1023/1
+          - 1023/1
+          - 1023/1
+          - 1023/1
+          - 1023/1
+          - 1023/1
+          - 1023/1
+          - 1023/1
+          - 1023/1
+          - 1023/1
+          - 1023/1
+          - 1023/1
+          - 1023/1
+          - 1023/1
+          - 1023/1
+          - 1023/1
+          - 1023/1
+          - 1023/1
+          - 1023/1
+          - 1023/1
+          - 1023/1
+          - 1023/1
+          - 1023/1
+          - 1023/1
+        cpp: 1
+        width: 6
+        height: 6
+      whitelevels:
+        - 16383
+      wbCoeffs:
+        - 1.9635762
+        - 1.0
+        - 1.8178807
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ""
+        artist: ""
+        lens_spec:
+          - 2300/100
+          - 2300/100
+          - 280/100
+          - 280/100
+        exposure_time: 10/2400
+        fnumber: 1100/100
+        aperture_value: 690/100
+        brightness_value: 971/100
+        iso_speed_ratings: 250
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: 1
+        exposure_bias: 33/100
+        date_time_original: "2025:08:20 10:20:50"
+        create_date: "2025:08:20 10:20:50"
+        modify_date: "2025:08:20 10:20:50"
+        exposure_program: 3
+        timezone_offset: ~
+        offset_time: "+01:00"
+        offset_time_original: "+01:00"
+        offset_time_digitized: "+01:00"
+        sub_sec_time: "32"
+        sub_sec_time_original: "32"
+        sub_sec_time_digitized: "32"
+        shutter_speed_value: 796/100
+        max_aperture_value: 300/100
+        subject_distance: ~
+        metering_mode: 5
+        light_source: 0
+        flash: 0
+        focal_length: 2300/100
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: 0
+        owner_name: ~
+        serial_number: 5C025659
+        lens_serial_number: 5BA15793
+        lens_make: FUJIFILM
+        lens_model: XF23mmF2.8 R WR
+        gps: ~
+        user_comment: ~
+      model: X-E5
+      make: Fujifilm
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

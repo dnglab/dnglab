@@ -729,6 +729,7 @@ cameras/Fujifilm/X-E3/compressed
 cameras/Fujifilm/X-E3/raw_modes
 cameras/Fujifilm/X-E4/compressed
 cameras/Fujifilm/X-E4/raw_modes
+cameras/Fujifilm/X-E5/raw_modes
 cameras/Fujifilm/XF10/raw_modes
 cameras/Fujifilm/XF1/raw_modes
 cameras/Fujifilm/X-H1/compressed
