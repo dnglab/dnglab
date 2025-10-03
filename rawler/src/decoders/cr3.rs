@@ -291,8 +291,12 @@ impl<'a> Decoder for Cr3Decoder<'a> {
     let cmp1 = self.cmp1_box(raw_trak_id).ok_or(format!("CMP1 box not found for trak {}", raw_trak_id))?;
     debug!("cmp1 mdat hdr size: {}", cmp1.mdat_hdr_size);
 
-    let mut wb = cr3md.wb.unwrap_or([f32::NAN, f32::NAN, f32::NAN, f32::NAN]);
-    let whitelevel = cr3md.whitelevel.unwrap_or(u16::MAX);
+    let mut wb = cr3md.wb.unwrap_or_else(|| {
+      // This is known for R5 C CRM Standard-Raw files
+      log::warn!("No WB info in CR3 metadata found, fallback to 1.0 coefficients");
+      [1.0, 1.0, 1.0, f32::NAN]
+    });
+    let whitelevel = cr3md.whitelevel.unwrap_or(((1_u32 << self.camera.bps.unwrap_or(16)) - 1) as u16);
 
     // Special handling for CRM movie files
     if let Some(entry) = self.cmt3.get_entry(0x0001) {
