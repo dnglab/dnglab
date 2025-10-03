@@ -79,7 +79,7 @@ pub fn decode_unwrapped(file: &RawSource) -> Result<RawImageData> {
       Ok(RawImageData::Integer(decode_16be(&image_data, width, height, false).into_inner()))
     }
     24 => Ok(RawImageData::Integer(
-      orf::OrfDecoder::decode_compressed(&buffer, width, height, false).into_inner(),
+      orf::OrfDecoder::decode_compressed(&buffer, width, height, 12, false).into_inner(),
     )),
     25 => {
       let loffsets = data;

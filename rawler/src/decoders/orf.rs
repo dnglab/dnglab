@@ -149,6 +149,17 @@ impl<'a> Decoder for OrfDecoder<'a> {
     let height = fetch_tiff_tag!(raw, TiffCommonTag::ImageLength).force_usize(0);
     let offset = fetch_tiff_tag!(raw, TiffCommonTag::StripOffsets).force_usize(0);
     let counts = fetch_tiff_tag!(raw, TiffCommonTag::StripByteCounts);
+    let bps = match self.get_bits_per_pixel()? {
+      Some(bps) if [12, 14].contains(&bps) => bps,
+      Some(bps) => {
+        log::warn!("Unsupported bps: {}", bps);
+        bps
+      }
+      None => {
+        log::debug!("No bps found, fallback to 12");
+        12
+      }
+    } as usize;
 
     let mut size: usize = 0;
     for i in 0..counts.count() {
@@ -198,17 +209,22 @@ impl<'a> Decoder for OrfDecoder<'a> {
       }
     } else {
       log::debug!("ORF: fallback to decode_compressed");
-      OrfDecoder::decode_compressed(&src, width, height, dummy)
+      OrfDecoder::decode_compressed(&src, width, height, bps, dummy)
     };
 
     let cpp = 1;
 
-    let blacklevel = self.get_blacklevel()?;
+    let blacklevel = self.get_blacklevel(bps)?;
     let whitelevel = None;
     let photometric = RawPhotometricInterpretation::Cfa(CFAConfig::new_from_camera(&self.camera));
     let mut img = RawImage::new(camera, image, cpp, normalize_wb(self.get_wb()?), photometric, blacklevel, whitelevel, dummy);
     if let Some(crop) = self.get_crop()? {
       img.crop_area = Some(crop);
+    }
+    if bps == 14 {
+      // Blacklevel is already corrected, only required for whitelevel.
+      // Encoded for 12 bps, whitelevel must be multiplied by 4.
+      img.whitelevel.0.iter_mut().for_each(|level| *level = *level << 2);
     }
 
     Ok(img)
@@ -237,7 +253,7 @@ impl<'a> OrfDecoder<'a> {
    * is based on the output of all previous pixel (bar the first four)
    */
 
-  pub fn decode_compressed(buf: &PaddedBuf, width: usize, height: usize, dummy: bool) -> PixU16 {
+  pub fn decode_compressed(buf: &PaddedBuf, width: usize, height: usize, bps: usize, dummy: bool) -> PixU16 {
     let mut out = alloc_image!(width, height, dummy);
 
     /* Build a table to quickly look up "high" value */
@@ -255,7 +271,8 @@ impl<'a> OrfDecoder<'a> {
 
     let mut left: [i32; 2] = [0; 2];
     let mut nw: [i32; 2] = [0; 2];
-    let mut pump = BitPumpMSB::new(&buf[7..]);
+    let skip = if bps == 14 { 8 } else { 7 };
+    let mut pump = BitPumpMSB::new(&buf[skip..]);
 
     for row in 0..height {
       let mut acarry: [[i32; 3]; 2] = [[0; 3]; 2];
@@ -331,7 +348,7 @@ impl<'a> OrfDecoder<'a> {
     out
   }
 
-  fn get_blacklevel(&self) -> Result<Option<BlackLevel>> {
+  fn get_blacklevel(&self, bps: usize) -> Result<Option<BlackLevel>> {
     let ifd = self.makernote.find_ifds_with_tag(OrfImageProcessing::OrfBlackLevels);
     if ifd.is_empty() {
       log::info!("ORF: Couldn't find ImgProc IFD, unable to read blacklevel");
@@ -339,8 +356,20 @@ impl<'a> OrfDecoder<'a> {
     }
 
     let blacks = fetch_tiff_tag!(ifd[0], OrfImageProcessing::OrfBlackLevels);
-    let levels = [blacks.force_u16(0), blacks.force_u16(1), blacks.force_u16(2), blacks.force_u16(3)];
+    let mut levels = [blacks.force_u16(0), blacks.force_u16(1), blacks.force_u16(2), blacks.force_u16(3)];
+    if bps == 14 {
+      // Blacklevel is encoded for 12 bits
+      levels.iter_mut().for_each(|level| *level = *level << 2);
+    }
     Ok(Some(BlackLevel::new(&levels, self.camera.cfa.width, self.camera.cfa.height, 1)))
+  }
+
+  fn get_bits_per_pixel(&self) -> Result<Option<u16>> {
+    let ifd = self.makernote.find_ifds_with_tag(OrfImageProcessing::ValidBits);
+    if ifd.is_empty() {
+      return Ok(None);
+    }
+    Ok(Some(fetch_tiff_tag!(ifd[0], OrfImageProcessing::ValidBits).force_u16(0)))
   }
 
   fn get_crop(&self) -> Result<Option<Rect>> {
@@ -447,6 +476,7 @@ pub enum OrfImageProcessing {
   ImageProcessingVersion = 0x0000,
   WB_RBLevels = 0x0100,
   OrfBlackLevels = 0x0600,
+  ValidBits = 0x0611,
   CropLeft = 0x0612,
   CropTop = 0x0613,
   CropWidth = 0x0614,
