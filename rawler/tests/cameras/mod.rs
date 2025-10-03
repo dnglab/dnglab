@@ -3017,6 +3017,17 @@ mod camera_om_1_mark_ii_raw_modes {
   super::camera_file_check!("OM", "OM-1 Mark II", cam_om_1_mark_ii_16bits_handheld_hires_orf, "raw_modes/OM-1-Mark-II_16bits_handheld_hires.ORF");
   super::camera_file_check!("OM", "OM-1 Mark II", cam_om_1_mark_ii_16bits_tripod_hires_orf, "raw_modes/OM-1-Mark-II_16bits_tripod_hires.ORF");
 }
+mod camera_om_3_raw_modes {
+  super::camera_file_check!("OM", "OM-3", cam_om_3_tripod_80mp_12bit_orf, "raw_modes/OM-3_Tripod_80mp_12bit.ORF");
+  super::camera_file_check!("OM", "OM-3", cam_om_3_handheld_20mp_12bit_ori, "raw_modes/OM-3_Handheld_20mp_12bit.ORI");
+  super::camera_file_check!("OM", "OM-3", cam_om_3_tripod_80mp_14bit_orf, "raw_modes/OM-3_Tripod_80mp_14bit.ORF");
+  super::camera_file_check!("OM", "OM-3", cam_om_3_handheld_20mp_14bit_ori, "raw_modes/OM-3_Handheld_20mp_14bit.ORI");
+  super::camera_file_check!("OM", "OM-3", cam_om_3_handheld_50mp_14bit_orf, "raw_modes/OM-3_Handheld_50mp_14bit.ORF");
+  super::camera_file_check!("OM", "OM-3", cam_om_3_tripod_20mp_12bit_ori, "raw_modes/OM-3_Tripod_20mp_12bit.ORI");
+  super::camera_file_check!("OM", "OM-3", cam_om_3_tripod_20mp_14bit_ori, "raw_modes/OM-3_Tripod_20mp_14bit.ORI");
+  super::camera_file_check!("OM", "OM-3", cam_om_3_20mp_12bit_orf, "raw_modes/OM-3_20mp_12bit.ORF");
+  super::camera_file_check!("OM", "OM-3", cam_om_3_handheld_50mp_12bit_orf, "raw_modes/OM-3_Handheld_50mp_12bit.ORF");
+}
 mod camera_om_5_raw_modes {
   super::camera_file_check!("OM", "OM-5", cam_om_5_iso_100_16bits_tripod_hires_orf, "raw_modes/OM-5_ISO_100_16bits_tripod_hires.ORF");
   super::camera_file_check!("OM", "OM-5", cam_om_5_iso_100_16bits_normal_orf, "raw_modes/OM-5_ISO_100_16bits_normal.ORF");
