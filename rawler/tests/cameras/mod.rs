@@ -2878,6 +2878,11 @@ mod camera_x_e4_compressed {
 mod camera_x_e4_raw_modes {
   super::camera_file_check!("Fujifilm", "X-E4", cam_fuji_xe4_32_uncompressed_raf, "raw_modes/fuji_xe4_32_uncompressed.RAF");
 }
+mod camera_x_e5_raw_modes {
+  super::camera_file_check!("Fujifilm", "X-E5", cam_x_e5_uncompressed_14bit_raf, "raw_modes/X-E5_uncompressed_14bit.RAF");
+  super::camera_file_check!("Fujifilm", "X-E5", cam_x_e5_lossy_14bit_raf, "raw_modes/X-E5_lossy_14bit.RAF");
+  super::camera_file_check!("Fujifilm", "X-E5", cam_x_e5_lossless_14bit_raf, "raw_modes/X-E5_lossless_14bit.RAF");
+}
 mod camera_xf10_raw_modes {
   super::camera_file_check!("Fujifilm", "XF10", cam_xf10_iso_200_raf, "raw_modes/XF10_ISO_200.RAF");
 }
