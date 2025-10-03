@@ -574,7 +574,7 @@ checksum = "04d2cd9c18b9f454ed67da600630b021a8a80bf33f8c95896ab33aaf1c26b728"
 
 [[package]]
 name = "dnglab"
-version = "0.7.0"
+version = "0.7.1"
 dependencies = [
  "clap_complete",
  "clap_mangen",
@@ -586,7 +586,7 @@ dependencies = [
 
 [[package]]
 name = "dnglab_lib"
-version = "0.7.0"
+version = "0.7.1"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -1907,7 +1907,7 @@ dependencies = [
 
 [[package]]
 name = "rawler"
-version = "0.7.0"
+version = "0.7.1"
 dependencies = [
  "anyhow",
  "approx",

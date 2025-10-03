@@ -2,7 +2,7 @@
 authors = ["Daniel Vogelbacher <daniel@chaospixel.com>"]
 edition = "2024"
 name = "dnglab"
-version = "0.7.0"
+version = "0.7.1"
 description = "Camera RAW to DNG file format converter"
 license = "LGPL-2.1"
 repository = "https://github.com/dnglab/dnglab"

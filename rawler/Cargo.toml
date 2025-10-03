@@ -10,7 +10,7 @@ license = "LGPL-2.1"
 name = "rawler"
 repository = "https://github.com/dnglab/dnglab"
 rust-version = "1.87"
-version = "0.7.0"
+version = "0.7.1"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
