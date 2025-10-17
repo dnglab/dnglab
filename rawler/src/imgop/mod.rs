@@ -14,6 +14,7 @@ pub mod yuv;
 
 use multiversion::multiversion;
 use serde::{Deserialize, Serialize};
+use std::cmp::{max, min};
 
 use crate::{formats::tiff::IFD, tags::DngTag};
 
@@ -180,6 +181,20 @@ impl Rect {
     None
   }
 
+  pub fn intersection(&self, other: &Self) -> Self {
+    let x1 = max(self.p.x, other.p.x);
+    let y1 = max(self.p.y, other.p.y);
+    let x2 = min(self.p.x + self.d.w, other.p.x + other.d.w);
+    let y2 = min(self.p.y + self.d.h, other.p.y + other.d.h);
+
+    if x1 >= x2 || y1 >= y2 {
+      // No overlap, return an empty rectangle
+      Self::new(Point::zero(), Dim2::new(0, 0))
+    } else {
+      Self::new_with_points(Point::new(x1, y1), Point::new(x2, y2))
+    }
+  }
+
   pub fn width(&self) -> usize {
     self.d.w
   }
@@ -308,7 +323,7 @@ pub fn convert_from_f32_unscaled_u16(pix: &[f32]) -> Vec<u16> {
 #[multiversion(targets("x86_64+avx+avx2", "x86+sse", "aarch64+neon"))]
 pub fn convert_from_f32_scaled_u16(input: &[f32], black: u16, white: u16) -> Vec<u16> {
   if black == u16::default() {
-    input.iter().map(|p| ((p * f32::from(white)) as u16)).collect()
+    input.iter().map(|p| (p * f32::from(white)) as u16).collect()
   } else {
     input.iter().map(|p| ((p * f32::from(white - black)) as u16) + black).collect()
   }
