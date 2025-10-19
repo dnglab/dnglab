@@ -15,7 +15,7 @@ use super::{
   Dim2, Rect, convert_from_f32_scaled_u16,
   raw::{map_3ch_to_rgb, map_4ch_to_rgb},
   sensor::bayer::{
-    bilinear::Bilinear4Channel, ppg::PPGDemosaic, superpixel::Superpixel4Channel, Demosaic,
+    bilinear::Bilinear4Channel, ppg::PPGDemosaic, superpixel::{Superpixel4Channel, SuperpixelQuarterRes3Channel}, Demosaic,
   },
   sensor::xtrans::demosaic::{XTransDemosaic, XTransSuperpixelDemosaic},
   xyz::Illuminant,
@@ -182,17 +182,17 @@ impl RawDevelop {
                   }
                 }
               } else {
-                log::info!("RGB Bayer-like pattern detected. Applying Bayer demosaicing.");
-                match self.demosaic_algorithm {
-                  DemosaicAlgorithm::Quality => {
-                    let ppg = PPGDemosaic::new();
-                    Intermediate::ThreeColor(ppg.demosaic(pixels, &config.cfa, &config.colors, roi))
+                  log::info!("RGB Bayer-like pattern detected. Applying Bayer demosaicing.");
+                  match self.demosaic_algorithm {
+                      DemosaicAlgorithm::Quality => {
+                          let ppg = PPGDemosaic::new();
+                          Intermediate::ThreeColor(ppg.demosaic(pixels, &config.cfa, &config.colors, roi))
+                      }
+                      DemosaicAlgorithm::Speed => {
+                          let superpixel = SuperpixelQuarterRes3Channel::new();
+                          Intermediate::ThreeColor(superpixel.demosaic(pixels, &config.cfa, &config.colors, roi))
+                      }
                   }
-                  DemosaicAlgorithm::Speed => {
-                    let ppg = PPGDemosaic::new();
-                    Intermediate::ThreeColor(ppg.demosaic(pixels, &config.cfa, &config.colors, roi))
-                  }
-                }
               }
             } else if config.cfa.unique_colors() == 4 {
                 log::info!("4-Color pattern detected. Applying 4-channel demosaicing.");
