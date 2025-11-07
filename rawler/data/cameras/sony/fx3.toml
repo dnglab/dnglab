@@ -2,6 +2,11 @@ make = "SONY"
 model = "ILME-FX3"
 clean_make = "SONY"
 clean_model = "ILME-FX3"
+
+model_aliases = [
+  ["ILME-FX3A", "ILME-FX3A"],
+]
+
 color_pattern = "RGGB"
 active_area = [0, 0, 0, 0]
 crop_area = [12, 8, 36, 8]
