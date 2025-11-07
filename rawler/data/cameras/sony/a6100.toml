@@ -2,6 +2,11 @@ make = "SONY"
 model = "ILCE-6100"
 clean_make = "SONY"
 clean_model = "ILCE-6100"
+
+model_aliases = [
+  ["ILCE-6100A", "ILCE-6100A"],
+]
+
 ##blackpoint = 512
 #whitepoint = 16300
 color_pattern = "RGGB"
