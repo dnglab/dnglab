@@ -2,6 +2,11 @@ make = "Canon"
 model = "Canon EOS 77D"
 clean_make = "Canon"
 clean_model = "Canon EOS 77D"
+
+model_aliases = [
+  ["Canon EOS 9000D", "EOS 9000D"],
+]
+
 color_pattern = "RGGB"
 blackareav = [0,260]
 blackareah = [0,30]
