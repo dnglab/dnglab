@@ -2,6 +2,11 @@ make = "NIKON CORPORATION"
 model = "COOLPIX P1000"
 clean_make = "Nikon"
 clean_model = "Coolpix P1000"
+
+model_aliases = [
+  ["COOLPIX P1100", "Coolpix P1100"],
+]
+
 color_pattern = "RGGB"
 active_area = [0, 0, 0, 0]
 crop_area = [8, 7, 8, 7]
