@@ -2,6 +2,11 @@ make = "FUJIFILM"
 model = "FinePix S6500fd"
 clean_make = "Fujifilm"
 clean_model = "FinePix S6500fd"
+
+model_aliases = [
+  ["FinePix S6000fd", "FinePix S6000fd"],
+]
+
 blackpoint = 0
 whitepoint = 15564
 color_pattern = "GBRG"
