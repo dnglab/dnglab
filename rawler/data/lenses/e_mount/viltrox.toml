@@ -24,6 +24,94 @@ aperture_range = [[14, 10], [14, 10]]
 
 [[lenses]]
 mount = "e-mount"
+lens_id = 49474
+make = "Viltrox"
+model = "13mm F1.4 E"
+focal_range = [[13, 1], [13, 1]]
+aperture_range = [[14, 10], [14, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 49474
+make = "Viltrox"
+model = "16mm F1.8 FE"
+focal_range = [[16, 1], [16, 1]]
+aperture_range = [[18, 10], [18, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 49474
+make = "Viltrox"
+model = "23mm F1.4 E"
+focal_range = [[23, 1], [23, 1]]
+aperture_range = [[14, 10], [14, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 49474
+make = "Viltrox"
+model = "24mm F1.8 FE"
+focal_range = [[24, 1], [24, 1]]
+aperture_range = [[18, 10], [18, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 49474
+make = "Viltrox"
+model = "28mm F1.8 FE"
+focal_range = [[28, 1], [28, 1]]
+aperture_range = [[18, 10], [18, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 49474
+make = "Viltrox"
+model = "33mm F1.4 E"
+focal_range = [[33, 1], [33, 1]]
+aperture_range = [[14, 10], [14, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 49474
+make = "Viltrox"
+model = "35mm F1.8 FE"
+focal_range = [[35, 1], [35, 1]]
+aperture_range = [[18, 10], [18, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 49474
+make = "Viltrox"
+model = "50mm F1.8 FE"
+focal_range = [[50, 1], [50, 1]]
+aperture_range = [[18, 10], [18, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 49474
+make = "Viltrox"
+model = "75mm F1.2 E"
+focal_range = [[75, 1], [75, 1]]
+aperture_range = [[12, 10], [12, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 49474
+make = "Viltrox"
+model = "20mm F2.8 FE"
+focal_range = [[20, 1], [20, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 49474
+make = "Viltrox"
+model = "AF 135/1.8 LAB FE"
+focal_range = [[135, 1], [135, 1]]
+aperture_range = [[18, 10], [18, 10]]
+
+[[lenses]]
+mount = "e-mount"
 lens_id = 61761
 make = "Viltrox"
 model = "28mm F4.5 FE"
