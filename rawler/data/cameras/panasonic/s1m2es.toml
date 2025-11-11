@@ -1,0 +1,14 @@
+make = "Panasonic"
+model = "DC-S1M2ES"
+clean_make = "Panasonic"
+clean_model = "DC-S1M2ES"
+whitepoint = 16383
+color_pattern = "RGGB"
+
+[cameras.color_matrix]
+A = [1.6824, -1.1875, 0.0536, -0.4077, 1.2021, 0.2316, 0.0046, 0.0356, 0.7564]
+D65 = [1.1333, -0.4794, -0.1062, -0.3912, 1.2027, 0.2115, 0.0042, 0.0784, 0.5904]
+
+[[cameras.modes]]
+mode = "3:2"
+active_area = [0, 2, 0, 0]
