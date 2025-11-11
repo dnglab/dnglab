@@ -1721,6 +1721,9 @@ mod camera_nx5_raw_modes {
 mod camera_nx10_raw_modes {
   super::camera_file_check!("Samsung", "NX10", cam_samsung_nx10_srw, "raw_modes/Samsung_NX10.SRW");
 }
+mod camera_nx11_raw_modes {
+  super::camera_file_check!("Samsung", "NX11", cam_samsung_nx11_srw, "raw_modes/Samsung_NX11.SRW");
+}
 mod camera_nx2000_raw_modes {
   super::camera_file_check!("Samsung", "NX2000", cam_nx2000_iso_320_samsung_srw_compressed_srw, "raw_modes/NX2000_ISO_320_Samsung SRW Compressed.SRW");
 }

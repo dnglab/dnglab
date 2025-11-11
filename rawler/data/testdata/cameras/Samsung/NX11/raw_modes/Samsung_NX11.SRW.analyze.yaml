@@ -1,0 +1,115 @@
+---
+file:
+  fileSize: 28874496
+  fileName: Samsung_NX11.SRW
+  digest: 70348112292285490d430ab16300ef39
+data:
+  metadata:
+    rawParams:
+      rawWidth: 4704
+      rawHeight: 3124
+      bitDepth: 16
+      cropArea:
+        p:
+          x: 20
+          y: 12
+        d:
+          w: 4592
+          h: 3056
+      activeArea:
+        p:
+          x: 8
+          y: 8
+        d:
+          w: 4688
+          h: 3116
+      blacklevels:
+        levels:
+          - 0/1
+          - 0/1
+          - 0/1
+          - 0/1
+        cpp: 1
+        width: 2
+        height: 2
+      whitelevels:
+        - 3750
+      wbCoeffs:
+        - 1.7595215
+        - 1.1533203
+        - 0.9992676
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ~
+        artist: ~
+        lens_spec:
+          - 18/1
+          - 55/1
+          - 35/10
+          - 56/10
+        exposure_time: 1/1250
+        fnumber: 80/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 400
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: 0/10
+        date_time_original: "2011:01:01 00:02:52"
+        create_date: ~
+        modify_date: "2011:01:01 00:02:52"
+        exposure_program: 1
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: ~
+        max_aperture_value: ~
+        subject_distance: ~
+        metering_mode: 5
+        light_source: 255
+        flash: 0
+        focal_length: 550/10
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: ~
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: Samsung
+        lens_model: NX 18-55mm F3.5-5.6 OIS
+        gps: ~
+        user_comment: ~
+      model: NX11
+      make: Samsung
+      lens:
+        identifiers:
+          name: ~
+          id:
+            - 2
+            - 0
+          nikon_id: ~
+          olympus_id: ~
+        mount: NX-mount
+        lens_make: Samsung
+        lens_model: NX 18-55mm F3.5-5.6 OIS
+        focal_range:
+          - 18/1
+          - 55/1
+        aperture_range:
+          - 35/10
+          - 56/10
+        lens_name: Samsung NX 18-55mm F3.5-5.6 OIS
+      unique_image_id: ~
+      rating: ~
+
