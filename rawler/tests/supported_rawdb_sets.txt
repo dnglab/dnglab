@@ -448,6 +448,7 @@ cameras/Samsung/NX100/raw_modes
 cameras/Samsung/NX1100/raw_modes
 cameras/Samsung/NX1/raw_modes
 cameras/Samsung/NX5/raw_modes
+cameras/Samsung/NX10/raw_modes
 cameras/Samsung/NX2000/raw_modes
 cameras/Samsung/NX200/raw_modes
 cameras/Samsung/NX20/raw_modes
