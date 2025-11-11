@@ -153,7 +153,7 @@ impl<'a> LjpegDecompressor<'a> {
       if marker == m(Marker::SOF3) {
         // Start of the frame, giving us the basic info
         sof.parse_sof(&mut input)?;
-        if sof.precision > 16 || sof.precision < 12 {
+        if sof.precision > 16 || sof.precision < 10 {
           return Err(format!("ljpeg: sof.precision {}", sof.precision));
         }
       } else if marker == m(Marker::DHT) {
