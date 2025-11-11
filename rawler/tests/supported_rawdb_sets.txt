@@ -531,6 +531,7 @@ cameras/Olympus/SH-2/raw_modes
 cameras/Olympus/SP350/raw_modes
 cameras/Olympus/SP500UZ/raw_modes
 cameras/Olympus/SP510UZ/raw_modes
+cameras/Olympus/SP550UZ/raw_modes
 cameras/Olympus/SP565UZ/raw_modes
 cameras/Olympus/SP570UZ/raw_modes
 cameras/Olympus/Stylus1/raw_modes

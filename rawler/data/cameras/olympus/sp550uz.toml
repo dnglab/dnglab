@@ -1,0 +1,13 @@
+make = "OLYMPUS IMAGING CORP."
+model = "SP550UZ"
+clean_make = "Olympus"
+clean_model = "SP550UZ"
+whitepoint = 4095
+color_pattern = "BGGR"
+hints = ["interlaced"]
+active_area = [0, 0, 0, 0]
+crop_area = [8, 2, 8, 3]
+
+[cameras.color_matrix]
+A = [1.4117, -0.6746, 0.0307, -0.386, 1.0859, 0.347, -0.0207, 0.1013, 0.654]
+D65 = [1.1596, -0.4007, -0.1048, -0.5432, 1.2798, 0.2957, -0.1029, 0.1750, 0.6516]
