@@ -1,0 +1,115 @@
+---
+file:
+  fileSize: 25463376
+  fileName: Samsung_NX5.SRW
+  digest: b884c3ae0d21b6d4b4fbc19f16e23f8a
+data:
+  metadata:
+    rawParams:
+      rawWidth: 4704
+      rawHeight: 3124
+      bitDepth: 16
+      cropArea:
+        p:
+          x: 20
+          y: 12
+        d:
+          w: 4592
+          h: 3056
+      activeArea:
+        p:
+          x: 8
+          y: 8
+        d:
+          w: 4688
+          h: 3116
+      blacklevels:
+        levels:
+          - 0/1
+          - 0/1
+          - 0/1
+          - 0/1
+        cpp: 1
+        width: 2
+        height: 2
+      whitelevels:
+        - 3750
+      wbCoeffs:
+        - 1.810791
+        - 0.9995117
+        - 1.1547852
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ~
+        artist: ~
+        lens_spec:
+          - 45/1
+          - 45/1
+          - 18/10
+          - 18/10
+        exposure_time: 1/250
+        fnumber: 18/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 200
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: 0/10
+        date_time_original: "2022:07:02 17:09:40"
+        create_date: ~
+        modify_date: "2022:07:02 17:09:40"
+        exposure_program: 3
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: ~
+        max_aperture_value: ~
+        subject_distance: ~
+        metering_mode: 5
+        light_source: 255
+        flash: 0
+        focal_length: 450/10
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: ~
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: Samsung
+        lens_model: NX 45mm F1.8
+        gps: ~
+        user_comment: ~
+      model: NX5
+      make: Samsung
+      lens:
+        identifiers:
+          name: ~
+          id:
+            - 10
+            - 0
+          nikon_id: ~
+          olympus_id: ~
+        mount: NX-mount
+        lens_make: Samsung
+        lens_model: NX 45mm F1.8
+        focal_range:
+          - 45/1
+          - 45/1
+        aperture_range:
+          - 18/10
+          - 18/10
+        lens_name: Samsung NX 45mm F1.8
+      unique_image_id: ~
+      rating: ~
+

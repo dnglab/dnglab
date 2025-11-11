@@ -1,0 +1,13 @@
+make = "SAMSUNG"
+model = "NX5"
+clean_make = "Samsung"
+clean_model = "NX5"
+whitepoint = 3750
+color_pattern = "BGGR"
+active_area = [8, 8, 8, 0]
+crop_area = [20, 12, 92, 56]
+blackareav = [0, 8]
+
+[cameras.color_matrix]
+A = [1.1681, -0.4928, -0.0648, -0.5013, 1.3274, 0.1891, -0.0444, 0.1358, 0.9125]
+D65 = [1.0332, -0.3234, -0.1168, -0.6111, 1.4639, 0.152, -0.1352, 0.2647, 0.8331]
