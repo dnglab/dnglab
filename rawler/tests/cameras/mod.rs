@@ -1981,6 +1981,9 @@ mod camera_sp500uz_raw_modes {
 mod camera_sp510uz_raw_modes {
   super::camera_file_check!("Olympus", "SP510UZ", cam_sp510uz_iso_50_orf, "raw_modes/SP510UZ_ISO_50.ORF");
 }
+mod camera_sp550uz_raw_modes {
+  super::camera_file_check!("Olympus", "SP550UZ", cam_olympus_sp550uz_12bit_4x3_orf, "raw_modes/Olympus_SP550UZ_12bit_4x3.ORF");
+}
 mod camera_sp565uz_raw_modes {
   super::camera_file_check!("Olympus", "SP565UZ", cam_sp565uz_iso_64_orf, "raw_modes/SP565UZ_ISO_64.ORF");
 }
