@@ -566,6 +566,7 @@ cameras/Panasonic/DC-GX9/raw_modes
 cameras/Panasonic/DC-LX100M2/raw_modes
 cameras/Panasonic/DC-S1H/raw_modes
 cameras/Panasonic/DC-S1/raw_modes
+cameras/Panasonic/DC-S1M2ES/raw_modes
 cameras/Panasonic/DC-S1R/raw_modes
 cameras/Panasonic/DC-S1RM2/raw_modes
 cameras/Panasonic/DC-S5/raw_modes
