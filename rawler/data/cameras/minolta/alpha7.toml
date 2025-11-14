@@ -1,5 +1,8 @@
 make = "KONICA MINOLTA"
 model = "ALPHA-7 DIGITAL"
+model_aliases = [
+  ["ALPHA 7D", "ALPHA 7D"]
+]
 clean_make = "Minolta"
 clean_model = "ALPHA-7"
 blackpoint = 0

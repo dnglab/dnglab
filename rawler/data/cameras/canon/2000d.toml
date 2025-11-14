@@ -7,7 +7,8 @@ active_area = [88, 47, 0, 0]
 
 model_aliases = [
   ["Canon EOS REBEL T7", "Rebel T7"],
-  ["Canon EOS Rebel T7", "Rebel T7"]
+  ["Canon EOS Rebel T7", "Rebel T7"],
+  ["Canon EOS Kiss X90", "Kiss X90"]
 ]
 
 [cameras.color_matrix]
