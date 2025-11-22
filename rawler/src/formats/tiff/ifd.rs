@@ -107,24 +107,34 @@ impl IFD {
     let mut sub = HashMap::new();
     let mut next_pos = reader.position()?;
     debug!("Parse entries");
+    
     for _ in 0..entry_count {
-      reader.goto(next_pos)?;
+      // Safety check: If we can't seek to the next entry, stop immediately.
+      if let Err(_) = reader.goto(next_pos) {
+          log::warn!("Truncated IFD: Could not seek to next entry position. Stopping parse.");
+          break;
+      }
+      
       next_pos += 12;
-      //let embedded = reader.read_u32()?;
-      let tag = reader.read_u16()?;
+      
+      // Read the tag ID. If this fails (EOF), stop parsing.
+      let tag = match reader.read_u16() {
+          Ok(t) => t,
+          Err(_) => {
+              log::warn!("Truncated IFD: Could not read tag ID. Stopping parse.");
+              break;
+          }
+      };
 
       match Entry::parse(&mut reader, base, corr, tag) {
         Ok(entry) => {
           if sub_tags.contains(&tag) {
-            //let entry = Entry::parse(&mut reader, base, corr, tag)?;
             match &entry.value {
               Value::Long(offsets) => {
                 sub_ifd_offsets.insert(tag, offsets.clone());
-                //sub_ifd_offsets.extend_from_slice(&offsets);
               }
               Value::Unknown(tag, offsets) => {
                 sub_ifd_offsets.insert(*tag, vec![offsets[0] as u32]);
-                //sub_ifd_offsets.extend_from_slice(&offsets);
               }
               Value::Undefined(_) => {
                 sub_ifd_offsets.insert(tag, vec![entry.offset().unwrap() as u32]);
@@ -141,7 +151,17 @@ impl IFD {
           entries.insert(entry.tag, entry);
         }
         Err(err) => {
-          log::info!("Failed to parse TIFF tag 0x{:X}, skipping: {:?}", tag, err);
+          // Handle EOF specifically to stop on corrupt/truncated IFDs
+          match err {
+              TiffError::Io(ref io_err) if io_err.kind() == std::io::ErrorKind::UnexpectedEof => {
+                  log::warn!("EOF reached while parsing IFD entry (tag 0x{:X}). The IFD entry count is likely incorrect. Stopping parse.", tag);
+                  break; // Stop the loop, do not try to read the next tag
+              }
+              _ => {
+                  // For other errors (invalid types, etc), just log debug/warn and continue
+                  log::debug!("Failed to parse TIFF tag 0x{:X}, skipping: {:?}", tag, err);
+              }
+          }
         }
       }
     }
