@@ -30,7 +30,7 @@ impl<'a> Decompressor<'a, u16> for PackedDecompressor {
       // 8 bits
       (_, 8) => unpack_8bit(lines, src, skip_rows, line_width),
       // Generic MSB decoder for exotic packed bit sizes
-      (_, bps) if bps > 0 && bps < 16 => unpack_generic_msb(lines, src, skip_rows, self.bps),
+      (_, bps) if bps > 0 && bps < 16 => unpack_generic_msb(lines, src, skip_rows, line_width, self.bps),
       // Unhandled bits
       (_, bps) => return Err(format_args!("DNG: Don't know how to handle DNG with {} bps", bps).to_string()),
     }
@@ -112,10 +112,19 @@ fn unpack_8bit<'a>(lines: impl LineIteratorMut<'a, u16>, src: &[u8], skip_rows: 
 }
 
 #[multiversion(targets("x86_64+avx+avx2", "x86+sse", "aarch64+neon"))]
-fn unpack_generic_msb<'a>(lines: impl LineIteratorMut<'a, u16>, src: &[u8], skip_rows: usize, bits: u32) {
+fn unpack_generic_msb<'a>(lines: impl LineIteratorMut<'a, u16>, src: &[u8], skip_rows: usize, width: usize, bits: u32) {
   assert!(bits <= 16);
-  assert!(skip_rows == 0, "pumps not supported yet for offset rows");
-  let mut pump = BitPumpMSB::new(src);
+
+  let skip_bits = skip_rows * width * bits as usize;
+  let skip_bytes = skip_bits / 8;
+  let skip_rem = (skip_bits % 8) as u32;
+
+  let mut pump = BitPumpMSB::new(&src[skip_bytes..]);
+
+  if skip_rem > 0 {
+    pump.get_bits(skip_rem);
+  }
+
   for line in lines {
     for p in line {
       *p = pump.get_bits(bits) as u16;
