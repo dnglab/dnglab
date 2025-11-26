@@ -186,7 +186,7 @@ impl RawDevelop {
               wb = [1.0, 1.0, 1.0, 1.0];
             }
 
-      log::debug!("wb: {:?}, coeff: {:?}", wb, xyz2cam);
+            log::debug!("wb: {:?}, coeff: {:?}", wb, xyz2cam);
 
             intermediate = match intermediate {
               Intermediate::Monochrome(_) => intermediate,
