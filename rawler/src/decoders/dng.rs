@@ -411,13 +411,15 @@ impl<'a> DngDecoder<'a> {
 
         if !matrix.is_empty() && matrix.len() <= 12 {
             result.insert(illuminant, matrix);
+        } else {
+            log::warn!("Invalid ColorMatrix dimensions for illuminant {:?}: length {}", illuminant, matrix.len());
         }
       }
       Ok(())
     };
 
-    let _ = read_matrix(DngTag::CalibrationIlluminant1, DngTag::ColorMatrix1);
-    let _ = read_matrix(DngTag::CalibrationIlluminant2, DngTag::ColorMatrix2);
+    read_matrix(DngTag::CalibrationIlluminant1, DngTag::ColorMatrix1)?;
+    read_matrix(DngTag::CalibrationIlluminant2, DngTag::ColorMatrix2)?;
     // TODO: add 3
 
     Ok(result)

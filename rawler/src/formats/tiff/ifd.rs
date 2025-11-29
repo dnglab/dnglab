@@ -110,8 +110,8 @@ impl IFD {
     
     for _ in 0..entry_count {
       // Safety check: If we can't seek to the next entry, stop immediately.
-      if let Err(_) = reader.goto(next_pos) {
-          log::warn!("Truncated IFD: Could not seek to next entry position. Stopping parse.");
+      if let Err(e) = reader.goto(next_pos) {
+          log::warn!("Truncated IFD: Could not seek to next entry position. Stopping parse. Error: {}", e);
           break;
       }
       
@@ -120,8 +120,8 @@ impl IFD {
       // Read the tag ID. If this fails (EOF), stop parsing.
       let tag = match reader.read_u16() {
           Ok(t) => t,
-          Err(_) => {
-              log::warn!("Truncated IFD: Could not read tag ID. Stopping parse.");
+          Err(e) => {
+              log::warn!("Truncated IFD: Could not read tag ID. Stopping parse. Error: {}", e);
               break;
           }
       };
