@@ -20,6 +20,8 @@ use std::{
   io::{Read, Seek, SeekFrom},
 };
 
+const MAX_IFD_ENTRIES: usize = 4096;
+
 #[derive(Debug)]
 pub enum OffsetMode {
   Absolute,
@@ -103,25 +105,33 @@ impl IFD {
     let mut sub_ifd_offsets = HashMap::new();
     let mut reader = EndianReader::new(reader, endian);
     let entry_count = reader.read_u16()?;
+
+    if entry_count as usize > MAX_IFD_ENTRIES {
+      log::warn!("TIFF: IFD entry count {} is suspicious (limit {}). The file might be corrupt.", entry_count, MAX_IFD_ENTRIES);
+    }
+
     let mut entries = BTreeMap::new();
     let mut sub = HashMap::new();
     let mut next_pos = reader.position()?;
     debug!("Parse entries");
     
-    for _ in 0..entry_count {
-      // Safety check: If we can't seek to the next entry, stop immediately.
+    for i in 0..entry_count {
+      if i as usize >= MAX_IFD_ENTRIES {
+        log::warn!("TIFF: Reached maximum IFD entry limit ({}). Stopping parse to prevent infinite loops.", MAX_IFD_ENTRIES);
+        break;
+      }
+
       if let Err(e) = reader.goto(next_pos) {
           log::warn!("Truncated IFD: Could not seek to next entry position. Stopping parse. Error: {}", e);
           break;
       }
       
       next_pos += 12;
-      
-      // Read the tag ID. If this fails (EOF), stop parsing.
+
       let tag = match reader.read_u16() {
           Ok(t) => t,
           Err(e) => {
-              log::warn!("Truncated IFD: Could not read tag ID. Stopping parse. Error: {}", e);
+              log::warn!("Truncated IFD: Could not read tag ID (Index {}). Stopping parse. Error: {}", i, e);
               break;
           }
       };
@@ -151,16 +161,20 @@ impl IFD {
           entries.insert(entry.tag, entry);
         }
         Err(err) => {
-          // Handle EOF specifically to stop on corrupt/truncated IFDs
+          // Distinguish between EOF (Physical Truncation) and Logic Errors
           match err {
-              TiffError::Io(ref io_err) if io_err.kind() == std::io::ErrorKind::UnexpectedEof => {
-                  log::warn!("EOF reached while parsing IFD entry (tag 0x{:X}). The IFD entry count is likely incorrect. Stopping parse.", tag);
-                  break; // Stop the loop, do not try to read the next tag
-              }
-              _ => {
-                  // For other errors (invalid types, etc), just log debug/warn and continue
-                  log::debug!("Failed to parse TIFF tag 0x{:X}, skipping: {:?}", tag, err);
-              }
+            TiffError::Io(ref io_err) if io_err.kind() == std::io::ErrorKind::UnexpectedEof => {
+               // If we can't read the entry body, the file is physically done.
+               // Continuing here is what caused the infinite loop/flood of logs.
+               log::warn!("EOF reached while parsing IFD entry body (tag 0x{:X}). Stopping parse.", tag);
+               break; 
+            }
+            _ => {
+               // This preserves the Hasselblad fix:
+               // If the bytes exist but are invalid (e.g. unknown type), we just skip this tag.
+               log::warn!("Failed to parse TIFF tag 0x{:X}, skipping. Error: {:?}", tag, err);
+               continue;
+            }
           }
         }
       }
