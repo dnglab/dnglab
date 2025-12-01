@@ -114,7 +114,8 @@ impl IFD {
     let mut sub = HashMap::new();
     let mut next_pos = reader.position()?;
     debug!("Parse entries");
-    
+    let mut consecutive_errors = 0;
+
     for i in 0..entry_count {
       if i as usize >= MAX_IFD_ENTRIES {
         log::warn!("TIFF: Reached maximum IFD entry limit ({}). Stopping parse to prevent infinite loops.", MAX_IFD_ENTRIES);
@@ -138,6 +139,8 @@ impl IFD {
 
       match Entry::parse(&mut reader, base, corr, tag) {
         Ok(entry) => {
+          consecutive_errors = 0;
+
           if sub_tags.contains(&tag) {
             match &entry.value {
               Value::Long(offsets) => {
@@ -161,20 +164,13 @@ impl IFD {
           entries.insert(entry.tag, entry);
         }
         Err(err) => {
-          // Distinguish between EOF (Physical Truncation) and Logic Errors
-          match err {
-            TiffError::Io(ref io_err) if io_err.kind() == std::io::ErrorKind::UnexpectedEof => {
-               // If we can't read the entry body, the file is physically done.
-               // Continuing here is what caused the infinite loop/flood of logs.
-               log::warn!("EOF reached while parsing IFD entry body (tag 0x{:X}). Stopping parse.", tag);
-               break; 
-            }
-            _ => {
-               // This preserves the Hasselblad fix:
-               // If the bytes exist but are invalid (e.g. unknown type), we just skip this tag.
-               log::warn!("Failed to parse TIFF tag 0x{:X}, skipping. Error: {:?}", tag, err);
-               continue;
-            }
+          consecutive_errors += 1;
+          log::warn!("Failed to parse TIFF tag 0x{:X} (Index {}). Error: {:?}", tag, i, err);
+
+          // If we fail 5 times in a row, the IFD is likely garbage or physically truncated.
+          if consecutive_errors >= 5 {
+              log::warn!("Too many consecutive parsing errors ({}). Stopping parse to prevent flood.", consecutive_errors);
+              break;
           }
         }
       }
