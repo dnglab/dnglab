@@ -20,6 +20,8 @@ use std::{
   io::{Read, Seek, SeekFrom},
 };
 
+const MAX_IFD_ENTRIES: usize = 4096;
+
 #[derive(Debug)]
 pub enum OffsetMode {
   Absolute,
@@ -103,28 +105,49 @@ impl IFD {
     let mut sub_ifd_offsets = HashMap::new();
     let mut reader = EndianReader::new(reader, endian);
     let entry_count = reader.read_u16()?;
+
+    if entry_count as usize > MAX_IFD_ENTRIES {
+      log::warn!("TIFF: IFD entry count {} is suspicious (limit {}). The file might be corrupt.", entry_count, MAX_IFD_ENTRIES);
+    }
+
     let mut entries = BTreeMap::new();
     let mut sub = HashMap::new();
     let mut next_pos = reader.position()?;
     debug!("Parse entries");
-    for _ in 0..entry_count {
-      reader.goto(next_pos)?;
+    let mut consecutive_errors = 0;
+
+    for i in 0..entry_count {
+      if i as usize >= MAX_IFD_ENTRIES {
+        log::warn!("TIFF: Reached maximum IFD entry limit ({}). Stopping parse to prevent infinite loops.", MAX_IFD_ENTRIES);
+        break;
+      }
+
+      if let Err(e) = reader.goto(next_pos) {
+          log::warn!("Truncated IFD: Could not seek to next entry position. Stopping parse. Error: {}", e);
+          break;
+      }
+      
       next_pos += 12;
-      //let embedded = reader.read_u32()?;
-      let tag = reader.read_u16()?;
+
+      let tag = match reader.read_u16() {
+          Ok(t) => t,
+          Err(e) => {
+              log::warn!("Truncated IFD: Could not read tag ID (Index {}). Stopping parse. Error: {}", i, e);
+              break;
+          }
+      };
 
       match Entry::parse(&mut reader, base, corr, tag) {
         Ok(entry) => {
+          consecutive_errors = 0;
+
           if sub_tags.contains(&tag) {
-            //let entry = Entry::parse(&mut reader, base, corr, tag)?;
             match &entry.value {
               Value::Long(offsets) => {
                 sub_ifd_offsets.insert(tag, offsets.clone());
-                //sub_ifd_offsets.extend_from_slice(&offsets);
               }
               Value::Unknown(tag, offsets) => {
                 sub_ifd_offsets.insert(*tag, vec![offsets[0] as u32]);
-                //sub_ifd_offsets.extend_from_slice(&offsets);
               }
               Value::Undefined(_) => {
                 sub_ifd_offsets.insert(tag, vec![entry.offset().unwrap() as u32]);
@@ -141,7 +164,14 @@ impl IFD {
           entries.insert(entry.tag, entry);
         }
         Err(err) => {
-          log::info!("Failed to parse TIFF tag 0x{:X}, skipping: {:?}", tag, err);
+          consecutive_errors += 1;
+          log::warn!("Failed to parse TIFF tag 0x{:X} (Index {}). Error: {:?}", tag, i, err);
+
+          // If we fail 5 times in a row, the IFD is likely garbage or physically truncated.
+          if consecutive_errors >= 5 {
+              log::warn!("Too many consecutive parsing errors ({}). Stopping parse to prevent flood.", consecutive_errors);
+              break;
+          }
         }
       }
     }

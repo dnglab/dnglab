@@ -160,38 +160,45 @@ impl RawDevelop {
     }
 
     if self.steps.contains(&ProcessingStep::Calibrate) {
-      let mut xyz2cam: [[f32; 3]; 4] = [[0.0; 3]; 4];
-      let color_matrix = rawimage
+      let found_matrix = rawimage
         .color_matrix
         .iter()
         .find(|(illuminant, _m)| **illuminant == Illuminant::D65)
-        .ok_or("Illuminant matrix D65 not found")?
-        .1;
-      assert_eq!(color_matrix.len() % 3, 0); // this is not so nice...
-      let components = color_matrix.len() / 3;
-      for i in 0..components {
-        for j in 0..3 {
-          xyz2cam[i][j] = color_matrix[i * 3 + j];
+        .or_else(|| rawimage.color_matrix.iter().next());
+
+      if let Some((_illuminant, color_matrix)) = found_matrix {
+        // Safety check: ensure matrix is valid length
+        if color_matrix.len() % 3 == 0 {
+            let mut xyz2cam: [[f32; 3]; 4] = [[0.0; 3]; 4];
+            let components = color_matrix.len() / 3;
+            for i in 0..components {
+              for j in 0..3 {
+                xyz2cam[i][j] = color_matrix[i * 3 + j];
+              }
+            }
+
+            let mut wb = if rawimage.wb_coeffs[0].is_nan() {
+              [1.0, 1.0, 1.0, 1.0]
+            } else {
+              rawimage.wb_coeffs
+            };
+            if !self.steps.contains(&ProcessingStep::WhiteBalance) {
+              wb = [1.0, 1.0, 1.0, 1.0];
+            }
+
+            log::debug!("wb: {:?}, coeff: {:?}", wb, xyz2cam);
+
+            intermediate = match intermediate {
+              Intermediate::Monochrome(_) => intermediate,
+              Intermediate::ThreeColor(pixels) => Intermediate::ThreeColor(map_3ch_to_rgb(&pixels, &wb, xyz2cam)),
+              Intermediate::FourColor(pixels) => Intermediate::ThreeColor(map_4ch_to_rgb(&pixels, &wb, xyz2cam)),
+            };
+        } else {
+            log::warn!("Color matrix found but has invalid length. Skipping calibration.");
         }
-      }
-
-      // Some old images may not provide WB coeffs. Assume 1.0 in this case.
-      let mut wb = if rawimage.wb_coeffs[0].is_nan() {
-        [1.0, 1.0, 1.0, 1.0]
       } else {
-        rawimage.wb_coeffs
-      };
-      if !self.steps.contains(&ProcessingStep::WhiteBalance) {
-        wb = [1.0, 1.0, 1.0, 1.0];
+        log::warn!("Illuminant matrix D65 not found and no fallback available. Skipping calibration.");
       }
-
-      log::debug!("wb: {:?}, coeff: {:?}", wb, xyz2cam);
-
-      intermediate = match intermediate {
-        Intermediate::Monochrome(_) => intermediate,
-        Intermediate::ThreeColor(pixels) => Intermediate::ThreeColor(map_3ch_to_rgb(&pixels, &wb, xyz2cam)),
-        Intermediate::FourColor(pixels) => Intermediate::ThreeColor(map_4ch_to_rgb(&pixels, &wb, xyz2cam)),
-      };
     }
 
     if self.steps.contains(&ProcessingStep::CropDefault) {
