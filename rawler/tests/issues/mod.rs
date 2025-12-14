@@ -60,3 +60,11 @@ fn dnglab_477_jpeg_quantization_table_with_zero_value() -> std::result::Result<(
   let _ = image.to_rgb8();
   Ok(())
 }
+
+#[test]
+fn dnglab_619_silverfast_scan_missing_illuminant() -> std::result::Result<(), Box<dyn std::error::Error>> {
+  let path = rawdb_file("issues/dnglab_619/silverfast_scan.dng");
+  let mut dng = Cursor::new(Vec::new());
+  convert_raw_file(&path, &mut dng, &ConvertParams::default())?;
+  Ok(())
+}
