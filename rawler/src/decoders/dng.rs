@@ -58,13 +58,14 @@ impl<'a> Decoder for DngDecoder<'a> {
     };
 
     let raw_data = plain_image_from_ifd(raw, file)?;
+    let wb_coeffs = self.get_wb(&cam)?;
     let mut image = RawImage::new_with_data(
       cam,
       raw_data,
       width * cpp,
       height,
       cpp,
-      self.get_wb()?,
+      wb_coeffs,
       photometric,
       blacklevel,
       whitelevel,
@@ -289,9 +290,28 @@ impl<'a> DngDecoder<'a> {
     })
   }
 
-  fn get_wb(&self) -> Result<[f32; 4]> {
+  fn get_wb(&self, cam: &Camera) -> Result<[f32; 4]> {
     if let Some(levels) = self.tiff.get_entry(TiffCommonTag::AsShotNeutral) {
       Ok([1.0 / levels.force_f32(0), 1.0 / levels.force_f32(1), 1.0 / levels.force_f32(2), f32::NAN])
+    } else if let Some(levels) = self.tiff.get_entry(TiffCommonTag::AsShotAsWhiteXY) {
+      let mut wb_coeffs = [f32::NAN, f32::NAN, f32::NAN, f32::NAN];
+      let x = levels.force_f32(0);
+      let y = levels.force_f32(1);
+      if y > 0.0 {
+        let white_x = x / y;
+        // Y = 1.0, so we don't need to consider it in the calculation below
+        let white_z = (1.0 - x - y) / y;
+
+        // TODO: use proper camera space matrix (XYZtoCamera = AB * CC * CM) as specified in DNG 1.6 spec
+        if let Some(matrix) = cam.color_matrix.get(&Illuminant::D65) {
+          for i in 0..3 {
+            let c = matrix[i * 3] * white_x + matrix[i * 3 + 1] + matrix[i * 3 + 2] * white_z;
+
+            wb_coeffs[i] = if c > 0.0 { 1.0 / c } else { 0.0 };
+          }
+        }
+      }
+      Ok(wb_coeffs)
     } else {
       Ok([f32::NAN, f32::NAN, f32::NAN, f32::NAN])
     }
@@ -410,9 +430,9 @@ impl<'a> DngDecoder<'a> {
         }
 
         if !matrix.is_empty() && matrix.len() <= 12 {
-            result.insert(illuminant, matrix);
+          result.insert(illuminant, matrix);
         } else {
-            log::warn!("Invalid ColorMatrix dimensions for illuminant {:?}: length {}", illuminant, matrix.len());
+          log::warn!("Invalid ColorMatrix dimensions for illuminant {:?}: length {}", illuminant, matrix.len());
         }
       }
       Ok(())

@@ -108,6 +108,7 @@ pub enum TiffCommonTag {
   ColorMatrix1 = 0xC621,
   ColorMatrix2 = 0xC622,
   AsShotNeutral = 0xC628,
+  AsShotAsWhiteXY = 0xC629,
   DNGPrivateArea = 0xC634,
   Cr2StripeWidths = 0xC640,
   ActiveArea = 0xC68D,
