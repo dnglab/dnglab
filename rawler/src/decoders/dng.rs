@@ -293,7 +293,7 @@ impl<'a> DngDecoder<'a> {
   fn get_wb(&self, cam: &Camera) -> Result<[f32; 4]> {
     if let Some(levels) = self.tiff.get_entry(TiffCommonTag::AsShotNeutral) {
       Ok([1.0 / levels.force_f32(0), 1.0 / levels.force_f32(1), 1.0 / levels.force_f32(2), f32::NAN])
-    } else if let Some(levels) = self.tiff.get_entry(TiffCommonTag::AsShotAsWhiteXY) {
+    } else if let Some(levels) = self.tiff.get_entry(TiffCommonTag::AsShotWhiteXY) {
       let mut wb_coeffs = [f32::NAN, f32::NAN, f32::NAN, f32::NAN];
       let x = levels.force_f32(0);
       let y = levels.force_f32(1);
