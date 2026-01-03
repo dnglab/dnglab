@@ -7,8 +7,8 @@ use crate::formats::tiff::Value;
 use crate::imgop::Dim2;
 use crate::imgop::Point;
 use crate::imgop::Rect;
-use crate::imgop::xyz::FlatColorMatrix;
-use crate::imgop::xyz::Illuminant;
+use crate::imgop::matrix::*;
+use crate::imgop::xyz::*;
 use crate::tags::DngTag;
 use crate::tags::TiffCommonTag;
 
@@ -294,24 +294,15 @@ impl<'a> DngDecoder<'a> {
     if let Some(levels) = self.tiff.get_entry(DngTag::AsShotNeutral) {
       Ok([1.0 / levels.force_f32(0), 1.0 / levels.force_f32(1), 1.0 / levels.force_f32(2), f32::NAN])
     } else if let Some(levels) = self.tiff.get_entry(DngTag::AsShotWhiteXY) {
-      let mut wb_coeffs = [f32::NAN, f32::NAN, f32::NAN, f32::NAN];
-      let x = levels.force_f32(0);
-      let y = levels.force_f32(1);
-      if y > 0.0 {
-        let white_x = x / y;
-        // Y = 1.0, so we don't need to consider it in the calculation below
-        let white_z = (1.0 - x - y) / y;
-
-        // TODO: use proper camera space matrix (XYZtoCamera = AB * CC * CM) as specified in DNG 1.6 spec
-        if let Some(matrix) = cam.color_matrix.get(&Illuminant::D65) {
-          for i in 0..3 {
-            let c = matrix[i * 3] * white_x + matrix[i * 3 + 1] + matrix[i * 3 + 2] * white_z;
-
-            wb_coeffs[i] = if c > 0.0 { 1.0 / c } else { 0.0 };
-          }
-        }
+      // TODO: improve once AnalogBalance and CC is properly implemented
+      if let Some(flat_colormatrix) = cam.color_matrix.get(&Illuminant::D65)
+        && let Some(colormatrix) = transform_1d::<3, 3>(flat_colormatrix)
+      {
+        let wb_coeff = xy_whitepoint_to_wb_coeff(levels.force_f32(0), levels.force_f32(1), &colormatrix);
+        Ok([wb_coeff[0], wb_coeff[1], wb_coeff[2], f32::NAN])
+      } else {
+        Ok([f32::NAN, f32::NAN, f32::NAN, f32::NAN])
       }
-      Ok(wb_coeffs)
     } else {
       Ok([f32::NAN, f32::NAN, f32::NAN, f32::NAN])
     }
