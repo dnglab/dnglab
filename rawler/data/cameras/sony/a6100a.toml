@@ -1,5 +1,5 @@
 make = "SONY"
-model = "ILCE-6100"
+model = "ILCE-6100A"
 clean_make = "SONY"
 clean_model = "ILCE-6100"
 ##blackpoint = 512

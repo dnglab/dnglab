@@ -1,7 +1,7 @@
 make = "SONY"
-model = "ILCE-6100"
+model = "ILCE-6400A"
 clean_make = "SONY"
-clean_model = "ILCE-6100"
+clean_model = "ILCE-6400"
 ##blackpoint = 512
 #whitepoint = 16300
 color_pattern = "RGGB"

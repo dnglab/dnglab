@@ -1,0 +1,26 @@
+make = "Canon"
+model = "Canon PowerShot V1"
+clean_make = "Canon"
+clean_model = "PowerShot V1"
+color_pattern = "RGGB"
+
+[cameras.color_matrix]
+A = [0.9247, -0.3795, -0.0371, -0.3448, 1.1212, 0.2514, -0.0452, 0.1537, 0.5881]
+
+D65 = [
+    0.8461,
+    -0.2325,
+    -0.0678,
+    -0.4019,
+    1.1575,
+    0.2671,
+    -0.0423,
+    0.1647,
+    0.5560,
+]
+
+[[cameras.modes]]
+mode = "raw"
+
+[[cameras.modes]]
+mode = "craw"

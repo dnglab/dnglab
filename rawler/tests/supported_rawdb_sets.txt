@@ -447,9 +447,6 @@ cameras/Samsung/NX1000/raw_modes
 cameras/Samsung/NX100/raw_modes
 cameras/Samsung/NX1100/raw_modes
 cameras/Samsung/NX1/raw_modes
-cameras/Samsung/NX5/raw_modes
-cameras/Samsung/NX10/raw_modes
-cameras/Samsung/NX11/raw_modes
 cameras/Samsung/NX2000/raw_modes
 cameras/Samsung/NX200/raw_modes
 cameras/Samsung/NX20/raw_modes
@@ -531,7 +528,6 @@ cameras/Olympus/SH-2/raw_modes
 cameras/Olympus/SP350/raw_modes
 cameras/Olympus/SP500UZ/raw_modes
 cameras/Olympus/SP510UZ/raw_modes
-cameras/Olympus/SP550UZ/raw_modes
 cameras/Olympus/SP565UZ/raw_modes
 cameras/Olympus/SP570UZ/raw_modes
 cameras/Olympus/Stylus1/raw_modes
@@ -566,7 +562,6 @@ cameras/Panasonic/DC-GX9/raw_modes
 cameras/Panasonic/DC-LX100M2/raw_modes
 cameras/Panasonic/DC-S1H/raw_modes
 cameras/Panasonic/DC-S1/raw_modes
-cameras/Panasonic/DC-S1M2ES/raw_modes
 cameras/Panasonic/DC-S1R/raw_modes
 cameras/Panasonic/DC-S1RM2/raw_modes
 cameras/Panasonic/DC-S5/raw_modes

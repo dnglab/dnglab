@@ -2,11 +2,6 @@ make = "Panasonic"
 model = "DMC-TZ70"
 clean_make = "Panasonic"
 clean_model = "DMC-TZ70"
-
-model_aliases = [
-  ["DMC-ZS50", "DMC-ZS50"],
-]
-
 #blackpoint = 143
 whitepoint = 3971
 color_pattern = "RGGB"

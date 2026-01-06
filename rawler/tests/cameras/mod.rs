@@ -1715,15 +1715,6 @@ mod camera_nx1100_raw_modes {
 mod camera_nx1_raw_modes {
   super::camera_file_check!("Samsung", "NX1", cam_nx1_iso_400_packbits_srw, "raw_modes/NX1_ISO_400_PackBits.SRW");
 }
-mod camera_nx5_raw_modes {
-  super::camera_file_check!("Samsung", "NX5", cam_samsung_nx5_srw, "raw_modes/Samsung_NX5.SRW");
-}
-mod camera_nx10_raw_modes {
-  super::camera_file_check!("Samsung", "NX10", cam_samsung_nx10_srw, "raw_modes/Samsung_NX10.SRW");
-}
-mod camera_nx11_raw_modes {
-  super::camera_file_check!("Samsung", "NX11", cam_samsung_nx11_srw, "raw_modes/Samsung_NX11.SRW");
-}
 mod camera_nx2000_raw_modes {
   super::camera_file_check!("Samsung", "NX2000", cam_nx2000_iso_320_samsung_srw_compressed_srw, "raw_modes/NX2000_ISO_320_Samsung SRW Compressed.SRW");
 }
@@ -1981,9 +1972,6 @@ mod camera_sp500uz_raw_modes {
 mod camera_sp510uz_raw_modes {
   super::camera_file_check!("Olympus", "SP510UZ", cam_sp510uz_iso_50_orf, "raw_modes/SP510UZ_ISO_50.ORF");
 }
-mod camera_sp550uz_raw_modes {
-  super::camera_file_check!("Olympus", "SP550UZ", cam_olympus_sp550uz_12bit_4x3_orf, "raw_modes/Olympus_SP550UZ_12bit_4x3.ORF");
-}
 mod camera_sp565uz_raw_modes {
   super::camera_file_check!("Olympus", "SP565UZ", cam_sp565uz_iso_64_orf, "raw_modes/SP565UZ_ISO_64.ORF");
 }
@@ -2149,9 +2137,6 @@ mod camera_dc_s1h_raw_modes {
 }
 mod camera_dc_s1_raw_modes {
   super::camera_file_check!("Panasonic", "DC-S1", cam_dc_s1_iso_800_6fmt_6000x4000_rw2, "raw_modes/DC-S1_ISO_800_6fmt_6000x4000.RW2");
-}
-mod camera_dc_s1m2es_raw_modes {
-  super::camera_file_check!("Panasonic", "DC-S1M2ES", cam_dc_s1m2es_3x2_rw2, "raw_modes/DC-S1M2ES_3x2.RW2");
 }
 mod camera_dc_s1r_raw_modes {
   super::camera_file_check!("Panasonic", "DC-S1R", cam_dc_s1r_iso_100_6fmt_8368x5584_rw2, "raw_modes/DC-S1R_ISO_100_6fmt_8368x5584.RW2");

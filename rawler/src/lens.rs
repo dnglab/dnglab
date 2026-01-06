@@ -189,12 +189,11 @@ impl LensResolver {
         } => self.clone().with_lens_id((7, subid)).resolve_internal(),
         _ => None,
       };
+
       if second_try.is_none() {
         log::warn!("No lens definition found in database, search parameters: {}. {}", self, crate::ISSUE_HINT);
-        if std::env::var("RAWLER_FAIL_NO_LENS").ok().map(|val| val == "1").unwrap_or(false) {
-          panic!("No lens definition found in database, search parameters: {}.", self);
-        }
       }
+
       second_try
     }
   }

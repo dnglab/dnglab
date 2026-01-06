@@ -120,34 +120,42 @@ fn correct_blacklevel_channels<const CH: usize>(raw: &mut [f32], blacklevel: &[f
 /// modifications on godbolt before committing.
 #[multiversion(targets("x86_64+avx+avx2", "x86+sse", "aarch64+neon"))]
 pub fn correct_blacklevel(raw: &mut [f32], blacklevel: &[f32], whitelevel: &[f32]) {
-  match (blacklevel.len(), whitelevel.len()) {
-    (1, 1) => correct_blacklevel_channels::<1>(
-      raw,
-      blacklevel.try_into().expect("Array size mismatch"),
-      whitelevel.try_into().expect("Array size mismatch"),
-    ),
-    (3, 3) => correct_blacklevel_channels::<3>(
-      raw,
-      blacklevel.try_into().expect("Array size mismatch"),
-      whitelevel.try_into().expect("Array size mismatch"),
-    ),
-    (a, b) if a == b => {
-      // max value can be pre-computed for all channels.
-      let mut max = whitelevel.to_vec();
-      max.iter_mut().enumerate().for_each(|(i, x)| *x -= blacklevel[i]);
+  // Make owned/expandable copies
+  let mut bl = blacklevel.to_vec();
+  let mut wl = whitelevel.to_vec();
 
-      let clip = |v: f32| {
-        if v.is_sign_negative() { 0.0 } else { v }
-      };
+  // Canon compact CR3 case: BlackLevel = 4, WhiteLevel = 1
+  if wl.len() == 1 && bl.len() > 1 {
+    wl = vec![wl[0]; bl.len()];
+  }
 
-      let ch = blacklevel.len();
-      raw.chunks_exact_mut(ch).for_each(|block| {
-        for i in 0..ch {
-          block[i] = clip(block[i] - blacklevel[i]) / max[i];
-        }
-      });
+  // Opposite case (rare): BlackLevel = 1, WhiteLevel > 1
+  if bl.len() == 1 && wl.len() > 1 {
+    bl = vec![bl[0]; wl.len()];
+  }
+
+  // After normalization, lengths must match
+  if bl.len() != wl.len() {
+    panic!("Blacklevel ({}) and Whitelevel ({}) count mismatch after normalization", bl.len(), wl.len());
+  }
+
+  let ch = bl.len();
+
+  // Precompute max for each channel
+  let mut max = vec![0.0; ch];
+  for i in 0..ch {
+    max[i] = wl[i] - bl[i];
+    if max[i] <= 0.0 {
+      max[i] = 1.0; // avoid divide by zero
     }
-    _ => panic!("Blacklevel ({}) and Whitelevel ({})count mismatch", blacklevel.len(), whitelevel.len()),
+  }
+
+  // Apply correction
+  for block in raw.chunks_exact_mut(ch) {
+    for i in 0..ch {
+      let v = block[i] - bl[i];
+      block[i] = if v < 0.0 { 0.0 } else { v / max[i] };
+    }
   }
 }
 

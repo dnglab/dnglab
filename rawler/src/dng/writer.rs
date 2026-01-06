@@ -669,7 +669,7 @@ where
         strip_sizes.push(std::mem::size_of_val(strip) as u32);
         strip_rows.push((strip.len() / (rawimage.width * rawimage.cpp)) as u32);
       }
-      subframe.ifd_mut().add_tag(TiffCommonTag::SampleFormat, &vec![3_u16; rawimage.cpp]); // IEEE Float
+      subframe.ifd_mut().add_tag(TiffCommonTag::SampleFormat, &vec![3_u16; rawimage.cpp]); // Unsigned Integer// IEEE Float
       subframe.ifd_mut().add_tag(TiffCommonTag::BitsPerSample, &vec![32_u16; rawimage.cpp]);
     }
   };

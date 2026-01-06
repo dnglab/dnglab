@@ -16,6 +16,7 @@ fn main() {
 }
 
 fn join_cameras() {
+  println!("cargo:rerun-if-changed=data/cameras/*/**/*.toml");
   let out_dir = env::var("OUT_DIR").expect("Missing ENV OUT_DIR");
   let dest_path = Path::new(&out_dir).join("cameras.toml");
   let mut out = File::create(dest_path).expect("Unable to create output file");

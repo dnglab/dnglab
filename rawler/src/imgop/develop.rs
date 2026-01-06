@@ -14,7 +14,13 @@ use crate::{
 use super::{
   Dim2, Rect, convert_from_f32_scaled_u16,
   raw::{map_3ch_to_rgb, map_4ch_to_rgb},
-  sensor::bayer::{Demosaic, bilinear::Bilinear4Channel, ppg::PPGDemosaic},
+  sensor::bayer::{
+    Demosaic,
+    bilinear::Bilinear4Channel,
+    ppg::PPGDemosaic,
+    superpixel::{Superpixel4Channel, SuperpixelQuarterRes3Channel},
+  },
+  sensor::xtrans::demosaic::{XTransDemosaic, XTransSuperpixelDemosaic},
   xyz::Illuminant,
 };
 
@@ -27,6 +33,17 @@ pub enum ProcessingStep {
   Calibrate,
   CropDefault,
   SRgb,
+}
+
+/// The demosaicing algorithm to use.
+#[derive(PartialEq, Eq, Debug, Clone, Copy, Default)]
+pub enum DemosaicAlgorithm {
+  /// High-quality demosaicing (PPG for Bayer, Full-Res for X-Trans).
+  #[default]
+  Quality,
+  /// High-speed demosaicing using a superpixel algorithm (e.g. for thumbnails).
+  /// This reduces image dimensions by a factor of four (quarter width and height).
+  Speed,
 }
 
 pub struct RawDevelopBuilder {}
@@ -76,6 +93,7 @@ impl Intermediate {
 #[derive(Clone)]
 pub struct RawDevelop {
   pub steps: Vec<ProcessingStep>,
+  pub demosaic_algorithm: DemosaicAlgorithm,
 }
 
 impl Default for RawDevelop {
@@ -90,6 +108,7 @@ impl Default for RawDevelop {
         ProcessingStep::CropDefault,
         ProcessingStep::SRgb,
       ],
+      demosaic_algorithm: DemosaicAlgorithm::default(),
     }
   }
 }
@@ -136,20 +155,66 @@ impl RawDevelop {
     if self.steps.contains(&ProcessingStep::Demosaic) {
       intermediate = match &rawimage.photometric {
         RawPhotometricInterpretation::Cfa(config) => {
-          if let Intermediate::Monochrome(pixels) = intermediate {
+          log::debug!(
+            "Demosaicing check for '{} {}': CFA name='{}', width={}, height={}, is_rgb={}",
+            rawimage.clean_make,
+            rawimage.clean_model,
+            config.cfa.name,
+            config.cfa.width,
+            config.cfa.height,
+            config.cfa.is_rgb()
+          );
+          if let Intermediate::Monochrome(ref pixels) = intermediate {
             let roi = if self.steps.contains(&ProcessingStep::CropActiveArea) {
               rawimage.active_area.unwrap_or(pixels.rect())
             } else {
               pixels.rect()
             };
             if config.cfa.is_rgb() {
-              let ppg = PPGDemosaic::new();
-              Intermediate::ThreeColor(ppg.demosaic(&pixels, &config.cfa, &config.colors, roi))
+              // Check if this is an X-Trans sensor (6x6 pattern)
+              if config.cfa.width == 6 && config.cfa.height == 6 {
+                log::debug!("X-Trans pattern (6x6) detected. Applying X-Trans demosaicing ({:?}).", self.demosaic_algorithm);
+                match self.demosaic_algorithm {
+                  DemosaicAlgorithm::Quality => {
+                    let xtrans_demosaic = XTransDemosaic::new();
+                    Intermediate::ThreeColor(xtrans_demosaic.demosaic(pixels, &config.cfa, &config.colors, roi))
+                  }
+                  DemosaicAlgorithm::Speed => {
+                    let xtrans_demosaic = XTransSuperpixelDemosaic::new();
+                    Intermediate::ThreeColor(xtrans_demosaic.demosaic(pixels, &config.cfa, &config.colors, roi))
+                  }
+                }
+              } else {
+                log::debug!("RGB Bayer-like pattern detected. Applying Bayer demosaicing.");
+                match self.demosaic_algorithm {
+                  DemosaicAlgorithm::Quality => {
+                    let ppg = PPGDemosaic::new();
+                    Intermediate::ThreeColor(ppg.demosaic(pixels, &config.cfa, &config.colors, roi))
+                  }
+                  DemosaicAlgorithm::Speed => {
+                    let superpixel = SuperpixelQuarterRes3Channel::new();
+                    Intermediate::ThreeColor(superpixel.demosaic(pixels, &config.cfa, &config.colors, roi))
+                  }
+                }
+              }
             } else if config.cfa.unique_colors() == 4 {
-              let linear = Bilinear4Channel::new();
-              Intermediate::FourColor(linear.demosaic(&pixels, &config.cfa, &config.colors, roi))
+              log::debug!("4-Color pattern detected. Applying 4-channel demosaicing.");
+              match self.demosaic_algorithm {
+                DemosaicAlgorithm::Quality => {
+                  let linear = Bilinear4Channel::new();
+                  Intermediate::FourColor(linear.demosaic(&pixels, &config.cfa, &config.colors, roi))
+                }
+                DemosaicAlgorithm::Speed => {
+                  let superpixel = Superpixel4Channel::new();
+                  Intermediate::FourColor(superpixel.demosaic(&pixels, &config.cfa, &config.colors, roi))
+                }
+              }
             } else {
-              todo!()
+              log::warn!(
+                "Unsupported CFA pattern '{}' for demosaicing. Passing through without demosaicing.",
+                config.cfa.name
+              );
+              Intermediate::Monochrome(pixels.clone())
             }
           } else {
             intermediate
@@ -160,60 +225,64 @@ impl RawDevelop {
     }
 
     if self.steps.contains(&ProcessingStep::Calibrate) {
-      let found_matrix = rawimage
+      let mut xyz2cam: [[f32; 3]; 4] = [[0.0; 3]; 4];
+
+      // Try to find D65 matrix. If missing, log warning and use identity.
+      let color_matrix: Vec<f32> = rawimage
         .color_matrix
         .iter()
         .find(|(illuminant, _m)| **illuminant == Illuminant::D65)
-        .or_else(|| rawimage.color_matrix.iter().next());
+        .map(|(_, m)| m.clone())
+        .unwrap_or_else(|| {
+          log::warn!("Illuminant matrix D65 not found, using identity fallback.");
+          vec![
+            1.0, 0.0, 0.0,
+            0.0, 1.0, 0.0,
+            0.0, 0.0, 1.0,
+          ]
+        });
 
-      if let Some((_illuminant, color_matrix)) = found_matrix {
-        // Safety check: ensure matrix is valid length
-        if color_matrix.len() % 3 == 0 {
-            let mut xyz2cam: [[f32; 3]; 4] = [[0.0; 3]; 4];
-            let components = color_matrix.len() / 3;
-            for i in 0..components {
-              for j in 0..3 {
-                xyz2cam[i][j] = color_matrix[i * 3 + j];
-              }
-            }
-
-            let mut wb = if rawimage.wb_coeffs[0].is_nan() {
-              [1.0, 1.0, 1.0, 1.0]
-            } else {
-              rawimage.wb_coeffs
-            };
-            if !self.steps.contains(&ProcessingStep::WhiteBalance) {
-              wb = [1.0, 1.0, 1.0, 1.0];
-            }
-
-            log::debug!("wb: {:?}, coeff: {:?}", wb, xyz2cam);
-
-            intermediate = match intermediate {
-              Intermediate::Monochrome(_) => intermediate,
-              Intermediate::ThreeColor(pixels) => Intermediate::ThreeColor(map_3ch_to_rgb(&pixels, &wb, xyz2cam)),
-              Intermediate::FourColor(pixels) => Intermediate::ThreeColor(map_4ch_to_rgb(&pixels, &wb, xyz2cam)),
-            };
-        } else {
-            log::warn!("Color matrix found but has invalid length. Skipping calibration.");
+      assert_eq!(color_matrix.len() % 3, 0);
+      let components = color_matrix.len() / 3;
+      for i in 0..components {
+        for j in 0..3 {
+          xyz2cam[i][j] = color_matrix[i * 3 + j];
         }
-      } else {
-        log::warn!("Illuminant matrix D65 not found and no fallback available. Skipping calibration.");
       }
-    }
 
+      let mut wb = if rawimage.wb_coeffs[0].is_nan() {
+        [1.0, 1.0, 1.0, 1.0]
+      } else {
+        rawimage.wb_coeffs
+      };
+      if !self.steps.contains(&ProcessingStep::WhiteBalance) {
+        wb = [1.0, 1.0, 1.0, 1.0];
+      }
+
+      log::debug!("Applying calibration with wb: {:?}, xyz2cam: {:?}", wb, xyz2cam);
+
+      intermediate = match intermediate {
+        Intermediate::Monochrome(_) => intermediate,
+        Intermediate::ThreeColor(pixels) => Intermediate::ThreeColor(map_3ch_to_rgb(&pixels, &wb, xyz2cam)),
+        Intermediate::FourColor(pixels) => Intermediate::ThreeColor(map_4ch_to_rgb(&pixels, &wb, xyz2cam)),
+      };
+    }
     if self.steps.contains(&ProcessingStep::CropDefault) {
-      if let Some(mut crop) = rawimage.crop_area.or(rawimage.active_area) {
+      if let Some(mut crop) = rawimage.crop_area {
         if self.steps.contains(&ProcessingStep::Demosaic) && self.steps.contains(&ProcessingStep::CropActiveArea) {
-          // If active area crop was already applied during demosaic, we need to
-          // adapt default crop to active area crop.
-          crop = crop.adapt(&rawimage.active_area.unwrap_or(crop));
+          if let Some(active_area) = rawimage.active_area {
+            let intersection = crop.intersection(&active_area);
+            crop = intersection.adapt(&active_area);
+          }
         }
-        if intermediate.dim().w == rawimage.active_area.map(|area| area.d).unwrap_or(rawimage.dim()).w / 2 {
-          // Superpixel debayer used
-          crop.scale(0.5);
+        let original_width = rawimage.active_area.map(|area| area.d.w).unwrap_or(rawimage.dim().w);
+        if original_width > 0 {
+          let scale_factor = (intermediate.dim().w as f32) / (original_width as f32);
+          if (scale_factor - 1.0).abs() > 1e-6 {
+            crop.scale(scale_factor);
+          }
         }
-        // Only apply crop if dimensions differ.
-        if crop.d != intermediate.dim() {
+        if !crop.is_empty() && crop.d != intermediate.dim() {
           log::debug!("crop: {:?}, intermediate dim: {:?}, rawimage: {:?}", crop, intermediate.dim(), rawimage.dim());
           intermediate = match intermediate {
             Intermediate::Monochrome(pixels) => Intermediate::Monochrome(pixels.crop(crop)),
@@ -315,3 +384,4 @@ impl RawDevelop {
     Ok(())
   }
 }
+

@@ -401,19 +401,13 @@ impl<'a> DngDecoder<'a> {
 
     let mut read_matrix = |cal: DngTag, mat: DngTag| -> Result<()> {
       if let Some(c) = self.tiff.get_entry(mat) {
-        let illuminant_val = self.tiff.get_entry(cal).map(|e| e.force_u16(0)).unwrap_or(21);
-        let illuminant: Illuminant = illuminant_val.try_into().unwrap_or(Illuminant::D65);
-
+        let illuminant: Illuminant = fetch_tiff_tag!(self.tiff, cal).force_u16(0).try_into()?;
         let mut matrix = FlatColorMatrix::new();
         for i in 0..c.count() as usize {
           matrix.push(c.force_f32(i));
         }
-
-        if !matrix.is_empty() && matrix.len() <= 12 {
-            result.insert(illuminant, matrix);
-        } else {
-            log::warn!("Invalid ColorMatrix dimensions for illuminant {:?}: length {}", illuminant, matrix.len());
-        }
+        assert!(matrix.len() <= 12 && !matrix.is_empty());
+        result.insert(illuminant, matrix);
       }
       Ok(())
     };
