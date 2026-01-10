@@ -7,8 +7,8 @@ use crate::formats::tiff::Value;
 use crate::imgop::Dim2;
 use crate::imgop::Point;
 use crate::imgop::Rect;
-use crate::imgop::xyz::FlatColorMatrix;
-use crate::imgop::xyz::Illuminant;
+use crate::imgop::matrix::*;
+use crate::imgop::xyz::*;
 use crate::tags::DngTag;
 use crate::tags::TiffCommonTag;
 
@@ -58,13 +58,14 @@ impl<'a> Decoder for DngDecoder<'a> {
     };
 
     let raw_data = plain_image_from_ifd(raw, file)?;
+    let wb_coeffs = self.get_wb(&cam)?;
     let mut image = RawImage::new_with_data(
       cam,
       raw_data,
       width * cpp,
       height,
       cpp,
-      self.get_wb()?,
+      wb_coeffs,
       photometric,
       blacklevel,
       whitelevel,
@@ -289,9 +290,19 @@ impl<'a> DngDecoder<'a> {
     })
   }
 
-  fn get_wb(&self) -> Result<[f32; 4]> {
-    if let Some(levels) = self.tiff.get_entry(TiffCommonTag::AsShotNeutral) {
+  fn get_wb(&self, cam: &Camera) -> Result<[f32; 4]> {
+    if let Some(levels) = self.tiff.get_entry(DngTag::AsShotNeutral) {
       Ok([1.0 / levels.force_f32(0), 1.0 / levels.force_f32(1), 1.0 / levels.force_f32(2), f32::NAN])
+    } else if let Some(levels) = self.tiff.get_entry(DngTag::AsShotWhiteXY) {
+      // TODO: improve once AnalogBalance and CC is properly implemented
+      if let Some(flat_colormatrix) = cam.color_matrix.get(&Illuminant::D65)
+        && let Some(colormatrix) = transform_1d::<3, 3>(flat_colormatrix)
+      {
+        let wb_coeff = xy_whitepoint_to_wb_coeff(levels.force_f32(0), levels.force_f32(1), &colormatrix);
+        Ok([wb_coeff[0], wb_coeff[1], wb_coeff[2], f32::NAN])
+      } else {
+        Ok([f32::NAN, f32::NAN, f32::NAN, f32::NAN])
+      }
     } else {
       Ok([f32::NAN, f32::NAN, f32::NAN, f32::NAN])
     }
@@ -410,9 +421,9 @@ impl<'a> DngDecoder<'a> {
         }
 
         if !matrix.is_empty() && matrix.len() <= 12 {
-            result.insert(illuminant, matrix);
+          result.insert(illuminant, matrix);
         } else {
-            log::warn!("Invalid ColorMatrix dimensions for illuminant {:?}: length {}", illuminant, matrix.len());
+          log::warn!("Invalid ColorMatrix dimensions for illuminant {:?}: length {}", illuminant, matrix.len());
         }
       }
       Ok(())
