@@ -1218,6 +1218,9 @@ mod camera_nikon_z_9_raw_modes {
 mod camera_nikon_z_8_raw_modes {
   super::camera_file_check!("Nikon", "NIKON Z 8", cam_nikon_z8_raw_14_bit_lossless_compression_nef, "raw_modes/Nikon_Z8_raw_14_bit_lossless_compression.NEF");
 }
+mod camera_nikon_coolscan_5000_ed_raw_modes {
+  super::camera_file_check!("Nikon", "Nikon COOLSCAN 5000 ED", cam_nikon_super_coolscan_5000_ed_nef, "raw_modes/nikon-super-coolscan-5000-ed.nef");
+}
 mod camera_dsc_f828_raw_modes {
   super::camera_file_check!("Sony", "DSC-F828", cam_dsc_f828_iso_64_14_14_14bits_uncompressed_srf, "raw_modes/DSC-F828_ISO_64_14 14 14bits_Uncompressed.SRF");
 }

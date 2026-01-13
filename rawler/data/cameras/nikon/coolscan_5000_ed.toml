@@ -1,0 +1,13 @@
+make = "Nikon"
+model = "Nikon SUPER COOLSCAN 5000 ED"
+clean_make = "Nikon"
+clean_model = "Super Coolscan 5000 ED"
+
+#color_pattern = "RGGB"
+
+[cameras.color_matrix]
+Unknown = [3.1336, -1.6168, -0.4907, -0.9787, 1.9161, 0.0335, 0.0721, -0.2291, 1.4054]
+
+[[cameras.modes]]
+mode = "16bit"
+whitepoint = 65535

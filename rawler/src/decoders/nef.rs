@@ -147,7 +147,8 @@ impl<'a> NefDecoder<'a> {
   pub fn new(file: &RawSource, tiff: GenericTiffReader, rawloader: &'a RawLoader) -> Result<NefDecoder<'a>> {
     let raw = tiff
       .find_first_ifd_with_tag(TiffCommonTag::CFAPattern)
-      .ok_or_else(|| RawlerError::DecoderFailed(format!("Failed to find a IFD with CFAPattern tag")))?;
+      .or_else(|| tiff.find_ifd_with_new_subfile_type(0))
+      .ok_or_else(|| RawlerError::DecoderFailed(format!("Failed to find a suitable IFD in NEF decoder")))?;
     let bps = fetch_tiff_tag!(raw, TiffCommonTag::BitsPerSample).force_usize(0);
 
     // Make sure we always use a 12/14 bit mode to get correct white/blackpoints
@@ -178,10 +179,12 @@ impl<'a> Decoder for NefDecoder<'a> {
     let raw = self
       .tiff
       .find_first_ifd_with_tag(TiffCommonTag::CFAPattern)
-      .ok_or_else(|| RawlerError::DecoderFailed(format!("Failed to find a IFD with CFAPattern tag")))?;
+      .or_else(|| self.tiff.find_ifd_with_new_subfile_type(0))
+      .ok_or_else(|| RawlerError::DecoderFailed(format!("Failed to find a suitable IFD in NEF decoder")))?;
     let mut width = fetch_tiff_tag!(raw, TiffCommonTag::ImageWidth).force_usize(0);
     let height = fetch_tiff_tag!(raw, TiffCommonTag::ImageLength).force_usize(0);
     let bps = fetch_tiff_tag!(raw, TiffCommonTag::BitsPerSample).force_usize(0);
+    let mut cpp = fetch_tiff_tag!(raw, TiffCommonTag::BitsPerSample).count(); // Linear files don't have SamplesPerPixel
     let compression = fetch_tiff_tag!(raw, TiffCommonTag::Compression).force_usize(0);
 
     let nef_compression = if let Some(z_makernote) = self.makernote.get_entry(NikonMakernote::Makernotes0x51) {
@@ -223,7 +226,6 @@ impl<'a> Decoder for NefDecoder<'a> {
       file.subview_padded(offset as u64, full_size as u64)?
     };
 
-    let mut cpp = 1;
     let coeffs = normalize_wb(self.get_wb()?);
     debug!("WB coeff: {:?}", coeffs);
 
@@ -246,6 +248,14 @@ impl<'a> Decoder for NefDecoder<'a> {
     } else if let Some(padding) = self.is_uncompressed(raw)? {
       debug!("NEF uncompressed row padding: {}, little-endian: {}", padding, self.tiff.little_endian());
       match bps {
+        16 => {
+          // Used by Coolscan scanners
+          if self.tiff.little_endian() {
+            decode_16le(&src, width * cpp, height, dummy)
+          } else {
+            decode_16be(&src, width * cpp, height, dummy)
+          }
+        }
         14 => {
           if (self.tiff.little_endian() || self.camera.find_hint("little_endian")) && !self.camera.find_hint("big_endian") {
             // Models like D6 uses packed instead of unpacked 14le encoding. And D6 uses
@@ -496,7 +506,8 @@ impl<'a> NefDecoder<'a> {
         x => Err(RawlerError::unsupported(&self.camera, format!("NEF: Don't know about WB version 0x{:x}", x))),
       }
     } else {
-      Err(RawlerError::DecoderFailed("NEF: Don't know how to fetch WB".to_string()))
+      log::debug!("NEF: Don't know how to fetch WB, fallback to [1.0, 1.0, 1.0]");
+      Ok([1.0, 1.0, 1.0, 1.0])
     }
   }
 
