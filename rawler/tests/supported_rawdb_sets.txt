@@ -304,6 +304,7 @@ cameras/Nikon/NIKON Z fc/raw_modes
 cameras/Nikon/Z 7/raw_modes
 cameras/Nikon/NIKON Z 9/raw_modes
 cameras/Nikon/NIKON Z 8/raw_modes
+cameras/Nikon/Nikon COOLSCAN 5000 ED/raw_modes
 cameras/Sony/DSC-F828/raw_modes
 cameras/Sony/DSC-HX95/raw_modes
 cameras/Sony/DSC-HX99/raw_modes
