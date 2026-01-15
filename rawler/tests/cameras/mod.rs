@@ -1583,6 +1583,9 @@ mod camera_slt_a99_raw_modes {
 mod camera_zv_1_raw_modes {
   super::camera_file_check!("Sony", "ZV-1", cam_zv_1_iso_125_12bits_sony_arw_compressed_arw, "raw_modes/ZV-1_ISO_125_12bits_Sony ARW Compressed.ARW");
 }
+mod camera_zv_1m2_raw_modes {
+  super::camera_file_check!("Sony", "ZV-1M2", cam_sony_zv_1m2_12bit_3x2_arw, "raw_modes/Sony_ZV-1M2_12bit_3x2.ARW");
+}
 mod camera_zv_e1_raw_modes {
   super::camera_file_check!("Sony", "ZV-E1", cam_zv_e1_iso_200_14bits_arw, "raw_modes/ZV-E1_ISO_200_14bits.ARW");
 }
