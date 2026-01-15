@@ -404,6 +404,7 @@ cameras/Sony/SLT-A65/raw_modes
 cameras/Sony/SLT-A77/raw_modes
 cameras/Sony/SLT-A99/raw_modes
 cameras/Sony/ZV-1/raw_modes
+cameras/Sony/ZV-1M2/raw_modes
 cameras/Sony/ZV-E1/raw_modes
 cameras/Sony/ZV-E10/raw_modes
 cameras/Sony/ZV-E10M2/raw_modes
