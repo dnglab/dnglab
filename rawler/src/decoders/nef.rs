@@ -317,9 +317,13 @@ impl<'a> Decoder for NefDecoder<'a> {
 
   fn raw_metadata(&self, _file: &RawSource, _params: &RawDecodeParams) -> Result<RawMetadata> {
     let exif = Exif::new(self.tiff.root_ifd())?;
-    //let mdata = RawMetadata::new(&self.camera, exif);
-    let mdata = RawMetadata::new_with_lens(&self.camera, exif, self.get_lens_description()?.cloned());
-    Ok(mdata)
+    Ok(match self.get_lens_description() {
+      Ok(lens_data) => RawMetadata::new_with_lens(&self.camera, exif, lens_data.cloned()),
+      Err(err) => {
+        log::warn!("Failed to read lens information: {:?}", err);
+        RawMetadata::new(&self.camera, exif)
+      }
+    })
   }
 
   fn full_image(&self, file: &RawSource, params: &RawDecodeParams) -> Result<Option<DynamicImage>> {

@@ -257,7 +257,7 @@ impl LensResolver {
           crate::ISSUE_HINT
         );
         for lens in matches {
-          log::warn!("Possible lens: {} {}", lens.lens_make, lens.lens_model);
+          log::debug!("Possible lens: {} {}", lens.lens_make, lens.lens_model);
         }
       }
       _ => {}
