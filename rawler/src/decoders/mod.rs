@@ -3,6 +3,7 @@ use chrono::NaiveDateTime;
 use chrono::TimeZone;
 use image::DynamicImage;
 use image::ImageBuffer;
+use image::ImageFormat;
 use image::Luma;
 use image::Rgb;
 use log::debug;
@@ -336,7 +337,6 @@ pub trait Decoder: Send {
     Ok(None)
   }
 
-  // TODO: extend with decode params for image index
   fn thumbnail_image(&self, _file: &RawSource, _params: &RawDecodeParams) -> Result<Option<DynamicImage>> {
     warn!("Decoder has no thumbnail image support, fallback to preview image");
     Ok(None)
@@ -501,6 +501,13 @@ pub(crate) fn ok_cfa_image_with_black_white(camera: Camera, cpp: usize, wb_coeff
   Ok(img)
 }
    */
+
+pub(crate) fn dynamic_image_from_jpeg_interchange_format(ifd: &IFD, rawsource: &RawSource) -> Result<DynamicImage> {
+  let offset = fetch_tiff_tag!(ifd, ExifTag::JPEGInterchangeFormat).force_usize(0) as u64;
+  let size = fetch_tiff_tag!(ifd, ExifTag::JPEGInterchangeFormatLength).force_usize(0) as u64;
+  let buf = rawsource.subview(offset, size)?;
+  image::load_from_memory_with_format(buf, ImageFormat::Jpeg).map_err(|err| RawlerError::DecoderFailed(format!("Failed to read JPEG image: {:?}", err)))
+}
 
 pub(crate) fn dynamic_image_from_ifd(ifd: &IFD, rawsource: &RawSource) -> Result<DynamicImage> {
   let tiff_width = fetch_tiff_tag!(ifd, TiffCommonTag::ImageWidth).force_usize(0);

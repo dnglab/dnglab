@@ -316,7 +316,11 @@ where
 
   pub fn preview(&mut self, img: &DynamicImage, quality: f32) -> Result<()> {
     let now = Instant::now();
-    let preview_img = DynamicImage::ImageRgb8(img.resize(1024, 768, FilterType::Nearest).to_rgb8());
+    let preview_img = if img.width() > 1024 {
+      DynamicImage::ImageRgb8(img.resize(1024, 768, FilterType::Nearest).to_rgb8())
+    } else {
+      DynamicImage::ImageRgb8(img.to_rgb8())
+    };
     debug!("preview downscale: {} s", now.elapsed().as_secs_f32());
 
     self.ifd_mut().add_tag(TiffCommonTag::ImageWidth, Value::long(preview_img.width()));

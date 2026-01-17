@@ -79,6 +79,24 @@ pub trait TiffReader {
     ifds
   }
 
+  fn find_ifds_with_filter<F: Fn(&IFD) -> bool>(&self, filter: F) -> Vec<&IFD> {
+    let mut ifds = Vec::new();
+    for ifd in &self.file().chain {
+      if filter(ifd) {
+        ifds.push(ifd);
+      }
+      // Now search in all sub IFDs
+      for subs in ifd.sub_ifds() {
+        for ifd in subs.1 {
+          if filter(ifd) {
+            ifds.push(ifd);
+          }
+        }
+      }
+    }
+    ifds
+  }
+
   fn find_ifd_with_new_subfile_type(&self, typ: u32) -> Option<&IFD> {
     let list = self.find_ifds_with_tag(TiffCommonTag::NewSubFileType);
     list

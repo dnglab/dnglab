@@ -20,6 +20,8 @@ use crate::bits::LookupTable;
 use crate::bits::clampbits;
 use crate::buffer::PaddedBuf;
 use crate::decoders::decode_threaded;
+use crate::decoders::dynamic_image_from_ifd;
+use crate::decoders::dynamic_image_from_jpeg_interchange_format;
 use crate::decoders::nef::lensdata::NefLensData;
 use crate::decompressors::ljpeg::huffman::HuffTable;
 use crate::exif::Exif;
@@ -330,26 +332,28 @@ impl<'a> Decoder for NefDecoder<'a> {
     if params.image_index != 0 {
       return Ok(None);
     }
-    let root_ifd = &self.tiff.root_ifd();
-    if !root_ifd.contains_singlestrip_image() {
-      // TODO: implement multistrip
-      return Ok(None);
-    }
-    let buf = root_ifd
-      .singlestrip_data_rawsource(file)
-      .map_err(|e| RawlerError::DecoderFailed(format!("Failed to get strip data: {}", e)))?;
-    let compression = root_ifd.get_entry(TiffCommonTag::Compression).ok_or("Missing tag")?.force_usize(0);
-    let width = fetch_tiff_tag!(root_ifd, TiffCommonTag::ImageWidth).force_usize(0);
-    let height = fetch_tiff_tag!(root_ifd, TiffCommonTag::ImageLength).force_usize(0);
-    if compression == 1 {
-      Ok(Some(DynamicImage::ImageRgb8(
-        ImageBuffer::<Rgb<u8>, Vec<u8>>::from_raw(width as u32, height as u32, buf.to_vec())
-          .ok_or_else(|| RawlerError::DecoderFailed(format!("Failed to read image")))?,
-      )))
+    // High resolution preview image is stored in JPEGInterchangeFormat tag.
+    // Search for all IFDs and use the best match.
+    let mut ifds = self.tiff.find_ifds_with_filter(|ifd| {
+      if ifd.get_new_sub_file_type() == Some(1) {
+        ifd.get_entry(ExifTag::JPEGInterchangeFormatLength).is_some()
+      } else {
+        false
+      }
+    });
+
+    ifds.sort_by(|a, b| {
+      a.get_entry(ExifTag::JPEGInterchangeFormatLength)
+        .map(|x| x.force_u32(0))
+        .cmp(&b.get_entry(ExifTag::JPEGInterchangeFormatLength).map(|x| x.force_u32(0)))
+    });
+
+    // Take the IFD with the largest JPEG stream size
+    if let Some(jpeg_ifd) = ifds.last() {
+      return Ok(Some(dynamic_image_from_jpeg_interchange_format(jpeg_ifd, file)?));
     } else {
-      let img = image::load_from_memory_with_format(buf, image::ImageFormat::Jpeg)
-        .map_err(|err| RawlerError::DecoderFailed(format!("Failed to read JPEG image: {:?}", err)))?;
-      Ok(Some(img))
+      // No matching IFDs found, use root IFD (possibly bad resolution)
+      Ok(Some(dynamic_image_from_ifd(self.tiff.root_ifd(), file)?))
     }
   }
 
