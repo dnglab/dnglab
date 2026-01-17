@@ -4,7 +4,7 @@ use crate::{decoders::nef::NikonMakernote, formats::tiff::IFD};
 
 const ERRMSG: &str = "Lens composite buffer error: EOF";
 
-#[derive(Default, Clone)]
+#[derive(Default, Clone, Debug)]
 #[allow(dead_code)]
 pub struct NefLensDataF {
   version: u32,
@@ -23,14 +23,14 @@ pub struct NefLensDataF {
   lens_model: Option<String>,
 }
 
-#[derive(Default, Clone)]
+#[derive(Default, Clone, Debug)]
 #[allow(dead_code)]
 pub struct NefLensDataZ {
   version: u32,
   pub lens_id: u16,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 #[allow(dead_code)]
 pub enum NefLensData {
   FMount(NefLensDataF),
@@ -98,7 +98,7 @@ pub(super) fn from_makernote(makernote: &IFD) -> Result<Option<NefLensData>> {
       _ => todo!("Lensdata version: 0x{:x} not implemented", version),
     };
 
-    log::debug!("NEF lens data version: 0x{:x}", version);
+    log::debug!("NEF lens data version: 0x{:x}, lensdata: {:?}", version, lensdata);
 
     Ok(Some(lensdata))
   } else {
@@ -176,7 +176,7 @@ fn parse_lensdata_0x800(version: u32, buf: &[u8]) -> Result<NefLensData> {
   // This check comes from exiftool. If the buffer contains only zeros,
   // we consider the block as unused. Hopefully we find another method...
   let old_data_avail = !buf[0x04..0x04 + 16].iter().all(|&x| x == 0);
-  let new_data_avail = !buf[0x30..0x30 + 16].iter().all(|&x| x == 0);
+  let new_data_avail = !buf[48..].iter().all(|&x| x == 0);
   if old_data_avail {
     log::debug!("NEF lensdata 0x80X: Found old lensdata block");
     Ok(NefLensData::FMount(NefLensDataF {
