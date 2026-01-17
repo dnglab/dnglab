@@ -9,7 +9,7 @@ use std::{
 use image::DynamicImage;
 
 use crate::{
-  RawImage,
+  RawImage, RawlerError,
   decoders::{Decoder, RawDecodeParams, WellKnownIFD},
   dng::{DNG_VERSION_V1_4, PREVIEW_JPEG_QUALITY, original::OriginalCompressed, writer::DngWriter},
   formats::tiff::Entry,
@@ -215,23 +215,17 @@ where
 }
 
 fn generate_preview(rawfile: &RawSource, decoder: &dyn Decoder, rawimage: &RawImage, params: &RawDecodeParams) -> crate::Result<DynamicImage> {
-  match decoder.full_image(rawfile, params)? {
+  let image = match decoder.full_image(rawfile, params)? {
     Some(image) => Ok(image),
     None => {
       log::warn!("Preview image not found, try to generate sRGB from RAW");
       let dev = RawDevelop::default();
       let image = dev.develop_intermediate(rawimage)?;
-      /*
-      let params = rawimage.develop_params()?;
-      let (srgbf, dim) = develop_raw_srgb(&rawimage.data, &params)?;
-      let output = convert_from_f32_scaled_u16(&srgbf, 0, u16::MAX);
-      let image = if srgbf.len() == dim.w * dim.h {
-        DynamicImage::ImageLuma16(ImageBuffer::from_raw(dim.w as u32, dim.h as u32, output).expect("Invalid ImageBuffer size"))
-      } else {
-        DynamicImage::ImageRgb16(ImageBuffer::from_raw(dim.w as u32, dim.h as u32, output).expect("Invalid ImageBuffer size"))
-      };
-       */
-      Ok(image.to_dynamic_image().unwrap())
+      image
+        .to_dynamic_image()
+        .ok_or_else(|| RawlerError::DecoderFailed("Failed to generate preview image".to_string()))
     }
-  }
+  }?;
+  log::debug!("Using preview image with source dimension {}x{}", image.width(), image.height());
+  Ok(image)
 }

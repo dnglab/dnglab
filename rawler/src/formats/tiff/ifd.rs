@@ -107,7 +107,11 @@ impl IFD {
     let entry_count = reader.read_u16()?;
 
     if entry_count as usize > MAX_IFD_ENTRIES {
-      log::warn!("TIFF: IFD entry count {} is suspicious (limit {}). The file might be corrupt.", entry_count, MAX_IFD_ENTRIES);
+      log::warn!(
+        "TIFF: IFD entry count {} is suspicious (limit {}). The file might be corrupt.",
+        entry_count,
+        MAX_IFD_ENTRIES
+      );
     }
 
     let mut entries = BTreeMap::new();
@@ -118,23 +122,26 @@ impl IFD {
 
     for i in 0..entry_count {
       if i as usize >= MAX_IFD_ENTRIES {
-        log::warn!("TIFF: Reached maximum IFD entry limit ({}). Stopping parse to prevent infinite loops.", MAX_IFD_ENTRIES);
+        log::warn!(
+          "TIFF: Reached maximum IFD entry limit ({}). Stopping parse to prevent infinite loops.",
+          MAX_IFD_ENTRIES
+        );
         break;
       }
 
       if let Err(e) = reader.goto(next_pos) {
-          log::warn!("Truncated IFD: Could not seek to next entry position. Stopping parse. Error: {}", e);
-          break;
+        log::warn!("Truncated IFD: Could not seek to next entry position. Stopping parse. Error: {}", e);
+        break;
       }
-      
+
       next_pos += 12;
 
       let tag = match reader.read_u16() {
-          Ok(t) => t,
-          Err(e) => {
-              log::warn!("Truncated IFD: Could not read tag ID (Index {}). Stopping parse. Error: {}", i, e);
-              break;
-          }
+        Ok(t) => t,
+        Err(e) => {
+          log::warn!("Truncated IFD: Could not read tag ID (Index {}). Stopping parse. Error: {}", i, e);
+          break;
+        }
       };
 
       match Entry::parse(&mut reader, base, corr, tag) {
@@ -169,8 +176,8 @@ impl IFD {
 
           // If we fail 5 times in a row, the IFD is likely garbage or physically truncated.
           if consecutive_errors >= 5 {
-              log::warn!("Too many consecutive parsing errors ({}). Stopping parse to prevent flood.", consecutive_errors);
-              break;
+            log::warn!("Too many consecutive parsing errors ({}). Stopping parse to prevent flood.", consecutive_errors);
+            break;
           }
         }
       }
@@ -391,6 +398,14 @@ impl IFD {
         );
         ifds.get(0)
       }
+    } else {
+      None
+    }
+  }
+
+  pub fn get_new_sub_file_type(&self) -> Option<u16> {
+    if let Some(entry) = self.get_entry(TiffCommonTag::NewSubFileType) {
+      Some(entry.force_u16(0))
     } else {
       None
     }
