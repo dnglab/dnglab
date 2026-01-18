@@ -16,7 +16,9 @@ fn main() {
 }
 
 fn join_cameras() {
-  println!("cargo:rerun-if-changed=data/cameras/*/**/*.toml");
+  // Watch the directory for additions/removals
+  println!("cargo:rerun-if-changed=data/cameras");
+
   let out_dir = env::var("OUT_DIR").expect("Missing ENV OUT_DIR");
   let dest_path = Path::new(&out_dir).join("cameras.toml");
   let mut out = File::create(dest_path).expect("Unable to create output file");
@@ -24,6 +26,10 @@ fn join_cameras() {
   for entry in glob("./data/cameras/*/**/*.toml").expect("Failed to read glob pattern") {
     out.write_all(b"[[cameras]]\n").expect("Failed to write camera TOML");
     let path = entry.expect("Invalid glob entry");
+    
+    // Watch each file
+    println!("cargo:rerun-if-changed={}", path.display());
+
     let mut f = File::open(&path).expect("failed to open camera definition file");
     let mut toml = String::new();
     f.read_to_string(&mut toml).expect("Failed to read camera definition file");
@@ -46,12 +52,19 @@ fn join_cameras() {
 }
 
 fn join_lenses() {
+  // Watch the directory for additions/removals
+  println!("cargo:rerun-if-changed=data/lenses");
+
   let out_dir = env::var("OUT_DIR").expect("Missing ENV OUT_DIR");
   let dest_path = Path::new(&out_dir).join("lenses.toml");
   let mut out = File::create(dest_path).expect("Unable to create output file");
 
   for entry in glob("./data/lenses/*/**/*.toml").expect("Failed to read glob pattern") {
     let path = entry.expect("Invalid glob entry");
+
+    // Watch each file
+    println!("cargo:rerun-if-changed={}", path.display());
+
     let mut f = File::open(&path).expect("failed to open lens definition file");
     let mut toml = String::new();
     f.read_to_string(&mut toml).expect("Failed to read lens definition file");
