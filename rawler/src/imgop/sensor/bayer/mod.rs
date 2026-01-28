@@ -27,7 +27,6 @@ fn expand_bayer_rgb(raw: &[f32], dim: Dim2, cfa: &CFA, roi: Rect) -> RgbF32 {
   let cfa_roi = cfa.shift(roi.x(), roi.y());
   let mut out = RgbF32::new(roi.width(), roi.height());
   out.pixels_mut().par_chunks_exact_mut(roi.width()).enumerate().for_each(|(row_out, buf)| {
-    assert_eq!(roi.width() % cfa.width, 0); // Area must be bound to CFA bounds
     let row_in = roi.p.y + row_out;
     let start_in = row_in * dim.w + roi.p.x;
     let line = &raw[start_in..start_in + roi.width()];
