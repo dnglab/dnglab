@@ -1104,7 +1104,7 @@ impl<'a> IiqDecoder<'a> {
               }
             }
 
-            let pump_savepoint = pump; // savepoint for error recovery
+            let pump_savepoint = pump.clone(); // savepoint for error recovery
             let x = pump.peek_bits(3) as usize; // 3 bits are max 7, so it's safe as array index
             pump.consume_bits(SV2_USED_CORR[x]);
 
