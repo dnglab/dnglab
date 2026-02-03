@@ -1,9 +1,10 @@
+use std::slice::Chunks;
+
 use crate::bits::*;
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Clone)]
 pub struct BitPumpLSB<'a> {
-  buffer: &'a [u8],
-  pos: usize,
+  buffer: Chunks<'a, u8>,
   bits: u64,
   nbits: u32,
 }
@@ -11,18 +12,39 @@ pub struct BitPumpLSB<'a> {
 impl<'a> BitPumpLSB<'a> {
   pub fn new(src: &'a [u8]) -> Self {
     Self {
-      buffer: src,
-      pos: 0,
+      buffer: src.chunks(size_of::<u32>()),
       bits: 0,
       nbits: 0,
     }
   }
+
+  /// Refill internal bit buffer - Little-Endian
+  ///
+  /// For fast refill, we can simply take a whole u32 value out.
+  /// For slow refill, there may be 1, 2 or 3 bytes left in buffer. We need
+  /// to collect them manually.
+  fn refill(&mut self) -> (u32, u32) {
+    if let Some(chunk) = self.buffer.next() {
+      if chunk.len() == 4 {
+        // Fast refill
+        let bits: u32 = u32::from_le_bytes([chunk[0], chunk[1], chunk[2], chunk[3]]);
+        (bits, u32::BITS)
+      } else {
+        // Slow refill
+        chunk
+          .into_iter()
+          .rev()
+          .fold((0, 0), |(bits, bit_cnt), x| ((bits << 8) | *x as u32, bit_cnt + 8))
+      }
+    } else {
+      panic!("Can't refill bitpump, buffer exhausted");
+    }
+  }
 }
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Clone)]
 pub struct BitPumpMSB<'a> {
-  buffer: &'a [u8],
-  pos: usize,
+  buffer: Chunks<'a, u8>,
   bits: u64,
   nbits: u32,
 }
@@ -30,17 +52,36 @@ pub struct BitPumpMSB<'a> {
 impl<'a> BitPumpMSB<'a> {
   pub fn new(src: &'a [u8]) -> Self {
     Self {
-      buffer: src,
-      pos: 0,
+      buffer: src.chunks(size_of::<u32>()),
       bits: 0,
       nbits: 0,
     }
   }
+
+  /// Refill internal bit buffer - Big-Endian
+  ///
+  /// For fast refill, we can simply take a whole u32 value out.
+  /// For slow refill, there may be 1, 2 or 3 bytes left in buffer. We need
+  /// to collect them manually.
+  fn refill(&mut self) -> (u32, u32) {
+    if let Some(chunk) = self.buffer.next() {
+      if chunk.len() == 4 {
+        // Fast refill
+        let bits: u32 = u32::from_be_bytes([chunk[0], chunk[1], chunk[2], chunk[3]]);
+        (bits, u32::BITS)
+      } else {
+        // Slow refill
+        chunk.into_iter().fold((0, 0), |(bits, bit_cnt), x| ((bits << 8) | *x as u32, bit_cnt + 8))
+      }
+    } else {
+      panic!("Can't refill bitpump, buffer exhausted");
+    }
+  }
 }
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Clone)]
 pub struct BitPumpMSB32<'a> {
-  buffer: &'a [u8],
+  buffer: Chunks<'a, u8>,
   pos: usize,
   bits: u64,
   nbits: u32,
@@ -49,10 +90,33 @@ pub struct BitPumpMSB32<'a> {
 impl<'a> BitPumpMSB32<'a> {
   pub fn new(src: &'a [u8]) -> Self {
     Self {
-      buffer: src,
+      buffer: src.chunks(size_of::<u32>()),
       pos: 0,
       bits: 0,
       nbits: 0,
+    }
+  }
+
+  /// Refill internal bit buffer - Little-Endian
+  ///
+  /// For fast refill, we can simply take a whole u32 value out.
+  /// For slow refill, there may be 1, 2 or 3 bytes left in buffer. We need
+  /// to collect them manually.
+  fn refill(&mut self) -> (u32, u32) {
+    if let Some(chunk) = self.buffer.next() {
+      if chunk.len() == 4 {
+        // Fast refill
+        let bits: u32 = u32::from_le_bytes([chunk[0], chunk[1], chunk[2], chunk[3]]);
+        (bits, u32::BITS)
+      } else {
+        // Slow refill
+        chunk
+          .into_iter()
+          .rev()
+          .fold((0, 0), |(bits, bit_cnt), x| ((bits << 8) | *x as u32, bit_cnt + 8))
+      }
+    } else {
+      panic!("Can't refill bitpump, buffer exhausted");
     }
   }
 
@@ -143,10 +207,9 @@ impl<'a> BitPump for BitPumpLSB<'a> {
   #[inline(always)]
   fn peek_bits(&mut self, num: u32) -> u32 {
     if num > self.nbits {
-      let inbits: u64 = LEu32(self.buffer, self.pos) as u64;
-      self.bits = ((inbits << 32) | (self.bits << (32 - self.nbits))) >> (32 - self.nbits);
-      self.pos += 4;
-      self.nbits += 32;
+      let (inbits, bit_cnt) = self.refill();
+      self.bits = (((inbits as u64) << 32) | (self.bits << (32 - self.nbits))) >> (32 - self.nbits);
+      self.nbits += bit_cnt;
     }
     (self.bits & (0x0ffffffffu64 >> (32 - num))) as u32
   }
@@ -162,10 +225,9 @@ impl<'a> BitPump for BitPumpMSB<'a> {
   #[inline(always)]
   fn peek_bits(&mut self, num: u32) -> u32 {
     if num > self.nbits {
-      let inbits: u64 = BEu32(self.buffer, self.pos) as u64;
-      self.bits = (self.bits << 32) | inbits;
-      self.pos += 4;
-      self.nbits += 32;
+      let (inbits, bit_cnt) = self.refill();
+      self.bits = (self.bits << bit_cnt) | inbits as u64;
+      self.nbits += bit_cnt;
     }
     (self.bits >> (self.nbits - num)) as u32
   }
@@ -181,10 +243,10 @@ impl<'a> BitPump for BitPumpMSB32<'a> {
   #[inline(always)]
   fn peek_bits(&mut self, num: u32) -> u32 {
     if num > self.nbits {
-      let inbits: u64 = LEu32(self.buffer, self.pos) as u64;
-      self.bits = (self.bits << 32) | inbits;
-      self.pos += 4;
-      self.nbits += 32;
+      let (inbits, bit_cnt) = self.refill();
+      self.bits = (self.bits << 32) | inbits as u64;
+      self.nbits += bit_cnt;
+      self.pos += bit_cnt as usize / 8;
     }
     (self.bits >> (self.nbits - num)) as u32
   }
