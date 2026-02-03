@@ -2,6 +2,7 @@ make = "Canon"
 model = "Canon EOS 850D"
 model_aliases = [
   ["Canon EOS Rebel T8i", "EOS Rebel T8i"],
+  ["Canon EOS Kiss X10i", "EOS Kiss X10i"],
 ]
 clean_make = "Canon"
 clean_model = "EOS 850D"
