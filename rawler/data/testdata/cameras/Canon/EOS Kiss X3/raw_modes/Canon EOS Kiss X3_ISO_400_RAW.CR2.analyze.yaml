@@ -126,7 +126,7 @@ data:
           gps_differential: ~
           gps_h_positioning_error: ~
         user_comment: ~
-      model: Kiss X3
+      model: EOS Kiss X3
       make: Canon
       lens:
         identifiers:

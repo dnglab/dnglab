@@ -4,10 +4,10 @@ clean_make = "Canon"
 clean_model = "EOS 650D"
 
 model_aliases = [
-  ["Canon EOS DIGITAL REBEL T4i", "Rebel T4i"],
-  ["Canon EOS REBEL T4i", "Rebel T4i"],
-  ["Canon EOS Kiss Digital X6i", "Kiss X6i"],
-  ["Canon EOS Kiss X6i", "Kiss X6i"],
+  ["Canon EOS DIGITAL REBEL T4i", "EOS Rebel T4i"],
+  ["Canon EOS REBEL T4i", "EOS Rebel T4i"],
+  ["Canon EOS Kiss Digital X6i", "EOS Kiss X6i"],
+  ["Canon EOS Kiss X6i", "EOS Kiss X6i"],
 ]
 
 color_pattern = "RGGB"

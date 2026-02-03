@@ -4,10 +4,10 @@ clean_make = "Canon"
 clean_model = "EOS 1000D"
 
 model_aliases = [
-  ["Canon EOS DIGITAL REBEL XS", "Rebel XS"],
-  ["Canon EOS REBEL XS", "Rebel XS"],
-  ["Canon EOS Kiss Digital F", "Kiss F"],
-  ["Canon EOS Kiss F", "Kiss F"],
+  ["Canon EOS DIGITAL REBEL XS", "EOS Digital Rebel XS"],
+  ["Canon EOS REBEL XS", "EOS Rebel XS"],
+  ["Canon EOS Kiss Digital F", "EOS Kiss F"],
+  ["Canon EOS Kiss F", "EOS Kiss F"],
 ]
 
 hints = ["invalid_blacklevel"]
