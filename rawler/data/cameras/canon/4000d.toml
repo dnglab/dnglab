@@ -6,7 +6,7 @@ color_pattern = "GBRG"
 active_area = [142, 51, 0, 0]
 
 model_aliases = [
-  ["Canon EOS Rebel T100", "Rebel T100"],
+  ["Canon EOS Rebel T100", "EOS Rebel T100"],
   ["Canon EOS 3000D", "EOS 3000D"]
 ]
 

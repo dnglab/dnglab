@@ -4,10 +4,10 @@ clean_make = "Canon"
 clean_model = "EOS 100D"
 
 model_aliases = [
-  ["Canon EOS DIGITAL REBEL SL1", "Rebel SL1"],
-  ["Canon EOS REBEL SL1", "Rebel SL1"],
-  ["Canon EOS Kiss Digital X7", "Kiss X7"],
-  ["Canon EOS Kiss X7", "Kiss X7"],
+  ["Canon EOS DIGITAL REBEL SL1", "EOS Rebel SL1"],
+  ["Canon EOS REBEL SL1", "EOS Rebel SL1"],
+  ["Canon EOS Kiss Digital X7", "EOS Kiss X7"],
+  ["Canon EOS Kiss X7", "EOS Kiss X7"],
 ]
 
 color_pattern = "RGGB"

@@ -126,7 +126,7 @@ data:
           gps_differential: ~
           gps_h_positioning_error: ~
         user_comment: ~
-      model: Rebel T100
+      model: EOS Rebel T100
       make: Canon
       lens:
         identifiers:

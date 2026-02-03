@@ -4,8 +4,8 @@ clean_make = "Canon"
 clean_model = "EOS 760D"
 
 model_aliases = [
-  ["Canon EOS DIGITAL REBEL T6s", "Rebel T6s"],
-  ["Canon EOS Rebel T6s", "Rebel T6s"],
+  ["Canon EOS DIGITAL REBEL T6s", "EOS Rebel T6s"],
+  ["Canon EOS Rebel T6s", "EOS Rebel T6s"],
   ["Canon EOS 8000D", "EOS 8000D"],
 ]
 

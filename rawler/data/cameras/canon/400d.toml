@@ -4,10 +4,10 @@ clean_make = "Canon"
 clean_model = "EOS 400D"
 
 model_aliases = [
-  ["Canon EOS DIGITAL REBEL XTi", "Rebel XTi"],
-  ["Canon EOS REBEL XTi", "Rebel XTi"],
-  ["Canon EOS Kiss Digital X", "Kiss X"],
-  ["Canon EOS Kiss X", "Kiss X"],
+  ["Canon EOS DIGITAL REBEL XTi", "EOS Digital Rebel XTi"],
+  ["Canon EOS REBEL XTi", "EOS Rebel XTi"],
+  ["Canon EOS Kiss Digital X", "EOS Kiss Digital X"],
+  ["Canon EOS Kiss X", "EOS Kiss X"],
 ]
 
 whitepoint = 4058

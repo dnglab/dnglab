@@ -6,7 +6,7 @@ clean_model = "EOS 800D"
 model_aliases = [
   ["Canon EOS REBEL T7i", "EOS Rebel T7i"],
   ["Canon EOS Rebel T7i", "EOS Rebel T7i"],
-  ["Canon EOS Kiss X9i", "Kiss X9i"]
+  ["Canon EOS Kiss X9i", "EOS Kiss X9i"],
 ]
 
 color_pattern = "RGGB"
