@@ -6,9 +6,10 @@ color_pattern = "GBRG"
 active_area = [88, 47, 0, 0]
 
 model_aliases = [
-  ["Canon EOS REBEL T7", "Rebel T7"],
-  ["Canon EOS Rebel T7", "Rebel T7"],
-  ["Canon EOS Kiss X90", "Kiss X90"]
+  ["Canon EOS 1500D", "EOS 1500D"],
+  ["Canon EOS REBEL T7", "EOS Rebel T7"],
+  ["Canon EOS Rebel T7", "EOS Rebel T7"],
+  ["Canon EOS Kiss X90", "EOS Kiss X90"],
 ]
 
 [cameras.color_matrix]
