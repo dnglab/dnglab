@@ -1,0 +1,130 @@
+---
+file:
+  fileSize: 21700096
+  fileName: Leica_M_Typ_246_Monochrom_12bit_3x2.dng
+  digest: 80c1bea73d3e9d57a2429ecd8706f2fd
+data:
+  metadata:
+    rawParams:
+      rawWidth: 5984
+      rawHeight: 4000
+      bitDepth: 12
+      cropArea:
+        p:
+          x: 4
+          y: 4
+        d:
+          w: 5976
+          h: 3992
+      activeArea: ~
+      blacklevels:
+        levels:
+          - 0/1
+        cpp: 1
+        width: 1
+        height: 1
+      whitelevels:
+        - 3750
+      wbCoeffs:
+        - ~
+        - ~
+        - ~
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ""
+        artist: ""
+        lens_spec: ~
+        exposure_time: 1/500
+        fnumber: ~
+        aperture_value: 740/100
+        brightness_value: ~
+        iso_speed_ratings: 1600
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: "-85/256"
+        date_time_original: "2017:02:04 11:26:36"
+        create_date: "2017:02:04 11:26:36"
+        modify_date: ~
+        exposure_program: 3
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: 2319/256
+        max_aperture_value: 646/256
+        subject_distance: ~
+        metering_mode: 2
+        light_source: 0
+        flash: 0
+        focal_length: 50/1
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: ~
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: "-------"
+        lens_make: ~
+        lens_model: ~
+        gps:
+          gps_version_id:
+            - 2
+            - 2
+            - 0
+            - 0
+          gps_latitude_ref: ""
+          gps_latitude:
+            - 0/1
+            - 0/1
+            - 0/1000
+          gps_longitude_ref: ""
+          gps_longitude:
+            - 0/1
+            - 0/1
+            - 0/1000
+          gps_altitude_ref: 0
+          gps_altitude: 0/100
+          gps_timestamp:
+            - 0/1
+            - 0/1
+            - 0/1
+          gps_satellites: ~
+          gps_status: V
+          gps_measure_mode: ~
+          gps_dop: 0/100
+          gps_speed_ref: ""
+          gps_speed: 0/100
+          gps_track_ref: ~
+          gps_track: 0/1
+          gps_img_direction_ref: ~
+          gps_img_direction: ~
+          gps_map_datum: ~
+          gps_dest_latitude_ref: ~
+          gps_dest_latitude: ~
+          gps_dest_longitude_ref: ~
+          gps_dest_longitude: ~
+          gps_dest_bearing_ref: ~
+          gps_dest_bearing: ~
+          gps_dest_distance_ref: ~
+          gps_dest_distance: ~
+          gps_processing_method: ~
+          gps_area_information: ~
+          gps_date_stamp: "2000:00:00"
+          gps_differential: ~
+          gps_h_positioning_error: ~
+        user_comment: ~
+      model: M Monochrom (Typ 246)
+      make: Leica
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

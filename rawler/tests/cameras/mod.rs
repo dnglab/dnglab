@@ -2682,6 +2682,47 @@ mod camera_v_lux_typ_114_raw_modes {
   super::camera_file_check!("Leica", "V-LUX Typ 114", cam_v_lux_typ_114_iso_125_4fmt_1x1_rwl, "raw_modes/V-LUX Typ 114_ISO_125_4fmt_1x1.RWL");
   super::camera_file_check!("Leica", "V-LUX Typ 114", cam_v_lux_typ_114_iso_125_4fmt_4x3_rwl, "raw_modes/V-LUX Typ 114_ISO_125_4fmt_4x3.RWL");
 }
+mod camera_cl_raw_modes {
+  super::camera_file_check!("Leica", "CL", cam_leica_cl_14bit_uncompressed_3x2_dng, "raw_modes/Leica_CL_14bit_uncompressed_3x2.dng");
+}
+mod camera_m10_raw_modes {
+  super::camera_file_check!("Leica", "M10", cam_leica_m10_16bi6_uncompressed_3x2_dng, "raw_modes/Leica_M10_16bi6_uncompressed_3x2.dng");
+}
+mod camera_m10_r_raw_modes {
+  super::camera_file_check!("Leica", "M10-R", cam_leica_m10_r_16bit_compressed_3x2_dng, "raw_modes/Leica_M10-R_16bit_compressed_3x2.dng");
+}
+mod camera_m8_raw_modes {
+  super::camera_file_check!("Leica", "M8", cam_leica_m8_8bit_uncompressed_3x2_dng, "raw_modes/Leica_M8_8bit_uncompressed_3x2.dng");
+}
+mod camera_m9_raw_modes {
+  super::camera_file_check!("Leica", "M9", cam_leica_m9_16bit_uncompressed_dng, "raw_modes/Leica_M9_16bit_uncompressed.dng");
+  super::camera_file_check!("Leica", "M9", cam_leica_m9_8bit_compressed_dng, "raw_modes/Leica_M9_8bit_compressed.dng");
+}
+mod camera_m_monochrom_raw_modes {
+  super::camera_file_check!("Leica", "M Monochrom", cam_leica_m_monochrom_16bit_3x2_dng, "raw_modes/Leica_M_Monochrom_16bit_3x2.dng");
+}
+mod camera_m_monochrom_typ_246_raw_modes {
+  super::camera_file_check!("Leica", "M Monochrom Typ 246", cam_leica_m_typ_246_monochrom_12bit_3x2_dng, "raw_modes/Leica_M_Typ_246_Monochrom_12bit_3x2.dng");
+}
+mod camera_m_typ_240_raw_modes {
+  super::camera_file_check!("Leica", "M Typ 240", cam_leica_m_typ_240_16bit_uncompressed_3x2_dng, "raw_modes/Leica_M_Typ_240_16bit_uncompressed_3x2.dng");
+  super::camera_file_check!("Leica", "M Typ 240", cam_leica_m_typ_240_16bit_compressed_3x2_dng, "raw_modes/Leica_M_Typ_240_16bit_compressed_3x2.dng");
+}
+mod camera_q2_raw_modes {
+  super::camera_file_check!("Leica", "Q2", cam_leica_q2_14bit_uncompressed_3x2_dng, "raw_modes/Leica_Q2_14bit_uncompressed_3x2.dng");
+}
+mod camera_q_typ_116_raw_modes {
+  super::camera_file_check!("Leica", "Q Typ 116", cam_leica_q_typ_116_14bit_3x2_dng, "raw_modes/Leica_Q_Typ_116_14bit_3x2.dng");
+}
+mod camera_sl2_raw_modes {
+  super::camera_file_check!("Leica", "SL2", cam_leica_sl2_14bit_uncompressed_3x2_dng, "raw_modes/Leica_SL2_14bit_uncompressed_3x2.dng");
+}
+mod camera_sl_typ_601_raw_modes {
+  super::camera_file_check!("Leica", "SL Typ 601", cam_leica_sl_typ_601_14bit_3x2_dng, "raw_modes/Leica_SL_Typ_601_14bit_3x2.dng");
+}
+mod camera_x2_raw_modes {
+  super::camera_file_check!("Leica", "X2", cam_leica_x2_12bit_3x2_dng, "raw_modes/Leica_X2_12bit_3x2.dng");
+}
 mod camera_dbp_for_gx680_raw_modes {
   super::camera_file_check!("Fujifilm", "DBP for GX680", cam_dbp_for_gx680_iso_100_raf, "raw_modes/DBP for GX680_ISO_100.RAF");
 }

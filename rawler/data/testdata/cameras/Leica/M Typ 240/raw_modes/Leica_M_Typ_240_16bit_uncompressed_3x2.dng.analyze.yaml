@@ -1,0 +1,130 @@
+---
+file:
+  fileSize: 48505856
+  fileName: Leica_M_Typ_240_16bit_uncompressed_3x2.dng
+  digest: e31f3a1d8aae1a2fc5fc4ec63ee2b098
+data:
+  metadata:
+    rawParams:
+      rawWidth: 5984
+      rawHeight: 4000
+      bitDepth: 16
+      cropArea:
+        p:
+          x: 4
+          y: 4
+        d:
+          w: 5976
+          h: 3992
+      activeArea: ~
+      blacklevels:
+        levels:
+          - 0/1
+        cpp: 1
+        width: 1
+        height: 1
+      whitelevels:
+        - 15000
+      wbCoeffs:
+        - 2.1484375
+        - 1.0
+        - 1.296875
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ""
+        artist: ""
+        lens_spec: ~
+        exposure_time: 1/250
+        fnumber: ~
+        aperture_value: 600/100
+        brightness_value: ~
+        iso_speed_ratings: 200
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: 170/256
+        date_time_original: "2018:02:07 17:01:08"
+        create_date: "2018:02:07 17:01:08"
+        modify_date: ~
+        exposure_program: 3
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: 2060/256
+        max_aperture_value: 0/256
+        subject_distance: ~
+        metering_mode: 2
+        light_source: 0
+        flash: 0
+        focal_length: 0/1
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: "-------"
+        lens_make: ~
+        lens_model: ~
+        gps:
+          gps_version_id:
+            - 2
+            - 2
+            - 0
+            - 0
+          gps_latitude_ref: ""
+          gps_latitude:
+            - 0/1
+            - 0/1
+            - 0/1000
+          gps_longitude_ref: ""
+          gps_longitude:
+            - 0/1
+            - 0/1
+            - 0/1000
+          gps_altitude_ref: 0
+          gps_altitude: 0/100
+          gps_timestamp:
+            - 0/1
+            - 0/1
+            - 0/1
+          gps_satellites: ~
+          gps_status: V
+          gps_measure_mode: ~
+          gps_dop: 0/100
+          gps_speed_ref: ""
+          gps_speed: 0/100
+          gps_track_ref: ~
+          gps_track: 0/1
+          gps_img_direction_ref: ~
+          gps_img_direction: ~
+          gps_map_datum: ~
+          gps_dest_latitude_ref: ~
+          gps_dest_latitude: ~
+          gps_dest_longitude_ref: ~
+          gps_dest_longitude: ~
+          gps_dest_bearing_ref: ~
+          gps_dest_bearing: ~
+          gps_dest_distance_ref: ~
+          gps_dest_distance: ~
+          gps_processing_method: ~
+          gps_area_information: ~
+          gps_date_stamp: "2000:00:00"
+          gps_differential: ~
+          gps_h_positioning_error: ~
+        user_comment: ~
+      model: M (Typ 240)
+      make: Leica
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

@@ -1,0 +1,94 @@
+---
+file:
+  fileSize: 88964096
+  fileName: Leica_SL2_14bit_uncompressed_3x2.dng
+  digest: 869cef6c6c91622d501bf494024af427
+data:
+  metadata:
+    rawParams:
+      rawWidth: 8424
+      rawHeight: 5632
+      bitDepth: 14
+      cropArea:
+        p:
+          x: 12
+          y: 24
+        d:
+          w: 8368
+          h: 5584
+      activeArea:
+        p:
+          x: 0
+          y: 0
+        d:
+          w: 8392
+          h: 5632
+      blacklevels:
+        levels:
+          - 511/1
+          - 511/1
+          - 511/1
+          - 511/1
+        cpp: 1
+        width: 2
+        height: 2
+      whitelevels:
+        - 16383
+      wbCoeffs:
+        - 1.8095703
+        - 1.0
+        - 1.6972656
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ""
+        artist: ""
+        lens_spec: ~
+        exposure_time: 10/2000
+        fnumber: 28/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 100
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: 1
+        exposure_bias: 0/10
+        date_time_original: "2019:01:01 10:13:08"
+        create_date: "2019:01:01 10:13:08"
+        modify_date: "2019:01:01 10:13:08"
+        exposure_program: 3
+        timezone_offset: ~
+        offset_time: "+02:00"
+        offset_time_original: "+02:00"
+        offset_time_digitized: "+02:00"
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: ~
+        max_aperture_value: 512/256
+        subject_distance: ~
+        metering_mode: 5
+        light_source: 0
+        flash: 16
+        focal_length: 750/10
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: ~
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: "4960157"
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+        user_comment: ~
+      model: SL2
+      make: Leica
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+
