@@ -1,0 +1,7 @@
+[[lenses]]
+mount = "Z-mount"
+lens_id = 2826
+make = "Viltrox"
+model = "AF 35/1.7 Z"
+focal_range = [[35, 1], [35, 1]]
+aperture_range = [[17, 10], [17, 10]]
