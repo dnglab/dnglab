@@ -99,6 +99,7 @@ impl Termination for AppResult {
       Err(AppError::Io(_)) => ExitCode::from(4),
       Err(AppError::NotFound(_)) => ExitCode::from(5),
       Err(AppError::AlreadyExists(_)) => ExitCode::from(6),
+      Err(AppError::UnsupportedFile(_)) => ExitCode::from(7),
       Err(AppError::Other(_)) => ExitCode::from(99),
     }
   }
