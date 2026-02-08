@@ -1,0 +1,9 @@
+[[lenses]]
+mount = "rf-mount"
+key = "TAMRON 18-300mm F3.5-6.3 B061 RF"
+lens_id = 373
+lens_subid = 0
+make = "Tamron"
+model = "18-300mm F/3.5-6.3 Di III-A VC VXD"
+focal_range = [[18, 1], [300, 1]]
+aperture_range = [[35, 10], [63, 10]]
