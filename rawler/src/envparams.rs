@@ -24,3 +24,25 @@ pub(crate) fn rawler_crx_raw_trak() -> Option<usize> {
     Err(_) => None,
   }
 }
+
+pub(crate) fn rawler_dng_rows_per_strip() -> Option<usize> {
+  match std::env::var("RAWLER_DNG_ROWS_PER_STRIP").map(|val| val.parse::<usize>()) {
+    Ok(Ok(value)) => Some(value),
+    Ok(Err(_)) => {
+      warn!("Invalid value for RAWLER_DNG_ROWS_PER_STRIP");
+      None
+    }
+    Err(_) => None,
+  }
+}
+
+pub(crate) fn rawler_dng_multistrip_threshold() -> Option<usize> {
+  match std::env::var("RAWLER_DNG_MULTISTRIP_THRESHOLD").map(|val| val.parse::<usize>()) {
+    Ok(Ok(value)) => Some(value),
+    Ok(Err(_)) => {
+      warn!("Invalid value for RAWLER_DNG_MULTISTRIP_THRESHOLD");
+      None
+    }
+    Err(_) => None,
+  }
+}
