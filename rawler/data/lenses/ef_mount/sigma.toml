@@ -869,6 +869,7 @@ aperture_range = [[28, 10], [28, 10]]
 [[lenses]]
 mount = "ef-mount"
 lens_id = 368
+key = "20mm F1.4 DG HSM | Art 015"
 make = "Sigma"
 model = "20mm f/1.4 DG HSM | A"
 focal_range = [[20, 1], [20, 1]]
