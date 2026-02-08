@@ -42,9 +42,18 @@ impl<'a> Decoder for DngDecoder<'a> {
 
     let mut cam = self.make_camera(raw, width, height)?;
     // If we know the camera, re-use the clean names
-    if let Ok(known_cam) = self.rawloader.check_supported(self.tiff.root_ifd()) {
+    if let Ok(known_cam) = self
+      .rawloader
+      .check_supported_with_mode(self.tiff.root_ifd(), "dng")
+      .or_else(|_| self.rawloader.check_supported(self.tiff.root_ifd()))
+    {
       cam.clean_make = known_cam.clean_make;
       cam.clean_model = known_cam.clean_model;
+      cam.hints.extend_from_slice(&known_cam.hints);
+      cam.params.extend(known_cam.params.iter().map(|(k, v)| (k.clone(), v.clone())));
+    } else {
+      log::debug!("DNG: camera {} / {} is not in the camera catalog", cam.make, cam.model);
+      // panic!("Camera {} / {} is not in the camera catalog", cam.make, cam.model);
     }
 
     let blacklevel = self.get_blacklevels(raw)?;
@@ -59,18 +68,7 @@ impl<'a> Decoder for DngDecoder<'a> {
 
     let raw_data = plain_image_from_ifd(raw, file)?;
     let wb_coeffs = self.get_wb(&cam)?;
-    let mut image = RawImage::new_with_data(
-      cam,
-      raw_data,
-      width * cpp,
-      height,
-      cpp,
-      wb_coeffs,
-      photometric,
-      blacklevel,
-      whitelevel,
-      dummy,
-    );
+    let mut image = RawImage::new_with_data(cam, raw_data, width * cpp, height, cpp, wb_coeffs, photometric, blacklevel, whitelevel, dummy);
     image.orientation = orientation;
     Ok(image)
   }
