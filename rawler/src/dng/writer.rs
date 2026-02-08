@@ -13,6 +13,7 @@ use crate::{
   CFA, RawImage, RawImageData,
   decoders::{Camera, RawMetadata},
   dng::rect_to_dng_area,
+  envparams::{rawler_dng_multistrip_threshold, rawler_dng_rows_per_strip},
   formats::tiff::{
     CompressionMethod, PhotometricInterpretation, PreviewColorSpace, Rational, TiffError, Value,
     writer::{DirectoryWriter, TiffWriter, transfer_entry},
@@ -653,7 +654,11 @@ where
   let mut strip_sizes: Vec<u32> = Vec::new();
   let mut strip_rows: Vec<u32> = Vec::new();
 
-  let rows_per_strip = if rawimage.height > 1000 { 256 } else { rawimage.height };
+  let rows_per_strip = if rawimage.height > rawler_dng_multistrip_threshold().unwrap_or(100) {
+    rawler_dng_rows_per_strip().unwrap_or(256)
+  } else {
+    rawimage.height
+  };
 
   match rawimage.data {
     RawImageData::Integer(ref data) => {
