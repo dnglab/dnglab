@@ -1,6 +1,6 @@
 make = "FUJIFILM"
 model = "FinePix SL1000"
-clean_make = "FUJIFILM"
+clean_make = "Fujifilm"
 clean_model = "FinePix SL1000"
 whitepoint = 4095
 color_pattern = "RGGB"

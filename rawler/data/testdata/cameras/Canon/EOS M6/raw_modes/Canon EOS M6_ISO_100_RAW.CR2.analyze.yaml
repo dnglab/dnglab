@@ -126,7 +126,7 @@ data:
           gps_differential: ~
           gps_h_positioning_error: ~
         user_comment: ~
-      model: Canon EOS M6
+      model: EOS M6
       make: Canon
       lens:
         identifiers:

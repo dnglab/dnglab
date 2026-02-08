@@ -91,7 +91,7 @@ data:
         gps: ~
         user_comment: ~
       model: ZV-E10
-      make: SONY
+      make: Sony
       lens:
         identifiers:
           name: ~

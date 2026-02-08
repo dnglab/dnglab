@@ -1,7 +1,7 @@
 make = "Canon"
 model = "Canon EOS M6"
 clean_make = "Canon"
-clean_model = "Canon EOS M6"
+clean_model = "EOS M6"
 color_pattern = "RGGB"
 blackareav = [0,260]
 blackareah = [0,30]

@@ -91,7 +91,7 @@ data:
         gps: ~
         user_comment: ~
       model: ILCE-6400
-      make: SONY
+      make: Sony
       lens:
         identifiers:
           name: ~

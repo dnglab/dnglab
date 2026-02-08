@@ -1,6 +1,6 @@
 make = "FUJIFILM"
 model = "X-S20"
-clean_make = "FUJIFILM"
+clean_make = "Fujifilm"
 clean_model = "X-S20"
 whitepoint = 16383
 color_pattern = "GGRGGBGGBGGRBRGRBGGGBGGRGGRGGBRBGBRG"

@@ -1,6 +1,6 @@
 make = "SONY"
 model = "DSC-RX100M5A"
-clean_make = "SONY"
+clean_make = "Sony"
 clean_model = "DSC-RX100M5A"
 ##blackpoint = 800
 #whitepoint = 16300

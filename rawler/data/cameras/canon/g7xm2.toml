@@ -1,7 +1,7 @@
 make = "Canon"
 model = "Canon PowerShot G7 X Mark II"
 clean_make = "Canon"
-clean_model = "Canon PowerShot G7 X Mark II"
+clean_model = "PowerShot G7 X Mark II"
 color_pattern = "RGGB"
 active_area = [96, 17, 0, 0]
 blackareav = [0, 70]

@@ -126,8 +126,8 @@ data:
           gps_differential: ~
           gps_h_positioning_error: ~
         user_comment: ~
-      model: PENTAX K-3 Mark III
-      make: Ricoh
+      model: K-3 Mark III
+      make: Pentax
       lens:
         identifiers:
           name: ~

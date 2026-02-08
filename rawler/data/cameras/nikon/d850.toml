@@ -1,7 +1,7 @@
 make = "NIKON CORPORATION"
 model = "NIKON D850"
-clean_make = "NIKON CORPORATION"
-clean_model = "NIKON D850"
+clean_make = "Nikon"
+clean_model = "D850"
 color_pattern = "RGGB"
 active_area = [0, 0, 0, 0]
 crop_area = [16, 8, 16, 8] # TODO: This camera has Large/Medium/Small format with different crop

@@ -1,7 +1,7 @@
 make = "Canon"
 model = "Canon EOS 4000D"
 clean_make = "Canon"
-clean_model = "Canon EOS 4000D"
+clean_model = "EOS 4000D"
 color_pattern = "GBRG"
 active_area = [142, 51, 0, 0]
 

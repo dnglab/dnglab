@@ -1,6 +1,6 @@
 make = "SONY"
 model = "ILCE-6300"
-clean_make = "SONY"
+clean_make = "Sony"
 clean_model = "ILCE-6300"
 ##blackpoint = 512
 #whitepoint = 16300

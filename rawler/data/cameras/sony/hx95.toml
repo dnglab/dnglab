@@ -1,6 +1,6 @@
 make = "SONY"
 model = "DSC-HX95"
-clean_make = "SONY"
+clean_make = "Sony"
 clean_model = "DSC-HX95"
 ##blackpoint = 512
 #whitepoint = 16300

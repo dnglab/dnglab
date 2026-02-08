@@ -1,6 +1,6 @@
 make = "FUJIFILM"
 model = "FinePix S1"
-clean_make = "FUJIFILM"
+clean_make = "Fujifilm"
 clean_model = "FinePix S1"
 #blackpoint = 200
 whitepoint = 4095
