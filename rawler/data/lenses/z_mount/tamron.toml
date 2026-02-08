@@ -1,0 +1,7 @@
+[[lenses]]
+mount = "Z-mount"
+lens_id = 57346
+make = "Tamron"
+model = "35-150mm F/2-2.8 Di III VXD"
+focal_range = [[35, 1], [150, 1]]
+aperture_range = [[20, 10], [28, 10]]
