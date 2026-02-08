@@ -37,6 +37,8 @@ pub enum AppError {
   AlreadyExists(PathBuf),
   #[error("Decoder failed: {}", _0)]
   DecoderFailed(String),
+  #[error("Unsupported file: {}", _0)]
+  UnsupportedFile(String),
   #[error(transparent)]
   Other(#[from] anyhow::Error),
 }
@@ -63,7 +65,7 @@ impl From<RawlerError> for AppError {
   fn from(value: RawlerError) -> Self {
     match value {
       RawlerError::DecoderFailed(err) => Self::DecoderFailed(err),
-      RawlerError::Unsupported { .. } => Self::General(value.to_string()),
+      RawlerError::Unsupported { .. } => Self::UnsupportedFile(value.to_string()),
     }
   }
 }

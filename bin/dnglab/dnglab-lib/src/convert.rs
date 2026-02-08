@@ -72,15 +72,22 @@ pub async fn convert(options: &ArgMatches) -> crate::Result<()> {
   let failure = results.iter().filter(|j| j.error.is_some()).count();
 
   if failure == 0 {
-    println!("Converted {}/{} files", success, total,);
+    eprintln!("Converted {}/{} files", success, total,);
   } else {
     eprintln!("Converted {}/{} files, {} failed:", success, total, failure,);
     for failed in results.iter().filter(|j| j.error.is_some()) {
       eprintln!("   {}", failed.job.input.display());
     }
   }
-  println!("Total time: {:.2}s", now.elapsed().as_secs_f32());
-  Ok(())
+  eprintln!("Total time: {:.2}s", now.elapsed().as_secs_f32());
+
+  let first_error = results.into_iter().filter(|j| j.error.is_some()).map(|j| j.error).next();
+  if let Some(Some(err)) = first_error {
+    // In case of errors, return the first error in the queue
+    Err(err)
+  } else {
+    Ok(())
+  }
 }
 
 /// Convert given raw file to dng file
