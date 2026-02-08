@@ -1,6 +1,6 @@
 make = "LEICA"
 model = "V-LUX (Typ 114)"
-clean_make = "LEICA"
+clean_make = "Leica"
 clean_model = "V-LUX (Typ 114)"
 #blackpoint = 143
 whitepoint = 3956

@@ -1,0 +1,85 @@
+---
+file:
+  fileSize: 24453726
+  fileName: Leica_X2_12bit_3x2.dng
+  digest: 8792d5af2cf2a4b3dc4e8f2fe74b76df
+data:
+  metadata:
+    rawParams:
+      rawWidth: 4944
+      rawHeight: 3272
+      bitDepth: 12
+      cropArea:
+        p:
+          x: 8
+          y: 4
+        d:
+          w: 4928
+          h: 3264
+      activeArea: ~
+      blacklevels:
+        levels:
+          - 0/1
+        cpp: 1
+        width: 1
+        height: 1
+      whitelevels:
+        - 4095
+      wbCoeffs:
+        - 2.4453125
+        - 1.0
+        - 1.4726562
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ~
+        artist: ~
+        lens_spec: ~
+        exposure_time: 10/400
+        fnumber: 28/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 100
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: 0/10
+        date_time_original: "2016:04:18 19:36:26"
+        create_date: "2016:04:18 19:36:26"
+        modify_date: "2016:04:18 19:36:26"
+        exposure_program: 3
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: ~
+        max_aperture_value: 297/100
+        subject_distance: ~
+        metering_mode: 5
+        light_source: 0
+        flash: 16
+        focal_length: 24/1
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: ~
+        white_balance: 0
+        scene_capture_type: 1
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+        user_comment: ~
+      model: X2
+      make: Leica
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

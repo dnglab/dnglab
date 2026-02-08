@@ -1,0 +1,121 @@
+---
+file:
+  fileSize: 54857728
+  fileName: Leica_M10-R_16bit_compressed_3x2.dng
+  digest: ef7e0f051b39438e1e3c2c4799131746
+data:
+  metadata:
+    rawParams:
+      rawWidth: 7872
+      rawHeight: 5208
+      bitDepth: 16
+      cropArea:
+        p:
+          x: 4
+          y: 4
+        d:
+          w: 7864
+          h: 5200
+      activeArea: ~
+      blacklevels:
+        levels:
+          - 0/1
+        cpp: 1
+        width: 1
+        height: 1
+      whitelevels:
+        - 15000
+      wbCoeffs:
+        - 3.2382812
+        - 1.0
+        - 1.5390625
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: Cameron Davidson
+        artist: Cameron Davidson
+        lens_spec: ~
+        exposure_time: 1/60
+        fnumber: ~
+        aperture_value: 496/100
+        brightness_value: ~
+        iso_speed_ratings: 100
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: 0/1000
+        date_time_original: "2025:05:09 16:59:52"
+        create_date: "2025:05:09 16:59:52"
+        modify_date: ~
+        exposure_program: 3
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: 1530/256
+        max_aperture_value: 511/256
+        subject_distance: ~
+        metering_mode: 2
+        light_source: 1
+        flash: 0
+        focal_length: 50/1
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 1
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: "5513753"
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps:
+          gps_version_id:
+            - 2
+            - 3
+            - 0
+            - 0
+          gps_latitude_ref: ~
+          gps_latitude: ~
+          gps_longitude_ref: ~
+          gps_longitude: ~
+          gps_altitude_ref: ~
+          gps_altitude: ~
+          gps_timestamp: ~
+          gps_satellites: ~
+          gps_status: ~
+          gps_measure_mode: ~
+          gps_dop: ~
+          gps_speed_ref: ~
+          gps_speed: ~
+          gps_track_ref: ~
+          gps_track: ~
+          gps_img_direction_ref: ~
+          gps_img_direction: ~
+          gps_map_datum: ~
+          gps_dest_latitude_ref: ~
+          gps_dest_latitude: ~
+          gps_dest_longitude_ref: ~
+          gps_dest_longitude: ~
+          gps_dest_bearing_ref: ~
+          gps_dest_bearing: ~
+          gps_dest_distance_ref: ~
+          gps_dest_distance: ~
+          gps_processing_method: ~
+          gps_area_information: ~
+          gps_date_stamp: ~
+          gps_differential: ~
+          gps_h_positioning_error: ~
+        user_comment: ~
+      model: M10-R
+      make: Leica
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

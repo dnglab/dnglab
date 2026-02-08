@@ -671,6 +671,19 @@ cameras/Leica/V-LUX 1/raw_modes
 cameras/Leica/V-LUX 4/raw_modes
 cameras/Leica/V-LUX 5/raw_modes
 cameras/Leica/V-LUX Typ 114/raw_modes
+cameras/Leica/CL/raw_modes
+cameras/Leica/M10/raw_modes
+cameras/Leica/M10-R/raw_modes
+cameras/Leica/M8/raw_modes
+cameras/Leica/M9/raw_modes
+cameras/Leica/M Monochrom/raw_modes
+cameras/Leica/M Monochrom Typ 246/raw_modes
+cameras/Leica/M Typ 240/raw_modes
+cameras/Leica/Q2/raw_modes
+cameras/Leica/Q Typ 116/raw_modes
+cameras/Leica/SL2/raw_modes
+cameras/Leica/SL Typ 601/raw_modes
+cameras/Leica/X2/raw_modes
 cameras/Fujifilm/DBP for GX680/raw_modes
 cameras/Fujifilm/FinePix E550/raw_modes
 cameras/Fujifilm/FinePix E900/raw_modes

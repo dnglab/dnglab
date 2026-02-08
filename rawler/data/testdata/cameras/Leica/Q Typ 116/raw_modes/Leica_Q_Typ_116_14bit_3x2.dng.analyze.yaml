@@ -1,0 +1,94 @@
+---
+file:
+  fileSize: 45100032
+  fileName: Leica_Q_Typ_116_14bit_3x2.dng
+  digest: 4c4d1662d6b147fe0e89452e7c31365c
+data:
+  metadata:
+    rawParams:
+      rawWidth: 6120
+      rawHeight: 4016
+      bitDepth: 14
+      cropArea:
+        p:
+          x: 8
+          y: 8
+        d:
+          w: 6000
+          h: 4000
+      activeArea:
+        p:
+          x: 0
+          y: 0
+        d:
+          w: 6016
+          h: 4016
+      blacklevels:
+        levels:
+          - 512/1
+          - 512/1
+          - 512/1
+          - 512/1
+        cpp: 1
+        width: 2
+        height: 2
+      whitelevels:
+        - 16383
+      wbCoeffs:
+        - 2.2519531
+        - 1.0
+        - 1.3955078
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ~
+        artist: ~
+        lens_spec: ~
+        exposure_time: 10/4000
+        fnumber: 40/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 100
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: 1
+        exposure_bias: "-6/10"
+        date_time_original: "2017:09:03 09:03:24"
+        create_date: "2017:09:03 09:03:24"
+        modify_date: "2017:09:03 09:03:24"
+        exposure_program: 3
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: ~
+        max_aperture_value: 392/256
+        subject_distance: ~
+        metering_mode: 5
+        light_source: 0
+        flash: 16
+        focal_length: 280/10
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: ~
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: N/A
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+        user_comment: ~
+      model: Q (Typ 116)
+      make: Leica
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

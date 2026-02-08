@@ -1,0 +1,7 @@
+make = "Leica Camera AG"
+model = "LEICA M10"
+clean_make = "Leica"
+clean_model = "M10"
+
+[[cameras.modes]]
+mode = "dng"

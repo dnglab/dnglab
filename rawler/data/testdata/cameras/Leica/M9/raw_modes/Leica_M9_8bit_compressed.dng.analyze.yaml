@@ -1,0 +1,85 @@
+---
+file:
+  fileSize: 18324480
+  fileName: Leica_M9_8bit_compressed.dng
+  digest: 391b2efc47cb279bd5cb242759b305c3
+data:
+  metadata:
+    rawParams:
+      rawWidth: 5216
+      rawHeight: 3472
+      bitDepth: 16
+      cropArea:
+        p:
+          x: 2
+          y: 2
+        d:
+          w: 5212
+          h: 3468
+      activeArea: ~
+      blacklevels:
+        levels:
+          - 165/1
+        cpp: 1
+        width: 1
+        height: 1
+      whitelevels:
+        - 16383
+      wbCoeffs:
+        - 1.3800049
+        - 1.0
+        - 2.0039062
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ~
+        artist: ~
+        lens_spec: ~
+        exposure_time: 1/45
+        fnumber: ~
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 640
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: 0/65536
+        date_time_original: "2017:01:03 16:47:22"
+        create_date: "2017:01:03 16:47:22"
+        modify_date: ~
+        exposure_program: 3
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: 360448/65536
+        max_aperture_value: 65536/65536
+        subject_distance: ~
+        metering_mode: 2
+        light_source: 0
+        flash: 0
+        focal_length: 50000/1000
+        image_number: ~
+        color_space: ~
+        flash_energy: ~
+        exposure_mode: 1
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+        user_comment: ~
+      model: M9
+      make: Leica
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+
