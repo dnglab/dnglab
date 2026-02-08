@@ -114,8 +114,11 @@ fn unpack_8bit<'a>(lines: impl LineIteratorMut<'a, u16>, src: &[u8], skip_rows: 
 #[multiversion(targets("x86_64+avx+avx2", "x86+sse", "aarch64+neon"))]
 fn unpack_generic_msb<'a>(lines: impl LineIteratorMut<'a, u16>, src: &[u8], skip_rows: usize, width: usize, bits: u32) {
   assert!(bits <= 16);
-  assert!(skip_rows == 0, "pumps not supported yet for offset rows");
-  let mut pump = BitPumpMSB::new(src);
+  let skip_bits = skip_rows * width * bits as usize;
+  let offset = skip_bits / 8;
+  let bias = skip_bits % 8;
+  let mut pump = BitPumpMSB::new(&src[offset..]);
+  pump.consume_bits(bias as u32);
   for line in lines {
     for p in line {
       *p = pump.get_bits(bits) as u16;
