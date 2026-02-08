@@ -1,6 +1,6 @@
 make = "RICOH IMAGING COMPANY, LTD."
 model = "PENTAX K-3 Mark III Monochrome"
-clean_make = "Ricoh"
+clean_make = "Pentax"
 clean_model = "K-3 Mark III Monochrome"
 whitepoint = 16378
 active_area = [26, 34, 54, 30]

@@ -1,6 +1,6 @@
 make = "SONY"
 model = "ZV-E1"
-clean_make = "SONY"
+clean_make = "Sony"
 clean_model = "ZV-E1"
 color_pattern = "RGGB"
 active_area = [0, 0, 0, 0]

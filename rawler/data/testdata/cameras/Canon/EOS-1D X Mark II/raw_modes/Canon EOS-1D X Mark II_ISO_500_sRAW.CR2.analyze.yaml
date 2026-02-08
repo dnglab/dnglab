@@ -127,7 +127,7 @@ data:
           gps_differential: ~
           gps_h_positioning_error: ~
         user_comment: ~
-      model: Canon EOS-1D X Mark II
+      model: EOS-1D X Mark II
       make: Canon
       lens:
         identifiers:

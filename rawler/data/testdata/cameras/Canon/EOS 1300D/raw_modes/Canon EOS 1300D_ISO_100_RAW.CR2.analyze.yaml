@@ -126,7 +126,7 @@ data:
           gps_differential: ~
           gps_h_positioning_error: ~
         user_comment: ~
-      model: Canon EOS 1300D
+      model: EOS 1300D
       make: Canon
       lens:
         identifiers:

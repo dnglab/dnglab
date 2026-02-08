@@ -1,6 +1,6 @@
 make = "Phase One A/S"
 model = "P45"
-clean_make = "Phase One A/S"
+clean_make = "Phase One"
 clean_model = "P45"
 whitepoint = 65535
 color_pattern = "GRBG"

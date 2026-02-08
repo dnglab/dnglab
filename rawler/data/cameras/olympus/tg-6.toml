@@ -1,6 +1,6 @@
 make = "OLYMPUS CORPORATION"
 model = "TG-6"
-clean_make = "OLYMPUS CORPORATION"
+clean_make = "Olympus"
 clean_model = "TG-6"
 #blackpoint = 256
 whitepoint = 4000

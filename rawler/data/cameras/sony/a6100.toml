@@ -1,6 +1,6 @@
 make = "SONY"
 model = "ILCE-6100"
-clean_make = "SONY"
+clean_make = "Sony"
 clean_model = "ILCE-6100"
 
 model_aliases = [

@@ -1,6 +1,6 @@
 make = "OLYMPUS IMAGING CORP."
 model = "SP570UZ"
-clean_make = "OLYMPUS IMAGING CORP."
+clean_make = "Olympus"
 clean_model = "SP570UZ"
 whitepoint = 4095
 color_pattern = "BGGR"

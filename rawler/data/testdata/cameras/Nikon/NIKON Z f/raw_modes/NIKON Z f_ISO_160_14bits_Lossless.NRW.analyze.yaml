@@ -44,7 +44,11 @@ data:
         orientation: 1
         copyright: www.jonathanhrovath.com
         artist: Jonathan Hrovath
-        lens_spec: ~
+        lens_spec:
+          - 35/1
+          - 150/1
+          - 20/10
+          - 28/10
         exposure_time: 10/600
         fnumber: 560/100
         aperture_value: ~
@@ -82,8 +86,8 @@ data:
         owner_name: ~
         serial_number: "3000292"
         lens_serial_number: "21000170"
-        lens_make: ~
-        lens_model: ~
+        lens_make: Tamron
+        lens_model: 35-150mm F/2-2.8 Di III VXD
         gps:
           gps_version_id:
             - 2
@@ -122,9 +126,26 @@ data:
           gps_differential: ~
           gps_h_positioning_error: ~
         user_comment: ~
-      model: NIKON Z f
-      make: NIKON CORPORATION
-      lens: ~
+      model: Z f
+      make: Nikon
+      lens:
+        identifiers:
+          name: ~
+          id:
+            - 57346
+            - 0
+          nikon_id: ~
+          olympus_id: ~
+        mount: Z-mount
+        lens_make: Tamron
+        lens_model: 35-150mm F/2-2.8 Di III VXD
+        focal_range:
+          - 35/1
+          - 150/1
+        aperture_range:
+          - 20/10
+          - 28/10
+        lens_name: Tamron 35-150mm F/2-2.8 Di III VXD
       unique_image_id: ~
       rating: ~
 

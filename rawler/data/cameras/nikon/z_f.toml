@@ -1,7 +1,7 @@
 make = "NIKON CORPORATION"
 model = "NIKON Z f"
-clean_make = "NIKON CORPORATION"
-clean_model = "NIKON Z f"
+clean_make = "Nikon"
+clean_model = "Z f"
 color_pattern = "RGGB"
 active_area = [0, 0, 0, 0]
 crop_area = [8, 4, 8, 4]

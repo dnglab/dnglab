@@ -1,7 +1,7 @@
 make = "NIKON CORPORATION"
 model = "NIKON D7500"
-clean_make = "NIKON CORPORATION"
-clean_model = "NIKON D7500"
+clean_make = "Nikon"
+clean_model = "D7500"
 color_pattern = "RGGB"
 active_area = [0, 0, 0, 0]
 crop_area = [16, 8, 16, 8]

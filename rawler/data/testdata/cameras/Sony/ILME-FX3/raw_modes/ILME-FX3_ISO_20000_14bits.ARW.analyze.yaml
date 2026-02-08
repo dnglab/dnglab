@@ -91,7 +91,7 @@ data:
         gps: ~
         user_comment: ~
       model: ILME-FX3
-      make: SONY
+      make: Sony
       lens:
         identifiers:
           name: ~

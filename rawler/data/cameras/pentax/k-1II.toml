@@ -1,7 +1,7 @@
 make = "RICOH IMAGING COMPANY, LTD."
 model = "PENTAX K-1 Mark II"
-clean_make = "RICOH IMAGING COMPANY, LTD."
-clean_model = "PENTAX K-1 Mark II"
+clean_make = "Pentax"
+clean_model = "K-1 Mark II"
 #blackpoint = 64
 whitepoint = 16315
 color_pattern = "RGGB"
