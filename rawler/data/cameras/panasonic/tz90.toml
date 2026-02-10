@@ -2,6 +2,14 @@ make = "Panasonic"
 model = "DC-TZ90"
 clean_make = "Panasonic"
 clean_model = "DC-TZ90"
+
+model_aliases = [
+  ["DC-TZ91", "DC-TZ91"],
+  ["DC-TZ92", "DC-TZ92"],
+  ["DC-TZ93", "DC-TZ93"],
+  ["DC-ZS70", "DC-ZS70"],
+]
+
 #blackpoint = 139
 whitepoint = 4095
 color_pattern = "GBRG"
