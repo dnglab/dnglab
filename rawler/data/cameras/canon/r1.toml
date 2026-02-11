@@ -1,0 +1,16 @@
+make = "Canon"
+model = "Canon EOS R1"
+clean_make = "Canon"
+clean_model = "EOS R1"
+color_pattern = "RGGB"
+
+[cameras.color_matrix]
+# TODO
+A = [1.1029, -0.5523, 0.0088, -0.411, 1.1671, 0.2778, -0.0165, 0.0658, 0.6438]
+D65 = [0.9423, -0.2839, -0.1195, -0.4532, 1.2377, 0.2415, -0.0483, 0.1374, 0.5276]
+
+[[cameras.modes]]
+mode = "raw"
+
+[[cameras.modes]]
+mode = "craw"
