@@ -4,6 +4,7 @@ clean_make = "Panasonic"
 clean_model = "DC-G100"
 
 model_aliases = [
+  ["DC-G100D", "DC-G100D"],
   ["DC-G110", "DC-G110"],
 ]
 
