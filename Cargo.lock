@@ -984,6 +984,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d0263a3d970d5c054ed9312c0057b4f3bde9c0b33836d3637361d4a9e6e7a408"
 
 [[package]]
+name = "impl_ops"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "90f97a5f38dd3ccfbe7aa80f4a0c00930f21b922c74195be0201c51028f22dcf"
+
+[[package]]
 name = "indexmap"
 version = "1.9.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1922,6 +1928,7 @@ dependencies = [
  "glob",
  "hex",
  "image",
+ "impl_ops",
  "itertools 0.14.0",
  "jxl-oxide",
  "lazy_static 1.5.0",
@@ -1930,6 +1937,7 @@ dependencies = [
  "md5",
  "memmap2",
  "multiversion",
+ "num-integer",
  "num 0.4.3",
  "num_enum",
  "rayon",

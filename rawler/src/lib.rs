@@ -112,6 +112,8 @@ use std::io::Seek;
 use std::path::Path;
 use thiserror::Error;
 
+#[macro_use] extern crate impl_ops;
+
 pub(crate) const ISSUE_HINT: &str = "Please open an issue at https://github.com/dnglab/dnglab/issues and provide this message (optionally the RAW file, if you can license it under CC0-license).";
 
 pub trait ReadTrait: Read + Seek {}

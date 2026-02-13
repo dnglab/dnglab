@@ -4,6 +4,9 @@
 use byteorder::{NativeEndian, WriteBytesExt};
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::{convert::Infallible, ffi::CString, fmt::Display, io::Write, num::TryFromIntError};
+use std::iter::Sum;
+use num_integer::lcm;
+use std::ops;
 
 use super::{Result, TiffError};
 
@@ -50,6 +53,51 @@ impl Display for Rational {
 impl Display for SRational {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
     f.write_fmt(format_args!("{}/{}", self.n, self.d))
+  }
+}
+
+impl_op_ex!(+ |lhs: &Rational, rhs: &Rational| -> Rational {
+  if lhs.d == rhs.d {
+    return Rational::new(lhs.n + rhs.n, lhs.d);
+  }
+
+  let lcm = lcm(lhs.d, rhs.d);
+  let lhs_n = lhs.n * (lcm / lhs.d);
+  let rhs_n = rhs.n * (lcm / rhs.d);
+
+  Rational::new(lhs_n + rhs_n, lcm)
+});
+
+impl_op_ex!(+ |lhs: &SRational, rhs: &SRational| -> SRational {
+  if lhs.d == rhs.d {
+    return SRational::new(lhs.n + rhs.n, lhs.d);
+  }
+
+  let lcm = lcm(lhs.d, rhs.d);
+  let lhs_n = lhs.n * (lcm / lhs.d);
+  let rhs_n = rhs.n * (lcm / rhs.d);
+
+  SRational::new(lhs_n + rhs_n, lcm)
+});
+
+impl Sum for Rational {
+  fn sum<I: Iterator<Item=Self>>(iter: I) -> Self {
+    iter.fold(Self{n: 0, d: 1}, |acc, x| acc + x)
+  }
+}
+impl<'a> Sum<&'a Rational> for Rational {
+  fn sum<I: Iterator<Item=&'a Self>>(iter: I) -> Self {
+    iter.fold(Self{n: 0, d: 1}, |acc, x| acc + x)
+  }
+}
+impl Sum for SRational {
+  fn sum<I: Iterator<Item=Self>>(iter: I) -> Self {
+    iter.fold(Self{n: 0, d: 1}, |acc, x| acc + x)
+  }
+}
+impl<'a> Sum<&'a SRational> for SRational {
+  fn sum<I: Iterator<Item=&'a Self>>(iter: I) -> Self {
+    iter.fold(Self{n: 0, d: 1}, |acc, x| acc + x)
   }
 }
 
@@ -299,6 +347,10 @@ pub struct SRational {
 impl SRational {
   pub fn new(n: i32, d: i32) -> Self {
     Self { n, d }
+  }
+
+  pub fn as_f32(&self) -> f32 {
+    self.n as f32 / self.d as f32
   }
 }
 
@@ -1353,5 +1405,21 @@ mod tests {
     let a = SRational::new(-200, 1);
     let b = SRational::new(-300, 10);
     assert!(a < b);
+  }
+
+  #[test]
+  fn rational_sum() {
+    let a = Rational::new(1, 2);
+    let b = Rational::new(1, 4);
+
+    assert_eq!([a, b].iter().sum::<Rational>(), Rational::new(3, 4));
+  }
+
+  #[test]
+  fn srational_sum() {
+    let a = SRational::new(1, 2);
+    let b = SRational::new(-3, 4);
+
+    assert_eq!([a, b].iter().sum::<SRational>(), SRational::new(-1, 4));
   }
 }
