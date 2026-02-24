@@ -1,0 +1,15 @@
+make = "Canon"
+model = "Canon EOS R6 Mark III"
+clean_make = "Canon"
+clean_model = "EOS R6 Mark III"
+color_pattern = "RGGB"
+
+[cameras.color_matrix]
+A = [1.0273, -0.4611, 0.0139, -0.3922, 1.1425, 0.2856, -0.0231, 0.0839, 0.6645]
+D65 = [0.8309, -0.1786, -0.1095, -0.4851, 1.2736, 0.2353, -0.0956, 0.1911, 0.5534]
+
+[[cameras.modes]]
+mode = "raw"
+
+[[cameras.modes]]
+mode = "craw"

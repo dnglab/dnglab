@@ -85,6 +85,7 @@ cameras/Canon/EOS R5 C/raw_modes
 cameras/Canon/EOS R5 C/crm
 cameras/Canon/EOS R6/raw_modes
 cameras/Canon/EOS R6 Mark II/raw_modes
+cameras/Canon/EOS R6 Mark III/raw_modes
 cameras/Canon/EOS R7/raw_modes
 cameras/Canon/EOS R8/raw_modes
 cameras/Canon/EOS R10/raw_modes
