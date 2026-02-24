@@ -1356,6 +1356,17 @@ mod camera_ilce_1_raw_modes {
   super::camera_file_check!("Sony", "ILCE-1", cam_ilce_1_iso_500_14bits_lossless_compressed_raw_arw, "raw_modes/ILCE-1_ISO_500_14bits_Lossless Compressed RAW.ARW");
   super::camera_file_check!("Sony", "ILCE-1", cam_ilce_1_iso_500_14bits_compressed_raw_arw, "raw_modes/ILCE-1_ISO_500_14bits_Compressed RAW.ARW");
 }
+mod camera_ilce_1m2_raw_modes {
+  super::camera_file_check!("Sony", "ILCE-1M2", cam_ilce_1m2_iso_100_14bits_lossless_arw, "raw_modes/ILCE-1M2_ISO_100_14bits_Lossless.ARW");
+  super::camera_file_check!("Sony", "ILCE-1M2", cam_ilce_1m2_iso_100_14bits_small_lossless_arw, "raw_modes/ILCE-1M2_ISO_100_14bits_small_Lossless.ARW");
+  super::camera_file_check!("Sony", "ILCE-1M2", cam_ilce_1m2_iso_100_14bits_medium_lossless_arw, "raw_modes/ILCE-1M2_ISO_100_14bits_medium_Lossless.ARW");
+  super::camera_file_check!("Sony", "ILCE-1M2", cam_ilce_1m2_iso_100_14bits_lossy_arw, "raw_modes/ILCE-1M2_ISO_100_14bits_Lossy.ARW");
+  super::camera_file_check!("Sony", "ILCE-1M2", cam_ilce_1m2_iso_100_14bits_crop_lossy_arw, "raw_modes/ILCE-1M2_ISO_100_14bits_Crop_Lossy.ARW");
+  super::camera_file_check!("Sony", "ILCE-1M2", cam_ilce_1m2_iso_100_14bits_uncompressed_raw_arw, "raw_modes/ILCE-1M2_ISO_100_14bits_Uncompressed RAW.ARW");
+  super::camera_file_check!("Sony", "ILCE-1M2", cam_ilce_1m2_iso_100_14bits_crop_medium_lossless_arw, "raw_modes/ILCE-1M2_ISO_100_14bits_Crop_medium_Lossless.ARW");
+  super::camera_file_check!("Sony", "ILCE-1M2", cam_ilce_1m2_iso_100_14bits_crop_small_lossless_arw, "raw_modes/ILCE-1M2_ISO_100_14bits_Crop_small_Lossless.ARW");
+  super::camera_file_check!("Sony", "ILCE-1M2", cam_ilce_1m2_iso_100_14bits_crop_uncompressed_raw_arw, "raw_modes/ILCE-1M2_ISO_100_14bits_Crop_Uncompressed RAW.ARW");
+}
 mod camera_ilce_3000_raw_modes {
   super::camera_file_check!("Sony", "ILCE-3000", cam_ilce_3000_iso_100_12bits_sony_arw_compressed_arw, "raw_modes/ILCE-3000_ISO_100_12bits_Sony ARW Compressed.ARW");
 }

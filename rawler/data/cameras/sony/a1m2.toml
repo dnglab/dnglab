@@ -1,0 +1,10 @@
+make = "SONY"
+model = "ILCE-1M2"
+clean_make = "Sony"
+clean_model = "ILCE-1M2"
+color_pattern = "RGGB"
+bps = 8
+
+[cameras.color_matrix]
+A = [1.201, -0.6965, 0.0665, -0.4276, 1.2077, 0.248, -0.0167, 0.0625, 0.7188]
+D65 = [1.0058, -0.4074, -0.0932, -0.4777, 1.2731, 0.2274, -0.0544, 0.1282, 0.6102]

@@ -1,0 +1,139 @@
+---
+file:
+  fileSize: 57909248
+  fileName: ILCE-1M2_ISO_100_14bits_Lossless.ARW
+  digest: 8a63eff5d3c8b4b17fbc69800345731e
+data:
+  metadata:
+    rawParams:
+      rawWidth: 8704
+      rawHeight: 6144
+      bitDepth: 16
+      cropArea:
+        p:
+          x: 12
+          y: 12
+        d:
+          w: 8640
+          h: 5760
+      activeArea:
+        p:
+          x: 0
+          y: 0
+        d:
+          w: 8664
+          h: 5784
+      blacklevels:
+        levels:
+          - 512/1
+          - 512/1
+          - 512/1
+          - 512/1
+        cpp: 1
+        width: 2
+        height: 2
+      whitelevels:
+        - 15360
+      wbCoeffs:
+        - 2.2734375
+        - 1.0
+        - 1.5751953
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ~
+        artist: ~
+        lens_spec: ~
+        exposure_time: 1/1000
+        fnumber: 28/10
+        aperture_value: ~
+        brightness_value: 21214/2560
+        iso_speed_ratings: 100
+        iso_speed: ~
+        recommended_exposure_index: 100
+        sensitivity_type: 2
+        exposure_bias: 0/10
+        date_time_original: "2025:05:09 09:35:33"
+        create_date: "2025:05:09 09:35:33"
+        modify_date: "2025:05:09 09:35:33"
+        exposure_program: 3
+        timezone_offset: ~
+        offset_time: "+01:00"
+        offset_time_original: "+01:00"
+        offset_time_digitized: "+01:00"
+        sub_sec_time: "267"
+        sub_sec_time_original: "267"
+        sub_sec_time_digitized: "267"
+        shutter_speed_value: ~
+        max_aperture_value: 760/256
+        subject_distance: ~
+        metering_mode: 5
+        light_source: 0
+        flash: 16
+        focal_length: 1330/10
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps:
+          gps_version_id:
+            - 2
+            - 3
+            - 0
+            - 0
+          gps_latitude_ref: N
+          gps_latitude:
+            - 45/1
+            - 3/1
+            - 41614/1000
+          gps_longitude_ref: E
+          gps_longitude:
+            - 7/1
+            - 41/1
+            - 1272/1000
+          gps_altitude_ref: ~
+          gps_altitude: ~
+          gps_timestamp:
+            - 8/1
+            - 35/1
+            - 31000/1000
+          gps_satellites: ~
+          gps_status: A
+          gps_measure_mode: "2"
+          gps_dop: ~
+          gps_speed_ref: ~
+          gps_speed: ~
+          gps_track_ref: ~
+          gps_track: ~
+          gps_img_direction_ref: ~
+          gps_img_direction: ~
+          gps_map_datum: WGS-84
+          gps_dest_latitude_ref: ~
+          gps_dest_latitude: ~
+          gps_dest_longitude_ref: ~
+          gps_dest_longitude: ~
+          gps_dest_bearing_ref: ~
+          gps_dest_bearing: ~
+          gps_dest_distance_ref: ~
+          gps_dest_distance: ~
+          gps_processing_method: ~
+          gps_area_information: ~
+          gps_date_stamp: "2025:05:09"
+          gps_differential: 0
+          gps_h_positioning_error: ~
+        user_comment: ~
+      model: ILCE-1M2
+      make: Sony
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+
