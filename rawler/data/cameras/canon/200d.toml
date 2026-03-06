@@ -5,6 +5,7 @@ clean_model = "EOS 200D"
 
 model_aliases = [
   ["Canon EOS Kiss X9", "EOS Kiss X9"],
+  ["Canon EOS REBEL SL2", "EOS Rebel SL2"],
   ["Canon EOS Rebel SL2", "EOS Rebel SL2"],
 ]
 
