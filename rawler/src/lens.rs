@@ -242,10 +242,7 @@ impl LensResolver {
           .is_none_or(|focal| *focal >= entry.focal_range[0] && *focal <= entry.focal_range[1])
       })
       .filter(|entry| {
-        self
-          .aperture
-          .as_ref()
-          .is_none_or(|ap| *ap >= entry.aperture_range[0] || *ap <= entry.aperture_range[1])
+        self.aperture.as_ref().is_none_or(|ap| *ap >= entry.aperture_range[0]) // equal or greater then lowest possible aperture
       })
       .collect();
     match matches.len() {
