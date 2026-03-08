@@ -3,6 +3,7 @@
 
 use image::DynamicImage;
 use log::{debug, warn};
+use num::Zero;
 use std::convert::{TryFrom, TryInto};
 use std::fmt::Debug;
 
@@ -678,8 +679,15 @@ impl Ctmd {
 
   pub fn focal_len(&self) -> Result<Option<Rational>> {
     if let Some(rec) = self.records.get(&4) {
+      if rec.payload.len() < 4 {
+        return Ok(None)
+      }
       let mut buf = ByteStream::new(rec.payload.as_slice(), Endian::Little);
       let focal_len = Rational::new(buf.get_u16().into(), buf.get_u16().into());
+      if focal_len.d.is_zero() {
+        // Canon EOS R_RAW_ISO_100_nocrop_nodual.CR3 has an invalid Rational value
+        return Ok(None);
+      }
       Ok(Some(focal_len))
     } else {
       Ok(None)
