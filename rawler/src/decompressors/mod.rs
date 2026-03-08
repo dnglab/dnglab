@@ -3,6 +3,7 @@
 
 use crate::pixarray::SubPixel;
 
+pub mod arw6;
 pub mod crx;
 pub mod deflate;
 pub mod jpeg;

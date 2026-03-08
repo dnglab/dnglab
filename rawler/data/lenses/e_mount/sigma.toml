@@ -390,6 +390,15 @@ model = "24-70mm F2.8 DG DN II | A"
 focal_range = [[24, 1], [70, 1]]
 aperture_range = [[28, 10], [28, 10]]
 
+# Duplicated, appears with id 514, too.
+[[lenses]]
+mount = "e-mount"
+lens_id = 514
+make = "Sigma"
+model = "24-70mm F2.8 DG DN II | A"
+focal_range = [[24, 1], [70, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
 [[lenses]]
 mount = "e-mount"
 lens_id = 50546

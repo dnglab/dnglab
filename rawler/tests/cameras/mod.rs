@@ -1463,6 +1463,10 @@ mod camera_ilce_7m4_resolutions {
   super::camera_file_check!("Sony", "ILCE-7M4", cam_ilce_7m4_dsc06676_fullframe_lossless_compressed_small_arw, "resolutions/ILCE-7M4_DSC06676_FullFrame-LossLess-Compressed-Small.ARW");
   super::camera_file_check!("Sony", "ILCE-7M4", cam_ilce_7m4_dsc06673_fullframe_raw_uncompressed_arw, "resolutions/ILCE-7M4_DSC06673_FullFrame-Raw-Uncompressed.ARW");
 }
+mod camera_ilce_7m5_raw_modes {
+  super::camera_file_check!("Sony", "ILCE-7M5", cam_ilce_7m5_iso_100_14bits_lossless_compressed_raw_arw, "raw_modes/ILCE-7M5_ISO_100_14bits_Lossless Compressed RAW.ARW");
+  super::camera_file_check!("Sony", "ILCE-7M5", cam_ilce_7m5_iso_100_14bits_apsc_lossless_compressed_raw_arw, "raw_modes/ILCE-7M5_ISO_100_14bits_APSC_Lossless Compressed RAW.ARW");
+}
 mod camera_ilce_7_raw_modes {
   super::camera_file_check!("Sony", "ILCE-7", cam_ilce_7_iso_200_14bits_sony_arw_compressed_arw, "raw_modes/ILCE-7_ISO_200_14bits_Sony ARW Compressed.ARW");
 }
