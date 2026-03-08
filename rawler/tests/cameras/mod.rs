@@ -3070,6 +3070,14 @@ mod camera_x_t30_ii_compressed {
 mod camera_x_t30_ii_raw_modes {
   super::camera_file_check!("Fujifilm", "X-T30 II", cam_x_t30_ii_14_bits_uncompressed_raf, "raw_modes/X-T30-II-14-bits-uncompressed.RAF");
 }
+mod camera_x_t30_iii_raw_modes {
+  super::camera_file_check!("Fujifilm", "X-T30 III", cam_fujifilm_xt30iii_iso_100_lossless_compressed_raf, "raw_modes/FUJIFILM_XT30III_ISO_100_LOSSLESS_COMPRESSED.RAF");
+  super::camera_file_check!("Fujifilm", "X-T30 III", cam_fujifilm_xt30iii_iso_160_burst_crop_lossless_compressed_raf, "raw_modes/FUJIFILM_XT30III_ISO_160_BURST_CROP_LOSSLESS_COMPRESSED.RAF");
+  super::camera_file_check!("Fujifilm", "X-T30 III", cam_fujifilm_xt30iii_iso_160_burst_crop_uncompressed_raf, "raw_modes/FUJIFILM_XT30III_ISO_160_BURST_CROP_UNCOMPRESSED.RAF");
+  super::camera_file_check!("Fujifilm", "X-T30 III", cam_fujifilm_xt30iii_iso_100_uncompressed_raf, "raw_modes/FUJIFILM_XT30III_ISO_100_UNCOMPRESSED.RAF");
+  super::camera_file_check!("Fujifilm", "X-T30 III", cam_fujifilm_xt30iii_iso_160_burst_crop_compressed_raf, "raw_modes/FUJIFILM_XT30III_ISO_160_BURST_CROP_COMPRESSED.RAF");
+  super::camera_file_check!("Fujifilm", "X-T30 III", cam_fujifilm_xt30iii_iso_100_compressed_raf, "raw_modes/FUJIFILM_XT30III_ISO_100_COMPRESSED.RAF");
+}
 mod camera_x_t30_raw_modes {
   super::camera_file_check!("Fujifilm", "X-T30", cam_x_t30_iso_100_bitdepth_14_54_mib_raf, "raw_modes/X-T30_ISO_100_Bitdepth_14_54 MiB.RAF");
 }

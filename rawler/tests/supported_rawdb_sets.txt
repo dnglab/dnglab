@@ -783,6 +783,7 @@ cameras/Fujifilm/X-T2/raw_modes
 cameras/Fujifilm/X-T30/compressed
 cameras/Fujifilm/X-T30 II/compressed
 cameras/Fujifilm/X-T30 II/raw_modes
+cameras/Fujifilm/X-T30 III/raw_modes
 cameras/Fujifilm/X-T30/raw_modes
 cameras/Fujifilm/X-T3/compressed
 cameras/Fujifilm/X-T3/raw_modes

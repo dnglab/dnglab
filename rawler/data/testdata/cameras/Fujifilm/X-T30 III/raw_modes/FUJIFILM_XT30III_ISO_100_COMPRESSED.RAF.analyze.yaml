@@ -1,0 +1,130 @@
+---
+file:
+  fileSize: 19266384
+  fileName: FUJIFILM_XT30III_ISO_100_COMPRESSED.RAF
+  digest: df1f2136a2f2662d2bfdf43b76d80047
+data:
+  metadata:
+    rawParams:
+      rawWidth: 6336
+      rawHeight: 4182
+      bitDepth: 16
+      cropArea:
+        p:
+          x: 6
+          y: 13
+        d:
+          w: 6240
+          h: 4160
+      activeArea:
+        p:
+          x: 0
+          y: 5
+        d:
+          w: 6252
+          h: 4176
+      blacklevels:
+        levels:
+          - 1022/1
+          - 1022/1
+          - 1022/1
+          - 1022/1
+          - 1022/1
+          - 1022/1
+          - 1022/1
+          - 1022/1
+          - 1022/1
+          - 1022/1
+          - 1022/1
+          - 1022/1
+          - 1022/1
+          - 1022/1
+          - 1022/1
+          - 1022/1
+          - 1022/1
+          - 1022/1
+          - 1022/1
+          - 1022/1
+          - 1022/1
+          - 1022/1
+          - 1022/1
+          - 1022/1
+          - 1022/1
+          - 1022/1
+          - 1022/1
+          - 1022/1
+          - 1022/1
+          - 1022/1
+          - 1022/1
+          - 1022/1
+          - 1022/1
+          - 1022/1
+          - 1022/1
+          - 1022/1
+        cpp: 1
+        width: 6
+        height: 6
+      whitelevels:
+        - 16383
+      wbCoeffs:
+        - 1.781457
+        - 1.0
+        - 1.9370861
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 8
+        copyright: ""
+        artist: ""
+        lens_spec:
+          - 5600/100
+          - 5600/100
+          - 170/100
+          - 170/100
+        exposure_time: 10/300
+        fnumber: 170/100
+        aperture_value: 150/100
+        brightness_value: 258/100
+        iso_speed_ratings: 100
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: 1
+        exposure_bias: 0/100
+        date_time_original: "2026:03:06 07:16:21"
+        create_date: "2026:03:06 07:16:21"
+        modify_date: "2026:03:06 07:16:21"
+        exposure_program: 1
+        timezone_offset: ~
+        offset_time: "-03:00"
+        offset_time_original: "-03:00"
+        offset_time_digitized: "-03:00"
+        sub_sec_time: "19"
+        sub_sec_time_original: "19"
+        sub_sec_time_digitized: "19"
+        shutter_speed_value: 500/100
+        max_aperture_value: 150/100
+        subject_distance: ~
+        metering_mode: 5
+        light_source: 0
+        flash: 0
+        focal_length: 5600/100
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 1
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: 0
+        owner_name: ~
+        serial_number: "57036262"
+        lens_serial_number: "00000000"
+        lens_make: "VILTROX "
+        lens_model: AF 56/1.7 XF
+        gps: ~
+        user_comment: ~
+      model: X-T30 III
+      make: Fujifilm
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+
