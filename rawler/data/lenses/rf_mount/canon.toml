@@ -358,3 +358,13 @@ make = "Canon"
 model = "RF 50mm F1.4L VCM"
 focal_range = [[50, 1], [50, 1]]
 aperture_range = [[14, 10], [14, 10]]
+
+[[lenses]]
+mount = "rf-mount"
+key = "RF5.2mm F2.8 L DUAL FISHEYE"
+lens_id = 61182
+lens_subid = 301
+make = "Canon"
+model = "RF 5.2mm F2.8L DUAL FISHEYE"
+focal_range = [[52, 10], [52, 10]]
+aperture_range = [[28, 10], [28, 10]]
