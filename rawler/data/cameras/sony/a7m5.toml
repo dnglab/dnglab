@@ -1,0 +1,11 @@
+make = "SONY"
+model = "ILCE-7M5"
+clean_make = "Sony"
+clean_model = "ILCE-7M5"
+color_pattern = "RGGB"
+active_area = [0, 0, 0, 0]
+bps = 8
+
+[cameras.color_matrix]
+A = [1.1168, -0.6826, 0.0991, -0.3276, 1.0617, 0.308, -0.005, 0.046, 0.7113]
+D65 = [0.9089, -0.3577, -0.0787, -0.3563, 1.1326, 0.2557, -0.0114, 0.0928, 0.5904]

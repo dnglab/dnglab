@@ -1,0 +1,115 @@
+---
+file:
+  fileSize: 22233088
+  fileName: ILCE-7M5_ISO_100_14bits_APSC_Lossless Compressed RAW.ARW
+  digest: 67daa26d592123c78837864ac50866d4
+data:
+  metadata:
+    rawParams:
+      rawWidth: 5120
+      rawHeight: 3584
+      bitDepth: 16
+      cropArea:
+        p:
+          x: 12
+          y: 8
+        d:
+          w: 4608
+          h: 3072
+      activeArea:
+        p:
+          x: 0
+          y: 0
+        d:
+          w: 4632
+          h: 3088
+      blacklevels:
+        levels:
+          - 512/1
+          - 512/1
+          - 512/1
+          - 512/1
+        cpp: 1
+        width: 2
+        height: 2
+      whitelevels:
+        - 15360
+      wbCoeffs:
+        - 2.8271484
+        - 1.0
+        - 1.3203125
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ~
+        artist: ~
+        lens_spec:
+          - 24/1
+          - 70/1
+          - 28/10
+          - 28/10
+        exposure_time: 1/6
+        fnumber: 28/10
+        aperture_value: ~
+        brightness_value: 4144/2560
+        iso_speed_ratings: 100
+        iso_speed: ~
+        recommended_exposure_index: 100
+        sensitivity_type: 2
+        exposure_bias: 3/10
+        date_time_original: "2025:12:17 16:06:25"
+        create_date: "2025:12:17 16:06:25"
+        modify_date: "2025:12:17 16:06:25"
+        exposure_program: 3
+        timezone_offset: ~
+        offset_time: "+01:00"
+        offset_time_original: "+01:00"
+        offset_time_digitized: "+01:00"
+        sub_sec_time: "008"
+        sub_sec_time_original: "008"
+        sub_sec_time_digitized: "008"
+        shutter_speed_value: ~
+        max_aperture_value: 760/256
+        subject_distance: ~
+        metering_mode: 5
+        light_source: 0
+        flash: 16
+        focal_length: 240/10
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: "02052278"
+        lens_serial_number: ~
+        lens_make: Sigma
+        lens_model: 24-70mm F2.8 DG DN II | A
+        gps: ~
+        user_comment: ~
+      model: ILCE-7M5
+      make: Sony
+      lens:
+        identifiers:
+          name: ~
+          id:
+            - 514
+            - 0
+          nikon_id: ~
+          olympus_id: ~
+        mount: e-mount
+        lens_make: Sigma
+        lens_model: 24-70mm F2.8 DG DN II | A
+        focal_range:
+          - 24/1
+          - 70/1
+        aperture_range:
+          - 28/10
+          - 28/10
+        lens_name: Sigma 24-70mm F2.8 DG DN II | A
+      unique_image_id: ~
+      rating: ~
+

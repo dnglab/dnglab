@@ -12,6 +12,7 @@ use crate::alloc_image;
 use crate::bits::*;
 use crate::decoders::decode_threaded;
 use crate::decoders::decode_threaded_multiline;
+use crate::decompressors::arw6::decompress_arw6;
 use crate::decompressors::ljpeg::LjpegDecompressor;
 use crate::exif::Exif;
 use crate::formats::tiff::Entry;
@@ -64,7 +65,18 @@ pub struct ArwDecoder<'a> {
 
 impl<'a> ArwDecoder<'a> {
   pub fn new(file: &RawSource, tiff: GenericTiffReader, rawloader: &'a RawLoader) -> Result<ArwDecoder<'a>> {
-    let camera = rawloader.check_supported(tiff.root_ifd())?;
+    let data = tiff.find_ifds_with_tag(TiffCommonTag::StripOffsets);
+    let compression = if !data.is_empty() {
+      fetch_tiff_tag!(data[0], TiffCommonTag::Compression).force_u32(0)
+    } else {
+      0
+    };
+    let mode = match compression {
+      32766 => "arw6", // New wavelet based compression
+      _ => "",
+    };
+
+    let camera = rawloader.check_supported_with_mode(tiff.root_ifd(), mode)?;
 
     let makernote = if let Some(exif) = tiff.find_first_ifd_with_tag(ExifTag::MakerNotes) {
       exif.parse_makernote(&mut file.reader(), OffsetMode::Absolute, &[])?
@@ -133,6 +145,10 @@ impl<'a> Decoder for ArwDecoder<'a> {
         // Starting with A-1, image is compressed in tiles with LJPEG92.
         // Data is RGGB for bayer readout and YCbCr for reduced resolution files.
         ArwDecoder::decode_ljpeg(&self.camera, file, raw, dummy)?
+      }
+      32766 => {
+        let curve = ArwDecoder::get_curve(raw)?;
+        ArwDecoder::decode_arw6(src, width, height, &curve, dummy)?
       }
       32767 => {
         if (width * height * bps) != count * 8 {
@@ -418,6 +434,10 @@ impl<'a> ArwDecoder<'a> {
       }
     }
     out
+  }
+
+  pub(crate) fn decode_arw6(buf: &[u8], width: usize, height: usize, curve: &LookupTable, dummy: bool) -> Result<PixU16> {
+    decompress_arw6(buf, width, height, curve, dummy)
   }
 
   pub(crate) fn decode_arw2(buf: &[u8], width: usize, height: usize, curve: &LookupTable, dummy: bool) -> PixU16 {
