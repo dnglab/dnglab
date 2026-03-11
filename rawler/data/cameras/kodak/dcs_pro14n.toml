@@ -1,7 +1,7 @@
 make = "Kodak"
 model = "DCS Pro 14N"
 clean_make = "Kodak"
-clean_model = "DCS Pro 14N"
+clean_model = "DCS Pro 14n"
 blackpoint = 0
 whitepoint = 3700
 color_pattern = "GRBG"
