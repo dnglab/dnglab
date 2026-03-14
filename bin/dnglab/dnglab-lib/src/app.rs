@@ -136,6 +136,36 @@ pub fn create_app() -> Command {
         .arg(arg!(<FILE> "Input file").value_parser(clap::value_parser!(PathBuf))),
     )
     .subcommand(
+      Command::new("process-raw")
+        .arg(
+          arg!(--"artist" <artist> "Set the artist tag")
+            .required(false)
+            .value_parser(NonEmptyStringValueParser::new()),
+        )
+        .arg(
+          arg!(keep_mtime: --"keep-mtime" <keepmtime> "Keep mtime, read from EXIF with fallback to original file mtime")
+            .value_parser(ValueParser::bool())
+            .required(false)
+            .default_value("false")
+            .default_missing_value("false"),
+        )
+        .arg(
+          arg!(index: --"image-index" <index> "Select a specific image index (or 'all') if file is a image container")
+            .required(false)
+            .default_value("0"),
+        )
+        .arg(
+          arg!(--"crop" <crop> "DNG default crop")
+            .required(false)
+            .value_parser(value_parser!(CropMode))
+            .default_value("best"),
+        )
+        .arg(arg!(-f --override "Override existing files").action(ArgAction::SetTrue))
+        .arg(arg!(-r --recursive "Process input directory recursive").action(ArgAction::SetTrue))
+        .arg(arg!(<INPUT> "Input file or directory").value_parser(clap::value_parser!(PathBuf)))
+        .arg(arg!(<OUTPUT> "Output file or existing directory").value_parser(clap::value_parser!(PathBuf))),
+    )
+    .subcommand(
       convert_base
         .clone()
         .name("convert")

@@ -1,5 +1,6 @@
 use std::cell::UnsafeCell;
 
+use itertools::Itertools;
 use multiversion::multiversion;
 use rayon::prelude::*;
 
@@ -399,6 +400,10 @@ where
     self.data.iter().flatten().copied().collect::<Vec<T>>()
   }
 
+  pub fn into_flatten(self) -> Vec<T> {
+    self.data.into_iter().flatten().collect::<Vec<T>>()
+  }
+
   pub fn data_ptr(&self) -> Color2DPtr<T, N> {
     Color2DPtr::new(self)
   }
@@ -485,6 +490,33 @@ where
         .cloned(),
     );
     Self::new_with(output, area.d.w, area.d.h)
+  }
+
+  pub fn rotate_90cw(&self) -> Self {
+    let mut out = Self::new(self.height, self.width);
+    let out_width = out.width;
+    out.pixels_mut().chunks_exact_mut(out_width).enumerate().for_each(|(row, line)| {
+      line.iter_mut().enumerate().for_each(|(col, pixel)| {
+        *pixel = *self.at(self.height - 1 - col, row);
+      });
+    });
+    out
+  }
+
+  pub fn rotate_90ccw(&self) -> Self {
+    let mut out = Self::new(self.height, self.width);
+    let out_width = out.width;
+    out.pixels_mut().chunks_exact_mut(out_width).enumerate().for_each(|(row, line)| {
+      line.iter_mut().enumerate().for_each(|(col, pixel)| {
+        *pixel = *self.at(col, self.width - 1 - row);
+      });
+    });
+    out
+  }
+
+  pub fn rotate_180(&self) -> Self {
+    let data = self.pixels().iter().rev().copied().collect_vec();
+    Self::new_with(data, self.width, self.height)
   }
 }
 

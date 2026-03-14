@@ -8,6 +8,7 @@ use serde::{Deserialize, Serialize};
 use crate::Result;
 use crate::cfa::PlaneColor;
 use crate::imgop::raw::{correct_blacklevel, correct_blacklevel_cfa};
+use crate::imgop::sensor::SensorType;
 use crate::imgop::{convert_from_f32_scaled_u16, convert_to_f32_unscaled};
 use crate::pixarray::SubPixel;
 use crate::{
@@ -172,6 +173,7 @@ pub enum RawPhotometricInterpretation {
 pub struct CFAConfig {
   pub cfa: CFA,
   pub colors: PlaneColor,
+  pub sensor: SensorType,
 }
 
 impl CFAConfig {
@@ -179,6 +181,7 @@ impl CFAConfig {
     Self {
       cfa: cfa.clone(),
       colors: colors.clone(),
+      sensor: SensorType::from_cfa(cfa),
     }
   }
 
@@ -186,6 +189,7 @@ impl CFAConfig {
     Self {
       cfa: cam.cfa.clone(),
       colors: cam.plane_color.clone(),
+      sensor: SensorType::from_cfa(&cam.cfa),
     }
   }
 }
@@ -239,6 +243,10 @@ pub struct RawImage {
   pub color_matrix: HashMap<Illuminant, FlatColorMatrix>,
 
   pub dng_tags: HashMap<u16, Value>,
+
+  /// For Fuji rotated sensors: the split point T used to compute the
+  /// inscribed rectangle after 45° rotation (equivalent to dcraw's fuji_width).
+  pub fuji_rotation_width: Option<usize>,
 }
 
 /// The actual image data, after decoding
@@ -389,6 +397,7 @@ impl RawImage {
       orientation: Orientation::Normal, //cam.orientation, // TODO fixme
       color_matrix: cam.color_matrix,
       dng_tags: HashMap::new(),
+      fuji_rotation_width: None,
     }
   }
 
@@ -478,6 +487,7 @@ impl RawImage {
       orientation: Orientation::Normal, //cam.orientation, // TODO fixme
       color_matrix: cam.color_matrix,
       dng_tags: HashMap::new(),
+      fuji_rotation_width: None,
     }
   }
 
@@ -704,6 +714,18 @@ impl RawImage {
   pub fn is_monochrome(&self) -> bool {
     self.photometric == RawPhotometricInterpretation::BlackIsZero
     //self.cpp == 1 && !self.cfa.is_valid()
+  }
+
+  /// Find the first matching color matrix by illumninat
+  ///
+  /// First item in iterator has highest prio
+  pub fn color_matrix_find_first(&self, illuminants: impl IntoIterator<Item = Illuminant>) -> Option<(Illuminant, FlatColorMatrix)> {
+    for illu in illuminants.into_iter() {
+      if let Some(matrix) = self.color_matrix.get(&illu) {
+        return Some((illu, matrix.clone()));
+      }
+    }
+    None
   }
 }
 

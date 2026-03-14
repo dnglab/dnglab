@@ -26,6 +26,7 @@ set edit:completion:arg-completer[dnglab] = {|@words|
             cand -V 'Print version'
             cand --version 'Print version'
             cand analyze 'Analyze raw image'
+            cand process-raw 'process-raw'
             cand convert 'Convert raw image(s) into dng format'
             cand ftpserver 'Convert raw image(s) into dng format'
             cand cameras 'List supported cameras'
@@ -51,6 +52,21 @@ set edit:completion:arg-completer[dnglab] = {|@words|
             cand --summary 'Write summary information for file to STDOUT'
             cand --json 'Format metadata as JSON'
             cand --yaml 'Format metadata as YAML'
+            cand -v 'Print status for every file'
+            cand -h 'Print help'
+            cand --help 'Print help'
+        }
+        &'dnglab;process-raw'= {
+            cand --artist 'Set the artist tag'
+            cand --keep-mtime 'Keep mtime, read from EXIF with fallback to original file mtime'
+            cand --image-index 'Select a specific image index (or ''all'') if file is a image container'
+            cand --crop 'DNG default crop'
+            cand -d 'Log level'
+            cand --loglevel 'Log level'
+            cand -f 'Override existing files'
+            cand --override 'Override existing files'
+            cand -r 'Process input directory recursive'
+            cand --recursive 'Process input directory recursive'
             cand -v 'Print status for every file'
             cand -h 'Print help'
             cand --help 'Print help'
@@ -164,6 +180,7 @@ set edit:completion:arg-completer[dnglab] = {|@words|
         }
         &'dnglab;help'= {
             cand analyze 'Analyze raw image'
+            cand process-raw 'process-raw'
             cand convert 'Convert raw image(s) into dng format'
             cand ftpserver 'Convert raw image(s) into dng format'
             cand cameras 'List supported cameras'
@@ -174,6 +191,8 @@ set edit:completion:arg-completer[dnglab] = {|@words|
             cand help 'Print this message or the help of the given subcommand(s)'
         }
         &'dnglab;help;analyze'= {
+        }
+        &'dnglab;help;process-raw'= {
         }
         &'dnglab;help;convert'= {
         }

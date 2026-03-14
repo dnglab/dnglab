@@ -3,6 +3,7 @@
 
 pub mod chromatic_adaption;
 pub mod develop;
+pub mod fuji_rotate;
 pub mod gamma;
 pub mod matrix;
 pub mod raw;
