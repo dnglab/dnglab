@@ -29,6 +29,7 @@ Register-ArgumentCompleter -Native -CommandName 'dnglab' -ScriptBlock {
             [CompletionResult]::new('-V', '-V ', [CompletionResultType]::ParameterName, 'Print version')
             [CompletionResult]::new('--version', '--version', [CompletionResultType]::ParameterName, 'Print version')
             [CompletionResult]::new('analyze', 'analyze', [CompletionResultType]::ParameterValue, 'Analyze raw image')
+            [CompletionResult]::new('process-raw', 'process-raw', [CompletionResultType]::ParameterValue, 'process-raw')
             [CompletionResult]::new('convert', 'convert', [CompletionResultType]::ParameterValue, 'Convert raw image(s) into dng format')
             [CompletionResult]::new('ftpserver', 'ftpserver', [CompletionResultType]::ParameterValue, 'Convert raw image(s) into dng format')
             [CompletionResult]::new('cameras', 'cameras', [CompletionResultType]::ParameterValue, 'List supported cameras')
@@ -55,6 +56,22 @@ Register-ArgumentCompleter -Native -CommandName 'dnglab' -ScriptBlock {
             [CompletionResult]::new('--summary', '--summary', [CompletionResultType]::ParameterName, 'Write summary information for file to STDOUT')
             [CompletionResult]::new('--json', '--json', [CompletionResultType]::ParameterName, 'Format metadata as JSON')
             [CompletionResult]::new('--yaml', '--yaml', [CompletionResultType]::ParameterName, 'Format metadata as YAML')
+            [CompletionResult]::new('-v', '-v', [CompletionResultType]::ParameterName, 'Print status for every file')
+            [CompletionResult]::new('-h', '-h', [CompletionResultType]::ParameterName, 'Print help')
+            [CompletionResult]::new('--help', '--help', [CompletionResultType]::ParameterName, 'Print help')
+            break
+        }
+        'dnglab;process-raw' {
+            [CompletionResult]::new('--artist', '--artist', [CompletionResultType]::ParameterName, 'Set the artist tag')
+            [CompletionResult]::new('--keep-mtime', '--keep-mtime', [CompletionResultType]::ParameterName, 'Keep mtime, read from EXIF with fallback to original file mtime')
+            [CompletionResult]::new('--image-index', '--image-index', [CompletionResultType]::ParameterName, 'Select a specific image index (or ''all'') if file is a image container')
+            [CompletionResult]::new('--crop', '--crop', [CompletionResultType]::ParameterName, 'DNG default crop')
+            [CompletionResult]::new('-d', '-d', [CompletionResultType]::ParameterName, 'Log level')
+            [CompletionResult]::new('--loglevel', '--loglevel', [CompletionResultType]::ParameterName, 'Log level')
+            [CompletionResult]::new('-f', '-f', [CompletionResultType]::ParameterName, 'Override existing files')
+            [CompletionResult]::new('--override', '--override', [CompletionResultType]::ParameterName, 'Override existing files')
+            [CompletionResult]::new('-r', '-r', [CompletionResultType]::ParameterName, 'Process input directory recursive')
+            [CompletionResult]::new('--recursive', '--recursive', [CompletionResultType]::ParameterName, 'Process input directory recursive')
             [CompletionResult]::new('-v', '-v', [CompletionResultType]::ParameterName, 'Print status for every file')
             [CompletionResult]::new('-h', '-h', [CompletionResultType]::ParameterName, 'Print help')
             [CompletionResult]::new('--help', '--help', [CompletionResultType]::ParameterName, 'Print help')
@@ -176,6 +193,7 @@ Register-ArgumentCompleter -Native -CommandName 'dnglab' -ScriptBlock {
         }
         'dnglab;help' {
             [CompletionResult]::new('analyze', 'analyze', [CompletionResultType]::ParameterValue, 'Analyze raw image')
+            [CompletionResult]::new('process-raw', 'process-raw', [CompletionResultType]::ParameterValue, 'process-raw')
             [CompletionResult]::new('convert', 'convert', [CompletionResultType]::ParameterValue, 'Convert raw image(s) into dng format')
             [CompletionResult]::new('ftpserver', 'ftpserver', [CompletionResultType]::ParameterValue, 'Convert raw image(s) into dng format')
             [CompletionResult]::new('cameras', 'cameras', [CompletionResultType]::ParameterValue, 'List supported cameras')
@@ -187,6 +205,9 @@ Register-ArgumentCompleter -Native -CommandName 'dnglab' -ScriptBlock {
             break
         }
         'dnglab;help;analyze' {
+            break
+        }
+        'dnglab;help;process-raw' {
             break
         }
         'dnglab;help;convert' {

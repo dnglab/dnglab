@@ -78,6 +78,7 @@ async fn main_async() -> dnglab_lib::Result<()> {
     Some(("analyze", sc)) => analyze::analyze(sc).await,
     Some(("convert", sc)) => convert::convert(sc).await,
     Some(("makedng", sc)) => makedng::makedng(sc).await,
+    Some(("process-raw", sc)) => process_raw::process_raw(sc).await,
     Some(("extract", sc)) => extract::extract(sc).await,
     Some(("ftpserver", sc)) => ftpconv::ftpserver(sc).await,
     Some(("lenses", sc)) => lenses::lenses(sc).await,

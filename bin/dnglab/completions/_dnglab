@@ -54,6 +54,25 @@ _arguments "${_arguments_options[@]}" : \
 ':FILE -- Input file:_files' \
 && ret=0
 ;;
+(process-raw)
+_arguments "${_arguments_options[@]}" : \
+'--artist=[Set the artist tag]:artist:_default' \
+'--keep-mtime=[Keep mtime, read from EXIF with fallback to original file mtime]:keepmtime:(true false)' \
+'--image-index=[Select a specific image index (or '\''all'\'') if file is a image container]:index:_default' \
+'--crop=[DNG default crop]:crop:(best activearea none)' \
+'-d+[Log level]:level:(error warn info debug trace)' \
+'--loglevel=[Log level]:level:(error warn info debug trace)' \
+'-f[Override existing files]' \
+'--override[Override existing files]' \
+'-r[Process input directory recursive]' \
+'--recursive[Process input directory recursive]' \
+'-v[Print status for every file]' \
+'-h[Print help]' \
+'--help[Print help]' \
+':INPUT -- Input file or directory:_files' \
+':OUTPUT -- Output file or existing directory:_files' \
+&& ret=0
+;;
 (convert)
 _arguments "${_arguments_options[@]}" : \
 '-c+[Compression for raw image]:compression:(lossless uncompressed)' \
@@ -196,6 +215,10 @@ _arguments "${_arguments_options[@]}" : \
 _arguments "${_arguments_options[@]}" : \
 && ret=0
 ;;
+(process-raw)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
 (convert)
 _arguments "${_arguments_options[@]}" : \
 && ret=0
@@ -241,6 +264,7 @@ esac
 _dnglab_commands() {
     local commands; commands=(
 'analyze:Analyze raw image' \
+'process-raw:' \
 'convert:Convert raw image(s) into dng format' \
 'ftpserver:Convert raw image(s) into dng format' \
 'cameras:List supported cameras' \
@@ -286,6 +310,7 @@ _dnglab__gui_commands() {
 _dnglab__help_commands() {
     local commands; commands=(
 'analyze:Analyze raw image' \
+'process-raw:' \
 'convert:Convert raw image(s) into dng format' \
 'ftpserver:Convert raw image(s) into dng format' \
 'cameras:List supported cameras' \
@@ -342,6 +367,11 @@ _dnglab__help__makedng_commands() {
     local commands; commands=()
     _describe -t commands 'dnglab help makedng commands' commands "$@"
 }
+(( $+functions[_dnglab__help__process-raw_commands] )) ||
+_dnglab__help__process-raw_commands() {
+    local commands; commands=()
+    _describe -t commands 'dnglab help process-raw commands' commands "$@"
+}
 (( $+functions[_dnglab__lenses_commands] )) ||
 _dnglab__lenses_commands() {
     local commands; commands=()
@@ -351,6 +381,11 @@ _dnglab__lenses_commands() {
 _dnglab__makedng_commands() {
     local commands; commands=()
     _describe -t commands 'dnglab makedng commands' commands "$@"
+}
+(( $+functions[_dnglab__process-raw_commands] )) ||
+_dnglab__process-raw_commands() {
+    local commands; commands=()
+    _describe -t commands 'dnglab process-raw commands' commands "$@"
 }
 
 if [ "$funcstack[1]" = "_dnglab" ]; then

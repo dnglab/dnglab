@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: LGPL-2.1
 // Copyright 2021 Daniel Vogelbacher <daniel@chaospixel.com>
 
+use async_trait::async_trait;
 use std::fmt::Debug;
 
 pub mod extractraw;
+pub mod process_raw;
 pub mod raw2dng;
-use async_trait::async_trait;
 
 #[async_trait]
 pub trait Job: Clone + Debug + Send {
