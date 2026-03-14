@@ -158,7 +158,7 @@ pub async fn makedng_internal(options: &ArgMatches, dest_path: &Path) -> crate::
   if let Ok(preview_input) = get_input_path(&inputs, &maps, InputUsage::Preview) {
     let rawfile = RawSource::new(preview_input)?;
     if let Ok(decoder) = get_decoder(&rawfile) {
-      if let Some(preview) = decoder.full_image(&rawfile, &RawDecodeParams::default())? {
+      if let Some(preview) = decoder.preview_image(&rawfile, &RawDecodeParams::default())? {
         let mut frame = dng.subframe(1);
         frame.preview(&preview, 0.7)?;
         frame.finalize()?;
@@ -176,7 +176,7 @@ pub async fn makedng_internal(options: &ArgMatches, dest_path: &Path) -> crate::
   if let Ok(thumbnail_input) = get_input_path(&inputs, &maps, InputUsage::Thumbnail) {
     let rawfile = RawSource::new(thumbnail_input)?;
     if let Ok(decoder) = get_decoder(&rawfile) {
-      if let Some(preview) = decoder.full_image(&rawfile, &RawDecodeParams::default())? {
+      if let Some(preview) = decoder.preview_image(&rawfile, &RawDecodeParams::default())? {
         dng.thumbnail(&preview)?;
       }
     } else {

@@ -40,6 +40,7 @@ _arguments "${_arguments_options[@]}" : \
 '--preview-pixel[Write uncompressed preview pixel data to STDOUT]' \
 '--thumbnail-pixel[Write uncompressed preview pixel data to STDOUT]' \
 '--raw-checksum[Write MD5 checksum of raw pixels to STDOUT]' \
+'--full-checksum[Write MD5 checksum of full pixels to STDOUT]' \
 '--preview-checksum[Write MD5 checksum of preview pixels to STDOUT]' \
 '--thumbnail-checksum[Write MD5 checksum of thumbnail pixels to STDOUT]' \
 '--srgb[Write sRGB 16-bit TIFF to STDOUT]' \

@@ -3,6 +3,9 @@
 
 //#[cfg(feature = "samplecheck")]
 use md5::Digest;
+use rawler::analyze::extract_full_pixels;
+use rawler::analyze::extract_preview_pixels;
+use rawler::analyze::extract_thumbnail_pixels;
 use rawler::dng::convert::ConvertParams;
 use rawler::dng::convert::convert_raw_file;
 use rawler::{
@@ -11,9 +14,46 @@ use rawler::{
 };
 use std::{
   convert::TryInto,
+  io::{Seek, SeekFrom, Write},
   path::{Path, PathBuf},
 };
 use zerocopy::IntoBytes;
+
+/// A `Write + Seek` implementation that discards all data
+/// while correctly tracking the stream position.
+pub(crate) struct SeekableSink {
+  pos: u64,
+}
+
+impl SeekableSink {
+  pub(crate) fn new() -> Self {
+    Self { pos: 0 }
+  }
+}
+
+impl Write for SeekableSink {
+  fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
+    self.pos += buf.len() as u64;
+    Ok(buf.len())
+  }
+
+  fn flush(&mut self) -> std::io::Result<()> {
+    Ok(())
+  }
+}
+
+impl Seek for SeekableSink {
+  fn seek(&mut self, pos: SeekFrom) -> std::io::Result<u64> {
+    match pos {
+      SeekFrom::Start(p) => self.pos = p,
+      SeekFrom::End(_) => self.pos = u64::MAX,
+      SeekFrom::Current(off) => {
+        self.pos = (self.pos as i64).wrapping_add(off) as u64;
+      }
+    }
+    Ok(self.pos)
+  }
+}
 
 macro_rules! camera_file_check {
   ($make:expr, $model:expr, $test:ident, $file:expr) => {
@@ -54,6 +94,14 @@ pub(crate) fn check_md5_equal(digest: [u8; 16], expected: &str) {
   assert_eq!(hex::encode(digest), expected);
 }
 
+pub(crate) fn compare_digest(buf: &[u8], digest_file: impl AsRef<Path>) -> std::result::Result<(), Box<dyn std::error::Error>> {
+  let old_digest_str = std::fs::read_to_string(digest_file.as_ref())?;
+  let old_digest = Digest(TryInto::<[u8; 16]>::try_into(hex::decode(old_digest_str.trim()).expect("Malformed MD5 digest")).expect("Must be [u8; 16]"));
+  let new_digest = md5::compute(buf);
+  assert_eq!(old_digest, new_digest, "Old and new digest not match for file {}", digest_file.as_ref().display());
+  Ok(())
+}
+
 /// Generic function to check camera raw files against
 /// pre-generated stats and pixel files.
 pub(crate) fn check_camera_raw_file_conversion(category: &str, make: &str, model: &str, sample: &str) -> std::result::Result<(), Box<dyn std::error::Error>> {
@@ -70,11 +118,20 @@ pub(crate) fn check_camera_raw_file_conversion(category: &str, make: &str, model
   let raw_file = camera_rawdb.join(make).join(model).join(sample);
   let filename = raw_file.file_name().map(|name| name.to_os_string()).expect("Filename must by OS string compatible");
   let mut orig_analyze_file = filename.clone();
-  let mut orig_digest_file = filename.clone();
+  let mut orig_raw_digest_file = filename.clone();
+  let mut orig_full_digest_file = filename.clone();
+  let mut orig_preview_digest_file = filename.clone();
+  let mut orig_thumbnail_digest_file = filename.clone();
   orig_analyze_file.push(".analyze.yaml");
-  orig_digest_file.push(".digest.txt");
+  orig_raw_digest_file.push(".digest.txt");
+  orig_full_digest_file.push(".digest.full.txt");
+  orig_preview_digest_file.push(".digest.preview.txt");
+  orig_thumbnail_digest_file.push(".digest.thumbnail.txt");
   let stats_file = base_path.join(sample).with_file_name(orig_analyze_file);
-  let digest_file = base_path.join(sample).with_file_name(orig_digest_file);
+  let digest_raw_file = base_path.join(sample).with_file_name(orig_raw_digest_file);
+  let digest_full_file = base_path.join(sample).with_file_name(orig_full_digest_file);
+  let digest_preview_file = base_path.join(sample).with_file_name(orig_preview_digest_file);
+  let digest_thumbnail_file = base_path.join(sample).with_file_name(orig_thumbnail_digest_file);
 
   //let pixel_file = base_path.join(&sample).with_extension("pixel");
 
@@ -91,16 +148,33 @@ pub(crate) fn check_camera_raw_file_conversion(category: &str, make: &str, model
 
   assert_eq!(old_stats, new_stats);
 
-  // Validate pixel data
-  let old_digest_str = std::fs::read_to_string(digest_file)?;
-  let old_digest = Digest(TryInto::<[u8; 16]>::try_into(hex::decode(old_digest_str.trim()).expect("Malformed MD5 digest")).expect("Must be [u8; 16]"));
-  let image = extract_raw_pixels(&raw_file, &RawDecodeParams::default()).unwrap();
-  let byte_buf = match &image.data {
-    rawler::RawImageData::Integer(samples) => samples.as_slice().as_bytes(),
-    rawler::RawImageData::Float(samples) => samples.as_slice().as_bytes(),
-  };
-  let new_digest = md5::compute(byte_buf);
-  assert_eq!(old_digest, new_digest, "Old and new raw pixel digest not match!");
+  // Validate raw pixel data
+  {
+    let image = extract_raw_pixels(&raw_file, &RawDecodeParams::default()).unwrap();
+    let byte_buf = match &image.data {
+      rawler::RawImageData::Integer(samples) => samples.as_slice().as_bytes(),
+      rawler::RawImageData::Float(samples) => samples.as_slice().as_bytes(),
+    };
+    compare_digest(byte_buf, digest_raw_file)?;
+  }
+
+  // Validate full pixel data
+  {
+    let image = extract_full_pixels(&raw_file, &RawDecodeParams::default()).unwrap();
+    compare_digest(image.as_bytes(), digest_full_file)?;
+  }
+
+  // Validate preview pixel data
+  {
+    let image = extract_preview_pixels(&raw_file, &RawDecodeParams::default()).unwrap();
+    compare_digest(image.as_bytes(), digest_preview_file)?;
+  }
+
+  // Validate full pixel data
+  {
+    let image = extract_thumbnail_pixels(&raw_file, &RawDecodeParams::default()).unwrap();
+    compare_digest(image.as_bytes(), digest_thumbnail_file)?;
+  }
 
   // Convert to DNG with default params
   let params = ConvertParams {
@@ -108,7 +182,7 @@ pub(crate) fn check_camera_raw_file_conversion(category: &str, make: &str, model
     apply_scaling: false,
     ..Default::default()
   };
-  let mut dng = std::io::Cursor::new(Vec::new());
+  let mut dng = SeekableSink::new();
   convert_raw_file(&raw_file, &mut dng, &params)?;
 
   Ok(())
@@ -168,7 +242,7 @@ pub(crate) fn check_sample_raw_file_conversion(sampleset: &str, sample: &str) ->
     apply_scaling: false,
     ..Default::default()
   };
-  let mut dng = std::io::Cursor::new(Vec::new());
+  let mut dng = SeekableSink::new();
   convert_raw_file(&raw_file, &mut dng, &params)?;
 
   Ok(())

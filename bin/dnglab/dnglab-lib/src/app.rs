@@ -125,6 +125,7 @@ pub fn create_app() -> Command {
         .arg(arg!(preview_pixel: --"preview-pixel" "Write uncompressed preview pixel data to STDOUT").action(ArgAction::SetTrue))
         .arg(arg!(thumbnail_pixel: --"thumbnail-pixel" "Write uncompressed preview pixel data to STDOUT").action(ArgAction::SetTrue))
         .arg(arg!(raw_checksum: --"raw-checksum" "Write MD5 checksum of raw pixels to STDOUT").action(ArgAction::SetTrue))
+        .arg(arg!(full_checksum: --"full-checksum" "Write MD5 checksum of full pixels to STDOUT").action(ArgAction::SetTrue))
         .arg(arg!(preview_checksum: --"preview-checksum" "Write MD5 checksum of preview pixels to STDOUT").action(ArgAction::SetTrue))
         .arg(arg!(thumbnail_checksum: --"thumbnail-checksum" "Write MD5 checksum of thumbnail pixels to STDOUT").action(ArgAction::SetTrue))
         .arg(arg!(srgb: --srgb "Write sRGB 16-bit TIFF to STDOUT").action(ArgAction::SetTrue))

@@ -44,6 +44,7 @@ set edit:completion:arg-completer[dnglab] = {|@words|
             cand --preview-pixel 'Write uncompressed preview pixel data to STDOUT'
             cand --thumbnail-pixel 'Write uncompressed preview pixel data to STDOUT'
             cand --raw-checksum 'Write MD5 checksum of raw pixels to STDOUT'
+            cand --full-checksum 'Write MD5 checksum of full pixels to STDOUT'
             cand --preview-checksum 'Write MD5 checksum of preview pixels to STDOUT'
             cand --thumbnail-checksum 'Write MD5 checksum of thumbnail pixels to STDOUT'
             cand --srgb 'Write sRGB 16-bit TIFF to STDOUT'

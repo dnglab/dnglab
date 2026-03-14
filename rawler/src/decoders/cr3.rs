@@ -417,7 +417,7 @@ impl<'a> Decoder for Cr3Decoder<'a> {
   }
 
   /// Extract preview image embedded in CR3
-  fn full_image(&self, file: &RawSource, params: &RawDecodeParams) -> Result<Option<DynamicImage>> {
+  fn preview_image(&self, file: &RawSource, params: &RawDecodeParams) -> Result<Option<DynamicImage>> {
     if params.image_index != 0 {
       return Ok(None);
     }
@@ -433,10 +433,11 @@ impl<'a> Decoder for Cr3Decoder<'a> {
     match image::load_from_memory_with_format(buf, image::ImageFormat::Jpeg) {
       Ok(img) => Ok(Some(img)),
       Err(e) => {
-        debug!("TRAK 0 contains no JPEG preview, is it PQ/HEIF? Error: {}", e);
-        Err(RawlerError::DecoderFailed(
-          "Unable to extract preview image from CR3 HDR-PQ file. Please see 'https://github.com/dnglab/dnglab/issues/7'".into(),
-        ))
+        warn!("TRAK 0 contains no JPEG preview, is it PQ/HEIF? Error: {}", e);
+        //Err(RawlerError::DecoderFailed(
+        //  "Unable to extract preview image from CR3 HDR-PQ file. Please see 'https://github.com/dnglab/dnglab/issues/7'".into(),
+        //))
+        Ok(None)
       }
     }
   }
@@ -700,7 +701,7 @@ impl Ctmd {
   pub fn focal_len(&self) -> Result<Option<Rational>> {
     if let Some(rec) = self.records.get(&4) {
       if rec.payload.len() < 4 {
-        return Ok(None)
+        return Ok(None);
       }
       let mut buf = ByteStream::new(rec.payload.as_slice(), Endian::Little);
       let focal_len = Rational::new(buf.get_u16().into(), buf.get_u16().into());

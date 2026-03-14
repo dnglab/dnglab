@@ -4,7 +4,7 @@
 .SH NAME
 dnglab\-analyze \- Analyze raw image
 .SH SYNOPSIS
-\fBdnglab\-analyze\fR [\fB\-\-raw\-pixel\fR] [\fB\-\-full\-pixel\fR] [\fB\-\-preview\-pixel\fR] [\fB\-\-thumbnail\-pixel\fR] [\fB\-\-raw\-checksum\fR] [\fB\-\-preview\-checksum\fR] [\fB\-\-thumbnail\-checksum\fR] [\fB\-\-srgb\fR] [\fB\-\-meta\fR] [\fB\-\-structure\fR] [\fB\-\-summary\fR] [\fB\-\-json\fR] [\fB\-\-yaml\fR] [\fB\-h\fR|\fB\-\-help\fR] <\fIFILE\fR> 
+\fBdnglab\-analyze\fR [\fB\-\-raw\-pixel\fR] [\fB\-\-full\-pixel\fR] [\fB\-\-preview\-pixel\fR] [\fB\-\-thumbnail\-pixel\fR] [\fB\-\-raw\-checksum\fR] [\fB\-\-full\-checksum\fR] [\fB\-\-preview\-checksum\fR] [\fB\-\-thumbnail\-checksum\fR] [\fB\-\-srgb\fR] [\fB\-\-meta\fR] [\fB\-\-structure\fR] [\fB\-\-summary\fR] [\fB\-\-json\fR] [\fB\-\-yaml\fR] [\fB\-h\fR|\fB\-\-help\fR] <\fIFILE\fR> 
 .SH DESCRIPTION
 Analyze raw image
 .SH OPTIONS
@@ -23,6 +23,9 @@ Write uncompressed preview pixel data to STDOUT
 .TP
 \fB\-\-raw\-checksum\fR
 Write MD5 checksum of raw pixels to STDOUT
+.TP
+\fB\-\-full\-checksum\fR
+Write MD5 checksum of full pixels to STDOUT
 .TP
 \fB\-\-preview\-checksum\fR
 Write MD5 checksum of preview pixels to STDOUT

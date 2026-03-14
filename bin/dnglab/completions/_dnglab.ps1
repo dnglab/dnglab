@@ -48,6 +48,7 @@ Register-ArgumentCompleter -Native -CommandName 'dnglab' -ScriptBlock {
             [CompletionResult]::new('--preview-pixel', '--preview-pixel', [CompletionResultType]::ParameterName, 'Write uncompressed preview pixel data to STDOUT')
             [CompletionResult]::new('--thumbnail-pixel', '--thumbnail-pixel', [CompletionResultType]::ParameterName, 'Write uncompressed preview pixel data to STDOUT')
             [CompletionResult]::new('--raw-checksum', '--raw-checksum', [CompletionResultType]::ParameterName, 'Write MD5 checksum of raw pixels to STDOUT')
+            [CompletionResult]::new('--full-checksum', '--full-checksum', [CompletionResultType]::ParameterName, 'Write MD5 checksum of full pixels to STDOUT')
             [CompletionResult]::new('--preview-checksum', '--preview-checksum', [CompletionResultType]::ParameterName, 'Write MD5 checksum of preview pixels to STDOUT')
             [CompletionResult]::new('--thumbnail-checksum', '--thumbnail-checksum', [CompletionResultType]::ParameterName, 'Write MD5 checksum of thumbnail pixels to STDOUT')
             [CompletionResult]::new('--srgb', '--srgb', [CompletionResultType]::ParameterName, 'Write sRGB 16-bit TIFF to STDOUT')

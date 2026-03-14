@@ -52,6 +52,7 @@ complete -c dnglab -n "__fish_dnglab_using_subcommand analyze" -l full-pixel -d 
 complete -c dnglab -n "__fish_dnglab_using_subcommand analyze" -l preview-pixel -d 'Write uncompressed preview pixel data to STDOUT'
 complete -c dnglab -n "__fish_dnglab_using_subcommand analyze" -l thumbnail-pixel -d 'Write uncompressed preview pixel data to STDOUT'
 complete -c dnglab -n "__fish_dnglab_using_subcommand analyze" -l raw-checksum -d 'Write MD5 checksum of raw pixels to STDOUT'
+complete -c dnglab -n "__fish_dnglab_using_subcommand analyze" -l full-checksum -d 'Write MD5 checksum of full pixels to STDOUT'
 complete -c dnglab -n "__fish_dnglab_using_subcommand analyze" -l preview-checksum -d 'Write MD5 checksum of preview pixels to STDOUT'
 complete -c dnglab -n "__fish_dnglab_using_subcommand analyze" -l thumbnail-checksum -d 'Write MD5 checksum of thumbnail pixels to STDOUT'
 complete -c dnglab -n "__fish_dnglab_using_subcommand analyze" -l srgb -d 'Write sRGB 16-bit TIFF to STDOUT'

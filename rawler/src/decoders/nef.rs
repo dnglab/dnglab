@@ -304,7 +304,7 @@ impl<'a> Decoder for NefDecoder<'a> {
 
     if cpp == 3 {
       // Reset levels to defaults (0)
-      img.blacklevel = BlackLevel::default();
+      img.blacklevel = BlackLevel::zero(1, 1, cpp);
       img.whitelevel = WhiteLevel::new(vec![65535; cpp]);
     }
 
@@ -326,7 +326,7 @@ impl<'a> Decoder for NefDecoder<'a> {
     })
   }
 
-  fn full_image(&self, file: &RawSource, params: &RawDecodeParams) -> Result<Option<DynamicImage>> {
+  fn preview_image(&self, file: &RawSource, params: &RawDecodeParams) -> Result<Option<DynamicImage>> {
     if params.image_index != 0 {
       return Ok(None);
     }

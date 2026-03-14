@@ -195,7 +195,7 @@ impl<'a> Decoder for Rw2Decoder<'a> {
     Ok(img)
   }
 
-  fn full_image(&self, _file: &RawSource, params: &RawDecodeParams) -> Result<Option<DynamicImage>> {
+  fn preview_image(&self, _file: &RawSource, params: &RawDecodeParams) -> Result<Option<DynamicImage>> {
     if params.image_index != 0 {
       return Ok(None);
     }

@@ -3,6 +3,7 @@ model = "E5700"
 clean_make = "Nikon"
 clean_model = "E5700"
 color_pattern = "RGEB" # TODO: unsupported
+plane_color = "RGBE"
 active_area = [0, 0, 0, 0]
 crop_area = [8, 2, 8, 2]
 hints = ["coolpixsplit", "nowb"]
