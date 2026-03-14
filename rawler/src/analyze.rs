@@ -206,8 +206,14 @@ pub fn extract_full_pixels<P: AsRef<Path>>(path: P, params: &RawDecodeParams) ->
   let decoder = crate::get_decoder(&rawfile)?;
   match decoder.full_image(&rawfile, params)? {
     Some(preview) => Ok(preview),
-    None => Err("Unable to extract full image from RAW".into()),
+    None => raw_to_srgb(path, params),
   }
+}
+
+pub fn full_image_digest<P: AsRef<Path>>(path: P, params: &RawDecodeParams) -> Result<[u8; 16]> {
+  let image = extract_full_pixels(path, params)?;
+  let byte_buf = image.as_bytes();
+  Ok(md5::compute(byte_buf).into())
 }
 
 pub fn extract_preview_pixels<P: AsRef<Path>>(path: P, params: &RawDecodeParams) -> Result<DynamicImage> {
@@ -215,11 +221,14 @@ pub fn extract_preview_pixels<P: AsRef<Path>>(path: P, params: &RawDecodeParams)
   let decoder = crate::get_decoder(&rawfile)?;
   match decoder.preview_image(&rawfile, params)? {
     Some(preview) => Ok(preview),
-    None => match decoder.full_image(&rawfile, params)? {
-      Some(preview) => Ok(preview),
-      None => Err("Unable to extract preview image from RAW".into()),
-    },
+    None => extract_full_pixels(path, params),
   }
+}
+
+pub fn preview_digest<P: AsRef<Path>>(path: P, params: &RawDecodeParams) -> Result<[u8; 16]> {
+  let image = extract_preview_pixels(path, params)?;
+  let byte_buf = image.as_bytes();
+  Ok(md5::compute(byte_buf).into())
 }
 
 pub fn extract_thumbnail_pixels<P: AsRef<Path>>(path: P, params: &RawDecodeParams) -> Result<DynamicImage> {
@@ -227,14 +236,14 @@ pub fn extract_thumbnail_pixels<P: AsRef<Path>>(path: P, params: &RawDecodeParam
   let decoder = crate::get_decoder(&rawfile)?;
   match decoder.thumbnail_image(&rawfile, params)? {
     Some(thumbnail) => Ok(thumbnail),
-    None => match decoder.preview_image(&rawfile, params)? {
-      Some(thumbnail) => Ok(thumbnail),
-      None => match decoder.full_image(&rawfile, params)? {
-        Some(thumbnail) => Ok(thumbnail),
-        None => Err("Unable to extract thumbnail image from RAW".into()),
-      },
-    },
+    None => extract_preview_pixels(path, params),
   }
+}
+
+pub fn thumbnail_digest<P: AsRef<Path>>(path: P, params: &RawDecodeParams) -> Result<[u8; 16]> {
+  let image = extract_thumbnail_pixels(path, params)?;
+  let byte_buf = image.as_bytes();
+  Ok(md5::compute(byte_buf).into())
 }
 
 pub fn raw_to_srgb<P: AsRef<Path>>(path: P, params: &RawDecodeParams) -> Result<DynamicImage> {
@@ -244,7 +253,6 @@ pub fn raw_to_srgb<P: AsRef<Path>>(path: P, params: &RawDecodeParams) -> Result<
   //decoder.decode_metadata(&mut rawfile)?;
   let rawimage = decoder.raw_image(&rawfile, params, false)?;
   let dev = RawDevelop::default();
-  assert_eq!(rawimage.cpp, 1);
   Ok(dev.develop_intermediate(&rawimage)?.to_dynamic_image().unwrap())
 }
 

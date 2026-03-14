@@ -13,7 +13,7 @@ data:
       activeArea: ~
       blacklevels:
         levels:
-          - 128/1
+          - 230/1
         cpp: 1
         width: 1
         height: 1

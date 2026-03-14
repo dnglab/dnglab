@@ -8,7 +8,7 @@ color_pattern = "GBRG"
 hints = ["fuji_rotation"]
 
 active_area = [0, 0, 0, 0]
-crop_area = [16, 8, 16, 8]
+crop_area = [35, 8, 34, 9]
 
 [cameras.color_matrix]
 A = [0.9623, -0.3885, -0.0342, -0.549, 1.2863, 0.2947, -0.0959, 0.1637, 0.6933]

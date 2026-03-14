@@ -105,7 +105,7 @@ _dnglab() {
             return 0
             ;;
         dnglab__analyze)
-            opts="-d -v -h --raw-pixel --full-pixel --preview-pixel --thumbnail-pixel --raw-checksum --preview-checksum --thumbnail-checksum --srgb --meta --structure --summary --json --yaml --loglevel --help <FILE>"
+            opts="-d -v -h --raw-pixel --full-pixel --preview-pixel --thumbnail-pixel --raw-checksum --full-checksum --preview-checksum --thumbnail-checksum --srgb --meta --structure --summary --json --yaml --loglevel --help <FILE>"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0

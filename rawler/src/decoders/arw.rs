@@ -222,7 +222,7 @@ impl<'a> Decoder for ArwDecoder<'a> {
   /// Exiftool docs says there is a tag 0x2002 including the image, but this tag
   /// exists in none of the samples?! Instead, we can use the JPEG thumbnail
   /// tags which exists for most samples.
-  fn full_image(&self, file: &RawSource, params: &RawDecodeParams) -> Result<Option<DynamicImage>> {
+  fn preview_image(&self, file: &RawSource, params: &RawDecodeParams) -> Result<Option<DynamicImage>> {
     if params.image_index != 0 {
       return Ok(None);
     }

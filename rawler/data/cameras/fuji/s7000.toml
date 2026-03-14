@@ -7,7 +7,7 @@ whitepoint = 15564
 color_pattern = "GBRG"
 hints = ["fuji_rotation"]
 active_area = [0, 0, 0, 0]
-crop_area = [20, 12, 20, 12]
+crop_area = [24, 20, 24, 21]
 
 [cameras.color_matrix]
 A = [1.1722, -0.5492, -0.022, -0.5383, 1.2732, 0.298, -0.1296, 0.1807, 0.7597]

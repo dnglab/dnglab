@@ -4,8 +4,8 @@
 use clap::ArgMatches;
 use log::debug;
 use rawler::analyze::{
-  analyze_file_structure, analyze_metadata, extract_full_pixels, extract_preview_pixels, extract_raw_pixels, extract_thumbnail_pixels, raw_as_pgm,
-  raw_pixels_digest, rgb8_as_ppm8,
+  analyze_file_structure, analyze_metadata, extract_full_pixels, extract_preview_pixels, extract_raw_pixels, extract_thumbnail_pixels, full_image_digest,
+  preview_digest, raw_as_pgm, raw_pixels_digest, rgb8_as_ppm8, thumbnail_digest,
 };
 use rawler::analyze::{raw_as_ppm16, raw_to_srgb};
 use rawler::decoders::RawDecodeParams;
@@ -40,6 +40,15 @@ pub async fn analyze(options: &ArgMatches) -> crate::Result<()> {
     print_output(&analyze, options)?;
   } else if options.get_flag("raw_checksum") {
     let digest = raw_pixels_digest(PathBuf::from(in_file), &RawDecodeParams::default())?;
+    println!("{}", hex::encode(digest));
+  } else if options.get_flag("full_checksum") {
+    let digest = full_image_digest(PathBuf::from(in_file), &RawDecodeParams::default())?;
+    println!("{}", hex::encode(digest));
+  } else if options.get_flag("preview_checksum") {
+    let digest = preview_digest(PathBuf::from(in_file), &RawDecodeParams::default())?;
+    println!("{}", hex::encode(digest));
+  } else if options.get_flag("thumbnail_checksum") {
+    let digest = thumbnail_digest(PathBuf::from(in_file), &RawDecodeParams::default())?;
     println!("{}", hex::encode(digest));
   } else if options.get_flag("raw_pixel") {
     let mut image = extract_raw_pixels(PathBuf::from(in_file), &RawDecodeParams::default())?;

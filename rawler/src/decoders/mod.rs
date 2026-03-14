@@ -338,18 +338,18 @@ pub trait Decoder: Send {
   }
 
   fn thumbnail_image(&self, _file: &RawSource, _params: &RawDecodeParams) -> Result<Option<DynamicImage>> {
-    warn!("Decoder has no thumbnail image support, fallback to preview image");
+    warn!("Decoder has no thumbnail image support");
     Ok(None)
   }
 
   // TODO: clarify preview and full image
-  fn preview_image(&self, _file: &RawSource, _params: &RawDecodeParams) -> Result<Option<DynamicImage>> {
-    warn!("Decoder has no preview image support");
+  fn full_image(&self, _file: &RawSource, _params: &RawDecodeParams) -> Result<Option<DynamicImage>> {
+    warn!("Decoder has no full image support");
     Ok(None)
   }
 
-  fn full_image(&self, _file: &RawSource, _params: &RawDecodeParams) -> Result<Option<DynamicImage>> {
-    warn!("Decoder has no full image support");
+  fn preview_image(&self, _file: &RawSource, _params: &RawDecodeParams) -> Result<Option<DynamicImage>> {
+    warn!("Decoder has no preview image support");
     Ok(None)
   }
 

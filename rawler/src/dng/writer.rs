@@ -743,7 +743,7 @@ mod tests {
 
     let rawimage = decoder.raw_image(&rawfile, &RawDecodeParams::default(), false)?;
 
-    let full_image = decoder.full_image(&rawfile, &RawDecodeParams::default())?.unwrap();
+    let full_image = decoder.preview_image(&rawfile, &RawDecodeParams::default())?.unwrap();
 
     let metadata = decoder.raw_metadata(&rawfile, &RawDecodeParams::default())?;
 

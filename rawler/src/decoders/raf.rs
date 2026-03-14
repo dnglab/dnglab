@@ -26,6 +26,7 @@ use crate::formats::tiff::*;
 use crate::imgop::Dim2;
 use crate::imgop::Point;
 use crate::imgop::Rect;
+use crate::imgop::fuji_rotate::fuji_calc_dimension;
 use crate::packed::*;
 use crate::pixarray::PixU16;
 use crate::rawimage::BlackLevel;
@@ -55,6 +56,7 @@ pub struct RafDecoder<'a> {
   ifd: IFD,
   makernotes: IFD,
   camera: Camera,
+  camera_compressed: Option<Camera>,
 }
 
 /// Check if file has RAF signature
@@ -138,6 +140,14 @@ pub fn parse_raf_format(file: &RawSource, offset: u32) -> Result<IFD> {
   })
 }
 
+// This won't work for many samples, don't use it.
+#[allow(dead_code)]
+fn get_compression(file: &RawSource) -> Result<u32> {
+  let buf = file.subview(0, 0x6c + 4)?;
+  let compression = BEu32(buf, 0);
+  Ok(compression)
+}
+
 /// RAF format contains multiple TIFF and TIFF-like structures.
 /// This creates a IFD with all other IFDs found collected as SubIFDs.
 fn parse_raf(file: &RawSource) -> Result<IFD> {
@@ -210,7 +220,26 @@ fn parse_raf(file: &RawSource) -> Result<IFD> {
 impl<'a> RafDecoder<'a> {
   pub fn new(file: &RawSource, rawloader: &'a RawLoader) -> Result<RafDecoder<'a>> {
     let ifd = parse_raf(file)?;
-    let camera = rawloader.check_supported(&ifd)?;
+
+    /*
+    let mode = match get_compression(file)? {
+      0 => "uncompressed",
+      1 => "lossess",
+      2 => "lossy",
+      _ => "unknown",
+    };
+     */
+
+    let camera = match rawloader.check_supported(&ifd) {
+      Ok(camera) => camera,
+      Err(err) => {
+        log::debug!("Camera not found, trying without mode: {:?}", err);
+        rawloader.check_supported(&ifd)?
+      }
+    };
+
+    let camera_compressed = rawloader.check_supported_with_mode(&ifd, "compressed").ok();
+
     let makernotes = if let Some(exif) = ifd.find_first_ifd_with_tag(ExifTag::MakerNotes) {
       exif.parse_makernote(&mut file.reader(), OffsetMode::Absolute, &[])?
     } else {
@@ -223,6 +252,7 @@ impl<'a> RafDecoder<'a> {
       makernotes,
       rawloader,
       camera,
+      camera_compressed,
     })
   }
 }
@@ -276,6 +306,8 @@ impl<'a> Decoder for RafDecoder<'a> {
 
     log::debug!("BPS: {}, width: {}, height: {}, offset: {}", bps, width, height, offset);
 
+    let mut camera = self.camera.clone();
+
     let image = if self.camera.find_hint("double_width") {
       // Some fuji SuperCCD cameras include a second raw image next to the first one
       // that is identical but darker to the first. The two combined can produce
@@ -292,6 +324,10 @@ impl<'a> Decoder for RafDecoder<'a> {
       dbp::decode_dbp(&src, width, height, dummy)?
     } else if src.len() < bps * width * height / 8 {
       if !dummy {
+        //if let Some(camera) = rawloader.check_supported(&ifd)
+        if let Some(cam_compr) = self.camera_compressed.clone() {
+          camera = cam_compr;
+        }
         decompress_fuji(&src, width, height, bps, &corrected_cfa)?
       } else {
         alloc_image_plain!(width, height, dummy)
@@ -324,17 +360,19 @@ impl<'a> Decoder for RafDecoder<'a> {
     let cpp = 1;
     if self.camera.find_hint("fuji_rotation") || self.camera.find_hint("fuji_rotation_alt") {
       log::debug!("Apply Fuji image rotation");
-      let rotated = if rotate_for_dng {
-        if self.camera.find_hint("fuji_rotation") {
+      let (rotated, fuji_rot_width) = if rotate_for_dng {
+        let pix = if self.camera.find_hint("fuji_rotation") {
           fuji_raw_rotate(&image, dummy) // Only required for fuji_rotation
         } else {
           image
-        }
+        };
+        (pix, None)
       } else {
-        self.rotate_image(image.pixels(), &self.camera, width, height, dummy)?
+        let alt_layout = self.get_alt_layout();
+        let (pix, t) = self.rotate_image(image.pixels(), &self.camera, alt_layout, width, height, dummy)?;
+        (pix, Some(t))
       };
 
-      let mut camera = self.camera.clone();
       camera.cfa = corrected_cfa;
       let photometric = RawPhotometricInterpretation::Cfa(CFAConfig::new_from_camera(&camera));
       let mut image = RawImage::new(
@@ -347,6 +385,7 @@ impl<'a> Decoder for RafDecoder<'a> {
         None,
         dummy,
       );
+      image.fuji_rotation_width = fuji_rot_width;
 
       if rotate_for_dng {
         image.add_dng_tag(TiffCommonTag::CFARepeatPatternDim, [2, 4]);
@@ -359,13 +398,16 @@ impl<'a> Decoder for RafDecoder<'a> {
       }
 
       // Reset crops because we have rotated the data.
+      let rotated_dim = fuji_calc_dimension(image.width, fuji_rot_width.unwrap());
+      log::debug!("Image dimension after final rotation: {:?}", rotated_dim);
+      //image.active_area = camera.active_area.map(|area| Rect::new_with_borders(rotated_dim, &area));
+      image.crop_area = camera.crop_area.map(|area| Rect::new_with_borders(rotated_dim, &area));
       image.active_area = None;
-      image.crop_area = None;
       Ok(image)
     } else {
       //ok_image(self.camera.clone(), width, height, cpp, self.get_wb()?, image.into_inner())
 
-      let mut camera = self.camera.clone();
+      //let mut camera = self.camera.clone();
       camera.cfa = corrected_cfa;
       let whitelevel = if self.camera.whitelevel.is_none() {
         match bps {
@@ -430,7 +472,7 @@ impl<'a> Decoder for RafDecoder<'a> {
     }
   }
 
-  fn full_image(&self, file: &RawSource, params: &RawDecodeParams) -> Result<Option<DynamicImage>> {
+  fn preview_image(&self, file: &RawSource, params: &RawDecodeParams) -> Result<Option<DynamicImage>> {
     if params.image_index != 0 {
       return Ok(None);
     }
@@ -531,6 +573,20 @@ impl<'a> RafDecoder<'a> {
     )
   }
 
+  fn get_alt_layout(&self) -> bool {
+    if let Some(entry) = &self
+      .ifd
+      .sub_ifds()
+      .get(&RAF_TAG_VIRTUAL_RAF_DATA)
+      .and_then(|ifds| ifds.get(0).and_then(|ifd| ifd.get_entry(RafTags::FujiLayout)))
+    {
+      (entry.force_u8(0) >> 7) == 0
+    } else {
+      log::debug!("RafTags::FujiLayout tag not found");
+      false
+    }
+  }
+
   fn read_embedded_jpeg<'b>(&self, file: &'b RawSource) -> Result<&'b [u8]> {
     // The offset and len of JPEG preview is in the RAF structure
     let buf = file.subview(0, 84 + 8)?;
@@ -540,12 +596,16 @@ impl<'a> RafDecoder<'a> {
     Ok(file.subview(jpeg_off, jpeg_len)?)
   }
 
-  fn rotate_image(&self, src: &[u16], camera: &Camera, width: usize, height: usize, dummy: bool) -> Result<PixU16> {
+  /// Returns (rotated_pixels, fuji_rotation_width) where fuji_rotation_width is the
+  /// split point T for computing the inscribed rectangle after 45° back-rotation.
+  fn rotate_image(&self, src: &[u16], camera: &Camera, alt_layout: bool, width: usize, height: usize, dummy: bool) -> Result<(PixU16, usize)> {
     if let Some(active_area) = self.camera.active_area {
       let x = active_area[0];
       let y = active_area[1];
       let cropwidth = width - active_area[2] - x;
       let cropheight = height - active_area[3] - y; // TODO: bug, invalid order of crop index
+
+      assert_eq!(alt_layout, camera.find_hint("fuji_rotation_alt"));
 
       if camera.find_hint("fuji_rotation_alt") {
         let rotatedwidth = cropheight + cropwidth / 2;
@@ -562,7 +622,7 @@ impl<'a> RafDecoder<'a> {
             }
           }
         }
-        Ok(out)
+        Ok((out, cropheight))
       } else {
         let rotatedwidth = cropwidth + cropheight / 2;
         let rotatedheight = rotatedwidth - 1;
@@ -578,7 +638,7 @@ impl<'a> RafDecoder<'a> {
             }
           }
         }
-        Ok(out)
+        Ok((out, cropwidth))
       }
     } else {
       Err(RawlerError::DecoderFailed("no active_area for fuji_rotate".to_string()))

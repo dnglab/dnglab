@@ -9,11 +9,16 @@ use std::{
 use image::DynamicImage;
 
 use crate::{
-  RawImage, RawlerError,
-  decoders::{Decoder, RawDecodeParams, WellKnownIFD},
+  RawImage, RawImageData,
+  decoders::{Decoder, RawDecodeParams, RawPhotometricInterpretation, WellKnownIFD, WhiteLevel},
   dng::{DNG_VERSION_V1_4, PREVIEW_JPEG_QUALITY, original::OriginalCompressed, writer::DngWriter},
   formats::tiff::Entry,
-  imgop::develop::RawDevelop,
+  imgop::{
+    develop::RawDevelop,
+    fuji_rotate::fuji_normalize_rotation,
+    sensor::{Demosaic, bayer::ppg::PPGDemosaic},
+  },
+  pixarray::PixF32,
   rawsource::RawSource,
   tags::{DngTag, ExifTag, TiffCommonTag},
 };
@@ -115,12 +120,31 @@ where
     rawimage.clean_model,
     decoder.raw_image_count()?
   );
+  log::debug!("Raw image WB coeff: {:?}", rawimage.wb_coeffs);
 
-  if params.apply_scaling {
+  if rawimage.camera.find_hint("fuji_rotation") || rawimage.camera.find_hint("fuji_rotation_alt") {
+    // if the raw image needs to be rotated, we do this before
+    // writing the image to DNG. This requires scaling and debayer
+    // to be applied.
+    rawimage.apply_scaling()?;
+    log::debug!("Raw image requires fuji_rotation before writing to DNG");
+    let pixels = PixF32::new_with(rawimage.data.as_f32().into_owned(), rawimage.width, rawimage.height);
+    let roi = rawimage.active_area.unwrap_or(pixels.rect());
+    let demosaic = PPGDemosaic::new();
+    let mut rgb = demosaic.demosaic(&pixels, &rawimage.camera.cfa, &rawimage.camera.plane_color, roi);
+    let fuji_rotation_width = rawimage.fuji_rotation_width.expect("fuji_rotate: no rotation width found");
+    let extra_rotate = rawimage.camera.find_hint("fuji_rotate_90cw");
+    rgb = fuji_normalize_rotation(&rgb, fuji_rotation_width, extra_rotate);
+    rawimage.width = rgb.width;
+    rawimage.height = rgb.height;
+    rawimage.active_area = None;
+    rawimage.cpp = 3;
+    rawimage.whitelevel = WhiteLevel::new([1, 1, 1]); // Already scaled up to 0.0 .. 1.0
+    rawimage.photometric = RawPhotometricInterpretation::LinearRaw;
+    rawimage.data = RawImageData::Float(rgb.into_flatten());
+  } else if params.apply_scaling {
     rawimage.apply_scaling()?;
   }
-
-  log::debug!("wb coeff: {:?}", rawimage.wb_coeffs);
 
   let mut dng = DngWriter::new(dng, DNG_VERSION_V1_4)?;
 
@@ -215,17 +239,23 @@ where
 }
 
 fn generate_preview(rawfile: &RawSource, decoder: &dyn Decoder, rawimage: &RawImage, params: &RawDecodeParams) -> crate::Result<DynamicImage> {
-  let image = match decoder.full_image(rawfile, params)? {
+  match decoder.preview_image(rawfile, params)? {
     Some(image) => Ok(image),
     None => {
       log::warn!("Preview image not found, try to generate sRGB from RAW");
       let dev = RawDevelop::default();
       let image = dev.develop_intermediate(rawimage)?;
-      image
-        .to_dynamic_image()
-        .ok_or_else(|| RawlerError::DecoderFailed("Failed to generate preview image".to_string()))
+      /*
+      let params = rawimage.develop_params()?;
+      let (srgbf, dim) = develop_raw_srgb(&rawimage.data, &params)?;
+      let output = convert_from_f32_scaled_u16(&srgbf, 0, u16::MAX);
+      let image = if srgbf.len() == dim.w * dim.h {
+        DynamicImage::ImageLuma16(ImageBuffer::from_raw(dim.w as u32, dim.h as u32, output).expect("Invalid ImageBuffer size"))
+      } else {
+        DynamicImage::ImageRgb16(ImageBuffer::from_raw(dim.w as u32, dim.h as u32, output).expect("Invalid ImageBuffer size"))
+      };
+       */
+      Ok(image.to_dynamic_image().unwrap())
     }
-  }?;
-  log::debug!("Using preview image with source dimension {}x{}", image.width(), image.height());
-  Ok(image)
+  }
 }
