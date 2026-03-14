@@ -8,8 +8,10 @@ resolver = "2"
 
 
 [profile.bench]
-debug = true
-lto = "fat"
+opt-level = 3
+overflow-checks = false
+debug = 0
+lto = false
 
 [profile.release]
 opt-level = 3

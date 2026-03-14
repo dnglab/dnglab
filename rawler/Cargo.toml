@@ -72,3 +72,7 @@ name = "perf"
 [[bench]]
 harness = false
 name = "raw_decoder"
+
+[[bench]]
+harness = false
+name = "demosaic"
