@@ -4,12 +4,13 @@
 use crate::{
   CFA,
   cfa::PlaneColor,
-  imgop::{Dim2, Rect, sensor::bayer::RgbBayerPattern},
+  imgop::{
+    Dim2, Rect,
+    sensor::{Demosaic, bayer::RgbBayerPattern},
+  },
   pixarray::{Color2D, PixF32},
 };
 use rayon::prelude::*;
-
-use super::Demosaic;
 
 #[derive(Default)]
 pub struct Superpixel3Channel {}
