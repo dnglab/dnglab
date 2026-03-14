@@ -9,14 +9,10 @@ use multiversion::multiversion;
 use rayon::prelude::*;
 
 use crate::{
-  cfa::{CFA, PlaneColor},
+  cfa::CFA,
   imgop::{Dim2, Rect},
-  pixarray::{Color2D, Pix2D, RgbF32, SubPixel},
+  pixarray::RgbF32,
 };
-
-pub trait Demosaic<T: SubPixel, const N: usize> {
-  fn demosaic(&self, pixels: &Pix2D<T>, cfa: &CFA, colors: &PlaneColor, roi: Rect) -> Color2D<T, N>;
-}
 
 /// Extend a single pixel component from bayer pattern to RGB
 ///

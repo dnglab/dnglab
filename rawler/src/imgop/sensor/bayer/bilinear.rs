@@ -1,13 +1,14 @@
+// SPDX-License-Identifier: LGPL-2.1
+// Copyright 2021 Daniel Vogelbacher <daniel@chaospixel.com>
+
 use multiversion::multiversion;
 
 use crate::{
   CFA,
   cfa::PlaneColor,
-  imgop::Rect,
+  imgop::{Rect, sensor::Demosaic},
   pixarray::{Color2D, PixF32},
 };
-
-use super::Demosaic;
 
 #[derive(Default)]
 pub struct Bilinear4Channel {}

@@ -6,6 +6,7 @@ use crate::{
   RawImage,
   decoders::RawMetadata,
   formats::tiff::{DirectoryWriter, TiffWriter},
+  imgop::sensor::Demosaic,
   pixarray::{Color2D, PixF32},
   rawimage::RawPhotometricInterpretation,
   tags::{ExifTag, TiffCommonTag},
@@ -14,7 +15,7 @@ use crate::{
 use super::{
   Dim2, Rect, convert_from_f32_scaled_u16,
   raw::{map_3ch_to_rgb, map_4ch_to_rgb},
-  sensor::bayer::{Demosaic, bilinear::Bilinear4Channel, ppg::PPGDemosaic},
+  sensor::bayer::{bilinear::Bilinear4Channel, ppg::PPGDemosaic},
   xyz::Illuminant,
 };
 

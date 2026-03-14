@@ -7,11 +7,9 @@ use std::{ops::Add, time::Instant};
 
 use crate::{
   cfa::{CFA, CFA_COLOR_B, CFA_COLOR_G, CFA_COLOR_R, PlaneColor},
-  imgop::Rect,
+  imgop::{Rect, sensor::Demosaic},
   pixarray::{Color2D, PixF32, RgbF32},
 };
-
-use super::Demosaic;
 
 #[derive(Default)]
 pub struct PPGDemosaic {}

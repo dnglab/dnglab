@@ -378,6 +378,11 @@ where
     Self { data, width, height }
   }
 
+  pub fn new_with_default(width: usize, height: usize, default: T) -> Self {
+    let data = vec![[default; N]; width * height];
+    Self { data, width, height }
+  }
+
   pub fn into_inner(self) -> Vec<[T; N]> {
     self.data
   }
