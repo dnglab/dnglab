@@ -2,6 +2,7 @@
 // Copyright 2026 Daniel Vogelbacher <daniel@chaospixel.com>
 
 use multiversion::multiversion;
+use rayon::prelude::*;
 use std::time::Instant;
 
 use crate::{
@@ -67,15 +68,15 @@ impl Demosaic<f32, 3> for XTransBilinearDemosaic {
 /// full-frame CFA pattern.
 ///
 /// Uses SIMD acceleration via `multiversion` when available (AVX2, SSE, NEON).
-#[multiversion(targets("x86_64+avx+avx2", "x86+sse", "aarch64+neon"))]
+#[multiversion(targets("x86_64+avx+avx2+fma", "x86+sse", "aarch64+neon"))]
 fn interpolate_bilinear(input: &PixF32, cfa: &CFA, roi: Rect) -> Color2D<f32, 3> {
   let cfa_roi = cfa.shift(roi.p.x, roi.p.y);
   let mut output = RgbF32::new_with_default(roi.width(), roi.height(), f32::NAN);
   let width = output.width;
   let height = output.height;
 
-  for y in 0..height {
-    for x in 0..width {
+  output.pixels_mut().par_chunks_exact_mut(width).enumerate().for_each(|(y, line)| {
+    line.iter_mut().enumerate().for_each(|(x, pixel)| {
       let mut rgb = [0.0f32; 3];
       let mut count = [0u32; 3];
 
@@ -93,9 +94,9 @@ fn interpolate_bilinear(input: &PixF32, cfa: &CFA, roi: Rect) -> Color2D<f32, 3>
       }
 
       for c in 0..3 {
-        output.at_mut(y, x)[c] = if count[c] > 0 { rgb[c] / count[c] as f32 } else { 0.0 };
+        pixel[c] = if count[c] > 0 { rgb[c] / count[c] as f32 } else { 0.0 };
       }
-    }
-  }
+    });
+  });
   output
 }
