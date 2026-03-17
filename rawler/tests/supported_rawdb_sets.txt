@@ -547,7 +547,6 @@ cameras/Olympus/XZ-10/raw_modes
 cameras/Olympus/XZ-1/raw_modes
 cameras/Olympus/XZ-2/raw_modes
 cameras/Panasonic/DC-FZ10002/raw_modes
-cameras/Panasonic/DC-FZ45/raw_modes
 cameras/Panasonic/DC-FZ80/raw_modes
 cameras/Panasonic/DC-FZ82/raw_modes
 cameras/Panasonic/DC-G100/raw_modes
