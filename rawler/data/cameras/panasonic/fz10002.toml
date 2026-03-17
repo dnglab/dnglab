@@ -1,15 +1,10 @@
 make = "Panasonic"
-model = "DMC-FZ10002"
+model = "DC-FZ10002"
 clean_make = "Panasonic"
-clean_model = "DMC-FZ1000 II"
+clean_model = "DC-FZ1000M2"
 #blackpoint = 0
 whitepoint = 4095
 color_pattern = "GBRG"
-
-model_aliases = [
-  ["DC-FZ10002", "DC-FZ10002"],
-]
-
 
 [cameras.color_matrix]
 A = [1.0745, -0.6036, 0.0459, -0.2974, 1.1274, 0.1932, -0.0078, 0.0806, 0.5819]
