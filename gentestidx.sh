@@ -2,11 +2,12 @@
 
 # README
 # You need to export $RAWDB to point to the rawdb.
-if [[ -z "$RAWDB" ]]; then
-    echo "Error: RAWDB environment variable is not set."
+if [[ -z "$RAWLER_RAWDB" ]]; then
+    echo "Error: RAWLER_RAWDB environment variable is not set."
     exit 1
 fi
 
+RAWDB=$RAWLER_RAWDB
 
 function process_rawfile() {
 	rawtype=$1

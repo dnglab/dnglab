@@ -5,7 +5,7 @@ use multiversion::multiversion;
 use rayon::prelude::*;
 
 use crate::{
-  decoders::decode_threaded_prealloc,
+  decompressors::decompress_lines_fn,
   formats::tiff::Rational,
   imgop::{Dim2, Point, Rect},
 };
@@ -232,13 +232,11 @@ where
 }
 
 #[multiversion(targets("x86_64+avx+avx2", "x86+sse", "aarch64+neon"))]
-pub(crate) fn deinterleave2x2<T>(pixbuf: &Pix2D<T>) -> crate::Result<Pix2D<T>>
+pub(crate) fn deinterleave2x2<T>(pixbuf: &Pix2D<T>) -> std::result::Result<Pix2D<T>, String>
 where
   T: SubPixel,
 {
   if pixbuf.initialized {
-    let mut output = Pix2D::<T>::new(pixbuf.width, pixbuf.height);
-
     let line_width = pixbuf.width;
 
     let half_width = line_width / 2;
@@ -248,7 +246,7 @@ where
     let ch2 = &pixbuf[pixbuf.len() / 2..];
     let ch3 = &pixbuf[pixbuf.len() / 2 + half_width..];
 
-    decode_threaded_prealloc(&mut output, &|line, row| {
+    decompress_lines_fn(pixbuf.width, pixbuf.height, false, &|line, row| {
       let src_row = row / 2;
       let offset = src_row * line_distance;
       let ch_a;
@@ -271,8 +269,7 @@ where
         dst[1] = *b;
       });
       Ok(())
-    })?;
-    Ok(output)
+    })
   } else {
     Ok(pixbuf.clone())
   }
@@ -623,6 +620,20 @@ macro_rules! alloc_image_plain {
 }
 
 #[macro_export]
+macro_rules! alloc_image_plain_typed {
+  ($T:tt, $width:expr, $height:expr, $dummy: expr) => {{
+    if $width * $height > 500000000 || $width > 50000 || $height > 50000 {
+      panic!("rawler: surely there's no such thing as a >500MP or >50000 px wide/tall image!");
+    }
+    if $dummy {
+      $crate::pixarray::Pix2D::<T>::new_uninit($width, $height)
+    } else {
+      $crate::pixarray::Pix2D::<T>::new($width, $height)
+    }
+  }};
+}
+
+#[macro_export]
 macro_rules! alloc_image {
   ($width:expr, $height:expr, $dummy: expr) => {{
     if $dummy {
@@ -640,6 +651,17 @@ macro_rules! alloc_image_ok {
       return Ok($crate::pixarray::PixU16::new_uninit($width, $height));
     } else {
       $crate::alloc_image_plain!($width, $height, $dummy)
+    }
+  }};
+}
+
+#[macro_export]
+macro_rules! alloc_image_typed_ok {
+  ($T:tt, $width:expr, $height:expr, $dummy: expr) => {{
+    if $dummy {
+      return Ok($crate::pixarray::Pix2D::<T>::new_uninit($width, $height));
+    } else {
+      $crate::alloc_image_plain_typed!($T, $width, $height, $dummy)
     }
   }};
 }

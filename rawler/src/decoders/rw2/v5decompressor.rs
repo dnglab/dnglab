@@ -1,11 +1,12 @@
 /// Ported from Libraw
 use crate::{
   decoders::*,
+  decompressors::decompress_chunked_fn,
   pumps::{BitPump, BitPumpLSB},
 };
 
 /// This works for 12 and 14 bit depth images
-pub(crate) fn decode_panasonic_v5(buf: &[u8], width: usize, height: usize, bps: u32, dummy: bool) -> PixU16 {
+pub(crate) fn decode_panasonic_v5(buf: &[u8], width: usize, height: usize, bps: u32, dummy: bool) -> std::result::Result<PixU16, String> {
   // Raw data is divided into blocks of same size
   const V5_BLOCK_SIZE: usize = 0x4000;
   // Each block is splitted and swapped, we need to swap back
@@ -27,7 +28,7 @@ pub(crate) fn decode_panasonic_v5(buf: &[u8], width: usize, height: usize, bps: 
 
   // We decode chunked at pixels_per_block boundary
   // Each block delivers the same amount of pixels.
-  decode_threaded_chunked(
+  decompress_chunked_fn(
     width,
     height,
     pixels_per_block,

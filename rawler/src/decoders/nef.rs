@@ -17,11 +17,12 @@ use crate::bits::LEu32;
 use crate::bits::LookupTable;
 use crate::bits::clampbits;
 use crate::buffer::PaddedBuf;
-use crate::decoders::decode_threaded;
 use crate::decoders::dynamic_image_from_ifd;
 use crate::decoders::dynamic_image_from_jpeg_interchange_format;
 use crate::decoders::nef::lensdata::NefLensData;
+use crate::decompressors::decompress_lines_fn;
 use crate::decompressors::ljpeg::huffman::HuffTable;
+use crate::decompressors::packed::*;
 use crate::exif::Exif;
 use crate::formats::tiff::GenericTiffReader;
 use crate::formats::tiff::IFD;
@@ -33,7 +34,6 @@ use crate::imgop::Point;
 use crate::imgop::Rect;
 use crate::lens::LensDescription;
 use crate::lens::LensResolver;
-use crate::packed::*;
 use crate::pixarray::PixU16;
 use crate::pumps::BitPump;
 use crate::pumps::BitPumpMSB;
@@ -233,17 +233,17 @@ impl<'a> Decoder for NefDecoder<'a> {
 
     let image = if self.camera.model == "NIKON D100" {
       width = 3040;
-      decode_12be_wcontrol(&src, width, height, dummy)
+      decompress_12be_wcontrol(&src, width, height, dummy)?
     } else if self.camera.find_hint("coolpixsplit") {
-      decode_12be_interlaced_unaligned(&src, width, height, dummy)
+      decompress_12be_interlaced_unaligned(&src, width, height, dummy)?
     } else if self.camera.find_hint("msb32") {
-      decode_12be_msb32(&src, width, height, dummy)
+      decompress_12be_msb32(&src, width, height, dummy)?
     } else if self.camera.find_hint("unpacked") {
       // P7800 and others is LE, but data is BE, so we use hints here
       if (self.tiff.little_endian() || self.camera.find_hint("little_endian")) && !self.camera.find_hint("big_endian") {
-        decode_16le(&src, width, height, dummy)
+        decompress_16le(&src, width, height, dummy)?
       } else {
-        decode_16be(&src, width, height, dummy)
+        decompress_16be(&src, width, height, dummy)?
       }
     } else if let Some(padding) = self.is_uncompressed(raw)? {
       debug!("NEF uncompressed row padding: {}, little-endian: {}", padding, self.tiff.little_endian());
@@ -251,9 +251,9 @@ impl<'a> Decoder for NefDecoder<'a> {
         16 => {
           // Used by Coolscan scanners
           if self.tiff.little_endian() {
-            decode_16le(&src, width * cpp, height, dummy)
+            decompress_16le(&src, width * cpp, height, dummy)?
           } else {
-            decode_16be(&src, width * cpp, height, dummy)
+            decompress_16be(&src, width * cpp, height, dummy)?
           }
         }
         14 => {
@@ -261,26 +261,26 @@ impl<'a> Decoder for NefDecoder<'a> {
             // Models like D6 uses packed instead of unpacked 14le encoding. And D6 uses
             // row padding.
             if matches!(nef_compression, Some(NefCompression::Packed14Bits)) {
-              decode_14le_padded(&src, width, height, (width * bps / u8::BITS as usize) + padding, dummy)
+              decompress_14le_padded(&src, width, height, (width * bps / u8::BITS as usize) + padding, dummy)?
             } else {
-              decode_14le_unpacked(&src, width, height, dummy)
+              decompress_14le_unpacked(&src, width, height, dummy)?
             }
           } else {
-            decode_14be_unpacked(&src, width, height, dummy)
+            decompress_14be_unpacked(&src, width, height, dummy)?
           }
         }
         12 => {
           if (self.tiff.little_endian() || self.camera.find_hint("little_endian")) && !self.camera.find_hint("big_endian") {
-            decode_12le_padded(&src, width, height, (width * bps / u8::BITS as usize) + padding, dummy)
+            decompress_12le_padded(&src, width, height, (width * bps / u8::BITS as usize) + padding, dummy)?
           } else {
-            decode_12be(&src, width, height, dummy)
+            decompress_12be(&src, width, height, dummy)?
           }
         }
         x => return Err(RawlerError::unsupported(&self.camera, format!("Don't know uncompressed bps {}", x))),
       }
     } else if size == width * height * 3 {
       cpp = 3;
-      Self::decode_snef_compressed(&src, coeffs, width, height, dummy)
+      Self::decode_snef_compressed(&src, coeffs, width, height, dummy)?
     } else if compression == 34713 {
       self.decode_compressed(&src, width, height, bps, dummy)?
     } else {
@@ -517,7 +517,7 @@ impl<'a> NefDecoder<'a> {
     }
   }
 
-  fn create_hufftable(num: usize) -> Result<HuffTable> {
+  fn create_hufftable(num: usize) -> std::result::Result<HuffTable, String> {
     let mut htable = HuffTable::empty();
 
     for i in 0..15 {
@@ -568,7 +568,7 @@ impl<'a> NefDecoder<'a> {
     })
   }
 
-  fn decode_compressed(&self, src: &PaddedBuf, width: usize, height: usize, bps: usize, dummy: bool) -> Result<PixU16> {
+  fn decode_compressed(&self, src: &PaddedBuf, width: usize, height: usize, bps: usize, dummy: bool) -> std::result::Result<PixU16, String> {
     let meta = if let Some(meta) = self.makernote.get_entry(TiffCommonTag::NefMeta2) {
       debug!("Found NefMeta2");
       meta
@@ -579,7 +579,15 @@ impl<'a> NefDecoder<'a> {
     Self::do_decode(src, meta.get_data(), self.makernote.endian, width, height, bps, dummy)
   }
 
-  pub(crate) fn do_decode(src: &[u8], meta: &[u8], endian: Endian, width: usize, height: usize, bps: usize, dummy: bool) -> Result<PixU16> {
+  pub(crate) fn do_decode(
+    src: &[u8],
+    meta: &[u8],
+    endian: Endian,
+    width: usize,
+    height: usize,
+    bps: usize,
+    dummy: bool,
+  ) -> std::result::Result<PixU16, String> {
     debug!("NEF decode with: endian: {:?}, width: {}, height: {}, bps: {}", endian, width, height, bps);
     let mut out = alloc_image_ok!(width, height, dummy);
     let mut stream = ByteStream::new(meta, endian);
@@ -675,7 +683,7 @@ impl<'a> NefDecoder<'a> {
 
   // Decodes 12 bit data in an YUY2-like pattern (2 Luma, 1 Chroma per 2 pixels).
   // We un-apply the whitebalance, so output matches lossless.
-  pub(crate) fn decode_snef_compressed(src: &PaddedBuf, coeffs: [f32; 4], width: usize, height: usize, dummy: bool) -> PixU16 {
+  pub(crate) fn decode_snef_compressed(src: &PaddedBuf, coeffs: [f32; 4], width: usize, height: usize, dummy: bool) -> std::result::Result<PixU16, String> {
     let inv_wb_r = (1024.0 / coeffs[0]) as i32;
     let inv_wb_b = (1024.0 / coeffs[2]) as i32;
 
@@ -696,7 +704,7 @@ impl<'a> NefDecoder<'a> {
       LookupTable::new(&curve)
     };
 
-    decode_threaded(
+    decompress_lines_fn(
       width * 3,
       height,
       dummy,
@@ -732,6 +740,7 @@ impl<'a> NefDecoder<'a> {
           o[4] = g;
           o[5] = clampbits((inv_wb_b * b as i32 + (1 << 9)) >> 10, 15);
         }
+        Ok(())
       }),
     )
   }

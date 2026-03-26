@@ -24,7 +24,7 @@ impl PPGDemosaic {
 ///
 /// The PPG - Pattern Pixel Grouping - alogrithm was developed by Chuan-kai Lin
 /// Source on Internet Archive:
-/// https://web.archive.org/web/20160923211135/https://sites.google.com/site/chklin/demosaic/
+/// [](https://web.archive.org/web/20160923211135/https://sites.google.com/site/chklin/demosaic/)
 ///
 /// This is a simple algorithm but provides acceptable results.
 ///

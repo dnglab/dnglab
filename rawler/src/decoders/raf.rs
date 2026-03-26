@@ -19,6 +19,7 @@ use crate::analyze::FormatDump;
 use crate::bits::BEu32;
 use crate::bits::Endian;
 use crate::decoders::raf::fuji_decompressor::decompress_fuji;
+use crate::decompressors::packed::*;
 use crate::exif::Exif;
 use crate::formats::jfif::Jfif;
 use crate::formats::tiff::ifd::OffsetMode;
@@ -27,7 +28,6 @@ use crate::imgop::Dim2;
 use crate::imgop::Point;
 use crate::imgop::Rect;
 use crate::imgop::fuji_rotate::fuji_calc_dimension;
-use crate::packed::*;
 use crate::pixarray::PixU16;
 use crate::rawimage::BlackLevel;
 use crate::rawimage::CFAConfig;
@@ -312,11 +312,11 @@ impl<'a> Decoder for RafDecoder<'a> {
       // Some fuji SuperCCD cameras include a second raw image next to the first one
       // that is identical but darker to the first. The two combined can produce
       // a higher dynamic range image. Right now we're ignoring it.
-      decode_16le_skiplines(&src, width, height, dummy)
+      decompress_16le_skiplines(&src, width, height, dummy)?
     } else if self.camera.find_hint("jpeg32") {
       match bps {
-        12 => decode_12be_msb32(&src, width, height, dummy),
-        14 => decode_14be_msb32(&src, width, height, dummy),
+        12 => decompress_12be_msb32(&src, width, height, dummy)?,
+        14 => decompress_14be_msb32(&src, width, height, dummy)?,
         _ => return Err(RawlerError::unsupported(&self.camera, format!("RAF: Don't know how to decode bps {}", bps))),
       }
     } else if self.camera.clean_model == "DBP for GX680" {
@@ -334,13 +334,13 @@ impl<'a> Decoder for RafDecoder<'a> {
       }
     } else {
       match bps {
-        12 => decode_12le(&src, width, height, dummy),
-        14 => decode_14le_unpacked(&src, width, height, dummy),
+        12 => decompress_12le(&src, width, height, dummy)?,
+        14 => decompress_14le_unpacked(&src, width, height, dummy)?,
         16 => {
           if self.ifd.endian == Endian::Little {
-            decode_16le(&src, width, height, dummy)
+            decompress_16le(&src, width, height, dummy)?
           } else {
-            decode_16be(&src, width, height, dummy)
+            decompress_16be(&src, width, height, dummy)?
           }
         }
         _ => {

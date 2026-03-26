@@ -27,8 +27,8 @@ use crate::Result;
 use crate::analyze::FormatDump;
 use crate::bits::*;
 use crate::cfa;
-use crate::decoders::decode_threaded;
 use crate::decoders::ok_cfa_image_with_blacklevels;
+use crate::decompressors::decompress_lines_fn;
 use crate::exif::Exif;
 use crate::formats::tiff;
 use crate::formats::tiff::GenericTiffReader;
@@ -254,11 +254,11 @@ impl<'a> Decoder for IiqDecoder<'a> {
     let mut image = match fmt {
       IiqCompression::Raw1 => todo!(),
       IiqCompression::Raw2 => todo!(),
-      IiqCompression::Uncompressed => Self::decode_uncompressed(data, width, height, 14, dummy),
-      IiqCompression::IIQ_L => Self::decode_compressed(data, strips, width, height, 14, dummy),
-      IiqCompression::IIQ_L16 => Self::decode_compressed(data, strips, width, height, 16, dummy),
-      IiqCompression::IIQ_S => Self::decode_nonlinear(data, strips, width, height, 14, dummy),
-      IiqCompression::IIQ_Sv2 => Self::decode_compressed_sv2(data, strips, width, height, 14, dummy),
+      IiqCompression::Uncompressed => Self::decode_uncompressed(data, width, height, 14, dummy)?,
+      IiqCompression::IIQ_L => Self::decode_compressed(data, strips, width, height, 14, dummy)?,
+      IiqCompression::IIQ_L16 => Self::decode_compressed(data, strips, width, height, 16, dummy)?,
+      IiqCompression::IIQ_S => Self::decode_nonlinear(data, strips, width, height, 14, dummy)?,
+      IiqCompression::IIQ_Sv2 => Self::decode_compressed_sv2(data, strips, width, height, 14, dummy)?,
     };
 
     let black = self.blacklevel().unwrap_or(0);
@@ -990,10 +990,10 @@ impl<'a> IiqDecoder<'a> {
 
   /// Decode IIQ S format
   /// Same as IIQ L, but requires a linearization curve
-  fn decode_nonlinear(buffer: &[u8], strips: &[u8], width: usize, height: usize, bits: u8, dummy: bool) -> PixU16 {
+  fn decode_nonlinear(buffer: &[u8], strips: &[u8], width: usize, height: usize, bits: u8, dummy: bool) -> std::result::Result<PixU16, String> {
     // We fake the bit count as 16, then no shift happens in decoding.
     // Then we can linearize back the data.
-    let mut img = Self::decode_compressed(buffer, strips, width, height, 16, dummy);
+    let mut img = Self::decode_compressed(buffer, strips, width, height, 16, dummy)?;
 
     let value_shift: u32 = MAX_BITDEPTH - (bits as u32);
 
@@ -1008,13 +1008,13 @@ impl<'a> IiqDecoder<'a> {
       // Use the linearization curve to get back original data.
       img.for_each(|pix| if pix < 256 { curve[pix as usize] << value_shift } else { pix });
     }
-    img
+    Ok(img)
   }
 
   /// Decoder for IIQ uncompressed
-  fn decode_uncompressed(buffer: &[u8], width: usize, height: usize, bits: u8, dummy: bool) -> PixU16 {
+  fn decode_uncompressed(buffer: &[u8], width: usize, height: usize, bits: u8, dummy: bool) -> std::result::Result<PixU16, String> {
     let value_shift: u32 = MAX_BITDEPTH - (bits as u32);
-    decode_threaded(
+    decompress_lines_fn(
       width,
       height,
       dummy,
@@ -1022,15 +1022,16 @@ impl<'a> IiqDecoder<'a> {
         for (i, word) in out.iter_mut().enumerate() {
           *word = LEu16(buffer, row * (width * 2) + i * 2) << value_shift;
         }
+        Ok(())
       }),
     )
   }
 
   /// Decoder for IIQ L / S data
-  pub(crate) fn decode_compressed(buffer: &[u8], strips: &[u8], width: usize, height: usize, bits: u8, dummy: bool) -> PixU16 {
+  pub(crate) fn decode_compressed(buffer: &[u8], strips: &[u8], width: usize, height: usize, bits: u8, dummy: bool) -> std::result::Result<PixU16, String> {
     let value_shift: u32 = MAX_BITDEPTH - (bits as u32);
     let lens: [u32; 10] = [8, 7, 6, 9, 11, 10, 5, 12, 14, 13];
-    decode_threaded(
+    decompress_lines_fn(
       width,
       height,
       dummy,
@@ -1062,17 +1063,18 @@ impl<'a> IiqDecoder<'a> {
           };
           pixout[0] = (pred[col & 1] as u16) << value_shift;
         }
+        Ok(())
       }),
     )
   }
 
   /// Decoder for IIQ S v2
   /// This compression stores row pixels in clusters of 8 pixels.
-  fn decode_compressed_sv2(buffer: &[u8], strips: &[u8], width: usize, height: usize, bits: u8, dummy: bool) -> PixU16 {
+  fn decode_compressed_sv2(buffer: &[u8], strips: &[u8], width: usize, height: usize, bits: u8, dummy: bool) -> std::result::Result<PixU16, String> {
     // Correction shift for pixel values
     let value_shift: u32 = MAX_BITDEPTH - (bits as u32);
     // We can decode each row independently
-    decode_threaded(
+    decompress_lines_fn(
       width,
       height,
       dummy,
@@ -1159,6 +1161,7 @@ impl<'a> IiqDecoder<'a> {
             }
           }
         }
+        Ok(())
       }),
     )
   }

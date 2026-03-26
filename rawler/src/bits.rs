@@ -6,6 +6,8 @@
 // Copyright (C) 2017 Vasily Khoruzhick
 // Copyright (C) 2020 Roman Lebedev
 
+//! Low-level bit operations
+
 use std::iter::repeat;
 
 use byteorder::{BigEndian, ByteOrder, LittleEndian};

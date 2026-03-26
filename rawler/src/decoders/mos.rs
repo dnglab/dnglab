@@ -5,11 +5,11 @@ use crate::Result;
 use crate::alloc_image_ok;
 use crate::analyze::FormatDump;
 use crate::decompressors::ljpeg::LjpegDecompressor;
+use crate::decompressors::packed::decompress_16be;
+use crate::decompressors::packed::decompress_16le;
 use crate::exif::Exif;
 use crate::formats::tiff::GenericTiffReader;
 use crate::formats::tiff::reader::TiffReader;
-use crate::packed::decode_16be;
-use crate::packed::decode_16le;
 use crate::pixarray::PixU16;
 use crate::rawsource::RawSource;
 use crate::tags::TiffCommonTag;
@@ -49,14 +49,15 @@ impl<'a> Decoder for MosDecoder<'a> {
     let width = fetch_tiff_tag!(raw, TiffCommonTag::ImageWidth).force_usize(0);
     let height = fetch_tiff_tag!(raw, TiffCommonTag::ImageLength).force_usize(0);
     let offset = fetch_tiff_tag!(raw, TiffCommonTag::TileOffsets).force_usize(0);
+    let compression = fetch_tiff_tag!(raw, TiffCommonTag::Compression).force_usize(0);
     let src = file.subview_until_eof(offset as u64)?;
 
-    let image = match fetch_tiff_tag!(raw, TiffCommonTag::Compression).force_usize(0) {
+    let image = match compression {
       1 => {
         if self.tiff.little_endian() {
-          decode_16le(src, width, height, dummy)
+          decompress_16le(src, width, height, dummy)?
         } else {
-          decode_16be(src, width, height, dummy)
+          decompress_16be(src, width, height, dummy)?
         }
       }
       7 | 99 => self.decode_compressed(&self.camera, src, width, height, dummy)?,

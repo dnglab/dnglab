@@ -4,7 +4,7 @@ clean_make = "Leaf"
 clean_model = "Aptus 75"
 blackpoint = 0
 whitepoint = 16191
-color_pattern = "RGGB"
+color_pattern = "GBRG"
 #active_area = [36, 6, 16, 46]
 
 [cameras.color_matrix]

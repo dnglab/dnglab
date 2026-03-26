@@ -8,11 +8,8 @@ use image::Luma;
 use image::Rgb;
 use log::debug;
 use log::warn;
-use multiversion::multiversion;
-use rayon::iter::IndexedParallelIterator;
 use rayon::iter::ParallelIterator;
 use rayon::prelude::*;
-use rayon::slice::ParallelSliceMut;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::hash::Hash;
@@ -26,19 +23,19 @@ use std::time::SystemTime;
 use zerocopy::IntoBytes;
 
 use crate::Result;
-use crate::alloc_image_f32_plain;
 use crate::alloc_image_ok;
-use crate::alloc_image_plain;
+use crate::alloc_image_plain_typed;
 use crate::analyze::FormatDump;
 use crate::bits::LEu32;
 use crate::bits::LookupTable;
 use crate::bits::scale_u16;
 use crate::decompressors::Decompressor;
-use crate::decompressors::LineIteratorMut;
+use crate::decompressors::decompress_lines_fn;
+use crate::decompressors::decompress_strips_fn;
 use crate::decompressors::deflate::DeflateDecompressor;
 use crate::decompressors::jpeg::JpegDecompressor;
-use crate::decompressors::jpeg::LJpegDecompressor;
 use crate::decompressors::jpegxl::JpegXLDecompressor;
+use crate::decompressors::ljpeg::LJpegDecompressor;
 use crate::decompressors::packed::PackedDecompressor;
 use crate::exif::Exif;
 use crate::formats::ciff;
@@ -57,12 +54,12 @@ use crate::imgop::Point;
 use crate::imgop::Rect;
 use crate::lens::LensDescription;
 use crate::pixarray::Pix2D;
-use crate::pixarray::PixF32;
 use crate::pixarray::PixU16;
 use crate::pixarray::SubPixel;
 use crate::pixarray::deinterleave2x2;
 use crate::rawsource::RawSource;
 use crate::tags::DngTag;
+use crate::tiles::TilesMut;
 
 macro_rules! fetch_ciff_tag {
   ($tiff:expr, $tag:expr) => {
@@ -135,7 +132,6 @@ pub mod x3f;
 pub use camera::Camera;
 
 use crate::RawlerError;
-use crate::alloc_image;
 use crate::formats::bmff::Bmff;
 use crate::tags::ExifTag;
 use crate::tags::TiffCommonTag;
@@ -562,7 +558,44 @@ pub(crate) fn dynamic_image_from_ifd(ifd: &IFD, rawsource: &RawSource) -> Result
   }
 }
 
-pub(crate) fn plain_image_from_ifd(ifd: &IFD, rawsource: &RawSource) -> Result<RawImageData> {
+/// Decodes a complete image from a TIFF IFD into a [`RawImageData`] buffer.
+///
+/// Inspects the IFD for the compression method, sample format, storage layout
+/// (strips vs. tiles), bit depth, and photometric interpretation, then
+/// dispatches to the appropriate decompressor. After decompression the pixel
+/// buffer is cropped to the nominal image dimensions (removing any codec
+/// padding), and optional post-processing steps are applied:
+///
+/// * **Linearisation** — if a `Linearization` tag is present its lookup table
+///   is applied to every `u16` pixel.
+/// * **Deinterleaving** — if DNG 1.7.1 `RowInterleaveFactor` /
+///   `ColumnInterleaveFactor` tags indicate 2×2 interleaving, pixels are
+///   reordered.
+///
+/// # Supported combinations
+///
+/// | Sample format | Compression                    | Storage        |
+/// |---------------|--------------------------------|----------------|
+/// | `Uint` (u16)  | None                           | Strips / Tiles |
+/// | `Uint` (u16)  | ModernJPEG (lossy or lossless) | Strips / Tiles |
+/// | `Uint` (u16)  | LossyJPEG                      | Strips / Tiles |
+/// | `Uint` (u16)  | JPEG-XL                        | Strips / Tiles |
+/// | `IEEEFP` (f32)| None                           | Strips / Tiles |
+/// | `IEEEFP` (f32)| Deflate                        | Tiles          |
+///
+/// All other combinations return an error.
+///
+/// # Arguments
+/// * `ifd` - The IFD that describes the image. Must contain at minimum
+///   `ImageWidth`, `ImageLength`, `SamplesPerPixel`, `BitsPerSample`, and the
+///   relevant strip/tile offset tags.
+/// * `rawsource` - The raw file data used to read compressed pixel bytes.
+///
+/// # Errors
+/// Returns an error if required tags are missing, the compression /
+/// storage combination is unsupported, or any decompressor fails.
+pub fn plain_image_from_ifd(ifd: &IFD, rawsource: &RawSource) -> Result<RawImageData> {
+  let dummy = false;
   let endian = ifd.endian;
   let tiff_width = fetch_tiff_tag!(ifd, TiffCommonTag::ImageWidth).force_usize(0);
   let tiff_height = fetch_tiff_tag!(ifd, TiffCommonTag::ImageLength).force_usize(0);
@@ -573,7 +606,7 @@ pub(crate) fn plain_image_from_ifd(ifd: &IFD, rawsource: &RawSource) -> Result<R
   let pi = PhotometricInterpretation::extract(ifd)?.unwrap_or(PhotometricInterpretation::BlackIsZero);
 
   log::debug!(
-    "TIFF image: {}x{}, cpp={}, bits={}, compression={:?}, sample_format={:?}, data_mode={:?}, endian={:?}",
+    "plain_image_from_ifd(): {}x{}, cpp={}, bits={}, compression={:?}, sample_format={:?}, data_mode={:?}, endian={:?}",
     tiff_width,
     tiff_height,
     cpp,
@@ -584,47 +617,29 @@ pub(crate) fn plain_image_from_ifd(ifd: &IFD, rawsource: &RawSource) -> Result<R
     endian,
   );
 
-  let (decode_width, decode_height) = match ifd.data_mode()? {
-    DataMode::Strips => (tiff_width, tiff_height),
-    DataMode::Tiles => {
-      let twidth = fetch_tiff_tag!(ifd, TiffCommonTag::TileWidth).force_usize(0);
-      let tlength = fetch_tiff_tag!(ifd, TiffCommonTag::TileLength).force_usize(0);
-      (((tiff_width - 1) / twidth + 1) * twidth, ((tiff_height - 1) / tlength + 1) * tlength)
-    }
-  };
-
   match sample_format {
     SampleFormat::Uint => {
-      let mut pixbuf: PixU16 = alloc_image_plain!(decode_width * cpp, decode_height, false);
-      match (compression, ifd.data_mode()?) {
-        (CompressionMethod::None, DataMode::Strips) => {
-          decode_strips::<u16>(&mut pixbuf, rawsource, ifd, PackedDecompressor::new(bits, endian))?;
-        }
-        (CompressionMethod::None, DataMode::Tiles) => {
-          decode_tiles::<u16>(&mut pixbuf, rawsource, ifd, PackedDecompressor::new(bits, endian))?;
-        }
+      let mut pixbuf = match (compression, ifd.data_mode()?) {
+        (CompressionMethod::None, DataMode::Strips) => decode_strips::<u16>(rawsource, ifd, PackedDecompressor::new(bits, endian), dummy)?,
+        (CompressionMethod::None, DataMode::Tiles) => decode_tiles::<u16>(rawsource, ifd, PackedDecompressor::new(bits, endian), dummy)?,
         (CompressionMethod::ModernJPEG, DataMode::Strips) => {
           if (pi == PhotometricInterpretation::YCbCr && bits == 8) || (pi == PhotometricInterpretation::BlackIsZero && bits == 8) {
-            decode_strips::<u16>(&mut pixbuf, rawsource, ifd, JpegDecompressor::new())?;
+            decode_strips::<u16>(rawsource, ifd, JpegDecompressor::new(), dummy)?
           } else {
-            decode_strips::<u16>(&mut pixbuf, rawsource, ifd, LJpegDecompressor::new())?;
+            decode_strips::<u16>(rawsource, ifd, LJpegDecompressor::new(), dummy)?
           }
         }
         (CompressionMethod::ModernJPEG, DataMode::Tiles) => {
           if (pi == PhotometricInterpretation::YCbCr && bits == 8) || (pi == PhotometricInterpretation::BlackIsZero && bits == 8) {
-            decode_tiles::<u16>(&mut pixbuf, rawsource, ifd, JpegDecompressor::new())?;
+            decode_tiles::<u16>(rawsource, ifd, JpegDecompressor::new(), dummy)?
           } else {
-            decode_tiles::<u16>(&mut pixbuf, rawsource, ifd, LJpegDecompressor::new())?;
+            decode_tiles::<u16>(rawsource, ifd, LJpegDecompressor::new(), dummy)?
           }
         }
-        (CompressionMethod::LossyJPEG, DataMode::Strips) => {
-          decode_strips::<u16>(&mut pixbuf, rawsource, ifd, JpegDecompressor::new())?;
-        }
-        (CompressionMethod::LossyJPEG, DataMode::Tiles) => {
-          decode_tiles::<u16>(&mut pixbuf, rawsource, ifd, JpegDecompressor::new())?;
-        }
-        (CompressionMethod::JPEGXL, DataMode::Strips) => decode_strips::<u16>(&mut pixbuf, rawsource, ifd, JpegXLDecompressor::new(bits))?,
-        (CompressionMethod::JPEGXL, DataMode::Tiles) => decode_tiles::<u16>(&mut pixbuf, rawsource, ifd, JpegXLDecompressor::new(bits))?,
+        (CompressionMethod::LossyJPEG, DataMode::Strips) => decode_strips::<u16>(rawsource, ifd, JpegDecompressor::new(), dummy)?,
+        (CompressionMethod::LossyJPEG, DataMode::Tiles) => decode_tiles::<u16>(rawsource, ifd, JpegDecompressor::new(), dummy)?,
+        (CompressionMethod::JPEGXL, DataMode::Strips) => decode_strips::<u16>(rawsource, ifd, JpegXLDecompressor::new(bits), dummy)?,
+        (CompressionMethod::JPEGXL, DataMode::Tiles) => decode_tiles::<u16>(rawsource, ifd, JpegXLDecompressor::new(bits), dummy)?,
         _ => {
           return Err(RawlerError::DecoderFailed(format!(
             "Unsupported compression method: {:?}, storage: {:?}",
@@ -632,7 +647,7 @@ pub(crate) fn plain_image_from_ifd(ifd: &IFD, rawsource: &RawSource) -> Result<R
             ifd.data_mode()?
           )));
         }
-      }
+      };
 
       // We need to crop first, before we do stuff like deinterleaving.
       // Padded pixels on output by LJPEG compression will corrupt deinterleave.
@@ -657,17 +672,13 @@ pub(crate) fn plain_image_from_ifd(ifd: &IFD, rawsource: &RawSource) -> Result<R
     }
     // Floating Point (IEEE) storage
     SampleFormat::IEEEFP => {
-      let mut pixbuf: PixF32 = alloc_image_f32_plain!(decode_width * cpp, decode_height, false);
-      match (compression, ifd.data_mode()?) {
-        (CompressionMethod::None, DataMode::Strips) => {
-          decode_strips::<f32>(&mut pixbuf, rawsource, ifd, PackedDecompressor::new(bits, endian))?;
-        }
-        (CompressionMethod::None, DataMode::Tiles) => {
-          decode_tiles::<f32>(&mut pixbuf, rawsource, ifd, PackedDecompressor::new(bits, endian))?;
-        }
+      //let mut pixbuf: PixF32 = alloc_image_f32_plain!(decode_width * cpp, decode_height, false);
+      let mut pixbuf = match (compression, ifd.data_mode()?) {
+        (CompressionMethod::None, DataMode::Strips) => decode_strips::<f32>(rawsource, ifd, PackedDecompressor::new(bits, endian), dummy)?,
+        (CompressionMethod::None, DataMode::Tiles) => decode_tiles::<f32>(rawsource, ifd, PackedDecompressor::new(bits, endian), dummy)?,
         (CompressionMethod::Deflate, DataMode::Tiles) => {
           let predictor = fetch_tiff_tag!(ifd, TiffCommonTag::Predictor).force_u16(0);
-          decode_tiles::<f32>(&mut pixbuf, rawsource, ifd, DeflateDecompressor::new(cpp, predictor, bits, endian))?;
+          decode_tiles::<f32>(rawsource, ifd, DeflateDecompressor::new(cpp, predictor, bits), dummy)?
         }
         _ => {
           return Err(RawlerError::DecoderFailed(format!(
@@ -676,7 +687,7 @@ pub(crate) fn plain_image_from_ifd(ifd: &IFD, rawsource: &RawSource) -> Result<R
             ifd.data_mode()?
           )));
         }
-      }
+      };
 
       // We need to crop first, before we do stuff like deinterleaving.
       // Padded pixels on output by LJPEG compression will corrupt deinterleave.
@@ -690,41 +701,73 @@ pub(crate) fn plain_image_from_ifd(ifd: &IFD, rawsource: &RawSource) -> Result<R
   }
 }
 
-#[multiversion(targets("x86_64+avx+avx2", "x86+sse", "aarch64+neon"))]
-pub(super) fn decode_strips<'a, T>(pixbuf: &'a mut Pix2D<T>, file: &RawSource, raw: &IFD, dc: impl Decompressor<'a, T>) -> Result<()>
+/// Decodes a strip-organised raw image into a flat pixel buffer.
+///
+/// Reads strip offsets and byte counts from `raw` (TIFF tags `StripOffsets`,
+/// `StripByteCounts`, `RowsPerStrip`, `ImageWidth`, `ImageLength`, and
+/// `SamplesPerPixel`) and decompresses every strip with `dc`.
+///
+/// # Arguments
+/// * `file` - Source file handle used to read strip data.
+/// * `raw` - The IFD describing the image (must contain the tags listed above).
+/// * `dc` - A decompressor valid for any borrow lifetime.
+/// * `dummy` - When `true`, allocates an uninitialised output buffer and skips
+///   decompression (used for probing / benchmarking).
+///
+/// # Errors
+/// Returns an error if required TIFF tags are missing, strip data cannot be
+/// read, or the decompressor returns an error for any strip.
+pub(super) fn decode_strips<T>(file: &RawSource, raw: &IFD, dc: impl for<'a> Decompressor<'a, T>, dummy: bool) -> Result<Pix2D<T>>
 where
-  T: SubPixel + 'a,
+  T: SubPixel,
 {
   let (strips, cont) = raw.strip_data(file)?;
+  let width = fetch_tiff_tag!(raw, TiffCommonTag::ImageWidth).force_usize(0);
   let height = fetch_tiff_tag!(raw, TiffCommonTag::ImageLength).force_usize(0);
+  let cpp = fetch_tiff_tag!(raw, TiffCommonTag::SamplesPerPixel).force_usize(0);
   let rows_per_strip = raw.get_entry(TiffCommonTag::RowsPerStrip).map(|tag| tag.force_usize(0)).unwrap_or(height);
-  let line_width = pixbuf.width;
+  let line_width = width * cpp;
   // If we have a continous buffer, we can optimize decompression of multiple strips.
-  if let Some(src) = cont {
+  if let Some(src) = cont
+    && dc.can_skip_rows()
+  {
     // Some decompressors performing badly when skip_rows is > 0, because they need to
     // decompress the skipped rows anyway.
-    if dc.strips_optimized() {
-      decode_threaded_prealloc(pixbuf, &|line, row| dc.decompress(src, row, std::iter::once(line), line_width))?;
-    } else {
-      dc.decompress(src, 0, pixbuf.pixel_rows_mut(), line_width)?;
-    }
+    Ok(decompress_lines_fn(width * cpp, height, dummy, &|line, row| {
+      dc.decompress(src, row, std::iter::once(line), line_width)
+    })?)
   } else {
-    decode_threaded_multiline_prealloc(pixbuf, rows_per_strip, &|lines, strip, _row| {
+    Ok(decompress_strips_fn(width * cpp, height, rows_per_strip, dummy, &|lines, strip, _row| {
       let src = strips[strip];
-      dc.decompress(src, 0, lines, line_width)
-    })?;
+      dc.decompress(src, 0, lines.chunks_exact_mut(line_width), line_width)
+    })?)
   }
-
-  Ok(())
 }
 
-#[multiversion(targets("x86_64+avx+avx2", "x86+sse", "aarch64+neon"))]
-pub(super) fn decode_tiles<'a, T>(pixbuf: &'a mut Pix2D<T>, file: &RawSource, raw: &IFD, dc: impl Decompressor<'a, T>) -> Result<()>
+/// Decodes a tile-organised raw image into a flat pixel buffer.
+///
+/// Reads tile geometry and data offsets from `raw` (TIFF tags `TileWidth`,
+/// `TileLength`, `TileOffsets`, `TileByteCounts`, `ImageWidth`, `ImageLength`,
+/// and `SamplesPerPixel`) and decompresses every tile with `dc`.
+///
+/// An error is returned early if the number of tile offsets does not match the
+/// expected column × row tile count.
+///
+/// # Arguments
+/// * `file` - Source file handle used to read tile data.
+/// * `raw` - The IFD describing the image (must contain the tags listed above).
+/// * `dc` - A decompressor valid for any borrow lifetime.
+/// * `dummy` - When `true`, allocates an uninitialised output buffer and skips
+///   decompression (used for probing / benchmarking).
+///
+/// # Errors
+/// Returns an error if required TIFF tags are missing, the tile count does not
+/// match the offset table, tile data cannot be read, or the decompressor
+/// returns an error for any tile.
+pub(super) fn decode_tiles<T>(file: &RawSource, raw: &IFD, dc: impl for<'a> Decompressor<'a, T>, dummy: bool) -> Result<Pix2D<T>>
 where
-  T: SubPixel + 'a,
+  T: SubPixel,
 {
-  use crate::tiles::TilesMut;
-
   let tiles_src = raw.tile_data(file)?;
 
   let width = fetch_tiff_tag!(raw, TiffCommonTag::ImageWidth).force_usize(0);
@@ -732,11 +775,16 @@ where
   let cpp = fetch_tiff_tag!(raw, TiffCommonTag::SamplesPerPixel).force_usize(0);
   let twidth = fetch_tiff_tag!(raw, TiffCommonTag::TileWidth).force_usize(0); // * cpp;
   let tlength = fetch_tiff_tag!(raw, TiffCommonTag::TileLength).force_usize(0);
+
+  let (decode_width, decode_height) = (((width - 1) / twidth + 1) * twidth, ((height - 1) / tlength + 1) * tlength);
+
   let coltiles = (width - 1) / twidth + 1;
   let rowtiles = (height - 1) / tlength + 1;
   if coltiles * rowtiles != tiles_src.len() as usize {
     return Err(format_args!("DNG: trying to decode {} tiles from {} offsets", coltiles * rowtiles, tiles_src.len()).into());
   }
+
+  let mut pixbuf = alloc_image_plain_typed!(T, decode_width * cpp, decode_height, dummy);
 
   let tiles = pixbuf
     .data
@@ -744,16 +792,12 @@ where
     .map_err(|_| RawlerError::DecoderFailed(format!("Unable to divide source image into tiles")))?;
 
   let line_width = twidth * cpp;
-  tiles
-    .enumerate()
-    .par_bridge()
-    .map(|(tile_id, tile)| {
-      //eprintln!("Decode tile id {}", tile_id);
-      dc.decompress(tiles_src[tile_id], 0, tile.into_iter_mut(), line_width)
-    })
-    .collect::<std::result::Result<Vec<()>, _>>()?;
+  tiles.enumerate().par_bridge().try_for_each(|(tile_id, tile)| {
+    //eprintln!("Decode tile id {}", tile_id);
+    dc.decompress(tiles_src[tile_id], 0, tile.into_iter_mut(), line_width)
+  })?;
 
-  Ok(())
+  Ok(pixbuf)
 }
 
 pub(crate) fn apply_linearization(image: &mut PixU16, tbl: &Value, bits: u32) {
@@ -1060,85 +1104,4 @@ impl RawLoader {
       Err(_) => Err(RawlerError::DecoderFailed(format!("Caught a panic while decoding.{}", BUG))),
     }
   }
-}
-
-pub fn decode_unthreaded<F>(width: usize, height: usize, dummy: bool, closure: &F) -> PixU16
-where
-  F: Fn(&mut [u16], usize) + Sync,
-{
-  let mut out: PixU16 = alloc_image!(width, height, dummy);
-  out.pixels_mut().chunks_exact_mut(width).enumerate().for_each(|(row, line)| {
-    closure(line, row);
-  });
-  out
-}
-
-pub fn decode_threaded<F>(width: usize, height: usize, dummy: bool, closure: &F) -> PixU16
-where
-  F: Fn(&mut [u16], usize) + Sync,
-{
-  let mut out: PixU16 = alloc_image!(width, height, dummy);
-  out.pixels_mut().par_chunks_exact_mut(width).enumerate().for_each(|(row, line)| {
-    closure(line, row);
-  });
-  out
-}
-
-pub fn decode_threaded_prealloc<'a, T, F>(pixbuf: &'a mut Pix2D<T>, closure: &F) -> std::result::Result<(), String>
-where
-  F: Fn(&'a mut [T], usize) -> std::result::Result<(), String> + Sync,
-  T: SubPixel + 'a,
-{
-  let width = pixbuf.width;
-  pixbuf
-    .pixels_mut()
-    .par_chunks_exact_mut(width)
-    .enumerate()
-    .map(|(row, line)| closure(line, row))
-    .collect::<std::result::Result<Vec<()>, _>>()?;
-  Ok(())
-}
-
-pub fn decode_threaded_multiline<F>(width: usize, height: usize, lines: usize, dummy: bool, closure: &F) -> std::result::Result<PixU16, String>
-where
-  F: Fn(&mut [u16], usize) -> std::result::Result<(), String> + Sync,
-{
-  let mut out: PixU16 = alloc_image_ok!(width, height, dummy);
-  out
-    .pixels_mut()
-    .par_chunks_mut(width * lines)
-    .enumerate()
-    .map(|(row, line)| closure(line, row * lines))
-    .collect::<std::result::Result<Vec<()>, _>>()?;
-  Ok(out)
-}
-
-/// Split pixbuf by `lines`.
-/// Caution: The last chunk may not be equal to `lines`.
-pub fn decode_threaded_multiline_prealloc<'a, T, F>(pixbuf: &'a mut Pix2D<T>, lines: usize, closure: &F) -> std::result::Result<(), String>
-where
-  F: Fn(&mut dyn LineIteratorMut<'a, T>, usize, usize) -> std::result::Result<(), String> + Sync,
-  T: SubPixel + 'a,
-{
-  let width = pixbuf.width;
-  let chunksize = pixbuf.width * lines;
-  pixbuf
-    .pixels_mut()
-    .par_chunks_mut(chunksize)
-    .enumerate()
-    .map(|(strip, chunk)| closure(&mut chunk.chunks_exact_mut(width), strip, strip * lines))
-    .collect::<std::result::Result<Vec<()>, _>>()?;
-  Ok(())
-}
-
-/// This is used for streams where not chunked at line boundaries.
-pub fn decode_threaded_chunked<F>(width: usize, height: usize, chunksize: usize, dummy: bool, closure: &F) -> PixU16
-where
-  F: Fn(&mut [u16], usize) + Sync,
-{
-  let mut out: PixU16 = alloc_image!(width, height, dummy);
-  out.pixels_mut().par_chunks_mut(chunksize).enumerate().for_each(|(chunk_id, chunk)| {
-    closure(chunk, chunk_id);
-  });
-  out
 }

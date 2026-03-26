@@ -1,3 +1,5 @@
+//! Color Filter Array (CFA)
+
 use std::fmt;
 
 use itertools::Itertools;

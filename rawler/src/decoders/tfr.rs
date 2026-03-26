@@ -4,12 +4,12 @@ use serde::{Deserialize, Serialize};
 
 use crate::analyze::FormatDump;
 use crate::decompressors::ljpeg::*;
+use crate::decompressors::packed::decompress_16le;
 use crate::exif::Exif;
 use crate::formats::tiff::reader::TiffReader;
 use crate::formats::tiff::{Entry, GenericTiffReader, Rational, Value};
 use crate::imgop::{Dim2, Rect};
 use crate::lens::{LensDescription, LensResolver};
-use crate::packed::decode_16le;
 use crate::pixarray::PixU16;
 use crate::rawsource::RawSource;
 use crate::tags::{DngTag, ExifTag, TiffCommonTag};
@@ -69,7 +69,7 @@ impl<'a> Decoder for TfrDecoder<'a> {
     let src = file.subview_until_eof(offset as u64)?;
 
     let image = if self.camera.find_hint("uncompressed") {
-      decode_16le(src, width, height, dummy)
+      decompress_16le(src, width, height, dummy)?
     } else {
       self.decode_compressed(src, width, height, dummy)?
     };

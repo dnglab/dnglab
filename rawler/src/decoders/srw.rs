@@ -9,6 +9,10 @@ use crate::alloc_image;
 use crate::analyze::FormatDump;
 use crate::bits::LEu32;
 use crate::bits::clampbits;
+use crate::decompressors::packed::decompress_12be;
+use crate::decompressors::packed::decompress_12le;
+use crate::decompressors::packed::decompress_12le_unpacked;
+use crate::decompressors::packed::decompress_14le_unpacked;
 use crate::exif::Exif;
 use crate::formats::tiff::GenericTiffReader;
 use crate::formats::tiff::IFD;
@@ -16,10 +20,6 @@ use crate::formats::tiff::ifd::OffsetMode;
 use crate::formats::tiff::reader::TiffReader;
 use crate::lens::LensDescription;
 use crate::lens::LensResolver;
-use crate::packed::decode_12be;
-use crate::packed::decode_12le;
-use crate::packed::decode_12le_unpacked;
-use crate::packed::decode_14le_unpacked;
 use crate::pixarray::PixU16;
 use crate::pumps::BitPump;
 use crate::pumps::BitPumpMSB;
@@ -82,20 +82,20 @@ impl<'a> Decoder for SrwDecoder<'a> {
 
     let image = match compression {
       32769 => match bits {
-        12 => decode_12le_unpacked(&src, width, height, dummy),
-        14 => decode_14le_unpacked(&src, width, height, dummy),
+        12 => decompress_12le_unpacked(&src, width, height, dummy)?,
+        14 => decompress_14le_unpacked(&src, width, height, dummy)?,
         x => return Err(RawlerError::unsupported(&self.camera, format!("SRW: Don't know how to handle bps {}", x))),
       },
       32770 => match raw.get_entry(TiffCommonTag::SrwSensorAreas) {
         None => match bits {
           12 => {
             if self.camera.find_hint("little_endian") {
-              decode_12le(&src, width, height, dummy)
+              decompress_12le(&src, width, height, dummy)?
             } else {
-              decode_12be(&src, width, height, dummy)
+              decompress_12be(&src, width, height, dummy)?
             }
           }
-          14 => decode_14le_unpacked(&src, width, height, dummy),
+          14 => decompress_14le_unpacked(&src, width, height, dummy)?,
           x => return Err(RawlerError::unsupported(&self.camera, format!("SRW: Don't know how to handle bps {}", x))),
         },
         Some(x) => {

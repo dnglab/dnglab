@@ -25,6 +25,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+//! Lossless JPEG (LJPEG) compressor
+
 use byteorder::{BigEndian, WriteBytesExt};
 use multiversion::multiversion;
 use std::{
