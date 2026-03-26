@@ -9,6 +9,7 @@ use crate::Result;
 use crate::alloc_image;
 use crate::analyze::FormatDump;
 use crate::buffer::PaddedBuf;
+use crate::decompressors::packed::*;
 use crate::exif::Exif;
 use crate::formats::tiff::Entry;
 use crate::formats::tiff::GenericTiffReader;
@@ -21,7 +22,6 @@ use crate::imgop::Point;
 use crate::imgop::Rect;
 use crate::lens::LensDescription;
 use crate::lens::LensResolver;
-use crate::packed::*;
 use crate::pixarray::PixU16;
 use crate::pumps::BitPump;
 use crate::pumps::BitPumpMSB;
@@ -172,8 +172,6 @@ impl<'a> Decoder for OrfDecoder<'a> {
       self.camera.clone()
     };
 
-    let src = file.subview_padded(offset as u64, size as u64)?; // TODO add size and check all samples
-
     log::debug!(
       "ORF raw image size: {}, dim: {}x{}, total mp: {}, strip counts: {}",
       size,
@@ -188,32 +186,45 @@ impl<'a> Decoder for OrfDecoder<'a> {
     // But we need to differentiate between 12be-interlaced and
     // 12be-msb32 because they are in the same size range.
     let image = if size >= width * height * 2 {
+      let src = file.subview(offset as u64, size as u64)?;
       if self.tiff.little_endian() {
-        log::debug!("ORF: decode_12le_unpacked_left_aligned");
-        decode_12le_unpacked_left_aligned(&src, width, height, dummy)
+        log::debug!("ORF: decompress_12le_unpacked_left_aligned");
+        decompress_12le_unpacked_left_aligned(&src, width, height, dummy)?
       } else {
-        log::debug!("ORF: decode_12be_unpacked_left_aligned");
-        decode_12be_unpacked_left_aligned(&src, width, height, dummy)
+        log::debug!("ORF: decompress_12be_unpacked_left_aligned");
+        decompress_12be_unpacked_left_aligned(&src, width, height, dummy)?
       }
     } else if size >= width * height / 10 * 16 {
-      log::debug!("ORF: decode_12le_wcontrol");
-      decode_12le_wcontrol(&src, width, height, dummy)
+      log::debug!("ORF: decompress_12le_wcontrol");
+      let src = file.subview(offset as u64, size as u64)?;
+      decompress_12le_wcontrol(&src, width, height, dummy)?
     } else if size >= width * height * 12 / 8 {
       if self.camera.find_hint("interlaced") {
-        log::debug!("ORF: decode_12be_interlaced");
-        decode_12be_interlaced(&src, width, height, dummy)
+        log::debug!("ORF: decompress_12be_interlaced");
+        // If interlaced, there is a gap between the strips.
+        // To prevent reassembly of strips, we calculate the gap
+        // and increase the src buffer.
+        let gap = {
+          let half = (height + 1) >> 1;
+          // Second field is 2048 byte aligned
+          let second_field_offset = (((half * width * 3 / 2) >> 11) + 1) << 11;
+          let second_field_offset_unaligned = half * width * 3 / 2;
+          second_field_offset - second_field_offset_unaligned
+        };
+        let src = file.subview(offset as u64, (size + gap) as u64)?;
+        decompress_12be_interlaced(&src, width, height, dummy)?
       } else {
-        log::debug!("ORF: decode_12be_msb32");
-        //decode_12be_interlaced(&src, width, height, dummy)
-        decode_12be_msb32(&src, width, height, dummy)
+        log::debug!("ORF: decompress_12be_msb32");
+        let src = file.subview(offset as u64, size as u64)?;
+        decompress_12be_msb32(&src, width, height, dummy)?
       }
     } else {
       log::debug!("ORF: fallback to decode_compressed");
+      let src = file.subview_padded(offset as u64, size as u64)?;
       OrfDecoder::decode_compressed(&src, width, height, bps, dummy)
     };
 
     let cpp = 1;
-
     let blacklevel = self.get_blacklevel(bps)?;
     let whitelevel = None;
     let photometric = RawPhotometricInterpretation::Cfa(CFAConfig::new_from_camera(&self.camera));

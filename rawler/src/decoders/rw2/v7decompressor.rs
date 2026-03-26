@@ -1,11 +1,12 @@
 /// Ported from Libraw
 use crate::{
   decoders::*,
+  decompressors::decompress_lines_fn,
   pumps::{BitPump, BitPumpLSB},
 };
 
 /// This works for 12 and 14 bit depth images
-pub(crate) fn decode_panasonic_v7(buf: &[u8], width: usize, height: usize, bps: u32, dummy: bool) -> PixU16 {
+pub(crate) fn decode_panasonic_v7(buf: &[u8], width: usize, height: usize, bps: u32, dummy: bool) -> std::result::Result<PixU16, String> {
   const V7_BYTES_PER_BLOCK: usize = 16;
 
   let pixels_per_block = match bps {
@@ -19,7 +20,7 @@ pub(crate) fn decode_panasonic_v7(buf: &[u8], width: usize, height: usize, bps: 
 
   let bytes_per_row = V7_BYTES_PER_BLOCK * blocks_per_row;
 
-  decode_threaded(
+  decompress_lines_fn(
     width,
     height,
     dummy,
@@ -31,6 +32,7 @@ pub(crate) fn decode_panasonic_v7(buf: &[u8], width: usize, height: usize, bps: 
         let mut pump = BitPumpLSB::new(block);
         out.iter_mut().for_each(|pixel| *pixel = pump.get_bits(14) as u16);
       }
+      Ok(())
     }),
   )
 }

@@ -65,7 +65,7 @@ impl From<AddrParseError> for AppError {
 impl From<RawlerError> for AppError {
   fn from(value: RawlerError) -> Self {
     match value {
-      RawlerError::DecoderFailed(err) => Self::DecoderFailed(err),
+      RawlerError::DecoderFailed(_) => Self::DecoderFailed(value.to_string()),
       RawlerError::Unsupported { .. } => Self::UnsupportedFile(value.to_string()),
     }
   }

@@ -7,14 +7,14 @@ use crate::Result;
 use crate::analyze::FormatDump;
 use crate::bits::BEu16;
 use crate::bits::BEu32;
+use crate::decompressors::packed::decompress_12be;
+use crate::decompressors::packed::decompress_12be_unpacked;
+use crate::decompressors::packed::decompress_16le;
 use crate::exif::Exif;
 use crate::formats::jfif::Jfif;
 use crate::formats::jfif::Segment;
 use crate::formats::jfif::is_exif;
 use crate::formats::tiff::IFD;
-use crate::packed::decode_12be;
-use crate::packed::decode_12be_unpacked;
-use crate::packed::decode_16le;
 use crate::rawsource::RawSource;
 use crate::tags::TiffCommonTag;
 use std::io::Cursor;
@@ -209,11 +209,11 @@ impl<'a> Decoder for MrwDecoder<'a> {
     let src = file.subview_until_eof(self.data_offset as u64)?;
 
     let buffer = if self.bits == 16 {
-      decode_16le(src, self.raw_width, self.raw_height, dummy)
+      decompress_16le(src, self.raw_width, self.raw_height, dummy)?
     } else if self.packed {
-      decode_12be(src, self.raw_width, self.raw_height, dummy)
+      decompress_12be(src, self.raw_width, self.raw_height, dummy)?
     } else {
-      decode_12be_unpacked(src, self.raw_width, self.raw_height, dummy)
+      decompress_12be_unpacked(src, self.raw_width, self.raw_height, dummy)?
     };
 
     let wb_coeffs = if self.camera.find_hint("swapped_wb") {

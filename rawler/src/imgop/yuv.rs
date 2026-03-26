@@ -6,7 +6,7 @@ use rayon::prelude::*;
 
 /// Color conversion for Y Cb Cr to RGB
 ///
-/// Matrix source: https://web.archive.org/web/20180421030430/http://www.equasys.de/colorconversion.html
+/// Matrix source: [](https://web.archive.org/web/20180421030430/http://www.equasys.de/colorconversion.html)
 pub fn ycbcr_to_rgb(buf: &mut [u16]) {
   let cpp = 3;
   assert_eq!(buf.len() % cpp, 0, "pixel buffer must contains 3 samples/pixel");

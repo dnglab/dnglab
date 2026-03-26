@@ -85,7 +85,6 @@ pub mod formats;
 pub mod imgop;
 pub mod lens;
 pub mod ljpeg92;
-pub mod packed;
 pub mod pixarray;
 pub mod pumps;
 pub mod rawimage;
@@ -123,7 +122,7 @@ pub enum RawlerError {
   #[error("Error: {}, model '{}', make: '{}', mode: '{}'", what, model, make, mode)]
   Unsupported { what: String, model: String, make: String, mode: String },
 
-  #[error("Failed to decode image, possibly corrupt image. Origin error was: {}", _0)]
+  #[error("Failed to decode image, possibly corrupt image: {}", _0)]
   DecoderFailed(String),
 }
 

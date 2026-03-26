@@ -5,28 +5,29 @@
 // Rewritten in Rust by Daniel Vogelbacher, based on logic found in
 // crx.cpp and documentation done by Laurent Clévy (https://github.com/lclevy/canon_cr3).
 
-// Crx is based on JPEG-LS from ITU T.78 and described in US patent US 2016/0323602 A1.
-// It has two modes:
-//  - Lossless compression
-//  - Lossy compression
-// For lossless (only LL band exists) and LL band from lossy compression,
-// prediction is used combined with adaptive Golomb-Rice entropy encoding for compression.
-// For lossy bands other than LL a special value rounding is introduced
-// into Golomb-Rice encoded values.
-//
-// LL band compression uses for the first image line run-length encoding
-// from JPEG-LS and adaptive Golomb-Rice encoding. For other lines,
-// MED (Median Edge Detection) is added to the encoding routines.
-//
-// For Lossy compression, image input is wavelet-transformed into subbands.
-// The LL band for low frequency part
-// The LH band for horizontal-direction frequency characteristic
-// The HL band for vertical-direction frequency characteristic
-// The HH band for oblique-direction frequency characteristic
-//
-// Transformation is directed by i, number of wavelet transformations.
-// Crx uses i=3, so the output is LL(3), LH(3), HL(3), HH(3), LH(2), HL(2), HH(2), LH(1), HL(1), HH(1)
-//
+//! Canon CRX decompressor.
+//!
+//! Crx is based on JPEG-LS from ITU T.78 and described in US patent US 2016/0323602 A1.
+//! It has two modes:
+//!  - Lossless compression
+//!  - Lossy compression
+//! For lossless (only LL band exists) and LL band from lossy compression,
+//! prediction is used combined with adaptive Golomb-Rice entropy encoding for compression.
+//! For lossy bands other than LL a special value rounding is introduced
+//! into Golomb-Rice encoded values.
+//!
+//! LL band compression uses for the first image line run-length encoding
+//! from JPEG-LS and adaptive Golomb-Rice encoding. For other lines,
+//! MED (Median Edge Detection) is added to the encoding routines.
+//!
+//! For Lossy compression, image input is wavelet-transformed into subbands.
+//! The LL band for low frequency part
+//! The LH band for horizontal-direction frequency characteristic
+//! The HL band for vertical-direction frequency characteristic
+//! The HH band for oblique-direction frequency characteristic
+//!
+//! Transformation is directed by i, number of wavelet transformations.
+//! Crx uses i=3, so the output is LL(3), LH(3), HL(3), HH(3), LH(2), HL(2), HH(2), LH(1), HL(1), HH(1)
 
 use self::{mdat::Tile, rice::RiceDecoder};
 use crate::formats::bmff::ext_cr3::cmp1::Cmp1Box;

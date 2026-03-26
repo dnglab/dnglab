@@ -1,3 +1,5 @@
+//! Sony ARW6 decompressor (TBD)
+
 use crate::Result;
 use crate::bits::LookupTable;
 use crate::pixarray::PixU16;

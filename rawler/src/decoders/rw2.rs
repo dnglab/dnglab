@@ -6,6 +6,8 @@ use crate::RawLoader;
 use crate::RawlerError;
 use crate::Result;
 use crate::analyze::FormatDump;
+use crate::decompressors::packed::decompress_12le_unpacked_left_aligned;
+use crate::decompressors::packed::decompress_12le_wcontrol;
 use crate::exif::Exif;
 use crate::formats::tiff::Entry;
 use crate::formats::tiff::GenericTiffReader;
@@ -18,8 +20,6 @@ use crate::imgop::Point;
 use crate::imgop::Rect;
 use crate::lens::LensDescription;
 use crate::lens::LensResolver;
-use crate::packed::decode_12le_unpacked_left_aligned;
-use crate::packed::decode_12le_wcontrol;
 use crate::pixarray::PixU16;
 use crate::rawimage::CFAConfig;
 use crate::rawimage::RawPhotometricInterpretation;
@@ -157,9 +157,9 @@ impl<'a> Decoder for Rw2Decoder<'a> {
         let src = file.subview_until_eof_padded(offset as u64)?; // TODO add size and check all samples
 
         if src.len() >= width * height * 2 {
-          decode_12le_unpacked_left_aligned(&src, width, height, dummy)
+          decompress_12le_unpacked_left_aligned(&src, width, height, dummy)?
         } else if src.len() >= width * height * 3 / 2 {
-          decode_12le_wcontrol(&src, width, height, dummy)
+          decompress_12le_wcontrol(&src, width, height, dummy)?
         } else {
           Rw2Decoder::decode_panasonic(file, &src, width, height, split, raw_format, bps, self.tiff.root_ifd(), dummy)?
         }
@@ -359,9 +359,9 @@ impl<'a> Rw2Decoder<'a> {
     Ok(match raw_format {
       3 => decode_panasonic_v4(buf, width, height, split, dummy),
       4 => decode_panasonic_v4(buf, width, height, split, dummy),
-      5 => decode_panasonic_v5(buf, width, height, bps, dummy),
-      6 => decode_panasonic_v6(buf, width, height, bps, dummy),
-      7 => decode_panasonic_v7(buf, width, height, bps, dummy),
+      5 => decode_panasonic_v5(buf, width, height, bps, dummy)?,
+      6 => decode_panasonic_v6(buf, width, height, bps, dummy)?,
+      7 => decode_panasonic_v7(buf, width, height, bps, dummy)?,
       8 => decode_panasonic_v8(file, width, height, bps, ifd, dummy)?,
       _ => todo!("Format {} is not implemented", raw_format), // TODO: return error
     })

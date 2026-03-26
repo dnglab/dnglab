@@ -8,12 +8,12 @@ use crate::RawImage;
 use crate::RawLoader;
 use crate::Result;
 use crate::bits::BEu16;
+use crate::decompressors::packed::decompress_12be_wcontrol;
 use crate::exif::Exif;
 use crate::formats::tiff::GenericTiffReader;
 use crate::formats::tiff::IFD;
 use crate::formats::tiff::ifd::OffsetMode;
 use crate::formats::tiff::reader::TiffReader;
-use crate::packed::decode_12be_wcontrol;
 use crate::tags::ExifTag;
 use crate::tags::TiffCommonTag;
 
@@ -67,7 +67,7 @@ impl<'a> Decoder for ErfDecoder<'a> {
     let offset = fetch_tiff_tag!(raw, TiffCommonTag::StripOffsets).force_usize(0);
     let src = file.subview_until_eof(offset as u64)?;
 
-    let image = decode_12be_wcontrol(src, width, height, dummy);
+    let image = decompress_12be_wcontrol(src, width, height, dummy)?;
     let cpp = 1;
 
     let blacklevel = self.get_blacklevel(cpp);

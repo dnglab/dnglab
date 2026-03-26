@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: LGPL-2.1
 // Copyright 2024 Daniel Vogelbacher <daniel@chaospixel.com>
 // Originally written in C in dcraw.c by Dave Coffin
-//
-// Kodak Run Adaptive Differential Coding (RADC)
+
+//! Kodak Run Adaptive Differential Coding (RADC).
 
 use rayon::iter::IndexedParallelIterator;
 use rayon::iter::ParallelIterator;

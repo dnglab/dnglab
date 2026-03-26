@@ -1,3 +1,5 @@
+//! Image source like file or buffer
+
 use std::{
   fmt::Debug,
   fs::File,

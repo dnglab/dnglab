@@ -2,9 +2,10 @@ use crate::RawImage;
 use crate::RawLoader;
 use crate::Result;
 use crate::bits::*;
+use crate::decompressors::packed::decompress_12be_msb32;
+use crate::decompressors::packed::decompress_12le;
 use crate::exif::Exif;
 use crate::formats::tiff::Rational;
-use crate::packed::*;
 use crate::rawsource::RawSource;
 
 use super::Camera;
@@ -46,9 +47,9 @@ impl<'a> Decoder for AriDecoder<'a> {
     let src = file.subview_until_eof_padded(offset as u64)?;
 
     let image = if self.camera.find_hint("little-endian") {
-      decode_12le(&src, width, height, dummy)
+      decompress_12le(&src, width, height, dummy)?
     } else {
-      decode_12be_msb32(&src, width, height, dummy)
+      decompress_12be_msb32(&src, width, height, dummy)?
     };
 
     let cpp = 1;

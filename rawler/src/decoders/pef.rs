@@ -18,6 +18,7 @@ use crate::alloc_image_ok;
 use crate::analyze::FormatDump;
 use crate::bits::Endian;
 use crate::decompressors::ljpeg::huffman::*;
+use crate::decompressors::packed::*;
 use crate::exif::Exif;
 use crate::formats::tiff::Entry;
 use crate::formats::tiff::GenericTiffReader;
@@ -27,7 +28,6 @@ use crate::formats::tiff::ifd::OffsetMode;
 use crate::formats::tiff::reader::TiffReader;
 use crate::lens::LensDescription;
 use crate::lens::LensResolver;
-use crate::packed::*;
 use crate::pixarray::PixU16;
 use crate::pumps::BitPumpMSB;
 use crate::pumps::ByteStream;
@@ -114,8 +114,8 @@ impl<'a> Decoder for PefDecoder<'a> {
     let src = file.subview_until_eof(offset as u64)?;
 
     let image = match fetch_tiff_tag!(raw, TiffCommonTag::Compression).get_u32(0) {
-      Ok(Some(1)) => decode_16be(src, width, height, dummy),
-      Ok(Some(32773)) => decode_12be(src, width, height, dummy),
+      Ok(Some(1)) => decompress_16be(src, width, height, dummy)?,
+      Ok(Some(32773)) => decompress_12be(src, width, height, dummy)?,
       Ok(Some(65535)) => self.decode_compressed(src, width, height, dummy)?,
       Ok(Some(c)) => return Err(RawlerError::unsupported(&self.camera, format!("PEF: Don't know how to read compression {}", c))),
       _ => return Err(RawlerError::unsupported(&self.camera, "PEF: No compression tag found")),

@@ -1,5 +1,9 @@
+//! Lossless JPEG (LJPEG) decompressor.
+
 use crate::bits::Endian;
-use crate::decoders::decode_threaded_multiline;
+use crate::decompressors::Decompressor;
+use crate::decompressors::LineIteratorMut;
+use crate::decompressors::decompress_strips_fn;
 use crate::decompressors::ljpeg::decompressors::*;
 use crate::decompressors::ljpeg::huffman::*;
 use crate::pixarray::PixU16;
@@ -7,6 +11,43 @@ use crate::pumps::ByteStream;
 
 mod decompressors;
 pub mod huffman;
+
+/// Decompressor for lossless JPEG (LJPEG)
+pub struct LJpegDecompressor {}
+
+impl LJpegDecompressor {
+  pub fn new() -> Self {
+    Self {}
+  }
+}
+
+impl<'a> Decompressor<'a, u16> for LJpegDecompressor {
+  /// Decodes a lossless JPEG buffer into `u16` pixel lines.
+  ///
+  /// Decodes the entire LJPEG segment into a temporary [`PixU16`] buffer,
+  /// then copies the requested rows — starting after `skip_rows` — into
+  /// `lines`. The copy uses `line_width` to slice the decoded buffer, so
+  /// `line_width` must not exceed the decoded image width.
+  ///
+  /// # Errors
+  /// Returns `Err` if the LJPEG stream cannot be parsed or decoded.
+  fn decompress(&self, src: &[u8], skip_rows: usize, lines: impl LineIteratorMut<'a, u16>, line_width: usize) -> std::result::Result<(), String> {
+    let decompressor = LjpegDecompressor::new(src)?;
+    let mut pixbuf = PixU16::new(decompressor.width(), decompressor.height());
+
+    decompressor.decode(pixbuf.pixels_mut(), 0, decompressor.width(), decompressor.width(), decompressor.height(), false)?;
+
+    for (dst, src) in lines.zip(pixbuf.pixels().chunks_exact(line_width).skip(skip_rows)) {
+      dst.copy_from_slice(src);
+    }
+
+    Ok(())
+  }
+
+  fn can_skip_rows(&self) -> bool {
+    false
+  }
+}
 
 enum Marker {
   Stuff = 0x00,
@@ -334,16 +375,15 @@ impl<'a> LjpegDecompressor<'a> {
     let htable1 = &self.dhts[self.sof.components[0].dc_tbl_num];
     let htable2 = &self.dhts[self.sof.components[1].dc_tbl_num];
     let bpred = 1 << (self.sof.precision - self.point_transform - 1);
-    decode_threaded_multiline(
+    decompress_strips_fn(
       width,
       height,
       8,
       false,
-      &(|strip: &mut [u16], block| {
-        let block = block / 8;
-        let offset = offsets[block];
-        let nlines = strip.len() / width;
-        decode_leaf_strip(&self.buffer[offset..], strip, width, nlines, htable1, htable2, bpred)?;
+      &(|lines: &mut [u16], strip, _row| {
+        let offset = offsets[strip];
+        let nlines = lines.len() / width;
+        decode_leaf_strip(&self.buffer[offset..], lines, width, nlines, htable1, htable2, bpred)?;
         Ok(())
       }),
     )

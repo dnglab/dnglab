@@ -4,10 +4,10 @@ use crate::RawlerError;
 use crate::Result;
 use crate::analyze::FormatDump;
 use crate::bits::LookupTable;
+use crate::decompressors::packed::decompress_8bit_wtable;
 use crate::exif::Exif;
 use crate::formats::tiff::GenericTiffReader;
 use crate::formats::tiff::reader::TiffReader;
-use crate::packed::decode_8bit_wtable;
 use crate::rawsource::RawSource;
 use crate::tags::TiffCommonTag;
 
@@ -54,7 +54,7 @@ impl<'a> Decoder for DcsDecoder<'a> {
       LookupTable::new(&t)
     };
 
-    let image = decode_8bit_wtable(&src, &table, width, height, dummy);
+    let image = decompress_8bit_wtable(&src, &table, width, height, dummy)?;
     let cpp = 1;
     ok_cfa_image(self.camera.clone(), cpp, [f32::NAN, f32::NAN, f32::NAN, f32::NAN], image, dummy)
   }

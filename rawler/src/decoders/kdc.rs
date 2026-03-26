@@ -9,6 +9,7 @@ use crate::alloc_image;
 use crate::alloc_image_ok;
 use crate::analyze::FormatDump;
 use crate::bits::BEu16;
+use crate::decompressors::packed::decompress_12be;
 use crate::exif::Exif;
 use crate::formats::tiff::Entry;
 use crate::formats::tiff::GenericTiffReader;
@@ -16,7 +17,6 @@ use crate::formats::tiff::IFD;
 use crate::formats::tiff::Value;
 use crate::formats::tiff::ifd::OffsetMode;
 use crate::formats::tiff::reader::TiffReader;
-use crate::packed::decode_12be;
 use crate::pixarray::PixU16;
 use crate::tags::ExifTag;
 use crate::tags::TiffCommonTag;
@@ -129,7 +129,7 @@ impl<'a> Decoder for KdcDecoder<'a> {
     }
 
     let src = file.subview_until_eof(off as u64)?;
-    let image = decode_12be(src, width, height, dummy);
+    let image = decompress_12be(src, width, height, dummy)?;
     let cpp = 1;
     ok_cfa_image(self.camera.clone(), cpp, self.get_wb()?, image, dummy)
   }

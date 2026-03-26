@@ -1,12 +1,12 @@
-use crate::{bits::LEu16, decoders::*, pumps::BitPump};
+use crate::{bits::LEu16, decoders::*, decompressors::decompress_strips_fn, pumps::BitPump};
 
 pub(crate) fn decode_panasonic_v4(buf: &[u8], width: usize, height: usize, split: bool, dummy: bool) -> PixU16 {
-  decode_threaded_multiline(
+  decompress_strips_fn(
     width,
     height,
     5,
     dummy,
-    &(|out: &mut [u16], row| {
+    &(|out: &mut [u16], _strip, row| {
       let skip = ((width * row * 9) + (width / 14 * 2 * row)) / 8;
       let blocks = skip / 0x4000;
       let src = &buf[blocks * 0x4000..];

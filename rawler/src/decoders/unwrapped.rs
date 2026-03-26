@@ -3,7 +3,7 @@ use crate::bits::*;
 use crate::buffer::PaddedBuf;
 use crate::decoders::*;
 use crate::decompressors::ljpeg::LjpegDecompressor;
-use crate::packed::*;
+use crate::decompressors::packed::*;
 
 pub fn decode_unwrapped(file: &RawSource) -> Result<RawImageData> {
   let buffer = file.subview_until_eof_padded(0)?;
@@ -27,33 +27,35 @@ pub fn decode_unwrapped(file: &RawSource) -> Result<RawImageData> {
         LookupTable::new(&t)
       };
       let data = &data[512..];
-      Ok(RawImageData::Integer(decode_8bit_wtable(data, &table, width, height, false).into_inner()))
+      Ok(RawImageData::Integer(decompress_8bit_wtable(data, &table, width, height, false)?.into_inner()))
     }
-    1 => Ok(RawImageData::Integer(decode_10le_lsb16(data, width, height, false).into_inner())),
-    2 => Ok(RawImageData::Integer(decode_10be(data, width, height, false).into_inner())),
-    3 => Ok(RawImageData::Integer(decode_12be(data, width, height, false).into_inner())),
-    4 => Ok(RawImageData::Integer(decode_12be_msb16(data, width, height, false).into_inner())),
-    5 => Ok(RawImageData::Integer(decode_12le_16bitaligned(data, width, height, false).into_inner())),
-    6 => Ok(RawImageData::Integer(decode_12be_msb32(data, width, height, false).into_inner())),
-    7 => Ok(RawImageData::Integer(decode_12le_wcontrol(data, width, height, false).into_inner())),
-    8 => Ok(RawImageData::Integer(decode_12be_wcontrol(data, width, height, false).into_inner())),
-    9 => Ok(RawImageData::Integer(decode_12be_interlaced(data, width, height, false).into_inner())),
-    10 => Ok(RawImageData::Integer(decode_12be_interlaced_unaligned(data, width, height, false).into_inner())),
-    11 => Ok(RawImageData::Integer(decode_12le(data, width, height, false).into_inner())),
-    12 => Ok(RawImageData::Integer(decode_12le_unpacked(data, width, height, false).into_inner())),
-    13 => Ok(RawImageData::Integer(decode_12be_unpacked(data, width, height, false).into_inner())),
+    1 => Ok(RawImageData::Integer(decompress_10le_lsb16(data, width, height, false)?.into_inner())),
+    2 => Ok(RawImageData::Integer(decompress_10be(data, width, height, false)?.into_inner())),
+    3 => Ok(RawImageData::Integer(decompress_12be(data, width, height, false)?.into_inner())),
+    4 => Ok(RawImageData::Integer(decompress_12be_msb16(data, width, height, false)?.into_inner())),
+    5 => Ok(RawImageData::Integer(decompress_12le_16bitaligned(data, width, height, false)?.into_inner())),
+    6 => Ok(RawImageData::Integer(decompress_12be_msb32(data, width, height, false)?.into_inner())),
+    7 => Ok(RawImageData::Integer(decompress_12le_wcontrol(data, width, height, false)?.into_inner())),
+    8 => Ok(RawImageData::Integer(decompress_12be_wcontrol(data, width, height, false)?.into_inner())),
+    9 => Ok(RawImageData::Integer(decompress_12be_interlaced(data, width, height, false)?.into_inner())),
+    10 => Ok(RawImageData::Integer(
+      decompress_12be_interlaced_unaligned(data, width, height, false)?.into_inner(),
+    )),
+    11 => Ok(RawImageData::Integer(decompress_12le(data, width, height, false)?.into_inner())),
+    12 => Ok(RawImageData::Integer(decompress_12le_unpacked(data, width, height, false)?.into_inner())),
+    13 => Ok(RawImageData::Integer(decompress_12be_unpacked(data, width, height, false)?.into_inner())),
     14 => Ok(RawImageData::Integer(
-      decode_12be_unpacked_left_aligned(data, width, height, false).into_inner(),
+      decompress_12be_unpacked_left_aligned(data, width, height, false)?.into_inner(),
     )),
     15 => Ok(RawImageData::Integer(
-      decode_12le_unpacked_left_aligned(data, width, height, false).into_inner(),
+      decompress_12le_unpacked_left_aligned(data, width, height, false)?.into_inner(),
     )),
-    16 => Ok(RawImageData::Integer(decode_14le_unpacked(data, width, height, false).into_inner())),
-    17 => Ok(RawImageData::Integer(decode_14be_unpacked(data, width, height, false).into_inner())),
-    18 => Ok(RawImageData::Integer(decode_16le(data, width, height, false).into_inner())),
-    19 => Ok(RawImageData::Integer(decode_16le_skiplines(data, width, height, false).into_inner())),
-    20 => Ok(RawImageData::Integer(decode_16be(data, width, height, false).into_inner())),
-    21 => Ok(RawImageData::Integer(arw::ArwDecoder::decode_arw1(data, width, height, false).into_inner())),
+    16 => Ok(RawImageData::Integer(decompress_14le_unpacked(data, width, height, false)?.into_inner())),
+    17 => Ok(RawImageData::Integer(decompress_14be_unpacked(data, width, height, false)?.into_inner())),
+    18 => Ok(RawImageData::Integer(decompress_16le(data, width, height, false)?.into_inner())),
+    19 => Ok(RawImageData::Integer(decompress_16le_skiplines(data, width, height, false)?.into_inner())),
+    20 => Ok(RawImageData::Integer(decompress_16be(data, width, height, false)?.into_inner())),
+    21 => Ok(RawImageData::Integer(arw::ArwDecoder::decode_arw1(data, width, height, false)?.into_inner())),
     22 => {
       let mut curve: [usize; 6] = [0, 0, 0, 0, 0, 4095];
       for i in 0..4 {
@@ -63,7 +65,7 @@ pub fn decode_unwrapped(file: &RawSource) -> Result<RawImageData> {
       let curve = arw::ArwDecoder::calculate_curve(curve);
       let data = &data[8..];
       Ok(RawImageData::Integer(
-        arw::ArwDecoder::decode_arw2(data, width, height, &curve, false).into_inner(),
+        arw::ArwDecoder::decode_arw2(data, width, height, &curve, false)?.into_inner(),
       ))
     }
     23 => {
@@ -76,7 +78,7 @@ pub fn decode_unwrapped(file: &RawSource) -> Result<RawImageData> {
       }
 
       let image_data = arw::ArwDecoder::sony_decrypt(data, 0, length, key)?;
-      Ok(RawImageData::Integer(decode_16be(&image_data, width, height, false).into_inner()))
+      Ok(RawImageData::Integer(decompress_16be(&image_data, width, height, false)?.into_inner()))
     }
     24 => Ok(RawImageData::Integer(
       orf::OrfDecoder::decode_compressed(&buffer, width, height, 12, false).into_inner(),
@@ -168,7 +170,7 @@ pub fn decode_unwrapped(file: &RawSource) -> Result<RawImageData> {
       let coeffs = [LEf32(data, 0), LEf32(data, 4), LEf32(data, 8), LEf32(data, 12)];
       let data = PaddedBuf::new_owned(data[16..].to_vec(), data.len() - 16);
       Ok(RawImageData::Integer(
-        nef::NefDecoder::decode_snef_compressed(&data, coeffs, width, height, false).into_inner(),
+        nef::NefDecoder::decode_snef_compressed(&data, coeffs, width, height, false)?.into_inner(),
       ))
     }
     _ => Err("No such decoder".into()),

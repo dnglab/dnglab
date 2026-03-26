@@ -8,12 +8,16 @@ use crate::RawImage;
 use crate::RawLoader;
 use crate::RawlerError;
 use crate::Result;
-use crate::alloc_image;
+use crate::alloc_image_ok;
 use crate::bits::*;
-use crate::decoders::decode_threaded;
-use crate::decoders::decode_threaded_multiline;
 use crate::decompressors::arw6::decompress_arw6;
+use crate::decompressors::decompress_lines_fn;
+use crate::decompressors::decompress_strips_fn;
 use crate::decompressors::ljpeg::LjpegDecompressor;
+use crate::decompressors::packed::decompress_12le;
+use crate::decompressors::packed::decompress_14be_unpacked;
+use crate::decompressors::packed::decompress_16be;
+use crate::decompressors::packed::decompress_16le;
 use crate::exif::Exif;
 use crate::formats::tiff::Entry;
 use crate::formats::tiff::GenericTiffReader;
@@ -28,10 +32,6 @@ use crate::imgop::yuv::interpolate_yuv;
 use crate::imgop::yuv::ycbcr_to_rgb;
 use crate::lens::LensDescription;
 use crate::lens::LensResolver;
-use crate::packed::decode_12le;
-use crate::packed::decode_14be_unpacked;
-use crate::packed::decode_16be;
-use crate::packed::decode_16le;
 use crate::pixarray::PixU16;
 use crate::pumps::BitPump;
 use crate::pumps::BitPumpLSB;
@@ -135,9 +135,9 @@ impl<'a> Decoder for ArwDecoder<'a> {
     let image = match compression {
       1 => {
         if self.camera.model == "DSC-R1" {
-          decode_14be_unpacked(src, width, height, dummy)
+          decompress_14be_unpacked(src, width, height, dummy)?
         } else {
-          decode_16le(src, width, height, dummy)
+          decompress_16le(src, width, height, dummy)?
         }
       }
       7 => {
@@ -153,12 +153,12 @@ impl<'a> Decoder for ArwDecoder<'a> {
       32767 => {
         if (width * height * bps) != count * 8 {
           height += 8;
-          ArwDecoder::decode_arw1(src, width, height, dummy)
+          ArwDecoder::decode_arw1(src, width, height, dummy)?
         } else {
           match bps {
             8 => {
               let curve = ArwDecoder::get_curve(raw)?;
-              ArwDecoder::decode_arw2(src, width, height, &curve, dummy)
+              ArwDecoder::decode_arw2(src, width, height, &curve, dummy)?
             }
             12 => {
               /*
@@ -174,7 +174,7 @@ impl<'a> Decoder for ArwDecoder<'a> {
                 x.iter_mut().for_each(|x| *x >>= 2);
                 x
               });
-              decode_12le(src, width, height, dummy)
+              decompress_12le(src, width, height, dummy)?
             }
             _ => return Err(RawlerError::DecoderFailed(format!("ARW2: Don't know how to decode images with {} bps", bps))),
           }
@@ -333,7 +333,7 @@ impl<'a> ArwDecoder<'a> {
     let offset = fetch_tiff_tag!(raw, TiffCommonTag::SubIFDs).force_usize(0);
 
     let src = file.subview_until_eof(offset as u64)?;
-    let image = ArwDecoder::decode_arw1(src, width, height, dummy);
+    let image = ArwDecoder::decode_arw1(src, width, height, dummy)?;
 
     // Get the WB the MRW way
     // DNGPrivateTag contains 4 bytes forming a LE u32 offset value.
@@ -397,14 +397,14 @@ impl<'a> ArwDecoder<'a> {
 
       // "Decrypt" the whole image buffer
       let image_data = ArwDecoder::sony_decrypt(&buffer, off, len, second_key)?;
-      decode_16be(&image_data, width, height, dummy)
+      decompress_16be(&image_data, width, height, dummy)?
     };
     let cpp = 1;
     ok_cfa_image(self.camera.clone(), cpp, [f32::NAN, f32::NAN, f32::NAN, f32::NAN], image, dummy)
   }
 
-  pub(crate) fn decode_arw1(buf: &[u8], width: usize, height: usize, dummy: bool) -> PixU16 {
-    let mut out = alloc_image!(width, height, dummy);
+  pub(crate) fn decode_arw1(buf: &[u8], width: usize, height: usize, dummy: bool) -> Result<PixU16> {
+    let mut out = alloc_image_ok!(width, height, dummy);
     let mut pump = BitPumpMSB::new(buf);
 
     let mut sum: i32 = 0;
@@ -433,15 +433,15 @@ impl<'a> ArwDecoder<'a> {
         row += 2
       }
     }
-    out
+    Ok(out)
   }
 
   pub(crate) fn decode_arw6(buf: &[u8], width: usize, height: usize, curve: &LookupTable, dummy: bool) -> Result<PixU16> {
     decompress_arw6(buf, width, height, curve, dummy)
   }
 
-  pub(crate) fn decode_arw2(buf: &[u8], width: usize, height: usize, curve: &LookupTable, dummy: bool) -> PixU16 {
-    decode_threaded(
+  pub(crate) fn decode_arw2(buf: &[u8], width: usize, height: usize, curve: &LookupTable, dummy: bool) -> Result<PixU16> {
+    Ok(decompress_lines_fn(
       width,
       height,
       dummy,
@@ -473,8 +473,9 @@ impl<'a> ArwDecoder<'a> {
             }
           }
         }
+        Ok(())
       }),
-    )
+    )?)
   }
 
   /// Some newer cameras like Alpha-1 uses LJPEG compression, but in an awkward way.
@@ -507,12 +508,12 @@ impl<'a> ArwDecoder<'a> {
     let buffer = file.as_vec()?;
 
     if cpp == 3 {
-      let mut image = decode_threaded_multiline(
+      let mut image = decompress_strips_fn(
         width * cpp,
         height,
         tlength,
         dummy,
-        &(|strip: &mut [u16], row| {
+        &(|lines: &mut [u16], _strip, row| {
           let row = row / tlength;
           for col in 0..coltiles {
             log::debug!("Decode tile: row({}), col({})", row, col);
@@ -528,7 +529,7 @@ impl<'a> ArwDecoder<'a> {
             decompressor.decode_sony(&mut data, 0, w * cpp, w * cpp, h, dummy)?;
             interpolate_yuv(decompressor.super_h(), decompressor.super_v(), w * cpp, h, &mut data);
 
-            let mut strip = &mut *strip;
+            let mut strip = &mut *lines;
 
             for line in data.chunks_exact(w * cpp) {
               let base = col * twidth * cpp;
@@ -545,12 +546,12 @@ impl<'a> ArwDecoder<'a> {
       ycbcr_to_rgb(&mut image.data);
       Ok(image)
     } else if cpp == 1 {
-      decode_threaded_multiline(
+      decompress_strips_fn(
         width,
         height,
         tlength,
         dummy,
-        &(|strip: &mut [u16], row| {
+        &(|lines: &mut [u16], _strip, row| {
           let row = row / tlength;
           for col in 0..coltiles {
             let offset = offsets.force_usize(row * coltiles + col);
@@ -563,7 +564,7 @@ impl<'a> ArwDecoder<'a> {
 
             decompressor.decode(&mut data, 0, w * cpp, w * cpp, h, dummy)?;
 
-            let mut strip = &mut *strip;
+            let mut strip = &mut *lines;
             for line in data.chunks_exact(1024) {
               for (i, chunk) in line.chunks_exact(4).enumerate() {
                 // Unpack chunks of RGGB pixel data into two output lines
