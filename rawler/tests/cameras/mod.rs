@@ -3128,6 +3128,11 @@ mod camera_om_5_raw_modes {
   super::camera_file_check!("OM", "OM-5", cam_om_5_iso_100_16bits_normal_orf, "raw_modes/OM-5_ISO_100_16bits_normal.ORF");
   super::camera_file_check!("OM", "OM-5", cam_om_5_iso_100_16bits_handheld_hires_orf, "raw_modes/OM-5_ISO_100_16bits_handheld_hires.ORF");
 }
+mod camera_om_5_mark_ii_raw_modes {
+  super::camera_file_check!("OM", "OM-5 Mark II", cam_om_5ii_iso_100_16bits_handheld_hires_orf, "raw_modes/OM-5II_ISO_100_16bits_handheld_hires.ORF");
+  super::camera_file_check!("OM", "OM-5 Mark II", cam_om_5ii_iso_100_16bits_normal_orf, "raw_modes/OM-5II_ISO_100_16bits_normal.ORF");
+  super::camera_file_check!("OM", "OM-5 Mark II", cam_om_5ii_iso_100_16bits_tripod_hires_orf, "raw_modes/OM-5II_ISO_100_16bits_tripod_hires.ORF");
+}
 mod camera_tg_7_raw_modes {
   super::camera_file_check!("OM", "TG-7", cam_tg_7_iso_100_16bits_orf, "raw_modes/TG-7_ISO_100_16bits.ORF");
 }

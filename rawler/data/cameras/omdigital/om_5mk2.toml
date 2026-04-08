@@ -1,0 +1,16 @@
+make = "OM Digital Solutions"
+model = "OM-5MarkII"
+clean_make = "OM Digital Solutions"
+clean_model = "OM-5 Mark II"
+whitepoint = 4095
+color_pattern = "RGGB"
+active_area = [0, 0, 0, 0]
+highres_width = 10400
+
+[cameras.color_matrix]
+A = [1.356, -0.8131, 0.0909, -0.2159, 1.0237, 0.2236, 0.0084, 0.0457, 0.5877]
+D65 = [1.2008, -0.523, -0.1123, -0.2265, 1.0496, 0.2046, 0.0069, 0.0734, 0.4938]
+
+[[cameras.modes]]
+mode = "highres"
+active_area = [0, 0, 0, 0]
