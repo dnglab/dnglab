@@ -795,4 +795,5 @@ cameras/OM/OM-1/raw_modes
 cameras/OM/OM-1 Mark II/raw_modes
 cameras/OM/OM-3/raw_modes
 cameras/OM/OM-5/raw_modes
+cameras/OM/OM-5 Mark II/raw_modes
 cameras/OM/TG-7/raw_modes
