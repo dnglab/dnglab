@@ -134,10 +134,10 @@ fn interpolate_green(img: &mut RgbF32, shifted: &CFA) {
         let w_2 = unsafe { dataptr.at(row, col - 2)[ch] };
 
         // Calculate the gradients for each direction.
-        let n = (x - n_2).abs() * 2.0 + (n_1 - s_1);
-        let e = (x - e_2).abs() * 2.0 + (w_1 - e_1);
-        let w = (x - w_2).abs() * 2.0 + (w_1 - e_1);
-        let s = (x - s_2).abs() * 2.0 + (n_1 - s_1);
+        let n = (x - n_2).abs() * 2.0 + (n_1 - s_1).abs();
+        let e = (x - e_2).abs() * 2.0 + (w_1 - e_1).abs();
+        let w = (x - w_2).abs() * 2.0 + (w_1 - e_1).abs();
+        let s = (x - s_2).abs() * 2.0 + (n_1 - s_1).abs();
 
         // Find the minimum value of the gradients.
         let mut min = n;
@@ -238,7 +238,7 @@ fn interpolate_rb_at_non_green(img: &mut RgbF32, shifted: &CFA) {
 
         let ne = (y_ne_1 - y_sw_1).abs() + (x_ne_2 - x_center).abs() + (x_center - x_sw_2).abs() + (g_ne_1 - g_center).abs() + (g_center - g_sw_1).abs();
 
-        let nw = (y_nw_1 - y_se_1).abs() + (x_nw_2 - x_center).abs() + (x_center - x_se_2).abs() + (g_nw_1 + g_center).abs() + (g_center - g_se_1).abs();
+        let nw = (y_nw_1 - y_se_1).abs() + (x_nw_2 - x_center).abs() + (x_center - x_se_2).abs() + (g_nw_1 - g_center).abs() + (g_center - g_se_1).abs();
 
         pixel[y_ch] = if ne < nw {
           hue_transit(g_ne_1, g_center, g_sw_1, y_ne_1, y_sw_1)
