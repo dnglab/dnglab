@@ -326,6 +326,7 @@ cameras/Sony/DSC-RX10M4/raw_modes
 cameras/Sony/DSC-RX10/raw_modes
 cameras/Sony/DSC-RX1/raw_modes
 cameras/Sony/DSC-RX1RM2/raw_modes
+cameras/Sony/DSC-RX1RM3/raw_modes
 cameras/Sony/DSC-RX1R/raw_modes
 cameras/Sony/DSLR-A100/raw_modes
 cameras/Sony/DSLR-A200/raw_modes

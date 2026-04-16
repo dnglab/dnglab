@@ -1,0 +1,95 @@
+---
+file:
+  fileSize: 36315136
+  fileName: Sony_DSC-RX1RM3_Lossless_S_3x2.ARW
+  digest: e2cc23f40f5569faca1c905c299550a5
+data:
+  metadata:
+    rawParams:
+      rawWidth: 5120
+      rawHeight: 3584
+      bitDepth: 16
+      cropArea:
+        p:
+          x: 16
+          y: 10
+        d:
+          w: 4752
+          h: 3168
+      activeArea:
+        p:
+          x: 0
+          y: 0
+        d:
+          w: 4784
+          h: 3188
+      blacklevels:
+        levels:
+          - 1024/1
+          - 1024/1
+          - 1024/1
+        cpp: 3
+        width: 1
+        height: 1
+      whitelevels:
+        - 15360
+        - 15360
+        - 15360
+      wbCoeffs:
+        - 1.0
+        - 1.0
+        - 1.0
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ~
+        artist: ~
+        lens_spec: ~
+        exposure_time: 1/200
+        fnumber: 56/10
+        aperture_value: ~
+        brightness_value: 21654/2560
+        iso_speed_ratings: 100
+        iso_speed: ~
+        recommended_exposure_index: 100
+        sensitivity_type: 2
+        exposure_bias: 0/10
+        date_time_original: "2025:09:05 11:39:44"
+        create_date: "2025:09:05 11:39:44"
+        modify_date: "2025:09:05 11:39:44"
+        exposure_program: 3
+        timezone_offset: ~
+        offset_time: "+02:00"
+        offset_time_original: "+02:00"
+        offset_time_digitized: "+02:00"
+        sub_sec_time: "506"
+        sub_sec_time_original: "506"
+        sub_sec_time_digitized: "506"
+        shutter_speed_value: ~
+        max_aperture_value: 512/256
+        subject_distance: ~
+        metering_mode: 2
+        light_source: 0
+        flash: 16
+        focal_length: 3500/100
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+        user_comment: ~
+      model: DSC-RX1RM3
+      make: Sony
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+
