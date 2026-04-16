@@ -2178,6 +2178,10 @@ mod camera_dc_s1h_raw_modes {
 mod camera_dc_s1_raw_modes {
   super::camera_file_check!("Panasonic", "DC-S1", cam_dc_s1_iso_800_6fmt_6000x4000_rw2, "raw_modes/DC-S1_ISO_800_6fmt_6000x4000.RW2");
 }
+mod camera_dc_s1m2_raw_modes {
+  super::camera_file_check!("Panasonic", "DC-S1M2", cam_dc_s1m2_hires_3x2_rw2, "raw_modes/DC-S1M2_hires_3x2.RW2");
+  super::camera_file_check!("Panasonic", "DC-S1M2", cam_dc_s1m2_3x2_rw2, "raw_modes/DC-S1M2_3x2.RW2");
+}
 mod camera_dc_s1m2es_raw_modes {
   super::camera_file_check!("Panasonic", "DC-S1M2ES", cam_dc_s1m2es_3x2_rw2, "raw_modes/DC-S1M2ES_3x2.RW2");
 }
