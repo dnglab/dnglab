@@ -1288,6 +1288,13 @@ mod camera_dsc_rx1rm2_raw_modes {
   super::camera_file_check!("Sony", "DSC-RX1RM2", cam_dsc_rx1rm2_iso_100_14bits_compressed_raw_arw, "raw_modes/DSC-RX1RM2_ISO_100_14bits_Compressed RAW.ARW");
   super::camera_file_check!("Sony", "DSC-RX1RM2", cam_dsc_rx1rm2_iso_100_14bits_uncompressed_raw_arw, "raw_modes/DSC-RX1RM2_ISO_100_14bits_Uncompressed RAW.ARW");
 }
+mod camera_dsc_rx1rm3_raw_modes {
+  super::camera_file_check!("Sony", "DSC-RX1RM3", cam_sony_dsc_rx1rm3_14bit_lossless_l_3x2_arw, "raw_modes/Sony_DSC-RX1RM3_14bit_Lossless_L_3x2.ARW");
+  super::camera_file_check!("Sony", "DSC-RX1RM3", cam_sony_dsc_rx1rm3_lossless_s_3x2_arw, "raw_modes/Sony_DSC-RX1RM3_Lossless_S_3x2.ARW");
+  super::camera_file_check!("Sony", "DSC-RX1RM3", cam_sony_dsc_rx1rm3_lossless_m_3x2_arw, "raw_modes/Sony_DSC-RX1RM3_Lossless_M_3x2.ARW");
+  super::camera_file_check!("Sony", "DSC-RX1RM3", cam_sony_dsc_rx1rm3_14bit_uncompressed_3x2_arw, "raw_modes/Sony_DSC-RX1RM3_14bit_uncompressed_3x2.ARW");
+  super::camera_file_check!("Sony", "DSC-RX1RM3", cam_sony_dsc_rx1rm3_14bit_compressed_3x2_arw, "raw_modes/Sony_DSC-RX1RM3_14bit_compressed_3x2.ARW");
+}
 mod camera_dsc_rx1r_raw_modes {
   super::camera_file_check!("Sony", "DSC-RX1R", cam_dsc_rx1r_iso_6400_14bits_sony_arw_compressed_arw, "raw_modes/DSC-RX1R_ISO_6400_14bits_Sony ARW Compressed.ARW");
 }
