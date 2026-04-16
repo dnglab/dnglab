@@ -7,6 +7,7 @@ use image::ImageFormat;
 use image::Luma;
 use image::Rgb;
 use log::debug;
+use log::info;
 use log::warn;
 use rayon::iter::ParallelIterator;
 use rayon::prelude::*;
@@ -334,7 +335,7 @@ pub trait Decoder: Send {
   }
 
   fn thumbnail_image(&self, _file: &RawSource, _params: &RawDecodeParams) -> Result<Option<DynamicImage>> {
-    warn!("Decoder has no thumbnail image support");
+    info!("Decoder has no thumbnail image support");
     Ok(None)
   }
 
@@ -345,7 +346,7 @@ pub trait Decoder: Send {
   }
 
   fn preview_image(&self, _file: &RawSource, _params: &RawDecodeParams) -> Result<Option<DynamicImage>> {
-    warn!("Decoder has no preview image support");
+    info!("Decoder has no preview image support");
     Ok(None)
   }
 
