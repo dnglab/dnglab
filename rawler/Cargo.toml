@@ -51,7 +51,7 @@ weezl = "0.1.7"
 memmap2 = "0.9.4"
 
 [dev-dependencies]
-criterion = { version = "0.7", features = ["html_reports"] }
+criterion = { version = "0.8", features = ["html_reports"] }
 env_logger = "0.11"
 serde_yaml = "=0.8" # TODO - breaks camera tests, update to 0.9 when fixed
 anyhow = "1.0"
