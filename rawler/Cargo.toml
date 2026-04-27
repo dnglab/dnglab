@@ -45,7 +45,7 @@ rayon = "1"
 zerocopy = { version = "0.8.26", features = ["derive"] }
 serde = { version = "1.0", features = ["derive"] }
 thiserror = "2.0"
-toml = "0.8"
+toml = "1.1"
 uuid = { version = "1.0", features = ["serde", "v4"] }
 weezl = "0.1.7"
 memmap2 = "0.9.4"
@@ -60,7 +60,7 @@ approx = "0.5.1"
 [build-dependencies]
 glob = "0.3"
 rustc_version = "0.4"
-toml = "=0.8" # TODO - Updating breaks `join.rs` build script with message - Error parsing "data/cameras/apple/quicktake100.toml": message: "unexpected content, expected nothing",
+toml = "=1.1" # TODO - Updating breaks `join.rs` build script with message - Error parsing "data/cameras/apple/quicktake100.toml": message: "unexpected content, expected nothing",
 
 
 
