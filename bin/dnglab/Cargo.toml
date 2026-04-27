@@ -17,7 +17,7 @@ tokio = { version = "1.43.1", features = ["full"] }
 dnglab_lib = { path = "dnglab-lib" }
 
 [build-dependencies]
-clap_mangen = "0.2.15"
+clap_mangen = "0.3.0"
 clap_complete = "4.4.4"
 dnglab_lib = { path = "dnglab-lib" }
 
