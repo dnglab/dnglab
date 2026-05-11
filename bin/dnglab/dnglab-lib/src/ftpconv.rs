@@ -34,7 +34,14 @@ impl FtpCallback for FtpState {
         let mut dng = BufWriter::new(File::create(out_path)?);
         convert_raw_source(&rawfile, &mut dng, original_filename, &self.params).map_err(|err| std::io::Error::new(std::io::ErrorKind::Other, err))?;
         if self.params.keep_mtime {
-          if let Err(err) = copy_mtime_from_rawsource(&rawfile, &dng.into_inner().expect("Get inner() failed"), None, &self.params) {
+          if let Err(err) = copy_mtime_from_rawsource(
+            &rawfile,
+            &dng
+              .into_inner()
+              .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, format!("Can't access inner file: {e}")))?,
+            None,
+            &self.params,
+          ) {
             log::warn!("Failed to set mtime, continue anyway: {}", err);
           }
         }
@@ -47,16 +54,22 @@ impl FtpCallback for FtpState {
 
 /// Entry point for Clap sub command `ftpconvert`
 pub async fn ftpserver(options: &ArgMatches) -> crate::Result<()> {
-  let mut config = Config::new("foo").unwrap(); // TODO: Needs cleanup
+  let mut config = Config::new("foo").ok_or_else(|| anyhow::anyhow!("failed to create FTP config"))?;
 
   let params = ConvertParams {
-    predictor: *options.get_one("predictor").expect("predictor has no default"),
+    predictor: *options
+      .get_one("predictor")
+      .ok_or_else(|| crate::AppError::InvalidCmdSwitch("predictor has no default".into()))?,
     embedded: options.get_flag("embedded"),
     photometric_conversion: Default::default(),
-    crop: *options.get_one("crop").expect("crop has no default"),
+    crop: *options
+      .get_one("crop")
+      .ok_or_else(|| crate::AppError::InvalidCmdSwitch("crop has no default".into()))?,
     preview: options.get_flag("preview"),
     thumbnail: options.get_flag("thumbnail"),
-    compression: *options.get_one("compression").expect("compression has no default"),
+    compression: *options
+      .get_one("compression")
+      .ok_or_else(|| crate::AppError::InvalidCmdSwitch("compression has no default".into()))?,
     artist: options.get_one("artist").cloned(),
     software: format!("{} {}", PKG_NAME, PKG_VERSION),
     index: 0,
@@ -70,7 +83,9 @@ pub async fn ftpserver(options: &ArgMatches) -> crate::Result<()> {
   config.server_port = *options.get_one("ftp_port").unwrap_or(&2121);
   config.server_addr = options.get_one::<String>("ftp_listen").unwrap_or(&"127.0.0.1".to_string()).parse()?;
 
-  let out_path: &PathBuf = options.get_one("OUTPUT").expect("OUTPUT not available");
+  let out_path: &PathBuf = options
+    .get_one("OUTPUT")
+    .ok_or_else(|| crate::AppError::InvalidCmdSwitch("OUTPUT not available".into()))?;
 
   serve(Handle::current(), out_path.to_path_buf(), config, state).await?;
 

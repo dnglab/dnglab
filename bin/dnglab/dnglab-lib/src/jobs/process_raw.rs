@@ -85,7 +85,9 @@ impl Raw2Image {
 
     match process_raw_image(&self.input, &mut image_file, &self.params) {
       Ok(_) => {
-        let file = image_file.into_inner().expect("Can't access image inner file");
+        let file = image_file
+          .into_inner()
+          .map_err(|e| AppError::General(format!("Can't access image inner file: {e}")))?;
         if self.params.keep_mtime {
           let file_mtime = std::fs::metadata(&self.input).and_then(|md| md.modified()).ok();
           let rawfile = RawSource::new(&self.input)?;

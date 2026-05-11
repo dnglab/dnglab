@@ -65,6 +65,9 @@ toml = "=0.8" # TODO - Updating breaks `join.rs` build script with message - Err
 
 
 
+[lints]
+workspace = true
+
 [[bench]]
 harness = false
 name = "perf"

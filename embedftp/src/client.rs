@@ -197,7 +197,10 @@ where
               self
                 .send(Answer::new(
                   ResultCode::UserNameOkayNeedPassword,
-                  &format!("Login OK, password needed for {}", name.unwrap()),
+                  &format!(
+                    "Login OK, password needed for {}",
+                    name.as_deref().expect("name verified as Some in else branch")
+                  ),
                 ))
                 .await?;
             } else {
@@ -552,13 +555,12 @@ where
 
   async fn quit(&mut self) -> Result<()> {
     if self.data_writer.is_some() {
-      unimplemented!();
-    } else {
-      self
-        .send(Answer::new(ResultCode::ServiceClosingControlConnection, "Closing connection..."))
-        .await?;
-      self.writer.close().await?;
+      self.close_data_connection();
     }
+    self
+      .send(Answer::new(ResultCode::ServiceClosingControlConnection, "Closing connection..."))
+      .await?;
+    self.writer.close().await?;
     Ok(())
   }
 
@@ -737,13 +739,13 @@ fn add_file_info(path: PathBuf, out: &mut Vec<u8>) {
     Ok(meta) => meta,
     _ => return,
   };
-  let time: chrono::DateTime<Utc> = meta.modified().unwrap().into();
+  let time: chrono::DateTime<Utc> = meta.modified().unwrap_or(std::time::SystemTime::UNIX_EPOCH).into();
   #[cfg(unix)]
   let file_size = meta.size();
   #[cfg(windows)]
   let file_size = meta.file_size();
   let path = match path.to_str() {
-    Some(path) => match path.split('/').last() {
+    Some(path) => match path.split('/').next_back() {
       Some(path) => path,
       _ => return,
     },
@@ -775,7 +777,7 @@ fn add_file_info(path: PathBuf, out: &mut Vec<u8>) {
 fn add_file_info_nlst(path: PathBuf, out: &mut Vec<u8>) {
   let extra = if path.is_dir() { "/" } else { "" };
   let path = match path.to_str() {
-    Some(path) => match path.split('/').last() {
+    Some(path) => match path.split('/').next_back() {
       Some(path) => path,
       _ => return,
     },

@@ -255,7 +255,7 @@ fn generate_preview(rawfile: &RawSource, decoder: &dyn Decoder, rawimage: &RawIm
         DynamicImage::ImageRgb16(ImageBuffer::from_raw(dim.w as u32, dim.h as u32, output).expect("Invalid ImageBuffer size"))
       };
        */
-      Ok(image.to_dynamic_image().unwrap())
+      Ok(image.to_dynamic_image().ok_or("failed to convert to dynamic image")?)
     }
   }
 }

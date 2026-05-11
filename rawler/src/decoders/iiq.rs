@@ -123,17 +123,19 @@ enum IiqCompression {
   IIQ_L16 = 8,
 }
 
-impl From<usize> for IiqCompression {
-  fn from(v: usize) -> Self {
+impl TryFrom<usize> for IiqCompression {
+  type Error = RawlerError;
+
+  fn try_from(v: usize) -> std::result::Result<Self, Self::Error> {
     match v {
-      0 => Self::Uncompressed,
-      1 => Self::Raw1,
-      2 => Self::Raw2,
-      3 => Self::IIQ_L,
-      5 => Self::IIQ_S,
-      6 => Self::IIQ_Sv2,
-      8 => Self::IIQ_L16,
-      _ => panic!("Unsupported IIQ format: {}", v),
+      0 => Ok(Self::Uncompressed),
+      1 => Ok(Self::Raw1),
+      2 => Ok(Self::Raw2),
+      3 => Ok(Self::IIQ_L),
+      5 => Ok(Self::IIQ_S),
+      6 => Ok(Self::IIQ_Sv2),
+      8 => Ok(Self::IIQ_L16),
+      _ => Err(RawlerError::DecoderFailed(format!("Unsupported IIQ format: {}", v))),
     }
   }
 }
@@ -711,7 +713,7 @@ impl<'a> IiqDecoder<'a> {
     match self.makernotes.get(&IiqTag::Format.into()) {
       Some(mode) => {
         let code = mode.1.force_u32(0);
-        Ok(IiqCompression::from(code as usize))
+        Ok(IiqCompression::try_from(code as usize)?)
       }
       _ => Err(RawlerError::DecoderFailed("Unable to find compression mode in IIQ makernotes".to_string())),
     }

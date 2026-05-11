@@ -68,7 +68,9 @@ impl DirMap {
 
   /// Map `input` path to output, add sub directories if required
   fn make_mapping(&self, input: &Path) -> Result<FileMap> {
-    let sub_location = input.strip_prefix(&self.src).expect("Input path must be located inside source");
+    let sub_location = input
+      .strip_prefix(&self.src)
+      .map_err(|_| AppError::General("Input path must be located inside source".into()))?;
     let dest = self.dest.join(sub_location);
     Ok(FileMap {
       src: PathBuf::from(input),

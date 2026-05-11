@@ -136,16 +136,22 @@ impl Camera {
         }
         n @ "blackareah" => {
           let vals = val.as_array().unwrap_or_else(|| panic!("{} must be an array", n));
-          self.blackareah = Some((vals[0].as_integer().unwrap() as usize, vals[1].as_integer().unwrap() as usize));
+          self.blackareah = Some((
+            vals[0].as_integer().expect("blackareah[0] must be an integer") as usize,
+            vals[1].as_integer().expect("blackareah[1] must be an integer") as usize,
+          ));
         }
         n @ "blackareav" => {
           let vals = val.as_array().unwrap_or_else(|| panic!("{} must be an array", n));
-          self.blackareav = Some((vals[0].as_integer().unwrap() as usize, vals[1].as_integer().unwrap() as usize));
+          self.blackareav = Some((
+            vals[0].as_integer().expect("blackareav[0] must be an integer") as usize,
+            vals[1].as_integer().expect("blackareav[1] must be an integer") as usize,
+          ));
         }
         "color_matrix" => {
           if let Some(color_matrix) = val.as_table() {
             for (illu_str, matrix) in color_matrix.into_iter() {
-              let illu = Illuminant::new_from_str(illu_str).unwrap();
+              let illu = Illuminant::new_from_str(illu_str).expect("invalid illuminant string in color_matrix");
               let xyz_to_cam = matrix
                 .as_array()
                 .expect("color matrix must be array")
@@ -163,7 +169,7 @@ impl Camera {
           let crop_vals = val.as_array().unwrap_or_else(|| panic!("{} must be an array", n));
           let mut crop = [0, 0, 0, 0];
           for (i, val) in crop_vals.iter().enumerate() {
-            crop[i] = val.as_integer().unwrap() as usize;
+            crop[i] = val.as_integer().expect("active_area values must be integers") as usize;
           }
           self.active_area = Some(crop);
         }
@@ -171,7 +177,7 @@ impl Camera {
           let crop_vals = val.as_array().unwrap_or_else(|| panic!("{} must be an array", n));
           let mut crop = [0, 0, 0, 0];
           for (i, val) in crop_vals.iter().enumerate() {
-            crop[i] = val.as_integer().unwrap() as usize;
+            crop[i] = val.as_integer().expect("crop_area values must be integers") as usize;
           }
           self.crop_area = Some(crop);
         }

@@ -120,7 +120,8 @@ impl<'a> DcrDecoder<'a> {
         for (i, val) in buf.iter().enumerate() {
           pred[i & 1] += *val;
           if pred[i & 1] < 0 {
-            panic!("Found a negative pixel!");
+            log::warn!("DCR Decoder: Found a negative pixel value {}, clamping to 0", pred[i & 1]);
+            pred[i & 1] = 0;
           }
           out[row * width + col + i] = curve.dither(pred[i & 1] as u16, &mut random);
         }

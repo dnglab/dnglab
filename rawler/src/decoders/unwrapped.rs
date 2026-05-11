@@ -117,49 +117,45 @@ pub fn decode_unwrapped(file: &RawSource) -> Result<RawImageData> {
     34 => decode_ljpeg(data, width, height, true, false),
     35 => decode_ljpeg(data, width, height, true, true),
     36 => Ok(RawImageData::Integer(
-      pef::PefDecoder::do_decode(data, None, width, height, false).unwrap().into_inner(),
+      pef::PefDecoder::do_decode(data, None, width, height, false)?.into_inner(),
     )),
     37 => {
       let huff = data;
       let data = &data[64..];
       Ok(RawImageData::Integer(
-        pef::PefDecoder::do_decode(data, Some((huff, Endian::Little)), width, height, false)
-          .unwrap()
-          .into_inner(),
+        pef::PefDecoder::do_decode(data, Some((huff, Endian::Little)), width, height, false)?.into_inner(),
       ))
     }
     38 => {
       let huff = data;
       let data = &data[64..];
       Ok(RawImageData::Integer(
-        pef::PefDecoder::do_decode(data, Some((huff, Endian::Big)), width, height, false)
-          .unwrap()
-          .into_inner(),
+        pef::PefDecoder::do_decode(data, Some((huff, Endian::Big)), width, height, false)?.into_inner(),
       ))
     }
     39 => Ok(RawImageData::Integer(
-      crw::CrwDecoder::do_decode(file, false, 0, width, height, false).unwrap().into_inner(),
+      crw::CrwDecoder::do_decode(file, false, 0, width, height, false)?.into_inner(),
     )),
     40 => Ok(RawImageData::Integer(
-      crw::CrwDecoder::do_decode(file, false, 1, width, height, false).unwrap().into_inner(),
+      crw::CrwDecoder::do_decode(file, false, 1, width, height, false)?.into_inner(),
     )),
     41 => Ok(RawImageData::Integer(
-      crw::CrwDecoder::do_decode(file, false, 2, width, height, false).unwrap().into_inner(),
+      crw::CrwDecoder::do_decode(file, false, 2, width, height, false)?.into_inner(),
     )),
     42 => Ok(RawImageData::Integer(
-      crw::CrwDecoder::do_decode(file, true, 0, width, height, false).unwrap().into_inner(),
+      crw::CrwDecoder::do_decode(file, true, 0, width, height, false)?.into_inner(),
     )),
     43 => Ok(RawImageData::Integer(
-      crw::CrwDecoder::do_decode(file, true, 1, width, height, false).unwrap().into_inner(),
+      crw::CrwDecoder::do_decode(file, true, 1, width, height, false)?.into_inner(),
     )),
     44 => Ok(RawImageData::Integer(
-      crw::CrwDecoder::do_decode(file, true, 2, width, height, false).unwrap().into_inner(),
+      crw::CrwDecoder::do_decode(file, true, 2, width, height, false)?.into_inner(),
     )),
     45 => Ok(RawImageData::Integer(
-      mos::MosDecoder::do_decode(data, false, width, height, false).unwrap().into_inner(),
+      mos::MosDecoder::do_decode(data, false, width, height, false)?.into_inner(),
     )),
     46 => Ok(RawImageData::Integer(
-      mos::MosDecoder::do_decode(data, true, width, height, false).unwrap().into_inner(),
+      mos::MosDecoder::do_decode(data, true, width, height, false)?.into_inner(),
     )),
     //47  => Ok(RawImageData::Integer(iiq::IiqDecoder::decode_compressed(data, height*4, 0, width, height, false).into_inner())),
     48 => decode_nef(data, width, height, Endian::Little, 12),
@@ -188,6 +184,6 @@ fn decode_nef(data: &[u8], width: usize, height: usize, endian: Endian, bps: usi
   let meta = data;
   let data = &data[4096..];
   Ok(RawImageData::Integer(
-    nef::NefDecoder::do_decode(data, meta, endian, width, height, bps, false).unwrap().into_inner(),
+    nef::NefDecoder::do_decode(data, meta, endian, width, height, bps, false)?.into_inner(),
   ))
 }

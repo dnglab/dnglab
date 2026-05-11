@@ -65,7 +65,7 @@ impl<'a> PefDecoder<'a> {
     let makernote_offset = tiff
       .find_first_ifd_with_tag(ExifTag::MakerNotes)
       .and_then(|exif| exif.get_entry(ExifTag::MakerNotes))
-      .map(|entry| entry.offset().unwrap() as u32)
+      .and_then(|entry| entry.offset().map(|o| o as u32))
       .unwrap_or(0);
 
     //eprintln!("IFD makernote:");

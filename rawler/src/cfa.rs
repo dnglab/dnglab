@@ -170,7 +170,9 @@ impl CFA {
 
   /// from inner loops without performance issues.
   pub fn cfa_color_at(&self, row: usize, col: usize) -> CFAColor {
-    (self.pattern[(row + 48) % 48][(col + 48) % 48]).try_into().unwrap()
+    (self.pattern[(row + 48) % 48][(col + 48) % 48])
+      .try_into()
+      .expect("invalid CFA color value in pattern")
   }
 
   /// Get a flat pattern

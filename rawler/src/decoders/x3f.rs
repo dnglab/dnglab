@@ -114,7 +114,7 @@ impl<'a> Decoder for X3fDecoder<'a> {
     if data[0..4] != b"Exif"[..] {
       return Err("X3F: Couldn't find EXIF info".into());
     }
-    let tiff = IFD::new(&mut Cursor::new(&buffer), (caminfo.doffset + 12) as u32, 0, 0, Endian::Little, &[]).unwrap();
+    let tiff = IFD::new(&mut Cursor::new(&buffer), (caminfo.doffset + 12) as u32, 0, 0, Endian::Little, &[])?;
 
     let camera = self.rawloader.check_supported(&tiff)?;
 

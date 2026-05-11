@@ -85,7 +85,7 @@ impl Raw2DngJob {
 
     match convert_raw_file(&self.input, &mut dng, &self.params) {
       Ok(_) => {
-        let file = dng.into_inner().expect("Can't access DNG inner file");
+        let file = dng.into_inner().map_err(|e| AppError::General(format!("Can't access DNG inner file: {e}")))?;
         if self.params.keep_mtime {
           let file_mtime = std::fs::metadata(&self.input).and_then(|md| md.modified()).ok();
           let rawfile = RawSource::new(&self.input)?;

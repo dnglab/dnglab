@@ -37,7 +37,9 @@ fn get_input_path<'a>(inputs: &'a [&PathBuf], maps: &[&InputSourceUsageMap], usa
 }
 
 pub async fn makedng(options: &ArgMatches) -> crate::Result<()> {
-  let dest_path: &PathBuf = options.get_one("OUTPUT").expect("Output path is required");
+  let dest_path: &PathBuf = options
+    .get_one("OUTPUT")
+    .ok_or_else(|| crate::AppError::InvalidCmdSwitch("Output path is required".into()))?;
 
   match makedng_internal(options, dest_path).await {
     Ok(_) => Ok(()),
@@ -54,7 +56,10 @@ pub async fn makedng(options: &ArgMatches) -> crate::Result<()> {
 pub async fn makedng_internal(options: &ArgMatches, dest_path: &Path) -> crate::Result<()> {
   let _now = Instant::now();
 
-  let inputs: Vec<&PathBuf> = options.get_many("inputs").expect("inputs are required").collect();
+  let inputs: Vec<&PathBuf> = options
+    .get_many("inputs")
+    .ok_or_else(|| crate::AppError::InvalidCmdSwitch("inputs are required".into()))?
+    .collect();
   let maps: Vec<&InputSourceUsageMap> = options.get_many("map").unwrap_or_default().collect();
   let max_used_map_input = maps.iter().map(|x| x.source).max().unwrap_or(0);
 
@@ -225,7 +230,7 @@ pub async fn makedng_internal(options: &ArgMatches, dest_path: &Path) -> crate::
   if let Some(matrix) = options.get_one::<ColorMatrixArg>("matrix1") {
     let illuminant = options
       .get_one::<CalibrationIlluminantArg>("illuminant1")
-      .expect("illuminant1 is required when matrix1 is set");
+      .ok_or_else(|| crate::AppError::InvalidCmdSwitch("illuminant1 is required when matrix1 is set".into()))?;
     dng.root_ifd_mut().add_tag(DngTag::ColorMatrix1, matrix.as_tiff_value());
     dng.root_ifd_mut().add_tag(DngTag::CalibrationIlluminant1, illuminant.as_tiff_value());
   }
@@ -233,7 +238,7 @@ pub async fn makedng_internal(options: &ArgMatches, dest_path: &Path) -> crate::
   if let Some(matrix) = options.get_one::<ColorMatrixArg>("matrix2") {
     let illuminant = options
       .get_one::<CalibrationIlluminantArg>("illuminant2")
-      .expect("illuminant2 is required when matrix2 is set");
+      .ok_or_else(|| crate::AppError::InvalidCmdSwitch("illuminant2 is required when matrix2 is set".into()))?;
     dng.root_ifd_mut().add_tag(DngTag::ColorMatrix2, matrix.as_tiff_value());
     dng.root_ifd_mut().add_tag(DngTag::CalibrationIlluminant2, illuminant.as_tiff_value());
   }
@@ -242,7 +247,7 @@ pub async fn makedng_internal(options: &ArgMatches, dest_path: &Path) -> crate::
     if let Some(matrix) = options.get_one::<ColorMatrixArg>("matrix3") {
       let illuminant = options
         .get_one::<CalibrationIlluminantArg>("illuminant3")
-        .expect("illuminant3 is required when matrix3 is set");
+        .ok_or_else(|| crate::AppError::InvalidCmdSwitch("illuminant3 is required when matrix3 is set".into()))?;
       dng.root_ifd_mut().add_tag(DngTag::ColorMatrix3, matrix.as_tiff_value());
       dng.root_ifd_mut().add_tag(DngTag::CalibrationIlluminant3, illuminant.as_tiff_value());
     }

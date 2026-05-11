@@ -72,7 +72,7 @@ async fn main_async() -> dnglab_lib::Result<()> {
       ))
     })
     .apply()
-    .expect("Invalid fern configuration, exiting");
+    .map_err(|e| AppError::General(format!("Invalid fern configuration: {e}")))?;
 
   match matches.subcommand() {
     Some(("analyze", sc)) => analyze::analyze(sc).await,
@@ -84,7 +84,7 @@ async fn main_async() -> dnglab_lib::Result<()> {
     Some(("lenses", sc)) => lenses::lenses(sc).await,
     Some(("cameras", sc)) => cameras::cameras(sc).await,
     Some(("gui", sc)) => gui::gui(sc).await,
-    _ => panic!("Unknown subcommand was used"),
+    _ => Err(AppError::InvalidCmdSwitch("Unknown subcommand was used".into())),
   }
 }
 

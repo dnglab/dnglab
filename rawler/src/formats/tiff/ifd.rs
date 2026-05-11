@@ -157,7 +157,11 @@ impl IFD {
                 sub_ifd_offsets.insert(*tag, vec![offsets[0] as u32]);
               }
               Value::Undefined(_) => {
-                sub_ifd_offsets.insert(tag, vec![entry.offset().unwrap() as u32]);
+                if let Some(offset) = entry.offset() {
+                  sub_ifd_offsets.insert(tag, vec![offset as u32]);
+                } else {
+                  log::warn!("SubIFD entry for tag 0x{:X} has no offset, skipping", tag);
+                }
               }
               val => {
                 log::info!(
@@ -364,7 +368,14 @@ impl IFD {
       return Ok(Some(RawEntry {
         entry,
         endian: self.endian,
-        data: read_from_file(file, self.base + entry.offset().unwrap() as u32, entry.byte_size())?,
+        data: read_from_file(
+          file,
+          self.base
+            + entry
+              .offset()
+              .ok_or_else(|| TiffError::General(format!("Entry for tag {:?} has no offset", tag)))? as u32,
+          entry.byte_size(),
+        )?,
       }));
     }
     Ok(None)
@@ -376,7 +387,14 @@ impl IFD {
       return Ok(Some(RawEntry {
         entry,
         endian: self.endian,
-        data: read_from_file(file, self.base + entry.offset().unwrap() as u32, len)?,
+        data: read_from_file(
+          file,
+          self.base
+            + entry
+              .offset()
+              .ok_or_else(|| TiffError::General(format!("Entry for tag {:?} has no offset", tag)))? as u32,
+          len,
+        )?,
       }));
     }
     Ok(None)
@@ -565,7 +583,7 @@ impl IFD {
 
   pub fn parse_makernote<R: Read + Seek>(&self, reader: &mut R, offset_mode: OffsetMode, sub_tags: &[u16]) -> Result<Option<IFD>> {
     if let Some(exif) = self.get_entry(ExifTag::MakerNotes) {
-      let offset = exif.offset().unwrap() as u32;
+      let offset = exif.offset().ok_or(TiffError::General("MakerNote entry has no offset".into()))? as u32;
       debug!("Makernote offset: {}", offset);
       match &exif.value {
         Value::Undefined(data) => {

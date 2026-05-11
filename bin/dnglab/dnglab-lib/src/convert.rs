@@ -22,8 +22,12 @@ pub async fn convert(options: &ArgMatches) -> crate::Result<()> {
   let recursive = options.get_flag("recursive");
 
   let proc = {
-    let in_path: &PathBuf = options.get_one("INPUT").expect("INPUT not available");
-    let out_path: &PathBuf = options.get_one("OUTPUT").expect("OUTPUT not available");
+    let in_path: &PathBuf = options
+      .get_one("INPUT")
+      .ok_or_else(|| AppError::InvalidCmdSwitch("INPUT not available".into()))?;
+    let out_path: &PathBuf = options
+      .get_one("OUTPUT")
+      .ok_or_else(|| AppError::InvalidCmdSwitch("OUTPUT not available".into()))?;
     MapMode::new(in_path, out_path)?
   };
 
@@ -103,20 +107,26 @@ fn generate_job(entry: &FileMap, options: &ArgMatches) -> Result<Vec<Raw2DngJob>
     None => (false, 0),
   };
 
-  let batch_count = if do_batch { rawler::raw_image_count_file(&entry.src).unwrap() } else { 1 };
+  let batch_count = if do_batch { rawler::raw_image_count_file(&entry.src)? } else { 1 };
 
   let mut jobs = Vec::new();
 
   for i in 0..batch_count {
     // Params for conversion process
     let params = ConvertParams {
-      predictor: *options.get_one("predictor").expect("predictor has no default"),
+      predictor: *options
+        .get_one("predictor")
+        .ok_or_else(|| AppError::InvalidCmdSwitch("predictor has no default".into()))?,
       embedded: options.get_flag("embedded"),
       photometric_conversion: Default::default(),
-      crop: *options.get_one("crop").expect("crop has no default"),
+      crop: *options
+        .get_one("crop")
+        .ok_or_else(|| AppError::InvalidCmdSwitch("crop has no default".into()))?,
       preview: options.get_flag("preview"),
       thumbnail: options.get_flag("thumbnail"),
-      compression: *options.get_one("compression").expect("compression has no default"),
+      compression: *options
+        .get_one("compression")
+        .ok_or_else(|| AppError::InvalidCmdSwitch("compression has no default".into()))?,
       artist: options.get_one("artist").cloned(),
       software: format!("{} {}", "DNGLab", PKG_VERSION),
       index: if do_batch { i } else { index },
@@ -129,7 +139,7 @@ fn generate_job(entry: &FileMap, options: &ArgMatches) -> Result<Vec<Raw2DngJob>
 
     // If output is a directry
     if input.is_file() && output.exists() && output.is_dir() {
-      output.push(entry.src.file_name().unwrap());
+      output.push(entry.src.file_name().ok_or_else(|| AppError::General("Input path has no file name".into()))?);
     }
 
     let has_dng_ext = if let Some(ext) = output.extension() {
@@ -143,7 +153,12 @@ fn generate_job(entry: &FileMap, options: &ArgMatches) -> Result<Vec<Raw2DngJob>
     }
 
     if do_batch && batch_count > 1 {
-      let file_name = String::from(output.file_stem().unwrap().to_string_lossy());
+      let file_name = String::from(
+        output
+          .file_stem()
+          .ok_or_else(|| AppError::General("Output path has no file stem".into()))?
+          .to_string_lossy(),
+      );
       output.set_file_name(format!("{}_{:04}.dng", file_name, i));
     }
 

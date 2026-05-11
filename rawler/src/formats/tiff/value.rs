@@ -238,7 +238,10 @@ impl From<f32> for Rational {
     }
     let ratio = num::rational::Ratio::from_float(value).expect("Failed to convert float");
     // TODO: This is a workaround, need to implement better routine
-    Self::new(ratio.numer().try_into().unwrap(), ratio.denom().try_into().unwrap())
+    Self::new(
+      ratio.numer().try_into().expect("Rational numerator overflows u32"),
+      ratio.denom().try_into().expect("Rational denominator overflows u32"),
+    )
   }
 }
 
@@ -413,15 +416,15 @@ impl Value {
 
   pub fn as_string(&self) -> Option<&String> {
     match self {
-      Self::Ascii(v) => Some(&v.strings()[0]),
+      Self::Ascii(v) => v.strings().first(),
       _ => None,
     }
   }
 
   pub fn get_string(&self) -> Result<&String> {
     match self {
-      Self::Ascii(v) => Ok(&v.strings()[0]),
-      _ => todo!(),
+      Self::Ascii(v) => v.strings().first().ok_or_else(|| TiffError::General("Empty ASCII value".into())),
+      _ => Err(TiffError::General("Value is not an ASCII type".into())),
     }
   }
 
@@ -791,7 +794,7 @@ impl Value {
       Value::Double(v) => v.iter().take(limit).map(|a| format!("{}", a)).collect::<Vec<String>>().join(" "),
       Value::Undefined(v) => v.iter().take(limit).map(|a| format!("{:X}", a)).collect::<Vec<String>>().join(" "),
       Value::Unknown(_t, v) => v.iter().take(limit).map(|a| format!("{:X}", a)).collect::<Vec<String>>().join(" "),
-      Value::Ascii(v) => v.first().clone(),
+      Value::Ascii(v) => v.strings().first().cloned().unwrap_or_default(),
     }
   }
 
@@ -833,8 +836,7 @@ impl Value {
 
   pub fn as_embedded(&self) -> Result<u32> {
     if self.count() == 0 {
-      panic!("Embedded TIFF value data must not be empty");
-      //return Err(TiffError::General("Embedded data is empty".into()));
+      return Err(TiffError::General("Embedded data is empty".into()));
     }
     if self.byte_size() > 4 {
       Err(TiffError::Overflow("Invalid data".to_string()))
@@ -1021,8 +1023,8 @@ impl TiffAscii {
     &self.plain
   }
 
-  pub fn first(&self) -> &String {
-    &self.strings[0]
+  pub fn first(&self) -> Option<&String> {
+    self.strings.first()
   }
 
   pub fn count(&self) -> usize {
@@ -1032,7 +1034,7 @@ impl TiffAscii {
   pub fn as_vec_with_nul(&self) -> Vec<u8> {
     let mut out = Vec::new();
     for s in &self.strings {
-      let cstr = CString::new(s.as_bytes()).unwrap();
+      let cstr = CString::new(s.as_bytes()).expect("TIFF string value must not contain null bytes");
       out.extend_from_slice(cstr.to_bytes_with_nul());
     }
     out

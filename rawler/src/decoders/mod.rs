@@ -838,14 +838,19 @@ impl RawLoader {
     };
 
     let mut cams = Vec::new();
-    for camera in toml.get("cameras").unwrap().as_array().unwrap() {
+    for camera in toml
+      .get("cameras")
+      .expect("cameras.toml missing 'cameras' key")
+      .as_array()
+      .expect("'cameras' must be an array")
+    {
       // Create a list of all the camera modes including the base one
       let mut cammodes = Vec::new();
-      let ct = camera.as_table().unwrap();
+      let ct = camera.as_table().expect("each camera entry must be a table");
       cammodes.push(ct);
       if let Some(val) = ct.get("modes") {
-        for mode in val.as_array().unwrap() {
-          cammodes.push(mode.as_table().unwrap());
+        for mode in val.as_array().expect("'modes' must be an array") {
+          cammodes.push(mode.as_table().expect("each mode entry must be a table"));
         }
       }
 
@@ -855,8 +860,11 @@ impl RawLoader {
       // Create a list of alias names including the base one
       let mut camnames = vec![(cam.model.clone(), cam.clean_model.clone())];
       if let Some(val) = ct.get("model_aliases") {
-        for alias in val.as_array().unwrap() {
-          camnames.push((alias[0].as_str().unwrap().to_string().clone(), alias[1].as_str().unwrap().to_string().clone()));
+        for alias in val.as_array().expect("'model_aliases' must be an array") {
+          camnames.push((
+            alias[0].as_str().expect("model alias name must be a string").to_string().clone(),
+            alias[1].as_str().expect("model alias clean_name must be a string").to_string().clone(),
+          ));
         }
       }
 

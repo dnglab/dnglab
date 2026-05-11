@@ -128,7 +128,7 @@ where
         if rawimage.cpp == 3 {
           self.write_rawimage(Cow::Borrowed(rawimage), cropmode, compression, predictor)?;
         } else {
-          let rawimage = rawimage.linearize().unwrap(); // TODO: implement me
+          let rawimage = rawimage.linearize().map_err(|e| DngError::General(format!("linearization failed: {}", e)))?;
           self.write_rawimage(Cow::Borrowed(&rawimage), cropmode, compression, predictor)?;
         }
       }
@@ -607,13 +607,11 @@ where
       let tiles_compr: Vec<Vec<u8>> = tiled_data
         .par_iter()
         .map(|tile| {
-          //assert_eq!((tile_w * rawimage.cpp) % components, 0);
-          //assert_eq!((tile_w * rawimage.cpp) % 2, 0);
-          //assert_eq!(tile_h % 2, 0);
-          let state = LjpegCompressor::new(tile, j_width * realign, j_height / realign, components, rawimage.bps as u8, predictor, 0, 0).unwrap();
-          state.encode().unwrap()
+          let state = LjpegCompressor::new(tile, j_width * realign, j_height / realign, components, rawimage.bps as u8, predictor, 0, 0)
+            .map_err(|e| DngError::General(format!("LJPEG compressor init failed: {}", e)))?;
+          state.encode().map_err(|e| DngError::General(format!("LJPEG encoding failed: {}", e)))
         })
-        .collect();
+        .collect::<Result<Vec<_>>>()?;
       tiles_compr
     }
     RawImageData::Float(ref _data) => {
@@ -624,11 +622,11 @@ where
   let mut tile_offsets: Vec<u32> = Vec::new();
   let mut tile_sizes: Vec<u32> = Vec::new();
 
-  lj92_data.iter().for_each(|tile| {
-    let offs = subframe.writer.dng.write_data(tile).unwrap();
+  for tile in lj92_data.iter() {
+    let offs = subframe.writer.dng.write_data(tile)?;
     tile_offsets.push(offs);
     tile_sizes.push((tile.len() * size_of::<u8>()) as u32);
-  });
+  }
 
   subframe
     .ifd_mut()

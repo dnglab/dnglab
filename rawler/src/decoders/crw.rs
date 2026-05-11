@@ -171,7 +171,7 @@ impl<'a> CrwDecoder<'a> {
     }
 
     htable.disable_cache = true;
-    htable.initialize().unwrap();
+    htable.initialize().expect("failed to initialize CRW Huffman table");
     htable
   }
 

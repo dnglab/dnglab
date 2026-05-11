@@ -22,8 +22,12 @@ pub async fn process_raw(options: &ArgMatches) -> crate::Result<()> {
   let recursive = options.get_flag("recursive");
 
   let proc = {
-    let in_path: &PathBuf = options.get_one("INPUT").expect("INPUT not available");
-    let out_path: &PathBuf = options.get_one("OUTPUT").expect("OUTPUT not available");
+    let in_path: &PathBuf = options
+      .get_one("INPUT")
+      .ok_or_else(|| crate::AppError::InvalidCmdSwitch("INPUT not available".into()))?;
+    let out_path: &PathBuf = options
+      .get_one("OUTPUT")
+      .ok_or_else(|| crate::AppError::InvalidCmdSwitch("OUTPUT not available".into()))?;
     MapMode::new(in_path, out_path)?
   };
 
@@ -103,14 +107,16 @@ fn generate_job(entry: &FileMap, options: &ArgMatches) -> Result<Vec<Raw2Image>>
     None => (false, 0),
   };
 
-  let batch_count = if do_batch { rawler::raw_image_count_file(&entry.src).unwrap() } else { 1 };
+  let batch_count = if do_batch { rawler::raw_image_count_file(&entry.src)? } else { 1 };
 
   let mut jobs = Vec::new();
 
   for i in 0..batch_count {
     // Params for conversion process
     let params = RawProcessingParams {
-      crop: *options.get_one("crop").expect("crop has no default"),
+      crop: *options
+        .get_one("crop")
+        .ok_or_else(|| crate::AppError::InvalidCmdSwitch("crop has no default".into()))?,
       thumbnail: true, //options.get_flag("thumbnail"),
       artist: options.get_one("artist").cloned(),
       software: format!("{} {}", "DNGLab", PKG_VERSION),
@@ -123,13 +129,18 @@ fn generate_job(entry: &FileMap, options: &ArgMatches) -> Result<Vec<Raw2Image>>
 
     // If output is a directry
     if input.is_file() && output.exists() && output.is_dir() {
-      output.push(entry.src.file_name().unwrap());
+      output.push(entry.src.file_name().ok_or_else(|| anyhow::anyhow!("source path has no file name"))?);
     }
 
     output.set_extension("tif");
 
     if do_batch && batch_count > 1 {
-      let file_name = String::from(output.file_stem().unwrap().to_string_lossy());
+      let file_name = String::from(
+        output
+          .file_stem()
+          .ok_or_else(|| anyhow::anyhow!("output path has no file stem"))?
+          .to_string_lossy(),
+      );
       output.set_file_name(format!("{}_{:04}.tif", file_name, i));
     }
 

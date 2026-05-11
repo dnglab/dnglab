@@ -24,8 +24,12 @@ pub async fn extract(options: &ArgMatches) -> crate::Result<()> {
   let now = Instant::now();
 
   let proc = {
-    let in_path: &PathBuf = options.get_one("INPUT").expect("INPUT not available");
-    let out_path: &PathBuf = options.get_one("OUTPUT").expect("OUTPUT not available");
+    let in_path: &PathBuf = options
+      .get_one("INPUT")
+      .ok_or_else(|| crate::AppError::InvalidCmdSwitch("INPUT not available".into()))?;
+    let out_path: &PathBuf = options
+      .get_one("OUTPUT")
+      .ok_or_else(|| crate::AppError::InvalidCmdSwitch("OUTPUT not available".into()))?;
     MapMode::new(in_path, out_path)?
   };
 

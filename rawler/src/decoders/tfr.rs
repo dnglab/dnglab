@@ -100,7 +100,7 @@ impl<'a> Decoder for TfrDecoder<'a> {
     let height = fetch_tiff_tag!(root_ifd, TiffCommonTag::ImageLength).force_usize(0);
     if compression == 1 {
       Ok(Some(DynamicImage::ImageRgb8(
-        ImageBuffer::<Rgb<u8>, Vec<u8>>::from_raw(width as u32, height as u32, buf.to_vec()).unwrap(),
+        ImageBuffer::<Rgb<u8>, Vec<u8>>::from_raw(width as u32, height as u32, buf.to_vec()).ok_or("TFR: failed to create ImageBuffer from raw data")?,
       )))
     } else {
       let img = image::load_from_memory_with_format(buf, image::ImageFormat::Jpeg)
