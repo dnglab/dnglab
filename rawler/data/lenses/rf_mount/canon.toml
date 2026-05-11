@@ -368,3 +368,13 @@ make = "Canon"
 model = "RF 5.2mm F2.8L DUAL FISHEYE"
 focal_range = [[52, 10], [52, 10]]
 aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "rf-mount"
+key = "RF-S14-30mm F4-6.3 IS STM PZ"
+lens_id = 61182
+lens_subid = 324
+make = "Canon"
+model = "RF-S 14-30mm F4-6.3 IS STM PZ"
+focal_range = [[14, 1], [30, 1]]
+aperture_range = [[4, 1], [63, 10]]
