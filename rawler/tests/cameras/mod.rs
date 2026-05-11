@@ -1966,6 +1966,9 @@ mod camera_e_p3_raw_modes {
 mod camera_e_p5_raw_modes {
   super::camera_file_check!("Olympus", "E-P5", cam_e_p5_iso_200_orf, "raw_modes/E-P5_ISO_200.ORF");
 }
+mod camera_e_p7_raw_modes {
+  super::camera_file_check!("Olympus", "E-P7", cam_olympus_e_p7_16bit_4x3_orf, "raw_modes/Olympus_E-P7_16bit_4x3.ORF");
+}
 mod camera_e_pl10_raw_modes {
   super::camera_file_check!("Olympus", "E-PL10", cam_e_pl10_iso_1000_orf, "raw_modes/E-PL10_ISO_1000.ORF");
 }
