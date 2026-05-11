@@ -463,7 +463,9 @@ impl<'a> Cr2Decoder<'a> {
   /// Parse the Canon makernote IFD
   fn new_makernote(file: &RawSource, tiff: &GenericTiffReader, exif_ifd: &IFD, _rawloader: &RawLoader) -> Result<Option<IFD>> {
     if let Some(entry) = exif_ifd.get_entry(TiffCommonTag::Makernote) {
-      let offset = entry.offset().expect("Makernote internal offset is not present but should be");
+      let offset = entry
+        .offset()
+        .ok_or_else(|| RawlerError::DecoderFailed("Makernote internal offset is not present".into()))?;
       let makernote = tiff.parse_ifd(&mut file.reader(), offset as u32, 0, 0, exif_ifd.endian, &[])?;
       return Ok(Some(makernote));
     }

@@ -127,7 +127,7 @@ impl From<&RawImage> for RawParams {
         .iter()
         .map(|c| if c.is_nan() { None } else { Some(*c) })
         .collect_tuple()
-        .unwrap(),
+        .expect("wb_coeffs must have exactly 4 elements"),
     }
   }
 }
@@ -149,7 +149,7 @@ fn file_metadata<P: AsRef<Path>>(path: P, rawfile: &RawSource) -> Result<FileMet
   let fs_meta = metadata(&path).map_err(|e| RawlerError::with_io_error("read metadata", &path, e))?;
   let digest = rawfile.digest();
   Ok(FileMetadata {
-    file_name: path.as_ref().file_name().unwrap().to_string_lossy().to_string(),
+    file_name: path.as_ref().file_name().ok_or("path has no file name")?.to_string_lossy().to_string(),
     file_size: fs_meta.len(),
     digest: Some(digest.into()),
   })
@@ -253,7 +253,12 @@ pub fn raw_to_srgb<P: AsRef<Path>>(path: P, params: &RawDecodeParams) -> Result<
   //decoder.decode_metadata(&mut rawfile)?;
   let rawimage = decoder.raw_image(&rawfile, params, false)?;
   let dev = RawDevelop::default();
-  Ok(dev.develop_intermediate(&rawimage)?.to_dynamic_image().unwrap())
+  Ok(
+    dev
+      .develop_intermediate(&rawimage)?
+      .to_dynamic_image()
+      .ok_or("failed to convert to dynamic image")?,
+  )
 }
 
 /// Dump raw pixel data as PGM

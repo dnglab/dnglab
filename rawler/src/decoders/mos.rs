@@ -33,7 +33,7 @@ impl<'a> MosDecoder<'a> {
   pub fn new(_file: &RawSource, tiff: GenericTiffReader, rawloader: &'a RawLoader) -> Result<MosDecoder<'a>> {
     let make = Self::xmp_tag(&tiff, "Make")?;
     let model_full = Self::xmp_tag(&tiff, "Model")?;
-    let model = model_full.split_terminator('(').next().unwrap();
+    let model = model_full.split_terminator('(').next().expect("split always yields at least one element");
     let camera = rawloader.check_supported_with_everything(&make, model, "")?;
 
     Ok(MosDecoder { tiff, rawloader, camera })

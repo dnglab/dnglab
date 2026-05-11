@@ -28,7 +28,9 @@ fn print_output<T: Serialize + ?Sized>(obj: &T, options: &ArgMatches) -> crate::
 
 /// Analyze a given image
 pub async fn analyze(options: &ArgMatches) -> crate::Result<()> {
-  let in_file: &PathBuf = options.get_one("FILE").expect("FILE not available");
+  let in_file: &PathBuf = options
+    .get_one("FILE")
+    .ok_or_else(|| crate::AppError::InvalidCmdSwitch("FILE not available".into()))?;
 
   debug!("Infile: {:?}", in_file);
 
@@ -80,7 +82,8 @@ pub async fn analyze(options: &ArgMatches) -> crate::Result<()> {
   } else if options.get_flag("srgb") {
     // TODO: only RGB output is supported
     let image = raw_to_srgb(PathBuf::from(in_file), &RawDecodeParams::default())?;
-    dump_ppm16(image.width() as usize, image.height() as usize, image.as_flat_samples_u16().unwrap().samples)?;
+    let samples = image.as_flat_samples_u16().ok_or_else(|| anyhow::anyhow!("image is not u16 format"))?;
+    dump_ppm16(image.width() as usize, image.height() as usize, samples.samples)?;
   }
   Ok(())
 }

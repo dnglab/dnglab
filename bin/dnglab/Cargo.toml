@@ -21,6 +21,9 @@ clap_mangen = "0.2.15"
 clap_complete = "4.4.4"
 dnglab_lib = { path = "dnglab-lib" }
 
+[lints]
+workspace = true
+
 [package.metadata.deb]
 maintainer = "Daniel Vogelbacher <daniel@chaospixel.com>"
 license-file = ["../../LICENSE", "0"]

@@ -190,7 +190,7 @@ impl Strip {
       debug_assert_eq!(header.is_lossless(), q_bases.is_none());
       // init grads and main qtable
       if !header.is_lossless() {
-        let q_base = q_bases.as_ref().unwrap()[cur_line] as i32;
+        let q_base = q_bases.as_ref().expect("q_bases must be Some for lossy compression")[cur_line] as i32;
         if cur_line == 0 || q_base != params.qtables[0].q_base {
           let max_value = (1 << header.raw_bits) - 1; // todo: put into header as function?
           let main_qtable = Params::new_main_qtable(header, max_value, q_base);
@@ -277,7 +277,7 @@ pub(super) fn decompress_fuji(buf: &PaddedBuf, width: usize, height: usize, _bps
     "RAF header specifies different dimensions!"
   );
 
-  let params = Params::new(&header);
+  let params = Params::new(&header)?;
   log::debug!("Params: {:?}", params);
 
   let mut cfa: [[CFAColor; 6]; 6] = Default::default();
@@ -286,7 +286,7 @@ pub(super) fn decompress_fuji(buf: &PaddedBuf, width: usize, height: usize, _bps
       let color = corrected_cfa.cfa_color_at(i, j);
       match color {
         CFAColor::RED | CFAColor::GREEN | CFAColor::BLUE => cfa[i][j] = color,
-        _ => panic!("Got unexpected color: {:?}", color),
+        _ => return Err(format!("Fuji decompressor: got unexpected CFA color: {:?}", color).into()),
       }
     }
   }
@@ -794,9 +794,9 @@ impl Params {
   }
 
   /// Create new parameter
-  fn new(header: &Header) -> Self {
+  fn new(header: &Header) -> crate::Result<Self> {
     if (header.block_size % 3 != 0 && header.raw_type == 16) || (header.block_size & 1 != 0 && header.raw_type == 0) {
-      panic!("Invalid FUJI header");
+      return Err("Invalid FUJI header: block_size is incompatible with raw_type".into());
     }
     let min_value = 0x40;
     let max_value = ((1 << header.raw_bits) - 1) as i32;
@@ -865,13 +865,13 @@ impl Params {
       qtables
     };
 
-    Self {
+    Ok(Self {
       qtables,
       max_bits,
       min_value,
       max_value,
       line_width,
-    }
+    })
   }
 }
 

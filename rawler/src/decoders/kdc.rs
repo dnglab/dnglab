@@ -200,7 +200,7 @@ impl<'a> KdcDecoder<'a> {
 
     assert_eq!(width, img.width() as usize);
     assert_eq!(height, img.height() as usize * 2);
-    let buf = img.as_flat_samples_u8().unwrap();
+    let buf = img.as_flat_samples_u8().ok_or("KDC: failed to get u8 samples from JPEG")?;
     let jpeg = buf.as_slice();
 
     for irow in 0..img.height() as usize {

@@ -51,7 +51,7 @@ pub struct OrfDecoder<'a> {
 
 pub fn parse_makernote<R: Read + Seek>(reader: &mut R, exif_ifd: &IFD) -> Result<Option<IFD>> {
   if let Some(exif) = exif_ifd.get_entry(ExifTag::MakerNotes) {
-    let offset = exif.offset().unwrap() as u32;
+    let offset = exif.offset().ok_or("MakerNote entry has no offset")? as u32;
     log::debug!("Makernote offset: {}", offset);
     match &exif.value {
       Value::Undefined(data) => {

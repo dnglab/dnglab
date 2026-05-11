@@ -424,7 +424,14 @@ impl<'a> Decoder for Cr3Decoder<'a> {
     if rawler_ignore_previews() {
       return Err(RawlerError::DecoderFailed("Unable to extract preview image".into()));
     }
-    let offset = self.bmff.filebox.moov.traks[0].mdia.minf.stbl.co64.as_ref().expect("co64 box").entries[0] as usize;
+    let offset = self.bmff.filebox.moov.traks[0]
+      .mdia
+      .minf
+      .stbl
+      .co64
+      .as_ref()
+      .ok_or_else(|| RawlerError::DecoderFailed("co64 box not found".into()))?
+      .entries[0] as usize;
     let size = self.bmff.filebox.moov.traks[0].mdia.minf.stbl.stsz.sample_sizes[0] as usize;
     debug!("JPEG preview mdat offset: {}, len: {}", offset, size);
     let buf = file
@@ -484,7 +491,11 @@ impl<'a> Cr3Decoder<'a> {
     {
       if v.len() == 16 {
         debug!("CR3 makernote ImgUniqueID: {:x?}", v);
-        md.image_unique_id = Some(v.as_slice().try_into().expect("Invalid slice size"));
+        md.image_unique_id = Some(
+          v.as_slice()
+            .try_into()
+            .map_err(|_| RawlerError::DecoderFailed("Invalid ImgUniqueID slice size".into()))?,
+        );
       }
     }
 
