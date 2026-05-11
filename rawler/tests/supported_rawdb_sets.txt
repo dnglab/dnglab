@@ -521,6 +521,7 @@ cameras/Olympus/E-P1/raw_modes
 cameras/Olympus/E-P2/raw_modes
 cameras/Olympus/E-P3/raw_modes
 cameras/Olympus/E-P5/raw_modes
+cameras/Olympus/E-P7/raw_modes
 cameras/Olympus/E-PL10/raw_modes
 cameras/Olympus/E-PL1/raw_modes
 cameras/Olympus/E-PL2/raw_modes
