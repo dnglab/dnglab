@@ -1,24 +1,63 @@
 [package]
-name = "fuzz-rawloader"
-version = "0.0.1"
-authors = ["Pedro Côrte-Real <pedro@pedrocr.net>"]
-edition = "2018"
+name = "dnglab-fuzz"
+version = "0.0.0"
+publish = false
+edition = "2021"
 
-[dependencies.afl]
-git = "https://github.com/pedrocr/afl.rs/"
-branch = "myblend"
+[package.metadata]
+cargo-fuzz = true
 
-[dependencies.rawloader]
-path = "../"
+[dependencies]
+libfuzzer-sys = "0.4"
 
-[profile.dev]
-panic = "unwind"
-opt-level = 3
+[dependencies.rawler]
+path = ".."
+
+# Prevent this from interfering with workspaces
+[workspace]
+members = [""]
+
+[profile.release]
+debug = true
+debug-assertions = true
+overflow-checks = true
 
 [[bin]]
-name = "fuzz-rawloader-decoders"
-path = "src/decoders.rs"
+name = "fuzz_decode_full"
+path = "fuzz_targets/fuzz_decode_full.rs"
+doc = false
 
 [[bin]]
-name = "fuzz-rawloader-metadata"
-path = "src/metadata.rs"
+name = "fuzz_decode_metadata"
+path = "fuzz_targets/fuzz_decode_metadata.rs"
+doc = false
+
+[[bin]]
+name = "fuzz_decode_unwrapped"
+path = "fuzz_targets/fuzz_decode_unwrapped.rs"
+doc = false
+
+[[bin]]
+name = "fuzz_get_decoder"
+path = "fuzz_targets/fuzz_get_decoder.rs"
+doc = false
+
+[[bin]]
+name = "fuzz_bmff_parse"
+path = "fuzz_targets/fuzz_bmff_parse.rs"
+doc = false
+
+[[bin]]
+name = "fuzz_tiff_parse"
+path = "fuzz_targets/fuzz_tiff_parse.rs"
+doc = false
+
+[[bin]]
+name = "fuzz_jfif_parse"
+path = "fuzz_targets/fuzz_jfif_parse.rs"
+doc = false
+
+[[bin]]
+name = "fuzz_ciff_parse"
+path = "fuzz_targets/fuzz_ciff_parse.rs"
+doc = false
