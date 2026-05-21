@@ -675,6 +675,7 @@ pub enum DngVersion {
   V1_4,
   V1_5,
   V1_6,
+  V1_7,
 }
 
 impl DngVersion {
@@ -687,13 +688,14 @@ impl DngVersion {
       DngVersion::V1_4 => dng::DNG_VERSION_V1_4,
       DngVersion::V1_5 => dng::DNG_VERSION_V1_5,
       DngVersion::V1_6 => dng::DNG_VERSION_V1_6,
+      DngVersion::V1_7 => dng::DNG_VERSION_V1_7,
     }
   }
 }
 
 impl clap::ValueEnum for DngVersion {
   fn value_variants<'a>() -> &'a [Self] {
-    &[Self::V1_0, Self::V1_1, Self::V1_2, Self::V1_3, Self::V1_4, Self::V1_5, Self::V1_6]
+    &[Self::V1_0, Self::V1_1, Self::V1_2, Self::V1_3, Self::V1_4, Self::V1_5, Self::V1_6, Self::V1_7]
   }
 
   fn to_possible_value(&self) -> Option<clap::builder::PossibleValue> {
@@ -705,6 +707,7 @@ impl clap::ValueEnum for DngVersion {
       Self::V1_4 => clap::builder::PossibleValue::new("1.4"),
       Self::V1_5 => clap::builder::PossibleValue::new("1.5"),
       Self::V1_6 => clap::builder::PossibleValue::new("1.6"),
+      Self::V1_7 => clap::builder::PossibleValue::new("1.7"),
     })
   }
 }

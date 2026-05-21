@@ -156,11 +156,11 @@ _dnglab() {
             fi
             case "${prev}" in
                 --compression)
-                    COMPREPLY=($(compgen -W "lossless uncompressed" -- "${cur}"))
+                    COMPREPLY=($(compgen -W "lossless uncompressed jpegxl" -- "${cur}"))
                     return 0
                     ;;
                 -c)
-                    COMPREPLY=($(compgen -W "lossless uncompressed" -- "${cur}"))
+                    COMPREPLY=($(compgen -W "lossless uncompressed jpegxl" -- "${cur}"))
                     return 0
                     ;;
                 --ljpeg92-predictor)
@@ -240,11 +240,11 @@ _dnglab() {
             fi
             case "${prev}" in
                 --compression)
-                    COMPREPLY=($(compgen -W "lossless uncompressed" -- "${cur}"))
+                    COMPREPLY=($(compgen -W "lossless uncompressed jpegxl" -- "${cur}"))
                     return 0
                     ;;
                 -c)
-                    COMPREPLY=($(compgen -W "lossless uncompressed" -- "${cur}"))
+                    COMPREPLY=($(compgen -W "lossless uncompressed jpegxl" -- "${cur}"))
                     return 0
                     ;;
                 --ljpeg92-predictor)
@@ -532,7 +532,7 @@ _dnglab() {
                     return 0
                     ;;
                 --dng-backward-version)
-                    COMPREPLY=($(compgen -W "1.0 1.1 1.2 1.3 1.4 1.5 1.6" -- "${cur}"))
+                    COMPREPLY=($(compgen -W "1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7" -- "${cur}"))
                     return 0
                     ;;
                 --colorimetric-reference)

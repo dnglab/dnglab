@@ -34,6 +34,7 @@ hex = "0.4"
 image = { version = "0.25", default-features = false, features = ["jpeg"] }
 itertools = "0.14"
 lazy_static = "1"
+jxl-encoder = { version = "0.3.1", default-features = false, features = ["std"] }
 jxl-oxide = "0.12.2"
 libflate = "2.0"
 log = "0.4"
