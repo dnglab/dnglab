@@ -32,7 +32,7 @@ use crate::{
   tags::{DngTag, TiffCommonTag},
 };
 
-use super::{CropMode, DNG_VERSION_V1_6, DngCompression, DngPhotometricConversion, original::OriginalCompressed};
+use super::{CropMode, DNG_VERSION_V1_7, DngCompression, DngPhotometricConversion, original::OriginalCompressed};
 
 pub type DngError = TiffError;
 
@@ -378,7 +378,7 @@ where
     let mut root_ifd = DirectoryWriter::new();
     let mut exif_ifd = DirectoryWriter::new();
     root_ifd.add_tag(DngTag::DNGBackwardVersion, backward_version);
-    root_ifd.add_tag(DngTag::DNGVersion, DNG_VERSION_V1_6);
+    root_ifd.add_tag(DngTag::DNGVersion, DNG_VERSION_V1_7);
     // Add EXIF version 0220
     exif_ifd.add_tag_undefined(ExifTag::ExifVersion, vec![48, 50, 50, 48]);
 

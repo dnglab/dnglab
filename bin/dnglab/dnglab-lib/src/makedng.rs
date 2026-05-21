@@ -675,6 +675,7 @@ pub enum DngVersion {
   V1_4,
   V1_5,
   V1_6,
+  V1_7,
 }
 
 impl DngVersion {
@@ -687,6 +688,7 @@ impl DngVersion {
       DngVersion::V1_4 => dng::DNG_VERSION_V1_4,
       DngVersion::V1_5 => dng::DNG_VERSION_V1_5,
       DngVersion::V1_6 => dng::DNG_VERSION_V1_6,
+      DngVersion::V1_7 => dng::DNG_VERSION_V1_7,
     }
   }
 }

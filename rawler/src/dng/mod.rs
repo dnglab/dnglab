@@ -14,6 +14,7 @@ pub const DNG_VERSION_V1_3: [u8; 4] = [1, 3, 0, 0];
 pub const DNG_VERSION_V1_4: [u8; 4] = [1, 4, 0, 0];
 pub const DNG_VERSION_V1_5: [u8; 4] = [1, 5, 0, 0];
 pub const DNG_VERSION_V1_6: [u8; 4] = [1, 6, 0, 0];
+pub const DNG_VERSION_V1_7: [u8; 4] = [1, 7, 0, 0];
 
 /// Convert internal crop rectangle to DNG active area
 ///
