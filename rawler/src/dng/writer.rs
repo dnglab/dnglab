@@ -43,6 +43,7 @@ where
   B: Write + Seek,
 {
   pub dng: TiffWriter<B>,
+  backward_version: [u8; 4],
   root_ifd: DirectoryWriter,
   //raw_ifd: DirectoryWriter,
   //preview_ifd: DirectoryWriter,
@@ -306,6 +307,9 @@ where
         dng_put_raw_ljpeg(self, &rawimage, predictor)?;
       }
       DngCompression::JpegXL => {
+        if self.writer.backward_version < DNG_VERSION_V1_7 {
+          return Err(DngError::General("JPEG-XL requires DNG 1.7.0.0 or later".into()));
+        }
         self.ifd_mut().add_tag(TiffCommonTag::Compression, CompressionMethod::JPEGXL);
         dng_put_raw_jpegxl(self, &rawimage)?;
       }
@@ -384,6 +388,7 @@ where
 
     Ok(Self {
       dng,
+      backward_version,
       root_ifd,
       exif_ifd,
       subs: Vec::new(),
