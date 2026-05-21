@@ -308,7 +308,7 @@ where
       }
       DngCompression::JpegXL => {
         if self.writer.backward_version < DNG_VERSION_V1_7 {
-          return Err(DngError::General("JPEG-XL requires DNG 1.7.0.0 or later".into()));
+          self.writer.root_ifd_mut().add_tag(DngTag::DNGBackwardVersion, DNG_VERSION_V1_7);
         }
         self.ifd_mut().add_tag(TiffCommonTag::Compression, CompressionMethod::JPEGXL);
         dng_put_raw_jpegxl(self, &rawimage)?;
@@ -674,9 +674,7 @@ where
           assert_eq!(rawimage.cpp, 1);
           (tile_w, tile_h, 1)
         }
-        RawPhotometricInterpretation::LinearRaw => {
-          (tile_w, tile_h, rawimage.cpp)
-        }
+        RawPhotometricInterpretation::LinearRaw => (tile_w, tile_h, rawimage.cpp),
       };
 
       debug!("JPEG-XL compression: bit depth: {}", rawimage.bps);
@@ -686,9 +684,7 @@ where
       let tiles_compr: Vec<Vec<u8>> = tiled_data
         .par_iter()
         .map(|tile| {
-          let bytes: &[u8] = unsafe {
-            std::slice::from_raw_parts(tile.as_ptr() as *const u8, tile.len() * size_of::<u16>())
-          };
+          let bytes: &[u8] = unsafe { std::slice::from_raw_parts(tile.as_ptr() as *const u8, tile.len() * size_of::<u16>()) };
           let layout = if components == 1 { PixelLayout::Gray16 } else { PixelLayout::Rgb16 };
           config
             .encode(bytes, j_width as u32, j_height as u32, layout)
