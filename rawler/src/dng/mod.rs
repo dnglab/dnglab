@@ -41,13 +41,14 @@ pub fn rect_to_dng_area(area: &Rect) -> [u16; 4] {
 #[cfg(feature = "clap")]
 impl clap::ValueEnum for DngCompression {
   fn value_variants<'a>() -> &'a [Self] {
-    &[Self::Lossless, Self::Uncompressed]
+    &[Self::Lossless, Self::Uncompressed, Self::JpegXL]
   }
 
   fn to_possible_value(&self) -> Option<clap::builder::PossibleValue> {
     Some(match self {
       Self::Uncompressed => clap::builder::PossibleValue::new("uncompressed"),
       Self::Lossless => clap::builder::PossibleValue::new("lossless"),
+      Self::JpegXL => clap::builder::PossibleValue::new("jpegxl"),
     })
   }
 }
@@ -110,5 +111,7 @@ pub enum DngCompression {
   Uncompressed,
   /// Lossless JPEG-92 compression
   Lossless,
+  /// Lossless JPEG-XL compression
+  JpegXL,
   // Lossy
 }

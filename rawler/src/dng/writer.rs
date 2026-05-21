@@ -6,6 +6,7 @@ use std::{
 };
 
 use image::{DynamicImage, codecs::jpeg::JpegEncoder, imageops::FilterType};
+use jxl_encoder::{LosslessConfig, PixelLayout};
 use log::debug;
 use rayon::prelude::*;
 
@@ -144,7 +145,7 @@ where
   }
 
   fn write_rawimage(&mut self, mut rawimage: Cow<RawImage>, cropmode: CropMode, compression: DngCompression, predictor: u8) -> Result<()> {
-    if compression == DngCompression::Lossless && matches!(rawimage.data, RawImageData::Float(_)) {
+    if (compression == DngCompression::Lossless || compression == DngCompression::JpegXL) && matches!(rawimage.data, RawImageData::Float(_)) {
       // Lossless (LJPEG92) can only be used for 16 bit integer data.
       // If we have floats, convert them.
       rawimage.to_mut().data.force_integer();
@@ -303,6 +304,10 @@ where
       DngCompression::Lossless => {
         self.ifd_mut().add_tag(TiffCommonTag::Compression, CompressionMethod::ModernJPEG);
         dng_put_raw_ljpeg(self, &rawimage, predictor)?;
+      }
+      DngCompression::JpegXL => {
+        self.ifd_mut().add_tag(TiffCommonTag::Compression, CompressionMethod::JPEGXL);
+        dng_put_raw_jpegxl(self, &rawimage)?;
       }
     }
 
@@ -623,6 +628,79 @@ where
   let mut tile_sizes: Vec<u32> = Vec::new();
 
   for tile in lj92_data.iter() {
+    let offs = subframe.writer.dng.write_data(tile)?;
+    tile_offsets.push(offs);
+    tile_sizes.push((tile.len() * size_of::<u8>()) as u32);
+  }
+
+  subframe
+    .ifd_mut()
+    .add_tag(TiffCommonTag::BitsPerSample, &vec![rawimage.bps as u16; rawimage.cpp]);
+  subframe.ifd_mut().add_tag(TiffCommonTag::SampleFormat, &vec![1_u16; rawimage.cpp]);
+  subframe.ifd_mut().add_tag(TiffCommonTag::TileOffsets, &tile_offsets);
+  subframe.ifd_mut().add_tag(TiffCommonTag::TileByteCounts, &tile_sizes);
+  subframe.ifd_mut().add_tag(TiffCommonTag::TileWidth, tile_w as u16);
+  subframe.ifd_mut().add_tag(TiffCommonTag::TileLength, tile_h as u16);
+
+  Ok(())
+}
+
+/// Compress RAW image with JPEG-XL lossless
+///
+/// Data is split into multiple tiles, each tile is compressed seperately
+/// using the JPEG-XL modular mode (lossless).
+fn dng_put_raw_jpegxl<W>(subframe: &mut SubFrameWriter<W>, rawimage: &RawImage) -> Result<()>
+where
+  W: Seek + Write,
+{
+  let tile_w = 256 & !0b111; // ensure div 16
+  let tile_h = 256 & !0b111;
+
+  let jxl_data = match rawimage.data {
+    RawImageData::Integer(ref data) => {
+      let tiled_data: Vec<Vec<u16>> = ImageTiler::new(data, rawimage.width, rawimage.height, rawimage.cpp, tile_w, tile_h).collect();
+
+      let (j_width, j_height, components) = match &rawimage.photometric {
+        RawPhotometricInterpretation::BlackIsZero => {
+          assert_eq!(rawimage.cpp, 1);
+          (tile_w, tile_h, 1)
+        }
+        RawPhotometricInterpretation::Cfa(_config) => {
+          assert_eq!(rawimage.cpp, 1);
+          (tile_w, tile_h, 1)
+        }
+        RawPhotometricInterpretation::LinearRaw => {
+          (tile_w, tile_h, rawimage.cpp)
+        }
+      };
+
+      debug!("JPEG-XL compression: bit depth: {}", rawimage.bps);
+
+      let config = LosslessConfig::new();
+
+      let tiles_compr: Vec<Vec<u8>> = tiled_data
+        .par_iter()
+        .map(|tile| {
+          let bytes: &[u8] = unsafe {
+            std::slice::from_raw_parts(tile.as_ptr() as *const u8, tile.len() * size_of::<u16>())
+          };
+          let layout = if components == 1 { PixelLayout::Gray16 } else { PixelLayout::Rgb16 };
+          config
+            .encode(bytes, j_width as u32, j_height as u32, layout)
+            .map_err(|e| DngError::General(format!("JPEG-XL encoding failed: {}", e)))
+        })
+        .collect::<Result<Vec<_>>>()?;
+      tiles_compr
+    }
+    RawImageData::Float(ref _data) => {
+      panic!("invalid format");
+    }
+  };
+
+  let mut tile_offsets: Vec<u32> = Vec::new();
+  let mut tile_sizes: Vec<u32> = Vec::new();
+
+  for tile in jxl_data.iter() {
     let offs = subframe.writer.dng.write_data(tile)?;
     tile_offsets.push(offs);
     tile_sizes.push((tile.len() * size_of::<u8>()) as u32);

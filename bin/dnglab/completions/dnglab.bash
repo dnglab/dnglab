@@ -156,11 +156,11 @@ _dnglab() {
             fi
             case "${prev}" in
                 --compression)
-                    COMPREPLY=($(compgen -W "lossless uncompressed" -- "${cur}"))
+                    COMPREPLY=($(compgen -W "lossless uncompressed jpegxl" -- "${cur}"))
                     return 0
                     ;;
                 -c)
-                    COMPREPLY=($(compgen -W "lossless uncompressed" -- "${cur}"))
+                    COMPREPLY=($(compgen -W "lossless uncompressed jpegxl" -- "${cur}"))
                     return 0
                     ;;
                 --ljpeg92-predictor)
@@ -240,11 +240,11 @@ _dnglab() {
             fi
             case "${prev}" in
                 --compression)
-                    COMPREPLY=($(compgen -W "lossless uncompressed" -- "${cur}"))
+                    COMPREPLY=($(compgen -W "lossless uncompressed jpegxl" -- "${cur}"))
                     return 0
                     ;;
                 -c)
-                    COMPREPLY=($(compgen -W "lossless uncompressed" -- "${cur}"))
+                    COMPREPLY=($(compgen -W "lossless uncompressed jpegxl" -- "${cur}"))
                     return 0
                     ;;
                 --ljpeg92-predictor)
