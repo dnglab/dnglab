@@ -695,7 +695,7 @@ impl DngVersion {
 
 impl clap::ValueEnum for DngVersion {
   fn value_variants<'a>() -> &'a [Self] {
-    &[Self::V1_0, Self::V1_1, Self::V1_2, Self::V1_3, Self::V1_4, Self::V1_5, Self::V1_6]
+    &[Self::V1_0, Self::V1_1, Self::V1_2, Self::V1_3, Self::V1_4, Self::V1_5, Self::V1_6, Self::V1_7]
   }
 
   fn to_possible_value(&self) -> Option<clap::builder::PossibleValue> {
@@ -707,6 +707,7 @@ impl clap::ValueEnum for DngVersion {
       Self::V1_4 => clap::builder::PossibleValue::new("1.4"),
       Self::V1_5 => clap::builder::PossibleValue::new("1.5"),
       Self::V1_6 => clap::builder::PossibleValue::new("1.6"),
+      Self::V1_7 => clap::builder::PossibleValue::new("1.7"),
     })
   }
 }

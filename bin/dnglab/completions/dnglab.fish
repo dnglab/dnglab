@@ -159,7 +159,8 @@ complete -c dnglab -n "__fish_dnglab_using_subcommand makedng" -l dng-backward-v
 1.3\t''
 1.4\t''
 1.5\t''
-1.6\t''"
+1.6\t''
+1.7\t''"
 complete -c dnglab -n "__fish_dnglab_using_subcommand makedng" -l colorimetric-reference -d 'Reference for XYZ values' -r -f -a "scene\t''
 output\t''"
 complete -c dnglab -n "__fish_dnglab_using_subcommand makedng" -l unique-camera-model -d 'Unique camera model' -r
