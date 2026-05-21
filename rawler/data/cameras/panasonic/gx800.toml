@@ -5,6 +5,7 @@ clean_model = "DC-GX800"
 
 model_aliases = [
   ["DC-GX850", "DC-GX850"],
+  ["DC-GF9", "DC-GF9"],
 ]
 
 #blackpoint = 143
