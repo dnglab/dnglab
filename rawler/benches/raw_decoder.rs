@@ -1,19 +1,14 @@
 use criterion::{BenchmarkGroup, Criterion, criterion_group, criterion_main, measurement::WallTime};
-use rawler::{decoders::RawDecodeParams, rawsource::RawSource};
-use std::{hint::black_box, path::PathBuf, time::Duration};
+use rawler::{
+  decoders::RawDecodeParams,
+  devtools::rawdb::{get_rawdb_cache, rawdb_ensure_file},
+  rawsource::RawSource,
+};
+use std::{hint::black_box, time::Duration};
 
-fn rawdb_sample(sample: &str) -> PathBuf {
-  let mut path = PathBuf::from(std::env::var("RAWLER_RAWDB").expect("RAWLER_RAWDB variable must be set in order to run RAW test!"));
-  path.push(sample);
-  if !path.exists() {
-    eprintln!("Sample \"{}\" not found", path.display());
-  }
-  path
-}
-
-fn bench_raw_image(group: &mut BenchmarkGroup<'_, WallTime>, name: &str, sample: &str) {
+fn bench_raw_image(group: &mut BenchmarkGroup<'_, WallTime>, name: &str, make: &str, model: &str, sample: &str) {
   let mut inner = || -> anyhow::Result<()> {
-    let sample = rawdb_sample(sample);
+    let sample = rawdb_ensure_file(&get_rawdb_cache(), make, model, sample)?;
     let rawfile = RawSource::new(&sample)?;
     let decoder = rawler::get_decoder(&rawfile)?;
     group.bench_with_input(name, &rawfile, |b, rawfile| {
@@ -40,57 +35,101 @@ fn decoding_raw_frame(c: &mut Criterion) {
   bench_raw_image(
     &mut group,
     "decode_canon_eos_5dmk3_raw",
-    "cameras/Canon/EOS 5D Mark III/raw_modes/Canon EOS 5D Mark III_RAW_ISO_200.CR2",
+    "Canon",
+    "EOS 5D Mark III",
+    "raw_modes/Canon EOS 5D Mark III_RAW_ISO_200.CR2",
   );
 
   bench_raw_image(
     &mut group,
     "decode_canon_eos_5dmk3_sraw1",
-    "cameras/Canon/EOS 5D Mark III/raw_modes/Canon EOS 5D Mark III_sRAW1_ISO_200.CR2",
+    "Canon",
+    "EOS 5D Mark III",
+    "raw_modes/Canon EOS 5D Mark III_sRAW1_ISO_200.CR2",
   );
 
   bench_raw_image(
     &mut group,
     "decode_canon_eos_5dmk3_sraw2",
-    "cameras/Canon/EOS 5D Mark III/raw_modes/Canon EOS 5D Mark III_sRAW2_ISO_200.CR2",
+    "Canon",
+    "EOS 5D Mark III",
+    "raw_modes/Canon EOS 5D Mark III_sRAW2_ISO_200.CR2",
   );
 
   bench_raw_image(
     &mut group,
     "decode_canon_eos_r6_raw",
-    "cameras/Canon/EOS R6/raw_modes/Canon EOS R6_RAW_ISO_100_nocrop_nodual.CR3",
+    "Canon",
+    "EOS R6",
+    "raw_modes/Canon EOS R6_RAW_ISO_100_nocrop_nodual.CR3",
   );
 
   bench_raw_image(
     &mut group,
     "decode_canon_eos_r6_craw",
-    "cameras/Canon/EOS R6/raw_modes/Canon EOS R6_CRAW_ISO_100_nocrop_nodual.CR3",
+    "Canon",
+    "EOS R6",
+    "raw_modes/Canon EOS R6_CRAW_ISO_100_nocrop_nodual.CR3",
   );
 
-  bench_raw_image(&mut group, "decode_dng_ljpeg_tiles", "dng/compression-sets/ljpeg_tiles.dng");
+  bench_raw_image(
+    &mut group,
+    "decode_dng_ljpeg_tiles",
+    "dnglab",
+    "dng-compression-variants",
+    "variants/ljpeg_tiles.dng",
+  );
 
-  bench_raw_image(&mut group, "decode_dng_10bit", "dng/compression-sets/10bit.dng");
+  bench_raw_image(&mut group, "decode_dng_10bit", "dnglab", "dng-compression-variants", "variants/10bit.dng");
 
-  bench_raw_image(&mut group, "decode_dng_12bit", "dng/compression-sets/12bit.dng");
+  bench_raw_image(&mut group, "decode_dng_12bit", "dnglab", "dng-compression-variants", "variants/12bit.dng");
 
-  bench_raw_image(&mut group, "decode_dng_16bit_be", "dng/compression-sets/16bit_bigend.dng");
+  bench_raw_image(
+    &mut group,
+    "decode_dng_16bit_be",
+    "dnglab",
+    "dng-compression-variants",
+    "variants/16bit_bigend.dng",
+  );
 
-  bench_raw_image(&mut group, "decode_dng_8bit_lintable", "dng/compression-sets/8bit_lintable.dng");
+  bench_raw_image(
+    &mut group,
+    "decode_dng_8bit_lintable",
+    "dnglab",
+    "dng-compression-variants",
+    "variants/8bit_lintable.dng",
+  );
 
-  bench_raw_image(&mut group, "decode_dng_ljpeg_singlestrip", "dng/compression-sets/ljpeg_singlestrip.dng");
+  bench_raw_image(
+    &mut group,
+    "decode_dng_ljpeg_singlestrip",
+    "dnglab",
+    "dng-compression-variants",
+    "variants/ljpeg_singlestrip.dng",
+  );
 
-  bench_raw_image(&mut group, "decode_dng_lossy_jpeg_tiles", "dng/compression-sets/lossy_tiles.dng");
+  bench_raw_image(
+    &mut group,
+    "decode_dng_lossy_jpeg_tiles",
+    "dnglab",
+    "dng-compression-variants",
+    "variants/lossy_tiles.dng",
+  );
 
   bench_raw_image(
     &mut group,
     "decode_dng_uncomp_multistrip_16rows",
-    "dng/compression-sets/uncompressed_multistrip_16row.dng",
+    "dnglab",
+    "dng-compression-variants",
+    "variants/uncompressed_multistrip_16row.dng",
   );
 
   bench_raw_image(
     &mut group,
     "decode_dng_uncomp_multistrip_1row",
-    "dng/compression-sets/uncompressed_multistrip_1row.dng",
+    "dnglab",
+    "dng-compression-variants",
+    "variants/uncompressed_multistrip_1row.dng",
   );
 
   group.finish();

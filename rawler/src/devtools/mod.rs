@@ -10,6 +10,10 @@ use byteorder::{LittleEndian, WriteBytesExt};
 use image::{ImageBuffer, ImageFormat, Luma, Rgb};
 pub(crate) mod inspector;
 
+//#[cfg(test)]
+#[cfg(feature = "rawdb")]
+pub mod rawdb;
+
 pub fn dump_image_u16(data: &[u16], width: usize, height: usize, path: impl AsRef<str>) -> std::io::Result<()> {
   let img = ImageBuffer::<Luma<u16>, Vec<u16>>::from_vec(width as u32, height as u32, data.to_vec())
     .ok_or_else(|| std::io::Error::new(std::io::ErrorKind::InvalidInput, "image dimensions do not match data length"))?;

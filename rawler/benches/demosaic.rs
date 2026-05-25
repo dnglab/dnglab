@@ -1,23 +1,15 @@
 use criterion::{BenchmarkGroup, Criterion, criterion_group, criterion_main, measurement::WallTime};
 use rawler::{
   decoders::RawDecodeParams,
+  devtools::rawdb::{get_rawdb_cache, rawdb_ensure_file},
   imgop::develop::{ProcessingStep, RawDevelop},
   rawsource::RawSource,
 };
-use std::{hint::black_box, path::PathBuf, time::Duration};
+use std::{hint::black_box, time::Duration};
 
-fn rawdb_sample(sample: &str) -> PathBuf {
-  let mut path = PathBuf::from(std::env::var("RAWLER_RAWDB").expect("RAWLER_RAWDB variable must be set in order to run RAW test!"));
-  path.push(sample);
-  if !path.exists() {
-    eprintln!("Sample \"{}\" not found", path.display());
-  }
-  path
-}
-
-fn bench_full_image(group: &mut BenchmarkGroup<'_, WallTime>, name: &str, sample: &str) {
+fn bench_full_image(group: &mut BenchmarkGroup<'_, WallTime>, name: &str, make: &str, model: &str, sample: &str) {
   let mut inner = || -> anyhow::Result<()> {
-    let sample = rawdb_sample(sample);
+    let sample = rawdb_ensure_file(&get_rawdb_cache(), make, model, sample)?;
     let rawfile = RawSource::new(&sample)?;
     let decoder = rawler::get_decoder(&rawfile)?;
     let raw_params = RawDecodeParams::default();
@@ -46,13 +38,17 @@ fn decoding_full_frame(c: &mut Criterion) {
   bench_full_image(
     &mut group,
     "full_image_fuji_xt5",
-    "cameras/Fujifilm/X-T5/raw_modes/X-T5_ISO_125_Bitdepth_14_lossless.RAF",
+    "Fujifilm",
+    "X-T5",
+    "raw_modes/X-T5_ISO_125_Bitdepth_14_lossless.RAF",
   );
 
   bench_full_image(
     &mut group,
     "full_image_canon_r5",
-    "cameras/Canon/EOS R5/raw_modes/Canon EOS R5_CRAW_ISO_100_nocrop_nodual.CR3",
+    "Canon",
+    "EOS R5",
+    "raw_modes/Canon EOS R5_CRAW_ISO_100_nocrop_nodual.CR3",
   );
 
   group.finish();

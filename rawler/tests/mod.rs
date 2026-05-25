@@ -1,10 +1,8 @@
-#[cfg(feature = "samplecheck")]
-mod cameras;
-#[cfg(feature = "samplecheck")]
-mod common;
-#[cfg(feature = "samplecheck")]
+#[cfg(feature = "rawdb")]
+pub mod common;
+#[cfg(feature = "rawdb")]
 mod dng;
-#[cfg(feature = "samplecheck")]
+#[cfg(feature = "rawdb")]
 mod issues;
-#[cfg(feature = "samplecheck")]
-mod samples;
+#[cfg(feature = "rawdb")]
+mod rawdb;

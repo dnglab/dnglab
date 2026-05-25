@@ -1,0 +1,89 @@
+---
+file:
+  fileSize: 2484836
+  fileName: lossy_tiles.dng
+  digest: 1c7bcaed8ae26861b1da22caa1086db5
+data:
+  metadata:
+    rawParams:
+      rawWidth: 3960
+      rawHeight: 2640
+      bitDepth: 8
+      cropArea:
+        p:
+          x: 0
+          y: 0
+        d:
+          w: 3960
+          h: 2640
+      activeArea: ~
+      blacklevels:
+        levels:
+          - 0/256
+          - 0/256
+          - 0/256
+        cpp: 3
+        width: 1
+        height: 1
+      whitelevels:
+        - 255
+        - 255
+        - 255
+      wbCoeffs:
+        - 1.419904
+        - 1.2184899
+        - 1.0
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ~
+        artist: Simon Harhues
+        lens_spec: ~
+        exposure_time: 1/125
+        fnumber: 28/10
+        aperture_value: 2970854/1000000
+        brightness_value: ~
+        iso_speed_ratings: 200
+        iso_speed: ~
+        recommended_exposure_index: 200
+        sensitivity_type: 2
+        exposure_bias: 0/1
+        date_time_original: "2017:01:05 13:53:29"
+        create_date: "2017:01:05 13:53:29"
+        modify_date: "2017:01:31 19:30:24"
+        exposure_program: 1
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: "75"
+        sub_sec_time_digitized: "75"
+        shutter_speed_value: 6965784/1000000
+        max_aperture_value: 3/1
+        subject_distance: ~
+        metering_mode: 5
+        light_source: ~
+        flash: 16
+        focal_length: 70/1
+        image_number: 0
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 1
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: "063024001964"
+        lens_serial_number: "0000413819"
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+        user_comment: ~
+      model: EOS 5D Mark III
+      make: Canon
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

@@ -716,34 +716,35 @@ mod tests {
     Ok(())
   }
 
-  #[cfg(feature = "samplecheck")]
+  #[cfg(feature = "rawdb")]
   #[test]
   fn convert_canon_cr3_to_dng() -> std::result::Result<(), Box<dyn std::error::Error>> {
     use crate::{
       decoders::RawDecodeParams,
+      devtools::rawdb::{get_rawdb_cache, rawdb_ensure_file},
       dng::{DNG_VERSION_V1_4, PREVIEW_JPEG_QUALITY},
       rawsource::RawSource,
     };
     use std::{
       fs::File,
       io::{BufReader, BufWriter},
-      path::PathBuf,
     };
 
-    let mut rawdb = PathBuf::from(std::env::var("RAWLER_RAWDB").expect("RAWLER_RAWDB variable must be set in order to run RAW test!"));
-    rawdb.push("cameras/Canon/EOS R6/raw_modes/Canon EOS R6_RAW_ISO_100_nocrop_nodual.CR3");
+    let rawdb_cache = get_rawdb_cache();
+    let raw_file = rawdb_ensure_file(&rawdb_cache, "Canon", "EOS R6", "raw_modes/Canon EOS R6_RAW_ISO_100_nocrop_nodual.CR3")?;
 
-    let rawfile = RawSource::new(&rawdb)?;
+    let raw_source = RawSource::new(&raw_file)?;
+    let orig_file = File::open(&raw_file).expect("File missing");
 
-    let original_thread = std::thread::spawn(|| OriginalCompressed::compress(&mut BufReader::new(File::open(rawdb).unwrap())));
+    let original_thread = std::thread::spawn(move || OriginalCompressed::compress(&mut BufReader::new(orig_file)));
 
-    let decoder = crate::get_decoder(&rawfile)?;
+    let decoder = crate::get_decoder(&raw_source)?;
 
-    let rawimage = decoder.raw_image(&rawfile, &RawDecodeParams::default(), false)?;
+    let rawimage = decoder.raw_image(&raw_source, &RawDecodeParams::default(), false)?;
 
-    let full_image = decoder.preview_image(&rawfile, &RawDecodeParams::default())?.unwrap();
+    let full_image = decoder.preview_image(&raw_source, &RawDecodeParams::default())?.unwrap();
 
-    let metadata = decoder.raw_metadata(&rawfile, &RawDecodeParams::default())?;
+    let metadata = decoder.raw_metadata(&raw_source, &RawDecodeParams::default())?;
 
     let predictor = 1;
 
@@ -767,7 +768,7 @@ mod tests {
 
     dng.load_metadata(&metadata)?;
 
-    if let Some(xpacket) = decoder.xpacket(&rawfile, &RawDecodeParams::default())? {
+    if let Some(xpacket) = decoder.xpacket(&raw_source, &RawDecodeParams::default())? {
       dng.xpacket(xpacket)?;
     }
 
