@@ -1,11 +1,14 @@
 // SPDX-License-Identifier: LGPL-2.1
 // Copyright 2021 Daniel Vogelbacher <daniel@chaospixel.com>
 
-//#[cfg(feature = "samplecheck")]
+//#[cfg(feature = "rawdb")]
 use md5::Digest;
 use rawler::analyze::extract_full_pixels;
 use rawler::analyze::extract_preview_pixels;
 use rawler::analyze::extract_thumbnail_pixels;
+#[cfg(feature = "rawdb")]
+use rawler::devtools::rawdb::get_rawdb_cache;
+use rawler::devtools::rawdb::rawdb_ensure_file;
 use rawler::dng::convert::ConvertParams;
 use rawler::dng::convert::convert_raw_file;
 use rawler::{
@@ -55,40 +58,18 @@ impl Seek for SeekableSink {
   }
 }
 
-macro_rules! camera_file_check {
+macro_rules! rawdb_test_file {
   ($make:expr, $model:expr, $test:ident, $file:expr) => {
     #[allow(non_snake_case)]
     #[test]
     fn $test() -> std::result::Result<(), Box<dyn std::error::Error>> {
       //crate::init_test_logger();
-      crate::common::check_camera_raw_file_conversion("cameras", $make, $model, $file)
+      crate::common::check_raw_file_conversion($make, $model, $file)
     }
   };
 }
 
-pub(crate) use camera_file_check;
-
-macro_rules! sample_file_check {
-  ($sampleset:expr, $test:ident, $file:expr) => {
-    #[allow(non_snake_case)]
-    #[test]
-    fn $test() -> std::result::Result<(), Box<dyn std::error::Error>> {
-      //crate::init_test_logger();
-      crate::common::check_sample_raw_file_conversion($sampleset, $file)
-    }
-  };
-}
-
-pub(crate) use sample_file_check;
-
-pub(crate) fn rawdb_path() -> PathBuf {
-  PathBuf::from(std::env::var("RAWLER_RAWDB").expect("RAWLER_RAWDB variable must be set in order to run RAW test!"))
-}
-
-pub(crate) fn rawdb_file(path: impl AsRef<Path>) -> PathBuf {
-  let rawdb = rawdb_path();
-  rawdb.join(path)
-}
+pub(crate) use rawdb_test_file;
 
 pub(crate) fn check_md5_equal(digest: [u8; 16], expected: &str) {
   assert_eq!(hex::encode(digest), expected);
@@ -104,18 +85,15 @@ pub(crate) fn compare_digest(buf: &[u8], digest_file: impl AsRef<Path>) -> std::
 
 /// Generic function to check camera raw files against
 /// pre-generated stats and pixel files.
-pub(crate) fn check_camera_raw_file_conversion(category: &str, make: &str, model: &str, sample: &str) -> std::result::Result<(), Box<dyn std::error::Error>> {
-  let rawdb = PathBuf::from(std::env::var("RAWLER_RAWDB").expect("RAWLER_RAWDB variable must be set in order to run RAW test!"));
-
-  let mut camera_rawdb = rawdb.clone();
-  camera_rawdb.push(category);
-
-  let mut testfiles = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-  testfiles.push("data/testdata");
-
-  let base_path = testfiles.join(category).join(make).join(model);
-
-  let raw_file = camera_rawdb.join(make).join(model).join(sample);
+pub(crate) fn check_raw_file_conversion(make: &str, model: &str, sample: &str) -> std::result::Result<(), Box<dyn std::error::Error>> {
+  let rawdb_cache = get_rawdb_cache();
+  let testfiles = {
+    let mut p = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+    p.push("data/testdata/rawdb");
+    p
+  };
+  let base_path = testfiles.join(make).join(model);
+  let raw_file = rawdb_ensure_file(&rawdb_cache, make, model, sample)?;
   let filename = raw_file.file_name().map(|name| name.to_os_string()).expect("Filename must by OS string compatible");
   let mut orig_analyze_file = filename.clone();
   let mut orig_raw_digest_file = filename.clone();
@@ -175,66 +153,6 @@ pub(crate) fn check_camera_raw_file_conversion(category: &str, make: &str, model
     let image = extract_thumbnail_pixels(&raw_file, &RawDecodeParams::default()).unwrap();
     compare_digest(image.as_bytes(), digest_thumbnail_file)?;
   }
-
-  // Convert to DNG with default params
-  let params = ConvertParams {
-    embedded: false,
-    apply_scaling: false,
-    ..Default::default()
-  };
-  let mut dng = SeekableSink::new();
-  convert_raw_file(&raw_file, &mut dng, &params)?;
-
-  Ok(())
-}
-
-/// Generic function to check camera raw files against
-/// pre-generated stats and pixel files.
-pub(crate) fn check_sample_raw_file_conversion(sampleset: &str, sample: &str) -> std::result::Result<(), Box<dyn std::error::Error>> {
-  let rawdb = PathBuf::from(std::env::var("RAWLER_RAWDB").expect("RAWLER_RAWDB variable must be set in order to run RAW test!"));
-
-  let mut camera_rawdb = rawdb.clone();
-  camera_rawdb.push("samples");
-
-  let mut testfiles = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-  testfiles.push("data/testdata/samples");
-
-  let base_path = testfiles.join(sampleset);
-
-  let raw_file = camera_rawdb.join(sampleset).join(sample);
-  let filename = raw_file.file_name().map(|name| name.to_os_string()).expect("Filename must by OS string compatible");
-  let mut orig_analyze_file = filename.clone();
-  let mut orig_digest_file = filename.clone();
-  orig_analyze_file.push(".analyze.yaml");
-  orig_digest_file.push(".digest.txt");
-  let stats_file = base_path.join(sample).with_file_name(orig_analyze_file);
-  let digest_file = base_path.join(sample).with_file_name(orig_digest_file);
-
-  //let pixel_file = base_path.join(&sample).with_extension("pixel");
-
-  //eprintln!("{:?}", stats_file);
-
-  assert!(raw_file.exists(), "Raw file {:?} not found", raw_file);
-  assert!(stats_file.exists(), "Stats file {:?} not found", stats_file);
-
-  // Validate stats file
-  let new_stats = analyze_metadata(PathBuf::from(&raw_file)).unwrap();
-  let old_stats = std::fs::read_to_string(&stats_file)?;
-
-  let old_stats: AnalyzerResult = serde_yaml::from_str(&old_stats)?;
-
-  assert_eq!(old_stats, new_stats);
-
-  // Validate pixel data
-  let old_digest_str = std::fs::read_to_string(digest_file)?;
-  let old_digest = Digest(TryInto::<[u8; 16]>::try_into(hex::decode(old_digest_str.trim()).expect("Malformed MD5 digest")).expect("Must be [u8; 16]"));
-  let image = extract_raw_pixels(&raw_file, &RawDecodeParams::default()).unwrap();
-  let byte_buf = match &image.data {
-    rawler::RawImageData::Integer(samples) => samples.as_slice().as_bytes(),
-    rawler::RawImageData::Float(samples) => samples.as_slice().as_bytes(),
-  };
-  let new_digest = md5::compute(byte_buf);
-  assert_eq!(old_digest, new_digest, "Old and new raw pixel digest not match!");
 
   // Convert to DNG with default params
   let params = ConvertParams {

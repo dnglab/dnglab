@@ -2,12 +2,12 @@
 authors = ["Daniel Vogelbacher <daniel@chaospixel.com>", "Pedro Côrte-Real <pedro@pedrocr.net>"]
 categories = ["multimedia::images"]
 description = "A library to extract images and metadata from camera raw formats"
-readme = "README.md"
 edition = "2024"
 homepage = "https://github.com/dnglab/dnglab"
 keywords = ["camera", "raw"]
 license = "LGPL-2.1"
 name = "rawler"
+readme = "README.md"
 repository = "https://github.com/dnglab/dnglab"
 rust-version = "1.88"
 version = "0.7.2"
@@ -19,51 +19,49 @@ build = "data/join.rs"
 [features]
 # This is a developer feature, it enabled deep inspection of algorithm execution stages
 clap = ["dep:clap"]
-#default = ["samplecheck"]
 inspector = []
-samplecheck = []
+rawdb = ["dep:ureq", "dep:percent-encoding"]
 
 [dependencies]
 backtrace = "0.3"
 bitstream-io = "4.1"
 byteorder = "1"
 chrono = "0.4"
-clap = { version = "4.4.0", optional = true }
+clap = {version = "4.4.0", optional = true}
 enumn = "0.1"
 hex = "0.4"
-image = { version = "0.25", default-features = false, features = ["jpeg"] }
+image = {version = "0.25", default-features = false, features = ["jpeg"]}
 itertools = "0.14"
-lazy_static = "1"
 jxl-oxide = "0.12.2"
+lazy_static = "1"
 libflate = "2.0"
 log = "0.4"
 md5 = "0.8"
-num = "0.4"
+memmap2 = "0.9.4"
 multiversion = "0.8"
+num = "0.4"
 num_enum = "0.7"
+percent-encoding = {version = "2", optional = true}
 rayon = "1"
-zerocopy = { version = "0.8.26", features = ["derive"] }
-serde = { version = "1.0", features = ["derive"] }
+serde = {version = "1.0", features = ["derive"]}
 thiserror = "2.0"
 toml = "0.8"
-uuid = { version = "1.0", features = ["serde", "v4"] }
+ureq = {version = "2", default-features = false, features = ["tls"], optional = true}
+uuid = {version = "1.0", features = ["serde", "v4"]}
 weezl = "0.1.7"
-memmap2 = "0.9.4"
+zerocopy = {version = "0.8.26", features = ["derive"]}
 
 [dev-dependencies]
-criterion = { version = "0.8", features = ["html_reports"] }
-env_logger = "0.11"
-serde_yaml = "=0.8" # TODO - breaks camera tests, update to 0.9 when fixed
 anyhow = "1.0"
 approx = "0.5.1"
+criterion = {version = "0.8", features = ["html_reports"]}
+env_logger = "0.11"
+serde_yaml = "=0.8" # TODO - breaks camera tests, update to 0.9 when fixed
 
 [build-dependencies]
 glob = "0.3"
 rustc_version = "0.4"
 toml = "=0.8" # TODO - Updating breaks `join.rs` build script with message - Error parsing "data/cameras/apple/quicktake100.toml": message: "unexpected content, expected nothing",
-
-
-
 
 [lints]
 workspace = true

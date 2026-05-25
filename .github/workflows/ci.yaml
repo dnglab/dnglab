@@ -40,7 +40,7 @@ jobs:
       - run: cargo build --all-features
       - run: cargo check --all-features
 
-  samplecheck:
+  rawdb:
     name: Testdata validation with Rust ${{matrix.rust}}
     runs-on: testdata-avail
     strategy:
@@ -48,14 +48,14 @@ jobs:
       matrix:
         rust: [1.88.0]
     env:
-      RAWLER_RAWDB: /opt/rawdb2
+      RAWDB_CACHE: /opt/rawdb_cache
       RAYON_NUM_THREADS: 4
     steps:
       - uses: actions/checkout@v2
       - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: ${{matrix.rust}}
-      - run: cargo test --release --features samplecheck
+      - run: cargo test --release --features rawdb
 
   windows_check:
     name: Windows check
