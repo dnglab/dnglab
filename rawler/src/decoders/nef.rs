@@ -229,7 +229,9 @@ impl<'a> Decoder for NefDecoder<'a> {
     let coeffs = normalize_wb(self.get_wb()?);
     debug!("WB coeff: {:?}", coeffs);
 
-    assert_eq!(self.tiff.little_endian(), self.makernote.endian == Endian::Little);
+    if self.tiff.little_endian() != (self.makernote.endian == Endian::Little) {
+      return Err(RawlerError::DecoderFailed("NEF: TIFF and makernote endianness mismatch".to_string()));
+    }
 
     let image = if self.camera.model == "NIKON D100" {
       width = 3040;
