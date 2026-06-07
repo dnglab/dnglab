@@ -13,3 +13,11 @@ model = "PowerShot SX60 HS"
 focal_range = [[38, 10], [247, 1]]
 aperture_range = [[34, 10], [65, 10]]
 key = "canon_powershot_sx60hs_lens"
+
+[[lenses]]
+mount = "fixed"
+make = "Canon"
+model = "Zoom Lens 3.1x IS"
+focal_range = [[82, 10], [256, 10]]
+aperture_range = [[28, 10], [45, 10]]
+key = "canon_powershot_v1_lens"

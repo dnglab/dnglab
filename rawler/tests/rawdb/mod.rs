@@ -686,6 +686,19 @@ mod canon {
     super::super::rawdb_test_file!("Canon", "PowerShot SX70 HS", canon_powershot_sx70_hs_craw_iso_100_nocrop_nodual_cr3, "raw_modes/Canon PowerShot SX70 HS_CRAW_ISO_100_nocrop_nodual.CR3");
     super::super::rawdb_test_file!("Canon", "PowerShot SX70 HS", canon_powershot_sx70_hs_raw_iso_100_nocrop_nodual_cr3, "raw_modes/Canon PowerShot SX70 HS_RAW_ISO_100_nocrop_nodual.CR3");
   }
+  mod powershot_v1_raw_modes {
+    super::super::rawdb_test_file!("Canon", "PowerShot V1", canon_v1_iso_100_burst_raw_01_cr3, "raw_modes/CANON_V1_ISO_100_BURST_RAW_01.CR3");
+    super::super::rawdb_test_file!("Canon", "PowerShot V1", canon_v1_iso_100_burst_raw_02_cr3, "raw_modes/CANON_V1_ISO_100_BURST_RAW_02.CR3");
+    super::super::rawdb_test_file!("Canon", "PowerShot V1", canon_v1_iso_100_burst_raw_03_cr3, "raw_modes/CANON_V1_ISO_100_BURST_RAW_03.CR3");
+    super::super::rawdb_test_file!("Canon", "PowerShot V1", canon_v1_iso_100_burst_raw_04_cr3, "raw_modes/CANON_V1_ISO_100_BURST_RAW_04.CR3");
+    super::super::rawdb_test_file!("Canon", "PowerShot V1", canon_v1_iso_100_dp_craw_cr3, "raw_modes/CANON_V1_ISO_100_DP_CRAW.CR3");
+    super::super::rawdb_test_file!("Canon", "PowerShot V1", canon_v1_iso_100_dp_raw_cr3, "raw_modes/CANON_V1_ISO_100_DP_RAW.CR3");
+    super::super::rawdb_test_file!("Canon", "PowerShot V1", canon_v1_iso_100_f8_craw_cr3, "raw_modes/CANON_V1_ISO_100_F8_CRAW.CR3");
+    super::super::rawdb_test_file!("Canon", "PowerShot V1", canon_v1_iso_100_f8_raw_cr3, "raw_modes/CANON_V1_ISO_100_F8_RAW.CR3");
+    super::super::rawdb_test_file!("Canon", "PowerShot V1", canon_v1_iso_200_hdr_raw_cr3, "raw_modes/CANON_V1_ISO_200_HDR_RAW.CR3");
+    super::super::rawdb_test_file!("Canon", "PowerShot V1", canon_v1_iso_800_f8_craw_cr3, "raw_modes/CANON_V1_ISO_800_F8_CRAW.CR3");
+    super::super::rawdb_test_file!("Canon", "PowerShot V1", canon_v1_iso_800_f8_raw_cr3, "raw_modes/CANON_V1_ISO_800_F8_RAW.CR3");
+  }
 }
 
 mod dnglab {
