@@ -119,7 +119,7 @@ impl<'a> Decoder for KdcDecoder<'a> {
     let height = fetch_tiff_tag!(raw, TiffCommonTag::KdcLength).force_usize(0) + 70;
     let offset = fetch_tiff_tag!(raw, TiffCommonTag::KdcOffset);
     if offset.count() < 13 {
-      panic!("KDC Decoder: Couldn't find the KDC offset");
+      return Err(RawlerError::DecoderFailed("KDC Decoder: Couldn't find the KDC offset".to_string()));
     }
     let mut off = offset.force_usize(4) + offset.force_usize(12);
 
