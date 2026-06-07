@@ -187,14 +187,14 @@ impl<'a> Decoder for ArwDecoder<'a> {
       1 => BlackLevel::new(&black, self.camera.cfa.width, self.camera.cfa.height, cpp),
       // For YUV data, the blacklevel needs to be multiplicated by 2
       3 => BlackLevel::new(&[black[0] * 2, black[0] * 2, black[0] * 2], 1, 1, cpp),
-      _ => panic!("Unsupported cpp == {}", cpp),
+      _ => return Err(RawlerError::DecoderFailed(format!("ARW: Unsupported cpp: {}", cpp))),
     });
     let whitelevel = white.map(|white| WhiteLevel(vec![white as u32; cpp]));
 
     let photometric = match cpp {
       1 => RawPhotometricInterpretation::Cfa(CFAConfig::new_from_camera(&self.camera)),
       3 => RawPhotometricInterpretation::LinearRaw,
-      _ => todo!(),
+      _ => return Err(RawlerError::DecoderFailed(format!("ARW: Unsupported cpp: {}", cpp))),
     };
 
     let mut img = RawImage::new(self.camera.clone(), image, cpp, params.wb, photometric, blacklevel, whitelevel, dummy);
