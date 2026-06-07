@@ -357,7 +357,7 @@ impl<'a> ArwDecoder<'a> {
         // WBG
         wb_coeffs[0] = LEu16(buf, currpos + 12) as f32;
         wb_coeffs[1] = LEu16(buf, currpos + 14) as f32;
-        wb_coeffs[2] = LEu16(buf, currpos + 14) as f32;
+        wb_coeffs[2] = LEu16(buf, currpos + 16) as f32;
         wb_coeffs[3] = LEu16(buf, currpos + 18) as f32;
         break;
       }
