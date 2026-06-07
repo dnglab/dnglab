@@ -583,7 +583,7 @@ where
   #[inline(always)]
   pub unsafe fn at(&self, row: usize, col: usize) -> &[T; N] {
     unsafe {
-      debug_assert!(row * col < self.height * self.width);
+      debug_assert!(row < self.height && col < self.width);
       &*self.ptr.add(row * self.width + col)
     }
   }
