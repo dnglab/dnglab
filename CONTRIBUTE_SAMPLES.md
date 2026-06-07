@@ -21,8 +21,7 @@ you are the copyright owner of the images.
 **Please don't submit files with names like IMG_0001.CR2. Always give your files a good name like CANON_5DMK3_ISO_100_SRAW.CR2.**
 
 # How to upload
-As the samples sets are usually very big, please use an upload service like [wetransfer.com]. After uploading as a ZIP file,
-please raise an issue on our [issue tracker](https://github.com/dnglab/dnglab/issues). and provide the download link.
+Please upload your samples to [rawdb.dnglab.org](https://rawdb.dnglab.org).
 
 
 # Instructions
