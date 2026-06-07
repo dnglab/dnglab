@@ -164,7 +164,7 @@ impl<'a> Decoder for PefDecoder<'a> {
           None
         }
       }
-      _ => todo!(),
+      _ => None,
     };
 
     if let Some(image) = image {
@@ -184,7 +184,7 @@ impl<'a> Decoder for PefDecoder<'a> {
       }
     }
 
-    todo!()
+    Ok(None)
   }
 
   fn raw_metadata(&self, _file: &RawSource, _params: &RawDecodeParams) -> Result<RawMetadata> {
