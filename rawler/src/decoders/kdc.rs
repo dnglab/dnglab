@@ -65,7 +65,8 @@ impl<'a> Decoder for KdcDecoder<'a> {
     if self.camera.clean_model == "DC120" {
       let width = 848;
       let height = 976;
-      let raw = self.tiff.find_ifds_with_tag(TiffCommonTag::CFAPattern)[0];
+      let raw = self.tiff.find_ifds_with_tag(TiffCommonTag::CFAPattern).into_iter().next()
+        .ok_or_else(|| RawlerError::DecoderFailed("KDC DC120: no IFD with CFAPattern".to_string()))?;
       let off = fetch_tiff_tag!(raw, TiffCommonTag::StripOffsets).force_usize(0);
       let mut white = self.camera.whitelevel.clone().expect("KDC needs a whitelevel in camera config")[0];
       let src = file.subview_until_eof(off as u64)?;
@@ -90,7 +91,8 @@ impl<'a> Decoder for KdcDecoder<'a> {
     }
 
     if self.camera.clean_model == "DC50" {
-      let raw = self.tiff.find_ifds_with_tag(TiffCommonTag::CFAPattern)[0];
+      let raw = self.tiff.find_ifds_with_tag(TiffCommonTag::CFAPattern).into_iter().next()
+        .ok_or_else(|| RawlerError::DecoderFailed("KDC DC50: no IFD with CFAPattern".to_string()))?;
       let width = self.camera.raw_width;
       let height = self.camera.raw_height;
       let off = fetch_tiff_tag!(raw, TiffCommonTag::StripOffsets).force_usize(0);
