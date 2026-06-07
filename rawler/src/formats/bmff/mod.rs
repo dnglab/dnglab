@@ -321,7 +321,7 @@ impl Bmff {
     Ok(Self { filebox })
   }
 
-  pub fn compatible_brand(&self, _brand: &str) -> bool {
-    true // FIXME
+  pub fn compatible_brand(&self, brand: &str) -> bool {
+    self.filebox.ftyp.compatible_brands.iter().any(|b| b.to_string() == brand)
   }
 }
