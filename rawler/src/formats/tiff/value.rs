@@ -365,13 +365,13 @@ pub struct ValueConvertError(pub(crate) ());
 
 impl From<TryFromIntError> for ValueConvertError {
   fn from(_: TryFromIntError) -> Self {
-    todo!()
+    ValueConvertError(())
   }
 }
 
 impl From<Infallible> for ValueConvertError {
   fn from(_: Infallible) -> Self {
-    todo!()
+    ValueConvertError(())
   }
 }
 
