@@ -150,7 +150,7 @@ pub trait TiffReader {
     let mut reader = EndianReader::new(file, endian);
     let magic = reader.read_u16()?;
     if magic != 42 {
-      //return Err(TiffError::General(format!("Invalid magic marker for TIFF: {}", magic)));
+      return Err(TiffError::General(format!("Invalid magic marker for TIFF: {}", magic)));
     }
     let mut next_ifd = reader.read_u32()?;
     if next_ifd == 0 {
