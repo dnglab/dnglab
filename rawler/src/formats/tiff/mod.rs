@@ -192,7 +192,7 @@ pub enum ResolutionUnit {
 
 impl ExtractFromIFD for ResolutionUnit {
   fn extract(ifd: &IFD) -> Result<Option<Self>> {
-    let tag = TiffCommonTag::Predictor;
+    let tag = TiffCommonTag::ResolutionUnit;
     if let Some(entry) = ifd.get_entry(tag) {
       let x = entry.value.force_u16(0);
       Ok(Some(
