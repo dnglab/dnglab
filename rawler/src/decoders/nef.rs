@@ -287,7 +287,9 @@ impl<'a> Decoder for NefDecoder<'a> {
       return Err(RawlerError::unsupported(&self.camera, format!("NEF: Don't know compression {}", compression)));
     };
 
-    assert_eq!(image.width, width * cpp);
+    if image.width != width * cpp {
+      return Err(RawlerError::DecoderFailed(format!("NEF: decompressed width {} != expected {}", image.width, width * cpp)));
+    }
     let blacklevel = self.get_blacklevel(bps)?;
     let whitelevel = None;
     let photometric = match cpp {
