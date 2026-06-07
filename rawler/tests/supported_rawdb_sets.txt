@@ -173,6 +173,7 @@ Canon/PowerShot SX50 HS/raw_modes
 Canon/PowerShot SX60 HS/raw_modes
 Canon/PowerShot SX70 HS/raw_modes
 Canon/PowerShot SX150 IS/raw_modes
+Canon/PowerShot V1/raw_modes
 Pentax/ist DL2/raw_modes
 Pentax/K-5 II/raw_modes
 Pentax/645D/raw_modes
