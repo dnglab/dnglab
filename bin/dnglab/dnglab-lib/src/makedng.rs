@@ -682,8 +682,8 @@ impl DngVersion {
     match self {
       DngVersion::V1_0 => dng::DNG_VERSION_V1_0,
       DngVersion::V1_1 => dng::DNG_VERSION_V1_1,
-      DngVersion::V1_3 => dng::DNG_VERSION_V1_2,
-      DngVersion::V1_2 => dng::DNG_VERSION_V1_3,
+      DngVersion::V1_2 => dng::DNG_VERSION_V1_2,
+      DngVersion::V1_3 => dng::DNG_VERSION_V1_3,
       DngVersion::V1_4 => dng::DNG_VERSION_V1_4,
       DngVersion::V1_5 => dng::DNG_VERSION_V1_5,
       DngVersion::V1_6 => dng::DNG_VERSION_V1_6,
