@@ -271,7 +271,7 @@ pub fn raw_as_pgm(width: usize, height: usize, buf: &[u16], writer: &mut dyn Wri
   Ok(())
 }
 
-/// Dump  pixel data as PGM
+/// Dump pixel data as PPM
 pub fn rgb8_as_ppm8(width: usize, height: usize, buf: &[u8], writer: &mut dyn Write) -> std::io::Result<()> {
   let header = format!("P6 {} {} {}\n", width, height, u8::MAX);
   writer.write_all(header.as_bytes())?;

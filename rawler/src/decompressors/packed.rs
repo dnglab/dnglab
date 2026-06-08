@@ -681,7 +681,7 @@ pub(crate) fn decompress_14be_msb32(buf: &[u8], width: usize, height: usize, dum
 /// ```
 #[multiversion(targets("x86_64+avx+avx2+fma", "x86+sse", "aarch64+neon"))]
 pub(crate) fn decompress_12le_wcontrol(buf: &[u8], width: usize, height: usize, dummy: bool) -> std::result::Result<PixU16, String> {
-  // Calulate expected bytes per line.
+  // Calculate expected bytes per line.
   let perline = width * 12 / 8 + ((width + 2) / 10);
 
   let need = height * perline;
@@ -729,7 +729,7 @@ pub(crate) fn decompress_12le_wcontrol(buf: &[u8], width: usize, height: usize, 
 /// ```
 #[multiversion(targets("x86_64+avx+avx2+fma", "x86+sse", "aarch64+neon"))]
 pub(crate) fn decompress_12be_wcontrol(buf: &[u8], width: usize, height: usize, dummy: bool) -> std::result::Result<PixU16, String> {
-  // Calulate expected bytes per line.
+  // Calculate expected bytes per line.
   let perline = width * 12 / 8 + ((width + 2) / 10);
 
   let need = height * perline;

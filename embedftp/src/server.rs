@@ -32,7 +32,6 @@ where
     info!("New client connected: {}", addr);
     handle.spawn(handle_client(addr, stream, handle.clone(), server_root.clone(), config.clone(), env.clone()));
   }
-  //Ok(())
 }
 
 /// Handle a single client connection

@@ -804,7 +804,7 @@ struct ArwImageParams {
 
 crate::tags::tiff_tag_enum!(SR2SubIFD);
 
-/// Specific Canon CR2 Makernotes tags.
+/// Specific Sony SR2 sub-IFD tags.
 /// These are only related to the Makernote IFD.
 #[derive(Debug, Copy, Clone, PartialEq, enumn::N)]
 #[repr(u16)]

@@ -8,7 +8,6 @@ use crate::pumps::BitPumpMSB32;
 /// `stripwidth` is the count of pixels of a single output strip (may
 /// be larger than width if each row has padding bytes).
 /// `width` is the output image width in pixels.
-#[allow(clippy::let_and_return)]
 pub fn decode_ljpeg(ljpeg: &LjpegDecompressor, out: &mut [u16], x: usize, stripwidth: usize, width: usize, height: usize) -> Result<(), String> {
   let ncomp: usize = ljpeg.components();
   if ljpeg.sof.width * ncomp < width || ljpeg.sof.height < height {

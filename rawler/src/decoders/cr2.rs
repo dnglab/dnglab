@@ -105,7 +105,7 @@ impl<'a> Decoder for Cr2Decoder<'a> {
       }
     };
 
-    // We don't have an excact length, so read until end.
+    // We don't have an exact length, so read until end.
     let src = file.subview_until_eof(offset as u64)?;
 
     let (cpp, image) = {

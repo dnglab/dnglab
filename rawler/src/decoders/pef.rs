@@ -83,7 +83,7 @@ impl<'a> PefDecoder<'a> {
   }
 }
 
-/// CR2 format encapsulation for analyzer
+/// PEF format encapsulation for analyzer
 #[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct PefFormat {
