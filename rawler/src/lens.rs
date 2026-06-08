@@ -277,7 +277,7 @@ impl Display for LensResolver {
       s.push(format!("Keyname: '{}'", name));
     }
     if let Some(name) = &self.lens_make {
-      s.push(format!("Make: '{}", name));
+      s.push(format!("Make: '{}'", name));
     }
     if let Some(name) = &self.lens_model {
       s.push(format!("Model: '{}'", name));
