@@ -59,6 +59,11 @@ pub fn rawdb_ensure_file(rawdb_cache: &Path, make: &str, model: &str, subpath: &
 
   let url = build_url(make, model, subpath);
   let api_key = std::env::var("RAWDB_API_KEY").ok();
+  if api_key.is_none() && api_key_required() {
+    panic!(
+      "RAWDB_API_KEY_REQUIRED=true but RAWDB_API_KEY is not set; refusing to download {url} anonymously"
+    );
+  }
 
   let mut attempt: u32 = 0;
   loop {
@@ -96,6 +101,18 @@ pub fn rawdb_ensure_file(rawdb_cache: &Path, make: &str, model: &str, subpath: &
 }
 
 // 10s before retry #1, 60s before #2, 120s before #3.
+/// Returns true if `RAWDB_API_KEY_REQUIRED` is set to a truthy value
+/// (`"true"`, `"1"`, `"yes"`; case-insensitive). When true, downloads must
+/// not proceed without `RAWDB_API_KEY` — used by CI to guarantee tests use
+/// the rate-limit-exempt key rather than silently falling back to anonymous
+/// requests.
+fn api_key_required() -> bool {
+  matches!(
+    std::env::var("RAWDB_API_KEY_REQUIRED").as_deref().map(str::trim),
+    Ok("true" | "TRUE" | "True" | "1" | "yes" | "YES" | "Yes")
+  )
+}
+
 fn retry_delay(attempt: u32) -> Duration {
   match attempt {
     1 => Duration::from_secs(10),
