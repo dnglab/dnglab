@@ -125,7 +125,6 @@ where
           debug!("New Path: {:?}", self.cwd);
           let msg = format!("\"{}\" is the current directory.", self.cwd.to_str().unwrap_or(""));
           return self.send(Answer::new(ResultCode::RequestedFileActionOkay, &msg)).await;
-          //return Ok((self.send(Answer::new(ResultCode::Ok, "Okay."))).await?);
         }
         Command::Mkd(path) => return self.mkd(path).await,
         Command::Rmd(path) => return self.rmd(path).await,
@@ -157,7 +156,6 @@ where
     }
     match cmd {
       Command::Auth => {
-        //warn!("Auth not implemented");
         self.send(Answer::new(ResultCode::CommandNotImplemented, "Not implemented")).await?
       }
       Command::Quit => self.quit().await?,
@@ -471,7 +469,6 @@ where
       return Ok(());
     }
     self.active_data_port = None;
-    //let port = if let Some(port) = self.data_port { port } else { 0 };
     let port = 0; // auto configure port
     let mut addr = self.local_addr;
     addr.set_port(port);
@@ -515,7 +512,6 @@ where
   }
 
   async fn epsv(&mut self, proto: Option<String>) -> Result<()> {
-    //let port = if let Some(port) = self.data_port { port } else { 0 };
     let port = 0;
 
     if let Some(proto) = proto {

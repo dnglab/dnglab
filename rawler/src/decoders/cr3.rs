@@ -70,7 +70,7 @@ struct Cr3Metadata {
 const CR3_CTMD_BLOCK_EXIFIFD: u16 = 0x8769;
 const CR3_CTMD_BLOCK_MAKERNOTES: u16 = 0x927c;
 
-/// Type values fro CCTP records
+/// Type values for CCTP records
 #[derive(Clone, Copy, Debug)]
 #[allow(dead_code)]
 enum Cr3ImageType {

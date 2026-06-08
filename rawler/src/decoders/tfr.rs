@@ -52,7 +52,7 @@ impl<'a> Decoder for TfrDecoder<'a> {
     let raw = self
       .tiff
       .find_first_ifd_with_tag(TiffCommonTag::WhiteLevel)
-      .ok_or_else(|| RawlerError::DecoderFailed(format!("Failed to find a IFD with WhilteLevel tag")))?;
+      .ok_or_else(|| RawlerError::DecoderFailed(format!("Failed to find a IFD with WhiteLevel tag")))?;
 
     let whitelevel = raw
       .get_entry(TiffCommonTag::WhiteLevel)

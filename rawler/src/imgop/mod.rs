@@ -305,7 +305,7 @@ pub fn convert_from_f32_unscaled_u16(pix: &[f32]) -> Vec<u16> {
   pix.iter().copied().map(|x| x as u16).collect()
 }
 
-/// Rescale to u8 value
+/// Rescale to u16 value
 #[multiversion(targets("x86_64+avx+avx2", "x86+sse", "aarch64+neon"))]
 pub fn convert_from_f32_scaled_u16(input: &[f32], black: u16, white: u16) -> Vec<u16> {
   if black == u16::default() {

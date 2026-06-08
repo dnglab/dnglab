@@ -250,7 +250,7 @@ impl Strip {
 
 /// We need PaddedBuf here, because the buffer is divided
 /// into multiple strips and each strip is feed into a BitPump.
-/// Each pump need as litte bit more overhead at the end.
+/// Each pump need as little bit more overhead at the end.
 /// For the final strip, we need the extra bytes from PaddedBuf
 /// to prevent out-of-range errors in BitPump.
 pub(super) fn decompress_fuji(buf: &PaddedBuf, width: usize, height: usize, _bps: usize, corrected_cfa: &CFA) -> Result<PixU16> {

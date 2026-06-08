@@ -73,7 +73,7 @@ impl<R: Read + Seek> ReadBox<&mut R> for MoovBox {
 
     Ok(Self {
       header,
-      mvhd: mvhd.ok_or_else(|| BmffError::Parse("mdhd box not found, corrupt file?".into()))?,
+      mvhd: mvhd.ok_or_else(|| BmffError::Parse("mvhd box not found, corrupt file?".into()))?,
       traks,
       cr3desc,
       vendor: vendors,
