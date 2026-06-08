@@ -210,7 +210,7 @@ fn new_makernote(file: &RawSource, moffset: u64) -> std::io::Result<HashMap<u32,
         let value = tiff::Value::Ascii(tiff::TiffAscii::new_from_raw(&v));
         entries.insert(tag, (byte_count, value));
       }
-      // Short values
+      // Short values stored as Long
       2 => {
         entries.insert(tag, (byte_count, tiff::Value::Long(vec![data as u32])));
       }
@@ -749,7 +749,7 @@ impl<'a> IiqDecoder<'a> {
   fn blacklevel(&self) -> Result<u16> {
     match self.makernotes.get(&IiqTag::BlackLevel.into()) {
       Some(mode) => Ok(mode.1.force_u16(0)),
-      _ => Err(RawlerError::DecoderFailed("Unable to find lacklevel in IIQ makernotes".to_string())),
+      _ => Err(RawlerError::DecoderFailed("Unable to find blacklevel in IIQ makernotes".to_string())),
     }
   }
 

@@ -312,9 +312,9 @@ impl<'a> SrwDecoder<'a> {
     // The format includes an optimization code that sets 3 flags to change the
     // decoding parameters
     let optflags = pump.get_bits(4);
-    static OPT_SKIP: u32 = 1; // Skip checking if we need differences from previous line
-    static OPT_MV: u32 = 2; // Simplify motion vector definition
-    static OPT_QP: u32 = 4; // Don't scale the diff values
+    const OPT_SKIP: u32 = 1; // Skip checking if we need differences from previous line
+    const OPT_MV: u32 = 2; // Simplify motion vector definition
+    const OPT_QP: u32 = 4; // Don't scale the diff values
 
     pump.get_bits(8); // OverlapWidth
     pump.get_bits(8); // reserved

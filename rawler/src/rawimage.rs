@@ -501,7 +501,7 @@ impl RawImage {
     if let RawImageData::Integer(data) = &self.data {
       data
     } else {
-      panic!("Data ist not u16");
+      panic!("Data is not u16");
     }
   }
 
@@ -509,7 +509,7 @@ impl RawImage {
     if let RawImageData::Integer(data) = &mut self.data {
       data
     } else {
-      panic!("Data ist not u16");
+      panic!("Data is not u16");
     }
   }
 

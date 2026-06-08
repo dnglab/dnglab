@@ -383,7 +383,7 @@ pub(crate) fn decompress_8bit(buf: &[u8], width: usize, height: usize, dummy: bo
 pub(crate) fn decompress_10le_lsb16(buf: &[u8], width: usize, height: usize, dummy: bool) -> std::result::Result<PixU16, String> {
   let need = (height * width * 10).div_ceil(8);
   if buf.len() < need {
-    return Err(format!("decompress_10be(): buffer too short ({} < {})", buf.len(), need));
+    return Err(format!("decompress_10le_lsb16(): buffer too short ({} < {})", buf.len(), need));
   }
   decompress_lines_fn(
     width,
