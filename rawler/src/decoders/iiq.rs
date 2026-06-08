@@ -254,8 +254,8 @@ impl<'a> Decoder for IiqDecoder<'a> {
       .map_err(|ioerr| RawlerError::with_io_error("load IIQ strips", file.path(), ioerr))?;
 
     let mut image = match fmt {
-      IiqCompression::Raw1 => todo!(),
-      IiqCompression::Raw2 => todo!(),
+      IiqCompression::Raw1 => return Err(RawlerError::DecoderFailed("IIQ Raw1 compression not yet supported".to_string())),
+      IiqCompression::Raw2 => return Err(RawlerError::DecoderFailed("IIQ Raw2 compression not yet supported".to_string())),
       IiqCompression::Uncompressed => Self::decode_uncompressed(data, width, height, 14, dummy)?,
       IiqCompression::IIQ_L => Self::decode_compressed(data, strips, width, height, 14, dummy)?,
       IiqCompression::IIQ_L16 => Self::decode_compressed(data, strips, width, height, 16, dummy)?,
