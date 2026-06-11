@@ -32,6 +32,7 @@ impl StscBox {
     assert_eq!(self.entries[0].first_sample, 1, "First entry must start with first sample");
     match self.entries.binary_search_by(|entry| entry.first_sample.cmp(&sample)) {
       Ok(i) => &self.entries[i],
+      Err(0) => &self.entries[0],
       Err(i) => &self.entries[i - 1],
     }
   }
