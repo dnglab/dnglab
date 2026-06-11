@@ -916,7 +916,7 @@ fn read_code(pump: &mut BitPumpMSB, params: &Params, gradient: &mut Gradient, q_
   };
   // Validate code
   if code < 0 || code >= q_table.total_values as i32 {
-    panic!("Invalid code: {}", code);
+    return 0; // treat out-of-range codes as zero rather than crashing
   }
   // Adjust code
   if (code & 1) != 0 {
