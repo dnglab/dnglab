@@ -132,7 +132,7 @@ where
     let roi = rawimage.active_area.unwrap_or(pixels.rect());
     let demosaic = PPGDemosaic::new();
     let mut rgb = demosaic.demosaic(&pixels, &rawimage.camera.cfa, &rawimage.camera.plane_color, roi);
-    let fuji_rotation_width = rawimage.fuji_rotation_width.expect("fuji_rotate: no rotation width found");
+    let fuji_rotation_width = rawimage.fuji_rotation_width.ok_or_else(|| crate::RawlerError::DecoderFailed("fuji_rotate: no rotation width found".to_string()))?;
     let extra_rotate = rawimage.camera.find_hint("fuji_rotate_90cw");
     rgb = fuji_normalize_rotation(&rgb, fuji_rotation_width, extra_rotate);
     rawimage.width = rgb.width;
