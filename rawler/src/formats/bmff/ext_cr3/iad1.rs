@@ -103,7 +103,7 @@ impl<R: Read + Seek> ReadBox<&mut R> for Iad1Box {
         active_area_bottom_offset: reader.read_u16::<BigEndian>()?,
       }),
       _ => {
-        panic!("Invalid iad1 type"); // TODO
+        return Err(super::super::BmffError::Parse(format!("Invalid iad1 image_type: {}", image_type)));
       }
     };
 
