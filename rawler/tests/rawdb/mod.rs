@@ -1752,6 +1752,14 @@ mod nikon {
     super::super::rawdb_test_file!("Nikon", "Z 7", nikon_z_7_medium_iso_64_12bits_lossless_nef, "raw_modes/NIKON Z 7_Medium_ISO_64_12bits_Lossless.NEF");
     super::super::rawdb_test_file!("Nikon", "Z 7", nikon_z_7_small_iso_64_12bits_lossless_nef, "raw_modes/NIKON Z 7_Small_ISO_64_12bits_Lossless.NEF");
   }
+  mod zr_raw_modes {
+    super::super::rawdb_test_file!("Nikon", "ZR", nikon_zr_dx_l_nef, "raw_modes/Nikon_ZR_DX_L.NEF");
+    super::super::rawdb_test_file!("Nikon", "ZR", nikon_zr_dx_m_nef, "raw_modes/Nikon_ZR_DX_M.NEF");
+    super::super::rawdb_test_file!("Nikon", "ZR", nikon_zr_dx_s_nef, "raw_modes/Nikon_ZR_DX_S.NEF");
+    super::super::rawdb_test_file!("Nikon", "ZR", nikon_zr_fx_l_nef, "raw_modes/Nikon_ZR_FX_L.NEF");
+    super::super::rawdb_test_file!("Nikon", "ZR", nikon_zr_fx_m_nef, "raw_modes/Nikon_ZR_FX_M.NEF");
+    super::super::rawdb_test_file!("Nikon", "ZR", nikon_zr_fx_s_nef, "raw_modes/Nikon_ZR_FX_S.NEF");
+  }
 }
 
 mod olympus {

@@ -307,6 +307,7 @@ Nikon/NIKON Z fc/raw_modes
 Nikon/Z 7/raw_modes
 Nikon/NIKON Z 9/raw_modes
 Nikon/NIKON Z 8/raw_modes
+Nikon/ZR/raw_modes
 Nikon/Nikon COOLSCAN 5000 ED/raw_modes
 Sony/DSC-F828/raw_modes
 Sony/DSC-HX95/raw_modes
