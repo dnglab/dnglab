@@ -371,6 +371,17 @@ mod canon {
     super::super::rawdb_test_file!("Canon", "EOS R6 Mark II", canon_eos_r6m2_raw_iso_100_nodual_crop_cr3, "raw_modes/Canon EOS R6m2_RAW_ISO_100_nodual_crop.CR3");
     super::super::rawdb_test_file!("Canon", "EOS R6 Mark II", canon_eos_r6m2_raw_iso_100_nodual_nocrop_cr3, "raw_modes/Canon EOS R6m2_RAW_ISO_100_nodual_nocrop.CR3");
   }
+  mod eos_r6_mark_iii_crm {
+    super::super::rawdb_test_file!("Canon", "EOS R6 Mark III", canon_6dmk3_iso_100_light_raw_crm, "crm/CANON_6DMK3_ISO_100_Light_RAW.CRM");
+    super::super::rawdb_test_file!("Canon", "EOS R6 Mark III", canon_6dmk3_iso_100_raw_crm, "crm/CANON_6DMK3_ISO_100_RAW.CRM");
+    super::super::rawdb_test_file!("Canon", "EOS R6 Mark III", canon_6dmk3_iso_100_raw_opengate_crm, "crm/CANON_6DMK3_ISO_100_RAW_OPENGATE.CRM");
+    super::super::rawdb_test_file!("Canon", "EOS R6 Mark III", canon_6dmk3_iso_25600_light_raw_crm, "crm/CANON_6DMK3_ISO_25600_Light_RAW.CRM");
+    super::super::rawdb_test_file!("Canon", "EOS R6 Mark III", canon_6dmk3_iso_25600_raw_crm, "crm/CANON_6DMK3_ISO_25600_RAW.CRM");
+    super::super::rawdb_test_file!("Canon", "EOS R6 Mark III", canon_6dmk3_iso_25600_raw_opengate_crm, "crm/CANON_6DMK3_ISO_25600_RAW_OPENGATE.CRM");
+    super::super::rawdb_test_file!("Canon", "EOS R6 Mark III", canon_6dmk3_iso_800_light_raw_crm, "crm/CANON_6DMK3_ISO_800_Light_RAW.CRM");
+    super::super::rawdb_test_file!("Canon", "EOS R6 Mark III", canon_6dmk3_iso_800_raw_crm, "crm/CANON_6DMK3_ISO_800_RAW.CRM");
+    super::super::rawdb_test_file!("Canon", "EOS R6 Mark III", canon_6dmk3_iso_800_raw_opengate_crm, "crm/CANON_6DMK3_ISO_800_RAW_OPENGATE.CRM");
+  }
   mod eos_r6_mark_iii_raw_modes {
     super::super::rawdb_test_file!("Canon", "EOS R6 Mark III", r6m3_craw_iso_100_nodual_crop_cr3, "raw_modes/R6m3_CRAW_ISO_100_nodual_crop.CR3");
     super::super::rawdb_test_file!("Canon", "EOS R6 Mark III", r6m3_craw_iso_100_nodual_nocrop_cr3, "raw_modes/R6m3_CRAW_ISO_100_nodual_nocrop.CR3");
