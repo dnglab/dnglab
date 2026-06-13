@@ -125,3 +125,11 @@ make = "Voigtlander"
 model = "NOKTON 28mm F1.5 Aspherical"
 focal_range = [[28, 1], [28, 1]]
 aperture_range = [[15, 10], [15, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 51011
+make = "Voigtlander"
+model = "APO-LANTHAR 28mm F2 Aspherical"
+focal_range = [[28, 1], [28, 1]]
+aperture_range = [[2, 1], [2, 1]]

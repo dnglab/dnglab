@@ -809,3 +809,43 @@ make = "Sony"
 model = "FE 400-800mm F6.3-8 G OSS + 2X Teleconverter"
 focal_range = [[400, 1], [800, 1]]
 aperture_range = [[63, 10], [8, 1]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 32871
+make = "Sony"
+model = "FE PZ 16-35mm F4 G"
+focal_range = [[16, 1], [35, 1]]
+aperture_range = [[4, 1], [4, 1]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 32873
+make = "Sony"
+model = "E PZ 10-20mm F4 G"
+focal_range = [[10, 1], [20, 1]]
+aperture_range = [[4, 1], [4, 1]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 32895
+make = "Sony"
+model = "FE 100-400mm F4.5 GM OSS"
+focal_range = [[100, 1], [400, 1]]
+aperture_range = [[45, 10], [45, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 33095
+make = "Sony"
+model = "FE 100-400mm F4.5 GM OSS + 1.4X Teleconverter"
+focal_range = [[100, 1], [400, 1]]
+aperture_range = [[45, 10], [45, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 33096
+make = "Sony"
+model = "FE 100-400mm F4.5 GM OSS + 2X Teleconverter"
+focal_range = [[100, 1], [400, 1]]
+aperture_range = [[45, 10], [45, 10]]
