@@ -16,9 +16,14 @@ pub struct Config {
 
 /// This callback provides filtering for specific FTP
 /// commands, for example to inject a custom STOR handler.
+///
+/// `stor_file` is called for every STOR command received from the
+/// client. Implementations may run blocking work — e.g. file I/O or
+/// CPU-bound conversion — but should wrap such work in
+/// [`tokio::task::spawn_blocking`] to avoid stalling the runtime.
 pub trait FtpCallback {
-  fn stor_file(&self, _path: &Path, _data: Arc<Vec<u8>>) -> std::io::Result<bool> {
-    Ok(false)
+  fn stor_file(&self, _path: &Path, _data: Arc<Vec<u8>>) -> impl std::future::Future<Output = std::io::Result<bool>> + Send {
+    async { Ok(false) }
   }
 }
 

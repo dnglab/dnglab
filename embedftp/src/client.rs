@@ -655,7 +655,7 @@ where
   /// Put file directly or delegate to a filter
   async fn put_file(&mut self, path: PathBuf, content: Arc<Vec<u8>>) -> Result<()> {
     let path = PathBuf::from(&self.server_root).join(path.iter().skip(1).collect::<PathBuf>());
-    let handled = self.env.stor_file(&path, content.clone())?;
+    let handled = self.env.stor_file(&path, content.clone()).await?;
     if !handled {
       tokio::fs::write(&path, content.as_ref()).await?;
     }
