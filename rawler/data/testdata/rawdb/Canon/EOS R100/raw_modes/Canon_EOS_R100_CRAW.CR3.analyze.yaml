@@ -44,7 +44,11 @@ data:
         orientation: 1
         copyright: CC BY-ND
         artist: ExoSkye
-        lens_spec: ~
+        lens_spec:
+          - 18/1
+          - 45/1
+          - 45/10
+          - 63/10
         exposure_time: 1/200
         fnumber: 71/10
         aperture_value: 368640/65536
@@ -82,8 +86,8 @@ data:
         owner_name: ""
         serial_number: "053031004038"
         lens_serial_number: "2912013832"
-        lens_make: ~
-        lens_model: ~
+        lens_make: Canon
+        lens_model: RF-S 18-45mm F4.5-6.3 IS STM
         gps:
           gps_version_id:
             - 2
@@ -124,7 +128,24 @@ data:
         user_comment: ~
       model: EOS R100
       make: Canon
-      lens: ~
+      lens:
+        identifiers:
+          name: ~
+          id:
+            - 61182
+            - 282
+          nikon_id: ~
+          olympus_id: ~
+        mount: rf-mount
+        lens_make: Canon
+        lens_model: RF-S 18-45mm F4.5-6.3 IS STM
+        focal_range:
+          - 18/1
+          - 45/1
+        aperture_range:
+          - 45/10
+          - 63/10
+        lens_name: Canon RF-S 18-45mm F4.5-6.3 IS STM
       unique_image_id: 31748094499473923274652033275109744672
       rating: ~
 

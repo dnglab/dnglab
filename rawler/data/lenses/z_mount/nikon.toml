@@ -152,8 +152,224 @@ aperture_range = [[45, 10], [56, 10]]
 
 [[lenses]]
 mount = "Z-mount"
+lens_id = 25
+make = "Nikon"
+model = "Nikkor Z 40mm f/2"
+focal_range = [[40, 1], [40, 1]]
+aperture_range = [[2, 1], [2, 1]]
+
+[[lenses]]
+mount = "Z-mount"
+lens_id = 26
+make = "Nikon"
+model = "Nikkor Z DX 18-140mm f/3.5-6.3 VR"
+focal_range = [[18, 1], [140, 1]]
+aperture_range = [[35, 10], [63, 10]]
+
+[[lenses]]
+mount = "Z-mount"
 lens_id = 29
 make = "Nikon"
 model = "Nikkor Z 28mm f/2.8"
 focal_range = [[28, 1], [28, 1]]
 aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "Z-mount"
+lens_id = 30
+make = "Nikon"
+model = "Nikkor Z 400mm f/2.8 TC VR S"
+focal_range = [[400, 1], [400, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "Z-mount"
+lens_id = 31
+make = "Nikon"
+model = "Nikkor Z 24-120mm f/4 S"
+focal_range = [[24, 1], [120, 1]]
+aperture_range = [[4, 1], [4, 1]]
+
+[[lenses]]
+mount = "Z-mount"
+lens_id = 32
+make = "Nikon"
+model = "Nikkor Z 800mm f/6.3 VR S"
+focal_range = [[800, 1], [800, 1]]
+aperture_range = [[63, 10], [63, 10]]
+
+[[lenses]]
+mount = "Z-mount"
+lens_id = 35
+make = "Nikon"
+model = "Nikkor Z 28-75mm f/2.8"
+focal_range = [[28, 1], [75, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "Z-mount"
+lens_id = 36
+make = "Nikon"
+model = "Nikkor Z 400mm f/4.5 VR S"
+focal_range = [[400, 1], [400, 1]]
+aperture_range = [[45, 10], [45, 10]]
+
+[[lenses]]
+mount = "Z-mount"
+lens_id = 37
+make = "Nikon"
+model = "Nikkor Z 600mm f/4 TC VR S"
+focal_range = [[600, 1], [600, 1]]
+aperture_range = [[4, 1], [4, 1]]
+
+[[lenses]]
+mount = "Z-mount"
+lens_id = 38
+make = "Nikon"
+model = "Nikkor Z 85mm f/1.2 S"
+focal_range = [[85, 1], [85, 1]]
+aperture_range = [[12, 10], [12, 10]]
+
+[[lenses]]
+mount = "Z-mount"
+lens_id = 39
+make = "Nikon"
+model = "Nikkor Z 17-28mm f/2.8"
+focal_range = [[17, 1], [28, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "Z-mount"
+lens_id = 40
+make = "Nikon"
+model = "Nikkor Z 26mm f/2.8"
+focal_range = [[26, 1], [26, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "Z-mount"
+lens_id = 41
+make = "Nikon"
+model = "Nikkor Z DX 12-28mm f/3.5-5.6 PZ VR"
+focal_range = [[12, 1], [28, 1]]
+aperture_range = [[35, 10], [56, 10]]
+
+[[lenses]]
+mount = "Z-mount"
+lens_id = 42
+make = "Nikon"
+model = "Nikkor Z 180-600mm f/5.6-6.3 VR"
+focal_range = [[180, 1], [600, 1]]
+aperture_range = [[56, 10], [63, 10]]
+
+[[lenses]]
+mount = "Z-mount"
+lens_id = 43
+make = "Nikon"
+model = "Nikkor Z DX 24mm f/1.7"
+focal_range = [[24, 1], [24, 1]]
+aperture_range = [[17, 10], [17, 10]]
+
+[[lenses]]
+mount = "Z-mount"
+lens_id = 44
+make = "Nikon"
+model = "Nikkor Z 70-180mm f/2.8"
+focal_range = [[70, 1], [180, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "Z-mount"
+lens_id = 45
+make = "Nikon"
+model = "Nikkor Z 600mm f/6.3 VR S"
+focal_range = [[600, 1], [600, 1]]
+aperture_range = [[63, 10], [63, 10]]
+
+[[lenses]]
+mount = "Z-mount"
+lens_id = 46
+make = "Nikon"
+model = "Nikkor Z 135mm f/1.8 S Plena"
+focal_range = [[135, 1], [135, 1]]
+aperture_range = [[18, 10], [18, 10]]
+
+[[lenses]]
+mount = "Z-mount"
+lens_id = 47
+make = "Nikon"
+model = "Nikkor Z 35mm f/1.2 S"
+focal_range = [[35, 1], [35, 1]]
+aperture_range = [[12, 10], [12, 10]]
+
+[[lenses]]
+mount = "Z-mount"
+lens_id = 48
+make = "Nikon"
+model = "Nikkor Z 28-400mm f/4-8 VR"
+focal_range = [[28, 1], [400, 1]]
+aperture_range = [[4, 1], [8, 1]]
+
+[[lenses]]
+mount = "Z-mount"
+lens_id = 49
+make = "Nikon"
+model = "Nikkor Z 28-135mm f/4 PZ"
+focal_range = [[28, 1], [135, 1]]
+aperture_range = [[4, 1], [4, 1]]
+
+[[lenses]]
+mount = "Z-mount"
+lens_id = 50
+make = "Nikon"
+model = "Nikkor Z 24-70mm f/2.8 S II"
+focal_range = [[24, 1], [70, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "Z-mount"
+lens_id = 51
+make = "Nikon"
+model = "Nikkor Z 35mm f/1.4"
+focal_range = [[35, 1], [35, 1]]
+aperture_range = [[14, 10], [14, 10]]
+
+[[lenses]]
+mount = "Z-mount"
+lens_id = 52
+make = "Nikon"
+model = "Nikkor Z 50mm f/1.4"
+focal_range = [[50, 1], [50, 1]]
+aperture_range = [[14, 10], [14, 10]]
+
+[[lenses]]
+mount = "Z-mount"
+lens_id = 54
+make = "Nikon"
+model = "Nikkor Z 70-200mm f/2.8 VR S II"
+focal_range = [[70, 1], [200, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "Z-mount"
+lens_id = 57
+make = "Nikon"
+model = "Nikkor Z 24-105mm f/4-7.1"
+focal_range = [[24, 1], [105, 1]]
+aperture_range = [[4, 1], [71, 10]]
+
+[[lenses]]
+mount = "Z-mount"
+lens_id = 32768
+make = "Nikon"
+model = "Nikkor Z 400mm f/2.8 TC VR S TC-1.4x"
+focal_range = [[560, 1], [560, 1]]
+aperture_range = [[4, 1], [4, 1]]
+
+[[lenses]]
+mount = "Z-mount"
+lens_id = 32769
+make = "Nikon"
+model = "Nikkor Z 600mm f/4 TC VR S TC-1.4x"
+focal_range = [[840, 1], [840, 1]]
+aperture_range = [[56, 10], [56, 10]]

@@ -44,7 +44,11 @@ data:
         orientation: 1
         copyright: ""
         artist: ""
-        lens_spec: ~
+        lens_spec:
+          - 40/1
+          - 40/1
+          - 2/1
+          - 2/1
         exposure_time: 10/5000
         fnumber: 200/100
         aperture_value: ~
@@ -82,8 +86,8 @@ data:
         owner_name: ~
         serial_number: "6004290"
         lens_serial_number: "20032460"
-        lens_make: ~
-        lens_model: ~
+        lens_make: Nikon
+        lens_model: Nikkor Z 40mm f/2
         gps:
           gps_version_id:
             - 2
@@ -124,7 +128,24 @@ data:
         user_comment: ~
       model: Z 30
       make: Nikon
-      lens: ~
+      lens:
+        identifiers:
+          name: ~
+          id:
+            - 25
+            - 0
+          nikon_id: ~
+          olympus_id: ~
+        mount: Z-mount
+        lens_make: Nikon
+        lens_model: Nikkor Z 40mm f/2
+        focal_range:
+          - 40/1
+          - 40/1
+        aperture_range:
+          - 2/1
+          - 2/1
+        lens_name: Nikon Nikkor Z 40mm f/2
       unique_image_id: ~
       rating: ~
 

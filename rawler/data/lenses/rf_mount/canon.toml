@@ -74,8 +74,8 @@ key = "RF28-70mm F2.8 IS STM"
 lens_id = 61182
 lens_subid = 318
 make = "Canon"
-model = "RF 24-70mm F2.8L IS STM"
-focal_range = [[24, 1], [70, 1]]
+model = "RF 28-70mm F2.8 IS STM"
+focal_range = [[28, 1], [70, 1]]
 aperture_range = [[28, 10], [28, 10]]
 
 [[lenses]]
@@ -281,12 +281,11 @@ aperture_range = [[28, 10], [28, 10]]
 
 [[lenses]]
 mount = "rf-mount"
-key = "RF100mm F2.8 L MACRO IS USM"
 lens_id = 61182
 lens_subid = 289
 make = "Canon"
-model = "RF 100mm F2.8L Macro IS USM"
-focal_range = [[100, 1], [100, 1]]
+model = "RF 400mm F2.8L IS USM"
+focal_range = [[400, 1], [400, 1]]
 aperture_range = [[28, 10], [28, 10]]
 
 [[lenses]]
@@ -297,7 +296,7 @@ lens_subid = 286
 make = "Canon"
 model = "RF-S 18-150mm F3.5-6.3 IS STM"
 focal_range = [[18, 1], [150, 1]]
-aperture_range = [[5, 1], [63, 10]]
+aperture_range = [[35, 10], [63, 10]]
 
 [[lenses]]
 mount = "rf-mount"
@@ -378,3 +377,328 @@ make = "Canon"
 model = "RF-S 14-30mm F4-6.3 IS STM PZ"
 focal_range = [[14, 1], [30, 1]]
 aperture_range = [[4, 1], [63, 10]]
+
+[[lenses]]
+mount = "rf-mount"
+key = "RF100mm F2.8 L MACRO IS USM"
+lens_id = 61182
+lens_subid = 279
+make = "Canon"
+model = "RF 100mm F2.8L MACRO IS USM"
+focal_range = [[100, 1], [100, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "rf-mount"
+lens_id = 61182
+lens_subid = 282
+make = "Canon"
+model = "RF-S 18-45mm F4.5-6.3 IS STM"
+focal_range = [[18, 1], [45, 1]]
+aperture_range = [[45, 10], [63, 10]]
+
+[[lenses]]
+mount = "rf-mount"
+lens_id = 61182
+lens_subid = 287
+make = "Canon"
+model = "RF 24mm F1.8 MACRO IS STM"
+focal_range = [[24, 1], [24, 1]]
+aperture_range = [[18, 10], [18, 10]]
+
+[[lenses]]
+mount = "rf-mount"
+lens_id = 61182
+lens_subid = 290
+make = "Canon"
+model = "RF 400mm F2.8L IS USM + RF1.4x"
+focal_range = [[400, 1], [400, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "rf-mount"
+lens_id = 61182
+lens_subid = 291
+make = "Canon"
+model = "RF 400mm F2.8L IS USM + RF2x"
+focal_range = [[400, 1], [400, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "rf-mount"
+lens_id = 61182
+lens_subid = 292
+make = "Canon"
+model = "RF 600mm F4L IS USM"
+focal_range = [[600, 1], [600, 1]]
+aperture_range = [[4, 1], [4, 1]]
+
+[[lenses]]
+mount = "rf-mount"
+lens_id = 61182
+lens_subid = 293
+make = "Canon"
+model = "RF 600mm F4L IS USM + RF1.4x"
+focal_range = [[600, 1], [600, 1]]
+aperture_range = [[4, 1], [4, 1]]
+
+[[lenses]]
+mount = "rf-mount"
+lens_id = 61182
+lens_subid = 294
+make = "Canon"
+model = "RF 600mm F4L IS USM + RF2x"
+focal_range = [[600, 1], [600, 1]]
+aperture_range = [[4, 1], [4, 1]]
+
+[[lenses]]
+mount = "rf-mount"
+lens_id = 61182
+lens_subid = 295
+make = "Canon"
+model = "RF 800mm F5.6L IS USM"
+focal_range = [[800, 1], [800, 1]]
+aperture_range = [[56, 10], [56, 10]]
+
+[[lenses]]
+mount = "rf-mount"
+lens_id = 61182
+lens_subid = 296
+make = "Canon"
+model = "RF 800mm F5.6L IS USM + RF1.4x"
+focal_range = [[800, 1], [800, 1]]
+aperture_range = [[56, 10], [56, 10]]
+
+[[lenses]]
+mount = "rf-mount"
+lens_id = 61182
+lens_subid = 297
+make = "Canon"
+model = "RF 800mm F5.6L IS USM + RF2x"
+focal_range = [[800, 1], [800, 1]]
+aperture_range = [[56, 10], [56, 10]]
+
+[[lenses]]
+mount = "rf-mount"
+lens_id = 61182
+lens_subid = 298
+make = "Canon"
+model = "RF 1200mm F8L IS USM"
+focal_range = [[1200, 1], [1200, 1]]
+aperture_range = [[8, 1], [8, 1]]
+
+[[lenses]]
+mount = "rf-mount"
+lens_id = 61182
+lens_subid = 299
+make = "Canon"
+model = "RF 1200mm F8L IS USM + RF1.4x"
+focal_range = [[1200, 1], [1200, 1]]
+aperture_range = [[8, 1], [8, 1]]
+
+[[lenses]]
+mount = "rf-mount"
+lens_id = 61182
+lens_subid = 300
+make = "Canon"
+model = "RF 1200mm F8L IS USM + RF2x"
+focal_range = [[1200, 1], [1200, 1]]
+aperture_range = [[8, 1], [8, 1]]
+
+[[lenses]]
+mount = "rf-mount"
+lens_id = 61182
+lens_subid = 302
+make = "Canon"
+model = "RF 15-30mm F4.5-6.3 IS STM"
+focal_range = [[15, 1], [30, 1]]
+aperture_range = [[45, 10], [63, 10]]
+
+[[lenses]]
+mount = "rf-mount"
+lens_id = 61182
+lens_subid = 304
+make = "Canon"
+model = "RF 24-50mm F4.5-6.3 IS STM"
+focal_range = [[24, 1], [50, 1]]
+aperture_range = [[45, 10], [63, 10]]
+
+[[lenses]]
+mount = "rf-mount"
+lens_id = 61182
+lens_subid = 305
+make = "Canon"
+model = "RF-S 55-210mm F5-7.1 IS STM"
+focal_range = [[55, 1], [210, 1]]
+aperture_range = [[5, 1], [71, 10]]
+
+[[lenses]]
+mount = "rf-mount"
+lens_id = 61182
+lens_subid = 306
+make = "Canon"
+model = "RF 100-300mm F2.8L IS USM"
+focal_range = [[100, 1], [300, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "rf-mount"
+lens_id = 61182
+lens_subid = 307
+make = "Canon"
+model = "RF 100-300mm F2.8L IS USM + RF1.4x"
+focal_range = [[100, 1], [300, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "rf-mount"
+lens_id = 61182
+lens_subid = 308
+make = "Canon"
+model = "RF 100-300mm F2.8L IS USM + RF2x"
+focal_range = [[100, 1], [300, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "rf-mount"
+lens_id = 61182
+lens_subid = 310
+make = "Canon"
+model = "RF 200-800mm F6.3-9 IS USM + RF1.4x"
+focal_range = [[200, 1], [800, 1]]
+aperture_range = [[63, 10], [9, 1]]
+
+[[lenses]]
+mount = "rf-mount"
+lens_id = 61182
+lens_subid = 311
+make = "Canon"
+model = "RF 200-800mm F6.3-9 IS USM + RF2x"
+focal_range = [[200, 1], [800, 1]]
+aperture_range = [[63, 10], [9, 1]]
+
+[[lenses]]
+mount = "rf-mount"
+lens_id = 61182
+lens_subid = 312
+make = "Canon"
+model = "RF 10-20mm F4L IS STM"
+focal_range = [[10, 1], [20, 1]]
+aperture_range = [[4, 1], [4, 1]]
+
+[[lenses]]
+mount = "rf-mount"
+lens_id = 61182
+lens_subid = 314
+make = "Canon"
+model = "RF 24-105mm F2.8L IS USM Z"
+focal_range = [[24, 1], [105, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "rf-mount"
+lens_id = 61182
+lens_subid = 316
+make = "Canon"
+model = "RF 35mm F1.4L VCM"
+focal_range = [[35, 1], [35, 1]]
+aperture_range = [[14, 10], [14, 10]]
+
+[[lenses]]
+mount = "rf-mount"
+lens_id = 61182
+lens_subid = 317
+make = "Canon"
+model = "RF-S 3.9mm F3.5 STM DUAL FISHEYE"
+focal_range = [[39, 10], [39, 10]]
+aperture_range = [[35, 10], [35, 10]]
+
+[[lenses]]
+mount = "rf-mount"
+lens_id = 61182
+lens_subid = 320
+make = "Canon"
+model = "RF 70-200mm F2.8L IS USM Z + RF1.4x"
+focal_range = [[70, 1], [200, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "rf-mount"
+lens_id = 61182
+lens_subid = 321
+make = "Canon"
+model = "RF 70-200mm F2.8L IS USM Z + RF2x"
+focal_range = [[70, 1], [200, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "rf-mount"
+lens_id = 61182
+lens_subid = 323
+make = "Canon"
+model = "RF 16-28mm F2.8 IS STM"
+focal_range = [[16, 1], [28, 1]]
+aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "rf-mount"
+lens_id = 61182
+lens_subid = 326
+make = "Canon"
+model = "RF 24mm F1.4L VCM"
+focal_range = [[24, 1], [24, 1]]
+aperture_range = [[14, 10], [14, 10]]
+
+[[lenses]]
+mount = "rf-mount"
+lens_id = 61182
+lens_subid = 327
+make = "Canon"
+model = "RF 20mm F1.4L VCM"
+focal_range = [[20, 1], [20, 1]]
+aperture_range = [[14, 10], [14, 10]]
+
+[[lenses]]
+mount = "rf-mount"
+lens_id = 61182
+lens_subid = 328
+make = "Canon"
+model = "RF 85mm F1.4L VCM"
+focal_range = [[85, 1], [85, 1]]
+aperture_range = [[14, 10], [14, 10]]
+
+[[lenses]]
+mount = "rf-mount"
+lens_id = 61182
+lens_subid = 329
+make = "Canon"
+model = "RF 20-50mm F4L IS USM PZ"
+focal_range = [[20, 1], [50, 1]]
+aperture_range = [[4, 1], [4, 1]]
+
+[[lenses]]
+mount = "rf-mount"
+lens_id = 61182
+lens_subid = 330
+make = "Canon"
+model = "RF 45mm F1.2 STM"
+focal_range = [[45, 1], [45, 1]]
+aperture_range = [[12, 10], [12, 10]]
+
+[[lenses]]
+mount = "rf-mount"
+lens_id = 61182
+lens_subid = 331
+make = "Canon"
+model = "RF 7-14mm F2.8-3.5L FISHEYE STM"
+focal_range = [[7, 1], [14, 1]]
+aperture_range = [[28, 10], [35, 10]]
+
+[[lenses]]
+mount = "rf-mount"
+lens_id = 61182
+lens_subid = 332
+make = "Canon"
+model = "RF 14mm F1.4L VCM"
+focal_range = [[14, 1], [14, 1]]
+aperture_range = [[14, 10], [14, 10]]

@@ -5,3 +5,11 @@ make = "Laowa"
 model = "FFII 10mm F2.8 C&D Dreamer"
 focal_range = [[10, 1], [10, 1]]
 aperture_range = [[28, 10], [28, 10]]
+
+[[lenses]]
+mount = "e-mount"
+lens_id = 61572
+make = "Laowa"
+model = "FFII 12mm F2.8 C&D Dreamer"
+focal_range = [[12, 1], [12, 1]]
+aperture_range = [[28, 10], [28, 10]]
