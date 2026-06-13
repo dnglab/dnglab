@@ -9,12 +9,12 @@ use futures::{SinkExt, StreamExt};
 use glob::glob;
 use log::{debug, error, info, warn};
 use std::ffi::OsString;
-use std::fs::{File, create_dir, read_dir, remove_dir_all, remove_file};
-use std::io::{self, Write};
+use std::io;
 use std::net::{IpAddr, SocketAddr};
 use std::path::{Component, Path, PathBuf, StripPrefixError};
 use std::result;
 use std::sync::Arc;
+use tokio::fs::{File, canonicalize, create_dir, metadata, read_dir, remove_dir_all, remove_file};
 use tokio::io::AsyncWriteExt;
 use tokio::net::tcp::{OwnedReadHalf, OwnedWriteHalf};
 use tokio::net::{TcpListener, TcpStream};
@@ -251,13 +251,13 @@ where
     self.data_writer = None;
   }
 
-  fn complete_path(&self, path: &Path) -> result::Result<PathBuf, io::Error> {
+  async fn complete_path(&self, path: &Path) -> result::Result<PathBuf, io::Error> {
     let directory = self.server_root.join(if path.has_root() {
       path.iter().skip(1).clone().collect()
     } else {
       path.to_path_buf()
     });
-    let dir = directory.canonicalize();
+    let dir = canonicalize(&directory).await;
     if let Ok(ref dir) = dir {
       if !dir.starts_with(&self.server_root) {
         return Err(io::ErrorKind::PermissionDenied.into());
@@ -271,13 +271,14 @@ where
     let parent = get_parent(fullpath.clone());
     if let Some(parent) = parent {
       let parent = parent.to_path_buf();
-      let res = self.complete_path(&parent);
+      let res = self.complete_path(&parent).await;
       if let Ok(mut dir) = res {
-        if dir.is_dir() {
+        let is_dir = metadata(&dir).await.map(|m| m.is_dir()).unwrap_or(false);
+        if is_dir {
           let filename = get_filename(fullpath);
           if let Some(filename) = filename {
             dir.push(filename);
-            if create_dir(dir).is_ok() {
+            if create_dir(dir).await.is_ok() {
               self.send(Answer::new(ResultCode::PATHNAMECreated, "Folder successfully created!")).await?;
               return Ok(());
             }
@@ -293,9 +294,9 @@ where
 
   async fn rmd(&mut self, directory: PathBuf) -> Result<()> {
     let path = self.cwd.join(&directory);
-    let res = self.complete_path(&path);
+    let res = self.complete_path(&path).await;
     if let Ok(dir) = res {
-      if remove_dir_all(dir).is_ok() {
+      if remove_dir_all(dir).await.is_ok() {
         self
           .send(Answer::new(ResultCode::RequestedFileActionOkay, "Folder successfully removed"))
           .await?;
@@ -310,9 +311,9 @@ where
 
   async fn dele(&mut self, file: PathBuf) -> Result<()> {
     let path = self.cwd.join(&file);
-    let res = self.complete_path(&path);
+    let res = self.complete_path(&path).await;
     if let Ok(f) = res {
-      if remove_file(f).is_ok() {
+      if remove_file(f).await.is_ok() {
         self.send(Answer::new(ResultCode::RequestedFileActionOkay, "File successfully removed")).await?;
         return Ok(());
       }
@@ -330,7 +331,7 @@ where
 
   async fn cwd(&mut self, directory: PathBuf) -> Result<()> {
     let path = self.cwd.join(&directory);
-    let res = self.complete_path(&path);
+    let res = self.complete_path(&path).await;
     if let Ok(dir) = res {
       let res = self.strip_prefix(dir);
       if let Ok(prefix) = res {
@@ -355,25 +356,29 @@ where
     if self.data_writer.is_some() {
       let path = self.cwd.join(path.unwrap_or_default());
       let directory = PathBuf::from(&path);
-      let res = self.complete_path(&directory);
+      let res = self.complete_path(&directory).await;
       if let Ok(path) = res {
         self
           .send(Answer::new(ResultCode::DataConnectionAlreadyOpen, "Starting to list directory..."))
           .await?;
         let mut out = vec![];
-        if path.is_dir() {
-          if let Ok(dir) = read_dir(path) {
-            for entry in dir.flatten() {
-              add_file_info(entry.path(), &mut out);
+        let is_dir = metadata(&path).await.map(|m| m.is_dir()).unwrap_or(false);
+        if is_dir {
+          match read_dir(&path).await {
+            Ok(mut dir) => {
+              while let Ok(Some(entry)) = dir.next_entry().await {
+                add_file_info(entry.path(), &mut out).await;
+              }
             }
-          } else {
-            self
-              .send(Answer::new(ResultCode::InvalidParameterOrArgument, "No such file or directory"))
-              .await?;
-            return Ok(());
+            Err(_) => {
+              self
+                .send(Answer::new(ResultCode::InvalidParameterOrArgument, "No such file or directory"))
+                .await?;
+              return Ok(());
+            }
           }
         } else {
-          add_file_info(path, &mut out);
+          add_file_info(path, &mut out).await;
         }
         self.send_data(out).await?;
       } else {
@@ -396,7 +401,8 @@ where
   async fn nlst(&mut self, path: Option<PathBuf>) -> Result<()> {
     self.initiate_data_connection().await?;
     if self.data_writer.is_some() {
-      let res = self.complete_path(&self.cwd);
+      let cwd = self.cwd.clone();
+      let res = self.complete_path(&cwd).await;
       if let Ok(cwd) = res {
         let mut out = vec![];
 
@@ -429,10 +435,10 @@ where
 
         for entry in matches {
           match entry {
-            Ok(path) => match path.canonicalize() {
+            Ok(path) => match canonicalize(&path).await {
               Ok(p) => {
                 if p.starts_with(&self.server_root) {
-                  add_file_info_nlst(path, &mut out);
+                  add_file_info_nlst(path, &mut out).await;
                 } else {
                   warn!("Entry is out of server root: {:?}, skipping", path);
                 }
@@ -563,13 +569,14 @@ where
     // TODO: check if multiple data connection can be opened at the same time.
     if self.data_writer.is_some() {
       let path = self.cwd.join(path);
-      let res = self.complete_path(&path);
+      let res = self.complete_path(&path).await;
       if let Ok(path) = res {
-        if path.is_file() {
+        let is_file = metadata(&path).await.map(|m| m.is_file()).unwrap_or(false);
+        if is_file {
           self
             .send(Answer::new(ResultCode::DataConnectionAlreadyOpen, "Starting to send file..."))
             .await?;
-          let mut file = match tokio::fs::File::open(&path).await {
+          let mut file = match File::open(&path).await {
             Ok(file) => file,
             Err(e) => {
               error!("Failed to open file {:?}, {}", path, e);
@@ -650,8 +657,7 @@ where
     let path = PathBuf::from(&self.server_root).join(path.iter().skip(1).collect::<PathBuf>());
     let handled = self.env.stor_file(&path, content.clone())?;
     if !handled {
-      let mut file = File::create(path)?;
-      file.write_all(&content)?;
+      tokio::fs::write(&path, content.as_ref()).await?;
     }
     Ok(())
   }
@@ -725,14 +731,13 @@ fn prefix_slash(path: &mut PathBuf) {
 }
 
 // If an error occurs when we try to get file's information, we just return and don't send its info.
-fn add_file_info(path: PathBuf, out: &mut Vec<u8>) {
-  let extra = if path.is_dir() { "/" } else { "" };
-  let is_dir = if path.is_dir() { "d" } else { "-" };
-
-  let meta = match ::std::fs::metadata(&path) {
+async fn add_file_info(path: PathBuf, out: &mut Vec<u8>) {
+  let meta = match metadata(&path).await {
     Ok(meta) => meta,
     _ => return,
   };
+  let extra = if meta.is_dir() { "/" } else { "" };
+  let is_dir = if meta.is_dir() { "d" } else { "-" };
   let time: chrono::DateTime<Utc> = meta.modified().unwrap_or(std::time::SystemTime::UNIX_EPOCH).into();
   #[cfg(unix)]
   let file_size = meta.size();
@@ -768,8 +773,11 @@ fn add_file_info(path: PathBuf, out: &mut Vec<u8>) {
 }
 
 // If an error occurs when we try to get file's information, we just return and don't send its info.
-fn add_file_info_nlst(path: PathBuf, out: &mut Vec<u8>) {
-  let extra = if path.is_dir() { "/" } else { "" };
+async fn add_file_info_nlst(path: PathBuf, out: &mut Vec<u8>) {
+  let extra = match metadata(&path).await {
+    Ok(meta) if meta.is_dir() => "/",
+    _ => "",
+  };
   let path = match path.to_str() {
     Some(path) => match path.split('/').next_back() {
       Some(path) => path,
