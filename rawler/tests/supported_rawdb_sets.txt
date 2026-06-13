@@ -86,6 +86,7 @@ Canon/EOS R5 C/crm
 Canon/EOS R6/raw_modes
 Canon/EOS R6 Mark II/raw_modes
 Canon/EOS R6 Mark III/raw_modes
+Canon/EOS R6 Mark III/crm
 Canon/EOS R7/raw_modes
 Canon/EOS R8/raw_modes
 Canon/EOS R10/raw_modes
