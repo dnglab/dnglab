@@ -2,9 +2,11 @@
 // Copyright 2021 Daniel Vogelbacher <daniel@chaospixel.com>
 
 pub mod chromatic_adaption;
+pub mod cielab;
 pub mod develop;
 pub mod fuji_rotate;
 pub mod gamma;
+pub mod math;
 pub mod matrix;
 pub mod raw;
 pub mod sensor;

@@ -16,6 +16,7 @@ pub fn multiply<const X: usize, const A: usize, const B: usize>(a: &[[f32; X]; A
   r
 }
 
+#[inline(always)]
 pub fn multiply_row1(a: &[[f32; 3]; 3], b: &[f32; 3]) -> [f32; 3] {
   [
     a[0][0] * b[0] + a[0][1] * b[1] + a[0][2] * b[2],
