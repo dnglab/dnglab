@@ -183,12 +183,14 @@ impl<'a> Decoder for ArwDecoder<'a> {
       _ => return Err(RawlerError::DecoderFailed(format!("ARW: Don't know how to decode type {}", compression))),
     };
 
-    let blacklevel = black.map(|black| match cpp {
-      1 => BlackLevel::new(&black, self.camera.cfa.width, self.camera.cfa.height, cpp),
-      // For YUV data, the blacklevel needs to be multiplicated by 2
-      3 => BlackLevel::new(&[black[0] * 2, black[0] * 2, black[0] * 2], 1, 1, cpp),
-      _ => return Err(RawlerError::DecoderFailed(format!("ARW: Unsupported cpp: {}", cpp))),
-    });
+    let blacklevel = black
+      .map(|black| match cpp {
+        1 => Ok(BlackLevel::new(&black, self.camera.cfa.width, self.camera.cfa.height, cpp)),
+        // For YUV data, the blacklevel needs to be multiplicated by 2
+        3 => Ok(BlackLevel::new(&[black[0] * 2, black[0] * 2, black[0] * 2], 1, 1, cpp)),
+        _ => Err(RawlerError::DecoderFailed(format!("ARW: Unsupported cpp: {}", cpp))),
+      })
+      .transpose()?;
     let whitelevel = white.map(|white| WhiteLevel(vec![white as u32; cpp]));
 
     let photometric = match cpp {
