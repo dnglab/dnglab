@@ -1759,6 +1759,8 @@ mod nikon {
     super::super::rawdb_test_file!("Nikon", "ZR", nikon_zr_fx_l_nef, "raw_modes/Nikon_ZR_FX_L.NEF");
     super::super::rawdb_test_file!("Nikon", "ZR", nikon_zr_fx_m_nef, "raw_modes/Nikon_ZR_FX_M.NEF");
     super::super::rawdb_test_file!("Nikon", "ZR", nikon_zr_fx_s_nef, "raw_modes/Nikon_ZR_FX_S.NEF");
+    super::super::rawdb_test_file!("Nikon", "ZR", nikon_zr_l_16x9_nef, "raw_modes/Nikon_ZR_L_16x9.NEF");
+    super::super::rawdb_test_file!("Nikon", "ZR", nikon_zr_l_1x1_nef, "raw_modes/Nikon_ZR_L_1x1.NEF");
   }
 }
 
