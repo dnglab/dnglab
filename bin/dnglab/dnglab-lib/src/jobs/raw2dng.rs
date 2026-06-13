@@ -86,10 +86,7 @@ impl Raw2DngJob {
     }
     let file = std::fs::OpenOptions::new().write(true).create_new(true).open(&self.output)?;
     if let Err(err) = file.try_lock() {
-      return Err(AppError::General(format!(
-        "Cannot acquire exclusive lock on {}: {err}",
-        self.output.display()
-      )));
+      return Err(AppError::General(format!("Cannot acquire exclusive lock on {}: {err}", self.output.display())));
     }
     let mut dng = BufWriter::new(file);
 
