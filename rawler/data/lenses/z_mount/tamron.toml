@@ -5,3 +5,11 @@ make = "Tamron"
 model = "35-150mm F/2-2.8 Di III VXD"
 focal_range = [[35, 1], [150, 1]]
 aperture_range = [[20, 10], [28, 10]]
+
+[[lenses]]
+mount = "Z-mount"
+lens_id = 57348
+make = "Tamron"
+model = "28-75mm F/2.8 Di III VXD G2"
+focal_range = [[28, 1], [75, 1]]
+aperture_range = [[28, 10], [28, 10]]
