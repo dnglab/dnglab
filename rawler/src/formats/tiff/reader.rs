@@ -149,7 +149,13 @@ pub trait TiffReader {
     };
     let mut reader = EndianReader::new(file, endian);
     let magic = reader.read_u16()?;
-    if magic != 42 {
+    if !matches!(
+      magic,
+      42 // TIFF Magic
+      | 85 // Panasonic
+      | 21330 // Olympus
+      | 20306 // Olympus / OM
+    ) {
       return Err(TiffError::General(format!("Invalid magic marker for TIFF: {}", magic)));
     }
     let mut next_ifd = reader.read_u32()?;
