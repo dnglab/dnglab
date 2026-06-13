@@ -147,7 +147,11 @@ pub fn correct_blacklevel(raw: &mut [f32], blacklevel: &[f32], whitelevel: &[f32
         }
       });
     }
-    _ => log::warn!("Blacklevel ({}) and Whitelevel ({}) count mismatch, skipping correction", blacklevel.len(), whitelevel.len()),
+    _ => log::warn!(
+      "Blacklevel ({}) and Whitelevel ({}) count mismatch, skipping correction",
+      blacklevel.len(),
+      whitelevel.len()
+    ),
   }
 }
 

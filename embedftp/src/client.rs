@@ -155,9 +155,7 @@ where
       }
     }
     match cmd {
-      Command::Auth => {
-        self.send(Answer::new(ResultCode::CommandNotImplemented, "Not implemented")).await?
-      }
+      Command::Auth => self.send(Answer::new(ResultCode::CommandNotImplemented, "Not implemented")).await?,
       Command::Quit => self.quit().await?,
       Command::Syst => {
         self.send(Answer::new(ResultCode::SystemType, "UNIX Type: L8")).await?;

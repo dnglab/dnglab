@@ -290,7 +290,11 @@ impl<'a> Decoder for NefDecoder<'a> {
     };
 
     if image.width != width * cpp {
-      return Err(RawlerError::DecoderFailed(format!("NEF: decompressed width {} != expected {}", image.width, width * cpp)));
+      return Err(RawlerError::DecoderFailed(format!(
+        "NEF: decompressed width {} != expected {}",
+        image.width,
+        width * cpp
+      )));
     }
     let blacklevel = self.get_blacklevel(bps)?;
     let whitelevel = None;

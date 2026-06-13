@@ -60,9 +60,7 @@ pub fn rawdb_ensure_file(rawdb_cache: &Path, make: &str, model: &str, subpath: &
   let url = build_url(make, model, subpath);
   let api_key = std::env::var("RAWDB_API_KEY").ok();
   if api_key.is_none() && api_key_required() {
-    panic!(
-      "RAWDB_API_KEY_REQUIRED=true but RAWDB_API_KEY is not set; refusing to download {url} anonymously"
-    );
+    panic!("RAWDB_API_KEY_REQUIRED=true but RAWDB_API_KEY is not set; refusing to download {url} anonymously");
   }
 
   let mut attempt: u32 = 0;
