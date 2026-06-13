@@ -81,7 +81,17 @@ impl Raw2DngJob {
       .to_string_lossy()
       .to_string();
 
-    let mut dng = BufWriter::new(File::create(&self.output)?);
+    if self.replace && self.output.exists() {
+      remove_file(&self.output)?;
+    }
+    let file = std::fs::OpenOptions::new().write(true).create_new(true).open(&self.output)?;
+    if let Err(err) = file.try_lock() {
+      return Err(AppError::General(format!(
+        "Cannot acquire exclusive lock on {}: {err}",
+        self.output.display()
+      )));
+    }
+    let mut dng = BufWriter::new(file);
 
     match convert_raw_file(&self.input, &mut dng, &self.params) {
       Ok(_) => {
