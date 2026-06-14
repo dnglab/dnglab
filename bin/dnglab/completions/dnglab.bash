@@ -149,7 +149,7 @@ _dnglab() {
             return 0
             ;;
         dnglab__convert)
-            opts="-c -f -r -d -v -h --compression --ljpeg92-predictor --dng-preview --dng-thumbnail --embed-raw --artist --keep-mtime --image-index --crop --override --recursive --loglevel --help <INPUT> <OUTPUT>"
+            opts="-c -f -r -j -d -v -h --compression --ljpeg92-predictor --dng-preview --dng-thumbnail --embed-raw --artist --keep-mtime --image-index --crop --override --recursive --jobs --loglevel --help <INPUT> <OUTPUT>"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
@@ -193,6 +193,14 @@ _dnglab() {
                     ;;
                 --crop)
                     COMPREPLY=($(compgen -W "best activearea none" -- "${cur}"))
+                    return 0
+                    ;;
+                --jobs)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
+                -j)
+                    COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
                 --loglevel)

@@ -60,9 +60,10 @@ pub async fn convert(options: &ArgMatches) -> crate::Result<()> {
   }
 
   let verbose = options.get_flag("verbose");
+  let concurrency = resolve_concurrency(options.get_one::<usize>("jobs").copied().unwrap_or(0));
 
   let mut results: Vec<JobResult> = Vec::new();
-  for chunks in jobs.chunks(8) {
+  for chunks in jobs.chunks(concurrency) {
     let mut temp: Vec<JobResult> = join_all(chunks.iter().map(|j| j.execute()))
       .await
       .into_iter()
@@ -228,6 +229,25 @@ fn generate_job(entry: &FileMap, options: &ArgMatches, claimed: &mut HashSet<Pat
     });
   }
   Ok(jobs)
+}
+
+/// Decide how many files to convert in parallel.
+///
+/// Each in-flight job runs LJPEG tile compression on rayon's global pool,
+/// which fans the work across every logical CPU. Stacking many jobs at once
+/// on top of that quickly causes oversubscription (`jobs × cpus` workers
+/// contending), heavy context-switching, and cache thrash. We therefore cap
+/// outer concurrency low so rayon gets meaningful per-job parallelism.
+///
+/// `requested` is the value of the `--jobs` flag. `0` means "auto":
+///   - default to `max(1, available_parallelism / 4)`, capped at 4.
+/// Any non-zero `requested` value is honored verbatim.
+fn resolve_concurrency(requested: usize) -> usize {
+  if requested > 0 {
+    return requested;
+  }
+  let cpus = std::thread::available_parallelism().map(|n| n.get()).unwrap_or(1);
+  (cpus / 4).clamp(1, 4)
 }
 
 /// Check if file extension is a supported extension

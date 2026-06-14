@@ -86,6 +86,8 @@ _arguments "${_arguments_options[@]}" : \
 '--keep-mtime=[Keep mtime, read from EXIF with fallback to original file mtime]:keepmtime:(true false)' \
 '--image-index=[Select a specific image index (or '\''all'\'') if file is a image container]:index:_default' \
 '--crop=[DNG default crop]:crop:(best activearea none)' \
+'-j+[Number of files to convert in parallel (0 = auto)]:N:_default' \
+'--jobs=[Number of files to convert in parallel (0 = auto)]:N:_default' \
 '-d+[Log level]:level:(error warn info debug trace)' \
 '--loglevel=[Log level]:level:(error warn info debug trace)' \
 '-f[Override existing files]' \
