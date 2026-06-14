@@ -76,4 +76,8 @@ name = "raw_decoder"
 
 [[bench]]
 harness = false
+name = "convert"
+
+[[bench]]
+harness = false
 name = "demosaic"
