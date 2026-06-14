@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: LGPL-2.1
 // Copyright 2021 Daniel Vogelbacher <daniel@chaospixel.com>
 
-use core::panic;
 use image::DynamicImage;
 use image::ImageBuffer;
 use image::Rgb;
