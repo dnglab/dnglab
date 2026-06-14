@@ -575,13 +575,7 @@ where
 
   let lj92_data = match rawimage.data {
     RawImageData::Integer(ref data) => {
-      // Inject black pixel data for testing purposes.
-      // let data = vec![0x0000; data.len()];
-      //let tiled_data = TiledData::new(&data, rawimage.width, rawimage.height, rawimage.cpp);
-
       // Only merge two lines into one for higher predictors, if image is CFA
-
-      let tiled_data: Vec<Vec<u16>> = ImageTiler::new(data, rawimage.width, rawimage.height, rawimage.cpp, tile_w, tile_h).collect();
 
       let (j_width, j_height, components, realign) = match &rawimage.photometric {
         RawPhotometricInterpretation::BlackIsZero => {
@@ -604,10 +598,18 @@ where
 
       debug!("LJPEG compression: bit depth: {}", rawimage.bps);
 
-      let tiles_compr: Vec<Vec<u8>> = tiled_data
-        .par_iter()
-        .map(|tile| {
-          let state = LjpegCompressor::new(tile, j_width * realign, j_height / realign, components, rawimage.bps as u8, predictor, 0, 0)
+      // Build and compress each tile in one parallel pass: tile materialization
+      // overlaps with LJPEG encoding instead of pre-collecting `Vec<Vec<u16>>`
+      // for the whole image. Peak memory drops from O(image) uncompressed
+      // staging to roughly O(threads × tile).
+      let tiler = ImageTiler::new(data, rawimage.width, rawimage.height, rawimage.cpp, tile_w, tile_h);
+      let n_tiles = tiler.tile_count();
+      let bps = rawimage.bps as u8;
+      let tiles_compr: Vec<Vec<u8>> = (0..n_tiles)
+        .into_par_iter()
+        .map(|idx| {
+          let tile = tiler.build_tile(idx);
+          let state = LjpegCompressor::new(&tile, j_width * realign, j_height / realign, components, bps, predictor, 0, 0)
             .map_err(|e| DngError::General(format!("LJPEG compressor init failed: {}", e)))?;
           state.encode().map_err(|e| DngError::General(format!("LJPEG encoding failed: {}", e)))
         })
