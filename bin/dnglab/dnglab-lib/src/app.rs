@@ -171,6 +171,12 @@ pub fn create_app() -> Command {
         .clone()
         .name("convert")
         .arg(arg!(-r --recursive "Process input directory recursive").action(ArgAction::SetTrue))
+        .arg(
+          arg!(jobs: -j --jobs <N> "Number of files to convert in parallel (0 = auto)")
+            .required(false)
+            .value_parser(clap::value_parser!(usize))
+            .default_value("0"),
+        )
         .arg(arg!(<INPUT> "Input file or directory").value_parser(clap::value_parser!(PathBuf)))
         .arg(arg!(<OUTPUT> "Output file or existing directory").value_parser(clap::value_parser!(PathBuf))),
     )

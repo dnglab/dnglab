@@ -83,6 +83,8 @@ set edit:completion:arg-completer[dnglab] = {|@words|
             cand --keep-mtime 'Keep mtime, read from EXIF with fallback to original file mtime'
             cand --image-index 'Select a specific image index (or ''all'') if file is a image container'
             cand --crop 'DNG default crop'
+            cand -j 'Number of files to convert in parallel (0 = auto)'
+            cand --jobs 'Number of files to convert in parallel (0 = auto)'
             cand -d 'Log level'
             cand --loglevel 'Log level'
             cand -f 'Override existing files'
