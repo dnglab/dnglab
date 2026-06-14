@@ -69,9 +69,6 @@ pub(crate) fn copy_mtime_from_rawsource(rawfile: &RawSource, file: &File, fallba
 
 impl Raw2DngJob {
   fn internal_exec(&self) -> Result<JobResult> {
-    if self.output.exists() && !self.replace {
-      return Err(AppError::AlreadyExists(self.output.clone()));
-    }
     // File name for embedding
     let orig_filename = self
       .input
@@ -84,7 +81,18 @@ impl Raw2DngJob {
     if self.replace && self.output.exists() {
       remove_file(&self.output)?;
     }
-    let file = std::fs::OpenOptions::new().write(true).create_new(true).open(&self.output)?;
+    // `create_new(true)` (= `O_EXCL`) is the single source of truth for
+    // "don't clobber". An `AlreadyExists` error here is the common case
+    // when `--override` is off; surface it as `AppError::AlreadyExists`
+    // rather than letting it surface as a raw `io::Error`. This also
+    // eliminates a redundant pre-flight `stat()` syscall per job.
+    let file = match std::fs::OpenOptions::new().write(true).create_new(true).open(&self.output) {
+      Ok(f) => f,
+      Err(e) if e.kind() == std::io::ErrorKind::AlreadyExists => {
+        return Err(AppError::AlreadyExists(self.output.clone()));
+      }
+      Err(e) => return Err(e.into()),
+    };
     if let Err(err) = file.try_lock() {
       return Err(AppError::General(format!("Cannot acquire exclusive lock on {}: {err}", self.output.display())));
     }
