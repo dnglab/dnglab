@@ -44,7 +44,11 @@ data:
         orientation: 1
         copyright: ""
         artist: ""
-        lens_spec: ~
+        lens_spec:
+          - 28/1
+          - 75/1
+          - 28/10
+          - 28/10
         exposure_time: 10/8000
         fnumber: 710/100
         aperture_value: ~
@@ -82,8 +86,8 @@ data:
         owner_name: ~
         serial_number: "6007735"
         lens_serial_number: "12013804"
-        lens_make: ~
-        lens_model: ~
+        lens_make: Tamron
+        lens_model: 28-75mm F/2.8 Di III VXD G2
         gps:
           gps_version_id:
             - 2
@@ -124,7 +128,24 @@ data:
         user_comment: ~
       model: ZR
       make: Nikon
-      lens: ~
+      lens:
+        identifiers:
+          name: ~
+          id:
+            - 57348
+            - 0
+          nikon_id: ~
+          olympus_id: ~
+        mount: Z-mount
+        lens_make: Tamron
+        lens_model: 28-75mm F/2.8 Di III VXD G2
+        focal_range:
+          - 28/1
+          - 75/1
+        aperture_range:
+          - 28/10
+          - 28/10
+        lens_name: Tamron 28-75mm F/2.8 Di III VXD G2
       unique_image_id: ~
       rating: ~
 
