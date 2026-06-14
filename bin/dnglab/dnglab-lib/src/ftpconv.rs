@@ -39,7 +39,7 @@ impl FtpCallback for FtpState {
       let rawfile = RawSource::new_from_shared_vec(data).with_path(original_filename);
       let out_path = path.with_extension("dng");
       let mut dng = BufWriter::new(File::create(out_path)?);
-      convert_raw_source(&rawfile, &mut dng, original_filename, &state.params).map_err(|err| std::io::Error::new(std::io::ErrorKind::Other, err))?;
+      let _info = convert_raw_source(&rawfile, &mut dng, original_filename, &state.params).map_err(|err| std::io::Error::new(std::io::ErrorKind::Other, err))?;
       if state.params.keep_mtime {
         if let Err(err) = copy_mtime_from_rawsource(
           &rawfile,
