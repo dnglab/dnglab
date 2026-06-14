@@ -9,7 +9,7 @@ license = "LGPL-2.1"
 name = "rawler"
 readme = "README.md"
 repository = "https://github.com/dnglab/dnglab"
-rust-version = "1.88"
+rust-version = "1.89"
 version = "0.7.2"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html

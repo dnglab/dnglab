@@ -16,7 +16,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        rust: [nightly, beta, stable, 1.88.0]
+        rust: [nightly, beta, stable, 1.89.0]
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@master
@@ -47,7 +47,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        rust: [1.88.0]
+        rust: [1.89.0]
     env:
       RAWDB_CACHE: /opt/rawdb_cache
       RAWDB_API_KEY_REQUIRED: "true"
