@@ -91,12 +91,15 @@ impl Raw2DngJob {
     let mut dng = BufWriter::new(file);
 
     match convert_raw_file(&self.input, &mut dng, &self.params) {
-      Ok(_) => {
+      Ok(info) => {
         let file = dng.into_inner().map_err(|e| AppError::General(format!("Can't access DNG inner file: {e}")))?;
         if self.params.keep_mtime {
-          let file_mtime = std::fs::metadata(&self.input).and_then(|md| md.modified()).ok();
-          let rawfile = RawSource::new(&self.input)?;
-          copy_mtime_from_rawsource(&rawfile, &file, file_mtime, &self.params)?;
+          let fallback = std::fs::metadata(&self.input).and_then(|md| md.modified()).ok();
+          if let Some(ts) = info.last_modified.or(fallback) {
+            file.set_modified(ts)?;
+            let datetime: chrono::DateTime<Local> = ts.into();
+            log::debug!("Set mtime for DNG file to {}", datetime.format("%d/%m/%Y %T"));
+          }
         }
         drop(file);
         Ok(JobResult {

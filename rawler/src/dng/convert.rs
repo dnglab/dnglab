@@ -4,6 +4,7 @@ use std::{
   path::Path,
   sync::Arc,
   thread::JoinHandle,
+  time::SystemTime,
 };
 
 use image::DynamicImage;
@@ -42,6 +43,17 @@ pub struct ConvertParams {
   pub keep_mtime: bool,
 }
 
+/// Information surfaced from a completed conversion.
+///
+/// Lets callers reuse work the converter already performed (such as the
+/// metadata pass) instead of re-running the decoder.
+#[derive(Clone, Debug, Default)]
+pub struct ConvertInfo {
+  /// Embedded "last modified" timestamp recovered from the input's metadata,
+  /// if the decoder was able to find one.
+  pub last_modified: Option<SystemTime>,
+}
+
 impl Default for ConvertParams {
   fn default() -> Self {
     Self {
@@ -66,7 +78,7 @@ impl Default for ConvertParams {
 /// We don't accept a DNG file path here, because we don't know
 /// how to handle existing target files, buffering, etc.
 /// This is up to the caller.
-pub fn convert_raw_file<W: Write + Seek + Send>(raw: &Path, dng: &mut W, params: &ConvertParams) -> crate::Result<()> {
+pub fn convert_raw_file<W: Write + Seek + Send>(raw: &Path, dng: &mut W, params: &ConvertParams) -> crate::Result<ConvertInfo> {
   let original_filename = raw.file_name().and_then(OsStr::to_str).unwrap_or_default();
   //let raw_stream = BufReader::new(File::open(raw)?); // TODO: add path hint to error?
   //let rawfile = RawFile::new(PathBuf::from(raw), raw_stream);
@@ -84,7 +96,7 @@ pub fn convert_raw_file<W: Write + Seek + Send>(raw: &Path, dng: &mut W, params:
 }
 
 /// Convert a raw input file into DNG
-pub fn convert_raw_source<W>(raw_source: &RawSource, dng: &mut W, original_filename: impl AsRef<str>, params: &ConvertParams) -> crate::Result<()>
+pub fn convert_raw_source<W>(raw_source: &RawSource, dng: &mut W, original_filename: impl AsRef<str>, params: &ConvertParams) -> crate::Result<ConvertInfo>
 where
   W: Write + Seek + Send,
 {
@@ -104,7 +116,7 @@ fn internal_convert<W>(
   original_filename: impl AsRef<str>,
   original_compress_thread: Option<JoinHandle<Result<OriginalCompressed, std::io::Error>>>,
   params: &ConvertParams,
-) -> crate::Result<()>
+) -> crate::Result<ConvertInfo>
 where
   W: Write + Seek + Send,
 {
@@ -235,7 +247,8 @@ where
 
   dng.close()?;
 
-  Ok(())
+  let last_modified = metadata.last_modified()?;
+  Ok(ConvertInfo { last_modified })
 }
 
 fn generate_preview(rawfile: &RawSource, decoder: &dyn Decoder, rawimage: &RawImage, params: &RawDecodeParams) -> crate::Result<DynamicImage> {
