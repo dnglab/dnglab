@@ -166,14 +166,20 @@ struct HuffCode {
 /// Huffman table builder
 ///
 /// Builds an optimal Huffman table for encoding for a given
-/// list of frequencies and total resolution.
+/// list of symbol frequencies.
 #[derive(Default, Debug)]
 struct HuffTableBuilder {
-  /// Frequency of occurrence of symbol V
-  /// Used while building the table. Initialized with the
-  /// frequencies for each ssss (0-16).
-  /// Reserving one code point guarantees that no code word can ever be all “1” bits.
-  freq: [f32; Self::CLASSES + 1],
+  /// Frequency of occurrence of symbol V.
+  ///
+  /// Used while building the table. Initialized with the raw histogram
+  /// counts for each ssss (0..=16). The last slot (index 17) is the
+  /// reserved code point — per T.81 K.1 it is seeded with frequency 1 so
+  /// it is strictly smaller than any real non-zero bin. The K.1 pair-merge
+  /// loop therefore always picks it first, guaranteeing that no real code
+  /// word can ever be all "1" bits.
+  ///
+  /// Frequencies are kept as integers.
+  freq: [u64; Self::CLASSES + 1],
 
   /// Code size of symbol V
   /// Size (in bits) for each ssss.
@@ -208,37 +214,40 @@ impl HuffTableBuilder {
   /// we only have 17 classes for ssss (0-16).
   const CLASSES: usize = 17; // Sample classes for Lossless JPEG
 
-  /// Construct new Huffman table for given histogram
-  /// and image resolution
-  fn new(histogram: [usize; Self::CLASSES], resolution: f32) -> Self {
+  /// Construct new Huffman table for given histogram.
+  ///
+  /// The histogram bins are used verbatim as integer frequencies
+  /// and the reserved code point is seeded with 1 so it is
+  /// strictly smaller than any real non-zero bin (T.81 K.1).
+  fn new(histogram: [usize; Self::CLASSES]) -> Self {
     let mut ins = Self::default();
     ins.bits.resize(33, 0);
-    for (i, freq) in histogram.iter().map(|f| *f as f32 / resolution).enumerate() {
-      ins.freq[i] = freq;
+    for (i, f) in histogram.iter().enumerate() {
+      ins.freq[i] = *f as u64;
     }
-    //  Last freq must be 1
-    ins.freq[Self::CLASSES] = 1.0;
+    ins.freq[Self::CLASSES] = 1;
     ins
   }
 
   /// Figure K.1 - Procedure to find Huffman code sizes
   fn gen_codesizes(&mut self) {
     loop {
-      // smallest frequencies found in loop
-      let mut v1freq: f32 = 3.0; // just a value larger then 1.0
-      let mut v2freq: f32 = 3.0;
-      // Indices into frequency table
+      // Indices and frequencies of the two smallest non-zero bins.
+      // Sentinel = u64::MAX so any real value compares smaller.
+      let mut v1freq: u64 = u64::MAX;
+      let mut v2freq: u64 = u64::MAX;
       let mut v1: Option<usize> = None;
       let mut v2: Option<usize> = None;
-      // Search v1
-      for (i, f) in self.freq.iter().enumerate().filter(|(_i, f)| **f > 0.0) {
+      // Search v1. Forward iteration with `<=` keeps the highest index on
+      // ties, matching T.81 K.1's tie-breaking rule.
+      for (i, f) in self.freq.iter().enumerate().filter(|(_i, f)| **f > 0) {
         if *f <= v1freq {
           v1freq = *f;
           v1 = Some(i);
         }
       }
       // Search v2
-      for (i, f) in self.freq.iter().enumerate().filter(|(i, f)| **f > 0.0 && Some(*i) != v1) {
+      for (i, f) in self.freq.iter().enumerate().filter(|(i, f)| **f > 0 && Some(*i) != v1) {
         if *f <= v2freq {
           v2freq = *f;
           v2 = Some(i);
@@ -251,7 +260,7 @@ impl HuffTableBuilder {
         (Some(v1), Some(v2)) => {
           // Combine frequency values
           self.freq[*v1] += self.freq[*v2];
-          self.freq[*v2] = 0.0;
+          self.freq[*v2] = 0;
 
           // Increment code sizes for all codewords in this tree branch
           loop {
@@ -693,7 +702,7 @@ impl<'a> LjpegCompressor<'a> {
         inspector!("unsorted freq: {}: {}, {}", i, f, *f as f32 / (self.resolution() as f32));
       }
     }
-    let huffgen = HuffTableBuilder::new(self.comp_state[comp].histogram, self.resolution() as f32);
+    let huffgen = HuffTableBuilder::new(self.comp_state[comp].histogram);
     let table = huffgen.build();
     //let table = HuffTableBuilder::_generic_table(self.comp_state[comp].histogram.clone(), self.resolution() as f32);
     #[cfg(feature = "inspector")]
