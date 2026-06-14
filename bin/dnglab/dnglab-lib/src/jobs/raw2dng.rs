@@ -19,7 +19,6 @@ use std::{
   time::SystemTime,
 };
 use std::{path::PathBuf, time::Instant};
-use tokio::task::spawn_blocking;
 
 /// Job for converting RAW to DNG
 #[derive(Debug, Clone)]
@@ -147,8 +146,22 @@ impl Job for Raw2DngJob {
     debug!("Job running: input: {:?}, output: {:?}", self.input, self.output);
     let now = Instant::now();
     let cp = self.clone();
-    let handle = spawn_blocking(move || cp.internal_exec());
-    match handle.await {
+
+    // Run the CPU-bound conversion on rayon's global pool rather than tokio's
+    // blocking pool. Rationale:
+    //   - The work inside `internal_exec` already fans out through `par_iter`
+    //     on rayon for LJPEG tile compression. Dispatching the outer job onto
+    //     rayon too keeps every CPU thread under one work-stealing scheduler,
+    //     avoiding the "tokio-blocking-thread holds the call frame while
+    //     rayon does the work on different threads" double-dispatch.
+    //   - Tokio's blocking pool is sized for I/O fanout.
+    // A tokio oneshot bridges the result back into the async driver.
+    let (tx, rx) = tokio::sync::oneshot::channel();
+    rayon::spawn(move || {
+      let _ = tx.send(cp.internal_exec());
+    });
+
+    match rx.await {
       Ok(Ok(mut stat)) => {
         stat.duration = now.elapsed().as_secs_f32();
         eprintln!("Writing DNG output file: {}", stat.job.output.display());
@@ -159,10 +172,10 @@ impl Job for Raw2DngJob {
         duration: now.elapsed().as_secs_f32(),
         error: Some(e),
       },
-      Err(e) => JobResult {
+      Err(err) => JobResult {
         job: self.clone(),
         duration: now.elapsed().as_secs_f32(),
-        error: Some(AppError::General(format!("Join handle failed: {:?}", e))),
+        error: Some(AppError::General(format!("Rayon worker panicked before completing: {err}"))),
       },
     }
   }
