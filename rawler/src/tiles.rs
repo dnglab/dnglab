@@ -57,6 +57,42 @@ impl<'a, T> ImageTiler<'a, T> {
   }
 }
 
+impl<'a, T> ImageTiler<'a, T>
+where
+  T: Copy + Default,
+{
+  /// Materialize the tile at linear index `idx` (row-major).
+  ///
+  /// Stateless: borrows `&self` only, so callers can build tiles from many
+  /// threads in parallel (rayon `par_iter`). Edge-padding and last-row
+  /// replication follow the same rules as the iterator.
+  pub fn build_tile(&self, idx: usize) -> Vec<T> {
+    let mut buf = Vec::with_capacity(self.th * self.tw * self.cpp);
+
+    let tile_row = idx / self.tcols;
+    let tile_col = idx % self.tcols;
+
+    for row in 0..self.th {
+      let off_row = (tile_row * self.th) + row;
+      let offset = off_row * self.width * self.cpp + (tile_col * self.tw * self.cpp);
+
+      if offset < self.data.len() {
+        if tile_col < self.tcols - 1 || !self.needs_padding() {
+          let sub = &self.data[offset..offset + self.tw * self.cpp];
+          buf.extend_from_slice(sub);
+        } else {
+          buf.extend_from_slice(&self.data[offset..offset + (self.width % self.tw) * self.cpp]);
+          let last_pix = buf.last().copied().unwrap_or_default();
+          buf.extend(iter::repeat(last_pix).take((self.tw - (self.width % self.tw)) * self.cpp));
+        };
+      } else {
+        buf.extend_from_within((row - 1) * self.tw * self.cpp..((row - 1) * self.tw * self.cpp) + self.tw * self.cpp);
+      }
+    }
+    buf
+  }
+}
+
 impl<'a, T> Iterator for ImageTiler<'a, T>
 where
   T: Copy + Default,
@@ -64,37 +100,8 @@ where
   type Item = Vec<T>;
 
   fn next(&mut self) -> Option<Self::Item> {
-    if let Some(i) = self.tiles.next() {
-      let mut buf = Vec::with_capacity(self.th * self.tw * self.cpp);
-
-      let tile_row = i / self.tile_cols();
-      let tile_col = i % self.tile_cols();
-
-      //println!("Tile row: {}, col: {}", tile_row, tile_col);
-
-      for row in 0..self.th {
-        let off_row = (tile_row * self.th) + row;
-        let offset = off_row * self.width * self.cpp + (tile_col * self.tw * self.cpp);
-
-        if offset < self.data.len() {
-          //println!("Fill row: {}", row);
-          if tile_col < self.tile_cols() - 1 || !self.needs_padding() {
-            let sub = &self.data[offset..offset + self.tw * self.cpp];
-            buf.extend_from_slice(sub);
-          } else {
-            buf.extend_from_slice(&self.data[offset..offset + (self.width % self.tw) * self.cpp]);
-            let last_pix = buf.last().copied().unwrap_or_default();
-            buf.extend(iter::repeat(last_pix).take((self.tw - (self.width % self.tw)) * self.cpp));
-          };
-        } else {
-          //println!("extend row: {}", row);
-          buf.extend_from_within((row - 1) * self.tw * self.cpp..((row - 1) * self.tw * self.cpp) + self.tw * self.cpp);
-        }
-      }
-      Some(buf)
-    } else {
-      None
-    }
+    let i = self.tiles.next()?;
+    Some(self.build_tile(i))
   }
 
   fn size_hint(&self) -> (usize, Option<usize>) {
