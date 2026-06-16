@@ -247,7 +247,14 @@ where
 
   dng.close()?;
 
-  let last_modified = metadata.last_modified()?;
+  let last_modified = match metadata.last_modified() {
+    Ok(Some(last_modified)) => Some(last_modified),
+    Err(err) => {
+      log::warn!("Failed to get last-modified: {:?}", err);
+      None
+    }
+    _ => None,
+  };
   Ok(ConvertInfo { last_modified })
 }
 
