@@ -285,8 +285,15 @@ impl<'a> PefDecoder<'a> {
       // Calculate codes and store bitcounts
       let mut v2: [u32; 16] = [0; 16];
       for c in 0..depth {
-        v2[c] = v0[c] >> (12 - v1[c]);
-        htable.bits[v1[c] as usize] += 1;
+        // `v1[c]` is a Huffman code length from the (untrusted) makernote table.
+        // For a valid PEF it is 1..=12, so `12 - v1[c]` and `bits[v1[c]]` are in
+        // range and behave exactly as before. A crafted length > 12 would
+        // underflow the shift, and one > 16 would index past `bits[17]`; clamp
+        // the shift and skip an out-of-range bit count so such input can't panic.
+        v2[c] = v0[c] >> (12u32.saturating_sub(v1[c]));
+        if let Some(slot) = htable.bits.get_mut(v1[c] as usize) {
+          *slot += 1;
+        }
       }
 
       // Find smallest
@@ -312,7 +319,12 @@ impl<'a> PefDecoder<'a> {
         acc += htable.bits[i + 1] as usize;
       }
       for i in 0..acc {
-        htable.huffval[i] = pentax_tree[i + 16] as u32;
+        // Guard the fixed-table read: `acc` (14) can index one past the 13
+        // huffval entries stored at indices 16.. of `pentax_tree`. This legacy
+        // fallback only runs when no makernote Huffman table is present (never
+        // for a real PEF), so reading 0 for a missing entry can't affect valid
+        // decoding — it just avoids an out-of-bounds panic on crafted input.
+        htable.huffval[i] = pentax_tree.get(i + 16).copied().unwrap_or(0) as u32;
       }
     }
 
@@ -329,13 +341,25 @@ impl<'a> PefDecoder<'a> {
       pred_up2[row & 1] += htable.huff_decode(&mut pump)?;
       pred_left1 = pred_up1[row & 1];
       pred_left2 = pred_up2[row & 1];
-      out[row * width + 0] = pred_left1 as u16;
-      out[row * width + 1] = pred_left2 as u16;
+      // A valid PEF frame has an even width >= 2, so every write here is in
+      // bounds; guard against a crafted width of 1 (or an odd width on the last
+      // column) indexing past the buffer. The huffman decode runs unconditionally
+      // so the bitstream position is preserved.
+      if let Some(slot) = out.pixels_mut().get_mut(row * width) {
+        *slot = pred_left1 as u16;
+      }
+      if let Some(slot) = out.pixels_mut().get_mut(row * width + 1) {
+        *slot = pred_left2 as u16;
+      }
       for col in (2..width).step_by(2) {
         pred_left1 += htable.huff_decode(&mut pump)?;
         pred_left2 += htable.huff_decode(&mut pump)?;
-        out[row * width + col + 0] = pred_left1 as u16;
-        out[row * width + col + 1] = pred_left2 as u16;
+        if let Some(slot) = out.pixels_mut().get_mut(row * width + col) {
+          *slot = pred_left1 as u16;
+        }
+        if let Some(slot) = out.pixels_mut().get_mut(row * width + col + 1) {
+          *slot = pred_left2 as u16;
+        }
       }
     }
     Ok(out)

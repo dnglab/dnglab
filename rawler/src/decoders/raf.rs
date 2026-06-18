@@ -161,7 +161,14 @@ fn parse_raf(file: &RawSource) -> Result<IFD> {
   let offset = stream.read_u32::<BigEndian>()?;
 
   // Main IFD
-  let mut main = IFD::new_root(stream, offset + 12)?;
+  // `offset` is a file-supplied pointer; `offset + 12` overflows u32 when the
+  // file specifies a near-u32::MAX pointer. For a valid RAF the TIFF1 pointer is
+  // a small in-file offset, so this addition never overflows on well-formed
+  // input; a corrupt pointer becomes a decode error instead of a panic.
+  let main_base = offset
+    .checked_add(12)
+    .ok_or_else(|| RawlerError::DecoderFailed(format!("RAF: TIFF1 offset {} overflows", offset)))?;
+  let mut main = IFD::new_root(stream, main_base)?;
 
   //main.dump::<TiffCommonTag>(10).iter().for_each(|line| eprintln!("MAIN: {}", line));
 

@@ -283,7 +283,10 @@ impl<'a> OrfDecoder<'a> {
     let mut left: [i32; 2] = [0; 2];
     let mut nw: [i32; 2] = [0; 2];
     let skip = if bps == 14 { 8 } else { 7 };
-    let mut pump = BitPumpMSB::new(&buf[skip..]);
+    // A valid ORF strip is always larger than the 7/8-byte skip; a corrupt/short
+    // buffer is handled by reading an empty (zero-yielding, exhaustion-safe) bit
+    // stream rather than panicking on the slice.
+    let mut pump = BitPumpMSB::new(buf.get(skip..).unwrap_or(&[]));
 
     for row in 0..height {
       let mut acarry: [[i32; 3]; 2] = [[0; 3]; 2];
@@ -312,9 +315,17 @@ impl<'a> OrfDecoder<'a> {
             pump.consume_bits((high + 4) as u32);
           }
 
-          acarry[s][0] = ((high << nbits) | pump.get_ibits(nbits)) as i32;
-          let diff = (acarry[s][0] ^ sign) + acarry[s][1];
-          acarry[s][1] = (diff * 3 + acarry[s][1]) >> 5;
+          // These predictor calculations stay within pixel range for a valid
+          // ORF stream, so none of them overflow `i32` on well-formed input. A
+          // crafted stream can drive the accumulated values out of range; use
+          // wrapping arithmetic (matching the release build, which has no
+          // overflow checks) so such input wraps rather than panicking, leaving
+          // valid decodes bit-identical. The sign-only product is widened to
+          // `i64` so its comparison is correct even when the i32 product would
+          // have overflowed.
+          acarry[s][0] = (high.wrapping_shl(nbits)) | pump.get_ibits(nbits);
+          let diff = (acarry[s][0] ^ sign).wrapping_add(acarry[s][1]);
+          acarry[s][1] = (diff.wrapping_mul(3).wrapping_add(acarry[s][1])) >> 5;
           acarry[s][2] = if acarry[s][0] > 16 { 0 } else { acarry[s][2] + 1 };
 
           if row < 2 || col < 2 {
@@ -330,26 +341,26 @@ impl<'a> OrfDecoder<'a> {
               nw[s] = out[(row - 2) * width + (col + s)] as i32;
               nw[s]
             };
-            left[s] = pred + ((diff << 2) | low);
+            left[s] = pred.wrapping_add((diff.wrapping_shl(2)) | low);
             out[row * width + (col + s)] = left[s] as u16;
           } else {
             let up: i32 = out[(row - 2) * width + (col + s)] as i32;
-            let left_minus_nw: i32 = left[s] - nw[s];
-            let up_minus_nw: i32 = up - nw[s];
+            let left_minus_nw: i32 = left[s].wrapping_sub(nw[s]);
+            let up_minus_nw: i32 = up.wrapping_sub(nw[s]);
             // Check if sign is different, and one is not zero
-            let pred = if left_minus_nw * up_minus_nw < 0 {
-              if left_minus_nw.abs() > 32 || up_minus_nw.abs() > 32 {
-                left[s] + up_minus_nw
+            let pred = if (left_minus_nw as i64) * (up_minus_nw as i64) < 0 {
+              if left_minus_nw.unsigned_abs() > 32 || up_minus_nw.unsigned_abs() > 32 {
+                left[s].wrapping_add(up_minus_nw)
               } else {
-                (left[s] + up) >> 1
+                (left[s].wrapping_add(up)) >> 1
               }
-            } else if left_minus_nw.abs() > up_minus_nw.abs() {
+            } else if left_minus_nw.unsigned_abs() > up_minus_nw.unsigned_abs() {
               left[s]
             } else {
               up
             };
 
-            left[s] = pred + ((diff << 2) | low);
+            left[s] = pred.wrapping_add((diff.wrapping_shl(2)) | low);
             nw[s] = up;
             out[row * width + (col + s)] = left[s] as u16;
           }

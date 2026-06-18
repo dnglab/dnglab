@@ -21,7 +21,16 @@ impl Cmt4Box {
 impl<R: Read + Seek> ReadBox<&mut R> for Cmt4Box {
   fn read_box(reader: &mut R, header: BoxHeader) -> Result<Self> {
     let current = reader.stream_position()?;
-    let data_len = header.end_offset() - current;
+    // See Cmt1Box::read_box: guard the length against underflow (corrupt box end
+    // before start) and clamp to remaining stream bytes so a giant declared size
+    // can't over-allocate. Valid boxes are unaffected.
+    let stream_end = reader.seek(SeekFrom::End(0))?;
+    reader.seek(SeekFrom::Start(current))?;
+    let data_len = header
+      .end_offset()
+      .checked_sub(current)
+      .ok_or_else(|| BmffError::Parse("CMT4: box end before start, corrupt file?".into()))?
+      .min(stream_end.saturating_sub(current));
     let mut data = vec![0; data_len as usize];
     reader.read_exact(&mut data)?;
 

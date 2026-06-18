@@ -194,7 +194,11 @@ impl<'a> KdcDecoder<'a> {
     for row in 0..height {
       let shift = row * mul[row & 3] + add[row & 3];
       for col in 0..width {
-        out[row * width + col] = src[row * width + ((col + shift) % 848)] as u16;
+        // `src` is indexed by a file-size-dependent position; a short/corrupt
+        // buffer makes this read out of range. For a valid DC120 frame the
+        // source is large enough that every read is in bounds, so the result is
+        // unchanged; a missing source byte reads as 0 instead of panicking.
+        out[row * width + col] = src.get(row * width + ((col + shift) % 848)).copied().unwrap_or(0) as u16;
       }
     }
     out

@@ -11,10 +11,24 @@ pub fn decode_unwrapped(file: &RawSource) -> Result<RawImageData> {
   let decoder = LEu16(&buffer, 0);
   let width = LEu16(&buffer, 2) as usize;
   let height = LEu16(&buffer, 4) as usize;
-  let data = &buffer[6..];
+  // This is a fuzzing/test-only entry point; the 6-byte header (decoder, width,
+  // height) is followed by the payload. Guard the slice so a sub-6-byte input
+  // errors instead of panicking. The `LEu*` readers above are already EOF-safe.
+  let data = buffer.get(6..).ok_or("Unwrapped: input too small for header")?;
 
   if width > 64 || height > 64 {
     return Err(RawlerError::DecoderFailed(format!("Unwrapped: image {}x{} exceeds 64x64 limit", width, height)));
+  }
+  // Several unwrapped decoders below call into helpers that `.expect()` a
+  // successful decompress (e.g. Panasonic v4), and a 0-width/0-height image makes
+  // those helpers fail (zero chunk size). A real image has non-zero dimensions,
+  // so rejecting them here is invisible to valid input and keeps the decoders
+  // from hitting an internal panic.
+  if width == 0 || height == 0 {
+    return Err(RawlerError::DecoderFailed(format!(
+      "Unwrapped: image {}x{} has a zero dimension",
+      width, height
+    )));
   }
 
   match decoder {
@@ -26,7 +40,7 @@ pub fn decode_unwrapped(file: &RawSource) -> Result<RawImageData> {
         }
         LookupTable::new(&t)
       };
-      let data = &data[512..];
+      let data = data.get(512..).ok_or("Unwrapped: input too small for 8bit table data")?;
       Ok(RawImageData::Integer(decompress_8bit_wtable(data, &table, width, height, false)?.into_inner()))
     }
     1 => Ok(RawImageData::Integer(decompress_10le_lsb16(data, width, height, false)?.into_inner())),
@@ -63,7 +77,7 @@ pub fn decode_unwrapped(file: &RawSource) -> Result<RawImageData> {
       }
 
       let curve = arw::ArwDecoder::calculate_curve(curve);
-      let data = &data[8..];
+      let data = data.get(8..).ok_or("Unwrapped: input too small for arw2 curve")?;
       Ok(RawImageData::Integer(
         arw::ArwDecoder::decode_arw2(data, width, height, &curve, false)?.into_inner(),
       ))
@@ -71,7 +85,7 @@ pub fn decode_unwrapped(file: &RawSource) -> Result<RawImageData> {
     23 => {
       let key = LEu32(data, 0);
       let length = LEu16(data, 4) as usize;
-      let data = &data[10..];
+      let data = data.get(10..).ok_or("Unwrapped: input too small for SRF header")?;
 
       if length > 5000 {
         return Err(RawlerError::DecoderFailed(format!("Unwrapped: SRF image length {} exceeds 5000 limit", length)));
@@ -85,13 +99,15 @@ pub fn decode_unwrapped(file: &RawSource) -> Result<RawImageData> {
     )),
     25 => {
       let loffsets = data;
-      let data = &data[height * 4..];
+      // height <= 64 (checked above), so `height * 4` cannot overflow; guard the
+      // slice for inputs shorter than the line-offset table.
+      let data = data.get(height * 4..).ok_or("Unwrapped: input too small for srw1 line offsets")?;
       Ok(RawImageData::Integer(
         srw::SrwDecoder::decode_srw1(data, loffsets, width, height, false).into_inner(),
       ))
     }
     26 => Ok(RawImageData::Integer(srw::SrwDecoder::decode_srw2(data, width, height, false).into_inner())),
-    27 => Ok(RawImageData::Integer(srw::SrwDecoder::decode_srw3(data, width, height, false).into_inner())),
+    27 => Ok(RawImageData::Integer(srw::SrwDecoder::decode_srw3(data, width, height, false)?.into_inner())),
     28 => Ok(RawImageData::Integer(kdc::KdcDecoder::decode_dc120(data, width, height, false).into_inner())),
     29 => Ok(RawImageData::Integer(
       rw2::v4decompressor::decode_panasonic_v4(data, width, height, false, false).into_inner(),
@@ -107,7 +123,7 @@ pub fn decode_unwrapped(file: &RawSource) -> Result<RawImageData> {
         }
         LookupTable::new(&t)
       };
-      let data = &data[2048..];
+      let data = data.get(2048..).ok_or("Unwrapped: input too small for kodak65000 table data")?;
       Ok(RawImageData::Integer(
         dcr::DcrDecoder::decode_kodak65000(data, &table, width, height, false).into_inner(),
       ))
@@ -121,14 +137,14 @@ pub fn decode_unwrapped(file: &RawSource) -> Result<RawImageData> {
     )),
     37 => {
       let huff = data;
-      let data = &data[64..];
+      let data = data.get(64..).ok_or("Unwrapped: input too small for PEF huffman table")?;
       Ok(RawImageData::Integer(
         pef::PefDecoder::do_decode(data, Some((huff, Endian::Little)), width, height, false)?.into_inner(),
       ))
     }
     38 => {
       let huff = data;
-      let data = &data[64..];
+      let data = data.get(64..).ok_or("Unwrapped: input too small for PEF huffman table")?;
       Ok(RawImageData::Integer(
         pef::PefDecoder::do_decode(data, Some((huff, Endian::Big)), width, height, false)?.into_inner(),
       ))
@@ -164,7 +180,8 @@ pub fn decode_unwrapped(file: &RawSource) -> Result<RawImageData> {
     51 => decode_nef(data, width, height, Endian::Big, 14),
     52 => {
       let coeffs = [LEf32(data, 0), LEf32(data, 4), LEf32(data, 8), LEf32(data, 12)];
-      let data = PaddedBuf::new_owned(data[16..].to_vec(), data.len() - 16);
+      let payload = data.get(16..).ok_or("Unwrapped: input too small for snef coeffs")?;
+      let data = PaddedBuf::new_owned(payload.to_vec(), payload.len());
       Ok(RawImageData::Integer(
         nef::NefDecoder::decode_snef_compressed(&data, coeffs, width, height, false)?.into_inner(),
       ))
@@ -182,7 +199,7 @@ fn decode_ljpeg(src: &[u8], width: usize, height: usize, dng_bug: bool, csfix: b
 
 fn decode_nef(data: &[u8], width: usize, height: usize, endian: Endian, bps: usize) -> Result<RawImageData> {
   let meta = data;
-  let data = &data[4096..];
+  let data = data.get(4096..).ok_or("Unwrapped: input too small for NEF metadata block")?;
   Ok(RawImageData::Integer(
     nef::NefDecoder::do_decode(data, meta, endian, width, height, bps, false)?.into_inner(),
   ))

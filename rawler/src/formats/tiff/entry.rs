@@ -106,6 +106,27 @@ impl Entry {
     }
 
     reader.goto(base + offset)?;
+
+    // Guard against a corrupt `count` driving a huge allocation. Each match arm
+    // allocates `count` elements and then reads that many from the stream; with
+    // an attacker-controlled `count` (up to 4 billion) the allocation happens
+    // *before* the read can fail with EOF, so a truncated file could request
+    // gigabytes. For any well-formed entry the data region `[offset, offset +
+    // bytesize)` lies inside the file, so this check always passes and the
+    // result is unchanged; it only rejects entries whose data extends past EOF,
+    // which would have failed at the subsequent `read_*_into` anyway — we just
+    // turn that EOF into an error before allocating.
+    if bytesize > 4 {
+      let stream_len = reader.stream_len()?;
+      let end = (base as u64) + (offset as u64) + (bytesize as u64);
+      if end > stream_len {
+        return Err(TiffError::Overflow(format!(
+          "Tag 0x{:X}: entry data ({} bytes at offset {}) extends past end of file ({} bytes)",
+          tag, bytesize, offset, stream_len
+        )));
+      }
+    }
+
     let entry = match typ {
       TYPE_BYTE => {
         let mut v = vec![0; count as usize];

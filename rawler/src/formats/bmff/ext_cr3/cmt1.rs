@@ -21,7 +21,20 @@ impl Cmt1Box {
 impl<R: Read + Seek> ReadBox<&mut R> for Cmt1Box {
   fn read_box(reader: &mut R, header: BoxHeader) -> Result<Self> {
     let current = reader.stream_position()?;
-    let data_len = header.end_offset() - current;
+    // `end_offset() - current` underflows for a corrupt box whose declared end
+    // is before the current position, and (with a near-u64::MAX size) yields a
+    // huge `data_len` that would over-allocate. Compute the length with
+    // `checked_sub` and clamp it to the bytes actually remaining in the stream:
+    // a valid CMT box's payload is fully present, so the clamp is a no-op and the
+    // data read is unchanged; a corrupt box becomes a decode error / bounded read
+    // instead of a panic or OOM.
+    let stream_end = reader.seek(SeekFrom::End(0))?;
+    reader.seek(SeekFrom::Start(current))?;
+    let data_len = header
+      .end_offset()
+      .checked_sub(current)
+      .ok_or_else(|| BmffError::Parse("CMT1: box end before start, corrupt file?".into()))?
+      .min(stream_end.saturating_sub(current));
     let mut data = vec![0; data_len as usize];
     reader.read_exact(&mut data)?;
 

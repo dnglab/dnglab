@@ -56,17 +56,31 @@ impl CiffIFD {
     let mut entries = HashMap::new();
     let mut subifds = Vec::new();
 
-    let valuedata_size = LEu32(buf, end - 4) as usize;
-    let dircount = LEu16(buf, start + valuedata_size) as usize;
+    // The CIFF directory layout stores its value-data size in the last 4 bytes
+    // of the [start, end) block. A truncated file where `end < 4` (e.g. an empty
+    // input) would underflow `end - 4`; the directory count offset and entry
+    // offsets are likewise derived from file values and can overflow `usize`.
+    // For a well-formed CIFF every offset stays inside the block, so these
+    // checks never fire on valid input — they only turn a corrupt directory into
+    // a decode error instead of a panic.
+    let valuedata_pos = end.checked_sub(4).ok_or("CIFF: block too small for value-data size")?;
+    let valuedata_size = LEu32(buf, valuedata_pos) as usize;
+    let dircount_pos = start.checked_add(valuedata_size).ok_or("CIFF: value-data offset overflow")?;
+    let dircount = LEu16(buf, dircount_pos) as usize;
 
     for i in 0..dircount {
-      let entry_offset: usize = start + valuedata_size + 2 + i * 10;
+      let entry_offset: usize = start
+        .checked_add(valuedata_size)
+        .and_then(|v| v.checked_add(2))
+        .and_then(|v| i.checked_mul(10).and_then(|im| v.checked_add(im)))
+        .ok_or("CIFF: directory entry offset overflow")?;
       let e = CiffEntry::new(buf, start, entry_offset)?;
       if e.typ == 0x2800 || e.typ == 0x3000 {
         // SubIFDs
         if depth < 10 {
           // Avoid infinite looping IFDs
-          let ifd = CiffIFD::new(buf, e.data_offset, e.data_offset + e.bytesize, depth + 1);
+          let sub_end = e.data_offset.checked_add(e.bytesize).ok_or("CIFF: sub-IFD extent overflow")?;
+          let ifd = CiffIFD::new(buf, e.data_offset, sub_end, depth + 1);
           match ifd {
             Ok(val) => {
               subifds.push(val);
@@ -107,12 +121,26 @@ impl CiffEntry {
 
     let (bytesize, data_offset) = match datalocation {
       // Data is offset in value_data
-      0x0000 => (LEu32(buf, offset + 2) as usize, LEu32(buf, offset + 6) as usize + value_data),
+      0x0000 => (
+        LEu32(buf, offset + 2) as usize,
+        // `data_offset = value_data + stored_offset` is built from file values
+        // and can overflow `usize` on a corrupt entry; a valid entry's offset
+        // lands inside the buffer, so the sum is unchanged for well-formed input.
+        (LEu32(buf, offset + 6) as usize)
+          .checked_add(value_data)
+          .ok_or("CIFF: entry data offset overflow")?,
+      ),
       // Data is stored directly in entry
       0x4000 => (8, offset + 2),
       val => return Err(format!("CIFF: Don't know about data location {:x}", val)),
     };
-    let data = &buf[data_offset..data_offset + bytesize];
+    // `&buf[data_offset..data_offset + bytesize]` indexed directly; both bounds
+    // come from the (untrusted) file and can exceed the buffer or overflow. For
+    // a valid entry the data slice lies inside the buffer, so this `get`
+    // succeeds and the copied data is identical; a corrupt entry becomes a
+    // decode error instead of an out-of-range panic.
+    let data_end = data_offset.checked_add(bytesize).ok_or("CIFF: entry data extent overflow")?;
+    let data = buf.get(data_offset..data_end).ok_or("CIFF: entry data out of range")?;
     let count = bytesize >> CiffEntry::element_shift(typ);
 
     Ok(CiffEntry {

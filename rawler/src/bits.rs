@@ -80,45 +80,52 @@ impl Endian {
     matches!(*self, Self::Little)
   }
 
+  // EOF-safe: see the note on the free `LEu16`/`BEu16`/… readers below. An
+  // out-of-range `offset` (from an untrusted file) returns 0 instead of
+  // panicking; well-formed input is unaffected.
   #[inline]
   pub fn read_u8(&self, buf: &[u8], offset: usize) -> u8 {
-    buf[offset]
+    buf.get(offset).copied().unwrap_or(0)
   }
 
   #[inline]
   pub fn read_i8(&self, buf: &[u8], offset: usize) -> i8 {
-    buf[offset] as i8
+    buf.get(offset).map_or(0, |&b| b as i8)
   }
 
   #[inline]
   pub fn read_u16(&self, buf: &[u8], offset: usize) -> u16 {
-    match *self {
-      Self::Big => BigEndian::read_u16(&buf[offset..]),
-      Self::Little => LittleEndian::read_u16(&buf[offset..]),
+    match buf.get(offset..offset.saturating_add(2)) {
+      Some(b) if self.little() => LittleEndian::read_u16(b),
+      Some(b) => BigEndian::read_u16(b),
+      None => 0,
     }
   }
 
   #[inline]
   pub fn read_i16(&self, buf: &[u8], offset: usize) -> i16 {
-    match *self {
-      Self::Big => BigEndian::read_i16(&buf[offset..]),
-      Self::Little => LittleEndian::read_i16(&buf[offset..]),
+    match buf.get(offset..offset.saturating_add(2)) {
+      Some(b) if self.little() => LittleEndian::read_i16(b),
+      Some(b) => BigEndian::read_i16(b),
+      None => 0,
     }
   }
 
   #[inline]
   pub fn read_u32(&self, buf: &[u8], offset: usize) -> u32 {
-    match *self {
-      Self::Big => BigEndian::read_u32(&buf[offset..]),
-      Self::Little => LittleEndian::read_u32(&buf[offset..]),
+    match buf.get(offset..offset.saturating_add(4)) {
+      Some(b) if self.little() => LittleEndian::read_u32(b),
+      Some(b) => BigEndian::read_u32(b),
+      None => 0,
     }
   }
 
   #[inline]
   pub fn read_i32(&self, buf: &[u8], offset: usize) -> i32 {
-    match *self {
-      Self::Big => BigEndian::read_i32(&buf[offset..]),
-      Self::Little => LittleEndian::read_i32(&buf[offset..]),
+    match buf.get(offset..offset.saturating_add(4)) {
+      Some(b) if self.little() => LittleEndian::read_i32(b),
+      Some(b) => BigEndian::read_i32(b),
+      None => 0,
     }
   }
 
@@ -131,80 +138,94 @@ impl Endian {
   }
 }
 
+// NOTE: these byte readers take a caller-computed `pos` that, for camera raw
+// formats, is frequently derived from offsets/lengths stored in the (untrusted)
+// file. A malformed file can make `pos` point past the end of `buf`, which with
+// a raw `&buf[pos..pos + N]` slice panics ("range … out of range"). To keep the
+// decoders panic-free on hostile input — matching the dcraw lineage and rawler's
+// own `PaddedBuf` over-read convention — an out-of-range read returns 0 (a wild
+// offset can't be served by zero-padding the buffer). On well-formed input every
+// read is in bounds, so the result is bit-identical to a direct slice read; the
+// `0` branch is only ever taken on truncated/corrupt input.
+
 #[allow(non_snake_case)]
 #[inline]
 pub fn BEi32(buf: &[u8], pos: usize) -> i32 {
-  BigEndian::read_i32(&buf[pos..pos + 4])
+  buf.get(pos..pos.saturating_add(4)).map_or(0, |b| BigEndian::read_i32(b))
 }
 
 #[allow(non_snake_case)]
 #[inline]
 pub fn LEi32(buf: &[u8], pos: usize) -> i32 {
-  LittleEndian::read_i32(&buf[pos..pos + 4])
+  buf.get(pos..pos.saturating_add(4)).map_or(0, |b| LittleEndian::read_i32(b))
 }
 
 #[allow(non_snake_case)]
 #[inline]
 pub fn BEu32(buf: &[u8], pos: usize) -> u32 {
-  BigEndian::read_u32(&buf[pos..pos + 4])
+  buf.get(pos..pos.saturating_add(4)).map_or(0, |b| BigEndian::read_u32(b))
 }
 
 #[allow(non_snake_case)]
 #[inline]
 pub fn LEu32(buf: &[u8], pos: usize) -> u32 {
-  LittleEndian::read_u32(&buf[pos..pos + 4])
+  buf.get(pos..pos.saturating_add(4)).map_or(0, |b| LittleEndian::read_u32(b))
 }
 
 #[allow(non_snake_case)]
 #[inline]
 pub fn LEf32(buf: &[u8], pos: usize) -> f32 {
-  LittleEndian::read_f32(&buf[pos..pos + 4])
+  buf.get(pos..pos.saturating_add(4)).map_or(0.0, |b| LittleEndian::read_f32(b))
 }
 
 #[allow(non_snake_case)]
 #[inline]
 pub fn LEf24(buf: &[u8], pos: usize) -> f32 {
-  let fp24: u32 = u32::from_le_bytes([buf[pos + 0], buf[pos + 1], buf[pos + 2], 0]);
+  let b = buf.get(pos..pos.saturating_add(3)).unwrap_or(&[0, 0, 0]);
+  let fp24: u32 = u32::from_le_bytes([b[0], b[1], b[2], 0]);
   f32::from_bits(extend_binary_floating_point::<Binary24, Binary32>(fp24))
 }
 
 #[allow(non_snake_case)]
 #[inline]
 pub fn BEf24(buf: &[u8], pos: usize) -> f32 {
-  let fp24: u32 = u32::from_be_bytes([0, buf[pos + 0], buf[pos + 1], buf[pos + 2]]);
+  let b = buf.get(pos..pos.saturating_add(3)).unwrap_or(&[0, 0, 0]);
+  let fp24: u32 = u32::from_be_bytes([0, b[0], b[1], b[2]]);
   f32::from_bits(extend_binary_floating_point::<Binary24, Binary32>(fp24))
 }
 
 #[allow(non_snake_case)]
 #[inline]
 pub fn LEf16(buf: &[u8], pos: usize) -> f32 {
-  let fp16: u16 = u16::from_le_bytes([buf[pos + 0], buf[pos + 1]]);
+  let b = buf.get(pos..pos.saturating_add(2)).unwrap_or(&[0, 0]);
+  let fp16: u16 = u16::from_le_bytes([b[0], b[1]]);
   f32::from_bits(extend_binary_floating_point::<Binary16, Binary32>(fp16 as u32))
 }
 
 #[allow(non_snake_case)]
 #[inline]
 pub fn BEf16(buf: &[u8], pos: usize) -> f32 {
-  let fp16: u16 = u16::from_be_bytes([buf[pos + 0], buf[pos + 1]]);
+  let b = buf.get(pos..pos.saturating_add(2)).unwrap_or(&[0, 0]);
+  let fp16: u16 = u16::from_be_bytes([b[0], b[1]]);
   f32::from_bits(extend_binary_floating_point::<Binary16, Binary32>(fp16 as u32))
 }
 
 #[allow(non_snake_case)]
 #[inline]
 pub fn BEf32(buf: &[u8], pos: usize) -> f32 {
-  BigEndian::read_f32(&buf[pos..pos + 4])
+  buf.get(pos..pos.saturating_add(4)).map_or(0.0, |b| BigEndian::read_f32(b))
 }
 
 #[allow(non_snake_case)]
 #[inline]
 pub fn BEu16(buf: &[u8], pos: usize) -> u16 {
-  BigEndian::read_u16(&buf[pos..pos + 2])
+  buf.get(pos..pos.saturating_add(2)).map_or(0, |b| BigEndian::read_u16(b))
 }
 
 #[allow(non_snake_case)]
 #[inline]
 pub fn LEu16(buf: &[u8], pos: usize) -> u16 {
-  LittleEndian::read_u16(&buf[pos..pos + 2])
+  buf.get(pos..pos.saturating_add(2)).map_or(0, |b| LittleEndian::read_u16(b))
 }
 
 #[derive(Debug, Clone)]
@@ -219,8 +240,22 @@ impl LookupTable {
       let center = table[i];
       let lower = if i > 0 { table[i - 1] } else { center };
       let upper = if i < (table.len() - 1) { table[i + 1] } else { center };
-      let base = if center == 0 { 0 } else { center - ((upper - lower + 2) / 4) };
-      let delta = upper - lower;
+      // A real lookup table is a monotonic tone curve, so `upper >= lower` and
+      // `center >= (upper - lower + 2) / 4`; these subtractions never underflow
+      // on well-formed input. An attacker-supplied (e.g. unwrapped-decoder) table
+      // can be non-monotonic, underflowing the `u16` subtraction and panicking
+      // under overflow checks (in plain release it would silently wrap, which is
+      // worse). `saturating_sub` yields the identical value whenever the curve is
+      // monotonic and clamps to 0 otherwise, so valid decodes are unchanged.
+      let delta = upper.saturating_sub(lower);
+      // Compute `(delta + 2) / 4` in u32 to avoid overflowing `u16` when delta is
+      // large (only possible for a non-monotonic, i.e. malformed, table). For a
+      // real curve delta is small so the value is identical to the u16 form.
+      let base = if center == 0 {
+        0
+      } else {
+        center.saturating_sub((((delta as u32) + 2) / 4) as u16)
+      };
       tbl[i] = (center, base, delta);
     }
     LookupTable { table: tbl }

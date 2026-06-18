@@ -92,7 +92,12 @@ impl BoxHeader {
   }
 
   pub fn end_offset(&self) -> u64 {
-    self.offset + self.size
+    // Saturating add: a corrupt box can declare a near-u64::MAX `size`, making
+    // `offset + size` overflow. A real BMFF box always ends well within u64, so
+    // the saturating sum is identical for valid input; for a corrupt size the
+    // clamp to u64::MAX makes the subsequent seek land past EOF (terminating the
+    // box loop) instead of panicking under overflow checks.
+    self.offset.saturating_add(self.size)
   }
 
   pub fn make_view<'a>(&self, buffer: &'a [u8], skip: usize, limit: usize) -> &'a [u8] {

@@ -145,6 +145,12 @@ where
   F: Fn(&mut [T], usize) -> std::result::Result<(), String> + Sync,
   T: SubPixel,
 {
+  // `par_chunks_mut(width)` panics if `width == 0`. A real image always has a
+  // non-zero width, so this guard only fires on malformed input (e.g. a crafted
+  // 0-width frame), turning the panic into a decode error.
+  if width == 0 {
+    return Err("decompress_lines_fn: image width must not be zero".to_string());
+  }
   let mut out: Pix2D<T> = alloc_image_typed_ok!(T, width, height, dummy);
   out
     .pixels_mut()
@@ -177,6 +183,11 @@ where
   D: for<'a> Decompressor<'a, T>,
   T: SubPixel,
 {
+  // `par_chunks_exact_mut(width)` panics if `width == 0`; a real image has a
+  // non-zero width, so this only guards malformed 0-width input.
+  if width == 0 {
+    return Err("decompress_lines: image width must not be zero".to_string());
+  }
   let mut out: Pix2D<T> = alloc_image_typed_ok!(T, width, height, dummy);
   out
     .pixels_mut()
@@ -212,6 +223,11 @@ where
   F: Fn(&mut [T], usize, usize) -> std::result::Result<(), String> + Sync,
   T: SubPixel,
 {
+  // `par_chunks_mut(width * stripsize)` panics if the chunk size is 0; a real
+  // image has non-zero width and stripsize, so this only guards malformed input.
+  if width == 0 || stripsize == 0 {
+    return Err("decompress_strips_fn: width and stripsize must not be zero".to_string());
+  }
   let mut out: Pix2D<T> = alloc_image_typed_ok!(T, width, height, dummy);
   out
     .pixels_mut()
@@ -249,6 +265,12 @@ where
   D: for<'a> Decompressor<'a, T>,
   T: SubPixel,
 {
+  // `par_chunks_mut(width * stripsize)` and the inner `chunks_exact_mut(width)`
+  // panic on a zero chunk size; a real image has non-zero width and stripsize,
+  // so this only guards malformed input.
+  if width == 0 || stripsize == 0 {
+    return Err("decompress_strips: width and stripsize must not be zero".to_string());
+  }
   let mut out: Pix2D<T> = alloc_image_typed_ok!(T, width, height, dummy);
   out
     .pixels_mut()
@@ -286,6 +308,11 @@ where
   F: Fn(&mut [T], usize) + Sync,
   T: SubPixel,
 {
+  // `par_chunks_mut(chunksize)` panics if `chunksize == 0`; valid callers always
+  // pass a non-zero chunk size, so this only guards malformed input.
+  if chunksize == 0 {
+    return Err("decompress_chunked_fn: chunksize must not be zero".to_string());
+  }
   let mut out: Pix2D<T> = alloc_image_typed_ok!(T, width, height, dummy);
   out.pixels_mut().par_chunks_mut(chunksize).enumerate().for_each(|(chunk_id, chunk)| {
     closure(chunk, chunk_id);

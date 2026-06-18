@@ -9,7 +9,10 @@ pub(crate) fn decode_panasonic_v4(buf: &[u8], width: usize, height: usize, split
     &(|out: &mut [u16], _strip, row| {
       let skip = ((width * row * 9) + (width / 14 * 2 * row)) / 8;
       let blocks = skip / 0x4000;
-      let src = &buf[blocks * 0x4000..];
+      // `buf` length depends on the file; a short/corrupt buffer makes this
+      // block offset exceed it. A valid RW2 strip lies inside the buffer, so the
+      // `get` succeeds and the decode is unchanged.
+      let src = buf.get(blocks * 0x4000..).ok_or("Panasonic v4: strip offset out of range")?;
       let mut pump = BitPumpPanasonic::new(src, split);
       for _ in 0..(skip % 0x4000) {
         pump.get_bits(8);

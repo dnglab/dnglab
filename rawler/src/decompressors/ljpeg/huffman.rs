@@ -134,6 +134,14 @@ impl HuffTable {
       for _ in 0..self.bits[len as usize + 1] {
         // Fill for all possible extra bits, payload is always the same for fast lookup bases on peek_bits(self.nbits)
         for _ in 0..(1 << (self.nbits - len - 1)) {
+          // A valid Huffman table satisfies the Kraft inequality, so the filled
+          // slot count never exceeds `hufftable.len()` (= 1 << nbits) and `pos`
+          // stays inside `huffval`. A crafted/over-full code distribution can
+          // overrun both; reject it instead of panicking. Valid tables are
+          // unaffected.
+          if h >= self.hufftable.len() || pos >= self.huffval.len() {
+            return Err("LJPEG: Huffman table is over-full (invalid code lengths)".to_string());
+          }
           self.hufftable[h] = (len as u8 + 1, self.huffval[pos] as u8, self.shiftval[pos] as u8);
           h += 1;
         }

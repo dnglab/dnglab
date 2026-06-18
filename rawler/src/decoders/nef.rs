@@ -719,7 +719,10 @@ impl<'a> NefDecoder<'a> {
       height,
       dummy,
       &(|out: &mut [u16], row| {
-        let inb = &src[row * width * 3..];
+        // `row * width * 3` indexes the file-derived source; a short buffer makes
+        // the per-row offset exceed it. A valid SNEF frame has each row present,
+        // so the slice is unchanged; otherwise this errors instead of panicking.
+        let inb = src.get(row * width * 3..).ok_or_else(|| format!("SNEF: row {} offset out of range", row))?;
         let mut random = BEu32(inb, 0);
         for (o, i) in out.chunks_exact_mut(6).zip(inb.chunks_exact(6)) {
           let g1: u16 = i[0] as u16;
@@ -738,17 +741,22 @@ impl<'a> NefDecoder<'a> {
           let g = snef_curve.dither(clampbits((y1 - 0.337633 * cb - 0.698001 * cr) as i32, 12), &mut random);
           let b = snef_curve.dither(clampbits((y1 + 1.732446 * cb) as i32, 12), &mut random);
           // invert the white balance
-          o[0] = clampbits((inv_wb_r * r as i32 + (1 << 9)) >> 10, 15);
+          // `inv_wb_*` is `(1024.0 / coeff) as i32`; for valid white-balance
+          // coefficients this is a small multiplier and `inv_wb * v` fits in
+          // i32. A crafted near-zero coefficient makes `inv_wb` saturate to
+          // i32::MAX, overflowing the i32 product. Compute in i64 (the result is
+          // clamped to 15 bits anyway), which is identical for valid input.
+          o[0] = clampbits(((inv_wb_r as i64 * r as i64 + (1 << 9)) >> 10) as i32, 15);
           o[1] = g;
-          o[2] = clampbits((inv_wb_b * b as i32 + (1 << 9)) >> 10, 15);
+          o[2] = clampbits(((inv_wb_b as i64 * b as i64 + (1 << 9)) >> 10) as i32, 15);
 
           let r = snef_curve.dither(clampbits((y2 + 1.370705 * cr) as i32, 12), &mut random);
           let g = snef_curve.dither(clampbits((y2 - 0.337633 * cb - 0.698001 * cr) as i32, 12), &mut random);
           let b = snef_curve.dither(clampbits((y2 + 1.732446 * cb) as i32, 12), &mut random);
-          // invert the white balance
-          o[3] = clampbits((inv_wb_r * r as i32 + (1 << 9)) >> 10, 15);
+          // invert the white balance (see above; computed in i64 to avoid overflow)
+          o[3] = clampbits(((inv_wb_r as i64 * r as i64 + (1 << 9)) >> 10) as i32, 15);
           o[4] = g;
-          o[5] = clampbits((inv_wb_b * b as i32 + (1 << 9)) >> 10, 15);
+          o[5] = clampbits(((inv_wb_b as i64 * b as i64 + (1 << 9)) >> 10) as i32, 15);
         }
         Ok(())
       }),

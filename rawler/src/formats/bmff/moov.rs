@@ -66,7 +66,16 @@ impl<R: Read + Seek> ReadBox<&mut R> for MoovBox {
         }
       }
 
-      current = reader.stream_position()?;
+      let new_pos = reader.stream_position()?;
+      if new_pos <= current {
+        // A child box that did not advance the cursor (corrupt/zero-size box)
+        // would otherwise loop forever, pushing entries until the Vec exhausts
+        // memory. A valid moov always advances past each child, so this guard
+        // never fires on well-formed input. Mirrors the same guard in
+        // `FileBox::parse`.
+        return Err(BmffError::Parse("moov: child box did not advance, corrupt file?".into()));
+      }
+      current = new_pos;
     }
 
     reader.seek(SeekFrom::Start(header.end_offset()))?;

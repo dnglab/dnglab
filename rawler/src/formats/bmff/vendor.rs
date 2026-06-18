@@ -12,7 +12,10 @@ pub struct VendorBox {
 
 impl<R: Read + Seek> ReadBox<&mut R> for VendorBox {
   fn read_box(reader: &mut R, header: BoxHeader) -> Result<Self> {
-    reader.seek(SeekFrom::Start(header.offset + header.size))?;
+    // Use the saturating `end_offset()` instead of `offset + size`, which
+    // overflows for a corrupt near-u64::MAX box size. Valid boxes are unchanged;
+    // a corrupt size seeks past EOF and the box loop terminates.
+    reader.seek(SeekFrom::Start(header.end_offset()))?;
 
     Ok(Self { header })
   }

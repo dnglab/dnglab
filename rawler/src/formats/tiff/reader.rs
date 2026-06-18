@@ -291,6 +291,19 @@ impl<'a, R: Read + Seek + 'a> EndianReader<'a, R> {
     Ok(self.inner.stream_position().map(|v| v as u32)?)
   }
 
+  /// Total length of the underlying stream in bytes.
+  ///
+  /// Used to reject entry counts that point past the end of the file *before*
+  /// allocating their backing buffer, so a corrupt count can't drive a huge
+  /// allocation. Restores the original stream position so callers are
+  /// unaffected.
+  pub fn stream_len(&mut self) -> Result<u64> {
+    let cur = self.inner.stream_position()?;
+    let end = self.inner.seek(SeekFrom::End(0))?;
+    self.inner.seek(SeekFrom::Start(cur))?;
+    Ok(end)
+  }
+
   // TODO: try_from?
 
   pub fn goto(&mut self, offset: u32) -> Result<()> {

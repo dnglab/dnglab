@@ -37,7 +37,13 @@ impl<'a> BitPumpLSB<'a> {
           .fold((0, 0), |(bits, bit_cnt), x| ((bits << 8) | *x as u32, bit_cnt + 8))
       }
     } else {
-      panic!("Can't refill bitpump, buffer exhausted");
+      // Buffer exhausted: yield 32 phantom zero bits instead of panicking. A
+      // valid (correctly-sized) bitstream never refills past its end before the
+      // decode finishes, so this is invisible to well-formed input; a truncated
+      // stream reads zeros past EOF (the same over-read-returns-zero convention
+      // used by the byte readers / PaddedBuf) rather than crashing. Returning a
+      // full 32-bit width keeps `nbits >= num` so `peek_bits` can't underflow.
+      (0, u32::BITS)
     }
   }
 }
@@ -74,7 +80,9 @@ impl<'a> BitPumpMSB<'a> {
         chunk.into_iter().fold((0, 0), |(bits, bit_cnt), x| ((bits << 8) | *x as u32, bit_cnt + 8))
       }
     } else {
-      panic!("Can't refill bitpump, buffer exhausted");
+      // Buffer exhausted: yield 32 phantom zero bits instead of panicking (see
+      // BitPumpLSB::refill for rationale). Invisible to valid bitstreams.
+      (0, u32::BITS)
     }
   }
 }
@@ -116,7 +124,9 @@ impl<'a> BitPumpMSB32<'a> {
           .fold((0, 0), |(bits, bit_cnt), x| ((bits << 8) | *x as u32, bit_cnt + 8))
       }
     } else {
-      panic!("Can't refill bitpump, buffer exhausted");
+      // Buffer exhausted: yield 32 phantom zero bits instead of panicking (see
+      // BitPumpLSB::refill for rationale). Invisible to valid bitstreams.
+      (0, u32::BITS)
     }
   }
 
@@ -216,7 +226,10 @@ impl<'a> BitPump for BitPumpLSB<'a> {
 
   #[inline(always)]
   fn consume_bits(&mut self, num: u32) {
-    self.nbits -= num;
+    // `saturating_sub` only differs from `-` when more bits are consumed than
+    // were available, which happens solely on a truncated bitstream; valid
+    // streams never over-consume here.
+    self.nbits = self.nbits.saturating_sub(num);
     self.bits >>= num;
   }
 }
@@ -229,13 +242,17 @@ impl<'a> BitPump for BitPumpMSB<'a> {
       self.bits = (self.bits << bit_cnt) | inbits as u64;
       self.nbits += bit_cnt;
     }
-    (self.bits >> (self.nbits - num)) as u32
+    // `nbits - num` underflows only when a single refill couldn't satisfy `num`
+    // (a truncated final chunk yields < 32 bits). For a valid, complete
+    // bitstream `nbits >= num` always holds here, so the shift is identical;
+    // `saturating_sub` just keeps a truncated stream from panicking.
+    (self.bits >> self.nbits.saturating_sub(num)) as u32
   }
 
   #[inline(always)]
   fn consume_bits(&mut self, num: u32) {
-    self.nbits -= num;
-    self.bits &= (1 << self.nbits) - 1;
+    self.nbits = self.nbits.saturating_sub(num);
+    self.bits &= (1u64 << self.nbits) - 1;
   }
 }
 
@@ -248,13 +265,15 @@ impl<'a> BitPump for BitPumpMSB32<'a> {
       self.nbits += bit_cnt;
       self.pos += bit_cnt as usize / 8;
     }
-    (self.bits >> (self.nbits - num)) as u32
+    // `saturating_sub` only diverges from `-` on a truncated bitstream where a
+    // single refill couldn't supply `num` bits; valid streams are unchanged.
+    (self.bits >> self.nbits.saturating_sub(num)) as u32
   }
 
   #[inline(always)]
   fn consume_bits(&mut self, num: u32) {
-    self.nbits -= num;
-    self.bits &= (1 << self.nbits) - 1;
+    self.nbits = self.nbits.saturating_sub(num);
+    self.bits &= (1u64 << self.nbits) - 1;
   }
 }
 
@@ -285,7 +304,11 @@ impl<'a> BitPump for BitPumpJPEG<'a> {
               let nextbyte = self.buffer[self.pos];
               if nextbyte != 0xff {
                 nextbyte
-              } else if self.buffer[self.pos + 1] == 0x00 {
+              } else if self.buffer.get(self.pos + 1) == Some(&0x00) {
+                // `buffer[self.pos + 1]` was indexed directly; when the 0xff is
+                // the final byte, `pos + 1` is out of range. Treat a missing
+                // marker byte as "not a stuffed 0x00" (i.e. end of scan), which
+                // matches valid JPEG where the marker byte is always present.
                 self.pos += 1; // Skip the extra byte used to mark 255
                 nextbyte
               } else {
@@ -301,20 +324,22 @@ impl<'a> BitPump for BitPumpJPEG<'a> {
         }
       }
     }
-    if num > self.nbits && self.finished {
-      // Stuff with zeroes to not fail to read
+    while num > self.nbits && self.finished {
+      // Stuff with zeroes to not fail to read. Loop so a `num` larger than a
+      // single 32-bit stuff is still satisfied (valid JPEG never needs this, but
+      // it keeps a truncated stream from underflowing the shift below).
       self.bits <<= 32;
       self.nbits += 32;
     }
 
-    (self.bits >> (self.nbits - num)) as u32
+    (self.bits >> self.nbits.saturating_sub(num)) as u32
   }
 
   #[inline(always)]
   fn consume_bits(&mut self, num: u32) {
     debug_assert!(num <= self.nbits);
-    self.nbits -= num;
-    self.bits &= (1 << self.nbits) - 1;
+    self.nbits = self.nbits.saturating_sub(num);
+    self.bits &= (1u64 << self.nbits) - 1;
   }
 }
 
@@ -473,12 +498,14 @@ impl<'a> BitPump for BitPumpReverseBitsMSB<'a> {
       self.pos += 4;
       self.nbits += 32;
     }
-    (self.bits >> (self.nbits - num)) as u32
+    // Defensive `saturating_sub` (a single 32-bit refill always satisfies the
+    // asserted `num <= 32`, so this is identical for valid use).
+    (self.bits >> self.nbits.saturating_sub(num)) as u32
   }
 
   #[inline(always)]
   fn consume_bits(&mut self, num: u32) {
-    self.nbits -= num;
-    self.bits &= (1 << self.nbits) - 1;
+    self.nbits = self.nbits.saturating_sub(num);
+    self.bits &= (1u64 << self.nbits) - 1;
   }
 }

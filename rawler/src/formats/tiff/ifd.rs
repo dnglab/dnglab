@@ -54,7 +54,11 @@ impl IFD {
   }
 
   pub fn new_root_with_correction<R: Read + Seek>(reader: &mut R, offset: u32, base: u32, corr: i32, max_chain: usize, sub_tags: &[u16]) -> Result<IFD> {
-    reader.seek(SeekFrom::Start((base + offset) as u64))?;
+    // Widen before adding: `base + offset` as `u32 + u32` overflows when the
+    // file supplies a near-u32::MAX IFD pointer, panicking under overflow
+    // checks. The 64-bit sum is the same seek target for any in-file offset, so
+    // valid files are unaffected; an out-of-range target simply fails the read.
+    reader.seek(SeekFrom::Start(base as u64 + offset as u64))?;
     let endian = match reader.read_u16::<LittleEndian>()? {
       0x4949 => Endian::Little,
       0x4d4d => Endian::Big,
@@ -101,7 +105,11 @@ impl IFD {
   }
 
   pub fn new<R: Read + Seek>(reader: &mut R, offset: u32, base: u32, corr: i32, endian: Endian, sub_tags: &[u16]) -> Result<IFD> {
-    reader.seek(SeekFrom::Start((base + offset) as u64))?;
+    // Widen before adding: `base + offset` as `u32 + u32` overflows when the
+    // file supplies a near-u32::MAX IFD pointer, panicking under overflow
+    // checks. The 64-bit sum is the same seek target for any in-file offset, so
+    // valid files are unaffected; an out-of-range target simply fails the read.
+    reader.seek(SeekFrom::Start(base as u64 + offset as u64))?;
     let mut sub_ifd_offsets = HashMap::new();
     let mut reader = EndianReader::new(reader, endian);
     let entry_count = reader.read_u16()?;
@@ -154,7 +162,15 @@ impl IFD {
                 sub_ifd_offsets.insert(tag, offsets.clone());
               }
               Value::Unknown(tag, offsets) => {
-                sub_ifd_offsets.insert(*tag, vec![offsets[0] as u32]);
+                // A SubIFD pointer always carries at least one offset; a corrupt
+                // entry with count 0 leaves `offsets` empty and `offsets[0]`
+                // panics. Skip an empty offset list instead — valid files always
+                // have an offset here, so their behaviour is unchanged.
+                if let Some(&first) = offsets.first() {
+                  sub_ifd_offsets.insert(*tag, vec![first as u32]);
+                } else {
+                  log::warn!("SubIFD entry for tag 0x{:X} has empty offset list, skipping", tag);
+                }
               }
               Value::Undefined(_) => {
                 if let Some(offset) = entry.offset() {
@@ -240,7 +256,11 @@ impl IFD {
 
   /*
   pub fn new<R: Read + Seek>(reader: &mut R, offset: u32, base: u32, corr: i32, endian: Endian, sub_tags: &[u16]) -> Result<Self> {
-    reader.seek(SeekFrom::Start((base + offset) as u64))?;
+    // Widen before adding: `base + offset` as `u32 + u32` overflows when the
+    // file supplies a near-u32::MAX IFD pointer, panicking under overflow
+    // checks. The 64-bit sum is the same seek target for any in-file offset, so
+    // valid files are unaffected; an out-of-range target simply fails the read.
+    reader.seek(SeekFrom::Start(base as u64 + offset as u64))?;
     let mut sub_ifd_offsets = Vec::new();
     let mut reader = EndianReader::new(reader, endian);
     let entry_count = reader.read_u16()?;

@@ -6,6 +6,7 @@ use crate::RawLoader;
 use crate::RawlerError;
 use crate::Result;
 use crate::alloc_image;
+use crate::alloc_image_ok;
 use crate::analyze::FormatDump;
 use crate::bits::LEu32;
 use crate::bits::clampbits;
@@ -106,7 +107,7 @@ impl<'a> Decoder for SrwDecoder<'a> {
         }
       },
       32772 => SrwDecoder::decode_srw2(&src, width, height, dummy),
-      32773 => SrwDecoder::decode_srw3(&src, width, height, dummy),
+      32773 => SrwDecoder::decode_srw3(&src, width, height, dummy)?,
       x => {
         return Err(RawlerError::unsupported(
           &self.camera,
@@ -140,7 +141,12 @@ impl<'a> SrwDecoder<'a> {
     for row in 0..height {
       let mut len: [u32; 4] = [if row < 2 { 7 } else { 4 }; 4];
       let loffset = LEu32(loffsets, row * 4) as usize;
-      let mut pump = BitPumpMSB32::new(&buf[loffset..]);
+      // `loffset` is a per-row offset read from the (untrusted) line-offset table
+      // and can point past `buf` on a corrupt file. For a valid SRW1 stream each
+      // row offset lands inside the buffer, so this is the same slice; an
+      // out-of-range offset yields an empty bitstream (decoding zeros) instead of
+      // panicking.
+      let mut pump = BitPumpMSB32::new(buf.get(loffset..).unwrap_or(&[]));
 
       let img = width * row;
       let img_up = width * (cmp::max(1, row) - 1);
@@ -154,8 +160,11 @@ impl<'a> SrwDecoder<'a> {
         for (i, op) in ops.iter().enumerate() {
           match *op {
             3 => len[i] = pump.get_bits(4),
-            2 => len[i] -= 1,
-            1 => len[i] += 1,
+            // For a valid SRW1 the op sequence keeps `len` in a sane bit-count
+            // range, so these never underflow/overflow; saturating arithmetic is
+            // identical for valid input and avoids a panic on a crafted op stream.
+            2 => len[i] = len[i].saturating_sub(1),
+            1 => len[i] = len[i].saturating_add(1),
             _ => {}
           }
         }
@@ -164,14 +173,20 @@ impl<'a> SrwDecoder<'a> {
         for c in (0..16).step_by(2) {
           let l = len[c >> 3];
           let adj = pump.get_ibits_sextended(l);
-          let predictor = if dir {
-            // Upward prediction
-            out[img_up + col + c]
-          } else {
-            // Left to right prediction
-            if col == 0 { 128 } else { out[img + col - 2] }
-          };
+          // The predictor is only used to write a pixel that lies inside the
+          // image (`col + c < width`), and the upward read `out[img_up + col + c]`
+          // is in bounds exactly when that holds. For a valid SRW1 frame (width a
+          // multiple of 16) the read is always in range; computing the predictor
+          // only when the pixel is in-image leaves valid output unchanged while
+          // avoiding an out-of-bounds read on a crafted non-multiple-of-16 width.
           if col + c < width {
+            let predictor = if dir {
+              // Upward prediction
+              out[img_up + col + c]
+            } else {
+              // Left to right prediction
+              if col == 0 { 128 } else { out[img + col - 2] }
+            };
             // No point in decoding pixels outside the image
             out[img + col + c] = ((predictor as i32) + adj) as u16;
           }
@@ -180,14 +195,14 @@ impl<'a> SrwDecoder<'a> {
         for c in (1..16).step_by(2) {
           let l = len[2 | (c >> 3)];
           let adj = pump.get_ibits_sextended(l);
-          let predictor = if dir {
-            // Upward prediction
-            out[img_up2 + col + c]
-          } else {
-            // Left to right prediction
-            if col == 0 { 128 } else { out[img + col - 1] }
-          };
           if col + c < width {
+            let predictor = if dir {
+              // Upward prediction
+              out[img_up2 + col + c]
+            } else {
+              // Left to right prediction
+              if col == 0 { 128 } else { out[img + col - 1] }
+            };
             // No point in decoding pixels outside the image
             out[img + col + c] = ((predictor as i32) + adj) as u16;
           }
@@ -198,9 +213,18 @@ impl<'a> SrwDecoder<'a> {
     // SRW1 apparently has red and blue swapped, just changing the CFA pattern to
     // match causes color fringing in high contrast areas because the actual pixel
     // locations would not match the CFA pattern
+    let pixel_count = width * height;
     for row in (0..height).step_by(2) {
       for col in (0..width).step_by(2) {
-        out.pixels_mut().swap(row * width + col + 1, (row + 1) * width + col);
+        // For a valid SRW1 (even width and height, Bayer layout) both swap
+        // indices are always in bounds; only a crafted odd width/height pushes
+        // `(row + 1) * width + col` past the end. Skip the out-of-range swap
+        // instead of panicking — valid frames swap exactly as before.
+        let a = row * width + col + 1;
+        let b = (row + 1) * width + col;
+        if a < pixel_count && b < pixel_count {
+          out.pixels_mut().swap(a, b);
+        }
       }
     }
 
@@ -286,7 +310,7 @@ impl<'a> SrwDecoder<'a> {
     diff
   }
 
-  pub fn decode_srw3(buf: &[u8], width: usize, height: usize, dummy: bool) -> PixU16 {
+  pub fn decode_srw3(buf: &[u8], width: usize, height: usize, dummy: bool) -> std::result::Result<PixU16, String> {
     // Decoder for third generation compressed SRW files (NX1)
     // Seriously Samsung just use lossless jpeg already, it compresses better too :)
 
@@ -294,7 +318,7 @@ impl<'a> SrwDecoder<'a> {
     // and Loring von Palleske (Samsung) for pointing to the open-source code of
     // Samsung's DNG converter at http://opensource.samsung.com/
 
-    let mut out = alloc_image!(width, height, dummy);
+    let mut out = alloc_image_ok!(width, height, dummy);
     let mut pump = BitPumpMSB32::new(buf);
 
     // Process the initial metadata bits, we only really use initVal, width and
@@ -335,7 +359,11 @@ impl<'a> SrwDecoder<'a> {
       if (line_offset & 0x0f) != 0 {
         line_offset += 16 - (line_offset & 0xf);
       }
-      pump = BitPumpMSB32::new(&buf[line_offset..]);
+      // `line_offset` accumulates from per-line bit positions; for a valid NX1
+      // stream each line starts within the buffer, so this slice is unchanged. A
+      // corrupt stream that walks past the end yields an empty (exhaustion-safe)
+      // bit pump instead of panicking.
+      pump = BitPumpMSB32::new(buf.get(line_offset..).unwrap_or(&[]));
 
       let img = width * row;
       let img_up = width * (cmp::max(1, row) - 1);
@@ -370,41 +398,70 @@ impl<'a> SrwDecoder<'a> {
         }
 
         if row < 2 && motion != 7 {
-          panic!("SRW Decoder: At start of image and motion isn't 7. File corrupted?")
+          // Reachable only on a corrupt stream (a valid NX1 always has motion==7
+          // on the first two rows); return an error instead of panicking.
+          return Err("SRW Decoder: At start of image and motion isn't 7. File corrupted?".to_string());
         }
 
         if motion == 7 {
           // The base case, just set all pixels to the previous ones on the same line
           // If we're at the left edge we just start at the initial value
+          // For a valid NX1 frame (width a multiple of 16) `img + col + i` is
+          // always in bounds; guard against a crafted non-multiple-of-16 width
+          // that would index past the buffer. The same-line back-reference
+          // (`- 2`) reads a previously-written pixel and is read as 0 if missing.
           for i in 0..16 {
-            out[img + col + i] = if col == 0 { init_val } else { out[img + col + i - 2] };
+            let value = if col == 0 {
+              init_val
+            } else {
+              out.pixels().get(img + col + i - 2).copied().unwrap_or(0)
+            };
+            if let Some(slot) = out.pixels_mut().get_mut(img + col + i) {
+              *slot = value;
+            }
           }
         } else {
           // The complex case, we now need to actually lookup one or two lines above
           if row < 2 {
-            panic!("SRW: Got a previous line lookup on first two lines. File corrupted?");
+            // Reachable only on a corrupt stream; a valid NX1 never does a
+            // previous-line lookup on the first two rows.
+            return Err("SRW: Got a previous line lookup on first two lines. File corrupted?".to_string());
           }
+          // `motion` is bounded to 0..=7 by the 3-bit reads above, but guard the
+          // table index defensively.
           let motion_offset: [isize; 7] = [-4, -2, -2, 0, 0, 2, 4];
           let motion_average: [i32; 7] = [0, 0, 1, 0, 1, 0, 0];
-          let slide_offset = motion_offset[motion];
+          let slide_offset = *motion_offset.get(motion).ok_or("SRW: motion index out of range")?;
+          let motion_avg = *motion_average.get(motion).ok_or("SRW: motion index out of range")?;
 
           for i in 0..16 {
-            let refpixel: usize = if ((row + i) & 0x1) != 0 {
+            let refpixel: isize = if ((row + i) & 0x1) != 0 {
               // Red or blue pixels use same color two lines up
-              ((img_up2 + col + i) as isize + slide_offset) as usize
+              (img_up2 + col + i) as isize + slide_offset
             } else {
               // Green pixel N uses Green pixel N from row above (top left or top right)
               if (i % 2) != 0 {
-                ((img_up + col + i - 1) as isize + slide_offset) as usize
+                (img_up + col + i - 1) as isize + slide_offset
               } else {
-                ((img_up + col + i + 1) as isize + slide_offset) as usize
+                (img_up + col + i + 1) as isize + slide_offset
               }
             };
+            // `refpixel` is computed with a signed slide offset; for a valid NX1
+            // it always lands inside the buffer, but a corrupt stream can push it
+            // negative or past the end. Read 0 for an out-of-range reference
+            // instead of panicking (or wrapping a negative index to a huge usize).
+            let get_ref = |p: isize| -> u16 { if p < 0 { 0 } else { out.pixels().get(p as usize).copied().unwrap_or(0) } };
             // In some cases we use as reference interpolation of this pixel and the next
-            out[img + col + i] = if motion_average[motion] != 0 {
-              (out[refpixel] + out[refpixel + 2] + 1) >> 1
+            let value = if motion_avg != 0 {
+              // Average two reference pixels. Widen to u32 for the sum: two
+              // in-range pixels can sum past u16::MAX, overflowing the u16 add
+              // (the `>> 1` brings it back in range). Identical for valid pixels.
+              (((get_ref(refpixel) as u32) + (get_ref(refpixel + 2) as u32) + 1) >> 1) as u16
             } else {
-              out[refpixel]
+              get_ref(refpixel)
+            };
+            if let Some(slot) = out.pixels_mut().get_mut(img + col + i) {
+              *slot = value;
             }
           }
         }
@@ -424,7 +481,10 @@ impl<'a> SrwDecoder<'a> {
                 diff_bits[i] = diff_bits_mode[colornum][0] + 1;
               }
               2 => {
-                diff_bits[i] = diff_bits_mode[colornum][0] - 1;
+                // A valid stream keeps `diff_bits_mode[..][0] >= 1` here; guard
+                // the subtraction against a corrupt 0 value (saturating matches
+                // the valid case where the value is always >= 1).
+                diff_bits[i] = diff_bits_mode[colornum][0].saturating_sub(1);
               }
               3 => {
                 diff_bits[i] = pump.get_bits(4);
@@ -434,7 +494,9 @@ impl<'a> SrwDecoder<'a> {
             diff_bits_mode[colornum][0] = diff_bits_mode[colornum][1];
             diff_bits_mode[colornum][1] = diff_bits[i];
             if diff_bits[i] > bit_depth + 1 {
-              panic!("SRW Decoder: Too many difference bits. File corrupted?");
+              // Reachable only on a corrupt stream; return an error instead of
+              // panicking.
+              return Err("SRW Decoder: Too many difference bits. File corrupted?".to_string());
             }
           }
         }
@@ -452,12 +514,17 @@ impl<'a> SrwDecoder<'a> {
             ((i & 0x7) << 1) + (i >> 3)
           } + img
             + col;
-          out[pos] = clampbits((out[pos] as i32) + diff, bit_depth);
+          // `pos` is bounded for a valid NX1 frame; guard against a corrupt
+          // stream pushing it past the buffer end (e.g. a non-multiple-of-16
+          // width) by skipping the out-of-range write.
+          if let Some(slot) = out.pixels_mut().get_mut(pos) {
+            *slot = clampbits((*slot as i32) + diff, bit_depth);
+          }
         }
       }
     }
 
-    out
+    Ok(out)
   }
 
   /// Get lens description by analyzing TIFF tags and makernotes

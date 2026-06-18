@@ -26,7 +26,14 @@ impl<R: Read + Seek> ReadBox<&mut R> for FtypBox {
     if header.size % 4 != 0 {
       return Err(BmffError::Parse("invalid ftyp size".into()));
     }
-    let brand_count = (header.size - 16) / 4; // header + major + minor
+    // `size - 16` underflows for a corrupt ftyp smaller than its fixed header
+    // (8) + major (4) + minor (4) = 16 bytes. A valid ftyp is always >= 16, so
+    // this check never fires on well-formed input.
+    let brand_count = header
+      .size
+      .checked_sub(16)
+      .ok_or_else(|| BmffError::Parse("invalid ftyp size (too small)".into()))?
+      / 4; // header + major + minor
 
     let mut brands = Vec::new();
     for _ in 0..brand_count {

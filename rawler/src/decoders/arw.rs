@@ -448,7 +448,11 @@ impl<'a> ArwDecoder<'a> {
       height,
       dummy,
       &(|out: &mut [u16], row| {
-        let mut pump = BitPumpLSB::new(&buf[(row * width)..]);
+        // `row * width` indexes into the file-derived `buf`; a short buffer makes
+        // the per-row start exceed it. A valid ARW2 frame has a row at this
+        // offset, so the slice is unchanged; otherwise the bit pump reads zeros
+        // past EOF (it is itself exhaustion-safe).
+        let mut pump = BitPumpLSB::new(buf.get((row * width)..).unwrap_or(&[]));
 
         let mut random = pump.peek_bits(16);
         for out in out.chunks_exact_mut(32) {
@@ -456,7 +460,9 @@ impl<'a> ArwDecoder<'a> {
           for j in 0..2 {
             let max = pump.get_bits(11);
             let min = pump.get_bits(11);
-            let delta = max - min;
+            // A corrupt bitstream can yield min > max; `saturating_sub` matches
+            // the real (max >= min) value and avoids an underflow panic.
+            let delta = max.saturating_sub(min);
             // Calculate the size of the data shift needed by how large the delta is
             // A delta with 11 bits requires a shift of 4, 10 bits of 3, etc
             let delta_shift: u32 = cmp::max(0, (32 - (delta.leading_zeros() as i32)) - 7) as u32;

@@ -56,7 +56,13 @@ impl<R: Read + Seek> ReadBox<&mut R> for MinfBox {
         }
       }
 
-      current = reader.stream_position()?;
+      let new_pos = reader.stream_position()?;
+      if new_pos <= current {
+        // Guard against a non-advancing (corrupt/zero-size) child box that would
+        // otherwise spin forever and exhaust memory. Valid boxes always advance.
+        return Err(BmffError::Parse("minf: child box did not advance, corrupt file?".into()));
+      }
+      current = new_pos;
     }
 
     reader.seek(SeekFrom::Start(header.end_offset()))?;

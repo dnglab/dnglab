@@ -147,7 +147,11 @@ impl<'a> MrwDecoder<'a> {
   fn new_mrw(file: &RawSource, rawloader: &'a RawLoader) -> Result<MrwDecoder<'a>> {
     let full = file.as_vec()?;
     let buf = &full;
-    let data_offset: usize = (BEu32(buf, 4) + 8) as usize;
+    // Widen before adding: `BEu32(..) + 8` as `u32 + u32` overflows when the
+    // file stores a near-u32::MAX length, panicking under overflow checks. The
+    // widened sum is identical for any real MRW data offset, so valid files are
+    // unchanged.
+    let data_offset: usize = BEu32(buf, 4) as usize + 8;
     let mut raw_height: usize = 0;
     let mut raw_width: usize = 0;
     let bits = 12;
@@ -166,7 +170,12 @@ impl<'a> MrwDecoder<'a> {
           // PRD
           raw_height = BEu16(buf, currpos + 16) as usize;
           raw_width = BEu16(buf, currpos + 18) as usize;
-          packed = buf[currpos + 24] == 12;
+          // `buf[currpos + 24]` indexed directly; the loop only guarantees
+          // `currpos + 20 < data_offset`, so on a corrupt/short file this can
+          // read past the end and panic. A missing byte is treated as 0 (not
+          // `12`, i.e. not packed) — for a valid PRD block the byte is present
+          // so the result is unchanged.
+          packed = buf.get(currpos + 24).copied().unwrap_or(0) == 12;
         }
         0x574247 => {
           // WBG
@@ -182,7 +191,11 @@ impl<'a> MrwDecoder<'a> {
         }
         _ => {}
       }
-      currpos += (len + 8) as usize;
+      // Widen before adding: `len + 8` as `u32 + u32` overflows when a block
+      // declares a near-u32::MAX length, panicking under overflow checks.
+      // Widening to usize matches the value for any real block length; the
+      // loop's `currpos + 20 < data_offset` guard still terminates the scan.
+      currpos += len as usize + 8;
     }
 
     let tiff_data = file.subview_until_eof(tiffpos as u64)?;

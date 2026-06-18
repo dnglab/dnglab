@@ -58,8 +58,15 @@ impl<R: Read + Seek> ReadSegment<&mut R> for App0 {
         let ydensity = reader.read_u16::<BigEndian>()?;
         let xthumbnail = reader.read_u8()?;
         let ythumbnail = reader.read_u8()?;
-        let thumbnail = if xthumbnail * ythumbnail > 0 {
-          let mut data = vec![0; (3 * xthumbnail * ythumbnail) as usize];
+        // Widen before multiplying: `xthumbnail * ythumbnail` as `u8 * u8`
+        // overflows (e.g. 16 * 16) and panics under overflow checks. The
+        // widened product is the same value for any real thumbnail size, so
+        // valid files are unaffected; only the overflow panic on crafted
+        // dimensions is removed. The subsequent `read_exact` still bounds the
+        // actual allocation to the bytes present in the file.
+        let thumbnail_pixels = xthumbnail as usize * ythumbnail as usize;
+        let thumbnail = if thumbnail_pixels > 0 {
+          let mut data = vec![0; 3 * thumbnail_pixels];
           reader.read_exact(&mut data)?;
           Some(data)
         } else {
@@ -179,7 +186,16 @@ impl<R: Read + Seek> ReadSegment<&mut R> for App1 {
       reader.read_exact(&mut xmp_str)?;
       if xmp_str == APP1_XMP_MARKER.as_bytes() {
         log::debug!("Found APP1 XMP marker");
-        let mut xpacket = vec![0; len as usize - xmp_str.len() - 2];
+        // `len` includes the 2-byte length field and the XMP marker; a corrupt
+        // `len` smaller than `marker + 2` would underflow this subtraction. The
+        // outer guard only ensures `len >= marker.len()`, not `>= marker.len() +
+        // 2`, so a crafted `len` of exactly the marker length reaches here. A
+        // valid XMP segment always satisfies `len >= marker.len() + 2`, so this
+        // check never fires on well-formed input.
+        let xpacket_len = (len as usize)
+          .checked_sub(xmp_str.len() + 2)
+          .ok_or_else(|| JfifError::General(format!("Invalid APP1 XMP segment length {}", len)))?;
+        let mut xpacket = vec![0; xpacket_len];
         reader.read_exact(&mut xpacket)?;
         reader.seek(SeekFrom::Start(pos + len))?;
         return Ok(Self {
@@ -232,6 +248,15 @@ impl Jfif {
           Ok(app1) => Segment::APP1 { offset: pos, app1 },
           Err(err) => {
             log::warn!("Failed to read APP1 (EXIF) segement, maybe corrupt: {:?}", err);
+            // Advance past this marker before retrying. The bare `continue`
+            // here did not update `sym`/`pos`, so a corrupt/truncated APP1
+            // (e.g. a JFIF with a partial EXIF segment) re-processed the same
+            // stale `0xFFE1` symbol forever. On a well-formed file this branch
+            // is never taken (the segment parses), so reading the next symbol
+            // here only changes the malformed path: we skip the bad segment
+            // and continue marker scanning instead of hanging.
+            pos = reader.stream_position()?;
+            sym = reader.read_u16::<BigEndian>().ok();
             continue;
           }
         },
@@ -243,7 +268,15 @@ impl Jfif {
         _ => {
           log::debug!("Unhandled JFIF segment marker: {:X}", symbol);
           let len: u64 = reader.read_u16::<BigEndian>()? as u64;
-          reader.seek(SeekFrom::Current(len as i64 - 2))?;
+          // A JFIF segment length is inclusive of its own 2-byte length field,
+          // so a well-formed segment always has `len >= 2`. A corrupt `len < 2`
+          // would seek backwards (`len - 2 < 0`) and re-read the same marker
+          // forever; reject it instead. Valid files never take this branch.
+          let skip = (len as i64)
+            .checked_sub(2)
+            .filter(|&n| n >= 0)
+            .ok_or_else(|| JfifError::General(format!("Invalid JFIF segment length {} for marker {:X}", len, symbol)))?;
+          reader.seek(SeekFrom::Current(skip))?;
 
           Segment::Unknown { offset: pos, marker: symbol }
         }

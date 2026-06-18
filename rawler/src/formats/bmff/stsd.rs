@@ -3,7 +3,7 @@
 // Copyright 2021 Daniel Vogelbacher <daniel@chaospixel.com>
 
 use super::{
-  BoxHeader, FourCC, ReadBox, Result,
+  BmffError, BoxHeader, FourCC, ReadBox, Result,
   ext_cr3::{craw::CrawBox, ctmd::CtmdBox},
   read_box_header_ext,
   vendor::VendorBox,
@@ -63,7 +63,13 @@ impl<R: Read + Seek> ReadBox<&mut R> for StsdBox {
         }
       }
 
-      current = reader.stream_position()?;
+      let new_pos = reader.stream_position()?;
+      if new_pos <= current {
+        // Guard against a non-advancing (corrupt/zero-size) child box that would
+        // otherwise spin forever and exhaust memory. Valid boxes always advance.
+        return Err(BmffError::Parse("stsd: child box did not advance, corrupt file?".into()));
+      }
+      current = new_pos;
     }
 
     reader.seek(SeekFrom::Start(header.end_offset()))?;
