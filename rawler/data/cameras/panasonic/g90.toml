@@ -4,8 +4,9 @@ clean_make = "Panasonic"
 clean_model = "DC-G90"
 
 model_aliases = [
-  ["DC-G95", "DC-G95D", "DC-G99D"],
+  ["DC-G95", "DC-G95"],
   ["DC-G91", "DC-G91"],
+  ["DC-G95D", "DC-G95D"],
 ]
 
 #blackpoint = 140
