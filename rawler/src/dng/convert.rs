@@ -12,7 +12,7 @@ use image::DynamicImage;
 use crate::{
   RawImage, RawImageData,
   decoders::{Decoder, RawDecodeParams, RawPhotometricInterpretation, WellKnownIFD, WhiteLevel},
-  dng::{DNG_VERSION_V1_4, PREVIEW_JPEG_QUALITY, original::OriginalCompressed, writer::DngWriter},
+  dng::{DNG_VERSION_V1_4, DNG_VERSION_V1_6, DNG_VERSION_V1_7_0, PREVIEW_JPEG_QUALITY, original::OriginalCompressed, writer::DngWriter},
   formats::tiff::Entry,
   imgop::{
     develop::RawDevelop,
@@ -158,7 +158,12 @@ where
     rawimage.apply_scaling()?;
   }
 
-  let mut dng = DngWriter::new(dng, DNG_VERSION_V1_4)?;
+  // DNG 1.7.0 is required when using JPEG XL compression (Compatibility Issue 18).
+  let (dng_version, backward_version) = match params.compression {
+    DngCompression::JxlLossy { .. } => (DNG_VERSION_V1_7_0, DNG_VERSION_V1_7_0),
+    _ => (DNG_VERSION_V1_6, DNG_VERSION_V1_4),
+  };
+  let mut dng = DngWriter::new(dng, dng_version, backward_version)?;
 
   // Write RAW image for subframe type 0
   // If no thumbnail should be written to root IFD, we need to put the raw image into

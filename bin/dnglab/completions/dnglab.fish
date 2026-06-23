@@ -80,8 +80,12 @@ complete -c dnglab -n "__fish_dnglab_using_subcommand process-raw" -s r -l recur
 complete -c dnglab -n "__fish_dnglab_using_subcommand process-raw" -s v -d 'Print status for every file'
 complete -c dnglab -n "__fish_dnglab_using_subcommand process-raw" -s h -l help -d 'Print help'
 complete -c dnglab -n "__fish_dnglab_using_subcommand convert" -s c -l compression -d 'Compression for raw image' -r -f -a "lossless\t''
-uncompressed\t''"
+uncompressed\t''
+jpegxl-lossy\t''"
 complete -c dnglab -n "__fish_dnglab_using_subcommand convert" -l ljpeg92-predictor -d 'LJPEG-92 predictor' -r
+complete -c dnglab -n "__fish_dnglab_using_subcommand convert" -l jxl-distance -d 'JPEG XL distance (0.0 = lossless, 1.0 = visually lossless)' -r
+complete -c dnglab -n "__fish_dnglab_using_subcommand convert" -l jxl-effort -d 'JPEG XL encoding effort (1 = fast, 9 = best quality)' -r
+complete -c dnglab -n "__fish_dnglab_using_subcommand convert" -l jxl-decode-speed -d 'JPEG XL decode speed hint (1 = slow, 4 = fast)' -r
 complete -c dnglab -n "__fish_dnglab_using_subcommand convert" -l dng-preview -d 'DNG include preview image' -r -f -a "true\t''
 false\t''"
 complete -c dnglab -n "__fish_dnglab_using_subcommand convert" -l dng-thumbnail -d 'DNG include thumbnail image' -r -f -a "true\t''
@@ -106,8 +110,12 @@ complete -c dnglab -n "__fish_dnglab_using_subcommand convert" -s r -l recursive
 complete -c dnglab -n "__fish_dnglab_using_subcommand convert" -s v -d 'Print status for every file'
 complete -c dnglab -n "__fish_dnglab_using_subcommand convert" -s h -l help -d 'Print help'
 complete -c dnglab -n "__fish_dnglab_using_subcommand ftpserver" -s c -l compression -d 'Compression for raw image' -r -f -a "lossless\t''
-uncompressed\t''"
+uncompressed\t''
+jpegxl-lossy\t''"
 complete -c dnglab -n "__fish_dnglab_using_subcommand ftpserver" -l ljpeg92-predictor -d 'LJPEG-92 predictor' -r
+complete -c dnglab -n "__fish_dnglab_using_subcommand ftpserver" -l jxl-distance -d 'JPEG XL distance (0.0 = lossless, 1.0 = visually lossless)' -r
+complete -c dnglab -n "__fish_dnglab_using_subcommand ftpserver" -l jxl-effort -d 'JPEG XL encoding effort (1 = fast, 9 = best quality)' -r
+complete -c dnglab -n "__fish_dnglab_using_subcommand ftpserver" -l jxl-decode-speed -d 'JPEG XL decode speed hint (1 = slow, 4 = fast)' -r
 complete -c dnglab -n "__fish_dnglab_using_subcommand ftpserver" -l dng-preview -d 'DNG include preview image' -r -f -a "true\t''
 false\t''"
 complete -c dnglab -n "__fish_dnglab_using_subcommand ftpserver" -l dng-thumbnail -d 'DNG include thumbnail image' -r -f -a "true\t''

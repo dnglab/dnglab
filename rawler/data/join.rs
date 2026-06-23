@@ -9,10 +9,40 @@ extern crate toml;
 use toml::Value;
 extern crate rustc_version;
 use rustc_version::{Version, version};
+extern crate cc;
+extern crate pkg_config;
 
 fn main() {
   join_cameras();
   join_lenses();
+  compile_jxl_helper();
+}
+
+fn compile_jxl_helper() {
+  let libjxl = pkg_config::Config::new()
+    .atleast_version("0.11")
+    .probe("libjxl")
+    .expect("libjxl >= 0.11 not found; install libjxl-dev");
+
+  let mut build = cc::Build::new();
+  build.file("src/dng/jxl_encode_helper.c").opt_level(2);
+
+  // Forward include paths that pkg-config found for libjxl
+  for path in &libjxl.include_paths {
+    build.include(path);
+  }
+
+  build.compile("rawler_jxl_encode_helper");
+
+  // Link against libjxl itself
+  for path in &libjxl.link_paths {
+    println!("cargo:rustc-link-search=native={}", path.display());
+  }
+  for lib in &libjxl.libs {
+    println!("cargo:rustc-link-lib={}", lib);
+  }
+
+  println!("cargo:rerun-if-changed=src/dng/jxl_encode_helper.c");
 }
 
 fn join_cameras() {

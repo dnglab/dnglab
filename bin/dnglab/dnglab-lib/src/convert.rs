@@ -14,6 +14,7 @@ use crate::filemap::{FileMap, MapMode};
 use crate::jobs::Job;
 use crate::jobs::raw2dng::{JobResult, Raw2DngJob};
 use crate::{AppError, PKG_VERSION, Result};
+use rawler::dng::DngCompression;
 use rawler::dng::convert::ConvertParams;
 
 /// Entry point for Clap sub command `convert`
@@ -212,9 +213,21 @@ fn generate_job(entry: &FileMap, options: &ArgMatches, claimed: &mut HashSet<Pat
         .ok_or_else(|| AppError::InvalidCmdSwitch("crop has no default".into()))?,
       preview: options.get_flag("preview"),
       thumbnail: options.get_flag("thumbnail"),
-      compression: *options
-        .get_one("compression")
-        .ok_or_else(|| AppError::InvalidCmdSwitch("compression has no default".into()))?,
+      compression: {
+        let mut c: DngCompression = *options
+          .get_one("compression")
+          .ok_or_else(|| AppError::InvalidCmdSwitch("compression has no default".into()))?;
+        if let DngCompression::JxlLossy { ref mut distance, ref mut effort, ref mut decode_speed } = c {
+          if let Some(&d) = options.get_one::<f32>("jxl_distance") {
+            *distance = d;
+          }
+          if let Some(&e) = options.get_one::<u32>("jxl_effort") {
+            *effort = e;
+          }
+          *decode_speed = options.get_one::<u32>("jxl_decode_speed").copied();
+        }
+        c
+      },
       artist: options.get_one("artist").cloned(),
       software: format!("{} {}", "DNGLab", PKG_VERSION),
       index: if do_batch { i } else { index },

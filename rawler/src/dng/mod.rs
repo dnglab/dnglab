@@ -2,6 +2,7 @@
 // Copyright 2023 Daniel Vogelbacher <daniel@chaospixel.com>
 
 pub mod convert;
+pub(crate) mod jxl_encoder;
 pub mod original;
 pub mod writer;
 
@@ -14,6 +15,8 @@ pub const DNG_VERSION_V1_3: [u8; 4] = [1, 3, 0, 0];
 pub const DNG_VERSION_V1_4: [u8; 4] = [1, 4, 0, 0];
 pub const DNG_VERSION_V1_5: [u8; 4] = [1, 5, 0, 0];
 pub const DNG_VERSION_V1_6: [u8; 4] = [1, 6, 0, 0];
+pub const DNG_VERSION_V1_7_0: [u8; 4] = [1, 7, 0, 0];
+pub const DNG_VERSION_V1_7_1: [u8; 4] = [1, 7, 1, 0];
 
 /// Convert internal crop rectangle to DNG active area
 ///
@@ -41,13 +44,22 @@ pub fn rect_to_dng_area(area: &Rect) -> [u16; 4] {
 #[cfg(feature = "clap")]
 impl clap::ValueEnum for DngCompression {
   fn value_variants<'a>() -> &'a [Self] {
-    &[Self::Lossless, Self::Uncompressed]
+    &[
+      Self::Lossless,
+      Self::Uncompressed,
+      Self::JxlLossy {
+        distance: 1.0,
+        effort: 7,
+        decode_speed: None,
+      },
+    ]
   }
 
   fn to_possible_value(&self) -> Option<clap::builder::PossibleValue> {
     Some(match self {
       Self::Uncompressed => clap::builder::PossibleValue::new("uncompressed"),
       Self::Lossless => clap::builder::PossibleValue::new("lossless"),
+      Self::JxlLossy { .. } => clap::builder::PossibleValue::new("jpegxl-lossy"),
     })
   }
 }
@@ -103,12 +115,39 @@ impl FromStr for CropMode {
 
 /// Quality of preview images
 const PREVIEW_JPEG_QUALITY: f32 = 0.75;
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+
 /// Compression mode for DNG
+#[derive(Clone, Copy, Debug)]
 pub enum DngCompression {
   /// No compression is applied
   Uncompressed,
   /// Lossless JPEG-92 compression
   Lossless,
-  // Lossy
+  /// JPEG XL lossy compression (DNG 1.7.0+).
+  ///
+  /// `distance` is the JXL butterfly distance: 0.0 = mathematically lossless,
+  /// 1.0 ≈ visually lossless, higher values increase compression at the cost of
+  /// quality (max ≈ 15).  `effort` controls encoder effort (1 = fastest … 9 =
+  /// best quality, default 7).  `decode_speed` is the optional JXL decode-speed
+  /// hint (1 = slowest/best quality … 4 = fastest).
+  JxlLossy {
+    distance: f32,
+    effort: u32,
+    decode_speed: Option<u32>,
+  },
 }
+
+impl PartialEq for DngCompression {
+  fn eq(&self, other: &Self) -> bool {
+    match (self, other) {
+      (Self::Uncompressed, Self::Uncompressed) => true,
+      (Self::Lossless, Self::Lossless) => true,
+      (
+        Self::JxlLossy { distance: d1, effort: e1, decode_speed: ds1 },
+        Self::JxlLossy { distance: d2, effort: e2, decode_speed: ds2 },
+      ) => d1.to_bits() == d2.to_bits() && e1 == e2 && ds1 == ds2,
+      _ => false,
+    }
+  }
+}
+impl Eq for DngCompression {}
