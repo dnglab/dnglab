@@ -125,7 +125,7 @@ pub enum DngCompression {
   Lossless,
   /// JPEG XL lossy compression (DNG 1.7.0+).
   ///
-  /// `distance` is the JXL butterfly distance: 0.0 = mathematically lossless,
+  /// `distance` is the JXL butteraugli distance: 0.0 = mathematically lossless,
   /// 1.0 ≈ visually lossless, higher values increase compression at the cost of
   /// quality (max ≈ 15).  `effort` controls encoder effort (1 = fastest … 10 =
   /// best quality, default 7).  `decode_speed` is the optional JXL decode-speed
