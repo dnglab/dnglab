@@ -65,9 +65,9 @@ pub fn create_app() -> Command {
         .default_value("1.0"),
     )
     .arg(
-      arg!(jxl_effort: --"jxl-effort" <effort> "JPEG XL encoding effort (1 = fast, 9 = best quality)")
+      arg!(jxl_effort: --"jxl-effort" <effort> "JPEG XL encoding effort (1 = fast, 10 = best quality)")
         .required(false)
-        .value_parser(clap::value_parser!(u32).range(1..=9))
+        .value_parser(clap::value_parser!(u32).range(1..=10))
         .default_value("7"),
     )
     .arg(

@@ -127,7 +127,7 @@ pub enum DngCompression {
   ///
   /// `distance` is the JXL butterfly distance: 0.0 = mathematically lossless,
   /// 1.0 ≈ visually lossless, higher values increase compression at the cost of
-  /// quality (max ≈ 15).  `effort` controls encoder effort (1 = fastest … 9 =
+  /// quality (max ≈ 15).  `effort` controls encoder effort (1 = fastest … 10 =
   /// best quality, default 7).  `decode_speed` is the optional JXL decode-speed
   /// hint (1 = slowest/best quality … 4 = fastest).
   JxlLossy {

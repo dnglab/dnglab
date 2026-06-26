@@ -28,7 +28,7 @@ unsafe extern "C" {
 /// * `cpp`            – channels per pixel (1 or 3)
 /// * `bps`            – stored bits per sample (8–16)
 /// * `distance`       – JXL butterfly distance (0.0 = lossless, 1.0 ≈ visually lossless)
-/// * `effort`         – encoder effort 1–9 (default 7)
+/// * `effort`         – encoder effort 1–10 (default 7)
 pub fn encode_jxl_tile(pixels: &[u16], width: u32, height: u32, cpp: u32, bps: u32, distance: f32, effort: u32) -> Result<Vec<u8>, DngError> {
   let mut out_ptr: *mut u8 = std::ptr::null_mut();
   let mut out_len: usize = 0;

@@ -21,7 +21,7 @@
 /// @param num_channels 1 (grayscale) or 3 (RGB).
 /// @param bits_per_sample  Actual bit depth stored in each u16 (8–16).
 /// @param distance     JXL distance: 0.0 = lossless, 1.0 ≈ visually lossless.
-/// @param effort       Encoder effort 1 (fast) … 9 (best quality), default 7.
+/// @param effort       Encoder effort 1 (fast) … 10 (best quality), default 7.
 /// @param output       Receives a malloc-allocated byte buffer on success.
 /// @param output_size  Receives the number of valid bytes in *output.
 ///

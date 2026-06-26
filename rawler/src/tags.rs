@@ -646,7 +646,7 @@ pub enum DngTag {
 
   // 1.7.0
   JXLDistance = 52553,    // CD49.H — JXL distance parameter (0.0 = lossless, >0 = lossy)
-  JXLEffort = 52554,      // CD4A.H — JXL effort 1 (low) … 9 (high)
+  JXLEffort = 52554,      // CD4A.H — JXL effort 1 (low) … 10 (high)
   JXLDecodeSpeed = 52555, // CD4B.H — JXL decode speed 1 (slow) … 4 (fast)
 
   // 1.7.1

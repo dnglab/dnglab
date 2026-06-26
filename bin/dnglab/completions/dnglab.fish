@@ -84,7 +84,7 @@ uncompressed\t''
 jpegxl-lossy\t''"
 complete -c dnglab -n "__fish_dnglab_using_subcommand convert" -l ljpeg92-predictor -d 'LJPEG-92 predictor' -r
 complete -c dnglab -n "__fish_dnglab_using_subcommand convert" -l jxl-distance -d 'JPEG XL distance (0.0 = lossless, 1.0 = visually lossless)' -r
-complete -c dnglab -n "__fish_dnglab_using_subcommand convert" -l jxl-effort -d 'JPEG XL encoding effort (1 = fast, 9 = best quality)' -r
+complete -c dnglab -n "__fish_dnglab_using_subcommand convert" -l jxl-effort -d 'JPEG XL encoding effort (1 = fast, 10 = best quality)' -r
 complete -c dnglab -n "__fish_dnglab_using_subcommand convert" -l jxl-decode-speed -d 'JPEG XL decode speed hint (1 = slow, 4 = fast)' -r
 complete -c dnglab -n "__fish_dnglab_using_subcommand convert" -l dng-preview -d 'DNG include preview image' -r -f -a "true\t''
 false\t''"
@@ -114,7 +114,7 @@ uncompressed\t''
 jpegxl-lossy\t''"
 complete -c dnglab -n "__fish_dnglab_using_subcommand ftpserver" -l ljpeg92-predictor -d 'LJPEG-92 predictor' -r
 complete -c dnglab -n "__fish_dnglab_using_subcommand ftpserver" -l jxl-distance -d 'JPEG XL distance (0.0 = lossless, 1.0 = visually lossless)' -r
-complete -c dnglab -n "__fish_dnglab_using_subcommand ftpserver" -l jxl-effort -d 'JPEG XL encoding effort (1 = fast, 9 = best quality)' -r
+complete -c dnglab -n "__fish_dnglab_using_subcommand ftpserver" -l jxl-effort -d 'JPEG XL encoding effort (1 = fast, 10 = best quality)' -r
 complete -c dnglab -n "__fish_dnglab_using_subcommand ftpserver" -l jxl-decode-speed -d 'JPEG XL decode speed hint (1 = slow, 4 = fast)' -r
 complete -c dnglab -n "__fish_dnglab_using_subcommand ftpserver" -l dng-preview -d 'DNG include preview image' -r -f -a "true\t''
 false\t''"
