@@ -472,7 +472,7 @@ impl<'a> NefDecoder<'a> {
           BEu16(buf, 11 * 2) as f32,
           BEu16(buf, 12 * 2) as f32,
         ]),
-        0x204 | 0x205 => {
+        0x204 | 0x205 | 0x206 => {
           let serial = fetch_tiff_tag!(self.makernote, TiffCommonTag::NefSerial);
           let data = serial.get_data();
           let mut serialno = 0_usize;
@@ -493,10 +493,11 @@ impl<'a> NefDecoder<'a> {
           let keydata = fetch_tiff_tag!(self.makernote, TiffCommonTag::NefKey).force_u32(0).to_le_bytes();
           let keyno = (keydata[0] ^ keydata[1] ^ keydata[2] ^ keydata[3]) as usize;
 
-          let src = if version == 0x204 {
-            &levels.get_data()[284..]
-          } else {
+          // 0x205 stores encrypted data starting at offset 4; 0x204 and 0x206 at offset 284
+          let src = if version == 0x205 {
             &levels.get_data()[4..]
+          } else {
+            &levels.get_data()[284..]
           };
 
           let ci = WB_SERIALMAP[serialno & 0xff] as u32;
@@ -509,7 +510,8 @@ impl<'a> NefDecoder<'a> {
             buf[i] = src[i] ^ (cj as u8);
           }
 
-          let off = if version == 0x204 { 6 } else { 14 };
+          // 0x205 stores WB at offset 14 in the decrypted block; 0x204 and 0x206 at offset 6
+          let off = if version == 0x205 { 14 } else { 6 };
           Ok([
             BEu16(&buf, off) as f32,
             BEu16(&buf, off + 2) as f32,
