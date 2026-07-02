@@ -261,11 +261,24 @@ impl<'a> Rw2Decoder<'a> {
   }
 
   fn get_blacklevel(&self) -> Result<Option<BlackLevel>> {
+    // A +15 offset is required if the PanasonicTag::StripOffset tag is not present, or if the version is <=4.
+    let raw_format = self.tiff.get_entry(PanasonicTag::RawFormat).map(|e| e.force_u16(0)).unwrap_or(0);
+    let offset = if !self.tiff.has_entry(PanasonicTag::StripOffset) || raw_format <= 4 {
+      15
+    } else {
+      0
+    };
+
     if self.tiff.has_entry(PanasonicTag::BlackLevelRed) {
       let r = fetch_tiff_tag!(self.tiff, PanasonicTag::BlackLevelRed).force_u16(0);
       let g = fetch_tiff_tag!(self.tiff, PanasonicTag::BlackLevelGreen).force_u16(0);
       let b = fetch_tiff_tag!(self.tiff, PanasonicTag::BlackLevelBlue).force_u16(0);
-      Ok(Some(BlackLevel::new(&[r, g, g, b], self.camera.cfa.width, self.camera.cfa.height, 1)))
+      Ok(Some(BlackLevel::new(
+        &[r + offset, g + offset, g + offset, b + offset],
+        self.camera.cfa.width,
+        self.camera.cfa.height,
+        1,
+      )))
     } else {
       Ok(None)
     }
@@ -408,7 +421,7 @@ pub enum PanasonicTag {
   PanaWBs2R = 0x0024,
   PanaWBs2G = 0x0025,
   PanaWBs2B = 0x0026,
-  RawFormat = 0x0002d,
+  RawFormat = 0x002d,
   JpegData = 0x002e,
   CropTop = 0x002f,
   CropLeft = 0x0030,
@@ -433,6 +446,8 @@ pub enum PanasonicTag {
   CF2StripWidths = 0x0047,
   CF2StripHeights = 0x0048,
   CF2StripWidth = 0x0064,
+
+  StripOffset = 0x0118,
 
   CameraIFD = 0x0120,
   Multishot = 0x0121,
