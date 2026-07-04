@@ -326,6 +326,14 @@ Options:
 ## Contribute samples
 Please see our guide: [CONTRIBUTE_SAMPLES.md](CONTRIBUTE_SAMPLES.md).
 
+## A note about processing of untrusted files
+This project receives no support from camera manufacturers. Most of the development effort goes into understanding compression algorithms and file formats — largely through debugging.
+Avoiding panics is generally good practice (e.g. using `x.saturating_sub(y)` instead of `x - y`). But a panic on `x - y` points directly at a misunderstanding of the algorithm (or a corrupt file), whereas the saturating variant silently hides it — so the panicking version is often far more useful. Because maintainable, debuggable code takes priority over panic-freedom here, PRs whose only purpose is to keep a fuzzer happy are unlikely to be merged.
+If you need to process untrusted files in an environment that could be harmed by malformed input, or where panics/aborts are unacceptable, we recommend **not** using dnglab/rawler at all. Instead, ask your camera vendor for support, official libraries and documentation.
+
+## A note on AI-assisted contributions
+This project accepts contributions made with the help of AI. However, your PR description must clearly communicate that you fully understand the change, can answer questions about it, and are prepared to maintain the code in the future. When in doubt, it's very likely that your PR will be closed without further response.
+
 ## FAQ
 
 ### Why a DNG tool if there is already something from Adobe?
