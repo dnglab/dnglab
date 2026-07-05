@@ -4,7 +4,7 @@
 .SH NAME
 dnglab\-ftpserver \- Convert raw image(s) into dng format
 .SH SYNOPSIS
-\fBdnglab\-ftpserver\fR [\fB\-c\fR|\fB\-\-compression\fR] [\fB\-\-ljpeg92\-predictor\fR] [\fB\-\-dng\-preview\fR] [\fB\-\-dng\-thumbnail\fR] [\fB\-\-embed\-raw\fR] [\fB\-\-artist\fR] [\fB\-\-keep\-mtime\fR] [\fB\-\-image\-index\fR] [\fB\-\-crop\fR] [\fB\-f\fR|\fB\-\-override\fR] [\fB\-\-port\fR] [\fB\-\-listen\fR] [\fB\-\-keep\-original\fR] [\fB\-h\fR|\fB\-\-help\fR] <\fIOUTPUT\fR> 
+\fBdnglab\-ftpserver\fR [\fB\-c\fR|\fB\-\-compression\fR] [\fB\-\-ljpeg92\-predictor\fR] [\fB\-\-jxl\-distance\fR] [\fB\-\-jxl\-effort\fR] [\fB\-\-jxl\-decode\-speed\fR] [\fB\-\-dng\-preview\fR] [\fB\-\-dng\-thumbnail\fR] [\fB\-\-embed\-raw\fR] [\fB\-\-artist\fR] [\fB\-\-keep\-mtime\fR] [\fB\-\-image\-index\fR] [\fB\-\-crop\fR] [\fB\-f\fR|\fB\-\-override\fR] [\fB\-\-port\fR] [\fB\-\-listen\fR] [\fB\-\-keep\-original\fR] [\fB\-h\fR|\fB\-\-help\fR] <\fIOUTPUT\fR> 
 .SH DESCRIPTION
 Convert raw image(s) into dng format
 .SH OPTIONS
@@ -14,10 +14,19 @@ Compression for raw image
 .br
 
 .br
-[\fIpossible values: \fRlossless, uncompressed]
+[\fIpossible values: \fRlossless, uncompressed, jpegxl\-lossy]
 .TP
 \fB\-\-ljpeg92\-predictor\fR=\fIpredictor\fR [default: 1]
 LJPEG\-92 predictor
+.TP
+\fB\-\-jxl\-distance\fR=\fIdistance\fR [default: 1.0]
+JPEG XL distance (0.0 = lossless, 1.0 = visually lossless)
+.TP
+\fB\-\-jxl\-effort\fR=\fIeffort\fR [default: 7]
+JPEG XL encoding effort (1 = fast, 10 = best quality)
+.TP
+\fB\-\-jxl\-decode\-speed\fR=\fIspeed\fR
+JPEG XL decode speed hint (1 = slow, 4 = fast)
 .TP
 \fB\-\-dng\-preview\fR=\fIpreview\fR [default: true]
 DNG include preview image

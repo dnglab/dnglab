@@ -31,7 +31,7 @@ use crate::{
   tags::{DngTag, TiffCommonTag},
 };
 
-use super::{CropMode, DNG_VERSION_V1_6, DngCompression, DngPhotometricConversion, original::OriginalCompressed};
+use super::{CropMode, DngCompression, DngPhotometricConversion, jxl_encoder::encode_jxl_tile, original::OriginalCompressed};
 
 pub type DngError = TiffError;
 
@@ -144,12 +144,18 @@ where
   }
 
   fn write_rawimage(&mut self, mut rawimage: Cow<RawImage>, cropmode: CropMode, compression: DngCompression, predictor: u8) -> Result<()> {
-    if compression == DngCompression::Lossless && matches!(rawimage.data, RawImageData::Float(_)) {
+    if matches!(compression, DngCompression::Lossless) && matches!(rawimage.data, RawImageData::Float(_)) {
       // Lossless (LJPEG92) can only be used for 16 bit integer data.
       // If we have floats, convert them.
       rawimage.to_mut().data.force_integer();
       rawimage.to_mut().whitelevel.0.iter_mut().for_each(|x| *x = u16::MAX as u32);
-      rawimage.to_mut().bps = 16; // Reset bps as intgers are scaled to u16 range.
+      rawimage.to_mut().bps = 16; // Reset bps as integers are scaled to u16 range.
+    }
+    if matches!(compression, DngCompression::JxlLossy { .. }) && matches!(rawimage.data, RawImageData::Float(_)) {
+      // JXL supports float, but for now convert to integer for simplicity.
+      rawimage.to_mut().data.force_integer();
+      rawimage.to_mut().whitelevel.0.iter_mut().for_each(|x| *x = u16::MAX as u32);
+      rawimage.to_mut().bps = 16;
     }
 
     if rawimage.cpp > 1 || matches!(rawimage.photometric, RawPhotometricInterpretation::Cfa(_)) {
@@ -304,6 +310,16 @@ where
         self.ifd_mut().add_tag(TiffCommonTag::Compression, CompressionMethod::ModernJPEG);
         dng_put_raw_ljpeg(self, &rawimage, predictor)?;
       }
+      DngCompression::JxlLossy { distance, effort, decode_speed } => {
+        self.ifd_mut().add_tag(TiffCommonTag::Compression, CompressionMethod::JPEGXL);
+        // Write JXL metadata tags (spec §4, Additional Tags for Version 1.7.0)
+        self.ifd_mut().add_tag(DngTag::JXLDistance, distance);
+        self.ifd_mut().add_tag(DngTag::JXLEffort, effort);
+        if let Some(ds) = decode_speed {
+          self.ifd_mut().add_tag(DngTag::JXLDecodeSpeed, ds);
+        }
+        dng_put_raw_jxl(self, &rawimage, distance, effort)?;
+      }
     }
 
     /*
@@ -367,13 +383,13 @@ impl<B> DngWriter<B>
 where
   B: Write + Seek,
 {
-  pub fn new(buf: B, backward_version: [u8; 4]) -> Result<Self> {
+  pub fn new(buf: B, version: [u8; 4], backward_version: [u8; 4]) -> Result<Self> {
     let dng = TiffWriter::new(buf)?;
 
     let mut root_ifd = DirectoryWriter::new();
     let mut exif_ifd = DirectoryWriter::new();
     root_ifd.add_tag(DngTag::DNGBackwardVersion, backward_version);
-    root_ifd.add_tag(DngTag::DNGVersion, DNG_VERSION_V1_6);
+    root_ifd.add_tag(DngTag::DNGVersion, version);
     // Add EXIF version 0220
     exif_ifd.add_tag_undefined(ExifTag::ExifVersion, vec![48, 50, 50, 48]);
 
@@ -642,6 +658,57 @@ where
   Ok(())
 }
 
+/// Compress RAW image with JPEG XL
+///
+/// Each tile is encoded independently as a "bare" JXL bitstream (no ISOBMFF
+/// container), as recommended by DNG 1.7 for multi-tile images.
+fn dng_put_raw_jxl<W>(subframe: &mut SubFrameWriter<W>, rawimage: &RawImage, distance: f32, effort: u32) -> Result<()>
+where
+  W: Seek + Write,
+{
+  let tile_w: usize = 256;
+  let tile_h: usize = 256;
+
+  let tiles_compr: Vec<Vec<u8>> = match rawimage.data {
+    RawImageData::Integer(ref data) => {
+      let tiler = ImageTiler::new(data, rawimage.width, rawimage.height, rawimage.cpp, tile_w, tile_h);
+      let n_tiles = tiler.tile_count();
+      let bps = rawimage.bps as u32;
+      let cpp = rawimage.cpp as u32;
+
+      (0..n_tiles)
+        .into_par_iter()
+        .map(|idx| {
+          let tile = tiler.build_tile(idx);
+          // build_tile always pads to full tile_w × tile_h (edge rows/cols replicated)
+          encode_jxl_tile(&tile, tile_w as u32, tile_h as u32, cpp, bps, distance, effort)
+        })
+        .collect::<Result<Vec<_>>>()?
+    }
+    RawImageData::Float(_) => {
+      return Err(DngError::General("JXL encoding of float data is not yet supported".into()));
+    }
+  };
+
+  let mut tile_offsets: Vec<u32> = Vec::with_capacity(tiles_compr.len());
+  let mut tile_sizes: Vec<u32> = Vec::with_capacity(tiles_compr.len());
+
+  for tile in &tiles_compr {
+    let offs = subframe.writer.dng.write_data(tile)?;
+    tile_offsets.push(offs);
+    tile_sizes.push(tile.len() as u32);
+  }
+
+  subframe.ifd_mut().add_tag(TiffCommonTag::BitsPerSample, &vec![rawimage.bps as u16; rawimage.cpp]);
+  subframe.ifd_mut().add_tag(TiffCommonTag::SampleFormat, &vec![1_u16; rawimage.cpp]); // unsigned integer
+  subframe.ifd_mut().add_tag(TiffCommonTag::TileOffsets, &tile_offsets);
+  subframe.ifd_mut().add_tag(TiffCommonTag::TileByteCounts, &tile_sizes);
+  subframe.ifd_mut().add_tag(TiffCommonTag::TileWidth, tile_w as u16);
+  subframe.ifd_mut().add_tag(TiffCommonTag::TileLength, tile_h as u16);
+
+  Ok(())
+}
+
 /// Write RAW uncompressed into DNG
 ///
 /// This uses unsigned 16 bit values for storage
@@ -701,7 +768,7 @@ mod tests {
   #[test]
   fn build_empty_dng() -> std::result::Result<(), Box<dyn std::error::Error>> {
     let mut buf = Cursor::new(Vec::new());
-    let mut dng = DngWriter::new(&mut buf, DNG_VERSION_V1_4)?;
+    let mut dng = DngWriter::new(&mut buf, DNG_VERSION_V1_6, DNG_VERSION_V1_4)?;
     dng.root_ifd_mut().add_tag(TiffCommonTag::Artist, "Test");
     dng.close()?;
     #[cfg(target_endian = "little")]
@@ -752,7 +819,7 @@ mod tests {
 
     let buf = BufWriter::new(Cursor::new(Vec::new()));
     //let buf = BufWriter::new(File::create("/tmp/dng_writer_simple_test.dng")?);
-    let mut dng = DngWriter::new(buf, DNG_VERSION_V1_4)?;
+    let mut dng = DngWriter::new(buf, DNG_VERSION_V1_6, DNG_VERSION_V1_4)?;
     let mut raw = dng.subframe(0);
     raw.raw_image(
       &rawimage,

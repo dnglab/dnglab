@@ -874,7 +874,7 @@ impl Value {
         ),
         Self::SShort(v) => Ok((v[0] as u32) | ((*v.get(1).unwrap_or(&0) as u32) << 16)),
         Self::SLong(v) => Ok(v[0] as u32),
-        Self::Float(v) => Ok(v[0] as u32),
+        Self::Float(v) => Ok(v[0].to_bits()),
         Self::Unknown(_, v) => Ok(
           (*v.get(0).unwrap_or(&0) as u32)
             | ((*v.get(1).unwrap_or(&0) as u32) << 8)

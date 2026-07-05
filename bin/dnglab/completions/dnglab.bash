@@ -149,21 +149,33 @@ _dnglab() {
             return 0
             ;;
         dnglab__convert)
-            opts="-c -f -r -j -d -v -h --compression --ljpeg92-predictor --dng-preview --dng-thumbnail --embed-raw --artist --keep-mtime --image-index --crop --override --recursive --jobs --loglevel --help <INPUT> <OUTPUT>"
+            opts="-c -f -r -j -d -v -h --compression --ljpeg92-predictor --jxl-distance --jxl-effort --jxl-decode-speed --dng-preview --dng-thumbnail --embed-raw --artist --keep-mtime --image-index --crop --override --recursive --jobs --loglevel --help <INPUT> <OUTPUT>"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
             fi
             case "${prev}" in
                 --compression)
-                    COMPREPLY=($(compgen -W "lossless uncompressed" -- "${cur}"))
+                    COMPREPLY=($(compgen -W "lossless uncompressed jpegxl-lossy" -- "${cur}"))
                     return 0
                     ;;
                 -c)
-                    COMPREPLY=($(compgen -W "lossless uncompressed" -- "${cur}"))
+                    COMPREPLY=($(compgen -W "lossless uncompressed jpegxl-lossy" -- "${cur}"))
                     return 0
                     ;;
                 --ljpeg92-predictor)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
+                --jxl-distance)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
+                --jxl-effort)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
+                --jxl-decode-speed)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
@@ -241,21 +253,33 @@ _dnglab() {
             return 0
             ;;
         dnglab__ftpserver)
-            opts="-c -f -d -v -h --compression --ljpeg92-predictor --dng-preview --dng-thumbnail --embed-raw --artist --keep-mtime --image-index --crop --override --port --listen --keep-original --loglevel --help <OUTPUT>"
+            opts="-c -f -d -v -h --compression --ljpeg92-predictor --jxl-distance --jxl-effort --jxl-decode-speed --dng-preview --dng-thumbnail --embed-raw --artist --keep-mtime --image-index --crop --override --port --listen --keep-original --loglevel --help <OUTPUT>"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
             fi
             case "${prev}" in
                 --compression)
-                    COMPREPLY=($(compgen -W "lossless uncompressed" -- "${cur}"))
+                    COMPREPLY=($(compgen -W "lossless uncompressed jpegxl-lossy" -- "${cur}"))
                     return 0
                     ;;
                 -c)
-                    COMPREPLY=($(compgen -W "lossless uncompressed" -- "${cur}"))
+                    COMPREPLY=($(compgen -W "lossless uncompressed jpegxl-lossy" -- "${cur}"))
                     return 0
                     ;;
                 --ljpeg92-predictor)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
+                --jxl-distance)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
+                --jxl-effort)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
+                --jxl-decode-speed)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
