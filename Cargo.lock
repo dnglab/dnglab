@@ -1255,18 +1255,18 @@ dependencies = [
 
 [[package]]
 name = "jxl-bitstream"
-version = "1.0.0"
+version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "eda699770a7f4ea38f8eb21d91b545eb6448be28e540acc7ce84498bcead4903"
+checksum = "b480e752277e29eb4054f69546887a9b84656fe78c08f54ba5850ced98a378fe"
 dependencies = [
  "tracing",
 ]
 
 [[package]]
 name = "jxl-coding"
-version = "1.0.0"
+version = "1.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6748ba8af69b87c68f8dcdf992de959c207962689bc28ddb7906abf4a0b786c9"
+checksum = "cd972bcd125e776f1eb241ac50e39f956095a1c2770c64736c968f8946bd9a3c"
 dependencies = [
  "jxl-bitstream",
  "tracing",
@@ -1289,9 +1289,9 @@ dependencies = [
 
 [[package]]
 name = "jxl-frame"
-version = "0.13.1"
+version = "0.13.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f30587a9687223a602a408555db47803c907ea47700e1f28eb14cdb3bf1527a9"
+checksum = "2d967c6fd669c7c01060b5022d8835fa82fd46b06ffc98b549f17600a097c2b3"
 dependencies = [
  "jxl-bitstream",
  "jxl-coding",
@@ -1306,9 +1306,9 @@ dependencies = [
 
 [[package]]
 name = "jxl-grid"
-version = "0.6.0"
+version = "0.6.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "335e4371396c5729ba80a42798746d198897d3b854ba4f3684efac5f4025d84f"
+checksum = "01671307879a033bfa52e6e8784b941aca770b3f3a7d33830b455b6844f793fb"
 dependencies = [
  "tracing",
 ]
@@ -1327,9 +1327,9 @@ dependencies = [
 
 [[package]]
 name = "jxl-jbr"
-version = "0.2.0"
+version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d91ba39b083a82788a17717edbcc4b08160b51fdffc9fec640deba9e8268da1a"
+checksum = "e35d032bcec660647828527ff42c6f5776d2fd44b8357f9f6d9ac6dc07218e46"
 dependencies = [
  "brotli-decompressor",
  "jxl-bitstream",
@@ -1345,9 +1345,9 @@ dependencies = [
 
 [[package]]
 name = "jxl-modular"
-version = "0.11.0"
+version = "0.11.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3f526ad8af8daea0d1cccce945f18c241f95b391d34443be018de2efbf28b44e"
+checksum = "2a2f045b24c738dd91d482be385512b512721ae08a671bd4b27bf1c47f215235"
 dependencies = [
  "jxl-bitstream",
  "jxl-coding",
@@ -1359,9 +1359,9 @@ dependencies = [
 
 [[package]]
 name = "jxl-oxide"
-version = "0.12.2"
+version = "0.12.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6e45ccb25d698cdcad3a5573a7181835842711fd951c98fe38986e3cb721e775"
+checksum = "d36c662923f47586880211f3bc7c0d83fb3a9b410d278c7bde93450748abeef3"
 dependencies = [
  "brotli-decompressor",
  "jxl-bitstream",
@@ -1387,9 +1387,9 @@ dependencies = [
 
 [[package]]
 name = "jxl-render"
-version = "0.12.1"
+version = "0.12.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b3f3fece78b2104450bd6d1bdbc48e3b6ef7442ef276be2a08e35b229eeff1a4"
+checksum = "d34386bfdb6a19b5a30cc9beb4d475d537422c31ae8c39bb69640fcce3fcaf19"
 dependencies = [
  "bytemuck",
  "jxl-bitstream",
