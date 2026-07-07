@@ -261,9 +261,9 @@ impl<'a> Rw2Decoder<'a> {
   }
 
   fn get_blacklevel(&self) -> Result<Option<BlackLevel>> {
-    // A +15 offset is required if the PanasonicTag::StripOffset tag is not present, or if the version is <=4.
+    // A +15 offset is required if the PanasonicTag::RawDataOffset tag is not present, or if the version is <=4.
     let raw_format = self.tiff.get_entry(PanasonicTag::RawFormat).map(|e| e.force_u16(0)).unwrap_or(0);
-    let offset = if !self.tiff.has_entry(PanasonicTag::StripOffset) || raw_format <= 4 {
+    let offset = if !self.tiff.has_entry(PanasonicTag::RawDataOffset) || raw_format <= 4 {
       15
     } else {
       0
@@ -447,7 +447,7 @@ pub enum PanasonicTag {
   CF2StripHeights = 0x0048,
   CF2StripWidth = 0x0064,
 
-  StripOffset = 0x0118,
+  RawDataOffset = 0x0118,
 
   CameraIFD = 0x0120,
   Multishot = 0x0121,
