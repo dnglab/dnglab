@@ -244,7 +244,9 @@ pub struct Subband {
 impl Subband {
   pub fn new<R: Read>(id: usize, hdr: &mut R, ind: u16, parent_offset: usize, band_offset: usize) -> Result<Self> {
     let size = hdr.read_u16::<BigEndian>()?;
-    assert!((size == 8 && ind == 0xFF03) || (size == 16 && ind == 0xFF13));
+    if !((size == 8 && ind == 0xFF03) || (size == 16 && ind == 0xFF13)) {
+      return Err(CrxError::General(format!("CRX: unexpected subband header size={} ind={:#06x}", size, ind)));
+    }
     let subband_size = hdr.read_u32::<BigEndian>()? as usize;
     match ind {
       0xFF03 => {
