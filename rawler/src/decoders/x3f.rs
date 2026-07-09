@@ -143,7 +143,7 @@ impl<'a> Decoder for X3fDecoder<'a> {
   }
 
   fn raw_metadata(&self, _file: &RawSource, _params: &RawDecodeParams) -> Result<RawMetadata> {
-    todo!()
+    Err(RawlerError::DecoderFailed("X3F raw_metadata not implemented".into()))
   }
 }
 
