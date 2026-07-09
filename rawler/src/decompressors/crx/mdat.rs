@@ -50,7 +50,9 @@ impl Tile {
       let mdat_qp_data_size = hdr.read_u32::<BigEndian>()?;
       let mdat_extra_size = hdr.read_u16::<BigEndian>()?;
       let terminator = hdr.read_u16::<BigEndian>()?;
-      assert!(terminator == 0);
+      if terminator != 0 {
+        return Err(CrxError::General(format!("CRX: non-zero terminator {} in tile qp_data", terminator)));
+      }
       Some(TileQPData {
         mdat_qp_data_size,
         mdat_extra_size,
@@ -60,8 +62,9 @@ impl Tile {
       None
     };
 
-    // TODO check on release
-    assert!((size == 8 && tail_sign == 0) || (size == 16 && tail_sign == 0x4000));
+    if !((size == 8 && tail_sign == 0) || (size == 16 && tail_sign == 0x4000)) {
+      return Err(CrxError::General(format!("CRX: unexpected tile header size={} tail_sign={:#x}", size, tail_sign)));
+    }
 
     Ok(Tile {
       id,
