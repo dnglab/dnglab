@@ -167,7 +167,9 @@ impl Plane {
       rounded_bits_mask = 1 << (rounded_bits_mask - 1);
     }
 
-    assert!(flags & 0x00FFFFFF == 0);
+    if flags & 0x00FFFFFF != 0 {
+      log::warn!("CRX: unexpected plane flags lower bits: {:#010x}", flags);
+    }
     Ok(Plane {
       id,
       ind,
