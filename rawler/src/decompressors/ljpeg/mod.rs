@@ -318,6 +318,9 @@ impl<'a> LjpegDecompressor<'a> {
   }
 
   fn parse_dri(input: &mut ByteStream) -> Result<usize, String> {
+    if input.remaining_bytes() < 4 {
+      return Err(format!("ljpeg: truncated DRI segment ({} bytes remain)", input.remaining_bytes()));
+    }
     let length = input.get_u16();
     if length != 4 {
       return Err(format!("ljpeg: invalid DRI length {length}"));

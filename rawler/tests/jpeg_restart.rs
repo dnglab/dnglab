@@ -74,3 +74,14 @@ fn jpeg_bit_pump_rejects_wrong_restart_sequence() {
   let error = pump.consume_restart_marker(0).unwrap_err();
   assert!(error.contains("expected RST0"));
 }
+
+#[test]
+fn rejects_truncated_restart_interval_segment_without_panicking() {
+  let jpeg = [
+    0xff, 0xd8, // SOI
+    0xff, 0xdd, 0x00, 0x04, 0x00, // DRI with one interval byte missing
+  ];
+
+  let error = LjpegDecompressor::new(&jpeg).unwrap_err();
+  assert!(error.contains("truncated DRI segment"));
+}
