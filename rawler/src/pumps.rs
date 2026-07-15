@@ -145,6 +145,38 @@ impl<'a> BitPumpJPEG<'a> {
       finished: false,
     }
   }
+
+  /// Discard entropy padding and resume after an expected JPEG restart marker.
+  pub fn consume_restart_marker(&mut self, expected: u8) -> Result<(), String> {
+    if expected > 7 {
+      return Err(format!("Invalid JPEG restart marker index: {expected}"));
+    }
+    if self.pos >= self.buffer.len() || self.buffer[self.pos] != 0xff {
+      return Err(format!("Expected JPEG restart marker RST{expected} at byte {}", self.pos));
+    }
+
+    // JPEG permits extra 0xff fill bytes before a marker.
+    while self.pos < self.buffer.len() && self.buffer[self.pos] == 0xff {
+      self.pos += 1;
+    }
+    if self.pos >= self.buffer.len() {
+      return Err(format!("Truncated JPEG restart marker RST{expected}"));
+    }
+
+    let marker = self.buffer[self.pos];
+    let expected_marker = 0xd0 + expected;
+    if marker != expected_marker {
+      return Err(format!(
+        "Unexpected JPEG marker 0x{marker:02x}, expected RST{expected} (0x{expected_marker:02x})"
+      ));
+    }
+
+    self.pos += 1;
+    self.bits = 0;
+    self.nbits = 0;
+    self.finished = false;
+    Ok(())
+  }
 }
 
 pub trait BitPump {
@@ -277,22 +309,22 @@ impl<'a> BitPump for BitPumpJPEG<'a> {
         // Read 32 bits the hard way
         let mut read_bytes = 0;
         while read_bytes < 4 && !self.finished {
-          let byte = {
-            if self.pos >= self.buffer.len() {
-              self.finished = true;
-              0
-            } else {
-              let nextbyte = self.buffer[self.pos];
-              if nextbyte != 0xff {
-                nextbyte
-              } else if self.buffer[self.pos + 1] == 0x00 {
-                self.pos += 1; // Skip the extra byte used to mark 255
-                nextbyte
-              } else {
-                self.finished = true;
-                0
-              }
-            }
+          if self.pos >= self.buffer.len() {
+            self.finished = true;
+            break;
+          }
+
+          let nextbyte = self.buffer[self.pos];
+          let byte = if nextbyte != 0xff {
+            nextbyte
+          } else if self.pos + 1 < self.buffer.len() && self.buffer[self.pos + 1] == 0x00 {
+            self.pos += 1; // Skip the extra byte used to mark 255
+            nextbyte
+          } else {
+            // Leave the marker untouched so a restart-aware decoder can
+            // validate and consume it after the current MCU.
+            self.finished = true;
+            break;
           };
           self.bits = (self.bits << 8) | (byte as u64);
           self.pos += 1;

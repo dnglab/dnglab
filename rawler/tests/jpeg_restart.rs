@@ -1,0 +1,76 @@
+use rawler::decompressors::ljpeg::LjpegDecompressor;
+use rawler::pumps::{BitPump, BitPumpJPEG};
+
+#[test]
+fn lossless_jpeg_resets_prediction_after_restart() {
+  // Four 12-bit samples, one component, predictor 1, restart interval 2.
+  // The first interval decodes to [2049, 2049]. After RST0, a zero
+  // difference must use the initial predictor again and produce 2048.
+  let jpeg = [
+    0xff, 0xd8, // SOI
+    0xff, 0xc3, 0x00, 0x0b, 0x0c, 0x00, 0x01, 0x00, 0x04, 0x01, 0x01, 0x11, 0x00, // SOF3
+    0xff, 0xc4, 0x00, 0x15, 0x00, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, // DHT: category 0 = code 0, category 1 = code 1
+    0xff, 0xdd, 0x00, 0x04, 0x00, 0x02, // DRI: two MCUs
+    0xff, 0xda, 0x00, 0x08, 0x01, 0x01, 0x00, 0x01, 0x00, 0x00, // SOS
+    0xdf, // +1, then 0, followed by entropy padding
+    0xff, 0xd0, // RST0
+    0x3f, // 0, then 0, followed by entropy padding
+    0xff, 0xd9, // EOI
+  ];
+
+  let decompressor = LjpegDecompressor::new(&jpeg).unwrap();
+  let mut output = [0_u16; 4];
+  decompressor.decode(&mut output, 0, 4, 4, 1, false).unwrap();
+
+  assert_eq!(output, [2049, 2049, 2048, 2048]);
+}
+
+#[test]
+fn rejects_restart_markers_for_unimplemented_sampling_modes() {
+  let jpeg = [
+    0xff, 0xd8, // SOI
+    0xff, 0xc3, 0x00, 0x0b, 0x0c, 0x00, 0x01, 0x00, 0x04, 0x01, 0x01, 0x21, 0x00, // SOF3 with 2x1 sampling
+    0xff, 0xc4, 0x00, 0x15, 0x00, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, // DHT
+    0xff, 0xdd, 0x00, 0x04, 0x00, 0x02, // DRI
+    0xff, 0xda, 0x00, 0x08, 0x01, 0x01, 0x00, 0x01, 0x00, 0x00, // SOS
+    0xdf, 0xff, 0xd0, 0x3f, 0xff, 0xd9,
+  ];
+
+  let decompressor = LjpegDecompressor::new(&jpeg).unwrap();
+  let mut output = [0_u16; 8];
+  let error = decompressor.decode(&mut output, 0, 8, 8, 1, false).unwrap_err();
+
+  assert!(error.contains("restart markers are not supported for sampling 2x1"));
+}
+
+#[test]
+fn jpeg_bit_pump_resumes_after_restart_markers() {
+  let data = [0x12, 0xff, 0xd0, 0x34, 0xff, 0xff, 0xd1, 0x56];
+  let mut pump = BitPumpJPEG::new(&data);
+
+  assert_eq!(pump.get_bits(8), 0x12);
+  pump.consume_restart_marker(0).unwrap();
+  assert_eq!(pump.get_bits(8), 0x34);
+  pump.consume_restart_marker(1).unwrap();
+  assert_eq!(pump.get_bits(8), 0x56);
+}
+
+#[test]
+fn jpeg_bit_pump_preserves_stuffed_ff_before_restart() {
+  let data = [0xff, 0x00, 0xaa, 0xff, 0xd0, 0xbb];
+  let mut pump = BitPumpJPEG::new(&data);
+
+  assert_eq!(pump.get_bits(16), 0xffaa);
+  pump.consume_restart_marker(0).unwrap();
+  assert_eq!(pump.get_bits(8), 0xbb);
+}
+
+#[test]
+fn jpeg_bit_pump_rejects_wrong_restart_sequence() {
+  let data = [0x12, 0xff, 0xd1, 0x34];
+  let mut pump = BitPumpJPEG::new(&data);
+
+  assert_eq!(pump.get_bits(8), 0x12);
+  let error = pump.consume_restart_marker(0).unwrap_err();
+  assert!(error.contains("expected RST0"));
+}

@@ -20,11 +20,19 @@ pub fn decode_ljpeg(ljpeg: &LjpegDecompressor, out: &mut [u16], x: usize, stripw
   let htable = |index: usize| -> &HuffTable { &ljpeg.dhts[ljpeg.sof.components[index].dc_tbl_num] };
   let mut pump = BitPumpJPEG::new(ljpeg.buffer);
   let base_prediction = 1 << (ljpeg.sof.precision - ljpeg.point_transform - 1);
+  let total_mcus = ljpeg
+    .sof
+    .width
+    .checked_mul(height)
+    .ok_or_else(|| format!("ljpeg: MCU count overflow for {}x{height}", ljpeg.sof.width))?;
+  let mut next_restart_marker = 0;
 
   // initialize first pixel components
   for c in 0..ncomp {
     out[x + c] = (base_prediction + htable(c).huff_decode(&mut pump)?) as u16;
   }
+  let mut decoded_mcus = 1;
+  let mut reset_prediction = consume_restart_if_needed(ljpeg, &mut pump, decoded_mcus, total_mcus, &mut next_restart_marker)?;
 
   let skip_x = ljpeg.sof.width - width / ncomp;
 
@@ -32,7 +40,9 @@ pub fn decode_ljpeg(ljpeg: &LjpegDecompressor, out: &mut [u16], x: usize, stripw
     let startcol = if row == 0 { x + ncomp } else { x }; // skip first pixel in first row
     for col in (startcol..(width + x)).step_by(ncomp) {
       for c in 0..ncomp {
-        let p: i32 = if col == x {
+        let p: i32 = if reset_prediction {
+          base_prediction
+        } else if col == x {
           // At start of line predictor starts with start of previous line
           out[(row - 1) * stripwidth + x + c] as i32
         } else {
@@ -82,16 +92,38 @@ pub fn decode_ljpeg(ljpeg: &LjpegDecompressor, out: &mut [u16], x: usize, stripw
         let diff = htable(c).huff_decode(&mut pump)?;
         out[row * stripwidth + col + c] = (p + diff) as u16;
       }
+      decoded_mcus += 1;
+      reset_prediction = consume_restart_if_needed(ljpeg, &mut pump, decoded_mcus, total_mcus, &mut next_restart_marker)?;
     }
     for _ in 0..skip_x {
+      // This MCU is outside the requested output width, but it still counts
+      // towards the restart interval and its entropy data must be consumed.
       for c in 0..ncomp {
         // Skip extra encoded differences if the ljpeg frame is wider than the output
         htable(c).huff_decode(&mut pump)?;
       }
+      decoded_mcus += 1;
+      reset_prediction = consume_restart_if_needed(ljpeg, &mut pump, decoded_mcus, total_mcus, &mut next_restart_marker)?;
     }
   }
 
   Ok(())
+}
+
+fn consume_restart_if_needed(
+  ljpeg: &LjpegDecompressor,
+  pump: &mut BitPumpJPEG<'_>,
+  decoded_mcus: usize,
+  total_mcus: usize,
+  next_restart_marker: &mut u8,
+) -> Result<bool, String> {
+  if ljpeg.restart_interval != 0 && decoded_mcus % ljpeg.restart_interval == 0 && decoded_mcus < total_mcus {
+    pump.consume_restart_marker(*next_restart_marker)?;
+    *next_restart_marker = (*next_restart_marker + 1) % 8;
+    Ok(true)
+  } else {
+    Ok(false)
+  }
 }
 
 fn set_yuv_420(out: &mut [u16], row: usize, col: usize, width: usize, y1: i32, y2: i32, y3: i32, y4: i32, cb: i32, cr: i32) {
