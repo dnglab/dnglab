@@ -171,7 +171,29 @@ impl<'a> BitPumpJPEG<'a> {
 
   /// Validate the padding after the final decoded MCU in the scan.
   pub fn validate_end_of_scan(&self) -> Result<(), String> {
-    self.validate_entropy_padding("at end of scan")
+    self.validate_entropy_padding("at end of scan")?;
+
+    if self.pos == self.buffer.len() {
+      return Ok(());
+    }
+    if self.buffer[self.pos] != 0xff {
+      return Err(format!("Unexpected trailing JPEG entropy data at byte {}", self.pos));
+    }
+
+    let mut marker_pos = self.pos;
+    while marker_pos < self.buffer.len() && self.buffer[marker_pos] == 0xff {
+      marker_pos += 1;
+    }
+    if marker_pos == self.buffer.len() {
+      return Err("Truncated JPEG marker at end of scan".to_string());
+    }
+
+    let marker = self.buffer[marker_pos];
+    if marker != 0xd9 {
+      return Err(format!("Unexpected JPEG marker 0x{marker:02x} at end of scan"));
+    }
+
+    Ok(())
   }
 
   /// Discard entropy padding and resume after an expected JPEG restart marker.

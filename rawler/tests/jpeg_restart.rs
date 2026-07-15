@@ -1,6 +1,26 @@
 use rawler::decompressors::ljpeg::LjpegDecompressor;
 use rawler::pumps::{BitPump, BitPumpJPEG};
 
+fn restart_marked_jpeg(dri: Option<u16>) -> Vec<u8> {
+  let mut jpeg = vec![
+    0xff, 0xd8, // SOI
+    0xff, 0xc3, 0x00, 0x0b, 0x0c, 0x00, 0x01, 0x00, 0x04, 0x01, 0x01, 0x11, 0x00, // SOF3
+    0xff, 0xc4, 0x00, 0x15, 0x00, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, // DHT: category 0 = code 0, category 1 = code 1
+  ];
+  if let Some(interval) = dri {
+    jpeg.extend_from_slice(&[0xff, 0xdd, 0x00, 0x04]);
+    jpeg.extend_from_slice(&interval.to_be_bytes());
+  }
+  jpeg.extend_from_slice(&[
+    0xff, 0xda, 0x00, 0x08, 0x01, 0x01, 0x00, 0x01, 0x00, 0x00, // SOS
+    0xdf, // +1, then 0, followed by entropy padding
+    0xff, 0xd0, // RST0
+    0x3f, // 0, then 0, followed by entropy padding
+    0xff, 0xd9, // EOI
+  ]);
+  jpeg
+}
+
 #[test]
 fn lossless_jpeg_resets_prediction_after_restart() {
   // Four 12-bit samples, one component, predictor 1, restart interval 2.
@@ -188,4 +208,26 @@ fn rejects_truncated_final_entropy_segment() {
   let error = decompressor.decode(&mut output, 0, 4, 4, 1, false).unwrap_err();
 
   assert!(error.contains("Truncated JPEG entropy data at end of scan"));
+}
+
+#[test]
+fn rejects_restart_marker_without_dri() {
+  let jpeg = restart_marked_jpeg(None);
+  let decompressor = LjpegDecompressor::new(&jpeg).unwrap();
+  let mut output = [0_u16; 4];
+
+  let error = decompressor.decode(&mut output, 0, 4, 4, 1, false).unwrap_err();
+
+  assert!(error.contains("Unexpected JPEG marker 0xd0 at end of scan"));
+}
+
+#[test]
+fn rejects_restart_marker_with_zero_dri() {
+  let jpeg = restart_marked_jpeg(Some(0));
+  let decompressor = LjpegDecompressor::new(&jpeg).unwrap();
+  let mut output = [0_u16; 4];
+
+  let error = decompressor.decode(&mut output, 0, 4, 4, 1, false).unwrap_err();
+
+  assert!(error.contains("Unexpected JPEG marker 0xd0 at end of scan"));
 }

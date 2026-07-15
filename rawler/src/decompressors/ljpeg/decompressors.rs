@@ -107,11 +107,7 @@ pub fn decode_ljpeg(ljpeg: &LjpegDecompressor, out: &mut [u16], x: usize, stripw
     }
   }
 
-  if ljpeg.restart_interval != 0 && height == ljpeg.sof.height {
-    pump.validate_end_of_scan()
-  } else {
-    Ok(())
-  }
+  if height == ljpeg.sof.height { pump.validate_end_of_scan() } else { Ok(()) }
 }
 
 fn consume_restart_if_needed(
