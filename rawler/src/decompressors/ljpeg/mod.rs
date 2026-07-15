@@ -410,12 +410,21 @@ impl<'a> LjpegDecompressor<'a> {
   }
 
   fn validate_restart_support(&self) -> Result<(), String> {
-    if self.restart_interval != 0 && (self.sof.components[0].super_h != 1 || self.sof.components[0].super_v != 1 || !(1..=7).contains(&self.predictor)) {
+    if self.restart_interval == 0 {
+      return Ok(());
+    }
+
+    if let Some(component) = self.sof.components.iter().find(|component| component.super_h != 1 || component.super_v != 1) {
       return Err(format!(
-        "ljpeg: restart markers are not supported for sampling {}x{} with predictor {}",
-        self.sof.components[0].super_h, self.sof.components[0].super_v, self.predictor
+        "ljpeg: restart markers are not supported for component {} sampling {}x{}",
+        component.id, component.super_h, component.super_v
       ));
     }
+
+    if !(1..=7).contains(&self.predictor) {
+      return Err(format!("ljpeg: restart markers are not supported with predictor {}", self.predictor));
+    }
+
     Ok(())
   }
 

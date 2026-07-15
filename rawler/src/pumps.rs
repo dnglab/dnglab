@@ -132,6 +132,8 @@ pub struct BitPumpJPEG<'a> {
   pos: usize,
   bits: u64,
   nbits: u32,
+  zero_fill_bits: u32,
+  consumed_zero_fill: bool,
   finished: bool,
 }
 
@@ -142,8 +144,34 @@ impl<'a> BitPumpJPEG<'a> {
       pos: 0,
       bits: 0,
       nbits: 0,
+      zero_fill_bits: 0,
+      consumed_zero_fill: false,
       finished: false,
     }
+  }
+
+  fn validate_entropy_padding(&self, context: &str) -> Result<(), String> {
+    if self.consumed_zero_fill {
+      return Err(format!("Truncated JPEG entropy data {context}"));
+    }
+
+    let padding_bits = self.nbits.saturating_sub(self.zero_fill_bits);
+    if padding_bits > 7 {
+      return Err(format!("Unexpected trailing JPEG entropy data {context}"));
+    }
+    if padding_bits != 0 {
+      let padding = (self.bits >> self.zero_fill_bits) & ((1_u64 << padding_bits) - 1);
+      if padding != (1_u64 << padding_bits) - 1 {
+        return Err(format!("Invalid JPEG entropy padding {context}"));
+      }
+    }
+
+    Ok(())
+  }
+
+  /// Validate the padding after the final decoded MCU in the scan.
+  pub fn validate_end_of_scan(&self) -> Result<(), String> {
+    self.validate_entropy_padding("at end of scan")
   }
 
   /// Discard entropy padding and resume after an expected JPEG restart marker.
@@ -154,6 +182,7 @@ impl<'a> BitPumpJPEG<'a> {
     if self.pos >= self.buffer.len() || self.buffer[self.pos] != 0xff {
       return Err(format!("Expected JPEG restart marker RST{expected} at byte {}", self.pos));
     }
+    self.validate_entropy_padding(&format!("before RST{expected}"))?;
 
     // JPEG permits extra 0xff fill bytes before a marker.
     while self.pos < self.buffer.len() && self.buffer[self.pos] == 0xff {
@@ -174,6 +203,8 @@ impl<'a> BitPumpJPEG<'a> {
     self.pos += 1;
     self.bits = 0;
     self.nbits = 0;
+    self.zero_fill_bits = 0;
+    self.consumed_zero_fill = false;
     self.finished = false;
     Ok(())
   }
@@ -334,9 +365,12 @@ impl<'a> BitPump for BitPumpJPEG<'a> {
       }
     }
     if num > self.nbits && self.finished {
-      // Stuff with zeroes to not fail to read
+      // Huffman lookup may read ahead of the marker. Preserve the fast,
+      // infallible BitPump interface, but remember these synthetic bits so the
+      // restart-aware decoder can reject a segment that actually consumes them.
       self.bits <<= 32;
       self.nbits += 32;
+      self.zero_fill_bits += 32;
     }
 
     (self.bits >> (self.nbits - num)) as u32
@@ -345,6 +379,12 @@ impl<'a> BitPump for BitPumpJPEG<'a> {
   #[inline(always)]
   fn consume_bits(&mut self, num: u32) {
     debug_assert!(num <= self.nbits);
+    let real_bits = self.nbits.saturating_sub(self.zero_fill_bits);
+    let consumed_zero_fill = num.saturating_sub(real_bits);
+    if consumed_zero_fill != 0 {
+      self.consumed_zero_fill = true;
+      self.zero_fill_bits -= consumed_zero_fill;
+    }
     self.nbits -= num;
     self.bits &= (1 << self.nbits) - 1;
   }
