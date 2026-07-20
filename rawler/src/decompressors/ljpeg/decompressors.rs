@@ -222,7 +222,7 @@ pub fn decode_sony_ljpeg_420(ljpeg: &LjpegDecompressor, out: &mut [u16], width: 
     }
   }
 
-  Ok(())
+  pump.validate_end_of_scan()
 }
 
 pub fn decode_ljpeg_420(ljpeg: &LjpegDecompressor, out: &mut [u16], width: usize, height: usize) -> Result<(), String> {
@@ -276,7 +276,7 @@ pub fn decode_ljpeg_420(ljpeg: &LjpegDecompressor, out: &mut [u16], width: usize
     }
   }
 
-  Ok(())
+  pump.validate_end_of_scan()
 }
 
 fn set_yuv_422(out: &mut [u16], row: usize, col: usize, width: usize, y1: i32, y2: i32, cb: i32, cr: i32) {
@@ -339,7 +339,7 @@ pub fn decode_ljpeg_422(ljpeg: &LjpegDecompressor, out: &mut [u16], width: usize
     }
   }
 
-  Ok(())
+  pump.validate_end_of_scan()
 }
 
 pub fn decode_hasselblad(ljpeg: &LjpegDecompressor, out: &mut [u16], width: usize) -> Result<(), String> {

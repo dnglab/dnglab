@@ -21,6 +21,85 @@ fn restart_marked_jpeg(dri: Option<u16>) -> Vec<u8> {
   jpeg
 }
 
+fn subsampled_jpeg(vertical_sampling: u8, entropy: &[u8]) -> Vec<u8> {
+  let height = if vertical_sampling == 2 { 2 } else { 1 };
+  let mut jpeg = vec![
+    0xff,
+    0xd8, // SOI
+    0xff,
+    0xc3,
+    0x00,
+    0x11,
+    0x0c,
+    0x00,
+    height,
+    0x00,
+    0x02,
+    0x03, // SOF3: 2 pixels, 3 components
+    0x01,
+    0x20 | vertical_sampling,
+    0x00, // Y: 2x1 or 2x2 sampling
+    0x02,
+    0x11,
+    0x00, // Cb: 1x1 sampling
+    0x03,
+    0x11,
+    0x00, // Cr: 1x1 sampling
+    0xff,
+    0xc4,
+    0x00,
+    0x14,
+    0x00,
+    0x01,
+    0x00,
+    0x00,
+    0x00,
+    0x00,
+    0x00,
+    0x00,
+    0x00,
+    0x00,
+    0x00,
+    0x00,
+    0x00,
+    0x00,
+    0x00,
+    0x00,
+    0x00,
+    0x00, // DHT: category 0 = code 0
+    0xff,
+    0xda,
+    0x00,
+    0x0c,
+    0x03,
+    0x01,
+    0x00,
+    0x02,
+    0x00,
+    0x03,
+    0x00,
+    0x01,
+    0x00,
+    0x00, // SOS: predictor 1
+  ];
+  jpeg.extend_from_slice(entropy);
+  jpeg.extend_from_slice(&[0xff, 0xd9]); // EOI
+  jpeg
+}
+
+fn decode_subsampled(jpeg: &[u8], vertical_sampling: u8, sony: bool) -> Result<Vec<u16>, String> {
+  let width = 6;
+  let height = if vertical_sampling == 2 { 2 } else { 1 };
+  let decompressor = LjpegDecompressor::new(jpeg)?;
+  let mut output = vec![0_u16; width * height];
+  if sony {
+    decompressor.decode_sony(&mut output, 0, width, width, height, false)?;
+  } else {
+    decompressor.decode(&mut output, 0, width, width, height, false)?;
+  }
+  Ok(output)
+}
+
 #[test]
 fn lossless_jpeg_resets_prediction_after_restart() {
   // Four 12-bit samples, one component, predictor 1, restart interval 2.
@@ -239,4 +318,36 @@ fn rejects_restart_marker_with_zero_dri() {
   let error = decompressor.decode(&mut output, 0, 4, 4, 1, false).unwrap_err();
 
   assert!(error.contains("Unexpected JPEG marker 0xd0 at end of scan"));
+}
+
+#[test]
+fn subsampled_420_rejects_truncated_final_entropy() {
+  let valid = subsampled_jpeg(2, &[0x03]); // six zero differences plus one-padding
+  assert_eq!(decode_subsampled(&valid, 2, false).unwrap(), vec![2048; 12]);
+  assert_eq!(decode_subsampled(&valid, 2, true).unwrap(), vec![2048; 12]);
+
+  let truncated = subsampled_jpeg(2, &[]);
+  for sony in [false, true] {
+    let error = decode_subsampled(&truncated, 2, sony).unwrap_err();
+    assert!(error.contains("Truncated JPEG entropy data at end of scan"));
+  }
+}
+
+#[test]
+fn subsampled_422_rejects_truncated_final_entropy() {
+  let valid = subsampled_jpeg(1, &[0x0f]); // four zero differences plus one-padding
+  assert_eq!(decode_subsampled(&valid, 1, false).unwrap(), vec![2048; 6]);
+
+  let truncated = subsampled_jpeg(1, &[]);
+  let error = decode_subsampled(&truncated, 1, false).unwrap_err();
+  assert!(error.contains("Truncated JPEG entropy data at end of scan"));
+}
+
+#[test]
+fn subsampled_decoders_reject_restart_markers_without_dri() {
+  for (vertical_sampling, entropy) in [(2, 0x03), (1, 0x0f)] {
+    let jpeg = subsampled_jpeg(vertical_sampling, &[entropy, 0xff, 0xd0]);
+    let error = decode_subsampled(&jpeg, vertical_sampling, false).unwrap_err();
+    assert!(error.contains("Unexpected JPEG marker 0xd0 at end of scan"));
+  }
 }
