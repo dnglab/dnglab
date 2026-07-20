@@ -116,6 +116,15 @@ fn jpeg_bit_pump_rejects_wrong_restart_sequence() {
 }
 
 #[test]
+fn jpeg_bit_pump_accepts_legacy_zero_padding_at_end_of_scan() {
+  let data = [0b1000_0000];
+  let mut pump = BitPumpJPEG::new(&data);
+
+  assert_eq!(pump.get_bits(1), 1);
+  pump.validate_end_of_scan().unwrap();
+}
+
+#[test]
 fn rejects_truncated_restart_interval_segment_without_panicking() {
   let jpeg = [
     0xff, 0xd8, // SOI

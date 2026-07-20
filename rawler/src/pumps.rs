@@ -150,7 +150,7 @@ impl<'a> BitPumpJPEG<'a> {
     }
   }
 
-  fn validate_entropy_padding(&self, context: &str) -> Result<(), String> {
+  fn validate_entropy_padding(&self, context: &str, allow_legacy_zero_padding: bool) -> Result<(), String> {
     if self.consumed_zero_fill {
       return Err(format!("Truncated JPEG entropy data {context}"));
     }
@@ -161,7 +161,8 @@ impl<'a> BitPumpJPEG<'a> {
     }
     if padding_bits != 0 {
       let padding = (self.bits >> self.zero_fill_bits) & ((1_u64 << padding_bits) - 1);
-      if padding != (1_u64 << padding_bits) - 1 {
+      let one_padding = (1_u64 << padding_bits) - 1;
+      if padding != one_padding && !(allow_legacy_zero_padding && padding == 0) {
         return Err(format!("Invalid JPEG entropy padding {context}"));
       }
     }
@@ -171,7 +172,10 @@ impl<'a> BitPumpJPEG<'a> {
 
   /// Validate the padding after the final decoded MCU in the scan.
   pub fn validate_end_of_scan(&self) -> Result<(), String> {
-    self.validate_entropy_padding("at end of scan")?;
+    // Older rawler versions emitted zero padding at the end of a scan.
+    // Continue to decode those files while requiring standard one-padding
+    // before restart markers, which the legacy encoder did not emit.
+    self.validate_entropy_padding("at end of scan", true)?;
 
     if self.pos == self.buffer.len() {
       return Ok(());
@@ -204,7 +208,7 @@ impl<'a> BitPumpJPEG<'a> {
     if self.pos >= self.buffer.len() || self.buffer[self.pos] != 0xff {
       return Err(format!("Expected JPEG restart marker RST{expected} at byte {}", self.pos));
     }
-    self.validate_entropy_padding(&format!("before RST{expected}"))?;
+    self.validate_entropy_padding(&format!("before RST{expected}"), false)?;
 
     // JPEG permits extra 0xff fill bytes before a marker.
     while self.pos < self.buffer.len() && self.buffer[self.pos] == 0xff {
