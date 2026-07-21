@@ -7,6 +7,7 @@ on:
     paths-ignore:
       - '**.md'
       - '.github/workflows/release.yaml'
+  pull_request_target:
   workflow_dispatch:
     inputs:
       commit_sha:
@@ -17,15 +18,14 @@ on:
 permissions:
   contents: read
 
-# SECURITY: testdata-avail must belong to a runner group restricted to
-# dnglab/dnglab/.github/workflows/rawdb.yaml@refs/heads/main. Without that
-# repository-level policy, a fork PR could target the self-hosted runner from
-# a modified or newly added workflow. If workflow-level runner restrictions
-# are unavailable, do not expose this runner to the public repository.
+# SECURITY: builddrone approval is the primary gate before pull request code
+# reaches testdata-avail. Restricting the runner group to
+# dnglab/dnglab/.github/workflows/rawdb.yaml@refs/heads/main is recommended as
+# defense in depth so no other workflow can target the self-hosted runner.
 jobs:
   resolve-ref:
-    name: Resolve trusted revision
-    if: github.ref == 'refs/heads/main'
+    name: Resolve validation revision
+    if: github.event_name == 'pull_request_target' || github.ref == 'refs/heads/main'
     runs-on: ubuntu-24.04
     outputs:
       commit_sha: ${{ steps.resolve.outputs.commit_sha }}
@@ -36,21 +36,35 @@ jobs:
         env:
           EVENT_NAME: ${{ github.event_name }}
           EVENT_SHA: ${{ github.sha }}
+          PULL_REQUEST_SHA: ${{ github.event.pull_request.head.sha }}
           REQUESTED_SHA: ${{ inputs.commit_sha }}
           REPOSITORY: ${{ github.repository }}
         run: |
           set -euo pipefail
 
-          if [[ "$EVENT_NAME" == "push" ]]; then
-            commit_sha="$EVENT_SHA"
-          else
-            commit_sha="$REQUESTED_SHA"
-            if [[ ! "$commit_sha" =~ ^[0-9a-fA-F]{40}$ ]]; then
-              echo "commit_sha must be a full 40-character commit SHA" >&2
+          case "$EVENT_NAME" in
+            pull_request_target)
+              commit_sha="$PULL_REQUEST_SHA"
+              ;;
+            push)
+              commit_sha="$EVENT_SHA"
+              ;;
+            workflow_dispatch)
+              commit_sha="$REQUESTED_SHA"
+              ;;
+            *)
+              echo "unsupported event: $EVENT_NAME" >&2
               exit 1
-            fi
-            commit_sha=$(printf '%s' "$commit_sha" | tr '[:upper:]' '[:lower:]')
+              ;;
+          esac
 
+          if [[ ! "$commit_sha" =~ ^[0-9a-fA-F]{40}$ ]]; then
+            echo "commit_sha must be a full 40-character commit SHA" >&2
+            exit 1
+          fi
+          commit_sha=$(printf '%s' "$commit_sha" | tr '[:upper:]' '[:lower:]')
+
+          if [[ "$EVENT_NAME" == "workflow_dispatch" ]]; then
             if ! git ls-remote "https://github.com/${REPOSITORY}.git" 'refs/heads/*' |
               awk -v sha="$commit_sha" '$1 == sha { found = 1 } END { exit !found }'; then
               echo "commit_sha must be the current tip of a branch in ${REPOSITORY}" >&2
@@ -74,7 +88,17 @@ jobs:
       RAWDB_API_KEY_REQUIRED: "true"
       RAYON_NUM_THREADS: 4
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      # This opt-out is limited to a PR revision approved through builddrone.
+      - name: Checkout reviewed pull request
+        if: github.event_name == 'pull_request_target'
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          ref: ${{ needs.resolve-ref.outputs.commit_sha }}
+          persist-credentials: false
+          allow-unsafe-pr-checkout: true
+      - name: Checkout trusted revision
+        if: github.event_name != 'pull_request_target'
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           ref: ${{ needs.resolve-ref.outputs.commit_sha }}
           persist-credentials: false
