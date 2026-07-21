@@ -1,0 +1,46 @@
+name: CI (rawdb)
+
+# Runs the testdata validation that needs the RAWDB_API_KEY secret.
+#
+# This uses `pull_request_target`, so the workflow definition is ALWAYS taken
+# from the base branch (main) — a fork cannot alter these steps by editing the
+# workflow in its PR. The job checks out and runs the fork's code with the
+# secret in scope ("pwn request" surface), so it is gated behind the
+# `builddrone` environment's required reviewers: a maintainer must manually
+# approve each fork PR run after reviewing the diff.
+on:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - '**.md'
+      - '.github/workflows/release.yaml'
+  pull_request_target:
+
+jobs:
+  rawdb:
+    name: Testdata validation with Rust ${{matrix.rust}}
+    runs-on: testdata-avail
+    environment: builddrone
+    strategy:
+      fail-fast: false
+      matrix:
+        rust: [1.89.0]
+    env:
+      RAWDB_CACHE: /opt/rawdb_cache
+      RAWDB_API_KEY_REQUIRED: "true"
+      RAYON_NUM_THREADS: 4
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # On pull_request_target this is the fork's head; on push it is empty
+          # and checkout falls back to the pushed commit. Approval is enforced
+          # by the builddrone environment before this code ever runs.
+          ref: ${{ github.event.pull_request.head.sha }}
+          allow-unsafe-pr-checkout: true
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{matrix.rust}}
+      - run: cargo test --release --features rawdb
+        env:
+          RAWDB_API_KEY: ${{ secrets.RAWDB_API_KEY }}
