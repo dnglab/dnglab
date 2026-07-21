@@ -31,7 +31,7 @@ jobs:
       RAWDB_API_KEY_REQUIRED: "true"
       RAYON_NUM_THREADS: 4
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           # On pull_request_target this is the fork's head; on push it is empty
           # and checkout falls back to the pushed commit. Approval is enforced
