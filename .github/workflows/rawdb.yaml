@@ -1,0 +1,85 @@
+name: RawDB validation
+
+on:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - '**.md'
+      - '.github/workflows/release.yaml'
+  workflow_dispatch:
+    inputs:
+      commit_sha:
+        description: Full SHA at a reviewed dnglab/dnglab branch tip; dispatch from main
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+# SECURITY: testdata-avail must belong to a runner group restricted to
+# dnglab/dnglab/.github/workflows/rawdb.yaml@refs/heads/main. Without that
+# repository-level policy, a fork PR could target the self-hosted runner from
+# a modified or newly added workflow. If workflow-level runner restrictions
+# are unavailable, do not expose this runner to the public repository.
+jobs:
+  resolve-ref:
+    name: Resolve trusted revision
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    outputs:
+      commit_sha: ${{ steps.resolve.outputs.commit_sha }}
+    steps:
+      - name: Resolve and validate revision
+        id: resolve
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          EVENT_SHA: ${{ github.sha }}
+          REQUESTED_SHA: ${{ inputs.commit_sha }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+
+          if [[ "$EVENT_NAME" == "push" ]]; then
+            commit_sha="$EVENT_SHA"
+          else
+            commit_sha="$REQUESTED_SHA"
+            if [[ ! "$commit_sha" =~ ^[0-9a-fA-F]{40}$ ]]; then
+              echo "commit_sha must be a full 40-character commit SHA" >&2
+              exit 1
+            fi
+            commit_sha=$(printf '%s' "$commit_sha" | tr '[:upper:]' '[:lower:]')
+
+            if ! git ls-remote "https://github.com/${REPOSITORY}.git" 'refs/heads/*' |
+              awk -v sha="$commit_sha" '$1 == sha { found = 1 } END { exit !found }'; then
+              echo "commit_sha must be the current tip of a branch in ${REPOSITORY}" >&2
+              exit 1
+            fi
+          fi
+
+          echo "commit_sha=$commit_sha" >> "$GITHUB_OUTPUT"
+
+  rawdb:
+    name: Testdata validation with Rust ${{matrix.rust}}
+    needs: resolve-ref
+    runs-on: testdata-avail
+    environment: builddrone
+    strategy:
+      fail-fast: false
+      matrix:
+        rust: [1.89.0]
+    env:
+      RAWDB_CACHE: /opt/rawdb_cache
+      RAWDB_API_KEY_REQUIRED: "true"
+      RAYON_NUM_THREADS: 4
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.resolve-ref.outputs.commit_sha }}
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{matrix.rust}}
+      - run: cargo test --release --features rawdb
+        env:
+          RAWDB_API_KEY: ${{ secrets.RAWDB_API_KEY }}
