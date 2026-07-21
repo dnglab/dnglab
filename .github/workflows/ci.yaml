@@ -9,6 +9,9 @@ on:
       - '.github/workflows/release.yaml'
   pull_request:
 
+permissions:
+  contents: read
+
 jobs:
   test:
     name: Rust ${{matrix.rust}}
