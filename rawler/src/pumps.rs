@@ -150,18 +150,18 @@ impl<'a> BitPumpJPEG<'a> {
     }
   }
 
-  fn validate_entropy_padding(&self, context: &str, allow_legacy_zero_padding: bool) -> Result<(), String> {
+  fn validate_entropy_padding(&self, context: &str, allow_legacy_zero_padding: bool, allow_trailing_entropy: bool) -> Result<(), String> {
     if self.consumed_zero_fill {
       return Err(format!("Truncated JPEG entropy data {context}"));
     }
 
-    let padding_bits = self.nbits.saturating_sub(self.zero_fill_bits);
-    if padding_bits > 7 {
+    let real_bits = self.nbits.saturating_sub(self.zero_fill_bits);
+    if real_bits > 7 && !allow_trailing_entropy {
       return Err(format!("Unexpected trailing JPEG entropy data {context}"));
     }
-    if padding_bits != 0 {
-      let padding = (self.bits >> self.zero_fill_bits) & ((1_u64 << padding_bits) - 1);
-      let one_padding = (1_u64 << padding_bits) - 1;
+    if real_bits <= 7 && real_bits != 0 {
+      let padding = (self.bits >> self.zero_fill_bits) & ((1_u64 << real_bits) - 1);
+      let one_padding = (1_u64 << real_bits) - 1;
       if padding != one_padding && !(allow_legacy_zero_padding && padding == 0) {
         return Err(format!("Invalid JPEG entropy padding {context}"));
       }
@@ -172,10 +172,22 @@ impl<'a> BitPumpJPEG<'a> {
 
   /// Validate the padding after the final decoded MCU in the scan.
   pub fn validate_end_of_scan(&self) -> Result<(), String> {
+    let has_eoi = if self.pos < self.buffer.len() && self.buffer[self.pos] == 0xff {
+      let mut marker_pos = self.pos;
+      while marker_pos < self.buffer.len() && self.buffer[marker_pos] == 0xff {
+        marker_pos += 1;
+      }
+      marker_pos < self.buffer.len() && self.buffer[marker_pos] == 0xd9
+    } else {
+      false
+    };
+
     // Older rawler versions emitted zero padding at the end of a scan.
-    // Continue to decode those files while requiring standard one-padding
-    // before restart markers, which the legacy encoder did not emit.
-    self.validate_entropy_padding("at end of scan", true)?;
+    // Some legacy camera files also leave extra entropy bits immediately
+    // before EOI. Continue to decode those files, but keep padding strict when
+    // no EOI is present and before restart markers, where extra data would make
+    // the restart cadence ambiguous.
+    self.validate_entropy_padding("at end of scan", true, has_eoi)?;
 
     if self.pos == self.buffer.len() {
       return Ok(());
@@ -208,7 +220,7 @@ impl<'a> BitPumpJPEG<'a> {
     if self.pos >= self.buffer.len() || self.buffer[self.pos] != 0xff {
       return Err(format!("Expected JPEG restart marker RST{expected} at byte {}", self.pos));
     }
-    self.validate_entropy_padding(&format!("before RST{expected}"), false)?;
+    self.validate_entropy_padding(&format!("before RST{expected}"), false, false)?;
 
     // JPEG permits extra 0xff fill bytes before a marker.
     while self.pos < self.buffer.len() && self.buffer[self.pos] == 0xff {

@@ -204,6 +204,35 @@ fn jpeg_bit_pump_accepts_legacy_zero_padding_at_end_of_scan() {
 }
 
 #[test]
+fn jpeg_bit_pump_accepts_legacy_trailing_entropy_before_eoi() {
+  let data = [0b1010_0000, 0xaa, 0xff, 0xd9];
+  let mut pump = BitPumpJPEG::new(&data);
+
+  assert_eq!(pump.get_bits(1), 1);
+  pump.validate_end_of_scan().unwrap();
+}
+
+#[test]
+fn jpeg_bit_pump_still_validates_final_padding_without_trailing_bytes() {
+  let data = [0b1010_0000, 0xff, 0xd9];
+  let mut pump = BitPumpJPEG::new(&data);
+
+  assert_eq!(pump.get_bits(1), 1);
+  let error = pump.validate_end_of_scan().unwrap_err();
+  assert!(error.contains("Invalid JPEG entropy padding at end of scan"));
+}
+
+#[test]
+fn jpeg_bit_pump_rejects_trailing_entropy_without_eoi() {
+  let data = [0b1010_0000, 0xaa];
+  let mut pump = BitPumpJPEG::new(&data);
+
+  assert_eq!(pump.get_bits(1), 1);
+  let error = pump.validate_end_of_scan().unwrap_err();
+  assert!(error.contains("Unexpected trailing JPEG entropy data at end of scan"));
+}
+
+#[test]
 fn rejects_truncated_restart_interval_segment_without_panicking() {
   let jpeg = [
     0xff, 0xd8, // SOI
