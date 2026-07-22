@@ -551,6 +551,10 @@ impl<'a> BitstreamJPEG<'a> {
 
   pub fn flush(&mut self) -> std::io::Result<()> {
     if self.used > 0 {
+      // T.81 B.1.1.5 requires Huffman entropy segments to be padded with
+      // 1-bits to complete the final byte.
+      let pad_bits = 8 - self.used;
+      self.next |= ((1_u16 << pad_bits) - 1) as u8;
       self.internal_flush()?;
     }
     Ok(())
@@ -967,14 +971,15 @@ mod tests {
     bs.flush()?;
     bs.write(16, 0b0)?;
     bs.flush()?;
-    assert_eq!(buf[0], 0b10000000);
-    assert_eq!(buf[1], 0b01011101);
-    assert_eq!(buf[2], 0b01000000);
-    assert_eq!(buf[3], 0xFF);
-    assert_eq!(buf[4], 0x00); // stuffing
-    assert_eq!(buf[5], 0xFF);
-    assert_eq!(buf[6], 0x00); // stuffing
-    assert_eq!(buf[7], 0x00);
+    assert_eq!(buf[0], 0xFF);
+    assert_eq!(buf[1], 0x00); // stuffing
+    assert_eq!(buf[2], 0b01011101);
+    assert_eq!(buf[3], 0b01111111);
+    assert_eq!(buf[4], 0xFF);
+    assert_eq!(buf[5], 0x00); // stuffing
+    assert_eq!(buf[6], 0xFF);
+    assert_eq!(buf[7], 0x00); // stuffing
+    assert_eq!(buf[8], 0x00);
     Ok(())
   }
 
