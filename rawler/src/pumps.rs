@@ -172,6 +172,16 @@ impl<'a> BitPumpJPEG<'a> {
 
   /// Validate the padding after the final decoded MCU in the scan.
   pub fn validate_end_of_scan(&self) -> Result<(), String> {
+    self.validate_end_of_scan_inner(false)
+  }
+
+  /// Validate the final scan while accepting extra entropy buffered before
+  /// EOI by a small set of legacy camera streams.
+  pub fn validate_end_of_scan_with_legacy_trailing_entropy(&self) -> Result<(), String> {
+    self.validate_end_of_scan_inner(true)
+  }
+
+  fn validate_end_of_scan_inner(&self, allow_legacy_trailing_entropy: bool) -> Result<(), String> {
     let has_eoi = if self.pos < self.buffer.len() && self.buffer[self.pos] == 0xff {
       let mut marker_pos = self.pos;
       while marker_pos < self.buffer.len() && self.buffer[marker_pos] == 0xff {
@@ -187,7 +197,7 @@ impl<'a> BitPumpJPEG<'a> {
     // before EOI. Continue to decode those files, but keep padding strict when
     // no EOI is present and before restart markers, where extra data would make
     // the restart cadence ambiguous.
-    self.validate_entropy_padding("at end of scan", true, has_eoi)?;
+    self.validate_entropy_padding("at end of scan", true, allow_legacy_trailing_entropy && has_eoi)?;
 
     if self.pos == self.buffer.len() {
       return Ok(());

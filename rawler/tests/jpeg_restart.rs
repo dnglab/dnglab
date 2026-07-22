@@ -209,7 +209,17 @@ fn jpeg_bit_pump_accepts_legacy_trailing_entropy_before_eoi() {
   let mut pump = BitPumpJPEG::new(&data);
 
   assert_eq!(pump.get_bits(1), 1);
-  pump.validate_end_of_scan().unwrap();
+  pump.validate_end_of_scan_with_legacy_trailing_entropy().unwrap();
+}
+
+#[test]
+fn jpeg_bit_pump_keeps_trailing_entropy_strict_by_default() {
+  let data = [0b1010_0000, 0xaa, 0xff, 0xd9];
+  let mut pump = BitPumpJPEG::new(&data);
+
+  assert_eq!(pump.get_bits(1), 1);
+  let error = pump.validate_end_of_scan().unwrap_err();
+  assert!(error.contains("Unexpected trailing JPEG entropy data at end of scan"), "{error}");
 }
 
 #[test]
@@ -347,6 +357,25 @@ fn rejects_restart_marker_with_zero_dri() {
   let error = decompressor.decode(&mut output, 0, 4, 4, 1, false).unwrap_err();
 
   assert!(error.contains("Unexpected JPEG marker 0xd0 at end of scan"));
+}
+
+#[test]
+fn restart_marked_scan_rejects_legacy_trailing_entropy_before_eoi() {
+  let jpeg = [
+    0xff, 0xd8, // SOI
+    0xff, 0xc3, 0x00, 0x0b, 0x0c, 0x00, 0x01, 0x00, 0x04, 0x01, 0x01, 0x11, 0x00, // SOF3
+    0xff, 0xc4, 0x00, 0x15, 0x00, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, // DHT
+    0xff, 0xdd, 0x00, 0x04, 0x00, 0x02, // DRI: two MCUs
+    0xff, 0xda, 0x00, 0x08, 0x01, 0x01, 0x00, 0x01, 0x00, 0x00, // SOS
+    0xdf, 0xff, 0xd0, 0x3f, 0xaa, // extra entropy after the final two MCUs
+    0xff, 0xd9, // EOI
+  ];
+  let decompressor = LjpegDecompressor::new(&jpeg).unwrap();
+  let mut output = [0_u16; 4];
+
+  let error = decompressor.decode(&mut output, 0, 4, 4, 1, false).unwrap_err();
+
+  assert!(error.contains("Unexpected trailing JPEG entropy data at end of scan"), "{error}");
 }
 
 #[test]

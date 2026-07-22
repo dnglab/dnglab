@@ -107,7 +107,19 @@ pub fn decode_ljpeg(ljpeg: &LjpegDecompressor, out: &mut [u16], x: usize, stripw
     }
   }
 
-  if height == ljpeg.sof.height { pump.validate_end_of_scan() } else { Ok(()) }
+  if height == ljpeg.sof.height {
+    validate_full_scan(ljpeg, &pump)
+  } else {
+    Ok(())
+  }
+}
+
+fn validate_full_scan(ljpeg: &LjpegDecompressor, pump: &BitPumpJPEG<'_>) -> Result<(), String> {
+  if ljpeg.restart_interval == 0 {
+    pump.validate_end_of_scan_with_legacy_trailing_entropy()
+  } else {
+    pump.validate_end_of_scan()
+  }
 }
 
 fn consume_restart_if_needed(
@@ -222,7 +234,7 @@ pub fn decode_sony_ljpeg_420(ljpeg: &LjpegDecompressor, out: &mut [u16], width: 
     }
   }
 
-  pump.validate_end_of_scan()
+  validate_full_scan(ljpeg, &pump)
 }
 
 pub fn decode_ljpeg_420(ljpeg: &LjpegDecompressor, out: &mut [u16], width: usize, height: usize) -> Result<(), String> {
@@ -276,7 +288,7 @@ pub fn decode_ljpeg_420(ljpeg: &LjpegDecompressor, out: &mut [u16], width: usize
     }
   }
 
-  pump.validate_end_of_scan()
+  validate_full_scan(ljpeg, &pump)
 }
 
 fn set_yuv_422(out: &mut [u16], row: usize, col: usize, width: usize, y1: i32, y2: i32, cb: i32, cr: i32) {
@@ -339,7 +351,7 @@ pub fn decode_ljpeg_422(ljpeg: &LjpegDecompressor, out: &mut [u16], width: usize
     }
   }
 
-  pump.validate_end_of_scan()
+  validate_full_scan(ljpeg, &pump)
 }
 
 pub fn decode_hasselblad(ljpeg: &LjpegDecompressor, out: &mut [u16], width: usize) -> Result<(), String> {
