@@ -218,7 +218,7 @@ pub enum ExifTag {
   Software = 0x0131,
   ModifyDate = 0x0132,
   Artist = 0x013b,
-  HostComputer = 0x0103c,
+  HostComputer = 0x013c,
   Predictor = 0x013d,
   WhitePoint = 0x013e,
   PrimaryChromaticities = 0x013f,
