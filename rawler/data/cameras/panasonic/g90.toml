@@ -7,6 +7,7 @@ model_aliases = [
   ["DC-G95", "DC-G95"],
   ["DC-G91", "DC-G91"],
   ["DC-G95D", "DC-G95D"],
+  ["DC-G97", "DC-G97"],
 ]
 
 #blackpoint = 140
