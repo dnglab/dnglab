@@ -59,6 +59,23 @@ pub fn create_app() -> Command {
         .default_value("1"),
     )
     .arg(
+      arg!(jxl_distance: --"jxl-distance" <distance> "JPEG XL distance (0.0 = lossless, 1.0 = visually lossless)")
+        .required(false)
+        .value_parser(clap::value_parser!(f32))
+        .default_value("1.0"),
+    )
+    .arg(
+      arg!(jxl_effort: --"jxl-effort" <effort> "JPEG XL encoding effort (1 = fast, 10 = best quality)")
+        .required(false)
+        .value_parser(clap::value_parser!(u32).range(1..=10))
+        .default_value("7"),
+    )
+    .arg(
+      arg!(jxl_decode_speed: --"jxl-decode-speed" <speed> "JPEG XL decode speed hint (1 = slow, 4 = fast)")
+        .required(false)
+        .value_parser(clap::value_parser!(u32).range(1..=4)),
+    )
+    .arg(
       arg!(preview: --"dng-preview" <preview> "DNG include preview image")
         .value_parser(ValueParser::bool())
         .required(false)

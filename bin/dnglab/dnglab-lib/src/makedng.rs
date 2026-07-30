@@ -82,7 +82,9 @@ pub async fn makedng_internal(options: &ArgMatches, dest_path: &Path) -> crate::
     .unwrap_or(&DngVersion::V1_4)
     .as_dng_value();
 
-  let mut dng = DngWriter::new(&mut stream, backward_version)?;
+  // DNG version must be at least as new as the backward version
+  let dng_version = if backward_version > DNG_VERSION_V1_6 { backward_version } else { DNG_VERSION_V1_6 };
+  let mut dng = DngWriter::new(&mut stream, dng_version, backward_version)?;
 
   if let Some(artist) = options.get_one::<String>("artist") {
     dng.root_ifd_mut().add_tag(TiffCommonTag::Artist, artist);

@@ -1,0 +1,44 @@
+.ie \n(.g .ds Aq \(aq
+.el .ds Aq '
+.TH dnglab-process-raw 1  "dnglab-process-raw " 
+.SH NAME
+dnglab\-process\-raw
+.SH SYNOPSIS
+\fBdnglab\-process\-raw\fR [\fB\-\-artist\fR] [\fB\-\-keep\-mtime\fR] [\fB\-\-image\-index\fR] [\fB\-\-crop\fR] [\fB\-f\fR|\fB\-\-override\fR] [\fB\-r\fR|\fB\-\-recursive\fR] [\fB\-h\fR|\fB\-\-help\fR] <\fIINPUT\fR> <\fIOUTPUT\fR> 
+.SH DESCRIPTION
+.SH OPTIONS
+.TP
+\fB\-\-artist\fR=\fIartist\fR
+Set the artist tag
+.TP
+\fB\-\-keep\-mtime\fR=\fIkeepmtime\fR [default: false]
+Keep mtime, read from EXIF with fallback to original file mtime
+.br
+
+.br
+[\fIpossible values: \fRtrue, false]
+.TP
+\fB\-\-image\-index\fR=\fIindex\fR [default: 0]
+Select a specific image index (or \*(Aqall\*(Aq) if file is a image container
+.TP
+\fB\-\-crop\fR=\fIcrop\fR [default: best]
+DNG default crop
+.br
+
+.br
+[\fIpossible values: \fRbest, activearea, none]
+.TP
+\fB\-f\fR, \fB\-\-override\fR
+Override existing files
+.TP
+\fB\-r\fR, \fB\-\-recursive\fR
+Process input directory recursive
+.TP
+\fB\-h\fR, \fB\-\-help\fR
+Print help
+.TP
+<\fIINPUT\fR>
+Input file or directory
+.TP
+<\fIOUTPUT\fR>
+Output file or existing directory

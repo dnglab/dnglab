@@ -59,7 +59,9 @@ env_logger = "0.11"
 serde_yaml = "=0.8" # TODO - breaks camera tests, update to 0.9 when fixed
 
 [build-dependencies]
+cc = "1"
 glob = "0.3"
+pkg-config = "0.3"
 rustc_version = "0.4"
 toml = "=0.8" # TODO - Updating breaks `join.rs` build script with message - Error parsing "data/cameras/apple/quicktake100.toml": message: "unexpected content, expected nothing",
 
