@@ -1,0 +1,22 @@
+make = "Panasonic"
+model = "DC-L10"
+clean_make = "Panasonic"
+clean_model = "DC-L10"
+whitepoint = 65535
+color_pattern = "RGGB"
+
+[cameras.color_matrix]
+A = [0.8899, -0.4935, 0.0121, -0.4391, 1.2135, 0.2544, -0.0523, 0.1884, 0.6776]
+D65 = [0.8056, -0.3376, -0.0782, -0.4528, 1.2406, 0.2376, -0.079, 0.2517, 0.5688]
+
+[[cameras.modes]]
+mode = "4:3"
+
+[[cameras.modes]]
+mode = "1:1"
+
+[[cameras.modes]]
+mode = "16:9"
+
+[[cameras.modes]]
+mode = "3:2"
