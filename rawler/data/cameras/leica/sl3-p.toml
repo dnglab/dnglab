@@ -1,0 +1,7 @@
+make = "LEICA CAMERA AG"
+model = "LEICA SL3-P"
+clean_make = "Leica"
+clean_model = "SL3-P"
+
+[[cameras.modes]]
+mode = "dng"
