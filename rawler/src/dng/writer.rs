@@ -266,6 +266,26 @@ where
       self.ifd_mut().add_tag(DngTag::BlackLevel, blacklevel.levels.as_slice());
     }
 
+    if blacklevel.delta_h.len() == active_area.d.w {
+      self.ifd_mut().add_tag(DngTag::BlackLevelDeltaH, blacklevel.delta_h.as_slice());
+    } else if !blacklevel.delta_h.is_empty() {
+      log::warn!(
+        "Skipping BlackLevelDeltaH with length {}, expected {} for the output active area",
+        blacklevel.delta_h.len(),
+        active_area.d.w
+      );
+    }
+
+    if blacklevel.delta_v.len() == active_area.d.h {
+      self.ifd_mut().add_tag(DngTag::BlackLevelDeltaV, blacklevel.delta_v.as_slice());
+    } else if !blacklevel.delta_v.is_empty() {
+      log::warn!(
+        "Skipping BlackLevelDeltaV with length {}, expected {} for the output active area",
+        blacklevel.delta_v.len(),
+        active_area.d.h
+      );
+    }
+
     if !rawimage.blackareas.is_empty() {
       let data: Vec<u16> = rawimage.blackareas.iter().flat_map(rect_to_dng_area).collect();
       self.ifd_mut().add_tag(DngTag::MaskedAreas, &data);
