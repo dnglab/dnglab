@@ -449,13 +449,11 @@ where
 
   pub fn original_file(&mut self, original: &OriginalCompressed, filename: impl AsRef<str>) -> Result<()> {
     let mut buf = std::io::Cursor::new(Vec::new());
-    original.write_to_stream(&mut buf)?;
+    let digest = original.write_to_stream(&mut buf)?;
 
     self.root_ifd.add_tag_undefined(DngTag::OriginalRawFileData, buf.into_inner());
     self.root_ifd.add_tag(DngTag::OriginalRawFileName, filename.as_ref());
-    if let Some(digest) = original.digest() {
-      self.root_ifd.add_tag(DngTag::OriginalRawFileDigest, digest);
-    }
+    self.root_ifd.add_tag(DngTag::OriginalRawFileDigest, <[u8; 16]>::from(digest));
     Ok(())
   }
 

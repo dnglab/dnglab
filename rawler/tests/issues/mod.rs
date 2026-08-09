@@ -5,6 +5,7 @@ use rawler::devtools::rawdb::get_rawdb_cache;
 use rawler::devtools::rawdb::rawdb_ensure_file;
 use rawler::dng::convert::ConvertParams;
 use rawler::dng::convert::convert_raw_file;
+use rawler::dng::original::extract_original;
 use rawler::formats::jfif::Jfif;
 use rawler::rawsource::RawSource;
 use rawler::{analyze::raw_pixels_digest, decoders::RawDecodeParams};
@@ -69,5 +70,35 @@ fn dnglab_619_silverfast_scan_missing_illuminant() -> std::result::Result<(), Bo
   let path = rawdb_ensure_file(&get_rawdb_cache(), "dnglab", "dnglab-issue-619", "testfiles/silverfast_scan.dng")?;
   let mut dng = Cursor::new(Vec::new());
   convert_raw_file(&path, &mut dng, &ConvertParams::default())?;
+  Ok(())
+}
+
+#[test]
+fn dnglab_807_extract_embedded_raw_invalid_digest() -> std::result::Result<(), Box<dyn std::error::Error>> {
+  let path = rawdb_ensure_file(&get_rawdb_cache(), "dnglab", "dnglab-issue-807", "testfiles/dnglab-issue-807_embedded_original.dng")?;
+  let mut original = Cursor::new(Vec::new());
+  let dng = RawSource::new(&path)?;
+  let verify_digest = true;
+  extract_original(&dng, &mut original, verify_digest)?;
+  let plain = original.into_inner();
+  let plain_digest = md5::compute(&plain);
+  assert_eq!(format!("{:x}", plain_digest), "a968cf0183a84c51ef492c631c6d16b7");
+  Ok(())
+}
+
+#[test]
+fn dnglab_807_digest_calculation() -> std::result::Result<(), Box<dyn std::error::Error>> {
+  let path = rawdb_ensure_file(&get_rawdb_cache(), "Canon", "EOS 40D", "raw_modes/Canon EOS 40D_ISO_100_RAW.CR2")?;
+  let mut dng = Cursor::new(Vec::new());
+  convert_raw_file(&path, &mut dng, &ConvertParams::default().with_embedded(true))?;
+  // Now verify
+  let inner = dng.into_inner();
+  let mut original = Cursor::new(Vec::new());
+  let dng = RawSource::new_from_slice(&inner);
+  let verify_digest = true;
+  extract_original(&dng, &mut original, verify_digest)?;
+  let plain = original.into_inner();
+  let plain_digest = md5::compute(&plain);
+  assert_eq!(format!("{:x}", plain_digest), "a968cf0183a84c51ef492c631c6d16b7");
   Ok(())
 }
