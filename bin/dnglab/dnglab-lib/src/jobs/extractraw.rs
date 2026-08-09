@@ -5,15 +5,11 @@ use super::Job;
 use crate::{AppError, Result};
 use async_trait::async_trait;
 use log::debug;
-use rawler::{
-  dng::original::{OriginalCompressed, OriginalDigest},
-  formats::tiff::{GenericTiffReader, Value, reader::TiffReader},
-  tags::DngTag,
-};
+use rawler::{dng::original::extract_original, rawsource::RawSource};
 use std::{
   fmt::Display,
   fs::remove_file,
-  io::{BufReader, BufWriter, Cursor, Write},
+  io::{BufWriter, Write},
 };
 use std::{fs::File, path::PathBuf, time::Instant};
 
@@ -56,43 +52,22 @@ impl ExtractRawJob {
     if self.output.exists() && !self.replace {
       return Err(AppError::AlreadyExists(self.output.clone()));
     }
-    let dng_file = File::open(&self.input)?;
-
-    let mut in_file = BufReader::new(dng_file);
-    let file = GenericTiffReader::new(&mut in_file, 0, 0, None, &[]).map_err(|e| AppError::General(e.to_string()))?;
-
-    if !file.has_entry(DngTag::DNGVersion) {
-      debug!("Input is not a DNG file");
-      return Err(AppError::General("Input file is not a DNG".into()));
-    }
-    if let Some(orig_data) = file.get_entry(DngTag::OriginalRawFileData) {
-      if let Value::Undefined(val) = &orig_data.value {
-        let digest = file
-          .get_entry(DngTag::OriginalRawFileDigest)
-          .map(|entry| entry.value.get_data().as_slice())
-          .and_then(|data| OriginalDigest::try_from(data).ok());
-
-        let original = OriginalCompressed::new(&mut Cursor::new(val), digest)?;
-        let mut stream = BufWriter::new(File::create(&self.output)?);
-        if let Err(err) = original.decompress(&mut stream, !self.skip_checks) {
-          drop(original);
-          if let Err(err) = remove_file(&self.output) {
-            log::error!("Failed to delete original file after decompress error: {:?}", err);
-          }
-          return Err(err.into());
-        }
-        stream.flush()?;
-        Ok(JobResult {
-          job: self.clone(),
-          duration: 0.0, // TODO: fixme
-          error: None,
-        })
-      } else {
-        Err(AppError::General("No embedded raw data found".into()))
+    let dng = RawSource::new(&self.input)?;
+    let mut target = BufWriter::new(File::create(&self.output)?);
+    if let Err(err) = extract_original(&dng, &mut target, !self.skip_checks) {
+      drop(target);
+      if let Err(err) = remove_file(&self.output) {
+        log::error!("Failed to delete original file after decompress error: {:?}", err);
       }
-    } else {
-      Err(AppError::General("No embedded raw file found".into()))
+      return Err(err.into());
     }
+    target.flush()?;
+    drop(target);
+    Ok(JobResult {
+      job: self.clone(),
+      duration: 0.0, // Overwritten with the measured elapsed time in `execute`.
+      error: None,
+    })
   }
 }
 
