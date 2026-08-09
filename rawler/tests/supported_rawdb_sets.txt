@@ -327,6 +327,7 @@ Sony/DSC-RX100/raw_modes
 Sony/DSC-RX10M2/raw_modes
 Sony/DSC-RX10M3/raw_modes
 Sony/DSC-RX10M4/raw_modes
+Sony/DSC-RX10M5/raw_modes
 Sony/DSC-RX10/raw_modes
 Sony/DSC-RX1/raw_modes
 Sony/DSC-RX1RM2/raw_modes
