@@ -38,7 +38,11 @@ data:
         orientation: 1
         copyright: ~
         artist: ~
-        lens_spec: ~
+        lens_spec:
+          - 120/10
+          - 240/10
+          - 28/10
+          - 28/10
         exposure_time: 1/200
         fnumber: 71/10
         aperture_value: ~
@@ -77,7 +81,7 @@ data:
         serial_number: ~
         lens_serial_number: ~
         lens_make: ~
-        lens_model: ~
+        lens_model: FE 12-24mm F2.8 GM
         gps: ~
         user_comment: ~
       model: ILCE-7SM3

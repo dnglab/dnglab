@@ -44,7 +44,11 @@ data:
         orientation: 1
         copyright: ~
         artist: ~
-        lens_spec: ~
+        lens_spec:
+          - 2800/100
+          - 2800/100
+          - 392/256
+          - 392/256
         exposure_time: 10/4000
         fnumber: 40/10
         aperture_value: ~
@@ -82,8 +86,8 @@ data:
         owner_name: ~
         serial_number: ~
         lens_serial_number: N/A
-        lens_make: ~
-        lens_model: ~
+        lens_make: LEICA CAMERA AG
+        lens_model: 28.0 mm f/1.7
         gps: ~
         user_comment: ~
       model: Q (Typ 116)

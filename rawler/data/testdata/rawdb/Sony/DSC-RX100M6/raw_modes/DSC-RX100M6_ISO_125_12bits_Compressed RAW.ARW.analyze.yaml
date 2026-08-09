@@ -38,7 +38,11 @@ data:
         orientation: 1
         copyright: CC0
         artist: "publisher: https://raw.pixls.us"
-        lens_spec: ~
+        lens_spec:
+          - 900/100
+          - 7200/100
+          - 28/10
+          - 45/10
         exposure_time: 1/80
         fnumber: 71/10
         aperture_value: ~

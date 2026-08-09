@@ -44,7 +44,11 @@ data:
         orientation: 1
         copyright: ~
         artist: ~
-        lens_spec: ~
+        lens_spec:
+          - 280/10
+          - 800/10
+          - 35/10
+          - 56/10
         exposure_time: 1/125
         fnumber: 100/10
         aperture_value: ~
@@ -83,7 +87,7 @@ data:
         serial_number: ~
         lens_serial_number: ~
         lens_make: ~
-        lens_model: ~
+        lens_model: 28-80mm F3.5-5.6
         gps:
           gps_version_id:
             - 2

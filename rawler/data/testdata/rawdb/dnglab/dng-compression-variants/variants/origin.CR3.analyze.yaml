@@ -44,7 +44,11 @@ data:
         orientation: 1
         copyright: Daniel Vogelbacher (www.chaospixel.com)
         artist: Daniel Vogelbacher
-        lens_spec: ~
+        lens_spec:
+          - 14/1
+          - 35/1
+          - 4/1
+          - 4/1
         exposure_time: 1/800
         fnumber: 8/1
         aperture_value: 393216/65536
@@ -82,8 +86,8 @@ data:
         owner_name: Daniel Vogelbacher
         serial_number: "148302302661"
         lens_serial_number: "0803001156"
-        lens_make: ~
-        lens_model: ~
+        lens_make: Canon
+        lens_model: RF 14-35mm F4L IS USM
         gps:
           gps_version_id:
             - 2

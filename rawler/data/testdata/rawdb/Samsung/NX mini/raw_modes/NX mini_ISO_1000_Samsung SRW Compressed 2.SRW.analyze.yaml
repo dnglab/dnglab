@@ -44,7 +44,11 @@ data:
         orientation: 1
         copyright: ~
         artist: ~
-        lens_spec: ~
+        lens_spec:
+          - 0/0
+          - 0/0
+          - 0/0
+          - 0/0
         exposure_time: 1/30
         fnumber: 35/10
         aperture_value: 35/10
@@ -82,8 +86,8 @@ data:
         owner_name: ~
         serial_number: ~
         lens_serial_number: ~
-        lens_make: ~
-        lens_model: ~
+        lens_make: Samsung
+        lens_model: NX-M 9mm F3.5
         gps: ~
         user_comment: ~
       model: NX mini

@@ -44,7 +44,11 @@ data:
         orientation: 1
         copyright: ~
         artist: ~
-        lens_spec: ~
+        lens_spec:
+          - 850/10
+          - 850/10
+          - 18/10
+          - 18/10
         exposure_time: 1/50
         fnumber: 18/10
         aperture_value: ~
@@ -83,7 +87,7 @@ data:
         serial_number: ~
         lens_serial_number: ~
         lens_make: ~
-        lens_model: ~
+        lens_model: FE 85mm F1.8
         gps: ~
         user_comment: ~
       model: ILCE-7M4

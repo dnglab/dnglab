@@ -44,7 +44,11 @@ data:
         orientation: 1
         copyright: ""
         artist: ""
-        lens_spec: ~
+        lens_spec:
+          - 1100/100
+          - 2300/100
+          - 924/256
+          - 1006/256
         exposure_time: 10/400
         fnumber: 160/10
         aperture_value: ~
@@ -82,8 +86,8 @@ data:
         owner_name: ~
         serial_number: ~
         lens_serial_number: "4420616"
-        lens_make: ~
-        lens_model: ~
+        lens_make: LEICA CAMERA AG
+        lens_model: "Super-Vario-Elmar-TL  1:3.5-4.5 / 11-23 ASPH."
         gps: ~
         user_comment: ~
       model: CL

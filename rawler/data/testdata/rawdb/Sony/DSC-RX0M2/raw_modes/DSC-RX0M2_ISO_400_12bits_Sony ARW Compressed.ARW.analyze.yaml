@@ -44,7 +44,11 @@ data:
         orientation: 1
         copyright: Eugene Imes
         artist: Eugene Imes
-        lens_spec: ~
+        lens_spec:
+          - 790/100
+          - 790/100
+          - 40/10
+          - 40/10
         exposure_time: 1/50
         fnumber: 40/10
         aperture_value: ~

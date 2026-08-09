@@ -44,7 +44,11 @@ data:
         orientation: 1
         copyright: CC0
         artist: Alex Esseling
-        lens_spec: ~
+        lens_spec:
+          - 24/1
+          - 70/1
+          - 0/1
+          - 0/1
         exposure_time: 1/15
         fnumber: 11/1
         aperture_value: 458752/65536

@@ -44,7 +44,11 @@ data:
         orientation: 1
         copyright: Rolf Meyerhoff
         artist: Rolf Meyerhoff
-        lens_spec: ~
+        lens_spec:
+          - 880/100
+          - 2570/100
+          - 18/10
+          - 28/10
         exposure_time: 1/320
         fnumber: 18/10
         aperture_value: ~

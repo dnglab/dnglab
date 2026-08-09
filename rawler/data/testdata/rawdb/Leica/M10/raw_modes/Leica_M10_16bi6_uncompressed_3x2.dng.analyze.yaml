@@ -35,7 +35,11 @@ data:
         orientation: 1
         copyright: ""
         artist: ""
-        lens_spec: ~
+        lens_spec:
+          - 35/1
+          - 35/1
+          - 5110/10
+          - 5110/10
         exposure_time: 1/45
         fnumber: ~
         aperture_value: ~
@@ -73,8 +77,8 @@ data:
         owner_name: ~
         serial_number: "5181587"
         lens_serial_number: ~
-        lens_make: ~
-        lens_model: ~
+        lens_make: Leica Camera AG
+        lens_model: "Summicron-M 1:2/35 ASPH."
         gps:
           gps_version_id:
             - 2

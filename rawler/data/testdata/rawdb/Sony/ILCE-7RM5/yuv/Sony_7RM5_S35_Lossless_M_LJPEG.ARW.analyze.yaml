@@ -44,7 +44,11 @@ data:
         orientation: 1
         copyright: ~
         artist: ~
-        lens_spec: ~
+        lens_spec:
+          - 500/10
+          - 500/10
+          - 12/10
+          - 12/10
         exposure_time: 1/2000
         fnumber: 12/10
         aperture_value: ~
@@ -83,7 +87,7 @@ data:
         serial_number: ~
         lens_serial_number: ~
         lens_make: ~
-        lens_model: ~
+        lens_model: FE 50mm F1.2 GM
         gps: ~
         user_comment: ~
       model: ILCE-7RM5

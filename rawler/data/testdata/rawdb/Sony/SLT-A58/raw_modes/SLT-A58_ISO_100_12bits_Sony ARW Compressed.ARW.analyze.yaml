@@ -44,7 +44,11 @@ data:
         orientation: 8
         copyright: ~
         artist: ~
-        lens_spec: ~
+        lens_spec:
+          - 500/10
+          - 500/10
+          - 14/10
+          - 14/10
         exposure_time: 1/800
         fnumber: 40/10
         aperture_value: ~
@@ -83,7 +87,7 @@ data:
         serial_number: ~
         lens_serial_number: ~
         lens_make: ~
-        lens_model: ~
+        lens_model: 50mm F1.4
         gps: ~
         user_comment: ~
       model: SLT-A58

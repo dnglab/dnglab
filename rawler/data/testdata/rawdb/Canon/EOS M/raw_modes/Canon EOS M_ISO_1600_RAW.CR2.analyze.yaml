@@ -44,7 +44,11 @@ data:
         orientation: 1
         copyright: ""
         artist: ""
-        lens_spec: ~
+        lens_spec:
+          - 17/1
+          - 50/1
+          - 0/1
+          - 0/1
         exposure_time: 1/60
         fnumber: 28/10
         aperture_value: 196608/65536
@@ -83,7 +87,7 @@ data:
         serial_number: "032152201973"
         lens_serial_number: "0000000000"
         lens_make: ~
-        lens_model: ~
+        lens_model: 17-50mm
         gps:
           gps_version_id:
             - 2

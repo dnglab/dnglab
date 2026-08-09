@@ -44,7 +44,11 @@ data:
         orientation: 1
         copyright: CC-0
         artist: Andreas Kreitenmeyer
-        lens_spec: ~
+        lens_spec:
+          - 8800/1000
+          - 36800/1000
+          - 0/1
+          - 0/1
         exposure_time: 1/60
         fnumber: 25/10
         aperture_value: 172032/65536

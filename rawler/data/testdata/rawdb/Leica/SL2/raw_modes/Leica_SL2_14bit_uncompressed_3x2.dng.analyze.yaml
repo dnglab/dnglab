@@ -44,7 +44,11 @@ data:
         orientation: 1
         copyright: ""
         artist: ""
-        lens_spec: ~
+        lens_spec:
+          - 7500/100
+          - 7500/100
+          - 512/256
+          - 512/256
         exposure_time: 10/2000
         fnumber: 28/10
         aperture_value: ~
@@ -82,8 +86,8 @@ data:
         owner_name: ~
         serial_number: ~
         lens_serial_number: "4960157"
-        lens_make: ~
-        lens_model: ~
+        lens_make: SIGMA
+        lens_model: TTARTISAN 75F2 L
         gps: ~
         user_comment: ~
       model: SL2

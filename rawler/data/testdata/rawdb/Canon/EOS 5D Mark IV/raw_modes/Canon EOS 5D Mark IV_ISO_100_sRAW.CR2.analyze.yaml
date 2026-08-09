@@ -45,7 +45,11 @@ data:
         orientation: 1
         copyright: ""
         artist: Lothar Kimmeringer
-        lens_spec: ~
+        lens_spec:
+          - 24/1
+          - 70/1
+          - 0/1
+          - 0/1
         exposure_time: 1/3200
         fnumber: 28/10
         aperture_value: 196608/65536
@@ -84,7 +88,7 @@ data:
         serial_number: "013021003973"
         lens_serial_number: "0000000000"
         lens_make: ~
-        lens_model: ~
+        lens_model: 24-70mm
         gps:
           gps_version_id:
             - 2

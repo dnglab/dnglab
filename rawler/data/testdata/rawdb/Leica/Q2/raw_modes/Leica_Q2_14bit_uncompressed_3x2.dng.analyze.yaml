@@ -44,7 +44,11 @@ data:
         orientation: 1
         copyright: ""
         artist: ""
-        lens_spec: ~
+        lens_spec:
+          - 2800/100
+          - 2800/100
+          - 392/256
+          - 761/256
         exposure_time: 10/5000
         fnumber: 63/10
         aperture_value: ~
@@ -83,7 +87,7 @@ data:
         serial_number: ~
         lens_serial_number: N/A
         lens_make: ~
-        lens_model: ~
+        lens_model: 28.0 mm f/1.7
         gps: ~
         user_comment: ~
       model: Q2

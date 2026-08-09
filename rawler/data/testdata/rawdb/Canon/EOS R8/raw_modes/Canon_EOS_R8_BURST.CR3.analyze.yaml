@@ -44,7 +44,11 @@ data:
         orientation: 1
         copyright: ""
         artist: ""
-        lens_spec: ~
+        lens_spec:
+          - 140/1
+          - 400/1
+          - 0/1
+          - 0/1
         exposure_time: 1/2000
         fnumber: 56/10
         aperture_value: 327680/65536
@@ -83,7 +87,7 @@ data:
         serial_number: "112022012435"
         lens_serial_number: 0000c2fd89
         lens_make: ~
-        lens_model: ~
+        lens_model: EF70-200mm f/2.8L IS II USM +2x
         gps:
           gps_version_id:
             - 2

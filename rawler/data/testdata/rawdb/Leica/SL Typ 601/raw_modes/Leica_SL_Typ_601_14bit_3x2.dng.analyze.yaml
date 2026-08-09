@@ -44,7 +44,11 @@ data:
         orientation: 1
         copyright: ""
         artist: ""
-        lens_spec: ~
+        lens_spec:
+          - 2400/100
+          - 9000/100
+          - 768/256
+          - 1002/256
         exposure_time: 10/450
         fnumber: 80/10
         aperture_value: ~
@@ -82,8 +86,8 @@ data:
         owner_name: ~
         serial_number: ~
         lens_serial_number: N/A
-        lens_make: ~
-        lens_model: ~
+        lens_make: LEICA CAMERA AG
+        lens_model: "VARIO-ELMARIT 1:2.8-4.0/24-90mm ASPH. OIS"
         gps:
           gps_version_id:
             - 2

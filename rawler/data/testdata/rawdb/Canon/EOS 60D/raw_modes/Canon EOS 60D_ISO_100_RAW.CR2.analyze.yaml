@@ -44,7 +44,11 @@ data:
         orientation: 1
         copyright: Copywrite Carlo Vaccari
         artist: Carlo Vaccari
-        lens_spec: ~
+        lens_spec:
+          - 0/0
+          - 0/0
+          - 0/0
+          - 0/0
         exposure_time: 1/125
         fnumber: 0/1
         aperture_value: 2147483648/1

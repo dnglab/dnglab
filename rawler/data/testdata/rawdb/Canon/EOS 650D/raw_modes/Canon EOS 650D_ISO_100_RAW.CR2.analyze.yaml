@@ -44,7 +44,11 @@ data:
         orientation: 1
         copyright: ""
         artist: ""
-        lens_spec: ~
+        lens_spec:
+          - 24/1
+          - 70/1
+          - 0/1
+          - 0/1
         exposure_time: 1/320
         fnumber: 5/1
         aperture_value: 303104/65536
@@ -83,7 +87,7 @@ data:
         serial_number: "073053009450"
         lens_serial_number: "0000000000"
         lens_make: ~
-        lens_model: ~
+        lens_model: 24-70mm
         gps:
           gps_version_id:
             - 2

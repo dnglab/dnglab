@@ -118,8 +118,8 @@ data:
         owner_name: ~
         serial_number: 2C002941
         lens_serial_number: "00000101"
-        lens_make: "VILTROX "
-        lens_model: "23mmF1.4XM  "
+        lens_make: VILTROX
+        lens_model: 23mmF1.4XM
         gps: ~
         user_comment: ~
       model: X-H2

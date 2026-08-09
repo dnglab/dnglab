@@ -44,7 +44,11 @@ data:
         orientation: 1
         copyright: ~
         artist: ~
-        lens_spec: ~
+        lens_spec:
+          - 425/100
+          - 11800/100
+          - 35/10
+          - 64/10
         exposure_time: 1/400
         fnumber: 45/10
         aperture_value: ~

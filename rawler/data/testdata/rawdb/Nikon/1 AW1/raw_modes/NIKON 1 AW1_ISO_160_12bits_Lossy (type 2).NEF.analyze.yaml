@@ -80,7 +80,7 @@ data:
         serial_number: ~
         lens_serial_number: ~
         lens_make: ~
-        lens_model: ~
+        lens_model: 1 NIKKOR AW 10mm f/2.8
         gps:
           gps_version_id:
             - 2

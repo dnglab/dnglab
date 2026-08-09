@@ -44,7 +44,11 @@ data:
         orientation: 1
         copyright: ~
         artist: ~
-        lens_spec: ~
+        lens_spec:
+          - 180/10
+          - 550/10
+          - 35/10
+          - 56/10
         exposure_time: 1/200
         fnumber: 71/10
         aperture_value: ~
@@ -83,7 +87,7 @@ data:
         serial_number: ~
         lens_serial_number: ~
         lens_make: ~
-        lens_model: ~
+        lens_model: E 18-55mm F3.5-5.6 OSS
         gps: ~
         user_comment: ~
       model: NEX-5

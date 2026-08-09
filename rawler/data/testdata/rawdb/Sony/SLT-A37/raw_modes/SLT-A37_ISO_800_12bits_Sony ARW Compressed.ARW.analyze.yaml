@@ -44,7 +44,11 @@ data:
         orientation: 1
         copyright: ~
         artist: ~
-        lens_spec: ~
+        lens_spec:
+          - 180/10
+          - 2500/10
+          - 35/10
+          - 63/10
         exposure_time: 1/13
         fnumber: 45/10
         aperture_value: ~
@@ -83,7 +87,7 @@ data:
         serial_number: ~
         lens_serial_number: ~
         lens_make: ~
-        lens_model: ~
+        lens_model: 18-250mm F3.5-6.3
         gps: ~
         user_comment: ~
       model: SLT-A37
