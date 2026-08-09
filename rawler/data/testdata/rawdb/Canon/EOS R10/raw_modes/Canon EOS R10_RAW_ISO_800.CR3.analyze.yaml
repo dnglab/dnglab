@@ -44,7 +44,11 @@ data:
         orientation: 8
         copyright: ""
         artist: CC-0
-        lens_spec: ~
+        lens_spec:
+          - 17/1
+          - 50/1
+          - 0/1
+          - 0/1
         exposure_time: 1/1000
         fnumber: 10/1
         aperture_value: 434176/65536

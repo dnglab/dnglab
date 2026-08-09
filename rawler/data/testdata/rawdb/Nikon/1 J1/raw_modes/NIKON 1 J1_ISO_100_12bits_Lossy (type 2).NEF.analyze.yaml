@@ -80,7 +80,7 @@ data:
         serial_number: ~
         lens_serial_number: ~
         lens_make: ~
-        lens_model: ~
+        lens_model: 1 NIKKOR VR 10-30mm f/3.5-5.6
         gps: ~
         user_comment: ~
       model: 1 J1

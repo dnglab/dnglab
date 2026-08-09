@@ -440,18 +440,10 @@ impl<'a> Decoder for RafDecoder<'a> {
   }
 
   fn raw_metadata(&self, _file: &RawSource, _params: &RawDecodeParams) -> Result<RawMetadata> {
-    let mut exif = Exif::new(&self.ifd)?;
     // Fuji RAF has all EXIF tags we need and there is no LensID or something
     // we can lookup. So this is an exception, we just pass the information.
-    // TODO: better imeplement LensData::from_exif()?
-    if let Some(ifd) = self.ifd.get_sub_ifd(TiffCommonTag::ExifIFDPointer) {
-      exif.lens_make = ifd.get_entry(ExifTag::LensMake).and_then(|entry| entry.as_string().cloned());
-      exif.lens_model = ifd.get_entry(ExifTag::LensModel).and_then(|entry| entry.as_string().cloned());
-      exif.lens_spec = ifd.get_entry(ExifTag::LensSpecification).and_then(|entry| match &entry.value {
-        Value::Rational(data) => Some([data[0], data[1], data[2], data[3]]),
-        _ => None,
-      });
-    }
+    // The lens tags are parsed by Exif::new() from the EXIF IFD.
+    let exif = Exif::new(&self.ifd)?;
     let mdata = RawMetadata::new(&self.camera, exif);
     Ok(mdata)
   }

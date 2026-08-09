@@ -83,7 +83,7 @@ data:
         serial_number: ~
         lens_serial_number: ~
         lens_make: ~
-        lens_model: ~
+        lens_model: "----"
         gps: ~
         user_comment: ~
       model: DSLR-A560

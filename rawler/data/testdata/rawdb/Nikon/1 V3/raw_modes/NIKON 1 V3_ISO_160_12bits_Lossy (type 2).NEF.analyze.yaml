@@ -80,7 +80,7 @@ data:
         serial_number: ~
         lens_serial_number: ~
         lens_make: ~
-        lens_model: ~
+        lens_model: 1 NIKKOR VR 70-300mm f/4.5-5.6
         gps:
           gps_version_id:
             - 2

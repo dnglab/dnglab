@@ -259,6 +259,14 @@ impl RawMetadata {
   pub(crate) fn new_with_lens(camera: &Camera, mut exif: Exif, lens: Option<LensDescription>) -> Self {
     if let Some(lens) = &lens {
       exif.extend_from_lens(lens);
+    } else {
+      // No lens found in database, keep the lens information from source EXIF (if any).
+      log::warn!(
+        "Lens resolver found no matching lens, falling back to EXIF lens data: make: {:?}, model: {:?}, spec: {:?}",
+        exif.lens_make,
+        exif.lens_model,
+        exif.lens_spec
+      );
     }
     Self {
       exif,

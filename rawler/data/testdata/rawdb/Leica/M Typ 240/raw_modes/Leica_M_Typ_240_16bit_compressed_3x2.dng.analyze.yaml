@@ -35,7 +35,11 @@ data:
         orientation: 1
         copyright: ""
         artist: ""
-        lens_spec: ~
+        lens_spec:
+          - 0/1
+          - 0/1
+          - 0/10
+          - 0/10
         exposure_time: 1/250
         fnumber: ~
         aperture_value: 600/100
@@ -73,8 +77,8 @@ data:
         owner_name: ~
         serial_number: ~
         lens_serial_number: "-------"
-        lens_make: ~
-        lens_model: ~
+        lens_make: Leica Camera AG
+        lens_model: not selected
         gps:
           gps_version_id:
             - 2

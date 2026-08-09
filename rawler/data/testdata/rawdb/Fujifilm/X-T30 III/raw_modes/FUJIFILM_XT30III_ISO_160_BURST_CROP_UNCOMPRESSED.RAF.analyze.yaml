@@ -118,7 +118,7 @@ data:
         owner_name: ~
         serial_number: "57036262"
         lens_serial_number: "00000000"
-        lens_make: "VILTROX "
+        lens_make: VILTROX
         lens_model: AF 56/1.7 XF
         gps: ~
         user_comment: ~

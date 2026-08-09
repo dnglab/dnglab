@@ -35,7 +35,11 @@ data:
         orientation: 1
         copyright: ""
         artist: ""
-        lens_spec: ~
+        lens_spec:
+          - 50/1
+          - 50/1
+          - 24/10
+          - 160/10
         exposure_time: 1/500
         fnumber: ~
         aperture_value: 740/100
@@ -73,8 +77,8 @@ data:
         owner_name: ~
         serial_number: ~
         lens_serial_number: "-------"
-        lens_make: ~
-        lens_model: ~
+        lens_make: Leica Camera AG
+        lens_model: "Summarit-M 1:2.4/50"
         gps:
           gps_version_id:
             - 2

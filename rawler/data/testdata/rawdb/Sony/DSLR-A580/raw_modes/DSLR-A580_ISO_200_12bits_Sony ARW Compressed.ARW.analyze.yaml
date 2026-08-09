@@ -44,7 +44,11 @@ data:
         orientation: 1
         copyright: ~
         artist: ~
-        lens_spec: ~
+        lens_spec:
+          - 750/10
+          - 3000/10
+          - 45/10
+          - 56/10
         exposure_time: 1/30
         fnumber: 80/10
         aperture_value: ~
@@ -83,7 +87,7 @@ data:
         serial_number: ~
         lens_serial_number: ~
         lens_make: ~
-        lens_model: ~
+        lens_model: 75-300mm F4.5-5.6
         gps: ~
         user_comment: ~
       model: DSLR-A580

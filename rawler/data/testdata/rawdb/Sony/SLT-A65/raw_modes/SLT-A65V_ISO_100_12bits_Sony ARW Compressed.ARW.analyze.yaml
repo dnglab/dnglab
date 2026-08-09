@@ -44,7 +44,11 @@ data:
         orientation: 1
         copyright: ~
         artist: ~
-        lens_spec: ~
+        lens_spec:
+          - 240/10
+          - 1050/10
+          - 35/10
+          - 45/10
         exposure_time: 1/500
         fnumber: 35/10
         aperture_value: ~
@@ -83,7 +87,7 @@ data:
         serial_number: ~
         lens_serial_number: ~
         lens_make: ~
-        lens_model: ~
+        lens_model: 24-105mm F3.5-4.5
         gps: ~
         user_comment: ~
       model: SLT-A65V

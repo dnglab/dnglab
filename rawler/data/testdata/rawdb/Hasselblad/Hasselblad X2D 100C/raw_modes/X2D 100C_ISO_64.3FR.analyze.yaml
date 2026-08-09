@@ -73,8 +73,8 @@ data:
         owner_name: ~
         serial_number: ~
         lens_serial_number: ~
-        lens_make: ~
-        lens_model: ~
+        lens_make: Hasselblad
+        lens_model: XCD 38V
         gps: ~
         user_comment: ~
       model: X2D 100C

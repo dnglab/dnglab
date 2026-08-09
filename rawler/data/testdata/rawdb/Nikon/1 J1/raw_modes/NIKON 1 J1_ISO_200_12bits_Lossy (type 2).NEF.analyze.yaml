@@ -80,7 +80,7 @@ data:
         serial_number: ~
         lens_serial_number: ~
         lens_make: ~
-        lens_model: ~
+        lens_model: 1 NIKKOR 18.5mm f/1.8
         gps: ~
         user_comment: ~
       model: 1 J1

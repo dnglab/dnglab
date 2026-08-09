@@ -38,7 +38,11 @@ data:
         orientation: 1
         copyright: ~
         artist: ~
-        lens_spec: ~
+        lens_spec:
+          - 700/10
+          - 2000/10
+          - 28/10
+          - 28/10
         exposure_time: 1/1000
         fnumber: 28/10
         aperture_value: ~
@@ -77,7 +81,7 @@ data:
         serial_number: ~
         lens_serial_number: ~
         lens_make: ~
-        lens_model: ~
+        lens_model: FE 70-200mm F2.8 GM OSS II
         gps:
           gps_version_id:
             - 2

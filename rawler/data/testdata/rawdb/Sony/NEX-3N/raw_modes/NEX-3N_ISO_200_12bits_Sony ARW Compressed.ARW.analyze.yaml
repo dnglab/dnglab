@@ -44,7 +44,11 @@ data:
         orientation: 1
         copyright: ~
         artist: ~
-        lens_spec: ~
+        lens_spec:
+          - 190/10
+          - 190/10
+          - 28/10
+          - 28/10
         exposure_time: 1/400
         fnumber: 160/10
         aperture_value: ~
@@ -83,7 +87,7 @@ data:
         serial_number: ~
         lens_serial_number: ~
         lens_make: ~
-        lens_model: ~
+        lens_model: E 19mm F2.8
         gps: ~
         user_comment: ~
       model: NEX-3N

@@ -44,7 +44,11 @@ data:
         orientation: 1
         copyright: Bernhard Richter Bild + Video
         artist: BernhardRichter@gmx.de
-        lens_spec: ~
+        lens_spec:
+          - 1000/10
+          - 3000/10
+          - 45/10
+          - 56/10
         exposure_time: 1/160
         fnumber: 63/10
         aperture_value: ~
@@ -83,7 +87,7 @@ data:
         serial_number: ~
         lens_serial_number: ~
         lens_make: ~
-        lens_model: ~
+        lens_model: 100-300mm F4.5-5.6
         gps:
           gps_version_id:
             - 2
