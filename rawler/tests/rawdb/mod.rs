@@ -1431,6 +1431,7 @@ mod nikon {
   }
   mod d2hs_raw_modes {
     super::super::rawdb_test_file!("Nikon", "D2Hs", nikon_d2hs_iso_200_12bits_uncompressed_nef, "raw_modes/NIKON D2Hs_ISO_200_12bits_Uncompressed.NEF");
+    super::super::rawdb_test_file!("Nikon", "D2Hs", nikon_d2hs_wb0x206_nef, "raw_modes/Nikon_D2Hs_wb0x206.NEF");
   }
   mod d2x_raw_modes {
     super::super::rawdb_test_file!("Nikon", "D2X", nikon_d2x_iso_100_12bits_uncompressed_nef, "raw_modes/NIKON D2X_ISO_100_12bits_Uncompressed.NEF");
