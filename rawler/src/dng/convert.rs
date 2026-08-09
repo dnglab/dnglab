@@ -73,6 +73,80 @@ impl Default for ConvertParams {
   }
 }
 
+impl ConvertParams {
+  /// Set whether the original raw file is embedded into the DNG.
+  pub fn with_embedded(mut self, embedded: bool) -> Self {
+    self.embedded = embedded;
+    self
+  }
+
+  /// Set the DNG compression method.
+  pub fn with_compression(mut self, compression: DngCompression) -> Self {
+    self.compression = compression;
+    self
+  }
+
+  /// Set the photometric conversion mode.
+  pub fn with_photometric_conversion(mut self, photometric_conversion: DngPhotometricConversion) -> Self {
+    self.photometric_conversion = photometric_conversion;
+    self
+  }
+
+  /// Set whether black/white level scaling is applied.
+  pub fn with_apply_scaling(mut self, apply_scaling: bool) -> Self {
+    self.apply_scaling = apply_scaling;
+    self
+  }
+
+  /// Set the crop mode.
+  pub fn with_crop(mut self, crop: CropMode) -> Self {
+    self.crop = crop;
+    self
+  }
+
+  /// Set the compression predictor.
+  pub fn with_predictor(mut self, predictor: u8) -> Self {
+    self.predictor = predictor;
+    self
+  }
+
+  /// Set whether a preview image is generated.
+  pub fn with_preview(mut self, preview: bool) -> Self {
+    self.preview = preview;
+    self
+  }
+
+  /// Set whether a thumbnail image is generated.
+  pub fn with_thumbnail(mut self, thumbnail: bool) -> Self {
+    self.thumbnail = thumbnail;
+    self
+  }
+
+  /// Set the artist metadata field.
+  pub fn with_artist(mut self, artist: Option<String>) -> Self {
+    self.artist = artist;
+    self
+  }
+
+  /// Set the software metadata field.
+  pub fn with_software(mut self, software: String) -> Self {
+    self.software = software;
+    self
+  }
+
+  /// Set the image index to convert.
+  pub fn with_index(mut self, index: usize) -> Self {
+    self.index = index;
+    self
+  }
+
+  /// Set whether the source modification time is preserved.
+  pub fn with_keep_mtime(mut self, keep_mtime: bool) -> Self {
+    self.keep_mtime = keep_mtime;
+    self
+  }
+}
+
 /// Convert a raw input file into DNG
 ///
 /// We don't accept a DNG file path here, because we don't know
