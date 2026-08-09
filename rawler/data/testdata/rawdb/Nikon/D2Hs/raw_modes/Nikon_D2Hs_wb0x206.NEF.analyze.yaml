@@ -1,0 +1,146 @@
+---
+file:
+  fileSize: 3901725
+  fileName: Nikon_D2Hs_wb0x206.NEF
+  digest: 74425bffe65ec410278b2b189dc95123
+data:
+  metadata:
+    rawParams:
+      rawWidth: 2496
+      rawHeight: 1648
+      bitDepth: 16
+      cropArea:
+        p:
+          x: 16
+          y: 9
+        d:
+          w: 2464
+          h: 1632
+      activeArea:
+        p:
+          x: 6
+          y: 0
+        d:
+          w: 2482
+          h: 1648
+      blacklevels:
+        levels:
+          - 0/1
+        cpp: 1
+        width: 1
+        height: 1
+      whitelevels:
+        - 3880
+      wbCoeffs:
+        - 2.7851562
+        - 1.0
+        - 1.4101562
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ~
+        artist: ~
+        lens_spec:
+          - 60/1
+          - 60/1
+          - 28/10
+          - 28/10
+        exposure_time: 10/800
+        fnumber: 32/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 640
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: 0/6
+        date_time_original: "2016:01:11 03:43:41"
+        create_date: "2016:01:11 03:43:41"
+        modify_date: "2016:01:11 03:43:41"
+        exposure_program: 3
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: "16"
+        sub_sec_time_original: "16"
+        sub_sec_time_digitized: "16"
+        shutter_speed_value: ~
+        max_aperture_value: 34/10
+        subject_distance: ~
+        metering_mode: 3
+        light_source: 0
+        flash: 0
+        focal_length: 600/10
+        image_number: ~
+        color_space: ~
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: 0
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: Nikon
+        lens_model: AF Micro-Nikkor 60mm f/2.8D
+        gps:
+          gps_version_id:
+            - 2
+            - 2
+            - 0
+            - 0
+          gps_latitude_ref: ~
+          gps_latitude: ~
+          gps_longitude_ref: ~
+          gps_longitude: ~
+          gps_altitude_ref: ~
+          gps_altitude: ~
+          gps_timestamp: ~
+          gps_satellites: ~
+          gps_status: ~
+          gps_measure_mode: ~
+          gps_dop: ~
+          gps_speed_ref: ~
+          gps_speed: ~
+          gps_track_ref: ~
+          gps_track: ~
+          gps_img_direction_ref: ~
+          gps_img_direction: ~
+          gps_map_datum: ~
+          gps_dest_latitude_ref: ~
+          gps_dest_latitude: ~
+          gps_dest_longitude_ref: ~
+          gps_dest_longitude: ~
+          gps_dest_bearing_ref: ~
+          gps_dest_bearing: ~
+          gps_dest_distance_ref: ~
+          gps_dest_distance: ~
+          gps_processing_method: ~
+          gps_area_information: ~
+          gps_date_stamp: ~
+          gps_differential: ~
+          gps_h_positioning_error: ~
+        user_comment: ~
+      model: D2Hs
+      make: Nikon
+      lens:
+        identifiers:
+          name: ~
+          id: ~
+          nikon_id: 31 54 56 56 24 24 25 02
+          olympus_id: ~
+        mount: F-mount
+        lens_make: Nikon
+        lens_model: AF Micro-Nikkor 60mm f/2.8D
+        focal_range:
+          - 60/1
+          - 60/1
+        aperture_range:
+          - 28/10
+          - 28/10
+        lens_name: Nikon AF Micro-Nikkor 60mm f/2.8D
+      unique_image_id: ~
+      rating: ~
+
