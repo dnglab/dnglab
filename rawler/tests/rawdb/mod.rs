@@ -2928,6 +2928,10 @@ mod sony {
   mod dsc_rx10m4_raw_modes {
     super::super::rawdb_test_file!("Sony", "DSC-RX10M4", dsc_rx10m4_iso_100_12bits_sony_arw_compressed_arw, "raw_modes/DSC-RX10M4_ISO_100_12bits_Sony ARW Compressed.ARW");
   }
+  mod dsc_rx10m5_raw_modes {
+    super::super::rawdb_test_file!("Sony", "DSC-RX10M5", sony_dsc_rx10m5_lossless_arw, "raw_modes/Sony_DSC_RX10M5_lossless.ARW");
+    super::super::rawdb_test_file!("Sony", "DSC-RX10M5", sony_dsc_rx10m5_lossy_arw, "raw_modes/Sony_DSC_RX10M5_lossy.ARW");
+  }
   mod dsc_rx1r_raw_modes {
     super::super::rawdb_test_file!("Sony", "DSC-RX1R", dsc_rx1r_iso_6400_14bits_sony_arw_compressed_arw, "raw_modes/DSC-RX1R_ISO_6400_14bits_Sony ARW Compressed.ARW");
   }
