@@ -9,56 +9,94 @@ dnglab\-convert \- Convert raw image(s) into dng format
 Convert raw image(s) into dng format
 .SH OPTIONS
 .TP
-\fB\-c\fR, \fB\-\-compression\fR=\fIcompression\fR [default: lossless]
+\fB\-c\fR, \fB\-\-compression\fR \fI<compression>\fR [default: lossless]
 Compression for raw image
 .br
 
 .br
-[\fIpossible values: \fRlossless, uncompressed]
+\fIPossible values:\fR
+.RS 14
+.IP \(bu 2
+lossless
+.IP \(bu 2
+uncompressed
+.RE
 .TP
-\fB\-\-ljpeg92\-predictor\fR=\fIpredictor\fR [default: 1]
+\fB\-\-ljpeg92\-predictor\fR \fI<predictor>\fR [default: 1]
 LJPEG\-92 predictor
 .TP
-\fB\-\-dng\-preview\fR=\fIpreview\fR [default: true]
+\fB\-\-dng\-preview\fR \fI<preview>\fR [default: true]
 DNG include preview image
 .br
 
 .br
-[\fIpossible values: \fRtrue, false]
+\fIPossible values:\fR
+.RS 14
+.IP \(bu 2
+true
+.IP \(bu 2
+false
+.RE
 .TP
-\fB\-\-dng\-thumbnail\fR=\fIthumbnail\fR [default: true]
+\fB\-\-dng\-thumbnail\fR \fI<thumbnail>\fR [default: true]
 DNG include thumbnail image
 .br
 
 .br
-[\fIpossible values: \fRtrue, false]
+\fIPossible values:\fR
+.RS 14
+.IP \(bu 2
+true
+.IP \(bu 2
+false
+.RE
 .TP
-\fB\-\-embed\-raw\fR=\fIembedded\fR [default: true]
+\fB\-\-embed\-raw\fR \fI<embedded>\fR [default: true]
 Embed the raw file into DNG
 .br
 
 .br
-[\fIpossible values: \fRtrue, false]
+\fIPossible values:\fR
+.RS 14
+.IP \(bu 2
+true
+.IP \(bu 2
+false
+.RE
 .TP
-\fB\-\-artist\fR=\fIartist\fR
+\fB\-\-artist\fR \fI<artist>\fR
 Set the artist tag
 .TP
-\fB\-\-keep\-mtime\fR=\fIkeepmtime\fR [default: false]
+\fB\-\-keep\-mtime\fR \fI<keepmtime>\fR [default: false]
 Keep mtime, read from EXIF with fallback to original file mtime
 .br
 
 .br
-[\fIpossible values: \fRtrue, false]
+\fIPossible values:\fR
+.RS 14
+.IP \(bu 2
+true
+.IP \(bu 2
+false
+.RE
 .TP
-\fB\-\-image\-index\fR=\fIindex\fR [default: 0]
+\fB\-\-image\-index\fR \fI<index>\fR [default: 0]
 Select a specific image index (or \*(Aqall\*(Aq) if file is a image container
 .TP
-\fB\-\-crop\fR=\fIcrop\fR [default: best]
+\fB\-\-crop\fR \fI<crop>\fR [default: best]
 DNG default crop
 .br
 
 .br
-[\fIpossible values: \fRbest, activearea, none]
+\fIPossible values:\fR
+.RS 14
+.IP \(bu 2
+best
+.IP \(bu 2
+activearea
+.IP \(bu 2
+none
+.RE
 .TP
 \fB\-f\fR, \fB\-\-override\fR
 Override existing files
@@ -66,7 +104,7 @@ Override existing files
 \fB\-r\fR, \fB\-\-recursive\fR
 Process input directory recursive
 .TP
-\fB\-j\fR, \fB\-\-jobs\fR=\fIN\fR [default: 0]
+\fB\-j\fR, \fB\-\-jobs\fR \fI<N>\fR [default: 0]
 Number of files to convert in parallel (0 = auto)
 .TP
 \fB\-h\fR, \fB\-\-help\fR
