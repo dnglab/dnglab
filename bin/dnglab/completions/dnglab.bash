@@ -17,64 +17,64 @@ _dnglab() {
                 cmd="dnglab"
                 ;;
             dnglab,analyze)
-                cmd="dnglab__analyze"
+                cmd="dnglab__subcmd__analyze"
                 ;;
             dnglab,cameras)
-                cmd="dnglab__cameras"
+                cmd="dnglab__subcmd__cameras"
                 ;;
             dnglab,convert)
-                cmd="dnglab__convert"
+                cmd="dnglab__subcmd__convert"
                 ;;
             dnglab,extract)
-                cmd="dnglab__extract"
+                cmd="dnglab__subcmd__extract"
                 ;;
             dnglab,ftpserver)
-                cmd="dnglab__ftpserver"
+                cmd="dnglab__subcmd__ftpserver"
                 ;;
             dnglab,gui)
-                cmd="dnglab__gui"
+                cmd="dnglab__subcmd__gui"
                 ;;
             dnglab,help)
-                cmd="dnglab__help"
+                cmd="dnglab__subcmd__help"
                 ;;
             dnglab,lenses)
-                cmd="dnglab__lenses"
+                cmd="dnglab__subcmd__lenses"
                 ;;
             dnglab,makedng)
-                cmd="dnglab__makedng"
+                cmd="dnglab__subcmd__makedng"
                 ;;
             dnglab,process-raw)
-                cmd="dnglab__process__raw"
+                cmd="dnglab__subcmd__process__subcmd__raw"
                 ;;
-            dnglab__help,analyze)
-                cmd="dnglab__help__analyze"
+            dnglab__subcmd__help,analyze)
+                cmd="dnglab__subcmd__help__subcmd__analyze"
                 ;;
-            dnglab__help,cameras)
-                cmd="dnglab__help__cameras"
+            dnglab__subcmd__help,cameras)
+                cmd="dnglab__subcmd__help__subcmd__cameras"
                 ;;
-            dnglab__help,convert)
-                cmd="dnglab__help__convert"
+            dnglab__subcmd__help,convert)
+                cmd="dnglab__subcmd__help__subcmd__convert"
                 ;;
-            dnglab__help,extract)
-                cmd="dnglab__help__extract"
+            dnglab__subcmd__help,extract)
+                cmd="dnglab__subcmd__help__subcmd__extract"
                 ;;
-            dnglab__help,ftpserver)
-                cmd="dnglab__help__ftpserver"
+            dnglab__subcmd__help,ftpserver)
+                cmd="dnglab__subcmd__help__subcmd__ftpserver"
                 ;;
-            dnglab__help,gui)
-                cmd="dnglab__help__gui"
+            dnglab__subcmd__help,gui)
+                cmd="dnglab__subcmd__help__subcmd__gui"
                 ;;
-            dnglab__help,help)
-                cmd="dnglab__help__help"
+            dnglab__subcmd__help,help)
+                cmd="dnglab__subcmd__help__subcmd__help"
                 ;;
-            dnglab__help,lenses)
-                cmd="dnglab__help__lenses"
+            dnglab__subcmd__help,lenses)
+                cmd="dnglab__subcmd__help__subcmd__lenses"
                 ;;
-            dnglab__help,makedng)
-                cmd="dnglab__help__makedng"
+            dnglab__subcmd__help,makedng)
+                cmd="dnglab__subcmd__help__subcmd__makedng"
                 ;;
-            dnglab__help,process-raw)
-                cmd="dnglab__help__process__raw"
+            dnglab__subcmd__help,process-raw)
+                cmd="dnglab__subcmd__help__subcmd__process__subcmd__raw"
                 ;;
             *)
                 ;;
@@ -104,8 +104,8 @@ _dnglab() {
             COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
             return 0
             ;;
-        dnglab__analyze)
-            opts="-d -v -h --raw-pixel --full-pixel --preview-pixel --thumbnail-pixel --raw-checksum --full-checksum --preview-checksum --thumbnail-checksum --srgb --meta --structure --summary --json --yaml --loglevel --help <FILE>"
+        dnglab__subcmd__analyze)
+            opts="-d -v -h --raw-pixel --full-pixel --preview-pixel --thumbnail-pixel --raw-checksum --full-checksum --preview-checksum --thumbnail-checksum --srgb --meta --structure --summary --json --yaml --loglevel --help"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
@@ -126,7 +126,7 @@ _dnglab() {
             COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
             return 0
             ;;
-        dnglab__cameras)
+        dnglab__subcmd__cameras)
             opts="-d -v -h --md --loglevel --help"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
@@ -148,8 +148,8 @@ _dnglab() {
             COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
             return 0
             ;;
-        dnglab__convert)
-            opts="-c -f -r -j -d -v -h --compression --ljpeg92-predictor --dng-preview --dng-thumbnail --embed-raw --artist --keep-mtime --image-index --crop --override --recursive --jobs --loglevel --help <INPUT> <OUTPUT>"
+        dnglab__subcmd__convert)
+            opts="-c -f -r -j -d -v -h --compression --ljpeg92-predictor --dng-preview --dng-thumbnail --embed-raw --artist --keep-mtime --image-index --crop --override --recursive --jobs --loglevel --help"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
@@ -218,8 +218,8 @@ _dnglab() {
             COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
             return 0
             ;;
-        dnglab__extract)
-            opts="-r -f -d -v -h --skipchecks --recursive --override --loglevel --help <INPUT> <OUTPUT>"
+        dnglab__subcmd__extract)
+            opts="-r -f -d -v -h --skipchecks --recursive --override --loglevel --help"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
@@ -240,8 +240,8 @@ _dnglab() {
             COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
             return 0
             ;;
-        dnglab__ftpserver)
-            opts="-c -f -d -v -h --compression --ljpeg92-predictor --dng-preview --dng-thumbnail --embed-raw --artist --keep-mtime --image-index --crop --override --port --listen --keep-original --loglevel --help <OUTPUT>"
+        dnglab__subcmd__ftpserver)
+            opts="-c -f -d -v -h --compression --ljpeg92-predictor --dng-preview --dng-thumbnail --embed-raw --artist --keep-mtime --image-index --crop --override --port --listen --keep-original --loglevel --help"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
@@ -314,7 +314,7 @@ _dnglab() {
             COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
             return 0
             ;;
-        dnglab__gui)
+        dnglab__subcmd__gui)
             opts="-d -v -h --loglevel --help"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
@@ -336,7 +336,7 @@ _dnglab() {
             COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
             return 0
             ;;
-        dnglab__help)
+        dnglab__subcmd__help)
             opts="analyze process-raw convert ftpserver cameras lenses makedng gui extract help"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
@@ -350,7 +350,7 @@ _dnglab() {
             COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
             return 0
             ;;
-        dnglab__help__analyze)
+        dnglab__subcmd__help__subcmd__analyze)
             opts=""
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 3 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
@@ -364,7 +364,7 @@ _dnglab() {
             COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
             return 0
             ;;
-        dnglab__help__cameras)
+        dnglab__subcmd__help__subcmd__cameras)
             opts=""
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 3 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
@@ -378,7 +378,7 @@ _dnglab() {
             COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
             return 0
             ;;
-        dnglab__help__convert)
+        dnglab__subcmd__help__subcmd__convert)
             opts=""
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 3 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
@@ -392,7 +392,7 @@ _dnglab() {
             COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
             return 0
             ;;
-        dnglab__help__extract)
+        dnglab__subcmd__help__subcmd__extract)
             opts=""
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 3 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
@@ -406,7 +406,7 @@ _dnglab() {
             COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
             return 0
             ;;
-        dnglab__help__ftpserver)
+        dnglab__subcmd__help__subcmd__ftpserver)
             opts=""
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 3 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
@@ -420,7 +420,7 @@ _dnglab() {
             COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
             return 0
             ;;
-        dnglab__help__gui)
+        dnglab__subcmd__help__subcmd__gui)
             opts=""
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 3 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
@@ -434,7 +434,7 @@ _dnglab() {
             COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
             return 0
             ;;
-        dnglab__help__help)
+        dnglab__subcmd__help__subcmd__help)
             opts=""
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 3 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
@@ -448,7 +448,7 @@ _dnglab() {
             COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
             return 0
             ;;
-        dnglab__help__lenses)
+        dnglab__subcmd__help__subcmd__lenses)
             opts=""
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 3 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
@@ -462,7 +462,7 @@ _dnglab() {
             COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
             return 0
             ;;
-        dnglab__help__makedng)
+        dnglab__subcmd__help__subcmd__makedng)
             opts=""
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 3 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
@@ -476,7 +476,7 @@ _dnglab() {
             COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
             return 0
             ;;
-        dnglab__help__process__raw)
+        dnglab__subcmd__help__subcmd__process__subcmd__raw)
             opts=""
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 3 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
@@ -490,7 +490,7 @@ _dnglab() {
             COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
             return 0
             ;;
-        dnglab__lenses)
+        dnglab__subcmd__lenses)
             opts="-d -v -h --md --loglevel --help"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
@@ -512,7 +512,7 @@ _dnglab() {
             COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
             return 0
             ;;
-        dnglab__makedng)
+        dnglab__subcmd__makedng)
             opts="-o -i -f -d -v -h --output --input --map --dng-backward-version --colorimetric-reference --unique-camera-model --artist --make --model --matrix1 --matrix2 --matrix3 --illuminant1 --illuminant2 --illuminant3 --linearization --wb --white-xy --override --loglevel --help"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
@@ -614,8 +614,8 @@ _dnglab() {
             COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
             return 0
             ;;
-        dnglab__process__raw)
-            opts="-f -r -d -v -h --artist --keep-mtime --image-index --crop --override --recursive --loglevel --help <INPUT> <OUTPUT>"
+        dnglab__subcmd__process__subcmd__raw)
+            opts="-f -r -d -v -h --artist --keep-mtime --image-index --crop --override --recursive --loglevel --help"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0

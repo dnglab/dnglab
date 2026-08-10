@@ -204,7 +204,7 @@ _arguments "${_arguments_options[@]}" : \
 ;;
 (help)
 _arguments "${_arguments_options[@]}" : \
-":: :_dnglab__help_commands" \
+":: :_dnglab__subcmd__help_commands" \
 "*::: :->help" \
 && ret=0
 
@@ -279,38 +279,38 @@ _dnglab_commands() {
     )
     _describe -t commands 'dnglab commands' commands "$@"
 }
-(( $+functions[_dnglab__analyze_commands] )) ||
-_dnglab__analyze_commands() {
+(( $+functions[_dnglab__subcmd__analyze_commands] )) ||
+_dnglab__subcmd__analyze_commands() {
     local commands; commands=()
     _describe -t commands 'dnglab analyze commands' commands "$@"
 }
-(( $+functions[_dnglab__cameras_commands] )) ||
-_dnglab__cameras_commands() {
+(( $+functions[_dnglab__subcmd__cameras_commands] )) ||
+_dnglab__subcmd__cameras_commands() {
     local commands; commands=()
     _describe -t commands 'dnglab cameras commands' commands "$@"
 }
-(( $+functions[_dnglab__convert_commands] )) ||
-_dnglab__convert_commands() {
+(( $+functions[_dnglab__subcmd__convert_commands] )) ||
+_dnglab__subcmd__convert_commands() {
     local commands; commands=()
     _describe -t commands 'dnglab convert commands' commands "$@"
 }
-(( $+functions[_dnglab__extract_commands] )) ||
-_dnglab__extract_commands() {
+(( $+functions[_dnglab__subcmd__extract_commands] )) ||
+_dnglab__subcmd__extract_commands() {
     local commands; commands=()
     _describe -t commands 'dnglab extract commands' commands "$@"
 }
-(( $+functions[_dnglab__ftpserver_commands] )) ||
-_dnglab__ftpserver_commands() {
+(( $+functions[_dnglab__subcmd__ftpserver_commands] )) ||
+_dnglab__subcmd__ftpserver_commands() {
     local commands; commands=()
     _describe -t commands 'dnglab ftpserver commands' commands "$@"
 }
-(( $+functions[_dnglab__gui_commands] )) ||
-_dnglab__gui_commands() {
+(( $+functions[_dnglab__subcmd__gui_commands] )) ||
+_dnglab__subcmd__gui_commands() {
     local commands; commands=()
     _describe -t commands 'dnglab gui commands' commands "$@"
 }
-(( $+functions[_dnglab__help_commands] )) ||
-_dnglab__help_commands() {
+(( $+functions[_dnglab__subcmd__help_commands] )) ||
+_dnglab__subcmd__help_commands() {
     local commands; commands=(
 'analyze:Analyze raw image' \
 'process-raw:' \
@@ -325,68 +325,68 @@ _dnglab__help_commands() {
     )
     _describe -t commands 'dnglab help commands' commands "$@"
 }
-(( $+functions[_dnglab__help__analyze_commands] )) ||
-_dnglab__help__analyze_commands() {
+(( $+functions[_dnglab__subcmd__help__subcmd__analyze_commands] )) ||
+_dnglab__subcmd__help__subcmd__analyze_commands() {
     local commands; commands=()
     _describe -t commands 'dnglab help analyze commands' commands "$@"
 }
-(( $+functions[_dnglab__help__cameras_commands] )) ||
-_dnglab__help__cameras_commands() {
+(( $+functions[_dnglab__subcmd__help__subcmd__cameras_commands] )) ||
+_dnglab__subcmd__help__subcmd__cameras_commands() {
     local commands; commands=()
     _describe -t commands 'dnglab help cameras commands' commands "$@"
 }
-(( $+functions[_dnglab__help__convert_commands] )) ||
-_dnglab__help__convert_commands() {
+(( $+functions[_dnglab__subcmd__help__subcmd__convert_commands] )) ||
+_dnglab__subcmd__help__subcmd__convert_commands() {
     local commands; commands=()
     _describe -t commands 'dnglab help convert commands' commands "$@"
 }
-(( $+functions[_dnglab__help__extract_commands] )) ||
-_dnglab__help__extract_commands() {
+(( $+functions[_dnglab__subcmd__help__subcmd__extract_commands] )) ||
+_dnglab__subcmd__help__subcmd__extract_commands() {
     local commands; commands=()
     _describe -t commands 'dnglab help extract commands' commands "$@"
 }
-(( $+functions[_dnglab__help__ftpserver_commands] )) ||
-_dnglab__help__ftpserver_commands() {
+(( $+functions[_dnglab__subcmd__help__subcmd__ftpserver_commands] )) ||
+_dnglab__subcmd__help__subcmd__ftpserver_commands() {
     local commands; commands=()
     _describe -t commands 'dnglab help ftpserver commands' commands "$@"
 }
-(( $+functions[_dnglab__help__gui_commands] )) ||
-_dnglab__help__gui_commands() {
+(( $+functions[_dnglab__subcmd__help__subcmd__gui_commands] )) ||
+_dnglab__subcmd__help__subcmd__gui_commands() {
     local commands; commands=()
     _describe -t commands 'dnglab help gui commands' commands "$@"
 }
-(( $+functions[_dnglab__help__help_commands] )) ||
-_dnglab__help__help_commands() {
+(( $+functions[_dnglab__subcmd__help__subcmd__help_commands] )) ||
+_dnglab__subcmd__help__subcmd__help_commands() {
     local commands; commands=()
     _describe -t commands 'dnglab help help commands' commands "$@"
 }
-(( $+functions[_dnglab__help__lenses_commands] )) ||
-_dnglab__help__lenses_commands() {
+(( $+functions[_dnglab__subcmd__help__subcmd__lenses_commands] )) ||
+_dnglab__subcmd__help__subcmd__lenses_commands() {
     local commands; commands=()
     _describe -t commands 'dnglab help lenses commands' commands "$@"
 }
-(( $+functions[_dnglab__help__makedng_commands] )) ||
-_dnglab__help__makedng_commands() {
+(( $+functions[_dnglab__subcmd__help__subcmd__makedng_commands] )) ||
+_dnglab__subcmd__help__subcmd__makedng_commands() {
     local commands; commands=()
     _describe -t commands 'dnglab help makedng commands' commands "$@"
 }
-(( $+functions[_dnglab__help__process-raw_commands] )) ||
-_dnglab__help__process-raw_commands() {
+(( $+functions[_dnglab__subcmd__help__subcmd__process-raw_commands] )) ||
+_dnglab__subcmd__help__subcmd__process-raw_commands() {
     local commands; commands=()
     _describe -t commands 'dnglab help process-raw commands' commands "$@"
 }
-(( $+functions[_dnglab__lenses_commands] )) ||
-_dnglab__lenses_commands() {
+(( $+functions[_dnglab__subcmd__lenses_commands] )) ||
+_dnglab__subcmd__lenses_commands() {
     local commands; commands=()
     _describe -t commands 'dnglab lenses commands' commands "$@"
 }
-(( $+functions[_dnglab__makedng_commands] )) ||
-_dnglab__makedng_commands() {
+(( $+functions[_dnglab__subcmd__makedng_commands] )) ||
+_dnglab__subcmd__makedng_commands() {
     local commands; commands=()
     _describe -t commands 'dnglab makedng commands' commands "$@"
 }
-(( $+functions[_dnglab__process-raw_commands] )) ||
-_dnglab__process-raw_commands() {
+(( $+functions[_dnglab__subcmd__process-raw_commands] )) ||
+_dnglab__subcmd__process-raw_commands() {
     local commands; commands=()
     _describe -t commands 'dnglab process-raw commands' commands "$@"
 }
