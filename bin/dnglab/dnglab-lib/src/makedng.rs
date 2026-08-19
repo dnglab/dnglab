@@ -36,6 +36,19 @@ fn get_input_path<'a>(inputs: &'a [&PathBuf], maps: &[&InputSourceUsageMap], usa
     .ok_or_else(|| std::io::Error::new(std::io::ErrorKind::InvalidInput, format!("No input found for '{:?}'", usage)))
 }
 
+/// Open an image like [`image::open`], but without the default decoding limits.
+///
+/// The image crate defaults to a 256 MiB allocation limit, which rejects large
+/// but perfectly valid inputs - a 45 MP 16-bit RGB TIFF needs ~260 MiB decoded
+/// and fails with "Memory limit exceeded". As a CLI tool operating on files the
+/// user explicitly passed in, makedng should accept any image the system has
+/// memory for.
+fn open_without_limits(path: &Path) -> crate::Result<DynamicImage> {
+  let mut reader = image::ImageReader::open(path)?;
+  reader.no_limits();
+  Ok(reader.decode()?)
+}
+
 pub async fn makedng(options: &ArgMatches) -> crate::Result<()> {
   let dest_path: &PathBuf = options
     .get_one("OUTPUT")
@@ -112,7 +125,7 @@ pub async fn makedng_internal(options: &ArgMatches, dest_path: &Path) -> crate::
       rawframe.raw_image(&rawimage, CropMode::Best, DngCompression::Lossless, DngPhotometricConversion::Original, 1)?;
       rawframe.finalize()?;
     } else {
-      let image = image::open(raw_input)?;
+      let image = open_without_limits(raw_input)?;
       let mut frame = dng.subframe(0);
       match &image {
         DynamicImage::ImageRgb8(img) => {
@@ -169,7 +182,7 @@ pub async fn makedng_internal(options: &ArgMatches, dest_path: &Path) -> crate::
         frame.finalize()?;
       }
     } else {
-      let image = image::open(preview_input)?;
+      let image = open_without_limits(preview_input)?;
       let mut frame = dng.subframe(1);
       frame.preview(&image, 0.7)?;
       frame.finalize()?;
@@ -185,7 +198,7 @@ pub async fn makedng_internal(options: &ArgMatches, dest_path: &Path) -> crate::
         dng.thumbnail(&preview)?;
       }
     } else {
-      let image = image::open(thumbnail_input)?;
+      let image = open_without_limits(thumbnail_input)?;
       dng.thumbnail(&image)?;
     }
   } else {
