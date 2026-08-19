@@ -353,6 +353,15 @@ pub trait Decoder: Send {
     Ok(None)
   }
 
+  /// Return an already-encoded JPEG preview when the source format stores one.
+  ///
+  /// This lets DNG conversion preserve an embedded JPEG bit-for-bit instead of
+  /// decoding, resizing and re-encoding it. Decoders that don't expose an
+  /// encoded JPEG can keep the default implementation.
+  fn preview_jpeg(&self, _file: &RawSource, _params: &RawDecodeParams) -> Result<Option<Vec<u8>>> {
+    Ok(None)
+  }
+
   fn preview_image(&self, _file: &RawSource, _params: &RawDecodeParams) -> Result<Option<DynamicImage>> {
     info!("Decoder has no preview image support");
     Ok(None)

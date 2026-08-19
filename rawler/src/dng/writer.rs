@@ -315,6 +315,43 @@ where
     Ok(())
   }
 
+  /// Write an already-encoded JPEG directly as a DNG preview.
+  ///
+  /// Only the JPEG header is parsed to obtain dimensions. The compressed
+  /// payload itself is copied unchanged into the DNG.
+  pub fn preview_jpeg(&mut self, jpeg: &[u8]) -> Result<()> {
+    let (width, height) = image::ImageReader::with_format(
+      std::io::Cursor::new(jpeg),
+      image::ImageFormat::Jpeg,
+    )
+    .into_dimensions()
+    .map_err(|err| io::Error::new(io::ErrorKind::InvalidData, format!("Failed to read JPEG preview dimensions: {err}")))?;
+
+    let jpeg_len = u32::try_from(jpeg.len())
+      .map_err(|_| io::Error::new(io::ErrorKind::InvalidData, "JPEG preview is larger than 4 GiB"))?;
+
+    self.ifd_mut().add_tag(TiffCommonTag::ImageWidth, Value::long(width));
+    self.ifd_mut().add_tag(TiffCommonTag::ImageLength, Value::long(height));
+    self.ifd_mut().add_tag(TiffCommonTag::Compression, CompressionMethod::ModernJPEG);
+    self.ifd_mut().add_tag(TiffCommonTag::BitsPerSample, [8_u16, 8, 8]);
+    self.ifd_mut().add_tag(TiffCommonTag::SampleFormat, [1_u16, 1, 1]);
+    self.ifd_mut().add_tag(TiffCommonTag::PhotometricInt, PhotometricInterpretation::YCbCr);
+    self.ifd_mut().add_tag(TiffCommonTag::RowsPerStrip, Value::long(height));
+    self.ifd_mut().add_tag(TiffCommonTag::SamplesPerPixel, 3_u16);
+    self.ifd_mut().add_tag(DngTag::PreviewColorSpace, PreviewColorSpace::SRgb);
+
+    let offset = self.writer.dng.write_data(jpeg)?;
+    self.ifd_mut().add_value(TiffCommonTag::StripOffsets, Value::Long(vec![offset]));
+    self.ifd_mut().add_tag(TiffCommonTag::StripByteCounts, Value::Long(vec![jpeg_len]));
+
+    debug!(
+      "copied encoded JPEG preview directly: {}x{}, {} bytes",
+      width, height, jpeg_len
+    );
+
+    Ok(())
+  }
+
   pub fn preview(&mut self, img: &DynamicImage, quality: f32) -> Result<()> {
     let now = Instant::now();
     let preview_img = if img.width() > 1024 {

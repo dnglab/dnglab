@@ -4,7 +4,7 @@
 use clap::ArgMatches;
 use futures::future::join_all;
 use rawler::decoders::supported_extensions;
-use std::collections::HashSet;
+use std::collections::{HashSet, VecDeque};
 use std::fs::create_dir_all;
 use std::path::PathBuf;
 
@@ -63,8 +63,29 @@ pub async fn convert(options: &ArgMatches) -> crate::Result<()> {
   let concurrency = resolve_concurrency(options.get_one::<usize>("jobs").copied().unwrap_or(0));
 
   let mut results: Vec<JobResult> = Vec::new();
-  for chunks in jobs.chunks(concurrency) {
-    let mut temp: Vec<JobResult> = join_all(chunks.iter().map(|j| j.execute()))
+
+  // `--image-index all` expands one multi-image RAW into multiple jobs which
+  // all read the same source file. Do not execute two jobs for the same input
+  // concurrently. Jobs for different source files may still run concurrently
+  // up to `concurrency`, so directory/batch conversions retain outer
+  // parallelism.
+  let mut pending: VecDeque<Raw2DngJob> = jobs.into();
+  while !pending.is_empty() {
+    let mut batch: Vec<Raw2DngJob> = Vec::with_capacity(concurrency);
+    let mut deferred: VecDeque<Raw2DngJob> = VecDeque::new();
+    let mut active_inputs: HashSet<PathBuf> = HashSet::new();
+
+    while let Some(job) = pending.pop_front() {
+      if batch.len() < concurrency && active_inputs.insert(job.input.clone()) {
+        batch.push(job);
+      } else {
+        deferred.push_back(job);
+      }
+    }
+    pending = deferred;
+    debug_assert!(!batch.is_empty());
+
+    let mut temp: Vec<JobResult> = join_all(batch.iter().map(|j| j.execute()))
       .await
       .into_iter()
       .map(|res| {

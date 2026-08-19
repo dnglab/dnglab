@@ -320,6 +320,26 @@ aperture_range = [[63, 10], [9, 1]]
 
 [[lenses]]
 mount = "rf-mount"
+key = "RF200-800mm F6.3-9 IS USM + EXTENDER RF1.4x"
+lens_id = 61182
+lens_subid = 310
+make = "Canon"
+model = "RF 200-800mm F6.3-9 IS USM + RF1.4x"
+focal_range = [[280, 1], [1120, 1]]
+aperture_range = [[9, 1], [13, 1]]
+
+[[lenses]]
+mount = "rf-mount"
+key = "RF200-800mm F6.3-9 IS USM + EXTENDER RF2x"
+lens_id = 61182
+lens_subid = 311
+make = "Canon"
+model = "RF 200-800mm F6.3-9 IS USM + RF2x"
+focal_range = [[400, 1], [1600, 1]]
+aperture_range = [[13, 1], [18, 1]]
+
+[[lenses]]
+mount = "rf-mount"
 key = "RF-S10-18mm F4.5-6.3 IS STM"
 lens_id = 61182
 lens_subid = 315

@@ -245,11 +245,37 @@ where
   }
   raw.finalize()?;
 
-  // Write preview and thumbnail if requested
-  if params.preview || params.thumbnail {
+  // Write preview and thumbnail if requested.
+  //
+  // Prefer an already-encoded JPEG supplied by the decoder. This preserves
+  // camera-embedded previews bit-for-bit and avoids JPEG decode/resize/re-encode.
+  let mut preview_written = false;
+
+  if params.preview {
+    match decoder.preview_jpeg(rawfile, &raw_params) {
+      Ok(Some(jpeg)) => {
+        let mut preview = dng.subframe(1);
+        preview.preview_jpeg(&jpeg)?;
+        preview.finalize()?;
+        preview_written = true;
+      }
+      Ok(None) => {}
+      Err(err) => {
+        log::warn!(
+          "Failed to get encoded preview, falling back to decoded preview: {:?}",
+          err
+        );
+      }
+    }
+  }
+
+  // Keep the existing DynamicImage path for formats without an encoded JPEG,
+  // invalid/non-JPEG CR3 previews (for example HDR-PQ/HEIF), and thumbnail
+  // generation, which requires pixels.
+  if (params.preview && !preview_written) || params.thumbnail {
     match generate_preview(rawfile, decoder.as_ref(), &rawimage, &raw_params) {
       Ok(image) => {
-        if params.preview {
+        if params.preview && !preview_written {
           let mut preview = dng.subframe(1);
           preview.preview(&image, PREVIEW_JPEG_QUALITY)?;
           preview.finalize()?;
