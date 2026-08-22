@@ -59,9 +59,10 @@ pub(super) fn dequant(value: i32, q: u8) -> i32 {
   // (mag + 0.5) * 2^q => (2*mag+1) * 2^(q-1) - 0.5
   // The trailing `-0.5` is approximated as `-(mag & 1)`: rounded down on odd
   // magnitudes and up on even ones.
-  let mag = value.unsigned_abs() as i64;
+  let value = i64::from(value);
+  let mag = value.abs();
   let recon = (((mag << 1) + 1) << (q - 1)) - (mag & 1);
-  (value.signum() as i64 * recon) as i32
+  (value.signum() * recon) as i32
 }
 
 /// Inverse horizontal DPCM in place over each row.
