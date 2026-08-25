@@ -4,7 +4,7 @@ clean_make = "Olympus"
 clean_model = "E-M1X"
 #blackpoint = 0
 whitepoint = 4000
-color_pattern = "BGGR"
+color_pattern = "RGGB"
 active_area = [0, 0, 0, 0]
 crop_area = [12, 12, 44, 12]
 
