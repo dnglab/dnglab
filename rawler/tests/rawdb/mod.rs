@@ -2140,6 +2140,12 @@ mod panasonic {
     super::super::rawdb_test_file!("Panasonic", "DC-GX9", dc_gx9_iso_200_4fmt_3x2_rw2, "raw_modes/DC-GX9_ISO_200_4fmt_3x2.RW2");
     super::super::rawdb_test_file!("Panasonic", "DC-GX9", dc_gx9_iso_200_4fmt_4x3_rw2, "raw_modes/DC-GX9_ISO_200_4fmt_4x3.RW2");
   }
+  mod dc_l10_raw_modes {
+    super::super::rawdb_test_file!("Panasonic", "DC-L10", lumix_dc_10_16x9_rw2, "raw_modes/Lumix DC-10_16x9.RW2");
+    super::super::rawdb_test_file!("Panasonic", "DC-L10", lumix_dc_10_1x1_rw2, "raw_modes/Lumix DC-10_1x1.RW2");
+    super::super::rawdb_test_file!("Panasonic", "DC-L10", lumix_dc_10_3x2_rw2, "raw_modes/Lumix DC-10_3x2.RW2");
+    super::super::rawdb_test_file!("Panasonic", "DC-L10", lumix_dc_10_4x3_rw2, "raw_modes/Lumix DC-10_4x3.RW2");
+  }
   mod dc_lx100m2_raw_modes {
     super::super::rawdb_test_file!("Panasonic", "DC-LX100M2", dc_lx100m2_iso_200_panasonic_raw_1_3552x3552_rw2, "raw_modes/DC-LX100M2_ISO_200_Panasonic RAW 1_3552x3552.RW2");
     super::super::rawdb_test_file!("Panasonic", "DC-LX100M2", dc_lx100m2_iso_200_panasonic_raw_1_4736x3552_rw2, "raw_modes/DC-LX100M2_ISO_200_Panasonic RAW 1_4736x3552.RW2");

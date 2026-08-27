@@ -1,0 +1,94 @@
+---
+file:
+  fileSize: 31715328
+  fileName: Lumix DC-10_16x9.RW2
+  digest: ba390a4ddcdc5dee92080954d668e34c
+data:
+  metadata:
+    rawParams:
+      rawWidth: 5672
+      rawHeight: 3200
+      bitDepth: 16
+      cropArea:
+        p:
+          x: 4
+          y: 4
+        d:
+          w: 5664
+          h: 3192
+      activeArea:
+        p:
+          x: 4
+          y: 4
+        d:
+          w: 5664
+          h: 3192
+      blacklevels:
+        levels:
+          - 2048/1
+          - 2048/1
+          - 2048/1
+          - 2048/1
+        cpp: 1
+        width: 2
+        height: 2
+      whitelevels:
+        - 65535
+      wbCoeffs:
+        - 2.7421875
+        - 1.0
+        - 1.578125
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: "CC0: Year 2026"
+        artist: Public Domain
+        lens_spec: ~
+        exposure_time: 10/400
+        fnumber: 80/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 100
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: 1
+        exposure_bias: 0/100
+        date_time_original: "2026:08:07 11:43:01"
+        create_date: "2026:08:07 11:43:01"
+        modify_date: ~
+        exposure_program: 3
+        timezone_offset: ~
+        offset_time: "-05:00"
+        offset_time_original: "-05:00"
+        offset_time_digitized: "-05:00"
+        sub_sec_time: "979"
+        sub_sec_time_original: "979"
+        sub_sec_time_digitized: "979"
+        shutter_speed_value: ~
+        max_aperture_value: 392/256
+        subject_distance: ~
+        metering_mode: 5
+        light_source: 0
+        flash: 16
+        focal_length: 109/10
+        image_number: ~
+        color_space: ~
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: ~
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: WT6EA002738
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+        user_comment: ~
+      model: DC-L10
+      make: Panasonic
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+
