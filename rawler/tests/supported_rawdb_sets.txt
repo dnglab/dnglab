@@ -575,6 +575,7 @@ Panasonic/DC-GX850/raw_modes
 Panasonic/DC-GX880/raw_modes
 Panasonic/DC-GX9/raw_modes
 Panasonic/DC-LX100M2/raw_modes
+Panasonic/DC-L10/raw_modes
 Panasonic/DC-S1H/raw_modes
 Panasonic/DC-S1/raw_modes
 Panasonic/DC-S1M2/raw_modes
