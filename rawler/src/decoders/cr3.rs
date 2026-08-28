@@ -418,32 +418,48 @@ impl<'a> Decoder for Cr3Decoder<'a> {
 
   /// Extract preview image embedded in CR3
   fn preview_image(&self, file: &RawSource, params: &RawDecodeParams) -> Result<Option<DynamicImage>> {
-    if params.image_index != 0 {
-      return Ok(None);
-    }
     if rawler_ignore_previews() {
       return Err(RawlerError::DecoderFailed("Unable to extract preview image".into()));
     }
-    let offset = self.bmff.filebox.moov.traks[0]
+
+    let sample_idx = params.image_index;
+    let preview_trak_id = self.get_trak_index(Cr3ImageType::PreviewBig).unwrap_or(0);
+    let preview_trak = self
+      .moov_trak(preview_trak_id)
+      .ok_or_else(|| RawlerError::DecoderFailed(format!("Unable to get preview trak {}", preview_trak_id)))?;
+
+    let preview_count = preview_trak.mdia.minf.stbl.stsz.sample_count as usize;
+    if sample_idx >= preview_count {
+      warn!(
+        "CR3 preview sample index {} out of range for trak {} ({} samples)",
+        sample_idx, preview_trak_id, preview_count
+      );
+      return Ok(None);
+    }
+
+    let (offset, size) = preview_trak
       .mdia
       .minf
       .stbl
-      .co64
-      .as_ref()
-      .ok_or_else(|| RawlerError::DecoderFailed("co64 box not found".into()))?
-      .entries[0] as usize;
-    let size = self.bmff.filebox.moov.traks[0].mdia.minf.stbl.stsz.sample_sizes[0] as usize;
-    debug!("JPEG preview mdat offset: {}, len: {}", offset, size);
+      .get_sample_offset(sample_idx as u32 + 1)
+      .ok_or_else(|| RawlerError::DecoderFailed(format!("CR3 preview sample {} not found in trak {}", sample_idx, preview_trak_id)))?;
+
+    debug!(
+      "JPEG preview trak: {}, sample_idx: {}, mdat offset: {}, len: {}",
+      preview_trak_id, sample_idx, offset, size
+    );
+
     let buf = file
       .subview(offset as u64, size as u64)
       .map_err(|e| RawlerError::with_io_error("CR3: failed to read full image data", file.path(), e))?;
+
     match image::load_from_memory_with_format(buf, image::ImageFormat::Jpeg) {
       Ok(img) => Ok(Some(img)),
       Err(e) => {
-        warn!("TRAK 0 contains no JPEG preview, is it PQ/HEIF? Error: {}", e);
-        //Err(RawlerError::DecoderFailed(
-        //  "Unable to extract preview image from CR3 HDR-PQ file. Please see 'https://github.com/dnglab/dnglab/issues/7'".into(),
-        //))
+        warn!(
+          "CR3 preview trak {} sample {} contains no JPEG preview, is it PQ/HEIF? Error: {}",
+          preview_trak_id, sample_idx, e
+        );
         Ok(None)
       }
     }
