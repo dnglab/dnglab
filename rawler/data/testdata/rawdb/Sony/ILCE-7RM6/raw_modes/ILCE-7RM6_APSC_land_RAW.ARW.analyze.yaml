@@ -1,0 +1,115 @@
+---
+file:
+  fileSize: 44167168
+  fileName: ILCE-7RM6_APSC_land_RAW.ARW
+  digest: a4ae136b508b640a713203495d402d04
+data:
+  metadata:
+    rawParams:
+      rawWidth: 6656
+      rawHeight: 4608
+      bitDepth: 16
+      cropArea:
+        p:
+          x: 16
+          y: 10
+        d:
+          w: 6528
+          h: 4352
+      activeArea:
+        p:
+          x: 0
+          y: 0
+        d:
+          w: 6560
+          h: 4372
+      blacklevels:
+        levels:
+          - 512/1
+          - 512/1
+          - 512/1
+          - 512/1
+        cpp: 1
+        width: 2
+        height: 2
+      whitelevels:
+        - 15360
+      wbCoeffs:
+        - 2.2197266
+        - 1.0
+        - 1.8740234
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ~
+        artist: ~
+        lens_spec:
+          - 24/1
+          - 70/1
+          - 28/10
+          - 28/10
+        exposure_time: 1/1000
+        fnumber: 28/10
+        aperture_value: ~
+        brightness_value: 20704/2560
+        iso_speed_ratings: 100
+        iso_speed: ~
+        recommended_exposure_index: 100
+        sensitivity_type: 2
+        exposure_bias: 0/10
+        date_time_original: "2026:06:26 14:02:19"
+        create_date: "2026:06:26 14:02:19"
+        modify_date: "2026:06:26 14:02:19"
+        exposure_program: 3
+        timezone_offset: ~
+        offset_time: "+07:00"
+        offset_time_original: "+07:00"
+        offset_time_digitized: "+07:00"
+        sub_sec_time: "535"
+        sub_sec_time_original: "535"
+        sub_sec_time_digitized: "535"
+        shutter_speed_value: ~
+        max_aperture_value: 760/256
+        subject_distance: ~
+        metering_mode: 5
+        light_source: 0
+        flash: 16
+        focal_length: 160/10
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: Sigma
+        lens_model: 24-70mm F2.8 DG DN II | A
+        gps: ~
+        user_comment: ~
+      model: ILCE-7RM6
+      make: Sony
+      lens:
+        identifiers:
+          name: ~
+          id:
+            - 514
+            - 0
+          nikon_id: ~
+          olympus_id: ~
+        mount: e-mount
+        lens_make: Sigma
+        lens_model: 24-70mm F2.8 DG DN II | A
+        focal_range:
+          - 24/1
+          - 70/1
+        aperture_range:
+          - 28/10
+          - 28/10
+        lens_name: Sigma 24-70mm F2.8 DG DN II | A
+      unique_image_id: ~
+      rating: ~
+

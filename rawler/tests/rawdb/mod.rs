@@ -3170,6 +3170,12 @@ mod sony {
     super::super::rawdb_test_file!("Sony", "ILCE-7RM5", sony_7rm5_s35_lossless_m_ljpeg_arw, "yuv/Sony_7RM5_S35_Lossless_M_LJPEG.ARW");
     super::super::rawdb_test_file!("Sony", "ILCE-7RM5", sony_7rm5_s35_lossless_s_ljpeg_arw, "yuv/Sony_7RM5_S35_Lossless_S_LJPEG.ARW");
   }
+  mod ilce_7rm6_raw_modes {
+    super::super::rawdb_test_file!("Sony", "ILCE-7RM6", ilce_7rm6_apsc_land_raw_arw, "raw_modes/ILCE-7RM6_APSC_land_RAW.ARW");
+    super::super::rawdb_test_file!("Sony", "ILCE-7RM6", ilce_7rm6_apsc_port_raw_arw, "raw_modes/ILCE-7RM6_APSC_port_RAW.ARW");
+    super::super::rawdb_test_file!("Sony", "ILCE-7RM6", ilce_7rm6_ff_land_raw_arw, "raw_modes/ILCE-7RM6_FF_land_RAW.ARW");
+    super::super::rawdb_test_file!("Sony", "ILCE-7RM6", ilce_7rm6_ff_port_raw_arw, "raw_modes/ILCE-7RM6_FF_port_RAW.ARW");
+  }
   mod ilce_7s_raw_modes {
     super::super::rawdb_test_file!("Sony", "ILCE-7S", ilce_7s_iso_400_14bits_sony_arw_compressed_arw, "raw_modes/ILCE-7S_ISO_400_14bits_Sony ARW Compressed.ARW");
   }
