@@ -111,6 +111,7 @@ Canon/EOS REBEL T7i/raw_modes
 Canon/EOS Rebel T7/raw_modes
 Canon/EOS RP/raw_modes
 Canon/EOS R/raw_modes
+Canon/EOS C50/raw_modes
 Canon/IXUS900Ti/raw_modes
 Canon/IXY 220F/raw_modes
 Canon/PowerShot A480/raw_modes

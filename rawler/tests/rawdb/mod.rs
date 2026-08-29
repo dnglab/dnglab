@@ -192,6 +192,10 @@ mod canon {
     super::super::rawdb_test_file!("Canon", "EOS 90D", canon_eos_90d_craw_iso_100_nocrop_nodual_cr3, "raw_modes/Canon EOS 90D_CRAW_ISO_100_nocrop_nodual.CR3");
     super::super::rawdb_test_file!("Canon", "EOS 90D", canon_eos_90d_raw_iso_100_nocrop_nodual_cr3, "raw_modes/Canon EOS 90D_RAW_ISO_100_nocrop_nodual.CR3");
   }
+  mod eos_c50_raw_modes {
+    super::super::rawdb_test_file!("Canon", "EOS C50", canon_eos_c50_craw_cr3, "raw_modes/Canon_EOS_C50_CRAW.CR3");
+    super::super::rawdb_test_file!("Canon", "EOS C50", canon_eos_c50_raw_cr3, "raw_modes/Canon_EOS_C50_RAW.CR3");
+  }
   mod eos_d2000c_raw_modes {
     super::super::rawdb_test_file!("Canon", "EOS D2000C", canon_d2000c_raw_iso_200_tif, "raw_modes/Canon D2000C_RAW_ISO_200.TIF");
   }
