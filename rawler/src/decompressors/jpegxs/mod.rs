@@ -20,6 +20,32 @@
 //!   table is stored in that same order.
 
 pub mod bitreader;
+pub mod entropy;
 pub mod header;
 pub mod pi;
+
+/// Finds the data the cross-check tests compare against, which is the output
+/// of the patched SVT-JPEG-XS decoder and too large to check in. Point
+/// `RAWLER_JPEGXS_REFERENCE` at a directory holding `he_star.jxs`,
+/// `precinct0.txt` and `ref_final.planes` to run them; [`entropy`] and
+/// [`mct`] say how to regenerate those files.
+///
+/// With the variable unset the tests skip. With it pointed at an incomplete
+/// directory they fail. They cannot pass by accident.
+#[cfg(test)]
+pub(crate) mod reference {
+  use std::path::PathBuf;
+
+  pub fn dir(test: &str) -> Option<PathBuf> {
+    let dir = std::env::var_os("RAWLER_JPEGXS_REFERENCE");
+    if dir.is_none() {
+      eprintln!("skipping {}: set RAWLER_JPEGXS_REFERENCE to the reference data directory", test);
+    }
+    dir.map(PathBuf::from)
+  }
+
+  pub fn read(dir: &PathBuf, name: &str) -> Vec<u8> {
+    std::fs::read(dir.join(name)).unwrap_or_else(|e| panic!("RAWLER_JPEGXS_REFERENCE is set but {} is unreadable: {}", name, e))
+  }
+}
 
