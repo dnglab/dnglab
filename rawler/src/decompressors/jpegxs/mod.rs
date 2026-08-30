@@ -20,4 +20,5 @@
 //!   table is stored in that same order.
 
 pub mod bitreader;
+pub mod header;
 
