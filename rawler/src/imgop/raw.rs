@@ -155,6 +155,100 @@ pub fn correct_blacklevel(raw: &mut [f32], blacklevel: &[f32], whitelevel: &[f32
   }
 }
 
+/// Correct raw data using a repeating black level plus DNG per-column and per-row deltas.
+///
+/// DNG black-level patterns and delta tables are relative to the top-left corner of the
+/// active area. Normalization uses the maximum computed black level for each sample plane.
+pub(crate) fn correct_blacklevel_with_deltas(
+  raw: &mut [f32],
+  width: usize,
+  height: usize,
+  cpp: usize,
+  blacklevel: &BlackLevel,
+  whitelevel: &[f32],
+  active_area: Rect,
+) {
+  assert_eq!(raw.len(), width * height * cpp);
+  assert_eq!(blacklevel.cpp, cpp);
+  assert_eq!(whitelevel.len(), cpp);
+  assert!(active_area.d.w > 0 && active_area.d.h > 0);
+  assert!(active_area.p.x + active_area.d.w <= width);
+  assert!(active_area.p.y + active_area.d.h <= height);
+  assert!(blacklevel.delta_h.is_empty() || blacklevel.delta_h.len() == active_area.d.w);
+  assert!(blacklevel.delta_v.is_empty() || blacklevel.delta_v.len() == active_area.d.h);
+
+  let delta_h: Vec<f32> = if blacklevel.delta_h.is_empty() {
+    vec![0.0; active_area.d.w]
+  } else {
+    blacklevel.delta_h.iter().map(|value| value.n as f32 / value.d as f32).collect()
+  };
+  let delta_v: Vec<f32> = if blacklevel.delta_v.is_empty() {
+    vec![0.0; active_area.d.h]
+  } else {
+    blacklevel.delta_v.iter().map(|value| value.n as f32 / value.d as f32).collect()
+  };
+
+  let mut max_delta_h = vec![f32::NEG_INFINITY; blacklevel.width];
+  for (column, delta) in delta_h.iter().enumerate() {
+    max_delta_h[column % blacklevel.width] = max_delta_h[column % blacklevel.width].max(*delta);
+  }
+
+  let mut max_delta_v = vec![f32::NEG_INFINITY; blacklevel.height];
+  for (row, delta) in delta_v.iter().enumerate() {
+    max_delta_v[row % blacklevel.height] = max_delta_v[row % blacklevel.height].max(*delta);
+  }
+
+  let mut maximum_blacklevel = vec![f32::NEG_INFINITY; cpp];
+  for (pattern_row, row_delta) in max_delta_v.iter().enumerate() {
+    if !row_delta.is_finite() {
+      continue;
+    }
+    for (pattern_column, column_delta) in max_delta_h.iter().enumerate() {
+      if !column_delta.is_finite() {
+        continue;
+      }
+      for (sample, maximum) in maximum_blacklevel.iter_mut().enumerate() {
+        let index = (pattern_row * blacklevel.width + pattern_column) * cpp + sample;
+        *maximum = maximum.max(blacklevel.levels[index].as_f32() + column_delta + row_delta);
+      }
+    }
+  }
+
+  let scale: Vec<f32> = whitelevel
+    .iter()
+    .zip(maximum_blacklevel.iter())
+    .map(|(white, black)| 1.0 / (white - black))
+    .collect();
+  let active_right = active_area.p.x + active_area.d.w;
+  let active_bottom = active_area.p.y + active_area.d.h;
+  let pattern_origin_x = active_area.p.x % blacklevel.width;
+  let pattern_origin_y = active_area.p.y % blacklevel.height;
+
+  raw.par_chunks_exact_mut(width * cpp).enumerate().for_each(|(row, line)| {
+    let pattern_row = (row + blacklevel.height - pattern_origin_y) % blacklevel.height;
+    let row_delta = if row >= active_area.p.y && row < active_bottom {
+      delta_v[row - active_area.p.y]
+    } else {
+      0.0
+    };
+
+    line.chunks_exact_mut(cpp).enumerate().for_each(|(column, pixel)| {
+      let pattern_column = (column + blacklevel.width - pattern_origin_x) % blacklevel.width;
+      let column_delta = if column >= active_area.p.x && column < active_right {
+        delta_h[column - active_area.p.x]
+      } else {
+        0.0
+      };
+
+      for sample in 0..cpp {
+        let index = (pattern_row * blacklevel.width + pattern_column) * cpp + sample;
+        let black = blacklevel.levels[index].as_f32() + column_delta + row_delta;
+        pixel[sample] = (pixel[sample] - black).max(0.0) * scale[sample];
+      }
+    });
+  });
+}
+
 /// Correct data by blacklevel and whitelevel on CFA (bayer) data.
 ///
 /// The output is between 0.0 .. 1.0.
@@ -187,6 +281,65 @@ pub fn correct_blacklevel_cfa(raw: &mut [f32], width: usize, _height: usize, bla
       b[1] = clip(b[1] - blacklevel[3]) / max[3];
     });
   });
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+  use crate::formats::tiff::SRational;
+  use approx::assert_abs_diff_eq;
+
+  #[test]
+  fn corrects_signed_dng_blacklevel_deltas() {
+    let mut blacklevel = BlackLevel::new(&[10_u16], 1, 1, 1);
+    blacklevel.delta_h = vec![SRational::new(0, 1), SRational::new(1, 1), SRational::new(2, 1)];
+    blacklevel.delta_v = vec![SRational::new(-1, 1), SRational::new(3, 1)];
+
+    let mut raw = vec![9.0, 10.0, 11.0, 13.0, 56.5, 100.0];
+    correct_blacklevel_with_deltas(
+      &mut raw,
+      3,
+      2,
+      1,
+      &blacklevel,
+      &[100.0],
+      Rect::new(crate::imgop::Point::zero(), crate::imgop::Dim2::new(3, 2)),
+    );
+
+    assert_abs_diff_eq!(raw[0], 0.0);
+    assert_abs_diff_eq!(raw[1], 0.0);
+    assert_abs_diff_eq!(raw[2], 0.0);
+    assert_abs_diff_eq!(raw[3], 0.0);
+    assert_abs_diff_eq!(raw[4], 0.5, epsilon = 1e-6);
+    assert_abs_diff_eq!(raw[5], 1.0, epsilon = 1e-6);
+  }
+
+  #[test]
+  fn anchors_dng_blacklevel_pattern_to_active_area() {
+    let mut blacklevel = BlackLevel::new(&[10_u16, 20, 30, 40], 2, 2, 1);
+    blacklevel.delta_h = vec![SRational::new(0, 1); 2];
+    blacklevel.delta_v = vec![SRational::new(0, 1); 2];
+
+    let mut raw = vec![0.0; 16];
+    raw[5] = 10.0;
+    raw[6] = 20.0;
+    raw[9] = 30.0;
+    raw[10] = 100.0;
+    correct_blacklevel_with_deltas(
+      &mut raw,
+      4,
+      4,
+      1,
+      &blacklevel,
+      &[100.0],
+      Rect::new(crate::imgop::Point::new(1, 1), crate::imgop::Dim2::new(2, 2)),
+    );
+
+    assert_abs_diff_eq!(raw[5], 0.0);
+    assert_abs_diff_eq!(raw[6], 0.0);
+    assert_abs_diff_eq!(raw[9], 0.0);
+    assert_abs_diff_eq!(raw[10], 1.0, epsilon = 1e-6);
+  }
 }
 
 #[multiversion(targets("x86_64+avx+avx2", "x86+sse", "aarch64+neon"))]

@@ -3,6 +3,7 @@ use crate::cfa::*;
 use crate::decoders::*;
 use crate::formats::tiff::Entry;
 use crate::formats::tiff::Rational;
+use crate::formats::tiff::SRational;
 use crate::formats::tiff::Value;
 use crate::imgop::Dim2;
 use crate::imgop::Point;
@@ -31,6 +32,73 @@ pub struct DngFormat {
   tiff: GenericTiffReader,
 }
 
+fn active_area_borders(raw: &IFD) -> Option<[usize; 4]> {
+  raw
+    .get_entry(DngTag::ActiveArea)
+    .map(|crops| [crops.force_usize(0), crops.force_usize(1), crops.force_usize(2), crops.force_usize(3)])
+}
+
+fn get_blacklevel_delta(raw: &IFD, tag: DngTag, expected_count: usize, name: &str) -> Result<Vec<SRational>> {
+  if let Some(entry) = raw.get_entry(tag) {
+    if let Value::SRational(values) = &entry.value {
+      if values.len() == expected_count {
+        Ok(values.clone())
+      } else {
+        log::warn!("File has {} tag with invalid length: {}, expected: {}", name, values.len(), expected_count);
+        Ok(Vec::new())
+      }
+    } else {
+      Err(format!("Unsupported {} type: {}", name, entry.value_type_name()).into())
+    }
+  } else {
+    Ok(Vec::new())
+  }
+}
+
+fn get_blacklevels(raw: &IFD) -> Result<Option<BlackLevel>> {
+  let cpp = raw.get_entry(TiffCommonTag::SamplesPerPixel).map(|entry| entry.force_usize(0)).unwrap_or(1);
+  let base_entry = raw.get_entry(TiffCommonTag::BlackLevels);
+  let mut blacklevel = if let Some(entry) = base_entry {
+    let levels = match &entry.value {
+      Value::Short(black) => black.iter().copied().map(Rational::from).collect(),
+      Value::Long(black) => black.iter().copied().map(Rational::from).collect(),
+      Value::Rational(black) => black.clone(),
+      _ => return Err(format!("Unsupported BlackLevel type: {}", entry.value_type_name()).into()),
+    };
+    let mut repeat = (1, 1);
+    if let Some(Entry {
+      value: Value::Short(value), ..
+    }) = raw.get_entry(DngTag::BlackLevelRepeatDim)
+    {
+      if value.len() == 2 {
+        repeat = (value[0] as usize, value[1] as usize);
+      } else {
+        // Pentax K-3 Mark III Monochrome is known to have an invalid tag.
+        log::warn!("File has BlackLevelRepeatDim tag but with invalid length: {}", value.len());
+      }
+    }
+    BlackLevel::new(&levels, repeat.1, repeat.0, cpp)
+  } else {
+    BlackLevel::zero(1, 1, cpp)
+  };
+
+  let width = fetch_tiff_tag!(raw, TiffCommonTag::ImageWidth).force_usize(0);
+  let height = fetch_tiff_tag!(raw, TiffCommonTag::ImageLength).force_usize(0);
+  let [top, left, bottom, right] = active_area_borders(raw).unwrap_or([0, 0, height, width]);
+  if bottom < top || right < left || bottom > height || right > width {
+    return Err(format!("Invalid ActiveArea: [{}, {}, {}, {}]", top, left, bottom, right).into());
+  }
+
+  blacklevel.delta_h = get_blacklevel_delta(raw, DngTag::BlackLevelDeltaH, right - left, "BlackLevelDeltaH")?;
+  blacklevel.delta_v = get_blacklevel_delta(raw, DngTag::BlackLevelDeltaV, bottom - top, "BlackLevelDeltaV")?;
+
+  if base_entry.is_none() && !blacklevel.has_deltas() {
+    Ok(None)
+  } else {
+    Ok(Some(blacklevel))
+  }
+}
+
 impl<'a> Decoder for DngDecoder<'a> {
   fn raw_image(&self, file: &RawSource, _params: &RawDecodeParams, dummy: bool) -> Result<RawImage> {
     let raw = self.get_raw_ifd()?;
@@ -56,7 +124,7 @@ impl<'a> Decoder for DngDecoder<'a> {
       // panic!("Camera {} / {} is not in the camera catalog", cam.make, cam.model);
     }
 
-    let blacklevel = self.get_blacklevels(raw)?;
+    let blacklevel = get_blacklevels(raw)?;
     let whitelevel = self.get_whitelevels(raw)?.or(Some(WhiteLevel::new_bits(bits, cpp)));
 
     let photometric = match fetch_tiff_tag!(raw, TiffCommonTag::PhotometricInt).force_u32(0) {
@@ -306,33 +374,6 @@ impl<'a> DngDecoder<'a> {
     }
   }
 
-  fn get_blacklevels(&self, raw: &IFD) -> Result<Option<BlackLevel>> {
-    let cpp = raw.get_entry(TiffCommonTag::SamplesPerPixel).map(|entry| entry.force_usize(0)).unwrap_or(1);
-    if let Some(entry) = raw.get_entry(TiffCommonTag::BlackLevels) {
-      let levels = match &entry.value {
-        Value::Short(black) => black.iter().copied().map(Rational::from).collect(),
-        Value::Long(black) => black.iter().copied().map(Rational::from).collect(),
-        Value::Rational(black) => black.clone(),
-        _ => return Err(format!("Unsupported BlackLevel type: {}", entry.value_type_name()).into()),
-      };
-      let mut repeat = (1, 1);
-      if let Some(Entry {
-        value: Value::Short(value), ..
-      }) = raw.get_entry(DngTag::BlackLevelRepeatDim)
-      {
-        if value.len() == 2 {
-          repeat = (value[0] as usize, value[1] as usize);
-        } else {
-          // Pentax K-3 Mark III Monochrome is known to has invalid tag
-          log::warn!("File has BlackLevelRepeatDim tag but with invalid length: {}", value.len());
-        }
-      }
-      Ok(Some(BlackLevel::new(&levels, repeat.1, repeat.0, cpp)))
-    } else {
-      Ok(None)
-    }
-  }
-
   fn get_whitelevels(&self, raw: &IFD) -> Result<Option<WhiteLevel>> {
     let cpp = fetch_tiff_tag!(raw, TiffCommonTag::SamplesPerPixel).force_usize(0);
     if let Some(levels) = raw.get_entry(TiffCommonTag::WhiteLevel) {
@@ -362,13 +403,8 @@ impl<'a> DngDecoder<'a> {
   }
 
   fn get_active_area_borders(&self, raw: &IFD) -> Option<[usize; 4]> {
-    if let Some(crops) = raw.get_entry(DngTag::ActiveArea) {
-      let rect = [crops.force_usize(0), crops.force_usize(1), crops.force_usize(2), crops.force_usize(3)];
-      Some(rect)
-    } else {
-      // Ignore missing crops, at least some pentax DNGs don't have it
-      None
-    }
+    // Ignore missing crops, at least some Pentax DNGs don't have it.
+    active_area_borders(raw)
   }
 
   fn get_active_area(&self, raw: &IFD, width: usize, height: usize) -> Option<[usize; 4]> {
@@ -432,5 +468,64 @@ impl<'a> DngDecoder<'a> {
     // TODO: add 3
 
     Ok(result)
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  fn add_entry(ifd: &mut IFD, tag: u16, value: Value) {
+    ifd.entries.insert(tag, Entry { tag, value, embedded: None });
+  }
+
+  #[test]
+  fn reads_blacklevel_deltas_relative_to_active_area() {
+    let mut raw = IFD::default();
+    add_entry(&mut raw, TiffCommonTag::ImageWidth.into(), Value::Long(vec![5]));
+    add_entry(&mut raw, TiffCommonTag::ImageLength.into(), Value::Long(vec![4]));
+    add_entry(&mut raw, TiffCommonTag::SamplesPerPixel.into(), Value::Short(vec![1]));
+    add_entry(&mut raw, DngTag::ActiveArea.into(), Value::Long(vec![1, 1, 3, 4]));
+    add_entry(&mut raw, DngTag::BlackLevel.into(), Value::Short(vec![10]));
+    add_entry(&mut raw, DngTag::BlackLevelRepeatDim.into(), Value::Short(vec![1, 1]));
+    add_entry(
+      &mut raw,
+      DngTag::BlackLevelDeltaH.into(),
+      Value::SRational(vec![SRational::new(1, 2), SRational::new(-1, 2), SRational::new(2, 1)]),
+    );
+    add_entry(
+      &mut raw,
+      DngTag::BlackLevelDeltaV.into(),
+      Value::SRational(vec![SRational::new(3, 1), SRational::new(-2, 1)]),
+    );
+
+    let blacklevel = get_blacklevels(&raw)
+      .expect("black-level tags should parse")
+      .expect("black-level metadata should be present");
+
+    assert_eq!(blacklevel.levels, vec![Rational::new(10, 1)]);
+    assert_eq!(blacklevel.delta_h.len(), 3);
+    assert_eq!(blacklevel.delta_h[1], SRational::new(-1, 2));
+    assert_eq!(blacklevel.delta_v, vec![SRational::new(3, 1), SRational::new(-2, 1)]);
+  }
+
+  #[test]
+  fn uses_default_blacklevel_when_only_delta_is_present() {
+    let mut raw = IFD::default();
+    add_entry(&mut raw, TiffCommonTag::ImageWidth.into(), Value::Long(vec![2]));
+    add_entry(&mut raw, TiffCommonTag::ImageLength.into(), Value::Long(vec![2]));
+    add_entry(&mut raw, TiffCommonTag::SamplesPerPixel.into(), Value::Short(vec![1]));
+    add_entry(
+      &mut raw,
+      DngTag::BlackLevelDeltaV.into(),
+      Value::SRational(vec![SRational::new(5, 1), SRational::new(6, 1)]),
+    );
+
+    let blacklevel = get_blacklevels(&raw)
+      .expect("black-level tags should parse")
+      .expect("delta metadata should create a black level");
+
+    assert_eq!(blacklevel.levels, vec![Rational::new(0, 1)]);
+    assert_eq!(blacklevel.delta_v, vec![SRational::new(5, 1), SRational::new(6, 1)]);
   }
 }
