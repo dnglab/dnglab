@@ -18,6 +18,24 @@ pub struct DngDecoder<'a> {
   tiff: GenericTiffReader,
 }
 
+fn validate_blacklevel_count(level_count: usize, repeat: (usize, usize), cpp: usize) -> Result<()> {
+  let expected_levels = repeat
+    .0
+    .checked_mul(repeat.1)
+    .and_then(|count| count.checked_mul(cpp))
+    .ok_or_else(|| format!("BlackLevel repeat size overflow: {}x{} with {cpp} samples per pixel", repeat.0, repeat.1))?;
+  if level_count != expected_levels {
+    return Err(
+      format!(
+        "BlackLevel count mismatch: expected {expected_levels} values for repeat {}x{} with {cpp} samples per pixel, found {level_count}",
+        repeat.0, repeat.1
+      )
+      .into(),
+    );
+  }
+  Ok(())
+}
+
 impl<'a> DngDecoder<'a> {
   pub fn new(_file: &RawSource, tiff: GenericTiffReader, rawloader: &'a RawLoader) -> Result<DngDecoder<'a>> {
     Ok(DngDecoder { tiff, rawloader })
@@ -327,6 +345,7 @@ impl<'a> DngDecoder<'a> {
           log::warn!("File has BlackLevelRepeatDim tag but with invalid length: {}", value.len());
         }
       }
+      validate_blacklevel_count(levels.len(), repeat, cpp)?;
       Ok(Some(BlackLevel::new(&levels, repeat.1, repeat.0, cpp)))
     } else {
       Ok(None)
@@ -432,5 +451,21 @@ impl<'a> DngDecoder<'a> {
     // TODO: add 3
 
     Ok(result)
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use super::validate_blacklevel_count;
+
+  #[test]
+  fn rejects_blacklevel_count_mismatch_before_construction() {
+    let error = validate_blacklevel_count(1, (2, 2), 3).unwrap_err();
+    assert!(error.to_string().contains("expected 12 values"));
+  }
+
+  #[test]
+  fn accepts_row_column_sample_blacklevel_count() {
+    validate_blacklevel_count(12, (2, 2), 3).unwrap();
   }
 }

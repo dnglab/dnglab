@@ -57,6 +57,7 @@ enum Marker {
   EOI = 0xd9,  // end of image
   SOS = 0xda,  // start of scan
   DQT = 0xdb,  // quantization tables
+  DRI = 0xdd,  // restart interval
   Fill = 0xff,
 }
 
@@ -169,6 +170,7 @@ pub struct LjpegDecompressor<'a> {
   sof: SOFInfo,
   predictor: usize,
   point_transform: usize,
+  restart_interval: usize,
   dhts: Vec<HuffTable>,
 }
 
@@ -189,6 +191,7 @@ impl<'a> LjpegDecompressor<'a> {
     let mut dht_huffval = [[0_u32; 256]; 4];
     let pred;
     let pt;
+    let mut restart_interval = 0;
     loop {
       let marker = LjpegDecompressor::get_next_marker(&mut input, true)?;
       if marker == m(Marker::SOF3) {
@@ -200,6 +203,8 @@ impl<'a> LjpegDecompressor<'a> {
       } else if marker == m(Marker::DHT) {
         // Huffman table settings
         LjpegDecompressor::parse_dht(&mut input, &mut dht_init, &mut dht_bits, &mut dht_huffval)?;
+      } else if marker == m(Marker::DRI) {
+        restart_interval = LjpegDecompressor::parse_dri(&mut input)?;
       } else if marker == m(Marker::SOS) {
         // Start of the actual stream, we can decode after this
         let (a, b) = sof.parse_sos(&mut input)?;
@@ -224,13 +229,14 @@ impl<'a> LjpegDecompressor<'a> {
     }
 
     log::debug!(
-      "LJPEGDecompressor: super_h: {}, super_v: {}, pred: {}, pt: {}, prec: {}, cps: {}",
+      "LJPEGDecompressor: super_h: {}, super_v: {}, pred: {}, pt: {}, prec: {}, cps: {}, restart_interval: {}",
       sof.components[0].super_h,
       sof.components[0].super_v,
       pred,
       pt,
       sof.precision,
       sof.cps,
+      restart_interval,
     );
 
     if sof.components[0].super_h == 2 && sof.components[0].super_v == 2 {
@@ -245,6 +251,7 @@ impl<'a> LjpegDecompressor<'a> {
       sof,
       predictor: pred,
       point_transform: pt,
+      restart_interval,
       dhts,
     })
   }
@@ -310,11 +317,23 @@ impl<'a> LjpegDecompressor<'a> {
     Ok(())
   }
 
+  fn parse_dri(input: &mut ByteStream) -> Result<usize, String> {
+    if input.remaining_bytes() < 4 {
+      return Err(format!("ljpeg: truncated DRI segment ({} bytes remain)", input.remaining_bytes()));
+    }
+    let length = input.get_u16();
+    if length != 4 {
+      return Err(format!("ljpeg: invalid DRI length {length}"));
+    }
+    Ok(input.get_u16() as usize)
+  }
+
   /// Handle special SONY YUV 4:2:0 encoding in ILCE-7RM5
   pub fn decode_sony(&self, out: &mut [u16], x: usize, stripwidth: usize, width: usize, height: usize, dummy: bool) -> Result<(), String> {
     if dummy {
       return Ok(());
     }
+    self.validate_restart_support()?;
     log::debug!("LJPEG decode with special Sony mode");
     if self.sof.components[0].super_h == 2 && self.sof.components[0].super_v == 2 {
       decode_sony_ljpeg_420(self, out, width, height)
@@ -338,6 +357,7 @@ impl<'a> LjpegDecompressor<'a> {
     if dummy {
       return Ok(());
     }
+    self.validate_restart_support()?;
 
     if self.sof.components[0].super_h == 2 && self.sof.components[0].super_v == 2 {
       decode_ljpeg_420(self, out, width, height)
@@ -387,6 +407,25 @@ impl<'a> LjpegDecompressor<'a> {
         Ok(())
       }),
     )
+  }
+
+  fn validate_restart_support(&self) -> Result<(), String> {
+    if self.restart_interval == 0 {
+      return Ok(());
+    }
+
+    if let Some(component) = self.sof.components.iter().find(|component| component.super_h != 1 || component.super_v != 1) {
+      return Err(format!(
+        "ljpeg: restart markers are not supported for component {} sampling {}x{}",
+        component.id, component.super_h, component.super_v
+      ));
+    }
+
+    if !(1..=7).contains(&self.predictor) {
+      return Err(format!("ljpeg: restart markers are not supported with predictor {}", self.predictor));
+    }
+
+    Ok(())
   }
 
   pub fn width(&self) -> usize {
