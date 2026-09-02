@@ -7,6 +7,9 @@ clean_model = "X1D II 50C"
 color_pattern = "RGGB"
 hints = ["uncompressed"]
 
+# Phocus-written FFF files include the make in the model string.
+model_aliases = [["Hasselblad X1D II 50C", "X1D II 50C"]]
+
 active_area = [46, 96, 58, 0]
 
 [cameras.color_matrix]
