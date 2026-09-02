@@ -232,7 +232,10 @@ impl Jfif {
           Ok(app1) => Segment::APP1 { offset: pos, app1 },
           Err(err) => {
             log::warn!("Failed to read APP1 (EXIF) segement, maybe corrupt: {:?}", err);
-            continue;
+            // The reader may not have advanced when the segment header is
+            // truncated. Re-entering this arm with the same marker would
+            // spin forever, so keep the segments parsed so far and stop.
+            break;
           }
         },
         0xFFDA => Segment::SOS {
@@ -318,5 +321,18 @@ pub fn is_exif(file: &RawSource) -> bool {
       log::error!("is_exif(): {:?}", err);
       false
     }
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+  use std::io::Cursor;
+
+  #[test]
+  fn truncated_app1_does_not_loop() {
+    let bytes = [0xFF, 0xD8, 0xFF, 0xE1, 0x33];
+    let parsed = Jfif::parse(Cursor::new(bytes)).expect("SOI remains a valid parsed segment");
+    assert!(matches!(parsed.segments.as_slice(), [Segment::SOI { .. }]));
   }
 }
