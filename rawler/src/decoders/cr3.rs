@@ -646,6 +646,12 @@ impl Ctmd {
 
     while data.remaining_bytes() >= 12 {
       let size = data.get_u32();
+      // A record is at least its 12-byte header and fits in what is left.
+      // A zeroed record (a file still being copied) or a truncated one ends the list.
+      if (size as usize) < 12 || data.remaining_bytes() < size as usize - 4 {
+        log::debug!("CTMD record: size {}, remaining: {} - is invalid, stop", size, data.remaining_bytes());
+        break;
+      }
       let mut rec = CtmdRecord {
         rec_size: size,
         rec_type: data.get_u16(),
@@ -851,4 +857,33 @@ pub enum Cr3MakernoteTag {
   HDRInfo = 0x4025,
   AFConfig = 0x4028,
   RawBurstModeRoll = 0x403f,
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[test]
+  fn ctmd_stops_at_a_zeroed_record() {
+    let zeros = [0u8; 64];
+    let ctmd = Ctmd::new(&mut ByteStream::new(&zeros, Endian::Little));
+    assert!(ctmd.records.is_empty());
+  }
+
+  #[test]
+  fn ctmd_stops_at_a_record_larger_than_the_data() {
+    let mut data = vec![0u8; 32];
+    data[0..4].copy_from_slice(&1000u32.to_le_bytes());
+    let ctmd = Ctmd::new(&mut ByteStream::new(&data, Endian::Little));
+    assert!(ctmd.records.is_empty());
+  }
+
+  #[test]
+  fn ctmd_reads_a_record_that_fits() {
+    let mut data = vec![0u8; 20];
+    data[0..4].copy_from_slice(&20u32.to_le_bytes());
+    data[4..6].copy_from_slice(&1u16.to_le_bytes());
+    let ctmd = Ctmd::new(&mut ByteStream::new(&data, Endian::Little));
+    assert_eq!(ctmd.records[&1].payload.len(), 8);
+  }
 }
