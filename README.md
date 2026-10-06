@@ -79,6 +79,7 @@ For a list of supported cameras please see [SUPPORTED_CAMERAS.md](SUPPORTED_CAME
 |Phase One    | IIQ    | ✅ Yes                            |                                        |
 |Samsung      | SRW    | ✅ Yes                            |                                        |
 |Sony         | ARW    | ✅ Yes                            |                                        |
+|Sony         | ARQ    | ✅ Yes                            | Pixel shift (Imaging Edge), converted to RGB |
 |Sony         | SRF    | ✅ Yes                            |                                        |
 |Sony         | SR2    | ✅ Yes                            |                                        |
 

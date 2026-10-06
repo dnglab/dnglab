@@ -3,6 +3,7 @@ use std::io::Cursor;
 
 use image::DynamicImage;
 use log::debug;
+use rayon::prelude::*;
 
 use crate::RawImage;
 use crate::RawLoader;
@@ -131,8 +132,16 @@ impl<'a> Decoder for ArwDecoder<'a> {
 
     let src = file.subview_until_eof(offset as u64)?;
     let mut cpp = 1;
+    // ARQ: pixel shift sequence merged by Sony software, four raw samples
+    // per pixel (one per position of the 2x2 CFA block).
+    let samples_per_pixel = raw.get_entry(TiffCommonTag::SamplesPerPixel).map(|e| e.value.force_usize(0)).unwrap_or(1);
+    let arq = compression == 1 && samples_per_pixel == 4;
 
     let image = match compression {
+      1 if arq => {
+        cpp = 3;
+        decode_arq(src, width, height, &self.camera.cfa, dummy)?
+      }
       1 => {
         if self.camera.model == "DSC-R1" {
           decompress_14be_unpacked(src, width, height, dummy)?
@@ -185,6 +194,7 @@ impl<'a> Decoder for ArwDecoder<'a> {
 
     let blacklevel = black
       .map(|black| match cpp {
+        3 if arq => Ok(BlackLevel::new(&arq_levels(&black, &self.camera.cfa), 1, 1, cpp)),
         1 => Ok(BlackLevel::new(&black, self.camera.cfa.width, self.camera.cfa.height, cpp)),
         // For YUV data, the blacklevel needs to be multiplicated by 2
         3 => Ok(BlackLevel::new(&[black[0] * 2, black[0] * 2, black[0] * 2], 1, 1, cpp)),
@@ -201,7 +211,7 @@ impl<'a> Decoder for ArwDecoder<'a> {
 
     let mut img = RawImage::new(self.camera.clone(), image, cpp, params.wb, photometric, blacklevel, whitelevel, dummy);
 
-    if cpp == 3 {
+    if cpp == 3 && !arq {
       // For debayer images, we assume WB coeffs already applied
       img.wb_coeffs = [1.0, 1.0, 1.0, f32::NAN];
     }
@@ -765,6 +775,51 @@ pub enum ArwMakernoteTag {
   Tag_9416 = 0x9416, // replaces 0x9405 for the Sony ILCE-7SM3, from July 2020
 }
 
+/// Decode uncompressed ARQ data (four 16-bit samples per pixel, channel =
+/// position in the 2x2 CFA block) into RGB, averaging the two green samples.
+fn decode_arq(src: &[u8], width: usize, height: usize, cfa: &crate::cfa::CFA, dummy: bool) -> Result<PixU16> {
+  let need = width * height * 8;
+  if src.len() < need {
+    return Err(RawlerError::DecoderFailed(format!("ARQ: buffer too short ({} < {})", src.len(), need)));
+  }
+  // Colour (0 = R, 1 = G, 2 = B) of each of the four channels.
+  let colors: Vec<usize> = (0..4).map(|ch| cfa.color_at(ch / 2, ch % 2)).collect();
+  if colors.iter().filter(|c| **c == 1).count() != 2 || !colors.contains(&0) || !colors.contains(&2) {
+    return Err(RawlerError::DecoderFailed(format!("ARQ: unsupported CFA pattern {}", cfa.name)));
+  }
+  if dummy {
+    return Ok(PixU16::new_uninit(width * 3, height));
+  }
+  let mut out = vec![0u16; width * height * 3];
+  out.par_chunks_exact_mut(width * 3).enumerate().for_each(|(row, line)| {
+    let inb = &src[row * width * 8..(row + 1) * width * 8];
+    for (dst, s) in line.as_chunks_mut::<3>().0.iter_mut().zip(inb.as_chunks::<8>().0) {
+      let mut g = 0u32;
+      for (ch, &color) in colors.iter().enumerate() {
+        let v = u16::from_le_bytes([s[2 * ch], s[2 * ch + 1]]);
+        match color {
+          1 => g += v as u32,
+          c => dst[c] = v,
+        }
+      }
+      dst[1] = g.div_ceil(2) as u16;
+    }
+  });
+  Ok(PixU16::new_with(out, width * 3, height))
+}
+
+/// Per-colour (R, G, B) levels from the four CFA-position levels.
+fn arq_levels(levels: &[u16; 4], cfa: &crate::cfa::CFA) -> [u16; 3] {
+  let mut sum = [0u32; 3];
+  let mut n = [0u32; 3];
+  for (pos, &lvl) in levels.iter().enumerate() {
+    let c = cfa.color_at(pos / 2, pos % 2).min(2);
+    sum[c] += lvl as u32;
+    n[c] += 1;
+  }
+  [0, 1, 2].map(|c| (sum[c] / n[c].max(1)) as u16)
+}
+
 /// Decipher/encipher Sony tag 0x2010, 0x900b, 0x9050 and 0x940x data
 /// Extracted from exiftool, comment from PH:
 /// This is a simple substitution cipher, so use a hardcoded translation table for speed.
@@ -817,4 +872,26 @@ pub enum SR2SubIFD {
   BlackLevel1 = 0x7300,
   BlackLevel2 = 0x7310,
   WhiteLevel = 0x787f,
+}
+
+#[cfg(test)]
+mod arq_tests {
+  use super::*;
+
+  #[test]
+  fn arq_samples_become_rgb_with_averaged_green() {
+    let cfa = crate::cfa::CFA::new("RGGB");
+    // Two pixels; channels are the CFA positions R, G, G, B.
+    let samples: [u16; 8] = [100, 200, 203, 300, 1, 10, 11, 65535];
+    let src: Vec<u8> = samples.iter().flat_map(|v| v.to_le_bytes()).collect();
+    let img = decode_arq(&src, 2, 1, &cfa, false).expect("decode");
+    assert_eq!(img.pixels(), &[100, 202, 300, 1, 11, 65535]);
+    assert_eq!(arq_levels(&[512, 510, 514, 600], &cfa), [512, 512, 600]);
+  }
+
+  #[test]
+  fn arq_rejects_short_buffer() {
+    let cfa = crate::cfa::CFA::new("RGGB");
+    assert!(decode_arq(&[0u8; 10], 2, 1, &cfa, false).is_err());
+  }
 }
