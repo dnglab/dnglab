@@ -82,12 +82,26 @@ impl BoxHeader {
     }
 
     let current = reader.stream_position()?;
+    let header_len = current - start;
+    if size == 0 {
+      // ISO/IEC 14496-12: the box extends to the end of the file.
+      let end = reader.seek(SeekFrom::End(0))?;
+      reader.seek(SeekFrom::Start(current))?;
+      size = end - start;
+    } else if size < header_len {
+      // The box would end before its own header does, so a container
+      // loop reading it would never advance.
+      return Err(BmffError::Parse(format!(
+        "Invalid size {} for box {:?} at offset {}, smaller than its header ({} bytes)",
+        size, typ, start, header_len
+      )));
+    }
     Ok(BoxHeader {
       size,
       typ,
       uuid,
       offset: start,
-      header_len: current - start,
+      header_len,
     })
   }
 
@@ -323,5 +337,52 @@ impl Bmff {
 
   pub fn compatible_brand(&self, brand: &str) -> bool {
     self.filebox.ftyp.compatible_brands.iter().any(|b| b.to_string() == brand)
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  fn boxed(typ: &[u8; 4], size: u32, payload: &[u8]) -> Vec<u8> {
+    let mut b = size.to_be_bytes().to_vec();
+    b.extend_from_slice(typ);
+    b.extend_from_slice(payload);
+    b
+  }
+
+  fn ftyp() -> Vec<u8> {
+    boxed(b"ftyp", 24, b"crx \x00\x00\x00\x01crx isom")
+  }
+
+  #[test]
+  fn size_zero_extends_to_end_of_file() {
+    let data = boxed(b"mdat", 0, &[1, 2, 3, 4]);
+    let header = BoxHeader::parse(&mut Cursor::new(&data)).expect("header");
+    assert_eq!(header.size, 12);
+    assert_eq!(header.header_len, 8);
+    assert_eq!(header.end_offset(), 12);
+  }
+
+  #[test]
+  fn size_smaller_than_header_is_rejected() {
+    let data = boxed(b"free", 3, &[]);
+    assert!(matches!(BoxHeader::parse(&mut Cursor::new(&data)), Err(BmffError::Parse(_))));
+  }
+
+  // dnglab/dnglab#848: a box with size 0 inside moov made the moov loop
+  // read the same box forever until memory ran out.
+  #[test]
+  fn zero_size_box_in_moov_terminates() {
+    let mut data = ftyp();
+    data.extend(boxed(b"moov", 16, &[0; 8]));
+    assert!(parse_buffer(&data).is_err());
+  }
+
+  #[test]
+  fn undersized_box_in_moov_is_an_error() {
+    let mut data = ftyp();
+    data.extend(boxed(b"moov", 16, &boxed(b"free", 3, &[])));
+    assert!(matches!(parse_buffer(&data), Err(BmffError::Parse(msg)) if msg.contains("Invalid size 3")));
   }
 }
