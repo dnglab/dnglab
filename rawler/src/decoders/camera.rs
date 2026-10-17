@@ -1,3 +1,5 @@
+use serde::Deserialize;
+use serde::Serialize;
 use toml::Value;
 
 use crate::CFA;
@@ -11,7 +13,7 @@ use super::BlackLevel;
 use super::WhiteLevel;
 
 /// Contains sanitized information about the raw image's properties
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct Camera {
   pub make: String,
   pub model: String,
@@ -46,7 +48,7 @@ pub struct Camera {
   pub params: HashMap<String, Value>,
 }
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub struct DefaultScale(pub [[u32; 2]; 2]);
 
 impl Default for DefaultScale {
@@ -55,7 +57,7 @@ impl Default for DefaultScale {
   }
 }
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub struct BestQualityScale(pub [u32; 2]);
 
 impl Default for BestQualityScale {

@@ -3,8 +3,10 @@
 
 use std::convert::TryFrom;
 
+use serde::{Deserialize, Serialize};
+
 /// Illuminants for XYZ
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 pub enum Illuminant {
   Unknown = 0,
   Daylight = 1,
