@@ -9,14 +9,14 @@ use serde::{Deserialize, Serialize};
 
 use crate::Result;
 use crate::cfa::PlaneColor;
-use crate::imgop::raw::{correct_blacklevel, correct_blacklevel_cfa};
+use crate::imgop::raw::{correct_blacklevel, correct_blacklevel_cfa, correct_blacklevel_with_deltas};
 use crate::imgop::sensor::SensorType;
 use crate::imgop::{convert_from_f32_scaled_u16, convert_to_f32_unscaled};
 use crate::pixarray::SubPixel;
 use crate::{
   CFA,
   decoders::*,
-  formats::tiff::{Rational, Value},
+  formats::tiff::{Rational, SRational, Value},
   imgop::{
     Dim2, Point, Rect,
     raw::{ColorMatrix, DevelopParams},
@@ -67,6 +67,10 @@ pub struct BlackLevel {
   pub cpp: usize,
   pub width: usize,
   pub height: usize,
+  #[serde(default, skip_serializing_if = "Vec::is_empty")]
+  pub delta_h: Vec<SRational>,
+  #[serde(default, skip_serializing_if = "Vec::is_empty")]
+  pub delta_v: Vec<SRational>,
 }
 
 impl Default for BlackLevel {
@@ -76,6 +80,8 @@ impl Default for BlackLevel {
       width: 1,
       height: 1,
       cpp: 1,
+      delta_h: Vec::new(),
+      delta_v: Vec::new(),
     }
   }
 }
@@ -83,7 +89,15 @@ impl Default for BlackLevel {
 impl std::fmt::Debug for BlackLevel {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
     let levels: Vec<f32> = self.levels.iter().map(|x| x.as_f32()).collect();
-    f.write_fmt(format_args!("RepeatDim: {}:{}, cpp: {}, {:?}", self.height, self.width, self.cpp, levels))
+    f.write_fmt(format_args!(
+      "RepeatDim: {}:{}, cpp: {}, DeltaH: {}, DeltaV: {}, {:?}",
+      self.height,
+      self.width,
+      self.cpp,
+      self.delta_h.len(),
+      self.delta_v.len(),
+      levels
+    ))
   }
 }
 
@@ -98,6 +112,8 @@ impl BlackLevel {
       width,
       height,
       cpp,
+      delta_h: Vec::new(),
+      delta_v: Vec::new(),
     }
   }
 
@@ -113,6 +129,8 @@ impl BlackLevel {
       width,
       height,
       cpp,
+      delta_h: Vec::new(),
+      delta_v: Vec::new(),
     }
   }
 
@@ -140,6 +158,10 @@ impl BlackLevel {
 
   pub fn sample_count(&self) -> usize {
     self.cpp * self.width * self.height
+  }
+
+  pub fn has_deltas(&self) -> bool {
+    !self.delta_h.is_empty() || !self.delta_v.is_empty()
   }
 
   // TODO: write test
@@ -518,24 +540,42 @@ impl RawImage {
   /// Internal blacklevel and whitelevel is reset to 0.0 and 1.0 to match image data.
   pub fn apply_scaling(&mut self) -> crate::Result<()> {
     let mut pixels = self.data.as_f32();
-    match &self.photometric {
-      RawPhotometricInterpretation::BlackIsZero => todo!(),
-      RawPhotometricInterpretation::Cfa(_) => {
-        correct_blacklevel_cfa(
-          pixels.to_mut(),
-          self.width,
-          self.height,
-          &self.blacklevel.as_bayer_array(),
-          &self.whitelevel.as_bayer_array(),
-        );
-        self.data = RawImageData::Float(pixels.into_owned());
+    if self.blacklevel.has_deltas() {
+      match &self.photometric {
+        RawPhotometricInterpretation::BlackIsZero => todo!(),
+        RawPhotometricInterpretation::Cfa(_) | RawPhotometricInterpretation::LinearRaw => {
+          correct_blacklevel_with_deltas(
+            pixels.to_mut(),
+            self.width,
+            self.height,
+            self.cpp,
+            &self.blacklevel,
+            &self.whitelevel.as_vec(),
+            self.active_area.unwrap_or_else(|| Rect::new(Point::zero(), self.dim())),
+          );
+        }
       }
-      RawPhotometricInterpretation::LinearRaw => {
-        correct_blacklevel(pixels.to_mut(), &self.blacklevel.as_vec(), &self.whitelevel.as_vec());
-        self.data = RawImageData::Float(pixels.into_owned());
+    } else {
+      match &self.photometric {
+        RawPhotometricInterpretation::BlackIsZero => todo!(),
+        RawPhotometricInterpretation::Cfa(_) => {
+          correct_blacklevel_cfa(
+            pixels.to_mut(),
+            self.width,
+            self.height,
+            &self.blacklevel.as_bayer_array(),
+            &self.whitelevel.as_bayer_array(),
+          );
+        }
+        RawPhotometricInterpretation::LinearRaw => {
+          correct_blacklevel(pixels.to_mut(), &self.blacklevel.as_vec(), &self.whitelevel.as_vec());
+        }
       }
     }
+    self.data = RawImageData::Float(pixels.into_owned());
     self.blacklevel.levels.iter_mut().for_each(|x| *x = Rational::new(0, 1));
+    self.blacklevel.delta_h.clear();
+    self.blacklevel.delta_v.clear();
     self.whitelevel.0.iter_mut().for_each(|x| *x = 1);
     Ok(())
   }
