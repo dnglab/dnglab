@@ -11,7 +11,7 @@ use image::DynamicImage;
 
 use crate::{
   RawImage, RawImageData,
-  decoders::{Decoder, RawDecodeParams, RawPhotometricInterpretation, WellKnownIFD, WhiteLevel},
+  decoders::{Decoder, RawDecodeParams, RawPhotometricInterpretation, WellKnownIFD, WhiteLevel, validate_image_index},
   dng::{DNG_VERSION_V1_4, PREVIEW_JPEG_QUALITY, original::OriginalCompressed, writer::DngWriter},
   formats::tiff::Entry,
   imgop::{
@@ -196,6 +196,7 @@ where
 {
   let decoder = crate::get_decoder(rawfile)?;
   let raw_params = RawDecodeParams { image_index: params.index };
+  validate_image_index(decoder.as_ref(), &raw_params)?;
   let mut rawimage = decoder.raw_image(rawfile, &raw_params, false)?;
   let metadata = decoder.raw_metadata(rawfile, &raw_params)?;
 

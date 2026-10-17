@@ -7,7 +7,7 @@ use image::{DynamicImage, ImageBuffer};
 
 use crate::{
   RawImage,
-  decoders::{RawDecodeParams, RawMetadata},
+  decoders::{RawDecodeParams, RawMetadata, validate_image_index},
   dng::CropMode,
   formats::tiff::{DirectoryWriter, TiffWriter},
   imgop::{
@@ -57,6 +57,7 @@ pub fn process_raw_image<W: Write + Seek + Send>(raw: &Path, image_file: &mut W,
   let rawfile = RawSource::new(raw)?;
   let decoder = crate::get_decoder(&rawfile)?;
   let raw_params = RawDecodeParams { image_index: params.index };
+  validate_image_index(decoder.as_ref(), &raw_params)?;
   let rawimage = decoder.raw_image(&rawfile, &raw_params, false)?;
   let metadata = decoder.raw_metadata(&rawfile, &raw_params)?;
   let develop = RawDevelop::default();
