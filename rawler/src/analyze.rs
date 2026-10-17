@@ -10,7 +10,10 @@ use zerocopy::IntoBytes;
 
 use crate::{
   RawImage, RawImageData, RawlerError, Result,
-  decoders::{RawDecodeParams, RawMetadata, cr2::Cr2Format, cr3::Cr3Format, dng::DngFormat, iiq::IiqFormat, nef::NefFormat, pef::PefFormat, tfr::TfrFormat},
+  decoders::{
+    RawDecodeParams, RawMetadata, cr2::Cr2Format, cr3::Cr3Format, dng::DngFormat, iiq::IiqFormat, nef::NefFormat, pef::PefFormat, tfr::TfrFormat,
+    validate_image_index,
+  },
   formats::tiff::Rational,
   formats::tiff::SRational,
   imgop::{Rect, develop::RawDevelop},
@@ -188,6 +191,7 @@ pub fn analyze_file_structure<P: AsRef<Path>>(path: P) -> Result<AnalyzerResult>
 pub fn extract_raw_pixels<P: AsRef<Path>>(path: P, params: &RawDecodeParams) -> Result<RawImage> {
   let rawfile = RawSource::new(path.as_ref())?;
   let decoder = crate::get_decoder(&rawfile)?;
+  validate_image_index(decoder.as_ref(), params)?;
   let rawimage = decoder.raw_image(&rawfile, params, false)?;
   Ok(rawimage)
 }
@@ -250,6 +254,7 @@ pub fn raw_to_srgb<P: AsRef<Path>>(path: P, params: &RawDecodeParams) -> Result<
   let rawfile = RawSource::new(path.as_ref())?;
   // Get decoder or return
   let decoder = crate::get_decoder(&rawfile)?;
+  validate_image_index(decoder.as_ref(), params)?;
   //decoder.decode_metadata(&mut rawfile)?;
   let rawimage = decoder.raw_image(&rawfile, params, false)?;
   let dev = RawDevelop::default();

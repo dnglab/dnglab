@@ -163,6 +163,28 @@ pub struct RawDecodeParams {
   pub image_index: usize,
 }
 
+/// Check that `params.image_index` selects an image the file actually contains.
+///
+/// Most formats hold a single raw image, and their decoders ignore
+/// `image_index` entirely, so `Decoder::raw_image()` would happily return image
+/// 0 when asked for image 5. Call this before decoding so an out-of-range index
+/// is reported instead of quietly yielding the wrong frame.
+///
+/// The entry points in this crate ([`RawLoader::decode()`],
+/// [`crate::analyze::extract_raw_pixels()`], DNG conversion and the develop
+/// pipeline) all call it already; it is public for callers that drive a
+/// [`Decoder`] directly.
+pub fn validate_image_index(decoder: &dyn Decoder, params: &RawDecodeParams) -> Result<()> {
+  let count = decoder.raw_image_count()?;
+  if params.image_index >= count {
+    return Err(RawlerError::DecoderFailed(format!(
+      "Raw image index {} is out of range, this file contains {} raw image(s)",
+      params.image_index, count
+    )));
+  }
+  Ok(())
+}
+
 #[derive(Default, Debug, Clone)]
 struct DecoderCache<T>
 where
@@ -1086,6 +1108,7 @@ impl RawLoader {
 
   fn decode_unsafe(&self, rawfile: &RawSource, params: &RawDecodeParams, dummy: bool) -> Result<RawImage> {
     let decoder = self.get_decoder(rawfile)?;
+    validate_image_index(decoder.as_ref(), params)?;
     decoder.raw_image(rawfile, params, dummy)
   }
 
@@ -1120,5 +1143,90 @@ impl RawLoader {
       Ok(val) => val,
       Err(_) => Err(RawlerError::DecoderFailed(format!("Caught a panic while decoding.{}", BUG))),
     }
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use std::io::Cursor;
+
+  use super::*;
+  use crate::CFA;
+  use crate::RawImage;
+  use crate::dng::DNG_VERSION_V1_4;
+  use crate::dng::writer::DngWriter;
+  use crate::dng::{CropMode, DngCompression, DngPhotometricConversion};
+  use crate::pixarray::PixU16;
+  use crate::rawimage::{BlackLevel, CFAConfig, RawPhotometricInterpretation, WhiteLevel};
+  use crate::rawsource::RawSource;
+
+  /// Builds a minimal single-image DNG in memory, so these tests need no
+  /// sample files and run without the `rawdb` feature.
+  fn single_image_dng() -> std::result::Result<Vec<u8>, Box<dyn std::error::Error>> {
+    let mut camera = Camera::new();
+    camera.cfa = CFA::new("RGGB");
+    camera.clean_make = "DNGLab".into();
+    camera.clean_model = "Synthetic".into();
+
+    let pixels: Vec<u16> = (0..16 * 16).map(|i| (i % 4096) as u16).collect();
+    let image = PixU16::new_with(pixels, 16, 16);
+    let photometric = RawPhotometricInterpretation::Cfa(CFAConfig::new_from_camera(&camera));
+    let rawimage = RawImage::new(
+      camera,
+      image,
+      1,
+      [1.0, 1.0, 1.0, f32::NAN],
+      photometric,
+      Some(BlackLevel::new(&[0_u32, 0, 0, 0], 2, 2, 1)),
+      Some(WhiteLevel::new_bits(12, 1)),
+      false,
+    );
+
+    let mut buf = Cursor::new(Vec::new());
+    let mut dng = DngWriter::new(&mut buf, DNG_VERSION_V1_4)?;
+    dng.load_base_tags(&rawimage)?;
+    let mut frame = dng.subframe(0);
+    frame.raw_image(&rawimage, CropMode::None, DngCompression::Uncompressed, DngPhotometricConversion::Original, 1)?;
+    frame.finalize()?;
+    dng.close()?;
+    Ok(buf.into_inner())
+  }
+
+  #[test]
+  fn validate_image_index_accepts_zero() -> std::result::Result<(), Box<dyn std::error::Error>> {
+    let source = RawSource::new_from_slice(&single_image_dng()?);
+    let decoder = crate::get_decoder(&source)?;
+
+    assert_eq!(decoder.raw_image_count()?, 1);
+    validate_image_index(decoder.as_ref(), &RawDecodeParams { image_index: 0 })?;
+    Ok(())
+  }
+
+  #[test]
+  fn validate_image_index_rejects_out_of_range() -> std::result::Result<(), Box<dyn std::error::Error>> {
+    let source = RawSource::new_from_slice(&single_image_dng()?);
+    let decoder = crate::get_decoder(&source)?;
+
+    for index in [1, 5, usize::MAX] {
+      let err = validate_image_index(decoder.as_ref(), &RawDecodeParams { image_index: index }).expect_err("an out-of-range index must be rejected");
+      assert!(err.to_string().contains("out of range"), "unexpected error for index {}: {}", index, err);
+    }
+    Ok(())
+  }
+
+  /// The guard has to hold through the public entry point, which is what
+  /// `dnglab convert --image-index` and the C API both go through. Before it
+  /// existed, asking a single-image file for image 5 quietly returned image 0,
+  /// because every decoder except CR3 ignores `image_index` outright.
+  #[test]
+  fn decode_rejects_out_of_range_index() -> std::result::Result<(), Box<dyn std::error::Error>> {
+    let source = RawSource::new_from_slice(&single_image_dng()?);
+
+    let image = crate::decode(&source, &RawDecodeParams { image_index: 0 })?;
+    assert_eq!((image.width, image.height), (16, 16));
+
+    let err = crate::decode(&source, &RawDecodeParams { image_index: 1 }).expect_err("image index 1 must be rejected");
+    assert!(err.to_string().contains("out of range"), "unexpected error: {}", err);
+    Ok(())
   }
 }
