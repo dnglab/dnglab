@@ -2254,6 +2254,12 @@ mod panasonic {
     super::super::rawdb_test_file!("Panasonic", "DC-TZ96", dc_tz96_iso_80_4fmt_3x2_rw2, "raw_modes/DC-TZ96_ISO_80_4fmt_3x2.RW2");
     super::super::rawdb_test_file!("Panasonic", "DC-TZ96", dc_tz96_iso_80_4fmt_4x3_rw2, "raw_modes/DC-TZ96_ISO_80_4fmt_4x3.RW2");
   }
+  mod dc_zs300_raw_modes {
+    super::super::rawdb_test_file!("Panasonic", "DC-ZS300", panasonic_zs300_16x9_rw2, "raw_modes/Panasonic_ZS300_16x9.RW2");
+    super::super::rawdb_test_file!("Panasonic", "DC-ZS300", panasonic_zs300_1x1_rw2, "raw_modes/Panasonic_ZS300_1x1.RW2");
+    super::super::rawdb_test_file!("Panasonic", "DC-ZS300", panasonic_zs300_3x2_rw2, "raw_modes/Panasonic_ZS300_3x2.RW2");
+    super::super::rawdb_test_file!("Panasonic", "DC-ZS300", panasonic_zs300_4x3_rw2, "raw_modes/Panasonic_ZS300_4x3.RW2");
+  }
   mod dmc_cm1_raw_modes {
     super::super::rawdb_test_file!("Panasonic", "DMC-CM1", dmc_cm1_iso_125_panasonic_raw_1_3648x3648_rw2, "raw_modes/DMC-CM1_ISO_125_Panasonic RAW 1_3648x3648.RW2");
     super::super::rawdb_test_file!("Panasonic", "DMC-CM1", dmc_cm1_iso_125_panasonic_raw_1_4864x3648_rw2, "raw_modes/DMC-CM1_ISO_125_Panasonic RAW 1_4864x3648.RW2");
