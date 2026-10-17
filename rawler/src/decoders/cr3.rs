@@ -9,6 +9,7 @@ use std::fmt::Debug;
 
 use crate::bits::Endian;
 use crate::decoders::*;
+#[cfg(feature = "crx")]
 use crate::decompressors::crx::decompress_crx_image;
 use crate::envparams::{rawler_crx_raw_trak, rawler_ignore_previews};
 use crate::exif::ExifGPS;
@@ -284,10 +285,6 @@ impl<'a> Decoder for Cr3Decoder<'a> {
       .get_sample_offset(sample_idx as u32 + 1)
       .ok_or_else(|| RawlerError::DecoderFailed(format!("stbl sample not found")))?;
     debug!("RAW mdat offset: {}, len: {}", offset, size);
-    // Raw data buffer
-    let buf = file
-      .subview(offset as u64, size as u64)
-      .map_err(|e| RawlerError::with_io_error("CR3: failed to read raw data", file.path(), e))?;
 
     let cmp1 = self.cmp1_box(raw_trak_id).ok_or(format!("CMP1 box not found for trak {}", raw_trak_id))?;
     debug!("cmp1 mdat hdr size: {}", cmp1.mdat_hdr_size);
@@ -312,11 +309,17 @@ impl<'a> Decoder for Cr3Decoder<'a> {
     }
 
     let image = if !dummy {
-      PixU16::new_with(
-        decompress_crx_image(buf, cmp1).map_err(|e| format!("Failed to decode raw: {}", e))?,
-        cmp1.f_width as usize,
-        cmp1.f_height as usize,
-      )
+      require_feature!("crx", {
+        // Raw data buffer
+        let buf = file
+          .subview(offset as u64, size as u64)
+          .map_err(|e| RawlerError::with_io_error("CR3: failed to read raw data", file.path(), e))?;
+        PixU16::new_with(
+          decompress_crx_image(buf, cmp1).map_err(|e| format!("Failed to decode raw: {}", e))?,
+          cmp1.f_width as usize,
+          cmp1.f_height as usize,
+        )
+      })
     } else {
       PixU16::new_uninit(cmp1.f_width as usize, cmp1.f_height as usize)
     };
