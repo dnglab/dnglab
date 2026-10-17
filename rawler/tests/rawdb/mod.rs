@@ -2017,6 +2017,12 @@ mod om {
     super::super::rawdb_test_file!("OM", "OM-5 Mark II", om_5ii_iso_100_16bits_normal_orf, "raw_modes/OM-5II_ISO_100_16bits_normal.ORF");
     super::super::rawdb_test_file!("OM", "OM-5 Mark II", om_5ii_iso_100_16bits_tripod_hires_orf, "raw_modes/OM-5II_ISO_100_16bits_tripod_hires.ORF");
   }
+  mod pen_raw_modes {
+    super::super::rawdb_test_file!("OM", "PEN", om_pen_iso200_orf, "raw_modes/OM_PEN_ISO200.ORF");
+    super::super::rawdb_test_file!("OM", "PEN", om_pen_iso200_80mp_orf, "raw_modes/OM_PEN_ISO200_80MP.ORF");
+    super::super::rawdb_test_file!("OM", "PEN", om_pen_iso200_80mp_firstframe_ori, "raw_modes/OM_PEN_ISO200_80MP_firstframe.ORI");
+    super::super::rawdb_test_file!("OM", "PEN", om_pen_iso250_hires_handheld_orf, "raw_modes/OM_PEN_ISO250_hires_handheld.ORF");
+  }
   mod tg_7_raw_modes {
     super::super::rawdb_test_file!("OM", "TG-7", tg_7_iso_100_16bits_orf, "raw_modes/TG-7_ISO_100_16bits.ORF");
   }
