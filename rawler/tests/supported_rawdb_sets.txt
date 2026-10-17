@@ -595,6 +595,7 @@ Panasonic/DC-TZ91/raw_modes
 Panasonic/DC-TZ95/raw_modes
 Panasonic/DC-TZ96/raw_modes
 Panasonic/DC-TZ220D/raw_modes
+Panasonic/DC-ZS300/raw_modes
 Panasonic/DMC-CM1/raw_modes
 Panasonic/DMC-FX150/raw_modes
 Panasonic/DMC-FZ1000/raw_modes
