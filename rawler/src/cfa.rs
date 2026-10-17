@@ -1,8 +1,12 @@
 //! Color Filter Array (CFA)
 
-use std::fmt;
+use std::{
+  fmt,
+  ops::{Deref, DerefMut},
+};
 
 use itertools::Itertools;
+use serde::{Deserialize, Deserializer, Serialize, Serializer, de::Error as DeError, de::Visitor};
 
 use crate::formats::tiff::{self, Value};
 
@@ -12,7 +16,7 @@ pub const CFA_COLOR_B: usize = 2;
 
 use num_enum::TryFromPrimitive;
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq, PartialOrd, Ord, TryFromPrimitive)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, PartialOrd, Ord, TryFromPrimitive, Serialize, Deserialize)]
 #[repr(u8)]
 #[allow(non_camel_case_types)]
 pub enum CFAColor {
@@ -53,6 +57,113 @@ impl TryFrom<char> for CFAColor {
   }
 }
 
+pub const CFA_DIM: usize = 48;
+const CFA_LEN: usize = CFA_DIM * CFA_DIM; // 2304
+
+#[derive(Clone, Eq, PartialEq, PartialOrd, Ord)]
+pub struct CFAPattern(pub [[u8; CFA_DIM]; CFA_DIM]);
+
+impl Serialize for CFAPattern {
+  fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+  where
+    S: Serializer,
+  {
+    // `[[u8; 48]; 48]` is contiguous, so this is a view, not a copy.
+    // Requires Rust 1.80+; see `flatten_copy` below for an older-toolchain fallback.
+    serializer.serialize_bytes(self.0.as_flattened())
+  }
+}
+
+impl<'de> Deserialize<'de> for CFAPattern {
+  fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+  where
+    D: Deserializer<'de>,
+  {
+    deserializer.deserialize_bytes(CFAPatternVisitor)
+  }
+}
+
+struct CFAPatternVisitor;
+
+impl<'de> Visitor<'de> for CFAPatternVisitor {
+  type Value = CFAPattern;
+
+  fn expecting(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    write!(f, "{CFA_LEN} bytes forming a {CFA_DIM}x{CFA_DIM} CFA pattern")
+  }
+
+  fn visit_bytes<E>(self, v: &[u8]) -> Result<Self::Value, E>
+  where
+    E: serde::de::Error,
+  {
+    if v.len() != CFA_LEN {
+      return Err(E::invalid_length(v.len(), &self));
+    }
+    let mut out = [[0u8; CFA_DIM]; CFA_DIM];
+    for (row, chunk) in out.iter_mut().zip(v.chunks_exact(CFA_DIM)) {
+      row.copy_from_slice(chunk);
+    }
+    Ok(CFAPattern(out))
+  }
+
+  fn visit_byte_buf<E>(self, v: Vec<u8>) -> Result<Self::Value, E>
+  where
+    E: serde::de::Error,
+  {
+    self.visit_bytes(&v)
+  }
+
+  /// Formats without a native byte type (JSON, RON, ...) hand us a sequence
+  /// of integers instead. Accept a flat run of 2304 values here.
+  fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
+  where
+    A: serde::de::SeqAccess<'de>,
+  {
+    let mut out = [[0u8; CFA_DIM]; CFA_DIM];
+    for i in 0..CFA_LEN {
+      let byte: u8 = seq.next_element()?.ok_or_else(|| A::Error::invalid_length(i, &self))?;
+      out[i / CFA_DIM][i % CFA_DIM] = byte;
+    }
+    // Reject trailing elements rather than silently truncating.
+    if seq.next_element::<u8>()?.is_some() {
+      return Err(A::Error::invalid_length(CFA_LEN + 1, &self));
+    }
+    Ok(CFAPattern(out))
+  }
+}
+
+impl fmt::Debug for CFAPattern {
+  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    write!(f, "CFAPattern({CFA_DIM}x{CFA_DIM})")
+  }
+}
+
+impl From<[[u8; 48]; 48]> for CFAPattern {
+  fn from(value: [[u8; 48]; 48]) -> Self {
+    Self(value)
+  }
+}
+
+impl Deref for CFAPattern {
+  type Target = [[u8; 48]; 48];
+
+  fn deref(&self) -> &Self::Target {
+    &self.0
+  }
+}
+
+impl DerefMut for CFAPattern {
+  fn deref_mut(&mut self) -> &mut Self::Target {
+    &mut self.0
+  }
+}
+
+impl Default for CFAPattern {
+  fn default() -> Self {
+    Self([[0; 48]; 48])
+  }
+}
+
 /// Representation of the color filter array pattern in raw cameras
 ///
 /// # Example
@@ -69,7 +180,7 @@ impl TryFrom<char> for CFAColor {
 /// initialized and ready to be used in processing. The color_at() implementation is
 /// designed to be fast so it can be called inside the inner loop of demosaic or other
 /// color-aware algorithms that work on pre-demosaic data
-#[derive(Clone, Eq, PartialEq, PartialOrd, Ord)]
+#[derive(Clone, Eq, PartialEq, PartialOrd, Ord, Serialize, Deserialize)]
 pub struct CFA {
   /// CFA pattern as a String
   pub name: String,
@@ -79,7 +190,7 @@ pub struct CFA {
   pub height: usize,
   // Actual pattern. We use u8 here because usize would blow
   // the stack usage and we don't need that much bits.
-  pattern: [[u8; 48]; 48],
+  pattern: CFAPattern,
 }
 
 impl Default for CFA {
@@ -123,7 +234,7 @@ impl CFA {
       144 => (12, 12),
       _ => panic!("Unknown CFA size \"{}\"", patname),
     };
-    let mut pattern: [[u8; 48]; 48] = [[0; 48]; 48];
+    let mut pattern = CFAPattern::default();
 
     if width > 0 {
       // copy the pattern into the top left
@@ -233,7 +344,7 @@ impl CFA {
   /// assert_eq!(shifted.color_at(1,1), 0);
   /// ```
   pub fn shift(&self, x: usize, y: usize) -> CFA {
-    let mut pattern: [[u8; 48]; 48] = [[0; 48]; 48];
+    let mut pattern = CFAPattern::default();
     for row in 0..48 {
       for col in 0..48 {
         pattern[row][col] = self.color_at(row + y, col + x) as u8;
@@ -302,7 +413,7 @@ impl fmt::Debug for CFA {
   }
 }
 
-#[derive(Clone, Eq, PartialEq)]
+#[derive(Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub struct PlaneColor {
   pub colors: Vec<CFAColor>,
 }
