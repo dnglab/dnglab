@@ -808,4 +808,5 @@ OM/OM-3/raw_modes
 OM/OM-5/raw_modes
 OM/OM-5 Mark II/raw_modes
 OM/TG-7/raw_modes
+OM/PEN/raw_modes
 dnglab/dng-compression-variants/variants
