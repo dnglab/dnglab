@@ -558,6 +558,7 @@ Olympus/XZ-2/raw_modes
 Panasonic/DC-FZ10002/raw_modes
 Panasonic/DC-FZ80/raw_modes
 Panasonic/DC-FZ82/raw_modes
+Panasonic/DC-FZ83/raw_modes
 Panasonic/DC-G100/raw_modes
 Panasonic/DC-G110/raw_modes
 Panasonic/DC-G90/raw_modes
