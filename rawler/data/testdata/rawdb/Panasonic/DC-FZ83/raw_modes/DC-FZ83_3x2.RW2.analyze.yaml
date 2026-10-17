@@ -1,0 +1,94 @@
+---
+file:
+  fileSize: 21897728
+  fileName: DC-FZ83_3x2.RW2
+  digest: 155faa083025483ba5cbd413cf1e0e42
+data:
+  metadata:
+    rawParams:
+      rawWidth: 5040
+      rawHeight: 3688
+      bitDepth: 16
+      cropArea:
+        p:
+          x: 8
+          y: 8
+        d:
+          w: 4896
+          h: 3672
+      activeArea:
+        p:
+          x: 8
+          y: 8
+        d:
+          w: 4896
+          h: 3672
+      blacklevels:
+        levels:
+          - 144/1
+          - 144/1
+          - 144/1
+          - 144/1
+        cpp: 1
+        width: 2
+        height: 2
+      whitelevels:
+        - 4095
+      wbCoeffs:
+        - 1.7578125
+        - 1.0
+        - 1.7304688
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ~
+        artist: ~
+        lens_spec: ~
+        exposure_time: 10/8000
+        fnumber: 56/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 125
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: "-100/100"
+        date_time_original: "2026:09:15 16:06:12"
+        create_date: "2026:09:15 16:06:12"
+        modify_date: ~
+        exposure_program: 2
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: "344"
+        sub_sec_time_digitized: "344"
+        shutter_speed_value: ~
+        max_aperture_value: 1005/256
+        subject_distance: ~
+        metering_mode: 3
+        light_source: ~
+        flash: 16
+        focal_length: 90/10
+        image_number: ~
+        color_space: ~
+        flash_energy: ~
+        exposure_mode: ~
+        white_balance: ~
+        scene_capture_type: ~
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+        user_comment: ~
+      model: DC-FZ83
+      make: Panasonic
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

@@ -2047,6 +2047,12 @@ mod panasonic {
     super::super::rawdb_test_file!("Panasonic", "DC-FZ82", dc_fz82_iso_80_4fmt_3x2_rw2, "raw_modes/DC-FZ82_ISO_80_4fmt_3x2.RW2");
     super::super::rawdb_test_file!("Panasonic", "DC-FZ82", dc_fz82_iso_80_4fmt_4x3_rw2, "raw_modes/DC-FZ82_ISO_80_4fmt_4x3.RW2");
   }
+  mod dc_fz83_raw_modes {
+    super::super::rawdb_test_file!("Panasonic", "DC-FZ83", dc_fz83_16x9_rw2, "raw_modes/DC-FZ83_16x9.RW2");
+    super::super::rawdb_test_file!("Panasonic", "DC-FZ83", dc_fz83_1x1_rw2, "raw_modes/DC-FZ83_1x1.RW2");
+    super::super::rawdb_test_file!("Panasonic", "DC-FZ83", dc_fz83_3x2_rw2, "raw_modes/DC-FZ83_3x2.RW2");
+    super::super::rawdb_test_file!("Panasonic", "DC-FZ83", dc_fz83_4x3_rw2, "raw_modes/DC-FZ83_4x3.RW2");
+  }
   mod dc_g100_raw_modes {
     super::super::rawdb_test_file!("Panasonic", "DC-G100", dc_g100_iso_200_4fmt_16x9_rw2, "raw_modes/DC-G100_ISO_200_4fmt_16x9.RW2");
     super::super::rawdb_test_file!("Panasonic", "DC-G100", dc_g100_iso_200_4fmt_1x1_rw2, "raw_modes/DC-G100_ISO_200_4fmt_1x1.RW2");
