@@ -250,7 +250,7 @@ impl LookupTable {
     let delta = sdelta as u32;
     let pixel = base + ((delta * (*rand & 2047) + 1024) >> 12);
     *rand = 15700 * (*rand & 65535) + (*rand >> 16);
-    pixel as u16
+    pixel.min(u32::from(u16::MAX)) as u16
   }
 }
 
@@ -376,5 +376,13 @@ mod tests {
     assert_eq!(Binary32::EXPONENT_POS, 23);
     assert_eq!(Binary32::SIGN_BIT_POS, 31);
     assert_eq!(Binary32::STORAGE_BYTES, 4);
+  }
+
+  #[test]
+  fn test_dither_clamps_interpolated_value_to_u16_max() {
+    let table = LookupTable::new(&[64000, 65535]);
+    let mut random = 2047;
+
+    assert_eq!(table.dither(1, &mut random), u16::MAX);
   }
 }
