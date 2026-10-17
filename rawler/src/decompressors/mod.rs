@@ -41,6 +41,7 @@ use crate::{
 use rayon::prelude::*;
 
 pub mod arw6;
+#[cfg(feature = "crx")]
 pub mod crx;
 pub mod deflate;
 pub mod jpeg;

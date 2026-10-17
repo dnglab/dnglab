@@ -10,11 +10,16 @@ repository = "https://github.com/dnglab/dnglab"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+[features]
+default = ["crx"]
+# Canon CR3/CRM (CRX) decompressor
+crx = ["dnglab_lib/crx"]
+
 [dependencies]
 fern = {version = "0.7", features = ["colored"]}
 log = "0.4"
 tokio = { version = "1.43.1", features = ["full"] }
-dnglab_lib = { path = "dnglab-lib" }
+dnglab_lib = { path = "dnglab-lib", default-features = false }
 
 [build-dependencies]
 clap_mangen = "0.3.0"

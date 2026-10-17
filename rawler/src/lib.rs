@@ -70,6 +70,28 @@ use decoders::RawDecodeParams;
 use formats::jfif::JfifError;
 use lazy_static::lazy_static;
 
+/// Evaluates `$body` if the cargo feature `$feature` is enabled. Otherwise returns
+/// from the enclosing function with a `DecoderFailed` error naming the missing feature.
+/// `$body` is not compiled when the feature is disabled, so it can reference gated items.
+macro_rules! require_feature {
+  ($feature:literal, $body:expr) => {{
+    #[cfg(feature = $feature)]
+    {
+      $body
+    }
+    #[cfg(not(feature = $feature))]
+    {
+      return Err(
+        $crate::RawlerError::DecoderFailed(format!(
+          "Feature '{}' is required to decode this file, but it was disabled at build time.",
+          $feature
+        ))
+        .into(),
+      );
+    }
+  }};
+}
+
 pub mod analyze;
 pub mod bitarray;
 pub mod bits;

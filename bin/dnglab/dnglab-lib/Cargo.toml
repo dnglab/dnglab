@@ -10,12 +10,17 @@ version = "0.8.0"
 [lints]
 workspace = true
 
+[features]
+default = ["crx"]
+# Canon CR3/CRM (CRX) decompressor
+crx = ["rawler/crx"]
+
 [dependencies]
 anyhow = "1.0"
 chrono = "0.4"
 clap = { version = "4.4", features = ["cargo", "string"] }
 log = "0.4"
-rawler = { path = "../../../rawler", features = ["clap"] }
+rawler = { path = "../../../rawler", default-features = false, features = ["clap"] }
 embedftp = { path = "../../../embedftp" }
 image = { version = "0.25" }
 serde = { version = "1.0", features = ["derive"] }

@@ -17,6 +17,9 @@ version = "0.8.0"
 build = "data/join.rs"
 
 [features]
+default = ["crx"]
+# Canon CR3/CRM (CRX) decompressor
+crx = []
 # This is a developer feature, it enabled deep inspection of algorithm execution stages
 clap = ["dep:clap"]
 inspector = []
