@@ -156,9 +156,7 @@ where
     {
       // Lossless (LJPEG92) can only be used for 16 bit integer data and
       // floating point data requires DNG 1.4. If we have floats, convert them.
-      rawimage.to_mut().data.force_integer();
-      rawimage.to_mut().whitelevel.0.iter_mut().for_each(|x| *x = u16::MAX as u32);
-      rawimage.to_mut().bps = 16; // Reset bps as intgers are scaled to u16 range.
+      float_to_integer(rawimage.to_mut());
     }
 
     if rawimage.cpp > 1 || matches!(rawimage.photometric, RawPhotometricInterpretation::Cfa(_)) {
@@ -571,6 +569,28 @@ where
   }
 }
 
+/// Convert floating point image data to 16 bit integer data
+///
+/// The highest white level is scaled to the full u16 range, sample values,
+/// white levels and black levels are scaled by the same factor.
+fn float_to_integer(rawimage: &mut RawImage) {
+  let max_whitelevel = rawimage.whitelevel.0.iter().copied().max().unwrap_or(1).max(1) as f32;
+  let scale = |v: f32| v / max_whitelevel * u16::MAX as f32;
+  if let RawImageData::Float(data) = &rawimage.data {
+    rawimage.data = RawImageData::Integer(data.iter().map(|p| scale(*p) as u16).collect());
+  }
+  rawimage.whitelevel.0.iter_mut().for_each(|x| *x = scale(*x as f32).round() as u32);
+  rawimage.blacklevel.levels.iter_mut().for_each(|x| {
+    let level = scale(x.as_f32());
+    *x = if level.fract() == 0.0 {
+      Rational::new(level as u32, 1)
+    } else {
+      Rational::new_f32(level, 1000)
+    };
+  });
+  rawimage.bps = 16; // Reset bps as integers are scaled to u16 range.
+}
+
 /// DNG requires the WB values to be the reciprocal
 fn wbcoeff_to_tiff_value(rawimage: &RawImage) -> Vec<Rational> {
   let wb = &rawimage.wb_coeffs;
@@ -816,6 +836,18 @@ mod tests {
     Ok(buf.into_inner())
   }
 
+  /// Write `rawimage` with the given compression and return the DNG bytes
+  fn write_synthetic_dng_compressed(rawimage: &RawImage, compression: DngCompression) -> Result<Vec<u8>> {
+    let mut buf = Cursor::new(Vec::new());
+    let mut dng = DngWriter::new(&mut buf, DNG_VERSION_V1_4)?;
+    dng.load_base_tags(rawimage)?;
+    let mut frame = dng.subframe(0);
+    frame.raw_image(rawimage, CropMode::None, compression, DngPhotometricConversion::Original, 1)?;
+    frame.finalize()?;
+    dng.close()?;
+    Ok(buf.into_inner())
+  }
+
   fn read_backward_version_and_active_area(data: &[u8]) -> std::result::Result<(DngVersionNumber, bool), Box<dyn std::error::Error>> {
     use crate::formats::tiff::{GenericTiffReader, reader::TiffReader};
 
@@ -944,6 +976,26 @@ mod tests {
     let rawimage = synthetic_rawimage_f32();
     let (backward_version, _, bps) = write_float_dng(&rawimage, DngCompression::Lossless, DNG_VERSION_V1_4)?;
     assert_eq!((backward_version, bps), (DNG_VERSION_V1_0, 16));
+    Ok(())
+  }
+
+  #[test]
+  fn float_to_integer_scales_by_whitelevel() -> std::result::Result<(), Box<dyn std::error::Error>> {
+    let mut rawimage = synthetic_rawimage(None);
+    rawimage.data = RawImageData::Float((0..16 * 16).map(|i| [0.0, 256.0, 2048.0, 4095.0][i % 4]).collect());
+    rawimage.whitelevel = WhiteLevel::new(vec![4095]);
+    rawimage.blacklevel = BlackLevel::new(&[256_u32], 1, 1, 1);
+    let data = write_synthetic_dng_compressed(&rawimage, DngCompression::Lossless)?;
+
+    let source = crate::rawsource::RawSource::new_from_slice(&data);
+    let decoded = crate::get_decoder(&source)?.raw_image(&source, &crate::decoders::RawDecodeParams::default(), false)?;
+    assert_eq!(decoded.whitelevel.0, vec![65535]);
+    // 256 / 4095 * 65535 = 4096.94
+    assert!((decoded.blacklevel.levels[0].as_f32() - 4096.94).abs() < 0.01);
+    match decoded.data {
+      RawImageData::Integer(pixels) => assert_eq!(pixels[..4], [0, 4096, 32775, 65535]),
+      RawImageData::Float(_) => panic!("lossless data must be integer"),
+    }
     Ok(())
   }
 

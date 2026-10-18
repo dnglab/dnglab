@@ -33,11 +33,11 @@ use crate::bits::scale_u16;
 use crate::decompressors::Decompressor;
 use crate::decompressors::decompress_lines_fn;
 use crate::decompressors::decompress_strips_fn;
-use crate::decompressors::deflate::DeflateDecompressor;
+use crate::decompressors::deflate::{DeflateDecompressor, DeflateIntDecompressor};
 use crate::decompressors::jpeg::JpegDecompressor;
 use crate::decompressors::jpegxl::JpegXLDecompressor;
 use crate::decompressors::ljpeg::LJpegDecompressor;
-use crate::decompressors::packed::PackedDecompressor;
+use crate::decompressors::packed::{PackedDecompressor, PackedIntDecompressor};
 use crate::exif::Exif;
 use crate::formats::ciff;
 use crate::formats::jfif;
@@ -655,6 +655,33 @@ pub fn plain_image_from_ifd_ext(ifd: &IFD, rawsource: &RawSource, ljpeg_dng_bug:
   );
 
   match sample_format {
+    // Unsigned integer data with more than 16 bits does not fit into u16 storage,
+    // so it is returned as f32 holding the raw integer values.
+    SampleFormat::Uint if bits > 16 => {
+      let pixbuf = match (compression, ifd.data_mode()?) {
+        (CompressionMethod::None, DataMode::Strips) => decode_strips::<f32>(rawsource, ifd, PackedIntDecompressor::new(bits, endian), dummy)?,
+        (CompressionMethod::None, DataMode::Tiles) => decode_tiles::<f32>(rawsource, ifd, PackedIntDecompressor::new(bits, endian), dummy)?,
+        // Deflate is allowed for 32-bit integer data
+        (CompressionMethod::Deflate, data_mode) if bits == 32 => {
+          let predictor = ifd.get_entry(TiffCommonTag::Predictor).map(|tag| tag.force_u16(0)).unwrap_or(1);
+          let dc = DeflateIntDecompressor::new(cpp, predictor, endian).map_err(RawlerError::DecoderFailed)?;
+          match data_mode {
+            DataMode::Strips => decode_strips::<f32>(rawsource, ifd, dc, dummy)?,
+            DataMode::Tiles => decode_tiles::<f32>(rawsource, ifd, dc, dummy)?,
+          }
+        }
+        _ => {
+          return Err(RawlerError::DecoderFailed(format!(
+            "Unsupported compression method: {:?}, storage: {:?}, bits: {}",
+            compression,
+            ifd.data_mode()?,
+            bits
+          )));
+        }
+      };
+      let pixbuf = pixbuf.into_crop(Rect::new(Point::zero(), Dim2::new(tiff_width * cpp, tiff_height)));
+      Ok(RawImageData::Float(pixbuf.into_inner()))
+    }
     SampleFormat::Uint => {
       let mut pixbuf = match (compression, ifd.data_mode()?) {
         (CompressionMethod::None, DataMode::Strips) => decode_strips::<u16>(rawsource, ifd, PackedDecompressor::new(bits, endian), dummy)?,
