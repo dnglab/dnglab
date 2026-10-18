@@ -555,7 +555,7 @@ pub(crate) fn dynamic_image_from_ifd(ifd: &IFD, rawsource: &RawSource) -> Result
             ImageBuffer::<Rgb<u8>, Vec<u8>>::from_raw(tiff_width as u32, tiff_height as u32, buf.to_vec())
               .ok_or(RawlerError::DecoderFailed(format!("Create RGB thumbnail from strip failed")))?,
           )),
-          _ => unimplemented!(),
+          _ => Err(RawlerError::DecoderFailed(format!("Unsupported image with {} samples per pixel", cpp))),
         }
       }
       9..=16 => {
@@ -573,10 +573,10 @@ pub(crate) fn dynamic_image_from_ifd(ifd: &IFD, rawsource: &RawSource) -> Result
             ImageBuffer::<Rgb<u16>, Vec<u16>>::from_raw((tiff_width) as u32, tiff_height as u32, samples)
               .ok_or(RawlerError::DecoderFailed(format!("Create RGB image failed")))?,
           )),
-          _ => unimplemented!(),
+          _ => Err(RawlerError::DecoderFailed(format!("Unsupported image with {} samples per pixel", cpp))),
         }
       }
-      _ => unimplemented!(),
+      _ => Err(RawlerError::DecoderFailed(format!("Unsupported image with {} bits per sample", bits))),
     },
     RawImageData::Float(samples) => match cpp {
       3 => Ok(DynamicImage::ImageRgb32F(
@@ -584,7 +584,10 @@ pub(crate) fn dynamic_image_from_ifd(ifd: &IFD, rawsource: &RawSource) -> Result
         ImageBuffer::<Rgb<f32>, Vec<f32>>::from_raw(tiff_width as u32, tiff_height as u32, samples)
           .ok_or(RawlerError::DecoderFailed(format!("Create RGB image failed")))?,
       )),
-      _ => unimplemented!(),
+      _ => Err(RawlerError::DecoderFailed(format!(
+        "Unsupported floating point image with {} samples per pixel",
+        cpp
+      ))),
     },
   }
 }
@@ -753,7 +756,7 @@ pub fn plain_image_from_ifd_ext(ifd: &IFD, rawsource: &RawSource, ljpeg_dng_bug:
       pixbuf = deinterleave(pixbuf, ifd, tiff_width, tiff_height, cpp)?;
       return Ok(RawImageData::Float(pixbuf.into_inner()));
     }
-    _ => unimplemented!("other sample-formats"),
+    _ => Err(RawlerError::DecoderFailed(format!("Unsupported sample format: {:?}", sample_format))),
   }
 }
 

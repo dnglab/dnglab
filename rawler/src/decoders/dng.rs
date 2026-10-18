@@ -70,8 +70,16 @@ impl<'a> Decoder for DngDecoder<'a> {
     let cpp = fetch_tiff_tag!(raw, TiffCommonTag::SamplesPerPixel).force_usize(0);
     let bits = fetch_tiff_tag!(raw, TiffCommonTag::BitsPerSample).force_u32(0);
     let orientation = Orientation::from_tiff(self.tiff.root_ifd());
+    // Raw IFDs use CFA (32803) or LinearRaw (34892), BlackIsZero (1) is accepted for monochrome images
+    let photometric_int = fetch_tiff_tag!(raw, TiffCommonTag::PhotometricInt).force_u32(0);
+    if ![1, 32803, 34892].contains(&photometric_int) {
+      return Err(RawlerError::DecoderFailed(format!(
+        "DNG: unsupported PhotometricInterpretation {} for raw image",
+        photometric_int
+      )));
+    }
 
-    let mut cam = self.make_camera(raw, width, height)?;
+    let mut cam = self.make_camera(raw, width, height, photometric_int)?;
     // If we know the camera, re-use the clean names
     if let Ok(known_cam) = self
       .rawloader
@@ -96,11 +104,16 @@ impl<'a> Decoder for DngDecoder<'a> {
     };
     let whitelevel = Some(whitelevel);
 
-    let photometric = match fetch_tiff_tag!(raw, TiffCommonTag::PhotometricInt).force_u32(0) {
+    let photometric = match photometric_int {
       1 => RawPhotometricInterpretation::BlackIsZero,
       32803 => RawPhotometricInterpretation::Cfa(CFAConfig::new_from_camera(&cam)),
       34892 => RawPhotometricInterpretation::LinearRaw,
-      _ => todo!(),
+      _ => {
+        return Err(RawlerError::DecoderFailed(format!(
+          "DNG: unsupported PhotometricInterpretation {} for raw image",
+          photometric_int
+        )));
+      }
     };
 
     // DNG versions before 1.1.0.0 use a deviating 16-bit lossless JPEG encoding
@@ -120,7 +133,8 @@ impl<'a> Decoder for DngDecoder<'a> {
     let raw = self.get_raw_ifd()?;
     let width = fetch_tiff_tag!(raw, TiffCommonTag::ImageWidth).force_usize(0);
     let height = fetch_tiff_tag!(raw, TiffCommonTag::ImageLength).force_usize(0);
-    let mut cam = self.make_camera(raw, width, height)?;
+    let photometric_int = fetch_tiff_tag!(raw, TiffCommonTag::PhotometricInt).force_u32(0);
+    let mut cam = self.make_camera(raw, width, height, photometric_int)?;
     // If we know the camera, re-use the clean names
     if let Ok(known_cam) = self.rawloader.check_supported(self.tiff.root_ifd()) {
       cam.clean_make = known_cam.clean_make;
@@ -261,7 +275,7 @@ impl<'a> DngDecoder<'a> {
     }
   }
 
-  fn make_camera(&self, raw: &IFD, width: usize, height: usize) -> Result<Camera> {
+  fn make_camera(&self, raw: &IFD, width: usize, height: usize, photometric_int: u32) -> Result<Camera> {
     let mode = String::from("dng");
 
     let make = self
@@ -293,8 +307,8 @@ impl<'a> DngDecoder<'a> {
       None
     };
 
-    let linear = fetch_tiff_tag!(raw, TiffCommonTag::PhotometricInt).force_usize(0) == 34892;
-    let cfa = if linear { CFA::default() } else { self.get_cfa(raw)? };
+    // Only CFA images have a CFA pattern
+    let cfa = if photometric_int == 32803 { self.get_cfa(raw)? } else { CFA::default() };
     let color_matrix = self.get_color_matrix()?;
     let real_bps = if raw.has_entry(TiffCommonTag::Linearization) {
       // If DNG contains linearization table, output is always 16 bits
@@ -865,6 +879,35 @@ mod tests {
     rawimage.whitelevel = WhiteLevel::new(vec![1]);
     let data = write_dng(&rawimage, |ifd| ifd.add_tag(DngTag::RowInterleaveFactor, 2_u16))?;
     assert_eq!(float_data(decode_dng(&data)?), image);
+    Ok(())
+  }
+
+  #[test]
+  fn unsupported_photometric_is_error() -> TestResult {
+    use crate::formats::tiff::PhotometricInterpretation;
+
+    let data = write_dng(&synthetic_rawimage(), |ifd| {
+      ifd.add_tag(TiffCommonTag::PhotometricInt, PhotometricInterpretation::RGB)
+    })?;
+    assert!(decode_dng(&data).is_err());
+    Ok(())
+  }
+
+  #[test]
+  fn unsupported_sample_format_is_error() -> TestResult {
+    let data = write_dng(&synthetic_rawimage(), |ifd| ifd.add_tag(TiffCommonTag::SampleFormat, SampleFormat::Int))?;
+    assert!(decode_dng(&data).is_err());
+    Ok(())
+  }
+
+  #[test]
+  fn monochrome_black_is_zero_roundtrip() -> TestResult {
+    let mut rawimage = synthetic_rawimage();
+    rawimage.photometric = RawPhotometricInterpretation::BlackIsZero;
+    let data = write_dng(&rawimage, |_| {})?;
+    let decoded = decode_dng(&data)?;
+    assert!(matches!(decoded.photometric, RawPhotometricInterpretation::BlackIsZero));
+    assert_eq!(integer_data(decoded), Some(synthetic_pixels()));
     Ok(())
   }
 
