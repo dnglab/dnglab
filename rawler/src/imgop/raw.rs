@@ -2,9 +2,9 @@
 // Copyright 2021 Daniel Vogelbacher <daniel@chaospixel.com>
 
 use super::xyz::Illuminant;
-use crate::imgop::Rect;
 use crate::imgop::matrix::{multiply, normalize, pseudo_inverse};
 use crate::imgop::xyz::SRGB_TO_XYZ_D65;
+use crate::imgop::{Point, Rect};
 use crate::pixarray::{Color2D, RgbF32};
 use crate::rawimage::{BlackLevel, RawPhotometricInterpretation, WhiteLevel};
 
@@ -152,6 +152,140 @@ pub fn correct_blacklevel(raw: &mut [f32], blacklevel: &[f32], whitelevel: &[f32
       blacklevel.len(),
       whitelevel.len()
     ),
+  }
+}
+
+/// Correct black and white levels for an interleaved linear raw image.
+///
+/// DNG black levels are stored in row-column-sample order and may repeat over
+/// multiple pixels, while white levels are stored once per sample plane. The
+/// repeat pattern is relative to `blacklevel_origin` (the top-left corner of
+/// the DNG ActiveArea).
+pub fn correct_blacklevel_linear(
+  raw: &mut [f32],
+  width: usize,
+  height: usize,
+  cpp: usize,
+  blacklevel: &BlackLevel,
+  whitelevel: &WhiteLevel,
+  blacklevel_origin: Point,
+) -> crate::Result<()> {
+  if width == 0 || height == 0 || cpp == 0 {
+    return Err(format!("Invalid linear raw dimensions: {width}x{height} with {cpp} components per pixel").into());
+  }
+
+  let row_len = width
+    .checked_mul(cpp)
+    .ok_or_else(|| format!("Linear raw row size overflow: width {width}, cpp {cpp}"))?;
+  let expected_raw_len = row_len
+    .checked_mul(height)
+    .ok_or_else(|| format!("Linear raw image size overflow: {width}x{height} with {cpp} components per pixel"))?;
+  if raw.len() != expected_raw_len {
+    return Err(format!("Linear raw data length mismatch: expected {expected_raw_len}, found {}", raw.len()).into());
+  }
+
+  if blacklevel.width == 0 || blacklevel.height == 0 || blacklevel.cpp == 0 {
+    return Err(
+      format!(
+        "Invalid black level repeat dimensions: {}x{} with {} components per pixel",
+        blacklevel.width, blacklevel.height, blacklevel.cpp
+      )
+      .into(),
+    );
+  }
+  if blacklevel.cpp != 1 && blacklevel.cpp != cpp {
+    return Err(format!("Black level component count mismatch: expected 1 or {cpp}, found {}", blacklevel.cpp).into());
+  }
+
+  let expected_blacklevel_len = blacklevel
+    .width
+    .checked_mul(blacklevel.height)
+    .and_then(|count| count.checked_mul(blacklevel.cpp))
+    .ok_or_else(|| {
+      format!(
+        "Black level repeat size overflow: {}x{} with {} components per pixel",
+        blacklevel.width, blacklevel.height, blacklevel.cpp
+      )
+    })?;
+  if blacklevel.levels.len() != expected_blacklevel_len {
+    return Err(
+      format!(
+        "Black level data length mismatch: expected {expected_blacklevel_len}, found {}",
+        blacklevel.levels.len()
+      )
+      .into(),
+    );
+  }
+
+  let whitelevels = match whitelevel.0.as_slice() {
+    [level] => vec![*level as f32; cpp],
+    levels if levels.len() == cpp => levels.iter().map(|level| *level as f32).collect(),
+    levels => {
+      return Err(format!("White level component count mismatch: expected 1 or {cpp}, found {}", levels.len()).into());
+    }
+  };
+  let blacklevels = blacklevel.as_vec();
+  if blacklevels.iter().any(|level| !level.is_finite()) {
+    return Err("Black level contains a non-finite value".into());
+  }
+
+  // DNG normalization uses the maximum computed black level for each sample
+  // plane, even when the repeating pattern contains different local values.
+  let mut max_blacklevels = vec![f32::NEG_INFINITY; cpp];
+  for cell in blacklevels.chunks_exact(blacklevel.cpp) {
+    for channel in 0..cpp {
+      let black_channel = if blacklevel.cpp == 1 { 0 } else { channel };
+      max_blacklevels[channel] = max_blacklevels[channel].max(cell[black_channel]);
+    }
+  }
+  let scales: Vec<f32> = whitelevels
+    .iter()
+    .zip(&max_blacklevels)
+    .enumerate()
+    .map(|(channel, (white, black))| {
+      let scale = *white - *black;
+      if scale.is_finite() && scale > 0.0 {
+        Ok(scale)
+      } else {
+        Err(format!("Invalid black/white level range for channel {channel}: black {black}, white {white}"))
+      }
+    })
+    .collect::<std::result::Result<_, _>>()?;
+
+  // Most linear DNGs, including Samsung's 2x2 patterns, repeat identical
+  // values. Keep that common case on the vectorized per-channel path.
+  let first_cell = &blacklevels[..blacklevel.cpp];
+  if blacklevels.chunks_exact(blacklevel.cpp).all(|cell| cell == first_cell) {
+    let flat_blacklevels: Vec<f32> = (0..cpp).map(|channel| first_cell[if blacklevel.cpp == 1 { 0 } else { channel }]).collect();
+    correct_blacklevel(raw, &flat_blacklevels, &whitelevels);
+    return Ok(());
+  }
+
+  let origin_x = blacklevel_origin.x % blacklevel.width;
+  let origin_y = blacklevel_origin.y % blacklevel.height;
+  raw.par_chunks_exact_mut(row_len).enumerate().for_each(|(y, row)| {
+    let repeat_y = repeat_position(y, origin_y, blacklevel.height);
+    row.chunks_exact_mut(cpp).enumerate().for_each(|(x, pixel)| {
+      let repeat_x = repeat_position(x, origin_x, blacklevel.width);
+      let cell_offset = (repeat_y * blacklevel.width + repeat_x) * blacklevel.cpp;
+      for channel in 0..cpp {
+        let black_channel = if blacklevel.cpp == 1 { 0 } else { channel };
+        let corrected = pixel[channel] - blacklevels[cell_offset + black_channel];
+        pixel[channel] = if corrected.is_sign_negative() { 0.0 } else { corrected / scales[channel] };
+      }
+    });
+  });
+
+  Ok(())
+}
+
+#[inline]
+fn repeat_position(position: usize, origin: usize, repeat: usize) -> usize {
+  let position = position % repeat;
+  if position >= origin {
+    position - origin
+  } else {
+    repeat - (origin - position)
   }
 }
 
