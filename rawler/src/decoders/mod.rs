@@ -57,7 +57,7 @@ use crate::lens::LensDescription;
 use crate::pixarray::Pix2D;
 use crate::pixarray::PixU16;
 use crate::pixarray::SubPixel;
-use crate::pixarray::deinterleave2x2;
+use crate::pixarray::{deinterleave_cols, deinterleave_rows, deinterleave2x2, reorder_sub_tile_blocks};
 use crate::rawsource::RawSource;
 use crate::tags::DngTag;
 use crate::tiles::TilesMut;
@@ -599,8 +599,10 @@ pub(crate) fn dynamic_image_from_ifd(ifd: &IFD, rawsource: &RawSource) -> Result
 ///
 /// * **Linearisation** — if a `Linearization` tag is present its lookup table
 ///   is applied to every `u16` pixel.
-/// * **Deinterleaving** — if DNG 1.7.1 `RowInterleaveFactor` /
-///   `ColumnInterleaveFactor` tags indicate 2×2 interleaving, pixels are
+/// * **Sub-tile blocks** — if a DNG `SubTileBlockSize` tag is present, the
+///   blocks within each tile (or strip) are reordered before cropping.
+/// * **Deinterleaving** — if DNG `RowInterleaveFactor` / DNG 1.7.1
+///   `ColumnInterleaveFactor` tags are present, rows and columns are
 ///   reordered.
 ///
 /// # Supported combinations
@@ -611,8 +613,9 @@ pub(crate) fn dynamic_image_from_ifd(ifd: &IFD, rawsource: &RawSource) -> Result
 /// | `Uint` (u16)  | ModernJPEG (lossy or lossless) | Strips / Tiles |
 /// | `Uint` (u16)  | LossyJPEG                      | Strips / Tiles |
 /// | `Uint` (u16)  | JPEG-XL                        | Strips / Tiles |
+/// | `Uint` (>16 bits, as f32) | None / Deflate (32 bit)  | Strips / Tiles |
 /// | `IEEEFP` (f32)| None                           | Strips / Tiles |
-/// | `IEEEFP` (f32)| Deflate                        | Tiles          |
+/// | `IEEEFP` (f32)| Deflate                        | Strips / Tiles |
 ///
 /// All other combinations return an error.
 ///
@@ -679,7 +682,8 @@ pub fn plain_image_from_ifd_ext(ifd: &IFD, rawsource: &RawSource, ljpeg_dng_bug:
           )));
         }
       };
-      let pixbuf = pixbuf.into_crop(Rect::new(Point::zero(), Dim2::new(tiff_width * cpp, tiff_height)));
+      let pixbuf = reorder_and_crop(pixbuf, ifd, tiff_width, tiff_height, cpp)?;
+      let pixbuf = deinterleave(pixbuf, ifd, tiff_width, tiff_height, cpp)?;
       Ok(RawImageData::Float(pixbuf.into_inner()))
     }
     SampleFormat::Uint => {
@@ -713,25 +717,13 @@ pub fn plain_image_from_ifd_ext(ifd: &IFD, rawsource: &RawSource, ljpeg_dng_bug:
         }
       };
 
-      // We need to crop first, before we do stuff like deinterleaving.
-      // Padded pixels on output by LJPEG compression will corrupt deinterleave.
-      pixbuf = pixbuf.into_crop(Rect::new(Point::zero(), Dim2::new(tiff_width * cpp, tiff_height)));
+      pixbuf = reorder_and_crop(pixbuf, ifd, tiff_width, tiff_height, cpp)?;
 
       if let Some(lintable) = ifd.get_entry(TiffCommonTag::Linearization) {
         apply_linearization(&mut pixbuf, &lintable.value, bits);
       }
 
-      // DNG 1.7.1 may store JPEG-XL data in interleaved format
-      let col_ilf = ifd.get_entry(DngTag::ColumnInterleaveFactor).map(|tag| tag.force_u16(0)).unwrap_or(1);
-      let row_ilf = ifd.get_entry(DngTag::RowInterleaveFactor).map(|tag| tag.force_u16(0)).unwrap_or(1);
-      match (row_ilf, col_ilf) {
-        (1, 1) => {}
-        (2, 2) => {
-          // Make sure pixbuf is properly cropped (e.g. LJPEG padding)
-          pixbuf = deinterleave2x2(&pixbuf)?;
-        }
-        _ => todo!(),
-      }
+      pixbuf = deinterleave(pixbuf, ifd, tiff_width, tiff_height, cpp)?;
       return Ok(RawImageData::Integer(pixbuf.into_inner()));
     }
     // Floating Point (IEEE) storage
@@ -757,16 +749,77 @@ pub fn plain_image_from_ifd_ext(ifd: &IFD, rawsource: &RawSource, ljpeg_dng_bug:
         }
       };
 
-      // We need to crop first, before we do stuff like deinterleaving.
-      // Padded pixels on output by LJPEG compression will corrupt deinterleave.
-      pixbuf = pixbuf.into_crop(Rect::new(Point::zero(), Dim2::new(tiff_width * cpp, tiff_height)));
-
-      // TODO: other corrections (see u16 code above)?
-
+      pixbuf = reorder_and_crop(pixbuf, ifd, tiff_width, tiff_height, cpp)?;
+      pixbuf = deinterleave(pixbuf, ifd, tiff_width, tiff_height, cpp)?;
       return Ok(RawImageData::Float(pixbuf.into_inner()));
     }
     _ => unimplemented!("other sample-formats"),
   }
+}
+
+/// Reorder sub-tile blocks (DNG SubTileBlockSize) and crop the decoded buffer
+/// to the image size.
+///
+/// The crop must happen before deinterleaving, as padded pixels (e.g. from
+/// LJPEG tiles) would corrupt it.
+fn reorder_and_crop<T>(mut pixbuf: Pix2D<T>, ifd: &IFD, width: usize, height: usize, cpp: usize) -> Result<Pix2D<T>>
+where
+  T: SubPixel,
+{
+  if let Some(block_size) = ifd.get_entry(DngTag::SubTileBlockSize) {
+    let (block_rows, block_cols) = (block_size.force_usize(0), block_size.force_usize(1));
+    // SubTileBlockSize is only in effect for more than one block row
+    if block_rows > 1 {
+      // Strips are handled as tiles with full image width
+      let (tile_w, tile_h) = match ifd.data_mode()? {
+        DataMode::Tiles => (
+          fetch_tiff_tag!(ifd, TiffCommonTag::TileWidth).force_usize(0),
+          fetch_tiff_tag!(ifd, TiffCommonTag::TileLength).force_usize(0),
+        ),
+        DataMode::Strips => (
+          width,
+          ifd
+            .get_entry(TiffCommonTag::RowsPerStrip)
+            .map(|tag| tag.force_usize(0))
+            .unwrap_or(height)
+            .min(height),
+        ),
+      };
+      reorder_sub_tile_blocks(&mut pixbuf, cpp, tile_w, tile_h, block_rows, block_cols).map_err(RawlerError::DecoderFailed)?;
+    }
+  }
+  Ok(pixbuf.into_crop(Rect::new(Point::zero(), Dim2::new(width * cpp, height))))
+}
+
+/// Restore row and column order of interleaved images (DNG RowInterleaveFactor
+/// and ColumnInterleaveFactor).
+fn deinterleave<T>(pixbuf: Pix2D<T>, ifd: &IFD, width: usize, height: usize, cpp: usize) -> Result<Pix2D<T>>
+where
+  T: SubPixel,
+{
+  let row_ilf = ifd.get_entry(DngTag::RowInterleaveFactor).map(|tag| tag.force_usize(0)).unwrap_or(1);
+  let col_ilf = ifd.get_entry(DngTag::ColumnInterleaveFactor).map(|tag| tag.force_usize(0)).unwrap_or(1);
+  Ok(match (row_ilf, col_ilf) {
+    (0, _) | (_, 0) => {
+      return Err(RawlerError::DecoderFailed(format!(
+        "Invalid interleave factors: rows {}, columns {}",
+        row_ilf, col_ilf
+      )));
+    }
+    (1, 1) => pixbuf,
+    // DNG 1.7.1 may store JPEG-XL data in 2x2 interleaved format
+    (2, 2) => deinterleave2x2(&pixbuf)?,
+    (row_ilf, col_ilf) => {
+      let mut pixbuf = pixbuf;
+      if row_ilf > 1 && row_ilf < height {
+        pixbuf = deinterleave_rows(&pixbuf, row_ilf);
+      }
+      if col_ilf > 1 && col_ilf < width {
+        pixbuf = deinterleave_cols(&pixbuf, cpp, col_ilf);
+      }
+      pixbuf
+    }
+  })
 }
 
 /// Decodes a strip-organised raw image into a flat pixel buffer.
