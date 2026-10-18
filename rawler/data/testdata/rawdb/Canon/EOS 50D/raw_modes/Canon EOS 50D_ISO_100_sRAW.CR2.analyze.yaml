@@ -25,9 +25,9 @@ data:
           h: 1584
       blacklevels:
         levels:
-          - 1023/1
-          - 1023/1
-          - 1023/1
+          - 0/1
+          - 0/1
+          - 0/1
         cpp: 3
         width: 1
         height: 1
