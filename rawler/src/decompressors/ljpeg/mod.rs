@@ -13,11 +13,20 @@ mod decompressors;
 pub mod huffman;
 
 /// Decompressor for lossless JPEG (LJPEG)
-pub struct LJpegDecompressor {}
+#[derive(Default)]
+pub struct LJpegDecompressor {
+  dng_bug: bool,
+}
 
 impl LJpegDecompressor {
   pub fn new() -> Self {
-    Self {}
+    Self::new_with_dng_bug(false)
+  }
+
+  /// Create decompressor with optional handling of the 16-bit LJPEG
+  /// deviation used by DNG files with DNGVersion < 1.1.0.0.
+  pub fn new_with_dng_bug(dng_bug: bool) -> Self {
+    Self { dng_bug }
   }
 }
 
@@ -32,7 +41,7 @@ impl<'a> Decompressor<'a, u16> for LJpegDecompressor {
   /// # Errors
   /// Returns `Err` if the LJPEG stream cannot be parsed or decoded.
   fn decompress(&self, src: &[u8], skip_rows: usize, lines: impl LineIteratorMut<'a, u16>, line_width: usize) -> std::result::Result<(), String> {
-    let decompressor = LjpegDecompressor::new(src)?;
+    let decompressor = LjpegDecompressor::new_full(src, self.dng_bug, false)?;
     let mut pixbuf = PixU16::new(decompressor.width(), decompressor.height());
 
     decompressor.decode(pixbuf.pixels_mut(), 0, decompressor.width(), decompressor.width(), decompressor.height(), false)?;
