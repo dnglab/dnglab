@@ -304,7 +304,7 @@ where
     for tile_x in (0..row_samples).step_by(tile_w * cpp) {
       let w = (tile_w * cpp).min(row_samples - tile_x);
       let h = tile_h.min(pixbuf.height - tile_y);
-      if w % block_samples != 0 || h % block_rows != 0 {
+      if !w.is_multiple_of(block_samples) || !h.is_multiple_of(block_rows) {
         return Err(format!("SubTileBlockSize {block_rows}x{block_cols} does not divide tile area {}x{h}", w / cpp));
       }
       // Tile data in stored order

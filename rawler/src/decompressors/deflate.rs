@@ -226,7 +226,7 @@ mod tests {
   use super::*;
 
   /// Apply horizontal differencing with `stride` and compress
-  fn encode(samples: &[u32], width: usize, stride: usize) -> Vec<u8> {
+  fn encode(samples: &[u32], width: usize, stride: usize) -> std::result::Result<Vec<u8>, String> {
     let mut data = Vec::new();
     for row in samples.chunks_exact(width) {
       for col in 0..width {
@@ -238,9 +238,7 @@ mod tests {
         data.extend_from_slice(&v.to_le_bytes());
       }
     }
-    let mut encoder = Encoder::new(Vec::new()).unwrap();
-    encoder.write_all(&data).unwrap();
-    encoder.finish().into_result().unwrap()
+    zlib(&data)
   }
 
   #[test]
@@ -249,7 +247,7 @@ mod tests {
     let samples: Vec<u32> = (0..width as u32 * 2).map(|i| i.wrapping_mul(0x1234_5679)).collect();
     let expected: Vec<f32> = samples.iter().map(|v| *v as f32).collect();
     for (predictor, stride) in [(1, 0), (2, 1), (34892, 2), (34893, 4)] {
-      let src = encode(&samples, width, stride);
+      let src = encode(&samples, width, stride)?;
       let mut out = vec![0.0_f32; samples.len()];
       DeflateIntDecompressor::new(1, predictor, Endian::Little)?.decompress(&src, 0, out.chunks_exact_mut(width), width)?;
       assert_eq!(out, expected, "predictor {predictor}");
@@ -257,10 +255,10 @@ mod tests {
     Ok(())
   }
 
-  fn zlib(data: &[u8]) -> Vec<u8> {
-    let mut encoder = Encoder::new(Vec::new()).unwrap();
-    encoder.write_all(data).unwrap();
-    encoder.finish().into_result().unwrap()
+  fn zlib(data: &[u8]) -> std::result::Result<Vec<u8>, String> {
+    let mut encoder = Encoder::new(Vec::new()).map_err(|err| err.to_string())?;
+    encoder.write_all(data).map_err(|err| err.to_string())?;
+    encoder.finish().into_result().map_err(|err| err.to_string())
   }
 
   fn decode_float(src: &[u8], cpp: usize, predictor: u16, bps: u32, endian: Endian, width: usize, height: usize) -> std::result::Result<Vec<f32>, String> {
@@ -270,7 +268,7 @@ mod tests {
   }
 
   /// Apply the floating point predictor (byte-plane shuffle and byte delta) to f32 rows
-  fn encode_fp_predictor(samples: &[f32], width: usize, pred_factor: usize) -> Vec<u8> {
+  fn encode_fp_predictor(samples: &[f32], width: usize, pred_factor: usize) -> std::result::Result<Vec<u8>, String> {
     let mut data = Vec::new();
     for row in samples.chunks_exact(width) {
       let mut bytes = vec![0_u8; width * 4];
@@ -292,12 +290,12 @@ mod tests {
     let samples = [0.0_f32, 0.25, 1.0, 1234.5, -2.0, 0.001];
     let le: Vec<u8> = samples.iter().flat_map(|v| v.to_le_bytes()).collect();
     let be: Vec<u8> = samples.iter().flat_map(|v| v.to_be_bytes()).collect();
-    assert_eq!(decode_float(&zlib(&le), 1, 1, 32, Endian::Little, 3, 2)?, samples);
-    assert_eq!(decode_float(&zlib(&be), 1, 1, 32, Endian::Big, 3, 2)?, samples);
+    assert_eq!(decode_float(&zlib(&le)?, 1, 1, 32, Endian::Little, 3, 2)?, samples);
+    assert_eq!(decode_float(&zlib(&be)?, 1, 1, 32, Endian::Big, 3, 2)?, samples);
 
     // Half float: 0.0, 0.5, 1.0, 2.0
     let half: Vec<u8> = [0x0000_u16, 0x3800, 0x3C00, 0x4000].iter().flat_map(|v| v.to_le_bytes()).collect();
-    assert_eq!(decode_float(&zlib(&half), 1, 1, 16, Endian::Little, 2, 2)?, [0.0, 0.5, 1.0, 2.0]);
+    assert_eq!(decode_float(&zlib(&half)?, 1, 1, 16, Endian::Little, 2, 2)?, [0.0, 0.5, 1.0, 2.0]);
     Ok(())
   }
 
@@ -308,7 +306,7 @@ mod tests {
     samples[5] = f32::from_bits(1); // Subnormal value
     // Predictor 3/34894/34895 compares bytes 1/2/4 samples to the left
     for (cpp, predictor, mult) in [(1, 3, 1), (2, 3, 1), (1, 34894, 2), (2, 34894, 2), (1, 34895, 4)] {
-      let src = encode_fp_predictor(&samples, width, cpp * mult);
+      let src = encode_fp_predictor(&samples, width, cpp * mult)?;
       assert_eq!(
         decode_float(&src, cpp, predictor, 32, Endian::Little, width, 3)?,
         samples,
