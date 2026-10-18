@@ -2,7 +2,9 @@ use crate::RawImage;
 use crate::cfa::*;
 use crate::decoders::*;
 use crate::formats::tiff::Entry;
+use crate::formats::tiff::ExtractFromIFD;
 use crate::formats::tiff::Rational;
+use crate::formats::tiff::SampleFormat;
 use crate::formats::tiff::Value;
 use crate::imgop::Dim2;
 use crate::imgop::Point;
@@ -57,7 +59,13 @@ impl<'a> Decoder for DngDecoder<'a> {
     }
 
     let blacklevel = self.get_blacklevels(raw)?;
-    let whitelevel = self.get_whitelevels(raw)?.or(Some(WhiteLevel::new_bits(bits, cpp)));
+    // Default WhiteLevel is 1.0 for floating point and 2^BitsPerSample-1 for integer data
+    let whitelevel = match self.get_whitelevels(raw)? {
+      Some(whitelevel) => whitelevel,
+      None if SampleFormat::extract(raw)? == Some(SampleFormat::IEEEFP) => WhiteLevel::new(vec![1; cpp]),
+      None => WhiteLevel::new_bits(bits, cpp),
+    };
+    let whitelevel = Some(whitelevel);
 
     let photometric = match fetch_tiff_tag!(raw, TiffCommonTag::PhotometricInt).force_u32(0) {
       1 => RawPhotometricInterpretation::BlackIsZero,
@@ -429,5 +437,79 @@ impl<'a> DngDecoder<'a> {
     // TODO: add 3
 
     Ok(result)
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use std::io::Cursor;
+
+  use crate::RawImage;
+  use crate::cfa::CFA;
+  use crate::decoders::{Camera, RawDecodeParams};
+  use crate::dng::writer::DngWriter;
+  use crate::dng::{CropMode, DNG_VERSION_V1_4, DngCompression, DngPhotometricConversion};
+  use crate::formats::tiff::DirectoryWriter;
+  use crate::pixarray::PixU16;
+  use crate::rawimage::{BlackLevel, CFAConfig, RawImageData, RawPhotometricInterpretation, WhiteLevel};
+  use crate::rawsource::RawSource;
+  use crate::tags::TiffCommonTag;
+
+  type TestResult<T = ()> = std::result::Result<T, Box<dyn std::error::Error>>;
+
+  /// Synthetic 16x16 CFA image
+  fn synthetic_rawimage() -> RawImage {
+    let mut camera = Camera::new();
+    camera.cfa = CFA::new("RGGB");
+    camera.clean_make = "DNGLab".into();
+    camera.clean_model = "Synthetic".into();
+    let pixels: Vec<u16> = (0..16 * 16).map(|i| (i % 4096) as u16).collect();
+    let photometric = RawPhotometricInterpretation::Cfa(CFAConfig::new_from_camera(&camera));
+    RawImage::new(
+      camera,
+      PixU16::new_with(pixels, 16, 16),
+      1,
+      [1.0, 1.0, 1.0, f32::NAN],
+      photometric,
+      Some(BlackLevel::new(&[0_u32, 0, 0, 0], 2, 2, 1)),
+      Some(WhiteLevel::new_bits(12, 1)),
+      false,
+    )
+  }
+
+  /// Write `rawimage` uncompressed as DNG, `modify` can change the raw IFD before it is written
+  fn write_dng(rawimage: &RawImage, modify: impl FnOnce(&mut DirectoryWriter)) -> TestResult<Vec<u8>> {
+    let mut buf = Cursor::new(Vec::new());
+    let mut dng = DngWriter::new(&mut buf, DNG_VERSION_V1_4)?;
+    dng.load_base_tags(rawimage)?;
+    let mut frame = dng.subframe(0);
+    frame.raw_image(rawimage, CropMode::None, DngCompression::Uncompressed, DngPhotometricConversion::Original, 1)?;
+    modify(frame.ifd_mut());
+    frame.finalize()?;
+    dng.close()?;
+    Ok(buf.into_inner())
+  }
+
+  fn decode_dng(data: &[u8]) -> TestResult<RawImage> {
+    let source = RawSource::new_from_slice(data);
+    let decoder = crate::get_decoder(&source)?;
+    Ok(decoder.raw_image(&source, &RawDecodeParams::default(), false)?)
+  }
+
+  #[test]
+  fn float_whitelevel_defaults_to_one() -> TestResult {
+    let mut rawimage = synthetic_rawimage();
+    rawimage.data = RawImageData::Float((0..16 * 16).map(|i| i as f32 / 256.0).collect());
+    rawimage.whitelevel = WhiteLevel::new(vec![1]);
+    let data = write_dng(&rawimage, |ifd| ifd.remove_tag(TiffCommonTag::WhiteLevel))?;
+    assert_eq!(decode_dng(&data)?.whitelevel.0, vec![1]);
+    Ok(())
+  }
+
+  #[test]
+  fn integer_whitelevel_defaults_to_bits() -> TestResult {
+    let data = write_dng(&synthetic_rawimage(), |ifd| ifd.remove_tag(TiffCommonTag::WhiteLevel))?;
+    assert_eq!(decode_dng(&data)?.whitelevel.0, vec![u16::MAX as u32]);
+    Ok(())
   }
 }
