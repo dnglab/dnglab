@@ -8,7 +8,7 @@ use image::DynamicImage;
 use itertools::Itertools;
 use rawler::decoders::{RawDecodeParams, RawMetadata};
 use rawler::dng::writer::DngWriter;
-use rawler::dng::{CropMode, DNG_VERSION_V1_6, DngCompression, DngPhotometricConversion, DngVersion};
+use rawler::dng::{CropMode, DngCompression, DngPhotometricConversion, DngVersion};
 use rawler::exif::Exif;
 use rawler::formats::jfif::{Jfif, is_exif, is_jfif};
 use rawler::formats::tiff::{self, Rational, SRational};
@@ -256,14 +256,12 @@ pub async fn makedng_internal(options: &ArgMatches, dest_path: &Path) -> crate::
     dng.root_ifd_mut().add_tag(DngTag::CalibrationIlluminant2, illuminant.as_tiff_value());
   }
 
-  if backward_version >= DNG_VERSION_V1_6 {
-    if let Some(matrix) = options.get_one::<ColorMatrixArg>("matrix3") {
-      let illuminant = options
-        .get_one::<CalibrationIlluminantArg>("illuminant3")
-        .ok_or_else(|| crate::AppError::InvalidCmdSwitch("illuminant3 is required when matrix3 is set".into()))?;
-      dng.root_ifd_mut().add_tag(DngTag::ColorMatrix3, matrix.as_tiff_value());
-      dng.root_ifd_mut().add_tag(DngTag::CalibrationIlluminant3, illuminant.as_tiff_value());
-    }
+  if let Some(matrix) = options.get_one::<ColorMatrixArg>("matrix3") {
+    let illuminant = options
+      .get_one::<CalibrationIlluminantArg>("illuminant3")
+      .ok_or_else(|| crate::AppError::InvalidCmdSwitch("illuminant3 is required when matrix3 is set".into()))?;
+    dng.root_ifd_mut().add_tag(DngTag::ColorMatrix3, matrix.as_tiff_value());
+    dng.root_ifd_mut().add_tag(DngTag::CalibrationIlluminant3, illuminant.as_tiff_value());
   }
 
   if let Some(as_shot_neutral) = options.get_one::<WhiteBalanceInput>("as_shot_neutral") {

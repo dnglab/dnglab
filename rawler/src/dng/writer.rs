@@ -32,7 +32,8 @@ use crate::{
 };
 
 use super::{
-  CropMode, DNG_VERSION_V1_0, DNG_VERSION_V1_1, DNG_VERSION_V1_6, DngCompression, DngPhotometricConversion, DngVersionNumber, original::OriginalCompressed,
+  CropMode, DNG_VERSION_V1_0, DNG_VERSION_V1_1, DNG_VERSION_V1_4, DNG_VERSION_V1_6, DngCompression, DngPhotometricConversion, DngVersionNumber,
+  original::OriginalCompressed,
 };
 
 pub type DngError = TiffError;
@@ -150,9 +151,11 @@ where
   }
 
   fn write_rawimage(&mut self, mut rawimage: Cow<RawImage>, cropmode: CropMode, compression: DngCompression, predictor: u8) -> Result<()> {
-    if compression == DngCompression::Lossless && matches!(rawimage.data, RawImageData::Float(_)) {
-      // Lossless (LJPEG92) can only be used for 16 bit integer data.
-      // If we have floats, convert them.
+    if matches!(rawimage.data, RawImageData::Float(_))
+      && (compression == DngCompression::Lossless || !self.writer.backward_version_allows(DNG_VERSION_V1_4, "Floating point image data"))
+    {
+      // Lossless (LJPEG92) can only be used for 16 bit integer data and
+      // floating point data requires DNG 1.4. If we have floats, convert them.
       rawimage.to_mut().data.force_integer();
       rawimage.to_mut().whitelevel.0.iter_mut().for_each(|x| *x = u16::MAX as u32);
       rawimage.to_mut().bps = 16; // Reset bps as intgers are scaled to u16 range.
@@ -342,7 +345,7 @@ where
     self.ifd_mut().add_tag(TiffCommonTag::PhotometricInt, PhotometricInterpretation::YCbCr);
     self.ifd_mut().add_tag(TiffCommonTag::RowsPerStrip, Value::long(preview_img.height()));
     self.ifd_mut().add_tag(TiffCommonTag::SamplesPerPixel, 3_u16);
-    self.ifd_mut().add_tag(DngTag::PreviewColorSpace, PreviewColorSpace::SRgb); // ??
+    self.ifd_mut().add_tag(DngTag::PreviewColorSpace, PreviewColorSpace::SRgb); // Default for color previews, no DNGBackwardVersion 1.2 required
 
     //ifd.add_tag(TiffRootTag::XResolution, Rational { n: 1, d: 1 })?;
     //ifd.add_tag(TiffRootTag::YResolution, Rational { n: 1, d: 1 })?;
@@ -386,6 +389,13 @@ where
   /// `max_backward_version` is the highest DNGBackwardVersion the output is
   /// allowed to declare.
   pub fn new_with_version(buf: B, version: DngVersionNumber, max_backward_version: DngVersionNumber) -> Result<Self> {
+    let max_backward_version = if max_backward_version > version {
+      log::warn!("DNG backward version {} is higher than DNG version {}, clamping", max_backward_version, version);
+      version
+    } else {
+      max_backward_version
+    };
+
     let dng = TiffWriter::new(buf)?;
 
     let mut root_ifd = DirectoryWriter::new();
@@ -725,6 +735,7 @@ where
       subframe.ifd_mut().add_tag(TiffCommonTag::BitsPerSample, &vec![16_u16; rawimage.cpp]);
     }
     RawImageData::Float(ref data) => {
+      subframe.writer.update_backward_version(DNG_VERSION_V1_4, "Floating point image data")?;
       for strip in data.chunks(rows_per_strip * rawimage.width * rawimage.cpp) {
         let offset = subframe.writer.dng.write_data_f32_le(strip)?;
         strip_offsets.push(offset);
@@ -867,6 +878,81 @@ mod tests {
     let (backward_version, has_active_area) = read_backward_version_and_active_area(&data)?;
     assert_eq!(backward_version, DNG_VERSION_V1_0);
     assert!(!has_active_area);
+    Ok(())
+  }
+
+  /// Synthetic 16x16 CFA image with floating point data
+  fn synthetic_rawimage_f32() -> RawImage {
+    let mut rawimage = synthetic_rawimage(None);
+    rawimage.data = RawImageData::Float((0..16 * 16).map(|i| i as f32 / 256.0).collect());
+    rawimage.whitelevel = WhiteLevel::new(vec![1]);
+    rawimage
+  }
+
+  /// Write `rawimage` uncompressed or lossless and return DNGBackwardVersion, SampleFormat and BitsPerSample
+  fn write_float_dng(
+    rawimage: &RawImage,
+    compression: DngCompression,
+    max_backward_version: DngVersionNumber,
+  ) -> std::result::Result<(DngVersionNumber, u16, u16), Box<dyn std::error::Error>> {
+    use crate::formats::tiff::{GenericTiffReader, reader::TiffReader};
+
+    let mut buf = Cursor::new(Vec::new());
+    let mut dng = DngWriter::new(&mut buf, max_backward_version)?;
+    let mut frame = dng.subframe(0);
+    frame.raw_image(rawimage, CropMode::None, compression, DngPhotometricConversion::Original, 1)?;
+    frame.finalize()?;
+    dng.close()?;
+    let data = buf.into_inner();
+
+    let (backward_version, _) = read_backward_version_and_active_area(&data)?;
+    let tiff = GenericTiffReader::new_with_buffer(&data, 0, 0, None)?;
+    let raw_ifd = tiff.find_first_ifd_with_tag(TiffCommonTag::BitsPerSample).ok_or("raw IFD missing")?;
+    let sample_format = raw_ifd.get_entry(TiffCommonTag::SampleFormat).map(|e| e.value.force_u16(0)).unwrap_or(1);
+    let bps = raw_ifd
+      .get_entry(TiffCommonTag::BitsPerSample)
+      .ok_or("BitsPerSample missing")?
+      .value
+      .force_u16(0);
+    Ok((backward_version, sample_format, bps))
+  }
+
+  #[test]
+  fn backward_version_float_data() -> std::result::Result<(), Box<dyn std::error::Error>> {
+    let rawimage = synthetic_rawimage_f32();
+    assert_eq!(
+      write_float_dng(&rawimage, DngCompression::Uncompressed, DNG_VERSION_V1_4)?,
+      (DNG_VERSION_V1_4, 3, 32)
+    );
+    Ok(())
+  }
+
+  #[test]
+  fn backward_version_float_data_not_allowed() -> std::result::Result<(), Box<dyn std::error::Error>> {
+    // Floats are converted to integer data
+    let rawimage = synthetic_rawimage_f32();
+    assert_eq!(
+      write_float_dng(&rawimage, DngCompression::Uncompressed, DNG_VERSION_V1_1)?,
+      (DNG_VERSION_V1_0, 1, 16)
+    );
+    Ok(())
+  }
+
+  #[test]
+  fn backward_version_float_data_lossless() -> std::result::Result<(), Box<dyn std::error::Error>> {
+    // Lossless always converts floats to integer data
+    let rawimage = synthetic_rawimage_f32();
+    let (backward_version, _, bps) = write_float_dng(&rawimage, DngCompression::Lossless, DNG_VERSION_V1_4)?;
+    assert_eq!((backward_version, bps), (DNG_VERSION_V1_0, 16));
+    Ok(())
+  }
+
+  #[test]
+  fn max_backward_version_is_clamped_to_dng_version() -> std::result::Result<(), Box<dyn std::error::Error>> {
+    let mut buf = Cursor::new(Vec::new());
+    let dng = DngWriter::new_with_version(&mut buf, DNG_VERSION_V1_4, DNG_VERSION_V1_6)?;
+    assert!(dng.backward_version_allows(DNG_VERSION_V1_4, "test"));
+    assert!(!dng.backward_version_allows(DNG_VERSION_V1_6, "test"));
     Ok(())
   }
 

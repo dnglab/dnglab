@@ -277,17 +277,7 @@ where
     rawimage.apply_scaling()?;
   }
 
-  let backward_version = if params.max_dng_backward_version > params.dng_version {
-    log::warn!(
-      "DNG backward version {:?} is higher than DNG version {:?}, clamping",
-      params.max_dng_backward_version,
-      params.dng_version
-    );
-    params.dng_version
-  } else {
-    params.max_dng_backward_version
-  };
-  let mut dng = DngWriter::new_with_version(dng, params.dng_version.as_dng_value(), backward_version.as_dng_value())?;
+  let mut dng = DngWriter::new_with_version(dng, params.dng_version.as_dng_value(), params.max_dng_backward_version.as_dng_value())?;
 
   // Write RAW image for subframe type 0
   // If no thumbnail should be written to root IFD, we need to put the raw image into
@@ -295,6 +285,8 @@ where
   let mut raw = if params.thumbnail { dng.subframe(0) } else { dng.subframe_on_root(0) };
   raw.raw_image(&rawimage, params.crop, params.compression, params.photometric_conversion, params.predictor)?;
   // Check for DNG raw IFD related tags
+  // TODO: OpcodeList1-3 require per-opcode version checks. Required (non-optional) opcodes
+  // raise DNGBackwardVersion to the opcode's DNG version (DNG spec, Appendix A, issue 7 and 16).
   if let Some(dng_raw_ifd) = decoder.ifd(WellKnownIFD::VirtualDngRawTags)? {
     raw.ifd_mut().copy(dng_raw_ifd.value_iter());
   }
