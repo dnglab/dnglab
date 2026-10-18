@@ -667,6 +667,7 @@ dependencies = [
  "async-trait",
  "chrono 0.4.45",
  "clap",
+ "dirs",
  "embedftp",
  "futures",
  "hex",
@@ -680,6 +681,7 @@ dependencies = [
  "serde_yaml",
  "thiserror",
  "tokio",
+ "toml",
 ]
 
 [[package]]
