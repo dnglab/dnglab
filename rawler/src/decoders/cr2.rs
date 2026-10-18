@@ -571,17 +571,14 @@ impl<'a> Cr2Decoder<'a> {
   /// Get the black level from COLORDATA tag
   /// The offsets are different, so we take the offset from camera params.
   fn get_blacklevel(&self, cam: &Camera, cpp: usize) -> Result<Option<BlackLevel>> {
+    // sRAW/mRAW: the camera subtracts the black level before YCbCr encoding,
+    // so the RGB output has no black offset (same as dcraw/LibRaw).
+    if cpp == 3 {
+      return Ok(Some(BlackLevel::zero(1, 1, cpp)));
+    }
     if let Some(colordata) = self.makernote.as_ref().and_then(|mn| mn.get_entry(Cr2MakernoteTag::ColorData)) {
       if let Some(blacklevel) = colordata::parse_colordata(colordata)?.blacklevel {
-        match cpp {
-          1 => return Ok(Some(BlackLevel::new(&blacklevel, cam.cfa.width, cam.cfa.height, cpp))),
-          3 => {
-            let avg = blacklevel.into_iter().sum::<u16>() / 4;
-            let levels: [u16; 3] = [avg, avg, avg];
-            return Ok(Some(BlackLevel::new(&levels, 1, 1, cpp)));
-          }
-          _ => unreachable!(),
-        }
+        return Ok(Some(BlackLevel::new(&blacklevel, cam.cfa.width, cam.cfa.height, cpp)));
       }
     }
     Ok(None)
