@@ -1,0 +1,30 @@
+# Built-in convert profiles shipped with rawler.
+#
+# Built-in profile names use the "builtin_" prefix by convention.
+# Fields not given here fall back to the defaults of the profile schema.
+
+[convertprofile.builtin_compat]
+version = 1
+title = "Compatible (DNG 1.4.0)"
+description = "Default settings, compatible with DNG 1.4.0 readers"
+max_dng_backward_version = "1.4"
+embed_raw = false
+multiframe = "split"
+keep_mtime = true
+
+[convertprofile.builtin_latest]
+version = 1
+title = "Latest (DNG 1.6.0)"
+description = "Default settings, requires DNG 1.6.0 readers"
+max_dng_backward_version = "1.6"
+embed_raw = false
+multiframe = "split"
+keep_mtime = true
+
+[convertprofile.builtin_archive]
+version = 1
+title = "Archive"
+description = "Archival: embed original raw, split multi-frame files, keep modification time"
+embed_raw = true
+multiframe = "split"
+keep_mtime = true

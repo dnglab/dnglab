@@ -8,7 +8,7 @@ use image::DynamicImage;
 use itertools::Itertools;
 use rawler::decoders::{RawDecodeParams, RawMetadata};
 use rawler::dng::writer::DngWriter;
-use rawler::dng::{self, CropMode, DNG_VERSION_V1_6, DngCompression, DngPhotometricConversion};
+use rawler::dng::{CropMode, DNG_VERSION_V1_6, DngCompression, DngPhotometricConversion, DngVersion};
 use rawler::exif::Exif;
 use rawler::formats::jfif::{Jfif, is_exif, is_jfif};
 use rawler::formats::tiff::{self, Rational, SRational};
@@ -676,49 +676,6 @@ impl clap::builder::TypedValueParser for CalibrationIlluminantArgParser {
         .into_iter()
         .map(clap::builder::PossibleValue::from),
     ))
-  }
-}
-
-#[derive(Clone, Debug)]
-pub enum DngVersion {
-  V1_0,
-  V1_1,
-  V1_3,
-  V1_2,
-  V1_4,
-  V1_5,
-  V1_6,
-}
-
-impl DngVersion {
-  fn as_dng_value(&self) -> [u8; 4] {
-    match self {
-      DngVersion::V1_0 => dng::DNG_VERSION_V1_0,
-      DngVersion::V1_1 => dng::DNG_VERSION_V1_1,
-      DngVersion::V1_2 => dng::DNG_VERSION_V1_2,
-      DngVersion::V1_3 => dng::DNG_VERSION_V1_3,
-      DngVersion::V1_4 => dng::DNG_VERSION_V1_4,
-      DngVersion::V1_5 => dng::DNG_VERSION_V1_5,
-      DngVersion::V1_6 => dng::DNG_VERSION_V1_6,
-    }
-  }
-}
-
-impl clap::ValueEnum for DngVersion {
-  fn value_variants<'a>() -> &'a [Self] {
-    &[Self::V1_0, Self::V1_1, Self::V1_2, Self::V1_3, Self::V1_4, Self::V1_5, Self::V1_6]
-  }
-
-  fn to_possible_value(&self) -> Option<clap::builder::PossibleValue> {
-    Some(match self {
-      Self::V1_0 => clap::builder::PossibleValue::new("1.0"),
-      Self::V1_1 => clap::builder::PossibleValue::new("1.1"),
-      Self::V1_2 => clap::builder::PossibleValue::new("1.2"),
-      Self::V1_3 => clap::builder::PossibleValue::new("1.3"),
-      Self::V1_4 => clap::builder::PossibleValue::new("1.4"),
-      Self::V1_5 => clap::builder::PossibleValue::new("1.5"),
-      Self::V1_6 => clap::builder::PossibleValue::new("1.6"),
-    })
   }
 }
 

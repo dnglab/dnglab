@@ -17,9 +17,10 @@ _dnglab() {
     _arguments "${_arguments_options[@]}" : \
 '-d+[Log level]:level:(error warn info debug trace)' \
 '--loglevel=[Log level]:level:(error warn info debug trace)' \
+'--profile-path=[Directory with profile TOML files]:dir:_files' \
 '-v[Print status for every file]' \
-'-h[Print help]' \
-'--help[Print help]' \
+'-h[Print help (see more with '\''--help'\'')]' \
+'--help[Print help (see more with '\''--help'\'')]' \
 '-V[Print version]' \
 '--version[Print version]' \
 ":: :_dnglab_commands" \
@@ -35,6 +36,7 @@ _dnglab() {
 _arguments "${_arguments_options[@]}" : \
 '-d+[Log level]:level:(error warn info debug trace)' \
 '--loglevel=[Log level]:level:(error warn info debug trace)' \
+'--profile-path=[Directory with profile TOML files]:dir:_files' \
 '--raw-pixel[]' \
 '--full-pixel[Write uncompressed full pixel data to STDOUT]' \
 '--preview-pixel[Write uncompressed preview pixel data to STDOUT]' \
@@ -50,8 +52,8 @@ _arguments "${_arguments_options[@]}" : \
 '--json[Format metadata as JSON]' \
 '--yaml[Format metadata as YAML]' \
 '-v[Print status for every file]' \
-'-h[Print help]' \
-'--help[Print help]' \
+'-h[Print help (see more with '\''--help'\'')]' \
+'--help[Print help (see more with '\''--help'\'')]' \
 ':FILE -- Input file:_files' \
 && ret=0
 ;;
@@ -63,26 +65,33 @@ _arguments "${_arguments_options[@]}" : \
 '--crop=[DNG default crop]:crop:(best activearea none)' \
 '-d+[Log level]:level:(error warn info debug trace)' \
 '--loglevel=[Log level]:level:(error warn info debug trace)' \
+'--profile-path=[Directory with profile TOML files]:dir:_files' \
 '-f[Override existing files]' \
 '--override[Override existing files]' \
 '-r[Process input directory recursive]' \
 '--recursive[Process input directory recursive]' \
 '-v[Print status for every file]' \
-'-h[Print help]' \
-'--help[Print help]' \
+'-h[Print help (see more with '\''--help'\'')]' \
+'--help[Print help (see more with '\''--help'\'')]' \
 ':INPUT -- Input file or directory:_files' \
 ':OUTPUT -- Output file or existing directory:_files' \
 && ret=0
 ;;
 (convert)
 _arguments "${_arguments_options[@]}" : \
+'-p+[Convert profile name]:name:_default' \
+'--profile=[Convert profile name]:name:_default' \
 '-c+[Compression for raw image]:compression:(lossless uncompressed)' \
 '--compression=[Compression for raw image]:compression:(lossless uncompressed)' \
 '--ljpeg92-predictor=[LJPEG-92 predictor]:predictor:_default' \
 '--dng-preview=[DNG include preview image]:preview:(true false)' \
 '--dng-thumbnail=[DNG include thumbnail image]:thumbnail:(true false)' \
+'--dng-force-preview=[Generate DNG preview image from raw data]:force_preview:(true false)' \
+'--dng-force-thumbnail=[Generate DNG thumbnail image from raw data]:force_thumbnail:(true false)' \
+'--max-dng-backward-version=[Maximum DNG backward version]:version:(1.0 1.1 1.2 1.3 1.4 1.5 1.6)' \
 '--embed-raw=[Embed the raw file into DNG]:embedded:(true false)' \
 '--artist=[Set the artist tag]:artist:_default' \
+'--copyright=[Set the copyright tag]:copyright:_default' \
 '--keep-mtime=[Keep mtime, read from EXIF with fallback to original file mtime]:keepmtime:(true false)' \
 '--image-index=[Select a specific image index (or '\''all'\'') if file is a image container]:index:_default' \
 '--crop=[DNG default crop]:crop:(best activearea none)' \
@@ -90,26 +99,33 @@ _arguments "${_arguments_options[@]}" : \
 '--jobs=[Number of files to convert in parallel (0 = auto)]:N:_default' \
 '-d+[Log level]:level:(error warn info debug trace)' \
 '--loglevel=[Log level]:level:(error warn info debug trace)' \
+'--profile-path=[Directory with profile TOML files]:dir:_files' \
 '-f[Override existing files]' \
 '--override[Override existing files]' \
 '-r[Process input directory recursive]' \
 '--recursive[Process input directory recursive]' \
 '-v[Print status for every file]' \
-'-h[Print help]' \
-'--help[Print help]' \
+'-h[Print help (see more with '\''--help'\'')]' \
+'--help[Print help (see more with '\''--help'\'')]' \
 ':INPUT -- Input file or directory:_files' \
 ':OUTPUT -- Output file or existing directory:_files' \
 && ret=0
 ;;
 (ftpserver)
 _arguments "${_arguments_options[@]}" : \
+'-p+[Convert profile name]:name:_default' \
+'--profile=[Convert profile name]:name:_default' \
 '-c+[Compression for raw image]:compression:(lossless uncompressed)' \
 '--compression=[Compression for raw image]:compression:(lossless uncompressed)' \
 '--ljpeg92-predictor=[LJPEG-92 predictor]:predictor:_default' \
 '--dng-preview=[DNG include preview image]:preview:(true false)' \
 '--dng-thumbnail=[DNG include thumbnail image]:thumbnail:(true false)' \
+'--dng-force-preview=[Generate DNG preview image from raw data]:force_preview:(true false)' \
+'--dng-force-thumbnail=[Generate DNG thumbnail image from raw data]:force_thumbnail:(true false)' \
+'--max-dng-backward-version=[Maximum DNG backward version]:version:(1.0 1.1 1.2 1.3 1.4 1.5 1.6)' \
 '--embed-raw=[Embed the raw file into DNG]:embedded:(true false)' \
 '--artist=[Set the artist tag]:artist:_default' \
+'--copyright=[Set the copyright tag]:copyright:_default' \
 '--keep-mtime=[Keep mtime, read from EXIF with fallback to original file mtime]:keepmtime:(true false)' \
 '--image-index=[Select a specific image index (or '\''all'\'') if file is a image container]:index:_default' \
 '--crop=[DNG default crop]:crop:(best activearea none)' \
@@ -118,11 +134,12 @@ _arguments "${_arguments_options[@]}" : \
 '--keep-original=[Keep original raw]:keep:(true false)' \
 '-d+[Log level]:level:(error warn info debug trace)' \
 '--loglevel=[Log level]:level:(error warn info debug trace)' \
+'--profile-path=[Directory with profile TOML files]:dir:_files' \
 '-f[Override existing files]' \
 '--override[Override existing files]' \
 '-v[Print status for every file]' \
-'-h[Print help]' \
-'--help[Print help]' \
+'-h[Print help (see more with '\''--help'\'')]' \
+'--help[Print help (see more with '\''--help'\'')]' \
 ':OUTPUT -- Output file or existing directory:_files' \
 && ret=0
 ;;
@@ -130,20 +147,22 @@ _arguments "${_arguments_options[@]}" : \
 _arguments "${_arguments_options[@]}" : \
 '-d+[Log level]:level:(error warn info debug trace)' \
 '--loglevel=[Log level]:level:(error warn info debug trace)' \
+'--profile-path=[Directory with profile TOML files]:dir:_files' \
 '--md[Markdown format output]' \
 '-v[Print status for every file]' \
-'-h[Print help]' \
-'--help[Print help]' \
+'-h[Print help (see more with '\''--help'\'')]' \
+'--help[Print help (see more with '\''--help'\'')]' \
 && ret=0
 ;;
 (lenses)
 _arguments "${_arguments_options[@]}" : \
 '-d+[Log level]:level:(error warn info debug trace)' \
 '--loglevel=[Log level]:level:(error warn info debug trace)' \
+'--profile-path=[Directory with profile TOML files]:dir:_files' \
 '--md[Markdown format output]' \
 '-v[Print status for every file]' \
-'-h[Print help]' \
-'--help[Print help]' \
+'-h[Print help (see more with '\''--help'\'')]' \
+'--help[Print help (see more with '\''--help'\'')]' \
 && ret=0
 ;;
 (makedng)
@@ -170,6 +189,7 @@ _arguments "${_arguments_options[@]}" : \
 '--white-xy=[Whitebalance as-shot encoded as xy chromaticity coordinates]:x,y:(D50 D65 custom x,y value (comma seperated))' \
 '-d+[Log level]:level:(error warn info debug trace)' \
 '--loglevel=[Log level]:level:(error warn info debug trace)' \
+'--profile-path=[Directory with profile TOML files]:dir:_files' \
 '-f[Override existing files]' \
 '--override[Override existing files]' \
 '-v[Print status for every file]' \
@@ -181,23 +201,25 @@ _arguments "${_arguments_options[@]}" : \
 _arguments "${_arguments_options[@]}" : \
 '-d+[Log level]:level:(error warn info debug trace)' \
 '--loglevel=[Log level]:level:(error warn info debug trace)' \
+'--profile-path=[Directory with profile TOML files]:dir:_files' \
 '-v[Print status for every file]' \
-'-h[Print help]' \
-'--help[Print help]' \
+'-h[Print help (see more with '\''--help'\'')]' \
+'--help[Print help (see more with '\''--help'\'')]' \
 && ret=0
 ;;
 (extract)
 _arguments "${_arguments_options[@]}" : \
 '-d+[Log level]:level:(error warn info debug trace)' \
 '--loglevel=[Log level]:level:(error warn info debug trace)' \
+'--profile-path=[Directory with profile TOML files]:dir:_files' \
 '--skipchecks[Skip integrity checks]' \
 '-r[Process input directory recursive]' \
 '--recursive[Process input directory recursive]' \
 '-f[Override existing files]' \
 '--override[Override existing files]' \
 '-v[Print status for every file]' \
-'-h[Print help]' \
-'--help[Print help]' \
+'-h[Print help (see more with '\''--help'\'')]' \
+'--help[Print help (see more with '\''--help'\'')]' \
 ':INPUT -- Input file or directory:_files' \
 ':OUTPUT -- Output file or existing directory:_files' \
 && ret=0

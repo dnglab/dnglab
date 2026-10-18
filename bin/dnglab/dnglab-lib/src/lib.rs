@@ -3,6 +3,7 @@ use std::{net::AddrParseError, path::PathBuf};
 use image::ImageError;
 use rawler::{
   RawlerError,
+  dng::convertprofile::ConvertProfileError,
   formats::{jfif::JfifError, tiff::TiffError},
 };
 use thiserror::Error;
@@ -12,6 +13,7 @@ pub mod analyze;
 pub mod app;
 pub mod cameras;
 pub mod convert;
+pub mod convertprofile;
 pub mod extract;
 pub mod filemap;
 pub mod ftpconv;
@@ -68,6 +70,12 @@ impl From<RawlerError> for AppError {
       RawlerError::DecoderFailed(_) => Self::DecoderFailed(value.to_string()),
       RawlerError::Unsupported { .. } => Self::UnsupportedFile(value.to_string()),
     }
+  }
+}
+
+impl From<ConvertProfileError> for AppError {
+  fn from(value: ConvertProfileError) -> Self {
+    anyhow::Error::new(value).into()
   }
 }
 
