@@ -294,7 +294,12 @@ impl<'a> DngDecoder<'a> {
 
   fn get_wb(&self, cam: &Camera) -> Result<[f32; 4]> {
     if let Some(levels) = self.tiff.get_entry(DngTag::AsShotNeutral) {
-      Ok([1.0 / levels.force_f32(0), 1.0 / levels.force_f32(1), 1.0 / levels.force_f32(2), f32::NAN])
+      // One value per color plane (1, 3 or 4)
+      let mut wb = [f32::NAN; 4];
+      for (i, coeff) in wb.iter_mut().enumerate().take(levels.count() as usize) {
+        *coeff = 1.0 / levels.force_f32(i);
+      }
+      Ok(wb)
     } else if let Some(levels) = self.tiff.get_entry(DngTag::AsShotWhiteXY) {
       // TODO: improve once AnalogBalance and CC is properly implemented
       if let Some(flat_colormatrix) = cam.color_matrix.get(&Illuminant::D65)
@@ -449,10 +454,11 @@ mod tests {
   use crate::dng::writer::DngWriter;
   use crate::dng::{CropMode, DNG_VERSION_V1_4, DngCompression, DngPhotometricConversion};
   use crate::formats::tiff::DirectoryWriter;
+  use crate::formats::tiff::Rational;
   use crate::pixarray::PixU16;
   use crate::rawimage::{BlackLevel, CFAConfig, RawImageData, RawPhotometricInterpretation, WhiteLevel};
   use crate::rawsource::RawSource;
-  use crate::tags::TiffCommonTag;
+  use crate::tags::{DngTag, TiffCommonTag};
 
   type TestResult<T = ()> = std::result::Result<T, Box<dyn std::error::Error>>;
 
@@ -522,6 +528,35 @@ mod tests {
 
     let decoded = decode_dng(&buf.into_inner())?;
     assert_eq!((decoded.width, decoded.height), (16, 16));
+    Ok(())
+  }
+
+  /// Write a DNG with the given AsShotNeutral values and return the decoded WB coefficients
+  fn decode_wb(as_shot_neutral: &[Rational]) -> TestResult<[f32; 4]> {
+    let rawimage = synthetic_rawimage();
+    let mut buf = Cursor::new(Vec::new());
+    let mut dng = DngWriter::new(&mut buf, DNG_VERSION_V1_4)?;
+    dng.load_base_tags(&rawimage)?;
+    let mut frame = dng.subframe(0);
+    frame.raw_image(&rawimage, CropMode::None, DngCompression::Uncompressed, DngPhotometricConversion::Original, 1)?;
+    frame.finalize()?;
+    dng.root_ifd_mut().add_tag(DngTag::AsShotNeutral, as_shot_neutral);
+    dng.close()?;
+    Ok(decode_dng(&buf.into_inner())?.wb_coeffs)
+  }
+
+  #[test]
+  fn as_shot_neutral_with_four_planes() -> TestResult {
+    let wb = decode_wb(&[Rational::new(1, 2), Rational::new(1, 1), Rational::new(1, 4), Rational::new(1, 5)])?;
+    assert_eq!(wb, [2.0, 1.0, 4.0, 5.0]);
+    Ok(())
+  }
+
+  #[test]
+  fn as_shot_neutral_with_three_planes() -> TestResult {
+    let wb = decode_wb(&[Rational::new(1, 2), Rational::new(1, 1), Rational::new(1, 4)])?;
+    assert_eq!(wb[..3], [2.0, 1.0, 4.0]);
+    assert!(wb[3].is_nan());
     Ok(())
   }
 
