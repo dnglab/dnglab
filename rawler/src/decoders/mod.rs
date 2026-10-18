@@ -626,6 +626,12 @@ pub(crate) fn dynamic_image_from_ifd(ifd: &IFD, rawsource: &RawSource) -> Result
 /// Returns an error if required tags are missing, the compression /
 /// storage combination is unsupported, or any decompressor fails.
 pub fn plain_image_from_ifd(ifd: &IFD, rawsource: &RawSource) -> Result<RawImageData> {
+  plain_image_from_ifd_ext(ifd, rawsource, false)
+}
+
+/// Same as [`plain_image_from_ifd`], `ljpeg_dng_bug` enables the 16-bit LJPEG
+/// deviation used by DNG files with DNGVersion < 1.1.0.0.
+pub fn plain_image_from_ifd_ext(ifd: &IFD, rawsource: &RawSource, ljpeg_dng_bug: bool) -> Result<RawImageData> {
   let dummy = false;
   let endian = ifd.endian;
   let tiff_width = fetch_tiff_tag!(ifd, TiffCommonTag::ImageWidth).force_usize(0);
@@ -657,14 +663,14 @@ pub fn plain_image_from_ifd(ifd: &IFD, rawsource: &RawSource) -> Result<RawImage
           if (pi == PhotometricInterpretation::YCbCr && bits == 8) || (pi == PhotometricInterpretation::BlackIsZero && bits == 8) {
             decode_strips::<u16>(rawsource, ifd, JpegDecompressor::new(), dummy)?
           } else {
-            decode_strips::<u16>(rawsource, ifd, LJpegDecompressor::new(), dummy)?
+            decode_strips::<u16>(rawsource, ifd, LJpegDecompressor::new_with_dng_bug(ljpeg_dng_bug), dummy)?
           }
         }
         (CompressionMethod::ModernJPEG, DataMode::Tiles) => {
           if (pi == PhotometricInterpretation::YCbCr && bits == 8) || (pi == PhotometricInterpretation::BlackIsZero && bits == 8) {
             decode_tiles::<u16>(rawsource, ifd, JpegDecompressor::new(), dummy)?
           } else {
-            decode_tiles::<u16>(rawsource, ifd, LJpegDecompressor::new(), dummy)?
+            decode_tiles::<u16>(rawsource, ifd, LJpegDecompressor::new_with_dng_bug(ljpeg_dng_bug), dummy)?
           }
         }
         (CompressionMethod::LossyJPEG, DataMode::Strips) => decode_strips::<u16>(rawsource, ifd, JpegDecompressor::new(), dummy)?,

@@ -1,7 +1,7 @@
 use crate::RawImage;
 use crate::cfa::*;
 use crate::decoders::*;
-use crate::dng::{DNG_READER_VERSION, DngVersionNumber};
+use crate::dng::{DNG_READER_VERSION, DNG_VERSION_V1_1, DngVersionNumber};
 use crate::formats::tiff::Entry;
 use crate::formats::tiff::ExtractFromIFD;
 use crate::formats::tiff::Rational;
@@ -103,7 +103,9 @@ impl<'a> Decoder for DngDecoder<'a> {
       _ => todo!(),
     };
 
-    let raw_data = plain_image_from_ifd(raw, file)?;
+    // DNG versions before 1.1.0.0 use a deviating 16-bit lossless JPEG encoding
+    let ljpeg_dng_bug = self.dng_version().is_some_and(|version| version < DNG_VERSION_V1_1);
+    let raw_data = plain_image_from_ifd_ext(raw, file, ljpeg_dng_bug)?;
     let wb_coeffs = self.get_wb(&cam)?;
     let mut image = RawImage::new_with_data(cam, raw_data, width * cpp, height, cpp, wb_coeffs, photometric, blacklevel, whitelevel, dummy);
     image.orientation = orientation;
@@ -482,7 +484,9 @@ mod tests {
   use crate::cfa::CFA;
   use crate::decoders::{Camera, RawDecodeParams};
   use crate::dng::writer::DngWriter;
-  use crate::dng::{CropMode, DNG_VERSION_V1_4, DNG_VERSION_V1_6, DngCompression, DngPhotometricConversion, DngVersionNumber};
+  use crate::dng::{
+    CropMode, DNG_VERSION_V1_0, DNG_VERSION_V1_1, DNG_VERSION_V1_4, DNG_VERSION_V1_6, DngCompression, DngPhotometricConversion, DngVersionNumber,
+  };
   use crate::formats::tiff::Rational;
   use crate::formats::tiff::{DirectoryWriter, GenericTiffReader};
   use crate::pixarray::PixU16;
@@ -632,6 +636,47 @@ mod tests {
     data[entry..entry + 2].copy_from_slice(&0xFFFE_u16.to_ne_bytes());
     let decoder = dng_decoder(&data)?;
     assert_eq!(decoder.dng_backward_version(), Some(DngVersionNumber([1, 4, 0, 0])));
+    Ok(())
+  }
+
+  /// Write a lossless DNG with the given DNGVersion. The image has a jump of 32768
+  /// between same-colored pixels, which needs the special-cased 16-bit LJPEG difference.
+  fn lossless_dng_with_32768_diff(dng_version: DngVersionNumber) -> TestResult<(Vec<u8>, Vec<u16>)> {
+    let mut rawimage = synthetic_rawimage();
+    let pixels: Vec<u16> = (0..16 * 16).map(|i| if i % 16 < 8 { 0 } else { 32768 }).collect();
+    rawimage.data = RawImageData::Integer(pixels.clone());
+    rawimage.whitelevel = WhiteLevel::new_bits(16, 1);
+    rawimage.bps = 16;
+    let mut buf = Cursor::new(Vec::new());
+    let mut dng = DngWriter::new_with_version(&mut buf, dng_version, DNG_VERSION_V1_0)?;
+    dng.load_base_tags(&rawimage)?;
+    let mut frame = dng.subframe(0);
+    frame.raw_image(&rawimage, CropMode::None, DngCompression::Lossless, DngPhotometricConversion::Original, 1)?;
+    frame.finalize()?;
+    dng.close()?;
+    Ok((buf.into_inner(), pixels))
+  }
+
+  fn integer_data(image: RawImage) -> Option<Vec<u16>> {
+    match image.data {
+      RawImageData::Integer(data) => Some(data),
+      RawImageData::Float(_) => None,
+    }
+  }
+
+  #[test]
+  fn ljpeg_dng_bug_depends_on_dng_version() -> TestResult {
+    // DNG 1.1: compliant LJPEG decoding, the image matches
+    let (data, pixels) = lossless_dng_with_32768_diff(DNG_VERSION_V1_1)?;
+    assert_eq!(integer_data(decode_dng(&data)?), Some(pixels));
+
+    // DNG 1.0: the decoder expects the old 16-bit deviation. The compliant
+    // stream from our encoder is therefore not decoded to the same image.
+    let (data, pixels) = lossless_dng_with_32768_diff(DNG_VERSION_V1_0)?;
+    match decode_dng(&data) {
+      Ok(image) => assert_ne!(integer_data(image), Some(pixels)),
+      Err(_) => {} // Decoder may also fail to decode the stream
+    }
     Ok(())
   }
 
