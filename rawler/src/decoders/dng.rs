@@ -1,6 +1,7 @@
 use crate::RawImage;
 use crate::cfa::*;
 use crate::decoders::*;
+use crate::dng::{DNG_READER_VERSION, DngVersionNumber};
 use crate::formats::tiff::Entry;
 use crate::formats::tiff::ExtractFromIFD;
 use crate::formats::tiff::Rational;
@@ -22,7 +23,35 @@ pub struct DngDecoder<'a> {
 
 impl<'a> DngDecoder<'a> {
   pub fn new(_file: &RawSource, tiff: GenericTiffReader, rawloader: &'a RawLoader) -> Result<DngDecoder<'a>> {
-    Ok(DngDecoder { tiff, rawloader })
+    let decoder = DngDecoder { tiff, rawloader };
+    if let Some(backward_version) = decoder.dng_backward_version()
+      && backward_version > DNG_READER_VERSION
+    {
+      log::warn!(
+        "DNG file requires a reader for DNG version {}, but only {} is supported. Trying to decode anyway.",
+        backward_version,
+        DNG_READER_VERSION
+      );
+    }
+    Ok(decoder)
+  }
+
+  /// DNGVersion of the file
+  pub fn dng_version(&self) -> Option<DngVersionNumber> {
+    Self::read_version(self.tiff.root_ifd(), DngTag::DNGVersion)
+  }
+
+  /// DNGBackwardVersion of the file, defaults to DNGVersion with the last two bytes set to zero
+  pub fn dng_backward_version(&self) -> Option<DngVersionNumber> {
+    Self::read_version(self.tiff.root_ifd(), DngTag::DNGBackwardVersion)
+      .or_else(|| self.dng_version().map(|version| DngVersionNumber([version.major(), version.minor(), 0, 0])))
+  }
+
+  fn read_version(ifd: &IFD, tag: DngTag) -> Option<DngVersionNumber> {
+    ifd
+      .get_entry(tag)
+      .filter(|entry| entry.count() == 4)
+      .map(|entry| DngVersionNumber([0, 1, 2, 3].map(|i| entry.value.force_u8(i))))
   }
 }
 
@@ -448,13 +477,14 @@ impl<'a> DngDecoder<'a> {
 mod tests {
   use std::io::Cursor;
 
+  use super::DngDecoder;
   use crate::RawImage;
   use crate::cfa::CFA;
   use crate::decoders::{Camera, RawDecodeParams};
   use crate::dng::writer::DngWriter;
-  use crate::dng::{CropMode, DNG_VERSION_V1_4, DngCompression, DngPhotometricConversion};
-  use crate::formats::tiff::DirectoryWriter;
+  use crate::dng::{CropMode, DNG_VERSION_V1_4, DNG_VERSION_V1_6, DngCompression, DngPhotometricConversion, DngVersionNumber};
   use crate::formats::tiff::Rational;
+  use crate::formats::tiff::{DirectoryWriter, GenericTiffReader};
   use crate::pixarray::PixU16;
   use crate::rawimage::{BlackLevel, CFAConfig, RawImageData, RawPhotometricInterpretation, WhiteLevel};
   use crate::rawsource::RawSource;
@@ -557,6 +587,51 @@ mod tests {
     let wb = decode_wb(&[Rational::new(1, 2), Rational::new(1, 1), Rational::new(1, 4)])?;
     assert_eq!(wb[..3], [2.0, 1.0, 4.0]);
     assert!(wb[3].is_nan());
+    Ok(())
+  }
+
+  /// Find the inline DNGBackwardVersion IFD entry in `data` (written in native byte order)
+  fn find_backward_version_entry(data: &[u8]) -> usize {
+    let pattern: Vec<u8> = [&50707_u16.to_ne_bytes()[..], &1_u16.to_ne_bytes(), &4_u32.to_ne_bytes()].concat();
+    data
+      .windows(pattern.len())
+      .position(|w| w == pattern)
+      .expect("DNGBackwardVersion entry not found")
+  }
+
+  fn dng_decoder(data: &[u8]) -> TestResult<DngDecoder<'static>> {
+    let source = RawSource::new_from_slice(data);
+    let tiff = GenericTiffReader::new_with_buffer(data, 0, 0, None)?;
+    Ok(DngDecoder::new(&source, tiff, crate::global_loader())?)
+  }
+
+  #[test]
+  fn dng_backward_version_from_tag() -> TestResult {
+    let mut data = write_dng(&synthetic_rawimage(), |_| {})?;
+    let entry = find_backward_version_entry(&data);
+    // Newer than supported, decoder warns but continues
+    data[entry + 8..entry + 12].copy_from_slice(&[1, 8, 0, 0]);
+    let decoder = dng_decoder(&data)?;
+    assert_eq!(decoder.dng_backward_version(), Some(DngVersionNumber([1, 8, 0, 0])));
+    assert_eq!(decoder.dng_version(), Some(DNG_VERSION_V1_6));
+    Ok(())
+  }
+
+  #[test]
+  fn dng_backward_version_defaults_to_dng_version() -> TestResult {
+    let rawimage = synthetic_rawimage();
+    let mut buf = Cursor::new(Vec::new());
+    let mut dng = DngWriter::new_with_version(&mut buf, DngVersionNumber([1, 4, 2, 1]), DNG_VERSION_V1_4)?;
+    let mut frame = dng.subframe(0);
+    frame.raw_image(&rawimage, CropMode::None, DngCompression::Uncompressed, DngPhotometricConversion::Original, 1)?;
+    frame.finalize()?;
+    dng.close()?;
+    let mut data = buf.into_inner();
+    // Rename the DNGBackwardVersion entry to an unused tag
+    let entry = find_backward_version_entry(&data);
+    data[entry..entry + 2].copy_from_slice(&0xFFFE_u16.to_ne_bytes());
+    let decoder = dng_decoder(&data)?;
+    assert_eq!(decoder.dng_backward_version(), Some(DngVersionNumber([1, 4, 0, 0])));
     Ok(())
   }
 

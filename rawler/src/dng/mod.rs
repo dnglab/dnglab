@@ -18,6 +18,9 @@ pub const DNG_VERSION_V1_4: DngVersionNumber = DngVersionNumber([1, 4, 0, 0]);
 pub const DNG_VERSION_V1_5: DngVersionNumber = DngVersionNumber([1, 5, 0, 0]);
 pub const DNG_VERSION_V1_6: DngVersionNumber = DngVersionNumber([1, 6, 0, 0]);
 
+/// Highest DNG specification version the DNG reader is based on
+pub const DNG_READER_VERSION: DngVersionNumber = DngVersionNumber([1, 7, 1, 0]);
+
 /// DNG specification version
 #[derive(Clone, Copy, Debug, Eq, PartialEq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 pub enum DngVersion {
