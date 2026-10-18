@@ -31,7 +31,9 @@ use crate::{
   tags::{DngTag, TiffCommonTag},
 };
 
-use super::{CropMode, DNG_VERSION_V1_6, DngCompression, DngPhotometricConversion, original::OriginalCompressed};
+use super::{
+  CropMode, DNG_VERSION_V1_0, DNG_VERSION_V1_1, DNG_VERSION_V1_6, DngCompression, DngPhotometricConversion, DngVersionNumber, original::OriginalCompressed,
+};
 
 pub type DngError = TiffError;
 
@@ -47,6 +49,10 @@ where
   //preview_ifd: DirectoryWriter,
   exif_ifd: DirectoryWriter,
   subs: Vec<u32>,
+  /// Highest DNGBackwardVersion the output is allowed to declare
+  max_backward_version: DngVersionNumber,
+  /// DNGBackwardVersion required by the features used so far
+  dng_backward_version: DngVersionNumber,
 }
 
 pub struct SubFrameWriter<'w, B>
@@ -179,7 +185,7 @@ where
     let full_size = Rect::new(Point::new(0, 0), Dim2::new(rawimage.width, rawimage.height));
 
     // Active area or uncropped
-    let active_area: Rect = match cropmode {
+    let mut active_area: Rect = match cropmode {
       CropMode::ActiveArea | CropMode::Best => rawimage.active_area.unwrap_or(full_size),
       CropMode::None => full_size,
     };
@@ -187,34 +193,38 @@ where
     assert!(active_area.p.x + active_area.d.w <= rawimage.width);
     assert!(active_area.p.y + active_area.d.h <= rawimage.height);
 
+    // Default crop, in full image coordinates
+    let crop: Option<Rect> = match cropmode {
+      CropMode::ActiveArea => Some(active_area),
+      CropMode::Best => Some(rawimage.crop_area.unwrap_or(active_area)),
+      CropMode::None => None,
+    };
+
     //self.ifd.add_tag(TiffCommonTag::NewSubFileType, 0_u16)?; // Raw
     self.ifd_mut().add_tag(TiffCommonTag::ImageWidth, rawimage.width as u32);
     self.ifd_mut().add_tag(TiffCommonTag::ImageLength, rawimage.height as u32);
 
-    self.ifd_mut().add_tag(DngTag::ActiveArea, rect_to_dng_area(&active_area));
+    // ActiveArea defaults to the full image, so the tag is only required
+    // if masked pixels are stored.
+    if active_area != full_size {
+      if self.writer.backward_version_allows(DNG_VERSION_V1_1, "ActiveArea (masked pixels stored)") {
+        self.writer.update_backward_version(DNG_VERSION_V1_1, "ActiveArea (masked pixels stored)")?;
+        self.ifd_mut().add_tag(DngTag::ActiveArea, rect_to_dng_area(&active_area));
+      } else {
+        // ActiveArea is not available, so the full image becomes the active area.
+        // The masked pixels are still hidden by the default crop.
+        active_area = full_size;
+      }
+    }
 
-    match cropmode {
-      CropMode::ActiveArea => {
-        let crop = active_area;
-        assert!(crop.p.x >= active_area.p.x);
-        assert!(crop.p.y >= active_area.p.y);
-        self.ifd_mut().add_tag(
-          DngTag::DefaultCropOrigin,
-          [(crop.p.x - active_area.p.x) as u16, (crop.p.y - active_area.p.y) as u16],
-        );
-        self.ifd_mut().add_tag(DngTag::DefaultCropSize, [crop.d.w as u16, crop.d.h as u16]);
-      }
-      CropMode::Best => {
-        let crop = rawimage.crop_area.unwrap_or(active_area);
-        assert!(crop.p.x >= active_area.p.x);
-        assert!(crop.p.y >= active_area.p.y);
-        self.ifd_mut().add_tag(
-          DngTag::DefaultCropOrigin,
-          [(crop.p.x - active_area.p.x) as u16, (crop.p.y - active_area.p.y) as u16],
-        );
-        self.ifd_mut().add_tag(DngTag::DefaultCropSize, [crop.d.w as u16, crop.d.h as u16]);
-      }
-      CropMode::None => {}
+    if let Some(crop) = crop {
+      assert!(crop.p.x >= active_area.p.x);
+      assert!(crop.p.y >= active_area.p.y);
+      self.ifd_mut().add_tag(
+        DngTag::DefaultCropOrigin,
+        [(crop.p.x - active_area.p.x) as u16, (crop.p.y - active_area.p.y) as u16],
+      );
+      self.ifd_mut().add_tag(DngTag::DefaultCropSize, [crop.d.w as u16, crop.d.h as u16]);
     }
 
     self.ifd_mut().add_tag(ExifTag::PlanarConfiguration, 1_u16);
@@ -367,7 +377,7 @@ impl<B> DngWriter<B>
 where
   B: Write + Seek,
 {
-  pub fn new(buf: B, backward_version: [u8; 4]) -> Result<Self> {
+  pub fn new(buf: B, backward_version: DngVersionNumber) -> Result<Self> {
     Self::new_with_version(buf, DNG_VERSION_V1_6, backward_version)
   }
 
@@ -375,14 +385,12 @@ where
   ///
   /// `max_backward_version` is the highest DNGBackwardVersion the output is
   /// allowed to declare.
-  pub fn new_with_version(buf: B, version: [u8; 4], max_backward_version: [u8; 4]) -> Result<Self> {
+  pub fn new_with_version(buf: B, version: DngVersionNumber, max_backward_version: DngVersionNumber) -> Result<Self> {
     let dng = TiffWriter::new(buf)?;
 
     let mut root_ifd = DirectoryWriter::new();
     let mut exif_ifd = DirectoryWriter::new();
-    // TODO: track the DNG features used while writing, derive the real
-    // backward version from them and fail/warn if it exceeds `max_backward_version`.
-    root_ifd.add_tag(DngTag::DNGBackwardVersion, max_backward_version);
+    // DNGBackwardVersion is derived from the used features and written on close().
     root_ifd.add_tag(DngTag::DNGVersion, version);
     // Add EXIF version 0220
     exif_ifd.add_tag_undefined(ExifTag::ExifVersion, vec![48, 50, 50, 48]);
@@ -392,7 +400,42 @@ where
       root_ifd,
       exif_ifd,
       subs: Vec::new(),
+      max_backward_version,
+      dng_backward_version: DNG_VERSION_V1_0,
     })
+  }
+
+  /// Raise the tracked DNGBackwardVersion to `version` because `feature` is used.
+  /// Fails if `version` exceeds the allowed maximum backward version.
+  fn update_backward_version(&mut self, version: DngVersionNumber, feature: &str) -> Result<()> {
+    if version <= self.dng_backward_version {
+      return Ok(());
+    }
+    if version > self.max_backward_version {
+      return Err(DngError::General(format!(
+        "DNG feature '{}' requires DNGBackwardVersion {}, but maximum allowed is {}",
+        feature, version, self.max_backward_version
+      )));
+    }
+    debug!(
+      "DNGBackwardVersion raised from {} to {} by feature: {}",
+      self.dng_backward_version, version, feature
+    );
+    self.dng_backward_version = version;
+    Ok(())
+  }
+
+  /// Check if `feature`, which requires DNGBackwardVersion `version`, can be used
+  /// within the allowed maximum backward version. The tracked version is not changed.
+  fn backward_version_allows(&self, version: DngVersionNumber, feature: &str) -> bool {
+    let allowed = version <= self.max_backward_version;
+    if !allowed {
+      debug!(
+        "DNG feature '{}' requires DNGBackwardVersion {}, but maximum allowed is {}",
+        feature, version, self.max_backward_version
+      );
+    }
+    allowed
   }
 
   pub fn as_shot_neutral(&mut self, wb: impl AsRef<[Rational]>) {
@@ -452,6 +495,8 @@ where
     if !self.subs.is_empty() {
       self.root_ifd.add_tag(TiffCommonTag::SubIFDs, &self.subs);
     }
+
+    self.root_ifd.add_tag(DngTag::DNGBackwardVersion, self.dng_backward_version);
 
     self.dng.build(self.root_ifd)?;
     Ok(())
@@ -715,15 +760,133 @@ mod tests {
     #[cfg(target_endian = "little")]
     let expected_output = [
       73, 73, 42, 0, 36, 0, 0, 0, 1, 0, 0, 144, 7, 0, 4, 0, 0, 0, 48, 50, 50, 48, 0, 0, 0, 0, 0, 0, 84, 101, 115, 116, 0, 0, 0, 0, 4, 0, 59, 1, 2, 0, 5, 0, 0,
-      0, 28, 0, 0, 0, 105, 135, 4, 0, 1, 0, 0, 0, 8, 0, 0, 0, 18, 198, 1, 0, 4, 0, 0, 0, 1, 6, 0, 0, 19, 198, 1, 0, 4, 0, 0, 0, 1, 4, 0, 0, 0, 0, 0, 0,
+      0, 28, 0, 0, 0, 105, 135, 4, 0, 1, 0, 0, 0, 8, 0, 0, 0, 18, 198, 1, 0, 4, 0, 0, 0, 1, 6, 0, 0, 19, 198, 1, 0, 4, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0,
     ];
     #[cfg(not(target_endian = "little"))]
     let expected_output = [
       77, 77, 0, 42, 0, 0, 0, 36, 0, 1, 144, 0, 0, 7, 0, 0, 0, 4, 48, 50, 50, 48, 0, 0, 0, 0, 0, 0, 84, 101, 115, 116, 0, 0, 0, 0, 0, 4, 1, 59, 0, 2, 0, 0, 0,
-      5, 0, 0, 0, 28, 135, 105, 0, 4, 0, 0, 0, 1, 0, 0, 0, 8, 198, 18, 0, 1, 0, 0, 0, 4, 0, 0, 6, 1, 198, 19, 0, 1, 0, 0, 0, 4, 0, 0, 4, 1, 0, 0, 0, 0,
+      5, 0, 0, 0, 28, 135, 105, 0, 4, 0, 0, 0, 1, 0, 0, 0, 8, 198, 18, 0, 1, 0, 0, 0, 4, 0, 0, 6, 1, 198, 19, 0, 1, 0, 0, 0, 4, 0, 0, 0, 1, 0, 0, 0, 0,
     ];
     assert_eq!(expected_output, buf.into_inner().as_slice());
     Ok(())
+  }
+
+  /// Synthetic 16x16 CFA image with an optional active area
+  fn synthetic_rawimage(active_area: Option<Rect>) -> RawImage {
+    use crate::rawimage::CFAConfig;
+
+    let mut camera = Camera::new();
+    camera.cfa = CFA::new("RGGB");
+    let pixels: Vec<u16> = (0..16 * 16).map(|i| (i % 4096) as u16).collect();
+    let image = PixU16::new_with(pixels, 16, 16);
+    let photometric = RawPhotometricInterpretation::Cfa(CFAConfig::new_from_camera(&camera));
+    let mut rawimage = RawImage::new(
+      camera,
+      image,
+      1,
+      [1.0, 1.0, 1.0, f32::NAN],
+      photometric,
+      Some(BlackLevel::new(&[0_u32, 0, 0, 0], 2, 2, 1)),
+      Some(WhiteLevel::new_bits(12, 1)),
+      false,
+    );
+    rawimage.active_area = active_area;
+    rawimage
+  }
+
+  /// Write `rawimage` with the given max backward version and return the DNG bytes
+  fn write_synthetic_dng(rawimage: &RawImage, cropmode: CropMode, max_backward_version: DngVersionNumber) -> Result<Vec<u8>> {
+    let mut buf = Cursor::new(Vec::new());
+    let mut dng = DngWriter::new(&mut buf, max_backward_version)?;
+    let mut frame = dng.subframe(0);
+    frame.raw_image(rawimage, cropmode, DngCompression::Uncompressed, DngPhotometricConversion::Original, 1)?;
+    frame.finalize()?;
+    dng.close()?;
+    Ok(buf.into_inner())
+  }
+
+  fn read_backward_version_and_active_area(data: &[u8]) -> std::result::Result<(DngVersionNumber, bool), Box<dyn std::error::Error>> {
+    use crate::formats::tiff::{GenericTiffReader, reader::TiffReader};
+
+    let tiff = GenericTiffReader::new_with_buffer(data, 0, 0, None)?;
+    let backward_version = tiff
+      .root_ifd()
+      .get_entry(DngTag::DNGBackwardVersion)
+      .ok_or("DNGBackwardVersion missing")?
+      .value
+      .get_data()
+      .as_slice()
+      .try_into()
+      .map(DngVersionNumber)?;
+    let has_active_area = !tiff.find_ifds_with_tag(DngTag::ActiveArea).is_empty();
+    Ok((backward_version, has_active_area))
+  }
+
+  #[test]
+  fn backward_version_active_area() -> std::result::Result<(), Box<dyn std::error::Error>> {
+    let rawimage = synthetic_rawimage(Some(Rect::new(Point::new(2, 2), Dim2::new(12, 12))));
+    let data = write_synthetic_dng(&rawimage, CropMode::Best, DNG_VERSION_V1_4)?;
+    let (backward_version, has_active_area) = read_backward_version_and_active_area(&data)?;
+    assert_eq!(backward_version, DNG_VERSION_V1_1);
+    assert!(has_active_area);
+    Ok(())
+  }
+
+  #[test]
+  fn backward_version_active_area_not_allowed() -> std::result::Result<(), Box<dyn std::error::Error>> {
+    use crate::formats::tiff::{GenericTiffReader, reader::TiffReader};
+
+    // ActiveArea is skipped, masked pixels are excluded by the default crop only
+    let rawimage = synthetic_rawimage(Some(Rect::new(Point::new(2, 2), Dim2::new(12, 12))));
+    let data = write_synthetic_dng(&rawimage, CropMode::Best, DNG_VERSION_V1_0)?;
+    let (backward_version, has_active_area) = read_backward_version_and_active_area(&data)?;
+    assert_eq!(backward_version, DNG_VERSION_V1_0);
+    assert!(!has_active_area);
+
+    let tiff = GenericTiffReader::new_with_buffer(&data, 0, 0, None)?;
+    let raw_ifd = tiff.find_first_ifd_with_tag(DngTag::DefaultCropOrigin).ok_or("DefaultCropOrigin missing")?;
+    let origin = raw_ifd.get_entry(DngTag::DefaultCropOrigin).ok_or("DefaultCropOrigin missing")?;
+    let size = raw_ifd.get_entry(DngTag::DefaultCropSize).ok_or("DefaultCropSize missing")?;
+    assert_eq!((origin.value.force_u16(0), origin.value.force_u16(1)), (2, 2));
+    assert_eq!((size.value.force_u16(0), size.value.force_u16(1)), (12, 12));
+    Ok(())
+  }
+
+  #[test]
+  fn backward_version_full_size_active_area() -> std::result::Result<(), Box<dyn std::error::Error>> {
+    // Active area covers the full image, so no masked pixels are stored
+    let rawimage = synthetic_rawimage(Some(Rect::new(Point::new(0, 0), Dim2::new(16, 16))));
+    let data = write_synthetic_dng(&rawimage, CropMode::Best, DNG_VERSION_V1_0)?;
+    let (backward_version, has_active_area) = read_backward_version_and_active_area(&data)?;
+    assert_eq!(backward_version, DNG_VERSION_V1_0);
+    assert!(!has_active_area);
+
+    // CropMode::None ignores the active area
+    let rawimage = synthetic_rawimage(Some(Rect::new(Point::new(2, 2), Dim2::new(12, 12))));
+    let data = write_synthetic_dng(&rawimage, CropMode::None, DNG_VERSION_V1_0)?;
+    let (backward_version, has_active_area) = read_backward_version_and_active_area(&data)?;
+    assert_eq!(backward_version, DNG_VERSION_V1_0);
+    assert!(!has_active_area);
+    Ok(())
+  }
+
+  #[test]
+  fn backward_version_allows() -> std::result::Result<(), Box<dyn std::error::Error>> {
+    let mut buf = Cursor::new(Vec::new());
+    let dng = DngWriter::new(&mut buf, DNG_VERSION_V1_4)?;
+    assert!(dng.backward_version_allows(DNG_VERSION_V1_1, "test"));
+    assert!(dng.backward_version_allows(DNG_VERSION_V1_4, "test"));
+    assert!(!dng.backward_version_allows(DNG_VERSION_V1_6, "test"));
+    Ok(())
+  }
+
+  #[test]
+  fn dng_version_number() {
+    let version = DngVersionNumber::from([1, 4, 2, 3]);
+    assert_eq!((version.major(), version.minor(), version.revision(), version.build()), (1, 4, 2, 3));
+    assert_eq!(version.to_string(), "1.4.2.3");
+    assert!(DNG_VERSION_V1_1 < DNG_VERSION_V1_4);
+    assert!(DngVersionNumber::from([1, 1, 0, 0]) < DngVersionNumber::from([1, 1, 0, 1]));
   }
 
   #[cfg(feature = "rawdb")]
