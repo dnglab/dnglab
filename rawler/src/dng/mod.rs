@@ -8,15 +8,15 @@ pub mod writer;
 
 use serde::{Deserialize, Serialize};
 
-use crate::imgop::Rect;
+use crate::{formats::tiff::Value, imgop::Rect};
 
-pub const DNG_VERSION_V1_0: [u8; 4] = [1, 0, 0, 0];
-pub const DNG_VERSION_V1_1: [u8; 4] = [1, 1, 0, 0];
-pub const DNG_VERSION_V1_2: [u8; 4] = [1, 2, 0, 0];
-pub const DNG_VERSION_V1_3: [u8; 4] = [1, 3, 0, 0];
-pub const DNG_VERSION_V1_4: [u8; 4] = [1, 4, 0, 0];
-pub const DNG_VERSION_V1_5: [u8; 4] = [1, 5, 0, 0];
-pub const DNG_VERSION_V1_6: [u8; 4] = [1, 6, 0, 0];
+pub const DNG_VERSION_V1_0: DngVersionNumber = DngVersionNumber([1, 0, 0, 0]);
+pub const DNG_VERSION_V1_1: DngVersionNumber = DngVersionNumber([1, 1, 0, 0]);
+pub const DNG_VERSION_V1_2: DngVersionNumber = DngVersionNumber([1, 2, 0, 0]);
+pub const DNG_VERSION_V1_3: DngVersionNumber = DngVersionNumber([1, 3, 0, 0]);
+pub const DNG_VERSION_V1_4: DngVersionNumber = DngVersionNumber([1, 4, 0, 0]);
+pub const DNG_VERSION_V1_5: DngVersionNumber = DngVersionNumber([1, 5, 0, 0]);
+pub const DNG_VERSION_V1_6: DngVersionNumber = DngVersionNumber([1, 6, 0, 0]);
 
 /// DNG specification version
 #[derive(Clone, Copy, Debug, Eq, PartialEq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
@@ -39,7 +39,7 @@ pub enum DngVersion {
 
 impl DngVersion {
   /// Get the version as DNGVersion/DNGBackwardVersion tag value
-  pub fn as_dng_value(&self) -> [u8; 4] {
+  pub fn as_dng_value(&self) -> DngVersionNumber {
     match self {
       Self::V1_0 => DNG_VERSION_V1_0,
       Self::V1_1 => DNG_VERSION_V1_1,
@@ -49,6 +49,52 @@ impl DngVersion {
       Self::V1_5 => DNG_VERSION_V1_5,
       Self::V1_6 => DNG_VERSION_V1_6,
     }
+  }
+}
+
+/// Full 4-byte DNG version number as stored in DNGVersion/DNGBackwardVersion
+#[derive(Clone, Copy, Debug, Eq, PartialEq, PartialOrd, Ord, Hash)]
+pub struct DngVersionNumber(pub [u8; 4]);
+
+impl DngVersionNumber {
+  pub const fn major(&self) -> u8 {
+    self.0[0]
+  }
+
+  pub const fn minor(&self) -> u8 {
+    self.0[1]
+  }
+
+  pub const fn revision(&self) -> u8 {
+    self.0[2]
+  }
+
+  pub const fn build(&self) -> u8 {
+    self.0[3]
+  }
+}
+
+impl From<[u8; 4]> for DngVersionNumber {
+  fn from(value: [u8; 4]) -> Self {
+    Self(value)
+  }
+}
+
+impl From<DngVersion> for DngVersionNumber {
+  fn from(value: DngVersion) -> Self {
+    value.as_dng_value()
+  }
+}
+
+impl From<DngVersionNumber> for Value {
+  fn from(value: DngVersionNumber) -> Self {
+    value.0.into()
+  }
+}
+
+impl std::fmt::Display for DngVersionNumber {
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    write!(f, "{}.{}.{}.{}", self.major(), self.minor(), self.revision(), self.build())
   }
 }
 
