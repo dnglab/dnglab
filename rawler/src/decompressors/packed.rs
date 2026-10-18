@@ -1348,3 +1348,107 @@ pub(crate) fn decompress_generic_lsb(buf: &[u8], width: usize, height: usize, bi
   }
   Ok(pix)
 }
+
+/// Decompressor for packed unsigned integer data with 17 to 32 bits per sample.
+///
+/// Samples are returned as `f32` holding the raw integer values (not
+/// normalized), as `u16` storage is not sufficient. 32-bit samples use the
+/// IFD byte order, all other depths are packed MSB-first. Each row starts
+/// on a byte boundary.
+pub struct PackedIntDecompressor {
+  bps: u32,
+  endian: Endian,
+}
+
+impl PackedIntDecompressor {
+  /// Creates a new `PackedIntDecompressor` for the given bit depth and byte order.
+  pub fn new(bps: u32, endian: Endian) -> Self {
+    Self { bps, endian }
+  }
+}
+
+impl<'a> Decompressor<'a, f32> for PackedIntDecompressor {
+  fn decompress(&self, src: &[u8], skip_rows: usize, lines: impl LineIteratorMut<'a, f32>, line_width: usize) -> std::result::Result<(), String> {
+    if !(17..=32).contains(&self.bps) {
+      return Err(format!("PackedIntDecompressor: unsupported bit depth: {} bps", self.bps));
+    }
+    let row_bytes = (line_width * self.bps as usize).div_ceil(u8::BITS as usize);
+    let need = (skip_rows + lines.len()) * row_bytes;
+    if src.len() < need {
+      return Err(format!("PackedIntDecompressor: buffer too short ({} < {})", src.len(), need));
+    }
+    for (line, row) in lines.zip(src.chunks_exact(row_bytes).skip(skip_rows)) {
+      match (self.bps, self.endian) {
+        (32, Endian::Big) => line
+          .iter_mut()
+          .zip(row.as_chunks::<4>().0)
+          .for_each(|(p, bytes)| *p = u32::from_be_bytes(*bytes) as f32),
+        (32, Endian::Little) => line
+          .iter_mut()
+          .zip(row.as_chunks::<4>().0)
+          .for_each(|(p, bytes)| *p = u32::from_le_bytes(*bytes) as f32),
+        (bps, _) => line
+          .iter_mut()
+          .enumerate()
+          .for_each(|(i, p)| *p = get_msb_bits(row, i * bps as usize, bps) as f32),
+      }
+    }
+    Ok(())
+  }
+
+  fn can_skip_rows(&self) -> bool {
+    true
+  }
+}
+
+/// Extract `bits` (max. 32) MSB-first packed bits starting at `bit_pos` from `row`.
+fn get_msb_bits(row: &[u8], bit_pos: usize, bits: u32) -> u32 {
+  let start = bit_pos / 8;
+  let shift = (bit_pos % 8) as u32;
+  let mut buf = [0_u8; 8];
+  let n = (row.len() - start).min(buf.len());
+  buf[..n].copy_from_slice(&row[start..start + n]);
+  ((u64::from_be_bytes(buf) << shift) >> (u64::BITS - bits)) as u32
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  fn decode_int(src: &[u8], bps: u32, endian: Endian, width: usize, height: usize) -> std::result::Result<Vec<f32>, String> {
+    let mut out = vec![0.0_f32; width * height];
+    PackedIntDecompressor::new(bps, endian).decompress(src, 0, out.chunks_exact_mut(width), width)?;
+    Ok(out)
+  }
+
+  #[test]
+  fn packed_int_32bit() -> std::result::Result<(), String> {
+    let values = [0_u32, 1, 70_000, 1 << 24];
+    let be: Vec<u8> = values.iter().flat_map(|v| v.to_be_bytes()).collect();
+    let le: Vec<u8> = values.iter().flat_map(|v| v.to_le_bytes()).collect();
+    let expected: Vec<f32> = values.iter().map(|v| *v as f32).collect();
+    assert_eq!(decode_int(&be, 32, Endian::Big, 2, 2)?, expected);
+    assert_eq!(decode_int(&le, 32, Endian::Little, 2, 2)?, expected);
+    Ok(())
+  }
+
+  #[test]
+  fn packed_int_20bit_with_row_padding() -> std::result::Result<(), String> {
+    // 3 samples of 20 bits = 60 bits, padded to 8 bytes per row
+    let rows = [[0x12345_u32, 0xFFFFF, 0x00001], [0x80000, 0x0ABCD, 0x7FFFF]];
+    let mut src = Vec::new();
+    for row in rows {
+      let packed = row.iter().fold(0_u64, |acc, v| (acc << 20) | *v as u64) << 4;
+      src.extend_from_slice(&packed.to_be_bytes());
+    }
+    let expected: Vec<f32> = rows.iter().flatten().map(|v| *v as f32).collect();
+    assert_eq!(decode_int(&src, 20, Endian::Little, 3, 2)?, expected);
+    Ok(())
+  }
+
+  #[test]
+  fn packed_int_rejects_short_buffer() {
+    assert!(decode_int(&[0; 15], 32, Endian::Big, 2, 2).is_err());
+    assert!(decode_int(&[0; 16], 16, Endian::Big, 2, 2).is_err());
+  }
+}

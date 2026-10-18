@@ -681,6 +681,54 @@ mod tests {
   }
 
   #[test]
+  fn integer_32bit_deflate() -> TestResult {
+    use crate::formats::tiff::CompressionMethod;
+    use libflate::zlib::Encoder;
+    use std::io::Write;
+
+    // Values above u16 range, but exact in f32 (< 2^24)
+    let samples: Vec<u32> = (0..16 * 16_u32).map(|i| i * 50_000 % (1 << 24)).collect();
+    // Horizontal difference (predictor 2) per row, native byte order
+    let mut predicted = Vec::new();
+    for row in samples.chunks_exact(16) {
+      for col in 0..16 {
+        let v = if col > 0 { row[col].wrapping_sub(row[col - 1]) } else { row[col] };
+        predicted.extend_from_slice(&v.to_ne_bytes());
+      }
+    }
+    let mut encoder = Encoder::new(Vec::new())?;
+    encoder.write_all(&predicted)?;
+    let compressed = encoder.finish().into_result()?;
+
+    let rawimage = synthetic_rawimage();
+    let mut buf = Cursor::new(Vec::new());
+    let mut dng = DngWriter::new(&mut buf, DNG_VERSION_V1_4)?;
+    dng.load_base_tags(&rawimage)?;
+    let offset = dng.dng.write_data(&compressed)?;
+    let mut frame = dng.subframe(0);
+    frame.raw_image(&rawimage, CropMode::None, DngCompression::Uncompressed, DngPhotometricConversion::Original, 1)?;
+    // Replace the 16 bit image data by the 32 bit deflate compressed data
+    let ifd = frame.ifd_mut();
+    ifd.add_tag(TiffCommonTag::BitsPerSample, 32_u16);
+    ifd.add_tag(TiffCommonTag::Compression, CompressionMethod::Deflate);
+    ifd.add_tag(TiffCommonTag::Predictor, 2_u16);
+    ifd.add_tag(TiffCommonTag::StripOffsets, offset);
+    ifd.add_tag(TiffCommonTag::StripByteCounts, compressed.len() as u32);
+    ifd.add_tag(TiffCommonTag::RowsPerStrip, 16_u32);
+    ifd.remove_tag(TiffCommonTag::WhiteLevel);
+    frame.finalize()?;
+    dng.close()?;
+
+    let decoded = decode_dng(&buf.into_inner())?;
+    assert_eq!(decoded.whitelevel.0, vec![u32::MAX]);
+    match decoded.data {
+      RawImageData::Float(data) => assert_eq!(data, samples.iter().map(|v| *v as f32).collect::<Vec<_>>()),
+      RawImageData::Integer(_) => panic!("32 bit integer data must be decoded as float"),
+    }
+    Ok(())
+  }
+
+  #[test]
   fn integer_whitelevel_defaults_to_bits() -> TestResult {
     let data = write_dng(&synthetic_rawimage(), |ifd| ifd.remove_tag(TiffCommonTag::WhiteLevel))?;
     assert_eq!(decode_dng(&data)?.whitelevel.0, vec![u16::MAX as u32]);
