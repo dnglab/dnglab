@@ -1,6 +1,6 @@
 # Print an optspec for argparse to handle cmd's options that are independent of any subcommand.
 function __fish_dnglab_global_optspecs
-    string join \n d/loglevel= v h/help V/version
+    string join \n d/loglevel= v profile-path= h/help V/version
 end
 
 function __fish_dnglab_needs_command
@@ -29,8 +29,9 @@ warn\t''
 info\t''
 debug\t''
 trace\t''"
+complete -c dnglab -n "__fish_dnglab_needs_command" -l profile-path -d 'Directory with profile TOML files' -r -F
 complete -c dnglab -n "__fish_dnglab_needs_command" -s v -d 'Print status for every file'
-complete -c dnglab -n "__fish_dnglab_needs_command" -s h -l help -d 'Print help'
+complete -c dnglab -n "__fish_dnglab_needs_command" -s h -l help -d 'Print help (see more with \'--help\')'
 complete -c dnglab -n "__fish_dnglab_needs_command" -s V -l version -d 'Print version'
 complete -c dnglab -n "__fish_dnglab_needs_command" -f -a "analyze" -d 'Analyze raw image'
 complete -c dnglab -n "__fish_dnglab_needs_command" -f -a "process-raw"
@@ -47,6 +48,7 @@ warn\t''
 info\t''
 debug\t''
 trace\t''"
+complete -c dnglab -n "__fish_dnglab_using_subcommand analyze" -l profile-path -d 'Directory with profile TOML files' -r -F
 complete -c dnglab -n "__fish_dnglab_using_subcommand analyze" -l raw-pixel
 complete -c dnglab -n "__fish_dnglab_using_subcommand analyze" -l full-pixel -d 'Write uncompressed full pixel data to STDOUT'
 complete -c dnglab -n "__fish_dnglab_using_subcommand analyze" -l preview-pixel -d 'Write uncompressed preview pixel data to STDOUT'
@@ -62,7 +64,7 @@ complete -c dnglab -n "__fish_dnglab_using_subcommand analyze" -l summary -d 'Wr
 complete -c dnglab -n "__fish_dnglab_using_subcommand analyze" -l json -d 'Format metadata as JSON'
 complete -c dnglab -n "__fish_dnglab_using_subcommand analyze" -l yaml -d 'Format metadata as YAML'
 complete -c dnglab -n "__fish_dnglab_using_subcommand analyze" -s v -d 'Print status for every file'
-complete -c dnglab -n "__fish_dnglab_using_subcommand analyze" -s h -l help -d 'Print help'
+complete -c dnglab -n "__fish_dnglab_using_subcommand analyze" -s h -l help -d 'Print help (see more with \'--help\')'
 complete -c dnglab -n "__fish_dnglab_using_subcommand process-raw" -l artist -d 'Set the artist tag' -r
 complete -c dnglab -n "__fish_dnglab_using_subcommand process-raw" -l keep-mtime -d 'Keep mtime, read from EXIF with fallback to original file mtime' -r -f -a "true\t''
 false\t''"
@@ -75,10 +77,12 @@ warn\t''
 info\t''
 debug\t''
 trace\t''"
+complete -c dnglab -n "__fish_dnglab_using_subcommand process-raw" -l profile-path -d 'Directory with profile TOML files' -r -F
 complete -c dnglab -n "__fish_dnglab_using_subcommand process-raw" -s f -l override -d 'Override existing files'
 complete -c dnglab -n "__fish_dnglab_using_subcommand process-raw" -s r -l recursive -d 'Process input directory recursive'
 complete -c dnglab -n "__fish_dnglab_using_subcommand process-raw" -s v -d 'Print status for every file'
-complete -c dnglab -n "__fish_dnglab_using_subcommand process-raw" -s h -l help -d 'Print help'
+complete -c dnglab -n "__fish_dnglab_using_subcommand process-raw" -s h -l help -d 'Print help (see more with \'--help\')'
+complete -c dnglab -n "__fish_dnglab_using_subcommand convert" -s p -l profile -d 'Convert profile name' -r
 complete -c dnglab -n "__fish_dnglab_using_subcommand convert" -s c -l compression -d 'Compression for raw image' -r -f -a "lossless\t''
 uncompressed\t''"
 complete -c dnglab -n "__fish_dnglab_using_subcommand convert" -l ljpeg92-predictor -d 'LJPEG-92 predictor' -r
@@ -86,9 +90,21 @@ complete -c dnglab -n "__fish_dnglab_using_subcommand convert" -l dng-preview -d
 false\t''"
 complete -c dnglab -n "__fish_dnglab_using_subcommand convert" -l dng-thumbnail -d 'DNG include thumbnail image' -r -f -a "true\t''
 false\t''"
+complete -c dnglab -n "__fish_dnglab_using_subcommand convert" -l dng-force-preview -d 'Generate DNG preview image from raw data' -r -f -a "true\t''
+false\t''"
+complete -c dnglab -n "__fish_dnglab_using_subcommand convert" -l dng-force-thumbnail -d 'Generate DNG thumbnail image from raw data' -r -f -a "true\t''
+false\t''"
+complete -c dnglab -n "__fish_dnglab_using_subcommand convert" -l max-dng-backward-version -d 'Maximum DNG backward version' -r -f -a "1.0\t''
+1.1\t''
+1.2\t''
+1.3\t''
+1.4\t''
+1.5\t''
+1.6\t''"
 complete -c dnglab -n "__fish_dnglab_using_subcommand convert" -l embed-raw -d 'Embed the raw file into DNG' -r -f -a "true\t''
 false\t''"
 complete -c dnglab -n "__fish_dnglab_using_subcommand convert" -l artist -d 'Set the artist tag' -r
+complete -c dnglab -n "__fish_dnglab_using_subcommand convert" -l copyright -d 'Set the copyright tag' -r
 complete -c dnglab -n "__fish_dnglab_using_subcommand convert" -l keep-mtime -d 'Keep mtime, read from EXIF with fallback to original file mtime' -r -f -a "true\t''
 false\t''"
 complete -c dnglab -n "__fish_dnglab_using_subcommand convert" -l image-index -d 'Select a specific image index (or \'all\') if file is a image container' -r
@@ -101,10 +117,12 @@ warn\t''
 info\t''
 debug\t''
 trace\t''"
+complete -c dnglab -n "__fish_dnglab_using_subcommand convert" -l profile-path -d 'Directory with profile TOML files' -r -F
 complete -c dnglab -n "__fish_dnglab_using_subcommand convert" -s f -l override -d 'Override existing files'
 complete -c dnglab -n "__fish_dnglab_using_subcommand convert" -s r -l recursive -d 'Process input directory recursive'
 complete -c dnglab -n "__fish_dnglab_using_subcommand convert" -s v -d 'Print status for every file'
-complete -c dnglab -n "__fish_dnglab_using_subcommand convert" -s h -l help -d 'Print help'
+complete -c dnglab -n "__fish_dnglab_using_subcommand convert" -s h -l help -d 'Print help (see more with \'--help\')'
+complete -c dnglab -n "__fish_dnglab_using_subcommand ftpserver" -s p -l profile -d 'Convert profile name' -r
 complete -c dnglab -n "__fish_dnglab_using_subcommand ftpserver" -s c -l compression -d 'Compression for raw image' -r -f -a "lossless\t''
 uncompressed\t''"
 complete -c dnglab -n "__fish_dnglab_using_subcommand ftpserver" -l ljpeg92-predictor -d 'LJPEG-92 predictor' -r
@@ -112,9 +130,21 @@ complete -c dnglab -n "__fish_dnglab_using_subcommand ftpserver" -l dng-preview 
 false\t''"
 complete -c dnglab -n "__fish_dnglab_using_subcommand ftpserver" -l dng-thumbnail -d 'DNG include thumbnail image' -r -f -a "true\t''
 false\t''"
+complete -c dnglab -n "__fish_dnglab_using_subcommand ftpserver" -l dng-force-preview -d 'Generate DNG preview image from raw data' -r -f -a "true\t''
+false\t''"
+complete -c dnglab -n "__fish_dnglab_using_subcommand ftpserver" -l dng-force-thumbnail -d 'Generate DNG thumbnail image from raw data' -r -f -a "true\t''
+false\t''"
+complete -c dnglab -n "__fish_dnglab_using_subcommand ftpserver" -l max-dng-backward-version -d 'Maximum DNG backward version' -r -f -a "1.0\t''
+1.1\t''
+1.2\t''
+1.3\t''
+1.4\t''
+1.5\t''
+1.6\t''"
 complete -c dnglab -n "__fish_dnglab_using_subcommand ftpserver" -l embed-raw -d 'Embed the raw file into DNG' -r -f -a "true\t''
 false\t''"
 complete -c dnglab -n "__fish_dnglab_using_subcommand ftpserver" -l artist -d 'Set the artist tag' -r
+complete -c dnglab -n "__fish_dnglab_using_subcommand ftpserver" -l copyright -d 'Set the copyright tag' -r
 complete -c dnglab -n "__fish_dnglab_using_subcommand ftpserver" -l keep-mtime -d 'Keep mtime, read from EXIF with fallback to original file mtime' -r -f -a "true\t''
 false\t''"
 complete -c dnglab -n "__fish_dnglab_using_subcommand ftpserver" -l image-index -d 'Select a specific image index (or \'all\') if file is a image container' -r
@@ -130,25 +160,28 @@ warn\t''
 info\t''
 debug\t''
 trace\t''"
+complete -c dnglab -n "__fish_dnglab_using_subcommand ftpserver" -l profile-path -d 'Directory with profile TOML files' -r -F
 complete -c dnglab -n "__fish_dnglab_using_subcommand ftpserver" -s f -l override -d 'Override existing files'
 complete -c dnglab -n "__fish_dnglab_using_subcommand ftpserver" -s v -d 'Print status for every file'
-complete -c dnglab -n "__fish_dnglab_using_subcommand ftpserver" -s h -l help -d 'Print help'
+complete -c dnglab -n "__fish_dnglab_using_subcommand ftpserver" -s h -l help -d 'Print help (see more with \'--help\')'
 complete -c dnglab -n "__fish_dnglab_using_subcommand cameras" -s d -l loglevel -d 'Log level' -r -f -a "error\t''
 warn\t''
 info\t''
 debug\t''
 trace\t''"
+complete -c dnglab -n "__fish_dnglab_using_subcommand cameras" -l profile-path -d 'Directory with profile TOML files' -r -F
 complete -c dnglab -n "__fish_dnglab_using_subcommand cameras" -l md -d 'Markdown format output'
 complete -c dnglab -n "__fish_dnglab_using_subcommand cameras" -s v -d 'Print status for every file'
-complete -c dnglab -n "__fish_dnglab_using_subcommand cameras" -s h -l help -d 'Print help'
+complete -c dnglab -n "__fish_dnglab_using_subcommand cameras" -s h -l help -d 'Print help (see more with \'--help\')'
 complete -c dnglab -n "__fish_dnglab_using_subcommand lenses" -s d -l loglevel -d 'Log level' -r -f -a "error\t''
 warn\t''
 info\t''
 debug\t''
 trace\t''"
+complete -c dnglab -n "__fish_dnglab_using_subcommand lenses" -l profile-path -d 'Directory with profile TOML files' -r -F
 complete -c dnglab -n "__fish_dnglab_using_subcommand lenses" -l md -d 'Markdown format output'
 complete -c dnglab -n "__fish_dnglab_using_subcommand lenses" -s v -d 'Print status for every file'
-complete -c dnglab -n "__fish_dnglab_using_subcommand lenses" -s h -l help -d 'Print help'
+complete -c dnglab -n "__fish_dnglab_using_subcommand lenses" -s h -l help -d 'Print help (see more with \'--help\')'
 complete -c dnglab -n "__fish_dnglab_using_subcommand makedng" -s o -l output -d 'Output DNG file path' -r -F
 complete -c dnglab -n "__fish_dnglab_using_subcommand makedng" -s i -l input -d 'Input files (raw, preview, exif, ...), index for map starts with 0' -r -F
 complete -c dnglab -n "__fish_dnglab_using_subcommand makedng" -l map -d 'Input usage map' -r
@@ -234,6 +267,7 @@ warn\t''
 info\t''
 debug\t''
 trace\t''"
+complete -c dnglab -n "__fish_dnglab_using_subcommand makedng" -l profile-path -d 'Directory with profile TOML files' -r -F
 complete -c dnglab -n "__fish_dnglab_using_subcommand makedng" -s f -l override -d 'Override existing files'
 complete -c dnglab -n "__fish_dnglab_using_subcommand makedng" -s v -d 'Print status for every file'
 complete -c dnglab -n "__fish_dnglab_using_subcommand makedng" -s h -l help -d 'Print help (see more with \'--help\')'
@@ -242,18 +276,20 @@ warn\t''
 info\t''
 debug\t''
 trace\t''"
+complete -c dnglab -n "__fish_dnglab_using_subcommand gui" -l profile-path -d 'Directory with profile TOML files' -r -F
 complete -c dnglab -n "__fish_dnglab_using_subcommand gui" -s v -d 'Print status for every file'
-complete -c dnglab -n "__fish_dnglab_using_subcommand gui" -s h -l help -d 'Print help'
+complete -c dnglab -n "__fish_dnglab_using_subcommand gui" -s h -l help -d 'Print help (see more with \'--help\')'
 complete -c dnglab -n "__fish_dnglab_using_subcommand extract" -s d -l loglevel -d 'Log level' -r -f -a "error\t''
 warn\t''
 info\t''
 debug\t''
 trace\t''"
+complete -c dnglab -n "__fish_dnglab_using_subcommand extract" -l profile-path -d 'Directory with profile TOML files' -r -F
 complete -c dnglab -n "__fish_dnglab_using_subcommand extract" -l skipchecks -d 'Skip integrity checks'
 complete -c dnglab -n "__fish_dnglab_using_subcommand extract" -s r -l recursive -d 'Process input directory recursive'
 complete -c dnglab -n "__fish_dnglab_using_subcommand extract" -s f -l override -d 'Override existing files'
 complete -c dnglab -n "__fish_dnglab_using_subcommand extract" -s v -d 'Print status for every file'
-complete -c dnglab -n "__fish_dnglab_using_subcommand extract" -s h -l help -d 'Print help'
+complete -c dnglab -n "__fish_dnglab_using_subcommand extract" -s h -l help -d 'Print help (see more with \'--help\')'
 complete -c dnglab -n "__fish_dnglab_using_subcommand help; and not __fish_seen_subcommand_from analyze process-raw convert ftpserver cameras lenses makedng gui extract help" -f -a "analyze" -d 'Analyze raw image'
 complete -c dnglab -n "__fish_dnglab_using_subcommand help; and not __fish_seen_subcommand_from analyze process-raw convert ftpserver cameras lenses makedng gui extract help" -f -a "process-raw"
 complete -c dnglab -n "__fish_dnglab_using_subcommand help; and not __fish_seen_subcommand_from analyze process-raw convert ftpserver cameras lenses makedng gui extract help" -f -a "convert" -d 'Convert raw image(s) into dng format'

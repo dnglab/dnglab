@@ -9,11 +9,11 @@ use clap::{
   command, value_parser,
 };
 use log::debug;
-use rawler::dng::{CropMode, DngCompression};
+use rawler::dng::{CropMode, DngCompression, DngVersion};
 
 use crate::makedng::{
-  CalibrationIlluminantArgParser, ColorMatrixArgParser, DngColorimetricReference, DngVersion, InputSourceUsageMap, LinearizationTableArgParser,
-  WhiteBalanceInput, WhitePointArgParser,
+  CalibrationIlluminantArgParser, ColorMatrixArgParser, DngColorimetricReference, InputSourceUsageMap, LinearizationTableArgParser, WhiteBalanceInput,
+  WhitePointArgParser,
 };
 
 #[derive(Clone, Debug, Copy, Eq, PartialEq, PartialOrd, Ord)]
@@ -47,6 +47,16 @@ pub fn create_app() -> Command {
   let convert_base = Command::new("dnglab")
     .about("Convert raw image(s) into dng format")
     .arg(
+      arg!(profile: -p --"profile" <name> "Convert profile name")
+        .required(false)
+        .value_parser(NonEmptyStringValueParser::new())
+        .long_help(
+          "Convert profile to use for conversion. Built-in profiles are 'builtin_compat' (DNG 1.4.0), 'builtin_latest' (DNG 1.6.0) and 'builtin_archive'.
+If not given, no profile is used and the command line switches with their defaults apply.
+Command line switches override the values of the profile.",
+        ),
+    )
+    .arg(
       arg!(compression: -c --"compression" <compression> "Compression for raw image")
         .required(false)
         .value_parser(value_parser!(DngCompression))
@@ -73,6 +83,26 @@ pub fn create_app() -> Command {
         .default_missing_value("true"),
     )
     .arg(
+      arg!(force_preview: --"dng-force-preview" <force_preview> "Generate DNG preview image from raw data")
+        .value_parser(ValueParser::bool())
+        .required(false)
+        .default_value("false")
+        .default_missing_value("true"),
+    )
+    .arg(
+      arg!(force_thumbnail: --"dng-force-thumbnail" <force_thumbnail> "Generate DNG thumbnail image from raw data")
+        .value_parser(ValueParser::bool())
+        .required(false)
+        .default_value("false")
+        .default_missing_value("true"),
+    )
+    .arg(
+      arg!(max_dng_backward_version: --"max-dng-backward-version" <version> "Maximum DNG backward version")
+        .required(false)
+        .value_parser(value_parser!(DngVersion))
+        .default_value("1.4"),
+    )
+    .arg(
       arg!(embedded: --"embed-raw" <embedded> "Embed the raw file into DNG")
         .value_parser(ValueParser::bool())
         .required(false)
@@ -81,6 +111,11 @@ pub fn create_app() -> Command {
     )
     .arg(
       arg!(--"artist" <artist> "Set the artist tag")
+        .required(false)
+        .value_parser(NonEmptyStringValueParser::new()),
+    )
+    .arg(
+      arg!(--"copyright" <copyright> "Set the copyright tag")
         .required(false)
         .value_parser(NonEmptyStringValueParser::new()),
     )
@@ -116,6 +151,17 @@ pub fn create_app() -> Command {
         .default_value("warn"),
     )
     .arg(arg!(verbose: -v "Print status for every file").global(true).action(ArgAction::SetTrue))
+    .arg(
+      arg!(profile_path: --"profile-path" <dir> "Directory with profile TOML files")
+        .global(true)
+        .required(false)
+        .value_parser(clap::value_parser!(PathBuf))
+        .long_help(
+          "Directory with profile TOML files. All *.toml files in this directory are loaded.
+If not given, profiles are loaded from the 'rawler/profiles' and 'dnglab/profiles' directories
+in the user configuration directory (e.g. ~/.config on Linux, ~/Library/Application Support on macOS, %APPDATA% on Windows).",
+        ),
+    )
     .subcommand(
       Command::new("analyze")
         .about("Analyze raw image")

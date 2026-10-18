@@ -2,8 +2,11 @@
 // Copyright 2023 Daniel Vogelbacher <daniel@chaospixel.com>
 
 pub mod convert;
+pub mod convertprofile;
 pub mod original;
 pub mod writer;
+
+use serde::{Deserialize, Serialize};
 
 use crate::imgop::Rect;
 
@@ -14,6 +17,59 @@ pub const DNG_VERSION_V1_3: [u8; 4] = [1, 3, 0, 0];
 pub const DNG_VERSION_V1_4: [u8; 4] = [1, 4, 0, 0];
 pub const DNG_VERSION_V1_5: [u8; 4] = [1, 5, 0, 0];
 pub const DNG_VERSION_V1_6: [u8; 4] = [1, 6, 0, 0];
+
+/// DNG specification version
+#[derive(Clone, Copy, Debug, Eq, PartialEq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
+pub enum DngVersion {
+  #[serde(rename = "1.0")]
+  V1_0,
+  #[serde(rename = "1.1")]
+  V1_1,
+  #[serde(rename = "1.2")]
+  V1_2,
+  #[serde(rename = "1.3")]
+  V1_3,
+  #[serde(rename = "1.4")]
+  V1_4,
+  #[serde(rename = "1.5")]
+  V1_5,
+  #[serde(rename = "1.6")]
+  V1_6,
+}
+
+impl DngVersion {
+  /// Get the version as DNGVersion/DNGBackwardVersion tag value
+  pub fn as_dng_value(&self) -> [u8; 4] {
+    match self {
+      Self::V1_0 => DNG_VERSION_V1_0,
+      Self::V1_1 => DNG_VERSION_V1_1,
+      Self::V1_2 => DNG_VERSION_V1_2,
+      Self::V1_3 => DNG_VERSION_V1_3,
+      Self::V1_4 => DNG_VERSION_V1_4,
+      Self::V1_5 => DNG_VERSION_V1_5,
+      Self::V1_6 => DNG_VERSION_V1_6,
+    }
+  }
+}
+
+#[cfg(feature = "clap")]
+impl clap::ValueEnum for DngVersion {
+  fn value_variants<'a>() -> &'a [Self] {
+    &[Self::V1_0, Self::V1_1, Self::V1_2, Self::V1_3, Self::V1_4, Self::V1_5, Self::V1_6]
+  }
+
+  fn to_possible_value(&self) -> Option<clap::builder::PossibleValue> {
+    Some(match self {
+      Self::V1_0 => clap::builder::PossibleValue::new("1.0"),
+      Self::V1_1 => clap::builder::PossibleValue::new("1.1"),
+      Self::V1_2 => clap::builder::PossibleValue::new("1.2"),
+      Self::V1_3 => clap::builder::PossibleValue::new("1.3"),
+      Self::V1_4 => clap::builder::PossibleValue::new("1.4"),
+      Self::V1_5 => clap::builder::PossibleValue::new("1.5"),
+      Self::V1_6 => clap::builder::PossibleValue::new("1.6"),
+    })
+  }
+}
 
 /// Convert internal crop rectangle to DNG active area
 ///
@@ -52,7 +108,7 @@ impl clap::ValueEnum for DngCompression {
   }
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum DngPhotometricConversion {
   Original,
   Linear,
@@ -64,7 +120,8 @@ impl Default for DngPhotometricConversion {
   }
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
 pub enum CropMode {
   Best,
   ActiveArea,
@@ -103,7 +160,8 @@ impl FromStr for CropMode {
 
 /// Quality of preview images
 const PREVIEW_JPEG_QUALITY: f32 = 0.75;
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
 /// Compression mode for DNG
 pub enum DngCompression {
   /// No compression is applied

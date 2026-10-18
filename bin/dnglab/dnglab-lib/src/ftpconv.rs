@@ -14,6 +14,7 @@ use std::sync::Arc;
 
 use tokio::runtime::Handle;
 
+use crate::convertprofile::{FrameSelection, resolve_convert_profile};
 use crate::jobs::raw2dng::copy_mtime_from_rawsource;
 use crate::{PKG_NAME, PKG_VERSION};
 use rawler::dng::convert::{ConvertParams, convert_raw_source};
@@ -64,26 +65,15 @@ impl FtpCallback for FtpState {
 pub async fn ftpserver(options: &ArgMatches) -> crate::Result<()> {
   let mut config = Config::new("foo").ok_or_else(|| anyhow::anyhow!("failed to create FTP config"))?;
 
-  let params = ConvertParams {
-    predictor: *options
-      .get_one("predictor")
-      .ok_or_else(|| crate::AppError::InvalidCmdSwitch("predictor has no default".into()))?,
-    embedded: options.get_flag("embedded"),
-    photometric_conversion: Default::default(),
-    crop: *options
-      .get_one("crop")
-      .ok_or_else(|| crate::AppError::InvalidCmdSwitch("crop has no default".into()))?,
-    preview: options.get_flag("preview"),
-    thumbnail: options.get_flag("thumbnail"),
-    compression: *options
-      .get_one("compression")
-      .ok_or_else(|| crate::AppError::InvalidCmdSwitch("compression has no default".into()))?,
-    artist: options.get_one("artist").cloned(),
-    software: format!("{} {}", PKG_NAME, PKG_VERSION),
-    index: 0,
-    apply_scaling: false,
-    keep_mtime: options.get_flag("keep_mtime"),
+  let (profile, frames) = resolve_convert_profile(options)?;
+  let index = match frames {
+    FrameSelection::Single(index) => index,
+    FrameSelection::All => {
+      log::warn!("Splitting multi-frame files is not supported by ftpserver, converting first frame only");
+      0
+    }
   };
+  let params = profile.to_convert_params(format!("{} {}", PKG_NAME, PKG_VERSION)).with_index(index);
   let keep_orig = options.get_flag("keep_orig");
 
   let state = FtpState { params, keep_orig };

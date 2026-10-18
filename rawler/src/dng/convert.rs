@@ -12,7 +12,7 @@ use image::DynamicImage;
 use crate::{
   RawImage, RawImageData,
   decoders::{Decoder, RawDecodeParams, RawPhotometricInterpretation, WellKnownIFD, WhiteLevel, validate_image_index},
-  dng::{DNG_VERSION_V1_4, PREVIEW_JPEG_QUALITY, original::OriginalCompressed, writer::DngWriter},
+  dng::{PREVIEW_JPEG_QUALITY, original::OriginalCompressed, writer::DngWriter},
   formats::tiff::Entry,
   imgop::{
     develop::RawDevelop,
@@ -24,7 +24,7 @@ use crate::{
   tags::{DngTag, ExifTag, TiffCommonTag},
 };
 
-use super::{CropMode, DngCompression, DngPhotometricConversion};
+use super::{CropMode, DngCompression, DngPhotometricConversion, DngVersion};
 
 /// Parameters for DNG conversion
 #[derive(Clone, Debug)]
@@ -37,10 +37,19 @@ pub struct ConvertParams {
   pub predictor: u8,
   pub preview: bool,
   pub thumbnail: bool,
+  /// Develop the preview from raw data instead of using an embedded preview
+  pub force_preview: bool,
+  /// Develop the thumbnail from raw data instead of using an embedded preview
+  pub force_thumbnail: bool,
   pub artist: Option<String>,
+  pub copyright: Option<String>,
   pub software: String,
   pub index: usize,
   pub keep_mtime: bool,
+  /// Value for DNGVersion tag
+  pub dng_version: DngVersion,
+  /// Highest allowed value for DNGBackwardVersion tag
+  pub max_dng_backward_version: DngVersion,
 }
 
 /// Information surfaced from a completed conversion.
@@ -65,10 +74,15 @@ impl Default for ConvertParams {
       predictor: 1,
       preview: true,
       thumbnail: true,
+      force_preview: false,
+      force_thumbnail: false,
       artist: None,
+      copyright: None,
       software: "DNGLab".into(),
       index: 0,
       keep_mtime: false,
+      dng_version: DngVersion::V1_6,
+      max_dng_backward_version: DngVersion::V1_4,
     }
   }
 }
@@ -122,9 +136,27 @@ impl ConvertParams {
     self
   }
 
+  /// Set whether the preview image is developed from raw data.
+  pub fn with_force_preview(mut self, force_preview: bool) -> Self {
+    self.force_preview = force_preview;
+    self
+  }
+
+  /// Set whether the thumbnail image is developed from raw data.
+  pub fn with_force_thumbnail(mut self, force_thumbnail: bool) -> Self {
+    self.force_thumbnail = force_thumbnail;
+    self
+  }
+
   /// Set the artist metadata field.
   pub fn with_artist(mut self, artist: Option<String>) -> Self {
     self.artist = artist;
+    self
+  }
+
+  /// Set the copyright metadata field.
+  pub fn with_copyright(mut self, copyright: Option<String>) -> Self {
+    self.copyright = copyright;
     self
   }
 
@@ -143,6 +175,18 @@ impl ConvertParams {
   /// Set whether the source modification time is preserved.
   pub fn with_keep_mtime(mut self, keep_mtime: bool) -> Self {
     self.keep_mtime = keep_mtime;
+    self
+  }
+
+  /// Set the DNGVersion.
+  pub fn with_dng_version(mut self, dng_version: DngVersion) -> Self {
+    self.dng_version = dng_version;
+    self
+  }
+
+  /// Set the highest allowed DNGBackwardVersion.
+  pub fn with_max_dng_backward_version(mut self, max_dng_backward_version: DngVersion) -> Self {
+    self.max_dng_backward_version = max_dng_backward_version;
     self
   }
 }
@@ -233,7 +277,17 @@ where
     rawimage.apply_scaling()?;
   }
 
-  let mut dng = DngWriter::new(dng, DNG_VERSION_V1_4)?;
+  let backward_version = if params.max_dng_backward_version > params.dng_version {
+    log::warn!(
+      "DNG backward version {:?} is higher than DNG version {:?}, clamping",
+      params.max_dng_backward_version,
+      params.dng_version
+    );
+    params.dng_version
+  } else {
+    params.max_dng_backward_version
+  };
+  let mut dng = DngWriter::new_with_version(dng, params.dng_version.as_dng_value(), backward_version.as_dng_value())?;
 
   // Write RAW image for subframe type 0
   // If no thumbnail should be written to root IFD, we need to put the raw image into
@@ -248,18 +302,31 @@ where
 
   // Write preview and thumbnail if requested
   if params.preview || params.thumbnail {
-    match generate_preview(rawfile, decoder.as_ref(), &rawimage, &raw_params) {
-      Ok(image) => {
-        if params.preview {
-          let mut preview = dng.subframe(1);
-          preview.preview(&image, PREVIEW_JPEG_QUALITY)?;
-          preview.finalize()?;
-        }
-        if params.thumbnail {
-          dng.thumbnail(&image)?;
-        }
+    // Each source image is generated at most once, and only if required.
+    let need_embedded = (params.preview && !params.force_preview) || (params.thumbnail && !params.force_thumbnail);
+    let need_developed = (params.preview && params.force_preview) || (params.thumbnail && params.force_thumbnail);
+    let load = |force_develop: bool| match generate_preview(rawfile, decoder.as_ref(), &rawimage, &raw_params, force_develop) {
+      Ok(image) => Some(image),
+      Err(err) => {
+        log::warn!("Failed to get review image, continue anyway: {:?}", err);
+        None
       }
-      Err(err) => log::warn!("Failed to get review image, continue anyway: {:?}", err),
+    };
+    let embedded = if need_embedded { load(false) } else { None };
+    let developed = if need_developed { load(true) } else { None };
+    let select = |force: bool| if force { developed.as_ref() } else { embedded.as_ref() };
+
+    if params.preview {
+      if let Some(image) = select(params.force_preview) {
+        let mut preview = dng.subframe(1);
+        preview.preview(image, PREVIEW_JPEG_QUALITY)?;
+        preview.finalize()?;
+      }
+    }
+    if params.thumbnail {
+      if let Some(image) = select(params.force_thumbnail) {
+        dng.thumbnail(image)?;
+      }
     }
   }
   // Write metadata
@@ -314,6 +381,9 @@ where
   if let Some(artist) = &params.artist {
     dng.root_ifd_mut().add_tag(TiffCommonTag::Artist, artist);
   }
+  if let Some(copyright) = &params.copyright {
+    dng.root_ifd_mut().add_tag(ExifTag::Copyright, copyright);
+  }
   dng.root_ifd_mut().add_tag(TiffCommonTag::Software, &params.software);
 
   dng
@@ -333,11 +403,25 @@ where
   Ok(ConvertInfo { last_modified })
 }
 
-fn generate_preview(rawfile: &RawSource, decoder: &dyn Decoder, rawimage: &RawImage, params: &RawDecodeParams) -> crate::Result<DynamicImage> {
-  match decoder.preview_image(rawfile, params)? {
+/// Get a preview image from the decoder, or develop it from raw data.
+///
+/// If `force_develop` is set, embedded previews are ignored.
+fn generate_preview(
+  rawfile: &RawSource,
+  decoder: &dyn Decoder,
+  rawimage: &RawImage,
+  params: &RawDecodeParams,
+  force_develop: bool,
+) -> crate::Result<DynamicImage> {
+  let embedded = if force_develop { None } else { decoder.preview_image(rawfile, params)? };
+  match embedded {
     Some(image) => Ok(image),
     None => {
-      log::warn!("Preview image not found, try to generate sRGB from RAW");
+      if force_develop {
+        log::debug!("Generate sRGB preview from RAW");
+      } else {
+        log::warn!("Preview image not found, try to generate sRGB from RAW");
+      }
       let dev = RawDevelop::default();
       let image = dev.develop_intermediate(rawimage)?;
       /*

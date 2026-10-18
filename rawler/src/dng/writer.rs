@@ -368,12 +368,22 @@ where
   B: Write + Seek,
 {
   pub fn new(buf: B, backward_version: [u8; 4]) -> Result<Self> {
+    Self::new_with_version(buf, DNG_VERSION_V1_6, backward_version)
+  }
+
+  /// Create a new DNG writer with explicit DNGVersion.
+  ///
+  /// `max_backward_version` is the highest DNGBackwardVersion the output is
+  /// allowed to declare.
+  pub fn new_with_version(buf: B, version: [u8; 4], max_backward_version: [u8; 4]) -> Result<Self> {
     let dng = TiffWriter::new(buf)?;
 
     let mut root_ifd = DirectoryWriter::new();
     let mut exif_ifd = DirectoryWriter::new();
-    root_ifd.add_tag(DngTag::DNGBackwardVersion, backward_version);
-    root_ifd.add_tag(DngTag::DNGVersion, DNG_VERSION_V1_6);
+    // TODO: track the DNG features used while writing, derive the real
+    // backward version from them and fail/warn if it exceeds `max_backward_version`.
+    root_ifd.add_tag(DngTag::DNGBackwardVersion, max_backward_version);
+    root_ifd.add_tag(DngTag::DNGVersion, version);
     // Add EXIF version 0220
     exif_ifd.add_tag_undefined(ExifTag::ExifVersion, vec![48, 50, 50, 48]);
 

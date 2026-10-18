@@ -10,17 +10,19 @@ use std::path::PathBuf;
 
 use std::time::Instant;
 
+use crate::convertprofile::{FrameSelection, resolve_convert_profile};
 use crate::filemap::{FileMap, MapMode};
 use crate::jobs::Job;
 use crate::jobs::raw2dng::{JobResult, Raw2DngJob};
 use crate::{AppError, PKG_VERSION, Result};
-use rawler::dng::convert::ConvertParams;
+use rawler::dng::convertprofile::ConvertProfile;
 
 /// Entry point for Clap sub command `convert`
 pub async fn convert(options: &ArgMatches) -> crate::Result<()> {
   let now = Instant::now();
 
   let recursive = options.get_flag("recursive");
+  let (profile, frames) = resolve_convert_profile(options)?;
 
   let proc = {
     let in_path: &PathBuf = options
@@ -42,7 +44,7 @@ pub async fn convert(options: &ArgMatches) -> crate::Result<()> {
   match proc {
     // We have only one input file, so output must be a file, too.
     MapMode::File(sd) => {
-      jobs.append(&mut generate_job(&sd, options, &mut claimed)?);
+      jobs.append(&mut generate_job(&sd, options, &profile, frames, &mut claimed)?);
     }
     // Input is directory, to process all files
     MapMode::Dir(sd) => {
@@ -54,7 +56,7 @@ pub async fn convert(options: &ArgMatches) -> crate::Result<()> {
         }
       })?;
       for entry in list {
-        jobs.append(&mut generate_job(&entry, options, &mut claimed)?);
+        jobs.append(&mut generate_job(&entry, options, &profile, frames, &mut claimed)?);
       }
     }
   }
@@ -101,16 +103,16 @@ pub async fn convert(options: &ArgMatches) -> crate::Result<()> {
 }
 
 /// Convert given raw file to dng file
-fn generate_job(entry: &FileMap, options: &ArgMatches, claimed: &mut HashSet<PathBuf>) -> Result<Vec<Raw2DngJob>> {
-  let (do_batch, index) = match options.get_one::<String>("index") {
-    Some(index) => {
-      if index.to_lowercase().eq("all") {
-        (true, 0)
-      } else {
-        (false, index.parse::<usize>().unwrap_or(0))
-      }
-    }
-    None => (false, 0),
+fn generate_job(
+  entry: &FileMap,
+  options: &ArgMatches,
+  profile: &ConvertProfile,
+  frames: FrameSelection,
+  claimed: &mut HashSet<PathBuf>,
+) -> Result<Vec<Raw2DngJob>> {
+  let (do_batch, index) = match frames {
+    FrameSelection::All => (true, 0),
+    FrameSelection::Single(index) => (false, index),
   };
 
   let batch_count = if do_batch { rawler::raw_image_count_file(&entry.src)? } else { 1 };
@@ -201,26 +203,9 @@ fn generate_job(entry: &FileMap, options: &ArgMatches, claimed: &mut HashSet<Pat
 
   let mut jobs = Vec::with_capacity(batch_count);
   for (i, out) in final_outputs.into_iter().enumerate() {
-    let params = ConvertParams {
-      predictor: *options
-        .get_one("predictor")
-        .ok_or_else(|| AppError::InvalidCmdSwitch("predictor has no default".into()))?,
-      embedded: options.get_flag("embedded"),
-      photometric_conversion: Default::default(),
-      crop: *options
-        .get_one("crop")
-        .ok_or_else(|| AppError::InvalidCmdSwitch("crop has no default".into()))?,
-      preview: options.get_flag("preview"),
-      thumbnail: options.get_flag("thumbnail"),
-      compression: *options
-        .get_one("compression")
-        .ok_or_else(|| AppError::InvalidCmdSwitch("compression has no default".into()))?,
-      artist: options.get_one("artist").cloned(),
-      software: format!("{} {}", "DNGLab", PKG_VERSION),
-      index: if do_batch { i } else { index },
-      apply_scaling: false,
-      keep_mtime: options.get_flag("keep_mtime"),
-    };
+    let params = profile
+      .to_convert_params(format!("{} {}", "DNGLab", PKG_VERSION))
+      .with_index(if do_batch { i } else { index });
     jobs.push(Raw2DngJob {
       input: input.clone(),
       output: out,

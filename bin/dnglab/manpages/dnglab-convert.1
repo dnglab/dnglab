@@ -4,10 +4,15 @@
 .SH NAME
 dnglab\-convert \- Convert raw image(s) into dng format
 .SH SYNOPSIS
-\fBdnglab\-convert\fR [\fB\-c\fR|\fB\-\-compression\fR] [\fB\-\-ljpeg92\-predictor\fR] [\fB\-\-dng\-preview\fR] [\fB\-\-dng\-thumbnail\fR] [\fB\-\-embed\-raw\fR] [\fB\-\-artist\fR] [\fB\-\-keep\-mtime\fR] [\fB\-\-image\-index\fR] [\fB\-\-crop\fR] [\fB\-f\fR|\fB\-\-override\fR] [\fB\-r\fR|\fB\-\-recursive\fR] [\fB\-j\fR|\fB\-\-jobs\fR] [\fB\-h\fR|\fB\-\-help\fR] <\fIINPUT\fR> <\fIOUTPUT\fR> 
+\fBdnglab\-convert\fR [\fB\-p\fR|\fB\-\-profile\fR] [\fB\-c\fR|\fB\-\-compression\fR] [\fB\-\-ljpeg92\-predictor\fR] [\fB\-\-dng\-preview\fR] [\fB\-\-dng\-thumbnail\fR] [\fB\-\-dng\-force\-preview\fR] [\fB\-\-dng\-force\-thumbnail\fR] [\fB\-\-max\-dng\-backward\-version\fR] [\fB\-\-embed\-raw\fR] [\fB\-\-artist\fR] [\fB\-\-copyright\fR] [\fB\-\-keep\-mtime\fR] [\fB\-\-image\-index\fR] [\fB\-\-crop\fR] [\fB\-f\fR|\fB\-\-override\fR] [\fB\-r\fR|\fB\-\-recursive\fR] [\fB\-j\fR|\fB\-\-jobs\fR] [\fB\-h\fR|\fB\-\-help\fR] <\fIINPUT\fR> <\fIOUTPUT\fR> 
 .SH DESCRIPTION
 Convert raw image(s) into dng format
 .SH OPTIONS
+.TP
+\fB\-p\fR, \fB\-\-profile\fR \fI<name>\fR
+Convert profile to use for conversion. Built\-in profiles are \*(Aqbuiltin_compat\*(Aq (DNG 1.4.0), \*(Aqbuiltin_latest\*(Aq (DNG 1.6.0) and \*(Aqbuiltin_archive\*(Aq.
+If not given, no profile is used and the command line switches with their defaults apply.
+Command line switches override the values of the profile.
 .TP
 \fB\-c\fR, \fB\-\-compression\fR \fI<compression>\fR [default: lossless]
 Compression for raw image
@@ -51,6 +56,55 @@ true
 false
 .RE
 .TP
+\fB\-\-dng\-force\-preview\fR \fI<force_preview>\fR [default: false]
+Generate DNG preview image from raw data
+.br
+
+.br
+\fIPossible values:\fR
+.RS 14
+.IP \(bu 2
+true
+.IP \(bu 2
+false
+.RE
+.TP
+\fB\-\-dng\-force\-thumbnail\fR \fI<force_thumbnail>\fR [default: false]
+Generate DNG thumbnail image from raw data
+.br
+
+.br
+\fIPossible values:\fR
+.RS 14
+.IP \(bu 2
+true
+.IP \(bu 2
+false
+.RE
+.TP
+\fB\-\-max\-dng\-backward\-version\fR \fI<version>\fR [default: 1.4]
+Maximum DNG backward version
+.br
+
+.br
+\fIPossible values:\fR
+.RS 14
+.IP \(bu 2
+1.0
+.IP \(bu 2
+1.1
+.IP \(bu 2
+1.2
+.IP \(bu 2
+1.3
+.IP \(bu 2
+1.4
+.IP \(bu 2
+1.5
+.IP \(bu 2
+1.6
+.RE
+.TP
 \fB\-\-embed\-raw\fR \fI<embedded>\fR [default: true]
 Embed the raw file into DNG
 .br
@@ -66,6 +120,9 @@ false
 .TP
 \fB\-\-artist\fR \fI<artist>\fR
 Set the artist tag
+.TP
+\fB\-\-copyright\fR \fI<copyright>\fR
+Set the copyright tag
 .TP
 \fB\-\-keep\-mtime\fR \fI<keepmtime>\fR [default: false]
 Keep mtime, read from EXIF with fallback to original file mtime
@@ -108,7 +165,7 @@ Process input directory recursive
 Number of files to convert in parallel (0 = auto)
 .TP
 \fB\-h\fR, \fB\-\-help\fR
-Print help
+Print help (see a summary with \*(Aq\-h\*(Aq)
 .TP
 <\fIINPUT\fR>
 Input file or directory

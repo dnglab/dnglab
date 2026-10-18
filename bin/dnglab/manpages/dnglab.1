@@ -4,7 +4,7 @@
 .SH NAME
 dnglab \- DNGLab \- A camera raw utility and DNG converter
 .SH SYNOPSIS
-\fBdnglab\fR [\fB\-d\fR|\fB\-\-loglevel\fR] [\fB\-v \fR] [\fB\-h\fR|\fB\-\-help\fR] [\fB\-V\fR|\fB\-\-version\fR] <\fIsubcommands\fR>
+\fBdnglab\fR [\fB\-d\fR|\fB\-\-loglevel\fR] [\fB\-v \fR] [\fB\-\-profile\-path\fR] [\fB\-h\fR|\fB\-\-help\fR] [\fB\-V\fR|\fB\-\-version\fR] <\fIsubcommands\fR>
 .SH DESCRIPTION
 DNGLab \- A camera raw utility and DNG converter
 .SH OPTIONS
@@ -31,8 +31,13 @@ trace
 \fB\-v\fR
 Print status for every file
 .TP
+\fB\-\-profile\-path\fR \fI<dir>\fR
+Directory with profile TOML files. All *.toml files in this directory are loaded.
+If not given, profiles are loaded from the \*(Aqrawler/profiles\*(Aq and \*(Aqdnglab/profiles\*(Aq directories
+in the user configuration directory (e.g. ~/.config on Linux, ~/Library/Application Support on macOS, %APPDATA% on Windows).
+.TP
 \fB\-h\fR, \fB\-\-help\fR
-Print help
+Print help (see a summary with \*(Aq\-h\*(Aq)
 .TP
 \fB\-V\fR, \fB\-\-version\fR
 Print version
