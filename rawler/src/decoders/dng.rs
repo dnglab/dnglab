@@ -688,9 +688,9 @@ mod tests {
     // DNG 1.0: the decoder expects the old 16-bit deviation. The compliant
     // stream from our encoder is therefore not decoded to the same image.
     let (data, pixels) = lossless_dng_with_32768_diff(DNG_VERSION_V1_0)?;
-    match decode_dng(&data) {
-      Ok(image) => assert_ne!(integer_data(image), Some(pixels)),
-      Err(_) => {} // Decoder may also fail to decode the stream
+    // The decoder may also fail to decode the stream.
+    if let Ok(image) = decode_dng(&data) {
+      assert_ne!(integer_data(image), Some(pixels));
     }
     Ok(())
   }
@@ -747,7 +747,7 @@ mod tests {
     let samples: Vec<u32> = (0..16 * 16_u32).map(|i| i * 50_000 % (1 << 24)).collect();
     // Horizontal difference (predictor 2) per row, native byte order
     let mut predicted = Vec::new();
-    for row in samples.chunks_exact(16) {
+    for row in samples.as_chunks::<16>().0 {
       for col in 0..16 {
         let v = if col > 0 { row[col].wrapping_sub(row[col - 1]) } else { row[col] };
         predicted.extend_from_slice(&v.to_ne_bytes());
@@ -784,7 +784,7 @@ mod tests {
     // Floating point predictor 3: byte planes per row (big endian), then byte delta
     let samples = float_samples();
     let mut predicted = Vec::new();
-    for row in samples.chunks_exact(16) {
+    for row in samples.as_chunks::<16>().0 {
       let mut bytes = vec![0_u8; 16 * 4];
       for (col, v) in row.iter().enumerate() {
         for (b, byte) in v.to_be_bytes().into_iter().enumerate() {
