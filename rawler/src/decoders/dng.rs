@@ -488,6 +488,7 @@ mod tests {
     CropMode, DNG_VERSION_V1_0, DNG_VERSION_V1_1, DNG_VERSION_V1_4, DNG_VERSION_V1_6, DngCompression, DngPhotometricConversion, DngVersionNumber,
   };
   use crate::formats::tiff::Rational;
+  use crate::formats::tiff::SampleFormat;
   use crate::formats::tiff::{DirectoryWriter, GenericTiffReader};
   use crate::pixarray::PixU16;
   use crate::rawimage::{BlackLevel, CFAConfig, RawImageData, RawPhotometricInterpretation, WhiteLevel};
@@ -680,12 +681,54 @@ mod tests {
     Ok(())
   }
 
-  #[test]
-  fn integer_32bit_deflate() -> TestResult {
-    use crate::formats::tiff::CompressionMethod;
+  /// Zlib compress `data`
+  fn zlib(data: &[u8]) -> TestResult<Vec<u8>> {
     use libflate::zlib::Encoder;
     use std::io::Write;
 
+    let mut encoder = Encoder::new(Vec::new())?;
+    encoder.write_all(data)?;
+    Ok(encoder.finish().into_result()?)
+  }
+
+  /// Write a 16x16 DNG whose raw image is a single Deflate compressed strip
+  fn write_deflate_dng(compressed: &[u8], bits: u16, sample_format: SampleFormat, predictor: Option<u16>) -> TestResult<Vec<u8>> {
+    use crate::formats::tiff::CompressionMethod;
+
+    let rawimage = synthetic_rawimage();
+    let mut buf = Cursor::new(Vec::new());
+    let mut dng = DngWriter::new(&mut buf, DNG_VERSION_V1_4)?;
+    dng.load_base_tags(&rawimage)?;
+    let offset = dng.dng.write_data(compressed)?;
+    let mut frame = dng.subframe(0);
+    frame.raw_image(&rawimage, CropMode::None, DngCompression::Uncompressed, DngPhotometricConversion::Original, 1)?;
+    // Replace the 16 bit image data by the deflate compressed data
+    let ifd = frame.ifd_mut();
+    ifd.add_tag(TiffCommonTag::BitsPerSample, bits);
+    ifd.add_tag(TiffCommonTag::SampleFormat, sample_format);
+    ifd.add_tag(TiffCommonTag::Compression, CompressionMethod::Deflate);
+    match predictor {
+      Some(predictor) => ifd.add_tag(TiffCommonTag::Predictor, predictor),
+      None => ifd.remove_tag(TiffCommonTag::Predictor),
+    }
+    ifd.add_tag(TiffCommonTag::StripOffsets, offset);
+    ifd.add_tag(TiffCommonTag::StripByteCounts, compressed.len() as u32);
+    ifd.add_tag(TiffCommonTag::RowsPerStrip, 16_u32);
+    ifd.remove_tag(TiffCommonTag::WhiteLevel);
+    frame.finalize()?;
+    dng.close()?;
+    Ok(buf.into_inner())
+  }
+
+  fn float_data(image: RawImage) -> Vec<f32> {
+    match image.data {
+      RawImageData::Float(data) => data,
+      RawImageData::Integer(_) => panic!("expected float data"),
+    }
+  }
+
+  #[test]
+  fn integer_32bit_deflate() -> TestResult {
     // Values above u16 range, but exact in f32 (< 2^24)
     let samples: Vec<u32> = (0..16 * 16_u32).map(|i| i * 50_000 % (1 << 24)).collect();
     // Horizontal difference (predictor 2) per row, native byte order
@@ -696,35 +739,51 @@ mod tests {
         predicted.extend_from_slice(&v.to_ne_bytes());
       }
     }
-    let mut encoder = Encoder::new(Vec::new())?;
-    encoder.write_all(&predicted)?;
-    let compressed = encoder.finish().into_result()?;
+    let data = write_deflate_dng(&zlib(&predicted)?, 32, SampleFormat::Uint, Some(2))?;
 
-    let rawimage = synthetic_rawimage();
-    let mut buf = Cursor::new(Vec::new());
-    let mut dng = DngWriter::new(&mut buf, DNG_VERSION_V1_4)?;
-    dng.load_base_tags(&rawimage)?;
-    let offset = dng.dng.write_data(&compressed)?;
-    let mut frame = dng.subframe(0);
-    frame.raw_image(&rawimage, CropMode::None, DngCompression::Uncompressed, DngPhotometricConversion::Original, 1)?;
-    // Replace the 16 bit image data by the 32 bit deflate compressed data
-    let ifd = frame.ifd_mut();
-    ifd.add_tag(TiffCommonTag::BitsPerSample, 32_u16);
-    ifd.add_tag(TiffCommonTag::Compression, CompressionMethod::Deflate);
-    ifd.add_tag(TiffCommonTag::Predictor, 2_u16);
-    ifd.add_tag(TiffCommonTag::StripOffsets, offset);
-    ifd.add_tag(TiffCommonTag::StripByteCounts, compressed.len() as u32);
-    ifd.add_tag(TiffCommonTag::RowsPerStrip, 16_u32);
-    ifd.remove_tag(TiffCommonTag::WhiteLevel);
-    frame.finalize()?;
-    dng.close()?;
-
-    let decoded = decode_dng(&buf.into_inner())?;
+    let decoded = decode_dng(&data)?;
     assert_eq!(decoded.whitelevel.0, vec![u32::MAX]);
-    match decoded.data {
-      RawImageData::Float(data) => assert_eq!(data, samples.iter().map(|v| *v as f32).collect::<Vec<_>>()),
-      RawImageData::Integer(_) => panic!("32 bit integer data must be decoded as float"),
+    assert_eq!(float_data(decoded), samples.iter().map(|v| *v as f32).collect::<Vec<_>>());
+    Ok(())
+  }
+
+  /// Float samples for 16x16 image
+  fn float_samples() -> Vec<f32> {
+    (0..16 * 16).map(|i| i as f32 / 256.0).collect()
+  }
+
+  #[test]
+  fn float_deflate_strips_without_predictor() -> TestResult {
+    // No Predictor tag, samples in native byte order
+    let samples = float_samples();
+    let raw: Vec<u8> = samples.iter().flat_map(|v| v.to_ne_bytes()).collect();
+    let data = write_deflate_dng(&zlib(&raw)?, 32, SampleFormat::IEEEFP, None)?;
+
+    let decoded = decode_dng(&data)?;
+    assert_eq!(decoded.whitelevel.0, vec![1]);
+    assert_eq!(float_data(decoded), samples);
+    Ok(())
+  }
+
+  #[test]
+  fn float_deflate_strips_fp_predictor() -> TestResult {
+    // Floating point predictor 3: byte planes per row (big endian), then byte delta
+    let samples = float_samples();
+    let mut predicted = Vec::new();
+    for row in samples.chunks_exact(16) {
+      let mut bytes = vec![0_u8; 16 * 4];
+      for (col, v) in row.iter().enumerate() {
+        for (b, byte) in v.to_be_bytes().into_iter().enumerate() {
+          bytes[b * 16 + col] = byte;
+        }
+      }
+      for i in (1..bytes.len()).rev() {
+        bytes[i] = bytes[i].wrapping_sub(bytes[i - 1]);
+      }
+      predicted.extend_from_slice(&bytes);
     }
+    let data = write_deflate_dng(&zlib(&predicted)?, 32, SampleFormat::IEEEFP, Some(3))?;
+    assert_eq!(float_data(decode_dng(&data)?), samples);
     Ok(())
   }
 

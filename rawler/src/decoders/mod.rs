@@ -740,9 +740,13 @@ pub fn plain_image_from_ifd_ext(ifd: &IFD, rawsource: &RawSource, ljpeg_dng_bug:
       let mut pixbuf = match (compression, ifd.data_mode()?) {
         (CompressionMethod::None, DataMode::Strips) => decode_strips::<f32>(rawsource, ifd, PackedDecompressor::new(bits, endian), dummy)?,
         (CompressionMethod::None, DataMode::Tiles) => decode_tiles::<f32>(rawsource, ifd, PackedDecompressor::new(bits, endian), dummy)?,
-        (CompressionMethod::Deflate, DataMode::Tiles) => {
-          let predictor = fetch_tiff_tag!(ifd, TiffCommonTag::Predictor).force_u16(0);
-          decode_tiles::<f32>(rawsource, ifd, DeflateDecompressor::new(cpp, predictor, bits), dummy)?
+        (CompressionMethod::Deflate, data_mode) => {
+          let predictor = ifd.get_entry(TiffCommonTag::Predictor).map(|tag| tag.force_u16(0)).unwrap_or(1);
+          let dc = DeflateDecompressor::new(cpp, predictor, bits, endian).map_err(RawlerError::DecoderFailed)?;
+          match data_mode {
+            DataMode::Strips => decode_strips::<f32>(rawsource, ifd, dc, dummy)?,
+            DataMode::Tiles => decode_tiles::<f32>(rawsource, ifd, dc, dummy)?,
+          }
         }
         _ => {
           return Err(RawlerError::DecoderFailed(format!(
