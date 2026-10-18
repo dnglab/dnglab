@@ -217,11 +217,10 @@ impl<'a> DngDecoder<'a> {
           .get_entry(TiffCommonTag::Compression)
           .expect("This IFD must contains this tag")
           .force_u32(0);
-        let subsampled = match (**ifd).get_entry(TiffCommonTag::NewSubFileType) {
-          Some(e) => e.force_u32(0) & 1 != 0,
-          None => false,
-        };
-        !subsampled && (compression == 7 || compression == 8 || compression == 1 || compression == 0x884c || compression == 52546)
+        // The main raw image has NewSubFileType 0. Other values are previews (1),
+        // transparency masks (4), depth maps (8), enhanced images (16) etc.
+        let subfile_type = (**ifd).get_entry(TiffCommonTag::NewSubFileType).map(|e| e.force_u32(0)).unwrap_or(0);
+        subfile_type == 0 && (compression == 7 || compression == 8 || compression == 1 || compression == 0x884c || compression == 52546)
       })
       .collect::<Vec<&IFD>>();
     if let Some(first) = ifds.first() {
@@ -503,6 +502,26 @@ mod tests {
     rawimage.whitelevel = WhiteLevel::new(vec![1]);
     let data = write_dng(&rawimage, |ifd| ifd.remove_tag(TiffCommonTag::WhiteLevel))?;
     assert_eq!(decode_dng(&data)?.whitelevel.0, vec![1]);
+    Ok(())
+  }
+
+  #[test]
+  fn raw_ifd_requires_subfile_type_zero() -> TestResult {
+    let rawimage = synthetic_rawimage();
+    let mut buf = Cursor::new(Vec::new());
+    let mut dng = DngWriter::new(&mut buf, DNG_VERSION_V1_4)?;
+    dng.load_base_tags(&rawimage)?;
+    // Transparency mask (NewSubFileType 4) with a different size, written before the raw image
+    let mut mask = dng.subframe(4);
+    mask.rgb_image_u8(&[0; 8 * 8 * 3], 8, 8, DngCompression::Uncompressed, 1)?;
+    mask.finalize()?;
+    let mut frame = dng.subframe(0);
+    frame.raw_image(&rawimage, CropMode::None, DngCompression::Uncompressed, DngPhotometricConversion::Original, 1)?;
+    frame.finalize()?;
+    dng.close()?;
+
+    let decoded = decode_dng(&buf.into_inner())?;
+    assert_eq!((decoded.width, decoded.height), (16, 16));
     Ok(())
   }
 
