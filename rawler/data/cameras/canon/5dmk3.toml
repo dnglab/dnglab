@@ -14,9 +14,9 @@ D65 = [0.6722, -0.0635, -0.0963, -0.4287, 1.246, 0.2028, -0.0908, 0.2162, 0.5668
 [[cameras.modes]]
 mode = "sRaw1"
 hints = ["invert_sraw_wb", "sraw_new"]
-whitepoint = 55128
+whitepoint = 46700
 
 [[cameras.modes]]
 mode = "sRaw2"
 hints = ["invert_sraw_wb", "sraw_new"]
-whitepoint = 55128
+whitepoint = 47000

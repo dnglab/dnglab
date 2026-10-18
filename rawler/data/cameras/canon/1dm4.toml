@@ -12,7 +12,7 @@ D65 = [0.6014, -0.022, -0.0795, -0.4109, 1.2014, 0.2361, -0.0561, 0.1824, 0.5787
 
 [[cameras.modes]]
 mode = "sRaw1"
-whitepoint = 65535
+whitepoint = 52400
 
 [[cameras.modes]]
 mode = "sRaw2"
