@@ -12,6 +12,7 @@ use thiserror::Error;
 pub mod analyze;
 pub mod app;
 pub mod cameras;
+pub mod config;
 pub mod convert;
 pub mod convertprofile;
 pub mod extract;
@@ -70,6 +71,12 @@ impl From<RawlerError> for AppError {
       RawlerError::DecoderFailed(_) => Self::DecoderFailed(value.to_string()),
       RawlerError::Unsupported { .. } => Self::UnsupportedFile(value.to_string()),
     }
+  }
+}
+
+impl From<config::ConfigError> for AppError {
+  fn from(value: config::ConfigError) -> Self {
+    anyhow::Error::new(value).into()
   }
 }
 

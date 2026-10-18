@@ -11,7 +11,8 @@ Convert raw image(s) into dng format
 .TP
 \fB\-p\fR, \fB\-\-profile\fR \fI<name>\fR
 Convert profile to use for conversion. Built\-in profiles are \*(Aqbuiltin_compat\*(Aq (DNG 1.4.0), \*(Aqbuiltin_latest\*(Aq (DNG 1.6.0) and \*(Aqbuiltin_archive\*(Aq.
-If not given, no profile is used and the command line switches with their defaults apply.
+If not given, \*(Aqconvert.default_profile\*(Aq from the dnglab configuration file is used.
+Otherwise no profile is used and the command line switches with their defaults apply.
 Command line switches override the values of the profile.
 .TP
 \fB\-c\fR, \fB\-\-compression\fR \fI<compression>\fR [default: lossless]

@@ -83,7 +83,7 @@ _dnglab() {
 
     case "${cmd}" in
         dnglab)
-            opts="-d -v -h -V --loglevel --profile-path --help --version analyze process-raw convert ftpserver cameras lenses makedng gui extract help"
+            opts="-d -v -h -V --loglevel --profile-path --config --help --version analyze process-raw convert ftpserver cameras lenses makedng gui extract help"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 1 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
@@ -101,6 +101,10 @@ _dnglab() {
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
+                --config)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
                 *)
                     COMPREPLY=()
                     ;;
@@ -109,7 +113,7 @@ _dnglab() {
             return 0
             ;;
         dnglab__subcmd__analyze)
-            opts="-d -v -h --raw-pixel --full-pixel --preview-pixel --thumbnail-pixel --raw-checksum --full-checksum --preview-checksum --thumbnail-checksum --srgb --meta --structure --summary --json --yaml --loglevel --profile-path --help"
+            opts="-d -v -h --raw-pixel --full-pixel --preview-pixel --thumbnail-pixel --raw-checksum --full-checksum --preview-checksum --thumbnail-checksum --srgb --meta --structure --summary --json --yaml --loglevel --profile-path --config --help"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
@@ -124,6 +128,10 @@ _dnglab() {
                     return 0
                     ;;
                 --profile-path)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
+                --config)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
@@ -135,7 +143,7 @@ _dnglab() {
             return 0
             ;;
         dnglab__subcmd__cameras)
-            opts="-d -v -h --md --loglevel --profile-path --help"
+            opts="-d -v -h --md --loglevel --profile-path --config --help"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
@@ -153,6 +161,10 @@ _dnglab() {
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
+                --config)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
                 *)
                     COMPREPLY=()
                     ;;
@@ -161,7 +173,7 @@ _dnglab() {
             return 0
             ;;
         dnglab__subcmd__convert)
-            opts="-p -c -f -r -j -d -v -h --profile --compression --ljpeg92-predictor --dng-preview --dng-thumbnail --dng-force-preview --dng-force-thumbnail --max-dng-backward-version --embed-raw --artist --copyright --keep-mtime --image-index --crop --override --recursive --jobs --loglevel --profile-path --help"
+            opts="-p -c -f -r -j -d -v -h --profile --compression --ljpeg92-predictor --dng-preview --dng-thumbnail --dng-force-preview --dng-force-thumbnail --max-dng-backward-version --embed-raw --artist --copyright --keep-mtime --image-index --crop --override --recursive --jobs --loglevel --profile-path --config --help"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
@@ -251,6 +263,10 @@ _dnglab() {
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
+                --config)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
                 *)
                     COMPREPLY=()
                     ;;
@@ -259,7 +275,7 @@ _dnglab() {
             return 0
             ;;
         dnglab__subcmd__extract)
-            opts="-r -f -d -v -h --skipchecks --recursive --override --loglevel --profile-path --help"
+            opts="-r -f -d -v -h --skipchecks --recursive --override --loglevel --profile-path --config --help"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
@@ -277,6 +293,10 @@ _dnglab() {
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
+                --config)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
                 *)
                     COMPREPLY=()
                     ;;
@@ -285,7 +305,7 @@ _dnglab() {
             return 0
             ;;
         dnglab__subcmd__ftpserver)
-            opts="-p -c -f -d -v -h --profile --compression --ljpeg92-predictor --dng-preview --dng-thumbnail --dng-force-preview --dng-force-thumbnail --max-dng-backward-version --embed-raw --artist --copyright --keep-mtime --image-index --crop --override --port --listen --keep-original --loglevel --profile-path --help"
+            opts="-p -c -f -d -v -h --profile --compression --ljpeg92-predictor --dng-preview --dng-thumbnail --dng-force-preview --dng-force-thumbnail --max-dng-backward-version --embed-raw --artist --copyright --keep-mtime --image-index --crop --override --port --listen --keep-original --loglevel --profile-path --config --help"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
@@ -379,6 +399,10 @@ _dnglab() {
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
+                --config)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
                 *)
                     COMPREPLY=()
                     ;;
@@ -387,7 +411,7 @@ _dnglab() {
             return 0
             ;;
         dnglab__subcmd__gui)
-            opts="-d -v -h --loglevel --profile-path --help"
+            opts="-d -v -h --loglevel --profile-path --config --help"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
@@ -402,6 +426,10 @@ _dnglab() {
                     return 0
                     ;;
                 --profile-path)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
+                --config)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
@@ -567,7 +595,7 @@ _dnglab() {
             return 0
             ;;
         dnglab__subcmd__lenses)
-            opts="-d -v -h --md --loglevel --profile-path --help"
+            opts="-d -v -h --md --loglevel --profile-path --config --help"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
@@ -585,6 +613,10 @@ _dnglab() {
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
+                --config)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
                 *)
                     COMPREPLY=()
                     ;;
@@ -593,7 +625,7 @@ _dnglab() {
             return 0
             ;;
         dnglab__subcmd__makedng)
-            opts="-o -i -f -d -v -h --output --input --map --dng-backward-version --colorimetric-reference --unique-camera-model --artist --make --model --matrix1 --matrix2 --matrix3 --illuminant1 --illuminant2 --illuminant3 --linearization --wb --white-xy --override --loglevel --profile-path --help"
+            opts="-o -i -f -d -v -h --output --input --map --dng-backward-version --colorimetric-reference --unique-camera-model --artist --make --model --matrix1 --matrix2 --matrix3 --illuminant1 --illuminant2 --illuminant3 --linearization --wb --white-xy --override --loglevel --profile-path --config --help"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
@@ -691,6 +723,10 @@ _dnglab() {
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
+                --config)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
                 *)
                     COMPREPLY=()
                     ;;
@@ -699,7 +735,7 @@ _dnglab() {
             return 0
             ;;
         dnglab__subcmd__process__subcmd__raw)
-            opts="-f -r -d -v -h --artist --keep-mtime --image-index --crop --override --recursive --loglevel --profile-path --help"
+            opts="-f -r -d -v -h --artist --keep-mtime --image-index --crop --override --recursive --loglevel --profile-path --config --help"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
@@ -730,6 +766,10 @@ _dnglab() {
                     return 0
                     ;;
                 --profile-path)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
+                --config)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;

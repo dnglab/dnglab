@@ -18,6 +18,7 @@ _dnglab() {
 '-d+[Log level]:level:(error warn info debug trace)' \
 '--loglevel=[Log level]:level:(error warn info debug trace)' \
 '--profile-path=[Directory with profile TOML files]:dir:_files' \
+'--config=[dnglab configuration file]:file:_files' \
 '-v[Print status for every file]' \
 '-h[Print help (see more with '\''--help'\'')]' \
 '--help[Print help (see more with '\''--help'\'')]' \
@@ -37,6 +38,7 @@ _arguments "${_arguments_options[@]}" : \
 '-d+[Log level]:level:(error warn info debug trace)' \
 '--loglevel=[Log level]:level:(error warn info debug trace)' \
 '--profile-path=[Directory with profile TOML files]:dir:_files' \
+'--config=[dnglab configuration file]:file:_files' \
 '--raw-pixel[]' \
 '--full-pixel[Write uncompressed full pixel data to STDOUT]' \
 '--preview-pixel[Write uncompressed preview pixel data to STDOUT]' \
@@ -66,6 +68,7 @@ _arguments "${_arguments_options[@]}" : \
 '-d+[Log level]:level:(error warn info debug trace)' \
 '--loglevel=[Log level]:level:(error warn info debug trace)' \
 '--profile-path=[Directory with profile TOML files]:dir:_files' \
+'--config=[dnglab configuration file]:file:_files' \
 '-f[Override existing files]' \
 '--override[Override existing files]' \
 '-r[Process input directory recursive]' \
@@ -100,6 +103,7 @@ _arguments "${_arguments_options[@]}" : \
 '-d+[Log level]:level:(error warn info debug trace)' \
 '--loglevel=[Log level]:level:(error warn info debug trace)' \
 '--profile-path=[Directory with profile TOML files]:dir:_files' \
+'--config=[dnglab configuration file]:file:_files' \
 '-f[Override existing files]' \
 '--override[Override existing files]' \
 '-r[Process input directory recursive]' \
@@ -135,6 +139,7 @@ _arguments "${_arguments_options[@]}" : \
 '-d+[Log level]:level:(error warn info debug trace)' \
 '--loglevel=[Log level]:level:(error warn info debug trace)' \
 '--profile-path=[Directory with profile TOML files]:dir:_files' \
+'--config=[dnglab configuration file]:file:_files' \
 '-f[Override existing files]' \
 '--override[Override existing files]' \
 '-v[Print status for every file]' \
@@ -148,6 +153,7 @@ _arguments "${_arguments_options[@]}" : \
 '-d+[Log level]:level:(error warn info debug trace)' \
 '--loglevel=[Log level]:level:(error warn info debug trace)' \
 '--profile-path=[Directory with profile TOML files]:dir:_files' \
+'--config=[dnglab configuration file]:file:_files' \
 '--md[Markdown format output]' \
 '-v[Print status for every file]' \
 '-h[Print help (see more with '\''--help'\'')]' \
@@ -159,6 +165,7 @@ _arguments "${_arguments_options[@]}" : \
 '-d+[Log level]:level:(error warn info debug trace)' \
 '--loglevel=[Log level]:level:(error warn info debug trace)' \
 '--profile-path=[Directory with profile TOML files]:dir:_files' \
+'--config=[dnglab configuration file]:file:_files' \
 '--md[Markdown format output]' \
 '-v[Print status for every file]' \
 '-h[Print help (see more with '\''--help'\'')]' \
@@ -190,6 +197,7 @@ _arguments "${_arguments_options[@]}" : \
 '-d+[Log level]:level:(error warn info debug trace)' \
 '--loglevel=[Log level]:level:(error warn info debug trace)' \
 '--profile-path=[Directory with profile TOML files]:dir:_files' \
+'--config=[dnglab configuration file]:file:_files' \
 '-f[Override existing files]' \
 '--override[Override existing files]' \
 '-v[Print status for every file]' \
@@ -202,6 +210,7 @@ _arguments "${_arguments_options[@]}" : \
 '-d+[Log level]:level:(error warn info debug trace)' \
 '--loglevel=[Log level]:level:(error warn info debug trace)' \
 '--profile-path=[Directory with profile TOML files]:dir:_files' \
+'--config=[dnglab configuration file]:file:_files' \
 '-v[Print status for every file]' \
 '-h[Print help (see more with '\''--help'\'')]' \
 '--help[Print help (see more with '\''--help'\'')]' \
@@ -212,6 +221,7 @@ _arguments "${_arguments_options[@]}" : \
 '-d+[Log level]:level:(error warn info debug trace)' \
 '--loglevel=[Log level]:level:(error warn info debug trace)' \
 '--profile-path=[Directory with profile TOML files]:dir:_files' \
+'--config=[dnglab configuration file]:file:_files' \
 '--skipchecks[Skip integrity checks]' \
 '-r[Process input directory recursive]' \
 '--recursive[Process input directory recursive]' \

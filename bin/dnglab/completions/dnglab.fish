@@ -1,6 +1,6 @@
 # Print an optspec for argparse to handle cmd's options that are independent of any subcommand.
 function __fish_dnglab_global_optspecs
-    string join \n d/loglevel= v profile-path= h/help V/version
+    string join \n d/loglevel= v profile-path= config= h/help V/version
 end
 
 function __fish_dnglab_needs_command
@@ -30,6 +30,7 @@ info\t''
 debug\t''
 trace\t''"
 complete -c dnglab -n "__fish_dnglab_needs_command" -l profile-path -d 'Directory with profile TOML files' -r -F
+complete -c dnglab -n "__fish_dnglab_needs_command" -l config -d 'dnglab configuration file' -r -F
 complete -c dnglab -n "__fish_dnglab_needs_command" -s v -d 'Print status for every file'
 complete -c dnglab -n "__fish_dnglab_needs_command" -s h -l help -d 'Print help (see more with \'--help\')'
 complete -c dnglab -n "__fish_dnglab_needs_command" -s V -l version -d 'Print version'
@@ -49,6 +50,7 @@ info\t''
 debug\t''
 trace\t''"
 complete -c dnglab -n "__fish_dnglab_using_subcommand analyze" -l profile-path -d 'Directory with profile TOML files' -r -F
+complete -c dnglab -n "__fish_dnglab_using_subcommand analyze" -l config -d 'dnglab configuration file' -r -F
 complete -c dnglab -n "__fish_dnglab_using_subcommand analyze" -l raw-pixel
 complete -c dnglab -n "__fish_dnglab_using_subcommand analyze" -l full-pixel -d 'Write uncompressed full pixel data to STDOUT'
 complete -c dnglab -n "__fish_dnglab_using_subcommand analyze" -l preview-pixel -d 'Write uncompressed preview pixel data to STDOUT'
@@ -78,6 +80,7 @@ info\t''
 debug\t''
 trace\t''"
 complete -c dnglab -n "__fish_dnglab_using_subcommand process-raw" -l profile-path -d 'Directory with profile TOML files' -r -F
+complete -c dnglab -n "__fish_dnglab_using_subcommand process-raw" -l config -d 'dnglab configuration file' -r -F
 complete -c dnglab -n "__fish_dnglab_using_subcommand process-raw" -s f -l override -d 'Override existing files'
 complete -c dnglab -n "__fish_dnglab_using_subcommand process-raw" -s r -l recursive -d 'Process input directory recursive'
 complete -c dnglab -n "__fish_dnglab_using_subcommand process-raw" -s v -d 'Print status for every file'
@@ -118,6 +121,7 @@ info\t''
 debug\t''
 trace\t''"
 complete -c dnglab -n "__fish_dnglab_using_subcommand convert" -l profile-path -d 'Directory with profile TOML files' -r -F
+complete -c dnglab -n "__fish_dnglab_using_subcommand convert" -l config -d 'dnglab configuration file' -r -F
 complete -c dnglab -n "__fish_dnglab_using_subcommand convert" -s f -l override -d 'Override existing files'
 complete -c dnglab -n "__fish_dnglab_using_subcommand convert" -s r -l recursive -d 'Process input directory recursive'
 complete -c dnglab -n "__fish_dnglab_using_subcommand convert" -s v -d 'Print status for every file'
@@ -161,6 +165,7 @@ info\t''
 debug\t''
 trace\t''"
 complete -c dnglab -n "__fish_dnglab_using_subcommand ftpserver" -l profile-path -d 'Directory with profile TOML files' -r -F
+complete -c dnglab -n "__fish_dnglab_using_subcommand ftpserver" -l config -d 'dnglab configuration file' -r -F
 complete -c dnglab -n "__fish_dnglab_using_subcommand ftpserver" -s f -l override -d 'Override existing files'
 complete -c dnglab -n "__fish_dnglab_using_subcommand ftpserver" -s v -d 'Print status for every file'
 complete -c dnglab -n "__fish_dnglab_using_subcommand ftpserver" -s h -l help -d 'Print help (see more with \'--help\')'
@@ -170,6 +175,7 @@ info\t''
 debug\t''
 trace\t''"
 complete -c dnglab -n "__fish_dnglab_using_subcommand cameras" -l profile-path -d 'Directory with profile TOML files' -r -F
+complete -c dnglab -n "__fish_dnglab_using_subcommand cameras" -l config -d 'dnglab configuration file' -r -F
 complete -c dnglab -n "__fish_dnglab_using_subcommand cameras" -l md -d 'Markdown format output'
 complete -c dnglab -n "__fish_dnglab_using_subcommand cameras" -s v -d 'Print status for every file'
 complete -c dnglab -n "__fish_dnglab_using_subcommand cameras" -s h -l help -d 'Print help (see more with \'--help\')'
@@ -179,6 +185,7 @@ info\t''
 debug\t''
 trace\t''"
 complete -c dnglab -n "__fish_dnglab_using_subcommand lenses" -l profile-path -d 'Directory with profile TOML files' -r -F
+complete -c dnglab -n "__fish_dnglab_using_subcommand lenses" -l config -d 'dnglab configuration file' -r -F
 complete -c dnglab -n "__fish_dnglab_using_subcommand lenses" -l md -d 'Markdown format output'
 complete -c dnglab -n "__fish_dnglab_using_subcommand lenses" -s v -d 'Print status for every file'
 complete -c dnglab -n "__fish_dnglab_using_subcommand lenses" -s h -l help -d 'Print help (see more with \'--help\')'
@@ -268,6 +275,7 @@ info\t''
 debug\t''
 trace\t''"
 complete -c dnglab -n "__fish_dnglab_using_subcommand makedng" -l profile-path -d 'Directory with profile TOML files' -r -F
+complete -c dnglab -n "__fish_dnglab_using_subcommand makedng" -l config -d 'dnglab configuration file' -r -F
 complete -c dnglab -n "__fish_dnglab_using_subcommand makedng" -s f -l override -d 'Override existing files'
 complete -c dnglab -n "__fish_dnglab_using_subcommand makedng" -s v -d 'Print status for every file'
 complete -c dnglab -n "__fish_dnglab_using_subcommand makedng" -s h -l help -d 'Print help (see more with \'--help\')'
@@ -277,6 +285,7 @@ info\t''
 debug\t''
 trace\t''"
 complete -c dnglab -n "__fish_dnglab_using_subcommand gui" -l profile-path -d 'Directory with profile TOML files' -r -F
+complete -c dnglab -n "__fish_dnglab_using_subcommand gui" -l config -d 'dnglab configuration file' -r -F
 complete -c dnglab -n "__fish_dnglab_using_subcommand gui" -s v -d 'Print status for every file'
 complete -c dnglab -n "__fish_dnglab_using_subcommand gui" -s h -l help -d 'Print help (see more with \'--help\')'
 complete -c dnglab -n "__fish_dnglab_using_subcommand extract" -s d -l loglevel -d 'Log level' -r -f -a "error\t''
@@ -285,6 +294,7 @@ info\t''
 debug\t''
 trace\t''"
 complete -c dnglab -n "__fish_dnglab_using_subcommand extract" -l profile-path -d 'Directory with profile TOML files' -r -F
+complete -c dnglab -n "__fish_dnglab_using_subcommand extract" -l config -d 'dnglab configuration file' -r -F
 complete -c dnglab -n "__fish_dnglab_using_subcommand extract" -l skipchecks -d 'Skip integrity checks'
 complete -c dnglab -n "__fish_dnglab_using_subcommand extract" -s r -l recursive -d 'Process input directory recursive'
 complete -c dnglab -n "__fish_dnglab_using_subcommand extract" -s f -l override -d 'Override existing files'

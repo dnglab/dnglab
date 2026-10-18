@@ -52,7 +52,8 @@ pub fn create_app() -> Command {
         .value_parser(NonEmptyStringValueParser::new())
         .long_help(
           "Convert profile to use for conversion. Built-in profiles are 'builtin_compat' (DNG 1.4.0), 'builtin_latest' (DNG 1.6.0) and 'builtin_archive'.
-If not given, no profile is used and the command line switches with their defaults apply.
+If not given, 'convert.default_profile' from the dnglab configuration file is used.
+Otherwise no profile is used and the command line switches with their defaults apply.
 Command line switches override the values of the profile.",
         ),
     )
@@ -158,8 +159,26 @@ Command line switches override the values of the profile.",
         .value_parser(clap::value_parser!(PathBuf))
         .long_help(
           "Directory with profile TOML files. All *.toml files in this directory are loaded.
-If not given, profiles are loaded from the 'rawler/profiles' and 'dnglab/profiles' directories
-in the user configuration directory (e.g. ~/.config on Linux, ~/Library/Application Support on macOS, %APPDATA% on Windows).",
+If not given, 'profile_path' from the dnglab configuration file is used. Otherwise profiles are loaded
+from the 'rawler/profiles' and 'dnglab/profiles' directories in the user configuration directory
+(e.g. ~/.config on Linux, ~/Library/Application Support on macOS, %APPDATA% on Windows).",
+        ),
+    )
+    .arg(
+      arg!(config: --config <file> "dnglab configuration file")
+        .global(true)
+        .required(false)
+        .value_parser(clap::value_parser!(PathBuf))
+        .long_help(
+          "dnglab configuration file. If not given, 'dnglab/config.toml' in the user configuration directory
+(e.g. ~/.config on Linux, ~/Library/Application Support on macOS, %APPDATA% on Windows) is used if it exists.
+Example:
+
+  version = 1
+  profile_path = \"profiles\"   # relative to the configuration file
+
+  [convert]
+  default_profile = \"builtin_latest\"",
         ),
     )
     .subcommand(

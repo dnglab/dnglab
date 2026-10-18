@@ -9,7 +9,10 @@ use rawler::dng::{
   convertprofile::{ConvertProfile, ConvertProfileRegistry, MultiFrameMode},
 };
 
-use crate::{AppError, Result};
+use crate::{
+  AppError, Result,
+  config::{DnglabConfig, load_config},
+};
 
 /// Application name for profile search directories
 const APP_NAME: &str = "dnglab";
@@ -23,26 +26,46 @@ pub enum FrameSelection {
   All,
 }
 
-/// Load built-in profiles and profiles from the profile directories
-pub fn load_registry(options: &ArgMatches) -> Result<ConvertProfileRegistry> {
-  Ok(ConvertProfileRegistry::load(
-    APP_NAME,
-    options.get_one::<PathBuf>("profile_path").map(PathBuf::as_path),
-  )?)
+/// Load built-in profiles and profiles from the profile directory
+///
+/// The directory is `--profile-path`, else `profile_path` from the config
+/// file, else the default search directories.
+fn load_registry(options: &ArgMatches, config: &DnglabConfig) -> Result<ConvertProfileRegistry> {
+  let profile_dir = options.get_one::<PathBuf>("profile_path").or(config.profile_path.as_ref());
+  Ok(ConvertProfileRegistry::load(APP_NAME, profile_dir.map(PathBuf::as_path))?)
 }
 
-/// Resolve the convert profile from command line options
+/// Resolve the convert profile from command line options and config file
 ///
-/// If no profile is given, no profile is used and the defaults apply.
-/// Values given explicitly on the command line override the profile values.
+/// The profile is `--profile`, else `convert.default_profile` from the
+/// config file. If neither is given, no profile is used and the defaults
+/// apply, built-in profiles are never used implicitly. The profile directory
+/// is `--profile-path`, else `profile_path` from the config file, else the
+/// default search directories. Values given explicitly on the command line
+/// override the profile values.
 pub fn resolve_convert_profile(options: &ArgMatches) -> Result<(ConvertProfile, FrameSelection)> {
-  let mut profile = match options.get_one::<String>("profile") {
-    Some(name) => {
-      let registry = load_registry(options)?;
+  let (config, config_path) = load_config(options)?;
+  let mut profile = match (options.get_one::<String>("profile"), &config.convert.default_profile) {
+    (Some(name), _) => {
+      let registry = load_registry(options, &config)?;
       log::debug!("Using convert profile '{}' from {:?}", name, registry.source(name));
       registry.get(name)?.clone()
     }
-    None => {
+    (None, Some(name)) => {
+      let registry = load_registry(options, &config)?;
+      log::debug!("Using default convert profile '{}' from {:?}", name, registry.source(name));
+      registry
+        .get(name)
+        .map_err(|err| {
+          AppError::General(format!(
+            "Default convert profile from config file '{}': {}",
+            config_path.as_deref().map(|p| p.display().to_string()).unwrap_or_default(),
+            err
+          ))
+        })?
+        .clone()
+    }
+    (None, None) => {
       log::debug!("No convert profile selected, using defaults");
       ConvertProfile::default()
     }
@@ -120,25 +143,69 @@ fn frame_selection(profile: &ConvertProfile, options: &ArgMatches) -> Result<Fra
 mod tests {
   use super::*;
   use crate::app::create_app;
+  use std::sync::atomic::{AtomicUsize, Ordering};
 
   /// Parse convert arguments, `--profile-path` defaults to an empty
   /// directory so tests don't depend on the user configuration.
-  fn convert_matches(args: &[&str]) -> ArgMatches {
-    let empty = std::env::temp_dir().join(format!("dnglab-convertprofile-empty-{}", std::process::id()));
+  /// Temporary directory, removed on drop
+  struct TempDir(PathBuf);
+
+  impl TempDir {
+    fn new() -> Self {
+      static COUNTER: AtomicUsize = AtomicUsize::new(0);
+      let id = COUNTER.fetch_add(1, Ordering::Relaxed);
+      let path = std::env::temp_dir().join(format!("dnglab-convertprofile-{}-{}", std::process::id(), id));
+      std::fs::create_dir_all(&path).expect("create dir");
+      Self(path)
+    }
+
+    fn write(&self, name: &str, content: &str) -> String {
+      let path = self.0.join(name);
+      std::fs::write(&path, content).expect("write");
+      path.to_string_lossy().to_string()
+    }
+
+    fn path(&self) -> String {
+      self.0.to_string_lossy().to_string()
+    }
+  }
+
+  impl Drop for TempDir {
+    fn drop(&mut self) {
+      let _ = std::fs::remove_dir_all(&self.0);
+    }
+  }
+
+  /// Parse arguments, independent of the user configuration:
+  /// `--config` defaults to an empty config and `--profile-path`
+  /// to an empty directory, unless given.
+  fn matches(tmp: &TempDir, args: &[&str]) -> ArgMatches {
+    let config = tmp.write("empty-config.toml", "version = 1\n");
+    let empty = tmp.0.join("empty-profiles");
     std::fs::create_dir_all(&empty).expect("create dir");
-    let empty = empty.to_string_lossy().to_string();
+    let empty_path = empty.to_string_lossy().to_string();
     let mut argv = vec!["dnglab"];
-    if !args.contains(&"--profile-path") {
-      argv.extend_from_slice(&["--profile-path", &empty]);
+    if !args.contains(&"--config") {
+      argv.extend_from_slice(&["--config", &config]);
+      if !args.contains(&"--profile-path") {
+        argv.extend_from_slice(&["--profile-path", &empty_path]);
+      }
     }
     argv.extend_from_slice(args);
     let matches = create_app().try_get_matches_from(argv).expect("valid arguments");
     matches.subcommand_matches("convert").expect("convert subcommand").clone()
   }
 
+  /// Like [`matches`], the returned [`TempDir`] must be kept alive while the matches are used
+  fn convert_matches(args: &[&str]) -> (TempDir, ArgMatches) {
+    let tmp = TempDir::new();
+    let options = matches(&tmp, args);
+    (tmp, options)
+  }
+
   #[test]
   fn cli_overrides_profile() {
-    let options = convert_matches(&["convert", "-p", "builtin_latest", "-c", "uncompressed", "in.raw", "out.dng"]);
+    let (_tmp, options) = convert_matches(&["convert", "-p", "builtin_latest", "-c", "uncompressed", "in.raw", "out.dng"]);
     let (profile, frames) = resolve_convert_profile(&options).expect("profile");
     // From profile
     assert_eq!(profile.max_dng_backward_version, DngVersion::V1_6);
@@ -149,7 +216,7 @@ mod tests {
 
   #[test]
   fn cli_defaults_do_not_override_profile() {
-    let options = convert_matches(&["convert", "-p", "builtin_archive", "in.raw", "out.dng"]);
+    let (_tmp, options) = convert_matches(&["convert", "-p", "builtin_archive", "in.raw", "out.dng"]);
     let (profile, frames) = resolve_convert_profile(&options).expect("profile");
     assert!(profile.keep_mtime);
     assert_eq!(frames, FrameSelection::All);
@@ -157,43 +224,100 @@ mod tests {
 
   #[test]
   fn no_profile_uses_defaults() {
-    let options = convert_matches(&["convert", "in.raw", "out.dng"]);
+    let (_tmp, options) = convert_matches(&["convert", "in.raw", "out.dng"]);
     let (profile, frames) = resolve_convert_profile(&options).expect("profile");
     assert_eq!(profile, ConvertProfile::default());
     assert_eq!(frames, FrameSelection::Single(0));
 
-    let options = convert_matches(&["convert", "--embed-raw", "false", "in.raw", "out.dng"]);
+    let (_tmp, options) = convert_matches(&["convert", "--embed-raw", "false", "in.raw", "out.dng"]);
     let (profile, _) = resolve_convert_profile(&options).expect("profile");
     assert!(!profile.embed_raw);
   }
 
   #[test]
   fn explicit_index_overrides_multiframe() {
-    let options = convert_matches(&["convert", "-p", "builtin_archive", "--image-index", "2", "in.raw", "out.dng"]);
+    let (_tmp, options) = convert_matches(&["convert", "-p", "builtin_archive", "--image-index", "2", "in.raw", "out.dng"]);
     let (_, frames) = resolve_convert_profile(&options).expect("profile");
     assert_eq!(frames, FrameSelection::Single(2));
   }
 
   #[test]
   fn global_profile_path() {
-    let dir = std::env::temp_dir().join(format!("dnglab-convertprofile-mine-{}", std::process::id()));
-    std::fs::create_dir_all(&dir).expect("create dir");
-    std::fs::write(
-      dir.join("mine.toml"),
-      "[convertprofile.mine]\nversion = 1\ntitle = \"T\"\ncopyright = \"(c) Test\"\n",
-    )
-    .expect("write");
-    let path = dir.to_string_lossy().to_string();
-    let options = convert_matches(&["--profile-path", &path, "convert", "-p", "mine", "in.raw", "out.dng"]);
-    let result = resolve_convert_profile(&options);
-    let _ = std::fs::remove_dir_all(&dir);
-    let (profile, _) = result.expect("profile");
+    let tmp = TempDir::new();
+    tmp.write("mine.toml", "[convertprofile.mine]\nversion = 1\ntitle = \"T\"\ncopyright = \"(c) Test\"\n");
+    let path = tmp.path();
+    let (_tmp, options) = convert_matches(&["--profile-path", &path, "convert", "-p", "mine", "in.raw", "out.dng"]);
+    let (profile, _) = resolve_convert_profile(&options).expect("profile");
     assert_eq!(profile.copyright.as_deref(), Some("(c) Test"));
+  }
+
+  /// Config with `profile_path = "profiles"` and default profile `mine`
+  fn config_with_profiles(tmp: &TempDir) -> String {
+    std::fs::create_dir_all(tmp.0.join("profiles")).expect("create dir");
+    tmp.write(
+      "profiles/mine.toml",
+      "[convertprofile.mine]\nversion = 1\ntitle = \"T\"\ncopyright = \"(c) Mine\"\n",
+    );
+    tmp.write(
+      "config.toml",
+      "version = 1\nprofile_path = \"profiles\"\n\n[convert]\ndefault_profile = \"mine\"\n",
+    )
+  }
+
+  #[test]
+  fn config_default_profile() {
+    let tmp = TempDir::new();
+    let config = config_with_profiles(&tmp);
+    let options = matches(&tmp, &["--config", &config, "convert", "in.raw", "out.dng"]);
+    let (profile, _) = resolve_convert_profile(&options).expect("profile");
+    assert_eq!(profile.copyright.as_deref(), Some("(c) Mine"));
+  }
+
+  #[test]
+  fn cli_profile_beats_config_default() {
+    let tmp = TempDir::new();
+    let config = config_with_profiles(&tmp);
+    let options = matches(&tmp, &["--config", &config, "convert", "-p", "builtin_latest", "in.raw", "out.dng"]);
+    let (profile, _) = resolve_convert_profile(&options).expect("profile");
+    assert_eq!(profile.max_dng_backward_version, DngVersion::V1_6);
+  }
+
+  #[test]
+  fn cli_profile_path_beats_config() {
+    let tmp = TempDir::new();
+    let config = config_with_profiles(&tmp);
+    let other = TempDir::new();
+    other.write("mine.toml", "[convertprofile.mine]\nversion = 1\ntitle = \"T\"\ncopyright = \"(c) Other\"\n");
+    let other_path = other.path();
+    let options = matches(&tmp, &["--config", &config, "--profile-path", &other_path, "convert", "in.raw", "out.dng"]);
+    let (profile, _) = resolve_convert_profile(&options).expect("profile");
+    assert_eq!(profile.copyright.as_deref(), Some("(c) Other"));
+  }
+
+  #[test]
+  fn unknown_config_default_profile_fails() {
+    let tmp = TempDir::new();
+    let empty = TempDir::new();
+    let config = tmp.write(
+      "config.toml",
+      &format!("version = 1\nprofile_path = '{}'\n\n[convert]\ndefault_profile = \"nope\"\n", empty.path()),
+    );
+    let options = matches(&tmp, &["--config", &config, "convert", "in.raw", "out.dng"]);
+    let err = resolve_convert_profile(&options).expect_err("must fail");
+    assert!(err.to_string().contains("config.toml"), "{}", err);
+  }
+
+  #[test]
+  fn missing_config_file_fails() {
+    let tmp = TempDir::new();
+    let missing = tmp.0.join("missing.toml").to_string_lossy().to_string();
+    let options = matches(&tmp, &["--config", &missing, "convert", "in.raw", "out.dng"]);
+    assert!(resolve_convert_profile(&options).is_err());
   }
 
   #[test]
   fn unknown_profile_fails() {
-    let options = convert_matches(&["convert", "-p", "doesnotexist", "in.raw", "out.dng"]);
+    let (_tmp, options) = convert_matches(&["convert", "-p", "doesnotexist", "in.raw", "out.dng"]);
     assert!(resolve_convert_profile(&options).is_err());
   }
 }
