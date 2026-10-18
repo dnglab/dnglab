@@ -787,6 +787,87 @@ mod tests {
     Ok(())
   }
 
+  /// Rows in interleaved field order: rows 0, n, 2n, ..., then 1, n+1, ...
+  fn to_field_order(image: &[u16], width: usize, factor: usize) -> Vec<u16> {
+    let height = image.len() / width;
+    (0..factor)
+      .flat_map(|field| (field..height).step_by(factor))
+      .flat_map(|row| image[row * width..(row + 1) * width].to_vec())
+      .collect()
+  }
+
+  /// Whole image as a single tile in sub-tile block order
+  fn to_block_order(image: &[u16], width: usize, block_rows: usize, block_cols: usize) -> Vec<u16> {
+    let height = image.len() / width;
+    let mut out = Vec::with_capacity(image.len());
+    for block_y in (0..height).step_by(block_rows) {
+      for block_x in (0..width).step_by(block_cols) {
+        for row in block_y..block_y + block_rows {
+          out.extend_from_slice(&image[row * width + block_x..row * width + block_x + block_cols]);
+        }
+      }
+    }
+    out
+  }
+
+  /// Write the synthetic image with `stored` as image data and decode it again
+  fn decode_stored_layout(stored: Vec<u16>, modify: impl FnOnce(&mut DirectoryWriter)) -> TestResult<Option<Vec<u16>>> {
+    let mut rawimage = synthetic_rawimage();
+    rawimage.data = RawImageData::Integer(stored);
+    Ok(integer_data(decode_dng(&write_dng(&rawimage, modify)?)?))
+  }
+
+  fn synthetic_pixels() -> Vec<u16> {
+    match synthetic_rawimage().data {
+      RawImageData::Integer(data) => data,
+      RawImageData::Float(_) => unreachable!(),
+    }
+  }
+
+  #[test]
+  fn row_interleave_factor() -> TestResult {
+    let image = synthetic_pixels();
+    let decoded = decode_stored_layout(to_field_order(&image, 16, 3), |ifd| ifd.add_tag(DngTag::RowInterleaveFactor, 3_u16))?;
+    assert_eq!(decoded, Some(image));
+    Ok(())
+  }
+
+  #[test]
+  fn sub_tile_block_size() -> TestResult {
+    let image = synthetic_pixels();
+    let decoded = decode_stored_layout(to_block_order(&image, 16, 2, 4), |ifd| ifd.add_tag(DngTag::SubTileBlockSize, [2_u16, 4]))?;
+    assert_eq!(decoded, Some(image));
+    Ok(())
+  }
+
+  #[test]
+  fn sub_tile_block_size_with_row_interleave() -> TestResult {
+    // Rows are interleaved first, the result is stored in sub-tile blocks
+    let image = synthetic_pixels();
+    let stored = to_block_order(&to_field_order(&image, 16, 2), 16, 4, 2);
+    let decoded = decode_stored_layout(stored, |ifd| {
+      ifd.add_tag(DngTag::RowInterleaveFactor, 2_u16);
+      ifd.add_tag(DngTag::SubTileBlockSize, [4_u16, 2]);
+    })?;
+    assert_eq!(decoded, Some(image));
+    Ok(())
+  }
+
+  #[test]
+  fn row_interleave_factor_float() -> TestResult {
+    let image = float_samples();
+    let stored: Vec<f32> = (0..2)
+      .flat_map(|field| (field..16).step_by(2))
+      .flat_map(|row| image[row * 16..(row + 1) * 16].to_vec())
+      .collect();
+    let mut rawimage = synthetic_rawimage();
+    rawimage.data = RawImageData::Float(stored);
+    rawimage.whitelevel = WhiteLevel::new(vec![1]);
+    let data = write_dng(&rawimage, |ifd| ifd.add_tag(DngTag::RowInterleaveFactor, 2_u16))?;
+    assert_eq!(float_data(decode_dng(&data)?), image);
+    Ok(())
+  }
+
   #[test]
   fn integer_whitelevel_defaults_to_bits() -> TestResult {
     let data = write_dng(&synthetic_rawimage(), |ifd| ifd.remove_tag(TiffCommonTag::WhiteLevel))?;

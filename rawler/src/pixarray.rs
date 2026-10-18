@@ -275,6 +275,109 @@ where
   }
 }
 
+/// Reorder tiles stored in sub-tile blocks (DNG SubTileBlockSize) into row-scan order.
+///
+/// Each tile of `tile_w` x `tile_h` pixels (clipped to the buffer) contains blocks of
+/// `block_rows` x `block_cols` pixels, stored in row-scan order. The pixels within each
+/// block are stored in row-scan order, too. Strips are handled as tiles with full image width.
+pub(crate) fn reorder_sub_tile_blocks<T>(
+  pixbuf: &mut Pix2D<T>,
+  cpp: usize,
+  tile_w: usize,
+  tile_h: usize,
+  block_rows: usize,
+  block_cols: usize,
+) -> std::result::Result<(), String>
+where
+  T: SubPixel,
+{
+  if !pixbuf.initialized {
+    return Ok(());
+  }
+  if cpp == 0 || tile_w == 0 || tile_h == 0 || block_rows == 0 || block_cols == 0 {
+    return Err(format!("Invalid SubTileBlockSize {block_rows}x{block_cols} or tile size {tile_w}x{tile_h}"));
+  }
+  let row_samples = pixbuf.width;
+  let block_samples = block_cols * cpp;
+  let mut stored = Vec::with_capacity(tile_w * cpp * tile_h);
+  for tile_y in (0..pixbuf.height).step_by(tile_h) {
+    for tile_x in (0..row_samples).step_by(tile_w * cpp) {
+      let w = (tile_w * cpp).min(row_samples - tile_x);
+      let h = tile_h.min(pixbuf.height - tile_y);
+      if w % block_samples != 0 || h % block_rows != 0 {
+        return Err(format!("SubTileBlockSize {block_rows}x{block_cols} does not divide tile area {}x{h}", w / cpp));
+      }
+      // Tile data in stored order
+      stored.clear();
+      for row in tile_y..tile_y + h {
+        stored.extend_from_slice(&pixbuf.data[row * row_samples + tile_x..row * row_samples + tile_x + w]);
+      }
+      let mut src = stored.chunks_exact(block_samples);
+      for block_y in (tile_y..tile_y + h).step_by(block_rows) {
+        for block_x in (tile_x..tile_x + w).step_by(block_samples) {
+          for row in block_y..block_y + block_rows {
+            let start = row * row_samples + block_x;
+            pixbuf.data[start..start + block_samples].copy_from_slice(src.next().expect("Block data available"));
+          }
+        }
+      }
+    }
+  }
+  Ok(())
+}
+
+/// Start index of each field in the stored order for `count` elements interleaved
+/// into `factor` fields (field `f` contains the elements `f`, `f + factor`, ...).
+fn interleave_field_starts(count: usize, factor: usize) -> Vec<usize> {
+  let mut start = 0;
+  (0..factor)
+    .map(|field| {
+      let field_start = start;
+      start += (count.saturating_sub(field)).div_ceil(factor);
+      field_start
+    })
+    .collect()
+}
+
+/// Restore row order for rows stored in `factor` interleaved fields (DNG RowInterleaveFactor).
+pub(crate) fn deinterleave_rows<T>(pixbuf: &Pix2D<T>, factor: usize) -> Pix2D<T>
+where
+  T: SubPixel,
+{
+  if !pixbuf.initialized || factor <= 1 {
+    return pixbuf.clone();
+  }
+  let width = pixbuf.width;
+  let field_starts = interleave_field_starts(pixbuf.height, factor);
+  let mut data = Vec::with_capacity(pixbuf.data.len());
+  for row in 0..pixbuf.height {
+    let stored = field_starts[row % factor] + row / factor;
+    data.extend_from_slice(&pixbuf.data[stored * width..(stored + 1) * width]);
+  }
+  Pix2D::new_with(data, width, pixbuf.height)
+}
+
+/// Restore column order for pixels stored in `factor` interleaved fields per row
+/// (DNG ColumnInterleaveFactor). Each pixel consists of `cpp` samples.
+pub(crate) fn deinterleave_cols<T>(pixbuf: &Pix2D<T>, cpp: usize, factor: usize) -> Pix2D<T>
+where
+  T: SubPixel,
+{
+  if !pixbuf.initialized || factor <= 1 || cpp == 0 {
+    return pixbuf.clone();
+  }
+  let pixels = pixbuf.width / cpp;
+  let field_starts = interleave_field_starts(pixels, factor);
+  let mut data = Vec::with_capacity(pixbuf.data.len());
+  for line in pixbuf.data.chunks_exact(pixbuf.width) {
+    for col in 0..pixels {
+      let stored = field_starts[col % factor] + col / factor;
+      data.extend_from_slice(&line[stored * cpp..(stored + 1) * cpp]);
+    }
+  }
+  Pix2D::new_with(data, pixbuf.width, pixbuf.height)
+}
+
 /*
 impl<T> Index<usize> for Pix2D<T> {
   type Output = T;
@@ -664,4 +767,68 @@ macro_rules! alloc_image_typed_ok {
       $crate::alloc_image_plain_typed!($T, $width, $height, $dummy)
     }
   }};
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[test]
+  fn deinterleave_rows_uneven_fields() {
+    // 7 rows, factor 3: fields are rows [0, 3, 6], [1, 4], [2, 5]
+    let stored: Vec<u16> = [0, 3, 6, 1, 4, 2, 5].into_iter().flat_map(|r| [r, r + 100]).collect();
+    let out = deinterleave_rows(&Pix2D::new_with(stored, 2, 7), 3);
+    let expected: Vec<u16> = (0..7).flat_map(|r| [r, r + 100]).collect();
+    assert_eq!(out.data, expected);
+  }
+
+  #[test]
+  fn deinterleave_cols_with_cpp() {
+    // 5 pixels with 3 samples, factor 2: fields are pixels [0, 2, 4], [1, 3]
+    let stored: Vec<u16> = [0, 2, 4, 1, 3].into_iter().flat_map(|p| [p, p + 10, p + 20]).collect();
+    let out = deinterleave_cols(&Pix2D::new_with(stored, 15, 1), 3, 2);
+    let expected: Vec<u16> = (0..5).flat_map(|p| [p, p + 10, p + 20]).collect();
+    assert_eq!(out.data, expected);
+  }
+
+  /// Store an image (cpp = 1) in sub-tile block order per tile
+  fn to_block_order(image: &[u16], width: usize, height: usize, tile: (usize, usize), block: (usize, usize)) -> Vec<u16> {
+    let mut out = image.to_vec();
+    for tile_y in (0..height).step_by(tile.1) {
+      for tile_x in (0..width).step_by(tile.0) {
+        let mut stored = Vec::new();
+        for block_y in (tile_y..tile_y + tile.1).step_by(block.0) {
+          for block_x in (tile_x..tile_x + tile.0).step_by(block.1) {
+            for row in block_y..block_y + block.0 {
+              stored.extend_from_slice(&image[row * width + block_x..row * width + block_x + block.1]);
+            }
+          }
+        }
+        // Write stored data back into the tile area in row-scan order
+        for (i, row) in (tile_y..tile_y + tile.1).enumerate() {
+          out[row * width + tile_x..row * width + tile_x + tile.0].copy_from_slice(&stored[i * tile.0..(i + 1) * tile.0]);
+        }
+      }
+    }
+    out
+  }
+
+  #[test]
+  fn reorder_sub_tile_blocks_roundtrip() -> std::result::Result<(), String> {
+    let (width, height) = (16, 8);
+    let image: Vec<u16> = (0..(width * height) as u16).collect();
+    for block in [(2, 4), (4, 2), (2, 1)] {
+      let stored = to_block_order(&image, width, height, (8, 4), block);
+      let mut pixbuf = Pix2D::new_with(stored, width, height);
+      reorder_sub_tile_blocks(&mut pixbuf, 1, 8, 4, block.0, block.1)?;
+      assert_eq!(pixbuf.data, image, "block {block:?}");
+    }
+    Ok(())
+  }
+
+  #[test]
+  fn reorder_sub_tile_blocks_rejects_non_multiple() {
+    let mut pixbuf = Pix2D::new_with(vec![0_u16; 16 * 8], 16, 8);
+    assert!(reorder_sub_tile_blocks(&mut pixbuf, 1, 8, 4, 3, 2).is_err());
+  }
 }
