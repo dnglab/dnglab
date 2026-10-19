@@ -33,7 +33,7 @@ use crate::{
 
 use super::{
   CropMode, DNG_VERSION_V1_0, DNG_VERSION_V1_1, DNG_VERSION_V1_4, DNG_VERSION_V1_6, DngCompression, DngPhotometricConversion, DngVersionNumber,
-  original::OriginalCompressed,
+  opcodes::OpcodeStage, original::OriginalCompressed,
 };
 
 pub type DngError = TiffError;
@@ -151,6 +151,12 @@ where
   }
 
   fn write_rawimage(&mut self, mut rawimage: Cow<RawImage>, cropmode: CropMode, compression: DngCompression, predictor: u8) -> Result<()> {
+    // Readers process OpcodeList2 and OpcodeList3 on 16 bit data for 16 bit integer
+    // raw data, otherwise on floats (as in the DNG SDK).
+    let source_integer = match rawimage.data {
+      RawImageData::Integer(_) => true,
+      RawImageData::Float(_) => rawimage.scaled_from_integer,
+    };
     if matches!(rawimage.data, RawImageData::Float(_))
       && (compression == DngCompression::Lossless || !self.writer.backward_version_allows(DNG_VERSION_V1_4, "Floating point image data"))
     {
@@ -158,6 +164,13 @@ where
       // floating point data requires DNG 1.4. If we have floats, convert them.
       float_to_integer(rawimage.to_mut());
     }
+    // Deltas of DeltaPerRow and DeltaPerColumn are in pixel units of that data,
+    // so they must be converted if the stored sample format differs.
+    let delta_factor = match (source_integer, matches!(rawimage.data, RawImageData::Integer(_))) {
+      (true, false) => 1.0 / u16::MAX as f32,
+      (false, true) => u16::MAX as f32,
+      _ => 1.0,
+    };
 
     if rawimage.cpp > 1 || matches!(rawimage.photometric, RawPhotometricInterpretation::Cfa(_)) {
       self.writer.as_shot_neutral(wbcoeff_to_tiff_value(&rawimage));
@@ -304,6 +317,40 @@ where
       RawPhotometricInterpretation::LinearRaw => {
         self.ifd_mut().add_tag(TiffCommonTag::PhotometricInt, PhotometricInterpretation::LinearRaw);
       }
+    }
+
+    // Opcode lists not applied to the image data
+    for (stage, tag) in [
+      (OpcodeStage::List1, DngTag::OpcodeList1),
+      (OpcodeStage::List2, DngTag::OpcodeList2),
+      (OpcodeStage::List3, DngTag::OpcodeList3),
+    ] {
+      let Some(mut list) = rawimage.opcode_list(stage).filter(|list| !list.is_empty()).map(Cow::Borrowed) else {
+        continue;
+      };
+      if stage != OpcodeStage::List1 && delta_factor != 1.0 {
+        debug!("Scale deltas of {} by {} for the stored sample format", stage, delta_factor);
+        list.to_mut().scale_deltas(delta_factor);
+      }
+      // DNGBackwardVersion must not be less than the version of any
+      // required opcode (DNG spec, Appendix A, issue 7 and 16).
+      for opcode in list.opcodes().iter().filter(|opcode| !opcode.is_optional()) {
+        self
+          .writer
+          .update_backward_version(opcode.version(), &format!("required opcode {} in {}", opcode.name(), stage))?;
+      }
+      if stage != OpcodeStage::List1 && rawimage.active_area.unwrap_or(full_size) != active_area {
+        log::warn!(
+          "{} is relative to ActiveArea {:?}, but ActiveArea {:?} is written, opcodes may affect the wrong image area",
+          stage,
+          rawimage.active_area.unwrap_or(full_size),
+          active_area
+        );
+      }
+      let data = list
+        .to_bytes()
+        .map_err(|err| DngError::General(format!("Failed to write {}: {}", stage, err)))?;
+      self.ifd_mut().add_tag(tag, Value::Undefined(data));
     }
 
     match compression {
@@ -996,6 +1043,69 @@ mod tests {
       RawImageData::Integer(pixels) => assert_eq!(pixels[..4], [0, 4096, 32775, 65535]),
       RawImageData::Float(_) => panic!("lossless data must be integer"),
     }
+    Ok(())
+  }
+
+  /// Write `rawimage` with DeltaPerRow opcodes in all opcode lists and return the
+  /// deltas read from the DNG per list and whether the data is stored as floats
+  fn write_deltas(mut rawimage: RawImage, compression: DngCompression) -> std::result::Result<([Vec<f32>; 3], bool), Box<dyn std::error::Error>> {
+    use crate::dng::opcodes::{AreaSpec, DeltaPerRow, Opcode, OpcodeList};
+
+    let area = AreaSpec {
+      top: 0,
+      left: 0,
+      bottom: 16,
+      right: 16,
+      plane: 0,
+      planes: 1,
+      row_pitch: 8,
+      col_pitch: 1,
+    };
+    let list = OpcodeList::new(vec![Opcode::DeltaPerRow(DeltaPerRow {
+      version: 0x01030000,
+      flags: 0,
+      area,
+      deltas: vec![1000.0, -2.0],
+    })]);
+    rawimage.dng_opcodes_1 = Some(list.clone());
+    rawimage.dng_opcodes_2 = Some(list.clone());
+    rawimage.dng_opcodes_3 = Some(list);
+    let data = write_synthetic_dng_compressed(&rawimage, compression)?;
+
+    let source = crate::rawsource::RawSource::new_from_slice(&data);
+    let decoded = crate::get_decoder(&source)?.raw_image(&source, &crate::decoders::RawDecodeParams::default(), false)?;
+    let deltas = |list: Option<&OpcodeList>| match list.map(OpcodeList::opcodes) {
+      Some([Opcode::DeltaPerRow(op)]) => Ok(op.deltas.clone()),
+      other => Err(format!("unexpected opcode list: {:?}", other)),
+    };
+    Ok((
+      [
+        deltas(decoded.dng_opcodes_1.as_ref())?,
+        deltas(decoded.dng_opcodes_2.as_ref())?,
+        deltas(decoded.dng_opcodes_3.as_ref())?,
+      ],
+      matches!(decoded.data, RawImageData::Float(_)),
+    ))
+  }
+
+  #[test]
+  fn deltas_follow_stored_sample_format() -> std::result::Result<(), Box<dyn std::error::Error>> {
+    let deltas = vec![1000.0, -2.0];
+    let to_float = vec![1000.0 * (1.0 / 65535.0), -2.0 * (1.0 / 65535.0)];
+    let to_integer = vec![1000.0 * 65535.0, -2.0 * 65535.0];
+    let mut scaled = synthetic_rawimage_f32();
+    scaled.scaled_from_integer = true;
+    // OpcodeList1 is unchanged, OpcodeList2 and OpcodeList3 are converted
+    let expect = |stage23: &Vec<f32>, float: bool| ([deltas.clone(), stage23.clone(), stage23.clone()], float);
+    // Data scaled from 16 bit integers
+    assert_eq!(write_deltas(scaled.clone(), DngCompression::Uncompressed)?, expect(&to_float, true));
+    assert_eq!(write_deltas(scaled, DngCompression::Lossless)?, expect(&deltas, false));
+    // Floating point raw data
+    assert_eq!(write_deltas(synthetic_rawimage_f32(), DngCompression::Uncompressed)?, expect(&deltas, true));
+    assert_eq!(write_deltas(synthetic_rawimage_f32(), DngCompression::Lossless)?, expect(&to_integer, false));
+    // 16 bit integer raw data
+    assert_eq!(write_deltas(synthetic_rawimage(None), DngCompression::Uncompressed)?, expect(&deltas, false));
+    assert_eq!(write_deltas(synthetic_rawimage(None), DngCompression::Lossless)?, expect(&deltas, false));
     Ok(())
   }
 

@@ -9,6 +9,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::Result;
 use crate::cfa::PlaneColor;
+use crate::dng::opcodes::{OpcodeList, OpcodeStage};
 use crate::imgop::raw::{correct_blacklevel, correct_blacklevel_cfa};
 use crate::imgop::sensor::SensorType;
 use crate::imgop::{convert_from_f32_scaled_u16, convert_to_f32_unscaled};
@@ -241,6 +242,8 @@ pub struct RawImage {
   pub orientation: Orientation,
   /// image data itself, has `width`\*`height`\*`cpp` elements
   pub data: RawImageData,
+  /// The image data was scaled from 16 bit integer samples to floats by `apply_scaling()`
+  pub scaled_from_integer: bool,
 
   pub color_matrix: HashMap<Illuminant, FlatColorMatrix>,
 
@@ -249,6 +252,10 @@ pub struct RawImage {
   /// For Fuji rotated sensors: the split point T used to compute the
   /// inscribed rectangle after 45° rotation (equivalent to dcraw's fuji_width).
   pub fuji_rotation_width: Option<usize>,
+
+  pub dng_opcodes_1: Option<OpcodeList>,
+  pub dng_opcodes_2: Option<OpcodeList>,
+  pub dng_opcodes_3: Option<OpcodeList>,
 }
 
 /// The actual image data, after decoding
@@ -400,6 +407,10 @@ impl RawImage {
       color_matrix: cam.color_matrix,
       dng_tags: HashMap::new(),
       fuji_rotation_width: None,
+      scaled_from_integer: false,
+      dng_opcodes_1: None,
+      dng_opcodes_2: None,
+      dng_opcodes_3: None,
     }
   }
 
@@ -490,6 +501,10 @@ impl RawImage {
       color_matrix: cam.color_matrix,
       dng_tags: HashMap::new(),
       fuji_rotation_width: None,
+      scaled_from_integer: false,
+      dng_opcodes_1: None,
+      dng_opcodes_2: None,
+      dng_opcodes_3: None,
     }
   }
 
@@ -517,6 +532,7 @@ impl RawImage {
   /// with floating point values in range 0.0 .. 1.0.
   /// Internal blacklevel and whitelevel is reset to 0.0 and 1.0 to match image data.
   pub fn apply_scaling(&mut self) -> crate::Result<()> {
+    self.scaled_from_integer = matches!(self.data, RawImageData::Integer(_));
     let mut pixels = self.data.as_f32();
     match &self.photometric {
       RawPhotometricInterpretation::BlackIsZero => todo!(),
@@ -538,6 +554,31 @@ impl RawImage {
     self.blacklevel.levels.iter_mut().for_each(|x| *x = Rational::new(0, 1));
     self.whitelevel.0.iter_mut().for_each(|x| *x = 1);
     Ok(())
+  }
+
+  /// DNG opcode list for the given processing stage
+  pub fn opcode_list(&self, stage: OpcodeStage) -> Option<&OpcodeList> {
+    match stage {
+      OpcodeStage::List1 => self.dng_opcodes_1.as_ref(),
+      OpcodeStage::List2 => self.dng_opcodes_2.as_ref(),
+      OpcodeStage::List3 => self.dng_opcodes_3.as_ref(),
+    }
+  }
+
+  /// Apply the DNG opcode list of the given processing stage to the image data.
+  /// The image data must be in the state the stage requires, e.g. mapped to
+  /// linear reference values for OpcodeList2. The list is consumed, so it is
+  /// not written again into a DNG file.
+  pub fn apply_opcode_list(&mut self, stage: OpcodeStage) -> Result<()> {
+    let list = match stage {
+      OpcodeStage::List1 => self.dng_opcodes_1.take(),
+      OpcodeStage::List2 => self.dng_opcodes_2.take(),
+      OpcodeStage::List3 => self.dng_opcodes_3.take(),
+    };
+    match list {
+      Some(list) => list.apply(self, stage),
+      None => Ok(()),
+    }
   }
 
   pub fn develop_params(&self) -> Result<DevelopParams> {

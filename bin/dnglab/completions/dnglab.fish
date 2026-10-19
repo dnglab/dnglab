@@ -106,6 +106,8 @@ complete -c dnglab -n "__fish_dnglab_using_subcommand convert" -l max-dng-backwa
 1.6\t''"
 complete -c dnglab -n "__fish_dnglab_using_subcommand convert" -l embed-raw -d 'Embed the raw file into DNG' -r -f -a "true\t''
 false\t''"
+complete -c dnglab -n "__fish_dnglab_using_subcommand convert" -l map-linear -d 'Map raw values to linear reference values' -r -f -a "true\t''
+false\t''"
 complete -c dnglab -n "__fish_dnglab_using_subcommand convert" -l artist -d 'Set the artist tag' -r
 complete -c dnglab -n "__fish_dnglab_using_subcommand convert" -l copyright -d 'Set the copyright tag' -r
 complete -c dnglab -n "__fish_dnglab_using_subcommand convert" -l keep-mtime -d 'Keep mtime, read from EXIF with fallback to original file mtime' -r -f -a "true\t''
@@ -146,6 +148,8 @@ complete -c dnglab -n "__fish_dnglab_using_subcommand ftpserver" -l max-dng-back
 1.5\t''
 1.6\t''"
 complete -c dnglab -n "__fish_dnglab_using_subcommand ftpserver" -l embed-raw -d 'Embed the raw file into DNG' -r -f -a "true\t''
+false\t''"
+complete -c dnglab -n "__fish_dnglab_using_subcommand ftpserver" -l map-linear -d 'Map raw values to linear reference values' -r -f -a "true\t''
 false\t''"
 complete -c dnglab -n "__fish_dnglab_using_subcommand ftpserver" -l artist -d 'Set the artist tag' -r
 complete -c dnglab -n "__fish_dnglab_using_subcommand ftpserver" -l copyright -d 'Set the copyright tag' -r

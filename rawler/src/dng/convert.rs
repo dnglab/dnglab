@@ -10,21 +10,26 @@ use std::{
 use image::DynamicImage;
 
 use crate::{
-  RawImage, RawImageData,
+  RawImage, RawImageData, RawlerError,
   decoders::{Decoder, RawDecodeParams, RawPhotometricInterpretation, WellKnownIFD, WhiteLevel, validate_image_index},
-  dng::{PREVIEW_JPEG_QUALITY, original::OriginalCompressed, writer::DngWriter},
+  dng::{PREVIEW_JPEG_QUALITY, opcodes::OpcodeStage, original::OriginalCompressed, writer::DngWriter},
   formats::tiff::Entry,
   imgop::{
+    Point, Rect,
     develop::RawDevelop,
     fuji_rotate::fuji_normalize_rotation,
     sensor::{Demosaic, bayer::ppg::PPGDemosaic},
   },
   pixarray::PixF32,
+  rawimage::BlackLevel,
   rawsource::RawSource,
   tags::{DngTag, ExifTag, TiffCommonTag},
 };
 
 use super::{CropMode, DngCompression, DngPhotometricConversion, DngVersion};
+
+/// Opcode list stages in processing order
+const STAGES: [OpcodeStage; 3] = [OpcodeStage::List1, OpcodeStage::List2, OpcodeStage::List3];
 
 /// Parameters for DNG conversion
 #[derive(Clone, Debug)]
@@ -253,31 +258,57 @@ where
   );
   log::debug!("Raw image WB coeff: {:?}", rawimage.wb_coeffs);
 
-  if rawimage.camera.find_hint("fuji_rotation") || rawimage.camera.find_hint("fuji_rotation_alt") {
-    // if the raw image needs to be rotated, we do this before
-    // writing the image to DNG. This requires scaling and debayer
-    // to be applied.
-    rawimage.apply_scaling()?;
-    log::debug!("Raw image requires fuji_rotation before writing to DNG");
-    let pixels = PixF32::new_with(rawimage.data.as_f32().into_owned(), rawimage.width, rawimage.height);
-    let roi = rawimage.active_area.unwrap_or(pixels.rect());
-    let demosaic = PPGDemosaic::new();
-    let mut rgb = demosaic.demosaic(&pixels, &rawimage.camera.cfa, &rawimage.camera.plane_color, roi);
-    let fuji_rotation_width = rawimage.fuji_rotation_width.expect("fuji_rotate: no rotation width found");
-    let extra_rotate = rawimage.camera.find_hint("fuji_rotate_90cw");
-    rgb = fuji_normalize_rotation(&rgb, fuji_rotation_width, extra_rotate);
-    rawimage.width = rgb.width;
-    rawimage.height = rgb.height;
-    rawimage.active_area = None;
-    rawimage.cpp = 3;
-    rawimage.whitelevel = WhiteLevel::new([1, 1, 1]); // Already scaled up to 0.0 .. 1.0
-    rawimage.photometric = RawPhotometricInterpretation::LinearRaw;
-    rawimage.data = RawImageData::Float(rgb.into_flatten());
+  // If the raw image needs to be rotated, we do this before
+  // writing the image to DNG. This requires scaling and debayer
+  // to be applied.
+  let fuji_rotation = rawimage.camera.find_hint("fuji_rotation") || rawimage.camera.find_hint("fuji_rotation_alt");
+  let max_backward_version = params.max_dng_backward_version.as_dng_value();
+  let needs_processing = STAGES.map(|stage| rawimage.opcode_list(stage).is_some_and(|list| list.needs_processing(max_backward_version)));
+
+  // Processing stage of the image data written to DNG. An opcode list that can't be
+  // stored with the maximum DNGBackwardVersion is applied as a whole, as the opcodes
+  // may depend on each other. Lists of earlier stages are applied as well, because a
+  // DNG reader would apply them to image data of the wrong stage.
+  let required_stage = if fuji_rotation {
+    OpcodeStage::List3
   } else if params.apply_scaling {
-    rawimage.apply_scaling()?;
+    OpcodeStage::List2
+  } else {
+    OpcodeStage::List1
+  };
+  let data_stage = STAGES
+    .into_iter()
+    .zip(needs_processing)
+    .filter_map(|(stage, needs)| needs.then_some(stage))
+    .fold(required_stage, Ord::max);
+  for (stage, needs) in STAGES.into_iter().zip(needs_processing) {
+    // Bring the image data into the state the stage operates on
+    match stage {
+      OpcodeStage::List2 if data_stage >= stage => rawimage.apply_scaling()?,
+      OpcodeStage::List3 if data_stage >= stage => {
+        if fuji_rotation {
+          log::debug!("Raw image requires fuji_rotation before writing to DNG");
+        }
+        demosaic_to_linear_raw(&mut rawimage, fuji_rotation);
+      }
+      _ => {}
+    }
+    if stage < data_stage || (stage == data_stage && needs) {
+      rawimage.apply_opcode_list(stage).map_err(|err| {
+        RawlerError::DecoderFailed(format!(
+          "Can't apply {} to the image data (maximum DNG backward version: {}): {}",
+          stage,
+          max_backward_version,
+          match err {
+            RawlerError::DecoderFailed(msg) => msg,
+            err => err.to_string(),
+          }
+        ))
+      })?;
+    }
   }
 
-  let mut dng = DngWriter::new_with_version(dng, params.dng_version.as_dng_value(), params.max_dng_backward_version.as_dng_value())?;
+  let mut dng = DngWriter::new_with_version(dng, params.dng_version.as_dng_value(), max_backward_version)?;
 
   // Write RAW image for subframe type 0
   // If no thumbnail should be written to root IFD, we need to put the raw image into
@@ -285,10 +316,10 @@ where
   let mut raw = if params.thumbnail { dng.subframe(0) } else { dng.subframe_on_root(0) };
   raw.raw_image(&rawimage, params.crop, params.compression, params.photometric_conversion, params.predictor)?;
   // Check for DNG raw IFD related tags
-  // TODO: OpcodeList1-3 require per-opcode version checks. Required (non-optional) opcodes
-  // raise DNGBackwardVersion to the opcode's DNG version (DNG spec, Appendix A, issue 7 and 16).
   if let Some(dng_raw_ifd) = decoder.ifd(WellKnownIFD::VirtualDngRawTags)? {
-    raw.ifd_mut().copy(dng_raw_ifd.value_iter());
+    // Opcode lists are written by raw_image(), they may have been applied to the image data
+    let opcode_lists = [DngTag::OpcodeList1 as u16, DngTag::OpcodeList2 as u16, DngTag::OpcodeList3 as u16];
+    raw.ifd_mut().copy(dng_raw_ifd.value_iter().filter(|(tag, _)| !opcode_lists.contains(tag)));
   }
   raw.finalize()?;
 
@@ -393,6 +424,36 @@ where
     _ => None,
   };
   Ok(ConvertInfo { last_modified })
+}
+
+/// Demosaic scaled CFA image data into three-color LinearRaw data, cropped to the
+/// active area. Other image data is left unchanged, as stage 3 equals stage 2 for it.
+fn demosaic_to_linear_raw(rawimage: &mut RawImage, fuji_rotation: bool) {
+  if !fuji_rotation && !matches!(rawimage.photometric, RawPhotometricInterpretation::Cfa(_)) {
+    return;
+  }
+  let pixels = PixF32::new_with(rawimage.data.as_f32().into_owned(), rawimage.width, rawimage.height);
+  let roi = rawimage.active_area.unwrap_or(pixels.rect());
+  let demosaic = PPGDemosaic::new();
+  let mut rgb = demosaic.demosaic(&pixels, &rawimage.camera.cfa, &rawimage.camera.plane_color, roi);
+  if fuji_rotation {
+    let fuji_rotation_width = rawimage.fuji_rotation_width.expect("fuji_rotate: no rotation width found");
+    let extra_rotate = rawimage.camera.find_hint("fuji_rotate_90cw");
+    rgb = fuji_normalize_rotation(&rgb, fuji_rotation_width, extra_rotate);
+  } else {
+    // Crop area is relative to the full image, which is now cropped to the active area
+    rawimage.crop_area = rawimage
+      .crop_area
+      .map(|crop| Rect::new(Point::new(crop.p.x.saturating_sub(roi.p.x), crop.p.y.saturating_sub(roi.p.y)), crop.d));
+  }
+  rawimage.width = rgb.width;
+  rawimage.height = rgb.height;
+  rawimage.active_area = None;
+  rawimage.cpp = 3;
+  rawimage.blacklevel = BlackLevel::zero(1, 1, 3);
+  rawimage.whitelevel = WhiteLevel::new([1, 1, 1]); // Already scaled up to 0.0 .. 1.0
+  rawimage.photometric = RawPhotometricInterpretation::LinearRaw;
+  rawimage.data = RawImageData::Float(rgb.into_flatten());
 }
 
 /// Get a preview image from the decoder, or develop it from raw data.

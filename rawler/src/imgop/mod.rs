@@ -199,6 +199,23 @@ impl Rect {
     self.p.y
   }
 
+  /// Intersection of two rectangles, `None` if they don't overlap
+  pub fn intersect(&self, other: &Self) -> Option<Self> {
+    let left = self.x().max(other.x());
+    let top = self.y().max(other.y());
+    let right = (self.x() + self.width()).min(other.x() + other.width());
+    let bottom = (self.y() + self.height()).min(other.y() + other.height());
+    (left < right && top < bottom).then(|| Self::new_with_points(Point::new(left, top), Point::new(right, bottom)))
+  }
+
+  /// Rectangle relative to the origin of `area`, clipped to it.
+  /// `None` if they don't overlap.
+  pub fn rebase(&self, area: &Self) -> Option<Self> {
+    self
+      .intersect(area)
+      .map(|rect| Self::new(Point::new(rect.p.x - area.p.x, rect.p.y - area.p.y), rect.d))
+  }
+
   pub fn adapt(&self, master: &Self) -> Self {
     assert!(self.p.x >= master.p.x);
     assert!(self.p.y >= master.p.y);

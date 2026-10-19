@@ -6,9 +6,9 @@ use std::{
 use image::{DynamicImage, ImageBuffer};
 
 use crate::{
-  RawImage,
+  RawImage, RawImageData,
   decoders::{RawDecodeParams, RawMetadata, validate_image_index},
-  dng::CropMode,
+  dng::{CropMode, opcodes::OpcodeStage},
   formats::tiff::{DirectoryWriter, TiffWriter},
   imgop::{
     chromatic_adaption::adapt_bradford,
@@ -23,7 +23,7 @@ use crate::{
 };
 
 use super::{
-  Dim2, Rect, convert_from_f32_scaled_u16,
+  Dim2, Point, Rect, convert_from_f32_scaled_u16, crop,
   raw::{map_3ch_to_rgb, map_4ch_to_rgb},
   sensor::bayer::{bilinear::Bilinear4Channel, ppg::PPGDemosaic},
   xyz::Illuminant,
@@ -167,8 +167,12 @@ impl RawDevelop {
   /// has only one color channel.
   pub fn develop_intermediate(&self, rawimage: &RawImage) -> crate::Result<Intermediate> {
     let mut rawimage = rawimage.clone();
+    // OpcodeList1 is applied to the raw image as read from the file
+    rawimage.apply_opcode_list(OpcodeStage::List1)?;
     if self.steps.contains(&ProcessingStep::Rescale) {
       rawimage.apply_scaling()?;
+      // OpcodeList2 is applied just after mapping to linear reference values
+      rawimage.apply_opcode_list(OpcodeStage::List2)?;
     }
 
     let mut intermediate = match rawimage.cpp {
@@ -226,6 +230,12 @@ impl RawDevelop {
         }
         _ => intermediate,
       };
+
+      // OpcodeList3 is applied just after demosaicing
+      if rawimage.opcode_list(OpcodeStage::List3).is_some() {
+        let cropped = matches!(rawimage.photometric, RawPhotometricInterpretation::Cfa(_)) && self.steps.contains(&ProcessingStep::CropActiveArea);
+        intermediate = apply_opcode_list3(&mut rawimage, intermediate, cropped)?;
+      }
     }
 
     if self.steps.contains(&ProcessingStep::Calibrate) {
@@ -405,6 +415,183 @@ impl RawDevelop {
 
     tiff.build(root_ifd)?;
 
+    Ok(())
+  }
+}
+
+/// Apply OpcodeList3 to the demosaiced image. While the opcodes are applied, the
+/// intermediate is the image data of `rawimage`. If `cropped` is set, the
+/// intermediate is the ActiveArea of the raw image and stays cropped to it.
+fn apply_opcode_list3(rawimage: &mut RawImage, intermediate: Intermediate, cropped: bool) -> crate::Result<Intermediate> {
+  let dim = intermediate.dim();
+  let (cpp, data) = match intermediate {
+    Intermediate::Monochrome(pixels) => (1, pixels.data),
+    Intermediate::ThreeColor(pixels) => (3, pixels.data.into_flattened()),
+    Intermediate::FourColor(pixels) => (4, pixels.data.into_flattened()),
+  };
+  rawimage.width = dim.w;
+  rawimage.height = dim.h;
+  rawimage.cpp = cpp;
+  rawimage.data = RawImageData::Float(data);
+  if cropped && let Some(active_area) = rawimage.active_area.take() {
+    rawimage.crop_area = rawimage.crop_area.and_then(|crop_area| crop_area.rebase(&active_area));
+  }
+
+  rawimage.apply_opcode_list(OpcodeStage::List3)?;
+
+  let mut samples = match std::mem::replace(&mut rawimage.data, RawImageData::Float(Vec::new())) {
+    RawImageData::Float(samples) => samples,
+    data => data.as_f32().into_owned(),
+  };
+  // A TrimBounds in OpcodeList3 shrinks the ActiveArea, keep the intermediate cropped to it
+  if cropped && let Some(active_area) = rawimage.active_area.take() {
+    let window = Rect::new(
+      Point::new(active_area.p.x * cpp, active_area.p.y),
+      Dim2::new(active_area.d.w * cpp, active_area.d.h),
+    );
+    samples = crop(&samples, Dim2::new(rawimage.width * cpp, rawimage.height), window);
+    rawimage.width = active_area.d.w;
+    rawimage.height = active_area.d.h;
+    rawimage.crop_area = rawimage.crop_area.and_then(|crop_area| crop_area.rebase(&active_area));
+  }
+  let (width, height) = (rawimage.width, rawimage.height);
+  Ok(match cpp {
+    1 => Intermediate::Monochrome(PixF32::new_with(samples, width, height)),
+    3 => Intermediate::ThreeColor(Color2D::new_with(samples.as_chunks::<3>().0.to_vec(), width, height)),
+    _ => Intermediate::FourColor(Color2D::new_with(samples.as_chunks::<4>().0.to_vec(), width, height)),
+  })
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+  use crate::{
+    CFA,
+    decoders::Camera,
+    dng::opcodes::{FixBadPixelsConstant, Opcode, OpcodeList, TrimBounds, WarpRectilinear, WarpRectilinearCoeffs},
+    pixarray::PixU16,
+    rawimage::{BlackLevel, CFAConfig, WhiteLevel},
+  };
+
+  fn warp_rectilinear(k_r0: f64, k_r1: f64) -> Opcode {
+    Opcode::WarpRectilinear(WarpRectilinear {
+      version: 0x01030000,
+      flags: 0,
+      coeffs: vec![WarpRectilinearCoeffs {
+        k_r0,
+        k_r1,
+        k_r2: 0.0,
+        k_r3: 0.0,
+        k_t0: 0.0,
+        k_t1: 0.0,
+      }],
+      c_x: 0.5,
+      c_y: 0.5,
+    })
+  }
+
+  #[test]
+  fn develop_applies_opcode_list3() -> std::result::Result<(), Box<dyn std::error::Error>> {
+    // LinearRaw ramp, the warp maps all pixels to full or half source pixels
+    let ramp = (0..8 * 6 * 3).map(|i| ((i / 3) % 8) as f32 / 8.0).collect();
+    let mut rawimage = RawImage::new_with_data(
+      Camera::default(),
+      RawImageData::Float(ramp),
+      8 * 3,
+      6,
+      3,
+      [1.0, 1.0, 1.0, f32::NAN],
+      RawPhotometricInterpretation::LinearRaw,
+      Some(BlackLevel::zero(1, 1, 3)),
+      Some(WhiteLevel::new(vec![1; 3])),
+      false,
+    );
+    rawimage.dng_opcodes_3 = Some(OpcodeList::new(vec![warp_rectilinear(0.5, 0.0)]));
+    let develop = RawDevelop::new_with(&[ProcessingStep::Rescale, ProcessingStep::Demosaic]);
+    let Intermediate::ThreeColor(pixels) = develop.develop_intermediate(&rawimage)? else {
+      panic!("expected three color image");
+    };
+    for (i, pixel) in pixels.data.iter().enumerate() {
+      let x = (i % 8) as f32;
+      assert_eq!(*pixel, [(2.0 + x / 2.0) / 8.0; 3], "pixel {}", i);
+    }
+    Ok(())
+  }
+
+  #[test]
+  fn develop_opcode_list3_keeps_crop_consistent() -> std::result::Result<(), Box<dyn std::error::Error>> {
+    let mut camera = Camera::new();
+    camera.cfa = CFA::new("RGGB");
+    let photometric = RawPhotometricInterpretation::Cfa(CFAConfig::new_from_camera(&camera));
+    let mut rawimage = RawImage::new(
+      camera,
+      PixU16::new_with(vec![2048; 16 * 16], 16, 16),
+      1,
+      [1.0, 1.0, 1.0, f32::NAN],
+      photometric,
+      Some(BlackLevel::new(&[0_u32, 0, 0, 0], 2, 2, 1)),
+      Some(WhiteLevel::new_bits(12, 1)),
+      false,
+    );
+    rawimage.active_area = Some(Rect::new(Point::new(2, 2), Dim2::new(12, 10)));
+    rawimage.crop_area = Some(Rect::new(Point::new(4, 4), Dim2::new(8, 6)));
+    // TrimBounds moves the stage 3 image origin by (1, 1), DefaultCrop keeps its size
+    let trim = Opcode::TrimBounds(TrimBounds {
+      version: 0x01030000,
+      flags: 0,
+      top: 1,
+      left: 1,
+      bottom: 9,
+      right: 11,
+    });
+    rawimage.dng_opcodes_3 = Some(OpcodeList::new(vec![warp_rectilinear(0.98, 0.03), trim]));
+    let develop = RawDevelop::new_with(&[
+      ProcessingStep::Rescale,
+      ProcessingStep::Demosaic,
+      ProcessingStep::CropActiveArea,
+      ProcessingStep::CropDefault,
+    ]);
+    let intermediate = develop.develop_intermediate(&rawimage)?;
+    assert_eq!(intermediate.dim(), Dim2::new(8, 6));
+    let Intermediate::ThreeColor(pixels) = intermediate else {
+      panic!("expected three color image");
+    };
+    let expected = 2048.0 / 4095.0;
+    assert!(pixels.data.iter().flatten().all(|v| (v - expected).abs() < 1e-4));
+    Ok(())
+  }
+
+  #[test]
+  fn develop_applies_opcode_list1() -> std::result::Result<(), Box<dyn std::error::Error>> {
+    let mut camera = Camera::new();
+    camera.cfa = CFA::new("RGGB");
+    let photometric = RawPhotometricInterpretation::Cfa(CFAConfig::new_from_camera(&camera));
+    // Bad red pixel, its red neighbours are 1000, 1200, 1400 and 1600
+    let mut pixels = vec![2048; 16 * 16];
+    pixels[6 * 16 + 6] = 0;
+    for (i, (row, col)) in [(4, 6), (8, 6), (6, 4), (6, 8)].into_iter().enumerate() {
+      pixels[row * 16 + col] = 1000 + 200 * i as u16;
+    }
+    let mut rawimage = RawImage::new(
+      camera,
+      PixU16::new_with(pixels, 16, 16),
+      1,
+      [1.0, 1.0, 1.0, f32::NAN],
+      photometric,
+      Some(BlackLevel::new(&[0_u32, 0, 0, 0], 2, 2, 1)),
+      Some(WhiteLevel::new_bits(12, 1)),
+      false,
+    );
+    rawimage.dng_opcodes_1 = Some(OpcodeList::new(vec![Opcode::FixBadPixelsConstant(FixBadPixelsConstant {
+      version: 0x01030000,
+      flags: 0,
+      constant: 0,
+      bayer_phase: 0,
+    })]));
+    let Intermediate::Monochrome(pixels) = RawDevelop::new_with(&[ProcessingStep::Rescale]).develop_intermediate(&rawimage)? else {
+      panic!("expected monochrome image");
+    };
+    assert_eq!(pixels.data[6 * 16 + 6], 1300.0 / 4095.0);
     Ok(())
   }
 }

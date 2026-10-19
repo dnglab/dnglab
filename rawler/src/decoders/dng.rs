@@ -1,6 +1,7 @@
 use crate::RawImage;
 use crate::cfa::*;
 use crate::decoders::*;
+use crate::dng::opcodes::OpcodeList;
 use crate::dng::{DNG_READER_VERSION, DNG_VERSION_V1_1, DngVersionNumber};
 use crate::formats::tiff::Entry;
 use crate::formats::tiff::ExtractFromIFD;
@@ -122,6 +123,27 @@ impl<'a> Decoder for DngDecoder<'a> {
     let wb_coeffs = self.get_wb(&cam)?;
     let mut image = RawImage::new_with_data(cam, raw_data, width * cpp, height, cpp, wb_coeffs, photometric, blacklevel, whitelevel, dummy);
     image.orientation = orientation;
+
+    // Opcode extraction
+
+    if let Some(data) = raw.get_entry(DngTag::OpcodeList1).map(|entry| entry.value.get_data()) {
+      let opcodes = OpcodeList::parse(data)?;
+      log::debug!("OpcodeList1: {:?}", opcodes);
+      image.dng_opcodes_1 = Some(opcodes);
+    }
+
+    if let Some(data) = raw.get_entry(DngTag::OpcodeList2).map(|entry| entry.value.get_data()) {
+      let opcodes = OpcodeList::parse(data)?;
+      log::debug!("OpcodeList2: {:?}", opcodes);
+      image.dng_opcodes_2 = Some(opcodes);
+    }
+
+    if let Some(data) = raw.get_entry(DngTag::OpcodeList3).map(|entry| entry.value.get_data()) {
+      let opcodes = OpcodeList::parse(data)?;
+      log::debug!("OpcodeList3: {:?}", opcodes);
+      image.dng_opcodes_3 = Some(opcodes);
+    }
+
     Ok(image)
   }
 
@@ -188,6 +210,8 @@ impl<'a> Decoder for DngDecoder<'a> {
         .map(Rc::new),
       WellKnownIFD::VirtualDngRawTags => {
         let mut ifd = IFD::default();
+        // OpcodeList1-3 are returned as stored. DNG conversion writes them from
+        // RawImage instead, as they may have been applied to the image data.
         IFD::copy_tag(&mut ifd, self.get_raw_ifd()?, DngTag::OpcodeList1);
         IFD::copy_tag(&mut ifd, self.get_raw_ifd()?, DngTag::OpcodeList2);
         IFD::copy_tag(&mut ifd, self.get_raw_ifd()?, DngTag::OpcodeList3);
@@ -915,6 +939,79 @@ mod tests {
   fn integer_whitelevel_defaults_to_bits() -> TestResult {
     let data = write_dng(&synthetic_rawimage(), |ifd| ifd.remove_tag(TiffCommonTag::WhiteLevel))?;
     assert_eq!(decode_dng(&data)?.whitelevel.0, vec![u16::MAX as u32]);
+    Ok(())
+  }
+
+  /// Synthetic DNG with a required FixBadPixelsConstant (DNG 1.3) in OpcodeList1
+  /// and an optional one in OpcodeList2
+  fn dng_with_opcode_lists() -> TestResult<Vec<u8>> {
+    use crate::dng::opcodes::{FixBadPixelsConstant, Opcode, OpcodeList};
+
+    let list = |flags| {
+      OpcodeList::new(vec![Opcode::FixBadPixelsConstant(FixBadPixelsConstant {
+        version: 0x01030000,
+        flags,
+        constant: 0,
+        bayer_phase: 0,
+      })])
+    };
+    let mut rawimage = synthetic_rawimage();
+    rawimage.dng_opcodes_1 = Some(list(0));
+    rawimage.dng_opcodes_2 = Some(list(1));
+    write_dng(&rawimage, |_| {})
+  }
+
+  /// Raw IFD of the DNG in `data`
+  fn raw_ifd(data: &[u8]) -> TestResult<std::rc::Rc<crate::formats::tiff::IFD>> {
+    use crate::decoders::{Decoder, WellKnownIFD};
+
+    Ok(dng_decoder(data)?.ifd(WellKnownIFD::Raw)?.ok_or("raw IFD not found")?)
+  }
+
+  #[test]
+  fn virtual_raw_tags_keep_opcode_lists() -> TestResult {
+    use crate::decoders::{Decoder, WellKnownIFD};
+
+    let data = dng_with_opcode_lists()?;
+    let raw = raw_ifd(&data)?;
+    let tags = dng_decoder(&data)?.ifd(WellKnownIFD::VirtualDngRawTags)?.ok_or("no virtual raw tags")?;
+    for tag in [DngTag::OpcodeList1, DngTag::OpcodeList2] {
+      let stored = raw.get_entry(tag).map(|entry| &entry.value);
+      assert!(stored.is_some(), "{:?} is not stored", tag);
+      assert_eq!(tags.get_entry(tag).map(|entry| &entry.value), stored, "{:?}", tag);
+    }
+    assert!(tags.get_entry(DngTag::OpcodeList3).is_none());
+    Ok(())
+  }
+
+  #[test]
+  fn convert_does_not_copy_applied_opcode_lists() -> TestResult {
+    use crate::dng::DngVersion;
+    use crate::dng::convert::{ConvertParams, convert_raw_source};
+
+    let data = dng_with_opcode_lists()?;
+    let source = raw_ifd(&data)?;
+    let convert = |max_backward_version| -> TestResult<std::rc::Rc<crate::formats::tiff::IFD>> {
+      let params = ConvertParams::default()
+        .with_preview(false)
+        .with_thumbnail(false)
+        .with_max_dng_backward_version(max_backward_version);
+      let mut output = Cursor::new(Vec::new());
+      convert_raw_source(&RawSource::new_from_slice(&data), &mut output, "synthetic.dng", &params)?;
+      raw_ifd(&output.into_inner())
+    };
+    let value = |ifd: &crate::formats::tiff::IFD, tag| ifd.get_entry(tag).map(|entry| entry.value.clone());
+
+    // Both lists are stored unchanged
+    let raw = convert(DngVersion::V1_4)?;
+    assert_eq!(value(&raw, DngTag::OpcodeList1), value(&source, DngTag::OpcodeList1));
+    assert_eq!(value(&raw, DngTag::OpcodeList2), value(&source, DngTag::OpcodeList2));
+
+    // The required DNG 1.3 opcode can't be stored with DNGBackwardVersion 1.2, so
+    // OpcodeList1 is applied and must not be copied from the source
+    let raw = convert(DngVersion::V1_2)?;
+    assert_eq!(value(&raw, DngTag::OpcodeList1), None);
+    assert_eq!(value(&raw, DngTag::OpcodeList2), value(&source, DngTag::OpcodeList2));
     Ok(())
   }
 }

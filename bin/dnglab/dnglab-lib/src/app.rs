@@ -111,6 +111,13 @@ Command line switches override the values of the profile.",
         .default_missing_value("true"),
     )
     .arg(
+      arg!(map_linear: --"map-linear" <linear> "Map raw values to linear reference values")
+        .value_parser(ValueParser::bool())
+        .required(false)
+        .default_value("false")
+        .default_missing_value("true"),
+    )
+    .arg(
       arg!(--"artist" <artist> "Set the artist tag")
         .required(false)
         .value_parser(NonEmptyStringValueParser::new()),
