@@ -3,6 +3,7 @@
 
 pub mod convert;
 pub mod convertprofile;
+pub mod opcodes;
 pub mod original;
 pub mod writer;
 

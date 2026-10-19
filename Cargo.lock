@@ -2257,6 +2257,7 @@ dependencies = [
  "rustc_version",
  "serde",
  "serde_arrays",
+ "serde_json",
  "serde_yaml",
  "thiserror",
  "toml",
