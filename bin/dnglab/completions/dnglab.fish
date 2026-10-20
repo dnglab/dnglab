@@ -67,6 +67,7 @@ complete -c dnglab -n "__fish_dnglab_using_subcommand analyze" -l json -d 'Forma
 complete -c dnglab -n "__fish_dnglab_using_subcommand analyze" -l yaml -d 'Format metadata as YAML'
 complete -c dnglab -n "__fish_dnglab_using_subcommand analyze" -s v -d 'Print status for every file'
 complete -c dnglab -n "__fish_dnglab_using_subcommand analyze" -s h -l help -d 'Print help (see more with \'--help\')'
+complete -c dnglab -n "__fish_dnglab_using_subcommand process-raw" -l remove-dng-opcodes -d 'Remove DNG opcodes, as comma separated [<list>:]<opcode> (e.g. WarpRectilinear,2:GainMap)' -r
 complete -c dnglab -n "__fish_dnglab_using_subcommand process-raw" -l artist -d 'Set the artist tag' -r
 complete -c dnglab -n "__fish_dnglab_using_subcommand process-raw" -l keep-mtime -d 'Keep mtime, read from EXIF with fallback to original file mtime' -r -f -a "true\t''
 false\t''"
@@ -106,8 +107,11 @@ complete -c dnglab -n "__fish_dnglab_using_subcommand convert" -l max-dng-backwa
 1.6\t''"
 complete -c dnglab -n "__fish_dnglab_using_subcommand convert" -l embed-raw -d 'Embed the raw file into DNG' -r -f -a "true\t''
 false\t''"
-complete -c dnglab -n "__fish_dnglab_using_subcommand convert" -l map-linear -d 'Map raw values to linear reference values' -r -f -a "true\t''
-false\t''"
+complete -c dnglab -n "__fish_dnglab_using_subcommand convert" -l apply-dng-opcodes -d 'Apply DNG opcode lists to the image data instead of writing them to the DNG' -r -f -a "auto\t''
+list1\t''
+list2\t''
+list3\t''"
+complete -c dnglab -n "__fish_dnglab_using_subcommand convert" -l remove-dng-opcodes -d 'Remove DNG opcodes, as comma separated [<list>:]<opcode> (e.g. WarpRectilinear,2:GainMap)' -r
 complete -c dnglab -n "__fish_dnglab_using_subcommand convert" -l artist -d 'Set the artist tag' -r
 complete -c dnglab -n "__fish_dnglab_using_subcommand convert" -l copyright -d 'Set the copyright tag' -r
 complete -c dnglab -n "__fish_dnglab_using_subcommand convert" -l keep-mtime -d 'Keep mtime, read from EXIF with fallback to original file mtime' -r -f -a "true\t''
@@ -149,8 +153,11 @@ complete -c dnglab -n "__fish_dnglab_using_subcommand ftpserver" -l max-dng-back
 1.6\t''"
 complete -c dnglab -n "__fish_dnglab_using_subcommand ftpserver" -l embed-raw -d 'Embed the raw file into DNG' -r -f -a "true\t''
 false\t''"
-complete -c dnglab -n "__fish_dnglab_using_subcommand ftpserver" -l map-linear -d 'Map raw values to linear reference values' -r -f -a "true\t''
-false\t''"
+complete -c dnglab -n "__fish_dnglab_using_subcommand ftpserver" -l apply-dng-opcodes -d 'Apply DNG opcode lists to the image data instead of writing them to the DNG' -r -f -a "auto\t''
+list1\t''
+list2\t''
+list3\t''"
+complete -c dnglab -n "__fish_dnglab_using_subcommand ftpserver" -l remove-dng-opcodes -d 'Remove DNG opcodes, as comma separated [<list>:]<opcode> (e.g. WarpRectilinear,2:GainMap)' -r
 complete -c dnglab -n "__fish_dnglab_using_subcommand ftpserver" -l artist -d 'Set the artist tag' -r
 complete -c dnglab -n "__fish_dnglab_using_subcommand ftpserver" -l copyright -d 'Set the copyright tag' -r
 complete -c dnglab -n "__fish_dnglab_using_subcommand ftpserver" -l keep-mtime -d 'Keep mtime, read from EXIF with fallback to original file mtime' -r -f -a "true\t''

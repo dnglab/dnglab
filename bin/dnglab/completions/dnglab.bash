@@ -173,7 +173,7 @@ _dnglab() {
             return 0
             ;;
         dnglab__subcmd__convert)
-            opts="-p -c -f -r -j -d -v -h --profile --compression --ljpeg92-predictor --dng-preview --dng-thumbnail --dng-force-preview --dng-force-thumbnail --max-dng-backward-version --embed-raw --map-linear --artist --copyright --keep-mtime --image-index --crop --override --recursive --jobs --loglevel --profile-path --config --help"
+            opts="-p -c -f -r -j -d -v -h --profile --compression --ljpeg92-predictor --dng-preview --dng-thumbnail --dng-force-preview --dng-force-thumbnail --max-dng-backward-version --embed-raw --apply-dng-opcodes --remove-dng-opcodes --artist --copyright --keep-mtime --image-index --crop --override --recursive --jobs --loglevel --profile-path --config --help"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
@@ -223,8 +223,12 @@ _dnglab() {
                     COMPREPLY=($(compgen -W "true false" -- "${cur}"))
                     return 0
                     ;;
-                --map-linear)
-                    COMPREPLY=($(compgen -W "true false" -- "${cur}"))
+                --apply-dng-opcodes)
+                    COMPREPLY=($(compgen -W "auto list1 list2 list3" -- "${cur}"))
+                    return 0
+                    ;;
+                --remove-dng-opcodes)
+                    COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
                 --artist)
@@ -309,7 +313,7 @@ _dnglab() {
             return 0
             ;;
         dnglab__subcmd__ftpserver)
-            opts="-p -c -f -d -v -h --profile --compression --ljpeg92-predictor --dng-preview --dng-thumbnail --dng-force-preview --dng-force-thumbnail --max-dng-backward-version --embed-raw --map-linear --artist --copyright --keep-mtime --image-index --crop --override --port --listen --keep-original --loglevel --profile-path --config --help"
+            opts="-p -c -f -d -v -h --profile --compression --ljpeg92-predictor --dng-preview --dng-thumbnail --dng-force-preview --dng-force-thumbnail --max-dng-backward-version --embed-raw --apply-dng-opcodes --remove-dng-opcodes --artist --copyright --keep-mtime --image-index --crop --override --port --listen --keep-original --loglevel --profile-path --config --help"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
@@ -359,8 +363,12 @@ _dnglab() {
                     COMPREPLY=($(compgen -W "true false" -- "${cur}"))
                     return 0
                     ;;
-                --map-linear)
-                    COMPREPLY=($(compgen -W "true false" -- "${cur}"))
+                --apply-dng-opcodes)
+                    COMPREPLY=($(compgen -W "auto list1 list2 list3" -- "${cur}"))
+                    return 0
+                    ;;
+                --remove-dng-opcodes)
+                    COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
                 --artist)
@@ -743,12 +751,16 @@ _dnglab() {
             return 0
             ;;
         dnglab__subcmd__process__subcmd__raw)
-            opts="-f -r -d -v -h --artist --keep-mtime --image-index --crop --override --recursive --loglevel --profile-path --config --help"
+            opts="-f -r -d -v -h --remove-dng-opcodes --artist --keep-mtime --image-index --crop --override --recursive --loglevel --profile-path --config --help"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
             fi
             case "${prev}" in
+                --remove-dng-opcodes)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
                 --artist)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0

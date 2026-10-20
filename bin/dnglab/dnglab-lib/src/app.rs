@@ -4,12 +4,12 @@
 use std::path::PathBuf;
 
 use clap::{
-  ArgAction, Command, arg,
+  Arg, ArgAction, Command, arg,
   builder::{NonEmptyStringValueParser, ValueParser},
   command, value_parser,
 };
 use log::debug;
-use rawler::dng::{CropMode, DngCompression, DngVersion};
+use rawler::dng::{ApplyDngOpcodes, CropMode, DngCompression, DngVersion, opcodes::OpcodeSelector};
 
 use crate::makedng::{
   CalibrationIlluminantArgParser, ColorMatrixArgParser, DngColorimetricReference, InputSourceUsageMap, LinearizationTableArgParser, WhiteBalanceInput,
@@ -39,6 +39,15 @@ impl clap::ValueEnum for LogLevel {
       Self::Trace => clap::builder::PossibleValue::new("trace"),
     })
   }
+}
+
+/// Argument to remove DNG opcodes, shared by convert and process-raw
+fn remove_dng_opcodes_arg() -> Arg {
+  arg!(remove_dng_opcodes: --"remove-dng-opcodes" <opcodes> "Remove DNG opcodes, as comma separated [<list>:]<opcode> (e.g. WarpRectilinear,2:GainMap)")
+    .required(false)
+    .value_parser(value_parser!(OpcodeSelector))
+    .value_delimiter(',')
+    .action(ArgAction::Append)
 }
 
 pub fn create_app() -> Command {
@@ -111,12 +120,12 @@ Command line switches override the values of the profile.",
         .default_missing_value("true"),
     )
     .arg(
-      arg!(map_linear: --"map-linear" <linear> "Map raw values to linear reference values")
-        .value_parser(ValueParser::bool())
+      arg!(apply_dng_opcodes: --"apply-dng-opcodes" <mode> "Apply DNG opcode lists to the image data instead of writing them to the DNG")
         .required(false)
-        .default_value("false")
-        .default_missing_value("true"),
+        .value_parser(value_parser!(ApplyDngOpcodes))
+        .default_value("auto"),
     )
+    .arg(remove_dng_opcodes_arg())
     .arg(
       arg!(--"artist" <artist> "Set the artist tag")
         .required(false)
@@ -210,6 +219,7 @@ Example:
     )
     .subcommand(
       Command::new("process-raw")
+        .arg(remove_dng_opcodes_arg())
         .arg(
           arg!(--"artist" <artist> "Set the artist tag")
             .required(false)

@@ -62,6 +62,7 @@ set edit:completion:arg-completer[dnglab] = {|@words|
             cand --help 'Print help (see more with ''--help'')'
         }
         &'dnglab;process-raw'= {
+            cand --remove-dng-opcodes 'Remove DNG opcodes, as comma separated [<list>:]<opcode> (e.g. WarpRectilinear,2:GainMap)'
             cand --artist 'Set the artist tag'
             cand --keep-mtime 'Keep mtime, read from EXIF with fallback to original file mtime'
             cand --image-index 'Select a specific image index (or ''all'') if file is a image container'
@@ -90,7 +91,8 @@ set edit:completion:arg-completer[dnglab] = {|@words|
             cand --dng-force-thumbnail 'Generate DNG thumbnail image from raw data'
             cand --max-dng-backward-version 'Maximum DNG backward version'
             cand --embed-raw 'Embed the raw file into DNG'
-            cand --map-linear 'Map raw values to linear reference values'
+            cand --apply-dng-opcodes 'Apply DNG opcode lists to the image data instead of writing them to the DNG'
+            cand --remove-dng-opcodes 'Remove DNG opcodes, as comma separated [<list>:]<opcode> (e.g. WarpRectilinear,2:GainMap)'
             cand --artist 'Set the artist tag'
             cand --copyright 'Set the copyright tag'
             cand --keep-mtime 'Keep mtime, read from EXIF with fallback to original file mtime'
@@ -122,7 +124,8 @@ set edit:completion:arg-completer[dnglab] = {|@words|
             cand --dng-force-thumbnail 'Generate DNG thumbnail image from raw data'
             cand --max-dng-backward-version 'Maximum DNG backward version'
             cand --embed-raw 'Embed the raw file into DNG'
-            cand --map-linear 'Map raw values to linear reference values'
+            cand --apply-dng-opcodes 'Apply DNG opcode lists to the image data instead of writing them to the DNG'
+            cand --remove-dng-opcodes 'Remove DNG opcodes, as comma separated [<list>:]<opcode> (e.g. WarpRectilinear,2:GainMap)'
             cand --artist 'Set the artist tag'
             cand --copyright 'Set the copyright tag'
             cand --keep-mtime 'Keep mtime, read from EXIF with fallback to original file mtime'

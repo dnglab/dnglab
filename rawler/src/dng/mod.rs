@@ -193,6 +193,51 @@ impl clap::ValueEnum for CropMode {
   }
 }
 
+/// DNG opcode lists that are applied to the image data when converting to DNG.
+/// Lists that are not applied are written to the DNG.
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum ApplyDngOpcodes {
+  /// Apply only opcode lists that can't be stored with the maximum DNGBackwardVersion
+  #[default]
+  Auto,
+  /// Apply OpcodeList1
+  List1,
+  /// Apply OpcodeList1 and OpcodeList2
+  List2,
+  /// Apply all opcode lists
+  List3,
+}
+
+impl ApplyDngOpcodes {
+  /// Check if the opcode list of `stage` is applied
+  pub fn includes(self, stage: opcodes::OpcodeStage) -> bool {
+    let last = match self {
+      Self::Auto => return false,
+      Self::List1 => opcodes::OpcodeStage::List1,
+      Self::List2 => opcodes::OpcodeStage::List2,
+      Self::List3 => opcodes::OpcodeStage::List3,
+    };
+    stage <= last
+  }
+}
+
+#[cfg(feature = "clap")]
+impl clap::ValueEnum for ApplyDngOpcodes {
+  fn value_variants<'a>() -> &'a [Self] {
+    &[Self::Auto, Self::List1, Self::List2, Self::List3]
+  }
+
+  fn to_possible_value(&self) -> Option<clap::builder::PossibleValue> {
+    Some(match self {
+      Self::Auto => clap::builder::PossibleValue::new("auto"),
+      Self::List1 => clap::builder::PossibleValue::new("list1"),
+      Self::List2 => clap::builder::PossibleValue::new("list2"),
+      Self::List3 => clap::builder::PossibleValue::new("list3"),
+    })
+  }
+}
+
 /*
 impl FromStr for CropMode {
   type Err = String;
