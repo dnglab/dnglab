@@ -434,6 +434,13 @@ impl<'a> LjpegDecompressor<'a> {
       return Err(format!("ljpeg: restart markers are not supported with predictor {}", self.predictor));
     }
 
+    if self.sof.width == 0 || !self.restart_interval.is_multiple_of(self.sof.width) {
+      return Err(format!(
+        "ljpeg: restart interval {} must be a multiple of image width {}",
+        self.restart_interval, self.sof.width
+      ));
+    }
+
     Ok(())
   }
 
