@@ -7,7 +7,7 @@
 
 use serde::{Deserialize, Serialize};
 
-use crate::dng::{CropMode, DngCompression, DngVersion};
+use crate::dng::{ApplyDngOpcodes, CropMode, DngCompression, DngVersion, opcodes::OpcodeSelector};
 
 /// How to handle files that contain multiple raw images
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq, Serialize, Deserialize)]
@@ -33,6 +33,13 @@ pub struct ConvertProfileV1 {
   /// Highest DNGBackwardVersion the output is allowed to declare
   #[serde(default = "default_max_dng_backward_version")]
   pub max_dng_backward_version: DngVersion,
+  /// DNG opcode lists to apply to the image data, in addition to the lists
+  /// that can't be stored with `max_dng_backward_version`
+  #[serde(default)]
+  pub apply_dng_opcodes: ApplyDngOpcodes,
+  /// DNG opcodes to remove, as `[<list>:]<opcode>`, e.g. "WarpRectilinear" or "2:GainMap"
+  #[serde(default, skip_serializing_if = "Vec::is_empty")]
+  pub remove_dng_opcodes: Vec<OpcodeSelector>,
   #[serde(default = "default_compression")]
   pub compression: DngCompression,
   #[serde(default = "default_ljpeg92_predictor")]
@@ -88,6 +95,8 @@ impl Default for ConvertProfileV1 {
       title: String::new(),
       description: None,
       max_dng_backward_version: default_max_dng_backward_version(),
+      apply_dng_opcodes: ApplyDngOpcodes::Auto,
+      remove_dng_opcodes: Vec::new(),
       compression: default_compression(),
       ljpeg92_predictor: default_ljpeg92_predictor(),
       crop: default_crop(),

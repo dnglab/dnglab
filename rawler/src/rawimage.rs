@@ -9,7 +9,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::Result;
 use crate::cfa::PlaneColor;
-use crate::dng::opcodes::{OpcodeList, OpcodeStage};
+use crate::dng::opcodes::{OpcodeList, OpcodeSelector, OpcodeStage};
 use crate::imgop::raw::{correct_blacklevel, correct_blacklevel_cfa};
 use crate::imgop::sensor::SensorType;
 use crate::imgop::{convert_from_f32_scaled_u16, convert_to_f32_unscaled};
@@ -569,6 +569,29 @@ impl RawImage {
   /// The image data must be in the state the stage requires, e.g. mapped to
   /// linear reference values for OpcodeList2. The list is consumed, so it is
   /// not written again into a DNG file.
+  /// Remove the DNG opcodes selected by `selectors`, so they are neither applied
+  /// nor written into a DNG file. Opcode lists without opcodes left are removed.
+  pub fn remove_opcodes(&mut self, selectors: &[OpcodeSelector]) {
+    if selectors.is_empty() {
+      return;
+    }
+    for (stage, list) in [
+      (OpcodeStage::List1, &mut self.dng_opcodes_1),
+      (OpcodeStage::List2, &mut self.dng_opcodes_2),
+      (OpcodeStage::List3, &mut self.dng_opcodes_3),
+    ] {
+      let Some(opcodes) = list.as_mut() else {
+        continue;
+      };
+      for opcode in opcodes.remove(stage, selectors) {
+        log::debug!("Removed DNG opcode {} from {}", opcode.name(), stage);
+      }
+      if opcodes.is_empty() {
+        *list = None;
+      }
+    }
+  }
+
   pub fn apply_opcode_list(&mut self, stage: OpcodeStage) -> Result<()> {
     let list = match stage {
       OpcodeStage::List1 => self.dng_opcodes_1.take(),

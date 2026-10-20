@@ -5,8 +5,9 @@ use std::path::PathBuf;
 
 use clap::{ArgMatches, parser::ValueSource};
 use rawler::dng::{
-  CropMode, DngCompression, DngVersion,
+  ApplyDngOpcodes, CropMode, DngCompression, DngVersion,
   convertprofile::{ConvertProfile, ConvertProfileRegistry, MultiFrameMode},
+  opcodes::OpcodeSelector,
 };
 
 use crate::{
@@ -85,6 +86,15 @@ fn from_cli<T: Clone + Send + Sync + 'static>(options: &ArgMatches, id: &str) ->
   }
 }
 
+/// Get all values only if they were given on the command line
+fn many_from_cli<T: Clone + Send + Sync + 'static>(options: &ArgMatches, id: &str) -> Option<Vec<T>> {
+  if options.value_source(id) == Some(ValueSource::CommandLine) {
+    options.get_many::<T>(id).map(|values| values.cloned().collect())
+  } else {
+    None
+  }
+}
+
 fn apply_cli_overrides(profile: &mut ConvertProfile, options: &ArgMatches) {
   if let Some(value) = from_cli::<DngCompression>(options, "compression") {
     profile.compression = value;
@@ -112,6 +122,12 @@ fn apply_cli_overrides(profile: &mut ConvertProfile, options: &ArgMatches) {
   }
   if let Some(value) = from_cli::<DngVersion>(options, "max_dng_backward_version") {
     profile.max_dng_backward_version = value;
+  }
+  if let Some(value) = from_cli::<ApplyDngOpcodes>(options, "apply_dng_opcodes") {
+    profile.apply_dng_opcodes = value;
+  }
+  if let Some(value) = many_from_cli::<OpcodeSelector>(options, "remove_dng_opcodes") {
+    profile.remove_dng_opcodes = value;
   }
   if let Some(value) = from_cli::<String>(options, "artist") {
     profile.artist = Some(value);
@@ -212,6 +228,41 @@ mod tests {
     assert_eq!(frames, FrameSelection::All);
     // From command line
     assert_eq!(profile.compression, DngCompression::Uncompressed);
+  }
+
+  #[test]
+  fn cli_overrides_dng_opcodes() {
+    let tmp = TempDir::new();
+    tmp.write(
+      "mine.toml",
+      "[convertprofile.mine]\nversion = 1\ntitle = \"T\"\napply_dng_opcodes = \"list3\"\nremove_dng_opcodes = [\"GainMap\"]\n",
+    );
+    let path = tmp.path();
+    let (_tmp, options) = convert_matches(&["--profile-path", &path, "convert", "-p", "mine", "in.raw", "out.dng"]);
+    let (profile, _) = resolve_convert_profile(&options).expect("profile");
+    assert_eq!(profile.apply_dng_opcodes, ApplyDngOpcodes::List3);
+    assert_eq!(profile.remove_dng_opcodes, ["GainMap".parse::<OpcodeSelector>().expect("selector")]);
+    // The command line replaces the profile values
+    let args = [
+      "--profile-path",
+      &path,
+      "convert",
+      "-p",
+      "mine",
+      "--apply-dng-opcodes",
+      "list1",
+      "--remove-dng-opcodes",
+      "3:WarpRectilinear,2:GainMap",
+      "--remove-dng-opcodes",
+      "51966",
+      "in.raw",
+      "out.dng",
+    ];
+    let (_tmp, options) = convert_matches(&args);
+    let (profile, _) = resolve_convert_profile(&options).expect("profile");
+    assert_eq!(profile.apply_dng_opcodes, ApplyDngOpcodes::List1);
+    let removed: Vec<String> = profile.remove_dng_opcodes.iter().map(ToString::to_string).collect();
+    assert_eq!(removed, ["3:WarpRectilinear", "2:GainMap", "51966"]);
   }
 
   #[test]

@@ -8,7 +8,10 @@ use image::{DynamicImage, ImageBuffer};
 use crate::{
   RawImage, RawImageData,
   decoders::{RawDecodeParams, RawMetadata, validate_image_index},
-  dng::{CropMode, opcodes::OpcodeStage},
+  dng::{
+    CropMode,
+    opcodes::{OpcodeSelector, OpcodeStage},
+  },
   formats::tiff::{DirectoryWriter, TiffWriter},
   imgop::{
     chromatic_adaption::adapt_bradford,
@@ -38,6 +41,8 @@ pub struct RawProcessingParams {
   pub software: String,
   pub index: usize,
   pub keep_mtime: bool,
+  /// DNG opcodes to remove before processing
+  pub remove_dng_opcodes: Vec<OpcodeSelector>,
 }
 
 impl Default for RawProcessingParams {
@@ -49,6 +54,7 @@ impl Default for RawProcessingParams {
       software: "DNGLab".into(),
       index: 0,
       keep_mtime: false,
+      remove_dng_opcodes: Vec::new(),
     }
   }
 }
@@ -58,7 +64,8 @@ pub fn process_raw_image<W: Write + Seek + Send>(raw: &Path, image_file: &mut W,
   let decoder = crate::get_decoder(&rawfile)?;
   let raw_params = RawDecodeParams { image_index: params.index };
   validate_image_index(decoder.as_ref(), &raw_params)?;
-  let rawimage = decoder.raw_image(&rawfile, &raw_params, false)?;
+  let mut rawimage = decoder.raw_image(&rawfile, &raw_params, false)?;
+  rawimage.remove_opcodes(&params.remove_dng_opcodes);
   let metadata = decoder.raw_metadata(&rawfile, &raw_params)?;
   let develop = RawDevelop::default();
   develop.develop(&rawimage, &metadata, image_file)?;

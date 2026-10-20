@@ -192,6 +192,8 @@ impl ConvertProfile {
       software: software.into(),
       keep_mtime: self.keep_mtime,
       max_dng_backward_version: self.max_dng_backward_version,
+      apply_dng_opcodes: self.apply_dng_opcodes,
+      remove_dng_opcodes: self.remove_dng_opcodes.clone(),
       ..Default::default()
     }
   }
@@ -424,7 +426,7 @@ impl ConvertProfileRegistry {
 #[cfg(test)]
 mod tests {
   use super::*;
-  use crate::dng::{CropMode, DngCompression, DngVersion};
+  use crate::dng::{ApplyDngOpcodes, CropMode, DngCompression, DngVersion};
 
   /// Temporary directory, removed on drop
   struct TempDir(PathBuf);
@@ -483,6 +485,8 @@ mod tests {
     assert_eq!(params.keep_mtime, default.keep_mtime);
     assert_eq!(params.dng_version, default.dng_version);
     assert_eq!(params.max_dng_backward_version, default.max_dng_backward_version);
+    assert_eq!(params.apply_dng_opcodes, default.apply_dng_opcodes);
+    assert_eq!(params.remove_dng_opcodes, default.remove_dng_opcodes);
   }
 
   #[test]
@@ -491,6 +495,8 @@ mod tests {
       title: "Test title".into(),
       description: Some("Test".into()),
       max_dng_backward_version: DngVersion::V1_1,
+      apply_dng_opcodes: ApplyDngOpcodes::List2,
+      remove_dng_opcodes: vec!["WarpRectilinear".parse().expect("selector"), "2:GainMap".parse().expect("selector")],
       compression: DngCompression::Uncompressed,
       ljpeg92_predictor: 3,
       crop: CropMode::ActiveArea,
@@ -512,6 +518,8 @@ mod tests {
     assert!(toml.contains("title = \"Test title\""));
     assert!(toml.contains("max_dng_backward_version = \"1.1\""));
     assert!(toml.contains("crop = \"activearea\""));
+    assert!(toml.contains("apply_dng_opcodes = \"list2\""));
+    assert!(toml.contains("remove_dng_opcodes = [\"WarpRectilinear\", \"2:GainMap\"]"));
     let parsed = ConvertProfileFile::from_toml_str(&toml).expect("parse");
     assert_eq!(parsed, file);
     assert_eq!(parsed.into_profiles().next().map(|(_, p)| p), Some(profile));

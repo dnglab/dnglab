@@ -61,6 +61,7 @@ _arguments "${_arguments_options[@]}" : \
 ;;
 (process-raw)
 _arguments "${_arguments_options[@]}" : \
+'*--remove-dng-opcodes=[Remove DNG opcodes, as comma separated \[<list>\:\]<opcode> (e.g. WarpRectilinear,2\:GainMap)]:opcodes:_default' \
 '--artist=[Set the artist tag]:artist:_default' \
 '--keep-mtime=[Keep mtime, read from EXIF with fallback to original file mtime]:keepmtime:(true false)' \
 '--image-index=[Select a specific image index (or '\''all'\'') if file is a image container]:index:_default' \
@@ -93,7 +94,8 @@ _arguments "${_arguments_options[@]}" : \
 '--dng-force-thumbnail=[Generate DNG thumbnail image from raw data]:force_thumbnail:(true false)' \
 '--max-dng-backward-version=[Maximum DNG backward version]:version:(1.0 1.1 1.2 1.3 1.4 1.5 1.6)' \
 '--embed-raw=[Embed the raw file into DNG]:embedded:(true false)' \
-'--map-linear=[Map raw values to linear reference values]:linear:(true false)' \
+'--apply-dng-opcodes=[Apply DNG opcode lists to the image data instead of writing them to the DNG]:mode:(auto list1 list2 list3)' \
+'*--remove-dng-opcodes=[Remove DNG opcodes, as comma separated \[<list>\:\]<opcode> (e.g. WarpRectilinear,2\:GainMap)]:opcodes:_default' \
 '--artist=[Set the artist tag]:artist:_default' \
 '--copyright=[Set the copyright tag]:copyright:_default' \
 '--keep-mtime=[Keep mtime, read from EXIF with fallback to original file mtime]:keepmtime:(true false)' \
@@ -129,7 +131,8 @@ _arguments "${_arguments_options[@]}" : \
 '--dng-force-thumbnail=[Generate DNG thumbnail image from raw data]:force_thumbnail:(true false)' \
 '--max-dng-backward-version=[Maximum DNG backward version]:version:(1.0 1.1 1.2 1.3 1.4 1.5 1.6)' \
 '--embed-raw=[Embed the raw file into DNG]:embedded:(true false)' \
-'--map-linear=[Map raw values to linear reference values]:linear:(true false)' \
+'--apply-dng-opcodes=[Apply DNG opcode lists to the image data instead of writing them to the DNG]:mode:(auto list1 list2 list3)' \
+'*--remove-dng-opcodes=[Remove DNG opcodes, as comma separated \[<list>\:\]<opcode> (e.g. WarpRectilinear,2\:GainMap)]:opcodes:_default' \
 '--artist=[Set the artist tag]:artist:_default' \
 '--copyright=[Set the copyright tag]:copyright:_default' \
 '--keep-mtime=[Keep mtime, read from EXIF with fallback to original file mtime]:keepmtime:(true false)' \

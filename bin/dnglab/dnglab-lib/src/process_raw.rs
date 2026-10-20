@@ -4,7 +4,7 @@
 use clap::ArgMatches;
 use futures::future::join_all;
 use rawler::decoders::supported_extensions;
-use rawler::imgop::develop::RawProcessingParams;
+use rawler::{dng::opcodes::OpcodeSelector, imgop::develop::RawProcessingParams};
 use std::fs::create_dir_all;
 use std::path::PathBuf;
 
@@ -122,6 +122,10 @@ fn generate_job(entry: &FileMap, options: &ArgMatches) -> Result<Vec<Raw2Image>>
       software: format!("{} {}", "DNGLab", PKG_VERSION),
       index: if do_batch { i } else { index },
       keep_mtime: options.get_flag("keep_mtime"),
+      remove_dng_opcodes: options
+        .get_many::<OpcodeSelector>("remove_dng_opcodes")
+        .map(|values| values.cloned().collect())
+        .unwrap_or_default(),
     };
 
     let input = PathBuf::from(&entry.src);

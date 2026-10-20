@@ -12,7 +12,12 @@ use image::DynamicImage;
 use crate::{
   RawImage, RawImageData, RawlerError,
   decoders::{Decoder, RawDecodeParams, RawPhotometricInterpretation, WellKnownIFD, WhiteLevel, validate_image_index},
-  dng::{PREVIEW_JPEG_QUALITY, opcodes::OpcodeStage, original::OriginalCompressed, writer::DngWriter},
+  dng::{
+    PREVIEW_JPEG_QUALITY,
+    opcodes::{OpcodeSelector, OpcodeStage},
+    original::OriginalCompressed,
+    writer::DngWriter,
+  },
   formats::tiff::Entry,
   imgop::{
     Point, Rect,
@@ -26,7 +31,7 @@ use crate::{
   tags::{DngTag, ExifTag, TiffCommonTag},
 };
 
-use super::{CropMode, DngCompression, DngPhotometricConversion, DngVersion};
+use super::{ApplyDngOpcodes, CropMode, DngCompression, DngPhotometricConversion, DngVersion};
 
 /// Opcode list stages in processing order
 const STAGES: [OpcodeStage; 3] = [OpcodeStage::List1, OpcodeStage::List2, OpcodeStage::List3];
@@ -55,6 +60,11 @@ pub struct ConvertParams {
   pub dng_version: DngVersion,
   /// Highest allowed value for DNGBackwardVersion tag
   pub max_dng_backward_version: DngVersion,
+  /// DNG opcode lists to apply to the image data, in addition to the lists
+  /// that can't be stored with `max_dng_backward_version`
+  pub apply_dng_opcodes: ApplyDngOpcodes,
+  /// DNG opcodes to remove, they are neither applied nor written to the DNG
+  pub remove_dng_opcodes: Vec<OpcodeSelector>,
 }
 
 /// Information surfaced from a completed conversion.
@@ -88,6 +98,8 @@ impl Default for ConvertParams {
       keep_mtime: false,
       dng_version: DngVersion::V1_6,
       max_dng_backward_version: DngVersion::V1_4,
+      apply_dng_opcodes: ApplyDngOpcodes::Auto,
+      remove_dng_opcodes: Vec::new(),
     }
   }
 }
@@ -194,6 +206,18 @@ impl ConvertParams {
     self.max_dng_backward_version = max_dng_backward_version;
     self
   }
+
+  /// Set the DNG opcode lists to apply to the image data.
+  pub fn with_apply_dng_opcodes(mut self, apply_dng_opcodes: ApplyDngOpcodes) -> Self {
+    self.apply_dng_opcodes = apply_dng_opcodes;
+    self
+  }
+
+  /// Set the DNG opcodes to remove.
+  pub fn with_remove_dng_opcodes(mut self, remove_dng_opcodes: Vec<OpcodeSelector>) -> Self {
+    self.remove_dng_opcodes = remove_dng_opcodes;
+    self
+  }
 }
 
 /// Convert a raw input file into DNG
@@ -247,6 +271,7 @@ where
   let raw_params = RawDecodeParams { image_index: params.index };
   validate_image_index(decoder.as_ref(), &raw_params)?;
   let mut rawimage = decoder.raw_image(rawfile, &raw_params, false)?;
+  rawimage.remove_opcodes(&params.remove_dng_opcodes);
   let metadata = decoder.raw_metadata(rawfile, &raw_params)?;
 
   log::info!(
@@ -263,12 +288,8 @@ where
   // to be applied.
   let fuji_rotation = rawimage.camera.find_hint("fuji_rotation") || rawimage.camera.find_hint("fuji_rotation_alt");
   let max_backward_version = params.max_dng_backward_version.as_dng_value();
+  let present = STAGES.map(|stage| rawimage.opcode_list(stage).is_some_and(|list| !list.is_empty()));
   let needs_processing = STAGES.map(|stage| rawimage.opcode_list(stage).is_some_and(|list| list.needs_processing(max_backward_version)));
-
-  // Processing stage of the image data written to DNG. An opcode list that can't be
-  // stored with the maximum DNGBackwardVersion is applied as a whole, as the opcodes
-  // may depend on each other. Lists of earlier stages are applied as well, because a
-  // DNG reader would apply them to image data of the wrong stage.
   let required_stage = if fuji_rotation {
     OpcodeStage::List3
   } else if params.apply_scaling {
@@ -276,12 +297,8 @@ where
   } else {
     OpcodeStage::List1
   };
-  let data_stage = STAGES
-    .into_iter()
-    .zip(needs_processing)
-    .filter_map(|(stage, needs)| needs.then_some(stage))
-    .fold(required_stage, Ord::max);
-  for (stage, needs) in STAGES.into_iter().zip(needs_processing) {
+  let (data_stage, apply) = processing_plan(present, needs_processing, params.apply_dng_opcodes, required_stage);
+  for (stage, apply) in STAGES.into_iter().zip(apply) {
     // Bring the image data into the state the stage operates on
     match stage {
       OpcodeStage::List2 if data_stage >= stage => rawimage.apply_scaling()?,
@@ -293,12 +310,12 @@ where
       }
       _ => {}
     }
-    if stage < data_stage || (stage == data_stage && needs) {
+    if apply {
+      log::debug!("Apply {} to the image data", stage);
       rawimage.apply_opcode_list(stage).map_err(|err| {
         RawlerError::DecoderFailed(format!(
-          "Can't apply {} to the image data (maximum DNG backward version: {}): {}",
+          "Can't apply {} to the image data: {}",
           stage,
-          max_backward_version,
           match err {
             RawlerError::DecoderFailed(msg) => msg,
             err => err.to_string(),
@@ -426,6 +443,25 @@ where
   Ok(ConvertInfo { last_modified })
 }
 
+/// Decide which opcode lists are applied to the image data, returns the processing
+/// stage of the image data written to DNG and the lists to apply.
+///
+/// `present` are the opcode lists of the image. A list in `needs` can't be stored with
+/// the maximum DNGBackwardVersion, `apply` are the lists requested by the user and
+/// `required` is the minimum stage of the image data. An opcode list is applied as a
+/// whole, as the opcodes may depend on each other. Lists of earlier stages are applied
+/// as well, because a DNG reader would apply them to image data of the wrong stage.
+fn processing_plan(present: [bool; 3], needs: [bool; 3], apply: ApplyDngOpcodes, required: OpcodeStage) -> (OpcodeStage, [bool; 3]) {
+  let processed: [bool; 3] = std::array::from_fn(|i| needs[i] || (present[i] && apply.includes(STAGES[i])));
+  let data_stage = STAGES
+    .into_iter()
+    .zip(processed)
+    .filter_map(|(stage, processed)| processed.then_some(stage))
+    .fold(required, Ord::max);
+  let applied = std::array::from_fn(|i| present[i] && (STAGES[i] < data_stage || (STAGES[i] == data_stage && processed[i])));
+  (data_stage, applied)
+}
+
 /// Demosaic scaled CFA image data into three-color LinearRaw data, cropped to the
 /// active area. Other image data is left unchanged, as stage 3 equals stage 2 for it.
 fn demosaic_to_linear_raw(rawimage: &mut RawImage, fuji_rotation: bool) {
@@ -488,6 +524,48 @@ fn generate_preview(
       };
        */
       Ok(image.to_dynamic_image().ok_or("failed to convert to dynamic image")?)
+    }
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[test]
+  fn processing_plan_stages() {
+    use ApplyDngOpcodes as A;
+    use OpcodeStage as S;
+    const ALL: [bool; 3] = [true, true, true];
+    const NONE: [bool; 3] = [false, false, false];
+    let cases = [
+      // Lists are written as they are
+      (ALL, NONE, A::Auto, S::List1, (S::List1, NONE)),
+      // Lists requested by the user
+      (ALL, NONE, A::List1, S::List1, (S::List1, [true, false, false])),
+      (ALL, NONE, A::List2, S::List1, (S::List2, [true, true, false])),
+      (ALL, NONE, A::List3, S::List1, (S::List3, ALL)),
+      // The image data is only processed up to the last present list
+      ([true, false, false], NONE, A::List3, S::List1, (S::List1, [true, false, false])),
+      ([false, false, true], NONE, A::List2, S::List1, (S::List1, NONE)),
+      // A list that can't be stored is applied with all earlier lists
+      (ALL, [false, false, true], A::List1, S::List1, (S::List3, ALL)),
+      (ALL, [false, true, false], A::Auto, S::List1, (S::List2, [true, true, false])),
+      // Scaling applies OpcodeList1 and keeps OpcodeList2
+      (ALL, NONE, A::Auto, S::List2, (S::List2, [true, false, false])),
+      // Missing lists are not applied
+      ([false, true, false], [false, true, false], A::Auto, S::List1, (S::List2, [false, true, false])),
+    ];
+    for (present, needs, apply, required, expected) in cases {
+      assert_eq!(
+        processing_plan(present, needs, apply, required),
+        expected,
+        "present {:?}, needs {:?}, apply {:?}, required {:?}",
+        present,
+        needs,
+        apply,
+        required
+      );
     }
   }
 }

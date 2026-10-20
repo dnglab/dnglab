@@ -89,6 +89,84 @@ impl std::fmt::Display for OpcodeStage {
   }
 }
 
+/// Selects opcodes by ID, in all opcode lists or in the list of a single stage.
+///
+/// The string form is `[<list>:]<opcode>`, where `<list>` is 1, 2 or 3 and
+/// `<opcode>` is an opcode name (case-insensitive) or a decimal opcode ID,
+/// e.g. `WarpRectilinear`, `2:GainMap` or `3:51966`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct OpcodeSelector {
+  /// Opcode list, `None` for all lists
+  pub stage: Option<OpcodeStage>,
+  /// Opcode ID
+  pub id: u32,
+}
+
+impl OpcodeSelector {
+  /// Check if `opcode` in the opcode list of `stage` is selected
+  pub fn matches(&self, stage: OpcodeStage, opcode: &Opcode) -> bool {
+    self.stage.is_none_or(|selected| selected == stage) && self.id == opcode.id()
+  }
+}
+
+impl std::str::FromStr for OpcodeSelector {
+  type Err = String;
+
+  fn from_str(value: &str) -> std::result::Result<Self, Self::Err> {
+    let (stage, opcode) = match value.split_once(':') {
+      Some((list, opcode)) => {
+        let stage = match list.trim() {
+          "1" => OpcodeStage::List1,
+          "2" => OpcodeStage::List2,
+          "3" => OpcodeStage::List3,
+          _ => return Err(format!("Invalid opcode list '{}' in '{}', expected 1, 2 or 3", list, value)),
+        };
+        (Some(stage), opcode.trim())
+      }
+      None => (None, value.trim()),
+    };
+    let id = match opcode.parse::<u32>() {
+      Ok(id) => id,
+      Err(_) => (1..=u32::MAX)
+        .map_while(OpcodeID::n)
+        .find(|id| format!("{:?}", id).eq_ignore_ascii_case(opcode))
+        .map(|id| id as u32)
+        .ok_or_else(|| {
+          let names: Vec<String> = (1..=u32::MAX).map_while(OpcodeID::n).map(|id| format!("{:?}", id)).collect();
+          format!("Unknown DNG opcode '{}', expected an opcode ID or one of: {}", opcode, names.join(", "))
+        })?,
+    };
+    Ok(Self { stage, id })
+  }
+}
+
+impl std::fmt::Display for OpcodeSelector {
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    match self.stage {
+      Some(OpcodeStage::List1) => f.write_str("1:")?,
+      Some(OpcodeStage::List2) => f.write_str("2:")?,
+      Some(OpcodeStage::List3) => f.write_str("3:")?,
+      None => {}
+    }
+    match OpcodeID::n(self.id) {
+      Some(id) => write!(f, "{:?}", id),
+      None => write!(f, "{}", self.id),
+    }
+  }
+}
+
+impl Serialize for OpcodeSelector {
+  fn serialize<S: serde::Serializer>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error> {
+    serializer.collect_str(self)
+  }
+}
+
+impl<'de> Deserialize<'de> for OpcodeSelector {
+  fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> std::result::Result<Self, D::Error> {
+    String::deserialize(deserializer)?.parse().map_err(serde::de::Error::custom)
+  }
+}
+
 #[derive(Debug, Clone, PartialEq, PartialOrd, Serialize, Deserialize)]
 pub enum Opcode {
   WarpRectilinear(WarpRectilinear),
@@ -318,6 +396,16 @@ impl OpcodeList {
   /// DNGBackwardVersion and must be applied to the image data instead.
   pub fn needs_processing(&self, max_backward_version: DngVersionNumber) -> bool {
     self.0.iter().any(|opcode| !opcode.is_optional() && opcode.version() > max_backward_version)
+  }
+
+  /// Remove the opcodes selected by `selectors` from this list of `stage`,
+  /// returns the removed opcodes
+  pub fn remove(&mut self, stage: OpcodeStage, selectors: &[OpcodeSelector]) -> Vec<Opcode> {
+    let (removed, kept) = std::mem::take(&mut self.0)
+      .into_iter()
+      .partition(|opcode| selectors.iter().any(|selector| selector.matches(stage, opcode)));
+    self.0 = kept;
+    removed
   }
 
   /// Multiply the values of DeltaPerRow and DeltaPerColumn by `factor`. Their
@@ -559,6 +647,50 @@ mod tests {
     assert!(matches!(&list.opcodes()[2], Opcode::ScalePerRow(op) if op.scales == [2.0, 4.0]));
     // Scaled values are serialized and parsed again
     assert_eq!(OpcodeList::parse(&list.to_bytes()?)?, list);
+    Ok(())
+  }
+
+  #[test]
+  fn opcode_selector_parse_and_display() -> std::result::Result<(), Box<dyn std::error::Error>> {
+    for (value, stage, id, display) in [
+      ("WarpRectilinear", None, 1, "WarpRectilinear"),
+      ("warprectilinear", None, 1, "WarpRectilinear"),
+      ("14", None, 14, "WarpRectilinear2"),
+      ("51966", None, 51966, "51966"),
+      ("2:GainMap", Some(OpcodeStage::List2), 9, "2:GainMap"),
+      ("3:1", Some(OpcodeStage::List3), 1, "3:WarpRectilinear"),
+      ("1:51966", Some(OpcodeStage::List1), 51966, "1:51966"),
+    ] {
+      let selector: OpcodeSelector = value.parse()?;
+      assert_eq!(selector, OpcodeSelector { stage, id }, "{}", value);
+      assert_eq!(selector.to_string(), display);
+      assert_eq!(display.parse::<OpcodeSelector>()?, selector);
+    }
+    for value in ["Foo", "4:GainMap", "x:GainMap", "", "2:"] {
+      assert!(value.parse::<OpcodeSelector>().is_err(), "{}", value);
+    }
+    Ok(())
+  }
+
+  #[test]
+  fn remove_opcodes() -> std::result::Result<(), Box<dyn std::error::Error>> {
+    let gain_map = opcode(9, V1_3, 0, &gain_map([0, 0, 0, 0, 0, 1, 1, 1], (1, 1), (1.0, 1.0), (0.0, 0.0), 1, &[1.0]));
+    let poly = opcode(8, V1_3, 0, &map_polynomial([0, 0, 0, 0, 0, 1, 1, 1], &[0.0, 1.0]));
+    let unknown = opcode(51966, V1_3, 0, &[]);
+    let mut image = float_image(2, 2, 1, 0.0);
+    let lists = || -> Result<_> { Ok(Some(OpcodeList::parse(&opcode_list(&[gain_map.clone(), poly.clone(), unknown.clone()]))?)) };
+    let ids = |list: &Option<OpcodeList>| list.as_ref().map(|list| list.opcodes().iter().map(Opcode::id).collect::<Vec<_>>());
+    // A list prefix selects the opcode list
+    (image.dng_opcodes_1, image.dng_opcodes_2, image.dng_opcodes_3) = (lists()?, lists()?, lists()?);
+    image.remove_opcodes(&["2:GainMap".parse()?, "51966".parse()?]);
+    assert_eq!(ids(&image.dng_opcodes_1), Some(vec![9, 8]));
+    assert_eq!(ids(&image.dng_opcodes_2), Some(vec![8]));
+    assert_eq!(ids(&image.dng_opcodes_3), Some(vec![9, 8]));
+    // Lists without opcodes left are removed
+    image.remove_opcodes(&["GainMap".parse()?, "3:MapPolynomial".parse()?]);
+    assert_eq!(ids(&image.dng_opcodes_1), Some(vec![8]));
+    assert_eq!(ids(&image.dng_opcodes_2), Some(vec![8]));
+    assert_eq!(ids(&image.dng_opcodes_3), None);
     Ok(())
   }
 }

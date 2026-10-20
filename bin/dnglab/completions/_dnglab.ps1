@@ -67,6 +67,7 @@ Register-ArgumentCompleter -Native -CommandName 'dnglab' -ScriptBlock {
             break
         }
         'dnglab;process-raw' {
+            [CompletionResult]::new('--remove-dng-opcodes', '--remove-dng-opcodes', [CompletionResultType]::ParameterName, 'Remove DNG opcodes, as comma separated [<list>:]<opcode> (e.g. WarpRectilinear,2:GainMap)')
             [CompletionResult]::new('--artist', '--artist', [CompletionResultType]::ParameterName, 'Set the artist tag')
             [CompletionResult]::new('--keep-mtime', '--keep-mtime', [CompletionResultType]::ParameterName, 'Keep mtime, read from EXIF with fallback to original file mtime')
             [CompletionResult]::new('--image-index', '--image-index', [CompletionResultType]::ParameterName, 'Select a specific image index (or ''all'') if file is a image container')
@@ -96,7 +97,8 @@ Register-ArgumentCompleter -Native -CommandName 'dnglab' -ScriptBlock {
             [CompletionResult]::new('--dng-force-thumbnail', '--dng-force-thumbnail', [CompletionResultType]::ParameterName, 'Generate DNG thumbnail image from raw data')
             [CompletionResult]::new('--max-dng-backward-version', '--max-dng-backward-version', [CompletionResultType]::ParameterName, 'Maximum DNG backward version')
             [CompletionResult]::new('--embed-raw', '--embed-raw', [CompletionResultType]::ParameterName, 'Embed the raw file into DNG')
-            [CompletionResult]::new('--map-linear', '--map-linear', [CompletionResultType]::ParameterName, 'Map raw values to linear reference values')
+            [CompletionResult]::new('--apply-dng-opcodes', '--apply-dng-opcodes', [CompletionResultType]::ParameterName, 'Apply DNG opcode lists to the image data instead of writing them to the DNG')
+            [CompletionResult]::new('--remove-dng-opcodes', '--remove-dng-opcodes', [CompletionResultType]::ParameterName, 'Remove DNG opcodes, as comma separated [<list>:]<opcode> (e.g. WarpRectilinear,2:GainMap)')
             [CompletionResult]::new('--artist', '--artist', [CompletionResultType]::ParameterName, 'Set the artist tag')
             [CompletionResult]::new('--copyright', '--copyright', [CompletionResultType]::ParameterName, 'Set the copyright tag')
             [CompletionResult]::new('--keep-mtime', '--keep-mtime', [CompletionResultType]::ParameterName, 'Keep mtime, read from EXIF with fallback to original file mtime')
@@ -129,7 +131,8 @@ Register-ArgumentCompleter -Native -CommandName 'dnglab' -ScriptBlock {
             [CompletionResult]::new('--dng-force-thumbnail', '--dng-force-thumbnail', [CompletionResultType]::ParameterName, 'Generate DNG thumbnail image from raw data')
             [CompletionResult]::new('--max-dng-backward-version', '--max-dng-backward-version', [CompletionResultType]::ParameterName, 'Maximum DNG backward version')
             [CompletionResult]::new('--embed-raw', '--embed-raw', [CompletionResultType]::ParameterName, 'Embed the raw file into DNG')
-            [CompletionResult]::new('--map-linear', '--map-linear', [CompletionResultType]::ParameterName, 'Map raw values to linear reference values')
+            [CompletionResult]::new('--apply-dng-opcodes', '--apply-dng-opcodes', [CompletionResultType]::ParameterName, 'Apply DNG opcode lists to the image data instead of writing them to the DNG')
+            [CompletionResult]::new('--remove-dng-opcodes', '--remove-dng-opcodes', [CompletionResultType]::ParameterName, 'Remove DNG opcodes, as comma separated [<list>:]<opcode> (e.g. WarpRectilinear,2:GainMap)')
             [CompletionResult]::new('--artist', '--artist', [CompletionResultType]::ParameterName, 'Set the artist tag')
             [CompletionResult]::new('--copyright', '--copyright', [CompletionResultType]::ParameterName, 'Set the copyright tag')
             [CompletionResult]::new('--keep-mtime', '--keep-mtime', [CompletionResultType]::ParameterName, 'Keep mtime, read from EXIF with fallback to original file mtime')
