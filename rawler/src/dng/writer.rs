@@ -157,6 +157,11 @@ where
       RawImageData::Integer(_) => true,
       RawImageData::Float(_) => rawimage.scaled_from_integer,
     };
+    // The table maps the stored integer values, it must be applied by apply_scaling()
+    // before the data is converted to floats.
+    if rawimage.linearization_table.is_some() && matches!(rawimage.data, RawImageData::Float(_)) {
+      return Err(DngError::General("LinearizationTable requires integer image data".into()));
+    }
     if matches!(rawimage.data, RawImageData::Float(_))
       && (compression == DngCompression::Lossless || !self.writer.backward_version_allows(DNG_VERSION_V1_4, "Floating point image data"))
     {
@@ -317,6 +322,11 @@ where
       RawPhotometricInterpretation::LinearRaw => {
         self.ifd_mut().add_tag(TiffCommonTag::PhotometricInt, PhotometricInterpretation::LinearRaw);
       }
+    }
+
+    // LinearizationTable not applied to the image data
+    if let Some(table) = &rawimage.linearization_table {
+      self.ifd_mut().add_tag(DngTag::LinearizationTable, &table[..]);
     }
 
     // Opcode lists not applied to the image data

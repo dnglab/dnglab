@@ -2,6 +2,7 @@
 // Copyright 2021 Daniel Vogelbacher <daniel@chaospixel.com>
 
 use super::xyz::Illuminant;
+use crate::bits::{LEu32, LookupTable};
 use crate::imgop::Rect;
 use crate::imgop::matrix::{multiply, normalize, pseudo_inverse};
 use crate::imgop::xyz::SRGB_TO_XYZ_D65;
@@ -10,6 +11,7 @@ use crate::rawimage::{BlackLevel, RawPhotometricInterpretation, WhiteLevel};
 
 use multiversion::multiversion;
 use rayon::prelude::*;
+use zerocopy::IntoBytes;
 
 /// Conversion matrix for a specific illuminant
 #[derive(Debug)]
@@ -186,6 +188,23 @@ pub fn correct_blacklevel_cfa(raw: &mut [f32], width: usize, _height: usize, bla
       b[0] = clip(b[0] - blacklevel[2]) / max[2];
       b[1] = clip(b[1] - blacklevel[3]) / max[3];
     });
+  });
+}
+
+/// Apply a DNG LinearizationTable to integer samples, with dithering.
+///
+/// Values beyond the table are mapped to the last table entry.
+/// Each row of `row_width` samples is dithered with its own seed.
+pub fn apply_linearization_table(samples: &mut [u16], row_width: usize, table: &[u16]) {
+  if table.is_empty() || row_width == 0 {
+    return;
+  }
+  let table = LookupTable::new_with_bits(table, 16);
+  samples.par_chunks_exact_mut(row_width).for_each(|row| {
+    let mut random = if row.len() >= 2 { LEu32(row.as_bytes(), 0) } else { 0 };
+    row.iter_mut().for_each(|p| {
+      *p = table.dither(*p, &mut random);
+    })
   });
 }
 

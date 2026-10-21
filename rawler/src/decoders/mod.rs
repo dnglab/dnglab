@@ -21,14 +21,11 @@ use std::rc::Rc;
 use std::str::FromStr;
 use std::sync::Arc;
 use std::time::SystemTime;
-use zerocopy::IntoBytes;
 
 use crate::Result;
 use crate::alloc_image_ok;
 use crate::alloc_image_plain_typed;
 use crate::analyze::FormatDump;
-use crate::bits::LEu32;
-use crate::bits::LookupTable;
 use crate::bits::scale_u16;
 use crate::decompressors::Decompressor;
 use crate::decompressors::decompress_lines_fn;
@@ -47,7 +44,6 @@ use crate::formats::tiff::GenericTiffReader;
 use crate::formats::tiff::IFD;
 use crate::formats::tiff::PhotometricInterpretation;
 use crate::formats::tiff::SampleFormat;
-use crate::formats::tiff::Value;
 use crate::formats::tiff::ifd::DataMode;
 use crate::formats::tiff::reader::TiffReader;
 use crate::imgop::Dim2;
@@ -600,13 +596,14 @@ pub(crate) fn dynamic_image_from_ifd(ifd: &IFD, rawsource: &RawSource) -> Result
 /// buffer is cropped to the nominal image dimensions (removing any codec
 /// padding), and optional post-processing steps are applied:
 ///
-/// * **Linearisation** — if a `Linearization` tag is present its lookup table
-///   is applied to every `u16` pixel.
 /// * **Sub-tile blocks** — if a DNG `SubTileBlockSize` tag is present, the
 ///   blocks within each tile (or strip) are reordered before cropping.
 /// * **Deinterleaving** — if DNG `RowInterleaveFactor` / DNG 1.7.1
 ///   `ColumnInterleaveFactor` tags are present, rows and columns are
 ///   reordered.
+///
+/// A DNG `LinearizationTable` is not applied here, as it must be applied
+/// after OpcodeList1 (see [`RawImage::apply_scaling`]).
 ///
 /// # Supported combinations
 ///
@@ -721,11 +718,6 @@ pub fn plain_image_from_ifd_ext(ifd: &IFD, rawsource: &RawSource, ljpeg_dng_bug:
       };
 
       pixbuf = reorder_and_crop(pixbuf, ifd, tiff_width, tiff_height, cpp)?;
-
-      if let Some(lintable) = ifd.get_entry(TiffCommonTag::Linearization) {
-        apply_linearization(&mut pixbuf, &lintable.value, bits);
-      }
-
       pixbuf = deinterleave(pixbuf, ifd, tiff_width, tiff_height, cpp)?;
       return Ok(RawImageData::Integer(pixbuf.into_inner()));
     }
@@ -922,26 +914,6 @@ where
   })?;
 
   Ok(pixbuf)
-}
-
-pub(crate) fn apply_linearization(image: &mut PixU16, tbl: &Value, bits: u32) {
-  match tbl {
-    Value::Short(points) => {
-      if points.is_empty() {
-        return;
-      }
-      let table = LookupTable::new_with_bits(points, bits);
-      image.par_pixel_rows_mut().for_each(|row| {
-        let mut random = LEu32(row.as_bytes(), 0);
-        row.iter_mut().for_each(|p| {
-          *p = table.dither(*p, &mut random);
-        })
-      });
-    }
-    _ => {
-      panic!("Unsupported linear table");
-    }
-  }
 }
 
 /// The struct that holds all the info about the cameras and is able to decode a file

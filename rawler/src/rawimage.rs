@@ -10,7 +10,7 @@ use serde::{Deserialize, Serialize};
 use crate::Result;
 use crate::cfa::PlaneColor;
 use crate::dng::opcodes::{OpcodeList, OpcodeSelector, OpcodeStage};
-use crate::imgop::raw::{correct_blacklevel, correct_blacklevel_cfa};
+use crate::imgop::raw::{apply_linearization_table, correct_blacklevel, correct_blacklevel_cfa};
 use crate::imgop::sensor::SensorType;
 use crate::imgop::{convert_from_f32_scaled_u16, convert_to_f32_unscaled};
 use crate::pixarray::SubPixel;
@@ -256,6 +256,10 @@ pub struct RawImage {
   pub dng_opcodes_1: Option<OpcodeList>,
   pub dng_opcodes_2: Option<OpcodeList>,
   pub dng_opcodes_3: Option<OpcodeList>,
+
+  /// DNG LinearizationTable, not yet applied to the integer image data.
+  /// It is applied by `apply_scaling()`, after OpcodeList1.
+  pub linearization_table: Option<Vec<u16>>,
 }
 
 /// The actual image data, after decoding
@@ -411,6 +415,7 @@ impl RawImage {
       dng_opcodes_1: None,
       dng_opcodes_2: None,
       dng_opcodes_3: None,
+      linearization_table: None,
     }
   }
 
@@ -505,6 +510,7 @@ impl RawImage {
       dng_opcodes_1: None,
       dng_opcodes_2: None,
       dng_opcodes_3: None,
+      linearization_table: None,
     }
   }
 
@@ -528,11 +534,17 @@ impl RawImage {
     }
   }
 
-  /// Apply blacklevel and whitelevel scaling, replacing raw image data
-  /// with floating point values in range 0.0 .. 1.0.
+  /// Apply LinearizationTable, blacklevel and whitelevel scaling, replacing raw
+  /// image data with floating point values in range 0.0 .. 1.0.
   /// Internal blacklevel and whitelevel is reset to 0.0 and 1.0 to match image data.
   pub fn apply_scaling(&mut self) -> crate::Result<()> {
     self.scaled_from_integer = matches!(self.data, RawImageData::Integer(_));
+    // The LinearizationTable is applied before black and white levels
+    if let Some(table) = self.linearization_table.take()
+      && let RawImageData::Integer(samples) = &mut self.data
+    {
+      apply_linearization_table(samples, self.width * self.cpp, &table);
+    }
     let mut pixels = self.data.as_f32();
     match &self.photometric {
       RawPhotometricInterpretation::BlackIsZero => todo!(),

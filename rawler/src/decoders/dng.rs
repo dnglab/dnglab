@@ -123,6 +123,7 @@ impl<'a> Decoder for DngDecoder<'a> {
     let wb_coeffs = self.get_wb(&cam)?;
     let mut image = RawImage::new_with_data(cam, raw_data, width * cpp, height, cpp, wb_coeffs, photometric, blacklevel, whitelevel, dummy);
     image.orientation = orientation;
+    image.linearization_table = self.get_linearization_table(raw, &image.data)?;
 
     // Opcode extraction
 
@@ -334,12 +335,9 @@ impl<'a> DngDecoder<'a> {
     // Only CFA images have a CFA pattern
     let cfa = if photometric_int == 32803 { self.get_cfa(raw)? } else { CFA::default() };
     let color_matrix = self.get_color_matrix()?;
-    let real_bps = if raw.has_entry(TiffCommonTag::Linearization) {
-      // If DNG contains linearization table, output is always 16 bits
-      16
-    } else {
-      raw.get_entry(TiffCommonTag::BitsPerSample).map(|v| v.force_usize(0)).unwrap_or(16)
-    };
+    // A LinearizationTable is not applied while decoding, so the
+    // image data keeps the stored bit depth.
+    let real_bps = raw.get_entry(TiffCommonTag::BitsPerSample).map(|v| v.force_usize(0)).unwrap_or(16);
 
     Ok(Camera {
       clean_make: make.clone(),
@@ -408,6 +406,22 @@ impl<'a> DngDecoder<'a> {
       Ok(Some(BlackLevel::new(&levels, repeat.1, repeat.0, cpp)))
     } else {
       Ok(None)
+    }
+  }
+
+  /// LinearizationTable of the raw IFD, it is only valid for integer data up to 16 bits
+  fn get_linearization_table(&self, raw: &IFD, data: &RawImageData) -> Result<Option<Vec<u16>>> {
+    match (raw.get_entry(DngTag::LinearizationTable).map(|entry| &entry.value), data) {
+      (None, _) => Ok(None),
+      (Some(Value::Short(table)), RawImageData::Integer(_)) => Ok(Some(table.clone()).filter(|table| !table.is_empty())),
+      (Some(_), RawImageData::Float(_)) => {
+        log::warn!("DNG: LinearizationTable is not allowed for floating point or >16 bit data, ignoring it");
+        Ok(None)
+      }
+      (Some(value), _) => Err(RawlerError::DecoderFailed(format!(
+        "DNG: unsupported LinearizationTable type: {}",
+        value.value_type_name()
+      ))),
     }
   }
 
@@ -527,6 +541,7 @@ mod tests {
   };
   use crate::formats::tiff::Rational;
   use crate::formats::tiff::SampleFormat;
+  use crate::formats::tiff::Value;
   use crate::formats::tiff::{DirectoryWriter, GenericTiffReader};
   use crate::pixarray::PixU16;
   use crate::rawimage::{BlackLevel, CFAConfig, RawImageData, RawPhotometricInterpretation, WhiteLevel};
@@ -557,11 +572,16 @@ mod tests {
 
   /// Write `rawimage` uncompressed as DNG, `modify` can change the raw IFD before it is written
   fn write_dng(rawimage: &RawImage, modify: impl FnOnce(&mut DirectoryWriter)) -> TestResult<Vec<u8>> {
+    write_dng_with(rawimage, DngCompression::Uncompressed, modify)
+  }
+
+  /// Write `rawimage` as DNG with `compression`, `modify` can change the raw IFD before it is written
+  fn write_dng_with(rawimage: &RawImage, compression: DngCompression, modify: impl FnOnce(&mut DirectoryWriter)) -> TestResult<Vec<u8>> {
     let mut buf = Cursor::new(Vec::new());
     let mut dng = DngWriter::new(&mut buf, DNG_VERSION_V1_4)?;
     dng.load_base_tags(rawimage)?;
     let mut frame = dng.subframe(0);
-    frame.raw_image(rawimage, CropMode::None, DngCompression::Uncompressed, DngPhotometricConversion::Original, 1)?;
+    frame.raw_image(rawimage, CropMode::None, compression, DngPhotometricConversion::Original, 1)?;
     modify(frame.ifd_mut());
     frame.finalize()?;
     dng.close()?;
@@ -984,22 +1004,24 @@ mod tests {
     Ok(())
   }
 
+  /// Convert the DNG in `data` to DNG and return the raw IFD of the result
+  fn convert_to_raw_ifd(data: &[u8], params: crate::dng::convert::ConvertParams) -> TestResult<std::rc::Rc<crate::formats::tiff::IFD>> {
+    use crate::dng::convert::convert_raw_source;
+
+    let params = params.with_preview(false).with_thumbnail(false);
+    let mut output = Cursor::new(Vec::new());
+    convert_raw_source(&RawSource::new_from_slice(data), &mut output, "synthetic.dng", &params)?;
+    raw_ifd(&output.into_inner())
+  }
+
   #[test]
   fn convert_does_not_copy_applied_opcode_lists() -> TestResult {
     use crate::dng::DngVersion;
-    use crate::dng::convert::{ConvertParams, convert_raw_source};
+    use crate::dng::convert::ConvertParams;
 
     let data = dng_with_opcode_lists()?;
     let source = raw_ifd(&data)?;
-    let convert = |max_backward_version| -> TestResult<std::rc::Rc<crate::formats::tiff::IFD>> {
-      let params = ConvertParams::default()
-        .with_preview(false)
-        .with_thumbnail(false)
-        .with_max_dng_backward_version(max_backward_version);
-      let mut output = Cursor::new(Vec::new());
-      convert_raw_source(&RawSource::new_from_slice(&data), &mut output, "synthetic.dng", &params)?;
-      raw_ifd(&output.into_inner())
-    };
+    let convert = |max_backward_version| convert_to_raw_ifd(&data, ConvertParams::default().with_max_dng_backward_version(max_backward_version));
     let value = |ifd: &crate::formats::tiff::IFD, tag| ifd.get_entry(tag).map(|entry| entry.value.clone());
 
     // Both lists are stored unchanged
@@ -1012,6 +1034,130 @@ mod tests {
     let raw = convert(DngVersion::V1_2)?;
     assert_eq!(value(&raw, DngTag::OpcodeList1), None);
     assert_eq!(value(&raw, DngTag::OpcodeList2), value(&source, DngTag::OpcodeList2));
+    Ok(())
+  }
+
+  /// Nonlinear LinearizationTable with fewer entries than the synthetic pixel values (0..256)
+  fn linearization_table() -> Vec<u16> {
+    (0..200_u32).map(|i| (i * i / 10) as u16).collect()
+  }
+
+  /// Synthetic DNG with a LinearizationTable
+  fn dng_with_linearization_table() -> TestResult<Vec<u8>> {
+    let mut rawimage = synthetic_rawimage();
+    rawimage.linearization_table = Some(linearization_table());
+    write_dng(&rawimage, |_| {})
+  }
+
+  #[test]
+  fn linearization_table_is_not_applied_on_decode() -> TestResult {
+    let mut rawimage = synthetic_rawimage();
+    rawimage.bps = 12;
+    let data = write_dng_with(&rawimage, DngCompression::Lossless, |ifd| {
+      ifd.add_tag(DngTag::LinearizationTable, &linearization_table()[..])
+    })?;
+    let decoded = decode_dng(&data)?;
+    assert_eq!(decoded.bps, 12);
+    assert_eq!(decoded.linearization_table, Some(linearization_table()));
+    assert_eq!(integer_data(decoded), Some(synthetic_pixels()));
+    Ok(())
+  }
+
+  #[test]
+  fn apply_scaling_applies_linearization_table() -> TestResult {
+    let decoded = decode_dng(&dng_with_linearization_table()?)?;
+    let whitelevel = decoded.whitelevel.0[0] as f32;
+    let mut scaled = decoded.clone();
+    scaled.apply_scaling()?;
+    assert_eq!(scaled.linearization_table, None);
+
+    let table = linearization_table();
+    let last = table.len() - 1;
+    for (stored, value) in synthetic_pixels().into_iter().zip(float_data(scaled.clone())) {
+      // Dithering spreads a value over a quarter of the distance to its neighbour entries
+      let index = (stored as usize).min(last);
+      let lower = table[index.saturating_sub(1)] as f32;
+      let upper = table[(index + 1).min(last)] as f32;
+      let spread = (upper - lower + 2.0) / 4.0 + 1.0;
+      let linear = value * whitelevel;
+      assert!(
+        (linear - table[index] as f32).abs() <= spread,
+        "stored {} is {} after scaling, expected {} +/- {}",
+        stored,
+        linear,
+        table[index],
+        spread
+      );
+    }
+
+    // Dithering is deterministic
+    let mut again = decoded;
+    again.apply_scaling()?;
+    assert_eq!(float_data(again), float_data(scaled));
+    Ok(())
+  }
+
+  #[test]
+  fn linearization_table_roundtrip() -> TestResult {
+    let decoded = decode_dng(&dng_with_linearization_table()?)?;
+    let data = write_dng(&decoded, |_| {})?;
+    let raw = raw_ifd(&data)?;
+    assert_eq!(
+      raw.get_entry(DngTag::LinearizationTable).map(|entry| entry.value.clone()),
+      Some(Value::Short(linearization_table()))
+    );
+    let decoded_again = decode_dng(&data)?;
+    assert_eq!(decoded_again.linearization_table, Some(linearization_table()));
+    assert_eq!(integer_data(decoded_again), Some(synthetic_pixels()));
+    Ok(())
+  }
+
+  #[test]
+  fn convert_keeps_linearization_table_at_stage1() -> TestResult {
+    use crate::dng::convert::ConvertParams;
+
+    let data = dng_with_linearization_table()?;
+    let table = |raw: &crate::formats::tiff::IFD| raw.get_entry(DngTag::LinearizationTable).map(|entry| entry.value.clone());
+
+    // The image data is written as stored, so the table is required
+    let raw = convert_to_raw_ifd(&data, ConvertParams::default())?;
+    assert_eq!(table(&raw), Some(Value::Short(linearization_table())));
+
+    // The table is applied by scaling
+    let raw = convert_to_raw_ifd(&data, ConvertParams::default().with_apply_scaling(true))?;
+    assert_eq!(table(&raw), None);
+    Ok(())
+  }
+
+  #[test]
+  fn opcode_list1_runs_before_linearization() -> TestResult {
+    use crate::dng::opcodes::{FixBadPixelsConstant, Opcode, OpcodeList, OpcodeStage};
+
+    // The bad pixel constant is a stored value, the table maps it to a different value
+    let constant = 7;
+    assert_ne!(linearization_table()[constant], constant as u16);
+    let mut rawimage = synthetic_rawimage();
+    rawimage.linearization_table = Some(linearization_table());
+    rawimage.dng_opcodes_1 = Some(OpcodeList::new(vec![Opcode::FixBadPixelsConstant(FixBadPixelsConstant {
+      version: 0x01030000,
+      flags: 0,
+      constant: constant as u32,
+      bayer_phase: 0,
+    })]));
+    let mut decoded = decode_dng(&write_dng(&rawimage, |_| {})?)?;
+    decoded.apply_opcode_list(OpcodeStage::List1)?;
+
+    let pixels = synthetic_pixels();
+    let fixed = integer_data(decoded.clone()).ok_or("expected integer data")?;
+    for (i, (fixed, stored)) in fixed.iter().zip(&pixels).enumerate() {
+      if *stored == constant as u16 {
+        assert_ne!(fixed, stored, "bad pixel {} is not fixed", i);
+      } else {
+        assert_eq!(fixed, stored, "pixel {} is changed", i);
+      }
+    }
+    decoded.apply_scaling()?;
+    assert_eq!(decoded.linearization_table, None);
     Ok(())
   }
 }
