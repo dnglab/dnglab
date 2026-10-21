@@ -2407,6 +2407,12 @@ mod panasonic {
   mod dmc_g70_raw_modes {
     super::super::rawdb_test_file!("Panasonic", "DMC-G70", dmc_g70_iso_100_4fmt_4592x3448_rw2, "raw_modes/DMC-G70_ISO_100_4fmt_4592x3448.RW2");
   }
+  mod dmc_g8_raw_modes {
+    super::super::rawdb_test_file!("Panasonic", "DMC-G8", dmc_g8_iso_100_4fmt_16x9_rw2, "raw_modes/DMC-G8_ISO_100_4fmt_16x9.RW2");
+    super::super::rawdb_test_file!("Panasonic", "DMC-G8", dmc_g8_iso_100_4fmt_1x1_rw2, "raw_modes/DMC-G8_ISO_100_4fmt_1x1.RW2");
+    super::super::rawdb_test_file!("Panasonic", "DMC-G8", dmc_g8_iso_100_4fmt_3x2_rw2, "raw_modes/DMC-G8_ISO_100_4fmt_3x2.RW2");
+    super::super::rawdb_test_file!("Panasonic", "DMC-G8", dmc_g8_iso_100_4fmt_4x3_rw2, "raw_modes/DMC-G8_ISO_100_4fmt_4x3.RW2");
+  }
   mod dmc_g80_raw_modes {
     super::super::rawdb_test_file!("Panasonic", "DMC-G80", dmc_g80_iso_200_4fmt_16x9_rw2, "raw_modes/DMC-G80_ISO_200_4fmt_16x9.RW2");
     super::super::rawdb_test_file!("Panasonic", "DMC-G80", dmc_g80_iso_200_4fmt_1x1_rw2, "raw_modes/DMC-G80_ISO_200_4fmt_1x1.RW2");
