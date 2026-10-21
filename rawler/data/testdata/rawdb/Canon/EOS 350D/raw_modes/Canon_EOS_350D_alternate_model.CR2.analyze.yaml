@@ -1,0 +1,91 @@
+---
+file:
+  fileSize: 7891454
+  fileName: Canon_EOS_350D_alternate_model.CR2
+  digest: c81d1770f2e7ce09d93bf0f5692bcdb5
+data:
+  metadata:
+    rawParams:
+      rawWidth: 3516
+      rawHeight: 2328
+      bitDepth: 16
+      cropArea:
+        p:
+          x: 52
+          y: 19
+        d:
+          w: 3456
+          h: 2304
+      activeArea:
+        p:
+          x: 42
+          y: 14
+        d:
+          w: 3474
+          h: 2314
+      blacklevels:
+        levels:
+          - 0/1
+        cpp: 1
+        width: 1
+        height: 1
+      whitelevels:
+        - 4095
+      wbCoeffs:
+        - 2.2058823
+        - 0.9990196
+        - 1.4647058
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ~
+        artist: ~
+        lens_spec: ~
+        exposure_time: 1/500
+        fnumber: 14/1
+        aperture_value: 499038/65536
+        brightness_value: ~
+        iso_speed_ratings: 400
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: 0/2
+        date_time_original: "2006:11:18 10:40:30"
+        create_date: "2006:11:18 10:40:30"
+        modify_date: "2006:11:18 10:40:30"
+        exposure_program: 2
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: 587582/65536
+        max_aperture_value: ~
+        subject_distance: ~
+        metering_mode: 5
+        light_source: ~
+        flash: 16
+        focal_length: 18/1
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+        user_comment: ~
+      model: EOS 350D
+      make: Canon
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+
