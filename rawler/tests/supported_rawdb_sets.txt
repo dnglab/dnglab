@@ -625,6 +625,7 @@ Panasonic/DMC-G5/raw_modes
 Panasonic/DMC-G6/raw_modes
 Panasonic/DMC-G70/raw_modes
 Panasonic/DMC-G7/raw_modes
+Panasonic/DMC-G8/raw_modes
 Panasonic/DMC-G80/raw_modes
 Panasonic/DMC-G81/raw_modes
 Panasonic/DMC-G85/raw_modes
