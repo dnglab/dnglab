@@ -72,6 +72,7 @@ mod canon {
   }
   mod eos_350d_raw_modes {
     super::super::rawdb_test_file!("Canon", "EOS 350D", canon_eos_350d_digital_iso_100_cr2, "raw_modes/Canon EOS 350D DIGITAL_ISO_100.CR2");
+    super::super::rawdb_test_file!("Canon", "EOS 350D", canon_eos_350d_alternate_model_cr2, "raw_modes/Canon_EOS_350D_alternate_model.CR2");
   }
   mod eos_4000d_raw_modes {
     super::super::rawdb_test_file!("Canon", "EOS 4000D", canon_eos_4000d_iso_100_raw_cr2, "raw_modes/Canon EOS 4000D_ISO_100_RAW.CR2");
