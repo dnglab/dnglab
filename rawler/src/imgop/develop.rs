@@ -78,6 +78,7 @@ pub enum ProcessingStep {
   Demosaic,
   FujiRotate,
   CropActiveArea,
+  BaselineExposure,
   WhiteBalance,
   Calibrate,
   CropDefault,
@@ -141,6 +142,7 @@ impl Default for RawDevelop {
         ProcessingStep::Demosaic,
         ProcessingStep::FujiRotate,
         ProcessingStep::CropActiveArea,
+        ProcessingStep::BaselineExposure,
         ProcessingStep::WhiteBalance,
         ProcessingStep::Calibrate,
         ProcessingStep::CropDefault,
@@ -242,6 +244,21 @@ impl RawDevelop {
       if rawimage.opcode_list(OpcodeStage::List3).is_some() {
         let cropped = matches!(rawimage.photometric, RawPhotometricInterpretation::Cfa(_)) && self.steps.contains(&ProcessingStep::CropActiveArea);
         intermediate = apply_opcode_list3(&mut rawimage, intermediate, cropped)?;
+      }
+    }
+
+    // BaselineExposure is applied as linear gain to the scene-linear data, clipping
+    // is done by the color space conversion or the final conversion to integers.
+    if self.steps.contains(&ProcessingStep::BaselineExposure) {
+      let exposure = rawimage.baseline_exposure.unwrap_or(0.0) + rawimage.baseline_exposure_offset.unwrap_or(0.0);
+      if exposure != 0.0 {
+        let gain = exposure.exp2();
+        log::debug!("ProcessingStep: BaselineExposure {} EV, gain: {}", exposure, gain);
+        match &mut intermediate {
+          Intermediate::Monochrome(pixels) => pixels.for_each(|v| v * gain),
+          Intermediate::ThreeColor(pixels) => pixels.for_each(|v| v.map(|v| v * gain)),
+          Intermediate::FourColor(pixels) => pixels.for_each(|v| v.map(|v| v * gain)),
+        };
       }
     }
 
@@ -599,6 +616,30 @@ mod tests {
       panic!("expected monochrome image");
     };
     assert_eq!(pixels.data[6 * 16 + 6], 1300.0 / 4095.0);
+    Ok(())
+  }
+
+  #[test]
+  fn develop_applies_baseline_exposure() -> std::result::Result<(), Box<dyn std::error::Error>> {
+    let mut rawimage = RawImage::new_with_data(
+      Camera::default(),
+      RawImageData::Float(vec![0.25; 8 * 6 * 3]),
+      8 * 3,
+      6,
+      3,
+      [1.0, 1.0, 1.0, f32::NAN],
+      RawPhotometricInterpretation::LinearRaw,
+      Some(BlackLevel::zero(1, 1, 3)),
+      Some(WhiteLevel::new(vec![1; 3])),
+      false,
+    );
+    rawimage.baseline_exposure = Some(0.5);
+    rawimage.baseline_exposure_offset = Some(0.5);
+    let develop = RawDevelop::new_with(&[ProcessingStep::Rescale, ProcessingStep::Demosaic, ProcessingStep::BaselineExposure]);
+    let Intermediate::ThreeColor(pixels) = develop.develop_intermediate(&rawimage)? else {
+      panic!("expected three color image");
+    };
+    assert!(pixels.data.iter().flatten().all(|v| *v == 0.5));
     Ok(())
   }
 }
