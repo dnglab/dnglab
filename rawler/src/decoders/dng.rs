@@ -124,6 +124,16 @@ impl<'a> Decoder for DngDecoder<'a> {
     let mut image = RawImage::new_with_data(cam, raw_data, width * cpp, height, cpp, wb_coeffs, photometric, blacklevel, whitelevel, dummy);
     image.orientation = orientation;
     image.linearization_table = self.get_linearization_table(raw, &image.data)?;
+    image.baseline_exposure = self
+      .tiff
+      .root_ifd()
+      .get_entry(DngTag::BaselineExposure)
+      .and_then(|entry| entry.value.get_f32(0).ok().flatten());
+    image.baseline_exposure_offset = self
+      .tiff
+      .root_ifd()
+      .get_entry(DngTag::BaselineExposureOffset)
+      .and_then(|entry| entry.value.get_f32(0).ok().flatten());
 
     // Opcode extraction
 

@@ -260,6 +260,11 @@ pub struct RawImage {
   /// DNG LinearizationTable, not yet applied to the integer image data.
   /// It is applied by `apply_scaling()`, after OpcodeList1.
   pub linearization_table: Option<Vec<u16>>,
+
+  /// DNG BaselineExposure in EV, applied by the develop pipeline.
+  pub baseline_exposure: Option<f32>,
+  /// DNG BaselineExposureOffset in EV, added to BaselineExposure by the develop pipeline.
+  pub baseline_exposure_offset: Option<f32>,
 }
 
 /// The actual image data, after decoding
@@ -416,6 +421,8 @@ impl RawImage {
       dng_opcodes_2: None,
       dng_opcodes_3: None,
       linearization_table: None,
+      baseline_exposure: None,
+      baseline_exposure_offset: None,
     }
   }
 
@@ -511,6 +518,8 @@ impl RawImage {
       dng_opcodes_2: None,
       dng_opcodes_3: None,
       linearization_table: None,
+      baseline_exposure: None,
+      baseline_exposure_offset: None,
     }
   }
 

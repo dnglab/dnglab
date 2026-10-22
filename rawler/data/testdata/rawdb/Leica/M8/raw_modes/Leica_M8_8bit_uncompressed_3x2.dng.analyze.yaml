@@ -8,7 +8,7 @@ data:
     rawParams:
       rawWidth: 3920
       rawHeight: 2638
-      bitDepth: 16
+      bitDepth: 8
       cropArea:
         p:
           x: 2
