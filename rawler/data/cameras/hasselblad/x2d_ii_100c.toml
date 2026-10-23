@@ -1,0 +1,17 @@
+make = "Hasselblad"
+model = "X2D II 100C"
+clean_make = "Hasselblad"
+clean_model = "X2D II 100C"
+color_pattern = "RGGB"
+hints = ["uncompressed"]
+
+model_aliases = [["Hasselblad X2D II 100C", "X2D II 100C"]]
+
+# Masked sensor border measured on three 11904x8842 frames. Phocus trims an
+# additional four pixels per side and produces a 11656x8742 active image.
+active_area = [128, 96, 120, 4]
+
+# The X2D II uses the same sensor family as the X2D 100C. Use its matrix until
+# a dedicated spectral measurement is available.
+[cameras.color_matrix]
+D65 = [0.6468, -0.1899, -0.0545, -0.4526, 1.2267, 0.2542, -0.0388, 0.1276, 0.6096]
