@@ -158,6 +158,11 @@ impl<'a> Decoder for DngDecoder<'a> {
     Ok(image)
   }
 
+  fn check_supported(&self) -> Result<()> {
+    // DNG files carry their own calibration data
+    Ok(())
+  }
+
   fn format_dump(&self) -> FormatDump {
     FormatDump::Dng(DngFormat { tiff: self.tiff.clone() })
   }

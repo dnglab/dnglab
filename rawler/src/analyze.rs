@@ -70,7 +70,8 @@ pub struct FileMetadata {
 #[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AnalyzerMetadata {
-  pub raw_params: RawParams,
+  /// Only available if the camera is supported for raw decoding
+  pub raw_params: Option<RawParams>,
   pub raw_metadata: RawMetadata,
 }
 
@@ -162,7 +163,13 @@ pub fn analyze_metadata<P: AsRef<Path>>(path: P) -> Result<AnalyzerResult> {
   //let input = BufReader::new(File::open(&path).map_err(|e| RawlerError::with_io_error("load into buffer", &path, e))?);
   let rawfile = RawSource::new(path.as_ref())?;
   let decoder = crate::get_decoder(&rawfile)?;
-  let rawimage = decoder.raw_image(&rawfile, &RawDecodeParams::default(), true)?;
+  let raw_params = match decoder.check_supported() {
+    Ok(()) => Some(RawParams::from(&decoder.raw_image(&rawfile, &RawDecodeParams::default(), true)?)),
+    Err(err) => {
+      log::warn!("Raw parameters not available: {}", err);
+      None
+    }
+  };
 
   let mut result = AnalyzerResult {
     file: file_metadata(path, &rawfile)?,
@@ -170,10 +177,7 @@ pub fn analyze_metadata<P: AsRef<Path>>(path: P) -> Result<AnalyzerResult> {
   };
 
   let md = decoder.raw_metadata(&rawfile, &RawDecodeParams::default())?;
-  result.data = Some(AnalyzerData::Metadata(AnalyzerMetadata {
-    raw_params: RawParams::from(&rawimage),
-    raw_metadata: md,
-  }));
+  result.data = Some(AnalyzerData::Metadata(AnalyzerMetadata { raw_params, raw_metadata: md }));
   Ok(result)
 }
 

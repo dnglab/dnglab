@@ -127,6 +127,7 @@ mod unwrapped;
 pub mod x3f;
 
 pub use camera::Camera;
+pub(crate) use camera::CameraLookup;
 
 use crate::RawlerError;
 use crate::formats::bmff::Bmff;
@@ -347,6 +348,10 @@ impl RawMetadata {
 
 pub trait Decoder: Send {
   fn raw_image(&self, file: &RawSource, params: &RawDecodeParams, dummy: bool) -> Result<RawImage>;
+
+  /// Checks that raw_image() can decode this file, which requires the camera to be in
+  /// the camera database. Metadata, thumbnails and previews are available regardless.
+  fn check_supported(&self) -> Result<()>;
 
   fn raw_image_count(&self) -> Result<usize> {
     Ok(1)
@@ -993,6 +998,11 @@ impl RawLoader {
   }
 
   /// Returns a decoder for a given buffer
+  ///
+  /// A decoder is returned for any file in a supported format, even if the camera
+  /// is not in the camera database. Metadata, thumbnails and previews can be extracted
+  /// from such files, but raw_image() fails with `RawlerError::Unsupported`.
+  /// Use [`Decoder::check_supported()`] to test for this upfront.
   pub fn get_decoder<'b>(&'b self, rawfile: &RawSource) -> Result<Box<dyn Decoder + 'b>> {
     if mrw::is_mrw(rawfile) {
       let dec = Box::new(mrw::MrwDecoder::new(rawfile, self)?);
@@ -1171,6 +1181,39 @@ impl RawLoader {
     self.check_supported_with_mode(ifd0, "")
   }
 
+  /// Look up a camera, unknown cameras get a generic definition that only
+  /// serves metadata.
+  fn lookup_camera_with_everything(&self, make: &str, model: &str, mode: &str) -> CameraLookup {
+    if let Ok(camera) = self.check_supported_with_everything(make, model, mode) {
+      return CameraLookup::new_supported(camera);
+    }
+    // If only the mode is unknown, the base camera still provides clean names
+    let mut camera = self
+      .cameras
+      .get(&(make.to_string(), model.to_string(), String::new()))
+      .cloned()
+      .unwrap_or_else(|| {
+        let mut camera = Camera::new();
+        camera.make = make.to_string();
+        camera.model = model.to_string();
+        camera.clean_make = make.to_string();
+        camera.clean_model = model.to_string();
+        camera
+      });
+    camera.mode = mode.to_string();
+    CameraLookup::new_unknown(camera)
+  }
+
+  fn lookup_camera_with_mode(&self, ifd0: &IFD, mode: &str) -> Result<CameraLookup> {
+    let make = fetch_tiff_tag!(ifd0, TiffCommonTag::Make).get_string()?.trim_end();
+    let model = fetch_tiff_tag!(ifd0, TiffCommonTag::Model).get_string()?.trim_end();
+    Ok(self.lookup_camera_with_everything(make, model, mode))
+  }
+
+  fn lookup_camera(&self, ifd0: &IFD) -> Result<CameraLookup> {
+    self.lookup_camera_with_mode(ifd0, "")
+  }
+
   fn decode_unsafe(&self, rawfile: &RawSource, params: &RawDecodeParams, dummy: bool) -> Result<RawImage> {
     let decoder = self.get_decoder(rawfile)?;
     validate_image_index(decoder.as_ref(), params)?;
@@ -1292,6 +1335,76 @@ mod tests {
 
     let err = crate::decode(&source, &RawDecodeParams { image_index: 1 }).expect_err("image index 1 must be rejected");
     assert!(err.to_string().contains("out of range"), "unexpected error: {}", err);
+    Ok(())
+  }
+
+  fn assert_unsupported<T: std::fmt::Debug>(result: Result<T>, make: &str, model: &str, mode: &str) {
+    match result {
+      Err(RawlerError::Unsupported {
+        make: err_make,
+        model: err_model,
+        mode: err_mode,
+        ..
+      }) => assert_eq!((err_make.as_str(), err_model.as_str(), err_mode.as_str()), (make, model, mode)),
+      other => panic!("expected RawlerError::Unsupported, got {:?}", other),
+    }
+  }
+
+  #[test]
+  fn lookup_known_camera_is_supported() -> Result<()> {
+    let camera = crate::global_loader().lookup_camera_with_everything("NIKON CORPORATION", "NIKON 1 AW1", "12bit");
+    assert_eq!(camera.supported()?.clean_model, "1 AW1");
+    Ok(())
+  }
+
+  #[test]
+  fn lookup_unknown_mode_keeps_clean_names() {
+    let camera = crate::global_loader().lookup_camera_with_everything("NIKON CORPORATION", "NIKON 1 AW1", "99bit");
+    assert_unsupported(camera.supported(), "NIKON CORPORATION", "NIKON 1 AW1", "99bit");
+    assert_eq!(
+      (camera.metadata().clean_make.as_str(), camera.metadata().clean_model.as_str()),
+      ("Nikon", "1 AW1")
+    );
+  }
+
+  #[test]
+  fn lookup_unknown_camera_uses_file_names() {
+    let camera = crate::global_loader().lookup_camera_with_everything("NIKON CORPORATION", "NIKON Z 99", "14bit");
+    assert_unsupported(camera.supported(), "NIKON CORPORATION", "NIKON Z 99", "14bit");
+    assert_eq!(
+      (camera.metadata().clean_make.as_str(), camera.metadata().clean_model.as_str()),
+      ("NIKON CORPORATION", "NIKON Z 99")
+    );
+  }
+
+  /// Builds a minimal MEF file in memory for a Mamiya camera that is not
+  /// in the camera database.
+  fn unknown_camera_mef() -> std::result::Result<Vec<u8>, Box<dyn std::error::Error>> {
+    let mut buf = Cursor::new(Vec::new());
+    let tiff = crate::formats::tiff::writer::TiffWriter::new(&mut buf)?;
+    let mut root = tiff.new_directory();
+    root.add_tag(TiffCommonTag::Make, "Mamiya-OP Co.,Ltd.");
+    root.add_tag(TiffCommonTag::Model, "MAMIYA ZD2");
+    tiff.build(root)?;
+    Ok(buf.into_inner())
+  }
+
+  #[test]
+  fn unknown_camera_provides_metadata_only() -> std::result::Result<(), Box<dyn std::error::Error>> {
+    let source = RawSource::new_from_slice(&unknown_camera_mef()?);
+    let decoder = crate::get_decoder(&source)?;
+
+    let metadata = decoder.raw_metadata(&source, &RawDecodeParams::default())?;
+    assert_eq!((metadata.make.as_str(), metadata.model.as_str()), ("Mamiya-OP Co.,Ltd.", "MAMIYA ZD2"));
+
+    assert_unsupported(decoder.check_supported(), "Mamiya-OP Co.,Ltd.", "MAMIYA ZD2", "");
+    assert_unsupported(
+      decoder.raw_image(&source, &RawDecodeParams::default(), false),
+      "Mamiya-OP Co.,Ltd.",
+      "MAMIYA ZD2",
+      "",
+    );
+    assert_unsupported(crate::decode(&source, &RawDecodeParams::default()), "Mamiya-OP Co.,Ltd.", "MAMIYA ZD2", "");
     Ok(())
   }
 }

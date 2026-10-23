@@ -22,7 +22,7 @@ use crate::tags::ExifTag;
 use crate::tags::TiffCommonTag;
 
 use super::CFAConfig;
-use super::Camera;
+use super::CameraLookup;
 use super::Decoder;
 use super::FormatHint;
 use super::RawDecodeParams;
@@ -37,12 +37,12 @@ pub struct KdcDecoder<'a> {
   rawloader: &'a RawLoader,
   tiff: GenericTiffReader,
   makernote: Option<IFD>,
-  camera: Camera,
+  camera: CameraLookup,
 }
 
 impl<'a> KdcDecoder<'a> {
   pub fn new(file: &RawSource, tiff: GenericTiffReader, rawloader: &'a RawLoader) -> Result<KdcDecoder<'a>> {
-    let camera = rawloader.check_supported(tiff.root_ifd())?;
+    let camera = rawloader.lookup_camera(tiff.root_ifd())?;
 
     let makernote = if let Some(exif) = tiff.find_first_ifd_with_tag(ExifTag::MakerNotes) {
       exif.parse_makernote(&mut file.reader(), OffsetMode::Absolute, &[])?
@@ -62,7 +62,8 @@ impl<'a> KdcDecoder<'a> {
 
 impl<'a> Decoder for KdcDecoder<'a> {
   fn raw_image(&self, file: &RawSource, _params: &RawDecodeParams, dummy: bool) -> Result<RawImage> {
-    if self.camera.clean_model == "DC120" {
+    let camera = self.camera.supported()?;
+    if camera.clean_model == "DC120" {
       let width = 848;
       let height = 976;
       let raw = self
@@ -72,7 +73,7 @@ impl<'a> Decoder for KdcDecoder<'a> {
         .next()
         .ok_or_else(|| RawlerError::DecoderFailed("KDC DC120: no IFD with CFAPattern".to_string()))?;
       let off = fetch_tiff_tag!(raw, TiffCommonTag::StripOffsets).force_usize(0);
-      let mut white = self.camera.whitelevel.clone().expect("KDC needs a whitelevel in camera config")[0];
+      let mut white = camera.whitelevel.clone().expect("KDC needs a whitelevel in camera config")[0];
       let src = file.subview_until_eof(off as u64)?;
       let image = match fetch_tiff_tag!(raw, TiffCommonTag::Compression).force_usize(0) {
         1 => Self::decode_dc120(src, width, height, dummy),
@@ -82,29 +83,29 @@ impl<'a> Decoder for KdcDecoder<'a> {
         }
         c => {
           return Err(RawlerError::unsupported(
-            &self.camera,
+            camera,
             format!("KDC: DC120: Don't know how to handle compression type {}", c),
           ));
         }
       };
       let cpp = 1;
       let whitelevel = Some(WhiteLevel::new(vec![white; cpp]));
-      let photometric = RawPhotometricInterpretation::Cfa(CFAConfig::new_from_camera(&self.camera));
-      let img = RawImage::new(self.camera.clone(), image, cpp, [1.0, 1.0, 1.0, f32::NAN], photometric, None, whitelevel, dummy);
+      let photometric = RawPhotometricInterpretation::Cfa(CFAConfig::new_from_camera(camera));
+      let img = RawImage::new(camera.clone(), image, cpp, [1.0, 1.0, 1.0, f32::NAN], photometric, None, whitelevel, dummy);
       return Ok(img);
     }
 
-    if self.camera.clean_model == "DC50" {
+    if camera.clean_model == "DC50" {
       let raw = self
         .tiff
         .find_ifds_with_tag(TiffCommonTag::CFAPattern)
         .into_iter()
         .next()
         .ok_or_else(|| RawlerError::DecoderFailed("KDC DC50: no IFD with CFAPattern".to_string()))?;
-      let width = self.camera.raw_width;
-      let height = self.camera.raw_height;
+      let width = camera.raw_width;
+      let height = camera.raw_height;
       let off = fetch_tiff_tag!(raw, TiffCommonTag::StripOffsets).force_usize(0);
-      let white = self.camera.whitelevel.clone().expect("KDC needs a whitelevel in camera config")[0];
+      let white = camera.whitelevel.clone().expect("KDC needs a whitelevel in camera config")[0];
       let cbpp = match raw.get_entry(ExifTag::CompressedBitsPerPixel) {
         Some(Entry {
           value: Value::Rational(data), ..
@@ -115,8 +116,8 @@ impl<'a> Decoder for KdcDecoder<'a> {
       let image = crate::decompressors::radc::decompress(&src, width, height, cbpp, dummy)?;
       let cpp = 1;
       let whitelevel = Some(WhiteLevel::new(vec![white; cpp]));
-      let photometric = RawPhotometricInterpretation::Cfa(CFAConfig::new_from_camera(&self.camera));
-      let img = RawImage::new(self.camera.clone(), image, cpp, [1.0, 1.0, 1.0, f32::NAN], photometric, None, whitelevel, dummy);
+      let photometric = RawPhotometricInterpretation::Cfa(CFAConfig::new_from_camera(camera));
+      let img = RawImage::new(camera.clone(), image, cpp, [1.0, 1.0, 1.0, f32::NAN], photometric, None, whitelevel, dummy);
       return Ok(img);
     }
 
@@ -134,14 +135,18 @@ impl<'a> Decoder for KdcDecoder<'a> {
     let mut off = offset.force_usize(4) + offset.force_usize(12);
 
     // Offset hardcoding gotten from dcraw
-    if self.camera.find_hint("easyshare_offset_hack") {
+    if camera.find_hint("easyshare_offset_hack") {
       off = if off < 0x15000 { 0x15000 } else { 0x17000 };
     }
 
     let src = file.subview_until_eof(off as u64)?;
     let image = decompress_12be(src, width, height, dummy)?;
     let cpp = 1;
-    ok_cfa_image(self.camera.clone(), cpp, self.get_wb()?, image, dummy)
+    ok_cfa_image(camera.clone(), cpp, self.get_wb()?, image, dummy)
+  }
+
+  fn check_supported(&self) -> Result<()> {
+    self.camera.supported().map(|_| ())
   }
 
   fn format_dump(&self) -> FormatDump {
@@ -150,7 +155,7 @@ impl<'a> Decoder for KdcDecoder<'a> {
 
   fn raw_metadata(&self, _file: &RawSource, _params: &RawDecodeParams) -> Result<RawMetadata> {
     let exif = Exif::new(self.tiff.root_ifd())?;
-    let mdata = RawMetadata::new(&self.camera, exif);
+    let mdata = RawMetadata::new(self.camera.metadata(), exif);
     Ok(mdata)
   }
 

@@ -33,6 +33,7 @@ use crate::tags::TiffCommonTag;
 
 use super::BlackLevel;
 use super::Camera;
+use super::CameraLookup;
 use super::Decoder;
 use super::FormatHint;
 use super::RawDecodeParams;
@@ -45,7 +46,7 @@ pub struct OrfDecoder<'a> {
   #[allow(unused)]
   rawloader: &'a RawLoader,
   tiff: GenericTiffReader,
-  camera: Camera,
+  camera: CameraLookup,
   makernote: IFD,
 }
 
@@ -118,7 +119,7 @@ pub fn parse_makernote<R: Read + Seek>(reader: &mut R, exif_ifd: &IFD) -> Result
 
 impl<'a> OrfDecoder<'a> {
   pub fn new(file: &RawSource, tiff: GenericTiffReader, rawloader: &'a RawLoader) -> Result<OrfDecoder<'a>> {
-    let camera = rawloader.check_supported(tiff.root_ifd())?;
+    let camera = rawloader.lookup_camera(tiff.root_ifd())?;
 
     let makernote = if let Some(exif) = tiff.find_first_ifd_with_tag(ExifTag::MakerNotes) {
       parse_makernote(&mut file.reader(), exif)?
@@ -141,6 +142,7 @@ impl<'a> OrfDecoder<'a> {
 
 impl<'a> Decoder for OrfDecoder<'a> {
   fn raw_image(&self, file: &RawSource, _params: &RawDecodeParams, dummy: bool) -> Result<RawImage> {
+    let base_camera = self.camera.supported()?;
     let raw = self
       .tiff
       .find_first_ifd_with_tag(TiffCommonTag::StripOffsets)
@@ -166,10 +168,10 @@ impl<'a> Decoder for OrfDecoder<'a> {
       size += counts.force_u32(i as usize) as usize;
     }
 
-    let camera = if width >= self.camera.highres_width {
+    let camera = if width >= base_camera.highres_width {
       self.rawloader.check_supported_with_mode(self.tiff.root_ifd(), "highres")?
     } else {
-      self.camera.clone()
+      base_camera.clone()
     };
 
     log::debug!(
@@ -199,7 +201,7 @@ impl<'a> Decoder for OrfDecoder<'a> {
       let src = file.subview(offset as u64, size as u64)?;
       decompress_12le_wcontrol(&src, width, height, dummy)?
     } else if size >= width * height * 12 / 8 {
-      if self.camera.find_hint("interlaced") {
+      if base_camera.find_hint("interlaced") {
         log::debug!("ORF: decompress_12be_interlaced");
         // If interlaced, there is a gap between the strips.
         // To prevent reassembly of strips, we calculate the gap
@@ -225,9 +227,9 @@ impl<'a> Decoder for OrfDecoder<'a> {
     };
 
     let cpp = 1;
-    let blacklevel = self.get_blacklevel(bps)?;
+    let blacklevel = self.get_blacklevel(base_camera, bps)?;
     let whitelevel = None;
-    let photometric = RawPhotometricInterpretation::Cfa(CFAConfig::new_from_camera(&self.camera));
+    let photometric = RawPhotometricInterpretation::Cfa(CFAConfig::new_from_camera(base_camera));
     let mut img = RawImage::new(camera, image, cpp, normalize_wb(self.get_wb()?), photometric, blacklevel, whitelevel, dummy);
     if let Some(crop) = self.get_crop()? {
       img.crop_area = Some(crop);
@@ -241,13 +243,17 @@ impl<'a> Decoder for OrfDecoder<'a> {
     Ok(img)
   }
 
+  fn check_supported(&self) -> Result<()> {
+    self.camera.supported().map(|_| ())
+  }
+
   fn format_dump(&self) -> FormatDump {
     todo!()
   }
 
   fn raw_metadata(&self, _file: &RawSource, __params: &RawDecodeParams) -> Result<RawMetadata> {
     let exif = Exif::new(self.tiff.root_ifd())?;
-    let mdata = RawMetadata::new_with_lens(&self.camera, exif, self.get_lens_description()?.cloned());
+    let mdata = RawMetadata::new_with_lens(self.camera.metadata(), exif, self.get_lens_description()?.cloned());
     Ok(mdata)
   }
 
@@ -359,7 +365,7 @@ impl<'a> OrfDecoder<'a> {
     out
   }
 
-  fn get_blacklevel(&self, bps: usize) -> Result<Option<BlackLevel>> {
+  fn get_blacklevel(&self, camera: &Camera, bps: usize) -> Result<Option<BlackLevel>> {
     let ifd = self.makernote.find_ifds_with_tag(OrfImageProcessing::OrfBlackLevels);
     if ifd.is_empty() {
       log::info!("ORF: Couldn't find ImgProc IFD, unable to read blacklevel");
@@ -372,7 +378,7 @@ impl<'a> OrfDecoder<'a> {
       // Blacklevel is encoded for 12 bits
       levels.iter_mut().for_each(|level| *level = *level << 2);
     }
-    Ok(Some(BlackLevel::new(&levels, self.camera.cfa.width, self.camera.cfa.height, 1)))
+    Ok(Some(BlackLevel::new(&levels, camera.cfa.width, camera.cfa.height, 1)))
   }
 
   fn get_bits_per_pixel(&self) -> Result<Option<u16>> {
@@ -410,7 +416,7 @@ impl<'a> OrfDecoder<'a> {
           log::debug!("ORF lens composite ID: {}", composite_id);
           let resolver = LensResolver::new()
             .with_olympus_id(Some(composite_id))
-            .with_camera(&self.camera)
+            .with_camera(self.camera.metadata())
             .with_focal_len(self.get_focal_len()?)
             .with_mounts(&[MFT_MOUNT.into()]);
           return Ok(resolver.resolve());

@@ -46,6 +46,7 @@ use crate::tags::ExifTag;
 use crate::tags::TiffCommonTag;
 
 use super::Camera;
+use super::CameraLookup;
 use super::Decoder;
 use super::FormatHint;
 use super::RawDecodeParams;
@@ -61,7 +62,7 @@ pub struct ArwDecoder<'a> {
   rawloader: &'a RawLoader,
   tiff: GenericTiffReader,
   makernote: IFD,
-  camera: Camera,
+  camera: CameraLookup,
 }
 
 impl<'a> ArwDecoder<'a> {
@@ -77,7 +78,7 @@ impl<'a> ArwDecoder<'a> {
       _ => "",
     };
 
-    let camera = rawloader.check_supported_with_mode(tiff.root_ifd(), mode)?;
+    let camera = rawloader.lookup_camera_with_mode(tiff.root_ifd(), mode)?;
 
     let makernote = if let Some(exif) = tiff.find_first_ifd_with_tag(ExifTag::MakerNotes) {
       exif.parse_makernote(&mut file.reader(), OffsetMode::Absolute, &[])?
@@ -100,13 +101,14 @@ impl<'a> ArwDecoder<'a> {
 
 impl<'a> Decoder for ArwDecoder<'a> {
   fn raw_image(&self, file: &RawSource, _params: &RawDecodeParams, dummy: bool) -> Result<RawImage> {
+    let camera = self.camera.supported()?;
     let data = self.tiff.find_ifds_with_tag(TiffCommonTag::StripOffsets);
     if data.is_empty() {
-      if self.camera.model == "DSLR-A100" {
-        return self.image_a100(file, dummy);
+      if camera.model == "DSLR-A100" {
+        return self.image_a100(camera, file, dummy);
       } else {
         // try decoding as SRF
-        return self.image_srf(file, dummy);
+        return self.image_srf(camera, file, dummy);
       }
     }
     let raw = data[0];
@@ -115,7 +117,7 @@ impl<'a> Decoder for ArwDecoder<'a> {
     let offset = fetch_tiff_tag!(raw, TiffCommonTag::StripOffsets).force_usize(0);
     let count = fetch_tiff_tag!(raw, TiffCommonTag::StripByteCounts).force_usize(0);
     let compression = fetch_tiff_tag!(raw, TiffCommonTag::Compression).force_u32(0);
-    let bps = if let Some(forced_bps) = &self.camera.bps {
+    let bps = if let Some(forced_bps) = &camera.bps {
       *forced_bps
     } else {
       fetch_tiff_tag!(raw, TiffCommonTag::BitsPerSample).force_usize(0)
@@ -140,10 +142,10 @@ impl<'a> Decoder for ArwDecoder<'a> {
     let image = match compression {
       1 if arq => {
         cpp = 3;
-        decode_arq(src, width, height, &self.camera.cfa, dummy)?
+        decode_arq(src, width, height, &camera.cfa, dummy)?
       }
       1 => {
-        if self.camera.model == "DSC-R1" {
+        if camera.model == "DSC-R1" {
           decompress_14be_unpacked(src, width, height, dummy)?
         } else {
           decompress_16le(src, width, height, dummy)?
@@ -153,7 +155,7 @@ impl<'a> Decoder for ArwDecoder<'a> {
         cpp = fetch_tiff_tag!(raw, TiffCommonTag::SamplesPerPixel).force_usize(0);
         // Starting with A-1, image is compressed in tiles with LJPEG92.
         // Data is RGGB for bayer readout and YCbCr for reduced resolution files.
-        ArwDecoder::decode_ljpeg(&self.camera, file, raw, dummy)?
+        ArwDecoder::decode_ljpeg(camera, file, raw, dummy)?
       }
       32766 => {
         let curve = ArwDecoder::get_curve(raw)?;
@@ -194,8 +196,8 @@ impl<'a> Decoder for ArwDecoder<'a> {
 
     let blacklevel = black
       .map(|black| match cpp {
-        3 if arq => Ok(BlackLevel::new(&arq_levels(&black, &self.camera.cfa), 1, 1, cpp)),
-        1 => Ok(BlackLevel::new(&black, self.camera.cfa.width, self.camera.cfa.height, cpp)),
+        3 if arq => Ok(BlackLevel::new(&arq_levels(&black, &camera.cfa), 1, 1, cpp)),
+        1 => Ok(BlackLevel::new(&black, camera.cfa.width, camera.cfa.height, cpp)),
         // For YUV data, the blacklevel needs to be multiplicated by 2
         3 => Ok(BlackLevel::new(&[black[0] * 2, black[0] * 2, black[0] * 2], 1, 1, cpp)),
         _ => Err(RawlerError::DecoderFailed(format!("ARW: Unsupported cpp: {}", cpp))),
@@ -204,12 +206,12 @@ impl<'a> Decoder for ArwDecoder<'a> {
     let whitelevel = white.map(|white| WhiteLevel(vec![white as u32; cpp]));
 
     let photometric = match cpp {
-      1 => RawPhotometricInterpretation::Cfa(CFAConfig::new_from_camera(&self.camera)),
+      1 => RawPhotometricInterpretation::Cfa(CFAConfig::new_from_camera(camera)),
       3 => RawPhotometricInterpretation::LinearRaw,
       _ => return Err(RawlerError::DecoderFailed(format!("ARW: Unsupported cpp: {}", cpp))),
     };
 
-    let mut img = RawImage::new(self.camera.clone(), image, cpp, params.wb, photometric, blacklevel, whitelevel, dummy);
+    let mut img = RawImage::new(camera.clone(), image, cpp, params.wb, photometric, blacklevel, whitelevel, dummy);
 
     if cpp == 3 && !arq {
       // For debayer images, we assume WB coeffs already applied
@@ -220,14 +222,18 @@ impl<'a> Decoder for ArwDecoder<'a> {
       log::debug!("Found SONYRAWIMAGESIZE tag, using as active_area");
       img.active_area = Some(raw_image_size);
     } else {
-      img.active_area = self.camera.active_area.map(|area| Rect::new_with_borders(Dim2::new(width, height), &area));
+      img.active_area = camera.active_area.map(|area| Rect::new_with_borders(Dim2::new(width, height), &area));
     }
-    img.crop_area = Rect::from_tiff(raw).or_else(|| self.camera.crop_area.map(|area| Rect::new_with_borders(Dim2::new(width, height), &area)));
+    img.crop_area = Rect::from_tiff(raw).or_else(|| camera.crop_area.map(|area| Rect::new_with_borders(Dim2::new(width, height), &area)));
 
     log::debug!("raw dim: {}x{}", width, height);
     log::debug!("crop_area: {:?}", img.crop_area);
     log::debug!("active_area: {:?}", img.active_area);
     Ok(img)
+  }
+
+  fn check_supported(&self) -> Result<()> {
+    self.camera.supported().map(|_| ())
   }
 
   /// Return the embedded JPEG preview
@@ -257,7 +263,7 @@ impl<'a> Decoder for ArwDecoder<'a> {
   fn raw_metadata(&self, _file: &RawSource, _params: &RawDecodeParams) -> Result<RawMetadata> {
     let mut exif = Exif::new(self.tiff.root_ifd())?;
     exif.extend_from_ifd(self.get_exif()?)?; // TODO: is this required?
-    let mdata = RawMetadata::new_with_lens(&self.camera, exif, self.get_lens_description()?.cloned());
+    let mdata = RawMetadata::new_with_lens(self.camera.metadata(), exif, self.get_lens_description()?.cloned());
     Ok(mdata)
   }
 
@@ -287,7 +293,7 @@ impl<'a> ArwDecoder<'a> {
       debug!("Lens Id tag: {}", lens_id);
 
       let resolver = LensResolver::new()
-        .with_camera(&self.camera)
+        .with_camera(self.camera.metadata())
         .with_lens_id((lens_id as u32, 0))
         .with_mounts(&[SONY_E_MOUNT.into(), SONY_A_MOUNT.into()]);
       return Ok(resolver.resolve());
@@ -305,7 +311,7 @@ impl<'a> ArwDecoder<'a> {
         debug!("Lens Id tag: {}", lens_id);
 
         let resolver = LensResolver::new()
-          .with_camera(&self.camera)
+          .with_camera(self.camera.metadata())
           .with_lens_id((lens_id as u32, 0))
           .with_mounts(&[SONY_E_MOUNT.into(), SONY_A_MOUNT.into()]);
         return Ok(resolver.resolve());
@@ -323,7 +329,7 @@ impl<'a> ArwDecoder<'a> {
       debug!("Lens Id tag: {}", lens_id);
 
       let resolver = LensResolver::new()
-        .with_camera(&self.camera)
+        .with_camera(self.camera.metadata())
         .with_lens_id((lens_id as u32, 0))
         .with_mounts(&[SONY_E_MOUNT.into(), SONY_A_MOUNT.into()]);
       return Ok(resolver.resolve());
@@ -331,7 +337,7 @@ impl<'a> ArwDecoder<'a> {
     Ok(None)
   }
 
-  fn image_a100(&self, file: &RawSource, dummy: bool) -> Result<RawImage> {
+  fn image_a100(&self, camera: &Camera, file: &RawSource, dummy: bool) -> Result<RawImage> {
     // We've caught the elusive A100 in the wild, a transitional format
     // between the simple sanity of the MRW custom format and the wordly
     // wonderfullness of the Tiff-based ARW format, let's shoot from the hip
@@ -377,10 +383,10 @@ impl<'a> ArwDecoder<'a> {
     }
 
     let cpp = 1;
-    ok_cfa_image(self.camera.clone(), cpp, normalize_wb(wb_coeffs), image, dummy)
+    ok_cfa_image(camera.clone(), cpp, normalize_wb(wb_coeffs), image, dummy)
   }
 
-  fn image_srf(&self, file: &RawSource, dummy: bool) -> Result<RawImage> {
+  fn image_srf(&self, camera: &Camera, file: &RawSource, dummy: bool) -> Result<RawImage> {
     let data = self.tiff.find_ifds_with_tag(TiffCommonTag::ImageWidth);
     if data.is_empty() {
       return Err(RawlerError::DecoderFailed("ARW: Couldn't find the data IFD!".to_string()));
@@ -412,7 +418,7 @@ impl<'a> ArwDecoder<'a> {
       decompress_16be(&image_data, width, height, dummy)?
     };
     let cpp = 1;
-    ok_cfa_image(self.camera.clone(), cpp, [f32::NAN, f32::NAN, f32::NAN, f32::NAN], image, dummy)
+    ok_cfa_image(camera.clone(), cpp, [f32::NAN, f32::NAN, f32::NAN, f32::NAN], image, dummy)
   }
 
   pub(crate) fn decode_arw1(buf: &[u8], width: usize, height: usize, dummy: bool) -> Result<PixU16> {

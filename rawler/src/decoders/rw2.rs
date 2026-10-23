@@ -36,6 +36,7 @@ use self::v8decompressor::decode_panasonic_v8;
 
 use super::BlackLevel;
 use super::Camera;
+use super::CameraLookup;
 use super::Decoder;
 use super::FormatHint;
 use super::RawDecodeParams;
@@ -53,7 +54,7 @@ pub struct Rw2Decoder<'a> {
   rawloader: &'a RawLoader,
   tiff: GenericTiffReader,
   camera_ifd: Option<IFD>,
-  camera: Camera,
+  camera: CameraLookup,
 }
 
 impl<'a> Rw2Decoder<'a> {
@@ -84,7 +85,7 @@ impl<'a> Rw2Decoder<'a> {
         "16:9"
       }
     };
-    let camera = rawloader.check_supported_with_mode(tiff.root_ifd(), mode)?;
+    let camera = rawloader.lookup_camera_with_mode(tiff.root_ifd(), mode)?;
 
     let camera_ifd = if let Some(ifd) = tiff.get_entry(PanasonicTag::CameraIFD) {
       let buf = ifd.get_data();
@@ -107,6 +108,7 @@ impl<'a> Rw2Decoder<'a> {
 
 impl<'a> Decoder for Rw2Decoder<'a> {
   fn raw_image(&self, file: &RawSource, _params: &RawDecodeParams, dummy: bool) -> Result<RawImage> {
+    let camera = self.camera.supported()?;
     let width;
     let height;
 
@@ -177,8 +179,8 @@ impl<'a> Decoder for Rw2Decoder<'a> {
     );
 
     let cpp = 1;
-    let blacklevel = self.get_blacklevel()?;
-    let mut camera = self.camera.clone();
+    let blacklevel = self.get_blacklevel(camera)?;
+    let mut camera = camera.clone();
     if let Some(cfa) = self.get_cfa()? {
       camera.cfa = cfa;
     }
@@ -193,6 +195,10 @@ impl<'a> Decoder for Rw2Decoder<'a> {
     }
 
     Ok(img)
+  }
+
+  fn check_supported(&self) -> Result<()> {
+    self.camera.supported().map(|_| ())
   }
 
   fn preview_image(&self, _file: &RawSource, params: &RawDecodeParams) -> Result<Option<DynamicImage>> {
@@ -220,7 +226,7 @@ impl<'a> Decoder for Rw2Decoder<'a> {
         exif.iso_speed_ratings = Some(iso.force_u16(0));
       }
     }
-    let mdata = RawMetadata::new_with_lens(&self.camera, exif, self.get_lens_description()?.cloned());
+    let mdata = RawMetadata::new_with_lens(self.camera.metadata(), exif, self.get_lens_description()?.cloned());
     Ok(mdata)
   }
 
@@ -260,7 +266,7 @@ impl<'a> Rw2Decoder<'a> {
     }
   }
 
-  fn get_blacklevel(&self) -> Result<Option<BlackLevel>> {
+  fn get_blacklevel(&self, camera: &Camera) -> Result<Option<BlackLevel>> {
     // A +15 offset is required if the PanasonicTag::RawDataOffset tag is not present, or if the version is <=4.
     let raw_format = self.tiff.get_entry(PanasonicTag::RawFormat).map(|e| e.force_u16(0)).unwrap_or(0);
     let offset = if !self.tiff.has_entry(PanasonicTag::RawDataOffset) || raw_format <= 4 {
@@ -275,8 +281,8 @@ impl<'a> Rw2Decoder<'a> {
       let b = fetch_tiff_tag!(self.tiff, PanasonicTag::BlackLevelBlue).force_u16(0);
       Ok(Some(BlackLevel::new(
         &[r + offset, g + offset, g + offset, b + offset],
-        self.camera.cfa.width,
-        self.camera.cfa.height,
+        camera.cfa.width,
+        camera.cfa.height,
         1,
       )))
     } else {
@@ -301,7 +307,7 @@ impl<'a> Rw2Decoder<'a> {
           );
           log::debug!("RW2 lens composite ID: {}", composite_id);
           let resolver = LensResolver::new()
-            .with_camera(&self.camera)
+            .with_camera(self.camera.metadata())
             .with_olympus_id(Some(composite_id))
             .with_focal_len(self.get_focal_len()?)
             .with_mounts(&[MFT_MOUNT.into()]);
