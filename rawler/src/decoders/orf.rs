@@ -2,6 +2,8 @@ use std::cmp;
 use std::io::Read;
 use std::io::Seek;
 
+use image::DynamicImage;
+
 use crate::RawImage;
 use crate::RawLoader;
 use crate::RawlerError;
@@ -47,6 +49,7 @@ pub struct OrfDecoder<'a> {
   tiff: GenericTiffReader,
   camera: Camera,
   makernote: IFD,
+  camera_settings: Option<IFD>,
 }
 
 pub fn parse_makernote<R: Read + Seek>(reader: &mut R, exif_ifd: &IFD) -> Result<Option<IFD>> {
@@ -106,6 +109,31 @@ pub fn parse_makernote<R: Read + Seek>(reader: &mut R, exif_ifd: &IFD) -> Result
           } else {
             log::debug!("ORF ImageIFD not found");
           }
+
+          // Parse the Olympus CameraSettings section if it exists, it holds the preview JPEG
+          if let Some(entry) = mainifd.get_entry_raw_with_len(OrfMakernotes::CameraSettingsIFD, reader, 4)? {
+            let ioff = entry.get_force_u32(0);
+            log::debug!("Found CameraSettingsIFD at offset: {}", ioff);
+            // Same as above, offsets inside are relative to the main makernote IFD offset.
+            let csifd = IFD::new(reader, ioff, offset, 0, endian, &[])?;
+            mainifd.sub.insert(OrfMakernotes::CameraSettingsIFD.into(), vec![csifd]);
+          }
+
+          // The thumbnail JPEG is stored outside the main IFD, relative to the makernote offset, too.
+          // The main IFD reads it relative to the TIFF base, so read it again from the right place.
+          if let Some(entry) = mainifd.get_entry(OrfMakernotes::ThumbnailImage) {
+            if let (Value::Undefined(data), Some(toff)) = (&entry.value, entry.offset()) {
+              let mut thumb = vec![0; data.len()];
+              reader.seek(std::io::SeekFrom::Start(offset as u64 + toff as u64))?;
+              reader.read_exact(&mut thumb)?;
+              let entry = Entry {
+                tag: entry.tag,
+                value: Value::Undefined(thumb),
+                embedded: entry.embedded,
+              };
+              mainifd.entries.insert(entry.tag, entry);
+            }
+          }
         }
         Ok(Some(mainifd))
       }
@@ -120,7 +148,7 @@ impl<'a> OrfDecoder<'a> {
   pub fn new(file: &RawSource, tiff: GenericTiffReader, rawloader: &'a RawLoader) -> Result<OrfDecoder<'a>> {
     let camera = rawloader.check_supported(tiff.root_ifd())?;
 
-    let makernote = if let Some(exif) = tiff.find_first_ifd_with_tag(ExifTag::MakerNotes) {
+    let mut makernote = if let Some(exif) = tiff.find_first_ifd_with_tag(ExifTag::MakerNotes) {
       parse_makernote(&mut file.reader(), exif)?
     } else {
       log::warn!("ORF makernote not found");
@@ -130,11 +158,16 @@ impl<'a> OrfDecoder<'a> {
 
     //makernote.dump::<ExifTag>(0).iter().for_each(|line| eprintln!("DUMP: {}", line));
 
+    // CameraSettings reuses tag numbers of ImageProcessing (0x0100, 0x0600), so it must
+    // not be among the sub IFDs that find_ifds_with_tag() searches for those.
+    let camera_settings = makernote.sub.remove(&OrfMakernotes::CameraSettingsIFD.into()).and_then(|mut ifds| ifds.pop());
+
     Ok(OrfDecoder {
       tiff,
       rawloader,
       camera,
       makernote,
+      camera_settings,
     })
   }
 }
@@ -251,6 +284,34 @@ impl<'a> Decoder for OrfDecoder<'a> {
     Ok(mdata)
   }
 
+  fn thumbnail_image(&self, _file: &RawSource, params: &RawDecodeParams) -> Result<Option<DynamicImage>> {
+    if params.image_index != 0 {
+      return Ok(None);
+    }
+    match self.makernote.get_entry(OrfMakernotes::ThumbnailImage).map(|entry| &entry.value) {
+      Some(Value::Undefined(jpeg_buf)) => {
+        let img = image::load_from_memory_with_format(jpeg_buf, image::ImageFormat::Jpeg)
+          .map_err(|err| RawlerError::DecoderFailed(format!("Failed to read JPEG: {:?}", err)))?;
+        Ok(Some(img))
+      }
+      _ => Ok(None),
+    }
+  }
+
+  fn preview_image(&self, file: &RawSource, params: &RawDecodeParams) -> Result<Option<DynamicImage>> {
+    if params.image_index != 0 {
+      return Ok(None);
+    }
+    match self.read_preview_jpeg(file)? {
+      Some(jpeg_buf) => {
+        let img = image::load_from_memory_with_format(jpeg_buf, image::ImageFormat::Jpeg)
+          .map_err(|err| RawlerError::DecoderFailed(format!("Failed to read JPEG: {:?}", err)))?;
+        Ok(Some(img))
+      }
+      None => Ok(None),
+    }
+  }
+
   fn format_hint(&self) -> FormatHint {
     FormatHint::ORF
   }
@@ -357,6 +418,24 @@ impl<'a> OrfDecoder<'a> {
       }
     }
     out
+  }
+
+  /// The preview JPEG from the CameraSettings section, its start relative to the makernote
+  fn read_preview_jpeg<'b>(&self, file: &'b RawSource) -> Result<Option<&'b [u8]>> {
+    let Some(ifd) = &self.camera_settings else {
+      return Ok(None);
+    };
+    let valid = ifd.get_entry(OrfCameraSettings::PreviewImageValid).map(|entry| entry.force_u32(0));
+    let start = ifd.get_entry(OrfCameraSettings::PreviewImageStart).map(|entry| entry.force_u32(0));
+    let len = ifd.get_entry(OrfCameraSettings::PreviewImageLength).map(|entry| entry.force_u32(0));
+    match (valid, start, len) {
+      (Some(1), Some(start), Some(len)) if start > 0 && len > 0 => {
+        let jpeg_off = ifd.base as u64 + start as u64;
+        log::debug!("ORF preview JPEG off: {}, len: {}", jpeg_off, len);
+        Ok(Some(file.subview(jpeg_off, len as u64)?))
+      }
+      _ => Ok(None),
+    }
   }
 
   fn get_blacklevel(&self, bps: usize) -> Result<Option<BlackLevel>> {
@@ -468,6 +547,7 @@ fn normalize_wb(raw_wb: [f32; 4]) -> [f32; 4] {
 crate::tags::tiff_tag_enum!(OrfMakernotes);
 crate::tags::tiff_tag_enum!(OrfImageProcessing);
 crate::tags::tiff_tag_enum!(OrfEquipmentTags);
+crate::tags::tiff_tag_enum!(OrfCameraSettings);
 
 #[allow(non_camel_case_types)]
 #[derive(Debug, Copy, Clone, PartialEq, enumn::N)]
@@ -478,6 +558,8 @@ pub enum OrfMakernotes {
   OlympusRedMul = 0x1017,
   OlympusBlueMul = 0x1018,
   EquipmentIFD = 0x2010,
+  CameraSettingsIFD = 0x2020,
+  ThumbnailImage = 0x0100,
 }
 
 #[allow(non_camel_case_types)]
@@ -499,4 +581,13 @@ pub enum OrfImageProcessing {
 #[repr(u16)]
 pub enum OrfEquipmentTags {
   LensType = 0x0201,
+}
+
+#[allow(non_camel_case_types)]
+#[derive(Debug, Copy, Clone, PartialEq, enumn::N)]
+#[repr(u16)]
+pub enum OrfCameraSettings {
+  PreviewImageValid = 0x0100,
+  PreviewImageStart = 0x0101,
+  PreviewImageLength = 0x0102,
 }
