@@ -68,7 +68,15 @@ impl<'a> Decoder for TfrDecoder<'a> {
 
     let src = file.subview_until_eof(offset as u64)?;
 
-    let image = if self.camera.find_hint("uncompressed") {
+    // A camera's 3FR and a Phocus-written FFF can use different compression.
+    // Prefer the file's tag and retain the camera hint as a compatibility
+    // fallback for files that omit it.
+    let uncompressed = match raw.get_entry(TiffCommonTag::Compression).map(|tag| tag.force_usize(0)) {
+      Some(1) => true,
+      Some(_) => false,
+      None => self.camera.find_hint("uncompressed"),
+    };
+    let image = if uncompressed {
       decompress_16le(src, width, height, dummy)?
     } else {
       self.decode_compressed(src, width, height, dummy)?
