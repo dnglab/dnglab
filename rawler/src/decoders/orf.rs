@@ -10,6 +10,7 @@ use crate::RawlerError;
 use crate::Result;
 use crate::alloc_image;
 use crate::analyze::FormatDump;
+use crate::bits::Endian;
 use crate::buffer::PaddedBuf;
 use crate::decompressors::packed::*;
 use crate::exif::Exif;
@@ -110,28 +111,27 @@ pub fn parse_makernote<R: Read + Seek>(reader: &mut R, exif_ifd: &IFD) -> Result
             log::debug!("ORF ImageIFD not found");
           }
 
-          // Parse the Olympus CameraSettings section if it exists, it holds the preview JPEG
-          if let Some(entry) = mainifd.get_entry_raw_with_len(OrfMakernotes::CameraSettingsIFD, reader, 4)? {
-            let ioff = entry.get_force_u32(0);
-            log::debug!("Found CameraSettingsIFD at offset: {}", ioff);
-            // Same as above, offsets inside are relative to the main makernote IFD offset.
-            let csifd = IFD::new(reader, ioff, offset, 0, endian, &[])?;
+          // Parse the Olympus CameraSettings section if it exists, it holds the preview JPEG.
+          // It is optional: a broken one must not fail the decode.
+          if let Some(csifd) = parse_camera_settings(reader, &mainifd, offset, endian) {
             mainifd.sub.insert(OrfMakernotes::CameraSettingsIFD.into(), vec![csifd]);
           }
 
           // The thumbnail JPEG is stored outside the main IFD, relative to the makernote offset, too.
           // The main IFD reads it relative to the TIFF base, so read it again from the right place.
-          if let Some(entry) = mainifd.get_entry(OrfMakernotes::ThumbnailImage) {
-            if let (Value::Undefined(data), Some(toff)) = (&entry.value, entry.offset()) {
-              let mut thumb = vec![0; data.len()];
-              reader.seek(std::io::SeekFrom::Start(offset as u64 + toff as u64))?;
-              reader.read_exact(&mut thumb)?;
-              let entry = Entry {
-                tag: entry.tag,
-                value: Value::Undefined(thumb),
-                embedded: entry.embedded,
-              };
-              mainifd.entries.insert(entry.tag, entry);
+          // If that fails, the entry is dropped rather than failing the decode.
+          let reread = mainifd
+            .get_entry(OrfMakernotes::ThumbnailImage)
+            .map(|entry| reread_thumbnail(reader, entry, offset));
+          if let Some(reread) = reread {
+            match reread {
+              Ok(entry) => {
+                mainifd.entries.insert(entry.tag, entry);
+              }
+              Err(err) => {
+                log::warn!("ORF: dropping unreadable makernote thumbnail: {}", err);
+                mainifd.entries.remove(&u16::from(OrfMakernotes::ThumbnailImage));
+              }
             }
           }
         }
@@ -142,6 +142,52 @@ pub fn parse_makernote<R: Read + Seek>(reader: &mut R, exif_ifd: &IFD) -> Result
   } else {
     Ok(None)
   }
+}
+
+/// The CameraSettings sub IFD, its offsets relative to the makernote at `offset`.
+/// `None` (with a warning) when it is missing or unreadable.
+fn parse_camera_settings<R: Read + Seek>(reader: &mut R, mainifd: &IFD, offset: u32, endian: Endian) -> Option<IFD> {
+  let entry = match mainifd.get_entry_raw_with_len(OrfMakernotes::CameraSettingsIFD, reader, 4) {
+    Ok(Some(entry)) => entry,
+    Ok(None) => return None,
+    Err(err) => {
+      log::warn!("ORF: unreadable CameraSettingsIFD entry: {}", err);
+      return None;
+    }
+  };
+  let ioff = entry.get_force_u32(0);
+  log::debug!("Found CameraSettingsIFD at offset: {}", ioff);
+  if offset.checked_add(ioff).is_none() {
+    log::warn!("ORF: CameraSettingsIFD offset {} is out of range", ioff);
+    return None;
+  }
+  // Same as the other sections, offsets inside are relative to the main makernote IFD offset.
+  match IFD::new(reader, ioff, offset, 0, endian, &[]) {
+    Ok(ifd) => Some(ifd),
+    Err(err) => {
+      log::warn!("ORF: unreadable CameraSettingsIFD: {}", err);
+      None
+    }
+  }
+}
+
+/// The makernote thumbnail entry, its data read again relative to the makernote at `offset`.
+fn reread_thumbnail<R: Read + Seek>(reader: &mut R, entry: &Entry, offset: u32) -> std::io::Result<Entry> {
+  let (Value::Undefined(data), Some(toff)) = (&entry.value, entry.offset()) else {
+    return Err(std::io::Error::other("not an UNDEFINED entry with an offset"));
+  };
+  // Data of up to 4 bytes is stored inline in the entry, there is nothing to re-read.
+  if data.len() <= 4 {
+    return Err(std::io::Error::other("inline data is no thumbnail"));
+  }
+  let mut thumb = vec![0; data.len()];
+  reader.seek(std::io::SeekFrom::Start(offset as u64 + toff as u64))?;
+  reader.read_exact(&mut thumb)?;
+  Ok(Entry {
+    tag: entry.tag,
+    value: Value::Undefined(thumb),
+    embedded: entry.embedded,
+  })
 }
 
 impl<'a> OrfDecoder<'a> {
@@ -432,7 +478,13 @@ impl<'a> OrfDecoder<'a> {
       (Some(1), Some(start), Some(len)) if start > 0 && len > 0 => {
         let jpeg_off = ifd.base as u64 + start as u64;
         log::debug!("ORF preview JPEG off: {}, len: {}", jpeg_off, len);
-        Ok(Some(file.subview(jpeg_off, len as u64)?))
+        match file.subview(jpeg_off, len as u64) {
+          Ok(buf) => Ok(Some(buf)),
+          Err(err) => {
+            log::warn!("ORF: preview JPEG at {}, len {} is out of the file: {}", jpeg_off, len, err);
+            Ok(None)
+          }
+        }
       }
       _ => Ok(None),
     }
