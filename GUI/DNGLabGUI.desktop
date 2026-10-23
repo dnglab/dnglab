@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=DNGLabGUI
+Exec=/usr/local/bin/DNGLabGUI.py
+Type=Application
+Terminal=false
+StartupNotify=true
+Comment=Convert CR3 to DNG
+Icon=/home/frohro/Desktop/DNGLabGUIIcon.png
