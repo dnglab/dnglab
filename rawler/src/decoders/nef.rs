@@ -21,6 +21,7 @@ use crate::decoders::dynamic_image_from_ifd;
 use crate::decoders::dynamic_image_from_jpeg_interchange_format;
 use crate::decoders::nef::lensdata::NefLensData;
 use crate::decompressors::decompress_lines_fn;
+use crate::decompressors::jpegxs;
 use crate::decompressors::ljpeg::huffman::HuffTable;
 use crate::decompressors::packed::*;
 use crate::exif::Exif;
@@ -202,10 +203,6 @@ impl<'a> Decoder for NefDecoder<'a> {
     };
     debug!("TIFF compression flag: {}, NEF compression mode: {:?}", compression, nef_compression);
 
-    if matches!(nef_compression, Some(NefCompression::HighEfficency)) || matches!(nef_compression, Some(NefCompression::HighEfficencyStar)) {
-      return Err(RawlerError::DecoderFailed(format!("NEF compression {:?} is not supported", nef_compression)));
-    }
-
     let offset = fetch_tiff_tag!(raw, TiffCommonTag::StripOffsets).force_usize(0);
     let size = fetch_tiff_tag!(raw, TiffCommonTag::StripByteCounts).force_usize(0);
     let rows_per_strip = fetch_tiff_tag!(raw, TiffCommonTag::RowsPerStrip).get_usize(0).ok().flatten().unwrap_or(height);
@@ -283,6 +280,11 @@ impl<'a> Decoder for NefDecoder<'a> {
     } else if size == width * height * 3 {
       cpp = 3;
       Self::decode_snef_compressed(&src, coeffs, width, height, dummy)?
+    } else if matches!(nef_compression, Some(NefCompression::HighEfficency) | Some(NefCompression::HighEfficencyStar)) {
+      // HE and HE* store the CFA data as a JPEG XS codestream with Nikon's
+      // vendor deviations. Black (MakerNote 0x003d) and white (14-bit) levels
+      // come from the same places as for lossless files.
+      self.decode_high_efficiency(&src, width, height, dummy)?
     } else if compression == 34713 {
       self.decode_compressed(&src, width, height, bps, dummy)?
     } else {
@@ -576,6 +578,23 @@ impl<'a> NefDecoder<'a> {
     } else {
       None
     })
+  }
+
+  /// Decode a "High Efficiency" (HE/HE*) raw strip: a JPEG XS codestream
+  /// carrying a star-tetrix decorrelation of the CFA planes, which
+  /// [`jpegxs::decode`] reassembles into the full-resolution RGGB mosaic.
+  fn decode_high_efficiency(&self, src: &PaddedBuf, width: usize, height: usize, dummy: bool) -> Result<PixU16> {
+    if dummy {
+      return Ok(PixU16::new_uninit(width, height));
+    }
+    let (mosaic, w, h) = jpegxs::decode(src)?;
+    if (w, h) != (width, height) {
+      return Err(RawlerError::DecoderFailed(format!(
+        "NEF: JPEG XS decoded a {}x{} mosaic but the IFD says {}x{}",
+        w, h, width, height
+      )));
+    }
+    Ok(PixU16::new_with(mosaic, w, h))
   }
 
   fn decode_compressed(&self, src: &PaddedBuf, width: usize, height: usize, bps: usize, dummy: bool) -> std::result::Result<PixU16, String> {
