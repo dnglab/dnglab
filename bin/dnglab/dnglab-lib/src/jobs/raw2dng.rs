@@ -16,9 +16,11 @@ use std::{
   fmt::Display,
   fs::{File, remove_file},
   io::BufWriter,
+  panic::{AssertUnwindSafe, catch_unwind},
   time::SystemTime,
 };
 use std::{path::PathBuf, time::Instant};
+use tokio::task::spawn_blocking;
 
 /// Job for converting RAW to DNG
 #[derive(Debug, Clone)]
@@ -147,21 +149,41 @@ impl Job for Raw2DngJob {
     let now = Instant::now();
     let cp = self.clone();
 
-    // Run the CPU-bound conversion on rayon's global pool rather than tokio's
-    // blocking pool. Rationale:
-    //   - The work inside `internal_exec` already fans out through `par_iter`
-    //     on rayon for LJPEG tile compression. Dispatching the outer job onto
-    //     rayon too keeps every CPU thread under one work-stealing scheduler,
-    //     avoiding the "tokio-blocking-thread holds the call frame while
-    //     rayon does the work on different threads" double-dispatch.
-    //   - Tokio's blocking pool is sized for I/O fanout.
-    // A tokio oneshot bridges the result back into the async driver.
-    let (tx, rx) = tokio::sync::oneshot::channel();
-    rayon::spawn(move || {
-      let _ = tx.send(cp.internal_exec());
+    // Keep the outer conversion job off Rayon's global pool. The conversion
+    // itself uses Rayon internally for CPU-parallel work such as LJPEG tile
+    // compression. Running the outer job as an unowned `rayon::spawn()` task
+    // means a panic propagated out of that conversion reaches the top of a
+    // Rayon spawn task; Rayon's default behavior for such an unhandled panic
+    // is to abort the process.
+    //
+    // `spawn_blocking` gives the conversion an owning Tokio JoinHandle.
+    // `catch_unwind` additionally turns a decoder/writer panic into a normal
+    // per-job error and lets us remove the partially written output file.
+    let handle = spawn_blocking(move || {
+      let output = cp.output.clone();
+      match catch_unwind(AssertUnwindSafe(|| cp.internal_exec())) {
+        Ok(result) => result,
+        Err(payload) => {
+          let message = if let Some(s) = payload.downcast_ref::<&str>() {
+            (*s).to_string()
+          } else if let Some(s) = payload.downcast_ref::<String>() {
+            s.clone()
+          } else {
+            "unknown panic payload".to_string()
+          };
+
+          if let Err(err) = remove_file(&output) {
+            if err.kind() != std::io::ErrorKind::NotFound {
+              log::error!("Failed to delete DNG file after conversion panic: {:?}", err);
+            }
+          }
+
+          Err(AppError::General(format!("Conversion worker panicked: {message}")))
+        }
+      }
     });
 
-    match rx.await {
+    match handle.await {
       Ok(Ok(mut stat)) => {
         stat.duration = now.elapsed().as_secs_f32();
         eprintln!("Writing DNG output file: {}", stat.job.output.display());
@@ -172,10 +194,10 @@ impl Job for Raw2DngJob {
         duration: now.elapsed().as_secs_f32(),
         error: Some(e),
       },
-      Err(err) => JobResult {
+      Err(e) => JobResult {
         job: self.clone(),
         duration: now.elapsed().as_secs_f32(),
-        error: Some(AppError::General(format!("Rayon worker panicked before completing: {err}"))),
+        error: Some(AppError::General(format!("Conversion worker failed to join: {e}"))),
       },
     }
   }
