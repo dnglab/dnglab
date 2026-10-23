@@ -203,6 +203,16 @@ where
     crop(&self, area)
   }
 
+  pub fn view(&self, area: Rect) -> Pix2DView<'_, T> {
+    debug_assert!(self.initialized);
+    debug_assert!(area.p.x <= self.width && area.d.w <= self.width - area.p.x, "view extends beyond image width");
+    debug_assert!(
+      area.p.y <= self.height && area.d.h <= self.height - area.p.y,
+      "view extends beyond image height"
+    );
+    Pix2DView { rect: area, inner: self }
+  }
+
   pub fn into_crop(self, area: Rect) -> Self {
     if self.dim() == area.d && area.p == Point::zero() {
       self // No-Op
@@ -454,6 +464,46 @@ where
 
 unsafe impl<T> Sync for SharedPix2D<T> where T: SubPixel {}
 
+pub struct Pix2DView<'a, T: SubPixel> {
+  pub rect: Rect,
+  pub inner: &'a Pix2D<T>,
+}
+
+impl<'a, T> Pix2DView<'a, T>
+where
+  T: SubPixel,
+{
+  pub fn width(&self) -> usize {
+    self.rect.d.w
+  }
+
+  pub fn height(&self) -> usize {
+    self.rect.d.h
+  }
+
+  #[inline(always)]
+  pub fn at(&self, row: usize, col: usize) -> &T {
+    debug_assert!(row < self.rect.d.h, "row is outside the view");
+    debug_assert!(col < self.rect.d.w, "column is outside the view");
+    self.inner.at(row + self.rect.p.y, col + self.rect.p.x)
+  }
+
+  pub fn view(&self, area: Rect) -> Pix2DView<'a, T> {
+    debug_assert!(
+      area.p.x <= self.rect.d.w && area.d.w <= self.rect.d.w - area.p.x,
+      "view extends beyond image width"
+    );
+    debug_assert!(
+      area.p.y <= self.rect.d.h && area.d.h <= self.rect.d.h - area.p.y,
+      "view extends beyond image height"
+    );
+    Pix2DView {
+      rect: Rect::new(Point::new(area.p.x + self.rect.p.x, area.p.y + self.rect.p.y), area.d),
+      inner: self.inner,
+    }
+  }
+}
+
 #[derive(Clone)]
 pub struct Color2D<T, const N: usize> {
   pub width: usize,
@@ -592,6 +642,15 @@ where
     Self::new_with(output, area.d.w, area.d.h)
   }
 
+  pub fn view(&self, area: Rect) -> Color2DView<'_, T, N> {
+    debug_assert!(area.p.x <= self.width && area.d.w <= self.width - area.p.x, "view extends beyond image width");
+    debug_assert!(
+      area.p.y <= self.height && area.d.h <= self.height - area.p.y,
+      "view extends beyond image height"
+    );
+    Color2DView { rect: area, inner: self }
+  }
+
   pub fn rotate_90cw(&self) -> Self {
     let mut out = Self::new(self.height, self.width);
     let out_width = out.width;
@@ -602,7 +661,6 @@ where
     });
     out
   }
-
   pub fn rotate_90ccw(&self) -> Self {
     let mut out = Self::new(self.height, self.width);
     let out_width = out.width;
@@ -617,6 +675,47 @@ where
   pub fn rotate_180(&self) -> Self {
     let data = self.pixels().iter().rev().copied().collect_vec();
     Self::new_with(data, self.width, self.height)
+  }
+}
+
+pub struct Color2DView<'a, T, const N: usize> {
+  pub rect: Rect,
+  pub inner: &'a Color2D<T, N>,
+}
+
+impl<'a, T, const N: usize> Color2DView<'a, T, N>
+where
+  T: Copy + Clone + Default + Send,
+  [T; N]: Default,
+{
+  pub fn width(&self) -> usize {
+    self.rect.d.w
+  }
+
+  pub fn height(&self) -> usize {
+    self.rect.d.h
+  }
+
+  #[inline(always)]
+  pub fn at(&self, row: usize, col: usize) -> &[T; N] {
+    debug_assert!(row < self.rect.d.h, "row is outside the view");
+    debug_assert!(col < self.rect.d.w, "column is outside the view");
+    self.inner.at(row + self.rect.p.y, col + self.rect.p.x)
+  }
+
+  pub fn view(&self, area: Rect) -> Color2DView<'a, T, N> {
+    debug_assert!(
+      area.p.x <= self.rect.d.w && area.d.w <= self.rect.d.w - area.p.x,
+      "view extends beyond image width"
+    );
+    debug_assert!(
+      area.p.y <= self.rect.d.h && area.d.h <= self.rect.d.h - area.p.y,
+      "view extends beyond image height"
+    );
+    Color2DView {
+      rect: Rect::new(Point::new(area.p.x + self.rect.p.x, area.p.y + self.rect.p.y), area.d),
+      inner: self.inner,
+    }
   }
 }
 
@@ -693,6 +792,163 @@ where
 }
 
 unsafe impl<T, const N: usize> Sync for Color2DPtr<T, N> {}
+
+/// Border-coordinate access for 2D pixel containers such as [`crate::pixarray::Pix2D`]
+/// and [`crate::pixarray::Color2D`].
+///
+/// Negative or out-of-range coordinates are mapped back into the image according
+/// to the selected edge-padding rule. For an input row `a b c d e f g` and a
+/// two-pixel border, the rules are:
+pub trait BorderPadding<T> {
+  /// Access a pixel using reflected padding.
+  ///
+  /// When `repeat_edge` is `true`, the edge pixel is repeated: `b a | a b c d
+  /// e f g | g f`. This is OpenCV `BORDER_REFLECT`, NumPy
+  /// `pad(mode="symmetric")`, and SciPy `ndimage` `mode="reflect"`.
+  ///
+  /// When `repeat_edge` is `false`, the edge pixel is not repeated: `c b | a b
+  /// c d e f g | f e`. This is OpenCV `BORDER_REFLECT_101` (also
+  /// `BORDER_DEFAULT`), NumPy `pad(mode="reflect")`, and SciPy `ndimage`
+  /// `mode="mirror"`.
+  fn at_reflect(&self, row: isize, col: isize, repeat_edge: bool) -> &T;
+
+  /// Access a pixel using constant-value padding.
+  ///
+  /// Out-of-range coordinates return `constant`, e.g. passing `0` produces
+  /// `0 0 | a b c d e f g | 0 0`. This is OpenCV `BORDER_CONSTANT`, NumPy
+  /// `pad(mode="constant", constant_values=constant)`, and SciPy `ndimage`
+  /// `mode="constant", cval=constant`.
+  fn at_padding<'a>(&'a self, row: isize, col: isize, constant: &'a T) -> &'a T;
+}
+
+impl<T> BorderPadding<T> for Pix2D<T>
+where
+  T: SubPixel,
+{
+  #[inline(always)]
+  fn at_reflect(&self, row: isize, col: isize, repeat_edge: bool) -> &T {
+    if repeat_edge {
+      self.at(reflect_repeat_edge(row, self.height), reflect_repeat_edge(col, self.width))
+    } else {
+      self.at(reflect_unique_edge(row, self.height), reflect_unique_edge(col, self.width))
+    }
+  }
+
+  #[inline(always)]
+  fn at_padding<'a>(&'a self, row: isize, col: isize, constant: &'a T) -> &'a T {
+    if row >= 0 && (row as usize) < self.height && col >= 0 && (col as usize) < self.width {
+      self.at(row as usize, col as usize)
+    } else {
+      constant
+    }
+  }
+}
+
+impl<T> BorderPadding<T> for Pix2DView<'_, T>
+where
+  T: SubPixel,
+{
+  #[inline(always)]
+  fn at_reflect(&self, row: isize, col: isize, repeat_edge: bool) -> &T {
+    if repeat_edge {
+      let new_row = reflect_repeat_edge(row, self.rect.d.h);
+      let new_col = reflect_repeat_edge(col, self.rect.d.w);
+      self.inner.at(new_row + self.rect.p.y, new_col + self.rect.p.x)
+    } else {
+      let new_row = reflect_unique_edge(row, self.rect.d.h);
+      let new_col = reflect_unique_edge(col, self.rect.d.w);
+      self.inner.at(new_row + self.rect.p.y, new_col + self.rect.p.x)
+    }
+  }
+
+  #[inline(always)]
+  fn at_padding<'a>(&'a self, row: isize, col: isize, constant: &'a T) -> &'a T {
+    if row >= 0 && (row as usize) < self.height() && col >= 0 && (col as usize) < self.width() {
+      self.at(row as usize, col as usize)
+    } else {
+      constant
+    }
+  }
+}
+
+impl<T, const N: usize> BorderPadding<[T; N]> for Color2D<T, N>
+where
+  T: Copy + Clone + Default + Send,
+  [T; N]: Default,
+{
+  #[inline(always)]
+  fn at_reflect(&self, row: isize, col: isize, repeat_edge: bool) -> &[T; N] {
+    if repeat_edge {
+      self.at(reflect_repeat_edge(row, self.height), reflect_repeat_edge(col, self.width))
+    } else {
+      self.at(reflect_unique_edge(row, self.height), reflect_unique_edge(col, self.width))
+    }
+  }
+
+  #[inline(always)]
+  fn at_padding<'a>(&'a self, row: isize, col: isize, constant: &'a [T; N]) -> &'a [T; N] {
+    if row >= 0 && (row as usize) < self.height && col >= 0 && (col as usize) < self.width {
+      self.at(row as usize, col as usize)
+    } else {
+      constant
+    }
+  }
+}
+
+impl<T, const N: usize> BorderPadding<[T; N]> for Color2DView<'_, T, N>
+where
+  T: Copy + Clone + Default + Send,
+  [T; N]: Default,
+{
+  #[inline(always)]
+  fn at_reflect(&self, row: isize, col: isize, repeat_edge: bool) -> &[T; N] {
+    if repeat_edge {
+      let new_row = reflect_repeat_edge(row, self.rect.d.h);
+      let new_col = reflect_repeat_edge(col, self.rect.d.w);
+      self.inner.at(new_row + self.rect.p.y, new_col + self.rect.p.x)
+    } else {
+      let new_row = reflect_unique_edge(row, self.rect.d.h);
+      let new_col = reflect_unique_edge(col, self.rect.d.w);
+      self.inner.at(new_row + self.rect.p.y, new_col + self.rect.p.x)
+    }
+  }
+
+  #[inline(always)]
+  fn at_padding<'a>(&'a self, row: isize, col: isize, constant: &'a [T; N]) -> &'a [T; N] {
+    if row >= 0 && (row as usize) < self.height() && col >= 0 && (col as usize) < self.width() {
+      self.at(row as usize, col as usize)
+    } else {
+      constant
+    }
+  }
+}
+
+#[inline(always)]
+fn reflect_repeat_edge(i: isize, n: usize) -> usize {
+  if 0 <= i && i < n as isize {
+    return i as usize;
+  }
+  let n = n as isize;
+  debug_assert!(n > 0, "cannot reflect an empty dimension");
+  let period = n * 2;
+  let index = i.rem_euclid(period);
+  (if index < n { index } else { period - 1 - index }) as usize
+}
+
+#[inline(always)]
+fn reflect_unique_edge(i: isize, n: usize) -> usize {
+  if 0 <= i && i < n as isize {
+    return i as usize;
+  }
+  let n = n as isize;
+  debug_assert!(n > 0, "cannot reflect an empty dimension");
+  if n == 1 {
+    return 0;
+  }
+  let period = (n - 1) * 2;
+  let index = i.rem_euclid(period);
+  (if index < n { index } else { period - index }) as usize
+}
 
 #[macro_export]
 macro_rules! alloc_image_f32_plain {
