@@ -32,7 +32,7 @@ const CANON_RF_MOUNT: &str = "rf-mount";
 #[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub struct Cr3Decoder<'a> {
-  camera: Camera,
+  camera: CameraLookup,
   rawloader: &'a RawLoader,
   bmff: Bmff,
   // Basic EXIF information
@@ -87,7 +87,7 @@ impl<'a> Cr3Decoder<'a> {
   pub fn new(_rawfile: &RawSource, bmff: Bmff, rawloader: &'a RawLoader) -> Result<Cr3Decoder<'a>> {
     if let Some(Cr3DescBox { cmt1, cmt2, cmt3, cmt4, .. }) = bmff.filebox.moov.cr3desc.as_ref() {
       let mode = Self::get_mode(cmt3.tiff.root_ifd())?;
-      let camera = rawloader.check_supported_with_mode(cmt1.tiff.root_ifd(), mode)?;
+      let camera = rawloader.lookup_camera_with_mode(cmt1.tiff.root_ifd(), mode)?;
       let decoder = Cr3Decoder {
         camera,
         rawloader,
@@ -229,7 +229,7 @@ impl<'a> Decoder for Cr3Decoder<'a> {
       }
     }
 
-    let mut mdata = RawMetadata::new_with_lens(&self.camera, exif, cr3md.lens_description.cloned());
+    let mut mdata = RawMetadata::new_with_lens(self.camera.metadata(), exif, cr3md.lens_description.cloned());
 
     if let Some(unique_id) = &cr3md.image_unique_id {
       // For CR3, we use the already included Makernote tag with unique image ID
@@ -255,6 +255,7 @@ impl<'a> Decoder for Cr3Decoder<'a> {
 
   /// Decode raw image
   fn raw_image(&self, file: &RawSource, params: &RawDecodeParams, dummy: bool) -> Result<RawImage> {
+    let camera = self.camera.supported()?;
     let sample_idx = params.image_index;
     if sample_idx >= self.raw_image_count()? {
       return Err(RawlerError::DecoderFailed(format!(
@@ -294,7 +295,7 @@ impl<'a> Decoder for Cr3Decoder<'a> {
       log::warn!("No WB info in CR3 metadata found, fallback to 1.0 coefficients");
       [1.0, 1.0, 1.0, f32::NAN]
     });
-    let whitelevel = cr3md.whitelevel.unwrap_or(((1_u32 << self.camera.bps.unwrap_or(16)) - 1) as u16);
+    let whitelevel = cr3md.whitelevel.unwrap_or(((1_u32 << camera.bps.unwrap_or(16)) - 1) as u16);
 
     // Special handling for CRM movie files
     if let Some(entry) = self.cmt3.get_entry(0x0001) {
@@ -325,12 +326,10 @@ impl<'a> Decoder for Cr3Decoder<'a> {
     };
 
     let cpp = 1;
-    let blacklevel = cr3md
-      .blacklevels
-      .map(|x| BlackLevel::new(&x, self.camera.cfa.width, self.camera.cfa.height, cpp));
+    let blacklevel = cr3md.blacklevels.map(|x| BlackLevel::new(&x, camera.cfa.width, camera.cfa.height, cpp));
     let whitelevel = WhiteLevel(vec![whitelevel as u32]);
-    let photometric = RawPhotometricInterpretation::Cfa(CFAConfig::new_from_camera(&self.camera));
-    let mut img = RawImage::new(self.camera.clone(), image, cpp, wb, photometric, blacklevel, Some(whitelevel), dummy);
+    let photometric = RawPhotometricInterpretation::Cfa(CFAConfig::new_from_camera(camera));
+    let mut img = RawImage::new(camera.clone(), image, cpp, wb, photometric, blacklevel, Some(whitelevel), dummy);
 
     // IAD1 box contains sensor information
     // We use the sensor crop from IAD1 as recommended image crop.
@@ -380,7 +379,7 @@ impl<'a> Decoder for Cr3Decoder<'a> {
             // Check if after apply of active_area the crop is out of bounds.
             // This is know to happen with R5II 1.6 crop raw files.
             let overflow = (rect_crop.x() - rect_active.x()) + rect_crop.width() > rect_active.width();
-            if self.camera.find_hint("activearea_bug") && overflow {
+            if camera.find_hint("activearea_bug") && overflow {
               // In this case, we ignore the active_area in IAD1 and use the crop instead.
               log::debug!("Raw file has invalid active_area parameters in IAD1, using crop_area instead");
               img.active_area = Some(rect_crop);
@@ -417,6 +416,10 @@ impl<'a> Decoder for Cr3Decoder<'a> {
     debug!("Canon crop area: {:?}", img.crop_area);
     debug!("Black areas: {:?}", img.blackareas);
     Ok(img)
+  }
+
+  fn check_supported(&self) -> Result<()> {
+    self.camera.supported().map(|_| ())
   }
 
   /// Extract preview image embedded in CR3
@@ -595,7 +598,7 @@ impl<'a> Cr3Decoder<'a> {
 
     let resolver = LensResolver::new()
       .with_lens_keyname(self.read_lens_name()?)
-      .with_camera(&self.camera) // must follow with_lens_keyname() as it my override key
+      .with_camera(self.camera.metadata()) // must follow with_lens_keyname() as it my override key
       .with_lens_id(self.read_lens_id()?)
       .with_aperture(md.ctmd_exposure.as_ref().map(|x| x.fnumber.clone()))
       .with_focal_len(md.ctmd_focallen.clone())

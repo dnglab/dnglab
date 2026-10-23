@@ -28,7 +28,7 @@ use crate::rawsource::RawSource;
 use crate::tags::ExifTag;
 use crate::tags::TiffCommonTag;
 
-use super::Camera;
+use super::CameraLookup;
 use super::Decoder;
 use super::FormatHint;
 use super::RawDecodeParams;
@@ -43,12 +43,12 @@ pub struct SrwDecoder<'a> {
   rawloader: &'a RawLoader,
   tiff: GenericTiffReader,
   makernote: IFD,
-  camera: Camera,
+  camera: CameraLookup,
 }
 
 impl<'a> SrwDecoder<'a> {
   pub fn new(file: &RawSource, tiff: GenericTiffReader, rawloader: &'a RawLoader) -> Result<SrwDecoder<'a>> {
-    let camera = rawloader.check_supported(tiff.root_ifd())?;
+    let camera = rawloader.lookup_camera(tiff.root_ifd())?;
 
     let makernote = if let Some(exif) = tiff.find_first_ifd_with_tag(ExifTag::MakerNotes) {
       exif.parse_makernote(&mut file.reader(), OffsetMode::RelativeToIFD, &[])?
@@ -69,6 +69,7 @@ impl<'a> SrwDecoder<'a> {
 
 impl<'a> Decoder for SrwDecoder<'a> {
   fn raw_image(&self, file: &RawSource, _params: &RawDecodeParams, dummy: bool) -> Result<RawImage> {
+    let camera = self.camera.supported()?;
     let raw = self
       .tiff
       .find_first_ifd_with_tag(TiffCommonTag::StripOffsets)
@@ -84,19 +85,19 @@ impl<'a> Decoder for SrwDecoder<'a> {
       32769 => match bits {
         12 => decompress_12le_unpacked(&src, width, height, dummy)?,
         14 => decompress_14le_unpacked(&src, width, height, dummy)?,
-        x => return Err(RawlerError::unsupported(&self.camera, format!("SRW: Don't know how to handle bps {}", x))),
+        x => return Err(RawlerError::unsupported(camera, format!("SRW: Don't know how to handle bps {}", x))),
       },
       32770 => match raw.get_entry(TiffCommonTag::SrwSensorAreas) {
         None => match bits {
           12 => {
-            if self.camera.find_hint("little_endian") {
+            if camera.find_hint("little_endian") {
               decompress_12le(&src, width, height, dummy)?
             } else {
               decompress_12be(&src, width, height, dummy)?
             }
           }
           14 => decompress_14le_unpacked(&src, width, height, dummy)?,
-          x => return Err(RawlerError::unsupported(&self.camera, format!("SRW: Don't know how to handle bps {}", x))),
+          x => return Err(RawlerError::unsupported(camera, format!("SRW: Don't know how to handle bps {}", x))),
         },
         Some(x) => {
           let coffset = x.force_usize(0);
@@ -108,14 +109,15 @@ impl<'a> Decoder for SrwDecoder<'a> {
       32772 => SrwDecoder::decode_srw2(&src, width, height, dummy),
       32773 => SrwDecoder::decode_srw3(&src, width, height, dummy),
       x => {
-        return Err(RawlerError::unsupported(
-          &self.camera,
-          format!("SRW: Don't know how to handle compression {}", x),
-        ));
+        return Err(RawlerError::unsupported(camera, format!("SRW: Don't know how to handle compression {}", x)));
       }
     };
     let cpp = 1;
-    ok_cfa_image_with_blacklevels(self.camera.clone(), cpp, self.get_wb()?, self.get_blacklevel()?, image, dummy)
+    ok_cfa_image_with_blacklevels(camera.clone(), cpp, self.get_wb()?, self.get_blacklevel()?, image, dummy)
+  }
+
+  fn check_supported(&self) -> Result<()> {
+    self.camera.supported().map(|_| ())
   }
 
   fn format_dump(&self) -> FormatDump {
@@ -124,7 +126,7 @@ impl<'a> Decoder for SrwDecoder<'a> {
 
   fn raw_metadata(&self, _file: &RawSource, _params: &RawDecodeParams) -> Result<RawMetadata> {
     let exif = Exif::new(self.tiff.root_ifd())?;
-    let mdata = RawMetadata::new_with_lens(&self.camera, exif, self.get_lens_description()?.cloned());
+    let mdata = RawMetadata::new_with_lens(self.camera.metadata(), exif, self.get_lens_description()?.cloned());
     Ok(mdata)
   }
 
@@ -466,7 +468,7 @@ impl<'a> SrwDecoder<'a> {
       let lens_id = lens_id.force_u16(0);
       let resolver = LensResolver::new()
         .with_lens_id((lens_id.into(), 0))
-        .with_camera(&self.camera)
+        .with_camera(self.camera.metadata())
         .with_mounts(&[NX_MOUNT.into()]);
       return Ok(resolver.resolve());
     }

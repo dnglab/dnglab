@@ -47,6 +47,7 @@ use crate::tags::TiffCommonTag;
 
 use super::BlackLevel;
 use super::Camera;
+use super::CameraLookup;
 use super::Decoder;
 use super::FormatHint;
 use super::RawDecodeParams;
@@ -140,7 +141,7 @@ pub struct NefDecoder<'a> {
   rawloader: &'a RawLoader,
   tiff: GenericTiffReader,
   makernote: IFD,
-  camera: Camera,
+  camera: CameraLookup,
 }
 
 impl<'a> NefDecoder<'a> {
@@ -153,7 +154,7 @@ impl<'a> NefDecoder<'a> {
 
     // Make sure we always use a 12/14 bit mode to get correct white/blackpoints
     let mode = format!("{}bit", bps);
-    let camera = rawloader.check_supported_with_mode(tiff.root_ifd(), &mode)?;
+    let camera = rawloader.lookup_camera_with_mode(tiff.root_ifd(), &mode)?;
 
     let makernote = if let Some(exif) = tiff.find_first_ifd_with_tag(ExifTag::MakerNotes) {
       exif.parse_makernote(&mut file.reader(), OffsetMode::Absolute, &[])?
@@ -176,6 +177,7 @@ impl<'a> NefDecoder<'a> {
 
 impl<'a> Decoder for NefDecoder<'a> {
   fn raw_image(&self, file: &RawSource, _params: &RawDecodeParams, dummy: bool) -> Result<RawImage> {
+    let camera = self.camera.supported()?;
     let raw = self
       .tiff
       .find_first_ifd_with_tag(TiffCommonTag::CFAPattern)
@@ -226,23 +228,23 @@ impl<'a> Decoder for NefDecoder<'a> {
       file.subview_padded(offset as u64, full_size as u64)?
     };
 
-    let coeffs = normalize_wb(self.get_wb()?);
+    let coeffs = normalize_wb(self.get_wb(camera)?);
     debug!("WB coeff: {:?}", coeffs);
 
     if self.tiff.little_endian() != (self.makernote.endian == Endian::Little) {
       return Err(RawlerError::DecoderFailed("NEF: TIFF and makernote endianness mismatch".to_string()));
     }
 
-    let image = if self.camera.model == "NIKON D100" {
+    let image = if camera.model == "NIKON D100" {
       width = 3040;
       decompress_12be_wcontrol(&src, width, height, dummy)?
-    } else if self.camera.find_hint("coolpixsplit") {
+    } else if camera.find_hint("coolpixsplit") {
       decompress_12be_interlaced_unaligned(&src, width, height, dummy)?
-    } else if self.camera.find_hint("msb32") {
+    } else if camera.find_hint("msb32") {
       decompress_12be_msb32(&src, width, height, dummy)?
-    } else if self.camera.find_hint("unpacked") {
+    } else if camera.find_hint("unpacked") {
       // P7800 and others is LE, but data is BE, so we use hints here
-      if (self.tiff.little_endian() || self.camera.find_hint("little_endian")) && !self.camera.find_hint("big_endian") {
+      if (self.tiff.little_endian() || camera.find_hint("little_endian")) && !camera.find_hint("big_endian") {
         decompress_16le(&src, width, height, dummy)?
       } else {
         decompress_16be(&src, width, height, dummy)?
@@ -259,7 +261,7 @@ impl<'a> Decoder for NefDecoder<'a> {
           }
         }
         14 => {
-          if (self.tiff.little_endian() || self.camera.find_hint("little_endian")) && !self.camera.find_hint("big_endian") {
+          if (self.tiff.little_endian() || camera.find_hint("little_endian")) && !camera.find_hint("big_endian") {
             // Models like D6 uses packed instead of unpacked 14le encoding. And D6 uses
             // row padding.
             if matches!(nef_compression, Some(NefCompression::Packed14Bits)) {
@@ -272,13 +274,13 @@ impl<'a> Decoder for NefDecoder<'a> {
           }
         }
         12 => {
-          if (self.tiff.little_endian() || self.camera.find_hint("little_endian")) && !self.camera.find_hint("big_endian") {
+          if (self.tiff.little_endian() || camera.find_hint("little_endian")) && !camera.find_hint("big_endian") {
             decompress_12le_padded(&src, width, height, (width * bps / u8::BITS as usize) + padding, dummy)?
           } else {
             decompress_12be(&src, width, height, dummy)?
           }
         }
-        x => return Err(RawlerError::unsupported(&self.camera, format!("Don't know uncompressed bps {}", x))),
+        x => return Err(RawlerError::unsupported(camera, format!("Don't know uncompressed bps {}", x))),
       }
     } else if size == width * height * 3 {
       cpp = 3;
@@ -286,7 +288,7 @@ impl<'a> Decoder for NefDecoder<'a> {
     } else if compression == 34713 {
       self.decode_compressed(&src, width, height, bps, dummy)?
     } else {
-      return Err(RawlerError::unsupported(&self.camera, format!("NEF: Don't know compression {}", compression)));
+      return Err(RawlerError::unsupported(camera, format!("NEF: Don't know compression {}", compression)));
     };
 
     if image.width != width * cpp {
@@ -296,14 +298,14 @@ impl<'a> Decoder for NefDecoder<'a> {
         width * cpp
       )));
     }
-    let blacklevel = self.get_blacklevel(bps)?;
+    let blacklevel = self.get_blacklevel(camera, bps)?;
     let whitelevel = None;
     let photometric = match cpp {
-      1 => RawPhotometricInterpretation::Cfa(CFAConfig::new_from_camera(&self.camera)),
+      1 => RawPhotometricInterpretation::Cfa(CFAConfig::new_from_camera(camera)),
       3 => RawPhotometricInterpretation::LinearRaw,
       _ => todo!(),
     };
-    let mut img = RawImage::new(self.camera.clone(), image, cpp, coeffs, photometric, blacklevel, whitelevel, dummy);
+    let mut img = RawImage::new(camera.clone(), image, cpp, coeffs, photometric, blacklevel, whitelevel, dummy);
 
     if let Some(crop) = self.get_crop()? {
       debug!("RAW Crops: {:?}", crop);
@@ -319,6 +321,10 @@ impl<'a> Decoder for NefDecoder<'a> {
     Ok(img)
   }
 
+  fn check_supported(&self) -> Result<()> {
+    self.camera.supported().map(|_| ())
+  }
+
   fn format_dump(&self) -> FormatDump {
     FormatDump::Nef(NefFormat { tiff: self.tiff.clone() })
   }
@@ -326,10 +332,10 @@ impl<'a> Decoder for NefDecoder<'a> {
   fn raw_metadata(&self, _file: &RawSource, _params: &RawDecodeParams) -> Result<RawMetadata> {
     let exif = Exif::new(self.tiff.root_ifd())?;
     Ok(match self.get_lens_description() {
-      Ok(lens_data) => RawMetadata::new_with_lens(&self.camera, exif, lens_data.cloned()),
+      Ok(lens_data) => RawMetadata::new_with_lens(self.camera.metadata(), exif, lens_data.cloned()),
       Err(err) => {
         log::warn!("Failed to read lens information: {:?}", err);
-        RawMetadata::new(&self.camera, exif)
+        RawMetadata::new(self.camera.metadata(), exif)
       }
     })
   }
@@ -373,13 +379,13 @@ impl<'a> NefDecoder<'a> {
   /// is useless. But if we found here the levels in makernotes, we
   /// use these instead. For 12 bit images, the blacklevels are still relative to
   /// 14 bit image data. So we need to reduce them by 2 bits.
-  fn get_blacklevel(&self, bps: usize) -> Result<Option<BlackLevel>> {
+  fn get_blacklevel(&self, camera: &Camera, bps: usize) -> Result<Option<BlackLevel>> {
     if let Some(levels) = self.makernote.get_entry(NikonMakernote::BlackLevel) {
       let mut black = [levels.force_u16(0), levels.force_u16(1), levels.force_u16(2), levels.force_u16(3)];
       if bps == 12 {
         black.iter_mut().for_each(|v| *v >>= 14 - 12);
       }
-      Ok(Some(BlackLevel::new(&black, self.camera.cfa.width, self.camera.cfa.height, 1)))
+      Ok(Some(BlackLevel::new(&black, camera.cfa.width, camera.cfa.height, 1)))
     } else {
       Ok(None)
     }
@@ -408,14 +414,14 @@ impl<'a> NefDecoder<'a> {
             log::debug!("NEF lens composite ID: {}", composite_id);
             let resolver = LensResolver::new()
               .with_nikon_id(Some(composite_id))
-              .with_camera(&self.camera)
+              .with_camera(self.camera.metadata())
               .with_mounts(&[NIKON_F_MOUNT.into()]);
             return Ok(resolver.resolve());
           }
           NefLensData::ZMount(newv) => {
             let resolver = LensResolver::new()
               .with_lens_id((newv.lens_id as u32, 0))
-              .with_camera(&self.camera)
+              .with_camera(self.camera.metadata())
               .with_mounts(&[NIKON_Z_MOUNT.into()]);
             return Ok(resolver.resolve());
           }
@@ -425,8 +431,8 @@ impl<'a> NefDecoder<'a> {
     Ok(None)
   }
 
-  fn get_wb(&self) -> Result<[f32; 4]> {
-    if self.camera.find_hint("nowb") {
+  fn get_wb(&self, camera: &Camera) -> Result<[f32; 4]> {
+    if camera.find_hint("nowb") {
       Ok([f32::NAN, f32::NAN, f32::NAN, f32::NAN])
     } else if let Some(levels) = self.makernote.get_entry(TiffCommonTag::NefWB0) {
       Ok([levels.force_f32(0), 1.0, 1.0, levels.force_f32(1)])
@@ -519,7 +525,7 @@ impl<'a> NefDecoder<'a> {
             BEu16(&buf, off + 6) as f32,
           ])
         }
-        x => Err(RawlerError::unsupported(&self.camera, format!("NEF: Don't know about WB version 0x{:x}", x))),
+        x => Err(RawlerError::unsupported(camera, format!("NEF: Don't know about WB version 0x{:x}", x))),
       }
     } else {
       log::debug!("NEF: Don't know how to fetch WB, fallback to [1.0, 1.0, 1.0]");

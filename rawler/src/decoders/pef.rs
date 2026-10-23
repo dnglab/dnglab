@@ -6,6 +6,7 @@ use serde::Serialize;
 
 use super::BlackLevel;
 use super::Camera;
+use super::CameraLookup;
 use super::Decoder;
 use super::FormatHint;
 use super::RawDecodeParams;
@@ -39,7 +40,7 @@ use crate::tags::TiffCommonTag;
 
 #[derive(Debug, Clone)]
 pub struct PefDecoder<'a> {
-  camera: Camera,
+  camera: CameraLookup,
   #[allow(unused)]
   rawloader: &'a RawLoader,
   tiff: GenericTiffReader,
@@ -52,7 +53,7 @@ impl<'a> PefDecoder<'a> {
   pub fn new(file: &RawSource, tiff: GenericTiffReader, rawloader: &'a RawLoader) -> Result<PefDecoder<'a>> {
     debug!("PEF decoder choosen");
 
-    let camera = rawloader.check_supported(tiff.root_ifd())?;
+    let camera = rawloader.lookup_camera(tiff.root_ifd())?;
 
     let makernote = if let Some(exif) = tiff.find_first_ifd_with_tag(ExifTag::MakerNotes) {
       exif.parse_makernote(&mut file.reader(), OffsetMode::Absolute, &[])?
@@ -96,6 +97,7 @@ impl<'a> Decoder for PefDecoder<'a> {
   }
 
   fn raw_image(&self, file: &RawSource, _params: &RawDecodeParams, dummy: bool) -> Result<RawImage> {
+    let camera = self.camera.supported()?;
     //for (i, ifd) in self.tiff.chains().iter().enumerate() {
     //  eprintln!("IFD {}", i);
     //  for line in ifd.dump::<crate::tags::LegacyTiffRootTag>(10) {
@@ -106,7 +108,7 @@ impl<'a> Decoder for PefDecoder<'a> {
     let raw = self
       .tiff
       .find_first_ifd_with_tag(TiffCommonTag::StripOffsets)
-      .ok_or_else(|| RawlerError::unsupported(&self.camera, "Unable to find IFD"))?;
+      .ok_or_else(|| RawlerError::unsupported(camera, "Unable to find IFD"))?;
     let width = fetch_tiff_tag!(raw, TiffCommonTag::ImageWidth).force_usize(0);
     let height = fetch_tiff_tag!(raw, TiffCommonTag::ImageLength).force_usize(0);
     let offset = fetch_tiff_tag!(raw, TiffCommonTag::StripOffsets).force_usize(0);
@@ -117,21 +119,25 @@ impl<'a> Decoder for PefDecoder<'a> {
       Ok(Some(1)) => decompress_16be(src, width, height, dummy)?,
       Ok(Some(32773)) => decompress_12be(src, width, height, dummy)?,
       Ok(Some(65535)) => self.decode_compressed(src, width, height, dummy)?,
-      Ok(Some(c)) => return Err(RawlerError::unsupported(&self.camera, format!("PEF: Don't know how to read compression {}", c))),
-      _ => return Err(RawlerError::unsupported(&self.camera, "PEF: No compression tag found")),
+      Ok(Some(c)) => return Err(RawlerError::unsupported(camera, format!("PEF: Don't know how to read compression {}", c))),
+      _ => return Err(RawlerError::unsupported(camera, "PEF: No compression tag found")),
     };
 
     let cpp = 1;
     let wb = self.get_wb()?;
-    let blacklevel = self.get_blacklevel()?;
+    let blacklevel = self.get_blacklevel(camera)?;
     let whitelevel = None;
     debug!("Found WB: {:?}", wb);
-    let photometric = if self.camera.cfa.is_valid() {
-      RawPhotometricInterpretation::Cfa(CFAConfig::new_from_camera(&self.camera))
+    let photometric = if camera.cfa.is_valid() {
+      RawPhotometricInterpretation::Cfa(CFAConfig::new_from_camera(camera))
     } else {
       RawPhotometricInterpretation::LinearRaw
     };
-    Ok(RawImage::new(self.camera.clone(), image, cpp, wb, photometric, blacklevel, whitelevel, dummy))
+    Ok(RawImage::new(camera.clone(), image, cpp, wb, photometric, blacklevel, whitelevel, dummy))
+  }
+
+  fn check_supported(&self) -> Result<()> {
+    self.camera.supported().map(|_| ())
   }
 
   fn preview_image(&self, file: &RawSource, params: &RawDecodeParams) -> Result<Option<DynamicImage>> {
@@ -189,7 +195,7 @@ impl<'a> Decoder for PefDecoder<'a> {
 
   fn raw_metadata(&self, _file: &RawSource, _params: &RawDecodeParams) -> Result<RawMetadata> {
     let exif = Exif::new(self.tiff.root_ifd())?;
-    let mdata = RawMetadata::new_with_lens(&self.camera, exif, self.get_lens_description()?.cloned());
+    let mdata = RawMetadata::new_with_lens(self.camera.metadata(), exif, self.get_lens_description()?.cloned());
     Ok(mdata)
   }
 
@@ -209,12 +215,12 @@ impl<'a> PefDecoder<'a> {
     }
   }
 
-  fn get_blacklevel(&self) -> Result<Option<BlackLevel>> {
+  fn get_blacklevel(&self, camera: &Camera) -> Result<Option<BlackLevel>> {
     match self.makernote.get_entry(PefMakernote::BlackPoint) {
       Some(data) => {
-        if self.camera.cfa.is_valid() {
+        if camera.cfa.is_valid() {
           let levels = [data.force_u16(0), data.force_u16(1), data.force_u16(2), data.force_u16(3)];
-          Ok(Some(BlackLevel::new(&levels, self.camera.cfa.width, self.camera.cfa.height, 1)))
+          Ok(Some(BlackLevel::new(&levels, camera.cfa.width, camera.cfa.height, 1)))
         } else {
           // Monochrome PEF like K-3
           let levels = [data.force_u16(0)];
@@ -240,7 +246,7 @@ impl<'a> PefDecoder<'a> {
         return Ok(None);
       } else {
         let resolver = LensResolver::new()
-          .with_camera(&self.camera)
+          .with_camera(self.camera.metadata())
           .with_lens_id(lens_id)
           .with_mounts(&["k-mount".into()]);
         return Ok(resolver.resolve());

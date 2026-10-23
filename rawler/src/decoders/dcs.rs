@@ -11,7 +11,7 @@ use crate::formats::tiff::reader::TiffReader;
 use crate::rawsource::RawSource;
 use crate::tags::TiffCommonTag;
 
-use super::Camera;
+use super::CameraLookup;
 use super::Decoder;
 use super::FormatHint;
 use super::RawDecodeParams;
@@ -23,12 +23,12 @@ pub struct DcsDecoder<'a> {
   #[allow(unused)]
   rawloader: &'a RawLoader,
   tiff: GenericTiffReader,
-  camera: Camera,
+  camera: CameraLookup,
 }
 
 impl<'a> DcsDecoder<'a> {
   pub fn new(_file: &RawSource, tiff: GenericTiffReader, rawloader: &'a RawLoader) -> Result<DcsDecoder<'a>> {
-    let camera = rawloader.check_supported(tiff.root_ifd())?;
+    let camera = rawloader.lookup_camera(tiff.root_ifd())?;
 
     Ok(DcsDecoder { camera, tiff, rawloader })
   }
@@ -36,6 +36,7 @@ impl<'a> DcsDecoder<'a> {
 
 impl<'a> Decoder for DcsDecoder<'a> {
   fn raw_image(&self, file: &RawSource, _params: &RawDecodeParams, dummy: bool) -> Result<RawImage> {
+    let camera = self.camera.supported()?;
     let raw = self
       .tiff
       .find_ifd_with_new_subfile_type(0)
@@ -56,7 +57,11 @@ impl<'a> Decoder for DcsDecoder<'a> {
 
     let image = decompress_8bit_wtable(&src, &table, width, height, dummy)?;
     let cpp = 1;
-    ok_cfa_image(self.camera.clone(), cpp, [f32::NAN, f32::NAN, f32::NAN, f32::NAN], image, dummy)
+    ok_cfa_image(camera.clone(), cpp, [f32::NAN, f32::NAN, f32::NAN, f32::NAN], image, dummy)
+  }
+
+  fn check_supported(&self) -> Result<()> {
+    self.camera.supported().map(|_| ())
   }
 
   fn format_dump(&self) -> FormatDump {
@@ -65,7 +70,7 @@ impl<'a> Decoder for DcsDecoder<'a> {
 
   fn raw_metadata(&self, _file: &RawSource, _params: &RawDecodeParams) -> Result<RawMetadata> {
     let exif = Exif::new(self.tiff.root_ifd())?;
-    let mdata = RawMetadata::new(&self.camera, exif);
+    let mdata = RawMetadata::new(self.camera.metadata(), exif);
     Ok(mdata)
   }
 

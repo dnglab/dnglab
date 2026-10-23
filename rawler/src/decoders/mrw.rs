@@ -19,7 +19,7 @@ use crate::rawsource::RawSource;
 use crate::tags::TiffCommonTag;
 use std::io::Cursor;
 
-use super::Camera;
+use super::CameraLookup;
 use super::Decoder;
 use super::FormatHint;
 use super::RawDecodeParams;
@@ -56,7 +56,7 @@ pub struct MrwDecoder<'a> {
   packed: bool,
   wb_vals: [u16; 4],
   tiff: IFD,
-  camera: Camera,
+  camera: CameraLookup,
 }
 
 impl<'a> MrwDecoder<'a> {
@@ -110,7 +110,7 @@ impl<'a> MrwDecoder<'a> {
       .exif_ifd()
       .ok_or(RawlerError::DecoderFailed("No EXIF IFD found in JFIF file".to_string()))?
       .clone();
-    let camera = rawloader.check_supported(&tiff)?;
+    let camera = rawloader.lookup_camera(&tiff)?;
     let (app1_offset, app1_len) = jfif
       .segments
       .iter()
@@ -124,9 +124,12 @@ impl<'a> MrwDecoder<'a> {
       .find(Option::is_some)
       .flatten()
       .unwrap_or_default();
-    let data_offset = (app1_offset + app1_len + camera.param_i32("offset_corr").unwrap_or(0) as u64) as usize;
-    let raw_width = camera.raw_width;
-    let raw_height = camera.raw_height;
+    // The raw layout comes from the camera definition. For unknown cameras, it is
+    // never used, as raw_image() fails for them.
+    let raw_def = camera.metadata();
+    let data_offset = (app1_offset + app1_len + raw_def.param_i32("offset_corr").unwrap_or(0) as u64) as usize;
+    let raw_width = raw_def.raw_width;
+    let raw_height = raw_def.raw_height;
     let packed = false;
     let wb_vals = Self::get_mly_wb(&tiff, file, data_offset as u64)?;
     let bits = 16;
@@ -188,7 +191,7 @@ impl<'a> MrwDecoder<'a> {
     let tiff_data = file.subview_until_eof(tiffpos as u64)?;
     let tiff = IFD::new(&mut Cursor::new(tiff_data), 8, 0, 0, crate::bits::Endian::Big, &[])?;
 
-    let camera = rawloader.check_supported(&tiff)?;
+    let camera = rawloader.lookup_camera(&tiff)?;
 
     Ok(MrwDecoder {
       data_offset,
@@ -206,6 +209,7 @@ impl<'a> MrwDecoder<'a> {
 
 impl<'a> Decoder for MrwDecoder<'a> {
   fn raw_image(&self, file: &RawSource, _params: &RawDecodeParams, dummy: bool) -> Result<RawImage> {
+    let camera = self.camera.supported()?;
     let src = file.subview_until_eof(self.data_offset as u64)?;
 
     let buffer = if self.bits == 16 {
@@ -216,13 +220,17 @@ impl<'a> Decoder for MrwDecoder<'a> {
       decompress_12be_unpacked(src, self.raw_width, self.raw_height, dummy)?
     };
 
-    let wb_coeffs = if self.camera.find_hint("swapped_wb") {
+    let wb_coeffs = if camera.find_hint("swapped_wb") {
       [self.wb_vals[2] as f32, self.wb_vals[0] as f32, self.wb_vals[0] as f32, self.wb_vals[1] as f32]
     } else {
       [self.wb_vals[0] as f32, self.wb_vals[1] as f32, self.wb_vals[2] as f32, self.wb_vals[3] as f32]
     };
     let cpp = 1;
-    ok_cfa_image(self.camera.clone(), cpp, normalize_wb(wb_coeffs), buffer, dummy)
+    ok_cfa_image(camera.clone(), cpp, normalize_wb(wb_coeffs), buffer, dummy)
+  }
+
+  fn check_supported(&self) -> Result<()> {
+    self.camera.supported().map(|_| ())
   }
 
   fn format_dump(&self) -> FormatDump {
@@ -231,7 +239,7 @@ impl<'a> Decoder for MrwDecoder<'a> {
 
   fn raw_metadata(&self, _file: &RawSource, _params: &RawDecodeParams) -> Result<RawMetadata> {
     let exif = Exif::new(&self.tiff)?;
-    let mdata = RawMetadata::new(&self.camera, exif);
+    let mdata = RawMetadata::new(self.camera.metadata(), exif);
     Ok(mdata)
   }
 

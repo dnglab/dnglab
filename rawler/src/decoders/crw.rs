@@ -53,7 +53,7 @@ pub struct CrwDecoder<'a> {
   #[allow(unused)]
   rawloader: &'a RawLoader,
   ciff: CiffIFD,
-  camera: Camera,
+  camera: CameraLookup,
 }
 
 impl<'a> CrwDecoder<'a> {
@@ -64,7 +64,7 @@ impl<'a> CrwDecoder<'a> {
     if makemodel.len() < 2 {
       return Err(RawlerError::DecoderFailed("CRW: MakeModel tag needs to have 2 strings".to_string()));
     }
-    let camera = rawloader.check_supported_with_everything(&makemodel[0], &makemodel[1], "")?;
+    let camera = rawloader.lookup_camera_with_everything(&makemodel[0], &makemodel[1], "");
 
     Ok(CrwDecoder { ciff, rawloader, camera })
   }
@@ -72,19 +72,20 @@ impl<'a> CrwDecoder<'a> {
 
 impl<'a> Decoder for CrwDecoder<'a> {
   fn raw_image(&self, file: &RawSource, _params: &RawDecodeParams, dummy: bool) -> Result<RawImage> {
-    let image = if self.camera.model == "Canon PowerShot Pro70" {
+    let camera = self.camera.supported()?;
+    let image = if camera.model == "Canon PowerShot Pro70" {
       let src = file.subview_until_eof(26)?;
       decompress_10le_lsb16(src, 1552, 1024, dummy)?
     } else {
       let sensorinfo = fetch_ciff_tag!(self.ciff, CiffTag::SensorInfo);
       let width = sensorinfo.get_usize(1);
       let height = sensorinfo.get_usize(2);
-      self.decode_compressed(file, width, height, dummy)?
+      self.decode_compressed(camera, file, width, height, dummy)?
     };
 
     let wb = {
-      let wb_raw = self.get_wb()?;
-      match self.camera.cfa.unique_colors() {
+      let wb_raw = self.get_wb(camera)?;
+      match camera.cfa.unique_colors() {
         3 => normalize_wb(wb_raw),
         4 => {
           let maxval = wb_raw.into_iter().map(|v| v as i32).min().unwrap_or(0) as f32;
@@ -95,7 +96,11 @@ impl<'a> Decoder for CrwDecoder<'a> {
     };
 
     let cpp = 1;
-    ok_cfa_image(self.camera.clone(), cpp, wb, image, dummy)
+    ok_cfa_image(camera.clone(), cpp, wb, image, dummy)
+  }
+
+  fn check_supported(&self) -> Result<()> {
+    self.camera.supported().map(|_| ())
   }
 
   fn format_dump(&self) -> FormatDump {
@@ -105,7 +110,7 @@ impl<'a> Decoder for CrwDecoder<'a> {
   fn raw_metadata(&self, _file: &RawSource, __params: &RawDecodeParams) -> Result<RawMetadata> {
     // TODO: Add EXIF info
     let exif = Exif::default();
-    Ok(RawMetadata::new(&self.camera, exif))
+    Ok(RawMetadata::new(self.camera.metadata(), exif))
   }
 
   fn format_hint(&self) -> FormatHint {
@@ -114,9 +119,9 @@ impl<'a> Decoder for CrwDecoder<'a> {
 }
 
 impl<'a> CrwDecoder<'a> {
-  fn get_wb(&self) -> Result<[f32; 4]> {
+  fn get_wb(&self, camera: &Camera) -> Result<[f32; 4]> {
     if let Some(levels) = self.ciff.find_entry(CiffTag::WhiteBalance) {
-      let offset = self.camera.param_usize("wb_offset").unwrap_or(0);
+      let offset = camera.param_usize("wb_offset").unwrap_or(0);
       return Ok([
         levels.get_f32(offset + 0),
         levels.get_f32(offset + 1),
@@ -124,7 +129,7 @@ impl<'a> CrwDecoder<'a> {
         levels.get_f32(offset + 3),
       ]);
     }
-    if !self.camera.find_hint("nocinfo2") {
+    if !camera.find_hint("nocinfo2") {
       if let Some(cinfo) = self.ciff.find_entry(CiffTag::ColorInfo2) {
         return Ok(if cinfo.get_u32(0) > 512 {
           [cinfo.get_f32(62), cinfo.get_f32(63), cinfo.get_f32(60), cinfo.get_f32(61)]
@@ -144,8 +149,8 @@ impl<'a> CrwDecoder<'a> {
           1024.0 / (cinfo.get_force_u16(39) as f32),
         ]);
       }
-      let off = self.camera.param_usize("wb_offset").unwrap_or(0);
-      let key: [u16; 2] = if self.camera.find_hint("wb_mangle") { [0x410, 0x45f3] } else { [0, 0] };
+      let off = camera.param_usize("wb_offset").unwrap_or(0);
+      let key: [u16; 2] = if camera.find_hint("wb_mangle") { [0x410, 0x45f3] } else { [0, 0] };
       return Ok([
         (cinfo.get_force_u16(off + 1) ^ key[1]) as f32,
         (cinfo.get_force_u16(off + 0) ^ key[0]) as f32,
@@ -175,8 +180,8 @@ impl<'a> CrwDecoder<'a> {
     htable
   }
 
-  fn decode_compressed(&self, file: &RawSource, width: usize, height: usize, dummy: bool) -> Result<PixU16> {
-    let lowbits = !self.camera.find_hint("nolowbits");
+  fn decode_compressed(&self, camera: &Camera, file: &RawSource, width: usize, height: usize, dummy: bool) -> Result<PixU16> {
+    let lowbits = !camera.find_hint("nolowbits");
     let dectable = fetch_ciff_tag!(self.ciff, CiffTag::DecoderTable).get_usize(0);
     if dectable > 2 {
       return Err(RawlerError::DecoderFailed(format!("CRW: Unknown decoder table {}", dectable)));

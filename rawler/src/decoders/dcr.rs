@@ -18,7 +18,7 @@ use crate::pumps::ByteStream;
 use crate::rawsource::RawSource;
 use crate::tags::TiffCommonTag;
 
-use super::Camera;
+use super::CameraLookup;
 use super::Decoder;
 use super::FormatHint;
 use super::RawDecodeParams;
@@ -31,12 +31,12 @@ pub struct DcrDecoder<'a> {
   rawloader: &'a RawLoader,
   tiff: GenericTiffReader,
   makernote: IFD,
-  camera: Camera,
+  camera: CameraLookup,
 }
 
 impl<'a> DcrDecoder<'a> {
   pub fn new(file: &RawSource, tiff: GenericTiffReader, rawloader: &'a RawLoader) -> Result<DcrDecoder<'a>> {
-    let camera = rawloader.check_supported(tiff.root_ifd())?;
+    let camera = rawloader.lookup_camera(tiff.root_ifd())?;
 
     let kodak_ifd = fetch_tiff_tag!(tiff, TiffCommonTag::KodakIFD);
     let makernote = IFD::new(&mut file.reader(), kodak_ifd.force_u32(0), 0, 0, tiff.get_endian(), &[])?;
@@ -52,6 +52,7 @@ impl<'a> DcrDecoder<'a> {
 
 impl<'a> Decoder for DcrDecoder<'a> {
   fn raw_image(&self, file: &RawSource, _params: &RawDecodeParams, dummy: bool) -> Result<RawImage> {
+    let camera = self.camera.supported()?;
     let raw = self
       .tiff
       .find_first_ifd_with_tag(TiffCommonTag::CFAPattern)
@@ -74,7 +75,11 @@ impl<'a> Decoder for DcrDecoder<'a> {
     let image = DcrDecoder::decode_kodak65000(&src, &curve, width, height, dummy);
 
     let cpp = 1;
-    ok_cfa_image(self.camera.clone(), cpp, self.get_wb()?, image, dummy)
+    ok_cfa_image(camera.clone(), cpp, self.get_wb()?, image, dummy)
+  }
+
+  fn check_supported(&self) -> Result<()> {
+    self.camera.supported().map(|_| ())
   }
 
   fn format_dump(&self) -> FormatDump {
@@ -83,7 +88,7 @@ impl<'a> Decoder for DcrDecoder<'a> {
 
   fn raw_metadata(&self, _file: &RawSource, __params: &RawDecodeParams) -> Result<RawMetadata> {
     let exif = Exif::new(self.tiff.root_ifd())?;
-    let mdata = RawMetadata::new(&self.camera, exif);
+    let mdata = RawMetadata::new(self.camera.metadata(), exif);
     Ok(mdata)
   }
 

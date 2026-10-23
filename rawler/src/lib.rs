@@ -260,6 +260,11 @@ pub fn decode_dummy(rawfile: &RawSource) -> Result<RawImage> {
   LOADER.decode(rawfile, &RawDecodeParams::default(), true)
 }
 
+/// Get a decoder for a raw file
+///
+/// This succeeds for cameras missing in the camera database, too, so metadata,
+/// thumbnails and previews can be extracted. Decoding the raw image fails with
+/// `RawlerError::Unsupported` for such cameras, see [`Decoder::check_supported()`].
 pub fn get_decoder(rawfile: &RawSource) -> Result<Box<dyn Decoder>> {
   LOADER.get_decoder(rawfile)
 }
