@@ -40,6 +40,7 @@ use crate::tags::TiffCommonTag;
 
 use super::BlackLevel;
 use super::Camera;
+use super::CameraLookup;
 use super::Decoder;
 use super::FormatHint;
 use super::RawDecodeParams;
@@ -64,7 +65,7 @@ pub struct Cr2Decoder<'a> {
   #[allow(dead_code)]
   mode: Cr2Mode,
   xpacket: Option<Vec<u8>>,
-  camera: Camera,
+  camera: CameraLookup,
   model_id: Option<u32>,
 }
 
@@ -90,7 +91,7 @@ impl<'a> Decoder for Cr2Decoder<'a> {
     }
      */
 
-    let camera = &self.camera;
+    let camera = self.camera.supported()?;
     let (raw, offset) = {
       if let Some(raw) = self.tiff.find_first_ifd(TiffCommonTag::Cr2Id) {
         (raw, fetch_tiff_tag!(raw, TiffCommonTag::StripOffsets).force_usize(0))
@@ -258,7 +259,7 @@ impl<'a> Decoder for Cr2Decoder<'a> {
     let whitelevel = self.get_whitelevel(cpp)?;
 
     let photometric = match cpp {
-      1 => RawPhotometricInterpretation::Cfa(CFAConfig::new_from_camera(&self.camera)),
+      1 => RawPhotometricInterpretation::Cfa(CFAConfig::new_from_camera(camera)),
       3 => RawPhotometricInterpretation::LinearRaw,
       _ => todo!(),
     };
@@ -269,7 +270,7 @@ impl<'a> Decoder for Cr2Decoder<'a> {
       assert!(
         img.crop_area.is_none(),
         "Camera {} has embedded crop params, remove crop from config file!",
-        self.camera.clean_make
+        camera.clean_make
       );
       img.crop_area = Some(file_crop);
     } else {
@@ -291,9 +292,13 @@ impl<'a> Decoder for Cr2Decoder<'a> {
     Ok(img)
   }
 
+  fn check_supported(&self) -> Result<()> {
+    self.camera.supported().map(|_| ())
+  }
+
   fn raw_metadata(&self, _file: &RawSource, _params: &RawDecodeParams) -> Result<RawMetadata> {
     let exif = Exif::new(self.tiff.root_ifd())?;
-    let mdata = RawMetadata::new_with_lens(&self.camera, exif, self.get_lens_description()?.cloned());
+    let mdata = RawMetadata::new_with_lens(self.camera.metadata(), exif, self.get_lens_description()?.cloned());
     Ok(mdata)
   }
 
@@ -374,7 +379,7 @@ impl<'a> Cr2Decoder<'a> {
       Cr2Mode::Sraw2 => "sRaw2",
     };
 
-    let camera = rawloader.check_supported_with_mode(tiff.root_ifd(), mode_str)?;
+    let camera = rawloader.lookup_camera_with_mode(tiff.root_ifd(), mode_str)?;
 
     let xpacket = Self::read_xpacket(file, &tiff, rawloader)?;
 
@@ -446,7 +451,7 @@ impl<'a> Cr2Decoder<'a> {
         debug!("Lens Info tag: {}", lens_info);
         let resolver = LensResolver::new()
           .with_lens_keyname(exif_lens_name)
-          .with_camera(&self.camera) // must follow with_lens_keyname() as it my override key
+          .with_camera(self.camera.metadata()) // must follow with_lens_keyname() as it my override key
           .with_lens_id((lens_info as u32, 0))
           .with_focal_len(self.get_focal_len()?)
           .with_mounts(&[CANON_CN_MOUNT.into(), CANON_EF_MOUNT.into()]);

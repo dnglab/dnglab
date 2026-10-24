@@ -15,6 +15,7 @@ use crate::rawsource::RawSource;
 use crate::tags::TiffCommonTag;
 
 use super::Camera;
+use super::CameraLookup;
 use super::Decoder;
 use super::FormatHint;
 use super::RawDecodeParams;
@@ -26,7 +27,7 @@ pub struct MosDecoder<'a> {
   #[allow(unused)]
   rawloader: &'a RawLoader,
   tiff: GenericTiffReader,
-  camera: Camera,
+  camera: CameraLookup,
 }
 
 impl<'a> MosDecoder<'a> {
@@ -34,7 +35,7 @@ impl<'a> MosDecoder<'a> {
     let make = Self::xmp_tag(&tiff, "Make")?;
     let model_full = Self::xmp_tag(&tiff, "Model")?;
     let model = model_full.split_terminator('(').next().expect("split always yields at least one element");
-    let camera = rawloader.check_supported_with_everything(&make, model, "")?;
+    let camera = rawloader.lookup_camera_with_everything(&make, model, "");
 
     Ok(MosDecoder { tiff, rawloader, camera })
   }
@@ -42,6 +43,7 @@ impl<'a> MosDecoder<'a> {
 
 impl<'a> Decoder for MosDecoder<'a> {
   fn raw_image(&self, file: &RawSource, _params: &RawDecodeParams, dummy: bool) -> Result<RawImage> {
+    let camera = self.camera.supported()?;
     let raw = self
       .tiff
       .find_first_ifd_with_tag(TiffCommonTag::TileOffsets)
@@ -60,12 +62,16 @@ impl<'a> Decoder for MosDecoder<'a> {
           decompress_16be(src, width, height, dummy)?
         }
       }
-      7 | 99 => self.decode_compressed(&self.camera, src, width, height, dummy)?,
-      x => return Err(RawlerError::unsupported(&self.camera, format!("MOS: unsupported compression {}", x))),
+      7 | 99 => self.decode_compressed(camera, src, width, height, dummy)?,
+      x => return Err(RawlerError::unsupported(camera, format!("MOS: unsupported compression {}", x))),
     };
 
     let cpp = 1;
-    ok_cfa_image(self.camera.clone(), cpp, self.get_wb()?, image, dummy)
+    ok_cfa_image(camera.clone(), cpp, self.get_wb()?, image, dummy)
+  }
+
+  fn check_supported(&self) -> Result<()> {
+    self.camera.supported().map(|_| ())
   }
 
   fn format_dump(&self) -> FormatDump {
@@ -74,7 +80,7 @@ impl<'a> Decoder for MosDecoder<'a> {
 
   fn raw_metadata(&self, _file: &RawSource, _params: &RawDecodeParams) -> Result<RawMetadata> {
     let exif = Exif::new(self.tiff.root_ifd())?;
-    let mdata = RawMetadata::new(&self.camera, exif);
+    let mdata = RawMetadata::new(self.camera.metadata(), exif);
     Ok(mdata)
   }
 

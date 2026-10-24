@@ -41,6 +41,11 @@ impl<'a> Decoder for NakedDecoder<'a> {
     ok_cfa_image(self.camera.clone(), cpp, [f32::NAN, f32::NAN, f32::NAN, f32::NAN], image, dummy)
   }
 
+  fn check_supported(&self) -> Result<()> {
+    // Naked cameras are identified by the camera database
+    Ok(())
+  }
+
   fn format_dump(&self) -> FormatDump {
     todo!()
   }

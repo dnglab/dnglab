@@ -43,6 +43,7 @@ use crate::pumps::BitPumpMSB32;
 use crate::rawsource::RawSource;
 
 use super::Camera;
+use super::CameraLookup;
 use super::Decoder;
 use super::FormatHint;
 use super::RawDecodeParams;
@@ -152,7 +153,7 @@ pub type IiqMakernotes = HashMap<u32, (usize, tiff::Value)>;
 
 #[derive(Debug, Clone)]
 pub struct IiqDecoder<'a> {
-  camera: Camera,
+  camera: CameraLookup,
   #[allow(unused)]
   rawloader: &'a RawLoader,
   tiff: GenericTiffReader,
@@ -162,7 +163,7 @@ pub struct IiqDecoder<'a> {
 impl<'a> IiqDecoder<'a> {
   pub fn new(file: &RawSource, tiff: GenericTiffReader, rawloader: &'a RawLoader) -> Result<IiqDecoder<'a>> {
     debug!("IIQ decoder choosen");
-    let camera = rawloader.check_supported(tiff.root_ifd())?;
+    let camera = rawloader.lookup_camera(tiff.root_ifd())?;
     let makernotes = new_makernote(file, 8).map_err(|ioerr| RawlerError::with_io_error("load IIQ makernotes", file.path(), ioerr))?;
     Ok(IiqDecoder {
       camera,
@@ -230,6 +231,7 @@ fn new_makernote(file: &RawSource, moffset: u64) -> std::io::Result<HashMap<u32,
 
 impl<'a> Decoder for IiqDecoder<'a> {
   fn raw_image(&self, file: &RawSource, _params: &RawDecodeParams, dummy: bool) -> Result<RawImage> {
+    let camera = self.camera.supported()?;
     let fmt = self.compression_mode()?;
 
     let wb_offset = self.wb_offset()?;
@@ -280,7 +282,11 @@ impl<'a> Decoder for IiqDecoder<'a> {
       .get_wb(file, wb_offset)
       .map_err(|ioerr| RawlerError::with_io_error("read IIQ white balance", file.path(), ioerr))?;
 
-    ok_cfa_image_with_blacklevels(self.camera.clone(), cpp, wb, blacklevel, image, dummy)
+    ok_cfa_image_with_blacklevels(camera.clone(), cpp, wb, blacklevel, image, dummy)
+  }
+
+  fn check_supported(&self) -> Result<()> {
+    self.camera.supported().map(|_| ())
   }
 
   fn format_dump(&self) -> FormatDump {
@@ -292,7 +298,7 @@ impl<'a> Decoder for IiqDecoder<'a> {
 
   fn raw_metadata(&self, _file: &RawSource, _params: &RawDecodeParams) -> Result<RawMetadata> {
     let exif = Exif::new(self.tiff.root_ifd())?;
-    let mdata = RawMetadata::new_with_lens(&self.camera, exif, self.get_lens_description()?.cloned());
+    let mdata = RawMetadata::new_with_lens(self.camera.metadata(), exif, self.get_lens_description()?.cloned());
     Ok(mdata)
   }
 
@@ -305,6 +311,7 @@ impl<'a> IiqDecoder<'a> {
   /// Apply correction information for sensor defects
   /// Only bad columns are corrected for now.
   fn correct_raw_defects(&self, img: &mut PixU16, senscorr: &SensorCalibration) -> Result<()> {
+    let camera = self.camera.supported()?;
     if let Some(defects) = &senscorr.defects {
       debug!("Apply defect correction");
 
@@ -315,7 +322,7 @@ impl<'a> IiqDecoder<'a> {
         match def.typ {
           131 | 137 => {
             debug!("Correct bad colum: {}", def.col);
-            self.fix_bad_column(img, def);
+            self.fix_bad_column(camera, img, def);
           }
           129 => {
             // single bad pixels are ignored, these can be fixed by
@@ -499,6 +506,7 @@ impl<'a> IiqDecoder<'a> {
     // Map the second green (on odd rows) to color 3
     let cfa = self
       .camera
+      .supported()?
       .cfa
       .map_colors(|row, _col, color| if (color as usize) == cfa::CFA_COLOR_G && (row & 1 == 1) { 3 } else { color });
 
@@ -908,10 +916,10 @@ impl<'a> IiqDecoder<'a> {
     }
   }
 
-  fn fix_bad_column(&self, img: &mut PixU16, defect: &Defect) {
+  fn fix_bad_column(&self, camera: &Camera, img: &mut PixU16, defect: &Defect) {
     let col = defect.col;
     for row in 2..img.height - 2 {
-      match self.camera.cfa.color_at(row, col) {
+      match camera.cfa.color_at(row, col) {
         cfa::CFA_COLOR_G => {
           // Do green pixels. Let's pretend we are in "G" pixel, in the middle:
           //   G=G
@@ -983,7 +991,7 @@ impl<'a> IiqDecoder<'a> {
         let resolver = LensResolver::new()
           .with_mounts(&[String::from("phaseone")])
           .with_lens_keyname(Some(model))
-          .with_camera(&self.camera);
+          .with_camera(self.camera.metadata());
         Ok(resolver.resolve())
       }
       None => Ok(None),

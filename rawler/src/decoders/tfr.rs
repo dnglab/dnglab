@@ -16,7 +16,7 @@ use crate::tags::{DngTag, ExifTag, TiffCommonTag};
 use crate::{RawImage, RawLoader, alloc_image_ok};
 use crate::{RawlerError, Result};
 
-use super::{BlackLevel, CFAConfig, Camera, Decoder, FormatHint, RawDecodeParams, RawMetadata, RawPhotometricInterpretation, WhiteLevel};
+use super::{BlackLevel, CFAConfig, CameraLookup, Decoder, FormatHint, RawDecodeParams, RawMetadata, RawPhotometricInterpretation, WhiteLevel};
 
 /// 3FR format encapsulation for analyzer
 #[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize)]
@@ -27,7 +27,7 @@ pub struct TfrFormat {
 
 #[derive(Debug, Clone)]
 pub struct TfrDecoder<'a> {
-  camera: Camera,
+  camera: CameraLookup,
   #[allow(unused)]
   rawloader: &'a RawLoader,
   tiff: GenericTiffReader,
@@ -36,7 +36,7 @@ pub struct TfrDecoder<'a> {
 impl<'a> TfrDecoder<'a> {
   pub fn new(_file: &RawSource, tiff: GenericTiffReader, rawloader: &'a RawLoader) -> Result<TfrDecoder<'a>> {
     debug!("3FR decoder choosen");
-    let camera = rawloader.check_supported(tiff.root_ifd())?;
+    let camera = rawloader.lookup_camera(tiff.root_ifd())?;
     //let makernotes = new_makernote(file, 8).map_err(|ioerr| RawlerError::with_io_error("load 3FR makernotes", file.path(), ioerr))?;
     Ok(TfrDecoder {
       camera,
@@ -49,6 +49,7 @@ impl<'a> TfrDecoder<'a> {
 
 impl<'a> Decoder for TfrDecoder<'a> {
   fn raw_image(&self, file: &RawSource, _params: &RawDecodeParams, dummy: bool) -> Result<RawImage> {
+    let camera = self.camera.supported()?;
     let raw = self
       .tiff
       .find_first_ifd_with_tag(TiffCommonTag::WhiteLevel)
@@ -68,23 +69,27 @@ impl<'a> Decoder for TfrDecoder<'a> {
 
     let src = file.subview_until_eof(offset as u64)?;
 
-    let image = if self.camera.find_hint("uncompressed") {
+    let image = if camera.find_hint("uncompressed") {
       decompress_16le(src, width, height, dummy)?
     } else {
       self.decode_compressed(src, width, height, dummy)?
     };
 
-    let crop = Rect::from_tiff(raw).or_else(|| self.camera.crop_area.map(|area| Rect::new_with_borders(Dim2::new(width, height), &area)));
+    let crop = Rect::from_tiff(raw).or_else(|| camera.crop_area.map(|area| Rect::new_with_borders(Dim2::new(width, height), &area)));
 
     //crate::devtools::dump_image_u16(&image.data, width, height, "/tmp/tfrdump.pnm");
 
     let cpp = 1;
-    let photometric = RawPhotometricInterpretation::Cfa(CFAConfig::new_from_camera(&self.camera));
-    let mut img = RawImage::new(self.camera.clone(), image, cpp, self.get_wb()?, photometric, blacklevel, whitelevel, dummy);
+    let photometric = RawPhotometricInterpretation::Cfa(CFAConfig::new_from_camera(camera));
+    let mut img = RawImage::new(camera.clone(), image, cpp, self.get_wb()?, photometric, blacklevel, whitelevel, dummy);
 
     img.crop_area = crop;
 
     Ok(img)
+  }
+
+  fn check_supported(&self) -> Result<()> {
+    self.camera.supported().map(|_| ())
   }
 
   fn preview_image(&self, file: &RawSource, params: &RawDecodeParams) -> Result<Option<DynamicImage>> {
@@ -119,7 +124,7 @@ impl<'a> Decoder for TfrDecoder<'a> {
 
   fn raw_metadata(&self, _file: &RawSource, _params: &RawDecodeParams) -> Result<RawMetadata> {
     let exif = Exif::new(self.tiff.root_ifd())?;
-    let mut mdata = RawMetadata::new_with_lens(&self.camera, exif, self.get_lens_description()?.cloned());
+    let mut mdata = RawMetadata::new_with_lens(self.camera.metadata(), exif, self.get_lens_description()?.cloned());
     // Read Unique ID
     if let Some(Entry {
       value: Value::Byte(unique_id), ..
@@ -152,7 +157,7 @@ impl<'a> TfrDecoder<'a> {
         _ => None,
       };
       let resolver = LensResolver::new()
-        .with_camera(&self.camera)
+        .with_camera(self.camera.metadata())
         .with_lens_make(lens_make)
         .with_lens_model(lens_model)
         .with_focal_len(focal_len)

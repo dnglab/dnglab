@@ -8,7 +8,7 @@ use crate::exif::Exif;
 use crate::formats::tiff::Rational;
 use crate::rawsource::RawSource;
 
-use super::Camera;
+use super::CameraLookup;
 use super::Decoder;
 use super::FormatHint;
 use super::RawDecodeParams;
@@ -26,34 +26,39 @@ pub fn is_ari(file: &RawSource) -> bool {
 pub struct AriDecoder<'a> {
   #[allow(unused)]
   rawloader: &'a RawLoader,
-  camera: Camera,
+  camera: CameraLookup,
 }
 
 impl<'a> AriDecoder<'a> {
   pub fn new(file: &RawSource, rawloader: &'a RawLoader) -> Result<AriDecoder<'a>> {
     let buffer = file.subview(668, 30)?;
     let model = String::from_utf8_lossy(buffer).split_terminator('\0').next().unwrap_or("").to_string();
-    let camera = rawloader.check_supported_with_everything("ARRI", &model, "")?;
+    let camera = rawloader.lookup_camera_with_everything("ARRI", &model, "");
     Ok(AriDecoder { rawloader, camera })
   }
 }
 
 impl<'a> Decoder for AriDecoder<'a> {
   fn raw_image(&self, file: &RawSource, _params: &RawDecodeParams, dummy: bool) -> Result<RawImage> {
+    let camera = self.camera.supported()?;
     let buffer = file.subview(0, 100)?;
     let offset = LEu32(buffer, ArriRawTag::DataOffset as usize) as usize;
     let width = LEu32(buffer, ArriRawTag::Width as usize) as usize;
     let height = LEu32(buffer, ArriRawTag::Height as usize) as usize;
     let src = file.subview_until_eof_padded(offset as u64)?;
 
-    let image = if self.camera.find_hint("little-endian") {
+    let image = if camera.find_hint("little-endian") {
       decompress_12le(&src, width, height, dummy)?
     } else {
       decompress_12be_msb32(&src, width, height, dummy)?
     };
 
     let cpp = 1;
-    ok_cfa_image(self.camera.clone(), cpp, self.get_wb(file)?, image, dummy)
+    ok_cfa_image(camera.clone(), cpp, self.get_wb(file)?, image, dummy)
+  }
+
+  fn check_supported(&self) -> Result<()> {
+    self.camera.supported().map(|_| ())
   }
 
   fn format_dump(&self) -> crate::analyze::FormatDump {
@@ -73,7 +78,7 @@ impl<'a> Decoder for AriDecoder<'a> {
     let focal_len = LEu32(buffer, ArriRawTag::LensFocalLen as usize);
     exif.focal_length = Some(Rational::new(focal_len, 1000));
 
-    let mdata = RawMetadata::new(&self.camera, exif);
+    let mdata = RawMetadata::new(self.camera.metadata(), exif);
     Ok(mdata)
   }
 

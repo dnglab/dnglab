@@ -39,6 +39,7 @@ use crate::tags::ExifTag;
 use crate::tags::TiffCommonTag;
 
 use super::Camera;
+use super::CameraLookup;
 use super::Decoder;
 use super::FormatHint;
 use super::RawDecodeParams;
@@ -55,7 +56,7 @@ pub struct RafDecoder<'a> {
   rawloader: &'a RawLoader,
   ifd: IFD,
   makernotes: IFD,
-  camera: Camera,
+  camera: CameraLookup,
   camera_compressed: Option<Camera>,
 }
 
@@ -230,14 +231,7 @@ impl<'a> RafDecoder<'a> {
     };
      */
 
-    let camera = match rawloader.check_supported(&ifd) {
-      Ok(camera) => camera,
-      Err(err) => {
-        log::debug!("Camera not found, trying without mode: {:?}", err);
-        rawloader.check_supported(&ifd)?
-      }
-    };
-
+    let camera = rawloader.lookup_camera(&ifd)?;
     let camera_compressed = rawloader.check_supported_with_mode(&ifd, "compressed").ok();
 
     let makernotes = if let Some(exif) = ifd.find_first_ifd_with_tag(ExifTag::MakerNotes) {
@@ -259,6 +253,7 @@ impl<'a> RafDecoder<'a> {
 
 impl<'a> Decoder for RafDecoder<'a> {
   fn raw_image(&self, file: &RawSource, _params: &RawDecodeParams, dummy: bool) -> Result<RawImage> {
+    let base_camera = self.camera.supported()?;
     let raw = self.ifd.find_first_ifd_with_tag(FujiIFD::StripOffsets).ok_or("No StripOffsets found")?;
     let (width, height) = if raw.has_entry(FujiIFD::RawImageFullWidth) {
       (
@@ -291,7 +286,7 @@ impl<'a> Decoder for RafDecoder<'a> {
       );
       cfa
     } else {
-      self.camera.cfa.clone()
+      base_camera.cfa.clone()
     };
 
     // Strip offset is relative to IFD base
@@ -306,20 +301,20 @@ impl<'a> Decoder for RafDecoder<'a> {
 
     log::debug!("BPS: {}, width: {}, height: {}, offset: {}", bps, width, height, offset);
 
-    let mut camera = self.camera.clone();
+    let mut camera = base_camera.clone();
 
-    let image = if self.camera.find_hint("double_width") {
+    let image = if base_camera.find_hint("double_width") {
       // Some fuji SuperCCD cameras include a second raw image next to the first one
       // that is identical but darker to the first. The two combined can produce
       // a higher dynamic range image. Right now we're ignoring it.
       decompress_16le_skiplines(&src, width, height, dummy)?
-    } else if self.camera.find_hint("jpeg32") {
+    } else if base_camera.find_hint("jpeg32") {
       match bps {
         12 => decompress_12be_msb32(&src, width, height, dummy)?,
         14 => decompress_14be_msb32(&src, width, height, dummy)?,
-        _ => return Err(RawlerError::unsupported(&self.camera, format!("RAF: Don't know how to decode bps {}", bps))),
+        _ => return Err(RawlerError::unsupported(base_camera, format!("RAF: Don't know how to decode bps {}", bps))),
       }
-    } else if self.camera.clean_model == "DBP for GX680" {
+    } else if base_camera.clean_model == "DBP for GX680" {
       assert_eq!(bps, 16);
       dbp::decode_dbp(&src, width, height, dummy)?
     } else if src.len() < bps * width * height / 8 {
@@ -344,7 +339,7 @@ impl<'a> Decoder for RafDecoder<'a> {
           }
         }
         _ => {
-          return Err(RawlerError::unsupported(&self.camera, format!("RAF: Don't know how to decode bps {}", bps)));
+          return Err(RawlerError::unsupported(base_camera, format!("RAF: Don't know how to decode bps {}", bps)));
         }
       }
     };
@@ -358,10 +353,10 @@ impl<'a> Decoder for RafDecoder<'a> {
     // The code path for staggered data is already implemented here, but remains unused.
     let rotate_for_dng = false;
     let cpp = 1;
-    if self.camera.find_hint("fuji_rotation") || self.camera.find_hint("fuji_rotation_alt") {
+    if base_camera.find_hint("fuji_rotation") || base_camera.find_hint("fuji_rotation_alt") {
       log::debug!("Apply Fuji image rotation");
       let (rotated, fuji_rot_width) = if rotate_for_dng {
-        let pix = if self.camera.find_hint("fuji_rotation") {
+        let pix = if base_camera.find_hint("fuji_rotation") {
           fuji_raw_rotate(&image, dummy) // Only required for fuji_rotation
         } else {
           image
@@ -369,14 +364,14 @@ impl<'a> Decoder for RafDecoder<'a> {
         (pix, None)
       } else {
         let alt_layout = self.get_alt_layout();
-        let (pix, t) = self.rotate_image(image.pixels(), &self.camera, alt_layout, width, height, dummy)?;
+        let (pix, t) = self.rotate_image(image.pixels(), base_camera, alt_layout, width, height, dummy)?;
         (pix, Some(t))
       };
 
       camera.cfa = corrected_cfa;
       let photometric = RawPhotometricInterpretation::Cfa(CFAConfig::new_from_camera(&camera));
       let mut image = RawImage::new(
-        self.camera.clone(),
+        base_camera.clone(),
         rotated,
         cpp,
         normalize_wb(self.get_wb()?),
@@ -409,7 +404,7 @@ impl<'a> Decoder for RafDecoder<'a> {
 
       //let mut camera = self.camera.clone();
       camera.cfa = corrected_cfa;
-      let whitelevel = if self.camera.whitelevel.is_none() {
+      let whitelevel = if base_camera.whitelevel.is_none() {
         match bps {
           12 | 14 | 16 => {
             let max_value: u32 = (1_u32 << bps) - 1;
@@ -439,12 +434,16 @@ impl<'a> Decoder for RafDecoder<'a> {
     }
   }
 
+  fn check_supported(&self) -> Result<()> {
+    self.camera.supported().map(|_| ())
+  }
+
   fn raw_metadata(&self, _file: &RawSource, _params: &RawDecodeParams) -> Result<RawMetadata> {
     // Fuji RAF has all EXIF tags we need and there is no LensID or something
     // we can lookup. So this is an exception, we just pass the information.
     // The lens tags are parsed by Exif::new() from the EXIF IFD.
     let exif = Exif::new(&self.ifd)?;
-    let mdata = RawMetadata::new(&self.camera, exif);
+    let mdata = RawMetadata::new(self.camera.metadata(), exif);
     Ok(mdata)
   }
 
@@ -591,7 +590,7 @@ impl<'a> RafDecoder<'a> {
   /// Returns (rotated_pixels, fuji_rotation_width) where fuji_rotation_width is the
   /// split point T for computing the inscribed rectangle after 45° back-rotation.
   fn rotate_image(&self, src: &[u16], camera: &Camera, alt_layout: bool, width: usize, height: usize, dummy: bool) -> Result<(PixU16, usize)> {
-    if let Some(active_area) = self.camera.active_area {
+    if let Some(active_area) = camera.active_area {
       let x = active_area[0];
       let y = active_area[1];
       let cropwidth = width - active_area[2] - x;

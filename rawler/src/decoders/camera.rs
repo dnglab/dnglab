@@ -3,6 +3,8 @@ use serde::Serialize;
 use toml::Value;
 
 use crate::CFA;
+use crate::RawlerError;
+use crate::Result;
 use crate::cfa::PlaneColor;
 use crate::imgop::xyz::FlatColorMatrix;
 use crate::imgop::xyz::Illuminant;
@@ -280,5 +282,41 @@ impl Camera {
       params: HashMap::new(),
       //orientation: Orientation::Unknown,
     }
+  }
+}
+
+/// Camera definition of a decoder.
+///
+/// Decoders are created for cameras missing in the camera database, too, so metadata
+/// and embedded previews stay available. Such cameras get a generic definition with
+/// make and model from the file, and raw decoding fails with `RawlerError::Unsupported`.
+#[derive(Debug, Clone)]
+pub(crate) struct CameraLookup {
+  camera: Camera,
+  supported: bool,
+}
+
+impl CameraLookup {
+  pub(crate) fn new_supported(camera: Camera) -> Self {
+    Self { camera, supported: true }
+  }
+
+  pub(crate) fn new_unknown(camera: Camera) -> Self {
+    Self { camera, supported: false }
+  }
+
+  /// Camera definition for raw decoding, fails for cameras missing in the camera database
+  pub(crate) fn supported(&self) -> Result<&Camera> {
+    if self.supported {
+      Ok(&self.camera)
+    } else {
+      Err(RawlerError::unsupported(&self.camera, "Unknown camera"))
+    }
+  }
+
+  /// Camera definition for metadata (clean make/model and lens lookup).
+  /// For unknown cameras, this is the generic definition.
+  pub(crate) fn metadata(&self) -> &Camera {
+    &self.camera
   }
 }

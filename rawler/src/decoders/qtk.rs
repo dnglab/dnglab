@@ -24,7 +24,7 @@ use crate::pumps::BitPumpMSB;
 use crate::pumps::ByteStream;
 use crate::rawsource::RawSource;
 
-use super::Camera;
+use super::CameraLookup;
 use super::Decoder;
 use super::FormatHint;
 use super::RawDecodeParams;
@@ -35,7 +35,7 @@ use super::ok_cfa_image;
 pub struct QtkDecoder<'a> {
   #[allow(unused)]
   rawloader: &'a RawLoader,
-  camera: Camera,
+  camera: CameraLookup,
 }
 
 pub fn is_qtk(file: &RawSource) -> bool {
@@ -51,19 +51,19 @@ impl<'a> QtkDecoder<'a> {
       b"qktk" => {
         let make = "Apple";
         let model = "QuickTake 100";
-        let camera = rawloader.check_supported_with_everything(make, model, "")?;
+        let camera = rawloader.lookup_camera_with_everything(make, model, "");
         Ok(QtkDecoder { rawloader, camera })
       }
       b"qktn" => {
         if file.subview(0, 6)?[5] != 0 {
           let make = "Apple";
           let model = "QuickTake 200";
-          let camera = rawloader.check_supported_with_everything(make, model, "")?;
+          let camera = rawloader.lookup_camera_with_everything(make, model, "");
           Ok(QtkDecoder { rawloader, camera })
         } else {
           let make = "Apple";
           let model = "QuickTake 150";
-          let camera = rawloader.check_supported_with_everything(make, model, "")?;
+          let camera = rawloader.lookup_camera_with_everything(make, model, "");
           Ok(QtkDecoder { rawloader, camera })
         }
       }
@@ -77,6 +77,7 @@ impl<'a> QtkDecoder<'a> {
 
 impl<'a> Decoder for QtkDecoder<'a> {
   fn raw_image(&self, file: &RawSource, _params: &RawDecodeParams, dummy: bool) -> Result<RawImage> {
+    let camera = self.camera.supported()?;
     const META_OFFSET: u64 = 544;
     let meta = file.subview(META_OFFSET, 16)?;
     let mut stream = ByteStream::new(meta, Endian::Big);
@@ -109,10 +110,14 @@ impl<'a> Decoder for QtkDecoder<'a> {
     };
 
     let cpp = 1;
-    ok_cfa_image(self.camera.clone(), cpp, self.get_wb()?, image, dummy).map(|mut image| {
+    ok_cfa_image(camera.clone(), cpp, self.get_wb()?, image, dummy).map(|mut image| {
       image.orientation = orientation;
       image
     })
+  }
+
+  fn check_supported(&self) -> Result<()> {
+    self.camera.supported().map(|_| ())
   }
 
   fn format_dump(&self) -> FormatDump {
@@ -120,7 +125,7 @@ impl<'a> Decoder for QtkDecoder<'a> {
   }
 
   fn raw_metadata(&self, _file: &RawSource, _params: &RawDecodeParams) -> Result<RawMetadata> {
-    let meta = RawMetadata::new(&self.camera, Exif::default());
+    let meta = RawMetadata::new(self.camera.metadata(), Exif::default());
     Ok(meta)
   }
 

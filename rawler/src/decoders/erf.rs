@@ -20,6 +20,7 @@ use crate::tags::TiffCommonTag;
 use super::BlackLevel;
 use super::CFAConfig;
 use super::Camera;
+use super::CameraLookup;
 use super::Decoder;
 use super::FormatHint;
 use super::RawDecodeParams;
@@ -32,12 +33,12 @@ pub struct ErfDecoder<'a> {
   rawloader: &'a RawLoader,
   tiff: GenericTiffReader,
   makernote: IFD,
-  camera: Camera,
+  camera: CameraLookup,
 }
 
 impl<'a> ErfDecoder<'a> {
   pub fn new(file: &RawSource, tiff: GenericTiffReader, rawloader: &'a RawLoader) -> Result<ErfDecoder<'a>> {
-    let camera = rawloader.check_supported(tiff.root_ifd())?;
+    let camera = rawloader.lookup_camera(tiff.root_ifd())?;
 
     let makernote = if let Some(exif) = tiff.find_first_ifd_with_tag(ExifTag::MakerNotes) {
       exif.parse_makernote(&mut file.reader(), OffsetMode::Absolute, &[])?
@@ -58,6 +59,7 @@ impl<'a> ErfDecoder<'a> {
 
 impl<'a> Decoder for ErfDecoder<'a> {
   fn raw_image(&self, file: &RawSource, _params: &RawDecodeParams, dummy: bool) -> Result<RawImage> {
+    let camera = self.camera.supported()?;
     let raw = self
       .tiff
       .find_first_ifd_with_tag(TiffCommonTag::CFAPattern)
@@ -70,10 +72,14 @@ impl<'a> Decoder for ErfDecoder<'a> {
     let image = decompress_12be_wcontrol(src, width, height, dummy)?;
     let cpp = 1;
 
-    let blacklevel = self.get_blacklevel(cpp);
-    let photometric = RawPhotometricInterpretation::Cfa(CFAConfig::new_from_camera(&self.camera));
-    let img = RawImage::new(self.camera.clone(), image, cpp, self.get_wb()?, photometric, blacklevel, None, dummy);
+    let blacklevel = self.get_blacklevel(camera, cpp);
+    let photometric = RawPhotometricInterpretation::Cfa(CFAConfig::new_from_camera(camera));
+    let img = RawImage::new(camera.clone(), image, cpp, self.get_wb()?, photometric, blacklevel, None, dummy);
     Ok(img)
+  }
+
+  fn check_supported(&self) -> Result<()> {
+    self.camera.supported().map(|_| ())
   }
 
   fn format_dump(&self) -> FormatDump {
@@ -82,7 +88,7 @@ impl<'a> Decoder for ErfDecoder<'a> {
 
   fn raw_metadata(&self, _file: &RawSource, _params: &RawDecodeParams) -> Result<RawMetadata> {
     let exif = Exif::new(self.tiff.root_ifd())?;
-    let mdata = RawMetadata::new(&self.camera, exif);
+    let mdata = RawMetadata::new(self.camera.metadata(), exif);
     Ok(mdata)
   }
 
@@ -103,10 +109,10 @@ impl<'a> ErfDecoder<'a> {
     }
   }
 
-  fn get_blacklevel(&self, cpp: usize) -> Option<BlackLevel> {
+  fn get_blacklevel(&self, camera: &Camera, cpp: usize) -> Option<BlackLevel> {
     if let Some(levels) = self.makernote.get_entry(0x0401) {
       let levels = [levels.force_u16(0), levels.force_u16(1), levels.force_u16(2), levels.force_u16(3)];
-      return Some(BlackLevel::new(&levels, self.camera.cfa.width, self.camera.cfa.height, cpp));
+      return Some(BlackLevel::new(&levels, camera.cfa.width, camera.cfa.height, cpp));
     }
     None
   }

@@ -134,6 +134,10 @@ impl<'a> Decoder for X3fDecoder<'a> {
     Ok(RawImage::new(camera, image, cpp, self.get_wb()?, photometric, None, None, dummy))
   }
 
+  fn check_supported(&self) -> Result<()> {
+    Err("X3F decoding not implemented yet".into())
+  }
+
   fn format_dump(&self) -> FormatDump {
     todo!()
   }
