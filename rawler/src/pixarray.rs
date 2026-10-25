@@ -378,6 +378,46 @@ where
   Pix2D::new_with(data, pixbuf.width, pixbuf.height)
 }
 
+/// Store rows in `factor` interleaved fields (DNG RowInterleaveFactor),
+/// the inverse of [`deinterleave_rows`].
+pub(crate) fn interleave_rows<T>(pixbuf: &Pix2D<T>, factor: usize) -> Pix2D<T>
+where
+  T: SubPixel,
+{
+  if !pixbuf.initialized || factor <= 1 {
+    return pixbuf.clone();
+  }
+  let width = pixbuf.width;
+  let mut data = Vec::with_capacity(pixbuf.data.len());
+  for field in 0..factor {
+    for row in (field..pixbuf.height).step_by(factor) {
+      data.extend_from_slice(&pixbuf.data[row * width..(row + 1) * width]);
+    }
+  }
+  Pix2D::new_with(data, width, pixbuf.height)
+}
+
+/// Store the pixels of each row in `factor` interleaved fields (DNG ColumnInterleaveFactor),
+/// the inverse of [`deinterleave_cols`]. Each pixel consists of `cpp` samples.
+pub(crate) fn interleave_cols<T>(pixbuf: &Pix2D<T>, cpp: usize, factor: usize) -> Pix2D<T>
+where
+  T: SubPixel,
+{
+  if !pixbuf.initialized || factor <= 1 || cpp == 0 {
+    return pixbuf.clone();
+  }
+  let pixels = pixbuf.width / cpp;
+  let mut data = Vec::with_capacity(pixbuf.data.len());
+  for line in pixbuf.data.chunks_exact(pixbuf.width) {
+    for field in 0..factor {
+      for col in (field..pixels).step_by(factor) {
+        data.extend_from_slice(&line[col * cpp..(col + 1) * cpp]);
+      }
+    }
+  }
+  Pix2D::new_with(data, pixbuf.width, pixbuf.height)
+}
+
 /*
 impl<T> Index<usize> for Pix2D<T> {
   type Output = T;
@@ -789,6 +829,17 @@ mod tests {
     let out = deinterleave_cols(&Pix2D::new_with(stored, 15, 1), 3, 2);
     let expected: Vec<u16> = (0..5).flat_map(|p| [p, p + 10, p + 20]).collect();
     assert_eq!(out.data, expected);
+  }
+
+  #[test]
+  fn interleave_is_inverse_of_deinterleave() {
+    for (width, height, cpp, rows, cols) in [(7, 5, 1, 2, 2), (13, 11, 1, 6, 6), (5, 4, 3, 2, 3), (6, 6, 1, 6, 6)] {
+      let image: Vec<u16> = (0..(width * cpp * height) as u16).collect();
+      let pixbuf = Pix2D::new_with(image.clone(), width * cpp, height);
+      let stored = interleave_cols(&interleave_rows(&pixbuf, rows), cpp, cols);
+      let restored = deinterleave_rows(&deinterleave_cols(&stored, cpp, cols), rows);
+      assert_eq!(restored.data, image, "{}x{} cpp {}", width, height, cpp);
+    }
   }
 
   /// Store an image (cpp = 1) in sub-tile block order per tile

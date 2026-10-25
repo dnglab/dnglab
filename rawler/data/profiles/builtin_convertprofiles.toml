@@ -28,3 +28,13 @@ description = "Archival: embed original raw, split multi-frame files, keep modif
 embed_raw = true
 multiframe = "split"
 keep_mtime = true
+
+[convertprofile.builtin_jxl]
+version = 1
+title = "JPEG XL lossless (DNG 1.7.1)"
+description = "Lossless JPEG XL compression, requires DNG 1.7.1 readers"
+compression = "jxl"
+max_dng_backward_version = "1.7.1"
+embed_raw = false
+multiframe = "split"
+keep_mtime = true

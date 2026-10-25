@@ -646,4 +646,7 @@ pub enum DngTag {
 
   // 1.7.1
   ColumnInterleaveFactor = 52547,
+  JXLDistance = 52553,
+  JXLEffort = 52554,
+  JXLDecodeSpeed = 52555,
 }

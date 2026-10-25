@@ -37,7 +37,10 @@ use crate::{
   tags::{DngTag, ExifTag, TiffCommonTag},
 };
 
-use super::{ApplyDngOpcodes, CropMode, DngCompression, DngPhotometricConversion, DngVersion};
+use super::{
+  ApplyDngOpcodes, CompressionParams, CropMode, DEFAULT_JXL_DECODE_SPEED, DEFAULT_JXL_DISTANCE, DEFAULT_JXL_EFFORT, DngCompression, DngPhotometricConversion,
+  DngVersion, JxlParams,
+};
 
 /// Opcode list stages in processing order
 const STAGES: [OpcodeStage; 3] = [OpcodeStage::List1, OpcodeStage::List2, OpcodeStage::List3];
@@ -71,6 +74,12 @@ pub struct ConvertParams {
   pub predictor: u8,
   /// JPEG quality (1-100) for lossy compression
   pub lossy_jpeg_quality: u8,
+  /// JPEG XL distance, 0.0 is lossless
+  pub jxl_distance: f32,
+  /// JPEG XL effort (1-9)
+  pub jxl_effort: u8,
+  /// JPEG XL decoding speed (1-4), only used for lossy compression
+  pub jxl_decode_speed: u8,
   pub preview: bool,
   pub thumbnail: bool,
   /// Develop the preview from raw data instead of using an embedded preview
@@ -114,6 +123,9 @@ impl Default for ConvertParams {
       crop: CropMode::Best,
       predictor: 1,
       lossy_jpeg_quality: DEFAULT_LOSSY_JPEG_QUALITY,
+      jxl_distance: DEFAULT_JXL_DISTANCE,
+      jxl_effort: DEFAULT_JXL_EFFORT,
+      jxl_decode_speed: DEFAULT_JXL_DECODE_SPEED,
       preview: true,
       thumbnail: true,
       force_preview: false,
@@ -123,7 +135,7 @@ impl Default for ConvertParams {
       software: "DNGLab".into(),
       index: 0,
       keep_mtime: false,
-      dng_version: DngVersion::V1_6,
+      dng_version: DngVersion::V1_7_1,
       max_dng_backward_version: DngVersion::V1_4,
       apply_dng_opcodes: ApplyDngOpcodes::Auto,
       remove_dng_opcodes: Vec::new(),
@@ -172,6 +184,49 @@ impl ConvertParams {
   pub fn with_lossy_jpeg_quality(mut self, lossy_jpeg_quality: u8) -> Self {
     self.lossy_jpeg_quality = lossy_jpeg_quality;
     self
+  }
+
+  /// Set the JPEG XL distance, 0.0 is lossless.
+  pub fn with_jxl_distance(mut self, jxl_distance: f32) -> Self {
+    self.jxl_distance = jxl_distance;
+    self
+  }
+
+  /// Set the JPEG XL effort (1-9).
+  pub fn with_jxl_effort(mut self, jxl_effort: u8) -> Self {
+    self.jxl_effort = jxl_effort;
+    self
+  }
+
+  /// Set the JPEG XL decoding speed (1-4) for lossy compression.
+  pub fn with_jxl_decode_speed(mut self, jxl_decode_speed: u8) -> Self {
+    self.jxl_decode_speed = jxl_decode_speed;
+    self
+  }
+
+  /// Parameters of the compression methods
+  pub fn compression_params(&self) -> CompressionParams {
+    CompressionParams {
+      ljpeg92_predictor: self.predictor,
+      lossy_jpeg_quality: self.lossy_jpeg_quality,
+      jxl: JxlParams {
+        distance: self.jxl_distance,
+        effort: self.jxl_effort,
+        decode_speed: self.jxl_decode_speed,
+      },
+    }
+  }
+
+  /// Opcode lists to apply to the image data, `apply_dng_opcodes` adjusted for the compression
+  ///
+  /// Lossy JPEG XL stores curve encoded raw values and readers apply OpcodeList1 to
+  /// the stored values, so OpcodeList1 is applied to the raw values before compression.
+  fn effective_apply_dng_opcodes(&self) -> ApplyDngOpcodes {
+    let jxl_lossy = self.compression == DngCompression::JpegXl && !self.compression_params().jxl.is_lossless();
+    match self.apply_dng_opcodes {
+      ApplyDngOpcodes::Auto if jxl_lossy => ApplyDngOpcodes::List1,
+      apply => apply,
+    }
   }
 
   /// Set whether a preview image is generated.
@@ -324,7 +379,7 @@ where
   let present = STAGES.map(|stage| rawimage.opcode_list(stage).is_some_and(|list| !list.is_empty()));
   let needs_processing = STAGES.map(|stage| rawimage.opcode_list(stage).is_some_and(|list| list.needs_processing(max_backward_version)));
   let required_stage = required_stage(fuji_rotation, params.apply_scaling, params.compression);
-  let (data_stage, apply) = processing_plan(present, needs_processing, params.apply_dng_opcodes, required_stage);
+  let (data_stage, apply) = processing_plan(present, needs_processing, params.effective_apply_dng_opcodes(), required_stage);
   for (stage, apply) in STAGES.into_iter().zip(apply) {
     // Bring the image data into the state the stage operates on
     match stage {
@@ -351,8 +406,8 @@ where
       })?;
     }
   }
-  // Lossy JPEG supports one or three color planes
-  let reduced_planes = params.compression == DngCompression::Lossy && rawimage.cpp == 4;
+  // Lossy JPEG and JPEG XL support one or three color planes
+  let reduced_planes = matches!(params.compression, DngCompression::Lossy | DngCompression::JpegXl) && rawimage.cpp == 4;
   if reduced_planes {
     // OpcodeList3 addresses the four color planes
     rawimage.apply_opcode_list(OpcodeStage::List3)?;
@@ -383,8 +438,7 @@ where
     params.crop,
     params.compression,
     params.photometric_conversion,
-    params.predictor,
-    params.lossy_jpeg_quality,
+    &params.compression_params(),
   )?;
   // Check for DNG raw IFD related tags
   if let Some(dng_raw_ifd) = decoder.ifd(WellKnownIFD::VirtualDngRawTags)? {
@@ -814,6 +868,21 @@ mod tests {
     );
     rawimage.color_matrix.clear();
     assert!(reduce_to_three_planes(&mut rawimage).is_err());
+  }
+
+  #[test]
+  fn lossy_jxl_applies_opcode_list1() {
+    use ApplyDngOpcodes as A;
+    use OpcodeStage as S;
+    let lossless = ConvertParams::default().with_compression(DngCompression::JpegXl);
+    assert_eq!(lossless.effective_apply_dng_opcodes(), A::Auto);
+    let lossy = lossless.with_jxl_distance(1.0);
+    assert_eq!(lossy.effective_apply_dng_opcodes(), A::List1);
+    // OpcodeList2 and OpcodeList3 are written to the DNG
+    let plan = processing_plan([true; 3], [false; 3], lossy.effective_apply_dng_opcodes(), S::List1);
+    assert_eq!(plan, (S::List1, [true, false, false]));
+    // Explicit modes include OpcodeList1
+    assert_eq!(lossy.with_apply_dng_opcodes(A::List2).effective_apply_dng_opcodes(), A::List2);
   }
 
   #[test]

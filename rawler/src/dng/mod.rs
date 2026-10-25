@@ -18,6 +18,8 @@ pub const DNG_VERSION_V1_3: DngVersionNumber = DngVersionNumber([1, 3, 0, 0]);
 pub const DNG_VERSION_V1_4: DngVersionNumber = DngVersionNumber([1, 4, 0, 0]);
 pub const DNG_VERSION_V1_5: DngVersionNumber = DngVersionNumber([1, 5, 0, 0]);
 pub const DNG_VERSION_V1_6: DngVersionNumber = DngVersionNumber([1, 6, 0, 0]);
+pub const DNG_VERSION_V1_7: DngVersionNumber = DngVersionNumber([1, 7, 0, 0]);
+pub const DNG_VERSION_V1_7_1: DngVersionNumber = DngVersionNumber([1, 7, 1, 0]);
 
 /// Highest DNG specification version the DNG reader is based on
 pub const DNG_READER_VERSION: DngVersionNumber = DngVersionNumber([1, 7, 1, 0]);
@@ -39,6 +41,10 @@ pub enum DngVersion {
   V1_5,
   #[serde(rename = "1.6")]
   V1_6,
+  #[serde(rename = "1.7")]
+  V1_7,
+  #[serde(rename = "1.7.1")]
+  V1_7_1,
 }
 
 impl DngVersion {
@@ -52,6 +58,8 @@ impl DngVersion {
       Self::V1_4 => DNG_VERSION_V1_4,
       Self::V1_5 => DNG_VERSION_V1_5,
       Self::V1_6 => DNG_VERSION_V1_6,
+      Self::V1_7 => DNG_VERSION_V1_7,
+      Self::V1_7_1 => DNG_VERSION_V1_7_1,
     }
   }
 }
@@ -105,7 +113,17 @@ impl std::fmt::Display for DngVersionNumber {
 #[cfg(feature = "clap")]
 impl clap::ValueEnum for DngVersion {
   fn value_variants<'a>() -> &'a [Self] {
-    &[Self::V1_0, Self::V1_1, Self::V1_2, Self::V1_3, Self::V1_4, Self::V1_5, Self::V1_6]
+    &[
+      Self::V1_0,
+      Self::V1_1,
+      Self::V1_2,
+      Self::V1_3,
+      Self::V1_4,
+      Self::V1_5,
+      Self::V1_6,
+      Self::V1_7,
+      Self::V1_7_1,
+    ]
   }
 
   fn to_possible_value(&self) -> Option<clap::builder::PossibleValue> {
@@ -117,6 +135,8 @@ impl clap::ValueEnum for DngVersion {
       Self::V1_4 => clap::builder::PossibleValue::new("1.4"),
       Self::V1_5 => clap::builder::PossibleValue::new("1.5"),
       Self::V1_6 => clap::builder::PossibleValue::new("1.6"),
+      Self::V1_7 => clap::builder::PossibleValue::new("1.7"),
+      Self::V1_7_1 => clap::builder::PossibleValue::new("1.7.1"),
     })
   }
 }
@@ -147,7 +167,7 @@ pub fn rect_to_dng_area(area: &Rect) -> [u16; 4] {
 #[cfg(feature = "clap")]
 impl clap::ValueEnum for DngCompression {
   fn value_variants<'a>() -> &'a [Self] {
-    &[Self::Lossless, Self::Lossy, Self::Uncompressed]
+    &[Self::Lossless, Self::Lossy, Self::JpegXl, Self::Uncompressed]
   }
 
   fn to_possible_value(&self) -> Option<clap::builder::PossibleValue> {
@@ -155,6 +175,7 @@ impl clap::ValueEnum for DngCompression {
       Self::Uncompressed => clap::builder::PossibleValue::new("uncompressed"),
       Self::Lossless => clap::builder::PossibleValue::new("lossless"),
       Self::Lossy => clap::builder::PossibleValue::new("lossy"),
+      Self::JpegXl => clap::builder::PossibleValue::new("jxl"),
     })
   }
 }
@@ -270,4 +291,69 @@ pub enum DngCompression {
   Lossless,
   /// Lossy JPEG compression of demosaiced 8-bit data (DNG 1.4)
   Lossy,
+  /// JPEG XL compression, lossless or lossy (DNG 1.7)
+  #[serde(rename = "jxl")]
+  JpegXl,
+}
+
+/// Default JPEG XL distance, 0.0 is lossless
+pub const DEFAULT_JXL_DISTANCE: f32 = 0.0;
+/// Highest JPEG XL distance
+pub const MAX_JXL_DISTANCE: f32 = 25.0;
+/// Default JPEG XL effort
+pub const DEFAULT_JXL_EFFORT: u8 = 7;
+/// Range of the JPEG XL effort (DNG tag JXLEffort)
+pub const JXL_EFFORT_RANGE: std::ops::RangeInclusive<u8> = 1..=9;
+/// Default JPEG XL decoding speed
+pub const DEFAULT_JXL_DECODE_SPEED: u8 = 4;
+/// Range of the JPEG XL decoding speed (DNG tag JXLDecodeSpeed)
+pub const JXL_DECODE_SPEED_RANGE: std::ops::RangeInclusive<u8> = 1..=4;
+
+/// Parameters for JPEG XL compression
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct JxlParams {
+  /// Butteraugli distance, 0.0 is lossless
+  pub distance: f32,
+  /// Effort (1 to 9)
+  pub effort: u8,
+  /// Decoding speed (1 to 4), only used for lossy compression
+  pub decode_speed: u8,
+}
+
+impl JxlParams {
+  /// Check if the parameters select lossless compression
+  pub fn is_lossless(&self) -> bool {
+    self.distance == 0.0
+  }
+}
+
+impl Default for JxlParams {
+  fn default() -> Self {
+    Self {
+      distance: DEFAULT_JXL_DISTANCE,
+      effort: DEFAULT_JXL_EFFORT,
+      decode_speed: DEFAULT_JXL_DECODE_SPEED,
+    }
+  }
+}
+
+/// Parameters of the DNG compression methods
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct CompressionParams {
+  /// LJPEG-92 predictor (1 to 7) for lossless compression
+  pub ljpeg92_predictor: u8,
+  /// JPEG quality (1 to 100) for lossy compression
+  pub lossy_jpeg_quality: u8,
+  /// JPEG XL parameters
+  pub jxl: JxlParams,
+}
+
+impl Default for CompressionParams {
+  fn default() -> Self {
+    Self {
+      ljpeg92_predictor: 1,
+      lossy_jpeg_quality: DEFAULT_LOSSY_JPEG_QUALITY,
+      jxl: JxlParams::default(),
+    }
+  }
 }

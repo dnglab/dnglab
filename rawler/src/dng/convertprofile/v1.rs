@@ -7,7 +7,10 @@
 
 use serde::{Deserialize, Serialize};
 
-use crate::dng::{ApplyDngOpcodes, CropMode, DEFAULT_LOSSY_JPEG_QUALITY, DngCompression, DngVersion, opcodes::OpcodeSelector};
+use crate::dng::{
+  ApplyDngOpcodes, CropMode, DEFAULT_JXL_DECODE_SPEED, DEFAULT_JXL_DISTANCE, DEFAULT_JXL_EFFORT, DEFAULT_LOSSY_JPEG_QUALITY, DngCompression, DngVersion,
+  opcodes::OpcodeSelector,
+};
 
 /// How to handle files that contain multiple raw images
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq, Serialize, Deserialize)]
@@ -23,7 +26,7 @@ pub enum MultiFrameMode {
 /// Convert profile, schema version 1
 ///
 /// Only `title` is mandatory, all other fields fall back to their defaults.
-#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct ConvertProfileV1 {
   /// Short human readable name
@@ -47,6 +50,15 @@ pub struct ConvertProfileV1 {
   /// JPEG quality (1-100) for lossy compression
   #[serde(default = "default_lossy_jpeg_quality")]
   pub lossy_jpeg_quality: u8,
+  /// JPEG XL distance (0.0-25.0), 0.0 is lossless
+  #[serde(default = "default_jxl_distance")]
+  pub jxl_distance: f32,
+  /// JPEG XL encoder effort (1-9)
+  #[serde(default = "default_jxl_effort")]
+  pub jxl_effort: u8,
+  /// JPEG XL decoding speed (1-4) for lossy compression
+  #[serde(default = "default_jxl_decode_speed")]
+  pub jxl_decode_speed: u8,
   #[serde(default = "default_crop")]
   pub crop: CropMode,
   #[serde(default = "default_true")]
@@ -87,6 +99,18 @@ fn default_lossy_jpeg_quality() -> u8 {
   DEFAULT_LOSSY_JPEG_QUALITY
 }
 
+fn default_jxl_distance() -> f32 {
+  DEFAULT_JXL_DISTANCE
+}
+
+fn default_jxl_effort() -> u8 {
+  DEFAULT_JXL_EFFORT
+}
+
+fn default_jxl_decode_speed() -> u8 {
+  DEFAULT_JXL_DECODE_SPEED
+}
+
 fn default_crop() -> CropMode {
   CropMode::Best
 }
@@ -107,6 +131,9 @@ impl Default for ConvertProfileV1 {
       compression: default_compression(),
       ljpeg92_predictor: default_ljpeg92_predictor(),
       lossy_jpeg_quality: default_lossy_jpeg_quality(),
+      jxl_distance: default_jxl_distance(),
+      jxl_effort: default_jxl_effort(),
+      jxl_decode_speed: default_jxl_decode_speed(),
       crop: default_crop(),
       add_preview: true,
       add_thumbnail: true,

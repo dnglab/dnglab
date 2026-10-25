@@ -89,9 +89,13 @@ complete -c dnglab -n "__fish_dnglab_using_subcommand process-raw" -s h -l help 
 complete -c dnglab -n "__fish_dnglab_using_subcommand convert" -s p -l profile -d 'Convert profile name' -r
 complete -c dnglab -n "__fish_dnglab_using_subcommand convert" -s c -l compression -d 'Compression for raw image' -r -f -a "lossless\t''
 lossy\t''
+jxl\t''
 uncompressed\t''"
 complete -c dnglab -n "__fish_dnglab_using_subcommand convert" -l ljpeg92-predictor -d 'LJPEG-92 predictor' -r
 complete -c dnglab -n "__fish_dnglab_using_subcommand convert" -l lossy-jpeg-quality -d 'JPEG quality for lossy compression (1-100)' -r
+complete -c dnglab -n "__fish_dnglab_using_subcommand convert" -l jxl-distance -d 'JPEG XL distance (0-25), 0 is lossless' -r
+complete -c dnglab -n "__fish_dnglab_using_subcommand convert" -l jxl-effort -d 'JPEG XL encoder effort (1-9)' -r
+complete -c dnglab -n "__fish_dnglab_using_subcommand convert" -l jxl-decode-speed -d 'JPEG XL decoding speed for lossy compression (1-4)' -r
 complete -c dnglab -n "__fish_dnglab_using_subcommand convert" -l dng-preview -d 'DNG include preview image' -r -f -a "true\t''
 false\t''"
 complete -c dnglab -n "__fish_dnglab_using_subcommand convert" -l dng-thumbnail -d 'DNG include thumbnail image' -r -f -a "true\t''
@@ -106,7 +110,9 @@ complete -c dnglab -n "__fish_dnglab_using_subcommand convert" -l max-dng-backwa
 1.3\t''
 1.4\t''
 1.5\t''
-1.6\t''"
+1.6\t''
+1.7\t''
+1.7.1\t''"
 complete -c dnglab -n "__fish_dnglab_using_subcommand convert" -l embed-raw -d 'Embed the raw file into DNG' -r -f -a "true\t''
 false\t''"
 complete -c dnglab -n "__fish_dnglab_using_subcommand convert" -l apply-dng-opcodes -d 'Apply DNG opcode lists to the image data instead of writing them to the DNG' -r -f -a "auto\t''
@@ -137,9 +143,13 @@ complete -c dnglab -n "__fish_dnglab_using_subcommand convert" -s h -l help -d '
 complete -c dnglab -n "__fish_dnglab_using_subcommand ftpserver" -s p -l profile -d 'Convert profile name' -r
 complete -c dnglab -n "__fish_dnglab_using_subcommand ftpserver" -s c -l compression -d 'Compression for raw image' -r -f -a "lossless\t''
 lossy\t''
+jxl\t''
 uncompressed\t''"
 complete -c dnglab -n "__fish_dnglab_using_subcommand ftpserver" -l ljpeg92-predictor -d 'LJPEG-92 predictor' -r
 complete -c dnglab -n "__fish_dnglab_using_subcommand ftpserver" -l lossy-jpeg-quality -d 'JPEG quality for lossy compression (1-100)' -r
+complete -c dnglab -n "__fish_dnglab_using_subcommand ftpserver" -l jxl-distance -d 'JPEG XL distance (0-25), 0 is lossless' -r
+complete -c dnglab -n "__fish_dnglab_using_subcommand ftpserver" -l jxl-effort -d 'JPEG XL encoder effort (1-9)' -r
+complete -c dnglab -n "__fish_dnglab_using_subcommand ftpserver" -l jxl-decode-speed -d 'JPEG XL decoding speed for lossy compression (1-4)' -r
 complete -c dnglab -n "__fish_dnglab_using_subcommand ftpserver" -l dng-preview -d 'DNG include preview image' -r -f -a "true\t''
 false\t''"
 complete -c dnglab -n "__fish_dnglab_using_subcommand ftpserver" -l dng-thumbnail -d 'DNG include thumbnail image' -r -f -a "true\t''
@@ -154,7 +164,9 @@ complete -c dnglab -n "__fish_dnglab_using_subcommand ftpserver" -l max-dng-back
 1.3\t''
 1.4\t''
 1.5\t''
-1.6\t''"
+1.6\t''
+1.7\t''
+1.7.1\t''"
 complete -c dnglab -n "__fish_dnglab_using_subcommand ftpserver" -l embed-raw -d 'Embed the raw file into DNG' -r -f -a "true\t''
 false\t''"
 complete -c dnglab -n "__fish_dnglab_using_subcommand ftpserver" -l apply-dng-opcodes -d 'Apply DNG opcode lists to the image data instead of writing them to the DNG' -r -f -a "auto\t''
@@ -213,7 +225,9 @@ complete -c dnglab -n "__fish_dnglab_using_subcommand makedng" -l dng-backward-v
 1.3\t''
 1.4\t''
 1.5\t''
-1.6\t''"
+1.6\t''
+1.7\t''
+1.7.1\t''"
 complete -c dnglab -n "__fish_dnglab_using_subcommand makedng" -l colorimetric-reference -d 'Reference for XYZ values' -r -f -a "scene\t''
 output\t''"
 complete -c dnglab -n "__fish_dnglab_using_subcommand makedng" -l unique-camera-model -d 'Unique camera model' -r

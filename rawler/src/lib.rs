@@ -97,6 +97,7 @@ pub mod bitarray;
 pub mod bits;
 pub mod buffer;
 pub mod cfa;
+pub mod compressors;
 pub mod decoders;
 pub mod decompressors;
 pub mod devtools;

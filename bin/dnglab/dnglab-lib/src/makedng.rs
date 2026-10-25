@@ -8,7 +8,7 @@ use image::DynamicImage;
 use itertools::Itertools;
 use rawler::decoders::{RawDecodeParams, RawMetadata};
 use rawler::dng::writer::DngWriter;
-use rawler::dng::{CropMode, DEFAULT_LOSSY_JPEG_QUALITY, DngCompression, DngPhotometricConversion, DngVersion};
+use rawler::dng::{CompressionParams, CropMode, DngCompression, DngPhotometricConversion, DngVersion};
 use rawler::exif::Exif;
 use rawler::formats::jfif::{Jfif, is_exif, is_jfif};
 use rawler::formats::tiff::{self, Rational, SRational};
@@ -127,8 +127,7 @@ pub async fn makedng_internal(options: &ArgMatches, dest_path: &Path) -> crate::
         CropMode::Best,
         DngCompression::Lossless,
         DngPhotometricConversion::Original,
-        1,
-        DEFAULT_LOSSY_JPEG_QUALITY,
+        &CompressionParams::default(),
       )?;
       rawframe.finalize()?;
     } else {
@@ -142,8 +141,7 @@ pub async fn makedng_internal(options: &ArgMatches, dest_path: &Path) -> crate::
             img.width() as usize,
             img.height() as usize,
             DngCompression::Lossless,
-            1,
-            DEFAULT_LOSSY_JPEG_QUALITY,
+            &CompressionParams::default(),
           )?;
           frame.ifd_mut().add_tag(DngTag::BlackLevel, [0u16, 0, 0]);
 
@@ -167,8 +165,7 @@ pub async fn makedng_internal(options: &ArgMatches, dest_path: &Path) -> crate::
             img.width() as usize,
             img.height() as usize,
             DngCompression::Lossless,
-            1,
-            DEFAULT_LOSSY_JPEG_QUALITY,
+            &CompressionParams::default(),
           )?;
           frame.ifd_mut().add_tag(DngTag::BlackLevel, [0u16, 0, 0]);
 

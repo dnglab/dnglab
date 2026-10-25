@@ -11,6 +11,7 @@ use rayon::prelude::*;
 
 use crate::{
   CFA, RawImage, RawImageData,
+  compressors::jpegxl::{self, LossyTransfer, TileSamples, TileSettings},
   decoders::{Camera, RawMetadata},
   dng::rect_to_dng_area,
   envparams::{rawler_dng_multistrip_threshold, rawler_dng_rows_per_strip},
@@ -20,7 +21,7 @@ use crate::{
   },
   imgop::{Dim2, Point, Rect},
   ljpeg92::LjpegCompressor,
-  pixarray::PixU16,
+  pixarray::{Pix2D, PixU16, interleave_cols, interleave_rows},
   rawimage::{BlackLevel, RawPhotometricInterpretation, WhiteLevel},
   tags::ExifTag,
   tiles::ImageTiler,
@@ -32,8 +33,8 @@ use crate::{
 };
 
 use super::{
-  CropMode, DNG_VERSION_V1_0, DNG_VERSION_V1_1, DNG_VERSION_V1_4, DNG_VERSION_V1_6, DngCompression, DngPhotometricConversion, DngVersionNumber,
-  opcodes::OpcodeStage, original::OriginalCompressed,
+  CompressionParams, CropMode, DNG_VERSION_V1_0, DNG_VERSION_V1_1, DNG_VERSION_V1_4, DNG_VERSION_V1_7, DNG_VERSION_V1_7_1, DngCompression,
+  DngPhotometricConversion, DngVersionNumber, JxlParams, opcodes::OpcodeStage, original::OriginalCompressed,
 };
 
 pub type DngError = TiffError;
@@ -88,7 +89,7 @@ where
     self.ifd.as_mut().unwrap_or(self.writer.root_ifd_mut())
   }
 
-  pub fn rgb_image_u8(&mut self, data: &[u8], width: usize, height: usize, compression: DngCompression, predictor: u8, lossy_jpeg_quality: u8) -> Result<()> {
+  pub fn rgb_image_u8(&mut self, data: &[u8], width: usize, height: usize, compression: DngCompression, params: &CompressionParams) -> Result<()> {
     let cpp = 3;
     let rawimagedata = PixU16::new_with(data.iter().copied().map(u16::from).collect(), width * cpp, height);
     let mut cam = Camera::new();
@@ -99,17 +100,10 @@ where
     let whitelevel = Some(WhiteLevel::new_bits(8, cpp));
     let photometric = RawPhotometricInterpretation::LinearRaw;
     let rawimage = RawImage::new(cam, rawimagedata, cpp, wb_coeffs, photometric, blacklevel, whitelevel, false);
-    self.raw_image(
-      &rawimage,
-      CropMode::None,
-      compression,
-      DngPhotometricConversion::Original,
-      predictor,
-      lossy_jpeg_quality,
-    )
+    self.raw_image(&rawimage, CropMode::None, compression, DngPhotometricConversion::Original, params)
   }
 
-  pub fn rgb_image_u16(&mut self, data: &[u16], width: usize, height: usize, compression: DngCompression, predictor: u8, lossy_jpeg_quality: u8) -> Result<()> {
+  pub fn rgb_image_u16(&mut self, data: &[u16], width: usize, height: usize, compression: DngCompression, params: &CompressionParams) -> Result<()> {
     let cpp = 3;
     let rawimagedata = PixU16::new_with(data.to_vec(), width * cpp, height);
     let mut cam = Camera::new();
@@ -120,14 +114,7 @@ where
     let whitelevel = Some(WhiteLevel::new_bits(16, cpp));
     let photometric = RawPhotometricInterpretation::LinearRaw;
     let rawimage = RawImage::new(cam, rawimagedata, cpp, wb_coeffs, photometric, blacklevel, whitelevel, false);
-    self.raw_image(
-      &rawimage,
-      CropMode::None,
-      compression,
-      DngPhotometricConversion::Original,
-      predictor,
-      lossy_jpeg_quality,
-    )
+    self.raw_image(&rawimage, CropMode::None, compression, DngPhotometricConversion::Original, params)
   }
 
   pub fn image(&mut self, _image: &RawImageData, _width: u16, _height: u16) -> Result<()> {
@@ -140,18 +127,17 @@ where
     cropmode: CropMode,
     compression: DngCompression,
     photometric_conversion: DngPhotometricConversion,
-    predictor: u8,
-    lossy_jpeg_quality: u8,
+    params: &CompressionParams,
   ) -> Result<()> {
     match photometric_conversion {
-      DngPhotometricConversion::Original => self.write_rawimage(Cow::Borrowed(rawimage), cropmode, compression, predictor, lossy_jpeg_quality)?,
+      DngPhotometricConversion::Original => self.write_rawimage(Cow::Borrowed(rawimage), cropmode, compression, params)?,
 
       DngPhotometricConversion::Linear => {
         if rawimage.cpp == 3 {
-          self.write_rawimage(Cow::Borrowed(rawimage), cropmode, compression, predictor, lossy_jpeg_quality)?;
+          self.write_rawimage(Cow::Borrowed(rawimage), cropmode, compression, params)?;
         } else {
           let rawimage = rawimage.linearize().map_err(|e| DngError::General(format!("linearization failed: {}", e)))?;
-          self.write_rawimage(Cow::Borrowed(&rawimage), cropmode, compression, predictor, lossy_jpeg_quality)?;
+          self.write_rawimage(Cow::Borrowed(&rawimage), cropmode, compression, params)?;
         }
       }
     }
@@ -165,20 +151,15 @@ where
     Ok(())
   }
 
-  fn write_rawimage(
-    &mut self,
-    mut rawimage: Cow<RawImage>,
-    cropmode: CropMode,
-    compression: DngCompression,
-    predictor: u8,
-    lossy_jpeg_quality: u8,
-  ) -> Result<()> {
+  fn write_rawimage(&mut self, mut rawimage: Cow<RawImage>, cropmode: CropMode, compression: DngCompression, params: &CompressionParams) -> Result<()> {
     // Readers process OpcodeList2 and OpcodeList3 on 16 bit data for 16 bit integer
     // raw data, otherwise on floats (as in the DNG SDK).
     let source_integer = match rawimage.data {
       RawImageData::Integer(_) => true,
       RawImageData::Float(_) => rawimage.scaled_from_integer,
     };
+    // Area of the image data, without padding added for compression
+    let image_area = Rect::new(Point::new(0, 0), Dim2::new(rawimage.width, rawimage.height));
     // The table maps the stored integer values, it must be applied by apply_scaling()
     // before the data is converted to floats.
     if rawimage.linearization_table.is_some() && matches!(rawimage.data, RawImageData::Float(_)) {
@@ -187,6 +168,25 @@ where
     if compression == DngCompression::Lossy {
       self.writer.update_backward_version(DNG_VERSION_V1_4, "Lossy JPEG compression")?;
       to_lossy_8bit(rawimage.to_mut())?;
+    }
+    if compression == DngCompression::JpegXl {
+      // Fail before any processing if libjxl is missing
+      jpegxl::libjxl_version().map_err(DngError::General)?;
+      self.writer.update_backward_version(DNG_VERSION_V1_7, "JPEG XL compression")?;
+      if jxl_interleave(&rawimage).is_some() {
+        self.writer.update_backward_version(DNG_VERSION_V1_7_1, "ColumnInterleaveFactor")?;
+      }
+      if matches!(rawimage.data, RawImageData::Float(_)) && !jxl_stores_float(&rawimage) {
+        float_to_integer(rawimage.to_mut());
+      }
+      if !params.jxl.is_lossless() {
+        if matches!(rawimage.data, RawImageData::Integer(_)) {
+          to_jxl_lossy_16bit(rawimage.to_mut());
+        }
+        if jxl_interleave(&rawimage).is_some() {
+          pad_jxl_fields(rawimage.to_mut());
+        }
+      }
     }
     if matches!(rawimage.data, RawImageData::Float(_))
       && (compression == DngCompression::Lossless || !self.writer.backward_version_allows(DNG_VERSION_V1_4, "Floating point image data"))
@@ -245,10 +245,10 @@ where
 
     let full_size = Rect::new(Point::new(0, 0), Dim2::new(rawimage.width, rawimage.height));
 
-    // Active area or uncropped
+    // Active area or uncropped, padding is never part of the active area
     let mut active_area: Rect = match cropmode {
-      CropMode::ActiveArea | CropMode::Best => rawimage.active_area.unwrap_or(full_size),
-      CropMode::None => full_size,
+      CropMode::ActiveArea | CropMode::Best => rawimage.active_area.unwrap_or(image_area),
+      CropMode::None => image_area,
     };
 
     assert!(active_area.p.x + active_area.d.w <= rawimage.width);
@@ -391,11 +391,11 @@ where
           .writer
           .update_backward_version(opcode.version(), &format!("required opcode {} in {}", opcode.name(), stage))?;
       }
-      if stage != OpcodeStage::List1 && rawimage.active_area.unwrap_or(full_size) != active_area {
+      if stage != OpcodeStage::List1 && rawimage.active_area.unwrap_or(image_area) != active_area {
         log::warn!(
           "{} is relative to ActiveArea {:?}, but ActiveArea {:?} is written, opcodes may affect the wrong image area",
           stage,
-          rawimage.active_area.unwrap_or(full_size),
+          rawimage.active_area.unwrap_or(image_area),
           active_area
         );
       }
@@ -412,11 +412,15 @@ where
       }
       DngCompression::Lossless => {
         self.ifd_mut().add_tag(TiffCommonTag::Compression, CompressionMethod::ModernJPEG);
-        dng_put_raw_ljpeg(self, &rawimage, predictor)?;
+        dng_put_raw_ljpeg(self, &rawimage, params.ljpeg92_predictor)?;
       }
       DngCompression::Lossy => {
         self.ifd_mut().add_tag(TiffCommonTag::Compression, CompressionMethod::LossyJPEG);
-        dng_put_raw_lossy_jpeg(self, &rawimage, lossy_jpeg_quality)?;
+        dng_put_raw_lossy_jpeg(self, &rawimage, params.lossy_jpeg_quality)?;
+      }
+      DngCompression::JpegXl => {
+        self.ifd_mut().add_tag(TiffCommonTag::Compression, CompressionMethod::JPEGXL);
+        dng_put_raw_jxl(self, &rawimage, &params.jxl)?;
       }
     }
 
@@ -482,7 +486,7 @@ where
   B: Write + Seek,
 {
   pub fn new(buf: B, backward_version: DngVersionNumber) -> Result<Self> {
-    Self::new_with_version(buf, DNG_VERSION_V1_6, backward_version)
+    Self::new_with_version(buf, DNG_VERSION_V1_7_1, backward_version)
   }
 
   /// Create a new DNG writer with explicit DNGVersion.
@@ -764,6 +768,119 @@ fn to_lossy_8bit(rawimage: &mut RawImage) -> Result<()> {
   Ok(())
 }
 
+/// Slope at the origin of the encoding curve for 16 bit lossy JPEG XL data
+const JXL_LOSSY_CURVE_SLOPE: f64 = 1.0 / 16.0;
+
+/// Interleave factors (rows, columns) for JPEG XL compression of CFA data
+///
+/// CFA data is stored as sub-images of the single colours of the pattern,
+/// see DNG RowInterleaveFactor and ColumnInterleaveFactor.
+fn jxl_interleave(rawimage: &RawImage) -> Option<(usize, usize)> {
+  match &rawimage.photometric {
+    RawPhotometricInterpretation::Cfa(config) if config.cfa.height < rawimage.height && config.cfa.width < rawimage.width => {
+      Some((config.cfa.height, config.cfa.width))
+    }
+    _ => None,
+  }
+}
+
+/// Check if floating point data is stored as half floats with JPEG XL
+///
+/// Floats derived from integer raw data are stored exactly as 16 bit integers,
+/// as are floats out of the half float range (e.g. integers above 16 bits).
+fn jxl_stores_float(rawimage: &RawImage) -> bool {
+  matches!(rawimage.data, RawImageData::Float(_)) && !rawimage.scaled_from_integer && rawimage.whitelevel.0.iter().all(|x| *x as f32 <= half::f16::MAX.to_f32())
+}
+
+/// Length of JPEG XL tiles of about 1024 pixels, which split `len` evenly
+fn jxl_tile_size(len: usize) -> usize {
+  let count = len.div_ceil(1024).max(1);
+  len.div_ceil(count).next_multiple_of(16)
+}
+
+/// Encode integer data for lossy JPEG XL compression
+///
+/// The linear values (after an existing LinearizationTable) are encoded to 16 bit
+/// codes by x = s·y + (1−s)·y³. The new
+/// LinearizationTable maps the codes back to the linear values, so black and white
+/// levels keep their units and values below the black level are kept.
+fn to_jxl_lossy_16bit(rawimage: &mut RawImage) {
+  let table = rawimage.linearization_table.take();
+  let RawImageData::Integer(data) = &rawimage.data else {
+    rawimage.linearization_table = table;
+    return;
+  };
+  let linear = |v: u16| -> u16 {
+    match &table {
+      Some(table) if !table.is_empty() => table[(v as usize).min(table.len() - 1)],
+      _ => v,
+    }
+  };
+  let max_input = data.par_iter().copied().max().unwrap_or(0);
+  let max_linear = (0..=max_input).map(linear).max().unwrap_or(0) as u32;
+  let white = rawimage.whitelevel.0.iter().copied().max().unwrap_or(0);
+  let d = white.max(max_linear).min(u16::MAX as u32) as f64;
+  let s = JXL_LOSSY_CURVE_SLOPE;
+  let codes: Vec<u16> = (0..=u16::MAX)
+    .map(|c| {
+      let y = c as f64 / u16::MAX as f64;
+      (d * (s * y + (1.0 - s) * y.powi(3))).round() as u16
+    })
+    .collect();
+  // Decision levels between adjacent codes, so each value gets the nearest code
+  let levels: Vec<f64> = codes.windows(2).map(|pair| (pair[0] as f64 + pair[1] as f64) / 2.0).collect();
+  let lut: Vec<u16> = (0..=max_input)
+    .map(|v| levels.partition_point(|level| *level < linear(v) as f64) as u16)
+    .collect();
+  rawimage.data = RawImageData::Integer(data.par_iter().map(|v| lut[*v as usize]).collect());
+  rawimage.linearization_table = Some(codes);
+  rawimage.bps = 16;
+}
+
+/// Pad CFA data on the right and bottom, so each interleave field of lossy JPEG XL
+/// data is a multiple of the tile size and tile seams don't cross colour fields.
+///
+/// The padding repeats the last pixels of the same CFA phase. It is outside of
+/// the active area written by `write_rawimage`.
+fn pad_jxl_fields(rawimage: &mut RawImage) {
+  let Some((rows, cols)) = jxl_interleave(rawimage) else {
+    return;
+  };
+  let (width, height, cpp) = (rawimage.width, rawimage.height, rawimage.cpp);
+  let padded_len = |len: usize, factor: usize| {
+    let field = len.div_ceil(factor);
+    field.next_multiple_of(jxl_tile_size(field)) * factor
+  };
+  let (padded_width, padded_height) = (padded_len(width, cols), padded_len(height, rows));
+  if (padded_width, padded_height) == (width, height) {
+    return;
+  }
+  // Source indices within the image for the padded indices, with the same phase
+  let sources = |padded_len: usize, len: usize, factor: usize| -> Vec<usize> {
+    (0..padded_len)
+      .map(|i| if i < len { i } else { i - factor * ((i - len) / factor + 1) })
+      .collect()
+  };
+  let (xs, ys) = (sources(padded_width, width, cols), sources(padded_height, height, rows));
+  fn pad<T: Copy>(data: &[T], width: usize, cpp: usize, xs: &[usize], ys: &[usize]) -> Vec<T> {
+    let mut padded = Vec::with_capacity(xs.len() * ys.len() * cpp);
+    for y in ys {
+      let row = &data[y * width * cpp..][..width * cpp];
+      for x in xs {
+        padded.extend_from_slice(&row[x * cpp..][..cpp]);
+      }
+    }
+    padded
+  }
+  rawimage.data = match &rawimage.data {
+    RawImageData::Integer(data) => RawImageData::Integer(pad(data, width, cpp, &xs, &ys)),
+    RawImageData::Float(data) => RawImageData::Float(pad(data, width, cpp, &xs, &ys)),
+  };
+  debug!("Pad {}x{} to {}x{} for JPEG XL fields", width, height, padded_width, padded_height);
+  rawimage.width = padded_width;
+  rawimage.height = padded_height;
+}
+
 /// DNG requires the WB values to be the reciprocal
 fn wbcoeff_to_tiff_value(rawimage: &RawImage) -> Vec<Rational> {
   let wb = &rawimage.wb_coeffs;
@@ -949,6 +1066,95 @@ where
   Ok(())
 }
 
+/// Compress image with JPEG XL
+///
+/// CFA data is interleaved into sub-images of the single colours. Data is split
+/// into tiles, each tile is compressed separately. Integer data is stored with
+/// 16 bits per sample, floating point data as half floats.
+fn dng_put_raw_jxl<W>(subframe: &mut SubFrameWriter<W>, rawimage: &RawImage, params: &JxlParams) -> Result<()>
+where
+  W: Seek + Write,
+{
+  let cpp = rawimage.cpp;
+  if cpp != 1 && cpp != 3 {
+    return Err(DngError::General(format!("JPEG XL compression requires 1 or 3 samples per pixel, got {}", cpp)));
+  }
+  let interleave = jxl_interleave(rawimage);
+  let lossless = params.is_lossless();
+  // Lossy CFA data is padded, so tiles of the field size cover whole fields
+  let (tile_w, tile_h) = match interleave {
+    Some((rows, cols)) if !lossless => (jxl_tile_size(rawimage.width / cols), jxl_tile_size(rawimage.height / rows)),
+    _ => (jxl_tile_size(rawimage.width), jxl_tile_size(rawimage.height)),
+  };
+  let settings = TileSettings {
+    distance: params.distance,
+    effort: params.effort as u32,
+    decode_speed: params.decode_speed as u32,
+    lossy_transfer: if jxl_stores_float(rawimage) {
+      LossyTransfer::Linear
+    } else {
+      LossyTransfer::Srgb
+    },
+  };
+  // Samples in stored order, as integers or half float bit patterns
+  let (samples, float) = match &rawimage.data {
+    RawImageData::Integer(data) => (data.clone(), false),
+    RawImageData::Float(data) => (data.par_iter().map(|v| half::f16::from_f32(*v).to_bits()).collect(), true),
+  };
+  let mut pixbuf = Pix2D::new_with(samples, rawimage.width * cpp, rawimage.height);
+  if let Some((rows, cols)) = interleave {
+    pixbuf = interleave_cols(&interleave_rows(&pixbuf, rows), cpp, cols);
+  }
+  debug!(
+    "JPEG XL compression: distance {}, effort {}, {}, tiles {}x{}, interleave {:?}",
+    params.distance,
+    params.effort,
+    if float { "half float" } else { "16 bit integer" },
+    tile_w,
+    tile_h,
+    interleave
+  );
+
+  let tiler = ImageTiler::new(&pixbuf.data, rawimage.width, rawimage.height, cpp, tile_w, tile_h);
+  let jxl_data: Vec<Vec<u8>> = (0..tiler.tile_count())
+    .into_par_iter()
+    .map(|idx| {
+      let tile = tiler.build_tile(idx);
+      let samples = if float { TileSamples::F16(&tile) } else { TileSamples::U16(&tile) };
+      jpegxl::encode_tile(samples, tile_w, tile_h, cpp, &settings).map_err(DngError::General)
+    })
+    .collect::<Result<Vec<_>>>()?;
+
+  let mut tile_offsets: Vec<u32> = Vec::new();
+  let mut tile_sizes: Vec<u32> = Vec::new();
+
+  for tile in jxl_data.iter() {
+    let offs = subframe.writer.dng.write_data(tile)?;
+    tile_offsets.push(offs);
+    tile_sizes.push(tile.len() as u32);
+  }
+
+  subframe.ifd_mut().add_tag(TiffCommonTag::BitsPerSample, &vec![16_u16; cpp]);
+  subframe
+    .ifd_mut()
+    .add_tag(TiffCommonTag::SampleFormat, &vec![if float { 3_u16 } else { 1_u16 }; cpp]);
+  subframe.ifd_mut().add_tag(TiffCommonTag::TileOffsets, &tile_offsets);
+  subframe.ifd_mut().add_tag(TiffCommonTag::TileByteCounts, &tile_sizes);
+  subframe.ifd_mut().add_tag(TiffCommonTag::TileWidth, tile_w as u32);
+  subframe.ifd_mut().add_tag(TiffCommonTag::TileLength, tile_h as u32);
+  if let Some((rows, cols)) = interleave {
+    subframe.ifd_mut().add_tag(DngTag::RowInterleaveFactor, rows as u16);
+    subframe.ifd_mut().add_tag(DngTag::ColumnInterleaveFactor, cols as u16);
+  }
+  subframe.ifd_mut().add_tag(DngTag::JXLDistance, params.distance);
+  subframe.ifd_mut().add_tag(DngTag::JXLEffort, params.effort as u32);
+  if !lossless {
+    subframe.ifd_mut().add_tag(DngTag::JXLDecodeSpeed, params.decode_speed as u32);
+  }
+
+  Ok(())
+}
+
 /// Write RAW uncompressed into DNG
 ///
 /// This uses unsigned 16 bit values for storage
@@ -1002,7 +1208,8 @@ mod tests {
 
   use std::io::Cursor;
 
-  use crate::dng::{DEFAULT_LOSSY_JPEG_QUALITY, DNG_VERSION_V1_4};
+  use crate::dng::{DNG_VERSION_V1_4, DNG_VERSION_V1_6};
+  use crate::dng::{DNG_VERSION_V1_7, DNG_VERSION_V1_7_1};
 
   use super::*;
 
@@ -1015,12 +1222,12 @@ mod tests {
     #[cfg(target_endian = "little")]
     let expected_output = [
       73, 73, 42, 0, 36, 0, 0, 0, 1, 0, 0, 144, 7, 0, 4, 0, 0, 0, 48, 50, 50, 48, 0, 0, 0, 0, 0, 0, 84, 101, 115, 116, 0, 0, 0, 0, 4, 0, 59, 1, 2, 0, 5, 0, 0,
-      0, 28, 0, 0, 0, 105, 135, 4, 0, 1, 0, 0, 0, 8, 0, 0, 0, 18, 198, 1, 0, 4, 0, 0, 0, 1, 6, 0, 0, 19, 198, 1, 0, 4, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0,
+      0, 28, 0, 0, 0, 105, 135, 4, 0, 1, 0, 0, 0, 8, 0, 0, 0, 18, 198, 1, 0, 4, 0, 0, 0, 1, 7, 1, 0, 19, 198, 1, 0, 4, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0,
     ];
     #[cfg(not(target_endian = "little"))]
     let expected_output = [
       77, 77, 0, 42, 0, 0, 0, 36, 0, 1, 144, 0, 0, 7, 0, 0, 0, 4, 48, 50, 50, 48, 0, 0, 0, 0, 0, 0, 84, 101, 115, 116, 0, 0, 0, 0, 0, 4, 1, 59, 0, 2, 0, 0, 0,
-      5, 0, 0, 0, 28, 135, 105, 0, 4, 0, 0, 0, 1, 0, 0, 0, 8, 198, 18, 0, 1, 0, 0, 0, 4, 0, 0, 6, 1, 198, 19, 0, 1, 0, 0, 0, 4, 0, 0, 0, 1, 0, 0, 0, 0,
+      5, 0, 0, 0, 28, 135, 105, 0, 4, 0, 0, 0, 1, 0, 0, 0, 8, 198, 18, 0, 1, 0, 0, 0, 4, 0, 1, 7, 1, 198, 19, 0, 1, 0, 0, 0, 4, 0, 0, 0, 1, 0, 0, 0, 0,
     ];
     assert_eq!(expected_output, buf.into_inner().as_slice());
     Ok(())
@@ -1059,8 +1266,7 @@ mod tests {
       cropmode,
       DngCompression::Uncompressed,
       DngPhotometricConversion::Original,
-      1,
-      DEFAULT_LOSSY_JPEG_QUALITY,
+      &CompressionParams::default(),
     )?;
     frame.finalize()?;
     dng.close()?;
@@ -1078,8 +1284,7 @@ mod tests {
       CropMode::None,
       compression,
       DngPhotometricConversion::Original,
-      1,
-      DEFAULT_LOSSY_JPEG_QUALITY,
+      &CompressionParams::default(),
     )?;
     frame.finalize()?;
     dng.close()?;
@@ -1175,8 +1380,7 @@ mod tests {
       CropMode::None,
       compression,
       DngPhotometricConversion::Original,
-      1,
-      DEFAULT_LOSSY_JPEG_QUALITY,
+      &CompressionParams::default(),
     )?;
     frame.finalize()?;
     dng.close()?;
@@ -1413,11 +1617,293 @@ mod tests {
       CropMode::None,
       DngCompression::Lossy,
       DngPhotometricConversion::Original,
-      1,
-      DEFAULT_LOSSY_JPEG_QUALITY,
+      &CompressionParams::default(),
     );
     assert!(result.is_err());
     Ok(())
+  }
+
+  type TestResult<T = ()> = std::result::Result<T, Box<dyn std::error::Error>>;
+
+  const XTRANS: &str = "GGRGGBGGBGGRBRGRBGGGBGGRGGRGGBRBGBRG";
+
+  /// Synthetic `width` x `height` CFA image of `pattern` with 12 bit data, `sample` gives the value of a pixel
+  fn synthetic_cfa(pattern: &str, colors: &str, width: usize, height: usize, sample: impl Fn(usize, usize) -> u16) -> RawImage {
+    use crate::{cfa::PlaneColor, rawimage::CFAConfig};
+
+    let mut camera = Camera::new();
+    camera.cfa = CFA::new(pattern);
+    camera.plane_color = PlaneColor::new(colors);
+    let pixels: Vec<u16> = (0..width * height).map(|i| sample(i % width, i / width)).collect();
+    let photometric = RawPhotometricInterpretation::Cfa(CFAConfig::new_from_camera(&camera));
+    let mut rawimage = RawImage::new(
+      camera,
+      PixU16::new_with(pixels, width, height),
+      1,
+      [1.0, 1.0, 1.0, 1.0],
+      photometric,
+      Some(BlackLevel::new(&[0_u32], 1, 1, 1)),
+      Some(WhiteLevel::new_bits(12, 1)),
+      false,
+    );
+    rawimage.bps = 12;
+    rawimage
+  }
+
+  /// Noisy 12 bit samples, every value is likely to differ from its neighbours
+  fn noise(x: usize, y: usize) -> u16 {
+    ((x * 7919 + y * 104729) % 4096) as u16
+  }
+
+  /// Synthetic `width` x `height` LinearRaw image with `cpp` planes of 16 bit data
+  fn synthetic_linear_u16(cpp: usize, width: usize, height: usize) -> RawImage {
+    let mut rawimage = synthetic_linear_f32(cpp);
+    rawimage.width = width;
+    rawimage.height = height;
+    rawimage.data = RawImageData::Integer((0..width * height * cpp).map(|i| ((i * 7919) % 65536) as u16).collect());
+    rawimage.whitelevel = WhiteLevel::new_bits(16, cpp);
+    rawimage
+  }
+
+  /// Write `rawimage` with JPEG XL compression
+  fn write_jxl(rawimage: &RawImage, jxl: JxlParams, max_backward_version: DngVersionNumber) -> Result<Vec<u8>> {
+    let mut buf = Cursor::new(Vec::new());
+    let mut dng = DngWriter::new(&mut buf, max_backward_version)?;
+    dng.load_base_tags(rawimage)?;
+    let mut frame = dng.subframe(0);
+    let params = CompressionParams { jxl, ..Default::default() };
+    frame.raw_image(rawimage, CropMode::None, DngCompression::JpegXl, DngPhotometricConversion::Original, &params)?;
+    frame.finalize()?;
+    dng.close()?;
+    Ok(buf.into_inner())
+  }
+
+  fn decode_dng(data: &[u8]) -> TestResult<RawImage> {
+    let source = crate::rawsource::RawSource::new_from_slice(data);
+    Ok(crate::get_decoder(&source)?.raw_image(&source, &crate::decoders::RawDecodeParams::default(), false)?)
+  }
+
+  fn integers(data: &RawImageData) -> &[u16] {
+    match data {
+      RawImageData::Integer(samples) => samples,
+      RawImageData::Float(_) => panic!("expected integer data"),
+    }
+  }
+
+  /// Values of the raw IFD tags, None if the tag is missing
+  fn raw_ifd_values<const N: usize>(data: &[u8], tags: [u16; N]) -> TestResult<[Option<f32>; N]> {
+    use crate::formats::tiff::{GenericTiffReader, reader::TiffReader};
+
+    let tiff = GenericTiffReader::new_with_buffer(data, 0, 0, None)?;
+    let raw_ifd = tiff.find_first_ifd_with_tag(TiffCommonTag::TileOffsets).ok_or("raw IFD missing")?;
+    Ok(tags.map(|tag| raw_ifd.get_entry(tag).map(|entry| entry.value.force_f32(0))))
+  }
+
+  #[test]
+  fn jxl_lossless_cfa_roundtrip() -> TestResult {
+    if !jpegxl::libjxl_available_for_tests() {
+      return Ok(());
+    }
+    // Image sizes are not divisible by the pattern size, so the interleave fields differ in size
+    for (pattern, colors, width, height) in [("RGGB", "RGB", 37, 23), ("CYGM", "CYGM", 36, 25), (XTRANS, "RGB", 41, 29)] {
+      let rawimage = synthetic_cfa(pattern, colors, width, height, noise);
+      let data = write_jxl(&rawimage, JxlParams::default(), DNG_VERSION_V1_7_1)?;
+      let (backward_version, _) = read_backward_version_and_active_area(&data)?;
+      assert_eq!(backward_version, DNG_VERSION_V1_7_1);
+      let cfa = CFA::new(pattern);
+      let tags = [
+        TiffCommonTag::Compression as u16,
+        DngTag::RowInterleaveFactor as u16,
+        DngTag::ColumnInterleaveFactor as u16,
+        TiffCommonTag::BitsPerSample as u16,
+        TiffCommonTag::SampleFormat as u16,
+        DngTag::JXLDistance as u16,
+        DngTag::JXLEffort as u16,
+        DngTag::JXLDecodeSpeed as u16,
+      ];
+      assert_eq!(
+        raw_ifd_values(&data, tags)?,
+        [
+          Some(52546.0),
+          Some(cfa.height as f32),
+          Some(cfa.width as f32),
+          Some(16.0),
+          Some(1.0),
+          Some(0.0),
+          Some(7.0),
+          None
+        ],
+        "{}",
+        pattern
+      );
+      let decoded = decode_dng(&data)?;
+      assert_eq!((decoded.width, decoded.height), (width, height));
+      assert_eq!(integers(&decoded.data), integers(&rawimage.data), "{}", pattern);
+    }
+    Ok(())
+  }
+
+  #[test]
+  fn jxl_lossless_linear_raw_roundtrip() -> TestResult {
+    if !jpegxl::libjxl_available_for_tests() {
+      return Ok(());
+    }
+    for cpp in [1, 3] {
+      let rawimage = synthetic_linear_u16(cpp, 35, 19);
+      let data = write_jxl(&rawimage, JxlParams::default(), DNG_VERSION_V1_7)?;
+      let (backward_version, _) = read_backward_version_and_active_area(&data)?;
+      assert_eq!(backward_version, DNG_VERSION_V1_7);
+      let tags = [DngTag::RowInterleaveFactor as u16, DngTag::ColumnInterleaveFactor as u16];
+      assert_eq!(raw_ifd_values(&data, tags)?, [None, None]);
+      let decoded = decode_dng(&data)?;
+      assert_eq!(decoded.cpp, cpp);
+      assert_eq!(integers(&decoded.data), integers(&rawimage.data));
+    }
+    Ok(())
+  }
+
+  #[test]
+  fn jxl_lossless_floats() -> TestResult {
+    use crate::formats::tiff::{GenericTiffReader, reader::TiffReader};
+
+    if !jpegxl::libjxl_available_for_tests() {
+      return Ok(());
+    }
+    // jxl-oxide decodes half float subnormals wrong, so only normal values are used
+    let mut rawimage = synthetic_linear_f32(3);
+    rawimage.data = RawImageData::Float((1..=16 * 16 * 3).map(|i| i as f32 / 800.0).collect());
+    let data = write_jxl(&rawimage, JxlParams::default(), DNG_VERSION_V1_7)?;
+    let tags = [TiffCommonTag::BitsPerSample as u16, TiffCommonTag::SampleFormat as u16];
+    assert_eq!(raw_ifd_values(&data, tags)?, [Some(16.0), Some(3.0)]);
+    // rawler can't read half float JPEG XL yet, decode the single tile directly
+    let tiff = GenericTiffReader::new_with_buffer(&data, 0, 0, None)?;
+    let raw_ifd = tiff.find_first_ifd_with_tag(TiffCommonTag::TileOffsets).ok_or("raw IFD missing")?;
+    let offset = raw_ifd.get_entry(TiffCommonTag::TileOffsets).ok_or("offsets")?.value.force_usize(0);
+    let size = raw_ifd.get_entry(TiffCommonTag::TileByteCounts).ok_or("sizes")?.value.force_usize(0);
+    let image = jxl_oxide::JxlImage::builder()
+      .read(&data[offset..offset + size])
+      .map_err(|err| err.to_string())?;
+    let render = image.render_frame(0).map_err(|err| err.to_string())?;
+    let mut stream = render.stream_no_alpha();
+    let mut decoded = vec![0.0_f32; 16 * 16 * 3];
+    stream.write_to_buffer(&mut decoded);
+    let expected: Vec<f32> = rawimage.data.as_f32().iter().map(|v| half::f16::from_f32(*v).to_f32()).collect();
+    assert_eq!(decoded, expected);
+
+    // Floats derived from integer data are stored as 16 bit integers
+    rawimage.scaled_from_integer = true;
+    let data = write_jxl(&rawimage, JxlParams::default(), DNG_VERSION_V1_7)?;
+    assert_eq!(raw_ifd_values(&data, tags)?, [Some(16.0), Some(1.0)]);
+    Ok(())
+  }
+
+  #[test]
+  fn jxl_lossy_cfa() -> TestResult {
+    if !jpegxl::libjxl_available_for_tests() {
+      return Ok(());
+    }
+    let params = JxlParams {
+      distance: 1.0,
+      ..Default::default()
+    };
+    // Smooth gradients with a different level for each CFA phase, so mixed up
+    // phases are detected. The two left columns are below the black level.
+    let mut rawimage = synthetic_cfa("GRBG", "RGB", 30, 18, |x, y| {
+      if x < 2 {
+        200
+      } else {
+        (600 + 700 * (x % 2 + 2 * (y % 2)) + 30 * x + 20 * y) as u16
+      }
+    });
+    rawimage.blacklevel = BlackLevel::new(&[256_u32], 1, 1, 1);
+    let data = write_jxl(&rawimage, params, DNG_VERSION_V1_7_1)?;
+    let tags = [DngTag::JXLDistance as u16, DngTag::JXLDecodeSpeed as u16, TiffCommonTag::BitsPerSample as u16];
+    assert_eq!(raw_ifd_values(&data, tags)?, [Some(1.0), Some(4.0), Some(16.0)]);
+
+    let mut decoded = decode_dng(&data)?;
+    // Each interleave field is padded to the tile size (16), the active area excludes the padding
+    assert_eq!((decoded.width, decoded.height), (32, 32));
+    assert_eq!(decoded.active_area, Some(Rect::new(Point::new(0, 0), Dim2::new(30, 18))));
+    assert_eq!(decoded.camera.cfa.to_string(), "GRBG");
+    assert_eq!(decoded.blacklevel.levels, rawimage.blacklevel.levels);
+    assert_eq!(decoded.whitelevel, rawimage.whitelevel);
+    let table = decoded.linearization_table.clone().ok_or("LinearizationTable missing")?;
+    assert_eq!(table.len(), 65536);
+    // Values below the black level are kept
+    let below_black = table[integers(&decoded.data)[decoded.width] as usize];
+    assert!((180..=220).contains(&below_black), "below black: {}", below_black);
+
+    decoded.apply_scaling()?;
+    let mut expected = rawimage.clone();
+    expected.apply_scaling()?;
+    let (decoded, expected) = (decoded.data.as_f32(), expected.data.as_f32());
+    let mut sum = 0.0;
+    for y in 0..18 {
+      for x in 0..30 {
+        let (d, e) = (decoded[y * 32 + x], expected[y * 30 + x]);
+        // Errors are larger next to the edge of the left columns
+        assert!((d - e).abs() < 0.06, "pixel {}x{}: decoded {}, expected {}", x, y, d, e);
+        sum += (d - e).abs();
+      }
+    }
+    let mean = sum / (30 * 18) as f32;
+    assert!(mean < 0.01, "mean error {}", mean);
+    Ok(())
+  }
+
+  #[test]
+  fn jxl_lossy_linear_raw() -> TestResult {
+    if !jpegxl::libjxl_available_for_tests() {
+      return Ok(());
+    }
+    let params = JxlParams {
+      distance: 1.0,
+      ..Default::default()
+    };
+    // Integer data with a LinearizationTable, which is composed into the lossy table
+    let mut rawimage = synthetic_linear_u16(3, 32, 16);
+    rawimage.data = RawImageData::Integer((0..32 * 16 * 3).map(|i| ((i / 3) % 32 * 100 + (i / 96) * 50) as u16).collect());
+    rawimage.linearization_table = Some((0..4096_u32).map(|i| (i * i / 256) as u16).collect());
+    let data = write_jxl(&rawimage, params, DNG_VERSION_V1_7)?;
+    let mut decoded = decode_dng(&data)?;
+    assert_eq!(decoded.linearization_table.as_ref().map(Vec::len), Some(65536));
+    decoded.apply_scaling()?;
+    let mut expected = rawimage.clone();
+    expected.apply_scaling()?;
+    for (d, e) in decoded.data.as_f32().iter().zip(expected.data.as_f32().iter()) {
+      assert!((d - e).abs() < 0.02, "decoded {}, expected {}", d, e);
+    }
+
+    // Floats are stored as half floats with linear transfer
+    let rawimage = synthetic_linear_f32(3);
+    let data = write_jxl(&rawimage, params, DNG_VERSION_V1_7)?;
+    let tags = [TiffCommonTag::SampleFormat as u16, DngTag::JXLDecodeSpeed as u16];
+    assert_eq!(raw_ifd_values(&data, tags)?, [Some(3.0), Some(4.0)]);
+    Ok(())
+  }
+
+  #[test]
+  fn jxl_requires_dng_1_7() -> TestResult {
+    if !jpegxl::libjxl_available_for_tests() {
+      return Ok(());
+    }
+    let linear = synthetic_linear_u16(1, 16, 16);
+    let cfa = synthetic_cfa("RGGB", "RGB", 16, 16, noise);
+    assert!(write_jxl(&linear, JxlParams::default(), DNG_VERSION_V1_6).is_err());
+    assert!(write_jxl(&linear, JxlParams::default(), DNG_VERSION_V1_7).is_ok());
+    // CFA data needs ColumnInterleaveFactor
+    assert!(write_jxl(&cfa, JxlParams::default(), DNG_VERSION_V1_7).is_err());
+    assert!(write_jxl(&cfa, JxlParams::default(), DNG_VERSION_V1_7_1).is_ok());
+    Ok(())
+  }
+
+  #[test]
+  fn jxl_tile_size_splits_evenly() {
+    assert_eq!(jxl_tile_size(16), 16);
+    assert_eq!(jxl_tile_size(1000), 1008);
+    assert_eq!(jxl_tile_size(1024), 1024);
+    assert_eq!(jxl_tile_size(1500), 752);
+    assert_eq!(jxl_tile_size(6000), 1008);
   }
 
   #[test]
@@ -1489,8 +1975,10 @@ mod tests {
       CropMode::Best,
       DngCompression::Lossless,
       DngPhotometricConversion::Original,
-      predictor,
-      DEFAULT_LOSSY_JPEG_QUALITY,
+      &CompressionParams {
+        ljpeg92_predictor: predictor,
+        ..Default::default()
+      },
     )?;
     raw.finalize()?;
     dng.thumbnail(&full_image)?;

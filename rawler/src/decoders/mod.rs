@@ -807,8 +807,9 @@ where
       )));
     }
     (1, 1) => pixbuf,
-    // DNG 1.7.1 may store JPEG-XL data in 2x2 interleaved format
-    (2, 2) => deinterleave2x2(&pixbuf)?,
+    // DNG 1.7.1 may store JPEG-XL data in 2x2 interleaved format, the fast path
+    // requires fields of equal size
+    (2, 2) if cpp == 1 && width.is_multiple_of(2) && height.is_multiple_of(2) => deinterleave2x2(&pixbuf)?,
     (row_ilf, col_ilf) => {
       let mut pixbuf = pixbuf;
       if row_ilf > 1 && row_ilf < height {
@@ -1263,7 +1264,7 @@ mod tests {
   use crate::RawImage;
   use crate::dng::DNG_VERSION_V1_4;
   use crate::dng::writer::DngWriter;
-  use crate::dng::{CropMode, DEFAULT_LOSSY_JPEG_QUALITY, DngCompression, DngPhotometricConversion};
+  use crate::dng::{CompressionParams, CropMode, DngCompression, DngPhotometricConversion};
   use crate::pixarray::PixU16;
   use crate::rawimage::{BlackLevel, CFAConfig, RawPhotometricInterpretation, WhiteLevel};
   use crate::rawsource::RawSource;
@@ -1299,8 +1300,7 @@ mod tests {
       CropMode::None,
       DngCompression::Uncompressed,
       DngPhotometricConversion::Original,
-      1,
-      DEFAULT_LOSSY_JPEG_QUALITY,
+      &CompressionParams::default(),
     )?;
     frame.finalize()?;
     dng.close()?;

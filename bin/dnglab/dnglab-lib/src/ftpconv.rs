@@ -14,7 +14,7 @@ use std::sync::Arc;
 
 use tokio::runtime::Handle;
 
-use crate::convertprofile::{FrameSelection, resolve_convert_profile};
+use crate::convertprofile::{FrameSelection, check_compression_available, resolve_convert_profile};
 use crate::jobs::raw2dng::copy_mtime_from_rawsource;
 use crate::{PKG_NAME, PKG_VERSION};
 use rawler::dng::convert::{ConvertParams, convert_raw_source};
@@ -66,6 +66,7 @@ pub async fn ftpserver(options: &ArgMatches) -> crate::Result<()> {
   let mut config = Config::new("foo").ok_or_else(|| anyhow::anyhow!("failed to create FTP config"))?;
 
   let (profile, frames) = resolve_convert_profile(options)?;
+  check_compression_available(&profile)?;
   let index = match frames {
     FrameSelection::Single(index) => index,
     FrameSelection::All => {
