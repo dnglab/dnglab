@@ -8,6 +8,7 @@ use log::debug;
 use serde::{Deserialize, Serialize};
 
 use crate::Result;
+use crate::camera_profile::{CalibrationSlot, CameraCalibration, CameraProfile, D65_PREFERENCE, GainTableMap, RgbTables};
 use crate::cfa::PlaneColor;
 use crate::dng::opcodes::{OpcodeList, OpcodeSelector, OpcodeStage};
 use crate::imgop::raw::{apply_linearization_table, correct_blacklevel, correct_blacklevel_cfa};
@@ -20,34 +21,16 @@ use crate::{
   formats::tiff::{Rational, Value},
   imgop::{
     Dim2, Point, Rect,
-    chromatic_adaption::adapt_xyz2cam_bradford,
-    matrix::{determinant, multiply, normalize, project_rows_to_simplex, pseudo_inverse, transform_1d, transform_2d},
+    matrix::FlatMatrix,
     raw::{ColorMatrix, DevelopParams},
-    xyz::{FlatColorMatrix, Illuminant, XYZ_TO_PROFOTORGB_D50},
+    xyz::Illuminant,
   },
   pixarray::PixU16,
   tags::TiffTag,
 };
 
-/// Illuminants in order of preference for color calculations based on D65.
-/// Color matrices of these illuminants can be adapted to D65.
-const D65_PREFERENCE: [Illuminant; 9] = [
-  Illuminant::D65,
-  Illuminant::A,
-  Illuminant::B,
-  Illuminant::C,
-  Illuminant::D50,
-  Illuminant::D55,
-  Illuminant::D75,
-  Illuminant::Daylight,
-  Illuminant::Flash,
-];
-
-/// Sort key for illuminants in order of [`D65_PREFERENCE`], other illuminants follow by their EXIF value
-pub(crate) fn d65_preference(illuminant: &Illuminant) -> (usize, u16) {
-  let position = D65_PREFERENCE.iter().position(|x| x == illuminant).unwrap_or(D65_PREFERENCE.len());
-  (position, u16::from(*illuminant))
-}
+/// Prefix of an AsShotProfileName that selects a profile group
+const PROFILE_GROUP_PREFIX: &str = "Group: ";
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WhiteLevel(pub Vec<u32>);
@@ -247,8 +230,6 @@ pub struct RawImage {
   pub whitelevel: WhiteLevel,
   /// image blacklevels in RGBE order
   pub blacklevel: BlackLevel,
-  /// matrix to convert XYZ to camera RGBE
-  pub xyz_to_cam: [[f32; 3]; 4], // TODO: deprecated, use color_matrix
   /// Photometric interpretation
   pub photometric: RawPhotometricInterpretation,
   /// how much to crop the image to get all the usable (non-black) area
@@ -267,10 +248,14 @@ pub struct RawImage {
   /// The image data was scaled from 16 bit integer samples to floats by `apply_scaling()`
   pub scaled_from_integer: bool,
 
-  pub color_matrix: HashMap<Illuminant, FlatColorMatrix>,
-
-  /// Reduction matrices (3 x color planes) for images with more than three color planes
-  pub reduction_matrix: HashMap<Illuminant, FlatColorMatrix>,
+  /// Camera profiles, the first one is the primary profile (IFD 0 of a DNG)
+  pub camera_profiles: Vec<CameraProfile>,
+  /// Calibration of the individual camera, see [`CameraCalibration::applies_to`]
+  pub camera_calibration: CameraCalibration,
+  /// DNG AnalogBalance, one gain for each color plane
+  pub analog_balance: Option<Vec<f32>>,
+  /// DNG AsShotProfileName, selects the default camera profile
+  pub as_shot_profile_name: Option<String>,
 
   pub dng_tags: HashMap<u16, Value>,
 
@@ -288,8 +273,6 @@ pub struct RawImage {
 
   /// DNG BaselineExposure in EV, applied by the develop pipeline.
   pub baseline_exposure: Option<f32>,
-  /// DNG BaselineExposureOffset in EV, added to BaselineExposure by the develop pipeline.
-  pub baseline_exposure_offset: Option<f32>,
 }
 
 /// The actual image data, after decoding
@@ -432,14 +415,15 @@ impl RawImage {
       data: RawImageData::Integer(image.into_inner()),
       blacklevel,
       whitelevel,
-      xyz_to_cam: cam.xyz_to_cam,
       photometric,
       active_area,
       crop_area,
       blackareas,
       orientation: Orientation::Normal, //cam.orientation, // TODO fixme
-      color_matrix: cam.color_matrix,
-      reduction_matrix: cam.reduction_matrix,
+      camera_profiles: CameraProfile::from_catalog(&cam.color_matrix, &cam.reduction_matrix).into_iter().collect(),
+      camera_calibration: CameraCalibration::default(),
+      analog_balance: None,
+      as_shot_profile_name: None,
       dng_tags: HashMap::new(),
       fuji_rotation_width: None,
       scaled_from_integer: false,
@@ -448,7 +432,6 @@ impl RawImage {
       dng_opcodes_3: None,
       linearization_table: None,
       baseline_exposure: None,
-      baseline_exposure_offset: None,
     }
   }
 
@@ -530,14 +513,15 @@ impl RawImage {
       data: image,
       blacklevel,
       whitelevel,
-      xyz_to_cam: cam.xyz_to_cam,
       photometric,
       active_area,
       crop_area,
       blackareas,
       orientation: Orientation::Normal, //cam.orientation, // TODO fixme
-      color_matrix: cam.color_matrix,
-      reduction_matrix: cam.reduction_matrix,
+      camera_profiles: CameraProfile::from_catalog(&cam.color_matrix, &cam.reduction_matrix).into_iter().collect(),
+      camera_calibration: CameraCalibration::default(),
+      analog_balance: None,
+      as_shot_profile_name: None,
       dng_tags: HashMap::new(),
       fuji_rotation_width: None,
       scaled_from_integer: false,
@@ -546,7 +530,6 @@ impl RawImage {
       dng_opcodes_3: None,
       linearization_table: None,
       baseline_exposure: None,
-      baseline_exposure_offset: None,
     }
   }
 
@@ -654,12 +637,9 @@ impl RawImage {
 
   pub fn develop_params(&self) -> Result<DevelopParams> {
     let mut xyz2cam: [[f32; 3]; 4] = [[0.0; 3]; 4];
-    //let color_matrix = self.color_matrix.get(&Illuminant::D65).unwrap(); // TODO fixme
     let color_matrix = self
-      .color_matrix
-      .values()
-      .next()
-      .cloned()
+      .best_color_matrix()
+      .map(|(_, matrix)| matrix.clone())
       .unwrap_or(vec![1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]); // TODO: invalid
     assert_eq!(color_matrix.len() % 3, 0); // this is not so nice...
     let components = color_matrix.len() / 3;
@@ -710,112 +690,6 @@ impl RawImage {
     todo!()
   }
 
-  /// Outputs the inverted matrix that converts pixels in the camera colorspace into
-  /// XYZ components.
-  pub fn cam_to_xyz(&self) -> [[f32; 4]; 3] {
-    self.pseudoinverse(self.xyz_to_cam)
-  }
-
-  /// Outputs the inverted matrix that converts pixels in the camera colorspace into
-  /// XYZ components normalized to be easily used to convert to Lab or a RGB output space
-  pub fn cam_to_xyz_normalized(&self) -> [[f32; 4]; 3] {
-    let mut xyz_to_cam = self.xyz_to_cam;
-    // Normalize xyz_to_cam so that xyz_to_cam * (1,1,1) is (1,1,1,1)
-    for i in 0..4 {
-      let mut num = 0.0;
-      for j in 0..3 {
-        num += xyz_to_cam[i][j];
-      }
-      for j in 0..3 {
-        xyz_to_cam[i][j] = if num == 0.0 { 0.0 } else { xyz_to_cam[i][j] / num };
-      }
-    }
-
-    self.pseudoinverse(xyz_to_cam)
-  }
-
-  /// Not all cameras encode a whitebalance so in those cases just using a 6500K neutral one
-  /// is a good compromise
-  pub fn neutralwb(&self) -> [f32; 4] {
-    let rgb_to_xyz = [
-      // sRGB D65
-      [0.412453, 0.357580, 0.180423],
-      [0.212671, 0.715160, 0.072169],
-      [0.019334, 0.119193, 0.950227],
-    ];
-
-    // Multiply RGB matrix
-    let mut rgb_to_cam = [[0.0; 3]; 4];
-    for i in 0..4 {
-      for j in 0..3 {
-        rgb_to_cam[i][j] = 0.0;
-        for k in 0..3 {
-          rgb_to_cam[i][j] += self.xyz_to_cam[i][k] * rgb_to_xyz[k][j];
-        }
-      }
-    }
-
-    let mut neutralwb = [0 as f32; 4];
-    for i in 0..4 {
-      let mut num = 0.0;
-      for j in 0..3 {
-        num += rgb_to_cam[i][j];
-      }
-      neutralwb[i] = 1.0 / num;
-    }
-
-    [
-      neutralwb[0] / neutralwb[1],
-      neutralwb[1] / neutralwb[1],
-      neutralwb[2] / neutralwb[1],
-      neutralwb[3] / neutralwb[1],
-    ]
-  }
-
-  fn pseudoinverse(&self, inm: [[f32; 3]; 4]) -> [[f32; 4]; 3] {
-    let mut temp: [[f32; 6]; 3] = [[0.0; 6]; 3];
-
-    for i in 0..3 {
-      for j in 0..6 {
-        temp[i][j] = if j == i + 3 { 1.0 } else { 0.0 };
-      }
-      for j in 0..3 {
-        for k in 0..4 {
-          temp[i][j] += inm[k][i] * inm[k][j];
-        }
-      }
-    }
-
-    for i in 0..3 {
-      let mut num = temp[i][i];
-      for j in 0..6 {
-        temp[i][j] /= num;
-      }
-      for k in 0..3 {
-        if k == i {
-          continue;
-        }
-        num = temp[k][i];
-        for j in 0..6 {
-          temp[k][j] -= temp[i][j] * num;
-        }
-      }
-    }
-
-    let mut out: [[f32; 4]; 3] = [[0.0; 4]; 3];
-
-    for i in 0..4 {
-      for j in 0..3 {
-        out[j][i] = 0.0;
-        for k in 0..3 {
-          out[j][i] += temp[j][k + 3] * inm[i][k];
-        }
-      }
-    }
-
-    out
-  }
-
   /// Returns the CFA pattern after the crop has been applied (and thus the pattern
   /// potentially shifted)
   pub fn cropped_cfa(&self) -> CFA {
@@ -830,142 +704,159 @@ impl RawImage {
     //self.cpp == 1 && !self.cfa.is_valid()
   }
 
-  /// Find the first matching color matrix by illumninat
+  /// Primary camera profile (IFD 0 of a DNG)
+  pub fn primary_camera_profile(&self) -> Option<&CameraProfile> {
+    self.camera_profiles.first()
+  }
+
+  /// Primary camera profile (IFD 0 of a DNG)
+  pub fn primary_camera_profile_mut(&mut self) -> Option<&mut CameraProfile> {
+    self.camera_profiles.first_mut()
+  }
+
+  /// Index of the camera profile selected by AsShotProfileName
   ///
-  /// First item in iterator has highest prio
-  pub fn color_matrix_find_first(&self, illuminants: impl IntoIterator<Item = Illuminant>) -> Option<(Illuminant, FlatColorMatrix)> {
-    for illu in illuminants.into_iter() {
-      if let Some(matrix) = self.color_matrix.get(&illu) {
-        return Some((illu, matrix.clone()));
+  /// A name with the prefix "Group: " selects a profile of that group (SDR
+  /// profiles first), otherwise the profile name must match (case sensitive
+  /// first). Without a name or match, the primary profile is used.
+  pub fn as_shot_camera_profile_index(&self) -> Option<usize> {
+    if self.camera_profiles.is_empty() {
+      return None;
+    }
+    let Some(name) = self.as_shot_profile_name.as_deref().filter(|name| !name.is_empty()) else {
+      return Some(0);
+    };
+    let profiles = &self.camera_profiles;
+    if let Some(group) = name.strip_prefix(PROFILE_GROUP_PREFIX).filter(|group| !group.is_empty()) {
+      let in_group = |profile: &CameraProfile| profile.group_name.as_deref() == Some(group);
+      let found = profiles
+        .iter()
+        .position(|profile| in_group(profile) && !profile.is_hdr())
+        .or_else(|| profiles.iter().position(in_group));
+      if found.is_some() {
+        return found;
       }
     }
-    None
-  }
-
-  /// Reduction matrix for each color matrix with four color planes
-  ///
-  /// Matrices of the camera definition are used as they are, missing ones are
-  /// replaced by [`Self::calc_reduction_matrix`].
-  pub fn reduction_matrices(&self) -> HashMap<Illuminant, FlatColorMatrix> {
-    let calculated = self.calc_reduction_matrix().map(|matrix| transform_2d(&matrix));
-    self
-      .color_matrix
-      .iter()
-      .filter(|(_, matrix)| matrix.len() == 12)
-      .filter_map(|(illuminant, _)| {
-        let matrix = self
-          .reduction_matrix
-          .get(illuminant)
-          .filter(|matrix| matrix.len() == 12)
-          .or(calculated.as_ref())?;
-        Some((*illuminant, matrix.clone()))
-      })
-      .collect()
-  }
-
-  /// Calculate a reduction matrix (3x4) for four color planes from the color matrix
-  /// for D65, or from another color matrix adapted to D65 by Bradford.
-  ///
-  /// The matrix has non-negative entries and each row sums to 1.0, so the camera
-  /// white (1, 1, 1, 1) is mapped to (1, 1, 1), values never leave the range
-  /// 0.0 .. 1.0 and clipped channels stay mostly clipped. A matrix with negative
-  /// entries turns partially clipped highlights into noisy, wrong colors when the
-  /// image data is reduced. The matrix is the projection of the least squares
-  /// mapping into a wide gamut RGB space onto such matrices.
-  pub fn calc_reduction_matrix(&self) -> Option<[[f32; 4]; 3]> {
-    let (illuminant, matrix) = self
-      .color_matrix
-      .iter()
-      .filter_map(|(illuminant, matrix)| transform_1d::<4, 3>(matrix).map(|matrix| (*illuminant, matrix)))
-      .min_by_key(|(illuminant, _)| d65_preference(illuminant))?;
-    let xyz2cam = if illuminant == Illuminant::D65 {
-      matrix
-    } else if D65_PREFERENCE.contains(&illuminant) {
-      adapt_xyz2cam_bradford(&illuminant, &Illuminant::D65, &matrix)
-    } else {
-      debug!("Color matrix for {:?} can't be adapted to D65, it is used as it is", illuminant);
-      matrix
-    };
-    let prophoto2xyz = pseudo_inverse(XYZ_TO_PROFOTORGB_D50);
-    let wide_gamut = pseudo_inverse(normalize(multiply(&xyz2cam, &prophoto2xyz)));
-    let projected = project_rows_to_simplex(wide_gamut);
-    // The reduced color matrix must stay invertible, compare its determinant
-    // to the volume of its rows (Hadamard's inequality).
-    let reduced = multiply(&projected, &xyz2cam);
-    let volume: f32 = reduced.iter().map(|row| row.iter().map(|v| v * v).sum::<f32>().sqrt()).product();
-    if determinant(&reduced).abs() > 0.01 * volume {
-      debug!("Reduction matrix {:?} based on color matrix for {:?}", projected, illuminant);
-      Some(projected)
-    } else {
-      log::warn!("Non-negative reduction matrix is degenerate, highlights may clip");
-      Some(wide_gamut)
+    let found = profiles.iter().position(|profile| profile.name.as_deref() == Some(name)).or_else(|| {
+      profiles
+        .iter()
+        .position(|profile| profile.name.as_deref().is_some_and(|n| n.eq_ignore_ascii_case(name)))
+    });
+    if found.is_none() {
+      log::debug!("AsShotProfileName '{}' matches no camera profile, using the primary profile", name);
     }
+    Some(found.unwrap_or(0))
+  }
+
+  /// Camera profile selected by AsShotProfileName, see [`Self::as_shot_camera_profile_index`]
+  pub fn as_shot_camera_profile(&self) -> Option<&CameraProfile> {
+    self.as_shot_camera_profile_index().map(|index| &self.camera_profiles[index])
+  }
+
+  /// Best color matrix of the as-shot camera profile for calculations based on D65,
+  /// see [`D65_PREFERENCE`]
+  pub fn best_color_matrix(&self) -> Option<(Illuminant, &FlatMatrix)> {
+    self.best_calibration_slot().map(|slot| (slot.illuminant, slot.color_matrix))
+  }
+
+  /// Slot of [`Self::best_color_matrix`] with all its calibration data
+  pub fn best_calibration_slot(&self) -> Option<CalibrationSlot<'_>> {
+    let profile = self.as_shot_camera_profile()?;
+    profile.calibration_slot(profile.best_slot(&D65_PREFERENCE)?, Some(&self.camera_calibration))
+  }
+
+  /// All slots of camera profile `index` with the camera calibration,
+  /// if it applies to the profile
+  pub fn calibration_slots(&self, index: usize) -> Vec<CalibrationSlot<'_>> {
+    self
+      .camera_profiles
+      .get(index)
+      .map(|profile| profile.unpack(Some(&self.camera_calibration)))
+      .unwrap_or_default()
+  }
+
+  /// RGBTables for camera profile `index`, the primary profile's tables (IFD 0) are the default
+  pub fn effective_rgb_tables(&self, index: usize) -> Option<&RgbTables> {
+    self
+      .camera_profiles
+      .get(index)
+      .and_then(|profile| profile.rgb_tables.as_ref())
+      .or_else(|| self.primary_camera_profile().and_then(|profile| profile.rgb_tables.as_ref()))
+  }
+
+  /// ProfileGainTableMap2 for camera profile `index`, the primary profile's map (IFD 0) is the default
+  pub fn effective_gain_table_map(&self, index: usize) -> Option<&GainTableMap> {
+    self
+      .camera_profiles
+      .get(index)
+      .and_then(|profile| profile.gain_table_map.as_ref())
+      .or_else(|| self.primary_camera_profile().and_then(|profile| profile.gain_table_map.as_ref()))
+  }
+
+  /// BaselineExposureOffset of the as-shot camera profile
+  pub fn baseline_exposure_offset(&self) -> Option<f32> {
+    self.as_shot_camera_profile().and_then(|profile| profile.baseline_exposure_offset)
   }
 }
 
 #[cfg(test)]
 mod tests {
   use super::*;
-  use crate::imgop::xyz::XYZ_TO_SRGB_D65;
 
-  /// XYZ to camera matrix of a CYGM sensor: cyan = G + B, yellow = R + G, green = G, magenta = R + B
-  fn cygm_color_matrix() -> FlatColorMatrix {
-    let rgb2cam = [[0.0, 1.0, 1.0], [1.0, 1.0, 0.0], [0.0, 1.0, 0.0], [1.0, 0.0, 1.0]];
-    transform_2d(&multiply(&rgb2cam, &XYZ_TO_SRGB_D65))
-  }
+  /// Image with camera profiles of the given names, group names and HDR flags
+  fn image_with_profiles(profiles: &[(&str, Option<&str>, bool)]) -> RawImage {
+    use crate::camera_profile::ProfileDynamicRange;
 
-  /// Four-color image with the given color and reduction matrices
-  fn four_color_image(color_matrix: &[(Illuminant, FlatColorMatrix)], reduction_matrix: &[(Illuminant, FlatColorMatrix)]) -> RawImage {
-    let mut camera = Camera::new();
-    camera.color_matrix = color_matrix.iter().cloned().collect();
-    camera.reduction_matrix = reduction_matrix.iter().cloned().collect();
-    RawImage::new(
-      camera,
-      PixU16::new_with(vec![0; 4], 4, 1),
-      4,
-      [1.0, 1.0, 1.0, 1.0],
+    let mut image = RawImage::new(
+      Camera::new(),
+      PixU16::new_with(vec![0; 3], 3, 1),
+      3,
+      [1.0, 1.0, 1.0, f32::NAN],
       RawPhotometricInterpretation::LinearRaw,
-      Some(BlackLevel::zero(1, 1, 4)),
-      Some(WhiteLevel::new(vec![1; 4])),
+      Some(BlackLevel::zero(1, 1, 3)),
+      Some(WhiteLevel::new(vec![1; 3])),
       false,
-    )
-  }
-
-  #[test]
-  fn reduction_matrices_use_camera_definition() {
-    let provided = vec![1.0, 0.0, 0.0, 0.0, 0.0, 0.5, 0.0, 0.5, 0.0, 0.0, 1.0, 0.0];
-    let image = four_color_image(
-      &[(Illuminant::A, cygm_color_matrix()), (Illuminant::D65, cygm_color_matrix())],
-      &[(Illuminant::A, provided.clone())],
     );
-    let matrices = image.reduction_matrices();
-    assert_eq!(matrices.len(), 2);
-    assert_eq!(matrices.get(&Illuminant::A), Some(&provided));
-    // Missing matrices are calculated, rows are non-negative and sum to 1.0
-    let calculated = image.calc_reduction_matrix().expect("reduction matrix");
-    assert_eq!(matrices.get(&Illuminant::D65), Some(&transform_2d(&calculated)));
-    for row in calculated {
-      assert!(row.iter().all(|v| *v >= 0.0), "{:?}", calculated);
-      assert!((row.iter().sum::<f32>() - 1.0).abs() < 1e-5, "{:?}", calculated);
-    }
+    image.camera_profiles = profiles
+      .iter()
+      .map(|(name, group, hdr)| CameraProfile {
+        name: Some(name.to_string()),
+        group_name: group.map(String::from),
+        dynamic_range: Some(ProfileDynamicRange {
+          version: 1,
+          dynamic_range: *hdr as u16,
+          hint_max_output_value: 0.0,
+        }),
+        ..Default::default()
+      })
+      .collect();
+    image
   }
 
   #[test]
-  fn reduction_matrix_from_bradford_adapted_matrix() {
-    let matrix_a = cygm_color_matrix();
-    let adapted = adapt_xyz2cam_bradford(&Illuminant::A, &Illuminant::D65, &transform_1d::<4, 3>(&matrix_a).expect("4x3 matrix"));
-    let image_a = four_color_image(&[(Illuminant::A, matrix_a)], &[]);
-    let image_d65 = four_color_image(&[(Illuminant::D65, transform_2d(&adapted))], &[]);
-    assert_eq!(image_a.calc_reduction_matrix(), image_d65.calc_reduction_matrix());
-    assert!(image_a.calc_reduction_matrix().is_some());
-  }
+  fn as_shot_camera_profile() {
+    let mut image = image_with_profiles(&[]);
+    assert_eq!(image.as_shot_camera_profile_index(), None);
 
-  #[test]
-  fn no_reduction_matrix_for_three_color_planes() {
-    let mut image = four_color_image(&[], &[]);
-    image.color_matrix.insert(Illuminant::D65, transform_2d(&XYZ_TO_SRGB_D65));
-    assert!(image.calc_reduction_matrix().is_none());
-    assert!(image.reduction_matrices().is_empty());
+    let mut image_with = |name: Option<&str>| {
+      image = image_with_profiles(&[
+        ("Primary", None, false),
+        ("Portrait HDR", Some("Portrait"), true),
+        ("Portrait SDR", Some("Portrait"), false),
+        ("Landscape HDR", Some("Landscape"), true),
+      ]);
+      image.as_shot_profile_name = name.map(String::from);
+      image.as_shot_camera_profile_index()
+    };
+    assert_eq!(image_with(None), Some(0));
+    assert_eq!(image_with(Some("")), Some(0));
+    assert_eq!(image_with(Some("Portrait HDR")), Some(1));
+    assert_eq!(image_with(Some("portrait sdr")), Some(2));
+    // SDR profiles of a group are preferred
+    assert_eq!(image_with(Some("Group: Portrait")), Some(2));
+    assert_eq!(image_with(Some("Group: Landscape")), Some(3));
+    assert_eq!(image_with(Some("Unknown")), Some(0));
+    assert_eq!(image_with(Some("Group: Unknown")), Some(0));
   }
 
   #[test]

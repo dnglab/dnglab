@@ -1,6 +1,8 @@
 use crate::RawImage;
+use crate::camera_profile::CameraProfile;
 use crate::cfa::*;
 use crate::decoders::*;
+use crate::dng::camera_profile_tags::{read_camera_calibration, read_camera_profile, read_extra_camera_profiles, read_string};
 use crate::dng::opcodes::OpcodeList;
 use crate::dng::{DNG_READER_VERSION, DNG_VERSION_V1_1, DngVersionNumber};
 use crate::formats::tiff::Entry;
@@ -120,20 +122,35 @@ impl<'a> Decoder for DngDecoder<'a> {
     // DNG versions before 1.1.0.0 use a deviating 16-bit lossless JPEG encoding
     let ljpeg_dng_bug = self.dng_version().is_some_and(|version| version < DNG_VERSION_V1_1);
     let raw_data = plain_image_from_ifd_ext(raw, file, ljpeg_dng_bug)?;
-    let wb_coeffs = self.get_wb(&cam)?;
+    let root = self.tiff.root_ifd();
+    let mut camera_profiles: Vec<CameraProfile> = read_camera_profile(root).into_iter().collect();
+    if !camera_profiles.is_empty() {
+      camera_profiles.extend(read_extra_camera_profiles(&mut file.reader(), root));
+    }
+    let wb_coeffs = self.get_wb(camera_profiles.first())?;
     let mut image = RawImage::new_with_data(cam, raw_data, width * cpp, height, cpp, wb_coeffs, photometric, blacklevel, whitelevel, dummy);
     image.orientation = orientation;
     image.linearization_table = self.get_linearization_table(raw, &image.data)?;
-    image.baseline_exposure = self
-      .tiff
-      .root_ifd()
-      .get_entry(DngTag::BaselineExposure)
-      .and_then(|entry| entry.value.get_f32(0).ok().flatten());
-    image.baseline_exposure_offset = self
-      .tiff
-      .root_ifd()
-      .get_entry(DngTag::BaselineExposureOffset)
-      .and_then(|entry| entry.value.get_f32(0).ok().flatten());
+    image.baseline_exposure = root.get_entry(DngTag::BaselineExposure).and_then(|entry| entry.value.get_f32(0).ok().flatten());
+    if let Some(planes) = camera_profiles.first().and_then(CameraProfile::color_planes) {
+      image.camera_calibration = read_camera_calibration(root, planes);
+      image.analog_balance = root
+        .get_entry(DngTag::AnalogBalance)
+        .and_then(|entry| {
+          (0..entry.count() as usize)
+            .map(|i| entry.value.get_f32(i).ok().flatten())
+            .collect::<Option<Vec<f32>>>()
+        })
+        .filter(|balance| {
+          let valid = balance.len() == planes;
+          if !valid {
+            log::warn!("AnalogBalance has {} values, expected {}", balance.len(), planes);
+          }
+          valid
+        });
+    }
+    image.camera_profiles = camera_profiles;
+    image.as_shot_profile_name = read_string(root, DngTag::AsShotProfileName);
 
     // Opcode extraction
 
@@ -237,31 +254,14 @@ impl<'a> Decoder for DngDecoder<'a> {
         IFD::copy_tag(&mut ifd, self.get_raw_ifd()?, DngTag::AntiAliasStrength);
         IFD::copy_tag(&mut ifd, self.get_raw_ifd()?, DngTag::NoiseReductionApplied);
         IFD::copy_tag(&mut ifd, self.get_raw_ifd()?, DngTag::ProfileGainTableMap);
-        IFD::copy_tag(&mut ifd, self.get_raw_ifd()?, DngTag::CameraCalibration1);
-        IFD::copy_tag(&mut ifd, self.get_raw_ifd()?, DngTag::CameraCalibration2);
-        IFD::copy_tag(&mut ifd, self.get_raw_ifd()?, DngTag::CameraCalibration3);
-        IFD::copy_tag(&mut ifd, self.get_raw_ifd()?, DngTag::ForwardMatrix1);
-        IFD::copy_tag(&mut ifd, self.get_raw_ifd()?, DngTag::ForwardMatrix2);
-        IFD::copy_tag(&mut ifd, self.get_raw_ifd()?, DngTag::ForwardMatrix3);
         Some(Rc::new(ifd))
       }
       WellKnownIFD::VirtualDngRootTags => {
+        // Camera profiles, CameraCalibration, AnalogBalance and AsShotProfileName
+        // are written from RawImage.
         let mut ifd = IFD::default();
-        IFD::copy_tag(&mut ifd, self.tiff.root_ifd(), DngTag::ProfileEmbedPolicy);
-        IFD::copy_tag(&mut ifd, self.tiff.root_ifd(), DngTag::ProfileHueSatMapData1);
-        IFD::copy_tag(&mut ifd, self.tiff.root_ifd(), DngTag::ProfileHueSatMapData2);
-        IFD::copy_tag(&mut ifd, self.tiff.root_ifd(), DngTag::ProfileHueSatMapData3);
-        IFD::copy_tag(&mut ifd, self.tiff.root_ifd(), DngTag::ProfileHueSatMapDims);
-        IFD::copy_tag(&mut ifd, self.tiff.root_ifd(), DngTag::ProfileHueSatMapEncoding);
-        IFD::copy_tag(&mut ifd, self.tiff.root_ifd(), DngTag::ProfileLookTableData);
-        IFD::copy_tag(&mut ifd, self.tiff.root_ifd(), DngTag::ProfileLookTableDims);
-        IFD::copy_tag(&mut ifd, self.tiff.root_ifd(), DngTag::ProfileLookTableEncoding);
-        IFD::copy_tag(&mut ifd, self.tiff.root_ifd(), DngTag::ProfileName);
-        IFD::copy_tag(&mut ifd, self.tiff.root_ifd(), DngTag::ProfileCopyright);
-        IFD::copy_tag(&mut ifd, self.tiff.root_ifd(), DngTag::ProfileToneCurve);
         IFD::copy_tag(&mut ifd, self.tiff.root_ifd(), DngTag::DNGPrivateData);
         IFD::copy_tag(&mut ifd, self.tiff.root_ifd(), DngTag::MakerNoteSafety);
-        IFD::copy_tag(&mut ifd, self.tiff.root_ifd(), DngTag::AnalogBalance);
         IFD::copy_tag(&mut ifd, self.tiff.root_ifd(), DngTag::BaselineExposure);
         IFD::copy_tag(&mut ifd, self.tiff.root_ifd(), DngTag::BaselineNoise);
         IFD::copy_tag(&mut ifd, self.tiff.root_ifd(), DngTag::BaselineSharpness);
@@ -271,15 +271,11 @@ impl<'a> Decoder for DngDecoder<'a> {
         IFD::copy_tag(&mut ifd, self.tiff.root_ifd(), DngTag::AsShotPreProfileMatrix);
         IFD::copy_tag(&mut ifd, self.tiff.root_ifd(), DngTag::CurrentICCProfile);
         IFD::copy_tag(&mut ifd, self.tiff.root_ifd(), DngTag::CurrentPreProfileMatrix);
-        IFD::copy_tag(&mut ifd, self.tiff.root_ifd(), DngTag::AsShotProfileName);
-        IFD::copy_tag(&mut ifd, self.tiff.root_ifd(), DngTag::DefaultBlackRender);
-        IFD::copy_tag(&mut ifd, self.tiff.root_ifd(), DngTag::BaselineExposureOffset);
         IFD::copy_tag(&mut ifd, self.tiff.root_ifd(), DngTag::DepthFormat);
         IFD::copy_tag(&mut ifd, self.tiff.root_ifd(), DngTag::DepthNear);
         IFD::copy_tag(&mut ifd, self.tiff.root_ifd(), DngTag::DepthFar);
         IFD::copy_tag(&mut ifd, self.tiff.root_ifd(), DngTag::DepthUnits);
         IFD::copy_tag(&mut ifd, self.tiff.root_ifd(), DngTag::DepthMeasureType);
-        IFD::copy_tag(&mut ifd, self.tiff.root_ifd(), DngTag::RGBTables);
         Some(Rc::new(ifd))
       }
       _ => return Ok(None),
@@ -354,8 +350,20 @@ impl<'a> DngDecoder<'a> {
     } else {
       PlaneColor::default()
     };
-    let color_matrix = self.get_color_matrix()?;
-    let reduction_matrix = self.get_reduction_matrix()?;
+    // Matrices of the primary camera profile by illuminant
+    let mut color_matrix = HashMap::new();
+    let mut reduction_matrix = HashMap::new();
+    if let Some(profile) = read_camera_profile(self.tiff.root_ifd()) {
+      for slot in profile.slots() {
+        let illuminant = profile.illuminant(slot);
+        if let Some(matrix) = &profile.color_matrix[slot] {
+          color_matrix.entry(illuminant).or_insert_with(|| matrix.clone());
+        }
+        if let Some(matrix) = &profile.reduction_matrix[slot] {
+          reduction_matrix.entry(illuminant).or_insert_with(|| matrix.clone());
+        }
+      }
+    }
     // A LinearizationTable is not applied while decoding, so the
     // image data keeps the stored bit depth.
     let real_bps = raw.get_entry(TiffCommonTag::BitsPerSample).map(|v| v.force_usize(0)).unwrap_or(16);
@@ -370,7 +378,6 @@ impl<'a> DngDecoder<'a> {
       blacklevel: None,
       blackareah: None,
       blackareav: None,
-      xyz_to_cam: Default::default(),
       color_matrix,
       reduction_matrix,
       cfa,
@@ -382,7 +389,7 @@ impl<'a> DngDecoder<'a> {
     })
   }
 
-  fn get_wb(&self, cam: &Camera) -> Result<[f32; 4]> {
+  fn get_wb(&self, profile: Option<&CameraProfile>) -> Result<[f32; 4]> {
     if let Some(levels) = self.tiff.get_entry(DngTag::AsShotNeutral) {
       // One value per color plane (1, 3 or 4)
       let mut wb = [f32::NAN; 4];
@@ -392,7 +399,8 @@ impl<'a> DngDecoder<'a> {
       Ok(wb)
     } else if let Some(levels) = self.tiff.get_entry(DngTag::AsShotWhiteXY) {
       // TODO: improve once AnalogBalance and CC is properly implemented
-      if let Some(flat_colormatrix) = cam.color_matrix.get(&Illuminant::D65)
+      if let Some(profile) = profile
+        && let Some(flat_colormatrix) = profile.best_d65_slot().and_then(|slot| profile.color_matrix[slot].as_ref())
         && let Some(colormatrix) = transform_1d::<3, 3>(flat_colormatrix)
       {
         let wb_coeff = xy_whitepoint_to_wb_coeff(levels.force_f32(0), levels.force_f32(1), &colormatrix);
@@ -534,48 +542,6 @@ impl<'a> DngDecoder<'a> {
 
     areas
   }
-
-  fn get_color_matrix(&self) -> Result<HashMap<Illuminant, FlatColorMatrix>> {
-    // TODO: add 3
-    let tags = [
-      (DngTag::CalibrationIlluminant1, DngTag::ColorMatrix1),
-      (DngTag::CalibrationIlluminant2, DngTag::ColorMatrix2),
-    ];
-    Ok(self.get_illuminant_matrices(&tags, |len| len > 0 && len <= 12))
-  }
-
-  /// ReductionMatrix (3 x color planes) for each calibration illuminant
-  fn get_reduction_matrix(&self) -> Result<HashMap<Illuminant, FlatColorMatrix>> {
-    let tags = [
-      (DngTag::CalibrationIlluminant1, DngTag::ReductionMatrix1),
-      (DngTag::CalibrationIlluminant2, DngTag::ReductionMatrix2),
-    ];
-    Ok(self.get_illuminant_matrices(&tags, |len| len.is_multiple_of(3) && len > 9))
-  }
-
-  /// Read the matrix tags of the root IFD by their calibration illuminant tags,
-  /// matrices with a length `valid_len` rejects are ignored
-  fn get_illuminant_matrices(&self, tags: &[(DngTag, DngTag)], valid_len: impl Fn(usize) -> bool) -> HashMap<Illuminant, FlatColorMatrix> {
-    let mut result = HashMap::new();
-    for (cal, mat) in tags {
-      if let Some(c) = self.tiff.get_entry(*mat) {
-        let illuminant_val = self.tiff.get_entry(*cal).map(|e| e.force_u16(0)).unwrap_or(21);
-        let illuminant: Illuminant = illuminant_val.try_into().unwrap_or(Illuminant::D65);
-
-        let mut matrix = FlatColorMatrix::new();
-        for i in 0..c.count() as usize {
-          matrix.push(c.force_f32(i));
-        }
-
-        if valid_len(matrix.len()) {
-          result.insert(illuminant, matrix);
-        } else {
-          log::warn!("Invalid {:?} dimensions for illuminant {:?}: length {}", mat, illuminant, matrix.len());
-        }
-      }
-    }
-    result
-  }
 }
 
 #[cfg(test)]
@@ -584,6 +550,7 @@ mod tests {
 
   use super::DngDecoder;
   use crate::RawImage;
+  use crate::camera_profile::{CameraCalibration, CameraProfile, GainData, GainTableMap, IlluminantData, ProfileDynamicRange, RgbTable, RgbTables, TableData};
   use crate::cfa::CFA;
   use crate::decoders::{Camera, RawDecodeParams};
   use crate::dng::writer::DngWriter;
@@ -1095,7 +1062,7 @@ mod tests {
     let mut rawimage = synthetic_cygm_rawimage();
     // Matrix of the camera definition for A, the matrix for D65 is calculated
     let provided = vec![1.0, 0.0, 0.0, 0.0, 0.0, 0.5, 0.0, 0.5, 0.0, 0.0, 1.0, 0.0];
-    rawimage.reduction_matrix.insert(Illuminant::A, provided.clone());
+    rawimage.camera_profiles[0].reduction_matrix[0] = Some(provided.clone());
     let data = write_dng(&rawimage, |_| {})?;
 
     // ReductionMatrix1 and 2 belong to ColorMatrix1 (A) and ColorMatrix2 (D65)
@@ -1107,15 +1074,17 @@ mod tests {
     assert_eq!((count(DngTag::ReductionMatrix1), count(DngTag::ReductionMatrix2)), (Some(12), Some(12)));
 
     let decoded = decode_dng(&data)?;
-    assert_eq!(decoded.reduction_matrix.get(&Illuminant::A), Some(&provided));
-    let calculated = rawimage.calc_reduction_matrix().ok_or("no reduction matrix")?;
-    let read = decoded.reduction_matrix.get(&Illuminant::D65).ok_or("ReductionMatrix2 missing")?;
+    let profile = decoded.primary_camera_profile().ok_or("no camera profile")?;
+    assert_eq!(profile.illuminant(0), Illuminant::A);
+    assert_eq!(profile.reduction_matrix[0], Some(provided));
+    let calculated = rawimage.camera_profiles[0].calc_reduction_matrix().ok_or("no reduction matrix")?;
+    let read = profile.reduction_matrix[1].as_ref().ok_or("ReductionMatrix2 missing")?;
     for (read, expected) in read.iter().zip(calculated.as_flattened()) {
       assert!((read - expected).abs() < 1e-4, "{:?} != {:?}", read, calculated);
     }
     // Decoded matrices are written again as they are
     assert_eq!(decoded.camera.plane_color.plane_count(), 4);
-    assert_eq!(decoded.reduction_matrices(), decoded.reduction_matrix);
+    assert_eq!(profile.reduction_matrices(), profile.reduction_matrix);
     let data = write_dng(&decoded, |_| {})?;
     let tiff = GenericTiffReader::new_with_buffer(&data, 0, 0, None)?;
     assert!(tiff.root_ifd().get_entry(DngTag::ReductionMatrix1).is_some());
@@ -1129,12 +1098,18 @@ mod tests {
     use crate::imgop::xyz::{Illuminant, XYZ_TO_SRGB_D65};
 
     let mut rawimage = synthetic_rawimage();
-    rawimage.color_matrix.insert(Illuminant::D65, XYZ_TO_SRGB_D65.as_flattened().to_vec());
+    let mut profile = CameraProfile::default();
+    profile.calibration_illuminant[0] = Some(Illuminant::D65);
+    profile.color_matrix[0] = Some(XYZ_TO_SRGB_D65.as_flattened().to_vec());
+    // Not allowed for three color planes
+    profile.reduction_matrix[0] = Some(vec![0.25; 9]);
+    rawimage.camera_profiles = vec![profile];
     let data = write_dng(&rawimage, |_| {})?;
     let tiff = GenericTiffReader::new_with_buffer(&data, 0, 0, None)?;
     assert!(tiff.root_ifd().get_entry(DngTag::ColorMatrix1).is_some());
     assert!(tiff.root_ifd().get_entry(DngTag::ReductionMatrix1).is_none());
-    assert!(decode_dng(&data)?.reduction_matrix.is_empty());
+    let decoded = decode_dng(&data)?;
+    assert!(decoded.camera_profiles[0].reduction_matrix.iter().all(Option::is_none));
     Ok(())
   }
 
@@ -1159,7 +1134,7 @@ mod tests {
     let mut decoded = decode_dng(output.get_ref())?;
     assert!(matches!(decoded.photometric, RawPhotometricInterpretation::LinearRaw));
     assert_eq!(decoded.cpp, 1);
-    assert!(decoded.color_matrix.is_empty());
+    assert!(decoded.camera_profiles.is_empty());
     decoded.apply_scaling()?;
     let expected = synthetic_pixels().into_iter().enumerate().map(|(i, p)| {
       let black = black[(i / 16 % 2) * 2 + i % 2] as f32;
@@ -1392,6 +1367,181 @@ mod tests {
     }
     decoded.apply_scaling()?;
     assert_eq!(decoded.linearization_table, None);
+    Ok(())
+  }
+
+  /// Write `rawimage` uncompressed as DNG with the maximum DNGBackwardVersion `max_backward`
+  fn write_dng_max_backward(rawimage: &RawImage, max_backward: DngVersionNumber) -> TestResult<Vec<u8>> {
+    let mut buf = Cursor::new(Vec::new());
+    let mut dng = DngWriter::new(&mut buf, max_backward)?;
+    dng.load_base_tags(rawimage)?;
+    let mut frame = dng.subframe(0);
+    frame.raw_image(
+      rawimage,
+      CropMode::None,
+      DngCompression::Uncompressed,
+      DngPhotometricConversion::Original,
+      &CompressionParams::default(),
+    )?;
+    frame.finalize()?;
+    dng.close()?;
+    Ok(buf.into_inner())
+  }
+
+  /// Camera profile with three slots and all other values set, the values are exact in DNG rationals
+  fn full_camera_profile(name: &str) -> CameraProfile {
+    use crate::imgop::xyz::Illuminant;
+
+    let matrix = |f: f32| (0..9).map(|i| (i as f32 - 4.0) * 0.25 * f).collect::<Vec<f32>>();
+    let mut profile = CameraProfile {
+      name: Some(name.into()),
+      calibration_signature: Some("com.dnglab.test".into()),
+      copyright: Some("Copyright © DNGLab".into()),
+      embed_policy: Some(1),
+      group_name: Some("Group".into()),
+      hue_sat_map_dims: Some([2, 2, 1]),
+      hue_sat_map_encoding: Some(1),
+      look_table_dims: Some([2, 1, 2]),
+      look_table_data: Some((0..12).map(|i| i as f32 / 8.0).collect()),
+      look_table_encoding: Some(0),
+      tone_curve: Some(vec![0.0, 0.0, 0.5, 0.25, 1.0, 1.0]),
+      baseline_exposure_offset: Some(-0.5),
+      default_black_render: Some(1),
+      dynamic_range: Some(ProfileDynamicRange {
+        version: 1,
+        dynamic_range: 1,
+        hint_max_output_value: 4.0,
+      }),
+      rgb_tables: Some(RgbTables {
+        composite_method: 0,
+        tables: vec![RgbTable {
+          semantic_name: None,
+          divisions: 2,
+          gamma_encoding: 1,
+          color_primaries: 0,
+          gamut_extension: 1,
+          data: TableData::U16((0..24).map(|v| v * 2000).collect()),
+        }],
+      }),
+      gain_table_map: Some(GainTableMap {
+        points: [1, 1, 4],
+        spacing: [1.0, 1.0],
+        origin: [0.0, 0.0],
+        input_weights: [0.25, 0.5, 0.25, 0.0, 0.0],
+        gamma: 1.0,
+        gain_min: 1.0,
+        gain_max: 1.0,
+        gains: GainData::F32(vec![1.0, 1.5, 2.0, 2.5]),
+      }),
+      ..Default::default()
+    };
+    for (slot, illuminant) in [Illuminant::A, Illuminant::D65, Illuminant::Other].into_iter().enumerate() {
+      profile.calibration_illuminant[slot] = Some(illuminant);
+      profile.color_matrix[slot] = Some(matrix(slot as f32 + 1.0));
+      profile.forward_matrix[slot] = Some(matrix(0.5));
+      profile.hue_sat_map_data[slot] = Some((0..12).map(|i| i as f32 * 0.5).collect());
+    }
+    profile.illuminant_data[2] = Some(IlluminantData::Spectral {
+      min_lambda: 380.0,
+      lambda_spacing: 10.0,
+      values: vec![0.5, 1.0, 1.5],
+    });
+    profile
+  }
+
+  /// Synthetic image with a primary and two extra camera profiles and calibration data
+  fn synthetic_rawimage_with_profiles() -> RawImage {
+    let mut rawimage = synthetic_rawimage();
+    let mut minimal = CameraProfile {
+      name: Some("Minimal".into()),
+      ..Default::default()
+    };
+    minimal.color_matrix[0] = Some(vec![1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0]);
+    rawimage.camera_profiles = vec![full_camera_profile("Primary"), full_camera_profile("Extra"), minimal];
+    rawimage.camera_calibration = CameraCalibration {
+      matrices: [Some(vec![1.0, 0.0, 0.0, 0.0, 0.5, 0.0, 0.0, 0.0, 1.0]), None, Some(vec![2.0; 9])],
+      signature: Some("com.dnglab.test".into()),
+    };
+    rawimage.analog_balance = Some(vec![1.0, 0.5, 2.0]);
+    rawimage.as_shot_profile_name = Some("Extra".into());
+    rawimage
+  }
+
+  #[test]
+  fn camera_profiles_roundtrip() -> TestResult {
+    use crate::formats::tiff::reader::TiffReader;
+
+    let rawimage = synthetic_rawimage_with_profiles();
+    let data = write_dng(&rawimage, |_| {})?;
+    let tiff = GenericTiffReader::new_with_buffer(&data, 0, 0, None)?;
+    assert_eq!(tiff.root_ifd().get_entry(DngTag::ExtraCameraProfiles).map(|entry| entry.count()), Some(2));
+
+    let decoded = decode_dng(&data)?;
+    assert_eq!(decoded.camera_profiles, rawimage.camera_profiles);
+    assert_eq!(decoded.camera_calibration, rawimage.camera_calibration);
+    assert_eq!(decoded.analog_balance, rawimage.analog_balance);
+    assert_eq!(decoded.as_shot_profile_name.as_deref(), Some("Extra"));
+    assert_eq!(decoded.as_shot_camera_profile_index(), Some(1));
+    Ok(())
+  }
+
+  #[test]
+  fn camera_profiles_survive_dng_conversion() -> TestResult {
+    use crate::dng::convert::{ConvertParams, convert_raw_source};
+
+    let rawimage = synthetic_rawimage_with_profiles();
+    let source = RawSource::new_from_slice(&write_dng(&rawimage, |_| {})?);
+    let params = ConvertParams::default().with_embedded(false).with_preview(false).with_thumbnail(false);
+    let mut output = Cursor::new(Vec::new());
+    convert_raw_source(&source, &mut output, "profiles.dng", &params)?;
+
+    let decoded = decode_dng(output.get_ref())?;
+    assert_eq!(decoded.camera_profiles, rawimage.camera_profiles);
+    assert_eq!(decoded.camera_calibration, rawimage.camera_calibration);
+    assert_eq!(decoded.analog_balance, rawimage.analog_balance);
+    assert_eq!(decoded.as_shot_profile_name, rawimage.as_shot_profile_name);
+    Ok(())
+  }
+
+  #[test]
+  fn custom_illuminant_requires_dng_1_6_reader() -> TestResult {
+    use crate::dng::DNG_VERSION_V1_6;
+    use crate::imgop::xyz::Illuminant;
+
+    let mut rawimage = synthetic_rawimage();
+    let mut profile = CameraProfile::default();
+    profile.calibration_illuminant[0] = Some(Illuminant::Other);
+    profile.illuminant_data[0] = Some(IlluminantData::Xy { x: 0.3127, y: 0.329 });
+    profile.color_matrix[0] = Some(vec![1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0]);
+    rawimage.camera_profiles = vec![profile.clone()];
+
+    let data = write_dng_max_backward(&rawimage, DNG_VERSION_V1_6)?;
+    assert_eq!(dng_decoder(&data)?.dng_backward_version(), Some(DNG_VERSION_V1_6));
+    let decoded = decode_dng(&data)?;
+    assert_eq!(decoded.camera_profiles, vec![profile]);
+    // The custom illuminant is not treated as D65
+    assert_eq!(decoded.best_color_matrix().map(|(illuminant, _)| illuminant), Some(Illuminant::Other));
+
+    // Readers before DNG 1.6 get the nearest standard illuminant
+    let data = write_dng_max_backward(&rawimage, DNG_VERSION_V1_4)?;
+    assert!(dng_decoder(&data)?.dng_backward_version() < Some(DNG_VERSION_V1_6));
+    let decoded = decode_dng(&data)?;
+    assert_eq!(decoded.camera_profiles[0].illuminant(0), Illuminant::D65);
+    assert_eq!(decoded.camera_profiles[0].illuminant_data[0], None);
+    Ok(())
+  }
+
+  #[test]
+  fn missing_calibration_illuminant_is_unknown() -> TestResult {
+    use crate::imgop::xyz::Illuminant;
+
+    let mut rawimage = synthetic_rawimage();
+    let mut profile = CameraProfile::default();
+    profile.color_matrix[0] = Some(vec![1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0]);
+    rawimage.camera_profiles = vec![profile];
+    let decoded = decode_dng(&write_dng(&rawimage, |_| {})?)?;
+    // The only matrix is used as it is
+    assert_eq!(decoded.best_color_matrix().map(|(illuminant, _)| illuminant), Some(Illuminant::Unknown));
     Ok(())
   }
 }

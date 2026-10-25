@@ -644,6 +644,11 @@ pub enum DngTag {
   IlluminantData2 = 52534,
   IlluminantData3 = 52535,
 
+  // 1.7.0
+  ProfileGainTableMap2 = 52544,
+  ProfileDynamicRange = 52551,
+  ProfileGroupName = 52552,
+
   // 1.7.1
   ColumnInterleaveFactor = 52547,
   JXLDistance = 52553,

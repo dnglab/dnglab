@@ -96,6 +96,7 @@ pub mod analyze;
 pub mod bitarray;
 pub mod bits;
 pub mod buffer;
+pub mod camera_profile;
 pub mod cfa;
 pub mod compressors;
 pub mod decoders;
