@@ -349,6 +349,11 @@ impl<'a> DngDecoder<'a> {
 
     // Only CFA images have a CFA pattern
     let cfa = if photometric_int == 32803 { self.get_cfa(raw)? } else { CFA::default() };
+    let plane_color = if photometric_int == 32803 {
+      self.get_plane_color(raw)
+    } else {
+      PlaneColor::default()
+    };
     let color_matrix = self.get_color_matrix()?;
     // A LinearizationTable is not applied while decoding, so the
     // image data keeps the stored bit depth.
@@ -367,6 +372,7 @@ impl<'a> DngDecoder<'a> {
       xyz_to_cam: Default::default(),
       color_matrix,
       cfa,
+      plane_color,
       active_area,
       crop_area,
       real_bps,
@@ -465,6 +471,21 @@ impl<'a> DngDecoder<'a> {
       Ok(cfa.shift(left % cfa.width, top % cfa.height))
     } else {
       Ok(cfa)
+    }
+  }
+
+  /// CFAPlaneColor of the raw IFD, defaults to red, green, blue
+  fn get_plane_color(&self, raw: &IFD) -> PlaneColor {
+    let Some(entry) = raw.get_entry(DngTag::CFAPlaneColor) else {
+      return PlaneColor::default();
+    };
+    let colors: Option<Vec<CFAColor>> = (0..entry.count() as usize).map(|i| CFAColor::try_from(entry.force_u16(i) as u8).ok()).collect();
+    match colors {
+      Some(colors) if !colors.is_empty() => PlaneColor { colors },
+      _ => {
+        log::warn!("DNG: invalid CFAPlaneColor {:?}, using red, green, blue", entry.value);
+        PlaneColor::default()
+      }
     }
   }
 
@@ -967,6 +988,50 @@ mod tests {
     let decoded = decode_dng(&data)?;
     assert!(matches!(decoded.photometric, RawPhotometricInterpretation::BlackIsZero));
     assert_eq!(integer_data(decoded), Some(synthetic_pixels()));
+    Ok(())
+  }
+
+  /// Synthetic 16x16 CYGM image with color matrices for A and D65
+  fn synthetic_cygm_rawimage() -> RawImage {
+    use crate::cfa::PlaneColor;
+    use crate::imgop::{
+      matrix::{multiply, transform_2d},
+      xyz::{Illuminant, XYZ_TO_SRGB_D65},
+    };
+
+    let mut camera = Camera::new();
+    camera.cfa = CFA::new("CYGM");
+    camera.plane_color = PlaneColor::new("CYGM");
+    camera.clean_make = "DNGLab".into();
+    camera.clean_model = "Synthetic".into();
+    // cyan = G + B, yellow = R + G, green = G, magenta = R + B
+    let rgb2cam = [[0.0, 1.0, 1.0], [1.0, 1.0, 0.0], [0.0, 1.0, 0.0], [1.0, 0.0, 1.0]];
+    let xyz2cam = transform_2d(&multiply(&rgb2cam, &XYZ_TO_SRGB_D65));
+    camera.color_matrix.insert(Illuminant::A, xyz2cam.iter().map(|v| v * 1.1).collect());
+    camera.color_matrix.insert(Illuminant::D65, xyz2cam);
+    let photometric = RawPhotometricInterpretation::Cfa(CFAConfig::new_from_camera(&camera));
+    RawImage::new(
+      camera,
+      PixU16::new_with(synthetic_pixels(), 16, 16),
+      1,
+      [1.0, 1.0, 1.0, 1.0],
+      photometric,
+      Some(BlackLevel::new(&[0_u32, 0, 0, 0], 2, 2, 1)),
+      Some(WhiteLevel::new_bits(12, 1)),
+      false,
+    )
+  }
+
+  #[test]
+  fn cfa_plane_color_roundtrip() -> TestResult {
+    use crate::cfa::PlaneColor;
+
+    let rawimage = synthetic_cygm_rawimage();
+    let decoded = decode_dng(&write_dng(&rawimage, |_| {})?)?;
+    assert_eq!(decoded.camera.plane_color.colors, PlaneColor::new("CYGM").colors);
+    // Without CFAPlaneColor, the planes are red, green, blue
+    let decoded = decode_dng(&write_dng(&rawimage, |ifd| ifd.remove_tag(DngTag::CFAPlaneColor))?)?;
+    assert_eq!(decoded.camera.plane_color.colors, PlaneColor::default().colors);
     Ok(())
   }
 
