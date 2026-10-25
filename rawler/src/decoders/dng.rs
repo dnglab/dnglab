@@ -355,6 +355,7 @@ impl<'a> DngDecoder<'a> {
       PlaneColor::default()
     };
     let color_matrix = self.get_color_matrix()?;
+    let reduction_matrix = self.get_reduction_matrix()?;
     // A LinearizationTable is not applied while decoding, so the
     // image data keeps the stored bit depth.
     let real_bps = raw.get_entry(TiffCommonTag::BitsPerSample).map(|v| v.force_usize(0)).unwrap_or(16);
@@ -371,6 +372,7 @@ impl<'a> DngDecoder<'a> {
       blackareav: None,
       xyz_to_cam: Default::default(),
       color_matrix,
+      reduction_matrix,
       cfa,
       plane_color,
       active_area,
@@ -534,11 +536,30 @@ impl<'a> DngDecoder<'a> {
   }
 
   fn get_color_matrix(&self) -> Result<HashMap<Illuminant, FlatColorMatrix>> {
-    let mut result = HashMap::new();
+    // TODO: add 3
+    let tags = [
+      (DngTag::CalibrationIlluminant1, DngTag::ColorMatrix1),
+      (DngTag::CalibrationIlluminant2, DngTag::ColorMatrix2),
+    ];
+    Ok(self.get_illuminant_matrices(&tags, |len| len > 0 && len <= 12))
+  }
 
-    let mut read_matrix = |cal: DngTag, mat: DngTag| -> Result<()> {
-      if let Some(c) = self.tiff.get_entry(mat) {
-        let illuminant_val = self.tiff.get_entry(cal).map(|e| e.force_u16(0)).unwrap_or(21);
+  /// ReductionMatrix (3 x color planes) for each calibration illuminant
+  fn get_reduction_matrix(&self) -> Result<HashMap<Illuminant, FlatColorMatrix>> {
+    let tags = [
+      (DngTag::CalibrationIlluminant1, DngTag::ReductionMatrix1),
+      (DngTag::CalibrationIlluminant2, DngTag::ReductionMatrix2),
+    ];
+    Ok(self.get_illuminant_matrices(&tags, |len| len.is_multiple_of(3) && len > 9))
+  }
+
+  /// Read the matrix tags of the root IFD by their calibration illuminant tags,
+  /// matrices with a length `valid_len` rejects are ignored
+  fn get_illuminant_matrices(&self, tags: &[(DngTag, DngTag)], valid_len: impl Fn(usize) -> bool) -> HashMap<Illuminant, FlatColorMatrix> {
+    let mut result = HashMap::new();
+    for (cal, mat) in tags {
+      if let Some(c) = self.tiff.get_entry(*mat) {
+        let illuminant_val = self.tiff.get_entry(*cal).map(|e| e.force_u16(0)).unwrap_or(21);
         let illuminant: Illuminant = illuminant_val.try_into().unwrap_or(Illuminant::D65);
 
         let mut matrix = FlatColorMatrix::new();
@@ -546,20 +567,14 @@ impl<'a> DngDecoder<'a> {
           matrix.push(c.force_f32(i));
         }
 
-        if !matrix.is_empty() && matrix.len() <= 12 {
+        if valid_len(matrix.len()) {
           result.insert(illuminant, matrix);
         } else {
-          log::warn!("Invalid ColorMatrix dimensions for illuminant {:?}: length {}", illuminant, matrix.len());
+          log::warn!("Invalid {:?} dimensions for illuminant {:?}: length {}", mat, illuminant, matrix.len());
         }
       }
-      Ok(())
-    };
-
-    read_matrix(DngTag::CalibrationIlluminant1, DngTag::ColorMatrix1)?;
-    read_matrix(DngTag::CalibrationIlluminant2, DngTag::ColorMatrix2)?;
-    // TODO: add 3
-
-    Ok(result)
+    }
+    result
   }
 }
 
@@ -1032,6 +1047,57 @@ mod tests {
     // Without CFAPlaneColor, the planes are red, green, blue
     let decoded = decode_dng(&write_dng(&rawimage, |ifd| ifd.remove_tag(DngTag::CFAPlaneColor))?)?;
     assert_eq!(decoded.camera.plane_color.colors, PlaneColor::default().colors);
+    Ok(())
+  }
+
+  #[test]
+  fn reduction_matrix_roundtrip() -> TestResult {
+    use crate::formats::tiff::reader::TiffReader;
+    use crate::imgop::xyz::Illuminant;
+
+    let mut rawimage = synthetic_cygm_rawimage();
+    // Matrix of the camera definition for A, the matrix for D65 is calculated
+    let provided = vec![1.0, 0.0, 0.0, 0.0, 0.0, 0.5, 0.0, 0.5, 0.0, 0.0, 1.0, 0.0];
+    rawimage.reduction_matrix.insert(Illuminant::A, provided.clone());
+    let data = write_dng(&rawimage, |_| {})?;
+
+    // ReductionMatrix1 and 2 belong to ColorMatrix1 (A) and ColorMatrix2 (D65)
+    let tiff = GenericTiffReader::new_with_buffer(&data, 0, 0, None)?;
+    let illuminant = |tag| tiff.root_ifd().get_entry(tag).map(|entry| entry.force_u16(0));
+    assert_eq!(illuminant(DngTag::CalibrationIlluminant1), Some(u16::from(Illuminant::A)));
+    assert_eq!(illuminant(DngTag::CalibrationIlluminant2), Some(u16::from(Illuminant::D65)));
+    let count = |tag| tiff.root_ifd().get_entry(tag).map(|entry| entry.count());
+    assert_eq!((count(DngTag::ReductionMatrix1), count(DngTag::ReductionMatrix2)), (Some(12), Some(12)));
+
+    let decoded = decode_dng(&data)?;
+    assert_eq!(decoded.reduction_matrix.get(&Illuminant::A), Some(&provided));
+    let calculated = rawimage.calc_reduction_matrix().ok_or("no reduction matrix")?;
+    let read = decoded.reduction_matrix.get(&Illuminant::D65).ok_or("ReductionMatrix2 missing")?;
+    for (read, expected) in read.iter().zip(calculated.as_flattened()) {
+      assert!((read - expected).abs() < 1e-4, "{:?} != {:?}", read, calculated);
+    }
+    // Decoded matrices are written again as they are
+    assert_eq!(decoded.camera.plane_color.plane_count(), 4);
+    assert_eq!(decoded.reduction_matrices(), decoded.reduction_matrix);
+    let data = write_dng(&decoded, |_| {})?;
+    let tiff = GenericTiffReader::new_with_buffer(&data, 0, 0, None)?;
+    assert!(tiff.root_ifd().get_entry(DngTag::ReductionMatrix1).is_some());
+    assert!(tiff.root_ifd().get_entry(DngTag::ReductionMatrix2).is_some());
+    Ok(())
+  }
+
+  #[test]
+  fn no_reduction_matrix_for_three_color_planes() -> TestResult {
+    use crate::formats::tiff::reader::TiffReader;
+    use crate::imgop::xyz::{Illuminant, XYZ_TO_SRGB_D65};
+
+    let mut rawimage = synthetic_rawimage();
+    rawimage.color_matrix.insert(Illuminant::D65, XYZ_TO_SRGB_D65.as_flattened().to_vec());
+    let data = write_dng(&rawimage, |_| {})?;
+    let tiff = GenericTiffReader::new_with_buffer(&data, 0, 0, None)?;
+    assert!(tiff.root_ifd().get_entry(DngTag::ColorMatrix1).is_some());
+    assert!(tiff.root_ifd().get_entry(DngTag::ReductionMatrix1).is_none());
+    assert!(decode_dng(&data)?.reduction_matrix.is_empty());
     Ok(())
   }
 

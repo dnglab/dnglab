@@ -86,6 +86,32 @@ pub fn pseudo_inverse<const N: usize>(matrix: [[f32; 3]; N]) -> [[f32; N]; 3] {
   result
 }
 
+/// Project each row of a matrix onto the probability simplex
+///
+/// Each row is replaced by the nearest row (Euclidean distance) with
+/// non-negative entries that sum to 1.0.
+pub fn project_rows_to_simplex<const N: usize, const M: usize>(matrix: [[f32; N]; M]) -> [[f32; N]; M] {
+  matrix.map(|row| {
+    let mut sorted = row;
+    sorted.sort_by(|a, b| b.total_cmp(a));
+    let mut sum = 0.0;
+    let mut theta = 0.0;
+    for (k, v) in sorted.iter().enumerate() {
+      sum += v;
+      let t = (sum - 1.0) / (k + 1) as f32;
+      if v - t > 0.0 {
+        theta = t;
+      }
+    }
+    row.map(|v| (v - theta).max(0.0))
+  })
+}
+
+/// Calculate the determinant of a 3x3 matrix
+pub fn determinant(m: &[[f32; 3]; 3]) -> f32 {
+  m[0][0] * (m[1][1] * m[2][2] - m[1][2] * m[2][1]) - m[0][1] * (m[1][0] * m[2][2] - m[1][2] * m[2][0]) + m[0][2] * (m[1][0] * m[2][1] - m[1][1] * m[2][0])
+}
+
 /// Transpose a given input matrix
 pub fn transpose<const N: usize, const M: usize>(matrix: &[[f32; M]; N]) -> [[f32; N]; M] {
   let mut transposed = [[f32::NAN; N]; M];
@@ -126,5 +152,29 @@ mod tests {
     assert!(transform_1d::<1, 1>(&m1d).is_none());
     assert!(transform_1d::<6, 7>(&m1d).is_none());
     Ok(())
+  }
+
+  #[test]
+  fn rows_projected_to_simplex() {
+    let projected = project_rows_to_simplex([[0.2, 0.3, 0.5], [2.0, 0.0, 0.0], [0.5, 0.5, -1.0], [1.2, 0.4, -0.6]]);
+    assert_eq!(projected[0], [0.2, 0.3, 0.5]);
+    assert_eq!(projected[1], [1.0, 0.0, 0.0]);
+    assert_eq!(projected[2], [0.5, 0.5, 0.0]);
+    assert!(
+      projected[3].iter().zip([0.9, 0.1, 0.0]).all(|(a, b)| (a - b).abs() < 1e-6),
+      "{:?}",
+      projected[3]
+    );
+    for row in projected {
+      assert!(row.iter().all(|v| *v >= 0.0));
+      assert!((row.iter().sum::<f32>() - 1.0).abs() < 1e-6);
+    }
+  }
+
+  #[test]
+  fn determinant_3x3() {
+    assert_eq!(determinant(&IDENTITY_MATRIX_3), 1.0);
+    assert_eq!(determinant(&[[2.0, 0.0, 1.0], [1.0, 3.0, 2.0], [1.0, 1.0, 2.0]]), 6.0);
+    assert_eq!(determinant(&[[1.0, 2.0, 3.0], [2.0, 4.0, 6.0], [0.0, 1.0, 1.0]]), 0.0);
   }
 }

@@ -33,6 +33,8 @@ pub struct Camera {
   pub blackareav: Option<(usize, usize)>,
   pub xyz_to_cam: [[f32; 3]; 4],
   pub color_matrix: HashMap<Illuminant, FlatColorMatrix>,
+  /// Reduction matrices (3 x color planes) for cameras with more than three color planes
+  pub reduction_matrix: HashMap<Illuminant, FlatColorMatrix>,
   pub cfa: CFA,
   pub plane_color: PlaneColor,
   // Active area relative to sensor size
@@ -169,6 +171,27 @@ impl Camera {
           }
           assert!(!self.color_matrix.is_empty());
         }
+        "reduction_matrix" => {
+          if let Some(reduction_matrix) = val.as_table() {
+            for (illu_str, matrix) in reduction_matrix.into_iter() {
+              let illu = Illuminant::new_from_str(illu_str).expect("invalid illuminant string in reduction_matrix");
+              let matrix: FlatColorMatrix = matrix
+                .as_array()
+                .expect("reduction matrix must be array")
+                .iter()
+                .map(|a| a.as_float().expect("reduction matrix values must be float") as f32)
+                .collect();
+              assert!(
+                matrix.len().is_multiple_of(3) && matrix.len() > 9,
+                "reduction matrix for {} must have 3 rows and more than 3 columns",
+                self.clean_model
+              );
+              self.reduction_matrix.insert(illu, matrix);
+            }
+          } else {
+            eprintln!("Invalid reduction matrix spec for {}", self.clean_model);
+          }
+        }
         n @ "active_area" => {
           let crop_vals = val.as_array().unwrap_or_else(|| panic!("{} must be an array", n));
           let mut crop = [0, 0, 0, 0];
@@ -269,6 +292,7 @@ impl Camera {
       blackareav: None,
       xyz_to_cam: [[0.0; 3]; 4],
       color_matrix: HashMap::new(),
+      reduction_matrix: HashMap::new(),
       cfa: CFA::new(""),
       plane_color: PlaneColor::default(),
       active_area: None,
@@ -318,5 +342,35 @@ impl CameraLookup {
   /// For unknown cameras, this is the generic definition.
   pub(crate) fn metadata(&self) -> &Camera {
     &self.camera
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  const REDUCTION: [f32; 12] = [0.9, 0.1, 0.0, 0.0, 0.0, 0.5, 0.0, 0.5, 0.0, 0.0, 1.0, 0.0];
+
+  fn camera_from_toml(content: &str) -> Camera {
+    let table: toml::value::Table = toml::from_str(content).expect("valid TOML");
+    let mut camera = Camera::new();
+    camera.update_from_toml(&table);
+    camera
+  }
+
+  #[test]
+  fn reduction_matrix_from_toml() {
+    let camera = camera_from_toml(
+      "[reduction_matrix]\nD65 = [0.9, 0.1, 0.0, 0.0, 0.0, 0.5, 0.0, 0.5, 0.0, 0.0, 1.0, 0.0]\nA = [0.9, 0.1, 0.0, 0.0, 0.0, 0.5, 0.0, 0.5, 0.0, 0.0, 1.0, 0.0]\n",
+    );
+    assert_eq!(camera.reduction_matrix.len(), 2);
+    assert_eq!(camera.reduction_matrix.get(&Illuminant::D65), Some(&REDUCTION.to_vec()));
+    assert_eq!(camera.reduction_matrix.get(&Illuminant::A), Some(&REDUCTION.to_vec()));
+  }
+
+  #[test]
+  #[should_panic(expected = "must have 3 rows and more than 3 columns")]
+  fn reduction_matrix_needs_more_than_three_columns() {
+    camera_from_toml("[reduction_matrix]\nD65 = [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0]\n");
   }
 }

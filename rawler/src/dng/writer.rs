@@ -179,6 +179,16 @@ where
 
     if rawimage.cpp > 1 || matches!(rawimage.photometric, RawPhotometricInterpretation::Cfa(_)) {
       self.writer.as_shot_neutral(wbcoeff_to_tiff_value(&rawimage));
+      // ReductionMatrix is required for more than three color planes
+      let color_planes = match &rawimage.photometric {
+        RawPhotometricInterpretation::Cfa(config) => config.colors.plane_count(),
+        _ => rawimage.cpp,
+      };
+      let reduction_matrices = if color_planes > 3 {
+        rawimage.reduction_matrices()
+      } else {
+        Default::default()
+      };
       // Add matrix and illumninant
       let mut available_matrices = rawimage.color_matrix.clone();
       if let Some(first_key) = available_matrices.keys().next().cloned() {
@@ -190,6 +200,9 @@ where
         self
           .writer
           .color_matrix(1, first_matrix.0, matrix_to_tiff_value(&first_matrix.1, 10_000).as_slice());
+        if let Some(reduction) = reduction_matrices.get(&first_matrix.0) {
+          self.writer.reduction_matrix(1, matrix_to_tiff_value(reduction, 10_000).as_slice());
+        }
         if let Some(second_matrix) = available_matrices
           .remove_entry(&Illuminant::D65)
           .or_else(|| available_matrices.remove_entry(&Illuminant::D50))
@@ -197,6 +210,9 @@ where
           self
             .writer
             .color_matrix(2, second_matrix.0, matrix_to_tiff_value(&second_matrix.1, 10_000).as_slice());
+          if let Some(reduction) = reduction_matrices.get(&second_matrix.0) {
+            self.writer.reduction_matrix(2, matrix_to_tiff_value(reduction, 10_000).as_slice());
+          }
         }
       }
     }
@@ -520,6 +536,15 @@ where
         self.root_ifd.add_tag(DngTag::CalibrationIlluminant2, u16::from(illu));
         self.root_ifd.add_tag(DngTag::ColorMatrix2, matrix.as_ref());
       }
+      _ => todo!(),
+    }
+  }
+
+  /// Add the ReductionMatrix for the illuminant of color matrix `slot`
+  pub fn reduction_matrix(&mut self, slot: usize, matrix: impl AsRef<[SRational]>) {
+    match slot {
+      1 => self.root_ifd.add_tag(DngTag::ReductionMatrix1, matrix.as_ref()),
+      2 => self.root_ifd.add_tag(DngTag::ReductionMatrix2, matrix.as_ref()),
       _ => todo!(),
     }
   }
