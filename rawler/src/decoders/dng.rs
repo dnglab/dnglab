@@ -1259,6 +1259,24 @@ mod tests {
     Ok(())
   }
 
+  #[test]
+  fn convert_copies_cfa_tags_only_for_cfa_data() -> TestResult {
+    use crate::dng::convert::ConvertParams;
+
+    let data = write_dng(&synthetic_rawimage(), |ifd| ifd.add_tag(DngTag::BayerGreenSplit, 500_u32))?;
+    let value = |ifd: &crate::formats::tiff::IFD| ifd.get_entry(DngTag::BayerGreenSplit).map(|entry| entry.value.clone());
+    let source = raw_ifd(&data)?;
+    assert!(value(&source).is_some());
+
+    let raw = convert_to_raw_ifd(&data, ConvertParams::default())?;
+    assert_eq!(value(&raw), value(&source));
+
+    // Lossy JPEG compression requires demosaiced image data
+    let raw = convert_to_raw_ifd(&data, ConvertParams::default().with_compression(DngCompression::Lossy))?;
+    assert_eq!(value(&raw), None);
+    Ok(())
+  }
+
   /// Nonlinear LinearizationTable with fewer entries than the synthetic pixel values (0..256)
   fn linearization_table() -> Vec<u16> {
     (0..200_u32).map(|i| (i * i / 10) as u16).collect()

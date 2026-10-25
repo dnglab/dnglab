@@ -56,6 +56,10 @@ const COLOR_PLANE_TAGS: [DngTag; 9] = [
   DngTag::CurrentPreProfileMatrix,
 ];
 
+/// Tags only allowed for CFA image data, copied from DNG input.
+/// They are invalid after the image data is demosaiced.
+const CFA_TAGS: [DngTag; 1] = [DngTag::BayerGreenSplit];
+
 /// Parameters for DNG conversion
 #[derive(Clone, Debug)]
 pub struct ConvertParams {
@@ -354,12 +358,18 @@ where
     rawimage.apply_opcode_list(OpcodeStage::List3)?;
     reduce_to_three_planes(&mut rawimage)?;
   }
+  let cfa = matches!(rawimage.photometric, RawPhotometricInterpretation::Cfa(_));
   let copy_tag = |tag: &u16| {
-    let keep = !reduced_planes || !COLOR_PLANE_TAGS.iter().any(|t| *t as u16 == *tag);
-    if !keep {
+    let listed = |tags: &[DngTag]| tags.iter().any(|t| *t as u16 == *tag);
+    if reduced_planes && listed(&COLOR_PLANE_TAGS) {
       log::debug!("Color planes are reduced, tag 0x{:04x} is not copied", tag);
+      return false;
     }
-    keep
+    if !cfa && listed(&CFA_TAGS) {
+      log::debug!("Image data is not CFA, tag 0x{:04x} is not copied", tag);
+      return false;
+    }
+    true
   };
 
   let mut dng = DngWriter::new_with_version(dng, params.dng_version.as_dng_value(), max_backward_version)?;
