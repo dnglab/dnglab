@@ -28,6 +28,8 @@ const fn parse_delin_curve(csv: &str) -> [u16; 1 << CODEC_BIT_DEPTH] {
         assert!(value <= u16::MAX as u32, "delin_curve.csv: value does not fit u16");
         have_digit = true;
       }
+      // Tolerate CRLF line endings (e.g. git autocrlf checkouts on Windows).
+      b'\r' if i + 1 < bytes.len() && bytes[i + 1] == b'\n' => {}
       b'\n' => {
         assert!(have_digit, "delin_curve.csv: empty line");
         assert!(entry < table.len(), "delin_curve.csv: too many entries");
