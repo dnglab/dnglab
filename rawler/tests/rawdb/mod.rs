@@ -3150,6 +3150,12 @@ mod sony {
     super::super::rawdb_test_file!("Sony", "ILCE-7M4", ilce_7m4_dsc06680_aps_c_lossless_small_arw, "resolutions/ILCE-7M4_DSC06680_APS-C-LossLess-Small.ARW");
     super::super::rawdb_test_file!("Sony", "ILCE-7M4", ilce_7m4_dsc06681_aps_c_raw_compressed_arw, "resolutions/ILCE-7M4_DSC06681_APS-C-Raw-Compressed.ARW");
   }
+  mod ilce_7m5_arw6 {
+    super::super::rawdb_test_file!("Sony", "ILCE-7M5", ilce_7m5_iso_100_14bits_apsc_arw6_arw, "arw6/ILCE-7M5_ISO_100_14bits_APSC_ARW6.ARW");
+    super::super::rawdb_test_file!("Sony", "ILCE-7M5", ilce_7m5_iso_100_14bits_apsc_arw6_hq_arw, "arw6/ILCE-7M5_ISO_100_14bits_APSC_ARW6_HQ.ARW");
+    super::super::rawdb_test_file!("Sony", "ILCE-7M5", ilce_7m5_iso_100_14bits_arw6_arw, "arw6/ILCE-7M5_ISO_100_14bits_ARW6.ARW");
+    super::super::rawdb_test_file!("Sony", "ILCE-7M5", ilce_7m5_iso_100_14bits_arw6_hq_arw, "arw6/ILCE-7M5_ISO_100_14bits_ARW6_HQ.ARW");
+  }
   mod ilce_7m5_raw_modes {
     super::super::rawdb_test_file!("Sony", "ILCE-7M5", ilce_7m5_iso_100_14bits_apsc_lossless_compressed_raw_arw, "raw_modes/ILCE-7M5_ISO_100_14bits_APSC_Lossless Compressed RAW.ARW");
     super::super::rawdb_test_file!("Sony", "ILCE-7M5", ilce_7m5_iso_100_14bits_lossless_compressed_raw_arw, "raw_modes/ILCE-7M5_ISO_100_14bits_Lossless Compressed RAW.ARW");
@@ -3198,6 +3204,16 @@ mod sony {
     super::super::rawdb_test_file!("Sony", "ILCE-7RM5", sony_7rm5_lossless_s_ljpeg_arw, "yuv/Sony_7RM5_Lossless_S_LJPEG.ARW");
     super::super::rawdb_test_file!("Sony", "ILCE-7RM5", sony_7rm5_s35_lossless_m_ljpeg_arw, "yuv/Sony_7RM5_S35_Lossless_M_LJPEG.ARW");
     super::super::rawdb_test_file!("Sony", "ILCE-7RM5", sony_7rm5_s35_lossless_s_ljpeg_arw, "yuv/Sony_7RM5_S35_Lossless_S_LJPEG.ARW");
+  }
+  mod ilce_7rm6_arw6 {
+    super::super::rawdb_test_file!("Sony", "ILCE-7RM6", ilce_7rm6_apsc_land_raw_c_hd_arw, "arw6/ILCE-7RM6_APSC_land_RAW-C-HD.ARW");
+    super::super::rawdb_test_file!("Sony", "ILCE-7RM6", ilce_7rm6_apsc_land_raw_c_arw, "arw6/ILCE-7RM6_APSC_land_RAW-C.ARW");
+    super::super::rawdb_test_file!("Sony", "ILCE-7RM6", ilce_7rm6_apsc_port_raw_c_hd_arw, "arw6/ILCE-7RM6_APSC_port_RAW-C-HD.ARW");
+    super::super::rawdb_test_file!("Sony", "ILCE-7RM6", ilce_7rm6_apsc_port_raw_c_arw, "arw6/ILCE-7RM6_APSC_port_RAW-C.ARW");
+    super::super::rawdb_test_file!("Sony", "ILCE-7RM6", ilce_7rm6_ff_land_raw_c_hd_arw, "arw6/ILCE-7RM6_FF_land_RAW-C-HD.ARW");
+    super::super::rawdb_test_file!("Sony", "ILCE-7RM6", ilce_7rm6_ff_land_raw_c_arw, "arw6/ILCE-7RM6_FF_land_RAW-C.ARW");
+    super::super::rawdb_test_file!("Sony", "ILCE-7RM6", ilce_7rm6_ff_port_raw_c_hd_arw, "arw6/ILCE-7RM6_FF_port_RAW-C-HD.ARW");
+    super::super::rawdb_test_file!("Sony", "ILCE-7RM6", ilce_7rm6_ff_port_raw_c_arw, "arw6/ILCE-7RM6_FF_port_RAW-C.ARW");
   }
   mod ilce_7rm6_raw_modes {
     super::super::rawdb_test_file!("Sony", "ILCE-7RM6", ilce_7rm6_apsc_land_raw_arw, "raw_modes/ILCE-7RM6_APSC_land_RAW.ARW");
