@@ -9,6 +9,7 @@ use std::{
 
 use image::DynamicImage;
 
+use crate::camera_profile::{CALIBRATION_SLOTS, d65_preference};
 use crate::{
   RawImage, RawImageData, RawlerError,
   decoders::{Decoder, RawDecodeParams, RawPhotometricInterpretation, WellKnownIFD, WhiteLevel, validate_image_index},
@@ -32,7 +33,7 @@ use crate::{
     },
   },
   pixarray::{Color2D, PixF32},
-  rawimage::{BlackLevel, d65_preference},
+  rawimage::BlackLevel,
   rawsource::RawSource,
   tags::{DngTag, ExifTag, TiffCommonTag},
 };
@@ -47,17 +48,7 @@ const STAGES: [OpcodeStage; 3] = [OpcodeStage::List1, OpcodeStage::List2, Opcode
 
 /// Tags with values for each color plane, copied from DNG input.
 /// They don't match the image data after the color planes are reduced.
-const COLOR_PLANE_TAGS: [DngTag; 9] = [
-  DngTag::CameraCalibration1,
-  DngTag::CameraCalibration2,
-  DngTag::CameraCalibration3,
-  DngTag::ForwardMatrix1,
-  DngTag::ForwardMatrix2,
-  DngTag::ForwardMatrix3,
-  DngTag::AnalogBalance,
-  DngTag::AsShotPreProfileMatrix,
-  DngTag::CurrentPreProfileMatrix,
-];
+const COLOR_PLANE_TAGS: [DngTag; 2] = [DngTag::AsShotPreProfileMatrix, DngTag::CurrentPreProfileMatrix];
 
 /// Tags only allowed for CFA image data, copied from DNG input.
 /// They are invalid after the image data is demosaiced.
@@ -635,39 +626,64 @@ fn demosaic_to_linear_raw(rawimage: &mut RawImage, fuji_rotation: bool) -> crate
 
 /// Reduce demosaiced four-color image data to three color planes.
 ///
-/// The planes are mapped by a 3x4 reduction matrix R and the color matrices are
-/// replaced by R·CM. This is what a DNG reader does with a ReductionMatrix, but
-/// applied to the image data, so the DNG has three color planes and no ReductionMatrix.
-/// The image data can only be reduced once, so the reduction matrix for D65 is
-/// preferred, see [`RawImage::reduction_matrices`].
+/// The planes are mapped by a 3x4 reduction matrix R and the color matrices of all
+/// camera profiles are replaced by R·AB·CC·CM, so the analog balance and camera
+/// calibration become part of the color matrices. This is what a DNG reader does
+/// with a ReductionMatrix, but applied to the image data, so the DNG has three color
+/// planes and no ReductionMatrix. The image data can only be reduced once, so the
+/// reduction matrix of the as-shot profile for D65 is preferred, see
+/// [`CameraProfile::reduction_matrices`](crate::camera_profile::CameraProfile::reduction_matrices).
 fn reduce_to_three_planes(rawimage: &mut RawImage) -> crate::Result<()> {
-  let (illuminant, matrix) = rawimage
-    .reduction_matrices()
-    .into_iter()
+  let no_matrix = || RawlerError::DecoderFailed("Reducing four color planes requires a color matrix".into());
+  let profile = rawimage.as_shot_camera_profile().ok_or_else(no_matrix)?;
+  let reductions = profile.reduction_matrices();
+  let (illuminant, matrix) = profile
+    .slots()
+    .filter_map(|slot| Some((profile.illuminant(slot), reductions[slot].clone()?)))
     .min_by_key(|(illuminant, _)| d65_preference(illuminant))
-    .ok_or_else(|| RawlerError::DecoderFailed("Reducing four color planes requires a color matrix".into()))?;
+    .ok_or_else(no_matrix)?;
   let reduction = transform_1d::<3, 4>(&matrix).expect("reduction matrix has 12 values");
   log::debug!("Reduce four color planes by {:?}, the reduction matrix for {:?}", reduction, illuminant);
 
   let pixels = Color2D::<f32, 4>::new_with(rawimage.data.as_f32().as_chunks::<4>().0.to_vec(), rawimage.width, rawimage.height);
   rawimage.data = RawImageData::Float(map_4ch_to_3ch(&pixels, &reduction).into_flatten());
 
-  for matrix in rawimage.color_matrix.values_mut() {
-    if let Some(xyz2cam) = transform_1d::<4, 3>(matrix) {
-      *matrix = transform_2d(&multiply(&reduction, &xyz2cam));
+  let analog_balance = rawimage.analog_balance.take().and_then(|balance| {
+    let balance: [f32; 4] = balance.try_into().ok()?;
+    Some(std::array::from_fn::<_, 4, _>(|i| {
+      std::array::from_fn::<_, 4, _>(|j| if i == j { balance[i] } else { 0.0 })
+    }))
+  });
+  let calibration = std::mem::take(&mut rawimage.camera_calibration);
+  for profile in &mut rawimage.camera_profiles {
+    let calibration = Some(&calibration).filter(|calibration| calibration.applies_to(profile));
+    for slot in 0..CALIBRATION_SLOTS {
+      if let Some(matrix) = profile.color_matrix[slot].take() {
+        let Some(mut xyz2cam) = transform_1d::<4, 3>(&matrix) else {
+          log::warn!(
+            "Color matrix for {:?} has {} values, can't reduce it to three color planes",
+            profile.illuminant(slot),
+            matrix.len()
+          );
+          continue;
+        };
+        if let Some(cc) = calibration
+          .and_then(|calibration| calibration.matrices[slot].as_deref())
+          .and_then(transform_1d::<4, 4>)
+        {
+          xyz2cam = multiply(&cc, &xyz2cam);
+        }
+        if let Some(ab) = &analog_balance {
+          xyz2cam = multiply(ab, &xyz2cam);
+        }
+        profile.color_matrix[slot] = Some(transform_2d(&multiply(&reduction, &xyz2cam)));
+      }
+      // ForwardMatrix maps four color planes, ReductionMatrix is only allowed for more than three
+      profile.forward_matrix[slot] = None;
+      profile.reduction_matrix[slot] = None;
     }
   }
-  rawimage.color_matrix.retain(|illuminant, matrix| {
-    let valid = matrix.len() == 9;
-    if !valid {
-      log::warn!(
-        "Color matrix for {:?} has {} values, can't reduce it to three color planes",
-        illuminant,
-        matrix.len()
-      );
-    }
-    valid
-  });
+  rawimage.camera_profiles.retain(|profile| profile.slots().next().is_some());
 
   // Camera neutral in the reduced color space
   let wb = rawimage.wb_coeffs;
@@ -688,8 +704,6 @@ fn reduce_to_three_planes(rawimage: &mut RawImage) -> crate::Result<()> {
   rawimage.cpp = 3;
   rawimage.blacklevel = BlackLevel::zero(1, 1, 3);
   rawimage.whitelevel = WhiteLevel::new(vec![1; 3]);
-  // ReductionMatrix is only allowed for more than three color planes
-  rawimage.reduction_matrix.clear();
   Ok(())
 }
 
@@ -792,8 +806,14 @@ mod tests {
 
   /// Demosaiced CYGM image with white and a saturated color, with color matrices for D65 and A
   fn four_plane_image() -> RawImage {
+    // cyan = G + B, yellow = R + G, green = G, magenta = R + B
+    let rgb2cam = [[0.0, 1.0, 1.0], [1.0, 1.0, 0.0], [0.0, 1.0, 0.0], [1.0, 0.0, 1.0]];
+    let xyz2cam = transform_2d(&multiply(&rgb2cam, &crate::imgop::xyz::XYZ_TO_SRGB_D65));
+    let mut camera = Camera::new();
+    camera.color_matrix.insert(Illuminant::D65, xyz2cam.clone());
+    camera.color_matrix.insert(Illuminant::A, xyz2cam.iter().map(|v| v * 1.1).collect());
     let mut rawimage = RawImage::new(
-      Camera::new(),
+      camera,
       PixU16::new_with(vec![0; 2 * 4], 2 * 4, 1),
       4,
       // Camera neutral of D65 is (1, 1, 0.5, 1)
@@ -804,12 +824,16 @@ mod tests {
       false,
     );
     rawimage.data = RawImageData::Float(vec![1.0, 1.0, 1.0, 1.0, 0.8, 0.2, 0.1, 0.4]);
-    // cyan = G + B, yellow = R + G, green = G, magenta = R + B
-    let rgb2cam = [[0.0, 1.0, 1.0], [1.0, 1.0, 0.0], [0.0, 1.0, 0.0], [1.0, 0.0, 1.0]];
-    let xyz2cam = transform_2d(&multiply(&rgb2cam, &crate::imgop::xyz::XYZ_TO_SRGB_D65));
-    rawimage.color_matrix.insert(Illuminant::D65, xyz2cam.clone());
-    rawimage.color_matrix.insert(Illuminant::A, xyz2cam.iter().map(|v| v * 1.1).collect());
     rawimage
+  }
+
+  /// Color matrix of `illuminant` in the primary profile
+  fn color_matrix(rawimage: &RawImage, illuminant: Illuminant) -> Vec<f32> {
+    let profile = rawimage.primary_camera_profile().expect("profile");
+    profile
+      .slot_of(illuminant)
+      .and_then(|slot| profile.color_matrix[slot].clone())
+      .expect("color matrix")
   }
 
   #[test]
@@ -825,7 +849,13 @@ mod tests {
     // Camera white stays white, colors stay in range
     assert!(data[..3].iter().all(|v| (v - 1.0).abs() < 1e-4), "white is {:?}", &data[..3]);
     assert!(data.iter().all(|v| (0.0..=1.0 + 1e-6).contains(v)), "data is {:?}", data);
-    assert!(rawimage.color_matrix.values().all(|matrix| matrix.len() == 9));
+    let profile = rawimage.primary_camera_profile().expect("profile");
+    assert_eq!(profile.slots().count(), 2);
+    assert!(
+      profile
+        .slots()
+        .all(|slot| profile.color_matrix[slot].as_ref().is_some_and(|matrix| matrix.len() == 9))
+    );
     // The neutral is mapped into the reduced planes and normalized to a maximum of 1.0
     assert!(rawimage.wb_coeffs[3].is_nan());
     let neutral: Vec<f32> = rawimage.wb_coeffs[..3].iter().map(|wb| 1.0 / wb).collect();
@@ -837,20 +867,60 @@ mod tests {
   #[test]
   fn reduce_four_planes_by_camera_reduction_matrix() -> crate::Result<()> {
     let mut rawimage = four_plane_image();
-    let xyz2cam_a = transform_1d::<4, 3>(&rawimage.color_matrix[&Illuminant::A]).expect("4x3 matrix");
+    let xyz2cam_a = transform_1d::<4, 3>(&color_matrix(&rawimage, Illuminant::A)).expect("4x3 matrix");
     // The matrix for D65 is preferred to reduce the image data
     let provided = [[1.0, 0.0, 0.0, 0.0], [0.0, 0.5, 0.0, 0.5], [0.0, 0.0, 1.0, 0.0]];
-    rawimage.reduction_matrix.insert(Illuminant::D65, transform_2d(&provided));
-    rawimage.reduction_matrix.insert(Illuminant::A, vec![0.25; 12]);
+    let profile = rawimage.primary_camera_profile_mut().expect("profile");
+    let (slot_a, slot_d65) = (profile.slot_of(Illuminant::A).expect("A"), profile.slot_of(Illuminant::D65).expect("D65"));
+    profile.reduction_matrix[slot_d65] = Some(transform_2d(&provided));
+    profile.reduction_matrix[slot_a] = Some(vec![0.25; 12]);
 
     reduce_to_three_planes(&mut rawimage)?;
 
     let data = rawimage.data.as_f32();
     let expected = [1.0, 1.0, 1.0, 0.8, 0.3, 0.1];
     assert!(data.iter().zip(expected).all(|(v, e)| (v - e).abs() < 1e-6), "data is {:?}", data);
-    assert_eq!(rawimage.color_matrix[&Illuminant::A], transform_2d(&multiply(&provided, &xyz2cam_a)));
+    assert_eq!(color_matrix(&rawimage, Illuminant::A), transform_2d(&multiply(&provided, &xyz2cam_a)));
     // Three color planes have no reduction matrix
-    assert!(rawimage.reduction_matrix.is_empty());
+    assert!(rawimage.camera_profiles[0].reduction_matrix.iter().all(Option::is_none));
+    Ok(())
+  }
+
+  #[test]
+  fn reduce_four_planes_of_all_profiles_with_calibration() -> crate::Result<()> {
+    let mut rawimage = four_plane_image();
+    let profile = rawimage.camera_profiles[0].clone();
+    let slot_d65 = profile.slot_of(Illuminant::D65).expect("D65");
+    let xyz2cam = transform_1d::<4, 3>(&color_matrix(&rawimage, Illuminant::D65)).expect("4x3 matrix");
+    let provided = [[1.0, 0.0, 0.0, 0.0], [0.0, 0.5, 0.0, 0.5], [0.0, 0.0, 1.0, 0.0]];
+    rawimage.camera_profiles[0].reduction_matrix[slot_d65] = Some(transform_2d(&provided));
+    rawimage.camera_profiles[0].forward_matrix[slot_d65] = Some(vec![0.25; 12]);
+    // Extra profile with another calibration signature
+    let mut extra = profile;
+    extra.name = Some("Extra".into());
+    extra.calibration_signature = Some("other".into());
+    rawimage.camera_profiles.push(extra);
+    let balance = [1.0, 2.0, 1.0, 1.0];
+    rawimage.analog_balance = Some(balance.to_vec());
+    let calibration = [[1.0, 0.0, 0.0, 0.0], [0.0, 1.0, 0.0, 0.0], [0.0, 0.0, 0.5, 0.0], [0.0, 0.0, 0.0, 1.0]];
+    rawimage.camera_calibration.matrices[slot_d65] = Some(transform_2d(&calibration));
+
+    reduce_to_three_planes(&mut rawimage)?;
+
+    let ab = std::array::from_fn::<_, 4, _>(|i| std::array::from_fn::<_, 4, _>(|j| if i == j { balance[i] } else { 0.0 }));
+    // CameraCalibration applies to the primary profile only
+    let expected = multiply(&provided, &multiply(&ab, &multiply(&calibration, &xyz2cam)));
+    assert_eq!(rawimage.camera_profiles[0].color_matrix[slot_d65], Some(transform_2d(&expected)));
+    let expected = multiply(&provided, &multiply(&ab, &xyz2cam));
+    assert_eq!(rawimage.camera_profiles[1].color_matrix[slot_d65], Some(transform_2d(&expected)));
+    assert!(
+      rawimage
+        .camera_profiles
+        .iter()
+        .all(|profile| profile.forward_matrix.iter().all(Option::is_none))
+    );
+    assert_eq!(rawimage.analog_balance, None);
+    assert!(rawimage.camera_calibration.is_empty());
     Ok(())
   }
 
@@ -866,7 +936,7 @@ mod tests {
       Some(WhiteLevel::new(vec![1; 4])),
       false,
     );
-    rawimage.color_matrix.clear();
+    rawimage.camera_profiles.clear();
     assert!(reduce_to_three_planes(&mut rawimage).is_err());
   }
 

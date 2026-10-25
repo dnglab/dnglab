@@ -9,6 +9,7 @@ use image::{DynamicImage, ExtendedColorType, codecs::jpeg::JpegEncoder, imageops
 use log::debug;
 use rayon::prelude::*;
 
+use crate::tags::{DngTag, TiffCommonTag};
 use crate::{
   CFA, RawImage, RawImageData,
   compressors::jpegxl::{self, LossyTransfer, TileSamples, TileSettings},
@@ -26,15 +27,13 @@ use crate::{
   tags::ExifTag,
   tiles::ImageTiler,
 };
-use crate::{
-  formats::tiff::SRational,
-  imgop::xyz::Illuminant,
-  tags::{DngTag, TiffCommonTag},
-};
 
 use super::{
   CompressionParams, CropMode, DNG_VERSION_V1_0, DNG_VERSION_V1_1, DNG_VERSION_V1_4, DNG_VERSION_V1_7, DNG_VERSION_V1_7_1, DngCompression,
-  DngPhotometricConversion, DngVersionNumber, JxlParams, opcodes::OpcodeStage, original::OriginalCompressed,
+  DngPhotometricConversion, DngVersionNumber, JxlParams,
+  camera_profile_tags::{extra_camera_profile_data, rationals, write_camera_calibration, write_camera_profile, write_string},
+  opcodes::OpcodeStage,
+  original::OriginalCompressed,
 };
 
 pub type DngError = TiffError;
@@ -205,42 +204,11 @@ where
 
     if rawimage.cpp > 1 || matches!(rawimage.photometric, RawPhotometricInterpretation::Cfa(_)) {
       self.writer.as_shot_neutral(wbcoeff_to_tiff_value(&rawimage));
-      // ReductionMatrix is required for more than three color planes
       let color_planes = match &rawimage.photometric {
         RawPhotometricInterpretation::Cfa(config) => config.colors.plane_count(),
         _ => rawimage.cpp,
       };
-      let reduction_matrices = if color_planes > 3 {
-        rawimage.reduction_matrices()
-      } else {
-        Default::default()
-      };
-      // Add matrix and illumninant
-      let mut available_matrices = rawimage.color_matrix.clone();
-      if let Some(first_key) = available_matrices.keys().next().cloned() {
-        let first_matrix = available_matrices
-          .remove_entry(&Illuminant::A)
-          .or_else(|| available_matrices.remove_entry(&Illuminant::A))
-          .or_else(|| available_matrices.remove_entry(&first_key))
-          .expect("No matrix found");
-        self
-          .writer
-          .color_matrix(1, first_matrix.0, matrix_to_tiff_value(&first_matrix.1, 10_000).as_slice());
-        if let Some(reduction) = reduction_matrices.get(&first_matrix.0) {
-          self.writer.reduction_matrix(1, matrix_to_tiff_value(reduction, 10_000).as_slice());
-        }
-        if let Some(second_matrix) = available_matrices
-          .remove_entry(&Illuminant::D65)
-          .or_else(|| available_matrices.remove_entry(&Illuminant::D50))
-        {
-          self
-            .writer
-            .color_matrix(2, second_matrix.0, matrix_to_tiff_value(&second_matrix.1, 10_000).as_slice());
-          if let Some(reduction) = reduction_matrices.get(&second_matrix.0) {
-            self.writer.reduction_matrix(2, matrix_to_tiff_value(reduction, 10_000).as_slice());
-          }
-        }
-      }
+      self.writer.camera_profiles(&rawimage, color_planes)?;
     }
 
     let full_size = Rect::new(Point::new(0, 0), Dim2::new(rawimage.width, rawimage.height));
@@ -560,27 +528,46 @@ where
     }
   }
 
-  pub fn color_matrix(&mut self, slot: usize, illu: Illuminant, matrix: impl AsRef<[SRational]>) {
-    match slot {
-      1 => {
-        self.root_ifd.add_tag(DngTag::CalibrationIlluminant1, u16::from(illu));
-        self.root_ifd.add_tag(DngTag::ColorMatrix1, matrix.as_ref());
+  /// Write the camera profiles of `rawimage` with `color_planes` color planes, the
+  /// camera calibration, AnalogBalance and AsShotProfileName.
+  ///
+  /// The first profile is written to IFD 0, others are extra camera profiles.
+  pub fn camera_profiles(&mut self, rawimage: &RawImage, color_planes: usize) -> Result<()> {
+    const CUSTOM_ILLUMINANT: &str = "Custom calibration illuminant";
+    let mut extra_profiles = Vec::new();
+    for (index, profile) in rawimage.camera_profiles.iter().enumerate() {
+      let mut profile = profile.clone();
+      // ReductionMatrix is required for more than three color planes, and not allowed otherwise
+      profile.reduction_matrix = if color_planes > 3 { profile.reduction_matrices() } else { Default::default() };
+      let version = profile.min_backward_version();
+      if self.backward_version_allows(version, CUSTOM_ILLUMINANT) {
+        self.update_backward_version(version, CUSTOM_ILLUMINANT)?;
+      } else {
+        log::warn!(
+          "Camera profile {} uses a custom calibration illuminant, which requires DNG backward version {}. It is replaced by the nearest standard illuminant.",
+          index,
+          version
+        );
+        profile = profile.with_standard_illuminants();
       }
-      2 => {
-        self.root_ifd.add_tag(DngTag::CalibrationIlluminant2, u16::from(illu));
-        self.root_ifd.add_tag(DngTag::ColorMatrix2, matrix.as_ref());
+      if index == 0 {
+        write_camera_profile(&mut self.root_ifd, &profile);
+      } else {
+        let data = extra_camera_profile_data(&profile)?;
+        extra_profiles.push(self.dng.write_data(&data)?);
       }
-      _ => todo!(),
     }
-  }
-
-  /// Add the ReductionMatrix for the illuminant of color matrix `slot`
-  pub fn reduction_matrix(&mut self, slot: usize, matrix: impl AsRef<[SRational]>) {
-    match slot {
-      1 => self.root_ifd.add_tag(DngTag::ReductionMatrix1, matrix.as_ref()),
-      2 => self.root_ifd.add_tag(DngTag::ReductionMatrix2, matrix.as_ref()),
-      _ => todo!(),
+    if !extra_profiles.is_empty() {
+      self.root_ifd.add_tag(DngTag::ExtraCameraProfiles, extra_profiles.as_slice());
     }
+    write_camera_calibration(&mut self.root_ifd, &rawimage.camera_calibration);
+    if let Some(balance) = &rawimage.analog_balance {
+      self.root_ifd.add_tag(DngTag::AnalogBalance, rationals(balance).as_slice());
+    }
+    if let Some(name) = &rawimage.as_shot_profile_name {
+      write_string(&mut self.root_ifd, DngTag::AsShotProfileName, name);
+    }
+    Ok(())
   }
 
   pub fn load_metadata(&mut self, metadata: &RawMetadata) -> Result<()> {
@@ -914,10 +901,6 @@ fn wbcoeff_to_tiff_value(rawimage: &RawImage) -> Vec<Rational> {
       }
     }
   }
-}
-
-fn matrix_to_tiff_value(xyz_to_cam: &[f32], d: i32) -> Vec<SRational> {
-  xyz_to_cam.iter().map(|a| SRational::new((a * d as f32) as i32, d)).collect()
 }
 
 /// Compress RAW image with LJPEG-92

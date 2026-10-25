@@ -28,9 +28,9 @@ pub enum Illuminant {
   D75 = 22,
   D50 = 23,
   IsoStudioTungsten = 24,
+  /// Custom illuminant, described by DNG IlluminantData
+  Other = 255,
 }
-
-pub type FlatColorMatrix = Vec<f32>;
 
 impl TryFrom<u16> for Illuminant {
   type Error = String;
@@ -57,6 +57,7 @@ impl TryFrom<u16> for Illuminant {
       22 => Self::D75,
       23 => Self::D50,
       24 => Self::IsoStudioTungsten,
+      255 => Self::Other,
       _ => {
         return Err(format!("Unknown illuminant value: {}", v));
       }
@@ -93,6 +94,7 @@ impl Illuminant {
       "D75" => Ok(Self::D75),
       "D50" => Ok(Self::D50),
       "IsoStudioTungsten" => Ok(Self::IsoStudioTungsten),
+      "Other" => Ok(Self::Other),
       _ => Err(format!("Unknown illuminant name: '{}'", s)),
     }
   }

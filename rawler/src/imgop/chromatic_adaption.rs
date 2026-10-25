@@ -55,6 +55,8 @@ fn illuminant_to_XYZ_tristimulus(illuminant: &Illuminant) -> [f32; 3] {
     Illuminant::D75 => CIE_1931_TRISTIMULUS_D75,
     Illuminant::D50 => CIE_1931_TRISTIMULUS_D50,
     Illuminant::IsoStudioTungsten => todo!(),
+    // Callers only adapt illuminants of D65_PREFERENCE
+    Illuminant::Other => unreachable!("Custom illuminant has no standard white point"),
   }
 }
 

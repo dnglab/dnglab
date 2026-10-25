@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: LGPL-2.1
 // Copyright 2023 Daniel Vogelbacher <daniel@chaospixel.com>
 
+pub mod camera_profile_tags;
 pub mod convert;
 pub mod convertprofile;
 pub mod opcodes;

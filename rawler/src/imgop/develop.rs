@@ -7,6 +7,7 @@ use image::{DynamicImage, ImageBuffer};
 
 use crate::{
   RawImage, RawImageData,
+  camera_profile::D65_PREFERENCE,
   decoders::{RawDecodeParams, RawMetadata, validate_image_index},
   dng::{
     CropMode,
@@ -250,7 +251,7 @@ impl RawDevelop {
     // BaselineExposure is applied as linear gain to the scene-linear data, clipping
     // is done by the color space conversion or the final conversion to integers.
     if self.steps.contains(&ProcessingStep::BaselineExposure) {
-      let exposure = rawimage.baseline_exposure.unwrap_or(0.0) + rawimage.baseline_exposure_offset.unwrap_or(0.0);
+      let exposure = rawimage.baseline_exposure.unwrap_or(0.0) + rawimage.baseline_exposure_offset().unwrap_or(0.0);
       if exposure != 0.0 {
         let gain = exposure.exp2();
         log::debug!("ProcessingStep: BaselineExposure {} EV, gain: {}", exposure, gain);
@@ -265,23 +266,14 @@ impl RawDevelop {
     if self.steps.contains(&ProcessingStep::Calibrate) {
       let mut xyz2cam: [[f32; 3]; 4] = [[0.0; 3]; 4];
       let d65_matrix: Vec<f32>;
-      let (illu, matrix) = rawimage
-        .color_matrix_find_first([
-          Illuminant::D65, // Best option
-          Illuminant::A,
-          Illuminant::B,
-          Illuminant::C,
-          Illuminant::D50,
-          Illuminant::D55,
-          Illuminant::D75,
-          Illuminant::Daylight,
-          Illuminant::Flash,
-        ])
-        .unwrap_or_else(|| {
-          log::warn!("No alternative matrix found, using identity matrix");
-          (Illuminant::D65, IDENTITY_MATRIX_3.as_flattened().to_vec())
-        });
+      let (illu, matrix) = rawimage.best_color_matrix().map(|(illu, matrix)| (illu, matrix.clone())).unwrap_or_else(|| {
+        log::warn!("No alternative matrix found, using identity matrix");
+        (Illuminant::D65, IDENTITY_MATRIX_3.as_flattened().to_vec())
+      });
       if illu == Illuminant::D65 {
+        d65_matrix = matrix;
+      } else if !D65_PREFERENCE.contains(&illu) {
+        log::warn!("Color matrix for {:?} can't be adapted to D65, it is used as it is", illu);
         d65_matrix = matrix;
       } else {
         log::warn!("Image has no D65 illuminant matrix, alternative for Bradford adaption: {:?}", illu);
@@ -634,7 +626,11 @@ mod tests {
       false,
     );
     rawimage.baseline_exposure = Some(0.5);
-    rawimage.baseline_exposure_offset = Some(0.5);
+    // BaselineExposureOffset is part of the camera profile
+    rawimage.camera_profiles = vec![crate::camera_profile::CameraProfile {
+      baseline_exposure_offset: Some(0.5),
+      ..Default::default()
+    }];
     let develop = RawDevelop::new_with(&[ProcessingStep::Rescale, ProcessingStep::Demosaic, ProcessingStep::BaselineExposure]);
     let Intermediate::ThreeColor(pixels) = develop.develop_intermediate(&rawimage)? else {
       panic!("expected three color image");

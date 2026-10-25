@@ -6,7 +6,7 @@ use crate::CFA;
 use crate::RawlerError;
 use crate::Result;
 use crate::cfa::PlaneColor;
-use crate::imgop::xyz::FlatColorMatrix;
+use crate::imgop::matrix::FlatMatrix;
 use crate::imgop::xyz::Illuminant;
 
 use std::collections::HashMap;
@@ -31,10 +31,9 @@ pub struct Camera {
   pub blacklevel: Option<Vec<u32>>,
   pub blackareah: Option<(usize, usize)>,
   pub blackareav: Option<(usize, usize)>,
-  pub xyz_to_cam: [[f32; 3]; 4],
-  pub color_matrix: HashMap<Illuminant, FlatColorMatrix>,
+  pub color_matrix: HashMap<Illuminant, FlatMatrix>,
   /// Reduction matrices (3 x color planes) for cameras with more than three color planes
-  pub reduction_matrix: HashMap<Illuminant, FlatColorMatrix>,
+  pub reduction_matrix: HashMap<Illuminant, FlatMatrix>,
   pub cfa: CFA,
   pub plane_color: PlaneColor,
   // Active area relative to sensor size
@@ -175,7 +174,7 @@ impl Camera {
           if let Some(reduction_matrix) = val.as_table() {
             for (illu_str, matrix) in reduction_matrix.into_iter() {
               let illu = Illuminant::new_from_str(illu_str).expect("invalid illuminant string in reduction_matrix");
-              let matrix: FlatColorMatrix = matrix
+              let matrix: FlatMatrix = matrix
                 .as_array()
                 .expect("reduction matrix must be array")
                 .iter()
@@ -290,7 +289,6 @@ impl Camera {
       blacklevel: None,
       blackareah: None,
       blackareav: None,
-      xyz_to_cam: [[0.0; 3]; 4],
       color_matrix: HashMap::new(),
       reduction_matrix: HashMap::new(),
       cfa: CFA::new(""),

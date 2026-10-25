@@ -29,8 +29,14 @@ where
   W: Write + Seek,
 {
   pub fn new(writer: W) -> Result<Self> {
+    Self::new_with_magic(writer, TIFF_MAGIC)
+  }
+
+  /// Writer for a TIFF like structure with another magic number in the
+  /// header, like DNG camera profiles
+  pub fn new_with_magic(writer: W, magic: u16) -> Result<Self> {
     let mut tmp = Self { writer, ifd_location: 0 };
-    tmp.write_header()?;
+    tmp.write_header(magic)?;
     Ok(tmp)
   }
 
@@ -38,14 +44,14 @@ where
     DirectoryWriter::new()
   }
 
-  fn write_header(&mut self) -> Result<()> {
+  fn write_header(&mut self, magic: u16) -> Result<()> {
     #[cfg(target_endian = "little")]
     let boi: u8 = 0x49;
     #[cfg(not(target_endian = "little"))]
     let boi: u8 = 0x4d;
 
     self.writer.write_all(&[boi, boi])?;
-    self.writer.write_u16::<NativeEndian>(TIFF_MAGIC)?;
+    self.writer.write_u16::<NativeEndian>(magic)?;
     self.ifd_location = self.writer.stream_position()?;
     self.writer.write_u32::<NativeEndian>(0_u32)?;
 

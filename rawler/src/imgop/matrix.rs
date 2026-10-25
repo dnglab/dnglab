@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: LGPL-2.1
 // Copyright 2021 Daniel Vogelbacher <daniel@chaospixel.com>
 
+/// Matrix in row-major order, the dimensions are given by the context
+pub type FlatMatrix = Vec<f32>;
+
 pub const IDENTITY_MATRIX_3: [[f32; 3]; 3] = [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]];
 
 /// Multiply two matrices a and b
