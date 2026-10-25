@@ -79,6 +79,12 @@ Command line switches override the values of the profile.",
         .default_value("1"),
     )
     .arg(
+      arg!(lossy_jpeg_quality: --"lossy-jpeg-quality" <quality> "JPEG quality for lossy compression (1-100)")
+        .required(false)
+        .value_parser(clap::value_parser!(u8).range(1..=100))
+        .default_value("94"),
+    )
+    .arg(
       arg!(preview: --"dng-preview" <preview> "DNG include preview image")
         .value_parser(ValueParser::bool())
         .required(false)

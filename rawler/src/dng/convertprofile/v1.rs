@@ -7,7 +7,7 @@
 
 use serde::{Deserialize, Serialize};
 
-use crate::dng::{ApplyDngOpcodes, CropMode, DngCompression, DngVersion, opcodes::OpcodeSelector};
+use crate::dng::{ApplyDngOpcodes, CropMode, DEFAULT_LOSSY_JPEG_QUALITY, DngCompression, DngVersion, opcodes::OpcodeSelector};
 
 /// How to handle files that contain multiple raw images
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq, Serialize, Deserialize)]
@@ -44,6 +44,9 @@ pub struct ConvertProfileV1 {
   pub compression: DngCompression,
   #[serde(default = "default_ljpeg92_predictor")]
   pub ljpeg92_predictor: u8,
+  /// JPEG quality (1-100) for lossy compression
+  #[serde(default = "default_lossy_jpeg_quality")]
+  pub lossy_jpeg_quality: u8,
   #[serde(default = "default_crop")]
   pub crop: CropMode,
   #[serde(default = "default_true")]
@@ -80,6 +83,10 @@ fn default_ljpeg92_predictor() -> u8 {
   1
 }
 
+fn default_lossy_jpeg_quality() -> u8 {
+  DEFAULT_LOSSY_JPEG_QUALITY
+}
+
 fn default_crop() -> CropMode {
   CropMode::Best
 }
@@ -99,6 +106,7 @@ impl Default for ConvertProfileV1 {
       remove_dng_opcodes: Vec::new(),
       compression: default_compression(),
       ljpeg92_predictor: default_ljpeg92_predictor(),
+      lossy_jpeg_quality: default_lossy_jpeg_quality(),
       crop: default_crop(),
       add_preview: true,
       add_thumbnail: true,

@@ -102,6 +102,9 @@ fn apply_cli_overrides(profile: &mut ConvertProfile, options: &ArgMatches) {
   if let Some(value) = from_cli::<u8>(options, "predictor") {
     profile.ljpeg92_predictor = value;
   }
+  if let Some(value) = from_cli::<u8>(options, "lossy_jpeg_quality") {
+    profile.lossy_jpeg_quality = value;
+  }
   if let Some(value) = from_cli::<bool>(options, "preview") {
     profile.add_preview = value;
   }
@@ -228,6 +231,31 @@ mod tests {
     assert_eq!(frames, FrameSelection::All);
     // From command line
     assert_eq!(profile.compression, DngCompression::Uncompressed);
+  }
+
+  #[test]
+  fn cli_overrides_lossy_jpeg_quality() {
+    let tmp = TempDir::new();
+    tmp.write("mine.toml", "[convertprofile.mine]\nversion = 1\ntitle = \"T\"\nlossy_jpeg_quality = 60\n");
+    let path = tmp.path();
+    let (_tmp, options) = convert_matches(&["--profile-path", &path, "convert", "-p", "mine", "-c", "lossy", "in.raw", "out.dng"]);
+    let (profile, _) = resolve_convert_profile(&options).expect("profile");
+    assert_eq!(profile.compression, DngCompression::Lossy);
+    assert_eq!(profile.lossy_jpeg_quality, 60);
+    let args = [
+      "--profile-path",
+      &path,
+      "convert",
+      "-p",
+      "mine",
+      "--lossy-jpeg-quality",
+      "80",
+      "in.raw",
+      "out.dng",
+    ];
+    let (_tmp, options) = convert_matches(&args);
+    let (profile, _) = resolve_convert_profile(&options).expect("profile");
+    assert_eq!(profile.lossy_jpeg_quality, 80);
   }
 
   #[test]

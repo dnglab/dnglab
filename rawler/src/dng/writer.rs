@@ -5,7 +5,7 @@ use std::{
   time::Instant,
 };
 
-use image::{DynamicImage, codecs::jpeg::JpegEncoder, imageops::FilterType};
+use image::{DynamicImage, ExtendedColorType, codecs::jpeg::JpegEncoder, imageops::FilterType};
 use log::debug;
 use rayon::prelude::*;
 
@@ -88,7 +88,7 @@ where
     self.ifd.as_mut().unwrap_or(self.writer.root_ifd_mut())
   }
 
-  pub fn rgb_image_u8(&mut self, data: &[u8], width: usize, height: usize, compression: DngCompression, predictor: u8) -> Result<()> {
+  pub fn rgb_image_u8(&mut self, data: &[u8], width: usize, height: usize, compression: DngCompression, predictor: u8, lossy_jpeg_quality: u8) -> Result<()> {
     let cpp = 3;
     let rawimagedata = PixU16::new_with(data.iter().copied().map(u16::from).collect(), width * cpp, height);
     let mut cam = Camera::new();
@@ -99,10 +99,17 @@ where
     let whitelevel = Some(WhiteLevel::new_bits(8, cpp));
     let photometric = RawPhotometricInterpretation::LinearRaw;
     let rawimage = RawImage::new(cam, rawimagedata, cpp, wb_coeffs, photometric, blacklevel, whitelevel, false);
-    self.raw_image(&rawimage, CropMode::None, compression, DngPhotometricConversion::Original, predictor)
+    self.raw_image(
+      &rawimage,
+      CropMode::None,
+      compression,
+      DngPhotometricConversion::Original,
+      predictor,
+      lossy_jpeg_quality,
+    )
   }
 
-  pub fn rgb_image_u16(&mut self, data: &[u16], width: usize, height: usize, compression: DngCompression, predictor: u8) -> Result<()> {
+  pub fn rgb_image_u16(&mut self, data: &[u16], width: usize, height: usize, compression: DngCompression, predictor: u8, lossy_jpeg_quality: u8) -> Result<()> {
     let cpp = 3;
     let rawimagedata = PixU16::new_with(data.to_vec(), width * cpp, height);
     let mut cam = Camera::new();
@@ -113,7 +120,14 @@ where
     let whitelevel = Some(WhiteLevel::new_bits(16, cpp));
     let photometric = RawPhotometricInterpretation::LinearRaw;
     let rawimage = RawImage::new(cam, rawimagedata, cpp, wb_coeffs, photometric, blacklevel, whitelevel, false);
-    self.raw_image(&rawimage, CropMode::None, compression, DngPhotometricConversion::Original, predictor)
+    self.raw_image(
+      &rawimage,
+      CropMode::None,
+      compression,
+      DngPhotometricConversion::Original,
+      predictor,
+      lossy_jpeg_quality,
+    )
   }
 
   pub fn image(&mut self, _image: &RawImageData, _width: u16, _height: u16) -> Result<()> {
@@ -127,16 +141,17 @@ where
     compression: DngCompression,
     photometric_conversion: DngPhotometricConversion,
     predictor: u8,
+    lossy_jpeg_quality: u8,
   ) -> Result<()> {
     match photometric_conversion {
-      DngPhotometricConversion::Original => self.write_rawimage(Cow::Borrowed(rawimage), cropmode, compression, predictor)?,
+      DngPhotometricConversion::Original => self.write_rawimage(Cow::Borrowed(rawimage), cropmode, compression, predictor, lossy_jpeg_quality)?,
 
       DngPhotometricConversion::Linear => {
         if rawimage.cpp == 3 {
-          self.write_rawimage(Cow::Borrowed(rawimage), cropmode, compression, predictor)?;
+          self.write_rawimage(Cow::Borrowed(rawimage), cropmode, compression, predictor, lossy_jpeg_quality)?;
         } else {
           let rawimage = rawimage.linearize().map_err(|e| DngError::General(format!("linearization failed: {}", e)))?;
-          self.write_rawimage(Cow::Borrowed(&rawimage), cropmode, compression, predictor)?;
+          self.write_rawimage(Cow::Borrowed(&rawimage), cropmode, compression, predictor, lossy_jpeg_quality)?;
         }
       }
     }
@@ -150,7 +165,14 @@ where
     Ok(())
   }
 
-  fn write_rawimage(&mut self, mut rawimage: Cow<RawImage>, cropmode: CropMode, compression: DngCompression, predictor: u8) -> Result<()> {
+  fn write_rawimage(
+    &mut self,
+    mut rawimage: Cow<RawImage>,
+    cropmode: CropMode,
+    compression: DngCompression,
+    predictor: u8,
+    lossy_jpeg_quality: u8,
+  ) -> Result<()> {
     // Readers process OpcodeList2 and OpcodeList3 on 16 bit data for 16 bit integer
     // raw data, otherwise on floats (as in the DNG SDK).
     let source_integer = match rawimage.data {
@@ -161,6 +183,10 @@ where
     // before the data is converted to floats.
     if rawimage.linearization_table.is_some() && matches!(rawimage.data, RawImageData::Float(_)) {
       return Err(DngError::General("LinearizationTable requires integer image data".into()));
+    }
+    if compression == DngCompression::Lossy {
+      self.writer.update_backward_version(DNG_VERSION_V1_4, "Lossy JPEG compression")?;
+      to_lossy_8bit(rawimage.to_mut())?;
     }
     if matches!(rawimage.data, RawImageData::Float(_))
       && (compression == DngCompression::Lossless || !self.writer.backward_version_allows(DNG_VERSION_V1_4, "Floating point image data"))
@@ -387,6 +413,10 @@ where
       DngCompression::Lossless => {
         self.ifd_mut().add_tag(TiffCommonTag::Compression, CompressionMethod::ModernJPEG);
         dng_put_raw_ljpeg(self, &rawimage, predictor)?;
+      }
+      DngCompression::Lossy => {
+        self.ifd_mut().add_tag(TiffCommonTag::Compression, CompressionMethod::LossyJPEG);
+        dng_put_raw_lossy_jpeg(self, &rawimage, lossy_jpeg_quality)?;
       }
     }
 
@@ -673,6 +703,67 @@ fn float_to_integer(rawimage: &mut RawImage) {
   rawimage.bps = 16; // Reset bps as integers are scaled to u16 range.
 }
 
+/// Slope at the origin of the encoding curve for 8 bit lossy compressed data
+const LOSSY_CURVE_SLOPE: f64 = 1.0 / 128.0;
+
+/// LinearizationTable for 8 bit lossy compressed data
+///
+/// Maps code y (scaled to 0.0 .. 1.0) to the linear value x = s·y + (1−s)·y³,
+/// scaled to the 16 bit range.
+fn lossy_linearization_table() -> Vec<u16> {
+  (0..=u8::MAX)
+    .map(|code| {
+      let y = code as f64 / u8::MAX as f64;
+      let x = LOSSY_CURVE_SLOPE * y + (1.0 - LOSSY_CURVE_SLOPE) * y.powi(3);
+      (x * u16::MAX as f64).round() as u16
+    })
+    .collect()
+}
+
+/// Convert image data to 8 bit codes for lossy JPEG compression
+///
+/// Lossy JPEG requires 8 bit LinearRaw data. The data is scaled to linear
+/// 0.0 .. 1.0 and each sample is encoded to the nearest code of
+/// [`lossy_linearization_table`], which is stored as LinearizationTable.
+fn to_lossy_8bit(rawimage: &mut RawImage) -> Result<()> {
+  match rawimage.photometric {
+    RawPhotometricInterpretation::Cfa(_) => {
+      return Err(DngError::General("Lossy JPEG compression requires demosaiced (LinearRaw) image data".into()));
+    }
+    // A single plane LinearRaw image is the same as BlackIsZero
+    RawPhotometricInterpretation::BlackIsZero => rawimage.photometric = RawPhotometricInterpretation::LinearRaw,
+    RawPhotometricInterpretation::LinearRaw => {}
+  }
+  if rawimage.cpp != 1 && rawimage.cpp != 3 {
+    return Err(DngError::General(format!(
+      "Lossy JPEG compression requires 1 or 3 samples per pixel, got {}",
+      rawimage.cpp
+    )));
+  }
+  let normalized =
+    matches!(rawimage.data, RawImageData::Float(_)) && rawimage.blacklevel.levels.iter().all(|x| x.n == 0) && rawimage.whitelevel.0.iter().all(|x| *x == 1);
+  if !normalized {
+    rawimage
+      .apply_scaling()
+      .map_err(|err| DngError::General(format!("Scaling for lossy compression failed: {}", err)))?;
+  }
+  let table = lossy_linearization_table();
+  // Decision levels between adjacent codes, so each sample gets the nearest code
+  let levels: Vec<f32> = table.windows(2).map(|pair| (pair[0] as f32 + pair[1] as f32) / 2.0 / u16::MAX as f32).collect();
+  let codes: Vec<u16> = rawimage
+    .data
+    .as_f32()
+    .par_iter()
+    .map(|v| levels.partition_point(|level| level < v) as u16)
+    .collect();
+  rawimage.data = RawImageData::Integer(codes);
+  rawimage.linearization_table = Some(table);
+  rawimage.blacklevel = BlackLevel::zero(1, 1, rawimage.cpp);
+  rawimage.whitelevel = WhiteLevel::new_bits(16, rawimage.cpp);
+  rawimage.bps = 8;
+  Ok(())
+}
+
 /// DNG requires the WB values to be the reciprocal
 fn wbcoeff_to_tiff_value(rawimage: &RawImage) -> Vec<Rational> {
   let wb = &rawimage.wb_coeffs;
@@ -701,13 +792,7 @@ fn wbcoeff_to_tiff_value(rawimage: &RawImage) -> Vec<Rational> {
         1 => {
           vec![Rational::new(1, 1)]
         }
-        3 => {
-          let mut values = Vec::with_capacity(3);
-          values.push(Rational::new_f32(1.0 / wb[0], 100000));
-          values.push(Rational::new_f32(1.0 / wb[1], 100000));
-          values.push(Rational::new_f32(1.0 / wb[2], 100000));
-          values
-        }
+        3 | 4 => wb[..rawimage.cpp].iter().map(|x| Rational::new_f32(1.0 / x, 100000)).collect(),
         _ => todo!(),
       }
     }
@@ -807,6 +892,63 @@ where
   Ok(())
 }
 
+/// Compress image with lossy JPEG
+///
+/// Data is split into multiple tiles, each tile is compressed seperately.
+/// The image must hold 8 bit samples with one (grayscale) or three (RGB) planes.
+fn dng_put_raw_lossy_jpeg<W>(subframe: &mut SubFrameWriter<W>, rawimage: &RawImage, quality: u8) -> Result<()>
+where
+  W: Seek + Write,
+{
+  let tile_w = 256;
+  let tile_h = 256;
+
+  let color_type = match rawimage.cpp {
+    1 => ExtendedColorType::L8,
+    3 => ExtendedColorType::Rgb8,
+    cpp => {
+      return Err(DngError::General(format!(
+        "Lossy JPEG compression requires 1 or 3 samples per pixel, got {}",
+        cpp
+      )));
+    }
+  };
+  let RawImageData::Integer(ref data) = rawimage.data else {
+    return Err(DngError::General("Lossy JPEG compression requires 8 bit integer data".into()));
+  };
+
+  let tiler = ImageTiler::new(data, rawimage.width, rawimage.height, rawimage.cpp, tile_w, tile_h);
+  let jpeg_data: Vec<Vec<u8>> = (0..tiler.tile_count())
+    .into_par_iter()
+    .map(|idx| {
+      let tile: Vec<u8> = tiler.build_tile(idx).into_iter().map(|v| v as u8).collect();
+      let mut buf = Vec::new();
+      JpegEncoder::new_with_quality(&mut buf, quality.clamp(1, 100))
+        .encode(&tile, tile_w as u32, tile_h as u32, color_type)
+        .map_err(|e| DngError::General(format!("Lossy JPEG encoding failed: {}", e)))?;
+      Ok(buf)
+    })
+    .collect::<Result<Vec<_>>>()?;
+
+  let mut tile_offsets: Vec<u32> = Vec::new();
+  let mut tile_sizes: Vec<u32> = Vec::new();
+
+  for tile in jpeg_data.iter() {
+    let offs = subframe.writer.dng.write_data(tile)?;
+    tile_offsets.push(offs);
+    tile_sizes.push(tile.len() as u32);
+  }
+
+  subframe.ifd_mut().add_tag(TiffCommonTag::BitsPerSample, &vec![8_u16; rawimage.cpp]);
+  subframe.ifd_mut().add_tag(TiffCommonTag::SampleFormat, &vec![1_u16; rawimage.cpp]);
+  subframe.ifd_mut().add_tag(TiffCommonTag::TileOffsets, &tile_offsets);
+  subframe.ifd_mut().add_tag(TiffCommonTag::TileByteCounts, &tile_sizes);
+  subframe.ifd_mut().add_tag(TiffCommonTag::TileWidth, tile_w as u16);
+  subframe.ifd_mut().add_tag(TiffCommonTag::TileLength, tile_h as u16);
+
+  Ok(())
+}
+
 /// Write RAW uncompressed into DNG
 ///
 /// This uses unsigned 16 bit values for storage
@@ -860,7 +1002,7 @@ mod tests {
 
   use std::io::Cursor;
 
-  use crate::dng::DNG_VERSION_V1_4;
+  use crate::dng::{DEFAULT_LOSSY_JPEG_QUALITY, DNG_VERSION_V1_4};
 
   use super::*;
 
@@ -912,7 +1054,14 @@ mod tests {
     let mut buf = Cursor::new(Vec::new());
     let mut dng = DngWriter::new(&mut buf, max_backward_version)?;
     let mut frame = dng.subframe(0);
-    frame.raw_image(rawimage, cropmode, DngCompression::Uncompressed, DngPhotometricConversion::Original, 1)?;
+    frame.raw_image(
+      rawimage,
+      cropmode,
+      DngCompression::Uncompressed,
+      DngPhotometricConversion::Original,
+      1,
+      DEFAULT_LOSSY_JPEG_QUALITY,
+    )?;
     frame.finalize()?;
     dng.close()?;
     Ok(buf.into_inner())
@@ -924,7 +1073,14 @@ mod tests {
     let mut dng = DngWriter::new(&mut buf, DNG_VERSION_V1_4)?;
     dng.load_base_tags(rawimage)?;
     let mut frame = dng.subframe(0);
-    frame.raw_image(rawimage, CropMode::None, compression, DngPhotometricConversion::Original, 1)?;
+    frame.raw_image(
+      rawimage,
+      CropMode::None,
+      compression,
+      DngPhotometricConversion::Original,
+      1,
+      DEFAULT_LOSSY_JPEG_QUALITY,
+    )?;
     frame.finalize()?;
     dng.close()?;
     Ok(buf.into_inner())
@@ -1014,7 +1170,14 @@ mod tests {
     let mut buf = Cursor::new(Vec::new());
     let mut dng = DngWriter::new(&mut buf, max_backward_version)?;
     let mut frame = dng.subframe(0);
-    frame.raw_image(rawimage, CropMode::None, compression, DngPhotometricConversion::Original, 1)?;
+    frame.raw_image(
+      rawimage,
+      CropMode::None,
+      compression,
+      DngPhotometricConversion::Original,
+      1,
+      DEFAULT_LOSSY_JPEG_QUALITY,
+    )?;
     frame.finalize()?;
     dng.close()?;
     let data = buf.into_inner();
@@ -1144,6 +1307,119 @@ mod tests {
     Ok(())
   }
 
+  /// Synthetic 16x16 LinearRaw image with `cpp` planes of floating point data in range 0.0 .. 1.0
+  fn synthetic_linear_f32(cpp: usize) -> RawImage {
+    let mut rawimage = synthetic_rawimage(None);
+    let samples = 16 * 16 * cpp;
+    rawimage.data = RawImageData::Float((0..samples).map(|i| i as f32 / samples as f32).collect());
+    rawimage.cpp = cpp;
+    rawimage.photometric = RawPhotometricInterpretation::LinearRaw;
+    rawimage.blacklevel = BlackLevel::zero(1, 1, cpp);
+    rawimage.whitelevel = WhiteLevel::new(vec![1; cpp]);
+    rawimage
+  }
+
+  /// Write `rawimage` lossy compressed, check the raw IFD and return the decoded image data, scaled to 0.0 .. 1.0
+  fn write_lossy(rawimage: &RawImage) -> std::result::Result<Vec<f32>, Box<dyn std::error::Error>> {
+    use crate::formats::tiff::{GenericTiffReader, reader::TiffReader};
+
+    let data = write_synthetic_dng_compressed(rawimage, DngCompression::Lossy)?;
+    let (backward_version, _) = read_backward_version_and_active_area(&data)?;
+    assert_eq!(backward_version, DNG_VERSION_V1_4);
+    let tiff = GenericTiffReader::new_with_buffer(&data, 0, 0, None)?;
+    let raw_ifd = tiff.find_first_ifd_with_tag(DngTag::LinearizationTable).ok_or("LinearizationTable missing")?;
+    let value = |tag: TiffCommonTag| raw_ifd.get_entry(tag).map(|entry| entry.value.force_u16(0));
+    assert_eq!(value(TiffCommonTag::Compression), Some(CompressionMethod::LossyJPEG as u16));
+    assert_eq!(value(TiffCommonTag::PhotometricInt), Some(PhotometricInterpretation::LinearRaw as u16));
+    assert_eq!(value(TiffCommonTag::BitsPerSample), Some(8));
+    assert_eq!(raw_ifd.get_entry(DngTag::LinearizationTable).map(|entry| entry.value.count()), Some(256));
+    assert_eq!(tiff.root_ifd().get_entry(DngTag::AsShotNeutral).is_some(), rawimage.cpp > 1);
+
+    let source = crate::rawsource::RawSource::new_from_slice(&data);
+    let mut decoded = crate::get_decoder(&source)?.raw_image(&source, &crate::decoders::RawDecodeParams::default(), false)?;
+    assert_eq!(decoded.cpp, rawimage.cpp);
+    decoded.apply_scaling()?;
+    Ok(decoded.data.as_f32().into_owned())
+  }
+
+  /// Compare lossy compressed data, the step size of 8 bit codes is up to 1.2% of the white level
+  fn assert_lossy_eq(decoded: &[f32], expected: &[f32]) {
+    assert_eq!(decoded.len(), expected.len());
+    for (i, (d, e)) in decoded.iter().zip(expected).enumerate() {
+      assert!((d - e).abs() < 0.03, "sample {}: decoded {}, expected {}", i, d, e);
+    }
+  }
+
+  #[test]
+  fn lossy_rgb_roundtrip() -> std::result::Result<(), Box<dyn std::error::Error>> {
+    let rawimage = synthetic_linear_f32(3);
+    assert_lossy_eq(&write_lossy(&rawimage)?, &rawimage.data.as_f32());
+    Ok(())
+  }
+
+  #[test]
+  fn lossy_monochrome_roundtrip() -> std::result::Result<(), Box<dyn std::error::Error>> {
+    let rawimage = synthetic_linear_f32(1);
+    assert_lossy_eq(&write_lossy(&rawimage)?, &rawimage.data.as_f32());
+
+    // BlackIsZero is written as LinearRaw
+    let mut rawimage = synthetic_rawimage(None);
+    rawimage.photometric = RawPhotometricInterpretation::BlackIsZero;
+    rawimage.blacklevel = BlackLevel::new(&[256_u32], 1, 1, 1);
+    let expected: Vec<f32> = rawimage.data.as_f32().iter().map(|v| ((v - 256.0) / (4095.0 - 256.0)).max(0.0)).collect();
+    assert_lossy_eq(&write_lossy(&rawimage)?, &expected);
+    Ok(())
+  }
+
+  #[test]
+  fn lossy_applies_linearization_table() -> std::result::Result<(), Box<dyn std::error::Error>> {
+    let mut rawimage = synthetic_linear_f32(3);
+    rawimage.data = RawImageData::Integer((0..16 * 16 * 3).map(|i| (i * 5) as u16).collect());
+    rawimage.linearization_table = Some((0..4096_u32).map(|i| (i * i / 256) as u16).collect());
+    rawimage.whitelevel = WhiteLevel::new_bits(16, 3);
+    let expected: Vec<f32> = (0..16 * 16 * 3).map(|i| ((i * 5) * (i * 5) / 256) as f32 / 65535.0).collect();
+    assert_lossy_eq(&write_lossy(&rawimage)?, &expected);
+    Ok(())
+  }
+
+  #[test]
+  fn lossy_linearization_table_is_monotonic() {
+    let table = lossy_linearization_table();
+    assert_eq!(table.len(), 256);
+    assert_eq!((table[0], table[255]), (0, u16::MAX));
+    assert!(table.windows(2).all(|pair| pair[0] < pair[1]));
+
+    // Each table value is encoded to its own code
+    let mut rawimage = synthetic_linear_f32(1);
+    rawimage.data = RawImageData::Float(table.iter().map(|v| *v as f32 / u16::MAX as f32).collect());
+    to_lossy_8bit(&mut rawimage).expect("lossy conversion");
+    assert_eq!(
+      rawimage.data.as_f32().iter().map(|v| *v as u16).collect::<Vec<_>>(),
+      (0..=255).collect::<Vec<u16>>()
+    );
+    assert_eq!(rawimage.linearization_table, Some(table));
+  }
+
+  #[test]
+  fn lossy_requires_linear_raw_and_dng_1_4() -> std::result::Result<(), Box<dyn std::error::Error>> {
+    assert!(write_synthetic_dng_compressed(&synthetic_rawimage(None), DngCompression::Lossy).is_err());
+    assert!(write_synthetic_dng_compressed(&synthetic_linear_f32(4), DngCompression::Lossy).is_err());
+
+    let mut buf = Cursor::new(Vec::new());
+    let mut dng = DngWriter::new(&mut buf, DNG_VERSION_V1_1)?;
+    let mut frame = dng.subframe(0);
+    let result = frame.raw_image(
+      &synthetic_linear_f32(3),
+      CropMode::None,
+      DngCompression::Lossy,
+      DngPhotometricConversion::Original,
+      1,
+      DEFAULT_LOSSY_JPEG_QUALITY,
+    );
+    assert!(result.is_err());
+    Ok(())
+  }
+
   #[test]
   fn max_backward_version_is_clamped_to_dng_version() -> std::result::Result<(), Box<dyn std::error::Error>> {
     let mut buf = Cursor::new(Vec::new());
@@ -1214,6 +1490,7 @@ mod tests {
       DngCompression::Lossless,
       DngPhotometricConversion::Original,
       predictor,
+      DEFAULT_LOSSY_JPEG_QUALITY,
     )?;
     raw.finalize()?;
     dng.thumbnail(&full_image)?;

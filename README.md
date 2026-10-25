@@ -86,6 +86,7 @@ For a list of supported cameras please see [SUPPORTED_CAMERAS.md](SUPPORTED_CAME
 ### Supported DNG features
 
  * DNG lossless compression (LJPEG-92)
+ * DNG lossy compression (JPEG, DNG 1.4), the raw data is demosaiced and stored as 8 bit
 
 ## Command line help
 
@@ -107,7 +108,7 @@ OPTIONS:
             Set the artist tag
 
     -c, --compression <compression>
-            Compression for raw image [default: lossless] [possible values: lossless, uncompressed]
+            Compression for raw image [default: lossless] [possible values: lossless, lossy, uncompressed]
 
         --crop <crop>
             DNG default crop [default: best] [possible values: best, activearea, none]
@@ -135,6 +136,9 @@ OPTIONS:
 
         --ljpeg92-predictor <predictor>
             LJPEG-92 predictor [default: 1] [possible values: 1, 2, 3, 4, 5, 6, 7]
+
+        --lossy-jpeg-quality <quality>
+            JPEG quality for lossy compression (1-100) [default: 94]
 
     -r, --recursive
             Process input directory recursive

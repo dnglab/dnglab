@@ -4,7 +4,7 @@
 .SH NAME
 dnglab\-ftpserver \- Convert raw image(s) into dng format
 .SH SYNOPSIS
-\fBdnglab\-ftpserver\fR [\fB\-p\fR|\fB\-\-profile\fR] [\fB\-c\fR|\fB\-\-compression\fR] [\fB\-\-ljpeg92\-predictor\fR] [\fB\-\-dng\-preview\fR] [\fB\-\-dng\-thumbnail\fR] [\fB\-\-dng\-force\-preview\fR] [\fB\-\-dng\-force\-thumbnail\fR] [\fB\-\-max\-dng\-backward\-version\fR] [\fB\-\-embed\-raw\fR] [\fB\-\-apply\-dng\-opcodes\fR] [\fB\-\-remove\-dng\-opcodes\fR] [\fB\-\-artist\fR] [\fB\-\-copyright\fR] [\fB\-\-keep\-mtime\fR] [\fB\-\-image\-index\fR] [\fB\-\-crop\fR] [\fB\-f\fR|\fB\-\-override\fR] [\fB\-\-port\fR] [\fB\-\-listen\fR] [\fB\-\-keep\-original\fR] [\fB\-h\fR|\fB\-\-help\fR] <\fIOUTPUT\fR> 
+\fBdnglab\-ftpserver\fR [\fB\-p\fR|\fB\-\-profile\fR] [\fB\-c\fR|\fB\-\-compression\fR] [\fB\-\-ljpeg92\-predictor\fR] [\fB\-\-lossy\-jpeg\-quality\fR] [\fB\-\-dng\-preview\fR] [\fB\-\-dng\-thumbnail\fR] [\fB\-\-dng\-force\-preview\fR] [\fB\-\-dng\-force\-thumbnail\fR] [\fB\-\-max\-dng\-backward\-version\fR] [\fB\-\-embed\-raw\fR] [\fB\-\-apply\-dng\-opcodes\fR] [\fB\-\-remove\-dng\-opcodes\fR] [\fB\-\-artist\fR] [\fB\-\-copyright\fR] [\fB\-\-keep\-mtime\fR] [\fB\-\-image\-index\fR] [\fB\-\-crop\fR] [\fB\-f\fR|\fB\-\-override\fR] [\fB\-\-port\fR] [\fB\-\-listen\fR] [\fB\-\-keep\-original\fR] [\fB\-h\fR|\fB\-\-help\fR] <\fIOUTPUT\fR> 
 .SH DESCRIPTION
 Convert raw image(s) into dng format
 .SH OPTIONS
@@ -25,11 +25,16 @@ Compression for raw image
 .IP \(bu 2
 lossless
 .IP \(bu 2
+lossy
+.IP \(bu 2
 uncompressed
 .RE
 .TP
 \fB\-\-ljpeg92\-predictor\fR \fI<predictor>\fR [default: 1]
 LJPEG\-92 predictor
+.TP
+\fB\-\-lossy\-jpeg\-quality\fR \fI<quality>\fR [default: 94]
+JPEG quality for lossy compression (1\-100)
 .TP
 \fB\-\-dng\-preview\fR \fI<preview>\fR [default: true]
 DNG include preview image

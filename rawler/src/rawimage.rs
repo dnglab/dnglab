@@ -583,8 +583,8 @@ impl RawImage {
     }
     let mut pixels = self.data.as_f32();
     match &self.photometric {
-      RawPhotometricInterpretation::BlackIsZero => todo!(),
-      RawPhotometricInterpretation::Cfa(_) => {
+      // Black levels of a single plane repeat spatially like on CFA data
+      RawPhotometricInterpretation::BlackIsZero | RawPhotometricInterpretation::Cfa(_) => {
         correct_blacklevel_cfa(
           pixels.to_mut(),
           self.width,

@@ -8,7 +8,7 @@ use image::DynamicImage;
 use itertools::Itertools;
 use rawler::decoders::{RawDecodeParams, RawMetadata};
 use rawler::dng::writer::DngWriter;
-use rawler::dng::{CropMode, DngCompression, DngPhotometricConversion, DngVersion};
+use rawler::dng::{CropMode, DEFAULT_LOSSY_JPEG_QUALITY, DngCompression, DngPhotometricConversion, DngVersion};
 use rawler::exif::Exif;
 use rawler::formats::jfif::{Jfif, is_exif, is_jfif};
 use rawler::formats::tiff::{self, Rational, SRational};
@@ -122,7 +122,14 @@ pub async fn makedng_internal(options: &ArgMatches, dest_path: &Path) -> crate::
     if let Ok(decoder) = get_decoder(&rawfile) {
       let rawimage = decoder.raw_image(&rawfile, &RawDecodeParams::default(), false)?;
       let mut rawframe = dng.subframe(0);
-      rawframe.raw_image(&rawimage, CropMode::Best, DngCompression::Lossless, DngPhotometricConversion::Original, 1)?;
+      rawframe.raw_image(
+        &rawimage,
+        CropMode::Best,
+        DngCompression::Lossless,
+        DngPhotometricConversion::Original,
+        1,
+        DEFAULT_LOSSY_JPEG_QUALITY,
+      )?;
       rawframe.finalize()?;
     } else {
       let image = open_without_limits(raw_input)?;
@@ -130,7 +137,14 @@ pub async fn makedng_internal(options: &ArgMatches, dest_path: &Path) -> crate::
       match &image {
         DynamicImage::ImageRgb8(img) => {
           let buf = img.as_raw().as_slice();
-          frame.rgb_image_u8(buf, img.width() as usize, img.height() as usize, DngCompression::Lossless, 1)?;
+          frame.rgb_image_u8(
+            buf,
+            img.width() as usize,
+            img.height() as usize,
+            DngCompression::Lossless,
+            1,
+            DEFAULT_LOSSY_JPEG_QUALITY,
+          )?;
           frame.ifd_mut().add_tag(DngTag::BlackLevel, [0u16, 0, 0]);
 
           if let Some(linear_table_input) = options.get_one::<<LinearizationTableArgParser as TypedValueParser>::Value>("linearization") {
@@ -148,7 +162,14 @@ pub async fn makedng_internal(options: &ArgMatches, dest_path: &Path) -> crate::
 
         DynamicImage::ImageRgb16(img) => {
           let buf = img.as_raw().as_slice();
-          frame.rgb_image_u16(buf, img.width() as usize, img.height() as usize, DngCompression::Lossless, 1)?;
+          frame.rgb_image_u16(
+            buf,
+            img.width() as usize,
+            img.height() as usize,
+            DngCompression::Lossless,
+            1,
+            DEFAULT_LOSSY_JPEG_QUALITY,
+          )?;
           frame.ifd_mut().add_tag(DngTag::BlackLevel, [0u16, 0, 0]);
 
           if let Some(linear_table_input) = options.get_one::<<LinearizationTableArgParser as TypedValueParser>::Value>("linearization") {

@@ -44,7 +44,7 @@ use std::{
 
 use serde::{Deserialize, Deserializer, Serialize, Serializer, de::Error as _};
 
-use super::convert::ConvertParams;
+use super::{DngCompression, DngVersion, convert::ConvertParams};
 
 pub use v1::MultiFrameMode;
 
@@ -164,6 +164,18 @@ impl ConvertProfile {
         reason: format!("ljpeg92_predictor must be in range 1..=7, got {}", self.ljpeg92_predictor),
       });
     }
+    if !(1..=100).contains(&self.lossy_jpeg_quality) {
+      return Err(ConvertProfileError::Invalid {
+        profile: name.to_string(),
+        reason: format!("lossy_jpeg_quality must be in range 1..=100, got {}", self.lossy_jpeg_quality),
+      });
+    }
+    if self.compression == DngCompression::Lossy && self.max_dng_backward_version < DngVersion::V1_4 {
+      return Err(ConvertProfileError::Invalid {
+        profile: name.to_string(),
+        reason: "lossy compression requires max_dng_backward_version 1.4 or higher".to_string(),
+      });
+    }
     if self.force_preview && !self.add_preview {
       log::warn!("Convert profile '{}': force_preview has no effect, add_preview is disabled", name);
     }
@@ -183,6 +195,7 @@ impl ConvertProfile {
       compression: self.compression,
       crop: self.crop,
       predictor: self.ljpeg92_predictor,
+      lossy_jpeg_quality: self.lossy_jpeg_quality,
       preview: self.add_preview,
       thumbnail: self.add_thumbnail,
       force_preview: self.force_preview,
@@ -426,7 +439,7 @@ impl ConvertProfileRegistry {
 #[cfg(test)]
 mod tests {
   use super::*;
-  use crate::dng::{ApplyDngOpcodes, CropMode, DngCompression, DngVersion};
+  use crate::dng::{ApplyDngOpcodes, CropMode};
 
   /// Temporary directory, removed on drop
   struct TempDir(PathBuf);
@@ -474,6 +487,7 @@ mod tests {
     assert_eq!(params.apply_scaling, default.apply_scaling);
     assert_eq!(params.crop, default.crop);
     assert_eq!(params.predictor, default.predictor);
+    assert_eq!(params.lossy_jpeg_quality, default.lossy_jpeg_quality);
     assert_eq!(params.preview, default.preview);
     assert_eq!(params.thumbnail, default.thumbnail);
     assert_eq!(params.force_preview, default.force_preview);
@@ -499,6 +513,7 @@ mod tests {
       remove_dng_opcodes: vec!["WarpRectilinear".parse().expect("selector"), "2:GainMap".parse().expect("selector")],
       compression: DngCompression::Uncompressed,
       ljpeg92_predictor: 3,
+      lossy_jpeg_quality: 80,
       crop: CropMode::ActiveArea,
       add_preview: false,
       add_thumbnail: true,
@@ -519,6 +534,7 @@ mod tests {
     assert!(toml.contains("max_dng_backward_version = \"1.1\""));
     assert!(toml.contains("crop = \"activearea\""));
     assert!(toml.contains("apply_dng_opcodes = \"list2\""));
+    assert!(toml.contains("lossy_jpeg_quality = 80"));
     assert!(toml.contains("remove_dng_opcodes = [\"WarpRectilinear\", \"2:GainMap\"]"));
     let parsed = ConvertProfileFile::from_toml_str(&toml).expect("parse");
     assert_eq!(parsed, file);
@@ -591,6 +607,42 @@ mod tests {
     dir.write("a.toml", "[convertprofile.x]\nversion = 1\ntitle = \"T\"\nljpeg92_predictor = 8\n");
     let mut registry = ConvertProfileRegistry::new();
     assert!(matches!(registry.load_dir(&dir.0), Err(ConvertProfileError::Invalid { .. })));
+  }
+
+  #[test]
+  fn invalid_lossy_jpeg_quality_is_rejected() {
+    for quality in [0, 101] {
+      let dir = TempDir::new();
+      let path = dir.write(
+        "a.toml",
+        &format!("[convertprofile.x]\nversion = 1\ntitle = \"T\"\nlossy_jpeg_quality = {}\n", quality),
+      );
+      let mut registry = ConvertProfileRegistry::new();
+      assert!(
+        matches!(registry.load_file(path), Err(ConvertProfileError::Invalid { .. })),
+        "quality {}",
+        quality
+      );
+    }
+  }
+
+  #[test]
+  fn lossy_requires_dng_1_4() {
+    let dir = TempDir::new();
+    let path = dir.write(
+      "a.toml",
+      "[convertprofile.x]\nversion = 1\ntitle = \"T\"\ncompression = \"lossy\"\nmax_dng_backward_version = \"1.1\"\n",
+    );
+    let mut registry = ConvertProfileRegistry::new();
+    assert!(matches!(registry.load_file(&path), Err(ConvertProfileError::Invalid { .. })));
+    let path = dir.write(
+      "b.toml",
+      "[convertprofile.x]\nversion = 1\ntitle = \"T\"\ncompression = \"lossy\"\nlossy_jpeg_quality = 50\n",
+    );
+    registry.load_file(&path).expect("load");
+    let profile = registry.get("x").expect("profile");
+    assert_eq!(profile.compression, DngCompression::Lossy);
+    assert_eq!(profile.to_convert_params("DNGLab").lossy_jpeg_quality, 50);
   }
 
   #[test]

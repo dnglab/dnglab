@@ -13,7 +13,7 @@ use crate::{
   RawImage, RawImageData, RawlerError,
   decoders::{Decoder, RawDecodeParams, RawPhotometricInterpretation, WellKnownIFD, WhiteLevel, validate_image_index},
   dng::{
-    PREVIEW_JPEG_QUALITY,
+    DEFAULT_LOSSY_JPEG_QUALITY, PREVIEW_JPEG_QUALITY,
     opcodes::{OpcodeSelector, OpcodeStage},
     original::OriginalCompressed,
     writer::DngWriter,
@@ -23,10 +23,16 @@ use crate::{
     Point, Rect,
     develop::RawDevelop,
     fuji_rotate::fuji_normalize_rotation,
-    sensor::{Demosaic, bayer::ppg::PPGDemosaic},
+    matrix::{multiply, transform_1d, transform_2d},
+    raw::map_4ch_to_3ch,
+    sensor::{
+      Demosaic, SensorType,
+      bayer::{bilinear::Bilinear4Channel, ppg::PPGDemosaic},
+      xtrans::markesteijn::XTransMarkesteijnDemosaic,
+    },
   },
-  pixarray::PixF32,
-  rawimage::BlackLevel,
+  pixarray::{Color2D, PixF32},
+  rawimage::{BlackLevel, d65_preference},
   rawsource::RawSource,
   tags::{DngTag, ExifTag, TiffCommonTag},
 };
@@ -35,6 +41,20 @@ use super::{ApplyDngOpcodes, CropMode, DngCompression, DngPhotometricConversion,
 
 /// Opcode list stages in processing order
 const STAGES: [OpcodeStage; 3] = [OpcodeStage::List1, OpcodeStage::List2, OpcodeStage::List3];
+
+/// Tags with values for each color plane, copied from DNG input.
+/// They don't match the image data after the color planes are reduced.
+const COLOR_PLANE_TAGS: [DngTag; 9] = [
+  DngTag::CameraCalibration1,
+  DngTag::CameraCalibration2,
+  DngTag::CameraCalibration3,
+  DngTag::ForwardMatrix1,
+  DngTag::ForwardMatrix2,
+  DngTag::ForwardMatrix3,
+  DngTag::AnalogBalance,
+  DngTag::AsShotPreProfileMatrix,
+  DngTag::CurrentPreProfileMatrix,
+];
 
 /// Parameters for DNG conversion
 #[derive(Clone, Debug)]
@@ -45,6 +65,8 @@ pub struct ConvertParams {
   pub apply_scaling: bool,
   pub crop: CropMode,
   pub predictor: u8,
+  /// JPEG quality (1-100) for lossy compression
+  pub lossy_jpeg_quality: u8,
   pub preview: bool,
   pub thumbnail: bool,
   /// Develop the preview from raw data instead of using an embedded preview
@@ -87,6 +109,7 @@ impl Default for ConvertParams {
       apply_scaling: false,
       crop: CropMode::Best,
       predictor: 1,
+      lossy_jpeg_quality: DEFAULT_LOSSY_JPEG_QUALITY,
       preview: true,
       thumbnail: true,
       force_preview: false,
@@ -138,6 +161,12 @@ impl ConvertParams {
   /// Set the compression predictor.
   pub fn with_predictor(mut self, predictor: u8) -> Self {
     self.predictor = predictor;
+    self
+  }
+
+  /// Set the JPEG quality (1-100) for lossy compression.
+  pub fn with_lossy_jpeg_quality(mut self, lossy_jpeg_quality: u8) -> Self {
+    self.lossy_jpeg_quality = lossy_jpeg_quality;
     self
   }
 
@@ -290,13 +319,7 @@ where
   let max_backward_version = params.max_dng_backward_version.as_dng_value();
   let present = STAGES.map(|stage| rawimage.opcode_list(stage).is_some_and(|list| !list.is_empty()));
   let needs_processing = STAGES.map(|stage| rawimage.opcode_list(stage).is_some_and(|list| list.needs_processing(max_backward_version)));
-  let required_stage = if fuji_rotation {
-    OpcodeStage::List3
-  } else if params.apply_scaling {
-    OpcodeStage::List2
-  } else {
-    OpcodeStage::List1
-  };
+  let required_stage = required_stage(fuji_rotation, params.apply_scaling, params.compression);
   let (data_stage, apply) = processing_plan(present, needs_processing, params.apply_dng_opcodes, required_stage);
   for (stage, apply) in STAGES.into_iter().zip(apply) {
     // Bring the image data into the state the stage operates on
@@ -306,7 +329,7 @@ where
         if fuji_rotation {
           log::debug!("Raw image requires fuji_rotation before writing to DNG");
         }
-        demosaic_to_linear_raw(&mut rawimage, fuji_rotation);
+        demosaic_to_linear_raw(&mut rawimage, fuji_rotation)?;
       }
       _ => {}
     }
@@ -324,6 +347,20 @@ where
       })?;
     }
   }
+  // Lossy JPEG supports one or three color planes
+  let reduced_planes = params.compression == DngCompression::Lossy && rawimage.cpp == 4;
+  if reduced_planes {
+    // OpcodeList3 addresses the four color planes
+    rawimage.apply_opcode_list(OpcodeStage::List3)?;
+    reduce_to_three_planes(&mut rawimage)?;
+  }
+  let copy_tag = |tag: &u16| {
+    let keep = !reduced_planes || !COLOR_PLANE_TAGS.iter().any(|t| *t as u16 == *tag);
+    if !keep {
+      log::debug!("Color planes are reduced, tag 0x{:04x} is not copied", tag);
+    }
+    keep
+  };
 
   let mut dng = DngWriter::new_with_version(dng, params.dng_version.as_dng_value(), max_backward_version)?;
 
@@ -331,12 +368,21 @@ where
   // If no thumbnail should be written to root IFD, we need to put the raw image into
   // root IFD instead.
   let mut raw = if params.thumbnail { dng.subframe(0) } else { dng.subframe_on_root(0) };
-  raw.raw_image(&rawimage, params.crop, params.compression, params.photometric_conversion, params.predictor)?;
+  raw.raw_image(
+    &rawimage,
+    params.crop,
+    params.compression,
+    params.photometric_conversion,
+    params.predictor,
+    params.lossy_jpeg_quality,
+  )?;
   // Check for DNG raw IFD related tags
   if let Some(dng_raw_ifd) = decoder.ifd(WellKnownIFD::VirtualDngRawTags)? {
     // Opcode lists are written by raw_image(), they may have been applied to the image data
     let opcode_lists = [DngTag::OpcodeList1 as u16, DngTag::OpcodeList2 as u16, DngTag::OpcodeList3 as u16];
-    raw.ifd_mut().copy(dng_raw_ifd.value_iter().filter(|(tag, _)| !opcode_lists.contains(tag)));
+    raw
+      .ifd_mut()
+      .copy(dng_raw_ifd.value_iter().filter(|(tag, _)| !opcode_lists.contains(tag) && copy_tag(tag)));
   }
   raw.finalize()?;
 
@@ -378,7 +424,7 @@ where
 
   // Check for DNG root IFD related tags
   if let Some(dng_root_ifd) = decoder.ifd(WellKnownIFD::VirtualDngRootTags)? {
-    dng.root_ifd_mut().copy(dng_root_ifd.value_iter());
+    dng.root_ifd_mut().copy(dng_root_ifd.value_iter().filter(|(tag, _)| copy_tag(tag)));
   }
 
   // Check for TIFF root IFD related tags
@@ -443,6 +489,18 @@ where
   Ok(ConvertInfo { last_modified })
 }
 
+/// Minimum processing stage of the image data written to DNG
+fn required_stage(fuji_rotation: bool, apply_scaling: bool, compression: DngCompression) -> OpcodeStage {
+  if fuji_rotation || compression == DngCompression::Lossy {
+    // Rotation and lossy compression require demosaiced image data
+    OpcodeStage::List3
+  } else if apply_scaling {
+    OpcodeStage::List2
+  } else {
+    OpcodeStage::List1
+  }
+}
+
 /// Decide which opcode lists are applied to the image data, returns the processing
 /// stage of the image data written to DNG and the lists to apply.
 ///
@@ -462,34 +520,113 @@ fn processing_plan(present: [bool; 3], needs: [bool; 3], apply: ApplyDngOpcodes,
   (data_stage, applied)
 }
 
-/// Demosaic scaled CFA image data into three-color LinearRaw data, cropped to the
-/// active area. Other image data is left unchanged, as stage 3 equals stage 2 for it.
-fn demosaic_to_linear_raw(rawimage: &mut RawImage, fuji_rotation: bool) {
+/// Demosaic scaled CFA image data into LinearRaw data, cropped to the active area.
+/// Other image data is left unchanged, as stage 3 equals stage 2 for it.
+///
+/// Three-color sensors result in three planes, four-color sensors in four planes.
+fn demosaic_to_linear_raw(rawimage: &mut RawImage, fuji_rotation: bool) -> crate::Result<()> {
   if !fuji_rotation && !matches!(rawimage.photometric, RawPhotometricInterpretation::Cfa(_)) {
-    return;
+    return Ok(());
   }
   let pixels = PixF32::new_with(rawimage.data.as_f32().into_owned(), rawimage.width, rawimage.height);
   let roi = rawimage.active_area.unwrap_or(pixels.rect());
-  let demosaic = PPGDemosaic::new();
-  let mut rgb = demosaic.demosaic(&pixels, &rawimage.camera.cfa, &rawimage.camera.plane_color, roi);
-  if fuji_rotation {
-    let fuji_rotation_width = rawimage.fuji_rotation_width.expect("fuji_rotate: no rotation width found");
-    let extra_rotate = rawimage.camera.find_hint("fuji_rotate_90cw");
-    rgb = fuji_normalize_rotation(&rgb, fuji_rotation_width, extra_rotate);
-  } else {
+  let cfa = &rawimage.camera.cfa;
+  let colors = &rawimage.camera.plane_color;
+  let (width, height, cpp, data) = match SensorType::from_cfa(cfa) {
+    SensorType::Bayer if cfa.is_rgb() => {
+      let mut rgb = PPGDemosaic::new().demosaic(&pixels, cfa, colors, roi);
+      if fuji_rotation {
+        let fuji_rotation_width = rawimage.fuji_rotation_width.expect("fuji_rotate: no rotation width found");
+        let extra_rotate = rawimage.camera.find_hint("fuji_rotate_90cw");
+        rgb = fuji_normalize_rotation(&rgb, fuji_rotation_width, extra_rotate);
+      }
+      (rgb.width, rgb.height, 3, rgb.into_flatten())
+    }
+    SensorType::Bayer if cfa.unique_colors() == 4 => {
+      let image = Bilinear4Channel::new().demosaic(&pixels, cfa, colors, roi);
+      (image.width, image.height, 4, image.into_flatten())
+    }
+    SensorType::Xtrans if cfa.is_rgb() => {
+      let rgb = XTransMarkesteijnDemosaic::new_pass_3().demosaic(&pixels, cfa, colors, roi);
+      (rgb.width, rgb.height, 3, rgb.into_flatten())
+    }
+    _ => return Err(RawlerError::DecoderFailed(format!("Demosaic of CFA pattern '{}' is not supported", cfa))),
+  };
+  if !fuji_rotation {
     // Crop area is relative to the full image, which is now cropped to the active area
     rawimage.crop_area = rawimage
       .crop_area
       .map(|crop| Rect::new(Point::new(crop.p.x.saturating_sub(roi.p.x), crop.p.y.saturating_sub(roi.p.y)), crop.d));
   }
-  rawimage.width = rgb.width;
-  rawimage.height = rgb.height;
+  rawimage.width = width;
+  rawimage.height = height;
   rawimage.active_area = None;
+  rawimage.cpp = cpp;
+  rawimage.blacklevel = BlackLevel::zero(1, 1, cpp);
+  rawimage.whitelevel = WhiteLevel::new(vec![1; cpp]); // Already scaled up to 0.0 .. 1.0
+  rawimage.photometric = RawPhotometricInterpretation::LinearRaw;
+  rawimage.data = RawImageData::Float(data);
+  Ok(())
+}
+
+/// Reduce demosaiced four-color image data to three color planes.
+///
+/// The planes are mapped by a 3x4 reduction matrix R and the color matrices are
+/// replaced by R·CM. This is what a DNG reader does with a ReductionMatrix, but
+/// applied to the image data, so the DNG has three color planes and no ReductionMatrix.
+/// The image data can only be reduced once, so the reduction matrix for D65 is
+/// preferred, see [`RawImage::reduction_matrices`].
+fn reduce_to_three_planes(rawimage: &mut RawImage) -> crate::Result<()> {
+  let (illuminant, matrix) = rawimage
+    .reduction_matrices()
+    .into_iter()
+    .min_by_key(|(illuminant, _)| d65_preference(illuminant))
+    .ok_or_else(|| RawlerError::DecoderFailed("Reducing four color planes requires a color matrix".into()))?;
+  let reduction = transform_1d::<3, 4>(&matrix).expect("reduction matrix has 12 values");
+  log::debug!("Reduce four color planes by {:?}, the reduction matrix for {:?}", reduction, illuminant);
+
+  let pixels = Color2D::<f32, 4>::new_with(rawimage.data.as_f32().as_chunks::<4>().0.to_vec(), rawimage.width, rawimage.height);
+  rawimage.data = RawImageData::Float(map_4ch_to_3ch(&pixels, &reduction).into_flatten());
+
+  for matrix in rawimage.color_matrix.values_mut() {
+    if let Some(xyz2cam) = transform_1d::<4, 3>(matrix) {
+      *matrix = transform_2d(&multiply(&reduction, &xyz2cam));
+    }
+  }
+  rawimage.color_matrix.retain(|illuminant, matrix| {
+    let valid = matrix.len() == 9;
+    if !valid {
+      log::warn!(
+        "Color matrix for {:?} has {} values, can't reduce it to three color planes",
+        illuminant,
+        matrix.len()
+      );
+    }
+    valid
+  });
+
+  // Camera neutral in the reduced color space
+  let wb = rawimage.wb_coeffs;
+  rawimage.wb_coeffs = [f32::NAN; 4];
+  if !wb[0].is_nan() {
+    let neutral = reduction.map(|row| row.iter().zip(wb).map(|(r, wb)| r / wb).sum::<f32>());
+    let max = neutral.iter().copied().fold(f32::MIN, f32::max);
+    if neutral.iter().all(|n| *n > 0.0) {
+      rawimage.wb_coeffs = [max / neutral[0], max / neutral[1], max / neutral[2], f32::NAN];
+    } else {
+      log::warn!(
+        "Camera neutral {:?} is invalid after reducing the color planes, white balance is dropped",
+        neutral
+      );
+    }
+  }
+
   rawimage.cpp = 3;
   rawimage.blacklevel = BlackLevel::zero(1, 1, 3);
-  rawimage.whitelevel = WhiteLevel::new([1, 1, 1]); // Already scaled up to 0.0 .. 1.0
-  rawimage.photometric = RawPhotometricInterpretation::LinearRaw;
-  rawimage.data = RawImageData::Float(rgb.into_flatten());
+  rawimage.whitelevel = WhiteLevel::new(vec![1; 3]);
+  // ReductionMatrix is only allowed for more than three color planes
+  rawimage.reduction_matrix.clear();
+  Ok(())
 }
 
 /// Get a preview image from the decoder, or develop it from raw data.
@@ -531,6 +668,143 @@ fn generate_preview(
 #[cfg(test)]
 mod tests {
   use super::*;
+  use crate::{decoders::Camera, imgop::xyz::Illuminant, pixarray::PixU16};
+
+  #[test]
+  fn required_stage_for_compression() {
+    use DngCompression as C;
+    use OpcodeStage as S;
+    assert_eq!(required_stage(false, false, C::Lossless), S::List1);
+    assert_eq!(required_stage(false, true, C::Uncompressed), S::List2);
+    assert_eq!(required_stage(true, false, C::Lossless), S::List3);
+    // Lossy compression requires demosaiced data
+    assert_eq!(required_stage(false, false, C::Lossy), S::List3);
+    assert_eq!(required_stage(false, true, C::Lossy), S::List3);
+  }
+
+  #[test]
+  fn demosaic_by_sensor_type() -> crate::Result<()> {
+    use crate::{
+      cfa::{CFA, PlaneColor},
+      rawimage::CFAConfig,
+    };
+
+    const XTRANS: &str = "GGRGGBGGBGGRBRGRBGGGBGGRGGRGGBRBGBRG";
+    for (pattern, colors, cpp) in [("RGGB", "RGB", 3), (XTRANS, "RGB", 3), ("CYGM", "CYGM", 4)] {
+      let mut camera = Camera::new();
+      camera.cfa = CFA::new(pattern);
+      camera.plane_color = PlaneColor::new(colors);
+      let photometric = RawPhotometricInterpretation::Cfa(CFAConfig::new_from_camera(&camera));
+      let mut rawimage = RawImage::new(
+        camera,
+        PixU16::new_with(vec![0; 24 * 24], 24, 24),
+        1,
+        [1.0, 1.0, 1.0, 1.0],
+        photometric,
+        Some(BlackLevel::zero(1, 1, 1)),
+        Some(WhiteLevel::new(vec![1])),
+        false,
+      );
+      rawimage.data = RawImageData::Float(vec![0.5; 24 * 24]);
+
+      demosaic_to_linear_raw(&mut rawimage, false)?;
+
+      assert_eq!(rawimage.cpp, cpp, "{}", pattern);
+      assert_eq!(rawimage.photometric, RawPhotometricInterpretation::LinearRaw);
+      assert_eq!(rawimage.whitelevel.0, vec![1; cpp]);
+      let data = rawimage.data.as_f32();
+      assert_eq!(data.len(), 24 * 24 * cpp);
+      // A flat field stays flat
+      let center = (12 * 24 + 12) * cpp;
+      assert!(
+        data[center..center + cpp].iter().all(|v| (v - 0.5).abs() < 1e-3),
+        "{}: {:?}",
+        pattern,
+        &data[center..center + cpp]
+      );
+    }
+    Ok(())
+  }
+
+  /// Demosaiced CYGM image with white and a saturated color, with color matrices for D65 and A
+  fn four_plane_image() -> RawImage {
+    let mut rawimage = RawImage::new(
+      Camera::new(),
+      PixU16::new_with(vec![0; 2 * 4], 2 * 4, 1),
+      4,
+      // Camera neutral of D65 is (1, 1, 0.5, 1)
+      [1.0, 1.0, 2.0, 1.0],
+      RawPhotometricInterpretation::LinearRaw,
+      Some(BlackLevel::zero(1, 1, 4)),
+      Some(WhiteLevel::new(vec![1; 4])),
+      false,
+    );
+    rawimage.data = RawImageData::Float(vec![1.0, 1.0, 1.0, 1.0, 0.8, 0.2, 0.1, 0.4]);
+    // cyan = G + B, yellow = R + G, green = G, magenta = R + B
+    let rgb2cam = [[0.0, 1.0, 1.0], [1.0, 1.0, 0.0], [0.0, 1.0, 0.0], [1.0, 0.0, 1.0]];
+    let xyz2cam = transform_2d(&multiply(&rgb2cam, &crate::imgop::xyz::XYZ_TO_SRGB_D65));
+    rawimage.color_matrix.insert(Illuminant::D65, xyz2cam.clone());
+    rawimage.color_matrix.insert(Illuminant::A, xyz2cam.iter().map(|v| v * 1.1).collect());
+    rawimage
+  }
+
+  #[test]
+  fn reduce_four_planes_to_three() -> crate::Result<()> {
+    let mut rawimage = four_plane_image();
+
+    reduce_to_three_planes(&mut rawimage)?;
+
+    assert_eq!(rawimage.cpp, 3);
+    assert_eq!(rawimage.whitelevel.0, vec![1; 3]);
+    let data = rawimage.data.as_f32();
+    assert_eq!(data.len(), 2 * 3);
+    // Camera white stays white, colors stay in range
+    assert!(data[..3].iter().all(|v| (v - 1.0).abs() < 1e-4), "white is {:?}", &data[..3]);
+    assert!(data.iter().all(|v| (0.0..=1.0 + 1e-6).contains(v)), "data is {:?}", data);
+    assert!(rawimage.color_matrix.values().all(|matrix| matrix.len() == 9));
+    // The neutral is mapped into the reduced planes and normalized to a maximum of 1.0
+    assert!(rawimage.wb_coeffs[3].is_nan());
+    let neutral: Vec<f32> = rawimage.wb_coeffs[..3].iter().map(|wb| 1.0 / wb).collect();
+    assert!(neutral.iter().all(|n| *n > 0.0 && *n <= 1.0 + 1e-6), "neutral is {:?}", neutral);
+    assert!(neutral.iter().any(|n| (n - 1.0).abs() < 1e-6), "neutral is {:?}", neutral);
+    Ok(())
+  }
+
+  #[test]
+  fn reduce_four_planes_by_camera_reduction_matrix() -> crate::Result<()> {
+    let mut rawimage = four_plane_image();
+    let xyz2cam_a = transform_1d::<4, 3>(&rawimage.color_matrix[&Illuminant::A]).expect("4x3 matrix");
+    // The matrix for D65 is preferred to reduce the image data
+    let provided = [[1.0, 0.0, 0.0, 0.0], [0.0, 0.5, 0.0, 0.5], [0.0, 0.0, 1.0, 0.0]];
+    rawimage.reduction_matrix.insert(Illuminant::D65, transform_2d(&provided));
+    rawimage.reduction_matrix.insert(Illuminant::A, vec![0.25; 12]);
+
+    reduce_to_three_planes(&mut rawimage)?;
+
+    let data = rawimage.data.as_f32();
+    let expected = [1.0, 1.0, 1.0, 0.8, 0.3, 0.1];
+    assert!(data.iter().zip(expected).all(|(v, e)| (v - e).abs() < 1e-6), "data is {:?}", data);
+    assert_eq!(rawimage.color_matrix[&Illuminant::A], transform_2d(&multiply(&provided, &xyz2cam_a)));
+    // Three color planes have no reduction matrix
+    assert!(rawimage.reduction_matrix.is_empty());
+    Ok(())
+  }
+
+  #[test]
+  fn reduce_four_planes_requires_color_matrix() {
+    let mut rawimage = RawImage::new(
+      Camera::new(),
+      PixU16::new_with(vec![0; 4], 4, 1),
+      4,
+      [1.0, 1.0, 1.0, 1.0],
+      RawPhotometricInterpretation::LinearRaw,
+      Some(BlackLevel::zero(1, 1, 4)),
+      Some(WhiteLevel::new(vec![1; 4])),
+      false,
+    );
+    rawimage.color_matrix.clear();
+    assert!(reduce_to_three_planes(&mut rawimage).is_err());
+  }
 
   #[test]
   fn processing_plan_stages() {

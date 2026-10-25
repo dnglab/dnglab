@@ -88,8 +88,10 @@ complete -c dnglab -n "__fish_dnglab_using_subcommand process-raw" -s v -d 'Prin
 complete -c dnglab -n "__fish_dnglab_using_subcommand process-raw" -s h -l help -d 'Print help (see more with \'--help\')'
 complete -c dnglab -n "__fish_dnglab_using_subcommand convert" -s p -l profile -d 'Convert profile name' -r
 complete -c dnglab -n "__fish_dnglab_using_subcommand convert" -s c -l compression -d 'Compression for raw image' -r -f -a "lossless\t''
+lossy\t''
 uncompressed\t''"
 complete -c dnglab -n "__fish_dnglab_using_subcommand convert" -l ljpeg92-predictor -d 'LJPEG-92 predictor' -r
+complete -c dnglab -n "__fish_dnglab_using_subcommand convert" -l lossy-jpeg-quality -d 'JPEG quality for lossy compression (1-100)' -r
 complete -c dnglab -n "__fish_dnglab_using_subcommand convert" -l dng-preview -d 'DNG include preview image' -r -f -a "true\t''
 false\t''"
 complete -c dnglab -n "__fish_dnglab_using_subcommand convert" -l dng-thumbnail -d 'DNG include thumbnail image' -r -f -a "true\t''
@@ -134,8 +136,10 @@ complete -c dnglab -n "__fish_dnglab_using_subcommand convert" -s v -d 'Print st
 complete -c dnglab -n "__fish_dnglab_using_subcommand convert" -s h -l help -d 'Print help (see more with \'--help\')'
 complete -c dnglab -n "__fish_dnglab_using_subcommand ftpserver" -s p -l profile -d 'Convert profile name' -r
 complete -c dnglab -n "__fish_dnglab_using_subcommand ftpserver" -s c -l compression -d 'Compression for raw image' -r -f -a "lossless\t''
+lossy\t''
 uncompressed\t''"
 complete -c dnglab -n "__fish_dnglab_using_subcommand ftpserver" -l ljpeg92-predictor -d 'LJPEG-92 predictor' -r
+complete -c dnglab -n "__fish_dnglab_using_subcommand ftpserver" -l lossy-jpeg-quality -d 'JPEG quality for lossy compression (1-100)' -r
 complete -c dnglab -n "__fish_dnglab_using_subcommand ftpserver" -l dng-preview -d 'DNG include preview image' -r -f -a "true\t''
 false\t''"
 complete -c dnglab -n "__fish_dnglab_using_subcommand ftpserver" -l dng-thumbnail -d 'DNG include thumbnail image' -r -f -a "true\t''
