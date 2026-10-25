@@ -14,7 +14,7 @@ use crate::{
   },
   formats::tiff::{DirectoryWriter, TiffWriter},
   imgop::{
-    chromatic_adaption::adapt_bradford,
+    chromatic_adaption::adapt_xyz2cam_bradford,
     fuji_rotate::fuji_normalize_rotation,
     matrix::{IDENTITY_MATRIX_3, transform_1d},
     sensor::{Demosaic, SensorType, xtrans::bilinear::XTransBilinearDemosaic},
@@ -286,7 +286,7 @@ impl RawDevelop {
       } else {
         log::warn!("Image has no D65 illuminant matrix, alternative for Bradford adaption: {:?}", illu);
         d65_matrix = match matrix.len() {
-          9 => adapt_bradford(&illu, &Illuminant::D65, &transform_1d::<3, 3>(&matrix).expect("Transformation failed"))
+          9 => adapt_xyz2cam_bradford(&illu, &Illuminant::D65, &transform_1d::<3, 3>(&matrix).expect("Transformation failed"))
             .as_flattened()
             .to_vec(),
           _ => unimplemented!(),

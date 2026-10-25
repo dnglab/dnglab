@@ -58,7 +58,10 @@ fn illuminant_to_XYZ_tristimulus(illuminant: &Illuminant) -> [f32; 3] {
   }
 }
 
-// See http://www.brucelindbloom.com/index.html?Eqn_RGB_XYZ_Matrix.html
+/// Bradford adaptation matrix M for XYZ values: XYZ_dst = M · XYZ_src maps XYZ
+/// values relative to the white of `src_illu` to the white of `dst_illu`.
+///
+/// See http://www.brucelindbloom.com/index.html?Eqn_RGB_XYZ_Matrix.html
 pub fn bradford_adaption_matrix(src_illu: &Illuminant, dst_illu: &Illuminant) -> [[f32; 3]; 3] {
   let tristimulus_src = illuminant_to_XYZ_tristimulus(src_illu);
   let tristimulus_dst = illuminant_to_XYZ_tristimulus(dst_illu);
@@ -75,9 +78,23 @@ pub fn bradford_adaption_matrix(src_illu: &Illuminant, dst_illu: &Illuminant) ->
   multiply(&multiply(&BRADFORD_ADAPTION_INVERSE, &diag), &BRADFORD_ADAPTION)
 }
 
-pub fn adapt_bradford(src_illu: &Illuminant, dst_illu: &Illuminant, src_matrix: &[[f32; 3]; 3]) -> [[f32; 3]; 3] {
-  let adaption = bradford_adaption_matrix(src_illu, dst_illu);
-  multiply(src_matrix, &adaption)
+/// Adapt an XYZ to camera matrix (DNG ColorMatrix) for illuminant `src_illu`
+/// to illuminant `dst_illu`.
+///
+/// The matrix converts XYZ values to camera values, so the adaptation is applied
+/// to its input: XYZ values relative to `dst_illu` are converted to `src_illu`,
+/// where the matrix is valid.
+///
+///   cam = xyz2cam_src · XYZ_src = xyz2cam_src · M(dst → src) · XYZ_dst
+///
+/// This is why `bradford_adaption_matrix()` is called with `dst_illu` and
+/// `src_illu` swapped: the matrix is adapted from `src_illu` to `dst_illu`,
+/// but its input is adapted the opposite way, from `dst_illu` to `src_illu`.
+pub fn adapt_xyz2cam_bradford(src_illu: &Illuminant, dst_illu: &Illuminant, xyz2cam: &[[f32; 3]; 3]) -> [[f32; 3]; 3] {
+  // Arguments swapped on purpose: converts XYZ values relative to `dst_illu`
+  // back to `src_illu`, where `xyz2cam` is valid
+  let dst_to_src = bradford_adaption_matrix(dst_illu, src_illu);
+  multiply(xyz2cam, &dst_to_src)
 }
 
 #[cfg(test)]
@@ -100,7 +117,7 @@ mod tests {
       (Illuminant::D50, Illuminant::D65, CIE_1931_TRISTIMULUS_D50, CIE_1931_TRISTIMULUS_D65),
     ] {
       let neutral = multiply_row1(&xyz2cam, &src_white);
-      let adapted = adapt_bradford(&src, &dst, &xyz2cam);
+      let adapted = adapt_xyz2cam_bradford(&src, &dst, &xyz2cam);
       assert_relative_eq!(multiply_row1(&adapted, &dst_white).as_slice(), neutral.as_slice(), epsilon = 1e-4);
     }
   }
