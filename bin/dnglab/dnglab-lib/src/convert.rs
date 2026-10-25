@@ -10,7 +10,7 @@ use std::path::PathBuf;
 
 use std::time::Instant;
 
-use crate::convertprofile::{FrameSelection, resolve_convert_profile};
+use crate::convertprofile::{FrameSelection, check_compression_available, resolve_convert_profile};
 use crate::filemap::{FileMap, MapMode};
 use crate::jobs::Job;
 use crate::jobs::raw2dng::{JobResult, Raw2DngJob};
@@ -23,6 +23,7 @@ pub async fn convert(options: &ArgMatches) -> crate::Result<()> {
 
   let recursive = options.get_flag("recursive");
   let (profile, frames) = resolve_convert_profile(options)?;
+  check_compression_available(&profile)?;
 
   let proc = {
     let in_path: &PathBuf = options

@@ -24,6 +24,17 @@ for example `./dnglab_linux_x64 convert IMG_1234.CR2 IMG_1234.dng`.
 Windows is not officially supported, but the release assets contains a **dnglab-win-x64_vx.x.x.zip**
 file with pre-built Windows binary. Please be aware that this build is untested.
 
+### JPEG XL compression
+
+JPEG XL compression (`-c jxl` or the profile `builtin_jxl`) requires libjxl 0.11 or later,
+which is loaded at runtime. Without it, all other features work as usual.
+
+ * Linux: install the libjxl package of your distribution, e.g. `libjxl0.11` on Debian 13 (trixie).
+ * macOS: install `jpeg-xl` with Homebrew.
+ * Windows: place `jxl.dll` and the DLLs it depends on next to `dnglab.exe` or in a directory of `PATH`.
+
+To use a specific library file, set the environment variable `RAWLER_LIBJXL` to its path.
+
 ## Build from source
 Dnglab is written in Rust, so you can compile it by your own on your target machine.
 You need the Rust toolchain installed on your machine, see https://rustup.rs/ for that.
@@ -87,6 +98,7 @@ For a list of supported cameras please see [SUPPORTED_CAMERAS.md](SUPPORTED_CAME
 
  * DNG lossless compression (LJPEG-92)
  * DNG lossy compression (JPEG, DNG 1.4), the raw data is demosaiced and stored as 8 bit
+ * DNG JPEG XL compression (DNG 1.7.1), lossless or lossy, for CFA and demosaiced data
 
 ## Command line help
 
@@ -108,7 +120,7 @@ OPTIONS:
             Set the artist tag
 
     -c, --compression <compression>
-            Compression for raw image [default: lossless] [possible values: lossless, lossy, uncompressed]
+            Compression for raw image [default: lossless] [possible values: lossless, lossy, jxl, uncompressed]
 
         --crop <crop>
             DNG default crop [default: best] [possible values: best, activearea, none]
@@ -133,6 +145,15 @@ OPTIONS:
 
         --image-index <index>
             Select a specific image index (or 'all') if file is a image container [default: 0]
+
+        --jxl-decode-speed <speed>
+            JPEG XL decoding speed for lossy compression (1-4) [default: 4]
+
+        --jxl-distance <distance>
+            JPEG XL distance (0-25), 0 is lossless [default: 0]
+
+        --jxl-effort <effort>
+            JPEG XL encoder effort (1-9) [default: 7]
 
         --ljpeg92-predictor <predictor>
             LJPEG-92 predictor [default: 1] [possible values: 1, 2, 3, 4, 5, 6, 7]

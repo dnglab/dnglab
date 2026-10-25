@@ -85,15 +85,18 @@ _arguments "${_arguments_options[@]}" : \
 _arguments "${_arguments_options[@]}" : \
 '-p+[Convert profile name]:name:_default' \
 '--profile=[Convert profile name]:name:_default' \
-'-c+[Compression for raw image]:compression:(lossless lossy uncompressed)' \
-'--compression=[Compression for raw image]:compression:(lossless lossy uncompressed)' \
+'-c+[Compression for raw image]:compression:(lossless lossy jxl uncompressed)' \
+'--compression=[Compression for raw image]:compression:(lossless lossy jxl uncompressed)' \
 '--ljpeg92-predictor=[LJPEG-92 predictor]:predictor:_default' \
 '--lossy-jpeg-quality=[JPEG quality for lossy compression (1-100)]:quality:_default' \
+'--jxl-distance=[JPEG XL distance (0-25), 0 is lossless]:distance:_default' \
+'--jxl-effort=[JPEG XL encoder effort (1-9)]:effort:_default' \
+'--jxl-decode-speed=[JPEG XL decoding speed for lossy compression (1-4)]:speed:_default' \
 '--dng-preview=[DNG include preview image]:preview:(true false)' \
 '--dng-thumbnail=[DNG include thumbnail image]:thumbnail:(true false)' \
 '--dng-force-preview=[Generate DNG preview image from raw data]:force_preview:(true false)' \
 '--dng-force-thumbnail=[Generate DNG thumbnail image from raw data]:force_thumbnail:(true false)' \
-'--max-dng-backward-version=[Maximum DNG backward version]:version:(1.0 1.1 1.2 1.3 1.4 1.5 1.6)' \
+'--max-dng-backward-version=[Maximum DNG backward version]:version:(1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.7.1)' \
 '--embed-raw=[Embed the raw file into DNG]:embedded:(true false)' \
 '--apply-dng-opcodes=[Apply DNG opcode lists to the image data instead of writing them to the DNG]:mode:(auto list1 list2 list3)' \
 '*--remove-dng-opcodes=[Remove DNG opcodes, as comma separated \[<list>\:\]<opcode> (e.g. WarpRectilinear,2\:GainMap)]:opcodes:_default' \
@@ -123,15 +126,18 @@ _arguments "${_arguments_options[@]}" : \
 _arguments "${_arguments_options[@]}" : \
 '-p+[Convert profile name]:name:_default' \
 '--profile=[Convert profile name]:name:_default' \
-'-c+[Compression for raw image]:compression:(lossless lossy uncompressed)' \
-'--compression=[Compression for raw image]:compression:(lossless lossy uncompressed)' \
+'-c+[Compression for raw image]:compression:(lossless lossy jxl uncompressed)' \
+'--compression=[Compression for raw image]:compression:(lossless lossy jxl uncompressed)' \
 '--ljpeg92-predictor=[LJPEG-92 predictor]:predictor:_default' \
 '--lossy-jpeg-quality=[JPEG quality for lossy compression (1-100)]:quality:_default' \
+'--jxl-distance=[JPEG XL distance (0-25), 0 is lossless]:distance:_default' \
+'--jxl-effort=[JPEG XL encoder effort (1-9)]:effort:_default' \
+'--jxl-decode-speed=[JPEG XL decoding speed for lossy compression (1-4)]:speed:_default' \
 '--dng-preview=[DNG include preview image]:preview:(true false)' \
 '--dng-thumbnail=[DNG include thumbnail image]:thumbnail:(true false)' \
 '--dng-force-preview=[Generate DNG preview image from raw data]:force_preview:(true false)' \
 '--dng-force-thumbnail=[Generate DNG thumbnail image from raw data]:force_thumbnail:(true false)' \
-'--max-dng-backward-version=[Maximum DNG backward version]:version:(1.0 1.1 1.2 1.3 1.4 1.5 1.6)' \
+'--max-dng-backward-version=[Maximum DNG backward version]:version:(1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.7.1)' \
 '--embed-raw=[Embed the raw file into DNG]:embedded:(true false)' \
 '--apply-dng-opcodes=[Apply DNG opcode lists to the image data instead of writing them to the DNG]:mode:(auto list1 list2 list3)' \
 '*--remove-dng-opcodes=[Remove DNG opcodes, as comma separated \[<list>\:\]<opcode> (e.g. WarpRectilinear,2\:GainMap)]:opcodes:_default' \
@@ -186,7 +192,7 @@ _arguments "${_arguments_options[@]}" : \
 '-i+[Input files (raw, preview, exif, ...), index for map starts with 0]:INPUT:_files' \
 '--input=[Input files (raw, preview, exif, ...), index for map starts with 0]:INPUT:_files' \
 '--map=[Input usage map]:map:_default' \
-'--dng-backward-version=[DNG specification version]:version:(1.0 1.1 1.2 1.3 1.4 1.5 1.6)' \
+'--dng-backward-version=[DNG specification version]:version:(1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.7.1)' \
 '--colorimetric-reference=[Reference for XYZ values]:reference:(scene output)' \
 '--unique-camera-model=[Unique camera model]:id:_default' \
 '--artist=[Set the Artist tag]:artist:_default' \

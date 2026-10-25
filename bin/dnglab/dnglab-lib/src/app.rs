@@ -9,7 +9,7 @@ use clap::{
   command, value_parser,
 };
 use log::debug;
-use rawler::dng::{ApplyDngOpcodes, CropMode, DngCompression, DngVersion, opcodes::OpcodeSelector};
+use rawler::dng::{ApplyDngOpcodes, CropMode, DngCompression, DngVersion, MAX_JXL_DISTANCE, opcodes::OpcodeSelector};
 
 use crate::makedng::{
   CalibrationIlluminantArgParser, ColorMatrixArgParser, DngColorimetricReference, InputSourceUsageMap, LinearizationTableArgParser, WhiteBalanceInput,
@@ -41,6 +41,16 @@ impl clap::ValueEnum for LogLevel {
   }
 }
 
+/// Parse a JPEG XL distance in the range 0 to 25
+fn jxl_distance_parser(value: &str) -> std::result::Result<f32, String> {
+  let distance: f32 = value.parse().map_err(|err| format!("{}", err))?;
+  if (0.0..=MAX_JXL_DISTANCE).contains(&distance) {
+    Ok(distance)
+  } else {
+    Err(format!("{} is not in 0..={}", value, MAX_JXL_DISTANCE))
+  }
+}
+
 /// Argument to remove DNG opcodes, shared by convert and process-raw
 fn remove_dng_opcodes_arg() -> Arg {
   arg!(remove_dng_opcodes: --"remove-dng-opcodes" <opcodes> "Remove DNG opcodes, as comma separated [<list>:]<opcode> (e.g. WarpRectilinear,2:GainMap)")
@@ -60,7 +70,8 @@ pub fn create_app() -> Command {
         .required(false)
         .value_parser(NonEmptyStringValueParser::new())
         .long_help(
-          "Convert profile to use for conversion. Built-in profiles are 'builtin_compat' (DNG 1.4.0), 'builtin_latest' (DNG 1.6.0) and 'builtin_archive'.
+          "Convert profile to use for conversion. Built-in profiles are 'builtin_compat' (DNG 1.4.0), 'builtin_latest' (DNG 1.6.0),
+'builtin_jxl' (JPEG XL lossless, DNG 1.7.1) and 'builtin_archive'.
 If not given, 'convert.default_profile' from the dnglab configuration file is used.
 Otherwise no profile is used and the command line switches with their defaults apply.
 Command line switches override the values of the profile.",
@@ -83,6 +94,28 @@ Command line switches override the values of the profile.",
         .required(false)
         .value_parser(clap::value_parser!(u8).range(1..=100))
         .default_value("94"),
+    )
+    .arg(
+      arg!(jxl_distance: --"jxl-distance" <distance> "JPEG XL distance (0-25), 0 is lossless")
+        .required(false)
+        .value_parser(jxl_distance_parser)
+        .default_value("0")
+        .long_help(
+          "JPEG XL distance (0-25). 0 is lossless, larger values are lossy and give smaller files.
+Lossy compression applies OpcodeList1 to the image data.",
+        ),
+    )
+    .arg(
+      arg!(jxl_effort: --"jxl-effort" <effort> "JPEG XL encoder effort (1-9)")
+        .required(false)
+        .value_parser(clap::value_parser!(u8).range(1..=9))
+        .default_value("7"),
+    )
+    .arg(
+      arg!(jxl_decode_speed: --"jxl-decode-speed" <speed> "JPEG XL decoding speed for lossy compression (1-4)")
+        .required(false)
+        .value_parser(clap::value_parser!(u8).range(1..=4))
+        .default_value("4"),
     )
     .arg(
       arg!(preview: --"dng-preview" <preview> "DNG include preview image")

@@ -73,8 +73,22 @@ pub fn resolve_convert_profile(options: &ArgMatches) -> Result<(ConvertProfile, 
   };
 
   apply_cli_overrides(&mut profile, options);
+  // The compression may come from the command line, fail before any file is converted
+  if profile.compression == DngCompression::JpegXl && profile.max_dng_backward_version < DngVersion::V1_7 {
+    return Err(AppError::InvalidCmdSwitch(
+      "JPEG XL compression requires --max-dng-backward-version 1.7 or higher (1.7.1 for CFA images), or use the profile 'builtin_jxl'".into(),
+    ));
+  }
   let frames = frame_selection(&profile, options)?;
   Ok((profile, frames))
+}
+
+/// Check that the compression of the profile is available, before any file is converted
+pub fn check_compression_available(profile: &ConvertProfile) -> Result<()> {
+  if profile.compression == DngCompression::JpegXl {
+    rawler::compressors::jpegxl::libjxl_version().map_err(AppError::General)?;
+  }
+  Ok(())
 }
 
 /// Get a value only if it was given on the command line
@@ -104,6 +118,15 @@ fn apply_cli_overrides(profile: &mut ConvertProfile, options: &ArgMatches) {
   }
   if let Some(value) = from_cli::<u8>(options, "lossy_jpeg_quality") {
     profile.lossy_jpeg_quality = value;
+  }
+  if let Some(value) = from_cli::<f32>(options, "jxl_distance") {
+    profile.jxl_distance = value;
+  }
+  if let Some(value) = from_cli::<u8>(options, "jxl_effort") {
+    profile.jxl_effort = value;
+  }
+  if let Some(value) = from_cli::<u8>(options, "jxl_decode_speed") {
+    profile.jxl_decode_speed = value;
   }
   if let Some(value) = from_cli::<bool>(options, "preview") {
     profile.add_preview = value;
@@ -256,6 +279,60 @@ mod tests {
     let (_tmp, options) = convert_matches(&args);
     let (profile, _) = resolve_convert_profile(&options).expect("profile");
     assert_eq!(profile.lossy_jpeg_quality, 80);
+  }
+
+  #[test]
+  fn cli_overrides_jxl_params() {
+    let (_tmp, options) = convert_matches(&["convert", "-p", "builtin_jxl", "in.raw", "out.dng"]);
+    let (profile, _) = resolve_convert_profile(&options).expect("profile");
+    assert_eq!(profile.compression, DngCompression::JpegXl);
+    assert_eq!((profile.jxl_distance, profile.jxl_effort, profile.jxl_decode_speed), (0.0, 7, 4));
+    let args = [
+      "convert",
+      "-p",
+      "builtin_jxl",
+      "--jxl-distance",
+      "1.5",
+      "--jxl-effort",
+      "3",
+      "--jxl-decode-speed",
+      "2",
+      "in.raw",
+      "out.dng",
+    ];
+    let (_tmp, options) = convert_matches(&args);
+    let (profile, _) = resolve_convert_profile(&options).expect("profile");
+    assert_eq!((profile.jxl_distance, profile.jxl_effort, profile.jxl_decode_speed), (1.5, 3, 2));
+  }
+
+  #[test]
+  fn invalid_jxl_params_are_rejected() {
+    use clap::error::ErrorKind;
+    for (arg, value) in [
+      ("--jxl-distance", "-1"),
+      ("--jxl-distance", "25.5"),
+      ("--jxl-distance", "NaN"),
+      ("--jxl-distance", "x"),
+      ("--jxl-effort", "0"),
+      ("--jxl-effort", "10"),
+      ("--jxl-decode-speed", "5"),
+    ] {
+      let arg = format!("{}={}", arg, value);
+      let err = create_app()
+        .try_get_matches_from(["dnglab", "convert", &arg, "in.raw", "out.dng"])
+        .expect_err("must fail");
+      assert_eq!(err.kind(), ErrorKind::ValueValidation, "{}: {}", arg, err);
+    }
+  }
+
+  #[test]
+  fn jxl_requires_dng_1_7() {
+    let (_tmp, options) = convert_matches(&["convert", "-c", "jxl", "in.raw", "out.dng"]);
+    let err = resolve_convert_profile(&options).expect_err("must fail");
+    assert!(err.to_string().contains("--max-dng-backward-version"), "{}", err);
+    let (_tmp, options) = convert_matches(&["convert", "-c", "jxl", "--max-dng-backward-version", "1.7", "in.raw", "out.dng"]);
+    let (profile, _) = resolve_convert_profile(&options).expect("profile");
+    assert_eq!(profile.max_dng_backward_version, DngVersion::V1_7);
   }
 
   #[test]

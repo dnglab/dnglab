@@ -25,6 +25,21 @@ jobs:
       - run: cargo test
       - run: cargo check
 
+  # libjxl is loaded at runtime, its tests are skipped if it is missing.
+  # Ubuntu 24.04 only provides libjxl 0.7, so this job runs on Debian.
+  test-libjxl:
+    name: Rust stable with libjxl
+    runs-on: ubuntu-24.04
+    container: debian:trixie
+    env:
+      DEBIAN_FRONTEND: noninteractive
+      RAWLER_REQUIRE_LIBJXL: 1
+    steps:
+      - run: apt-get update && apt-get install -y --no-install-recommends ca-certificates curl gcc git libc6-dev libjxl0.11
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+      - run: cargo test -p rawler -p dnglab_lib
+
   build-all-features:
     name: Rust all-features ${{matrix.rust}}
     runs-on: ubuntu-24.04

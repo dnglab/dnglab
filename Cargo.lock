@@ -1580,6 +1580,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "libloading"
+version = "0.8.9"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d7c4b02199fee7c5d21a5ae7d8cfa79a6ef5bb2fc834d6e9058e89c825efdc55"
+dependencies = [
+ "cfg-if",
+ "windows-link",
+]
+
+[[package]]
 name = "libm"
 version = "0.2.16"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2240,12 +2250,14 @@ dependencies = [
  "enumn",
  "env_logger",
  "glob",
+ "half",
  "hex",
  "image",
  "itertools 0.14.0",
  "jxl-oxide",
  "lazy_static 1.5.0",
  "libflate",
+ "libloading",
  "log",
  "md5",
  "memmap2",

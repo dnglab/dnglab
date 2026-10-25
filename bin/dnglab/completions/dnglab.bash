@@ -173,7 +173,7 @@ _dnglab() {
             return 0
             ;;
         dnglab__subcmd__convert)
-            opts="-p -c -f -r -j -d -v -h --profile --compression --ljpeg92-predictor --lossy-jpeg-quality --dng-preview --dng-thumbnail --dng-force-preview --dng-force-thumbnail --max-dng-backward-version --embed-raw --apply-dng-opcodes --remove-dng-opcodes --artist --copyright --keep-mtime --image-index --crop --override --recursive --jobs --loglevel --profile-path --config --help"
+            opts="-p -c -f -r -j -d -v -h --profile --compression --ljpeg92-predictor --lossy-jpeg-quality --jxl-distance --jxl-effort --jxl-decode-speed --dng-preview --dng-thumbnail --dng-force-preview --dng-force-thumbnail --max-dng-backward-version --embed-raw --apply-dng-opcodes --remove-dng-opcodes --artist --copyright --keep-mtime --image-index --crop --override --recursive --jobs --loglevel --profile-path --config --help"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
@@ -188,11 +188,11 @@ _dnglab() {
                     return 0
                     ;;
                 --compression)
-                    COMPREPLY=($(compgen -W "lossless lossy uncompressed" -- "${cur}"))
+                    COMPREPLY=($(compgen -W "lossless lossy jxl uncompressed" -- "${cur}"))
                     return 0
                     ;;
                 -c)
-                    COMPREPLY=($(compgen -W "lossless lossy uncompressed" -- "${cur}"))
+                    COMPREPLY=($(compgen -W "lossless lossy jxl uncompressed" -- "${cur}"))
                     return 0
                     ;;
                 --ljpeg92-predictor)
@@ -200,6 +200,18 @@ _dnglab() {
                     return 0
                     ;;
                 --lossy-jpeg-quality)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
+                --jxl-distance)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
+                --jxl-effort)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
+                --jxl-decode-speed)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
@@ -220,7 +232,7 @@ _dnglab() {
                     return 0
                     ;;
                 --max-dng-backward-version)
-                    COMPREPLY=($(compgen -W "1.0 1.1 1.2 1.3 1.4 1.5 1.6" -- "${cur}"))
+                    COMPREPLY=($(compgen -W "1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.7.1" -- "${cur}"))
                     return 0
                     ;;
                 --embed-raw)
@@ -317,7 +329,7 @@ _dnglab() {
             return 0
             ;;
         dnglab__subcmd__ftpserver)
-            opts="-p -c -f -d -v -h --profile --compression --ljpeg92-predictor --lossy-jpeg-quality --dng-preview --dng-thumbnail --dng-force-preview --dng-force-thumbnail --max-dng-backward-version --embed-raw --apply-dng-opcodes --remove-dng-opcodes --artist --copyright --keep-mtime --image-index --crop --override --port --listen --keep-original --loglevel --profile-path --config --help"
+            opts="-p -c -f -d -v -h --profile --compression --ljpeg92-predictor --lossy-jpeg-quality --jxl-distance --jxl-effort --jxl-decode-speed --dng-preview --dng-thumbnail --dng-force-preview --dng-force-thumbnail --max-dng-backward-version --embed-raw --apply-dng-opcodes --remove-dng-opcodes --artist --copyright --keep-mtime --image-index --crop --override --port --listen --keep-original --loglevel --profile-path --config --help"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
@@ -332,11 +344,11 @@ _dnglab() {
                     return 0
                     ;;
                 --compression)
-                    COMPREPLY=($(compgen -W "lossless lossy uncompressed" -- "${cur}"))
+                    COMPREPLY=($(compgen -W "lossless lossy jxl uncompressed" -- "${cur}"))
                     return 0
                     ;;
                 -c)
-                    COMPREPLY=($(compgen -W "lossless lossy uncompressed" -- "${cur}"))
+                    COMPREPLY=($(compgen -W "lossless lossy jxl uncompressed" -- "${cur}"))
                     return 0
                     ;;
                 --ljpeg92-predictor)
@@ -344,6 +356,18 @@ _dnglab() {
                     return 0
                     ;;
                 --lossy-jpeg-quality)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
+                --jxl-distance)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
+                --jxl-effort)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
+                --jxl-decode-speed)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
@@ -364,7 +388,7 @@ _dnglab() {
                     return 0
                     ;;
                 --max-dng-backward-version)
-                    COMPREPLY=($(compgen -W "1.0 1.1 1.2 1.3 1.4 1.5 1.6" -- "${cur}"))
+                    COMPREPLY=($(compgen -W "1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.7.1" -- "${cur}"))
                     return 0
                     ;;
                 --embed-raw)
@@ -676,7 +700,7 @@ _dnglab() {
                     return 0
                     ;;
                 --dng-backward-version)
-                    COMPREPLY=($(compgen -W "1.0 1.1 1.2 1.3 1.4 1.5 1.6" -- "${cur}"))
+                    COMPREPLY=($(compgen -W "1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.7.1" -- "${cur}"))
                     return 0
                     ;;
                 --colorimetric-reference)

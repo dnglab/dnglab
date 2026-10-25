@@ -44,7 +44,7 @@ use std::{
 
 use serde::{Deserialize, Deserializer, Serialize, Serializer, de::Error as _};
 
-use super::{DngCompression, DngVersion, convert::ConvertParams};
+use super::{DngCompression, DngVersion, JXL_DECODE_SPEED_RANGE, JXL_EFFORT_RANGE, MAX_JXL_DISTANCE, convert::ConvertParams};
 
 pub use v1::MultiFrameMode;
 
@@ -84,7 +84,7 @@ pub enum ConvertProfileError {
 pub type Result<T> = std::result::Result<T, ConvertProfileError>;
 
 /// Convert profile as stored on disk, tagged by its schema version
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum VersionedConvertProfile {
   V1(v1::ConvertProfileV1),
 }
@@ -176,6 +176,30 @@ impl ConvertProfile {
         reason: "lossy compression requires max_dng_backward_version 1.4 or higher".to_string(),
       });
     }
+    if !(0.0..=MAX_JXL_DISTANCE).contains(&self.jxl_distance) {
+      return Err(ConvertProfileError::Invalid {
+        profile: name.to_string(),
+        reason: format!("jxl_distance must be in range 0..={}, got {}", MAX_JXL_DISTANCE, self.jxl_distance),
+      });
+    }
+    if !JXL_EFFORT_RANGE.contains(&self.jxl_effort) {
+      return Err(ConvertProfileError::Invalid {
+        profile: name.to_string(),
+        reason: format!("jxl_effort must be in range {:?}, got {}", JXL_EFFORT_RANGE, self.jxl_effort),
+      });
+    }
+    if !JXL_DECODE_SPEED_RANGE.contains(&self.jxl_decode_speed) {
+      return Err(ConvertProfileError::Invalid {
+        profile: name.to_string(),
+        reason: format!("jxl_decode_speed must be in range {:?}, got {}", JXL_DECODE_SPEED_RANGE, self.jxl_decode_speed),
+      });
+    }
+    if self.compression == DngCompression::JpegXl && self.max_dng_backward_version < DngVersion::V1_7 {
+      return Err(ConvertProfileError::Invalid {
+        profile: name.to_string(),
+        reason: "jxl compression requires max_dng_backward_version 1.7 or higher (1.7.1 for CFA images)".to_string(),
+      });
+    }
     if self.force_preview && !self.add_preview {
       log::warn!("Convert profile '{}': force_preview has no effect, add_preview is disabled", name);
     }
@@ -196,6 +220,9 @@ impl ConvertProfile {
       crop: self.crop,
       predictor: self.ljpeg92_predictor,
       lossy_jpeg_quality: self.lossy_jpeg_quality,
+      jxl_distance: self.jxl_distance,
+      jxl_effort: self.jxl_effort,
+      jxl_decode_speed: self.jxl_decode_speed,
       preview: self.add_preview,
       thumbnail: self.add_thumbnail,
       force_preview: self.force_preview,
@@ -213,7 +240,7 @@ impl ConvertProfile {
 }
 
 /// A TOML file containing convert profiles
-#[derive(Clone, Debug, Default, Eq, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
 pub struct ConvertProfileFile {
   #[serde(default)]
   pub convertprofile: BTreeMap<String, VersionedConvertProfile>,
@@ -470,11 +497,16 @@ mod tests {
     assert!(registry.contains("builtin_compat"));
     assert!(registry.contains("builtin_archive"));
     assert!(registry.contains("builtin_latest"));
-    assert_eq!(registry.names().count(), 3);
+    assert!(registry.contains("builtin_jxl"));
+    assert_eq!(registry.names().count(), 4);
     assert!(registry.iter().all(|(_, profile, _)| !profile.title.is_empty()));
     assert_eq!(registry.get("builtin_archive").expect("profile").multiframe, MultiFrameMode::Split);
     assert_eq!(registry.get("builtin_compat").expect("profile").max_dng_backward_version, DngVersion::V1_4);
     assert_eq!(registry.get("builtin_latest").expect("profile").max_dng_backward_version, DngVersion::V1_6);
+    let jxl = registry.get("builtin_jxl").expect("profile");
+    assert_eq!(jxl.compression, DngCompression::JpegXl);
+    assert_eq!(jxl.max_dng_backward_version, DngVersion::V1_7_1);
+    assert_eq!(jxl.jxl_distance, 0.0);
   }
 
   #[test]
@@ -488,6 +520,9 @@ mod tests {
     assert_eq!(params.crop, default.crop);
     assert_eq!(params.predictor, default.predictor);
     assert_eq!(params.lossy_jpeg_quality, default.lossy_jpeg_quality);
+    assert_eq!(params.jxl_distance, default.jxl_distance);
+    assert_eq!(params.jxl_effort, default.jxl_effort);
+    assert_eq!(params.jxl_decode_speed, default.jxl_decode_speed);
     assert_eq!(params.preview, default.preview);
     assert_eq!(params.thumbnail, default.thumbnail);
     assert_eq!(params.force_preview, default.force_preview);
@@ -514,6 +549,9 @@ mod tests {
       compression: DngCompression::Uncompressed,
       ljpeg92_predictor: 3,
       lossy_jpeg_quality: 80,
+      jxl_distance: 1.5,
+      jxl_effort: 5,
+      jxl_decode_speed: 2,
       crop: CropMode::ActiveArea,
       add_preview: false,
       add_thumbnail: true,
@@ -535,6 +573,7 @@ mod tests {
     assert!(toml.contains("crop = \"activearea\""));
     assert!(toml.contains("apply_dng_opcodes = \"list2\""));
     assert!(toml.contains("lossy_jpeg_quality = 80"));
+    assert!(toml.contains("jxl_distance = 1.5"));
     assert!(toml.contains("remove_dng_opcodes = [\"WarpRectilinear\", \"2:GainMap\"]"));
     let parsed = ConvertProfileFile::from_toml_str(&toml).expect("parse");
     assert_eq!(parsed, file);
@@ -643,6 +682,43 @@ mod tests {
     let profile = registry.get("x").expect("profile");
     assert_eq!(profile.compression, DngCompression::Lossy);
     assert_eq!(profile.to_convert_params("DNGLab").lossy_jpeg_quality, 50);
+  }
+
+  #[test]
+  fn invalid_jxl_params_are_rejected() {
+    for param in [
+      "jxl_distance = -1.0",
+      "jxl_distance = 25.5",
+      "jxl_distance = nan",
+      "jxl_effort = 0",
+      "jxl_effort = 10",
+      "jxl_decode_speed = 0",
+      "jxl_decode_speed = 5",
+    ] {
+      let dir = TempDir::new();
+      let path = dir.write("a.toml", &format!("[convertprofile.x]\nversion = 1\ntitle = \"T\"\n{}\n", param));
+      let mut registry = ConvertProfileRegistry::new();
+      assert!(matches!(registry.load_file(path), Err(ConvertProfileError::Invalid { .. })), "{}", param);
+    }
+  }
+
+  #[test]
+  fn jxl_requires_dng_1_7() {
+    let dir = TempDir::new();
+    let path = dir.write(
+      "a.toml",
+      "[convertprofile.x]\nversion = 1\ntitle = \"T\"\ncompression = \"jxl\"\nmax_dng_backward_version = \"1.6\"\n",
+    );
+    let mut registry = ConvertProfileRegistry::new();
+    assert!(matches!(registry.load_file(&path), Err(ConvertProfileError::Invalid { .. })));
+    let path = dir.write(
+      "b.toml",
+      "[convertprofile.x]\nversion = 1\ntitle = \"T\"\ncompression = \"jxl\"\nmax_dng_backward_version = \"1.7\"\njxl_distance = 1.0\njxl_effort = 3\njxl_decode_speed = 2\n",
+    );
+    registry.load_file(&path).expect("load");
+    let params = registry.get("x").expect("profile").to_convert_params("DNGLab");
+    assert_eq!(params.compression, DngCompression::JpegXl);
+    assert_eq!((params.jxl_distance, params.jxl_effort, params.jxl_decode_speed), (1.0, 3, 2));
   }
 
   #[test]

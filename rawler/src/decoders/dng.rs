@@ -588,7 +588,7 @@ mod tests {
   use crate::decoders::{Camera, RawDecodeParams};
   use crate::dng::writer::DngWriter;
   use crate::dng::{
-    CropMode, DEFAULT_LOSSY_JPEG_QUALITY, DNG_VERSION_V1_0, DNG_VERSION_V1_1, DNG_VERSION_V1_4, DNG_VERSION_V1_6, DngCompression, DngPhotometricConversion,
+    CompressionParams, CropMode, DNG_VERSION_V1_0, DNG_VERSION_V1_1, DNG_VERSION_V1_4, DNG_VERSION_V1_7_1, DngCompression, DngPhotometricConversion,
     DngVersionNumber,
   };
   use crate::formats::tiff::Rational;
@@ -638,8 +638,7 @@ mod tests {
       CropMode::None,
       compression,
       DngPhotometricConversion::Original,
-      1,
-      DEFAULT_LOSSY_JPEG_QUALITY,
+      &CompressionParams::default(),
     )?;
     modify(frame.ifd_mut());
     frame.finalize()?;
@@ -671,7 +670,7 @@ mod tests {
     dng.load_base_tags(&rawimage)?;
     // Transparency mask (NewSubFileType 4) with a different size, written before the raw image
     let mut mask = dng.subframe(4);
-    mask.rgb_image_u8(&[0; 8 * 8 * 3], 8, 8, DngCompression::Uncompressed, 1, DEFAULT_LOSSY_JPEG_QUALITY)?;
+    mask.rgb_image_u8(&[0; 8 * 8 * 3], 8, 8, DngCompression::Uncompressed, &CompressionParams::default())?;
     mask.finalize()?;
     let mut frame = dng.subframe(0);
     frame.raw_image(
@@ -679,8 +678,7 @@ mod tests {
       CropMode::None,
       DngCompression::Uncompressed,
       DngPhotometricConversion::Original,
-      1,
-      DEFAULT_LOSSY_JPEG_QUALITY,
+      &CompressionParams::default(),
     )?;
     frame.finalize()?;
     dng.close()?;
@@ -702,8 +700,7 @@ mod tests {
       CropMode::None,
       DngCompression::Uncompressed,
       DngPhotometricConversion::Original,
-      1,
-      DEFAULT_LOSSY_JPEG_QUALITY,
+      &CompressionParams::default(),
     )?;
     frame.finalize()?;
     dng.root_ifd_mut().add_tag(DngTag::AsShotNeutral, as_shot_neutral);
@@ -749,7 +746,7 @@ mod tests {
     data[entry + 8..entry + 12].copy_from_slice(&[1, 8, 0, 0]);
     let decoder = dng_decoder(&data)?;
     assert_eq!(decoder.dng_backward_version(), Some(DngVersionNumber([1, 8, 0, 0])));
-    assert_eq!(decoder.dng_version(), Some(DNG_VERSION_V1_6));
+    assert_eq!(decoder.dng_version(), Some(DNG_VERSION_V1_7_1));
     Ok(())
   }
 
@@ -764,8 +761,7 @@ mod tests {
       CropMode::None,
       DngCompression::Uncompressed,
       DngPhotometricConversion::Original,
-      1,
-      DEFAULT_LOSSY_JPEG_QUALITY,
+      &CompressionParams::default(),
     )?;
     frame.finalize()?;
     dng.close()?;
@@ -795,8 +791,7 @@ mod tests {
       CropMode::None,
       DngCompression::Lossless,
       DngPhotometricConversion::Original,
-      1,
-      DEFAULT_LOSSY_JPEG_QUALITY,
+      &CompressionParams::default(),
     )?;
     frame.finalize()?;
     dng.close()?;
@@ -851,8 +846,7 @@ mod tests {
       CropMode::None,
       DngCompression::Uncompressed,
       DngPhotometricConversion::Original,
-      1,
-      DEFAULT_LOSSY_JPEG_QUALITY,
+      &CompressionParams::default(),
     )?;
     // Replace the 16 bit image data by the deflate compressed data
     let ifd = frame.ifd_mut();

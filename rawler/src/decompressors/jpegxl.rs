@@ -3,16 +3,14 @@
 
 //! JPEG-XL decompressor for DNG strips and tiles.
 
-use jxl_oxide::JxlImage;
+use jxl_oxide::{JxlImage, image::BitDepth};
 
 use crate::decompressors::{Decompressor, LineIteratorMut};
 
 /// Decompressor for JPEG-XL compressed DNG image data.
 ///
-/// Only 8-bit and 16-bit JPEG-XL streams are currently supported. Other
-/// bit depths are rejected because `jxl_oxide` scales samples to the full
-/// storage-type range on decode, which would break black-level calculations
-/// without a rescaling step that is not yet implemented.
+/// Supports integer codestreams with 8 to 16 bits per sample. Samples are
+/// returned in the range of the codestream bit depth.
 pub struct JpegXLDecompressor {
   /// Bits per sample as declared in the TIFF IFD (not the JXL stream).
   bps: u32,
@@ -33,33 +31,27 @@ impl<'a> Decompressor<'a, u16> for JpegXLDecompressor {
   ///
   /// * **8 bps** — samples are decoded to `u8` via a temporary buffer and
   ///   zero-extended to `u16` without scaling.
-  /// * **9–16 bps** — samples are written directly into the `u16` output.
+  /// * **9–16 bps** — samples are decoded to `u16`. jxl-oxide scales them to
+  ///   the full `u16` range, so samples of codestreams with less than 16 bits
+  ///   are scaled back to the codestream range, which restores the stored values.
   ///
   /// # Errors
-  /// Returns `Err` if the JXL image cannot be read or rendered.
-  ///
-  /// # Panics
-  /// Panics if the JXL stream's internal bit depth is not 8 or 16, or if
-  /// `bps` is outside the ranges 8 and 9–16.
+  /// Returns `Err` if the JXL image cannot be read or rendered, if it holds
+  /// floating point samples or if `bps` is not in the range 8 to 16.
   fn decompress(&self, src: &[u8], mut skip_rows: usize, lines: impl LineIteratorMut<'a, u16>, line_width: usize) -> std::result::Result<(), String> {
     let image = JxlImage::builder()
       .read(src)
       .map_err(|err| format!("Failed to read JPEG-XL image: {:?}", err))?;
-    if let Some(header) = image.frame_header(0) {
-      if header.bit_depth.bits_per_sample() != 8 && header.bit_depth.bits_per_sample() != 16 {
-        // jxl_oxide scales the pixels into full range of storage type.
-        // If we get e.g. 12 bit compressed data, output is scaled to 16 bit.
-        // This breaks blacklevel scaling. We need to scale back to given bps (from TIFF).
-        unimplemented!("JPEG-XL bit-depth {} not supported yet", header.bit_depth.bits_per_sample());
-      }
-      //eprintln!("JPEG-XL Bit-Depth: {:?}", header.bit_depth);
-    }
+    let codestream_bits = match image.image_header().metadata.bit_depth {
+      BitDepth::IntegerSample { bits_per_sample } if (8..=16).contains(&bits_per_sample) => bits_per_sample,
+      bit_depth => return Err(format!("JPEG-XL bit depth {:?} is not supported", bit_depth)),
+    };
     let frame = image.render_frame(0).map_err(|err| format!("Failed to render JPEG-XL image: {:?}", err))?;
 
     let mut stream = frame.stream_no_alpha();
 
     match self.bps {
-      8 => {
+      8 if codestream_bits == 8 => {
         let mut tmp = vec![0_u8; line_width];
 
         for line in lines.skip(skip_rows) {
@@ -75,7 +67,8 @@ impl<'a> Decompressor<'a, u16> for JpegXLDecompressor {
           }
         }
       }
-      9..=16 => {
+      8..=16 => {
+        let max = (1_u32 << codestream_bits) - 1;
         for line in lines.skip(skip_rows) {
           while skip_rows > 0 {
             let written = stream.write_to_buffer(line);
@@ -84,27 +77,46 @@ impl<'a> Decompressor<'a, u16> for JpegXLDecompressor {
           }
           let written = stream.write_to_buffer(line);
           assert_eq!(line.len(), written);
+          if codestream_bits < 16 {
+            for p in line.iter_mut() {
+              *p = ((*p as u32 * max + 32767) / 65535) as u16;
+            }
+          }
         }
       }
-      _ => unimplemented!(),
+      bps => return Err(format!("JPEG-XL data with {} bits per sample is not supported", bps)),
     }
-
-    /*
-    let all_ch = frame.image_all_channels();
-
-    let pixbuf = all_ch.buf();
-    for (line, buf) in lines.zip(pixbuf.chunks_exact(line_width).skip(skip_rows)) {
-      for (p, f) in line.iter_mut().zip(buf.iter()) {
-        //debug_assert!(*f <= (1.0 + f32::EPSILON));
-        // *p = (f * u16::MAX as f32) as u16;
-        // *p = *f as u16;
-      }
-    }
-    */
     Ok(())
   }
 
   fn can_skip_rows(&self) -> bool {
     false
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  /// Lossless 8x4 gray codestream with 12 bits per sample, encoded by cjxl from [`samples_12bit`]
+  const JXL_12BIT: &[u8] = &[
+    0xff, 0x0a, 0x18, 0x70, 0x18, 0x14, 0x37, 0x02, 0x08, 0x04, 0x01, 0x00, 0xdc, 0x00, 0x4b, 0x38, 0x6a, 0x18, 0xd2, 0xd3, 0xbf, 0x2a, 0x28, 0x48, 0x8a, 0x2d,
+    0x82, 0x1b, 0xb0, 0xfe, 0x76, 0x62, 0x86, 0x22, 0x8a, 0x28, 0x56, 0x17, 0x45, 0x14, 0xab, 0x2b, 0x15, 0x14, 0xab, 0x3b, 0xa9, 0x54, 0x77, 0x52, 0xf9, 0xea,
+    0xa4, 0x52, 0xdd, 0x49, 0x05, 0xc5, 0xea, 0x4a, 0x05, 0xc5, 0xea, 0x4a, 0x05, 0xc5, 0xea, 0x4e, 0xc7,
+  ];
+
+  /// Samples of [`JXL_12BIT`], including the highest 12 bit value
+  fn samples_12bit() -> Vec<u16> {
+    let mut samples: Vec<u16> = (0..32).map(|i| (i * 1301 % 4096) as u16).collect();
+    samples[31] = 4095;
+    samples
+  }
+
+  #[test]
+  fn codestream_with_less_than_16_bits_keeps_stored_values() -> std::result::Result<(), String> {
+    let mut out = vec![0_u16; 8 * 4];
+    JpegXLDecompressor::new(12).decompress(JXL_12BIT, 0, out.chunks_exact_mut(8), 8)?;
+    assert_eq!(out, samples_12bit());
+    Ok(())
   }
 }
