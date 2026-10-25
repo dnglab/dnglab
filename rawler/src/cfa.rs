@@ -275,13 +275,16 @@ impl CFA {
 
   /// Get the color index at the given position. Designed to be fast so it can be called
   /// from inner loops without performance issues.
+  ///
+  /// Small negative offsets, wrapped by casting to `usize`, address the pattern
+  /// above or left of the origin.
   pub fn color_at(&self, row: usize, col: usize) -> usize {
-    self.pattern[(row + 48) % 48][(col + 48) % 48] as usize
+    self.pattern[row.wrapping_add(48) % 48][col.wrapping_add(48) % 48] as usize
   }
 
   /// from inner loops without performance issues.
   pub fn cfa_color_at(&self, row: usize, col: usize) -> CFAColor {
-    (self.pattern[(row + 48) % 48][(col + 48) % 48])
+    (self.pattern[row.wrapping_add(48) % 48][col.wrapping_add(48) % 48])
       .try_into()
       .expect("invalid CFA color value in pattern")
   }

@@ -1263,7 +1263,7 @@ mod tests {
   use crate::RawImage;
   use crate::dng::DNG_VERSION_V1_4;
   use crate::dng::writer::DngWriter;
-  use crate::dng::{CropMode, DngCompression, DngPhotometricConversion};
+  use crate::dng::{CropMode, DEFAULT_LOSSY_JPEG_QUALITY, DngCompression, DngPhotometricConversion};
   use crate::pixarray::PixU16;
   use crate::rawimage::{BlackLevel, CFAConfig, RawPhotometricInterpretation, WhiteLevel};
   use crate::rawsource::RawSource;
@@ -1294,7 +1294,14 @@ mod tests {
     let mut dng = DngWriter::new(&mut buf, DNG_VERSION_V1_4)?;
     dng.load_base_tags(&rawimage)?;
     let mut frame = dng.subframe(0);
-    frame.raw_image(&rawimage, CropMode::None, DngCompression::Uncompressed, DngPhotometricConversion::Original, 1)?;
+    frame.raw_image(
+      &rawimage,
+      CropMode::None,
+      DngCompression::Uncompressed,
+      DngPhotometricConversion::Original,
+      1,
+      DEFAULT_LOSSY_JPEG_QUALITY,
+    )?;
     frame.finalize()?;
     dng.close()?;
     Ok(buf.into_inner())

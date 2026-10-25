@@ -263,6 +263,20 @@ pub(crate) fn map_4ch_to_rgb(src: &Color2D<f32, 4>, wb_coeff: &[f32; 4], xyz2cam
   RgbF32::new_with(out, src.width, src.height)
 }
 
+/// Map four color planes to three planes by the 3x4 `reduction` matrix
+#[multiversion(targets("x86_64+avx+avx2", "x86+sse", "aarch64+neon"))]
+pub(crate) fn map_4ch_to_3ch(src: &Color2D<f32, 4>, reduction: &[[f32; 4]; 3]) -> Color2D<f32, 3> {
+  let mut out = Vec::with_capacity(src.data.len());
+
+  src
+    .pixels()
+    .par_iter()
+    .map(|pix| reduction.map(|row| row[0] * pix[0] + row[1] * pix[1] + row[2] * pix[2] + row[3] * pix[3]))
+    .collect_into_vec(&mut out);
+
+  Color2D::new_with(out, src.width, src.height)
+}
+
 /// Collect iterator into array
 pub fn collect_array<T, I, const N: usize>(itr: I) -> [T; N]
 where

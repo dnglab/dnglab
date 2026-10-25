@@ -147,13 +147,14 @@ pub fn rect_to_dng_area(area: &Rect) -> [u16; 4] {
 #[cfg(feature = "clap")]
 impl clap::ValueEnum for DngCompression {
   fn value_variants<'a>() -> &'a [Self] {
-    &[Self::Lossless, Self::Uncompressed]
+    &[Self::Lossless, Self::Lossy, Self::Uncompressed]
   }
 
   fn to_possible_value(&self) -> Option<clap::builder::PossibleValue> {
     Some(match self {
       Self::Uncompressed => clap::builder::PossibleValue::new("uncompressed"),
       Self::Lossless => clap::builder::PossibleValue::new("lossless"),
+      Self::Lossy => clap::builder::PossibleValue::new("lossy"),
     })
   }
 }
@@ -255,6 +256,10 @@ impl FromStr for CropMode {
 
 /// Quality of preview images
 const PREVIEW_JPEG_QUALITY: f32 = 0.75;
+
+/// Default JPEG quality (1-100) for lossy compression of raw images.
+pub const DEFAULT_LOSSY_JPEG_QUALITY: u8 = 94;
+
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 /// Compression mode for DNG
@@ -263,5 +268,6 @@ pub enum DngCompression {
   Uncompressed,
   /// Lossless JPEG-92 compression
   Lossless,
-  // Lossy
+  /// Lossy JPEG compression of demosaiced 8-bit data (DNG 1.4)
+  Lossy,
 }

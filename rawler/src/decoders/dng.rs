@@ -588,7 +588,8 @@ mod tests {
   use crate::decoders::{Camera, RawDecodeParams};
   use crate::dng::writer::DngWriter;
   use crate::dng::{
-    CropMode, DNG_VERSION_V1_0, DNG_VERSION_V1_1, DNG_VERSION_V1_4, DNG_VERSION_V1_6, DngCompression, DngPhotometricConversion, DngVersionNumber,
+    CropMode, DEFAULT_LOSSY_JPEG_QUALITY, DNG_VERSION_V1_0, DNG_VERSION_V1_1, DNG_VERSION_V1_4, DNG_VERSION_V1_6, DngCompression, DngPhotometricConversion,
+    DngVersionNumber,
   };
   use crate::formats::tiff::Rational;
   use crate::formats::tiff::SampleFormat;
@@ -632,7 +633,14 @@ mod tests {
     let mut dng = DngWriter::new(&mut buf, DNG_VERSION_V1_4)?;
     dng.load_base_tags(rawimage)?;
     let mut frame = dng.subframe(0);
-    frame.raw_image(rawimage, CropMode::None, compression, DngPhotometricConversion::Original, 1)?;
+    frame.raw_image(
+      rawimage,
+      CropMode::None,
+      compression,
+      DngPhotometricConversion::Original,
+      1,
+      DEFAULT_LOSSY_JPEG_QUALITY,
+    )?;
     modify(frame.ifd_mut());
     frame.finalize()?;
     dng.close()?;
@@ -663,10 +671,17 @@ mod tests {
     dng.load_base_tags(&rawimage)?;
     // Transparency mask (NewSubFileType 4) with a different size, written before the raw image
     let mut mask = dng.subframe(4);
-    mask.rgb_image_u8(&[0; 8 * 8 * 3], 8, 8, DngCompression::Uncompressed, 1)?;
+    mask.rgb_image_u8(&[0; 8 * 8 * 3], 8, 8, DngCompression::Uncompressed, 1, DEFAULT_LOSSY_JPEG_QUALITY)?;
     mask.finalize()?;
     let mut frame = dng.subframe(0);
-    frame.raw_image(&rawimage, CropMode::None, DngCompression::Uncompressed, DngPhotometricConversion::Original, 1)?;
+    frame.raw_image(
+      &rawimage,
+      CropMode::None,
+      DngCompression::Uncompressed,
+      DngPhotometricConversion::Original,
+      1,
+      DEFAULT_LOSSY_JPEG_QUALITY,
+    )?;
     frame.finalize()?;
     dng.close()?;
 
@@ -682,7 +697,14 @@ mod tests {
     let mut dng = DngWriter::new(&mut buf, DNG_VERSION_V1_4)?;
     dng.load_base_tags(&rawimage)?;
     let mut frame = dng.subframe(0);
-    frame.raw_image(&rawimage, CropMode::None, DngCompression::Uncompressed, DngPhotometricConversion::Original, 1)?;
+    frame.raw_image(
+      &rawimage,
+      CropMode::None,
+      DngCompression::Uncompressed,
+      DngPhotometricConversion::Original,
+      1,
+      DEFAULT_LOSSY_JPEG_QUALITY,
+    )?;
     frame.finalize()?;
     dng.root_ifd_mut().add_tag(DngTag::AsShotNeutral, as_shot_neutral);
     dng.close()?;
@@ -737,7 +759,14 @@ mod tests {
     let mut buf = Cursor::new(Vec::new());
     let mut dng = DngWriter::new_with_version(&mut buf, DngVersionNumber([1, 4, 2, 1]), DNG_VERSION_V1_4)?;
     let mut frame = dng.subframe(0);
-    frame.raw_image(&rawimage, CropMode::None, DngCompression::Uncompressed, DngPhotometricConversion::Original, 1)?;
+    frame.raw_image(
+      &rawimage,
+      CropMode::None,
+      DngCompression::Uncompressed,
+      DngPhotometricConversion::Original,
+      1,
+      DEFAULT_LOSSY_JPEG_QUALITY,
+    )?;
     frame.finalize()?;
     dng.close()?;
     let mut data = buf.into_inner();
@@ -761,7 +790,14 @@ mod tests {
     let mut dng = DngWriter::new_with_version(&mut buf, dng_version, DNG_VERSION_V1_0)?;
     dng.load_base_tags(&rawimage)?;
     let mut frame = dng.subframe(0);
-    frame.raw_image(&rawimage, CropMode::None, DngCompression::Lossless, DngPhotometricConversion::Original, 1)?;
+    frame.raw_image(
+      &rawimage,
+      CropMode::None,
+      DngCompression::Lossless,
+      DngPhotometricConversion::Original,
+      1,
+      DEFAULT_LOSSY_JPEG_QUALITY,
+    )?;
     frame.finalize()?;
     dng.close()?;
     Ok((buf.into_inner(), pixels))
@@ -810,7 +846,14 @@ mod tests {
     dng.load_base_tags(&rawimage)?;
     let offset = dng.dng.write_data(compressed)?;
     let mut frame = dng.subframe(0);
-    frame.raw_image(&rawimage, CropMode::None, DngCompression::Uncompressed, DngPhotometricConversion::Original, 1)?;
+    frame.raw_image(
+      &rawimage,
+      CropMode::None,
+      DngCompression::Uncompressed,
+      DngPhotometricConversion::Original,
+      1,
+      DEFAULT_LOSSY_JPEG_QUALITY,
+    )?;
     // Replace the 16 bit image data by the deflate compressed data
     let ifd = frame.ifd_mut();
     ifd.add_tag(TiffCommonTag::BitsPerSample, bits);
@@ -1098,6 +1141,39 @@ mod tests {
     assert!(tiff.root_ifd().get_entry(DngTag::ColorMatrix1).is_some());
     assert!(tiff.root_ifd().get_entry(DngTag::ReductionMatrix1).is_none());
     assert!(decode_dng(&data)?.reduction_matrix.is_empty());
+    Ok(())
+  }
+
+  #[test]
+  fn monochrome_lossy_conversion() -> TestResult {
+    use crate::dng::convert::{ConvertParams, convert_raw_source};
+
+    let mut rawimage = synthetic_rawimage();
+    rawimage.photometric = RawPhotometricInterpretation::BlackIsZero;
+    let black = [64_u32, 80, 96, 112];
+    rawimage.blacklevel = BlackLevel::new(&black, 2, 2, 1);
+    let source = RawSource::new_from_slice(&write_dng(&rawimage, |_| {})?);
+    let params = ConvertParams::default()
+      .with_compression(DngCompression::Lossy)
+      .with_embedded(false)
+      .with_preview(false)
+      .with_thumbnail(false);
+    let mut output = Cursor::new(Vec::new());
+    convert_raw_source(&source, &mut output, "mono.dng", &params)?;
+
+    // Lossy JPEG requires LinearRaw, a single plane is monochrome
+    let mut decoded = decode_dng(output.get_ref())?;
+    assert!(matches!(decoded.photometric, RawPhotometricInterpretation::LinearRaw));
+    assert_eq!(decoded.cpp, 1);
+    assert!(decoded.color_matrix.is_empty());
+    decoded.apply_scaling()?;
+    let expected = synthetic_pixels().into_iter().enumerate().map(|(i, p)| {
+      let black = black[(i / 16 % 2) * 2 + i % 2] as f32;
+      ((p as f32 - black) / (4095.0 - black)).max(0.0)
+    });
+    for (i, (d, e)) in decoded.data.as_f32().iter().zip(expected).enumerate() {
+      assert!((d - e).abs() < 0.005, "sample {}: decoded {}, expected {}", i, d, e);
+    }
     Ok(())
   }
 
