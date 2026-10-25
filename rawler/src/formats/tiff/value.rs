@@ -874,7 +874,7 @@ impl Value {
         ),
         Self::SShort(v) => Ok((v[0] as u32) | ((*v.get(1).unwrap_or(&0) as u32) << 16)),
         Self::SLong(v) => Ok(v[0] as u32),
-        Self::Float(v) => Ok(v[0] as u32),
+        Self::Float(v) => Ok(v[0].to_bits()),
         Self::Unknown(_, v) => Ok(
           (*v.get(0).unwrap_or(&0) as u32)
             | ((*v.get(1).unwrap_or(&0) as u32) << 8)
@@ -1355,5 +1355,11 @@ mod tests {
     let a = SRational::new(-200, 1);
     let b = SRational::new(-300, 10);
     assert!(a < b);
+  }
+
+  #[test]
+  fn embedded_float_keeps_bits() {
+    assert_eq!(Value::from(1.0_f32).as_embedded().expect("embedded"), 1.0_f32.to_bits());
+    assert_eq!(Value::from(-0.25_f32).as_embedded().expect("embedded"), (-0.25_f32).to_bits());
   }
 }
