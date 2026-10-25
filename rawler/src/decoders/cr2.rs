@@ -549,6 +549,30 @@ impl<'a> Cr2Decoder<'a> {
     Ok([f32::NAN, f32::NAN, f32::NAN, f32::NAN])
   }
 
+  /// Get the white balance coefficents from WBINFO tag (PowerShot G9)
+  /// WBINFO holds a table of GRBG levels (8 x u32 per entry),
+  /// the entry is selected by the WhiteBalance value from SHOTINFO.
+  fn get_powershot_wb(&self, rawfile: &RawSource) -> Result<Option<[f32; 4]>> {
+    let Some(mn) = self.makernote.as_ref() else {
+      return Ok(None);
+    };
+    let Some(shot_info) = mn.get_entry(Cr2MakernoteTag::ShotInfo) else {
+      return Ok(None);
+    };
+    let Some(levels) = mn.get_entry_raw(Cr2MakernoteTag::WBInfo, &mut rawfile.reader())? else {
+      return Ok(None);
+    };
+    let wb_index = shot_info.force_u16(7) as usize;
+    let entry = if wb_index < 18 { b"012347800000005896"[wb_index] - b'0' } else { 0 } as usize;
+    let offset = entry * 8 + 2;
+    Ok(Some(normalize_wb([
+      levels.get_force_u32(offset + 1) as f32,
+      levels.get_force_u32(offset) as f32,
+      levels.get_force_u32(offset + 3) as f32,
+      levels.get_force_u32(offset + 2) as f32,
+    ])))
+  }
+
   /// Get the white balance coefficents from COLORDATA tag
   /// The offsets are different, so we take the offset from camera params.
   fn get_wb(&self, rawfile: &RawSource, _cam: &Camera) -> Result<[f32; 4]> {
@@ -556,17 +580,16 @@ impl<'a> Cr2Decoder<'a> {
       let raw_wb = colordata::parse_colordata(colordata)?.wb;
       return Ok(normalize_wb(raw_wb));
     }
-
-    // TODO: check if these tags belongs to RootIFD or makernote
-    if let Some(levels) = self.tiff.get_entry_raw(TiffCommonTag::Cr2PowerShotWB, &mut rawfile.reader())? {
-      Ok([
-        levels.get_force_u32(3) as f32,
-        levels.get_force_u32(2) as f32,
-        levels.get_force_u32(4) as f32,
-        f32::NAN,
-      ])
-    } else if let Some(levels) = self.tiff.get_entry(TiffCommonTag::Cr2OldWB) {
-      Ok([levels.force_f32(0), levels.force_f32(1), levels.force_f32(2), f32::NAN])
+    if let Some(wb) = self.get_powershot_wb(rawfile)? {
+      Ok(wb)
+    } else if let Some(levels) = self.makernote.as_ref().and_then(|mn| mn.get_entry(TiffCommonTag::Cr2OldWB)) {
+      // The EOS-1D / EOS-1Ds uses this tag.
+      Ok(normalize_wb([
+        levels.force_f32(0),
+        levels.force_f32(1),
+        levels.force_f32(1),
+        levels.force_f32(2),
+      ]))
     } else {
       // At least the D2000 has no WB
       Ok([f32::NAN, f32::NAN, f32::NAN, f32::NAN])
