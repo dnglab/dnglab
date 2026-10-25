@@ -391,7 +391,7 @@ impl<'a> ArwDecoder<'a> {
     let image = if dummy {
       PixU16::new_uninit(width, height)
     } else {
-      let buffer = file.as_vec()?;
+      let buffer = file.buf();
       let len = width * height * 2;
 
       // Constants taken from dcraw
@@ -401,12 +401,12 @@ impl<'a> ArwDecoder<'a> {
 
       // Replicate the dcraw contortions to get the "decryption" key
       let offset = (buffer[key_off] as usize) * 4;
-      let first_key = BEu32(&buffer, key_off + offset);
-      let head = ArwDecoder::sony_decrypt(&buffer, head_off, 40, first_key)?;
+      let first_key = BEu32(buffer, key_off + offset);
+      let head = ArwDecoder::sony_decrypt(buffer, head_off, 40, first_key)?;
       let second_key = LEu32(&head, 22);
 
       // "Decrypt" the whole image buffer
-      let image_data = ArwDecoder::sony_decrypt(&buffer, off, len, second_key)?;
+      let image_data = ArwDecoder::sony_decrypt(buffer, off, len, second_key)?;
       decompress_16be(&image_data, width, height, dummy)?
     };
     let cpp = 1;
@@ -515,7 +515,7 @@ impl<'a> ArwDecoder<'a> {
         format!("ARW LJPEG: trying to decode {} tiles from {} offsets", coltiles * rowtiles, offsets.count()),
       ));
     }
-    let buffer = file.as_vec()?;
+    let buffer = file.buf();
 
     if cpp == 3 {
       let mut image = decompress_strips_fn(
@@ -616,8 +616,8 @@ impl<'a> ArwDecoder<'a> {
       let tag = fetch_tiff_tag!(priv_tiff, TiffCommonTag::SonyKey).get_data();
       LEu32(tag, 0)
     };
-    let buffer = file.as_vec()?;
-    let decrypted_buf = ArwDecoder::sony_decrypt(&buffer, sony_offset as usize, sony_length, sony_key)?;
+    let buffer = file.buf();
+    let decrypted_buf = ArwDecoder::sony_decrypt(buffer, sony_offset as usize, sony_length, sony_key)?;
 
     let decrypted_tiff = IFD::new(&mut Cursor::new(decrypted_buf), 0, 0, -(sony_offset as i32), Endian::Little, &[])?;
 
