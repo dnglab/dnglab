@@ -90,7 +90,7 @@ pub fn bradford_adaption_matrix(src_illu: &Illuminant, dst_illu: &Illuminant) ->
 /// This is why `bradford_adaption_matrix()` is called with `dst_illu` and
 /// `src_illu` swapped: the matrix is adapted from `src_illu` to `dst_illu`,
 /// but its input is adapted the opposite way, from `dst_illu` to `src_illu`.
-pub fn adapt_xyz2cam_bradford(src_illu: &Illuminant, dst_illu: &Illuminant, xyz2cam: &[[f32; 3]; 3]) -> [[f32; 3]; 3] {
+pub fn adapt_xyz2cam_bradford<const N: usize>(src_illu: &Illuminant, dst_illu: &Illuminant, xyz2cam: &[[f32; 3]; N]) -> [[f32; 3]; N] {
   // Arguments swapped on purpose: converts XYZ values relative to `dst_illu`
   // back to `src_illu`, where `xyz2cam` is valid
   let dst_to_src = bradford_adaption_matrix(dst_illu, src_illu);

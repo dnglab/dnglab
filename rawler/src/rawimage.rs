@@ -20,12 +20,34 @@ use crate::{
   formats::tiff::{Rational, Value},
   imgop::{
     Dim2, Point, Rect,
+    chromatic_adaption::adapt_xyz2cam_bradford,
+    matrix::{determinant, multiply, normalize, project_rows_to_simplex, pseudo_inverse, transform_1d, transform_2d},
     raw::{ColorMatrix, DevelopParams},
-    xyz::{FlatColorMatrix, Illuminant},
+    xyz::{FlatColorMatrix, Illuminant, XYZ_TO_PROFOTORGB_D50},
   },
   pixarray::PixU16,
   tags::TiffTag,
 };
+
+/// Illuminants in order of preference for color calculations based on D65.
+/// Color matrices of these illuminants can be adapted to D65.
+const D65_PREFERENCE: [Illuminant; 9] = [
+  Illuminant::D65,
+  Illuminant::A,
+  Illuminant::B,
+  Illuminant::C,
+  Illuminant::D50,
+  Illuminant::D55,
+  Illuminant::D75,
+  Illuminant::Daylight,
+  Illuminant::Flash,
+];
+
+/// Sort key for illuminants in order of [`D65_PREFERENCE`], other illuminants follow by their EXIF value
+pub(crate) fn d65_preference(illuminant: &Illuminant) -> (usize, u16) {
+  let position = D65_PREFERENCE.iter().position(|x| x == illuminant).unwrap_or(D65_PREFERENCE.len());
+  (position, u16::from(*illuminant))
+}
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WhiteLevel(pub Vec<u32>);
@@ -247,6 +269,9 @@ pub struct RawImage {
 
   pub color_matrix: HashMap<Illuminant, FlatColorMatrix>,
 
+  /// Reduction matrices (3 x color planes) for images with more than three color planes
+  pub reduction_matrix: HashMap<Illuminant, FlatColorMatrix>,
+
   pub dng_tags: HashMap<u16, Value>,
 
   /// For Fuji rotated sensors: the split point T used to compute the
@@ -414,6 +439,7 @@ impl RawImage {
       blackareas,
       orientation: Orientation::Normal, //cam.orientation, // TODO fixme
       color_matrix: cam.color_matrix,
+      reduction_matrix: cam.reduction_matrix,
       dng_tags: HashMap::new(),
       fuji_rotation_width: None,
       scaled_from_integer: false,
@@ -511,6 +537,7 @@ impl RawImage {
       blackareas,
       orientation: Orientation::Normal, //cam.orientation, // TODO fixme
       color_matrix: cam.color_matrix,
+      reduction_matrix: cam.reduction_matrix,
       dng_tags: HashMap::new(),
       fuji_rotation_width: None,
       scaled_from_integer: false,
@@ -814,11 +841,132 @@ impl RawImage {
     }
     None
   }
+
+  /// Reduction matrix for each color matrix with four color planes
+  ///
+  /// Matrices of the camera definition are used as they are, missing ones are
+  /// replaced by [`Self::calc_reduction_matrix`].
+  pub fn reduction_matrices(&self) -> HashMap<Illuminant, FlatColorMatrix> {
+    let calculated = self.calc_reduction_matrix().map(|matrix| transform_2d(&matrix));
+    self
+      .color_matrix
+      .iter()
+      .filter(|(_, matrix)| matrix.len() == 12)
+      .filter_map(|(illuminant, _)| {
+        let matrix = self
+          .reduction_matrix
+          .get(illuminant)
+          .filter(|matrix| matrix.len() == 12)
+          .or(calculated.as_ref())?;
+        Some((*illuminant, matrix.clone()))
+      })
+      .collect()
+  }
+
+  /// Calculate a reduction matrix (3x4) for four color planes from the color matrix
+  /// for D65, or from another color matrix adapted to D65 by Bradford.
+  ///
+  /// The matrix has non-negative entries and each row sums to 1.0, so the camera
+  /// white (1, 1, 1, 1) is mapped to (1, 1, 1), values never leave the range
+  /// 0.0 .. 1.0 and clipped channels stay mostly clipped. A matrix with negative
+  /// entries turns partially clipped highlights into noisy, wrong colors when the
+  /// image data is reduced. The matrix is the projection of the least squares
+  /// mapping into a wide gamut RGB space onto such matrices.
+  pub fn calc_reduction_matrix(&self) -> Option<[[f32; 4]; 3]> {
+    let (illuminant, matrix) = self
+      .color_matrix
+      .iter()
+      .filter_map(|(illuminant, matrix)| transform_1d::<4, 3>(matrix).map(|matrix| (*illuminant, matrix)))
+      .min_by_key(|(illuminant, _)| d65_preference(illuminant))?;
+    let xyz2cam = if illuminant == Illuminant::D65 {
+      matrix
+    } else if D65_PREFERENCE.contains(&illuminant) {
+      adapt_xyz2cam_bradford(&illuminant, &Illuminant::D65, &matrix)
+    } else {
+      debug!("Color matrix for {:?} can't be adapted to D65, it is used as it is", illuminant);
+      matrix
+    };
+    let prophoto2xyz = pseudo_inverse(XYZ_TO_PROFOTORGB_D50);
+    let wide_gamut = pseudo_inverse(normalize(multiply(&xyz2cam, &prophoto2xyz)));
+    let projected = project_rows_to_simplex(wide_gamut);
+    // The reduced color matrix must stay invertible, compare its determinant
+    // to the volume of its rows (Hadamard's inequality).
+    let reduced = multiply(&projected, &xyz2cam);
+    let volume: f32 = reduced.iter().map(|row| row.iter().map(|v| v * v).sum::<f32>().sqrt()).product();
+    if determinant(&reduced).abs() > 0.01 * volume {
+      debug!("Reduction matrix {:?} based on color matrix for {:?}", projected, illuminant);
+      Some(projected)
+    } else {
+      log::warn!("Non-negative reduction matrix is degenerate, highlights may clip");
+      Some(wide_gamut)
+    }
+  }
 }
 
 #[cfg(test)]
 mod tests {
   use super::*;
+  use crate::imgop::xyz::XYZ_TO_SRGB_D65;
+
+  /// XYZ to camera matrix of a CYGM sensor: cyan = G + B, yellow = R + G, green = G, magenta = R + B
+  fn cygm_color_matrix() -> FlatColorMatrix {
+    let rgb2cam = [[0.0, 1.0, 1.0], [1.0, 1.0, 0.0], [0.0, 1.0, 0.0], [1.0, 0.0, 1.0]];
+    transform_2d(&multiply(&rgb2cam, &XYZ_TO_SRGB_D65))
+  }
+
+  /// Four-color image with the given color and reduction matrices
+  fn four_color_image(color_matrix: &[(Illuminant, FlatColorMatrix)], reduction_matrix: &[(Illuminant, FlatColorMatrix)]) -> RawImage {
+    let mut camera = Camera::new();
+    camera.color_matrix = color_matrix.iter().cloned().collect();
+    camera.reduction_matrix = reduction_matrix.iter().cloned().collect();
+    RawImage::new(
+      camera,
+      PixU16::new_with(vec![0; 4], 4, 1),
+      4,
+      [1.0, 1.0, 1.0, 1.0],
+      RawPhotometricInterpretation::LinearRaw,
+      Some(BlackLevel::zero(1, 1, 4)),
+      Some(WhiteLevel::new(vec![1; 4])),
+      false,
+    )
+  }
+
+  #[test]
+  fn reduction_matrices_use_camera_definition() {
+    let provided = vec![1.0, 0.0, 0.0, 0.0, 0.0, 0.5, 0.0, 0.5, 0.0, 0.0, 1.0, 0.0];
+    let image = four_color_image(
+      &[(Illuminant::A, cygm_color_matrix()), (Illuminant::D65, cygm_color_matrix())],
+      &[(Illuminant::A, provided.clone())],
+    );
+    let matrices = image.reduction_matrices();
+    assert_eq!(matrices.len(), 2);
+    assert_eq!(matrices.get(&Illuminant::A), Some(&provided));
+    // Missing matrices are calculated, rows are non-negative and sum to 1.0
+    let calculated = image.calc_reduction_matrix().expect("reduction matrix");
+    assert_eq!(matrices.get(&Illuminant::D65), Some(&transform_2d(&calculated)));
+    for row in calculated {
+      assert!(row.iter().all(|v| *v >= 0.0), "{:?}", calculated);
+      assert!((row.iter().sum::<f32>() - 1.0).abs() < 1e-5, "{:?}", calculated);
+    }
+  }
+
+  #[test]
+  fn reduction_matrix_from_bradford_adapted_matrix() {
+    let matrix_a = cygm_color_matrix();
+    let adapted = adapt_xyz2cam_bradford(&Illuminant::A, &Illuminant::D65, &transform_1d::<4, 3>(&matrix_a).expect("4x3 matrix"));
+    let image_a = four_color_image(&[(Illuminant::A, matrix_a)], &[]);
+    let image_d65 = four_color_image(&[(Illuminant::D65, transform_2d(&adapted))], &[]);
+    assert_eq!(image_a.calc_reduction_matrix(), image_d65.calc_reduction_matrix());
+    assert!(image_a.calc_reduction_matrix().is_some());
+  }
+
+  #[test]
+  fn no_reduction_matrix_for_three_color_planes() {
+    let mut image = four_color_image(&[], &[]);
+    image.color_matrix.insert(Illuminant::D65, transform_2d(&XYZ_TO_SRGB_D65));
+    assert!(image.calc_reduction_matrix().is_none());
+    assert!(image.reduction_matrices().is_empty());
+  }
 
   #[test]
   fn blacklevel_shift() -> std::result::Result<(), Box<dyn std::error::Error>> {
