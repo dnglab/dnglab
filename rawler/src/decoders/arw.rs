@@ -67,19 +67,7 @@ pub struct ArwDecoder<'a> {
 
 impl<'a> ArwDecoder<'a> {
   pub fn new(file: &RawSource, tiff: GenericTiffReader, rawloader: &'a RawLoader) -> Result<ArwDecoder<'a>> {
-    let data = tiff.find_ifds_with_tag(TiffCommonTag::StripOffsets);
-    let compression = if !data.is_empty() {
-      fetch_tiff_tag!(data[0], TiffCommonTag::Compression).force_u32(0)
-    } else {
-      0
-    };
-    let mode = match compression {
-      32766 => "arw6", // New wavelet based compression
-      _ => "",
-    };
-
-    let camera = rawloader.lookup_camera_with_mode(tiff.root_ifd(), mode)?;
-
+    let camera = rawloader.lookup_camera_with_mode(tiff.root_ifd(), "")?;
     let makernote = if let Some(exif) = tiff.find_first_ifd_with_tag(ExifTag::MakerNotes) {
       exif.parse_makernote(&mut file.reader(), OffsetMode::Absolute, &[])?
     } else {
