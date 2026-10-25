@@ -88,6 +88,23 @@ mod tests {
 
   use super::*;
 
+  /// An adapted XYZ to camera matrix must map the white of the destination
+  /// illuminant to the camera neutral of the source illuminant white.
+  #[test]
+  fn adapted_color_matrix_keeps_neutral() {
+    // ColorMatrix for illuminant A of the Canon EOS 5D Mark IV
+    let xyz2cam = [[0.6515, -0.0927, -0.0634], [-0.4068, 1.1151, 0.3359], [-0.0641, 0.1839, 0.7328]];
+    for (src, dst, src_white, dst_white) in [
+      (Illuminant::A, Illuminant::D65, CIE_1931_TRISTIMULUS_A, CIE_1931_TRISTIMULUS_D65),
+      (Illuminant::D65, Illuminant::A, CIE_1931_TRISTIMULUS_D65, CIE_1931_TRISTIMULUS_A),
+      (Illuminant::D50, Illuminant::D65, CIE_1931_TRISTIMULUS_D50, CIE_1931_TRISTIMULUS_D65),
+    ] {
+      let neutral = multiply_row1(&xyz2cam, &src_white);
+      let adapted = adapt_bradford(&src, &dst, &xyz2cam);
+      assert_relative_eq!(multiply_row1(&adapted, &dst_white).as_slice(), neutral.as_slice(), epsilon = 1e-4);
+    }
+  }
+
   #[test]
   fn adaption_test() -> std::result::Result<(), Box<dyn std::error::Error>> {
     let m = bradford_adaption_matrix(&Illuminant::A, &Illuminant::B);
