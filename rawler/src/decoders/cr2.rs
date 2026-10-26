@@ -11,6 +11,7 @@ use rayon::slice::ParallelSliceMut;
 use serde::Deserialize;
 use serde::Serialize;
 use std::convert::TryFrom;
+use std::rc::Rc;
 
 use crate::RawImage;
 use crate::RawLoader;
@@ -46,6 +47,7 @@ use super::FormatHint;
 use super::RawDecodeParams;
 use super::RawMetadata;
 use super::Result;
+use super::WellKnownIFD;
 use super::WhiteLevel;
 
 mod colordata;
@@ -93,9 +95,7 @@ impl<'a> Decoder for Cr2Decoder<'a> {
 
     let camera = self.camera.supported()?;
     let (raw, offset) = {
-      if let Some(raw) = self.tiff.find_first_ifd(TiffCommonTag::Cr2Id) {
-        (raw, fetch_tiff_tag!(raw, TiffCommonTag::StripOffsets).force_usize(0))
-      } else if let Some(raw) = self.tiff.find_first_ifd(TiffCommonTag::CFAPattern) {
+      if let Some(raw) = self.raw_ifd() {
         (raw, fetch_tiff_tag!(raw, TiffCommonTag::StripOffsets).force_usize(0))
       } else if let Some(off) = self.makernote.as_ref().and_then(|md| md.get_entry(TiffCommonTag::Cr2OldOffset)) {
         // Old Canon TIF files contains the offset in makernote tags
@@ -331,6 +331,22 @@ impl<'a> Decoder for Cr2Decoder<'a> {
     }
   }
 
+  fn ifd(&self, wk_ifd: WellKnownIFD) -> Result<Option<Rc<IFD>>> {
+    Ok(match wk_ifd {
+      WellKnownIFD::Root => Some(Rc::new(self.tiff.root_ifd().clone())),
+      WellKnownIFD::Raw => self.raw_ifd().cloned().map(Rc::new),
+      WellKnownIFD::Exif => Some(Rc::new(self.exif.clone())),
+      WellKnownIFD::ExifGps => self
+        .tiff
+        .root_ifd()
+        .get_sub_ifd_all(ExifTag::GPSInfo)
+        .and_then(|list| list.get(0))
+        .cloned()
+        .map(Rc::new),
+      _ => None,
+    })
+  }
+
   fn format_hint(&self) -> FormatHint {
     FormatHint::CR2
   }
@@ -398,6 +414,15 @@ impl<'a> Cr2Decoder<'a> {
       camera,
       model_id,
     })
+  }
+
+  /// Get the IFD containing the raw image data. Old Canon TIF files
+  /// have no such IFD, the offset is stored in the makernotes instead.
+  fn raw_ifd(&self) -> Option<&IFD> {
+    self
+      .tiff
+      .find_first_ifd(TiffCommonTag::Cr2Id)
+      .or_else(|| self.tiff.find_first_ifd(TiffCommonTag::CFAPattern))
   }
 
   /// Search for EXIF IFD, if not found, fallback to root IFD.

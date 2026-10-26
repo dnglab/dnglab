@@ -13,11 +13,11 @@ use crate::decoders::*;
 use crate::decompressors::crx::decompress_crx_image;
 use crate::envparams::{rawler_crx_raw_trak, rawler_ignore_previews};
 use crate::exif::ExifGPS;
-use crate::formats::bmff::FileBox;
 use crate::formats::bmff::ext_cr3::cmp1::Cmp1Box;
 use crate::formats::bmff::ext_cr3::cr3desc::Cr3DescBox;
 use crate::formats::bmff::ext_cr3::iad1::{Iad1Box, Iad1Type};
 use crate::formats::bmff::trak::TrakBox;
+use crate::formats::bmff::{BoxHeader, FileBox};
 use crate::formats::tiff::reader::TiffReader;
 use crate::formats::tiff::{Entry, GenericTiffReader, Rational, Value};
 use crate::imgop::{Point, Rect};
@@ -464,9 +464,59 @@ impl<'a> Decoder for Cr3Decoder<'a> {
     }
   }
 
+  fn ifd(&self, wk_ifd: WellKnownIFD) -> Result<Option<Rc<IFD>>> {
+    Ok(match wk_ifd {
+      WellKnownIFD::Root => {
+        let cmt1 = &self.cr3desc().cmt1;
+        Some(Rc::new(rebase_cmt_ifd(cmt1.tiff.root_ifd(), &cmt1.header)?))
+      }
+      WellKnownIFD::Exif => {
+        // CR3 has no MakerNotes tag; we synthesize one from the makernotes (CMT3)
+        // so they can be accessed like in CR2. Unlike CR2, the data is a complete
+        // TIFF structure with offsets relative to its own header. IFD::parse_makernote()
+        // handles this.
+        // Like all other entry offsets, the entry offset is relative to the CMT2 data.
+        let Cr3DescBox { cmt2, cmt3, .. } = self.cr3desc();
+        let mut exif = rebase_cmt_ifd(cmt2.tiff.root_ifd(), &cmt2.header)?;
+        let cmt3_offset = cmt_payload_offset(&cmt3.header)?;
+        let tag = ExifTag::MakerNotes as u16;
+        exif.entries.insert(
+          tag,
+          Entry {
+            tag,
+            value: Value::Undefined(cmt3.data.clone()),
+            embedded: cmt3_offset.checked_sub(exif.base),
+          },
+        );
+        Some(Rc::new(exif))
+      }
+      WellKnownIFD::ExifGps => {
+        let cmt4 = &self.cr3desc().cmt4;
+        Some(Rc::new(rebase_cmt_ifd(cmt4.tiff.root_ifd(), &cmt4.header)?))
+      }
+      _ => None,
+    })
+  }
+
   fn format_hint(&self) -> FormatHint {
     FormatHint::CR3
   }
+}
+
+/// File offset of the payload of a CMT box.
+fn cmt_payload_offset(header: &BoxHeader) -> Result<u32> {
+  u32::try_from(header.offset + header.header_len).map_err(|_| RawlerError::DecoderFailed(format!("CMT box offset {} exceeds 32 bit", header.offset)))
+}
+
+/// Set the base to the payload file offset so the offsets resolve against the file.
+fn rebase_cmt_ifd(ifd: &IFD, header: &BoxHeader) -> Result<IFD> {
+  fn rebase(ifd: &mut IFD, base: u32) {
+    ifd.base = base;
+    ifd.sub.values_mut().flatten().chain(ifd.chain.iter_mut()).for_each(|sub| rebase(sub, base));
+  }
+  let mut ifd = ifd.clone();
+  rebase(&mut ifd, cmt_payload_offset(header)?);
+  Ok(ifd)
 }
 
 impl<'a> Cr3Decoder<'a> {
