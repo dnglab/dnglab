@@ -310,8 +310,10 @@
 |Hasselblad                          | Hasselblad H6D-100cMS                   | ✅ Yes | all |  |
 |Hasselblad                          | Hasselblad X1D                          | ✅ Yes | all |  |
 |Hasselblad                          | Hasselblad X2D 100C                     | ✅ Yes | all |  |
+|Hasselblad                          | Hasselblad X2D II 100C                  | ✅ Yes | all |  |
 |Hasselblad                          | X1D II 50C                              | ✅ Yes | all |  |
 |Hasselblad                          | X2D 100C                                | ✅ Yes | all |  |
+|Hasselblad                          | X2D II 100C                             | ✅ Yes | all |  |
 |KODAK                               | DCS460D         FILE VERSION 3          | ✅ Yes | all |  |
 |KODAK                               | EOSDCS1B        FILE VERSION 3          | ✅ Yes | all |  |
 |KODAK                               | EOSDCS3C        FILE VERSION 3          | ✅ Yes | all |  |
