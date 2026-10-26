@@ -2,6 +2,7 @@
 // Copyright 2021 Daniel Vogelbacher <daniel@chaospixel.com>
 
 pub mod bilinear;
+pub mod menon;
 pub mod ppg;
 pub mod superpixel;
 
