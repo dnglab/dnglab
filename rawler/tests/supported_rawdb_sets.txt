@@ -378,6 +378,7 @@ Sony/ILCE-7M3/raw_modes
 Sony/ILCE-7M4/raw_modes
 Sony/ILCE-7M4/resolutions
 Sony/ILCE-7M5/raw_modes
+Sony/ILCE-7M5/arw6
 Sony/ILCE-7/raw_modes
 Sony/ILCE-7RM2/raw_modes
 Sony/ILCE-7RM3A/raw_modes
@@ -387,6 +388,7 @@ Sony/ILCE-7RM4/raw_modes
 Sony/ILCE-7RM5/raw_modes
 Sony/ILCE-7RM5/yuv
 Sony/ILCE-7RM6/raw_modes
+Sony/ILCE-7RM6/arw6
 Sony/ILCE-7R/raw_modes
 Sony/ILCE-7SM2/raw_modes
 Sony/ILCE-7SM3/raw_modes

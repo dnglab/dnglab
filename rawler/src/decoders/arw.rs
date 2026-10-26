@@ -67,19 +67,7 @@ pub struct ArwDecoder<'a> {
 
 impl<'a> ArwDecoder<'a> {
   pub fn new(file: &RawSource, tiff: GenericTiffReader, rawloader: &'a RawLoader) -> Result<ArwDecoder<'a>> {
-    let data = tiff.find_ifds_with_tag(TiffCommonTag::StripOffsets);
-    let compression = if !data.is_empty() {
-      fetch_tiff_tag!(data[0], TiffCommonTag::Compression).force_u32(0)
-    } else {
-      0
-    };
-    let mode = match compression {
-      32766 => "arw6", // New wavelet based compression
-      _ => "",
-    };
-
-    let camera = rawloader.lookup_camera_with_mode(tiff.root_ifd(), mode)?;
-
+    let camera = rawloader.lookup_camera_with_mode(tiff.root_ifd(), "")?;
     let makernote = if let Some(exif) = tiff.find_first_ifd_with_tag(ExifTag::MakerNotes) {
       exif.parse_makernote(&mut file.reader(), OffsetMode::Absolute, &[])?
     } else {
@@ -158,8 +146,12 @@ impl<'a> Decoder for ArwDecoder<'a> {
         ArwDecoder::decode_ljpeg(camera, file, raw, dummy)?
       }
       32766 => {
-        let curve = ArwDecoder::get_curve(raw)?;
-        ArwDecoder::decode_arw6(src, width, height, &curve, dummy)?
+        // The ARW6 raw IFD stores the black and white levels halved (and its
+        // SonyCurve tag is zeroed; the codec has a built-in curve instead).
+        black = Some(self.get_blacklevel(raw).ok_or("ARW6: no black level in the raw IFD")?.map(|v| v * 2));
+        white = Some(fetch_tiff_tag!(raw, TiffCommonTag::WhiteLevel).force_u16(0) * 2);
+        let strip = file.subview(offset as u64, count as u64)?;
+        ArwDecoder::decode_arw6(strip, width, height, dummy)?
       }
       32767 => {
         if (width * height * bps) != count * 8 {
@@ -454,8 +446,8 @@ impl<'a> ArwDecoder<'a> {
     Ok(out)
   }
 
-  pub(crate) fn decode_arw6(buf: &[u8], width: usize, height: usize, curve: &LookupTable, dummy: bool) -> Result<PixU16> {
-    decompress_arw6(buf, width, height, curve, dummy)
+  pub(crate) fn decode_arw6(buf: &[u8], width: usize, height: usize, dummy: bool) -> Result<PixU16> {
+    decompress_arw6(buf, width, height, dummy)
   }
 
   pub(crate) fn decode_arw2(buf: &[u8], width: usize, height: usize, curve: &LookupTable, dummy: bool) -> Result<PixU16> {
