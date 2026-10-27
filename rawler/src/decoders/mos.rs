@@ -1,3 +1,7 @@
+use log::warn;
+use serde::Deserialize;
+use serde::Serialize;
+
 use crate::RawImage;
 use crate::RawLoader;
 use crate::RawlerError;
@@ -32,7 +36,10 @@ pub struct MosDecoder<'a> {
 
 impl<'a> MosDecoder<'a> {
   pub fn new(_file: &RawSource, tiff: GenericTiffReader, rawloader: &'a RawLoader) -> Result<MosDecoder<'a>> {
-    let make = Self::xmp_tag(&tiff, "Make")?;
+    let mut make = Self::xmp_tag(&tiff, "Make")?;
+    if make == "Creo/Leaf" || make == "Creo Leaf" {
+      make = "Leaf".to_string();
+    }
     let model_full = Self::xmp_tag(&tiff, "Model")?;
     let model = model_full.split_terminator('(').next().expect("split always yields at least one element");
     let camera = rawloader.lookup_camera_with_everything(&make, model, "");
@@ -63,56 +70,40 @@ impl<'a> Decoder for MosDecoder<'a> {
         }
       }
       7 | 99 => self.decode_compressed(camera, src, width, height, dummy)?,
-      x => return Err(RawlerError::unsupported(camera, format!("MOS: unsupported compression {}", x))),
+      _ => return Err(RawlerError::DecoderFailed(format!("Unknown MOS compression: {}", compression))),
     };
 
-    let cpp = 1;
-    ok_cfa_image(camera.clone(), cpp, self.get_wb()?, image, dummy)
+    ok_cfa_image(camera, image)
   }
 
-  fn check_supported(&self) -> Result<()> {
-    self.camera.supported().map(|_| ())
+  fn raw_metadata(&self, file: &RawSource, _params: &RawDecodeParams) -> Result<RawMetadata> {
+    let mut raw_md = RawMetadata::new(self.camera.metadata());
+
+    let raw = self
+      .tiff
+      .find_first_ifd_with_tag(TiffCommonTag::TileOffsets)
+      .ok_or_else(|| RawlerError::DecoderFailed(format!("Failed to find a IFD with TileOffsets tag")))?;
+    let width = fetch_tiff_tag!(raw, TiffCommonTag::ImageWidth).force_usize(0);
+    let height = fetch_tiff_tag!(raw, TiffCommonTag::ImageLength).force_usize(0);
+
+    raw_md.exif = Exif::new(file, &self.tiff)?;
+    raw_md.format_hints.push(FormatHint::RawImageSize(width, height));
+    Ok(raw_md)
   }
 
   fn format_dump(&self) -> FormatDump {
-    todo!()
-  }
-
-  fn raw_metadata(&self, _file: &RawSource, _params: &RawDecodeParams) -> Result<RawMetadata> {
-    let exif = Exif::new(self.tiff.root_ifd())?;
-    let mdata = RawMetadata::new(self.camera.metadata(), exif);
-    Ok(mdata)
-  }
-
-  fn format_hint(&self) -> FormatHint {
-    FormatHint::MOS
+    FormatDump::Mos(MosFormat { tiff: self.tiff.clone() })
   }
 }
 
-impl<'a> MosDecoder<'a> {
-  fn get_wb(&self) -> Result<[f32; 4]> {
-    let meta = fetch_tiff_tag!(self.tiff, TiffCommonTag::LeafMetadata).get_data();
-    let mut pos = 0;
-    // We need at least 16+45+10 bytes for the NeutObj_neutrals section itself
-    while pos + 70 < meta.len() {
-      if meta[pos..pos + 16] == b"NeutObj_neutrals"[..] {
-        let data = &meta[pos + 44..];
-        if let Some(endpos) = data.iter().position(|&x| x == 0) {
-          let nums = String::from_utf8_lossy(&data[0..endpos])
-            .split_terminator('\n')
-            .map(|x| x.parse::<f32>().unwrap_or(f32::NAN))
-            .collect::<Vec<f32>>();
-          if nums.len() == 4 {
-            return Ok([nums[0] / nums[1], nums[0] / nums[2], nums[0] / nums[3], f32::NAN]);
-          }
-        }
-        break;
-      }
-      pos += 1;
-    }
-    Ok([f32::NAN, f32::NAN, f32::NAN, f32::NAN])
-  }
+/// MOS format encapsulation for analyzer
+#[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct MosFormat {
+  tiff: GenericTiffReader,
+}
 
+impl<'a> MosDecoder<'a> {
   fn xmp_tag(tiff: &GenericTiffReader, tag: &str) -> Result<String> {
     let xmp_bytes = fetch_tiff_tag!(tiff, TiffCommonTag::Xmp).get_data();
     let xmp = String::from_utf8_lossy(xmp_bytes);
@@ -124,26 +115,11 @@ impl<'a> MosDecoder<'a> {
   }
 
   pub fn decode_compressed(&self, cam: &Camera, src: &[u8], width: usize, height: usize, dummy: bool) -> Result<PixU16> {
-    let interlaced = cam.find_hint("interlaced");
-    Self::do_decode(src, interlaced, width, height, dummy)
-  }
+    let interleaved = self.camera.metadata().model == "Aptus 75";
+    let img = alloc_image_ok!(dummy, width, height);
+    let mut pump = LjpegDecompressor::new(src)?;
+    pump.decode(width, height, img, interleaved, cam.whitepoint)?;
 
-  pub(crate) fn do_decode(src: &[u8], interlaced: bool, width: usize, height: usize, dummy: bool) -> Result<PixU16> {
-    if dummy {
-      return Ok(PixU16::new_uninit(width, height));
-    }
-
-    let decompressor = LjpegDecompressor::new_full(src, true, true)?;
-    let ljpegout = decompressor.decode_leaf(width, height)?;
-    if interlaced {
-      let mut out = alloc_image_ok!(width, height, dummy);
-      for (row, line) in ljpegout.pixels().chunks_exact(width).enumerate() {
-        let orow = if row & 1 == 1 { height - 1 - row / 2 } else { row / 2 };
-        out[orow * width..(orow + 1) * width].copy_from_slice(line);
-      }
-      Ok(out)
-    } else {
-      Ok(ljpegout)
-    }
+    Ok(img)
   }
 }
