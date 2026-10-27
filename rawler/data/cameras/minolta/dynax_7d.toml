@@ -1,7 +1,12 @@
 make = "KONICA MINOLTA"
 model = "DYNAX 7D"
 clean_make = "Minolta"
-clean_model = "DYNAX 7D"
+clean_model = "Dynax 7D"
+model_aliases = [
+  ["ALPHA 7D", "Alpha 7D"],
+  ["ALPHA-7 DIGITAL", "Alpha-7 Digital"],
+  ["MAXXUM 7D", "Maxxum 7D"]
+]
 blackpoint = 0
 whitepoint = 4095
 color_pattern = "RGGB"
