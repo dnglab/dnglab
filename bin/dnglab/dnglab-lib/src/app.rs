@@ -10,6 +10,7 @@ use clap::{
 };
 use log::debug;
 use rawler::dng::{ApplyDngOpcodes, CropMode, DngCompression, DngVersion, MAX_JXL_DISTANCE, opcodes::OpcodeSelector};
+use rawler::imgop::develop::ProcessedImageFormat;
 
 use crate::makedng::{
   CalibrationIlluminantArgParser, ColorMatrixArgParser, DngColorimetricReference, InputSourceUsageMap, LinearizationTableArgParser, WhiteBalanceInput,
@@ -311,6 +312,17 @@ fn process_raw_command() -> Command {
         .required(false)
         .value_parser(value_parser!(CropMode))
         .default_value("best"),
+    )
+    .arg(
+      arg!(--"format" <format> "Output image format, defaults to the OUTPUT file extension or tif")
+        .required(false)
+        .value_parser(value_parser!(ProcessedImageFormat)),
+    )
+    .arg(
+      arg!(jpeg_quality: --"jpeg-quality" <quality> "JPEG quality (1-100)")
+        .required(false)
+        .value_parser(clap::value_parser!(u8).range(1..=100))
+        .default_value("94"),
     )
     .arg(arg!(-f --override "Override existing files").action(ArgAction::SetTrue))
     .arg(arg!(-r --recursive "Process input directory recursive").action(ArgAction::SetTrue))

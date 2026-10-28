@@ -76,6 +76,9 @@ complete -c dnglab -n "__fish_dnglab_using_subcommand process-raw" -l image-inde
 complete -c dnglab -n "__fish_dnglab_using_subcommand process-raw" -l crop -d 'DNG default crop' -r -f -a "best\t''
 activearea\t''
 none\t''"
+complete -c dnglab -n "__fish_dnglab_using_subcommand process-raw" -l format -d 'Output image format, defaults to the OUTPUT file extension or tif' -r -f -a "tif\t''
+jpeg\t''"
+complete -c dnglab -n "__fish_dnglab_using_subcommand process-raw" -l jpeg-quality -d 'JPEG quality (1-100)' -r
 complete -c dnglab -n "__fish_dnglab_using_subcommand process-raw" -s d -l loglevel -d 'Log level' -r -f -a "error\t''
 warn\t''
 info\t''

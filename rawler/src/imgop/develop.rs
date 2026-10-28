@@ -1,9 +1,10 @@
 use std::{
-  io::{self, Seek, Write},
+  ffi::OsStr,
+  io::{self, Cursor, Seek, Write},
   path::Path,
 };
 
-use image::{DynamicImage, ImageBuffer};
+use image::{DynamicImage, ImageBuffer, ImageEncoder, codecs::jpeg::JpegEncoder};
 
 use crate::{
   RawImage, RawImageData,
@@ -33,6 +34,49 @@ use super::{
   xyz::Illuminant,
 };
 
+/// File format of a processed raw image
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum ProcessedImageFormat {
+  /// 16-bit TIFF, LZW compressed
+  #[default]
+  Tiff,
+  /// 8-bit JPEG
+  Jpeg,
+}
+
+impl ProcessedImageFormat {
+  /// Default file extension of the format
+  pub fn extension(&self) -> &'static str {
+    match self {
+      Self::Tiff => "tif",
+      Self::Jpeg => "jpg",
+    }
+  }
+
+  /// Format of a file extension, ignoring case
+  pub fn from_extension(extension: &OsStr) -> Option<Self> {
+    match extension.to_str()?.to_ascii_lowercase().as_str() {
+      "tif" | "tiff" => Some(Self::Tiff),
+      "jpg" | "jpeg" => Some(Self::Jpeg),
+      _ => None,
+    }
+  }
+}
+
+#[cfg(feature = "clap")]
+impl clap::ValueEnum for ProcessedImageFormat {
+  fn value_variants<'a>() -> &'a [Self] {
+    &[Self::Tiff, Self::Jpeg]
+  }
+
+  fn to_possible_value(&self) -> Option<clap::builder::PossibleValue> {
+    Some(match self {
+      Self::Tiff => clap::builder::PossibleValue::new("tif").alias("tiff"),
+      Self::Jpeg => clap::builder::PossibleValue::new("jpeg").alias("jpg"),
+    })
+  }
+}
+
 /// Parameters for raw image processing
 #[derive(Clone, Debug)]
 pub struct RawProcessingParams {
@@ -44,6 +88,9 @@ pub struct RawProcessingParams {
   pub keep_mtime: bool,
   /// DNG opcodes to remove before processing
   pub remove_dng_opcodes: Vec<OpcodeSelector>,
+  pub format: ProcessedImageFormat,
+  /// JPEG quality (1-100)
+  pub jpeg_quality: u8,
 }
 
 impl Default for RawProcessingParams {
@@ -56,6 +103,8 @@ impl Default for RawProcessingParams {
       index: 0,
       keep_mtime: false,
       remove_dng_opcodes: Vec::new(),
+      format: ProcessedImageFormat::Tiff,
+      jpeg_quality: 94,
     }
   }
 }
@@ -69,7 +118,10 @@ pub fn process_raw_image<W: Write + Seek + Send>(raw: &Path, image_file: &mut W,
   rawimage.remove_opcodes(&params.remove_dng_opcodes);
   let metadata = decoder.raw_metadata(&rawfile, &raw_params)?;
   let develop = RawDevelop::default();
-  develop.develop(&rawimage, &metadata, image_file)?;
+  match params.format {
+    ProcessedImageFormat::Tiff => develop.develop(&rawimage, &metadata, image_file)?,
+    ProcessedImageFormat::Jpeg => develop.develop_jpeg(&rawimage, &metadata, image_file, params.jpeg_quality)?,
+  }
   Ok(())
 }
 
@@ -363,20 +415,7 @@ impl RawDevelop {
     let intermediate = self.develop_intermediate(rawimage)?;
 
     let mut tiff = TiffWriter::new(writer)?;
-    let mut root_ifd = DirectoryWriter::new();
-    let mut exif_ifd = DirectoryWriter::new();
-
-    // Add EXIF version 0220
-    exif_ifd.add_tag_undefined(ExifTag::ExifVersion, vec![48, 50, 50, 48]);
-
-    md.write_exif_tags(&mut tiff, &mut root_ifd, &mut exif_ifd)?;
-    root_ifd.add_tag(TiffCommonTag::Make, rawimage.clean_make.as_str());
-    root_ifd.add_tag(TiffCommonTag::Model, rawimage.clean_model.as_str());
-
-    let exif_offset = exif_ifd.build(&mut tiff)?;
-
-    root_ifd.add_tag(TiffCommonTag::ExifIFDPointer, exif_offset);
-    root_ifd.add_tag(TiffCommonTag::Orientation, rawimage.orientation.to_u16());
+    let mut root_ifd = Self::metadata_ifd(&mut tiff, rawimage, md)?;
 
     match intermediate {
       Intermediate::Monochrome(pixels) => {
@@ -432,6 +471,58 @@ impl RawDevelop {
     tiff.build(root_ifd)?;
 
     Ok(())
+  }
+
+  /// Develop raw image and write result as 8-bit JPEG with EXIF data
+  pub fn develop_jpeg<W>(&self, rawimage: &RawImage, md: &RawMetadata, writer: W, quality: u8) -> crate::Result<()>
+  where
+    W: io::Write,
+  {
+    let image = self
+      .develop_intermediate(rawimage)?
+      .to_dynamic_image()
+      .ok_or("failed to convert to dynamic image")?;
+
+    // EXIF data is a TIFF structure without image data
+    let mut exif = Cursor::new(Vec::new());
+    let mut tiff = TiffWriter::new(&mut exif)?;
+    let root_ifd = Self::metadata_ifd(&mut tiff, rawimage, md)?;
+    tiff.build(root_ifd)?;
+    let exif = exif.into_inner();
+
+    let mut encoder = JpegEncoder::new_with_quality(writer, quality);
+    // The APP1 segment holds 65533 bytes, including the "Exif\0\0" header
+    if exif.len() <= 65527 {
+      encoder
+        .set_exif_metadata(exif)
+        .map_err(|err| format!("Failed to set JPEG EXIF data: {}", err))?;
+    } else {
+      log::warn!("EXIF data of {} bytes doesn't fit into JPEG, it is not written", exif.len());
+    }
+    image.write_with_encoder(encoder).map_err(|err| format!("Failed to write JPEG: {}", err))?;
+    Ok(())
+  }
+
+  /// IFD 0 with the EXIF data of a developed image
+  fn metadata_ifd<W>(tiff: &mut TiffWriter<W>, rawimage: &RawImage, md: &RawMetadata) -> crate::Result<DirectoryWriter>
+  where
+    W: io::Write + io::Seek,
+  {
+    let mut root_ifd = DirectoryWriter::new();
+    let mut exif_ifd = DirectoryWriter::new();
+
+    // Add EXIF version 0220
+    exif_ifd.add_tag_undefined(ExifTag::ExifVersion, vec![48, 50, 50, 48]);
+
+    md.write_exif_tags(tiff, &mut root_ifd, &mut exif_ifd)?;
+    root_ifd.add_tag(TiffCommonTag::Make, rawimage.clean_make.as_str());
+    root_ifd.add_tag(TiffCommonTag::Model, rawimage.clean_model.as_str());
+
+    let exif_offset = exif_ifd.build(tiff)?;
+
+    root_ifd.add_tag(TiffCommonTag::ExifIFDPointer, exif_offset);
+    root_ifd.add_tag(TiffCommonTag::Orientation, rawimage.orientation.to_u16());
+    Ok(root_ifd)
   }
 }
 
@@ -504,6 +595,46 @@ mod tests {
       c_x: 0.5,
       c_y: 0.5,
     })
+  }
+
+  #[test]
+  fn develop_jpeg_with_exif() -> std::result::Result<(), Box<dyn std::error::Error>> {
+    use crate::{camera_profile::CameraProfile, exif::Exif, imgop::matrix::transform_2d};
+    use image::{ColorType, ImageDecoder, codecs::jpeg::JpegDecoder};
+
+    let mut camera = Camera::new();
+    camera.clean_make = "DNGLab".into();
+    camera.clean_model = "Synthetic".into();
+    let ramp = (0..16 * 8 * 3).map(|i| ((i / 3) % 16) as f32 / 16.0).collect();
+    let mut rawimage = RawImage::new_with_data(
+      camera.clone(),
+      RawImageData::Float(ramp),
+      16 * 3,
+      8,
+      3,
+      [1.0, 1.0, 1.0, f32::NAN],
+      RawPhotometricInterpretation::LinearRaw,
+      Some(BlackLevel::zero(1, 1, 3)),
+      Some(WhiteLevel::new(vec![1; 3])),
+      false,
+    );
+    rawimage.camera_profiles = vec![CameraProfile {
+      calibration_illuminant: [Some(Illuminant::D65), None, None],
+      color_matrix: [Some(transform_2d(&IDENTITY_MATRIX_3)), None, None],
+      ..Default::default()
+    }];
+    let metadata = RawMetadata::new(&camera, Exif::default());
+
+    let mut jpeg = Vec::new();
+    RawDevelop::default().develop_jpeg(&rawimage, &metadata, &mut jpeg, 90)?;
+
+    let mut decoder = JpegDecoder::new(Cursor::new(&jpeg))?;
+    let exif = decoder.exif_metadata()?.ok_or("no EXIF data")?;
+    assert!(exif.windows(6).any(|window| window == b"DNGLab"));
+    let image = DynamicImage::from_decoder(decoder)?;
+    assert_eq!(image.color(), ColorType::Rgb8);
+    assert_eq!((image.width(), image.height()), (16, 8));
+    Ok(())
   }
 
   #[test]

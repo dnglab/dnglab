@@ -783,7 +783,7 @@ _dnglab() {
             return 0
             ;;
         dnglab__subcmd__process__subcmd__raw)
-            opts="-f -r -d -v -h --remove-dng-opcodes --artist --keep-mtime --image-index --crop --override --recursive --loglevel --profile-path --config --help"
+            opts="-f -r -d -v -h --remove-dng-opcodes --artist --keep-mtime --image-index --crop --format --jpeg-quality --override --recursive --loglevel --profile-path --config --help"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
@@ -807,6 +807,14 @@ _dnglab() {
                     ;;
                 --crop)
                     COMPREPLY=($(compgen -W "best activearea none" -- "${cur}"))
+                    return 0
+                    ;;
+                --format)
+                    COMPREPLY=($(compgen -W "tif jpeg" -- "${cur}"))
+                    return 0
+                    ;;
+                --jpeg-quality)
+                    COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
                 --loglevel)

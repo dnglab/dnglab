@@ -67,6 +67,8 @@ _arguments "${_arguments_options[@]}" : \
 '--keep-mtime=[Keep mtime, read from EXIF with fallback to original file mtime]:keepmtime:(true false)' \
 '--image-index=[Select a specific image index (or '\''all'\'') if file is a image container]:index:_default' \
 '--crop=[DNG default crop]:crop:(best activearea none)' \
+'--format=[Output image format, defaults to the OUTPUT file extension or tif]:format:(tif jpeg)' \
+'--jpeg-quality=[JPEG quality (1-100)]:quality:_default' \
 '-d+[Log level]:level:(error warn info debug trace)' \
 '--loglevel=[Log level]:level:(error warn info debug trace)' \
 '--profile-path=[Directory with profile TOML files]:dir:_files' \

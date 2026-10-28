@@ -4,9 +4,12 @@
 use clap::ArgMatches;
 use futures::future::join_all;
 use rawler::decoders::supported_extensions;
-use rawler::{dng::opcodes::OpcodeSelector, imgop::develop::RawProcessingParams};
+use rawler::{
+  dng::opcodes::OpcodeSelector,
+  imgop::develop::{ProcessedImageFormat, RawProcessingParams},
+};
 use std::fs::create_dir_all;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use std::time::Instant;
 
@@ -112,6 +115,28 @@ fn generate_job(entry: &FileMap, options: &ArgMatches) -> Result<Vec<Raw2Image>>
   let mut jobs = Vec::new();
 
   for i in 0..batch_count {
+    let input = PathBuf::from(&entry.src);
+    let mut output = PathBuf::from(&entry.dest);
+
+    // If output is a directry
+    if input.is_file() && output.exists() && output.is_dir() {
+      output.push(entry.src.file_name().ok_or_else(|| anyhow::anyhow!("source path has no file name"))?);
+    }
+
+    let format = output_format(options.get_one("format").copied(), &output);
+    set_output_extension(&mut output, format);
+
+    if do_batch && batch_count > 1 {
+      let file_name = String::from(
+        output
+          .file_stem()
+          .ok_or_else(|| anyhow::anyhow!("output path has no file stem"))?
+          .to_string_lossy(),
+      );
+      let extension = output.extension().map(|ext| ext.to_string_lossy().into_owned()).unwrap_or_default();
+      output.set_file_name(format!("{}_{:04}.{}", file_name, i, extension));
+    }
+
     // Params for conversion process
     let params = RawProcessingParams {
       crop: *options
@@ -126,27 +151,11 @@ fn generate_job(entry: &FileMap, options: &ArgMatches) -> Result<Vec<Raw2Image>>
         .get_many::<OpcodeSelector>("remove_dng_opcodes")
         .map(|values| values.cloned().collect())
         .unwrap_or_default(),
+      format,
+      jpeg_quality: *options
+        .get_one("jpeg_quality")
+        .ok_or_else(|| crate::AppError::InvalidCmdSwitch("jpeg-quality has no default".into()))?,
     };
-
-    let input = PathBuf::from(&entry.src);
-    let mut output = PathBuf::from(&entry.dest);
-
-    // If output is a directry
-    if input.is_file() && output.exists() && output.is_dir() {
-      output.push(entry.src.file_name().ok_or_else(|| anyhow::anyhow!("source path has no file name"))?);
-    }
-
-    output.set_extension("tif");
-
-    if do_batch && batch_count > 1 {
-      let file_name = String::from(
-        output
-          .file_stem()
-          .ok_or_else(|| anyhow::anyhow!("output path has no file stem"))?
-          .to_string_lossy(),
-      );
-      output.set_file_name(format!("{}_{:04}.tif", file_name, i));
-    }
 
     match output.parent() {
       Some(parent) => {
@@ -172,8 +181,59 @@ fn generate_job(entry: &FileMap, options: &ArgMatches) -> Result<Vec<Raw2Image>>
   Ok(jobs)
 }
 
+/// Output format given by `format`, otherwise by the extension of `output`
+fn output_format(format: Option<ProcessedImageFormat>, output: &Path) -> ProcessedImageFormat {
+  format
+    .or_else(|| output.extension().and_then(ProcessedImageFormat::from_extension))
+    .unwrap_or_default()
+}
+
+/// Keep the extension of `output` if it belongs to `format`, otherwise use the default one
+fn set_output_extension(output: &mut PathBuf, format: ProcessedImageFormat) {
+  if output.extension().and_then(ProcessedImageFormat::from_extension) != Some(format) {
+    output.set_extension(format.extension());
+  }
+}
+
 /// Check if file extension is a supported extension
 fn is_ext_supported<T: AsRef<str>>(ext: T) -> bool {
   let uc = ext.as_ref().to_uppercase();
   supported_extensions().iter().any(|ext| ext.eq(&uc))
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[test]
+  fn format_from_flag_or_extension() {
+    for (flag, path, expected) in [
+      (None, "out.jpg", ProcessedImageFormat::Jpeg),
+      (None, "out.JPEG", ProcessedImageFormat::Jpeg),
+      (None, "out.tiff", ProcessedImageFormat::Tiff),
+      (None, "out.TIF", ProcessedImageFormat::Tiff),
+      (None, "dir/IMG_0001.CR2", ProcessedImageFormat::Tiff),
+      (None, "out", ProcessedImageFormat::Tiff),
+      (Some(ProcessedImageFormat::Jpeg), "dir/IMG_0001.CR2", ProcessedImageFormat::Jpeg),
+      (Some(ProcessedImageFormat::Tiff), "out.jpg", ProcessedImageFormat::Tiff),
+    ] {
+      assert_eq!(output_format(flag, Path::new(path)), expected, "{:?} {}", flag, path);
+    }
+  }
+
+  #[test]
+  fn output_extension_matches_format() {
+    for (path, format, expected) in [
+      ("out.jpeg", ProcessedImageFormat::Jpeg, "out.jpeg"),
+      ("out.JPG", ProcessedImageFormat::Jpeg, "out.JPG"),
+      ("out.tiff", ProcessedImageFormat::Tiff, "out.tiff"),
+      ("out.jpg", ProcessedImageFormat::Tiff, "out.tif"),
+      ("dir/IMG_0001.CR2", ProcessedImageFormat::Jpeg, "dir/IMG_0001.jpg"),
+      ("dir/IMG_0001.CR2", ProcessedImageFormat::Tiff, "dir/IMG_0001.tif"),
+    ] {
+      let mut output = PathBuf::from(path);
+      set_output_extension(&mut output, format);
+      assert_eq!(output, PathBuf::from(expected));
+    }
+  }
 }
