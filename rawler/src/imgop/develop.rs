@@ -16,9 +16,9 @@ use crate::{
   },
   formats::tiff::{DirectoryWriter, TiffWriter},
   imgop::{
-    chromatic_adaption::adapt_xyz2cam_bradford,
+    chromatic_adaption::{adapt_xyz2cam_bradford, bradford_adaption_matrix},
     fuji_rotate::fuji_normalize_rotation,
-    matrix::{IDENTITY_MATRIX_3, transform_1d},
+    matrix::{diagonal, identity, invert, multiply, multiply_vector, normalize, pseudo_inverse, transform_1d},
     sensor::{Demosaic, SensorType, xtrans::bilinear::XTransBilinearDemosaic},
   },
   pixarray::{Color2D, PixF32},
@@ -31,7 +31,7 @@ use super::{
   Dim2, Point, Rect, convert_from_f32_scaled_u16, crop,
   raw::{map_3ch_to_rgb, map_4ch_to_rgb},
   sensor::bayer::{bilinear::Bilinear4Channel, ppg::PPGDemosaic},
-  xyz::Illuminant,
+  xyz::{Illuminant, SRGB_TO_XYZ_D65, XYZ_TO_SRGB_D65},
 };
 
 /// File format of a processed raw image
@@ -316,35 +316,6 @@ impl RawDevelop {
     }
 
     if self.steps.contains(&ProcessingStep::Calibrate) {
-      let mut xyz2cam: [[f32; 3]; 4] = [[0.0; 3]; 4];
-      let d65_matrix: Vec<f32>;
-      let (illu, matrix) = rawimage.best_color_matrix().map(|(illu, matrix)| (illu, matrix.clone())).unwrap_or_else(|| {
-        log::warn!("No alternative matrix found, using identity matrix");
-        (Illuminant::D65, IDENTITY_MATRIX_3.as_flattened().to_vec())
-      });
-      if illu == Illuminant::D65 {
-        d65_matrix = matrix;
-      } else if !D65_PREFERENCE.contains(&illu) {
-        log::warn!("Color matrix for {:?} can't be adapted to D65, it is used as it is", illu);
-        d65_matrix = matrix;
-      } else {
-        log::warn!("Image has no D65 illuminant matrix, alternative for Bradford adaption: {:?}", illu);
-        d65_matrix = match matrix.len() {
-          9 => adapt_xyz2cam_bradford(&illu, &Illuminant::D65, &transform_1d::<3, 3>(&matrix).expect("Transformation failed"))
-            .as_flattened()
-            .to_vec(),
-          _ => unimplemented!(),
-        }
-      }
-
-      assert_eq!(d65_matrix.len() % 3, 0); // this is not so nice...
-      let components = d65_matrix.len() / 3;
-      for i in 0..components {
-        for j in 0..3 {
-          xyz2cam[i][j] = d65_matrix[i * 3 + j];
-        }
-      }
-
       // Some old images may not provide WB coeffs. Assume 1.0 in this case.
       let mut wb = if rawimage.wb_coeffs[0].is_nan() {
         [1.0, 1.0, 1.0, 1.0]
@@ -355,12 +326,19 @@ impl RawDevelop {
         wb = [1.0, 1.0, 1.0, 1.0];
       }
 
-      log::debug!("wb: {:?}, coeff: {:?}", wb, xyz2cam);
-
       intermediate = match intermediate {
         Intermediate::Monochrome(_) => intermediate,
-        Intermediate::ThreeColor(pixels) => Intermediate::ThreeColor(map_3ch_to_rgb(&pixels, &wb, xyz2cam)),
-        Intermediate::FourColor(pixels) => Intermediate::ThreeColor(map_4ch_to_rgb(&pixels, &wb, xyz2cam)),
+        Intermediate::ThreeColor(pixels) => {
+          let wb = [wb[0], wb[1], wb[2]];
+          let cam2rgb = camera_to_srgb(&rawimage, &wb);
+          log::debug!("wb: {:?}, camera to sRGB: {:?}", wb, cam2rgb);
+          Intermediate::ThreeColor(map_3ch_to_rgb(&pixels, &wb, &cam2rgb))
+        }
+        Intermediate::FourColor(pixels) => {
+          let cam2rgb = camera_to_srgb(&rawimage, &wb);
+          log::debug!("wb: {:?}, camera to sRGB: {:?}", wb, cam2rgb);
+          Intermediate::ThreeColor(map_4ch_to_rgb(&pixels, &wb, &cam2rgb))
+        }
       };
     }
 
@@ -526,6 +504,78 @@ impl RawDevelop {
   }
 }
 
+/// Matrix from white balanced camera values to linear sRGB (D65)
+///
+/// Camera values are white balanced by `wb`, the reciprocal of the camera
+/// neutral. AnalogBalance and CameraCalibration (AB * CC) of the image are
+/// applied. With a ForwardMatrix, the camera values are mapped to XYZ D50 as
+/// defined by DNG and adapted to D65 by Bradford. Otherwise the ColorMatrix,
+/// adapted to D65, is normalized to map the camera neutral to the sRGB white.
+fn camera_to_srgb<const N: usize>(rawimage: &RawImage, wb: &[f32; N]) -> [[f32; N]; 3] {
+  let slot = rawimage.best_calibration_slot();
+
+  let analog_balance = rawimage.analog_balance.as_deref().and_then(|balance| {
+    let balance = <[f32; N]>::try_from(balance).ok();
+    if balance.is_none() {
+      log::warn!("AnalogBalance doesn't match {} color planes, ignoring it", N);
+    }
+    balance
+  });
+  let calibration = slot.and_then(|slot| slot.camera_calibration).and_then(|matrix| {
+    let matrix = transform_1d::<N, N>(matrix);
+    if matrix.is_none() {
+      log::warn!("CameraCalibration doesn't match {} color planes, ignoring it", N);
+    }
+    matrix
+  });
+  let abcc = match (analog_balance, calibration) {
+    (None, None) => None,
+    (balance, calibration) => Some(multiply(&diagonal(&balance.unwrap_or([1.0; N])), &calibration.unwrap_or(identity()))),
+  };
+
+  if let Some(forward_matrix) = slot.and_then(|slot| slot.forward_matrix) {
+    match (transform_1d::<3, N>(forward_matrix), invert(&abcc.unwrap_or(identity()))) {
+      (Some(forward_matrix), Some(abcc_inv)) => {
+        // CameraToXYZ_D50 = FM * D * Inverse(AB * CC), D white balances the reference neutral
+        let neutral = wb.map(|coeff| 1.0 / coeff);
+        let reference_neutral = multiply_vector(&abcc_inv, &neutral);
+        let camera_to_xyz = multiply(&forward_matrix, &multiply(&diagonal(&reference_neutral.map(|v| 1.0 / v)), &abcc_inv));
+        // The camera values are already white balanced by `wb`
+        let camera_to_xyz = multiply(&camera_to_xyz, &diagonal(&neutral));
+        let xyz_to_srgb = multiply(&XYZ_TO_SRGB_D65, &bradford_adaption_matrix(&Illuminant::D50, &Illuminant::D65));
+        let cam2rgb = multiply(&xyz_to_srgb, &camera_to_xyz);
+        if cam2rgb.as_flattened().iter().all(|v| v.is_finite()) {
+          return cam2rgb;
+        }
+        log::warn!("Invalid ForwardMatrix result for white balance {:?}, using ColorMatrix", wb);
+      }
+      (None, _) => log::warn!("ForwardMatrix doesn't match {} color planes, using ColorMatrix", N),
+      (_, None) => log::warn!("AnalogBalance * CameraCalibration is not invertible, using ColorMatrix"),
+    }
+  }
+
+  let xyz2cam = match slot.and_then(|slot| Some((slot.illuminant, transform_1d::<N, 3>(slot.color_matrix)?))) {
+    Some((Illuminant::D65, matrix)) => matrix,
+    Some((illuminant, matrix)) if !D65_PREFERENCE.contains(&illuminant) => {
+      log::warn!("Color matrix for {:?} can't be adapted to D65, it is used as it is", illuminant);
+      matrix
+    }
+    Some((illuminant, matrix)) => {
+      log::warn!("Image has no D65 illuminant matrix, alternative for Bradford adaption: {:?}", illuminant);
+      adapt_xyz2cam_bradford(&illuminant, &Illuminant::D65, &matrix)
+    }
+    None => {
+      log::warn!("No color matrix for {} color planes found, using identity matrix", N);
+      std::array::from_fn(|i| std::array::from_fn(|j| if i == j { 1.0 } else { 0.0 }))
+    }
+  };
+  let xyz2cam = match abcc {
+    Some(abcc) => multiply(&abcc, &xyz2cam),
+    None => xyz2cam,
+  };
+  pseudo_inverse(normalize(multiply(&xyz2cam, &SRGB_TO_XYZ_D65)))
+}
+
 /// Apply OpcodeList3 to the demosaiced image. While the opcodes are applied, the
 /// intermediate is the image data of `rawimage`. If `cropped` is set, the
 /// intermediate is the ActiveArea of the raw image and stays cropped to it.
@@ -576,6 +626,7 @@ mod tests {
     CFA,
     decoders::Camera,
     dng::opcodes::{FixBadPixelsConstant, Opcode, OpcodeList, TrimBounds, WarpRectilinear, WarpRectilinearCoeffs},
+    imgop::matrix::{FlatMatrix, transform_2d},
     pixarray::PixU16,
     rawimage::{BlackLevel, CFAConfig, WhiteLevel},
   };
@@ -597,9 +648,116 @@ mod tests {
     })
   }
 
+  /// ForwardMatrix of the Adobe Standard profile for the Phase One IQ3 100MP
+  const FORWARD_MATRIX: [[f32; 3]; 3] = [[0.8296, 0.0538, 0.0809], [0.3137, 0.8399, -0.1536], [0.0133, -0.4061, 1.2179]];
+  const COLOR_MATRIX: [[f32; 3]; 3] = [[0.6722, -0.0635, -0.0963], [-0.4287, 1.2460, 0.2028], [-0.0908, 0.2162, 0.5668]];
+  const CALIBRATION: [[f32; 3]; 3] = [[1.0, 0.1, 0.0], [0.0, 0.9, 0.05], [0.0, 0.0, 1.1]];
+
+  /// Image with a D65 profile, `forward_matrix` and the calibration data
+  fn calibrated_rawimage(forward_matrix: Option<FlatMatrix>, calibration: Option<FlatMatrix>, analog_balance: Option<Vec<f32>>) -> RawImage {
+    use crate::camera_profile::{CameraCalibration, CameraProfile};
+
+    let mut rawimage = RawImage::new_with_data(
+      Camera::default(),
+      RawImageData::Float(vec![0.0; 3]),
+      3,
+      1,
+      3,
+      [f32::NAN; 4],
+      RawPhotometricInterpretation::LinearRaw,
+      Some(BlackLevel::zero(1, 1, 3)),
+      Some(WhiteLevel::new(vec![1; 3])),
+      false,
+    );
+    let mut profile = CameraProfile::default();
+    profile.calibration_illuminant[0] = Some(Illuminant::D65);
+    profile.color_matrix[0] = Some(transform_2d(&COLOR_MATRIX));
+    profile.forward_matrix[0] = forward_matrix;
+    rawimage.camera_profiles = vec![profile];
+    rawimage.camera_calibration = CameraCalibration {
+      matrices: [calibration, None, None],
+      signature: None,
+    };
+    rawimage.analog_balance = analog_balance;
+    rawimage
+  }
+
+  fn assert_matrix_eq<const N: usize>(a: &[[f32; N]; 3], b: &[[f32; N]; 3]) {
+    for (x, y) in a.as_flattened().iter().zip(b.as_flattened()) {
+      assert!((x - y).abs() < 1e-4, "{:?} != {:?}", a, b);
+    }
+  }
+
+  /// The white balanced camera neutral is the sRGB white
+  fn assert_neutral_is_white<const N: usize>(cam2rgb: &[[f32; N]; 3]) {
+    for v in multiply_vector(cam2rgb, &[1.0; N]) {
+      assert!((v - 1.0).abs() < 1e-3, "{:?}", cam2rgb);
+    }
+  }
+
+  #[test]
+  fn forward_matrix_maps_to_xyz_d50() {
+    let rawimage = calibrated_rawimage(Some(transform_2d(&FORWARD_MATRIX)), None, None);
+    let cam2rgb = camera_to_srgb(&rawimage, &[2.0, 1.0, 1.5]);
+    let expected = multiply(
+      &multiply(&XYZ_TO_SRGB_D65, &bradford_adaption_matrix(&Illuminant::D50, &Illuminant::D65)),
+      &FORWARD_MATRIX,
+    );
+    assert_matrix_eq(&cam2rgb, &expected);
+    assert_neutral_is_white(&cam2rgb);
+  }
+
+  #[test]
+  fn forward_matrix_with_calibration() {
+    let wb = [2.0, 1.0, 1.5];
+    let plain = camera_to_srgb(&calibrated_rawimage(Some(transform_2d(&FORWARD_MATRIX)), None, None), &wb);
+    // A diagonal AB * CC is removed by the white balance
+    let diagonal_calibration = calibrated_rawimage(
+      Some(transform_2d(&FORWARD_MATRIX)),
+      Some(transform_2d(&diagonal(&[1.1, 1.0, 0.9]))),
+      Some(vec![1.2, 1.0, 0.8]),
+    );
+    assert_matrix_eq(&camera_to_srgb(&diagonal_calibration, &wb), &plain);
+    // A full CameraCalibration changes the colors, the neutral stays white
+    let calibrated = camera_to_srgb(
+      &calibrated_rawimage(Some(transform_2d(&FORWARD_MATRIX)), Some(transform_2d(&CALIBRATION)), Some(vec![1.2, 1.0, 0.8])),
+      &wb,
+    );
+    assert_neutral_is_white(&calibrated);
+    assert!(calibrated.as_flattened().iter().zip(plain.as_flattened()).any(|(a, b)| (a - b).abs() > 0.01));
+  }
+
+  #[test]
+  fn color_matrix_with_calibration() {
+    let wb = [2.0, 1.0, 1.5];
+    // Without calibration, the matrix is calculated as before
+    let plain = camera_to_srgb(&calibrated_rawimage(None, None, None), &wb);
+    assert_eq!(plain, pseudo_inverse(normalize(multiply(&COLOR_MATRIX, &SRGB_TO_XYZ_D65))));
+    let diagonal_calibration = calibrated_rawimage(None, Some(transform_2d(&diagonal(&[1.1, 1.0, 0.9]))), Some(vec![1.2, 1.0, 0.8]));
+    assert_matrix_eq(&camera_to_srgb(&diagonal_calibration, &wb), &plain);
+    // XYZtoCamera = AB * CC * CM
+    let calibrated = camera_to_srgb(&calibrated_rawimage(None, Some(transform_2d(&CALIBRATION)), Some(vec![1.2, 1.0, 0.8])), &wb);
+    let xyz2cam = multiply(&diagonal(&[1.2, 1.0, 0.8]), &multiply(&CALIBRATION, &COLOR_MATRIX));
+    assert_matrix_eq(&calibrated, &pseudo_inverse(normalize(multiply(&xyz2cam, &SRGB_TO_XYZ_D65))));
+    assert_neutral_is_white(&calibrated);
+  }
+
+  #[test]
+  fn forward_matrix_with_four_color_planes() {
+    let forward_matrix = [[0.4, 0.2, 0.3, 0.0644], [0.2, 0.5, 0.1, 0.2], [0.1, 0.0, 0.6, 0.1252]];
+    let mut rawimage = calibrated_rawimage(Some(transform_2d(&forward_matrix)), None, Some(vec![1.0, 1.0, 1.0, 2.0]));
+    rawimage.camera_profiles[0].color_matrix[0] = Some(vec![1.0; 12]);
+    let cam2rgb = camera_to_srgb(&rawimage, &[2.0, 1.0, 1.5, 1.2]);
+    let expected = multiply(
+      &multiply(&XYZ_TO_SRGB_D65, &bradford_adaption_matrix(&Illuminant::D50, &Illuminant::D65)),
+      &forward_matrix,
+    );
+    assert_matrix_eq(&cam2rgb, &expected);
+  }
+
   #[test]
   fn develop_jpeg_with_exif() -> std::result::Result<(), Box<dyn std::error::Error>> {
-    use crate::{camera_profile::CameraProfile, exif::Exif, imgop::matrix::transform_2d};
+    use crate::{camera_profile::CameraProfile, exif::Exif};
     use image::{ColorType, ImageDecoder, codecs::jpeg::JpegDecoder};
 
     let mut camera = Camera::new();
@@ -620,7 +778,7 @@ mod tests {
     );
     rawimage.camera_profiles = vec![CameraProfile {
       calibration_illuminant: [Some(Illuminant::D65), None, None],
-      color_matrix: [Some(transform_2d(&IDENTITY_MATRIX_3)), None, None],
+      color_matrix: [Some(transform_2d(&identity::<3>())), None, None],
       ..Default::default()
     }];
     let metadata = RawMetadata::new(&camera, Exif::default());
