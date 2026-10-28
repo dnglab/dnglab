@@ -121,7 +121,7 @@ impl<'a> Decoder for DngDecoder<'a> {
 
     // DNG versions before 1.1.0.0 use a deviating 16-bit lossless JPEG encoding
     let ljpeg_dng_bug = self.dng_version().is_some_and(|version| version < DNG_VERSION_V1_1);
-    let raw_data = plain_image_from_ifd_ext(raw, file, ljpeg_dng_bug)?;
+    let raw_data = plain_image_from_ifd_ext(raw, file, ljpeg_dng_bug, dummy)?;
     let root = self.tiff.root_ifd();
     let mut camera_profiles: Vec<CameraProfile> = read_camera_profile(root).into_iter().collect();
     if !camera_profiles.is_empty() {
@@ -617,6 +617,26 @@ mod tests {
     let source = RawSource::new_from_slice(data);
     let decoder = crate::get_decoder(&source)?;
     Ok(decoder.raw_image(&source, &RawDecodeParams::default(), false)?)
+  }
+
+  /// A dummy decode skips the pixels of strips (uncompressed) and tiles
+  /// (lossless JPEG), the metadata is the same as for a full decode
+  #[test]
+  fn dummy_decode_skips_pixels() -> TestResult {
+    for compression in [DngCompression::Uncompressed, DngCompression::Lossless] {
+      let data = write_dng_with(&synthetic_rawimage(), compression, |_| {})?;
+      let source = RawSource::new_from_slice(&data);
+      let decoder = crate::get_decoder(&source)?;
+      let full = decoder.raw_image(&source, &RawDecodeParams::default(), false)?;
+      let dummy = decoder.raw_image(&source, &RawDecodeParams::default(), true)?;
+      assert!(matches!(&full.data, RawImageData::Integer(pixels) if pixels.len() == 16 * 16));
+      assert!(matches!(&dummy.data, RawImageData::Integer(pixels) if pixels.is_empty()), "{:?}", compression);
+      assert_eq!((dummy.width, dummy.height, dummy.cpp), (full.width, full.height, full.cpp));
+      assert_eq!(dummy.blacklevel, full.blacklevel);
+      assert_eq!(dummy.whitelevel, full.whitelevel);
+      assert_eq!(dummy.camera_profiles, full.camera_profiles);
+    }
+    Ok(())
   }
 
   #[test]
