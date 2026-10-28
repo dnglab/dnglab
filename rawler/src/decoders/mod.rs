@@ -24,7 +24,7 @@ use std::time::SystemTime;
 
 use crate::Result;
 use crate::alloc_image_ok;
-use crate::alloc_image_plain_typed;
+use crate::alloc_image_typed_ok;
 use crate::analyze::FormatDump;
 use crate::bits::scale_u16;
 use crate::decompressors::Decompressor;
@@ -634,13 +634,13 @@ pub(crate) fn dynamic_image_from_ifd(ifd: &IFD, rawsource: &RawSource) -> Result
 /// Returns an error if required tags are missing, the compression /
 /// storage combination is unsupported, or any decompressor fails.
 pub fn plain_image_from_ifd(ifd: &IFD, rawsource: &RawSource) -> Result<RawImageData> {
-  plain_image_from_ifd_ext(ifd, rawsource, false)
+  plain_image_from_ifd_ext(ifd, rawsource, false, false)
 }
 
 /// Same as [`plain_image_from_ifd`], `ljpeg_dng_bug` enables the 16-bit LJPEG
-/// deviation used by DNG files with DNGVersion < 1.1.0.0.
-pub fn plain_image_from_ifd_ext(ifd: &IFD, rawsource: &RawSource, ljpeg_dng_bug: bool) -> Result<RawImageData> {
-  let dummy = false;
+/// deviation used by DNG files with DNGVersion < 1.1.0.0. With `dummy`, the
+/// pixels are not decoded and the returned data is empty.
+pub fn plain_image_from_ifd_ext(ifd: &IFD, rawsource: &RawSource, ljpeg_dng_bug: bool, dummy: bool) -> Result<RawImageData> {
   let endian = ifd.endian;
   let tiff_width = fetch_tiff_tag!(ifd, TiffCommonTag::ImageWidth).force_usize(0);
   let tiff_height = fetch_tiff_tag!(ifd, TiffCommonTag::ImageLength).force_usize(0);
@@ -906,7 +906,7 @@ where
     return Err(format_args!("DNG: trying to decode {} tiles from {} offsets", coltiles * rowtiles, tiles_src.len()).into());
   }
 
-  let mut pixbuf = alloc_image_plain_typed!(T, decode_width * cpp, decode_height, dummy);
+  let mut pixbuf = alloc_image_typed_ok!(T, decode_width * cpp, decode_height, dummy);
 
   let tiles = pixbuf
     .data
