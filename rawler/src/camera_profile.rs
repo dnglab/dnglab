@@ -13,7 +13,7 @@ use log::debug;
 
 use crate::dng::{DNG_VERSION_V1_0, DNG_VERSION_V1_6, DngVersionNumber};
 use crate::imgop::chromatic_adaption::adapt_xyz2cam_bradford;
-use crate::imgop::matrix::{FlatMatrix, determinant, multiply, normalize, project_rows_to_simplex, pseudo_inverse, transform_1d};
+use crate::imgop::matrix::{FlatMatrix, determinant, multiply, normalize, project_rows_to_simplex, pseudo_inverse, transform_1d, transform_2d};
 use crate::imgop::xyz::{
   CIE_1931_WHITE_POINT_A, CIE_1931_WHITE_POINT_B, CIE_1931_WHITE_POINT_C, CIE_1931_WHITE_POINT_D50, CIE_1931_WHITE_POINT_D55, CIE_1931_WHITE_POINT_D65,
   CIE_1931_WHITE_POINT_D75, Illuminant, XYZ_TO_PROFOTORGB_D50,
@@ -303,6 +303,28 @@ impl CameraProfile {
       profile.reduction_matrix[slot] = reduction_matrix.get(&illuminant).cloned();
     }
     if profile.slots().next().is_some() { Some(profile) } else { None }
+  }
+
+  /// Build a profile from a matrix that maps white balanced camera values to
+  /// XYZ D50 (like a DNG ForwardMatrix) and the camera neutral of the white balance
+  ///
+  /// The profile has one ColorMatrix for D50, the white of `neutral` is declared
+  /// to be the D50 white. This reproduces a pipeline that applies the white
+  /// balance and then a fixed matrix, like the one of Phase One IIQ files.
+  pub fn from_forward_matrix_d50(forward_matrix: &[[f32; 3]; 3], neutral: &[f32; 3]) -> Option<Self> {
+    if !neutral.iter().all(|value| value.is_finite() && *value > 0.0) {
+      return None;
+    }
+    // XYZ D50 to white balanced camera values, scaled to camera values of the neutral
+    let xyz2cam = pseudo_inverse(*forward_matrix);
+    let color_matrix: [[f32; 3]; 3] = std::array::from_fn(|row| xyz2cam[row].map(|value| value * neutral[row]));
+    if !color_matrix.as_flattened().iter().all(|value| value.is_finite()) {
+      return None;
+    }
+    let mut profile = Self::default();
+    profile.calibration_illuminant[0] = Some(Illuminant::D50);
+    profile.color_matrix[0] = Some(transform_2d(&color_matrix));
+    Some(profile)
   }
 
   /// Indices of the slots with a color matrix
@@ -605,5 +627,58 @@ mod tests {
     let profile = catalog(&[(Illuminant::D65, transform_2d(&XYZ_TO_SRGB_D65))], &[]).expect("profile");
     assert!(profile.calc_reduction_matrix().is_none());
     assert_eq!(profile.reduction_matrices(), [None, None, None]);
+  }
+
+  /// White balanced camera to XYZ D50 of a Phase One IQ3 100MP (IIQ tag 0x106, camera to ROMM)
+  fn iiq_forward_matrix() -> [[f32; 3]; 3] {
+    let romm = [[1.193, -0.2, 0.007], [-0.018, 1.129, -0.111], [0.028, -0.173, 1.145]];
+    multiply(&pseudo_inverse(XYZ_TO_PROFOTORGB_D50), &romm)
+  }
+
+  #[test]
+  fn forward_matrix_d50_maps_neutral_to_d50() {
+    use crate::imgop::{matrix::multiply_row1, xyz::CIE_1931_TRISTIMULUS_D50};
+
+    let neutral = [0.31, 1.0, 0.76];
+    let profile = CameraProfile::from_forward_matrix_d50(&iiq_forward_matrix(), &neutral).expect("profile");
+    assert_eq!(profile.slots().collect::<Vec<_>>(), vec![0]);
+    assert_eq!(profile.illuminant(0), Illuminant::D50);
+    let color_matrix = transform_1d::<3, 3>(profile.color_matrix[0].as_ref().expect("color matrix")).expect("3x3 matrix");
+    // The neutral is the camera value of the D50 white and vice versa
+    let camera = multiply_row1(&color_matrix, &CIE_1931_TRISTIMULUS_D50);
+    let white = multiply_row1(&pseudo_inverse(color_matrix), &neutral);
+    for i in 0..3 {
+      assert!((camera[i] - neutral[i]).abs() < 1e-3, "camera {:?}", camera);
+      assert!((white[i] - CIE_1931_TRISTIMULUS_D50[i]).abs() < 1e-3, "white {:?}", white);
+    }
+  }
+
+  #[test]
+  fn forward_matrix_d50_develops_like_forward_matrix() {
+    use crate::imgop::{
+      chromatic_adaption::bradford_adaption_matrix,
+      xyz::{SRGB_TO_XYZ_D65, XYZ_TO_SRGB_D65},
+    };
+
+    let forward_matrix = iiq_forward_matrix();
+    let profile = CameraProfile::from_forward_matrix_d50(&forward_matrix, &[0.31, 1.0, 0.76]).expect("profile");
+    let color_matrix = transform_1d::<3, 3>(profile.color_matrix[0].as_ref().expect("color matrix")).expect("3x3 matrix");
+    // Camera to sRGB as calculated by develop: Bradford adaption to D65, then map_3ch_to_rgb()
+    let xyz2cam = adapt_xyz2cam_bradford(&Illuminant::D50, &Illuminant::D65, &color_matrix);
+    let developed = pseudo_inverse(normalize(multiply(&xyz2cam, &SRGB_TO_XYZ_D65)));
+    let expected = multiply(
+      &XYZ_TO_SRGB_D65,
+      &multiply(&bradford_adaption_matrix(&Illuminant::D50, &Illuminant::D65), &forward_matrix),
+    );
+    for (developed, expected) in developed.as_flattened().iter().zip(expected.as_flattened()) {
+      assert!((developed - expected).abs() < 1e-3, "{:?} != {:?}", developed, expected);
+    }
+  }
+
+  #[test]
+  fn forward_matrix_d50_requires_valid_neutral() {
+    for neutral in [[0.0, 1.0, 0.5], [f32::NAN, 1.0, 0.5], [-1.0, 1.0, 0.5]] {
+      assert!(CameraProfile::from_forward_matrix_d50(&iiq_forward_matrix(), &neutral).is_none());
+    }
   }
 }
