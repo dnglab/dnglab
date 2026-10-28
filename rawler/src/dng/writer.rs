@@ -31,7 +31,7 @@ use crate::{
 use super::{
   CompressionParams, CropMode, DNG_VERSION_V1_0, DNG_VERSION_V1_1, DNG_VERSION_V1_4, DNG_VERSION_V1_7, DNG_VERSION_V1_7_1, DngCompression,
   DngPhotometricConversion, DngVersionNumber, JxlParams,
-  camera_profile_tags::{extra_camera_profile_data, rationals, write_camera_calibration, write_camera_profile, write_string},
+  camera_profile_tags::{extra_camera_profile_data, rationals, write_camera_calibration, write_camera_profile, write_gain_table_map_v1, write_string},
   opcodes::OpcodeStage,
   original::OriginalCompressed,
 };
@@ -371,6 +371,10 @@ where
         .to_bytes()
         .map_err(|err| DngError::General(format!("Failed to write {}: {}", stage, err)))?;
       self.ifd_mut().add_tag(tag, Value::Undefined(data));
+    }
+
+    if let Some(map) = &rawimage.gain_table_map {
+      write_gain_table_map_v1(self.ifd_mut(), map);
     }
 
     match compression {

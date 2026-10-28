@@ -173,6 +173,19 @@ pub enum GainData {
   F32(Vec<f32>),
 }
 
+impl GainTableMap {
+  /// Gains as floating point values, integer gains are scaled to GainMin ..= GainMax
+  pub fn gain_values(&self) -> Vec<f32> {
+    let scale = |value: f32, max: f32| self.gain_min + value / max * (self.gain_max - self.gain_min);
+    match &self.gains {
+      GainData::U8(values) => values.iter().map(|value| scale(*value as f32, 255.0)).collect(),
+      GainData::U16(values) => values.iter().map(|value| scale(*value as f32, 65535.0)).collect(),
+      GainData::F16(values) => values.iter().map(|value| half::f16::from_bits(*value).to_f32()).collect(),
+      GainData::F32(values) => values.clone(),
+    }
+  }
+}
+
 impl GainData {
   pub fn len(&self) -> usize {
     match self {
@@ -673,6 +686,24 @@ mod tests {
     for (developed, expected) in developed.as_flattened().iter().zip(expected.as_flattened()) {
       assert!((developed - expected).abs() < 1e-3, "{:?} != {:?}", developed, expected);
     }
+  }
+
+  #[test]
+  fn gain_values_of_data_types() {
+    let map = |gains| GainTableMap {
+      points: [1, 1, 3],
+      spacing: [1.0, 1.0],
+      origin: [0.0, 0.0],
+      input_weights: [0.0; 5],
+      gamma: 1.0,
+      gain_min: 0.5,
+      gain_max: 2.5,
+      gains,
+    };
+    assert_eq!(map(GainData::U8(vec![0, 51, 255])).gain_values(), vec![0.5, 0.9, 2.5]);
+    assert_eq!(map(GainData::U16(vec![0, 13107, 65535])).gain_values(), vec![0.5, 0.9, 2.5]);
+    assert_eq!(map(GainData::F16(vec![0x3800, 0x3c00, 0x4000])).gain_values(), vec![0.5, 1.0, 2.0]);
+    assert_eq!(map(GainData::F32(vec![0.25, 1.0, 4.0])).gain_values(), vec![0.25, 1.0, 4.0]);
   }
 
   #[test]

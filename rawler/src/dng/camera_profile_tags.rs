@@ -244,6 +244,11 @@ fn read_extra_camera_profile<R: Read + Seek>(reader: &mut R, offset: u32) -> std
 }
 
 /// Read CameraCalibration1..3 and CameraCalibrationSignature of IFD 0
+/// Read ProfileGainTableMap of the raw IFD
+pub fn read_gain_table_map_v1(ifd: &IFD) -> Option<GainTableMap> {
+  read_binary(ifd, DngTag::ProfileGainTableMap, decode_gain_table_map_v1)
+}
+
 pub fn read_camera_calibration(ifd: &IFD, planes: usize) -> CameraCalibration {
   CameraCalibration {
     matrices: CAMERA_CALIBRATION_TAGS.map(|tag| read_matrix(ifd, tag, planes * planes)),
@@ -330,6 +335,11 @@ pub fn extra_camera_profile_data(profile: &CameraProfile) -> crate::formats::tif
 }
 
 /// Write CameraCalibration1..3 and CameraCalibrationSignature
+/// Write ProfileGainTableMap to the raw IFD
+pub fn write_gain_table_map_v1(ifd: &mut DirectoryWriter, map: &GainTableMap) {
+  ifd.add_tag_undefined(DngTag::ProfileGainTableMap, encode_gain_table_map_v1(map, native_endian()));
+}
+
 pub fn write_camera_calibration(ifd: &mut DirectoryWriter, calibration: &CameraCalibration) {
   for (tag, matrix) in CAMERA_CALIBRATION_TAGS.iter().zip(&calibration.matrices) {
     if let Some(matrix) = matrix {
@@ -607,6 +617,16 @@ pub fn encode_rgb_tables(value: &RgbTables, endian: Endian) -> Vec<u8> {
 
 /// Decode ProfileGainTableMap2
 pub fn decode_gain_table_map(data: &[u8], endian: Endian) -> std::result::Result<GainTableMap, String> {
+  decode_gain_table_map_version(data, endian, true)
+}
+
+/// Decode ProfileGainTableMap (raw IFD), the gains are 32-bit floats
+pub fn decode_gain_table_map_v1(data: &[u8], endian: Endian) -> std::result::Result<GainTableMap, String> {
+  decode_gain_table_map_version(data, endian, false)
+}
+
+/// ProfileGainTableMap2 extends ProfileGainTableMap by DataType, Gamma, GainMin and GainMax
+fn decode_gain_table_map_version(data: &[u8], endian: Endian, version2: bool) -> std::result::Result<GainTableMap, String> {
   let mut r = BinaryReader::new(data, endian);
   let points_v = r.u32()?;
   let points_h = r.u32()?;
@@ -614,10 +634,11 @@ pub fn decode_gain_table_map(data: &[u8], endian: Endian) -> std::result::Result
   let origin = [r.f64()?, r.f64()?];
   let points_n = r.u32()?;
   let input_weights = [r.f32()?, r.f32()?, r.f32()?, r.f32()?, r.f32()?];
-  let data_type = r.u32()?;
-  let gamma = r.f32()?;
-  let gain_min = r.f32()?;
-  let gain_max = r.f32()?;
+  let (data_type, gamma, gain_min, gain_max) = if version2 {
+    (r.u32()?, r.f32()?, r.f32()?, r.f32()?)
+  } else {
+    (3, 1.0, 1.0, 1.0)
+  };
   if points_v < 1 || points_h < 1 || points_n < 1 {
     return Err(format!("invalid map points {}x{}x{}", points_v, points_h, points_n));
   }
@@ -659,13 +680,7 @@ pub fn decode_gain_table_map(data: &[u8], endian: Endian) -> std::result::Result
 
 /// Encode ProfileGainTableMap2
 pub fn encode_gain_table_map(value: &GainTableMap, endian: Endian) -> Vec<u8> {
-  let mut w = BinaryWriter::new(endian);
-  w.u32(value.points[0]);
-  w.u32(value.points[1]);
-  value.spacing.iter().for_each(|v| w.f64(*v));
-  value.origin.iter().for_each(|v| w.f64(*v));
-  w.u32(value.points[2]);
-  value.input_weights.iter().for_each(|v| w.f32(*v));
+  let mut w = encode_gain_table_map_header(value, endian);
   w.u32(match value.gains {
     GainData::U8(_) => 0,
     GainData::U16(_) => 1,
@@ -681,6 +696,27 @@ pub fn encode_gain_table_map(value: &GainTableMap, endian: Endian) -> Vec<u8> {
     GainData::F32(v) => v.iter().for_each(|v| w.f32(*v)),
   }
   w.data
+}
+
+/// Encode ProfileGainTableMap (raw IFD), the gains are written as 32-bit floats
+///
+/// This format has no Gamma, the map must use a gamma of 1.0.
+pub fn encode_gain_table_map_v1(value: &GainTableMap, endian: Endian) -> Vec<u8> {
+  let mut w = encode_gain_table_map_header(value, endian);
+  value.gain_values().iter().for_each(|v| w.f32(*v));
+  w.data
+}
+
+/// Fields common to ProfileGainTableMap and ProfileGainTableMap2
+fn encode_gain_table_map_header(value: &GainTableMap, endian: Endian) -> BinaryWriter {
+  let mut w = BinaryWriter::new(endian);
+  w.u32(value.points[0]);
+  w.u32(value.points[1]);
+  value.spacing.iter().for_each(|v| w.f64(*v));
+  value.origin.iter().for_each(|v| w.f64(*v));
+  w.u32(value.points[2]);
+  value.input_weights.iter().for_each(|v| w.f32(*v));
+  w
 }
 
 #[cfg(test)]
@@ -815,6 +851,24 @@ mod tests {
         assert_eq!(decode_gain_table_map(&data, endian), Ok(map));
       }
     }
+  }
+
+  #[test]
+  fn gain_table_map_v1_roundtrip() {
+    for endian in ENDIANS {
+      let map = GainTableMap {
+        gain_min: 1.0,
+        gain_max: 1.0,
+        ..gain_table_map(GainData::F32(vec![1.0, 2.0, 0.5, 1.0]))
+      };
+      let data = encode_gain_table_map_v1(&map, endian);
+      assert_eq!(data.len(), 64 + 4 * 4);
+      assert_eq!(decode_gain_table_map_v1(&data, endian), Ok(map));
+    }
+    // Integer gains are written as floats
+    let map = gain_table_map(GainData::U8(vec![0, 255, 255, 0]));
+    let decoded = decode_gain_table_map_v1(&encode_gain_table_map_v1(&map, Endian::Little), Endian::Little).expect("map");
+    assert_eq!(decoded.gains, GainData::F32(vec![0.5, 2.0, 2.0, 0.5]));
   }
 
   #[test]
