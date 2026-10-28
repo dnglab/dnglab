@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: LGPL-2.1
 // Copyright 2021 Daniel Vogelbacher <daniel@chaospixel.com>
 
+use crate::camera_profiles::analyze_camera_profiles;
 use clap::ArgMatches;
 use log::debug;
 use rawler::analyze::{
@@ -40,6 +41,13 @@ pub async fn analyze(options: &ArgMatches) -> crate::Result<()> {
   } else if options.get_flag("structure") {
     let analyze = analyze_file_structure(PathBuf::from(in_file))?;
     print_output(&analyze, options)?;
+  } else if options.get_flag("camera_profiles") {
+    let report = analyze_camera_profiles(in_file)?;
+    if options.get_flag("json") || options.get_flag("yaml") {
+      print_output(&report, options)?;
+    } else {
+      print!("{}", report);
+    }
   } else if options.get_flag("raw_checksum") {
     let digest = raw_pixels_digest(PathBuf::from(in_file), &RawDecodeParams::default())?;
     println!("{}", hex::encode(digest));

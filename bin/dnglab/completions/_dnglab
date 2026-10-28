@@ -51,6 +51,7 @@ _arguments "${_arguments_options[@]}" : \
 '--meta[Write metadata to STDOUT]' \
 '--structure[Write file structure to STDOUT]' \
 '--summary[Write summary information for file to STDOUT]' \
+'--camera-profiles[Write camera profiles to STDOUT (plain text, JSON or YAML)]' \
 '--json[Format metadata as JSON]' \
 '--yaml[Format metadata as YAML]' \
 '-v[Print status for every file]' \

@@ -11,6 +11,7 @@ use thiserror::Error;
 
 pub mod analyze;
 pub mod app;
+pub mod camera_profiles;
 pub mod cameras;
 pub mod config;
 pub mod convert;

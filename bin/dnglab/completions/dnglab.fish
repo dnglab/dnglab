@@ -63,6 +63,7 @@ complete -c dnglab -n "__fish_dnglab_using_subcommand analyze" -l srgb -d 'Write
 complete -c dnglab -n "__fish_dnglab_using_subcommand analyze" -l meta -d 'Write metadata to STDOUT'
 complete -c dnglab -n "__fish_dnglab_using_subcommand analyze" -l structure -d 'Write file structure to STDOUT'
 complete -c dnglab -n "__fish_dnglab_using_subcommand analyze" -l summary -d 'Write summary information for file to STDOUT'
+complete -c dnglab -n "__fish_dnglab_using_subcommand analyze" -l camera-profiles -d 'Write camera profiles to STDOUT (plain text, JSON or YAML)'
 complete -c dnglab -n "__fish_dnglab_using_subcommand analyze" -l json -d 'Format metadata as JSON'
 complete -c dnglab -n "__fish_dnglab_using_subcommand analyze" -l yaml -d 'Format metadata as YAML'
 complete -c dnglab -n "__fish_dnglab_using_subcommand analyze" -s v -d 'Print status for every file'
