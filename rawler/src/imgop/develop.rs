@@ -13,6 +13,7 @@ use crate::{
   dng::{
     CropMode,
     opcodes::{OpcodeSelector, OpcodeStage},
+    profile_render::{ProfileRender, prophoto_to_srgb, srgb_to_prophoto},
   },
   formats::tiff::{DirectoryWriter, TiffWriter},
   imgop::{
@@ -21,7 +22,7 @@ use crate::{
     matrix::{diagonal, identity, invert, multiply, multiply_vector, normalize, pseudo_inverse, transform_1d},
     sensor::{Demosaic, SensorType, xtrans::bilinear::XTransBilinearDemosaic},
   },
-  pixarray::{Color2D, PixF32},
+  pixarray::{Color2D, PixF32, RgbF32},
   rawimage::RawPhotometricInterpretation,
   rawsource::RawSource,
   tags::{ExifTag, TiffCommonTag},
@@ -29,7 +30,7 @@ use crate::{
 
 use super::{
   Dim2, Point, Rect, convert_from_f32_scaled_u16, crop,
-  raw::{map_3ch_to_rgb, map_4ch_to_rgb},
+  raw::{map_3ch_to_rgb, map_4ch_to_rgb, map_to_3ch},
   sensor::bayer::{bilinear::Bilinear4Channel, ppg::PPGDemosaic},
   xyz::{Illuminant, SRGB_TO_XYZ_D65, XYZ_TO_SRGB_D65},
 };
@@ -134,6 +135,8 @@ pub enum ProcessingStep {
   BaselineExposure,
   WhiteBalance,
   Calibrate,
+  /// Apply the rendering tables of the camera profile (part of Calibrate)
+  ProfileRender,
   CropDefault,
   SRgb,
 }
@@ -198,6 +201,7 @@ impl Default for RawDevelop {
         ProcessingStep::BaselineExposure,
         ProcessingStep::WhiteBalance,
         ProcessingStep::Calibrate,
+        ProcessingStep::ProfileRender,
         ProcessingStep::CropDefault,
         ProcessingStep::SRgb,
       ],
@@ -302,8 +306,12 @@ impl RawDevelop {
 
     // BaselineExposure is applied as linear gain to the scene-linear data, clipping
     // is done by the color space conversion or the final conversion to integers.
+    let exposure = if self.steps.contains(&ProcessingStep::BaselineExposure) {
+      rawimage.baseline_exposure.unwrap_or(0.0) + rawimage.baseline_exposure_offset().unwrap_or(0.0)
+    } else {
+      0.0
+    };
     if self.steps.contains(&ProcessingStep::BaselineExposure) {
-      let exposure = rawimage.baseline_exposure.unwrap_or(0.0) + rawimage.baseline_exposure_offset().unwrap_or(0.0);
       if exposure != 0.0 {
         let gain = exposure.exp2();
         log::debug!("ProcessingStep: BaselineExposure {} EV, gain: {}", exposure, gain);
@@ -326,18 +334,31 @@ impl RawDevelop {
         wb = [1.0, 1.0, 1.0, 1.0];
       }
 
+      // Rendering tables of the camera profile, for the same slot as the matrices
+      let render = if self.steps.contains(&ProcessingStep::ProfileRender) {
+        rawimage.best_calibration_slot().and_then(|slot| ProfileRender::new(slot.profile, slot.slot))
+      } else {
+        None
+      };
+
       intermediate = match intermediate {
         Intermediate::Monochrome(_) => intermediate,
         Intermediate::ThreeColor(pixels) => {
           let wb = [wb[0], wb[1], wb[2]];
           let cam2rgb = camera_to_srgb(&rawimage, &wb);
           log::debug!("wb: {:?}, camera to sRGB: {:?}", wb, cam2rgb);
-          Intermediate::ThreeColor(map_3ch_to_rgb(&pixels, &wb, &cam2rgb))
+          Intermediate::ThreeColor(match &render {
+            Some(render) => map_with_profile_render(&pixels, &wb, exposure, &cam2rgb, render),
+            None => map_3ch_to_rgb(&pixels, &wb, &cam2rgb),
+          })
         }
         Intermediate::FourColor(pixels) => {
           let cam2rgb = camera_to_srgb(&rawimage, &wb);
           log::debug!("wb: {:?}, camera to sRGB: {:?}", wb, cam2rgb);
-          Intermediate::ThreeColor(map_4ch_to_rgb(&pixels, &wb, &cam2rgb))
+          Intermediate::ThreeColor(match &render {
+            Some(render) => map_with_profile_render(&pixels, &wb, exposure, &cam2rgb, render),
+            None => map_4ch_to_rgb(&pixels, &wb, &cam2rgb),
+          })
         }
       };
     }
@@ -502,6 +523,21 @@ impl RawDevelop {
     root_ifd.add_tag(TiffCommonTag::Orientation, rawimage.orientation.to_u16());
     Ok(root_ifd)
   }
+}
+
+/// Map camera values to linear sRGB (D65) by way of the rendering tables of
+/// the camera profile, which are applied to linear ProPhoto RGB
+///
+/// Like a DNG reader, white balanced camera values are clipped at the camera
+/// white (scaled by the BaselineExposure gain), so clipped highlights stay
+/// neutral, and colors outside of sRGB are clipped per channel.
+fn map_with_profile_render<const N: usize>(pixels: &Color2D<f32, N>, wb: &[f32; N], exposure: f32, cam2rgb: &[[f32; N]; 3], render: &ProfileRender) -> RgbF32 {
+  let white = exposure.exp2() * wb.iter().copied().fold(f32::INFINITY, f32::min);
+  let mut prophoto = map_to_3ch(pixels, wb, white, &multiply(&srgb_to_prophoto(), cam2rgb));
+  prophoto.for_each(|pixel| render.apply(pixel));
+  let mut srgb = map_to_3ch(&prophoto, &[1.0; 3], f32::INFINITY, &prophoto_to_srgb());
+  srgb.for_each(|pixel| pixel.map(|v| v.clamp(0.0, 1.0)));
+  srgb
 }
 
 /// Matrix from white balanced camera values to linear sRGB (D65)
@@ -753,6 +789,31 @@ mod tests {
       &forward_matrix,
     );
     assert_matrix_eq(&cam2rgb, &expected);
+  }
+
+  #[test]
+  fn develop_applies_profile_render() -> std::result::Result<(), Box<dyn std::error::Error>> {
+    let mut rawimage = calibrated_rawimage(None, None, None);
+    rawimage.data = RawImageData::Float(vec![0.2, 0.4, 0.3]);
+    let without_render: Vec<ProcessingStep> = RawDevelop::default()
+      .steps
+      .into_iter()
+      .filter(|step| *step != ProcessingStep::ProfileRender)
+      .collect();
+    let develop = |rawimage: &RawImage, steps: &[ProcessingStep]| -> crate::Result<[f32; 3]> {
+      match RawDevelop::new_with(steps).develop_intermediate(rawimage)? {
+        Intermediate::ThreeColor(pixels) => Ok(pixels.data[0]),
+        _ => panic!("expected three color image"),
+      }
+    };
+    // Without tables, the step has no effect
+    assert_eq!(develop(&rawimage, &RawDevelop::default().steps)?, develop(&rawimage, &without_render)?);
+    // The tone curve brightens the image
+    rawimage.camera_profiles[0].tone_curve = Some(vec![0.0, 0.0, 0.5, 0.8, 1.0, 1.0]);
+    let rendered = develop(&rawimage, &RawDevelop::default().steps)?;
+    let plain = develop(&rawimage, &without_render)?;
+    assert!(rendered.iter().zip(plain).all(|(a, b)| *a > b), "{:?} {:?}", rendered, plain);
+    Ok(())
   }
 
   #[test]

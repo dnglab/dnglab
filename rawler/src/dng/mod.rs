@@ -6,6 +6,7 @@ pub mod convert;
 pub mod convertprofile;
 pub mod opcodes;
 pub mod original;
+pub mod profile_render;
 pub mod writer;
 
 use serde::{Deserialize, Serialize};
