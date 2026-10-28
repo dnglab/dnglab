@@ -269,6 +269,24 @@ pub(crate) fn map_4ch_to_3ch(src: &Color2D<f32, 4>, reduction: &[[f32; 4]; 3]) -
   Color2D::new_with(out, src.width, src.height)
 }
 
+/// Map white balanced color planes to three planes by `matrix`
+///
+/// The white balanced values are limited to `white`, the result is not clipped.
+pub(crate) fn map_to_3ch<const N: usize>(src: &Color2D<f32, N>, wb_coeff: &[f32; N], white: f32, matrix: &[[f32; N]; 3]) -> RgbF32 {
+  let mut out = Vec::with_capacity(src.data.len());
+
+  src
+    .data
+    .par_iter()
+    .map(|pix| {
+      let balanced: [f32; N] = std::array::from_fn(|i| (pix[i] * wb_coeff[i]).min(white));
+      matrix.map(|row| row.iter().zip(&balanced).map(|(m, v)| m * v).sum())
+    })
+    .collect_into_vec(&mut out);
+
+  RgbF32::new_with(out, src.width, src.height)
+}
+
 /// Collect iterator into array
 pub fn collect_array<T, I, const N: usize>(itr: I) -> [T; N]
 where

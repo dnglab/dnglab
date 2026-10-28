@@ -6,6 +6,7 @@ pub mod cielab;
 pub mod develop;
 pub mod fuji_rotate;
 pub mod gamma;
+pub mod hsv;
 pub mod math;
 pub mod matrix;
 pub mod raw;
