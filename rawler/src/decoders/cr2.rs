@@ -163,8 +163,8 @@ impl<'a> Decoder for Cr2Decoder<'a> {
       if let Some(canoncol) = raw.get_entry(TiffCommonTag::Cr2StripeWidths) {
         debug!("Found Cr2StripeWidths tag: {:?}", canoncol.value);
         if canoncol.value.force_usize(0) == 0 {
-          if cpp == 3 {
-            self.convert_to_rgb(file, camera, &decompressor, width, height, ljpegout.pixels_mut(), dummy)?;
+          if cpp == 3 && !dummy {
+            self.convert_to_rgb(file, camera, &decompressor, width, height, ljpegout.pixels_mut())?;
             //width /= 3;
           }
           ljpegout.update_dimension(Dim2::new(width, height));
@@ -237,8 +237,8 @@ impl<'a> Decoder for Cr2Decoder<'a> {
               }
             }
           }
-          if cpp == 3 {
-            self.convert_to_rgb(file, camera, &decompressor, width, height, out.pixels_mut(), dummy)?;
+          if cpp == 3 && !dummy {
+            self.convert_to_rgb(file, camera, &decompressor, width, height, out.pixels_mut())?;
             //width /= 3;
           }
           (cpp, out)
@@ -713,22 +713,10 @@ impl<'a> Cr2Decoder<'a> {
   }
 
   /// Convert YCbCr (YUV) data to linear RGB
-  fn convert_to_rgb(
-    &self,
-    rawfile: &RawSource,
-    cam: &Camera,
-    ljpeg: &LjpegDecompressor,
-    width: usize,
-    height: usize,
-    image: &mut [u16],
-    dummy: bool,
-  ) -> Result<()> {
+  fn convert_to_rgb(&self, rawfile: &RawSource, cam: &Camera, ljpeg: &LjpegDecompressor, width: usize, height: usize, image: &mut [u16]) -> Result<()> {
     debug!("YUV2RGB: Regular WB: {:?}", self.get_wb(rawfile, cam));
     debug!("YUV2RGB: SRAW WB: {:?}", self.get_sraw_wb(rawfile, cam));
     debug!("Model ID: 0x{:X}", self.model_id.unwrap_or(0));
-    if dummy {
-      return Ok(());
-    }
 
     let do_interpolate = std::env::var("RAWLER_CR2_YUV_INTERPOLATE")
       .ok()
