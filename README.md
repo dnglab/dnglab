@@ -181,6 +181,7 @@ ARGS:
     <FILE>    Input file
 
 OPTIONS:
+        --camera-profiles       Write camera profiles to STDOUT (plain text, JSON or YAML)
     -d                          turns on debugging mode
         --full-pixel            Write uncompressed full pixel data to STDOUT
     -h, --help                  Print help information
@@ -223,6 +224,39 @@ The output is:
   "cfa_layout": 1
 }
 ```
+
+With **--camera-profiles**, analyze shows the camera profiles used for color
+processing: the profiles of a DNG file, or the color matrices of the camera
+definition for other formats. The output is plain text, or JSON/YAML with
+**--json** or **--yaml**. Large tables (HueSatMap, LookTable, RGBTables, ...)
+are summarized by their dimensions.
+
+````
+$ dnglab analyze --camera-profiles sample.dng
+File:                       sample.dng
+AnalogBalance:              [ 1.3995  1.0000  2.6773 ]
+CameraCalibrationSignature: com.adobe
+...
+
+Camera profile 1 of 1 (primary, as shot)
+  Name:                  Adobe Standard
+  Calibration signature: com.adobe
+  Embed policy:          Allow copying
+  Color planes:          3
+  Slot 1: A (2850 K)
+    ColorMatrix1 (XYZ → camera, 3 × 3)
+      ⎡  0.7234  -0.1413  -0.0600 ⎤
+      ⎢ -0.3631   1.1150   0.2850 ⎥
+      ⎣ -0.0382   0.1335   0.6437 ⎦
+    ForwardMatrix1 (camera → XYZ D50, 3 × 3)
+      ⎡  0.7868   0.0092   0.1683 ⎤
+      ⎢  0.2291   0.8615  -0.0906 ⎥
+      ⎣  0.0027  -0.4752   1.2976 ⎦
+    ProfileHueSatMapData1: 90 × 30 × 1, Linear
+  Slot 2: D65 (6500 K)
+    ...
+  LookTable: 36 × 8 × 16, Linear
+````
 
 ### extract subcommand
 

@@ -59,6 +59,7 @@ Register-ArgumentCompleter -Native -CommandName 'dnglab' -ScriptBlock {
             [CompletionResult]::new('--meta', '--meta', [CompletionResultType]::ParameterName, 'Write metadata to STDOUT')
             [CompletionResult]::new('--structure', '--structure', [CompletionResultType]::ParameterName, 'Write file structure to STDOUT')
             [CompletionResult]::new('--summary', '--summary', [CompletionResultType]::ParameterName, 'Write summary information for file to STDOUT')
+            [CompletionResult]::new('--camera-profiles', '--camera-profiles', [CompletionResultType]::ParameterName, 'Write camera profiles to STDOUT (plain text, JSON or YAML)')
             [CompletionResult]::new('--json', '--json', [CompletionResultType]::ParameterName, 'Format metadata as JSON')
             [CompletionResult]::new('--yaml', '--yaml', [CompletionResultType]::ParameterName, 'Format metadata as YAML')
             [CompletionResult]::new('-v', '-v', [CompletionResultType]::ParameterName, 'Print status for every file')

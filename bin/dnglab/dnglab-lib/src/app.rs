@@ -279,6 +279,7 @@ fn analyze_command() -> Command {
     .arg(arg!(meta: --meta "Write metadata to STDOUT").action(ArgAction::SetTrue))
     .arg(arg!(structure: --structure "Write file structure to STDOUT").action(ArgAction::SetTrue))
     .arg(arg!(summary: --summary "Write summary information for file to STDOUT").action(ArgAction::SetTrue))
+    .arg(arg!(camera_profiles: --"camera-profiles" "Write camera profiles to STDOUT (plain text, JSON or YAML)").action(ArgAction::SetTrue))
     .arg(arg!(json: --json "Format metadata as JSON").action(ArgAction::SetTrue))
     .arg(arg!(yaml: --yaml "Format metadata as YAML").action(ArgAction::SetTrue))
     .arg(arg!(<FILE> "Input file").value_parser(clap::value_parser!(PathBuf)))

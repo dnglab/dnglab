@@ -55,6 +55,7 @@ set edit:completion:arg-completer[dnglab] = {|@words|
             cand --meta 'Write metadata to STDOUT'
             cand --structure 'Write file structure to STDOUT'
             cand --summary 'Write summary information for file to STDOUT'
+            cand --camera-profiles 'Write camera profiles to STDOUT (plain text, JSON or YAML)'
             cand --json 'Format metadata as JSON'
             cand --yaml 'Format metadata as YAML'
             cand -v 'Print status for every file'

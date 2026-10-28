@@ -4,7 +4,7 @@
 .SH NAME
 dnglab\-analyze \- Analyze raw image
 .SH SYNOPSIS
-\fBdnglab\-analyze\fR [\fB\-\-raw\-pixel\fR] [\fB\-\-full\-pixel\fR] [\fB\-\-preview\-pixel\fR] [\fB\-\-thumbnail\-pixel\fR] [\fB\-\-raw\-checksum\fR] [\fB\-\-full\-checksum\fR] [\fB\-\-preview\-checksum\fR] [\fB\-\-thumbnail\-checksum\fR] [\fB\-\-srgb\fR] [\fB\-\-meta\fR] [\fB\-\-structure\fR] [\fB\-\-summary\fR] [\fB\-\-json\fR] [\fB\-\-yaml\fR] [\fB\-h\fR|\fB\-\-help\fR] <\fIFILE\fR> 
+\fBdnglab\-analyze\fR [\fB\-\-raw\-pixel\fR] [\fB\-\-full\-pixel\fR] [\fB\-\-preview\-pixel\fR] [\fB\-\-thumbnail\-pixel\fR] [\fB\-\-raw\-checksum\fR] [\fB\-\-full\-checksum\fR] [\fB\-\-preview\-checksum\fR] [\fB\-\-thumbnail\-checksum\fR] [\fB\-\-srgb\fR] [\fB\-\-meta\fR] [\fB\-\-structure\fR] [\fB\-\-summary\fR] [\fB\-\-camera\-profiles\fR] [\fB\-\-json\fR] [\fB\-\-yaml\fR] [\fB\-h\fR|\fB\-\-help\fR] <\fIFILE\fR> 
 .SH DESCRIPTION
 Analyze raw image
 .SH OPTIONS
@@ -44,6 +44,9 @@ Write file structure to STDOUT
 .TP
 \fB\-\-summary\fR
 Write summary information for file to STDOUT
+.TP
+\fB\-\-camera\-profiles\fR
+Write camera profiles to STDOUT (plain text, JSON or YAML)
 .TP
 \fB\-\-json\fR
 Format metadata as JSON
