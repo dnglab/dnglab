@@ -256,6 +256,8 @@ pub struct RawImage {
   pub analog_balance: Option<Vec<f32>>,
   /// DNG AsShotProfileName, selects the default camera profile
   pub as_shot_profile_name: Option<String>,
+  /// DNG ProfileGainTableMap of the raw IFD, used by profiles without ProfileGainTableMap2
+  pub gain_table_map: Option<GainTableMap>,
 
   pub dng_tags: HashMap<u16, Value>,
 
@@ -424,6 +426,7 @@ impl RawImage {
       camera_calibration: CameraCalibration::default(),
       analog_balance: None,
       as_shot_profile_name: None,
+      gain_table_map: None,
       dng_tags: HashMap::new(),
       fuji_rotation_width: None,
       scaled_from_integer: false,
@@ -522,6 +525,7 @@ impl RawImage {
       camera_calibration: CameraCalibration::default(),
       analog_balance: None,
       as_shot_profile_name: None,
+      gain_table_map: None,
       dng_tags: HashMap::new(),
       fuji_rotation_width: None,
       scaled_from_integer: false,
@@ -784,13 +788,15 @@ impl RawImage {
       .or_else(|| self.primary_camera_profile().and_then(|profile| profile.rgb_tables.as_ref()))
   }
 
-  /// ProfileGainTableMap2 for camera profile `index`, the primary profile's map (IFD 0) is the default
+  /// Gain table map for camera profile `index`: its ProfileGainTableMap2, the
+  /// primary profile's map (IFD 0) or the ProfileGainTableMap of the raw IFD
   pub fn effective_gain_table_map(&self, index: usize) -> Option<&GainTableMap> {
     self
       .camera_profiles
       .get(index)
       .and_then(|profile| profile.gain_table_map.as_ref())
       .or_else(|| self.primary_camera_profile().and_then(|profile| profile.gain_table_map.as_ref()))
+      .or(self.gain_table_map.as_ref())
   }
 
   /// BaselineExposureOffset of the as-shot camera profile

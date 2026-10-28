@@ -2,7 +2,7 @@ use crate::RawImage;
 use crate::camera_profile::CameraProfile;
 use crate::cfa::*;
 use crate::decoders::*;
-use crate::dng::camera_profile_tags::{read_camera_calibration, read_camera_profile, read_extra_camera_profiles, read_string};
+use crate::dng::camera_profile_tags::{read_camera_calibration, read_camera_profile, read_extra_camera_profiles, read_gain_table_map_v1, read_string};
 use crate::dng::opcodes::OpcodeList;
 use crate::dng::{DNG_READER_VERSION, DNG_VERSION_V1_1, DngVersionNumber};
 use crate::formats::tiff::Entry;
@@ -162,6 +162,7 @@ impl<'a> Decoder for DngDecoder<'a> {
     }
     image.camera_profiles = camera_profiles;
     image.as_shot_profile_name = read_string(root, DngTag::AsShotProfileName);
+    image.gain_table_map = read_gain_table_map_v1(raw);
     image.wb_coeffs = self.get_wb(&image)?;
 
     // Opcode extraction
@@ -265,7 +266,7 @@ impl<'a> Decoder for DngDecoder<'a> {
         IFD::copy_tag(&mut ifd, self.get_raw_ifd()?, DngTag::ChromaBlurRadius);
         IFD::copy_tag(&mut ifd, self.get_raw_ifd()?, DngTag::AntiAliasStrength);
         IFD::copy_tag(&mut ifd, self.get_raw_ifd()?, DngTag::NoiseReductionApplied);
-        IFD::copy_tag(&mut ifd, self.get_raw_ifd()?, DngTag::ProfileGainTableMap);
+        // ProfileGainTableMap is written from RawImage
         Some(Rc::new(ifd))
       }
       WellKnownIFD::VirtualDngRootTags => {
@@ -1557,6 +1558,32 @@ mod tests {
     rawimage.analog_balance = Some(vec![1.0, 0.5, 2.0]);
     rawimage.as_shot_profile_name = Some("Extra".into());
     rawimage
+  }
+
+  /// ProfileGainTableMap of the raw IFD is written from RawImage
+  #[test]
+  fn gain_table_map_roundtrip() -> TestResult {
+    use crate::camera_profile::{GainData, GainTableMap};
+    use crate::formats::tiff::reader::TiffReader;
+
+    let mut rawimage = synthetic_rawimage();
+    let map = GainTableMap {
+      points: [2, 3, 2],
+      spacing: [1.0, 0.5],
+      origin: [0.0, 0.0],
+      input_weights: [0.25, 0.5, 0.25, 0.0, 0.0],
+      gamma: 1.0,
+      gain_min: 1.0,
+      gain_max: 1.0,
+      gains: GainData::F32((0..12).map(|i| 1.0 + i as f32 / 8.0).collect()),
+    };
+    rawimage.gain_table_map = Some(map.clone());
+    let data = write_dng(&rawimage, |_| {})?;
+    let tiff = GenericTiffReader::new_with_buffer(&data, 0, 0, None)?;
+    let raw_ifd = tiff.find_ifds_with_tag(TiffCommonTag::CFAPattern)[0];
+    assert!(raw_ifd.get_entry(DngTag::ProfileGainTableMap).is_some());
+    assert_eq!(decode_dng(&data)?.gain_table_map, Some(map));
+    Ok(())
   }
 
   #[test]

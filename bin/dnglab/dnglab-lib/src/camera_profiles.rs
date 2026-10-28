@@ -44,6 +44,8 @@ pub struct CameraProfilesReport {
   pub as_shot_profile_index: Option<usize>,
   pub analog_balance: Option<Vec<f32>>,
   pub camera_calibration: Option<CameraCalibrationSummary>,
+  /// ProfileGainTableMap of the raw IFD
+  pub gain_table_map: Option<GainTableMapSummary>,
   pub profiles: Vec<CameraProfileSummary>,
 }
 
@@ -173,6 +175,7 @@ impl CameraProfilesReport {
       as_shot_profile_index: rawimage.as_shot_camera_profile_index(),
       analog_balance: rawimage.analog_balance.clone(),
       camera_calibration: (!rawimage.camera_calibration.is_empty()).then(|| CameraCalibrationSummary::from(&rawimage.camera_calibration)),
+      gain_table_map: rawimage.gain_table_map.as_ref().map(GainTableMapSummary::from),
       profiles: rawimage.camera_profiles.iter().map(CameraProfileSummary::from).collect(),
     }
   }
@@ -337,6 +340,9 @@ impl Display for CameraProfilesReport {
     if let Some(signature) = self.camera_calibration.as_ref().and_then(|calibration| calibration.signature.as_ref()) {
       fields.push(Field::new("CameraCalibrationSignature", signature));
     }
+    if let Some(map) = &self.gain_table_map {
+      fields.push(Field::new("ProfileGainTableMap", map.to_string()).details(map.detail_lines()));
+    }
     let mut lines = field_lines(&fields);
     for calibration in self.camera_calibration.iter().flat_map(|calibration| &calibration.matrices) {
       lines.extend(matrix_lines(&format!("CameraCalibration{}", calibration.tag), None, &calibration.matrix));
@@ -425,14 +431,7 @@ impl CameraProfileSummary {
       );
     }
     if let Some(map) = &self.gain_table_map {
-      let [v, h, n] = map.points;
-      fields.push(
-        Field::new(
-          "GainTableMap",
-          format!("{} × {} × {} points, {} {} gains", v, h, n, map.gain_count, map.data_type),
-        )
-        .details(map.detail_lines()),
-      );
+      fields.push(Field::new("GainTableMap", map.to_string()).details(map.detail_lines()));
     }
     lines.extend(field_lines(&fields));
     lines
@@ -494,6 +493,13 @@ impl Display for RgbTableSummary {
       self.primaries,
       self.gamut.to_lowercase()
     )
+  }
+}
+
+impl Display for GainTableMapSummary {
+  fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+    let [v, h, n] = self.points;
+    write!(f, "{} × {} × {} points, {} {} gains", v, h, n, self.gain_count, self.data_type)
   }
 }
 
@@ -685,12 +691,28 @@ ToneCurve: 2 points
         matrices: [None, Some(identity()), None],
         signature: None,
       })),
+      gain_table_map: Some(GainTableMapSummary::from(&GainTableMap {
+        points: [1, 2, 3],
+        spacing: [1.0, 0.5],
+        origin: [0.0, 0.0],
+        input_weights: [0.0, 0.0, 0.0, 0.0, 1.0],
+        gamma: 1.0,
+        gain_min: 1.0,
+        gain_max: 1.0,
+        gains: GainData::F32(vec![1.0; 6]),
+      })),
       profiles: vec![CameraProfileSummary::from(&CameraProfile::default()); 2],
     };
     let expected = "\
-File:              test.dng
-AsShotProfileName: Extra
-AnalogBalance:     [ 1.0000  1.0000  1.0000 ]
+File:                test.dng
+AsShotProfileName:   Extra
+AnalogBalance:       [ 1.0000  1.0000  1.0000 ]
+ProfileGainTableMap: 1 × 2 × 3 points, 6 f32 gains
+  Spacing:       1 × 0.5
+  Origin:        0 × 0
+  Input weights: [ 0.0000  0.0000  0.0000  0.0000  1.0000 ]
+  Gamma:         1
+  Gain:          1 .. 1
 CameraCalibration2 (3 × 3)
   ⎡ 1.0000  0.0000  0.0000 ⎤
   ⎢ 0.0000  1.0000  0.0000 ⎥

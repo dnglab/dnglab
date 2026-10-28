@@ -336,10 +336,21 @@ impl RawDevelop {
 
       // Rendering tables of the camera profile, for the same slot as the matrices
       let render = if self.steps.contains(&ProcessingStep::ProfileRender) {
-        rawimage.best_calibration_slot().and_then(|slot| ProfileRender::new(slot.profile, slot.slot))
+        rawimage.best_calibration_slot().and_then(|slot| {
+          let gain_table_map = rawimage
+            .as_shot_camera_profile_index()
+            .and_then(|index| rawimage.effective_gain_table_map(index));
+          ProfileRender::new(slot.profile, slot.slot, gain_table_map)
+        })
       } else {
         None
       };
+      // Stage 3 image area of the gain table map: demosaiced CFA data is already
+      // cropped to the ActiveArea, other data is cropped later
+      let cropped = matches!(rawimage.photometric, RawPhotometricInterpretation::Cfa(_))
+        && self.steps.contains(&ProcessingStep::Demosaic)
+        && self.steps.contains(&ProcessingStep::CropActiveArea);
+      let active_area = if cropped { None } else { rawimage.active_area };
 
       intermediate = match intermediate {
         Intermediate::Monochrome(_) => intermediate,
@@ -348,7 +359,7 @@ impl RawDevelop {
           let cam2rgb = camera_to_srgb(&rawimage, &wb);
           log::debug!("wb: {:?}, camera to sRGB: {:?}", wb, cam2rgb);
           Intermediate::ThreeColor(match &render {
-            Some(render) => map_with_profile_render(&pixels, &wb, exposure, &cam2rgb, render),
+            Some(render) => map_with_profile_render(&pixels, &wb, exposure, &cam2rgb, render, active_area),
             None => map_3ch_to_rgb(&pixels, &wb, &cam2rgb),
           })
         }
@@ -356,7 +367,7 @@ impl RawDevelop {
           let cam2rgb = camera_to_srgb(&rawimage, &wb);
           log::debug!("wb: {:?}, camera to sRGB: {:?}", wb, cam2rgb);
           Intermediate::ThreeColor(match &render {
-            Some(render) => map_with_profile_render(&pixels, &wb, exposure, &cam2rgb, render),
+            Some(render) => map_with_profile_render(&pixels, &wb, exposure, &cam2rgb, render, active_area),
             None => map_4ch_to_rgb(&pixels, &wb, &cam2rgb),
           })
         }
@@ -530,11 +541,21 @@ impl RawDevelop {
 ///
 /// Like a DNG reader, white balanced camera values are clipped at the camera
 /// white (scaled by the BaselineExposure gain), so clipped highlights stay
-/// neutral, and colors outside of sRGB are clipped per channel.
-fn map_with_profile_render<const N: usize>(pixels: &Color2D<f32, N>, wb: &[f32; N], exposure: f32, cam2rgb: &[[f32; N]; 3], render: &ProfileRender) -> RgbF32 {
-  let white = exposure.exp2() * wb.iter().copied().fold(f32::INFINITY, f32::min);
+/// neutral, and colors outside of sRGB are clipped per channel. `active_area`
+/// is the image area of the gain table map, the whole image if `None`.
+fn map_with_profile_render<const N: usize>(
+  pixels: &Color2D<f32, N>,
+  wb: &[f32; N],
+  exposure: f32,
+  cam2rgb: &[[f32; N]; 3],
+  render: &ProfileRender,
+  active_area: Option<Rect>,
+) -> RgbF32 {
+  let gain = exposure.exp2();
+  let white = gain * wb.iter().copied().fold(f32::INFINITY, f32::min);
   let mut prophoto = map_to_3ch(pixels, wb, white, &multiply(&srgb_to_prophoto(), cam2rgb));
-  prophoto.for_each(|pixel| render.apply(pixel));
+  let area = active_area.unwrap_or_else(|| prophoto.rect());
+  render.apply(&mut prophoto, gain, area);
   let mut srgb = map_to_3ch(&prophoto, &[1.0; 3], f32::INFINITY, &prophoto_to_srgb());
   srgb.for_each(|pixel| pixel.map(|v| v.clamp(0.0, 1.0)));
   srgb
