@@ -115,6 +115,51 @@ pub fn determinant(m: &[[f32; 3]; 3]) -> f32 {
   m[0][0] * (m[1][1] * m[2][2] - m[1][2] * m[2][1]) - m[0][1] * (m[1][0] * m[2][2] - m[1][2] * m[2][0]) + m[0][2] * (m[1][0] * m[2][1] - m[1][1] * m[2][0])
 }
 
+/// Identity matrix of size N x N
+pub fn identity<const N: usize>() -> [[f32; N]; N] {
+  std::array::from_fn(|i| std::array::from_fn(|j| if i == j { 1.0 } else { 0.0 }))
+}
+
+/// Diagonal matrix with `values` on the diagonal
+pub fn diagonal<const N: usize>(values: &[f32; N]) -> [[f32; N]; N] {
+  std::array::from_fn(|i| std::array::from_fn(|j| if i == j { values[i] } else { 0.0 }))
+}
+
+/// Multiply matrix with a column vector
+pub fn multiply_vector<const N: usize, const M: usize>(matrix: &[[f32; N]; M], vector: &[f32; N]) -> [f32; M] {
+  matrix.map(|row| row.iter().zip(vector).map(|(a, b)| a * b).sum())
+}
+
+/// Invert a square matrix by Gauss-Jordan elimination, `None` if it is singular
+pub fn invert<const N: usize>(matrix: &[[f32; N]; N]) -> Option<[[f32; N]; N]> {
+  let mut work = *matrix;
+  let mut inverse = identity::<N>();
+  for col in 0..N {
+    // Partial pivoting: use the row with the largest value in this column
+    let pivot = (col..N).max_by(|a, b| work[*a][col].abs().total_cmp(&work[*b][col].abs()))?;
+    if work[pivot][col].abs() < f32::EPSILON {
+      return None;
+    }
+    work.swap(col, pivot);
+    inverse.swap(col, pivot);
+    let scale = work[col][col];
+    for j in 0..N {
+      work[col][j] /= scale;
+      inverse[col][j] /= scale;
+    }
+    for row in 0..N {
+      if row != col {
+        let factor = work[row][col];
+        for j in 0..N {
+          work[row][j] -= factor * work[col][j];
+          inverse[row][j] -= factor * inverse[col][j];
+        }
+      }
+    }
+  }
+  Some(inverse)
+}
+
 /// Transpose a given input matrix
 pub fn transpose<const N: usize, const M: usize>(matrix: &[[f32; M]; N]) -> [[f32; N]; M] {
   let mut transposed = [[f32::NAN; N]; M];
@@ -155,6 +200,30 @@ mod tests {
     assert!(transform_1d::<1, 1>(&m1d).is_none());
     assert!(transform_1d::<6, 7>(&m1d).is_none());
     Ok(())
+  }
+
+  fn assert_matrix_eq<const N: usize, const M: usize>(a: &[[f32; N]; M], b: &[[f32; N]; M]) {
+    for (x, y) in a.as_flattened().iter().zip(b.as_flattened()) {
+      assert!((x - y).abs() < 1e-5, "{:?} != {:?}", a, b);
+    }
+  }
+
+  #[test]
+  fn invert_matrix() {
+    let m3 = [[0.6722, -0.0635, -0.0963], [-0.4287, 1.2460, 0.2028], [-0.0908, 0.2162, 0.5668]];
+    assert_matrix_eq(&multiply(&m3, &invert(&m3).expect("invertible")), &identity());
+    // A zero pivot in the first column requires a row swap
+    let m4 = [[0.0, 2.0, 0.0, 1.0], [1.0, 0.0, 0.5, 0.0], [0.0, 0.3, 1.0, 0.0], [0.2, 0.0, 0.0, 1.5]];
+    assert_matrix_eq(&multiply(&invert(&m4).expect("invertible"), &m4), &identity());
+    assert_eq!(invert(&identity::<4>()), Some(identity::<4>()));
+    assert_eq!(invert(&[[1.0, 2.0], [2.0, 4.0]]), None);
+  }
+
+  #[test]
+  fn diagonal_and_vector() {
+    let m = [[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]];
+    assert_eq!(multiply_vector(&m, &[1.0, 0.0, 2.0]), [7.0, 16.0]);
+    assert_eq!(multiply(&m, &diagonal(&[2.0, 1.0, 0.5])), [[2.0, 2.0, 1.5], [8.0, 5.0, 3.0]]);
   }
 
   #[test]

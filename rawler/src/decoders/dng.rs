@@ -127,8 +127,19 @@ impl<'a> Decoder for DngDecoder<'a> {
     if !camera_profiles.is_empty() {
       camera_profiles.extend(read_extra_camera_profiles(&mut file.reader(), root));
     }
-    let wb_coeffs = self.get_wb(camera_profiles.first())?;
-    let mut image = RawImage::new_with_data(cam, raw_data, width * cpp, height, cpp, wb_coeffs, photometric, blacklevel, whitelevel, dummy);
+    // The white balance depends on the camera profile and calibration, it is set below
+    let mut image = RawImage::new_with_data(
+      cam,
+      raw_data,
+      width * cpp,
+      height,
+      cpp,
+      [f32::NAN; 4],
+      photometric,
+      blacklevel,
+      whitelevel,
+      dummy,
+    );
     image.orientation = orientation;
     image.linearization_table = self.get_linearization_table(raw, &image.data)?;
     image.baseline_exposure = root.get_entry(DngTag::BaselineExposure).and_then(|entry| entry.value.get_f32(0).ok().flatten());
@@ -151,6 +162,7 @@ impl<'a> Decoder for DngDecoder<'a> {
     }
     image.camera_profiles = camera_profiles;
     image.as_shot_profile_name = read_string(root, DngTag::AsShotProfileName);
+    image.wb_coeffs = self.get_wb(&image)?;
 
     // Opcode extraction
 
@@ -389,7 +401,7 @@ impl<'a> DngDecoder<'a> {
     })
   }
 
-  fn get_wb(&self, profile: Option<&CameraProfile>) -> Result<[f32; 4]> {
+  fn get_wb(&self, image: &RawImage) -> Result<[f32; 4]> {
     if let Some(levels) = self.tiff.get_entry(DngTag::AsShotNeutral) {
       // One value per color plane (1, 3 or 4)
       let mut wb = [f32::NAN; 4];
@@ -398,11 +410,18 @@ impl<'a> DngDecoder<'a> {
       }
       Ok(wb)
     } else if let Some(levels) = self.tiff.get_entry(DngTag::AsShotWhiteXY) {
-      // TODO: improve once AnalogBalance and CC is properly implemented
-      if let Some(profile) = profile
-        && let Some(flat_colormatrix) = profile.best_d65_slot().and_then(|slot| profile.color_matrix[slot].as_ref())
-        && let Some(colormatrix) = transform_1d::<3, 3>(flat_colormatrix)
-      {
+      // XYZtoCamera = AB * CC * CM of the calibration slot used for development
+      let xyz2cam = image.best_calibration_slot().and_then(|slot| {
+        let mut xyz2cam = transform_1d::<3, 3>(slot.color_matrix)?;
+        if let Some(calibration) = slot.camera_calibration.and_then(|matrix| transform_1d::<3, 3>(matrix)) {
+          xyz2cam = multiply(&calibration, &xyz2cam);
+        }
+        if let Some(balance) = image.analog_balance.as_deref().and_then(|balance| <[f32; 3]>::try_from(balance).ok()) {
+          xyz2cam = multiply(&diagonal(&balance), &xyz2cam);
+        }
+        Some(xyz2cam)
+      });
+      if let Some(colormatrix) = xyz2cam {
         let wb_coeff = xy_whitepoint_to_wb_coeff(levels.force_f32(0), levels.force_f32(1), &colormatrix);
         Ok([wb_coeff[0], wb_coeff[1], wb_coeff[2], f32::NAN])
       } else {
@@ -707,6 +726,59 @@ mod tests {
     let wb = decode_wb(&[Rational::new(1, 2), Rational::new(1, 1), Rational::new(1, 4)])?;
     assert_eq!(wb[..3], [2.0, 1.0, 4.0]);
     assert!(wb[3].is_nan());
+    Ok(())
+  }
+
+  /// AsShotWhiteXY is mapped to the camera neutral by AB * CC * CM
+  #[test]
+  fn as_shot_white_xy_with_calibration() -> TestResult {
+    use crate::imgop::{
+      matrix::{diagonal, multiply, transform_2d},
+      xyz::{Illuminant, xy_whitepoint_to_wb_coeff},
+    };
+
+    let color_matrix = [[0.6722, -0.0635, -0.0963], [-0.4287, 1.246, 0.2028], [-0.0908, 0.2162, 0.5668]];
+    let calibration = [[1.0, 0.1, 0.0], [0.0, 0.9, 0.05], [0.0, 0.0, 1.1]];
+    let balance = [1.0, 0.5, 2.0];
+    let mut rawimage = synthetic_rawimage();
+    let mut profile = CameraProfile::default();
+    profile.calibration_illuminant[0] = Some(Illuminant::D65);
+    profile.color_matrix[0] = Some(transform_2d(&color_matrix));
+    rawimage.camera_profiles = vec![profile];
+    rawimage.camera_calibration = CameraCalibration {
+      matrices: [Some(transform_2d(&calibration)), None, None],
+      signature: None,
+    };
+    rawimage.analog_balance = Some(balance.to_vec());
+
+    let mut buf = Cursor::new(Vec::new());
+    let mut dng = DngWriter::new(&mut buf, DNG_VERSION_V1_4)?;
+    dng.load_base_tags(&rawimage)?;
+    let mut frame = dng.subframe(0);
+    frame.raw_image(
+      &rawimage,
+      CropMode::None,
+      DngCompression::Uncompressed,
+      DngPhotometricConversion::Original,
+      &CompressionParams::default(),
+    )?;
+    frame.finalize()?;
+    dng.root_ifd_mut().remove_tag(DngTag::AsShotNeutral);
+    dng
+      .root_ifd_mut()
+      .add_tag(DngTag::AsShotWhiteXY, [Rational::new(3127, 10000), Rational::new(3290, 10000)]);
+    dng.close()?;
+
+    let wb = decode_dng(&buf.into_inner())?.wb_coeffs;
+    let xyz2cam = multiply(&diagonal(&balance), &multiply(&calibration, &color_matrix));
+    let expected = xy_whitepoint_to_wb_coeff(0.3127, 0.329, &xyz2cam);
+    for (coeff, expected) in wb.iter().zip(expected) {
+      assert!((coeff - expected).abs() < 1e-4, "{:?} != {:?}", wb, expected);
+    }
+    assert!(wb[3].is_nan());
+    // Without AB * CC the white balance would differ
+    let uncalibrated = xy_whitepoint_to_wb_coeff(0.3127, 0.329, &color_matrix);
+    assert!(wb.iter().zip(uncalibrated).any(|(coeff, other)| (coeff - other).abs() > 0.01));
     Ok(())
   }
 

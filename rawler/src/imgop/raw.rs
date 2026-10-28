@@ -4,8 +4,6 @@
 use super::xyz::Illuminant;
 use crate::bits::{LEu32, LookupTable};
 use crate::imgop::Rect;
-use crate::imgop::matrix::{multiply, normalize, pseudo_inverse};
-use crate::imgop::xyz::SRGB_TO_XYZ_D65;
 use crate::pixarray::{Color2D, RgbF32};
 use crate::rawimage::{BlackLevel, RawPhotometricInterpretation, WhiteLevel};
 
@@ -209,10 +207,7 @@ pub fn apply_linearization_table(samples: &mut [u16], row_width: usize, table: &
 }
 
 #[multiversion(targets("x86_64+avx+avx2", "x86+sse", "aarch64+neon"))]
-pub(crate) fn map_3ch_to_rgb(src: &Color2D<f32, 3>, wb_coeff: &[f32; 4], xyz2cam: [[f32; 3]; 4]) -> RgbF32 {
-  let rgb2cam = normalize(multiply(&xyz2cam, &SRGB_TO_XYZ_D65));
-  let cam2rgb = pseudo_inverse(rgb2cam);
-
+pub(crate) fn map_3ch_to_rgb(src: &Color2D<f32, 3>, wb_coeff: &[f32; 3], cam2rgb: &[[f32; 3]; 3]) -> RgbF32 {
   let mut out = Vec::with_capacity(src.data.len());
 
   src
@@ -236,10 +231,7 @@ pub(crate) fn map_3ch_to_rgb(src: &Color2D<f32, 3>, wb_coeff: &[f32; 4], xyz2cam
 }
 
 #[multiversion(targets("x86_64+avx+avx2", "x86+sse", "aarch64+neon"))]
-pub(crate) fn map_4ch_to_rgb(src: &Color2D<f32, 4>, wb_coeff: &[f32; 4], xyz2cam: [[f32; 3]; 4]) -> RgbF32 {
-  let rgb2cam = normalize(multiply(&xyz2cam, &SRGB_TO_XYZ_D65));
-  let cam2rgb = pseudo_inverse(rgb2cam);
-
+pub(crate) fn map_4ch_to_rgb(src: &Color2D<f32, 4>, wb_coeff: &[f32; 4], cam2rgb: &[[f32; 4]; 3]) -> RgbF32 {
   let mut out = Vec::with_capacity(src.data.len());
 
   src
