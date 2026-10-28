@@ -26,6 +26,7 @@ use crate::RawlerError;
 use crate::Result;
 use crate::analyze::FormatDump;
 use crate::bits::*;
+use crate::camera_profile::CameraProfile;
 use crate::cfa;
 use crate::decoders::ok_cfa_image_with_blacklevels;
 use crate::decompressors::decompress_lines_fn;
@@ -34,7 +35,9 @@ use crate::formats::tiff;
 use crate::formats::tiff::GenericTiffReader;
 use crate::formats::tiff::reader::TiffReader;
 use crate::imgop::Point;
+use crate::imgop::matrix::{multiply, pseudo_inverse};
 use crate::imgop::spline::Spline;
+use crate::imgop::xyz::XYZ_TO_PROFOTORGB_D50;
 use crate::lens::LensDescription;
 use crate::lens::LensResolver;
 use crate::pixarray::PixU16;
@@ -282,7 +285,23 @@ impl<'a> Decoder for IiqDecoder<'a> {
       .get_wb(file, wb_offset)
       .map_err(|ioerr| RawlerError::with_io_error("read IIQ white balance", file.path(), ioerr))?;
 
-    ok_cfa_image_with_blacklevels(camera.clone(), cpp, wb, blacklevel, image, dummy)
+    let mut image = ok_cfa_image_with_blacklevels(camera.clone(), cpp, wb, blacklevel, image, dummy)?;
+    // Cameras without color matrix in the camera definition use the matrix of the file
+    if image.camera_profiles.is_empty() {
+      let romm_matrix = self
+        .romm_matrix(file)
+        .map_err(|ioerr| RawlerError::with_io_error("read IIQ color matrix", file.path(), ioerr))?;
+      if let Some(romm_matrix) = romm_matrix {
+        debug!("IIQ camera to ROMM matrix: {:?}", romm_matrix);
+        let forward_matrix = multiply(&pseudo_inverse(XYZ_TO_PROFOTORGB_D50), &romm_matrix);
+        let neutral = [wb[1] / wb[0], 1.0, wb[1] / wb[2]];
+        match CameraProfile::from_forward_matrix_d50(&forward_matrix, &neutral) {
+          Some(profile) => image.camera_profiles.push(profile),
+          None => warn!("IIQ: invalid white balance {:?}, color matrix not available", wb),
+        }
+      }
+    }
+    Ok(image)
   }
 
   fn check_supported(&self) -> Result<()> {
@@ -984,6 +1003,17 @@ impl<'a> IiqDecoder<'a> {
     Ok([LEf32(buffer, 0), LEf32(buffer, 4), LEf32(buffer, 8), f32::NAN])
   }
 
+  /// Extract the matrix from white balanced camera values to ROMM (ProPhoto) RGB
+  fn romm_matrix(&self, file: &RawSource) -> std::io::Result<Option<[[f32; 3]; 3]>> {
+    match self.makernotes.get(&IiqTag::RommMatrix.into()) {
+      Some((byte_count, value)) if *byte_count == 9 * 4 => {
+        let buffer = file.subview(value.force_u64(0) + 8, 9 * 4)?;
+        Ok(Some(std::array::from_fn(|row| std::array::from_fn(|col| LEf32(buffer, (row * 3 + col) * 4)))))
+      }
+      _ => Ok(None),
+    }
+  }
+
   /// Get lens description by analyzing TIFF tags and makernotes
   fn get_lens_description(&self) -> Result<Option<&'static LensDescription>> {
     match self.lens_model()? {
@@ -1180,6 +1210,8 @@ impl<'a> IiqDecoder<'a> {
 #[allow(unused)]
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Ord, PartialOrd)]
 enum IiqTag {
+  /// Matrix from white balanced camera values to ROMM (ProPhoto) RGB
+  RommMatrix = 0x106,
   WhiteBalance = 0x107,
   Width = 0x108,
   Height = 0x109,

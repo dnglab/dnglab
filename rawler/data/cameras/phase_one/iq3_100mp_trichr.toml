@@ -6,7 +6,3 @@ clean_model = "IQ3 100MP Trichr"
 whitepoint = 65535
 color_pattern = "RGGB"
 active_area = [148, 120, 220, 24]
-
-[cameras.color_matrix]
-Flash = [0.4138, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.9769]
-Tungsten = [0.5184, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.1134]
