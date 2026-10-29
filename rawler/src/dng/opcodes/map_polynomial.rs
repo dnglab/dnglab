@@ -5,10 +5,10 @@
 
 use serde::{Deserialize, Serialize};
 
-use crate::{RawImage, RawImageData, RawlerError, Result};
+use crate::{RawlerError, Result};
 
 use super::{
-  OpcodeStage,
+  OpcodeData, OpcodeImage, OpcodeStage,
   helpers::{AreaSpec, ParamReader, map_area, put_f64, put_u32},
 };
 
@@ -62,24 +62,26 @@ impl MapPolynomial {
     self.coeffs.iter().rev().fold(0.0, |acc, coeff| acc * x + coeff)
   }
 
-  pub fn apply(&self, rawimage: &mut RawImage, stage: OpcodeStage) -> Result<()> {
-    let Some(rect) = self.area.buffer_rect(rawimage, stage) else {
+  pub fn apply(&self, image: &mut OpcodeImage<'_>, stage: OpcodeStage) -> Result<()> {
+    let Some(rect) = self.area.buffer_rect(image, stage) else {
       return Ok(());
     };
-    let (width, cpp) = (rawimage.width, rawimage.cpp);
-    match (&mut rawimage.data, stage) {
+    let (width, cpp) = (image.width(), image.channels());
+    match (&mut image.data, stage) {
       // Logical range of floating point data is 0.0 to 1.0
-      (RawImageData::Float(samples), _) => {
+      (OpcodeData::Float(view), _) => {
+        let samples = view.as_mut_slice();
         map_area(samples, width, cpp, rect, &self.area, &|x: f32| self.evaluate(x as f64).clamp(0.0, 1.0) as f32);
       }
       // Logical range of 16 bit data in OpcodeList1 is 0 to 65535, the polynomial
       // maps 16 bit sample values.
-      (RawImageData::Integer(samples), OpcodeStage::List1) => {
+      (OpcodeData::Integer(view), OpcodeStage::List1) => {
+        let samples = view.as_mut_slice();
         map_area(samples, width, cpp, rect, &self.area, &|x: u16| {
           self.evaluate(x as f64).round().clamp(0.0, 65535.0) as u16
         });
       }
-      (RawImageData::Integer(_), _) => {
+      (OpcodeData::Integer(_), _) => {
         return Err(RawlerError::DecoderFailed(format!(
           "DNG opcode MapPolynomial in {} requires image data mapped to linear reference values",
           stage
@@ -94,6 +96,7 @@ impl MapPolynomial {
 mod tests {
   use super::*;
   use crate::{
+    RawImageData,
     dng::opcodes::{OpcodeList, testutil::*},
     imgop::{Dim2, Point, Rect},
   };

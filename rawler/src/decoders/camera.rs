@@ -60,6 +60,15 @@ impl Default for DefaultScale {
   }
 }
 
+impl DefaultScale {
+  /// Pixel aspect ratio (width / height), 1.0 for an invalid scale
+  pub fn pixel_aspect_ratio(&self) -> f64 {
+    let [[h_n, h_d], [v_n, v_d]] = self.0;
+    let aspect = (h_n as f64 / h_d as f64) / (v_n as f64 / v_d as f64);
+    if aspect.is_finite() && aspect > 0.0 { aspect } else { 1.0 }
+  }
+}
+
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub struct BestQualityScale(pub [u32; 2]);
 

@@ -9,7 +9,7 @@ use super::{
 };
 use crate::{
   RawImage, RawImageData,
-  dng::opcodes::OpcodeStage,
+  dng::opcodes::{OpcodeData, OpcodeImage, OpcodeStage},
   imgop::{
     Dim2, Point, Rect,
     color::{PixelOp, apply_gain, apply_transfer_function, camera_to_rgb, camera_to_rgb_in_place},
@@ -233,23 +233,38 @@ impl Executor {
   /// Apply the opcode list of `stage`. While the opcodes are applied, the
   /// image data is the data of the raw image.
   fn apply_opcodes(&mut self, stage: OpcodeStage, crop_to_active_area: bool) -> crate::Result<()> {
-    let processed = match self.image.take() {
-      Some(image) => {
-        self.rawimage.width = image.width;
-        self.rawimage.height = image.height;
-        self.rawimage.cpp = image.channels;
-        self.rawimage.data = RawImageData::Float(image.data);
-        true
-      }
-      None => false,
+    let Some(list) = self.rawimage.take_opcode_list(stage) else {
+      return Ok(());
     };
-    self.rawimage.active_area = self.active_area;
-    self.rawimage.crop_area = self.crop_area;
-    self.rawimage.apply_opcode_list(stage)?;
-    self.active_area = self.rawimage.active_area;
-    self.crop_area = self.rawimage.crop_area;
-    if processed {
-      self.image();
+    match &mut self.image {
+      // Image data as read from the file, in the raw image
+      None => {
+        (self.rawimage.active_area, self.rawimage.crop_area) = (self.active_area, self.crop_area);
+        list.apply(&mut self.rawimage, stage)?;
+        (self.active_area, self.crop_area) = (self.rawimage.active_area, self.rawimage.crop_area);
+      }
+      Some(image) => {
+        let mut target = OpcodeImage {
+          data: OpcodeData::Float(image.view_mut()),
+          active_area: self.active_area,
+          crop_area: self.crop_area,
+          black_areas: self.rawimage.blackareas.clone(),
+          scaled_from_integer: self.rawimage.scaled_from_integer,
+          aspect_ratio: self.rawimage.camera.default_scale.pixel_aspect_ratio(),
+        };
+        let result = list.apply_to(&mut target, stage);
+        let (width, height) = (target.width(), target.height());
+        let OpcodeImage {
+          active_area,
+          crop_area,
+          black_areas,
+          ..
+        } = target;
+        image.data.truncate(width * height * image.channels);
+        (image.width, image.height) = (width, height);
+        (self.active_area, self.crop_area, self.rawimage.blackareas) = (active_area, crop_area, black_areas);
+        result?;
+      }
     }
     // A TrimBounds shrinks the ActiveArea, keep the image data cropped to it
     if crop_to_active_area && let Some(active_area) = self.active_area.take() {

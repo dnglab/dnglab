@@ -6,12 +6,13 @@
 use serde::{Deserialize, Serialize};
 
 use crate::{
-  RawImage, RawImageData, RawlerError, Result,
-  imgop::{Dim2, Point, Rect, crop},
+  RawlerError, Result,
+  imgop::{Point, Rect},
+  pixarray::ImageViewMut,
 };
 
 use super::{
-  OpcodeStage,
+  OpcodeData, OpcodeImage, OpcodeStage,
   helpers::{ParamReader, put_u32, stage_bounds},
 };
 
@@ -58,8 +59,8 @@ impl TrimBounds {
     self.top >= self.bottom || self.left >= self.right
   }
 
-  pub fn apply(&self, rawimage: &mut RawImage, stage: OpcodeStage) -> Result<()> {
-    let bounds = stage_bounds(rawimage, stage);
+  pub fn apply(&self, image: &mut OpcodeImage<'_>, stage: OpcodeStage) -> Result<()> {
+    let bounds = stage_bounds(image, stage);
     if self.is_empty() || self.bottom as usize > bounds.d.h || self.right as usize > bounds.d.w {
       return Err(RawlerError::DecoderFailed(format!(
         "DNG opcode TrimBounds in {}: rectangle (t={}, l={}, b={}, r={}) is empty or exceeds image of {}x{}",
@@ -71,12 +72,12 @@ impl TrimBounds {
       Point::new(self.right as usize, self.bottom as usize),
     );
     match stage {
-      OpcodeStage::List1 => Self::trim_raw_image(rawimage, rect)?,
+      OpcodeStage::List1 => Self::trim_raw_image(image, rect)?,
       OpcodeStage::List2 | OpcodeStage::List3 => {
         let area = Rect::new(Point::new(bounds.p.x + rect.p.x, bounds.p.y + rect.p.y), rect.d);
-        rawimage.active_area = Some(area);
+        image.active_area = Some(area);
         // The stage 3 image now starts at the top-left corner of the rectangle
-        rawimage.crop_area = rawimage
+        image.crop_area = image
           .crop_area
           .and_then(|crop_area| Rect::new(Point::new(crop_area.p.x + rect.p.x, crop_area.p.y + rect.p.y), crop_area.d).intersect(&area));
       }
@@ -86,28 +87,22 @@ impl TrimBounds {
 
   /// Crop the stored raw image (OpcodeList1). ActiveArea and DefaultCrop keep
   /// their coordinates, which now apply to the trimmed image.
-  fn trim_raw_image(rawimage: &mut RawImage, rect: Rect) -> Result<()> {
-    let image = Rect::new(Point::zero(), rect.d);
-    if let Some(active_area) = rawimage.active_area
-      && active_area.intersect(&image) != Some(active_area)
+  fn trim_raw_image(image: &mut OpcodeImage<'_>, rect: Rect) -> Result<()> {
+    let trimmed = Rect::new(Point::zero(), rect.d);
+    if let Some(active_area) = image.active_area
+      && active_area.intersect(&trimmed) != Some(active_area)
     {
       return Err(RawlerError::DecoderFailed(format!(
         "DNG opcode TrimBounds in OpcodeList1: ActiveArea {:?} exceeds trimmed image of {}x{}",
         active_area, rect.d.w, rect.d.h
       )));
     }
-    let cpp = rawimage.cpp;
-    let dim = Dim2::new(rawimage.width * cpp, rawimage.height);
-    let area = Rect::new(Point::new(rect.p.x * cpp, rect.p.y), Dim2::new(rect.d.w * cpp, rect.d.h));
-    match &mut rawimage.data {
-      RawImageData::Integer(samples) => *samples = crop(samples, dim, area),
-      RawImageData::Float(samples) => *samples = crop(samples, dim, area),
-    }
-    rawimage.width = rect.d.w;
-    rawimage.height = rect.d.h;
-    rawimage.crop_area = rawimage.crop_area.and_then(|crop_area| crop_area.intersect(&image));
+    // The trimmed image is moved to the start of the image data
+    let data = std::mem::replace(&mut image.data, OpcodeData::Float(ImageViewMut::new(&mut [], 0, 0, 1)));
+    image.data = data.crop_in_place(rect)?;
+    image.crop_area = image.crop_area.and_then(|crop_area| crop_area.intersect(&trimmed));
     // Masked areas are relative to the stored raw image
-    rawimage.blackareas = rawimage.blackareas.iter().filter_map(|masked| masked.rebase(&rect)).collect();
+    image.black_areas = image.black_areas.iter().filter_map(|masked| masked.rebase(&rect)).collect();
     Ok(())
   }
 }
@@ -116,6 +111,7 @@ impl TrimBounds {
 mod tests {
   use super::*;
   use crate::dng::opcodes::{Opcode, OpcodeList, testutil::*};
+  use crate::{RawImageData, imgop::Dim2};
 
   fn trim_bounds(top: u32, left: u32, bottom: u32, right: u32) -> Vec<u8> {
     let mut buf = Vec::new();

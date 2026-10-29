@@ -5,10 +5,10 @@
 
 use serde::{Deserialize, Serialize};
 
-use crate::{RawImage, RawImageData, RawlerError, Result};
+use crate::{RawlerError, Result};
 
 use super::{
-  OpcodeStage,
+  OpcodeData, OpcodeImage, OpcodeStage,
   helpers::{AreaSpec, ParamReader, map_area, put_u32},
 };
 
@@ -56,28 +56,30 @@ impl MapTable {
     self.table[index.min(self.table.len() - 1)]
   }
 
-  pub fn apply(&self, rawimage: &mut RawImage, stage: OpcodeStage) -> Result<()> {
+  pub fn apply(&self, image: &mut OpcodeImage<'_>, stage: OpcodeStage) -> Result<()> {
     if self.table.is_empty() || self.table.len() > MAP_TABLE_MAX_ENTRIES {
       return Err(RawlerError::DecoderFailed(format!(
         "DNG opcode MapTable: invalid table size {}",
         self.table.len()
       )));
     }
-    let Some(rect) = self.area.buffer_rect(rawimage, stage) else {
+    let Some(rect) = self.area.buffer_rect(image, stage) else {
       return Ok(());
     };
-    let (width, cpp) = (rawimage.width, rawimage.cpp);
-    match (&mut rawimage.data, stage) {
+    let (width, cpp) = (image.width(), image.channels());
+    match (&mut image.data, stage) {
       // Floating point data is mapped through the 16 bit table
-      (RawImageData::Float(samples), _) => {
+      (OpcodeData::Float(view), _) => {
+        let samples = view.as_mut_slice();
         map_area(samples, width, cpp, rect, &self.area, &|x: f32| {
           self.lookup((x.clamp(0.0, 1.0) * 65535.0).round() as usize) as f32 / 65535.0
         });
       }
-      (RawImageData::Integer(samples), OpcodeStage::List1) => {
+      (OpcodeData::Integer(view), OpcodeStage::List1) => {
+        let samples = view.as_mut_slice();
         map_area(samples, width, cpp, rect, &self.area, &|x: u16| self.lookup(x as usize));
       }
-      (RawImageData::Integer(_), _) => {
+      (OpcodeData::Integer(_), _) => {
         return Err(RawlerError::DecoderFailed(format!(
           "DNG opcode MapTable in {} requires image data mapped to linear reference values",
           stage
@@ -92,6 +94,7 @@ impl MapTable {
 mod tests {
   use super::*;
   use crate::{
+    RawImageData,
     dng::opcodes::{Opcode, OpcodeList, testutil::*},
     imgop::{Dim2, Point, Rect},
   };

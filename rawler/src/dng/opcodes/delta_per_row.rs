@@ -5,10 +5,10 @@
 
 use serde::{Deserialize, Serialize};
 
-use crate::{RawImage, Result};
+use crate::Result;
 
 use super::{
-  OpcodeStage,
+  OpcodeImage, OpcodeStage,
   helpers::{AreaSpec, LineTable, ParamReader, TableAxis, parse_line_table, write_line_table},
 };
 
@@ -33,8 +33,8 @@ impl DeltaPerRow {
     write_line_table(buf, &self.area, &self.deltas);
   }
 
-  pub fn apply(&self, rawimage: &mut RawImage, stage: OpcodeStage) -> Result<()> {
-    self.table().apply_delta(rawimage, stage)
+  pub fn apply(&self, image: &mut OpcodeImage<'_>, stage: OpcodeStage) -> Result<()> {
+    self.table().apply_delta(image, stage)
   }
 
   fn table(&self) -> LineTable<'_> {

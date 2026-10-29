@@ -40,11 +40,76 @@ pub use self::warp_rectilinear2::{WarpRectilinear2, WarpRectilinear2Coeffs};
 use serde::{Deserialize, Serialize};
 
 use crate::{
-  RawImage, RawlerError, Result,
+  RawImage, RawImageData, RawlerError, Result,
   dng::{DNG_READER_VERSION, DngVersionNumber},
+  imgop::Rect,
+  pixarray::ImageViewMut,
 };
 
 use self::helpers::{ParamReader, put_u32};
+
+/// Image data that DNG opcodes are applied to
+#[derive(Debug)]
+pub enum OpcodeData<'a> {
+  /// 16 bit data as stored in the file, for OpcodeList1
+  Integer(ImageViewMut<'a, u16>),
+  /// Floating point data
+  Float(ImageViewMut<'a, f32>),
+}
+
+impl<'a> OpcodeData<'a> {
+  /// Crop to `area` without a new buffer, see [`ImageViewMut::crop_in_place`]
+  fn crop_in_place(self, area: Rect) -> Result<Self> {
+    Ok(match self {
+      Self::Integer(view) => Self::Integer(view.crop_in_place(area)?),
+      Self::Float(view) => Self::Float(view.crop_in_place(area)?),
+    })
+  }
+}
+
+/// Image data with the metadata that DNG opcodes use and change
+///
+/// Opcodes work in place on the borrowed image data. TrimBounds in
+/// OpcodeList1 crops the data to the start of the buffer, the owner of the
+/// buffer can truncate it to the size of the image after the opcodes.
+#[derive(Debug)]
+pub struct OpcodeImage<'a> {
+  pub data: OpcodeData<'a>,
+  /// ActiveArea, relative to the image data
+  pub active_area: Option<Rect>,
+  /// DefaultCrop, relative to the image data
+  pub crop_area: Option<Rect>,
+  /// Masked areas, relative to the image data
+  pub black_areas: Vec<Rect>,
+  /// Floating point data is mapped from 16 bit data: deltas of opcodes are in
+  /// units of 1/65535
+  pub scaled_from_integer: bool,
+  /// Pixel aspect ratio (width / height), for warps
+  pub aspect_ratio: f64,
+}
+
+impl OpcodeImage<'_> {
+  pub fn width(&self) -> usize {
+    match &self.data {
+      OpcodeData::Integer(view) => view.width(),
+      OpcodeData::Float(view) => view.width(),
+    }
+  }
+
+  pub fn height(&self) -> usize {
+    match &self.data {
+      OpcodeData::Integer(view) => view.height(),
+      OpcodeData::Float(view) => view.height(),
+    }
+  }
+
+  pub fn channels(&self) -> usize {
+    match &self.data {
+      OpcodeData::Integer(view) => view.channels(),
+      OpcodeData::Float(view) => view.channels(),
+    }
+  }
+}
 
 /// Opcode flag bit 0: the opcode is optional, a reader may skip it
 const FLAG_OPTIONAL: u32 = 1;
@@ -300,22 +365,22 @@ impl Opcode {
     !matches!(self, Self::Unknown(_))
   }
 
-  pub fn apply(&self, rawimage: &mut RawImage, stage: OpcodeStage) -> Result<()> {
+  pub fn apply(&self, image: &mut OpcodeImage<'_>, stage: OpcodeStage) -> Result<()> {
     match self {
-      Self::WarpRectilinear(warp_rectilinear) => warp_rectilinear.apply(rawimage, stage),
-      Self::WarpFisheye(warp_fisheye) => warp_fisheye.apply(rawimage, stage),
-      Self::WarpRectilinear2(warp_rectilinear2) => warp_rectilinear2.apply(rawimage, stage),
-      Self::FixVignetteRadial(fix_vignette) => fix_vignette.apply(rawimage, stage),
-      Self::FixBadPixelsConstant(fix_bad_pixels) => fix_bad_pixels.apply(rawimage, stage),
-      Self::FixBadPixelsList(fix_bad_pixels) => fix_bad_pixels.apply(rawimage, stage),
-      Self::TrimBounds(trim_bounds) => trim_bounds.apply(rawimage, stage),
-      Self::MapTable(map_table) => map_table.apply(rawimage, stage),
-      Self::MapPolynomial(map_polynomial) => map_polynomial.apply(rawimage, stage),
-      Self::GainMap(gain_map) => gain_map.apply(rawimage, stage),
-      Self::DeltaPerRow(delta_per_row) => delta_per_row.apply(rawimage, stage),
-      Self::DeltaPerColumn(delta_per_column) => delta_per_column.apply(rawimage, stage),
-      Self::ScalePerRow(scale_per_row) => scale_per_row.apply(rawimage, stage),
-      Self::ScalePerColumn(scale_per_column) => scale_per_column.apply(rawimage, stage),
+      Self::WarpRectilinear(warp_rectilinear) => warp_rectilinear.apply(image, stage),
+      Self::WarpFisheye(warp_fisheye) => warp_fisheye.apply(image, stage),
+      Self::WarpRectilinear2(warp_rectilinear2) => warp_rectilinear2.apply(image, stage),
+      Self::FixVignetteRadial(fix_vignette) => fix_vignette.apply(image, stage),
+      Self::FixBadPixelsConstant(fix_bad_pixels) => fix_bad_pixels.apply(image, stage),
+      Self::FixBadPixelsList(fix_bad_pixels) => fix_bad_pixels.apply(image, stage),
+      Self::TrimBounds(trim_bounds) => trim_bounds.apply(image, stage),
+      Self::MapTable(map_table) => map_table.apply(image, stage),
+      Self::MapPolynomial(map_polynomial) => map_polynomial.apply(image, stage),
+      Self::GainMap(gain_map) => gain_map.apply(image, stage),
+      Self::DeltaPerRow(delta_per_row) => delta_per_row.apply(image, stage),
+      Self::DeltaPerColumn(delta_per_column) => delta_per_column.apply(image, stage),
+      Self::ScalePerRow(scale_per_row) => scale_per_row.apply(image, stage),
+      Self::ScalePerColumn(scale_per_column) => scale_per_column.apply(image, stage),
       Self::Unknown(_) => Err(RawlerError::DecoderFailed(format!("DNG opcode {} is not supported", self.name()))),
     }
   }
@@ -423,9 +488,41 @@ impl OpcodeList {
     }
   }
 
-  /// Apply all opcodes in sequence. Unsupported optional opcodes are skipped,
-  /// unsupported required opcodes return an error.
+  /// Apply all opcodes to the image data of `rawimage`, see [`Self::apply_to`]
   pub fn apply(&self, rawimage: &mut RawImage, stage: OpcodeStage) -> Result<()> {
+    let (width, height, cpp) = (rawimage.width, rawimage.height, rawimage.cpp);
+    let mut image = OpcodeImage {
+      data: match &mut rawimage.data {
+        RawImageData::Integer(samples) => OpcodeData::Integer(ImageViewMut::new(samples, width, height, cpp)),
+        RawImageData::Float(samples) => OpcodeData::Float(ImageViewMut::new(samples, width, height, cpp)),
+      },
+      active_area: rawimage.active_area,
+      crop_area: rawimage.crop_area,
+      black_areas: rawimage.blackareas.clone(),
+      scaled_from_integer: rawimage.scaled_from_integer,
+      aspect_ratio: rawimage.camera.default_scale.pixel_aspect_ratio(),
+    };
+    let result = self.apply_to(&mut image, stage);
+    let (width, height) = (image.width(), image.height());
+    let OpcodeImage {
+      active_area,
+      crop_area,
+      black_areas,
+      ..
+    } = image;
+    // TrimBounds may have cropped the image data
+    match &mut rawimage.data {
+      RawImageData::Integer(samples) => samples.truncate(width * height * cpp),
+      RawImageData::Float(samples) => samples.truncate(width * height * cpp),
+    }
+    (rawimage.width, rawimage.height) = (width, height);
+    (rawimage.active_area, rawimage.crop_area, rawimage.blackareas) = (active_area, crop_area, black_areas);
+    result
+  }
+
+  /// Apply all opcodes in sequence to `image`. Unsupported optional opcodes are
+  /// skipped, unsupported required opcodes return an error.
+  pub fn apply_to(&self, image: &mut OpcodeImage<'_>, stage: OpcodeStage) -> Result<()> {
     // DNG spec "skip rule": a WarpRectilinear or WarpFisheye immediately following
     // an optional WarpRectilinear2 is a fallback for older DNG readers.
     let mut skip_fallback_warp = false;
@@ -444,7 +541,7 @@ impl OpcodeList {
       match reason {
         None => {
           log::debug!("Apply {}: {:?}", stage, opcode);
-          opcode.apply(rawimage, stage)?;
+          opcode.apply(image, stage)?;
           skip_fallback_warp = opcode.is_optional() && matches!(opcode, Opcode::WarpRectilinear2(_));
         }
         Some(reason) if opcode.is_optional() => {
@@ -491,6 +588,42 @@ mod tests {
     helpers::{put_f32, put_f64},
     testutil::*,
   };
+
+  /// `data` without ActiveArea, DefaultCrop and masked areas
+  fn opcode_image(data: OpcodeData<'_>) -> OpcodeImage<'_> {
+    OpcodeImage {
+      data,
+      active_area: None,
+      crop_area: None,
+      black_areas: Vec::new(),
+      scaled_from_integer: false,
+      aspect_ratio: 1.0,
+    }
+  }
+
+  #[test]
+  fn apply_to_plain_buffers() -> Result<()> {
+    // MapPolynomial doubles the values of floating point data
+    let polynomial = map_polynomial([0, 0, 2, 3, 0, 1, 1, 1], &[0.0, 2.0]);
+    let list = OpcodeList::parse(&opcode_list(&[opcode(OpcodeID::MapPolynomial as u32, V1_3, 0, &polynomial)]))?;
+    let mut samples = vec![0.25_f32; 6];
+    list.apply_to(
+      &mut opcode_image(OpcodeData::Float(ImageViewMut::new(&mut samples, 3, 2, 1))),
+      OpcodeStage::List2,
+    )?;
+    assert_eq!(samples, [0.5; 6]);
+
+    // TrimBounds crops integer data of OpcodeList1 to the start of the buffer
+    let mut bounds = Vec::new();
+    [0, 1, 2, 3].into_iter().for_each(|v| put_u32(&mut bounds, v)); // Top, left, bottom, right
+    let list = OpcodeList::parse(&opcode_list(&[opcode(OpcodeID::TrimBounds as u32, V1_3, 0, &bounds)]))?;
+    let mut samples: Vec<u16> = (0..12).collect();
+    let mut image = opcode_image(OpcodeData::Integer(ImageViewMut::new(&mut samples, 4, 3, 1)));
+    list.apply_to(&mut image, OpcodeStage::List1)?;
+    assert_eq!((image.width(), image.height()), (2, 2));
+    assert_eq!(samples[..4], [1, 2, 5, 6]);
+    Ok(())
+  }
 
   #[test]
   fn parse_and_serialize_map_polynomial_list() -> std::result::Result<(), Box<dyn std::error::Error>> {

@@ -5,11 +5,11 @@
 
 use serde::{Deserialize, Serialize};
 
-use crate::{RawImage, RawImageData, RawlerError, Result, imgop::Rect, pixarray::SubPixel};
+use crate::{RawlerError, Result, imgop::Rect, pixarray::SubPixel};
 
 use super::{
-  OpcodeStage,
-  helpers::{ParamReader, apply_roi_threaded, pixel_aspect_ratio, put_f64, stage_bounds},
+  OpcodeData, OpcodeImage, OpcodeStage,
+  helpers::{ParamReader, apply_roi_threaded, put_f64, stage_bounds},
 };
 
 /// Radially symmetric gain to correct vignetting
@@ -63,12 +63,12 @@ impl FixVignetteRadial {
     1.0 + self.k.iter().rev().fold(0.0, |acc, k| rr * (k + acc))
   }
 
-  pub fn apply(&self, rawimage: &mut RawImage, stage: OpcodeStage) -> Result<()> {
+  pub fn apply(&self, image: &mut OpcodeImage<'_>, stage: OpcodeStage) -> Result<()> {
     self.validate()?;
     if self.k.iter().all(|k| *k == 0.0) {
       return Ok(());
     }
-    let bounds = stage_bounds(rawimage, stage);
+    let bounds = stage_bounds(image, stage);
     if bounds.width() == 0 || bounds.height() == 0 {
       return Ok(());
     }
@@ -76,23 +76,25 @@ impl FixVignetteRadial {
     // outer image edges and for square pixels
     let (w, h) = (bounds.width() as f64, bounds.height() as f64);
     let (c_x, c_y) = (self.c_x * w, self.c_y * h);
-    let scale_v = 1.0 / pixel_aspect_ratio(rawimage);
+    let scale_v = 1.0 / image.aspect_ratio;
     let radius = (c_y.max(h - c_y) * scale_v).hypot(c_x.max(w - c_x));
-    let (width, cpp) = (rawimage.width, rawimage.cpp);
-    match (&mut rawimage.data, stage) {
+    let (width, cpp) = (image.width(), image.channels());
+    match (&mut image.data, stage) {
       // Logical range of floating point data is 0.0 to 1.0
-      (RawImageData::Float(samples), _) => {
+      (OpcodeData::Float(view), _) => {
+        let samples = view.as_mut_slice();
         self.apply_gain(samples, width, cpp, bounds, (c_x, c_y), scale_v, radius, &|v: f32, gain| {
           (v * gain).clamp(0.0, 1.0)
         });
       }
       // Logical range of 16 bit data in OpcodeList1 is 0 to 65535
-      (RawImageData::Integer(samples), OpcodeStage::List1) => {
+      (OpcodeData::Integer(view), OpcodeStage::List1) => {
+        let samples = view.as_mut_slice();
         self.apply_gain(samples, width, cpp, bounds, (c_x, c_y), scale_v, radius, &|v: u16, gain| {
           ((v as f32 / 65535.0 * gain).clamp(0.0, 1.0) * 65535.0).round() as u16
         });
       }
-      (RawImageData::Integer(_), _) => {
+      (OpcodeData::Integer(_), _) => {
         return Err(RawlerError::DecoderFailed(format!(
           "DNG opcode FixVignetteRadial in {} requires image data mapped to linear reference values",
           stage
@@ -126,6 +128,7 @@ impl FixVignetteRadial {
 mod tests {
   use super::*;
   use crate::{
+    RawImageData,
     dng::opcodes::{Opcode, OpcodeList, testutil::*},
     imgop::{Dim2, Point},
   };
