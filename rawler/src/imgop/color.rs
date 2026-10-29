@@ -13,7 +13,6 @@ use crate::{
     Point, Rect,
     chromatic_adaption::{adapt_xyz2cam_bradford, bradford_adaption_matrix},
     matrix::{diagonal, identity, invert, multiply, multiply_vector, normalize, pseudo_inverse, transform_1d},
-    raw::clip_euclidean_norm_avg,
     srgb::{srgb_apply_gamma, srgb_invert_gamma},
     xyz::{ADOBERGB_TO_XYZ_D65, Illuminant, PROPHOTORGB_TO_XYZ_D50, SRGB_TO_XYZ_D65, XYZ_TO_ADOBERGB_D65, XYZ_TO_PROFOTORGB_D50, XYZ_TO_SRGB_D65},
   },
@@ -274,8 +273,6 @@ pub enum PixelOp {
   Profile(ProfileRender),
   /// Clip each value to 0.0..=1.0
   Clip,
-  /// Clip values above 1.0 and keep some of the color, see [`clip_euclidean_norm_avg`]
-  ClipNormAvg,
   /// Encode each value by a transfer function
   TransferFunction(TransferFunction),
 }
@@ -289,7 +286,6 @@ impl PixelOp {
       Self::Matrix(matrix) => matrix.map(|row| row.iter().zip(&rgb).map(|(m, c)| m * c).sum()),
       Self::Profile(render) => render.apply_pixel(rgb, u, v),
       Self::Clip => rgb.map(|c| c.clamp(0.0, 1.0)),
-      Self::ClipNormAvg => clip_euclidean_norm_avg(&rgb),
       Self::TransferFunction(function) => rgb.map(|c| function.encode(c)),
     }
   }

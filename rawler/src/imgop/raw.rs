@@ -66,25 +66,6 @@ pub fn clip_value(p: f32, lower: f32, upper: f32) -> f32 {
   }
 }
 
-/// Clip pixel with N components by:
-/// 1. Normalize pixel by max(pix) if any component is > 1.0
-/// 2. Compute euclidean norm of the pixel, normalized by sqrt(N)
-/// 3. Compute channel-wise average of normalized pixel + euclidean norm
-pub fn clip_euclidean_norm_avg<const N: usize>(pix: &[f32; N]) -> [f32; N] {
-  let pix = clip_negative(pix);
-  let max_val = pix.iter().copied().reduce(f32::max).unwrap_or(f32::NAN);
-  if max_val > 1.0 {
-    // Retains color
-    let color = pix.map(|p| p / max_val);
-    // Euclidean norm
-    let eucl = pix.map(|p| p.powi(2)).iter().sum::<f32>().sqrt() / (N as f32).sqrt();
-    // Take average of both
-    color.map(|p| (p + eucl) / 2.0)
-  } else {
-    pix
-  }
-}
-
 /// Correct data by blacklevel and whitelevel on CFA (bayer) data.
 ///
 /// The output is between 0.0 .. 1.0.
