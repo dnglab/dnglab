@@ -74,6 +74,7 @@ Register-ArgumentCompleter -Native -CommandName 'dnglab' -ScriptBlock {
             [CompletionResult]::new('--image-index', '--image-index', [CompletionResultType]::ParameterName, 'Select a specific image index (or ''all'') if file is a image container')
             [CompletionResult]::new('--crop', '--crop', [CompletionResultType]::ParameterName, 'Crop of the image: DefaultCrop (best), ActiveArea or none')
             [CompletionResult]::new('--format', '--format', [CompletionResultType]::ParameterName, 'Output image format, defaults to the OUTPUT file extension or tif')
+            [CompletionResult]::new('--color-space', '--color-space', [CompletionResultType]::ParameterName, 'Color space of the image')
             [CompletionResult]::new('--jpeg-quality', '--jpeg-quality', [CompletionResultType]::ParameterName, 'JPEG quality (1-100)')
             [CompletionResult]::new('-d', '-d', [CompletionResultType]::ParameterName, 'Log level')
             [CompletionResult]::new('--loglevel', '--loglevel', [CompletionResultType]::ParameterName, 'Log level')

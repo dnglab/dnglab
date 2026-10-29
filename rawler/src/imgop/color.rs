@@ -14,8 +14,8 @@ use crate::{
     chromatic_adaption::{adapt_xyz2cam_bradford, bradford_adaption_matrix},
     matrix::{diagonal, identity, invert, multiply, multiply_vector, normalize, pseudo_inverse, transform_1d},
     raw::clip_euclidean_norm_avg,
-    srgb::srgb_apply_gamma,
-    xyz::{Illuminant, SRGB_TO_XYZ_D65, XYZ_TO_SRGB_D65},
+    srgb::{srgb_apply_gamma, srgb_invert_gamma},
+    xyz::{ADOBERGB_TO_XYZ_D65, Illuminant, PROPHOTORGB_TO_XYZ_D50, SRGB_TO_XYZ_D65, XYZ_TO_ADOBERGB_D65, XYZ_TO_PROFOTORGB_D50, XYZ_TO_SRGB_D65},
   },
   pixarray::{ImageView, ImageViewMut, RgbF32},
 };
@@ -26,20 +26,29 @@ pub enum OutputSpace {
   /// sRGB, D65 white
   #[default]
   Srgb,
+  /// Adobe RGB (1998), D65 white
+  AdobeRgb,
+  /// ProPhoto RGB (ROMM RGB), D50 white
+  ProPhotoRgb,
 }
 
 impl OutputSpace {
-  /// Matrix from linear RGB of the color space to XYZ (D65)
+  /// Matrix from linear RGB of the color space to XYZ (D65). A white other
+  /// than D65 is adapted by Bradford.
   pub fn rgb_to_xyz(self) -> [[f32; 3]; 3] {
     match self {
       Self::Srgb => SRGB_TO_XYZ_D65,
+      Self::AdobeRgb => ADOBERGB_TO_XYZ_D65,
+      Self::ProPhotoRgb => multiply(&bradford_adaption_matrix(&Illuminant::D50, &Illuminant::D65), &PROPHOTORGB_TO_XYZ_D50),
     }
   }
 
-  /// Matrix from XYZ (D65) to linear RGB of the color space
+  /// Matrix from XYZ (D65) to linear RGB of the color space, see [`Self::rgb_to_xyz`]
   pub fn xyz_to_rgb(self) -> [[f32; 3]; 3] {
     match self {
       Self::Srgb => XYZ_TO_SRGB_D65,
+      Self::AdobeRgb => XYZ_TO_ADOBERGB_D65,
+      Self::ProPhotoRgb => multiply(&XYZ_TO_PROFOTORGB_D50, &bradford_adaption_matrix(&Illuminant::D65, &Illuminant::D50)),
     }
   }
 
@@ -47,7 +56,33 @@ impl OutputSpace {
   pub fn transfer_function(self) -> TransferFunction {
     match self {
       Self::Srgb => TransferFunction::Srgb,
+      Self::AdobeRgb => TransferFunction::AdobeRgb,
+      Self::ProPhotoRgb => TransferFunction::ProPhotoRgb,
     }
+  }
+
+  /// Name of the color space
+  pub fn name(self) -> &'static str {
+    match self {
+      Self::Srgb => "sRGB",
+      Self::AdobeRgb => "Adobe RGB (1998) compatible",
+      Self::ProPhotoRgb => "ProPhoto RGB",
+    }
+  }
+}
+
+#[cfg(feature = "clap")]
+impl clap::ValueEnum for OutputSpace {
+  fn value_variants<'a>() -> &'a [Self] {
+    &[Self::Srgb, Self::AdobeRgb, Self::ProPhotoRgb]
+  }
+
+  fn to_possible_value(&self) -> Option<clap::builder::PossibleValue> {
+    Some(match self {
+      Self::Srgb => clap::builder::PossibleValue::new("srgb"),
+      Self::AdobeRgb => clap::builder::PossibleValue::new("adobergb"),
+      Self::ProPhotoRgb => clap::builder::PossibleValue::new("prophoto"),
+    })
   }
 }
 
@@ -95,6 +130,31 @@ impl TransferFunction {
           v.powf(1.0 / PROPHOTO_RGB_GAMMA)
         }
       }
+    }
+  }
+
+  /// Linear value of an encoded value, the inverse of [`Self::encode`]
+  pub fn decode(self, v: f32) -> f32 {
+    match self {
+      Self::Linear => v,
+      Self::Srgb => srgb_invert_gamma(v),
+      Self::AdobeRgb => v.abs().powf(ADOBE_RGB_GAMMA).copysign(v),
+      Self::ProPhotoRgb => {
+        if v < PROPHOTO_RGB_LINEAR_END * PROPHOTO_RGB_LINEAR_SLOPE {
+          v / PROPHOTO_RGB_LINEAR_SLOPE
+        } else {
+          v.powf(PROPHOTO_RGB_GAMMA)
+        }
+      }
+    }
+  }
+
+  /// Gamma of a pure power function, `None` for other functions
+  pub fn gamma(self) -> Option<f32> {
+    match self {
+      Self::Linear => Some(1.0),
+      Self::AdobeRgb => Some(ADOBE_RGB_GAMMA),
+      Self::Srgb | Self::ProPhotoRgb => None,
     }
   }
 }
@@ -431,6 +491,34 @@ mod tests {
     camera_to_rgb_in_place(ImageViewMut::new(&mut samples, 2, 1, 3), &map, &[], Rect::default(), Point::default())?;
     assert_eq!(samples, [0.2, 0.2, 0.3, 1.0, 0.5, 0.5]);
     Ok(())
+  }
+
+  #[test]
+  fn output_spaces() {
+    for space in [OutputSpace::Srgb, OutputSpace::AdobeRgb, OutputSpace::ProPhotoRgb] {
+      // The matrices are inverse, RGB white is D65
+      let identity = multiply(&space.xyz_to_rgb(), &space.rgb_to_xyz());
+      for (i, row) in identity.iter().enumerate() {
+        assert!(
+          row.iter().enumerate().all(|(j, v)| (v - if i == j { 1.0 } else { 0.0 }).abs() < 1e-4),
+          "{:?}: {:?}",
+          space,
+          identity
+        );
+      }
+      let white = multiply_vector(&space.rgb_to_xyz(), &[1.0; 3]);
+      assert!(
+        white.iter().zip(crate::imgop::xyz::CIE_1931_TRISTIMULUS_D65).all(|(a, b)| (a - b).abs() < 1e-3),
+        "{:?}: {:?}",
+        space,
+        white
+      );
+      // Decoding inverts the encoding
+      let function = space.transfer_function();
+      for v in [0.0, 0.001, 0.01, 0.2, 0.5, 1.0] {
+        assert!((function.decode(function.encode(v)) - v).abs() < 1e-5, "{:?} {}", function, v);
+      }
+    }
   }
 
   #[test]

@@ -8,10 +8,13 @@ use image::{ImageEncoder, codecs::jpeg::JpegEncoder};
 
 use crate::{
   RawImage,
-  decoders::{RawDecodeParams, RawMetadata, validate_image_index},
+  decoders::{Orientation, RawDecodeParams, RawMetadata, validate_image_index},
   dng::{CropMode, opcodes::OpcodeSelector},
   formats::tiff::{DirectoryWriter, TiffWriter},
-  imgop::render::{RenderOptions, RenderedImage, render},
+  imgop::{
+    color::{OutputSpace, TransferFunction},
+    render::{RenderOptions, RenderedImage, render},
+  },
   rawsource::RawSource,
   tags::{ExifTag, TiffCommonTag},
 };
@@ -77,6 +80,8 @@ pub struct RawProcessingParams {
   pub format: ProcessedImageFormat,
   /// JPEG quality (1-100)
   pub jpeg_quality: u8,
+  /// Color space of the image
+  pub color_space: OutputSpace,
 }
 
 impl Default for RawProcessingParams {
@@ -91,6 +96,7 @@ impl Default for RawProcessingParams {
       remove_dng_opcodes: Vec::new(),
       format: ProcessedImageFormat::Tiff,
       jpeg_quality: 94,
+      color_space: OutputSpace::Srgb,
     }
   }
 }
@@ -103,7 +109,10 @@ pub fn process_raw_image<W: Write + Seek + Send>(raw: &Path, image_file: &mut W,
   let mut rawimage = decoder.raw_image(&rawfile, &raw_params, false)?;
   rawimage.remove_opcodes(&params.remove_dng_opcodes);
   let metadata = decoder.raw_metadata(&rawfile, &raw_params)?;
-  let develop = RawDevelop::with_crop(params.crop);
+  let develop = RawDevelop {
+    color_space: params.color_space,
+    ..RawDevelop::with_crop(params.crop)
+  };
   match params.format {
     ProcessedImageFormat::Tiff => develop.develop(rawimage, &metadata, image_file)?,
     ProcessedImageFormat::Jpeg => develop.develop_jpeg(rawimage, &metadata, image_file, params.jpeg_quality)?,
@@ -118,19 +127,22 @@ pub fn process_raw_image<W: Write + Seek + Send>(raw: &Path, image_file: &mut W,
 #[derive(Clone)]
 pub struct RawDevelop {
   pub steps: Vec<ProcessingStep>,
+  /// Color space of the developed image
+  pub color_space: OutputSpace,
 }
 
 impl Default for RawDevelop {
   fn default() -> Self {
-    Self {
-      steps: ProcessingStep::ALL.to_vec(),
-    }
+    Self::new_with(&ProcessingStep::ALL)
   }
 }
 
 impl RawDevelop {
   pub fn new_with(steps: &[ProcessingStep]) -> Self {
-    Self { steps: Vec::from(steps) }
+    Self {
+      steps: Vec::from(steps),
+      color_space: OutputSpace::default(),
+    }
   }
 
   /// Development with all steps, the image is cropped by `crop`: to the
@@ -141,15 +153,15 @@ impl RawDevelop {
       CropMode::ActiveArea => &[ProcessingStep::CropDefault],
       CropMode::None => &[ProcessingStep::CropActiveArea, ProcessingStep::CropDefault],
     };
-    Self {
-      steps: ProcessingStep::ALL.into_iter().filter(|step| !excluded.contains(step)).collect(),
-    }
+    let steps: Vec<ProcessingStep> = ProcessingStep::ALL.into_iter().filter(|step| !excluded.contains(step)).collect();
+    Self::new_with(&steps)
   }
 
   /// Options of the rendering with the steps of this development
   pub fn render_options(&self) -> RenderOptions {
     RenderOptions {
       steps: self.steps.iter().copied().collect(),
+      color_space: self.color_space,
       ..Default::default()
     }
   }
@@ -169,10 +181,14 @@ impl RawDevelop {
   where
     W: io::Write + io::Seek,
   {
-    let mut tiff = TiffWriter::new(writer)?;
-    let mut root_ifd = Self::metadata_ifd(&mut tiff, &rawimage, md)?;
-
+    let (make, model, orientation) = (rawimage.clean_make.clone(), rawimage.clean_model.clone(), rawimage.orientation);
     let image = self.develop_image(rawimage)?;
+
+    let mut tiff = TiffWriter::new(writer)?;
+    let mut root_ifd = Self::metadata_ifd(&mut tiff, &make, &model, orientation, md, &image)?;
+    if let Some(icc) = image.icc_profile() {
+      root_ifd.add_tag_undefined(ExifTag::IccProfile, icc);
+    }
 
     let data = convert_from_f32_scaled_u16(&image.data, 0, u16::MAX);
     let (strip_rows, strips) = tiff.write_strips_lzw(&data, image.channels, image.dim(), 0)?;
@@ -200,16 +216,23 @@ impl RawDevelop {
   where
     W: io::Write,
   {
+    let (make, model, orientation) = (rawimage.clean_make.clone(), rawimage.clean_model.clone(), rawimage.orientation);
+    let image = self.develop_image(rawimage)?;
+
     // EXIF data is a TIFF structure without image data
     let mut exif = Cursor::new(Vec::new());
     let mut tiff = TiffWriter::new(&mut exif)?;
-    let root_ifd = Self::metadata_ifd(&mut tiff, &rawimage, md)?;
+    let root_ifd = Self::metadata_ifd(&mut tiff, &make, &model, orientation, md, &image)?;
     tiff.build(root_ifd)?;
     let exif = exif.into_inner();
 
-    let image = self.develop_image(rawimage)?.to_dynamic_image().ok_or("failed to convert to dynamic image")?;
+    let icc = image.icc_profile();
+    let image = image.to_dynamic_image().ok_or("failed to convert to dynamic image")?;
 
     let mut encoder = JpegEncoder::new_with_quality(writer, quality);
+    if let Some(icc) = icc {
+      encoder.set_icc_profile(icc).map_err(|err| format!("Failed to set JPEG ICC profile: {}", err))?;
+    }
     // The APP1 segment holds 65533 bytes, including the "Exif\0\0" header
     if exif.len() <= 65527 {
       encoder
@@ -222,8 +245,16 @@ impl RawDevelop {
     Ok(())
   }
 
-  /// IFD 0 with the EXIF data of a developed image
-  fn metadata_ifd<W>(tiff: &mut TiffWriter<W>, rawimage: &RawImage, md: &RawMetadata) -> crate::Result<DirectoryWriter>
+  /// IFD 0 with the EXIF data of `image`, developed from a raw image of a
+  /// camera with `make` and `model`
+  fn metadata_ifd<W>(
+    tiff: &mut TiffWriter<W>,
+    make: &str,
+    model: &str,
+    orientation: Orientation,
+    md: &RawMetadata,
+    image: &RenderedImage,
+  ) -> crate::Result<DirectoryWriter>
   where
     W: io::Write + io::Seek,
   {
@@ -234,13 +265,16 @@ impl RawDevelop {
     exif_ifd.add_tag_undefined(ExifTag::ExifVersion, vec![48, 50, 50, 48]);
 
     md.write_exif_tags(tiff, &mut root_ifd, &mut exif_ifd)?;
-    root_ifd.add_tag(TiffCommonTag::Make, rawimage.clean_make.as_str());
-    root_ifd.add_tag(TiffCommonTag::Model, rawimage.clean_model.as_str());
+    root_ifd.add_tag(TiffCommonTag::Make, make);
+    root_ifd.add_tag(TiffCommonTag::Model, model);
+    // The color space of the image, not of the camera: sRGB or uncalibrated
+    let srgb = image.color_space == Some(OutputSpace::Srgb) && image.transfer_function == TransferFunction::Srgb;
+    exif_ifd.add_tag(ExifTag::ColorSpace, if srgb { 1_u16 } else { 0xffff });
 
     let exif_offset = exif_ifd.build(tiff)?;
 
     root_ifd.add_tag(TiffCommonTag::ExifIFDPointer, exif_offset);
-    root_ifd.add_tag(TiffCommonTag::Orientation, rawimage.orientation.to_u16());
+    root_ifd.add_tag(TiffCommonTag::Orientation, orientation.to_u16());
     Ok(root_ifd)
   }
 }
@@ -331,10 +365,9 @@ mod tests {
     Ok(())
   }
 
-  #[test]
-  fn develop_jpeg_with_exif() -> std::result::Result<(), Box<dyn std::error::Error>> {
+  /// Linear RGB ramp of 16x8 pixels with an identity color matrix, and its metadata
+  fn ramp_rawimage() -> (RawImage, RawMetadata) {
     use crate::{camera_profile::CameraProfile, exif::Exif};
-    use image::{ColorType, DynamicImage, ImageDecoder, codecs::jpeg::JpegDecoder};
 
     let mut camera = Camera::new();
     camera.clean_make = "DNGLab".into();
@@ -357,8 +390,14 @@ mod tests {
       color_matrix: [Some(transform_2d(&identity::<3>())), None, None],
       ..Default::default()
     }];
-    let metadata = RawMetadata::new(&camera, Exif::default());
+    (rawimage, RawMetadata::new(&camera, Exif::default()))
+  }
 
+  #[test]
+  fn develop_jpeg_with_exif() -> std::result::Result<(), Box<dyn std::error::Error>> {
+    use image::{ColorType, DynamicImage, ImageDecoder, codecs::jpeg::JpegDecoder};
+
+    let (rawimage, metadata) = ramp_rawimage();
     let mut jpeg = Vec::new();
     RawDevelop::default().develop_jpeg(rawimage, &metadata, &mut jpeg, 90)?;
 
@@ -368,6 +407,50 @@ mod tests {
     let image = DynamicImage::from_decoder(decoder)?;
     assert_eq!(image.color(), ColorType::Rgb8);
     assert_eq!((image.width(), image.height()), (16, 8));
+    Ok(())
+  }
+
+  #[test]
+  fn develop_tags_color_space() -> std::result::Result<(), Box<dyn std::error::Error>> {
+    use crate::imgop::icc;
+    use image::{ImageDecoder, codecs::jpeg::JpegDecoder};
+
+    let contains = |data: &[u8], part: &[u8]| data.windows(part.len()).any(|window| window == part);
+    // IFD entry of the EXIF ColorSpace (SHORT, one value) in the byte order of the TIFF structure
+    let color_space_entry = |tiff: &[u8], value: u16| -> Vec<u8> {
+      let little = &tiff[..2] == b"II";
+      let bytes = |v: u16| if little { v.to_le_bytes() } else { v.to_be_bytes() };
+      [
+        bytes(0xa001),
+        bytes(3),
+        bytes(if little { 1 } else { 0 }),
+        bytes(if little { 0 } else { 1 }),
+        bytes(value),
+        [0, 0],
+      ]
+      .concat()
+    };
+    for (space, exif_color_space) in [(OutputSpace::Srgb, 1), (OutputSpace::AdobeRgb, 0xffff), (OutputSpace::ProPhotoRgb, 0xffff)] {
+      let develop = RawDevelop {
+        color_space: space,
+        ..Default::default()
+      };
+      let profile = icc::rgb_profile(space, space.transfer_function());
+      let (rawimage, metadata) = ramp_rawimage();
+
+      let mut jpeg = Vec::new();
+      develop.develop_jpeg(rawimage.clone(), &metadata, &mut jpeg, 90)?;
+      let mut decoder = JpegDecoder::new(Cursor::new(&jpeg))?;
+      assert_eq!(decoder.icc_profile()?.as_ref(), Some(&profile), "{:?}", space);
+      let exif = decoder.exif_metadata()?.ok_or("no EXIF data")?;
+      assert!(contains(&exif, &color_space_entry(&exif, exif_color_space)), "{:?}", space);
+
+      let mut tiff = Cursor::new(Vec::new());
+      develop.develop(rawimage, &metadata, &mut tiff)?;
+      let tiff = tiff.into_inner();
+      assert!(contains(&tiff, &profile), "{:?}", space);
+      assert!(contains(&tiff, &color_space_entry(&tiff, exif_color_space)), "{:?}", space);
+    }
     Ok(())
   }
 
@@ -687,6 +770,14 @@ mod tests {
         demosaic: DemosaicQuality::Preview,
         ..Default::default()
       };
+      let adobe_rgb = RenderOptions {
+        color_space: OutputSpace::AdobeRgb,
+        ..Default::default()
+      };
+      let prophoto = RenderOptions {
+        color_space: OutputSpace::ProPhotoRgb,
+        ..Default::default()
+      };
 
       let mut rggb_profile = rggb();
       add_profile_tables(&mut rggb_profile);
@@ -716,6 +807,8 @@ mod tests {
         ("xtrans", xtrans, all.clone()),
         ("mono", mono(), all.clone()),
         ("linear_raw_profile", linear_raw(), all.clone()),
+        ("rggb_adobe_rgb", rggb(), adobe_rgb),
+        ("linear_raw_prophoto", linear_raw(), prophoto),
       ]
     }
 
@@ -750,6 +843,8 @@ mod tests {
       ("xtrans", 28, 16, 3, &[441.8567228913307, 20118.23803973198, 436.9002191243954, 270.7740049660206, 12374.535669326782, 170.7231797951337, 409.30331003665924, 18666.734287142754, 378.8607051136843]),
       ("mono", 24, 16, 1, &[286.27965730428696, 13782.818696141243, 217.83812832726255]),
       ("linear_raw_profile", 16, 12, 3, &[185.23571345210075, 8951.324946820736, 181.01863179486003, 145.2774385213852, 7214.587505862117, 118.69475065947488, 188.05537682771683, 8992.080503284931, 184.6161640864077]),
+      ("rggb_adobe_rgb", 24, 16, 3, &[371.56912833452225, 17734.80420601368, 360.9035039896841, 230.95152899622917, 11181.354400068521, 145.65351766270155, 349.8610346317291, 16862.70594650507, 322.1781369714192]),
+      ("linear_raw_prophoto", 16, 12, 3, &[178.5531117618084, 8687.535918176174, 169.53801987957394, 146.80028820037842, 7289.14681071043, 120.36781506826523, 182.88982164859772, 8785.257615506649, 175.13845659815522]),
     ];
 
     /// Largest absolute difference of the samples of two images of the same size

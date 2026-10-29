@@ -8,7 +8,7 @@ use crate::{
   RawImage, RawImageData,
   dng::{
     opcodes::OpcodeStage,
-    profile_render::{ProfileRender, ToneCurve, prophoto_to_srgb, srgb_to_prophoto},
+    profile_render::{ProfileRender, ToneCurve, prophoto_to_rgb, rgb_to_prophoto},
   },
   imgop::{
     color::{CameraToRgb, OutputSpace, PixelOp, TransferFunction, camera_to_output},
@@ -54,8 +54,8 @@ pub(super) enum Op {
   Gain(f32),
   /// Apply a tone curve to the image
   ToneCurve(ToneCurve),
-  /// Map camera values to RGB, then apply the pixel operations
-  CameraToRgb(CameraMap, Vec<PixelOp>),
+  /// Map camera values to RGB of `space`, then apply the pixel operations
+  CameraToRgb { map: CameraMap, ops: Vec<PixelOp>, space: OutputSpace },
   /// Crop to the DefaultCrop, or the ActiveArea without DefaultCrop
   CropDefault,
   /// Crop to the ActiveArea
@@ -261,7 +261,11 @@ pub fn plan(rawimage: &RawImage, options: &RenderOptions) -> crate::Result<Plan>
       }
     };
     pixel_ops.extend(transfer_function.map(PixelOp::TransferFunction));
-    ops.push(Op::CameraToRgb(map, pixel_ops));
+    ops.push(Op::CameraToRgb {
+      map,
+      ops: pixel_ops,
+      space: options.color_space,
+    });
   } else {
     if let Some(coeffs) = wb.filter(|_| !wb_before_demosaic && channels > 1) {
       ops.push(Op::WhiteBalance(WhiteBalance { coeffs, clip: Some(white) }));
@@ -322,9 +326,7 @@ fn camera_map<const N: usize>(
   let white = gain * white;
   match render {
     Some(render) => {
-      let (to_prophoto, from_prophoto) = match output {
-        OutputSpace::Srgb => (srgb_to_prophoto(), prophoto_to_srgb()),
-      };
+      let (to_prophoto, from_prophoto) = (rgb_to_prophoto(output), prophoto_to_rgb(output));
       let map = CameraToRgb {
         wb,
         white,

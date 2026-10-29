@@ -155,6 +155,9 @@ fn generate_job(entry: &FileMap, options: &ArgMatches) -> Result<Vec<Raw2Image>>
       jpeg_quality: *options
         .get_one("jpeg_quality")
         .ok_or_else(|| crate::AppError::InvalidCmdSwitch("jpeg-quality has no default".into()))?,
+      color_space: *options
+        .get_one("color_space")
+        .ok_or_else(|| crate::AppError::InvalidCmdSwitch("color-space has no default".into()))?,
     };
 
     match output.parent() {

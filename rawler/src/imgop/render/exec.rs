@@ -12,7 +12,7 @@ use crate::{
   dng::opcodes::OpcodeStage,
   imgop::{
     Dim2, Point, Rect,
-    color::{apply_gain, apply_transfer_function, camera_to_rgb, camera_to_rgb_in_place},
+    color::{PixelOp, apply_gain, apply_transfer_function, camera_to_rgb, camera_to_rgb_in_place},
     fuji_rotate::fuji_normalize_rotation,
     raw::{rescale_mosaic, white_balance, white_balance_mosaic},
     sensor::{
@@ -132,6 +132,7 @@ impl Executor {
         width: rawimage.width,
         height: rawimage.height,
         channels: rawimage.cpp,
+        ..Default::default()
       }
     })
   }
@@ -181,7 +182,7 @@ impl Executor {
       }
       Op::Gain(gain) => apply_gain(self.image().view_mut(), *gain),
       Op::ToneCurve(curve) => curve.apply_image(self.image().view_mut()),
-      Op::CameraToRgb(map, ops) => {
+      Op::CameraToRgb { map, ops, space } => {
         // The pixel positions of the gain table map are relative to the stage 3 image
         let (area, origin) = self.stage3_area();
         let image = self.image();
@@ -189,13 +190,24 @@ impl Executor {
           CameraMap::Three(map) => camera_to_rgb_in_place(image.view_mut(), map, ops, area, origin)?,
           CameraMap::Four(map) => *image = camera_to_rgb(image.view(), map, ops, area, origin)?.into(),
         }
+        image.color_space = Some(*space);
+        if let Some(function) = ops.iter().find_map(|op| match op {
+          PixelOp::TransferFunction(function) => Some(*function),
+          _ => None,
+        }) {
+          image.transfer_function = function;
+        }
       }
       Op::CropDefault => {
         self.crop(self.crop_area.or(self.active_area))?;
         self.crop_area = None;
       }
       Op::CropActiveArea => self.crop(self.active_area)?,
-      Op::TransferFunction(function) => apply_transfer_function(self.image().view_mut(), *function),
+      Op::TransferFunction(function) => {
+        let image = self.image();
+        apply_transfer_function(image.view_mut(), *function);
+        image.transfer_function = *function;
+      }
     }
     Ok(())
   }

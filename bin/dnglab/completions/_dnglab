@@ -68,6 +68,7 @@ _arguments "${_arguments_options[@]}" : \
 '--image-index=[Select a specific image index (or '\''all'\'') if file is a image container]:index:_default' \
 '--crop=[Crop of the image\: DefaultCrop (best), ActiveArea or none]:crop:(best activearea none)' \
 '--format=[Output image format, defaults to the OUTPUT file extension or tif]:format:(tif jpeg)' \
+'--color-space=[Color space of the image]:space:(srgb adobergb prophoto)' \
 '--jpeg-quality=[JPEG quality (1-100)]:quality:_default' \
 '-d+[Log level]:level:(error warn info debug trace)' \
 '--loglevel=[Log level]:level:(error warn info debug trace)' \
