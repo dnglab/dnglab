@@ -9,6 +9,28 @@ use crate::pumps::BitPumpMSB32;
 /// be larger than width if each row has padding bytes).
 /// `width` is the output image width in pixels.
 pub fn decode_ljpeg(ljpeg: &LjpegDecompressor, out: &mut [u16], x: usize, stripwidth: usize, width: usize, height: usize) -> Result<(), String> {
+  // Dispatch to a variant specialized for the predictor, so it is not
+  // evaluated for each sample.
+  match ljpeg.predictor {
+    1 => decode_ljpeg_predictor::<1>(ljpeg, out, x, stripwidth, width, height),
+    2 => decode_ljpeg_predictor::<2>(ljpeg, out, x, stripwidth, width, height),
+    3 => decode_ljpeg_predictor::<3>(ljpeg, out, x, stripwidth, width, height),
+    4 => decode_ljpeg_predictor::<4>(ljpeg, out, x, stripwidth, width, height),
+    5 => decode_ljpeg_predictor::<5>(ljpeg, out, x, stripwidth, width, height),
+    6 => decode_ljpeg_predictor::<6>(ljpeg, out, x, stripwidth, width, height),
+    7 => decode_ljpeg_predictor::<7>(ljpeg, out, x, stripwidth, width, height),
+    p => Err(format!("ljpeg: predictor {} not supported", p)),
+  }
+}
+
+fn decode_ljpeg_predictor<const PREDICTOR: usize>(
+  ljpeg: &LjpegDecompressor,
+  out: &mut [u16],
+  x: usize,
+  stripwidth: usize,
+  width: usize,
+  height: usize,
+) -> Result<(), String> {
   let ncomp: usize = ljpeg.components();
   if ljpeg.sof.width * ncomp < width || ljpeg.sof.height < height {
     return Err(format!(
@@ -17,7 +39,7 @@ pub fn decode_ljpeg(ljpeg: &LjpegDecompressor, out: &mut [u16], x: usize, stripw
     ));
   }
 
-  let htable = |index: usize| -> &HuffTable { &ljpeg.dhts[ljpeg.sof.components[index].dc_tbl_num] };
+  let htables: Vec<&HuffTable> = (0..ncomp).map(|c| &ljpeg.dhts[ljpeg.sof.components[c].dc_tbl_num]).collect();
   let mut pump = BitPumpJPEG::new(ljpeg.buffer);
   let base_prediction = 1 << (ljpeg.sof.precision - ljpeg.point_transform - 1);
   // validate_restart_support ensures that a restart interval spans whole rows.
@@ -29,8 +51,8 @@ pub fn decode_ljpeg(ljpeg: &LjpegDecompressor, out: &mut [u16], x: usize, stripw
   let mut next_restart_marker = 0;
 
   // initialize first pixel components
-  for c in 0..ncomp {
-    out[x + c] = (base_prediction + htable(c).huff_decode(&mut pump)?) as u16;
+  for (c, htable) in htables.iter().enumerate() {
+    out[x + c] = (base_prediction + htable.huff_decode(&mut pump)?) as u16;
   }
   let skip_x = ljpeg.sof.width - width / ncomp;
 
@@ -40,75 +62,100 @@ pub fn decode_ljpeg(ljpeg: &LjpegDecompressor, out: &mut [u16], x: usize, stripw
       pump.consume_restart_marker(next_restart_marker)?;
       next_restart_marker = (next_restart_marker + 1) % 8;
     }
-    let startcol = if row == 0 { x + ncomp } else { x }; // skip first pixel in first row
-    for col in (startcol..(width + x)).step_by(ncomp) {
-      for c in 0..ncomp {
-        let p: i32 = if first_interval_row && col == x {
+    let mut col = if row == 0 { x + ncomp } else { x }; // skip first pixel in first row
+    if col == x && col < width + x {
+      for (c, htable) in htables.iter().enumerate() {
+        let p: i32 = if first_interval_row {
           base_prediction
-        } else if col == x {
+        } else {
           // At start of line predictor starts with start of previous line
           out[(row - 1) * stripwidth + x + c] as i32
-        } else {
-          // Each restart interval begins like a new image: its entire first
-          // row uses the left neighbour, regardless of the selected predictor.
-          match (first_interval_row, ljpeg.predictor) {
-            (true, _) | (_, 1) => {
-              let a = out[row * stripwidth + (col - ncomp) + c] as i32;
-              a
-            }
-            (_, 2) => {
-              let b = out[(row - 1) * stripwidth + col + c] as i32;
-              b
-            }
-            (_, 3) => {
-              let c = out[(row - 1) * stripwidth + (col - ncomp) + c] as i32;
-              c
-            }
-            (_, 4) => {
-              let a = out[row * stripwidth + (col - ncomp) + c] as i32;
-              let b = out[(row - 1) * stripwidth + col + c] as i32;
-              let c = out[(row - 1) * stripwidth + (col - ncomp) + c] as i32;
-              a + b - c
-            }
-            (_, 5) => {
-              let a = out[row * stripwidth + (col - ncomp) + c] as i32;
-              let b = out[(row - 1) * stripwidth + col + c] as i32;
-              let c = out[(row - 1) * stripwidth + (col - ncomp) + c] as i32;
-              a + ((b - c) >> 1)
-            }
-            (_, 6) => {
-              let a = out[row * stripwidth + (col - ncomp) + c] as i32;
-              let b = out[(row - 1) * stripwidth + col + c] as i32;
-              let c = out[(row - 1) * stripwidth + (col - ncomp) + c] as i32;
-              b + ((a - c) >> 1)
-            }
-            (_, 7) => {
-              let a = out[row * stripwidth + (col - ncomp) + c] as i32;
-              let b = out[(row - 1) * stripwidth + col + c] as i32;
-              (a + b) >> 1 // Adobe DNG SDK uses int32 and shifts, so we will do, too.
-            }
-            _ => {
-              panic!("Unsupported prediction in LJPEG")
-            }
-          }
         };
-
-        let diff = htable(c).huff_decode(&mut pump)?;
+        let diff = htable.huff_decode(&mut pump)?;
         out[row * stripwidth + col + c] = (p + diff) as u16;
       }
+      col += ncomp;
+    }
+    // Each restart interval begins like a new image: its entire first
+    // row uses the left neighbour, regardless of the selected predictor.
+    if first_interval_row {
+      decode_row::<1>(&mut pump, &htables, out, row, col, x + width, stripwidth)?;
+    } else {
+      decode_row::<PREDICTOR>(&mut pump, &htables, out, row, col, x + width, stripwidth)?;
     }
     for _ in 0..skip_x {
       // Consume the complete encoded row even when the output is narrower.
       // Its restart marker is handled at the start of the next decoded row.
-      for c in 0..ncomp {
+      for htable in htables.iter() {
         // Skip extra encoded differences if the ljpeg frame is wider than the output
-        htable(c).huff_decode(&mut pump)?;
+        htable.huff_decode(&mut pump)?;
       }
     }
   }
 
   if height == ljpeg.sof.height {
     warn_on_scan_end(&pump);
+  }
+  Ok(())
+}
+
+/// Decode the samples of `row` from column `start` (which is not the
+/// first column) up to column `end`.
+#[inline(always)]
+fn decode_row<const PREDICTOR: usize>(
+  pump: &mut BitPumpJPEG,
+  htables: &[&HuffTable],
+  out: &mut [u16],
+  row: usize,
+  start: usize,
+  end: usize,
+  stripwidth: usize,
+) -> Result<(), String> {
+  let ncomp = htables.len();
+  for col in (start..end).step_by(ncomp) {
+    for (c, htable) in htables.iter().enumerate() {
+      let p: i32 = match PREDICTOR {
+        1 => {
+          let a = out[row * stripwidth + (col - ncomp) + c] as i32;
+          a
+        }
+        2 => {
+          let b = out[(row - 1) * stripwidth + col + c] as i32;
+          b
+        }
+        3 => {
+          let c = out[(row - 1) * stripwidth + (col - ncomp) + c] as i32;
+          c
+        }
+        4 => {
+          let a = out[row * stripwidth + (col - ncomp) + c] as i32;
+          let b = out[(row - 1) * stripwidth + col + c] as i32;
+          let c = out[(row - 1) * stripwidth + (col - ncomp) + c] as i32;
+          a + b - c
+        }
+        5 => {
+          let a = out[row * stripwidth + (col - ncomp) + c] as i32;
+          let b = out[(row - 1) * stripwidth + col + c] as i32;
+          let c = out[(row - 1) * stripwidth + (col - ncomp) + c] as i32;
+          a + ((b - c) >> 1)
+        }
+        6 => {
+          let a = out[row * stripwidth + (col - ncomp) + c] as i32;
+          let b = out[(row - 1) * stripwidth + col + c] as i32;
+          let c = out[(row - 1) * stripwidth + (col - ncomp) + c] as i32;
+          b + ((a - c) >> 1)
+        }
+        7 => {
+          let a = out[row * stripwidth + (col - ncomp) + c] as i32;
+          let b = out[(row - 1) * stripwidth + col + c] as i32;
+          (a + b) >> 1 // Adobe DNG SDK uses int32 and shifts, so we will do, too.
+        }
+        _ => unreachable!("Unsupported prediction in LJPEG"),
+      };
+
+      let diff = htable.huff_decode(&mut *pump)?;
+      out[row * stripwidth + col + c] = (p + diff) as u16;
+    }
   }
   Ok(())
 }
