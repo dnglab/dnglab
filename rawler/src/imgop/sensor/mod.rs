@@ -5,7 +5,7 @@ use crate::{
   CFA,
   cfa::PlaneColor,
   imgop::Rect,
-  pixarray::{Color2D, Pix2D, SubPixel},
+  pixarray::{Color2D, ImageView, SubPixel},
 };
 
 pub mod bayer;
@@ -56,12 +56,16 @@ pub trait Demosaic<T: SubPixel, const N: usize> {
   /// Demosaic the given mosaic `pixels` within the specified `roi`.
   ///
   /// # Parameters
-  /// - `pixels`: Single-channel mosaic pixel data from the sensor.
+  /// - `pixels`: Single-channel mosaic pixel data from the sensor, e.g.
+  ///   `pix.view()` of a [`Pix2D`](crate::pixarray::Pix2D).
   /// - `cfa`: The color filter array pattern describing the sensor layout.
   /// - `colors`: Mapping from CFA plane indices to color channel indices.
   /// - `roi`: The region of interest to demosaic within `pixels`.
   ///
   /// # Returns
   /// An `N`-channel color image covering the requested ROI.
-  fn demosaic(&self, pixels: &Pix2D<T>, cfa: &CFA, colors: &PlaneColor, roi: Rect) -> Color2D<T, N>;
+  ///
+  /// # Panics
+  /// Panics if `pixels` has more than one channel.
+  fn demosaic(&self, pixels: ImageView<'_, T>, cfa: &CFA, colors: &PlaneColor, roi: Rect) -> Color2D<T, N>;
 }

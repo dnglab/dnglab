@@ -7,7 +7,7 @@ use crate::{
   CFA,
   cfa::PlaneColor,
   imgop::{Rect, sensor::Demosaic},
-  pixarray::{Color2D, PixF32},
+  pixarray::{Color2D, ImageView, PixF32},
 };
 
 #[derive(Default)]
@@ -21,13 +21,16 @@ impl Bilinear4Channel {
 
 impl Demosaic<f32, 4> for Bilinear4Channel {
   /// Debayer image by using bilinear method.
-  fn demosaic(&self, pixels: &PixF32, cfa: &CFA, colors: &PlaneColor, roi: Rect) -> Color2D<f32, 4> {
-    Self::demosaic_4ch(pixels, cfa, colors, roi)
+  fn demosaic(&self, pixels: ImageView<'_, f32>, cfa: &CFA, colors: &PlaneColor, roi: Rect) -> Color2D<f32, 4> {
+    assert_eq!(pixels.channels(), 1, "Mosaic data must have one channel");
+    let pixels = PixF32::new_with(pixels.copy_area(roi), roi.width(), roi.height());
+    Self::demosaic_4ch(&pixels, cfa, colors, roi)
   }
 }
 
 impl Bilinear4Channel {
   #[multiversion(targets("x86_64+avx+avx2", "x86+sse", "aarch64+neon"))]
+  /// `pixels` is the ROI of the image
   fn demosaic_4ch(pixels: &PixF32, cfa: &CFA, colors: &PlaneColor, roi: Rect) -> Color2D<f32, 4> {
     if colors.plane_count() != 4 {
       panic!("Demosaic for 4 channels needs 4 color planes, but {} given", colors.plane_count());
@@ -38,7 +41,6 @@ impl Bilinear4Channel {
     let plane_map = colors.plane_lookup_table();
     let ch = |row: usize, col: usize| -> usize { plane_map[cfa.color_at(row, col)] };
 
-    let pixels = pixels.crop(roi);
     let dim = pixels.dim();
     let mut out = Color2D::new(pixels.dim().w, pixels.dim().h);
 

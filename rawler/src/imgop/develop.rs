@@ -270,7 +270,7 @@ impl RawDevelop {
             };
             if config.cfa.is_rgb() && config.sensor == SensorType::Bayer {
               let ppg = PPGDemosaic::new();
-              let mut rgb = ppg.demosaic(&pixels, &config.cfa, &config.colors, roi);
+              let mut rgb = ppg.demosaic(pixels.view(), &config.cfa, &config.colors, roi);
 
               // Fuji Rotate
               if self.steps.contains(&ProcessingStep::FujiRotate)
@@ -283,10 +283,10 @@ impl RawDevelop {
               Intermediate::ThreeColor(rgb)
             } else if config.cfa.unique_colors() == 4 && config.sensor == SensorType::Bayer {
               let linear = Bilinear4Channel::new();
-              Intermediate::FourColor(linear.demosaic(&pixels, &config.cfa, &config.colors, roi))
+              Intermediate::FourColor(linear.demosaic(pixels.view(), &config.cfa, &config.colors, roi))
             } else if config.cfa.is_rgb() && config.sensor == SensorType::Xtrans {
               let xtrans_demosaic = XTransBilinearDemosaic::new();
-              Intermediate::ThreeColor(xtrans_demosaic.demosaic(&pixels, &config.cfa, &config.colors, roi))
+              Intermediate::ThreeColor(xtrans_demosaic.demosaic(pixels.view(), &config.cfa, &config.colors, roi))
             } else {
               todo!()
             }
@@ -371,7 +371,7 @@ impl RawDevelop {
           let cam2rgb = camera_to_srgb(&rawimage, &wb);
           log::debug!("wb: {:?}, camera to sRGB: {:?}", wb, cam2rgb);
           Intermediate::ThreeColor(match &render {
-            Some(render) => map_with_profile_render(&pixels, &wb, &cam2rgb, render, active_area),
+            Some(render) => map_with_profile_render(&pixels, &wb, &cam2rgb, render, active_area)?,
             None => map_3ch_to_rgb(&pixels, &wb, &cam2rgb),
           })
         }
@@ -379,7 +379,7 @@ impl RawDevelop {
           let cam2rgb = camera_to_srgb(&rawimage, &wb);
           log::debug!("wb: {:?}, camera to sRGB: {:?}", wb, cam2rgb);
           Intermediate::ThreeColor(match &render {
-            Some(render) => map_with_profile_render(&pixels, &wb, &cam2rgb, render, active_area),
+            Some(render) => map_with_profile_render(&pixels, &wb, &cam2rgb, render, active_area)?,
             None => map_4ch_to_rgb(&pixels, &wb, &cam2rgb),
           })
         }
@@ -562,14 +562,14 @@ fn map_with_profile_render<const N: usize>(
   cam2rgb: &[[f32; N]; 3],
   render: &ProfileRender,
   active_area: Option<Rect>,
-) -> RgbF32 {
+) -> crate::Result<RgbF32> {
   let white = render.exposure_gain() * wb.iter().copied().fold(f32::INFINITY, f32::min);
   let mut prophoto = map_to_3ch(pixels, wb, white, &multiply(&srgb_to_prophoto(), cam2rgb));
   let area = active_area.unwrap_or_else(|| prophoto.rect());
-  render.apply(&mut prophoto, area);
+  render.apply(&mut prophoto, area)?;
   let mut srgb = map_to_3ch(&prophoto, &[1.0; 3], f32::INFINITY, &prophoto_to_srgb());
   srgb.for_each(|pixel| pixel.map(|v| v.clamp(0.0, 1.0)));
-  srgb
+  Ok(srgb)
 }
 
 /// Matrix from white balanced camera values to linear sRGB (D65)
@@ -1050,5 +1050,229 @@ mod tests {
     };
     assert!(pixels.data.iter().flatten().all(|v| *v == 0.5));
     Ok(())
+  }
+
+  /// Output of the development of synthetic images, pinned to detect unintended
+  /// changes. Run with `RAWLER_UPDATE_GOLDEN=1` and `--nocapture` to print the
+  /// current values instead of comparing them.
+  mod golden {
+    use super::*;
+    use crate::{
+      camera_profile::{CameraCalibration, CameraProfile, GainData, GainTableMap},
+      cfa::PlaneColor,
+    };
+
+    /// Allowed deviation of the fingerprints, relative to the expected value
+    const TOLERANCE: f64 = 0.0;
+
+    const XTRANS: &str = "GGRGGBGGBGGRBRGRBGGGBGGRGGRGGBRBGBRG";
+
+    /// Gradient with noise between `black` and `white`, and a clipped block
+    fn samples(width: usize, height: usize, channels: usize, black: u16, white: u16) -> Vec<u16> {
+      let mut state = 0x2545_f491_u32;
+      let range = u32::from(white - black);
+      let scale = (width * 7 + height * 5 + channels * 11) as u32;
+      (0..width * height * channels)
+        .map(|i| {
+          state = state.wrapping_mul(1_664_525).wrapping_add(1_013_904_223);
+          let (x, y, c) = ((i / channels) % width, (i / channels) / width, i % channels);
+          if (4..8).contains(&x) && (4..8).contains(&y) {
+            return white;
+          }
+          let gradient = (x * 7 + y * 5 + c * 11) as u32 * range / scale;
+          let noise = (state >> 22) % (range / 16);
+          black + (gradient + noise).min(range) as u16
+        })
+        .collect()
+    }
+
+    fn d65_profile(color_matrix: FlatMatrix) -> CameraProfile {
+      CameraProfile {
+        calibration_illuminant: [Some(Illuminant::D65), None, None],
+        color_matrix: [Some(color_matrix), None, None],
+        ..Default::default()
+      }
+    }
+
+    /// Hue shifts, saturation and value scales that vary across the table
+    fn hue_sat_map(dims: [u32; 3]) -> Vec<f32> {
+      let count = (dims[0] * dims[1] * dims[2]) as usize;
+      (0..count)
+        .flat_map(|i| [(i % 6) as f32 * 4.0 - 10.0, 1.0 + 0.05 * (i % 3) as f32, 1.0 - 0.03 * (i % 2) as f32])
+        .collect()
+    }
+
+    /// Rendering tables, a ForwardMatrix and a positive BaselineExposure
+    fn add_profile_tables(rawimage: &mut RawImage) {
+      let profile = &mut rawimage.camera_profiles[0];
+      profile.forward_matrix[0] = Some(transform_2d(&FORWARD_MATRIX));
+      profile.hue_sat_map_dims = Some([6, 2, 1]);
+      profile.hue_sat_map_data[0] = Some(hue_sat_map([6, 2, 1]));
+      profile.look_table_dims = Some([6, 2, 2]);
+      profile.look_table_data = Some(hue_sat_map([6, 2, 2]));
+      profile.tone_curve = Some(vec![0.0, 0.0, 0.25, 0.3, 0.5, 0.6, 1.0, 1.0]);
+      profile.gain_table_map = Some(GainTableMap {
+        points: [2, 2, 1],
+        spacing: [1.0, 1.0],
+        origin: [0.0, 0.0],
+        input_weights: [0.0, 0.0, 0.0, 0.0, 1.0],
+        gamma: 1.0,
+        gain_min: 0.9,
+        gain_max: 1.2,
+        gains: GainData::F32(vec![1.0, 1.2, 0.9, 1.1]),
+      });
+      rawimage.baseline_exposure = Some(0.5);
+    }
+
+    /// CFA image of 12 bits with a black level of 64, an ActiveArea and a DefaultCrop
+    fn cfa_rawimage(pattern: &str, colors: &str, width: usize, height: usize, wb: [f32; 4], color_matrix: FlatMatrix) -> RawImage {
+      let mut camera = Camera::new();
+      camera.cfa = CFA::new(pattern);
+      camera.plane_color = PlaneColor::new(colors);
+      let photometric = RawPhotometricInterpretation::Cfa(CFAConfig::new_from_camera(&camera));
+      let mut rawimage = RawImage::new(
+        camera,
+        PixU16::new_with(samples(width, height, 1, 64, 4095), width, height),
+        1,
+        wb,
+        photometric,
+        Some(BlackLevel::new(&[64_u32; 4], 2, 2, 1)),
+        Some(WhiteLevel::new_bits(12, 1)),
+        false,
+      );
+      rawimage.active_area = Some(Rect::new(Point::new(2, 2), Dim2::new(width - 4, height - 4)));
+      rawimage.crop_area = Some(Rect::new(Point::new(4, 4), Dim2::new(width - 8, height - 8)));
+      rawimage.camera_profiles = vec![d65_profile(color_matrix)];
+      rawimage
+    }
+
+    fn rggb() -> RawImage {
+      cfa_rawimage("RGGB", "RGB", 32, 24, [2.0, 1.0, 1.5, f32::NAN], transform_2d(&COLOR_MATRIX))
+    }
+
+    fn mono() -> RawImage {
+      let (width, height) = (32, 24);
+      let mut rawimage = RawImage::new(
+        Camera::new(),
+        PixU16::new_with(samples(width, height, 1, 64, 4095), width, height),
+        1,
+        [f32::NAN; 4],
+        RawPhotometricInterpretation::BlackIsZero,
+        Some(BlackLevel::new(&[64_u32], 1, 1, 1)),
+        Some(WhiteLevel::new_bits(12, 1)),
+        false,
+      );
+      rawimage.crop_area = Some(Rect::new(Point::new(4, 4), Dim2::new(width - 8, height - 8)));
+      rawimage
+    }
+
+    fn linear_raw() -> RawImage {
+      let (width, height) = (16, 12);
+      let data = samples(width, height, 3, 0, 4095).iter().map(|v| f32::from(*v) / 4095.0).collect();
+      let mut rawimage = RawImage::new_with_data(
+        Camera::default(),
+        RawImageData::Float(data),
+        width * 3,
+        height,
+        3,
+        [1.8, 1.0, 1.4, f32::NAN],
+        RawPhotometricInterpretation::LinearRaw,
+        Some(BlackLevel::zero(1, 1, 3)),
+        Some(WhiteLevel::new(vec![1; 3])),
+        false,
+      );
+      rawimage.camera_profiles = vec![d65_profile(transform_2d(&COLOR_MATRIX))];
+      add_profile_tables(&mut rawimage);
+      rawimage
+    }
+
+    fn cases() -> Vec<(&'static str, RawImage, Vec<ProcessingStep>)> {
+      use ProcessingStep::*;
+      let all = RawDevelop::default().steps;
+      let without = |step: ProcessingStep| all.iter().copied().filter(|s| *s != step).collect::<Vec<_>>();
+
+      let mut rggb_profile = rggb();
+      add_profile_tables(&mut rggb_profile);
+      rggb_profile.analog_balance = Some(vec![1.1, 1.0, 0.9]);
+      rggb_profile.camera_calibration = CameraCalibration {
+        matrices: [Some(transform_2d(&CALIBRATION)), None, None],
+        signature: None,
+      };
+      let mut rggb_negative_exposure = rggb();
+      rggb_negative_exposure.baseline_exposure = Some(-1.0);
+      let cygm_matrix = [[0.2, 0.6, 0.5], [0.7, 0.8, 0.0], [0.1, 0.9, 0.1], [0.8, 0.2, 0.6]];
+      let cygm = cfa_rawimage("CYGM", "CYGM", 32, 24, [1.5, 1.2, 1.0, 1.4], transform_2d(&cygm_matrix));
+      let xtrans = cfa_rawimage(XTRANS, "RGB", 36, 24, [2.0, 1.0, 1.5, f32::NAN], transform_2d(&COLOR_MATRIX));
+
+      vec![
+        ("rggb", rggb(), all.clone()),
+        ("rggb_camera", rggb(), vec![Rescale, Demosaic, CropActiveArea, CropDefault]),
+        ("rggb_no_wb", rggb(), without(WhiteBalance)),
+        ("rggb_linear", rggb(), without(SRgb)),
+        ("rggb_full_frame", rggb(), without(CropActiveArea)),
+        ("rggb_profile", rggb_profile, all.clone()),
+        ("rggb_negative_exposure", rggb_negative_exposure, all.clone()),
+        ("cygm", cygm, all.clone()),
+        ("xtrans", xtrans, all.clone()),
+        ("mono", mono(), all.clone()),
+        ("linear_raw_profile", linear_raw(), all.clone()),
+      ]
+    }
+
+    /// Width, height, channels and per channel: sum, position weighted sum and
+    /// sum of squares of the samples
+    fn fingerprint(rawimage: &RawImage, steps: &[ProcessingStep]) -> (usize, usize, usize, Vec<f64>) {
+      let (dim, channels, data) = match RawDevelop::new_with(steps).develop_intermediate(rawimage).expect("develop") {
+        Intermediate::Monochrome(pixels) => (pixels.dim(), 1, pixels.data),
+        Intermediate::ThreeColor(pixels) => (pixels.dim(), 3, pixels.data.into_flattened()),
+        Intermediate::FourColor(pixels) => (pixels.dim(), 4, pixels.data.into_flattened()),
+      };
+      let mut sums = vec![0.0; channels * 3];
+      for (i, v) in data.iter().map(|v| f64::from(*v)).enumerate() {
+        let c = i % channels;
+        sums[c * 3] += v;
+        sums[c * 3 + 1] += v * ((i / channels) % 97) as f64;
+        sums[c * 3 + 2] += v * v;
+      }
+      (dim.w, dim.h, channels, sums)
+    }
+
+    #[rustfmt::skip]
+    const GOLDEN: &[(&str, usize, usize, usize, &[f64])] = &[
+      ("rggb", 24, 16, 3, &[390.4277983903885, 18649.48181670904, 398.80261222413327, 301.5255986750126, 14622.446534872055, 245.25021871881017, 351.73224437236786, 16866.046346843243, 324.9258630959287]),
+      ("rggb_camera", 24, 16, 3, &[201.33198672533035, 9818.438517972827, 115.96816916500968, 204.2414404898882, 9990.435259357095, 119.04132786895539, 201.55772396922112, 9910.428465634584, 115.02212716218857]),
+      ("rggb_no_wb", 24, 16, 3, &[282.0708654075861, 13578.937698602676, 211.88289972290173, 286.74830588698387, 13828.199366986752, 218.39876404618298, 284.960844039917, 13739.649574756622, 215.0416308865553]),
+      ("rggb_linear", 24, 16, 3, &[401.5790760219097, 19307.839012920856, 430.0369745481188, 233.60734894871712, 11492.54205609858, 159.34961785767993, 318.6504339873791, 15448.737531334162, 275.65717300909876]),
+      ("rggb_full_frame", 24, 16, 3, &[390.9816264510155, 18673.078037142754, 399.81150783985595, 301.62672540545464, 14615.128017276525, 245.55037887830713, 351.85164338350296, 16864.02519339323, 325.2974662559539]),
+      ("rggb_profile", 24, 16, 3, &[383.875735104084, 18234.070569992065, 383.766911972525, 296.8160035312176, 14464.464508086443, 242.2721247115981, 375.16428911685944, 17875.188795506954, 367.20890053130154]),
+      ("rggb_negative_exposure", 24, 16, 3, &[374.2274509072304, 17846.962663829327, 366.3125811072176, 146.99772273004055, 7233.688356488943, 68.94241642546928, 340.7157753109932, 16449.87398082018, 308.7189830362546]),
+      ("cygm", 24, 16, 3, &[334.43972811102867, 16040.300295442343, 298.54624110765343, 278.23176115751266, 13425.739764779806, 210.7132874067811, 364.8037489056587, 17384.13460189104, 348.86014754212096]),
+      ("xtrans", 28, 16, 3, &[454.0960969924927, 20714.50831478834, 462.02791130939414, 351.8829416036606, 16054.636072933674, 284.05223487005367, 407.09242457151413, 18571.098776698112, 373.1839582965802]),
+      ("mono", 24, 16, 1, &[286.27965730428696, 13782.818696141243, 217.83812832726255]),
+      ("linear_raw_profile", 16, 12, 3, &[185.23571464419365, 8951.324981868267, 181.01863450977868, 145.27743846178055, 7214.58751539886, 118.69475087388987, 188.05537623167038, 8992.080491483212, 184.61616298759185]),
+    ];
+
+    #[test]
+    fn develop_output_is_unchanged() {
+      let update = std::env::var_os("RAWLER_UPDATE_GOLDEN").is_some();
+      for (name, rawimage, steps) in cases() {
+        let (width, height, channels, sums) = fingerprint(&rawimage, &steps);
+        if update {
+          println!("      (\"{}\", {}, {}, {}, &{:?}),", name, width, height, channels, sums);
+          continue;
+        }
+        let (_, ew, eh, ech, expected) = GOLDEN.iter().find(|golden| golden.0 == name).expect("no golden values");
+        assert_eq!((width, height, channels), (*ew, *eh, *ech), "{}", name);
+        for (value, expected_value) in sums.iter().zip(expected.iter()) {
+          assert!(
+            (value - expected_value).abs() <= TOLERANCE * expected_value.abs().max(1.0),
+            "{}: {:?} != {:?}",
+            name,
+            sums,
+            expected
+          );
+        }
+      }
+    }
   }
 }

@@ -21,7 +21,7 @@ use crate::{
     sensor::Demosaic,
     xyz::{CIE_1931_TRISTIMULUS_D65, SRGB_TO_XYZ_D65},
   },
-  pixarray::{Color2D, PixF32, SharedColor2D},
+  pixarray::{Color2D, ImageView, SharedColor2D},
 };
 
 /// Markesteijn demosaicing implementation for Fujifilm X-Trans sensor data.
@@ -73,18 +73,19 @@ impl XTransMarkesteijnDemosaic {
 
 impl Demosaic<f32, 3> for XTransMarkesteijnDemosaic {
   /// Debayer image by using Markesteijn (1-pass) method.
-  fn demosaic(&self, pixels: &PixF32, cfa: &CFA, _colors: &PlaneColor, roi: Rect) -> Color2D<f32, 3> {
+  fn demosaic(&self, pixels: ImageView<'_, f32>, cfa: &CFA, _colors: &PlaneColor, roi: Rect) -> Color2D<f32, 3> {
+    assert_eq!(pixels.channels(), 1, "Mosaic data must have one channel");
     if !cfa.is_rgb() {
       panic!("CFA pattern '{}' is not a RGB pattern, can not demosaic with Markesteijn", cfa);
     }
     // Measure time
     let now = Instant::now();
-    let input = pixels.crop(roi);
+    let input = pixels.copy_area(roi);
 
     // The ROI changes the pattern if not perfectly aligned on the origin pattern
     let cfa_roi = cfa.shift(roi.p.x, roi.p.y);
 
-    let result = demosaic_impl(&input.data, roi.width(), roi.height(), &cfa_roi, self.passes);
+    let result = demosaic_impl(&input, roi.width(), roi.height(), &cfa_roi, self.passes);
     log::debug!("X-Trans Markesteijn ({}-pass) debayer time: {:.5}s", self.passes, now.elapsed().as_secs_f32());
     result
   }

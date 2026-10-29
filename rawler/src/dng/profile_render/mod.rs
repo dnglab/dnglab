@@ -25,7 +25,7 @@ use crate::imgop::{
   matrix::{multiply, pseudo_inverse},
   xyz::{Illuminant, SRGB_TO_XYZ_D65, XYZ_TO_PROFOTORGB_D50, XYZ_TO_SRGB_D65},
 };
-use crate::pixarray::RgbF32;
+use crate::pixarray::ImageViewMut;
 
 /// Rendering tables of a camera profile for one calibration slot
 ///
@@ -93,11 +93,19 @@ impl ProfileRender {
   ///
   /// The image is already scaled by [`Self::exposure_gain`]. `area` is the
   /// image area the gain table map refers to (the stage 3 image), relative to
-  /// `image`.
-  pub fn apply(&self, image: &mut RgbF32, area: Rect) {
+  /// `image`. Fails if `image` has not three channels.
+  pub fn apply<'a>(&self, image: impl Into<ImageViewMut<'a, f32>>, area: Rect) -> crate::Result<()> {
+    self.apply_view(image.into(), area)
+  }
+
+  fn apply_view(&self, mut image: ImageViewMut<'_, f32>, area: Rect) -> crate::Result<()> {
+    let (row_width, channels) = (image.width().max(1), image.channels());
+    let pixels = image
+      .as_array_slice_mut::<3>()
+      .ok_or_else(|| format!("Rendering tables require three channels, image has {}", channels))?;
     let (left, top) = (area.p.x as f32, area.p.y as f32);
     let (width, height) = (area.d.w.max(1) as f32, area.d.h.max(1) as f32);
-    image.data.par_chunks_mut(image.width.max(1)).enumerate().for_each(|(row, pixels)| {
+    pixels.par_chunks_mut(row_width).enumerate().for_each(|(row, pixels)| {
       // Positions of the pixel centers, relative to the image area
       let v = (row as f32 + 0.5 - top) / height;
       for (col, pixel) in pixels.iter_mut().enumerate() {
@@ -105,6 +113,7 @@ impl ProfileRender {
         *pixel = self.apply_pixel(*pixel, u, v);
       }
     });
+    Ok(())
   }
 
   /// Apply the tables to one pixel at the relative position `u` (horizontal)
@@ -159,6 +168,7 @@ mod tests {
   use super::*;
   use crate::camera_profile::GainData;
   use crate::imgop::{Dim2, Point, matrix::multiply_vector};
+  use crate::pixarray::RgbF32;
 
   #[test]
   fn profile_render_of_slot() {
@@ -207,7 +217,7 @@ mod tests {
     let render = ProfileRender::new(None, Some(&gain_table_map(vec![1.0, 3.0])), 0.0).expect("render");
     let mut image = RgbF32::new_with(vec![[0.2, 0.1, 0.1]; 4], 2, 2);
     // The map covers the right column only
-    render.apply(&mut image, Rect::new(Point::new(1, 0), Dim2::new(1, 2)));
+    render.apply(&mut image, Rect::new(Point::new(1, 0), Dim2::new(1, 2))).expect("three channels");
     // Left column: the pixel center is outside of the map (left edge), right column: the center
     assert_eq!(image.data[0], [0.2, 0.1, 0.1]);
     assert_eq!(image.data[1], [0.4, 0.2, 0.2]);
