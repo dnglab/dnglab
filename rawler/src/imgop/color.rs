@@ -10,7 +10,7 @@ use crate::{
   camera_profile::{CalibrationSlot, D65_PREFERENCE},
   dng::profile_render::ProfileRender,
   imgop::{
-    Rect,
+    Point, Rect,
     chromatic_adaption::{adapt_xyz2cam_bradford, bradford_adaption_matrix},
     matrix::{diagonal, identity, invert, multiply, multiply_vector, normalize, pseudo_inverse, transform_1d},
     raw::clip_euclidean_norm_avg,
@@ -216,6 +216,8 @@ pub enum PixelOp {
   Clip,
   /// Clip values above 1.0 and keep some of the color, see [`clip_euclidean_norm_avg`]
   ClipNormAvg,
+  /// Encode each value by a transfer function
+  TransferFunction(TransferFunction),
 }
 
 impl PixelOp {
@@ -228,6 +230,7 @@ impl PixelOp {
       Self::Profile(render) => render.apply_pixel(rgb, u, v),
       Self::Clip => rgb.map(|c| c.clamp(0.0, 1.0)),
       Self::ClipNormAvg => clip_euclidean_norm_avg(&rgb),
+      Self::TransferFunction(function) => rgb.map(|c| function.encode(c)),
     }
   }
 }
@@ -240,12 +243,20 @@ fn channel_error(expected: usize, channels: usize) -> crate::RawlerError {
 /// apply `ops` to each pixel
 ///
 /// `area` is the image area that the pixel positions of the operations refer
-/// to, relative to `src`, see [`Rect::relative_position`]. Fails if `src` has not N channels.
-pub fn camera_to_rgb<'a, const N: usize>(src: impl Into<ImageView<'a, f32>>, map: &CameraToRgb<N>, ops: &[PixelOp], area: Rect) -> crate::Result<RgbF32> {
-  camera_to_rgb_view(src.into(), map, ops, area)
+/// to (see [`Rect::relative_position`]), `origin` is the position of `src` in
+/// the coordinates of `area`. Unless `src` is cropped from the image that
+/// `area` refers to, `origin` is (0, 0). Fails if `src` has not N channels.
+pub fn camera_to_rgb<'a, const N: usize>(
+  src: impl Into<ImageView<'a, f32>>,
+  map: &CameraToRgb<N>,
+  ops: &[PixelOp],
+  area: Rect,
+  origin: Point,
+) -> crate::Result<RgbF32> {
+  camera_to_rgb_view(src.into(), map, ops, area, origin)
 }
 
-fn camera_to_rgb_view<const N: usize>(src: ImageView<'_, f32>, map: &CameraToRgb<N>, ops: &[PixelOp], area: Rect) -> crate::Result<RgbF32> {
+fn camera_to_rgb_view<const N: usize>(src: ImageView<'_, f32>, map: &CameraToRgb<N>, ops: &[PixelOp], area: Rect, origin: Point) -> crate::Result<RgbF32> {
   let pixels = src.as_array_slice::<N>().ok_or_else(|| channel_error(N, src.channels()))?;
   let width = src.width().max(1);
   let mut out = RgbF32::new(src.width(), src.height());
@@ -256,7 +267,7 @@ fn camera_to_rgb_view<const N: usize>(src: ImageView<'_, f32>, map: &CameraToRgb
     .enumerate()
     .for_each(|(row, (out, pixels))| {
       for (col, (out, pixel)) in out.iter_mut().zip(pixels).enumerate() {
-        let (u, v) = area.relative_position(col, row);
+        let (u, v) = area.relative_position(origin.x + col, origin.y + row);
         *out = ops.iter().fold(map.apply(pixel), |rgb, op| op.apply(rgb, u, v));
       }
     });
@@ -265,16 +276,22 @@ fn camera_to_rgb_view<const N: usize>(src: ImageView<'_, f32>, map: &CameraToRgb
 
 /// Map the camera values of `image`, which has three channels, to RGB by
 /// `map` and apply `ops` to each pixel, see [`camera_to_rgb`]
-pub fn camera_to_rgb_in_place<'a>(image: impl Into<ImageViewMut<'a, f32>>, map: &CameraToRgb<3>, ops: &[PixelOp], area: Rect) -> crate::Result<()> {
-  camera_to_rgb_in_place_view(image.into(), map, ops, area)
+pub fn camera_to_rgb_in_place<'a>(
+  image: impl Into<ImageViewMut<'a, f32>>,
+  map: &CameraToRgb<3>,
+  ops: &[PixelOp],
+  area: Rect,
+  origin: Point,
+) -> crate::Result<()> {
+  camera_to_rgb_in_place_view(image.into(), map, ops, area, origin)
 }
 
-fn camera_to_rgb_in_place_view(mut image: ImageViewMut<'_, f32>, map: &CameraToRgb<3>, ops: &[PixelOp], area: Rect) -> crate::Result<()> {
+fn camera_to_rgb_in_place_view(mut image: ImageViewMut<'_, f32>, map: &CameraToRgb<3>, ops: &[PixelOp], area: Rect, origin: Point) -> crate::Result<()> {
   let (width, channels) = (image.width().max(1), image.channels());
   let pixels = image.as_array_slice_mut::<3>().ok_or_else(|| channel_error(3, channels))?;
   pixels.par_chunks_mut(width).enumerate().for_each(|(row, pixels)| {
     for (col, pixel) in pixels.iter_mut().enumerate() {
-      let (u, v) = area.relative_position(col, row);
+      let (u, v) = area.relative_position(origin.x + col, origin.y + row);
       *pixel = ops.iter().fold(map.apply(pixel), |rgb, op| op.apply(rgb, u, v));
     }
   });
@@ -287,7 +304,7 @@ mod tests {
   use crate::{
     camera_profile::{CameraCalibration, CameraProfile},
     imgop::{
-      Dim2, Point,
+      Dim2,
       matrix::{FlatMatrix, transform_2d},
     },
   };
@@ -398,10 +415,11 @@ mod tests {
       &map,
       &[PixelOp::Clip],
       Rect::new(Point::default(), Dim2::new(2, 1)),
+      Point::default(),
     )?;
     assert_eq!(rgb.data, [[0.2, 0.5, 0.275], [0.9, 1.0, 0.6]]);
     // The image must have four channels
-    assert!(camera_to_rgb(ImageView::new(&samples[..6], 2, 1, 3), &map, &[], Rect::default()).is_err());
+    assert!(camera_to_rgb(ImageView::new(&samples[..6], 2, 1, 3), &map, &[], Rect::default(), Point::default()).is_err());
 
     // In place for three channels, the same map applies
     let mut samples = [0.1, 0.2, 0.3, 0.5, 0.5, 0.5_f32];
@@ -410,7 +428,7 @@ mod tests {
       white: f32::INFINITY,
       matrix: [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]],
     };
-    camera_to_rgb_in_place(ImageViewMut::new(&mut samples, 2, 1, 3), &map, &[], Rect::default())?;
+    camera_to_rgb_in_place(ImageViewMut::new(&mut samples, 2, 1, 3), &map, &[], Rect::default(), Point::default())?;
     assert_eq!(samples, [0.2, 0.2, 0.3, 1.0, 0.5, 0.5]);
     Ok(())
   }

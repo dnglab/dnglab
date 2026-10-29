@@ -727,7 +727,7 @@ fn generate_preview(
         log::warn!("Preview image not found, try to generate sRGB from RAW");
       }
       let dev = RawDevelop::default();
-      let image = dev.develop_image(rawimage)?;
+      let image = dev.develop_image(rawimage.clone())?;
       /*
       let params = rawimage.develop_params()?;
       let (srgbf, dim) = develop_raw_srgb(&rawimage.data, &params)?;

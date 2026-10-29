@@ -105,8 +105,8 @@ pub fn process_raw_image<W: Write + Seek + Send>(raw: &Path, image_file: &mut W,
   let metadata = decoder.raw_metadata(&rawfile, &raw_params)?;
   let develop = RawDevelop::default();
   match params.format {
-    ProcessedImageFormat::Tiff => develop.develop(&rawimage, &metadata, image_file)?,
-    ProcessedImageFormat::Jpeg => develop.develop_jpeg(&rawimage, &metadata, image_file, params.jpeg_quality)?,
+    ProcessedImageFormat::Tiff => develop.develop(rawimage, &metadata, image_file)?,
+    ProcessedImageFormat::Jpeg => develop.develop_jpeg(rawimage, &metadata, image_file, params.jpeg_quality)?,
   }
   Ok(())
 }
@@ -143,21 +143,23 @@ impl RawDevelop {
 
   /// Develop raw image. If demosaic is disabled or camera raw is monochrome,
   /// the image has one channel.
-  pub fn develop_image(&self, rawimage: &RawImage) -> crate::Result<RenderedImage> {
-    render(rawimage.clone(), &self.render_options())
+  ///
+  /// The image data of `rawimage` is processed in place, clone it to keep it.
+  pub fn develop_image(&self, rawimage: RawImage) -> crate::Result<RenderedImage> {
+    render(rawimage, &self.render_options())
   }
 
   /// Develop raw image and write result into TIFF.
   /// If demosaic is disabled or camera raw is monochrome, the TIFF
   /// has only one color channel.
-  pub fn develop<W>(&self, rawimage: &RawImage, md: &RawMetadata, writer: W) -> crate::Result<()>
+  pub fn develop<W>(&self, rawimage: RawImage, md: &RawMetadata, writer: W) -> crate::Result<()>
   where
     W: io::Write + io::Seek,
   {
-    let image = self.develop_image(rawimage)?;
-
     let mut tiff = TiffWriter::new(writer)?;
-    let mut root_ifd = Self::metadata_ifd(&mut tiff, rawimage, md)?;
+    let mut root_ifd = Self::metadata_ifd(&mut tiff, &rawimage, md)?;
+
+    let image = self.develop_image(rawimage)?;
 
     let data = convert_from_f32_scaled_u16(&image.data, 0, u16::MAX);
     let (strip_rows, strips) = tiff.write_strips_lzw(&data, image.channels, image.dim(), 0)?;
@@ -181,18 +183,18 @@ impl RawDevelop {
   }
 
   /// Develop raw image and write result as 8-bit JPEG with EXIF data
-  pub fn develop_jpeg<W>(&self, rawimage: &RawImage, md: &RawMetadata, writer: W, quality: u8) -> crate::Result<()>
+  pub fn develop_jpeg<W>(&self, rawimage: RawImage, md: &RawMetadata, writer: W, quality: u8) -> crate::Result<()>
   where
     W: io::Write,
   {
-    let image = self.develop_image(rawimage)?.to_dynamic_image().ok_or("failed to convert to dynamic image")?;
-
     // EXIF data is a TIFF structure without image data
     let mut exif = Cursor::new(Vec::new());
     let mut tiff = TiffWriter::new(&mut exif)?;
-    let root_ifd = Self::metadata_ifd(&mut tiff, rawimage, md)?;
+    let root_ifd = Self::metadata_ifd(&mut tiff, &rawimage, md)?;
     tiff.build(root_ifd)?;
     let exif = exif.into_inner();
+
+    let image = self.develop_image(rawimage)?.to_dynamic_image().ok_or("failed to convert to dynamic image")?;
 
     let mut encoder = JpegEncoder::new_with_quality(writer, quality);
     // The APP1 segment holds 65533 bytes, including the "Exif\0\0" header
@@ -303,8 +305,9 @@ mod tests {
       .into_iter()
       .filter(|step| *step != ProcessingStep::ProfileRender)
       .collect();
-    let develop =
-      |rawimage: &RawImage, steps: &[ProcessingStep]| -> crate::Result<[f32; 3]> { Ok(rgb_pixels(&RawDevelop::new_with(steps).develop_image(rawimage)?)[0]) };
+    let develop = |rawimage: &RawImage, steps: &[ProcessingStep]| -> crate::Result<[f32; 3]> {
+      Ok(rgb_pixels(&RawDevelop::new_with(steps).develop_image(rawimage.clone())?)[0])
+    };
     // Without tables, the step has no effect
     assert_eq!(develop(&rawimage, &RawDevelop::default().steps)?, develop(&rawimage, &without_render)?);
     // The tone curve brightens the image
@@ -344,7 +347,7 @@ mod tests {
     let metadata = RawMetadata::new(&camera, Exif::default());
 
     let mut jpeg = Vec::new();
-    RawDevelop::default().develop_jpeg(&rawimage, &metadata, &mut jpeg, 90)?;
+    RawDevelop::default().develop_jpeg(rawimage, &metadata, &mut jpeg, 90)?;
 
     let mut decoder = JpegDecoder::new(Cursor::new(&jpeg))?;
     let exif = decoder.exif_metadata()?.ok_or("no EXIF data")?;
@@ -373,7 +376,7 @@ mod tests {
     );
     rawimage.dng_opcodes_3 = Some(OpcodeList::new(vec![warp_rectilinear(0.5, 0.0)]));
     let develop = RawDevelop::new_with(&[ProcessingStep::Rescale, ProcessingStep::Demosaic]);
-    let image = develop.develop_image(&rawimage)?;
+    let image = develop.develop_image(rawimage)?;
     let pixels = rgb_pixels(&image);
     for (i, pixel) in pixels.iter().enumerate() {
       let x = (i % 8) as f32;
@@ -415,7 +418,7 @@ mod tests {
       ProcessingStep::CropActiveArea,
       ProcessingStep::CropDefault,
     ]);
-    let image = develop.develop_image(&rawimage)?;
+    let image = develop.develop_image(rawimage)?;
     assert_eq!(image.dim(), Dim2::new(8, 6));
     let pixels = rgb_pixels(&image);
     let expected = 2048.0 / 4095.0;
@@ -450,7 +453,7 @@ mod tests {
       constant: 0,
       bayer_phase: 0,
     })]));
-    let image = RawDevelop::new_with(&[ProcessingStep::Rescale]).develop_image(&rawimage)?;
+    let image = RawDevelop::new_with(&[ProcessingStep::Rescale]).develop_image(rawimage)?;
     assert_eq!(image.channels, 1);
     assert_eq!(image.data[6 * 16 + 6], 1300.0 / 4095.0);
     Ok(())
@@ -474,14 +477,14 @@ mod tests {
       .into_iter()
       .filter(|step| *step != ProcessingStep::TransferFunction)
       .collect();
-    let image = RawDevelop::new_with(&steps).develop_image(&rawimage)?;
+    let image = RawDevelop::new_with(&steps).develop_image(rawimage.clone())?;
     let pixels = rgb_pixels(&image);
     for (pixel, expected) in pixels.iter().zip([1.0, 0.1]) {
       assert!(pixel.iter().all(|v| (v - expected).abs() < 1e-3), "{:?}", pixel);
     }
     // Without Calibrate, the BaselineExposure step applies the curve
     let develop = RawDevelop::new_with(&[ProcessingStep::Rescale, ProcessingStep::Demosaic, ProcessingStep::BaselineExposure]);
-    let image = develop.develop_image(&rawimage)?;
+    let image = develop.develop_image(rawimage)?;
     let pixels = rgb_pixels(&image);
     for (pixel, expected) in pixels.iter().zip([1.0, 0.1]) {
       assert!(pixel.iter().all(|v| (v - expected).abs() < 1e-5), "{:?}", pixel);
@@ -510,7 +513,7 @@ mod tests {
       ..Default::default()
     }];
     let develop = RawDevelop::new_with(&[ProcessingStep::Rescale, ProcessingStep::Demosaic, ProcessingStep::BaselineExposure]);
-    let image = develop.develop_image(&rawimage)?;
+    let image = develop.develop_image(rawimage)?;
     let pixels = rgb_pixels(&image);
     assert!(pixels.iter().flatten().all(|v| *v == 0.5));
     Ok(())
@@ -526,8 +529,10 @@ mod tests {
       cfa::PlaneColor,
     };
 
-    /// Allowed deviation of the fingerprints, relative to the expected value
-    const TOLERANCE: f64 = 0.0;
+    /// Allowed deviation of the fingerprints, relative to the expected value.
+    /// The exposure gain is applied with the white balance, which changes the
+    /// rounding of images with a positive BaselineExposure.
+    const TOLERANCE: f64 = 1e-6;
 
     const XTRANS: &str = "GGRGGBGGBGGRBRGRBGGGBGGRGGRGGBRBGBRG";
 
@@ -686,7 +691,7 @@ mod tests {
     /// Width, height, channels and per channel: sum, position weighted sum and
     /// sum of squares of the samples
     fn fingerprint(rawimage: &RawImage, steps: &[ProcessingStep]) -> (usize, usize, usize, Vec<f64>) {
-      let image = RawDevelop::new_with(steps).develop_image(rawimage).expect("develop");
+      let image = RawDevelop::new_with(steps).develop_image(rawimage.clone()).expect("develop");
       let (dim, channels, data) = (image.dim(), image.channels, image.data);
       let mut sums = vec![0.0; channels * 3];
       for (i, v) in data.iter().map(|v| f64::from(*v)).enumerate() {
@@ -712,6 +717,34 @@ mod tests {
       ("mono", 24, 16, 1, &[286.27965730428696, 13782.818696141243, 217.83812832726255]),
       ("linear_raw_profile", 16, 12, 3, &[185.23571464419365, 8951.324981868267, 181.01863450977868, 145.27743846178055, 7214.58751539886, 118.69475087388987, 188.05537623167038, 8992.080491483212, 184.61616298759185]),
     ];
+
+    #[test]
+    fn crop_in_demosaic_equals_crop_after_rendering() {
+      // A DefaultCrop far from the borders of the ActiveArea, the gain table map
+      // depends on the position of the pixels in the ActiveArea
+      let crop = Rect::new(Point::new(40, 30), Dim2::new(24, 18));
+      let cygm_matrix = [[0.2, 0.6, 0.5], [0.7, 0.8, 0.0], [0.1, 0.9, 0.1], [0.8, 0.2, 0.6]];
+      for (pattern, colors, wb, matrix) in [
+        ("RGGB", "RGB", [2.0, 1.0, 1.5, f32::NAN], transform_2d(&COLOR_MATRIX)),
+        (XTRANS, "RGB", [2.0, 1.0, 1.5, f32::NAN], transform_2d(&COLOR_MATRIX)),
+        ("CYGM", "CYGM", [1.5, 1.2, 1.0, 1.4], transform_2d(&cygm_matrix)),
+      ] {
+        let mut rawimage = cfa_rawimage(pattern, colors, 96, 72, wb, matrix);
+        add_profile_tables(&mut rawimage);
+        rawimage.crop_area = Some(crop);
+        let active_area = rawimage.active_area.expect("active area");
+        let cropped = RawDevelop::default().develop_image(rawimage.clone()).expect("develop");
+        let steps: Vec<ProcessingStep> = RawDevelop::default()
+          .steps
+          .into_iter()
+          .filter(|step| *step != ProcessingStep::CropDefault)
+          .collect();
+        let mut expected = RawDevelop::new_with(&steps).develop_image(rawimage).expect("develop");
+        expected.crop(crop.rebase(&active_area).expect("crop inside of the active area")).expect("crop");
+        assert_eq!(cropped.dim(), expected.dim(), "{}", pattern);
+        assert!(cropped.data == expected.data, "{}", pattern);
+      }
+    }
 
     #[test]
     fn develop_output_is_unchanged() {
