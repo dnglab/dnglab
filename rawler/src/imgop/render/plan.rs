@@ -225,7 +225,7 @@ pub fn plan(rawimage: &RawImage, options: &RenderOptions) -> crate::Result<Plan>
   }
 
   // A positive BaselineExposure is applied as linear gain to the scene-linear
-  // data, clipping is done by the color space conversion or the final
+  // data, clipping is done before the transfer function or by the final
   // conversion to integers. A negative BaselineExposure is applied as tone
   // curve that keeps white at 1.0, by the rendering of the camera map or as
   // separate operation without it.
@@ -260,7 +260,12 @@ pub fn plan(rawimage: &RawImage, options: &RenderOptions) -> crate::Result<Plan>
         (CameraMap::Four(map), pixel_ops)
       }
     };
-    pixel_ops.extend(transfer_function.map(PixelOp::TransferFunction));
+    // Encoded values are clipped per channel to the output range. Linear
+    // values keep highlights above white and colors outside of the output
+    // space, the conversion to integers clips them.
+    if let Some(function) = transfer_function {
+      pixel_ops.extend([PixelOp::Clip, PixelOp::TransferFunction(function)]);
+    }
     ops.push(Op::CameraToRgb {
       map,
       ops: pixel_ops,
@@ -307,9 +312,9 @@ fn demosaic_algorithm(config: &CFAConfig, quality: DemosaicQuality) -> crate::Re
 /// neutral. The map applies them, unless the values are `balanced` already,
 /// and the exposure `gain`. Like a DNG reader, white balanced camera values
 /// are clipped at the camera `white` (scaled by the gain), so clipped
-/// highlights stay neutral, and colors outside of the output space are clipped
-/// per channel. With rendering tables, the camera values are mapped to linear
-/// ProPhoto RGB for the tables.
+/// highlights stay neutral. The RGB values are not clipped, they can be above
+/// 1.0 or negative for colors outside of the output space. With rendering
+/// tables, the camera values are mapped to linear ProPhoto RGB for the tables.
 fn camera_map<const N: usize>(
   rawimage: &RawImage,
   wb: [f32; 4],
@@ -332,8 +337,8 @@ fn camera_map<const N: usize>(
         white,
         matrix: multiply(&to_prophoto, &cam2rgb),
       };
-      (map, vec![PixelOp::Profile(render), PixelOp::Matrix(from_prophoto), PixelOp::Clip])
+      (map, vec![PixelOp::Profile(render), PixelOp::Matrix(from_prophoto)])
     }
-    None => (CameraToRgb { wb, white, matrix: cam2rgb }, vec![PixelOp::Clip]),
+    None => (CameraToRgb { wb, white, matrix: cam2rgb }, Vec::new()),
   }
 }

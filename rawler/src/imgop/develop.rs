@@ -615,6 +615,60 @@ mod tests {
     Ok(())
   }
 
+  /// Ramp of a saturated color `k * (1.0, 0.4, 0.2)` with a D65 profile and a
+  /// BaselineExposure of +1 EV. No camera value is clipped, but red is above
+  /// 1.0 after the color matrix for the brighter pixels.
+  fn saturated_ramp_rawimage() -> (RawImage, Vec<f32>) {
+    let ramp: Vec<f32> = (0..61).map(|i| 0.3 + i as f32 / 100.0).collect();
+    let mut rawimage = d65_rawimage();
+    rawimage.width = ramp.len();
+    rawimage.data = RawImageData::Float(ramp.iter().flat_map(|k| [*k, 0.4 * k, 0.2 * k]).collect());
+    rawimage.wb_coeffs = [1.0, 1.0, 1.0, f32::NAN];
+    rawimage.baseline_exposure = Some(1.0);
+    (rawimage, ramp)
+  }
+
+  #[test]
+  fn develop_keeps_linear_values_above_white() -> std::result::Result<(), Box<dyn std::error::Error>> {
+    // Issue #884: values above 1.0 were mapped to a less saturated color, with
+    // a jump at 1.0
+    let (rawimage, ramp) = saturated_ramp_rawimage();
+    let steps: Vec<ProcessingStep> = RawDevelop::default()
+      .steps
+      .into_iter()
+      .filter(|step| *step != ProcessingStep::TransferFunction)
+      .collect();
+    let image = RawDevelop::new_with(&steps).develop_image(rawimage)?;
+    let pixels = rgb_pixels(&image);
+    assert!(pixels[0][0] < 1.0 && pixels[pixels.len() - 1][0] > 1.0, "{:?}", pixels);
+    // All values, also those above 1.0 or negative, are proportional to the camera values
+    let color = pixels[0].map(|v| v / ramp[0]);
+    for (pixel, k) in pixels.iter().zip(&ramp) {
+      for (v, c) in pixel.iter().zip(color) {
+        assert!((v - c * k).abs() < 1e-5, "{:?} at {}", pixel, k);
+      }
+    }
+    Ok(())
+  }
+
+  #[test]
+  fn develop_clips_encoded_values_per_channel() -> std::result::Result<(), Box<dyn std::error::Error>> {
+    let (rawimage, _) = saturated_ramp_rawimage();
+    let steps: Vec<ProcessingStep> = RawDevelop::default()
+      .steps
+      .into_iter()
+      .filter(|step| *step != ProcessingStep::TransferFunction)
+      .collect();
+    let linear = RawDevelop::new_with(&steps).develop_image(rawimage.clone())?;
+    let encoded = RawDevelop::default().develop_image(rawimage)?;
+    // Each channel is clipped to 0..1 on its own, so the ramp stays continuous
+    for (linear, encoded) in rgb_pixels(&linear).iter().zip(rgb_pixels(&encoded)) {
+      let expected = linear.map(|v| TransferFunction::Srgb.encode(v.clamp(0.0, 1.0)));
+      assert!(expected.iter().zip(encoded).all(|(a, b)| (a - b).abs() < 1e-5), "{:?} {:?}", linear, encoded);
+    }
+    Ok(())
+  }
+
   /// Output of the development of synthetic images, pinned to detect unintended
   /// changes. Run with `RAWLER_UPDATE_GOLDEN=1` and `--nocapture` to print the
   /// current values instead of comparing them.
@@ -834,7 +888,7 @@ mod tests {
       ("rggb_preview", 12, 8, 3, &[95.1130530834198, 4535.024439275265, 94.3125455442176, 57.73037052154541, 2806.694089382887, 36.49492572569757, 89.82149887084961, 4330.648076474667, 84.67189949810677]),
       ("rggb_camera", 24, 16, 3, &[202.01232363283634, 9857.277190387249, 117.52662926537228, 204.2414404898882, 9990.435259357095, 119.04132786895539, 201.11399140954018, 9900.458577096462, 114.79045569113153]),
       ("rggb_no_wb", 24, 16, 3, &[281.4802607446909, 13564.986759513617, 211.7243223425459, 287.3429910540581, 13848.008021116257, 219.29237275252382, 283.6068353652954, 13712.447558701038, 213.1742812932963]),
-      ("rggb_linear", 24, 16, 3, &[377.01246961951256, 17960.735143005848, 372.1423593051457, 133.64919804036617, 6578.678369447589, 58.98300084691425, 322.27758035063744, 15752.828521579504, 282.1283962510165]),
+      ("rggb_linear", 24, 16, 3, &[485.7438862025738, 23320.44913226366, 631.5755190633486, 134.4012443870306, 6599.922600671649, 60.6319791428197, 336.55111595988274, 16570.51391789317, 312.51550925905866]),
       ("rggb_full_frame", 24, 16, 3, &[381.69512236118317, 18150.39451789856, 379.595433615728, 232.32091468572617, 11240.07896360755, 147.64509285845165, 355.1079213619232, 17057.55524724722, 331.2803854717914]),
       ("rggb_profile", 24, 16, 3, &[383.4662112593651, 18215.506040215492, 383.0383059067018, 297.52433839440346, 14476.317115783691, 242.40614491711693, 373.5126699209213, 17833.258824765682, 364.2168519828674]),
       ("rggb_negative_exposure", 24, 16, 3, &[372.9707576036453, 17801.475763201714, 364.28282762169994, 148.17328909039497, 7266.1948882341385, 69.80508398590429, 337.22546261548996, 16365.803864657879, 303.55807226827676]),
