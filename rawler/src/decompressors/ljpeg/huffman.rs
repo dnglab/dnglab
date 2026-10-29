@@ -51,37 +51,6 @@ pub struct HuffTable {
   initialized: bool,
 }
 
-struct MockPump {
-  bits: u64,
-  nbits: u32,
-}
-
-impl MockPump {
-  pub fn empty() -> Self {
-    MockPump { bits: 0, nbits: 0 }
-  }
-
-  pub fn set(&mut self, bits: u32, nbits: u32) {
-    self.bits = (bits as u64) << 32;
-    self.nbits = nbits + 32;
-  }
-
-  pub fn validbits(&self) -> i32 {
-    self.nbits as i32 - 32
-  }
-}
-
-impl BitPump for MockPump {
-  fn peek_bits(&mut self, num: u32) -> u32 {
-    (self.bits >> (self.nbits - num)) as u32
-  }
-
-  fn consume_bits(&mut self, num: u32) {
-    self.nbits -= num;
-    self.bits &= (1 << self.nbits) - 1;
-  }
-}
-
 impl HuffTable {
   pub fn empty() -> HuffTable {
     HuffTable {
@@ -141,26 +110,69 @@ impl HuffTable {
       }
     }
 
-    // Create the decode cache by running the slow code over all the possible
-    // values DECODE_CACHE_BITS wide
     if !self.disable_cache {
-      let mut pump = MockPump::empty();
-      let mut i = 0;
-      loop {
-        pump.set(i, DECODE_CACHE_BITS);
-        let (bits, decode) = self.huff_decode_slow(&mut pump);
-        if pump.validbits() >= 0 {
-          self.decodecache[i as usize] = Some((bits, decode as i16));
-        }
-        i += 1;
-        if i >= 1 << DECODE_CACHE_BITS {
-          break;
-        }
-      }
+      self.fill_decodecache();
     }
 
     self.initialized = true;
     Ok(())
+  }
+
+  /// Create the decode cache with the result of [`Self::huff_decode_slow`]
+  /// for all possible bit sequences DECODE_CACHE_BITS wide.
+  ///
+  /// All sequences that start with the same Huffman code and difference bits
+  /// share the same cache entry, so the cache is filled in runs.
+  fn fill_decodecache(&mut self) {
+    let mut i: u32 = 0;
+    while i < (1 << DECODE_CACHE_BITS) {
+      let (entry, prefix_bits) = self.decodecache_entry(i);
+      let run = 1 << (DECODE_CACHE_BITS - prefix_bits);
+      if let Some(entry) = entry {
+        self.decodecache[i as usize..(i + run) as usize].fill(Some(entry));
+      }
+      i += run;
+    }
+  }
+
+  /// Calculate the decode cache entry for the bit sequence `seq`, like
+  /// [`Self::huff_decode_slow`] would decode it. A sequence gets an entry
+  /// if the Huffman code and the following difference bits fit into
+  /// DECODE_CACHE_BITS.
+  ///
+  /// Also returns the count of leading bits of `seq` the entry depends on.
+  fn decodecache_entry(&self, seq: u32) -> (Option<(u8, i16)>, u32) {
+    // peek_bits(nbits) on the sequence, padded with zero bits
+    let code = if self.nbits <= DECODE_CACHE_BITS {
+      seq >> (DECODE_CACHE_BITS - self.nbits)
+    } else {
+      seq << (self.nbits - DECODE_CACHE_BITS)
+    };
+    let (bits, len, shift) = self.hufftable[code as usize];
+    if bits == 0 {
+      // Not a valid code, the table entry is empty and nothing is consumed
+      return (Some((0, 0)), self.nbits.min(DECODE_CACHE_BITS));
+    }
+    // Remaining bits of the sequence after the code
+    let Some(rest) = DECODE_CACHE_BITS.checked_sub(bits as u32) else {
+      return (None, DECODE_CACHE_BITS);
+    };
+    match len {
+      0 => (Some((bits, 0)), bits as u32),
+      // With dng_bug, 16 extra bits are consumed (and don't fit)
+      16 => (if self.dng_bug { None } else { Some((bits + 16, -32768)) }, bits as u32),
+      len if len as u32 > rest => (None, bits as u32),
+      len => {
+        let fulllen: i32 = len as i32 + shift as i32;
+        let shift: i32 = shift as i32;
+        let diffbits = ((seq >> (rest - len as u32)) & ((1 << len) - 1)) as i32;
+        let mut diff: i32 = ((diffbits << 1) + 1) << shift >> 1;
+        if (diff & (1 << (fulllen - 1))) == 0 {
+          diff -= (1 << fulllen) - ((shift == 0) as i32);
+        }
+        (Some((bits + len, diff as i16)), bits as u32 + len as u32)
+      }
+    }
   }
 
   #[inline(always)]
@@ -239,6 +251,119 @@ impl fmt::Debug for HuffTable {
       write!(f, "HuffTable {{ bits: {:?} huffval: {:?} }}", self.bits, &self.huffval[..])
     } else {
       write!(f, "HuffTable {{ uninitialized }}")
+    }
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  struct MockPump {
+    bits: u64,
+    nbits: u32,
+  }
+
+  impl MockPump {
+    pub fn empty() -> Self {
+      MockPump { bits: 0, nbits: 0 }
+    }
+
+    pub fn set(&mut self, bits: u32, nbits: u32) {
+      self.bits = (bits as u64) << 32;
+      self.nbits = nbits + 32;
+    }
+
+    pub fn validbits(&self) -> i32 {
+      self.nbits as i32 - 32
+    }
+  }
+
+  impl BitPump for MockPump {
+    fn peek_bits(&mut self, num: u32) -> u32 {
+      (self.bits >> (self.nbits - num)) as u32
+    }
+
+    fn consume_bits(&mut self, num: u32) {
+      self.nbits -= num;
+      self.bits &= (1 << self.nbits) - 1;
+    }
+  }
+
+  /// Reference implementation: run the slow decoder over all possible
+  /// bit sequences DECODE_CACHE_BITS wide.
+  fn slow_decodecache(tbl: &HuffTable) -> Vec<Option<(u8, i16)>> {
+    let mut cache = vec![None; 1 << DECODE_CACHE_BITS];
+    let mut pump = MockPump::empty();
+    for i in 0..(1 << DECODE_CACHE_BITS) {
+      pump.set(i, DECODE_CACHE_BITS);
+      let (bits, decode) = tbl.huff_decode_slow(&mut pump);
+      if pump.validbits() >= 0 {
+        cache[i as usize] = Some((bits, decode as i16));
+      }
+    }
+    cache
+  }
+
+  /// Minimal xorshift PRNG to generate test tables without dependencies
+  struct Rng(u64);
+
+  impl Rng {
+    fn next(&mut self, max: u32) -> u32 {
+      self.0 ^= self.0 << 13;
+      self.0 ^= self.0 >> 7;
+      self.0 ^= self.0 << 17;
+      (self.0 % max as u64) as u32
+    }
+  }
+
+  /// Generate a valid Huffman table (Kraft inequality holds) with
+  /// codes up to `maxlen` bits.
+  fn random_table(rng: &mut Rng, maxlen: usize, with_shift: bool) -> ([u32; 17], [u32; 256], [u32; 256]) {
+    let mut bits = [0_u32; 17];
+    let mut huffval = [0_u32; 256];
+    let mut shiftval = [0_u32; 256];
+    // Free code space at the current length
+    let mut free: u32 = 2;
+    let mut count = 0;
+    for len in 1..=maxlen {
+      // Keep at least one code for the next length, except for the last one
+      let max_codes = if len == maxlen { free } else { free - 1 };
+      let n = rng.next(max_codes.min(17 - count as u32).max(1) + 1).min(max_codes);
+      bits[len] = n;
+      for _ in 0..n {
+        huffval[count] = rng.next(17);
+        if with_shift {
+          shiftval[count] = rng.next(6);
+        }
+        count += 1;
+      }
+      free = (free - n) * 2;
+      if count >= 17 {
+        break;
+      }
+    }
+    (bits, huffval, shiftval)
+  }
+
+  #[test]
+  fn decodecache_matches_slow_decoder() {
+    let mut rng = Rng(0x9E37_79B9_7F4A_7C15);
+    for round in 0..2000 {
+      let maxlen = 1 + (round % 16);
+      let (bits, huffval, shiftval) = random_table(&mut rng, maxlen, round % 3 == 0);
+      let dng_bug = round % 2 == 0;
+      let mut tbl = HuffTable::empty();
+      tbl.bits = bits;
+      tbl.huffval = huffval;
+      tbl.shiftval = shiftval;
+      tbl.dng_bug = dng_bug;
+      tbl.initialize().expect("initialize");
+      assert_eq!(
+        tbl.decodecache.as_slice(),
+        slow_decodecache(&tbl).as_slice(),
+        "round {round}: bits {bits:?}, dng_bug {dng_bug}"
+      );
     }
   }
 }
