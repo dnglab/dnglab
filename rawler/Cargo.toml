@@ -89,3 +89,7 @@ name = "convert"
 [[bench]]
 harness = false
 name = "demosaic"
+
+[[bench]]
+harness = false
+name = "develop"

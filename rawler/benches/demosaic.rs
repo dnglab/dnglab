@@ -1,4 +1,4 @@
-use criterion::{BenchmarkGroup, Criterion, criterion_group, criterion_main, measurement::WallTime};
+use criterion::{BatchSize, BenchmarkGroup, Criterion, criterion_group, criterion_main, measurement::WallTime};
 use rawler::{
   decoders::RawDecodeParams,
   devtools::rawdb::{get_rawdb_cache, rawdb_ensure_file},
@@ -17,9 +17,11 @@ fn bench_full_image(group: &mut BenchmarkGroup<'_, WallTime>, name: &str, make: 
     let develop = RawDevelop::new_with(&[ProcessingStep::Demosaic]);
 
     group.bench_with_input(name, &develop, |b, develop| {
-      b.iter(|| {
-        let _ = develop.develop_image(black_box(&rawimage)).expect("Development failed");
-      })
+      b.iter_batched(
+        || rawimage.clone(),
+        |rawimage| develop.develop_image(black_box(rawimage)).expect("Development failed"),
+        BatchSize::LargeInput,
+      )
     });
     Ok(())
   };

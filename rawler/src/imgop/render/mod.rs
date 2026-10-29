@@ -204,6 +204,7 @@ pub fn render(rawimage: RawImage, options: &RenderOptions) -> crate::Result<Rend
 #[cfg(test)]
 mod tests {
   use super::{plan::Op, *};
+  use crate::imgop::color::{PixelOp, TransferFunction};
   use crate::{
     CFA, RawImageData,
     decoders::Camera,
@@ -271,10 +272,28 @@ mod tests {
     rawimage.dng_opcodes_3 = Some(OpcodeList::new(Vec::new()));
     rawimage.baseline_exposure = Some(0.5);
     let plan = plan(&rawimage, &RenderOptions::default())?;
-    let ops = ["Rescale", "Demosaic", "List3", "Gain", "CameraToRgb", "CropDefault", "TransferFunction"];
-    assert_eq!(op_names(&plan), ops);
+    // The crop follows OpcodeList3, the gain and the transfer function are part of the color map
+    assert_eq!(op_names(&plan), ["Rescale", "Demosaic", "List3", "CropDefault", "CameraToRgb"]);
     // OpcodeList3 keeps the data cropped to the ActiveArea, like the demosaic
     assert!(plan.ops.iter().any(|op| matches!(op, Op::Opcodes { crop_to_active_area: true, .. })));
+    let Some(Op::CameraToRgb(_, pixel_ops)) = plan.ops.last() else {
+      panic!("color map expected");
+    };
+    assert_eq!(pixel_ops.last(), Some(&PixelOp::TransferFunction(TransferFunction::Srgb)));
+    Ok(())
+  }
+
+  #[test]
+  fn plan_crops_in_demosaic() -> crate::Result<()> {
+    // Without OpcodeList3, only the DefaultCrop is demosaiced
+    let cropped = plan(&rggb_rawimage(), &RenderOptions::default())?;
+    assert_eq!(op_names(&cropped), ["Rescale", "Demosaic", "CameraToRgb"]);
+    assert!(matches!(cropped.ops[1], Op::Demosaic { crop_default: true, .. }));
+    let options = RenderOptions {
+      steps: StepSet::all().without(ProcessingStep::CropDefault),
+      ..Default::default()
+    };
+    assert!(matches!(plan(&rggb_rawimage(), &options)?.ops[1], Op::Demosaic { crop_default: false, .. }));
     Ok(())
   }
 
@@ -283,25 +302,19 @@ mod tests {
     // The color map renders the curve, without it a separate tone curve is applied
     let mut rawimage = rggb_rawimage();
     rawimage.baseline_exposure = Some(-1.0);
-    assert_eq!(
-      op_names(&plan(&rawimage, &RenderOptions::default())?),
-      ["Rescale", "Demosaic", "CameraToRgb", "CropDefault", "TransferFunction"]
-    );
+    assert_eq!(op_names(&plan(&rawimage, &RenderOptions::default())?), ["Rescale", "Demosaic", "CameraToRgb"]);
     let options = RenderOptions {
       steps: StepSet::all().without(ProcessingStep::Calibrate),
       ..Default::default()
     };
-    assert_eq!(
-      op_names(&plan(&rawimage, &options)?),
-      ["Rescale", "Demosaic", "ToneCurve", "CropDefault", "TransferFunction"]
-    );
+    assert_eq!(op_names(&plan(&rawimage, &options)?), ["Rescale", "Demosaic", "ToneCurve", "TransferFunction"]);
     // Monochrome images have no color map
     let mut mono = linear_raw_rawimage(4, 2, 1);
     mono.photometric = RawPhotometricInterpretation::BlackIsZero;
     mono.baseline_exposure = Some(-1.0);
     assert_eq!(
       op_names(&plan(&mono, &RenderOptions::default())?),
-      ["Rescale", "ToneCurve", "CropDefault", "TransferFunction"]
+      ["Rescale", "CropDefault", "ToneCurve", "TransferFunction"]
     );
     Ok(())
   }

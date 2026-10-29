@@ -262,7 +262,7 @@ pub fn raw_to_srgb<P: AsRef<Path>>(path: P, params: &RawDecodeParams) -> Result<
   //decoder.decode_metadata(&mut rawfile)?;
   let rawimage = decoder.raw_image(&rawfile, params, false)?;
   let dev = RawDevelop::default();
-  Ok(dev.develop_image(&rawimage)?.to_dynamic_image().ok_or("failed to convert to dynamic image")?)
+  Ok(dev.develop_image(rawimage)?.to_dynamic_image().ok_or("failed to convert to dynamic image")?)
 }
 
 /// Dump raw pixel data as PGM
