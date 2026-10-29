@@ -32,7 +32,8 @@ pub enum ProcessingStep {
   Demosaic,
   /// Rotate images of sensors with a 45° layout (Fujifilm)
   FujiRotate,
-  /// Crop CFA data to the ActiveArea while it is demosaiced
+  /// Crop to the ActiveArea: CFA data while it is demosaiced, other data
+  /// before the color operations
   CropActiveArea,
   /// Apply BaselineExposure and BaselineExposureOffset
   BaselineExposure,
@@ -316,6 +317,7 @@ mod tests {
         Op::ToneCurve(_) => "ToneCurve",
         Op::CameraToRgb(..) => "CameraToRgb",
         Op::CropDefault => "CropDefault",
+        Op::CropActiveArea => "CropActiveArea",
         Op::TransferFunction(_) => "TransferFunction",
       })
       .collect()
@@ -525,6 +527,24 @@ mod tests {
     assert_eq!(algorithm_of(&bayer, DemosaicQuality::Preview)?, Some(DemosaicAlgorithm::Superpixel3));
     bayer.fuji_rotation_width = Some(4);
     assert_eq!(algorithm_of(&bayer, DemosaicQuality::Preview)?, Some(DemosaicAlgorithm::Ppg));
+    Ok(())
+  }
+
+  #[test]
+  fn plan_crops_other_data_to_active_area() -> crate::Result<()> {
+    // Data that is not demosaiced is cropped to the ActiveArea without DefaultCrop
+    let rawimage = linear_raw_rawimage(4, 2, 3);
+    let options = RenderOptions {
+      steps: StepSet::all().without(ProcessingStep::CropDefault),
+      ..Default::default()
+    };
+    assert_eq!(op_names(&plan(&rawimage, &options)?), ["Rescale", "CropActiveArea", "CameraToRgb"]);
+    // LinearRaw data is not cropped
+    let options = RenderOptions {
+      target: RenderTarget::LinearRaw,
+      ..options
+    };
+    assert_eq!(op_names(&plan(&rawimage, &options)?), ["Rescale"]);
     Ok(())
   }
 

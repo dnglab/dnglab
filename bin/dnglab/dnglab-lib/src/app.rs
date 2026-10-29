@@ -308,7 +308,7 @@ fn process_raw_command() -> Command {
         .default_value("0"),
     )
     .arg(
-      arg!(--"crop" <crop> "DNG default crop")
+      arg!(--"crop" <crop> "Crop of the image: DefaultCrop (best), ActiveArea or none")
         .required(false)
         .value_parser(value_parser!(CropMode))
         .default_value("best"),

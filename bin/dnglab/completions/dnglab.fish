@@ -73,7 +73,7 @@ complete -c dnglab -n "__fish_dnglab_using_subcommand process-raw" -l artist -d 
 complete -c dnglab -n "__fish_dnglab_using_subcommand process-raw" -l keep-mtime -d 'Keep mtime, read from EXIF with fallback to original file mtime' -r -f -a "true\t''
 false\t''"
 complete -c dnglab -n "__fish_dnglab_using_subcommand process-raw" -l image-index -d 'Select a specific image index (or \'all\') if file is a image container' -r
-complete -c dnglab -n "__fish_dnglab_using_subcommand process-raw" -l crop -d 'DNG default crop' -r -f -a "best\t''
+complete -c dnglab -n "__fish_dnglab_using_subcommand process-raw" -l crop -d 'Crop of the image: DefaultCrop (best), ActiveArea or none' -r -f -a "best\t''
 activearea\t''
 none\t''"
 complete -c dnglab -n "__fish_dnglab_using_subcommand process-raw" -l format -d 'Output image format, defaults to the OUTPUT file extension or tif' -r -f -a "tif\t''

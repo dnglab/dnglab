@@ -58,6 +58,8 @@ pub(super) enum Op {
   CameraToRgb(CameraMap, Vec<PixelOp>),
   /// Crop to the DefaultCrop, or the ActiveArea without DefaultCrop
   CropDefault,
+  /// Crop to the ActiveArea
+  CropActiveArea,
   /// Encode all samples by a transfer function
   TransferFunction(TransferFunction),
 }
@@ -218,6 +220,8 @@ pub fn plan(rawimage: &RawImage, options: &RenderOptions) -> crate::Result<Plan>
   // Cropping before the color operations saves their work for the cropped pixels
   if crop_default && !cropped {
     ops.push(Op::CropDefault);
+  } else if !crop_default && demosaic.is_none() && steps.contains(Step::CropActiveArea) {
+    ops.push(Op::CropActiveArea);
   }
 
   // A positive BaselineExposure is applied as linear gain to the scene-linear
