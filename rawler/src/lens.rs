@@ -405,4 +405,16 @@ mod tests {
     assert_eq!(lens.expect("No lens").lens_name, "Canon RF 15-35mm F2.8L IS USM");
     Ok(())
   }
+
+  #[test]
+  fn resolve_lens_by_exif_keyname() {
+    for (key, model) in [
+      ("EF-M18-55mm f/3.5-5.6 IS STM", "EF-M 18-55mm f/3.5-5.6 IS STM"),
+      ("EF70-200mm f/2.8L IS II USM +2x III", "EF 70-200mm f/2.8L IS II USM + 2x"),
+      ("TAMRON 100-400mm F/4.5-6.3 Di VC USD A035", "100-400mm f/4.5-6.3 Di VC USD (A035)"),
+    ] {
+      let lens = LensResolver::new().with_lens_keyname(Some(key)).resolve();
+      assert_eq!(lens.map(|l| l.lens_model.as_str()), Some(model), "keyname {key:?}");
+    }
+  }
 }

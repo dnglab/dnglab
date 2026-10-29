@@ -1336,6 +1336,7 @@ aperture_range = [[28, 10], [28, 10]]
 
 [[lenses]]
 mount = "ef-mount"
+key = "EF70-200mm f/2.8L IS II USM +2x III"
 lens_id = 253
 make = "Canon"
 model = "EF 70-200mm f/2.8L IS II USM + 2x"
@@ -1349,7 +1350,6 @@ make = "Canon"
 model = "EF 70-200mm f/2.8L IS III USM + 2x"
 focal_range = [[70, 1], [200, 1]]
 aperture_range = [[28, 10], [28, 10]]
-keyname = "EF70-200mm f/2.8L IS II USM +2x III"
 
 [[lenses]]
 mount = "ef-mount"
@@ -1592,6 +1592,7 @@ aperture_range = [[35, 10], [56, 10]]
 
 [[lenses]]
 mount = "ef-mount"
+key = "EF-M18-55mm f/3.5-5.6 IS STM"
 lens_id = 4143
 make = "Canon"
 model = "EF-M 18-55mm f/3.5-5.6 IS STM"
