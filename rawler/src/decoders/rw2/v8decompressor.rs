@@ -244,31 +244,45 @@ impl HuffmanDecoder {
   }
 }
 
-/// Internal decoder state
-struct State {
+/// Lookup tables derived from [`CF2Params`].
+///
+/// They are identical for all strips, so they are built once per image
+/// and shared by all strip decoders.
+struct Tables {
   huffdec: HuffmanDecoder,
   gamma_table: Option<Vec<u16>>,
+}
+
+impl Tables {
+  fn new(params: &CF2Params) -> Self {
+    let huffdec = HuffmanDecoder::new(
+      params.huf_table.iter().map(|(bits, _symbol)| *bits as u8),
+      params.huf_table.iter().map(|(_bits, symbol)| *symbol),
+    );
+    let gamma_table = make_gammatable(params);
+    Self { huffdec, gamma_table }
+  }
+}
+
+/// Internal decoder state
+struct State<'a> {
+  huffdec: &'a HuffmanDecoder,
+  gamma_table: Option<&'a [u16]>,
   datamax: i32,
   line_base: CoeffBase,
   current_base: CoeffBase,
 }
 
-impl State {
-  fn new(params: &CF2Params) -> Self {
+impl<'a> State<'a> {
+  fn new(params: &CF2Params, tables: &'a Tables) -> Self {
     let initial = [params.huf_init_val0, params.huf_init_val1, params.huf_init_val2, params.huf_init_val3];
-    let gamma_table = make_gammatable(params);
 
     let line_base = CoeffBase::new([initial[0], initial[1], initial[2], initial[3]]);
     let current_base = line_base;
 
-    let huffdec = HuffmanDecoder::new(
-      params.huf_table.iter().map(|(bits, _symbol)| *bits as u8),
-      params.huf_table.iter().map(|(_bits, symbol)| *symbol),
-    );
-
     Self {
-      huffdec,
-      gamma_table,
+      huffdec: &tables.huffdec,
+      gamma_table: tables.gamma_table.as_deref(),
       datamax: params.gamma_clip_val as i32,
       line_base,
       current_base,
@@ -385,16 +399,18 @@ pub(crate) fn decode_panasonic_v8(rawfile: &RawSource, width: usize, height: usi
     bitstreams.push(rawfile.subview(params.strip_byte_offsets[strip_id] as u64, (params.strip_data_size[strip_id] as u64 + 7) / 8)?);
   }
 
+  let tables = Tables::new(&params);
+
   // Parallel decode multiple strips
   (0..total_strip_count).into_par_iter().for_each(|strip_id| {
     let buf = &bitstreams[strip_id];
-    decode_strip(buf, &params, strip_id, unsafe { shared_pix.inner_mut() });
+    decode_strip(buf, &params, &tables, strip_id, unsafe { shared_pix.inner_mut() });
   });
   Ok(shared_pix.into_inner())
 }
 
 /// Decode a single strip
-fn decode_strip(buf: &[u8], params: &CF2Params, strip_id: usize, out: &mut PixU16) {
+fn decode_strip(buf: &[u8], params: &CF2Params, tables: &Tables, strip_id: usize, out: &mut PixU16) {
   let mut pump = BitPumpReverseBitsMSB::new(buf);
   let width = params.strip_widths[strip_id] as usize;
   let height = params.strip_heights[strip_id] as usize;
@@ -409,7 +425,7 @@ fn decode_strip(buf: &[u8], params: &CF2Params, strip_id: usize, out: &mut PixU1
   //   //log::debug!("Pana8: huf_table {:02}: {}, {}", i, item.0, item.1);
   // }
 
-  let mut state = State::new(params);
+  let mut state = State::new(params, tables);
 
   // Data is encoded in RGRGRG..GBGBGB in a single line (like LJPEG92 4-7 predictors)
   for curr_row in 0..halfheight {
