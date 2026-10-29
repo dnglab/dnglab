@@ -11,13 +11,17 @@ use crate::{
   RawImage, RawImageData,
   dng::opcodes::OpcodeStage,
   imgop::{
-    Point, Rect,
+    Dim2, Point, Rect,
     color::{apply_gain, apply_transfer_function, camera_to_rgb, camera_to_rgb_in_place},
     fuji_rotate::fuji_normalize_rotation,
     raw::{rescale_mosaic, white_balance, white_balance_mosaic},
     sensor::{
       Demosaic,
-      bayer::{bilinear::Bilinear4Channel, ppg::PPGDemosaic},
+      bayer::{
+        bilinear::Bilinear4Channel,
+        ppg::PPGDemosaic,
+        superpixel::{Superpixel3Channel, Superpixel4Channel},
+      },
       xtrans::{bilinear::XTransBilinearDemosaic, markesteijn::XTransMarkesteijnDemosaic},
     },
   },
@@ -255,22 +259,39 @@ impl Executor {
       DemosaicAlgorithm::Bilinear4 => Bilinear4Channel::new().demosaic(pixels, &cfa.cfa, &cfa.colors, roi).into(),
       DemosaicAlgorithm::XTransBilinear => XTransBilinearDemosaic::new().demosaic(pixels, &cfa.cfa, &cfa.colors, roi).into(),
       DemosaicAlgorithm::Markesteijn => XTransMarkesteijnDemosaic::new_pass_3().demosaic(pixels, &cfa.cfa, &cfa.colors, roi).into(),
+      DemosaicAlgorithm::Superpixel3 => Superpixel3Channel::new().demosaic(pixels, &cfa.cfa, &cfa.colors, roi).into(),
+      DemosaicAlgorithm::Superpixel4 => Superpixel4Channel::new().demosaic(pixels, &cfa.cfa, &cfa.colors, roi).into(),
     };
     *image = demosaiced;
     log::debug!("Demosaiced {:?}", roi);
 
+    // Positions in the demosaiced image of half size
+    let half = algorithm.half_size();
+    let scale_point = |p: Point| if half { Point::new(p.x / 2, p.y / 2) } else { p };
+    let scale = |rect: Rect| {
+      if half {
+        Rect::new(scale_point(rect.p), Dim2::new(rect.d.w / 2, rect.d.h / 2))
+      } else {
+        rect
+      }
+    };
     if let Some(crop) = crop {
       // The pixels of the margin are cropped, the gain table map refers to the
       // stage 3 image in the coordinates of the mosaic data
-      let crop = crop.rebase(&roi).unwrap_or(self.image().view().rect());
+      let relative = crop.rebase(&roi);
+      let origin = relative.map_or(roi.p, |crop| Point::new(roi.p.x + crop.p.x, roi.p.y + crop.p.y));
+      let crop = relative.map(scale).unwrap_or(self.image().view().rect());
       if crop.d != self.image().dim() {
         self.image().crop(crop)?;
       }
-      (self.stage3_area, self.origin) = (Some(stage3_area), Point::new(roi.p.x + crop.p.x, roi.p.y + crop.p.y));
+      (self.stage3_area, self.origin) = (Some(scale(stage3_area)), scale_point(origin));
       (self.active_area, self.crop_area) = (None, None);
-    } else if crop_to_active_area && let Some(active_area) = self.active_area.take() {
-      // The DefaultCrop is relative to the ActiveArea now
-      self.crop_area = self.crop_area.and_then(|crop_area| crop_area.rebase(&active_area));
+    } else {
+      if crop_to_active_area && let Some(active_area) = self.active_area.take() {
+        // The DefaultCrop is relative to the ActiveArea now
+        self.crop_area = self.crop_area.and_then(|crop_area| crop_area.rebase(&active_area));
+      }
+      (self.active_area, self.crop_area) = (self.active_area.map(scale), self.crop_area.map(scale));
     }
     Ok(())
   }
