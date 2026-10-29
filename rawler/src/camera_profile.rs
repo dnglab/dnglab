@@ -676,7 +676,7 @@ mod tests {
     let forward_matrix = iiq_forward_matrix();
     let profile = CameraProfile::from_forward_matrix_d50(&forward_matrix, &[0.31, 1.0, 0.76]).expect("profile");
     let color_matrix = transform_1d::<3, 3>(profile.color_matrix[0].as_ref().expect("color matrix")).expect("3x3 matrix");
-    // Camera to sRGB as calculated by develop: Bradford adaption to D65, then map_3ch_to_rgb()
+    // Camera to sRGB as calculated by camera_to_output(): Bradford adaption to D65, then normalized
     let xyz2cam = adapt_xyz2cam_bradford(&Illuminant::D50, &Illuminant::D65, &color_matrix);
     let developed = pseudo_inverse(normalize(multiply(&xyz2cam, &SRGB_TO_XYZ_D65)));
     let expected = multiply(

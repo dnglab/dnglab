@@ -540,11 +540,6 @@ where
     self.data.as_flattened().to_vec()
   }
 
-  /// Samples of all pixels, without copying the data
-  pub fn into_flatten(self) -> Vec<T> {
-    self.data.into_flattened()
-  }
-
   pub fn data_ptr(&self) -> Color2DPtr<T, N> {
     Color2DPtr::new(self)
   }
@@ -675,6 +670,11 @@ where
 }
 
 impl<T, const N: usize> Color2D<T, N> {
+  /// Samples of all pixels, without copying the data
+  pub fn into_flatten(self) -> Vec<T> {
+    self.data.into_flattened()
+  }
+
   /// Borrowed view of the pixels with N channels
   pub fn view(&self) -> ImageView<'_, T> {
     self.into()
@@ -897,6 +897,28 @@ impl<'a, T> ImageViewMut<'a, T> {
   /// Mutable rows of `width * channels` samples
   pub fn rows_mut(&mut self) -> std::slice::ChunksExactMut<'_, T> {
     self.data.chunks_exact_mut((self.width * self.channels).max(1))
+  }
+
+  /// Crop to `area` without a new buffer: the rows of `area` are moved to the
+  /// start of the data, the returned view covers them
+  ///
+  /// The owner of the data can truncate it to the length of the returned view.
+  /// Fails if `area` is not inside of the image.
+  pub fn crop_in_place(self, area: Rect) -> crate::Result<ImageViewMut<'a, T>>
+  where
+    T: Copy,
+  {
+    if area.p.x + area.d.w > self.width || area.p.y + area.d.h > self.height {
+      return Err(format!("Crop {:?} is outside of {:?}", area, self).into());
+    }
+    let row_len = area.d.w * self.channels;
+    let data = self.data;
+    // Rows only move to lower positions, so each row is read before it is overwritten
+    for row in 0..area.d.h {
+      let start = ((area.p.y + row) * self.width + area.p.x) * self.channels;
+      data.copy_within(start..start + row_len, row * row_len);
+    }
+    Ok(ImageViewMut::new(&mut data[..row_len * area.d.h], area.d.w, area.d.h, self.channels))
   }
 }
 
@@ -1188,6 +1210,20 @@ mod tests {
     assert_eq!(view_info(rgb.view()), (3, 24));
     assert_eq!(view_info(rgb.view_mut()), (3, 24));
     assert_eq!(view_info(ImageView::new(&[0.5_f32; 6], 1, 2, 3)), (3, 6));
+
+    let mut samples: Vec<u16> = (0..24).collect();
+    let cropped = ImageViewMut::new(&mut samples, 4, 3, 2)
+      .crop_in_place(Rect::new(Point::new(1, 1), Dim2::new(2, 2)))
+      .expect("crop");
+    assert_eq!(
+      (cropped.width(), cropped.height(), cropped.as_slice()),
+      (2, 2, &[10, 11, 12, 13, 18, 19, 20, 21][..])
+    );
+    assert!(
+      ImageViewMut::new(&mut samples, 4, 3, 2)
+        .crop_in_place(Rect::new(Point::new(3, 0), Dim2::new(2, 1)))
+        .is_err()
+    );
 
     let mono = Pix2D::from(Color2D::<u16, 1>::new_with(vec![[1], [2]], 2, 1));
     assert_eq!((mono.width, mono.data), (2, vec![1, 2]));

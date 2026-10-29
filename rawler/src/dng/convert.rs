@@ -593,7 +593,7 @@ fn demosaic_to_linear_raw(rawimage: &mut RawImage, fuji_rotation: bool) -> crate
       if fuji_rotation {
         let fuji_rotation_width = rawimage.fuji_rotation_width.expect("fuji_rotate: no rotation width found");
         let extra_rotate = rawimage.camera.find_hint("fuji_rotate_90cw");
-        rgb = fuji_normalize_rotation(&rgb, fuji_rotation_width, extra_rotate);
+        rgb = fuji_normalize_rotation(&rgb, fuji_rotation_width, extra_rotate)?;
       }
       (rgb.width, rgb.height, 3, rgb.into_flatten())
     }
@@ -727,7 +727,7 @@ fn generate_preview(
         log::warn!("Preview image not found, try to generate sRGB from RAW");
       }
       let dev = RawDevelop::default();
-      let image = dev.develop_intermediate(rawimage)?;
+      let image = dev.develop_image(rawimage)?;
       /*
       let params = rawimage.develop_params()?;
       let (srgbf, dim) = develop_raw_srgb(&rawimage.data, &params)?;

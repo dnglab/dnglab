@@ -3,6 +3,7 @@
 
 pub mod chromatic_adaption;
 pub mod cielab;
+pub mod color;
 pub mod develop;
 pub mod fuji_rotate;
 pub mod gamma;
@@ -10,6 +11,7 @@ pub mod hsv;
 pub mod math;
 pub mod matrix;
 pub mod raw;
+pub mod render;
 pub mod sensor;
 pub mod spline;
 pub mod srgb;
@@ -124,6 +126,18 @@ impl std::fmt::Debug for Rect {
 impl Rect {
   pub fn new(p: Point, d: Dim2) -> Self {
     Self { p, d }
+  }
+
+  /// Position of the center of pixel (`x`, `y`) relative to the rectangle,
+  /// in fractions of its width and height: 0.0 is the left or top edge, 1.0
+  /// the right or bottom edge, positions outside of the rectangle are below
+  /// 0.0 or above 1.0
+  #[inline]
+  pub fn relative_position(&self, x: usize, y: usize) -> (f32, f32) {
+    (
+      (x as f32 + 0.5 - self.p.x as f32) / self.d.w.max(1) as f32,
+      (y as f32 + 0.5 - self.p.y as f32) / self.d.h.max(1) as f32,
+    )
   }
 
   // left, top, right, bottom
@@ -338,6 +352,15 @@ pub fn convert_from_f32_scaled_u16(input: &[f32], black: u16, white: u16) -> Vec
 #[cfg(test)]
 mod tests {
   use super::*;
+
+  #[test]
+  fn relative_position_in_rect() {
+    let rect = Rect::new(Point::new(2, 1), Dim2::new(4, 2));
+    assert_eq!(rect.relative_position(2, 1), (0.125, 0.25));
+    assert_eq!(rect.relative_position(5, 2), (0.875, 0.75));
+    // Pixels outside of the rectangle
+    assert_eq!(rect.relative_position(0, 3), (-0.375, 1.25));
+  }
 
   #[test]
   fn rect_from_points() -> std::result::Result<(), Box<dyn std::error::Error>> {

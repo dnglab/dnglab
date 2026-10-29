@@ -3,6 +3,10 @@
 
 //! ProfileToneCurve
 
+use rayon::prelude::*;
+
+use crate::pixarray::ImageViewMut;
+
 /// Number of intervals of the lookup table
 const TABLE_SIZE: usize = 4096;
 
@@ -96,6 +100,16 @@ impl ToneCurve {
     result[min] = self.eval(rgb[min]);
     result[mid] = result[min] + (result[max] - result[min]) * (rgb[mid] - rgb[min]) / (rgb[max] - rgb[min]);
     result
+  }
+
+  /// Apply the curve to an image: to the RGB values of an image with three
+  /// channels (see [`Self::apply_rgb`]), to each sample otherwise
+  pub fn apply_image<'a>(&self, image: impl Into<ImageViewMut<'a, f32>>) {
+    let mut image = image.into();
+    match image.as_array_slice_mut::<3>() {
+      Some(pixels) => pixels.par_iter_mut().for_each(|pixel| *pixel = self.apply_rgb(*pixel)),
+      None => image.as_mut_slice().par_iter_mut().for_each(|v| *v = self.eval(*v)),
+    }
   }
 }
 
