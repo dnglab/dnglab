@@ -4,7 +4,7 @@
 .SH NAME
 dnglab\-process\-raw
 .SH SYNOPSIS
-\fBdnglab\-process\-raw\fR [\fB\-\-remove\-dng\-opcodes\fR] [\fB\-\-artist\fR] [\fB\-\-keep\-mtime\fR] [\fB\-\-image\-index\fR] [\fB\-\-crop\fR] [\fB\-\-format\fR] [\fB\-\-jpeg\-quality\fR] [\fB\-f\fR|\fB\-\-override\fR] [\fB\-r\fR|\fB\-\-recursive\fR] [\fB\-h\fR|\fB\-\-help\fR] <\fIINPUT\fR> <\fIOUTPUT\fR> 
+\fBdnglab\-process\-raw\fR [\fB\-\-remove\-dng\-opcodes\fR] [\fB\-\-artist\fR] [\fB\-\-keep\-mtime\fR] [\fB\-\-image\-index\fR] [\fB\-\-crop\fR] [\fB\-\-format\fR] [\fB\-\-color\-space\fR] [\fB\-\-jpeg\-quality\fR] [\fB\-f\fR|\fB\-\-override\fR] [\fB\-r\fR|\fB\-\-recursive\fR] [\fB\-h\fR|\fB\-\-help\fR] <\fIINPUT\fR> <\fIOUTPUT\fR> 
 .SH DESCRIPTION
 .SH OPTIONS
 .TP
@@ -56,6 +56,21 @@ Output image format, defaults to the OUTPUT file extension or tif
 tif
 .IP \(bu 2
 jpeg
+.RE
+.TP
+\fB\-\-color\-space\fR \fI<space>\fR [default: srgb]
+Color space of the image
+.br
+
+.br
+\fIPossible values:\fR
+.RS 14
+.IP \(bu 2
+srgb
+.IP \(bu 2
+adobergb
+.IP \(bu 2
+prophoto
 .RE
 .TP
 \fB\-\-jpeg\-quality\fR \fI<quality>\fR [default: 94]

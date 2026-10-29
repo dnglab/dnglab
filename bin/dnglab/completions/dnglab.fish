@@ -78,6 +78,9 @@ activearea\t''
 none\t''"
 complete -c dnglab -n "__fish_dnglab_using_subcommand process-raw" -l format -d 'Output image format, defaults to the OUTPUT file extension or tif' -r -f -a "tif\t''
 jpeg\t''"
+complete -c dnglab -n "__fish_dnglab_using_subcommand process-raw" -l color-space -d 'Color space of the image' -r -f -a "srgb\t''
+adobergb\t''
+prophoto\t''"
 complete -c dnglab -n "__fish_dnglab_using_subcommand process-raw" -l jpeg-quality -d 'JPEG quality (1-100)' -r
 complete -c dnglab -n "__fish_dnglab_using_subcommand process-raw" -s d -l loglevel -d 'Log level' -r -f -a "error\t''
 warn\t''

@@ -783,7 +783,7 @@ _dnglab() {
             return 0
             ;;
         dnglab__subcmd__process__subcmd__raw)
-            opts="-f -r -d -v -h --remove-dng-opcodes --artist --keep-mtime --image-index --crop --format --jpeg-quality --override --recursive --loglevel --profile-path --config --help"
+            opts="-f -r -d -v -h --remove-dng-opcodes --artist --keep-mtime --image-index --crop --format --color-space --jpeg-quality --override --recursive --loglevel --profile-path --config --help"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
@@ -811,6 +811,10 @@ _dnglab() {
                     ;;
                 --format)
                     COMPREPLY=($(compgen -W "tif jpeg" -- "${cur}"))
+                    return 0
+                    ;;
+                --color-space)
+                    COMPREPLY=($(compgen -W "srgb adobergb prophoto" -- "${cur}"))
                     return 0
                     ;;
                 --jpeg-quality)

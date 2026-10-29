@@ -22,8 +22,9 @@ use crate::camera_profile::{CameraProfile, GainTableMap};
 use crate::imgop::{
   Rect,
   chromatic_adaption::bradford_adaption_matrix,
+  color::OutputSpace,
   matrix::{multiply, pseudo_inverse},
-  xyz::{Illuminant, SRGB_TO_XYZ_D65, XYZ_TO_PROFOTORGB_D50, XYZ_TO_SRGB_D65},
+  xyz::{Illuminant, XYZ_TO_PROFOTORGB_D50},
 };
 use crate::pixarray::ImageViewMut;
 
@@ -140,23 +141,33 @@ impl ProfileRender {
   }
 }
 
-/// Linear sRGB (D65) to linear ProPhoto RGB (D50)
-pub fn srgb_to_prophoto() -> [[f32; 3]; 3] {
+/// Linear RGB of `space` to linear ProPhoto RGB (D50)
+pub fn rgb_to_prophoto(space: OutputSpace) -> [[f32; 3]; 3] {
   multiply(
     &XYZ_TO_PROFOTORGB_D50,
-    &multiply(&bradford_adaption_matrix(&Illuminant::D65, &Illuminant::D50), &SRGB_TO_XYZ_D65),
+    &multiply(&bradford_adaption_matrix(&Illuminant::D65, &Illuminant::D50), &space.rgb_to_xyz()),
   )
 }
 
-/// Linear ProPhoto RGB (D50) to linear sRGB (D65)
-pub fn prophoto_to_srgb() -> [[f32; 3]; 3] {
+/// Linear ProPhoto RGB (D50) to linear RGB of `space`
+pub fn prophoto_to_rgb(space: OutputSpace) -> [[f32; 3]; 3] {
   multiply(
-    &XYZ_TO_SRGB_D65,
+    &space.xyz_to_rgb(),
     &multiply(
       &bradford_adaption_matrix(&Illuminant::D50, &Illuminant::D65),
       &pseudo_inverse(XYZ_TO_PROFOTORGB_D50),
     ),
   )
+}
+
+/// Linear sRGB (D65) to linear ProPhoto RGB (D50)
+pub fn srgb_to_prophoto() -> [[f32; 3]; 3] {
+  rgb_to_prophoto(OutputSpace::Srgb)
+}
+
+/// Linear ProPhoto RGB (D50) to linear sRGB (D65)
+pub fn prophoto_to_srgb() -> [[f32; 3]; 3] {
+  prophoto_to_rgb(OutputSpace::Srgb)
 }
 
 #[cfg(test)]

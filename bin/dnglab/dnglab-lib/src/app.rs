@@ -10,7 +10,7 @@ use clap::{
 };
 use log::debug;
 use rawler::dng::{ApplyDngOpcodes, CropMode, DngCompression, DngVersion, MAX_JXL_DISTANCE, opcodes::OpcodeSelector};
-use rawler::imgop::develop::ProcessedImageFormat;
+use rawler::imgop::{color::OutputSpace, develop::ProcessedImageFormat};
 
 use crate::makedng::{
   CalibrationIlluminantArgParser, ColorMatrixArgParser, DngColorimetricReference, InputSourceUsageMap, LinearizationTableArgParser, WhiteBalanceInput,
@@ -317,6 +317,12 @@ fn process_raw_command() -> Command {
       arg!(--"format" <format> "Output image format, defaults to the OUTPUT file extension or tif")
         .required(false)
         .value_parser(value_parser!(ProcessedImageFormat)),
+    )
+    .arg(
+      arg!(color_space: --"color-space" <space> "Color space of the image")
+        .required(false)
+        .value_parser(value_parser!(OutputSpace))
+        .default_value("srgb"),
     )
     .arg(
       arg!(jpeg_quality: --"jpeg-quality" <quality> "JPEG quality (1-100)")

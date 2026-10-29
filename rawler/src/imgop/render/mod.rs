@@ -19,7 +19,11 @@ use image::{DynamicImage, ImageBuffer};
 
 use crate::{
   RawImage,
-  imgop::{Dim2, Rect, color::OutputSpace, convert_from_f32_scaled_u16},
+  imgop::{
+    Dim2, Rect,
+    color::{OutputSpace, TransferFunction},
+    convert_from_f32_scaled_u16, icc,
+  },
   pixarray::{Color2D, ImageView, ImageViewMut, Pix2D},
 };
 
@@ -195,6 +199,10 @@ pub struct RenderedImage {
   pub width: usize,
   pub height: usize,
   pub channels: usize,
+  /// Color space of RGB data, `None` for camera values
+  pub color_space: Option<OutputSpace>,
+  /// Transfer function that encodes the values
+  pub transfer_function: TransferFunction,
 }
 
 impl RenderedImage {
@@ -216,6 +224,16 @@ impl RenderedImage {
     self.data.truncate(len);
     (self.width, self.height) = (area.d.w, area.d.h);
     Ok(())
+  }
+
+  /// ICC profile of the image data: of its color space, or of gray values for
+  /// an image with one channel. `None` for camera values.
+  pub fn icc_profile(&self) -> Option<Vec<u8>> {
+    match (self.color_space, self.channels) {
+      (Some(space), 3) => Some(icc::rgb_profile(space, self.transfer_function)),
+      (None, 1) => Some(icc::gray_profile(self.transfer_function)),
+      _ => None,
+    }
   }
 
   /// Image of 16 bit integers, values of 0.0 to 1.0 are scaled to the full range
@@ -247,6 +265,7 @@ impl From<Pix2D<f32>> for RenderedImage {
       width,
       height,
       channels: 1,
+      ..Default::default()
     }
   }
 }
@@ -259,6 +278,7 @@ impl<const N: usize> From<Color2D<f32, N>> for RenderedImage {
       width,
       height,
       channels: N,
+      ..Default::default()
     }
   }
 }
@@ -315,7 +335,7 @@ mod tests {
         Op::FujiRotate { .. } => "FujiRotate",
         Op::Gain(_) => "Gain",
         Op::ToneCurve(_) => "ToneCurve",
-        Op::CameraToRgb(..) => "CameraToRgb",
+        Op::CameraToRgb { .. } => "CameraToRgb",
         Op::CropDefault => "CropDefault",
         Op::CropActiveArea => "CropActiveArea",
         Op::TransferFunction(_) => "TransferFunction",
@@ -365,7 +385,7 @@ mod tests {
     assert_eq!(op_names(&plan), ["RescaleMosaic", "Demosaic", "List3", "CropDefault", "CameraToRgb"]);
     // OpcodeList3 keeps the data cropped to the ActiveArea, like the demosaic
     assert!(plan.ops.iter().any(|op| matches!(op, Op::Opcodes { crop_to_active_area: true, .. })));
-    let Some(Op::CameraToRgb(_, pixel_ops)) = plan.ops.last() else {
+    let Some(Op::CameraToRgb { ops: pixel_ops, .. }) = plan.ops.last() else {
       panic!("color map expected");
     };
     assert_eq!(pixel_ops.last(), Some(&PixelOp::TransferFunction(TransferFunction::Srgb)));
@@ -424,7 +444,10 @@ mod tests {
     };
     assert_eq!((&wb.coeffs[..3], wb.clip), (&[2.0, 1.0, 1.5][..], Some(1.0)));
     // The camera map applies no white balance then
-    let Some(Op::CameraToRgb(CameraMap::Three(map), _)) = before.ops.last() else {
+    let Some(Op::CameraToRgb {
+      map: CameraMap::Three(map), ..
+    }) = before.ops.last()
+    else {
       panic!("color map expected");
     };
     assert_eq!((map.wb, map.white), ([1.0; 3], 1.0));
@@ -442,7 +465,10 @@ mod tests {
     };
     let after = plan(&rawimage, &options)?;
     assert!(matches!(after.ops[0], Op::RescaleMosaic { white_balance: None, .. }));
-    let Some(Op::CameraToRgb(CameraMap::Three(map), _)) = after.ops.last() else {
+    let Some(Op::CameraToRgb {
+      map: CameraMap::Three(map), ..
+    }) = after.ops.last()
+    else {
       panic!("color map expected");
     };
     assert_eq!((map.wb, map.white), ([2.0, 1.0, 1.5], 1.0));
