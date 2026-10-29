@@ -26,7 +26,8 @@ impl PPGDemosaic {
 /// Source on Internet Archive:
 /// [](https://web.archive.org/web/20160923211135/https://sites.google.com/site/chklin/demosaic/)
 ///
-/// This is a simple algorithm but provides acceptable results.
+/// This is a simple algorithm but provides acceptable results. Like the color
+/// differences it interpolates, it works best on white balanced data.
 ///
 /// # Panics
 ///
@@ -250,11 +251,17 @@ fn interpolate_rb_at_non_green(img: &mut RgbF32, shifted: &CFA) {
 }
 
 /// PPG helper procedure to calculate hue transit
+///
+/// `v1` and `v3` of a color plane are interpolated at the position of `l2`,
+/// `l1` to `l3` are the green values. Unless green changes monotonically, the
+/// color difference to green is interpolated. Lin's description damps the
+/// green term by 1/4, the full color difference (1/2, like dcraw's PPG) keeps
+/// neutral edges of white balanced data neutral.
 #[inline(always)]
 fn hue_transit(l1: f32, l2: f32, l3: f32, v1: f32, v3: f32) -> f32 {
   if (l1 < l2 && l2 < l3) || (l1 > l2 && l2 > l3) {
     v1 + (v3 - v1) * (l2 - l1) / (l3 - l1)
   } else {
-    (v1 + v3) / 2.0 + (l2 * 2.0 - l1 - l3) / 4.0
+    (v1 + v3) / 2.0 + (l2 * 2.0 - l1 - l3) / 2.0
   }
 }
