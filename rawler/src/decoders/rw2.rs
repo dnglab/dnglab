@@ -144,8 +144,13 @@ impl<'a> Decoder for Rw2Decoder<'a> {
         let offset = fetch_tiff_tag!(raw, TiffCommonTag::PanaOffsets).force_usize(0);
         //let size = fetch_tiff_tag!(raw, TiffCommonTag::StripByteCounts).force_usize(0);
         log::debug!("PanaOffset: {}", offset);
-        let src = file.subview_until_eof_padded(offset as u64)?; // TODO add size and check all samples
-        Rw2Decoder::decode_panasonic(file, &src, width, height, split, raw_format, bps, self.tiff.root_ifd(), dummy)?
+        if raw_format == 8 {
+          // V8 reads its strips from the file by itself, so skip the copy of src
+          decode_panasonic_v8(file, width, height, bps, self.tiff.root_ifd(), dummy)?
+        } else {
+          let src = file.subview_until_eof_padded(offset as u64)?; // TODO add size and check all samples
+          Rw2Decoder::decode_panasonic(file, &src, width, height, split, raw_format, bps, self.tiff.root_ifd(), dummy)?
+        }
       } else {
         let raw = self
           .tiff
