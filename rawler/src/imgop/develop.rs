@@ -669,6 +669,42 @@ mod tests {
     Ok(())
   }
 
+  #[test]
+  fn develop_renders_clipped_highlights_white() -> std::result::Result<(), Box<dyn std::error::Error>> {
+    // White balance of a camera with a coefficient below 1.0
+    let wb = [1.0, 0.76, 1.05, f32::NAN];
+    let is_white = |image: &RenderedImage| rgb_pixels(image)[0].iter().all(|v| (v - 1.0).abs() < 1e-5);
+    // Clipped mosaic data, white balanced before the demosaic
+    let mut camera = Camera::new();
+    camera.cfa = CFA::new("RGGB");
+    let photometric = RawPhotometricInterpretation::Cfa(CFAConfig::new_from_camera(&camera));
+    let mut mosaic = RawImage::new(
+      camera,
+      PixU16::new_with(vec![4095; 16 * 16], 16, 16),
+      1,
+      wb,
+      photometric,
+      Some(BlackLevel::new(&[0_u32, 0, 0, 0], 2, 2, 1)),
+      Some(WhiteLevel::new_bits(12, 1)),
+      false,
+    );
+    mosaic.camera_profiles = d65_rawimage().camera_profiles;
+    let image = RawDevelop::default().develop_image(mosaic)?;
+    assert!(is_white(&image), "{:?}", rgb_pixels(&image)[0]);
+    // A clipped and a gray pixel of LinearRaw data, white balanced by the color map
+    let mut rawimage = d65_rawimage();
+    rawimage.width = 2;
+    rawimage.data = RawImageData::Float(vec![1.0, 1.0, 1.0, 0.2, 0.15, 0.21]);
+    rawimage.wb_coeffs = wb;
+    let image = RawDevelop::default().develop_image(rawimage.clone())?;
+    assert!(is_white(&image), "{:?}", rgb_pixels(&image)[0]);
+    // The scale of the coefficients has no effect
+    rawimage.wb_coeffs = wb.map(|c| c * 1.7);
+    let scaled = RawDevelop::default().develop_image(rawimage)?.data;
+    assert!(image.data.iter().zip(&scaled).all(|(a, b)| (a - b).abs() < 1e-5), "{:?}", scaled);
+    Ok(())
+  }
+
   /// Output of the development of synthetic images, pinned to detect unintended
   /// changes. Run with `RAWLER_UPDATE_GOLDEN=1` and `--nocapture` to print the
   /// current values instead of comparing them.

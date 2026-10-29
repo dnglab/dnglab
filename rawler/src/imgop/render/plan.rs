@@ -116,12 +116,16 @@ pub fn plan(rawimage: &RawImage, options: &RenderOptions) -> crate::Result<Plan>
   let demosaic = mosaic.map(|config| demosaic_algorithm(config, quality)).transpose()?;
   let channels = demosaic.map_or(rawimage.cpp, |(_, planes)| planes);
 
-  // As shot white balance, some old images may not provide WB coeffs. White
-  // balanced values are limited to the camera white, the smallest coefficient.
+  // As shot white balance, some old images may not provide WB coeffs. Like
+  // the camera neutral of DNG readers, the coefficients are normalized to a
+  // smallest coefficient of 1.0. White balanced values are limited to 1.0, the
+  // camera white, so clipped highlights are white.
   let planes = channels.min(4);
   let valid = rawimage.wb_coeffs[..planes].iter().all(|c| c.is_finite() && *c > 0.0);
-  let wb = (steps.contains(Step::WhiteBalance) && valid).then_some(rawimage.wb_coeffs);
-  let white = wb.map_or(1.0, |wb| wb[..planes].iter().copied().fold(f32::INFINITY, f32::min));
+  let wb = (steps.contains(Step::WhiteBalance) && valid).then(|| {
+    let smallest = rawimage.wb_coeffs[..planes].iter().copied().fold(f32::INFINITY, f32::min);
+    rawimage.wb_coeffs.map(|c| c / smallest)
+  });
   // CFA data is white balanced before it is demosaiced, see WhiteBalancePlacement.
   // LinearRaw data is not limited, its white balance is divided out again.
   let mut mosaic_wb = wb
@@ -129,7 +133,7 @@ pub fn plan(rawimage: &RawImage, options: &RenderOptions) -> crate::Result<Plan>
     .filter(|_| linear_raw || steps.contains(Step::Rescale))
     .map(|coeffs| WhiteBalance {
       coeffs,
-      clip: (!linear_raw).then_some(white),
+      clip: (!linear_raw).then_some(1.0),
     });
   let wb_before_demosaic = mosaic_wb.is_some();
 
@@ -252,11 +256,11 @@ pub fn plan(rawimage: &RawImage, options: &RenderOptions) -> crate::Result<Plan>
     let render = ProfileRender::new(slot.map(|slot| (slot.profile, slot.slot)), gain_table_map, exposure);
     let (map, mut pixel_ops) = match channels {
       3 => {
-        let (map, pixel_ops) = camera_map::<3>(rawimage, neutral, wb_before_demosaic, white, gain, render, options.color_space);
+        let (map, pixel_ops) = camera_map::<3>(rawimage, neutral, wb_before_demosaic, gain, render, options.color_space);
         (CameraMap::Three(map), pixel_ops)
       }
       _ => {
-        let (map, pixel_ops) = camera_map::<4>(rawimage, neutral, wb_before_demosaic, white, gain, render, options.color_space);
+        let (map, pixel_ops) = camera_map::<4>(rawimage, neutral, wb_before_demosaic, gain, render, options.color_space);
         (CameraMap::Four(map), pixel_ops)
       }
     };
@@ -273,7 +277,7 @@ pub fn plan(rawimage: &RawImage, options: &RenderOptions) -> crate::Result<Plan>
     });
   } else {
     if let Some(coeffs) = wb.filter(|_| !wb_before_demosaic && channels > 1) {
-      ops.push(Op::WhiteBalance(WhiteBalance { coeffs, clip: Some(white) }));
+      ops.push(Op::WhiteBalance(WhiteBalance { coeffs, clip: Some(1.0) }));
     }
     if exposure > 0.0 {
       ops.push(Op::Gain(gain));
@@ -309,17 +313,17 @@ fn demosaic_algorithm(config: &CFAConfig, quality: DemosaicQuality) -> crate::Re
 /// Map of camera values to `output` and the pixel operations that follow it
 ///
 /// `wb` are the white balance coefficients, the reciprocal of the camera
-/// neutral. The map applies them, unless the values are `balanced` already,
-/// and the exposure `gain`. Like a DNG reader, white balanced camera values
-/// are clipped at the camera `white` (scaled by the gain), so clipped
-/// highlights stay neutral. The RGB values are not clipped, they can be above
-/// 1.0 or negative for colors outside of the output space. With rendering
-/// tables, the camera values are mapped to linear ProPhoto RGB for the tables.
+/// neutral, with a smallest coefficient of 1.0. The map applies them, unless
+/// the values are `balanced` already, and the exposure `gain`. Like a DNG
+/// reader, white balanced camera values are clipped at the camera white, 1.0
+/// scaled by the gain, so clipped highlights stay neutral. The RGB values are
+/// not clipped, they can be above 1.0 or negative for colors outside of the
+/// output space. With rendering tables, the camera values are mapped to linear
+/// ProPhoto RGB for the tables.
 fn camera_map<const N: usize>(
   rawimage: &RawImage,
   wb: [f32; 4],
   balanced: bool,
-  white: f32,
   gain: f32,
   render: Option<ProfileRender>,
   output: OutputSpace,
@@ -328,17 +332,12 @@ fn camera_map<const N: usize>(
   let cam2rgb = camera_to_output(rawimage.best_calibration_slot().as_ref(), rawimage.analog_balance.as_deref(), &neutral, output);
   log::debug!("wb: {:?}, camera to {:?}: {:?}", neutral, output, cam2rgb);
   let wb = if balanced { [gain; N] } else { neutral.map(|c| c * gain) };
-  let white = gain * white;
-  match render {
-    Some(render) => {
-      let (to_prophoto, from_prophoto) = (rgb_to_prophoto(output), prophoto_to_rgb(output));
-      let map = CameraToRgb {
-        wb,
-        white,
-        matrix: multiply(&to_prophoto, &cam2rgb),
-      };
-      (map, vec![PixelOp::Profile(render), PixelOp::Matrix(from_prophoto)])
-    }
-    None => (CameraToRgb { wb, white, matrix: cam2rgb }, Vec::new()),
-  }
+  let (matrix, pixel_ops) = match render {
+    Some(render) => (
+      multiply(&rgb_to_prophoto(output), &cam2rgb),
+      vec![PixelOp::Profile(render), PixelOp::Matrix(prophoto_to_rgb(output))],
+    ),
+    None => (cam2rgb, Vec::new()),
+  };
+  (CameraToRgb { wb, white: gain, matrix }, pixel_ops)
 }
