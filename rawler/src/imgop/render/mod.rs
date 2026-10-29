@@ -393,6 +393,26 @@ mod tests {
   }
 
   #[test]
+  fn plan_clips_encoded_values_only() -> crate::Result<()> {
+    let pixel_ops = |options: &RenderOptions| -> crate::Result<Vec<PixelOp>> {
+      match plan(&rggb_rawimage(), options)?.ops.pop() {
+        Some(Op::CameraToRgb { ops, .. }) => Ok(ops),
+        _ => panic!("color map expected"),
+      }
+    };
+    // Values are clipped before they are encoded
+    let encoded = pixel_ops(&RenderOptions::default())?;
+    assert_eq!(encoded, [PixelOp::Clip, PixelOp::TransferFunction(TransferFunction::Srgb)]);
+    // Linear values keep highlights above white and colors outside of the output space
+    let linear = RenderOptions {
+      steps: StepSet::all().without(ProcessingStep::TransferFunction),
+      ..Default::default()
+    };
+    assert!(pixel_ops(&linear)?.is_empty());
+    Ok(())
+  }
+
+  #[test]
   fn plan_crops_in_demosaic() -> crate::Result<()> {
     // Without OpcodeList3, only the DefaultCrop is demosaiced
     let cropped = plan(&rggb_rawimage(), &RenderOptions::default())?;
