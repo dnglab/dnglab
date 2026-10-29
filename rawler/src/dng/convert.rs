@@ -21,18 +21,12 @@ use crate::{
   },
   formats::tiff::Entry,
   imgop::{
-    Point, Rect,
     develop::RawDevelop,
-    fuji_rotate::fuji_normalize_rotation,
     matrix::{multiply, transform_1d, transform_2d},
-    raw::{WhiteBalance, map_4ch_to_3ch, white_balance, white_balance_mosaic},
-    sensor::{
-      Demosaic, SensorType,
-      bayer::{bilinear::Bilinear4Channel, ppg::PPGDemosaic},
-      xtrans::markesteijn::XTransMarkesteijnDemosaic,
-    },
+    raw::map_4ch_to_3ch,
+    render::{ProcessingStep, RenderOptions, StepSet, render_linear_raw},
   },
-  pixarray::{Color2D, ImageViewMut, PixF32},
+  pixarray::Color2D,
   rawimage::BlackLevel,
   rawsource::RawSource,
   tags::{DngTag, ExifTag, TiffCommonTag},
@@ -379,7 +373,7 @@ where
         if fuji_rotation {
           log::debug!("Raw image requires fuji_rotation before writing to DNG");
         }
-        demosaic_to_linear_raw(&mut rawimage, fuji_rotation)?;
+        rawimage = demosaic_to_linear_raw(rawimage, fuji_rotation)?;
       }
       _ => {}
     }
@@ -575,73 +569,20 @@ fn processing_plan(present: [bool; 3], needs: [bool; 3], apply: ApplyDngOpcodes,
   (data_stage, applied)
 }
 
-/// Demosaic scaled CFA image data into LinearRaw data, cropped to the active area.
-/// Other image data is left unchanged, as stage 3 equals stage 2 for it.
+/// Demosaic scaled CFA image data into LinearRaw data, cropped to the active area,
+/// see [`render_linear_raw`]. Other image data is left unchanged, as stage 3 equals
+/// stage 2 for it.
 ///
 /// Three-color sensors result in three planes, four-color sensors in four planes.
-///
-/// The CFA data is demosaiced white balanced, which works better for algorithms
-/// that interpolate color differences. The white balance is divided out again,
-/// as DNG readers apply it, and the values are not clipped, so the highlights
-/// are kept for the reader.
-fn demosaic_to_linear_raw(rawimage: &mut RawImage, fuji_rotation: bool) -> crate::Result<()> {
-  if !fuji_rotation && !matches!(rawimage.photometric, RawPhotometricInterpretation::Cfa(_)) {
-    return Ok(());
+/// The CFA data is demosaiced white balanced, the white balance is divided out
+/// again, as DNG readers apply it.
+fn demosaic_to_linear_raw(rawimage: RawImage, fuji_rotation: bool) -> crate::Result<RawImage> {
+  use ProcessingStep::*;
+  let mut steps: StepSet = [Demosaic, CropActiveArea, WhiteBalance].into_iter().collect();
+  if fuji_rotation {
+    steps.insert(FujiRotate);
   }
-  let mut pixels = PixF32::new_with(rawimage.data.as_f32().into_owned(), rawimage.width, rawimage.height);
-  let roi = rawimage.active_area.unwrap_or(pixels.rect());
-  let cfa = &rawimage.camera.cfa;
-  let colors = &rawimage.camera.plane_color;
-  let coeffs = rawimage.wb_coeffs;
-  let wb = coeffs[..colors.plane_count().min(4)]
-    .iter()
-    .all(|c| c.is_finite() && *c > 0.0)
-    .then_some(WhiteBalance { coeffs, clip: None });
-  if let Some(wb) = &wb {
-    white_balance_mosaic(pixels.view_mut(), cfa, colors, wb)?;
-  }
-  let (width, height, cpp, mut data) = match SensorType::from_cfa(cfa) {
-    SensorType::Bayer if cfa.is_rgb() => {
-      let mut rgb = PPGDemosaic::new().demosaic(pixels.view(), cfa, colors, roi);
-      if fuji_rotation {
-        let fuji_rotation_width = rawimage.fuji_rotation_width.expect("fuji_rotate: no rotation width found");
-        let extra_rotate = rawimage.camera.find_hint("fuji_rotate_90cw");
-        rgb = fuji_normalize_rotation(&rgb, fuji_rotation_width, extra_rotate)?;
-      }
-      (rgb.width, rgb.height, 3, rgb.into_flatten())
-    }
-    SensorType::Bayer if cfa.unique_colors() == 4 => {
-      let image = Bilinear4Channel::new().demosaic(pixels.view(), cfa, colors, roi);
-      (image.width, image.height, 4, image.into_flatten())
-    }
-    SensorType::Xtrans if cfa.is_rgb() => {
-      let rgb = XTransMarkesteijnDemosaic::new_pass_3().demosaic(pixels.view(), cfa, colors, roi);
-      (rgb.width, rgb.height, 3, rgb.into_flatten())
-    }
-    _ => return Err(RawlerError::DecoderFailed(format!("Demosaic of CFA pattern '{}' is not supported", cfa))),
-  };
-  if let Some(wb) = wb {
-    let inverse = WhiteBalance {
-      coeffs: wb.coeffs.map(|c| 1.0 / c),
-      clip: None,
-    };
-    white_balance(ImageViewMut::new(&mut data, width, height, cpp), &inverse)?;
-  }
-  if !fuji_rotation {
-    // Crop area is relative to the full image, which is now cropped to the active area
-    rawimage.crop_area = rawimage
-      .crop_area
-      .map(|crop| Rect::new(Point::new(crop.p.x.saturating_sub(roi.p.x), crop.p.y.saturating_sub(roi.p.y)), crop.d));
-  }
-  rawimage.width = width;
-  rawimage.height = height;
-  rawimage.active_area = None;
-  rawimage.cpp = cpp;
-  rawimage.blacklevel = BlackLevel::zero(1, 1, cpp);
-  rawimage.whitelevel = WhiteLevel::new(vec![1; cpp]); // Already scaled up to 0.0 .. 1.0
-  rawimage.photometric = RawPhotometricInterpretation::LinearRaw;
-  rawimage.data = RawImageData::Float(data);
-  Ok(())
+  render_linear_raw(rawimage, &RenderOptions { steps, ..Default::default() })
 }
 
 /// Reduce demosaiced four-color image data to three color planes.
@@ -805,7 +746,7 @@ mod tests {
       );
       rawimage.data = RawImageData::Float(vec![0.5; 24 * 24]);
 
-      demosaic_to_linear_raw(&mut rawimage, false)?;
+      let rawimage = demosaic_to_linear_raw(rawimage, false)?;
 
       assert_eq!(rawimage.cpp, cpp, "{}", pattern);
       assert_eq!(rawimage.photometric, RawPhotometricInterpretation::LinearRaw);
@@ -865,8 +806,8 @@ mod tests {
       (XTRANS, "RGB", [2.0, 1.0, 1.5, f32::NAN]),
       ("CYGM", "CYGM", [1.5, 1.2, 1.0, 1.4]),
     ] {
-      let mut rawimage = float_cfa_image(pattern, colors, wb, |_, _, plane| 0.4 / wb[plane]);
-      demosaic_to_linear_raw(&mut rawimage, false)?;
+      let rawimage = float_cfa_image(pattern, colors, wb, |_, _, plane| 0.4 / wb[plane]);
+      let rawimage = demosaic_to_linear_raw(rawimage, false)?;
       let cpp = rawimage.cpp;
       let center = (12 * 24 + 12) * cpp;
       let pixel = &rawimage.data.as_f32()[center..center + cpp];
@@ -877,8 +818,8 @@ mod tests {
     let wb = [2.0, 1.0, 1.5, f32::NAN];
     let gray = |x: usize| if x < 12 { 0.45 } else { 0.1 };
     let error = |wb_coeffs: [f32; 4]| -> crate::Result<f32> {
-      let mut rawimage = float_cfa_image("RGGB", "RGB", wb_coeffs, |x, _, plane| gray(x) / wb[plane]);
-      demosaic_to_linear_raw(&mut rawimage, false)?;
+      let rawimage = float_cfa_image("RGGB", "RGB", wb_coeffs, |x, _, plane| gray(x) / wb[plane]);
+      let rawimage = demosaic_to_linear_raw(rawimage, false)?;
       let data = rawimage.data.as_f32();
       Ok(
         (4..20)

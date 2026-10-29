@@ -12,7 +12,7 @@
 mod exec;
 mod plan;
 
-pub use exec::execute;
+pub use exec::{execute, execute_raw};
 pub use plan::{Plan, plan};
 
 use image::{DynamicImage, ImageBuffer};
@@ -86,6 +86,12 @@ impl StepSet {
     self.0 &= !Self::bit(step);
   }
 
+  /// The set with `step`
+  pub fn with(mut self, step: ProcessingStep) -> Self {
+    self.insert(step);
+    self
+  }
+
   /// The set without `step`
   pub fn without(mut self, step: ProcessingStep) -> Self {
     self.remove(step);
@@ -126,13 +132,40 @@ pub enum WhiteBalancePlacement {
   AfterDemosaic,
 }
 
+/// Result of the rendering
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum RenderTarget {
+  /// Image of the processing steps
+  #[default]
+  Image,
+  /// LinearRaw data of the stage 3 image, like in a DNG file: CFA data is
+  /// demosaiced (cropped to the ActiveArea with the CropActiveArea step), the
+  /// values are neither white balanced nor clipped. OpcodeList3, the color
+  /// operations and the DefaultCrop are not applied.
+  LinearRaw,
+}
+
+/// Quality of the demosaic
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum DemosaicQuality {
+  /// PPG for Bayer, Markesteijn (3 passes) for X-Trans data
+  #[default]
+  Quality,
+  /// PPG for Bayer, bilinear interpolation for X-Trans data
+  Fast,
+}
+
 /// Options of the rendering
 #[derive(Clone, Debug, PartialEq)]
 pub struct RenderOptions {
+  /// Result of the rendering
+  pub target: RenderTarget,
   /// Processing steps to apply
   pub steps: StepSet,
   /// Position of the WhiteBalance step
   pub white_balance: WhiteBalancePlacement,
+  /// Quality of the Demosaic step
+  pub demosaic: DemosaicQuality,
   /// Color space of the output: the Calibrate step maps the camera values to
   /// it, the TransferFunction step encodes the values by its transfer function
   pub color_space: OutputSpace,
@@ -141,8 +174,10 @@ pub struct RenderOptions {
 impl Default for RenderOptions {
   fn default() -> Self {
     Self {
+      target: RenderTarget::default(),
       steps: StepSet::all(),
       white_balance: WhiteBalancePlacement::default(),
+      demosaic: DemosaicQuality::default(),
       color_space: OutputSpace::default(),
     }
   }
@@ -229,10 +264,24 @@ pub fn render(rawimage: RawImage, options: &RenderOptions) -> crate::Result<Rend
   execute(rawimage, &plan)
 }
 
+/// LinearRaw data of `rawimage` at stage 3, with its metadata, see
+/// [`RenderTarget::LinearRaw`] and [`execute_raw`]
+///
+/// Without the Rescale step, the image data must already be mapped to linear
+/// reference values. OpcodeList3 is kept in the raw image.
+pub fn render_linear_raw(rawimage: RawImage, options: &RenderOptions) -> crate::Result<RawImage> {
+  let options = RenderOptions {
+    target: RenderTarget::LinearRaw,
+    ..options.clone()
+  };
+  let plan = plan(&rawimage, &options)?;
+  execute_raw(rawimage, &plan)
+}
+
 #[cfg(test)]
 mod tests {
   use super::{
-    plan::{CameraMap, Op},
+    plan::{CameraMap, DemosaicAlgorithm, Op},
     *,
   };
   use crate::imgop::color::{PixelOp, TransferFunction};
@@ -403,6 +452,68 @@ mod tests {
       op_names(&plan(&linear_raw, &options)?),
       ["Rescale", "CropDefault", "WhiteBalance", "TransferFunction"]
     );
+    Ok(())
+  }
+
+  #[test]
+  fn plan_for_linear_raw() -> crate::Result<()> {
+    // LinearRaw data of scaled CFA data: white balanced for the demosaic only,
+    // without limit, and OpcodeList3 is kept
+    let mut rawimage = rggb_rawimage();
+    rawimage.dng_opcodes_3 = Some(OpcodeList::new(Vec::new()));
+    let options = RenderOptions {
+      target: RenderTarget::LinearRaw,
+      steps: [ProcessingStep::Demosaic, ProcessingStep::CropActiveArea, ProcessingStep::WhiteBalance]
+        .into_iter()
+        .collect(),
+      ..Default::default()
+    };
+    let linear = plan(&rawimage, &options)?;
+    assert_eq!(op_names(&linear), ["WhiteBalanceMosaic", "Demosaic", "WhiteBalance"]);
+    let (Op::WhiteBalanceMosaic { white_balance: wb, .. }, Op::WhiteBalance(inverse)) = (&linear.ops[0], &linear.ops[2]) else {
+      panic!("white balance expected");
+    };
+    assert_eq!((&wb.coeffs[..3], wb.clip), (&[2.0, 1.0, 1.5][..], None));
+    assert_eq!((&inverse.coeffs[..3], inverse.clip), (&[0.5, 1.0, 1.0 / 1.5][..], None));
+    // With the Rescale step, the white balance is part of the rescale
+    let options = RenderOptions {
+      steps: options.steps.with(ProcessingStep::Rescale),
+      ..options
+    };
+    assert_eq!(op_names(&plan(&rawimage, &options)?), ["RescaleMosaic", "Demosaic", "WhiteBalance"]);
+    Ok(())
+  }
+
+  #[test]
+  fn plan_demosaic_quality() -> crate::Result<()> {
+    let mut camera = Camera::new();
+    camera.cfa = CFA::new("GGRGGBGGBGGRBRGRBGGGBGGRGGRGGBRBGBRG");
+    let photometric = RawPhotometricInterpretation::Cfa(CFAConfig::new_from_camera(&camera));
+    let rawimage = RawImage::new(
+      camera,
+      PixU16::new_with(vec![1000; 12 * 12], 12, 12),
+      1,
+      [2.0, 1.0, 1.5, f32::NAN],
+      photometric,
+      Some(BlackLevel::zero(2, 2, 1)),
+      Some(WhiteLevel::new_bits(12, 1)),
+      false,
+    );
+    for (demosaic, algorithm) in [
+      (DemosaicQuality::Quality, DemosaicAlgorithm::Markesteijn),
+      (DemosaicQuality::Fast, DemosaicAlgorithm::XTransBilinear),
+    ] {
+      let options = RenderOptions {
+        demosaic,
+        ..Default::default()
+      };
+      let ops = plan(&rawimage, &options)?.ops;
+      assert!(
+        ops.iter().any(|op| matches!(op, Op::Demosaic { algorithm: a, .. } if *a == algorithm)),
+        "{:?}",
+        demosaic
+      );
+    }
     Ok(())
   }
 

@@ -695,8 +695,22 @@ impl RawImage {
     self.dng_tags.insert(tag, value.into());
   }
 
+  /// Copy of the image with LinearRaw data at stage 3, see
+  /// [`render_linear_raw`](crate::imgop::render::render_linear_raw)
+  ///
+  /// OpcodeList1 and OpcodeList2 are applied, the image data is mapped to
+  /// linear reference values and CFA data is demosaiced, cropped to the
+  /// ActiveArea and not white balanced. OpcodeList3 is kept for the DNG reader.
   pub fn linearize(&self) -> Result<Self> {
-    todo!()
+    use crate::imgop::render::{ProcessingStep as Step, RenderOptions, render_linear_raw};
+
+    let options = RenderOptions {
+      steps: [Step::Rescale, Step::Demosaic, Step::CropActiveArea, Step::FujiRotate, Step::WhiteBalance]
+        .into_iter()
+        .collect(),
+      ..Default::default()
+    };
+    render_linear_raw(self.clone(), &options)
   }
 
   /// Returns the CFA pattern after the crop has been applied (and thus the pattern
@@ -813,6 +827,41 @@ impl RawImage {
 #[cfg(test)]
 mod tests {
   use super::*;
+
+  #[test]
+  fn linearize_cfa_image() -> Result<()> {
+    let mut camera = Camera::new();
+    camera.cfa = CFA::new("RGGB");
+    let photometric = RawPhotometricInterpretation::Cfa(CFAConfig::new_from_camera(&camera));
+    let mut rawimage = RawImage::new(
+      camera,
+      PixU16::new_with(vec![2048; 16 * 16], 16, 16),
+      1,
+      [2.0, 1.0, 1.5, f32::NAN],
+      photometric,
+      Some(BlackLevel::new(&[0_u32; 4], 2, 2, 1)),
+      Some(WhiteLevel::new_bits(12, 1)),
+      false,
+    );
+    rawimage.active_area = Some(Rect::new(Point::new(2, 2), Dim2::new(12, 10)));
+    rawimage.crop_area = Some(Rect::new(Point::new(4, 4), Dim2::new(8, 6)));
+    rawimage.dng_opcodes_3 = Some(OpcodeList::new(Vec::new()));
+
+    let linear = rawimage.linearize()?;
+    assert_eq!((linear.width, linear.height, linear.cpp), (12, 10, 3));
+    assert_eq!(linear.photometric, RawPhotometricInterpretation::LinearRaw);
+    assert_eq!((linear.blacklevel, linear.whitelevel.0.clone()), (BlackLevel::zero(1, 1, 3), vec![1; 3]));
+    // The image data is the ActiveArea, the DefaultCrop is relative to it
+    assert_eq!(
+      (linear.active_area, linear.crop_area),
+      (None, Some(Rect::new(Point::new(2, 2), Dim2::new(8, 6))))
+    );
+    assert!(linear.dng_opcodes_3.is_some());
+    // The white balance of the demosaic is divided out again
+    let expected = 2048.0 / 4095.0;
+    assert!(linear.data.as_f32().iter().all(|v| (v - expected).abs() < 1e-5));
+    Ok(())
+  }
 
   /// Image with camera profiles of the given names, group names and HDR flags
   fn image_with_profiles(profiles: &[(&str, Option<&str>, bool)]) -> RawImage {
