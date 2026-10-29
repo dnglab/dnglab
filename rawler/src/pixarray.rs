@@ -537,11 +537,12 @@ where
   }
 
   pub fn flatten(&self) -> Vec<T> {
-    self.data.iter().flatten().copied().collect::<Vec<T>>()
+    self.data.as_flattened().to_vec()
   }
 
+  /// Samples of all pixels, without copying the data
   pub fn into_flatten(self) -> Vec<T> {
-    self.data.into_iter().flatten().collect::<Vec<T>>()
+    self.data.into_flattened()
   }
 
   pub fn data_ptr(&self) -> Color2DPtr<T, N> {
@@ -670,6 +671,268 @@ where
       height: 0,
       data: Default::default(),
     }
+  }
+}
+
+impl<T, const N: usize> Color2D<T, N> {
+  /// Borrowed view of the pixels with N channels
+  pub fn view(&self) -> ImageView<'_, T> {
+    self.into()
+  }
+
+  /// Borrowed mutable view of the pixels with N channels
+  pub fn view_mut(&mut self) -> ImageViewMut<'_, T> {
+    self.into()
+  }
+}
+
+impl<T: SubPixel> Pix2D<T> {
+  /// Borrowed view of the pixels with one channel
+  pub fn view(&self) -> ImageView<'_, T> {
+    self.into()
+  }
+
+  /// Borrowed mutable view of the pixels with one channel
+  pub fn view_mut(&mut self) -> ImageViewMut<'_, T> {
+    self.into()
+  }
+}
+
+impl<T: SubPixel> From<Color2D<T, 1>> for Pix2D<T> {
+  fn from(pixels: Color2D<T, 1>) -> Self {
+    Self::new_with(pixels.data.into_flattened(), pixels.width, pixels.height)
+  }
+}
+
+/// Image data of `width * height` pixels with `channels` interleaved samples,
+/// borrowed from a buffer
+///
+/// The samples are available as flat slice ([`Self::as_slice`]) or as slice of
+/// pixel arrays ([`Self::as_array_slice`]), both refer to the same memory. The
+/// number of channels is checked once when the array slice is created, so
+/// loops over it are compiled for a fixed number of channels.
+pub struct ImageView<'a, T> {
+  data: &'a [T],
+  width: usize,
+  height: usize,
+  channels: usize,
+}
+
+impl<'a, T> ImageView<'a, T> {
+  /// View of `data`, which holds `width * height` pixels of `channels` samples
+  ///
+  /// # Panics
+  /// Panics if the length of `data` doesn't match the dimensions.
+  pub fn new(data: &'a [T], width: usize, height: usize, channels: usize) -> Self {
+    assert_eq!(
+      data.len(),
+      width * height * channels,
+      "Image data doesn't match {}x{} pixels with {} channels",
+      width,
+      height,
+      channels
+    );
+    Self { data, width, height, channels }
+  }
+
+  /// View of `width * height` pixels with N channels
+  pub fn from_array_slice<const N: usize>(data: &'a [[T; N]], width: usize, height: usize) -> Self {
+    Self::new(data.as_flattened(), width, height, N)
+  }
+
+  /// Pixels as arrays of N samples, `None` if the image has not N channels
+  pub fn as_array_slice<const N: usize>(&self) -> Option<&'a [[T; N]]> {
+    (N == self.channels).then(|| self.data.as_chunks::<N>().0)
+  }
+
+  /// All samples
+  pub fn as_slice(&self) -> &'a [T] {
+    self.data
+  }
+
+  pub fn width(&self) -> usize {
+    self.width
+  }
+
+  pub fn height(&self) -> usize {
+    self.height
+  }
+
+  pub fn channels(&self) -> usize {
+    self.channels
+  }
+
+  pub fn dim(&self) -> Dim2 {
+    Dim2::new(self.width, self.height)
+  }
+
+  pub fn rect(&self) -> Rect {
+    Rect::new(Point::default(), self.dim())
+  }
+
+  /// Rows of `width * channels` samples
+  pub fn rows(&self) -> std::slice::ChunksExact<'a, T> {
+    self.data.chunks_exact((self.width * self.channels).max(1))
+  }
+
+  /// Copy of the samples of the pixels in `area`
+  ///
+  /// # Panics
+  /// Panics if `area` is not inside of the image.
+  pub fn copy_area(&self, area: Rect) -> Vec<T>
+  where
+    T: Copy,
+  {
+    assert!(
+      area.p.x + area.d.w <= self.width && area.p.y + area.d.h <= self.height,
+      "{:?} is outside of {:?}",
+      area,
+      self
+    );
+    let (start, end) = (area.p.x * self.channels, (area.p.x + area.d.w) * self.channels);
+    self.rows().skip(area.p.y).take(area.d.h).flat_map(|row| &row[start..end]).copied().collect()
+  }
+}
+
+impl<T> Clone for ImageView<'_, T> {
+  fn clone(&self) -> Self {
+    *self
+  }
+}
+
+impl<T> Copy for ImageView<'_, T> {}
+
+impl<T> std::fmt::Debug for ImageView<'_, T> {
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    write!(f, "ImageView({}x{}, {} channels)", self.width, self.height, self.channels)
+  }
+}
+
+/// Mutable image data of `width * height` pixels with `channels` interleaved
+/// samples, borrowed from a buffer, see [`ImageView`]
+pub struct ImageViewMut<'a, T> {
+  data: &'a mut [T],
+  width: usize,
+  height: usize,
+  channels: usize,
+}
+
+impl<'a, T> ImageViewMut<'a, T> {
+  /// View of `data`, which holds `width * height` pixels of `channels` samples
+  ///
+  /// # Panics
+  /// Panics if the length of `data` doesn't match the dimensions.
+  pub fn new(data: &'a mut [T], width: usize, height: usize, channels: usize) -> Self {
+    assert_eq!(
+      data.len(),
+      width * height * channels,
+      "Image data doesn't match {}x{} pixels with {} channels",
+      width,
+      height,
+      channels
+    );
+    Self { data, width, height, channels }
+  }
+
+  /// View of `width * height` pixels with N channels
+  pub fn from_array_slice<const N: usize>(data: &'a mut [[T; N]], width: usize, height: usize) -> Self {
+    Self::new(data.as_flattened_mut(), width, height, N)
+  }
+
+  /// Pixels as arrays of N samples, `None` if the image has not N channels
+  pub fn as_array_slice<const N: usize>(&self) -> Option<&[[T; N]]> {
+    (N == self.channels).then(|| self.data.as_chunks::<N>().0)
+  }
+
+  /// Mutable pixels as arrays of N samples, `None` if the image has not N channels
+  pub fn as_array_slice_mut<const N: usize>(&mut self) -> Option<&mut [[T; N]]> {
+    (N == self.channels).then(|| self.data.as_chunks_mut::<N>().0)
+  }
+
+  /// All samples
+  pub fn as_slice(&self) -> &[T] {
+    self.data
+  }
+
+  /// All samples, mutable
+  pub fn as_mut_slice(&mut self) -> &mut [T] {
+    self.data
+  }
+
+  /// Immutable view of the same data
+  pub fn as_view(&self) -> ImageView<'_, T> {
+    ImageView::new(self.data, self.width, self.height, self.channels)
+  }
+
+  /// Shorter-lived mutable view, to pass the view on without giving it away
+  pub fn reborrow(&mut self) -> ImageViewMut<'_, T> {
+    ImageViewMut::new(self.data, self.width, self.height, self.channels)
+  }
+
+  pub fn width(&self) -> usize {
+    self.width
+  }
+
+  pub fn height(&self) -> usize {
+    self.height
+  }
+
+  pub fn channels(&self) -> usize {
+    self.channels
+  }
+
+  pub fn dim(&self) -> Dim2 {
+    Dim2::new(self.width, self.height)
+  }
+
+  pub fn rect(&self) -> Rect {
+    Rect::new(Point::default(), self.dim())
+  }
+
+  /// Rows of `width * channels` samples
+  pub fn rows(&self) -> std::slice::ChunksExact<'_, T> {
+    self.data.chunks_exact((self.width * self.channels).max(1))
+  }
+
+  /// Mutable rows of `width * channels` samples
+  pub fn rows_mut(&mut self) -> std::slice::ChunksExactMut<'_, T> {
+    self.data.chunks_exact_mut((self.width * self.channels).max(1))
+  }
+}
+
+impl<T> std::fmt::Debug for ImageViewMut<'_, T> {
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    write!(f, "ImageViewMut({}x{}, {} channels)", self.width, self.height, self.channels)
+  }
+}
+
+impl<'a, T> From<ImageViewMut<'a, T>> for ImageView<'a, T> {
+  fn from(view: ImageViewMut<'a, T>) -> Self {
+    Self::new(view.data, view.width, view.height, view.channels)
+  }
+}
+
+impl<'a, T: SubPixel> From<&'a Pix2D<T>> for ImageView<'a, T> {
+  fn from(pixels: &'a Pix2D<T>) -> Self {
+    Self::new(&pixels.data, pixels.width, pixels.height, 1)
+  }
+}
+
+impl<'a, T: SubPixel> From<&'a mut Pix2D<T>> for ImageViewMut<'a, T> {
+  fn from(pixels: &'a mut Pix2D<T>) -> Self {
+    Self::new(&mut pixels.data, pixels.width, pixels.height, 1)
+  }
+}
+
+impl<'a, T, const N: usize> From<&'a Color2D<T, N>> for ImageView<'a, T> {
+  fn from(pixels: &'a Color2D<T, N>) -> Self {
+    Self::from_array_slice(&pixels.data, pixels.width, pixels.height)
+  }
+}
+
+impl<'a, T, const N: usize> From<&'a mut Color2D<T, N>> for ImageViewMut<'a, T> {
+  fn from(pixels: &'a mut Color2D<T, N>) -> Self {
+    Self::from_array_slice(&mut pixels.data, pixels.width, pixels.height)
   }
 }
 
@@ -881,5 +1144,54 @@ mod tests {
   fn reorder_sub_tile_blocks_rejects_non_multiple() {
     let mut pixbuf = Pix2D::new_with(vec![0_u16; 16 * 8], 16, 8);
     assert!(reorder_sub_tile_blocks(&mut pixbuf, 1, 8, 4, 3, 2).is_err());
+  }
+
+  #[test]
+  fn image_view_array_slices() {
+    let data: Vec<u16> = (0..12).collect();
+    let view = ImageView::new(&data, 2, 2, 3);
+    let pixels = view.as_array_slice::<3>().expect("three channels");
+    assert_eq!(pixels, &[[0, 1, 2], [3, 4, 5], [6, 7, 8], [9, 10, 11]]);
+    assert!(view.as_array_slice::<4>().is_none());
+    // The pixel arrays are the same memory
+    assert_eq!(pixels.as_ptr().cast::<u16>(), data.as_ptr());
+    let back = ImageView::from_array_slice(pixels, 2, 2);
+    assert_eq!((back.channels(), back.as_slice()), (3, data.as_slice()));
+    assert_eq!(view.rows().count(), 2);
+
+    let mut samples = vec![0.0_f32; 8];
+    let mut view = ImageViewMut::new(&mut samples, 2, 1, 4);
+    assert!(view.as_array_slice_mut::<3>().is_none());
+    view.as_array_slice_mut::<4>().expect("four channels")[1] = [1.0, 2.0, 3.0, 4.0];
+    assert_eq!(samples, [0.0, 0.0, 0.0, 0.0, 1.0, 2.0, 3.0, 4.0]);
+  }
+
+  #[test]
+  #[should_panic(expected = "doesn't match")]
+  fn image_view_checks_length() {
+    let data = [0_u16; 5];
+    let _ = ImageView::new(&data, 2, 1, 3);
+  }
+
+  /// Channels and samples of anything that converts into a view
+  fn view_info<'a, T: 'a>(image: impl Into<ImageView<'a, T>>) -> (usize, usize) {
+    let view = image.into();
+    (view.channels(), view.as_slice().len())
+  }
+
+  #[test]
+  fn image_view_from_containers() {
+    let pixels = PixU16::new(4, 2);
+    let mut rgb = RgbF32::new(4, 2);
+    assert_eq!(view_info(&pixels), (1, 8));
+    assert_eq!(view_info(&rgb), (3, 24));
+    assert_eq!(view_info(rgb.view()), (3, 24));
+    assert_eq!(view_info(rgb.view_mut()), (3, 24));
+    assert_eq!(view_info(ImageView::new(&[0.5_f32; 6], 1, 2, 3)), (3, 6));
+
+    let mono = Pix2D::from(Color2D::<u16, 1>::new_with(vec![[1], [2]], 2, 1));
+    assert_eq!((mono.width, mono.data), (2, vec![1, 2]));
+    let rgb = Color2D::<u16, 3>::new_with(vec![[1, 2, 3], [4, 5, 6]], 2, 1);
+    assert_eq!(rgb.into_flatten(), [1, 2, 3, 4, 5, 6]);
   }
 }

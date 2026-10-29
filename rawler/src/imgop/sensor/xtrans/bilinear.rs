@@ -8,7 +8,7 @@ use std::time::Instant;
 use crate::{
   cfa::{CFA, PlaneColor},
   imgop::{Rect, sensor::Demosaic},
-  pixarray::{Color2D, PixF32, RgbF32},
+  pixarray::{Color2D, ImageView, RgbF32},
 };
 
 /// Bilinear demosaicing implementation for Fujifilm X-Trans sensor data.
@@ -46,12 +46,13 @@ impl Demosaic<f32, 3> for XTransBilinearDemosaic {
   /// # Panics
   /// Panics if the CFA pattern is not an RGB pattern.
   #[allow(unused)]
-  fn demosaic(&self, pixels: &PixF32, cfa: &CFA, colors: &PlaneColor, roi: Rect) -> Color2D<f32, 3> {
+  fn demosaic(&self, pixels: ImageView<'_, f32>, cfa: &CFA, colors: &PlaneColor, roi: Rect) -> Color2D<f32, 3> {
+    assert_eq!(pixels.channels(), 1, "Mosaic data must have one channel");
     if !cfa.is_rgb() {
       panic!("CFA pattern '{}' is not a RGB pattern, can not demosaic", cfa);
     }
     let now = Instant::now();
-    let rgb = interpolate_bilinear(pixels, cfa, roi);
+    let rgb = interpolate_bilinear(pixels.as_slice(), pixels.width(), cfa, roi);
     log::debug!("X-Trans bilinear demosaic total time: {:.5}s", now.elapsed().as_secs_f32());
     rgb
   }
@@ -69,7 +70,7 @@ impl Demosaic<f32, 3> for XTransBilinearDemosaic {
 ///
 /// Uses SIMD acceleration via `multiversion` when available (AVX2, SSE, NEON).
 #[multiversion(targets("x86_64+avx+avx2+fma", "x86+sse", "aarch64+neon"))]
-fn interpolate_bilinear(input: &PixF32, cfa: &CFA, roi: Rect) -> Color2D<f32, 3> {
+fn interpolate_bilinear(input: &[f32], input_width: usize, cfa: &CFA, roi: Rect) -> Color2D<f32, 3> {
   let cfa_roi = cfa.shift(roi.p.x, roi.p.y);
   let mut output = RgbF32::new_with_default(roi.width(), roi.height(), f32::NAN);
   let width = output.width;
@@ -88,7 +89,7 @@ fn interpolate_bilinear(input: &PixF32, cfa: &CFA, roi: Rect) -> Color2D<f32, 3>
       for row in y_lo..=y_hi {
         for col in x_lo..=x_hi {
           let ch = cfa_roi.color_at(row, col) as usize;
-          rgb[ch] += input.at(roi.p.y + row, roi.p.x + col);
+          rgb[ch] += input[(roi.p.y + row) * input_width + roi.p.x + col];
           count[ch] += 1;
         }
       }

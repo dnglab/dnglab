@@ -589,7 +589,7 @@ fn demosaic_to_linear_raw(rawimage: &mut RawImage, fuji_rotation: bool) -> crate
   let colors = &rawimage.camera.plane_color;
   let (width, height, cpp, data) = match SensorType::from_cfa(cfa) {
     SensorType::Bayer if cfa.is_rgb() => {
-      let mut rgb = PPGDemosaic::new().demosaic(&pixels, cfa, colors, roi);
+      let mut rgb = PPGDemosaic::new().demosaic(pixels.view(), cfa, colors, roi);
       if fuji_rotation {
         let fuji_rotation_width = rawimage.fuji_rotation_width.expect("fuji_rotate: no rotation width found");
         let extra_rotate = rawimage.camera.find_hint("fuji_rotate_90cw");
@@ -598,11 +598,11 @@ fn demosaic_to_linear_raw(rawimage: &mut RawImage, fuji_rotation: bool) -> crate
       (rgb.width, rgb.height, 3, rgb.into_flatten())
     }
     SensorType::Bayer if cfa.unique_colors() == 4 => {
-      let image = Bilinear4Channel::new().demosaic(&pixels, cfa, colors, roi);
+      let image = Bilinear4Channel::new().demosaic(pixels.view(), cfa, colors, roi);
       (image.width, image.height, 4, image.into_flatten())
     }
     SensorType::Xtrans if cfa.is_rgb() => {
-      let rgb = XTransMarkesteijnDemosaic::new_pass_3().demosaic(&pixels, cfa, colors, roi);
+      let rgb = XTransMarkesteijnDemosaic::new_pass_3().demosaic(pixels.view(), cfa, colors, roi);
       (rgb.width, rgb.height, 3, rgb.into_flatten())
     }
     _ => return Err(RawlerError::DecoderFailed(format!("Demosaic of CFA pattern '{}' is not supported", cfa))),
