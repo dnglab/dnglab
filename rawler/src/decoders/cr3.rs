@@ -13,11 +13,11 @@ use crate::decoders::*;
 use crate::decompressors::crx::decompress_crx_image;
 use crate::envparams::{rawler_crx_raw_trak, rawler_ignore_previews};
 use crate::exif::ExifGPS;
-use crate::formats::bmff::FileBox;
 use crate::formats::bmff::ext_cr3::cmp1::Cmp1Box;
 use crate::formats::bmff::ext_cr3::cr3desc::Cr3DescBox;
 use crate::formats::bmff::ext_cr3::iad1::{Iad1Box, Iad1Type};
 use crate::formats::bmff::trak::TrakBox;
+use crate::formats::bmff::{BoxHeader, FileBox};
 use crate::formats::tiff::reader::TiffReader;
 use crate::formats::tiff::{Entry, GenericTiffReader, Rational, Value};
 use crate::imgop::{Point, Rect};
@@ -35,14 +35,6 @@ pub struct Cr3Decoder<'a> {
   camera: CameraLookup,
   rawloader: &'a RawLoader,
   bmff: Bmff,
-  // Basic EXIF information
-  cmt1: GenericTiffReader,
-  // EXIF
-  cmt2: GenericTiffReader,
-  // Makernotes
-  cmt3: GenericTiffReader,
-  // GPS
-  cmt4: GenericTiffReader,
   // Metadata cache
   md_cache: DecoderCache<Cr3Metadata>,
 }
@@ -85,16 +77,12 @@ enum Cr3ImageType {
 impl<'a> Cr3Decoder<'a> {
   /// Construct new CR3 or CRM deocder
   pub fn new(_rawfile: &RawSource, bmff: Bmff, rawloader: &'a RawLoader) -> Result<Cr3Decoder<'a>> {
-    if let Some(Cr3DescBox { cmt1, cmt2, cmt3, cmt4, .. }) = bmff.filebox.moov.cr3desc.as_ref() {
+    if let Some(Cr3DescBox { cmt1, cmt3, .. }) = bmff.filebox.moov.cr3desc.as_ref() {
       let mode = Self::get_mode(cmt3.tiff.root_ifd())?;
       let camera = rawloader.lookup_camera_with_mode(cmt1.tiff.root_ifd(), mode)?;
       let decoder = Cr3Decoder {
         camera,
         rawloader,
-        cmt1: cmt1.tiff.clone(),
-        cmt2: cmt2.tiff.clone(),
-        cmt3: cmt3.tiff.clone(),
-        cmt4: cmt4.tiff.clone(),
         bmff,
         md_cache: DecoderCache::new(),
       };
@@ -104,10 +92,17 @@ impl<'a> Cr3Decoder<'a> {
     }
   }
 
+  /// CR3 description box with the CMT1 (basic EXIF), CMT2 (EXIF),
+  /// CMT3 (makernotes) and CMT4 (GPS) sections.
+  /// Its presence is checked in `new()`.
+  fn cr3desc(&self) -> &Cr3DescBox {
+    self.bmff.filebox.moov.cr3desc.as_ref().expect("CR3 decoder without CR3 description box")
+  }
+
   // Search for quality tag inside makernotes and derive
   // our mode string for configuration.
   fn get_mode(makernotes: &IFD) -> Result<&str> {
-    Ok(if let Some(entry) = makernotes.get_entry(0x0001) {
+    Ok(if let Some(entry) = makernotes.get_entry(Cr3MakernoteTag::CameraSettings) {
       match entry.force_u16(3) {
         4 => "raw",
         7 => "craw",
@@ -192,18 +187,18 @@ impl<'a> Decoder for Cr3Decoder<'a> {
 
   fn raw_metadata(&self, file: &RawSource, params: &RawDecodeParams) -> Result<RawMetadata> {
     let cr3md = self.read_cr3_metadata(file, params)?;
-
+    let Cr3DescBox { cmt1, cmt2, cmt4, .. } = self.cr3desc();
     let mut exif = Exif::default();
-    exif.extend_from_ifd(self.cmt1.root_ifd())?;
-    exif.extend_from_ifd(self.cmt2.root_ifd())?;
-    exif.extend_from_gps_ifd(self.cmt4.root_ifd())?;
+    exif.extend_from_ifd(cmt1.tiff.root_ifd())?;
+    exif.extend_from_ifd(cmt2.tiff.root_ifd())?;
+    exif.extend_from_gps_ifd(cmt4.tiff.root_ifd())?;
 
     if exif.gps.is_none() {
       exif.gps = Some(ExifGPS::default());
     }
 
     if let Some(gps) = &mut exif.gps {
-      for (tag, entry) in self.cmt4.root_ifd().entries() {
+      for (tag, entry) in cmt4.tiff.root_ifd().entries() {
         match tag {
           // Special handling for Exif.GPSInfo.GPSLatitude and Exif.GPSInfo.GPSLongitude.
           // Exif.GPSInfo.GPSTimeStamp is wrong, too and can be fixed with the same logic.
@@ -267,10 +262,8 @@ impl<'a> Decoder for Cr3Decoder<'a> {
 
     let cr3md = self.read_cr3_metadata(file, params)?;
 
-    if let Some(cr3desc) = &self.bmff.filebox.moov.cr3desc {
-      for item in cr3desc.cctp.ccdts.iter() {
-        log::debug!("CCDT: trak {} type {} dual {}", item.trak_index, item.image_type, item.dual_pixel);
-      }
+    for item in self.cr3desc().cctp.ccdts.iter() {
+      log::debug!("CCDT: trak {} type {} dual {}", item.trak_index, item.image_type, item.dual_pixel);
     }
 
     let raw_trak_id = rawler_crx_raw_trak()
@@ -298,7 +291,7 @@ impl<'a> Decoder for Cr3Decoder<'a> {
     let whitelevel = cr3md.whitelevel.unwrap_or(((1_u32 << camera.bps.unwrap_or(16)) - 1) as u16);
 
     // Special handling for CRM movie files
-    if let Some(entry) = self.cmt3.get_entry(0x0001) {
+    if let Some(entry) = self.cr3desc().cmt3.tiff.get_entry(Cr3MakernoteTag::CameraSettings) {
       if 130 == entry.force_u16(3) {
         // Light Raw
         // WB is already applied, use 1.0
@@ -471,19 +464,69 @@ impl<'a> Decoder for Cr3Decoder<'a> {
     }
   }
 
+  fn ifd(&self, wk_ifd: WellKnownIFD) -> Result<Option<Rc<IFD>>> {
+    Ok(match wk_ifd {
+      WellKnownIFD::Root => {
+        let cmt1 = &self.cr3desc().cmt1;
+        Some(Rc::new(rebase_cmt_ifd(cmt1.tiff.root_ifd(), &cmt1.header)?))
+      }
+      WellKnownIFD::Exif => {
+        // CR3 has no MakerNotes tag; we synthesize one from the makernotes (CMT3)
+        // so they can be accessed like in CR2. Unlike CR2, the data is a complete
+        // TIFF structure with offsets relative to its own header. IFD::parse_makernote()
+        // handles this.
+        // Like all other entry offsets, the entry offset is relative to the CMT2 data.
+        let Cr3DescBox { cmt2, cmt3, .. } = self.cr3desc();
+        let mut exif = rebase_cmt_ifd(cmt2.tiff.root_ifd(), &cmt2.header)?;
+        let cmt3_offset = cmt_payload_offset(&cmt3.header)?;
+        let tag = ExifTag::MakerNotes as u16;
+        exif.entries.insert(
+          tag,
+          Entry {
+            tag,
+            value: Value::Undefined(cmt3.data.clone()),
+            embedded: cmt3_offset.checked_sub(exif.base),
+          },
+        );
+        Some(Rc::new(exif))
+      }
+      WellKnownIFD::ExifGps => {
+        let cmt4 = &self.cr3desc().cmt4;
+        Some(Rc::new(rebase_cmt_ifd(cmt4.tiff.root_ifd(), &cmt4.header)?))
+      }
+      _ => None,
+    })
+  }
+
   fn format_hint(&self) -> FormatHint {
     FormatHint::CR3
   }
 }
 
+/// File offset of the payload of a CMT box.
+fn cmt_payload_offset(header: &BoxHeader) -> Result<u32> {
+  u32::try_from(header.offset + header.header_len).map_err(|_| RawlerError::DecoderFailed(format!("CMT box offset {} exceeds 32 bit", header.offset)))
+}
+
+/// Set the base to the payload file offset so the offsets resolve against the file.
+fn rebase_cmt_ifd(ifd: &IFD, header: &BoxHeader) -> Result<IFD> {
+  fn rebase(ifd: &mut IFD, base: u32) {
+    ifd.base = base;
+    ifd.sub.values_mut().flatten().chain(ifd.chain.iter_mut()).for_each(|sub| rebase(sub, base));
+  }
+  let mut ifd = ifd.clone();
+  rebase(&mut ifd, cmt_payload_offset(header)?);
+  Ok(ifd)
+}
+
 impl<'a> Cr3Decoder<'a> {
   fn read_lens_id(&self) -> Result<LensId> {
     let mut id = (0, 0);
-    if let Some(Entry { value: Value::Short(v), .. }) = self.cmt3.get_entry(Cr3MakernoteTag::CameraSettings) {
+    if let Some(Entry { value: Value::Short(v), .. }) = self.cr3desc().cmt3.tiff.get_entry(Cr3MakernoteTag::CameraSettings) {
       id.0 = v[22] as u32;
     }
 
-    if let Some(Entry { value: Value::Short(v), .. }) = self.cmt3.get_entry(Cr3MakernoteTag::FileInfo) {
+    if let Some(Entry { value: Value::Short(v), .. }) = self.cr3desc().cmt3.tiff.get_entry(Cr3MakernoteTag::FileInfo) {
       id.1 = v[61] as u32;
     }
     Ok(id)
@@ -493,7 +536,7 @@ impl<'a> Cr3Decoder<'a> {
     if let Some(Entry {
       value: crate::formats::tiff::Value::Ascii(lens_id),
       ..
-    }) = self.cmt2.get_entry(ExifTag::LensModel)
+    }) = self.cr3desc().cmt2.tiff.get_entry(ExifTag::LensModel)
     {
       return Ok(lens_id.strings().get(0));
     }
@@ -509,7 +552,7 @@ impl<'a> Cr3Decoder<'a> {
     if let Some(Entry {
       value: crate::formats::tiff::Value::Byte(v),
       ..
-    }) = self.cmt3.get_entry(Cr3MakernoteTag::ImgUniqueID)
+    }) = self.cr3desc().cmt3.tiff.get_entry(Cr3MakernoteTag::ImgUniqueID)
     {
       if v.len() == 16 {
         debug!("CR3 makernote ImgUniqueID: {:x?}", v);
@@ -521,7 +564,7 @@ impl<'a> Cr3Decoder<'a> {
       }
     }
 
-    if let Some(entry) = self.cmt3.get_entry(0x0001) {
+    if let Some(entry) = self.cr3desc().cmt3.tiff.get_entry(Cr3MakernoteTag::CameraSettings) {
       let quality = match entry.force_u16(3) {
         4 => "RAW",
         5 => "Superfine",
@@ -533,7 +576,7 @@ impl<'a> Cr3Decoder<'a> {
       debug!("Canon quality mode: {}", quality);
     }
 
-    if let Some(entry) = self.cmt3.get_entry(0x4026) {
+    if let Some(entry) = self.cr3desc().cmt3.tiff.get_entry(Cr3MakernoteTag::LogInfo) {
       let clog = match entry.force_u32(11) {
         0 => "OFF",
         1 => "CLog1",
@@ -613,14 +656,10 @@ impl<'a> Cr3Decoder<'a> {
   }
 
   fn get_trak_index(&self, image_type: Cr3ImageType) -> Option<usize> {
-    if let Some(cr3desc) = &self.bmff.filebox.moov.cr3desc {
-      cr3desc.cctp.ccdts.iter().find(|ccdt| ccdt.image_type == image_type as u64).map(|rec| {
-        debug_assert!(rec.trak_index > 0);
-        (rec.trak_index - 1) as usize
-      })
-    } else {
-      None
-    }
+    self.cr3desc().cctp.ccdts.iter().find(|ccdt| ccdt.image_type == image_type as u64).map(|rec| {
+      debug_assert!(rec.trak_index > 0);
+      (rec.trak_index - 1) as usize
+    })
   }
 }
 
@@ -861,6 +900,7 @@ pub enum Cr3MakernoteTag {
   MultiExp = 0x4021,
   FilterInfo = 0x4024,
   HDRInfo = 0x4025,
+  LogInfo = 0x4026,
   AFConfig = 0x4028,
   RawBurstModeRoll = 0x403f,
 }

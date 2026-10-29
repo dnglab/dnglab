@@ -581,6 +581,8 @@ impl IFD {
     }
   }
 
+  /// Parse the MakerNotes entry of this (EXIF) IFD as IFD.
+  /// The entry offset must be relative to `self.base` within `reader`.
   pub fn parse_makernote<R: Read + Seek>(&self, reader: &mut R, offset_mode: OffsetMode, sub_tags: &[u16]) -> Result<Option<IFD>> {
     if let Some(exif) = self.get_entry(ExifTag::MakerNotes) {
       let offset = exif.offset().ok_or(TiffError::General("MakerNote entry has no offset".into()))? as u32;
@@ -633,6 +635,24 @@ impl IFD {
             off += 10;
             let endian = if data[off..off + 2] == b"II"[..] { Endian::Little } else { Endian::Big };
             return Ok(Some(IFD::new(reader, 8, self.base + offset + 10, 0, endian, sub_tags)?));
+          }
+
+          // Some makernotes are a complete TIFF structure (e.g. Canon CR3).
+          // All offsets are relative to the TIFF header, so offset_mode is ignored.
+          let tiff_endian = match data.get(off..off + 8) {
+            Some([b'I', b'I', 0x2a, 0x00, ..]) => Some(Endian::Little),
+            Some([b'M', b'M', 0x00, 0x2a, ..]) => Some(Endian::Big),
+            _ => None,
+          };
+          if let Some(endian) = tiff_endian {
+            let ifd_offset = endian.read_u32(data, off + 4);
+            let ifd_base = self
+              .base
+              .checked_add(offset)
+              .and_then(|base| base.checked_add(off as u32))
+              .filter(|base| base.checked_add(ifd_offset).is_some())
+              .ok_or_else(|| TiffError::Overflow(format!("MakerNote TIFF offset {} overflows", ifd_offset)))?;
+            return Ok(Some(IFD::new(reader, ifd_offset, ifd_base, 0, endian, sub_tags)?));
           }
 
           // Some have MM or II to indicate endianness - read that

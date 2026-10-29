@@ -3,6 +3,8 @@ pub mod common;
 #[cfg(feature = "rawdb")]
 mod dng;
 #[cfg(feature = "rawdb")]
+mod ifd;
+#[cfg(feature = "rawdb")]
 mod issues;
 #[cfg(feature = "rawdb")]
 mod rawdb;
