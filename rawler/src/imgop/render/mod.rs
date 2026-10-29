@@ -20,7 +20,7 @@ use image::{DynamicImage, ImageBuffer};
 use crate::{
   RawImage,
   imgop::{Dim2, Rect, color::OutputSpace, convert_from_f32_scaled_u16},
-  pixarray::{Color2D, ImageView, ImageViewMut},
+  pixarray::{Color2D, ImageView, ImageViewMut, Pix2D},
 };
 
 /// Processing step of the rendering, see [`StepSet`]
@@ -113,11 +113,26 @@ impl std::fmt::Debug for StepSet {
   }
 }
 
+/// Position of the white balance in the processing
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum WhiteBalancePlacement {
+  /// CFA data is white balanced before it is demosaiced. Demosaic algorithms
+  /// that interpolate by the differences of the color planes work better on
+  /// white balanced data, and clipped highlights stay neutral.
+  #[default]
+  BeforeDemosaic,
+  /// The white balance is applied after demosaicing, with the map of the
+  /// camera values to the output color space, as defined by DNG
+  AfterDemosaic,
+}
+
 /// Options of the rendering
 #[derive(Clone, Debug, PartialEq)]
 pub struct RenderOptions {
   /// Processing steps to apply
   pub steps: StepSet,
+  /// Position of the WhiteBalance step
+  pub white_balance: WhiteBalancePlacement,
   /// Color space of the output: the Calibrate step maps the camera values to
   /// it, the TransferFunction step encodes the values by its transfer function
   pub color_space: OutputSpace,
@@ -127,6 +142,7 @@ impl Default for RenderOptions {
   fn default() -> Self {
     Self {
       steps: StepSet::all(),
+      white_balance: WhiteBalancePlacement::default(),
       color_space: OutputSpace::default(),
     }
   }
@@ -183,6 +199,18 @@ impl std::fmt::Debug for RenderedImage {
   }
 }
 
+impl From<Pix2D<f32>> for RenderedImage {
+  fn from(pixels: Pix2D<f32>) -> Self {
+    let (width, height) = (pixels.width, pixels.height);
+    Self {
+      data: pixels.into_inner(),
+      width,
+      height,
+      channels: 1,
+    }
+  }
+}
+
 impl<const N: usize> From<Color2D<f32, N>> for RenderedImage {
   fn from(pixels: Color2D<f32, N>) -> Self {
     let (width, height) = (pixels.width, pixels.height);
@@ -203,7 +231,10 @@ pub fn render(rawimage: RawImage, options: &RenderOptions) -> crate::Result<Rend
 
 #[cfg(test)]
 mod tests {
-  use super::{plan::Op, *};
+  use super::{
+    plan::{CameraMap, Op},
+    *,
+  };
   use crate::imgop::color::{PixelOp, TransferFunction};
   use crate::{
     CFA, RawImageData,
@@ -223,6 +254,9 @@ mod tests {
         Op::Opcodes { stage: OpcodeStage::List2, .. } => "List2",
         Op::Opcodes { stage: OpcodeStage::List3, .. } => "List3",
         Op::Rescale => "Rescale",
+        Op::RescaleMosaic { .. } => "RescaleMosaic",
+        Op::WhiteBalanceMosaic { .. } => "WhiteBalanceMosaic",
+        Op::WhiteBalance(_) => "WhiteBalance",
         Op::Demosaic { .. } => "Demosaic",
         Op::FujiRotate { .. } => "FujiRotate",
         Op::Gain(_) => "Gain",
@@ -273,7 +307,7 @@ mod tests {
     rawimage.baseline_exposure = Some(0.5);
     let plan = plan(&rawimage, &RenderOptions::default())?;
     // The crop follows OpcodeList3, the gain and the transfer function are part of the color map
-    assert_eq!(op_names(&plan), ["Rescale", "Demosaic", "List3", "CropDefault", "CameraToRgb"]);
+    assert_eq!(op_names(&plan), ["RescaleMosaic", "Demosaic", "List3", "CropDefault", "CameraToRgb"]);
     // OpcodeList3 keeps the data cropped to the ActiveArea, like the demosaic
     assert!(plan.ops.iter().any(|op| matches!(op, Op::Opcodes { crop_to_active_area: true, .. })));
     let Some(Op::CameraToRgb(_, pixel_ops)) = plan.ops.last() else {
@@ -287,7 +321,7 @@ mod tests {
   fn plan_crops_in_demosaic() -> crate::Result<()> {
     // Without OpcodeList3, only the DefaultCrop is demosaiced
     let cropped = plan(&rggb_rawimage(), &RenderOptions::default())?;
-    assert_eq!(op_names(&cropped), ["Rescale", "Demosaic", "CameraToRgb"]);
+    assert_eq!(op_names(&cropped), ["RescaleMosaic", "Demosaic", "CameraToRgb"]);
     assert!(matches!(cropped.ops[1], Op::Demosaic { crop_default: true, .. }));
     let options = RenderOptions {
       steps: StepSet::all().without(ProcessingStep::CropDefault),
@@ -302,12 +336,18 @@ mod tests {
     // The color map renders the curve, without it a separate tone curve is applied
     let mut rawimage = rggb_rawimage();
     rawimage.baseline_exposure = Some(-1.0);
-    assert_eq!(op_names(&plan(&rawimage, &RenderOptions::default())?), ["Rescale", "Demosaic", "CameraToRgb"]);
+    assert_eq!(
+      op_names(&plan(&rawimage, &RenderOptions::default())?),
+      ["RescaleMosaic", "Demosaic", "CameraToRgb"]
+    );
     let options = RenderOptions {
       steps: StepSet::all().without(ProcessingStep::Calibrate),
       ..Default::default()
     };
-    assert_eq!(op_names(&plan(&rawimage, &options)?), ["Rescale", "Demosaic", "ToneCurve", "TransferFunction"]);
+    assert_eq!(
+      op_names(&plan(&rawimage, &options)?),
+      ["RescaleMosaic", "Demosaic", "ToneCurve", "TransferFunction"]
+    );
     // Monochrome images have no color map
     let mut mono = linear_raw_rawimage(4, 2, 1);
     mono.photometric = RawPhotometricInterpretation::BlackIsZero;
@@ -315,6 +355,53 @@ mod tests {
     assert_eq!(
       op_names(&plan(&mono, &RenderOptions::default())?),
       ["Rescale", "CropDefault", "ToneCurve", "TransferFunction"]
+    );
+    Ok(())
+  }
+
+  #[test]
+  fn plan_white_balance_placement() -> crate::Result<()> {
+    // Integer CFA data is rescaled and white balanced in one pass, limited to the camera white
+    let rawimage = rggb_rawimage();
+    let before = plan(&rawimage, &RenderOptions::default())?;
+    let Op::RescaleMosaic { white_balance: Some(wb), .. } = &before.ops[0] else {
+      panic!("white balanced rescale expected");
+    };
+    assert_eq!((&wb.coeffs[..3], wb.clip), (&[2.0, 1.0, 1.5][..], Some(1.0)));
+    // The camera map applies no white balance then
+    let Some(Op::CameraToRgb(CameraMap::Three(map), _)) = before.ops.last() else {
+      panic!("color map expected");
+    };
+    assert_eq!((map.wb, map.white), ([1.0; 3], 1.0));
+
+    // With OpcodeList2 between, the white balance is a separate operation
+    let mut with_list2 = rggb_rawimage();
+    with_list2.dng_opcodes_2 = Some(OpcodeList::new(Vec::new()));
+    let ops = ["Rescale", "List2", "WhiteBalanceMosaic", "Demosaic", "CameraToRgb"];
+    assert_eq!(op_names(&plan(&with_list2, &RenderOptions::default())?), ops);
+
+    // After demosaicing, the camera map applies it
+    let options = RenderOptions {
+      white_balance: WhiteBalancePlacement::AfterDemosaic,
+      ..Default::default()
+    };
+    let after = plan(&rawimage, &options)?;
+    assert!(matches!(after.ops[0], Op::RescaleMosaic { white_balance: None, .. }));
+    let Some(Op::CameraToRgb(CameraMap::Three(map), _)) = after.ops.last() else {
+      panic!("color map expected");
+    };
+    assert_eq!((map.wb, map.white), ([2.0, 1.0, 1.5], 1.0));
+
+    // Without the map to a color space, color planes are white balanced separately
+    let mut linear_raw = linear_raw_rawimage(4, 2, 3);
+    linear_raw.wb_coeffs = [2.0, 1.0, 1.5, f32::NAN];
+    let options = RenderOptions {
+      steps: StepSet::all().without(ProcessingStep::Calibrate),
+      ..Default::default()
+    };
+    assert_eq!(
+      op_names(&plan(&linear_raw, &options)?),
+      ["Rescale", "CropDefault", "WhiteBalance", "TransferFunction"]
     );
     Ok(())
   }

@@ -586,9 +586,14 @@ impl RawImage {
         self.data = RawImageData::Float(pixels.into_owned());
       }
     }
+    self.reset_levels();
+    Ok(())
+  }
+
+  /// Black and white levels of image data that is mapped to 0.0 .. 1.0
+  pub(crate) fn reset_levels(&mut self) {
     self.blacklevel.levels.iter_mut().for_each(|x| *x = Rational::new(0, 1));
     self.whitelevel.0.iter_mut().for_each(|x| *x = 1);
-    Ok(())
   }
 
   /// DNG opcode list for the given processing stage

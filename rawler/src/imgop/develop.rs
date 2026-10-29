@@ -527,11 +527,11 @@ mod tests {
     use crate::{
       camera_profile::{CameraCalibration, CameraProfile, GainData, GainTableMap},
       cfa::PlaneColor,
+      imgop::render::{StepSet, WhiteBalancePlacement},
     };
 
-    /// Allowed deviation of the fingerprints, relative to the expected value.
-    /// The exposure gain is applied with the white balance, which changes the
-    /// rounding of images with a positive BaselineExposure.
+    /// Allowed deviation of the fingerprints, relative to the expected value,
+    /// for differences of floating point functions between platforms
     const TOLERANCE: f64 = 1e-6;
 
     const XTRANS: &str = "GGRGGBGGBGGRBRGRBGGGBGGRGGRGGBRBGBRG";
@@ -655,10 +655,21 @@ mod tests {
       rawimage
     }
 
-    fn cases() -> Vec<(&'static str, RawImage, Vec<ProcessingStep>)> {
+    fn cases() -> Vec<(&'static str, RawImage, RenderOptions)> {
       use ProcessingStep::*;
-      let all = RawDevelop::default().steps;
-      let without = |step: ProcessingStep| all.iter().copied().filter(|s| *s != step).collect::<Vec<_>>();
+      let all = RenderOptions::default();
+      let without = |step: ProcessingStep| RenderOptions {
+        steps: StepSet::all().without(step),
+        ..Default::default()
+      };
+      let wb_after_demosaic = RenderOptions {
+        white_balance: WhiteBalancePlacement::AfterDemosaic,
+        ..Default::default()
+      };
+      let camera = RenderOptions {
+        steps: [Rescale, Demosaic, CropActiveArea, CropDefault].into_iter().collect(),
+        ..Default::default()
+      };
 
       let mut rggb_profile = rggb();
       add_profile_tables(&mut rggb_profile);
@@ -675,7 +686,8 @@ mod tests {
 
       vec![
         ("rggb", rggb(), all.clone()),
-        ("rggb_camera", rggb(), vec![Rescale, Demosaic, CropActiveArea, CropDefault]),
+        ("rggb_wb_after_demosaic", rggb(), wb_after_demosaic),
+        ("rggb_camera", rggb(), camera),
         ("rggb_no_wb", rggb(), without(WhiteBalance)),
         ("rggb_linear", rggb(), without(TransferFunction)),
         ("rggb_full_frame", rggb(), without(CropActiveArea)),
@@ -690,8 +702,8 @@ mod tests {
 
     /// Width, height, channels and per channel: sum, position weighted sum and
     /// sum of squares of the samples
-    fn fingerprint(rawimage: &RawImage, steps: &[ProcessingStep]) -> (usize, usize, usize, Vec<f64>) {
-      let image = RawDevelop::new_with(steps).develop_image(rawimage.clone()).expect("develop");
+    fn fingerprint(rawimage: &RawImage, options: &RenderOptions) -> (usize, usize, usize, Vec<f64>) {
+      let image = render(rawimage.clone(), options).expect("develop");
       let (dim, channels, data) = (image.dim(), image.channels, image.data);
       let mut sums = vec![0.0; channels * 3];
       for (i, v) in data.iter().map(|v| f64::from(*v)).enumerate() {
@@ -705,18 +717,65 @@ mod tests {
 
     #[rustfmt::skip]
     const GOLDEN: &[(&str, usize, usize, usize, &[f64])] = &[
-      ("rggb", 24, 16, 3, &[390.4277983903885, 18649.48181670904, 398.80261222413327, 301.5255986750126, 14622.446534872055, 245.25021871881017, 351.73224437236786, 16866.046346843243, 324.9258630959287]),
+      ("rggb", 24, 16, 3, &[380.48748272657394, 18095.475613176823, 377.5045028641137, 232.10450096428394, 11251.507007345557, 147.3522950384351, 353.6434442996979, 17019.469807982445, 328.740341114098]),
+      ("rggb_wb_after_demosaic", 24, 16, 3, &[381.2625027894974, 18131.435772717, 378.8702401502903, 231.30694465339184, 11229.669638305902, 146.84756262907865, 355.5833469033241, 17063.666516900063, 332.00312421469033]),
       ("rggb_camera", 24, 16, 3, &[201.33198672533035, 9818.438517972827, 115.96816916500968, 204.2414404898882, 9990.435259357095, 119.04132786895539, 201.55772396922112, 9910.428465634584, 115.02212716218857]),
-      ("rggb_no_wb", 24, 16, 3, &[282.0708654075861, 13578.937698602676, 211.88289972290173, 286.74830588698387, 13828.199366986752, 218.39876404618298, 284.960844039917, 13739.649574756622, 215.0416308865553]),
-      ("rggb_linear", 24, 16, 3, &[401.5790760219097, 19307.839012920856, 430.0369745481188, 233.60734894871712, 11492.54205609858, 159.34961785767993, 318.6504339873791, 15448.737531334162, 275.65717300909876]),
-      ("rggb_full_frame", 24, 16, 3, &[390.9816264510155, 18673.078037142754, 399.81150783985595, 301.62672540545464, 14615.128017276525, 245.55037887830713, 351.85164338350296, 16864.02519339323, 325.2974662559539]),
-      ("rggb_profile", 24, 16, 3, &[383.875735104084, 18234.070569992065, 383.766911972525, 296.8160035312176, 14464.464508086443, 242.2721247115981, 375.16428911685944, 17875.188795506954, 367.20890053130154]),
-      ("rggb_negative_exposure", 24, 16, 3, &[374.2274509072304, 17846.962663829327, 366.3125811072176, 146.99772273004055, 7233.688356488943, 68.94241642546928, 340.7157753109932, 16449.87398082018, 308.7189830362546]),
-      ("cygm", 24, 16, 3, &[334.43972811102867, 16040.300295442343, 298.54624110765343, 278.23176115751266, 13425.739764779806, 210.7132874067811, 364.8037489056587, 17384.13460189104, 348.86014754212096]),
-      ("xtrans", 28, 16, 3, &[454.0960969924927, 20714.50831478834, 462.02791130939414, 351.8829416036606, 16054.636072933674, 284.05223487005367, 407.09242457151413, 18571.098776698112, 373.1839582965802]),
+      ("rggb_no_wb", 24, 16, 3, &[281.41804756224155, 13544.18863427639, 211.0733201286009, 287.0341155230999, 13839.717891156673, 218.97909127970485, 284.187255859375, 13729.439485132694, 214.02814418573718]),
+      ("rggb_linear", 24, 16, 3, &[376.7854283154011, 17939.470737874508, 371.60039229691654, 133.27989721298218, 6566.758106201887, 58.836271068143546, 322.9456180334091, 15769.889257758856, 283.0030790269616]),
+      ("rggb_full_frame", 24, 16, 3, &[381.32452404499054, 18132.763287246227, 378.87638290411275, 231.77392564713955, 11225.565983697772, 147.23389698237116, 354.80902659893036, 17045.520306646824, 330.62366710491506]),
+      ("rggb_profile", 24, 16, 3, &[383.4662112593651, 18215.506040215492, 383.0383059067018, 296.44845950603485, 14440.323270201683, 241.9604888002999, 373.6859050989151, 17835.488741457462, 364.526467670008]),
+      ("rggb_negative_exposure", 24, 16, 3, &[372.73057693243027, 17782.682923793793, 363.7473612794026, 147.27665086835623, 7239.980796560645, 69.52375685313699, 337.6899732351303, 16378.00525778532, 304.22489976021023]),
+      ("cygm", 24, 16, 3, &[330.2392064332962, 15989.270647585392, 294.36408670208885, 242.15305441617966, 11660.862674564123, 160.30449729856224, 362.35906931757927, 17345.425794780254, 344.5220274683217]),
+      ("xtrans", 28, 16, 3, &[441.1662734746933, 20135.024219989777, 435.23239948117185, 272.69089791178703, 12451.46948003769, 171.7381630839859, 408.4678649902344, 18654.983914613724, 376.8882214632959]),
       ("mono", 24, 16, 1, &[286.27965730428696, 13782.818696141243, 217.83812832726255]),
-      ("linear_raw_profile", 16, 12, 3, &[185.23571464419365, 8951.324981868267, 181.01863450977868, 145.27743846178055, 7214.58751539886, 118.69475087388987, 188.05537623167038, 8992.080491483212, 184.61616298759185]),
+      ("linear_raw_profile", 16, 12, 3, &[185.23571345210075, 8951.324946820736, 181.01863179486003, 145.2774385213852, 7214.587505862117, 118.69475065947488, 188.05537682771683, 8992.080503284931, 184.6161640864077]),
     ];
+
+    /// Largest absolute difference of the samples of two images of the same size
+    fn max_difference(a: &RenderedImage, b: &RenderedImage) -> f32 {
+      assert_eq!((a.dim(), a.channels), (b.dim(), b.channels));
+      a.data.iter().zip(&b.data).map(|(a, b)| (a - b).abs()).fold(0.0, f32::max)
+    }
+
+    fn render_with(rawimage: &RawImage, white_balance: WhiteBalancePlacement) -> RenderedImage {
+      let options = RenderOptions {
+        white_balance,
+        ..Default::default()
+      };
+      render(rawimage.clone(), &options).expect("render")
+    }
+
+    #[test]
+    fn white_balance_placement_matters_for_ppg_only() {
+      // Values that don't clip when white balanced: bilinear demosaicing works on
+      // each color plane, so it doesn't matter if the planes are balanced before.
+      // PPG interpolates by the differences of the planes.
+      let cygm_matrix = [[0.2, 0.6, 0.5], [0.7, 0.8, 0.0], [0.1, 0.9, 0.1], [0.8, 0.2, 0.6]];
+      for (pattern, colors, wb, matrix, bilinear) in [
+        ("RGGB", "RGB", [2.0, 1.0, 1.5, f32::NAN], transform_2d(&COLOR_MATRIX), false),
+        (XTRANS, "RGB", [2.0, 1.0, 1.5, f32::NAN], transform_2d(&COLOR_MATRIX), true),
+        ("CYGM", "CYGM", [1.5, 1.2, 1.0, 1.4], transform_2d(&cygm_matrix), true),
+      ] {
+        let mut rawimage = cfa_rawimage(pattern, colors, 36, 24, wb, matrix);
+        rawimage.data = RawImageData::Integer(samples(36, 24, 1, 64, 1300));
+        let difference = max_difference(
+          &render_with(&rawimage, WhiteBalancePlacement::BeforeDemosaic),
+          &render_with(&rawimage, WhiteBalancePlacement::AfterDemosaic),
+        );
+        assert_eq!(difference < 1e-5, bilinear, "{}: {}", pattern, difference);
+      }
+    }
+
+    #[test]
+    fn clipped_highlights_are_white() {
+      // White balanced values are limited to the camera white, so clipped highlights stay neutral
+      let mut rawimage = rggb();
+      rawimage.data = RawImageData::Integer(vec![4095; 32 * 24]);
+      for placement in [WhiteBalancePlacement::BeforeDemosaic, WhiteBalancePlacement::AfterDemosaic] {
+        let image = render_with(&rawimage, placement);
+        assert!(image.data.iter().all(|v| (v - 1.0).abs() < 1e-4), "{:?}", placement);
+      }
+    }
 
     #[test]
     fn crop_in_demosaic_equals_crop_after_rendering() {
@@ -749,8 +808,8 @@ mod tests {
     #[test]
     fn develop_output_is_unchanged() {
       let update = std::env::var_os("RAWLER_UPDATE_GOLDEN").is_some();
-      for (name, rawimage, steps) in cases() {
-        let (width, height, channels, sums) = fingerprint(&rawimage, &steps);
+      for (name, rawimage, options) in cases() {
+        let (width, height, channels, sums) = fingerprint(&rawimage, &options);
         if update {
           println!("      (\"{}\", {}, {}, {}, &{:?}),", name, width, height, channels, sums);
           continue;
