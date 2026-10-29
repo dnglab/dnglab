@@ -75,6 +75,15 @@ pub(super) enum DemosaicAlgorithm {
   Bilinear4,
   XTransBilinear,
   Markesteijn,
+  Superpixel3,
+  Superpixel4,
+}
+
+impl DemosaicAlgorithm {
+  /// The result has half the width and height of the mosaic data
+  pub(super) fn half_size(self) -> bool {
+    matches!(self, Self::Superpixel3 | Self::Superpixel4)
+  }
 }
 
 /// Plan the processing of `rawimage` with `options`
@@ -97,7 +106,12 @@ pub fn plan(rawimage: &RawImage, options: &RenderOptions) -> crate::Result<Plan>
     RawPhotometricInterpretation::Cfa(config) if steps.contains(Step::Demosaic) && rawimage.cpp == 1 => Some(config),
     _ => None,
   };
-  let demosaic = mosaic.map(|config| demosaic_algorithm(config, options.demosaic)).transpose()?;
+  // Images of rotated sensors are rotated at full size
+  let quality = match options.demosaic {
+    DemosaicQuality::Preview if rawimage.fuji_rotation_width.is_some() && steps.contains(Step::FujiRotate) => DemosaicQuality::Fast,
+    quality => quality,
+  };
+  let demosaic = mosaic.map(|config| demosaic_algorithm(config, quality)).transpose()?;
   let channels = demosaic.map_or(rawimage.cpp, |(_, planes)| planes);
 
   // As shot white balance, some old images may not provide WB coeffs. White
@@ -263,11 +277,17 @@ pub fn plan(rawimage: &RawImage, options: &RenderOptions) -> crate::Result<Plan>
 /// Demosaic algorithm for a CFA and the number of color planes of its result
 fn demosaic_algorithm(config: &CFAConfig, quality: DemosaicQuality) -> crate::Result<(DemosaicAlgorithm, usize)> {
   match config.sensor {
-    SensorType::Bayer if config.cfa.is_rgb() => Ok((DemosaicAlgorithm::Ppg, 3)),
-    SensorType::Bayer if config.cfa.unique_colors() == 4 => Ok((DemosaicAlgorithm::Bilinear4, 4)),
+    SensorType::Bayer if config.cfa.is_rgb() => match quality {
+      DemosaicQuality::Preview => Ok((DemosaicAlgorithm::Superpixel3, 3)),
+      _ => Ok((DemosaicAlgorithm::Ppg, 3)),
+    },
+    SensorType::Bayer if config.cfa.unique_colors() == 4 => match quality {
+      DemosaicQuality::Preview => Ok((DemosaicAlgorithm::Superpixel4, 4)),
+      _ => Ok((DemosaicAlgorithm::Bilinear4, 4)),
+    },
     SensorType::Xtrans if config.cfa.is_rgb() => match quality {
       DemosaicQuality::Quality => Ok((DemosaicAlgorithm::Markesteijn, 3)),
-      DemosaicQuality::Fast => Ok((DemosaicAlgorithm::XTransBilinear, 3)),
+      DemosaicQuality::Fast | DemosaicQuality::Preview => Ok((DemosaicAlgorithm::XTransBilinear, 3)),
     },
     _ => Err(format!("Demosaic of CFA pattern '{}' is not supported", config.cfa).into()),
   }

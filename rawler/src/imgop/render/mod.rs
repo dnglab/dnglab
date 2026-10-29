@@ -153,6 +153,10 @@ pub enum DemosaicQuality {
   Quality,
   /// PPG for Bayer, bilinear interpolation for X-Trans data
   Fast,
+  /// Half size for previews: each 2x2 block of Bayer data is one pixel
+  /// (superpixel), bilinear interpolation for X-Trans data. Images of rotated
+  /// sensors (Fujifilm) are demosaiced like Fast.
+  Preview,
 }
 
 /// Options of the rendering
@@ -499,21 +503,28 @@ mod tests {
       Some(WhiteLevel::new_bits(12, 1)),
       false,
     );
-    for (demosaic, algorithm) in [
-      (DemosaicQuality::Quality, DemosaicAlgorithm::Markesteijn),
-      (DemosaicQuality::Fast, DemosaicAlgorithm::XTransBilinear),
-    ] {
+    let algorithm_of = |rawimage: &RawImage, demosaic| -> crate::Result<Option<DemosaicAlgorithm>> {
       let options = RenderOptions {
         demosaic,
         ..Default::default()
       };
-      let ops = plan(&rawimage, &options)?.ops;
-      assert!(
-        ops.iter().any(|op| matches!(op, Op::Demosaic { algorithm: a, .. } if *a == algorithm)),
-        "{:?}",
-        demosaic
-      );
+      Ok(plan(rawimage, &options)?.ops.iter().find_map(|op| match op {
+        Op::Demosaic { algorithm, .. } => Some(*algorithm),
+        _ => None,
+      }))
+    };
+    for (demosaic, algorithm) in [
+      (DemosaicQuality::Quality, DemosaicAlgorithm::Markesteijn),
+      (DemosaicQuality::Fast, DemosaicAlgorithm::XTransBilinear),
+      (DemosaicQuality::Preview, DemosaicAlgorithm::XTransBilinear),
+    ] {
+      assert_eq!(algorithm_of(&rawimage, demosaic)?, Some(algorithm), "{:?}", demosaic);
     }
+    // Bayer data of half size for previews, but rotated sensors are rotated at full size
+    let mut bayer = rggb_rawimage();
+    assert_eq!(algorithm_of(&bayer, DemosaicQuality::Preview)?, Some(DemosaicAlgorithm::Superpixel3));
+    bayer.fuji_rotation_width = Some(4);
+    assert_eq!(algorithm_of(&bayer, DemosaicQuality::Preview)?, Some(DemosaicAlgorithm::Ppg));
     Ok(())
   }
 

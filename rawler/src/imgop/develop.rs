@@ -670,6 +670,10 @@ mod tests {
         steps: [Rescale, Demosaic, CropActiveArea, CropDefault].into_iter().collect(),
         ..Default::default()
       };
+      let preview = RenderOptions {
+        demosaic: DemosaicQuality::Preview,
+        ..Default::default()
+      };
 
       let mut rggb_profile = rggb();
       add_profile_tables(&mut rggb_profile);
@@ -687,13 +691,15 @@ mod tests {
       vec![
         ("rggb", rggb(), all.clone()),
         ("rggb_wb_after_demosaic", rggb(), wb_after_demosaic),
+        ("rggb_preview", rggb(), preview.clone()),
         ("rggb_camera", rggb(), camera),
         ("rggb_no_wb", rggb(), without(WhiteBalance)),
         ("rggb_linear", rggb(), without(TransferFunction)),
         ("rggb_full_frame", rggb(), without(CropActiveArea)),
         ("rggb_profile", rggb_profile, all.clone()),
         ("rggb_negative_exposure", rggb_negative_exposure, all.clone()),
-        ("cygm", cygm, all.clone()),
+        ("cygm", cygm.clone(), all.clone()),
+        ("cygm_preview", cygm, preview.clone()),
         ("xtrans", xtrans, all.clone()),
         ("mono", mono(), all.clone()),
         ("linear_raw_profile", linear_raw(), all.clone()),
@@ -719,6 +725,7 @@ mod tests {
     const GOLDEN: &[(&str, usize, usize, usize, &[f64])] = &[
       ("rggb", 24, 16, 3, &[380.56808137893677, 18104.740788161755, 377.6961634597931, 232.66582250595093, 11266.001190900803, 147.76858769621805, 353.2642803788185, 17010.45430147648, 328.1159281710242]),
       ("rggb_wb_after_demosaic", 24, 16, 3, &[380.7199194431305, 18114.272230386734, 377.9928879594697, 232.36832988262177, 11259.613187074661, 147.3181136455201, 354.98246800899506, 17047.02375769615, 330.89957972745174]),
+      ("rggb_preview", 12, 8, 3, &[95.1130530834198, 4535.024439275265, 94.3125455442176, 57.73037052154541, 2806.694089382887, 36.49492572569757, 89.82149887084961, 4330.648076474667, 84.67189949810677]),
       ("rggb_camera", 24, 16, 3, &[202.01232363283634, 9857.277190387249, 117.52662926537228, 204.2414404898882, 9990.435259357095, 119.04132786895539, 201.11399140954018, 9900.458577096462, 114.79045569113153]),
       ("rggb_no_wb", 24, 16, 3, &[281.4802607446909, 13564.986759513617, 211.7243223425459, 287.3429910540581, 13848.008021116257, 219.29237275252382, 283.6068353652954, 13712.447558701038, 213.1742812932963]),
       ("rggb_linear", 24, 16, 3, &[377.01246961951256, 17960.735143005848, 372.1423593051457, 133.64919804036617, 6578.678369447589, 58.98300084691425, 322.27758035063744, 15752.828521579504, 282.1283962510165]),
@@ -726,6 +733,7 @@ mod tests {
       ("rggb_profile", 24, 16, 3, &[383.4662112593651, 18215.506040215492, 383.0383059067018, 297.52433839440346, 14476.317115783691, 242.40614491711693, 373.5126699209213, 17833.258824765682, 364.2168519828674]),
       ("rggb_negative_exposure", 24, 16, 3, &[372.9707576036453, 17801.475763201714, 364.28282762169994, 148.17328909039497, 7266.1948882341385, 69.80508398590429, 337.22546261548996, 16365.803864657879, 303.55807226827676]),
       ("cygm", 24, 16, 3, &[330.2392064332962, 15989.270647585392, 294.36408670208885, 242.15305441617966, 11660.862674564123, 160.30449729856224, 362.35906931757927, 17345.425794780254, 344.5220274683217]),
+      ("cygm_preview", 12, 8, 3, &[89.73201927542686, 4332.205256462097, 85.09224837936573, 54.80821684002876, 2643.0370524823666, 33.73017430069746, 90.4724417924881, 4360.6897903084755, 85.8589423764323]),
       ("xtrans", 28, 16, 3, &[441.8567228913307, 20118.23803973198, 436.9002191243954, 270.7740049660206, 12374.535669326782, 170.7231797951337, 409.30331003665924, 18666.734287142754, 378.8607051136843]),
       ("mono", 24, 16, 1, &[286.27965730428696, 13782.818696141243, 217.83812832726255]),
       ("linear_raw_profile", 16, 12, 3, &[185.23571345210075, 8951.324946820736, 181.01863179486003, 145.2774385213852, 7214.587505862117, 118.69475065947488, 188.05537682771683, 8992.080503284931, 184.6161640864077]),
@@ -851,17 +859,47 @@ mod tests {
         add_profile_tables(&mut rawimage);
         rawimage.crop_area = Some(crop);
         let active_area = rawimage.active_area.expect("active area");
-        let cropped = RawDevelop::default().develop_image(rawimage.clone()).expect("develop");
-        let steps: Vec<ProcessingStep> = RawDevelop::default()
-          .steps
-          .into_iter()
-          .filter(|step| *step != ProcessingStep::CropDefault)
-          .collect();
-        let mut expected = RawDevelop::new_with(&steps).develop_image(rawimage).expect("develop");
-        expected.crop(crop.rebase(&active_area).expect("crop inside of the active area")).expect("crop");
-        assert_eq!(cropped.dim(), expected.dim(), "{}", pattern);
-        assert!(cropped.data == expected.data, "{}", pattern);
+        for demosaic in [DemosaicQuality::Quality, DemosaicQuality::Preview] {
+          let options = RenderOptions {
+            demosaic,
+            ..Default::default()
+          };
+          let cropped = render(rawimage.clone(), &options).expect("render");
+          let full = RenderOptions {
+            steps: StepSet::all().without(ProcessingStep::CropDefault),
+            ..options
+          };
+          let mut expected = render(rawimage.clone(), &full).expect("render");
+          // Bayer data is demosaiced to half size for previews
+          let mut area = crop.rebase(&active_area).expect("crop inside of the active area");
+          if demosaic == DemosaicQuality::Preview && pattern != XTRANS {
+            area.scale(0.5);
+          }
+          expected.crop(area).expect("crop");
+          assert_eq!(cropped.dim(), expected.dim(), "{} {:?}", pattern, demosaic);
+          assert!(cropped.data == expected.data, "{} {:?}", pattern, demosaic);
+        }
       }
+    }
+
+    #[test]
+    fn preview_of_flat_field() {
+      // Each pixel of the preview is a block of 2x2 pixels, a flat field keeps its color
+      let mut rawimage = rggb();
+      rawimage.data = RawImageData::Integer(vec![1500; 32 * 24]);
+      let full = render(rawimage.clone(), &RenderOptions::default()).expect("render");
+      let options = RenderOptions {
+        demosaic: DemosaicQuality::Preview,
+        ..Default::default()
+      };
+      let preview = render(rawimage, &options).expect("render");
+      assert_eq!((preview.width * 2, preview.height * 2), (full.width, full.height));
+      let pixel = rgb_pixels(&full)[0];
+      assert!(
+        rgb_pixels(&preview).iter().all(|p| p.iter().zip(pixel).all(|(a, b)| (a - b).abs() < 1e-6)),
+        "{:?}",
+        pixel
+      );
     }
 
     #[test]

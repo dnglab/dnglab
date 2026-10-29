@@ -21,10 +21,9 @@ use crate::{
   },
   formats::tiff::Entry,
   imgop::{
-    develop::RawDevelop,
     matrix::{multiply, transform_1d, transform_2d},
     raw::map_4ch_to_3ch,
-    render::{ProcessingStep, RenderOptions, StepSet, render_linear_raw},
+    render::{DemosaicQuality, ProcessingStep, RenderOptions, StepSet, render, render_linear_raw},
   },
   pixarray::Color2D,
   rawimage::BlackLevel,
@@ -687,18 +686,12 @@ fn generate_preview(
       } else {
         log::warn!("Preview image not found, try to generate sRGB from RAW");
       }
-      let dev = RawDevelop::default();
-      let image = dev.develop_image(rawimage.clone())?;
-      /*
-      let params = rawimage.develop_params()?;
-      let (srgbf, dim) = develop_raw_srgb(&rawimage.data, &params)?;
-      let output = convert_from_f32_scaled_u16(&srgbf, 0, u16::MAX);
-      let image = if srgbf.len() == dim.w * dim.h {
-        DynamicImage::ImageLuma16(ImageBuffer::from_raw(dim.w as u32, dim.h as u32, output).expect("Invalid ImageBuffer size"))
-      } else {
-        DynamicImage::ImageRgb16(ImageBuffer::from_raw(dim.w as u32, dim.h as u32, output).expect("Invalid ImageBuffer size"))
+      // Previews are small, a demosaic of half size is enough
+      let options = RenderOptions {
+        demosaic: DemosaicQuality::Preview,
+        ..Default::default()
       };
-       */
+      let image = render(rawimage.clone(), &options)?;
       Ok(image.to_dynamic_image().ok_or("failed to convert to dynamic image")?)
     }
   }
