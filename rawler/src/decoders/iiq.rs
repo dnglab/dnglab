@@ -12,6 +12,7 @@ use byteorder::LittleEndian;
 use byteorder::ReadBytesExt;
 use log::debug;
 use log::warn;
+use rayon::prelude::*;
 use serde::Deserialize;
 use serde::Serialize;
 use std::collections::HashMap;
@@ -372,11 +373,11 @@ impl<'a> IiqDecoder<'a> {
         *x = clamp(num as i32, 0, 0xffff) as u16;
       }
       // Only apply for right side of image
-      for row in img.pixel_rows_mut() {
+      img.par_pixel_rows_mut().for_each(|row| {
         for pix in row.iter_mut().skip(split_col) {
           *pix = curve[*pix as usize];
         }
-      }
+      });
     }
     Ok(())
   }
@@ -425,27 +426,18 @@ impl<'a> IiqDecoder<'a> {
         control_points.iter_mut().flatten().for_each(|point| point[1 + i].y = (v + 2) >> 2);
       }
 
-      for qr in 0..2 {
-        for qc in 0..2 {
+      let curves: [[Vec<u16>; 2]; 2] = std::array::from_fn(|qr| {
+        std::array::from_fn(|qc| {
           let cp = &mut control_points[qr][qc];
           // Some images may overflow 65535 here, but it's also in dcraw...
           // We clamp here to be <= then the final control point.
           cp[17].x = clamp(((cp[16].y * 65535) / cp[16].x) as i32, 0, 65535) as usize;
           cp[17].y = cp[17].x;
           cp[18] = Point::new(65535, 65535);
-          let curve = Spline::new(cp).calculate_curve();
-
-          let (start_row, end_row) = if qr > 0 { (split_row, img.height) } else { (0, split_row) };
-          let (start_col, end_col) = if qc > 0 { (split_col, img.width) } else { (0, split_col) };
-
-          for row in start_row..end_row {
-            for col in start_col..end_col {
-              let pix = img.at_mut(row, col);
-              *pix = clamp(curve[*pix as usize] as i32, 0, 0xffff) as u16;
-            }
-          }
-        }
-      }
+          Spline::new(cp).calculate_curve()
+        })
+      });
+      apply_quadrant_curves(img, split_row, split_col, &curves);
     }
     Ok(())
   }
@@ -463,11 +455,13 @@ impl<'a> IiqDecoder<'a> {
       qmul[1][0] = 1.0 + multipliers[14];
       qmul[1][1] = 1.0 + multipliers[18];
 
-      img.for_each_index(|pix, row, col| {
+      img.par_pixel_rows_mut().enumerate().for_each(|(row, line)| {
         let qr = if row >= split_row { 1 } else { 0 };
-        let qc = if col >= split_col { 1 } else { 0 };
-        let x = qmul[qr][qc] * (pix as f32);
-        clamp(x as i32, 0, 0xffff) as u16
+        for (col, pix) in line.iter_mut().enumerate() {
+          let qc = if col >= split_col { 1 } else { 0 };
+          let x = qmul[qr][qc] * (*pix as f32);
+          *pix = clamp(x as i32, 0, 0xffff) as u16;
+        }
       });
     }
     Ok(())
@@ -494,28 +488,8 @@ impl<'a> IiqDecoder<'a> {
         }
       }
 
-      for qr in 0..2 {
-        for qc in 0..2 {
-          let cp = &mut control_points[qr][qc];
-
-          //for i in 0..9 {
-          //  println!("X: {}", cp[i].x);
-          //  //println!("Y: {}", cp[i].y);
-          //}
-
-          let curve = Spline::new(cp).calculate_curve();
-
-          let (start_row, end_row) = if qr > 0 { (split_row, img.height) } else { (0, split_row) };
-          let (start_col, end_col) = if qc > 0 { (split_col, img.width) } else { (0, split_col) };
-
-          for row in start_row..end_row {
-            for col in start_col..end_col {
-              let pix = img.at_mut(row, col);
-              *pix = curve[*pix as usize];
-            }
-          }
-        }
-      }
+      let curves: [[Vec<u16>; 2]; 2] = std::array::from_fn(|qr| std::array::from_fn(|qc| Spline::new(&control_points[qr][qc]).calculate_curve()));
+      apply_quadrant_curves(img, split_row, split_col, &curves);
     }
     Ok(())
   }
@@ -626,11 +600,13 @@ impl<'a> IiqDecoder<'a> {
       let (cblack, rblack) = q_blacklevel;
       debug_assert_eq!(cblack.len(), img.height * 2);
       debug_assert_eq!(rblack.len(), img.width * 2);
-      img.for_each_index(|pix, row, col| {
+      img.par_pixel_rows_mut().enumerate().for_each(|(row, line)| {
         let qr = if row >= split_row { 1 } else { 0 };
-        let qc = if col >= split_col { 1 } else { 0 };
-        let x = pix as i32 - black + (cblack[row * 2 + qc] as i32) + (rblack[col * 2 + qr] as i32);
-        clamp(x, 0, 0xffff) as u16
+        for (col, pix) in line.iter_mut().enumerate() {
+          let qc = if col >= split_col { 1 } else { 0 };
+          let x = *pix as i32 - black + (cblack[row * 2 + qc] as i32) + (rblack[col * 2 + qr] as i32);
+          *pix = clamp(x, 0, 0xffff) as u16;
+        }
       });
     } else {
       log::debug!("No q_blacklevel correction available, just apply basic blacklevel correction");
@@ -1205,6 +1181,17 @@ impl<'a> IiqDecoder<'a> {
       }),
     )
   }
+}
+
+/// Apply one of four lookup curves to each pixel, selected by the
+/// sensor quadrant (split at `split_row` and `split_col`) the pixel is in.
+fn apply_quadrant_curves(img: &mut PixU16, split_row: usize, split_col: usize, curves: &[[Vec<u16>; 2]; 2]) {
+  img.par_pixel_rows_mut().enumerate().for_each(|(row, line)| {
+    let qcurves = if row >= split_row { &curves[1] } else { &curves[0] };
+    let (left, right) = line.split_at_mut(split_col.min(line.len()));
+    left.iter_mut().for_each(|pix| *pix = qcurves[0][*pix as usize]);
+    right.iter_mut().for_each(|pix| *pix = qcurves[1][*pix as usize]);
+  });
 }
 
 #[allow(unused)]
