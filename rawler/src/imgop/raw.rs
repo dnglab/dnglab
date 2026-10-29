@@ -4,7 +4,7 @@
 use super::xyz::Illuminant;
 use crate::bits::{LEu32, LookupTable};
 use crate::imgop::Rect;
-use crate::pixarray::{Color2D, RgbF32};
+use crate::pixarray::Color2D;
 use crate::rawimage::{BlackLevel, RawPhotometricInterpretation, WhiteLevel};
 
 use multiversion::multiversion;
@@ -206,55 +206,6 @@ pub fn apply_linearization_table(samples: &mut [u16], row_width: usize, table: &
   });
 }
 
-#[multiversion(targets("x86_64+avx+avx2", "x86+sse", "aarch64+neon"))]
-pub(crate) fn map_3ch_to_rgb(src: &Color2D<f32, 3>, wb_coeff: &[f32; 3], cam2rgb: &[[f32; 3]; 3]) -> RgbF32 {
-  let mut out = Vec::with_capacity(src.data.len());
-
-  src
-    .pixels()
-    .par_iter()
-    .map(|pix| {
-      // We apply wb coeffs on the fly
-      let r = pix[0] * wb_coeff[0];
-      let g = pix[1] * wb_coeff[1];
-      let b = pix[2] * wb_coeff[2];
-      let srgb = [
-        cam2rgb[0][0] * r + cam2rgb[0][1] * g + cam2rgb[0][2] * b,
-        cam2rgb[1][0] * r + cam2rgb[1][1] * g + cam2rgb[1][2] * b,
-        cam2rgb[2][0] * r + cam2rgb[2][1] * g + cam2rgb[2][2] * b,
-      ];
-      clip_euclidean_norm_avg(&srgb)
-    })
-    .collect_into_vec(&mut out);
-
-  RgbF32::new_with(out, src.width, src.height)
-}
-
-#[multiversion(targets("x86_64+avx+avx2", "x86+sse", "aarch64+neon"))]
-pub(crate) fn map_4ch_to_rgb(src: &Color2D<f32, 4>, wb_coeff: &[f32; 4], cam2rgb: &[[f32; 4]; 3]) -> RgbF32 {
-  let mut out = Vec::with_capacity(src.data.len());
-
-  src
-    .pixels()
-    .par_iter()
-    .map(|pix| {
-      // We apply wb coeffs on the fly
-      let ch0 = pix[0] * wb_coeff[0];
-      let ch1 = pix[1] * wb_coeff[1];
-      let ch2 = pix[2] * wb_coeff[2];
-      let ch3 = pix[3] * wb_coeff[3];
-      let srgb = [
-        cam2rgb[0][0] * ch0 + cam2rgb[0][1] * ch1 + cam2rgb[0][2] * ch2 + cam2rgb[0][3] * ch3,
-        cam2rgb[1][0] * ch0 + cam2rgb[1][1] * ch1 + cam2rgb[1][2] * ch2 + cam2rgb[1][3] * ch3,
-        cam2rgb[2][0] * ch0 + cam2rgb[2][1] * ch1 + cam2rgb[2][2] * ch2 + cam2rgb[2][3] * ch3,
-      ];
-      clip_euclidean_norm_avg(&srgb)
-    })
-    .collect_into_vec(&mut out);
-
-  RgbF32::new_with(out, src.width, src.height)
-}
-
 /// Map four color planes to three planes by the 3x4 `reduction` matrix
 #[multiversion(targets("x86_64+avx+avx2", "x86+sse", "aarch64+neon"))]
 pub(crate) fn map_4ch_to_3ch(src: &Color2D<f32, 4>, reduction: &[[f32; 4]; 3]) -> Color2D<f32, 3> {
@@ -267,24 +218,6 @@ pub(crate) fn map_4ch_to_3ch(src: &Color2D<f32, 4>, reduction: &[[f32; 4]; 3]) -
     .collect_into_vec(&mut out);
 
   Color2D::new_with(out, src.width, src.height)
-}
-
-/// Map white balanced color planes to three planes by `matrix`
-///
-/// The white balanced values are limited to `white`, the result is not clipped.
-pub(crate) fn map_to_3ch<const N: usize>(src: &Color2D<f32, N>, wb_coeff: &[f32; N], white: f32, matrix: &[[f32; N]; 3]) -> RgbF32 {
-  let mut out = Vec::with_capacity(src.data.len());
-
-  src
-    .data
-    .par_iter()
-    .map(|pix| {
-      let balanced: [f32; N] = std::array::from_fn(|i| (pix[i] * wb_coeff[i]).min(white));
-      matrix.map(|row| row.iter().zip(&balanced).map(|(m, v)| m * v).sum())
-    })
-    .collect_into_vec(&mut out);
-
-  RgbF32::new_with(out, src.width, src.height)
 }
 
 /// Collect iterator into array

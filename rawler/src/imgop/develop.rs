@@ -4,36 +4,21 @@ use std::{
   path::Path,
 };
 
-use image::{DynamicImage, ImageBuffer, ImageEncoder, codecs::jpeg::JpegEncoder};
+use image::{ImageEncoder, codecs::jpeg::JpegEncoder};
 
 use crate::{
-  RawImage, RawImageData,
-  camera_profile::D65_PREFERENCE,
+  RawImage,
   decoders::{RawDecodeParams, RawMetadata, validate_image_index},
-  dng::{
-    CropMode,
-    opcodes::{OpcodeSelector, OpcodeStage},
-    profile_render::{ProfileRender, ToneCurve, prophoto_to_srgb, srgb_to_prophoto},
-  },
+  dng::{CropMode, opcodes::OpcodeSelector},
   formats::tiff::{DirectoryWriter, TiffWriter},
-  imgop::{
-    chromatic_adaption::{adapt_xyz2cam_bradford, bradford_adaption_matrix},
-    fuji_rotate::fuji_normalize_rotation,
-    matrix::{diagonal, identity, invert, multiply, multiply_vector, normalize, pseudo_inverse, transform_1d},
-    sensor::{Demosaic, SensorType, xtrans::bilinear::XTransBilinearDemosaic},
-  },
-  pixarray::{Color2D, PixF32, RgbF32},
-  rawimage::RawPhotometricInterpretation,
+  imgop::render::{RenderOptions, RenderedImage, render},
   rawsource::RawSource,
   tags::{ExifTag, TiffCommonTag},
 };
 
-use super::{
-  Dim2, Point, Rect, convert_from_f32_scaled_u16, crop,
-  raw::{map_3ch_to_rgb, map_4ch_to_rgb, map_to_3ch},
-  sensor::bayer::{bilinear::Bilinear4Channel, ppg::PPGDemosaic},
-  xyz::{Illuminant, SRGB_TO_XYZ_D65, XYZ_TO_SRGB_D65},
-};
+use super::convert_from_f32_scaled_u16;
+
+pub use super::render::ProcessingStep;
 
 /// File format of a processed raw image
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
@@ -126,65 +111,10 @@ pub fn process_raw_image<W: Write + Seek + Send>(raw: &Path, image_file: &mut W,
   Ok(())
 }
 
-#[derive(PartialEq, Eq, Debug, Clone, Copy)]
-pub enum ProcessingStep {
-  Rescale,
-  Demosaic,
-  FujiRotate,
-  CropActiveArea,
-  BaselineExposure,
-  WhiteBalance,
-  Calibrate,
-  /// Apply the rendering tables of the camera profile (part of Calibrate)
-  ProfileRender,
-  CropDefault,
-  SRgb,
-}
-
-pub struct RawDevelopBuilder {}
-
-#[derive(Clone)]
-pub enum Intermediate {
-  Monochrome(PixF32),
-  ThreeColor(Color2D<f32, 3>),
-  FourColor(Color2D<f32, 4>),
-}
-
-impl Intermediate {
-  pub fn dim(&self) -> Dim2 {
-    match self {
-      Intermediate::Monochrome(pixels) => pixels.dim(),
-      Intermediate::ThreeColor(pixels) => pixels.dim(),
-      Intermediate::FourColor(pixels) => pixels.dim(),
-    }
-  }
-
-  pub fn rect(&self) -> Rect {
-    match self {
-      Intermediate::Monochrome(pixels) => pixels.rect(),
-      Intermediate::ThreeColor(pixels) => pixels.rect(),
-      Intermediate::FourColor(pixels) => pixels.rect(),
-    }
-  }
-
-  pub fn to_dynamic_image(self) -> Option<DynamicImage> {
-    Some(match self {
-      Intermediate::Monochrome(pixels) => {
-        let data = convert_from_f32_scaled_u16(&pixels.data, 0, u16::MAX);
-        DynamicImage::ImageLuma16(ImageBuffer::from_raw(pixels.dim().w as u32, pixels.dim().h as u32, data)?)
-      }
-      Intermediate::ThreeColor(pixels) => {
-        let data = convert_from_f32_scaled_u16(&pixels.flatten(), 0, u16::MAX);
-        DynamicImage::ImageRgb16(ImageBuffer::from_raw(pixels.dim().w as u32, pixels.dim().h as u32, data)?)
-      }
-      Intermediate::FourColor(pixels) => {
-        let data = convert_from_f32_scaled_u16(&pixels.flatten(), 0, u16::MAX);
-        DynamicImage::ImageRgba16(ImageBuffer::from_raw(pixels.dim().w as u32, pixels.dim().h as u32, data)?)
-      }
-    })
-  }
-}
-
+/// Development of raw images with a set of processing steps
+///
+/// The order of the steps is defined by the rendering, see
+/// [`plan`](crate::imgop::render::plan).
 #[derive(Clone)]
 pub struct RawDevelop {
   pub steps: Vec<ProcessingStep>,
@@ -193,18 +123,7 @@ pub struct RawDevelop {
 impl Default for RawDevelop {
   fn default() -> Self {
     Self {
-      steps: vec![
-        ProcessingStep::Rescale,
-        ProcessingStep::Demosaic,
-        ProcessingStep::FujiRotate,
-        ProcessingStep::CropActiveArea,
-        ProcessingStep::BaselineExposure,
-        ProcessingStep::WhiteBalance,
-        ProcessingStep::Calibrate,
-        ProcessingStep::ProfileRender,
-        ProcessingStep::CropDefault,
-        ProcessingStep::SRgb,
-      ],
+      steps: ProcessingStep::ALL.to_vec(),
     }
   }
 }
@@ -214,217 +133,18 @@ impl RawDevelop {
     Self { steps: Vec::from(steps) }
   }
 
-  /*
-  pub fn linearize(rawimage: &RawImage) -> crate::Result<RgbF32> {
-    todo!()
+  /// Options of the rendering with the steps of this development
+  pub fn render_options(&self) -> RenderOptions {
+    RenderOptions {
+      steps: self.steps.iter().copied().collect(),
+      ..Default::default()
+    }
   }
 
-  pub fn develop_monochrome_image(&self, rawimage: &RawImage) -> crate::Result<PixF32> {
-    todo!()
-  }
-
-  pub fn develop_rgb_image(&self, rawimage: &RawImage) -> crate::Result<RgbF32> {
-    todo!()
-  }
-   */
-
-  /// Develop raw image and write result into TIFF.
-  /// If demosaic is disabled or camera raw is monochrome, the TIFF
-  /// has only one color channel.
-  pub fn develop_intermediate(&self, rawimage: &RawImage) -> crate::Result<Intermediate> {
-    let mut rawimage = rawimage.clone();
-    // OpcodeList1 is applied to the raw image as read from the file
-    rawimage.apply_opcode_list(OpcodeStage::List1)?;
-    if self.steps.contains(&ProcessingStep::Rescale) {
-      rawimage.apply_scaling()?;
-      // OpcodeList2 is applied just after mapping to linear reference values
-      rawimage.apply_opcode_list(OpcodeStage::List2)?;
-    }
-
-    let mut intermediate = match rawimage.cpp {
-      1 => Intermediate::Monochrome(PixF32::new_with(rawimage.data.as_f32().into_owned(), rawimage.width, rawimage.height)),
-      3 => Intermediate::ThreeColor(Color2D::<f32, 3>::new_with(
-        rawimage.data.as_f32().chunks_exact(3).map(|x| [x[0], x[1], x[2]]).collect(),
-        rawimage.width,
-        rawimage.height,
-      )),
-      4 => Intermediate::FourColor(Color2D::<f32, 4>::new_with(
-        rawimage.data.as_f32().chunks_exact(4).map(|x| [x[0], x[1], x[2], x[3]]).collect(),
-        rawimage.width,
-        rawimage.height,
-      )),
-      _ => todo!(),
-    };
-
-    if self.steps.contains(&ProcessingStep::Demosaic) {
-      intermediate = match &rawimage.photometric {
-        RawPhotometricInterpretation::Cfa(config) => {
-          if let Intermediate::Monochrome(pixels) = intermediate {
-            let roi = if self.steps.contains(&ProcessingStep::CropActiveArea) {
-              if rawimage.active_area.is_some() && rawimage.fuji_rotation_width.is_some() {
-                panic!("ActiveArea is not possible when rotation is not normalized");
-              }
-              rawimage.active_area.unwrap_or(pixels.rect())
-            } else {
-              pixels.rect()
-            };
-            if config.cfa.is_rgb() && config.sensor == SensorType::Bayer {
-              let ppg = PPGDemosaic::new();
-              let mut rgb = ppg.demosaic(pixels.view(), &config.cfa, &config.colors, roi);
-
-              // Fuji Rotate
-              if self.steps.contains(&ProcessingStep::FujiRotate)
-                && let Some(fuji_rotation_width) = rawimage.fuji_rotation_width
-              {
-                let extra_rotate = rawimage.camera.find_hint("fuji_rotate_90cw");
-                rgb = fuji_normalize_rotation(&rgb, fuji_rotation_width, extra_rotate);
-                log::debug!("dimension after rotate {:?}", rgb.dim());
-              }
-              Intermediate::ThreeColor(rgb)
-            } else if config.cfa.unique_colors() == 4 && config.sensor == SensorType::Bayer {
-              let linear = Bilinear4Channel::new();
-              Intermediate::FourColor(linear.demosaic(pixels.view(), &config.cfa, &config.colors, roi))
-            } else if config.cfa.is_rgb() && config.sensor == SensorType::Xtrans {
-              let xtrans_demosaic = XTransBilinearDemosaic::new();
-              Intermediate::ThreeColor(xtrans_demosaic.demosaic(pixels.view(), &config.cfa, &config.colors, roi))
-            } else {
-              todo!()
-            }
-          } else {
-            intermediate
-          }
-        }
-        _ => intermediate,
-      };
-
-      // OpcodeList3 is applied just after demosaicing
-      if rawimage.opcode_list(OpcodeStage::List3).is_some() {
-        let cropped = matches!(rawimage.photometric, RawPhotometricInterpretation::Cfa(_)) && self.steps.contains(&ProcessingStep::CropActiveArea);
-        intermediate = apply_opcode_list3(&mut rawimage, intermediate, cropped)?;
-      }
-    }
-
-    // A positive BaselineExposure is applied as linear gain to the scene-linear
-    // data, clipping is done by the color space conversion or the final
-    // conversion to integers. A negative BaselineExposure is applied as tone
-    // curve that keeps white at 1.0, by the Calibrate step or here without it.
-    let exposure = if self.steps.contains(&ProcessingStep::BaselineExposure) {
-      rawimage.baseline_exposure.unwrap_or(0.0) + rawimage.baseline_exposure_offset().unwrap_or(0.0)
-    } else {
-      0.0
-    };
-    if exposure > 0.0 {
-      let gain = exposure.exp2();
-      log::debug!("ProcessingStep: BaselineExposure {} EV, gain: {}", exposure, gain);
-      match &mut intermediate {
-        Intermediate::Monochrome(pixels) => pixels.for_each(|v| v * gain),
-        Intermediate::ThreeColor(pixels) => pixels.for_each(|v| v.map(|v| v * gain)),
-        Intermediate::FourColor(pixels) => pixels.for_each(|v| v.map(|v| v * gain)),
-      };
-    } else if !self.steps.contains(&ProcessingStep::Calibrate)
-      && let Some(curve) = ToneCurve::negative_exposure(exposure)
-    {
-      log::debug!("ProcessingStep: BaselineExposure {} EV as tone curve", exposure);
-      match &mut intermediate {
-        Intermediate::Monochrome(pixels) => pixels.for_each(|v| curve.eval(v)),
-        Intermediate::ThreeColor(pixels) => pixels.for_each(|v| curve.apply_rgb(v)),
-        Intermediate::FourColor(pixels) => pixels.for_each(|v| v.map(|v| curve.eval(v))),
-      };
-    }
-
-    if self.steps.contains(&ProcessingStep::Calibrate) {
-      // Some old images may not provide WB coeffs. Assume 1.0 in this case.
-      let mut wb = if rawimage.wb_coeffs[0].is_nan() {
-        [1.0, 1.0, 1.0, 1.0]
-      } else {
-        rawimage.wb_coeffs
-      };
-      if !self.steps.contains(&ProcessingStep::WhiteBalance) {
-        wb = [1.0, 1.0, 1.0, 1.0];
-      }
-
-      // Rendering tables of the camera profile, for the same slot as the matrices,
-      // and a negative BaselineExposure
-      let tables = self.steps.contains(&ProcessingStep::ProfileRender);
-      let slot = rawimage.best_calibration_slot().filter(|_| tables);
-      let gain_table_map = rawimage
-        .as_shot_camera_profile_index()
-        .and_then(|index| rawimage.effective_gain_table_map(index))
-        .filter(|_| tables);
-      let render = ProfileRender::new(slot.map(|slot| (slot.profile, slot.slot)), gain_table_map, exposure);
-      // Stage 3 image area of the gain table map: demosaiced CFA data is already
-      // cropped to the ActiveArea, other data is cropped later
-      let cropped = matches!(rawimage.photometric, RawPhotometricInterpretation::Cfa(_))
-        && self.steps.contains(&ProcessingStep::Demosaic)
-        && self.steps.contains(&ProcessingStep::CropActiveArea);
-      let active_area = if cropped { None } else { rawimage.active_area };
-
-      intermediate = match intermediate {
-        Intermediate::Monochrome(mut pixels) => {
-          if let Some(curve) = ToneCurve::negative_exposure(exposure) {
-            pixels.for_each(|v| curve.eval(v));
-          }
-          Intermediate::Monochrome(pixels)
-        }
-        Intermediate::ThreeColor(pixels) => {
-          let wb = [wb[0], wb[1], wb[2]];
-          let cam2rgb = camera_to_srgb(&rawimage, &wb);
-          log::debug!("wb: {:?}, camera to sRGB: {:?}", wb, cam2rgb);
-          Intermediate::ThreeColor(match &render {
-            Some(render) => map_with_profile_render(&pixels, &wb, &cam2rgb, render, active_area)?,
-            None => map_3ch_to_rgb(&pixels, &wb, &cam2rgb),
-          })
-        }
-        Intermediate::FourColor(pixels) => {
-          let cam2rgb = camera_to_srgb(&rawimage, &wb);
-          log::debug!("wb: {:?}, camera to sRGB: {:?}", wb, cam2rgb);
-          Intermediate::ThreeColor(match &render {
-            Some(render) => map_with_profile_render(&pixels, &wb, &cam2rgb, render, active_area)?,
-            None => map_4ch_to_rgb(&pixels, &wb, &cam2rgb),
-          })
-        }
-      };
-    }
-
-    if self.steps.contains(&ProcessingStep::CropDefault) {
-      log::debug!("ProcessingStep: CropDefault");
-      log::debug!("Crop: {:?}", rawimage.crop_area);
-      log::debug!("active_area: {:?}", rawimage.active_area);
-      if let Some(mut crop) = rawimage.crop_area.or(rawimage.active_area) {
-        if self.steps.contains(&ProcessingStep::Demosaic) && self.steps.contains(&ProcessingStep::CropActiveArea) {
-          // If active area crop was already applied during demosaic, we need to
-          // adapt default crop to active area crop.
-          if let Some(active_area) = &rawimage.active_area {
-            crop = crop.adapt(active_area);
-            log::debug!("Adapt crop to active_area: {:?}", crop);
-          }
-        }
-        if intermediate.dim().w == rawimage.active_area.map(|area| area.d).unwrap_or(rawimage.dim()).w / 2 {
-          // Superpixel debayer used
-          crop.scale(0.5);
-          log::debug!("Scale crop to 0.5: {:?}", crop);
-        }
-        // Only apply crop if dimensions differ.
-        if crop.d != intermediate.dim() {
-          log::debug!("crop: {:?}, intermediate dim: {:?}, rawimage: {:?}", crop, intermediate.dim(), rawimage.dim());
-          intermediate = match intermediate {
-            Intermediate::Monochrome(pixels) => Intermediate::Monochrome(pixels.crop(crop)),
-            Intermediate::ThreeColor(pixels) => Intermediate::ThreeColor(pixels.crop(crop)),
-            Intermediate::FourColor(pixels) => Intermediate::FourColor(pixels.crop(crop)),
-          };
-        }
-      }
-    }
-
-    if self.steps.contains(&ProcessingStep::SRgb) {
-      match &mut intermediate {
-        Intermediate::Monochrome(pixels) => pixels.for_each(super::srgb::srgb_apply_gamma),
-        Intermediate::ThreeColor(pixels) => pixels.for_each(super::srgb::srgb_apply_gamma_n),
-        Intermediate::FourColor(pixels) => pixels.for_each(super::srgb::srgb_apply_gamma_n),
-      };
-    }
-
-    Ok(intermediate)
+  /// Develop raw image. If demosaic is disabled or camera raw is monochrome,
+  /// the image has one channel.
+  pub fn develop_image(&self, rawimage: &RawImage) -> crate::Result<RenderedImage> {
+    render(rawimage.clone(), &self.render_options())
   }
 
   /// Develop raw image and write result into TIFF.
@@ -434,61 +154,26 @@ impl RawDevelop {
   where
     W: io::Write + io::Seek,
   {
-    let intermediate = self.develop_intermediate(rawimage)?;
+    let image = self.develop_image(rawimage)?;
 
     let mut tiff = TiffWriter::new(writer)?;
     let mut root_ifd = Self::metadata_ifd(&mut tiff, rawimage, md)?;
 
-    match intermediate {
-      Intermediate::Monochrome(pixels) => {
-        let data = convert_from_f32_scaled_u16(&pixels.data, 0, u16::MAX);
-        let (strip_rows, strips) = tiff.write_strips_lzw(&data, 1, pixels.dim(), 0)?;
-        let strip_offsets: Vec<u32> = strips.iter().map(|(offset, _)| *offset).collect();
-        let strip_bytes: Vec<u32> = strips.iter().map(|(_, bytes)| *bytes).collect();
-        root_ifd.add_tag(TiffCommonTag::Compression, 5);
-        root_ifd.add_tag(TiffCommonTag::Predictor, 1);
-        root_ifd.add_tag(TiffCommonTag::StripOffsets, &strip_offsets);
-        root_ifd.add_tag(TiffCommonTag::StripByteCounts, &strip_bytes);
-        root_ifd.add_tag(TiffCommonTag::BitsPerSample, [16_u16]);
-        root_ifd.add_tag(TiffCommonTag::SamplesPerPixel, [1_u16]);
-        root_ifd.add_tag(TiffCommonTag::PhotometricInt, [1_u16]);
-        root_ifd.add_tag(TiffCommonTag::RowsPerStrip, strip_rows);
-        root_ifd.add_tag(TiffCommonTag::ImageWidth, pixels.width as u16);
-        root_ifd.add_tag(TiffCommonTag::ImageLength, pixels.height as u16);
-      }
-      Intermediate::ThreeColor(pixels) => {
-        let data = convert_from_f32_scaled_u16(&pixels.flatten(), 0, u16::MAX);
-        let (strip_rows, strips) = tiff.write_strips_lzw(&data, 3, pixels.dim(), 0)?;
-        let strip_offsets: Vec<u32> = strips.iter().map(|(offset, _)| *offset).collect();
-        let strip_bytes: Vec<u32> = strips.iter().map(|(_, bytes)| *bytes).collect();
-        root_ifd.add_tag(TiffCommonTag::Compression, 5);
-        root_ifd.add_tag(TiffCommonTag::Predictor, 1);
-        root_ifd.add_tag(TiffCommonTag::StripOffsets, &strip_offsets);
-        root_ifd.add_tag(TiffCommonTag::StripByteCounts, &strip_bytes);
-        root_ifd.add_tag(TiffCommonTag::BitsPerSample, [16_u16, 16, 16]);
-        root_ifd.add_tag(TiffCommonTag::SamplesPerPixel, [3_u16]);
-        root_ifd.add_tag(TiffCommonTag::PhotometricInt, [2_u16]);
-        root_ifd.add_tag(TiffCommonTag::RowsPerStrip, strip_rows);
-        root_ifd.add_tag(TiffCommonTag::ImageWidth, pixels.width as u16);
-        root_ifd.add_tag(TiffCommonTag::ImageLength, pixels.height as u16);
-      }
-      Intermediate::FourColor(pixels) => {
-        let data = convert_from_f32_scaled_u16(&pixels.flatten(), 0, u16::MAX);
-        let (strip_rows, strips) = tiff.write_strips_lzw(&data, 4, pixels.dim(), 0)?;
-        let strip_offsets: Vec<u32> = strips.iter().map(|(offset, _)| *offset).collect();
-        let strip_bytes: Vec<u32> = strips.iter().map(|(_, bytes)| *bytes).collect();
-        root_ifd.add_tag(TiffCommonTag::Compression, 5);
-        root_ifd.add_tag(TiffCommonTag::Predictor, 1);
-        root_ifd.add_tag(TiffCommonTag::StripOffsets, &strip_offsets);
-        root_ifd.add_tag(TiffCommonTag::StripByteCounts, &strip_bytes);
-        root_ifd.add_tag(TiffCommonTag::BitsPerSample, [16_u16, 16, 16, 16]); // Extra-channel, even if PhotometricInt is RGB!
-        root_ifd.add_tag(TiffCommonTag::SamplesPerPixel, [4_u16]);
-        root_ifd.add_tag(TiffCommonTag::PhotometricInt, [2_u16]);
-        root_ifd.add_tag(TiffCommonTag::RowsPerStrip, strip_rows);
-        root_ifd.add_tag(TiffCommonTag::ImageWidth, pixels.width as u16);
-        root_ifd.add_tag(TiffCommonTag::ImageLength, pixels.height as u16);
-      }
-    }
+    let data = convert_from_f32_scaled_u16(&image.data, 0, u16::MAX);
+    let (strip_rows, strips) = tiff.write_strips_lzw(&data, image.channels, image.dim(), 0)?;
+    let strip_offsets: Vec<u32> = strips.iter().map(|(offset, _)| *offset).collect();
+    let strip_bytes: Vec<u32> = strips.iter().map(|(_, bytes)| *bytes).collect();
+    root_ifd.add_tag(TiffCommonTag::Compression, 5);
+    root_ifd.add_tag(TiffCommonTag::Predictor, 1);
+    root_ifd.add_tag(TiffCommonTag::StripOffsets, &strip_offsets);
+    root_ifd.add_tag(TiffCommonTag::StripByteCounts, &strip_bytes);
+    // Four channels are written as RGB with an extra channel
+    root_ifd.add_tag(TiffCommonTag::BitsPerSample, &vec![16_u16; image.channels]);
+    root_ifd.add_tag(TiffCommonTag::SamplesPerPixel, [image.channels as u16]);
+    root_ifd.add_tag(TiffCommonTag::PhotometricInt, [if image.channels == 1 { 1_u16 } else { 2 }]);
+    root_ifd.add_tag(TiffCommonTag::RowsPerStrip, strip_rows);
+    root_ifd.add_tag(TiffCommonTag::ImageWidth, image.width as u16);
+    root_ifd.add_tag(TiffCommonTag::ImageLength, image.height as u16);
 
     tiff.build(root_ifd)?;
 
@@ -500,10 +185,7 @@ impl RawDevelop {
   where
     W: io::Write,
   {
-    let image = self
-      .develop_intermediate(rawimage)?
-      .to_dynamic_image()
-      .ok_or("failed to convert to dynamic image")?;
+    let image = self.develop_image(rawimage)?.to_dynamic_image().ok_or("failed to convert to dynamic image")?;
 
     // EXIF data is a TIFF structure without image data
     let mut exif = Cursor::new(Vec::new());
@@ -548,155 +230,20 @@ impl RawDevelop {
   }
 }
 
-/// Map camera values to linear sRGB (D65) by way of the rendering tables of
-/// the camera profile, which are applied to linear ProPhoto RGB
-///
-/// Like a DNG reader, white balanced camera values are clipped at the camera
-/// white (scaled by the gain of a positive BaselineExposure), so clipped
-/// highlights stay neutral, and colors outside of sRGB are clipped per
-/// channel. `active_area` is the image area of the gain table map, the whole
-/// image if `None`.
-fn map_with_profile_render<const N: usize>(
-  pixels: &Color2D<f32, N>,
-  wb: &[f32; N],
-  cam2rgb: &[[f32; N]; 3],
-  render: &ProfileRender,
-  active_area: Option<Rect>,
-) -> crate::Result<RgbF32> {
-  let white = render.exposure_gain() * wb.iter().copied().fold(f32::INFINITY, f32::min);
-  let mut prophoto = map_to_3ch(pixels, wb, white, &multiply(&srgb_to_prophoto(), cam2rgb));
-  let area = active_area.unwrap_or_else(|| prophoto.rect());
-  render.apply(&mut prophoto, area)?;
-  let mut srgb = map_to_3ch(&prophoto, &[1.0; 3], f32::INFINITY, &prophoto_to_srgb());
-  srgb.for_each(|pixel| pixel.map(|v| v.clamp(0.0, 1.0)));
-  Ok(srgb)
-}
-
-/// Matrix from white balanced camera values to linear sRGB (D65)
-///
-/// Camera values are white balanced by `wb`, the reciprocal of the camera
-/// neutral. AnalogBalance and CameraCalibration (AB * CC) of the image are
-/// applied. With a ForwardMatrix, the camera values are mapped to XYZ D50 as
-/// defined by DNG and adapted to D65 by Bradford. Otherwise the ColorMatrix,
-/// adapted to D65, is normalized to map the camera neutral to the sRGB white.
-fn camera_to_srgb<const N: usize>(rawimage: &RawImage, wb: &[f32; N]) -> [[f32; N]; 3] {
-  let slot = rawimage.best_calibration_slot();
-
-  let analog_balance = rawimage.analog_balance.as_deref().and_then(|balance| {
-    let balance = <[f32; N]>::try_from(balance).ok();
-    if balance.is_none() {
-      log::warn!("AnalogBalance doesn't match {} color planes, ignoring it", N);
-    }
-    balance
-  });
-  let calibration = slot.and_then(|slot| slot.camera_calibration).and_then(|matrix| {
-    let matrix = transform_1d::<N, N>(matrix);
-    if matrix.is_none() {
-      log::warn!("CameraCalibration doesn't match {} color planes, ignoring it", N);
-    }
-    matrix
-  });
-  let abcc = match (analog_balance, calibration) {
-    (None, None) => None,
-    (balance, calibration) => Some(multiply(&diagonal(&balance.unwrap_or([1.0; N])), &calibration.unwrap_or(identity()))),
-  };
-
-  if let Some(forward_matrix) = slot.and_then(|slot| slot.forward_matrix) {
-    match (transform_1d::<3, N>(forward_matrix), invert(&abcc.unwrap_or(identity()))) {
-      (Some(forward_matrix), Some(abcc_inv)) => {
-        // CameraToXYZ_D50 = FM * D * Inverse(AB * CC), D white balances the reference neutral
-        let neutral = wb.map(|coeff| 1.0 / coeff);
-        let reference_neutral = multiply_vector(&abcc_inv, &neutral);
-        let camera_to_xyz = multiply(&forward_matrix, &multiply(&diagonal(&reference_neutral.map(|v| 1.0 / v)), &abcc_inv));
-        // The camera values are already white balanced by `wb`
-        let camera_to_xyz = multiply(&camera_to_xyz, &diagonal(&neutral));
-        let xyz_to_srgb = multiply(&XYZ_TO_SRGB_D65, &bradford_adaption_matrix(&Illuminant::D50, &Illuminant::D65));
-        let cam2rgb = multiply(&xyz_to_srgb, &camera_to_xyz);
-        if cam2rgb.as_flattened().iter().all(|v| v.is_finite()) {
-          return cam2rgb;
-        }
-        log::warn!("Invalid ForwardMatrix result for white balance {:?}, using ColorMatrix", wb);
-      }
-      (None, _) => log::warn!("ForwardMatrix doesn't match {} color planes, using ColorMatrix", N),
-      (_, None) => log::warn!("AnalogBalance * CameraCalibration is not invertible, using ColorMatrix"),
-    }
-  }
-
-  let xyz2cam = match slot.and_then(|slot| Some((slot.illuminant, transform_1d::<N, 3>(slot.color_matrix)?))) {
-    Some((Illuminant::D65, matrix)) => matrix,
-    Some((illuminant, matrix)) if !D65_PREFERENCE.contains(&illuminant) => {
-      log::warn!("Color matrix for {:?} can't be adapted to D65, it is used as it is", illuminant);
-      matrix
-    }
-    Some((illuminant, matrix)) => {
-      log::warn!("Image has no D65 illuminant matrix, alternative for Bradford adaption: {:?}", illuminant);
-      adapt_xyz2cam_bradford(&illuminant, &Illuminant::D65, &matrix)
-    }
-    None => {
-      log::warn!("No color matrix for {} color planes found, using identity matrix", N);
-      std::array::from_fn(|i| std::array::from_fn(|j| if i == j { 1.0 } else { 0.0 }))
-    }
-  };
-  let xyz2cam = match abcc {
-    Some(abcc) => multiply(&abcc, &xyz2cam),
-    None => xyz2cam,
-  };
-  pseudo_inverse(normalize(multiply(&xyz2cam, &SRGB_TO_XYZ_D65)))
-}
-
-/// Apply OpcodeList3 to the demosaiced image. While the opcodes are applied, the
-/// intermediate is the image data of `rawimage`. If `cropped` is set, the
-/// intermediate is the ActiveArea of the raw image and stays cropped to it.
-fn apply_opcode_list3(rawimage: &mut RawImage, intermediate: Intermediate, cropped: bool) -> crate::Result<Intermediate> {
-  let dim = intermediate.dim();
-  let (cpp, data) = match intermediate {
-    Intermediate::Monochrome(pixels) => (1, pixels.data),
-    Intermediate::ThreeColor(pixels) => (3, pixels.data.into_flattened()),
-    Intermediate::FourColor(pixels) => (4, pixels.data.into_flattened()),
-  };
-  rawimage.width = dim.w;
-  rawimage.height = dim.h;
-  rawimage.cpp = cpp;
-  rawimage.data = RawImageData::Float(data);
-  if cropped && let Some(active_area) = rawimage.active_area.take() {
-    rawimage.crop_area = rawimage.crop_area.and_then(|crop_area| crop_area.rebase(&active_area));
-  }
-
-  rawimage.apply_opcode_list(OpcodeStage::List3)?;
-
-  let mut samples = match std::mem::replace(&mut rawimage.data, RawImageData::Float(Vec::new())) {
-    RawImageData::Float(samples) => samples,
-    data => data.as_f32().into_owned(),
-  };
-  // A TrimBounds in OpcodeList3 shrinks the ActiveArea, keep the intermediate cropped to it
-  if cropped && let Some(active_area) = rawimage.active_area.take() {
-    let window = Rect::new(
-      Point::new(active_area.p.x * cpp, active_area.p.y),
-      Dim2::new(active_area.d.w * cpp, active_area.d.h),
-    );
-    samples = crop(&samples, Dim2::new(rawimage.width * cpp, rawimage.height), window);
-    rawimage.width = active_area.d.w;
-    rawimage.height = active_area.d.h;
-    rawimage.crop_area = rawimage.crop_area.and_then(|crop_area| crop_area.rebase(&active_area));
-  }
-  let (width, height) = (rawimage.width, rawimage.height);
-  Ok(match cpp {
-    1 => Intermediate::Monochrome(PixF32::new_with(samples, width, height)),
-    3 => Intermediate::ThreeColor(Color2D::new_with(samples.as_chunks::<3>().0.to_vec(), width, height)),
-    _ => Intermediate::FourColor(Color2D::new_with(samples.as_chunks::<4>().0.to_vec(), width, height)),
-  })
-}
-
 #[cfg(test)]
 mod tests {
   use super::*;
   use crate::{
-    CFA,
+    CFA, RawImageData,
     decoders::Camera,
     dng::opcodes::{FixBadPixelsConstant, Opcode, OpcodeList, TrimBounds, WarpRectilinear, WarpRectilinearCoeffs},
-    imgop::matrix::{FlatMatrix, transform_2d},
+    imgop::{
+      Dim2, Point, Rect,
+      matrix::{FlatMatrix, identity, transform_2d},
+      xyz::Illuminant,
+    },
     pixarray::PixU16,
-    rawimage::{BlackLevel, CFAConfig, WhiteLevel},
+    rawimage::{BlackLevel, CFAConfig, RawPhotometricInterpretation, WhiteLevel},
   };
 
   fn warp_rectilinear(k_r0: f64, k_r1: f64) -> Opcode {
@@ -721,10 +268,8 @@ mod tests {
   const COLOR_MATRIX: [[f32; 3]; 3] = [[0.6722, -0.0635, -0.0963], [-0.4287, 1.2460, 0.2028], [-0.0908, 0.2162, 0.5668]];
   const CALIBRATION: [[f32; 3]; 3] = [[1.0, 0.1, 0.0], [0.0, 0.9, 0.05], [0.0, 0.0, 1.1]];
 
-  /// Image with a D65 profile, `forward_matrix` and the calibration data
-  fn calibrated_rawimage(forward_matrix: Option<FlatMatrix>, calibration: Option<FlatMatrix>, analog_balance: Option<Vec<f32>>) -> RawImage {
-    use crate::camera_profile::{CameraCalibration, CameraProfile};
-
+  /// Image of one pixel with a D65 profile
+  fn d65_rawimage() -> RawImage {
     let mut rawimage = RawImage::new_with_data(
       Camera::default(),
       RawImageData::Float(vec![0.0; 3]),
@@ -737,107 +282,29 @@ mod tests {
       Some(WhiteLevel::new(vec![1; 3])),
       false,
     );
-    let mut profile = CameraProfile::default();
+    let mut profile = crate::camera_profile::CameraProfile::default();
     profile.calibration_illuminant[0] = Some(Illuminant::D65);
     profile.color_matrix[0] = Some(transform_2d(&COLOR_MATRIX));
-    profile.forward_matrix[0] = forward_matrix;
     rawimage.camera_profiles = vec![profile];
-    rawimage.camera_calibration = CameraCalibration {
-      matrices: [calibration, None, None],
-      signature: None,
-    };
-    rawimage.analog_balance = analog_balance;
     rawimage
   }
 
-  fn assert_matrix_eq<const N: usize>(a: &[[f32; N]; 3], b: &[[f32; N]; 3]) {
-    for (x, y) in a.as_flattened().iter().zip(b.as_flattened()) {
-      assert!((x - y).abs() < 1e-4, "{:?} != {:?}", a, b);
-    }
-  }
-
-  /// The white balanced camera neutral is the sRGB white
-  fn assert_neutral_is_white<const N: usize>(cam2rgb: &[[f32; N]; 3]) {
-    for v in multiply_vector(cam2rgb, &[1.0; N]) {
-      assert!((v - 1.0).abs() < 1e-3, "{:?}", cam2rgb);
-    }
-  }
-
-  #[test]
-  fn forward_matrix_maps_to_xyz_d50() {
-    let rawimage = calibrated_rawimage(Some(transform_2d(&FORWARD_MATRIX)), None, None);
-    let cam2rgb = camera_to_srgb(&rawimage, &[2.0, 1.0, 1.5]);
-    let expected = multiply(
-      &multiply(&XYZ_TO_SRGB_D65, &bradford_adaption_matrix(&Illuminant::D50, &Illuminant::D65)),
-      &FORWARD_MATRIX,
-    );
-    assert_matrix_eq(&cam2rgb, &expected);
-    assert_neutral_is_white(&cam2rgb);
-  }
-
-  #[test]
-  fn forward_matrix_with_calibration() {
-    let wb = [2.0, 1.0, 1.5];
-    let plain = camera_to_srgb(&calibrated_rawimage(Some(transform_2d(&FORWARD_MATRIX)), None, None), &wb);
-    // A diagonal AB * CC is removed by the white balance
-    let diagonal_calibration = calibrated_rawimage(
-      Some(transform_2d(&FORWARD_MATRIX)),
-      Some(transform_2d(&diagonal(&[1.1, 1.0, 0.9]))),
-      Some(vec![1.2, 1.0, 0.8]),
-    );
-    assert_matrix_eq(&camera_to_srgb(&diagonal_calibration, &wb), &plain);
-    // A full CameraCalibration changes the colors, the neutral stays white
-    let calibrated = camera_to_srgb(
-      &calibrated_rawimage(Some(transform_2d(&FORWARD_MATRIX)), Some(transform_2d(&CALIBRATION)), Some(vec![1.2, 1.0, 0.8])),
-      &wb,
-    );
-    assert_neutral_is_white(&calibrated);
-    assert!(calibrated.as_flattened().iter().zip(plain.as_flattened()).any(|(a, b)| (a - b).abs() > 0.01));
-  }
-
-  #[test]
-  fn color_matrix_with_calibration() {
-    let wb = [2.0, 1.0, 1.5];
-    // Without calibration, the matrix is calculated as before
-    let plain = camera_to_srgb(&calibrated_rawimage(None, None, None), &wb);
-    assert_eq!(plain, pseudo_inverse(normalize(multiply(&COLOR_MATRIX, &SRGB_TO_XYZ_D65))));
-    let diagonal_calibration = calibrated_rawimage(None, Some(transform_2d(&diagonal(&[1.1, 1.0, 0.9]))), Some(vec![1.2, 1.0, 0.8]));
-    assert_matrix_eq(&camera_to_srgb(&diagonal_calibration, &wb), &plain);
-    // XYZtoCamera = AB * CC * CM
-    let calibrated = camera_to_srgb(&calibrated_rawimage(None, Some(transform_2d(&CALIBRATION)), Some(vec![1.2, 1.0, 0.8])), &wb);
-    let xyz2cam = multiply(&diagonal(&[1.2, 1.0, 0.8]), &multiply(&CALIBRATION, &COLOR_MATRIX));
-    assert_matrix_eq(&calibrated, &pseudo_inverse(normalize(multiply(&xyz2cam, &SRGB_TO_XYZ_D65))));
-    assert_neutral_is_white(&calibrated);
-  }
-
-  #[test]
-  fn forward_matrix_with_four_color_planes() {
-    let forward_matrix = [[0.4, 0.2, 0.3, 0.0644], [0.2, 0.5, 0.1, 0.2], [0.1, 0.0, 0.6, 0.1252]];
-    let mut rawimage = calibrated_rawimage(Some(transform_2d(&forward_matrix)), None, Some(vec![1.0, 1.0, 1.0, 2.0]));
-    rawimage.camera_profiles[0].color_matrix[0] = Some(vec![1.0; 12]);
-    let cam2rgb = camera_to_srgb(&rawimage, &[2.0, 1.0, 1.5, 1.2]);
-    let expected = multiply(
-      &multiply(&XYZ_TO_SRGB_D65, &bradford_adaption_matrix(&Illuminant::D50, &Illuminant::D65)),
-      &forward_matrix,
-    );
-    assert_matrix_eq(&cam2rgb, &expected);
+  /// Pixels of an image with three channels
+  fn rgb_pixels(image: &RenderedImage) -> &[[f32; 3]] {
+    image.view().as_array_slice::<3>().expect("three color image")
   }
 
   #[test]
   fn develop_applies_profile_render() -> std::result::Result<(), Box<dyn std::error::Error>> {
-    let mut rawimage = calibrated_rawimage(None, None, None);
+    let mut rawimage = d65_rawimage();
     rawimage.data = RawImageData::Float(vec![0.2, 0.4, 0.3]);
     let without_render: Vec<ProcessingStep> = RawDevelop::default()
       .steps
       .into_iter()
       .filter(|step| *step != ProcessingStep::ProfileRender)
       .collect();
-    let develop = |rawimage: &RawImage, steps: &[ProcessingStep]| -> crate::Result<[f32; 3]> {
-      match RawDevelop::new_with(steps).develop_intermediate(rawimage)? {
-        Intermediate::ThreeColor(pixels) => Ok(pixels.data[0]),
-        _ => panic!("expected three color image"),
-      }
-    };
+    let develop =
+      |rawimage: &RawImage, steps: &[ProcessingStep]| -> crate::Result<[f32; 3]> { Ok(rgb_pixels(&RawDevelop::new_with(steps).develop_image(rawimage)?)[0]) };
     // Without tables, the step has no effect
     assert_eq!(develop(&rawimage, &RawDevelop::default().steps)?, develop(&rawimage, &without_render)?);
     // The tone curve brightens the image
@@ -851,7 +318,7 @@ mod tests {
   #[test]
   fn develop_jpeg_with_exif() -> std::result::Result<(), Box<dyn std::error::Error>> {
     use crate::{camera_profile::CameraProfile, exif::Exif};
-    use image::{ColorType, ImageDecoder, codecs::jpeg::JpegDecoder};
+    use image::{ColorType, DynamicImage, ImageDecoder, codecs::jpeg::JpegDecoder};
 
     let mut camera = Camera::new();
     camera.clean_make = "DNGLab".into();
@@ -906,10 +373,9 @@ mod tests {
     );
     rawimage.dng_opcodes_3 = Some(OpcodeList::new(vec![warp_rectilinear(0.5, 0.0)]));
     let develop = RawDevelop::new_with(&[ProcessingStep::Rescale, ProcessingStep::Demosaic]);
-    let Intermediate::ThreeColor(pixels) = develop.develop_intermediate(&rawimage)? else {
-      panic!("expected three color image");
-    };
-    for (i, pixel) in pixels.data.iter().enumerate() {
+    let image = develop.develop_image(&rawimage)?;
+    let pixels = rgb_pixels(&image);
+    for (i, pixel) in pixels.iter().enumerate() {
       let x = (i % 8) as f32;
       assert_eq!(*pixel, [(2.0 + x / 2.0) / 8.0; 3], "pixel {}", i);
     }
@@ -949,13 +415,11 @@ mod tests {
       ProcessingStep::CropActiveArea,
       ProcessingStep::CropDefault,
     ]);
-    let intermediate = develop.develop_intermediate(&rawimage)?;
-    assert_eq!(intermediate.dim(), Dim2::new(8, 6));
-    let Intermediate::ThreeColor(pixels) = intermediate else {
-      panic!("expected three color image");
-    };
+    let image = develop.develop_image(&rawimage)?;
+    assert_eq!(image.dim(), Dim2::new(8, 6));
+    let pixels = rgb_pixels(&image);
     let expected = 2048.0 / 4095.0;
-    assert!(pixels.data.iter().flatten().all(|v| (v - expected).abs() < 1e-4));
+    assert!(pixels.iter().flatten().all(|v| (v - expected).abs() < 1e-4));
     Ok(())
   }
 
@@ -986,16 +450,15 @@ mod tests {
       constant: 0,
       bayer_phase: 0,
     })]));
-    let Intermediate::Monochrome(pixels) = RawDevelop::new_with(&[ProcessingStep::Rescale]).develop_intermediate(&rawimage)? else {
-      panic!("expected monochrome image");
-    };
-    assert_eq!(pixels.data[6 * 16 + 6], 1300.0 / 4095.0);
+    let image = RawDevelop::new_with(&[ProcessingStep::Rescale]).develop_image(&rawimage)?;
+    assert_eq!(image.channels, 1);
+    assert_eq!(image.data[6 * 16 + 6], 1300.0 / 4095.0);
     Ok(())
   }
 
   /// White and a dark gray pixel with a D65 profile and a BaselineExposure of -1 EV
   fn negative_exposure_rawimage() -> RawImage {
-    let mut rawimage = calibrated_rawimage(None, None, None);
+    let mut rawimage = d65_rawimage();
     rawimage.width = 2;
     rawimage.data = RawImageData::Float(vec![1.0, 1.0, 1.0, 0.2, 0.2, 0.2]);
     rawimage.baseline_exposure = Some(-1.0);
@@ -1006,19 +469,21 @@ mod tests {
   fn develop_applies_negative_baseline_exposure() -> std::result::Result<(), Box<dyn std::error::Error>> {
     let rawimage = negative_exposure_rawimage();
     // White stays white, dark values are darkened by 1 EV
-    let steps: Vec<ProcessingStep> = RawDevelop::default().steps.into_iter().filter(|step| *step != ProcessingStep::SRgb).collect();
-    let Intermediate::ThreeColor(pixels) = RawDevelop::new_with(&steps).develop_intermediate(&rawimage)? else {
-      panic!("expected three color image");
-    };
-    for (pixel, expected) in pixels.data.iter().zip([1.0, 0.1]) {
+    let steps: Vec<ProcessingStep> = RawDevelop::default()
+      .steps
+      .into_iter()
+      .filter(|step| *step != ProcessingStep::TransferFunction)
+      .collect();
+    let image = RawDevelop::new_with(&steps).develop_image(&rawimage)?;
+    let pixels = rgb_pixels(&image);
+    for (pixel, expected) in pixels.iter().zip([1.0, 0.1]) {
       assert!(pixel.iter().all(|v| (v - expected).abs() < 1e-3), "{:?}", pixel);
     }
     // Without Calibrate, the BaselineExposure step applies the curve
     let develop = RawDevelop::new_with(&[ProcessingStep::Rescale, ProcessingStep::Demosaic, ProcessingStep::BaselineExposure]);
-    let Intermediate::ThreeColor(pixels) = develop.develop_intermediate(&rawimage)? else {
-      panic!("expected three color image");
-    };
-    for (pixel, expected) in pixels.data.iter().zip([1.0, 0.1]) {
+    let image = develop.develop_image(&rawimage)?;
+    let pixels = rgb_pixels(&image);
+    for (pixel, expected) in pixels.iter().zip([1.0, 0.1]) {
       assert!(pixel.iter().all(|v| (v - expected).abs() < 1e-5), "{:?}", pixel);
     }
     Ok(())
@@ -1045,10 +510,9 @@ mod tests {
       ..Default::default()
     }];
     let develop = RawDevelop::new_with(&[ProcessingStep::Rescale, ProcessingStep::Demosaic, ProcessingStep::BaselineExposure]);
-    let Intermediate::ThreeColor(pixels) = develop.develop_intermediate(&rawimage)? else {
-      panic!("expected three color image");
-    };
-    assert!(pixels.data.iter().flatten().all(|v| *v == 0.5));
+    let image = develop.develop_image(&rawimage)?;
+    let pixels = rgb_pixels(&image);
+    assert!(pixels.iter().flatten().all(|v| *v == 0.5));
     Ok(())
   }
 
@@ -1208,7 +672,7 @@ mod tests {
         ("rggb", rggb(), all.clone()),
         ("rggb_camera", rggb(), vec![Rescale, Demosaic, CropActiveArea, CropDefault]),
         ("rggb_no_wb", rggb(), without(WhiteBalance)),
-        ("rggb_linear", rggb(), without(SRgb)),
+        ("rggb_linear", rggb(), without(TransferFunction)),
         ("rggb_full_frame", rggb(), without(CropActiveArea)),
         ("rggb_profile", rggb_profile, all.clone()),
         ("rggb_negative_exposure", rggb_negative_exposure, all.clone()),
@@ -1222,11 +686,8 @@ mod tests {
     /// Width, height, channels and per channel: sum, position weighted sum and
     /// sum of squares of the samples
     fn fingerprint(rawimage: &RawImage, steps: &[ProcessingStep]) -> (usize, usize, usize, Vec<f64>) {
-      let (dim, channels, data) = match RawDevelop::new_with(steps).develop_intermediate(rawimage).expect("develop") {
-        Intermediate::Monochrome(pixels) => (pixels.dim(), 1, pixels.data),
-        Intermediate::ThreeColor(pixels) => (pixels.dim(), 3, pixels.data.into_flattened()),
-        Intermediate::FourColor(pixels) => (pixels.dim(), 4, pixels.data.into_flattened()),
-      };
+      let image = RawDevelop::new_with(steps).develop_image(rawimage).expect("develop");
+      let (dim, channels, data) = (image.dim(), image.channels, image.data);
       let mut sums = vec![0.0; channels * 3];
       for (i, v) in data.iter().map(|v| f64::from(*v)).enumerate() {
         let c = i % channels;

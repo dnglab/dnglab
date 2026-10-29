@@ -18,7 +18,7 @@ fn bench_full_image(group: &mut BenchmarkGroup<'_, WallTime>, name: &str, make: 
 
     group.bench_with_input(name, &develop, |b, develop| {
       b.iter(|| {
-        let _ = develop.develop_intermediate(black_box(&rawimage)).expect("Development failed");
+        let _ = develop.develop_image(black_box(&rawimage)).expect("Development failed");
       })
     });
     Ok(())
