@@ -103,7 +103,7 @@ pub fn process_raw_image<W: Write + Seek + Send>(raw: &Path, image_file: &mut W,
   let mut rawimage = decoder.raw_image(&rawfile, &raw_params, false)?;
   rawimage.remove_opcodes(&params.remove_dng_opcodes);
   let metadata = decoder.raw_metadata(&rawfile, &raw_params)?;
-  let develop = RawDevelop::default();
+  let develop = RawDevelop::with_crop(params.crop);
   match params.format {
     ProcessedImageFormat::Tiff => develop.develop(rawimage, &metadata, image_file)?,
     ProcessedImageFormat::Jpeg => develop.develop_jpeg(rawimage, &metadata, image_file, params.jpeg_quality)?,
@@ -131,6 +131,19 @@ impl Default for RawDevelop {
 impl RawDevelop {
   pub fn new_with(steps: &[ProcessingStep]) -> Self {
     Self { steps: Vec::from(steps) }
+  }
+
+  /// Development with all steps, the image is cropped by `crop`: to the
+  /// DefaultCrop, the ActiveArea or not at all
+  pub fn with_crop(crop: CropMode) -> Self {
+    let excluded: &[ProcessingStep] = match crop {
+      CropMode::Best => &[],
+      CropMode::ActiveArea => &[ProcessingStep::CropDefault],
+      CropMode::None => &[ProcessingStep::CropActiveArea, ProcessingStep::CropDefault],
+    };
+    Self {
+      steps: ProcessingStep::ALL.into_iter().filter(|step| !excluded.contains(step)).collect(),
+    }
   }
 
   /// Options of the rendering with the steps of this development
@@ -880,6 +893,29 @@ mod tests {
           assert!(cropped.data == expected.data, "{} {:?}", pattern, demosaic);
         }
       }
+    }
+
+    #[test]
+    fn crop_modes() {
+      let size = |rawimage: &RawImage, crop| {
+        let image = RawDevelop::with_crop(crop).develop_image(rawimage.clone()).expect("develop");
+        (image.width, image.height)
+      };
+      // CFA data is cropped while it is demosaiced
+      let rggb = rggb();
+      assert_eq!(size(&rggb, CropMode::Best), (24, 16));
+      assert_eq!(size(&rggb, CropMode::ActiveArea), (28, 20));
+      assert_eq!(size(&rggb, CropMode::None), (32, 24));
+      // Other data before the color operations, the gain table map keeps its positions
+      let mut linear_raw = linear_raw();
+      linear_raw.active_area = Some(Rect::new(Point::new(1, 1), Dim2::new(14, 10)));
+      linear_raw.crop_area = Some(Rect::new(Point::new(2, 2), Dim2::new(12, 8)));
+      assert_eq!(size(&linear_raw, CropMode::Best), (12, 8));
+      let active_area = RawDevelop::with_crop(CropMode::ActiveArea).develop_image(linear_raw.clone()).expect("develop");
+      let mut expected = RawDevelop::with_crop(CropMode::None).develop_image(linear_raw).expect("develop");
+      assert_eq!((expected.width, expected.height), (16, 12));
+      expected.crop(Rect::new(Point::new(1, 1), Dim2::new(14, 10))).expect("crop");
+      assert!(active_area.dim() == expected.dim() && active_area.data == expected.data);
     }
 
     #[test]

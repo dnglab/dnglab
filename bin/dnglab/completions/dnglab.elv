@@ -67,7 +67,7 @@ set edit:completion:arg-completer[dnglab] = {|@words|
             cand --artist 'Set the artist tag'
             cand --keep-mtime 'Keep mtime, read from EXIF with fallback to original file mtime'
             cand --image-index 'Select a specific image index (or ''all'') if file is a image container'
-            cand --crop 'DNG default crop'
+            cand --crop 'Crop of the image: DefaultCrop (best), ActiveArea or none'
             cand --format 'Output image format, defaults to the OUTPUT file extension or tif'
             cand --jpeg-quality 'JPEG quality (1-100)'
             cand -d 'Log level'

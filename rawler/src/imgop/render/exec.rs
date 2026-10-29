@@ -191,21 +191,30 @@ impl Executor {
         }
       }
       Op::CropDefault => {
-        let crop = self.crop_area.or(self.active_area);
-        log::debug!("Crop: {:?}", crop);
-        let (area, mut origin) = self.stage3_area();
-        // Only crop if the dimensions differ
-        if let Some(crop) = crop
-          && crop.d != self.image().dim()
-        {
-          self.image().crop(crop)?;
-          origin = Point::new(origin.x + crop.p.x, origin.y + crop.p.y);
-        }
-        (self.stage3_area, self.origin) = (Some(area), origin);
-        (self.active_area, self.crop_area) = (None, None);
+        self.crop(self.crop_area.or(self.active_area))?;
+        self.crop_area = None;
       }
+      Op::CropActiveArea => self.crop(self.active_area)?,
       Op::TransferFunction(function) => apply_transfer_function(self.image().view_mut(), *function),
     }
+    Ok(())
+  }
+
+  /// Crop the image data to `crop`. The pixel positions of the gain table map
+  /// stay relative to the stage 3 image.
+  fn crop(&mut self, crop: Option<Rect>) -> crate::Result<()> {
+    log::debug!("Crop: {:?}", crop);
+    let (area, mut origin) = self.stage3_area();
+    // Only crop if the dimensions differ
+    if let Some(crop) = crop
+      && crop.d != self.image().dim()
+    {
+      self.image().crop(crop)?;
+      origin = Point::new(origin.x + crop.p.x, origin.y + crop.p.y);
+      self.crop_area = self.crop_area.and_then(|crop_area| crop_area.rebase(&crop));
+    }
+    (self.stage3_area, self.origin) = (Some(area), origin);
+    self.active_area = None;
     Ok(())
   }
 
