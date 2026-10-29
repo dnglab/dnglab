@@ -6,12 +6,12 @@
 use serde::{Deserialize, Serialize};
 
 use crate::{
-  RawImage, RawImageData, RawlerError, Result,
+  RawlerError, Result,
   imgop::{Dim2, crop},
 };
 
 use super::{
-  OpcodeStage,
+  OpcodeData, OpcodeImage, OpcodeStage,
   helpers::{ParamReader, bayer_is_green, put_u32, same_phase_index, stage_bounds},
 };
 
@@ -73,11 +73,11 @@ impl FixBadPixelsList {
     }
   }
 
-  pub fn apply(&self, rawimage: &mut RawImage, stage: OpcodeStage) -> Result<()> {
-    let bounds = stage_bounds(rawimage, stage);
-    let (width, height, cpp) = (rawimage.width, rawimage.height, rawimage.cpp);
-    let samples = match &mut rawimage.data {
-      RawImageData::Integer(samples) if cpp == 1 => samples,
+  pub fn apply(&self, image: &mut OpcodeImage<'_>, stage: OpcodeStage) -> Result<()> {
+    let bounds = stage_bounds(image, stage);
+    let (width, height, cpp) = (image.width(), image.height(), image.channels());
+    let samples = match &mut image.data {
+      OpcodeData::Integer(view) if cpp == 1 => view.as_mut_slice(),
       _ => {
         return Err(RawlerError::DecoderFailed(format!(
           "DNG opcode FixBadPixelsList in {} requires 16 bit raw data with a single plane",
@@ -503,6 +503,7 @@ fn rects_intersect(a: (i64, i64, i64, i64), b: (i64, i64, i64, i64)) -> bool {
 #[cfg(test)]
 mod tests {
   use super::*;
+  use crate::RawImageData;
   use crate::dng::opcodes::{Opcode, OpcodeList, testutil::*};
 
   fn fix_bad_pixels_list(phase: u32, points: &[(i32, i32)], rects: &[(i32, i32, i32, i32)]) -> Vec<u8> {

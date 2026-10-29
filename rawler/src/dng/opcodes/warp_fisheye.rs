@@ -5,10 +5,10 @@
 
 use serde::{Deserialize, Serialize};
 
-use crate::{RawImage, RawlerError, Result};
+use crate::{RawlerError, Result};
 
 use super::{
-  OpcodeStage,
+  OpcodeImage, OpcodeStage,
   helpers::{ParamReader, RadialModel, WARP_MAX_PLANES, WarpPlane, apply_warp, put_f64, put_u32},
 };
 
@@ -68,9 +68,9 @@ impl WarpFisheye {
     Ok(())
   }
 
-  pub fn apply(&self, rawimage: &mut RawImage, stage: OpcodeStage) -> Result<()> {
+  pub fn apply(&self, image: &mut OpcodeImage<'_>, stage: OpcodeStage) -> Result<()> {
     self.validate()?;
-    apply_warp("WarpFisheye", &self.planes(), (self.c_x, self.c_y), rawimage, stage)
+    apply_warp("WarpFisheye", &self.planes(), (self.c_x, self.c_y), image, stage)
   }
 
   fn planes(&self) -> Vec<WarpPlane> {

@@ -5,10 +5,10 @@
 
 use serde::{Deserialize, Serialize};
 
-use crate::{RawImage, RawImageData, RawlerError, Result, imgop::Rect, pixarray::SubPixel};
+use crate::{RawlerError, Result, imgop::Rect, pixarray::SubPixel};
 
 use super::{
-  OpcodeStage,
+  OpcodeData, OpcodeImage, OpcodeStage,
   helpers::{AreaSpec, ParamReader, apply_roi_threaded, put_f32, put_f64, put_u32, stage_bounds},
 };
 
@@ -95,25 +95,27 @@ impl GainMap {
     self.gain_map[(v * self.map_points_h as usize + h) * self.map_planes as usize + plane]
   }
 
-  pub fn apply(&self, rawimage: &mut RawImage, stage: OpcodeStage) -> Result<()> {
+  pub fn apply(&self, image: &mut OpcodeImage<'_>, stage: OpcodeStage) -> Result<()> {
     self.validate()?;
-    let Some(rect) = self.area.buffer_rect(rawimage, stage) else {
+    let Some(rect) = self.area.buffer_rect(image, stage) else {
       return Ok(());
     };
-    let bounds = stage_bounds(rawimage, stage);
-    let (width, cpp) = (rawimage.width, rawimage.cpp);
-    match (&mut rawimage.data, stage) {
+    let bounds = stage_bounds(image, stage);
+    let (width, cpp) = (image.width(), image.channels());
+    match (&mut image.data, stage) {
       // Logical range of floating point data is 0.0 to 1.0
-      (RawImageData::Float(samples), _) => {
+      (OpcodeData::Float(view), _) => {
+        let samples = view.as_mut_slice();
         self.apply_gain(samples, width, cpp, rect, bounds, &|x: f32, gain| (x * gain).clamp(0.0, 1.0));
       }
       // Logical range of 16 bit data in OpcodeList1 is 0 to 65535
-      (RawImageData::Integer(samples), OpcodeStage::List1) => {
+      (OpcodeData::Integer(view), OpcodeStage::List1) => {
+        let samples = view.as_mut_slice();
         self.apply_gain(samples, width, cpp, rect, bounds, &|x: u16, gain| {
           (x as f32 * gain).round().clamp(0.0, 65535.0) as u16
         });
       }
-      (RawImageData::Integer(_), _) => {
+      (OpcodeData::Integer(_), _) => {
         return Err(RawlerError::DecoderFailed(format!(
           "DNG opcode GainMap in {} requires image data mapped to linear reference values",
           stage
@@ -195,6 +197,7 @@ fn lerp(a: f32, b: f32, t: f32) -> f32 {
 mod tests {
   use super::*;
   use crate::{
+    RawImageData,
     dng::opcodes::{Opcode, OpcodeList, testutil::*},
     imgop::{Dim2, Point},
   };

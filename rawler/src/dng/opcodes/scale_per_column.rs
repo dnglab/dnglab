@@ -5,10 +5,10 @@
 
 use serde::{Deserialize, Serialize};
 
-use crate::{RawImage, Result};
+use crate::Result;
 
 use super::{
-  OpcodeStage,
+  OpcodeImage, OpcodeStage,
   helpers::{AreaSpec, LineTable, ParamReader, TableAxis, parse_line_table, write_line_table},
 };
 
@@ -32,8 +32,8 @@ impl ScalePerColumn {
     write_line_table(buf, &self.area, &self.scales);
   }
 
-  pub fn apply(&self, rawimage: &mut RawImage, stage: OpcodeStage) -> Result<()> {
-    self.table().apply_scale(rawimage, stage)
+  pub fn apply(&self, image: &mut OpcodeImage<'_>, stage: OpcodeStage) -> Result<()> {
+    self.table().apply_scale(image, stage)
   }
 
   fn table(&self) -> LineTable<'_> {

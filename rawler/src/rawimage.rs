@@ -633,14 +633,18 @@ impl RawImage {
   }
 
   pub fn apply_opcode_list(&mut self, stage: OpcodeStage) -> Result<()> {
-    let list = match stage {
+    match self.take_opcode_list(stage) {
+      Some(list) => list.apply(self, stage),
+      None => Ok(()),
+    }
+  }
+
+  /// Remove the DNG opcode list of the given processing stage, to apply it
+  pub fn take_opcode_list(&mut self, stage: OpcodeStage) -> Option<OpcodeList> {
+    match stage {
       OpcodeStage::List1 => self.dng_opcodes_1.take(),
       OpcodeStage::List2 => self.dng_opcodes_2.take(),
       OpcodeStage::List3 => self.dng_opcodes_3.take(),
-    };
-    match list {
-      Some(list) => list.apply(self, stage),
-      None => Ok(()),
     }
   }
 

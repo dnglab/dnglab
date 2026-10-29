@@ -12,12 +12,12 @@ use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
 
 use crate::{
-  RawImage, RawImageData, RawlerError, Result,
+  RawlerError, Result,
   imgop::{Dim2, Point, Rect, crop},
   pixarray::SubPixel,
 };
 
-use super::OpcodeStage;
+use super::{OpcodeData, OpcodeImage, OpcodeStage};
 
 /// Reader for big-endian opcode data
 pub(super) struct ParamReader<'a> {
@@ -194,8 +194,8 @@ impl AreaSpec {
   }
 
   /// Affected rectangle in coordinates of the image buffer for the given stage
-  pub(super) fn buffer_rect(&self, rawimage: &RawImage, stage: OpcodeStage) -> Option<Rect> {
-    let bounds = stage_bounds(rawimage, stage);
+  pub(super) fn buffer_rect(&self, image: &OpcodeImage<'_>, stage: OpcodeStage) -> Option<Rect> {
+    let bounds = stage_bounds(image, stage);
     self
       .overlap(bounds.d)
       .map(|rect| Rect::new(Point::new(bounds.p.x + rect.p.x, bounds.p.y + rect.p.y), rect.d))
@@ -206,11 +206,11 @@ impl AreaSpec {
 /// OpcodeList1 operates on the raw image as stored in the file. The stage 2 and
 /// stage 3 images are cropped to the ActiveArea, so opcode
 /// coordinates of OpcodeList2 and OpcodeList3 are relative to the ActiveArea.
-pub(super) fn stage_bounds(rawimage: &RawImage, stage: OpcodeStage) -> Rect {
-  let full = Rect::new(Point::zero(), Dim2::new(rawimage.width, rawimage.height));
+pub(super) fn stage_bounds(image: &OpcodeImage<'_>, stage: OpcodeStage) -> Rect {
+  let full = Rect::new(Point::zero(), Dim2::new(image.width(), image.height()));
   match stage {
     OpcodeStage::List1 => full,
-    OpcodeStage::List2 | OpcodeStage::List3 => rawimage.active_area.unwrap_or(full),
+    OpcodeStage::List2 | OpcodeStage::List3 => image.active_area.unwrap_or(full),
   }
 }
 
@@ -337,11 +337,11 @@ impl WarpPlane {
 }
 
 /// Apply a warp
-pub(super) fn apply_warp(name: &str, planes: &[WarpPlane], center: (f64, f64), rawimage: &mut RawImage, stage: OpcodeStage) -> Result<()> {
+pub(super) fn apply_warp(name: &str, planes: &[WarpPlane], center: (f64, f64), image: &mut OpcodeImage<'_>, stage: OpcodeStage) -> Result<()> {
   if planes.iter().all(WarpPlane::is_identity) {
     return Ok(());
   }
-  let cpp = rawimage.cpp;
+  let cpp = image.channels();
   if planes.len() != 1 && planes.len() != cpp {
     return Err(RawlerError::DecoderFailed(format!(
       "DNG opcode {}: {} coefficient sets for an image with {} planes",
@@ -350,29 +350,31 @@ pub(super) fn apply_warp(name: &str, planes: &[WarpPlane], center: (f64, f64), r
       cpp
     )));
   }
-  let bounds = stage_bounds(rawimage, stage);
+  let bounds = stage_bounds(image, stage);
   if bounds.width() == 0 || bounds.height() == 0 {
     return Ok(());
   }
-  let geometry = WarpGeometry::new(center, bounds.d, pixel_aspect_ratio(rawimage));
+  let geometry = WarpGeometry::new(center, bounds.d, image.aspect_ratio);
   // The image being warped is copied, the warped image is written in place
-  let width = rawimage.width;
-  let dim = Dim2::new(width * cpp, rawimage.height);
+  let width = image.width();
+  let dim = Dim2::new(width * cpp, image.height());
   let window = Rect::new(Point::new(bounds.x() * cpp, bounds.y()), Dim2::new(bounds.width() * cpp, bounds.height()));
-  match (&mut rawimage.data, stage) {
+  match (&mut image.data, stage) {
     // Logical range of floating point data is 0.0 to 1.0
-    (RawImageData::Float(samples), _) => {
+    (OpcodeData::Float(view), _) => {
+      let samples = view.as_mut_slice();
       let src = crop(samples, dim, window);
       warp(samples, width, cpp, bounds, &src, &geometry, planes, &|v: f32| v.clamp(0.0, 1.0));
     }
     // Logical range of 16 bit data in OpcodeList1 is 0 to 65535
-    (RawImageData::Integer(samples), OpcodeStage::List1) => {
+    (OpcodeData::Integer(view), OpcodeStage::List1) => {
+      let samples = view.as_mut_slice();
       let src: Vec<f32> = crop(samples, dim, window).into_iter().map(|v| v as f32 / 65535.0).collect();
       warp(samples, width, cpp, bounds, &src, &geometry, planes, &|v: f32| {
         (v * 65535.0).round().clamp(0.0, 65535.0) as u16
       });
     }
-    (RawImageData::Integer(_), _) => {
+    (OpcodeData::Integer(_), _) => {
       return Err(RawlerError::DecoderFailed(format!(
         "DNG opcode {} in {} requires image data mapped to linear reference values",
         name, stage
@@ -449,13 +451,6 @@ impl WarpGeometry {
       self.center.1 + self.radius * (ny * ratio + tan_y * self.aspect),
     )
   }
-}
-
-/// Pixel aspect ratio from DefaultScale
-pub(super) fn pixel_aspect_ratio(rawimage: &RawImage) -> f64 {
-  let [[h_n, h_d], [v_n, v_d]] = rawimage.camera.default_scale.0;
-  let aspect = (h_n as f64 / h_d as f64) / (v_n as f64 / v_d as f64);
-  if aspect.is_finite() && aspect > 0.0 { aspect } else { 1.0 }
 }
 
 /// Keys cubic convolution kernel with A = -0.75
@@ -587,36 +582,36 @@ pub(super) struct LineTable<'a> {
 impl LineTable<'_> {
   /// Add the deltas, clipped to -1..1 for floating point data. Deltas are in pixel units of
   /// the image data, so for data scaled from 16 bit integers in 1/65535.
-  pub(super) fn apply_delta(&self, rawimage: &mut RawImage, stage: OpcodeStage) -> Result<()> {
-    let unit = if rawimage.scaled_from_integer { 1.0 / 65535.0 } else { 1.0 };
-    self.apply(rawimage, stage, &|x: f32, delta| (x + delta * unit).clamp(-1.0, 1.0), &|x: u16, delta| {
+  pub(super) fn apply_delta(&self, image: &mut OpcodeImage<'_>, stage: OpcodeStage) -> Result<()> {
+    let unit = if image.scaled_from_integer { 1.0 / 65535.0 } else { 1.0 };
+    self.apply(image, stage, &|x: f32, delta| (x + delta * unit).clamp(-1.0, 1.0), &|x: u16, delta| {
       (x as f32 + delta).clamp(0.0, 65535.0).round() as u16
     })
   }
 
   /// Multiply by the scales, clipped to -1..1 for floating point data
-  pub(super) fn apply_scale(&self, rawimage: &mut RawImage, stage: OpcodeStage) -> Result<()> {
-    self.apply(rawimage, stage, &|x: f32, scale| (x * scale).clamp(-1.0, 1.0), &|x: u16, scale| {
+  pub(super) fn apply_scale(&self, image: &mut OpcodeImage<'_>, stage: OpcodeStage) -> Result<()> {
+    self.apply(image, stage, &|x: f32, scale| (x * scale).clamp(-1.0, 1.0), &|x: u16, scale| {
       (x as f32 * scale).clamp(0.0, 65535.0).round() as u16
     })
   }
 
   /// Apply the table to floating point data with `float_fn`, or to the integer
   /// data of OpcodeList1 with `int_fn`.
-  fn apply<F, I>(&self, rawimage: &mut RawImage, stage: OpcodeStage, float_fn: &F, int_fn: &I) -> Result<()>
+  fn apply<F, I>(&self, image: &mut OpcodeImage<'_>, stage: OpcodeStage, float_fn: &F, int_fn: &I) -> Result<()>
   where
     F: Fn(f32, f32) -> f32 + Sync,
     I: Fn(u16, f32) -> u16 + Sync,
   {
-    let Some(rect) = self.area.buffer_rect(rawimage, stage) else {
+    let Some(rect) = self.area.buffer_rect(image, stage) else {
       return Ok(());
     };
-    let bounds = stage_bounds(rawimage, stage);
-    let (width, cpp) = (rawimage.width, rawimage.cpp);
-    match (&mut rawimage.data, stage) {
-      (RawImageData::Float(samples), _) => self.map(samples, width, cpp, rect, bounds, float_fn),
-      (RawImageData::Integer(samples), OpcodeStage::List1) => self.map(samples, width, cpp, rect, bounds, int_fn),
-      (RawImageData::Integer(_), _) => {
+    let bounds = stage_bounds(image, stage);
+    let (width, cpp) = (image.width(), image.channels());
+    match (&mut image.data, stage) {
+      (OpcodeData::Float(view), _) => self.map(view.as_mut_slice(), width, cpp, rect, bounds, float_fn),
+      (OpcodeData::Integer(view), OpcodeStage::List1) => self.map(view.as_mut_slice(), width, cpp, rect, bounds, int_fn),
+      (OpcodeData::Integer(_), _) => {
         return Err(RawlerError::DecoderFailed(format!(
           "DNG opcode {} in {} requires image data mapped to linear reference values",
           self.name, stage
@@ -679,6 +674,7 @@ impl LineTable<'_> {
 #[cfg(test)]
 mod tests {
   use super::*;
+  use crate::RawImageData;
   use crate::dng::opcodes::{Opcode, OpcodeList, testutil::*};
 
   #[test]
