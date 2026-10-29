@@ -25,14 +25,14 @@ use crate::{
     develop::RawDevelop,
     fuji_rotate::fuji_normalize_rotation,
     matrix::{multiply, transform_1d, transform_2d},
-    raw::map_4ch_to_3ch,
+    raw::{WhiteBalance, map_4ch_to_3ch, white_balance, white_balance_mosaic},
     sensor::{
       Demosaic, SensorType,
       bayer::{bilinear::Bilinear4Channel, ppg::PPGDemosaic},
       xtrans::markesteijn::XTransMarkesteijnDemosaic,
     },
   },
-  pixarray::{Color2D, PixF32},
+  pixarray::{Color2D, ImageViewMut, PixF32},
   rawimage::BlackLevel,
   rawsource::RawSource,
   tags::{DngTag, ExifTag, TiffCommonTag},
@@ -579,15 +579,28 @@ fn processing_plan(present: [bool; 3], needs: [bool; 3], apply: ApplyDngOpcodes,
 /// Other image data is left unchanged, as stage 3 equals stage 2 for it.
 ///
 /// Three-color sensors result in three planes, four-color sensors in four planes.
+///
+/// The CFA data is demosaiced white balanced, which works better for algorithms
+/// that interpolate color differences. The white balance is divided out again,
+/// as DNG readers apply it, and the values are not clipped, so the highlights
+/// are kept for the reader.
 fn demosaic_to_linear_raw(rawimage: &mut RawImage, fuji_rotation: bool) -> crate::Result<()> {
   if !fuji_rotation && !matches!(rawimage.photometric, RawPhotometricInterpretation::Cfa(_)) {
     return Ok(());
   }
-  let pixels = PixF32::new_with(rawimage.data.as_f32().into_owned(), rawimage.width, rawimage.height);
+  let mut pixels = PixF32::new_with(rawimage.data.as_f32().into_owned(), rawimage.width, rawimage.height);
   let roi = rawimage.active_area.unwrap_or(pixels.rect());
   let cfa = &rawimage.camera.cfa;
   let colors = &rawimage.camera.plane_color;
-  let (width, height, cpp, data) = match SensorType::from_cfa(cfa) {
+  let coeffs = rawimage.wb_coeffs;
+  let wb = coeffs[..colors.plane_count().min(4)]
+    .iter()
+    .all(|c| c.is_finite() && *c > 0.0)
+    .then_some(WhiteBalance { coeffs, clip: None });
+  if let Some(wb) = &wb {
+    white_balance_mosaic(pixels.view_mut(), cfa, colors, wb)?;
+  }
+  let (width, height, cpp, mut data) = match SensorType::from_cfa(cfa) {
     SensorType::Bayer if cfa.is_rgb() => {
       let mut rgb = PPGDemosaic::new().demosaic(pixels.view(), cfa, colors, roi);
       if fuji_rotation {
@@ -607,6 +620,13 @@ fn demosaic_to_linear_raw(rawimage: &mut RawImage, fuji_rotation: bool) -> crate
     }
     _ => return Err(RawlerError::DecoderFailed(format!("Demosaic of CFA pattern '{}' is not supported", cfa))),
   };
+  if let Some(wb) = wb {
+    let inverse = WhiteBalance {
+      coeffs: wb.coeffs.map(|c| 1.0 / c),
+      clip: None,
+    };
+    white_balance(ImageViewMut::new(&mut data, width, height, cpp), &inverse)?;
+  }
   if !fuji_rotation {
     // Crop area is relative to the full image, which is now cropped to the active area
     rawimage.crop_area = rawimage
@@ -801,6 +821,58 @@ mod tests {
         &data[center..center + cpp]
       );
     }
+    Ok(())
+  }
+
+  /// Float CFA image of 24x24 pixels with `wb_coeffs`, `value` of each pixel by position and color
+  fn float_cfa_image(pattern: &str, colors: &str, wb_coeffs: [f32; 4], value: impl Fn(usize, usize, usize) -> f32) -> RawImage {
+    use crate::{
+      cfa::{CFA, PlaneColor},
+      rawimage::CFAConfig,
+    };
+
+    let mut camera = Camera::new();
+    camera.cfa = CFA::new(pattern);
+    camera.plane_color = PlaneColor::new(colors);
+    let photometric = RawPhotometricInterpretation::Cfa(CFAConfig::new_from_camera(&camera));
+    let data = (0..24 * 24)
+      .map(|i| {
+        let (x, y) = (i % 24, i / 24);
+        let plane = camera.plane_color.plane_lookup_table()[camera.cfa.color_at(y, x)];
+        value(x, y, plane)
+      })
+      .collect();
+    let mut rawimage = RawImage::new(
+      camera,
+      PixU16::new_with(vec![0; 24 * 24], 24, 24),
+      1,
+      wb_coeffs,
+      photometric,
+      Some(BlackLevel::zero(1, 1, 1)),
+      Some(WhiteLevel::new(vec![1])),
+      false,
+    );
+    rawimage.data = RawImageData::Float(data);
+    rawimage
+  }
+
+  #[test]
+  fn demosaic_to_linear_raw_divides_white_balance_out() -> crate::Result<()> {
+    // A flat field keeps its values in each plane, the white balance is not part of the data
+    const XTRANS: &str = "GGRGGBGGBGGRBRGRBGGGBGGRGGRGGBRBGBRG";
+    for (pattern, colors, wb) in [
+      ("RGGB", "RGB", [2.0, 1.0, 1.5, f32::NAN]),
+      (XTRANS, "RGB", [2.0, 1.0, 1.5, f32::NAN]),
+      ("CYGM", "CYGM", [1.5, 1.2, 1.0, 1.4]),
+    ] {
+      let mut rawimage = float_cfa_image(pattern, colors, wb, |_, _, plane| 0.4 / wb[plane]);
+      demosaic_to_linear_raw(&mut rawimage, false)?;
+      let cpp = rawimage.cpp;
+      let center = (12 * 24 + 12) * cpp;
+      let pixel = &rawimage.data.as_f32()[center..center + cpp];
+      assert!(pixel.iter().zip(wb).all(|(v, wb)| (v - 0.4 / wb).abs() < 1e-5), "{}: {:?}", pattern, pixel);
+    }
+
     Ok(())
   }
 

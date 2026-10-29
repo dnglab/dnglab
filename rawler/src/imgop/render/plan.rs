@@ -3,9 +3,9 @@
 
 //! Planning of the processing operations for an image
 
-use super::{ProcessingStep, RenderOptions};
+use super::{ProcessingStep, RenderOptions, WhiteBalancePlacement};
 use crate::{
-  RawImage,
+  RawImage, RawImageData,
   dng::{
     opcodes::OpcodeStage,
     profile_render::{ProfileRender, ToneCurve, prophoto_to_srgb, srgb_to_prophoto},
@@ -13,6 +13,7 @@ use crate::{
   imgop::{
     color::{CameraToRgb, OutputSpace, PixelOp, TransferFunction, camera_to_output},
     matrix::multiply,
+    raw::WhiteBalance,
     sensor::SensorType,
   },
   rawimage::{CFAConfig, RawPhotometricInterpretation},
@@ -32,6 +33,12 @@ pub(super) enum Op {
   Opcodes { stage: OpcodeStage, crop_to_active_area: bool },
   /// Map raw values to linear reference values
   Rescale,
+  /// Map integer CFA data to linear reference values and white balance it
+  RescaleMosaic { cfa: Box<CFAConfig>, white_balance: Option<WhiteBalance> },
+  /// White balance CFA data
+  WhiteBalanceMosaic { cfa: Box<CFAConfig>, white_balance: WhiteBalance },
+  /// White balance color planes
+  WhiteBalance(WhiteBalance),
   /// Demosaic CFA data, cropped to the ActiveArea with `crop_to_active_area`.
   /// With `crop_default`, only the DefaultCrop and a margin around it for the
   /// interpolation are demosaiced, then the image is cropped to it.
@@ -82,6 +89,25 @@ pub fn plan(rawimage: &RawImage, options: &RenderOptions) -> crate::Result<Plan>
     return Err(format!("Images with {} color planes are not supported", rawimage.cpp).into());
   }
 
+  // CFA data that is demosaiced, its demosaic algorithm and the number of
+  // color planes after the demosaic
+  let mosaic = match &rawimage.photometric {
+    RawPhotometricInterpretation::Cfa(config) if steps.contains(Step::Demosaic) && rawimage.cpp == 1 => Some(config),
+    _ => None,
+  };
+  let demosaic = mosaic.map(demosaic_algorithm).transpose()?;
+  let channels = demosaic.map_or(rawimage.cpp, |(_, planes)| planes);
+
+  // As shot white balance, some old images may not provide WB coeffs. White
+  // balanced values are limited to the camera white, the smallest coefficient.
+  let wb = (steps.contains(Step::WhiteBalance) && !rawimage.wb_coeffs[0].is_nan()).then_some(rawimage.wb_coeffs);
+  let white = wb.map_or(1.0, |wb| wb[..channels.min(4)].iter().copied().fold(f32::INFINITY, f32::min));
+  // CFA data is white balanced before it is demosaiced, see WhiteBalancePlacement
+  let mut mosaic_wb = wb
+    .filter(|_| mosaic.is_some() && steps.contains(Step::Rescale) && options.white_balance == WhiteBalancePlacement::BeforeDemosaic)
+    .map(|coeffs| WhiteBalance { coeffs, clip: Some(white) });
+  let wb_before_demosaic = mosaic_wb.is_some();
+
   // OpcodeList1 is applied to the raw image as read from the file
   if has_opcodes(OpcodeStage::List1) {
     ops.push(Op::Opcodes {
@@ -90,33 +116,45 @@ pub fn plan(rawimage: &RawImage, options: &RenderOptions) -> crate::Result<Plan>
     });
   }
   if steps.contains(Step::Rescale) {
-    ops.push(Op::Rescale);
-    // OpcodeList2 is applied just after mapping to linear reference values
-    if has_opcodes(OpcodeStage::List2) {
-      ops.push(Op::Opcodes {
-        stage: OpcodeStage::List2,
-        crop_to_active_area: false,
+    // Integer CFA data is mapped and white balanced in one pass, unless a
+    // LinearizationTable or OpcodeList2 is applied between
+    let fused = matches!(rawimage.data, RawImageData::Integer(_))
+      && rawimage.linearization_table.is_none()
+      && !has_opcodes(OpcodeStage::List1)
+      && !has_opcodes(OpcodeStage::List2);
+    match mosaic.filter(|_| fused) {
+      Some(config) => ops.push(Op::RescaleMosaic {
+        cfa: Box::new(config.clone()),
+        white_balance: mosaic_wb.take(),
+      }),
+      None => {
+        ops.push(Op::Rescale);
+        // OpcodeList2 is applied just after mapping to linear reference values
+        if has_opcodes(OpcodeStage::List2) {
+          ops.push(Op::Opcodes {
+            stage: OpcodeStage::List2,
+            crop_to_active_area: false,
+          });
+        }
+      }
+    }
+    if let (Some(config), Some(white_balance)) = (mosaic, mosaic_wb) {
+      ops.push(Op::WhiteBalanceMosaic {
+        cfa: Box::new(config.clone()),
+        white_balance,
       });
     }
   }
 
-  let mut channels = rawimage.cpp;
   let crop_default = steps.contains(Step::CropDefault);
   let mut cropped = false;
   if steps.contains(Step::Demosaic) {
-    let cfa = match &rawimage.photometric {
-      RawPhotometricInterpretation::Cfa(config) => Some(config),
-      _ => None,
-    };
-    let crop_to_active_area = cfa.is_some() && steps.contains(Step::CropActiveArea);
+    let crop_to_active_area = matches!(rawimage.photometric, RawPhotometricInterpretation::Cfa(_)) && steps.contains(Step::CropActiveArea);
     let list3 = has_opcodes(OpcodeStage::List3);
-    if let Some(config) = cfa
-      && rawimage.cpp == 1
-    {
+    if let (Some(config), Some((algorithm, _))) = (mosaic, demosaic) {
       if crop_to_active_area && rawimage.active_area.is_some() && rawimage.fuji_rotation_width.is_some() {
         return Err("ActiveArea is not possible when rotation is not normalized".into());
       }
-      let (algorithm, planes) = demosaic_algorithm(config)?;
       let fuji_rotation_width = rawimage
         .fuji_rotation_width
         .filter(|_| algorithm == DemosaicAlgorithm::Ppg && steps.contains(Step::FujiRotate));
@@ -128,7 +166,6 @@ pub fn plan(rawimage: &RawImage, options: &RenderOptions) -> crate::Result<Plan>
         crop_to_active_area,
         crop_default: cropped,
       });
-      channels = planes;
       if let Some(width) = fuji_rotation_width {
         let extra_rotate = rawimage.camera.find_hint("fuji_rotate_90cw");
         ops.push(Op::FujiRotate { width, extra_rotate });
@@ -163,12 +200,7 @@ pub fn plan(rawimage: &RawImage, options: &RenderOptions) -> crate::Result<Plan>
   if steps.contains(Step::Calibrate) && channels > 1 {
     // All operations on the color image are applied in one pass, the gain
     // with the white balance and the transfer function after the rendering
-    // Some old images may not provide WB coeffs. Assume 1.0 in this case.
-    let wb = if steps.contains(Step::WhiteBalance) && !rawimage.wb_coeffs[0].is_nan() {
-      rawimage.wb_coeffs
-    } else {
-      [1.0; 4]
-    };
+    let neutral = wb.unwrap_or([1.0; 4]);
     // Rendering tables of the camera profile, for the same slot as the matrices,
     // and a negative BaselineExposure
     let tables = steps.contains(Step::ProfileRender);
@@ -180,17 +212,20 @@ pub fn plan(rawimage: &RawImage, options: &RenderOptions) -> crate::Result<Plan>
     let render = ProfileRender::new(slot.map(|slot| (slot.profile, slot.slot)), gain_table_map, exposure);
     let (map, mut pixel_ops) = match channels {
       3 => {
-        let (map, pixel_ops) = camera_map(rawimage, [wb[0], wb[1], wb[2]], gain, render, options.color_space);
+        let (map, pixel_ops) = camera_map::<3>(rawimage, neutral, wb_before_demosaic, white, gain, render, options.color_space);
         (CameraMap::Three(map), pixel_ops)
       }
       _ => {
-        let (map, pixel_ops) = camera_map(rawimage, wb, gain, render, options.color_space);
+        let (map, pixel_ops) = camera_map::<4>(rawimage, neutral, wb_before_demosaic, white, gain, render, options.color_space);
         (CameraMap::Four(map), pixel_ops)
       }
     };
     pixel_ops.extend(transfer_function.map(PixelOp::TransferFunction));
     ops.push(Op::CameraToRgb(map, pixel_ops));
   } else {
+    if let Some(coeffs) = wb.filter(|_| !wb_before_demosaic && channels > 1) {
+      ops.push(Op::WhiteBalance(WhiteBalance { coeffs, clip: Some(white) }));
+    }
     if exposure > 0.0 {
       ops.push(Op::Gain(gain));
     } else if let Some(curve) = ToneCurve::negative_exposure(exposure) {
@@ -213,43 +248,41 @@ fn demosaic_algorithm(config: &CFAConfig) -> crate::Result<(DemosaicAlgorithm, u
   }
 }
 
-/// Map of white balanced camera values to `output` and the pixel operations
-/// that follow it, the exposure `gain` is applied with the white balance
+/// Map of camera values to `output` and the pixel operations that follow it
 ///
-/// With rendering tables, the camera values are mapped to linear ProPhoto RGB
-/// for the tables. Like a DNG reader, white balanced camera values are clipped
-/// at the camera white (scaled by the gain of a positive BaselineExposure), so
-/// clipped highlights stay neutral, and colors outside of the output space are
-/// clipped per channel.
+/// `wb` are the white balance coefficients, the reciprocal of the camera
+/// neutral. The map applies them, unless the values are `balanced` already,
+/// and the exposure `gain`. Like a DNG reader, white balanced camera values
+/// are clipped at the camera `white` (scaled by the gain), so clipped
+/// highlights stay neutral, and colors outside of the output space are clipped
+/// per channel. With rendering tables, the camera values are mapped to linear
+/// ProPhoto RGB for the tables.
 fn camera_map<const N: usize>(
   rawimage: &RawImage,
-  wb: [f32; N],
+  wb: [f32; 4],
+  balanced: bool,
+  white: f32,
   gain: f32,
   render: Option<ProfileRender>,
   output: OutputSpace,
 ) -> (CameraToRgb<N>, Vec<PixelOp>) {
-  let cam2rgb = camera_to_output(rawimage.best_calibration_slot().as_ref(), rawimage.analog_balance.as_deref(), &wb, output);
-  log::debug!("wb: {:?}, camera to {:?}: {:?}", wb, output, cam2rgb);
+  let neutral: [f32; N] = std::array::from_fn(|i| wb[i]);
+  let cam2rgb = camera_to_output(rawimage.best_calibration_slot().as_ref(), rawimage.analog_balance.as_deref(), &neutral, output);
+  log::debug!("wb: {:?}, camera to {:?}: {:?}", neutral, output, cam2rgb);
+  let wb = if balanced { [gain; N] } else { neutral.map(|c| c * gain) };
+  let white = gain * white;
   match render {
     Some(render) => {
       let (to_prophoto, from_prophoto) = match output {
         OutputSpace::Srgb => (srgb_to_prophoto(), prophoto_to_srgb()),
       };
-      let white = render.exposure_gain() * wb.iter().copied().fold(f32::INFINITY, f32::min);
       let map = CameraToRgb {
-        wb: wb.map(|c| c * gain),
+        wb,
         white,
         matrix: multiply(&to_prophoto, &cam2rgb),
       };
       (map, vec![PixelOp::Profile(render), PixelOp::Matrix(from_prophoto), PixelOp::Clip])
     }
-    None => {
-      let map = CameraToRgb {
-        wb: wb.map(|c| c * gain),
-        white: f32::INFINITY,
-        matrix: cam2rgb,
-      };
-      (map, vec![PixelOp::ClipNormAvg])
-    }
+    None => (CameraToRgb { wb, white, matrix: cam2rgb }, vec![PixelOp::Clip]),
   }
 }

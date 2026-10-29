@@ -14,12 +14,14 @@ use crate::{
     Point, Rect,
     color::{apply_gain, apply_transfer_function, camera_to_rgb, camera_to_rgb_in_place},
     fuji_rotate::fuji_normalize_rotation,
+    raw::{rescale_mosaic, white_balance, white_balance_mosaic},
     sensor::{
       Demosaic,
       bayer::{bilinear::Bilinear4Channel, ppg::PPGDemosaic},
       xtrans::bilinear::XTransBilinearDemosaic,
     },
   },
+  pixarray::ImageView,
   rawimage::CFAConfig,
 };
 
@@ -110,6 +112,26 @@ impl Executor {
     match op {
       Op::Opcodes { stage, crop_to_active_area } => self.apply_opcodes(*stage, *crop_to_active_area)?,
       Op::Rescale => self.raw_data()?.apply_scaling()?,
+      Op::RescaleMosaic { cfa, white_balance } => {
+        let rawimage = self.raw_data()?;
+        let RawImageData::Integer(samples) = &rawimage.data else {
+          return Err("Mosaic data to rescale must be integer".into());
+        };
+        let pixels = rescale_mosaic(
+          ImageView::new(samples, rawimage.width, rawimage.height, 1),
+          &rawimage.blacklevel.as_bayer_array(),
+          &rawimage.whitelevel.as_bayer_array(),
+          &cfa.cfa,
+          &cfa.colors,
+          white_balance.as_ref(),
+        )?;
+        rawimage.data = RawImageData::Float(Vec::new());
+        rawimage.scaled_from_integer = true;
+        rawimage.reset_levels();
+        self.image = Some(pixels.into());
+      }
+      Op::WhiteBalanceMosaic { cfa, white_balance } => white_balance_mosaic(self.image().view_mut(), &cfa.cfa, &cfa.colors, white_balance)?,
+      Op::WhiteBalance(wb) => white_balance(self.image().view_mut(), wb)?,
       Op::Demosaic {
         algorithm,
         cfa,
