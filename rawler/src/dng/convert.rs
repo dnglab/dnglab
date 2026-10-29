@@ -873,6 +873,23 @@ mod tests {
       assert!(pixel.iter().zip(wb).all(|(v, wb)| (v - 0.4 / wb).abs() < 1e-5), "{}: {:?}", pattern, pixel);
     }
 
+    // A neutral edge stays neutral when the data is demosaiced white balanced
+    let wb = [2.0, 1.0, 1.5, f32::NAN];
+    let gray = |x: usize| if x < 12 { 0.45 } else { 0.1 };
+    let error = |wb_coeffs: [f32; 4]| -> crate::Result<f32> {
+      let mut rawimage = float_cfa_image("RGGB", "RGB", wb_coeffs, |x, _, plane| gray(x) / wb[plane]);
+      demosaic_to_linear_raw(&mut rawimage, false)?;
+      let data = rawimage.data.as_f32();
+      Ok(
+        (4..20)
+          .flat_map(|y| (4..20).flat_map(move |x| (0..3).map(move |c| (x, y, c))))
+          .map(|(x, y, c)| (data[(y * 24 + x) * 3 + c] * wb[c] - gray(x)).abs())
+          .fold(0.0, f32::max),
+      )
+    };
+    let balanced = error(wb)?;
+    let unbalanced = error([f32::NAN; 4])?;
+    assert!(balanced < 1e-3 && unbalanced > 0.01, "balanced {} unbalanced {}", balanced, unbalanced);
     Ok(())
   }
 
