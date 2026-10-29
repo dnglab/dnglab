@@ -527,7 +527,7 @@ mod tests {
     use crate::{
       camera_profile::{CameraCalibration, CameraProfile, GainData, GainTableMap},
       cfa::PlaneColor,
-      imgop::render::{StepSet, WhiteBalancePlacement},
+      imgop::render::{DemosaicQuality, StepSet, WhiteBalancePlacement},
     };
 
     /// Allowed deviation of the fingerprints, relative to the expected value,
@@ -726,7 +726,7 @@ mod tests {
       ("rggb_profile", 24, 16, 3, &[383.4662112593651, 18215.506040215492, 383.0383059067018, 297.52433839440346, 14476.317115783691, 242.40614491711693, 373.5126699209213, 17833.258824765682, 364.2168519828674]),
       ("rggb_negative_exposure", 24, 16, 3, &[372.9707576036453, 17801.475763201714, 364.28282762169994, 148.17328909039497, 7266.1948882341385, 69.80508398590429, 337.22546261548996, 16365.803864657879, 303.55807226827676]),
       ("cygm", 24, 16, 3, &[330.2392064332962, 15989.270647585392, 294.36408670208885, 242.15305441617966, 11660.862674564123, 160.30449729856224, 362.35906931757927, 17345.425794780254, 344.5220274683217]),
-      ("xtrans", 28, 16, 3, &[441.1662734746933, 20135.024219989777, 435.23239948117185, 272.69089791178703, 12451.46948003769, 171.7381630839859, 408.4678649902344, 18654.983914613724, 376.8882214632959]),
+      ("xtrans", 28, 16, 3, &[441.8567228913307, 20118.23803973198, 436.9002191243954, 270.7740049660206, 12374.535669326782, 170.7231797951337, 409.30331003665924, 18666.734287142754, 378.8607051136843]),
       ("mono", 24, 16, 1, &[286.27965730428696, 13782.818696141243, 217.83812832726255]),
       ("linear_raw_profile", 16, 12, 3, &[185.23571345210075, 8951.324946820736, 181.01863179486003, 145.2774385213852, 7214.587505862117, 118.69475065947488, 188.05537682771683, 8992.080503284931, 184.6161640864077]),
     ];
@@ -737,32 +737,36 @@ mod tests {
       a.data.iter().zip(&b.data).map(|(a, b)| (a - b).abs()).fold(0.0, f32::max)
     }
 
-    fn render_with(rawimage: &RawImage, white_balance: WhiteBalancePlacement) -> RenderedImage {
+    fn render_with(rawimage: &RawImage, white_balance: WhiteBalancePlacement, demosaic: DemosaicQuality) -> RenderedImage {
       let options = RenderOptions {
         white_balance,
+        demosaic,
         ..Default::default()
       };
       render(rawimage.clone(), &options).expect("render")
     }
 
     #[test]
-    fn white_balance_placement_matters_for_ppg_only() {
+    fn white_balance_placement_matters_for_color_differences() {
       // Values that don't clip when white balanced: bilinear demosaicing works on
       // each color plane, so it doesn't matter if the planes are balanced before.
-      // PPG interpolates by the differences of the planes.
+      // PPG interpolates by the differences of the planes, Markesteijn chooses
+      // the direction of the interpolation by the colors.
       let cygm_matrix = [[0.2, 0.6, 0.5], [0.7, 0.8, 0.0], [0.1, 0.9, 0.1], [0.8, 0.2, 0.6]];
-      for (pattern, colors, wb, matrix, bilinear) in [
-        ("RGGB", "RGB", [2.0, 1.0, 1.5, f32::NAN], transform_2d(&COLOR_MATRIX), false),
-        (XTRANS, "RGB", [2.0, 1.0, 1.5, f32::NAN], transform_2d(&COLOR_MATRIX), true),
-        ("CYGM", "CYGM", [1.5, 1.2, 1.0, 1.4], transform_2d(&cygm_matrix), true),
+      let rgb = [2.0, 1.0, 1.5, f32::NAN];
+      for (pattern, colors, wb, matrix, demosaic, bilinear) in [
+        ("RGGB", "RGB", rgb, transform_2d(&COLOR_MATRIX), DemosaicQuality::Quality, false),
+        (XTRANS, "RGB", rgb, transform_2d(&COLOR_MATRIX), DemosaicQuality::Quality, false),
+        (XTRANS, "RGB", rgb, transform_2d(&COLOR_MATRIX), DemosaicQuality::Fast, true),
+        ("CYGM", "CYGM", [1.5, 1.2, 1.0, 1.4], transform_2d(&cygm_matrix), DemosaicQuality::Quality, true),
       ] {
-        let mut rawimage = cfa_rawimage(pattern, colors, 36, 24, wb, matrix);
-        rawimage.data = RawImageData::Integer(samples(36, 24, 1, 64, 1300));
+        let mut rawimage = cfa_rawimage(pattern, colors, 96, 72, wb, matrix);
+        rawimage.data = RawImageData::Integer(samples(96, 72, 1, 64, 1300));
         let difference = max_difference(
-          &render_with(&rawimage, WhiteBalancePlacement::BeforeDemosaic),
-          &render_with(&rawimage, WhiteBalancePlacement::AfterDemosaic),
+          &render_with(&rawimage, WhiteBalancePlacement::BeforeDemosaic, demosaic),
+          &render_with(&rawimage, WhiteBalancePlacement::AfterDemosaic, demosaic),
         );
-        assert_eq!(difference < 1e-5, bilinear, "{}: {}", pattern, difference);
+        assert_eq!(difference < 1e-5, bilinear, "{} {:?}: {}", pattern, demosaic, difference);
       }
     }
 
@@ -827,7 +831,7 @@ mod tests {
       let mut rawimage = rggb();
       rawimage.data = RawImageData::Integer(vec![4095; 32 * 24]);
       for placement in [WhiteBalancePlacement::BeforeDemosaic, WhiteBalancePlacement::AfterDemosaic] {
-        let image = render_with(&rawimage, placement);
+        let image = render_with(&rawimage, placement, DemosaicQuality::Quality);
         assert!(image.data.iter().all(|v| (v - 1.0).abs() < 1e-4), "{:?}", placement);
       }
     }

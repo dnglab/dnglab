@@ -3,7 +3,7 @@
 
 //! Planning of the processing operations for an image
 
-use super::{ProcessingStep, RenderOptions, WhiteBalancePlacement};
+use super::{DemosaicQuality, ProcessingStep, RenderOptions, RenderTarget, WhiteBalancePlacement};
 use crate::{
   RawImage, RawImageData,
   dng::{
@@ -74,6 +74,7 @@ pub(super) enum DemosaicAlgorithm {
   Ppg,
   Bilinear4,
   XTransBilinear,
+  Markesteijn,
 }
 
 /// Plan the processing of `rawimage` with `options`
@@ -83,6 +84,7 @@ pub fn plan(rawimage: &RawImage, options: &RenderOptions) -> crate::Result<Plan>
   use ProcessingStep as Step;
 
   let steps = options.steps;
+  let linear_raw = options.target == RenderTarget::LinearRaw;
   let mut ops = Vec::new();
   let has_opcodes = |stage| rawimage.opcode_list(stage).is_some();
   if !matches!(rawimage.cpp, 1 | 3 | 4) {
@@ -95,17 +97,24 @@ pub fn plan(rawimage: &RawImage, options: &RenderOptions) -> crate::Result<Plan>
     RawPhotometricInterpretation::Cfa(config) if steps.contains(Step::Demosaic) && rawimage.cpp == 1 => Some(config),
     _ => None,
   };
-  let demosaic = mosaic.map(demosaic_algorithm).transpose()?;
+  let demosaic = mosaic.map(|config| demosaic_algorithm(config, options.demosaic)).transpose()?;
   let channels = demosaic.map_or(rawimage.cpp, |(_, planes)| planes);
 
   // As shot white balance, some old images may not provide WB coeffs. White
   // balanced values are limited to the camera white, the smallest coefficient.
-  let wb = (steps.contains(Step::WhiteBalance) && !rawimage.wb_coeffs[0].is_nan()).then_some(rawimage.wb_coeffs);
-  let white = wb.map_or(1.0, |wb| wb[..channels.min(4)].iter().copied().fold(f32::INFINITY, f32::min));
-  // CFA data is white balanced before it is demosaiced, see WhiteBalancePlacement
+  let planes = channels.min(4);
+  let valid = rawimage.wb_coeffs[..planes].iter().all(|c| c.is_finite() && *c > 0.0);
+  let wb = (steps.contains(Step::WhiteBalance) && valid).then_some(rawimage.wb_coeffs);
+  let white = wb.map_or(1.0, |wb| wb[..planes].iter().copied().fold(f32::INFINITY, f32::min));
+  // CFA data is white balanced before it is demosaiced, see WhiteBalancePlacement.
+  // LinearRaw data is not limited, its white balance is divided out again.
   let mut mosaic_wb = wb
-    .filter(|_| mosaic.is_some() && steps.contains(Step::Rescale) && options.white_balance == WhiteBalancePlacement::BeforeDemosaic)
-    .map(|coeffs| WhiteBalance { coeffs, clip: Some(white) });
+    .filter(|_| mosaic.is_some() && options.white_balance == WhiteBalancePlacement::BeforeDemosaic)
+    .filter(|_| linear_raw || steps.contains(Step::Rescale))
+    .map(|coeffs| WhiteBalance {
+      coeffs,
+      clip: (!linear_raw).then_some(white),
+    });
   let wb_before_demosaic = mosaic_wb.is_some();
 
   // OpcodeList1 is applied to the raw image as read from the file
@@ -138,19 +147,22 @@ pub fn plan(rawimage: &RawImage, options: &RenderOptions) -> crate::Result<Plan>
         }
       }
     }
-    if let (Some(config), Some(white_balance)) = (mosaic, mosaic_wb) {
-      ops.push(Op::WhiteBalanceMosaic {
-        cfa: Box::new(config.clone()),
-        white_balance,
-      });
-    }
+  }
+  // White balance that is not applied with the rescale, for LinearRaw data
+  // also without the Rescale step
+  if let (Some(config), Some(white_balance)) = (mosaic, mosaic_wb) {
+    ops.push(Op::WhiteBalanceMosaic {
+      cfa: Box::new(config.clone()),
+      white_balance,
+    });
   }
 
-  let crop_default = steps.contains(Step::CropDefault);
+  let crop_default = steps.contains(Step::CropDefault) && !linear_raw;
   let mut cropped = false;
   if steps.contains(Step::Demosaic) {
     let crop_to_active_area = matches!(rawimage.photometric, RawPhotometricInterpretation::Cfa(_)) && steps.contains(Step::CropActiveArea);
-    let list3 = has_opcodes(OpcodeStage::List3);
+    // OpcodeList3 of LinearRaw data is kept for the DNG reader
+    let list3 = has_opcodes(OpcodeStage::List3) && !linear_raw;
     if let (Some(config), Some((algorithm, _))) = (mosaic, demosaic) {
       if crop_to_active_area && rawimage.active_area.is_some() && rawimage.fuji_rotation_width.is_some() {
         return Err("ActiveArea is not possible when rotation is not normalized".into());
@@ -178,6 +190,16 @@ pub fn plan(rawimage: &RawImage, options: &RenderOptions) -> crate::Result<Plan>
         crop_to_active_area,
       });
     }
+  }
+  if linear_raw {
+    // The white balance for the demosaic is divided out, DNG readers apply it
+    if let Some(coeffs) = wb.filter(|_| wb_before_demosaic) {
+      ops.push(Op::WhiteBalance(WhiteBalance {
+        coeffs: coeffs.map(|c| 1.0 / c),
+        clip: None,
+      }));
+    }
+    return Ok(Plan { ops });
   }
   // Cropping before the color operations saves their work for the cropped pixels
   if crop_default && !cropped {
@@ -239,11 +261,14 @@ pub fn plan(rawimage: &RawImage, options: &RenderOptions) -> crate::Result<Plan>
 }
 
 /// Demosaic algorithm for a CFA and the number of color planes of its result
-fn demosaic_algorithm(config: &CFAConfig) -> crate::Result<(DemosaicAlgorithm, usize)> {
+fn demosaic_algorithm(config: &CFAConfig, quality: DemosaicQuality) -> crate::Result<(DemosaicAlgorithm, usize)> {
   match config.sensor {
     SensorType::Bayer if config.cfa.is_rgb() => Ok((DemosaicAlgorithm::Ppg, 3)),
     SensorType::Bayer if config.cfa.unique_colors() == 4 => Ok((DemosaicAlgorithm::Bilinear4, 4)),
-    SensorType::Xtrans if config.cfa.is_rgb() => Ok((DemosaicAlgorithm::XTransBilinear, 3)),
+    SensorType::Xtrans if config.cfa.is_rgb() => match quality {
+      DemosaicQuality::Quality => Ok((DemosaicAlgorithm::Markesteijn, 3)),
+      DemosaicQuality::Fast => Ok((DemosaicAlgorithm::XTransBilinear, 3)),
+    },
     _ => Err(format!("Demosaic of CFA pattern '{}' is not supported", config.cfa).into()),
   }
 }

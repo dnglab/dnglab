@@ -18,17 +18,18 @@ use crate::{
     sensor::{
       Demosaic,
       bayer::{bilinear::Bilinear4Channel, ppg::PPGDemosaic},
-      xtrans::bilinear::XTransBilinearDemosaic,
+      xtrans::{bilinear::XTransBilinearDemosaic, markesteijn::XTransMarkesteijnDemosaic},
     },
   },
   pixarray::ImageView,
-  rawimage::CFAConfig,
+  rawimage::{BlackLevel, CFAConfig, RawPhotometricInterpretation, WhiteLevel},
 };
 
 /// Pixels around the DefaultCrop that are demosaiced with it, so the
 /// interpolation at the border of the crop uses the same neighbor pixels as
-/// for the whole image
-const DEMOSAIC_MARGIN: usize = 16;
+/// for the whole image. Markesteijn (3 passes) interpolates the 17 border
+/// pixels of the demosaiced area differently.
+const DEMOSAIC_MARGIN: usize = 32;
 
 /// Apply the operations of `plan` to the image data of `rawimage`
 ///
@@ -39,6 +40,37 @@ pub fn execute(rawimage: RawImage, plan: &Plan) -> crate::Result<RenderedImage> 
     executor.apply(op)?;
   }
   Ok(std::mem::take(executor.image()))
+}
+
+/// Apply the operations of `plan` to the image data of `rawimage` and return
+/// the raw image with the processed image data
+///
+/// The ActiveArea and DefaultCrop are relative to the processed image data.
+/// Demosaiced CFA data is LinearRaw data, its black and white levels are 0.0
+/// and 1.0. The plan must be made for this image by [`plan`](super::plan).
+pub fn execute_raw(rawimage: RawImage, plan: &Plan) -> crate::Result<RawImage> {
+  let mut executor = Executor::new(rawimage);
+  for op in &plan.ops {
+    executor.apply(op)?;
+  }
+  let Executor {
+    mut rawimage,
+    image,
+    active_area,
+    crop_area,
+    ..
+  } = executor;
+  if let Some(image) = image {
+    if matches!(rawimage.photometric, RawPhotometricInterpretation::Cfa(_)) && image.channels > 1 {
+      rawimage.photometric = RawPhotometricInterpretation::LinearRaw;
+      rawimage.blacklevel = BlackLevel::zero(1, 1, image.channels);
+      rawimage.whitelevel = WhiteLevel::new(vec![1; image.channels]);
+    }
+    (rawimage.width, rawimage.height, rawimage.cpp) = (image.width, image.height, image.channels);
+    rawimage.data = RawImageData::Float(image.data);
+  }
+  (rawimage.active_area, rawimage.crop_area) = (active_area, crop_area);
+  Ok(rawimage)
 }
 
 /// Image data and its state while a plan is executed
@@ -222,6 +254,7 @@ impl Executor {
       DemosaicAlgorithm::Ppg => PPGDemosaic::new().demosaic(pixels, &cfa.cfa, &cfa.colors, roi).into(),
       DemosaicAlgorithm::Bilinear4 => Bilinear4Channel::new().demosaic(pixels, &cfa.cfa, &cfa.colors, roi).into(),
       DemosaicAlgorithm::XTransBilinear => XTransBilinearDemosaic::new().demosaic(pixels, &cfa.cfa, &cfa.colors, roi).into(),
+      DemosaicAlgorithm::Markesteijn => XTransMarkesteijnDemosaic::new_pass_3().demosaic(pixels, &cfa.cfa, &cfa.colors, roi).into(),
     };
     *image = demosaiced;
     log::debug!("Demosaiced {:?}", roi);
