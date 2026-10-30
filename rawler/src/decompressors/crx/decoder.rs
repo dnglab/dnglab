@@ -6,15 +6,14 @@
 // crx.cpp and documentation done by Laurent Clévy (https://github.com/lclevy/canon_cr3).
 
 use super::{
-  BandParam, CodecParams, CrxError, Result,
+  BandParam, BitPump, CodecParams, CrxError, Result,
   mdat::{Plane, Tile},
 };
 use crate::decompressors::crx::{idwt::WaveletTransform, mdat::parse_header, rice::RiceDecoder};
-use bitstream_io::BitReader;
 use itertools::izip;
 use log::debug;
 use rayon::prelude::*;
-use std::{io::Cursor, time::Instant};
+use std::time::Instant;
 
 /// Maximum value for K during Adaptive Golomb-Rice for K prediction
 pub(super) const PREDICT_K_MAX: u32 = 15;
@@ -52,7 +51,7 @@ impl<'a> PlaneLineIter<'a> {
       let band_buf = &data[band_mdat_offset..band_mdat_offset + band.data_size];
       // Line length is subband + one additional pixel at start and end
       let line_len = 1 + band.width + 1;
-      let bitpump = BitReader::endian(Cursor::new(band_buf), bitstream_io::BigEndian);
+      let bitpump = BitPump::new(band_buf);
 
       let param = BandParam {
         subband_width: band.width,

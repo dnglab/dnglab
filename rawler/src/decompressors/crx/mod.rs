@@ -29,13 +29,12 @@
 //! Transformation is directed by i, number of wavelet transformations.
 //! Crx uses i=3, so the output is LL(3), LH(3), HL(3), HH(3), LH(2), HL(2), HH(2), LH(1), HL(1), HH(1)
 
-use self::{mdat::Tile, rice::RiceDecoder};
+use self::{bitpump::BitPump, mdat::Tile, rice::RiceDecoder};
 use crate::formats::bmff::ext_cr3::cmp1::Cmp1Box;
-use bitstream_io::BitReader;
 use log::debug;
-use std::io::Cursor;
 use thiserror::Error;
 
+mod bitpump;
 mod decoder;
 mod idwt;
 mod iquant;
@@ -57,9 +56,6 @@ const EX_COEF_NUM_TBL:[usize; 0x30*3] = [
     // Level 3
     1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 0, 1, 2, 2, 2, 2, 1, 1, 1, 1, 2, 2, 1,
     1, 1, 1, 2, 2, 1, 1, 0, 1, 1, 1, 1, 1, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1];
-
-/// BitPump for Big Endian bit streams
-type BitPump<'a> = BitReader<Cursor<&'a [u8]>, bitstream_io::BigEndian>;
 
 /// Error variants for compressor
 #[derive(Debug, Error)]
