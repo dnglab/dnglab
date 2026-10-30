@@ -33,6 +33,8 @@ cargo run -p rawler --release --example <name>
 * `exif`: prints the camera, exposure time, ISO and aperture of the CR2, or
   of a raw file given as argument.
 * `makernote`: prints the Canon makernote of the CR2.
+* `linearize`: writes the linear camera RGB values of the CR2 to a 16-bit
+  TIFF image.
 
 The cache is the directory in the environment variable `RAWDB_CACHE`, or
 `dnglab/rawdb` in the cache directory of the user: `~/.cache/dnglab/rawdb`
