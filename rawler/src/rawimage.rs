@@ -29,6 +29,8 @@ use crate::{
   tags::TiffTag,
 };
 
+pub use crate::imgop::blacklevel::BlackLevel;
+
 /// Prefix of an AsShotProfileName that selects a profile group
 const PROFILE_GROUP_PREFIX: &str = "Group: ";
 
@@ -63,107 +65,6 @@ impl WhiteLevel {
       [self.0[0] as f32, self.0[1] as f32, self.0[2] as f32, self.0[3] as f32]
     } else {
       [self.0[0] as f32, self.0[0] as f32, self.0[0] as f32, self.0[0] as f32]
-    }
-  }
-}
-
-#[derive(Clone, PartialEq, Serialize, Deserialize)]
-pub struct BlackLevel {
-  pub levels: Vec<Rational>,
-  pub cpp: usize,
-  pub width: usize,
-  pub height: usize,
-}
-
-impl Default for BlackLevel {
-  fn default() -> Self {
-    Self {
-      levels: [Rational::from(0_u32)].into(),
-      width: 1,
-      height: 1,
-      cpp: 1,
-    }
-  }
-}
-
-impl std::fmt::Debug for BlackLevel {
-  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-    let levels: Vec<f32> = self.levels.iter().map(|x| x.as_f32()).collect();
-    f.write_fmt(format_args!("RepeatDim: {}:{}, cpp: {}, {:?}", self.height, self.width, self.cpp, levels))
-  }
-}
-
-impl BlackLevel {
-  pub fn new<T>(levels: &[T], width: usize, height: usize, cpp: usize) -> Self
-  where
-    T: Copy + Into<Rational>,
-  {
-    assert_eq!(levels.len(), width * height * cpp);
-    Self {
-      levels: levels.iter().map(|x| (*x).into()).collect(),
-      width,
-      height,
-      cpp,
-    }
-  }
-
-  pub fn zero(width: usize, height: usize, cpp: usize) -> Self {
-    if width == 0 || height == 0 || cpp == 0 {
-      panic!(
-        "Blacklevel::zero() must not be called with zero value arguments: width: {}, height: {}, cpp: {}",
-        width, height, cpp
-      );
-    }
-    Self {
-      levels: vec![0_u16; cpp * width * height].iter().map(|x| Rational::from(*x)).collect(),
-      width,
-      height,
-      cpp,
-    }
-  }
-
-  pub fn as_vec(&self) -> Vec<f32> {
-    self.levels.iter().map(Rational::as_f32).collect_vec()
-  }
-
-  pub fn as_bayer_array(&self) -> [f32; 4] {
-    if self.levels.len() == 4 {
-      [
-        self.levels[0].as_f32(),
-        self.levels[1].as_f32(),
-        self.levels[2].as_f32(),
-        self.levels[3].as_f32(),
-      ]
-    } else {
-      [
-        self.levels[0].as_f32(),
-        self.levels[0].as_f32(),
-        self.levels[0].as_f32(),
-        self.levels[0].as_f32(),
-      ]
-    }
-  }
-
-  pub fn sample_count(&self) -> usize {
-    self.cpp * self.width * self.height
-  }
-
-  // TODO: write test
-  pub fn shift(&self, x: usize, y: usize) -> Self {
-    if self.sample_count() == 1 {
-      self.clone()
-    } else {
-      let mut trans = self.clone();
-      let (w, h, cpp) = (trans.width, trans.height, trans.cpp);
-      for yn in 0..h {
-        for xn in 0..w {
-          let ys = (yn + y) % h;
-          let xs = (xn + x) % w;
-          trans.levels[yn * w * cpp + xn * cpp..yn * w * cpp + xn * cpp + cpp]
-            .copy_from_slice(&self.levels[ys * w * cpp + xs * cpp..ys * w * cpp + xs * cpp + cpp]);
-        }
-      }
-      trans
     }
   }
 }
@@ -921,21 +822,5 @@ mod tests {
     assert_eq!(image_with(Some("Group: Landscape")), Some(3));
     assert_eq!(image_with(Some("Unknown")), Some(0));
     assert_eq!(image_with(Some("Group: Unknown")), Some(0));
-  }
-
-  #[test]
-  fn blacklevel_shift() -> std::result::Result<(), Box<dyn std::error::Error>> {
-    let black = BlackLevel::new(&[1_u16, 2, 3, 4], 2, 2, 1).shift(1, 1);
-    assert_eq!(black.levels, vec![4_u16, 3, 2, 1].into_iter().map(Rational::from).collect::<Vec<Rational>>());
-
-    let black = BlackLevel::new(&[1_u16, 1, 1, 2, 2, 2, 3, 3, 3, 4, 4, 4], 2, 2, 3).shift(3, 3);
-    assert_eq!(
-      black.levels,
-      vec![4_u16, 4, 4, 3, 3, 3, 2, 2, 2, 1, 1, 1]
-        .into_iter()
-        .map(Rational::from)
-        .collect::<Vec<Rational>>()
-    );
-    Ok(())
   }
 }

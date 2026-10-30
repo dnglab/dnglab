@@ -303,6 +303,14 @@ impl SRational {
   pub fn new(n: i32, d: i32) -> Self {
     Self { n, d }
   }
+
+  pub fn new_f32(n: f32, d: i32) -> Self {
+    Self::new((n * d as f32) as i32, d)
+  }
+
+  pub fn as_f32(&self) -> f32 {
+    self.n as f32 / self.d as f32
+  }
 }
 
 impl PartialEq for SRational {

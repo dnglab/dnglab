@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: LGPL-2.1
 // Copyright 2021 Daniel Vogelbacher <daniel@chaospixel.com>
 
+pub mod blacklevel;
 pub mod chromatic_adaption;
 pub mod cielab;
 pub mod color;

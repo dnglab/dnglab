@@ -283,7 +283,7 @@ where
     }
 
     // Blacklevel
-    let blacklevel = rawimage.blacklevel.shift(active_area.p.x, active_area.p.y);
+    let blacklevel = rawimage.blacklevel.shift_pattern(active_area.p.x, active_area.p.y);
 
     self
       .ifd_mut()
