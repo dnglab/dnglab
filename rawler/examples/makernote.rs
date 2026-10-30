@@ -29,7 +29,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
   let string = |tag| makernote.get_entry(tag).and_then(|entry| entry.as_string()).map(|s| s.trim_end_matches('\0'));
   let model_id = makernote.get_entry(Cr2MakernoteTag::ModelId).and_then(|entry| entry.get_u32(0).ok().flatten());
-  println!("Firmware: {}", string(Cr2MakernoteTag::FirmareVer).unwrap_or("unknown"));
+  println!("Firmware: {}", string(Cr2MakernoteTag::FirmwareVer).unwrap_or("unknown"));
   println!("Lens:     {}", string(Cr2MakernoteTag::LensModel).unwrap_or("unknown"));
   println!("Model ID: {}", model_id.map_or_else(|| "unknown".to_string(), |id| format!("{:#010x}", id)));
   println!();
