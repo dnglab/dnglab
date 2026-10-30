@@ -23,7 +23,11 @@ crx = []
 # This is a developer feature, it enabled deep inspection of algorithm execution stages
 clap = ["dep:clap"]
 inspector = []
+# Download sample files of rawdb.dnglab.org into a local cache. Examples, tests
+# and benchmarks of rawler enable it by the dev-dependency on rawler itself.
 rawdb = ["dep:ureq", "dep:percent-encoding"]
+# Test all rawdb samples against the snapshots in data/testdata/rawdb (downloads ~100 GiB)
+rawdb-tests = ["rawdb"]
 
 [dependencies]
 backtrace = "0.3"
@@ -64,6 +68,8 @@ anyhow = "1.0"
 approx = "0.5.1"
 criterion = {version = "0.8", features = ["html_reports"]}
 env_logger = "0.11"
+# Enables the rawdb feature for examples, tests and benchmarks
+rawler = {path = ".", features = ["rawdb"]}
 serde_yaml = "=0.8" # TODO - breaks camera tests, update to 0.9 when fixed
 
 [build-dependencies]
@@ -81,14 +87,17 @@ name = "perf"
 [[bench]]
 harness = false
 name = "raw_decoder"
+required-features = ["rawdb"]
 
 [[bench]]
 harness = false
 name = "convert"
+required-features = ["rawdb"]
 
 [[bench]]
 harness = false
 name = "demosaic"
+required-features = ["rawdb"]
 
 [[bench]]
 harness = false

@@ -2265,6 +2265,7 @@ dependencies = [
  "num 0.4.3",
  "num_enum",
  "percent-encoding",
+ "rawler",
  "rayon",
  "rustc_version",
  "serde",

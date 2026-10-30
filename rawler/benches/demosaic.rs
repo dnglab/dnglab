@@ -1,7 +1,6 @@
 use criterion::{BatchSize, BenchmarkGroup, Criterion, criterion_group, criterion_main, measurement::WallTime};
 use rawler::{
   decoders::RawDecodeParams,
-  devtools::rawdb::{get_rawdb_cache, rawdb_ensure_file},
   imgop::develop::{ProcessingStep, RawDevelop},
   rawsource::RawSource,
 };
@@ -9,7 +8,7 @@ use std::{hint::black_box, time::Duration};
 
 fn bench_full_image(group: &mut BenchmarkGroup<'_, WallTime>, name: &str, make: &str, model: &str, sample: &str) {
   let mut inner = || -> anyhow::Result<()> {
-    let sample = rawdb_ensure_file(&get_rawdb_cache(), make, model, sample)?;
+    let sample = rawler::rawdb::sample(make, model, sample)?;
     let rawfile = RawSource::new(&sample)?;
     let decoder = rawler::get_decoder(&rawfile)?;
     let raw_params = RawDecodeParams::default();

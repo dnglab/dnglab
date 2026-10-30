@@ -1921,12 +1921,11 @@ mod tests {
     assert!(DngVersionNumber::from([1, 1, 0, 0]) < DngVersionNumber::from([1, 1, 0, 1]));
   }
 
-  #[cfg(feature = "rawdb")]
+  #[cfg(feature = "rawdb-tests")]
   #[test]
   fn convert_canon_cr3_to_dng() -> std::result::Result<(), Box<dyn std::error::Error>> {
     use crate::{
       decoders::RawDecodeParams,
-      devtools::rawdb::{get_rawdb_cache, rawdb_ensure_file},
       dng::{DNG_VERSION_V1_4, PREVIEW_JPEG_QUALITY},
       rawsource::RawSource,
     };
@@ -1935,8 +1934,7 @@ mod tests {
       io::{BufReader, BufWriter},
     };
 
-    let rawdb_cache = get_rawdb_cache();
-    let raw_file = rawdb_ensure_file(&rawdb_cache, "Canon", "EOS R6", "raw_modes/Canon EOS R6_RAW_ISO_100_nocrop_nodual.CR3")?;
+    let raw_file = crate::rawdb::sample("Canon", "EOS R6", "raw_modes/Canon EOS R6_RAW_ISO_100_nocrop_nodual.CR3")?;
 
     let raw_source = RawSource::new(&raw_file)?;
     let orig_file = File::open(&raw_file).expect("File missing");

@@ -1,16 +1,13 @@
 // SPDX-License-Identifier: LGPL-2.1
 // Copyright 2021 Daniel Vogelbacher <daniel@chaospixel.com>
 
-//#[cfg(feature = "rawdb")]
 use md5::Digest;
 use rawler::analyze::extract_full_pixels;
 use rawler::analyze::extract_preview_pixels;
 use rawler::analyze::extract_thumbnail_pixels;
-#[cfg(feature = "rawdb")]
-use rawler::devtools::rawdb::get_rawdb_cache;
-use rawler::devtools::rawdb::rawdb_ensure_file;
 use rawler::dng::convert::ConvertParams;
 use rawler::dng::convert::convert_raw_file;
+use rawler::rawdb;
 use rawler::{
   analyze::{AnalyzerResult, analyze_metadata, extract_raw_pixels},
   decoders::RawDecodeParams,
@@ -86,14 +83,13 @@ pub(crate) fn compare_digest(buf: &[u8], digest_file: impl AsRef<Path>) -> std::
 /// Generic function to check camera raw files against
 /// pre-generated stats and pixel files.
 pub(crate) fn check_raw_file_conversion(make: &str, model: &str, sample: &str) -> std::result::Result<(), Box<dyn std::error::Error>> {
-  let rawdb_cache = get_rawdb_cache();
   let testfiles = {
     let mut p = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     p.push("data/testdata/rawdb");
     p
   };
   let base_path = testfiles.join(make).join(model);
-  let raw_file = rawdb_ensure_file(&rawdb_cache, make, model, sample)?;
+  let raw_file = rawdb::sample(make, model, sample)?;
   let filename = raw_file.file_name().map(|name| name.to_os_string()).expect("Filename must by OS string compatible");
   let mut orig_analyze_file = filename.clone();
   let mut orig_raw_digest_file = filename.clone();

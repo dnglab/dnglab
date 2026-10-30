@@ -41,6 +41,6 @@ jobs:
       - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: ${{matrix.rust}}
-      - run: cargo test --release --features rawdb
+      - run: cargo test --release --features rawdb-tests
         env:
           RAWDB_API_KEY: ${{ secrets.RAWDB_API_KEY }}
