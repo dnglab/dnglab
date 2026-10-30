@@ -54,3 +54,6 @@ jobs:
       - run: cargo run -p rawler --release --example makernote
         env:
           RAWDB_API_KEY: ${{ secrets.RAWDB_API_KEY }}
+      - run: cargo run -p rawler --release --example linearize -- "$RUNNER_TEMP/linearize.tif"
+        env:
+          RAWDB_API_KEY: ${{ secrets.RAWDB_API_KEY }}

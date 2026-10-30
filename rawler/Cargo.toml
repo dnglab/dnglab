@@ -115,3 +115,7 @@ required-features = ["rawdb"]
 [[example]]
 name = "makernote"
 required-features = ["rawdb"]
+
+[[example]]
+name = "linearize"
+required-features = ["rawdb"]
