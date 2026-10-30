@@ -44,3 +44,7 @@ jobs:
       - run: cargo test --release --features rawdb-tests
         env:
           RAWDB_API_KEY: ${{ secrets.RAWDB_API_KEY }}
+      # Run every example of the workspace (see AGENTS.md)
+      - run: cargo run -p rawler --release --example develop -- "$RUNNER_TEMP/develop.jpg"
+        env:
+          RAWDB_API_KEY: ${{ secrets.RAWDB_API_KEY }}
