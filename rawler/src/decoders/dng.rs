@@ -529,11 +529,12 @@ impl<'a> DngDecoder<'a> {
     let cfa = CFA::new_from_tag(pattern);
     // If DNG has active area, we need to calulate back the CFA pattern,
     // because for DNG the CFAPattern is relative to ActiveArea and we
-    // use (0, 0) as starting point.
+    // use (0, 0) as starting point: the pattern is rotated in the opposite
+    // direction of the writer.
     if let Some(active_area) = self.get_active_area_borders(raw) {
       let top = active_area[0];
       let left = active_area[1];
-      Ok(cfa.shift(left % cfa.width, top % cfa.height))
+      Ok(cfa.shift((cfa.width - left % cfa.width) % cfa.width, (cfa.height - top % cfa.height) % cfa.height))
     } else {
       Ok(cfa)
     }
@@ -1360,6 +1361,33 @@ mod tests {
     expected.apply_scaling()?;
     decoded.apply_scaling()?;
     assert_eq!(decoded.data.as_f32(), expected.data.as_f32());
+    Ok(())
+  }
+
+  #[test]
+  fn cfa_pattern_round_trip_with_active_area() -> TestResult {
+    use crate::imgop::{Dim2, Point, Rect};
+
+    // X-Trans pattern and an ActiveArea that starts at its position (2, 1),
+    // where the rotation to the ActiveArea isn't its own inverse
+    let mut camera = Camera::new();
+    camera.cfa = CFA::new("GGRGGBGGBGGRBRGRBGGGBGGRGGRGGBRBGBRG");
+    camera.clean_make = "DNGLab".into();
+    camera.clean_model = "Synthetic".into();
+    let photometric = RawPhotometricInterpretation::Cfa(CFAConfig::new_from_camera(&camera));
+    let mut rawimage = RawImage::new(
+      camera,
+      PixU16::new_with((0..24 * 24).map(|i| (i % 4096) as u16).collect(), 24, 24),
+      1,
+      [1.0, 1.0, 1.0, f32::NAN],
+      photometric.clone(),
+      Some(BlackLevel::new(&[0_u32], 1, 1, 1)),
+      Some(WhiteLevel::new_bits(12, 1)),
+      false,
+    );
+    rawimage.active_area = Some(Rect::new(Point::new(2, 1), Dim2::new(18, 18)));
+    let decoded = decode_dng(&write_dng_with_active_area(&rawimage)?)?;
+    assert_eq!(decoded.photometric, photometric);
     Ok(())
   }
 
