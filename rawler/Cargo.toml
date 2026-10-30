@@ -123,3 +123,7 @@ required-features = ["rawdb"]
 [[example]]
 name = "dng_opcodes"
 required-features = ["rawdb"]
+
+[[example]]
+name = "simple_render"
+required-features = ["rawdb"]
