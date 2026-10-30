@@ -17,7 +17,7 @@ use crate::{
   dng::rect_to_dng_area,
   envparams::{rawler_dng_multistrip_threshold, rawler_dng_rows_per_strip},
   formats::tiff::{
-    CompressionMethod, PhotometricInterpretation, PreviewColorSpace, Rational, TiffError, Value,
+    CompressionMethod, PhotometricInterpretation, PreviewColorSpace, Rational, SRational, TiffError, Value,
     writer::{DirectoryWriter, TiffWriter, transfer_entry},
   },
   imgop::{Dim2, Point, Rect},
@@ -303,6 +303,26 @@ where
     } else {
       // Add as RATIONAL
       self.ifd_mut().add_tag(DngTag::BlackLevel, blacklevel.levels.as_slice());
+    }
+
+    // The differences of the columns and rows belong to the ActiveArea of the raw image
+    for (tag, deltas, count) in [
+      (DngTag::BlackLevelDeltaH, &blacklevel.delta_h, active_area.d.w),
+      (DngTag::BlackLevelDeltaV, &blacklevel.delta_v, active_area.d.h),
+    ] {
+      if deltas.iter().all(|delta| delta.n == 0) {
+        continue;
+      }
+      if rawimage.active_area.unwrap_or(image_area) == active_area && deltas.len() == count {
+        self.ifd_mut().add_tag(tag, deltas.as_slice());
+      } else {
+        log::warn!(
+          "{:?} with {} values doesn't match the ActiveArea {:?} of the DNG, it is not written",
+          tag,
+          deltas.len(),
+          active_area
+        );
+      }
     }
 
     if !rawimage.blackareas.is_empty() {
@@ -695,6 +715,15 @@ fn float_to_integer(rawimage: &mut RawImage) {
       Rational::new_f32(level, 1000)
     };
   });
+  let blacklevel = &mut rawimage.blacklevel;
+  blacklevel.delta_h.iter_mut().chain(blacklevel.delta_v.iter_mut()).for_each(|x| {
+    let delta = scale(x.as_f32());
+    *x = if delta.fract() == 0.0 {
+      SRational::new(delta as i32, 1)
+    } else {
+      SRational::new_f32(delta, 1000)
+    };
+  });
   rawimage.bps = 16; // Reset bps as integers are scaled to u16 range.
 }
 
@@ -735,8 +764,7 @@ fn to_lossy_8bit(rawimage: &mut RawImage) -> Result<()> {
       rawimage.cpp
     )));
   }
-  let normalized =
-    matches!(rawimage.data, RawImageData::Float(_)) && rawimage.blacklevel.levels.iter().all(|x| x.n == 0) && rawimage.whitelevel.0.iter().all(|x| *x == 1);
+  let normalized = matches!(rawimage.data, RawImageData::Float(_)) && rawimage.blacklevel.is_zero() && rawimage.whitelevel.0.iter().all(|x| *x == 1);
   if !normalized {
     rawimage
       .apply_scaling()

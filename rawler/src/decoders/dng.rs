@@ -98,7 +98,7 @@ impl<'a> Decoder for DngDecoder<'a> {
       // panic!("Camera {} / {} is not in the camera catalog", cam.make, cam.model);
     }
 
-    let blacklevel = self.get_blacklevels(raw)?;
+    let blacklevel = self.get_blacklevels(raw, width, height)?;
     // Default WhiteLevel is 1.0 for floating point and 2^BitsPerSample-1 for integer data
     let whitelevel = match self.get_whitelevels(raw)? {
       Some(whitelevel) => whitelevel,
@@ -433,10 +433,15 @@ impl<'a> DngDecoder<'a> {
     }
   }
 
-  fn get_blacklevels(&self, raw: &IFD) -> Result<Option<BlackLevel>> {
+  /// Black levels of the raw IFD of an image of `width` x `height` pixels
+  ///
+  /// The pattern is relative to the ActiveArea in DNG files, it is rotated to
+  /// start at the top-left sample of the image data. BlackLevelDeltaH and
+  /// BlackLevelDeltaV stay relative to the ActiveArea.
+  fn get_blacklevels(&self, raw: &IFD, width: usize, height: usize) -> Result<Option<BlackLevel>> {
     let cpp = raw.get_entry(TiffCommonTag::SamplesPerPixel).map(|entry| entry.force_usize(0)).unwrap_or(1);
     if let Some(entry) = raw.get_entry(TiffCommonTag::BlackLevels) {
-      let levels = match &entry.value {
+      let levels: Vec<Rational> = match &entry.value {
         Value::Short(black) => black.iter().copied().map(Rational::from).collect(),
         Value::Long(black) => black.iter().copied().map(Rational::from).collect(),
         Value::Rational(black) => black.clone(),
@@ -454,7 +459,37 @@ impl<'a> DngDecoder<'a> {
           log::warn!("File has BlackLevelRepeatDim tag but with invalid length: {}", value.len());
         }
       }
-      Ok(Some(BlackLevel::new(&levels, repeat.1, repeat.0, cpp)))
+      let (rows, cols) = repeat;
+      if rows == 0 || cols == 0 || levels.len() != rows * cols * cpp {
+        return Err(RawlerError::DecoderFailed(format!(
+          "DNG: BlackLevel has {} values, expected {} for {}x{} pixels with {} samples",
+          levels.len(),
+          rows * cols * cpp,
+          cols,
+          rows,
+          cpp
+        )));
+      }
+      // Without ActiveArea, the whole image is active
+      let [top, left, bottom, right] = self.get_active_area_borders(raw).unwrap_or([0, 0, height, width]);
+      let delta = |tag: DngTag, count: usize| match raw.get_entry(tag).map(|entry| &entry.value) {
+        Some(Value::SRational(deltas)) if deltas.len() == count => deltas.clone(),
+        Some(value) => {
+          log::warn!(
+            "DNG: ignoring {:?} with {} values of type {}, expected {} SRATIONAL",
+            tag,
+            value.count(),
+            value.value_type_name(),
+            count
+          );
+          Vec::new()
+        }
+        None => Vec::new(),
+      };
+      let delta_h = delta(DngTag::BlackLevelDeltaH, right.saturating_sub(left));
+      let delta_v = delta(DngTag::BlackLevelDeltaV, bottom.saturating_sub(top));
+      let blacklevel = BlackLevel::new(&levels, cols, rows, cpp).with_deltas(delta_h, delta_v);
+      Ok(Some(blacklevel.shift_pattern((cols - left % cols) % cols, (rows - top % rows) % rows)))
     } else {
       Ok(None)
     }
@@ -1270,6 +1305,79 @@ mod tests {
     use crate::decoders::{Decoder, WellKnownIFD};
 
     Ok(dng_decoder(data)?.ifd(WellKnownIFD::Raw)?.ok_or("raw IFD not found")?)
+  }
+
+  /// Synthetic image with an ActiveArea at an odd offset, a 2x2 pattern of
+  /// black levels and differences of the columns and rows
+  fn blacklevel_rawimage() -> RawImage {
+    use crate::formats::tiff::SRational;
+    use crate::imgop::{Dim2, Point, Rect};
+
+    let mut rawimage = synthetic_rawimage();
+    let active_area = Rect::new(Point::new(3, 1), Dim2::new(11, 13));
+    rawimage.active_area = Some(active_area);
+    let deltas = |count: usize| (0..count).map(|i| SRational::new(i as i32 % 5 - 2, 2)).collect();
+    rawimage.blacklevel = BlackLevel::new(&[10_u32, 20, 30, 40], 2, 2, 1).with_deltas(deltas(11), deltas(13));
+    rawimage
+  }
+
+  /// Write `rawimage` uncompressed as DNG with its ActiveArea
+  fn write_dng_with_active_area(rawimage: &RawImage) -> TestResult<Vec<u8>> {
+    let mut buf = Cursor::new(Vec::new());
+    let mut dng = DngWriter::new(&mut buf, DNG_VERSION_V1_4)?;
+    dng.load_base_tags(rawimage)?;
+    let mut frame = dng.subframe(0);
+    frame.raw_image(
+      rawimage,
+      CropMode::ActiveArea,
+      DngCompression::Uncompressed,
+      DngPhotometricConversion::Original,
+      &CompressionParams::default(),
+    )?;
+    frame.finalize()?;
+    dng.close()?;
+    Ok(buf.into_inner())
+  }
+
+  #[test]
+  fn blacklevel_pattern_and_deltas_round_trip() -> TestResult {
+    let rawimage = blacklevel_rawimage();
+    let data = write_dng_with_active_area(&rawimage)?;
+    // The DNG stores the pattern relative to the ActiveArea at (3, 1)
+    let raw = raw_ifd(&data)?;
+    let levels: Vec<u32> = (0..4)
+      .map(|i| raw.get_entry(TiffCommonTag::BlackLevels).map_or(0, |e| e.force_u32(i)))
+      .collect();
+    assert_eq!(levels, [40, 30, 20, 10]);
+    assert_eq!(raw.get_entry(DngTag::BlackLevelDeltaH).map(|e| e.count()), Some(11));
+    assert_eq!(raw.get_entry(DngTag::BlackLevelDeltaV).map(|e| e.count()), Some(13));
+
+    let decoded = decode_dng(&data)?;
+    assert_eq!(decoded.active_area, rawimage.active_area);
+    assert_eq!(decoded.blacklevel, rawimage.blacklevel);
+    // The same linear values
+    let (mut expected, mut decoded) = (rawimage, decoded);
+    expected.apply_scaling()?;
+    decoded.apply_scaling()?;
+    assert_eq!(decoded.data.as_f32(), expected.data.as_f32());
+    Ok(())
+  }
+
+  #[test]
+  fn blacklevel_deltas_must_match_the_active_area() -> TestResult {
+    use crate::formats::tiff::SRational;
+
+    // Differences with a wrong count are ignored
+    let data = write_dng(&synthetic_rawimage(), |ifd| {
+      ifd.add_tag(DngTag::BlackLevelDeltaH, &[SRational::new(1, 1); 3][..]);
+    })?;
+    assert!(decode_dng(&data)?.blacklevel.delta_h.is_empty());
+    // A BlackLevel that doesn't match BlackLevelRepeatDim is an error
+    let data = write_dng(&synthetic_rawimage(), |ifd| {
+      ifd.add_tag(DngTag::BlackLevelRepeatDim, [3_u16, 1]);
+    })?;
+    assert!(decode_dng(&data).is_err());
+    Ok(())
   }
 
   #[test]
