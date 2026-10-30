@@ -57,3 +57,6 @@ jobs:
       - run: cargo run -p rawler --release --example linearize -- "$RUNNER_TEMP/linearize.tif"
         env:
           RAWDB_API_KEY: ${{ secrets.RAWDB_API_KEY }}
+      - run: cargo run -p rawler --release --example dng_opcodes -- "$RUNNER_TEMP/dng_opcodes.jpg"
+        env:
+          RAWDB_API_KEY: ${{ secrets.RAWDB_API_KEY }}
