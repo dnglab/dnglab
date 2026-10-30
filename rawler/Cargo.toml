@@ -104,6 +104,10 @@ required-features = ["rawdb"]
 harness = false
 name = "develop"
 
+[[bench]]
+harness = false
+name = "rescale"
+
 [[example]]
 name = "develop"
 required-features = ["rawdb"]
