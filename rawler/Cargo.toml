@@ -111,3 +111,7 @@ required-features = ["rawdb"]
 [[example]]
 name = "exif"
 required-features = ["rawdb"]
+
+[[example]]
+name = "makernote"
+required-features = ["rawdb"]
