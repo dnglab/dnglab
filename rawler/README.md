@@ -16,3 +16,32 @@ It's a (c)rawler, just for raw file structures.
    but lacks of support for metadata.
  * For fun.
 
+## Examples and sample files
+
+The examples in `examples/` use sample files of
+[rawdb.dnglab.org](https://rawdb.dnglab.org). The `rawler::rawdb` module
+downloads them into a local cache when they are used the first time. It
+is part of the `rawdb` feature, which is off by default and on for the
+examples, tests and benchmarks of rawler. Other crates enable it with
+`features = ["rawdb"]`.
+
+```sh
+cargo run -p rawler --release --example develop
+```
+
+The cache is the directory in the environment variable `RAWDB_CACHE`, or
+`dnglab/rawdb` in the cache directory of the user: `~/.cache/dnglab/rawdb`
+on Linux, `~/Library/Caches/dnglab/rawdb` on macOS and
+`%LOCALAPPDATA%\dnglab\rawdb` on Windows. Downloads keep 5% of the file
+system free.
+
+## Testing
+
+`cargo test` runs the tests that need no sample files. The `rawdb-tests`
+feature adds the tests of all rawdb samples against the snapshots in
+`data/testdata/rawdb`. They download about 100 GiB, so `RAWDB_CACHE`
+should point to a directory with enough space:
+
+```sh
+RAWDB_CACHE=/path/to/rawdb cargo test -p rawler --release --features rawdb-tests
+```

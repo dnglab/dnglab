@@ -103,3 +103,7 @@ required-features = ["rawdb"]
 [[bench]]
 harness = false
 name = "develop"
+
+[[example]]
+name = "develop"
+required-features = ["rawdb"]
