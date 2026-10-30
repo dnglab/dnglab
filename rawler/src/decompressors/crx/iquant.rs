@@ -56,6 +56,14 @@ impl CodecParams {
 
   /// Decode line with inverse quantization
   pub(super) fn decode_line_with_iquantization(&self, band: &Subband, param: &mut BandParam, q_step: Option<&QStep>) -> super::Result<Vec<i32>> {
+    match param.decoded_ahead.pop_front() {
+      Some(line) => line,
+      None => self.decode_next_line(band, param, q_step),
+    }
+  }
+
+  /// Entropy decode and inverse quantize the next line of the subband bitstream
+  pub(super) fn decode_next_line(&self, band: &Subband, param: &mut BandParam, q_step: Option<&QStep>) -> super::Result<Vec<i32>> {
     if band.data_size == 0 {
       return Ok(Vec::new());
     }

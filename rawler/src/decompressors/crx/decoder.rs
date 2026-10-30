@@ -13,12 +13,18 @@ use crate::decompressors::crx::{idwt::WaveletTransform, mdat::parse_header, rice
 use itertools::izip;
 use log::debug;
 use rayon::prelude::*;
-use std::time::Instant;
+use std::{collections::VecDeque, time::Instant};
 
 /// Maximum value for K during Adaptive Golomb-Rice for K prediction
 pub(super) const PREDICT_K_MAX: u32 = 15;
 pub(super) const PREDICT_K_ESCAPE: u32 = 41;
 pub(super) const PREDICT_K_ESCBITS: u32 = 21;
+
+/// Plane rows to decode ahead per subband. All bands are refilled at the same
+/// time, so they run in parallel. Decoded lines use memory until the transform
+/// has consumed them, so this is kept small compared to the plane height.
+const LOOKAHEAD_ROWS: usize = 64;
+const LOOKAHEAD_EXTRA_LINES: usize = 2;
 
 struct PlaneLineIter<'a> {
   tile: &'a Tile,
@@ -67,6 +73,7 @@ impl<'a> PlaneLineIter<'a> {
         q_param: band.q_param,
         supports_partial: plane.support_partial && band_id == 0,
         rice: RiceDecoder::new(bitpump),
+        decoded_ahead: VecDeque::new(),
       };
       params.push(param);
     }
@@ -84,6 +91,7 @@ impl<'a> PlaneLineIter<'a> {
         };
         iwt_transforms.push(WaveletTransform::new(height, width));
       }
+      decode_ahead(&codec, tile, plane, &mut params, 0);
       codec.idwt_53_filter_init(tile, plane, &mut params, &mut iwt_transforms, codec.levels)?;
     }
 
@@ -100,8 +108,12 @@ impl<'a> PlaneLineIter<'a> {
   /// Decode a single line from plane
   fn decode_plane_line(&mut self) -> Result<&[i32]> {
     if self.next_row < self.tile.plane_height {
+      let row = self.next_row;
       self.next_row += 1;
       if self.codec.levels > 0 {
+        if row.is_multiple_of(LOOKAHEAD_ROWS) {
+          decode_ahead(&self.codec, self.tile, self.plane, &mut self.params, row);
+        }
         self
           .codec
           .idwt_53_filter_decode(self.tile, self.plane, &mut self.params, &mut self.iwt_transforms, self.codec.levels - 1)?;
@@ -144,6 +156,38 @@ impl<'a> Iterator for PlaneLineIter<'a> {
   fn size_hint(&self) -> (usize, Option<usize>) {
     (0, Some(self.tile.plane_height))
   }
+}
+
+/// Decode the subband lines needed for the next [`LOOKAHEAD_ROWS`] plane rows
+///
+/// Each subband has its own bitstream, so its lines can be decoded in parallel
+/// and independently of the inverse wavelet transform, which then takes them
+/// from [`BandParam::decoded_ahead`]. Decoding stops at the first failed line,
+/// as the error is returned when the transform reaches this line.
+fn decode_ahead(codec: &CodecParams, tile: &Tile, plane: &Plane, params: &mut [BandParam], row: usize) {
+  let end_row = (row + LOOKAHEAD_ROWS).min(tile.plane_height);
+  params
+    .par_iter_mut()
+    .zip(plane.subbands.par_iter())
+    .enumerate()
+    .for_each(|(band_id, (param, band))| {
+      if band.data_size == 0 || param.decoded_ahead.back().is_some_and(Result::is_err) {
+        return;
+      }
+      let level = band_id.saturating_sub(1) / 3;
+      let q_step = tile.q_step.as_ref().map(|f| &f[level]);
+      // Bands have fewer lines than the plane has rows. The wavelet filter reads
+      // a few lines ahead, without them each block would end with a serial decode.
+      let end_line = ((end_row * band.height).div_ceil(tile.plane_height) + LOOKAHEAD_EXTRA_LINES).min(band.height);
+      while param.cur_line < end_line {
+        let line = codec.decode_next_line(band, param, q_step);
+        let failed = line.is_err();
+        param.decoded_ahead.push_back(line);
+        if failed {
+          break;
+        }
+      }
+    });
 }
 
 /// A plane line is a vector if i32 values

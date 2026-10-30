@@ -32,6 +32,7 @@
 use self::{bitpump::BitPump, mdat::Tile, rice::RiceDecoder};
 use crate::formats::bmff::ext_cr3::cmp1::Cmp1Box;
 use log::debug;
+use std::collections::VecDeque;
 use thiserror::Error;
 
 mod bitpump;
@@ -367,6 +368,8 @@ struct BandParam<'mdat> {
   supports_partial: bool,
   /// Rice decoder, provides bit access to the MDAT stream
   rice: RiceDecoder<'mdat>,
+  /// Lines decoded ahead of the inverse wavelet transform
+  decoded_ahead: VecDeque<Result<Vec<i32>>>,
 }
 
 impl<'mdat> BandParam<'mdat> {
