@@ -5,6 +5,7 @@ use criterion::{BatchSize, Criterion, criterion_group, criterion_main};
 use rawler::{
   CFA, RawImage,
   decoders::Camera,
+  formats::tiff::SRational,
   imgop::render::{ProcessingStep, RenderOptions, render},
   pixarray::PixU16,
   rawimage::{BlackLevel, CFAConfig, RawPhotometricInterpretation, WhiteLevel},
@@ -54,10 +55,17 @@ fn uniform() -> RawImage {
   mosaic_rawimage("RGGB", BlackLevel::new(&[512_u32], 1, 1, 1))
 }
 
+/// Bayer image with differences of the black level for each column and row
+fn deltas() -> RawImage {
+  let delta = |i: usize| SRational::new(i as i32 % 9 - 4, 4);
+  let blacklevel = BlackLevel::new(&[510_u32, 512, 514, 511], 2, 2, 1).with_deltas((0..WIDTH).map(delta).collect(), (0..HEIGHT).map(delta).collect());
+  mosaic_rawimage("RGGB", blacklevel)
+}
+
 fn rescale(c: &mut Criterion) {
   let mut group = c.benchmark_group("rescale");
   group.sample_size(10).measurement_time(Duration::from_secs(10));
-  for (name, rawimage) in [("bayer", bayer()), ("xtrans", xtrans()), ("uniform", uniform())] {
+  for (name, rawimage) in [("bayer", bayer()), ("xtrans", xtrans()), ("uniform", uniform()), ("deltas", deltas())] {
     // Mapping to linear values without white balance
     group.bench_function(format!("apply_scaling_{}", name), |b| {
       b.iter_batched(

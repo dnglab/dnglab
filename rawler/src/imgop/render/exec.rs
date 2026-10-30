@@ -12,9 +12,10 @@ use crate::{
   dng::opcodes::{OpcodeData, OpcodeImage, OpcodeStage},
   imgop::{
     Dim2, Point, Rect,
+    blacklevel::{rescale, rescale_in_place},
     color::{PixelOp, apply_gain, apply_transfer_function, camera_to_rgb, camera_to_rgb_in_place},
     fuji_rotate::fuji_normalize_rotation,
-    raw::{rescale_mosaic, white_balance, white_balance_mosaic},
+    raw::{white_balance, white_balance_mosaic},
     sensor::{
       Demosaic,
       bayer::{
@@ -25,7 +26,7 @@ use crate::{
       xtrans::{bilinear::XTransBilinearDemosaic, markesteijn::XTransMarkesteijnDemosaic},
     },
   },
-  pixarray::ImageView,
+  pixarray::{ImageView, ImageViewMut},
   rawimage::{BlackLevel, CFAConfig, RawPhotometricInterpretation, WhiteLevel},
 };
 
@@ -150,22 +151,30 @@ impl Executor {
       Op::Opcodes { stage, crop_to_active_area } => self.apply_opcodes(*stage, *crop_to_active_area)?,
       Op::Rescale => self.raw_data()?.apply_scaling()?,
       Op::RescaleMosaic { cfa, white_balance } => {
+        // The image data isn't cropped yet, the patterns are aligned to it
+        let active_area = self.active_area;
         let rawimage = self.raw_data()?;
-        let RawImageData::Integer(samples) = &rawimage.data else {
-          return Err("Mosaic data to rescale must be integer".into());
+        let (width, height) = (rawimage.width, rawimage.height);
+        let active_area = active_area.unwrap_or_else(|| Rect::new(Point::zero(), Dim2::new(width, height)));
+        let wb = white_balance.as_ref().map(|wb| (cfa.as_ref(), wb));
+        let (black, white) = (&rawimage.blacklevel, &rawimage.whitelevel);
+        let data = match &mut rawimage.data {
+          RawImageData::Integer(samples) => rescale(ImageView::new(samples, width, height, 1), black, white, active_area, wb)?,
+          RawImageData::Float(samples) => {
+            rescale_in_place(ImageViewMut::new(samples, width, height, 1), black, white, active_area, wb)?;
+            std::mem::take(samples)
+          }
         };
-        let pixels = rescale_mosaic(
-          ImageView::new(samples, rawimage.width, rawimage.height, 1),
-          &rawimage.blacklevel.as_bayer_array(),
-          &rawimage.whitelevel.as_bayer_array(),
-          &cfa.cfa,
-          &cfa.colors,
-          white_balance.as_ref(),
-        )?;
+        rawimage.scaled_from_integer = matches!(rawimage.data, RawImageData::Integer(_));
         rawimage.data = RawImageData::Float(Vec::new());
-        rawimage.scaled_from_integer = true;
         rawimage.reset_levels();
-        self.image = Some(pixels.into());
+        self.image = Some(RenderedImage {
+          data,
+          width,
+          height,
+          channels: 1,
+          ..Default::default()
+        });
       }
       Op::WhiteBalanceMosaic { cfa, white_balance } => white_balance_mosaic(self.image().view_mut(), &cfa.cfa, &cfa.colors, white_balance)?,
       Op::WhiteBalance(wb) => white_balance(self.image().view_mut(), wb)?,

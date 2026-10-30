@@ -5,7 +5,7 @@ use super::xyz::Illuminant;
 use crate::bits::{LEu32, LookupTable};
 use crate::cfa::{CFA, PlaneColor};
 use crate::imgop::Rect;
-use crate::pixarray::{Color2D, ImageView, ImageViewMut, PixF32};
+use crate::pixarray::{Color2D, ImageViewMut};
 use crate::rawimage::{BlackLevel, RawPhotometricInterpretation, WhiteLevel};
 
 use multiversion::multiversion;
@@ -66,111 +66,6 @@ pub fn clip_value(p: f32, lower: f32, upper: f32) -> f32 {
   }
 }
 
-/// Correct data by blacklevel and whitelevel on CFA (bayer) data.
-///
-/// The output is between 0.0 .. 1.0.
-///
-/// This version is optimized vor vectorization, so please check
-/// modifications on godbolt before committing.
-#[multiversion(targets("x86_64+avx+avx2", "x86+sse", "aarch64+neon"))]
-fn correct_blacklevel_channels<const CH: usize>(raw: &mut [f32], blacklevel: &[f32; CH], whitelevel: &[f32; CH]) {
-  // max value can be pre-computed for all channels.
-  let mut max = *whitelevel;
-  max.iter_mut().enumerate().for_each(|(i, x)| *x -= blacklevel[i]);
-
-  let clip = |v: f32| {
-    if v.is_sign_negative() { 0.0 } else { v }
-  };
-  if CH == 1 {
-    let max = max[0];
-    let blacklevel = blacklevel[0];
-    raw.iter_mut().for_each(|p| *p = clip(*p - blacklevel) / max);
-  } else {
-    raw.chunks_exact_mut(CH).for_each(|block| {
-      for i in 0..CH {
-        block[i] = clip(block[i] - blacklevel[i]) / max[i];
-      }
-    });
-  }
-}
-
-/// Correct data by blacklevel and whitelevel on CFA (bayer) data.
-///
-/// The output is between 0.0 .. 1.0.
-///
-/// This version is optimized vor vectorization, so please check
-/// modifications on godbolt before committing.
-#[multiversion(targets("x86_64+avx+avx2", "x86+sse", "aarch64+neon"))]
-pub fn correct_blacklevel(raw: &mut [f32], blacklevel: &[f32], whitelevel: &[f32]) {
-  match (blacklevel.len(), whitelevel.len()) {
-    (1, 1) => correct_blacklevel_channels::<1>(
-      raw,
-      blacklevel.try_into().expect("Array size mismatch"),
-      whitelevel.try_into().expect("Array size mismatch"),
-    ),
-    (3, 3) => correct_blacklevel_channels::<3>(
-      raw,
-      blacklevel.try_into().expect("Array size mismatch"),
-      whitelevel.try_into().expect("Array size mismatch"),
-    ),
-    (a, b) if a == b => {
-      // max value can be pre-computed for all channels.
-      let mut max = whitelevel.to_vec();
-      max.iter_mut().enumerate().for_each(|(i, x)| *x -= blacklevel[i]);
-
-      let clip = |v: f32| {
-        if v.is_sign_negative() { 0.0 } else { v }
-      };
-
-      let ch = blacklevel.len();
-      raw.chunks_exact_mut(ch).for_each(|block| {
-        for i in 0..ch {
-          block[i] = clip(block[i] - blacklevel[i]) / max[i];
-        }
-      });
-    }
-    _ => log::warn!(
-      "Blacklevel ({}) and Whitelevel ({}) count mismatch, skipping correction",
-      blacklevel.len(),
-      whitelevel.len()
-    ),
-  }
-}
-
-/// Correct data by blacklevel and whitelevel on CFA (bayer) data.
-///
-/// The output is between 0.0 .. 1.0.
-///
-/// This version is optimized vor vectorization, so please check
-/// modifications on godbolt before committing.
-#[multiversion(targets("x86_64+avx+avx2", "x86+sse", "aarch64+neon"))]
-pub fn correct_blacklevel_cfa(raw: &mut [f32], width: usize, _height: usize, blacklevel: &[f32; 4], whitelevel: &[f32; 4]) {
-  //assert_eq!(width % 2, 0, "width is {}", width);
-  //assert_eq!(height % 2, 0, "height is {}", height);
-  // max value can be pre-computed for all channels.
-  let max = [
-    whitelevel[0] - blacklevel[0],
-    whitelevel[1] - blacklevel[1],
-    whitelevel[2] - blacklevel[2],
-    whitelevel[3] - blacklevel[3],
-  ];
-  let clip = |v: f32| {
-    if v.is_sign_negative() { 0.0 } else { v }
-  };
-  // Process two bayer lines at once.
-  raw.par_chunks_exact_mut(width * 2).for_each(|lines| {
-    // It's bayer data, so we have two lines for sure.
-    let (line0, line1) = lines.split_at_mut(width);
-    //line0.array_chunks_mut::<2>().zip(line1.array_chunks_mut::<2>()).for_each(|(a, b)| {
-    line0.chunks_exact_mut(2).zip(line1.chunks_exact_mut(2)).for_each(|(a, b)| {
-      a[0] = clip(a[0] - blacklevel[0]) / max[0];
-      a[1] = clip(a[1] - blacklevel[1]) / max[1];
-      b[0] = clip(b[0] - blacklevel[2]) / max[2];
-      b[1] = clip(b[1] - blacklevel[3]) / max[3];
-    });
-  });
-}
-
 /// White balance coefficients of the color planes and the limit of the
 /// balanced values
 #[derive(Clone, Debug, PartialEq)]
@@ -197,7 +92,7 @@ impl WhiteBalance {
 ///
 /// `colors` maps the colors of the CFA to color planes. Fails for a CFA color
 /// without plane.
-fn cfa_planes(cfa: &CFA, colors: &PlaneColor) -> crate::Result<Vec<usize>> {
+pub(crate) fn cfa_planes(cfa: &CFA, colors: &PlaneColor) -> crate::Result<Vec<usize>> {
   let lookup = colors.plane_lookup_table();
   (0..cfa.height * cfa.width)
     .map(|i| match lookup[cfa.color_at(i / cfa.width, i % cfa.width)] {
@@ -244,51 +139,6 @@ pub fn white_balance_mosaic<'a>(image: impl Into<ImageViewMut<'a, f32>>, cfa: &C
     }
   });
   Ok(())
-}
-
-/// Map integer CFA mosaic data to linear reference values by the black and
-/// white levels, and white balance it by `wb`, in one pass
-///
-/// The levels repeat in a 2x2 pattern (see [`BlackLevel::as_bayer_array`]),
-/// values below black are 0.0. `colors` maps the colors of `cfa` to the color
-/// planes of `wb`. Fails if `src` has more than one channel.
-pub fn rescale_mosaic<'a>(
-  src: impl Into<ImageView<'a, u16>>,
-  blacklevel: &[f32; 4],
-  whitelevel: &[f32; 4],
-  cfa: &CFA,
-  colors: &PlaneColor,
-  wb: Option<&WhiteBalance>,
-) -> crate::Result<PixF32> {
-  let src = src.into();
-  if src.channels() != 1 {
-    return Err(mosaic_error(src.channels()));
-  }
-  let planes = cfa_planes(cfa, colors)?;
-  let max: [f32; 4] = std::array::from_fn(|i| whitelevel[i] - blacklevel[i]);
-  let clip = |v: f32| {
-    if v.is_sign_negative() { 0.0 } else { v }
-  };
-  let width = src.width().max(1);
-  let mut out = PixF32::new(src.width(), src.height());
-  out
-    .data
-    .par_chunks_mut(width)
-    .zip(src.as_slice().par_chunks(width))
-    .enumerate()
-    .for_each(|(row, (out, src))| {
-      let level = (row % 2) * 2;
-      let row_planes = &planes[(row % cfa.height) * cfa.width..][..cfa.width];
-      for (col, ((out, v), plane)) in out.iter_mut().zip(src).zip(row_planes.iter().cycle()).enumerate() {
-        let i = level + col % 2;
-        let v = clip(f32::from(*v) - blacklevel[i]) / max[i];
-        *out = match wb {
-          Some(wb) => wb.apply(v, *plane),
-          None => v,
-        };
-      }
-    });
-  Ok(out)
 }
 
 /// Apply a DNG LinearizationTable to integer samples, with dithering.
@@ -359,37 +209,6 @@ pub fn rotate_90(src: &[u16], dst: &mut [u16], width: usize, height: usize) {
 #[cfg(test)]
 mod tests {
   use super::*;
-
-  #[test]
-  fn rescale_mosaic_like_correct_blacklevel_cfa() -> crate::Result<()> {
-    let (cfa, colors) = (CFA::new("RGGB"), PlaneColor::new("RGB"));
-    let samples: Vec<u16> = vec![100, 200, 300, 400, 50, 1100, 600, 700];
-    let (blacklevel, whitelevel) = ([100.0, 100.0, 100.0, 60.0], [1100.0; 4]);
-    let mut expected: Vec<f32> = samples.iter().copied().map(f32::from).collect();
-    correct_blacklevel_cfa(&mut expected, 4, 2, &blacklevel, &whitelevel);
-    let rescaled = rescale_mosaic(ImageView::new(&samples, 4, 2, 1), &blacklevel, &whitelevel, &cfa, &colors, None)?;
-    assert_eq!(rescaled.data, expected);
-
-    // White balancing in the same pass gives the same result as a separate pass
-    let wb = WhiteBalance {
-      coeffs: [2.0, 1.0, 1.5, f32::NAN],
-      clip: Some(1.0),
-    };
-    let balanced = rescale_mosaic(ImageView::new(&samples, 4, 2, 1), &blacklevel, &whitelevel, &cfa, &colors, Some(&wb))?;
-    white_balance_mosaic(ImageViewMut::new(&mut expected, 4, 2, 1), &cfa, &colors, &wb)?;
-    assert_eq!(balanced.data, expected);
-    // Red is doubled, blue of 1.5 is limited to 1.0
-    let close = |a: f32, b: f32| (a - b).abs() < 1e-6;
-    assert!(
-      close(balanced.data[2], 0.4) && close(balanced.data[3], 0.3) && balanced.data[5] == 1.0,
-      "{:?}",
-      balanced.data
-    );
-
-    // Mosaic data has one channel
-    assert!(rescale_mosaic(ImageView::new(&samples, 2, 2, 2), &blacklevel, &whitelevel, &cfa, &colors, None).is_err());
-    Ok(())
-  }
 
   #[test]
   fn white_balance_mosaic_by_plane_colors() -> crate::Result<()> {

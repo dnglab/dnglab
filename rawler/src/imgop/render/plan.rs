@@ -5,7 +5,7 @@
 
 use super::{DemosaicQuality, ProcessingStep, RenderOptions, RenderTarget, WhiteBalancePlacement};
 use crate::{
-  RawImage, RawImageData,
+  RawImage,
   dng::{
     opcodes::OpcodeStage,
     profile_render::{ProfileRender, ToneCurve, prophoto_to_rgb, rgb_to_prophoto},
@@ -145,12 +145,9 @@ pub fn plan(rawimage: &RawImage, options: &RenderOptions) -> crate::Result<Plan>
     });
   }
   if steps.contains(Step::Rescale) {
-    // Integer CFA data is mapped and white balanced in one pass, unless a
+    // CFA data is mapped and white balanced in one pass, unless a
     // LinearizationTable or OpcodeList2 is applied between
-    let fused = matches!(rawimage.data, RawImageData::Integer(_))
-      && rawimage.linearization_table.is_none()
-      && !has_opcodes(OpcodeStage::List1)
-      && !has_opcodes(OpcodeStage::List2);
+    let fused = rawimage.linearization_table.is_none() && !has_opcodes(OpcodeStage::List1) && !has_opcodes(OpcodeStage::List2);
     match mosaic.filter(|_| fused) {
       Some(config) => ops.push(Op::RescaleMosaic {
         cfa: Box::new(config.clone()),

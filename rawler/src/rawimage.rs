@@ -11,21 +11,22 @@ use crate::Result;
 use crate::camera_profile::{CalibrationSlot, CameraCalibration, CameraProfile, D65_PREFERENCE, GainTableMap, RgbTables};
 use crate::cfa::PlaneColor;
 use crate::dng::opcodes::{OpcodeList, OpcodeSelector, OpcodeStage};
-use crate::imgop::raw::{apply_linearization_table, correct_blacklevel, correct_blacklevel_cfa};
+use crate::imgop::blacklevel::{rescale, rescale_in_place};
+use crate::imgop::raw::apply_linearization_table;
 use crate::imgop::sensor::SensorType;
 use crate::imgop::{convert_from_f32_scaled_u16, convert_to_f32_unscaled};
 use crate::pixarray::SubPixel;
 use crate::{
   CFA,
   decoders::*,
-  formats::tiff::{Rational, Value},
+  formats::tiff::Value,
   imgop::{
     Dim2, Point, Rect,
     matrix::FlatMatrix,
     raw::{ColorMatrix, DevelopParams},
     xyz::Illuminant,
   },
-  pixarray::PixU16,
+  pixarray::{ImageView, ImageViewMut, PixU16},
   tags::TiffTag,
 };
 
@@ -233,12 +234,14 @@ impl RawImage {
         }
       }
 
+      if samples.iter().any(|s| s.count == 0) {
+        debug!("Black areas don't cover all positions of the CFA pattern");
+        return None;
+      }
       let blacklevels: Vec<f32> = samples.into_iter().map(|s| s.avg / s.count as f32).collect();
 
       debug!("Calculated blacklevels: {:?}", blacklevels);
-      // TODO: support other then RGGB levels
-      assert_eq!(cfa.width * cfa.height, 4);
-      Some(BlackLevel::new(&[blacklevels[0], blacklevels[1], blacklevels[2], blacklevels[3]], 2, 2, 1))
+      Some(BlackLevel::new(&blacklevels, cfa.width, cfa.height, 1))
     } else {
       None
     }
@@ -459,7 +462,7 @@ impl RawImage {
   }
 
   /// Apply LinearizationTable, blacklevel and whitelevel scaling, replacing raw
-  /// image data with floating point values in range 0.0 .. 1.0.
+  /// image data with floating point values in range 0.0 .. 1.0, see [`rescale`].
   /// Internal blacklevel and whitelevel is reset to 0.0 and 1.0 to match image data.
   pub fn apply_scaling(&mut self) -> crate::Result<()> {
     self.scaled_from_integer = matches!(self.data, RawImageData::Integer(_));
@@ -469,23 +472,27 @@ impl RawImage {
     {
       apply_linearization_table(samples, self.width * self.cpp, &table);
     }
-    let mut pixels = self.data.as_f32();
-    match &self.photometric {
-      // Black levels of a single plane repeat spatially like on CFA data
-      RawPhotometricInterpretation::BlackIsZero | RawPhotometricInterpretation::Cfa(_) => {
-        correct_blacklevel_cfa(
-          pixels.to_mut(),
-          self.width,
-          self.height,
-          &self.blacklevel.as_bayer_array(),
-          &self.whitelevel.as_bayer_array(),
-        );
-        self.data = RawImageData::Float(pixels.into_owned());
+    let (width, height, cpp) = (self.width, self.height, self.cpp);
+    // Without ActiveArea, the whole image is active
+    let active_area = self.active_area.unwrap_or_else(|| Rect::new(Point::zero(), Dim2::new(width, height)));
+    match &mut self.data {
+      RawImageData::Integer(samples) => {
+        let data = rescale(
+          ImageView::new(samples, width, height, cpp),
+          &self.blacklevel,
+          &self.whitelevel,
+          active_area,
+          None,
+        )?;
+        self.data = RawImageData::Float(data);
       }
-      RawPhotometricInterpretation::LinearRaw => {
-        correct_blacklevel(pixels.to_mut(), &self.blacklevel.as_vec(), &self.whitelevel.as_vec());
-        self.data = RawImageData::Float(pixels.into_owned());
-      }
+      RawImageData::Float(samples) => rescale_in_place(
+        ImageViewMut::new(samples, width, height, cpp),
+        &self.blacklevel,
+        &self.whitelevel,
+        active_area,
+        None,
+      )?,
     }
     self.reset_levels();
     Ok(())
@@ -493,7 +500,7 @@ impl RawImage {
 
   /// Black and white levels of image data that is mapped to 0.0 .. 1.0
   pub(crate) fn reset_levels(&mut self) {
-    self.blacklevel.levels.iter_mut().for_each(|x| *x = Rational::new(0, 1));
+    self.blacklevel = BlackLevel::zero(1, 1, self.cpp);
     self.whitelevel.0.iter_mut().for_each(|x| *x = 1);
   }
 
