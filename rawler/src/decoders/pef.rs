@@ -53,7 +53,22 @@ impl<'a> PefDecoder<'a> {
   pub fn new(file: &RawSource, tiff: GenericTiffReader, rawloader: &'a RawLoader) -> Result<PefDecoder<'a>> {
     debug!("PEF decoder choosen");
 
-    let camera = rawloader.lookup_camera(tiff.root_ifd())?;
+    let mut camera = rawloader.lookup_camera(tiff.root_ifd())?;
+    if camera.supported().is_err() {
+      let make = fetch_tiff_tag!(tiff.root_ifd(), TiffCommonTag::Make).get_string().unwrap_or_default();
+      let model = fetch_tiff_tag!(tiff.root_ifd(), TiffCommonTag::Model).get_string().unwrap_or_default();
+      if make.trim_end() == "PENTAX Corporation" {
+        let alt = rawloader.lookup_camera_with_everything("PENTAX", model.trim_end(), "");
+        if alt.supported().is_ok() {
+          camera = alt;
+        }
+      } else if make.trim_end() == "PENTAX" {
+        let alt = rawloader.lookup_camera_with_everything("PENTAX Corporation", model.trim_end(), "");
+        if alt.supported().is_ok() {
+          camera = alt;
+        }
+      }
+    }
 
     let makernote = if let Some(exif) = tiff.find_first_ifd_with_tag(ExifTag::MakerNotes) {
       exif.parse_makernote(&mut file.reader(), OffsetMode::Absolute, &[])?
