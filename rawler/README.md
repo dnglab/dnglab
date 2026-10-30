@@ -26,8 +26,12 @@ examples, tests and benchmarks of rawler. Other crates enable it with
 `features = ["rawdb"]`.
 
 ```sh
-cargo run -p rawler --release --example develop
+cargo run -p rawler --release --example <name>
 ```
+
+* `develop`: develops a Canon EOS 5D Mark III CR2 to a JPEG image.
+* `exif`: prints the camera, exposure time, ISO and aperture of the CR2, or
+  of a raw file given as argument.
 
 The cache is the directory in the environment variable `RAWDB_CACHE`, or
 `dnglab/rawdb` in the cache directory of the user: `~/.cache/dnglab/rawdb`

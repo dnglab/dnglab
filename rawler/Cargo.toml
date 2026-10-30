@@ -107,3 +107,7 @@ name = "develop"
 [[example]]
 name = "develop"
 required-features = ["rawdb"]
+
+[[example]]
+name = "exif"
+required-features = ["rawdb"]
