@@ -788,7 +788,7 @@ pub enum Cr3MakernoteTag {
   ShotInfo = 0x0004,
   Panorama = 0x0005,
   ImageType = 0x0006,
-  FirmareVer = 0x0007,
+  FirmwareVer = 0x0007,
   FileNumber = 0x0008,
   OwnerName = 0x0009,
   UnknownD30 = 0x000a,

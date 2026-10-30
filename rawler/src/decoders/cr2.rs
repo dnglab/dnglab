@@ -516,7 +516,7 @@ impl<'a> Cr2Decoder<'a> {
       match self
         .makernote
         .as_ref()
-        .and_then(|mn| mn.get_entry(Cr2MakernoteTag::FirmareVer).and_then(|v| v.as_string()))
+        .and_then(|mn| mn.get_entry(Cr2MakernoteTag::FirmwareVer).and_then(|v| v.as_string()))
       {
         Some(fw) => {
           let str: String = fw.chars().filter(|c| c.is_ascii_digit() || c == &'.').collect();
@@ -837,7 +837,7 @@ pub enum Cr2MakernoteTag {
   ShotInfo = 0x0004,
   Panorama = 0x0005,
   ImageType = 0x0006,
-  FirmareVer = 0x0007,
+  FirmwareVer = 0x0007,
   FileNumber = 0x0008,
   OwnerName = 0x0009,
   UnknownD30 = 0x000a,
