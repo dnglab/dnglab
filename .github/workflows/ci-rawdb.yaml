@@ -63,3 +63,6 @@ jobs:
       - run: cargo run -p rawler --release --example simple_render -- "$RUNNER_TEMP/simple_render.jpg"
         env:
           RAWDB_API_KEY: ${{ secrets.RAWDB_API_KEY }}
+      - run: cargo run -p rawler --release --example full_render -- "$RUNNER_TEMP/full_render.jpg"
+        env:
+          RAWDB_API_KEY: ${{ secrets.RAWDB_API_KEY }}

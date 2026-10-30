@@ -32,6 +32,8 @@ cargo run -p rawler --release --example <name>
 * `develop`: develops a Canon EOS 5D Mark III CR2 to a JPEG image.
 * `simple_render`: like `develop`, with `render()` of the render module
   instead of `RawDevelop`.
+* `full_render`: like `develop`, with `plan()` and `execute()` of the render
+  module and all render options.
 * `exif`: prints the camera, exposure time, ISO and aperture of the CR2, or
   of a raw file given as argument.
 * `makernote`: prints the Canon makernote of the CR2.

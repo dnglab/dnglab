@@ -127,3 +127,7 @@ required-features = ["rawdb"]
 [[example]]
 name = "simple_render"
 required-features = ["rawdb"]
+
+[[example]]
+name = "full_render"
+required-features = ["rawdb"]
