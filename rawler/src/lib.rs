@@ -111,6 +111,8 @@ pub mod lens;
 pub mod ljpeg92;
 pub mod pixarray;
 pub mod pumps;
+#[cfg(feature = "rawdb")]
+pub mod rawdb;
 pub mod rawimage;
 pub mod rawsource;
 pub mod tags;

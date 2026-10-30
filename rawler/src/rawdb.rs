@@ -1,7 +1,24 @@
 // SPDX-License-Identifier: LGPL-2.1
 // Copyright 2026 Daniel Vogelbacher <daniel@chaospixel.com>
 
+//! Sample files of [rawdb.dnglab.org](https://rawdb.dnglab.org)
+//!
+//! Samples are downloaded into a local cache when they are used the first
+//! time. The cache is the directory in the environment variable `RAWDB_CACHE`
+//! or `dnglab/rawdb` in the cache directory of the user, e.g.
+//! `~/.cache/dnglab/rawdb` on Linux, `~/Library/Caches/dnglab/rawdb` on macOS
+//! and `%LOCALAPPDATA%\dnglab\rawdb` on Windows.
+//!
+//! ```no_run
+//! # fn main() -> Result<(), Box<dyn std::error::Error>> {
+//! let path = rawler::rawdb::sample("Canon", "EOS 5D Mark III", "raw_modes/Canon EOS 5D Mark III_RAW_ISO_200.CR2")?;
+//! let rawimage = rawler::decode_file(&path)?;
+//! # Ok(())
+//! # }
+//! ```
+
 use percent_encoding::{AsciiSet, NON_ALPHANUMERIC, utf8_percent_encode};
+use std::ffi::OsString;
 use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
@@ -14,20 +31,30 @@ const SEGMENT: &AsciiSet = &NON_ALPHANUMERIC.remove(b'-').remove(b'_').remove(b'
 const BASE_URL: &str = "https://rawdb.dnglab.org/api/download";
 const MAX_RETRIES: u32 = 3;
 
-/// Returns the absolute path of the directory referenced by `RAWDB_CACHE`.
+/// Returns the absolute path of the sample cache.
 ///
-/// If the directory does not exist yet it is created, and a note is printed to
-/// stderr. Panics if `RAWDB_CACHE` is unset or the path exists but is not a
-/// directory.
-pub fn get_rawdb_cache() -> PathBuf {
-  let raw = std::env::var("RAWDB_CACHE").expect("RAWDB_CACHE environment variable must be set (~100 GiB data to download!)");
-  let path = PathBuf::from(&raw);
+/// The cache is the directory in `RAWDB_CACHE`, or `dnglab/rawdb` in the
+/// cache directory of the user if `RAWDB_CACHE` is unset or empty. If the
+/// directory does not exist yet it is created, and a note is printed to
+/// stderr.
+pub fn cache_dir() -> Result<PathBuf, RawdbError> {
+  let path = resolve_cache_dir(std::env::var_os("RAWDB_CACHE"), dirs::cache_dir()).ok_or(RawdbError::NoCacheDir)?;
   if !path.exists() {
-    fs::create_dir_all(&path).unwrap_or_else(|e| panic!("Failed to create RAWDB_CACHE={raw:?}: {e}"));
-    eprintln!("note: created RAWDB_CACHE={raw:?} (did not exist)");
+    fs::create_dir_all(&path)?;
+    eprintln!("note: created rawdb cache {} (did not exist)", path.display());
   }
-  assert!(path.is_dir(), "RAWDB_CACHE={raw:?} exists but is not a directory");
-  fs::canonicalize(&path).expect("RAWDB_CACHE must be canonicalizable to an absolute path")
+  if !path.is_dir() {
+    return Err(io::Error::new(io::ErrorKind::NotADirectory, format!("rawdb cache {} is not a directory", path.display())).into());
+  }
+  Ok(fs::canonicalize(&path)?)
+}
+
+/// Cache directory from the value of `RAWDB_CACHE` or the cache directory of the user
+fn resolve_cache_dir(env: Option<OsString>, user_cache: Option<PathBuf>) -> Option<PathBuf> {
+  match env.filter(|value| !value.is_empty()) {
+    Some(value) => Some(PathBuf::from(value)),
+    None => user_cache.map(|dir| dir.join("dnglab").join("rawdb")),
+  }
 }
 
 #[derive(Debug, thiserror::Error)]
@@ -38,29 +65,39 @@ pub enum RawdbError {
   Network(String),
   #[error("http {status} for {url}")]
   Http { status: u16, url: String },
+  #[error("no cache directory: RAWDB_CACHE is not set and the user has no cache directory")]
+  NoCacheDir,
+  #[error("RAWDB_API_KEY_REQUIRED is set but RAWDB_API_KEY is not, refusing to download {url} anonymously")]
+  ApiKeyRequired { url: String },
+}
+
+/// Ensure a sample file exists in the cache, downloading it from rawdb.dnglab.org if missing.
+///
+/// Returns the absolute path of the sample file, see [`ensure_file`].
+pub fn sample(make: &str, model: &str, subpath: &str) -> Result<PathBuf, RawdbError> {
+  ensure_file(&cache_dir()?, make, model, subpath)
 }
 
 /// Ensure a sample file exists locally, downloading it from rawdb.dnglab.org if missing.
 ///
 /// Returns the absolute path to the local file. The local layout mirrors the
-/// remote one: `{rawdb_cache}/{make}/{model}/{subpath}`.
+/// remote one: `{cache}/{make}/{model}/{subpath}`.
 ///
 /// If `RAWDB_API_KEY` is set in the environment, it is sent as the
 /// `X-API-Key` header to bypass anonymous rate limits.
-pub fn rawdb_ensure_file(rawdb_cache: &Path, make: &str, model: &str, subpath: &str) -> Result<PathBuf, RawdbError> {
-  let local = rawdb_cache.join(make).join(model).join(subpath);
+pub fn ensure_file(cache: &Path, make: &str, model: &str, subpath: &str) -> Result<PathBuf, RawdbError> {
+  let local = cache.join(make).join(model).join(subpath);
   if local.is_file() {
     return Ok(fs::canonicalize(&local)?);
+  }
+  let url = build_url(make, model, subpath);
+  let api_key = std::env::var("RAWDB_API_KEY").ok();
+  if api_key.is_none() && api_key_required() {
+    return Err(RawdbError::ApiKeyRequired { url });
   }
   eprintln!("Downloading sample: {}/{}/{}", make, model, subpath);
   if let Some(parent) = local.parent() {
     fs::create_dir_all(parent)?;
-  }
-
-  let url = build_url(make, model, subpath);
-  let api_key = std::env::var("RAWDB_API_KEY").ok();
-  if api_key.is_none() && api_key_required() {
-    panic!("RAWDB_API_KEY_REQUIRED=true but RAWDB_API_KEY is not set; refusing to download {url} anonymously");
   }
 
   let mut attempt: u32 = 0;
@@ -159,10 +196,24 @@ mod tests {
     fs::create_dir_all(target.parent().unwrap()).unwrap();
     fs::write(&target, b"hello").unwrap();
 
-    let got = rawdb_ensure_file(&dir, "Make", "Model", "sub/dir/file.raw").expect("must succeed without network");
+    let got = ensure_file(&dir, "Make", "Model", "sub/dir/file.raw").expect("must succeed without network");
     assert_eq!(fs::canonicalize(&target).unwrap(), got);
 
     fs::remove_dir_all(&dir).ok();
+  }
+
+  #[test]
+  fn cache_dir_from_env_or_user_cache() {
+    let user_cache = Some(PathBuf::from("/home/user/.cache"));
+    assert_eq!(
+      resolve_cache_dir(Some("/data/rawdb".into()), user_cache.clone()),
+      Some(PathBuf::from("/data/rawdb"))
+    );
+    // An empty RAWDB_CACHE is ignored
+    let default = Some(PathBuf::from("/home/user/.cache/dnglab/rawdb"));
+    assert_eq!(resolve_cache_dir(Some(OsString::new()), user_cache.clone()), default);
+    assert_eq!(resolve_cache_dir(None, user_cache), default);
+    assert_eq!(resolve_cache_dir(None, None), None);
   }
 
   #[test]

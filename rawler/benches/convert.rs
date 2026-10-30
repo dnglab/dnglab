@@ -1,13 +1,10 @@
 use criterion::{BenchmarkGroup, Criterion, criterion_group, criterion_main, measurement::WallTime};
-use rawler::{
-  devtools::rawdb::{get_rawdb_cache, rawdb_ensure_file},
-  dng::convert::{ConvertParams, convert_raw_file},
-};
+use rawler::dng::convert::{ConvertParams, convert_raw_file};
 use std::{hint::black_box, io::Cursor, time::Duration};
 
 fn bench_convert_raw(group: &mut BenchmarkGroup<'_, WallTime>, name: &str, make: &str, model: &str, sample: &str) {
   let mut inner = || -> anyhow::Result<()> {
-    let sample = rawdb_ensure_file(&get_rawdb_cache(), make, model, sample)?;
+    let sample = rawler::rawdb::sample(make, model, sample)?;
     let mut dng = Cursor::new(Vec::with_capacity(100 * 1024 * 1024));
     let mut params = ConvertParams::default();
     params.embedded = false;

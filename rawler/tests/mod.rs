@@ -1,8 +1,8 @@
-#[cfg(feature = "rawdb")]
+#[cfg(feature = "rawdb-tests")]
 pub mod common;
-#[cfg(feature = "rawdb")]
+#[cfg(feature = "rawdb-tests")]
 mod dng;
-#[cfg(feature = "rawdb")]
+#[cfg(feature = "rawdb-tests")]
 mod issues;
-#[cfg(feature = "rawdb")]
+#[cfg(feature = "rawdb-tests")]
 mod rawdb;
