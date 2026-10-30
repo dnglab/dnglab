@@ -35,6 +35,8 @@ cargo run -p rawler --release --example <name>
 * `makernote`: prints the Canon makernote of the CR2.
 * `linearize`: writes the linear camera RGB values of the CR2 to a 16-bit
   TIFF image.
+* `dng_opcodes`: prints the opcode lists of a Google Pixel 6 Pro DNG, applies
+  its OpcodeList2 and develops it to a JPEG image.
 
 The cache is the directory in the environment variable `RAWDB_CACHE`, or
 `dnglab/rawdb` in the cache directory of the user: `~/.cache/dnglab/rawdb`

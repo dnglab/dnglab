@@ -605,10 +605,6 @@ impl RawImage {
     }
   }
 
-  /// Apply the DNG opcode list of the given processing stage to the image data.
-  /// The image data must be in the state the stage requires, e.g. mapped to
-  /// linear reference values for OpcodeList2. The list is consumed, so it is
-  /// not written again into a DNG file.
   /// Remove the DNG opcodes selected by `selectors`, so they are neither applied
   /// nor written into a DNG file. Opcode lists without opcodes left are removed.
   pub fn remove_opcodes(&mut self, selectors: &[OpcodeSelector]) {
@@ -632,6 +628,10 @@ impl RawImage {
     }
   }
 
+  /// Apply the DNG opcode list of the given processing stage to the image data.
+  /// The image data must be in the state the stage requires, e.g. mapped to
+  /// linear reference values for OpcodeList2. The list is consumed, so it is
+  /// not written again into a DNG file.
   pub fn apply_opcode_list(&mut self, stage: OpcodeStage) -> Result<()> {
     match self.take_opcode_list(stage) {
       Some(list) => list.apply(self, stage),

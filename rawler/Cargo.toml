@@ -119,3 +119,7 @@ required-features = ["rawdb"]
 [[example]]
 name = "linearize"
 required-features = ["rawdb"]
+
+[[example]]
+name = "dng_opcodes"
+required-features = ["rawdb"]
