@@ -264,6 +264,13 @@ impl<'a> Decoder for Cr2Decoder<'a> {
       _ => todo!(),
     };
 
+    let mut camera = camera.clone();
+    if cpp == 3 {
+      // sRAW/mRAW data is smaller than the sensor and its black level is already
+      // subtracted, the masked areas of the camera don't apply to it.
+      camera.blackareah = None;
+      camera.blackareav = None;
+    }
     let mut img = RawImage::new(camera.clone(), image, cpp, wb, photometric, blacklevel, whitelevel, dummy);
 
     if let Some(file_crop) = self.get_sensor_area()? {

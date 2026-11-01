@@ -203,6 +203,41 @@ impl RawImageData {
   }
 }
 
+/// Masked areas of the camera definition (`blackareah` and `blackareav`) for
+/// an image of `dim` pixels
+///
+/// A horizontal area covers rows across the columns of the ActiveArea, a
+/// vertical area covers columns across its rows. Without an ActiveArea, they
+/// span the whole image. Areas that are empty or exceed the image are dropped.
+fn camera_masked_areas(cam: &Camera, dim: Dim2, active_area: Option<Rect>) -> Vec<Rect> {
+  let base = active_area.unwrap_or_else(|| Rect::new(Point::zero(), dim));
+  // First value is the start, second the length
+  let horizontal = cam
+    .blackareah
+    .map(|(start, len)| Rect::new(Point::new(base.p.x, start), Dim2::new(base.d.w, len)));
+  let vertical = cam
+    .blackareav
+    .map(|(start, len)| Rect::new(Point::new(start, base.p.y), Dim2::new(len, base.d.h)));
+  horizontal
+    .into_iter()
+    .chain(vertical)
+    .filter(|area| {
+      let valid = area.d.w > 0 && area.d.h > 0 && area.p.x + area.d.w <= dim.w && area.p.y + area.d.h <= dim.h;
+      if !valid {
+        log::warn!(
+          "Camera {} {}: masked area {:?} is empty or exceeds the image of {}x{} pixels, ignoring it",
+          cam.clean_make,
+          cam.clean_model,
+          area,
+          dim.w,
+          dim.h
+        );
+      }
+      valid
+    })
+    .collect()
+}
+
 impl RawImage {
   pub fn calc_black_levels<T>(cfa: &CFA, blackareas: &[Rect], width: usize, _height: usize, image: &[T]) -> Option<BlackLevel>
   where
@@ -260,33 +295,11 @@ impl RawImage {
   ) -> RawImage {
     assert_eq!(image.width % cpp, 0);
     assert_eq!(dummy, !image.is_initialized());
-    let sample_width = image.width;
     let pixel_width = image.width / cpp;
-
-    let mut blackareas: Vec<Rect> = Vec::new();
 
     let active_area = cam.active_area.map(|area| Rect::new_with_borders(Dim2::new(pixel_width, image.height), &area));
 
-    let blackarea_base = active_area.unwrap_or_else(|| Rect::new(Point::zero(), Dim2::new(sample_width, image.height)));
-
-    // For now, we only use masked areas when cpp is 1. For color images (RGB)
-    // like Canon SRAW, we ignore it (it isn't provided anyway).
-    if cpp == 1 {
-      // Build black areas
-      // First value (.0) is start and (.1) is length!
-      if let Some(ah) = cam.blackareah {
-        blackareas.push(Rect::new_with_points(
-          Point::new(blackarea_base.p.x, ah.0),
-          Point::new(blackarea_base.p.x + blackarea_base.d.w, ah.0 + ah.1),
-        ));
-      }
-      if let Some(av) = cam.blackareav {
-        blackareas.push(Rect::new_with_points(
-          Point::new(av.0, blackarea_base.p.y),
-          Point::new(av.0 + av.1, blackarea_base.p.y + blackarea_base.d.h),
-        ));
-      }
-    }
+    let blackareas = camera_masked_areas(&cam, Dim2::new(pixel_width, image.height), active_area);
 
     let blacklevel = cam
       .make_blacklevel(cpp)
@@ -359,30 +372,9 @@ impl RawImage {
     //assert_eq!(dummy, !image.is_initialized());
     let pixel_width = sample_width / cpp;
 
-    let mut blackareas: Vec<Rect> = Vec::new();
-
     let active_area = cam.active_area.map(|area| Rect::new_with_borders(Dim2::new(pixel_width, height), &area));
 
-    let blackarea_base = active_area.unwrap_or_else(|| Rect::new(Point::zero(), Dim2::new(sample_width, height)));
-
-    // For now, we only use masked areas when cpp is 1. For color images (RGB)
-    // like Canon SRAW, we ignore it (it isn't provided anyway).
-    if cpp == 1 {
-      // Build black areas
-      // First value (.0) is start and (.1) is length!
-      if let Some(ah) = cam.blackareah {
-        blackareas.push(Rect::new_with_points(
-          Point::new(blackarea_base.p.x, ah.0),
-          Point::new(blackarea_base.p.x + blackarea_base.d.w, ah.0 + ah.1),
-        ));
-      }
-      if let Some(av) = cam.blackareav {
-        blackareas.push(Rect::new_with_points(
-          Point::new(av.0, blackarea_base.p.y),
-          Point::new(av.0 + av.1, blackarea_base.p.y + blackarea_base.d.h),
-        ));
-      }
-    }
+    let blackareas = camera_masked_areas(&cam, Dim2::new(pixel_width, height), active_area);
 
     let blacklevel = cam
       .make_blacklevel(cpp)
@@ -773,6 +765,85 @@ mod tests {
     let expected = 2048.0 / 4095.0;
     assert!(linear.data.as_f32().iter().all(|v| (v - expected).abs() < 1e-5));
     Ok(())
+  }
+
+  #[test]
+  fn masked_areas_of_the_camera() {
+    let mut camera = Camera::new();
+    camera.blackareah = Some((1, 2));
+    camera.blackareav = Some((0, 3));
+    let (dim, active_area) = (Dim2::new(16, 14), Rect::new(Point::new(4, 4), Dim2::new(10, 8)));
+    assert_eq!(
+      camera_masked_areas(&camera, dim, Some(active_area)),
+      [Rect::new(Point::new(4, 1), Dim2::new(10, 2)), Rect::new(Point::new(0, 4), Dim2::new(3, 8))]
+    );
+    // Without ActiveArea, the areas span the whole image
+    assert_eq!(
+      camera_masked_areas(&camera, dim, None),
+      [Rect::new(Point::new(0, 1), Dim2::new(16, 2)), Rect::new(Point::new(0, 0), Dim2::new(3, 14))]
+    );
+    // Areas exceeding the image and empty areas are dropped
+    camera.blackareah = Some((13, 2));
+    camera.blackareav = Some((2, 0));
+    assert!(camera_masked_areas(&camera, dim, Some(active_area)).is_empty());
+  }
+
+  #[test]
+  fn masked_areas_for_all_samples_per_pixel() {
+    let mut camera = Camera::new();
+    camera.active_area = Some([4, 2, 0, 0]);
+    camera.blackareah = Some((0, 2));
+    camera.blackareav = Some((0, 4));
+    // The areas are in pixel coordinates
+    let expected = [Rect::new(Point::new(4, 0), Dim2::new(12, 2)), Rect::new(Point::new(0, 2), Dim2::new(4, 8))];
+    for cpp in [1, 3] {
+      let image = RawImage::new(
+        camera.clone(),
+        PixU16::new_with(vec![0; 16 * 10 * cpp], 16 * cpp, 10),
+        cpp,
+        [f32::NAN; 4],
+        RawPhotometricInterpretation::LinearRaw,
+        Some(BlackLevel::zero(1, 1, cpp)),
+        Some(WhiteLevel::new_bits(12, cpp)),
+        false,
+      );
+      assert_eq!(image.active_area, Some(Rect::new(Point::new(4, 2), Dim2::new(12, 8))), "cpp {}", cpp);
+      assert_eq!(image.blackareas, expected, "cpp {}", cpp);
+      let image = RawImage::new_with_data(
+        camera.clone(),
+        RawImageData::Integer(vec![0; 16 * 10 * cpp]),
+        16 * cpp,
+        10,
+        cpp,
+        [f32::NAN; 4],
+        RawPhotometricInterpretation::LinearRaw,
+        Some(BlackLevel::zero(1, 1, cpp)),
+        Some(WhiteLevel::new_bits(12, cpp)),
+        false,
+      );
+      assert_eq!(image.blackareas, expected, "cpp {}", cpp);
+    }
+  }
+
+  #[test]
+  fn masked_areas_outside_of_the_image_are_not_measured() {
+    let mut camera = Camera::new();
+    camera.cfa = CFA::new("RGGB");
+    camera.active_area = Some([4, 0, 0, 0]);
+    camera.blackareav = Some((14, 4));
+    let photometric = RawPhotometricInterpretation::Cfa(CFAConfig::new_from_camera(&camera));
+    let image = RawImage::new(
+      camera,
+      PixU16::new_with(vec![100; 16 * 8], 16, 8),
+      1,
+      [f32::NAN; 4],
+      photometric,
+      None,
+      Some(WhiteLevel::new_bits(12, 1)),
+      false,
+    );
+    assert!(image.blackareas.is_empty());
+    assert_eq!(image.blacklevel, BlackLevel::zero(1, 1, 1));
   }
 
   /// Image with camera profiles of the given names, group names and HDR flags
