@@ -178,6 +178,53 @@ impl BlackLevel {
   pub fn is_zero(&self) -> bool {
     self.levels.iter().all(|x| x.n == 0) && self.delta_h.iter().chain(&self.delta_v).all(|x| x.n == 0)
   }
+
+  /// Black levels measured in the masked areas `areas` of `image`
+  ///
+  /// The level of each sample at each position of a pattern of `width` x
+  /// `height` pixels is the median of its values in the areas, so a few hot
+  /// pixels don't raise it. The pattern starts at the top-left sample of the
+  /// image data. `None` without areas, if an area is empty or exceeds the
+  /// image, or if the areas don't cover all positions of the pattern.
+  pub fn from_masked_areas<'a>(image: impl Into<ImageView<'a, u16>>, areas: &[Rect], width: usize, height: usize) -> Option<Self> {
+    let image = image.into();
+    let cpp = image.channels();
+    if areas.is_empty() || width == 0 || height == 0 || cpp == 0 {
+      return None;
+    }
+    if let Some(area) = areas.iter().find(|area| area.intersect(&image.rect()) != Some(**area)) {
+      log::debug!("Masked area {:?} is empty or exceeds the image of {}x{} pixels", area, image.width(), image.height());
+      return None;
+    }
+    let mut values: Vec<Vec<u16>> = vec![Vec::new(); width * height * cpp];
+    for area in areas {
+      for (row, samples) in image.rows().enumerate().skip(area.p.y).take(area.d.h) {
+        for col in area.p.x..area.p.x + area.d.w {
+          let pos = ((row % height) * width + col % width) * cpp;
+          for (sample, value) in samples[col * cpp..(col + 1) * cpp].iter().enumerate() {
+            values[pos + sample].push(*value);
+          }
+        }
+      }
+    }
+    let levels: Option<Vec<u32>> = values
+      .into_iter()
+      .map(|mut values| {
+        let mid = values.len() / 2;
+        (!values.is_empty()).then(|| u32::from(*values.select_nth_unstable(mid).1))
+      })
+      .collect();
+    match levels {
+      Some(levels) => {
+        log::debug!("Black levels of the masked areas: {:?}", levels);
+        Some(Self::new(&levels, width, height, cpp))
+      }
+      None => {
+        log::debug!("Masked areas don't cover all positions of the {}x{} pattern", width, height);
+        None
+      }
+    }
+  }
 }
 
 /// White balance of CFA data with one channel, applied with the mapping to linear values
@@ -580,6 +627,67 @@ mod tests {
     assert!(BlackLevel::zero(2, 2, 1).is_zero());
     assert!(!BlackLevel::zero(2, 2, 1).with_deltas(srationals(&[0, 1]), Vec::new()).is_zero());
     assert!(!BlackLevel::new(&[0_u16, 1], 1, 1, 2).is_zero());
+    Ok(())
+  }
+
+  #[test]
+  fn from_masked_areas_takes_the_median() -> Result {
+    let pattern = [60_u16, 64, 66, 61];
+    let (w, h) = (8, 8);
+    let areas = [Rect::new(Point::zero(), Dim2::new(8, 2)), Rect::new(Point::new(0, 2), Dim2::new(2, 6))];
+    // Each position of the pattern has 7 values in the areas, the pixels
+    // outside of them are not used
+    let mut src = vec![1000_u16; w * h];
+    for area in areas {
+      for (row, col) in (area.p.y..area.p.y + area.d.h).cartesian_product(area.p.x..area.p.x + area.d.w) {
+        src[row * w + col] = pattern[(row % 2) * 2 + col % 2];
+      }
+    }
+    // Two hot pixels of each position don't change the median
+    for (row, col) in [(0, 0), (0, 2), (0, 1), (0, 3), (1, 0), (1, 2), (1, 1), (1, 3)] {
+      src[row * w + col] = 4095;
+    }
+    let black = BlackLevel::from_masked_areas(ImageView::new(&src, w, h, 1), &areas, 2, 2);
+    assert_eq!(black, Some(BlackLevel::new(&pattern, 2, 2, 1)));
+    Ok(())
+  }
+
+  #[test]
+  fn from_masked_areas_aligns_the_pattern_to_the_image() -> Result {
+    // X-Trans like pattern of 3x2 pixels, the area starts at an odd position
+    let (w, h) = (9, 6);
+    let src: Vec<u16> = (0..w * h).map(|i| ((i / w % 2) * 3 + i % w % 3) as u16 * 10).collect();
+    let areas = [Rect::new(Point::new(4, 1), Dim2::new(4, 3))];
+    let black = BlackLevel::from_masked_areas(ImageView::new(&src, w, h, 1), &areas, 3, 2);
+    assert_eq!(black, Some(BlackLevel::new(&[0_u16, 10, 20, 30, 40, 50], 3, 2, 1)));
+    Ok(())
+  }
+
+  #[test]
+  fn from_masked_areas_of_each_sample() -> Result {
+    // Monochrome: the upper median of an even number of values
+    let src = [9_u16, 1, 4, 3, 100, 100];
+    let areas = [Rect::new(Point::zero(), Dim2::new(4, 1))];
+    let black = BlackLevel::from_masked_areas(ImageView::new(&src, 6, 1, 1), &areas, 1, 1);
+    assert_eq!(black, Some(BlackLevel::new(&[4_u16], 1, 1, 1)));
+    // Three samples per pixel, one median for each sample
+    let src = [10_u16, 20, 30, 12, 22, 32, 11, 99, 31, 0, 0, 0];
+    let areas = [Rect::new(Point::zero(), Dim2::new(3, 1))];
+    let black = BlackLevel::from_masked_areas(ImageView::new(&src, 4, 1, 3), &areas, 1, 1);
+    assert_eq!(black, Some(BlackLevel::new(&[11_u16, 22, 31], 1, 1, 3)));
+    Ok(())
+  }
+
+  #[test]
+  fn from_masked_areas_requires_valid_areas() -> Result {
+    let src = [100_u16; 8 * 4];
+    let image = ImageView::new(&src, 8, 4, 1);
+    assert_eq!(BlackLevel::from_masked_areas(image, &[], 2, 2), None);
+    // The area exceeds the image or is empty
+    assert_eq!(BlackLevel::from_masked_areas(image, &[Rect::new(Point::new(6, 0), Dim2::new(3, 4))], 2, 2), None);
+    assert_eq!(BlackLevel::from_masked_areas(image, &[Rect::new(Point::zero(), Dim2::new(0, 4))], 2, 2), None);
+    // A single row doesn't cover the second row of the pattern
+    assert_eq!(BlackLevel::from_masked_areas(image, &[Rect::new(Point::zero(), Dim2::new(8, 1))], 2, 2), None);
     Ok(())
   }
 

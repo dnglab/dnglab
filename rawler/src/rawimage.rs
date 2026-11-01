@@ -15,7 +15,6 @@ use crate::imgop::blacklevel::{rescale, rescale_in_place};
 use crate::imgop::raw::apply_linearization_table;
 use crate::imgop::sensor::SensorType;
 use crate::imgop::{convert_from_f32_scaled_u16, convert_to_f32_unscaled};
-use crate::pixarray::SubPixel;
 use crate::{
   CFA,
   decoders::*,
@@ -238,50 +237,13 @@ fn camera_masked_areas(cam: &Camera, dim: Dim2, active_area: Option<Rect>) -> Ve
     .collect()
 }
 
+/// Size of the pattern of black levels measured in the masked areas: the CFA
+/// pattern or a single pixel
+fn masked_area_pattern(cam: &Camera) -> (usize, usize) {
+  if cam.cfa.is_valid() { (cam.cfa.width, cam.cfa.height) } else { (1, 1) }
+}
+
 impl RawImage {
-  pub fn calc_black_levels<T>(cfa: &CFA, blackareas: &[Rect], width: usize, _height: usize, image: &[T]) -> Option<BlackLevel>
-  where
-    T: SubPixel,
-  {
-    let x = cfa.width * cfa.height;
-    if x == 0 {
-      return None;
-    }
-    assert!(!image.is_empty());
-
-    #[derive(Clone, Copy)]
-    struct Sample {
-      avg: f32,
-      count: usize,
-    }
-
-    if !blackareas.is_empty() {
-      let mut samples = vec![Sample { avg: 0.0, count: 0 }; x];
-
-      for area in blackareas {
-        for row in area.p.y..area.p.y + area.d.h {
-          for col in area.p.x..area.p.x + area.d.w {
-            //let color = cfa.color_at(row, col);
-            let color = (row % cfa.height) * cfa.width + (col % cfa.width);
-            samples[color].avg += image[row * width + col].as_f32();
-            samples[color].count += 1;
-          }
-        }
-      }
-
-      if samples.iter().any(|s| s.count == 0) {
-        debug!("Black areas don't cover all positions of the CFA pattern");
-        return None;
-      }
-      let blacklevels: Vec<f32> = samples.into_iter().map(|s| s.avg / s.count as f32).collect();
-
-      debug!("Calculated blacklevels: {:?}", blacklevels);
-      Some(BlackLevel::new(&blacklevels, cfa.width, cfa.height, 1))
-    } else {
-      None
-    }
-  }
-
   #[doc(hidden)]
   pub fn new(
     cam: Camera,
@@ -308,7 +270,9 @@ impl RawImage {
         if dummy {
           Some(BlackLevel::default())
         } else {
-          Self::calc_black_levels::<u16>(&cam.cfa, &blackareas, image.width, image.height, image.pixels())
+          let (pattern_width, pattern_height) = masked_area_pattern(&cam);
+          let view = ImageView::new(image.pixels(), pixel_width, image.height, cpp);
+          BlackLevel::from_masked_areas(view, &blackareas, pattern_width, pattern_height)
         }
       })
       .unwrap_or_else(|| BlackLevel::zero(1, 1, cpp));
@@ -383,9 +347,14 @@ impl RawImage {
         if dummy {
           Some(BlackLevel::default())
         } else {
+          // Floating point data isn't measured
           match &image {
-            RawImageData::Integer(pix) => Self::calc_black_levels(&cam.cfa, &blackareas, sample_width, height, pix),
-            RawImageData::Float(pix) => Self::calc_black_levels(&cam.cfa, &blackareas, sample_width, height, pix),
+            _ if blackareas.is_empty() => None,
+            RawImageData::Integer(pix) => {
+              let (pattern_width, pattern_height) = masked_area_pattern(&cam);
+              BlackLevel::from_masked_areas(ImageView::new(pix, pixel_width, height, cpp), &blackareas, pattern_width, pattern_height)
+            }
+            RawImageData::Float(_) => None,
           }
         }
       })
