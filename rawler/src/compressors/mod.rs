@@ -3,4 +3,5 @@
 
 //! Compressors for image codecs used by the DNG writer.
 
+pub mod deflate;
 pub mod jpegxl;

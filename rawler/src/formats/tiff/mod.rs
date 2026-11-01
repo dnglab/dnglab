@@ -162,6 +162,7 @@ impl From<PlanarConfiguration> for Value {
 pub enum Predictor {
   None = 1,
   Horizontal = 2,
+  FloatingPoint = 3,
 }
 
 impl ExtractFromIFD for Predictor {
