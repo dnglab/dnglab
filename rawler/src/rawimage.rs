@@ -265,7 +265,7 @@ impl RawImage {
 
     let blacklevel = cam
       .make_blacklevel(cpp)
-      .or_else(|| if cam.find_hint("invalid_blacklevel") { None } else { blacklevel })
+      .or(blacklevel)
       .or_else(|| {
         if dummy {
           Some(BlackLevel::default())
@@ -342,7 +342,7 @@ impl RawImage {
 
     let blacklevel = cam
       .make_blacklevel(cpp)
-      .or_else(|| if cam.find_hint("invalid_blacklevel") { None } else { blacklevel })
+      .or(blacklevel)
       .or_else(|| {
         if dummy {
           Some(BlackLevel::default())

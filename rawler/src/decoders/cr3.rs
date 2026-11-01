@@ -20,7 +20,7 @@ use crate::formats::bmff::ext_cr3::iad1::{Iad1Box, Iad1Type};
 use crate::formats::bmff::trak::TrakBox;
 use crate::formats::tiff::reader::TiffReader;
 use crate::formats::tiff::{Entry, GenericTiffReader, Rational, Value};
-use crate::imgop::{Point, Rect};
+use crate::imgop::{Dim2, Point, Rect};
 use crate::lens::{LensDescription, LensId, LensResolver};
 use crate::{RawImage, pumps::ByteStream};
 
@@ -333,43 +333,35 @@ impl<'a> Decoder for Cr3Decoder<'a> {
 
     // IAD1 box contains sensor information
     // We use the sensor crop from IAD1 as recommended image crop.
-    // The same crop is used as ActiveArea, because black areas in IAD1 are not
-    // correct (they differs like 4-6 pixels from real values).
+    let dim = img.dim();
     match self.iad1_box(raw_trak_id) {
       Some(iad1) => {
         match &iad1.iad1_type {
-          // IAD1 (small, used for CRM movie files)
+          // IAD1 (small, used for CRM movie files), the crop is used as ActiveArea
           Iad1Type::Small(small) => {
-            img.crop_area = Some(Rect::new_with_points(
-              Point::new(small.crop_left_offset as usize, small.crop_top_offset as usize),
-              Point::new((small.crop_right_offset + 1) as usize, (small.crop_bottom_offset + 1) as usize),
+            img.crop_area = Some(iad1_rect(
+              small.crop_left_offset,
+              small.crop_top_offset,
+              small.crop_right_offset,
+              small.crop_bottom_offset,
+              dim,
             ));
             img.active_area = img.crop_area;
           }
           // IAD1 (big, used for full size raws)
           Iad1Type::Big(big) => {
-            let rect_crop = Rect::new_with_points(
-              Point::new(big.crop_left_offset as usize, big.crop_top_offset as usize),
-              Point::new((big.crop_right_offset + 1) as usize, (big.crop_bottom_offset + 1) as usize),
-            );
-            assert!(rect_crop.x() + rect_crop.width() <= cmp1.f_width as usize);
-            assert!(rect_crop.y() + rect_crop.height() <= cmp1.f_height as usize);
-
+            let rect_crop = iad1_rect(big.crop_left_offset, big.crop_top_offset, big.crop_right_offset, big.crop_bottom_offset, dim);
             img.crop_area = Some(rect_crop);
 
-            // For uncropped files this is fine, but for 1.6 crop files, the dimension is wrong.
-            // For example, R5 crop is total height of 3510, but active_area_bottom_offset is 3512.
-            let rect_active = {
-              // Limit the offsets to image bounds.
-              // Probably broken firmware, glitches in sensor size calculation or I'm just making
-              // wrong asumptions...
-              let right = usize::min(cmp1.f_width as usize, (big.active_area_right_offset - 1) as usize);
-              let bottom = usize::min(cmp1.f_height as usize, (big.active_area_bottom_offset - 1) as usize);
-              Rect::new_with_points(
-                Point::new(big.active_area_left_offset as usize, big.active_area_top_offset as usize),
-                Point::new(right, bottom),
-              )
-            };
+            // The active area of R5 1.6 crop files ends at row 3513, but the image
+            // has 3510 rows, so it is limited to the image.
+            let rect_active = iad1_rect(
+              big.active_area_left_offset,
+              big.active_area_top_offset,
+              big.active_area_right_offset,
+              big.active_area_bottom_offset,
+              dim,
+            );
             log::debug!("IAD1 active area: {:?}", rect_active);
             assert!(rect_crop.x() >= rect_active.x());
             assert!(rect_crop.y() >= rect_active.y());
@@ -755,6 +747,17 @@ impl Ctmd {
   }
 }
 
+/// Rectangle of the IAD1 coordinates `left`, `top`, `right` and `bottom`,
+/// limited to an image of `dim` pixels
+///
+/// The coordinates are inclusive: `right` and `bottom` are the last column and
+/// row of the rectangle.
+fn iad1_rect(left: u16, top: u16, right: u16, bottom: u16, dim: Dim2) -> Rect {
+  let right = usize::min(dim.w, right as usize + 1);
+  let bottom = usize::min(dim.h, bottom as usize + 1);
+  Rect::new_with_points(Point::new(left as usize, top as usize), Point::new(right, bottom))
+}
+
 fn normalize_wb(raw_wb: [f32; 4]) -> [f32; 4] {
   debug!("CR3 raw wb: {:?}", raw_wb);
   // We never have more then RGB colors so far (no RGBE etc.)
@@ -891,5 +894,19 @@ mod tests {
     data[4..6].copy_from_slice(&1u16.to_le_bytes());
     let ctmd = Ctmd::new(&mut ByteStream::new(&data, Endian::Little));
     assert_eq!(ctmd.records[&1].payload.len(), 8);
+  }
+
+  #[test]
+  fn iad1_rect_includes_the_last_column_and_row() {
+    // Active area of the EOS 90D, it ends at the last column and row of the image
+    let dim = Dim2::new(7128, 4732);
+    assert_eq!(iad1_rect(144, 72, 7127, 4731, dim), Rect::new(Point::new(144, 72), Dim2::new(6984, 4660)));
+  }
+
+  #[test]
+  fn iad1_rect_is_limited_to_the_image() {
+    // Active area of an EOS R5 1.6 crop file, it ends 4 rows below the image
+    let dim = Dim2::new(5248, 3510);
+    assert_eq!(iad1_rect(128, 96, 5247, 3513, dim), Rect::new(Point::new(128, 96), Dim2::new(5120, 3414)));
   }
 }

@@ -21,8 +21,8 @@ data:
           x: 144
           y: 96
         d:
-          w: 3430
-          h: 2286
+          w: 3432
+          h: 2288
       blacklevels:
         levels:
           - 512/1

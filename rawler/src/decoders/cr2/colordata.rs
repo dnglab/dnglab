@@ -1,6 +1,6 @@
 use crate::{
   RawlerError, Result,
-  formats::tiff::{Entry, Value},
+  formats::tiff::{Entry, Rational, Value},
 };
 
 #[derive(Debug, Clone)]
@@ -28,6 +28,39 @@ impl ColorData {
       normal_whitelevel,
       specular_whitelevel,
     }
+  }
+
+  /// Bits per sample of the raw data the levels are for, if they don't
+  /// follow the raw data
+  ///
+  /// Version 5 is used by the 450D with 14 bit and the 1000D with 12 bit raw
+  /// data, the levels are for 14 bit data.
+  fn level_bits(&self) -> Option<usize> {
+    (self.version == 5).then_some(14)
+  }
+
+  /// Divisor that maps the levels to raw data with `precision` bits per sample
+  fn level_divisor(&self, precision: usize) -> u32 {
+    match self.level_bits() {
+      Some(bits) if precision < bits => 1 << (bits - precision),
+      _ => 1,
+    }
+  }
+
+  /// Black levels for raw data with `precision` bits per sample
+  pub(crate) fn blacklevel_for(&self, precision: usize) -> Option<[Rational; 4]> {
+    let divisor = self.level_divisor(precision);
+    self.blacklevel.map(|levels| {
+      levels.map(|level| {
+        let gcd = num::integer::gcd(u32::from(level), divisor);
+        Rational::new(u32::from(level) / gcd, divisor / gcd)
+      })
+    })
+  }
+
+  /// Specular white level for raw data with `precision` bits per sample
+  pub(crate) fn specular_whitelevel_for(&self, precision: usize) -> Option<u32> {
+    self.specular_whitelevel.map(|level| u32::from(level) / self.level_divisor(precision))
   }
 }
 
@@ -141,5 +174,39 @@ pub(crate) fn parse_colordata(colordata: &Entry) -> Result<ColorData> {
       "Invalid COLORDATA tag: type {}",
       colordata.value_type_name()
     ))),
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  /// COLORDATA of `version` with the black levels at 0x2b4 and the specular white level at 0x2b9
+  fn colordata(version: i16) -> ColorData {
+    let mut data = vec![0_u16; 0x2c0];
+    data[0x2b4..0x2b8].copy_from_slice(&[1023, 1024, 1023, 1023]);
+    data[0x2b9] = 15120;
+    ColorData::new(&data, version, 0x3f, Some(0x2b4), Some(0x2b8), Some(0x2b9))
+  }
+
+  #[test]
+  fn version_5_levels_are_scaled_to_the_precision() {
+    // 1000D with 12 bit raw data
+    let colordata = colordata(5);
+    let black = [Rational::new(1023, 4), Rational::new(256, 1), Rational::new(1023, 4), Rational::new(1023, 4)];
+    assert_eq!(colordata.blacklevel_for(12), Some(black));
+    assert_eq!(colordata.specular_whitelevel_for(12), Some(3780));
+    // 450D with 14 bit raw data
+    let black = [1023_u32, 1024, 1023, 1023].map(Rational::from);
+    assert_eq!(colordata.blacklevel_for(14), Some(black));
+    assert_eq!(colordata.specular_whitelevel_for(14), Some(15120));
+  }
+
+  #[test]
+  fn other_versions_follow_the_raw_data() {
+    let colordata = colordata(7);
+    let black = [1023_u32, 1024, 1023, 1023].map(Rational::from);
+    assert_eq!(colordata.blacklevel_for(12), Some(black));
+    assert_eq!(colordata.specular_whitelevel_for(12), Some(15120));
   }
 }

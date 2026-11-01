@@ -8,7 +8,6 @@ model_aliases = [
   ["Canon EOS Kiss F", "EOS Kiss F"],
 ]
 
-hints = ["invalid_blacklevel"]
 color_pattern = "RGGB"
 blackareav = [0, 41]
 active_area = [42, 18, 0, 2]

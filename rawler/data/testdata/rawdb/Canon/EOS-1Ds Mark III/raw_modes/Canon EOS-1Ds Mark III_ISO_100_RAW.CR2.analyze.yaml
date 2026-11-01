@@ -23,6 +23,13 @@ data:
         d:
           w: 5640
           h: 3752
+      maskedAreas:
+        - p:
+            x: 0
+            y: 20
+          d:
+            w: 60
+            h: 3752
       blacklevels:
         levels:
           - 1023/1

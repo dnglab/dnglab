@@ -23,14 +23,24 @@ data:
         d:
           w: 3906
           h: 2602
+      maskedAreas:
+        - p:
+            x: 0
+            y: 18
+          d:
+            w: 41
+            h: 2602
       blacklevels:
         levels:
-          - 0/1
+          - 1023/4
+          - 256/1
+          - 1023/4
+          - 1023/4
         cpp: 1
-        width: 1
-        height: 1
+        width: 2
+        height: 2
       whitelevels:
-        - 15120
+        - 3780
       wbCoeffs:
         - 2.444336
         - 1.0

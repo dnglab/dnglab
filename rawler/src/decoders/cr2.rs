@@ -108,8 +108,9 @@ impl<'a> Decoder for Cr2Decoder<'a> {
     // We don't have an exact length, so read until end.
     let src = file.subview_until_eof(offset as u64)?;
 
-    let (cpp, image) = {
+    let (cpp, image, precision) = {
       let decompressor = LjpegDecompressor::new(src)?;
+      let precision = decompressor.precision();
       let ljpegwidth = decompressor.width();
       let mut width = ljpegwidth;
       let mut height = decompressor.height();
@@ -168,7 +169,7 @@ impl<'a> Decoder for Cr2Decoder<'a> {
             //width /= 3;
           }
           ljpegout.update_dimension(Dim2::new(width, height));
-          (cpp, ljpegout)
+          (cpp, ljpegout, precision)
           /*
           if camera.find_hint("double_line") {
             (width, height, cpp, PixU16::new_with(ljpegout.into_inner(), width, height))
@@ -241,12 +242,12 @@ impl<'a> Decoder for Cr2Decoder<'a> {
             self.convert_to_rgb(file, camera, &decompressor, width, height, out.pixels_mut())?;
             //width /= 3;
           }
-          (cpp, out)
+          (cpp, out, precision)
           //(width, height, cpp, out)
         }
       } else {
         ljpegout.update_dimension(Dim2::new(width, height));
-        (cpp, ljpegout)
+        (cpp, ljpegout, precision)
         // (width, height, cpp, PixU16::new_with(ljpegout.into_inner(), width, height))
       }
     };
@@ -255,8 +256,8 @@ impl<'a> Decoder for Cr2Decoder<'a> {
     debug!("CR2 WB: {:?}", wb);
     //assert_eq!(image.width, width * cpp);
 
-    let blacklevel = self.get_blacklevel(camera, cpp)?;
-    let whitelevel = self.get_whitelevel(cpp)?;
+    let blacklevel = self.get_blacklevel(camera, cpp, precision)?;
+    let whitelevel = self.get_whitelevel(cpp, precision)?;
 
     let photometric = match cpp {
       1 => RawPhotometricInterpretation::Cfa(CFAConfig::new_from_camera(camera)),
@@ -603,28 +604,28 @@ impl<'a> Cr2Decoder<'a> {
     }
   }
 
-  /// Get the black level from COLORDATA tag
+  /// Get the black level from COLORDATA tag for raw data with `precision` bits
   /// The offsets are different, so we take the offset from camera params.
-  fn get_blacklevel(&self, cam: &Camera, cpp: usize) -> Result<Option<BlackLevel>> {
+  fn get_blacklevel(&self, cam: &Camera, cpp: usize, precision: usize) -> Result<Option<BlackLevel>> {
     // sRAW/mRAW: the camera subtracts the black level before YCbCr encoding,
     // so the RGB output has no black offset (same as dcraw/LibRaw).
     if cpp == 3 {
       return Ok(Some(BlackLevel::zero(1, 1, cpp)));
     }
     if let Some(colordata) = self.makernote.as_ref().and_then(|mn| mn.get_entry(Cr2MakernoteTag::ColorData)) {
-      if let Some(blacklevel) = colordata::parse_colordata(colordata)?.blacklevel {
+      if let Some(blacklevel) = colordata::parse_colordata(colordata)?.blacklevel_for(precision) {
         return Ok(Some(BlackLevel::new(&blacklevel, cam.cfa.width, cam.cfa.height, cpp)));
       }
     }
     Ok(None)
   }
 
-  /// Get the white level from COLORDATA tag
+  /// Get the white level from COLORDATA tag for raw data with `precision` bits
   /// The offsets are different, so we take the offset from camera params.
-  fn get_whitelevel(&self, cpp: usize) -> Result<Option<WhiteLevel>> {
+  fn get_whitelevel(&self, cpp: usize, precision: usize) -> Result<Option<WhiteLevel>> {
     if let Some(colordata) = self.makernote.as_ref().and_then(|mn| mn.get_entry(Cr2MakernoteTag::ColorData)) {
-      if let Some(whitelevel) = colordata::parse_colordata(colordata)?.specular_whitelevel {
-        return Ok(Some(WhiteLevel(vec![whitelevel as u32; cpp])));
+      if let Some(whitelevel) = colordata::parse_colordata(colordata)?.specular_whitelevel_for(precision) {
+        return Ok(Some(WhiteLevel(vec![whitelevel; cpp])));
       }
     }
     Ok(None)

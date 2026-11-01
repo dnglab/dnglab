@@ -459,4 +459,8 @@ impl<'a> LjpegDecompressor<'a> {
   pub fn components(&self) -> usize {
     self.sof.components.len()
   }
+  /// Bits per sample of the frame
+  pub fn precision(&self) -> usize {
+    self.sof.precision
+  }
 }
