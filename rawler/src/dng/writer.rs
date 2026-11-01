@@ -20,7 +20,7 @@ use crate::{
     CompressionMethod, PhotometricInterpretation, PreviewColorSpace, Rational, SRational, TiffError, Value,
     writer::{DirectoryWriter, TiffWriter, transfer_entry},
   },
-  imgop::{Dim2, Point, Rect},
+  imgop::{Dim2, Point, Rect, blacklevel::check_masked_areas},
   ljpeg92::LjpegCompressor,
   pixarray::{Pix2D, PixU16, interleave_cols, interleave_rows},
   rawimage::{BlackLevel, RawPhotometricInterpretation, WhiteLevel},
@@ -325,9 +325,15 @@ where
       }
     }
 
+    // Masked pixels are only stored outside of the ActiveArea
     if !rawimage.blackareas.is_empty() {
-      let data: Vec<u16> = rawimage.blackareas.iter().flat_map(rect_to_dng_area).collect();
-      self.ifd_mut().add_tag(DngTag::MaskedAreas, &data);
+      if active_area == full_size {
+        log::debug!("MaskedAreas are not written, the ActiveArea is the whole image");
+      } else if let Err(err) = check_masked_areas(&rawimage.blackareas, full_size.d, active_area) {
+        log::warn!("MaskedAreas are not written: {}", err);
+      } else {
+        self.ifd_mut().add_tag(DngTag::MaskedAreas, masked_areas_value(&rawimage.blackareas));
+      }
     }
 
     self.ifd_mut().add_tag(TiffCommonTag::SamplesPerPixel, rawimage.cpp as u16);
@@ -693,6 +699,16 @@ where
 
   pub fn exif_ifd_mut(&mut self) -> &mut DirectoryWriter {
     &mut self.exif_ifd
+  }
+}
+
+/// MaskedAreas in top, left, bottom, right order, as SHORT if all values fit
+fn masked_areas_value(areas: &[Rect]) -> Value {
+  let coords: Vec<usize> = areas.iter().flat_map(Rect::as_tlbr).collect();
+  if coords.iter().all(|x| *x <= u16::MAX as usize) {
+    Value::Short(coords.into_iter().map(|x| x as u16).collect())
+  } else {
+    Value::Long(coords.into_iter().map(|x| x as u32).collect())
   }
 }
 
@@ -1369,6 +1385,87 @@ mod tests {
     assert_eq!(backward_version, DNG_VERSION_V1_0);
     assert!(!has_active_area);
     Ok(())
+  }
+
+  /// Synthetic 16x16 CFA image with an ActiveArea at (2, 2) and masked areas
+  /// above and left of it
+  fn synthetic_masked_rawimage() -> RawImage {
+    let mut rawimage = synthetic_rawimage(Some(Rect::new(Point::new(2, 2), Dim2::new(12, 12))));
+    rawimage.blackareas = vec![Rect::new(Point::new(2, 0), Dim2::new(12, 2)), Rect::new(Point::new(0, 2), Dim2::new(2, 12))];
+    rawimage
+  }
+
+  /// MaskedAreas of the DNG file `data`
+  fn read_masked_areas(data: &[u8]) -> TestResult<Option<Value>> {
+    use crate::formats::tiff::{GenericTiffReader, reader::TiffReader};
+
+    let tiff = GenericTiffReader::new_with_buffer(data, 0, 0, None)?;
+    Ok(
+      tiff
+        .find_first_ifd_with_tag(DngTag::MaskedAreas)
+        .and_then(|ifd| ifd.get_entry(DngTag::MaskedAreas))
+        .map(|entry| entry.value.clone()),
+    )
+  }
+
+  #[test]
+  fn masked_areas_are_written_in_tlbr_order() -> TestResult {
+    let data = write_synthetic_dng(&synthetic_masked_rawimage(), CropMode::ActiveArea, DNG_VERSION_V1_4)?;
+    assert_eq!(read_masked_areas(&data)?, Some(Value::Short(vec![0, 2, 2, 14, 2, 0, 14, 2])));
+    Ok(())
+  }
+
+  #[test]
+  fn masked_areas_require_an_active_area() -> TestResult {
+    let rawimage = synthetic_masked_rawimage();
+    // Without an ActiveArea, the masked pixels are part of the active image
+    let data = write_synthetic_dng(&rawimage, CropMode::None, DNG_VERSION_V1_4)?;
+    assert_eq!(read_masked_areas(&data)?, None);
+    // The ActiveArea requires DNG 1.1
+    let data = write_synthetic_dng(&rawimage, CropMode::Best, DNG_VERSION_V1_0)?;
+    assert_eq!(read_masked_areas(&data)?, None);
+    Ok(())
+  }
+
+  #[test]
+  fn invalid_masked_areas_are_not_written() -> TestResult {
+    let mut rawimage = synthetic_masked_rawimage();
+    for areas in [
+      // Overlaps the ActiveArea
+      vec![Rect::new(Point::zero(), Dim2::new(16, 3))],
+      // Overlap each other
+      vec![Rect::new(Point::zero(), Dim2::new(16, 2)), Rect::new(Point::new(0, 1), Dim2::new(2, 13))],
+    ] {
+      rawimage.blackareas = areas;
+      let data = write_synthetic_dng(&rawimage, CropMode::ActiveArea, DNG_VERSION_V1_4)?;
+      assert_eq!(read_masked_areas(&data)?, None, "{:?}", rawimage.blackareas);
+    }
+    Ok(())
+  }
+
+  #[test]
+  fn linear_dng_has_no_masked_areas() -> TestResult {
+    let mut buf = Cursor::new(Vec::new());
+    let mut dng = DngWriter::new(&mut buf, DNG_VERSION_V1_4)?;
+    let mut frame = dng.subframe(0);
+    frame.raw_image(
+      &synthetic_masked_rawimage(),
+      CropMode::ActiveArea,
+      DngCompression::Uncompressed,
+      DngPhotometricConversion::Linear,
+      &CompressionParams::default(),
+    )?;
+    frame.finalize()?;
+    dng.close()?;
+    assert_eq!(read_masked_areas(&buf.into_inner())?, None);
+    Ok(())
+  }
+
+  #[test]
+  fn masked_areas_value_is_long_for_large_coordinates() {
+    let area = |x: usize| Rect::new(Point::new(x, 0), Dim2::new(10, 2));
+    assert_eq!(masked_areas_value(&[area(65525)]), Value::Short(vec![0, 65525, 2, 65535]));
+    assert_eq!(masked_areas_value(&[area(65526)]), Value::Long(vec![0, 65526, 2, 65536]));
   }
 
   /// Synthetic 16x16 CFA image with floating point data

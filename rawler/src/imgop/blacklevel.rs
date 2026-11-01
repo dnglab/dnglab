@@ -13,7 +13,7 @@ use serde::{Deserialize, Serialize};
 use crate::{
   formats::tiff::{Rational, SRational},
   imgop::{
-    Dim2, Rect,
+    Dim2, Point, Rect,
     raw::{WhiteBalance, cfa_planes},
   },
   pixarray::{ImageView, ImageViewMut},
@@ -23,6 +23,36 @@ use crate::{
 /// Minimum number of samples of the blocks of black levels and scales that
 /// repeat along the rows of an image, see [`RescaleRows`]
 const BLOCK_SAMPLES: usize = 64;
+
+/// Maximum number of masked areas of a DNG raw image
+pub const MAX_MASKED_AREAS: usize = 4;
+
+/// Check the masked areas `areas` of an image of `dim` pixels with the
+/// ActiveArea `active_area`
+///
+/// Masked areas are non-overlapping rectangles of fully masked pixels (DNG
+/// spec, MaskedAreas). Each area must not be empty, must be inside of the
+/// image and outside of the ActiveArea, and must not overlap other areas. At
+/// most [`MAX_MASKED_AREAS`] areas are valid. The error describes the first
+/// invalid area.
+pub fn check_masked_areas(areas: &[Rect], dim: Dim2, active_area: Rect) -> Result<(), String> {
+  if areas.len() > MAX_MASKED_AREAS {
+    return Err(format!("{} masked areas, at most {} are allowed", areas.len(), MAX_MASKED_AREAS));
+  }
+  let image = Rect::new(Point::zero(), dim);
+  for (i, area) in areas.iter().enumerate() {
+    if area.intersect(&image) != Some(*area) {
+      return Err(format!("masked area {:?} is empty or exceeds the image of {}x{} pixels", area, dim.w, dim.h));
+    }
+    if area.intersect(&active_area).is_some() {
+      return Err(format!("masked area {:?} overlaps the ActiveArea {:?}", area, active_area));
+    }
+    if let Some(other) = areas[..i].iter().find(|other| area.intersect(other).is_some()) {
+      return Err(format!("masked areas {:?} and {:?} overlap", other, area));
+    }
+  }
+  Ok(())
+}
 
 /// Black levels of raw image data: a repeating pattern (DNG BlackLevel and
 /// BlackLevelRepeatDim) and differences for each column and row of the
@@ -193,7 +223,12 @@ impl BlackLevel {
       return None;
     }
     if let Some(area) = areas.iter().find(|area| area.intersect(&image.rect()) != Some(**area)) {
-      log::debug!("Masked area {:?} is empty or exceeds the image of {}x{} pixels", area, image.width(), image.height());
+      log::debug!(
+        "Masked area {:?} is empty or exceeds the image of {}x{} pixels",
+        area,
+        image.width(),
+        image.height()
+      );
       return None;
     }
     let mut values: Vec<Vec<u16>> = vec![Vec::new(); width * height * cpp];
@@ -684,11 +719,32 @@ mod tests {
     let image = ImageView::new(&src, 8, 4, 1);
     assert_eq!(BlackLevel::from_masked_areas(image, &[], 2, 2), None);
     // The area exceeds the image or is empty
-    assert_eq!(BlackLevel::from_masked_areas(image, &[Rect::new(Point::new(6, 0), Dim2::new(3, 4))], 2, 2), None);
+    assert_eq!(
+      BlackLevel::from_masked_areas(image, &[Rect::new(Point::new(6, 0), Dim2::new(3, 4))], 2, 2),
+      None
+    );
     assert_eq!(BlackLevel::from_masked_areas(image, &[Rect::new(Point::zero(), Dim2::new(0, 4))], 2, 2), None);
     // A single row doesn't cover the second row of the pattern
     assert_eq!(BlackLevel::from_masked_areas(image, &[Rect::new(Point::zero(), Dim2::new(8, 1))], 2, 2), None);
     Ok(())
+  }
+
+  #[test]
+  fn check_masked_areas_of_the_image() {
+    let (dim, active_area) = (Dim2::new(16, 16), Rect::new(Point::new(2, 2), Dim2::new(12, 12)));
+    let top = Rect::new(Point::new(2, 0), Dim2::new(12, 2));
+    let left = Rect::new(Point::new(0, 2), Dim2::new(2, 12));
+    let corner = |x: usize, y: usize| Rect::new(Point::new(x, y), Dim2::new(1, 1));
+    assert_eq!(check_masked_areas(&[], dim, active_area), Ok(()));
+    assert_eq!(check_masked_areas(&[top, left], dim, active_area), Ok(()));
+    assert_eq!(check_masked_areas(&[top, left, corner(0, 0), corner(15, 15)], dim, active_area), Ok(()));
+    // Too many areas
+    assert!(check_masked_areas(&[top, left, corner(0, 0), corner(15, 15), corner(0, 15)], dim, active_area).is_err());
+    // Empty, outside of the image, overlapping the ActiveArea or each other
+    assert!(check_masked_areas(&[Rect::new(Point::zero(), Dim2::new(0, 2))], dim, active_area).is_err());
+    assert!(check_masked_areas(&[Rect::new(Point::new(15, 0), Dim2::new(2, 2))], dim, active_area).is_err());
+    assert!(check_masked_areas(&[Rect::new(Point::new(2, 0), Dim2::new(12, 3))], dim, active_area).is_err());
+    assert!(check_masked_areas(&[top, Rect::new(Point::new(0, 1), Dim2::new(3, 1))], dim, active_area).is_err());
   }
 
   #[test]
