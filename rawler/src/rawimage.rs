@@ -460,9 +460,13 @@ impl RawImage {
   }
 
   /// Black and white levels of image data that is mapped to 0.0 .. 1.0
+  ///
+  /// The masked areas are removed: with the black level subtracted, their
+  /// pixels are no longer useful (DNG spec, MaskedAreas).
   pub(crate) fn reset_levels(&mut self) {
     self.blacklevel = BlackLevel::zero(1, 1, self.cpp);
     self.whitelevel.0.iter_mut().for_each(|x| *x = 1);
+    self.blackareas.clear();
   }
 
   /// DNG opcode list for the given processing stage
@@ -718,11 +722,14 @@ mod tests {
     );
     rawimage.active_area = Some(Rect::new(Point::new(2, 2), Dim2::new(12, 10)));
     rawimage.crop_area = Some(Rect::new(Point::new(4, 4), Dim2::new(8, 6)));
+    rawimage.blackareas = vec![Rect::new(Point::zero(), Dim2::new(16, 2))];
     rawimage.dng_opcodes_3 = Some(OpcodeList::new(Vec::new()));
 
     let linear = rawimage.linearize()?;
     assert_eq!((linear.width, linear.height, linear.cpp), (12, 10, 3));
     assert_eq!(linear.photometric, RawPhotometricInterpretation::LinearRaw);
+    // The black level is subtracted and the image data is cropped to the ActiveArea
+    assert!(linear.blackareas.is_empty());
     assert_eq!((linear.blacklevel, linear.whitelevel.0.clone()), (BlackLevel::zero(1, 1, 3), vec![1; 3]));
     // The image data is the ActiveArea, the DefaultCrop is relative to it
     assert_eq!(
@@ -733,6 +740,31 @@ mod tests {
     // The white balance of the demosaic is divided out again
     let expected = 2048.0 / 4095.0;
     assert!(linear.data.as_f32().iter().all(|v| (v - expected).abs() < 1e-5));
+    Ok(())
+  }
+
+  #[test]
+  fn apply_scaling_removes_masked_areas() -> Result<()> {
+    let mut camera = Camera::new();
+    camera.cfa = CFA::new("RGGB");
+    camera.active_area = Some([0, 2, 0, 0]);
+    camera.blackareah = Some((0, 2));
+    let photometric = RawPhotometricInterpretation::Cfa(CFAConfig::new_from_camera(&camera));
+    let mut rawimage = RawImage::new(
+      camera,
+      PixU16::new_with(vec![256; 8 * 8], 8, 8),
+      1,
+      [f32::NAN; 4],
+      photometric,
+      None,
+      Some(WhiteLevel::new_bits(12, 1)),
+      false,
+    );
+    // The black level is measured in the masked area
+    assert_eq!(rawimage.blackareas, [Rect::new(Point::zero(), Dim2::new(8, 2))]);
+    assert_eq!(rawimage.blacklevel, BlackLevel::new(&[256_u32; 4], 2, 2, 1));
+    rawimage.apply_scaling()?;
+    assert!(rawimage.blackareas.is_empty());
     Ok(())
   }
 

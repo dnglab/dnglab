@@ -73,6 +73,8 @@ pub fn execute_raw(rawimage: RawImage, plan: &Plan) -> crate::Result<RawImage> {
     }
     (rawimage.width, rawimage.height, rawimage.cpp) = (image.width, image.height, image.channels);
     rawimage.data = RawImageData::Float(image.data);
+    // The masked areas refer to the image data as read from the file
+    rawimage.blackareas.clear();
   }
   (rawimage.active_area, rawimage.crop_area) = (active_area, crop_area);
   Ok(rawimage)
