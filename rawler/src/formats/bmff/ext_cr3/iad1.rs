@@ -38,20 +38,28 @@ pub struct Iad1Small {
   pub sensor_y_end: u16,
 }
 
+/// Areas of a full size raw image
+///
+/// All rectangles are given by their left, top, right and bottom coordinates,
+/// right and bottom are the last column and row. The active area is the crop
+/// with a margin of 12 pixels on most bodies. The left and top borders are the
+/// parts of the image left of and above the active area: they contain the
+/// optical black, but on many bodies also columns and rows that receive light,
+/// and rows of a reference level.
 #[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize)]
 pub struct Iad1Big {
   pub crop_left_offset: u16,
   pub crop_top_offset: u16,
   pub crop_right_offset: u16,
   pub crop_bottom_offset: u16,
-  pub lob_left_offset: u16,
-  pub lob_top_offset: u16,
-  pub lob_right_offset: u16,
-  pub lob_bottom_offset: u16,
-  pub tob_left_offset: u16,
-  pub tob_top_offset: u16,
-  pub tob_right_offset: u16,
-  pub tob_bottom_offset: u16,
+  pub left_border_left_offset: u16,
+  pub left_border_top_offset: u16,
+  pub left_border_right_offset: u16,
+  pub left_border_bottom_offset: u16,
+  pub top_border_left_offset: u16,
+  pub top_border_top_offset: u16,
+  pub top_border_right_offset: u16,
+  pub top_border_bottom_offset: u16,
   pub active_area_left_offset: u16,
   pub active_area_top_offset: u16,
   pub active_area_right_offset: u16,
@@ -89,14 +97,14 @@ impl<R: Read + Seek> ReadBox<&mut R> for Iad1Box {
         crop_top_offset: reader.read_u16::<BigEndian>()?,
         crop_right_offset: reader.read_u16::<BigEndian>()?,
         crop_bottom_offset: reader.read_u16::<BigEndian>()?,
-        lob_left_offset: reader.read_u16::<BigEndian>()?,
-        lob_top_offset: reader.read_u16::<BigEndian>()?,
-        lob_right_offset: reader.read_u16::<BigEndian>()?,
-        lob_bottom_offset: reader.read_u16::<BigEndian>()?,
-        tob_left_offset: reader.read_u16::<BigEndian>()?,
-        tob_top_offset: reader.read_u16::<BigEndian>()?,
-        tob_right_offset: reader.read_u16::<BigEndian>()?,
-        tob_bottom_offset: reader.read_u16::<BigEndian>()?,
+        left_border_left_offset: reader.read_u16::<BigEndian>()?,
+        left_border_top_offset: reader.read_u16::<BigEndian>()?,
+        left_border_right_offset: reader.read_u16::<BigEndian>()?,
+        left_border_bottom_offset: reader.read_u16::<BigEndian>()?,
+        top_border_left_offset: reader.read_u16::<BigEndian>()?,
+        top_border_top_offset: reader.read_u16::<BigEndian>()?,
+        top_border_right_offset: reader.read_u16::<BigEndian>()?,
+        top_border_bottom_offset: reader.read_u16::<BigEndian>()?,
         active_area_left_offset: reader.read_u16::<BigEndian>()?,
         active_area_top_offset: reader.read_u16::<BigEndian>()?,
         active_area_right_offset: reader.read_u16::<BigEndian>()?,

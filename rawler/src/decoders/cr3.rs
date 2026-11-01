@@ -380,22 +380,8 @@ impl<'a> Decoder for Cr3Decoder<'a> {
               img.active_area = Some(rect_active);
             }
 
-            let blackarea_h = Rect::new_with_points(
-              Point::new(big.lob_left_offset as usize, big.lob_top_offset as usize),
-              Point::new((big.lob_right_offset - 1) as usize, (big.lob_bottom_offset - 1) as usize),
-            );
-            if !blackarea_h.is_empty() {
-              // Areas are sometimes wrong, don't add them!
-              //img.blackareas.push(blackarea_h);
-            }
-            let blackarea_v = Rect::new_with_points(
-              Point::new(big.tob_left_offset as usize, big.tob_top_offset as usize),
-              Point::new((big.tob_right_offset - 1) as usize, (big.tob_bottom_offset - 1) as usize),
-            );
-            if !blackarea_v.is_empty() {
-              // Areas are sometimes wrong, don't add them!
-              //img.blackareas.push(blackarea_v);
-            }
+            // CR3 images have no masked areas: the left and top borders of IAD1
+            // are not only optical black, and ColorData has the black level.
           }
         }
       }
