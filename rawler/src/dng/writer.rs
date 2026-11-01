@@ -1343,7 +1343,6 @@ where
 {
   let mut strip_offsets: Vec<u32> = Vec::new();
   let mut strip_sizes: Vec<u32> = Vec::new();
-  let mut strip_rows: Vec<u32> = Vec::new();
 
   let rows_per_strip = if rawimage.height > rawler_dng_multistrip_threshold().unwrap_or(100) {
     rawler_dng_rows_per_strip().unwrap_or(256)
@@ -1357,7 +1356,6 @@ where
         let offset = subframe.writer.dng.write_data_u16_le(strip)?;
         strip_offsets.push(offset);
         strip_sizes.push(std::mem::size_of_val(strip) as u32);
-        strip_rows.push((strip.len() / (rawimage.width * rawimage.cpp)) as u32);
       }
       subframe.ifd_mut().add_tag(TiffCommonTag::SampleFormat, &vec![1_u16; rawimage.cpp]); // Unsigned Integer
       subframe.ifd_mut().add_tag(TiffCommonTag::BitsPerSample, &vec![16_u16; rawimage.cpp]);
@@ -1368,7 +1366,6 @@ where
         let offset = subframe.writer.dng.write_data_f32_le(strip)?;
         strip_offsets.push(offset);
         strip_sizes.push(std::mem::size_of_val(strip) as u32);
-        strip_rows.push((strip.len() / (rawimage.width * rawimage.cpp)) as u32);
       }
       subframe.ifd_mut().add_tag(TiffCommonTag::SampleFormat, &vec![3_u16; rawimage.cpp]); // IEEE Float
       subframe.ifd_mut().add_tag(TiffCommonTag::BitsPerSample, &vec![32_u16; rawimage.cpp]);
@@ -1376,7 +1373,8 @@ where
   };
   subframe.ifd_mut().add_tag(TiffCommonTag::StripOffsets, &strip_offsets);
   subframe.ifd_mut().add_tag(TiffCommonTag::StripByteCounts, &strip_sizes);
-  subframe.ifd_mut().add_tag(TiffCommonTag::RowsPerStrip, &strip_rows);
+  // One value for all strips, the last strip may have fewer rows
+  subframe.ifd_mut().add_tag(TiffCommonTag::RowsPerStrip, rows_per_strip as u32);
 
   Ok(())
 }
@@ -1684,6 +1682,33 @@ mod tests {
     let rawimage = synthetic_rawimage_f32();
     let (backward_version, _, bps) = write_float_dng(&rawimage, DngCompression::Lossless, DNG_VERSION_V1_4)?;
     assert_eq!((backward_version, bps), (DNG_VERSION_V1_0, 16));
+    Ok(())
+  }
+
+  #[test]
+  fn uncompressed_strips_have_one_rows_per_strip() -> std::result::Result<(), Box<dyn std::error::Error>> {
+    use crate::formats::tiff::{GenericTiffReader, reader::TiffReader};
+
+    // 300 rows are written as two strips of 256 and 44 rows
+    let mut rawimage = synthetic_rawimage(None);
+    let pixels: Vec<u16> = (0..16 * 300).map(|i| (i % 4096) as u16).collect();
+    rawimage.data = RawImageData::Integer(pixels.clone());
+    rawimage.height = 300;
+    let data = write_synthetic_dng(&rawimage, CropMode::None, DNG_VERSION_V1_4)?;
+
+    let tiff = GenericTiffReader::new_with_buffer(&data, 0, 0, None)?;
+    let raw_ifd = tiff.find_first_ifd_with_tag(TiffCommonTag::StripOffsets).ok_or("raw IFD missing")?;
+    let entry = |tag: TiffCommonTag| raw_ifd.get_entry(tag).ok_or(format!("{:?} missing", tag));
+    assert_eq!(entry(TiffCommonTag::StripOffsets)?.value.count(), 2);
+    assert_eq!(entry(TiffCommonTag::StripByteCounts)?.value.count(), 2);
+    assert_eq!(entry(TiffCommonTag::RowsPerStrip)?.value, Value::Long(vec![256]));
+
+    let source = crate::rawsource::RawSource::new_from_slice(&data);
+    let decoded = crate::get_decoder(&source)?.raw_image(&source, &crate::decoders::RawDecodeParams::default(), false)?;
+    match decoded.data {
+      RawImageData::Integer(decoded) => assert_eq!(decoded, pixels),
+      RawImageData::Float(_) => panic!("expected integer data"),
+    }
     Ok(())
   }
 
