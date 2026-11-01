@@ -111,6 +111,9 @@ pub struct RawParams {
   pub bit_depth: usize,
   pub crop_area: Option<Rect>,
   pub active_area: Option<Rect>,
+  /// Masked areas of the raw image, omitted without areas
+  #[serde(default, skip_serializing_if = "Vec::is_empty")]
+  pub masked_areas: Vec<Rect>,
   pub blacklevels: BlackLevel,
   pub whitelevels: WhiteLevel,
   pub wb_coeffs: (Option<f32>, Option<f32>, Option<f32>, Option<f32>),
@@ -124,6 +127,7 @@ impl From<&RawImage> for RawParams {
       bit_depth: rawimage.bps,
       crop_area: rawimage.crop_area,
       active_area: rawimage.active_area,
+      masked_areas: rawimage.blackareas.clone(),
       blacklevels: rawimage.blacklevel.clone(),
       whitelevels: rawimage.whitelevel.clone(),
       wb_coeffs: rawimage
