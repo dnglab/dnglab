@@ -4,6 +4,7 @@ clean_make = "Canon"
 clean_model = "PowerShot Pro1"
 whitepoint = 4095
 color_pattern = "RGGB"
+active_area = [4,6,52,6]
 hints = ["wb_mangle"]
 blackareav = [3294,38]
 
