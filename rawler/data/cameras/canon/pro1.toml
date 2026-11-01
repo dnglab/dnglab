@@ -5,7 +5,7 @@ clean_model = "PowerShot Pro1"
 whitepoint = 4095
 color_pattern = "RGGB"
 hints = ["wb_mangle"]
-blackareav = [3294,50]
+blackareav = [3294,38]
 
 [cameras.color_matrix]
 A = [1.2248, -0.6026, 0.044, -0.6091, 1.3201, 0.324, -0.047, 0.0647, 0.7059]
