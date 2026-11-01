@@ -13,6 +13,7 @@ use crate::formats::tiff::Value;
 use crate::imgop::Dim2;
 use crate::imgop::Point;
 use crate::imgop::Rect;
+use crate::imgop::blacklevel::{MAX_MASKED_AREAS, check_masked_areas};
 use crate::imgop::matrix::*;
 use crate::imgop::xyz::*;
 use crate::tags::DngTag;
@@ -141,6 +142,9 @@ impl<'a> Decoder for DngDecoder<'a> {
       dummy,
     );
     image.orientation = orientation;
+    // The masked areas are kept, the black level is that of the BlackLevel tags
+    let active_area = image.active_area.unwrap_or_else(|| Rect::new(Point::zero(), Dim2::new(width, height)));
+    image.blackareas = self.get_masked_areas(raw, Dim2::new(width, height), active_area);
     image.linearization_table = self.get_linearization_table(raw, &image.data)?;
     image.baseline_exposure = root.get_entry(DngTag::BaselineExposure).and_then(|entry| entry.value.get_f32(0).ok().flatten());
     if let Some(planes) = camera_profiles.first().and_then(CameraProfile::color_planes) {
@@ -584,18 +588,46 @@ impl<'a> DngDecoder<'a> {
     None
   }
 
-  fn _get_masked_areas(&self, raw: &IFD) -> Vec<Rect> {
-    let mut areas = Vec::new();
-
-    if let Some(masked_area) = raw.get_entry(TiffCommonTag::MaskedAreas) {
-      for x in (0..masked_area.count() as usize).step_by(4) {
-        areas.push(Rect::new_with_points(
-          Point::new(masked_area.force_usize(x), masked_area.force_usize(x + 1)),
-          Point::new(masked_area.force_usize(x + 2), masked_area.force_usize(x + 3)),
-        ));
-      }
+  /// MaskedAreas of the raw IFD of an image of `dim` pixels with the
+  /// ActiveArea `active_area`
+  ///
+  /// The first [`MAX_MASKED_AREAS`] rectangles are used. Invalid areas are
+  /// ignored, see [`check_masked_areas`].
+  fn get_masked_areas(&self, raw: &IFD, dim: Dim2, active_area: Rect) -> Vec<Rect> {
+    let Some(entry) = raw.get_entry(DngTag::MaskedAreas) else {
+      return Vec::new();
+    };
+    let count = entry.count() as usize;
+    if !matches!(entry.value, Value::Short(_) | Value::Long(_)) || !count.is_multiple_of(4) {
+      log::warn!(
+        "DNG: ignoring MaskedAreas with {} values of type {}, expected rectangles of 4 SHORT or LONG",
+        count,
+        entry.value_type_name()
+      );
+      return Vec::new();
     }
-
+    if count / 4 > MAX_MASKED_AREAS {
+      log::debug!("DNG: MaskedAreas has {} rectangles, using the first {}", count / 4, MAX_MASKED_AREAS);
+    }
+    let mut areas = Vec::new();
+    for i in (0..count).step_by(4).take(MAX_MASKED_AREAS) {
+      let [top, left, bottom, right] = [0, 1, 2, 3].map(|j| entry.force_usize(i + j));
+      if top > bottom || left > right {
+        log::warn!(
+          "DNG: ignoring MaskedAreas, rectangle (t={}, l={}, b={}, r={}) is invalid",
+          top,
+          left,
+          bottom,
+          right
+        );
+        return Vec::new();
+      }
+      areas.push(Rect::new_with_points(Point::new(left, top), Point::new(right, bottom)));
+    }
+    if let Err(err) = check_masked_areas(&areas, dim, active_area) {
+      log::warn!("DNG: ignoring MaskedAreas: {}", err);
+      return Vec::new();
+    }
     areas
   }
 }
@@ -618,6 +650,7 @@ mod tests {
   use crate::formats::tiff::SampleFormat;
   use crate::formats::tiff::Value;
   use crate::formats::tiff::{DirectoryWriter, GenericTiffReader};
+  use crate::imgop::{Dim2, Point, Rect};
   use crate::pixarray::PixU16;
   use crate::rawimage::{BlackLevel, CFAConfig, RawImageData, RawPhotometricInterpretation, WhiteLevel};
   use crate::rawsource::RawSource;
@@ -702,6 +735,74 @@ mod tests {
     rawimage.whitelevel = WhiteLevel::new(vec![1]);
     let data = write_dng(&rawimage, |ifd| ifd.remove_tag(TiffCommonTag::WhiteLevel))?;
     assert_eq!(decode_dng(&data)?.whitelevel.0, vec![1]);
+    Ok(())
+  }
+
+  #[test]
+  fn masked_areas_roundtrip() -> TestResult {
+    let mut rawimage = synthetic_rawimage();
+    rawimage.blacklevel = BlackLevel::new(&[64_u32; 4], 2, 2, 1);
+    rawimage.active_area = Some(Rect::new(Point::new(3, 2), Dim2::new(12, 14)));
+    // Rows above and columns left of the ActiveArea, top and left differ
+    rawimage.blackareas = vec![Rect::new(Point::new(3, 0), Dim2::new(12, 2)), Rect::new(Point::new(0, 2), Dim2::new(2, 14))];
+    let mut buf = Cursor::new(Vec::new());
+    let mut dng = DngWriter::new(&mut buf, DNG_VERSION_V1_4)?;
+    dng.load_base_tags(&rawimage)?;
+    let mut frame = dng.subframe(0);
+    frame.raw_image(
+      &rawimage,
+      CropMode::ActiveArea,
+      DngCompression::Uncompressed,
+      DngPhotometricConversion::Original,
+      &CompressionParams::default(),
+    )?;
+    frame.finalize()?;
+    dng.close()?;
+
+    let decoded = decode_dng(&buf.into_inner())?;
+    assert_eq!(decoded.active_area, rawimage.active_area);
+    assert_eq!(decoded.blackareas, rawimage.blackareas);
+    // The black level is not measured in the masked areas
+    assert_eq!(decoded.blacklevel, rawimage.blacklevel);
+    Ok(())
+  }
+
+  /// Masked areas of a DNG file with the ActiveArea (2, 2, 16, 16) and the MaskedAreas `areas`
+  fn decode_masked_areas(areas: Value) -> TestResult<Vec<Rect>> {
+    let data = write_dng(&synthetic_rawimage(), |ifd| {
+      ifd.add_tag(DngTag::ActiveArea, [2_u16, 2, 16, 16]);
+      ifd.add_tag(DngTag::MaskedAreas, areas);
+    })?;
+    Ok(decode_dng(&data)?.blackareas)
+  }
+
+  #[test]
+  fn masked_areas_short_and_long() -> TestResult {
+    let expected = [Rect::new(Point::new(2, 0), Dim2::new(14, 2)), Rect::new(Point::new(0, 2), Dim2::new(2, 14))];
+    assert_eq!(decode_masked_areas(Value::Short(vec![0, 2, 2, 16, 2, 0, 16, 2]))?, expected);
+    assert_eq!(decode_masked_areas(Value::Long(vec![0, 2, 2, 16, 2, 0, 16, 2]))?, expected);
+    // The first four rectangles are used
+    let pixels = Value::Short(vec![0, 0, 1, 1, 0, 1, 1, 2, 1, 0, 2, 1, 1, 1, 2, 2, 0, 5, 1, 6]);
+    let pixel = |x: usize, y: usize| Rect::new(Point::new(x, y), Dim2::new(1, 1));
+    assert_eq!(decode_masked_areas(pixels)?, [pixel(0, 0), pixel(1, 0), pixel(0, 1), pixel(1, 1)]);
+    Ok(())
+  }
+
+  #[test]
+  fn invalid_masked_areas_are_ignored() -> TestResult {
+    for areas in [
+      // Not a multiple of 4 values or not SHORT or LONG
+      Value::Short(vec![0, 0, 2, 16, 0, 0]),
+      Value::Rational(vec![Rational::new(0, 1), Rational::new(0, 1), Rational::new(2, 1), Rational::new(16, 1)]),
+      // Bottom above top
+      Value::Short(vec![2, 0, 0, 2]),
+      // Exceeds the image, overlaps the ActiveArea or another area
+      Value::Short(vec![0, 0, 2, 17]),
+      Value::Short(vec![0, 0, 3, 16]),
+      Value::Short(vec![0, 0, 2, 16, 1, 0, 16, 2]),
+    ] {
+      assert_eq!(decode_masked_areas(areas.clone())?, [], "{:?}", areas);
+    }
     Ok(())
   }
 
