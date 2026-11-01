@@ -65,8 +65,9 @@ impl Dim2 {
     Self { w, h }
   }
 
+  /// The area has no pixels: its width or height is zero
   pub fn is_empty(&self) -> bool {
-    self.w == 0 && self.h == 0
+    self.w == 0 || self.h == 0
   }
 }
 
@@ -164,6 +165,7 @@ impl Rect {
     Self::new_with_points(Point::new(rect[1], rect[0]), Point::new(rect[3], rect[2]))
   }
 
+  /// The rectangle has no pixels: its width or height is zero
   pub fn is_empty(&self) -> bool {
     self.d.is_empty()
   }
@@ -362,6 +364,14 @@ mod tests {
     assert_eq!(rect.relative_position(5, 2), (0.875, 0.75));
     // Pixels outside of the rectangle
     assert_eq!(rect.relative_position(0, 3), (-0.375, 1.25));
+  }
+
+  #[test]
+  fn empty_rect() {
+    assert!(Rect::new(Point::new(2, 1), Dim2::new(0, 0)).is_empty());
+    assert!(Rect::new(Point::new(2, 1), Dim2::new(0, 3)).is_empty());
+    assert!(Rect::new(Point::new(2, 1), Dim2::new(4, 0)).is_empty());
+    assert!(!Rect::new(Point::new(2, 1), Dim2::new(1, 1)).is_empty());
   }
 
   #[test]

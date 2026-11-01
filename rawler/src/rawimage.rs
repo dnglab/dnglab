@@ -221,7 +221,7 @@ fn camera_masked_areas(cam: &Camera, dim: Dim2, active_area: Option<Rect>) -> Ve
     .into_iter()
     .chain(vertical)
     .filter(|area| {
-      let valid = area.d.w > 0 && area.d.h > 0 && area.p.x + area.d.w <= dim.w && area.p.y + area.d.h <= dim.h;
+      let valid = !area.is_empty() && area.p.x + area.d.w <= dim.w && area.p.y + area.d.h <= dim.h;
       if !valid {
         log::warn!(
           "Camera {} {}: masked area {:?} is empty or exceeds the image of {}x{} pixels, ignoring it",
