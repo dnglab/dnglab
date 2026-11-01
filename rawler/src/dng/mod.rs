@@ -169,7 +169,7 @@ pub fn rect_to_dng_area(area: &Rect) -> [u16; 4] {
 #[cfg(feature = "clap")]
 impl clap::ValueEnum for DngCompression {
   fn value_variants<'a>() -> &'a [Self] {
-    &[Self::Lossless, Self::Lossy, Self::JpegXl, Self::Uncompressed]
+    &[Self::Lossless, Self::Lossy, Self::JpegXl, Self::Deflate, Self::Uncompressed]
   }
 
   fn to_possible_value(&self) -> Option<clap::builder::PossibleValue> {
@@ -178,6 +178,7 @@ impl clap::ValueEnum for DngCompression {
       Self::Lossless => clap::builder::PossibleValue::new("lossless"),
       Self::Lossy => clap::builder::PossibleValue::new("lossy"),
       Self::JpegXl => clap::builder::PossibleValue::new("jxl"),
+      Self::Deflate => clap::builder::PossibleValue::new("deflate"),
     })
   }
 }
@@ -283,6 +284,9 @@ const PREVIEW_JPEG_QUALITY: f32 = 0.75;
 /// Default JPEG quality (1-100) for lossy compression of raw images.
 pub const DEFAULT_LOSSY_JPEG_QUALITY: u8 = 94;
 
+/// Default bits per sample (16 or 32) of floating point data with Deflate compression.
+pub const DEFAULT_DEFLATE_FLOAT_BITS: u8 = 16;
+
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 /// Compression mode for DNG
@@ -296,6 +300,8 @@ pub enum DngCompression {
   /// JPEG XL compression, lossless or lossy (DNG 1.7)
   #[serde(rename = "jxl")]
   JpegXl,
+  /// Deflate compression of floating point data (DNG 1.4)
+  Deflate,
 }
 
 /// Default JPEG XL distance, 0.0 is lossless
@@ -348,6 +354,10 @@ pub struct CompressionParams {
   pub lossy_jpeg_quality: u8,
   /// JPEG XL parameters
   pub jxl: JxlParams,
+  /// Bits per sample of floating point data with Deflate compression,
+  /// 16 (half floats) or 32. Data that doesn't fit half floats is always
+  /// stored with 32 bits.
+  pub deflate_float_bits: u8,
 }
 
 impl Default for CompressionParams {
@@ -356,6 +366,7 @@ impl Default for CompressionParams {
       ljpeg92_predictor: 1,
       lossy_jpeg_quality: DEFAULT_LOSSY_JPEG_QUALITY,
       jxl: JxlParams::default(),
+      deflate_float_bits: DEFAULT_DEFLATE_FLOAT_BITS,
     }
   }
 }

@@ -148,7 +148,8 @@ Command line switches override the values of the profile.",
       arg!(compression: -c --"compression" <compression> "Compression for raw image")
         .required(false)
         .value_parser(value_parser!(DngCompression))
-        .default_value("lossless"),
+        .default_value("lossless")
+        .long_help("Compression for raw image. Deflate: floating point input only (DNG 1.4), half floats where they fit."),
     )
     .arg(
       arg!(predictor: --"ljpeg92-predictor" <predictor> "LJPEG-92 predictor")

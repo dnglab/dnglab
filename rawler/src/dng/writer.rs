@@ -12,12 +12,15 @@ use rayon::prelude::*;
 use crate::tags::{DngTag, TiffCommonTag};
 use crate::{
   CFA, RawImage, RawImageData,
-  compressors::jpegxl::{self, LossyTransfer, TileSamples, TileSettings},
+  compressors::{
+    deflate,
+    jpegxl::{self, LossyTransfer, TileSamples, TileSettings},
+  },
   decoders::{Camera, RawMetadata},
   dng::rect_to_dng_area,
   envparams::{rawler_dng_multistrip_threshold, rawler_dng_rows_per_strip},
   formats::tiff::{
-    CompressionMethod, PhotometricInterpretation, PreviewColorSpace, Rational, SRational, TiffError, Value,
+    CompressionMethod, PhotometricInterpretation, Predictor, PreviewColorSpace, Rational, SRational, TiffError, Value,
     writer::{DirectoryWriter, TiffWriter, transfer_entry},
   },
   imgop::{Dim2, Point, Rect, blacklevel::check_masked_areas},
@@ -191,6 +194,16 @@ where
     // before the data is converted to floats.
     if rawimage.linearization_table.is_some() && matches!(rawimage.data, RawImageData::Float(_)) {
       return Err(DngError::General("LinearizationTable requires integer image data".into()));
+    }
+    if compression == DngCompression::Deflate {
+      // Deflate stores floating point data here. The DNG specification allows it for
+      // integer data only at 32 bits per sample, which nothing writes or reads.
+      if !matches!(rawimage.data, RawImageData::Float(_)) {
+        return Err(DngError::General("Deflate compression requires floating point image data".into()));
+      }
+      self
+        .writer
+        .update_backward_version(DNG_VERSION_V1_4, "Deflate compression of floating point data")?;
     }
     if compression == DngCompression::Lossy {
       self.writer.update_backward_version(DNG_VERSION_V1_4, "Lossy JPEG compression")?;
@@ -450,6 +463,10 @@ where
       DngCompression::JpegXl => {
         self.ifd_mut().add_tag(TiffCommonTag::Compression, CompressionMethod::JPEGXL);
         dng_put_raw_jxl(self, &rawimage, &params.jxl)?;
+      }
+      DngCompression::Deflate => {
+        self.ifd_mut().add_tag(TiffCommonTag::Compression, CompressionMethod::Deflate);
+        dng_put_raw_deflate(self, &rawimage, params.deflate_float_bits)?;
       }
     }
 
@@ -1333,6 +1350,64 @@ fn zlib_compress(data: &[u8]) -> io::Result<Vec<u8>> {
   encoder.finish().into_result()
 }
 
+/// Bits per sample of floating point data with Deflate compression
+///
+/// Half floats are used if requested and the data fits them (the same as
+/// for JPEG XL, see [`jxl_stores_float`]), otherwise single floats.
+fn deflate_float_bits(rawimage: &RawImage, bits: u8) -> Result<u16> {
+  match bits {
+    16 if jxl_stores_float(rawimage) => Ok(16),
+    16 | 32 => Ok(32),
+    _ => Err(DngError::General(format!(
+      "Deflate compression requires 16 or 32 bits per sample, got {}",
+      bits
+    ))),
+  }
+}
+
+/// Write floating point data with Deflate compression into DNG
+///
+/// Data is split into strips like uncompressed data, each strip is compressed separately.
+fn dng_put_raw_deflate<W>(subframe: &mut SubFrameWriter<W>, rawimage: &RawImage, bits: u8) -> Result<()>
+where
+  W: Write + Seek,
+{
+  let RawImageData::Float(ref data) = rawimage.data else {
+    return Err(DngError::General("Deflate compression requires floating point image data".into()));
+  };
+  let bits = deflate_float_bits(rawimage, bits)?;
+  let row_len = rawimage.width * rawimage.cpp;
+  let rows_per_strip = if rawimage.height > rawler_dng_multistrip_threshold().unwrap_or(100) {
+    rawler_dng_rows_per_strip().unwrap_or(256)
+  } else {
+    rawimage.height
+  };
+  debug!("Deflate compression: {} bit floats, {} rows per strip", bits, rows_per_strip);
+
+  let strips: Vec<Vec<u8>> = data
+    .par_chunks(rows_per_strip * row_len)
+    .map(|strip| deflate::encode_float_strip(strip, row_len, rawimage.cpp, bits))
+    .collect::<io::Result<Vec<_>>>()?;
+
+  let mut strip_offsets: Vec<u32> = Vec::new();
+  let mut strip_sizes: Vec<u32> = Vec::new();
+
+  for strip in strips.iter() {
+    let offset = subframe.writer.dng.write_data(strip)?;
+    strip_offsets.push(offset);
+    strip_sizes.push(strip.len() as u32);
+  }
+
+  subframe.ifd_mut().add_tag(TiffCommonTag::Predictor, Predictor::FloatingPoint);
+  subframe.ifd_mut().add_tag(TiffCommonTag::SampleFormat, &vec![3_u16; rawimage.cpp]); // IEEE Float
+  subframe.ifd_mut().add_tag(TiffCommonTag::BitsPerSample, &vec![bits; rawimage.cpp]);
+  subframe.ifd_mut().add_tag(TiffCommonTag::StripOffsets, &strip_offsets);
+  subframe.ifd_mut().add_tag(TiffCommonTag::StripByteCounts, &strip_sizes);
+  subframe.ifd_mut().add_tag(TiffCommonTag::RowsPerStrip, rows_per_strip as u32);
+
+  Ok(())
+}
+
 /// Write RAW uncompressed into DNG
 ///
 /// This uses unsigned 16 bit values for storage
@@ -1683,6 +1758,164 @@ mod tests {
     let (backward_version, _, bps) = write_float_dng(&rawimage, DngCompression::Lossless, DNG_VERSION_V1_4)?;
     assert_eq!((backward_version, bps), (DNG_VERSION_V1_0, 16));
     Ok(())
+  }
+
+  /// Synthetic LinearRaw image of `width` x `height` with `cpp` planes of floating point data,
+  /// with negative values and values above the white level
+  fn synthetic_linear_f32_sized(width: usize, height: usize, cpp: usize) -> RawImage {
+    let mut rawimage = synthetic_linear_f32(cpp);
+    let samples = width * height * cpp;
+    let data: Vec<f32> = (0..samples).map(|i| (i as f32 * 0.37).sin() * 1.5 + i as f32 / samples as f32).collect();
+    rawimage.data = RawImageData::Float(data);
+    rawimage.width = width;
+    rawimage.height = height;
+    rawimage
+  }
+
+  /// Write `rawimage` Deflate compressed and return the DNG bytes
+  fn write_deflate(rawimage: &RawImage, bits: u8, max_backward_version: DngVersionNumber) -> Result<Vec<u8>> {
+    let mut buf = Cursor::new(Vec::new());
+    let mut dng = DngWriter::new(&mut buf, max_backward_version)?;
+    let mut frame = dng.subframe(0);
+    frame.raw_image(
+      rawimage,
+      CropMode::None,
+      DngCompression::Deflate,
+      DngPhotometricConversion::Original,
+      &CompressionParams {
+        deflate_float_bits: bits,
+        ..Default::default()
+      },
+    )?;
+    frame.finalize()?;
+    dng.close()?;
+    Ok(buf.into_inner())
+  }
+
+  fn decode_float(data: &[u8]) -> std::result::Result<Vec<f32>, Box<dyn std::error::Error>> {
+    let source = crate::rawsource::RawSource::new_from_slice(data);
+    let decoded = crate::get_decoder(&source)?.raw_image(&source, &crate::decoders::RawDecodeParams::default(), false)?;
+    match decoded.data {
+      RawImageData::Float(pixels) => Ok(pixels),
+      RawImageData::Integer(_) => Err("deflate data must be float".into()),
+    }
+  }
+
+  /// Replace the first samples by NaN, infinities, negative zero and subnormals
+  fn with_special_floats(mut rawimage: RawImage) -> RawImage {
+    let specials = [
+      f32::NAN,
+      f32::INFINITY,
+      f32::NEG_INFINITY,
+      -0.0,
+      f32::from_bits(1),  // Subnormal, zero as half float
+      -f32::MIN_POSITIVE, // Normal, negative zero as half float
+      6.0e-6,             // Subnormal as half float
+      -6.0e-8,            // Smallest half float subnormal
+    ];
+    if let RawImageData::Float(data) = &mut rawimage.data {
+      data[..specials.len()].copy_from_slice(&specials);
+    }
+    rawimage
+  }
+
+  /// Compare floats by their bits, any NaN matches any NaN
+  fn assert_same_floats(decoded: &[f32], expected: &[f32], msg: &str) {
+    assert_eq!(decoded.len(), expected.len(), "{}", msg);
+    for (i, (a, b)) in decoded.iter().zip(expected).enumerate() {
+      assert!(
+        a.to_bits() == b.to_bits() || (a.is_nan() && b.is_nan()),
+        "{}: sample {}: {} != {}",
+        msg,
+        i,
+        a,
+        b
+      );
+    }
+  }
+
+  #[test]
+  fn deflate_round_trip() -> std::result::Result<(), Box<dyn std::error::Error>> {
+    for (cpp, rawimage) in [(1, synthetic_rawimage_f32()), (3, synthetic_linear_f32_sized(16, 300, 3))] {
+      let rawimage = with_special_floats(rawimage);
+      let RawImageData::Float(samples) = &rawimage.data else { unreachable!() };
+      // Single floats are exact
+      let data = write_deflate(&rawimage, 32, DNG_VERSION_V1_4)?;
+      assert_same_floats(&decode_float(&data)?, samples, &format!("cpp {}, 32 bit", cpp));
+      // Half floats are exact to half float precision
+      let half: Vec<f32> = samples.iter().map(|v| half::f16::from_f32(*v).to_f32()).collect();
+      let data = write_deflate(&rawimage, 16, DNG_VERSION_V1_4)?;
+      assert_same_floats(&decode_float(&data)?, &half, &format!("cpp {}, 16 bit", cpp));
+    }
+    Ok(())
+  }
+
+  #[test]
+  fn deflate_strips_match_ifd() -> std::result::Result<(), Box<dyn std::error::Error>> {
+    use crate::formats::tiff::{GenericTiffReader, reader::TiffReader};
+    use std::io::Read;
+
+    let (width, height, cpp) = (16, 300, 3);
+    let rawimage = synthetic_linear_f32_sized(width, height, cpp);
+    let data = write_deflate(&rawimage, 32, DNG_VERSION_V1_4)?;
+    let (backward_version, _) = read_backward_version_and_active_area(&data)?;
+    assert_eq!(backward_version, DNG_VERSION_V1_4);
+
+    let tiff = GenericTiffReader::new_with_buffer(&data, 0, 0, None)?;
+    let raw_ifd = tiff.find_first_ifd_with_tag(TiffCommonTag::StripOffsets).ok_or("raw IFD missing")?;
+    let tag = |tag: TiffCommonTag| raw_ifd.get_entry(tag).map(|e| e.value.clone()).ok_or(format!("{:?} missing", tag));
+    assert_eq!(tag(TiffCommonTag::Compression)?.force_u16(0), CompressionMethod::Deflate as u16);
+    assert_eq!(tag(TiffCommonTag::Predictor)?.force_u16(0), Predictor::FloatingPoint as u16);
+    assert_eq!(tag(TiffCommonTag::SampleFormat)?, Value::Short(vec![3; cpp]));
+    assert_eq!(tag(TiffCommonTag::BitsPerSample)?, Value::Short(vec![32; cpp]));
+
+    // Two strips of 256 and 44 rows, RowsPerStrip is one value for all strips
+    let offsets = tag(TiffCommonTag::StripOffsets)?;
+    let sizes = tag(TiffCommonTag::StripByteCounts)?;
+    assert_eq!((offsets.count(), sizes.count()), (2, 2));
+    assert_eq!(tag(TiffCommonTag::RowsPerStrip)?, Value::Long(vec![256]));
+    for (strip, strip_rows) in [256, height - 256].into_iter().enumerate() {
+      let (offset, size) = (offsets.force_usize(strip), sizes.force_usize(strip));
+      let mut inflated = Vec::new();
+      libflate::zlib::Decoder::new(&data[offset..offset + size])?.read_to_end(&mut inflated)?;
+      assert_eq!(inflated.len(), strip_rows * width * cpp * 4, "strip {}", strip);
+    }
+    let RawImageData::Float(samples) = &rawimage.data else { unreachable!() };
+    assert_eq!(&decode_float(&data)?, samples);
+    Ok(())
+  }
+
+  #[test]
+  fn deflate_stores_data_from_integers_as_single_floats() -> std::result::Result<(), Box<dyn std::error::Error>> {
+    // Half floats would lose precision of 16 bit integer data
+    let mut rawimage = synthetic_rawimage_f32();
+    rawimage.scaled_from_integer = true;
+    assert_eq!(deflate_float_bits(&rawimage, 16)?, 32);
+    assert_eq!(
+      write_float_dng(&rawimage, DngCompression::Deflate, DNG_VERSION_V1_4)?,
+      (DNG_VERSION_V1_4, 3, 32)
+    );
+    Ok(())
+  }
+
+  #[test]
+  fn deflate_rejects_integer_data_and_old_versions() {
+    let error = |rawimage: &RawImage, bits: u8, max_backward_version: DngVersionNumber| match write_deflate(rawimage, bits, max_backward_version) {
+      Ok(_) => panic!("Deflate compression must fail"),
+      Err(err) => err.to_string(),
+    };
+    assert_eq!(
+      error(&synthetic_rawimage(None), 16, DNG_VERSION_V1_4),
+      "General error: Deflate compression requires floating point image data"
+    );
+    assert_eq!(
+      error(&synthetic_rawimage_f32(), 16, DNG_VERSION_V1_1),
+      "General error: DNG feature 'Deflate compression of floating point data' requires DNGBackwardVersion 1.4.0.0, but maximum allowed is 1.1.0.0"
+    );
+    assert_eq!(
+      error(&synthetic_rawimage_f32(), 24, DNG_VERSION_V1_4),
+      "General error: Deflate compression requires 16 or 32 bits per sample, got 24"
+    );
   }
 
   #[test]

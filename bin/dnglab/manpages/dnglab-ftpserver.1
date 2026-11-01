@@ -17,7 +17,7 @@ Otherwise no profile is used and the command line switches with their defaults a
 Command line switches override the values of the profile.
 .TP
 \fB\-c\fR, \fB\-\-compression\fR \fI<compression>\fR [default: lossless]
-Compression for raw image
+Compression for raw image. Deflate: floating point input only (DNG 1.4), half floats where they fit.
 .br
 
 .br
@@ -29,6 +29,8 @@ lossless
 lossy
 .IP \(bu 2
 jxl
+.IP \(bu 2
+deflate
 .IP \(bu 2
 uncompressed
 .RE

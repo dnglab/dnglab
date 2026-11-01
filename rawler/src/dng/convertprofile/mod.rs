@@ -176,6 +176,12 @@ impl ConvertProfile {
         reason: "lossy compression requires max_dng_backward_version 1.4 or higher".to_string(),
       });
     }
+    if self.compression == DngCompression::Deflate && self.max_dng_backward_version < DngVersion::V1_4 {
+      return Err(ConvertProfileError::Invalid {
+        profile: name.to_string(),
+        reason: "deflate compression requires max_dng_backward_version 1.4 or higher".to_string(),
+      });
+    }
     if !(0.0..=MAX_JXL_DISTANCE).contains(&self.jxl_distance) {
       return Err(ConvertProfileError::Invalid {
         profile: name.to_string(),
@@ -682,6 +688,23 @@ mod tests {
     let profile = registry.get("x").expect("profile");
     assert_eq!(profile.compression, DngCompression::Lossy);
     assert_eq!(profile.to_convert_params("DNGLab").lossy_jpeg_quality, 50);
+  }
+
+  #[test]
+  fn deflate_requires_dng_1_4() {
+    let dir = TempDir::new();
+    let path = dir.write(
+      "a.toml",
+      "[convertprofile.x]\nversion = 1\ntitle = \"T\"\ncompression = \"deflate\"\nmax_dng_backward_version = \"1.1\"\n",
+    );
+    let mut registry = ConvertProfileRegistry::new();
+    match registry.load_file(&path) {
+      Err(ConvertProfileError::Invalid { reason, .. }) => assert_eq!(reason, "deflate compression requires max_dng_backward_version 1.4 or higher"),
+      other => panic!("unexpected result: {:?}", other),
+    }
+    let path = dir.write("b.toml", "[convertprofile.x]\nversion = 1\ntitle = \"T\"\ncompression = \"deflate\"\n");
+    registry.load_file(&path).expect("load");
+    assert_eq!(registry.get("x").expect("profile").compression, DngCompression::Deflate);
   }
 
   #[test]

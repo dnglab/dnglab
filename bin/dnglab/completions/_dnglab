@@ -90,8 +90,8 @@ _arguments "${_arguments_options[@]}" : \
 _arguments "${_arguments_options[@]}" : \
 '-p+[Convert profile name]:name:_default' \
 '--profile=[Convert profile name]:name:_default' \
-'-c+[Compression for raw image]:compression:(lossless lossy jxl uncompressed)' \
-'--compression=[Compression for raw image]:compression:(lossless lossy jxl uncompressed)' \
+'-c+[Compression for raw image]:compression:(lossless lossy jxl deflate uncompressed)' \
+'--compression=[Compression for raw image]:compression:(lossless lossy jxl deflate uncompressed)' \
 '--ljpeg92-predictor=[LJPEG-92 predictor]:predictor:_default' \
 '--lossy-jpeg-quality=[JPEG quality for lossy compression (1-100)]:quality:_default' \
 '--jxl-distance=[JPEG XL distance (0-25), 0 is lossless]:distance:_default' \
@@ -131,8 +131,8 @@ _arguments "${_arguments_options[@]}" : \
 _arguments "${_arguments_options[@]}" : \
 '-p+[Convert profile name]:name:_default' \
 '--profile=[Convert profile name]:name:_default' \
-'-c+[Compression for raw image]:compression:(lossless lossy jxl uncompressed)' \
-'--compression=[Compression for raw image]:compression:(lossless lossy jxl uncompressed)' \
+'-c+[Compression for raw image]:compression:(lossless lossy jxl deflate uncompressed)' \
+'--compression=[Compression for raw image]:compression:(lossless lossy jxl deflate uncompressed)' \
 '--ljpeg92-predictor=[LJPEG-92 predictor]:predictor:_default' \
 '--lossy-jpeg-quality=[JPEG quality for lossy compression (1-100)]:quality:_default' \
 '--jxl-distance=[JPEG XL distance (0-25), 0 is lossless]:distance:_default' \

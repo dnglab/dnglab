@@ -188,11 +188,11 @@ _dnglab() {
                     return 0
                     ;;
                 --compression)
-                    COMPREPLY=($(compgen -W "lossless lossy jxl uncompressed" -- "${cur}"))
+                    COMPREPLY=($(compgen -W "lossless lossy jxl deflate uncompressed" -- "${cur}"))
                     return 0
                     ;;
                 -c)
-                    COMPREPLY=($(compgen -W "lossless lossy jxl uncompressed" -- "${cur}"))
+                    COMPREPLY=($(compgen -W "lossless lossy jxl deflate uncompressed" -- "${cur}"))
                     return 0
                     ;;
                 --ljpeg92-predictor)
@@ -344,11 +344,11 @@ _dnglab() {
                     return 0
                     ;;
                 --compression)
-                    COMPREPLY=($(compgen -W "lossless lossy jxl uncompressed" -- "${cur}"))
+                    COMPREPLY=($(compgen -W "lossless lossy jxl deflate uncompressed" -- "${cur}"))
                     return 0
                     ;;
                 -c)
-                    COMPREPLY=($(compgen -W "lossless lossy jxl uncompressed" -- "${cur}"))
+                    COMPREPLY=($(compgen -W "lossless lossy jxl deflate uncompressed" -- "${cur}"))
                     return 0
                     ;;
                 --ljpeg92-predictor)

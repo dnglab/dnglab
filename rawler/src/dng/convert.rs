@@ -32,8 +32,8 @@ use crate::{
 };
 
 use super::{
-  ApplyDngOpcodes, CompressionParams, CropMode, DEFAULT_JXL_DECODE_SPEED, DEFAULT_JXL_DISTANCE, DEFAULT_JXL_EFFORT, DngCompression, DngPhotometricConversion,
-  DngVersion, JxlParams,
+  ApplyDngOpcodes, CompressionParams, CropMode, DEFAULT_DEFLATE_FLOAT_BITS, DEFAULT_JXL_DECODE_SPEED, DEFAULT_JXL_DISTANCE, DEFAULT_JXL_EFFORT, DngCompression,
+  DngPhotometricConversion, DngVersion, JxlParams,
 };
 
 /// Opcode list stages in processing order
@@ -198,6 +198,7 @@ impl ConvertParams {
         effort: self.jxl_effort,
         decode_speed: self.jxl_decode_speed,
       },
+      deflate_float_bits: DEFAULT_DEFLATE_FLOAT_BITS,
     }
   }
 
