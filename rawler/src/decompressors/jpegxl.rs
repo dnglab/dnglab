@@ -3,9 +3,15 @@
 
 //! JPEG-XL decompressor for DNG strips and tiles.
 
-use jxl_oxide::{JxlImage, image::BitDepth};
+use jxl_oxide::{
+  EnumColourEncoding, JxlImage, RenderingIntent,
+  color::{ColourEncoding, ColourSpace, Primaries, TransferFunction, WhitePoint},
+  image::BitDepth,
+};
 
 use crate::decompressors::{Decompressor, LineIteratorMut};
+use crate::imgop::matrix::{multiply, multiply_row1};
+use crate::imgop::xyz::{SRGB_TO_XYZ_D65, XYZ_TO_REC2020_D65};
 
 /// Decompressor for JPEG-XL compressed DNG image data.
 ///
@@ -95,12 +101,55 @@ impl<'a> Decompressor<'a, u16> for JpegXLDecompressor {
   }
 }
 
+/// Conversion of samples rendered as linear sRGB back to the colour encoding
+/// declared by a lossy (XYB) codestream, see [`render_as_linear_srgb`]
+#[derive(Clone, Copy)]
+enum LinearSrgbTo {
+  /// Linear RGB with other primaries, by a matrix from linear sRGB
+  Rgb([[f32; 3]; 3]),
+  /// Linear gray, by the luminance of linear sRGB
+  Gray,
+}
+
+/// Requests linear sRGB output for lossy (XYB) codestreams with a linear colour
+/// encoding that jxl-oxide would damage, and returns the conversion that
+/// restores the declared encoding.
+///
+/// Workaround for jxl-oxide 0.12: it renders XYB images in linear sRGB first and
+/// maps them to other primaries or to gray with gamut mapping (or clipping) to
+/// 0.0 .. 1.0. That destroys values above 1.0, like floats on the scale of the
+/// DNG WhiteLevel, and colours outside of the sRGB gamut, like camera native data
+/// declared as Rec. 2100. libjxl converts by a plain matrix, which is done here.
+///
+/// Returns `None` if the default rendering is kept.
+fn render_as_linear_srgb(image: &mut JxlImage) -> Option<LinearSrgbTo> {
+  let metadata = &image.image_header().metadata;
+  if !metadata.xyb_encoded {
+    return None;
+  }
+  let ColourEncoding::Enum(encoding) = &metadata.colour_encoding else {
+    return None;
+  };
+  if encoding.white_point != WhitePoint::D65 || encoding.tf != TransferFunction::Linear {
+    return None;
+  }
+  let conversion = match (encoding.colour_space, encoding.primaries) {
+    (ColourSpace::Grey, _) => LinearSrgbTo::Gray,
+    (ColourSpace::Rgb, Primaries::Bt2100) => LinearSrgbTo::Rgb(multiply(&XYZ_TO_REC2020_D65, &SRGB_TO_XYZ_D65)),
+    // Linear sRGB is rendered without gamut mapping
+    _ => return None,
+  };
+  image.request_color_encoding(EnumColourEncoding::srgb_linear(RenderingIntent::Relative));
+  Some(conversion)
+}
+
 impl<'a> Decompressor<'a, f32> for JpegXLDecompressor {
   /// Decodes a floating point JPEG-XL buffer into `f32` pixel lines.
   ///
   /// Renders frame 0 of the JXL image (alpha channel excluded) and writes
   /// samples row by row into `lines`, skipping the first `skip_rows` rows.
   /// Samples keep their stored values, e.g. on the scale of the DNG WhiteLevel.
+  /// Lossy codestreams are converted from XYB as by libjxl, see [`render_as_linear_srgb`].
   ///
   /// DNG requires 16-bit floats, but the codestream header may declare another
   /// float format (DNG SDK samples declare 32-bit), so any float format is accepted.
@@ -115,26 +164,47 @@ impl<'a> Decompressor<'a, f32> for JpegXLDecompressor {
     if self.bps != 16 {
       return Err(format!("JPEG-XL floating point data with {} bits per sample is not supported", self.bps));
     }
-    let image = JxlImage::builder()
+    let mut image = JxlImage::builder()
       .read(src)
       .map_err(|err| format!("Failed to read JPEG-XL image: {:?}", err))?;
     let bit_depth = image.image_header().metadata.bit_depth;
     if !matches!(bit_depth, BitDepth::FloatSample { .. }) {
       return Err(format!("JPEG-XL bit depth {:?} is not a floating point format", bit_depth));
     }
+    let conversion = render_as_linear_srgb(&mut image);
     let frame = image.render_frame(0).map_err(|err| format!("Failed to render JPEG-XL image: {:?}", err))?;
 
     let mut stream = frame.stream_no_alpha();
-    if skip_rows > 0 {
-      let mut tmp = vec![0.0_f32; line_width];
-      for _ in 0..skip_rows {
-        stream.write_to_buffer(&mut tmp);
-      }
+    // Gray images are rendered with three samples per pixel
+    let rendered_cpp = stream.channels() as usize;
+    let output_cpp = if matches!(conversion, Some(LinearSrgbTo::Gray)) { 1 } else { rendered_cpp };
+    let mut row = vec![0.0_f32; line_width / output_cpp * rendered_cpp];
+    for _ in 0..skip_rows {
+      stream.write_to_buffer(&mut row);
     }
     for line in lines {
-      let written = stream.write_to_buffer(line);
-      if written != line.len() {
-        return Err(format!("JPEG-XL image returned {} samples for a line of {} samples", written, line.len()));
+      let written = stream.write_to_buffer(&mut row);
+      if written != row.len() || line.len() != line_width {
+        return Err(format!(
+          "JPEG-XL image returned {} of {} samples for a line of {} samples",
+          written,
+          row.len(),
+          line.len()
+        ));
+      }
+      match conversion {
+        None => line.copy_from_slice(&row),
+        Some(LinearSrgbTo::Rgb(matrix)) => {
+          for (out, rgb) in line.as_chunks_mut::<3>().0.iter_mut().zip(row.as_chunks::<3>().0) {
+            *out = multiply_row1(&matrix, rgb);
+          }
+        }
+        Some(LinearSrgbTo::Gray) => {
+          let [lr, lg, lb] = SRGB_TO_XYZ_D65[1];
+          for (out, [r, g, b]) in line.iter_mut().zip(row.as_chunks::<3>().0) {
+            *out = lr * r + lg * g + lb * b;
+          }
+        }
       }
     }
     Ok(())

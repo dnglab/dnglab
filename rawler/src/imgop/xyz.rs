@@ -144,6 +144,14 @@ pub const XYZ_TO_SRGB_D65: [[f32; 3]; 3] = [
   [0.0556434, -0.2040259, 1.0572252],
 ];
 
+// Rec. 2020 / Rec. 2100 primaries, same white point as SRGB_TO_XYZ_D65
+#[allow(clippy::excessive_precision)]
+pub const XYZ_TO_REC2020_D65: [[f32; 3]; 3] = [
+  [1.7165107, -0.3556417, -0.2533455],
+  [-0.6666930, 1.6165022, 0.0157688],
+  [0.0176436, -0.0427798, 0.9423051],
+];
+
 #[allow(clippy::excessive_precision)]
 pub const PROPHOTORGB_TO_XYZ_D50: [[f32; 3]; 3] = [
   [0.7976749, 0.1351917, 0.0313534],
