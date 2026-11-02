@@ -621,6 +621,7 @@ pub(crate) fn dynamic_image_from_ifd(ifd: &IFD, rawsource: &RawSource) -> Result
 /// | `Uint` (>16 bits, as f32) | None / Deflate (32 bit)  | Strips / Tiles |
 /// | `IEEEFP` (f32)| None                           | Strips / Tiles |
 /// | `IEEEFP` (f32)| Deflate                        | Strips / Tiles |
+/// | `IEEEFP` (f32)| JPEG-XL (16 bit)               | Strips / Tiles |
 ///
 /// All other combinations return an error.
 ///
@@ -740,6 +741,8 @@ pub fn plain_image_from_ifd_ext(ifd: &IFD, rawsource: &RawSource, ljpeg_dng_bug:
             DataMode::Tiles => decode_tiles::<f32>(rawsource, ifd, dc, dummy)?,
           }
         }
+        (CompressionMethod::JPEGXL, DataMode::Strips) => decode_strips::<f32>(rawsource, ifd, JpegXLDecompressor::new(bits), dummy)?,
+        (CompressionMethod::JPEGXL, DataMode::Tiles) => decode_tiles::<f32>(rawsource, ifd, JpegXLDecompressor::new(bits), dummy)?,
         _ => {
           return Err(RawlerError::DecoderFailed(format!(
             "Unsupported compression method: {:?}, storage: {:?}",
