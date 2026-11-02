@@ -1876,31 +1876,22 @@ mod tests {
 
   #[test]
   fn jxl_lossless_floats() -> TestResult {
-    use crate::formats::tiff::{GenericTiffReader, reader::TiffReader};
-
     if !jpegxl::libjxl_available_for_tests() {
       return Ok(());
     }
-    // jxl-oxide decodes half float subnormals wrong, so only normal values are used
+    // jxl-oxide decodes half float zeros and subnormals wrong (see JpegXLDecompressor),
+    // so only normal values are used
     let mut rawimage = synthetic_linear_f32(3);
     rawimage.data = RawImageData::Float((1..=16 * 16 * 3).map(|i| i as f32 / 800.0).collect());
     let data = write_jxl(&rawimage, JxlParams::default(), DNG_VERSION_V1_7)?;
     let tags = [TiffCommonTag::BitsPerSample as u16, TiffCommonTag::SampleFormat as u16];
     assert_eq!(raw_ifd_values(&data, tags)?, [Some(16.0), Some(3.0)]);
-    // rawler can't read half float JPEG XL yet, decode the single tile directly
-    let tiff = GenericTiffReader::new_with_buffer(&data, 0, 0, None)?;
-    let raw_ifd = tiff.find_first_ifd_with_tag(TiffCommonTag::TileOffsets).ok_or("raw IFD missing")?;
-    let offset = raw_ifd.get_entry(TiffCommonTag::TileOffsets).ok_or("offsets")?.value.force_usize(0);
-    let size = raw_ifd.get_entry(TiffCommonTag::TileByteCounts).ok_or("sizes")?.value.force_usize(0);
-    let image = jxl_oxide::JxlImage::builder()
-      .read(&data[offset..offset + size])
-      .map_err(|err| err.to_string())?;
-    let render = image.render_frame(0).map_err(|err| err.to_string())?;
-    let mut stream = render.stream_no_alpha();
-    let mut decoded = vec![0.0_f32; 16 * 16 * 3];
-    stream.write_to_buffer(&mut decoded);
+    let decoded = decode_dng(&data)?;
     let expected: Vec<f32> = rawimage.data.as_f32().iter().map(|v| half::f16::from_f32(*v).to_f32()).collect();
-    assert_eq!(decoded, expected);
+    match decoded.data {
+      RawImageData::Float(samples) => assert_eq!(samples, expected),
+      RawImageData::Integer(_) => panic!("expected float data"),
+    }
 
     // Floats derived from integer data are stored as 16 bit integers
     rawimage.scaled_from_integer = true;
@@ -1986,11 +1977,18 @@ mod tests {
       assert!((d - e).abs() < 0.02, "decoded {}, expected {}", d, e);
     }
 
-    // Floats are stored as half floats with linear transfer
-    let rawimage = synthetic_linear_f32(3);
+    // Floats are stored as half floats with linear transfer, values above 1.0 are kept
+    let mut rawimage = synthetic_linear_f32(3);
+    rawimage.data = RawImageData::Float(rawimage.data.as_f32().iter().map(|v| v * 1000.0).collect());
+    rawimage.whitelevel = WhiteLevel::new(vec![1000; 3]);
     let data = write_jxl(&rawimage, params, DNG_VERSION_V1_7)?;
     let tags = [TiffCommonTag::SampleFormat as u16, DngTag::JXLDecodeSpeed as u16];
     assert_eq!(raw_ifd_values(&data, tags)?, [Some(3.0), Some(4.0)]);
+    let decoded = decode_dng(&data)?;
+    assert!(matches!(decoded.data, RawImageData::Float(_)));
+    for (d, e) in decoded.data.as_f32().iter().zip(rawimage.data.as_f32().iter()) {
+      assert!((d - e).abs() < 20.0, "decoded {}, expected {}", d, e);
+    }
     Ok(())
   }
 
