@@ -4,6 +4,7 @@ clean_make = "Panasonic"
 clean_model = "DC-FZ80"
 
 model_aliases = [
+  ["DC-FZ45", "DC-FZ45"],
   ["DC-FZ80D", "DC-FZ80D"],
   ["DC-FZ82", "DC-FZ82"],
   ["DC-FZ82D", "DC-FZ82D"],
