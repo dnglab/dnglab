@@ -80,7 +80,7 @@ fn interpolate_borders(input: &mut RgbF32, shifted: &CFA) {
     while col < w {
       // Full process first 3 and last 3 rows, process only left and right 3 pixels for all other
       if col == 3 && row >= 3 && row < h - 3 {
-        col = w - 3 // go to right border
+        col = col.max(w - 3) // go to right border, unless it starts left of here
       }
       // Store the pixel sum and count for each RGB channel (R=0, G=1, B=2)
       let mut sum = [(0.0, 0_usize); 3];
@@ -114,14 +114,16 @@ fn interpolate_borders(input: &mut RgbF32, shifted: &CFA) {
 fn interpolate_green(img: &mut RgbF32, shifted: &CFA) {
   let w = img.width;
   let h = img.height;
+  // Rows and columns 3 pixels away from the borders
+  let (rows, cols) = (h.saturating_sub(6), w.saturating_sub(6));
 
   // Secondary data pointer, so we can have a mutable subslice reference
   // inside the par_* methods and a second immutable reference to the whole
   // image. This is not possible in Rust without unsafe code.
   let dataptr = img.data_ptr();
 
-  img.pixels_mut().par_chunks_exact_mut(w).enumerate().skip(3).take(h - 6).for_each(|(row, buf)| {
-    for (col, pixel) in buf.iter_mut().enumerate().skip(3).take(w - 6) {
+  img.pixels_mut().par_chunks_exact_mut(w).enumerate().skip(3).take(rows).for_each(|(row, buf)| {
+    for (col, pixel) in buf.iter_mut().enumerate().skip(3).take(cols) {
       if shifted.color_at(row, col) != CFA_COLOR_G {
         let ch = shifted.color_at(row, col); // It's R or B
         let x = pixel[ch];
@@ -173,14 +175,16 @@ fn interpolate_green(img: &mut RgbF32, shifted: &CFA) {
 fn interpolate_rb_at_green(img: &mut RgbF32, shifted: &CFA) {
   let w = img.width;
   let h = img.height;
+  // Rows and columns 3 pixels away from the borders
+  let (rows, cols) = (h.saturating_sub(6), w.saturating_sub(6));
 
   // Secondary data pointer, so we can have a mutable subslice reference
   // inside the par_* methods and a second immutable reference to the whole
   // image. This is not possible in Rust without unsafe code.
   let dataptr = img.data_ptr();
 
-  img.pixels_mut().par_chunks_exact_mut(w).enumerate().skip(3).take(h - 6).for_each(|(row, buf)| {
-    for (col, pixel) in buf.iter_mut().enumerate().skip(3).take(w - 6) {
+  img.pixels_mut().par_chunks_exact_mut(w).enumerate().skip(3).take(rows).for_each(|(row, buf)| {
+    for (col, pixel) in buf.iter_mut().enumerate().skip(3).take(cols) {
       if shifted.color_at(row, col) == CFA_COLOR_G {
         let h_ch = shifted.color_at(row, col + 1); // horizontal corresponding channel
         let v_ch = shifted.color_at(row + 1, col); // vertical corresponding channel
@@ -210,14 +214,16 @@ fn interpolate_rb_at_green(img: &mut RgbF32, shifted: &CFA) {
 fn interpolate_rb_at_non_green(img: &mut RgbF32, shifted: &CFA) {
   let w = img.width;
   let h = img.height;
+  // Rows and columns 3 pixels away from the borders
+  let (rows, cols) = (h.saturating_sub(6), w.saturating_sub(6));
 
   // Secondary data pointer, so we can have a mutable subslice reference
   // inside the par_* methods and a second immutable reference to the whole
   // image. This is not possible in Rust without unsafe code.
   let dataptr = img.data_ptr();
 
-  img.pixels_mut().par_chunks_exact_mut(w).enumerate().skip(3).take(h - 6).for_each(|(row, buf)| {
-    for (col, pixel) in buf.iter_mut().enumerate().skip(3).take(w - 6) {
+  img.pixels_mut().par_chunks_exact_mut(w).enumerate().skip(3).take(rows).for_each(|(row, buf)| {
+    for (col, pixel) in buf.iter_mut().enumerate().skip(3).take(cols) {
       if shifted.color_at(row, col) != CFA_COLOR_G {
         let x_ch = shifted.color_at(row, col); // current
         let y_ch = if x_ch == CFA_COLOR_R { CFA_COLOR_B } else { CFA_COLOR_R };

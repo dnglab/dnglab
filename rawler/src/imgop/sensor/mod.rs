@@ -127,4 +127,37 @@ mod tests {
       }
     }
   }
+
+  #[test]
+  fn ppg_small_images() {
+    // PPG interpolates the pixels 3 pixels away from the borders, the borders
+    // bilinear. Images up to 6 pixels high or wide are border only.
+    for pattern in ["RGGB", "BGGR", "GRBG", "GBRG"] {
+      let cfa = CFA::new(pattern);
+      for (width, height) in (1..=9).flat_map(|width| (1..=9).map(move |height| (width, height))) {
+        let samples: Vec<f32> = (0..width * height).map(|i| (i * 7919 % 1000) as f32 / 1000.0).collect();
+        let rgb = PPGDemosaic::new().demosaic(ImageView::new(&samples, width, height, 1).into(), &cfa, &PlaneColor::new("RGB"));
+        assert_eq!((rgb.width, rgb.height), (width, height), "{}", pattern);
+        for (row, col) in (0..height).flat_map(|row| (0..width).map(move |col| (row, col))) {
+          let (pixel, own) = (rgb.at(row, col), cfa.color_at(row, col));
+          assert_eq!(pixel[own], samples[row * width + col], "{} {}x{} at {}:{}", pattern, width, height, col, row);
+          if width > 6 && height > 6 {
+            continue;
+          }
+          // Mean of the samples of each color around the pixel, 0 if there is none
+          let mut sum = [(0.0, 0); 3];
+          for y in row.saturating_sub(1)..(row + 2).min(height) {
+            for x in col.saturating_sub(1)..(col + 2).min(width) {
+              let color = cfa.color_at(y, x);
+              sum[color] = (sum[color].0 + samples[y * width + x], sum[color].1 + 1);
+            }
+          }
+          for color in (0..3).filter(|color| *color != own) {
+            let expected = if sum[color].1 > 0 { sum[color].0 / sum[color].1 as f32 } else { 0.0 };
+            assert_eq!(pixel[color], expected, "{} {}x{} at {}:{}", pattern, width, height, col, row);
+          }
+        }
+      }
+    }
+  }
 }
