@@ -316,7 +316,11 @@ impl<'a> Decoder for IiqDecoder<'a> {
   }
 
   fn raw_metadata(&self, _file: &RawSource, _params: &RawDecodeParams) -> Result<RawMetadata> {
-    let exif = Exif::new(self.tiff.root_ifd())?;
+    let mut exif = Exif::new(self.tiff.root_ifd())?;
+    // The makernote wins over the TIFF tag, which is not rotated with the sensor
+    if let Some(orientation) = self.orientation() {
+      exif.orientation = Some(orientation);
+    }
     let mdata = RawMetadata::new_with_lens(self.camera.metadata(), exif, self.get_lens_description()?.cloned());
     Ok(mdata)
   }
@@ -734,6 +738,17 @@ impl<'a> IiqDecoder<'a> {
       )),
       _ => Err(RawlerError::DecoderFailed("Unable to find strip offset in IIQ makernotes".to_string())),
     }
+  }
+
+  /// Orientation as EXIF value, the sensor is mounted rotated in the camera back
+  fn orientation(&self) -> Option<u16> {
+    let entry = self.makernotes.get(&IiqTag::Orientation.into())?;
+    Some(match entry.1.force_u32(0) & 3 {
+      1 => 6,
+      2 => 8,
+      3 => 3,
+      _ => 1,
+    })
   }
 
   fn wb_offset(&self) -> Result<u64> {
@@ -1189,6 +1204,7 @@ fn apply_quadrant_curves(img: &mut PixU16, split_row: usize, split_col: usize, c
 #[allow(unused)]
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Ord, PartialOrd)]
 enum IiqTag {
+  Orientation = 0x100,
   /// Matrix from white balanced camera values to ROMM (ProPhoto) RGB
   RommMatrix = 0x106,
   WhiteBalance = 0x107,
