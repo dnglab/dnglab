@@ -86,6 +86,9 @@ pub struct OpcodeImage<'a> {
   pub scaled_from_integer: bool,
   /// Pixel aspect ratio (width / height), for warps
   pub aspect_ratio: f64,
+  /// Area that TrimBounds in OpcodeList1 cropped the image data to, in the
+  /// coordinates of the image data before the opcodes were applied
+  pub raw_trim: Option<Rect>,
 }
 
 impl OpcodeImage<'_> {
@@ -501,6 +504,7 @@ impl OpcodeList {
       black_areas: rawimage.blackareas.clone(),
       scaled_from_integer: rawimage.scaled_from_integer,
       aspect_ratio: rawimage.camera.default_scale.pixel_aspect_ratio(),
+      raw_trim: None,
     };
     let result = self.apply_to(&mut image, stage);
     let (width, height) = (image.width(), image.height());
@@ -508,6 +512,7 @@ impl OpcodeList {
       active_area,
       crop_area,
       black_areas,
+      raw_trim,
       ..
     } = image;
     // TrimBounds may have cropped the image data
@@ -516,6 +521,13 @@ impl OpcodeList {
       RawImageData::Float(samples) => samples.truncate(width * height * cpp),
     }
     (rawimage.width, rawimage.height) = (width, height);
+    // TrimBounds changes the field of view of the ActiveArea
+    if raw_trim.is_some() || active_area != rawimage.active_area {
+      rawimage.drop_semantic_masks(&format!("TrimBounds in {}", stage));
+    }
+    if let Some(trim) = raw_trim {
+      rawimage.crop_transparency_mask(trim);
+    }
     (rawimage.active_area, rawimage.crop_area, rawimage.blackareas) = (active_area, crop_area, black_areas);
     result
   }
@@ -598,6 +610,7 @@ mod tests {
       black_areas: Vec::new(),
       scaled_from_integer: false,
       aspect_ratio: 1.0,
+      raw_trim: None,
     }
   }
 

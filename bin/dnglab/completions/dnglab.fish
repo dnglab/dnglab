@@ -89,6 +89,7 @@ debug\t''
 trace\t''"
 complete -c dnglab -n "__fish_dnglab_using_subcommand process-raw" -l profile-path -d 'Directory with profile TOML files' -r -F
 complete -c dnglab -n "__fish_dnglab_using_subcommand process-raw" -l config -d 'dnglab configuration file' -r -F
+complete -c dnglab -n "__fish_dnglab_using_subcommand process-raw" -l crop-transparent -d 'Crop to the largest rectangle without transparent pixels of the DNG transparency mask'
 complete -c dnglab -n "__fish_dnglab_using_subcommand process-raw" -s f -l override -d 'Override existing files'
 complete -c dnglab -n "__fish_dnglab_using_subcommand process-raw" -s r -l recursive -d 'Process input directory recursive'
 complete -c dnglab -n "__fish_dnglab_using_subcommand process-raw" -s v -d 'Print status for every file'

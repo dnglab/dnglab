@@ -4,7 +4,7 @@
 .SH NAME
 dnglab\-process\-raw
 .SH SYNOPSIS
-\fBdnglab\-process\-raw\fR [\fB\-\-remove\-dng\-opcodes\fR] [\fB\-\-artist\fR] [\fB\-\-keep\-mtime\fR] [\fB\-\-image\-index\fR] [\fB\-\-crop\fR] [\fB\-\-format\fR] [\fB\-\-color\-space\fR] [\fB\-\-jpeg\-quality\fR] [\fB\-f\fR|\fB\-\-override\fR] [\fB\-r\fR|\fB\-\-recursive\fR] [\fB\-h\fR|\fB\-\-help\fR] <\fIINPUT\fR> <\fIOUTPUT\fR> 
+\fBdnglab\-process\-raw\fR [\fB\-\-remove\-dng\-opcodes\fR] [\fB\-\-artist\fR] [\fB\-\-keep\-mtime\fR] [\fB\-\-image\-index\fR] [\fB\-\-crop\fR] [\fB\-\-crop\-transparent\fR] [\fB\-\-format\fR] [\fB\-\-color\-space\fR] [\fB\-\-jpeg\-quality\fR] [\fB\-f\fR|\fB\-\-override\fR] [\fB\-r\fR|\fB\-\-recursive\fR] [\fB\-h\fR|\fB\-\-help\fR] <\fIINPUT\fR> <\fIOUTPUT\fR> 
 .SH DESCRIPTION
 .SH OPTIONS
 .TP
@@ -44,6 +44,9 @@ activearea
 .IP \(bu 2
 none
 .RE
+.TP
+\fB\-\-crop\-transparent\fR
+Crop to the largest rectangle without transparent pixels of the DNG transparency mask
 .TP
 \fB\-\-format\fR \fI<format>\fR
 Output image format, defaults to the OUTPUT file extension or tif

@@ -618,6 +618,7 @@ pub(crate) fn dynamic_image_from_ifd(ifd: &IFD, rawsource: &RawSource) -> Result
 /// | `Uint` (u16)  | ModernJPEG (lossy or lossless) | Strips / Tiles |
 /// | `Uint` (u16)  | LossyJPEG                      | Strips / Tiles |
 /// | `Uint` (u16)  | JPEG-XL                        | Strips / Tiles |
+/// | `Uint` (u16)  | Deflate (8 / 16 bit)           | Strips / Tiles |
 /// | `Uint` (>16 bits, as f32) | None / Deflate (32 bit)  | Strips / Tiles |
 /// | `IEEEFP` (f32)| None                           | Strips / Tiles |
 /// | `IEEEFP` (f32)| Deflate                        | Strips / Tiles |
@@ -673,7 +674,7 @@ pub fn plain_image_from_ifd_ext(ifd: &IFD, rawsource: &RawSource, ljpeg_dng_bug:
         // Deflate is allowed for 32-bit integer data
         (CompressionMethod::Deflate, data_mode) if bits == 32 => {
           let predictor = ifd.get_entry(TiffCommonTag::Predictor).map(|tag| tag.force_u16(0)).unwrap_or(1);
-          let dc = DeflateIntDecompressor::new(cpp, predictor, endian).map_err(RawlerError::DecoderFailed)?;
+          let dc = DeflateIntDecompressor::new(cpp, predictor, bits, endian).map_err(RawlerError::DecoderFailed)?;
           match data_mode {
             DataMode::Strips => decode_strips::<f32>(rawsource, ifd, dc, dummy)?,
             DataMode::Tiles => decode_tiles::<f32>(rawsource, ifd, dc, dummy)?,
@@ -714,6 +715,15 @@ pub fn plain_image_from_ifd_ext(ifd: &IFD, rawsource: &RawSource, ljpeg_dng_bug:
         (CompressionMethod::LossyJPEG, DataMode::Tiles) => decode_tiles::<u16>(rawsource, ifd, JpegDecompressor::new(), dummy)?,
         (CompressionMethod::JPEGXL, DataMode::Strips) => decode_strips::<u16>(rawsource, ifd, JpegXLDecompressor::new(bits), dummy)?,
         (CompressionMethod::JPEGXL, DataMode::Tiles) => decode_tiles::<u16>(rawsource, ifd, JpegXLDecompressor::new(bits), dummy)?,
+        // Deflate is allowed for 8 and 16-bit masks
+        (CompressionMethod::Deflate, data_mode) => {
+          let predictor = ifd.get_entry(TiffCommonTag::Predictor).map(|tag| tag.force_u16(0)).unwrap_or(1);
+          let dc = DeflateIntDecompressor::new(cpp, predictor, bits, endian).map_err(RawlerError::DecoderFailed)?;
+          match data_mode {
+            DataMode::Strips => decode_strips::<u16>(rawsource, ifd, dc, dummy)?,
+            DataMode::Tiles => decode_tiles::<u16>(rawsource, ifd, dc, dummy)?,
+          }
+        }
         _ => {
           return Err(RawlerError::DecoderFailed(format!(
             "Unsupported compression method: {:?}, storage: {:?}",

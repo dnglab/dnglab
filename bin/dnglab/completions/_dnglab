@@ -74,6 +74,7 @@ _arguments "${_arguments_options[@]}" : \
 '--loglevel=[Log level]:level:(error warn info debug trace)' \
 '--profile-path=[Directory with profile TOML files]:dir:_files' \
 '--config=[dnglab configuration file]:file:_files' \
+'--crop-transparent[Crop to the largest rectangle without transparent pixels of the DNG transparency mask]' \
 '-f[Override existing files]' \
 '--override[Override existing files]' \
 '-r[Process input directory recursive]' \

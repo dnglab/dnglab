@@ -109,6 +109,7 @@ pub mod formats;
 pub mod imgop;
 pub mod lens;
 pub mod ljpeg92;
+pub mod mask;
 pub mod pixarray;
 pub mod pumps;
 #[cfg(feature = "rawdb")]

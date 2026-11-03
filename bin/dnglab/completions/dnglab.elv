@@ -75,6 +75,7 @@ set edit:completion:arg-completer[dnglab] = {|@words|
             cand --loglevel 'Log level'
             cand --profile-path 'Directory with profile TOML files'
             cand --config 'dnglab configuration file'
+            cand --crop-transparent 'Crop to the largest rectangle without transparent pixels of the DNG transparency mask'
             cand -f 'Override existing files'
             cand --override 'Override existing files'
             cand -r 'Process input directory recursive'

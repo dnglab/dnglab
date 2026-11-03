@@ -22,6 +22,7 @@ use crate::{
   },
   imgop::{Dim2, Point, Rect, blacklevel::check_masked_areas},
   ljpeg92::LjpegCompressor,
+  mask::MaskImage,
   pixarray::{Pix2D, PixU16, interleave_cols, interleave_rows},
   rawimage::{BlackLevel, RawPhotometricInterpretation, WhiteLevel},
   tags::ExifTag,
@@ -29,7 +30,7 @@ use crate::{
 };
 
 use super::{
-  CompressionParams, CropMode, DNG_VERSION_V1_0, DNG_VERSION_V1_1, DNG_VERSION_V1_4, DNG_VERSION_V1_7, DNG_VERSION_V1_7_1, DngCompression,
+  CompressionParams, CropMode, DNG_VERSION_V1_0, DNG_VERSION_V1_1, DNG_VERSION_V1_4, DNG_VERSION_V1_6, DNG_VERSION_V1_7, DNG_VERSION_V1_7_1, DngCompression,
   DngPhotometricConversion, DngVersionNumber, JxlParams,
   camera_profile_tags::{extra_camera_profile_data, rationals, write_camera_calibration, write_camera_profile, write_gain_table_map_v1, write_string},
   opcodes::OpcodeStage,
@@ -50,6 +51,8 @@ where
   //preview_ifd: DirectoryWriter,
   exif_ifd: DirectoryWriter,
   subs: Vec<u32>,
+  /// DNGVersion of the output
+  version: DngVersionNumber,
   /// Highest DNGBackwardVersion the output is allowed to declare
   max_backward_version: DngVersionNumber,
   /// DNGBackwardVersion required by the features used so far
@@ -62,6 +65,8 @@ where
 {
   writer: &'w mut DngWriter<B>,
   ifd: Option<DirectoryWriter>,
+  /// IFDs of the masks of the image, added after `ifd`
+  mask_ifds: Vec<DirectoryWriter>,
 }
 
 impl<'w, B> SubFrameWriter<'w, B>
@@ -77,7 +82,11 @@ where
       ifd.add_tag(TiffCommonTag::NewSubFileType, subtype);
       Some(ifd)
     };
-    Self { ifd, writer }
+    Self {
+      ifd,
+      writer,
+      mask_ifds: Vec::new(),
+    }
   }
 
   pub fn ifd(&mut self) -> &DirectoryWriter {
@@ -114,6 +123,25 @@ where
     let photometric = RawPhotometricInterpretation::LinearRaw;
     let rawimage = RawImage::new(cam, rawimagedata, cpp, wb_coeffs, photometric, blacklevel, whitelevel, false);
     self.raw_image(&rawimage, CropMode::None, compression, DngPhotometricConversion::Original, params)
+  }
+
+  /// Write `mask` as the image data of this IFD with the PhotometricInterpretation
+  /// `photometric`, see [`write_mask_image`]
+  pub fn mask_image(&mut self, mask: &MaskImage, photometric: PhotometricInterpretation) -> Result<()> {
+    let Self { writer, ifd, .. } = self;
+    let ifd = match ifd {
+      Some(ifd) => ifd,
+      None => &mut writer.root_ifd,
+    };
+    write_mask_image(&mut writer.dng, ifd, mask, photometric)
+  }
+
+  /// IFD of `mask` with the NewSubFileType `subtype`, which follows the IFD of the image
+  fn mask_ifd(&mut self, subtype: u32, mask: &MaskImage, photometric: PhotometricInterpretation) -> Result<DirectoryWriter> {
+    let mut ifd = DirectoryWriter::new();
+    ifd.add_tag(TiffCommonTag::NewSubFileType, subtype);
+    write_mask_image(&mut self.writer.dng, &mut ifd, mask, photometric)?;
+    Ok(ifd)
   }
 
   pub fn image(&mut self, _image: &RawImageData, _width: u16, _height: u16) -> Result<()> {
@@ -403,6 +431,9 @@ where
       write_gain_table_map_v1(self.ifd_mut(), map);
     }
 
+    // Semantic masks cover the field of view of the ActiveArea
+    self.write_masks(&rawimage, rawimage.active_area.unwrap_or(image_area) == active_area)?;
+
     match compression {
       DngCompression::Uncompressed => {
         self.ifd_mut().add_tag(TiffCommonTag::Compression, CompressionMethod::None);
@@ -471,9 +502,56 @@ where
   }
 
   pub fn finalize(self) -> Result<()> {
-    if let Some(ifd) = self.ifd {
+    for ifd in self.ifd.into_iter().chain(self.mask_ifds) {
       let offset = ifd.build(&mut self.writer.dng)?;
       self.writer.subs.push(offset);
+    }
+    Ok(())
+  }
+
+  /// Write the masks of `rawimage` into IFDs, which follow the IFD of the image.
+  /// `same_field_of_view` is false if the written ActiveArea covers another area
+  /// than the ActiveArea of `rawimage`, the semantic masks don't match it then.
+  fn write_masks(&mut self, rawimage: &RawImage, same_field_of_view: bool) -> Result<()> {
+    if let Some(mask) = &rawimage.transparency_mask {
+      if mask.dim() != Dim2::new(rawimage.width, rawimage.height) {
+        log::warn!(
+          "Transparency mask of {}x{} pixels doesn't match the image of {}x{} pixels, it is not written",
+          mask.width,
+          mask.height,
+          rawimage.width,
+          rawimage.height
+        );
+      } else if self.writer.backward_version_allows(DNG_VERSION_V1_4, "Transparency mask") {
+        self.writer.update_backward_version(DNG_VERSION_V1_4, "Transparency mask")?;
+        let ifd = self.mask_ifd(4, mask, PhotometricInterpretation::TransparencyMask)?;
+        self.mask_ifds.push(ifd);
+      } else {
+        log::warn!("Transparency mask is not written, it requires DNGBackwardVersion 1.4");
+      }
+    }
+    if rawimage.semantic_masks.is_empty() {
+      return Ok(());
+    }
+    if self.writer.version < DNG_VERSION_V1_6 {
+      log::warn!("Semantic masks are not written, they require DNGVersion 1.6");
+      return Ok(());
+    }
+    if !same_field_of_view {
+      log::warn!("Semantic masks are not written, the written ActiveArea covers another area");
+      return Ok(());
+    }
+    // Semantic masks don't raise the DNGBackwardVersion, as reading them is optional
+    for mask in &rawimage.semantic_masks {
+      let mut ifd = self.mask_ifd(0x10004, &mask.image, PhotometricInterpretation::PhotometricMask)?;
+      ifd.add_tag(DngTag::SemanticName, mask.name.as_str());
+      if let Some(instance_id) = &mask.instance_id {
+        ifd.add_tag(DngTag::SemanticInstanceID, instance_id.as_str());
+      }
+      if let Some(area) = &mask.sub_area {
+        ifd.add_tag(DngTag::MaskSubArea, &area[..]);
+      }
+      self.mask_ifds.push(ifd);
     }
     Ok(())
   }
@@ -513,6 +591,7 @@ where
       root_ifd,
       exif_ifd,
       subs: Vec::new(),
+      version,
       max_backward_version,
       dng_backward_version: DNG_VERSION_V1_0,
     })
@@ -911,6 +990,13 @@ fn pad_jxl_fields(rawimage: &mut RawImage) {
     RawImageData::Integer(data) => RawImageData::Integer(pad(data, width, cpp, &xs, &ys)),
     RawImageData::Float(data) => RawImageData::Float(pad(data, width, cpp, &xs, &ys)),
   };
+  // The mask must have the size of the image data, the padding is transparent
+  if let Some(mask) = &mut rawimage.transparency_mask
+    && let Err(err) = mask.pad(Dim2::new(padded_width, padded_height))
+  {
+    log::warn!("Transparency mask is dropped: {}", err);
+    rawimage.transparency_mask = None;
+  }
   debug!("Pad {}x{} to {}x{} for JPEG XL fields", width, height, padded_width, padded_height);
   rawimage.width = padded_width;
   rawimage.height = padded_height;
@@ -1184,6 +1270,67 @@ where
   }
 
   Ok(())
+}
+
+/// Rows per strip of mask IFDs
+const MASK_ROWS_PER_STRIP: usize = 256;
+
+/// Write the image data of `mask` to `dng` and its tags to `ifd`
+///
+/// The data is Deflate compressed without predictor. Integer masks are stored
+/// with 8 or 16 bits, floating point masks with 32 bits.
+fn write_mask_image<W>(dng: &mut TiffWriter<W>, ifd: &mut DirectoryWriter, mask: &MaskImage, photometric: PhotometricInterpretation) -> Result<()>
+where
+  W: Write + Seek,
+{
+  // Samples in little endian byte order, as the TIFF file
+  let (bps, sample_format, bytes): (u16, u16, Vec<u8>) = match &mask.data {
+    RawImageData::Integer(samples) if mask.bps == 8 => (8, 1, samples.iter().map(|v| *v as u8).collect()),
+    RawImageData::Integer(samples) => {
+      // Other bit depths are scaled to 16 bits, so opaque stays the maximum value
+      let max = ((1_u32 << mask.bps) - 1).max(1);
+      let scale = |v: u16| {
+        if mask.bps == 16 {
+          v
+        } else {
+          ((v as u32 * 65535 + max / 2) / max).min(65535) as u16
+        }
+      };
+      (16, 1, samples.iter().flat_map(|v| scale(*v).to_le_bytes()).collect())
+    }
+    RawImageData::Float(samples) => (32, 3, samples.iter().flat_map(|v| v.to_le_bytes()).collect()),
+  };
+  let row_bytes = mask.width * bps as usize / 8;
+  let strips: Vec<Vec<u8>> = bytes
+    .par_chunks((row_bytes * MASK_ROWS_PER_STRIP).max(1))
+    .map(zlib_compress)
+    .collect::<io::Result<_>>()?;
+  let mut strip_offsets = Vec::with_capacity(strips.len());
+  let mut strip_sizes = Vec::with_capacity(strips.len());
+  for strip in &strips {
+    strip_offsets.push(dng.write_data(strip)?);
+    strip_sizes.push(strip.len() as u32);
+  }
+
+  ifd.add_tag(TiffCommonTag::ImageWidth, mask.width as u32);
+  ifd.add_tag(TiffCommonTag::ImageLength, mask.height as u32);
+  ifd.add_tag(TiffCommonTag::SamplesPerPixel, 1_u16);
+  ifd.add_tag(TiffCommonTag::BitsPerSample, bps);
+  ifd.add_tag(TiffCommonTag::SampleFormat, sample_format);
+  ifd.add_tag(TiffCommonTag::PhotometricInt, photometric);
+  ifd.add_tag(TiffCommonTag::Compression, CompressionMethod::Deflate);
+  ifd.add_tag(TiffCommonTag::Predictor, 1_u16);
+  ifd.add_tag(TiffCommonTag::RowsPerStrip, MASK_ROWS_PER_STRIP.min(mask.height) as u32);
+  ifd.add_tag(TiffCommonTag::StripOffsets, &strip_offsets);
+  ifd.add_tag(TiffCommonTag::StripByteCounts, &strip_sizes);
+  Ok(())
+}
+
+/// Compress `data` into a zlib stream
+fn zlib_compress(data: &[u8]) -> io::Result<Vec<u8>> {
+  let mut encoder = libflate::zlib::Encoder::new(Vec::new())?;
+  encoder.write_all(data)?;
+  encoder.finish().into_result()
 }
 
 /// Write RAW uncompressed into DNG
@@ -2107,6 +2254,67 @@ mod tests {
 
     dng.close()?;
 
+    Ok(())
+  }
+
+  /// Mask of `width` x `height` pixels with the sample index as value
+  fn index_mask(width: usize, height: usize) -> MaskImage {
+    MaskImage::new(width, height, 16, RawImageData::Integer((0..(width * height) as u16).collect()))
+  }
+
+  /// Write `rawimage` uncompressed with `cropmode` and `conversion`
+  fn write_converted(rawimage: &RawImage, cropmode: CropMode, conversion: DngPhotometricConversion) -> Result<Vec<u8>> {
+    let mut buf = Cursor::new(Vec::new());
+    let mut dng = DngWriter::new(&mut buf, DNG_VERSION_V1_4)?;
+    dng.load_base_tags(rawimage)?;
+    let mut frame = dng.subframe(0);
+    frame.raw_image(rawimage, cropmode, DngCompression::Uncompressed, conversion, &CompressionParams::default())?;
+    frame.finalize()?;
+    dng.close()?;
+    Ok(buf.into_inner())
+  }
+
+  #[test]
+  fn masks_follow_the_written_image() -> TestResult {
+    use crate::mask::SemanticMask;
+
+    let mut rawimage = synthetic_cfa("RGGB", "RGB", 30, 18, |x, y| (600 + 30 * x + 20 * y) as u16);
+    rawimage.transparency_mask = Some(index_mask(30, 18));
+    let semantic = SemanticMask {
+      name: "sky".into(),
+      instance_id: None,
+      sub_area: None,
+      image: index_mask(13, 7),
+    };
+    rawimage.semantic_masks = vec![semantic.clone()];
+
+    // Lossy JPEG XL pads CFA data to 32x32, the padding of the mask is transparent
+    if jpegxl::libjxl_available_for_tests() {
+      let params = JxlParams {
+        distance: 1.0,
+        ..Default::default()
+      };
+      let decoded = decode_dng(&write_jxl(&rawimage, params, DNG_VERSION_V1_7_1)?)?;
+      let mut expected = index_mask(30, 18);
+      expected.pad(Dim2::new(32, 32))?;
+      assert_eq!((decoded.width, decoded.height), (32, 32));
+      assert_eq!(decoded.transparency_mask, Some(expected));
+      assert_eq!(decoded.semantic_masks, std::slice::from_ref(&semantic));
+    }
+
+    // The linear conversion crops the image data to the ActiveArea, which stays the field of view
+    rawimage.active_area = Some(Rect::new(Point::new(2, 2), Dim2::new(26, 14)));
+    let decoded = decode_dng(&write_converted(&rawimage, CropMode::Best, DngPhotometricConversion::Linear)?)?;
+    let mut expected = index_mask(30, 18);
+    expected.crop(Rect::new(Point::new(2, 2), Dim2::new(26, 14)))?;
+    assert_eq!((decoded.width, decoded.height), (26, 14));
+    assert_eq!(decoded.transparency_mask, Some(expected));
+    assert_eq!(decoded.semantic_masks, [semantic]);
+
+    // Without the ActiveArea, the field of view of the semantic masks changes
+    let decoded = decode_dng(&write_converted(&rawimage, CropMode::None, DngPhotometricConversion::Original)?)?;
+    assert_eq!(decoded.transparency_mask, Some(index_mask(30, 18)));
+    assert!(decoded.semantic_masks.is_empty());
     Ok(())
   }
 }
