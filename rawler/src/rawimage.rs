@@ -15,6 +15,7 @@ use crate::imgop::blacklevel::{rescale, rescale_in_place};
 use crate::imgop::raw::apply_linearization_table;
 use crate::imgop::sensor::SensorType;
 use crate::imgop::{convert_from_f32_scaled_u16, convert_to_f32_unscaled};
+use crate::mask::{MaskImage, SemanticMask};
 use crate::{
   CFA,
   decoders::*,
@@ -176,10 +177,17 @@ pub struct RawImage {
 
   /// DNG BaselineExposure in EV, applied by the develop pipeline.
   pub baseline_exposure: Option<f32>,
+
+  /// DNG transparency mask (NewSubFileType 4), it has the size of the image
+  /// data and is cropped with it
+  pub transparency_mask: Option<MaskImage>,
+  /// DNG semantic masks (NewSubFileType 65540), they cover the field of view
+  /// of the ActiveArea
+  pub semantic_masks: Vec<SemanticMask>,
 }
 
 /// The actual image data, after decoding
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum RawImageData {
   /// The most usual u16 output of almost all formats
   Integer(Vec<u16>),
@@ -316,6 +324,8 @@ impl RawImage {
       dng_opcodes_3: None,
       linearization_table: None,
       baseline_exposure: None,
+      transparency_mask: None,
+      semantic_masks: Vec::new(),
     }
   }
 
@@ -399,6 +409,8 @@ impl RawImage {
       dng_opcodes_3: None,
       linearization_table: None,
       baseline_exposure: None,
+      transparency_mask: None,
+      semantic_masks: Vec::new(),
     }
   }
 
@@ -564,6 +576,26 @@ impl RawImage {
     };
 
     Ok(params)
+  }
+
+  /// Crop the transparency mask like the image data to `area`. A mask that
+  /// doesn't match the image data is dropped with a warning.
+  pub fn crop_transparency_mask(&mut self, area: Rect) {
+    if let Some(mask) = &mut self.transparency_mask
+      && let Err(err) = mask.crop(area)
+    {
+      log::warn!("Transparency mask is dropped: {}", err);
+      self.transparency_mask = None;
+    }
+  }
+
+  /// Drop the semantic masks, because the field of view of the ActiveArea is
+  /// changed by `reason`
+  pub fn drop_semantic_masks(&mut self, reason: &str) {
+    if !self.semantic_masks.is_empty() {
+      log::warn!("{} semantic mask(s) are dropped: {}", self.semantic_masks.len(), reason);
+      self.semantic_masks.clear();
+    }
   }
 
   /// Add a DNG tag override

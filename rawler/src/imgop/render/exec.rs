@@ -44,7 +44,23 @@ pub fn execute(rawimage: RawImage, plan: &Plan) -> crate::Result<RenderedImage> 
   for op in &plan.ops {
     executor.apply(op)?;
   }
-  Ok(std::mem::take(executor.image()))
+  let mask = executor.rawimage.transparency_mask.take();
+  let mut image = std::mem::take(executor.image());
+  // The transparency mask is cropped with the image data
+  image.alpha = mask
+    .filter(|mask| {
+      let matches = mask.dim() == image.dim();
+      if !matches {
+        log::warn!(
+          "Transparency mask of {:?} doesn't match the image of {:?}, it is ignored",
+          mask.dim(),
+          image.dim()
+        );
+      }
+      matches
+    })
+    .map(|mask| mask.alpha());
+  Ok(image)
 }
 
 /// Apply the operations of `plan` to the image data of `rawimage` and return
@@ -187,6 +203,11 @@ impl Executor {
         crop_default,
       } => self.demosaic(*algorithm, cfa, *crop_to_active_area, *crop_default)?,
       Op::FujiRotate { width, extra_rotate } => {
+        // Masks are not rotated
+        if self.rawimage.transparency_mask.take().is_some() {
+          log::warn!("Transparency mask is dropped: the image data is rotated");
+        }
+        self.rawimage.drop_semantic_masks("the image data is rotated");
         let image = self.image();
         *image = fuji_normalize_rotation(image.view(), *width, *extra_rotate)?.into();
         log::debug!("dimension after rotate {:?}", image.dim());
@@ -233,6 +254,7 @@ impl Executor {
       && crop.d != self.image().dim()
     {
       self.image().crop(crop)?;
+      self.rawimage.crop_transparency_mask(crop);
       origin = Point::new(origin.x + crop.p.x, origin.y + crop.p.y);
       self.crop_area = self.crop_area.and_then(|crop_area| crop_area.rebase(&crop));
     }
@@ -262,6 +284,7 @@ impl Executor {
           black_areas: self.rawimage.blackareas.clone(),
           scaled_from_integer: self.rawimage.scaled_from_integer,
           aspect_ratio: self.rawimage.camera.default_scale.pixel_aspect_ratio(),
+          raw_trim: None,
         };
         let result = list.apply_to(&mut target, stage);
         let (width, height) = (target.width(), target.height());
@@ -269,10 +292,18 @@ impl Executor {
           active_area,
           crop_area,
           black_areas,
+          raw_trim,
           ..
         } = target;
         image.data.truncate(width * height * image.channels);
         (image.width, image.height) = (width, height);
+        // TrimBounds changes the field of view of the ActiveArea
+        if raw_trim.is_some() || active_area != self.active_area {
+          self.rawimage.drop_semantic_masks(&format!("TrimBounds in {}", stage));
+        }
+        if let Some(trim) = raw_trim {
+          self.rawimage.crop_transparency_mask(trim);
+        }
         (self.active_area, self.crop_area, self.rawimage.blackareas) = (active_area, crop_area, black_areas);
         result?;
       }
@@ -280,6 +311,7 @@ impl Executor {
     // A TrimBounds shrinks the ActiveArea, keep the image data cropped to it
     if crop_to_active_area && let Some(active_area) = self.active_area.take() {
       self.image().crop(active_area)?;
+      self.rawimage.crop_transparency_mask(active_area);
       self.crop_area = self.crop_area.and_then(|crop_area| crop_area.rebase(&active_area));
     }
     Ok(())
@@ -314,6 +346,10 @@ impl Executor {
 
     // Positions in the demosaiced image of half size
     let half = algorithm.half_size();
+    self.rawimage.crop_transparency_mask(roi);
+    if half && let Some(mask) = &mut self.rawimage.transparency_mask {
+      mask.half_size();
+    }
     let scale_point = |p: Point| if half { Point::new(p.x / 2, p.y / 2) } else { p };
     let scale = |rect: Rect| {
       if half {
@@ -330,6 +366,7 @@ impl Executor {
       let crop = relative.map(scale).unwrap_or(self.image().view().rect());
       if crop.d != self.image().dim() {
         self.image().crop(crop)?;
+        self.rawimage.crop_transparency_mask(crop);
       }
       (self.stage3_area, self.origin) = (Some(scale(stage3_area)), scale_point(origin));
       (self.active_area, self.crop_area) = (None, None);

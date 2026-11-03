@@ -24,7 +24,7 @@
 //! Supported bit depths: 16 (half-float), 24 (24-bit float), and 32
 //! (single-precision float). All depths are widened to `f32` on output.
 //!
-//! [`DeflateIntDecompressor`] handles 32-bit unsigned integer data.
+//! [`DeflateIntDecompressor`] handles 8, 16 and 32-bit unsigned integer data.
 
 use libflate::zlib::Decoder;
 use std::io::Read;
@@ -32,6 +32,7 @@ use std::io::Read;
 use crate::{
   bits::{Binary16, Binary24, Binary32, Endian, FloatingPointParameters, extend_binary_floating_point},
   decompressors::{Decompressor, LineIteratorMut, packed::PackedDecompressor},
+  pixarray::SubPixel,
 };
 
 /// Decompressor for Deflate-compressed floating-point DNG image data.
@@ -152,14 +153,17 @@ fn decode_fp_delta_row<NARROW: FloatingPointParameters>(line: &mut [f32], row: &
   }
 }
 
-/// Decompressor for Deflate-compressed 32-bit unsigned integer DNG image data.
+/// Decompressor for Deflate-compressed unsigned integer DNG image data.
 ///
-/// Samples are returned as `f32` holding the raw integer values (not
-/// normalized), as `u16` storage is not sufficient.
+/// 32-bit samples are returned as `f32` holding the raw integer values (not
+/// normalized), as `u16` storage is not sufficient. 8 and 16-bit samples, as
+/// in transparency masks, are returned as `u16`.
 #[derive(Debug)]
 pub struct DeflateIntDecompressor {
   /// Horizontal difference stride in samples, 0 if no predictor is used
   stride: usize,
+  /// Bits per sample (8, 16 or 32)
+  bps: u32,
   endian: Endian,
 }
 
@@ -170,8 +174,9 @@ impl DeflateIntDecompressor {
   /// * `cpp` — Channels (samples) per pixel.
   /// * `predictor` — Value of the TIFF `Predictor` tag: `1` (none), `2` (horizontal
   ///   difference), `34892` (horizontal difference X2) or `34893` (horizontal difference X4).
+  /// * `bps` — Bits per sample (8, 16 or 32).
   /// * `endian` — Byte order of the samples (IFD byte order).
-  pub fn new(cpp: usize, predictor: u16, endian: Endian) -> std::result::Result<Self, String> {
+  pub fn new(cpp: usize, predictor: u16, bps: u32, endian: Endian) -> std::result::Result<Self, String> {
     let stride = match predictor {
       1 => 0,
       2 => cpp,
@@ -179,37 +184,79 @@ impl DeflateIntDecompressor {
       34893 => 4 * cpp,
       _ => return Err(format!("DeflateIntDecompressor: unsupported predictor {predictor}")),
     };
-    Ok(Self { stride, endian })
+    if ![8, 16, 32].contains(&bps) {
+      return Err(format!("DeflateIntDecompressor: unsupported bit depth: {bps} bps"));
+    }
+    Ok(Self { stride, bps, endian })
+  }
+
+  /// Inflate `src` and write the samples of the rows after `skip_rows` to `lines`,
+  /// converted by `convert`
+  fn decompress_with<'a, T>(
+    &self,
+    src: &[u8],
+    skip_rows: usize,
+    lines: impl LineIteratorMut<'a, T>,
+    line_width: usize,
+    convert: impl Fn(u32) -> T,
+  ) -> std::result::Result<(), String>
+  where
+    T: SubPixel + 'a,
+  {
+    let mut decoder = Decoder::new(src).map_err(|err| err.to_string())?;
+    let mut decoded_data = Vec::new();
+    decoder.read_to_end(&mut decoded_data).map_err(|err| err.to_string())?;
+
+    let sample_bytes = self.bps as usize / 8;
+    let row_bytes = sample_bytes * line_width;
+    if decoded_data.len() != row_bytes * (skip_rows + lines.len()) {
+      return Err("DeflateIntDecompressor: buffer length mismatch".to_string());
+    }
+
+    let read: fn(&[u8]) -> u32 = match (self.bps, self.endian) {
+      (8, _) => |b| b[0] as u32,
+      (16, Endian::Big) => |b| u16::from_be_bytes([b[0], b[1]]) as u32,
+      (16, Endian::Little) => |b| u16::from_le_bytes([b[0], b[1]]) as u32,
+      (_, Endian::Big) => |b| u32::from_be_bytes([b[0], b[1], b[2], b[3]]),
+      (_, Endian::Little) => |b| u32::from_le_bytes([b[0], b[1], b[2], b[3]]),
+    };
+    // Differences wrap around at the sample size
+    let mask = if self.bps == 32 { u32::MAX } else { (1 << self.bps) - 1 };
+    let mut samples = vec![0_u32; line_width];
+    for (line, row) in lines.zip(decoded_data.chunks_exact(row_bytes).skip(skip_rows)) {
+      for (sample, bytes) in samples.iter_mut().zip(row.chunks_exact(sample_bytes)) {
+        *sample = read(bytes);
+      }
+      if self.stride > 0 {
+        for col in self.stride..samples.len() {
+          samples[col] = samples[col].wrapping_add(samples[col - self.stride]) & mask;
+        }
+      }
+      line.iter_mut().zip(samples.iter()).for_each(|(p, s)| *p = convert(*s));
+    }
+    Ok(())
   }
 }
 
 impl<'a> Decompressor<'a, f32> for DeflateIntDecompressor {
   fn decompress(&self, src: &[u8], skip_rows: usize, lines: impl LineIteratorMut<'a, f32>, line_width: usize) -> std::result::Result<(), String> {
-    let mut decoder = Decoder::new(src).map_err(|err| err.to_string())?;
-    let mut decoded_data = Vec::new();
-    decoder.read_to_end(&mut decoded_data).map_err(|err| err.to_string())?;
-
-    let row_bytes = size_of::<u32>() * line_width;
-    if decoded_data.len() != row_bytes * (skip_rows + lines.len()) {
-      return Err("DeflateIntDecompressor: buffer length mismatch".to_string());
+    if self.bps != 32 {
+      return Err(format!("DeflateIntDecompressor: {} bit samples are decoded to u16", self.bps));
     }
+    self.decompress_with(src, skip_rows, lines, line_width, |v| v as f32)
+  }
 
-    let mut samples = vec![0_u32; line_width];
-    for (line, row) in lines.zip(decoded_data.chunks_exact(row_bytes).skip(skip_rows)) {
-      for (sample, bytes) in samples.iter_mut().zip(row.as_chunks::<4>().0) {
-        *sample = match self.endian {
-          Endian::Big => u32::from_be_bytes(*bytes),
-          Endian::Little => u32::from_le_bytes(*bytes),
-        };
-      }
-      if self.stride > 0 {
-        for col in self.stride..samples.len() {
-          samples[col] = samples[col].wrapping_add(samples[col - self.stride]);
-        }
-      }
-      line.iter_mut().zip(samples.iter()).for_each(|(p, s)| *p = *s as f32);
+  fn can_skip_rows(&self) -> bool {
+    false
+  }
+}
+
+impl<'a> Decompressor<'a, u16> for DeflateIntDecompressor {
+  fn decompress(&self, src: &[u8], skip_rows: usize, lines: impl LineIteratorMut<'a, u16>, line_width: usize) -> std::result::Result<(), String> {
+    if self.bps > 16 {
+      return Err(format!("DeflateIntDecompressor: {} bit samples don't fit into u16", self.bps));
     }
-    Ok(())
+    self.decompress_with(src, skip_rows, lines, line_width, |v| v as u16)
   }
 
   fn can_skip_rows(&self) -> bool {
@@ -249,9 +296,55 @@ mod tests {
     for (predictor, stride) in [(1, 0), (2, 1), (34892, 2), (34893, 4)] {
       let src = encode(&samples, width, stride)?;
       let mut out = vec![0.0_f32; samples.len()];
-      DeflateIntDecompressor::new(1, predictor, Endian::Little)?.decompress(&src, 0, out.chunks_exact_mut(width), width)?;
+      DeflateIntDecompressor::new(1, predictor, 32, Endian::Little)?.decompress(&src, 0, out.chunks_exact_mut(width), width)?;
       assert_eq!(out, expected, "predictor {predictor}");
     }
+    Ok(())
+  }
+
+  #[test]
+  fn deflate_int_8_and_16_bit() -> std::result::Result<(), String> {
+    let width = 8;
+    for (bps, endian) in [(8, Endian::Little), (16, Endian::Little), (16, Endian::Big)] {
+      let max = (1_u32 << bps) - 1;
+      let samples: Vec<u16> = (0..width as u32 * 2).map(|i| (i.wrapping_mul(0x1234_5679) & max) as u16).collect();
+      for (predictor, stride) in [(1, 0), (2, 1), (34892, 2)] {
+        let mut data = Vec::new();
+        for row in samples.chunks_exact(width) {
+          for col in 0..width {
+            let v = if stride > 0 && col >= stride {
+              row[col].wrapping_sub(row[col - stride])
+            } else {
+              row[col]
+            } as u32
+              & max;
+            match (bps, endian) {
+              (8, _) => data.push(v as u8),
+              (_, Endian::Little) => data.extend_from_slice(&(v as u16).to_le_bytes()),
+              (_, Endian::Big) => data.extend_from_slice(&(v as u16).to_be_bytes()),
+            }
+          }
+        }
+        let mut out = vec![0_u16; samples.len()];
+        DeflateIntDecompressor::new(1, predictor, bps, endian)?.decompress(&zlib(&data)?, 0, out.chunks_exact_mut(width), width)?;
+        assert_eq!(out, samples, "{bps} bits, predictor {predictor}");
+      }
+    }
+    // 32 bit samples don't fit into u16, 16 bit samples are not decoded to f32
+    let src = zlib(&[0; 4])?;
+    let mut out = [0_u16; 1];
+    assert!(
+      DeflateIntDecompressor::new(1, 1, 32, Endian::Little)?
+        .decompress(&src, 0, std::iter::once(&mut out[..]), 1)
+        .is_err()
+    );
+    let mut out = [0_f32; 2];
+    assert!(
+      DeflateIntDecompressor::new(1, 1, 16, Endian::Little)?
+        .decompress(&src, 0, std::iter::once(&mut out[..]), 2)
+        .is_err()
+    );
+    assert!(DeflateIntDecompressor::new(1, 1, 12, Endian::Little).is_err());
     Ok(())
   }
 
@@ -325,6 +418,6 @@ mod tests {
 
   #[test]
   fn deflate_int_rejects_unknown_predictor() {
-    assert!(DeflateIntDecompressor::new(1, 3, Endian::Little).is_err());
+    assert!(DeflateIntDecompressor::new(1, 3, 32, Endian::Little).is_err());
   }
 }

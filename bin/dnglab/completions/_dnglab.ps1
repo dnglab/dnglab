@@ -80,6 +80,7 @@ Register-ArgumentCompleter -Native -CommandName 'dnglab' -ScriptBlock {
             [CompletionResult]::new('--loglevel', '--loglevel', [CompletionResultType]::ParameterName, 'Log level')
             [CompletionResult]::new('--profile-path', '--profile-path', [CompletionResultType]::ParameterName, 'Directory with profile TOML files')
             [CompletionResult]::new('--config', '--config', [CompletionResultType]::ParameterName, 'dnglab configuration file')
+            [CompletionResult]::new('--crop-transparent', '--crop-transparent', [CompletionResultType]::ParameterName, 'Crop to the largest rectangle without transparent pixels of the DNG transparency mask')
             [CompletionResult]::new('-f', '-f', [CompletionResultType]::ParameterName, 'Override existing files')
             [CompletionResult]::new('--override', '--override', [CompletionResultType]::ParameterName, 'Override existing files')
             [CompletionResult]::new('-r', '-r', [CompletionResultType]::ParameterName, 'Process input directory recursive')

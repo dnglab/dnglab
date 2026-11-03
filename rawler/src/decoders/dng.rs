@@ -16,6 +16,7 @@ use crate::imgop::Rect;
 use crate::imgop::blacklevel::{MAX_MASKED_AREAS, check_masked_areas};
 use crate::imgop::matrix::*;
 use crate::imgop::xyz::*;
+use crate::mask::{MaskImage, SemanticMask};
 use crate::tags::DngTag;
 use crate::tags::TiffCommonTag;
 
@@ -147,6 +148,11 @@ impl<'a> Decoder for DngDecoder<'a> {
     image.blackareas = self.get_masked_areas(raw, Dim2::new(width, height), active_area);
     image.linearization_table = self.get_linearization_table(raw, &image.data)?;
     image.baseline_exposure = root.get_entry(DngTag::BaselineExposure).and_then(|entry| entry.value.get_f32(0).ok().flatten());
+    // Masks are image data, they are skipped with the pixels
+    if !dummy {
+      image.transparency_mask = self.read_transparency_mask(file, Dim2::new(width, height));
+      image.semantic_masks = self.read_semantic_masks(file);
+    }
     if let Some(planes) = camera_profiles.first().and_then(CameraProfile::color_planes) {
       image.camera_calibration = read_camera_calibration(root, planes);
       image.analog_balance = root
@@ -326,6 +332,66 @@ impl<'a> DngDecoder<'a> {
     } else {
       Err(RawlerError::DecoderFailed(format!("TODO: Unsupported DNG compression")))
     }
+  }
+
+  /// IFDs with image data and NewSubFileType `subfile_type`
+  fn subfile_ifds(&self, subfile_type: u32) -> Vec<&IFD> {
+    self
+      .tiff
+      .find_ifds_with_tag(TiffCommonTag::Compression)
+      .into_iter()
+      .filter(|ifd| ifd.get_entry(TiffCommonTag::NewSubFileType).map(|e| e.force_u32(0)) == Some(subfile_type))
+      .collect()
+  }
+
+  /// Transparency mask (NewSubFileType 4) of a raw image of `dim` pixels. It
+  /// is ignored with a warning if it can't be read or doesn't match the raw image.
+  fn read_transparency_mask(&self, file: &RawSource, dim: Dim2) -> Option<MaskImage> {
+    let ifd = self.subfile_ifds(4).into_iter().next()?;
+    let mask = read_mask_image(ifd, file, PhotometricInterpretation::TransparencyMask)
+      .and_then(|mask| {
+        if mask.dim() == dim {
+          Ok(mask)
+        } else {
+          Err(format!("it has {}x{} pixels, the raw image {}x{}", mask.width, mask.height, dim.w, dim.h).into())
+        }
+      })
+      .map_err(|err| log::warn!("DNG: transparency mask is ignored: {}", err))
+      .ok()?;
+    log::debug!("DNG: transparency mask of {}x{} pixels, {} bits", mask.width, mask.height, mask.bps);
+    Some(mask)
+  }
+
+  /// Semantic masks (NewSubFileType 65540). Masks that can't be read are
+  /// ignored with a warning.
+  fn read_semantic_masks(&self, file: &RawSource) -> Vec<SemanticMask> {
+    self
+      .subfile_ifds(0x10004)
+      .into_iter()
+      .filter_map(|ifd| {
+        let result = read_mask_image(ifd, file, PhotometricInterpretation::PhotometricMask).and_then(|image| {
+          let name = read_string(ifd, DngTag::SemanticName).ok_or("SemanticName is missing")?;
+          let instance_id = read_string(ifd, DngTag::SemanticInstanceID);
+          let sub_area = ifd.get_entry(DngTag::MaskSubArea).and_then(|entry| {
+            let area: [u32; 4] = std::array::from_fn(|i| entry.force_u32(i));
+            // [top, left, full width, full height]
+            let valid = entry.count() == 4 && area[0] as usize + image.height <= area[3] as usize && area[1] as usize + image.width <= area[2] as usize;
+            if !valid {
+              log::warn!("DNG: MaskSubArea {:?} of semantic mask '{}' is invalid and ignored", area, name);
+            }
+            valid.then_some(area)
+          });
+          Ok(SemanticMask {
+            name,
+            instance_id,
+            sub_area,
+            image,
+          })
+        });
+        result.map_err(|err| log::warn!("DNG: semantic mask is ignored: {}", err)).ok()
+      })
+      .inspect(|mask| log::debug!("DNG: semantic mask '{}' of {}x{} pixels", mask.name, mask.image.width, mask.image.height))
+      .collect()
   }
 
   fn make_camera(&self, raw: &IFD, width: usize, height: usize, photometric_int: u32) -> Result<Camera> {
@@ -632,6 +698,36 @@ impl<'a> DngDecoder<'a> {
   }
 }
 
+/// Pixel data of a mask IFD with the PhotometricInterpretation `photometric`
+///
+/// Integer masks of 8 or 16 bits and floating point masks are supported.
+fn read_mask_image(ifd: &IFD, file: &RawSource, photometric: PhotometricInterpretation) -> Result<MaskImage> {
+  let width = fetch_tiff_tag!(ifd, TiffCommonTag::ImageWidth).force_usize(0);
+  let height = fetch_tiff_tag!(ifd, TiffCommonTag::ImageLength).force_usize(0);
+  let cpp = ifd.get_entry(TiffCommonTag::SamplesPerPixel).map(|entry| entry.force_usize(0)).unwrap_or(1);
+  let bps = ifd.get_entry(TiffCommonTag::BitsPerSample).map(|entry| entry.force_u32(0)).unwrap_or(1);
+  let found = PhotometricInterpretation::extract(ifd)?;
+  if found != Some(photometric) {
+    return Err(format!("PhotometricInterpretation {:?} instead of {:?}", found, photometric).into());
+  }
+  if cpp != 1 {
+    return Err(format!("{} samples per pixel", cpp).into());
+  }
+  let float = SampleFormat::extract(ifd)? == Some(SampleFormat::IEEEFP);
+  if !float && !(8..=16).contains(&bps) {
+    return Err(format!("{} bit integer samples are not supported", bps).into());
+  }
+  let data = plain_image_from_ifd_ext(ifd, file, false, false)?;
+  let len = match &data {
+    RawImageData::Integer(samples) => samples.len(),
+    RawImageData::Float(samples) => samples.len(),
+  };
+  if len != width * height {
+    return Err(format!("{} samples for {}x{} pixels", len, width, height).into());
+  }
+  Ok(MaskImage::new(width, height, bps, data))
+}
+
 #[cfg(test)]
 mod tests {
   use std::io::Cursor;
@@ -646,11 +742,13 @@ mod tests {
     CompressionParams, CropMode, DNG_VERSION_V1_0, DNG_VERSION_V1_1, DNG_VERSION_V1_4, DNG_VERSION_V1_7_1, DngCompression, DngPhotometricConversion,
     DngVersionNumber,
   };
+  use crate::formats::tiff::PhotometricInterpretation;
   use crate::formats::tiff::Rational;
   use crate::formats::tiff::SampleFormat;
   use crate::formats::tiff::Value;
   use crate::formats::tiff::{DirectoryWriter, GenericTiffReader};
   use crate::imgop::{Dim2, Point, Rect};
+  use crate::mask::{MaskImage, SemanticMask};
   use crate::pixarray::PixU16;
   use crate::rawimage::{BlackLevel, CFAConfig, RawImageData, RawPhotometricInterpretation, WhiteLevel};
   use crate::rawsource::RawSource;
@@ -1898,6 +1996,155 @@ mod tests {
     let decoded = decode_dng(&write_dng(&rawimage, |_| {})?)?;
     // The only matrix is used as it is
     assert_eq!(decoded.best_color_matrix().map(|(illuminant, _)| illuminant), Some(Illuminant::Unknown));
+    Ok(())
+  }
+
+  /// 8-bit transparency mask of the synthetic image
+  fn transparency_mask() -> MaskImage {
+    MaskImage::new(16, 16, 8, RawImageData::Integer((0..256).map(|i| (i * 7 % 256) as u16).collect()))
+  }
+
+  /// 16-bit semantic mask of half resolution and a cropped float mask
+  fn semantic_masks() -> Vec<SemanticMask> {
+    vec![
+      SemanticMask {
+        name: "sky".into(),
+        instance_id: None,
+        sub_area: None,
+        image: MaskImage::new(8, 8, 16, RawImageData::Integer((0..64).map(|i| i * 1000).collect())),
+      },
+      SemanticMask {
+        name: "skin".into(),
+        instance_id: Some("person_a".into()),
+        sub_area: Some([2, 3, 8, 8]),
+        image: MaskImage::new(4, 2, 32, RawImageData::Float(vec![0.0, 0.25, 0.5, 1.0, 1.0, 0.5, 0.25, 0.0])),
+      },
+    ]
+  }
+
+  fn masked_rawimage() -> RawImage {
+    let mut rawimage = synthetic_rawimage();
+    rawimage.transparency_mask = Some(transparency_mask());
+    rawimage.semantic_masks = semantic_masks();
+    rawimage
+  }
+
+  /// Write `rawimage` uncompressed with DNGVersion `version` and the maximum DNGBackwardVersion `max_backward_version`
+  fn write_dng_versions(rawimage: &RawImage, version: DngVersionNumber, max_backward_version: DngVersionNumber) -> TestResult<Vec<u8>> {
+    let mut buf = Cursor::new(Vec::new());
+    let mut dng = DngWriter::new_with_version(&mut buf, version, max_backward_version)?;
+    dng.load_base_tags(rawimage)?;
+    let mut frame = dng.subframe(0);
+    frame.raw_image(
+      rawimage,
+      CropMode::None,
+      DngCompression::Uncompressed,
+      DngPhotometricConversion::Original,
+      &CompressionParams::default(),
+    )?;
+    frame.finalize()?;
+    dng.close()?;
+    Ok(buf.into_inner())
+  }
+
+  #[test]
+  fn masks_roundtrip() -> TestResult {
+    let rawimage = masked_rawimage();
+    for compression in [DngCompression::Uncompressed, DngCompression::Lossless] {
+      let decoded = decode_dng(&write_dng_with(&rawimage, compression, |_| {})?)?;
+      assert_eq!(decoded.transparency_mask, rawimage.transparency_mask, "{:?}", compression);
+      assert_eq!(decoded.semantic_masks, rawimage.semantic_masks, "{:?}", compression);
+    }
+    // Masks are image data, a dummy decode skips them
+    let data = write_dng(&rawimage, |_| {})?;
+    let source = RawSource::new_from_slice(&data);
+    let dummy = crate::get_decoder(&source)?.raw_image(&source, &RawDecodeParams::default(), true)?;
+    assert!(dummy.transparency_mask.is_none() && dummy.semantic_masks.is_empty());
+    Ok(())
+  }
+
+  #[test]
+  fn masks_and_dng_versions() -> TestResult {
+    // A transparency mask requires DNGBackwardVersion 1.4, semantic masks are optional to read
+    let backward_version =
+      |rawimage: &RawImage| -> TestResult<Option<DngVersionNumber>> { Ok(dng_decoder(&write_dng(rawimage, |_| {})?)?.dng_backward_version()) };
+    let mut rawimage = synthetic_rawimage();
+    let without_masks = backward_version(&rawimage)?;
+    assert!(without_masks < Some(DNG_VERSION_V1_4));
+    rawimage.semantic_masks = semantic_masks();
+    assert_eq!(backward_version(&rawimage)?, without_masks);
+    rawimage.transparency_mask = Some(transparency_mask());
+    assert_eq!(backward_version(&rawimage)?, Some(DNG_VERSION_V1_4));
+
+    // Masks that the versions don't allow are not written
+    let rawimage = masked_rawimage();
+    let decoded = decode_dng(&write_dng_versions(&rawimage, DNG_VERSION_V1_7_1, DNG_VERSION_V1_1)?)?;
+    assert!(decoded.transparency_mask.is_none());
+    assert_eq!(decoded.semantic_masks, rawimage.semantic_masks);
+    let decoded = decode_dng(&write_dng_versions(&rawimage, DNG_VERSION_V1_4, DNG_VERSION_V1_4)?)?;
+    assert_eq!(decoded.transparency_mask, rawimage.transparency_mask);
+    assert!(decoded.semantic_masks.is_empty());
+    Ok(())
+  }
+
+  /// DNG of the synthetic image with an extra IFD of NewSubFileType `subtype`
+  /// holding `mask`, `modify` can change the extra IFD
+  fn write_dng_with_mask(
+    subtype: u32,
+    mask: &MaskImage,
+    photometric: PhotometricInterpretation,
+    modify: impl FnOnce(&mut DirectoryWriter),
+  ) -> TestResult<Vec<u8>> {
+    let rawimage = synthetic_rawimage();
+    let mut buf = Cursor::new(Vec::new());
+    let mut dng = DngWriter::new(&mut buf, DNG_VERSION_V1_4)?;
+    dng.load_base_tags(&rawimage)?;
+    let mut frame = dng.subframe(0);
+    frame.raw_image(
+      &rawimage,
+      CropMode::None,
+      DngCompression::Uncompressed,
+      DngPhotometricConversion::Original,
+      &CompressionParams::default(),
+    )?;
+    frame.finalize()?;
+    let mut frame = dng.subframe(subtype);
+    frame.mask_image(mask, photometric)?;
+    modify(frame.ifd_mut());
+    frame.finalize()?;
+    dng.close()?;
+    Ok(buf.into_inner())
+  }
+
+  #[test]
+  fn invalid_masks_are_ignored() -> TestResult {
+    let transparency = |mask: &MaskImage, photometric| -> TestResult<Option<MaskImage>> {
+      Ok(decode_dng(&write_dng_with_mask(4, mask, photometric, |_| {})?)?.transparency_mask)
+    };
+    let mask = transparency_mask();
+    assert_eq!(transparency(&mask, PhotometricInterpretation::TransparencyMask)?, Some(mask.clone()));
+    // Wrong PhotometricInterpretation
+    assert_eq!(transparency(&mask, PhotometricInterpretation::BlackIsZero)?, None);
+    // Not the size of the raw image
+    let small = MaskImage::new(8, 16, 8, RawImageData::Integer(vec![255; 8 * 16]));
+    assert_eq!(transparency(&small, PhotometricInterpretation::TransparencyMask)?, None);
+
+    let semantic = |modify: &dyn Fn(&mut DirectoryWriter)| -> TestResult<Vec<SemanticMask>> {
+      let image = MaskImage::new(4, 2, 8, RawImageData::Integer(vec![0, 64, 128, 255, 255, 128, 64, 0]));
+      Ok(decode_dng(&write_dng_with_mask(0x10004, &image, PhotometricInterpretation::PhotometricMask, modify)?)?.semantic_masks)
+    };
+    // SemanticName is required
+    assert!(semantic(&|_| {})?.is_empty());
+    let masks = semantic(&|ifd| ifd.add_tag(DngTag::SemanticName, "sky"))?;
+    assert_eq!((masks.len(), masks[0].name.as_str(), masks[0].sub_area), (1, "sky", None));
+    // A MaskSubArea that the mask exceeds is ignored, the mask is kept
+    for (area, valid) in [([2, 3, 8, 8], true), ([7, 3, 8, 8], false), ([2, 5, 8, 8], false)] {
+      let masks = semantic(&|ifd| {
+        ifd.add_tag(DngTag::SemanticName, "sky");
+        ifd.add_tag(DngTag::MaskSubArea, &area[..]);
+      })?;
+      assert_eq!(masks[0].sub_area, valid.then_some(area), "{:?}", area);
+    }
     Ok(())
   }
 }

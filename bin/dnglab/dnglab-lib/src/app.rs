@@ -314,6 +314,10 @@ fn process_raw_command() -> Command {
         .default_value("best"),
     )
     .arg(
+      arg!(crop_transparent: --"crop-transparent" "Crop to the largest rectangle without transparent pixels of the DNG transparency mask")
+        .action(ArgAction::SetTrue),
+    )
+    .arg(
       arg!(--"format" <format> "Output image format, defaults to the OUTPUT file extension or tif")
         .required(false)
         .value_parser(value_parser!(ProcessedImageFormat)),

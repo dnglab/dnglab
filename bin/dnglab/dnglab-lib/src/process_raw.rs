@@ -158,6 +158,7 @@ fn generate_job(entry: &FileMap, options: &ArgMatches) -> Result<Vec<Raw2Image>>
       color_space: *options
         .get_one("color_space")
         .ok_or_else(|| crate::AppError::InvalidCmdSwitch("color-space has no default".into()))?,
+      crop_transparent: options.get_flag("crop_transparent"),
     };
 
     match output.parent() {

@@ -101,6 +101,11 @@ impl TrimBounds {
     let data = std::mem::replace(&mut image.data, OpcodeData::Float(ImageViewMut::new(&mut [], 0, 0, 1)));
     image.data = data.crop_in_place(rect)?;
     image.crop_area = image.crop_area.and_then(|crop_area| crop_area.intersect(&trimmed));
+    // Trims of an already trimmed image are relative to it
+    image.raw_trim = Some(match image.raw_trim {
+      Some(previous) => Rect::new(Point::new(previous.p.x + rect.p.x, previous.p.y + rect.p.y), rect.d),
+      None => rect,
+    });
     // Masked areas are relative to the stored raw image
     image.black_areas = image.black_areas.iter().filter_map(|masked| masked.rebase(&rect)).collect();
     Ok(())
@@ -111,6 +116,7 @@ impl TrimBounds {
 mod tests {
   use super::*;
   use crate::dng::opcodes::{Opcode, OpcodeList, testutil::*};
+  use crate::mask::{MaskImage, SemanticMask};
   use crate::{RawImageData, imgop::Dim2};
 
   fn trim_bounds(top: u32, left: u32, bottom: u32, right: u32) -> Vec<u8> {
@@ -198,6 +204,48 @@ mod tests {
     let mut image = float_image(4, 4, 1, 0.25);
     assert!(list.apply(&mut image, OpcodeStage::List1).is_err());
     assert!(list.apply(&mut image, OpcodeStage::List2).is_err());
+    Ok(())
+  }
+
+  /// Mask with the sample index as value
+  fn index_mask(width: usize, height: usize) -> MaskImage {
+    MaskImage::new(width, height, 16, RawImageData::Integer((0..(width * height) as u16).collect()))
+  }
+
+  fn semantic_mask() -> SemanticMask {
+    SemanticMask {
+      name: "sky".into(),
+      instance_id: None,
+      sub_area: None,
+      image: index_mask(2, 2),
+    }
+  }
+
+  #[test]
+  fn trim_bounds_crops_and_drops_masks() -> std::result::Result<(), Box<dyn std::error::Error>> {
+    // OpcodeList1 crops the transparency mask with the image data, twice
+    let list = OpcodeList::parse(&opcode_list(&[
+      opcode(6, V1_3, 0, &trim_bounds(1, 2, 4, 6)),
+      opcode(6, V1_3, 0, &trim_bounds(1, 1, 3, 3)),
+    ]))?;
+    let mut image = float_image(6, 4, 1, 0.0);
+    image.transparency_mask = Some(index_mask(6, 4));
+    image.semantic_masks = vec![semantic_mask()];
+    list.apply(&mut image, OpcodeStage::List1)?;
+    assert_eq!((image.width, image.height), (2, 2));
+    let mask = image.transparency_mask.as_ref().ok_or("mask is dropped")?;
+    assert_eq!(mask.dim(), Dim2::new(2, 2));
+    assert!(matches!(&mask.data, RawImageData::Integer(samples) if samples == &[15, 16, 21, 22]));
+    // The field of view of the ActiveArea changes
+    assert!(image.semantic_masks.is_empty());
+
+    // OpcodeList3 shrinks the ActiveArea, the image data and the transparency mask keep their size
+    let mut image = float_image(4, 4, 3, 0.25);
+    image.transparency_mask = Some(index_mask(4, 4));
+    image.semantic_masks = vec![semantic_mask()];
+    single_trim_bounds(1, 1, 3, 3)?.apply(&mut image, OpcodeStage::List3)?;
+    assert_eq!(image.transparency_mask, Some(index_mask(4, 4)));
+    assert!(image.semantic_masks.is_empty());
     Ok(())
   }
 }

@@ -12,6 +12,7 @@ use crate::{
   dng::{CropMode, opcodes::OpcodeSelector},
   formats::tiff::{DirectoryWriter, TiffWriter},
   imgop::{
+    Dim2, Point, Rect,
     color::{OutputSpace, TransferFunction},
     render::{RenderOptions, RenderedImage, render},
   },
@@ -82,6 +83,9 @@ pub struct RawProcessingParams {
   pub jpeg_quality: u8,
   /// Color space of the image
   pub color_space: OutputSpace,
+  /// Crop to the largest rectangle without transparent pixels of the DNG
+  /// transparency mask, within the crop of `crop`
+  pub crop_transparent: bool,
 }
 
 impl Default for RawProcessingParams {
@@ -97,6 +101,7 @@ impl Default for RawProcessingParams {
       format: ProcessedImageFormat::Tiff,
       jpeg_quality: 94,
       color_space: OutputSpace::Srgb,
+      crop_transparent: false,
     }
   }
 }
@@ -109,15 +114,49 @@ pub fn process_raw_image<W: Write + Seek + Send>(raw: &Path, image_file: &mut W,
   let mut rawimage = decoder.raw_image(&rawfile, &raw_params, false)?;
   rawimage.remove_opcodes(&params.remove_dng_opcodes);
   let metadata = decoder.raw_metadata(&rawfile, &raw_params)?;
-  let develop = RawDevelop {
+  let mut develop = RawDevelop {
     color_space: params.color_space,
     ..RawDevelop::with_crop(params.crop)
   };
+  if params.crop_transparent {
+    crop_to_opaque_area(&mut rawimage, &mut develop, params.crop);
+  }
   match params.format {
     ProcessedImageFormat::Tiff => develop.develop(rawimage, &metadata, image_file)?,
     ProcessedImageFormat::Jpeg => develop.develop_jpeg(rawimage, &metadata, image_file, params.jpeg_quality)?,
   }
   Ok(())
+}
+
+/// Crop the development of `rawimage` to the largest rectangle of opaque pixels
+/// of its transparency mask, within the area that `crop` keeps: the rectangle
+/// replaces the DefaultCrop and `develop` crops to it. Without a transparency
+/// mask or opaque pixel, nothing is changed.
+fn crop_to_opaque_area(rawimage: &mut RawImage, develop: &mut RawDevelop, crop: CropMode) {
+  let Some(mask) = &rawimage.transparency_mask else {
+    log::debug!("Image has no transparency mask, it is not cropped to the opaque area");
+    return;
+  };
+  let full = Rect::new(Point::zero(), Dim2::new(rawimage.width, rawimage.height));
+  let within = match crop {
+    CropMode::Best => rawimage.crop_area.or(rawimage.active_area),
+    CropMode::ActiveArea => rawimage.active_area,
+    CropMode::None => None,
+  }
+  .unwrap_or(full);
+  match mask.largest_opaque_rect(within) {
+    Some(area) => {
+      log::debug!("Crop to the opaque area {:?} within {:?}", area, within);
+      rawimage.crop_area = Some(area);
+      if !develop.steps.contains(&ProcessingStep::CropDefault) {
+        develop.steps.push(ProcessingStep::CropDefault);
+      }
+    }
+    None => log::warn!(
+      "The transparency mask has no opaque pixels within {:?}, the image is not cropped to them",
+      within
+    ),
+  }
 }
 
 /// Development of raw images with a set of processing steps
@@ -190,8 +229,22 @@ impl RawDevelop {
       root_ifd.add_tag_undefined(ExifTag::IccProfile, icc);
     }
 
-    let data = convert_from_f32_scaled_u16(&image.data, 0, u16::MAX);
-    let (strip_rows, strips) = tiff.write_strips_lzw(&data, image.channels, image.dim(), 0)?;
+    let mut data = convert_from_f32_scaled_u16(&image.data, 0, u16::MAX);
+    let mut samples = image.channels;
+    // The transparency mask is an extra sample of unassociated alpha, the
+    // color values are not matted
+    if let Some(alpha) = &image.alpha {
+      data = data
+        .chunks_exact(image.channels)
+        .zip(alpha)
+        .flat_map(|(pixel, alpha)| pixel.iter().copied().chain(std::iter::once((alpha * u16::MAX as f32).round() as u16)))
+        .collect();
+      samples += 1;
+      let color_samples = if image.channels == 1 { 1 } else { 3 };
+      let extra: Vec<u16> = (color_samples..image.channels).map(|_| 0).chain(std::iter::once(2)).collect();
+      root_ifd.add_tag(ExifTag::ExtraSamples, &extra);
+    }
+    let (strip_rows, strips) = tiff.write_strips_lzw(&data, samples, image.dim(), 0)?;
     let strip_offsets: Vec<u32> = strips.iter().map(|(offset, _)| *offset).collect();
     let strip_bytes: Vec<u32> = strips.iter().map(|(_, bytes)| *bytes).collect();
     root_ifd.add_tag(TiffCommonTag::Compression, 5);
@@ -199,8 +252,8 @@ impl RawDevelop {
     root_ifd.add_tag(TiffCommonTag::StripOffsets, &strip_offsets);
     root_ifd.add_tag(TiffCommonTag::StripByteCounts, &strip_bytes);
     // Four channels are written as RGB with an extra channel
-    root_ifd.add_tag(TiffCommonTag::BitsPerSample, &vec![16_u16; image.channels]);
-    root_ifd.add_tag(TiffCommonTag::SamplesPerPixel, [image.channels as u16]);
+    root_ifd.add_tag(TiffCommonTag::BitsPerSample, &vec![16_u16; samples]);
+    root_ifd.add_tag(TiffCommonTag::SamplesPerPixel, [samples as u16]);
     root_ifd.add_tag(TiffCommonTag::PhotometricInt, [if image.channels == 1 { 1_u16 } else { 2 }]);
     root_ifd.add_tag(TiffCommonTag::RowsPerStrip, strip_rows);
     root_ifd.add_tag(TiffCommonTag::ImageWidth, image.width as u16);
@@ -217,7 +270,14 @@ impl RawDevelop {
     W: io::Write,
   {
     let (make, model, orientation) = (rawimage.clean_make.clone(), rawimage.clean_model.clone(), rawimage.orientation);
-    let image = self.develop_image(rawimage)?;
+    let mut image = self.develop_image(rawimage)?;
+    // JPEG has no alpha channel, transparent pixels are matted to black
+    if let Some(alpha) = image.alpha.take() {
+      let channels = image.channels;
+      for (pixel, alpha) in image.data.chunks_exact_mut(channels).zip(alpha) {
+        pixel.iter_mut().for_each(|v| *v *= alpha);
+      }
+    }
 
     // EXIF data is a TIFF structure without image data
     let mut exif = Cursor::new(Vec::new());
@@ -713,7 +773,9 @@ mod tests {
     use crate::{
       camera_profile::{CameraCalibration, CameraProfile, GainData, GainTableMap},
       cfa::PlaneColor,
+      formats::tiff::{GenericTiffReader, reader::TiffReader},
       imgop::render::{DemosaicQuality, StepSet, WhiteBalancePlacement},
+      mask::MaskImage,
     };
 
     /// Allowed deviation of the fingerprints, relative to the expected value,
@@ -1101,6 +1163,130 @@ mod tests {
       assert_eq!((expected.width, expected.height), (16, 12));
       expected.crop(Rect::new(Point::new(1, 1), Dim2::new(14, 10))).expect("crop");
       assert!(active_area.dim() == expected.dim() && active_area.data == expected.data);
+    }
+
+    /// Transparency mask of `rawimage` with the position y * width + x as value
+    fn position_mask(rawimage: &RawImage) -> MaskImage {
+      let (width, height) = (rawimage.width, rawimage.height);
+      MaskImage::new(width, height, 16, RawImageData::Integer((0..(width * height) as u16).collect()))
+    }
+
+    /// Alpha of the positions of `area` in a mask of `width` pixels, see [`position_mask`]
+    fn position_alpha(width: usize, area: Rect) -> Vec<f32> {
+      (area.p.y..area.p.y + area.d.h)
+        .flat_map(|y| (area.p.x..area.p.x + area.d.w).map(move |x| (y * width + x) as f32 / 65535.0))
+        .collect()
+    }
+
+    #[test]
+    fn transparency_mask_is_cropped_with_the_image() {
+      let mut linear_raw = linear_raw();
+      linear_raw.active_area = Some(Rect::new(Point::new(1, 1), Dim2::new(14, 10)));
+      linear_raw.crop_area = Some(Rect::new(Point::new(2, 2), Dim2::new(12, 8)));
+      for (name, mut rawimage) in [("rggb", rggb()), ("mono", mono()), ("linear_raw", linear_raw)] {
+        rawimage.transparency_mask = Some(position_mask(&rawimage));
+        let full = Rect::new(Point::zero(), Dim2::new(rawimage.width, rawimage.height));
+        let crop_area = rawimage.crop_area.expect("DefaultCrop");
+        for (crop, area) in [
+          (CropMode::Best, crop_area),
+          (CropMode::ActiveArea, rawimage.active_area.unwrap_or(full)),
+          (CropMode::None, full),
+        ] {
+          let image = RawDevelop::with_crop(crop).develop_image(rawimage.clone()).expect("develop");
+          assert_eq!(image.alpha, Some(position_alpha(rawimage.width, area)), "{} {:?}", name, crop);
+        }
+      }
+    }
+
+    #[test]
+    fn transparency_mask_of_preview_has_half_size() {
+      let mut rawimage = rggb();
+      rawimage.transparency_mask = Some(position_mask(&rawimage));
+      let crop = rawimage.crop_area.expect("DefaultCrop");
+      let options = RenderOptions {
+        demosaic: DemosaicQuality::Preview,
+        ..Default::default()
+      };
+      let image = render(rawimage.clone(), &options).expect("render");
+      assert_eq!(image.dim(), Dim2::new(crop.d.w / 2, crop.d.h / 2));
+      // Each pixel is the rounded mean of a 2x2 block of the DefaultCrop
+      let width = rawimage.width;
+      let expected: Vec<f32> = (0..image.height)
+        .flat_map(|y| {
+          (0..image.width).map(move |x| {
+            let (bx, by) = (crop.p.x + 2 * x, crop.p.y + 2 * y);
+            let sum: usize = [(0, 0), (1, 0), (0, 1), (1, 1)].iter().map(|(dx, dy)| (by + dy) * width + bx + dx).sum();
+            ((sum + 2) / 4) as f32 / 65535.0
+          })
+        })
+        .collect();
+      assert_eq!(image.alpha, Some(expected));
+    }
+
+    /// Mask of `rawimage` with an opaque rectangle `opaque`, other pixels are transparent
+    fn rect_mask(rawimage: &RawImage, opaque: Rect) -> MaskImage {
+      let samples = (0..rawimage.height)
+        .flat_map(|y| {
+          (0..rawimage.width).map(move |x| {
+            if opaque.intersect(&Rect::new(Point::new(x, y), Dim2::new(1, 1))).is_some() {
+              255
+            } else {
+              0
+            }
+          })
+        })
+        .collect();
+      MaskImage::new(rawimage.width, rawimage.height, 8, RawImageData::Integer(samples))
+    }
+
+    #[test]
+    fn crop_to_the_opaque_area() {
+      let mut rawimage = rggb();
+      rawimage.transparency_mask = Some(rect_mask(&rawimage, Rect::new(Point::new(6, 2), Dim2::new(20, 18))));
+      // Within the DefaultCrop (4, 4, 24, 16), or the whole image
+      for (crop, expected) in [
+        (CropMode::Best, Rect::new(Point::new(6, 4), Dim2::new(20, 16))),
+        (CropMode::None, Rect::new(Point::new(6, 2), Dim2::new(20, 18))),
+      ] {
+        let mut rawimage = rawimage.clone();
+        let mut develop = RawDevelop::with_crop(crop);
+        crop_to_opaque_area(&mut rawimage, &mut develop, crop);
+        assert_eq!(rawimage.crop_area, Some(expected), "{:?}", crop);
+        let image = develop.develop_image(rawimage).expect("develop");
+        assert_eq!(image.dim(), expected.d, "{:?}", crop);
+        assert!(image.alpha.is_some_and(|alpha| alpha.iter().all(|a| *a == 1.0)), "{:?}", crop);
+      }
+      // Without opaque pixels, the image isn't cropped
+      let mut rawimage = rggb();
+      rawimage.transparency_mask = Some(rect_mask(&rawimage, Rect::new(Point::zero(), Dim2::new(0, 0))));
+      let mut develop = RawDevelop::with_crop(CropMode::None);
+      crop_to_opaque_area(&mut rawimage, &mut develop, CropMode::None);
+      assert_eq!(develop.develop_image(rawimage).expect("develop").dim(), Dim2::new(32, 24));
+    }
+
+    #[test]
+    fn transparency_mask_in_output_files() {
+      // The left half is transparent
+      let mut rawimage = rggb();
+      rawimage.transparency_mask = Some(rect_mask(&rawimage, Rect::new(Point::new(16, 0), Dim2::new(16, 24))));
+      let develop = RawDevelop::with_crop(CropMode::None);
+      let metadata = RawMetadata::default();
+
+      // TIFF has an extra sample of unassociated alpha
+      let mut tiff = Cursor::new(Vec::new());
+      develop.develop(rawimage.clone(), &metadata, &mut tiff).expect("develop TIFF");
+      let tiff = tiff.into_inner();
+      let reader = GenericTiffReader::new_with_buffer(&tiff, 0, 0, None).expect("TIFF");
+      let root = reader.root_ifd();
+      assert_eq!(root.get_entry(TiffCommonTag::SamplesPerPixel).map(|entry| entry.force_u16(0)), Some(4));
+      assert_eq!(root.get_entry(ExifTag::ExtraSamples).map(|entry| entry.force_u16(0)), Some(2));
+
+      // JPEG is matted to black
+      let mut jpeg = Vec::new();
+      develop.develop_jpeg(rawimage, &metadata, &mut jpeg, 95).expect("develop JPEG");
+      let jpeg = image::load_from_memory(&jpeg).expect("JPEG").into_rgb8();
+      assert!(jpeg.get_pixel(3, 12).0.iter().all(|v| *v <= 2), "{:?}", jpeg.get_pixel(3, 12));
+      assert!(jpeg.get_pixel(28, 12).0.iter().any(|v| *v > 20), "{:?}", jpeg.get_pixel(28, 12));
     }
 
     #[test]

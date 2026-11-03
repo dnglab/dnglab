@@ -75,6 +75,9 @@ pub enum PhotometricInterpretation {
   // Defined by DNG
   CFA = 32803,
   LinearRaw = 34892,
+  Depth = 51177,
+  /// Semantic mask
+  PhotometricMask = 52527,
 }
 
 impl ExtractFromIFD for PhotometricInterpretation {

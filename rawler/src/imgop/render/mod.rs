@@ -22,7 +22,7 @@ use crate::{
   imgop::{
     Dim2, Rect,
     color::{OutputSpace, TransferFunction},
-    convert_from_f32_scaled_u16, icc,
+    convert_from_f32_scaled_u16, crop, icc,
   },
   pixarray::{Color2D, ImageView, ImageViewMut, Pix2D},
 };
@@ -203,6 +203,9 @@ pub struct RenderedImage {
   pub color_space: Option<OutputSpace>,
   /// Transfer function that encodes the values
   pub transfer_function: TransferFunction,
+  /// Opacity of the pixels from the transparency mask, 0.0 (transparent) to
+  /// 1.0 (opaque). The values in `data` are not matted.
+  pub alpha: Option<Vec<f32>>,
 }
 
 impl RenderedImage {
@@ -220,8 +223,12 @@ impl RenderedImage {
 
   /// Crop to `area`, in place
   pub fn crop(&mut self, area: Rect) -> crate::Result<()> {
+    let dim = self.dim();
     let len = self.view_mut().crop_in_place(area)?.as_slice().len();
     self.data.truncate(len);
+    if let Some(alpha) = &mut self.alpha {
+      *alpha = crop(alpha, dim, area);
+    }
     (self.width, self.height) = (area.d.w, area.d.h);
     Ok(())
   }
