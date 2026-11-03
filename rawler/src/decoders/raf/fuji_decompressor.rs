@@ -15,8 +15,8 @@ use crate::{
   bits::{Endian, log2ceil},
   buffer::PaddedBuf,
   cfa::CFAColor,
-  imgop::Dim2,
-  pixarray::{PixU16, SharedPix2D},
+  imgop::{Dim2, Point, Rect},
+  pixarray::{DisjointRegionMut, ImageRegionMut, PixU16},
   pumps::{BitPump, BitPumpMSB, ByteStream},
 };
 
@@ -162,7 +162,7 @@ impl Header {
 }
 
 impl Strip {
-  fn decompress_strip(&self, src: &PaddedBuf, header: &Header, params: &Params, q_bases: Option<&[u8]>, out: &mut PixU16) {
+  fn decompress_strip(&self, src: &PaddedBuf, header: &Header, params: &Params, q_bases: Option<&[u8]>, out: &mut DisjointRegionMut<u16>) {
     let mut info_block = CompressedBlock::new(header, params);
     log::debug!("Fuji strip offset: {}, len: {}", self.offset, self.size);
 
@@ -326,20 +326,23 @@ pub(super) fn decompress_fuji(buf: &PaddedBuf, width: usize, height: usize, _bps
 
   assert!(stream.remaining_bytes() <= 16);
 
-  let out = SharedPix2D::new(PixU16::new(width, height));
+  let mut out = PixU16::new(width, height);
+  // Each strip decodes a column of the image
+  let areas: Vec<Rect> = strips
+    .iter()
+    .map(|strip| Rect::new(Point::new(strip.offset_x(), 0), Dim2::new(strip.width(), height)))
+    .collect();
+  let regions = ImageRegionMut::from(out.view_mut()).split_regions_mut(&areas)?;
 
   // Process each strip
-  strips.par_iter().for_each(|strip| {
+  strips.par_iter().zip(regions).for_each(|(strip, mut region)| {
     let line_step = (header.total_lines as usize + 0xF) & !0xF;
     // Each strip has it's own q_bases
     let q_bases_strip = q_bases.as_ref().map(|buf| &buf[strip.n * line_step..]);
-    // DANGEROUS: We need multiple mut refs here. This should be
-    // safe as be only write pixels to pre-allocated memory.
-    let outbuf = unsafe { out.inner_mut() };
-    strip.decompress_strip(buf, &header, &params, q_bases_strip, outbuf);
+    strip.decompress_strip(buf, &header, &params, q_bases_strip, &mut region);
   });
 
-  Ok(out.into_inner())
+  Ok(out)
 }
 
 impl ColorPos {
@@ -438,7 +441,7 @@ impl CompressedBlock {
   }
 
   /// Copy line from decoding buffer to output
-  fn copy_line<F>(&self, strip: &Strip, cur_line: usize, index_f: F, out: &mut PixU16)
+  fn copy_line<F>(&self, strip: &Strip, cur_line: usize, index_f: F, out: &mut DisjointRegionMut<u16>)
   where
     F: Fn(usize) -> usize,
   {
@@ -454,27 +457,27 @@ impl CompressedBlock {
       line_buf_g[i] = XT_LINE_G2 + i;
     }
     for row_count in 0..Strip::line_height() {
-      for pixel_count in 0..strip.width() {
+      let row = out.row_mut(strip.offset_y(cur_line) + row_count);
+      for (pixel_count, pixel) in row.iter_mut().enumerate() {
         let line_idx = match strip.cfa[row_count][pixel_count % 6] {
           CFAColor::RED => line_buf_r[row_count >> 1],
           CFAColor::GREEN => line_buf_g[row_count],
           CFAColor::BLUE => line_buf_b[row_count >> 1],
           _ => unreachable!(),
         };
-        let p = self.linebuf[line_idx][1 + index_f(pixel_count)];
-        *out.at_mut(strip.offset_y(cur_line) + row_count, strip.offset_x() + pixel_count) = p;
+        *pixel = self.linebuf[line_idx][1 + index_f(pixel_count)];
       }
     }
   }
 
   /// Copy line by Bayer pattern
-  fn copy_line_to_bayer(&self, strip: &Strip, cur_line: usize, out: &mut PixU16) {
+  fn copy_line_to_bayer(&self, strip: &Strip, cur_line: usize, out: &mut DisjointRegionMut<u16>) {
     let index = |pixel_count: usize| -> usize { pixel_count >> 1 };
     self.copy_line(strip, cur_line, index, out);
   }
 
   /// Copy line by X-Trans pattern
-  fn copy_line_to_xtrans(&self, strip: &Strip, cur_line: usize, out: &mut PixU16) {
+  fn copy_line_to_xtrans(&self, strip: &Strip, cur_line: usize, out: &mut DisjointRegionMut<u16>) {
     let index = |pixel_count: usize| -> usize { (((pixel_count * 2 / 3) & 0x7FFFFFFE) | ((pixel_count % 3) & 1)) + ((pixel_count % 3) >> 1) };
     self.copy_line(strip, cur_line, index, out);
   }
