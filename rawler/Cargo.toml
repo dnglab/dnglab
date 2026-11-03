@@ -42,7 +42,7 @@ hex = "0.4"
 image = {version = "0.25", default-features = false, features = ["jpeg"]}
 itertools = "0.14"
 half = "2"
-jxl-oxide = "0.12.2"
+jxl-oxide = "0.12.3"
 lazy_static = "1"
 libflate = "2.0"
 libloading = "0.8"

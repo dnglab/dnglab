@@ -1,0 +1,93 @@
+---
+file:
+  fileSize: 12455716
+  fileName: HDR_DNG17_FLOAT16_JXL_TILES_1.dng
+  digest: 079418ce2e6535fc938af5b20645d6e9
+data:
+  metadata:
+    rawParams:
+      rawWidth: 6000
+      rawHeight: 4000
+      bitDepth: 16
+      cropArea:
+        p:
+          x: 0
+          y: 0
+        d:
+          w: 6000
+          h: 4000
+      activeArea: ~
+      blacklevels:
+        levels:
+          - 0/256
+          - 0/256
+          - 0/256
+        cpp: 3
+        width: 1
+        height: 1
+      whitelevels:
+        - 32768
+        - 32768
+        - 32768
+      wbCoeffs:
+        - 2.5507796
+        - 1.0
+        - 1.808593
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ~
+        artist: Fernando Martinez
+        lens_spec:
+          - 180/10
+          - 1350/10
+          - 35/10
+          - 56/10
+        exposure_time: 1/1000
+        fnumber: 13/1
+        aperture_value: 7400879/1000000
+        brightness_value: 27934/2560
+        iso_speed_ratings: 100
+        iso_speed: ~
+        recommended_exposure_index: 100
+        sensitivity_type: 2
+        exposure_bias: "-20/10"
+        date_time_original: "2023:12:24 08:29:41"
+        create_date: "2023:12:24 08:29:41"
+        modify_date: "2024:02:01 23:06:47"
+        exposure_program: 4
+        timezone_offset: ~
+        offset_time: "-03:00"
+        offset_time_original: "-04:00"
+        offset_time_digitized: "-04:00"
+        sub_sec_time: ~
+        sub_sec_time_original: "1"
+        sub_sec_time_digitized: "1"
+        shutter_speed_value: 9965784/1000000
+        max_aperture_value: 1188/256
+        subject_distance: ~
+        metering_mode: 1
+        light_source: 0
+        flash: 16
+        focal_length: 400/10
+        image_number: ~
+        color_space: 65535
+        flash_energy: ~
+        exposure_mode: 2
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: E 18-135mm F3.5-5.6 OSS
+        gps: ~
+        user_comment: ~
+      model: ILCE-6400
+      make: Sony
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

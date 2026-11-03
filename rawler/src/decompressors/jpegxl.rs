@@ -30,6 +30,25 @@ impl JpegXLDecompressor {
   }
 }
 
+/// Reads a JPEG-XL codestream, to be decoded with 32-bit Modular buffers.
+///
+/// jxl-oxide decodes with 16-bit buffers if the codestream header signals
+/// `modular_16bit_buffers`. libjxl signals it for all lossy (XYB) images, but
+/// the quantized LF coefficients of floats far above 1.0, like the raw data of
+/// Lightroom HDR DNG files on the scale of their WhiteLevel 32768, need more
+/// than 16 bits. jxl-oxide then fails with "ANS stream verification failed" or
+/// returns wrong pixels without an error. libjxl and the DNG SDK always decode
+/// with 32-bit buffers. jxl-oxide treats codestreams that break the flag as
+/// invalid (<https://github.com/tirr-c/jxl-oxide/issues/456>) and has the
+/// `force_wide_buffers` option for them (<https://github.com/tirr-c/jxl-oxide/pull/469>).
+/// It slows down lossless codestreams with up to 12 bits, like 8-bit masks, by about 10 %.
+fn read_image(src: &[u8]) -> std::result::Result<JxlImage, String> {
+  JxlImage::builder()
+    .force_wide_buffers(true)
+    .read(src)
+    .map_err(|err| format!("Failed to read JPEG-XL image: {:?}", err))
+}
+
 impl<'a> Decompressor<'a, u16> for JpegXLDecompressor {
   /// Decodes a JPEG-XL buffer into `u16` pixel lines.
   ///
@@ -46,9 +65,7 @@ impl<'a> Decompressor<'a, u16> for JpegXLDecompressor {
   /// Returns `Err` if the JXL image cannot be read or rendered, if it holds
   /// floating point samples or if `bps` is not in the range 8 to 16.
   fn decompress(&self, src: &[u8], mut skip_rows: usize, lines: impl LineIteratorMut<'a, u16>, line_width: usize) -> std::result::Result<(), String> {
-    let image = JxlImage::builder()
-      .read(src)
-      .map_err(|err| format!("Failed to read JPEG-XL image: {:?}", err))?;
+    let image = read_image(src)?;
     let codestream_bits = match image.image_header().metadata.bit_depth {
       BitDepth::IntegerSample { bits_per_sample } if (8..=16).contains(&bits_per_sample) => bits_per_sample,
       bit_depth => return Err(format!("JPEG-XL bit depth {:?} is not supported", bit_depth)),
@@ -164,9 +181,7 @@ impl<'a> Decompressor<'a, f32> for JpegXLDecompressor {
     if self.bps != 16 {
       return Err(format!("JPEG-XL floating point data with {} bits per sample is not supported", self.bps));
     }
-    let mut image = JxlImage::builder()
-      .read(src)
-      .map_err(|err| format!("Failed to read JPEG-XL image: {:?}", err))?;
+    let mut image = read_image(src)?;
     let bit_depth = image.image_header().metadata.bit_depth;
     if !matches!(bit_depth, BitDepth::FloatSample { .. }) {
       return Err(format!("JPEG-XL bit depth {:?} is not a floating point format", bit_depth));
@@ -278,6 +293,26 @@ mod tests {
     (0..4).flat_map(|y| (0..8).map(move |x| (100 + 100 * x + 10 * y) as f32)).collect()
   }
 
+  /// Lossy 8x4 RGB codestream with linear 32-bit float samples (Rec. 2100 primaries),
+  /// encoded by cjxl 0.11.2 with distance 0.5 from [`samples_float_large_lf`]. The
+  /// header signals `modular_16bit_buffers`, but the quantized LF coefficients don't
+  /// fit in 16 bits.
+  const JXL_FLOAT_LOSSY_LARGE_LF: &[u8] = &[
+    0xff, 0x0a, 0x18, 0x70, 0x72, 0x09, 0x79, 0xb4, 0x08, 0x00, 0x1b, 0x08, 0x00, 0x78, 0x01, 0x77, 0x3f, 0xc8, 0x01, 0x00, 0x50, 0xa1, 0x32, 0xca, 0xb8, 0xc1,
+    0xcb, 0xb9, 0x9e, 0x2f, 0x3f, 0x74, 0x58, 0x4c, 0xdb, 0xb8, 0xce, 0xd0, 0x56, 0xdb, 0x16, 0x96, 0x30, 0x36, 0xdb, 0x0b, 0x83, 0x84, 0x84, 0x14, 0xb0, 0x71,
+    0xf1, 0x86, 0x87, 0x9b, 0x63, 0x04, 0x14, 0x80, 0xed, 0x7d, 0x48, 0x47, 0x1a, 0x95, 0x24, 0x96, 0x20, 0xf0, 0x62, 0xb7, 0xcd, 0xf3, 0xfb, 0xa2, 0x28, 0x0f,
+    0x02, 0xad, 0xbb, 0x7f, 0xbe, 0xe2, 0x28, 0xde, 0x07, 0x80, 0x06, 0x00, 0xa2, 0x77, 0xf7, 0x6b, 0x3c, 0x77, 0x18, 0x00, 0x00, 0xc4, 0xfc, 0x54, 0x99, 0x1b,
+    0x67, 0x02, 0x00, 0x20, 0x13,
+  ];
+
+  /// Samples of [`JXL_FLOAT_LOSSY_LARGE_LF`], 900 to 3700 like the raw data of Lightroom HDR DNG files
+  fn samples_float_large_lf() -> Vec<f32> {
+    (0..4)
+      .flat_map(|y| (0..8).flat_map(move |x| [2000 + 200 * x + 100 * y, 2200 + 150 * x, 1800 - 300 * y]))
+      .map(|v| v as f32)
+      .collect()
+  }
+
   #[test]
   fn codestream_with_less_than_16_bits_keeps_stored_values() -> std::result::Result<(), String> {
     let mut out = vec![0_u16; 8 * 4];
@@ -306,6 +341,18 @@ mod tests {
     let mut out = vec![0_f32; 8 * 4];
     JpegXLDecompressor::new(16).decompress(JXL_FLOAT_LOSSY_GRAY, 0, out.chunks_exact_mut(8), 8)?;
     for (decoded, expected) in out.iter().zip(samples_float_gray()) {
+      assert!((decoded - expected).abs() < expected * 0.05, "decoded {} for {}", decoded, expected);
+    }
+    Ok(())
+  }
+
+  /// Lossy codestreams with LF coefficients above 16 bits are decoded with 32-bit buffers, as by libjxl
+  #[test]
+  fn lossy_float_codestream_with_large_lf_coefficients() -> std::result::Result<(), String> {
+    let mut out = vec![0_f32; 8 * 4 * 3];
+    JpegXLDecompressor::new(16).decompress(JXL_FLOAT_LOSSY_LARGE_LF, 0, out.chunks_exact_mut(8 * 3), 8 * 3)?;
+    // Lossy compression, libjxl decodes this codestream with less than 2 % deviation
+    for (decoded, expected) in out.iter().zip(samples_float_large_lf()) {
       assert!((decoded - expected).abs() < expected * 0.05, "decoded {} for {}", decoded, expected);
     }
     Ok(())
