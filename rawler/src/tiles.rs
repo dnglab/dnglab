@@ -3,18 +3,17 @@
 
 use std::{iter, ops::Range};
 
-use crate::pixarray::{LineMut, SubPixel};
+use crate::{
+  imgop::{Dim2, Point, Rect},
+  pixarray::{ImageView, LineMut, SubPixel},
+};
 
 #[derive(Debug)]
 pub struct ErrorNotTileable;
 
 /// Image tile generator
 pub struct ImageTiler<'a, T> {
-  data: &'a [T],
-  width: usize,
-  #[allow(dead_code)]
-  height: usize,
-  cpp: usize,
+  image: ImageView<'a, T>,
   tiles: Range<usize>,
   tw: usize,
   th: usize,
@@ -28,10 +27,7 @@ impl<'a, T> ImageTiler<'a, T> {
     let tcols = width.div_ceil(tw);
     let trows = height.div_ceil(th);
     Self {
-      data,
-      width,
-      height,
-      cpp,
+      image: ImageView::new(&data[..height * width * cpp], width, height, cpp),
       tiles: Range { start: 0, end: trows * tcols },
       tw,
       th,
@@ -51,10 +47,6 @@ impl<'a, T> ImageTiler<'a, T> {
   pub fn tile_count(&self) -> usize {
     self.tile_rows() * self.tile_cols()
   }
-
-  fn needs_padding(&self) -> bool {
-    self.width % self.tw > 0
-  }
 }
 
 impl<'a, T> ImageTiler<'a, T>
@@ -67,27 +59,20 @@ where
   /// threads in parallel (rayon `par_iter`). Edge-padding and last-row
   /// replication follow the same rules as the iterator.
   pub fn build_tile(&self, idx: usize) -> Vec<T> {
-    let mut buf = Vec::with_capacity(self.th * self.tw * self.cpp);
-
-    let tile_row = idx / self.tcols;
-    let tile_col = idx % self.tcols;
-
-    for row in 0..self.th {
-      let off_row = (tile_row * self.th) + row;
-      let offset = off_row * self.width * self.cpp + (tile_col * self.tw * self.cpp);
-
-      if offset < self.data.len() {
-        if tile_col < self.tcols - 1 || !self.needs_padding() {
-          let sub = &self.data[offset..offset + self.tw * self.cpp];
-          buf.extend_from_slice(sub);
-        } else {
-          buf.extend_from_slice(&self.data[offset..offset + (self.width % self.tw) * self.cpp]);
-          let last_pix = buf.last().copied().unwrap_or_default();
-          buf.extend(iter::repeat(last_pix).take((self.tw - (self.width % self.tw)) * self.cpp));
-        };
-      } else {
-        buf.extend_from_within((row - 1) * self.tw * self.cpp..((row - 1) * self.tw * self.cpp) + self.tw * self.cpp);
-      }
+    let (tw, th, cpp) = (self.tw, self.th, self.image.channels());
+    let mut buf = Vec::with_capacity(th * tw * cpp);
+    // Part of the tile inside of the image
+    let (x, y) = ((idx % self.tcols) * tw, (idx / self.tcols) * th);
+    let area = Rect::new(Point::new(x, y), Dim2::new(tw.min(self.image.width() - x), th.min(self.image.height() - y)));
+    for row in self.image.region(area).rows() {
+      buf.extend_from_slice(row);
+      // Columns right of the image repeat the last sample
+      let last = row.last().copied().unwrap_or_default();
+      buf.extend(iter::repeat_n(last, (tw - area.width()) * cpp));
+    }
+    // Rows below the image repeat the last row
+    for _ in area.height()..th {
+      buf.extend_from_within(buf.len() - tw * cpp..);
     }
     buf
   }
@@ -325,6 +310,41 @@ mod tests {
     assert_eq!(tiles[0].len(), c * 20 * 20);
 
     Ok(())
+  }
+
+  #[test]
+  fn build_tile_pads_partial_tiles() {
+    // 5x3 pixels in tiles of 4x2: the right tiles have one column of the
+    // image, the bottom tiles one row
+    let mono: Vec<u16> = (0..15).collect();
+    let tiles: Vec<Vec<u16>> = ImageTiler::new(&mono, 5, 3, 1, 4, 2).collect();
+    #[rustfmt::skip]
+    let expected = [
+      vec![0, 1, 2, 3,
+           5, 6, 7, 8],
+      vec![4, 4, 4, 4,
+           9, 9, 9, 9],
+      vec![10, 11, 12, 13,
+           10, 11, 12, 13],
+      vec![14, 14, 14, 14,
+           14, 14, 14, 14],
+    ];
+    assert_eq!(tiles, expected);
+
+    // Three samples per pixel
+    let rgb: Vec<u16> = (0..15).flat_map(|p| [p, p + 100, p + 200]).collect();
+    let tiler = ImageTiler::new(&rgb, 5, 3, 3, 4, 2);
+    #[rustfmt::skip]
+    assert_eq!(tiler.build_tile(1), [
+      4, 104, 204,  204, 204, 204,  204, 204, 204,  204, 204, 204,
+      9, 109, 209,  209, 209, 209,  209, 209, 209,  209, 209, 209,
+    ]);
+    assert_eq!(tiler.build_tile(2), [&rgb[30..42], &rgb[30..42]].concat());
+    #[rustfmt::skip]
+    assert_eq!(tiler.build_tile(3), [
+      14, 114, 214,  214, 214, 214,  214, 214, 214,  214, 214, 214,
+      14, 114, 214,  214, 214, 214,  214, 214, 214,  214, 214, 214,
+    ]);
   }
 
   #[test]
