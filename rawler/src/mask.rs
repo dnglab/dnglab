@@ -5,7 +5,8 @@
 
 use crate::{
   RawImageData,
-  imgop::{Dim2, Point, Rect, crop},
+  imgop::{Dim2, Point, Rect},
+  pixarray::ImageRegion,
 };
 
 /// Pixel data of a DNG mask with one sample per pixel
@@ -63,10 +64,10 @@ impl MaskImage {
     if area == Rect::new(Point::zero(), self.dim()) {
       return Ok(());
     }
-    let dim = self.dim();
+    let (width, height) = (self.width, self.height);
     self.data = match &self.data {
-      RawImageData::Integer(samples) => RawImageData::Integer(crop(samples, dim, area)),
-      RawImageData::Float(samples) => RawImageData::Float(crop(samples, dim, area)),
+      RawImageData::Integer(samples) => RawImageData::Integer(ImageRegion::new(samples, width, height, 1, area).to_vec()),
+      RawImageData::Float(samples) => RawImageData::Float(ImageRegion::new(samples, width, height, 1, area).to_vec()),
     };
     (self.width, self.height) = (area.d.w, area.d.h);
     Ok(())

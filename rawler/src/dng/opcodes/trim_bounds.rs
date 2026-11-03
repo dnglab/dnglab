@@ -74,12 +74,10 @@ impl TrimBounds {
     match stage {
       OpcodeStage::List1 => Self::trim_raw_image(image, rect)?,
       OpcodeStage::List2 | OpcodeStage::List3 => {
-        let area = Rect::new(Point::new(bounds.p.x + rect.p.x, bounds.p.y + rect.p.y), rect.d);
+        let area = rect.translate(bounds.p);
         image.active_area = Some(area);
         // The stage 3 image now starts at the top-left corner of the rectangle
-        image.crop_area = image
-          .crop_area
-          .and_then(|crop_area| Rect::new(Point::new(crop_area.p.x + rect.p.x, crop_area.p.y + rect.p.y), crop_area.d).intersect(&area));
+        image.crop_area = image.crop_area.and_then(|crop_area| crop_area.translate(rect.p).intersect(&area));
       }
     }
     Ok(())

@@ -5,10 +5,7 @@
 
 use serde::{Deserialize, Serialize};
 
-use crate::{
-  RawlerError, Result,
-  imgop::{Dim2, crop},
-};
+use crate::{RawlerError, Result};
 
 use super::{
   OpcodeData, OpcodeImage, OpcodeStage,
@@ -75,9 +72,9 @@ impl FixBadPixelsList {
 
   pub fn apply(&self, image: &mut OpcodeImage<'_>, stage: OpcodeStage) -> Result<()> {
     let bounds = stage_bounds(image, stage);
-    let (width, height, cpp) = (image.width(), image.height(), image.channels());
-    let samples = match &mut image.data {
-      OpcodeData::Integer(view) if cpp == 1 => view.as_mut_slice(),
+    let cpp = image.channels();
+    let view = match &mut image.data {
+      OpcodeData::Integer(view) if cpp == 1 => view,
       _ => {
         return Err(RawlerError::DecoderFailed(format!(
           "DNG opcode FixBadPixelsList in {} requires 16 bit raw data with a single plane",
@@ -93,9 +90,10 @@ impl FixBadPixelsList {
     points.sort_unstable();
     let mut rects: Vec<(i64, i64, i64, i64)> = self.rects.iter().map(|&(t, l, b, r)| (t as i64, l as i64, b as i64, r as i64)).collect();
     rects.sort_unstable();
+    let mut region = view.region_mut(bounds);
     let mut fixer = BadPixelFixer {
       image: BayerImage {
-        data: crop(samples, Dim2::new(width, height), bounds),
+        data: region.as_region().to_vec(),
         width: bounds.width() as i64,
         height: bounds.height() as i64,
         bayer_phase: self.bayer_phase,
@@ -104,15 +102,7 @@ impl FixBadPixelsList {
       rects,
     };
     fixer.fix();
-    let window = bounds.width();
-    for (line, fixed) in samples
-      .chunks_exact_mut(width)
-      .skip(bounds.y())
-      .take(bounds.height())
-      .zip(fixer.image.data.chunks_exact(window))
-    {
-      line[bounds.x()..bounds.x() + window].copy_from_slice(fixed);
-    }
+    region.copy_from_slice(&fixer.image.data);
     Ok(())
   }
 }

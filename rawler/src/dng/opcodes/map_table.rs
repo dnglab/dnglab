@@ -66,18 +66,15 @@ impl MapTable {
     let Some(rect) = self.area.buffer_rect(image, stage) else {
       return Ok(());
     };
-    let (width, cpp) = (image.width(), image.channels());
     match (&mut image.data, stage) {
       // Floating point data is mapped through the 16 bit table
       (OpcodeData::Float(view), _) => {
-        let samples = view.as_mut_slice();
-        map_area(samples, width, cpp, rect, &self.area, &|x: f32| {
+        map_area(view.region_mut(rect), &self.area, &|x: f32| {
           self.lookup((x.clamp(0.0, 1.0) * 65535.0).round() as usize) as f32 / 65535.0
         });
       }
       (OpcodeData::Integer(view), OpcodeStage::List1) => {
-        let samples = view.as_mut_slice();
-        map_area(samples, width, cpp, rect, &self.area, &|x: u16| self.lookup(x as usize));
+        map_area(view.region_mut(rect), &self.area, &|x: u16| self.lookup(x as usize));
       }
       (OpcodeData::Integer(_), _) => {
         return Err(RawlerError::DecoderFailed(format!(

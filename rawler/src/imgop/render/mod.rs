@@ -22,9 +22,9 @@ use crate::{
   imgop::{
     Dim2, Rect,
     color::{OutputSpace, TransferFunction},
-    convert_from_f32_scaled_u16, crop, icc,
+    convert_from_f32_scaled_u16, icc,
   },
-  pixarray::{Color2D, ImageView, ImageViewMut, Pix2D},
+  pixarray::{Color2D, ImageRegion, ImageView, ImageViewMut, Pix2D},
 };
 
 /// Processing step of the rendering, see [`StepSet`]
@@ -227,7 +227,7 @@ impl RenderedImage {
     let len = self.view_mut().crop_in_place(area)?.as_slice().len();
     self.data.truncate(len);
     if let Some(alpha) = &mut self.alpha {
-      *alpha = crop(alpha, dim, area);
+      *alpha = ImageRegion::new(alpha, dim.w, dim.h, 1, area).to_vec();
     }
     (self.width, self.height) = (area.d.w, area.d.h);
     Ok(())

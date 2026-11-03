@@ -5,11 +5,14 @@
 
 use serde::{Deserialize, Serialize};
 
-use crate::{RawlerError, Result, imgop::Rect, pixarray::SubPixel};
+use crate::{
+  RawlerError, Result,
+  pixarray::{ImageRegionMut, SubPixel},
+};
 
 use super::{
   OpcodeData, OpcodeImage, OpcodeStage,
-  helpers::{ParamReader, apply_roi_threaded, put_f64, stage_bounds},
+  helpers::{ParamReader, for_each_row, put_f64, stage_bounds},
 };
 
 /// Radially symmetric gain to correct vignetting
@@ -78,19 +81,14 @@ impl FixVignetteRadial {
     let (c_x, c_y) = (self.c_x * w, self.c_y * h);
     let scale_v = 1.0 / image.aspect_ratio;
     let radius = (c_y.max(h - c_y) * scale_v).hypot(c_x.max(w - c_x));
-    let (width, cpp) = (image.width(), image.channels());
     match (&mut image.data, stage) {
       // Logical range of floating point data is 0.0 to 1.0
       (OpcodeData::Float(view), _) => {
-        let samples = view.as_mut_slice();
-        self.apply_gain(samples, width, cpp, bounds, (c_x, c_y), scale_v, radius, &|v: f32, gain| {
-          (v * gain).clamp(0.0, 1.0)
-        });
+        self.apply_gain(view.region_mut(bounds), (c_x, c_y), scale_v, radius, &|v: f32, gain| (v * gain).clamp(0.0, 1.0));
       }
       // Logical range of 16 bit data in OpcodeList1 is 0 to 65535
       (OpcodeData::Integer(view), OpcodeStage::List1) => {
-        let samples = view.as_mut_slice();
-        self.apply_gain(samples, width, cpp, bounds, (c_x, c_y), scale_v, radius, &|v: u16, gain| {
+        self.apply_gain(view.region_mut(bounds), (c_x, c_y), scale_v, radius, &|v: u16, gain| {
           ((v as f32 / 65535.0 * gain).clamp(0.0, 1.0) * 65535.0).round() as u16
         });
       }
@@ -104,14 +102,14 @@ impl FixVignetteRadial {
     Ok(())
   }
 
-  /// Multiply all planes of the pixels in `bounds` by the gain for their pixel
+  /// Multiply all planes of the pixels of `region` by the gain for their pixel
   /// centers, using `mul`
-  #[allow(clippy::too_many_arguments)]
-  fn apply_gain<T: SubPixel, F>(&self, samples: &mut [T], width: usize, cpp: usize, bounds: Rect, center: (f64, f64), scale_v: f64, radius: f64, mul: &F)
+  fn apply_gain<T: SubPixel, F>(&self, region: ImageRegionMut<'_, T>, center: (f64, f64), scale_v: f64, radius: f64, mul: &F)
   where
     F: Fn(T, f32) -> T + Sync,
   {
-    apply_roi_threaded(samples, width, cpp, bounds, 1, &|line, row| {
+    let (bounds, cpp) = (region.area(), region.channels());
+    for_each_row(region, 1, &|line, row| {
       let dy = ((row - bounds.y()) as f64 + 0.5 - center.1) * scale_v / radius;
       for (x, pixel) in line.chunks_exact_mut(cpp).enumerate() {
         let dx = (x as f64 + 0.5 - center.0) / radius;
@@ -130,7 +128,7 @@ mod tests {
   use crate::{
     RawImageData,
     dng::opcodes::{Opcode, OpcodeList, testutil::*},
-    imgop::{Dim2, Point},
+    imgop::{Dim2, Point, Rect},
   };
 
   fn fix_vignette_radial(k: [f64; 5], center: (f64, f64)) -> Vec<u8> {

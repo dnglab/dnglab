@@ -5,11 +5,15 @@
 
 use serde::{Deserialize, Serialize};
 
-use crate::{RawlerError, Result, imgop::Rect, pixarray::SubPixel};
+use crate::{
+  RawlerError, Result,
+  imgop::Rect,
+  pixarray::{ImageRegionMut, SubPixel},
+};
 
 use super::{
   OpcodeData, OpcodeImage, OpcodeStage,
-  helpers::{AreaSpec, ParamReader, apply_roi_threaded, put_f32, put_f64, put_u32, stage_bounds},
+  helpers::{AreaSpec, ParamReader, for_each_row, put_f32, put_f64, put_u32, stage_bounds},
 };
 
 #[derive(Debug, Clone, PartialEq, PartialOrd, Serialize, Deserialize)]
@@ -101,17 +105,14 @@ impl GainMap {
       return Ok(());
     };
     let bounds = stage_bounds(image, stage);
-    let (width, cpp) = (image.width(), image.channels());
     match (&mut image.data, stage) {
       // Logical range of floating point data is 0.0 to 1.0
       (OpcodeData::Float(view), _) => {
-        let samples = view.as_mut_slice();
-        self.apply_gain(samples, width, cpp, rect, bounds, &|x: f32, gain| (x * gain).clamp(0.0, 1.0));
+        self.apply_gain(view.region_mut(rect), bounds, &|x: f32, gain| (x * gain).clamp(0.0, 1.0));
       }
       // Logical range of 16 bit data in OpcodeList1 is 0 to 65535
       (OpcodeData::Integer(view), OpcodeStage::List1) => {
-        let samples = view.as_mut_slice();
-        self.apply_gain(samples, width, cpp, rect, bounds, &|x: u16, gain| {
+        self.apply_gain(view.region_mut(rect), bounds, &|x: u16, gain| {
           (x as f32 * gain).round().clamp(0.0, 65535.0) as u16
         });
       }
@@ -125,13 +126,14 @@ impl GainMap {
     Ok(())
   }
 
-  /// Multiply the planes of all pixels in `rect` (stepping by the row and column
-  /// pitch) by the bilinear interpolated gain, using `mul`. Gain map coordinates
-  /// are relative to the size of `bounds`, the image being modified.
-  fn apply_gain<T: SubPixel, F>(&self, samples: &mut [T], width: usize, cpp: usize, rect: Rect, bounds: Rect, mul: &F)
+  /// Multiply the planes of all pixels of `region` (stepping by the row and
+  /// column pitch) by the bilinear interpolated gain, using `mul`. Gain map
+  /// coordinates are relative to the size of `bounds`, the image being modified.
+  fn apply_gain<T: SubPixel, F>(&self, region: ImageRegionMut<'_, T>, bounds: Rect, mul: &F)
   where
     F: Fn(T, f32) -> T + Sync,
   {
+    let (rect, cpp) = (region.area(), region.channels());
     let planes = self.area.plane_range(cpp);
     let col_pitch = self.area.col_pitch as usize;
     // Horizontal map position for each affected column
@@ -139,7 +141,7 @@ impl GainMap {
       .step_by(col_pitch)
       .map(|col| map_position(col - bounds.p.x, bounds.d.w, self.map_points_h, self.map_spacing_h, self.map_origin_h))
       .collect();
-    apply_roi_threaded(samples, width, cpp, rect, self.area.row_pitch as usize, &|line, row| {
+    for_each_row(region, self.area.row_pitch as usize, &|line, row| {
       let (v1, v2, fv) = map_position(row - bounds.p.y, bounds.d.h, self.map_points_v, self.map_spacing_v, self.map_origin_v);
       for plane in planes.clone() {
         // If Planes > MapPlanes, the last map plane is used for the remaining planes

@@ -13,8 +13,8 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
   RawlerError, Result,
-  imgop::{Dim2, Point, Rect, crop},
-  pixarray::SubPixel,
+  imgop::{Dim2, Point, Rect},
+  pixarray::{ImageRegionMut, LineMut, SubPixel},
 };
 
 use super::{OpcodeData, OpcodeImage, OpcodeStage};
@@ -196,9 +196,7 @@ impl AreaSpec {
   /// Affected rectangle in coordinates of the image buffer for the given stage
   pub(super) fn buffer_rect(&self, image: &OpcodeImage<'_>, stage: OpcodeStage) -> Option<Rect> {
     let bounds = stage_bounds(image, stage);
-    self
-      .overlap(bounds.d)
-      .map(|rect| Rect::new(Point::new(bounds.p.x + rect.p.x, bounds.p.y + rect.p.y), rect.d))
+    self.overlap(bounds.d).map(|rect| rect.translate(bounds.p))
   }
 }
 
@@ -214,15 +212,16 @@ pub(super) fn stage_bounds(image: &OpcodeImage<'_>, stage: OpcodeStage) -> Rect 
   }
 }
 
-/// Map the planes of all pixels in `rect` (stepping by the row and column pitch
-/// of `area`) through function `f`.
-pub(super) fn map_area<T: SubPixel, F>(samples: &mut [T], width: usize, cpp: usize, rect: Rect, area: &AreaSpec, f: &F)
+/// Map the planes of all pixels of `region` (stepping by the row and column
+/// pitch of `area`) through function `f`.
+pub(super) fn map_area<T: SubPixel, F>(region: ImageRegionMut<'_, T>, area: &AreaSpec, f: &F)
 where
   F: Fn(T) -> T + Sync,
 {
+  let cpp = region.channels();
   let planes = area.plane_range(cpp);
   let col_pitch = area.col_pitch as usize;
-  apply_roi_threaded(samples, width, cpp, rect, area.row_pitch as usize, &|line, _row| {
+  for_each_row(region, area.row_pitch as usize, &|line, _row| {
     for pixel in line.chunks_exact_mut(cpp).step_by(col_pitch) {
       for c in planes.clone() {
         pixel[c] = f(pixel[c]);
@@ -231,21 +230,18 @@ where
   });
 }
 
-/// Call `closure` for every `row_pitch` row of `roi` with the pixels of that
-/// row inside `roi` and the absolute row index.
-pub(super) fn apply_roi_threaded<T: SubPixel, F>(samples: &mut [T], width: usize, cpp: usize, roi: Rect, row_pitch: usize, closure: &F)
+/// Call `closure` in parallel for every `row_pitch` row of `region` with the
+/// samples of that row and its row index in the image buffer.
+pub(super) fn for_each_row<T: SubPixel, F>(mut region: ImageRegionMut<'_, T>, row_pitch: usize, closure: &F)
 where
-  F: Fn(&mut [T], usize) + Sync,
+  F: Fn(LineMut<'_, T>, usize) + Sync,
 {
-  let col_start = roi.x() * cpp;
-  let col_end = col_start + roi.width() * cpp;
-  samples
-    .par_chunks_exact_mut(width * cpp)
-    .skip(roi.y())
-    .take(roi.height())
-    .step_by(row_pitch)
+  let top = region.area().y();
+  region
+    .par_rows_mut()
     .enumerate()
-    .for_each(|(i, line)| closure(&mut line[col_start..col_end], roi.y() + i * row_pitch));
+    .step_by(row_pitch)
+    .for_each(|(row, line)| closure(line, top + row));
 }
 
 /// Check for a green pixel of a Bayer image. BayerPhase is the color of the top-left
@@ -356,23 +352,18 @@ pub(super) fn apply_warp(name: &str, planes: &[WarpPlane], center: (f64, f64), i
   }
   let geometry = WarpGeometry::new(center, bounds.d, image.aspect_ratio);
   // The image being warped is copied, the warped image is written in place
-  let width = image.width();
-  let dim = Dim2::new(width * cpp, image.height());
-  let window = Rect::new(Point::new(bounds.x() * cpp, bounds.y()), Dim2::new(bounds.width() * cpp, bounds.height()));
   match (&mut image.data, stage) {
     // Logical range of floating point data is 0.0 to 1.0
     (OpcodeData::Float(view), _) => {
-      let samples = view.as_mut_slice();
-      let src = crop(samples, dim, window);
-      warp(samples, width, cpp, bounds, &src, &geometry, planes, &|v: f32| v.clamp(0.0, 1.0));
+      let region = view.region_mut(bounds);
+      let src = region.as_region().to_vec();
+      warp(region, &src, &geometry, planes, &|v: f32| v.clamp(0.0, 1.0));
     }
     // Logical range of 16 bit data in OpcodeList1 is 0 to 65535
     (OpcodeData::Integer(view), OpcodeStage::List1) => {
-      let samples = view.as_mut_slice();
-      let src: Vec<f32> = crop(samples, dim, window).into_iter().map(|v| v as f32 / 65535.0).collect();
-      warp(samples, width, cpp, bounds, &src, &geometry, planes, &|v: f32| {
-        (v * 65535.0).round().clamp(0.0, 65535.0) as u16
-      });
+      let region = view.region_mut(bounds);
+      let src: Vec<f32> = region.as_region().rows().flatten().map(|v| *v as f32 / 65535.0).collect();
+      warp(region, &src, &geometry, planes, &|v: f32| (v * 65535.0).round().clamp(0.0, 65535.0) as u16);
     }
     (OpcodeData::Integer(_), _) => {
       return Err(RawlerError::DecoderFailed(format!(
@@ -384,15 +375,15 @@ pub(super) fn apply_warp(name: &str, planes: &[WarpPlane], center: (f64, f64), i
   Ok(())
 }
 
-/// Warp the `bounds` window of `samples`. `src` holds the samples of the window
-/// before warping, `store` converts the resampled values into the sample type.
-#[allow(clippy::too_many_arguments)]
-fn warp<T: SubPixel, F>(samples: &mut [T], width: usize, cpp: usize, bounds: Rect, src: &[f32], geometry: &WarpGeometry, planes: &[WarpPlane], store: &F)
+/// Warp `region`. `src` holds the samples of the region before warping,
+/// `store` converts the resampled values into the sample type.
+fn warp<T: SubPixel, F>(region: ImageRegionMut<'_, T>, src: &[f32], geometry: &WarpGeometry, planes: &[WarpPlane], store: &F)
 where
   F: Fn(f32) -> T + Sync,
 {
+  let (bounds, cpp) = (region.area(), region.channels());
   let dim = bounds.d;
-  apply_roi_threaded(samples, width, cpp, bounds, 1, &|line, row| {
+  for_each_row(region, 1, &|line, row| {
     let y = (row - bounds.y()) as f64;
     for (x, pixel) in line.chunks_exact_mut(cpp).enumerate() {
       if let [plane_warp] = planes {
@@ -607,10 +598,9 @@ impl LineTable<'_> {
       return Ok(());
     };
     let bounds = stage_bounds(image, stage);
-    let (width, cpp) = (image.width(), image.channels());
     match (&mut image.data, stage) {
-      (OpcodeData::Float(view), _) => self.map(view.as_mut_slice(), width, cpp, rect, bounds, float_fn),
-      (OpcodeData::Integer(view), OpcodeStage::List1) => self.map(view.as_mut_slice(), width, cpp, rect, bounds, int_fn),
+      (OpcodeData::Float(view), _) => self.map(view.region_mut(rect), bounds, float_fn),
+      (OpcodeData::Integer(view), OpcodeStage::List1) => self.map(view.region_mut(rect), bounds, int_fn),
       (OpcodeData::Integer(_), _) => {
         return Err(RawlerError::DecoderFailed(format!(
           "DNG opcode {} in {} requires image data mapped to linear reference values",
@@ -621,13 +611,14 @@ impl LineTable<'_> {
     Ok(())
   }
 
-  /// Map the planes of all pixels in `rect` (stepping by the row and column
+  /// Map the planes of all pixels of `region` (stepping by the row and column
   /// pitch) through `f` with the table value of their row or column. Table
   /// positions are relative to `bounds`, the image being modified.
-  fn map<T: SubPixel, F>(&self, samples: &mut [T], width: usize, cpp: usize, rect: Rect, bounds: Rect, f: &F)
+  fn map<T: SubPixel, F>(&self, region: ImageRegionMut<'_, T>, bounds: Rect, f: &F)
   where
     F: Fn(T, f32) -> T + Sync,
   {
+    let (rect, cpp) = (region.area(), region.channels());
     let area = self.area;
     let planes = area.plane_range(cpp);
     let col_pitch = area.col_pitch as usize;
@@ -643,7 +634,7 @@ impl LineTable<'_> {
         .map(|col| self.value(col - bounds.p.x, area.left, area.col_pitch))
         .collect(),
     };
-    apply_roi_threaded(samples, width, cpp, rect, area.row_pitch as usize, &|line, row| {
+    for_each_row(region, area.row_pitch as usize, &|line, row| {
       let pixels = line.chunks_exact_mut(cpp).step_by(col_pitch);
       match self.axis {
         TableAxis::Row => {
