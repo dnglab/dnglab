@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: LGPL-2.1
 // Copyright 2021 Daniel Vogelbacher <daniel@chaospixel.com>
 
-use std::{iter, ops::Range};
+use std::ops::Range;
 
 use crate::{
   imgop::{Dim2, Point, Rect},
@@ -51,7 +51,7 @@ impl<'a, T> ImageTiler<'a, T> {
 
 impl<'a, T> ImageTiler<'a, T>
 where
-  T: Copy + Default,
+  T: Copy,
 {
   /// Materialize the tile at linear index `idx` (row-major).
   ///
@@ -66,9 +66,11 @@ where
     let area = Rect::new(Point::new(x, y), Dim2::new(tw.min(self.image.width() - x), th.min(self.image.height() - y)));
     for row in self.image.region(area).rows() {
       buf.extend_from_slice(row);
-      // Columns right of the image repeat the last sample
-      let last = row.last().copied().unwrap_or_default();
-      buf.extend(iter::repeat_n(last, (tw - area.width()) * cpp));
+      // Columns right of the image repeat the last pixel
+      let last = &row[row.len() - cpp..];
+      for _ in area.width()..tw {
+        buf.extend_from_slice(last);
+      }
     }
     // Rows below the image repeat the last row
     for _ in area.height()..th {
@@ -80,7 +82,7 @@ where
 
 impl<'a, T> Iterator for ImageTiler<'a, T>
 where
-  T: Copy + Default,
+  T: Copy,
 {
   type Item = Vec<T>;
 
@@ -331,19 +333,19 @@ mod tests {
     ];
     assert_eq!(tiles, expected);
 
-    // Three samples per pixel
+    // Three samples per pixel, the padding repeats the last pixel
     let rgb: Vec<u16> = (0..15).flat_map(|p| [p, p + 100, p + 200]).collect();
     let tiler = ImageTiler::new(&rgb, 5, 3, 3, 4, 2);
     #[rustfmt::skip]
     assert_eq!(tiler.build_tile(1), [
-      4, 104, 204,  204, 204, 204,  204, 204, 204,  204, 204, 204,
-      9, 109, 209,  209, 209, 209,  209, 209, 209,  209, 209, 209,
+      4, 104, 204,  4, 104, 204,  4, 104, 204,  4, 104, 204,
+      9, 109, 209,  9, 109, 209,  9, 109, 209,  9, 109, 209,
     ]);
     assert_eq!(tiler.build_tile(2), [&rgb[30..42], &rgb[30..42]].concat());
     #[rustfmt::skip]
     assert_eq!(tiler.build_tile(3), [
-      14, 114, 214,  214, 214, 214,  214, 214, 214,  214, 214, 214,
-      14, 114, 214,  214, 214, 214,  214, 214, 214,  214, 214, 214,
+      14, 114, 214,  14, 114, 214,  14, 114, 214,  14, 114, 214,
+      14, 114, 214,  14, 114, 214,  14, 114, 214,  14, 114, 214,
     ]);
   }
 
