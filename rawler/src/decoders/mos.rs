@@ -79,7 +79,10 @@ impl<'a> Decoder for MosDecoder<'a> {
   }
 
   fn raw_metadata(&self, _file: &RawSource, _params: &RawDecodeParams) -> Result<RawMetadata> {
-    let exif = Exif::new(self.tiff.root_ifd())?;
+    let mut exif = Exif::new(self.tiff.root_ifd())?;
+    if let Some(orientation) = self.orientation() {
+      exif.orientation = Some(orientation);
+    }
     let mdata = RawMetadata::new(self.camera.metadata(), exif);
     Ok(mdata)
   }
@@ -90,6 +93,34 @@ impl<'a> Decoder for MosDecoder<'a> {
 }
 
 impl<'a> MosDecoder<'a> {
+  /// Value of an entry in the Leaf metadata block. Entries are a 40 byte name, a 4 byte length and the text value.
+  fn leaf_value(&self, name: &str) -> Option<String> {
+    let meta = self.tiff.get_entry(TiffCommonTag::LeafMetadata)?.get_data();
+    let key = name.as_bytes();
+    let pos = (0..meta.len().saturating_sub(44)).find(|&pos| meta[pos..].starts_with(key) && meta[pos + key.len()] == 0)?;
+    let data = &meta[pos + 44..];
+    let end = data.iter().position(|&x| x == 0).unwrap_or(data.len());
+    Some(String::from_utf8_lossy(&data[..end]).trim().to_string())
+  }
+
+  /// Orientation as EXIF value, the raw data is rotated by the capture and image profile.
+  fn orientation(&self) -> Option<u16> {
+    let degrees = |name: &str| self.leaf_value(name)?.parse::<i32>().ok();
+    let raw_rotation = degrees("CaptProf_raw_data_rotation");
+    let rotation = match (raw_rotation, degrees("ImgProf_rotation_angle")) {
+      (Some(raw), Some(image)) => image - raw,
+      (Some(raw), None) => raw,
+      (None, _) => return None,
+    };
+    match rotation.rem_euclid(360) {
+      0 => Some(1),
+      90 => Some(6),
+      180 => Some(3),
+      270 => Some(8),
+      _ => None,
+    }
+  }
+
   fn get_wb(&self) -> Result<[f32; 4]> {
     let meta = fetch_tiff_tag!(self.tiff, TiffCommonTag::LeafMetadata).get_data();
     let mut pos = 0;
