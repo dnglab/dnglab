@@ -1312,17 +1312,24 @@ impl<'a, T> ImageRegionMut<'a, T> {
         channels,
       })
       .collect();
-    // The row segments of the areas are split off from left to right
-    let mut by_x: Vec<usize> = (0..areas.len()).filter(|&i| !areas[i].is_empty()).collect();
-    by_x.sort_by_key(|&i| areas[i].p.x);
+    // Areas with pixels by their first row
+    let mut by_y: Vec<usize> = (0..areas.len()).filter(|&i| !areas[i].is_empty()).collect();
+    by_y.sort_by_key(|&i| areas[i].p.y);
+    let mut by_y = by_y.into_iter().peekable();
+    // Areas of the current row from left to right, their row segments are
+    // split off in this order
+    let mut row_areas: Vec<usize> = Vec::new();
     for (y, row) in data.chunks_mut(stride.max(1)).map(|row| &mut row[..row_len]).enumerate() {
+      row_areas.retain(|&i| y < areas[i].p.y + areas[i].d.h);
+      let count = row_areas.len();
+      row_areas.extend(std::iter::from_fn(|| by_y.next_if(|&i| areas[i].p.y <= y)));
+      if row_areas.len() > count {
+        row_areas.sort_by_key(|&i| areas[i].p.x);
+      }
       // Part of the row that is not split off yet, it starts at pixel x
       let (mut rest, mut x) = (row, 0);
-      for &i in &by_x {
+      for &i in &row_areas {
         let area = areas[i];
-        if y < area.p.y || y >= area.p.y + area.d.h {
-          continue;
-        }
         if area.p.x < x {
           return Err(format!("{:?} overlaps another area", area).into());
         }
