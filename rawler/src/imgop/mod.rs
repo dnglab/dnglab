@@ -261,20 +261,6 @@ impl Rect {
   }
 }
 
-/// Crop image to specific area
-pub fn crop<T: Clone>(input: &[T], dim: Dim2, area: Rect) -> Vec<T> {
-  let mut output = Vec::with_capacity(area.d.h * area.d.w);
-  output.extend(
-    input
-      .chunks_exact(dim.w)
-      .skip(area.p.y)
-      .take(area.d.h)
-      .flat_map(|row| row[area.p.x..area.p.x + area.d.w].iter())
-      .cloned(),
-  );
-  output
-}
-
 pub fn scale_u16_to_double(x: u16) -> f32 {
   x as f32 / u16::MAX as f32
 }

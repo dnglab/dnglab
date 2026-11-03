@@ -5,14 +5,11 @@
 
 use serde::{Deserialize, Serialize};
 
-use crate::{
-  RawlerError, Result,
-  imgop::{Dim2, crop},
-};
+use crate::{RawlerError, Result};
 
 use super::{
   OpcodeData, OpcodeImage, OpcodeStage,
-  helpers::{ParamReader, apply_roi_threaded, bayer_is_green, put_u32, same_phase_index, stage_bounds},
+  helpers::{ParamReader, bayer_is_green, for_each_row, put_u32, same_phase_index, stage_bounds},
 };
 
 /// Patches bad pixels of a Bayer CFA image that are marked with a constant value.
@@ -53,9 +50,9 @@ impl FixBadPixelsConstant {
 
   pub fn apply(&self, image: &mut OpcodeImage<'_>, stage: OpcodeStage) -> Result<()> {
     let bounds = stage_bounds(image, stage);
-    let (width, height, cpp) = (image.width(), image.height(), image.channels());
-    let samples = match &mut image.data {
-      OpcodeData::Integer(view) if cpp == 1 => view.as_mut_slice(),
+    let cpp = image.channels();
+    let view = match &mut image.data {
+      OpcodeData::Integer(view) if cpp == 1 => view,
       _ => {
         return Err(RawlerError::DecoderFailed(format!(
           "DNG opcode FixBadPixelsConstant in {} requires 16 bit raw data with a single plane",
@@ -72,8 +69,9 @@ impl FixBadPixelsConstant {
     }
     // Bad pixels are interpolated from the original values
     let dim = bounds.d;
-    let src = crop(samples, Dim2::new(width, height), bounds);
-    apply_roi_threaded(samples, width, 1, bounds, 1, &|line, row| {
+    let region = view.region_mut(bounds);
+    let src = region.as_region().to_vec();
+    for_each_row(region, 1, &|line, row| {
       let y = row - bounds.y();
       for (x, value) in line.iter_mut().enumerate() {
         if src[y * dim.w + x] != bad {

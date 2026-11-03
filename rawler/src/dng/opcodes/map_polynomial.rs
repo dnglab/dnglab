@@ -66,18 +66,15 @@ impl MapPolynomial {
     let Some(rect) = self.area.buffer_rect(image, stage) else {
       return Ok(());
     };
-    let (width, cpp) = (image.width(), image.channels());
     match (&mut image.data, stage) {
       // Logical range of floating point data is 0.0 to 1.0
       (OpcodeData::Float(view), _) => {
-        let samples = view.as_mut_slice();
-        map_area(samples, width, cpp, rect, &self.area, &|x: f32| self.evaluate(x as f64).clamp(0.0, 1.0) as f32);
+        map_area(view.region_mut(rect), &self.area, &|x: f32| self.evaluate(x as f64).clamp(0.0, 1.0) as f32);
       }
       // Logical range of 16 bit data in OpcodeList1 is 0 to 65535, the polynomial
       // maps 16 bit sample values.
       (OpcodeData::Integer(view), OpcodeStage::List1) => {
-        let samples = view.as_mut_slice();
-        map_area(samples, width, cpp, rect, &self.area, &|x: u16| {
+        map_area(view.region_mut(rect), &self.area, &|x: u16| {
           self.evaluate(x as f64).round().clamp(0.0, 65535.0) as u16
         });
       }
