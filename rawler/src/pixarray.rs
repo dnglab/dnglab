@@ -1314,6 +1314,55 @@ impl<'a, T> ImageRegionMut<'a, T> {
     }
     Some(ImageViewMut::new(self.data, self.area.d.w, self.area.d.h, self.channels))
   }
+
+  /// Split into mutable regions of `areas`, which are relative to this region
+  ///
+  /// The regions are returned in the order of `areas` and can be written at
+  /// the same time, also by different threads. Like for [`ImageRegion`], the
+  /// region of an empty area has no rows. Fails if an area is not inside of
+  /// the region or overlaps another area.
+  pub fn split_regions_mut(self, areas: &[Rect]) -> crate::Result<Vec<DisjointRegionMut<'a, T>>> {
+    let dim = self.dim();
+    if let Some(area) = areas.iter().find(|area| area.p.x + area.d.w > dim.w || area.p.y + area.d.h > dim.h) {
+      return Err(format!("{:?} is outside of {}x{} pixels", area, dim.w, dim.h).into());
+    }
+    let row_len = self.as_region().row_len();
+    let Self {
+      data,
+      stride,
+      area: parent,
+      channels,
+    } = self;
+    let mut regions: Vec<DisjointRegionMut<'a, T>> = areas
+      .iter()
+      .map(|area| DisjointRegionMut {
+        rows: Vec::with_capacity(if area.is_empty() { 0 } else { area.d.h }),
+        area: area.translate(parent.p),
+        channels,
+      })
+      .collect();
+    // The row segments of the areas are split off from left to right
+    let mut by_x: Vec<usize> = (0..areas.len()).filter(|&i| !areas[i].is_empty()).collect();
+    by_x.sort_by_key(|&i| areas[i].p.x);
+    for (y, row) in data.chunks_mut(stride.max(1)).map(|row| &mut row[..row_len]).enumerate() {
+      // Part of the row that is not split off yet, it starts at pixel x
+      let (mut rest, mut x) = (row, 0);
+      for &i in &by_x {
+        let area = areas[i];
+        if y < area.p.y || y >= area.p.y + area.d.h {
+          continue;
+        }
+        if area.p.x < x {
+          return Err(format!("{:?} overlaps another area", area).into());
+        }
+        let (_, tail) = std::mem::take(&mut rest).split_at_mut((area.p.x - x) * channels);
+        let (segment, tail) = tail.split_at_mut(area.d.w * channels);
+        regions[i].rows.push(segment);
+        (rest, x) = (tail, area.p.x + area.d.w);
+      }
+    }
+    Ok(regions)
+  }
 }
 
 impl<T> std::fmt::Debug for ImageRegionMut<'_, T> {
@@ -1321,6 +1370,80 @@ impl<T> std::fmt::Debug for ImageRegionMut<'_, T> {
     write!(
       f,
       "ImageRegionMut({}x{} at {}:{}, {} channels)",
+      self.area.d.w, self.area.d.h, self.area.p.x, self.area.p.y, self.channels
+    )
+  }
+}
+
+/// Mutable rectangular area of an image whose rows are borrowed one by one,
+/// see [`ImageRegionMut::split_regions_mut`]
+///
+/// Unlike an [`ImageRegionMut`], it doesn't borrow the samples between its
+/// rows, so regions side by side can be borrowed at the same time.
+pub struct DisjointRegionMut<'a, T> {
+  /// Rows of `width * channels` samples
+  rows: Vec<LineMut<'a, T>>,
+  /// Position in the image buffer
+  area: Rect,
+  channels: usize,
+}
+
+impl<T> DisjointRegionMut<'_, T> {
+  pub fn width(&self) -> usize {
+    self.area.d.w
+  }
+
+  pub fn height(&self) -> usize {
+    self.area.d.h
+  }
+
+  pub fn channels(&self) -> usize {
+    self.channels
+  }
+
+  pub fn dim(&self) -> Dim2 {
+    self.area.d
+  }
+
+  /// Position of the region in the image buffer
+  pub fn area(&self) -> Rect {
+    self.area
+  }
+
+  /// Row `row` of `width * channels` samples
+  ///
+  /// # Panics
+  /// Panics if `row` is not inside of the region.
+  pub fn row(&self, row: usize) -> Line<'_, T> {
+    match self.rows.get(row) {
+      Some(line) => line,
+      None => panic!("Row {} is outside of {:?}", row, self),
+    }
+  }
+
+  /// Mutable row `row` of `width * channels` samples
+  ///
+  /// # Panics
+  /// Panics if `row` is not inside of the region.
+  pub fn row_mut(&mut self, row: usize) -> LineMut<'_, T> {
+    let area = self.area;
+    match self.rows.get_mut(row) {
+      Some(line) => line,
+      None => panic!("Row {} is outside of {:?}", row, area),
+    }
+  }
+
+  /// Mutable rows of `width * channels` samples
+  pub fn rows_mut(&mut self) -> impl ExactSizeIterator<Item = LineMut<'_, T>> {
+    self.rows.iter_mut().map(|row| &mut **row)
+  }
+}
+
+impl<T> std::fmt::Debug for DisjointRegionMut<'_, T> {
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    write!(
+      f,
+      "DisjointRegionMut({}x{} at {}:{}, {} channels)",
       self.area.d.w, self.area.d.h, self.area.p.x, self.area.p.y, self.channels
     )
   }
@@ -1767,6 +1890,85 @@ mod tests {
     );
     assert_eq!(data[..12], (0..12).collect::<Vec<u16>>());
     assert!(data[12..].iter().all(|v| *v == 0));
+  }
+
+  fn area(x: usize, y: usize, w: usize, h: usize) -> Rect {
+    Rect::new(Point::new(x, y), Dim2::new(w, h))
+  }
+
+  #[test]
+  fn split_regions_mut_writes_disjoint_areas() {
+    // 6x4 pixels, a grid of 2x2 tiles with 3x2 pixels, written in parallel
+    let mut pixels = PixU16::new(6, 4);
+    let areas = [area(0, 0, 3, 2), area(3, 0, 3, 2), area(0, 2, 3, 2), area(3, 2, 3, 2)];
+    let regions = ImageRegionMut::from(pixels.view_mut()).split_regions_mut(&areas).expect("disjoint areas");
+    assert_eq!(regions.iter().map(|region| region.area()).collect::<Vec<_>>(), areas);
+    regions.into_par_iter().enumerate().for_each(|(i, mut region)| {
+      region.rows_mut().enumerate().for_each(|(row, line)| line.fill(10 * i as u16 + row as u16));
+    });
+    #[rustfmt::skip]
+    assert_eq!(pixels.data, [
+      0, 0, 0, 10, 10, 10,
+      1, 1, 1, 11, 11, 11,
+      20, 20, 20, 30, 30, 30,
+      21, 21, 21, 31, 31, 31,
+    ]);
+
+    // Column strips over the full height, from right to left with a gap between them
+    let mut rgb = RgbF32::new(4, 2);
+    let areas = [area(2, 0, 2, 2), area(0, 0, 1, 2)];
+    let mut regions = ImageRegionMut::from(rgb.view_mut()).split_regions_mut(&areas).expect("disjoint areas");
+    assert_eq!(regions[0].row(1).len(), 6);
+    regions[0].row_mut(1)[3..].fill(0.5);
+    regions[1].row_mut(0)[2] = 1.0;
+    assert_eq!(regions[1].row(0), [0.0, 0.0, 1.0]);
+    assert_eq!(
+      rgb.data,
+      [[0.0, 0.0, 1.0], [0.0; 3], [0.0; 3], [0.0; 3], [0.0; 3], [0.0; 3], [0.0; 3], [0.5; 3]]
+    );
+  }
+
+  #[test]
+  fn split_regions_mut_of_region() {
+    // 4x3 pixels with 2 channels, split the region of 3x2 pixels at 1:1
+    let mut samples = vec![0_u16; 24];
+    let region = ImageRegionMut::new(&mut samples, 4, 3, 2, area(1, 1, 3, 2));
+    let mut regions = region.split_regions_mut(&[area(0, 0, 1, 2), area(1, 1, 2, 1)]).expect("disjoint areas");
+    assert_eq!(regions[0].area(), area(1, 1, 1, 2));
+    assert_eq!(regions[1].area(), area(2, 2, 2, 1));
+    assert_eq!(
+      (regions[1].dim(), regions[1].width(), regions[1].height(), regions[1].channels()),
+      (Dim2::new(2, 1), 2, 1, 2)
+    );
+    regions[0].rows_mut().for_each(|row| row.fill(1));
+    regions[1].row_mut(0).copy_from_slice(&[2, 3, 4, 5]);
+    #[rustfmt::skip]
+    assert_eq!(samples, [
+      0, 0, 0, 0, 0, 0, 0, 0,
+      0, 0, 1, 1, 0, 0, 0, 0,
+      0, 0, 1, 1, 2, 3, 4, 5,
+    ]);
+  }
+
+  #[test]
+  fn split_regions_mut_checks_areas() {
+    let mut pixels = PixU16::new(4, 3);
+    let mut split = |areas: &[Rect]| {
+      ImageRegionMut::from(pixels.view_mut())
+        .split_regions_mut(areas)
+        .map(|mut regions| regions.iter_mut().map(|region| region.rows_mut().len()).collect::<Vec<_>>())
+    };
+    // Outside of the image
+    assert!(split(&[area(3, 0, 2, 1)]).is_err());
+    assert!(split(&[area(0, 2, 1, 2)]).is_err());
+    assert!(split(&[area(5, 0, 0, 0)]).is_err());
+    // Overlapping areas, in both orders
+    assert!(split(&[area(0, 0, 2, 2), area(1, 1, 2, 2)]).is_err());
+    assert!(split(&[area(1, 1, 2, 2), area(0, 0, 2, 2)]).is_err());
+    assert!(split(&[area(0, 0, 4, 3), area(0, 0, 4, 3)]).is_err());
+    // Adjacent areas, an empty area inside of another one has no rows
+    assert_eq!(split(&[area(0, 0, 2, 3), area(2, 1, 2, 2), area(1, 1, 0, 1)]).ok(), Some(vec![3, 2, 0]));
+    assert_eq!(split(&[]).ok(), Some(vec![]));
   }
 
   #[test]
