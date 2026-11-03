@@ -2,6 +2,7 @@ make = "SAMSUNG"
 model = "NX300"
 clean_make = "Samsung"
 clean_model = "NX300"
+model_aliases = [["EK-GN120", "EK-GN120"]]
 #blackpoint = 0
 whitepoint = 4095
 color_pattern = "GRBG"
