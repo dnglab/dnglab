@@ -2,6 +2,7 @@ make = "NIKON CORPORATION"
 model = "NIKON 1 J1"
 clean_make = "Nikon"
 clean_model = "1 J1"
+model_aliases = [["NIKON 1 S1", "1 S1"]]
 color_pattern = "RGGB"
 active_area = [0, 0, 0, 2]
 crop_area = [12, 6, 20, 8]
