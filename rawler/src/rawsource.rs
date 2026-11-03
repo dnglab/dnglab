@@ -40,6 +40,19 @@ impl RawSource {
     })
   }
 
+  /// Like [`RawSource::new`], but without populate:
+  /// pages are only read from disk when they are first accessed.
+  /// This is useful for parsing MakerNotes, thumbnails or previews
+  /// without loading the full raw file.
+  pub fn new_lazy(path: &Path) -> std::io::Result<Self> {
+    let file = File::open(path)?;
+    let mmap = unsafe { MmapOptions::new().map(&file)? };
+    Ok(Self {
+      path: path.canonicalize().unwrap_or_else(|_| path.to_owned()),
+      inner: RawSourceImpl::Memmap(mmap),
+    })
+  }
+
   pub fn new_from_shared_vec(buf: Arc<Vec<u8>>) -> Self {
     Self {
       path: PathBuf::default(),
@@ -144,5 +157,23 @@ impl Deref for RawSource {
 impl Debug for RawSource {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
     f.debug_struct("RawSource").field("path", &self.path).finish()
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[test]
+  fn new_lazy_reads_file() -> std::io::Result<()> {
+    let path = std::env::temp_dir().join(format!("rawler-rawsource-lazy-{}.bin", std::process::id()));
+    let data: Vec<u8> = (0..=255).collect();
+    std::fs::write(&path, &data)?;
+    let src = RawSource::new_lazy(&path);
+    std::fs::remove_file(&path)?;
+    let src = src?;
+    assert_eq!(src.buf(), data.as_slice());
+    assert_eq!(src.subview(16, 4)?, &data[16..20]);
+    Ok(())
   }
 }
