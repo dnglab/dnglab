@@ -5,7 +5,11 @@ clean_model = "Dynax 7D"
 model_aliases = [
   ["ALPHA 7D", "Alpha 7D"],
   ["ALPHA-7 DIGITAL", "Alpha-7 Digital"],
-  ["MAXXUM 7D", "Maxxum 7D"]
+  ["MAXXUM 7D", "Maxxum 7D"],
+  ["DYNAX 5D", "Dynax 5D"],
+  ["ALPHA SWEET DIGITAL", "Alpha Sweet Digital"],
+  ["MAXXUM 5D", "Maxxum 5D"],
+  ["ALPHA-5 DIGITAL", "Alpha-5 Digital"]
 ]
 blackpoint = 0
 whitepoint = 4095
