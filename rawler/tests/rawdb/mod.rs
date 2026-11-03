@@ -723,6 +723,8 @@ mod dnglab {
     super::super::rawdb_test_file!("dnglab", "dng-compression-variants", sample_12bit_dng, "variants/12bit.dng");
     super::super::rawdb_test_file!("dnglab", "dng-compression-variants", sample_16bit_bigend_dng, "variants/16bit_bigend.dng");
     super::super::rawdb_test_file!("dnglab", "dng-compression-variants", sample_8bit_lintable_dng, "variants/8bit_lintable.dng");
+    super::super::rawdb_test_file!("dnglab", "dng-compression-variants", hdr_dng17_float16_jxl_tiles_1_dng, "variants/HDR_DNG17_FLOAT16_JXL_TILES_1.dng");
+    super::super::rawdb_test_file!("dnglab", "dng-compression-variants", hdr_dng17_float16_jxl_tiles_2_dng, "variants/HDR_DNG17_FLOAT16_JXL_TILES_2.dng");
     super::super::rawdb_test_file!("dnglab", "dng-compression-variants", dng_fp16_uncompressed_dng, "variants/dng-fp16-uncompressed.dng");
     super::super::rawdb_test_file!("dnglab", "dng-compression-variants", dng_fp16_w_pred_deflate_dng, "variants/dng-fp16-w-pred-deflate.dng");
     super::super::rawdb_test_file!("dnglab", "dng-compression-variants", dng_fp24_uncompressed_dng, "variants/dng-fp24-uncompressed.dng");
