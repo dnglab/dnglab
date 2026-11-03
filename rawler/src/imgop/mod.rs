@@ -235,6 +235,13 @@ impl Rect {
       .map(|rect| Self::new(Point::new(rect.p.x - area.p.x, rect.p.y - area.p.y), rect.d))
   }
 
+  /// Rectangle moved by `offset`. For a rectangle relative to the origin of
+  /// an area, `offset` is the position of the area: the inverse of
+  /// [`Self::rebase`], without clipping.
+  pub fn translate(&self, offset: Point) -> Self {
+    Self::new(Point::new(self.p.x + offset.x, self.p.y + offset.y), self.d)
+  }
+
   pub fn adapt(&self, master: &Self) -> Self {
     assert!(self.p.x >= master.p.x);
     assert!(self.p.y >= master.p.y);
@@ -380,5 +387,13 @@ mod tests {
     let rect2 = Rect::new_with_points(Point::new(0, 0), Point::new(1, 1));
     assert_eq!(rect1, rect2);
     Ok(())
+  }
+
+  #[test]
+  fn translate_is_inverse_of_rebase() {
+    let area = Rect::new(Point::new(2, 1), Dim2::new(6, 4));
+    let rect = Rect::new(Point::new(1, 3), Dim2::new(2, 1));
+    assert_eq!(rect.translate(area.p), Rect::new(Point::new(3, 4), Dim2::new(2, 1)));
+    assert_eq!(rect.translate(area.p).rebase(&area), Some(rect));
   }
 }

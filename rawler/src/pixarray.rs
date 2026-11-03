@@ -1,4 +1,4 @@
-use std::cell::UnsafeCell;
+use std::{cell::UnsafeCell, ops::Range};
 
 use itertools::Itertools;
 use multiversion::multiversion;
@@ -684,6 +684,19 @@ impl<T, const N: usize> Color2D<T, N> {
   pub fn view_mut(&mut self) -> ImageViewMut<'_, T> {
     self.into()
   }
+
+  /// Borrowed region `area` of the pixels with N channels
+  ///
+  /// # Panics
+  /// Panics if `area` is not inside of the image.
+  pub fn region(&self, area: Rect) -> ImageRegion<'_, T> {
+    self.view().region(area)
+  }
+
+  /// Borrowed mutable region `area` of the pixels, see [`Self::region`]
+  pub fn region_mut(&mut self, area: Rect) -> ImageRegionMut<'_, T> {
+    self.view_mut().into_region_mut(area)
+  }
 }
 
 impl<T: SubPixel> Pix2D<T> {
@@ -695,6 +708,20 @@ impl<T: SubPixel> Pix2D<T> {
   /// Borrowed mutable view of the pixels with one channel
   pub fn view_mut(&mut self) -> ImageViewMut<'_, T> {
     self.into()
+  }
+
+  /// Borrowed region `area` of the pixels with one channel, `area` is in
+  /// samples like [`Self::width`]
+  ///
+  /// # Panics
+  /// Panics if `area` is not inside of the image.
+  pub fn region(&self, area: Rect) -> ImageRegion<'_, T> {
+    self.view().region(area)
+  }
+
+  /// Borrowed mutable region `area` of the pixels, see [`Self::region`]
+  pub fn region_mut(&mut self, area: Rect) -> ImageRegionMut<'_, T> {
+    self.view_mut().into_region_mut(area)
   }
 }
 
@@ -783,14 +810,15 @@ impl<'a, T> ImageView<'a, T> {
   where
     T: Copy,
   {
-    assert!(
-      area.p.x + area.d.w <= self.width && area.p.y + area.d.h <= self.height,
-      "{:?} is outside of {:?}",
-      area,
-      self
-    );
-    let (start, end) = (area.p.x * self.channels, (area.p.x + area.d.w) * self.channels);
-    self.rows().skip(area.p.y).take(area.d.h).flat_map(|row| &row[start..end]).copied().collect()
+    self.region(area).to_vec()
+  }
+
+  /// Region `area` of the image
+  ///
+  /// # Panics
+  /// Panics if `area` is not inside of the image.
+  pub fn region(&self, area: Rect) -> ImageRegion<'a, T> {
+    ImageRegion::from(*self).region(area)
   }
 }
 
@@ -920,6 +948,25 @@ impl<'a, T> ImageViewMut<'a, T> {
     }
     Ok(ImageViewMut::new(&mut data[..row_len * area.d.h], area.d.w, area.d.h, self.channels))
   }
+
+  /// Region `area` of the image
+  ///
+  /// # Panics
+  /// Panics if `area` is not inside of the image.
+  pub fn region(&self, area: Rect) -> ImageRegion<'_, T> {
+    self.as_view().region(area)
+  }
+
+  /// Mutable region `area` of the image, see [`Self::region`]
+  pub fn region_mut(&mut self, area: Rect) -> ImageRegionMut<'_, T> {
+    self.reborrow().into_region_mut(area)
+  }
+
+  /// Mutable region `area` of the image that keeps the borrow of the data,
+  /// see [`Self::region`]
+  pub fn into_region_mut(self, area: Rect) -> ImageRegionMut<'a, T> {
+    ImageRegionMut::from(self).into_region_mut(area)
+  }
 }
 
 impl<T> std::fmt::Debug for ImageViewMut<'_, T> {
@@ -955,6 +1002,381 @@ impl<'a, T, const N: usize> From<&'a Color2D<T, N>> for ImageView<'a, T> {
 impl<'a, T, const N: usize> From<&'a mut Color2D<T, N>> for ImageViewMut<'a, T> {
   fn from(pixels: &'a mut Color2D<T, N>) -> Self {
     Self::from_array_slice(&mut pixels.data, pixels.width, pixels.height)
+  }
+}
+
+/// Range of the samples of `area` in the data of a region of `dim` pixels with
+/// `stride` samples per row: from the first sample of the first row of `area`
+/// to the last sample of its last row. `area` is relative to the region.
+///
+/// # Panics
+/// Panics if `area` is not inside of the region.
+fn region_range(area: Rect, dim: Dim2, stride: usize, channels: usize) -> Range<usize> {
+  assert!(
+    area.p.x + area.d.w <= dim.w && area.p.y + area.d.h <= dim.h,
+    "{:?} is outside of {}x{} pixels",
+    area,
+    dim.w,
+    dim.h
+  );
+  if area.is_empty() {
+    return 0..0;
+  }
+  let start = area.p.y * stride + area.p.x * channels;
+  start..start + (area.d.h - 1) * stride + area.d.w * channels
+}
+
+/// Rectangular area of an image with `channels` interleaved samples per pixel,
+/// borrowed from the image buffer
+///
+/// The rows of the region are [`Line`]s of `width * channels` samples, a row
+/// starts one image row after the previous one. [`Self::area`] is the position
+/// in the image buffer, also for a region of a region. If the samples are
+/// contiguous, [`Self::image_view`] gives them as one slice. Like an empty
+/// [`ImageView`], a region of an empty area has no rows.
+pub struct ImageRegion<'a, T> {
+  /// Part of the image buffer from the first sample of the top-left pixel of
+  /// the region to the last sample of its bottom-right pixel. Between two
+  /// rows it holds the samples outside of the region, rows are `stride`
+  /// samples apart.
+  data: &'a [T],
+  /// Samples from the start of a row to the start of the next row
+  stride: usize,
+  /// Position in the image buffer
+  area: Rect,
+  channels: usize,
+}
+
+impl<'a, T> ImageRegion<'a, T> {
+  /// Region `area` of `data`, which holds `width * height` pixels of `channels` samples
+  ///
+  /// # Panics
+  /// Panics if the length of `data` doesn't match the dimensions or if `area`
+  /// is not inside of the image.
+  pub fn new(data: &'a [T], width: usize, height: usize, channels: usize, area: Rect) -> Self {
+    ImageView::new(data, width, height, channels).region(area)
+  }
+
+  pub fn width(&self) -> usize {
+    self.area.d.w
+  }
+
+  pub fn height(&self) -> usize {
+    self.area.d.h
+  }
+
+  pub fn channels(&self) -> usize {
+    self.channels
+  }
+
+  pub fn dim(&self) -> Dim2 {
+    self.area.d
+  }
+
+  /// Position of the region in the image buffer
+  pub fn area(&self) -> Rect {
+    self.area
+  }
+
+  fn row_len(&self) -> usize {
+    self.area.d.w * self.channels
+  }
+
+  /// The rows follow each other without gaps
+  fn is_contiguous(&self) -> bool {
+    self.area.is_empty() || self.area.d.h == 1 || self.row_len() == self.stride
+  }
+
+  /// Row `row` of `width * channels` samples
+  ///
+  /// # Panics
+  /// Panics if `row` is not inside of the region.
+  pub fn row(&self, row: usize) -> Line<'a, T> {
+    match self.data.chunks(self.stride.max(1)).nth(row) {
+      Some(line) => &line[..self.row_len()],
+      None => panic!("Row {} is outside of {:?}", row, self),
+    }
+  }
+
+  /// Rows of `width * channels` samples
+  pub fn rows(&self) -> impl ExactSizeIterator<Item = Line<'a, T>> + use<'a, T> {
+    let row_len = self.row_len();
+    self.data.chunks(self.stride.max(1)).map(move |row| &row[..row_len])
+  }
+
+  /// Rows of `width * channels` samples, processed in parallel
+  pub fn par_rows(&self) -> impl IndexedParallelIterator<Item = Line<'a, T>> + use<'a, T>
+  where
+    T: Sync,
+  {
+    let row_len = self.row_len();
+    self.data.par_chunks(self.stride.max(1)).map(move |row| &row[..row_len])
+  }
+
+  /// Region `area` of this region, `area` is relative to it
+  ///
+  /// # Panics
+  /// Panics if `area` is not inside of the region.
+  pub fn region(&self, area: Rect) -> ImageRegion<'a, T> {
+    let range = region_range(area, self.dim(), self.stride, self.channels);
+    ImageRegion {
+      data: &self.data[range],
+      stride: self.stride,
+      area: area.translate(self.area.p),
+      channels: self.channels,
+    }
+  }
+
+  /// Copy of the samples, row by row
+  pub fn to_vec(&self) -> Vec<T>
+  where
+    T: Copy,
+  {
+    let mut samples = Vec::with_capacity(self.row_len() * self.height());
+    self.rows().for_each(|row| samples.extend_from_slice(row));
+    samples
+  }
+
+  /// View of the samples as one slice, `None` if they are not contiguous
+  ///
+  /// The samples are contiguous if the region has the width of the image, a
+  /// single row or no pixels.
+  pub fn image_view(&self) -> Option<ImageView<'a, T>> {
+    self
+      .is_contiguous()
+      .then(|| ImageView::new(self.data, self.width(), self.height(), self.channels))
+  }
+}
+
+impl<T> Clone for ImageRegion<'_, T> {
+  fn clone(&self) -> Self {
+    *self
+  }
+}
+
+impl<T> Copy for ImageRegion<'_, T> {}
+
+impl<T> std::fmt::Debug for ImageRegion<'_, T> {
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    write!(
+      f,
+      "ImageRegion({}x{} at {}:{}, {} channels)",
+      self.area.d.w, self.area.d.h, self.area.p.x, self.area.p.y, self.channels
+    )
+  }
+}
+
+/// Mutable rectangular area of an image with `channels` interleaved samples
+/// per pixel, borrowed from the image buffer, see [`ImageRegion`]
+pub struct ImageRegionMut<'a, T> {
+  /// Part of the image buffer from the first sample of the top-left pixel of
+  /// the region to the last sample of its bottom-right pixel. Between two
+  /// rows it holds the samples outside of the region, rows are `stride`
+  /// samples apart.
+  data: &'a mut [T],
+  /// Samples from the start of a row to the start of the next row
+  stride: usize,
+  /// Position in the image buffer
+  area: Rect,
+  channels: usize,
+}
+
+impl<'a, T> ImageRegionMut<'a, T> {
+  /// Region `area` of `data`, which holds `width * height` pixels of `channels` samples
+  ///
+  /// # Panics
+  /// Panics if the length of `data` doesn't match the dimensions or if `area`
+  /// is not inside of the image.
+  pub fn new(data: &'a mut [T], width: usize, height: usize, channels: usize, area: Rect) -> Self {
+    ImageViewMut::new(data, width, height, channels).into_region_mut(area)
+  }
+
+  pub fn width(&self) -> usize {
+    self.area.d.w
+  }
+
+  pub fn height(&self) -> usize {
+    self.area.d.h
+  }
+
+  pub fn channels(&self) -> usize {
+    self.channels
+  }
+
+  pub fn dim(&self) -> Dim2 {
+    self.area.d
+  }
+
+  /// Position of the region in the image buffer
+  pub fn area(&self) -> Rect {
+    self.area
+  }
+
+  /// Immutable region of the same data
+  pub fn as_region(&self) -> ImageRegion<'_, T> {
+    ImageRegion {
+      data: self.data,
+      stride: self.stride,
+      area: self.area,
+      channels: self.channels,
+    }
+  }
+
+  /// Shorter-lived mutable region, to pass the region on without giving it away
+  pub fn reborrow(&mut self) -> ImageRegionMut<'_, T> {
+    ImageRegionMut {
+      data: self.data,
+      stride: self.stride,
+      area: self.area,
+      channels: self.channels,
+    }
+  }
+
+  /// Row `row` of `width * channels` samples
+  ///
+  /// # Panics
+  /// Panics if `row` is not inside of the region.
+  pub fn row(&self, row: usize) -> Line<'_, T> {
+    self.as_region().row(row)
+  }
+
+  /// Mutable row `row` of `width * channels` samples
+  ///
+  /// # Panics
+  /// Panics if `row` is not inside of the region.
+  pub fn row_mut(&mut self, row: usize) -> LineMut<'_, T> {
+    let (area, row_len) = (self.area, self.as_region().row_len());
+    match self.data.chunks_mut(self.stride.max(1)).nth(row) {
+      Some(line) => &mut line[..row_len],
+      None => panic!("Row {} is outside of {:?}", row, area),
+    }
+  }
+
+  /// Rows of `width * channels` samples
+  pub fn rows(&self) -> impl ExactSizeIterator<Item = Line<'_, T>> {
+    self.as_region().rows()
+  }
+
+  /// Mutable rows of `width * channels` samples
+  pub fn rows_mut(&mut self) -> impl ExactSizeIterator<Item = LineMut<'_, T>> {
+    let row_len = self.as_region().row_len();
+    self.data.chunks_mut(self.stride.max(1)).map(move |row| &mut row[..row_len])
+  }
+
+  /// Mutable rows of `width * channels` samples, processed in parallel
+  pub fn par_rows_mut(&mut self) -> impl IndexedParallelIterator<Item = LineMut<'_, T>>
+  where
+    T: Send,
+  {
+    let row_len = self.as_region().row_len();
+    self.data.par_chunks_mut(self.stride.max(1)).map(move |row| &mut row[..row_len])
+  }
+
+  /// Mutable region `area` of this region, `area` is relative to it
+  ///
+  /// # Panics
+  /// Panics if `area` is not inside of the region.
+  pub fn region_mut(&mut self, area: Rect) -> ImageRegionMut<'_, T> {
+    self.reborrow().into_region_mut(area)
+  }
+
+  /// Mutable region `area` of this region that keeps the borrow of the data,
+  /// see [`Self::region_mut`]
+  pub fn into_region_mut(self, area: Rect) -> ImageRegionMut<'a, T> {
+    let range = region_range(area, self.dim(), self.stride, self.channels);
+    let Self {
+      data,
+      stride,
+      area: parent,
+      channels,
+    } = self;
+    ImageRegionMut {
+      data: &mut data[range],
+      stride,
+      area: area.translate(parent.p),
+      channels,
+    }
+  }
+
+  /// Write `samples`, the samples of the region row by row as returned by
+  /// [`ImageRegion::to_vec`]
+  ///
+  /// # Panics
+  /// Panics if the length of `samples` doesn't match the dimensions.
+  pub fn copy_from_slice(&mut self, samples: &[T])
+  where
+    T: Copy,
+  {
+    let row_len = self.as_region().row_len();
+    assert_eq!(samples.len(), row_len * self.height(), "Samples don't match {:?}", self);
+    for (row, samples) in self.rows_mut().zip(samples.chunks_exact(row_len.max(1))) {
+      row.copy_from_slice(samples);
+    }
+  }
+
+  /// View of the samples as one slice, `None` if they are not contiguous,
+  /// see [`ImageRegion::image_view`]
+  pub fn image_view(&self) -> Option<ImageView<'_, T>> {
+    self.as_region().image_view()
+  }
+
+  /// Mutable view of the samples as one slice, `None` if they are not
+  /// contiguous, see [`ImageRegion::image_view`]
+  pub fn image_view_mut(&mut self) -> Option<ImageViewMut<'_, T>> {
+    self.reborrow().into_image_view_mut()
+  }
+
+  /// Mutable view of the samples that keeps the borrow of the data, `None` if
+  /// they are not contiguous, see [`ImageRegion::image_view`]
+  pub fn into_image_view_mut(self) -> Option<ImageViewMut<'a, T>> {
+    if !self.as_region().is_contiguous() {
+      return None;
+    }
+    Some(ImageViewMut::new(self.data, self.area.d.w, self.area.d.h, self.channels))
+  }
+}
+
+impl<T> std::fmt::Debug for ImageRegionMut<'_, T> {
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    write!(
+      f,
+      "ImageRegionMut({}x{} at {}:{}, {} channels)",
+      self.area.d.w, self.area.d.h, self.area.p.x, self.area.p.y, self.channels
+    )
+  }
+}
+
+impl<'a, T> From<ImageView<'a, T>> for ImageRegion<'a, T> {
+  fn from(view: ImageView<'a, T>) -> Self {
+    Self {
+      data: view.data,
+      stride: view.width * view.channels,
+      area: view.rect(),
+      channels: view.channels,
+    }
+  }
+}
+
+impl<'a, T> From<ImageViewMut<'a, T>> for ImageRegionMut<'a, T> {
+  fn from(view: ImageViewMut<'a, T>) -> Self {
+    let (stride, area) = (view.width * view.channels, view.rect());
+    Self {
+      data: view.data,
+      stride,
+      area,
+      channels: view.channels,
+    }
+  }
+}
+
+impl<'a, T> From<ImageRegionMut<'a, T>> for ImageRegion<'a, T> {
+  fn from(region: ImageRegionMut<'a, T>) -> Self {
+    Self {
+      data: region.data,
+      stride: region.stride,
+      area: region.area,
+      channels: region.channels,
+    }
   }
 }
 
@@ -1229,5 +1651,142 @@ mod tests {
     assert_eq!((mono.width, mono.data), (2, vec![1, 2]));
     let rgb = Color2D::<u16, 3>::new_with(vec![[1, 2, 3], [4, 5, 6]], 2, 1);
     assert_eq!(rgb.into_flatten(), [1, 2, 3, 4, 5, 6]);
+  }
+
+  #[test]
+  fn image_region_rows() {
+    // 4x3 pixels with 3 channels, the samples are their index
+    let data: Vec<u16> = (0..36).collect();
+    let view = ImageView::new(&data, 4, 3, 3);
+    let region = view.region(Rect::new(Point::new(1, 1), Dim2::new(2, 2)));
+    assert_eq!((region.dim(), region.channels()), (Dim2::new(2, 2), 3));
+    assert_eq!(region.rows().collect::<Vec<_>>(), [&data[15..21], &data[27..33]]);
+    assert_eq!(region.par_rows().collect::<Vec<_>>(), [&data[15..21], &data[27..33]]);
+    assert_eq!(region.row(1), &data[27..33]);
+    assert_eq!(region.to_vec(), [&data[15..21], &data[27..33]].concat());
+    assert_eq!(view.copy_area(region.area()), region.to_vec());
+
+    // A region of a region is positioned in the image buffer
+    let inner = region.region(Rect::new(Point::new(1, 0), Dim2::new(1, 2)));
+    assert_eq!(inner.area(), Rect::new(Point::new(2, 1), Dim2::new(1, 2)));
+    assert_eq!(inner.to_vec(), [&data[18..21], &data[30..33]].concat());
+    assert_eq!(ImageRegion::new(&data, 4, 3, 3, inner.area()).to_vec(), inner.to_vec());
+
+    // The whole image, a region of a Pix2D is in samples
+    let whole = ImageRegion::from(view);
+    assert_eq!((whole.area(), whole.rows().len()), (view.rect(), 3));
+    assert_eq!(whole.to_vec(), data);
+    let pixels = PixU16::new_with(data.clone(), 12, 3);
+    assert_eq!(pixels.region(Rect::new(Point::new(3, 1), Dim2::new(6, 2))).to_vec(), region.to_vec());
+
+    // An empty area has no rows
+    let empty = view.region(Rect::new(Point::new(4, 1), Dim2::new(0, 2)));
+    assert_eq!((empty.height(), empty.rows().len(), empty.to_vec()), (2, 0, Vec::new()));
+  }
+
+  #[test]
+  fn image_region_nested_levels() {
+    // 8x6 pixels with 2 channels, the samples are their index
+    let (width, channels) = (8, 2);
+    let mut data: Vec<u16> = (0..96).collect();
+    // Samples of `area` of the image, in buffer coordinates
+    let expected = |area: Rect| -> Vec<u16> {
+      (area.y()..area.y() + area.height())
+        .flat_map(|row| (area.x() * channels..(area.x() + area.width()) * channels).map(move |col| (row * width * channels + col) as u16))
+        .collect()
+    };
+    let outer_area = Rect::new(Point::new(3, 2), Dim2::new(3, 3));
+    let inner_area = Rect::new(Point::new(4, 3), Dim2::new(2, 2));
+
+    // Each level is positioned in the image buffer
+    let view = ImageView::new(&data, width, 6, channels);
+    let outer = view.region(Rect::new(Point::new(1, 1), Dim2::new(6, 4)));
+    let middle = outer.region(Rect::new(Point::new(2, 1), Dim2::new(3, 3)));
+    let inner = middle.region(Rect::new(Point::new(1, 1), Dim2::new(2, 2)));
+    assert_eq!((middle.area(), inner.area()), (outer_area, inner_area));
+    for region in [outer, middle, inner] {
+      assert_eq!(region.to_vec(), expected(region.area()), "{:?}", region);
+      assert_eq!(region.par_rows().flatten().copied().collect::<Vec<_>>(), expected(region.area()));
+    }
+    assert_eq!(inner.to_vec(), [56, 57, 58, 59, 72, 73, 74, 75]);
+
+    // Mutable regions of a mutable view write only inside the innermost area
+    let mut view = ImageViewMut::new(&mut data, width, 6, channels);
+    let mut outer = view.region_mut(Rect::new(Point::new(1, 1), Dim2::new(6, 4)));
+    let mut middle = outer.region_mut(Rect::new(Point::new(2, 1), Dim2::new(3, 3)));
+    assert_eq!(middle.area(), outer_area);
+    let mut inner = middle.region_mut(Rect::new(Point::new(1, 1), Dim2::new(2, 2)));
+    assert_eq!(inner.area(), inner_area);
+    inner.par_rows_mut().for_each(|row| row.fill(u16::MAX));
+    let written = expected(inner_area);
+    for (i, sample) in data.iter().enumerate() {
+      let value = if written.contains(&(i as u16)) { u16::MAX } else { i as u16 };
+      assert_eq!(*sample, value, "sample {}", i);
+    }
+  }
+
+  #[test]
+  #[should_panic(expected = "is outside of")]
+  fn image_region_checks_area() {
+    let data = [0_u16; 12];
+    let _ = ImageView::new(&data, 4, 3, 1).region(Rect::new(Point::new(3, 0), Dim2::new(2, 1)));
+  }
+
+  #[test]
+  fn image_region_mut_writes_inside_area() {
+    // 4x3 pixels with 2 channels
+    let mut samples = vec![0_u16; 24];
+    let mut view = ImageViewMut::new(&mut samples, 4, 3, 2);
+    let mut region = view.region_mut(Rect::new(Point::new(1, 0), Dim2::new(2, 3)));
+    region.par_rows_mut().for_each(|row| row.fill(1));
+    region.rows_mut().enumerate().for_each(|(i, row)| row[0] += i as u16);
+    region.row_mut(2)[3] = 9;
+    assert_eq!(samples, [0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 2, 1, 1, 1, 0, 0, 0, 0, 3, 1, 1, 9, 0, 0]);
+
+    // Nested regions, the samples are written row by row
+    let mut region = ImageRegionMut::new(&mut samples, 4, 3, 2, Rect::new(Point::new(1, 1), Dim2::new(3, 2)));
+    let mut inner = region.region_mut(Rect::new(Point::new(1, 0), Dim2::new(2, 2)));
+    assert_eq!(inner.area(), Rect::new(Point::new(2, 1), Dim2::new(2, 2)));
+    let values: Vec<u16> = (100..108).collect();
+    inner.copy_from_slice(&values);
+    assert_eq!(inner.as_region().to_vec(), values);
+    assert_eq!(ImageRegion::from(region).to_vec(), [2, 1, 100, 101, 102, 103, 3, 1, 104, 105, 106, 107]);
+    let whole = ImageRegionMut::from(ImageViewMut::new(&mut samples, 4, 3, 2));
+    assert_eq!(whole.area(), Rect::new(Point::zero(), Dim2::new(4, 3)));
+
+    let mut rgb = RgbF32::new(3, 2);
+    rgb.region_mut(Rect::new(Point::new(1, 1), Dim2::new(2, 1))).row_mut(0).fill(0.5);
+    assert_eq!(rgb.data, [[0.0; 3], [0.0; 3], [0.0; 3], [0.0; 3], [0.5; 3], [0.5; 3]]);
+  }
+
+  #[test]
+  fn image_region_image_view() {
+    let mut data: Vec<u16> = (0..36).collect();
+    let view = ImageView::new(&data, 4, 3, 3);
+    let contiguous = |area: Rect| view.region(area).image_view().map(|view| (view.dim(), view.channels(), view.as_slice()));
+    // Whole image, full-width band, single row and empty area
+    assert_eq!(contiguous(view.rect()), Some((Dim2::new(4, 3), 3, &data[..])));
+    assert_eq!(
+      contiguous(Rect::new(Point::new(0, 1), Dim2::new(4, 2))),
+      Some((Dim2::new(4, 2), 3, &data[12..]))
+    );
+    assert_eq!(
+      contiguous(Rect::new(Point::new(1, 2), Dim2::new(2, 1))),
+      Some((Dim2::new(2, 1), 3, &data[27..33]))
+    );
+    assert_eq!(contiguous(Rect::new(Point::new(1, 1), Dim2::new(0, 2))), Some((Dim2::new(0, 2), 3, &data[..0])));
+    // Rows of a part of the image width are not contiguous
+    assert_eq!(contiguous(Rect::new(Point::new(1, 0), Dim2::new(2, 2))), None);
+
+    let mut band = ImageRegionMut::new(&mut data, 4, 3, 3, Rect::new(Point::new(0, 1), Dim2::new(4, 2)));
+    assert_eq!(band.image_view().map(|view| view.as_slice().len()), Some(24));
+    band.image_view_mut().expect("contiguous").as_mut_slice().fill(0);
+    assert!(
+      ImageRegionMut::new(&mut data, 4, 3, 3, Rect::new(Point::new(1, 0), Dim2::new(2, 2)))
+        .into_image_view_mut()
+        .is_none()
+    );
+    assert_eq!(data[..12], (0..12).collect::<Vec<u16>>());
+    assert!(data[12..].iter().all(|v| *v == 0));
   }
 }
