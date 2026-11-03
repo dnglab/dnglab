@@ -1107,6 +1107,7 @@ impl RawLoader {
             "Canon" => return use_decoder!(cr2::Cr2Decoder, rawfile, tiff, self),
             "PENTAX" => return use_decoder!(pef::PefDecoder, rawfile, tiff, self),
             "PENTAX Corporation" => return use_decoder!(pef::PefDecoder, rawfile, tiff, self),
+            "SAMSUNG TECHWIN" => return use_decoder!(pef::PefDecoder, rawfile, tiff, self),
             "RICOH IMAGING COMPANY, LTD." => return use_decoder!(pef::PefDecoder, rawfile, tiff, self),
             "Phase One" => return use_decoder!(iiq::IiqDecoder, rawfile, tiff, self),
             "Phase One A/S" => return use_decoder!(iiq::IiqDecoder, rawfile, tiff, self),
