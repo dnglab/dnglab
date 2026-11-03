@@ -9,19 +9,18 @@
 
 use multiversion::multiversion;
 use rayon::prelude::*;
-use std::time::Instant;
+use std::{borrow::Cow, time::Instant};
 
 use crate::{
   CFA,
   cfa::{CFA_COLOR_B, CFA_COLOR_G, CFA_COLOR_R, PlaneColor},
   imgop::{
-    Rect,
     cielab::XYZ_to_lab,
     matrix::multiply_row1,
     sensor::Demosaic,
     xyz::{CIE_1931_TRISTIMULUS_D65, SRGB_TO_XYZ_D65},
   },
-  pixarray::{Color2D, ImageView, SharedColor2D},
+  pixarray::{Color2D, ImageRegion, SharedColor2D},
 };
 
 /// Markesteijn demosaicing implementation for Fujifilm X-Trans sensor data.
@@ -73,14 +72,19 @@ impl XTransMarkesteijnDemosaic {
 
 impl Demosaic<f32, 3> for XTransMarkesteijnDemosaic {
   /// Debayer image by using Markesteijn (1-pass) method.
-  fn demosaic(&self, pixels: ImageView<'_, f32>, cfa: &CFA, _colors: &PlaneColor, roi: Rect) -> Color2D<f32, 3> {
+  fn demosaic(&self, pixels: ImageRegion<'_, f32>, cfa: &CFA, _colors: &PlaneColor) -> Color2D<f32, 3> {
     assert_eq!(pixels.channels(), 1, "Mosaic data must have one channel");
     if !cfa.is_rgb() {
       panic!("CFA pattern '{}' is not a RGB pattern, can not demosaic with Markesteijn", cfa);
     }
     // Measure time
     let now = Instant::now();
-    let input = pixels.copy_area(roi);
+    // Contiguous samples are used in place, others are copied
+    let input = match pixels.image_view() {
+      Some(view) => Cow::Borrowed(view.as_slice()),
+      None => Cow::Owned(pixels.to_vec()),
+    };
+    let roi = pixels.area();
 
     // The ROI changes the pattern if not perfectly aligned on the origin pattern
     let cfa_roi = cfa.shift(roi.p.x, roi.p.y);

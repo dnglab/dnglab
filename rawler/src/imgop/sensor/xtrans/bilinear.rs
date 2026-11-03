@@ -7,8 +7,8 @@ use std::time::Instant;
 
 use crate::{
   cfa::{CFA, PlaneColor},
-  imgop::{Rect, sensor::Demosaic},
-  pixarray::{Color2D, ImageView, RgbF32},
+  imgop::sensor::Demosaic,
+  pixarray::{Color2D, ImageRegion, RgbF32},
 };
 
 /// Bilinear demosaicing implementation for Fujifilm X-Trans sensor data.
@@ -38,21 +38,20 @@ impl Demosaic<f32, 3> for XTransBilinearDemosaic {
   /// Demosaic X-Trans sensor data using bilinear interpolation.
   ///
   /// # Parameters
-  /// - `pixels`: Single-channel mosaic pixel data (f32).
+  /// - `pixels`: Region of single-channel mosaic pixel data (f32) to demosaic.
   /// - `cfa`: The color filter array describing the X-Trans pattern.
   /// - `colors`: Plane-to-color mapping (unused, assumed RGB).
-  /// - `roi`: Region of interest within `pixels` to demosaic.
   ///
   /// # Panics
   /// Panics if the CFA pattern is not an RGB pattern.
   #[allow(unused)]
-  fn demosaic(&self, pixels: ImageView<'_, f32>, cfa: &CFA, colors: &PlaneColor, roi: Rect) -> Color2D<f32, 3> {
+  fn demosaic(&self, pixels: ImageRegion<'_, f32>, cfa: &CFA, colors: &PlaneColor) -> Color2D<f32, 3> {
     assert_eq!(pixels.channels(), 1, "Mosaic data must have one channel");
     if !cfa.is_rgb() {
       panic!("CFA pattern '{}' is not a RGB pattern, can not demosaic", cfa);
     }
     let now = Instant::now();
-    let rgb = interpolate_bilinear(pixels.as_slice(), pixels.width(), cfa, roi);
+    let rgb = interpolate_bilinear(pixels, cfa);
     log::debug!("X-Trans bilinear demosaic total time: {:.5}s", now.elapsed().as_secs_f32());
     rgb
   }
@@ -62,34 +61,37 @@ impl Demosaic<f32, 3> for XTransBilinearDemosaic {
 ///
 /// For each pixel in the output, this function averages all same-color samples
 /// within a 5x5 window (±2 pixels in each direction) centered on the target
-/// pixel. The window is clamped at image boundaries.
+/// pixel. The window is clamped at the boundaries of the region.
 ///
-/// The CFA pattern is shifted according to the ROI origin so that the correct
-/// color channel is assigned regardless of where the ROI falls within the
+/// The CFA pattern is shifted according to the region origin so that the correct
+/// color channel is assigned regardless of where the region falls within the
 /// full-frame CFA pattern.
 ///
 /// Uses SIMD acceleration via `multiversion` when available (AVX2, SSE, NEON).
 #[multiversion(targets("x86_64+avx+avx2+fma", "x86+sse", "aarch64+neon"))]
-fn interpolate_bilinear(input: &[f32], input_width: usize, cfa: &CFA, roi: Rect) -> Color2D<f32, 3> {
+fn interpolate_bilinear<'a>(input: ImageRegion<'a, f32>, cfa: &CFA) -> Color2D<f32, 3> {
+  let roi = input.area();
   let cfa_roi = cfa.shift(roi.p.x, roi.p.y);
   let mut output = RgbF32::new_with_default(roi.width(), roi.height(), f32::NAN);
   let width = output.width;
   let height = output.height;
 
   output.pixels_mut().par_chunks_exact_mut(width).enumerate().for_each(|(y, line)| {
+    let y_lo = y.saturating_sub(2);
+    let y_hi = (y + 2).min(height - 1);
+    // Input rows of the window, rows below y_hi are not used
+    let rows: [&[f32]; 5] = std::array::from_fn(|i| input.row((y_lo + i).min(y_hi)));
     line.iter_mut().enumerate().for_each(|(x, pixel)| {
       let mut rgb = [0.0f32; 3];
       let mut count = [0u32; 3];
 
-      let y_lo = y.saturating_sub(2);
-      let y_hi = (y + 2).min(height - 1);
       let x_lo = x.saturating_sub(2);
       let x_hi = (x + 2).min(width - 1);
 
-      for row in y_lo..=y_hi {
+      for (row, samples) in (y_lo..=y_hi).zip(rows) {
         for col in x_lo..=x_hi {
           let ch = cfa_roi.color_at(row, col) as usize;
-          rgb[ch] += input[(roi.p.y + row) * input_width + roi.p.x + col];
+          rgb[ch] += samples[col];
           count[ch] += 1;
         }
       }
