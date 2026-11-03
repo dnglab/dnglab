@@ -802,17 +802,6 @@ impl<'a, T> ImageView<'a, T> {
     self.data.chunks_exact((self.width * self.channels).max(1))
   }
 
-  /// Copy of the samples of the pixels in `area`
-  ///
-  /// # Panics
-  /// Panics if `area` is not inside of the image.
-  pub fn copy_area(&self, area: Rect) -> Vec<T>
-  where
-    T: Copy,
-  {
-    self.region(area).to_vec()
-  }
-
   /// Region `area` of the image
   ///
   /// # Panics
@@ -1664,7 +1653,6 @@ mod tests {
     assert_eq!(region.par_rows().collect::<Vec<_>>(), [&data[15..21], &data[27..33]]);
     assert_eq!(region.row(1), &data[27..33]);
     assert_eq!(region.to_vec(), [&data[15..21], &data[27..33]].concat());
-    assert_eq!(view.copy_area(region.area()), region.to_vec());
 
     // A region of a region is positioned in the image buffer
     let inner = region.region(Rect::new(Point::new(1, 0), Dim2::new(1, 2)));

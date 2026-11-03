@@ -7,8 +7,8 @@ use std::{ops::Add, time::Instant};
 
 use crate::{
   cfa::{CFA, CFA_COLOR_B, CFA_COLOR_G, CFA_COLOR_R, PlaneColor},
-  imgop::{Rect, sensor::Demosaic},
-  pixarray::{Color2D, ImageView, RgbF32},
+  imgop::sensor::Demosaic,
+  pixarray::{Color2D, ImageRegion, RgbF32},
 };
 
 #[derive(Default)]
@@ -35,7 +35,7 @@ impl PPGDemosaic {
 /// to check the pattern before calling.
 impl Demosaic<f32, 3> for PPGDemosaic {
   /// Debayer image by using the PPG (Patterned Pixel Grouping) algorithm.
-  fn demosaic(&self, pixels: ImageView<'_, f32>, cfa: &CFA, _colors: &PlaneColor, roi: Rect) -> Color2D<f32, 3> {
+  fn demosaic(&self, pixels: ImageRegion<'_, f32>, cfa: &CFA, _colors: &PlaneColor) -> Color2D<f32, 3> {
     assert_eq!(pixels.channels(), 1, "Mosaic data must have one channel");
     // PPG can only applied to pure RGGB or variants.
     if !cfa.is_rgb() {
@@ -45,10 +45,11 @@ impl Demosaic<f32, 3> for PPGDemosaic {
     let now = Instant::now();
 
     // The ROI changes the pattern if not perfectly aligned on the origin pattern
+    let roi = pixels.area();
     let cfa_roi = cfa.shift(roi.p.x, roi.p.y);
 
     // Expand the bayer data to full RGB channel image, but only for ROI
-    let mut rgb = super::expand_bayer_rgb(pixels.as_slice(), pixels.dim(), cfa, roi);
+    let mut rgb = super::expand_bayer_rgb(pixels, cfa);
 
     // Now interpolate the missing channels
     interpolate_borders(&mut rgb, &cfa_roi);

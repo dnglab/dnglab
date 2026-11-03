@@ -332,14 +332,14 @@ impl Executor {
         margin.intersect(&bounds)
       })
       .unwrap_or(bounds);
-    let pixels = image.view();
+    let pixels = image.view().region(roi);
     let demosaiced = match algorithm {
-      DemosaicAlgorithm::Ppg => PPGDemosaic::new().demosaic(pixels, &cfa.cfa, &cfa.colors, roi).into(),
-      DemosaicAlgorithm::Bilinear4 => Bilinear4Channel::new().demosaic(pixels, &cfa.cfa, &cfa.colors, roi).into(),
-      DemosaicAlgorithm::XTransBilinear => XTransBilinearDemosaic::new().demosaic(pixels, &cfa.cfa, &cfa.colors, roi).into(),
-      DemosaicAlgorithm::Markesteijn => XTransMarkesteijnDemosaic::new_pass_3().demosaic(pixels, &cfa.cfa, &cfa.colors, roi).into(),
-      DemosaicAlgorithm::Superpixel3 => Superpixel3Channel::new().demosaic(pixels, &cfa.cfa, &cfa.colors, roi).into(),
-      DemosaicAlgorithm::Superpixel4 => Superpixel4Channel::new().demosaic(pixels, &cfa.cfa, &cfa.colors, roi).into(),
+      DemosaicAlgorithm::Ppg => PPGDemosaic::new().demosaic(pixels, &cfa.cfa, &cfa.colors).into(),
+      DemosaicAlgorithm::Bilinear4 => Bilinear4Channel::new().demosaic(pixels, &cfa.cfa, &cfa.colors).into(),
+      DemosaicAlgorithm::XTransBilinear => XTransBilinearDemosaic::new().demosaic(pixels, &cfa.cfa, &cfa.colors).into(),
+      DemosaicAlgorithm::Markesteijn => XTransMarkesteijnDemosaic::new_pass_3().demosaic(pixels, &cfa.cfa, &cfa.colors).into(),
+      DemosaicAlgorithm::Superpixel3 => Superpixel3Channel::new().demosaic(pixels, &cfa.cfa, &cfa.colors).into(),
+      DemosaicAlgorithm::Superpixel4 => Superpixel4Channel::new().demosaic(pixels, &cfa.cfa, &cfa.colors).into(),
     };
     *image = demosaiced;
     log::debug!("Demosaiced {:?}", roi);
