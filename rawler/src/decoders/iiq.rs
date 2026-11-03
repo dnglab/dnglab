@@ -316,7 +316,11 @@ impl<'a> Decoder for IiqDecoder<'a> {
   }
 
   fn raw_metadata(&self, _file: &RawSource, _params: &RawDecodeParams) -> Result<RawMetadata> {
-    let exif = Exif::new(self.tiff.root_ifd())?;
+    let mut exif = Exif::new(self.tiff.root_ifd())?;
+    // The makernote wins over the TIFF tag, which is not rotated with the sensor
+    if let Some(orientation) = self.orientation() {
+      exif.orientation = Some(orientation);
+    }
     let mdata = RawMetadata::new_with_lens(self.camera.metadata(), exif, self.get_lens_description()?.cloned());
     Ok(mdata)
   }
@@ -766,6 +770,17 @@ impl<'a> IiqDecoder<'a> {
     }
   }
 
+  /// Orientation as EXIF value, the sensor is mounted rotated in the camera back
+  fn orientation(&self) -> Option<u16> {
+    let entry = self.makernotes.get(&IiqTag::Orientation.into())?;
+    Some(match entry.1.force_u32(0) & 3 {
+      1 => 6,
+      2 => 8,
+      3 => 3,
+      _ => 1,
+    })
+  }
+
   fn wb_offset(&self) -> Result<u64> {
     match self.makernotes.get(&IiqTag::WhiteBalance.into()) {
       Some(mode) => Ok((mode.1.force_u64(0) + 8) as u64),
@@ -1210,6 +1225,7 @@ impl<'a> IiqDecoder<'a> {
 #[allow(unused)]
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Ord, PartialOrd)]
 enum IiqTag {
+  Orientation = 0x100,
   /// Matrix from white balanced camera values to ROMM (ProPhoto) RGB
   RommMatrix = 0x106,
   WhiteBalance = 0x107,
