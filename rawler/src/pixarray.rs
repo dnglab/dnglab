@@ -220,11 +220,10 @@ where
   let mut output;
   if pixbuf.initialized {
     output = Pix2D::<T>::new(area.width(), area.height());
-
-    output.par_pixel_rows_mut().enumerate().for_each(|(row, line)| {
-      let src_row = pixbuf.row(area.y() + row);
-      line.copy_from_slice(&src_row[area.x()..area.x() + line.len()]);
-    });
+    output
+      .par_pixel_rows_mut()
+      .zip(pixbuf.region(area).par_rows())
+      .for_each(|(line, src)| line.copy_from_slice(src));
   } else {
     output = Pix2D::<T>::new_uninit(area.width(), area.height());
   }
@@ -614,17 +613,9 @@ where
 
   pub fn crop(&self, area: Rect) -> Self {
     let mut output = Vec::with_capacity(area.d.h * area.d.w);
-    assert!(area.p.y + area.d.h <= self.height);
-    assert!(area.p.x + area.d.w <= self.width);
-    output.extend(
-      self
-        .pixels()
-        .chunks_exact(self.width)
-        .skip(area.p.y)
-        .take(area.d.h)
-        .flat_map(|row| row[area.p.x..area.p.x + area.d.w].iter())
-        .cloned(),
-    );
+    for row in self.region(area).rows() {
+      output.extend_from_slice(row.as_chunks::<N>().0);
+    }
     Self::new_with(output, area.d.w, area.d.h)
   }
 
@@ -1776,5 +1767,24 @@ mod tests {
     );
     assert_eq!(data[..12], (0..12).collect::<Vec<u16>>());
     assert!(data[12..].iter().all(|v| *v == 0));
+  }
+
+  #[test]
+  fn crop_pixels() {
+    // 4x3 samples, the values are their index
+    let pixels = PixU16::new_with((0..12).collect(), 4, 3);
+    let area = Rect::new(Point::new(1, 1), Dim2::new(2, 2));
+    let cropped = pixels.crop(area);
+    assert_eq!((cropped.width, cropped.height, cropped.data), (2, 2, vec![5, 6, 9, 10]));
+    assert_eq!(pixels.clone().into_crop(area).data, [5, 6, 9, 10]);
+    // Cropping to the whole image is a no-op, an uninitialized buffer stays uninitialized
+    assert_eq!(pixels.clone().into_crop(pixels.rect()).data, pixels.data);
+    let uninit = PixU16::new_uninit(4, 3).into_crop(area);
+    assert_eq!((uninit.dim(), uninit.is_initialized()), (Dim2::new(2, 2), false));
+
+    let rgb = Color2D::<u16, 3>::new_with((0..12).map(|i| [i, i + 100, i + 200]).collect(), 4, 3);
+    let cropped = rgb.crop(area);
+    assert_eq!((cropped.width, cropped.height), (2, 2));
+    assert_eq!(cropped.data, [5, 6, 9, 10].map(|i| [i, i + 100, i + 200]));
   }
 }
