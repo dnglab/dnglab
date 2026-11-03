@@ -464,35 +464,6 @@ where
 }
  */
 
-/// An ugly hack to get multiple mutable references to Pix2D
-pub struct SharedPix2D<T: SubPixel> {
-  pub inner: UnsafeCell<Pix2D<T>>,
-}
-
-impl<T> SharedPix2D<T>
-where
-  T: SubPixel,
-{
-  pub fn new(inner: Pix2D<T>) -> Self {
-    Self { inner: inner.into() }
-  }
-
-  /// Get inner Pix2D<> reference
-  ///
-  /// # Safety
-  /// Only use this inside Rayon parallel iterators.
-  #[allow(clippy::mut_from_ref)]
-  pub unsafe fn inner_mut(&self) -> &mut Pix2D<T> {
-    unsafe { &mut *self.inner.get() }
-  }
-
-  pub fn into_inner(self) -> Pix2D<T> {
-    self.inner.into_inner()
-  }
-}
-
-unsafe impl<T> Sync for SharedPix2D<T> where T: SubPixel {}
-
 #[derive(Clone)]
 pub struct Color2D<T, const N: usize> {
   pub width: usize,

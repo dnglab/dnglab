@@ -6,14 +6,15 @@
 // Ported from C++ to Rust by Daniel Vogelbacher
 
 use itertools::Itertools;
-use rayon::iter::{IntoParallelIterator, ParallelIterator};
+use rayon::iter::{IndexedParallelIterator, IntoParallelIterator, ParallelIterator};
 
 use crate::{
-  alloc_image_ok,
+  RawlerError, alloc_image_ok,
   bits::{Endian, clamp},
   decoders::{Result, rw2::PanasonicTag},
   formats::tiff::IFD,
-  pixarray::{PixU16, SharedPix2D},
+  imgop::{Dim2, Point, Rect},
+  pixarray::{DisjointRegionMut, ImageRegionMut, PixU16},
   pumps::{BitPump, BitPumpReverseBitsMSB, ByteStream},
   rawsource::RawSource,
 };
@@ -380,7 +381,7 @@ fn make_gammatable(params: &CF2Params) -> Option<Vec<u16>> {
 
 /// Decode Panasonic V8 bitstreams
 pub(crate) fn decode_panasonic_v8(rawfile: &RawSource, width: usize, height: usize, _bps: u32, ifd: &IFD, dummy: bool) -> Result<PixU16> {
-  let out = alloc_image_ok!(width, height, dummy);
+  let mut out = alloc_image_ok!(width, height, dummy);
 
   let params = CF2Params::new(ifd)?;
   log::debug!("pana8: params: {:?}", params);
@@ -390,31 +391,41 @@ pub(crate) fn decode_panasonic_v8(rawfile: &RawSource, width: usize, height: usi
     width
   );
 
-  // Shared output buffer, we need to write from multiple rayon threads to output image.
-  let shared_pix = SharedPix2D::new(out);
-
   let total_strip_count = (params.num_of_strips_h * params.num_of_strips_v) as usize;
   let mut bitstreams = Vec::with_capacity(total_strip_count);
   for strip_id in 0..total_strip_count {
     bitstreams.push(rawfile.subview(params.strip_byte_offsets[strip_id] as u64, (params.strip_data_size[strip_id] as u64 + 7) / 8)?);
   }
 
+  // Each strip decodes its own region of the output image, the split fails
+  // if a strip is outside of the image or overlaps another strip.
+  let areas: Vec<Rect> = (0..total_strip_count)
+    .map(|strip_id| {
+      let offset = &params.strip_line_offsets[strip_id];
+      Rect::new(
+        Point::new(offset.cols as usize, offset.rows as usize),
+        Dim2::new(params.strip_widths[strip_id] as usize, params.strip_heights[strip_id] as usize),
+      )
+    })
+    .collect();
+  let strips = ImageRegionMut::from(out.view_mut()).split_regions_mut(&areas).map_err(|err| match err {
+    RawlerError::DecoderFailed(msg) => RawlerError::DecoderFailed(format!("Panasonic V8: invalid strip: {}", msg)),
+    err => err,
+  })?;
+
   let tables = Tables::new(&params);
 
   // Parallel decode multiple strips
-  (0..total_strip_count).into_par_iter().for_each(|strip_id| {
-    let buf = &bitstreams[strip_id];
-    decode_strip(buf, &params, &tables, strip_id, unsafe { shared_pix.inner_mut() });
+  strips.into_par_iter().enumerate().for_each(|(strip_id, mut strip)| {
+    decode_strip(bitstreams[strip_id], &params, &tables, strip_id, &mut strip);
   });
-  Ok(shared_pix.into_inner())
+  Ok(out)
 }
 
-/// Decode a single strip
-fn decode_strip(buf: &[u8], params: &CF2Params, tables: &Tables, strip_id: usize, out: &mut PixU16) {
+/// Decode a single strip into `out`, its region of the image
+fn decode_strip(buf: &[u8], params: &CF2Params, tables: &Tables, strip_id: usize, out: &mut DisjointRegionMut<u16>) {
   let mut pump = BitPumpReverseBitsMSB::new(buf);
   let width = params.strip_widths[strip_id] as usize;
-  let height = params.strip_heights[strip_id] as usize;
-  let halfheight = height >> 1;
   let halfwidth = width >> 1;
   let doublewidth = halfwidth * 4;
   let mut linebuf = vec![0_u16; doublewidth];
@@ -427,8 +438,9 @@ fn decode_strip(buf: &[u8], params: &CF2Params, tables: &Tables, strip_id: usize
 
   let mut state = State::new(params, tables);
 
-  // Data is encoded in RGRGRG..GBGBGB in a single line (like LJPEG92 4-7 predictors)
-  for curr_row in 0..halfheight {
+  // Data is encoded in RGRGRG..GBGBGB in a single line (like LJPEG92 4-7 predictors),
+  // each line holds two rows of the strip.
+  for (row0, row1) in out.rows_mut().tuples() {
     state.current_base = state.line_base;
     for col in 0..doublewidth {
       // Calculate index
@@ -491,20 +503,17 @@ fn decode_strip(buf: &[u8], params: &CF2Params, tables: &Tables, strip_id: usize
     // Line buffer contains two rows packed into one row with double width.
     assert_eq!(linebuf.len(), 2 * width);
     for col in (0..width).step_by(2) {
-      let row_offset = params.strip_line_offsets[strip_id].rows as usize;
-      let left_margin = params.strip_line_offsets[strip_id].cols as usize;
-      let dest_row = row_offset + (curr_row * 2);
       if let Some(gamma_table) = &state.gamma_table {
         debug_assert!(!gamma_table.is_empty());
-        *out.at_mut(dest_row + 0, left_margin + col + 0) = gamma_table[linebuf[2 * col + 0] as usize];
-        *out.at_mut(dest_row + 0, left_margin + col + 1) = gamma_table[linebuf[2 * col + 1] as usize];
-        *out.at_mut(dest_row + 1, left_margin + col + 0) = gamma_table[linebuf[2 * col + 2] as usize];
-        *out.at_mut(dest_row + 1, left_margin + col + 1) = gamma_table[linebuf[2 * col + 3] as usize];
+        row0[col + 0] = gamma_table[linebuf[2 * col + 0] as usize];
+        row0[col + 1] = gamma_table[linebuf[2 * col + 1] as usize];
+        row1[col + 0] = gamma_table[linebuf[2 * col + 2] as usize];
+        row1[col + 1] = gamma_table[linebuf[2 * col + 3] as usize];
       } else {
-        *out.at_mut(dest_row + 0, left_margin + col + 0) = linebuf[2 * col + 0];
-        *out.at_mut(dest_row + 0, left_margin + col + 1) = linebuf[2 * col + 1];
-        *out.at_mut(dest_row + 1, left_margin + col + 0) = linebuf[2 * col + 2];
-        *out.at_mut(dest_row + 1, left_margin + col + 1) = linebuf[2 * col + 3];
+        row0[col + 0] = linebuf[2 * col + 0];
+        row0[col + 1] = linebuf[2 * col + 1];
+        row1[col + 0] = linebuf[2 * col + 2];
+        row1[col + 1] = linebuf[2 * col + 3];
       }
     }
   }
