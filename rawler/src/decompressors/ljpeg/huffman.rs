@@ -226,7 +226,8 @@ impl HuffTable {
       0 => 0,
       16 => {
         if self.dng_bug {
-          pump.get_bits(16); // consume can fail because we haven't peeked yet
+          let v = pump.get_bits(16) as i32;
+          return if v >= 32768 { v } else { v - 65535 };
         }
         -32768
       }
@@ -258,6 +259,7 @@ impl fmt::Debug for HuffTable {
 #[cfg(test)]
 mod tests {
   use super::*;
+  use crate::pumps::BitPumpJPEG;
 
   struct MockPump {
     bits: u64,
@@ -365,5 +367,29 @@ mod tests {
         "round {round}: bits {bits:?}, dng_bug {dng_bug}"
       );
     }
+  }
+
+  fn table_with_category_16(dng_bug: bool) -> HuffTable {
+    let mut bits = [0; 17];
+    bits[1] = 1;
+    let mut huffval = [0; 256];
+    huffval[0] = 16;
+    HuffTable::new(bits, huffval, dng_bug).unwrap()
+  }
+
+  #[test]
+  fn category_16_has_no_extra_bits() {
+    let mut pump = BitPumpJPEG::new(&[0x00, 0x00, 0x00, 0x00]);
+    assert_eq!(table_with_category_16(false).huff_decode(&mut pump).unwrap(), -32768);
+  }
+
+  #[test]
+  fn category_16_old_dng_reads_extra_bits() {
+    // code '0' followed by the 16 bits 0x0001
+    let mut pump = BitPumpJPEG::new(&[0x00, 0x00, 0x80, 0x00, 0x00]);
+    assert_eq!(table_with_category_16(true).huff_decode(&mut pump).unwrap(), 1 - 65535);
+    // code '0' followed by the 16 bits 0x8000
+    let mut pump = BitPumpJPEG::new(&[0x40, 0x00, 0x00, 0x00, 0x00]);
+    assert_eq!(table_with_category_16(true).huff_decode(&mut pump).unwrap(), 32768);
   }
 }
