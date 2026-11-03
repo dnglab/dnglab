@@ -25,6 +25,7 @@ const TYPE_SLONG: u16 = 9;
 const TYPE_SRATIONAL: u16 = 10;
 const TYPE_FLOAT: u16 = 11;
 const TYPE_DOUBLE: u16 = 12;
+const TYPE_IFD: u16 = 13;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Entry {
@@ -85,7 +86,7 @@ impl Entry {
     let count = reader.read_u32()?;
 
     // If we don't know the type assume byte data (undefined)
-    let compat_typ = if typ == 0 || typ > 12 { 7 } else { typ };
+    let compat_typ = if typ == 0 || typ > TYPE_IFD { 7 } else { typ };
 
     let bytesize: usize = (count as usize) << DATASHIFTS[compat_typ as usize];
     let offset: u32 = if bytesize <= 4 {
@@ -134,7 +135,7 @@ impl Entry {
           embedded: Some(offset),
         }
       }
-      TYPE_LONG => {
+      TYPE_LONG | TYPE_IFD => {
         let mut v = vec![0; count as usize];
         reader.read_u32_into(&mut v)?;
         Entry {
@@ -241,5 +242,24 @@ impl Entry {
 
   pub fn type_name(&self) -> String {
     self.value.value_type_name()
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+  use std::io::Cursor;
+
+  #[test]
+  fn ifd_type_is_read_as_long_offsets() {
+    // tag 0x14a, type IFD (13), count 2, offset 14, then two offsets
+    let mut data = vec![0x4a, 0x01, 13, 0, 2, 0, 0, 0, 14, 0, 0, 0];
+    data.extend_from_slice(&[0, 0]);
+    data.extend_from_slice(&[0x10, 0, 0, 0, 0x20, 0, 0, 0]);
+    let mut cursor = Cursor::new(data);
+    let mut reader = EndianReader::new(&mut cursor, Endian::Little);
+    let tag = reader.read_u16().unwrap();
+    let entry = Entry::parse(&mut reader, 0, 0, tag).unwrap();
+    assert_eq!(entry.value, Value::Long(vec![0x10, 0x20]));
   }
 }
