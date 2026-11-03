@@ -1,4 +1,4 @@
-use std::{cell::UnsafeCell, ops::Range};
+use std::ops::Range;
 
 use itertools::Itertools;
 use multiversion::multiversion;
@@ -1453,35 +1453,6 @@ impl<'a, T> From<ImageRegionMut<'a, T>> for ImageRegion<'a, T> {
     }
   }
 }
-
-/// An ugly hack to get multiple mutable references to Pix2D
-pub struct SharedColor2D<T: SubPixel, const N: usize> {
-  pub inner: UnsafeCell<Color2D<T, N>>,
-}
-
-impl<T, const N: usize> SharedColor2D<T, N>
-where
-  T: SubPixel,
-{
-  pub fn new(inner: Color2D<T, N>) -> Self {
-    Self { inner: inner.into() }
-  }
-
-  /// Get inner Pix2D<> reference
-  ///
-  /// # Safety
-  /// Only use this inside Rayon parallel iterators.
-  #[allow(clippy::mut_from_ref)]
-  pub unsafe fn inner_mut(&self) -> &mut Color2D<T, N> {
-    unsafe { &mut *self.inner.get() }
-  }
-
-  pub fn into_inner(self) -> Color2D<T, N> {
-    self.inner.into_inner()
-  }
-}
-
-unsafe impl<T, const N: usize> Sync for SharedColor2D<T, N> where T: SubPixel {}
 
 #[derive(Clone, Debug)]
 pub struct Color2DPtr<T, const N: usize> {

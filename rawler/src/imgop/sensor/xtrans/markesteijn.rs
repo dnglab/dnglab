@@ -15,12 +15,13 @@ use crate::{
   CFA,
   cfa::{CFA_COLOR_B, CFA_COLOR_G, CFA_COLOR_R, PlaneColor},
   imgop::{
+    Dim2, Point, Rect,
     cielab::XYZ_to_lab,
     matrix::multiply_row1,
     sensor::Demosaic,
     xyz::{CIE_1931_TRISTIMULUS_D65, SRGB_TO_XYZ_D65},
   },
-  pixarray::{Color2D, ImageRegion, SharedColor2D},
+  pixarray::{Color2D, DisjointRegionMut, ImageRegion, ImageRegionMut},
 };
 
 /// Markesteijn demosaicing implementation for Fujifilm X-Trans sensor data.
@@ -131,12 +132,17 @@ fn demosaic_impl(input: &[f32], width: usize, height: usize, cfa: &CFA, passes: 
     })
     .collect();
 
-  // SAFETY: Each tile writes to a non-overlapping region of the output buffer.
-  // Tiles step by `stride` (TS - overlap) but only write pixels within
-  // pad_tile..tile_size-pad_tile, so adjacent tiles cover adjacent, non-overlapping pixel ranges.
-  let shared_output = SharedColor2D::<f32, 3>::new(output);
+  // Each tile writes the pixels inside of pad_tile from its borders. Tiles step
+  // by `stride` (TS - overlap), so these areas of adjacent tiles are adjacent.
+  let areas: Vec<Rect> = tiles
+    .iter()
+    .map(|&(top, left, tile_h, tile_w)| Rect::new(Point::new(left + pad_tile, top + pad_tile), Dim2::new(tile_w - overlap, tile_h - overlap)))
+    .collect();
+  let regions = ImageRegionMut::from(output.view_mut())
+    .split_regions_mut(&areas)
+    .expect("Tiles write disjoint areas");
 
-  tiles.par_iter().for_each(|&(top, left, tile_h, tile_w)| {
+  tiles.par_iter().zip(regions).for_each(|(&(top, left, tile_h, tile_w), mut region)| {
     process_tile(
       input,
       width,
@@ -154,11 +160,11 @@ fn demosaic_impl(input: &[f32], width: usize, height: usize, cfa: &CFA, passes: 
       pad_drv,
       pad_homo,
       pad_tile,
-      &shared_output,
+      &mut region,
     );
   });
 
-  shared_output.into_inner()
+  output
 }
 
 /// Hex neighborhood offset lookup table built from orth/patt tables (matching dcraw/LibRaw).
@@ -465,7 +471,7 @@ fn process_tile(
   pad_drv: usize,
   pad_homo: usize,
   pad_tile: usize,
-  output: &SharedColor2D<f32, 3>,
+  output: &mut DisjointRegionMut<f32>,
 ) {
   let tpix = tile_h * tile_w;
   let mut rgb = vec![[0.0f32; 3]; ndir * tpix];
@@ -605,18 +611,10 @@ fn process_tile(
     }
   }
 
-  // Final averaging with 5x5 homogeneity summation
-  for ty in pad_tile..tile_h.saturating_sub(pad_tile) {
-    let iy = top + ty;
-    if iy >= height {
-      break;
-    }
-
-    for tx in pad_tile..tile_w.saturating_sub(pad_tile) {
-      let ix = left + tx;
-      if ix >= width {
-        break;
-      }
+  // Final averaging with 5x5 homogeneity summation into the output region,
+  // which starts at pixel pad_tile:pad_tile of the tile
+  for (ty, row) in (pad_tile..).zip(output.rows_mut()) {
+    for (tx, pixel) in (pad_tile..).zip(row.as_chunks_mut::<3>().0) {
       let ti = ty * tile_w + tx;
 
       // Sum homogeneity over 5x5 window for each direction
@@ -662,14 +660,11 @@ fn process_tile(
 
       if cnt > 0 {
         let inv = 1.0 / cnt as f32;
-        // SAFETY: Each tile writes to a unique region of the output; no concurrent writes to same index.
-        unsafe {
-          *output.inner_mut().at_mut(iy, ix) = [
-            sum[0] * inv, // Keep
-            sum[1] * inv, // Keep
-            sum[2] * inv, // Keep
-          ];
-        }
+        *pixel = [
+          sum[0] * inv, // Keep
+          sum[1] * inv, // Keep
+          sum[2] * inv, // Keep
+        ];
       }
     }
   }
