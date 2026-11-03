@@ -37,6 +37,7 @@ pub struct KdcDecoder<'a> {
   rawloader: &'a RawLoader,
   tiff: GenericTiffReader,
   makernote: Option<IFD>,
+  kodak_ifd: Option<IFD>,
   camera: CameraLookup,
 }
 
@@ -51,11 +52,17 @@ impl<'a> KdcDecoder<'a> {
       None
     };
 
+    let kodak_ifd = match tiff.root_ifd().get_entry(TiffCommonTag::KdcIFD) {
+      Some(entry) => IFD::new(&mut file.reader(), entry.force_u32(0), 0, 0, tiff.get_endian(), &[]).ok(),
+      None => None,
+    };
+
     Ok(KdcDecoder {
       tiff,
       rawloader,
       camera,
       makernote,
+      kodak_ifd,
     })
   }
 }
@@ -165,7 +172,31 @@ impl<'a> Decoder for KdcDecoder<'a> {
 }
 
 impl<'a> KdcDecoder<'a> {
+  /// White balance of the Kodak IFD, in the same way as LibRaw selects it by the white balance setting.
+  fn get_ifd_wb(&self) -> Option<[f32; 4]> {
+    let ifd = self.kodak_ifd.as_ref()?;
+    let tag = match ifd.get_entry(TiffCommonTag::KdcWBSetting).map(|e| e.get_data().first().copied().unwrap_or(0)) {
+      Some(1) => TiffCommonTag::KdcWBFluorescent,
+      Some(2) => TiffCommonTag::KdcWBTungsten,
+      Some(3) => TiffCommonTag::KdcWBDaylight,
+      Some(6) => TiffCommonTag::KdcWB,
+      _ => TiffCommonTag::KdcWBAuto,
+    };
+    let entry = ifd.get_entry(tag)?;
+    if entry.count() != 3 {
+      return None;
+    }
+    let (r, g, b) = (entry.force_f32(0), entry.force_f32(1), entry.force_f32(2));
+    if g <= 0.0 || r <= 0.0 || b <= 0.0 {
+      return None;
+    }
+    Some([r / g, 1.0, b / g, f32::NAN])
+  }
+
   fn get_wb(&self) -> Result<[f32; 4]> {
+    if let Some(wb) = self.get_ifd_wb() {
+      return Ok(wb);
+    }
     if let Some(makernote) = self.makernote.as_ref() {
       match makernote.get_entry(TiffCommonTag::KdcWB) {
         Some(levels) => {
