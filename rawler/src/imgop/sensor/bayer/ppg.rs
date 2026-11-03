@@ -110,31 +110,26 @@ fn interpolate_borders(input: &mut RgbF32, shifted: &CFA) {
 
 /// PPG Demosaic: Interpolate missing G channels
 /// After this procedure, all green values are known.
+///
+/// It writes G at R/B sites and reads the samples of R/B sites and G at G
+/// sites, so it doesn't read values it writes.
 #[multiversion(targets("x86_64+avx+avx2", "x86+sse", "aarch64+neon"))]
 fn interpolate_green(img: &mut RgbF32, shifted: &CFA) {
   let w = img.width;
-  let h = img.height;
-  // Rows and columns 3 pixels away from the borders
-  let (rows, cols) = (h.saturating_sub(6), w.saturating_sub(6));
 
-  // Secondary data pointer, so we can have a mutable subslice reference
-  // inside the par_* methods and a second immutable reference to the whole
-  // image. This is not possible in Rust without unsafe code.
-  let dataptr = img.data_ptr();
-
-  img.pixels_mut().par_chunks_exact_mut(w).enumerate().skip(3).take(rows).for_each(|(row, buf)| {
-    for (col, pixel) in buf.iter_mut().enumerate().skip(3).take(cols) {
+  par_interior_rows(img, |row, [n2, n1], line, [s1, s2]| {
+    for col in 3..w - 3 {
       if shifted.color_at(row, col) != CFA_COLOR_G {
         let ch = shifted.color_at(row, col); // It's R or B
-        let x = pixel[ch];
-        let n_1 = unsafe { dataptr.at(row - 1, col)[CFA_COLOR_G] };
-        let n_2 = unsafe { dataptr.at(row - 2, col)[ch] };
-        let e_1 = unsafe { dataptr.at(row, col + 1)[CFA_COLOR_G] };
-        let e_2 = unsafe { dataptr.at(row, col + 2)[ch] };
-        let s_1 = unsafe { dataptr.at(row + 1, col)[CFA_COLOR_G] };
-        let s_2 = unsafe { dataptr.at(row + 2, col)[ch] };
-        let w_1 = unsafe { dataptr.at(row, col - 1)[CFA_COLOR_G] };
-        let w_2 = unsafe { dataptr.at(row, col - 2)[ch] };
+        let x = line[col][ch];
+        let n_1 = n1[col][CFA_COLOR_G];
+        let n_2 = n2[col][ch];
+        let e_1 = line[col + 1][CFA_COLOR_G];
+        let e_2 = line[col + 2][ch];
+        let s_1 = s1[col][CFA_COLOR_G];
+        let s_2 = s2[col][ch];
+        let w_1 = line[col - 1][CFA_COLOR_G];
+        let w_2 = line[col - 2][ch];
 
         // Calculate the gradients for each direction.
         let n = (x - n_2).abs() * 2.0 + (n_1 - s_1).abs();
@@ -164,90 +159,80 @@ fn interpolate_green(img: &mut RgbF32, shifted: &CFA) {
         } else {
           (s_1 * 3.0 + n_1 + x - s_2) / 4.0
         };
-        pixel[CFA_COLOR_G] = p_green;
+        line[col][CFA_COLOR_G] = p_green;
       }
     }
   });
 }
 
 /// PPG Demosaic: Interpolate R/B channel at G channels
+///
+/// It writes R and B at G sites and reads G and the samples of R/B sites, so
+/// it doesn't read values it writes.
 #[multiversion(targets("x86_64+avx+avx2", "x86+sse", "aarch64+neon"))]
 fn interpolate_rb_at_green(img: &mut RgbF32, shifted: &CFA) {
   let w = img.width;
-  let h = img.height;
-  // Rows and columns 3 pixels away from the borders
-  let (rows, cols) = (h.saturating_sub(6), w.saturating_sub(6));
 
-  // Secondary data pointer, so we can have a mutable subslice reference
-  // inside the par_* methods and a second immutable reference to the whole
-  // image. This is not possible in Rust without unsafe code.
-  let dataptr = img.data_ptr();
-
-  img.pixels_mut().par_chunks_exact_mut(w).enumerate().skip(3).take(rows).for_each(|(row, buf)| {
-    for (col, pixel) in buf.iter_mut().enumerate().skip(3).take(cols) {
+  par_interior_rows(img, |row, [_, n1], line, [s1, _]| {
+    for col in 3..w - 3 {
       if shifted.color_at(row, col) == CFA_COLOR_G {
         let h_ch = shifted.color_at(row, col + 1); // horizontal corresponding channel
         let v_ch = shifted.color_at(row + 1, col); // vertical corresponding channel
 
         // Green samples in all directions
-        let g_x = pixel[CFA_COLOR_G];
-        let g_w = unsafe { dataptr.at(row, col - 1)[CFA_COLOR_G] };
-        let g_e = unsafe { dataptr.at(row, col + 1)[CFA_COLOR_G] };
-        let g_n = unsafe { dataptr.at(row - 1, col)[CFA_COLOR_G] };
-        let g_s = unsafe { dataptr.at(row + 1, col)[CFA_COLOR_G] };
+        let g_x = line[col][CFA_COLOR_G];
+        let g_w = line[col - 1][CFA_COLOR_G];
+        let g_e = line[col + 1][CFA_COLOR_G];
+        let g_n = n1[col][CFA_COLOR_G];
+        let g_s = s1[col][CFA_COLOR_G];
         // Horizontal samples for channel (R or B)
-        let h_w = unsafe { dataptr.at(row, col - 1).get_unchecked(h_ch) };
-        let h_e = unsafe { dataptr.at(row, col + 1).get_unchecked(h_ch) };
+        let h_w = line[col - 1][h_ch];
+        let h_e = line[col + 1][h_ch];
         // Vertial samples for channel (R or B)
-        let v_n = unsafe { dataptr.at(row - 1, col).get_unchecked(v_ch) };
-        let v_s = unsafe { dataptr.at(row + 1, col).get_unchecked(v_ch) };
+        let v_n = n1[col][v_ch];
+        let v_s = s1[col][v_ch];
 
-        *unsafe { pixel.get_unchecked_mut(h_ch) } = hue_transit(g_w, g_x, g_e, *h_w, *h_e);
-        *unsafe { pixel.get_unchecked_mut(v_ch) } = hue_transit(g_n, g_x, g_s, *v_n, *v_s);
+        line[col][h_ch] = hue_transit(g_w, g_x, g_e, h_w, h_e);
+        line[col][v_ch] = hue_transit(g_n, g_x, g_s, v_n, v_s);
       }
     }
   });
 }
 
 /// PPG Demosaic: Interpolate R/B channel at non-G channels
+///
+/// It writes the missing one of R and B at R/B sites and reads G and the
+/// samples of R/B sites, so it doesn't read values it writes.
 #[multiversion(targets("x86_64+avx+avx2", "x86+sse", "aarch64+neon"))]
 fn interpolate_rb_at_non_green(img: &mut RgbF32, shifted: &CFA) {
   let w = img.width;
-  let h = img.height;
-  // Rows and columns 3 pixels away from the borders
-  let (rows, cols) = (h.saturating_sub(6), w.saturating_sub(6));
 
-  // Secondary data pointer, so we can have a mutable subslice reference
-  // inside the par_* methods and a second immutable reference to the whole
-  // image. This is not possible in Rust without unsafe code.
-  let dataptr = img.data_ptr();
-
-  img.pixels_mut().par_chunks_exact_mut(w).enumerate().skip(3).take(rows).for_each(|(row, buf)| {
-    for (col, pixel) in buf.iter_mut().enumerate().skip(3).take(cols) {
+  par_interior_rows(img, |row, [n2, n1], line, [s1, s2]| {
+    for col in 3..w - 3 {
       if shifted.color_at(row, col) != CFA_COLOR_G {
         let x_ch = shifted.color_at(row, col); // current
         let y_ch = if x_ch == CFA_COLOR_R { CFA_COLOR_B } else { CFA_COLOR_R };
 
-        let y_ne_1 = unsafe { dataptr.at(row - 1, col + 1)[y_ch] };
-        let y_sw_1 = unsafe { dataptr.at(row + 1, col - 1)[y_ch] };
-        let x_ne_2 = unsafe { dataptr.at(row - 2, col + 2)[x_ch] };
-        let x_center = pixel[x_ch];
-        let x_sw_2 = unsafe { dataptr.at(row + 2, col - 2)[x_ch] };
-        let g_ne_1 = unsafe { dataptr.at(row - 1, col + 1)[CFA_COLOR_G] };
-        let g_center = pixel[CFA_COLOR_G];
-        let g_sw_1 = unsafe { dataptr.at(row + 1, col - 1)[CFA_COLOR_G] };
-        let y_nw_1 = unsafe { dataptr.at(row - 1, col - 1)[y_ch] };
-        let y_se_1 = unsafe { dataptr.at(row + 1, col + 1)[y_ch] };
-        let x_nw_2 = unsafe { dataptr.at(row - 2, col - 2)[x_ch] };
-        let x_se_2 = unsafe { dataptr.at(row + 2, col + 2)[x_ch] };
-        let g_nw_1 = unsafe { dataptr.at(row - 1, col - 1)[CFA_COLOR_G] };
-        let g_se_1 = unsafe { dataptr.at(row + 1, col + 1)[CFA_COLOR_G] };
+        let y_ne_1 = n1[col + 1][y_ch];
+        let y_sw_1 = s1[col - 1][y_ch];
+        let x_ne_2 = n2[col + 2][x_ch];
+        let x_center = line[col][x_ch];
+        let x_sw_2 = s2[col - 2][x_ch];
+        let g_ne_1 = n1[col + 1][CFA_COLOR_G];
+        let g_center = line[col][CFA_COLOR_G];
+        let g_sw_1 = s1[col - 1][CFA_COLOR_G];
+        let y_nw_1 = n1[col - 1][y_ch];
+        let y_se_1 = s1[col + 1][y_ch];
+        let x_nw_2 = n2[col - 2][x_ch];
+        let x_se_2 = s2[col + 2][x_ch];
+        let g_nw_1 = n1[col - 1][CFA_COLOR_G];
+        let g_se_1 = s1[col + 1][CFA_COLOR_G];
 
         let ne = (y_ne_1 - y_sw_1).abs() + (x_ne_2 - x_center).abs() + (x_center - x_sw_2).abs() + (g_ne_1 - g_center).abs() + (g_center - g_sw_1).abs();
 
         let nw = (y_nw_1 - y_se_1).abs() + (x_nw_2 - x_center).abs() + (x_center - x_se_2).abs() + (g_nw_1 - g_center).abs() + (g_center - g_se_1).abs();
 
-        pixel[y_ch] = if ne < nw {
+        line[col][y_ch] = if ne < nw {
           hue_transit(g_ne_1, g_center, g_sw_1, y_ne_1, y_sw_1)
         } else {
           hue_transit(g_nw_1, g_center, g_se_1, y_nw_1, y_se_1)
@@ -255,6 +240,72 @@ fn interpolate_rb_at_non_green(img: &mut RgbF32, shifted: &CFA) {
       }
     }
   });
+}
+
+/// Rows of the bands of [`par_interior_rows()`]
+const BAND_ROWS: usize = 32;
+
+/// Call `op(row, above, line, below)` in parallel for the rows 3 pixels away
+/// from the borders of `img`: `line` is the row, `above` are the two rows
+/// above it, from the top, and `below` the two rows below it.
+///
+/// The image is split into bands of rows, which are processed row by row. In
+/// two rounds, the bands of one parity are written while the bands of the
+/// other parity are read. So `op` must not read values of `above` and `below`
+/// that it writes, or the result depends on the order of the rows.
+fn par_interior_rows<F>(img: &mut RgbF32, op: F)
+where
+  F: Fn(usize, [&[[f32; 3]]; 2], &mut [[f32; 3]], [&[[f32; 3]]; 2]) + Sync,
+{
+  let (w, h) = (img.width, img.height);
+  if w <= 6 || h <= 6 {
+    return;
+  }
+  // Samples of row `i` of a band
+  let row_of = |i: usize| i * w..(i + 1) * w;
+  for parity in 0..2 {
+    let mut bands = Vec::new();
+    // Bands of the other parity, band b is at index b / 2
+    let mut neighbours = Vec::new();
+    for (band, rows) in img.pixels_mut().chunks_mut(BAND_ROWS * w).enumerate() {
+      if band % 2 == parity {
+        bands.push((band, rows));
+      } else {
+        neighbours.push(&*rows);
+      }
+    }
+    bands.into_par_iter().for_each(|(band, rows)| {
+      // Bands next to this one, the first band has none above, the last none below
+      let (prev_band, next_band) = (band.checked_sub(1), band + 1);
+      let (prev, next) = (prev_band.map(|prev| neighbours[prev / 2]), neighbours.get(next_band / 2).copied());
+      let count = rows.len() / w;
+      for i in 0..count {
+        let row = band * BAND_ROWS + i;
+        if row < 3 || row >= h - 3 {
+          continue;
+        }
+        let (before, rest) = rows.split_at_mut(i * w);
+        let (line, after) = rest.split_at_mut(w);
+        let (before, after) = (&*before, &*after);
+        // Rows outside of the band are in the bands next to it
+        let above = [2, 1].map(|k| match i.checked_sub(k) {
+          Some(j) => &before[row_of(j)],
+          None => {
+            let prev = prev.expect("Band above");
+            &prev[row_of(prev.len() / w + i - k)]
+          }
+        });
+        let below = [1, 2].map(|k| match (i + k).checked_sub(count) {
+          None => &after[row_of(k - 1)],
+          Some(j) => {
+            let next = next.expect("Band below");
+            &next[row_of(j)]
+          }
+        });
+        op(row, above, line, below);
+      }
+    });
+  }
 }
 
 /// PPG helper procedure to calculate hue transit

@@ -510,10 +510,6 @@ where
     self.data.as_flattened().to_vec()
   }
 
-  pub fn data_ptr(&self) -> Color2DPtr<T, N> {
-    Color2DPtr::new(self)
-  }
-
   pub fn pixels(&self) -> &[[T; N]] {
     &self.data
   }
@@ -1460,38 +1456,6 @@ impl<'a, T> From<ImageRegionMut<'a, T>> for ImageRegion<'a, T> {
     }
   }
 }
-
-#[derive(Clone, Debug)]
-pub struct Color2DPtr<T, const N: usize> {
-  ptr: *const [T; N],
-  pub width: usize,
-  pub height: usize,
-}
-impl<T, const N: usize> Color2DPtr<T, N>
-where
-  T: Copy + Clone,
-{
-  fn new(orig: &Color2D<T, N>) -> Self {
-    Self {
-      ptr: orig.data.as_slice().as_ptr(),
-      width: orig.width,
-      height: orig.height,
-    }
-  }
-
-  /// Get a pixel from raw pointer
-  /// # Safety
-  /// TODO
-  #[inline(always)]
-  pub unsafe fn at(&self, row: usize, col: usize) -> &[T; N] {
-    unsafe {
-      debug_assert!(row < self.height && col < self.width);
-      &*self.ptr.add(row * self.width + col)
-    }
-  }
-}
-
-unsafe impl<T, const N: usize> Sync for Color2DPtr<T, N> {}
 
 #[macro_export]
 macro_rules! alloc_image_f32_plain {
