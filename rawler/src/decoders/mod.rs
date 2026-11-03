@@ -1113,6 +1113,7 @@ impl RawLoader {
             "Leaf" => return use_decoder!(iiq::IiqDecoder, rawfile, tiff, self),
             "Hasselblad" => return use_decoder!(tfr::TfrDecoder, rawfile, tiff, self),
             "SONY" => return use_decoder!(arw::ArwDecoder, rawfile, tiff, self),
+            "HASSELBLAD" => return use_decoder!(arw::ArwDecoder, rawfile, tiff, self),
             "Mamiya-OP Co.,Ltd." => return use_decoder!(mef::MefDecoder, rawfile, tiff, self),
             "OLYMPUS IMAGING CORP." => return use_decoder!(orf::OrfDecoder, rawfile, tiff, self),
             "OLYMPUS CORPORATION" => return use_decoder!(orf::OrfDecoder, rawfile, tiff, self),
