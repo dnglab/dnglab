@@ -233,11 +233,11 @@ impl BlackLevel {
     }
     let mut values: Vec<Vec<u16>> = vec![Vec::new(); width * height * cpp];
     for area in areas {
-      for (row, samples) in image.rows().enumerate().skip(area.p.y).take(area.d.h) {
-        for col in area.p.x..area.p.x + area.d.w {
+      for (row, samples) in (area.p.y..).zip(image.region(*area).rows()) {
+        for (col, pixel) in (area.p.x..).zip(samples.chunks_exact(cpp)) {
           let pos = ((row % height) * width + col % width) * cpp;
-          for (sample, value) in samples[col * cpp..(col + 1) * cpp].iter().enumerate() {
-            values[pos + sample].push(*value);
+          for (values, value) in values[pos..pos + cpp].iter_mut().zip(pixel) {
+            values.push(*value);
           }
         }
       }
