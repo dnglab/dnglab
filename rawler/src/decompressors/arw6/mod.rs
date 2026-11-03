@@ -12,12 +12,14 @@ mod pixelops;
 use std::io::Cursor;
 
 use bitstream_io::BitReader;
+use itertools::Itertools;
 use rayon::prelude::*;
 
-use crate::Result;
 use crate::alloc_image_ok;
 use crate::bits::clampbits;
-use crate::pixarray::{PixU16, SharedPix2D};
+use crate::imgop::{Dim2, Point, Rect};
+use crate::pixarray::{DisjointRegionMut, ImageRegionMut, PixU16};
+use crate::{RawlerError, Result};
 
 use bitstream::decode_component;
 use container::{Region, TileRecord};
@@ -56,45 +58,30 @@ impl Plane {
 
 /// Decompress an ARW6 strip (`buf`) into the full `width` × `height` Bayer mosaic.
 pub(crate) fn decompress_arw6(buf: &[u8], width: usize, height: usize, dummy: bool) -> Result<PixU16> {
-  let image = alloc_image_ok!(width, height, dummy);
+  let mut image = alloc_image_ok!(width, height, dummy);
   let records = container::parse_records(buf)?;
-  // The tiles are decoded straight into the shared image, so their rectangles
-  // must lie inside it and must not overlap.
-  for (i, rec) in records.iter().enumerate() {
-    if rec.x + rec.w > width || rec.y + rec.h > height {
-      return Err(
-        format!(
-          "ARW6: tile {}x{} at ({}, {}) exceeds the {}x{} image",
-          rec.w, rec.h, rec.x, rec.y, width, height
-        )
-        .into(),
-      );
-    }
-    if records[..i]
-      .iter()
-      .any(|prev| rec.x < prev.x + prev.w && prev.x < rec.x + rec.w && rec.y < prev.y + prev.h && prev.y < rec.y + rec.h)
-    {
-      return Err(format!("ARW6: tile at ({}, {}) overlaps another tile", rec.x, rec.y).into());
-    }
-  }
-  let shared = SharedPix2D::new(image);
-  records.par_iter().try_for_each(|rec| {
-    let regions = container::parse_tile(rec)?;
-    // Safety: the tile rectangles are validated non-overlapping above, and
-    // decode_tile_into writes only within its tile's rectangle.
-    decode_tile_into(rec, &regions, unsafe { shared.inner_mut() })
+  // The tiles are decoded straight into their regions of the image, the
+  // split fails if a tile is outside of the image or overlaps another tile.
+  let areas: Vec<Rect> = records.iter().map(|rec| Rect::new(Point::new(rec.x, rec.y), Dim2::new(rec.w, rec.h))).collect();
+  let tiles = ImageRegionMut::from(image.view_mut()).split_regions_mut(&areas).map_err(|err| match err {
+    RawlerError::DecoderFailed(msg) => RawlerError::DecoderFailed(format!("ARW6: invalid tile: {}", msg)),
+    err => err,
   })?;
-  Ok(shared.into_inner())
+  records.par_iter().zip(tiles).try_for_each(|(rec, mut tile)| {
+    let regions = container::parse_tile(rec)?;
+    decode_tile_into(rec, &regions, &mut tile)
+  })?;
+  Ok(image)
 }
 
-/// Reconstruct one tile into its rectangle of `image`: entropy-decode every
-/// region, undo the wavelets and assemble the four components into the tile's
-/// Bayer mosaic.
+/// Reconstruct one tile into `tile`, its region of the image: entropy-decode
+/// every region, undo the wavelets and assemble the four components into the
+/// tile's Bayer mosaic.
 ///
 /// Region 0 holds the components' LL data, regions 1..n_levels-1 their detail
 /// levels coarsest-first, region n_levels `green_hi` alone; within the shared
 /// regions, components 0, 1, 2 = `green_lo`, `chroma_r`, `chroma_b`.
-fn decode_tile_into(rec: &TileRecord<'_>, regions: &[Region<'_>], image: &mut PixU16) -> Result<()> {
+fn decode_tile_into(rec: &TileRecord<'_>, regions: &[Region<'_>], tile: &mut DisjointRegionMut<u16>) -> Result<()> {
   let n_levels = regions.len() - 1; // vertical level count
   let coords = TileCoords::new(rec.w, rec.h, n_levels)?;
   let geoms = derive_geom(&coords);
@@ -125,7 +112,7 @@ fn decode_tile_into(rec: &TileRecord<'_>, regions: &[Region<'_>], image: &mut Pi
     })
     .collect::<Result<Vec<_>>>()?;
   let [green_lo, chroma_r, chroma_b, green_hi]: [Plane; 4] = planes.try_into().map_err(|_| "ARW6: expected 4 planes")?;
-  assemble_tile_into(&green_lo, &chroma_r, &chroma_b, &green_hi, rec, image)
+  assemble_tile_into(&green_lo, &chroma_r, &chroma_b, &green_hi, rec, tile)
 }
 
 /// Decode a single-orientation region's component (the LL or green_hi,
@@ -169,7 +156,7 @@ fn decode_region_comp(regions: &[Region<'_>], geoms: &[RegionGeometry], region_i
 }
 
 /// Combine one tile's decoded components into its Bayer mosaic, written
-/// straight into the tile's rectangle of `image`.
+/// straight into `tile`, the tile's region of the image.
 ///
 /// The green plane is `green_lo` and `green_hi` combined by one inverse
 /// quincunx 5/3 level, offset by the 12-bit mid value. R and B pixels come
@@ -183,7 +170,14 @@ fn decode_region_comp(regions: &[Region<'_>], geoms: &[RegionGeometry], region_i
 /// neighbours in the merged green plane). Everything is clamped to 12 bits;
 /// the stored pixels are mapped through the delinearization curve back to
 /// linear sensor values.
-fn assemble_tile_into(green_lo: &Plane, chroma_r: &Plane, chroma_b: &Plane, green_hi: &Plane, rec: &TileRecord<'_>, image: &mut PixU16) -> Result<()> {
+fn assemble_tile_into(
+  green_lo: &Plane,
+  chroma_r: &Plane,
+  chroma_b: &Plane,
+  green_hi: &Plane,
+  rec: &TileRecord<'_>,
+  tile: &mut DisjointRegionMut<u16>,
+) -> Result<()> {
   let mid_value = 1i32 << (CODEC_BIT_DEPTH - 1);
   let h = green_lo.h.min(green_hi.h);
   let w = green_lo.w;
@@ -203,14 +197,12 @@ fn assemble_tile_into(green_lo: &Plane, chroma_r: &Plane, chroma_b: &Plane, gree
   let greens = diamond_idwt(green_lo, green_hi, h, w);
   // Bayer RGGB layout per 2x2 cell: R at (even row, even col), B at (odd row,
   // odd col), greens on the other diagonal.
-  let width = image.width;
-  for r in 0..h {
+  for (r, (row_even, row_odd)) in tile.rows_mut().tuples().take(h).enumerate() {
     let g_row = greens.row(r);
     let cr_row = chroma_r.row(r);
     let cb_row = chroma_b.row(r);
-    let (top, bottom) = image.data.split_at_mut((rec.y + 2 * r + 1) * width);
-    let row_even = &mut top[(rec.y + 2 * r) * width + rec.x..][..full_w];
-    let row_odd = &mut bottom[rec.x..][..full_w];
+    let row_even = &mut row_even[..full_w];
+    let row_odd = &mut row_odd[..full_w];
     for i in 0..w {
       let g0 = clampbits(g_row[2 * i] + mid_value, CODEC_BIT_DEPTH); // lower-left diagonal
       let g1 = clampbits(g_row[2 * i + 1] + mid_value, CODEC_BIT_DEPTH); // upper-right diagonal
