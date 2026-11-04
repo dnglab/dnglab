@@ -188,7 +188,7 @@ struct HuffmanSymbol {
   mask: u16,
 }
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug)]
 struct HuffmanDecoder {
   #[allow(dead_code)]
   huff_symbols: [HuffmanSymbol; 17],
@@ -196,7 +196,7 @@ struct HuffmanDecoder {
   /// Lookup cache for all possible u16 values.
   /// If a 16 bit input value is invalid (the symbol is undefined), the
   /// value is None, otherwise it's (bitcnt, ssss)
-  cache: Vec<Option<(u8, u8)>>,
+  cache: Box<[Option<(u8, u8)>; 1 << 16]>,
 }
 
 impl HuffmanDecoder {
@@ -217,7 +217,10 @@ impl HuffmanDecoder {
     // Generate lookup cache for all possible 16 bit input values.
     let cache = (0..=0xFFFFu16)
       .map(|x| Self::slow_lookup(&huff_symbols, x).map(|ssss| (huff_symbols[ssss as usize].bitcnt, ssss)))
-      .collect_vec();
+      .collect_vec()
+      .into_boxed_slice()
+      .try_into()
+      .expect("One entry for each u16 value");
     Self { huff_symbols, cache }
   }
 
@@ -235,8 +238,7 @@ impl HuffmanDecoder {
   /// return index into symbol table.
   fn get_next(&self, pump: &mut dyn BitPump) -> u8 {
     let next_bits = pump.peek_bits(16);
-    debug_assert_eq!(self.cache.len(), u16::MAX as usize + 1);
-    if let Some((bits, ssss)) = unsafe { *self.cache.get_unchecked(next_bits as usize) } {
+    if let Some((bits, ssss)) = self.cache[next_bits as u16 as usize] {
       pump.consume_bits(bits as u32);
       ssss
     } else {
