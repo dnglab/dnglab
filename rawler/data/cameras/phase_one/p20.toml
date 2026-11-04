@@ -4,7 +4,7 @@ clean_make = "Phase One"
 clean_model = "P20+"
 #blackpoint = 0
 whitepoint = 65535
-color_pattern = "GRBG"
+color_pattern = "GBRG"
 
 active_area = [26, 20, 10, 10]
 
