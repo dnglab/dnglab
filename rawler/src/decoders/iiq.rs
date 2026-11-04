@@ -552,6 +552,7 @@ impl<'a> IiqDecoder<'a> {
         let rend = head[1] + y * head[5];
         let mut row = rend - head[5];
         while row < img.height && row < rend && row < head[1] + head[3] - head[5] {
+          let line = img.row_mut(row);
           for x in 1..wide {
             for c in (0..nc).step_by(2) {
               mult[c] = mrow[c * wide + x - 1];
@@ -559,7 +560,7 @@ impl<'a> IiqDecoder<'a> {
             }
             let cend = head[0] + x * head[4];
             let mut col = cend - head[4];
-            while col < img.width && col < cend && col < head[0] + head[2] - head[4] {
+            while col < line.len() && col < cend && col < head[0] + head[2] - head[4] {
               let color = if nc > 2 {
                 debug_assert!(row >= senscorr.sensor_margins.1);
                 debug_assert!(col >= senscorr.sensor_margins.0);
@@ -569,8 +570,8 @@ impl<'a> IiqDecoder<'a> {
               };
               // This matches for R (0) and B (2), not for G1 (1) and G2 (3)
               if (color & 1) == 0 {
-                let pix = *img.at(row, col) as f32 * mult[color];
-                *img.at_mut(row, col) = clamp(pix as i32, 0, 65535) as u16;
+                let pix = line[col] as f32 * mult[color];
+                line[col] = clamp(pix as i32, 0, 65535) as u16;
               }
               for c in (0..nc).step_by(2) {
                 mult[c] += mult[c + 1];
