@@ -19,7 +19,7 @@ use crate::mask::{MaskImage, SemanticMask};
 use crate::{
   CFA,
   decoders::*,
-  formats::tiff::Value,
+  formats::tiff::{SRational, Value},
   imgop::{
     Dim2, Point, Rect,
     matrix::FlatMatrix,
@@ -176,7 +176,7 @@ pub struct RawImage {
   pub linearization_table: Option<Vec<u16>>,
 
   /// DNG BaselineExposure in EV, applied by the develop pipeline.
-  pub baseline_exposure: Option<f32>,
+  pub baseline_exposure: Option<SRational>,
 
   /// DNG transparency mask (NewSubFileType 4), it has the size of the image
   /// data and is cropped with it

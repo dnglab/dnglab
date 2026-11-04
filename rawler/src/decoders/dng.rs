@@ -2,7 +2,9 @@ use crate::RawImage;
 use crate::camera_profile::CameraProfile;
 use crate::cfa::*;
 use crate::decoders::*;
-use crate::dng::camera_profile_tags::{read_camera_calibration, read_camera_profile, read_extra_camera_profiles, read_gain_table_map_v1, read_string};
+use crate::dng::camera_profile_tags::{
+  read_camera_calibration, read_camera_profile, read_extra_camera_profiles, read_gain_table_map_v1, read_string, srationals,
+};
 use crate::dng::opcodes::OpcodeList;
 use crate::dng::{DNG_READER_VERSION, DNG_VERSION_V1_1, DngVersionNumber};
 use crate::formats::tiff::Entry;
@@ -147,7 +149,11 @@ impl<'a> Decoder for DngDecoder<'a> {
     let active_area = image.active_area.unwrap_or_else(|| Rect::new(Point::zero(), Dim2::new(width, height)));
     image.blackareas = self.get_masked_areas(raw, Dim2::new(width, height), active_area);
     image.linearization_table = self.get_linearization_table(raw, &image.data)?;
-    image.baseline_exposure = root.get_entry(DngTag::BaselineExposure).and_then(|entry| entry.value.get_f32(0).ok().flatten());
+    image.baseline_exposure = root.get_entry(DngTag::BaselineExposure).and_then(|entry| match &entry.value {
+      Value::SRational(v) => v.first().copied(),
+      // The DNG specification requires SRATIONAL, other types are only rounded to it
+      value => value.get_f32(0).ok().flatten().map(|v| srationals(&[v])[0]),
+    });
     // Masks are image data, they are skipped with the pixels
     if !dummy {
       image.transparency_mask = self.read_transparency_mask(file, Dim2::new(width, height));
@@ -280,12 +286,11 @@ impl<'a> Decoder for DngDecoder<'a> {
         Some(Rc::new(ifd))
       }
       WellKnownIFD::VirtualDngRootTags => {
-        // Camera profiles, CameraCalibration, AnalogBalance and AsShotProfileName
-        // are written from RawImage.
+        // Camera profiles, CameraCalibration, AnalogBalance, AsShotProfileName
+        // and BaselineExposure are written from RawImage.
         let mut ifd = IFD::default();
         IFD::copy_tag(&mut ifd, self.tiff.root_ifd(), DngTag::DNGPrivateData);
         IFD::copy_tag(&mut ifd, self.tiff.root_ifd(), DngTag::MakerNoteSafety);
-        IFD::copy_tag(&mut ifd, self.tiff.root_ifd(), DngTag::BaselineExposure);
         IFD::copy_tag(&mut ifd, self.tiff.root_ifd(), DngTag::BaselineNoise);
         IFD::copy_tag(&mut ifd, self.tiff.root_ifd(), DngTag::BaselineSharpness);
         IFD::copy_tag(&mut ifd, self.tiff.root_ifd(), DngTag::LinearResponseLimit);
@@ -823,6 +828,68 @@ mod tests {
       assert_eq!(dummy.whitelevel, full.whitelevel);
       assert_eq!(dummy.camera_profiles, full.camera_profiles);
     }
+    Ok(())
+  }
+
+  #[test]
+  fn baseline_exposure_is_written_from_rawimage() -> TestResult {
+    use crate::formats::tiff::SRational;
+
+    let mut rawimage = synthetic_rawimage();
+    assert_eq!(decode_dng(&write_dng(&rawimage, |_| {})?)?.baseline_exposure, None);
+
+    for exposure in [SRational::new(1, 1), SRational::new(-1, 2)] {
+      rawimage.baseline_exposure = Some(exposure);
+      assert_eq!(decode_dng(&write_dng(&rawimage, |_| {})?)?.baseline_exposure, Some(exposure));
+    }
+    Ok(())
+  }
+
+  /// DNG with `exposure` stored as BaselineExposure
+  fn write_dng_with_baseline_exposure(exposure: impl Into<Value>) -> TestResult<Vec<u8>> {
+    let rawimage = synthetic_rawimage();
+    let mut buf = Cursor::new(Vec::new());
+    let mut dng = DngWriter::new(&mut buf, DNG_VERSION_V1_4)?;
+    dng.load_base_tags(&rawimage)?;
+    dng.root_ifd_mut().add_tag(DngTag::BaselineExposure, exposure);
+    let mut frame = dng.subframe(0);
+    frame.raw_image(
+      &rawimage,
+      CropMode::None,
+      DngCompression::Uncompressed,
+      DngPhotometricConversion::Original,
+      &CompressionParams::default(),
+    )?;
+    frame.finalize()?;
+    dng.close()?;
+    Ok(buf.into_inner())
+  }
+
+  #[test]
+  fn baseline_exposure_of_another_type_is_read() -> TestResult {
+    use crate::formats::tiff::SRational;
+
+    let data = write_dng_with_baseline_exposure(0.5_f32)?;
+    assert_eq!(decode_dng(&data)?.baseline_exposure, Some(SRational::new(1, 2)));
+    Ok(())
+  }
+
+  #[test]
+  fn convert_keeps_the_stored_baseline_exposure() -> TestResult {
+    use crate::decoders::{Decoder, WellKnownIFD};
+    use crate::dng::convert::{ConvertParams, convert_raw_source};
+    use crate::formats::tiff::SRational;
+
+    // 1/3 would change if the value was rounded on its way through RawImage
+    let exposure = SRational::new(1, 3);
+    let source = write_dng_with_baseline_exposure(exposure)?;
+
+    let params = ConvertParams::default().with_preview(false).with_thumbnail(false);
+    let mut output = Cursor::new(Vec::new());
+    convert_raw_source(&RawSource::new_from_slice(&source), &mut output, "synthetic.dng", &params)?;
+    let root = dng_decoder(&output.into_inner())?.ifd(WellKnownIFD::Root)?.ok_or("root IFD not found")?;
+    let stored = root.get_entry(DngTag::BaselineExposure).map(|entry| entry.value.clone());
+    assert_eq!(stored, Some(Value::SRational(vec![exposure])));
     Ok(())
   }
 

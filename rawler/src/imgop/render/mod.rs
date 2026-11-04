@@ -321,6 +321,7 @@ mod tests {
     CFA, RawImageData,
     decoders::Camera,
     dng::opcodes::{OpcodeList, OpcodeStage},
+    formats::tiff::SRational,
     imgop::Point,
     pixarray::PixU16,
     rawimage::{BlackLevel, CFAConfig, RawPhotometricInterpretation, WhiteLevel},
@@ -386,7 +387,7 @@ mod tests {
   fn plan_for_cfa_image() -> crate::Result<()> {
     let mut rawimage = rggb_rawimage();
     rawimage.dng_opcodes_3 = Some(OpcodeList::new(Vec::new()));
-    rawimage.baseline_exposure = Some(0.5);
+    rawimage.baseline_exposure = Some(SRational::new(1, 2));
     let plan = plan(&rawimage, &RenderOptions::default())?;
     // The crop follows OpcodeList3, the gain and the transfer function are part of the color map
     assert_eq!(op_names(&plan), ["RescaleMosaic", "Demosaic", "List3", "CropDefault", "CameraToRgb"]);
@@ -437,7 +438,7 @@ mod tests {
   fn plan_for_negative_exposure() -> crate::Result<()> {
     // The color map renders the curve, without it a separate tone curve is applied
     let mut rawimage = rggb_rawimage();
-    rawimage.baseline_exposure = Some(-1.0);
+    rawimage.baseline_exposure = Some(SRational::new(-1, 1));
     assert_eq!(
       op_names(&plan(&rawimage, &RenderOptions::default())?),
       ["RescaleMosaic", "Demosaic", "CameraToRgb"]
@@ -453,7 +454,7 @@ mod tests {
     // Monochrome images have no color map
     let mut mono = linear_raw_rawimage(4, 2, 1);
     mono.photometric = RawPhotometricInterpretation::BlackIsZero;
-    mono.baseline_exposure = Some(-1.0);
+    mono.baseline_exposure = Some(SRational::new(-1, 1));
     assert_eq!(
       op_names(&plan(&mono, &RenderOptions::default())?),
       ["Rescale", "CropDefault", "ToneCurve", "TransferFunction"]
