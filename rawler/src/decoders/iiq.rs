@@ -108,7 +108,6 @@ struct SensorCalibration {
   flats: Vec<FlatField>,
   blacklevel: u16,
   q_blacklevel: Option<(Vec<i16>, Vec<i16>)>,
-  sensor_margins: (usize, usize), // left, top
 }
 
 /// Known IIQ compression formats
@@ -494,16 +493,12 @@ impl<'a> IiqDecoder<'a> {
     Ok(())
   }
 
-  /// Apply flat field correction
-  fn correct_raw_flatfield(&self, img: &mut PixU16, senscorr: &SensorCalibration) -> Result<()> {
+  /// Apply flat field correction, `cfa` and the positions of the flat fields are relative to the raw origin
+  fn correct_raw_flatfield(img: &mut PixU16, cfa: &cfa::CFA, flats: &[FlatField]) {
     // Map the second green (on odd rows) to color 3
-    let cfa = self
-      .camera
-      .supported()?
-      .cfa
-      .map_colors(|row, _col, color| if (color as usize) == cfa::CFA_COLOR_G && (row & 1 == 1) { 3 } else { color });
+    let cfa = cfa.map_colors(|row, _col, color| if (color as usize) == cfa::CFA_COLOR_G && (row & 1 == 1) { 3 } else { color });
 
-    for flat in senscorr.flats.iter() {
+    for flat in flats.iter() {
       let nc = match flat.typ {
         0x401 => {
           debug!("Apply all-color flat field correction 0x{:x} HEAD: {:?}", flat.typ, flat.head);
@@ -562,9 +557,7 @@ impl<'a> IiqDecoder<'a> {
             let mut col = cend - head[4];
             while col < line.len() && col < cend && col < head[0] + head[2] - head[4] {
               let color = if nc > 2 {
-                debug_assert!(row >= senscorr.sensor_margins.1);
-                debug_assert!(col >= senscorr.sensor_margins.0);
-                cfa.color_at(row - senscorr.sensor_margins.1, col - senscorr.sensor_margins.0)
+                cfa.color_at(row, col)
               } else {
                 0 // match all colors
               };
@@ -589,7 +582,6 @@ impl<'a> IiqDecoder<'a> {
         }
       }
     }
-    Ok(())
   }
 
   /// Apply raw sensor corrections
@@ -625,7 +617,7 @@ impl<'a> IiqDecoder<'a> {
     self.correct_raw_q_combined(img, calib)?;
     self.correct_raw_q_linearization(img, calib)?;
     self.correct_raw_defects(img, calib)?;
-    self.correct_raw_flatfield(img, calib)?;
+    Self::correct_raw_flatfield(img, &self.camera.supported()?.cfa, &calib.flats);
     Ok(())
   }
 
@@ -642,6 +634,7 @@ impl<'a> IiqDecoder<'a> {
     }
   }
 
+  #[allow(dead_code)]
   fn sensor_margins(&self) -> Option<(usize, usize)> {
     let left = self.makernotes.get(&IiqTag::MarginLeft.into());
     let top = self.makernotes.get(&IiqTag::MarginTop.into());
@@ -774,7 +767,6 @@ impl<'a> IiqDecoder<'a> {
 
   fn new_sensor_correction(&self, file: &RawSource, blacklevel: u16) -> std::io::Result<SensorCalibration> {
     let q_blacklevel = self.split_blacks(file)?;
-    let sensor_margins = self.sensor_margins().unwrap_or((0, 0));
 
     match self.makernotes.get(&IiqTag::SensorCorrection.into()) {
       Some((_len, offset)) => {
@@ -905,7 +897,6 @@ impl<'a> IiqDecoder<'a> {
           flats,
           blacklevel,
           q_blacklevel,
-          sensor_margins,
         })
       }
       _ => panic!("No sensor calibration data found."),
@@ -1225,5 +1216,35 @@ enum IiqTag {
 impl From<IiqTag> for u32 {
   fn from(v: IiqTag) -> Self {
     v as u32
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[test]
+  fn red_blue_flat_field_corrects_red_and_blue_pixels() {
+    // One cell of 4x4 pixels at an odd row and column, red multiplier 2.0 and blue multiplier 0.5
+    let flat = FlatField {
+      typ: 0x40b,
+      head: [1, 1, 8, 8, 4, 4, 0, 0],
+      data: [2.0, 0.5].repeat(4),
+    };
+    let mut img = PixU16::new_with(vec![1000; 12 * 12], 12, 12);
+
+    IiqDecoder::correct_raw_flatfield(&mut img, &cfa::CFA::new("GBRG"), &[flat]);
+
+    for row in 0..12 {
+      for col in 0..12 {
+        let inside = (1..5).contains(&row) && (1..5).contains(&col);
+        let expected = match (row % 2, col % 2) {
+          (0, 1) if inside => 500,  // blue
+          (1, 0) if inside => 2000, // red
+          _ => 1000,
+        };
+        assert_eq!(*img.at(row, col), expected, "row {row}, col {col}");
+      }
+    }
   }
 }
