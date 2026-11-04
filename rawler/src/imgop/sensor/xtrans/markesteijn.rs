@@ -275,7 +275,7 @@ struct HexLut {
 /// For non-green (g=0): `c ^ 0 = c` (identity).
 /// For green (g=1): `c ^ (2 & d)` flips bit 1 when d has bit 1 set,
 /// swapping slot pairs to match the alternating row parity.
-#[multiversion(targets("x86_64+avx512f+avx512bw+avx512vl", "x86_64+avx+avx2+fma", "x86_64+sse4.1", "aarch64+neon"))]
+#[multiversion(targets("x86_64+avx512f+avx512bw+avx512vl", "x86_64+avx+avx2", "x86_64+sse4.1", "aarch64+neon"))]
 fn build_hex_lut(cfa: &CFA) -> HexLut {
   // See doc comment above for detailed explanation of these tables.
   const ORTH: [i32; 12] = [1, 0, 0, 1, -1, 0, 0, -1, 1, 0, 0, 1];
@@ -371,7 +371,7 @@ fn build_hex_lut(cfa: &CFA) -> HexLut {
 /// These bounds are used by:
 /// - [`green_interpolation`]: clamping the 4 directional green estimates
 /// - [`green_recalculation`]: clamping refined green in multi-pass mode
-#[multiversion(targets("x86_64+avx512f+avx512bw+avx512vl", "x86_64+avx+avx2+fma", "x86_64+sse4.1", "aarch64+neon"))]
+#[multiversion(targets("x86_64+avx512f+avx512bw+avx512vl", "x86_64+avx+avx2", "x86_64+sse4.1", "aarch64+neon"))]
 fn compute_green_bounds(input: &[f32], width: usize, height: usize, cfa: &CFA, allhex: &HexLut) -> Vec<[f32; 2]> {
   let npix = width * height;
   let mut bounds = vec![[0.0f32; 2]; npix];
@@ -427,7 +427,7 @@ fn border_interpolate(input: &[f32], width: usize, height: usize, cfa: &CFA, out
 }
 
 #[inline]
-#[multiversion(targets("x86_64+avx512f+avx512bw+avx512vl", "x86_64+avx+avx2+fma", "x86_64+sse4.1", "aarch64+neon"))]
+#[multiversion(targets("x86_64+avx512f+avx512bw+avx512vl", "x86_64+avx+avx2", "x86_64+sse4.1", "aarch64+neon"))]
 fn interpolate_border_pixel(input: &[f32], width: usize, height: usize, cfa: &CFA, output: &mut Color2D<f32, 3>, y: usize, x: usize) {
   let mut rgb = [0.0f32; 3];
   let mut count = [0u32; 3];
@@ -453,7 +453,7 @@ fn interpolate_border_pixel(input: &[f32], width: usize, height: usize, cfa: &CF
 }
 
 #[allow(clippy::too_many_arguments)]
-#[multiversion(targets("x86_64+avx512f+avx512bw+avx512vl", "x86_64+avx+avx2+fma", "x86_64+sse4.1", "aarch64+neon"))]
+#[multiversion(targets("x86_64+avx512f+avx512bw+avx512vl", "x86_64+avx+avx2", "x86_64+sse4.1", "aarch64+neon"))]
 fn process_tile(
   input: &[f32],
   width: usize,
@@ -670,7 +670,7 @@ fn process_tile(
   }
 }
 
-#[multiversion(targets("x86_64+avx512f+avx512bw+avx512vl", "x86_64+avx+avx2+fma", "x86_64+sse4.1", "aarch64+neon"))]
+#[multiversion(targets("x86_64+avx512f+avx512bw+avx512vl", "x86_64+avx+avx2", "x86_64+sse4.1", "aarch64+neon"))]
 fn green_interpolation(
   input: &[f32],
   width: usize,
@@ -780,7 +780,7 @@ fn green_interpolation(
 /// Green recalculation for passes > 0 of Markesteijn 3-pass.
 /// Uses interpolated R/B values to refine green estimates via hex neighbors.
 #[allow(clippy::too_many_arguments)]
-#[multiversion(targets("x86_64+avx512f+avx512bw+avx512vl", "x86_64+avx+avx2+fma", "x86_64+sse4.1", "aarch64+neon"))]
+#[multiversion(targets("x86_64+avx512f+avx512bw+avx512vl", "x86_64+avx+avx2", "x86_64+sse4.1", "aarch64+neon"))]
 fn green_recalculation(
   width: usize,
   cfa: &CFA,
@@ -839,7 +839,7 @@ fn green_recalculation(
   }
 }
 
-#[multiversion(targets("x86_64+avx512f+avx512bw+avx512vl", "x86_64+avx+avx2+fma", "x86_64+sse4.1", "aarch64+neon"))]
+#[multiversion(targets("x86_64+avx512f+avx512bw+avx512vl", "x86_64+avx+avx2", "x86_64+sse4.1", "aarch64+neon"))]
 fn rb_interpolation(
   _input: &[f32],
   _width: usize,

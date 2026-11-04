@@ -823,8 +823,7 @@ impl<'a> LjpegCompressor<'a> {
 /// value. This function is optimized for one and two component input
 /// as this the case for most image data.
 /// `linesize` is the count of values including padding data at the end
-#[multiversion(targets("x86_64+avx+avx2+fma+bmi1+bmi2", "x86_64+avx+avx2", "x86+sse", "aarch64+neon"))]
-//#[clone(target = "[x86|x86_64]+avx+avx2+fma+bmi1+bmi2+avx512f+avx512bw")]
+#[multiversion(targets("x86_64+avx+avx2", "x86+sse", "aarch64+neon"))]
 fn ljpeg92_diff<const NCOMP: usize, const PX: u8>(
   row_prev: &[u16],    // Previous row (for index 0 it's the same reference as row_curr)
   row_curr: &[u16],    // Current row
