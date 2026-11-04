@@ -918,7 +918,7 @@ fn ljpeg92_diff<const NCOMP: usize, const PX: u8>(
 /// | a | x |
 #[inline(always)]
 fn pred_x<const NCOMP: usize>(_prev: &[u16], curr: &[u16], idx: usize, point_transform: u8) -> i32 {
-  unsafe { (curr.get_unchecked(idx) >> point_transform) as i32 }
+  (curr[idx] >> point_transform) as i32
 }
 
 /// Get Ra predictor by current line
@@ -927,7 +927,7 @@ fn pred_x<const NCOMP: usize>(_prev: &[u16], curr: &[u16], idx: usize, point_tra
 /// | a | x |
 #[inline(always)]
 fn pred_a<const NCOMP: usize>(_prev: &[u16], curr: &[u16], idx: usize, point_transform: u8) -> i32 {
-  unsafe { (curr.get_unchecked(idx - NCOMP) >> point_transform) as i32 }
+  (curr[idx - NCOMP] >> point_transform) as i32
 }
 
 /// Get Rb predictor by previous line
@@ -936,7 +936,7 @@ fn pred_a<const NCOMP: usize>(_prev: &[u16], curr: &[u16], idx: usize, point_tra
 /// | a | x |
 #[inline(always)]
 fn pred_b<const NCOMP: usize>(prev: &[u16], _curr: &[u16], idx: usize, point_transform: u8) -> i32 {
-  unsafe { (prev.get_unchecked(idx) >> point_transform) as i32 }
+  (prev[idx] >> point_transform) as i32
 }
 
 /// Get Rc predictor by previous line
@@ -945,7 +945,7 @@ fn pred_b<const NCOMP: usize>(prev: &[u16], _curr: &[u16], idx: usize, point_tra
 /// | a | x |
 #[inline(always)]
 fn pred_c<const NCOMP: usize>(prev: &[u16], _curr: &[u16], idx: usize, point_transform: u8) -> i32 {
-  unsafe { (prev.get_unchecked(idx - NCOMP) >> point_transform) as i32 }
+  (prev[idx - NCOMP] >> point_transform) as i32
 }
 
 #[cfg(test)]
