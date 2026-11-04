@@ -82,7 +82,7 @@ impl<'a> Decompressor<'a, u16> for PackedDecompressor {
   }
 }
 
-#[multiversion(targets("x86_64+avx+avx2+fma", "x86+sse", "aarch64+neon"))]
+#[multiversion(targets("x86_64+avx+avx2", "x86+sse", "aarch64+neon"))]
 fn unpack_16be<'a>(lines: impl LineIteratorMut<'a, u16>, src: &[u8], skip_rows: usize, width: usize) -> std::result::Result<(), String> {
   const BITS: usize = 16;
   let need = ((skip_rows + lines.len()) * width * BITS).div_ceil(u8::BITS as usize);
@@ -98,7 +98,7 @@ fn unpack_16be<'a>(lines: impl LineIteratorMut<'a, u16>, src: &[u8], skip_rows: 
   Ok(())
 }
 
-#[multiversion(targets("x86_64+avx+avx2+fma", "x86+sse", "aarch64+neon"))]
+#[multiversion(targets("x86_64+avx+avx2", "x86+sse", "aarch64+neon"))]
 fn unpack_16le<'a>(lines: impl LineIteratorMut<'a, u16>, src: &[u8], skip_rows: usize, width: usize) -> std::result::Result<(), String> {
   const BITS: usize = 16;
   let need = ((skip_rows + lines.len()) * width * BITS).div_ceil(u8::BITS as usize);
@@ -114,7 +114,7 @@ fn unpack_16le<'a>(lines: impl LineIteratorMut<'a, u16>, src: &[u8], skip_rows: 
   Ok(())
 }
 
-#[multiversion(targets("x86_64+avx+avx2+fma", "x86+sse", "aarch64+neon"))]
+#[multiversion(targets("x86_64+avx+avx2", "x86+sse", "aarch64+neon"))]
 fn unpack_12be<'a>(lines: impl LineIteratorMut<'a, u16>, src: &[u8], skip_rows: usize, width: usize) -> std::result::Result<(), String> {
   const BITS: usize = 12;
   let need = ((skip_rows + lines.len()) * width * BITS).div_ceil(u8::BITS as usize);
@@ -135,7 +135,7 @@ fn unpack_12be<'a>(lines: impl LineIteratorMut<'a, u16>, src: &[u8], skip_rows: 
   Ok(())
 }
 
-#[multiversion(targets("x86_64+avx+avx2+fma", "x86+sse", "aarch64+neon"))]
+#[multiversion(targets("x86_64+avx+avx2", "x86+sse", "aarch64+neon"))]
 fn unpack_10be<'a>(lines: impl LineIteratorMut<'a, u16>, src: &[u8], skip_rows: usize, width: usize) -> std::result::Result<(), String> {
   const BITS: usize = 10;
   let need = ((skip_rows + lines.len()) * width * BITS).div_ceil(u8::BITS as usize);
@@ -161,7 +161,7 @@ fn unpack_10be<'a>(lines: impl LineIteratorMut<'a, u16>, src: &[u8], skip_rows: 
   Ok(())
 }
 
-#[multiversion(targets("x86_64+avx+avx2+fma", "x86+sse", "aarch64+neon"))]
+#[multiversion(targets("x86_64+avx+avx2", "x86+sse", "aarch64+neon"))]
 fn unpack_8bit<'a>(lines: impl LineIteratorMut<'a, u16>, src: &[u8], skip_rows: usize, width: usize) -> std::result::Result<(), String> {
   const BITS: usize = 8;
   let need = ((skip_rows + lines.len()) * width * BITS).div_ceil(u8::BITS as usize);
@@ -177,7 +177,7 @@ fn unpack_8bit<'a>(lines: impl LineIteratorMut<'a, u16>, src: &[u8], skip_rows: 
   Ok(())
 }
 
-#[multiversion(targets("x86_64+avx+avx2+fma", "x86+sse", "aarch64+neon"))]
+#[multiversion(targets("x86_64+avx+avx2", "x86+sse", "aarch64+neon"))]
 fn unpack_generic_msb<'a>(lines: impl LineIteratorMut<'a, u16>, src: &[u8], skip_rows: usize, width: usize, bits: u32) -> std::result::Result<(), String> {
   let need = ((skip_rows + lines.len()) * width * bits as usize).div_ceil(u8::BITS as usize);
   if src.len() < need {
@@ -220,7 +220,7 @@ impl<'a> Decompressor<'a, f32> for PackedDecompressor {
   }
 }
 
-#[multiversion(targets("x86_64+avx+avx2+fma", "x86+sse", "aarch64+neon"))]
+#[multiversion(targets("x86_64+avx+avx2", "x86+sse", "aarch64+neon"))]
 fn unpack_f32be<'a>(lines: impl LineIteratorMut<'a, f32>, src: &[u8], skip_rows: usize, width: usize) -> std::result::Result<(), String> {
   const BITS: usize = 32;
   let need = ((skip_rows + lines.len()) * width * BITS).div_ceil(u8::BITS as usize);
@@ -237,7 +237,7 @@ fn unpack_f32be<'a>(lines: impl LineIteratorMut<'a, f32>, src: &[u8], skip_rows:
   Ok(())
 }
 
-#[multiversion(targets("x86_64+avx+avx2+fma", "x86+sse", "aarch64+neon"))]
+#[multiversion(targets("x86_64+avx+avx2", "x86+sse", "aarch64+neon"))]
 fn unpack_f32le<'a>(lines: impl LineIteratorMut<'a, f32>, src: &[u8], skip_rows: usize, width: usize) -> std::result::Result<(), String> {
   const BITS: usize = 32;
   let need = ((skip_rows + lines.len()) * width * BITS).div_ceil(u8::BITS as usize);
@@ -253,7 +253,7 @@ fn unpack_f32le<'a>(lines: impl LineIteratorMut<'a, f32>, src: &[u8], skip_rows:
   Ok(())
 }
 
-#[multiversion(targets("x86_64+avx+avx2+fma", "x86+sse", "aarch64+neon"))]
+#[multiversion(targets("x86_64+avx+avx2", "x86+sse", "aarch64+neon"))]
 fn unpack_f24le<'a>(lines: impl LineIteratorMut<'a, f32>, src: &[u8], skip_rows: usize, width: usize) -> std::result::Result<(), String> {
   const BITS: usize = 24;
   let need = ((skip_rows + lines.len()) * width * BITS).div_ceil(u8::BITS as usize);
@@ -270,7 +270,7 @@ fn unpack_f24le<'a>(lines: impl LineIteratorMut<'a, f32>, src: &[u8], skip_rows:
   Ok(())
 }
 
-#[multiversion(targets("x86_64+avx+avx2+fma", "x86+sse", "aarch64+neon"))]
+#[multiversion(targets("x86_64+avx+avx2", "x86+sse", "aarch64+neon"))]
 fn unpack_f24be<'a>(lines: impl LineIteratorMut<'a, f32>, src: &[u8], skip_rows: usize, width: usize) -> std::result::Result<(), String> {
   const BITS: usize = 24;
   let need = ((skip_rows + lines.len()) * width * BITS).div_ceil(u8::BITS as usize);
@@ -287,7 +287,7 @@ fn unpack_f24be<'a>(lines: impl LineIteratorMut<'a, f32>, src: &[u8], skip_rows:
   Ok(())
 }
 
-#[multiversion(targets("x86_64+avx+avx2+fma", "x86+sse", "aarch64+neon"))]
+#[multiversion(targets("x86_64+avx+avx2", "x86+sse", "aarch64+neon"))]
 fn unpack_f16le<'a>(lines: impl LineIteratorMut<'a, f32>, src: &[u8], skip_rows: usize, width: usize) -> std::result::Result<(), String> {
   const BITS: usize = 16;
   let need = ((skip_rows + lines.len()) * width * BITS).div_ceil(u8::BITS as usize);
@@ -304,7 +304,7 @@ fn unpack_f16le<'a>(lines: impl LineIteratorMut<'a, f32>, src: &[u8], skip_rows:
   Ok(())
 }
 
-#[multiversion(targets("x86_64+avx+avx2+fma", "x86+sse", "aarch64+neon"))]
+#[multiversion(targets("x86_64+avx+avx2", "x86+sse", "aarch64+neon"))]
 fn unpack_f16be<'a>(lines: impl LineIteratorMut<'a, f32>, src: &[u8], skip_rows: usize, width: usize) -> std::result::Result<(), String> {
   const BITS: usize = 16;
   let need = ((skip_rows + lines.len()) * width * BITS).div_ceil(u8::BITS as usize);
@@ -331,7 +331,7 @@ fn unpack_f16be<'a>(lines: impl LineIteratorMut<'a, f32>, src: &[u8], skip_rows:
 /// [76543210][76543210][76543210]
 /// [  P0    ][  P1    ][  P2    ]   → each dithered via LookupTable
 /// ```
-#[multiversion(targets("x86_64+avx+avx2+fma", "x86+sse", "aarch64+neon"))]
+#[multiversion(targets("x86_64+avx+avx2", "x86+sse", "aarch64+neon"))]
 pub(crate) fn decompress_8bit_wtable(buf: &[u8], tbl: &LookupTable, width: usize, height: usize, dummy: bool) -> std::result::Result<PixU16, String> {
   let need = height * width;
   if buf.len() < need {
@@ -360,7 +360,7 @@ pub(crate) fn decompress_8bit_wtable(buf: &[u8], tbl: &LookupTable, width: usize
 /// [76543210][76543210][76543210]
 /// [  P0    ][  P1    ][  P2    ]   → zero-extended to u16
 /// ```
-#[multiversion(targets("x86_64+avx+avx2+fma", "x86+sse", "aarch64+neon"))]
+#[multiversion(targets("x86_64+avx+avx2", "x86+sse", "aarch64+neon"))]
 pub(crate) fn decompress_8bit(buf: &[u8], width: usize, height: usize, dummy: bool) -> std::result::Result<PixU16, String> {
   let need = height * width;
   if buf.len() < need {
@@ -385,7 +385,7 @@ pub(crate) fn decompress_8bit(buf: &[u8], width: usize, height: usize, dummy: bo
 ///                          GGGGGGGGGG HHHHHHHHHH
 ///                          |-- P6 --||-- P7 --|
 /// ```
-#[multiversion(targets("x86_64+avx+avx2+fma", "x86+sse", "aarch64+neon"))]
+#[multiversion(targets("x86_64+avx+avx2", "x86+sse", "aarch64+neon"))]
 pub(crate) fn decompress_10le_lsb16(buf: &[u8], width: usize, height: usize, dummy: bool) -> std::result::Result<PixU16, String> {
   let need = (height * width * 10).div_ceil(8);
   if buf.len() < need {
@@ -434,7 +434,7 @@ pub(crate) fn decompress_10le_lsb16(buf: &[u8], width: usize, height: usize, dum
 /// [AAAAAAAA][AABBBBBB][BBBBCCCC][CCCCCCDD][DDDDDDDD]
 ///  |-- P0 --||-- P1 --||-- P2 --||-- P3 --|
 /// ```
-#[multiversion(targets("x86_64+avx+avx2+fma", "x86+sse", "aarch64+neon"))]
+#[multiversion(targets("x86_64+avx+avx2", "x86+sse", "aarch64+neon"))]
 pub(crate) fn decompress_10be(buf: &[u8], width: usize, height: usize, dummy: bool) -> std::result::Result<PixU16, String> {
   let need = (height * width * 10).div_ceil(8);
   if buf.len() < need {
@@ -453,7 +453,7 @@ pub(crate) fn decompress_10be(buf: &[u8], width: usize, height: usize, dummy: bo
 /// [AAAAAAAA][AAAABBBB][BBBBBBBB]
 ///  |--- P0 ---||- P1 ---|
 /// ```
-#[multiversion(targets("x86_64+avx+avx2+fma", "x86+sse", "aarch64+neon"))]
+#[multiversion(targets("x86_64+avx+avx2", "x86+sse", "aarch64+neon"))]
 pub(crate) fn decompress_12be(buf: &[u8], width: usize, height: usize, dummy: bool) -> std::result::Result<PixU16, String> {
   decompress_lines(buf, width, height, dummy, PackedDecompressor::new(12, Endian::Big))
 }
@@ -472,7 +472,7 @@ pub(crate) fn decompress_12be(buf: &[u8], width: usize, height: usize, dummy: bo
 /// [AAAAAAAA AAAA|BBBBBBBB BBBB|CCCCCCCC CCCC|DDDDDDDDDDDD]
 ///  |--- P0 ---| |--- P1 ---| |--- P2 ---| |--- P3 ---|
 /// ```
-#[multiversion(targets("x86_64+avx+avx2+fma", "x86+sse", "aarch64+neon"))]
+#[multiversion(targets("x86_64+avx+avx2", "x86+sse", "aarch64+neon"))]
 pub(crate) fn decompress_12be_msb16(buf: &[u8], width: usize, height: usize, dummy: bool) -> std::result::Result<PixU16, String> {
   let need = (height * width * 12).div_ceil(8);
   if buf.len() < need {
@@ -516,7 +516,7 @@ pub(crate) fn decompress_12be_msb16(buf: &[u8], width: usize, height: usize, dum
 /// [AAAAAAAA][AAAABBBB][BBBBBBBB]
 /// |----- P0 ----||---- P1 -----|
 /// ```
-#[multiversion(targets("x86_64+avx+avx2+fma", "x86+sse", "aarch64+neon"))]
+#[multiversion(targets("x86_64+avx+avx2", "x86+sse", "aarch64+neon"))]
 pub(crate) fn decompress_12le_16bitaligned(buf: &[u8], width: usize, height: usize, dummy: bool) -> std::result::Result<PixU16, String> {
   let stride = ((width * 12 / 8 + 1) >> 1) << 1;
   let need = height * stride;
@@ -555,7 +555,7 @@ pub(crate) fn decompress_12le_16bitaligned(buf: &[u8], width: usize, height: usi
 /// [B3      B2  ][B1      B0  ][B7      B6  ][B5      B4  ][B11    B10 ][B9      B8  ]
 /// [AAAAAAAAAAAA][BBBBBBBBBBBB][CCCCCCCCCCCC][DDDDDDDDDDDD][EEEEEEEEEEEE][FFFFFFFFFFFF]
 /// ```
-#[multiversion(targets("x86_64+avx+avx2+fma", "x86+sse", "aarch64+neon"))]
+#[multiversion(targets("x86_64+avx+avx2", "x86+sse", "aarch64+neon"))]
 pub(crate) fn decompress_12be_msb32(buf: &[u8], width: usize, height: usize, dummy: bool) -> std::result::Result<PixU16, String> {
   let need = (height * width * 12).div_ceil(8);
   if buf.len() < need {
@@ -615,7 +615,7 @@ pub(crate) fn decompress_12be_msb32(buf: &[u8], width: usize, height: usize, dum
 /// [76543210 76543210 76543210 76543210][76543210 765432 ...
 /// [AAAAAAAAAAAAAA][BBBBBBBBBBBBBB][CCCCCCCCCCCCCC][DDD ...
 /// ```
-#[multiversion(targets("x86_64+avx+avx2+fma", "x86+sse", "aarch64+neon"))]
+#[multiversion(targets("x86_64+avx+avx2", "x86+sse", "aarch64+neon"))]
 pub(crate) fn decompress_14be_msb32(buf: &[u8], width: usize, height: usize, dummy: bool) -> std::result::Result<PixU16, String> {
   let need = (height * width * 14).div_ceil(8);
   if buf.len() < need {
@@ -711,7 +711,7 @@ pub(crate) fn decompress_14be_msb32(buf: &[u8], width: usize, height: usize, dum
 ///
 /// Row layout: [3B×5 pixels + 1B control] × (width/10)
 /// ```
-#[multiversion(targets("x86_64+avx+avx2+fma", "x86+sse", "aarch64+neon"))]
+#[multiversion(targets("x86_64+avx+avx2", "x86+sse", "aarch64+neon"))]
 pub(crate) fn decompress_12le_wcontrol(buf: &[u8], width: usize, height: usize, dummy: bool) -> std::result::Result<PixU16, String> {
   // Calculate expected bytes per line.
   let perline = width * 12 / 8 + ((width + 2) / 10);
@@ -759,7 +759,7 @@ pub(crate) fn decompress_12le_wcontrol(buf: &[u8], width: usize, height: usize, 
 ///
 /// Row layout: [3B×5 pixels + 1B control] × (width/10)
 /// ```
-#[multiversion(targets("x86_64+avx+avx2+fma", "x86+sse", "aarch64+neon"))]
+#[multiversion(targets("x86_64+avx+avx2", "x86+sse", "aarch64+neon"))]
 pub(crate) fn decompress_12be_wcontrol(buf: &[u8], width: usize, height: usize, dummy: bool) -> std::result::Result<PixU16, String> {
   // Calculate expected bytes per line.
   let perline = width * 12 / 8 + ((width + 2) / 10);
@@ -807,7 +807,7 @@ pub(crate) fn decompress_12be_wcontrol(buf: &[u8], width: usize, height: usize, 
 ///   Field 1 (even rows): offset 0
 ///   Field 2 (odd rows):  offset = align(ceil(height/2) * width * 3/2, 2048)
 /// ```
-#[multiversion(targets("x86_64+avx+avx2+fma", "x86+sse", "aarch64+neon"))]
+#[multiversion(targets("x86_64+avx+avx2", "x86+sse", "aarch64+neon"))]
 pub(crate) fn decompress_12be_interlaced(buf: &[u8], width: usize, height: usize, dummy: bool) -> std::result::Result<PixU16, String> {
   let half = (height + 1) >> 1;
   // Second field is 2048 byte aligned
@@ -856,7 +856,7 @@ pub(crate) fn decompress_12be_interlaced(buf: &[u8], width: usize, height: usize
 ///   Field 1 (even rows): offset 0
 ///   Field 2 (odd rows):  offset = ceil(height/2) * width * 12 / 8
 /// ```
-#[multiversion(targets("x86_64+avx+avx2+fma", "x86+sse", "aarch64+neon"))]
+#[multiversion(targets("x86_64+avx+avx2", "x86+sse", "aarch64+neon"))]
 pub(crate) fn decompress_12be_interlaced_unaligned(buf: &[u8], width: usize, height: usize, dummy: bool) -> std::result::Result<PixU16, String> {
   let need = (height * width * 12).div_ceil(8);
   if buf.len() < need {
@@ -900,7 +900,7 @@ pub(crate) fn decompress_12be_interlaced_unaligned(buf: &[u8], width: usize, hei
 /// P0 = B1[3:0] << 8 | B0
 /// P1 = B2 << 4       | B1[7:4]
 /// ```
-#[multiversion(targets("x86_64+avx+avx2+fma", "x86+sse", "aarch64+neon"))]
+#[multiversion(targets("x86_64+avx+avx2", "x86+sse", "aarch64+neon"))]
 pub(crate) fn decompress_12le(buf: &[u8], width: usize, height: usize, dummy: bool) -> std::result::Result<PixU16, String> {
   let need = (height * width * 12).div_ceil(8);
   if buf.len() < need {
@@ -940,7 +940,7 @@ pub(crate) fn decompress_12le(buf: &[u8], width: usize, height: usize, dummy: bo
 /// [AAAAAAAA][BBBBAAAA][BBBBBBBB]
 ///  |--- P0 ---||- P1 ---|
 /// ```
-#[multiversion(targets("x86_64+avx+avx2+fma", "x86+sse", "aarch64+neon"))]
+#[multiversion(targets("x86_64+avx+avx2", "x86+sse", "aarch64+neon"))]
 pub(crate) fn decompress_12le_padded(buf: &[u8], width: usize, height: usize, stripesize: usize, dummy: bool) -> std::result::Result<PixU16, String> {
   let need = height * stripesize;
   if buf.len() < need {
@@ -981,7 +981,7 @@ pub(crate) fn decompress_12le_padded(buf: &[u8], width: usize, height: usize, st
 /// P2 = B5[1:0] << 12 | B4 << 4 | B3[7:4]
 /// P3 = B6 << 6        | B5[7:2]
 /// ```
-#[multiversion(targets("x86_64+avx+avx2+fma", "x86+sse", "aarch64+neon"))]
+#[multiversion(targets("x86_64+avx+avx2", "x86+sse", "aarch64+neon"))]
 pub(crate) fn decompress_14le_padded(buf: &[u8], width: usize, height: usize, stripesize: usize, dummy: bool) -> std::result::Result<PixU16, String> {
   let need = height * stripesize;
   if buf.len() < need {
@@ -1025,7 +1025,7 @@ pub(crate) fn decompress_14le_padded(buf: &[u8], width: usize, height: usize, st
 ///
 /// P0 = u16::from_le(B1:B0) & 0x0FFF
 /// ```
-#[multiversion(targets("x86_64+avx+avx2+fma", "x86+sse", "aarch64+neon"))]
+#[multiversion(targets("x86_64+avx+avx2", "x86+sse", "aarch64+neon"))]
 pub(crate) fn decompress_12le_unpacked(buf: &[u8], width: usize, height: usize, dummy: bool) -> std::result::Result<PixU16, String> {
   let need = height * width * 2;
   if buf.len() < need {
@@ -1058,7 +1058,7 @@ pub(crate) fn decompress_12le_unpacked(buf: &[u8], width: usize, height: usize, 
 ///
 /// P0 = u16::from_be(B0:B1) & 0x0FFF
 /// ```
-#[multiversion(targets("x86_64+avx+avx2+fma", "x86+sse", "aarch64+neon"))]
+#[multiversion(targets("x86_64+avx+avx2", "x86+sse", "aarch64+neon"))]
 pub(crate) fn decompress_12be_unpacked(buf: &[u8], width: usize, height: usize, dummy: bool) -> std::result::Result<PixU16, String> {
   let need = height * width * 2;
   if buf.len() < need {
@@ -1092,7 +1092,7 @@ pub(crate) fn decompress_12be_unpacked(buf: &[u8], width: usize, height: usize, 
 ///
 /// P0 = u16::from_be(B0:B1) >> 4
 /// ```
-#[multiversion(targets("x86_64+avx+avx2+fma", "x86+sse", "aarch64+neon"))]
+#[multiversion(targets("x86_64+avx+avx2", "x86+sse", "aarch64+neon"))]
 pub(crate) fn decompress_12be_unpacked_left_aligned(buf: &[u8], width: usize, height: usize, dummy: bool) -> std::result::Result<PixU16, String> {
   let need = height * width * 2;
   if buf.len() < need {
@@ -1126,7 +1126,7 @@ pub(crate) fn decompress_12be_unpacked_left_aligned(buf: &[u8], width: usize, he
 ///
 /// P0 = u16::from_le(B1:B0) >> 4
 /// ```
-#[multiversion(targets("x86_64+avx+avx2+fma", "x86+sse", "aarch64+neon"))]
+#[multiversion(targets("x86_64+avx+avx2", "x86+sse", "aarch64+neon"))]
 pub(crate) fn decompress_12le_unpacked_left_aligned(buf: &[u8], width: usize, height: usize, dummy: bool) -> std::result::Result<PixU16, String> {
   let need = height * width * 2;
   if buf.len() < need {
@@ -1160,7 +1160,7 @@ pub(crate) fn decompress_12le_unpacked_left_aligned(buf: &[u8], width: usize, he
 ///
 /// P0 = u16::from_le(B1:B0) & 0x3FFF
 /// ```
-#[multiversion(targets("x86_64+avx+avx2+fma", "x86+sse", "aarch64+neon"))]
+#[multiversion(targets("x86_64+avx+avx2", "x86+sse", "aarch64+neon"))]
 pub(crate) fn decompress_14le_unpacked(buf: &[u8], width: usize, height: usize, dummy: bool) -> std::result::Result<PixU16, String> {
   let need = height * width * 2;
   if buf.len() < need {
@@ -1195,7 +1195,7 @@ pub(crate) fn decompress_14le_unpacked(buf: &[u8], width: usize, height: usize, 
 ///
 /// P0 = u16::from_be(B0:B1) & 0x3FFF
 /// ```
-#[multiversion(targets("x86_64+avx+avx2+fma", "x86+sse", "aarch64+neon"))]
+#[multiversion(targets("x86_64+avx+avx2", "x86+sse", "aarch64+neon"))]
 pub(crate) fn decompress_14le_unpacked_padded(buf: &[u8], width: usize, height: usize, stripsize: usize, dummy: bool) -> std::result::Result<PixU16, String> {
   let need = height * stripsize;
   if buf.len() < need {
@@ -1229,7 +1229,7 @@ pub(crate) fn decompress_14le_unpacked_padded(buf: &[u8], width: usize, height: 
 ///
 /// P0 = u16::from_be(B0:B1) & 0x3FFF
 /// ```
-#[multiversion(targets("x86_64+avx+avx2+fma", "x86+sse", "aarch64+neon"))]
+#[multiversion(targets("x86_64+avx+avx2", "x86+sse", "aarch64+neon"))]
 pub(crate) fn decompress_14be_unpacked(buf: &[u8], width: usize, height: usize, dummy: bool) -> std::result::Result<PixU16, String> {
   let need = width * height * 2;
   if buf.len() < need {
@@ -1262,7 +1262,7 @@ pub(crate) fn decompress_14be_unpacked(buf: &[u8], width: usize, height: usize, 
 ///
 /// P0 = u16::from_le(B1:B0)
 /// ```
-#[multiversion(targets("x86_64+avx+avx2+fma", "x86+sse", "aarch64+neon"))]
+#[multiversion(targets("x86_64+avx+avx2", "x86+sse", "aarch64+neon"))]
 pub(crate) fn decompress_16le(buf: &[u8], width: usize, height: usize, dummy: bool) -> std::result::Result<PixU16, String> {
   let need = width * height * 2;
   if buf.len() < need {
@@ -1285,7 +1285,7 @@ pub(crate) fn decompress_16le(buf: &[u8], width: usize, height: usize, dummy: bo
 ///
 /// Row stride = width × 4 bytes (2× normal)
 /// ```
-#[multiversion(targets("x86_64+avx+avx2+fma", "x86+sse", "aarch64+neon"))]
+#[multiversion(targets("x86_64+avx+avx2", "x86+sse", "aarch64+neon"))]
 pub(crate) fn decompress_16le_skiplines(buf: &[u8], width: usize, height: usize, dummy: bool) -> std::result::Result<PixU16, String> {
   let need = width * height * 4;
   if buf.len() < need {
@@ -1318,7 +1318,7 @@ pub(crate) fn decompress_16le_skiplines(buf: &[u8], width: usize, height: usize,
 ///
 /// P0 = u16::from_be(B0:B1)
 /// ```
-#[multiversion(targets("x86_64+avx+avx2+fma", "x86+sse", "aarch64+neon"))]
+#[multiversion(targets("x86_64+avx+avx2", "x86+sse", "aarch64+neon"))]
 pub(crate) fn decompress_16be(buf: &[u8], width: usize, height: usize, dummy: bool) -> std::result::Result<PixU16, String> {
   let need = width * height * 2;
   if buf.len() < need {
@@ -1339,7 +1339,7 @@ pub(crate) fn decompress_16be(buf: &[u8], width: usize, height: usize, dummy: bo
 /// |------- P0 ------||------- P1 ------| ...
 ///         n bits              n bits
 /// ```
-#[multiversion(targets("x86_64+avx+avx2+fma", "x86+sse", "aarch64+neon"))]
+#[multiversion(targets("x86_64+avx+avx2", "x86+sse", "aarch64+neon"))]
 pub(crate) fn decompress_generic_msb(buf: &[u8], width: usize, height: usize, bits: u32, dummy: bool) -> std::result::Result<PixU16, String> {
   assert!(bits <= 16);
   let need = (width * height * bits as usize).div_ceil(8);
@@ -1366,7 +1366,7 @@ pub(crate) fn decompress_generic_msb(buf: &[u8], width: usize, height: usize, bi
 /// |------- P0 ------||------- P1 ------| ...
 ///         n bits              n bits
 /// ```
-#[multiversion(targets("x86_64+avx+avx2+fma", "x86+sse", "aarch64+neon"))]
+#[multiversion(targets("x86_64+avx+avx2", "x86+sse", "aarch64+neon"))]
 pub(crate) fn decompress_generic_lsb(buf: &[u8], width: usize, height: usize, bits: u32, dummy: bool) -> std::result::Result<PixU16, String> {
   assert!(bits <= 16);
   let need = (width * height * bits as usize).div_ceil(8);

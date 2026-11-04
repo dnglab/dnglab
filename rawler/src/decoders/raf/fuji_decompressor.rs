@@ -905,9 +905,9 @@ fn bit_diff(v1: i32, v2: i32) -> u32 {
 }
 
 /// Read a single code from bitstream and ajust gradient.
-/// We use bmi1 feature here because it provides LZCNT for
-/// leading zero count which is used here a lot.
-#[multiversion(targets("x86_64+avx+avx2+fma+bmi1+bmi2", "x86_64+avx+avx2", "x86+sse", "aarch64+neon"))]
+/// This is scalar code with many variable shifts and a leading zero
+/// count, it gains from BMI2 and LZCNT.
+#[multiversion(targets("x86_64+bmi2+lzcnt"))]
 fn read_code(pump: &mut BitPumpMSB, params: &Params, gradient: &mut Gradient, q_table: &QTable) -> i32 {
   let sample = fuji_zerobits(pump);
   let mut code: i32 = if (sample as usize) < params.max_bits - q_table.raw_bits - 1 {

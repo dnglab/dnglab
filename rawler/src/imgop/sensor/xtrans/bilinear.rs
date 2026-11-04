@@ -68,7 +68,7 @@ impl Demosaic<f32, 3> for XTransBilinearDemosaic {
 /// full-frame CFA pattern.
 ///
 /// Uses SIMD acceleration via `multiversion` when available (AVX2, SSE, NEON).
-#[multiversion(targets("x86_64+avx+avx2+fma", "x86+sse", "aarch64+neon"))]
+#[multiversion(targets("x86_64+avx+avx2", "x86+sse", "aarch64+neon"))]
 fn interpolate_bilinear<'a>(input: ImageRegion<'a, f32>, cfa: &CFA) -> Color2D<f32, 3> {
   let roi = input.area();
   let cfa_roi = cfa.shift(roi.p.x, roi.p.y);
