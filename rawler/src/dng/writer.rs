@@ -2578,4 +2578,23 @@ mod tests {
     assert!(decoded.semantic_masks.is_empty());
     Ok(())
   }
+
+  #[test]
+  fn ljpeg_round_trip_of_several_tiles() -> TestResult {
+    use crate::formats::tiff::{GenericTiffReader, reader::TiffReader};
+
+    // 3x2 tiles of 256 pixels, the tiles at the right and bottom edge are partial
+    let (width, height) = (600, 400);
+    for rawimage in [synthetic_cfa("RGGB", "RGB", width, height, noise), synthetic_linear_u16(3, width, height)] {
+      let data = write_synthetic_dng_compressed(&rawimage, DngCompression::Lossless)?;
+      let tiff = GenericTiffReader::new_with_buffer(&data, 0, 0, None)?;
+      let raw_ifd = tiff.find_first_ifd_with_tag(TiffCommonTag::TileOffsets).ok_or("raw IFD missing")?;
+      let offsets = raw_ifd.get_entry(TiffCommonTag::TileOffsets).ok_or("TileOffsets missing")?;
+      assert_eq!(offsets.value.count(), 6);
+      let decoded = decode_dng(&data)?;
+      assert_eq!((decoded.width, decoded.height, decoded.cpp), (width, height, rawimage.cpp));
+      assert!(integers(&decoded.data) == integers(&rawimage.data), "cpp {}", rawimage.cpp);
+    }
+    Ok(())
+  }
 }
