@@ -19,7 +19,7 @@ use crate::formats::bmff::ext_cr3::cr3desc::Cr3DescBox;
 use crate::formats::bmff::ext_cr3::iad1::{Iad1Box, Iad1Type};
 use crate::formats::bmff::trak::TrakBox;
 use crate::formats::tiff::reader::TiffReader;
-use crate::formats::tiff::{Entry, GenericTiffReader, Rational, Value};
+use crate::formats::tiff::{Entry, GenericTiffReader, Rational, SRational, Value};
 use crate::imgop::{Dim2, Point, Rect};
 use crate::lens::{LensDescription, LensId, LensResolver};
 use crate::{RawImage, pumps::ByteStream};
@@ -330,6 +330,10 @@ impl<'a> Decoder for Cr3Decoder<'a> {
     let whitelevel = WhiteLevel(vec![whitelevel as u32]);
     let photometric = RawPhotometricInterpretation::Cfa(CFAConfig::new_from_camera(camera));
     let mut img = RawImage::new(camera.clone(), image, cpp, wb, photometric, blacklevel, Some(whitelevel), dummy);
+    img.baseline_exposure = self
+      .cmt3
+      .get_entry(Cr3MakernoteTag::LightningOpt)
+      .and_then(|entry| highlight_tone_priority_exposure(&entry.value));
 
     // IAD1 box contains sensor information
     // We use the sensor crop from IAD1 as recommended image crop.
@@ -744,6 +748,17 @@ fn iad1_rect(left: u16, top: u16, right: u16, bottom: u16, dim: Dim2) -> Rect {
   Rect::new_with_points(Point::new(left as usize, top as usize), Point::new(right, bottom))
 }
 
+/// BaselineExposure for the HighlightTonePriority value at index 3 of the LightingOpt makernote
+///
+/// With D+ (1) and D+2 (2) the raw data is darker, while EXIF reports the same ISO.
+/// Both are 1 EV darker than with the setting off, measured on an EOS R5 Mark II at ISO 800.
+fn highlight_tone_priority_exposure(lighting_opt: &Value) -> Option<SRational> {
+  match lighting_opt.get_u32(3) {
+    Ok(Some(1 | 2)) => Some(SRational::new(1, 1)),
+    _ => None,
+  }
+}
+
 fn normalize_wb(raw_wb: [f32; 4]) -> [f32; 4] {
   debug!("CR3 raw wb: {:?}", raw_wb);
   // We never have more then RGB colors so far (no RGBE etc.)
@@ -880,6 +895,21 @@ mod tests {
     data[4..6].copy_from_slice(&1u16.to_le_bytes());
     let ctmd = Ctmd::new(&mut ByteStream::new(&data, Endian::Little));
     assert_eq!(ctmd.records[&1].payload.len(), 8);
+  }
+
+  #[test]
+  fn highlight_tone_priority_sets_exposure() {
+    let lighting_opt = |priority| Value::Long(vec![64, 0, 3, priority]);
+    assert_eq!(highlight_tone_priority_exposure(&lighting_opt(0)), None);
+    assert_eq!(highlight_tone_priority_exposure(&lighting_opt(1)), Some(SRational::new(1, 1)));
+    assert_eq!(highlight_tone_priority_exposure(&lighting_opt(2)), Some(SRational::new(1, 1)));
+    assert_eq!(highlight_tone_priority_exposure(&lighting_opt(3)), None);
+  }
+
+  #[test]
+  fn highlight_tone_priority_ignores_invalid_values() {
+    assert_eq!(highlight_tone_priority_exposure(&Value::Long(vec![64, 0, 3])), None);
+    assert_eq!(highlight_tone_priority_exposure(&Value::Undefined(vec![1; 16])), None);
   }
 
   #[test]

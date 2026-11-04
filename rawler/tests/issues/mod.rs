@@ -5,6 +5,7 @@ use rawler::dng::convert::ConvertParams;
 use rawler::dng::convert::convert_raw_file;
 use rawler::dng::original::extract_original;
 use rawler::formats::jfif::Jfif;
+use rawler::formats::tiff::SRational;
 use rawler::rawdb;
 use rawler::rawsource::RawSource;
 use rawler::{analyze::raw_pixels_digest, decoders::RawDecodeParams};
@@ -99,5 +100,18 @@ fn dnglab_807_digest_calculation() -> std::result::Result<(), Box<dyn std::error
   let plain = original.into_inner();
   let plain_digest = md5::compute(&plain);
   assert_eq!(format!("{:x}", plain_digest), "a968cf0183a84c51ef492c631c6d16b7");
+  Ok(())
+}
+
+#[test]
+fn cr3_highlight_tone_priority_sets_baseline_exposure() -> std::result::Result<(), Box<dyn std::error::Error>> {
+  let baseline_exposure = |sample| -> std::result::Result<Option<SRational>, Box<dyn std::error::Error>> {
+    let path = rawdb::sample("Canon", "EOS R5 Mark II", sample)?;
+    let source = RawSource::new(&path)?;
+    let decoder = rawler::get_decoder(&source)?;
+    Ok(decoder.raw_image(&source, &RawDecodeParams::default(), true)?.baseline_exposure)
+  };
+  assert_eq!(baseline_exposure("raw_modes/Canon EOS R5m2_RAW_ISO_640_nocrop.CR3")?, Some(SRational::new(1, 1)));
+  assert_eq!(baseline_exposure("raw_modes/Canon EOS R5m2_RAW_ISO_125_crop.CR3")?, None);
   Ok(())
 }
