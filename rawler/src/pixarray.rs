@@ -151,30 +151,25 @@ where
     &mut self.data[start..start + self.width]
   }
 
+  /// Sample at `row` and `col`
+  ///
+  /// Each access is bounds checked, loops over many samples are faster with
+  /// the rows ([`Self::pixel_rows`], [`ImageRegion::rows`]).
+  ///
+  /// # Panics
+  /// Panics if the position is outside of the buffer. `col` is not checked
+  /// against the width, a larger value addresses the following row.
   #[inline(always)]
   pub fn at(&self, row: usize, col: usize) -> &T {
     debug_assert!(self.initialized);
-    #[cfg(debug_assertions)]
-    {
-      &self.data[row * self.width + col]
-    }
-    #[cfg(not(debug_assertions))]
-    unsafe {
-      self.data.get_unchecked(row * self.width + col)
-    }
+    &self.data[row * self.width + col]
   }
 
+  /// Mutable sample at `row` and `col`, see [`Self::at`]
   #[inline(always)]
   pub fn at_mut(&mut self, row: usize, col: usize) -> &mut T {
     debug_assert!(self.initialized);
-    #[cfg(debug_assertions)]
-    {
-      &mut self.data[row * self.width + col]
-    }
-    #[cfg(not(debug_assertions))]
-    unsafe {
-      self.data.get_unchecked_mut(row * self.width + col)
-    }
+    &mut self.data[row * self.width + col]
   }
 
   #[inline(always)]
@@ -526,28 +521,23 @@ where
     self.data.chunks_exact_mut(self.width)
   }
 
+  /// Pixel at `row` and `col`
+  ///
+  /// Each access is bounds checked, loops over many pixels are faster with
+  /// the rows ([`Self::pixel_rows`], [`ImageRegion::rows`]).
+  ///
+  /// # Panics
+  /// Panics if the position is outside of the buffer. `col` is not checked
+  /// against the width, a larger value addresses the following row.
   #[inline(always)]
   pub fn at(&self, row: usize, col: usize) -> &[T; N] {
-    #[cfg(debug_assertions)]
-    {
-      &self.data[row * self.width + col]
-    }
-    #[cfg(not(debug_assertions))]
-    unsafe {
-      self.data.get_unchecked(row * self.width + col)
-    }
+    &self.data[row * self.width + col]
   }
 
+  /// Mutable pixel at `row` and `col`, see [`Self::at`]
   #[inline(always)]
   pub fn at_mut(&mut self, row: usize, col: usize) -> &mut [T; N] {
-    #[cfg(debug_assertions)]
-    {
-      &mut self.data[row * self.width + col]
-    }
-    #[cfg(not(debug_assertions))]
-    unsafe {
-      self.data.get_unchecked_mut(row * self.width + col)
-    }
+    &mut self.data[row * self.width + col]
   }
 
   #[inline(always)]
@@ -1901,5 +1891,17 @@ mod tests {
     let cropped = rgb.crop(area);
     assert_eq!((cropped.width, cropped.height), (2, 2));
     assert_eq!(cropped.data, [5, 6, 9, 10].map(|i| [i, i + 100, i + 200]));
+  }
+
+  #[test]
+  #[should_panic(expected = "index out of bounds")]
+  fn pix2d_at_checks_the_buffer() {
+    let _ = PixU16::new(4, 3).at(3, 4);
+  }
+
+  #[test]
+  #[should_panic(expected = "index out of bounds")]
+  fn color2d_at_mut_checks_the_buffer() {
+    let _ = RgbF32::new(4, 3).at_mut(3, 0);
   }
 }
