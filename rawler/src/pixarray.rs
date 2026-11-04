@@ -1327,6 +1327,16 @@ impl<'a, T> ImageRegionMut<'a, T> {
     }
     Ok(regions)
   }
+
+  /// Split into mutable regions of the tiles of size `tile`, row by row from
+  /// the top-left, see [`Dim2::tile_areas`] and [`Self::split_regions_mut`]
+  ///
+  /// # Panics
+  /// Panics if the width or height of `tile` is zero.
+  pub fn split_regions_mut_tiled(self, tile: Dim2) -> Vec<DisjointRegionMut<'a, T>> {
+    let areas = self.dim().tile_areas(tile);
+    self.split_regions_mut(&areas).expect("Tiles are inside of the region and disjoint")
+  }
 }
 
 impl<T> std::fmt::Debug for ImageRegionMut<'_, T> {
@@ -1851,6 +1861,30 @@ mod tests {
       0, 0, 1, 1, 0, 0, 0, 0,
       0, 0, 1, 1, 2, 3, 4, 5,
     ]);
+  }
+
+  #[test]
+  fn split_regions_mut_tiled_writes_each_tile() {
+    // 5x3 pixels with 2 channels in tiles of 2x2, the right and bottom tiles are partial
+    let mut samples = vec![0_u16; 30];
+    let mut tiles = ImageRegionMut::from(ImageViewMut::new(&mut samples, 5, 3, 2)).split_regions_mut_tiled(Dim2::new(2, 2));
+    assert_eq!(tiles.len(), 6);
+    assert_eq!((tiles[2].dim(), tiles[5].area()), (Dim2::new(1, 2), area(4, 2, 1, 1)));
+    for (i, tile) in tiles.iter_mut().enumerate() {
+      tile.rows_mut().for_each(|row| row.fill(i as u16 + 1));
+    }
+    #[rustfmt::skip]
+    assert_eq!(samples, [
+      1, 1, 1, 1,  2, 2, 2, 2,  3, 3,
+      1, 1, 1, 1,  2, 2, 2, 2,  3, 3,
+      4, 4, 4, 4,  5, 5, 5, 5,  6, 6,
+    ]);
+
+    // The tiles of a region are positioned in the image buffer
+    let region = ImageRegionMut::new(&mut samples, 5, 3, 2, area(1, 1, 4, 2));
+    let tiles = region.split_regions_mut_tiled(Dim2::new(3, 1));
+    let areas: Vec<Rect> = tiles.iter().map(DisjointRegionMut::area).collect();
+    assert_eq!(areas, [area(1, 1, 3, 1), area(4, 1, 1, 1), area(1, 2, 3, 1), area(4, 2, 1, 1)]);
   }
 
   #[test]

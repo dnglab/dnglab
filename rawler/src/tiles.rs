@@ -4,7 +4,7 @@
 use std::ops::Range;
 
 use crate::{
-  imgop::{Dim2, Point, Rect},
+  imgop::{Dim2, Rect},
   pixarray::{ImageView, LineMut, SubPixel},
 };
 
@@ -14,6 +14,8 @@ pub struct ErrorNotTileable;
 /// Image tile generator
 pub struct ImageTiler<'a, T> {
   image: ImageView<'a, T>,
+  /// Parts of the tiles inside of the image
+  areas: Vec<Rect>,
   tiles: Range<usize>,
   tw: usize,
   th: usize,
@@ -28,6 +30,7 @@ impl<'a, T> ImageTiler<'a, T> {
     let trows = height.div_ceil(th);
     Self {
       image: ImageView::new(&data[..height * width * cpp], width, height, cpp),
+      areas: Dim2::new(width, height).tile_areas(Dim2::new(tw, th)),
       tiles: Range { start: 0, end: trows * tcols },
       tw,
       th,
@@ -61,9 +64,7 @@ where
   pub fn build_tile(&self, idx: usize) -> Vec<T> {
     let (tw, th, cpp) = (self.tw, self.th, self.image.channels());
     let mut buf = Vec::with_capacity(th * tw * cpp);
-    // Part of the tile inside of the image
-    let (x, y) = ((idx % self.tcols) * tw, (idx / self.tcols) * th);
-    let area = Rect::new(Point::new(x, y), Dim2::new(tw.min(self.image.width() - x), th.min(self.image.height() - y)));
+    let area = self.areas[idx];
     for row in self.image.region(area).rows() {
       buf.extend_from_slice(row);
       // Columns right of the image repeat the last pixel
