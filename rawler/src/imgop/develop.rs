@@ -346,6 +346,7 @@ mod tests {
     CFA, RawImageData,
     decoders::Camera,
     dng::opcodes::{FixBadPixelsConstant, Opcode, OpcodeList, TrimBounds, WarpRectilinear, WarpRectilinearCoeffs},
+    formats::tiff::SRational,
     imgop::{
       Dim2, Point, Rect,
       matrix::{FlatMatrix, identity, transform_2d},
@@ -620,7 +621,7 @@ mod tests {
     let mut rawimage = d65_rawimage();
     rawimage.width = 2;
     rawimage.data = RawImageData::Float(vec![1.0, 1.0, 1.0, 0.2, 0.2, 0.2]);
-    rawimage.baseline_exposure = Some(-1.0);
+    rawimage.baseline_exposure = Some(SRational::new(-1, 1));
     rawimage
   }
 
@@ -662,7 +663,7 @@ mod tests {
       Some(WhiteLevel::new(vec![1; 3])),
       false,
     );
-    rawimage.baseline_exposure = Some(0.5);
+    rawimage.baseline_exposure = Some(SRational::new(1, 2));
     // BaselineExposureOffset is part of the camera profile
     rawimage.camera_profiles = vec![crate::camera_profile::CameraProfile {
       baseline_exposure_offset: Some(0.5),
@@ -684,7 +685,7 @@ mod tests {
     rawimage.width = ramp.len();
     rawimage.data = RawImageData::Float(ramp.iter().flat_map(|k| [*k, 0.4 * k, 0.2 * k]).collect());
     rawimage.wb_coeffs = [1.0, 1.0, 1.0, f32::NAN];
-    rawimage.baseline_exposure = Some(1.0);
+    rawimage.baseline_exposure = Some(SRational::new(1, 1));
     (rawimage, ramp)
   }
 
@@ -838,7 +839,7 @@ mod tests {
         gain_max: 1.2,
         gains: GainData::F32(vec![1.0, 1.2, 0.9, 1.1]),
       });
-      rawimage.baseline_exposure = Some(0.5);
+      rawimage.baseline_exposure = Some(SRational::new(1, 2));
     }
 
     /// CFA image of 12 bits with a black level of 64, an ActiveArea and a DefaultCrop
@@ -939,7 +940,7 @@ mod tests {
         signature: None,
       };
       let mut rggb_negative_exposure = rggb();
-      rggb_negative_exposure.baseline_exposure = Some(-1.0);
+      rggb_negative_exposure.baseline_exposure = Some(SRational::new(-1, 1));
       let cygm_matrix = [[0.2, 0.6, 0.5], [0.7, 0.8, 0.0], [0.1, 0.9, 0.1], [0.8, 0.2, 0.6]];
       let cygm = cfa_rawimage("CYGM", "CYGM", 32, 24, [1.5, 1.2, 1.0, 1.4], transform_2d(&cygm_matrix));
       let xtrans = cfa_rawimage(XTRANS, "RGB", 36, 24, [2.0, 1.0, 1.5, f32::NAN], transform_2d(&COLOR_MATRIX));

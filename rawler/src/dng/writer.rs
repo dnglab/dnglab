@@ -719,6 +719,9 @@ where
     self.root_ifd.add_tag(TiffCommonTag::Model, rawimage.clean_model.as_str());
     let uq_model = format!("{} {}", rawimage.clean_make, rawimage.clean_model);
     self.root_ifd.add_tag(DngTag::UniqueCameraModel, uq_model.as_str());
+    if let Some(exposure) = rawimage.baseline_exposure {
+      self.root_ifd.add_tag(DngTag::BaselineExposure, exposure);
+    }
     Ok(())
   }
 

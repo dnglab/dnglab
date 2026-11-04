@@ -231,7 +231,7 @@ pub fn plan(rawimage: &RawImage, options: &RenderOptions) -> crate::Result<Plan>
   // curve that keeps white at 1.0, by the rendering of the camera map or as
   // separate operation without it.
   let exposure = if steps.contains(Step::BaselineExposure) {
-    rawimage.baseline_exposure.unwrap_or(0.0) + rawimage.baseline_exposure_offset().unwrap_or(0.0)
+    rawimage.baseline_exposure.map_or(0.0, |exposure| exposure.as_f32()) + rawimage.baseline_exposure_offset().unwrap_or(0.0)
   } else {
     0.0
   };
