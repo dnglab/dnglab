@@ -69,6 +69,32 @@ impl Dim2 {
   pub fn is_empty(&self) -> bool {
     self.w == 0 || self.h == 0
   }
+
+  /// Areas of the tiles of size `tile` that cover this dimension, row by row
+  /// from the top-left. Tiles at the right and bottom edge are clipped to it.
+  ///
+  /// # Panics
+  /// Panics if the width or height of `tile` is zero.
+  pub fn tile_areas(&self, tile: Dim2) -> Vec<Rect> {
+    assert!(!tile.is_empty(), "Tile size {:?} has no pixels", tile);
+    (0..self.h)
+      .step_by(tile.h)
+      .flat_map(|y| {
+        (0..self.w)
+          .step_by(tile.w)
+          .map(move |x| Rect::new(Point::new(x, y), Dim2::new(tile.w.min(self.w - x), tile.h.min(self.h - y))))
+      })
+      .collect()
+  }
+
+  /// Areas of the tiles of size `tile` that cover this dimension, see
+  /// [`Self::tile_areas`], all of exactly the size `tile`
+  ///
+  /// `None` if the dimension is not a multiple of `tile`, so that tiles at the
+  /// edges would be clipped, or if the width or height of `tile` is zero.
+  pub fn tile_areas_exact(&self, tile: Dim2) -> Option<Vec<Rect>> {
+    (!tile.is_empty() && self.w.is_multiple_of(tile.w) && self.h.is_multiple_of(tile.h)).then(|| self.tile_areas(tile))
+  }
 }
 
 /// Clip a value with min/max value
@@ -349,6 +375,46 @@ pub fn convert_from_f32_scaled_u16(input: &[f32], black: u16, white: u16) -> Vec
 #[cfg(test)]
 mod tests {
   use super::*;
+
+  #[test]
+  fn tile_areas_are_clipped_at_the_edges() {
+    let area = |x, y, w, h| Rect::new(Point::new(x, y), Dim2::new(w, h));
+    let tile = Dim2::new(2, 2);
+    #[rustfmt::skip]
+    assert_eq!(Dim2::new(5, 3).tile_areas(tile), [
+      area(0, 0, 2, 2), area(2, 0, 2, 2), area(4, 0, 1, 2),
+      area(0, 2, 2, 1), area(2, 2, 2, 1), area(4, 2, 1, 1),
+    ]);
+    // An exact multiple needs no clipping
+    assert_eq!(Dim2::new(4, 2).tile_areas(tile), [area(0, 0, 2, 2), area(2, 0, 2, 2)]);
+    // A tile larger than the dimension
+    assert_eq!(Dim2::new(3, 1).tile_areas(Dim2::new(8, 8)), [area(0, 0, 3, 1)]);
+    // No pixels, no tiles
+    assert!(Dim2::new(0, 3).tile_areas(tile).is_empty());
+    assert!(Dim2::new(3, 0).tile_areas(tile).is_empty());
+  }
+
+  #[test]
+  #[should_panic(expected = "has no pixels")]
+  fn tile_areas_require_a_tile_with_pixels() {
+    let _ = Dim2::new(4, 4).tile_areas(Dim2::new(0, 2));
+  }
+
+  #[test]
+  fn tile_areas_exact_have_the_tile_size() {
+    let (dim, tile) = (Dim2::new(6, 4), Dim2::new(2, 2));
+    let areas = dim.tile_areas_exact(tile).expect("exact multiple");
+    assert_eq!(areas, dim.tile_areas(tile));
+    assert_eq!(areas.len(), 6);
+    assert!(areas.iter().all(|area| area.d == tile));
+    // A remainder in the width or height, a tile without pixels
+    assert_eq!(Dim2::new(5, 4).tile_areas_exact(tile), None);
+    assert_eq!(Dim2::new(6, 3).tile_areas_exact(tile), None);
+    assert_eq!(dim.tile_areas_exact(Dim2::new(0, 2)), None);
+    assert_eq!(dim.tile_areas_exact(Dim2::new(2, 0)), None);
+    // No pixels, no tiles
+    assert_eq!(Dim2::new(0, 4).tile_areas_exact(tile), Some(Vec::new()));
+  }
 
   #[test]
   fn relative_position_in_rect() {
