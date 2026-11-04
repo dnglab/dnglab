@@ -50,13 +50,14 @@ use crate::imgop::Dim2;
 use crate::imgop::Point;
 use crate::imgop::Rect;
 use crate::lens::LensDescription;
+use crate::pixarray::ImageRegionMut;
+use crate::pixarray::ImageViewMut;
 use crate::pixarray::Pix2D;
 use crate::pixarray::PixU16;
 use crate::pixarray::SubPixel;
 use crate::pixarray::{deinterleave_cols, deinterleave_rows, deinterleave2x2, reorder_sub_tile_blocks};
 use crate::rawsource::RawSource;
 use crate::tags::DngTag;
-use crate::tiles::TilesMut;
 
 macro_rules! fetch_ciff_tag {
   ($tiff:expr, $tag:expr) => {
@@ -921,16 +922,15 @@ where
 
   let mut pixbuf = alloc_image_typed_ok!(T, decode_width * cpp, decode_height, dummy);
 
-  let tiles = pixbuf
-    .data
-    .into_tiles_iter_mut(pixbuf.width / cpp, cpp, twidth, tlength)
-    .map_err(|_| RawlerError::DecoderFailed(format!("Unable to divide source image into tiles")))?;
+  // Each tile decodes into its region of the image
+  let view = ImageViewMut::new(&mut pixbuf.data, decode_width, decode_height, cpp);
+  let tiles = ImageRegionMut::from(view).split_regions_mut_tiled(Dim2::new(twidth, tlength));
 
   let line_width = twidth * cpp;
-  tiles.enumerate().par_bridge().try_for_each(|(tile_id, tile)| {
-    //eprintln!("Decode tile id {}", tile_id);
-    dc.decompress(tiles_src[tile_id], 0, tile.into_iter_mut(), line_width)
-  })?;
+  tiles_src
+    .par_iter()
+    .zip(tiles)
+    .try_for_each(|(src, mut tile)| dc.decompress(src, 0, tile.rows_mut(), line_width))?;
 
   Ok(pixbuf)
 }
