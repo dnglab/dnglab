@@ -16,6 +16,7 @@ use crate::{
     color::{PixelOp, apply_gain, apply_transfer_function, camera_to_rgb, camera_to_rgb_in_place},
     fuji_rotate::fuji_normalize_rotation,
     raw::{white_balance, white_balance_mosaic},
+    scale::scale_image,
     sensor::{
       Demosaic,
       bayer::{
@@ -235,6 +236,7 @@ impl Executor {
         self.crop_area = None;
       }
       Op::CropActiveArea => self.crop(self.active_area)?,
+      Op::Scale { horizontal, vertical } => self.scale(*horizontal, *vertical),
       Op::TransferFunction(function) => {
         let image = self.image();
         apply_transfer_function(image.view_mut(), *function);
@@ -261,6 +263,33 @@ impl Executor {
     (self.stage3_area, self.origin) = (Some(area), origin);
     self.active_area = None;
     Ok(())
+  }
+
+  /// Scale the image data by the factors. The pixel positions of the gain table
+  /// map stay relative to the stage 3 image, it is scaled with the image data.
+  fn scale(&mut self, horizontal: f64, vertical: f64) {
+    // Masks are not scaled
+    if self.rawimage.transparency_mask.take().is_some() {
+      log::warn!("Transparency mask is dropped: the image data is scaled");
+    }
+    self.rawimage.drop_semantic_masks("the image data is scaled");
+    let (area, origin) = self.stage3_area();
+    let image = self.image();
+    let dim = image.dim();
+    let scaled = Dim2::new(
+      ((dim.w as f64 * horizontal).round() as usize).max(1),
+      ((dim.h as f64 * vertical).round() as usize).max(1),
+    );
+    image.data = scale_image(image.view(), scaled);
+    (image.width, image.height) = (scaled.w, scaled.h);
+    log::debug!("dimension after scale {:?}", image.dim());
+    let scale_x = |x: usize| (x as f64 * scaled.w as f64 / dim.w as f64).round() as usize;
+    let scale_y = |y: usize| (y as f64 * scaled.h as f64 / dim.h as f64).round() as usize;
+    self.stage3_area = Some(Rect::new(
+      Point::new(scale_x(area.p.x), scale_y(area.p.y)),
+      Dim2::new(scale_x(area.d.w), scale_y(area.d.h)),
+    ));
+    self.origin = Point::new(scale_x(origin.x), scale_y(origin.y));
   }
 
   /// Apply the opcode list of `stage`. While the opcodes are applied, the

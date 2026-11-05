@@ -60,6 +60,8 @@ pub(super) enum Op {
   CropDefault,
   /// Crop to the ActiveArea
   CropActiveArea,
+  /// Scale the image data by these horizontal and vertical factors
+  Scale { horizontal: f64, vertical: f64 },
   /// Encode all samples by a transfer function
   TransferFunction(TransferFunction),
 }
@@ -222,6 +224,12 @@ pub fn plan(rawimage: &RawImage, options: &RenderOptions) -> crate::Result<Plan>
     ops.push(Op::CropDefault);
   } else if !crop_default && demosaic.is_none() && steps.contains(Step::CropActiveArea) {
     ops.push(Op::CropActiveArea);
+  }
+  // The image is scaled while its values are linear, CFA data can't be scaled
+  let (horizontal, vertical) = rawimage.camera.best_quality_scale_factors();
+  let cfa_data = matches!(rawimage.photometric, RawPhotometricInterpretation::Cfa(_)) && demosaic.is_none();
+  if steps.contains(Step::DefaultScale) && !cfa_data && (horizontal, vertical) != (1.0, 1.0) {
+    ops.push(Op::Scale { horizontal, vertical });
   }
 
   // A positive BaselineExposure is applied as linear gain to the scene-linear

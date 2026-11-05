@@ -127,8 +127,8 @@ pub mod tfr;
 mod unwrapped;
 pub mod x3f;
 
-pub use camera::Camera;
 pub(crate) use camera::CameraLookup;
+pub use camera::{BestQualityScale, Camera, DefaultScale};
 
 use crate::RawlerError;
 use crate::formats::bmff::Bmff;
