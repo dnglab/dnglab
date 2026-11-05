@@ -35,7 +35,9 @@ use crate::exif::Exif;
 use crate::formats::tiff;
 use crate::formats::tiff::GenericTiffReader;
 use crate::formats::tiff::reader::TiffReader;
+use crate::imgop::Dim2;
 use crate::imgop::Point;
+use crate::imgop::Rect;
 use crate::imgop::matrix::{multiply, pseudo_inverse};
 use crate::imgop::spline::Spline;
 use crate::imgop::xyz::XYZ_TO_PROFOTORGB_D50;
@@ -286,6 +288,10 @@ impl<'a> Decoder for IiqDecoder<'a> {
       .map_err(|ioerr| RawlerError::with_io_error("read IIQ white balance", file.path(), ioerr))?;
 
     let mut image = ok_cfa_image_with_blacklevels(camera.clone(), cpp, wb, blacklevel, image, dummy)?;
+    // Cameras without active area in the camera definition use the area of the file
+    if image.active_area.is_none() {
+      image.active_area = self.image_area(Dim2::new(width, height));
+    }
     // Cameras without color matrix in the camera definition use the matrix of the file
     if image.camera_profiles.is_empty() {
       let romm_matrix = self
@@ -638,7 +644,6 @@ impl<'a> IiqDecoder<'a> {
     }
   }
 
-  #[allow(dead_code)]
   fn sensor_margins(&self) -> Option<(usize, usize)> {
     let left = self.makernotes.get(&IiqTag::MarginLeft.into());
     let top = self.makernotes.get(&IiqTag::MarginTop.into());
@@ -653,6 +658,19 @@ impl<'a> IiqDecoder<'a> {
         None
       }
     }
+  }
+
+  /// Area of the image on the sensor, without the masked borders
+  fn image_area(&self, sensor: Dim2) -> Option<Rect> {
+    let (left, top) = self.sensor_margins()?;
+    let width = self.makernotes.get(&IiqTag::ImageWidth.into())?.1.force_usize(0);
+    let height = self.makernotes.get(&IiqTag::ImageHeight.into())?.1.force_usize(0);
+    let area = Rect::new(Point::new(left, top), Dim2::new(width, height));
+    if area.is_empty() || left + width > sensor.w || top + height > sensor.h {
+      warn!("IIQ: image area {:?} is empty or exceeds the sensor of {}x{} pixels, ignoring it", area, sensor.w, sensor.h);
+      return None;
+    }
+    Some(area)
   }
 
   fn sensor_temp(&self) -> Result<Option<f32>> {
