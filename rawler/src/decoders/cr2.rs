@@ -581,9 +581,20 @@ impl<'a> Cr2Decoder<'a> {
     ])))
   }
 
+  /// Image is a multiple exposure of the camera
+  fn is_multi_exposure(&self) -> bool {
+    let multi_exp = self.makernote.as_ref().and_then(|mn| mn.get_entry(Cr2MakernoteTag::MultiExp));
+    multi_exp.is_some_and(|entry| matches!(entry.get_u32(1), Ok(Some(mode)) if mode != 0))
+  }
+
   /// Get the white balance coefficents from COLORDATA tag
   /// The offsets are different, so we take the offset from camera params.
   fn get_wb(&self, rawfile: &RawSource, _cam: &Camera) -> Result<[f32; 4]> {
+    // The camera white balances the raw data of a multiple exposure, the
+    // coefficients in COLORDATA are not to be applied anymore
+    if self.is_multi_exposure() {
+      return Ok([1.0, 1.0, 1.0, f32::NAN]);
+    }
     if let Some(colordata) = self.makernote.as_ref().and_then(|mn| mn.get_entry(Cr2MakernoteTag::ColorData)) {
       let raw_wb = colordata::parse_colordata(colordata)?.wb;
       return Ok(normalize_wb(raw_wb));
