@@ -14,7 +14,10 @@ use crate::{
     chromatic_adaption::{adapt_xyz2cam_bradford, bradford_adaption_matrix},
     matrix::{diagonal, identity, invert, multiply, multiply_vector, normalize, pseudo_inverse, transform_1d},
     srgb::{srgb_apply_gamma, srgb_invert_gamma},
-    xyz::{ADOBERGB_TO_XYZ_D65, Illuminant, PROPHOTORGB_TO_XYZ_D50, SRGB_TO_XYZ_D65, XYZ_TO_ADOBERGB_D65, XYZ_TO_PROFOTORGB_D50, XYZ_TO_SRGB_D65},
+    xyz::{
+      ADOBERGB_TO_XYZ_D65, CIE_1931_TRISTIMULUS_D65, Illuminant, PROPHOTORGB_TO_XYZ_D50, SRGB_TO_XYZ_D65, XYZ_TO_ADOBERGB_D65, XYZ_TO_PROFOTORGB_D50,
+      XYZ_TO_SRGB_D65,
+    },
   },
   pixarray::{ImageView, ImageViewMut, RgbF32},
 };
@@ -224,26 +227,38 @@ pub fn camera_to_output<const N: usize>(
     }
   }
 
-  let xyz2cam = match slot.and_then(|slot| Some((slot.illuminant, transform_1d::<N, 3>(slot.color_matrix)?))) {
-    Some((Illuminant::D65, matrix)) => matrix,
-    Some((illuminant, matrix)) if !D65_PREFERENCE.contains(&illuminant) => {
-      log::warn!("Color matrix for {:?} can't be adapted to D65, it is used as it is", illuminant);
-      matrix
-    }
-    Some((illuminant, matrix)) => {
-      log::warn!("Image has no D65 illuminant matrix, alternative for Bradford adaption: {:?}", illuminant);
-      adapt_xyz2cam_bradford(&illuminant, &Illuminant::D65, &matrix)
-    }
-    None => {
-      log::warn!("No color matrix for {} color planes found, using identity matrix", N);
-      std::array::from_fn(|i| std::array::from_fn(|j| if i == j { 1.0 } else { 0.0 }))
-    }
-  };
+  let xyz2cam = slot.and_then(xyz2cam_d65::<N>).unwrap_or_else(|| {
+    log::warn!("No color matrix for {} color planes found, using identity matrix", N);
+    std::array::from_fn(|i| std::array::from_fn(|j| if i == j { 1.0 } else { 0.0 }))
+  });
   let xyz2cam = match abcc {
     Some(abcc) => multiply(&abcc, &xyz2cam),
     None => xyz2cam,
   };
   pseudo_inverse(normalize(multiply(&xyz2cam, &output.rgb_to_xyz())))
+}
+
+/// ColorMatrix of `slot` for N color planes, adapted to D65
+fn xyz2cam_d65<const N: usize>(slot: &CalibrationSlot<'_>) -> Option<[[f32; 3]; N]> {
+  let matrix = transform_1d::<N, 3>(slot.color_matrix)?;
+  Some(match slot.illuminant {
+    Illuminant::D65 => matrix,
+    illuminant if !D65_PREFERENCE.contains(&illuminant) => {
+      log::warn!("Color matrix for {:?} can't be adapted to D65, it is used as it is", illuminant);
+      matrix
+    }
+    illuminant => {
+      log::warn!("Image has no D65 illuminant matrix, alternative for Bradford adaption: {:?}", illuminant);
+      adapt_xyz2cam_bradford(&illuminant, &Illuminant::D65, &matrix)
+    }
+  })
+}
+
+/// White balance coefficients for D65 light: the reciprocal of the camera
+/// values of its white point
+pub fn d65_white_balance<const N: usize>(slot: &CalibrationSlot<'_>) -> Option<[f32; N]> {
+  let neutral = multiply_vector(&xyz2cam_d65::<N>(slot)?, &CIE_1931_TRISTIMULUS_D65);
+  neutral.iter().all(|v| *v > 0.0).then(|| neutral.map(|v| 1.0 / v))
 }
 
 /// Map of camera values with N color planes to RGB: the values are white

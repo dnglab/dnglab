@@ -621,6 +621,7 @@ mod tests {
     let mut rawimage = d65_rawimage();
     rawimage.width = 2;
     rawimage.data = RawImageData::Float(vec![1.0, 1.0, 1.0, 0.2, 0.2, 0.2]);
+    rawimage.wb_coeffs = [1.0, 1.0, 1.0, f32::NAN];
     rawimage.baseline_exposure = Some(SRational::new(-1, 1));
     rawimage
   }
