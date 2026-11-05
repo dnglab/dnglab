@@ -78,9 +78,23 @@ impl Default for BestQualityScale {
   }
 }
 
+/// Value of a fraction, 1.0 for an invalid fraction
+fn scale_factor([numerator, denominator]: [u32; 2]) -> f64 {
+  let factor = numerator as f64 / denominator as f64;
+  if factor.is_finite() && factor > 0.0 { factor } else { 1.0 }
+}
+
 impl Camera {
   pub fn find_hint(&self, hint: &str) -> bool {
     self.hints.contains(&hint.to_string())
+  }
+
+  /// Horizontal and vertical scale from the DefaultCrop to the image with
+  /// square pixels of the best quality: DefaultScale * BestQualityScale
+  pub fn best_quality_scale_factors(&self) -> (f64, f64) {
+    let [horizontal, vertical] = self.default_scale.0.map(scale_factor);
+    let best = scale_factor(self.best_quality_scale.0);
+    (horizontal * best, vertical * best)
   }
 
   pub fn param_usize(&self, name: &str) -> Option<usize> {

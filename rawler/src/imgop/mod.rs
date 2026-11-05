@@ -14,6 +14,7 @@ pub mod math;
 pub mod matrix;
 pub mod raw;
 pub mod render;
+pub mod scale;
 pub mod sensor;
 pub mod spline;
 pub mod srgb;

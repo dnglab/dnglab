@@ -49,13 +49,16 @@ pub enum ProcessingStep {
   ProfileRender,
   /// Crop to the DefaultCrop, or the ActiveArea without DefaultCrop
   CropDefault,
+  /// Scale the image to square pixels by DefaultScale and to the size of the
+  /// best quality by BestQualityScale
+  DefaultScale,
   /// Encode the values by the transfer function of the output color space
   TransferFunction,
 }
 
 impl ProcessingStep {
   /// All steps
-  pub const ALL: [Self; 10] = [
+  pub const ALL: [Self; 11] = [
     Self::Rescale,
     Self::Demosaic,
     Self::FujiRotate,
@@ -65,6 +68,7 @@ impl ProcessingStep {
     Self::Calibrate,
     Self::ProfileRender,
     Self::CropDefault,
+    Self::DefaultScale,
     Self::TransferFunction,
   ];
 }
@@ -346,6 +350,7 @@ mod tests {
         Op::CameraToRgb { .. } => "CameraToRgb",
         Op::CropDefault => "CropDefault",
         Op::CropActiveArea => "CropActiveArea",
+        Op::Scale { .. } => "Scale",
         Op::TransferFunction(_) => "TransferFunction",
       })
       .collect()

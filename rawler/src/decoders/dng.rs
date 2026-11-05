@@ -455,6 +455,14 @@ impl<'a> DngDecoder<'a> {
     // A LinearizationTable is not applied while decoding, so the
     // image data keeps the stored bit depth.
     let real_bps = raw.get_entry(TiffCommonTag::BitsPerSample).map(|v| v.force_usize(0)).unwrap_or(16);
+    let default_scale = match raw.get_entry(DngTag::DefaultScale).map(|entry| &entry.value) {
+      Some(Value::Rational(scale)) if scale.len() == 2 => DefaultScale([[scale[0].n, scale[0].d], [scale[1].n, scale[1].d]]),
+      _ => DefaultScale::default(),
+    };
+    let best_quality_scale = match raw.get_entry(DngTag::BestQualityScale).map(|entry| &entry.value) {
+      Some(Value::Rational(scale)) if scale.len() == 1 => BestQualityScale([scale[0].n, scale[0].d]),
+      _ => BestQualityScale::default(),
+    };
 
     Ok(Camera {
       clean_make: make.clone(),
@@ -473,6 +481,8 @@ impl<'a> DngDecoder<'a> {
       active_area,
       crop_area,
       real_bps,
+      default_scale,
+      best_quality_scale,
       ..Default::default()
     })
   }
