@@ -26,9 +26,9 @@ data:
       blacklevels:
         levels:
           - 140/1
-          - 140/1
-          - 140/1
           - 141/1
+          - 140/1
+          - 140/1
         cpp: 1
         width: 2
         height: 2
