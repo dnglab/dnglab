@@ -156,6 +156,8 @@ impl<'a> Decoder for ArwDecoder<'a> {
       32767 => {
         if (width * height * bps) != count * 8 {
           height += 8;
+          // ARW1 data has 12 bits, the white and black levels of the file have 14 bits
+          ArwDecoder::levels_to_12bit(&mut white, &mut black);
           ArwDecoder::decode_arw1(src, width, height, dummy)?
         } else {
           match bps {
@@ -172,11 +174,7 @@ impl<'a> Decoder for ArwDecoder<'a> {
                 We set these 12bit points by shifting down the 14bit points. It might make sense to
                 have a separate camera mode instead but since the values seem good we don't bother.
               */
-              white = white.map(|x| x >> 2);
-              black = black.map(|mut x| {
-                x.iter_mut().for_each(|x| *x >>= 2);
-                x
-              });
+              ArwDecoder::levels_to_12bit(&mut white, &mut black);
               decompress_12le(src, width, height, dummy)?
             }
             _ => return Err(RawlerError::DecoderFailed(format!("ARW2: Don't know how to decode images with {} bps", bps))),
@@ -411,6 +409,12 @@ impl<'a> ArwDecoder<'a> {
     };
     let cpp = 1;
     ok_cfa_image(camera.clone(), cpp, [f32::NAN, f32::NAN, f32::NAN, f32::NAN], image, dummy)
+  }
+
+  /// Shift the 14 bit white and black levels of a file down to 12 bits
+  fn levels_to_12bit(white: &mut Option<u16>, black: &mut Option<[u16; 4]>) {
+    *white = white.map(|x| x >> 2);
+    *black = black.map(|levels| levels.map(|x| x >> 2));
   }
 
   pub(crate) fn decode_arw1(buf: &[u8], width: usize, height: usize, dummy: bool) -> Result<PixU16> {
