@@ -192,6 +192,12 @@ impl<'a> Decoder for Rw2Decoder<'a> {
     let photometric = RawPhotometricInterpretation::Cfa(CFAConfig::new_from_camera(&camera));
     let mut img = RawImage::new(camera, image, cpp, normalize_wb(self.get_wb()?), photometric, blacklevel, None, dummy);
 
+    // The white level of a camera belongs to its highest bit depth, it can't be
+    // above the range of the bit depth of this file
+    if let Some(max_value) = 1_u32.checked_shl(bps).map(|range| range - 1).filter(|max_value| *max_value > 0) {
+      img.whitelevel.0.iter_mut().for_each(|white| *white = (*white).min(max_value));
+    }
+
     if let Some(area) = self.get_active_area()? {
       img.active_area = Some(area);
       img.crop_area = Some(area);
