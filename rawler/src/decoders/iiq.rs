@@ -667,7 +667,10 @@ impl<'a> IiqDecoder<'a> {
     let height = self.makernotes.get(&IiqTag::ImageHeight.into())?.1.force_usize(0);
     let area = Rect::new(Point::new(left, top), Dim2::new(width, height));
     if area.is_empty() || left + width > sensor.w || top + height > sensor.h {
-      warn!("IIQ: image area {:?} is empty or exceeds the sensor of {}x{} pixels, ignoring it", area, sensor.w, sensor.h);
+      warn!(
+        "IIQ: image area {:?} is empty or exceeds the sensor of {}x{} pixels, ignoring it",
+        area, sensor.w, sensor.h
+      );
       return None;
     }
     Some(area)
