@@ -78,7 +78,8 @@ impl<'a> Decoder for DcrDecoder<'a> {
     let image = DcrDecoder::decode_kodak65000(&src, &curve, width, height, dummy);
 
     let cpp = 1;
-    let mut img = ok_cfa_image(camera.clone(), cpp, self.get_wb()?, image, dummy)?;
+    let wb = kodak_wb(&self.makernote).unwrap_or([f32::NAN, f32::NAN, f32::NAN, f32::NAN]);
+    let mut img = ok_cfa_image(camera.clone(), cpp, wb, image, dummy)?;
     let rows = img.active_area.map_or(img.height, |area| area.d.h);
     if let Some(blacklevel) = kodak_blacklevel(&self.makernote, linearization, rows, cpp) {
       img.blacklevel = blacklevel;
@@ -125,22 +126,34 @@ pub(super) fn kodak_blacklevel(kodak_ifd: &IFD, curve: &Value, rows: usize, cpp:
   Some(BlackLevel::new(&[top as u32], 1, 1, cpp).with_deltas(Vec::new(), delta_v))
 }
 
-impl<'a> DcrDecoder<'a> {
-  fn get_wb(&self) -> Result<[f32; 4]> {
-    let dcrwb = fetch_tiff_tag!(self.makernote, TiffCommonTag::DcrWB);
-    if dcrwb.count() >= 46 {
-      let levels = dcrwb.get_data();
-      Ok([
-        2048.0 / BEu16(levels, 40) as f32,
-        2048.0 / BEu16(levels, 42) as f32,
-        2048.0 / BEu16(levels, 44) as f32,
-        f32::NAN,
-      ])
-    } else {
-      Ok([f32::NAN, f32::NAN, f32::NAN, f32::NAN])
-    }
+/// As shot white balance from the KodakIFD: the levels set in software or else
+/// the levels of the white balance mode of the shot. The white balance
+/// coefficients are the reciprocal of the levels.
+pub(super) fn kodak_wb(kodak_ifd: &IFD) -> Option<[f32; 4]> {
+  if let Some(levels) = kodak_ifd.get_entry(TiffCommonTag::DcrWB).filter(|levels| levels.count() == 72) {
+    let levels = levels.get_data();
+    return Some([
+      2048.0 / BEu16(levels, 40) as f32,
+      2048.0 / BEu16(levels, 42) as f32,
+      2048.0 / BEu16(levels, 44) as f32,
+      f32::NAN,
+    ]);
   }
+  let tag = match kodak_ifd.get_entry(TiffCommonTag::KodakWhiteBalance)?.force_u16(0) {
+    0 => TiffCommonTag::KodakWBDaylight,
+    1 => TiffCommonTag::KodakWBTungsten,
+    2 => TiffCommonTag::KodakWBFluorescent,
+    3 => TiffCommonTag::KodakWBFlash,
+    4 => TiffCommonTag::KodakWBCustom,
+    5 => TiffCommonTag::KodakWBAuto,
+    _ => return None,
+  };
+  let levels = kodak_ifd.get_entry(tag).filter(|levels| levels.count() == 3)?;
+  let [r, g, b] = [0, 1, 2].map(|i| levels.force_f32(i));
+  (r > 0.0 && g > 0.0 && b > 0.0).then_some([g / r, 1.0, g / b, f32::NAN])
+}
 
+impl<'a> DcrDecoder<'a> {
   pub(crate) fn decode_kodak65000(buf: &[u8], curve: &LookupTable, width: usize, height: usize, dummy: bool) -> PixU16 {
     let mut out = alloc_image!(width, height, dummy);
     let mut input = ByteStream::new(buf, Endian::Little);
