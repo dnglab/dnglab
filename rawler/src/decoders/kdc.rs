@@ -8,14 +8,12 @@ use crate::Result;
 use crate::alloc_image;
 use crate::alloc_image_ok;
 use crate::analyze::FormatDump;
-use crate::bits::BEu16;
 use crate::decompressors::packed::decompress_12be;
 use crate::exif::Exif;
 use crate::formats::tiff::Entry;
 use crate::formats::tiff::GenericTiffReader;
 use crate::formats::tiff::IFD;
 use crate::formats::tiff::Value;
-use crate::formats::tiff::ifd::OffsetMode;
 use crate::formats::tiff::reader::TiffReader;
 use crate::pixarray::PixU16;
 use crate::tags::ExifTag;
@@ -36,7 +34,7 @@ pub struct KdcDecoder<'a> {
   #[allow(unused)]
   rawloader: &'a RawLoader,
   tiff: GenericTiffReader,
-  makernote: Option<IFD>,
+  kdc_ifd: Option<IFD>,
   camera: CameraLookup,
 }
 
@@ -44,18 +42,17 @@ impl<'a> KdcDecoder<'a> {
   pub fn new(file: &RawSource, tiff: GenericTiffReader, rawloader: &'a RawLoader) -> Result<KdcDecoder<'a>> {
     let camera = rawloader.lookup_camera(tiff.root_ifd())?;
 
-    let makernote = if let Some(exif) = tiff.find_first_ifd_with_tag(ExifTag::MakerNotes) {
-      exif.parse_makernote(&mut file.reader(), OffsetMode::Absolute, &[])?
-    } else {
-      warn!("KDC makernote not found");
-      None
+    let root = tiff.root_ifd();
+    let kdc_ifd = match root.get_entry(TiffCommonTag::KdcIFD) {
+      Some(entry) => Some(IFD::new(&mut file.reader(), entry.force_u32(0), root.base, root.corr, root.endian, &[])?),
+      None => None,
     };
 
     Ok(KdcDecoder {
       tiff,
       rawloader,
       camera,
-      makernote,
+      kdc_ifd,
     })
   }
 }
@@ -166,28 +163,36 @@ impl<'a> Decoder for KdcDecoder<'a> {
 
 impl<'a> KdcDecoder<'a> {
   fn get_wb(&self) -> Result<[f32; 4]> {
-    if let Some(makernote) = self.makernote.as_ref() {
-      match makernote.get_entry(TiffCommonTag::KdcWB) {
-        Some(levels) => {
-          if levels.count() != 3 {
-            Err(format!("KDC: Levels count is off: {}", levels.count()).into())
-          } else {
-            Ok([levels.force_f32(0), levels.force_f32(1), levels.force_f32(2), f32::NAN])
-          }
-        }
-        None => {
-          let levels = fetch_tiff_tag!(makernote, TiffCommonTag::KodakWB);
-          if ![734, 1502, 1512, 2288].contains(&levels.count()) {
-            Err(format!("KDC: Levels count is off: {}", levels.count()).into())
-          } else {
-            let r = BEu16(levels.get_data(), 148) as f32;
-            let b = BEu16(levels.get_data(), 150) as f32;
-            Ok([r / 256.0, 1.0, b / 256.0, f32::NAN])
-          }
-        }
+    match self.kdc_ifd.as_ref() {
+      Some(ifd) => Self::as_shot_wb(ifd),
+      None => {
+        warn!("KDC IFD not found, the white balance is unknown");
+        Ok([f32::NAN, f32::NAN, f32::NAN, f32::NAN])
       }
-    } else {
-      Ok([f32::NAN, f32::NAN, f32::NAN, f32::NAN])
+    }
+  }
+
+  /// As shot white balance from the KDC IFD. The file has levels for each white
+  /// balance mode, the mode of the shot selects them.
+  fn as_shot_wb(kdc_ifd: &IFD) -> Result<[f32; 4]> {
+    let mode = fetch_tiff_tag!(kdc_ifd, TiffCommonTag::KdcWBMode).force_u16(0);
+    let levels = fetch_tiff_tag!(kdc_ifd, Self::wb_levels_tag(mode));
+    if levels.count() != 3 {
+      return Err(format!("KDC: Levels count is off: {}", levels.count()).into());
+    }
+    let green = levels.force_f32(1);
+    Ok([levels.force_f32(0) / green, 1.0, levels.force_f32(2) / green, f32::NAN])
+  }
+
+  /// Tag with the white balance levels of a white balance mode. Other modes than
+  /// the known ones use the levels of the auto mode.
+  fn wb_levels_tag(mode: u16) -> TiffCommonTag {
+    match mode {
+      1 => TiffCommonTag::KdcWBFluorescent,
+      2 => TiffCommonTag::KdcWBTungsten,
+      3 => TiffCommonTag::KdcWBDaylight,
+      6 => TiffCommonTag::KdcWBShade,
+      _ => TiffCommonTag::KdcWBAuto,
     }
   }
 
