@@ -70,14 +70,10 @@ impl<'a> Decoder for KdcDecoder<'a> {
         .next()
         .ok_or_else(|| RawlerError::DecoderFailed("KDC DC120: no IFD with CFAPattern".to_string()))?;
       let off = fetch_tiff_tag!(raw, TiffCommonTag::StripOffsets).force_usize(0);
-      let mut white = camera.whitelevel.clone().expect("KDC needs a whitelevel in camera config")[0];
       let src = file.subview_until_eof(off as u64)?;
-      let image = match fetch_tiff_tag!(raw, TiffCommonTag::Compression).force_usize(0) {
-        1 => Self::decode_dc120(src, width, height, dummy),
-        7 => {
-          white = 0xFF << 1;
-          Self::decode_dc120_jpeg(src, width, height, dummy)?
-        }
+      let (image, white) = match fetch_tiff_tag!(raw, TiffCommonTag::Compression).force_usize(0) {
+        1 => (Self::decode_dc120(src, width, height, dummy), 0xFF),
+        7 => (Self::decode_dc120_jpeg(src, width, height, dummy)?, 0xFF << 1),
         c => {
           return Err(RawlerError::unsupported(
             camera,
