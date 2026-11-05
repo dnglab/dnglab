@@ -2,7 +2,6 @@ make = "Kodak"
 model = "DCS560C"
 clean_make = "Kodak"
 clean_model = "DCS560C"
-blackpoint = 0
 whitepoint = 4095
 color_pattern = "GRBG"
 active_area = [0, 0, 0, 0]

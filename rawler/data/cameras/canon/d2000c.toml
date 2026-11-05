@@ -2,7 +2,6 @@ make = "Canon"
 model = "EOS D2000C"
 clean_make = "Canon"
 clean_model = "EOS D2000C"
-blackpoint = 96
 whitepoint = 4095
 color_pattern = "GRBG"
 active_area = [0, 0, 0, 0]
