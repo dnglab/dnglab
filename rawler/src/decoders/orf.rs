@@ -308,7 +308,7 @@ impl<'a> Decoder for OrfDecoder<'a> {
     let cpp = 1;
     let blacklevel = self.get_blacklevel(base_camera, bps)?;
     let whitelevel = None;
-    let photometric = RawPhotometricInterpretation::Cfa(CFAConfig::new_from_camera(base_camera));
+    let photometric = RawPhotometricInterpretation::Cfa(CFAConfig::new_from_camera(&camera));
     let mut img = RawImage::new(camera, image, cpp, normalize_wb(self.get_wb()?), photometric, blacklevel, whitelevel, dummy);
     if let Some(crop) = self.get_crop()? {
       img.crop_area = Some(crop);
