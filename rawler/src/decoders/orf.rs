@@ -231,7 +231,7 @@ impl<'a> Decoder for OrfDecoder<'a> {
     let offset = fetch_tiff_tag!(raw, TiffCommonTag::StripOffsets).force_usize(0);
     let counts = fetch_tiff_tag!(raw, TiffCommonTag::StripByteCounts);
     let bps = match self.get_bits_per_pixel()? {
-      Some(bps) if [12, 14].contains(&bps) => bps,
+      Some(bps) if [10, 12, 14].contains(&bps) => bps,
       Some(bps) => {
         log::warn!("Unsupported bps: {}", bps);
         bps
@@ -498,15 +498,18 @@ impl<'a> OrfDecoder<'a> {
 
   fn get_blacklevel(&self, camera: &Camera, bps: usize) -> Result<Option<BlackLevel>> {
     let ifd = self.makernote.find_ifds_with_tag(OrfImageProcessing::OrfBlackLevels);
-    if ifd.is_empty() {
-      log::info!("ORF: Couldn't find ImgProc IFD, unable to read blacklevel");
+    let blacks = match ifd.first() {
+      Some(ifd) => ifd.get_entry(OrfImageProcessing::OrfBlackLevels),
+      None => self.makernote.get_entry(OrfMakernotes::OlympusBlackLevels),
+    };
+    let Some(blacks) = blacks else {
+      log::info!("ORF: Couldn't find a black level tag, unable to read blacklevel");
       return Ok(None);
-    }
-
-    let blacks = fetch_tiff_tag!(ifd[0], OrfImageProcessing::OrfBlackLevels);
+    };
     let mut levels = [blacks.force_u16(0), blacks.force_u16(1), blacks.force_u16(2), blacks.force_u16(3)];
-    if bps == 14 {
-      // Blacklevel is encoded for 12 bits
+    if bps == 14 || bps == 10 {
+      // Blacklevel is encoded for 12 bits with 14 valid bits, and for 10 bits with
+      // 10 valid bits in 12 bit values
       levels.iter_mut().for_each(|level| *level = *level << 2);
     }
     Ok(Some(BlackLevel::new(&levels, camera.cfa.width, camera.cfa.height, 1)))
@@ -514,10 +517,11 @@ impl<'a> OrfDecoder<'a> {
 
   fn get_bits_per_pixel(&self) -> Result<Option<u16>> {
     let ifd = self.makernote.find_ifds_with_tag(OrfImageProcessing::ValidBits);
-    if ifd.is_empty() {
-      return Ok(None);
-    }
-    Ok(Some(fetch_tiff_tag!(ifd[0], OrfImageProcessing::ValidBits).force_u16(0)))
+    let bits = match ifd.first() {
+      Some(ifd) => ifd.get_entry(OrfImageProcessing::ValidBits),
+      None => self.makernote.get_entry(OrfMakernotes::OlympusValidBits),
+    };
+    Ok(bits.map(|bits| bits.force_u16(0)))
   }
 
   fn get_crop(&self) -> Result<Option<Rect>> {
@@ -613,8 +617,10 @@ crate::tags::tiff_tag_enum!(OrfCameraSettings);
 pub enum OrfMakernotes {
   ImageProcessingIFD = 0x2040,
   RawInfo = 0x3000,
+  OlympusBlackLevels = 0x1012,
   OlympusRedMul = 0x1017,
   OlympusBlueMul = 0x1018,
+  OlympusValidBits = 0x102C,
   EquipmentIFD = 0x2010,
   CameraSettingsIFD = 0x2020,
   ThumbnailImage = 0x0100,
