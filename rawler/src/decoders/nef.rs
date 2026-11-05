@@ -3,6 +3,7 @@ use log::debug;
 use log::warn;
 use serde::Deserialize;
 use serde::Serialize;
+use std::cmp::Reverse;
 
 use crate::RawImage;
 use crate::RawLoader;
@@ -178,9 +179,15 @@ impl<'a> NefDecoder<'a> {
 impl<'a> Decoder for NefDecoder<'a> {
   fn raw_image(&self, file: &RawSource, _params: &RawDecodeParams, dummy: bool) -> Result<RawImage> {
     let camera = self.camera.supported()?;
+    // Some models store a small CFA image before the full image
     let raw = self
       .tiff
-      .find_first_ifd_with_tag(TiffCommonTag::CFAPattern)
+      .find_ifds_with_tag(TiffCommonTag::CFAPattern)
+      .into_iter()
+      .min_by_key(|ifd| {
+        let dim = |tag| ifd.get_entry(tag).map_or(0, |entry| entry.force_usize(0));
+        Reverse(dim(TiffCommonTag::ImageWidth) * dim(TiffCommonTag::ImageLength))
+      })
       .or_else(|| self.tiff.find_ifd_with_new_subfile_type(0))
       .ok_or_else(|| RawlerError::DecoderFailed(format!("Failed to find a suitable IFD in NEF decoder")))?;
     let mut width = fetch_tiff_tag!(raw, TiffCommonTag::ImageWidth).force_usize(0);
