@@ -5,7 +5,8 @@
 //!
 //! [`plan`] decides which processing operations are applied to a raw image,
 //! in which order and with which parameters, from the metadata of the image
-//! and the [`RenderOptions`]. [`execute`] applies the operations of a [`Plan`]
+//! and the [`RenderOptions`]. Only the estimation of a missing white balance
+//! reads the image data. [`execute`] applies the operations of a [`Plan`]
 //! to the image data. The operations are public processing steps that work on
 //! borrowed image data, e.g. [`camera_to_rgb`](crate::imgop::color::camera_to_rgb).
 
@@ -43,6 +44,9 @@ pub enum ProcessingStep {
   BaselineExposure,
   /// Apply the as shot white balance
   WhiteBalance,
+  /// Estimate the white balance from the image data if the as shot white
+  /// balance is not known, instead of using the one for D65 light
+  AutoWhiteBalance,
   /// Map camera values to the output color space
   Calibrate,
   /// Apply the rendering tables of the camera profile (part of Calibrate)
@@ -58,13 +62,14 @@ pub enum ProcessingStep {
 
 impl ProcessingStep {
   /// All steps
-  pub const ALL: [Self; 11] = [
+  pub const ALL: [Self; 12] = [
     Self::Rescale,
     Self::Demosaic,
     Self::FujiRotate,
     Self::CropActiveArea,
     Self::BaselineExposure,
     Self::WhiteBalance,
+    Self::AutoWhiteBalance,
     Self::Calibrate,
     Self::ProfileRender,
     Self::CropDefault,

@@ -11,6 +11,7 @@ use crate::{
     profile_render::{ProfileRender, ToneCurve, prophoto_to_rgb, rgb_to_prophoto},
   },
   imgop::{
+    balance::auto_white_balance,
     color::{CameraToRgb, OutputSpace, PixelOp, TransferFunction, camera_to_output, d65_white_balance},
     matrix::multiply,
     raw::WhiteBalance,
@@ -118,15 +119,20 @@ pub fn plan(rawimage: &RawImage, options: &RenderOptions) -> crate::Result<Plan>
   let demosaic = mosaic.map(|config| demosaic_algorithm(config, quality)).transpose()?;
   let channels = demosaic.map_or(rawimage.cpp, |(_, planes)| planes);
 
-  // As shot white balance, images without it use the one for D65 light. Like
-  // the camera neutral of DNG readers, the coefficients are normalized to a
-  // smallest coefficient of 1.0. White balanced values are limited to 1.0, the
-  // camera white, so clipped highlights are white.
+  // As shot white balance, images without it use an estimated one or the one
+  // for D65 light. Like the camera neutral of DNG readers, the coefficients are
+  // normalized to a smallest coefficient of 1.0. White balanced values are
+  // limited to 1.0, the camera white, so clipped highlights are white.
   let planes = channels.min(4);
-  let wb = white_balance(rawimage, planes).filter(|_| steps.contains(Step::WhiteBalance)).map(|coeffs| {
-    let smallest = coeffs[..planes].iter().copied().fold(f32::INFINITY, f32::min);
-    coeffs.map(|c| c / smallest)
-  });
+  let auto_wb = steps.contains(Step::AutoWhiteBalance);
+  let wb = steps
+    .contains(Step::WhiteBalance)
+    .then(|| white_balance(rawimage, planes, auto_wb))
+    .flatten()
+    .map(|coeffs| {
+      let smallest = coeffs[..planes].iter().copied().fold(f32::INFINITY, f32::min);
+      coeffs.map(|c| c / smallest)
+    });
   // CFA data is white balanced before it is demosaiced, see WhiteBalancePlacement.
   // LinearRaw data is not limited, its white balance is divided out again.
   let mut mosaic_wb = wb
@@ -315,10 +321,14 @@ fn demosaic_algorithm(config: &CFAConfig, quality: DemosaicQuality) -> crate::Re
 }
 
 /// White balance coefficients for `planes` color planes: the as shot values
-/// or, if the image doesn't provide them, the values for D65 light
-fn white_balance(rawimage: &RawImage, planes: usize) -> Option<[f32; 4]> {
+/// or, if the image doesn't provide them, the values estimated from the image
+/// data with `auto_wb` or the values for D65 light
+fn white_balance(rawimage: &RawImage, planes: usize, auto_wb: bool) -> Option<[f32; 4]> {
   if rawimage.wb_coeffs[..planes].iter().all(|c| c.is_finite() && *c > 0.0) {
     return Some(rawimage.wb_coeffs);
+  }
+  if let Some(coeffs) = auto_wb.then(|| auto_white_balance(rawimage, planes)).flatten() {
+    return Some(coeffs);
   }
   let slot = rawimage.best_calibration_slot()?;
   match planes {
