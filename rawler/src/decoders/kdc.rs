@@ -84,7 +84,8 @@ impl<'a> Decoder for KdcDecoder<'a> {
       let cpp = 1;
       let whitelevel = Some(WhiteLevel::new(vec![white; cpp]));
       let photometric = RawPhotometricInterpretation::Cfa(CFAConfig::new_from_camera(camera));
-      let img = RawImage::new(camera.clone(), image, cpp, [1.0, 1.0, 1.0, f32::NAN], photometric, None, whitelevel, dummy);
+      // The as shot white balance is not known
+      let img = RawImage::new(camera.clone(), image, cpp, [f32::NAN; 4], photometric, None, whitelevel, dummy);
       return Ok(img);
     }
 
