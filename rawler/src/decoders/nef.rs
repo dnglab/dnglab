@@ -307,6 +307,12 @@ impl<'a> Decoder for NefDecoder<'a> {
     };
     let mut img = RawImage::new(camera.clone(), image, cpp, coeffs, photometric, blacklevel, whitelevel, dummy);
 
+    if camera.find_hint("analog_wb") {
+      // The levels are gains of the sensor signal, the digitized values are already white balanced
+      img.analog_balance = Some(coeffs[..3].to_vec());
+      img.wb_coeffs = [1.0, 1.0, 1.0, f32::NAN];
+    }
+
     if let Some(crop) = self.get_crop()? {
       debug!("RAW Crops: {:?}", crop);
       img.crop_area = Some(crop);

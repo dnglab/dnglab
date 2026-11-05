@@ -5,6 +5,7 @@ clean_model = "D1"
 color_pattern = "BGGR"
 active_area = [0, 0, 0, 0]
 crop_area = [6, 6, 6, 6]
+hints = ["analog_wb"]
 
 [cameras.color_matrix]
 A = [0.8452, -0.3021, -0.0439, -0.8003, 1.5752, 0.2382, -0.1568, 0.215, 0.8985]
