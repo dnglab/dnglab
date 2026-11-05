@@ -2,7 +2,6 @@ make = "OLYMPUS OPTICAL CO.,LTD"
 model = "E-20,E-20N,E-20P"
 clean_make = "Olympus"
 clean_model = "E-20"
-blackpoint = 0
 whitepoint = 4092
 color_pattern = "RGGB"
 active_area = [0, 0, 0, 0]
