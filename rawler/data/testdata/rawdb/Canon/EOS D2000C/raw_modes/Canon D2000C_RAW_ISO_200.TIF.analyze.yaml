@@ -19,7 +19,7 @@ data:
           h: 1160
       blacklevels:
         levels:
-          - 96/1
+          - 94/1
         cpp: 1
         width: 1
         height: 1

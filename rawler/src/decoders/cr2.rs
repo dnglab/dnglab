@@ -47,6 +47,7 @@ use super::RawDecodeParams;
 use super::RawMetadata;
 use super::Result;
 use super::WhiteLevel;
+use super::dcr::kodak_blacklevel;
 
 mod colordata;
 
@@ -273,6 +274,13 @@ impl<'a> Decoder for Cr2Decoder<'a> {
       camera.blackareav = None;
     }
     let mut img = RawImage::new(camera.clone(), image, cpp, wb, photometric, blacklevel, whitelevel, dummy);
+
+    if camera.find_hint("linearization") {
+      let rows = img.active_area.map_or(img.height, |area| area.d.h);
+      if let Some(blacklevel) = self.get_kodak_blacklevel(file, raw, rows, cpp)? {
+        img.blacklevel = blacklevel;
+      }
+    }
 
     if let Some(file_crop) = self.get_sensor_area()? {
       assert!(
@@ -629,6 +637,17 @@ impl<'a> Cr2Decoder<'a> {
       }
     }
     Ok(None)
+  }
+
+  /// Get the black level from the KodakIFD for an image with `rows` rows in the
+  /// ActiveArea, see [`kodak_blacklevel`]
+  fn get_kodak_blacklevel(&self, file: &RawSource, raw: &IFD, rows: usize, cpp: usize) -> Result<Option<BlackLevel>> {
+    let Some(kodak_ifd) = self.tiff.root_ifd().get_entry(TiffCommonTag::KodakIFD) else {
+      return Ok(None);
+    };
+    let kodak_ifd = IFD::new(&mut file.reader(), kodak_ifd.force_u32(0), 0, 0, self.tiff.get_endian(), &[])?;
+    let curve = fetch_tiff_tag!(raw, TiffCommonTag::GrayResponse);
+    Ok(kodak_blacklevel(&kodak_ifd, curve, rows, cpp))
   }
 
   /// Get the white level from COLORDATA tag for raw data with `precision` bits

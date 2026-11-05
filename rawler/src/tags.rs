@@ -85,6 +85,8 @@ pub enum TiffCommonTag {
   PefWB = 0x0201,
   PefHuffman = 0x0220,
   Xmp = 0x02BC,
+  KodakBlackLevelTop = 0x03EF,
+  KodakBlackLevelBottom = 0x03F0,
   DcrWB = 0x03FD,
   DcrLinearization = 0x090D,
   EpsonWB = 0x0E80,

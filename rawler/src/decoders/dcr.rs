@@ -12,12 +12,15 @@ use crate::bits::LookupTable;
 use crate::exif::Exif;
 use crate::formats::tiff::GenericTiffReader;
 use crate::formats::tiff::IFD;
+use crate::formats::tiff::SRational;
+use crate::formats::tiff::Value;
 use crate::formats::tiff::reader::TiffReader;
 use crate::pixarray::PixU16;
 use crate::pumps::ByteStream;
 use crate::rawsource::RawSource;
 use crate::tags::TiffCommonTag;
 
+use super::BlackLevel;
 use super::CameraLookup;
 use super::Decoder;
 use super::FormatHint;
@@ -75,7 +78,12 @@ impl<'a> Decoder for DcrDecoder<'a> {
     let image = DcrDecoder::decode_kodak65000(&src, &curve, width, height, dummy);
 
     let cpp = 1;
-    ok_cfa_image(camera.clone(), cpp, self.get_wb()?, image, dummy)
+    let mut img = ok_cfa_image(camera.clone(), cpp, self.get_wb()?, image, dummy)?;
+    let rows = img.active_area.map_or(img.height, |area| area.d.h);
+    if let Some(blacklevel) = kodak_blacklevel(&self.makernote, linearization, rows, cpp) {
+      img.blacklevel = blacklevel;
+    }
+    Ok(img)
   }
 
   fn check_supported(&self) -> Result<()> {
@@ -95,6 +103,26 @@ impl<'a> Decoder for DcrDecoder<'a> {
   fn format_hint(&self) -> FormatHint {
     FormatHint::DCR
   }
+}
+
+/// Black level from the KodakIFD for an image with `rows` rows in the ActiveArea
+///
+/// The tags have the black levels at the top and the bottom of the image, before
+/// `curve` linearizes the values. The level between them changes by row. Tags
+/// with zero values don't define a black level.
+pub(super) fn kodak_blacklevel(kodak_ifd: &IFD, curve: &Value, rows: usize, cpp: usize) -> Option<BlackLevel> {
+  let top = kodak_ifd.get_entry(TiffCommonTag::KodakBlackLevelTop)?.force_usize(0);
+  let bottom = kodak_ifd.get_entry(TiffCommonTag::KodakBlackLevelBottom)?.force_usize(0);
+  if top == 0 && bottom == 0 {
+    return None;
+  }
+  let (top, bottom) = (curve.force_u16(top) as i32, curve.force_u16(bottom) as i32);
+  let delta_v = if top != bottom && rows > 1 {
+    (0..rows).map(|row| SRational::new((bottom - top) * row as i32, rows as i32 - 1)).collect()
+  } else {
+    Vec::new()
+  };
+  Some(BlackLevel::new(&[top as u32], 1, 1, cpp).with_deltas(Vec::new(), delta_v))
 }
 
 impl<'a> DcrDecoder<'a> {
