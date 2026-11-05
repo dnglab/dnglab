@@ -3,7 +3,7 @@ model = "E-10"
 clean_make = "Olympus"
 clean_model = "E-10"
 whitepoint = 3604
-color_pattern = "BGGR"
+color_pattern = "RGGB"
 active_area = [0, 0, 0, 0]
 crop_area = [8, 2, 8, 2]
 
