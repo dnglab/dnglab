@@ -24,12 +24,7 @@ pub trait TiffReader {
 
   /// Returns a list of well-known tags representing SubIFDs.
   fn wellknown_sub_ifd_tags(&self) -> Vec<u16> {
-    vec![
-      TiffCommonTag::SubIFDs.into(),
-      TiffCommonTag::ExifIFDPointer.into(),
-      ExifTag::GPSInfo.into(),
-      ExifTag::IccProfile.into(),
-    ]
+    vec![TiffCommonTag::SubIFDs.into(), TiffCommonTag::ExifIFDPointer.into(), ExifTag::GPSInfo.into()]
   }
 
   fn root_ifd(&self) -> &IFD {
