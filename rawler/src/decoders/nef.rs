@@ -289,6 +289,8 @@ impl<'a> Decoder for NefDecoder<'a> {
             decompress_12be(&src, width, height, dummy)?
           }
         }
+        // Used by Coolscan scanners
+        8 => decompress_8bit(&src, width * cpp, height, dummy)?,
         x => return Err(RawlerError::unsupported(camera, format!("Don't know uncompressed bps {}", x))),
       }
     } else if size == width * height * 3 {
@@ -329,8 +331,9 @@ impl<'a> Decoder for NefDecoder<'a> {
 
     if cpp == 3 {
       // Reset levels to defaults (0)
+      let white = if compression == 1 && bps == 8 { 255 } else { 65535 };
       img.blacklevel = BlackLevel::zero(1, 1, cpp);
-      img.whitelevel = WhiteLevel::new(vec![65535; cpp]);
+      img.whitelevel = WhiteLevel::new(vec![white; cpp]);
     }
 
     Ok(img)

@@ -1,0 +1,83 @@
+---
+file:
+  fileSize: 2201849
+  fileName: NEF_from_Nikon_Scan_4.0.3_at_600dpi.nef
+  digest: 506bf7605f03090a8166f7067c7b8f0b
+data:
+  metadata:
+    rawParams:
+      rawWidth: 869
+      rawHeight: 593
+      bitDepth: 16
+      cropArea: ~
+      activeArea: ~
+      blacklevels:
+        levels:
+          - 0/1
+          - 0/1
+          - 0/1
+        cpp: 3
+        width: 1
+        height: 1
+      whitelevels:
+        - 255
+        - 255
+        - 255
+      wbCoeffs:
+        - 1.0
+        - 1.0
+        - 1.0
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ~
+        artist: ~
+        lens_spec: ~
+        exposure_time: ~
+        fnumber: ~
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: ~
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: ~
+        date_time_original: ~
+        create_date: ~
+        modify_date: 2021.01.11 11.18.19
+        exposure_program: ~
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: ~
+        max_aperture_value: ~
+        subject_distance: ~
+        metering_mode: ~
+        light_source: ~
+        flash: ~
+        focal_length: ~
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: ~
+        white_balance: ~
+        scene_capture_type: ~
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+        user_comment: ~
+      model: Coolscan IV ED
+      make: Nikon
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+
