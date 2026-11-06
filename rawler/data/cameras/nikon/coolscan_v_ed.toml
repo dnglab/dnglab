@@ -1,0 +1,11 @@
+make = "Nikon"
+model = "Nikon COOLSCAN V ED"
+clean_make = "Nikon"
+clean_model = "Coolscan V ED"
+
+[cameras.color_matrix]
+Unknown = [1.3458, -0.2556, -0.051, -0.5444, 1.5081, 0.0205, 0.0, 0.0, 1.212]
+
+[[cameras.modes]]
+mode = "16bit"
+whitepoint = 65535
