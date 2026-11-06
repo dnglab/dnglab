@@ -11,7 +11,7 @@ pub enum CiffTag {
   ColorInfo2 = 0x102c,
   WhiteBalance = 0x10a9,
   SensorInfo = 0x1031,
-  //ImageInfo    = 0x1810,
+  ImageInfo = 0x1810,
   DecoderTable = 0x1835,
   //RawData      = 0x2005,
   //SubIFD       = 0x300a,

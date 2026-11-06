@@ -467,8 +467,8 @@ where
   // Write metadata
   dng.load_base_tags(&rawimage)?;
   dng.load_metadata(&metadata)?;
-  if !dng.root_ifd().contains(ExifTag::Orientation) {
-    dng.root_ifd_mut().add_tag(ExifTag::Orientation, rawimage.orientation.to_u16());
+  if let Some(orientation) = rawimage.orientation {
+    dng.root_ifd_mut().add_tag(ExifTag::Orientation, orientation.to_u16());
   }
 
   // Check for DNG root IFD related tags

@@ -51,6 +51,7 @@ use super::Camera;
 use super::CameraLookup;
 use super::Decoder;
 use super::FormatHint;
+use super::Orientation;
 use super::RawDecodeParams;
 use super::RawMetadata;
 
@@ -317,6 +318,7 @@ impl<'a> Decoder for NefDecoder<'a> {
       _ => todo!(),
     };
     let mut img = RawImage::new(camera.clone(), image, cpp, coeffs, photometric, blacklevel, whitelevel, dummy);
+    img.orientation = Orientation::from_tiff(self.tiff.root_ifd());
 
     if camera.find_hint("analog_wb") {
       // The levels are gains of the sensor signal, the digitized values are already white balanced

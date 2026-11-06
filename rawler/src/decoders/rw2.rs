@@ -39,6 +39,7 @@ use super::Camera;
 use super::CameraLookup;
 use super::Decoder;
 use super::FormatHint;
+use super::Orientation;
 use super::RawDecodeParams;
 use super::RawMetadata;
 
@@ -191,6 +192,7 @@ impl<'a> Decoder for Rw2Decoder<'a> {
     }
     let photometric = RawPhotometricInterpretation::Cfa(CFAConfig::new_from_camera(&camera));
     let mut img = RawImage::new(camera, image, cpp, normalize_wb(self.get_wb()?), photometric, blacklevel, None, dummy);
+    img.orientation = Orientation::from_tiff(self.tiff.root_ifd());
 
     // The white level of a camera belongs to its highest bit depth, it can't be
     // above the range of the bit depth of this file

@@ -23,6 +23,7 @@ use super::CFAConfig;
 use super::CameraLookup;
 use super::Decoder;
 use super::FormatHint;
+use super::Orientation;
 use super::RawDecodeParams;
 use super::RawMetadata;
 use super::RawPhotometricInterpretation;
@@ -85,7 +86,8 @@ impl<'a> Decoder for KdcDecoder<'a> {
       let whitelevel = Some(WhiteLevel::new(vec![white; cpp]));
       let photometric = RawPhotometricInterpretation::Cfa(CFAConfig::new_from_camera(camera));
       // The as shot white balance is not known
-      let img = RawImage::new(camera.clone(), image, cpp, [f32::NAN; 4], photometric, None, whitelevel, dummy);
+      let mut img = RawImage::new(camera.clone(), image, cpp, [f32::NAN; 4], photometric, None, whitelevel, dummy);
+      img.orientation = Orientation::from_tiff(self.tiff.root_ifd());
       return Ok(img);
     }
 
@@ -111,7 +113,8 @@ impl<'a> Decoder for KdcDecoder<'a> {
       let cpp = 1;
       let whitelevel = Some(WhiteLevel::new(vec![white; cpp]));
       let photometric = RawPhotometricInterpretation::Cfa(CFAConfig::new_from_camera(camera));
-      let img = RawImage::new(camera.clone(), image, cpp, [1.0, 1.0, 1.0, f32::NAN], photometric, None, whitelevel, dummy);
+      let mut img = RawImage::new(camera.clone(), image, cpp, [1.0, 1.0, 1.0, f32::NAN], photometric, None, whitelevel, dummy);
+      img.orientation = Orientation::from_tiff(self.tiff.root_ifd());
       return Ok(img);
     }
 
@@ -136,7 +139,9 @@ impl<'a> Decoder for KdcDecoder<'a> {
     let src = file.subview_until_eof(off as u64)?;
     let image = decompress_12be(src, width, height, dummy)?;
     let cpp = 1;
-    ok_cfa_image(camera.clone(), cpp, self.get_wb()?, image, dummy)
+    let mut img = ok_cfa_image(camera.clone(), cpp, self.get_wb()?, image, dummy)?;
+    img.orientation = Orientation::from_tiff(self.tiff.root_ifd());
+    Ok(img)
   }
 
   fn check_supported(&self) -> Result<()> {

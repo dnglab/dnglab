@@ -311,7 +311,7 @@ impl RawDevelop {
     tiff: &mut TiffWriter<W>,
     make: &str,
     model: &str,
-    orientation: Orientation,
+    orientation: Option<Orientation>,
     md: &RawMetadata,
     image: &RenderedImage,
   ) -> crate::Result<DirectoryWriter>
@@ -334,7 +334,9 @@ impl RawDevelop {
     let exif_offset = exif_ifd.build(tiff)?;
 
     root_ifd.add_tag(TiffCommonTag::ExifIFDPointer, exif_offset);
-    root_ifd.add_tag(TiffCommonTag::Orientation, orientation.to_u16());
+    if let Some(orientation) = orientation {
+      root_ifd.add_tag(TiffCommonTag::Orientation, orientation.to_u16());
+    }
     Ok(root_ifd)
   }
 }
@@ -468,6 +470,33 @@ mod tests {
     let image = DynamicImage::from_decoder(decoder)?;
     assert_eq!(image.color(), ColorType::Rgb8);
     assert_eq!((image.width(), image.height()), (16, 8));
+    Ok(())
+  }
+
+  #[test]
+  fn develop_writes_orientation_of_raw_image() -> std::result::Result<(), Box<dyn std::error::Error>> {
+    use crate::formats::tiff::{GenericTiffReader, reader::TiffReader};
+    use image::{ImageDecoder, codecs::jpeg::JpegDecoder};
+
+    let orientation_tag = |tiff: &[u8]| {
+      let reader = GenericTiffReader::new_with_buffer(tiff, 0, 0, None).expect("TIFF");
+      reader.root_ifd().get_entry(TiffCommonTag::Orientation).map(|entry| entry.force_u16(0))
+    };
+    for (orientation, tag) in [(Some(Orientation::Rotate90), Some(6)), (Some(Orientation::Normal), Some(1)), (None, None)] {
+      let (mut rawimage, mut metadata) = ramp_rawimage();
+      rawimage.orientation = orientation;
+      // Only the raw image counts, not the reported EXIF data
+      metadata.exif.orientation = Some(8);
+
+      let mut tiff = Cursor::new(Vec::new());
+      RawDevelop::default().develop(rawimage.clone(), &metadata, &mut tiff)?;
+      assert_eq!(orientation_tag(tiff.get_ref()), tag);
+
+      let mut jpeg = Vec::new();
+      RawDevelop::default().develop_jpeg(rawimage, &metadata, &mut jpeg, 90)?;
+      let exif = JpegDecoder::new(Cursor::new(&jpeg))?.exif_metadata()?.ok_or("no EXIF data")?;
+      assert_eq!(orientation_tag(&exif), tag);
+    }
     Ok(())
   }
 

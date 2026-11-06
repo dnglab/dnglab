@@ -345,7 +345,6 @@ impl crate::decoders::RawMetadata {
   where
     W: Write + Seek,
   {
-    transfer_entry(root_ifd, ExifTag::Orientation, &self.exif.orientation)?;
     transfer_entry(root_ifd, ExifTag::ModifyDate, &self.exif.modify_date)?;
     transfer_entry(root_ifd, ExifTag::Copyright, &self.exif.copyright)?;
     transfer_entry(root_ifd, ExifTag::Artist, &self.exif.artist)?;

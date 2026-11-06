@@ -143,8 +143,9 @@ pub struct RawImage {
   /// black levels and noise.
   pub blackareas: Vec<Rect>,
 
-  /// orientation of the image as indicated by the image metadata
-  pub orientation: Orientation,
+  /// orientation of the image as indicated by the image metadata, `None` if
+  /// the file has no information about it
+  pub orientation: Option<Orientation>,
   /// image data itself, has `width`\*`height`\*`cpp` elements
   pub data: RawImageData,
   /// The image data was scaled from 16 bit integer samples to floats by `apply_scaling()`
@@ -310,7 +311,7 @@ impl RawImage {
       active_area,
       crop_area,
       blackareas,
-      orientation: Orientation::Normal, //cam.orientation, // TODO fixme
+      orientation: None,
       camera_profiles: CameraProfile::from_catalog(&cam.color_matrix, &cam.reduction_matrix).into_iter().collect(),
       camera_calibration: CameraCalibration::default(),
       analog_balance: None,
@@ -395,7 +396,7 @@ impl RawImage {
       active_area,
       crop_area,
       blackareas,
-      orientation: Orientation::Normal, //cam.orientation, // TODO fixme
+      orientation: None,
       camera_profiles: CameraProfile::from_catalog(&cam.color_matrix, &cam.reduction_matrix).into_iter().collect(),
       camera_calibration: CameraCalibration::default(),
       analog_balance: None,

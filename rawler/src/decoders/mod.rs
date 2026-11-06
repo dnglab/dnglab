@@ -406,33 +406,42 @@ pub enum Orientation {
   Rotate90,
   Transverse,
   Rotate270,
-  Unknown,
 }
 
 impl Orientation {
   /// Convert a u16 from the IFD tag Orientation (0x0112) into its corresponding
-  /// enum value
-  pub fn from_u16(orientation: u16) -> Orientation {
+  /// enum value. An invalid value gives `None`.
+  pub fn from_u16(orientation: u16) -> Option<Orientation> {
     match orientation {
-      1 => Orientation::Normal,
-      2 => Orientation::HorizontalFlip,
-      3 => Orientation::Rotate180,
-      4 => Orientation::VerticalFlip,
-      5 => Orientation::Transpose,
-      6 => Orientation::Rotate90,
-      7 => Orientation::Transverse,
-      8 => Orientation::Rotate270,
-      _ => Orientation::Unknown,
+      1 => Some(Orientation::Normal),
+      2 => Some(Orientation::HorizontalFlip),
+      3 => Some(Orientation::Rotate180),
+      4 => Some(Orientation::VerticalFlip),
+      5 => Some(Orientation::Transpose),
+      6 => Some(Orientation::Rotate90),
+      7 => Some(Orientation::Transverse),
+      8 => Some(Orientation::Rotate270),
+      _ => None,
     }
   }
 
-  /// Extract orienation from a TiffIFD. If the given TiffIFD has an invalid
-  /// value or contains no orientation data `Orientation::Unknown` is returned
-  fn from_tiff(tiff: &IFD) -> Orientation {
-    match tiff.get_entry(TiffCommonTag::Orientation) {
-      Some(entry) => Orientation::from_u16(entry.force_usize(0) as u16),
-      None => Orientation::Unknown,
+  /// Convert a clockwise rotation in degrees into its corresponding enum value.
+  /// A rotation that isn't a multiple of 90 degrees gives `None`.
+  pub fn from_degrees(degrees: i32) -> Option<Orientation> {
+    match degrees.rem_euclid(360) {
+      0 => Some(Orientation::Normal),
+      90 => Some(Orientation::Rotate90),
+      180 => Some(Orientation::Rotate180),
+      270 => Some(Orientation::Rotate270),
+      _ => None,
     }
+  }
+
+  /// Extract orientation from a TiffIFD. If the given TiffIFD has an invalid
+  /// value or contains no orientation data `None` is returned
+  fn from_tiff(tiff: &IFD) -> Option<Orientation> {
+    let orientation = tiff.get_entry(TiffCommonTag::Orientation)?.value.get_u16(0).ok().flatten()?;
+    Orientation::from_u16(orientation)
   }
 
   /// Convert orientation to an image flip operation tuple. The first field is
@@ -441,7 +450,7 @@ impl Orientation {
   /// correct result, flipping must be done before transposing.
   pub fn to_flips(&self) -> (bool, bool, bool) {
     match *self {
-      Orientation::Normal | Orientation::Unknown => (false, false, false),
+      Orientation::Normal => (false, false, false),
       Orientation::VerticalFlip => (false, false, true),
       Orientation::HorizontalFlip => (false, true, false),
       Orientation::Rotate180 => (false, true, true),
@@ -469,7 +478,6 @@ impl Orientation {
   /// Convert orientation to the Tiff Orientation value
   pub fn to_u16(&self) -> u16 {
     match *self {
-      Orientation::Unknown => 0,
       Orientation::Normal => 1,
       Orientation::HorizontalFlip => 2,
       Orientation::Rotate180 => 3,
@@ -1281,6 +1289,26 @@ mod tests {
   use crate::pixarray::PixU16;
   use crate::rawimage::{BlackLevel, CFAConfig, RawPhotometricInterpretation, WhiteLevel};
   use crate::rawsource::RawSource;
+
+  #[test]
+  fn orientation_from_tiff_value() {
+    for value in 1..=8 {
+      assert_eq!(Orientation::from_u16(value).map(|orientation| orientation.to_u16()), Some(value));
+    }
+    assert_eq!(Orientation::from_u16(0), None);
+    assert_eq!(Orientation::from_u16(9), None);
+  }
+
+  #[test]
+  fn orientation_from_degrees() {
+    assert_eq!(Orientation::from_degrees(0), Some(Orientation::Normal));
+    assert_eq!(Orientation::from_degrees(90), Some(Orientation::Rotate90));
+    assert_eq!(Orientation::from_degrees(180), Some(Orientation::Rotate180));
+    assert_eq!(Orientation::from_degrees(270), Some(Orientation::Rotate270));
+    assert_eq!(Orientation::from_degrees(-90), Some(Orientation::Rotate270));
+    assert_eq!(Orientation::from_degrees(450), Some(Orientation::Rotate90));
+    assert_eq!(Orientation::from_degrees(45), None);
+  }
 
   /// Builds a minimal single-image DNG in memory, so these tests need no
   /// sample files and run without the `rawdb` feature.

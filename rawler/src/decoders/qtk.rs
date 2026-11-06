@@ -86,16 +86,16 @@ impl<'a> Decoder for QtkDecoder<'a> {
     let _zero = stream.get_u32();
     let hint = stream.get_u16();
     let offset = if hint == 30 { 738 } else { 736 };
-    let mut orientation = Orientation::Normal;
+    let mut orientation = None;
 
     if height > width {
       swap(&mut width, &mut height);
       let info = file.subview(offset - 6, 6)?;
-      orientation = if BEu16(info, 0).not() & 3 > 0 {
+      orientation = Some(if BEu16(info, 0).not() & 3 > 0 {
         Orientation::Rotate90
       } else {
         Orientation::Rotate270
-      };
+      });
       log::debug!("QTK file has flipped width/height, new orientation: {:?}", orientation);
     }
 

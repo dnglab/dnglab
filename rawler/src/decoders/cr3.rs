@@ -330,6 +330,7 @@ impl<'a> Decoder for Cr3Decoder<'a> {
     let whitelevel = WhiteLevel(vec![whitelevel as u32]);
     let photometric = RawPhotometricInterpretation::Cfa(CFAConfig::new_from_camera(camera));
     let mut img = RawImage::new(camera.clone(), image, cpp, wb, photometric, blacklevel, Some(whitelevel), dummy);
+    img.orientation = Orientation::from_tiff(self.cmt1.root_ifd());
     img.baseline_exposure = self
       .cmt3
       .get_entry(Cr3MakernoteTag::LightningOpt)

@@ -49,6 +49,7 @@ use super::Camera;
 use super::CameraLookup;
 use super::Decoder;
 use super::FormatHint;
+use super::Orientation;
 use super::RawDecodeParams;
 use super::RawMetadata;
 use super::ok_cfa_image;
@@ -92,12 +93,14 @@ impl<'a> Decoder for ArwDecoder<'a> {
     let camera = self.camera.supported()?;
     let data = self.tiff.find_ifds_with_tag(TiffCommonTag::StripOffsets);
     if data.is_empty() {
-      if camera.model == "DSLR-A100" {
-        return self.image_a100(camera, file, dummy);
+      let mut img = if camera.model == "DSLR-A100" {
+        self.image_a100(camera, file, dummy)?
       } else {
         // try decoding as SRF
-        return self.image_srf(camera, file, dummy);
-      }
+        self.image_srf(camera, file, dummy)?
+      };
+      img.orientation = Orientation::from_tiff(self.tiff.root_ifd());
+      return Ok(img);
     }
     let raw = data[0];
     let width = fetch_tiff_tag!(raw, TiffCommonTag::ImageWidth).force_usize(0);
@@ -202,6 +205,7 @@ impl<'a> Decoder for ArwDecoder<'a> {
     };
 
     let mut img = RawImage::new(camera.clone(), image, cpp, params.wb, photometric, blacklevel, whitelevel, dummy);
+    img.orientation = Orientation::from_tiff(self.tiff.root_ifd());
 
     if cpp == 3 && !arq {
       // For debayer images, we assume WB coeffs already applied

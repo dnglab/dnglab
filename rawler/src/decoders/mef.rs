@@ -13,6 +13,7 @@ use crate::tags::TiffCommonTag;
 use super::CameraLookup;
 use super::Decoder;
 use super::FormatHint;
+use super::Orientation;
 use super::RawDecodeParams;
 use super::RawMetadata;
 use super::ok_cfa_image;
@@ -46,7 +47,9 @@ impl<'a> Decoder for MefDecoder<'a> {
 
     let image = decompress_12be(src, width, height, dummy)?;
     let cpp = 1;
-    ok_cfa_image(camera.clone(), cpp, [f32::NAN, f32::NAN, f32::NAN, f32::NAN], image, dummy)
+    let mut img = ok_cfa_image(camera.clone(), cpp, [f32::NAN, f32::NAN, f32::NAN, f32::NAN], image, dummy)?;
+    img.orientation = Orientation::from_tiff(self.tiff.root_ifd());
+    Ok(img)
   }
 
   fn check_supported(&self) -> Result<()> {

@@ -9,6 +9,7 @@ use super::Camera;
 use super::CameraLookup;
 use super::Decoder;
 use super::FormatHint;
+use super::Orientation;
 use super::RawDecodeParams;
 use super::RawMetadata;
 use crate::RawImage;
@@ -133,7 +134,9 @@ impl<'a> Decoder for PefDecoder<'a> {
     } else {
       RawPhotometricInterpretation::LinearRaw
     };
-    Ok(RawImage::new(camera.clone(), image, cpp, wb, photometric, blacklevel, whitelevel, dummy))
+    let mut img = RawImage::new(camera.clone(), image, cpp, wb, photometric, blacklevel, whitelevel, dummy);
+    img.orientation = Orientation::from_tiff(self.tiff.root_ifd());
+    Ok(img)
   }
 
   fn check_supported(&self) -> Result<()> {
