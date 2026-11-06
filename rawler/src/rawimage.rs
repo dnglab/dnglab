@@ -79,6 +79,44 @@ pub enum RawPhotometricInterpretation {
   LinearRaw,
 }
 
+/// DNG ColorimetricReference, what the XYZ values of the DNG color model refer to
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub enum ColorimetricReference {
+  /// The values are scene-referred, a reader renders them for output
+  #[default]
+  SceneReferred,
+  /// The values are output-referred and use the dynamic range of the ICC
+  /// profile PCS. The data is already white balanced to the white of the PCS.
+  OutputReferred,
+  /// The values are output-referred and may be high dynamic range
+  OutputReferredHdr,
+}
+
+impl ColorimetricReference {
+  /// Value of the DNG tag, `None` if it isn't defined
+  pub fn from_dng_value(value: u16) -> Option<Self> {
+    match value {
+      0 => Some(Self::SceneReferred),
+      1 => Some(Self::OutputReferred),
+      2 => Some(Self::OutputReferredHdr),
+      _ => None,
+    }
+  }
+
+  /// Value of the DNG tag
+  pub fn dng_value(self) -> u16 {
+    match self {
+      Self::SceneReferred => 0,
+      Self::OutputReferred => 1,
+      Self::OutputReferredHdr => 2,
+    }
+  }
+
+  pub fn is_output_referred(self) -> bool {
+    self != Self::SceneReferred
+  }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct CFAConfig {
   pub cfa: CFA,
@@ -178,6 +216,9 @@ pub struct RawImage {
 
   /// DNG BaselineExposure in EV, applied by the develop pipeline.
   pub baseline_exposure: Option<SRational>,
+
+  /// DNG ColorimetricReference
+  pub colorimetric_reference: ColorimetricReference,
 
   /// DNG transparency mask (NewSubFileType 4), it has the size of the image
   /// data and is cropped with it
@@ -325,6 +366,7 @@ impl RawImage {
       dng_opcodes_3: None,
       linearization_table: None,
       baseline_exposure: None,
+      colorimetric_reference: ColorimetricReference::default(),
       transparency_mask: None,
       semantic_masks: Vec::new(),
     }
@@ -410,6 +452,7 @@ impl RawImage {
       dng_opcodes_3: None,
       linearization_table: None,
       baseline_exposure: None,
+      colorimetric_reference: ColorimetricReference::default(),
       transparency_mask: None,
       semantic_masks: Vec::new(),
     }

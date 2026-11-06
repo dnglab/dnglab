@@ -23,18 +23,18 @@ use crate::{
     CompressionMethod, PhotometricInterpretation, Predictor, PreviewColorSpace, Rational, SRational, TiffError, Value,
     writer::{DirectoryWriter, TiffWriter, transfer_entry},
   },
-  imgop::{Dim2, Point, Rect, blacklevel::check_masked_areas},
+  imgop::{Dim2, Point, Rect, blacklevel::check_masked_areas, xyz::CIE_1931_WHITE_POINT_D50},
   ljpeg92::LjpegCompressor,
   mask::MaskImage,
   pixarray::{Pix2D, PixU16, interleave_cols, interleave_rows},
-  rawimage::{BlackLevel, RawPhotometricInterpretation, WhiteLevel},
+  rawimage::{BlackLevel, ColorimetricReference, RawPhotometricInterpretation, WhiteLevel},
   tags::ExifTag,
   tiles::ImageTiler,
 };
 
 use super::{
-  CompressionParams, CropMode, DNG_VERSION_V1_0, DNG_VERSION_V1_1, DNG_VERSION_V1_4, DNG_VERSION_V1_6, DNG_VERSION_V1_7, DNG_VERSION_V1_7_1, DngCompression,
-  DngPhotometricConversion, DngVersionNumber, JxlParams,
+  CompressionParams, CropMode, DNG_VERSION_V1_0, DNG_VERSION_V1_1, DNG_VERSION_V1_2, DNG_VERSION_V1_4, DNG_VERSION_V1_6, DNG_VERSION_V1_7, DNG_VERSION_V1_7_1,
+  DngCompression, DngPhotometricConversion, DngVersionNumber, JxlParams,
   camera_profile_tags::{extra_camera_profile_data, rationals, write_camera_calibration, write_camera_profile, write_gain_table_map_v1, write_string},
   opcodes::OpcodeStage,
   original::OriginalCompressed,
@@ -243,8 +243,24 @@ where
       _ => 1.0,
     };
 
+    let output_referred = rawimage.colorimetric_reference.is_output_referred();
+    if output_referred {
+      let version = match rawimage.colorimetric_reference {
+        ColorimetricReference::OutputReferredHdr => DNG_VERSION_V1_7,
+        _ => DNG_VERSION_V1_2,
+      };
+      self.writer.update_backward_version(version, "ColorimetricReference")?;
+      self
+        .writer
+        .root_ifd
+        .add_tag(DngTag::ColorimetricReference, rawimage.colorimetric_reference.dng_value());
+    }
     if rawimage.cpp > 1 || matches!(rawimage.photometric, RawPhotometricInterpretation::Cfa(_)) {
-      self.writer.as_shot_neutral(wbcoeff_to_tiff_value(&rawimage));
+      if output_referred {
+        self.writer.as_shot_white_of_pcs();
+      } else {
+        self.writer.as_shot_neutral(wbcoeff_to_tiff_value(&rawimage));
+      }
       let color_planes = match &rawimage.photometric {
         RawPhotometricInterpretation::Cfa(config) => config.colors.plane_count(),
         _ => rawimage.cpp,
@@ -652,6 +668,13 @@ where
     if wb.as_ref()[0].n != 0 {
       self.root_ifd.add_tag(DngTag::AsShotNeutral, wb.as_ref());
     }
+  }
+
+  /// AsShotWhiteXY of output-referred data, it must be the white of the PCS.
+  /// AsShotNeutral is not allowed for this data.
+  pub fn as_shot_white_of_pcs(&mut self) {
+    let (x, y) = CIE_1931_WHITE_POINT_D50;
+    self.root_ifd.add_tag(DngTag::AsShotWhiteXY, rationals(&[x, y]).as_slice());
   }
 
   /// Write the camera profiles of `rawimage` with `color_planes` color planes, the
@@ -2041,6 +2064,44 @@ mod tests {
     rawimage.blacklevel = BlackLevel::zero(1, 1, cpp);
     rawimage.whitelevel = WhiteLevel::new(vec![1; cpp]);
     rawimage
+  }
+
+  #[test]
+  fn output_referred_image_has_white_of_pcs() -> std::result::Result<(), Box<dyn std::error::Error>> {
+    use crate::{
+      formats::tiff::{GenericTiffReader, reader::TiffReader},
+      rawimage::ColorimetricReference,
+    };
+
+    let data = write_synthetic_dng_compressed(&synthetic_linear_f32(3), DngCompression::Uncompressed)?;
+    let tiff = GenericTiffReader::new_with_buffer(&data, 0, 0, None)?;
+    assert!(tiff.root_ifd().get_entry(DngTag::ColorimetricReference).is_none());
+    assert!(tiff.root_ifd().get_entry(DngTag::AsShotNeutral).is_some());
+    assert!(tiff.root_ifd().get_entry(DngTag::AsShotWhiteXY).is_none());
+
+    let mut rawimage = synthetic_linear_f32(3);
+    rawimage.colorimetric_reference = ColorimetricReference::OutputReferred;
+    let data = write_synthetic_dng_compressed(&rawimage, DngCompression::Uncompressed)?;
+    let tiff = GenericTiffReader::new_with_buffer(&data, 0, 0, None)?;
+    let root = tiff.root_ifd();
+    assert_eq!(root.get_entry(DngTag::ColorimetricReference).map(|entry| entry.value.force_u16(0)), Some(1));
+    // AsShotNeutral is not allowed, readers warn about it
+    assert!(root.get_entry(DngTag::AsShotNeutral).is_none());
+    let white = root.get_entry(DngTag::AsShotWhiteXY).ok_or("AsShotWhiteXY missing")?;
+    assert_eq!((white.value.force_f32(0), white.value.force_f32(1)), (0.3457, 0.3585));
+    Ok(())
+  }
+
+  #[test]
+  fn output_referred_hdr_requires_dng_1_7() -> std::result::Result<(), Box<dyn std::error::Error>> {
+    use crate::rawimage::ColorimetricReference;
+
+    let mut rawimage = synthetic_linear_f32(3);
+    rawimage.colorimetric_reference = ColorimetricReference::OutputReferredHdr;
+    assert!(write_synthetic_dng(&rawimage, CropMode::None, DNG_VERSION_V1_4).is_err());
+    let data = write_synthetic_dng(&rawimage, CropMode::None, DNG_VERSION_V1_7)?;
+    assert_eq!(read_backward_version_and_active_area(&data)?.0, DNG_VERSION_V1_7);
+    Ok(())
   }
 
   /// Write `rawimage` lossy compressed, check the raw IFD and return the decoded image data, scaled to 0.0 .. 1.0
