@@ -253,6 +253,8 @@ impl<'a> Decoder for NefDecoder<'a> {
       // P7800 and others is LE, but data is BE, so we use hints here
       if (self.tiff.little_endian() || camera.find_hint("little_endian")) && !camera.find_hint("big_endian") {
         decompress_16le(&src, width, height, dummy)?
+      } else if camera.find_hint("left_aligned") {
+        decompress_12be_unpacked_left_aligned(&src, width, height, dummy)?
       } else {
         decompress_16be(&src, width, height, dummy)?
       }
