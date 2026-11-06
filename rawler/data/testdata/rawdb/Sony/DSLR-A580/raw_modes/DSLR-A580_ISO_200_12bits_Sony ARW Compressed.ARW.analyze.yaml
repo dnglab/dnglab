@@ -12,10 +12,10 @@ data:
       cropArea:
         p:
           x: 8
-          y: 260
+          y: 8
         d:
           w: 4912
-          h: 2760
+          h: 3264
       activeArea:
         p:
           x: 0

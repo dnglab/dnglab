@@ -6,7 +6,7 @@ clean_model = "DSLR-A580"
 #whitepoint = 16300
 color_pattern = "RGGB"
 active_area = [0, 0, 2, 2]
-crop_area = [8, 260, 8, 260]
+crop_area = [8, 8, 8, 8]
 bps = 8
 
 [cameras.color_matrix]
