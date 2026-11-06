@@ -70,6 +70,8 @@ _arguments "${_arguments_options[@]}" : \
 '--format=[Output image format, defaults to the OUTPUT file extension or tif]:format:(tif jpeg)' \
 '--color-space=[Color space of the image]:space:(srgb adobergb prophoto)' \
 '--jpeg-quality=[JPEG quality (1-100)]:quality:_default' \
+'--denoise-luma=[Strength of the luma noise reduction (0-4), 0 is off, 1 is a full reduction \[default\: 0.25\]]:strength:_default' \
+'--denoise-chroma=[Strength of the chroma noise reduction (0-4), 0 is off, 1 is a full reduction \[default\: 0.5\]]:strength:_default' \
 '-d+[Log level]:level:(error warn info debug trace)' \
 '--loglevel=[Log level]:level:(error warn info debug trace)' \
 '--profile-path=[Directory with profile TOML files]:dir:_files' \

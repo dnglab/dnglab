@@ -19,6 +19,7 @@ use rawler::{
   formats::tiff::{DirectoryWriter, TiffWriter},
   imgop::{
     color::{OutputSpace, TransferFunction},
+    denoise::DenoiseStrength,
     render::{DemosaicQuality, RenderOptions, RenderTarget, RenderedImage, StepSet, WhiteBalancePlacement, execute, plan},
   },
   rawdb,
@@ -59,6 +60,8 @@ fn main() -> Result<(), Box<dyn Error>> {
     demosaic: DemosaicQuality::Quality,
     // Color space of the image, with its transfer function
     color_space: OutputSpace::Srgb,
+    // A little noise reduction
+    denoise: DenoiseStrength::default(),
   };
 
   // Plan the processing operations for this image

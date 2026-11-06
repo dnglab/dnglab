@@ -14,6 +14,7 @@ use crate::{
   imgop::{
     Dim2, Point, Rect,
     color::{OutputSpace, TransferFunction},
+    denoise::DenoiseStrength,
     render::{RenderOptions, RenderedImage, render},
   },
   rawsource::RawSource,
@@ -83,6 +84,8 @@ pub struct RawProcessingParams {
   pub jpeg_quality: u8,
   /// Color space of the image
   pub color_space: OutputSpace,
+  /// Strength of the noise reduction
+  pub denoise: DenoiseStrength,
   /// Crop to the largest rectangle without transparent pixels of the DNG
   /// transparency mask, within the crop of `crop`
   pub crop_transparent: bool,
@@ -101,6 +104,7 @@ impl Default for RawProcessingParams {
       format: ProcessedImageFormat::Tiff,
       jpeg_quality: 94,
       color_space: OutputSpace::Srgb,
+      denoise: DenoiseStrength::default(),
       crop_transparent: false,
     }
   }
@@ -116,6 +120,7 @@ pub fn process_raw_image<W: Write + Seek + Send>(raw: &Path, image_file: &mut W,
   let metadata = decoder.raw_metadata(&rawfile, &raw_params)?;
   let mut develop = RawDevelop {
     color_space: params.color_space,
+    denoise: params.denoise,
     ..RawDevelop::with_crop(params.crop)
   };
   if params.crop_transparent {
@@ -168,6 +173,8 @@ pub struct RawDevelop {
   pub steps: Vec<ProcessingStep>,
   /// Color space of the developed image
   pub color_space: OutputSpace,
+  /// Strength of the Denoise step
+  pub denoise: DenoiseStrength,
 }
 
 impl Default for RawDevelop {
@@ -181,6 +188,7 @@ impl RawDevelop {
     Self {
       steps: Vec::from(steps),
       color_space: OutputSpace::default(),
+      denoise: DenoiseStrength::default(),
     }
   }
 
@@ -207,6 +215,7 @@ impl RawDevelop {
     RenderOptions {
       steps: self.steps.iter().copied().collect(),
       color_space: self.color_space,
+      denoise: self.denoise,
       ..Default::default()
     }
   }
@@ -416,7 +425,7 @@ mod tests {
   fn develop_applies_profile_render() -> std::result::Result<(), Box<dyn std::error::Error>> {
     let mut rawimage = d65_rawimage();
     rawimage.data = RawImageData::Float(vec![0.2, 0.4, 0.3]);
-    let with_render = RawDevelop::default().without(ProcessingStep::ToneCurve);
+    let with_render = RawDevelop::default().without(ProcessingStep::ToneCurve).without(ProcessingStep::Denoise);
     let without_render = with_render.clone().without(ProcessingStep::ProfileRender).steps;
     let develop = |rawimage: &RawImage, steps: &[ProcessingStep]| -> crate::Result<[f32; 3]> {
       Ok(rgb_pixels(&RawDevelop::new_with(steps).develop_image(rawimage.clone())?)[0])
@@ -706,7 +715,8 @@ mod tests {
     // White stays white, dark values are darkened by 1 EV
     let develop = RawDevelop::default()
       .without(ProcessingStep::TransferFunction)
-      .without(ProcessingStep::ToneCurve);
+      .without(ProcessingStep::ToneCurve)
+      .without(ProcessingStep::Denoise);
     let image = develop.develop_image(rawimage.clone())?;
     let pixels = rgb_pixels(&image);
     for (pixel, expected) in pixels.iter().zip([1.0, 0.1]) {
@@ -769,7 +779,8 @@ mod tests {
     let (rawimage, ramp) = saturated_ramp_rawimage();
     let develop = RawDevelop::default()
       .without(ProcessingStep::TransferFunction)
-      .without(ProcessingStep::ToneCurve);
+      .without(ProcessingStep::ToneCurve)
+      .without(ProcessingStep::Denoise);
     let image = develop.develop_image(rawimage)?;
     let pixels = rgb_pixels(&image);
     assert!(pixels[0][0] < 1.0 && pixels[pixels.len() - 1][0] > 1.0, "{:?}", pixels);
@@ -821,18 +832,19 @@ mod tests {
       false,
     );
     mosaic.camera_profiles = d65_rawimage().camera_profiles;
-    let image = RawDevelop::default().develop_image(mosaic)?;
+    let develop = RawDevelop::default().without(ProcessingStep::Denoise);
+    let image = develop.develop_image(mosaic)?;
     assert!(is_white(&image), "{:?}", rgb_pixels(&image)[0]);
     // A clipped and a gray pixel of LinearRaw data, white balanced by the color map
     let mut rawimage = d65_rawimage();
     rawimage.width = 2;
     rawimage.data = RawImageData::Float(vec![1.0, 1.0, 1.0, 0.2, 0.15, 0.21]);
     rawimage.wb_coeffs = wb;
-    let image = RawDevelop::default().develop_image(rawimage.clone())?;
+    let image = develop.develop_image(rawimage.clone())?;
     assert!(is_white(&image), "{:?}", rgb_pixels(&image)[0]);
     // The scale of the coefficients has no effect
     rawimage.wb_coeffs = wb.map(|c| c * 1.7);
-    let scaled = RawDevelop::default().develop_image(rawimage)?.data;
+    let scaled = develop.develop_image(rawimage)?.data;
     assert!(image.data.iter().zip(&scaled).all(|(a, b)| (a - b).abs() < 1e-5), "{:?}", scaled);
     Ok(())
   }
@@ -978,9 +990,16 @@ mod tests {
     fn cases() -> Vec<(&'static str, RawImage, RenderOptions)> {
       use ProcessingStep::*;
       // The cases pin the colors without the default tone curve, except for
-      // the cases of the curve
-      let with_tone_curve = RenderOptions::default();
-      let steps = StepSet::all().without(ToneCurve);
+      // the cases of the curve, and without the noise reduction
+      let with_tone_curve = RenderOptions {
+        steps: StepSet::all().without(Denoise),
+        ..Default::default()
+      };
+      let with_denoise = RenderOptions {
+        steps: StepSet::all().without(ToneCurve),
+        ..Default::default()
+      };
+      let steps = StepSet::all().without(ToneCurve).without(Denoise);
       let all = RenderOptions { steps, ..Default::default() };
       let without = |step: ProcessingStep| RenderOptions {
         steps: steps.without(step),
@@ -1043,6 +1062,8 @@ mod tests {
         ("linear_raw_prophoto", linear_raw(), prophoto),
         ("rggb_tone_curve", rggb(), with_tone_curve.clone()),
         ("mono_tone_curve", mono(), with_tone_curve),
+        ("rggb_denoise", rggb(), with_denoise.clone()),
+        ("mono_denoise", mono(), with_denoise),
       ]
     }
 
@@ -1081,6 +1102,8 @@ mod tests {
       ("linear_raw_prophoto", 16, 12, 3, &[178.5531117618084, 8687.535918176174, 169.53801987957394, 146.80028820037842, 7289.14681071043, 120.36781506826523, 182.88982164859772, 8785.257615506649, 175.13845659815522]),
       ("rggb_tone_curve", 24, 16, 3, &[382.7776269316673, 18193.989409446716, 381.7496863167044, 259.79086369276047, 12595.321324795485, 183.11937804395097, 360.4882082939148, 17300.99929469824, 340.23592304348347]),
       ("mono_tone_curve", 24, 16, 1, &[306.6658738851547, 14753.879509568214, 248.869998376688]),
+      ("rggb_denoise", 24, 16, 3, &[381.8545647263527, 18156.606020390987, 379.93434239532274, 235.6433406174183, 11340.5538893044, 149.3080918155735, 355.65923941135406, 17085.819627046585, 332.07478443911083]),
+      ("mono_denoise", 24, 16, 1, &[286.96862787008286, 13775.304181218147, 218.071894642691]),
     ];
 
     /// Largest absolute difference of the samples of two images of the same size
@@ -1091,6 +1114,7 @@ mod tests {
 
     fn render_with(rawimage: &RawImage, white_balance: WhiteBalancePlacement, demosaic: DemosaicQuality) -> RenderedImage {
       let options = RenderOptions {
+        steps: StepSet::all().without(ProcessingStep::Denoise),
         white_balance,
         demosaic,
         ..Default::default()
@@ -1204,13 +1228,16 @@ mod tests {
         rawimage.crop_area = Some(crop);
         let active_area = rawimage.active_area.expect("active area");
         for demosaic in [DemosaicQuality::Quality, DemosaicQuality::Preview] {
+          // The noise is estimated from the image data that is left after the crop
+          let steps = StepSet::all().without(ProcessingStep::Denoise);
           let options = RenderOptions {
+            steps,
             demosaic,
             ..Default::default()
           };
           let cropped = render(rawimage.clone(), &options).expect("render");
           let full = RenderOptions {
-            steps: StepSet::all().without(ProcessingStep::CropDefault),
+            steps: steps.without(ProcessingStep::CropDefault),
             ..options
           };
           let mut expected = render(rawimage.clone(), &full).expect("render");
@@ -1242,8 +1269,10 @@ mod tests {
       linear_raw.active_area = Some(Rect::new(Point::new(1, 1), Dim2::new(14, 10)));
       linear_raw.crop_area = Some(Rect::new(Point::new(2, 2), Dim2::new(12, 8)));
       assert_eq!(size(&linear_raw, CropMode::Best), (12, 8));
-      let active_area = RawDevelop::with_crop(CropMode::ActiveArea).develop_image(linear_raw.clone()).expect("develop");
-      let mut expected = RawDevelop::with_crop(CropMode::None).develop_image(linear_raw).expect("develop");
+      // The noise is estimated from the image data that is left after the crop
+      let with_crop = |crop| RawDevelop::with_crop(crop).without(ProcessingStep::Denoise);
+      let active_area = with_crop(CropMode::ActiveArea).develop_image(linear_raw.clone()).expect("develop");
+      let mut expected = with_crop(CropMode::None).develop_image(linear_raw).expect("develop");
       assert_eq!((expected.width, expected.height), (16, 12));
       expected.crop(Rect::new(Point::new(1, 1), Dim2::new(14, 10))).expect("crop");
       assert!(active_area.dim() == expected.dim() && active_area.data == expected.data);
@@ -1378,8 +1407,10 @@ mod tests {
       // Each pixel of the preview is a block of 2x2 pixels, a flat field keeps its color
       let mut rawimage = rggb();
       rawimage.data = RawImageData::Integer(vec![1500; 32 * 24]);
-      let full = render(rawimage.clone(), &RenderOptions::default()).expect("render");
+      let steps = StepSet::all().without(ProcessingStep::Denoise);
+      let full = render(rawimage.clone(), &RenderOptions { steps, ..Default::default() }).expect("render");
       let options = RenderOptions {
+        steps,
         demosaic: DemosaicQuality::Preview,
         ..Default::default()
       };

@@ -13,6 +13,7 @@ use crate::{
   imgop::{
     balance::auto_white_balance,
     color::{CameraToRgb, OutputSpace, PixelOp, TransferFunction, camera_to_output, d65_white_balance},
+    denoise::DenoiseStrength,
     matrix::multiply,
     raw::WhiteBalance,
     sensor::SensorType,
@@ -51,6 +52,9 @@ pub(super) enum Op {
   },
   /// Rotate an RGB image of a sensor with a 45° layout
   FujiRotate { width: usize, extra_rotate: bool },
+  /// Reduce the noise of linear values. `wb` are the white balance coefficients
+  /// to reach neutral colors, all ones if they are already white balanced.
+  Denoise { strength: DenoiseStrength, wb: [f32; 4] },
   /// Multiply all samples
   Gain(f32),
   /// Apply a tone curve to the image
@@ -231,9 +235,21 @@ pub fn plan(rawimage: &RawImage, options: &RenderOptions) -> crate::Result<Plan>
   } else if !crop_default && demosaic.is_none() && steps.contains(Step::CropActiveArea) {
     ops.push(Op::CropActiveArea);
   }
+  let cfa_data = matches!(rawimage.photometric, RawPhotometricInterpretation::Cfa(_)) && demosaic.is_none();
+  // The noise is reduced before scaling changes it, CFA data has no luma and
+  // chroma planes. Output-referred data is already rendered.
+  if steps.contains(Step::Denoise) && options.denoise.is_active() && !cfa_data {
+    if rawimage.colorimetric_reference.is_output_referred() {
+      log::debug!("Output-referred data is already rendered, the noise is not reduced");
+    } else {
+      ops.push(Op::Denoise {
+        strength: options.denoise,
+        wb: wb.filter(|_| !wb_before_demosaic).unwrap_or([1.0; 4]),
+      });
+    }
+  }
   // The image is scaled while its values are linear, CFA data can't be scaled
   let (horizontal, vertical) = rawimage.camera.best_quality_scale_factors();
-  let cfa_data = matches!(rawimage.photometric, RawPhotometricInterpretation::Cfa(_)) && demosaic.is_none();
   if steps.contains(Step::DefaultScale) && !cfa_data && (horizontal, vertical) != (1.0, 1.0) {
     ops.push(Op::Scale { horizontal, vertical });
   }

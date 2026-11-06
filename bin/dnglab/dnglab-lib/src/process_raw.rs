@@ -6,7 +6,10 @@ use futures::future::join_all;
 use rawler::decoders::supported_extensions;
 use rawler::{
   dng::opcodes::OpcodeSelector,
-  imgop::develop::{ProcessedImageFormat, RawProcessingParams},
+  imgop::{
+    denoise::DenoiseStrength,
+    develop::{ProcessedImageFormat, RawProcessingParams},
+  },
 };
 use std::fs::create_dir_all;
 use std::path::{Path, PathBuf};
@@ -158,6 +161,10 @@ fn generate_job(entry: &FileMap, options: &ArgMatches) -> Result<Vec<Raw2Image>>
       color_space: *options
         .get_one("color_space")
         .ok_or_else(|| crate::AppError::InvalidCmdSwitch("color-space has no default".into()))?,
+      denoise: DenoiseStrength {
+        luma: options.get_one("denoise_luma").copied().unwrap_or(DenoiseStrength::default().luma),
+        chroma: options.get_one("denoise_chroma").copied().unwrap_or(DenoiseStrength::default().chroma),
+      },
       crop_transparent: options.get_flag("crop_transparent"),
     };
 

@@ -10,7 +10,7 @@ use clap::{
 };
 use log::debug;
 use rawler::dng::{ApplyDngOpcodes, CropMode, DngCompression, DngVersion, MAX_JXL_DISTANCE, opcodes::OpcodeSelector};
-use rawler::imgop::{color::OutputSpace, develop::ProcessedImageFormat};
+use rawler::imgop::{color::OutputSpace, denoise::DenoiseStrength, develop::ProcessedImageFormat};
 
 use crate::makedng::{
   CalibrationIlluminantArgParser, ColorMatrixArgParser, DngColorimetricReference, InputSourceUsageMap, LinearizationTableArgParser, WhiteBalanceInput,
@@ -43,6 +43,19 @@ impl clap::ValueEnum for LogLevel {
 }
 
 /// Parse a JPEG XL distance in the range 0 to 25
+/// Largest strength of the noise reduction
+const MAX_DENOISE_STRENGTH: f32 = 4.0;
+
+/// Parser for the strength of the noise reduction
+fn denoise_strength_parser(value: &str) -> std::result::Result<f32, String> {
+  let strength: f32 = value.parse().map_err(|err| format!("{}", err))?;
+  if (0.0..=MAX_DENOISE_STRENGTH).contains(&strength) {
+    Ok(strength)
+  } else {
+    Err(format!("{} is not in 0..={}", value, MAX_DENOISE_STRENGTH))
+  }
+}
+
 fn jxl_distance_parser(value: &str) -> std::result::Result<f32, String> {
   let distance: f32 = value.parse().map_err(|err| format!("{}", err))?;
   if (0.0..=MAX_JXL_DISTANCE).contains(&distance) {
@@ -334,6 +347,26 @@ fn process_raw_command() -> Command {
         .required(false)
         .value_parser(clap::value_parser!(u8).range(1..=100))
         .default_value("94"),
+    )
+    .arg(
+      arg!(denoise_luma: --"denoise-luma" <strength>)
+        .help(format!(
+          "Strength of the luma noise reduction (0-{}), 0 is off, 1 is a full reduction [default: {}]",
+          MAX_DENOISE_STRENGTH,
+          DenoiseStrength::default().luma
+        ))
+        .required(false)
+        .value_parser(denoise_strength_parser),
+    )
+    .arg(
+      arg!(denoise_chroma: --"denoise-chroma" <strength>)
+        .help(format!(
+          "Strength of the chroma noise reduction (0-{}), 0 is off, 1 is a full reduction [default: {}]",
+          MAX_DENOISE_STRENGTH,
+          DenoiseStrength::default().chroma
+        ))
+        .required(false)
+        .value_parser(denoise_strength_parser),
     )
     .arg(arg!(-f --override "Override existing files").action(ArgAction::SetTrue))
     .arg(arg!(-r --recursive "Process input directory recursive").action(ArgAction::SetTrue))

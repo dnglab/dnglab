@@ -14,6 +14,7 @@ use crate::{
     Dim2, Point, Rect,
     blacklevel::{rescale, rescale_in_place},
     color::{PixelOp, apply_gain, apply_transfer_function, camera_to_rgb, camera_to_rgb_in_place},
+    denoise::wavelet_denoise,
     fuji_rotate::fuji_normalize_rotation,
     raw::{white_balance, white_balance_mosaic},
     scale::scale_image,
@@ -27,7 +28,7 @@ use crate::{
       xtrans::{bilinear::XTransBilinearDemosaic, markesteijn::XTransMarkesteijnDemosaic},
     },
   },
-  pixarray::{ImageView, ImageViewMut},
+  pixarray::{ImageRegionMut, ImageView, ImageViewMut},
   rawimage::{BlackLevel, CFAConfig, RawPhotometricInterpretation, WhiteLevel},
 };
 
@@ -213,6 +214,7 @@ impl Executor {
         *image = fuji_normalize_rotation(image.view(), *width, *extra_rotate)?.into();
         log::debug!("dimension after rotate {:?}", image.dim());
       }
+      Op::Denoise { strength, wb } => wavelet_denoise(ImageRegionMut::from(self.image().view_mut()), *strength, wb)?,
       Op::Gain(gain) => apply_gain(self.image().view_mut(), *gain),
       Op::ToneCurve(curve) => curve.apply_image(self.image().view_mut()),
       Op::CameraToRgb { map, ops, space } => {
