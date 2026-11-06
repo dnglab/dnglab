@@ -500,6 +500,48 @@ mod tests {
     Ok(())
   }
 
+  /// sRGB encoded `codes` with the table and the color matrix of an ICC profile
+  /// render back to the same values
+  #[test]
+  fn develop_linearizes_output_referred_values() -> std::result::Result<(), Box<dyn std::error::Error>> {
+    use crate::{
+      camera_profile::CameraProfile,
+      imgop::icc::{self, MatrixShaperProfile},
+      rawimage::ColorimetricReference,
+    };
+
+    let profile = MatrixShaperProfile::parse(&icc::rgb_profile(OutputSpace::Srgb, TransferFunction::Srgb))?;
+    for (bits, tolerance) in [(16, 0.5e-3), (8, 0.6 / 255.0)] {
+      let max = (1_u32 << bits) - 1;
+      let codes: Vec<u16> = (0..=max).flat_map(|code| [code as u16; 3]).collect();
+      let width = codes.len() / 3;
+      let mut rawimage = RawImage::new_with_data(
+        Camera::default(),
+        RawImageData::Integer(codes.clone()),
+        width * 3,
+        1,
+        3,
+        [1.0, 1.0, 1.0, f32::NAN],
+        RawPhotometricInterpretation::LinearRaw,
+        Some(BlackLevel::zero(1, 1, 3)),
+        Some(WhiteLevel::new(vec![u16::MAX as u32; 3])),
+        false,
+      );
+      rawimage.linearization_table = Some(profile.linearization_table(1 << bits)?);
+      rawimage.camera_profiles = vec![CameraProfile::from_forward_matrix_d50(&profile.rgb_to_xyz, &[1.0; 3]).ok_or("no profile")?];
+      rawimage.colorimetric_reference = ColorimetricReference::OutputReferred;
+
+      let rendered = RawDevelop::default().develop_image(rawimage)?;
+      let worst = codes
+        .iter()
+        .zip(&rendered.data)
+        .map(|(code, value)| (f32::from(*code) / max as f32 - value).abs())
+        .fold(0.0, f32::max);
+      assert!(worst <= tolerance, "{} bits: largest difference is {}", bits, worst);
+    }
+    Ok(())
+  }
+
   #[test]
   fn develop_tags_color_space() -> std::result::Result<(), Box<dyn std::error::Error>> {
     use crate::imgop::icc;

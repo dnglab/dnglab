@@ -19,6 +19,7 @@ use crate::imgop::blacklevel::{MAX_MASKED_AREAS, check_masked_areas};
 use crate::imgop::matrix::*;
 use crate::imgop::xyz::*;
 use crate::mask::{MaskImage, SemanticMask};
+use crate::rawimage::ColorimetricReference;
 use crate::tags::DngTag;
 use crate::tags::TiffCommonTag;
 
@@ -179,6 +180,7 @@ impl<'a> Decoder for DngDecoder<'a> {
     image.camera_profiles = camera_profiles;
     image.as_shot_profile_name = read_string(root, DngTag::AsShotProfileName);
     image.gain_table_map = read_gain_table_map_v1(raw);
+    image.colorimetric_reference = read_colorimetric_reference(root);
     image.wb_coeffs = self.get_wb(&image)?;
 
     // Opcode extraction
@@ -488,6 +490,11 @@ impl<'a> DngDecoder<'a> {
   }
 
   fn get_wb(&self, image: &RawImage) -> Result<[f32; 4]> {
+    // Output-referred data is already white balanced to the white of the PCS,
+    // it has no white balance of its own
+    if image.colorimetric_reference.is_output_referred() {
+      return Ok([1.0; 4]);
+    }
     if let Some(levels) = self.tiff.get_entry(DngTag::AsShotNeutral) {
       // One value per color plane (1, 3 or 4)
       let mut wb = [f32::NAN; 4];
@@ -716,6 +723,18 @@ impl<'a> DngDecoder<'a> {
 /// Pixel data of a mask IFD with the PhotometricInterpretation `photometric`
 ///
 /// Integer masks of 8 or 16 bits and floating point masks are supported.
+/// ColorimetricReference of IFD 0, a value that isn't defined is reported and ignored
+fn read_colorimetric_reference(root: &IFD) -> ColorimetricReference {
+  let Some(entry) = root.get_entry(DngTag::ColorimetricReference) else {
+    return ColorimetricReference::default();
+  };
+  let value = entry.force_u16(0);
+  ColorimetricReference::from_dng_value(value).unwrap_or_else(|| {
+    log::warn!("DNG: unknown ColorimetricReference {}, the data is treated as scene-referred", value);
+    ColorimetricReference::default()
+  })
+}
+
 fn read_mask_image(ifd: &IFD, file: &RawSource, photometric: PhotometricInterpretation) -> Result<MaskImage> {
   let width = fetch_tiff_tag!(ifd, TiffCommonTag::ImageWidth).force_usize(0);
   let height = fetch_tiff_tag!(ifd, TiffCommonTag::ImageLength).force_usize(0);
@@ -765,7 +784,7 @@ mod tests {
   use crate::imgop::{Dim2, Point, Rect};
   use crate::mask::{MaskImage, SemanticMask};
   use crate::pixarray::PixU16;
-  use crate::rawimage::{BlackLevel, CFAConfig, RawImageData, RawPhotometricInterpretation, WhiteLevel};
+  use crate::rawimage::{BlackLevel, CFAConfig, ColorimetricReference, RawImageData, RawPhotometricInterpretation, WhiteLevel};
   use crate::rawsource::RawSource;
   use crate::tags::{DngTag, TiffCommonTag};
 
@@ -1025,6 +1044,63 @@ mod tests {
     dng.root_ifd_mut().add_tag(DngTag::AsShotNeutral, as_shot_neutral);
     dng.close()?;
     Ok(decode_dng(&buf.into_inner())?.wb_coeffs)
+  }
+
+  /// Write a DNG with AsShotNeutral 0.5, 1.0, 0.25 and the given ColorimetricReference value
+  fn decode_with_colorimetric_reference(value: u16) -> TestResult<RawImage> {
+    let rawimage = synthetic_rawimage();
+    let mut buf = Cursor::new(Vec::new());
+    let mut dng = DngWriter::new(&mut buf, DNG_VERSION_V1_4)?;
+    dng.load_base_tags(&rawimage)?;
+    let mut frame = dng.subframe(0);
+    frame.raw_image(
+      &rawimage,
+      CropMode::None,
+      DngCompression::Uncompressed,
+      DngPhotometricConversion::Original,
+      &CompressionParams::default(),
+    )?;
+    frame.finalize()?;
+    let neutral = [Rational::new(1, 2), Rational::new(1, 1), Rational::new(1, 4)];
+    dng.root_ifd_mut().add_tag(DngTag::AsShotNeutral, neutral.as_slice());
+    dng.root_ifd_mut().add_tag(DngTag::ColorimetricReference, value);
+    dng.close()?;
+    decode_dng(&buf.into_inner())
+  }
+
+  #[test]
+  fn output_referred_data_is_white_balanced() -> TestResult {
+    let decoded = decode_with_colorimetric_reference(0)?;
+    assert_eq!(decoded.colorimetric_reference, ColorimetricReference::SceneReferred);
+    assert_eq!(decoded.wb_coeffs[..3], [2.0, 1.0, 4.0]);
+    // Like in the DNG SDK, AsShotNeutral is ignored for output-referred data
+    for (value, reference) in [(1, ColorimetricReference::OutputReferred), (2, ColorimetricReference::OutputReferredHdr)] {
+      let decoded = decode_with_colorimetric_reference(value)?;
+      assert_eq!(decoded.colorimetric_reference, reference);
+      assert_eq!(decoded.wb_coeffs, [1.0; 4]);
+    }
+    // A value that isn't defined is treated as scene-referred
+    let decoded = decode_with_colorimetric_reference(3)?;
+    assert_eq!(decoded.colorimetric_reference, ColorimetricReference::SceneReferred);
+    assert_eq!(decoded.wb_coeffs[..3], [2.0, 1.0, 4.0]);
+    Ok(())
+  }
+
+  #[test]
+  fn colorimetric_reference_survives_dng_conversion() -> TestResult {
+    use crate::dng::convert::{ConvertParams, convert_raw_source};
+
+    let mut rawimage = synthetic_rawimage_with_profiles();
+    rawimage.colorimetric_reference = ColorimetricReference::OutputReferred;
+    let source = RawSource::new_from_slice(&write_dng(&rawimage, |_| {})?);
+    let params = ConvertParams::default().with_embedded(false).with_preview(false).with_thumbnail(false);
+    let mut output = Cursor::new(Vec::new());
+    convert_raw_source(&source, &mut output, "output_referred.dng", &params)?;
+
+    let decoded = decode_dng(output.get_ref())?;
+    assert_eq!(decoded.colorimetric_reference, ColorimetricReference::OutputReferred);
+    assert_eq!(decoded.wb_coeffs, [1.0; 4]);
+    Ok(())
   }
 
   #[test]
