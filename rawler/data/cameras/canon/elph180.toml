@@ -1,0 +1,16 @@
+# CRW
+make = "Canon"
+model = "PowerShot ELPH 180"
+clean_make = "Canon"
+clean_model = "PowerShot ELPH 180"
+whitepoint = 4095
+color_pattern = "RGGB"
+active_area = [8, 16, 56, 16]
+crop_area = [24, 28, 72, 28]
+filesize = 30858240
+raw_width = 5248
+raw_height = 3920
+blackareav = [5192, 48]
+
+[cameras.color_matrix]
+D65 = [1.1657, -0.3781, -0.1136, -0.3544, 1.1262, 0.2283, -0.016, 0.1219, 0.47]

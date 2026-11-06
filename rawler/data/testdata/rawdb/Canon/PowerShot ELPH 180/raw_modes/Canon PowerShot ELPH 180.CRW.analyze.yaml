@@ -1,0 +1,98 @@
+---
+file:
+  fileSize: 30858240
+  fileName: Canon PowerShot ELPH 180.CRW
+  digest: 7606cf28f595183bc076c8b43d02a657
+data:
+  metadata:
+    rawParams:
+      rawWidth: 5248
+      rawHeight: 3920
+      bitDepth: 16
+      cropArea:
+        p:
+          x: 24
+          y: 28
+        d:
+          w: 5152
+          h: 3864
+      activeArea:
+        p:
+          x: 8
+          y: 16
+        d:
+          w: 5184
+          h: 3888
+      maskedAreas:
+        - p:
+            x: 5192
+            y: 16
+          d:
+            w: 48
+            h: 3888
+      blacklevels:
+        levels:
+          - 0/1
+        cpp: 1
+        width: 1
+        height: 1
+      whitelevels:
+        - 4095
+      wbCoeffs:
+        - ~
+        - ~
+        - ~
+        - ~
+    rawMetadata:
+      exif:
+        orientation: ~
+        copyright: ~
+        artist: ~
+        lens_spec: ~
+        exposure_time: ~
+        fnumber: ~
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: ~
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: ~
+        date_time_original: ~
+        create_date: ~
+        modify_date: ~
+        exposure_program: ~
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: ~
+        max_aperture_value: ~
+        subject_distance: ~
+        metering_mode: ~
+        light_source: ~
+        flash: ~
+        focal_length: ~
+        image_number: ~
+        color_space: ~
+        flash_energy: ~
+        exposure_mode: ~
+        white_balance: ~
+        scene_capture_type: ~
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+        user_comment: ~
+      model: PowerShot ELPH 180
+      make: Canon
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+
