@@ -127,6 +127,7 @@ Canon/PowerShot A710 IS/raw_modes
 Canon/PowerShot A720 IS/raw_modes
 Canon/PowerShot D10/raw_modes
 Canon/PowerShot ELPH 130 IS/raw_modes
+Canon/PowerShot ELPH 180/raw_modes
 Canon/PowerShot G10/raw_modes
 Canon/PowerShot G11/raw_modes
 Canon/PowerShot G12/raw_modes
