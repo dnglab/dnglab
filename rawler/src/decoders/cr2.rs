@@ -43,6 +43,7 @@ use super::Camera;
 use super::CameraLookup;
 use super::Decoder;
 use super::FormatHint;
+use super::Orientation;
 use super::RawDecodeParams;
 use super::RawMetadata;
 use super::Result;
@@ -275,6 +276,7 @@ impl<'a> Decoder for Cr2Decoder<'a> {
       camera.blackareav = None;
     }
     let mut img = RawImage::new(camera.clone(), image, cpp, wb, photometric, blacklevel, whitelevel, dummy);
+    img.orientation = Orientation::from_tiff(self.tiff.root_ifd());
 
     if camera.find_hint("linearization") {
       if let Some(kodak_ifd) = self.tiff.root_ifd().get_entry(TiffCommonTag::KodakIFD) {

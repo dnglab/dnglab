@@ -39,7 +39,7 @@ data:
         - ~
     rawMetadata:
       exif:
-        orientation: ~
+        orientation: 8
         copyright: ~
         artist: ~
         lens_spec: ~

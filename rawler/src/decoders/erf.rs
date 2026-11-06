@@ -23,6 +23,7 @@ use super::Camera;
 use super::CameraLookup;
 use super::Decoder;
 use super::FormatHint;
+use super::Orientation;
 use super::RawDecodeParams;
 use super::RawMetadata;
 use super::RawPhotometricInterpretation;
@@ -74,7 +75,8 @@ impl<'a> Decoder for ErfDecoder<'a> {
 
     let blacklevel = self.get_blacklevel(camera, cpp);
     let photometric = RawPhotometricInterpretation::Cfa(CFAConfig::new_from_camera(camera));
-    let img = RawImage::new(camera.clone(), image, cpp, self.get_wb()?, photometric, blacklevel, None, dummy);
+    let mut img = RawImage::new(camera.clone(), image, cpp, self.get_wb()?, photometric, blacklevel, None, dummy);
+    img.orientation = Orientation::from_tiff(self.tiff.root_ifd());
     Ok(img)
   }
 

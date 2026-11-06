@@ -42,6 +42,7 @@ use super::Camera;
 use super::CameraLookup;
 use super::Decoder;
 use super::FormatHint;
+use super::Orientation;
 use super::RawDecodeParams;
 use super::RawMetadata;
 
@@ -381,6 +382,7 @@ impl<'a> Decoder for RafDecoder<'a> {
         dummy,
       );
       image.fuji_rotation_width = fuji_rot_width;
+      image.orientation = Orientation::from_tiff(&self.ifd);
 
       if rotate_for_dng {
         image.add_dng_tag(TiffCommonTag::CFARepeatPatternDim, [2, 4]);
@@ -417,6 +419,7 @@ impl<'a> Decoder for RafDecoder<'a> {
       };
       let photometric = RawPhotometricInterpretation::Cfa(CFAConfig::new_from_camera(&camera));
       let mut image = RawImage::new(camera, image, cpp, normalize_wb(self.get_wb()?), photometric, blacklevel, whitelevel, dummy);
+      image.orientation = Orientation::from_tiff(&self.ifd);
 
       // Overwrite crop if available in metadata
       if let Some(crop) = self.get_crop()? {

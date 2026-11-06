@@ -22,6 +22,7 @@ use std::io::Cursor;
 use super::CameraLookup;
 use super::Decoder;
 use super::FormatHint;
+use super::Orientation;
 use super::RawDecodeParams;
 use super::RawMetadata;
 use super::ok_cfa_image;
@@ -226,7 +227,9 @@ impl<'a> Decoder for MrwDecoder<'a> {
       [self.wb_vals[0] as f32, self.wb_vals[1] as f32, self.wb_vals[2] as f32, self.wb_vals[3] as f32]
     };
     let cpp = 1;
-    ok_cfa_image(camera.clone(), cpp, normalize_wb(wb_coeffs), buffer, dummy)
+    let mut img = ok_cfa_image(camera.clone(), cpp, normalize_wb(wb_coeffs), buffer, dummy)?;
+    img.orientation = Orientation::from_tiff(&self.tiff);
+    Ok(img)
   }
 
   fn check_supported(&self) -> Result<()> {

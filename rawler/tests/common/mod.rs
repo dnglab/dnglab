@@ -9,8 +9,8 @@ use rawler::dng::convert::ConvertParams;
 use rawler::dng::convert::convert_raw_file;
 use rawler::rawdb;
 use rawler::{
-  analyze::{AnalyzerResult, analyze_metadata, extract_raw_pixels},
-  decoders::RawDecodeParams,
+  analyze::{AnalyzerData, AnalyzerResult, analyze_metadata, extract_raw_pixels},
+  decoders::{Orientation, RawDecodeParams},
 };
 use std::{
   convert::TryInto,
@@ -125,6 +125,10 @@ pub(crate) fn check_raw_file_conversion(make: &str, model: &str, sample: &str) -
   // Validate raw pixel data
   {
     let image = extract_raw_pixels(&raw_file, &RawDecodeParams::default()).unwrap();
+    // Writers use the orientation of the raw image, it must match the reported metadata
+    if let Some(AnalyzerData::Metadata(metadata)) = &new_stats.data {
+      assert_eq!(image.orientation, metadata.raw_metadata.exif.orientation.and_then(Orientation::from_u16));
+    }
     let byte_buf = match &image.data {
       rawler::RawImageData::Integer(samples) => samples.as_slice().as_bytes(),
       rawler::RawImageData::Float(samples) => samples.as_slice().as_bytes(),

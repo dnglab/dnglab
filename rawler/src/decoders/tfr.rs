@@ -16,7 +16,7 @@ use crate::tags::{DngTag, ExifTag, TiffCommonTag};
 use crate::{RawImage, RawLoader, alloc_image_ok};
 use crate::{RawlerError, Result};
 
-use super::{BlackLevel, CFAConfig, CameraLookup, Decoder, FormatHint, RawDecodeParams, RawMetadata, RawPhotometricInterpretation, WhiteLevel};
+use super::{BlackLevel, CFAConfig, CameraLookup, Decoder, FormatHint, Orientation, RawDecodeParams, RawMetadata, RawPhotometricInterpretation, WhiteLevel};
 
 /// 3FR format encapsulation for analyzer
 #[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize)]
@@ -82,6 +82,7 @@ impl<'a> Decoder for TfrDecoder<'a> {
     let cpp = 1;
     let photometric = RawPhotometricInterpretation::Cfa(CFAConfig::new_from_camera(camera));
     let mut img = RawImage::new(camera.clone(), image, cpp, self.get_wb()?, photometric, blacklevel, whitelevel, dummy);
+    img.orientation = Orientation::from_tiff(self.tiff.root_ifd());
 
     img.crop_area = crop;
 

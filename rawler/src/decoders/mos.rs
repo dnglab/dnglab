@@ -18,6 +18,7 @@ use super::Camera;
 use super::CameraLookup;
 use super::Decoder;
 use super::FormatHint;
+use super::Orientation;
 use super::RawDecodeParams;
 use super::RawMetadata;
 use super::ok_cfa_image;
@@ -67,7 +68,9 @@ impl<'a> Decoder for MosDecoder<'a> {
     };
 
     let cpp = 1;
-    ok_cfa_image(camera.clone(), cpp, self.get_wb()?, image, dummy)
+    let mut img = ok_cfa_image(camera.clone(), cpp, self.get_wb()?, image, dummy)?;
+    img.orientation = self.orientation();
+    Ok(img)
   }
 
   fn check_supported(&self) -> Result<()> {
@@ -79,7 +82,8 @@ impl<'a> Decoder for MosDecoder<'a> {
   }
 
   fn raw_metadata(&self, _file: &RawSource, _params: &RawDecodeParams) -> Result<RawMetadata> {
-    let exif = Exif::new(self.tiff.root_ifd())?;
+    let mut exif = Exif::new(self.tiff.root_ifd())?;
+    exif.orientation = self.orientation().map(|orientation| orientation.to_u16());
     let mdata = RawMetadata::new(self.camera.metadata(), exif);
     Ok(mdata)
   }
@@ -90,25 +94,42 @@ impl<'a> Decoder for MosDecoder<'a> {
 }
 
 impl<'a> MosDecoder<'a> {
+  /// Text of a section of the Leaf metadata. The name field has 40 bytes, it
+  /// is followed by 4 bytes with the section length and the NUL terminated text.
+  fn leaf_section(meta: &[u8], name: &str) -> Option<String> {
+    let pos = meta.windows(name.len()).position(|window| window == name.as_bytes())?;
+    let data = meta.get(pos + 44..)?;
+    let end = data.iter().position(|&x| x == 0)?;
+    Some(String::from_utf8_lossy(&data[..end]).into_owned())
+  }
+
+  /// The Leaf metadata has the rotation in degrees, it is relative to the
+  /// rotation of the raw data. Without it the TIFF tag is used.
+  fn orientation(&self) -> Option<Orientation> {
+    let leaf_rotation = || {
+      let meta = self.tiff.get_entry(TiffCommonTag::LeafMetadata)?.get_data();
+      let degrees = |name| Self::leaf_section(meta, name)?.trim().parse::<i32>().ok();
+      let raw_data = degrees("CaptProf_raw_data_rotation");
+      match degrees("ImgProf_rotation_angle") {
+        Some(image) => Some(image - raw_data.unwrap_or(0)),
+        None => raw_data,
+      }
+    };
+    leaf_rotation()
+      .and_then(Orientation::from_degrees)
+      .or_else(|| Orientation::from_tiff(self.tiff.root_ifd()))
+  }
+
   fn get_wb(&self) -> Result<[f32; 4]> {
     let meta = fetch_tiff_tag!(self.tiff, TiffCommonTag::LeafMetadata).get_data();
-    let mut pos = 0;
-    // We need at least 16+45+10 bytes for the NeutObj_neutrals section itself
-    while pos + 70 < meta.len() {
-      if meta[pos..pos + 16] == b"NeutObj_neutrals"[..] {
-        let data = &meta[pos + 44..];
-        if let Some(endpos) = data.iter().position(|&x| x == 0) {
-          let nums = String::from_utf8_lossy(&data[0..endpos])
-            .split_terminator('\n')
-            .map(|x| x.parse::<f32>().unwrap_or(f32::NAN))
-            .collect::<Vec<f32>>();
-          if nums.len() == 4 {
-            return Ok([nums[0] / nums[1], nums[0] / nums[2], nums[0] / nums[3], f32::NAN]);
-          }
-        }
-        break;
+    if let Some(neutrals) = Self::leaf_section(meta, "NeutObj_neutrals") {
+      let nums = neutrals
+        .split_terminator('\n')
+        .map(|x| x.parse::<f32>().unwrap_or(f32::NAN))
+        .collect::<Vec<f32>>();
+      if nums.len() == 4 {
+        return Ok([nums[0] / nums[1], nums[0] / nums[2], nums[0] / nums[3], f32::NAN]);
       }
-      pos += 1;
     }
     Ok([f32::NAN, f32::NAN, f32::NAN, f32::NAN])
   }

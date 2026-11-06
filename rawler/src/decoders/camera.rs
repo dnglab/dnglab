@@ -325,7 +325,6 @@ impl Camera {
       best_quality_scale: BestQualityScale::default(),
       hints: Vec::new(),
       params: HashMap::new(),
-      //orientation: Orientation::Unknown,
     }
   }
 }

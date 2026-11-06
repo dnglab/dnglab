@@ -96,7 +96,9 @@ impl<'a> Decoder for CrwDecoder<'a> {
     };
 
     let cpp = 1;
-    ok_cfa_image(camera.clone(), cpp, wb, image, dummy)
+    let mut img = ok_cfa_image(camera.clone(), cpp, wb, image, dummy)?;
+    img.orientation = self.orientation();
+    Ok(img)
   }
 
   fn check_supported(&self) -> Result<()> {
@@ -109,7 +111,10 @@ impl<'a> Decoder for CrwDecoder<'a> {
 
   fn raw_metadata(&self, _file: &RawSource, __params: &RawDecodeParams) -> Result<RawMetadata> {
     // TODO: Add EXIF info
-    let exif = Exif::default();
+    let exif = Exif {
+      orientation: self.orientation().map(|orientation| orientation.to_u16()),
+      ..Default::default()
+    };
     Ok(RawMetadata::new(self.camera.metadata(), exif))
   }
 
@@ -119,6 +124,12 @@ impl<'a> Decoder for CrwDecoder<'a> {
 }
 
 impl<'a> CrwDecoder<'a> {
+  /// The fourth value of the image info is the rotation in degrees
+  fn orientation(&self) -> Option<Orientation> {
+    let info = self.ciff.find_entry(CiffTag::ImageInfo).filter(|info| info.count > 3)?;
+    Orientation::from_degrees(info.get_u32(3) as i32)
+  }
+
   fn get_wb(&self, camera: &Camera) -> Result<[f32; 4]> {
     if let Some(levels) = self.ciff.find_entry(CiffTag::WhiteBalance) {
       let offset = camera.param_usize("wb_offset").unwrap_or(0);

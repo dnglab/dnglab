@@ -308,9 +308,7 @@ impl<'a> Decoder for IiqDecoder<'a> {
         }
       }
     }
-    if let Some(orientation) = self.orientation() {
-      image.orientation = Orientation::from_u16(orientation);
-    }
+    image.orientation = self.orientation();
     Ok(image)
   }
 
@@ -327,10 +325,7 @@ impl<'a> Decoder for IiqDecoder<'a> {
 
   fn raw_metadata(&self, _file: &RawSource, _params: &RawDecodeParams) -> Result<RawMetadata> {
     let mut exif = Exif::new(self.tiff.root_ifd())?;
-    // The makernote wins over the TIFF tag, which is not rotated with the sensor
-    if let Some(orientation) = self.orientation() {
-      exif.orientation = Some(orientation);
-    }
+    exif.orientation = self.orientation().map(|orientation| orientation.to_u16());
     let mdata = RawMetadata::new_with_lens(self.camera.metadata(), exif, self.get_lens_description()?.cloned());
     Ok(mdata)
   }
@@ -765,15 +760,18 @@ impl<'a> IiqDecoder<'a> {
     }
   }
 
-  /// Orientation as EXIF value, the sensor is mounted rotated in the camera back
-  fn orientation(&self) -> Option<u16> {
-    let entry = self.makernotes.get(&IiqTag::Orientation.into())?;
-    Some(match entry.1.force_u32(0) & 3 {
-      1 => 6,
-      2 => 8,
-      3 => 3,
-      _ => 1,
-    })
+  /// The sensor is mounted rotated in the camera back, so the makernote wins
+  /// over the TIFF tag, which is not rotated with the sensor
+  fn orientation(&self) -> Option<Orientation> {
+    match self.makernotes.get(&IiqTag::Orientation.into()) {
+      Some(entry) => Some(match entry.1.force_u32(0) & 3 {
+        1 => Orientation::Rotate90,
+        2 => Orientation::Rotate270,
+        3 => Orientation::Rotate180,
+        _ => Orientation::Normal,
+      }),
+      None => Orientation::from_tiff(self.tiff.root_ifd()),
+    }
   }
 
   fn wb_offset(&self) -> Result<u64> {

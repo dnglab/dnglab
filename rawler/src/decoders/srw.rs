@@ -33,6 +33,7 @@ use super::Camera;
 use super::CameraLookup;
 use super::Decoder;
 use super::FormatHint;
+use super::Orientation;
 use super::RawDecodeParams;
 use super::RawMetadata;
 use super::ok_cfa_image_with_blacklevels;
@@ -123,7 +124,9 @@ impl<'a> Decoder for SrwDecoder<'a> {
       }
     };
     let cpp = 1;
-    ok_cfa_image_with_blacklevels(camera.clone(), cpp, self.get_wb()?, self.get_blacklevel(camera)?, image, dummy)
+    let mut img = ok_cfa_image_with_blacklevels(camera.clone(), cpp, self.get_wb()?, self.get_blacklevel(camera)?, image, dummy)?;
+    img.orientation = Orientation::from_tiff(self.tiff.root_ifd());
+    Ok(img)
   }
 
   fn check_supported(&self) -> Result<()> {

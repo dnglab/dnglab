@@ -79,7 +79,14 @@ fn main() -> Result<(), Box<dyn Error>> {
 
 /// Write `image` as JPEG with the EXIF data of `metadata` and the ICC profile of
 /// its color space, like [`RawDevelop::develop_jpeg`](rawler::imgop::develop::RawDevelop::develop_jpeg)
-fn write_jpeg(image: &RenderedImage, make: &str, model: &str, orientation: Orientation, metadata: &RawMetadata, path: &Path) -> Result<(), Box<dyn Error>> {
+fn write_jpeg(
+  image: &RenderedImage,
+  make: &str,
+  model: &str,
+  orientation: Option<Orientation>,
+  metadata: &RawMetadata,
+  path: &Path,
+) -> Result<(), Box<dyn Error>> {
   // EXIF data is a TIFF structure without image data
   let mut exif = Cursor::new(Vec::new());
   let mut tiff = TiffWriter::new(&mut exif)?;
@@ -95,7 +102,9 @@ fn write_jpeg(image: &RenderedImage, make: &str, model: &str, orientation: Orien
   exif_ifd.add_tag(ExifTag::ColorSpace, if srgb { 1_u16 } else { 0xffff });
   let exif_offset = exif_ifd.build(&mut tiff)?;
   root_ifd.add_tag(TiffCommonTag::ExifIFDPointer, exif_offset);
-  root_ifd.add_tag(TiffCommonTag::Orientation, orientation.to_u16());
+  if let Some(orientation) = orientation {
+    root_ifd.add_tag(TiffCommonTag::Orientation, orientation.to_u16());
+  }
   tiff.build(root_ifd)?;
   let exif = exif.into_inner();
 

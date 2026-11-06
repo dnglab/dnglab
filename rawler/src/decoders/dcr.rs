@@ -24,6 +24,7 @@ use super::BlackLevel;
 use super::CameraLookup;
 use super::Decoder;
 use super::FormatHint;
+use super::Orientation;
 use super::RawDecodeParams;
 use super::RawMetadata;
 use super::ok_cfa_image;
@@ -80,6 +81,7 @@ impl<'a> Decoder for DcrDecoder<'a> {
     let cpp = 1;
     let wb = kodak_wb(&self.makernote).unwrap_or([f32::NAN, f32::NAN, f32::NAN, f32::NAN]);
     let mut img = ok_cfa_image(camera.clone(), cpp, wb, image, dummy)?;
+    img.orientation = Orientation::from_tiff(self.tiff.root_ifd());
     let rows = img.active_area.map_or(img.height, |area| area.d.h);
     if let Some(blacklevel) = kodak_blacklevel(&self.makernote, linearization, rows, cpp) {
       img.blacklevel = blacklevel;
