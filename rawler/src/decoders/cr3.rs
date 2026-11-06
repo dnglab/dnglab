@@ -71,6 +71,10 @@ struct Cr3Metadata {
 const CR3_CTMD_BLOCK_EXIFIFD: u16 = 0x8769;
 const CR3_CTMD_BLOCK_MAKERNOTES: u16 = 0x927c;
 
+/// Scale of Light Raw data to Standard Raw data of the same exposure, measured
+/// on the EOS R5 and EOS R5 Mark II
+const LIGHT_RAW_SCALE: f32 = 0.7;
+
 /// Type values for CCTP records
 #[derive(Clone, Copy, Debug)]
 #[allow(dead_code)]
@@ -295,7 +299,7 @@ impl<'a> Decoder for Cr3Decoder<'a> {
       log::warn!("No WB info in CR3 metadata found, fallback to 1.0 coefficients");
       [1.0, 1.0, 1.0, f32::NAN]
     });
-    let whitelevel = cr3md.whitelevel.unwrap_or(((1_u32 << camera.bps.unwrap_or(16)) - 1) as u16);
+    let mut whitelevel = cr3md.whitelevel.unwrap_or(((1_u32 << camera.bps.unwrap_or(16)) - 1) as u16);
 
     // Special handling for CRM movie files
     if let Some(entry) = self.cmt3.get_entry(0x0001) {
@@ -303,6 +307,9 @@ impl<'a> Decoder for Cr3Decoder<'a> {
         // Light Raw
         // WB is already applied, use 1.0
         wb = [1.0, 1.0, 1.0, f32::NAN];
+        // The data is scaled down, but the metadata has the white level of Standard Raw
+        let black = cr3md.blacklevels.map_or(0, |levels| levels[0]);
+        whitelevel = black + (whitelevel.saturating_sub(black) as f32 * LIGHT_RAW_SCALE) as u16;
       }
       if 131 == entry.force_u16(3) { // Standard Raw
         // Nothing special for Standard raw
