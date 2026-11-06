@@ -555,6 +555,9 @@ mod canon {
   mod powershot_elph_130_is_raw_modes {
     super::super::rawdb_test_file!("Canon", "PowerShot ELPH 130 IS", canon_powershot_elph_130_is_crw, "raw_modes/Canon PowerShot ELPH 130 IS.CRW");
   }
+  mod powershot_elph_180_raw_modes {
+    super::super::rawdb_test_file!("Canon", "PowerShot ELPH 180", canon_powershot_elph_180_crw, "raw_modes/Canon PowerShot ELPH 180.CRW");
+  }
   mod powershot_g1_raw_modes {
     super::super::rawdb_test_file!("Canon", "PowerShot G1", canon_powershot_g1_iso_50_crw, "raw_modes/Canon PowerShot G1_ISO_50.CRW");
   }
@@ -1185,6 +1188,9 @@ mod kodak {
   mod dcs460d_raw_modes {
     super::super::rawdb_test_file!("Kodak", "DCS460D", dcs460d_tiff, "raw_modes/DCS460D.TIFF");
   }
+  mod dcs520c_raw_modes {
+    super::super::rawdb_test_file!("Kodak", "DCS520C", dcs520c_tiff, "raw_modes/DCS520C.TIFF");
+  }
   mod dcs560c_raw_modes {
     super::super::rawdb_test_file!("Kodak", "DCS560C", raw_kodak_dcs560c_tif, "raw_modes/RAW_KODAK_DCS560C.TIF");
   }
@@ -1726,6 +1732,12 @@ mod nikon {
   }
   mod nikon_coolscan_5000_ed_raw_modes {
     super::super::rawdb_test_file!("Nikon", "Nikon COOLSCAN 5000 ED", nikon_super_coolscan_5000_ed_nef, "raw_modes/nikon-super-coolscan-5000-ed.nef");
+  }
+  mod nikon_coolscan_iv_ed_raw_modes {
+    super::super::rawdb_test_file!("Nikon", "Nikon COOLSCAN IV ED", nef_from_nikon_scan_4_0_3_at_600dpi_nef, "raw_modes/NEF_from_Nikon_Scan_4.0.3_at_600dpi.nef");
+  }
+  mod nikon_coolscan_v_ed_raw_modes {
+    super::super::rawdb_test_file!("Nikon", "Nikon COOLSCAN V ED", coolscan_v_ed_600px_nef, "raw_modes/Coolscan_V_ED_600px.nef");
   }
   mod z_30_raw_modes {
     super::super::rawdb_test_file!("Nikon", "Z 30", nikon_z30_lossless_12bit_nef, "raw_modes/Nikon_Z30_Lossless_12bit.NEF");
