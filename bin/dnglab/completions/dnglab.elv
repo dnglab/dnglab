@@ -73,6 +73,7 @@ set edit:completion:arg-completer[dnglab] = {|@words|
             cand --jpeg-quality 'JPEG quality (1-100)'
             cand --denoise-luma 'Strength of the luma noise reduction (0-4), 0 is off, 1 is a full reduction [default: 0.25]'
             cand --denoise-chroma 'Strength of the chroma noise reduction (0-4), 0 is off, 1 is a full reduction [default: 0.5]'
+            cand --sharpen 'Strength of the sharpening (0-2), 0 is off, 1 is the classic Laplacian filter [default: 0.2]'
             cand -d 'Log level'
             cand --loglevel 'Log level'
             cand --profile-path 'Directory with profile TOML files'

@@ -9,6 +9,7 @@ use rawler::{
   imgop::{
     denoise::DenoiseStrength,
     develop::{ProcessedImageFormat, RawProcessingParams},
+    sharpen::DEFAULT_SHARPEN,
   },
 };
 use std::fs::create_dir_all;
@@ -165,6 +166,7 @@ fn generate_job(entry: &FileMap, options: &ArgMatches) -> Result<Vec<Raw2Image>>
         luma: options.get_one("denoise_luma").copied().unwrap_or(DenoiseStrength::default().luma),
         chroma: options.get_one("denoise_chroma").copied().unwrap_or(DenoiseStrength::default().chroma),
       },
+      sharpen: options.get_one("sharpen").copied().unwrap_or(DEFAULT_SHARPEN),
       crop_transparent: options.get_flag("crop_transparent"),
     };
 

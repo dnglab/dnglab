@@ -18,6 +18,7 @@ pub mod raw;
 pub mod render;
 pub mod scale;
 pub mod sensor;
+pub mod sharpen;
 pub mod spline;
 pub mod srgb;
 pub mod xyz;

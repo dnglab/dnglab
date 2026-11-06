@@ -27,6 +27,7 @@ use crate::{
       },
       xtrans::{bilinear::XTransBilinearDemosaic, markesteijn::XTransMarkesteijnDemosaic},
     },
+    sharpen::laplacian_sharpen,
   },
   pixarray::{ImageRegionMut, ImageView, ImageViewMut},
   rawimage::{BlackLevel, CFAConfig, RawPhotometricInterpretation, WhiteLevel},
@@ -215,6 +216,7 @@ impl Executor {
         log::debug!("dimension after rotate {:?}", image.dim());
       }
       Op::Denoise { strength, wb } => wavelet_denoise(ImageRegionMut::from(self.image().view_mut()), *strength, wb)?,
+      Op::Sharpen { strength, scale } => laplacian_sharpen(ImageRegionMut::from(self.image().view_mut()), *strength, scale)?,
       Op::Gain(gain) => apply_gain(self.image().view_mut(), *gain),
       Op::ToneCurve(curve) => curve.apply_image(self.image().view_mut()),
       Op::CameraToRgb { map, ops, space } => {

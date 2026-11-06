@@ -26,6 +26,7 @@ use crate::{
     convert_from_f32_scaled_u16,
     denoise::DenoiseStrength,
     icc,
+    sharpen::DEFAULT_SHARPEN,
   },
   pixarray::{Color2D, ImageRegion, ImageView, ImageViewMut, Pix2D},
 };
@@ -65,13 +66,16 @@ pub enum ProcessingStep {
   /// Scale the image to square pixels by DefaultScale and to the size of the
   /// best quality by BestQualityScale
   DefaultScale,
+  /// Sharpen the linear values by [`RenderOptions::sharpen`]. Without effect for
+  /// output-referred data, which is already rendered.
+  Sharpen,
   /// Encode the values by the transfer function of the output color space
   TransferFunction,
 }
 
 impl ProcessingStep {
   /// All steps
-  pub const ALL: [Self; 14] = [
+  pub const ALL: [Self; 15] = [
     Self::Rescale,
     Self::Demosaic,
     Self::FujiRotate,
@@ -85,6 +89,7 @@ impl ProcessingStep {
     Self::CropDefault,
     Self::Denoise,
     Self::DefaultScale,
+    Self::Sharpen,
     Self::TransferFunction,
   ];
 }
@@ -200,6 +205,8 @@ pub struct RenderOptions {
   pub color_space: OutputSpace,
   /// Strength of the Denoise step
   pub denoise: DenoiseStrength,
+  /// Strength of the Sharpen step
+  pub sharpen: f32,
 }
 
 impl Default for RenderOptions {
@@ -211,6 +218,7 @@ impl Default for RenderOptions {
       demosaic: DemosaicQuality::default(),
       color_space: OutputSpace::default(),
       denoise: DenoiseStrength::default(),
+      sharpen: DEFAULT_SHARPEN,
     }
   }
 }
@@ -372,6 +380,7 @@ mod tests {
         Op::CropActiveArea => "CropActiveArea",
         Op::Scale { .. } => "Scale",
         Op::TransferFunction(_) => "TransferFunction",
+        Op::Sharpen { .. } => "Sharpen",
       })
       .collect()
   }
@@ -415,7 +424,10 @@ mod tests {
     rawimage.baseline_exposure = Some(SRational::new(1, 2));
     let plan = plan(&rawimage, &RenderOptions::default())?;
     // The crop follows OpcodeList3, the gain and the transfer function are part of the color map
-    assert_eq!(op_names(&plan), ["RescaleMosaic", "Demosaic", "List3", "CropDefault", "Denoise", "CameraToRgb"]);
+    assert_eq!(
+      op_names(&plan),
+      ["RescaleMosaic", "Demosaic", "List3", "CropDefault", "Denoise", "Sharpen", "CameraToRgb"]
+    );
     // OpcodeList3 keeps the data cropped to the ActiveArea, like the demosaic
     assert!(plan.ops.iter().any(|op| matches!(op, Op::Opcodes { crop_to_active_area: true, .. })));
     let Some(Op::CameraToRgb { ops: pixel_ops, .. }) = plan.ops.last() else {
@@ -450,7 +462,7 @@ mod tests {
   fn plan_crops_in_demosaic() -> crate::Result<()> {
     // Without OpcodeList3, only the DefaultCrop is demosaiced
     let cropped = plan(&rggb_rawimage(), &RenderOptions::default())?;
-    assert_eq!(op_names(&cropped), ["RescaleMosaic", "Demosaic", "Denoise", "CameraToRgb"]);
+    assert_eq!(op_names(&cropped), ["RescaleMosaic", "Demosaic", "Denoise", "Sharpen", "CameraToRgb"]);
     assert!(matches!(cropped.ops[1], Op::Demosaic { crop_default: true, .. }));
     let options = RenderOptions {
       steps: StepSet::all().without(ProcessingStep::CropDefault),
@@ -467,7 +479,7 @@ mod tests {
     rawimage.baseline_exposure = Some(SRational::new(-1, 1));
     assert_eq!(
       op_names(&plan(&rawimage, &RenderOptions::default())?),
-      ["RescaleMosaic", "Demosaic", "Denoise", "CameraToRgb"]
+      ["RescaleMosaic", "Demosaic", "Denoise", "Sharpen", "CameraToRgb"]
     );
     let options = RenderOptions {
       steps: StepSet::all().without(ProcessingStep::Calibrate),
@@ -475,7 +487,7 @@ mod tests {
     };
     assert_eq!(
       op_names(&plan(&rawimage, &options)?),
-      ["RescaleMosaic", "Demosaic", "Denoise", "ToneCurve", "TransferFunction"]
+      ["RescaleMosaic", "Demosaic", "Denoise", "Sharpen", "ToneCurve", "TransferFunction"]
     );
     // Monochrome images have no color map
     let mut mono = linear_raw_rawimage(4, 2, 1);
@@ -483,7 +495,7 @@ mod tests {
     mono.baseline_exposure = Some(SRational::new(-1, 1));
     assert_eq!(
       op_names(&plan(&mono, &RenderOptions::default())?),
-      ["Rescale", "CropDefault", "Denoise", "ToneCurve", "TransferFunction"]
+      ["Rescale", "CropDefault", "Denoise", "Sharpen", "ToneCurve", "TransferFunction"]
     );
     Ok(())
   }
@@ -546,16 +558,22 @@ mod tests {
     let mut mono = linear_raw_rawimage(4, 2, 1);
     mono.photometric = RawPhotometricInterpretation::BlackIsZero;
     let plan_of_mono = plan(&mono, &all)?;
-    assert_eq!(op_names(&plan_of_mono), ["Rescale", "CropDefault", "Denoise", "ToneCurve", "TransferFunction"]);
-    assert!(matches!(&plan_of_mono.ops[3], Op::ToneCurve(curve) if *curve == default_curve));
+    assert_eq!(
+      op_names(&plan_of_mono),
+      ["Rescale", "CropDefault", "Denoise", "Sharpen", "ToneCurve", "TransferFunction"]
+    );
+    assert!(matches!(&plan_of_mono.ops[4], Op::ToneCurve(curve) if *curve == default_curve));
     assert_eq!(
       op_names(&plan(&mono, &without(ProcessingStep::ToneCurve))?),
-      ["Rescale", "CropDefault", "Denoise", "TransferFunction"]
+      ["Rescale", "CropDefault", "Denoise", "Sharpen", "TransferFunction"]
     );
     mono.baseline_exposure = Some(SRational::new(-1, 1));
     let plan_of_mono = plan(&mono, &all)?;
-    assert_eq!(op_names(&plan_of_mono), ["Rescale", "CropDefault", "Denoise", "ToneCurve", "TransferFunction"]);
-    assert!(matches!(&plan_of_mono.ops[3], Op::ToneCurve(curve) if *curve == default_curve.after(&exposure_curve)));
+    assert_eq!(
+      op_names(&plan_of_mono),
+      ["Rescale", "CropDefault", "Denoise", "Sharpen", "ToneCurve", "TransferFunction"]
+    );
+    assert!(matches!(&plan_of_mono.ops[4], Op::ToneCurve(curve) if *curve == default_curve.after(&exposure_curve)));
 
     // LinearRaw data is not rendered
     let linear = RenderOptions {
@@ -629,7 +647,7 @@ mod tests {
 
     // After the crop and before the color map, while the values are linear
     let names = op_names(&plan(&linear_raw_rawimage(8, 6, 3), &all)?);
-    assert_eq!(names, ["Rescale", "CropDefault", "Denoise", "CameraToRgb"]);
+    assert_eq!(names, ["Rescale", "CropDefault", "Denoise", "Sharpen", "CameraToRgb"]);
 
     // The white balance is passed on if it is not applied yet
     assert_eq!(denoise_op(&rggb_rawimage(), &all)?.map(|op| op.1), Some([1.0; 4]));
@@ -643,6 +661,95 @@ mod tests {
     linear_raw.wb_coeffs = [2.0, 1.0, 1.5, f32::NAN];
     let (_, wb) = denoise_op(&linear_raw, &all)?.expect("denoise");
     assert_eq!(wb[..3], [2.0, 1.0, 1.5]);
+    Ok(())
+  }
+
+  #[test]
+  fn plan_applies_sharpen() -> crate::Result<()> {
+    use crate::{imgop::sharpen::DEFAULT_SHARPEN, rawimage::ColorimetricReference};
+
+    fn sharpen_op(rawimage: &RawImage, options: &RenderOptions) -> crate::Result<Option<(f32, [f32; 4])>> {
+      Ok(plan(rawimage, options)?.ops.iter().find_map(|op| match op {
+        Op::Sharpen { strength, scale } => Some((*strength, *scale)),
+        _ => None,
+      }))
+    }
+
+    let all = RenderOptions::default();
+    let without = |step: ProcessingStep| RenderOptions {
+      steps: StepSet::all().without(step),
+      ..Default::default()
+    };
+    assert!(all.steps.contains(ProcessingStep::Sharpen) && DEFAULT_SHARPEN > 0.0);
+
+    // On by default, and off without the step or without a strength
+    assert_eq!(sharpen_op(&rggb_rawimage(), &all)?.map(|op| op.0), Some(DEFAULT_SHARPEN));
+    assert!(sharpen_op(&rggb_rawimage(), &without(ProcessingStep::Sharpen))?.is_none());
+    let no_strength = RenderOptions {
+      sharpen: 0.0,
+      ..Default::default()
+    };
+    assert!(sharpen_op(&rggb_rawimage(), &no_strength)?.is_none());
+    let with_strength = RenderOptions {
+      sharpen: 1.5,
+      ..Default::default()
+    };
+    assert_eq!(sharpen_op(&rggb_rawimage(), &with_strength)?.map(|op| op.0), Some(1.5));
+
+    // Linear values don't need the transfer function
+    assert!(sharpen_op(&rggb_rawimage(), &without(ProcessingStep::TransferFunction))?.is_some());
+
+    // Output-referred data is already rendered, also with a strength
+    for reference in [ColorimetricReference::OutputReferred, ColorimetricReference::OutputReferredHdr] {
+      let mut scan = linear_raw_rawimage(8, 6, 3);
+      scan.colorimetric_reference = reference;
+      assert!(sharpen_op(&scan, &with_strength)?.is_none(), "{:?}", reference);
+    }
+
+    // CFA data that is not demosaiced is no image yet
+    assert!(sharpen_op(&rggb_rawimage(), &without(ProcessingStep::Demosaic))?.is_none());
+
+    // LinearRaw data is not rendered
+    let linear = RenderOptions {
+      target: RenderTarget::LinearRaw,
+      ..Default::default()
+    };
+    assert!(sharpen_op(&rggb_rawimage(), &linear)?.is_none());
+
+    // All numbers of color planes, also without the map to RGB
+    for channels in [1, 3, 4] {
+      let mut image = linear_raw_rawimage(8, 6, channels);
+      if channels == 1 {
+        image.photometric = RawPhotometricInterpretation::BlackIsZero;
+      }
+      assert!(sharpen_op(&image, &all)?.is_some(), "{}", channels);
+      assert!(sharpen_op(&image, &without(ProcessingStep::Calibrate))?.is_some(), "{}", channels);
+    }
+
+    // After the scaling and before the color operations, with and without the map
+    let mut scaled = linear_raw_rawimage(8, 6, 3);
+    scaled.camera.best_quality_scale = crate::decoders::BestQualityScale([1, 2]);
+    let names = op_names(&plan(&scaled, &all)?);
+    assert_eq!(names, ["Rescale", "CropDefault", "Denoise", "Scale", "Sharpen", "CameraToRgb"]);
+    let names = op_names(&plan(&scaled, &without(ProcessingStep::Calibrate))?);
+    assert_eq!(
+      names,
+      ["Rescale", "CropDefault", "Denoise", "Scale", "Sharpen", "ToneCurve", "TransferFunction"]
+    );
+
+    // The white balance that is not applied yet and the exposure give the scale of the luma
+    let mut bright = rggb_rawimage();
+    bright.baseline_exposure = Some(SRational::new(1, 1));
+    assert_eq!(sharpen_op(&bright, &all)?.map(|op| op.1), Some([2.0; 4]));
+    let after_demosaic = RenderOptions {
+      white_balance: WhiteBalancePlacement::AfterDemosaic,
+      ..Default::default()
+    };
+    let (_, scale) = sharpen_op(&bright, &after_demosaic)?.expect("sharpen");
+    assert_eq!(scale[..3], [4.0, 2.0, 3.0]);
+    // A negative exposure keeps white at 1.0
+    bright.baseline_exposure = Some(SRational::new(-1, 1));
+    assert_eq!(sharpen_op(&bright, &all)?.map(|op| op.1), Some([1.0; 4]));
     Ok(())
   }
 
@@ -686,7 +793,7 @@ mod tests {
     // With OpcodeList2 between, the white balance is a separate operation
     let mut with_list2 = rggb_rawimage();
     with_list2.dng_opcodes_2 = Some(OpcodeList::new(Vec::new()));
-    let ops = ["Rescale", "List2", "WhiteBalanceMosaic", "Demosaic", "Denoise", "CameraToRgb"];
+    let ops = ["Rescale", "List2", "WhiteBalanceMosaic", "Demosaic", "Denoise", "Sharpen", "CameraToRgb"];
     assert_eq!(op_names(&plan(&with_list2, &RenderOptions::default())?), ops);
 
     // After demosaicing, the camera map applies it
@@ -713,7 +820,7 @@ mod tests {
     };
     assert_eq!(
       op_names(&plan(&linear_raw, &options)?),
-      ["Rescale", "CropDefault", "Denoise", "WhiteBalance", "ToneCurve", "TransferFunction"]
+      ["Rescale", "CropDefault", "Denoise", "Sharpen", "WhiteBalance", "ToneCurve", "TransferFunction"]
     );
     Ok(())
   }
@@ -795,7 +902,10 @@ mod tests {
       steps: StepSet::all().without(ProcessingStep::CropDefault),
       ..Default::default()
     };
-    assert_eq!(op_names(&plan(&rawimage, &options)?), ["Rescale", "CropActiveArea", "Denoise", "CameraToRgb"]);
+    assert_eq!(
+      op_names(&plan(&rawimage, &options)?),
+      ["Rescale", "CropActiveArea", "Denoise", "Sharpen", "CameraToRgb"]
+    );
     // LinearRaw data is not cropped
     let options = RenderOptions {
       target: RenderTarget::LinearRaw,

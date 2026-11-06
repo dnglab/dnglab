@@ -21,6 +21,7 @@ use rawler::{
     color::{OutputSpace, TransferFunction},
     denoise::DenoiseStrength,
     render::{DemosaicQuality, RenderOptions, RenderTarget, RenderedImage, StepSet, WhiteBalancePlacement, execute, plan},
+    sharpen::DEFAULT_SHARPEN,
   },
   rawdb,
   rawsource::RawSource,
@@ -62,6 +63,8 @@ fn main() -> Result<(), Box<dyn Error>> {
     color_space: OutputSpace::Srgb,
     // A little noise reduction
     denoise: DenoiseStrength::default(),
+    // A slight sharpening
+    sharpen: DEFAULT_SHARPEN,
   };
 
   // Plan the processing operations for this image
