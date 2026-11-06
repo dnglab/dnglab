@@ -668,21 +668,24 @@ fn reduce_to_three_planes(rawimage: &mut RawImage) -> crate::Result<()> {
   Ok(())
 }
 
-/// Get a preview image from the decoder, or develop it from raw data.
-///
-/// If `force_develop` is set, embedded previews are ignored.
 /// Options to render a preview or thumbnail from the raw data
 ///
 /// Previews are small, a demosaic of half size is enough. They are not rendered
-/// with the default tone curve and the noise reduction.
+/// with the default tone curve, the noise reduction and the sharpening.
 fn preview_render_options() -> RenderOptions {
   RenderOptions {
-    steps: StepSet::all().without(ProcessingStep::ToneCurve).without(ProcessingStep::Denoise),
+    steps: StepSet::all()
+      .without(ProcessingStep::ToneCurve)
+      .without(ProcessingStep::Denoise)
+      .without(ProcessingStep::Sharpen),
     demosaic: DemosaicQuality::Preview,
     ..Default::default()
   }
 }
 
+/// Get a preview image from the decoder, or develop it from raw data.
+///
+/// If `force_develop` is set, embedded previews are ignored.
 fn generate_preview(
   rawfile: &RawSource,
   decoder: &dyn Decoder,
@@ -711,13 +714,17 @@ mod tests {
   use crate::{decoders::Camera, imgop::xyz::Illuminant, pixarray::PixU16};
 
   #[test]
-  fn previews_have_no_default_tone_curve_and_noise_reduction() {
+  fn previews_have_no_default_tone_curve_noise_reduction_and_sharpening() {
     let options = preview_render_options();
     assert!(!options.steps.contains(ProcessingStep::ToneCurve));
     assert!(!options.steps.contains(ProcessingStep::Denoise));
+    assert!(!options.steps.contains(ProcessingStep::Sharpen));
     assert_eq!(
       options.steps,
-      StepSet::all().without(ProcessingStep::ToneCurve).without(ProcessingStep::Denoise)
+      StepSet::all()
+        .without(ProcessingStep::ToneCurve)
+        .without(ProcessingStep::Denoise)
+        .without(ProcessingStep::Sharpen)
     );
     assert_eq!(options.demosaic, DemosaicQuality::Preview);
   }

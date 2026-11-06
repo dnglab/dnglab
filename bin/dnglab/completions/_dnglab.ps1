@@ -78,6 +78,7 @@ Register-ArgumentCompleter -Native -CommandName 'dnglab' -ScriptBlock {
             [CompletionResult]::new('--jpeg-quality', '--jpeg-quality', [CompletionResultType]::ParameterName, 'JPEG quality (1-100)')
             [CompletionResult]::new('--denoise-luma', '--denoise-luma', [CompletionResultType]::ParameterName, 'Strength of the luma noise reduction (0-4), 0 is off, 1 is a full reduction [default: 0.25]')
             [CompletionResult]::new('--denoise-chroma', '--denoise-chroma', [CompletionResultType]::ParameterName, 'Strength of the chroma noise reduction (0-4), 0 is off, 1 is a full reduction [default: 0.5]')
+            [CompletionResult]::new('--sharpen', '--sharpen', [CompletionResultType]::ParameterName, 'Strength of the sharpening (0-2), 0 is off, 1 is the classic Laplacian filter [default: 0.2]')
             [CompletionResult]::new('-d', '-d', [CompletionResultType]::ParameterName, 'Log level')
             [CompletionResult]::new('--loglevel', '--loglevel', [CompletionResultType]::ParameterName, 'Log level')
             [CompletionResult]::new('--profile-path', '--profile-path', [CompletionResultType]::ParameterName, 'Directory with profile TOML files')

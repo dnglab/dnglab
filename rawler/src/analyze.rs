@@ -268,7 +268,10 @@ pub fn raw_to_srgb<P: AsRef<Path>>(path: P, params: &RawDecodeParams) -> Result<
   validate_image_index(decoder.as_ref(), params)?;
   //decoder.decode_metadata(&mut rawfile)?;
   let rawimage = decoder.raw_image(&rawfile, params, false)?;
-  let dev = RawDevelop::default().without(ProcessingStep::ToneCurve).without(ProcessingStep::Denoise);
+  let dev = RawDevelop::default()
+    .without(ProcessingStep::ToneCurve)
+    .without(ProcessingStep::Denoise)
+    .without(ProcessingStep::Sharpen);
   Ok(dev.develop_image(rawimage)?.to_dynamic_image().ok_or("failed to convert to dynamic image")?)
 }
 

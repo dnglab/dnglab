@@ -37,7 +37,7 @@ const BLOCK_PERCENTILE: usize = 25;
 const MIN_BLOCK_DEVIATION: f32 = 1e-6;
 
 /// Added before the square root, to not amplify the read noise of dark values
-const STABILIZER_OFFSET: f32 = 1.0 / 4096.0;
+pub(super) const STABILIZER_OFFSET: f32 = 1.0 / 4096.0;
 
 /// Threshold of the luma plane for a strength of 1.0, in units of the noise
 const LUMA_THRESHOLD: f32 = 1.5;
@@ -103,14 +103,14 @@ impl DenoiseStrength {
 /// The same blocks are measured on both sides. After the reduction the flat
 /// blocks can be empty, the flattest blocks of the output would be other ones.
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
-struct NoiseChange {
-  before: f32,
-  after: f32,
+pub(super) struct NoiseChange {
+  pub(super) before: f32,
+  pub(super) after: f32,
 }
 
 impl NoiseChange {
   /// Measure the noise in the flattest blocks of `before`, see [`block_deviations`]
-  fn new(before: &[f32], after: &[f32]) -> Self {
+  pub(super) fn new(before: &[f32], after: &[f32]) -> Self {
     let blocks = flat_blocks(before);
     Self {
       before: block_noise(before, &blocks),
@@ -119,7 +119,7 @@ impl NoiseChange {
   }
 
   /// Share of the noise that is left, in percent
-  fn percent_left(self) -> f64 {
+  pub(super) fn percent_left(self) -> f64 {
     if self.before > 0.0 {
       100.0 * f64::from(self.after) / f64::from(self.before)
     } else {
@@ -438,6 +438,13 @@ fn high_pass_deviations(buffers: &mut Buffers, width: usize, height: usize) -> V
   }
   result.par_iter_mut().zip(current.par_iter()).for_each(|(value, low)| *value -= *low);
   block_deviations(result, width, height)
+}
+
+/// Deviations of the blocks of the detail of `values`, see [`high_pass_deviations`]
+pub(super) fn detail_deviations(values: &[f32], width: usize, height: usize) -> Vec<f32> {
+  let mut buffers = Buffers::new(values.len(), false);
+  buffers.current.copy_from_slice(values);
+  high_pass_deviations(&mut buffers, width, height)
 }
 
 /// Stabilized luma and chroma values of a pixel of linear values

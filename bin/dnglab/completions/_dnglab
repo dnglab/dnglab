@@ -72,6 +72,7 @@ _arguments "${_arguments_options[@]}" : \
 '--jpeg-quality=[JPEG quality (1-100)]:quality:_default' \
 '--denoise-luma=[Strength of the luma noise reduction (0-4), 0 is off, 1 is a full reduction \[default\: 0.25\]]:strength:_default' \
 '--denoise-chroma=[Strength of the chroma noise reduction (0-4), 0 is off, 1 is a full reduction \[default\: 0.5\]]:strength:_default' \
+'--sharpen=[Strength of the sharpening (0-2), 0 is off, 1 is the classic Laplacian filter \[default\: 0.2\]]:strength:_default' \
 '-d+[Log level]:level:(error warn info debug trace)' \
 '--loglevel=[Log level]:level:(error warn info debug trace)' \
 '--profile-path=[Directory with profile TOML files]:dir:_files' \

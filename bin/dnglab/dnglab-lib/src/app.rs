@@ -10,7 +10,7 @@ use clap::{
 };
 use log::debug;
 use rawler::dng::{ApplyDngOpcodes, CropMode, DngCompression, DngVersion, MAX_JXL_DISTANCE, opcodes::OpcodeSelector};
-use rawler::imgop::{color::OutputSpace, denoise::DenoiseStrength, develop::ProcessedImageFormat};
+use rawler::imgop::{color::OutputSpace, denoise::DenoiseStrength, develop::ProcessedImageFormat, sharpen::DEFAULT_SHARPEN};
 
 use crate::makedng::{
   CalibrationIlluminantArgParser, ColorMatrixArgParser, DngColorimetricReference, InputSourceUsageMap, LinearizationTableArgParser, WhiteBalanceInput,
@@ -42,7 +42,6 @@ impl clap::ValueEnum for LogLevel {
   }
 }
 
-/// Parse a JPEG XL distance in the range 0 to 25
 /// Largest strength of the noise reduction
 const MAX_DENOISE_STRENGTH: f32 = 4.0;
 
@@ -56,6 +55,20 @@ fn denoise_strength_parser(value: &str) -> std::result::Result<f32, String> {
   }
 }
 
+/// Largest strength of the sharpening
+const MAX_SHARPEN_STRENGTH: f32 = 2.0;
+
+/// Parser for the strength of the sharpening
+fn sharpen_strength_parser(value: &str) -> std::result::Result<f32, String> {
+  let strength: f32 = value.parse().map_err(|err| format!("{}", err))?;
+  if (0.0..=MAX_SHARPEN_STRENGTH).contains(&strength) {
+    Ok(strength)
+  } else {
+    Err(format!("{} is not in 0..={}", value, MAX_SHARPEN_STRENGTH))
+  }
+}
+
+/// Parse a JPEG XL distance in the range 0 to 25
 fn jxl_distance_parser(value: &str) -> std::result::Result<f32, String> {
   let distance: f32 = value.parse().map_err(|err| format!("{}", err))?;
   if (0.0..=MAX_JXL_DISTANCE).contains(&distance) {
@@ -367,6 +380,15 @@ fn process_raw_command() -> Command {
         ))
         .required(false)
         .value_parser(denoise_strength_parser),
+    )
+    .arg(
+      arg!(sharpen: --sharpen <strength>)
+        .help(format!(
+          "Strength of the sharpening (0-{}), 0 is off, 1 is the classic Laplacian filter [default: {}]",
+          MAX_SHARPEN_STRENGTH, DEFAULT_SHARPEN
+        ))
+        .required(false)
+        .value_parser(sharpen_strength_parser),
     )
     .arg(arg!(-f --override "Override existing files").action(ArgAction::SetTrue))
     .arg(arg!(-r --recursive "Process input directory recursive").action(ArgAction::SetTrue))

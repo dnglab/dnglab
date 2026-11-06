@@ -55,6 +55,9 @@ pub(super) enum Op {
   /// Reduce the noise of linear values. `wb` are the white balance coefficients
   /// to reach neutral colors, all ones if they are already white balanced.
   Denoise { strength: DenoiseStrength, wb: [f32; 4] },
+  /// Sharpen linear values. `scale` maps them to neutral colors with a white of
+  /// 1.0: the white balance that is not applied yet and the exposure gain.
+  Sharpen { strength: f32, scale: [f32; 4] },
   /// Multiply all samples
   Gain(f32),
   /// Apply a tone curve to the image
@@ -236,6 +239,8 @@ pub fn plan(rawimage: &RawImage, options: &RenderOptions) -> crate::Result<Plan>
     ops.push(Op::CropActiveArea);
   }
   let cfa_data = matches!(rawimage.photometric, RawPhotometricInterpretation::Cfa(_)) && demosaic.is_none();
+  // White balance that is applied after the operations on linear values
+  let pending_wb = wb.filter(|_| !wb_before_demosaic).unwrap_or([1.0; 4]);
   // The noise is reduced before scaling changes it, CFA data has no luma and
   // chroma planes. Output-referred data is already rendered.
   if steps.contains(Step::Denoise) && options.denoise.is_active() && !cfa_data {
@@ -244,7 +249,7 @@ pub fn plan(rawimage: &RawImage, options: &RenderOptions) -> crate::Result<Plan>
     } else {
       ops.push(Op::Denoise {
         strength: options.denoise,
-        wb: wb.filter(|_| !wb_before_demosaic).unwrap_or([1.0; 4]),
+        wb: pending_wb,
       });
     }
   }
@@ -269,6 +274,19 @@ pub fn plan(rawimage: &RawImage, options: &RenderOptions) -> crate::Result<Plan>
   let transfer_function = steps.contains(Step::TransferFunction).then(|| options.color_space.transfer_function());
   // Output-referred data is already rendered
   let default_tone_curve = (steps.contains(Step::ToneCurve) && !rawimage.colorimetric_reference.is_output_referred()).then(ToneCurve::default_render);
+  // The image is sharpened on the pixels of the output while its values are
+  // scene-referred, before the color operations render them. CFA data is no image
+  // yet and output-referred data is already rendered.
+  if steps.contains(Step::Sharpen) && options.sharpen > 0.0 && !cfa_data {
+    if rawimage.colorimetric_reference.is_output_referred() {
+      log::debug!("Output-referred data is already rendered, it is not sharpened");
+    } else {
+      ops.push(Op::Sharpen {
+        strength: options.sharpen,
+        scale: pending_wb.map(|c| c * gain),
+      });
+    }
+  }
   if steps.contains(Step::Calibrate) && channels > 1 {
     // All operations on the color image are applied in one pass, the gain
     // with the white balance and the transfer function after the rendering

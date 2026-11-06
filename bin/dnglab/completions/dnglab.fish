@@ -84,6 +84,7 @@ prophoto\t''"
 complete -c dnglab -n "__fish_dnglab_using_subcommand process-raw" -l jpeg-quality -d 'JPEG quality (1-100)' -r
 complete -c dnglab -n "__fish_dnglab_using_subcommand process-raw" -l denoise-luma -d 'Strength of the luma noise reduction (0-4), 0 is off, 1 is a full reduction [default: 0.25]' -r
 complete -c dnglab -n "__fish_dnglab_using_subcommand process-raw" -l denoise-chroma -d 'Strength of the chroma noise reduction (0-4), 0 is off, 1 is a full reduction [default: 0.5]' -r
+complete -c dnglab -n "__fish_dnglab_using_subcommand process-raw" -l sharpen -d 'Strength of the sharpening (0-2), 0 is off, 1 is the classic Laplacian filter [default: 0.2]' -r
 complete -c dnglab -n "__fish_dnglab_using_subcommand process-raw" -s d -l loglevel -d 'Log level' -r -f -a "error\t''
 warn\t''
 info\t''
