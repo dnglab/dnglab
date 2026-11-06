@@ -21,6 +21,7 @@ use std::io::Seek;
 use std::io::SeekFrom;
 use std::mem::size_of;
 
+use crate::Orientation;
 use crate::RawImage;
 use crate::RawLoader;
 use crate::RawlerError;
@@ -306,6 +307,9 @@ impl<'a> Decoder for IiqDecoder<'a> {
           None => warn!("IIQ: invalid white balance {:?}, color matrix not available", wb),
         }
       }
+    }
+    if let Some(orientation) = self.orientation() {
+      image.orientation = Orientation::from_u16(orientation);
     }
     Ok(image)
   }
