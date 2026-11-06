@@ -6,7 +6,7 @@ clean_model = "WB2000"
 whitepoint = 3700
 color_pattern = "RGGB"
 active_area = [0, 2, 10, 1]
-crop_area = [36, 368, 44, 365]
+crop_area = [36, 22, 44, 23]
 hints = ["little_endian"]
 
 [cameras.color_matrix]
