@@ -1,4 +1,4 @@
-use crate::{bits::LEu16, decoders::*, decompressors::decompress_strips_fn, pumps::BitPump};
+use crate::{decoders::*, decompressors::decompress_strips_fn, pumps::BitPump};
 
 pub(crate) fn decode_panasonic_v4(buf: &[u8], width: usize, height: usize, split: bool, dummy: bool) -> PixU16 {
   decompress_strips_fn(
@@ -72,11 +72,21 @@ impl<'a> BitPump for BitPumpPanasonic<'a> {
       self.nbits += 0x4000 * 8;
       self.pos += 0x4000;
     }
-    let mut byte = ((self.nbits - num) >> 3) ^ 0x3ff0;
-    if self.split {
-      byte = (byte + 0x4000 - 0x2008) % 0x4000;
-    }
-    let bits = LEu16(self.buffer, byte as usize + self.pos - 0x4000) as u32;
+    // The 16-bit window is read a byte at a time, each byte mapped
+    // through the split on its own: a window that straddles the split
+    // takes its high byte from this block's first byte, not from the
+    // next block, and a window at the block's end takes zero, as
+    // LibRaw's buffer does.
+    let byte = ((self.nbits - num) >> 3) ^ 0x3ff0;
+    let block = &self.buffer[self.pos - 0x4000..self.pos];
+    let at = |i: u32| -> u32 {
+      if i >= 0x4000 {
+        return 0;
+      }
+      let i = if self.split { (i + 0x4000 - 0x2008) % 0x4000 } else { i };
+      block[i as usize] as u32
+    };
+    let bits = at(byte) | (at(byte + 1) << 8);
     (bits >> ((self.nbits - num) & 7)) & (0x0ffffffffu32 >> (32 - num))
   }
 
