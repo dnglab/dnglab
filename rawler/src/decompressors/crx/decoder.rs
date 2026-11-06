@@ -6,20 +6,25 @@
 // crx.cpp and documentation done by Laurent Clévy (https://github.com/lclevy/canon_cr3).
 
 use super::{
-  BandParam, CodecParams, CrxError, Result,
+  BandParam, BitPump, CodecParams, CrxError, Result,
   mdat::{Plane, Tile},
 };
 use crate::decompressors::crx::{idwt::WaveletTransform, mdat::parse_header, rice::RiceDecoder};
-use bitstream_io::BitReader;
 use itertools::izip;
 use log::debug;
 use rayon::prelude::*;
-use std::{convert::TryInto, io::Cursor, time::Instant};
+use std::{collections::VecDeque, time::Instant};
 
 /// Maximum value for K during Adaptive Golomb-Rice for K prediction
 pub(super) const PREDICT_K_MAX: u32 = 15;
 pub(super) const PREDICT_K_ESCAPE: u32 = 41;
 pub(super) const PREDICT_K_ESCBITS: u32 = 21;
+
+/// Plane rows to decode ahead per subband. All bands are refilled at the same
+/// time, so they run in parallel. Decoded lines use memory until the transform
+/// has consumed them, so this is kept small compared to the plane height.
+const LOOKAHEAD_ROWS: usize = 64;
+const LOOKAHEAD_EXTRA_LINES: usize = 2;
 
 struct PlaneLineIter<'a> {
   tile: &'a Tile,
@@ -52,7 +57,7 @@ impl<'a> PlaneLineIter<'a> {
       let band_buf = &data[band_mdat_offset..band_mdat_offset + band.data_size];
       // Line length is subband + one additional pixel at start and end
       let line_len = 1 + band.width + 1;
-      let bitpump = BitReader::endian(Cursor::new(band_buf), bitstream_io::BigEndian);
+      let bitpump = BitPump::new(band_buf);
 
       let param = BandParam {
         subband_width: band.width,
@@ -68,6 +73,7 @@ impl<'a> PlaneLineIter<'a> {
         q_param: band.q_param,
         supports_partial: plane.support_partial && band_id == 0,
         rice: RiceDecoder::new(bitpump),
+        decoded_ahead: VecDeque::new(),
       };
       params.push(param);
     }
@@ -85,6 +91,7 @@ impl<'a> PlaneLineIter<'a> {
         };
         iwt_transforms.push(WaveletTransform::new(height, width));
       }
+      decode_ahead(&codec, tile, plane, &mut params, 0);
       codec.idwt_53_filter_init(tile, plane, &mut params, &mut iwt_transforms, codec.levels)?;
     }
 
@@ -101,8 +108,12 @@ impl<'a> PlaneLineIter<'a> {
   /// Decode a single line from plane
   fn decode_plane_line(&mut self) -> Result<&[i32]> {
     if self.next_row < self.tile.plane_height {
+      let row = self.next_row;
       self.next_row += 1;
       if self.codec.levels > 0 {
+        if row.is_multiple_of(LOOKAHEAD_ROWS) {
+          decode_ahead(&self.codec, self.tile, self.plane, &mut self.params, row);
+        }
         self
           .codec
           .idwt_53_filter_decode(self.tile, self.plane, &mut self.params, &mut self.iwt_transforms, self.codec.levels - 1)?;
@@ -147,6 +158,38 @@ impl<'a> Iterator for PlaneLineIter<'a> {
   }
 }
 
+/// Decode the subband lines needed for the next [`LOOKAHEAD_ROWS`] plane rows
+///
+/// Each subband has its own bitstream, so its lines can be decoded in parallel
+/// and independently of the inverse wavelet transform, which then takes them
+/// from [`BandParam::decoded_ahead`]. Decoding stops at the first failed line,
+/// as the error is returned when the transform reaches this line.
+fn decode_ahead(codec: &CodecParams, tile: &Tile, plane: &Plane, params: &mut [BandParam], row: usize) {
+  let end_row = (row + LOOKAHEAD_ROWS).min(tile.plane_height);
+  params
+    .par_iter_mut()
+    .zip(plane.subbands.par_iter())
+    .enumerate()
+    .for_each(|(band_id, (param, band))| {
+      if band.data_size == 0 || param.decoded_ahead.back().is_some_and(Result::is_err) {
+        return;
+      }
+      let level = band_id.saturating_sub(1) / 3;
+      let q_step = tile.q_step.as_ref().map(|f| &f[level]);
+      // Bands have fewer lines than the plane has rows. The wavelet filter reads
+      // a few lines ahead, without them each block would end with a serial decode.
+      let end_line = ((end_row * band.height).div_ceil(tile.plane_height) + LOOKAHEAD_EXTRA_LINES).min(band.height);
+      while param.cur_line < end_line {
+        let line = codec.decode_next_line(band, param, q_step);
+        let failed = line.is_err();
+        param.decoded_ahead.push_back(line);
+        if failed {
+          break;
+        }
+      }
+    });
+}
+
 /// A plane line is a vector if i32 values
 type PlaneLine = Vec<i32>;
 
@@ -185,31 +228,42 @@ impl CodecParams {
 
     // Now we have a list of tiles->planes->plane-lines
     // and can combine them to the final CFA
-    match plane_bufs {
-      Ok(bufs) => {
-        for (tile_id, tile) in bufs.into_iter().enumerate() {
-          let plane_count = tile.len();
-          debug_assert_eq!(plane_count, 4);
-          // Convert vector of planes to excact count of 4 planes - or fail
-          let planes: [Vec<PlaneLine>; 4] = tile
-            .try_into()
-            .map_err(|_| CrxError::General(format!("Invalid plane count {} (expected 4) for tile {}", plane_count, tile_id)))?;
-          // References to all 4 plane buffers
-          let (p0, p1, p2, p3) = (&planes[0], &planes[1], &planes[2], &planes[3]);
-          // Process each PlaneLine in all 4 buffers
-          for (plane_row, (l0, l1, l2, l3)) in izip!(p0, p1, p2, p3).enumerate() {
-            let (c0, c1, c2, c3) = convert_plane_line(&self, l0, l1, l2, l3)?;
-            integrate_cfa(&self, &tiles, &mut cfa, tile_id, 0, plane_row, &c0)?;
-            integrate_cfa(&self, &tiles, &mut cfa, tile_id, 1, plane_row, &c1)?;
-            integrate_cfa(&self, &tiles, &mut cfa, tile_id, 2, plane_row, &c2)?;
-            integrate_cfa(&self, &tiles, &mut cfa, tile_id, 3, plane_row, &c3)?;
-          }
-        }
+    let bufs = plane_bufs?;
+    for (tile_id, (tile, planes)) in tiles.iter().zip(&bufs).enumerate() {
+      if planes.len() != 4 {
+        return Err(CrxError::General(format!(
+          "Invalid plane count {} (expected 4) for tile {}",
+          planes.len(),
+          tile_id
+        )));
       }
-      Err(e) => {
-        return Err(e);
+      // Tile area in the CFA, must be inside the image
+      let (row_offset, col_offset) = self.tile_offset(tile_id);
+      if row_offset + planes[0].len() * 2 > self.image_height || col_offset + tile.plane_width * 2 > self.image_width {
+        return Err(CrxError::Overflow(format!("Tile {} exceeds the image area", tile_id)));
       }
     }
+
+    // Each CFA row is built from one line of two planes of each tile
+    // in this row, so the rows can be processed in parallel.
+    cfa.par_chunks_exact_mut(self.image_width).enumerate().try_for_each(|(row, cfa_row)| {
+      for (tile_id, (tile, planes)) in tiles.iter().zip(&bufs).enumerate() {
+        let (row_offset, col_offset) = self.tile_offset(tile_id);
+        let Some(tile_row) = row.checked_sub(row_offset) else {
+          continue;
+        };
+        let plane_row = tile_row / 2;
+        if plane_row >= planes[0].len() {
+          continue;
+        }
+        let lines: [&[i32]; 4] = std::array::from_fn(|plane| planes[plane][plane_row].as_slice());
+        if lines.iter().any(|line| line.len() != tile.plane_width) {
+          return Err(CrxError::General(format!("Invalid plane line width for tile {}", tile_id)));
+        }
+        self.convert_cfa_line(lines, tile_row % 2, &mut cfa_row[col_offset..col_offset + tile.plane_width * 2])?;
+      }
+      Ok(())
+    })?;
     debug!("MDAT decoding and CFA build: {} s", instant.elapsed().as_secs_f32());
     Ok(cfa)
   }
@@ -660,98 +714,63 @@ pub(super) fn med(a: i32, b: i32, c: i32) -> i32 {
   }
 }
 
-/// Convert a decoded line to plane output
-/// Results from decode_line() are signed 32 bit integers.
-/// By using a median and max value, these are converted
-/// to unsigned 16 bit integers.
-#[allow(clippy::type_complexity)]
-fn convert_plane_line(codec: &CodecParams, l0: &[i32], l1: &[i32], l2: &[i32], l3: &[i32]) -> Result<(Vec<u16>, Vec<u16>, Vec<u16>, Vec<u16>)> {
-  let mut p0 = vec![0; l0.len()];
-  let mut p1 = vec![0; l1.len()];
-  let mut p2 = vec![0; l2.len()];
-  let mut p3 = vec![0; l3.len()];
+impl CodecParams {
+  /// Get the (row, column) offset of a tile in the CFA image
+  fn tile_offset(&self, tile_id: usize) -> (usize, usize) {
+    let tile_row_idx = tile_id / self.tile_cols; // round down
+    let tile_col_idx = tile_id % self.tile_cols; // round down
+    (tile_row_idx * self.tile_width, tile_col_idx * self.tile_width)
+  }
 
-  match codec.enc_type {
-    0 => {
-      let median: i32 = 1 << (codec.median_bits - 1);
-      let max_val: i32 = (1 << codec.median_bits) - 1;
+  /// Convert one decoded line of all four planes of a tile and write
+  /// the CFA row `row_shift` (0 or 1) of this line into `cfa_row`.
+  ///
+  /// A plane is a single monochrome image for one of the four CFA colors
+  /// R, G1, G2 and B (plane 0 to 3). Plane 0 and 1 form the first row of the
+  /// 2x2 CFA pattern, plane 2 and 3 the second row.
+  ///
+  /// Results from decode_line() are signed 32 bit integers.
+  /// By using a median and max value, these are converted
+  /// to unsigned 16 bit integers.
+  fn convert_cfa_line(&self, lines: [&[i32]; 4], row_shift: usize, cfa_row: &mut [u16]) -> Result<()> {
+    let [l0, l1, l2, l3] = lines;
+    let pixels = izip!(cfa_row.as_chunks_mut::<2>().0, l0, l1, l2, l3);
 
-      izip!(l0, l1, l2, l3).enumerate().for_each(|(i, (v0, v1, v2, v3))| {
-        p0[i] = constrain(median + v0, 0, max_val) as u16;
-        p1[i] = constrain(median + v1, 0, max_val) as u16;
-        p2[i] = constrain(median + v2, 0, max_val) as u16;
-        p3[i] = constrain(median + v3, 0, max_val) as u16;
-      });
-    }
-    3 => {
-      let median: i32 = 1 << (codec.median_bits - 1) << 10;
-      let max_val: i32 = (1 << codec.median_bits) - 1;
+    match self.enc_type {
+      0 => {
+        let median: i32 = 1 << (self.median_bits - 1);
+        let max_val: i32 = (1 << self.median_bits) - 1;
 
-      izip!(l0, l1, l2, l3).enumerate().for_each(|(i, (v0, v1, v2, v3))| {
-        let mut gr: i32 = median + (v0 << 10) - 168 * v1 - 585 * v3;
-        if gr < 0 {
-          gr = -(((gr.abs() + 512) >> 9) & !1);
-        } else {
-          gr = ((gr.abs() + 512) >> 9) & !1;
+        for (cfa, v0, v1, v2, v3) in pixels {
+          let (left, right) = if row_shift == 0 { (v0, v1) } else { (v2, v3) };
+          cfa[0] = constrain(median + left, 0, max_val) as u16;
+          cfa[1] = constrain(median + right, 0, max_val) as u16;
         }
-        p0[i] = constrain((median + (v0 << 10) + 1510 * v3 + 512) >> 10, 0, max_val) as u16;
-        p1[i] = constrain((v2 + gr + 1) >> 1, 0, max_val) as u16;
-        p2[i] = constrain((gr - v2 + 1) >> 1, 0, max_val) as u16;
-        p3[i] = constrain((median + (v0 << 10) + 1927 * v1 + 512) >> 10, 0, max_val) as u16;
-      });
+      }
+      3 => {
+        let median: i32 = 1 << (self.median_bits - 1) << 10;
+        let max_val: i32 = (1 << self.median_bits) - 1;
+
+        for (cfa, v0, v1, v2, v3) in pixels {
+          let mut gr: i32 = median + (v0 << 10) - 168 * v1 - 585 * v3;
+          if gr < 0 {
+            gr = -(((gr.abs() + 512) >> 9) & !1);
+          } else {
+            gr = ((gr.abs() + 512) >> 9) & !1;
+          }
+          if row_shift == 0 {
+            cfa[0] = constrain((median + (v0 << 10) + 1510 * v3 + 512) >> 10, 0, max_val) as u16;
+            cfa[1] = constrain((v2 + gr + 1) >> 1, 0, max_val) as u16;
+          } else {
+            cfa[0] = constrain((gr - v2 + 1) >> 1, 0, max_val) as u16;
+            cfa[1] = constrain((median + (v0 << 10) + 1927 * v1 + 512) >> 10, 0, max_val) as u16;
+          }
+        }
+      }
+      enc_type => {
+        return Err(CrxError::General(format!("Unsupported encoding type {}", enc_type)));
+      }
     }
-    enc_type => {
-      return Err(CrxError::General(format!("Unsupported encoding type {}", enc_type)));
-    }
+    Ok(())
   }
-
-  Ok((p0, p1, p2, p3))
-}
-
-/// Integrate a plane buffer into CFA output image
-///
-/// A plane is a single monochrome image for one of the four CFA colors.
-/// `plane_id` is 0, 1, 2 or 3 for R, G1, G2, B
-fn integrate_cfa(codec: &CodecParams, tiles: &[Tile], cfa_buf: &mut [u16], tile_id: usize, plane_id: usize, plane_row: usize, plane_buf: &[u16]) -> Result<()> {
-  // 2x2 pixel for RGGB
-  const CFA_DIM: usize = 2;
-
-  debug_assert_ne!(plane_buf.len(), 0);
-  debug_assert_ne!(cfa_buf.len(), 0);
-  debug_assert!(codec.tile_cols > 0);
-  debug_assert!(codec.tile_rows > 0);
-
-  if plane_id > 3 {
-    return Err(CrxError::Overflow(format!(
-      "More then 4 planes detected, unable to process plane_id {}",
-      plane_id
-    )));
-  }
-
-  let tile_row_idx = tile_id / codec.tile_cols; // round down
-  let tile_col_idx = tile_id % codec.tile_cols; // round down
-
-  // Offset from top
-  let row_offset = tile_row_idx * codec.tile_width;
-  // Offset from left
-  let col_offset = tile_col_idx * codec.tile_width;
-  let (row_shift, col_shift) = match plane_id {
-    0 => (0, 0),
-    1 => (0, 1),
-    2 => (1, 0),
-    3 => (1, 1),
-    _ => {
-      return Err(CrxError::General("Invalid plane id".to_string()));
-    }
-  };
-  //println!("plane_width: {}, buf_size: {}", tiles[tile_id].plane_width, plane_buf.len());
-  let row_idx = row_offset + (plane_row * CFA_DIM) + row_shift;
-  for plane_col in 0..tiles[tile_id].plane_width {
-    // Row index into CFA for untiled full area
-    let col_idx = col_offset + (plane_col * CFA_DIM) + col_shift;
-
-    // Copy from plane to CFA
-    cfa_buf[(row_idx * codec.image_width) + col_idx] = plane_buf[plane_col];
-  }
-  Ok(())
 }
