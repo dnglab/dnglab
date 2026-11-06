@@ -671,6 +671,18 @@ fn reduce_to_three_planes(rawimage: &mut RawImage) -> crate::Result<()> {
 /// Get a preview image from the decoder, or develop it from raw data.
 ///
 /// If `force_develop` is set, embedded previews are ignored.
+/// Options to render a preview or thumbnail from the raw data
+///
+/// Previews are small, a demosaic of half size is enough. They are not rendered
+/// with the default tone curve.
+fn preview_render_options() -> RenderOptions {
+  RenderOptions {
+    steps: StepSet::all().without(ProcessingStep::ToneCurve),
+    demosaic: DemosaicQuality::Preview,
+    ..Default::default()
+  }
+}
+
 fn generate_preview(
   rawfile: &RawSource,
   decoder: &dyn Decoder,
@@ -687,12 +699,7 @@ fn generate_preview(
       } else {
         log::warn!("Preview image not found, try to generate sRGB from RAW");
       }
-      // Previews are small, a demosaic of half size is enough
-      let options = RenderOptions {
-        demosaic: DemosaicQuality::Preview,
-        ..Default::default()
-      };
-      let image = render(rawimage.clone(), &options)?;
+      let image = render(rawimage.clone(), &preview_render_options())?;
       Ok(image.to_dynamic_image().ok_or("failed to convert to dynamic image")?)
     }
   }
@@ -702,6 +709,14 @@ fn generate_preview(
 mod tests {
   use super::*;
   use crate::{decoders::Camera, imgop::xyz::Illuminant, pixarray::PixU16};
+
+  #[test]
+  fn previews_have_no_default_tone_curve() {
+    let options = preview_render_options();
+    assert!(!options.steps.contains(ProcessingStep::ToneCurve));
+    assert_eq!(options.steps, StepSet::all().without(ProcessingStep::ToneCurve));
+    assert_eq!(options.demosaic, DemosaicQuality::Preview);
+  }
 
   #[test]
   fn required_stage_for_compression() {

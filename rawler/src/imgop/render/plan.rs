@@ -251,6 +251,8 @@ pub fn plan(rawimage: &RawImage, options: &RenderOptions) -> crate::Result<Plan>
   let gain = exposure.max(0.0).exp2();
   log::debug!("BaselineExposure {} EV, gain: {}", exposure, gain);
   let transfer_function = steps.contains(Step::TransferFunction).then(|| options.color_space.transfer_function());
+  // Output-referred data is already rendered
+  let default_tone_curve = (steps.contains(Step::ToneCurve) && !rawimage.colorimetric_reference.is_output_referred()).then(ToneCurve::default_render);
   if steps.contains(Step::Calibrate) && channels > 1 {
     // All operations on the color image are applied in one pass, the gain
     // with the white balance and the transfer function after the rendering
@@ -263,7 +265,7 @@ pub fn plan(rawimage: &RawImage, options: &RenderOptions) -> crate::Result<Plan>
       .as_shot_camera_profile_index()
       .and_then(|index| rawimage.effective_gain_table_map(index))
       .filter(|_| tables);
-    let render = ProfileRender::new(slot.map(|slot| (slot.profile, slot.slot)), gain_table_map, exposure);
+    let render = ProfileRender::new(slot.map(|slot| (slot.profile, slot.slot)), gain_table_map, exposure, default_tone_curve);
     let (map, mut pixel_ops) = match channels {
       3 => {
         let (map, pixel_ops) = camera_map::<3>(rawimage, neutral, wb_before_demosaic, gain, render, options.color_space);
@@ -291,7 +293,8 @@ pub fn plan(rawimage: &RawImage, options: &RenderOptions) -> crate::Result<Plan>
     }
     if exposure > 0.0 {
       ops.push(Op::Gain(gain));
-    } else if let Some(curve) = ToneCurve::negative_exposure(exposure) {
+    }
+    if let Some(curve) = ToneCurve::with_exposure(exposure, default_tone_curve) {
       ops.push(Op::ToneCurve(curve));
     }
     if let Some(function) = transfer_function {

@@ -196,6 +196,12 @@ impl RawDevelop {
     Self::new_with(&steps)
   }
 
+  /// The development without `step`
+  pub fn without(mut self, step: ProcessingStep) -> Self {
+    self.steps.retain(|other| *other != step);
+    self
+  }
+
   /// Options of the rendering with the steps of this development
   pub fn render_options(&self) -> RenderOptions {
     RenderOptions {
@@ -410,19 +416,16 @@ mod tests {
   fn develop_applies_profile_render() -> std::result::Result<(), Box<dyn std::error::Error>> {
     let mut rawimage = d65_rawimage();
     rawimage.data = RawImageData::Float(vec![0.2, 0.4, 0.3]);
-    let without_render: Vec<ProcessingStep> = RawDevelop::default()
-      .steps
-      .into_iter()
-      .filter(|step| *step != ProcessingStep::ProfileRender)
-      .collect();
+    let with_render = RawDevelop::default().without(ProcessingStep::ToneCurve);
+    let without_render = with_render.clone().without(ProcessingStep::ProfileRender).steps;
     let develop = |rawimage: &RawImage, steps: &[ProcessingStep]| -> crate::Result<[f32; 3]> {
       Ok(rgb_pixels(&RawDevelop::new_with(steps).develop_image(rawimage.clone())?)[0])
     };
     // Without tables, the step has no effect
-    assert_eq!(develop(&rawimage, &RawDevelop::default().steps)?, develop(&rawimage, &without_render)?);
+    assert_eq!(develop(&rawimage, &with_render.steps)?, develop(&rawimage, &without_render)?);
     // The tone curve brightens the image
     rawimage.camera_profiles[0].tone_curve = Some(vec![0.0, 0.0, 0.5, 0.8, 1.0, 1.0]);
-    let rendered = develop(&rawimage, &RawDevelop::default().steps)?;
+    let rendered = develop(&rawimage, &with_render.steps)?;
     let plain = develop(&rawimage, &without_render)?;
     assert!(rendered.iter().zip(plain).all(|(a, b)| *a > b), "{:?} {:?}", rendered, plain);
     Ok(())
@@ -701,12 +704,10 @@ mod tests {
   fn develop_applies_negative_baseline_exposure() -> std::result::Result<(), Box<dyn std::error::Error>> {
     let rawimage = negative_exposure_rawimage();
     // White stays white, dark values are darkened by 1 EV
-    let steps: Vec<ProcessingStep> = RawDevelop::default()
-      .steps
-      .into_iter()
-      .filter(|step| *step != ProcessingStep::TransferFunction)
-      .collect();
-    let image = RawDevelop::new_with(&steps).develop_image(rawimage.clone())?;
+    let develop = RawDevelop::default()
+      .without(ProcessingStep::TransferFunction)
+      .without(ProcessingStep::ToneCurve);
+    let image = develop.develop_image(rawimage.clone())?;
     let pixels = rgb_pixels(&image);
     for (pixel, expected) in pixels.iter().zip([1.0, 0.1]) {
       assert!(pixel.iter().all(|v| (v - expected).abs() < 1e-3), "{:?}", pixel);
@@ -766,12 +767,10 @@ mod tests {
     // Issue #884: values above 1.0 were mapped to a less saturated color, with
     // a jump at 1.0
     let (rawimage, ramp) = saturated_ramp_rawimage();
-    let steps: Vec<ProcessingStep> = RawDevelop::default()
-      .steps
-      .into_iter()
-      .filter(|step| *step != ProcessingStep::TransferFunction)
-      .collect();
-    let image = RawDevelop::new_with(&steps).develop_image(rawimage)?;
+    let develop = RawDevelop::default()
+      .without(ProcessingStep::TransferFunction)
+      .without(ProcessingStep::ToneCurve);
+    let image = develop.develop_image(rawimage)?;
     let pixels = rgb_pixels(&image);
     assert!(pixels[0][0] < 1.0 && pixels[pixels.len() - 1][0] > 1.0, "{:?}", pixels);
     // All values, also those above 1.0 or negative, are proportional to the camera values
@@ -978,12 +977,17 @@ mod tests {
 
     fn cases() -> Vec<(&'static str, RawImage, RenderOptions)> {
       use ProcessingStep::*;
-      let all = RenderOptions::default();
+      // The cases pin the colors without the default tone curve, except for
+      // the cases of the curve
+      let with_tone_curve = RenderOptions::default();
+      let steps = StepSet::all().without(ToneCurve);
+      let all = RenderOptions { steps, ..Default::default() };
       let without = |step: ProcessingStep| RenderOptions {
-        steps: StepSet::all().without(step),
+        steps: steps.without(step),
         ..Default::default()
       };
       let wb_after_demosaic = RenderOptions {
+        steps,
         white_balance: WhiteBalancePlacement::AfterDemosaic,
         ..Default::default()
       };
@@ -992,14 +996,17 @@ mod tests {
         ..Default::default()
       };
       let preview = RenderOptions {
+        steps,
         demosaic: DemosaicQuality::Preview,
         ..Default::default()
       };
       let adobe_rgb = RenderOptions {
+        steps,
         color_space: OutputSpace::AdobeRgb,
         ..Default::default()
       };
       let prophoto = RenderOptions {
+        steps,
         color_space: OutputSpace::ProPhotoRgb,
         ..Default::default()
       };
@@ -1034,6 +1041,8 @@ mod tests {
         ("linear_raw_profile", linear_raw(), all.clone()),
         ("rggb_adobe_rgb", rggb(), adobe_rgb),
         ("linear_raw_prophoto", linear_raw(), prophoto),
+        ("rggb_tone_curve", rggb(), with_tone_curve.clone()),
+        ("mono_tone_curve", mono(), with_tone_curve),
       ]
     }
 
@@ -1070,6 +1079,8 @@ mod tests {
       ("linear_raw_profile", 16, 12, 3, &[185.23571345210075, 8951.324946820736, 181.01863179486003, 145.2774385213852, 7214.587505862117, 118.69475065947488, 188.05537682771683, 8992.080503284931, 184.6161640864077]),
       ("rggb_adobe_rgb", 24, 16, 3, &[371.56912833452225, 17734.80420601368, 360.9035039896841, 230.95152899622917, 11181.354400068521, 145.65351766270155, 349.8610346317291, 16862.70594650507, 322.1781369714192]),
       ("linear_raw_prophoto", 16, 12, 3, &[178.5531117618084, 8687.535918176174, 169.53801987957394, 146.80028820037842, 7289.14681071043, 120.36781506826523, 182.88982164859772, 8785.257615506649, 175.13845659815522]),
+      ("rggb_tone_curve", 24, 16, 3, &[382.7776269316673, 18193.989409446716, 381.7496863167044, 259.79086369276047, 12595.321324795485, 183.11937804395097, 360.4882082939148, 17300.99929469824, 340.23592304348347]),
+      ("mono_tone_curve", 24, 16, 1, &[306.6658738851547, 14753.879509568214, 248.869998376688]),
     ];
 
     /// Largest absolute difference of the samples of two images of the same size

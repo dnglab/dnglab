@@ -51,6 +51,10 @@ pub enum ProcessingStep {
   Calibrate,
   /// Apply the rendering tables of the camera profile (part of Calibrate)
   ProfileRender,
+  /// Apply the default tone curve. Without effect for output-referred data,
+  /// which is already rendered, and for a camera profile with a tone curve,
+  /// which replaces it with the ProfileRender step.
+  ToneCurve,
   /// Crop to the DefaultCrop, or the ActiveArea without DefaultCrop
   CropDefault,
   /// Scale the image to square pixels by DefaultScale and to the size of the
@@ -62,7 +66,7 @@ pub enum ProcessingStep {
 
 impl ProcessingStep {
   /// All steps
-  pub const ALL: [Self; 12] = [
+  pub const ALL: [Self; 13] = [
     Self::Rescale,
     Self::Demosaic,
     Self::FujiRotate,
@@ -72,6 +76,7 @@ impl ProcessingStep {
     Self::AutoWhiteBalance,
     Self::Calibrate,
     Self::ProfileRender,
+    Self::ToneCurve,
     Self::CropDefault,
     Self::DefaultScale,
     Self::TransferFunction,
@@ -80,7 +85,7 @@ impl ProcessingStep {
 
 /// Set of processing steps
 #[derive(Clone, Copy, Default, PartialEq, Eq)]
-pub struct StepSet(u16);
+pub struct StepSet(u64);
 
 impl StepSet {
   /// All processing steps
@@ -112,8 +117,8 @@ impl StepSet {
     self
   }
 
-  fn bit(step: ProcessingStep) -> u16 {
-    1 << step as u16
+  fn bit(step: ProcessingStep) -> u64 {
+    1 << step as u64
   }
 }
 
@@ -418,12 +423,13 @@ mod tests {
         _ => panic!("color map expected"),
       }
     };
+    let steps = StepSet::all().without(ProcessingStep::ToneCurve);
     // Values are clipped before they are encoded
-    let encoded = pixel_ops(&RenderOptions::default())?;
+    let encoded = pixel_ops(&RenderOptions { steps, ..Default::default() })?;
     assert_eq!(encoded, [PixelOp::Clip, PixelOp::TransferFunction(TransferFunction::Srgb)]);
     // Linear values keep highlights above white and colors outside of the output space
     let linear = RenderOptions {
-      steps: StepSet::all().without(ProcessingStep::TransferFunction),
+      steps: steps.without(ProcessingStep::TransferFunction),
       ..Default::default()
     };
     assert!(pixel_ops(&linear)?.is_empty());
@@ -470,6 +476,104 @@ mod tests {
       ["Rescale", "CropDefault", "ToneCurve", "TransferFunction"]
     );
     Ok(())
+  }
+
+  #[test]
+  fn plan_applies_default_tone_curve() -> crate::Result<()> {
+    use crate::{camera_profile::CameraProfile, dng::profile_render::ToneCurve, imgop::xyz::Illuminant, rawimage::ColorimetricReference};
+
+    /// Tone curve of the rendering of the color map
+    fn map_curve(rawimage: &RawImage, options: &RenderOptions) -> crate::Result<Option<ToneCurve>> {
+      let mut plan = plan(rawimage, options)?;
+      let Some(Op::CameraToRgb { ops, .. }) = plan.ops.pop() else {
+        panic!("color map expected");
+      };
+      Ok(ops.into_iter().find_map(|op| match op {
+        PixelOp::Profile(render) => render.tone_curve,
+        _ => None,
+      }))
+    }
+
+    let all = RenderOptions::default();
+    let without = |step: ProcessingStep| RenderOptions {
+      steps: StepSet::all().without(step),
+      ..Default::default()
+    };
+    let default_curve = ToneCurve::default_render();
+    assert!(all.steps.contains(ProcessingStep::ToneCurve));
+
+    // On by default, and the step removes it
+    assert_eq!(map_curve(&rggb_rawimage(), &all)?, Some(default_curve.clone()));
+    assert_eq!(map_curve(&rggb_rawimage(), &without(ProcessingStep::ToneCurve))?, None);
+
+    // Output-referred data is already rendered
+    for reference in [ColorimetricReference::OutputReferred, ColorimetricReference::OutputReferredHdr] {
+      let mut scan = rggb_rawimage();
+      scan.colorimetric_reference = reference;
+      assert_eq!(map_curve(&scan, &all)?, None, "{:?}", reference);
+    }
+
+    // The curve of a camera profile replaces it, unless the profile is not rendered
+    let points = vec![0.0, 0.0, 0.5, 0.6, 1.0, 1.0];
+    let mut profiled = rggb_rawimage();
+    profiled.camera_profiles = vec![CameraProfile {
+      calibration_illuminant: [Some(Illuminant::D65), None, None],
+      color_matrix: [Some(vec![1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0]), None, None],
+      tone_curve: Some(points.clone()),
+      ..Default::default()
+    }];
+    assert_eq!(map_curve(&profiled, &all)?, ToneCurve::new(&points));
+    assert_eq!(map_curve(&profiled, &without(ProcessingStep::ToneCurve))?, ToneCurve::new(&points));
+    assert_eq!(map_curve(&profiled, &without(ProcessingStep::ProfileRender))?, Some(default_curve.clone()));
+
+    // A negative BaselineExposure is applied before it
+    let mut darkened = rggb_rawimage();
+    darkened.baseline_exposure = Some(SRational::new(-1, 1));
+    let exposure_curve = ToneCurve::negative_exposure(-1.0).expect("curve");
+    assert_eq!(map_curve(&darkened, &all)?, Some(default_curve.after(&exposure_curve)));
+
+    // Without a color map it is a separate operation before the transfer function
+    let mut mono = linear_raw_rawimage(4, 2, 1);
+    mono.photometric = RawPhotometricInterpretation::BlackIsZero;
+    let plan_of_mono = plan(&mono, &all)?;
+    assert_eq!(op_names(&plan_of_mono), ["Rescale", "CropDefault", "ToneCurve", "TransferFunction"]);
+    assert!(matches!(&plan_of_mono.ops[2], Op::ToneCurve(curve) if *curve == default_curve));
+    assert_eq!(
+      op_names(&plan(&mono, &without(ProcessingStep::ToneCurve))?),
+      ["Rescale", "CropDefault", "TransferFunction"]
+    );
+    mono.baseline_exposure = Some(SRational::new(-1, 1));
+    let plan_of_mono = plan(&mono, &all)?;
+    assert_eq!(op_names(&plan_of_mono), ["Rescale", "CropDefault", "ToneCurve", "TransferFunction"]);
+    assert!(matches!(&plan_of_mono.ops[2], Op::ToneCurve(curve) if *curve == default_curve.after(&exposure_curve)));
+
+    // LinearRaw data is not rendered
+    let linear = RenderOptions {
+      target: RenderTarget::LinearRaw,
+      ..Default::default()
+    };
+    assert!(!op_names(&plan(&rggb_rawimage(), &linear)?).contains(&"ToneCurve"));
+    assert!(!op_names(&plan(&rggb_rawimage(), &linear)?).contains(&"CameraToRgb"));
+    Ok(())
+  }
+
+  #[test]
+  fn step_set_holds_all_steps() {
+    // The steps have different bits, and there is room for more of them
+    let set = StepSet::all();
+    assert!(ProcessingStep::ALL.into_iter().all(|step| set.contains(step)));
+    for step in ProcessingStep::ALL {
+      let without = set.without(step);
+      assert!(!without.contains(step));
+      assert!(
+        ProcessingStep::ALL
+          .into_iter()
+          .filter(|other| *other != step)
+          .all(|other| without.contains(other))
+      );
+    }
+    assert_eq!(StepSet::bit(ProcessingStep::ALL[ProcessingStep::ALL.len() - 1]).count_ones(), 1);
+    assert_eq!(std::mem::size_of::<StepSet>(), std::mem::size_of::<u64>());
   }
 
   #[test]
@@ -520,7 +624,7 @@ mod tests {
     };
     assert_eq!(
       op_names(&plan(&linear_raw, &options)?),
-      ["Rescale", "CropDefault", "WhiteBalance", "TransferFunction"]
+      ["Rescale", "CropDefault", "WhiteBalance", "ToneCurve", "TransferFunction"]
     );
     Ok(())
   }

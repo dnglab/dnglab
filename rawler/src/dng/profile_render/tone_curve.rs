@@ -10,6 +10,17 @@ use crate::pixarray::ImageViewMut;
 /// Number of intervals of the lookup table
 const TABLE_SIZE: usize = 4096;
 
+/// Points of the default curve, pairs of linear input and output values
+///
+/// An S-curve for images that have no curve of their own. It adds contrast around
+/// a fixed point at about 0.116 and keeps the brightness of the image: shadows get
+/// darker and highlights brighter. Brightness is a matter of the exposure.
+///
+/// The points are fitted to the tone map of the camera JPEGs of 65 files without
+/// its brightening of about 0.54 EV. They keep the median of the mean encoded
+/// brightness of these files.
+const DEFAULT_RENDER_POINTS: [f32; 12] = [0.0, 0.0, 0.02, 0.012, 0.08, 0.073, 0.25, 0.291, 0.55, 0.655, 1.0, 1.0];
+
 /// Tone curve of a camera profile, sampled into a lookup table
 ///
 /// The curve points are connected by a natural cubic spline: the curve is
@@ -47,6 +58,11 @@ impl ToneCurve {
     }))
   }
 
+  /// Default curve for images that have no curve of their own
+  pub fn default_render() -> Self {
+    Self::new(&DEFAULT_RENDER_POINTS).expect("Valid curve points")
+  }
+
   /// Curve of a negative exposure compensation of `ev` EV, `None` for `ev >= 0`
   ///
   /// Values up to 0.25 are scaled by 2^ev. Above, a quadratic curve with the
@@ -61,6 +77,15 @@ impl ToneCurve {
     let b = slope - 0.5 * a;
     let c = 1.0 - a - b;
     Some(Self::from_fn(|x| if x <= 0.25 { x * slope } else { (a * x + b) * x + c }))
+  }
+
+  /// `curve` applied to the result of a negative exposure compensation of `ev` EV,
+  /// `None` if there is neither a curve nor a negative exposure
+  pub fn with_exposure(ev: f32, curve: Option<Self>) -> Option<Self> {
+    match (Self::negative_exposure(ev), curve) {
+      (Some(exposure_curve), Some(curve)) => Some(curve.after(&exposure_curve)),
+      (exposure_curve, curve) => exposure_curve.or(curve),
+    }
   }
 
   /// This curve applied to the result of `first`
@@ -208,6 +233,36 @@ mod tests {
       assert!((exposure.after(&identity).eval(x) - exposure.eval(x)).abs() < 1e-5);
       assert!((lift.after(&exposure).eval(x) - lift.eval(exposure.eval(x))).abs() < 1e-4);
     }
+  }
+
+  #[test]
+  fn default_render_curve() {
+    let curve = ToneCurve::default_render();
+    for point in DEFAULT_RENDER_POINTS.chunks_exact(2) {
+      assert!((curve.eval(point[0]) - point[1]).abs() < 1e-5, "{:?}", point);
+    }
+    // Strictly increasing and limited to the output range, with no overshoot
+    assert!(curve.table.windows(2).all(|pair| pair[0] < pair[1]));
+    assert_eq!((curve.table[0], curve.table[TABLE_SIZE]), (0.0, 1.0));
+    // More contrast around a fixed point: darker shadows and brighter highlights
+    assert!((curve.eval(0.116) - 0.116).abs() < 0.002, "{}", curve.eval(0.116));
+    for x in [0.01, 0.02, 0.05, 0.08] {
+      assert!(curve.eval(x) < x, "{}", x);
+    }
+    for x in [0.15, 0.25, 0.55, 0.9] {
+      assert!(curve.eval(x) > x, "{}", x);
+    }
+    assert!(curve.eval(0.15) - curve.eval(0.1) > 0.15 - 0.1);
+  }
+
+  #[test]
+  fn curve_with_exposure() {
+    let lift = ToneCurve::new(&[0.0, 0.0, 0.5, 0.75, 1.0, 1.0]).expect("curve");
+    let exposure = ToneCurve::negative_exposure(-1.0).expect("curve");
+    assert!(ToneCurve::with_exposure(0.0, None).is_none());
+    assert_eq!(ToneCurve::with_exposure(1.0, Some(lift.clone())), Some(lift.clone()));
+    assert_eq!(ToneCurve::with_exposure(-1.0, None), Some(exposure.clone()));
+    assert_eq!(ToneCurve::with_exposure(-1.0, Some(lift.clone())), Some(lift.after(&exposure)));
   }
 
   #[test]
