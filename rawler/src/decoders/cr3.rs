@@ -341,7 +341,8 @@ impl<'a> Decoder for Cr3Decoder<'a> {
     img.baseline_exposure = self
       .cmt3
       .get_entry(Cr3MakernoteTag::LightningOpt)
-      .and_then(|entry| highlight_tone_priority_exposure(&entry.value));
+      .and_then(|entry| highlight_tone_priority_exposure(&entry.value))
+      .or_else(|| self.cmt3.get_entry(Cr3MakernoteTag::LogInfo).and_then(|entry| canon_log_exposure(&entry.value)));
 
     // IAD1 box contains sensor information
     // We use the sensor crop from IAD1 as recommended image crop.
@@ -523,7 +524,7 @@ impl<'a> Cr3Decoder<'a> {
       debug!("Canon quality mode: {}", quality);
     }
 
-    if let Some(entry) = self.cmt3.get_entry(0x4026) {
+    if let Some(entry) = self.cmt3.get_entry(Cr3MakernoteTag::LogInfo) {
       let clog = match entry.force_u32(11) {
         0 => "OFF",
         1 => "CLog1",
@@ -767,6 +768,18 @@ fn highlight_tone_priority_exposure(lighting_opt: &Value) -> Option<SRational> {
   }
 }
 
+/// BaselineExposure for the Canon Log version at index 11 of the LogInfo makernote
+///
+/// With Canon Log the raw data is darker, while EXIF reports the same ISO. Canon Log is
+/// 2 EV darker at ISO 400 and Canon Log 3 is 3 EV darker at ISO 800, measured on an EOS R5.
+fn canon_log_exposure(log_info: &Value) -> Option<SRational> {
+  match log_info.get_u32(11) {
+    Ok(Some(1)) => Some(SRational::new(2, 1)),
+    Ok(Some(3)) => Some(SRational::new(3, 1)),
+    _ => None,
+  }
+}
+
 fn normalize_wb(raw_wb: [f32; 4]) -> [f32; 4] {
   debug!("CR3 raw wb: {:?}", raw_wb);
   // We never have more then RGB colors so far (no RGBE etc.)
@@ -873,6 +886,7 @@ pub enum Cr3MakernoteTag {
   MultiExp = 0x4021,
   FilterInfo = 0x4024,
   HDRInfo = 0x4025,
+  LogInfo = 0x4026,
   AFConfig = 0x4028,
   RawBurstModeRoll = 0x403f,
 }
