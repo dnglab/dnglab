@@ -1,11 +1,14 @@
 // SPDX-License-Identifier: LGPL-2.1
 // Copyright 2026 Daniel Vogelbacher <daniel@chaospixel.com>
 
-//! ICC profiles (version 2) to tag rendered images with their color space
+//! ICC profiles (version 2) to tag rendered images with their color space, and
+//! the reader for matrix/TRC profiles of input files
 //!
 //! The profiles are matrix/TRC profiles: the colorants are the primaries of
 //! the color space, adapted to the D50 white of the profile connection space
 //! by Bradford, the tone reproduction curves decode the transfer function.
+
+use moxcms::{ColorProfile, DataColorSpace, ProfileText, ToneReprCurve};
 
 use crate::imgop::{
   chromatic_adaption::bradford_adaption_matrix,
@@ -16,6 +19,96 @@ use crate::imgop::{
 
 /// Number of samples of a tone reproduction curve that isn't a gamma
 const CURVE_SAMPLES: usize = 1024;
+
+/// Largest difference of the sum of the colorants to the white of the PCS
+const COLORANT_WHITE_TOLERANCE: f32 = 0.01;
+
+/// RGB matrix/TRC profile, read from a file
+#[derive(Clone, Debug, PartialEq)]
+pub struct MatrixShaperProfile {
+  /// Description of the profile
+  pub description: Option<String>,
+  /// Matrix from linear RGB values to XYZ (D50), its columns are the colorants
+  pub rgb_to_xyz: [[f32; 3]; 3],
+  /// Curve that decodes the RGB values of all channels
+  curve: ToneReprCurve,
+}
+
+impl MatrixShaperProfile {
+  /// Read a profile
+  ///
+  /// Fails for any other kind of profile: a profile with lookup tables needs
+  /// a color management module, and one LinearizationTable can't decode
+  /// different curves per channel.
+  pub fn parse(data: &[u8]) -> crate::Result<Self> {
+    let profile = ColorProfile::new_from_slice(data).map_err(|err| format!("Invalid ICC profile: {}", err))?;
+    if profile.color_space != DataColorSpace::Rgb || profile.pcs != DataColorSpace::Xyz {
+      return Err(
+        format!(
+          "ICC profile with color space {:?} and PCS {:?} is not supported",
+          profile.color_space, profile.pcs
+        )
+        .into(),
+      );
+    }
+    if profile.lut_a_to_b_perceptual.is_some() || profile.lut_a_to_b_colorimetric.is_some() || profile.lut_a_to_b_saturation.is_some() {
+      return Err("ICC profile with lookup tables is not supported".into());
+    }
+    let (Some(red), Some(green), Some(blue)) = (&profile.red_trc, &profile.green_trc, &profile.blue_trc) else {
+      return Err("ICC profile has no tone reproduction curves".into());
+    };
+    if red != green || green != blue {
+      return Err("ICC profile with different curves per channel is not supported".into());
+    }
+    let [r, g, b] = [profile.red_colorant, profile.green_colorant, profile.blue_colorant];
+    let rgb_to_xyz = [
+      [r.x as f32, g.x as f32, b.x as f32],
+      [r.y as f32, g.y as f32, b.y as f32],
+      [r.z as f32, g.z as f32, b.z as f32],
+    ];
+    // Colorants of the PCS map white RGB values to its white
+    if rgb_to_xyz
+      .iter()
+      .zip(CIE_1931_TRISTIMULUS_D50)
+      .any(|(row, white)| (row.iter().sum::<f32>() - white).abs() > COLORANT_WHITE_TOLERANCE)
+    {
+      return Err(format!("ICC profile with colorants {:?} doesn't map white to the white of the PCS", rgb_to_xyz).into());
+    }
+    let description = profile.description.as_ref().and_then(description_text);
+    Ok(Self {
+      description,
+      rgb_to_xyz,
+      curve: red.clone(),
+    })
+  }
+
+  /// LinearizationTable with `entries` evenly spaced values of the curve, scaled to 16 bits
+  ///
+  /// Fails for a curve that isn't monotonic, it can't be a LinearizationTable:
+  /// readers interpolate between its neighbor entries.
+  pub fn linearization_table(&self, entries: usize) -> crate::Result<Vec<u16>> {
+    let curve = self.curve.make_linear_evaluator().map_err(|err| format!("Invalid ICC curve: {}", err))?;
+    let last = entries.saturating_sub(1).max(1) as f32;
+    let table: Vec<u16> = (0..entries)
+      .map(|i| (curve.evaluate_value(i as f32 / last).clamp(0.0, 1.0) * f32::from(u16::MAX)).round() as u16)
+      .collect();
+    if table.windows(2).any(|pair| pair[0] > pair[1]) {
+      return Err("ICC curve is not monotonic".into());
+    }
+    Ok(table)
+  }
+}
+
+/// Text of a description tag
+fn description_text(text: &ProfileText) -> Option<String> {
+  let text = match text {
+    ProfileText::PlainString(text) => text.as_str(),
+    ProfileText::Description(description) => description.ascii_string.as_str(),
+    ProfileText::Localizable(strings) => strings.first()?.value.as_str(),
+  };
+  let text = text.trim_end_matches('\0').trim();
+  (!text.is_empty()).then(|| text.to_string())
+}
 
 /// ICC profile of RGB values of `space`, encoded by `transfer`
 pub fn rgb_profile(space: OutputSpace, transfer: TransferFunction) -> Vec<u8> {
@@ -215,5 +308,107 @@ mod tests {
     // A gamma of 1.0
     assert_eq!(tag(&profile, b"kTRC"), Some(&b"curv\0\0\0\0\0\0\0\x01\x01\x00"[..]));
     assert!(tag(&profile, b"rXYZ").is_none());
+  }
+
+  #[test]
+  fn read_generated_profiles() -> crate::Result<()> {
+    for (space, transfer) in [
+      (OutputSpace::Srgb, TransferFunction::Srgb),
+      (OutputSpace::Srgb, TransferFunction::Linear),
+      (OutputSpace::AdobeRgb, TransferFunction::AdobeRgb),
+      (OutputSpace::ProPhotoRgb, TransferFunction::ProPhotoRgb),
+    ] {
+      let profile = MatrixShaperProfile::parse(&rgb_profile(space, transfer))?;
+      assert!(
+        profile.description.as_deref().is_some_and(|text| text.starts_with(space.name())),
+        "{:?}",
+        profile.description
+      );
+      let expected = multiply(&bradford_adaption_matrix(&Illuminant::D65, &Illuminant::D50), &space.rgb_to_xyz());
+      for (row, expected) in profile.rgb_to_xyz.as_flattened().iter().zip(expected.as_flattened()) {
+        assert!((row - expected).abs() < 1e-4, "{:?} {:?}: {:?}", space, transfer, profile.rgb_to_xyz);
+      }
+      // The table has the values of the curve
+      let table = profile.linearization_table(CURVE_SAMPLES)?;
+      assert_eq!((table.len(), table[0], table[CURVE_SAMPLES - 1]), (CURVE_SAMPLES, 0, u16::MAX));
+      for (i, value) in table.iter().enumerate() {
+        let linear = transfer.decode(i as f32 / (CURVE_SAMPLES - 1) as f32) * f32::from(u16::MAX);
+        assert!(
+          (f32::from(*value) - linear).abs() <= 1.5,
+          "{:?} {} is {}, expected {}",
+          transfer,
+          i,
+          value,
+          linear
+        );
+      }
+    }
+    Ok(())
+  }
+
+  /// Tags of an sRGB profile with `curves` for red, green and blue
+  fn profile_with_curves(curves: [Vec<u8>; 3]) -> Vec<u8> {
+    let rgb_to_xyz = multiply(&bradford_adaption_matrix(&Illuminant::D65, &Illuminant::D50), &OutputSpace::Srgb.rgb_to_xyz());
+    let colorant = |c: usize| xyz_type([rgb_to_xyz[0][c], rgb_to_xyz[1][c], rgb_to_xyz[2][c]]);
+    let [red, green, blue] = curves;
+    profile(
+      b"RGB ",
+      vec![
+        (*b"desc", description_type("test")),
+        (*b"cprt", text_type("No copyright, use freely")),
+        (*b"wtpt", xyz_type(CIE_1931_TRISTIMULUS_D50)),
+        (*b"rXYZ", colorant(0)),
+        (*b"gXYZ", colorant(1)),
+        (*b"bXYZ", colorant(2)),
+        (*b"rTRC", red),
+        (*b"gTRC", green),
+        (*b"bTRC", blue),
+      ],
+    )
+  }
+
+  /// `curv` tag with the 16 bit `samples`
+  fn sampled_curve(samples: &[u16]) -> Vec<u8> {
+    let mut tag = b"curv\0\0\0\0".to_vec();
+    tag.extend_from_slice(&(samples.len() as u32).to_be_bytes());
+    samples.iter().for_each(|sample| tag.extend_from_slice(&sample.to_be_bytes()));
+    tag
+  }
+
+  #[test]
+  fn reject_unsupported_profiles() {
+    assert!(MatrixShaperProfile::parse(&[0; 16]).is_err());
+    assert!(MatrixShaperProfile::parse(&gray_profile(TransferFunction::Srgb)).is_err());
+    // One LinearizationTable can't decode different curves
+    let gamma = |gamma: u8| b"curv\0\0\0\0\0\0\0\x01\x02".iter().copied().chain([gamma]).collect::<Vec<u8>>();
+    assert!(MatrixShaperProfile::parse(&profile_with_curves([gamma(0x33), gamma(0x33), gamma(0x33)])).is_ok());
+    assert!(MatrixShaperProfile::parse(&profile_with_curves([gamma(0x33), gamma(0x34), gamma(0x33)])).is_err());
+    // Colorants that don't map white to the white of the PCS
+    let tags = vec![
+      (*b"desc", description_type("test")),
+      (*b"cprt", text_type("No copyright, use freely")),
+      (*b"wtpt", xyz_type(CIE_1931_TRISTIMULUS_D50)),
+      (*b"rXYZ", xyz_type([0.5, 0.2, 0.0])),
+      (*b"gXYZ", xyz_type([0.3, 0.7, 0.1])),
+      (*b"bXYZ", xyz_type([0.2, 0.1, 0.9])),
+      (*b"rTRC", gamma(0x33)),
+      (*b"gTRC", gamma(0x33)),
+      (*b"bTRC", gamma(0x33)),
+    ];
+    assert!(MatrixShaperProfile::parse(&profile(b"RGB ", tags)).is_err());
+  }
+
+  #[test]
+  fn linearization_table_of_sampled_curve() -> crate::Result<()> {
+    let rising = sampled_curve(&[0, 1000, 65535]);
+    let profile = MatrixShaperProfile::parse(&profile_with_curves([rising.clone(), rising.clone(), rising]))?;
+    // Samples between the entries of the curve are interpolated
+    assert_eq!(profile.linearization_table(3)?, vec![0, 1000, 65535]);
+    assert_eq!(profile.linearization_table(5)?, vec![0, 500, 1000, 33268, 65535]);
+    // The table of a curve that isn't monotonic is not usable
+    let falling = sampled_curve(&[0, 40000, 20000, 65535]);
+    let profile = MatrixShaperProfile::parse(&profile_with_curves([falling.clone(), falling.clone(), falling]))?;
+    assert!(profile.linearization_table(256).is_err());
+    Ok(())
   }
 }
