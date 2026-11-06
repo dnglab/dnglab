@@ -151,7 +151,9 @@ pub fn apply_linearization_table(samples: &mut [u16], row_width: usize, table: &
   }
   let table = LookupTable::new_with_bits(table, 16);
   samples.par_chunks_exact_mut(row_width).for_each(|row| {
-    let mut random = if row.len() >= 2 { LEu32(row.as_bytes(), 0) } else { 0 };
+    // The generator of the dither stays at 0 for a seed of 0, which shifts all
+    // values of a row that starts with black
+    let mut random = if row.len() >= 2 { LEu32(row.as_bytes(), 0).max(1) } else { 1 };
     row.iter_mut().for_each(|p| {
       *p = table.dither(*p, &mut random);
     })
@@ -209,6 +211,20 @@ pub fn rotate_90(src: &[u16], dst: &mut [u16], width: usize, height: usize) {
 #[cfg(test)]
 mod tests {
   use super::*;
+
+  /// The dither is centered on the values of the table, also for a row that starts with black
+  #[test]
+  fn linearization_table_dither_of_row_with_black_start() {
+    let table: Vec<u16> = (0..=255_u16).map(|code| code * 257).collect();
+    let mut samples = vec![100_u16; 1000];
+    samples[..2].fill(0);
+    apply_linearization_table(&mut samples, 1000, &table);
+    let values = &samples[2..];
+    // Spread over half of the distance to the next value, in both directions
+    assert!(values.iter().all(|value| value.abs_diff(100 * 257) <= 129), "{:?}", &values[..16]);
+    let mean = values.iter().map(|value| f32::from(*value)).sum::<f32>() / values.len() as f32;
+    assert!((mean - f32::from(100 * 257_u16)).abs() < 13.0, "mean is {}", mean);
+  }
 
   #[test]
   fn white_balance_mosaic_by_plane_colors() -> crate::Result<()> {
