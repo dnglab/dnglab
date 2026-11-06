@@ -15,6 +15,7 @@ use crate::{
     blacklevel::{rescale, rescale_in_place},
     color::{PixelOp, apply_gain, apply_transfer_function, camera_to_rgb, camera_to_rgb_in_place},
     denoise::wavelet_denoise,
+    exposure::{apply_exposure, auto_exposure},
     fuji_rotate::fuji_normalize_rotation,
     raw::{white_balance, white_balance_mosaic},
     scale::scale_image,
@@ -216,6 +217,14 @@ impl Executor {
         log::debug!("dimension after rotate {:?}", image.dim());
       }
       Op::Denoise { strength, wb } => wavelet_denoise(ImageRegionMut::from(self.image().view_mut()), *strength, wb)?,
+      Op::Exposure { manual, meter_scale, scale } => {
+        let region = ImageRegionMut::from(self.image().view_mut());
+        let estimate = match meter_scale {
+          Some(meter_scale) => auto_exposure(region.as_region(), meter_scale)?,
+          None => 0.0,
+        };
+        apply_exposure(region, manual + estimate, scale)?;
+      }
       Op::Sharpen { strength, scale } => laplacian_sharpen(ImageRegionMut::from(self.image().view_mut()), *strength, scale)?,
       Op::Gain(gain) => apply_gain(self.image().view_mut(), *gain),
       Op::ToneCurve(curve) => curve.apply_image(self.image().view_mut()),

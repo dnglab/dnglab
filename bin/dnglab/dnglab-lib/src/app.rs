@@ -68,6 +68,16 @@ fn sharpen_strength_parser(value: &str) -> std::result::Result<f32, String> {
   }
 }
 
+/// Parser for an exposure in EV, any finite number
+fn exposure_parser(value: &str) -> std::result::Result<f32, String> {
+  let exposure: f32 = value.parse().map_err(|err| format!("{}", err))?;
+  if exposure.is_finite() {
+    Ok(exposure)
+  } else {
+    Err(format!("{} is not a finite number", value))
+  }
+}
+
 /// Parse a JPEG XL distance in the range 0 to 25
 fn jxl_distance_parser(value: &str) -> std::result::Result<f32, String> {
   let distance: f32 = value.parse().map_err(|err| format!("{}", err))?;
@@ -390,6 +400,13 @@ fn process_raw_command() -> Command {
         .required(false)
         .value_parser(sharpen_strength_parser),
     )
+    .arg(
+      arg!(exposure: --exposure <EV> "Change the exposure by this value in EV, e.g. -1.2. A negative value keeps white [default: 0]")
+        .required(false)
+        .allow_negative_numbers(true)
+        .value_parser(exposure_parser),
+    )
+    .arg(arg!(auto_exposure: --"auto-exposure" "Correct the exposure by an estimate from the image, --exposure is added to it").action(ArgAction::SetTrue))
     .arg(arg!(-f --override "Override existing files").action(ArgAction::SetTrue))
     .arg(arg!(-r --recursive "Process input directory recursive").action(ArgAction::SetTrue))
     .arg(arg!(<INPUT> "Input file or directory").value_parser(clap::value_parser!(PathBuf)))

@@ -89,6 +89,10 @@ pub struct RawProcessingParams {
   pub denoise: DenoiseStrength,
   /// Strength of the sharpening
   pub sharpen: f32,
+  /// Exposure in EV, added to the estimate of `auto_exposure`
+  pub exposure: f32,
+  /// Correct the exposure by an estimate from the image data
+  pub auto_exposure: bool,
   /// Crop to the largest rectangle without transparent pixels of the DNG
   /// transparency mask, within the crop of `crop`
   pub crop_transparent: bool,
@@ -109,6 +113,8 @@ impl Default for RawProcessingParams {
       color_space: OutputSpace::Srgb,
       denoise: DenoiseStrength::default(),
       sharpen: DEFAULT_SHARPEN,
+      exposure: 0.0,
+      auto_exposure: false,
       crop_transparent: false,
     }
   }
@@ -126,6 +132,8 @@ pub fn process_raw_image<W: Write + Seek + Send>(raw: &Path, image_file: &mut W,
     color_space: params.color_space,
     denoise: params.denoise,
     sharpen: params.sharpen,
+    exposure: params.exposure,
+    auto_exposure: params.auto_exposure,
     ..RawDevelop::with_crop(params.crop)
   };
   if params.crop_transparent {
@@ -182,6 +190,10 @@ pub struct RawDevelop {
   pub denoise: DenoiseStrength,
   /// Strength of the Sharpen step
   pub sharpen: f32,
+  /// Exposure of the Exposure step in EV
+  pub exposure: f32,
+  /// Apply the AutoExposure step
+  pub auto_exposure: bool,
 }
 
 impl Default for RawDevelop {
@@ -197,6 +209,8 @@ impl RawDevelop {
       color_space: OutputSpace::default(),
       denoise: DenoiseStrength::default(),
       sharpen: DEFAULT_SHARPEN,
+      exposure: 0.0,
+      auto_exposure: false,
     }
   }
 
@@ -225,6 +239,8 @@ impl RawDevelop {
       color_space: self.color_space,
       denoise: self.denoise,
       sharpen: self.sharpen,
+      exposure: self.exposure,
+      auto_exposure: self.auto_exposure,
       ..Default::default()
     }
   }
@@ -742,6 +758,77 @@ mod tests {
     Ok(())
   }
 
+  /// Linear values of an image with the Exposure step as the only color operation
+  fn develop_exposure(rawimage: RawImage, exposure: f32) -> crate::Result<RenderedImage> {
+    let develop = RawDevelop {
+      exposure,
+      ..RawDevelop::new_with(&[ProcessingStep::Rescale, ProcessingStep::Demosaic, ProcessingStep::Exposure])
+    };
+    develop.develop_image(rawimage)
+  }
+
+  #[test]
+  fn develop_applies_exposure() -> std::result::Result<(), Box<dyn std::error::Error>> {
+    // Linear output of a neutral ramp is exactly scaled by a positive exposure
+    let (rawimage, _) = ramp_rawimage();
+    let before = develop_exposure(rawimage.clone(), 0.0)?;
+    let brighter = develop_exposure(rawimage.clone(), 1.5)?;
+    let factor = 1.5_f32.exp2();
+    assert!(before.data.iter().zip(&brighter.data).all(|(a, b)| (a * factor - b).abs() < 1e-5));
+    // By a negative exposure up to 0.25, values above are darkened less
+    let darker = develop_exposure(rawimage, -1.2)?;
+    let factor = (-1.2_f32).exp2();
+    for (a, b) in before.data.iter().zip(&darker.data) {
+      if *a <= 0.25 {
+        assert!((a * factor - b).abs() < 1e-5, "{} {}", a, b);
+      } else {
+        assert!(a * factor < *b && b < a, "{} {}", a, b);
+      }
+    }
+    Ok(())
+  }
+
+  #[test]
+  fn develop_keeps_white_at_negative_exposure() -> std::result::Result<(), Box<dyn std::error::Error>> {
+    // White stays white in the linear values and through the color map
+    let rawimage = {
+      let mut rawimage = negative_exposure_rawimage();
+      rawimage.baseline_exposure = None;
+      rawimage
+    };
+    let image = develop_exposure(rawimage.clone(), -1.2)?;
+    let pixels = rgb_pixels(&image);
+    assert_eq!(pixels[0], [1.0; 3]);
+    assert!(pixels[1].iter().all(|v| (v - 0.2 * (-1.2_f32).exp2()).abs() < 1e-5), "{:?}", pixels[1]);
+    let develop = RawDevelop {
+      exposure: -1.2,
+      ..RawDevelop::default()
+    };
+    let image = develop.develop_image(rawimage)?;
+    let pixels = rgb_pixels(&image);
+    assert!(pixels[0].iter().all(|v| (v - 1.0).abs() < 1e-5), "{:?}", pixels[0]);
+    assert!(pixels[1].iter().all(|v| *v < 0.9), "{:?}", pixels[1]);
+    Ok(())
+  }
+
+  #[test]
+  fn develop_has_no_exposure_by_default() {
+    for develop in [RawDevelop::default(), RawDevelop::with_crop(CropMode::None)] {
+      let options = develop.render_options();
+      assert_eq!((options.exposure, options.auto_exposure), (0.0, false));
+    }
+    let params = RawProcessingParams::default();
+    assert_eq!((params.exposure, params.auto_exposure), (0.0, false));
+    // The options reach the rendering
+    let develop = RawDevelop {
+      exposure: 0.5,
+      auto_exposure: true,
+      ..Default::default()
+    };
+    let options = develop.render_options();
+    assert_eq!((options.exposure, options.auto_exposure), (0.5, true));
+  }
+
   #[test]
   fn develop_applies_baseline_exposure() -> std::result::Result<(), Box<dyn std::error::Error>> {
     let mut rawimage = RawImage::new_with_data(
@@ -1015,6 +1102,16 @@ mod tests {
         steps: steps.with(Sharpen),
         ..Default::default()
       };
+      let with_exposure = |exposure| RenderOptions {
+        steps,
+        exposure,
+        ..Default::default()
+      };
+      let with_auto_exposure = RenderOptions {
+        steps,
+        auto_exposure: true,
+        ..Default::default()
+      };
       let all = RenderOptions { steps, ..Default::default() };
       let without = |step: ProcessingStep| RenderOptions {
         steps: steps.without(step),
@@ -1081,6 +1178,10 @@ mod tests {
         ("mono_denoise", mono(), with_denoise),
         ("rggb_sharpen", rggb(), with_sharpen.clone()),
         ("mono_sharpen", mono(), with_sharpen),
+        ("rggb_exposure_up", rggb(), with_exposure(1.0)),
+        ("rggb_exposure_down", rggb(), with_exposure(-1.2)),
+        ("mono_exposure_down", mono(), with_exposure(-1.2)),
+        ("rggb_auto_exposure", rggb(), with_auto_exposure),
       ]
     }
 
@@ -1123,6 +1224,10 @@ mod tests {
       ("mono_denoise", 24, 16, 1, &[286.96862787008286, 13775.304181218147, 218.071894642691]),
       ("rggb_sharpen", 24, 16, 3, &[380.3560812473297, 18098.973595499992, 377.30827813224204, 232.59430253505707, 11267.810094922781, 147.7265395562739, 353.0541972517967, 17005.989935040474, 327.8119022570862]),
       ("mono_sharpen", 24, 16, 1, &[286.0752182006836, 13778.213288664818, 217.66035739673464]),
+      ("rggb_exposure_up", 24, 16, 3, &[383.96843552589417, 18243.841208696365, 383.937458310667, 350.1493704319, 16878.810312092304, 325.87266324883933, 383.643371284008, 18234.11838966608, 383.3066028926243]),
+      ("rggb_exposure_down", 24, 16, 3, &[354.61059987545013, 17034.09955960512, 332.3316358791035, 201.39680242538452, 9835.41731902957, 115.59887993295101, 309.8609471321106, 15108.08115285635, 258.89411118142544]),
+      ("mono_exposure_down", 24, 16, 1, &[228.4502983391285, 11078.504926145077, 144.1481925731507]),
+      ("rggb_auto_exposure", 24, 16, 3, &[320.57339230179787, 15592.564796447754, 280.72790856261537, 179.13224990665913, 8831.046201482415, 97.00345894004089, 274.5888995230198, 13529.250810801983, 211.50433309477341]),
     ];
 
     /// Largest absolute difference of the samples of two images of the same size

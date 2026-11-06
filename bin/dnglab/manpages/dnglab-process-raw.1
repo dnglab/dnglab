@@ -4,7 +4,7 @@
 .SH NAME
 dnglab\-process\-raw
 .SH SYNOPSIS
-\fBdnglab\-process\-raw\fR [\fB\-\-remove\-dng\-opcodes\fR] [\fB\-\-artist\fR] [\fB\-\-keep\-mtime\fR] [\fB\-\-image\-index\fR] [\fB\-\-crop\fR] [\fB\-\-crop\-transparent\fR] [\fB\-\-format\fR] [\fB\-\-color\-space\fR] [\fB\-\-jpeg\-quality\fR] [\fB\-\-denoise\-luma\fR] [\fB\-\-denoise\-chroma\fR] [\fB\-\-sharpen\fR] [\fB\-f\fR|\fB\-\-override\fR] [\fB\-r\fR|\fB\-\-recursive\fR] [\fB\-h\fR|\fB\-\-help\fR] <\fIINPUT\fR> <\fIOUTPUT\fR> 
+\fBdnglab\-process\-raw\fR [\fB\-\-remove\-dng\-opcodes\fR] [\fB\-\-artist\fR] [\fB\-\-keep\-mtime\fR] [\fB\-\-image\-index\fR] [\fB\-\-crop\fR] [\fB\-\-crop\-transparent\fR] [\fB\-\-format\fR] [\fB\-\-color\-space\fR] [\fB\-\-jpeg\-quality\fR] [\fB\-\-denoise\-luma\fR] [\fB\-\-denoise\-chroma\fR] [\fB\-\-sharpen\fR] [\fB\-\-exposure\fR] [\fB\-\-auto\-exposure\fR] [\fB\-f\fR|\fB\-\-override\fR] [\fB\-r\fR|\fB\-\-recursive\fR] [\fB\-h\fR|\fB\-\-help\fR] <\fIINPUT\fR> <\fIOUTPUT\fR> 
 .SH DESCRIPTION
 .SH OPTIONS
 .TP
@@ -87,6 +87,12 @@ Strength of the chroma noise reduction (0\-4), 0 is off, 1 is a full reduction [
 .TP
 \fB\-\-sharpen\fR \fI<strength>\fR
 Strength of the sharpening (0\-2), 0 is off, 1 is the classic Laplacian filter [default: 0.2]
+.TP
+\fB\-\-exposure\fR \fI<EV>\fR
+Change the exposure by this value in EV, e.g. \-1.2. A negative value keeps white [default: 0]
+.TP
+\fB\-\-auto\-exposure\fR
+Correct the exposure by an estimate from the image, \-\-exposure is added to it
 .TP
 \fB\-f\fR, \fB\-\-override\fR
 Override existing files

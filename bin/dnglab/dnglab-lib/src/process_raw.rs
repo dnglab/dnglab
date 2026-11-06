@@ -167,6 +167,8 @@ fn generate_job(entry: &FileMap, options: &ArgMatches) -> Result<Vec<Raw2Image>>
         chroma: options.get_one("denoise_chroma").copied().unwrap_or(DenoiseStrength::default().chroma),
       },
       sharpen: options.get_one("sharpen").copied().unwrap_or(DEFAULT_SHARPEN),
+      exposure: options.get_one("exposure").copied().unwrap_or(0.0),
+      auto_exposure: options.get_flag("auto_exposure"),
       crop_transparent: options.get_flag("crop_transparent"),
     };
 

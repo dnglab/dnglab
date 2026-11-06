@@ -20,7 +20,10 @@ use std::time::{Duration, Instant};
 use multiversion::multiversion;
 use rayon::prelude::*;
 
-use super::denoise::{NoiseChange, STABILIZER_OFFSET, detail_deviations};
+use super::{
+  denoise::{NoiseChange, STABILIZER_OFFSET, detail_deviations},
+  luma::luma_coefficients,
+};
 use crate::pixarray::ImageRegionMut;
 
 /// Default strength: a slight gain of the finest detail
@@ -87,18 +90,6 @@ fn sharpen_region(mut region: ImageRegionMut<'_, f32>, strength: f32, scale: &[f
   );
   let elapsed = start.elapsed();
   Ok(collect.then(|| measure(&region, &coefficients, &luma, elapsed)))
-}
-
-/// Share of each color plane in the luma of neutral values with a white of 1.0
-fn luma_coefficients(channels: usize, scale: &[f32; 4]) -> Option<[f32; 4]> {
-  let shares = match channels {
-    1 => [1.0, 0.0, 0.0, 0.0],
-    3 => [0.25, 0.5, 0.25, 0.0],
-    4 => [0.25; 4],
-    _ => return None,
-  };
-  let scale = scale.map(|c| if c.is_finite() && c > 0.0 { c } else { 1.0 });
-  Some(std::array::from_fn(|plane| shares[plane] * scale[plane]))
 }
 
 /// Positions before and after position `index` of `len` positions, mirrored at

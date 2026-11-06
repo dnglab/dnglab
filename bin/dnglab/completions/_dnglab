@@ -73,11 +73,13 @@ _arguments "${_arguments_options[@]}" : \
 '--denoise-luma=[Strength of the luma noise reduction (0-4), 0 is off, 1 is a full reduction \[default\: 0.25\]]:strength:_default' \
 '--denoise-chroma=[Strength of the chroma noise reduction (0-4), 0 is off, 1 is a full reduction \[default\: 0.5\]]:strength:_default' \
 '--sharpen=[Strength of the sharpening (0-2), 0 is off, 1 is the classic Laplacian filter \[default\: 0.2\]]:strength:_default' \
+'--exposure=[Change the exposure by this value in EV, e.g. -1.2. A negative value keeps white \[default\: 0\]]:EV:_default' \
 '-d+[Log level]:level:(error warn info debug trace)' \
 '--loglevel=[Log level]:level:(error warn info debug trace)' \
 '--profile-path=[Directory with profile TOML files]:dir:_files' \
 '--config=[dnglab configuration file]:file:_files' \
 '--crop-transparent[Crop to the largest rectangle without transparent pixels of the DNG transparency mask]' \
+'--auto-exposure[Correct the exposure by an estimate from the image, --exposure is added to it]' \
 '-f[Override existing files]' \
 '--override[Override existing files]' \
 '-r[Process input directory recursive]' \
