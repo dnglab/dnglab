@@ -9,6 +9,7 @@ use crate::alloc_image;
 use crate::analyze::FormatDump;
 use crate::bits::LEu32;
 use crate::bits::clampbits;
+use crate::cfa::{CFA_COLOR_B, CFA_COLOR_R};
 use crate::decompressors::packed::decompress_12be;
 use crate::decompressors::packed::decompress_12le;
 use crate::decompressors::packed::decompress_12le_unpacked;
@@ -28,6 +29,7 @@ use crate::rawsource::RawSource;
 use crate::tags::ExifTag;
 use crate::tags::TiffCommonTag;
 
+use super::Camera;
 use super::CameraLookup;
 use super::Decoder;
 use super::FormatHint;
@@ -48,7 +50,15 @@ pub struct SrwDecoder<'a> {
 
 impl<'a> SrwDecoder<'a> {
   pub fn new(file: &RawSource, tiff: GenericTiffReader, rawloader: &'a RawLoader) -> Result<SrwDecoder<'a>> {
-    let camera = rawloader.lookup_camera(tiff.root_ifd())?;
+    // Some models have other levels for files with a lower bit depth
+    let bits = tiff
+      .find_first_ifd_with_tag(TiffCommonTag::StripOffsets)
+      .and_then(|raw| raw.get_entry(TiffCommonTag::BitsPerSample))
+      .map_or(0, |bits| bits.force_u32(0));
+    let camera = match rawloader.lookup_camera_with_mode(tiff.root_ifd(), &format!("{}bit", bits))? {
+      camera if camera.supported().is_ok() => camera,
+      _ => rawloader.lookup_camera(tiff.root_ifd())?,
+    };
 
     let makernote = if let Some(exif) = tiff.find_first_ifd_with_tag(ExifTag::MakerNotes) {
       exif.parse_makernote(&mut file.reader(), OffsetMode::RelativeToIFD, &[])?
@@ -113,7 +123,7 @@ impl<'a> Decoder for SrwDecoder<'a> {
       }
     };
     let cpp = 1;
-    ok_cfa_image_with_blacklevels(camera.clone(), cpp, self.get_wb()?, self.get_blacklevel()?, image, dummy)
+    ok_cfa_image_with_blacklevels(camera.clone(), cpp, self.get_wb()?, self.get_blacklevel(camera)?, image, dummy)
   }
 
   fn check_supported(&self) -> Result<()> {
@@ -482,6 +492,7 @@ impl<'a> SrwDecoder<'a> {
     if rggb_levels.count() != 4 || rggb_blacks.count() != 4 {
       Err(RawlerError::DecoderFailed("SRW: RGGB Levels and Blacks don't have 4 elements".to_string()))
     } else {
+      // The key of the encrypted values cancels out
       Ok([
         (rggb_levels.force_u32(0) as f32 - rggb_blacks.force_u32(0) as f32) / 4096.0,
         (rggb_levels.force_u32(1) as f32 - rggb_blacks.force_u32(1) as f32) / 4096.0,
@@ -491,25 +502,22 @@ impl<'a> SrwDecoder<'a> {
     }
   }
 
-  /// Extract blacklevel
-  /// Ironically, the data is already black level subtracted, but the
-  /// WB coeffs are not. So we can return 0 here. The black level
-  /// is subtracted in the get_wb() function.
-  fn get_blacklevel(&self) -> Result<[u32; 4]> {
-    Ok([0, 0, 0, 0])
-    /*
-     let rggb_blacks = fetch_tiff_tag!(self.makernote, SrwMakernote::SrwRGGBBlacks);
-     if rggb_blacks.count() != 4 {
-       Err(RawlerError::General("SRW: RGGB Blacks don't have 4 elements".to_string()))
-     } else {
-       Ok([
-         rggb_blacks.force_u16(0),
-         rggb_blacks.force_u16(1),
-         rggb_blacks.force_u16(2),
-         rggb_blacks.force_u16(3),
-       ])
-     }
-    */
+  /// Black levels of the CFA pattern. The makernote stores them in RGGB order,
+  /// encrypted by adding the values of the key.
+  fn get_blacklevel(&self, camera: &Camera) -> Result<[u32; 4]> {
+    let rggb_blacks = fetch_tiff_tag!(self.makernote, SrwMakernote::SrwRGGBBlacks);
+    if rggb_blacks.count() != 4 {
+      return Err(RawlerError::DecoderFailed("SRW: RGGB Blacks don't have 4 elements".to_string()));
+    }
+    let key = self.makernote.get_entry(SrwMakernote::SrwEncryptionKey);
+    Ok(std::array::from_fn(|i| {
+      let index = match camera.cfa.color_at(i / 2, i % 2) {
+        CFA_COLOR_R => 0,
+        CFA_COLOR_B => 3,
+        _ => 1,
+      };
+      rggb_blacks.force_u32(index).saturating_sub(key.map_or(0, |key| key.force_u32(index)))
+    }))
   }
 }
 
@@ -520,6 +528,7 @@ crate::tags::tiff_tag_enum!(SrwMakernote);
 #[repr(u16)]
 pub enum SrwMakernote {
   LensModel = 0xA003,
+  SrwEncryptionKey = 0xA020,
   SrwRGGBLevels = 0xA021,
   SrwRGGBBlacks = 0xA028,
 }
