@@ -18,6 +18,7 @@ use crate::bits::LEu32;
 use crate::bits::LookupTable;
 use crate::bits::clampbits;
 use crate::buffer::PaddedBuf;
+use crate::camera_profile::CameraProfile;
 use crate::decoders::dynamic_image_from_ifd;
 use crate::decoders::dynamic_image_from_jpeg_interchange_format;
 use crate::decoders::nef::lensdata::NefLensData;
@@ -27,12 +28,14 @@ use crate::decompressors::packed::*;
 use crate::exif::Exif;
 use crate::formats::tiff::GenericTiffReader;
 use crate::formats::tiff::IFD;
+use crate::formats::tiff::PhotometricInterpretation;
 use crate::formats::tiff::Value;
 use crate::formats::tiff::ifd::OffsetMode;
 use crate::formats::tiff::reader::TiffReader;
 use crate::imgop::Dim2;
 use crate::imgop::Point;
 use crate::imgop::Rect;
+use crate::imgop::icc::MatrixShaperProfile;
 use crate::lens::LensDescription;
 use crate::lens::LensResolver;
 use crate::pixarray::PixU16;
@@ -40,6 +43,7 @@ use crate::pumps::BitPump;
 use crate::pumps::BitPumpMSB;
 use crate::pumps::ByteStream;
 use crate::rawimage::CFAConfig;
+use crate::rawimage::ColorimetricReference;
 use crate::rawimage::RawPhotometricInterpretation;
 use crate::rawimage::WhiteLevel;
 use crate::rawsource::RawSource;
@@ -336,6 +340,15 @@ impl<'a> Decoder for NefDecoder<'a> {
       let white = if compression == 1 && bps == 8 { 255 } else { 65535 };
       img.blacklevel = BlackLevel::zero(1, 1, cpp);
       img.whitelevel = WhiteLevel::new(vec![white; cpp]);
+
+      if let Some(encoding) = self.scan_encoding() {
+        // The levels apply to the values of the table
+        img.whitelevel = WhiteLevel::new(vec![u16::MAX as u32; cpp]);
+        img.linearization_table = Some(encoding.linearization_table);
+        img.camera_profiles = vec![encoding.camera_profile];
+        img.wb_coeffs = [1.0, 1.0, 1.0, f32::NAN];
+        img.colorimetric_reference = ColorimetricReference::OutputReferred;
+      }
     }
 
     Ok(img)
@@ -362,6 +375,12 @@ impl<'a> Decoder for NefDecoder<'a> {
 
   fn preview_image(&self, file: &RawSource, params: &RawDecodeParams) -> Result<Option<DynamicImage>> {
     if params.image_index != 0 {
+      return Ok(None);
+    }
+    // The thumbnail of a scan is encoded in the working space of the scanner
+    // software, but previews are expected to be sRGB. It is rendered from the
+    // image data instead.
+    if self.scan_encoding().is_some() {
       return Ok(None);
     }
     // High resolution preview image is stored in JPEGInterchangeFormat tag.
@@ -394,7 +413,58 @@ impl<'a> Decoder for NefDecoder<'a> {
   }
 }
 
+/// Encoding of the RGB values of a scan, see [`NefDecoder::scan_encoding`]
+struct ScanEncoding {
+  linearization_table: Vec<u16>,
+  camera_profile: CameraProfile,
+}
+
+impl ScanEncoding {
+  /// Encoding of 8 or 16 bit values by the ICC profile in `data`
+  fn new(data: &[u8], bps: usize) -> Result<Self> {
+    if !matches!(bps, 8 | 16) {
+      return Err(format!("Scan with {} bits per sample is not supported", bps).into());
+    }
+    let profile = MatrixShaperProfile::parse(data)?;
+    let linearization_table = profile.linearization_table(1 << bps)?;
+    // The colorants map white RGB values to the D50 white of the PCS
+    let mut camera_profile = CameraProfile::from_forward_matrix_d50(&profile.rgb_to_xyz, &[1.0; 3]).ok_or("ICC profile has invalid colorants")?;
+    camera_profile.name = profile.description;
+    Ok(Self {
+      linearization_table,
+      camera_profile,
+    })
+  }
+}
+
 impl<'a> NefDecoder<'a> {
+  /// Encoding of the RGB values stored by the Nikon Scan software of Coolscan
+  /// scanners, from the ICC profile in IFD 0
+  ///
+  /// These values are not sensor data. The software has already rendered the
+  /// scan to a working space that is selected per scan, so they are
+  /// output-referred and encoded by the curve of the profile. The profile is
+  /// stored with the thumbnail in IFD 0, but it also describes the image in
+  /// the SubIFD.
+  ///
+  /// A profile that can't be used is reported, the values are then processed
+  /// as they are.
+  fn scan_encoding(&self) -> Option<ScanEncoding> {
+    let raw = self.tiff.find_ifd_with_new_subfile_type(0)?;
+    let photometric = raw.get_entry(TiffCommonTag::PhotometricInt)?.force_u16(0);
+    if photometric != PhotometricInterpretation::RGB as u16 {
+      return None;
+    }
+    let bps = raw.get_entry(TiffCommonTag::BitsPerSample)?.force_usize(0);
+    let (Value::Undefined(data) | Value::Byte(data)) = &self.tiff.root_ifd().get_entry(ExifTag::IccProfile)?.value else {
+      warn!("NEF: ICC profile has an unexpected type, it is ignored");
+      return None;
+    };
+    ScanEncoding::new(data, bps)
+      .inspect_err(|err| warn!("NEF: ICC profile of the scan is ignored, the colors will be wrong: {}", err))
+      .ok()
+  }
+
   /// For older formats, we use the camera definitions and this here
   /// is useless. But if we found here the levels in makernotes, we
   /// use these instead. For 12 bit images, the blacklevels are still relative to
