@@ -1092,9 +1092,9 @@ impl RawLoader {
           return Ok(Box::new(dng::DngDecoder::new(rawfile, tiff, self)?));
         }
 
-        // The DCS560C is really a CR2 camera so we just special case it here
+        // The DCS520C and DCS560C are really CR2 cameras so we just special case them here
         if let Some(model) = tiff.get_entry(TiffCommonTag::Model) {
-          if model.get_string().ok() == Some(&String::from("DCS560C")) {
+          if matches!(model.get_string().ok().map(String::as_str), Some("DCS520C" | "DCS560C")) {
             return use_decoder!(cr2::Cr2Decoder, rawfile, tiff, self);
           }
         }
