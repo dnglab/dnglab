@@ -1,0 +1,11 @@
+make = "Kodak"
+model = "DCS520C"
+clean_make = "Kodak"
+clean_model = "DCS520C"
+whitepoint = 4095
+color_pattern = "GRBG"
+active_area = [0, 0, 0, 0]
+hints = ["linearization"]
+
+[cameras.color_matrix]
+Unknown = [2.4542, -1.086, -0.3401, -0.149, 1.137, -0.0297, 0.2858, -0.0605, 0.3225]

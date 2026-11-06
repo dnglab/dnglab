@@ -481,6 +481,7 @@ Samsung/WB2000/raw_modes
 Kodak/DC120/raw_modes
 Kodak/DC50/raw_modes
 Kodak/DCS460D/raw_modes
+Kodak/DCS520C/raw_modes
 Kodak/DCS560C/raw_modes
 Kodak/DCS760C/raw_modes
 Kodak/DCS Pro 14N/raw_modes
