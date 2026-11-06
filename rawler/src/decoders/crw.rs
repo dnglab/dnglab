@@ -160,16 +160,33 @@ impl<'a> CrwDecoder<'a> {
           1024.0 / (cinfo.get_force_u16(39) as f32),
         ]);
       }
-      let off = camera.param_usize("wb_offset").unwrap_or(0);
-      let key: [u16; 2] = if camera.find_hint("wb_mangle") { [0x410, 0x45f3] } else { [0, 0] };
-      return Ok([
-        (cinfo.get_force_u16(off + 1) ^ key[1]) as f32,
-        (cinfo.get_force_u16(off + 0) ^ key[0]) as f32,
-        (cinfo.get_force_u16(off + 0) ^ key[0]) as f32,
-        (cinfo.get_force_u16(off + 2) ^ key[0]) as f32,
-      ]);
+      return Ok(self.preset_wb(cinfo).unwrap_or([f32::NAN, f32::NAN, f32::NAN, f32::NAN]));
     }
     Ok([f32::NAN, f32::NAN, f32::NAN, f32::NAN])
+  }
+
+  /// White balance levels of the shot from the table with the levels of each
+  /// white balance preset. A shot in auto mode has no levels in this table.
+  fn preset_wb(&self, cinfo: &CiffEntry) -> Option<[f32; 4]> {
+    let first = cinfo.get_force_u16(0);
+    // Index of the first row and the rows of the white balance modes:
+    // 1 daylight, 2 cloudy, 3 tungsten, 4 fluorescent, 5 flash, 14 fluorescent high, 17 underwater
+    let (first_row, rows): (usize, &[(u16, usize)]) = match (first, cinfo.count) {
+      // G3, G5, S45, S50
+      (0, 2048) => (40, &[(1, 2), (2, 3), (3, 4), (4, 5), (5, 7)]),
+      // Pro1
+      (0x410, 2048) => (44, &[(1, 2), (2, 3), (3, 4), (4, 5), (5, 7)]),
+      // G6, S60, S70
+      (0x410, 3072) => (48, &[(1, 2), (2, 3), (3, 4), (4, 5), (5, 10), (14, 6), (17, 8)]),
+      _ => return None,
+    };
+    let mode = self.ciff.find_entry(CiffTag::ShotInfo).filter(|info| info.count > 7)?.get_force_u16(7);
+    let (_, row) = rows.iter().find(|(preset, _)| *preset == mode)?;
+    let levels = first_row + row * 4;
+    // The first value of the table tells if the levels are encrypted
+    let key: [u16; 2] = if first == 0x410 { [0x410, 0x45f3] } else { [0, 0] };
+    let level = |i: usize| (cinfo.get_force_u16(levels + i) ^ key[i & 1]) as f32;
+    Some([level(1), level(0), level(3), level(2)])
   }
 
   fn create_hufftables(num: usize) -> [HuffTable; 2] {

@@ -7,7 +7,7 @@ pub enum CiffTag {
   //Null         = 0x0000,
   ColorInfo1 = 0x0032,
   MakeModel = 0x080a,
-  //ShotInfo     = 0x102a,
+  ShotInfo = 0x102a,
   ColorInfo2 = 0x102c,
   WhiteBalance = 0x10a9,
   SensorInfo = 0x1031,

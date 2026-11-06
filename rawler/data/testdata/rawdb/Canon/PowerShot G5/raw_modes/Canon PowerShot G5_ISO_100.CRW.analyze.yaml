@@ -33,9 +33,9 @@ data:
       whitelevels:
         - 4095
       wbCoeffs:
-        - 1.6563307
-        - 1.0
-        - 2.369509
+        - ~
+        - ~
+        - ~
         - ~
     rawMetadata:
       exif:
