@@ -2278,6 +2278,7 @@ dependencies = [
  "log",
  "md5",
  "memmap2",
+ "moxcms",
  "multiversion",
  "num 0.4.3",
  "num_enum",

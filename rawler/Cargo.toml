@@ -49,6 +49,7 @@ libloading = "0.8"
 log = "0.4"
 md5 = "0.8"
 memmap2 = "0.9.4"
+moxcms = {version = "0.8", default-features = false}
 multiversion = "0.8"
 num = "0.4"
 num_enum = "0.7"
