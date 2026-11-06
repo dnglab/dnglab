@@ -65,6 +65,9 @@ fn main() -> Result<(), Box<dyn Error>> {
     denoise: DenoiseStrength::default(),
     // A slight sharpening
     sharpen: DEFAULT_SHARPEN,
+    // No change of the exposure
+    exposure: 0.0,
+    auto_exposure: false,
   };
 
   // Plan the processing operations for this image

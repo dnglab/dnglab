@@ -55,6 +55,15 @@ pub(super) enum Op {
   /// Reduce the noise of linear values. `wb` are the white balance coefficients
   /// to reach neutral colors, all ones if they are already white balanced.
   Denoise { strength: DenoiseStrength, wb: [f32; 4] },
+  /// Change the exposure of linear values by `manual` EV and, if `meter_scale` is
+  /// there, by an estimate from the image data. `meter_scale` maps them to neutral
+  /// colors in the brightness of the image, `scale` to neutral colors with a white
+  /// of 1.0: the white balance that is not applied yet and the exposure gain.
+  Exposure {
+    manual: f32,
+    meter_scale: Option<[f32; 4]>,
+    scale: [f32; 4],
+  },
   /// Sharpen linear values. `scale` maps them to neutral colors with a white of
   /// 1.0: the white balance that is not applied yet and the exposure gain.
   Sharpen { strength: f32, scale: [f32; 4] },
@@ -274,6 +283,22 @@ pub fn plan(rawimage: &RawImage, options: &RenderOptions) -> crate::Result<Plan>
   let transfer_function = steps.contains(Step::TransferFunction).then(|| options.color_space.transfer_function());
   // Output-referred data is already rendered
   let default_tone_curve = (steps.contains(Step::ToneCurve) && !rawimage.colorimetric_reference.is_output_referred()).then(ToneCurve::default_render);
+  let linear_scale = pending_wb.map(|c| c * gain);
+  // The exposure is changed on the pixels of the output while the values are
+  // scene-referred. CFA data is no image yet. Output-referred data has its intended
+  // brightness, only an explicit exposure changes it.
+  if !cfa_data {
+    let manual = if steps.contains(Step::Exposure) { options.exposure } else { 0.0 };
+    let meter_scale = (steps.contains(Step::AutoExposure) && options.auto_exposure && !rawimage.colorimetric_reference.is_output_referred())
+      .then(|| pending_wb.map(|c| c * exposure.exp2()));
+    if manual != 0.0 || meter_scale.is_some() {
+      ops.push(Op::Exposure {
+        manual,
+        meter_scale,
+        scale: linear_scale,
+      });
+    }
+  }
   // The image is sharpened on the pixels of the output while its values are
   // scene-referred, before the color operations render them. CFA data is no image
   // yet and output-referred data is already rendered.
@@ -283,7 +308,7 @@ pub fn plan(rawimage: &RawImage, options: &RenderOptions) -> crate::Result<Plan>
     } else {
       ops.push(Op::Sharpen {
         strength: options.sharpen,
-        scale: pending_wb.map(|c| c * gain),
+        scale: linear_scale,
       });
     }
   }

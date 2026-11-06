@@ -66,6 +66,12 @@ pub enum ProcessingStep {
   /// Scale the image to square pixels by DefaultScale and to the size of the
   /// best quality by BestQualityScale
   DefaultScale,
+  /// Change the exposure of the linear values by [`RenderOptions::exposure`]
+  Exposure,
+  /// Correct the exposure of the linear values by an estimate from the image
+  /// data, if [`RenderOptions::auto_exposure`] asks for it. Without effect for
+  /// output-referred data, which has its intended brightness.
+  AutoExposure,
   /// Sharpen the linear values by [`RenderOptions::sharpen`]. Without effect for
   /// output-referred data, which is already rendered.
   Sharpen,
@@ -75,7 +81,7 @@ pub enum ProcessingStep {
 
 impl ProcessingStep {
   /// All steps
-  pub const ALL: [Self; 15] = [
+  pub const ALL: [Self; 17] = [
     Self::Rescale,
     Self::Demosaic,
     Self::FujiRotate,
@@ -89,6 +95,8 @@ impl ProcessingStep {
     Self::CropDefault,
     Self::Denoise,
     Self::DefaultScale,
+    Self::Exposure,
+    Self::AutoExposure,
     Self::Sharpen,
     Self::TransferFunction,
   ];
@@ -207,6 +215,11 @@ pub struct RenderOptions {
   pub denoise: DenoiseStrength,
   /// Strength of the Sharpen step
   pub sharpen: f32,
+  /// Exposure of the Exposure step in EV. With [`Self::auto_exposure`] it is added
+  /// to the estimate.
+  pub exposure: f32,
+  /// Apply the AutoExposure step
+  pub auto_exposure: bool,
 }
 
 impl Default for RenderOptions {
@@ -219,6 +232,8 @@ impl Default for RenderOptions {
       color_space: OutputSpace::default(),
       denoise: DenoiseStrength::default(),
       sharpen: DEFAULT_SHARPEN,
+      exposure: 0.0,
+      auto_exposure: false,
     }
   }
 }
@@ -380,6 +395,7 @@ mod tests {
         Op::CropActiveArea => "CropActiveArea",
         Op::Scale { .. } => "Scale",
         Op::TransferFunction(_) => "TransferFunction",
+        Op::Exposure { .. } => "Exposure",
         Op::Sharpen { .. } => "Sharpen",
       })
       .collect()
@@ -750,6 +766,106 @@ mod tests {
     // A negative exposure keeps white at 1.0
     bright.baseline_exposure = Some(SRational::new(-1, 1));
     assert_eq!(sharpen_op(&bright, &all)?.map(|op| op.1), Some([1.0; 4]));
+    Ok(())
+  }
+
+  #[test]
+  fn plan_applies_exposure() -> crate::Result<()> {
+    use crate::rawimage::ColorimetricReference;
+
+    fn exposure_op(rawimage: &RawImage, options: &RenderOptions) -> crate::Result<Option<(f32, Option<[f32; 4]>, [f32; 4])>> {
+      Ok(plan(rawimage, options)?.ops.iter().find_map(|op| match op {
+        Op::Exposure { manual, meter_scale, scale } => Some((*manual, *meter_scale, *scale)),
+        _ => None,
+      }))
+    }
+
+    let all = RenderOptions::default();
+    let manual = RenderOptions {
+      exposure: -1.2,
+      ..Default::default()
+    };
+    let auto = RenderOptions {
+      auto_exposure: true,
+      ..Default::default()
+    };
+    let without = |options: &RenderOptions, step: ProcessingStep| RenderOptions {
+      steps: StepSet::all().without(step),
+      ..options.clone()
+    };
+    assert!(all.steps.contains(ProcessingStep::Exposure) && all.steps.contains(ProcessingStep::AutoExposure));
+
+    // Without an exposure there is no operation
+    assert!(exposure_op(&rggb_rawimage(), &all)?.is_none());
+
+    // Manual and auto are separate, the step and the option must be there
+    assert_eq!(exposure_op(&rggb_rawimage(), &manual)?, Some((-1.2, None, [1.0; 4])));
+    assert!(exposure_op(&rggb_rawimage(), &without(&manual, ProcessingStep::Exposure))?.is_none());
+    assert_eq!(exposure_op(&rggb_rawimage(), &auto)?, Some((0.0, Some([1.0; 4]), [1.0; 4])));
+    assert!(exposure_op(&rggb_rawimage(), &without(&auto, ProcessingStep::AutoExposure))?.is_none());
+    let both = RenderOptions {
+      exposure: 0.5,
+      auto_exposure: true,
+      ..Default::default()
+    };
+    assert_eq!(exposure_op(&rggb_rawimage(), &both)?, Some((0.5, Some([1.0; 4]), [1.0; 4])));
+
+    // After the scaling and before the sharpening, with and without the map
+    let mut scaled = linear_raw_rawimage(8, 6, 3);
+    scaled.camera.best_quality_scale = crate::decoders::BestQualityScale([1, 2]);
+    assert_eq!(
+      op_names(&plan(&scaled, &manual)?),
+      ["Rescale", "CropDefault", "Denoise", "Scale", "Exposure", "Sharpen", "CameraToRgb"]
+    );
+    assert_eq!(
+      op_names(&plan(&scaled, &without(&manual, ProcessingStep::Calibrate))?),
+      [
+        "Rescale",
+        "CropDefault",
+        "Denoise",
+        "Scale",
+        "Exposure",
+        "Sharpen",
+        "ToneCurve",
+        "TransferFunction"
+      ]
+    );
+
+    // CFA data that is not demosaiced is no image yet, LinearRaw data is not rendered
+    for options in [&manual, &auto] {
+      assert!(exposure_op(&rggb_rawimage(), &without(options, ProcessingStep::Demosaic))?.is_none());
+      let linear = RenderOptions {
+        target: RenderTarget::LinearRaw,
+        ..options.clone()
+      };
+      assert!(exposure_op(&rggb_rawimage(), &linear)?.is_none());
+    }
+
+    // Output-referred data has its intended brightness, only an explicit exposure changes it
+    for reference in [ColorimetricReference::OutputReferred, ColorimetricReference::OutputReferredHdr] {
+      let mut scan = linear_raw_rawimage(8, 6, 3);
+      scan.colorimetric_reference = reference;
+      assert_eq!(exposure_op(&scan, &manual)?.map(|op| op.0), Some(-1.2), "{:?}", reference);
+      assert!(exposure_op(&scan, &auto)?.is_none(), "{:?}", reference);
+      assert_eq!(exposure_op(&scan, &both)?.map(|op| (op.0, op.1)), Some((0.5, None)), "{:?}", reference);
+    }
+
+    // The white balance that is not applied yet and the BaselineExposure are part
+    // of the scales: of the white for a positive one, of the meter for both
+    let mut bright = rggb_rawimage();
+    bright.baseline_exposure = Some(SRational::new(1, 1));
+    assert_eq!(exposure_op(&bright, &auto)?, Some((0.0, Some([2.0; 4]), [2.0; 4])));
+    let after_demosaic = RenderOptions {
+      white_balance: WhiteBalancePlacement::AfterDemosaic,
+      ..auto.clone()
+    };
+    let (_, meter_scale, scale) = exposure_op(&bright, &after_demosaic)?.expect("exposure");
+    assert_eq!(
+      (&scale[..3], &meter_scale.expect("meter scale")[..3]),
+      (&[4.0, 2.0, 3.0][..], &[4.0, 2.0, 3.0][..])
+    );
+    bright.baseline_exposure = Some(SRational::new(-1, 1));
+    assert_eq!(exposure_op(&bright, &auto)?, Some((0.0, Some([0.5; 4]), [1.0; 4])));
     Ok(())
   }
 

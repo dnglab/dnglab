@@ -719,6 +719,7 @@ mod tests {
     assert!(!options.steps.contains(ProcessingStep::ToneCurve));
     assert!(!options.steps.contains(ProcessingStep::Denoise));
     assert!(!options.steps.contains(ProcessingStep::Sharpen));
+    assert_eq!((options.exposure, options.auto_exposure), (0.0, false));
     assert_eq!(
       options.steps,
       StepSet::all()
