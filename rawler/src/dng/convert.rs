@@ -674,10 +674,10 @@ fn reduce_to_three_planes(rawimage: &mut RawImage) -> crate::Result<()> {
 /// Options to render a preview or thumbnail from the raw data
 ///
 /// Previews are small, a demosaic of half size is enough. They are not rendered
-/// with the default tone curve.
+/// with the default tone curve and the noise reduction.
 fn preview_render_options() -> RenderOptions {
   RenderOptions {
-    steps: StepSet::all().without(ProcessingStep::ToneCurve),
+    steps: StepSet::all().without(ProcessingStep::ToneCurve).without(ProcessingStep::Denoise),
     demosaic: DemosaicQuality::Preview,
     ..Default::default()
   }
@@ -711,10 +711,14 @@ mod tests {
   use crate::{decoders::Camera, imgop::xyz::Illuminant, pixarray::PixU16};
 
   #[test]
-  fn previews_have_no_default_tone_curve() {
+  fn previews_have_no_default_tone_curve_and_noise_reduction() {
     let options = preview_render_options();
     assert!(!options.steps.contains(ProcessingStep::ToneCurve));
-    assert_eq!(options.steps, StepSet::all().without(ProcessingStep::ToneCurve));
+    assert!(!options.steps.contains(ProcessingStep::Denoise));
+    assert_eq!(
+      options.steps,
+      StepSet::all().without(ProcessingStep::ToneCurve).without(ProcessingStep::Denoise)
+    );
     assert_eq!(options.demosaic, DemosaicQuality::Preview);
   }
 

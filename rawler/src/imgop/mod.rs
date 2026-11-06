@@ -6,6 +6,7 @@ pub mod blacklevel;
 pub mod chromatic_adaption;
 pub mod cielab;
 pub mod color;
+pub mod denoise;
 pub mod develop;
 pub mod fuji_rotate;
 pub mod gamma;

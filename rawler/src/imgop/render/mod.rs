@@ -23,7 +23,9 @@ use crate::{
   imgop::{
     Dim2, Rect,
     color::{OutputSpace, TransferFunction},
-    convert_from_f32_scaled_u16, icc,
+    convert_from_f32_scaled_u16,
+    denoise::DenoiseStrength,
+    icc,
   },
   pixarray::{Color2D, ImageRegion, ImageView, ImageViewMut, Pix2D},
 };
@@ -57,6 +59,9 @@ pub enum ProcessingStep {
   ToneCurve,
   /// Crop to the DefaultCrop, or the ActiveArea without DefaultCrop
   CropDefault,
+  /// Reduce the noise of demosaiced data by [`RenderOptions::denoise`]. Without
+  /// effect for output-referred data, which is already rendered.
+  Denoise,
   /// Scale the image to square pixels by DefaultScale and to the size of the
   /// best quality by BestQualityScale
   DefaultScale,
@@ -66,7 +71,7 @@ pub enum ProcessingStep {
 
 impl ProcessingStep {
   /// All steps
-  pub const ALL: [Self; 13] = [
+  pub const ALL: [Self; 14] = [
     Self::Rescale,
     Self::Demosaic,
     Self::FujiRotate,
@@ -78,6 +83,7 @@ impl ProcessingStep {
     Self::ProfileRender,
     Self::ToneCurve,
     Self::CropDefault,
+    Self::Denoise,
     Self::DefaultScale,
     Self::TransferFunction,
   ];
@@ -192,6 +198,8 @@ pub struct RenderOptions {
   /// Color space of the output: the Calibrate step maps the camera values to
   /// it, the TransferFunction step encodes the values by its transfer function
   pub color_space: OutputSpace,
+  /// Strength of the Denoise step
+  pub denoise: DenoiseStrength,
 }
 
 impl Default for RenderOptions {
@@ -202,6 +210,7 @@ impl Default for RenderOptions {
       white_balance: WhiteBalancePlacement::default(),
       demosaic: DemosaicQuality::default(),
       color_space: OutputSpace::default(),
+      denoise: DenoiseStrength::default(),
     }
   }
 }
@@ -355,6 +364,7 @@ mod tests {
         Op::WhiteBalance(_) => "WhiteBalance",
         Op::Demosaic { .. } => "Demosaic",
         Op::FujiRotate { .. } => "FujiRotate",
+        Op::Denoise { .. } => "Denoise",
         Op::Gain(_) => "Gain",
         Op::ToneCurve(_) => "ToneCurve",
         Op::CameraToRgb { .. } => "CameraToRgb",
@@ -405,7 +415,7 @@ mod tests {
     rawimage.baseline_exposure = Some(SRational::new(1, 2));
     let plan = plan(&rawimage, &RenderOptions::default())?;
     // The crop follows OpcodeList3, the gain and the transfer function are part of the color map
-    assert_eq!(op_names(&plan), ["RescaleMosaic", "Demosaic", "List3", "CropDefault", "CameraToRgb"]);
+    assert_eq!(op_names(&plan), ["RescaleMosaic", "Demosaic", "List3", "CropDefault", "Denoise", "CameraToRgb"]);
     // OpcodeList3 keeps the data cropped to the ActiveArea, like the demosaic
     assert!(plan.ops.iter().any(|op| matches!(op, Op::Opcodes { crop_to_active_area: true, .. })));
     let Some(Op::CameraToRgb { ops: pixel_ops, .. }) = plan.ops.last() else {
@@ -440,7 +450,7 @@ mod tests {
   fn plan_crops_in_demosaic() -> crate::Result<()> {
     // Without OpcodeList3, only the DefaultCrop is demosaiced
     let cropped = plan(&rggb_rawimage(), &RenderOptions::default())?;
-    assert_eq!(op_names(&cropped), ["RescaleMosaic", "Demosaic", "CameraToRgb"]);
+    assert_eq!(op_names(&cropped), ["RescaleMosaic", "Demosaic", "Denoise", "CameraToRgb"]);
     assert!(matches!(cropped.ops[1], Op::Demosaic { crop_default: true, .. }));
     let options = RenderOptions {
       steps: StepSet::all().without(ProcessingStep::CropDefault),
@@ -457,7 +467,7 @@ mod tests {
     rawimage.baseline_exposure = Some(SRational::new(-1, 1));
     assert_eq!(
       op_names(&plan(&rawimage, &RenderOptions::default())?),
-      ["RescaleMosaic", "Demosaic", "CameraToRgb"]
+      ["RescaleMosaic", "Demosaic", "Denoise", "CameraToRgb"]
     );
     let options = RenderOptions {
       steps: StepSet::all().without(ProcessingStep::Calibrate),
@@ -465,7 +475,7 @@ mod tests {
     };
     assert_eq!(
       op_names(&plan(&rawimage, &options)?),
-      ["RescaleMosaic", "Demosaic", "ToneCurve", "TransferFunction"]
+      ["RescaleMosaic", "Demosaic", "Denoise", "ToneCurve", "TransferFunction"]
     );
     // Monochrome images have no color map
     let mut mono = linear_raw_rawimage(4, 2, 1);
@@ -473,7 +483,7 @@ mod tests {
     mono.baseline_exposure = Some(SRational::new(-1, 1));
     assert_eq!(
       op_names(&plan(&mono, &RenderOptions::default())?),
-      ["Rescale", "CropDefault", "ToneCurve", "TransferFunction"]
+      ["Rescale", "CropDefault", "Denoise", "ToneCurve", "TransferFunction"]
     );
     Ok(())
   }
@@ -536,16 +546,16 @@ mod tests {
     let mut mono = linear_raw_rawimage(4, 2, 1);
     mono.photometric = RawPhotometricInterpretation::BlackIsZero;
     let plan_of_mono = plan(&mono, &all)?;
-    assert_eq!(op_names(&plan_of_mono), ["Rescale", "CropDefault", "ToneCurve", "TransferFunction"]);
-    assert!(matches!(&plan_of_mono.ops[2], Op::ToneCurve(curve) if *curve == default_curve));
+    assert_eq!(op_names(&plan_of_mono), ["Rescale", "CropDefault", "Denoise", "ToneCurve", "TransferFunction"]);
+    assert!(matches!(&plan_of_mono.ops[3], Op::ToneCurve(curve) if *curve == default_curve));
     assert_eq!(
       op_names(&plan(&mono, &without(ProcessingStep::ToneCurve))?),
-      ["Rescale", "CropDefault", "TransferFunction"]
+      ["Rescale", "CropDefault", "Denoise", "TransferFunction"]
     );
     mono.baseline_exposure = Some(SRational::new(-1, 1));
     let plan_of_mono = plan(&mono, &all)?;
-    assert_eq!(op_names(&plan_of_mono), ["Rescale", "CropDefault", "ToneCurve", "TransferFunction"]);
-    assert!(matches!(&plan_of_mono.ops[2], Op::ToneCurve(curve) if *curve == default_curve.after(&exposure_curve)));
+    assert_eq!(op_names(&plan_of_mono), ["Rescale", "CropDefault", "Denoise", "ToneCurve", "TransferFunction"]);
+    assert!(matches!(&plan_of_mono.ops[3], Op::ToneCurve(curve) if *curve == default_curve.after(&exposure_curve)));
 
     // LinearRaw data is not rendered
     let linear = RenderOptions {
@@ -554,6 +564,85 @@ mod tests {
     };
     assert!(!op_names(&plan(&rggb_rawimage(), &linear)?).contains(&"ToneCurve"));
     assert!(!op_names(&plan(&rggb_rawimage(), &linear)?).contains(&"CameraToRgb"));
+    Ok(())
+  }
+
+  #[test]
+  fn plan_applies_denoise() -> crate::Result<()> {
+    use crate::{imgop::denoise::DenoiseStrength, rawimage::ColorimetricReference};
+
+    fn denoise_op(rawimage: &RawImage, options: &RenderOptions) -> crate::Result<Option<(DenoiseStrength, [f32; 4])>> {
+      Ok(plan(rawimage, options)?.ops.iter().find_map(|op| match op {
+        Op::Denoise { strength, wb } => Some((*strength, *wb)),
+        _ => None,
+      }))
+    }
+
+    let all = RenderOptions::default();
+    let default = DenoiseStrength::default();
+    assert!(all.steps.contains(ProcessingStep::Denoise) && default.is_active());
+
+    // On by default, and off without the step or without a strength
+    assert_eq!(denoise_op(&rggb_rawimage(), &all)?.map(|op| op.0), Some(default));
+    let without_step = RenderOptions {
+      steps: StepSet::all().without(ProcessingStep::Denoise),
+      ..Default::default()
+    };
+    assert!(denoise_op(&rggb_rawimage(), &without_step)?.is_none());
+    let no_strength = RenderOptions {
+      denoise: DenoiseStrength::none(),
+      ..Default::default()
+    };
+    assert!(denoise_op(&rggb_rawimage(), &no_strength)?.is_none());
+    let strength = DenoiseStrength { luma: 1.5, chroma: 0.0 };
+    let with_strength = RenderOptions {
+      denoise: strength,
+      ..Default::default()
+    };
+    assert_eq!(denoise_op(&rggb_rawimage(), &with_strength)?.map(|op| op.0), Some(strength));
+
+    // Output-referred data is already rendered
+    for reference in [ColorimetricReference::OutputReferred, ColorimetricReference::OutputReferredHdr] {
+      let mut scan = linear_raw_rawimage(8, 6, 3);
+      scan.colorimetric_reference = reference;
+      assert!(denoise_op(&scan, &all)?.is_none(), "{:?}", reference);
+    }
+
+    // CFA data that is not demosaiced has no luma and chroma planes
+    let mosaic = RenderOptions {
+      steps: StepSet::all().without(ProcessingStep::Demosaic),
+      ..Default::default()
+    };
+    assert!(denoise_op(&rggb_rawimage(), &mosaic)?.is_none());
+
+    // LinearRaw data is not rendered
+    let linear = RenderOptions {
+      target: RenderTarget::LinearRaw,
+      ..Default::default()
+    };
+    assert!(denoise_op(&rggb_rawimage(), &linear)?.is_none());
+
+    // Monochrome data has one plane
+    let mut mono = linear_raw_rawimage(8, 6, 1);
+    mono.photometric = RawPhotometricInterpretation::BlackIsZero;
+    assert_eq!(denoise_op(&mono, &all)?.map(|op| op.0), Some(default));
+
+    // After the crop and before the color map, while the values are linear
+    let names = op_names(&plan(&linear_raw_rawimage(8, 6, 3), &all)?);
+    assert_eq!(names, ["Rescale", "CropDefault", "Denoise", "CameraToRgb"]);
+
+    // The white balance is passed on if it is not applied yet
+    assert_eq!(denoise_op(&rggb_rawimage(), &all)?.map(|op| op.1), Some([1.0; 4]));
+    let after_demosaic = RenderOptions {
+      white_balance: WhiteBalancePlacement::AfterDemosaic,
+      ..Default::default()
+    };
+    let (_, wb) = denoise_op(&rggb_rawimage(), &after_demosaic)?.expect("denoise");
+    assert_eq!(wb[..3], [2.0, 1.0, 1.5]);
+    let mut linear_raw = linear_raw_rawimage(8, 6, 3);
+    linear_raw.wb_coeffs = [2.0, 1.0, 1.5, f32::NAN];
+    let (_, wb) = denoise_op(&linear_raw, &all)?.expect("denoise");
+    assert_eq!(wb[..3], [2.0, 1.0, 1.5]);
     Ok(())
   }
 
@@ -597,7 +686,7 @@ mod tests {
     // With OpcodeList2 between, the white balance is a separate operation
     let mut with_list2 = rggb_rawimage();
     with_list2.dng_opcodes_2 = Some(OpcodeList::new(Vec::new()));
-    let ops = ["Rescale", "List2", "WhiteBalanceMosaic", "Demosaic", "CameraToRgb"];
+    let ops = ["Rescale", "List2", "WhiteBalanceMosaic", "Demosaic", "Denoise", "CameraToRgb"];
     assert_eq!(op_names(&plan(&with_list2, &RenderOptions::default())?), ops);
 
     // After demosaicing, the camera map applies it
@@ -624,7 +713,7 @@ mod tests {
     };
     assert_eq!(
       op_names(&plan(&linear_raw, &options)?),
-      ["Rescale", "CropDefault", "WhiteBalance", "ToneCurve", "TransferFunction"]
+      ["Rescale", "CropDefault", "Denoise", "WhiteBalance", "ToneCurve", "TransferFunction"]
     );
     Ok(())
   }
@@ -706,7 +795,7 @@ mod tests {
       steps: StepSet::all().without(ProcessingStep::CropDefault),
       ..Default::default()
     };
-    assert_eq!(op_names(&plan(&rawimage, &options)?), ["Rescale", "CropActiveArea", "CameraToRgb"]);
+    assert_eq!(op_names(&plan(&rawimage, &options)?), ["Rescale", "CropActiveArea", "Denoise", "CameraToRgb"]);
     // LinearRaw data is not cropped
     let options = RenderOptions {
       target: RenderTarget::LinearRaw,

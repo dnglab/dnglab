@@ -783,7 +783,7 @@ _dnglab() {
             return 0
             ;;
         dnglab__subcmd__process__subcmd__raw)
-            opts="-f -r -d -v -h --remove-dng-opcodes --artist --keep-mtime --image-index --crop --crop-transparent --format --color-space --jpeg-quality --override --recursive --loglevel --profile-path --config --help"
+            opts="-f -r -d -v -h --remove-dng-opcodes --artist --keep-mtime --image-index --crop --crop-transparent --format --color-space --jpeg-quality --denoise-luma --denoise-chroma --override --recursive --loglevel --profile-path --config --help"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
@@ -818,6 +818,14 @@ _dnglab() {
                     return 0
                     ;;
                 --jpeg-quality)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
+                --denoise-luma)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
+                --denoise-chroma)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
