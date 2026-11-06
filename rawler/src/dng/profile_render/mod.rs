@@ -38,7 +38,7 @@ pub struct ProfileRender {
   pub hue_sat_map: Option<HueSatMap>,
   pub gain_table: Option<GainTable>,
   pub look_table: Option<HueSatMap>,
-  /// ProfileToneCurve after the curve of a negative BaselineExposure
+  /// ProfileToneCurve or the default curve, after the curve of a negative BaselineExposure
   pub tone_curve: Option<ToneCurve>,
   /// Linear gain of a positive BaselineExposure, applied before
   exposure_gain: f32,
@@ -49,10 +49,17 @@ pub struct ProfileRender {
 impl ProfileRender {
   /// Tables of `profile` with the hue/saturation map of calibration slot
   /// `slot`, the gain table map that applies to the profile and the
-  /// BaselineExposure `exposure` in EV
+  /// BaselineExposure `exposure` in EV. `default_tone_curve` is used if the
+  /// profile has no ProfileToneCurve.
   ///
-  /// Returns `None` if there is neither a valid table nor a negative exposure.
-  pub fn new(profile: Option<(&CameraProfile, usize)>, gain_table_map: Option<&GainTableMap>, exposure: f32) -> Option<Self> {
+  /// Returns `None` if there is neither a valid table, a curve nor a negative
+  /// exposure.
+  pub fn new(
+    profile: Option<(&CameraProfile, usize)>,
+    gain_table_map: Option<&GainTableMap>,
+    exposure: f32,
+    default_tone_curve: Option<ToneCurve>,
+  ) -> Option<Self> {
     let hue_sat_map = profile.and_then(|(profile, slot)| {
       profile
         .hue_sat_map_dims
@@ -66,10 +73,7 @@ impl ProfileRender {
         .and_then(|(dims, data)| HueSatMap::new(dims, data, profile.look_table_encoding))
     });
     let profile_curve = profile.and_then(|(profile, _)| profile.tone_curve.as_deref()).and_then(ToneCurve::new);
-    let tone_curve = match (ToneCurve::negative_exposure(exposure), profile_curve) {
-      (Some(exposure_curve), Some(curve)) => Some(curve.after(&exposure_curve)),
-      (exposure_curve, curve) => exposure_curve.or(curve),
-    };
+    let tone_curve = ToneCurve::with_exposure(exposure, profile_curve.or(default_tone_curve));
     let gain_table = gain_table_map.and_then(GainTable::new);
     if hue_sat_map.is_none() && gain_table.is_none() && look_table.is_none() && tone_curve.is_none() {
       return None;
@@ -180,22 +184,22 @@ mod tests {
   #[test]
   fn profile_render_of_slot() {
     let mut profile = CameraProfile::default();
-    assert!(ProfileRender::new(Some((&profile, 0)), None, 0.0).is_none());
+    assert!(ProfileRender::new(Some((&profile, 0)), None, 0.0, None).is_none());
     // Hue shift of 120 degrees in slot 1, none in slot 0
     profile.hue_sat_map_dims = Some([2, 2, 1]);
     profile.hue_sat_map_data = [Some([0.0, 1.0, 1.0].repeat(4)), Some([120.0, 1.0, 1.0].repeat(4)), None];
-    let render = ProfileRender::new(Some((&profile, 1)), None, 0.0).expect("render");
+    let render = ProfileRender::new(Some((&profile, 1)), None, 0.0, None).expect("render");
     assert_eq!(render.apply_pixel([0.5, 0.0, 0.0], 0.5, 0.5), [0.0, 0.5, 0.0]);
     assert_eq!(
-      ProfileRender::new(Some((&profile, 0)), None, 0.0)
+      ProfileRender::new(Some((&profile, 0)), None, 0.0, None)
         .expect("render")
         .apply_pixel([0.5, 0.0, 0.0], 0.5, 0.5),
       [0.5, 0.0, 0.0]
     );
     // Slot 2 has no table
-    assert!(ProfileRender::new(Some((&profile, 2)), None, 0.0).is_none());
+    assert!(ProfileRender::new(Some((&profile, 2)), None, 0.0, None).is_none());
     profile.tone_curve = Some(vec![0.0, 0.0, 0.5, 0.25, 1.0, 1.0]);
-    let render = ProfileRender::new(Some((&profile, 2)), None, 0.0).expect("render");
+    let render = ProfileRender::new(Some((&profile, 2)), None, 0.0, None).expect("render");
     assert!(render.hue_sat_map.is_none() && render.tone_curve.is_some());
   }
 
@@ -221,7 +225,7 @@ mod tests {
   #[test]
   fn gain_table_map_across_image() {
     // Gain 1.0 at the left and 3.0 at the right edge
-    let render = ProfileRender::new(None, Some(&gain_table_map(vec![1.0, 3.0])), 0.0).expect("render");
+    let render = ProfileRender::new(None, Some(&gain_table_map(vec![1.0, 3.0])), 0.0, None).expect("render");
     let mut image = RgbF32::new_with(vec![[0.2, 0.1, 0.1]; 4], 2, 2);
     // The map covers the right column only
     render.apply(&mut image, Rect::new(Point::new(1, 0), Dim2::new(1, 2))).expect("three channels");
@@ -238,22 +242,22 @@ mod tests {
     profile.hue_sat_map_dims = Some([1, 2, 1]);
     profile.hue_sat_map_data = [Some([0.0, 1.0, 1.0].repeat(2)), None, None];
     // BaselineExposure of +1 EV, the white point is 2.0
-    let render = ProfileRender::new(Some((&profile, 0)), Some(&gain_table_map(vec![0.5, 0.5])), 1.0).expect("render");
+    let render = ProfileRender::new(Some((&profile, 0)), Some(&gain_table_map(vec![0.5, 0.5])), 1.0, None).expect("render");
     assert_eq!(render.exposure_gain(), 2.0);
     // 1.6 is below the white point, the gain table map halves it
     assert_rgb_eq(render.apply_pixel([1.6, 0.8, 0.4], 0.5, 0.5), [0.8, 0.4, 0.2]);
     // Values are limited to the white point, then clipped to 1.0 after the gain table map
-    let render = ProfileRender::new(Some((&profile, 0)), Some(&gain_table_map(vec![0.5, 0.5])), 0.0).expect("render");
+    let render = ProfileRender::new(Some((&profile, 0)), Some(&gain_table_map(vec![0.5, 0.5])), 0.0, None).expect("render");
     assert_rgb_eq(render.apply_pixel([3.0, 0.4, 0.4], 0.5, 0.5), [0.5, 0.2, 0.2]);
-    let without_map = ProfileRender::new(Some((&profile, 0)), None, 1.0).expect("render");
+    let without_map = ProfileRender::new(Some((&profile, 0)), None, 1.0, None).expect("render");
     assert_rgb_eq(without_map.apply_pixel([1.6, 0.8, 0.4], 0.5, 0.5), [1.0, 0.8, 0.4]);
   }
 
   #[test]
   fn negative_exposure() {
     // Without any table, a negative exposure is rendered as tone curve
-    assert!(ProfileRender::new(None, None, 0.0).is_none());
-    let render = ProfileRender::new(None, None, -1.0).expect("render");
+    assert!(ProfileRender::new(None, None, 0.0, None).is_none());
+    let render = ProfileRender::new(None, None, -1.0, None).expect("render");
     assert_eq!(render.exposure_gain(), 1.0);
     assert_rgb_eq(render.apply_pixel([1.0; 3], 0.5, 0.5), [1.0; 3]);
     assert_rgb_eq(render.apply_pixel([0.2; 3], 0.5, 0.5), [0.1; 3]);
@@ -261,7 +265,7 @@ mod tests {
     // gain 1.4 between 2.0 (dark) and 1.0 (bright)
     let mut map = gain_table_map(vec![2.0, 1.0]);
     map.points = [1, 1, 2];
-    let render = ProfileRender::new(None, Some(&map), -1.0).expect("render");
+    let render = ProfileRender::new(None, Some(&map), -1.0, None).expect("render");
     let curve = ToneCurve::negative_exposure(-1.0).expect("curve");
     assert_rgb_eq(render.apply_pixel([0.6, 0.3, 0.3], 0.5, 0.5), curve.apply_rgb([0.84, 0.42, 0.42]));
   }

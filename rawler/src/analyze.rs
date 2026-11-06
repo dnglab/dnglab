@@ -16,7 +16,10 @@ use crate::{
   },
   formats::tiff::Rational,
   formats::tiff::SRational,
-  imgop::{Rect, develop::RawDevelop},
+  imgop::{
+    Rect,
+    develop::{ProcessingStep, RawDevelop},
+  },
   rawimage::{BlackLevel, WhiteLevel},
   rawsource::RawSource,
 };
@@ -265,7 +268,7 @@ pub fn raw_to_srgb<P: AsRef<Path>>(path: P, params: &RawDecodeParams) -> Result<
   validate_image_index(decoder.as_ref(), params)?;
   //decoder.decode_metadata(&mut rawfile)?;
   let rawimage = decoder.raw_image(&rawfile, params, false)?;
-  let dev = RawDevelop::default();
+  let dev = RawDevelop::default().without(ProcessingStep::ToneCurve);
   Ok(dev.develop_image(rawimage)?.to_dynamic_image().ok_or("failed to convert to dynamic image")?)
 }
 
