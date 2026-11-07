@@ -2675,6 +2675,18 @@ mod panasonic {
   }
 }
 
+mod parrot {
+  mod anafi_raw_modes {
+    super::super::rawdb_test_file!("Parrot", "Anafi", parrot_anafi_16bit_4x3_dng, "raw_modes/Parrot_Anafi_16bit_4x3.dng");
+  }
+  mod bebop_2_raw_modes {
+    super::super::rawdb_test_file!("Parrot", "Bebop 2", parrot_bebop_2_16bit_4x3_dng, "raw_modes/Parrot_Bebop 2_16bit_4x3.dng");
+  }
+  mod bebop_drone_raw_modes {
+    super::super::rawdb_test_file!("Parrot", "Bebop Drone", parrot_bebop_16bit_4x3_dng, "raw_modes/Parrot_Bebop_16bit_4x3.dng");
+  }
+}
+
 mod pentax {
   mod sample_645d_raw_modes {
     super::super::rawdb_test_file!("Pentax", "645D", pentax_645d_raw_iso_200_pef, "raw_modes/PENTAX 645D_RAW_ISO_200.PEF");
