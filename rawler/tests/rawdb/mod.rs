@@ -3352,3 +3352,12 @@ mod sony {
     super::super::rawdb_test_file!("Sony", "ZV-E10M2", zv_e10m2_iso_400_12bits_lossless_compressed_raw_arw, "raw_modes/ZV-E10M2_ISO_400_12bits_Lossless Compressed RAW.ARW");
   }
 }
+
+mod xiaoyi {
+  mod ydxj_2_raw_modes {
+    super::super::rawdb_test_file!("Xiaoyi", "YDXJ 2", xiaoyi_ydxj2_16bit_4x3_dng, "raw_modes/Xiaoyi_YDXJ2_16bit_4x3.dng");
+  }
+  mod yiac_3_raw_modes {
+    super::super::rawdb_test_file!("Xiaoyi", "YIAC 3", xiaoyi_yiac3_16bit_4x3_dng, "raw_modes/Xiaoyi_YIAC3_16bit_4x3.dng");
+  }
+}

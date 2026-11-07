@@ -1,0 +1,85 @@
+---
+file:
+  fileSize: 16464979
+  fileName: Xiaoyi_YIAC3_16bit_4x3.dng
+  digest: c5dda1058e2f53b7db4e5e0319bf80d0
+data:
+  metadata:
+    rawParams:
+      rawWidth: 4000
+      rawHeight: 3000
+      bitDepth: 16
+      cropArea:
+        p:
+          x: 0
+          y: 0
+        d:
+          w: 4000
+          h: 3000
+      activeArea: ~
+      blacklevels:
+        levels:
+          - 0/256
+        cpp: 1
+        width: 1
+        height: 1
+      whitelevels:
+        - 65535
+      wbCoeffs:
+        - 2.300781
+        - 1.0
+        - 1.3007808
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ~
+        artist: ~
+        lens_spec: ~
+        exposure_time: 16666/1000000
+        fnumber: 280/100
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 123
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: ~
+        date_time_original: "2019:06:24 14:34:03"
+        create_date: ~
+        modify_date: ~
+        exposure_program: ~
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: ~
+        max_aperture_value: ~
+        subject_distance: ~
+        metering_mode: 1
+        light_source: 23
+        flash: ~
+        focal_length: 266/100
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 1
+        scene_capture_type: ~
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+        user_comment: ~
+      model: YIAC 3
+      make: XIAOYI
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+
