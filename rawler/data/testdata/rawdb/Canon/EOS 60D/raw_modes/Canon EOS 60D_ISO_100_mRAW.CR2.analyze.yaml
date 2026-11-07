@@ -32,9 +32,9 @@ data:
         width: 1
         height: 1
       whitelevels:
-        - 39500
-        - 39500
-        - 39500
+        - 40916
+        - 40916
+        - 40916
       wbCoeffs:
         - 2.1376953
         - 1.0

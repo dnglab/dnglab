@@ -15,9 +15,7 @@ D65 = [0.492, 0.0616, -0.0593, -0.6494, 1.3965, 0.2784, -0.1774, 0.3178, 0.7004]
 [[cameras.modes]]
 mode = "sRaw1"
 real_bps = 16
-whitepoint = 53000
 
 [[cameras.modes]]
 mode = "sRaw2"
 real_bps = 16
-whitepoint = 53000
