@@ -75,6 +75,8 @@ set edit:completion:arg-completer[dnglab] = {|@words|
             cand --denoise-chroma 'Strength of the chroma noise reduction (0-4), 0 is off, 1 is a full reduction [default: 0.5]'
             cand --sharpen 'Strength of the sharpening (0-2), 0 is off, 1 is the classic Laplacian filter [default: 0.2]'
             cand --exposure 'Change the exposure by this value in EV, e.g. -1.2. A negative value keeps white [default: 0]'
+            cand --steps 'Apply only these processing steps of the rendering, as comma separated list. Without it the default steps are applied'
+            cand --skip-steps 'Skip these processing steps of the rendering, as comma separated list (e.g. tonecurve,denoise,sharpen). Takes priority over --steps'
             cand -d 'Log level'
             cand --loglevel 'Log level'
             cand --profile-path 'Directory with profile TOML files'

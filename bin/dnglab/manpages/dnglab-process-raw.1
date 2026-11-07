@@ -4,7 +4,7 @@
 .SH NAME
 dnglab\-process\-raw
 .SH SYNOPSIS
-\fBdnglab\-process\-raw\fR [\fB\-\-remove\-dng\-opcodes\fR] [\fB\-\-artist\fR] [\fB\-\-keep\-mtime\fR] [\fB\-\-image\-index\fR] [\fB\-\-crop\fR] [\fB\-\-crop\-transparent\fR] [\fB\-\-format\fR] [\fB\-\-color\-space\fR] [\fB\-\-jpeg\-quality\fR] [\fB\-\-denoise\-luma\fR] [\fB\-\-denoise\-chroma\fR] [\fB\-\-sharpen\fR] [\fB\-\-exposure\fR] [\fB\-\-auto\-exposure\fR] [\fB\-f\fR|\fB\-\-override\fR] [\fB\-r\fR|\fB\-\-recursive\fR] [\fB\-h\fR|\fB\-\-help\fR] <\fIINPUT\fR> <\fIOUTPUT\fR> 
+\fBdnglab\-process\-raw\fR [\fB\-\-remove\-dng\-opcodes\fR] [\fB\-\-artist\fR] [\fB\-\-keep\-mtime\fR] [\fB\-\-image\-index\fR] [\fB\-\-crop\fR] [\fB\-\-crop\-transparent\fR] [\fB\-\-format\fR] [\fB\-\-color\-space\fR] [\fB\-\-jpeg\-quality\fR] [\fB\-\-denoise\-luma\fR] [\fB\-\-denoise\-chroma\fR] [\fB\-\-sharpen\fR] [\fB\-\-exposure\fR] [\fB\-\-auto\-exposure\fR] [\fB\-\-steps\fR] [\fB\-\-skip\-steps\fR] [\fB\-f\fR|\fB\-\-override\fR] [\fB\-r\fR|\fB\-\-recursive\fR] [\fB\-h\fR|\fB\-\-help\fR] <\fIINPUT\fR> <\fIOUTPUT\fR> 
 .SH DESCRIPTION
 .SH OPTIONS
 .TP
@@ -93,6 +93,92 @@ Change the exposure by this value in EV, e.g. \-1.2. A negative value keeps whit
 .TP
 \fB\-\-auto\-exposure\fR
 Correct the exposure by an estimate from the image, \-\-exposure is added to it
+.TP
+\fB\-\-steps\fR \fI<steps>\fR
+Apply only these processing steps of the rendering, as comma separated list. Without it the default steps are applied
+.br
+
+.br
+\fIPossible values:\fR
+.RS 14
+.IP \(bu 2
+rescale
+.IP \(bu 2
+demosaic
+.IP \(bu 2
+fujirotate
+.IP \(bu 2
+cropactivearea
+.IP \(bu 2
+baselineexposure
+.IP \(bu 2
+whitebalance
+.IP \(bu 2
+autowhitebalance
+.IP \(bu 2
+calibrate
+.IP \(bu 2
+profilerender
+.IP \(bu 2
+tonecurve
+.IP \(bu 2
+cropdefault
+.IP \(bu 2
+denoise
+.IP \(bu 2
+defaultscale
+.IP \(bu 2
+exposure
+.IP \(bu 2
+autoexposure
+.IP \(bu 2
+sharpen
+.IP \(bu 2
+transferfunction
+.RE
+.TP
+\fB\-\-skip\-steps\fR \fI<steps>\fR
+Skip these processing steps of the rendering, as comma separated list (e.g. tonecurve,denoise,sharpen). Takes priority over \-\-steps
+.br
+
+.br
+\fIPossible values:\fR
+.RS 14
+.IP \(bu 2
+rescale
+.IP \(bu 2
+demosaic
+.IP \(bu 2
+fujirotate
+.IP \(bu 2
+cropactivearea
+.IP \(bu 2
+baselineexposure
+.IP \(bu 2
+whitebalance
+.IP \(bu 2
+autowhitebalance
+.IP \(bu 2
+calibrate
+.IP \(bu 2
+profilerender
+.IP \(bu 2
+tonecurve
+.IP \(bu 2
+cropdefault
+.IP \(bu 2
+denoise
+.IP \(bu 2
+defaultscale
+.IP \(bu 2
+exposure
+.IP \(bu 2
+autoexposure
+.IP \(bu 2
+sharpen
+.IP \(bu 2
+transferfunction
+.RE
 .TP
 \fB\-f\fR, \fB\-\-override\fR
 Override existing files

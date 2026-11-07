@@ -8,7 +8,7 @@ use rawler::{
   dng::opcodes::OpcodeSelector,
   imgop::{
     denoise::DenoiseStrength,
-    develop::{ProcessedImageFormat, RawProcessingParams},
+    develop::{ProcessedImageFormat, ProcessingStep, RawProcessingParams},
     sharpen::DEFAULT_SHARPEN,
   },
 };
@@ -170,6 +170,11 @@ fn generate_job(entry: &FileMap, options: &ArgMatches) -> Result<Vec<Raw2Image>>
       exposure: options.get_one("exposure").copied().unwrap_or(0.0),
       auto_exposure: options.get_flag("auto_exposure"),
       crop_transparent: options.get_flag("crop_transparent"),
+      steps: options.get_many::<ProcessingStep>("steps").map(|values| values.copied().collect()),
+      skip_steps: options
+        .get_many::<ProcessingStep>("skip_steps")
+        .map(|values| values.copied().collect())
+        .unwrap_or_default(),
     };
 
     match output.parent() {
