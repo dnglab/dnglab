@@ -1,5 +1,6 @@
 use super::LjpegDecompressor;
 use super::huffman::*;
+use crate::pumps::BitPump;
 use crate::pumps::BitPumpJPEG;
 use crate::pumps::BitPumpMSB32;
 
@@ -352,14 +353,29 @@ pub fn decode_hasselblad(ljpeg: &LjpegDecompressor, out: &mut [u16], width: usiz
     for o in line.chunks_exact_mut(2) {
       let len1 = htable.huff_len(&mut pump);
       let len2 = htable.huff_len(&mut pump);
-      p1 += htable.huff_diff(&mut pump, len1);
-      p2 += htable.huff_diff(&mut pump, len2);
+      p1 += hasselblad_diff(htable, &mut pump, len1);
+      p2 += hasselblad_diff(htable, &mut pump, len2);
       o[0] = p1 as u16;
       o[1] = p2 as u16;
     }
   }
 
   Ok(())
+}
+
+/// Difference of a pixel of Hasselblad data
+///
+/// For the category 16 (SSSS=16), the 16 bits of the difference are stored like
+/// for any other category, but 0xFFFF stands for -32768.
+fn hasselblad_diff(htable: &HuffTable, pump: &mut dyn BitPump, len: (u8, u8, u8)) -> i32 {
+  match len.1 {
+    16 => match pump.get_bits(16) as i32 {
+      0xFFFF => -32768,
+      diff if diff & 0x8000 != 0 => diff,
+      diff => diff - 0xFFFF,
+    },
+    _ => htable.huff_diff(pump, len),
+  }
 }
 
 pub fn decode_leaf_strip(src: &[u8], out: &mut [u16], width: usize, height: usize, htable1: &HuffTable, htable2: &HuffTable, bpred: i32) -> Result<(), String> {
