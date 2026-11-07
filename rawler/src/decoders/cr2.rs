@@ -261,7 +261,7 @@ impl<'a> Decoder for Cr2Decoder<'a> {
     //assert_eq!(image.width, width * cpp);
 
     let blacklevel = self.get_blacklevel(camera, cpp, precision)?;
-    let whitelevel = self.get_whitelevel(cpp, precision)?;
+    let whitelevel = self.get_whitelevel(file, camera, cpp, precision)?;
 
     let photometric = match cpp {
       1 => RawPhotometricInterpretation::Cfa(CFAConfig::new_from_camera(camera)),
@@ -668,13 +668,41 @@ impl<'a> Cr2Decoder<'a> {
 
   /// Get the white level from COLORDATA tag for raw data with `precision` bits
   /// The offsets are different, so we take the offset from camera params.
-  fn get_whitelevel(&self, cpp: usize, precision: usize) -> Result<Option<WhiteLevel>> {
-    if let Some(colordata) = self.makernote.as_ref().and_then(|mn| mn.get_entry(Cr2MakernoteTag::ColorData)) {
-      if let Some(whitelevel) = colordata::parse_colordata(colordata)?.specular_whitelevel_for(precision) {
-        return Ok(Some(WhiteLevel(vec![whitelevel; cpp])));
-      }
+  ///
+  /// sRAW/mRAW data has no white level of its own. Its Y values cover
+  /// `SRAW_Y_RANGE` of the raw data range, from the black level to the
+  /// specular white level, and the conversion to RGB multiplies them by the
+  /// green sRAW coefficient. So the white level of the RGB values is
+  ///
+  /// `(specular white level - black level) * SRAW_Y_RANGE * green coefficient / SRAW_COEFF_ONE`
+  ///
+  /// The green coefficient is 1170 for older models and 1024 for newer ones,
+  /// the white level is 4.0 or 3.5 times the raw data range.
+  fn get_whitelevel(&self, rawfile: &RawSource, cam: &Camera, cpp: usize, precision: usize) -> Result<Option<WhiteLevel>> {
+    // convert_to_rgb() multiplies the YCbCr values by the sRAW coefficients and
+    // shifts the products right by 8 bits, so a coefficient of 1 << 8 keeps a
+    // value unchanged
+    const SRAW_COEFF_ONE: f32 = (1 << 8) as f32;
+    // Part of the raw data range, from the black level to the specular white
+    // level, that the Y values of sRAW/mRAW data cover. Measured on ISO series
+    // of the EOS 40D and EOS 60D and on sRAW and mRAW files of 13 other models.
+    const SRAW_Y_RANGE: f32 = 7.0 / 8.0;
+
+    let Some(entry) = self.makernote.as_ref().and_then(|mn| mn.get_entry(Cr2MakernoteTag::ColorData)) else {
+      return Ok(None);
+    };
+    let colordata = colordata::parse_colordata(entry)?;
+    if cpp == 3 {
+      let (Some(white), Some(black)) = (colordata.specular_whitelevel, colordata.blacklevel) else {
+        return Ok(None);
+      };
+      // Mean of the black levels of the CFA colors
+      let black = black.iter().map(|&level| f32::from(level)).sum::<f32>() / black.len() as f32;
+      let green = self.get_sraw_wb(rawfile, cam)?[1];
+      let whitelevel = (f32::from(white) - black) * SRAW_Y_RANGE * green / SRAW_COEFF_ONE;
+      return Ok(whitelevel.is_finite().then(|| WhiteLevel(vec![whitelevel.round() as u32; cpp])));
     }
-    Ok(None)
+    Ok(colordata.specular_whitelevel_for(precision).map(|whitelevel| WhiteLevel(vec![whitelevel; cpp])))
   }
 
   /// Get the SENSOR information, if available
