@@ -102,6 +102,35 @@ impl ProcessingStep {
   ];
 }
 
+#[cfg(feature = "clap")]
+impl clap::ValueEnum for ProcessingStep {
+  fn value_variants<'a>() -> &'a [Self] {
+    &Self::ALL
+  }
+
+  fn to_possible_value(&self) -> Option<clap::builder::PossibleValue> {
+    Some(clap::builder::PossibleValue::new(match self {
+      Self::Rescale => "rescale",
+      Self::Demosaic => "demosaic",
+      Self::FujiRotate => "fujirotate",
+      Self::CropActiveArea => "cropactivearea",
+      Self::BaselineExposure => "baselineexposure",
+      Self::WhiteBalance => "whitebalance",
+      Self::AutoWhiteBalance => "autowhitebalance",
+      Self::Calibrate => "calibrate",
+      Self::ProfileRender => "profilerender",
+      Self::ToneCurve => "tonecurve",
+      Self::CropDefault => "cropdefault",
+      Self::Denoise => "denoise",
+      Self::DefaultScale => "defaultscale",
+      Self::Exposure => "exposure",
+      Self::AutoExposure => "autoexposure",
+      Self::Sharpen => "sharpen",
+      Self::TransferFunction => "transferfunction",
+    }))
+  }
+}
+
 /// Set of processing steps
 #[derive(Clone, Copy, Default, PartialEq, Eq)]
 pub struct StepSet(u64);

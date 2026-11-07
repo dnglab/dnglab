@@ -10,7 +10,12 @@ use clap::{
 };
 use log::debug;
 use rawler::dng::{ApplyDngOpcodes, CropMode, DngCompression, DngVersion, MAX_JXL_DISTANCE, opcodes::OpcodeSelector};
-use rawler::imgop::{color::OutputSpace, denoise::DenoiseStrength, develop::ProcessedImageFormat, sharpen::DEFAULT_SHARPEN};
+use rawler::imgop::{
+  color::OutputSpace,
+  denoise::DenoiseStrength,
+  develop::{ProcessedImageFormat, ProcessingStep},
+  sharpen::DEFAULT_SHARPEN,
+};
 
 use crate::makedng::{
   CalibrationIlluminantArgParser, ColorMatrixArgParser, DngColorimetricReference, InputSourceUsageMap, LinearizationTableArgParser, WhiteBalanceInput,
@@ -94,6 +99,19 @@ fn remove_dng_opcodes_arg() -> Arg {
     .required(false)
     .value_parser(value_parser!(OpcodeSelector))
     .value_delimiter(',')
+    .action(ArgAction::Append)
+}
+
+/// Argument with a comma separated list of processing steps of the rendering
+fn steps_arg(id: &'static str, long: &'static str, help: &'static str) -> Arg {
+  Arg::new(id)
+    .long(long)
+    .value_name("steps")
+    .help(help)
+    .required(false)
+    .value_parser(value_parser!(ProcessingStep))
+    .value_delimiter(',')
+    .ignore_case(true)
     .action(ArgAction::Append)
 }
 
@@ -407,6 +425,16 @@ fn process_raw_command() -> Command {
         .value_parser(exposure_parser),
     )
     .arg(arg!(auto_exposure: --"auto-exposure" "Correct the exposure by an estimate from the image, --exposure is added to it").action(ArgAction::SetTrue))
+    .arg(steps_arg(
+      "steps",
+      "steps",
+      "Apply only these processing steps of the rendering, as comma separated list. Without it the default steps are applied",
+    ))
+    .arg(steps_arg(
+      "skip_steps",
+      "skip-steps",
+      "Skip these processing steps of the rendering, as comma separated list (e.g. tonecurve,denoise,sharpen). Takes priority over --steps",
+    ))
     .arg(arg!(-f --override "Override existing files").action(ArgAction::SetTrue))
     .arg(arg!(-r --recursive "Process input directory recursive").action(ArgAction::SetTrue))
     .arg(arg!(<INPUT> "Input file or directory").value_parser(clap::value_parser!(PathBuf)))

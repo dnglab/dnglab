@@ -80,6 +80,8 @@ Register-ArgumentCompleter -Native -CommandName 'dnglab' -ScriptBlock {
             [CompletionResult]::new('--denoise-chroma', '--denoise-chroma', [CompletionResultType]::ParameterName, 'Strength of the chroma noise reduction (0-4), 0 is off, 1 is a full reduction [default: 0.5]')
             [CompletionResult]::new('--sharpen', '--sharpen', [CompletionResultType]::ParameterName, 'Strength of the sharpening (0-2), 0 is off, 1 is the classic Laplacian filter [default: 0.2]')
             [CompletionResult]::new('--exposure', '--exposure', [CompletionResultType]::ParameterName, 'Change the exposure by this value in EV, e.g. -1.2. A negative value keeps white [default: 0]')
+            [CompletionResult]::new('--steps', '--steps', [CompletionResultType]::ParameterName, 'Apply only these processing steps of the rendering, as comma separated list. Without it the default steps are applied')
+            [CompletionResult]::new('--skip-steps', '--skip-steps', [CompletionResultType]::ParameterName, 'Skip these processing steps of the rendering, as comma separated list (e.g. tonecurve,denoise,sharpen). Takes priority over --steps')
             [CompletionResult]::new('-d', '-d', [CompletionResultType]::ParameterName, 'Log level')
             [CompletionResult]::new('--loglevel', '--loglevel', [CompletionResultType]::ParameterName, 'Log level')
             [CompletionResult]::new('--profile-path', '--profile-path', [CompletionResultType]::ParameterName, 'Directory with profile TOML files')

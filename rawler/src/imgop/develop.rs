@@ -96,6 +96,10 @@ pub struct RawProcessingParams {
   /// Crop to the largest rectangle without transparent pixels of the DNG
   /// transparency mask, within the crop of `crop`
   pub crop_transparent: bool,
+  /// Processing steps of the rendering to apply, `None` for the default steps
+  pub steps: Option<Vec<ProcessingStep>>,
+  /// Processing steps of the rendering to leave out, before `steps`
+  pub skip_steps: Vec<ProcessingStep>,
 }
 
 impl Default for RawProcessingParams {
@@ -116,6 +120,8 @@ impl Default for RawProcessingParams {
       exposure: 0.0,
       auto_exposure: false,
       crop_transparent: false,
+      steps: None,
+      skip_steps: Vec::new(),
     }
   }
 }
@@ -139,6 +145,10 @@ pub fn process_raw_image<W: Write + Seek + Send>(raw: &Path, image_file: &mut W,
   if params.crop_transparent {
     crop_to_opaque_area(&mut rawimage, &mut develop, params.crop);
   }
+  if let Some(steps) = &params.steps {
+    develop.steps.retain(|step| steps.contains(step));
+  }
+  develop.steps.retain(|step| !params.skip_steps.contains(step));
   match params.format {
     ProcessedImageFormat::Tiff => develop.develop(rawimage, &metadata, image_file)?,
     ProcessedImageFormat::Jpeg => develop.develop_jpeg(rawimage, &metadata, image_file, params.jpeg_quality)?,
