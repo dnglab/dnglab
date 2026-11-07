@@ -152,7 +152,10 @@ impl<'a> CrwDecoder<'a> {
     }
     if let Some(cinfo) = self.ciff.find_entry(CiffTag::ColorInfo1) {
       if cinfo.count == 768 {
-        // D30
+        // D30, the levels are not those of a shot in auto mode
+        if self.wb_mode() == Some(0) {
+          return Ok([f32::NAN, f32::NAN, f32::NAN, f32::NAN]);
+        }
         return Ok([
           1024.0 / (cinfo.get_force_u16(36) as f32),
           1024.0 / (cinfo.get_force_u16(37) as f32),
@@ -180,13 +183,22 @@ impl<'a> CrwDecoder<'a> {
       (0x410, 3072) => (48, &[(1, 2), (2, 3), (3, 4), (4, 5), (5, 10), (14, 6), (17, 8)]),
       _ => return None,
     };
-    let mode = self.ciff.find_entry(CiffTag::ShotInfo).filter(|info| info.count > 7)?.get_force_u16(7);
+    let mode = self.wb_mode()?;
     let (_, row) = rows.iter().find(|(preset, _)| *preset == mode)?;
     let levels = first_row + row * 4;
     // The first value of the table tells if the levels are encrypted
     let key: [u16; 2] = if first == 0x410 { [0x410, 0x45f3] } else { [0, 0] };
     let level = |i: usize| (cinfo.get_force_u16(levels + i) ^ key[i & 1]) as f32;
     Some([level(1), level(0), level(3), level(2)])
+  }
+
+  /// White balance mode of the shot, 0 is auto
+  fn wb_mode(&self) -> Option<u16> {
+    self
+      .ciff
+      .find_entry(CiffTag::ShotInfo)
+      .filter(|info| info.count > 7)
+      .map(|info| info.get_force_u16(7))
   }
 
   fn create_hufftables(num: usize) -> [HuffTable; 2] {
