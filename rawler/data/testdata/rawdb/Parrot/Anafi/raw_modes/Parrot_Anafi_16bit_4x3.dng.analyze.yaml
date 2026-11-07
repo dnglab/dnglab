@@ -1,0 +1,88 @@
+---
+file:
+  fileSize: 43001162
+  fileName: Parrot_Anafi_16bit_4x3.dng
+  digest: ede77d1d41318bb8d642d74726cca91c
+data:
+  metadata:
+    rawParams:
+      rawWidth: 5344
+      rawHeight: 4016
+      bitDepth: 16
+      cropArea:
+        p:
+          x: 0
+          y: 0
+        d:
+          w: 5344
+          h: 4016
+      activeArea: ~
+      blacklevels:
+        levels:
+          - 262144/256
+          - 262144/256
+          - 262144/256
+          - 262144/256
+        cpp: 1
+        width: 2
+        height: 2
+      whitelevels:
+        - 16383
+      wbCoeffs:
+        - 2.0344224
+        - 1.0
+        - 1.3588858
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ~
+        artist: ~
+        lens_spec: ~
+        exposure_time: 1/25
+        fnumber: ~
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 179
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: 3
+        exposure_bias: 0/1
+        date_time_original: "2018:12:07 16:23:22"
+        create_date: "2018:12:07 16:23:22"
+        modify_date: "2018:12:07 16:23:22"
+        exposure_program: 2
+        timezone_offset: ~
+        offset_time: "+01:00"
+        offset_time_original: "+01:00"
+        offset_time_digitized: "+01:00"
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: 4643856/1000000
+        max_aperture_value: ~
+        subject_distance: ~
+        metering_mode: ~
+        light_source: 0
+        flash: ~
+        focal_length: ~
+        image_number: ~
+        color_space: ~
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 0
+        scene_capture_type: ~
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+        user_comment: ~
+      model: ""
+      make: ""
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

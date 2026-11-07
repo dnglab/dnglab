@@ -820,4 +820,7 @@ OM/TG-7/raw_modes
 OM/PEN/raw_modes
 Xiaoyi/YDXJ 2/raw_modes
 Xiaoyi/YIAC 3/raw_modes
+Parrot/Bebop Drone/raw_modes
+Parrot/Bebop 2/raw_modes
+Parrot/Anafi/raw_modes
 dnglab/dng-compression-variants/variants
