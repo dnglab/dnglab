@@ -25,6 +25,7 @@ use crate::formats::tiff::Entry;
 use crate::formats::tiff::GenericTiffReader;
 use crate::formats::tiff::IFD;
 use crate::formats::tiff::Rational;
+use crate::formats::tiff::SRational;
 use crate::formats::tiff::Value;
 use crate::formats::tiff::reader::TiffReader;
 use crate::imgop::Dim2;
@@ -277,6 +278,7 @@ impl<'a> Decoder for Cr2Decoder<'a> {
     }
     let mut img = RawImage::new(camera.clone(), image, cpp, wb, photometric, blacklevel, whitelevel, dummy);
     img.orientation = Orientation::from_tiff(self.tiff.root_ifd());
+    img.baseline_exposure = self.highlight_tone_priority_exposure();
 
     if camera.find_hint("linearization") {
       if let Some(kodak_ifd) = self.tiff.root_ifd().get_entry(TiffCommonTag::KodakIFD) {
@@ -599,6 +601,21 @@ impl<'a> Cr2Decoder<'a> {
     ])))
   }
 
+  /// BaselineExposure for HighlightTonePriority, from the LightingOpt makernote
+  /// of newer cameras or from custom function 0x0203 of older ones
+  ///
+  /// With the setting on, the raw data is 1 EV darker, while EXIF reports the
+  /// same ISO, measured on an EOS 40D and an EOS 60D at ISO 800.
+  fn highlight_tone_priority_exposure(&self) -> Option<SRational> {
+    let makernote = self.makernote.as_ref()?;
+    // The LightingOpt makernote of older cameras ends before HighlightTonePriority
+    if let Some(lighting_opt) = makernote.get_entry(Cr2MakernoteTag::LightningOpt).filter(|entry| entry.count() > 3) {
+      return super::cr3::highlight_tone_priority_exposure(&lighting_opt.value);
+    }
+    let custom_functions = makernote.get_entry(Cr2MakernoteTag::CustomFunc2)?;
+    (custom_function(&custom_functions.value, 0x0203) == Some(1)).then(|| SRational::new(1, 1))
+  }
+
   /// Image is a multiple exposure of the camera
   fn is_multi_exposure(&self) -> bool {
     let multi_exp = self.makernote.as_ref().and_then(|mn| mn.get_entry(Cr2MakernoteTag::MultiExp));
@@ -859,6 +876,29 @@ fn normalize_wb(raw_wb: [f32; 4]) -> [f32; 4] {
     }
   });
   [norm[0], (norm[1] + norm[2]) / 2.0, norm[3], f32::NAN]
+}
+
+/// First value of custom function `function` in the CustomFunc2 makernote
+///
+/// The makernote starts with its size and the number of groups. Each group has
+/// a number, its byte length from the length on and the number of functions.
+/// Each function has an id, the number of values and the values.
+fn custom_function(custom_functions: &Value, function: u32) -> Option<u32> {
+  let value = |index: usize| custom_functions.get_u32(index).ok().flatten();
+  let mut group = 2;
+  for _ in 0..value(1)? {
+    let end = group + 1 + value(group + 1)? as usize / 4;
+    let mut pos = group + 3;
+    while pos + 2 <= end {
+      let (id, count) = (value(pos)?, value(pos + 1)? as usize);
+      if id == function && count > 0 {
+        return value(pos + 2);
+      }
+      pos += 2 + count;
+    }
+    group = end;
+  }
+  None
 }
 
 crate::tags::tiff_tag_enum!(Cr2MakernoteTag);

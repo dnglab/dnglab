@@ -761,7 +761,7 @@ fn iad1_rect(left: u16, top: u16, right: u16, bottom: u16, dim: Dim2) -> Rect {
 ///
 /// With D+ (1) and D+2 (2) the raw data is darker, while EXIF reports the same ISO.
 /// Both are 1 EV darker than with the setting off, measured on an EOS R5 Mark II at ISO 800.
-fn highlight_tone_priority_exposure(lighting_opt: &Value) -> Option<SRational> {
+pub(crate) fn highlight_tone_priority_exposure(lighting_opt: &Value) -> Option<SRational> {
   match lighting_opt.get_u32(3) {
     Ok(Some(1 | 2)) => Some(SRational::new(1, 1)),
     _ => None,
