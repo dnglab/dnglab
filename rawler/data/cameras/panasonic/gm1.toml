@@ -16,12 +16,12 @@ active_area = [0, 0, 32, 0]
 
 [[cameras.modes]]
 mode = "4:3"
-active_area = [0, 0, 206, 0]
+active_area = [0, 0, 208, 0]
 
 [[cameras.modes]]
 mode = "3:2"
-active_area = [0, 0, 206, 0]
+active_area = [0, 0, 208, 0]
 
 [[cameras.modes]]
 mode = "16:9"
-active_area = [0, 0, 206, 0]
+active_area = [0, 0, 208, 0]
