@@ -209,7 +209,7 @@ pub fn LEu16(buf: &[u8], pos: usize) -> u16 {
 
 #[derive(Debug, Clone)]
 pub struct LookupTable {
-  table: Vec<(u16, u16, u16)>,
+  table: Vec<(u16, i32, u16)>,
 }
 
 impl LookupTable {
@@ -219,8 +219,10 @@ impl LookupTable {
       let center = table[i];
       let lower = if i > 0 { table[i - 1] } else { center };
       let upper = if i < (table.len() - 1) { table[i + 1] } else { center };
-      let base = if center == 0 { 0 } else { center - ((upper - lower + 2) / 4) };
-      let delta = upper - lower;
+      // A steep rise near black pushes `center - delta/4` below zero, so the
+      // base is kept signed instead of wrapping around u16.
+      let delta = upper.saturating_sub(lower);
+      let base = center as i32 - ((delta as i32 + 2) / 4);
       tbl[i] = (center, base, delta);
     }
     LookupTable { table: tbl }
@@ -246,11 +248,10 @@ impl LookupTable {
   #[inline(always)]
   pub fn dither(&self, value: u16, rand: &mut u32) -> u16 {
     let (_, sbase, sdelta) = self.table[value as usize];
-    let base = sbase as u32;
     let delta = sdelta as u32;
-    let pixel = base + ((delta * (*rand & 2047) + 1024) >> 12);
+    let pixel = sbase + ((delta * (*rand & 2047) + 1024) >> 12) as i32;
     *rand = 15700 * (*rand & 65535) + (*rand >> 16);
-    pixel.min(u32::from(u16::MAX)) as u16
+    pixel.clamp(0, i32::from(u16::MAX)) as u16
   }
 }
 
@@ -384,5 +385,24 @@ mod tests {
     let mut random = 2047;
 
     assert_eq!(table.dither(1, &mut random), u16::MAX);
+  }
+
+  #[test]
+  fn test_lookup_table_steep_curve_keeps_values_in_range() {
+    // The first entry of a steep curve has a negative interpolation base.
+    let table = LookupTable::new(&[1, 100]);
+    for rand in [0u32, 512, 1024, 1536, 2047] {
+      let mut random = rand;
+      let value = table.dither(0, &mut random);
+      assert!(value <= 26, "dither(0, {}) = {}, expected a value near the table entry", rand, value);
+    }
+  }
+
+  #[test]
+  fn test_lookup_table_descending_curve_keeps_center() {
+    let table = LookupTable::new(&[100, 1]);
+    let mut random = 0;
+
+    assert_eq!(table.dither(0, &mut random), 100);
   }
 }
