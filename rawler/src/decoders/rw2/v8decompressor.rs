@@ -15,7 +15,7 @@ use crate::{
   formats::tiff::IFD,
   imgop::{Dim2, Point, Rect},
   pixarray::{DisjointRegionMut, ImageRegionMut, PixU16},
-  pumps::{BitPump, BitPumpError, BitPumpReverseBitsMSB, ByteStream},
+  pumps::{BitPump, BitPumpReverseBitsMSB, ByteStream},
   rawsource::RawSource,
 };
 
@@ -237,15 +237,22 @@ impl HuffmanDecoder {
   /// Extract Huffman symbol from bitstream pump and
   /// return index into symbol table.
   #[inline(always)]
-  fn get_next(&self, pump: &mut dyn BitPump) -> std::result::Result<u8, BitPumpError> {
+  fn get_next(&self, pump: &mut dyn BitPump) -> std::result::Result<u8, String> {
     let next_bits = pump.peek_bits(16)?;
     if let Some((bits, ssss)) = self.cache[next_bits as u16 as usize] {
       pump.consume_bits(bits as u32);
       Ok(ssss)
     } else {
-      panic!("Input value {:016b} starts not with a valid huffman symbol", next_bits);
+      Err(invalid_symbol(next_bits))
     }
   }
+}
+
+// Built in a cold function, so the compiler keeps the error branch out of
+// the decoder loop.
+#[cold]
+fn invalid_symbol(next_bits: u32) -> String {
+  format!("Panasonic V8: input value {:016b} starts not with a valid huffman symbol", next_bits)
 }
 
 /// Lookup tables derived from [`CF2Params`].
@@ -427,7 +434,7 @@ pub(crate) fn decode_panasonic_v8(rawfile: &RawSource, width: usize, height: usi
 }
 
 /// Decode a single strip into `out`, its region of the image
-fn decode_strip(buf: &[u8], params: &CF2Params, tables: &Tables, strip_id: usize, out: &mut DisjointRegionMut<u16>) -> std::result::Result<(), BitPumpError> {
+fn decode_strip(buf: &[u8], params: &CF2Params, tables: &Tables, strip_id: usize, out: &mut DisjointRegionMut<u16>) -> std::result::Result<(), String> {
   let mut pump = BitPumpReverseBitsMSB::new(buf);
   let width = params.strip_widths[strip_id] as usize;
   let halfwidth = width >> 1;
