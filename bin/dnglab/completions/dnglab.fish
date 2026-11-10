@@ -44,6 +44,8 @@ complete -c dnglab -n "__fish_dnglab_needs_command" -f -a "makedng" -d 'Lowlevel
 complete -c dnglab -n "__fish_dnglab_needs_command" -f -a "gui" -d 'Start GUI (not implemented)'
 complete -c dnglab -n "__fish_dnglab_needs_command" -f -a "extract" -d 'Extract embedded original Raw from DNG'
 complete -c dnglab -n "__fish_dnglab_needs_command" -f -a "help" -d 'Print this message or the help of the given subcommand(s)'
+complete -c dnglab -n "__fish_dnglab_using_subcommand analyze" -l export-dcp -d 'Write the as-shot camera profile as DCP file' -r -F
+complete -c dnglab -n "__fish_dnglab_using_subcommand analyze" -l export-dcp-all -d 'Write all camera profiles as DCP files to DIR' -r -F
 complete -c dnglab -n "__fish_dnglab_using_subcommand analyze" -s d -l loglevel -d 'Log level' -r -f -a "error\t''
 warn\t''
 info\t''
@@ -64,6 +66,7 @@ complete -c dnglab -n "__fish_dnglab_using_subcommand analyze" -l meta -d 'Write
 complete -c dnglab -n "__fish_dnglab_using_subcommand analyze" -l structure -d 'Write file structure to STDOUT'
 complete -c dnglab -n "__fish_dnglab_using_subcommand analyze" -l summary -d 'Write summary information for file to STDOUT'
 complete -c dnglab -n "__fish_dnglab_using_subcommand analyze" -l camera-profiles -d 'Write camera profiles to STDOUT (plain text, JSON or YAML)'
+complete -c dnglab -n "__fish_dnglab_using_subcommand analyze" -s f -l override -d 'Override existing DCP files'
 complete -c dnglab -n "__fish_dnglab_using_subcommand analyze" -l json -d 'Format metadata as JSON'
 complete -c dnglab -n "__fish_dnglab_using_subcommand analyze" -l yaml -d 'Format metadata as YAML'
 complete -c dnglab -n "__fish_dnglab_using_subcommand analyze" -s v -d 'Print status for every file'
@@ -81,6 +84,7 @@ jpeg\t''"
 complete -c dnglab -n "__fish_dnglab_using_subcommand process-raw" -l color-space -d 'Color space of the image' -r -f -a "srgb\t''
 adobergb\t''
 prophoto\t''"
+complete -c dnglab -n "__fish_dnglab_using_subcommand process-raw" -l dcp-file -d 'Camera profile (DCP) to render the image with, replaces the primary camera profile' -r -F
 complete -c dnglab -n "__fish_dnglab_using_subcommand process-raw" -l jpeg-quality -d 'JPEG quality (1-100)' -r
 complete -c dnglab -n "__fish_dnglab_using_subcommand process-raw" -l denoise-luma -d 'Strength of the luma noise reduction (0-4), 0 is off, 1 is a full reduction [default: 0.25]' -r
 complete -c dnglab -n "__fish_dnglab_using_subcommand process-raw" -l denoise-chroma -d 'Strength of the chroma noise reduction (0-4), 0 is off, 1 is a full reduction [default: 0.5]' -r
@@ -177,6 +181,8 @@ complete -c dnglab -n "__fish_dnglab_using_subcommand convert" -l crop -d 'DNG d
 activearea\t''
 none\t''"
 complete -c dnglab -n "__fish_dnglab_using_subcommand convert" -s j -l jobs -d 'Number of files to convert in parallel (0 = auto)' -r
+complete -c dnglab -n "__fish_dnglab_using_subcommand convert" -l dcp-file -d 'Camera profile (DCP) that replaces the primary camera profile' -r -F
+complete -c dnglab -n "__fish_dnglab_using_subcommand convert" -l extra-dcp-file -d 'Camera profile (DCP) to embed as extra camera profile, can be repeated' -r -F
 complete -c dnglab -n "__fish_dnglab_using_subcommand convert" -s d -l loglevel -d 'Log level' -r -f -a "error\t''
 warn\t''
 info\t''

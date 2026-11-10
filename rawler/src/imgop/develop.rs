@@ -9,7 +9,7 @@ use image::{ImageEncoder, codecs::jpeg::JpegEncoder};
 use crate::{
   RawImage,
   decoders::{Orientation, RawDecodeParams, RawMetadata, validate_image_index},
-  dng::{CropMode, opcodes::OpcodeSelector},
+  dng::{CropMode, dcp::CameraProfileFile, opcodes::OpcodeSelector},
   formats::tiff::{DirectoryWriter, TiffWriter},
   imgop::{
     Dim2, Point, Rect,
@@ -100,6 +100,8 @@ pub struct RawProcessingParams {
   pub steps: Option<Vec<ProcessingStep>>,
   /// Processing steps of the rendering to leave out, before `steps`
   pub skip_steps: Vec<ProcessingStep>,
+  /// Camera profile to render the image with, it replaces the primary camera profile
+  pub dcp: Option<CameraProfileFile>,
 }
 
 impl Default for RawProcessingParams {
@@ -122,6 +124,7 @@ impl Default for RawProcessingParams {
       crop_transparent: false,
       steps: None,
       skip_steps: Vec::new(),
+      dcp: None,
     }
   }
 }
@@ -133,6 +136,10 @@ pub fn process_raw_image<W: Write + Seek + Send>(raw: &Path, image_file: &mut W,
   validate_image_index(decoder.as_ref(), &raw_params)?;
   let mut rawimage = decoder.raw_image(&rawfile, &raw_params, false)?;
   rawimage.remove_opcodes(&params.remove_dng_opcodes);
+  if let Some(dcp) = &params.dcp {
+    dcp.check_camera(&rawimage);
+    rawimage.set_primary_camera_profile(dcp.profile.clone())?;
+  }
   let metadata = decoder.raw_metadata(&rawfile, &raw_params)?;
   let mut develop = RawDevelop {
     color_space: params.color_space,

@@ -8,6 +8,7 @@
 //! (CalibrationIlluminant1..3). Slot 0 holds the values of the tags ending in 1.
 
 use std::collections::HashMap;
+use std::fmt;
 
 use log::debug;
 
@@ -21,6 +22,74 @@ use crate::imgop::xyz::{
 
 /// Number of calibration illuminant slots of a camera profile
 pub const CALIBRATION_SLOTS: usize = 3;
+
+/// ProfileEmbedPolicy, the usage restrictions of a camera profile
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum ProfileEmbedPolicy {
+  /// The profile can be used, embedded and copied for any DNG file,
+  /// the default if the tag is missing
+  #[default]
+  AllowCopying,
+  /// Like [`Self::AllowCopying`], but a profile embedded in a DNG file
+  /// must not be copied to process other images
+  EmbedIfUsed,
+  /// The profile must not be embedded in files
+  EmbedNever,
+  /// No restrictions
+  NoRestrictions,
+  /// Value not defined by the DNG specification
+  Unknown(u32),
+}
+
+impl ProfileEmbedPolicy {
+  /// The profile can be embedded in a DNG file
+  ///
+  /// Unknown values don't allow it.
+  pub fn allows_embedding(self) -> bool {
+    matches!(self, Self::AllowCopying | Self::EmbedIfUsed | Self::NoRestrictions)
+  }
+
+  /// The profile can be copied from a file, to process other images
+  pub fn allows_copying(self) -> bool {
+    matches!(self, Self::AllowCopying | Self::NoRestrictions)
+  }
+}
+
+impl From<u32> for ProfileEmbedPolicy {
+  fn from(value: u32) -> Self {
+    match value {
+      0 => Self::AllowCopying,
+      1 => Self::EmbedIfUsed,
+      2 => Self::EmbedNever,
+      3 => Self::NoRestrictions,
+      value => Self::Unknown(value),
+    }
+  }
+}
+
+impl From<ProfileEmbedPolicy> for u32 {
+  fn from(policy: ProfileEmbedPolicy) -> Self {
+    match policy {
+      ProfileEmbedPolicy::AllowCopying => 0,
+      ProfileEmbedPolicy::EmbedIfUsed => 1,
+      ProfileEmbedPolicy::EmbedNever => 2,
+      ProfileEmbedPolicy::NoRestrictions => 3,
+      ProfileEmbedPolicy::Unknown(value) => value,
+    }
+  }
+}
+
+impl fmt::Display for ProfileEmbedPolicy {
+  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    match self {
+      Self::AllowCopying => f.write_str("Allow copying"),
+      Self::EmbedIfUsed => f.write_str("Embed if used"),
+      Self::EmbedNever => f.write_str("Embed never"),
+      Self::NoRestrictions => f.write_str("No restrictions"),
+      Self::Unknown(value) => write!(f, "Unknown ({})", value),
+    }
+  }
+}
 
 /// Illuminants in order of preference for color calculations based on D65.
 /// Color matrices of these illuminants can be adapted to D65.
@@ -213,7 +282,7 @@ pub struct CameraProfile {
   /// ProfileCopyright
   pub copyright: Option<String>,
   /// ProfileEmbedPolicy
-  pub embed_policy: Option<u32>,
+  pub embed_policy: Option<ProfileEmbedPolicy>,
   /// ProfileGroupName
   pub group_name: Option<String>,
   /// CalibrationIlluminant1..3, missing values are [`Illuminant::Unknown`]
@@ -404,6 +473,24 @@ impl CameraProfile {
   /// The profile is intended for High Dynamic Range rendering
   pub fn is_hdr(&self) -> bool {
     self.dynamic_range.is_some_and(|range| range.is_hdr())
+  }
+
+  /// ProfileEmbedPolicy, the default if the tag is missing
+  pub fn embed_policy(&self) -> ProfileEmbedPolicy {
+    self.embed_policy.unwrap_or_default()
+  }
+
+  /// ProfileEmbedPolicy allows to embed the profile in a DNG file
+  pub fn allows_embedding(&self) -> bool {
+    self.embed_policy().allows_embedding()
+  }
+
+  /// ProfileEmbedPolicy allows to copy the profile from a file, to process other images
+  ///
+  /// Profiles without ProfileEmbedPolicy (like the ones of the camera
+  /// definitions) allow copying, it is the default of the tag.
+  pub fn allows_copying(&self) -> bool {
+    self.embed_policy().allows_copying()
   }
 
   /// Minimum DNGBackwardVersion for this profile

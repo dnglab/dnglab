@@ -11,11 +11,13 @@ use std::path::PathBuf;
 use std::time::Instant;
 
 use crate::convertprofile::{FrameSelection, check_compression_available, resolve_convert_profile};
+use crate::dcp::{check_embedding, dcp_option, dcp_options};
 use crate::filemap::{FileMap, MapMode};
 use crate::jobs::Job;
 use crate::jobs::raw2dng::{JobResult, Raw2DngJob};
 use crate::{AppError, PKG_VERSION, Result};
 use rawler::dng::convertprofile::ConvertProfile;
+use rawler::dng::dcp::CameraProfileFile;
 
 /// Entry point for Clap sub command `convert`
 pub async fn convert(options: &ArgMatches) -> crate::Result<()> {
@@ -24,6 +26,12 @@ pub async fn convert(options: &ArgMatches) -> crate::Result<()> {
   let recursive = options.get_flag("recursive");
   let (profile, frames) = resolve_convert_profile(options)?;
   check_compression_available(&profile)?;
+  // Camera profiles are checked before any file is converted
+  let dcp = dcp_option(options, "dcp_file")?;
+  let extra_dcp = dcp_options(options, "extra_dcp_file")?;
+  for dcp in dcp.iter().chain(&extra_dcp) {
+    check_embedding(dcp)?;
+  }
 
   let proc = {
     let in_path: &PathBuf = options
@@ -45,7 +53,7 @@ pub async fn convert(options: &ArgMatches) -> crate::Result<()> {
   match proc {
     // We have only one input file, so output must be a file, too.
     MapMode::File(sd) => {
-      jobs.append(&mut generate_job(&sd, options, &profile, frames, &mut claimed)?);
+      jobs.append(&mut generate_job(&sd, options, &profile, frames, (&dcp, &extra_dcp), &mut claimed)?);
     }
     // Input is directory, to process all files
     MapMode::Dir(sd) => {
@@ -57,7 +65,7 @@ pub async fn convert(options: &ArgMatches) -> crate::Result<()> {
         }
       })?;
       for entry in list {
-        jobs.append(&mut generate_job(&entry, options, &profile, frames, &mut claimed)?);
+        jobs.append(&mut generate_job(&entry, options, &profile, frames, (&dcp, &extra_dcp), &mut claimed)?);
       }
     }
   }
@@ -109,6 +117,7 @@ fn generate_job(
   options: &ArgMatches,
   profile: &ConvertProfile,
   frames: FrameSelection,
+  (dcp, extra_dcp): (&Option<CameraProfileFile>, &[CameraProfileFile]),
   claimed: &mut HashSet<PathBuf>,
 ) -> Result<Vec<Raw2DngJob>> {
   let (do_batch, index) = match frames {
@@ -206,7 +215,9 @@ fn generate_job(
   for (i, out) in final_outputs.into_iter().enumerate() {
     let params = profile
       .to_convert_params(format!("{} {}", "DNGLab", PKG_VERSION))
-      .with_index(if do_batch { i } else { index });
+      .with_index(if do_batch { i } else { index })
+      .with_dcp(dcp.clone())
+      .with_extra_dcp(extra_dcp.to_vec());
     jobs.push(Raw2DngJob {
       input: input.clone(),
       output: out,

@@ -183,6 +183,9 @@ ARGS:
 OPTIONS:
         --camera-profiles       Write camera profiles to STDOUT (plain text, JSON or YAML)
     -d                          turns on debugging mode
+        --export-dcp <FILE>     Write the as-shot camera profile as DCP file
+        --export-dcp-all <DIR>  Write all camera profiles as DCP files to DIR
+    -f, --override              Override existing DCP files
         --full-pixel            Write uncompressed full pixel data to STDOUT
     -h, --help                  Print help information
         --json                  Format metadata as JSON
@@ -256,6 +259,36 @@ Camera profile 1 of 1 (primary, as shot)
   Slot 2: D65 (6500 K)
     ...
   LookTable: 36 × 8 × 16, Linear
+````
+
+### Camera profiles (DCP)
+
+DNG camera profiles (.dcp files) can replace the color matrices of the camera
+definitions.
+
+**convert** embeds them into the DNG: the profile of **--dcp-file** replaces
+the primary camera profile, **--extra-dcp-file** adds extra camera profiles and
+can be repeated. Extra camera profiles of a DNG input are kept.
+
+````
+dnglab convert --dcp-file "Canon EOS 100D Standard.dcp" \
+  --extra-dcp-file "Canon EOS 100D Portrait.dcp" IMG_1234.CR2 IMG_1234.dng
+````
+
+**process-raw** renders the image with the profile of **--dcp-file**, including
+its tone curve, look table and hue/saturation map:
+
+````
+dnglab process-raw --dcp-file "Canon EOS 100D Portrait.dcp" IMG_1234.CR2 IMG_1234.tif
+````
+
+**analyze** writes the as-shot camera profile of a file with **--export-dcp**,
+or all its camera profiles with **--export-dcp-all**. For files other than
+DNG, this is the profile of the camera definition.
+
+````
+dnglab analyze --export-dcp profile.dcp IMG_1234.dng
+dnglab analyze --export-dcp-all profiles/ IMG_1234.dng
 ````
 
 ### extract subcommand

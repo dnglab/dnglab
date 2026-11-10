@@ -4,6 +4,7 @@
 pub mod camera_profile_tags;
 pub mod convert;
 pub mod convertprofile;
+pub mod dcp;
 pub mod opcodes;
 pub mod original;
 pub mod profile_render;

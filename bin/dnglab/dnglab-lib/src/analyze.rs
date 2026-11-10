@@ -2,6 +2,7 @@
 // Copyright 2021 Daniel Vogelbacher <daniel@chaospixel.com>
 
 use crate::camera_profiles::analyze_camera_profiles;
+use crate::dcp::{export_dcp, export_dcp_all};
 use clap::ArgMatches;
 use log::debug;
 use rawler::analyze::{
@@ -34,6 +35,18 @@ pub async fn analyze(options: &ArgMatches) -> crate::Result<()> {
     .ok_or_else(|| crate::AppError::InvalidCmdSwitch("FILE not available".into()))?;
 
   debug!("Infile: {:?}", in_file);
+
+  // Exports are combined with the other output
+  let replace = options.get_flag("override");
+  if let Some(output) = options.get_one::<PathBuf>("export_dcp") {
+    export_dcp(in_file, output, replace)?;
+    eprintln!("Wrote {}", output.display());
+  }
+  if let Some(dir) = options.get_one::<PathBuf>("export_dcp_all") {
+    for path in export_dcp_all(in_file, dir, replace)? {
+      eprintln!("Wrote {}", path.display());
+    }
+  }
 
   if options.get_flag("meta") {
     let analyze = analyze_metadata(PathBuf::from(in_file))?;

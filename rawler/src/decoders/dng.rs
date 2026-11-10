@@ -768,7 +768,9 @@ mod tests {
 
   use super::DngDecoder;
   use crate::RawImage;
-  use crate::camera_profile::{CameraCalibration, CameraProfile, GainData, GainTableMap, IlluminantData, ProfileDynamicRange, RgbTable, RgbTables, TableData};
+  use crate::camera_profile::{
+    CameraCalibration, CameraProfile, GainData, GainTableMap, IlluminantData, ProfileDynamicRange, ProfileEmbedPolicy, RgbTable, RgbTables, TableData,
+  };
   use crate::cfa::CFA;
   use crate::decoders::{Camera, RawDecodeParams};
   use crate::dng::writer::DngWriter;
@@ -1978,7 +1980,7 @@ mod tests {
       name: Some(name.into()),
       calibration_signature: Some("com.dnglab.test".into()),
       copyright: Some("Copyright © DNGLab".into()),
-      embed_policy: Some(1),
+      embed_policy: Some(ProfileEmbedPolicy::EmbedIfUsed),
       group_name: Some("Group".into()),
       hue_sat_map_dims: Some([2, 2, 1]),
       hue_sat_map_encoding: Some(1),
@@ -2107,6 +2109,43 @@ mod tests {
     assert_eq!(decoded.camera_calibration, rawimage.camera_calibration);
     assert_eq!(decoded.analog_balance, rawimage.analog_balance);
     assert_eq!(decoded.as_shot_profile_name, rawimage.as_shot_profile_name);
+    Ok(())
+  }
+
+  #[test]
+  fn dcp_replaces_primary_camera_profile_in_conversion() -> TestResult {
+    use crate::dng::convert::{ConvertParams, convert_raw_source};
+    use crate::dng::dcp::CameraProfileFile;
+
+    let dcp = |name: &str| CameraProfileFile {
+      unique_camera_model: Some("DNGLab Synthetic".into()),
+      profile: full_camera_profile(name),
+    };
+    let rawimage = synthetic_rawimage_with_profiles();
+    let source = RawSource::new_from_slice(&write_dng(&rawimage, |_| {})?);
+    let params = ConvertParams::default()
+      .with_embedded(false)
+      .with_preview(false)
+      .with_thumbnail(false)
+      .with_dcp(Some(dcp("DCP")))
+      .with_extra_dcp(vec![dcp("Extra DCP 1"), dcp("Extra DCP 2")]);
+    let mut output = Cursor::new(Vec::new());
+    convert_raw_source(&source, &mut output, "dcp.dng", &params)?;
+
+    // The extra profiles of the DNG are kept, the extra DCPs follow
+    let decoded = decode_dng(output.get_ref())?;
+    let names: Vec<_> = decoded.camera_profiles.iter().map(|profile| profile.name.as_deref()).collect();
+    assert_eq!(names, [Some("DCP"), Some("Extra"), Some("Minimal"), Some("Extra DCP 1"), Some("Extra DCP 2")]);
+    assert_eq!(decoded.camera_profiles[0], full_camera_profile("DCP"));
+    // The DCP is the as-shot profile, the calibration of the camera is kept
+    assert_eq!(decoded.as_shot_profile_name, None);
+    assert_eq!(decoded.camera_calibration, rawimage.camera_calibration);
+
+    // A DCP with the embed policy "embed never" is not embedded
+    let mut never = dcp("Never");
+    never.profile.embed_policy = Some(ProfileEmbedPolicy::EmbedNever);
+    let params = params.with_extra_dcp(vec![never]);
+    assert!(convert_raw_source(&source, &mut Cursor::new(Vec::new()), "dcp.dng", &params).is_err());
     Ok(())
   }
 

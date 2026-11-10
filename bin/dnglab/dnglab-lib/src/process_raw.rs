@@ -5,7 +5,7 @@ use clap::ArgMatches;
 use futures::future::join_all;
 use rawler::decoders::supported_extensions;
 use rawler::{
-  dng::opcodes::OpcodeSelector,
+  dng::{dcp::CameraProfileFile, opcodes::OpcodeSelector},
   imgop::{
     denoise::DenoiseStrength,
     develop::{ProcessedImageFormat, ProcessingStep, RawProcessingParams},
@@ -17,6 +17,7 @@ use std::path::{Path, PathBuf};
 
 use std::time::Instant;
 
+use crate::dcp::dcp_option;
 use crate::filemap::{FileMap, MapMode};
 use crate::jobs::Job;
 use crate::jobs::process_raw::{JobResult, Raw2Image};
@@ -27,6 +28,7 @@ pub async fn process_raw(options: &ArgMatches) -> crate::Result<()> {
   let now = Instant::now();
 
   let recursive = options.get_flag("recursive");
+  let dcp = dcp_option(options, "dcp_file")?;
 
   let proc = {
     let in_path: &PathBuf = options
@@ -44,7 +46,7 @@ pub async fn process_raw(options: &ArgMatches) -> crate::Result<()> {
   match proc {
     // We have only one input file, so output must be a file, too.
     MapMode::File(sd) => {
-      jobs.append(&mut generate_job(&sd, options)?);
+      jobs.append(&mut generate_job(&sd, options, &dcp)?);
     }
     // Input is directory, to process all files
     MapMode::Dir(sd) => {
@@ -56,7 +58,7 @@ pub async fn process_raw(options: &ArgMatches) -> crate::Result<()> {
         }
       })?;
       for entry in list {
-        jobs.append(&mut generate_job(&entry, options)?);
+        jobs.append(&mut generate_job(&entry, options, &dcp)?);
       }
     }
   }
@@ -102,7 +104,7 @@ pub async fn process_raw(options: &ArgMatches) -> crate::Result<()> {
 }
 
 /// Convert given raw file to dng file
-fn generate_job(entry: &FileMap, options: &ArgMatches) -> Result<Vec<Raw2Image>> {
+fn generate_job(entry: &FileMap, options: &ArgMatches, dcp: &Option<CameraProfileFile>) -> Result<Vec<Raw2Image>> {
   let (do_batch, index) = match options.get_one::<String>("index") {
     Some(index) => {
       if index.to_lowercase().eq("all") {
@@ -175,6 +177,7 @@ fn generate_job(entry: &FileMap, options: &ArgMatches) -> Result<Vec<Raw2Image>>
         .get_many::<ProcessingStep>("skip_steps")
         .map(|values| values.copied().collect())
         .unwrap_or_default(),
+      dcp: dcp.clone(),
     };
 
     match output.parent() {

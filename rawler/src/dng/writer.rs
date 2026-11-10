@@ -35,7 +35,7 @@ use crate::{
 use super::{
   CompressionParams, CropMode, DNG_VERSION_V1_0, DNG_VERSION_V1_1, DNG_VERSION_V1_2, DNG_VERSION_V1_4, DNG_VERSION_V1_6, DNG_VERSION_V1_7, DNG_VERSION_V1_7_1,
   DngCompression, DngPhotometricConversion, DngVersionNumber, JxlParams,
-  camera_profile_tags::{extra_camera_profile_data, rationals, write_camera_calibration, write_camera_profile, write_gain_table_map_v1, write_string},
+  camera_profile_tags::{camera_profile_data, rationals, write_camera_calibration, write_camera_profile, write_gain_table_map_v1, write_string},
   opcodes::OpcodeStage,
   original::OriginalCompressed,
 };
@@ -261,11 +261,7 @@ where
       } else {
         self.writer.as_shot_neutral(wbcoeff_to_tiff_value(&rawimage));
       }
-      let color_planes = match &rawimage.photometric {
-        RawPhotometricInterpretation::Cfa(config) => config.colors.plane_count(),
-        _ => rawimage.cpp,
-      };
-      self.writer.camera_profiles(&rawimage, color_planes)?;
+      self.writer.camera_profiles(&rawimage, rawimage.color_planes())?;
     }
 
     let full_size = Rect::new(Point::new(0, 0), Dim2::new(rawimage.width, rawimage.height));
@@ -702,7 +698,7 @@ where
       if index == 0 {
         write_camera_profile(&mut self.root_ifd, &profile);
       } else {
-        let data = extra_camera_profile_data(&profile)?;
+        let data = camera_profile_data(&profile, None)?;
         extra_profiles.push(self.dng.write_data(&data)?);
       }
     }
@@ -740,8 +736,7 @@ where
   pub fn load_base_tags(&mut self, rawimage: &RawImage) -> Result<()> {
     self.root_ifd.add_tag(TiffCommonTag::Make, rawimage.clean_make.as_str());
     self.root_ifd.add_tag(TiffCommonTag::Model, rawimage.clean_model.as_str());
-    let uq_model = format!("{} {}", rawimage.clean_make, rawimage.clean_model);
-    self.root_ifd.add_tag(DngTag::UniqueCameraModel, uq_model.as_str());
+    self.root_ifd.add_tag(DngTag::UniqueCameraModel, rawimage.unique_camera_model().as_str());
     if let Some(exposure) = rawimage.baseline_exposure {
       self.root_ifd.add_tag(DngTag::BaselineExposure, exposure);
     }

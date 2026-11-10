@@ -336,6 +336,17 @@ fn analyze_command() -> Command {
     .arg(arg!(structure: --structure "Write file structure to STDOUT").action(ArgAction::SetTrue))
     .arg(arg!(summary: --summary "Write summary information for file to STDOUT").action(ArgAction::SetTrue))
     .arg(arg!(camera_profiles: --"camera-profiles" "Write camera profiles to STDOUT (plain text, JSON or YAML)").action(ArgAction::SetTrue))
+    .arg(
+      arg!(export_dcp: --"export-dcp" <FILE> "Write the as-shot camera profile as DCP file")
+        .required(false)
+        .value_parser(value_parser!(PathBuf)),
+    )
+    .arg(
+      arg!(export_dcp_all: --"export-dcp-all" <DIR> "Write all camera profiles as DCP files to DIR")
+        .required(false)
+        .value_parser(value_parser!(PathBuf)),
+    )
+    .arg(arg!(-f --override "Override existing DCP files").action(ArgAction::SetTrue))
     .arg(arg!(json: --json "Format metadata as JSON").action(ArgAction::SetTrue))
     .arg(arg!(yaml: --yaml "Format metadata as YAML").action(ArgAction::SetTrue))
     .arg(arg!(<FILE> "Input file").value_parser(clap::value_parser!(PathBuf)))
@@ -382,6 +393,11 @@ fn process_raw_command() -> Command {
         .required(false)
         .value_parser(value_parser!(OutputSpace))
         .default_value("srgb"),
+    )
+    .arg(
+      arg!(dcp_file: --"dcp-file" <FILE> "Camera profile (DCP) to render the image with, replaces the primary camera profile")
+        .required(false)
+        .value_parser(value_parser!(PathBuf)),
     )
     .arg(
       arg!(jpeg_quality: --"jpeg-quality" <quality> "JPEG quality (1-100)")
@@ -451,6 +467,17 @@ fn convert_command() -> Command {
         .required(false)
         .value_parser(clap::value_parser!(usize))
         .default_value("0"),
+    )
+    .arg(
+      arg!(dcp_file: --"dcp-file" <FILE> "Camera profile (DCP) that replaces the primary camera profile")
+        .required(false)
+        .value_parser(value_parser!(PathBuf)),
+    )
+    .arg(
+      arg!(extra_dcp_file: --"extra-dcp-file" <FILE> "Camera profile (DCP) to embed as extra camera profile, can be repeated")
+        .required(false)
+        .action(ArgAction::Append)
+        .value_parser(value_parser!(PathBuf)),
     )
     .arg(arg!(<INPUT> "Input file or directory").value_parser(clap::value_parser!(PathBuf)))
     .arg(arg!(<OUTPUT> "Output file or existing directory").value_parser(clap::value_parser!(PathBuf)))

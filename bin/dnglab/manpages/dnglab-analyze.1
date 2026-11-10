@@ -4,7 +4,7 @@
 .SH NAME
 dnglab\-analyze \- Analyze raw image
 .SH SYNOPSIS
-\fBdnglab\-analyze\fR [\fB\-\-raw\-pixel\fR] [\fB\-\-full\-pixel\fR] [\fB\-\-preview\-pixel\fR] [\fB\-\-thumbnail\-pixel\fR] [\fB\-\-raw\-checksum\fR] [\fB\-\-full\-checksum\fR] [\fB\-\-preview\-checksum\fR] [\fB\-\-thumbnail\-checksum\fR] [\fB\-\-srgb\fR] [\fB\-\-meta\fR] [\fB\-\-structure\fR] [\fB\-\-summary\fR] [\fB\-\-camera\-profiles\fR] [\fB\-\-json\fR] [\fB\-\-yaml\fR] [\fB\-h\fR|\fB\-\-help\fR] <\fIFILE\fR> 
+\fBdnglab\-analyze\fR [\fB\-\-raw\-pixel\fR] [\fB\-\-full\-pixel\fR] [\fB\-\-preview\-pixel\fR] [\fB\-\-thumbnail\-pixel\fR] [\fB\-\-raw\-checksum\fR] [\fB\-\-full\-checksum\fR] [\fB\-\-preview\-checksum\fR] [\fB\-\-thumbnail\-checksum\fR] [\fB\-\-srgb\fR] [\fB\-\-meta\fR] [\fB\-\-structure\fR] [\fB\-\-summary\fR] [\fB\-\-camera\-profiles\fR] [\fB\-\-export\-dcp\fR] [\fB\-\-export\-dcp\-all\fR] [\fB\-f\fR|\fB\-\-override\fR] [\fB\-\-json\fR] [\fB\-\-yaml\fR] [\fB\-h\fR|\fB\-\-help\fR] <\fIFILE\fR> 
 .SH DESCRIPTION
 Analyze raw image
 .SH OPTIONS
@@ -47,6 +47,15 @@ Write summary information for file to STDOUT
 .TP
 \fB\-\-camera\-profiles\fR
 Write camera profiles to STDOUT (plain text, JSON or YAML)
+.TP
+\fB\-\-export\-dcp\fR \fI<FILE>\fR
+Write the as\-shot camera profile as DCP file
+.TP
+\fB\-\-export\-dcp\-all\fR \fI<DIR>\fR
+Write all camera profiles as DCP files to DIR
+.TP
+\fB\-f\fR, \fB\-\-override\fR
+Override existing DCP files
 .TP
 \fB\-\-json\fR
 Format metadata as JSON

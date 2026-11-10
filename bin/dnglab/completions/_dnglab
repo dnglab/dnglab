@@ -35,6 +35,8 @@ _dnglab() {
         case $line[1] in
             (analyze)
 _arguments "${_arguments_options[@]}" : \
+'--export-dcp=[Write the as-shot camera profile as DCP file]:FILE:_files' \
+'--export-dcp-all=[Write all camera profiles as DCP files to DIR]:DIR:_files' \
 '-d+[Log level]:level:(error warn info debug trace)' \
 '--loglevel=[Log level]:level:(error warn info debug trace)' \
 '--profile-path=[Directory with profile TOML files]:dir:_files' \
@@ -52,6 +54,8 @@ _arguments "${_arguments_options[@]}" : \
 '--structure[Write file structure to STDOUT]' \
 '--summary[Write summary information for file to STDOUT]' \
 '--camera-profiles[Write camera profiles to STDOUT (plain text, JSON or YAML)]' \
+'-f[Override existing DCP files]' \
+'--override[Override existing DCP files]' \
 '--json[Format metadata as JSON]' \
 '--yaml[Format metadata as YAML]' \
 '-v[Print status for every file]' \
@@ -69,6 +73,7 @@ _arguments "${_arguments_options[@]}" : \
 '--crop=[Crop of the image\: DefaultCrop (best), ActiveArea or none]:crop:(best activearea none)' \
 '--format=[Output image format, defaults to the OUTPUT file extension or tif]:format:(tif jpeg)' \
 '--color-space=[Color space of the image]:space:(srgb adobergb prophoto)' \
+'--dcp-file=[Camera profile (DCP) to render the image with, replaces the primary camera profile]:FILE:_files' \
 '--jpeg-quality=[JPEG quality (1-100)]:quality:_default' \
 '--denoise-luma=[Strength of the luma noise reduction (0-4), 0 is off, 1 is a full reduction \[default\: 0.25\]]:strength:_default' \
 '--denoise-chroma=[Strength of the chroma noise reduction (0-4), 0 is off, 1 is a full reduction \[default\: 0.5\]]:strength:_default' \
@@ -119,6 +124,8 @@ _arguments "${_arguments_options[@]}" : \
 '--crop=[DNG default crop]:crop:(best activearea none)' \
 '-j+[Number of files to convert in parallel (0 = auto)]:N:_default' \
 '--jobs=[Number of files to convert in parallel (0 = auto)]:N:_default' \
+'--dcp-file=[Camera profile (DCP) that replaces the primary camera profile]:FILE:_files' \
+'*--extra-dcp-file=[Camera profile (DCP) to embed as extra camera profile, can be repeated]:FILE:_files' \
 '-d+[Log level]:level:(error warn info debug trace)' \
 '--loglevel=[Log level]:level:(error warn info debug trace)' \
 '--profile-path=[Directory with profile TOML files]:dir:_files' \
