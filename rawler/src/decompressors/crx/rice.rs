@@ -7,7 +7,7 @@
 
 use super::BitPump;
 use super::Result;
-use bitstream_io::BitRead;
+use crate::pumps::BitPump as _;
 
 /// Adaptive Golomb-Rice decoder
 pub(super) struct RiceDecoder<'mdat> {
@@ -38,7 +38,10 @@ impl<'mdat> RiceDecoder<'mdat> {
   /// All 0-bits are consumed.
   #[inline(always)]
   pub(super) fn bitstream_zeros(&mut self) -> Result<u32> {
-    Ok(self.bitpump.read_unary::<1>()?)
+    let zeros = self.bitpump.consume_zerobits()?;
+    // The run ends with a 1-bit, which is not part of the next value
+    self.bitpump.consume_bits(1);
+    Ok(zeros)
   }
 
   /// Return the requested bits
@@ -47,7 +50,7 @@ impl<'mdat> RiceDecoder<'mdat> {
   #[inline(always)]
   pub(super) fn bitstream_get_bits(&mut self, bits: u32) -> Result<u32> {
     debug_assert!(bits <= 32);
-    Ok(self.bitpump.read_var(bits)?)
+    Ok(self.bitpump.get_bits(bits)?)
   }
 
   /// Golomb-Rice decoding
