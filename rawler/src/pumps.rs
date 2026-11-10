@@ -88,15 +88,18 @@ impl<'a> BitPumpLSB<'a> {
 
 #[derive(Debug, Clone)]
 pub struct BitPumpMSB<'a> {
-  buffer: Chunks<'a, u8>,
+  /// Bytes not yet moved into `bits`
+  buffer: &'a [u8],
+  /// Bit register, the next bit of the stream is the most significant bit
   bits: u64,
+  /// Count of valid bits in `bits`, always below 64
   nbits: u32,
 }
 
 impl<'a> BitPumpMSB<'a> {
   pub fn new(src: &'a [u8]) -> Self {
     Self {
-      buffer: src.chunks(size_of::<u32>()),
+      buffer: src,
       bits: 0,
       nbits: 0,
     }
@@ -104,18 +107,54 @@ impl<'a> BitPumpMSB<'a> {
 
   /// Refill internal bit buffer - Big-Endian
   ///
-  /// For fast refill, we can simply take a whole u32 value out.
-  /// For slow refill, there may be 1, 2 or 3 bytes left in buffer. We need
-  /// to collect them manually.
-  fn refill(&mut self) -> Option<(u32, u32)> {
-    let chunk = self.buffer.next()?;
-    if chunk.len() == 4 {
-      // Fast refill
-      let bits: u32 = u32::from_be_bytes([chunk[0], chunk[1], chunk[2], chunk[3]]);
-      Some((bits, u32::BITS))
+  /// Afterwards the register holds at least 56 bits, or all
+  /// remaining bits at the end of the buffer.
+  #[inline(always)]
+  fn refill(&mut self) {
+    if let Some((word, _)) = self.buffer.split_first_chunk::<8>() {
+      // Fast refill: load 8 bytes behind the valid bits, but only
+      // account for the whole bytes which fit. The bits below `nbits`
+      // are the same bits the next refill loads, so OR-ing is safe.
+      self.bits |= u64::from_be_bytes(*word) >> self.nbits;
+      let bytes = (63 - self.nbits) >> 3;
+      self.buffer = &self.buffer[bytes as usize..];
+      self.nbits += bytes * 8;
     } else {
-      // Slow refill
-      Some(chunk.iter().fold((0, 0), |(bits, bit_cnt), x| ((bits << 8) | *x as u32, bit_cnt + 8)))
+      self.refill_tail();
+    }
+  }
+
+  /// Slow refill, there are less than 8 bytes left in buffer.
+  /// We need to collect them manually.
+  #[cold]
+  fn refill_tail(&mut self) {
+    while let Some((byte, rest)) = self.buffer.split_first()
+      && self.nbits <= 55
+    {
+      self.bits |= (*byte as u64) << (56 - self.nbits);
+      self.buffer = rest;
+      self.nbits += 8;
+    }
+  }
+
+  /// Count and consume a run of zero bits which
+  /// reaches the end of the bit register.
+  #[cold]
+  fn consume_zerobits_refill(&mut self) -> Result<u32, BitPumpError> {
+    let mut count = 0;
+    loop {
+      // All valid bits are zero
+      count += self.nbits;
+      self.consume_bits(self.nbits);
+      self.refill();
+      if self.nbits == 0 {
+        return Err(eof());
+      }
+      let zeros = self.bits.leading_zeros();
+      if zeros < self.nbits {
+        self.consume_bits(zeros);
+        return Ok(count + zeros);
+      }
     }
   }
 }
@@ -349,20 +388,32 @@ impl<'a> BitPump for BitPumpMSB<'a> {
   fn peek_bits(&mut self, num: u32) -> Result<u32, BitPumpError> {
     check_bits(num, MAX_PEEK_BITS)?;
     if num > self.nbits {
-      let (inbits, bit_cnt) = self.refill().ok_or_else(eof)?;
-      self.bits = (self.bits << bit_cnt) | inbits as u64;
-      self.nbits += bit_cnt;
+      self.refill();
       if num > self.nbits {
         return Err(eof());
       }
     }
-    Ok((self.bits >> (self.nbits - num)) as u32)
+    // Two shifts because num may be zero
+    Ok(((self.bits >> 1) >> (63 - num)) as u32)
   }
 
   #[inline(always)]
   fn consume_bits(&mut self, num: u32) {
+    debug_assert!(num <= self.nbits);
+    self.bits <<= num;
     self.nbits -= num;
-    self.bits &= (1 << self.nbits) - 1;
+  }
+
+  /// The run is counted in the bit register, up to 63 bits at once
+  #[inline(always)]
+  fn consume_zerobits(&mut self) -> Result<u32, BitPumpError> {
+    let zeros = self.bits.leading_zeros();
+    if zeros < self.nbits {
+      self.consume_bits(zeros);
+      Ok(zeros)
+    } else {
+      self.consume_zerobits_refill()
+    }
   }
 }
 
