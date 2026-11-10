@@ -33,15 +33,15 @@ pub(crate) fn decode_panasonic_v6(buf: &[u8], width: usize, height: usize, bps: 
       spix_compare = 0xffff;
       pixel_mask = 0x3fff;
     }
-    _ => {
-      unreachable!()
-    }
+    _ => return Err(format!("RW2 v6: unsupported bit depth {}", bps)),
   }
 
   let blocks_per_row = width / pixels_per_block;
   let bytes_per_row = V6_BYTES_PER_BLOCK * blocks_per_row;
 
-  assert_eq!(width % pixels_per_block, 0);
+  if !width.is_multiple_of(pixels_per_block) {
+    return Err(format!("RW2 v6: width {} is not a multiple of {} pixels per block", width, pixels_per_block));
+  }
 
   let need = bytes_per_row * height;
   if buf.len() < need {
