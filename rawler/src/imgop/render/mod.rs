@@ -1319,6 +1319,26 @@ mod tests {
   }
 
   #[test]
+  fn plan_fails_for_other_cfa_layouts() {
+    // A 2x8 pattern has no demosaic: the plan is an error, not a panic
+    let mut camera = Camera::new();
+    camera.cfa = CFA::new("RGGBGBRGRGGBGBRG");
+    let photometric = RawPhotometricInterpretation::Cfa(CFAConfig::new_from_camera(&camera));
+    let rawimage = RawImage::new(
+      camera,
+      PixU16::new_with(vec![1000; 8 * 8], 8, 8),
+      1,
+      [2.0, 1.0, 1.5, f32::NAN],
+      photometric,
+      Some(BlackLevel::zero(2, 2, 1)),
+      Some(WhiteLevel::new_bits(12, 1)),
+      false,
+    );
+    let error = plan(&rawimage, &RenderOptions::default()).err().map(|err| err.to_string());
+    assert!(error.as_deref().is_some_and(|err| err.contains("is not supported")), "{:?}", error);
+  }
+
+  #[test]
   fn plan_crops_other_data_to_active_area() -> crate::Result<()> {
     // Data that is not demosaiced is cropped to the ActiveArea without DefaultCrop
     let rawimage = linear_raw_rawimage(4, 2, 3);

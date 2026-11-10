@@ -27,6 +27,9 @@ pub enum SensorType {
   Bayer,
   /// Fujifilm 6x6 X-Trans CFA.
   Xtrans,
+  /// Any other CFA layout, e.g. 2x8 or 12x12 patterns, or a 2x2 pattern with
+  /// fewer than 3 colors. No demosaic of the rendering supports it.
+  Other,
 }
 
 impl SensorType {
@@ -34,17 +37,14 @@ impl SensorType {
   ///
   /// - 2x2 with at least 3 unique colors → [`SensorType::Bayer`]
   /// - 6x6 → [`SensorType::Xtrans`]
-  ///
-  /// # Panics
-  /// Panics (via `unimplemented!()`) for CFA patterns that do not match
-  /// either a Bayer or X-Trans layout.
+  /// - any other pattern → [`SensorType::Other`]
   pub fn from_cfa(cfa: &CFA) -> Self {
     if cfa.width == 2 && cfa.height == 2 && cfa.unique_colors() >= 3 {
       Self::Bayer
     } else if cfa.width == 6 && cfa.height == 6 {
       Self::Xtrans
     } else {
-      unimplemented!()
+      Self::Other
     }
   }
 }
@@ -303,6 +303,17 @@ mod tests {
         i
       );
     }
+  }
+
+  #[test]
+  fn sensor_type_of_cfa() {
+    assert_eq!(SensorType::from_cfa(&CFA::new("RGGB")), SensorType::Bayer);
+    assert_eq!(SensorType::from_cfa(&CFA::new("CYGM")), SensorType::Bayer);
+    assert_eq!(SensorType::from_cfa(&CFA::new(XTRANS)), SensorType::Xtrans);
+    // 2x8 and empty patterns, and a 2x2 pattern of 2 colors
+    assert_eq!(SensorType::from_cfa(&CFA::new("RGGBGBRGRGGBGBRG")), SensorType::Other);
+    assert_eq!(SensorType::from_cfa(&CFA::new("")), SensorType::Other);
+    assert_eq!(SensorType::from_cfa(&CFA::new("RGGR")), SensorType::Other);
   }
 
   #[test]
