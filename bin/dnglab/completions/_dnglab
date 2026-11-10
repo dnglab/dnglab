@@ -75,7 +75,8 @@ _arguments "${_arguments_options[@]}" : \
 '--format=[Output image format, defaults to the OUTPUT file extension or tif. TIFF has 16-bit samples, linear 32-bit floating point samples for High Dynamic Range camera profiles]:format:(tif jpeg)' \
 '--color-space=[Color space of the image]:space:(srgb adobergb prophoto)' \
 '--highlights=[Highlights above white after the BaselineExposure\: compress keeps their color with a smooth shoulder, clip clips each channel like DNG readers]:mode:(compress clip)' \
-'--bayer-demosaic=[Demosaic algorithm for Bayer sensors\: ppg is fast, ahd interpolates along edges with fewer artifacts]:algorithm:(ppg ahd)' \
+'--bayer-demosaic=[Demosaic algorithm for Bayer RGB sensors\: ppg is fast, ahd interpolates along edges with fewer artifacts, vng averages the directions with small gradients]:algorithm:(ppg ahd vng)' \
+'--xtrans-demosaic=[Demosaic algorithm for X-Trans sensors\: markesteijn has the best quality, vng is faster]:algorithm:(markesteijn vng)' \
 '--dcp-file=[Camera profile (DCP) to render the image with, replaces the primary camera profile]:FILE:_files' \
 '--jpeg-quality=[JPEG quality (1-100)]:quality:_default' \
 '--denoise-luma=[Strength of the luma noise reduction (0-4), 0 is off, 1 is a full reduction \[default\: 0.25\]]:strength:_default' \

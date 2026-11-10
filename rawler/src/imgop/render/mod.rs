@@ -216,8 +216,8 @@ pub enum RenderTarget {
 /// Quality of the demosaic
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum DemosaicQuality {
-  /// [`RenderOptions::bayer_demosaic`] for Bayer, Markesteijn (3 passes) for
-  /// X-Trans data
+  /// [`RenderOptions::bayer_demosaic`] for Bayer RGB, VNG for 4-color Bayer
+  /// (CYGM, RGBE) and [`RenderOptions::xtrans_demosaic`] for X-Trans data
   #[default]
   Quality,
   /// PPG for Bayer, bilinear interpolation for X-Trans data
@@ -237,18 +237,46 @@ pub enum BayerDemosaic {
   /// Adaptive Homogeneity-Directed: interpolates along edges, with fewer
   /// zipper artifacts, slower
   Ahd,
+  /// Variable Number of Gradients: averages the directions with small
+  /// gradients, slower
+  Vng,
 }
 
 #[cfg(feature = "clap")]
 impl clap::ValueEnum for BayerDemosaic {
   fn value_variants<'a>() -> &'a [Self] {
-    &[Self::Ppg, Self::Ahd]
+    &[Self::Ppg, Self::Ahd, Self::Vng]
   }
 
   fn to_possible_value(&self) -> Option<clap::builder::PossibleValue> {
     Some(match self {
       Self::Ppg => clap::builder::PossibleValue::new("ppg"),
       Self::Ahd => clap::builder::PossibleValue::new("ahd"),
+      Self::Vng => clap::builder::PossibleValue::new("vng"),
+    })
+  }
+}
+
+/// Demosaic algorithm for X-Trans data at [`DemosaicQuality::Quality`]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum XTransDemosaic {
+  /// Markesteijn with 3 passes: the best quality
+  #[default]
+  Markesteijn,
+  /// Variable Number of Gradients: faster
+  Vng,
+}
+
+#[cfg(feature = "clap")]
+impl clap::ValueEnum for XTransDemosaic {
+  fn value_variants<'a>() -> &'a [Self] {
+    &[Self::Markesteijn, Self::Vng]
+  }
+
+  fn to_possible_value(&self) -> Option<clap::builder::PossibleValue> {
+    Some(match self {
+      Self::Markesteijn => clap::builder::PossibleValue::new("markesteijn"),
+      Self::Vng => clap::builder::PossibleValue::new("vng"),
     })
   }
 }
@@ -267,6 +295,9 @@ pub struct RenderOptions {
   /// Algorithm of the Demosaic step for Bayer RGB data at
   /// [`DemosaicQuality::Quality`]
   pub bayer_demosaic: BayerDemosaic,
+  /// Algorithm of the Demosaic step for X-Trans data at
+  /// [`DemosaicQuality::Quality`]
+  pub xtrans_demosaic: XTransDemosaic,
   /// Color space of the output: the Calibrate step maps the camera values to
   /// it, the TransferFunction step encodes the values by its transfer function
   pub color_space: OutputSpace,
@@ -295,6 +326,7 @@ impl Default for RenderOptions {
       white_balance: WhiteBalancePlacement::default(),
       demosaic: DemosaicQuality::default(),
       bayer_demosaic: BayerDemosaic::default(),
+      xtrans_demosaic: XTransDemosaic::default(),
       color_space: OutputSpace::default(),
       denoise: DenoiseStrength::default(),
       sharpen: DEFAULT_SHARPEN,
@@ -1165,16 +1197,19 @@ mod tests {
       Some(WhiteLevel::new_bits(12, 1)),
       false,
     );
-    let algorithm_with = |rawimage: &RawImage, demosaic, bayer_demosaic| -> crate::Result<Option<DemosaicAlgorithm>> {
+    let algorithm_in = |rawimage: &RawImage, options: RenderOptions| -> crate::Result<Option<DemosaicAlgorithm>> {
+      Ok(plan(rawimage, &options)?.ops.iter().find_map(|op| match op {
+        Op::Demosaic { algorithm, .. } => Some(*algorithm),
+        _ => None,
+      }))
+    };
+    let algorithm_with = |rawimage: &RawImage, demosaic, bayer_demosaic| {
       let options = RenderOptions {
         demosaic,
         bayer_demosaic,
         ..Default::default()
       };
-      Ok(plan(rawimage, &options)?.ops.iter().find_map(|op| match op {
-        Op::Demosaic { algorithm, .. } => Some(*algorithm),
-        _ => None,
-      }))
+      algorithm_in(rawimage, options)
     };
     let algorithm_of = |rawimage: &RawImage, demosaic| algorithm_with(rawimage, demosaic, BayerDemosaic::default());
     for (demosaic, algorithm) in [
@@ -1204,6 +1239,45 @@ mod tests {
       algorithm_with(&rawimage, DemosaicQuality::Quality, BayerDemosaic::Ahd)?,
       Some(DemosaicAlgorithm::Markesteijn)
     );
+    assert_eq!(
+      algorithm_with(&bayer, DemosaicQuality::Quality, BayerDemosaic::Vng)?,
+      Some(DemosaicAlgorithm::Vng)
+    );
+    // X-Trans data by VNG at Quality only, if selected
+    for (demosaic, algorithm) in [
+      (DemosaicQuality::Quality, DemosaicAlgorithm::Vng),
+      (DemosaicQuality::Fast, DemosaicAlgorithm::XTransBilinear),
+      (DemosaicQuality::Preview, DemosaicAlgorithm::XTransBilinear),
+    ] {
+      let options = RenderOptions {
+        demosaic,
+        xtrans_demosaic: XTransDemosaic::Vng,
+        ..Default::default()
+      };
+      assert_eq!(algorithm_in(&rawimage, options)?, Some(algorithm), "{:?}", demosaic);
+    }
+    // 4-color data by VNG at Quality, bilinear at Fast
+    let mut camera = Camera::new();
+    camera.cfa = CFA::new("CYGM");
+    camera.plane_color = crate::cfa::PlaneColor::new("CYGM");
+    let photometric = RawPhotometricInterpretation::Cfa(CFAConfig::new_from_camera(&camera));
+    let cygm = RawImage::new(
+      camera,
+      PixU16::new_with(vec![1000; 8 * 6], 8, 6),
+      1,
+      [1.5, 1.2, 1.0, 1.4],
+      photometric,
+      Some(BlackLevel::zero(2, 2, 1)),
+      Some(WhiteLevel::new_bits(12, 1)),
+      false,
+    );
+    for (demosaic, algorithm) in [
+      (DemosaicQuality::Quality, DemosaicAlgorithm::Vng),
+      (DemosaicQuality::Fast, DemosaicAlgorithm::Bilinear4),
+      (DemosaicQuality::Preview, DemosaicAlgorithm::Superpixel4),
+    ] {
+      assert_eq!(algorithm_of(&cygm, demosaic)?, Some(algorithm), "{:?}", demosaic);
+    }
     // Images of rotated sensors are rotated after AHD too
     let mut rotated = rggb_rawimage();
     rotated.fuji_rotation_width = Some(4);

@@ -20,7 +20,7 @@ use crate::{
     color::{OutputSpace, TransferFunction},
     denoise::DenoiseStrength,
     highlights::HighlightMode,
-    render::{BayerDemosaic, RenderOptions, RenderedImage, render},
+    render::{BayerDemosaic, RenderOptions, RenderedImage, XTransDemosaic, render},
     sharpen::DEFAULT_SHARPEN,
   },
   rawsource::RawSource,
@@ -96,6 +96,8 @@ pub struct RawProcessingParams {
   pub color_space: OutputSpace,
   /// Demosaic algorithm for Bayer RGB data
   pub bayer_demosaic: BayerDemosaic,
+  /// Demosaic algorithm for X-Trans data
+  pub xtrans_demosaic: XTransDemosaic,
   /// Strength of the noise reduction
   pub denoise: DenoiseStrength,
   /// Strength of the sharpening
@@ -132,6 +134,7 @@ impl Default for RawProcessingParams {
       jpeg_quality: 94,
       color_space: OutputSpace::Srgb,
       bayer_demosaic: BayerDemosaic::default(),
+      xtrans_demosaic: XTransDemosaic::default(),
       denoise: DenoiseStrength::default(),
       sharpen: DEFAULT_SHARPEN,
       exposure: 0.0,
@@ -161,6 +164,7 @@ pub fn process_raw_image<W: Write + Seek + Send>(raw: &Path, image_file: &mut W,
   let mut develop = RawDevelop {
     color_space: params.color_space,
     bayer_demosaic: params.bayer_demosaic,
+    xtrans_demosaic: params.xtrans_demosaic,
     denoise: params.denoise,
     sharpen: params.sharpen,
     exposure: params.exposure,
@@ -237,6 +241,8 @@ pub struct RawDevelop {
   pub color_space: OutputSpace,
   /// Algorithm of the Demosaic step for Bayer RGB data
   pub bayer_demosaic: BayerDemosaic,
+  /// Algorithm of the Demosaic step for X-Trans data
+  pub xtrans_demosaic: XTransDemosaic,
   /// Strength of the Denoise step
   pub denoise: DenoiseStrength,
   /// Strength of the Sharpen step
@@ -261,6 +267,7 @@ impl RawDevelop {
       steps: Vec::from(steps),
       color_space: OutputSpace::default(),
       bayer_demosaic: BayerDemosaic::default(),
+      xtrans_demosaic: XTransDemosaic::default(),
       denoise: DenoiseStrength::default(),
       sharpen: DEFAULT_SHARPEN,
       exposure: 0.0,
@@ -293,6 +300,7 @@ impl RawDevelop {
       steps: self.steps.iter().copied().collect(),
       color_space: self.color_space,
       bayer_demosaic: self.bayer_demosaic,
+      xtrans_demosaic: self.xtrans_demosaic,
       denoise: self.denoise,
       sharpen: self.sharpen,
       exposure: self.exposure,
@@ -1282,7 +1290,7 @@ mod tests {
       ("rggb_full_frame", 24, 16, 3, &[381.69512236118317, 18150.39451789856, 379.595433615728, 232.32091468572617, 11240.07896360755, 147.64509285845165, 355.1079213619232, 17057.55524724722, 331.2803854717914]),
       ("rggb_profile", 24, 16, 3, &[383.2990419268608, 18208.48621380329, 382.7840235605359, 298.3092967271805, 14479.034941881895, 241.79218848726833, 362.78131806850433, 17361.05045902729, 343.8535267408927]),
       ("rggb_negative_exposure", 24, 16, 3, &[372.9707576036453, 17801.475763201714, 364.28282762169994, 148.17328909039497, 7266.1948882341385, 69.80508398590429, 337.22546261548996, 16365.803864657879, 303.55807226827676]),
-      ("cygm", 24, 16, 3, &[330.2392064332962, 15989.270647585392, 294.36408670208885, 242.15305441617966, 11660.862674564123, 160.30449729856224, 362.35906931757927, 17345.425794780254, 344.5220274683217]),
+      ("cygm", 24, 16, 3, &[333.887368619442, 16094.266443014145, 297.7676277348556, 244.9334465265274, 11778.500518351793, 161.74481508232535, 363.30793583393097, 17384.043117403984, 345.91098645419413]),
       ("cygm_preview", 12, 8, 3, &[89.73201927542686, 4332.205256462097, 85.09224837936573, 54.80821684002876, 2643.0370524823666, 33.73017430069746, 90.4724417924881, 4360.6897903084755, 85.8589423764323]),
       ("xtrans", 28, 16, 3, &[441.8567228913307, 20118.23803973198, 436.9002191243954, 270.7740049660206, 12374.535669326782, 170.7231797951337, 409.30331003665924, 18666.734287142754, 378.8607051136843]),
       ("mono", 24, 16, 1, &[286.27965730428696, 13782.818696141243, 217.83812832726255]),
@@ -1321,15 +1329,23 @@ mod tests {
     fn white_balance_placement_matters_for_color_differences() {
       // Values that don't clip when white balanced: bilinear demosaicing works on
       // each color plane, so it doesn't matter if the planes are balanced before.
-      // PPG interpolates by the differences of the planes, Markesteijn chooses
-      // the direction of the interpolation by the colors.
+      // PPG and VNG interpolate by the differences of the planes, Markesteijn
+      // chooses the direction of the interpolation by the colors.
       let cygm_matrix = [[0.2, 0.6, 0.5], [0.7, 0.8, 0.0], [0.1, 0.9, 0.1], [0.8, 0.2, 0.6]];
       let rgb = [2.0, 1.0, 1.5, f32::NAN];
       for (pattern, colors, wb, matrix, demosaic, bilinear) in [
         ("RGGB", "RGB", rgb, transform_2d(&COLOR_MATRIX), DemosaicQuality::Quality, false),
         (XTRANS, "RGB", rgb, transform_2d(&COLOR_MATRIX), DemosaicQuality::Quality, false),
         (XTRANS, "RGB", rgb, transform_2d(&COLOR_MATRIX), DemosaicQuality::Fast, true),
-        ("CYGM", "CYGM", [1.5, 1.2, 1.0, 1.4], transform_2d(&cygm_matrix), DemosaicQuality::Quality, true),
+        (
+          "CYGM",
+          "CYGM",
+          [1.5, 1.2, 1.0, 1.4],
+          transform_2d(&cygm_matrix),
+          DemosaicQuality::Quality,
+          false,
+        ),
+        ("CYGM", "CYGM", [1.5, 1.2, 1.0, 1.4], transform_2d(&cygm_matrix), DemosaicQuality::Fast, true),
       ] {
         let mut rawimage = cfa_rawimage(pattern, colors, 96, 72, wb, matrix);
         rawimage.data = RawImageData::Integer(samples(96, 72, 1, 64, 1300));

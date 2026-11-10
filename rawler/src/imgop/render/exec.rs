@@ -27,6 +27,7 @@ use crate::{
         ppg::PPGDemosaic,
         superpixel::{Superpixel3Channel, Superpixel4Channel},
       },
+      vng::VngDemosaic,
       xtrans::{bilinear::XTransBilinearDemosaic, markesteijn::XTransMarkesteijnDemosaic},
     },
     sharpen::laplacian_sharpen,
@@ -380,6 +381,8 @@ impl Executor {
     let demosaiced = match algorithm {
       DemosaicAlgorithm::Ppg => PPGDemosaic::new().demosaic(pixels, &cfa.cfa, &cfa.colors).into(),
       DemosaicAlgorithm::Ahd => AhdDemosaic::new().demosaic(pixels, &cfa.cfa, &cfa.colors).into(),
+      DemosaicAlgorithm::Vng if cfa.colors.plane_count() == 4 => Demosaic::<f32, 4>::demosaic(&VngDemosaic::new(), pixels, &cfa.cfa, &cfa.colors).into(),
+      DemosaicAlgorithm::Vng => Demosaic::<f32, 3>::demosaic(&VngDemosaic::new(), pixels, &cfa.cfa, &cfa.colors).into(),
       DemosaicAlgorithm::Bilinear4 => Bilinear4Channel::new().demosaic(pixels, &cfa.cfa, &cfa.colors).into(),
       DemosaicAlgorithm::XTransBilinear => XTransBilinearDemosaic::new().demosaic(pixels, &cfa.cfa, &cfa.colors).into(),
       DemosaicAlgorithm::Markesteijn => XTransMarkesteijnDemosaic::new_pass_3().demosaic(pixels, &cfa.cfa, &cfa.colors).into(),
