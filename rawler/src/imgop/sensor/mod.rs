@@ -151,8 +151,8 @@ mod tests {
     let region = ImageView::new(&samples, width, height, 1).region(area);
     let copy = region.to_vec();
     let copy = ImageView::new(&copy, area.width(), area.height(), 1);
-    let expected = algorithm.demosaic(copy.into(), &cfa.shift(area.p.x, area.p.y), &colors).unwrap();
-    let demosaiced = algorithm.demosaic(region, &cfa, &colors).unwrap();
+    let expected = algorithm.demosaic(copy.into(), &cfa.shift(area.p.x, area.p.y), &colors).expect("demosaic");
+    let demosaiced = algorithm.demosaic(region, &cfa, &colors).expect("demosaic");
     assert_eq!(
       (demosaiced.width, demosaiced.height),
       (expected.width, expected.height),
@@ -315,7 +315,7 @@ mod tests {
         let samples: Vec<f32> = (0..width * height).map(|i| (i * 7919 % 1000) as f32 / 1000.0).collect();
         let rgb = PPGDemosaic::new()
           .demosaic(ImageView::new(&samples, width, height, 1).into(), &cfa, &PlaneColor::new("RGB"))
-          .unwrap();
+          .expect("demosaic");
         assert_eq!((rgb.width, rgb.height), (width, height), "{}", pattern);
         for (row, col) in (0..height).flat_map(|row| (0..width).map(move |col| (row, col))) {
           let (pixel, own) = (rgb.at(row, col), cfa.color_at(row, col));

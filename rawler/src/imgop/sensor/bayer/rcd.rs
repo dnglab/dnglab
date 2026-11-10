@@ -348,7 +348,7 @@ mod tests {
   fn demosaic(algorithm: &RcdDemosaic, samples: &[f32], width: usize, height: usize, pattern: &str) -> Color2D<f32, 3> {
     algorithm
       .demosaic(ImageView::new(samples, width, height, 1).into(), &CFA::new(pattern), &PlaneColor::new("RGB"))
-      .unwrap()
+      .expect("demosaic")
   }
 
   #[test]

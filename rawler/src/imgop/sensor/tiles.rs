@@ -129,7 +129,7 @@ mod tests {
   fn cores_cover_the_area_and_windows_the_halo() {
     let dim = Dim2::new(40, 30);
     let inner = inner_area(dim, 5);
-    let tiles = halo_tiles(dim, inner, Dim2::new(8, 7), 5).unwrap();
+    let tiles = halo_tiles(dim, inner, Dim2::new(8, 7), 5).expect("tiles");
     // Each pixel of the area is in exactly one core, no pixel outside of it
     let mut count = Pix2D::<u16>::new(dim.w, dim.h);
     for tile in &tiles {
@@ -157,7 +157,7 @@ mod tests {
   #[test]
   fn windows_are_clipped_to_the_image() {
     let dim = Dim2::new(10, 6);
-    let tiles = halo_tiles(dim, area(0, 0, 10, 6), Dim2::new(4, 4), 2).unwrap();
+    let tiles = halo_tiles(dim, area(0, 0, 10, 6), Dim2::new(4, 4), 2).expect("tiles");
     assert_eq!(
       tiles,
       [
@@ -195,7 +195,7 @@ mod tests {
   #[test]
   fn empty_area_has_no_tiles() {
     let dim = Dim2::new(8, 8);
-    assert!(halo_tiles(dim, inner_area(dim, 5), Dim2::new(4, 4), 5).unwrap().is_empty());
+    assert!(halo_tiles(dim, inner_area(dim, 5), Dim2::new(4, 4), 5).expect("tiles").is_empty());
   }
 
   #[test]
@@ -209,7 +209,7 @@ mod tests {
   fn par_tiles_write_their_cores() {
     let dim = Dim2::new(23, 17);
     let mut out = Pix2D::<u16>::new(dim.w, dim.h);
-    let tiles = halo_tiles(dim, inner_area(dim, 2), Dim2::new(5, 4), 2).unwrap();
+    let tiles = halo_tiles(dim, inner_area(dim, 2), Dim2::new(5, 4), 2).expect("tiles");
     // Each tile writes the index of its first pixel in the image, workers count their tiles
     par_tiles(
       out.view_mut().into(),
@@ -221,7 +221,7 @@ mod tests {
         region.rows_mut().for_each(|row| row.fill(index));
       },
     )
-    .unwrap();
+    .expect("tiles");
     for tile in &tiles {
       let index = (tile.core.p.y * dim.w + tile.core.p.x) as u16 + 1;
       assert_eq!(*out.at(tile.core.p.y + tile.core.d.h - 1, tile.core.p.x + tile.core.d.w - 1), index);
