@@ -18,6 +18,7 @@ use std::path::{Path, PathBuf};
 
 use std::time::Instant;
 
+use crate::badpixels::{BadPixelFile, add_bad_pixel_opcodes, bad_pixels_option};
 use crate::dcp::dcp_option;
 use crate::filemap::{FileMap, MapMode};
 use crate::jobs::Job;
@@ -30,6 +31,7 @@ pub async fn process_raw(options: &ArgMatches) -> crate::Result<()> {
 
   let recursive = options.get_flag("recursive");
   let dcp = dcp_option(options, "dcp_file")?;
+  let bad_pixels = bad_pixels_option(options, "bad_pixels")?;
 
   let proc = {
     let in_path: &PathBuf = options
@@ -47,7 +49,7 @@ pub async fn process_raw(options: &ArgMatches) -> crate::Result<()> {
   match proc {
     // We have only one input file, so output must be a file, too.
     MapMode::File(sd) => {
-      jobs.append(&mut generate_job(&sd, options, &dcp)?);
+      jobs.append(&mut generate_job(&sd, options, &dcp, bad_pixels.as_ref())?);
     }
     // Input is directory, to process all files
     MapMode::Dir(sd) => {
@@ -59,7 +61,7 @@ pub async fn process_raw(options: &ArgMatches) -> crate::Result<()> {
         }
       })?;
       for entry in list {
-        jobs.append(&mut generate_job(&entry, options, &dcp)?);
+        jobs.append(&mut generate_job(&entry, options, &dcp, bad_pixels.as_ref())?);
       }
     }
   }
@@ -105,7 +107,7 @@ pub async fn process_raw(options: &ArgMatches) -> crate::Result<()> {
 }
 
 /// Convert given raw file to dng file
-fn generate_job(entry: &FileMap, options: &ArgMatches, dcp: &Option<CameraProfileFile>) -> Result<Vec<Raw2Image>> {
+fn generate_job(entry: &FileMap, options: &ArgMatches, dcp: &Option<CameraProfileFile>, bad_pixels: Option<&BadPixelFile>) -> Result<Vec<Raw2Image>> {
   let (do_batch, index) = match options.get_one::<String>("index") {
     Some(index) => {
       if index.to_lowercase().eq("all") {
@@ -145,7 +147,7 @@ fn generate_job(entry: &FileMap, options: &ArgMatches, dcp: &Option<CameraProfil
     }
 
     // Params for conversion process
-    let params = RawProcessingParams {
+    let mut params = RawProcessingParams {
       crop: *options
         .get_one("crop")
         .ok_or_else(|| crate::AppError::InvalidCmdSwitch("crop has no default".into()))?,
@@ -158,6 +160,7 @@ fn generate_job(entry: &FileMap, options: &ArgMatches, dcp: &Option<CameraProfil
         .get_many::<OpcodeSelector>("remove_dng_opcodes")
         .map(|values| values.cloned().collect())
         .unwrap_or_default(),
+      replace_dng_opcodes: Vec::new(),
       format,
       jpeg_quality: *options
         .get_one("jpeg_quality")
@@ -183,6 +186,9 @@ fn generate_job(entry: &FileMap, options: &ArgMatches, dcp: &Option<CameraProfil
         .unwrap_or_default(),
       dcp: dcp.clone(),
     };
+    if let Some(file) = bad_pixels {
+      add_bad_pixel_opcodes(file, &input, params.index, &mut params.replace_dng_opcodes, &mut params.remove_dng_opcodes);
+    }
 
     match output.parent() {
       Some(parent) => {

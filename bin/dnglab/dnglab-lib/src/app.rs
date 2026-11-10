@@ -103,6 +103,13 @@ fn remove_dng_opcodes_arg() -> Arg {
     .action(ArgAction::Append)
 }
 
+/// Argument with a bad pixel list in the format of dcraw, for convert and process-raw
+fn bad_pixels_arg() -> Arg {
+  arg!(bad_pixels: --"bad-pixels" <FILE> "Bad pixel list in the format of dcraw: column, row and UNIX time per line, relative to the ActiveArea. It is written as FixBadPixelsList to OpcodeList1 and replaces an existing one")
+    .required(false)
+    .value_parser(value_parser!(PathBuf))
+}
+
 /// Argument with a comma separated list of processing steps of the rendering
 fn steps_arg(id: &'static str, long: &'static str, help: &'static str) -> Arg {
   Arg::new(id)
@@ -357,6 +364,7 @@ fn analyze_command() -> Command {
 fn process_raw_command() -> Command {
   Command::new("process-raw")
     .arg(remove_dng_opcodes_arg())
+    .arg(bad_pixels_arg())
     .arg(
       arg!(--"artist" <artist> "Set the artist tag")
         .required(false)
@@ -486,6 +494,7 @@ fn convert_command() -> Command {
         .action(ArgAction::Append)
         .value_parser(value_parser!(PathBuf)),
     )
+    .arg(bad_pixels_arg())
     .arg(arg!(<INPUT> "Input file or directory").value_parser(clap::value_parser!(PathBuf)))
     .arg(arg!(<OUTPUT> "Output file or existing directory").value_parser(clap::value_parser!(PathBuf)))
 }

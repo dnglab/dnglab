@@ -476,6 +476,16 @@ impl OpcodeList {
     removed
   }
 
+  /// Replace the opcodes with the ID of `opcode`: it takes the place of the
+  /// first of them, the others are removed. Without one, `opcode` is inserted
+  /// at the start of the list, so it is applied before the other opcodes.
+  pub fn replace_or_prepend(&mut self, opcode: Opcode) {
+    let id = opcode.id();
+    let position = self.0.iter().position(|existing| existing.id() == id).unwrap_or(0);
+    self.0.retain(|existing| existing.id() != id);
+    self.0.insert(position.min(self.0.len()), opcode);
+  }
+
   /// Multiply the values of DeltaPerRow and DeltaPerColumn by `factor`. Their
   /// deltas are in pixel units of the image data, so they change with its
   /// sample format.
@@ -612,6 +622,38 @@ mod tests {
       aspect_ratio: 1.0,
       raw_trim: None,
     }
+  }
+
+  #[test]
+  fn replace_or_prepend() {
+    let constant = |constant| {
+      Opcode::FixBadPixelsConstant(FixBadPixelsConstant {
+        version: V1_3,
+        flags: 0,
+        constant,
+        bayer_phase: 0,
+      })
+    };
+    let bad_pixels = |row| {
+      Opcode::FixBadPixelsList(FixBadPixelsList {
+        version: V1_3,
+        flags: 0,
+        bayer_phase: 0,
+        points: vec![(row, 1)],
+        rects: Vec::new(),
+      })
+    };
+    // Without an opcode of its ID, the opcode is inserted first
+    let mut list = OpcodeList::new(vec![constant(0)]);
+    list.replace_or_prepend(bad_pixels(1));
+    assert_eq!(list.opcodes(), [bad_pixels(1), constant(0)]);
+    // It takes the place of the first opcode of its ID, the others are removed
+    let mut list = OpcodeList::new(vec![constant(0), bad_pixels(2), constant(1), bad_pixels(3)]);
+    list.replace_or_prepend(bad_pixels(1));
+    assert_eq!(list.opcodes(), [constant(0), bad_pixels(1), constant(1)]);
+    let mut list = OpcodeList::default();
+    list.replace_or_prepend(bad_pixels(1));
+    assert_eq!(list.opcodes(), [bad_pixels(1)]);
   }
 
   #[test]

@@ -68,6 +68,7 @@ set edit:completion:arg-completer[dnglab] = {|@words|
         }
         &'dnglab;process-raw'= {
             cand --remove-dng-opcodes 'Remove DNG opcodes, as comma separated [<list>:]<opcode> (e.g. WarpRectilinear,2:GainMap)'
+            cand --bad-pixels 'Bad pixel list in the format of dcraw: column, row and UNIX time per line, relative to the ActiveArea. It is written as FixBadPixelsList to OpcodeList1 and replaces an existing one'
             cand --artist 'Set the artist tag'
             cand --keep-mtime 'Keep mtime, read from EXIF with fallback to original file mtime'
             cand --image-index 'Select a specific image index (or ''all'') if file is a image container'
@@ -124,6 +125,7 @@ set edit:completion:arg-completer[dnglab] = {|@words|
             cand --jobs 'Number of files to convert in parallel (0 = auto)'
             cand --dcp-file 'Camera profile (DCP) that replaces the primary camera profile'
             cand --extra-dcp-file 'Camera profile (DCP) to embed as extra camera profile, can be repeated'
+            cand --bad-pixels 'Bad pixel list in the format of dcraw: column, row and UNIX time per line, relative to the ActiveArea. It is written as FixBadPixelsList to OpcodeList1 and replaces an existing one'
             cand -d 'Log level'
             cand --loglevel 'Log level'
             cand --profile-path 'Directory with profile TOML files'

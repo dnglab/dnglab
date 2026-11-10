@@ -299,51 +299,64 @@ impl RawMetadata {
   }
 
   pub fn last_modified(&self) -> Result<Option<SystemTime>> {
-    let mtime = self
-      .exif
-      .modify_date
-      .as_ref()
-      .map(|mtime| NaiveDateTime::parse_from_str(mtime, "%Y:%m:%d %H:%M:%S"))
-      .transpose()
-      .map_err(|err| RawlerError::DecoderFailed(err.to_string()))?;
-    if let Some(mtime) = mtime {
-      // Probe for available timezone information
-      let tz = if let Some(offset) = self.exif.timezone_offset.as_ref().and_then(|x| x.get(1)) {
-        if let Some(tz) = FixedOffset::east_opt(*offset as i32 * 3600) {
-          Some(tz)
-        } else {
-          log::warn!("TZ Offset overflow");
-          None
-        }
-      } else if let Some(offset) = &self.exif.offset_time {
-        match FixedOffset::from_str(offset) {
-          Ok(tz) => Some(tz),
-          Err(err) => {
-            log::warn!("Invalid fixed offset: {}", err);
-            None
-          }
-        }
-      } else {
-        None
-      };
-      // Any timezone? Then correct...
-      if let Some(tz) = tz {
-        let x = tz
-          .from_local_datetime(&mtime)
-          .earliest()
-          .ok_or(RawlerError::DecoderFailed(format!("Failed to convert datetime to local: {:?}", mtime)))?;
-        return Ok(Some(x.into()));
-      } else {
-        match chrono::Local.from_local_datetime(&mtime).earliest() {
-          Some(ts) => return Ok(Some(ts.into())),
-          None => {
-            log::warn!("Failed to convert ts to local time");
-          }
-        }
-      }
-    }
+    let tz = self.timezone_offset(1).or_else(|| self.exif.offset_time.as_deref().and_then(fixed_offset));
+    exif_time(self.exif.modify_date.as_deref(), tz)
+  }
 
-    Ok(None)
+  /// Time the image was captured: DateTimeOriginal in the time zone of
+  /// OffsetTimeOriginal, TimeZoneOffset or OffsetTime, otherwise in the local
+  /// time zone
+  pub fn capture_time(&self) -> Result<Option<SystemTime>> {
+    let tz = self
+      .exif
+      .offset_time_original
+      .as_deref()
+      .and_then(fixed_offset)
+      .or_else(|| self.timezone_offset(0))
+      .or_else(|| self.exif.offset_time.as_deref().and_then(fixed_offset));
+    exif_time(self.exif.date_time_original.as_deref(), tz)
+  }
+
+  /// Value `index` of TimeZoneOffset in hours: 0 for DateTimeOriginal, 1 for ModifyDate
+  fn timezone_offset(&self, index: usize) -> Option<FixedOffset> {
+    let offset = *self.exif.timezone_offset.as_ref()?.get(index)?;
+    let tz = FixedOffset::east_opt(offset as i32 * 3600);
+    if tz.is_none() {
+      log::warn!("TZ Offset overflow");
+    }
+    tz
+  }
+}
+
+/// Time zone of an EXIF offset like "+02:00"
+fn fixed_offset(offset: &str) -> Option<FixedOffset> {
+  FixedOffset::from_str(offset).map_err(|err| log::warn!("Invalid fixed offset: {}", err)).ok()
+}
+
+/// Time of an EXIF date ("YYYY:MM:DD HH:MM:SS") in the time zone `tz`, or in
+/// the local time zone without it
+fn exif_time(date: Option<&str>, tz: Option<FixedOffset>) -> Result<Option<SystemTime>> {
+  let Some(date) = date
+    .map(|date| NaiveDateTime::parse_from_str(date, "%Y:%m:%d %H:%M:%S"))
+    .transpose()
+    .map_err(|err| RawlerError::DecoderFailed(err.to_string()))?
+  else {
+    return Ok(None);
+  };
+  // Any timezone? Then correct...
+  if let Some(tz) = tz {
+    let time = tz
+      .from_local_datetime(&date)
+      .earliest()
+      .ok_or(RawlerError::DecoderFailed(format!("Failed to convert datetime to local: {:?}", date)))?;
+    return Ok(Some(time.into()));
+  }
+  match chrono::Local.from_local_datetime(&date).earliest() {
+    Some(time) => Ok(Some(time.into())),
+    None => {
+      log::warn!("Failed to convert ts to local time");
+      Ok(None)
+    }
   }
 }
 
@@ -1453,6 +1466,29 @@ mod tests {
       "",
     );
     assert_unsupported(crate::decode(&source, &RawDecodeParams::default()), "Mamiya-OP Co.,Ltd.", "MAMIYA ZD2", "");
+    Ok(())
+  }
+
+  #[test]
+  fn capture_time_with_time_zones() -> Result<()> {
+    let metadata = |offset: Option<&str>, timezone: Option<Vec<i16>>| RawMetadata {
+      exif: Exif {
+        date_time_original: Some("2024:02:29 19:08:33".into()),
+        offset_time_original: offset.map(String::from),
+        timezone_offset: timezone,
+        ..Default::default()
+      },
+      ..Default::default()
+    };
+    let time = |rfc3339: &str| Some(SystemTime::from(chrono::DateTime::parse_from_rfc3339(rfc3339).expect("time")));
+    assert_eq!(metadata(Some("+02:00"), None).capture_time()?, time("2024-02-29T19:08:33+02:00"));
+    // The first TimeZoneOffset belongs to DateTimeOriginal
+    assert_eq!(metadata(None, Some(vec![-5, 3])).capture_time()?, time("2024-02-29T19:08:33-05:00"));
+    // Without a time zone, the local time zone applies
+    let date = NaiveDateTime::parse_from_str("2024:02:29 19:08:33", "%Y:%m:%d %H:%M:%S").expect("date");
+    let local = chrono::Local.from_local_datetime(&date).earliest().map(SystemTime::from);
+    assert_eq!(metadata(None, None).capture_time()?, local);
+    assert_eq!(RawMetadata::default().capture_time()?, None);
     Ok(())
   }
 }

@@ -9,7 +9,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::camera_profile::{CalibrationSlot, CameraCalibration, CameraProfile, D65_PREFERENCE, GainTableMap, RgbTables};
 use crate::cfa::PlaneColor;
-use crate::dng::opcodes::{OpcodeList, OpcodeSelector, OpcodeStage};
+use crate::dng::opcodes::{Opcode, OpcodeList, OpcodeSelector, OpcodeStage};
 use crate::imgop::blacklevel::{rescale, rescale_in_place};
 use crate::imgop::raw::apply_linearization_table;
 use crate::imgop::sensor::SensorType;
@@ -531,6 +531,21 @@ impl RawImage {
       OpcodeStage::List1 => self.dng_opcodes_1.as_ref(),
       OpcodeStage::List2 => self.dng_opcodes_2.as_ref(),
       OpcodeStage::List3 => self.dng_opcodes_3.as_ref(),
+    }
+  }
+
+  /// Insert DNG opcodes into the opcode list of their stage, see
+  /// [`OpcodeList::replace_or_prepend`]: an opcode replaces the opcodes with
+  /// the same ID. A missing opcode list is created.
+  pub fn replace_opcodes(&mut self, opcodes: &[(OpcodeStage, Opcode)]) {
+    for (stage, opcode) in opcodes {
+      let list = match stage {
+        OpcodeStage::List1 => &mut self.dng_opcodes_1,
+        OpcodeStage::List2 => &mut self.dng_opcodes_2,
+        OpcodeStage::List3 => &mut self.dng_opcodes_3,
+      };
+      log::debug!("Insert DNG opcode {} into {}", opcode.name(), stage);
+      list.get_or_insert_with(OpcodeList::default).replace_or_prepend(opcode.clone());
     }
   }
 
@@ -1088,5 +1103,46 @@ mod tests {
     assert_eq!(image_with(Some("Group: Landscape")), Some(3));
     assert_eq!(image_with(Some("Unknown")), Some(0));
     assert_eq!(image_with(Some("Group: Unknown")), Some(0));
+  }
+
+  #[test]
+  fn replace_opcodes() {
+    use crate::dng::opcodes::{FixBadPixelsConstant, FixBadPixelsList};
+    let constant = Opcode::FixBadPixelsConstant(FixBadPixelsConstant {
+      version: 0x01030000,
+      flags: 0,
+      constant: 0,
+      bayer_phase: 0,
+    });
+    let bad_pixels = |row| {
+      Opcode::FixBadPixelsList(FixBadPixelsList {
+        version: 0x01030000,
+        flags: 0,
+        bayer_phase: 0,
+        points: vec![(row, 1)],
+        rects: Vec::new(),
+      })
+    };
+    let mut rawimage = RawImage::new(
+      Camera::new(),
+      PixU16::new_with(vec![0; 4 * 4], 4, 4),
+      1,
+      [f32::NAN; 4],
+      RawPhotometricInterpretation::BlackIsZero,
+      None,
+      Some(WhiteLevel::new_bits(12, 1)),
+      false,
+    );
+    // A missing list is created
+    rawimage.replace_opcodes(&[(OpcodeStage::List1, bad_pixels(1))]);
+    assert_eq!(rawimage.opcode_list(OpcodeStage::List1).map(OpcodeList::opcodes), Some(&[bad_pixels(1)][..]));
+    assert!(rawimage.opcode_list(OpcodeStage::List2).is_none());
+    // An opcode with the same ID is replaced, other opcodes stay
+    rawimage.dng_opcodes_1 = Some(OpcodeList::new(vec![constant.clone(), bad_pixels(1)]));
+    rawimage.replace_opcodes(&[(OpcodeStage::List1, bad_pixels(2))]);
+    assert_eq!(
+      rawimage.opcode_list(OpcodeStage::List1).map(OpcodeList::opcodes),
+      Some(&[constant, bad_pixels(2)][..])
+    );
   }
 }

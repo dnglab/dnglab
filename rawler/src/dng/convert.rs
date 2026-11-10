@@ -16,7 +16,7 @@ use crate::{
   dng::{
     DEFAULT_LOSSY_JPEG_QUALITY, PREVIEW_JPEG_QUALITY,
     dcp::CameraProfileFile,
-    opcodes::{OpcodeSelector, OpcodeStage},
+    opcodes::{Opcode, OpcodeSelector, OpcodeStage},
     original::OriginalCompressed,
     writer::DngWriter,
   },
@@ -85,6 +85,9 @@ pub struct ConvertParams {
   pub apply_dng_opcodes: ApplyDngOpcodes,
   /// DNG opcodes to remove, they are neither applied nor written to the DNG
   pub remove_dng_opcodes: Vec<OpcodeSelector>,
+  /// DNG opcodes to insert after `remove_dng_opcodes`, each replaces the
+  /// opcodes with its ID in the list of its stage
+  pub replace_dng_opcodes: Vec<(OpcodeStage, Opcode)>,
   /// Camera profile that replaces the primary camera profile
   pub dcp: Option<CameraProfileFile>,
   /// Camera profiles to add as extra camera profiles
@@ -128,6 +131,7 @@ impl Default for ConvertParams {
       max_dng_backward_version: DngVersion::V1_4,
       apply_dng_opcodes: ApplyDngOpcodes::Auto,
       remove_dng_opcodes: Vec::new(),
+      replace_dng_opcodes: Vec::new(),
       dcp: None,
       extra_dcp: Vec::new(),
     }
@@ -299,6 +303,12 @@ impl ConvertParams {
     self
   }
 
+  /// Set the DNG opcodes to insert, see [`Self::replace_dng_opcodes`].
+  pub fn with_replace_dng_opcodes(mut self, replace_dng_opcodes: Vec<(OpcodeStage, Opcode)>) -> Self {
+    self.replace_dng_opcodes = replace_dng_opcodes;
+    self
+  }
+
   /// Set the camera profile that replaces the primary camera profile.
   pub fn with_dcp(mut self, dcp: Option<CameraProfileFile>) -> Self {
     self.dcp = dcp;
@@ -364,6 +374,7 @@ where
   validate_image_index(decoder.as_ref(), &raw_params)?;
   let mut rawimage = decoder.raw_image(rawfile, &raw_params, false)?;
   rawimage.remove_opcodes(&params.remove_dng_opcodes);
+  rawimage.replace_opcodes(&params.replace_dng_opcodes);
   apply_dcp(&mut rawimage, params)?;
   let metadata = decoder.raw_metadata(rawfile, &raw_params)?;
 
