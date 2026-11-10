@@ -278,17 +278,17 @@ impl<'a> PefDecoder<'a> {
       debug!("Use in-file Huffman table");
       let mut stream = ByteStream::new(huff, endian);
 
-      let depth: usize = (stream.get_u16() as usize + 12) & 0xf;
-      stream.consume_bytes(12);
+      let depth: usize = (stream.get_u16()? as usize + 12) & 0xf;
+      stream.consume_bytes(12)?;
 
       let mut v0: [u32; 16] = [0; 16];
       for i in 0..depth {
-        v0[i] = stream.get_u16() as u32;
+        v0[i] = stream.get_u16()? as u32;
       }
 
       let mut v1: [u32; 16] = [0; 16];
       for i in 0..depth {
-        v1[i] = stream.get_u8() as u32;
+        v1[i] = stream.get_u8()? as u32;
       }
 
       // Calculate codes and store bitcounts

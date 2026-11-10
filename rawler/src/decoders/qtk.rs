@@ -81,10 +81,10 @@ impl<'a> Decoder for QtkDecoder<'a> {
     const META_OFFSET: u64 = 544;
     let meta = file.subview(META_OFFSET, 16)?;
     let mut stream = ByteStream::new(meta, Endian::Big);
-    let mut height = stream.get_u16() as usize;
-    let mut width = stream.get_u16() as usize;
-    let _zero = stream.get_u32();
-    let hint = stream.get_u16();
+    let mut height = stream.get_u16()? as usize;
+    let mut width = stream.get_u16()? as usize;
+    let _zero = stream.get_u32()?;
+    let hint = stream.get_u16()?;
     let offset = if hint == 30 { 738 } else { 736 };
     let mut orientation = None;
 

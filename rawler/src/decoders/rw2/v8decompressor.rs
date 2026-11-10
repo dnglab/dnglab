@@ -15,7 +15,7 @@ use crate::{
   formats::tiff::IFD,
   imgop::{Dim2, Point, Rect},
   pixarray::{DisjointRegionMut, ImageRegionMut, PixU16},
-  pumps::{BitPump, BitPumpReverseBitsMSB, ByteStream},
+  pumps::{BitPump, BitPumpReverseBitsMSB, ByteStream, ByteStreamError},
   rawsource::RawSource,
 };
 
@@ -98,13 +98,13 @@ impl CF2Params {
     let strip_height = fetch_tiff_tag!(ifd, PanasonicTag::CF2StripHeight).force_u32(0);
     let gamma_point = {
       let mut bs = ByteStream::new(fetch_tiff_tag!(ifd, PanasonicTag::CF2Unknown1).get_data(), Endian::Little);
-      let count = bs.get_u16();
-      (0..count).map(|_| bs.get_u32()).collect()
+      let count = bs.get_u16()?;
+      (0..count).map(|_| bs.get_u32()).collect::<std::result::Result<_, _>>()?
     };
     let gamma_slope = {
       let mut bs = ByteStream::new(fetch_tiff_tag!(ifd, PanasonicTag::CF2Unknown2).get_data(), Endian::Little);
-      let count = bs.get_u16();
-      (0..count).map(|_| bs.get_u32()).collect()
+      let count = bs.get_u16()?;
+      (0..count).map(|_| bs.get_u32()).collect::<std::result::Result<_, _>>()?
     };
     let gamma_clip_val = fetch_tiff_tag!(ifd, PanasonicTag::CF2ClipVal).force_u16(0);
     let huf_init_val0 = fetch_tiff_tag!(ifd, PanasonicTag::CF2HufInitVal0).force_u16(0);
@@ -113,45 +113,49 @@ impl CF2Params {
     let huf_init_val3 = fetch_tiff_tag!(ifd, PanasonicTag::CF2HufInitVal3).force_u16(0);
     let huf_table = {
       let mut bs = ByteStream::new(fetch_tiff_tag!(ifd, PanasonicTag::CF2HufTable).get_data(), Endian::Little);
-      let count = bs.get_u16();
-      (0..count).map(|_| (bs.get_u16(), bs.get_u16())).collect()
+      let count = bs.get_u16()?;
+      (0..count)
+        .map(|_| Ok((bs.get_u16()?, bs.get_u16()?)))
+        .collect::<std::result::Result<_, ByteStreamError>>()?
     };
     let huf_shift_down = {
       let mut bs = ByteStream::new(fetch_tiff_tag!(ifd, PanasonicTag::CF2HufShiftDown).get_data(), Endian::Little);
-      let count = bs.get_u16();
-      (0..count).map(|_| bs.get_u16()).collect()
+      let count = bs.get_u16()?;
+      (0..count).map(|_| bs.get_u16()).collect::<std::result::Result<_, _>>()?
     };
     let num_of_strips_h = fetch_tiff_tag!(ifd, PanasonicTag::CF2NumberOfStripsH).force_u16(0);
     let num_of_strips_v = fetch_tiff_tag!(ifd, PanasonicTag::CF2NumberOfStripsV).force_u16(0);
     let strip_byte_offsets = {
       let mut bs = ByteStream::new(fetch_tiff_tag!(ifd, PanasonicTag::CF2StripByteOffsets).get_data(), Endian::Little);
-      let count = bs.get_u16();
-      (0..count).map(|_| bs.get_u32()).collect()
+      let count = bs.get_u16()?;
+      (0..count).map(|_| bs.get_u32()).collect::<std::result::Result<_, _>>()?
     };
     let strip_line_offsets = {
       let mut bs = ByteStream::new(fetch_tiff_tag!(ifd, PanasonicTag::CF2StripLineOffsets).get_data(), Endian::Little);
-      let count = bs.get_u16();
+      let count = bs.get_u16()?;
       (0..count)
-        .map(|_| StripLineOffset {
-          cols: bs.get_u16(),
-          rows: bs.get_u16(),
+        .map(|_| {
+          Ok(StripLineOffset {
+            cols: bs.get_u16()?,
+            rows: bs.get_u16()?,
+          })
         })
-        .collect()
+        .collect::<std::result::Result<_, ByteStreamError>>()?
     };
     let strip_data_size = {
       let mut bs = ByteStream::new(fetch_tiff_tag!(ifd, PanasonicTag::CF2StripDataSize).get_data(), Endian::Little);
-      let count = bs.get_u16();
-      (0..count).map(|_| bs.get_u32()).collect()
+      let count = bs.get_u16()?;
+      (0..count).map(|_| bs.get_u32()).collect::<std::result::Result<_, _>>()?
     };
     let strip_widths = {
       let mut bs = ByteStream::new(fetch_tiff_tag!(ifd, PanasonicTag::CF2StripWidths).get_data(), Endian::Little);
-      let count = bs.get_u16();
-      (0..count).map(|_| bs.get_u16()).collect()
+      let count = bs.get_u16()?;
+      (0..count).map(|_| bs.get_u16()).collect::<std::result::Result<_, _>>()?
     };
     let strip_heights = {
       let mut bs = ByteStream::new(fetch_tiff_tag!(ifd, PanasonicTag::CF2StripHeights).get_data(), Endian::Little);
-      let count = bs.get_u16();
-      (0..count).map(|_| bs.get_u16()).collect()
+      let count = bs.get_u16()?;
+      (0..count).map(|_| bs.get_u16()).collect::<std::result::Result<_, _>>()?
     };
     let strip_width = fetch_tiff_tag!(ifd, PanasonicTag::CF2StripWidth).force_u32(0);
 
