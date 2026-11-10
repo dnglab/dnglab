@@ -26,6 +26,12 @@ pub(crate) fn decode_panasonic_v5(buf: &[u8], width: usize, height: usize, bps: 
 
   log::debug!("RW2 V5 decoder: pixels per block: {}, bps: {}", pixels_per_block, bps);
 
+  // Each chunk of pixels_per_block pixels reads a full block
+  let need = (width * height).div_ceil(pixels_per_block) * V5_BLOCK_SIZE;
+  if buf.len() < need {
+    return Err(format!("RW2 v5: buffer too short ({} < {})", buf.len(), need));
+  }
+
   // We decode chunked at pixels_per_block boundary
   // Each block delivers the same amount of pixels.
   decompress_chunked_fn(
