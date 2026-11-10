@@ -98,6 +98,7 @@ pub(super) enum DemosaicAlgorithm {
   Ppg,
   Ahd,
   Vng,
+  Rcd,
   Bilinear4,
   XTransBilinear,
   Markesteijn,
@@ -214,9 +215,12 @@ pub fn plan(rawimage: &RawImage, options: &RenderOptions) -> crate::Result<Plan>
       if crop_to_active_area && rawimage.active_area.is_some() && rawimage.fuji_rotation_width.is_some() {
         return Err("ActiveArea is not possible when rotation is not normalized".into());
       }
-      let fuji_rotation_width = rawimage
-        .fuji_rotation_width
-        .filter(|_| matches!(algorithm, DemosaicAlgorithm::Ppg | DemosaicAlgorithm::Ahd | DemosaicAlgorithm::Vng) && steps.contains(Step::FujiRotate));
+      let fuji_rotation_width = rawimage.fuji_rotation_width.filter(|_| {
+        matches!(
+          algorithm,
+          DemosaicAlgorithm::Ppg | DemosaicAlgorithm::Ahd | DemosaicAlgorithm::Vng | DemosaicAlgorithm::Rcd
+        ) && steps.contains(Step::FujiRotate)
+      });
       // Without operations on the whole stage 3 image, only the DefaultCrop is demosaiced
       cropped = crop_default && fuji_rotation_width.is_none() && !list3;
       ops.push(Op::Demosaic {
@@ -419,6 +423,7 @@ fn demosaic_algorithm(config: &CFAConfig, quality: DemosaicQuality, bayer: Bayer
       (DemosaicQuality::Preview, _) => Ok((DemosaicAlgorithm::Superpixel3, 3)),
       (DemosaicQuality::Quality, BayerDemosaic::Ahd) => Ok((DemosaicAlgorithm::Ahd, 3)),
       (DemosaicQuality::Quality, BayerDemosaic::Vng) => Ok((DemosaicAlgorithm::Vng, 3)),
+      (DemosaicQuality::Quality, BayerDemosaic::Rcd) => Ok((DemosaicAlgorithm::Rcd, 3)),
       _ => Ok((DemosaicAlgorithm::Ppg, 3)),
     },
     SensorType::Bayer if config.cfa.unique_colors() == 4 => match quality {

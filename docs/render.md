@@ -71,7 +71,7 @@ also crops to the largest opaque area of the transparency mask.
 | `steps` | all | Set of processing steps (`StepSet`) | `--steps`, `--skip-steps`, `--crop` |
 | `white_balance` | `BeforeDemosaic` | Where the white balance is applied | – |
 | `demosaic` | `Quality` | `Quality`, `Fast` or `Preview` (half size) | – |
-| `bayer_demosaic` | `Ppg` | Algorithm for Bayer RGB data at `Quality`: `Ppg`, `Ahd` or `Vng` | `--bayer-demosaic` |
+| `bayer_demosaic` | `Ppg` | Algorithm for Bayer RGB data at `Quality`: `Ppg`, `Ahd`, `Vng` or `Rcd` | `--bayer-demosaic` |
 | `xtrans_demosaic` | `Markesteijn` | Algorithm for X-Trans data at `Quality`: `Markesteijn` or `Vng` | `--xtrans-demosaic` |
 | `color_space` | sRGB | Output primaries and transfer function: sRGB, Adobe RGB, ProPhoto RGB | `--color-space` |
 | `denoise` | luma and chroma strength | Strength of the noise reduction | `--denoise-luma`, `--denoise-chroma` |
@@ -133,7 +133,7 @@ The planner makes these decisions first:
 
   | Sensor | `Quality` | `Fast` | `Preview` |
   | --- | --- | --- | --- |
-  | Bayer RGB | `bayer_demosaic`: PPG, AHD or VNG | PPG | Superpixel, half size |
+  | Bayer RGB | `bayer_demosaic`: PPG, AHD, VNG or RCD | PPG | Superpixel, half size |
   | Bayer with 4 colors (CYGM, RGBE) | VNG, 4 planes | Bilinear, 4 planes | Superpixel, half size, 4 planes |
   | X-Trans | `xtrans_demosaic`: Markesteijn (3 passes) or VNG | Bilinear | Bilinear |
 
@@ -192,15 +192,15 @@ OpcodeList1, replacing an existing FixBadPixelsList:
 ### 4. Demosaic, FujiRotate and OpcodeList3
 
 - CFA data is demosaiced and cropped to the ActiveArea.
-- **Tiled algorithms:** AHD, VNG and Markesteijn interpolate from a
+- **Tiled algorithms:** AHD, VNG, RCD and Markesteijn interpolate from a
   neighbourhood of pixels. They process the image in tiles in parallel, see
   [`sensor/tiles.rs`](../rawler/src/imgop/sensor/tiles.rs): each tile reads its
   core and a halo of pixels around it, and writes only its core. The halo covers
-  the reach of the algorithm (5 pixels for AHD, 2 for VNG), so the result
-  doesn't depend on the tiling. The tiles cover the image except a band of the
-  width of the halo at the edges, which is interpolated bilinearly from the 3x3
-  neighbourhood ([`sensor/border.rs`](../rawler/src/imgop/sensor/border.rs) for
-  AHD and VNG).
+  the reach of the algorithm (5 pixels for AHD, 2 for VNG, 10 for RCD), so the
+  result doesn't depend on the tiling. The tiles cover the image except a band
+  of the width of the halo at the edges, which is interpolated bilinearly from
+  the 3x3 neighbourhood ([`sensor/border.rs`](../rawler/src/imgop/sensor/border.rs)
+  for AHD, VNG and RCD).
 - **Partial demosaic:** without operations on the whole stage 3 image (no
   OpcodeList3 and no Fuji rotation), only the DefaultCrop is demosaiced, plus a
   margin of 32 pixels for the interpolation.

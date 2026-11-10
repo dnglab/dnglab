@@ -4,6 +4,7 @@
 pub mod ahd;
 pub mod bilinear;
 pub mod ppg;
+pub mod rcd;
 pub mod superpixel;
 
 use multiversion::multiversion;
