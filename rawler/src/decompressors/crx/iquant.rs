@@ -6,14 +6,12 @@
 // crx.cpp and documentation done by Laurent Clévy (https://github.com/lclevy/canon_cr3).
 
 use super::{
-  BandParam, CodecParams, CrxError, Result,
+  BandParam, BitPump, CodecParams, CrxError, Result,
   decoder::constrain,
   mdat::{Subband, Tile},
 };
 use crate::decompressors::crx::{decoder::error_code_signed, rice::RiceDecoder};
-use bitstream_io::BitReader;
 use log::warn;
-use std::io::Cursor;
 
 /// QStep table for QP [0,1,2,3,4,5]
 #[rustfmt::skip]
@@ -237,7 +235,7 @@ impl Tile {
       Some(qp_data) => {
         //println!("generate: size: {}", qp_data.mdat_qp_data_size);
         let mdat_qp = &data[self.data_offset..self.data_offset + qp_data.mdat_qp_data_size as usize];
-        let bitpump = BitReader::endian(Cursor::new(mdat_qp), bitstream_io::BigEndian);
+        let bitpump = BitPump::new(mdat_qp);
         let mut rice = RiceDecoder::new(bitpump);
 
         let qp_width = (self.plane_width >> 3) + if self.plane_width & 7 != 0 { 1 } else { 0 };

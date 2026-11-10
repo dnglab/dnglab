@@ -31,9 +31,8 @@
 
 use self::{mdat::Tile, rice::RiceDecoder};
 use crate::formats::bmff::ext_cr3::cmp1::Cmp1Box;
-use bitstream_io::BitReader;
+use crate::pumps::{BitPumpError, BitPumpMSB};
 use log::debug;
-use std::io::Cursor;
 use thiserror::Error;
 
 mod decoder;
@@ -59,7 +58,7 @@ const EX_COEF_NUM_TBL:[usize; 0x30*3] = [
     1, 1, 1, 2, 2, 1, 1, 0, 1, 1, 1, 1, 1, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1];
 
 /// BitPump for Big Endian bit streams
-type BitPump<'a> = BitReader<Cursor<&'a [u8]>, bitstream_io::BigEndian>;
+type BitPump<'a> = BitPumpMSB<'a>;
 
 /// Error variants for compressor
 #[derive(Debug, Error)]
@@ -79,6 +78,10 @@ pub enum CrxError {
   /// Error on internal cursor type
   #[error("I/O error")]
   Io(#[from] std::io::Error),
+
+  /// Error on reading a bitstream
+  #[error("Bitstream error: {}", _0)]
+  BitPump(#[from] BitPumpError),
 }
 
 /// Result type for Compressor results
