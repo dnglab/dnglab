@@ -13,6 +13,7 @@ use crate::bits::LookupTable;
 use crate::buffer::PaddedBuf;
 use crate::pixarray::PixU16;
 use crate::pumps::BitPump;
+use crate::pumps::BitPumpError;
 use crate::pumps::BitPumpMSB;
 
 #[rustfmt::skip]
@@ -70,11 +71,11 @@ impl HuffDecoder {
   }
 
   #[inline(always)]
-  fn huff_decode(&self, pump: &mut dyn BitPump, tree: usize) -> i8 {
-    let code = pump.peek_bits(8) as usize;
+  fn huff_decode(&self, pump: &mut dyn BitPump, tree: usize) -> std::result::Result<i8, BitPumpError> {
+    let code = pump.peek_bits(8)? as usize;
     let sym = self.cache[tree][code];
     pump.consume_bits(sym.bitcnt as u32);
-    sym.value as i8
+    Ok(sym.value as i8)
   }
 }
 
@@ -104,7 +105,7 @@ pub fn decompress(src: &PaddedBuf, width: usize, height: usize, cbpp: u8, dummy:
   let mut pump = BitPumpMSB::new(src);
 
   for row in (0..height).step_by(4) {
-    mul = [pump.get_bits(6) as i16, pump.get_bits(6) as i16, pump.get_bits(6) as i16];
+    mul = [pump.get_bits(6)? as i16, pump.get_bits(6)? as i16, pump.get_bits(6)? as i16];
 
     for c in 0..3 {
       let predictor = |buf: &[[[i16; 386]; 3]; 3], x: usize, y: usize| -> i16 {
@@ -130,26 +131,26 @@ pub fn decompress(src: &PaddedBuf, width: usize, height: usize, cbpp: u8, dummy:
         let mut tree = 1;
         let mut col = width / 2;
         while col > 0 {
-          tree = dec.huff_decode(&mut pump, tree) as usize;
+          tree = dec.huff_decode(&mut pump, tree)? as usize;
           if tree != 0 {
             col -= 2;
             if tree == 8 {
               for y in 1..3 {
                 for x in (col..=(col + 1)).rev() {
-                  buf[c][y][x] = (dec.huff_decode(&mut pump, 18) as u8) as i16 * mul[c];
+                  buf[c][y][x] = (dec.huff_decode(&mut pump, 18)? as u8) as i16 * mul[c];
                   assert!(buf[c][y][x] >= 0);
                 }
               }
             } else {
               for y in 1..3 {
                 for x in (col..=(col + 1)).rev() {
-                  buf[c][y][x] = dec.huff_decode(&mut pump, tree + 10) as i16 * 16 + predictor(&buf, x, y);
+                  buf[c][y][x] = dec.huff_decode(&mut pump, tree + 10)? as i16 * 16 + predictor(&buf, x, y);
                 }
               }
             }
           } else {
             loop {
-              let nreps = if col > 2 { dec.huff_decode(&mut pump, 9) + 1 } else { 1 };
+              let nreps = if col > 2 { dec.huff_decode(&mut pump, 9)? + 1 } else { 1 };
 
               for rep in 0..8 {
                 if rep < nreps && col > 0 {
@@ -160,7 +161,7 @@ pub fn decompress(src: &PaddedBuf, width: usize, height: usize, cbpp: u8, dummy:
                     }
                   }
                   if rep & 1 > 0 {
-                    let step = dec.huff_decode(&mut pump, 10) << 4;
+                    let step = dec.huff_decode(&mut pump, 10)? << 4;
                     for y in 1..3 {
                       for x in (col..=(col + 1)).rev() {
                         buf[c][y][x] += step as i16;

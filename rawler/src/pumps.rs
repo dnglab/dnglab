@@ -1,6 +1,56 @@
+use std::fmt;
 use std::slice::Chunks;
 
 use crate::bits::*;
+
+/// Maximum count of bits a [`BitPump`] returns at once
+const MAX_PEEK_BITS: u32 = u32::BITS;
+
+/// Error of a [`BitPump`] read
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum BitPumpError {
+  /// The buffer has fewer than the requested bits left
+  Eof,
+  /// More bits requested at once than the pump can return
+  ExcessiveBits { num: u32, max: u32 },
+}
+
+impl fmt::Display for BitPumpError {
+  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    match self {
+      Self::Eof => write!(f, "unexpected end of bit stream"),
+      Self::ExcessiveBits { num, max } => write!(f, "can't read {num} bits at once from bit stream, max is {max}"),
+    }
+  }
+}
+
+impl std::error::Error for BitPumpError {}
+
+impl From<BitPumpError> for String {
+  #[cold]
+  fn from(err: BitPumpError) -> Self {
+    err.to_string()
+  }
+}
+
+/// Check that a read of `num` bits fits into the result of a pump
+/// that returns at most `max` bits at once.
+#[inline(always)]
+pub(crate) fn check_bits(num: u32, max: u32) -> Result<(), BitPumpError> {
+  if num > max { Err(excessive_bits(num, max)) } else { Ok(()) }
+}
+
+// Errors are built in cold functions, so the compiler keeps the error
+// branches out of the hot decoder loops.
+#[cold]
+fn excessive_bits(num: u32, max: u32) -> BitPumpError {
+  BitPumpError::ExcessiveBits { num, max }
+}
+
+#[cold]
+fn eof() -> BitPumpError {
+  BitPumpError::Eof
+}
 
 #[derive(Debug, Clone)]
 pub struct BitPumpLSB<'a> {
@@ -23,21 +73,15 @@ impl<'a> BitPumpLSB<'a> {
   /// For fast refill, we can simply take a whole u32 value out.
   /// For slow refill, there may be 1, 2 or 3 bytes left in buffer. We need
   /// to collect them manually.
-  fn refill(&mut self) -> (u32, u32) {
-    if let Some(chunk) = self.buffer.next() {
-      if chunk.len() == 4 {
-        // Fast refill
-        let bits: u32 = u32::from_le_bytes([chunk[0], chunk[1], chunk[2], chunk[3]]);
-        (bits, u32::BITS)
-      } else {
-        // Slow refill
-        chunk
-          .into_iter()
-          .rev()
-          .fold((0, 0), |(bits, bit_cnt), x| ((bits << 8) | *x as u32, bit_cnt + 8))
-      }
+  fn refill(&mut self) -> Option<(u32, u32)> {
+    let chunk = self.buffer.next()?;
+    if chunk.len() == 4 {
+      // Fast refill
+      let bits: u32 = u32::from_le_bytes([chunk[0], chunk[1], chunk[2], chunk[3]]);
+      Some((bits, u32::BITS))
     } else {
-      panic!("Can't refill bitpump, buffer exhausted");
+      // Slow refill
+      Some(chunk.iter().rev().fold((0, 0), |(bits, bit_cnt), x| ((bits << 8) | *x as u32, bit_cnt + 8)))
     }
   }
 }
@@ -63,18 +107,15 @@ impl<'a> BitPumpMSB<'a> {
   /// For fast refill, we can simply take a whole u32 value out.
   /// For slow refill, there may be 1, 2 or 3 bytes left in buffer. We need
   /// to collect them manually.
-  fn refill(&mut self) -> (u32, u32) {
-    if let Some(chunk) = self.buffer.next() {
-      if chunk.len() == 4 {
-        // Fast refill
-        let bits: u32 = u32::from_be_bytes([chunk[0], chunk[1], chunk[2], chunk[3]]);
-        (bits, u32::BITS)
-      } else {
-        // Slow refill
-        chunk.into_iter().fold((0, 0), |(bits, bit_cnt), x| ((bits << 8) | *x as u32, bit_cnt + 8))
-      }
+  fn refill(&mut self) -> Option<(u32, u32)> {
+    let chunk = self.buffer.next()?;
+    if chunk.len() == 4 {
+      // Fast refill
+      let bits: u32 = u32::from_be_bytes([chunk[0], chunk[1], chunk[2], chunk[3]]);
+      Some((bits, u32::BITS))
     } else {
-      panic!("Can't refill bitpump, buffer exhausted");
+      // Slow refill
+      Some(chunk.iter().fold((0, 0), |(bits, bit_cnt), x| ((bits << 8) | *x as u32, bit_cnt + 8)))
     }
   }
 }
@@ -102,21 +143,15 @@ impl<'a> BitPumpMSB32<'a> {
   /// For fast refill, we can simply take a whole u32 value out.
   /// For slow refill, there may be 1, 2 or 3 bytes left in buffer. We need
   /// to collect them manually.
-  fn refill(&mut self) -> (u32, u32) {
-    if let Some(chunk) = self.buffer.next() {
-      if chunk.len() == 4 {
-        // Fast refill
-        let bits: u32 = u32::from_le_bytes([chunk[0], chunk[1], chunk[2], chunk[3]]);
-        (bits, u32::BITS)
-      } else {
-        // Slow refill
-        chunk
-          .into_iter()
-          .rev()
-          .fold((0, 0), |(bits, bit_cnt), x| ((bits << 8) | *x as u32, bit_cnt + 8))
-      }
+  fn refill(&mut self) -> Option<(u32, u32)> {
+    let chunk = self.buffer.next()?;
+    if chunk.len() == 4 {
+      // Fast refill
+      let bits: u32 = u32::from_le_bytes([chunk[0], chunk[1], chunk[2], chunk[3]]);
+      Some((bits, u32::BITS))
     } else {
-      panic!("Can't refill bitpump, buffer exhausted");
+      // Slow refill
+      Some(chunk.iter().rev().fold((0, 0), |(bits, bit_cnt), x| ((bits << 8) | *x as u32, bit_cnt + 8)))
     }
   }
 
@@ -233,50 +268,57 @@ impl<'a> BitPumpJPEG<'a> {
 }
 
 pub trait BitPump {
-  fn peek_bits(&mut self, num: u32) -> u32;
+  /// Return the next `num` bits without consuming them.
+  ///
+  /// Fails if the buffer has fewer than `num` bits left or if `num`
+  /// is larger than the pump can return at once.
+  fn peek_bits(&mut self, num: u32) -> Result<u32, BitPumpError>;
+
+  /// Consume `num` bits. Only valid after a successful
+  /// [`Self::peek_bits`] of at least `num` bits.
   fn consume_bits(&mut self, num: u32);
 
   #[inline(always)]
-  fn get_bits(&mut self, num: u32) -> u32 {
+  fn get_bits(&mut self, num: u32) -> Result<u32, BitPumpError> {
     if num == 0 {
-      return 0;
+      return Ok(0);
     }
 
-    let val = self.peek_bits(num);
+    let val = self.peek_bits(num)?;
     self.consume_bits(num);
 
-    val
+    Ok(val)
   }
 
   #[inline(always)]
-  fn peek_ibits(&mut self, num: u32) -> i32 {
-    self.peek_bits(num) as i32
+  fn peek_ibits(&mut self, num: u32) -> Result<i32, BitPumpError> {
+    Ok(self.peek_bits(num)? as i32)
   }
 
   #[inline(always)]
-  fn get_ibits(&mut self, num: u32) -> i32 {
-    self.get_bits(num) as i32
+  fn get_ibits(&mut self, num: u32) -> Result<i32, BitPumpError> {
+    Ok(self.get_bits(num)? as i32)
   }
 
   // Sign extend ibits
   #[inline(always)]
-  fn get_ibits_sextended(&mut self, num: u32) -> i32 {
-    let val = self.get_ibits(num);
-    val.wrapping_shl(32 - num).wrapping_shr(32 - num)
+  fn get_ibits_sextended(&mut self, num: u32) -> Result<i32, BitPumpError> {
+    let val = self.get_ibits(num)?;
+    Ok(val.wrapping_shl(32 - num).wrapping_shr(32 - num))
   }
 
   /// Count the leading zeroes block-wise in 31 bits
   /// per block and returns the count.
   /// All zero bits are consumed.
   #[inline(always)]
-  fn consume_zerobits(&mut self) -> u32 {
+  fn consume_zerobits(&mut self) -> Result<u32, BitPumpError> {
     // Take one bit less because leading_zeros() is undefined
     // when all bits in register are zero.
     const BITS_PER_LOOP: u32 = u32::BITS - 1;
     let mut count = 0;
     // Count-and-skip all the leading `0`s.
     loop {
-      let batch: u32 = (self.peek_bits(BITS_PER_LOOP) << 1) | 0x1;
+      let batch: u32 = (self.peek_bits(BITS_PER_LOOP)? << 1) | 0x1;
       let n = batch.leading_zeros();
       self.consume_bits(n);
       count += n;
@@ -284,19 +326,23 @@ pub trait BitPump {
         break;
       }
     }
-    count
+    Ok(count)
   }
 }
 
 impl<'a> BitPump for BitPumpLSB<'a> {
   #[inline(always)]
-  fn peek_bits(&mut self, num: u32) -> u32 {
+  fn peek_bits(&mut self, num: u32) -> Result<u32, BitPumpError> {
+    check_bits(num, MAX_PEEK_BITS)?;
     if num > self.nbits {
-      let (inbits, bit_cnt) = self.refill();
+      let (inbits, bit_cnt) = self.refill().ok_or_else(eof)?;
       self.bits = (((inbits as u64) << 32) | (self.bits << (32 - self.nbits))) >> (32 - self.nbits);
       self.nbits += bit_cnt;
+      if num > self.nbits {
+        return Err(eof());
+      }
     }
-    (self.bits & (0x0ffffffffu64 >> (32 - num))) as u32
+    Ok((self.bits & (0x0ffffffffu64 >> (32 - num))) as u32)
   }
 
   #[inline(always)]
@@ -308,13 +354,17 @@ impl<'a> BitPump for BitPumpLSB<'a> {
 
 impl<'a> BitPump for BitPumpMSB<'a> {
   #[inline(always)]
-  fn peek_bits(&mut self, num: u32) -> u32 {
+  fn peek_bits(&mut self, num: u32) -> Result<u32, BitPumpError> {
+    check_bits(num, MAX_PEEK_BITS)?;
     if num > self.nbits {
-      let (inbits, bit_cnt) = self.refill();
+      let (inbits, bit_cnt) = self.refill().ok_or_else(eof)?;
       self.bits = (self.bits << bit_cnt) | inbits as u64;
       self.nbits += bit_cnt;
+      if num > self.nbits {
+        return Err(eof());
+      }
     }
-    (self.bits >> (self.nbits - num)) as u32
+    Ok((self.bits >> (self.nbits - num)) as u32)
   }
 
   #[inline(always)]
@@ -326,14 +376,18 @@ impl<'a> BitPump for BitPumpMSB<'a> {
 
 impl<'a> BitPump for BitPumpMSB32<'a> {
   #[inline(always)]
-  fn peek_bits(&mut self, num: u32) -> u32 {
+  fn peek_bits(&mut self, num: u32) -> Result<u32, BitPumpError> {
+    check_bits(num, MAX_PEEK_BITS)?;
     if num > self.nbits {
-      let (inbits, bit_cnt) = self.refill();
+      let (inbits, bit_cnt) = self.refill().ok_or_else(eof)?;
       self.bits = (self.bits << 32) | inbits as u64;
       self.nbits += bit_cnt;
       self.pos += bit_cnt as usize / 8;
+      if num > self.nbits {
+        return Err(eof());
+      }
     }
-    (self.bits >> (self.nbits - num)) as u32
+    Ok((self.bits >> (self.nbits - num)) as u32)
   }
 
   #[inline(always)]
@@ -345,7 +399,8 @@ impl<'a> BitPump for BitPumpMSB32<'a> {
 
 impl<'a> BitPump for BitPumpJPEG<'a> {
   #[inline(always)]
-  fn peek_bits(&mut self, num: u32) -> u32 {
+  fn peek_bits(&mut self, num: u32) -> Result<u32, BitPumpError> {
+    check_bits(num, MAX_PEEK_BITS)?;
     if num > self.nbits && !self.finished {
       if (self.buffer.len() >= 4)
         && self.pos < self.buffer.len() - 4
@@ -387,15 +442,15 @@ impl<'a> BitPump for BitPumpJPEG<'a> {
       }
     }
     if num > self.nbits && self.finished {
-      // Huffman lookup may read ahead of the marker. Preserve the fast,
-      // infallible BitPump interface, but remember these synthetic bits so the
+      // Huffman lookup may read ahead of the marker. Fill with zero bits
+      // instead of failing, but remember these synthetic bits so the
       // restart-aware decoder can reject a segment that actually consumes them.
       self.bits <<= 32;
       self.nbits += 32;
       self.zero_fill_bits += 32;
     }
 
-    (self.bits >> (self.nbits - num)) as u32
+    Ok((self.bits >> (self.nbits - num)) as u32)
   }
 
   #[inline(always)]
@@ -554,20 +609,29 @@ impl<'a> BitPumpReverseBitsMSB<'a> {
 
 impl<'a> BitPump for BitPumpReverseBitsMSB<'a> {
   #[inline(always)]
-  fn peek_bits(&mut self, num: u32) -> u32 {
-    debug_assert!(num <= 32);
+  fn peek_bits(&mut self, num: u32) -> Result<u32, BitPumpError> {
+    check_bits(num, MAX_PEEK_BITS)?;
     if num > self.nbits {
-      let mut raw: [u8; 4] = BEu32(self.buffer, self.pos).to_ne_bytes();
-      raw[0] = raw[0].reverse_bits();
-      raw[1] = raw[1].reverse_bits();
-      raw[2] = raw[2].reverse_bits();
-      raw[3] = raw[3].reverse_bits();
-      let inbits: u64 = u32::from_ne_bytes(raw) as u64;
-      self.bits = (self.bits << 32) | inbits;
-      self.pos += 4;
-      self.nbits += 32;
+      if let Some(&[b0, b1, b2, b3]) = self.buffer.get(self.pos..self.pos + 4) {
+        // Fast refill
+        let raw = [b0.reverse_bits(), b1.reverse_bits(), b2.reverse_bits(), b3.reverse_bits()];
+        let inbits: u64 = u32::from_be_bytes(raw) as u64;
+        self.bits = (self.bits << 32) | inbits;
+        self.pos += 4;
+        self.nbits += 32;
+      } else {
+        // Slow refill, there may be 1, 2 or 3 bytes left in buffer
+        for byte in &self.buffer[self.pos..] {
+          self.bits = (self.bits << 8) | byte.reverse_bits() as u64;
+          self.nbits += 8;
+        }
+        self.pos = self.buffer.len();
+        if num > self.nbits {
+          return Err(eof());
+        }
+      }
     }
-    (self.bits >> (self.nbits - num)) as u32
+    Ok((self.bits >> (self.nbits - num)) as u32)
   }
 
   #[inline(always)]

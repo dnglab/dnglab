@@ -246,7 +246,7 @@ impl<'a> CrwDecoder<'a> {
       let mut i: usize = 0;
       while i < 64 {
         let tbl = &htables[(i > 0) as usize];
-        let leaf = tbl.huff_get_bits(&mut pump);
+        let leaf = tbl.huff_get_bits(&mut pump)?;
         if leaf == 0 && i != 0 {
           break;
         }
@@ -260,7 +260,7 @@ impl<'a> CrwDecoder<'a> {
           i += 1;
           continue;
         }
-        let mut diff: i32 = pump.get_bits(len) as i32;
+        let mut diff: i32 = pump.get_bits(len)? as i32;
         if (diff & (1 << (len - 1))) == 0 {
           diff -= (1 << len) - 1;
         }

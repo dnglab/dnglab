@@ -30,7 +30,12 @@ pub(crate) fn decode_panasonic_v7(buf: &[u8], width: usize, height: usize, bps: 
         let start = block_id * pixels_per_block;
         let out = &mut out[start..start + pixels_per_block];
         let mut pump = BitPumpLSB::new(block);
-        out.iter_mut().for_each(|pixel| *pixel = pump.get_bits(14) as u16);
+        // Always reads 14 bits. A 12-bit block (10 pixels) would need 140 of its
+        // 128 bits and fail with Eof. No 12-bit files are known yet; they would
+        // need get_bits(bps).
+        for pixel in out.iter_mut() {
+          *pixel = pump.get_bits(14)? as u16;
+        }
       }
       Ok(())
     }),

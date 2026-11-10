@@ -268,8 +268,8 @@ where
 /// entropy-coded formats).
 ///
 /// The closure receives a mutable pixel slice of length `chunksize` and the
-/// zero-based chunk index. Errors cannot be signalled from the closure; use
-/// [`decompress_lines_fn`] when fallible per-row processing is needed.
+/// zero-based chunk index, and is responsible for writing the decompressed
+/// pixel data.
 ///
 /// # Arguments
 /// * `width` - Width of the image in pixels (used only for buffer allocation).
@@ -281,16 +281,19 @@ where
 ///
 /// # Returns
 /// * `Ok(Pix2D<T>)` on success.
+/// * `Err(String)` if any chunk's closure returns an error.
 #[inline(always)]
 pub fn decompress_chunked_fn<T, F>(width: usize, height: usize, chunksize: usize, dummy: bool, closure: &F) -> std::result::Result<Pix2D<T>, String>
 where
-  F: Fn(&mut [T], usize) + Sync,
+  F: Fn(&mut [T], usize) -> std::result::Result<(), String> + Sync,
   T: SubPixel,
 {
   let mut out: Pix2D<T> = alloc_image_typed_ok!(T, width, height, dummy);
-  out.pixels_mut().par_chunks_mut(chunksize).enumerate().for_each(|(chunk_id, chunk)| {
-    closure(chunk, chunk_id);
-  });
+  out
+    .pixels_mut()
+    .par_chunks_mut(chunksize)
+    .enumerate()
+    .try_for_each(|(chunk_id, chunk)| closure(chunk, chunk_id))?;
   Ok(out)
 }
 

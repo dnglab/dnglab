@@ -125,6 +125,7 @@ pub use decoders::Orientation;
 #[doc(hidden)]
 pub use decoders::RawLoader;
 use formats::tiff::TiffError;
+use pumps::BitPumpError;
 pub use rawimage::RawImage;
 pub use rawimage::RawImageData;
 use rawsource::RawSource;
@@ -215,6 +216,13 @@ impl From<TiffError> for RawlerError {
 
 impl From<JfifError> for RawlerError {
   fn from(err: JfifError) -> Self {
+    Self::DecoderFailed(err.to_string())
+  }
+}
+
+impl From<BitPumpError> for RawlerError {
+  #[cold]
+  fn from(err: BitPumpError) -> Self {
     Self::DecoderFailed(err.to_string())
   }
 }

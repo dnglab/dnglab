@@ -389,8 +389,8 @@ impl<'a> Rw2Decoder<'a> {
   ) -> Result<PixU16> {
     log::debug!("width: {}, height: {}, bps: {}", width, height, bps);
     Ok(match raw_format {
-      3 => decode_panasonic_v4(buf, width, height, split, dummy),
-      4 => decode_panasonic_v4(buf, width, height, split, dummy),
+      3 => decode_panasonic_v4(buf, width, height, split, dummy)?,
+      4 => decode_panasonic_v4(buf, width, height, split, dummy)?,
       5 => decode_panasonic_v5(buf, width, height, bps, dummy)?,
       6 => decode_panasonic_v6(buf, width, height, bps, dummy)?,
       7 => decode_panasonic_v7(buf, width, height, bps, dummy)?,

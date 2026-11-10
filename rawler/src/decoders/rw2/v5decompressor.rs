@@ -44,8 +44,11 @@ pub(crate) fn decode_panasonic_v5(buf: &[u8], width: usize, height: usize, bps: 
       for (out, bytes) in chunk.chunks_exact_mut(pixels_per_packet).zip(swapped.chunks_exact(V5_BYTES_PER_PACKET)) {
         // The packet is a bitstream in LSB order.
         let mut pump = BitPumpLSB::new(bytes);
-        out.iter_mut().for_each(|p| *p = pump.get_bits(bps) as u16);
+        for p in out.iter_mut() {
+          *p = pump.get_bits(bps)? as u16;
+        }
       }
+      Ok(())
     }),
   )
 }

@@ -17,7 +17,7 @@ use crate::{
   cfa::CFAColor,
   imgop::{Dim2, Point, Rect},
   pixarray::{DisjointRegionMut, ImageRegionMut, PixU16},
-  pumps::{BitPump, BitPumpMSB, ByteStream},
+  pumps::{BitPump, BitPumpError, BitPumpMSB, ByteStream},
 };
 
 /// A single gradient with two points
@@ -162,7 +162,14 @@ impl Header {
 }
 
 impl Strip {
-  fn decompress_strip(&self, src: &PaddedBuf, header: &Header, params: &Params, q_bases: Option<&[u8]>, out: &mut DisjointRegionMut<u16>) {
+  fn decompress_strip(
+    &self,
+    src: &PaddedBuf,
+    header: &Header,
+    params: &Params,
+    q_bases: Option<&[u8]>,
+    out: &mut DisjointRegionMut<u16>,
+  ) -> std::result::Result<(), BitPumpError> {
     let mut info_block = CompressedBlock::new(header, params);
     log::debug!("Fuji strip offset: {}, len: {}", self.offset, self.size);
 
@@ -214,9 +221,9 @@ impl Strip {
       }
 
       if header.raw_type == 16 {
-        info_block.fuji_xtrans_decode_block(&mut pump, &params);
+        info_block.fuji_xtrans_decode_block(&mut pump, &params)?;
       } else {
-        info_block.fuji_bayer_decode_block(&mut pump, &params);
+        info_block.fuji_bayer_decode_block(&mut pump, &params)?;
       }
 
       // copy data from line buffers and advance
@@ -245,6 +252,7 @@ impl Strip {
         info_block.linebuf[i.0][params.line_width + 1] = info_block.linebuf[i.0 - 1][params.line_width];
       }
     }
+    Ok(())
   }
 }
 
@@ -335,12 +343,12 @@ pub(super) fn decompress_fuji(buf: &PaddedBuf, width: usize, height: usize, _bps
   let regions = ImageRegionMut::from(out.view_mut()).split_regions_mut(&areas)?;
 
   // Process each strip
-  strips.par_iter().zip(regions).for_each(|(strip, mut region)| {
+  strips.par_iter().zip(regions).try_for_each(|(strip, mut region)| {
     let line_step = (header.total_lines as usize + 0xF) & !0xF;
     // Each strip has it's own q_bases
     let q_bases_strip = q_bases.as_ref().map(|buf| &buf[strip.n * line_step..]);
-    strip.decompress_strip(buf, &header, &params, q_bases_strip, &mut region);
-  });
+    strip.decompress_strip(buf, &header, &params, q_bases_strip, &mut region)
+  })?;
 
   Ok(out)
 }
@@ -483,60 +491,65 @@ impl CompressedBlock {
   }
 
   /// Decode Bayer pattern (RGGB and the like) from block
-  fn fuji_bayer_decode_block(&mut self, pump: &mut BitPumpMSB, params: &Params) {
+  fn fuji_bayer_decode_block(&mut self, pump: &mut BitPumpMSB, params: &Params) -> std::result::Result<(), BitPumpError> {
     let line_width = params.line_width;
     let mut colors = Colors::new();
 
-    let pass_red_green = |colors: &mut Colors, pump: &mut BitPumpMSB, block: &mut CompressedBlock, c0: usize, c1: usize, grad: usize| {
-      while colors.g().even < line_width || colors.g().odd < line_width {
-        if colors.g().even < line_width {
-          fuji_decode_sample_even(pump, params, &mut block.linebuf, c0, &mut colors.r().even, &mut block.grad_even[grad]);
-          fuji_decode_sample_even(pump, params, &mut block.linebuf, c1, &mut colors.g().even, &mut block.grad_even[grad]);
+    let pass_red_green =
+      |colors: &mut Colors, pump: &mut BitPumpMSB, block: &mut CompressedBlock, c0: usize, c1: usize, grad: usize| -> std::result::Result<(), BitPumpError> {
+        while colors.g().even < line_width || colors.g().odd < line_width {
+          if colors.g().even < line_width {
+            fuji_decode_sample_even(pump, params, &mut block.linebuf, c0, &mut colors.r().even, &mut block.grad_even[grad])?;
+            fuji_decode_sample_even(pump, params, &mut block.linebuf, c1, &mut colors.g().even, &mut block.grad_even[grad])?;
+          }
+          if colors.g().even > 8 {
+            fuji_decode_sample_odd(pump, params, &mut block.linebuf, c0, &mut colors.r().odd, &mut block.grad_odd[grad])?;
+            fuji_decode_sample_odd(pump, params, &mut block.linebuf, c1, &mut colors.g().odd, &mut block.grad_odd[grad])?;
+          }
         }
-        if colors.g().even > 8 {
-          fuji_decode_sample_odd(pump, params, &mut block.linebuf, c0, &mut colors.r().odd, &mut block.grad_odd[grad]);
-          fuji_decode_sample_odd(pump, params, &mut block.linebuf, c1, &mut colors.g().odd, &mut block.grad_odd[grad]);
-        }
-      }
-      block.fuji_extend_red(line_width);
-      block.fuji_extend_green(line_width);
-    };
+        block.fuji_extend_red(line_width);
+        block.fuji_extend_green(line_width);
+        Ok(())
+      };
 
-    let pass_green_blue = |colors: &mut Colors, pump: &mut BitPumpMSB, block: &mut CompressedBlock, c0: usize, c1: usize, grad: usize| {
-      while colors.g().even < line_width || colors.g().odd < line_width {
-        if colors.g().even < line_width {
-          fuji_decode_sample_even(pump, params, &mut block.linebuf, c0, &mut colors.g().even, &mut block.grad_even[grad]);
-          fuji_decode_sample_even(pump, params, &mut block.linebuf, c1, &mut colors.b().even, &mut block.grad_even[grad]);
+    let pass_green_blue =
+      |colors: &mut Colors, pump: &mut BitPumpMSB, block: &mut CompressedBlock, c0: usize, c1: usize, grad: usize| -> std::result::Result<(), BitPumpError> {
+        while colors.g().even < line_width || colors.g().odd < line_width {
+          if colors.g().even < line_width {
+            fuji_decode_sample_even(pump, params, &mut block.linebuf, c0, &mut colors.g().even, &mut block.grad_even[grad])?;
+            fuji_decode_sample_even(pump, params, &mut block.linebuf, c1, &mut colors.b().even, &mut block.grad_even[grad])?;
+          }
+          if colors.g().even > 8 {
+            fuji_decode_sample_odd(pump, params, &mut block.linebuf, c0, &mut colors.g().odd, &mut block.grad_odd[grad])?;
+            fuji_decode_sample_odd(pump, params, &mut block.linebuf, c1, &mut colors.b().odd, &mut block.grad_odd[grad])?;
+          }
         }
-        if colors.g().even > 8 {
-          fuji_decode_sample_odd(pump, params, &mut block.linebuf, c0, &mut colors.g().odd, &mut block.grad_odd[grad]);
-          fuji_decode_sample_odd(pump, params, &mut block.linebuf, c1, &mut colors.b().odd, &mut block.grad_odd[grad]);
-        }
-      }
-      block.fuji_extend_green(line_width);
-      block.fuji_extend_blue(line_width);
-    };
+        block.fuji_extend_green(line_width);
+        block.fuji_extend_blue(line_width);
+        Ok(())
+      };
 
-    pass_red_green(&mut colors, pump, self, XT_LINE_R2, XT_LINE_G2, 0);
+    pass_red_green(&mut colors, pump, self, XT_LINE_R2, XT_LINE_G2, 0)?;
     colors.g().reset();
 
-    pass_green_blue(&mut colors, pump, self, XT_LINE_G3, XT_LINE_B2, 1);
+    pass_green_blue(&mut colors, pump, self, XT_LINE_G3, XT_LINE_B2, 1)?;
     colors.r().reset();
     colors.g().reset();
 
-    pass_red_green(&mut colors, pump, self, XT_LINE_R3, XT_LINE_G4, 2);
+    pass_red_green(&mut colors, pump, self, XT_LINE_R3, XT_LINE_G4, 2)?;
     colors.g().reset();
     colors.b().reset();
 
-    pass_green_blue(&mut colors, pump, self, XT_LINE_G5, XT_LINE_B3, 0);
+    pass_green_blue(&mut colors, pump, self, XT_LINE_G5, XT_LINE_B3, 0)?;
     colors.r().reset();
     colors.g().reset();
 
-    pass_red_green(&mut colors, pump, self, XT_LINE_R4, XT_LINE_G6, 1);
+    pass_red_green(&mut colors, pump, self, XT_LINE_R4, XT_LINE_G6, 1)?;
     colors.g().reset();
     colors.b().reset();
 
-    pass_green_blue(&mut colors, pump, self, XT_LINE_G7, XT_LINE_B4, 2);
+    pass_green_blue(&mut colors, pump, self, XT_LINE_G7, XT_LINE_B4, 2)?;
+    Ok(())
   }
 
   /// A single X-Trans decoding pass for the given control colors C0 and C1
@@ -549,27 +562,29 @@ impl CompressedBlock {
     c1: usize,
     grad: usize,
     even_func: F,
-  ) where
-    F: Fn(&mut CompressedBlock, &mut BitPumpMSB, usize, usize, usize, &mut ColorPos, &mut ColorPos),
+  ) -> std::result::Result<(), BitPumpError>
+  where
+    F: Fn(&mut CompressedBlock, &mut BitPumpMSB, usize, usize, usize, &mut ColorPos, &mut ColorPos) -> std::result::Result<(), BitPumpError>,
   {
     let line_width = params.line_width;
     while colors.g().even < line_width || colors.g().odd < line_width {
       if colors.g().even < line_width {
         let mut c0_pos = *colors.at(C0);
         let mut c1_pos = *colors.at(C1);
-        even_func(self, pump, c0, c1, grad, &mut c0_pos, &mut c1_pos);
+        even_func(self, pump, c0, c1, grad, &mut c0_pos, &mut c1_pos)?;
         *colors.at(C0) = c0_pos; // Write back
         *colors.at(C1) = c1_pos;
       }
       if colors.g().even > 8 {
-        fuji_decode_sample_odd(pump, params, &mut self.linebuf, c0, &mut colors.at(C0).odd, &mut self.grad_odd[grad]);
-        fuji_decode_sample_odd(pump, params, &mut self.linebuf, c1, &mut colors.at(C1).odd, &mut self.grad_odd[grad]);
+        fuji_decode_sample_odd(pump, params, &mut self.linebuf, c0, &mut colors.at(C0).odd, &mut self.grad_odd[grad])?;
+        fuji_decode_sample_odd(pump, params, &mut self.linebuf, c1, &mut colors.at(C1).odd, &mut self.grad_odd[grad])?;
       }
     }
+    Ok(())
   }
 
   /// Decode X-Trans pattern from block
-  fn fuji_xtrans_decode_block(&mut self, pump: &mut BitPumpMSB, params: &Params) {
+  fn fuji_xtrans_decode_block(&mut self, pump: &mut BitPumpMSB, params: &Params) -> std::result::Result<(), BitPumpError> {
     let mut colors = Colors::new();
     let line_width = params.line_width;
 
@@ -583,9 +598,10 @@ impl CompressedBlock {
       0,
       |block, pump, c0, c1, grad, c0_pos, c1_pos| {
         fuji_decode_interpolation_even(block, c0, &mut c0_pos.even);
-        fuji_decode_sample_even(pump, params, &mut block.linebuf, c1, &mut c1_pos.even, &mut block.grad_even[grad]);
+        fuji_decode_sample_even(pump, params, &mut block.linebuf, c1, &mut c1_pos.even, &mut block.grad_even[grad])?;
+        Ok(())
       },
-    );
+    )?;
     self.fuji_extend_red(line_width);
     self.fuji_extend_green(line_width);
     colors.g().reset();
@@ -599,10 +615,11 @@ impl CompressedBlock {
       XT_LINE_B2,
       1,
       |block, pump, c0, c1, grad, c0_pos, c1_pos| {
-        fuji_decode_sample_even(pump, params, &mut block.linebuf, c0, &mut c0_pos.even, &mut block.grad_even[grad]);
+        fuji_decode_sample_even(pump, params, &mut block.linebuf, c0, &mut c0_pos.even, &mut block.grad_even[grad])?;
         fuji_decode_interpolation_even(block, c1, &mut c1_pos.even);
+        Ok(())
       },
-    );
+    )?;
     self.fuji_extend_green(line_width);
     self.fuji_extend_blue(line_width);
     colors.r().reset();
@@ -618,13 +635,14 @@ impl CompressedBlock {
       2,
       |block, pump, c0, c1, grad, c0_pos, c1_pos| {
         if c0_pos.even & 3 != 0 {
-          fuji_decode_sample_even(pump, params, &mut block.linebuf, c0, &mut c0_pos.even, &mut block.grad_even[grad]);
+          fuji_decode_sample_even(pump, params, &mut block.linebuf, c0, &mut c0_pos.even, &mut block.grad_even[grad])?;
         } else {
           fuji_decode_interpolation_even(block, c0, &mut c0_pos.even);
         }
         fuji_decode_interpolation_even(block, c1, &mut c1_pos.even);
+        Ok(())
       },
-    );
+    )?;
     self.fuji_extend_red(line_width);
     self.fuji_extend_green(line_width);
     colors.g().reset();
@@ -639,15 +657,16 @@ impl CompressedBlock {
       XT_LINE_B3,
       0,
       |block, pump, c0, c1, grad, c0_pos, c1_pos| {
-        fuji_decode_sample_even(pump, params, &mut block.linebuf, c0, &mut c0_pos.even, &mut block.grad_even[grad]);
+        fuji_decode_sample_even(pump, params, &mut block.linebuf, c0, &mut c0_pos.even, &mut block.grad_even[grad])?;
 
         if c1_pos.even & 3 == 2 {
           fuji_decode_interpolation_even(block, c1, &mut c1_pos.even);
         } else {
-          fuji_decode_sample_even(pump, params, &mut block.linebuf, c1, &mut c1_pos.even, &mut block.grad_even[grad]);
+          fuji_decode_sample_even(pump, params, &mut block.linebuf, c1, &mut c1_pos.even, &mut block.grad_even[grad])?;
         }
+        Ok(())
       },
-    );
+    )?;
     self.fuji_extend_green(line_width);
     self.fuji_extend_blue(line_width);
     colors.r().reset();
@@ -665,12 +684,13 @@ impl CompressedBlock {
         if c0_pos.even & 3 == 2 {
           fuji_decode_interpolation_even(block, c0, &mut c0_pos.even);
         } else {
-          fuji_decode_sample_even(pump, params, &mut block.linebuf, c0, &mut c0_pos.even, &mut block.grad_even[grad]);
+          fuji_decode_sample_even(pump, params, &mut block.linebuf, c0, &mut c0_pos.even, &mut block.grad_even[grad])?;
         }
 
-        fuji_decode_sample_even(pump, params, &mut block.linebuf, c1, &mut c1_pos.even, &mut block.grad_even[grad]);
+        fuji_decode_sample_even(pump, params, &mut block.linebuf, c1, &mut c1_pos.even, &mut block.grad_even[grad])?;
+        Ok(())
       },
-    );
+    )?;
     self.fuji_extend_red(line_width);
     self.fuji_extend_green(line_width);
     colors.g().reset();
@@ -688,14 +708,16 @@ impl CompressedBlock {
         fuji_decode_interpolation_even(block, c0, &mut c0_pos.even);
 
         if c1_pos.even & 3 != 0 {
-          fuji_decode_sample_even(pump, params, &mut block.linebuf, c1, &mut c1_pos.even, &mut block.grad_even[grad]);
+          fuji_decode_sample_even(pump, params, &mut block.linebuf, c1, &mut c1_pos.even, &mut block.grad_even[grad])?;
         } else {
           fuji_decode_interpolation_even(block, c1, &mut c1_pos.even);
         }
+        Ok(())
       },
-    );
+    )?;
     self.fuji_extend_green(line_width);
     self.fuji_extend_blue(line_width);
+    Ok(())
   }
 
   fn fuji_extend_generic(&mut self, line_width: usize, start: usize, end: usize) {
@@ -881,11 +903,11 @@ impl Params {
 /// Count and consume all zero bits
 /// Additionally, consume the first 1 bit.
 #[inline(always)]
-fn fuji_zerobits(pump: &mut BitPumpMSB) -> u32 {
-  let count = pump.consume_zerobits();
-  debug_assert_eq!(pump.peek_bits(1), 1);
+fn fuji_zerobits(pump: &mut BitPumpMSB) -> std::result::Result<u32, BitPumpError> {
+  let count = pump.consume_zerobits()?;
+  debug_assert_eq!(pump.peek_bits(1), Ok(1));
   pump.consume_bits(1); // consume the next bit which is 0b1
-  count
+  Ok(count)
 }
 
 /// Calculate bit difference between two values
@@ -908,14 +930,14 @@ fn bit_diff(v1: i32, v2: i32) -> u32 {
 /// This is scalar code with many variable shifts and a leading zero
 /// count, it gains from BMI2 and LZCNT.
 #[multiversion(targets("x86_64+bmi2+lzcnt"))]
-fn read_code(pump: &mut BitPumpMSB, params: &Params, gradient: &mut Gradient, q_table: &QTable) -> i32 {
-  let sample = fuji_zerobits(pump);
+fn read_code(pump: &mut BitPumpMSB, params: &Params, gradient: &mut Gradient, q_table: &QTable) -> std::result::Result<i32, BitPumpError> {
+  let sample = fuji_zerobits(pump)?;
   let mut code: i32 = if (sample as usize) < params.max_bits - q_table.raw_bits - 1 {
     let dec_bits = bit_diff(gradient.0, gradient.1);
-    let extra_bits = if dec_bits == 0 { 0 } else { pump.get_bits(dec_bits) as i32 };
+    let extra_bits = if dec_bits == 0 { 0 } else { pump.get_bits(dec_bits)? as i32 };
     (sample << dec_bits) as i32 + extra_bits
   } else {
-    1 + pump.get_bits(q_table.raw_bits as u32) as i32
+    1 + pump.get_bits(q_table.raw_bits as u32)? as i32
   };
   // Validate code
   if code < 0 || code >= q_table.total_values as i32 {
@@ -934,11 +956,18 @@ fn read_code(pump: &mut BitPumpMSB, params: &Params, gradient: &mut Gradient, q_
     gradient.1 >>= 1;
   }
   gradient.1 += 1;
-  code
+  Ok(code)
 }
 
 /// Decode samples for even positions
-fn fuji_decode_sample_even(pump: &mut BitPumpMSB, params: &Params, linebuf: &mut [Vec<u16>], line: usize, pos: &mut usize, grads: &mut GradientList) {
+fn fuji_decode_sample_even(
+  pump: &mut BitPumpMSB,
+  params: &Params,
+  linebuf: &mut [Vec<u16>],
+  line: usize,
+  pos: &mut usize,
+  grads: &mut GradientList,
+) -> std::result::Result<(), BitPumpError> {
   // Line -2 |   | f |   |
   // Line -1 | c | b | d |
   // Line  0 | a | x | g |
@@ -974,7 +1003,7 @@ fn fuji_decode_sample_even(pump: &mut BitPumpMSB, params: &Params, linebuf: &mut
     rd + rc + 2 * rb
   };
 
-  let code = read_code(pump, params, &mut gradients[grad.unsigned_abs() as usize], qtable);
+  let code = read_code(pump, params, &mut gradients[grad.unsigned_abs() as usize], qtable)?;
 
   // Adjustments specific to even positions
   if grad < 0 {
@@ -997,10 +1026,18 @@ fn fuji_decode_sample_even(pump: &mut BitPumpMSB, params: &Params, linebuf: &mut
   }
 
   *pos += 2;
+  Ok(())
 }
 
 /// Decode samples for odd positions
-fn fuji_decode_sample_odd(pump: &mut BitPumpMSB, params: &Params, linebuf: &mut [Vec<u16>], line: usize, pos: &mut usize, grads: &mut GradientList) {
+fn fuji_decode_sample_odd(
+  pump: &mut BitPumpMSB,
+  params: &Params,
+  linebuf: &mut [Vec<u16>],
+  line: usize,
+  pos: &mut usize,
+  grads: &mut GradientList,
+) -> std::result::Result<(), BitPumpError> {
   // Line -2 |   | f |   |
   // Line -1 | c | b | d |
   // Line  0 | a | x | g |
@@ -1034,7 +1071,7 @@ fn fuji_decode_sample_odd(pump: &mut BitPumpMSB, params: &Params, linebuf: &mut 
     (ra + rg) >> 1
   };
 
-  let code = read_code(pump, params, &mut gradients[grad.unsigned_abs() as usize], qtable);
+  let code = read_code(pump, params, &mut gradients[grad.unsigned_abs() as usize], qtable)?;
 
   // Adjustments specific to odd positions
   if grad < 0 {
@@ -1057,6 +1094,7 @@ fn fuji_decode_sample_odd(pump: &mut BitPumpMSB, params: &Params, linebuf: &mut 
   }
 
   *pos += 2;
+  Ok(())
 }
 
 /// Interpolate x value from surrounding pixels

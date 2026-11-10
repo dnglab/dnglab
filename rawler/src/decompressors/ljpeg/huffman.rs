@@ -1,4 +1,4 @@
-use crate::pumps::BitPump;
+use crate::pumps::{BitPump, BitPumpError};
 use std::fmt;
 
 const DECODE_CACHE_BITS: u32 = 13;
@@ -176,8 +176,8 @@ impl HuffTable {
   }
 
   #[inline(always)]
-  pub fn huff_decode(&self, pump: &mut dyn BitPump) -> Result<i32, String> {
-    let code = pump.peek_bits(DECODE_CACHE_BITS) as usize;
+  pub fn huff_decode(&self, pump: &mut dyn BitPump) -> Result<i32, BitPumpError> {
+    let code = pump.peek_bits(DECODE_CACHE_BITS)? as usize;
     if let Some((bits, decode)) = self.decodecache[code] {
       match (decode, self.dng_bug) {
         // Special case: for -32768 no SSSS bits are stored
@@ -191,43 +191,43 @@ impl HuffTable {
       }
       Ok(decode as i32)
     } else {
-      let decode = self.huff_decode_slow(pump);
+      let decode = self.huff_decode_slow(pump)?;
       Ok(decode.1)
     }
   }
 
   #[inline(always)]
-  pub fn huff_decode_slow(&self, pump: &mut dyn BitPump) -> (u8, i32) {
-    let len = self.huff_len(pump);
-    (len.0 + len.1, self.huff_diff(pump, len))
+  pub fn huff_decode_slow(&self, pump: &mut dyn BitPump) -> Result<(u8, i32), BitPumpError> {
+    let len = self.huff_len(pump)?;
+    Ok((len.0 + len.1, self.huff_diff(pump, len)?))
   }
 
   #[inline(always)]
-  pub fn huff_len(&self, pump: &mut dyn BitPump) -> (u8, u8, u8) {
-    let code = pump.peek_bits(self.nbits) as usize;
+  pub fn huff_len(&self, pump: &mut dyn BitPump) -> Result<(u8, u8, u8), BitPumpError> {
+    let code = pump.peek_bits(self.nbits)? as usize;
     let (bits, len, shift) = self.hufftable[code];
     pump.consume_bits(bits as u32);
-    (bits, len, shift)
+    Ok((bits, len, shift))
   }
 
   #[inline(always)]
-  pub fn huff_get_bits(&self, pump: &mut dyn BitPump) -> u32 {
-    let code = pump.peek_bits(self.nbits) as usize;
+  pub fn huff_get_bits(&self, pump: &mut dyn BitPump) -> Result<u32, BitPumpError> {
+    let code = pump.peek_bits(self.nbits)? as usize;
     let (bits, len, _) = self.hufftable[code];
     pump.consume_bits(bits as u32);
-    len as u32
+    Ok(len as u32)
   }
 
   #[inline(always)]
-  pub fn huff_diff(&self, pump: &mut dyn BitPump, input: (u8, u8, u8)) -> i32 {
+  pub fn huff_diff(&self, pump: &mut dyn BitPump, input: (u8, u8, u8)) -> Result<i32, BitPumpError> {
     let (_, len, shift) = input;
 
-    match len {
+    Ok(match len {
       0 => 0,
       16 => {
         if self.dng_bug {
-          let v = pump.get_bits(16) as i32;
-          return if v >= 32768 { v } else { v - 65535 };
+          let v = pump.get_bits(16)? as i32;
+          return Ok(if v >= 32768 { v } else { v - 65535 });
         }
         -32768
       }
@@ -235,14 +235,14 @@ impl HuffTable {
         // decode the difference and extend sign bit
         let fulllen: i32 = len as i32 + shift as i32;
         let shift: i32 = shift as i32;
-        let bits = pump.get_bits(len as u32) as i32;
+        let bits = pump.get_bits(len as u32)? as i32;
         let mut diff: i32 = ((bits << 1) + 1) << shift >> 1;
         if (diff & (1 << (fulllen - 1))) == 0 {
           diff -= (1 << fulllen) - ((shift == 0) as i32);
         }
         diff
       }
-    }
+    })
   }
 }
 
@@ -282,8 +282,8 @@ mod tests {
   }
 
   impl BitPump for MockPump {
-    fn peek_bits(&mut self, num: u32) -> u32 {
-      (self.bits >> (self.nbits - num)) as u32
+    fn peek_bits(&mut self, num: u32) -> Result<u32, BitPumpError> {
+      Ok((self.bits >> (self.nbits - num)) as u32)
     }
 
     fn consume_bits(&mut self, num: u32) {
@@ -299,7 +299,7 @@ mod tests {
     let mut pump = MockPump::empty();
     for i in 0..(1 << DECODE_CACHE_BITS) {
       pump.set(i, DECODE_CACHE_BITS);
-      let (bits, decode) = tbl.huff_decode_slow(&mut pump);
+      let (bits, decode) = tbl.huff_decode_slow(&mut pump).unwrap();
       if pump.validbits() >= 0 {
         cache[i as usize] = Some((bits, decode as i16));
       }

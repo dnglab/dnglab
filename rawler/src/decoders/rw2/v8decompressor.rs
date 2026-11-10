@@ -15,7 +15,7 @@ use crate::{
   formats::tiff::IFD,
   imgop::{Dim2, Point, Rect},
   pixarray::{DisjointRegionMut, ImageRegionMut, PixU16},
-  pumps::{BitPump, BitPumpReverseBitsMSB, ByteStream},
+  pumps::{BitPump, BitPumpError, BitPumpReverseBitsMSB, ByteStream},
   rawsource::RawSource,
 };
 
@@ -236,11 +236,12 @@ impl HuffmanDecoder {
 
   /// Extract Huffman symbol from bitstream pump and
   /// return index into symbol table.
-  fn get_next(&self, pump: &mut dyn BitPump) -> u8 {
-    let next_bits = pump.peek_bits(16);
+  #[inline(always)]
+  fn get_next(&self, pump: &mut dyn BitPump) -> std::result::Result<u8, BitPumpError> {
+    let next_bits = pump.peek_bits(16)?;
     if let Some((bits, ssss)) = self.cache[next_bits as u16 as usize] {
       pump.consume_bits(bits as u32);
-      ssss
+      Ok(ssss)
     } else {
       panic!("Input value {:016b} starts not with a valid huffman symbol", next_bits);
     }
@@ -418,14 +419,15 @@ pub(crate) fn decode_panasonic_v8(rawfile: &RawSource, width: usize, height: usi
   let tables = Tables::new(&params);
 
   // Parallel decode multiple strips
-  strips.into_par_iter().enumerate().for_each(|(strip_id, mut strip)| {
-    decode_strip(bitstreams[strip_id], &params, &tables, strip_id, &mut strip);
-  });
+  strips
+    .into_par_iter()
+    .enumerate()
+    .try_for_each(|(strip_id, mut strip)| decode_strip(bitstreams[strip_id], &params, &tables, strip_id, &mut strip))?;
   Ok(out)
 }
 
 /// Decode a single strip into `out`, its region of the image
-fn decode_strip(buf: &[u8], params: &CF2Params, tables: &Tables, strip_id: usize, out: &mut DisjointRegionMut<u16>) {
+fn decode_strip(buf: &[u8], params: &CF2Params, tables: &Tables, strip_id: usize, out: &mut DisjointRegionMut<u16>) -> std::result::Result<(), BitPumpError> {
   let mut pump = BitPumpReverseBitsMSB::new(buf);
   let width = params.strip_widths[strip_id] as usize;
   let halfwidth = width >> 1;
@@ -446,7 +448,7 @@ fn decode_strip(buf: &[u8], params: &CF2Params, tables: &Tables, strip_id: usize
     state.current_base = state.line_base;
     for col in 0..doublewidth {
       // Calculate index
-      let ssss = state.huffdec.get_next(&mut pump);
+      let ssss = state.huffdec.get_next(&mut pump)?;
 
       // Shiftdown seems to be the count of bits shifted to right during encoding.
       // It's 0 for all existing samples so far, highly interested in samples that has
@@ -459,7 +461,7 @@ fn decode_strip(buf: &[u8], params: &CF2Params, tables: &Tables, strip_id: usize
         0
       } else {
         debug_assert_ne!(req_bits, 0);
-        let rawbits: u32 = pump.get_bits(req_bits as u32); // Get additional bits
+        let rawbits: u32 = pump.get_bits(req_bits as u32)?; // Get additional bits
         let sign = rawbits >> (req_bits - 1); // Get leading sign bit
         let val = (rawbits << (params.huf_shift_down[ssss as usize] & 0xFF)) as i32;
 
@@ -519,4 +521,5 @@ fn decode_strip(buf: &[u8], params: &CF2Params, tables: &Tables, strip_id: usize
       }
     }
   }
+  Ok(())
 }

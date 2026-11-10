@@ -178,7 +178,7 @@ impl<'a> QtkDecoder<'a> {
       let cstart = 2 + (row & 1);
       let mut val = 0;
       for col in (cstart..(width + 2)).step_by(2) {
-        val = (((pix[row - 1][col - 1] + 2 * pix[row - 1][col + 1] + pix[row][col - 2]) >> 2) + GSTEP[pump.get_bits(4) as usize]).clamp(0, 255);
+        val = (((pix[row - 1][col - 1] + 2 * pix[row - 1][col + 1] + pix[row][col - 2]) >> 2) + GSTEP[pump.get_bits(4)? as usize]).clamp(0, 255);
         pix[row][col] = val;
         if col < 4 {
           pix[row][col - 2] = val;
@@ -211,7 +211,7 @@ impl<'a> QtkDecoder<'a> {
             }
           };
 
-          let val = (((pix[row - 2][col] + pix[row][col - 2]) >> 1) + RSTEP[sharp][pump.get_bits(2) as usize]).clamp(0, 255);
+          let val = (((pix[row - 2][col] + pix[row][col - 2]) >> 1) + RSTEP[sharp][pump.get_bits(2)? as usize]).clamp(0, 255);
 
           pix[row][col] = val;
           if row < 4 {
