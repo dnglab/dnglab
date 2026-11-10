@@ -536,7 +536,9 @@ impl<'a> ArwDecoder<'a> {
           for col in 0..coltiles {
             log::debug!("Decode tile: row({}), col({})", row, col);
             let offset = offsets.force_usize(row * coltiles + col);
-            let src = &buffer[offset..];
+            let src = buffer
+              .get(offset..)
+              .ok_or_else(|| format!("ARW LJPEG: offset {offset} of tile ({row},{col}) is behind EOF"))?;
             let decompressor =
               LjpegDecompressor::new(src).map_err(|err| format!("Creating LJPEG decompressor for ARW LJPEG tile ({row},{col}) failed: {err}"))?;
             let cpp = 3;
@@ -573,7 +575,9 @@ impl<'a> ArwDecoder<'a> {
           let row = row / tlength;
           for col in 0..coltiles {
             let offset = offsets.force_usize(row * coltiles + col);
-            let src = &buffer[offset..];
+            let src = buffer
+              .get(offset..)
+              .ok_or_else(|| format!("ARW LJPEG: offset {offset} of tile ({row},{col}) is behind EOF"))?;
             let decompressor = LjpegDecompressor::new(src)?;
             let cpp = 4;
             let w = 256;
