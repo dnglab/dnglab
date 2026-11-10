@@ -19,7 +19,7 @@ pub(crate) fn decode_panasonic_v5(buf: &[u8], width: usize, height: usize, bps: 
   let pixels_per_packet = match bps {
     12 => 10,
     14 => 9,
-    _ => unreachable!(),
+    _ => return Err(format!("RW2 v5: unsupported bit depth {}", bps)),
   };
   // Pixel count per full block
   let pixels_per_block = V5_PACKETS_PER_BLOCK * pixels_per_packet;

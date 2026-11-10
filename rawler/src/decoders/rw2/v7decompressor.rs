@@ -12,11 +12,13 @@ pub(crate) fn decode_panasonic_v7(buf: &[u8], width: usize, height: usize, bps: 
   let pixels_per_block = match bps {
     14 => 9,
     12 => 10,
-    _ => unreachable!(),
+    _ => return Err(format!("RW2 v7: unsupported bit depth {}", bps)),
   };
   let blocks_per_row = width / pixels_per_block;
 
-  assert_eq!(width % pixels_per_block, 0);
+  if !width.is_multiple_of(pixels_per_block) {
+    return Err(format!("RW2 v7: width {} is not a multiple of {} pixels per block", width, pixels_per_block));
+  }
 
   let bytes_per_row = V7_BYTES_PER_BLOCK * blocks_per_row;
 
