@@ -10,6 +10,7 @@ use rawler::{
     denoise::DenoiseStrength,
     develop::{ProcessedImageFormat, ProcessingStep, RawProcessingParams},
     highlights::HighlightMode,
+    render::BayerDemosaic,
     sharpen::DEFAULT_SHARPEN,
   },
 };
@@ -171,6 +172,9 @@ fn generate_job(entry: &FileMap, options: &ArgMatches, dcp: &Option<CameraProfil
       highlights: *options
         .get_one::<HighlightMode>("highlights")
         .ok_or_else(|| crate::AppError::InvalidCmdSwitch("highlights has no default".into()))?,
+      bayer_demosaic: *options
+        .get_one::<BayerDemosaic>("bayer_demosaic")
+        .ok_or_else(|| crate::AppError::InvalidCmdSwitch("bayer-demosaic has no default".into()))?,
       denoise: DenoiseStrength {
         luma: options.get_one("denoise_luma").copied().unwrap_or(DenoiseStrength::default().luma),
         chroma: options.get_one("denoise_chroma").copied().unwrap_or(DenoiseStrength::default().chroma),

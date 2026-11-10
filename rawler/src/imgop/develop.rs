@@ -20,7 +20,7 @@ use crate::{
     color::{OutputSpace, TransferFunction},
     denoise::DenoiseStrength,
     highlights::HighlightMode,
-    render::{RenderOptions, RenderedImage, render},
+    render::{BayerDemosaic, RenderOptions, RenderedImage, render},
     sharpen::DEFAULT_SHARPEN,
   },
   rawsource::RawSource,
@@ -94,6 +94,8 @@ pub struct RawProcessingParams {
   pub jpeg_quality: u8,
   /// Color space of the image
   pub color_space: OutputSpace,
+  /// Demosaic algorithm for Bayer RGB data
+  pub bayer_demosaic: BayerDemosaic,
   /// Strength of the noise reduction
   pub denoise: DenoiseStrength,
   /// Strength of the sharpening
@@ -129,6 +131,7 @@ impl Default for RawProcessingParams {
       format: ProcessedImageFormat::Tiff,
       jpeg_quality: 94,
       color_space: OutputSpace::Srgb,
+      bayer_demosaic: BayerDemosaic::default(),
       denoise: DenoiseStrength::default(),
       sharpen: DEFAULT_SHARPEN,
       exposure: 0.0,
@@ -157,6 +160,7 @@ pub fn process_raw_image<W: Write + Seek + Send>(raw: &Path, image_file: &mut W,
   let metadata = decoder.raw_metadata(&rawfile, &raw_params)?;
   let mut develop = RawDevelop {
     color_space: params.color_space,
+    bayer_demosaic: params.bayer_demosaic,
     denoise: params.denoise,
     sharpen: params.sharpen,
     exposure: params.exposure,
@@ -231,6 +235,8 @@ pub struct RawDevelop {
   pub steps: Vec<ProcessingStep>,
   /// Color space of the developed image
   pub color_space: OutputSpace,
+  /// Algorithm of the Demosaic step for Bayer RGB data
+  pub bayer_demosaic: BayerDemosaic,
   /// Strength of the Denoise step
   pub denoise: DenoiseStrength,
   /// Strength of the Sharpen step
@@ -254,6 +260,7 @@ impl RawDevelop {
     Self {
       steps: Vec::from(steps),
       color_space: OutputSpace::default(),
+      bayer_demosaic: BayerDemosaic::default(),
       denoise: DenoiseStrength::default(),
       sharpen: DEFAULT_SHARPEN,
       exposure: 0.0,
@@ -285,6 +292,7 @@ impl RawDevelop {
     RenderOptions {
       steps: self.steps.iter().copied().collect(),
       color_space: self.color_space,
+      bayer_demosaic: self.bayer_demosaic,
       denoise: self.denoise,
       sharpen: self.sharpen,
       exposure: self.exposure,

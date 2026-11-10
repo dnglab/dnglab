@@ -81,6 +81,7 @@ Register-ArgumentCompleter -Native -CommandName 'dnglab' -ScriptBlock {
             [CompletionResult]::new('--format', '--format', [CompletionResultType]::ParameterName, 'Output image format, defaults to the OUTPUT file extension or tif. TIFF has 16-bit samples, linear 32-bit floating point samples for High Dynamic Range camera profiles')
             [CompletionResult]::new('--color-space', '--color-space', [CompletionResultType]::ParameterName, 'Color space of the image')
             [CompletionResult]::new('--highlights', '--highlights', [CompletionResultType]::ParameterName, 'Highlights above white after the BaselineExposure: compress keeps their color with a smooth shoulder, clip clips each channel like DNG readers')
+            [CompletionResult]::new('--bayer-demosaic', '--bayer-demosaic', [CompletionResultType]::ParameterName, 'Demosaic algorithm for Bayer sensors: ppg is fast, ahd interpolates along edges with fewer artifacts')
             [CompletionResult]::new('--dcp-file', '--dcp-file', [CompletionResultType]::ParameterName, 'Camera profile (DCP) to render the image with, replaces the primary camera profile')
             [CompletionResult]::new('--jpeg-quality', '--jpeg-quality', [CompletionResultType]::ParameterName, 'JPEG quality (1-100)')
             [CompletionResult]::new('--denoise-luma', '--denoise-luma', [CompletionResultType]::ParameterName, 'Strength of the luma noise reduction (0-4), 0 is off, 1 is a full reduction [default: 0.25]')

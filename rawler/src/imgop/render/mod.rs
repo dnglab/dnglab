@@ -216,7 +216,8 @@ pub enum RenderTarget {
 /// Quality of the demosaic
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum DemosaicQuality {
-  /// PPG for Bayer, Markesteijn (3 passes) for X-Trans data
+  /// [`RenderOptions::bayer_demosaic`] for Bayer, Markesteijn (3 passes) for
+  /// X-Trans data
   #[default]
   Quality,
   /// PPG for Bayer, bilinear interpolation for X-Trans data
@@ -225,6 +226,31 @@ pub enum DemosaicQuality {
   /// (superpixel), bilinear interpolation for X-Trans data. Images of rotated
   /// sensors (Fujifilm) are demosaiced like Fast.
   Preview,
+}
+
+/// Demosaic algorithm for Bayer RGB data at [`DemosaicQuality::Quality`]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum BayerDemosaic {
+  /// Patterned Pixel Grouping: fast, with good results
+  #[default]
+  Ppg,
+  /// Adaptive Homogeneity-Directed: interpolates along edges, with fewer
+  /// zipper artifacts, slower
+  Ahd,
+}
+
+#[cfg(feature = "clap")]
+impl clap::ValueEnum for BayerDemosaic {
+  fn value_variants<'a>() -> &'a [Self] {
+    &[Self::Ppg, Self::Ahd]
+  }
+
+  fn to_possible_value(&self) -> Option<clap::builder::PossibleValue> {
+    Some(match self {
+      Self::Ppg => clap::builder::PossibleValue::new("ppg"),
+      Self::Ahd => clap::builder::PossibleValue::new("ahd"),
+    })
+  }
 }
 
 /// Options of the rendering
@@ -238,6 +264,9 @@ pub struct RenderOptions {
   pub white_balance: WhiteBalancePlacement,
   /// Quality of the Demosaic step
   pub demosaic: DemosaicQuality,
+  /// Algorithm of the Demosaic step for Bayer RGB data at
+  /// [`DemosaicQuality::Quality`]
+  pub bayer_demosaic: BayerDemosaic,
   /// Color space of the output: the Calibrate step maps the camera values to
   /// it, the TransferFunction step encodes the values by its transfer function
   pub color_space: OutputSpace,
@@ -265,6 +294,7 @@ impl Default for RenderOptions {
       steps: StepSet::all(),
       white_balance: WhiteBalancePlacement::default(),
       demosaic: DemosaicQuality::default(),
+      bayer_demosaic: BayerDemosaic::default(),
       color_space: OutputSpace::default(),
       denoise: DenoiseStrength::default(),
       sharpen: DEFAULT_SHARPEN,
@@ -1135,9 +1165,10 @@ mod tests {
       Some(WhiteLevel::new_bits(12, 1)),
       false,
     );
-    let algorithm_of = |rawimage: &RawImage, demosaic| -> crate::Result<Option<DemosaicAlgorithm>> {
+    let algorithm_with = |rawimage: &RawImage, demosaic, bayer_demosaic| -> crate::Result<Option<DemosaicAlgorithm>> {
       let options = RenderOptions {
         demosaic,
+        bayer_demosaic,
         ..Default::default()
       };
       Ok(plan(rawimage, &options)?.ops.iter().find_map(|op| match op {
@@ -1145,6 +1176,7 @@ mod tests {
         _ => None,
       }))
     };
+    let algorithm_of = |rawimage: &RawImage, demosaic| algorithm_with(rawimage, demosaic, BayerDemosaic::default());
     for (demosaic, algorithm) in [
       (DemosaicQuality::Quality, DemosaicAlgorithm::Markesteijn),
       (DemosaicQuality::Fast, DemosaicAlgorithm::XTransBilinear),
@@ -1157,6 +1189,41 @@ mod tests {
     assert_eq!(algorithm_of(&bayer, DemosaicQuality::Preview)?, Some(DemosaicAlgorithm::Superpixel3));
     bayer.fuji_rotation_width = Some(4);
     assert_eq!(algorithm_of(&bayer, DemosaicQuality::Preview)?, Some(DemosaicAlgorithm::Ppg));
+    // The algorithm for Bayer data is PPG by default, AHD only at Quality, and
+    // X-Trans data doesn't use it
+    let bayer = rggb_rawimage();
+    assert_eq!(algorithm_of(&bayer, DemosaicQuality::Quality)?, Some(DemosaicAlgorithm::Ppg));
+    for (demosaic, algorithm) in [
+      (DemosaicQuality::Quality, DemosaicAlgorithm::Ahd),
+      (DemosaicQuality::Fast, DemosaicAlgorithm::Ppg),
+      (DemosaicQuality::Preview, DemosaicAlgorithm::Superpixel3),
+    ] {
+      assert_eq!(algorithm_with(&bayer, demosaic, BayerDemosaic::Ahd)?, Some(algorithm), "{:?}", demosaic);
+    }
+    assert_eq!(
+      algorithm_with(&rawimage, DemosaicQuality::Quality, BayerDemosaic::Ahd)?,
+      Some(DemosaicAlgorithm::Markesteijn)
+    );
+    // Images of rotated sensors are rotated after AHD too
+    let mut rotated = rggb_rawimage();
+    rotated.fuji_rotation_width = Some(4);
+    let options = RenderOptions {
+      bayer_demosaic: BayerDemosaic::Ahd,
+      ..Default::default()
+    };
+    let ops = plan(&rotated, &options)?.ops;
+    assert!(
+      ops.iter().any(|op| matches!(
+        op,
+        Op::Demosaic {
+          algorithm: DemosaicAlgorithm::Ahd,
+          ..
+        }
+      )),
+      "{:?}",
+      ops
+    );
+    assert!(ops.iter().any(|op| matches!(op, Op::FujiRotate { .. })), "{:?}", ops);
     Ok(())
   }
 

@@ -1069,9 +1069,20 @@ impl<'a, T> ImageRegion<'a, T> {
   where
     T: Copy,
   {
-    let mut samples = Vec::with_capacity(self.row_len() * self.height());
-    self.rows().for_each(|row| samples.extend_from_slice(row));
+    let mut samples = Vec::new();
+    self.copy_into(&mut samples);
     samples
+  }
+
+  /// Replace the content of `samples` by the samples of the region, row by row
+  /// like [`Self::to_vec`], e.g. to reuse a buffer for regions of the same size
+  pub fn copy_into(&self, samples: &mut Vec<T>)
+  where
+    T: Copy,
+  {
+    samples.clear();
+    samples.reserve(self.row_len() * self.height());
+    self.rows().for_each(|row| samples.extend_from_slice(row));
   }
 
   /// View of the samples as one slice, `None` if they are not contiguous

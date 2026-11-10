@@ -21,7 +21,7 @@ use rawler::{
     color::{OutputSpace, TransferFunction},
     denoise::DenoiseStrength,
     highlights::HighlightMode,
-    render::{DemosaicQuality, RenderOptions, RenderTarget, RenderedImage, StepSet, WhiteBalancePlacement, execute, plan},
+    render::{BayerDemosaic, DemosaicQuality, RenderOptions, RenderTarget, RenderedImage, StepSet, WhiteBalancePlacement, execute, plan},
     sharpen::DEFAULT_SHARPEN,
   },
   rawdb,
@@ -58,8 +58,10 @@ fn main() -> Result<(), Box<dyn Error>> {
     steps: StepSet::all(),
     // CFA data is white balanced before it is demosaiced
     white_balance: WhiteBalancePlacement::BeforeDemosaic,
-    // PPG for Bayer, Markesteijn for X-Trans data
+    // Bayer data by bayer_demosaic, X-Trans data by Markesteijn
     demosaic: DemosaicQuality::Quality,
+    // PPG for Bayer data, AHD interpolates along edges
+    bayer_demosaic: BayerDemosaic::Ppg,
     // Color space of the image, with its transfer function
     color_space: OutputSpace::Srgb,
     // A little noise reduction

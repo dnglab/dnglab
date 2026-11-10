@@ -4,5 +4,4 @@
 // This file is reserved for X-Trans specific sensor code.
 
 pub mod bilinear;
-pub mod lab;
 pub mod markesteijn;

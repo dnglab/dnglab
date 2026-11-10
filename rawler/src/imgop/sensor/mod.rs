@@ -8,6 +8,9 @@ use crate::{
 };
 
 pub mod bayer;
+pub mod border;
+pub mod lab;
+pub mod tiles;
 pub mod xtrans;
 
 /// Identifies the type of color filter array (CFA) sensor.
@@ -74,6 +77,7 @@ pub trait Demosaic<T: SubPixel, const N: usize> {
 mod tests {
   use super::{
     bayer::{
+      ahd::AhdDemosaic,
       bilinear::Bilinear4Channel,
       ppg::PPGDemosaic,
       superpixel::{Superpixel3Channel, Superpixel4Channel},
@@ -113,7 +117,7 @@ mod tests {
   fn demosaic_region() {
     // A band of full rows is demosaiced in place, other areas are copied
     for area in [Rect::new(Point::new(0, 6), Dim2::new(96, 48)), Rect::new(Point::new(5, 3), Dim2::new(70, 50))] {
-      let rgb: [&dyn Demosaic<f32, 3>; 2] = [&PPGDemosaic::new(), &Superpixel3Channel::new()];
+      let rgb: [&dyn Demosaic<f32, 3>; 3] = [&PPGDemosaic::new(), &AhdDemosaic::new(), &Superpixel3Channel::new()];
       for algorithm in rgb {
         assert_region_equals_copy(algorithm, "RGGB", "RGB", area);
       }
