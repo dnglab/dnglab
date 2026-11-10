@@ -93,7 +93,7 @@ clip
 .RE
 .TP
 \fB\-\-bayer\-demosaic\fR \fI<algorithm>\fR [default: ppg]
-Demosaic algorithm for Bayer RGB sensors: ppg is fast, ahd interpolates along edges with fewer artifacts, vng averages the directions with small gradients, rcd interpolates along edges with ratio corrections
+Demosaic algorithm for Bayer RGB sensors: ppg is fast, ahd interpolates along edges with fewer artifacts, vng averages the directions with small gradients, rcd interpolates along edges with ratio corrections, bilinear averages the neighbours of each color
 .br
 
 .br
@@ -107,6 +107,8 @@ ahd
 vng
 .IP \(bu 2
 rcd
+.IP \(bu 2
+bilinear
 .RE
 .TP
 \fB\-\-xtrans\-demosaic\fR \fI<algorithm>\fR [default: markesteijn]

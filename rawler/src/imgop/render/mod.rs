@@ -243,12 +243,15 @@ pub enum BayerDemosaic {
   /// Ratio Corrected Demosaicing: interpolates along edges with ratios of a
   /// low-pass filter, without overshoots
   Rcd,
+  /// Bilinear interpolation of each color from its neighbours: fast, soft,
+  /// with zipper artifacts at edges
+  Bilinear,
 }
 
 #[cfg(feature = "clap")]
 impl clap::ValueEnum for BayerDemosaic {
   fn value_variants<'a>() -> &'a [Self] {
-    &[Self::Ppg, Self::Ahd, Self::Vng, Self::Rcd]
+    &[Self::Ppg, Self::Ahd, Self::Vng, Self::Rcd, Self::Bilinear]
   }
 
   fn to_possible_value(&self) -> Option<clap::builder::PossibleValue> {
@@ -257,6 +260,7 @@ impl clap::ValueEnum for BayerDemosaic {
       Self::Ahd => clap::builder::PossibleValue::new("ahd"),
       Self::Vng => clap::builder::PossibleValue::new("vng"),
       Self::Rcd => clap::builder::PossibleValue::new("rcd"),
+      Self::Bilinear => clap::builder::PossibleValue::new("bilinear"),
     })
   }
 }
@@ -1252,6 +1256,10 @@ mod tests {
       Some(DemosaicAlgorithm::Rcd)
     );
     assert_eq!(algorithm_with(&bayer, DemosaicQuality::Fast, BayerDemosaic::Rcd)?, Some(DemosaicAlgorithm::Ppg));
+    assert_eq!(
+      algorithm_with(&bayer, DemosaicQuality::Quality, BayerDemosaic::Bilinear)?,
+      Some(DemosaicAlgorithm::Bilinear)
+    );
     // X-Trans data by VNG at Quality only, if selected
     for (demosaic, algorithm) in [
       (DemosaicQuality::Quality, DemosaicAlgorithm::Vng),
@@ -1282,7 +1290,7 @@ mod tests {
     );
     for (demosaic, algorithm) in [
       (DemosaicQuality::Quality, DemosaicAlgorithm::Vng),
-      (DemosaicQuality::Fast, DemosaicAlgorithm::Bilinear4),
+      (DemosaicQuality::Fast, DemosaicAlgorithm::Bilinear),
       (DemosaicQuality::Preview, DemosaicAlgorithm::Superpixel4),
     ] {
       assert_eq!(algorithm_of(&cygm, demosaic)?, Some(algorithm), "{:?}", demosaic);

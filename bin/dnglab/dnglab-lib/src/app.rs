@@ -411,7 +411,7 @@ fn process_raw_command() -> Command {
         .default_value("compress"),
     )
     .arg(
-      arg!(bayer_demosaic: --"bayer-demosaic" <algorithm> "Demosaic algorithm for Bayer RGB sensors: ppg is fast, ahd interpolates along edges with fewer artifacts, vng averages the directions with small gradients, rcd interpolates along edges with ratio corrections")
+      arg!(bayer_demosaic: --"bayer-demosaic" <algorithm> "Demosaic algorithm for Bayer RGB sensors: ppg is fast, ahd interpolates along edges with fewer artifacts, vng averages the directions with small gradients, rcd interpolates along edges with ratio corrections, bilinear averages the neighbours of each color")
         .required(false)
         .value_parser(value_parser!(BayerDemosaic))
         .default_value("ppg"),

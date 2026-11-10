@@ -87,10 +87,11 @@ adobergb\t''
 prophoto\t''"
 complete -c dnglab -n "__fish_dnglab_using_subcommand process-raw" -l highlights -d 'Highlights above white after the BaselineExposure: compress keeps their color with a smooth shoulder, clip clips each channel like DNG readers' -r -f -a "compress\t''
 clip\t''"
-complete -c dnglab -n "__fish_dnglab_using_subcommand process-raw" -l bayer-demosaic -d 'Demosaic algorithm for Bayer RGB sensors: ppg is fast, ahd interpolates along edges with fewer artifacts, vng averages the directions with small gradients, rcd interpolates along edges with ratio corrections' -r -f -a "ppg\t''
+complete -c dnglab -n "__fish_dnglab_using_subcommand process-raw" -l bayer-demosaic -d 'Demosaic algorithm for Bayer RGB sensors: ppg is fast, ahd interpolates along edges with fewer artifacts, vng averages the directions with small gradients, rcd interpolates along edges with ratio corrections, bilinear averages the neighbours of each color' -r -f -a "ppg\t''
 ahd\t''
 vng\t''
-rcd\t''"
+rcd\t''
+bilinear\t''"
 complete -c dnglab -n "__fish_dnglab_using_subcommand process-raw" -l xtrans-demosaic -d 'Demosaic algorithm for X-Trans sensors: markesteijn has the best quality, vng is faster' -r -f -a "markesteijn\t''
 vng\t''"
 complete -c dnglab -n "__fish_dnglab_using_subcommand process-raw" -l dcp-file -d 'Camera profile (DCP) to render the image with, replaces the primary camera profile' -r -F
