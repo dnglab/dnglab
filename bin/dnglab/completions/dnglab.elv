@@ -76,7 +76,7 @@ set edit:completion:arg-completer[dnglab] = {|@words|
             cand --format 'Output image format, defaults to the OUTPUT file extension or tif. TIFF has 16-bit samples, linear 32-bit floating point samples for High Dynamic Range camera profiles'
             cand --color-space 'Color space of the image'
             cand --highlights 'Highlights above white after the BaselineExposure: compress keeps their color with a smooth shoulder, clip clips each channel like DNG readers'
-            cand --bayer-demosaic 'Demosaic algorithm for Bayer RGB sensors: ppg is fast, ahd interpolates along edges with fewer artifacts, vng averages the directions with small gradients'
+            cand --bayer-demosaic 'Demosaic algorithm for Bayer RGB sensors: ppg is fast, ahd interpolates along edges with fewer artifacts, vng averages the directions with small gradients, rcd interpolates along edges with ratio corrections'
             cand --xtrans-demosaic 'Demosaic algorithm for X-Trans sensors: markesteijn has the best quality, vng is faster'
             cand --dcp-file 'Camera profile (DCP) to render the image with, replaces the primary camera profile'
             cand --jpeg-quality 'JPEG quality (1-100)'

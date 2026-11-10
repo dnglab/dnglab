@@ -61,7 +61,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     // Bayer RGB data by bayer_demosaic, 4-color data by VNG, X-Trans data by
     // xtrans_demosaic
     demosaic: DemosaicQuality::Quality,
-    // PPG for Bayer RGB data, AHD interpolates along edges, VNG by gradients
+    // PPG for Bayer RGB data, AHD and RCD interpolate along edges, VNG by gradients
     bayer_demosaic: BayerDemosaic::Ppg,
     // Markesteijn for X-Trans data, VNG is faster
     xtrans_demosaic: XTransDemosaic::Markesteijn,

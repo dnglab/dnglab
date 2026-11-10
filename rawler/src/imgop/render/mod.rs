@@ -240,12 +240,15 @@ pub enum BayerDemosaic {
   /// Variable Number of Gradients: averages the directions with small
   /// gradients, slower
   Vng,
+  /// Ratio Corrected Demosaicing: interpolates along edges with ratios of a
+  /// low-pass filter, without overshoots
+  Rcd,
 }
 
 #[cfg(feature = "clap")]
 impl clap::ValueEnum for BayerDemosaic {
   fn value_variants<'a>() -> &'a [Self] {
-    &[Self::Ppg, Self::Ahd, Self::Vng]
+    &[Self::Ppg, Self::Ahd, Self::Vng, Self::Rcd]
   }
 
   fn to_possible_value(&self) -> Option<clap::builder::PossibleValue> {
@@ -253,6 +256,7 @@ impl clap::ValueEnum for BayerDemosaic {
       Self::Ppg => clap::builder::PossibleValue::new("ppg"),
       Self::Ahd => clap::builder::PossibleValue::new("ahd"),
       Self::Vng => clap::builder::PossibleValue::new("vng"),
+      Self::Rcd => clap::builder::PossibleValue::new("rcd"),
     })
   }
 }
@@ -1243,6 +1247,11 @@ mod tests {
       algorithm_with(&bayer, DemosaicQuality::Quality, BayerDemosaic::Vng)?,
       Some(DemosaicAlgorithm::Vng)
     );
+    assert_eq!(
+      algorithm_with(&bayer, DemosaicQuality::Quality, BayerDemosaic::Rcd)?,
+      Some(DemosaicAlgorithm::Rcd)
+    );
+    assert_eq!(algorithm_with(&bayer, DemosaicQuality::Fast, BayerDemosaic::Rcd)?, Some(DemosaicAlgorithm::Ppg));
     // X-Trans data by VNG at Quality only, if selected
     for (demosaic, algorithm) in [
       (DemosaicQuality::Quality, DemosaicAlgorithm::Vng),

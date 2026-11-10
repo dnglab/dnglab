@@ -846,7 +846,7 @@ _dnglab() {
                     return 0
                     ;;
                 --bayer-demosaic)
-                    COMPREPLY=($(compgen -W "ppg ahd vng" -- "${cur}"))
+                    COMPREPLY=($(compgen -W "ppg ahd vng rcd" -- "${cur}"))
                     return 0
                     ;;
                 --xtrans-demosaic)
