@@ -262,8 +262,7 @@ impl<'a> Decoder for IiqDecoder<'a> {
       .map_err(|ioerr| RawlerError::with_io_error("load IIQ strips", file.path(), ioerr))?;
 
     let mut image = match fmt {
-      IiqCompression::Raw1 => todo!(),
-      IiqCompression::Raw2 => todo!(),
+      IiqCompression::Raw1 | IiqCompression::Raw2 => return Err(RawlerError::unsupported(camera, format!("IIQ compression {:?}", fmt))),
       IiqCompression::Uncompressed => Self::decode_uncompressed(data, width, height, 14, dummy)?,
       IiqCompression::IIQ_L => Self::decode_compressed(data, strips, width, height, 14, dummy)?,
       IiqCompression::IIQ_L16 => Self::decode_compressed(data, strips, width, height, 16, dummy)?,
