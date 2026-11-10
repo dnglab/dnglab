@@ -56,9 +56,10 @@ spelled out, `plan` and `execute` called separately) show the library use.
 
 `process-raw` builds the options in this order: command line, then
 `RawProcessingParams`, then `RawDevelop`, then `RenderOptions`. Before rendering
-it removes DNG opcodes (`--remove-dng-opcodes`) and replaces the primary camera
-profile with a DCP (`--dcp-file`). With `--crop-transparent` it also crops to
-the largest opaque area of the transparency mask.
+it removes DNG opcodes (`--remove-dng-opcodes`), inserts the opcodes of
+`replace_dng_opcodes` (the FixBadPixelsList of `--bad-pixels`) and replaces the
+primary camera profile with a DCP (`--dcp-file`). With `--crop-transparent` it
+also crops to the largest opaque area of the transparency mask.
 
 ## Options
 
@@ -156,6 +157,12 @@ DNG-like image without opcodes is short, for example
 ### 1. OpcodeList1
 
 Applied to the image data as read from the file, before anything else.
+
+`--bad-pixels` gives a bad pixel list in the format of dcraw. dnglab turns it
+into a FixBadPixelsList for each input file and inserts it at the start of
+OpcodeList1, replacing an existing FixBadPixelsList:
+- the coordinates are shifted from the ActiveArea to the raw image;
+- pixels that died after the capture time are skipped.
 
 ### 2. Rescale and OpcodeList2
 

@@ -67,6 +67,7 @@ _arguments "${_arguments_options[@]}" : \
 (process-raw)
 _arguments "${_arguments_options[@]}" : \
 '*--remove-dng-opcodes=[Remove DNG opcodes, as comma separated \[<list>\:\]<opcode> (e.g. WarpRectilinear,2\:GainMap)]:opcodes:_default' \
+'--bad-pixels=[Bad pixel list in the format of dcraw\: column, row and UNIX time per line, relative to the ActiveArea. It is written as FixBadPixelsList to OpcodeList1 and replaces an existing one]:FILE:_files' \
 '--artist=[Set the artist tag]:artist:_default' \
 '--keep-mtime=[Keep mtime, read from EXIF with fallback to original file mtime]:keepmtime:(true false)' \
 '--image-index=[Select a specific image index (or '\''all'\'') if file is a image container]:index:_default' \
@@ -127,6 +128,7 @@ _arguments "${_arguments_options[@]}" : \
 '--jobs=[Number of files to convert in parallel (0 = auto)]:N:_default' \
 '--dcp-file=[Camera profile (DCP) that replaces the primary camera profile]:FILE:_files' \
 '*--extra-dcp-file=[Camera profile (DCP) to embed as extra camera profile, can be repeated]:FILE:_files' \
+'--bad-pixels=[Bad pixel list in the format of dcraw\: column, row and UNIX time per line, relative to the ActiveArea. It is written as FixBadPixelsList to OpcodeList1 and replaces an existing one]:FILE:_files' \
 '-d+[Log level]:level:(error warn info debug trace)' \
 '--loglevel=[Log level]:level:(error warn info debug trace)' \
 '--profile-path=[Directory with profile TOML files]:dir:_files' \

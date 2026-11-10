@@ -4,12 +4,15 @@
 .SH NAME
 dnglab\-process\-raw
 .SH SYNOPSIS
-\fBdnglab\-process\-raw\fR [\fB\-\-remove\-dng\-opcodes\fR] [\fB\-\-artist\fR] [\fB\-\-keep\-mtime\fR] [\fB\-\-image\-index\fR] [\fB\-\-crop\fR] [\fB\-\-crop\-transparent\fR] [\fB\-\-format\fR] [\fB\-\-color\-space\fR] [\fB\-\-highlights\fR] [\fB\-\-dcp\-file\fR] [\fB\-\-jpeg\-quality\fR] [\fB\-\-denoise\-luma\fR] [\fB\-\-denoise\-chroma\fR] [\fB\-\-sharpen\fR] [\fB\-\-exposure\fR] [\fB\-\-auto\-exposure\fR] [\fB\-\-steps\fR] [\fB\-\-skip\-steps\fR] [\fB\-f\fR|\fB\-\-override\fR] [\fB\-r\fR|\fB\-\-recursive\fR] [\fB\-h\fR|\fB\-\-help\fR] <\fIINPUT\fR> <\fIOUTPUT\fR> 
+\fBdnglab\-process\-raw\fR [\fB\-\-remove\-dng\-opcodes\fR] [\fB\-\-bad\-pixels\fR] [\fB\-\-artist\fR] [\fB\-\-keep\-mtime\fR] [\fB\-\-image\-index\fR] [\fB\-\-crop\fR] [\fB\-\-crop\-transparent\fR] [\fB\-\-format\fR] [\fB\-\-color\-space\fR] [\fB\-\-highlights\fR] [\fB\-\-dcp\-file\fR] [\fB\-\-jpeg\-quality\fR] [\fB\-\-denoise\-luma\fR] [\fB\-\-denoise\-chroma\fR] [\fB\-\-sharpen\fR] [\fB\-\-exposure\fR] [\fB\-\-auto\-exposure\fR] [\fB\-\-steps\fR] [\fB\-\-skip\-steps\fR] [\fB\-f\fR|\fB\-\-override\fR] [\fB\-r\fR|\fB\-\-recursive\fR] [\fB\-h\fR|\fB\-\-help\fR] <\fIINPUT\fR> <\fIOUTPUT\fR> 
 .SH DESCRIPTION
 .SH OPTIONS
 .TP
 \fB\-\-remove\-dng\-opcodes\fR \fI<opcodes>\fR
 Remove DNG opcodes, as comma separated [<list>:]<opcode> (e.g. WarpRectilinear,2:GainMap)
+.TP
+\fB\-\-bad\-pixels\fR \fI<FILE>\fR
+Bad pixel list in the format of dcraw: column, row and UNIX time per line, relative to the ActiveArea. It is written as FixBadPixelsList to OpcodeList1 and replaces an existing one
 .TP
 \fB\-\-artist\fR \fI<artist>\fR
 Set the artist tag

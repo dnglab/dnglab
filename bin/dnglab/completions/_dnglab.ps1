@@ -73,6 +73,7 @@ Register-ArgumentCompleter -Native -CommandName 'dnglab' -ScriptBlock {
         }
         'dnglab;process-raw' {
             [CompletionResult]::new('--remove-dng-opcodes', '--remove-dng-opcodes', [CompletionResultType]::ParameterName, 'Remove DNG opcodes, as comma separated [<list>:]<opcode> (e.g. WarpRectilinear,2:GainMap)')
+            [CompletionResult]::new('--bad-pixels', '--bad-pixels', [CompletionResultType]::ParameterName, 'Bad pixel list in the format of dcraw: column, row and UNIX time per line, relative to the ActiveArea. It is written as FixBadPixelsList to OpcodeList1 and replaces an existing one')
             [CompletionResult]::new('--artist', '--artist', [CompletionResultType]::ParameterName, 'Set the artist tag')
             [CompletionResult]::new('--keep-mtime', '--keep-mtime', [CompletionResultType]::ParameterName, 'Keep mtime, read from EXIF with fallback to original file mtime')
             [CompletionResult]::new('--image-index', '--image-index', [CompletionResultType]::ParameterName, 'Select a specific image index (or ''all'') if file is a image container')
@@ -130,6 +131,7 @@ Register-ArgumentCompleter -Native -CommandName 'dnglab' -ScriptBlock {
             [CompletionResult]::new('--jobs', '--jobs', [CompletionResultType]::ParameterName, 'Number of files to convert in parallel (0 = auto)')
             [CompletionResult]::new('--dcp-file', '--dcp-file', [CompletionResultType]::ParameterName, 'Camera profile (DCP) that replaces the primary camera profile')
             [CompletionResult]::new('--extra-dcp-file', '--extra-dcp-file', [CompletionResultType]::ParameterName, 'Camera profile (DCP) to embed as extra camera profile, can be repeated')
+            [CompletionResult]::new('--bad-pixels', '--bad-pixels', [CompletionResultType]::ParameterName, 'Bad pixel list in the format of dcraw: column, row and UNIX time per line, relative to the ActiveArea. It is written as FixBadPixelsList to OpcodeList1 and replaces an existing one')
             [CompletionResult]::new('-d', '-d', [CompletionResultType]::ParameterName, 'Log level')
             [CompletionResult]::new('--loglevel', '--loglevel', [CompletionResultType]::ParameterName, 'Log level')
             [CompletionResult]::new('--profile-path', '--profile-path', [CompletionResultType]::ParameterName, 'Directory with profile TOML files')

@@ -9,7 +9,11 @@ use image::{ImageEncoder, codecs::jpeg::JpegEncoder};
 use crate::{
   RawImage,
   decoders::{Orientation, RawDecodeParams, RawMetadata, validate_image_index},
-  dng::{CropMode, dcp::CameraProfileFile, opcodes::OpcodeSelector},
+  dng::{
+    CropMode,
+    dcp::CameraProfileFile,
+    opcodes::{Opcode, OpcodeSelector, OpcodeStage},
+  },
   formats::tiff::{DirectoryWriter, TiffWriter},
   imgop::{
     Dim2, Point, Rect,
@@ -82,6 +86,9 @@ pub struct RawProcessingParams {
   pub keep_mtime: bool,
   /// DNG opcodes to remove before processing
   pub remove_dng_opcodes: Vec<OpcodeSelector>,
+  /// DNG opcodes to insert after `remove_dng_opcodes`, each replaces the
+  /// opcodes with its ID in the list of its stage
+  pub replace_dng_opcodes: Vec<(OpcodeStage, Opcode)>,
   pub format: ProcessedImageFormat,
   /// JPEG quality (1-100)
   pub jpeg_quality: u8,
@@ -118,6 +125,7 @@ impl Default for RawProcessingParams {
       index: 0,
       keep_mtime: false,
       remove_dng_opcodes: Vec::new(),
+      replace_dng_opcodes: Vec::new(),
       format: ProcessedImageFormat::Tiff,
       jpeg_quality: 94,
       color_space: OutputSpace::Srgb,
@@ -141,6 +149,7 @@ pub fn process_raw_image<W: Write + Seek + Send>(raw: &Path, image_file: &mut W,
   validate_image_index(decoder.as_ref(), &raw_params)?;
   let mut rawimage = decoder.raw_image(&rawfile, &raw_params, false)?;
   rawimage.remove_opcodes(&params.remove_dng_opcodes);
+  rawimage.replace_opcodes(&params.replace_dng_opcodes);
   if let Some(dcp) = &params.dcp {
     dcp.check_camera(&rawimage);
     rawimage.set_primary_camera_profile(dcp.profile.clone())?;

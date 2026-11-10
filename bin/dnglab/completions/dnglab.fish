@@ -72,6 +72,7 @@ complete -c dnglab -n "__fish_dnglab_using_subcommand analyze" -l yaml -d 'Forma
 complete -c dnglab -n "__fish_dnglab_using_subcommand analyze" -s v -d 'Print status for every file'
 complete -c dnglab -n "__fish_dnglab_using_subcommand analyze" -s h -l help -d 'Print help (see more with \'--help\')'
 complete -c dnglab -n "__fish_dnglab_using_subcommand process-raw" -l remove-dng-opcodes -d 'Remove DNG opcodes, as comma separated [<list>:]<opcode> (e.g. WarpRectilinear,2:GainMap)' -r
+complete -c dnglab -n "__fish_dnglab_using_subcommand process-raw" -l bad-pixels -d 'Bad pixel list in the format of dcraw: column, row and UNIX time per line, relative to the ActiveArea. It is written as FixBadPixelsList to OpcodeList1 and replaces an existing one' -r -F
 complete -c dnglab -n "__fish_dnglab_using_subcommand process-raw" -l artist -d 'Set the artist tag' -r
 complete -c dnglab -n "__fish_dnglab_using_subcommand process-raw" -l keep-mtime -d 'Keep mtime, read from EXIF with fallback to original file mtime' -r -f -a "true\t''
 false\t''"
@@ -185,6 +186,7 @@ none\t''"
 complete -c dnglab -n "__fish_dnglab_using_subcommand convert" -s j -l jobs -d 'Number of files to convert in parallel (0 = auto)' -r
 complete -c dnglab -n "__fish_dnglab_using_subcommand convert" -l dcp-file -d 'Camera profile (DCP) that replaces the primary camera profile' -r -F
 complete -c dnglab -n "__fish_dnglab_using_subcommand convert" -l extra-dcp-file -d 'Camera profile (DCP) to embed as extra camera profile, can be repeated' -r -F
+complete -c dnglab -n "__fish_dnglab_using_subcommand convert" -l bad-pixels -d 'Bad pixel list in the format of dcraw: column, row and UNIX time per line, relative to the ActiveArea. It is written as FixBadPixelsList to OpcodeList1 and replaces an existing one' -r -F
 complete -c dnglab -n "__fish_dnglab_using_subcommand convert" -s d -l loglevel -d 'Log level' -r -f -a "error\t''
 warn\t''
 info\t''
