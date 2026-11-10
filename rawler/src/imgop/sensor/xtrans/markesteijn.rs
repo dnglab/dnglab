@@ -16,10 +16,7 @@ use crate::{
   cfa::{CFA_COLOR_B, CFA_COLOR_G, CFA_COLOR_R, PlaneColor},
   imgop::{
     Dim2, Point, Rect,
-    cielab::XYZ_to_lab,
-    matrix::multiply_row1,
-    sensor::Demosaic,
-    xyz::{CIE_1931_TRISTIMULUS_D65, SRGB_TO_XYZ_D65},
+    sensor::{Demosaic, lab::rgb_to_lab},
   },
   pixarray::{Color2D, DisjointRegionMut, ImageRegion, ImageRegionMut},
 };
@@ -1033,15 +1030,4 @@ fn rb_interpolation(
       }
     }
   }
-}
-
-/// Convert linear RGB to CIELab.
-///
-/// Uses a fixed sRGB/D65 matrix for the RGB→XYZ step. This is used by
-/// Markesteijn for homogeneity comparison — exact colorimetric accuracy
-/// is not required, only consistent relative distances.
-#[inline(always)]
-pub fn rgb_to_lab(rgb: &[f32; 3]) -> [f32; 3] {
-  let xyz = multiply_row1(&SRGB_TO_XYZ_D65, &rgb);
-  XYZ_to_lab(&xyz, &CIE_1931_TRISTIMULUS_D65)
 }

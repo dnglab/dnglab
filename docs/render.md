@@ -71,6 +71,7 @@ also crops to the largest opaque area of the transparency mask.
 | `steps` | all | Set of processing steps (`StepSet`) | `--steps`, `--skip-steps`, `--crop` |
 | `white_balance` | `BeforeDemosaic` | Where the white balance is applied | – |
 | `demosaic` | `Quality` | `Quality`, `Fast` or `Preview` (half size) | – |
+| `bayer_demosaic` | `Ppg` | Algorithm for Bayer RGB data at `Quality`: `Ppg` or `Ahd` | `--bayer-demosaic` |
 | `color_space` | sRGB | Output primaries and transfer function: sRGB, Adobe RGB, ProPhoto RGB | `--color-space` |
 | `denoise` | luma and chroma strength | Strength of the noise reduction | `--denoise-luma`, `--denoise-chroma` |
 | `sharpen` | `DEFAULT_SHARPEN` | Strength of the sharpening | `--sharpen` |
@@ -131,7 +132,7 @@ The planner makes these decisions first:
 
   | Sensor | `Quality` | `Fast` | `Preview` |
   | --- | --- | --- | --- |
-  | Bayer RGB | PPG | PPG | Superpixel, half size |
+  | Bayer RGB | `bayer_demosaic`: PPG or AHD | PPG | Superpixel, half size |
   | Bayer with 4 colors (CYGM, RGBE) | Bilinear, 4 planes | Bilinear, 4 planes | Superpixel, half size, 4 planes |
   | X-Trans | Markesteijn (3 passes) | Bilinear | Bilinear |
 
@@ -187,6 +188,14 @@ OpcodeList1, replacing an existing FixBadPixelsList:
 ### 4. Demosaic, FujiRotate and OpcodeList3
 
 - CFA data is demosaiced and cropped to the ActiveArea.
+- **Tiled algorithms:** AHD and Markesteijn interpolate from a neighbourhood of
+  pixels. They process the image in tiles in parallel, see
+  [`sensor/tiles.rs`](../rawler/src/imgop/sensor/tiles.rs): each tile reads its
+  core and a halo of pixels around it, and writes only its core. The halo covers
+  the reach of the algorithm (5 pixels for AHD), so the result doesn't depend on
+  the tiling. The tiles cover the image except a band of the width of the halo
+  at the edges, which is interpolated bilinearly from the 3x3 neighbourhood
+  ([`sensor/border.rs`](../rawler/src/imgop/sensor/border.rs) for AHD).
 - **Partial demosaic:** without operations on the whole stage 3 image (no
   OpcodeList3 and no Fuji rotation), only the DefaultCrop is demosaiced, plus a
   margin of 32 pixels for the interpolation.

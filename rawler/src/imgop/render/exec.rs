@@ -22,6 +22,7 @@ use crate::{
     sensor::{
       Demosaic,
       bayer::{
+        ahd::AhdDemosaic,
         bilinear::Bilinear4Channel,
         ppg::PPGDemosaic,
         superpixel::{Superpixel3Channel, Superpixel4Channel},
@@ -378,6 +379,7 @@ impl Executor {
     let pixels = image.view().region(roi);
     let demosaiced = match algorithm {
       DemosaicAlgorithm::Ppg => PPGDemosaic::new().demosaic(pixels, &cfa.cfa, &cfa.colors).into(),
+      DemosaicAlgorithm::Ahd => AhdDemosaic::new().demosaic(pixels, &cfa.cfa, &cfa.colors).into(),
       DemosaicAlgorithm::Bilinear4 => Bilinear4Channel::new().demosaic(pixels, &cfa.cfa, &cfa.colors).into(),
       DemosaicAlgorithm::XTransBilinear => XTransBilinearDemosaic::new().demosaic(pixels, &cfa.cfa, &cfa.colors).into(),
       DemosaicAlgorithm::Markesteijn => XTransMarkesteijnDemosaic::new_pass_3().demosaic(pixels, &cfa.cfa, &cfa.colors).into(),

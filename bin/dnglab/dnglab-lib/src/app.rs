@@ -15,6 +15,7 @@ use rawler::imgop::{
   denoise::DenoiseStrength,
   develop::{ProcessedImageFormat, ProcessingStep},
   highlights::HighlightMode,
+  render::BayerDemosaic,
   sharpen::DEFAULT_SHARPEN,
 };
 
@@ -408,6 +409,12 @@ fn process_raw_command() -> Command {
         .required(false)
         .value_parser(value_parser!(HighlightMode))
         .default_value("compress"),
+    )
+    .arg(
+      arg!(bayer_demosaic: --"bayer-demosaic" <algorithm> "Demosaic algorithm for Bayer sensors: ppg is fast, ahd interpolates along edges with fewer artifacts")
+        .required(false)
+        .value_parser(value_parser!(BayerDemosaic))
+        .default_value("ppg"),
     )
     .arg(
       arg!(dcp_file: --"dcp-file" <FILE> "Camera profile (DCP) to render the image with, replaces the primary camera profile")

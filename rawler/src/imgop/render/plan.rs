@@ -3,7 +3,7 @@
 
 //! Planning of the processing operations for an image
 
-use super::{DemosaicQuality, ProcessingStep, RenderOptions, RenderTarget, WhiteBalancePlacement};
+use super::{BayerDemosaic, DemosaicQuality, ProcessingStep, RenderOptions, RenderTarget, WhiteBalancePlacement};
 use crate::{
   RawImage,
   dng::{
@@ -96,6 +96,7 @@ pub(super) enum CameraMap {
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(super) enum DemosaicAlgorithm {
   Ppg,
+  Ahd,
   Bilinear4,
   XTransBilinear,
   Markesteijn,
@@ -135,7 +136,7 @@ pub fn plan(rawimage: &RawImage, options: &RenderOptions) -> crate::Result<Plan>
     DemosaicQuality::Preview if rawimage.fuji_rotation_width.is_some() && steps.contains(Step::FujiRotate) => DemosaicQuality::Fast,
     quality => quality,
   };
-  let demosaic = mosaic.map(|config| demosaic_algorithm(config, quality)).transpose()?;
+  let demosaic = mosaic.map(|config| demosaic_algorithm(config, quality, options.bayer_demosaic)).transpose()?;
   let channels = demosaic.map_or(rawimage.cpp, |(_, planes)| planes);
 
   // As shot white balance, images without it use an estimated one or the one
@@ -212,7 +213,7 @@ pub fn plan(rawimage: &RawImage, options: &RenderOptions) -> crate::Result<Plan>
       }
       let fuji_rotation_width = rawimage
         .fuji_rotation_width
-        .filter(|_| algorithm == DemosaicAlgorithm::Ppg && steps.contains(Step::FujiRotate));
+        .filter(|_| matches!(algorithm, DemosaicAlgorithm::Ppg | DemosaicAlgorithm::Ahd) && steps.contains(Step::FujiRotate));
       // Without operations on the whole stage 3 image, only the DefaultCrop is demosaiced
       cropped = crop_default && fuji_rotation_width.is_none() && !list3;
       ops.push(Op::Demosaic {
@@ -406,11 +407,13 @@ pub fn plan(rawimage: &RawImage, options: &RenderOptions) -> crate::Result<Plan>
   Ok(Plan { ops, extended_range })
 }
 
-/// Demosaic algorithm for a CFA and the number of color planes of its result
-fn demosaic_algorithm(config: &CFAConfig, quality: DemosaicQuality) -> crate::Result<(DemosaicAlgorithm, usize)> {
+/// Demosaic algorithm for a CFA and the number of color planes of its result,
+/// `bayer` is the algorithm for Bayer RGB data at [`DemosaicQuality::Quality`]
+fn demosaic_algorithm(config: &CFAConfig, quality: DemosaicQuality, bayer: BayerDemosaic) -> crate::Result<(DemosaicAlgorithm, usize)> {
   match config.sensor {
-    SensorType::Bayer if config.cfa.is_rgb() => match quality {
-      DemosaicQuality::Preview => Ok((DemosaicAlgorithm::Superpixel3, 3)),
+    SensorType::Bayer if config.cfa.is_rgb() => match (quality, bayer) {
+      (DemosaicQuality::Preview, _) => Ok((DemosaicAlgorithm::Superpixel3, 3)),
+      (DemosaicQuality::Quality, BayerDemosaic::Ahd) => Ok((DemosaicAlgorithm::Ahd, 3)),
       _ => Ok((DemosaicAlgorithm::Ppg, 3)),
     },
     SensorType::Bayer if config.cfa.unique_colors() == 4 => match quality {

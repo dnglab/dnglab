@@ -4,7 +4,7 @@
 .SH NAME
 dnglab\-process\-raw
 .SH SYNOPSIS
-\fBdnglab\-process\-raw\fR [\fB\-\-remove\-dng\-opcodes\fR] [\fB\-\-bad\-pixels\fR] [\fB\-\-artist\fR] [\fB\-\-keep\-mtime\fR] [\fB\-\-image\-index\fR] [\fB\-\-crop\fR] [\fB\-\-crop\-transparent\fR] [\fB\-\-format\fR] [\fB\-\-color\-space\fR] [\fB\-\-highlights\fR] [\fB\-\-dcp\-file\fR] [\fB\-\-jpeg\-quality\fR] [\fB\-\-denoise\-luma\fR] [\fB\-\-denoise\-chroma\fR] [\fB\-\-sharpen\fR] [\fB\-\-exposure\fR] [\fB\-\-auto\-exposure\fR] [\fB\-\-steps\fR] [\fB\-\-skip\-steps\fR] [\fB\-f\fR|\fB\-\-override\fR] [\fB\-r\fR|\fB\-\-recursive\fR] [\fB\-h\fR|\fB\-\-help\fR] <\fIINPUT\fR> <\fIOUTPUT\fR> 
+\fBdnglab\-process\-raw\fR [\fB\-\-remove\-dng\-opcodes\fR] [\fB\-\-bad\-pixels\fR] [\fB\-\-artist\fR] [\fB\-\-keep\-mtime\fR] [\fB\-\-image\-index\fR] [\fB\-\-crop\fR] [\fB\-\-crop\-transparent\fR] [\fB\-\-format\fR] [\fB\-\-color\-space\fR] [\fB\-\-highlights\fR] [\fB\-\-bayer\-demosaic\fR] [\fB\-\-dcp\-file\fR] [\fB\-\-jpeg\-quality\fR] [\fB\-\-denoise\-luma\fR] [\fB\-\-denoise\-chroma\fR] [\fB\-\-sharpen\fR] [\fB\-\-exposure\fR] [\fB\-\-auto\-exposure\fR] [\fB\-\-steps\fR] [\fB\-\-skip\-steps\fR] [\fB\-f\fR|\fB\-\-override\fR] [\fB\-r\fR|\fB\-\-recursive\fR] [\fB\-h\fR|\fB\-\-help\fR] <\fIINPUT\fR> <\fIOUTPUT\fR> 
 .SH DESCRIPTION
 .SH OPTIONS
 .TP
@@ -90,6 +90,19 @@ Highlights above white after the BaselineExposure: compress keeps their color wi
 compress
 .IP \(bu 2
 clip
+.RE
+.TP
+\fB\-\-bayer\-demosaic\fR \fI<algorithm>\fR [default: ppg]
+Demosaic algorithm for Bayer sensors: ppg is fast, ahd interpolates along edges with fewer artifacts
+.br
+
+.br
+\fIPossible values:\fR
+.RS 14
+.IP \(bu 2
+ppg
+.IP \(bu 2
+ahd
 .RE
 .TP
 \fB\-\-dcp\-file\fR \fI<FILE>\fR
