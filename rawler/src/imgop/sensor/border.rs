@@ -127,12 +127,12 @@ mod tests {
       for pattern in ["RGGB", "GBRG"] {
         let (cfa, colors) = (CFA::new(pattern), PlaneColor::new("RGB"));
         let mut out = Color2D::<f32, 3>::new(area.d.w, area.d.h);
-        interpolate_border(view.region(area), &cfa, &colors, &mut out, border).unwrap();
+        interpolate_border(view.region(area), &cfa, &colors, &mut out, border).expect("border interpolation");
         assert_border(&samples, width, area, &cfa, &colors, &out, border);
       }
       let (cfa, colors) = (CFA::new("CYGM"), PlaneColor::new("CYGM"));
       let mut out = Color2D::<f32, 4>::new(area.d.w, area.d.h);
-      interpolate_border(view.region(area), &cfa, &colors, &mut out, border).unwrap();
+      interpolate_border(view.region(area), &cfa, &colors, &mut out, border).expect("border interpolation");
       assert_border(&samples, width, area, &cfa, &colors, &out, border);
     }
   }
@@ -144,7 +144,7 @@ mod tests {
       let samples: Vec<f32> = (0..width * height).map(|i| (i + 1) as f32).collect();
       let view = ImageView::new(&samples, width, height, 1);
       let mut out = Color2D::<f32, 3>::new(width, height);
-      interpolate_border(view.into(), &cfa, &PlaneColor::new("RGB"), &mut out, 3).unwrap();
+      interpolate_border(view.into(), &cfa, &PlaneColor::new("RGB"), &mut out, 3).expect("border interpolation");
       assert_border(&samples, width, view.rect(), &cfa, &PlaneColor::new("RGB"), &out, 3);
     }
   }

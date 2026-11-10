@@ -207,13 +207,13 @@ mod tests {
       for pattern in ["RGGB", "BGGR", "GRBG", "GBRG"] {
         let rgb: Color2D<f32, 3> = BilinearDemosaic::new()
           .demosaic(view.region(area), &CFA::new(pattern), &PlaneColor::new("RGB"))
-          .unwrap();
+          .expect("demosaic");
         assert_bilinear(&samples, width, area, pattern, "RGB", &rgb);
       }
       for (pattern, colors) in [("CYGM", "CYGM"), ("ERBG", "RGBE")] {
         let planes: Color2D<f32, 4> = BilinearDemosaic::new()
           .demosaic(view.region(area), &CFA::new(pattern), &PlaneColor::new(colors))
-          .unwrap();
+          .expect("demosaic");
         assert_bilinear(&samples, width, area, pattern, colors, &planes);
       }
     }
@@ -227,11 +227,11 @@ mod tests {
       let view = ImageView::new(&samples, width, height, 1);
       let rgb: Color2D<f32, 3> = BilinearDemosaic::new()
         .demosaic(view.into(), &CFA::new("GRBG"), &PlaneColor::new("RGB"))
-        .unwrap();
+        .expect("demosaic");
       assert_bilinear(&samples, width, view.rect(), "GRBG", "RGB", &rgb);
       let planes: Color2D<f32, 4> = BilinearDemosaic::new()
         .demosaic(view.into(), &CFA::new("CYGM"), &PlaneColor::new("CYGM"))
-        .unwrap();
+        .expect("demosaic");
       assert_bilinear(&samples, width, view.rect(), "CYGM", "CYGM", &planes);
     }
   }

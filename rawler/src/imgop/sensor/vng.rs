@@ -398,7 +398,7 @@ mod tests {
   {
     algorithm
       .demosaic(ImageView::new(samples, width, height, 1).into(), &CFA::new(pattern), &PlaneColor::new(colors))
-      .unwrap()
+      .expect("demosaic")
   }
 
   /// Run `check` for each pattern with the number of planes of its colors
@@ -513,7 +513,7 @@ mod tests {
 
   #[test]
   fn phases_of_bayer_data() {
-    let phases = Phases::new(&CFA::new("RGGB"), &PlaneColor::new("RGB"), 3).unwrap();
+    let phases = Phases::new(&CFA::new("RGGB"), &PlaneColor::new("RGB"), 3).expect("phases");
     assert_eq!((phases.rows, phases.cols), (2, 2));
     let (red, green) = (&phases.phases[0], &phases.phases[1]);
     assert_eq!((red.own, green.own), (0, 1));
