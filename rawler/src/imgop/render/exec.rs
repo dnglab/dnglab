@@ -23,7 +23,7 @@ use crate::{
       Demosaic,
       bayer::{
         ahd::AhdDemosaic,
-        bilinear::Bilinear4Channel,
+        bilinear::BilinearDemosaic,
         ppg::PPGDemosaic,
         rcd::RcdDemosaic,
         superpixel::{Superpixel3Channel, Superpixel4Channel},
@@ -385,7 +385,10 @@ impl Executor {
       DemosaicAlgorithm::Rcd => RcdDemosaic::new().demosaic(pixels, &cfa.cfa, &cfa.colors).into(),
       DemosaicAlgorithm::Vng if cfa.colors.plane_count() == 4 => Demosaic::<f32, 4>::demosaic(&VngDemosaic::new(), pixels, &cfa.cfa, &cfa.colors).into(),
       DemosaicAlgorithm::Vng => Demosaic::<f32, 3>::demosaic(&VngDemosaic::new(), pixels, &cfa.cfa, &cfa.colors).into(),
-      DemosaicAlgorithm::Bilinear4 => Bilinear4Channel::new().demosaic(pixels, &cfa.cfa, &cfa.colors).into(),
+      DemosaicAlgorithm::Bilinear if cfa.colors.plane_count() == 4 => {
+        Demosaic::<f32, 4>::demosaic(&BilinearDemosaic::new(), pixels, &cfa.cfa, &cfa.colors).into()
+      }
+      DemosaicAlgorithm::Bilinear => Demosaic::<f32, 3>::demosaic(&BilinearDemosaic::new(), pixels, &cfa.cfa, &cfa.colors).into(),
       DemosaicAlgorithm::XTransBilinear => XTransBilinearDemosaic::new().demosaic(pixels, &cfa.cfa, &cfa.colors).into(),
       DemosaicAlgorithm::Markesteijn => XTransMarkesteijnDemosaic::new_pass_3().demosaic(pixels, &cfa.cfa, &cfa.colors).into(),
       DemosaicAlgorithm::Superpixel3 => Superpixel3Channel::new().demosaic(pixels, &cfa.cfa, &cfa.colors).into(),

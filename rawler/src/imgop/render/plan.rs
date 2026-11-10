@@ -99,7 +99,7 @@ pub(super) enum DemosaicAlgorithm {
   Ahd,
   Vng,
   Rcd,
-  Bilinear4,
+  Bilinear,
   XTransBilinear,
   Markesteijn,
   Superpixel3,
@@ -215,12 +215,10 @@ pub fn plan(rawimage: &RawImage, options: &RenderOptions) -> crate::Result<Plan>
       if crop_to_active_area && rawimage.active_area.is_some() && rawimage.fuji_rotation_width.is_some() {
         return Err("ActiveArea is not possible when rotation is not normalized".into());
       }
-      let fuji_rotation_width = rawimage.fuji_rotation_width.filter(|_| {
-        matches!(
-          algorithm,
-          DemosaicAlgorithm::Ppg | DemosaicAlgorithm::Ahd | DemosaicAlgorithm::Vng | DemosaicAlgorithm::Rcd
-        ) && steps.contains(Step::FujiRotate)
-      });
+      // Data of rotated sensors is rotated at full size
+      let fuji_rotation_width = rawimage
+        .fuji_rotation_width
+        .filter(|_| !algorithm.half_size() && steps.contains(Step::FujiRotate));
       // Without operations on the whole stage 3 image, only the DefaultCrop is demosaiced
       cropped = crop_default && fuji_rotation_width.is_none() && !list3;
       ops.push(Op::Demosaic {
@@ -424,12 +422,13 @@ fn demosaic_algorithm(config: &CFAConfig, quality: DemosaicQuality, bayer: Bayer
       (DemosaicQuality::Quality, BayerDemosaic::Ahd) => Ok((DemosaicAlgorithm::Ahd, 3)),
       (DemosaicQuality::Quality, BayerDemosaic::Vng) => Ok((DemosaicAlgorithm::Vng, 3)),
       (DemosaicQuality::Quality, BayerDemosaic::Rcd) => Ok((DemosaicAlgorithm::Rcd, 3)),
+      (DemosaicQuality::Quality, BayerDemosaic::Bilinear) => Ok((DemosaicAlgorithm::Bilinear, 3)),
       _ => Ok((DemosaicAlgorithm::Ppg, 3)),
     },
     SensorType::Bayer if config.cfa.unique_colors() == 4 => match quality {
       DemosaicQuality::Preview => Ok((DemosaicAlgorithm::Superpixel4, 4)),
       DemosaicQuality::Quality => Ok((DemosaicAlgorithm::Vng, 4)),
-      DemosaicQuality::Fast => Ok((DemosaicAlgorithm::Bilinear4, 4)),
+      DemosaicQuality::Fast => Ok((DemosaicAlgorithm::Bilinear, 4)),
     },
     SensorType::Xtrans if config.cfa.is_rgb() => match (quality, xtrans) {
       (DemosaicQuality::Quality, XTransDemosaic::Markesteijn) => Ok((DemosaicAlgorithm::Markesteijn, 3)),

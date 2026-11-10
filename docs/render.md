@@ -71,7 +71,7 @@ also crops to the largest opaque area of the transparency mask.
 | `steps` | all | Set of processing steps (`StepSet`) | `--steps`, `--skip-steps`, `--crop` |
 | `white_balance` | `BeforeDemosaic` | Where the white balance is applied | – |
 | `demosaic` | `Quality` | `Quality`, `Fast` or `Preview` (half size) | – |
-| `bayer_demosaic` | `Ppg` | Algorithm for Bayer RGB data at `Quality`: `Ppg`, `Ahd`, `Vng` or `Rcd` | `--bayer-demosaic` |
+| `bayer_demosaic` | `Ppg` | Algorithm for Bayer RGB data at `Quality`: `Ppg`, `Ahd`, `Vng`, `Rcd` or `Bilinear` | `--bayer-demosaic` |
 | `xtrans_demosaic` | `Markesteijn` | Algorithm for X-Trans data at `Quality`: `Markesteijn` or `Vng` | `--xtrans-demosaic` |
 | `color_space` | sRGB | Output primaries and transfer function: sRGB, Adobe RGB, ProPhoto RGB | `--color-space` |
 | `denoise` | luma and chroma strength | Strength of the noise reduction | `--denoise-luma`, `--denoise-chroma` |
@@ -133,7 +133,7 @@ The planner makes these decisions first:
 
   | Sensor | `Quality` | `Fast` | `Preview` |
   | --- | --- | --- | --- |
-  | Bayer RGB | `bayer_demosaic`: PPG, AHD, VNG or RCD | PPG | Superpixel, half size |
+  | Bayer RGB | `bayer_demosaic`: PPG, AHD, VNG, RCD or bilinear | PPG | Superpixel, half size |
   | Bayer with 4 colors (CYGM, RGBE) | VNG, 4 planes | Bilinear, 4 planes | Superpixel, half size, 4 planes |
   | X-Trans | `xtrans_demosaic`: Markesteijn (3 passes) or VNG | Bilinear | Bilinear |
 
