@@ -395,7 +395,7 @@ impl<'a> Rw2Decoder<'a> {
       6 => decode_panasonic_v6(buf, width, height, bps, dummy)?,
       7 => decode_panasonic_v7(buf, width, height, bps, dummy)?,
       8 => decode_panasonic_v8(file, width, height, bps, ifd, dummy)?,
-      _ => todo!("Format {} is not implemented", raw_format), // TODO: return error
+      _ => return Err(RawlerError::DecoderFailed(format!("RW2: raw format {} is not supported", raw_format))),
     })
   }
 }
