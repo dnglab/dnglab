@@ -657,6 +657,48 @@ mod tests {
   }
 
   #[test]
+  fn plan_applies_rgb_tables() -> crate::Result<()> {
+    use crate::camera_profile::{CameraProfile, RgbTable, RgbTables, TableData};
+    use crate::imgop::xyz::Illuminant;
+
+    /// The rendering of the color map has RGBTables
+    fn has_tables(rawimage: &RawImage, options: &RenderOptions) -> crate::Result<bool> {
+      let mut plan = plan(rawimage, options)?;
+      let Some(Op::CameraToRgb { ops, .. }) = plan.ops.pop() else {
+        panic!("color map expected");
+      };
+      Ok(ops.iter().any(|op| matches!(op, PixelOp::Profile(render) if render.rgb_tables.is_some())))
+    }
+
+    let mut rawimage = rggb_rawimage();
+    rawimage.camera_profiles = vec![CameraProfile {
+      calibration_illuminant: [Some(Illuminant::D65), None, None],
+      color_matrix: [Some(vec![1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0]), None, None],
+      rgb_tables: Some(RgbTables {
+        composite_method: 0,
+        tables: vec![RgbTable {
+          semantic_name: None,
+          divisions: 2,
+          gamma_encoding: 0,
+          color_primaries: 4,
+          gamut_extension: 0,
+          data: TableData::F32(vec![0.5; 24]),
+        }],
+      }),
+      ..Default::default()
+    }];
+    // Without a tone curve, the RGBTables alone are rendered
+    let steps = StepSet::all().without(ProcessingStep::ToneCurve);
+    assert!(has_tables(&rawimage, &RenderOptions { steps, ..Default::default() })?);
+    let without_tables = RenderOptions {
+      steps: steps.without(ProcessingStep::ProfileRender),
+      ..Default::default()
+    };
+    assert!(!has_tables(&rawimage, &without_tables)?);
+    Ok(())
+  }
+
+  #[test]
   fn plan_applies_denoise() -> crate::Result<()> {
     use crate::{imgop::denoise::DenoiseStrength, rawimage::ColorimetricReference};
 
