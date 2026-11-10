@@ -1059,6 +1059,10 @@ impl<'a> IiqDecoder<'a> {
 
   /// Decoder for IIQ uncompressed
   fn decode_uncompressed(buffer: &[u8], width: usize, height: usize, bits: u8, dummy: bool) -> std::result::Result<PixU16, String> {
+    let need = width * height * 2;
+    if buffer.len() < need {
+      return Err(format!("IIQ: buffer too short ({} < {})", buffer.len(), need));
+    }
     let value_shift: u32 = MAX_BITDEPTH - (bits as u32);
     decompress_lines_fn(
       width,
@@ -1073,6 +1077,17 @@ impl<'a> IiqDecoder<'a> {
     )
   }
 
+  /// Data of a row of compressed IIQ files, at the offset from the strip table
+  fn row_data<'b>(buffer: &'b [u8], strips: &[u8], row: usize) -> std::result::Result<&'b [u8], String> {
+    let offset = strips
+      .get(row * 4..row * 4 + 4)
+      .map(|bytes| LEu32(bytes, 0) as usize)
+      .ok_or_else(|| format!("IIQ: strip table has no offset for row {}", row))?;
+    buffer
+      .get(offset..)
+      .ok_or_else(|| format!("IIQ: offset {} of row {} is behind the end of the data", offset, row))
+  }
+
   /// Decoder for IIQ L / S data
   pub(crate) fn decode_compressed(buffer: &[u8], strips: &[u8], width: usize, height: usize, bits: u8, dummy: bool) -> std::result::Result<PixU16, String> {
     let value_shift: u32 = MAX_BITDEPTH - (bits as u32);
@@ -1082,8 +1097,7 @@ impl<'a> IiqDecoder<'a> {
       height,
       dummy,
       &(|out: &mut [u16], row| {
-        let offset = LEu32(strips, row * 4) as usize;
-        let mut pump = BitPumpMSB32::new(&buffer[offset..]);
+        let mut pump = BitPumpMSB32::new(Self::row_data(buffer, strips, row)?);
         let mut pred = [0_u32; 2];
         let mut len = [0_u32; 2];
         for (col, pixout) in out.chunks_exact_mut(1).enumerate() {
@@ -1125,8 +1139,7 @@ impl<'a> IiqDecoder<'a> {
       height,
       dummy,
       &(|out: &mut [u16], row| {
-        let offset = LEu32(strips, row * 4) as usize;
-        let mut pump = BitPumpMSB32::new(&buffer[offset..]);
+        let mut pump = BitPumpMSB32::new(Self::row_data(buffer, strips, row)?);
         let base_bits = pump.get_bits(16)? & 7; // first 3 bits
         let mut bit_check: [u32; 2] = [0, 0]; // for even and odd pixels
         let mut prev_pix_value = [0, 0]; // for even and odd pixels
