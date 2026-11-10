@@ -113,7 +113,9 @@ impl<'a> Decoder for SrwDecoder<'a> {
         },
         Some(x) => {
           let coffset = x.force_usize(0);
-          assert!(coffset > 0, "Surely this can't be the start of the file");
+          if coffset == 0 {
+            return Err(RawlerError::DecoderFailed("SRW1: line offset table can't be at the start of the file".into()));
+          }
           let loffsets = file.subview_until_eof(coffset as u64)?;
           SrwDecoder::decode_srw1(&src, loffsets, width, height, dummy)?
         }
@@ -155,8 +157,15 @@ impl<'a> SrwDecoder<'a> {
 
     for row in 0..height {
       let mut len: [u32; 4] = [if row < 2 { 7 } else { 4 }; 4];
-      let loffset = LEu32(loffsets, row * 4) as usize;
-      let mut pump = BitPumpMSB32::new(&buf[loffset..]);
+      let loffset = loffsets
+        .get(row * 4..row * 4 + 4)
+        .map(|bytes| LEu32(bytes, 0) as usize)
+        .ok_or_else(|| RawlerError::DecoderFailed(format!("SRW1: line offset table has no offset for row {}", row)))?;
+      let mut pump = BitPumpMSB32::new(
+        buf
+          .get(loffset..)
+          .ok_or_else(|| RawlerError::DecoderFailed(format!("SRW1: offset {} of row {} is behind the end of the data", loffset, row)))?,
+      );
 
       let img = width * row;
       let img_up = width * (cmp::max(1, row) - 1);
@@ -170,7 +179,8 @@ impl<'a> SrwDecoder<'a> {
         for (i, op) in ops.iter().enumerate() {
           match *op {
             3 => len[i] = pump.get_bits(4)?,
-            2 => len[i] -= 1,
+            // Wraps for 0, which fails with ExcessiveBits in the pump
+            2 => len[i] = len[i].wrapping_sub(1),
             1 => len[i] += 1,
             _ => {}
           }
