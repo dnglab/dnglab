@@ -766,7 +766,7 @@ impl<'a> NefDecoder<'a> {
     let curve = LookupTable::new(&points[0..max]);
 
     let mut pump = BitPumpMSB::new(src);
-    let mut random = pump.peek_bits(24);
+    let mut random = pump.peek_bits(24)?;
 
     for row in 0..height {
       if split > 0 && row == split {

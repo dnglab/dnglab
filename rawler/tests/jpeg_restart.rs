@@ -285,37 +285,37 @@ fn trailing_ff_does_not_panic_or_discard_pixels() {
 fn jpeg_bit_pump_resumes_after_restart_markers() {
   let data = [0x12, 0xff, 0xd0, 0x34, 0xff, 0xff, 0xd1, 0x56];
   let mut pump = BitPumpJPEG::new(&data);
-  assert_eq!(pump.get_bits(8), 0x12);
+  assert_eq!(pump.get_bits(8).unwrap(), 0x12);
   pump.consume_restart_marker(0).unwrap();
-  assert_eq!(pump.get_bits(8), 0x34);
+  assert_eq!(pump.get_bits(8).unwrap(), 0x34);
   pump.consume_restart_marker(1).unwrap();
-  assert_eq!(pump.get_bits(8), 0x56);
+  assert_eq!(pump.get_bits(8).unwrap(), 0x56);
 }
 
 #[test]
 fn jpeg_bit_pump_preserves_stuffed_ff_before_restart() {
   let data = [0xff, 0, 0xaa, 0xff, 0xd0, 0xbb];
   let mut pump = BitPumpJPEG::new(&data);
-  assert_eq!(pump.get_bits(16), 0xffaa);
+  assert_eq!(pump.get_bits(16).unwrap(), 0xffaa);
   pump.consume_restart_marker(0).unwrap();
-  assert_eq!(pump.get_bits(8), 0xbb);
+  assert_eq!(pump.get_bits(8).unwrap(), 0xbb);
 }
 
 #[test]
 fn jpeg_bit_pump_allows_lookahead_without_consuming_synthetic_bits() {
   let data = [0xa5, 0xff, 0xd0, 0x34];
   let mut pump = BitPumpJPEG::new(&data);
-  assert_eq!(pump.get_bits(4), 0xa);
-  pump.peek_bits(16); // Huffman lookup may peek past the marker.
+  assert_eq!(pump.get_bits(4).unwrap(), 0xa);
+  pump.peek_bits(16).unwrap(); // Huffman lookup may peek past the marker.
   pump.consume_restart_marker(0).unwrap();
-  assert_eq!(pump.get_bits(8), 0x34);
+  assert_eq!(pump.get_bits(8).unwrap(), 0x34);
 }
 
 #[test]
 fn jpeg_bit_pump_rejects_consumed_synthetic_bits_before_restart() {
   let data = [0xa5, 0xff, 0xd0, 0x34];
   let mut pump = BitPumpJPEG::new(&data);
-  pump.get_bits(16);
+  pump.get_bits(16).unwrap();
   assert!(pump.consume_restart_marker(0).unwrap_err().contains("Truncated JPEG entropy data before RST0"));
 }
 
@@ -323,7 +323,7 @@ fn jpeg_bit_pump_rejects_consumed_synthetic_bits_before_restart() {
 fn jpeg_bit_pump_rejects_invalid_or_truncated_restart_marker() {
   let data = [0x12, 0xff];
   let mut pump = BitPumpJPEG::new(&data);
-  pump.get_bits(8);
+  pump.get_bits(8).unwrap();
   assert!(pump.consume_restart_marker(8).unwrap_err().contains("Invalid JPEG restart marker index"));
   assert!(pump.consume_restart_marker(0).unwrap_err().contains("Truncated JPEG restart marker"));
 }
@@ -332,7 +332,7 @@ fn jpeg_bit_pump_rejects_invalid_or_truncated_restart_marker() {
 fn end_of_scan_diagnostics_accept_standard_and_legacy_padding() {
   for data in [[0xaf, 0xff, 0xd9], [0xa0, 0xff, 0xd9]] {
     let mut pump = BitPumpJPEG::new(&data);
-    pump.get_bits(4);
+    pump.get_bits(4).unwrap();
     pump.validate_end_of_scan().unwrap();
   }
 }
@@ -345,7 +345,7 @@ fn end_of_scan_diagnostics_report_both_short_and_long_trailing_data() {
     (&[0xa5, 0xaa][..], "Unexpected trailing JPEG entropy data"),
   ] {
     let mut pump = BitPumpJPEG::new(data);
-    pump.get_bits(4);
+    pump.get_bits(4).unwrap();
     assert!(pump.validate_end_of_scan().unwrap_err().contains(message));
   }
 }
@@ -353,7 +353,7 @@ fn end_of_scan_diagnostics_report_both_short_and_long_trailing_data() {
 #[test]
 fn end_of_scan_diagnostics_report_truncation() {
   let mut pump = BitPumpJPEG::new(&[0xff, 0xd9]);
-  pump.get_bits(1);
+  pump.get_bits(1).unwrap();
   assert!(pump.validate_end_of_scan().unwrap_err().contains("Truncated JPEG entropy data"));
 }
 

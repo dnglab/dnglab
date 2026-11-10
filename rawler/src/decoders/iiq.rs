@@ -1093,19 +1093,19 @@ impl<'a> IiqDecoder<'a> {
           } else if col & 7 == 0 {
             for i in 0..2 {
               let mut j: usize = 0;
-              while j < 5 && pump.get_bits(1) == 0 {
+              while j < 5 && pump.get_bits(1)? == 0 {
                 j += 1
               }
               if j > 0 {
-                len[i] = lens[(j - 1) * 2 + pump.get_bits(1) as usize];
+                len[i] = lens[(j - 1) * 2 + pump.get_bits(1)? as usize];
               }
             }
           }
           let i = len[col & 1];
           pred[col & 1] = if i == 14 {
-            pump.get_bits(16)
+            pump.get_bits(16)?
           } else {
-            pred[col & 1] + pump.get_bits(i) + 1 - (1 << (i - 1))
+            pred[col & 1] + pump.get_bits(i)? + 1 - (1 << (i - 1))
           };
           pixout[0] = (pred[col & 1] as u16) << value_shift;
         }
@@ -1127,7 +1127,7 @@ impl<'a> IiqDecoder<'a> {
       &(|out: &mut [u16], row| {
         let offset = LEu32(strips, row * 4) as usize;
         let mut pump = BitPumpMSB32::new(&buffer[offset..]);
-        let base_bits = pump.get_bits(16) & 7; // first 3 bits
+        let base_bits = pump.get_bits(16)? & 7; // first 3 bits
         let mut bit_check: [u32; 2] = [0, 0]; // for even and odd pixels
         let mut prev_pix_value = [0, 0]; // for even and odd pixels
 
@@ -1138,7 +1138,7 @@ impl<'a> IiqDecoder<'a> {
           if cluster.len() == 8 {
             // Initialize the bit_check values for even and odd.
             for i in 0..bit_check.len() {
-              let idx = pump.peek_bits(7) as usize;
+              let idx = pump.peek_bits(7)? as usize;
               pump.consume_bits(2);
               if idx >= 32 {
                 // If idx is larger then lookup array, the value
@@ -1153,7 +1153,7 @@ impl<'a> IiqDecoder<'a> {
             }
 
             let pump_savepoint = pump.clone(); // savepoint for error recovery
-            let x = pump.peek_bits(3) as usize; // 3 bits are max 7, so it's safe as array index
+            let x = pump.peek_bits(3)? as usize; // 3 bits are max 7, so it's safe as array index
             pump.consume_bits(SV2_USED_CORR[x]);
 
             let nbits = base_bits + SV2_EXTRA_BITS[x];
@@ -1171,10 +1171,10 @@ impl<'a> IiqDecoder<'a> {
             for i in 0..8 {
               let value = if bit_check[i & 1] == 9 {
                 // Just get the value straight out the bit pump
-                pump.get_bits(14)
+                pump.get_bits(14)?
               } else {
                 // Otherwise reconstruct the value
-                let tmp = prev_pix_value[i & 1] + (pump.get_bits(nbits) << corr[i & 1]) - diff[i & 1];
+                let tmp = prev_pix_value[i & 1] + (pump.get_bits(nbits)? << corr[i & 1]) - diff[i & 1];
                 check_val |= tmp; // Apply to checker
                 tmp
               };
@@ -1190,10 +1190,10 @@ impl<'a> IiqDecoder<'a> {
               for i in 0..8 {
                 let value = if bit_check[i & 1] == 9 {
                   // Just get the value straight out the bit pump
-                  pump.get_bits(14)
+                  pump.get_bits(14)?
                 } else {
                   // Otherwise reconstruct the value
-                  let tmp = prev_pix_value[i & 1] as i32 + (pump.get_bits(nbits) << corr[i & 1]) as i32 - diff[i & 1] as i32;
+                  let tmp = prev_pix_value[i & 1] as i32 + (pump.get_bits(nbits)? << corr[i & 1]) as i32 - diff[i & 1] as i32;
                   clamp(tmp as i32, 0, 0x3FFF) as u32
                 };
                 cluster[i] = (value as u16) << value_shift;
@@ -1203,7 +1203,7 @@ impl<'a> IiqDecoder<'a> {
           } else {
             // Not a full cluster, just take the full values from the bit pump
             for pix in cluster.iter_mut() {
-              *pix = (pump.get_bits(14) as u16) << value_shift;
+              *pix = (pump.get_bits(14)? as u16) << value_shift;
             }
           }
         }

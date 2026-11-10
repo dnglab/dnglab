@@ -62,41 +62,41 @@ pub(crate) fn decode_panasonic_v6(buf: &[u8], width: usize, height: usize, bps: 
         match bps {
           14 => {
             // We fill from reverse, because bitstream is reversed
-            pump.get_bits(4); // padding bits, ignore it
-            pixelbuffer[13] = pump.get_bits(10) as u16;
-            pixelbuffer[12] = pump.get_bits(10) as u16;
-            pixelbuffer[11] = pump.get_bits(10) as u16;
-            pixelbuffer[10] = pump.get_bits(2) as u16;
-            pixelbuffer[9] = pump.get_bits(10) as u16;
-            pixelbuffer[8] = pump.get_bits(10) as u16;
-            pixelbuffer[7] = pump.get_bits(10) as u16;
-            pixelbuffer[6] = pump.get_bits(2) as u16;
-            pixelbuffer[5] = pump.get_bits(10) as u16;
-            pixelbuffer[4] = pump.get_bits(10) as u16;
-            pixelbuffer[3] = pump.get_bits(10) as u16;
-            pixelbuffer[2] = pump.get_bits(2) as u16;
-            pixelbuffer[1] = pump.get_bits(14) as u16;
-            pixelbuffer[0] = pump.get_bits(14) as u16;
+            pump.get_bits(4)?; // padding bits, ignore it
+            pixelbuffer[13] = pump.get_bits(10)? as u16;
+            pixelbuffer[12] = pump.get_bits(10)? as u16;
+            pixelbuffer[11] = pump.get_bits(10)? as u16;
+            pixelbuffer[10] = pump.get_bits(2)? as u16;
+            pixelbuffer[9] = pump.get_bits(10)? as u16;
+            pixelbuffer[8] = pump.get_bits(10)? as u16;
+            pixelbuffer[7] = pump.get_bits(10)? as u16;
+            pixelbuffer[6] = pump.get_bits(2)? as u16;
+            pixelbuffer[5] = pump.get_bits(10)? as u16;
+            pixelbuffer[4] = pump.get_bits(10)? as u16;
+            pixelbuffer[3] = pump.get_bits(10)? as u16;
+            pixelbuffer[2] = pump.get_bits(2)? as u16;
+            pixelbuffer[1] = pump.get_bits(14)? as u16;
+            pixelbuffer[0] = pump.get_bits(14)? as u16;
           }
           12 => {
-            pixelbuffer[17] = pump.get_bits(8) as u16;
-            pixelbuffer[16] = pump.get_bits(8) as u16;
-            pixelbuffer[15] = pump.get_bits(8) as u16;
-            pixelbuffer[14] = pump.get_bits(2) as u16;
-            pixelbuffer[13] = pump.get_bits(8) as u16;
-            pixelbuffer[12] = pump.get_bits(8) as u16;
-            pixelbuffer[11] = pump.get_bits(8) as u16;
-            pixelbuffer[10] = pump.get_bits(2) as u16;
-            pixelbuffer[9] = pump.get_bits(8) as u16;
-            pixelbuffer[8] = pump.get_bits(8) as u16;
-            pixelbuffer[7] = pump.get_bits(8) as u16;
-            pixelbuffer[6] = pump.get_bits(2) as u16;
-            pixelbuffer[5] = pump.get_bits(8) as u16;
-            pixelbuffer[4] = pump.get_bits(8) as u16;
-            pixelbuffer[3] = pump.get_bits(8) as u16;
-            pixelbuffer[2] = pump.get_bits(2) as u16;
-            pixelbuffer[1] = pump.get_bits(12) as u16;
-            pixelbuffer[0] = pump.get_bits(12) as u16;
+            pixelbuffer[17] = pump.get_bits(8)? as u16;
+            pixelbuffer[16] = pump.get_bits(8)? as u16;
+            pixelbuffer[15] = pump.get_bits(8)? as u16;
+            pixelbuffer[14] = pump.get_bits(2)? as u16;
+            pixelbuffer[13] = pump.get_bits(8)? as u16;
+            pixelbuffer[12] = pump.get_bits(8)? as u16;
+            pixelbuffer[11] = pump.get_bits(8)? as u16;
+            pixelbuffer[10] = pump.get_bits(2)? as u16;
+            pixelbuffer[9] = pump.get_bits(8)? as u16;
+            pixelbuffer[8] = pump.get_bits(8)? as u16;
+            pixelbuffer[7] = pump.get_bits(8)? as u16;
+            pixelbuffer[6] = pump.get_bits(2)? as u16;
+            pixelbuffer[5] = pump.get_bits(8)? as u16;
+            pixelbuffer[4] = pump.get_bits(8)? as u16;
+            pixelbuffer[3] = pump.get_bits(8)? as u16;
+            pixelbuffer[2] = pump.get_bits(2)? as u16;
+            pixelbuffer[1] = pump.get_bits(12)? as u16;
+            pixelbuffer[0] = pump.get_bits(12)? as u16;
           }
           _ => unreachable!(),
         }

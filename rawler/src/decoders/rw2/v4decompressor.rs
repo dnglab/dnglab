@@ -1,6 +1,10 @@
-use crate::{decoders::*, decompressors::decompress_strips_fn, pumps::BitPump};
+use crate::{
+  decoders::*,
+  decompressors::decompress_strips_fn,
+  pumps::{BitPump, BitPumpError, check_bits},
+};
 
-pub(crate) fn decode_panasonic_v4(buf: &[u8], width: usize, height: usize, split: bool, dummy: bool) -> PixU16 {
+pub(crate) fn decode_panasonic_v4(buf: &[u8], width: usize, height: usize, split: bool, dummy: bool) -> std::result::Result<PixU16, String> {
   decompress_strips_fn(
     width,
     height,
@@ -12,7 +16,7 @@ pub(crate) fn decode_panasonic_v4(buf: &[u8], width: usize, height: usize, split
       let src = &buf[blocks * 0x4000..];
       let mut pump = BitPumpPanasonic::new(src, split);
       for _ in 0..(skip % 0x4000) {
-        pump.get_bits(8);
+        pump.get_bits(8)?;
       }
 
       let mut sh: i32 = 0;
@@ -22,10 +26,10 @@ pub(crate) fn decode_panasonic_v4(buf: &[u8], width: usize, height: usize, split
 
         for i in 0..14 {
           if (i % 3) == 2 {
-            sh = 4 >> (3 - pump.get_bits(2));
+            sh = 4 >> (3 - pump.get_bits(2)?);
           }
           if nonz[i & 1] != 0 {
-            let j = pump.get_bits(8) as i32;
+            let j = pump.get_bits(8)? as i32;
             if j != 0 {
               pred[i & 1] -= 0x80 << sh;
               if pred[i & 1] < 0 || sh == 4 {
@@ -34,9 +38,9 @@ pub(crate) fn decode_panasonic_v4(buf: &[u8], width: usize, height: usize, split
               pred[i & 1] += j << sh;
             }
           } else {
-            nonz[i & 1] = pump.get_bits(8) as i32;
+            nonz[i & 1] = pump.get_bits(8)? as i32;
             if nonz[i & 1] != 0 || i > 11 {
-              pred[i & 1] = (nonz[i & 1] << 4) | (pump.get_bits(4) as i32);
+              pred[i & 1] = (nonz[i & 1] << 4) | (pump.get_bits(4)? as i32);
             }
           }
           out[i] = pred[i & 1] as u16;
@@ -45,7 +49,6 @@ pub(crate) fn decode_panasonic_v4(buf: &[u8], width: usize, height: usize, split
       Ok(())
     }),
   )
-  .expect("Failed to decode") // Decoder should never fail
 }
 
 pub struct BitPumpPanasonic<'a> {
@@ -56,6 +59,9 @@ pub struct BitPumpPanasonic<'a> {
 }
 
 impl<'a> BitPumpPanasonic<'a> {
+  /// The 16-bit window, shifted by up to 7 bits, holds at least 9 bits
+  const MAX_PEEK_BITS: u32 = 9;
+
   pub fn new(src: &'a [u8], split: bool) -> BitPumpPanasonic<'a> {
     BitPumpPanasonic {
       buffer: src,
@@ -67,8 +73,12 @@ impl<'a> BitPumpPanasonic<'a> {
 }
 
 impl<'a> BitPump for BitPumpPanasonic<'a> {
-  fn peek_bits(&mut self, num: u32) -> u32 {
+  fn peek_bits(&mut self, num: u32) -> std::result::Result<u32, BitPumpError> {
+    check_bits(num, Self::MAX_PEEK_BITS)?;
     if num > self.nbits {
+      if self.buffer.len() < self.pos + 0x4000 {
+        return Err(BitPumpError::Eof);
+      }
       self.nbits += 0x4000 * 8;
       self.pos += 0x4000;
     }
@@ -87,7 +97,7 @@ impl<'a> BitPump for BitPumpPanasonic<'a> {
       block[i as usize] as u32
     };
     let bits = at(byte) | (at(byte + 1) << 8);
-    (bits >> ((self.nbits - num) & 7)) & (0x0ffffffffu32 >> (32 - num))
+    Ok((bits >> ((self.nbits - num) & 7)) & (0x0ffffffffu32 >> (32 - num)))
   }
 
   fn consume_bits(&mut self, num: u32) {

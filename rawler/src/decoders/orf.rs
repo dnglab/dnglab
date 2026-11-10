@@ -8,7 +8,7 @@ use crate::RawImage;
 use crate::RawLoader;
 use crate::RawlerError;
 use crate::Result;
-use crate::alloc_image;
+use crate::alloc_image_ok;
 use crate::analyze::FormatDump;
 use crate::bits::Endian;
 use crate::buffer::PaddedBuf;
@@ -303,7 +303,7 @@ impl<'a> Decoder for OrfDecoder<'a> {
     } else {
       log::debug!("ORF: fallback to decode_compressed");
       let src = file.subview_padded(offset as u64, size as u64)?;
-      OrfDecoder::decode_compressed(&src, width, height, bps, dummy)
+      OrfDecoder::decode_compressed(&src, width, height, bps, dummy)?
     };
 
     let cpp = 1;
@@ -379,8 +379,8 @@ impl<'a> OrfDecoder<'a> {
    * is based on the output of all previous pixel (bar the first four)
    */
 
-  pub fn decode_compressed(buf: &PaddedBuf, width: usize, height: usize, bps: usize, dummy: bool) -> PixU16 {
-    let mut out = alloc_image!(width, height, dummy);
+  pub fn decode_compressed(buf: &PaddedBuf, width: usize, height: usize, bps: usize, dummy: bool) -> Result<PixU16> {
+    let mut out = alloc_image_ok!(width, height, dummy);
 
     /* Build a table to quickly look up "high" value */
     let mut bittable: [u8; 4096] = [0; 4096];
@@ -413,7 +413,7 @@ impl<'a> OrfDecoder<'a> {
             nbits += 1
           }
           nbits = cmp::min(nbits, 16);
-          let b = pump.peek_ibits(15);
+          let b = pump.peek_ibits(15)?;
 
           let sign: i32 = -(b >> 14);
           let low: i32 = (b >> 12) & 3;
@@ -422,12 +422,12 @@ impl<'a> OrfDecoder<'a> {
           // Skip bytes used above or read bits
           if high == 12 {
             pump.consume_bits(15);
-            high = pump.get_ibits(16 - nbits) >> 1;
+            high = pump.get_ibits(16 - nbits)? >> 1;
           } else {
             pump.consume_bits((high + 4) as u32);
           }
 
-          acarry[s][0] = ((high << nbits) | pump.get_ibits(nbits)) as i32;
+          acarry[s][0] = ((high << nbits) | pump.get_ibits(nbits)?) as i32;
           let diff = (acarry[s][0] ^ sign) + acarry[s][1];
           acarry[s][1] = (diff * 3 + acarry[s][1]) >> 5;
           acarry[s][2] = if acarry[s][0] > 16 { 0 } else { acarry[s][2] + 1 };
@@ -471,7 +471,7 @@ impl<'a> OrfDecoder<'a> {
         }
       }
     }
-    out
+    Ok(out)
   }
 
   /// The preview JPEG from the CameraSettings section, its start relative to the makernote

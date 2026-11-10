@@ -434,15 +434,15 @@ impl<'a> ArwDecoder<'a> {
           row = 1;
         }
 
-        let mut len: u32 = 4 - pump.get_bits(2);
-        if len == 3 && pump.get_bits(1) != 0 {
+        let mut len: u32 = 4 - pump.get_bits(2)?;
+        if len == 3 && pump.get_bits(1)? != 0 {
           len = 0;
         } else if len == 4 {
-          let zeros = pump.peek_bits(13).leading_zeros() - 19;
+          let zeros = pump.peek_bits(13)?.leading_zeros() - 19;
           len += zeros;
-          pump.get_bits(cmp::min(13, zeros + 1));
+          pump.get_bits(cmp::min(13, zeros + 1))?;
         }
-        let diff: i32 = pump.get_ibits(len);
+        let diff: i32 = pump.get_ibits(len)?;
         sum += diff;
         if len > 0 && (diff & (1 << (len - 1))) == 0 {
           sum -= (1 << len) - 1;
@@ -466,18 +466,18 @@ impl<'a> ArwDecoder<'a> {
       &(|out: &mut [u16], row| {
         let mut pump = BitPumpLSB::new(&buf[(row * width)..]);
 
-        let mut random = pump.peek_bits(16);
+        let mut random = pump.peek_bits(16)?;
         for out in out.chunks_exact_mut(32) {
           // Process 32 pixels at a time in interleaved fashion
           for j in 0..2 {
-            let max = pump.get_bits(11);
-            let min = pump.get_bits(11);
+            let max = pump.get_bits(11)?;
+            let min = pump.get_bits(11)?;
             let delta = max - min;
             // Calculate the size of the data shift needed by how large the delta is
             // A delta with 11 bits requires a shift of 4, 10 bits of 3, etc
             let delta_shift: u32 = cmp::max(0, (32 - (delta.leading_zeros() as i32)) - 7) as u32;
-            let imax = pump.get_bits(4) as usize;
-            let imin = pump.get_bits(4) as usize;
+            let imax = pump.get_bits(4)? as usize;
+            let imin = pump.get_bits(4)? as usize;
 
             for i in 0..16 {
               let val = if i == imax {
@@ -485,7 +485,7 @@ impl<'a> ArwDecoder<'a> {
               } else if i == imin {
                 min
               } else {
-                cmp::min(0x7ff, (pump.get_bits(7) << delta_shift) + min)
+                cmp::min(0x7ff, (pump.get_bits(7)? << delta_shift) + min)
               };
               out[j + (i * 2)] = curve.dither((val << 1) as u16, &mut random);
             }

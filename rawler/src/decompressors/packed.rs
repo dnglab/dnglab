@@ -191,7 +191,7 @@ fn unpack_generic_msb<'a>(lines: impl LineIteratorMut<'a, u16>, src: &[u8], skip
   pump.consume_bits(bias as u32);
   for line in lines {
     for p in line {
-      *p = pump.get_bits(bits) as u16;
+      *p = pump.get_bits(bits)? as u16;
     }
   }
   Ok(())
@@ -501,6 +501,7 @@ pub(crate) fn decompress_12be_msb16(buf: &[u8], width: usize, height: usize, dum
         o[2] = (g3 << 4) | (g6 >> 4);
         o[3] = ((g6 & 0x0f) << 8) | g5;
       }
+      Ok(())
     }),
   )
 }
@@ -597,6 +598,7 @@ pub(crate) fn decompress_12be_msb32(buf: &[u8], width: usize, height: usize, dum
         o[6] = (g11 << 4) | (g10 >> 4);
         o[7] = ((g10 & 0x0f) << 8) | g9;
       }
+      Ok(())
     }),
   )
 }
@@ -691,6 +693,7 @@ pub(crate) fn decompress_14be_msb32(buf: &[u8], width: usize, height: usize, dum
 
         o[15] = ((g26 & 0x3f) << 8) | g25;
       }
+      Ok(())
     }),
   )
 }
@@ -1349,7 +1352,7 @@ pub(crate) fn decompress_generic_msb(buf: &[u8], width: usize, height: usize, bi
   let mut pix: PixU16 = alloc_image_ok!(width, height, dummy);
   let mut pump = BitPumpMSB::new(buf);
   for p in pix.pixels_mut() {
-    *p = pump.get_bits(bits) as u16;
+    *p = pump.get_bits(bits)? as u16;
   }
   Ok(pix)
 }
@@ -1376,7 +1379,7 @@ pub(crate) fn decompress_generic_lsb(buf: &[u8], width: usize, height: usize, bi
   let mut pix: PixU16 = alloc_image_ok!(width, height, dummy);
   let mut pump = BitPumpLSB::new(buf);
   for p in pix.pixels_mut() {
-    *p = pump.get_bits(bits) as u16;
+    *p = pump.get_bits(bits)? as u16;
   }
   Ok(pix)
 }

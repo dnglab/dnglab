@@ -5,7 +5,7 @@ use crate::RawImage;
 use crate::RawLoader;
 use crate::RawlerError;
 use crate::Result;
-use crate::alloc_image;
+use crate::alloc_image_ok;
 use crate::analyze::FormatDump;
 use crate::bits::LEu32;
 use crate::bits::clampbits;
@@ -23,6 +23,7 @@ use crate::lens::LensDescription;
 use crate::lens::LensResolver;
 use crate::pixarray::PixU16;
 use crate::pumps::BitPump;
+use crate::pumps::BitPumpError;
 use crate::pumps::BitPumpMSB;
 use crate::pumps::BitPumpMSB32;
 use crate::rawsource::RawSource;
@@ -114,11 +115,11 @@ impl<'a> Decoder for SrwDecoder<'a> {
           let coffset = x.force_usize(0);
           assert!(coffset > 0, "Surely this can't be the start of the file");
           let loffsets = file.subview_until_eof(coffset as u64)?;
-          SrwDecoder::decode_srw1(&src, loffsets, width, height, dummy)
+          SrwDecoder::decode_srw1(&src, loffsets, width, height, dummy)?
         }
       },
-      32772 => SrwDecoder::decode_srw2(&src, width, height, dummy),
-      32773 => SrwDecoder::decode_srw3(&src, width, height, dummy),
+      32772 => SrwDecoder::decode_srw2(&src, width, height, dummy)?,
+      32773 => SrwDecoder::decode_srw3(&src, width, height, dummy)?,
       x => {
         return Err(RawlerError::unsupported(camera, format!("SRW: Don't know how to handle compression {}", x)));
       }
@@ -149,8 +150,8 @@ impl<'a> Decoder for SrwDecoder<'a> {
 }
 
 impl<'a> SrwDecoder<'a> {
-  pub fn decode_srw1(buf: &[u8], loffsets: &[u8], width: usize, height: usize, dummy: bool) -> PixU16 {
-    let mut out = alloc_image!(width, height, dummy);
+  pub fn decode_srw1(buf: &[u8], loffsets: &[u8], width: usize, height: usize, dummy: bool) -> Result<PixU16> {
+    let mut out = alloc_image_ok!(width, height, dummy);
 
     for row in 0..height {
       let mut len: [u32; 4] = [if row < 2 { 7 } else { 4 }; 4];
@@ -163,12 +164,12 @@ impl<'a> SrwDecoder<'a> {
 
       // Image is arranged in groups of 16 pixels horizontally
       for col in (0..width).step_by(16) {
-        let dir = pump.get_bits(1) == 1;
+        let dir = pump.get_bits(1)? == 1;
 
-        let ops = [pump.get_bits(2), pump.get_bits(2), pump.get_bits(2), pump.get_bits(2)];
+        let ops = [pump.get_bits(2)?, pump.get_bits(2)?, pump.get_bits(2)?, pump.get_bits(2)?];
         for (i, op) in ops.iter().enumerate() {
           match *op {
-            3 => len[i] = pump.get_bits(4),
+            3 => len[i] = pump.get_bits(4)?,
             2 => len[i] -= 1,
             1 => len[i] += 1,
             _ => {}
@@ -178,7 +179,7 @@ impl<'a> SrwDecoder<'a> {
         // First decode even pixels
         for c in (0..16).step_by(2) {
           let l = len[c >> 3];
-          let adj = pump.get_ibits_sextended(l);
+          let adj = pump.get_ibits_sextended(l)?;
           let predictor = if dir {
             // Upward prediction
             out[img_up + col + c]
@@ -194,7 +195,7 @@ impl<'a> SrwDecoder<'a> {
         // Now decode odd pixels
         for c in (1..16).step_by(2) {
           let l = len[2 | (c >> 3)];
-          let adj = pump.get_ibits_sextended(l);
+          let adj = pump.get_ibits_sextended(l)?;
           let predictor = if dir {
             // Upward prediction
             out[img_up2 + col + c]
@@ -219,11 +220,11 @@ impl<'a> SrwDecoder<'a> {
       }
     }
 
-    out
+    Ok(out)
   }
 
-  pub fn decode_srw2(buf: &[u8], width: usize, height: usize, dummy: bool) -> PixU16 {
-    let mut out = alloc_image!(width, height, dummy);
+  pub fn decode_srw2(buf: &[u8], width: usize, height: usize, dummy: bool) -> Result<PixU16> {
+    let mut out = alloc_image_ok!(width, height, dummy);
 
     // This format has a variable length encoding of how many bits are needed
     // to encode the difference between pixels, we use a table to process it
@@ -272,7 +273,7 @@ impl<'a> SrwDecoder<'a> {
     let mut pump = BitPumpMSB::new(buf);
     for row in 0..height {
       for col in 0..width {
-        let diff = SrwDecoder::srw2_diff(&mut pump, &tbl);
+        let diff = SrwDecoder::srw2_diff(&mut pump, &tbl)?;
         if col < 2 {
           vpred[row & 1][col] += diff;
           hpred[col] = vpred[row & 1][col];
@@ -283,25 +284,25 @@ impl<'a> SrwDecoder<'a> {
       }
     }
 
-    out
+    Ok(out)
   }
 
-  pub fn srw2_diff(pump: &mut BitPumpMSB, tbl: &[[u32; 2]; 1024]) -> i32 {
+  pub fn srw2_diff(pump: &mut BitPumpMSB, tbl: &[[u32; 2]; 1024]) -> std::result::Result<i32, BitPumpError> {
     // We read 10 bits to index into our table
-    let c = pump.peek_bits(10);
+    let c = pump.peek_bits(10)?;
     // Skip the bits that were used to encode this case
     pump.consume_bits(tbl[c as usize][0]);
     // Read the number of bits the table tells me
     let len = tbl[c as usize][1];
-    let mut diff = pump.get_bits(len) as i32;
+    let mut diff = pump.get_bits(len)? as i32;
     // If the first bit is 0 we need to turn this into a negative number
     if len != 0 && (diff & (1 << (len - 1))) == 0 {
       diff -= (1 << len) - 1;
     }
-    diff
+    Ok(diff)
   }
 
-  pub fn decode_srw3(buf: &[u8], width: usize, height: usize, dummy: bool) -> PixU16 {
+  pub fn decode_srw3(buf: &[u8], width: usize, height: usize, dummy: bool) -> Result<PixU16> {
     // Decoder for third generation compressed SRW files (NX1)
     // Seriously Samsung just use lossless jpeg already, it compresses better too :)
 
@@ -309,33 +310,33 @@ impl<'a> SrwDecoder<'a> {
     // and Loring von Palleske (Samsung) for pointing to the open-source code of
     // Samsung's DNG converter at http://opensource.samsung.com/
 
-    let mut out = alloc_image!(width, height, dummy);
+    let mut out = alloc_image_ok!(width, height, dummy);
     let mut pump = BitPumpMSB32::new(buf);
 
     // Process the initial metadata bits, we only really use initVal, width and
     // height (the last two match the TIFF values anyway)
-    pump.get_bits(16); // NLCVersion
-    pump.get_bits(4); // ImgFormat
-    let bit_depth = pump.get_bits(4) + 1;
-    pump.get_bits(4); // NumBlkInRCUnit
-    pump.get_bits(4); // CompressionRatio
-    pump.get_bits(16); // Width;
-    pump.get_bits(16); // Height;
-    pump.get_bits(16); // TileWidth
-    pump.get_bits(4); // reserved
+    pump.get_bits(16)?; // NLCVersion
+    pump.get_bits(4)?; // ImgFormat
+    let bit_depth = pump.get_bits(4)? + 1;
+    pump.get_bits(4)?; // NumBlkInRCUnit
+    pump.get_bits(4)?; // CompressionRatio
+    pump.get_bits(16)?; // Width;
+    pump.get_bits(16)?; // Height;
+    pump.get_bits(16)?; // TileWidth
+    pump.get_bits(4)?; // reserved
 
     // The format includes an optimization code that sets 3 flags to change the
     // decoding parameters
-    let optflags = pump.get_bits(4);
+    let optflags = pump.get_bits(4)?;
     const OPT_SKIP: u32 = 1; // Skip checking if we need differences from previous line
     const OPT_MV: u32 = 2; // Simplify motion vector definition
     const OPT_QP: u32 = 4; // Don't scale the diff values
 
-    pump.get_bits(8); // OverlapWidth
-    pump.get_bits(8); // reserved
-    pump.get_bits(8); // Inc
-    pump.get_bits(2); // reserved
-    let init_val = pump.get_bits(14) as u16;
+    pump.get_bits(8)?; // OverlapWidth
+    pump.get_bits(8)?; // reserved
+    pump.get_bits(8)?; // Inc
+    pump.get_bits(2)?; // reserved
+    let init_val = pump.get_bits(14)? as u16;
 
     // The format is relatively straightforward. Each line gets encoded as a set
     // of differences from pixels from another line. Pixels are grouped in blocks
@@ -371,17 +372,17 @@ impl<'a> SrwDecoder<'a> {
         // Calculate how much scaling the final values will need
         scale = if (optflags & OPT_QP) == 0 && (col & 63) == 0 {
           let scalevals: [i32; 3] = [0, -2, 2];
-          let i = pump.get_bits(2) as usize;
-          if i < 3 { scale + scalevals[i] } else { pump.get_bits(12) as i32 }
+          let i = pump.get_bits(2)? as usize;
+          if i < 3 { scale + scalevals[i] } else { pump.get_bits(12)? as i32 }
         } else {
           scale // Keep value from previous iteration
         };
 
         // First we figure out which reference pixels mode we're in
         if (optflags & OPT_MV) != 0 {
-          motion = if pump.get_bits(1) != 0 { 3 } else { 7 };
-        } else if pump.get_bits(1) == 0 {
-          motion = pump.get_bits(3) as usize;
+          motion = if pump.get_bits(1)? != 0 { 3 } else { 7 };
+        } else if pump.get_bits(1)? == 0 {
+          motion = pump.get_bits(3)? as usize;
         }
 
         if row < 2 && motion != 7 {
@@ -426,8 +427,8 @@ impl<'a> SrwDecoder<'a> {
 
         // Figure out how many difference bits we have to read for each pixel
         let mut diff_bits: [u32; 4] = [0; 4];
-        if (optflags & OPT_SKIP) != 0 || pump.get_bits(1) == 0 {
-          let flags: [u32; 4] = [pump.get_bits(2), pump.get_bits(2), pump.get_bits(2), pump.get_bits(2)];
+        if (optflags & OPT_SKIP) != 0 || pump.get_bits(1)? == 0 {
+          let flags: [u32; 4] = [pump.get_bits(2)?, pump.get_bits(2)?, pump.get_bits(2)?, pump.get_bits(2)?];
           for i in 0..4 {
             // The color is 0-Green 1-Blue 2-Red
             let colornum: usize = if row % 2 != 0 { i >> 1 } else { ((i >> 1) + 2) % 3 };
@@ -442,7 +443,7 @@ impl<'a> SrwDecoder<'a> {
                 diff_bits[i] = diff_bits_mode[colornum][0] - 1;
               }
               3 => {
-                diff_bits[i] = pump.get_bits(4);
+                diff_bits[i] = pump.get_bits(4)?;
               }
               _ => {}
             }
@@ -457,7 +458,7 @@ impl<'a> SrwDecoder<'a> {
         // Actually read the differences and write them to the pixels
         for i in 0..16 {
           let len = diff_bits[i >> 2];
-          let mut diff = pump.get_ibits_sextended(len);
+          let mut diff = pump.get_ibits_sextended(len)?;
           diff = diff * (scale * 2 + 1) + scale;
 
           // Apply the diff to pixels 0 2 4 6 8 10 12 14 1 3 5 7 9 11 13 15
@@ -472,7 +473,7 @@ impl<'a> SrwDecoder<'a> {
       }
     }
 
-    out
+    Ok(out)
   }
 
   /// Get lens description by analyzing TIFF tags and makernotes
