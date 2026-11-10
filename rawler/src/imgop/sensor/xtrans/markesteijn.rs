@@ -8,15 +8,18 @@
 // Ref [1] https://github.com/naorunaoru/demosaic/blob/5050131e998b7f6414eef02eeb60f74b99d77451/src/xtrans/markesteijn_impl.rs
 
 use multiversion::multiversion;
-use rayon::prelude::*;
 use std::{borrow::Cow, time::Instant};
 
 use crate::{
   CFA,
   cfa::{CFA_COLOR_B, CFA_COLOR_G, CFA_COLOR_R, PlaneColor},
   imgop::{
-    Dim2, Point, Rect,
-    sensor::{Demosaic, lab::rgb_to_lab},
+    Dim2,
+    sensor::{
+      Demosaic,
+      lab::rgb_to_lab,
+      tiles::{halo_tiles, inner_area, par_tiles},
+    },
   },
   pixarray::{Color2D, DisjointRegionMut, ImageRegion, ImageRegionMut},
 };
@@ -93,7 +96,7 @@ impl Demosaic<f32, 3> for XTransMarkesteijnDemosaic {
   }
 }
 
-const TS: usize = 64; // Tile size
+const TS: usize = 64; // Tile size, with the halo
 
 fn demosaic_impl(input: &[f32], width: usize, height: usize, cfa: &CFA, passes: usize) -> Color2D<f32, 3> {
   let mut output = Color2D::<f32, 3>::new(width, height);
@@ -112,54 +115,38 @@ fn demosaic_impl(input: &[f32], width: usize, height: usize, cfa: &CFA, passes: 
 
   border_interpolate(input, width, height, cfa, &mut output, pad_tile);
 
-  // Collect tile coordinates
-  let stride = TS - overlap;
-  let tiles: Vec<(usize, usize, usize, usize)> = (0..height)
-    .step_by(stride)
-    .flat_map(|top| {
-      (0..width).step_by(stride).filter_map(move |left| {
-        let tile_h = TS.min(height - top);
-        let tile_w = TS.min(width - left);
-        if tile_h > overlap && tile_w > overlap {
-          Some((top, left, tile_h, tile_w))
-        } else {
-          None
-        }
-      })
-    })
-    .collect();
-
-  // Each tile writes the pixels inside of pad_tile from its borders. Tiles step
-  // by `stride` (TS - overlap), so these areas of adjacent tiles are adjacent.
-  let areas: Vec<Rect> = tiles
-    .iter()
-    .map(|&(top, left, tile_h, tile_w)| Rect::new(Point::new(left + pad_tile, top + pad_tile), Dim2::new(tile_w - overlap, tile_h - overlap)))
-    .collect();
-  let regions = ImageRegionMut::from(output.view_mut())
-    .split_regions_mut(&areas)
-    .expect("Tiles write disjoint areas");
-
-  tiles.par_iter().zip(regions).for_each(|(&(top, left, tile_h, tile_w), mut region)| {
-    process_tile(
-      input,
-      width,
-      height,
-      cfa,
-      &allhex,
-      &green_bounds,
-      top,
-      left,
-      tile_h,
-      tile_w,
-      passes,
-      ndir,
-      pad_lab,
-      pad_drv,
-      pad_homo,
-      pad_tile,
-      &mut region,
-    );
-  });
+  // Each tile writes the pixels inside of pad_tile from the borders of its
+  // window, the pixels pad_tile from the edges of the image are interpolated
+  // by border_interpolate
+  let dim = Dim2::new(width, height);
+  let tiles = halo_tiles(dim, inner_area(dim, pad_tile), Dim2::new(TS - overlap, TS - overlap), pad_tile);
+  par_tiles(
+    ImageRegionMut::from(output.view_mut()),
+    &tiles,
+    || (),
+    |_, tile, region| {
+      let window = tile.window;
+      process_tile(
+        input,
+        width,
+        height,
+        cfa,
+        &allhex,
+        &green_bounds,
+        window.p.y,
+        window.p.x,
+        window.d.h,
+        window.d.w,
+        passes,
+        ndir,
+        pad_lab,
+        pad_drv,
+        pad_homo,
+        pad_tile,
+        region,
+      );
+    },
+  );
 
   output
 }
