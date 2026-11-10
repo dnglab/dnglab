@@ -351,7 +351,11 @@ impl<'a> SrwDecoder<'a> {
       if (line_offset & 0x0f) != 0 {
         line_offset += 16 - (line_offset & 0xf);
       }
-      pump = BitPumpMSB32::new(&buf[line_offset..]);
+      pump = BitPumpMSB32::new(
+        buf
+          .get(line_offset..)
+          .ok_or_else(|| RawlerError::DecoderFailed(format!("SRW3: offset {} of row {} is behind the end of the data", line_offset, row)))?,
+      );
 
       let img = width * row;
       let img_up = width * (cmp::max(1, row) - 1);
