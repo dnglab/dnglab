@@ -36,16 +36,30 @@ struct X3fImage {
   doffset: usize,
 }
 
+/// Read a little-endian u32 at `pos`, fails if `buf` is too short
+fn get_u32(buf: &[u8], pos: usize) -> Result<u32> {
+  buf.get(pos..pos + 4).map(|bytes| LEu32(bytes, 0)).ok_or_else(|| behind_eof(pos))
+}
+
+/// The bytes of `buf` from `pos`, fails if `pos` is behind the end of `buf`
+fn get_tail(buf: &[u8], pos: usize) -> Result<&[u8]> {
+  buf.get(pos..).ok_or_else(|| behind_eof(pos))
+}
+
+fn behind_eof(pos: usize) -> RawlerError {
+  RawlerError::DecoderFailed(format!("X3F: offset {} is behind EOF", pos))
+}
+
 impl X3fFile {
   fn new(file: &RawSource) -> Result<X3fFile> {
     let buf = file.as_vec()?;
-    let offset = LEu32(&buf, buf.len() - 4) as usize;
-    let data = &buf[offset..];
-    let version = LEu32(data, 4);
+    let offset = get_u32(&buf, buf.len().saturating_sub(4))? as usize;
+    let data = get_tail(&buf, offset)?;
+    let version = get_u32(data, 4)?;
     if version < 0x00020000 {
       return Err(format_args!("X3F: Directory version too old {}", version).into());
     }
-    let entries = LEu32(data, 8) as usize;
+    let entries = get_u32(data, 8)? as usize;
     let mut dirs = Vec::new();
     let mut images = Vec::new();
     for i in 0..entries {
@@ -63,10 +77,9 @@ impl X3fFile {
 
 impl X3fDirectory {
   fn new(buf: &[u8], offset: usize) -> Result<X3fDirectory> {
-    let data = &buf[offset..];
-    let off = LEu32(data, 0) as usize;
-    let len = LEu32(data, 4) as usize;
-    let name = String::from_utf8_lossy(&data[8..12]).to_string();
+    let off = get_u32(buf, offset)? as usize;
+    let len = get_u32(buf, offset + 4)? as usize;
+    let name = String::from_utf8_lossy(buf.get(offset + 8..offset + 12).ok_or_else(|| behind_eof(offset + 8))?).to_string();
 
     Ok(X3fDirectory { offset: off, len, id: name })
   }
@@ -74,14 +87,12 @@ impl X3fDirectory {
 
 impl X3fImage {
   fn new(buf: &[u8], offset: usize) -> Result<X3fImage> {
-    let data = &buf[offset..];
-
     Ok(X3fImage {
-      typ: LEu32(data, 8) as usize,
-      format: LEu32(data, 12) as usize,
-      width: LEu32(data, 16) as usize,
-      height: LEu32(data, 20) as usize,
-      pitch: LEu32(data, 24) as usize,
+      typ: get_u32(buf, offset + 8)? as usize,
+      format: get_u32(buf, offset + 12)? as usize,
+      width: get_u32(buf, offset + 16)? as usize,
+      height: get_u32(buf, offset + 20)? as usize,
+      pitch: get_u32(buf, offset + 24)? as usize,
       doffset: offset + 28,
     })
   }
@@ -110,8 +121,8 @@ impl<'a> Decoder for X3fDecoder<'a> {
       .iter()
       .find(|i| i.typ == 2 && i.format == 0x12)
       .ok_or("X3F: Couldn't find camera info")?;
-    let data = &buffer[caminfo.doffset + 6..];
-    if data[0..4] != b"Exif"[..] {
+    let data = get_tail(&buffer, caminfo.doffset + 6)?;
+    if !data.starts_with(b"Exif") {
       return Err("X3F: Couldn't find EXIF info".into());
     }
     let tiff = IFD::new(&mut Cursor::new(&buffer), (caminfo.doffset + 12) as u32, 0, 0, Endian::Little, &[])?;
@@ -122,7 +133,7 @@ impl<'a> Decoder for X3fDecoder<'a> {
     let width = imginfo.width;
     let height = imginfo.height;
     let offset = imginfo.doffset;
-    let src = &buffer[offset..];
+    let src = get_tail(&buffer, offset)?;
 
     let image = match imginfo.format {
       35 => self.decode_compressed(src, width, height, dummy)?,
