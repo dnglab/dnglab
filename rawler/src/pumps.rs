@@ -1,5 +1,5 @@
 use std::fmt;
-use std::slice::Chunks;
+use std::slice::{Chunks, Iter};
 
 use crate::bits::*;
 
@@ -122,7 +122,7 @@ impl<'a> BitPumpMSB<'a> {
 
 #[derive(Debug, Clone)]
 pub struct BitPumpMSB32<'a> {
-  buffer: Chunks<'a, u8>,
+  buffer: Iter<'a, [u8; 4]>,
   pos: usize,
   bits: u64,
   nbits: u32,
@@ -131,7 +131,7 @@ pub struct BitPumpMSB32<'a> {
 impl<'a> BitPumpMSB32<'a> {
   pub fn new(src: &'a [u8]) -> Self {
     Self {
-      buffer: src.chunks(size_of::<u32>()),
+      buffer: src.as_chunks().0.iter(),
       pos: 0,
       bits: 0,
       nbits: 0,
@@ -140,19 +140,11 @@ impl<'a> BitPumpMSB32<'a> {
 
   /// Refill internal bit buffer - MSB32 (bytes read in little-endian order)
   ///
-  /// For fast refill, we can simply take a whole u32 value out.
-  /// For slow refill, there may be 1, 2 or 3 bytes left in buffer. We need
-  /// to collect them manually.
-  fn refill(&mut self) -> Option<(u32, u32)> {
-    let chunk = self.buffer.next()?;
-    if chunk.len() == 4 {
-      // Fast refill
-      let bits: u32 = u32::from_le_bytes([chunk[0], chunk[1], chunk[2], chunk[3]]);
-      Some((bits, u32::BITS))
-    } else {
-      // Slow refill
-      Some(chunk.iter().rev().fold((0, 0), |(bits, bit_cnt), x| ((bits << 8) | *x as u32, bit_cnt + 8)))
-    }
+  /// The stream is read in whole 32-bit words. If 1, 2 or 3 bytes are left,
+  /// the high bytes of the last word are missing. These would be read first,
+  /// so no bit of a partial word can be read.
+  fn refill(&mut self) -> Option<u32> {
+    self.buffer.next().map(|word| u32::from_le_bytes(*word))
   }
 
   #[inline(always)]
@@ -379,13 +371,10 @@ impl<'a> BitPump for BitPumpMSB32<'a> {
   fn peek_bits(&mut self, num: u32) -> Result<u32, BitPumpError> {
     check_bits(num, MAX_PEEK_BITS)?;
     if num > self.nbits {
-      let (inbits, bit_cnt) = self.refill().ok_or_else(eof)?;
+      let inbits = self.refill().ok_or_else(eof)?;
       self.bits = (self.bits << 32) | inbits as u64;
-      self.nbits += bit_cnt;
-      self.pos += bit_cnt as usize / 8;
-      if num > self.nbits {
-        return Err(eof());
-      }
+      self.nbits += u32::BITS;
+      self.pos += size_of::<u32>();
     }
     Ok((self.bits >> (self.nbits - num)) as u32)
   }
