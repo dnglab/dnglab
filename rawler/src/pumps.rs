@@ -456,6 +456,41 @@ impl<'a> BitPump for BitPumpJPEG<'a> {
   }
 }
 
+/// Error of a [`ByteStream`] read
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ByteStreamError {
+  /// The buffer has fewer than the requested bytes left
+  Eof,
+  /// No marker found in the rest of the buffer
+  NoMarker,
+}
+
+impl fmt::Display for ByteStreamError {
+  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    match self {
+      Self::Eof => write!(f, "unexpected end of byte stream"),
+      Self::NoMarker => write!(f, "no marker found inside rest of buffer"),
+    }
+  }
+}
+
+impl std::error::Error for ByteStreamError {}
+
+impl From<ByteStreamError> for String {
+  #[cold]
+  fn from(err: ByteStreamError) -> Self {
+    err.to_string()
+  }
+}
+
+#[cold]
+fn byte_stream_eof() -> ByteStreamError {
+  ByteStreamError::Eof
+}
+
+/// Reads values from a byte buffer. The position never moves behind the
+/// end of the buffer, reads and skips beyond it fail with
+/// [`ByteStreamError::Eof`].
 #[derive(Debug, Copy, Clone)]
 pub struct ByteStream<'a> {
   buffer: &'a [u8],
@@ -478,68 +513,73 @@ impl<'a> ByteStream<'a> {
     self.pos
   }
 
+  /// The next `N` bytes, without moving the position
   #[inline(always)]
-  pub fn peek_u8(&self) -> u8 {
-    self.buffer[self.pos]
+  fn peek_array<const N: usize>(&self) -> Result<&'a [u8; N], ByteStreamError> {
+    self.buffer[self.pos..].first_chunk::<N>().ok_or_else(byte_stream_eof)
+  }
+
+  #[inline(always)]
+  pub fn peek_u8(&self) -> Result<u8, ByteStreamError> {
+    Ok(self.peek_array::<1>()?[0])
   }
   #[inline(always)]
-  pub fn get_u8(&mut self) -> u8 {
-    let val = self.peek_u8();
+  pub fn get_u8(&mut self) -> Result<u8, ByteStreamError> {
+    let val = self.peek_u8()?;
     self.pos += 1;
-    val
+    Ok(val)
   }
 
   #[inline(always)]
-  pub fn peek_i8(&self) -> i8 {
-    self.buffer[self.pos] as i8
+  pub fn peek_i8(&self) -> Result<i8, ByteStreamError> {
+    Ok(self.peek_u8()? as i8)
   }
   #[inline(always)]
-  pub fn get_i8(&mut self) -> i8 {
-    let val = self.peek_i8();
+  pub fn get_i8(&mut self) -> Result<i8, ByteStreamError> {
+    let val = self.peek_i8()?;
     self.pos += 1;
-    val
+    Ok(val)
   }
 
   #[inline(always)]
-  pub fn peek_u16(&self) -> u16 {
-    self.endian.read_u16(self.buffer, self.pos)
+  pub fn peek_u16(&self) -> Result<u16, ByteStreamError> {
+    Ok(self.endian.read_u16(self.peek_array::<2>()?, 0))
   }
   #[inline(always)]
-  pub fn get_u16(&mut self) -> u16 {
-    let val = self.peek_u16();
+  pub fn get_u16(&mut self) -> Result<u16, ByteStreamError> {
+    let val = self.peek_u16()?;
     self.pos += 2;
-    val
+    Ok(val)
   }
 
   #[inline(always)]
-  pub fn peek_i16(&self) -> i16 {
-    self.endian.read_i16(self.buffer, self.pos)
+  pub fn peek_i16(&self) -> Result<i16, ByteStreamError> {
+    Ok(self.endian.read_i16(self.peek_array::<2>()?, 0))
   }
   #[inline(always)]
-  pub fn get_i16(&mut self) -> i16 {
-    let val = self.peek_i16();
+  pub fn get_i16(&mut self) -> Result<i16, ByteStreamError> {
+    let val = self.peek_i16()?;
     self.pos += 2;
-    val
+    Ok(val)
   }
 
   #[inline(always)]
-  pub fn peek_u32(&self) -> u32 {
-    self.endian.read_u32(self.buffer, self.pos)
+  pub fn peek_u32(&self) -> Result<u32, ByteStreamError> {
+    Ok(self.endian.read_u32(self.peek_array::<4>()?, 0))
   }
 
   #[inline(always)]
-  pub fn get_u32(&mut self) -> u32 {
-    let val = self.peek_u32();
+  pub fn get_u32(&mut self) -> Result<u32, ByteStreamError> {
+    let val = self.peek_u32()?;
     self.pos += 4;
-    val
+    Ok(val)
   }
 
   #[inline(always)]
-  pub fn get_bytes(&mut self, n: usize) -> Vec<u8> {
-    let mut val = Vec::with_capacity(n);
-    val.extend_from_slice(&self.buffer[self.pos..self.pos + n]);
+  pub fn get_bytes(&mut self, n: usize) -> Result<Vec<u8>, ByteStreamError> {
+    let val = self.buffer[self.pos..].get(..n).ok_or_else(byte_stream_eof)?.to_vec();
     self.pos += n;
-    val
+    Ok(val)
   }
 
   //  #[inline(always)]
@@ -552,21 +592,24 @@ impl<'a> ByteStream<'a> {
   //  }
 
   #[inline(always)]
-  pub fn consume_bytes(&mut self, num: usize) {
-    self.pos += num
+  pub fn consume_bytes(&mut self, num: usize) -> Result<(), ByteStreamError> {
+    if num > self.remaining_bytes() {
+      return Err(byte_stream_eof());
+    }
+    self.pos += num;
+    Ok(())
   }
 
-  #[inline(always)]
-  pub fn skip_to_marker(&mut self) -> Result<usize, String> {
-    let mut skip_count = 0;
-    while !(self.buffer[self.pos] == 0xFF && self.buffer[self.pos + 1] != 0 && self.buffer[self.pos + 1] != 0xFF) {
-      self.pos += 1;
-      skip_count += 1;
-      if self.pos >= self.buffer.len() {
-        return Err("No marker found inside rest of buffer".to_string());
-      }
-    }
-    self.pos += 1; // Make the next byte the marker
+  /// Skip to the next marker, a 0xFF byte followed by a byte other than
+  /// 0x00 and 0xFF. The position is moved to the byte after the 0xFF,
+  /// the count of skipped bytes is returned.
+  pub fn skip_to_marker(&mut self) -> Result<usize, ByteStreamError> {
+    let rest = &self.buffer[self.pos..];
+    let skip_count = rest
+      .windows(2)
+      .position(|pair| pair[0] == 0xFF && pair[1] != 0 && pair[1] != 0xFF)
+      .ok_or(ByteStreamError::NoMarker)?;
+    self.pos += skip_count + 1; // Make the next byte the marker
     Ok(skip_count + 1)
   }
 }

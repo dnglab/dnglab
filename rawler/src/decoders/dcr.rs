@@ -4,7 +4,7 @@ use crate::RawImage;
 use crate::RawLoader;
 use crate::RawlerError;
 use crate::Result;
-use crate::alloc_image;
+use crate::alloc_image_ok;
 use crate::analyze::FormatDump;
 use crate::bits::BEu16;
 use crate::bits::Endian;
@@ -17,6 +17,7 @@ use crate::formats::tiff::Value;
 use crate::formats::tiff::reader::TiffReader;
 use crate::pixarray::PixU16;
 use crate::pumps::ByteStream;
+use crate::pumps::ByteStreamError;
 use crate::rawsource::RawSource;
 use crate::tags::TiffCommonTag;
 
@@ -76,7 +77,7 @@ impl<'a> Decoder for DcrDecoder<'a> {
       LookupTable::new(&points)
     };
 
-    let image = DcrDecoder::decode_kodak65000(&src, &curve, width, height, dummy);
+    let image = DcrDecoder::decode_kodak65000(&src, &curve, width, height, dummy)?;
 
     let cpp = 1;
     let wb = kodak_wb(&self.makernote).unwrap_or([f32::NAN, f32::NAN, f32::NAN, f32::NAN]);
@@ -156,15 +157,15 @@ pub(super) fn kodak_wb(kodak_ifd: &IFD) -> Option<[f32; 4]> {
 }
 
 impl<'a> DcrDecoder<'a> {
-  pub(crate) fn decode_kodak65000(buf: &[u8], curve: &LookupTable, width: usize, height: usize, dummy: bool) -> PixU16 {
-    let mut out = alloc_image!(width, height, dummy);
+  pub(crate) fn decode_kodak65000(buf: &[u8], curve: &LookupTable, width: usize, height: usize, dummy: bool) -> Result<PixU16> {
+    let mut out = alloc_image_ok!(width, height, dummy);
     let mut input = ByteStream::new(buf, Endian::Little);
 
     let mut random: u32 = 0;
     for row in 0..height {
       for col in (0..width).step_by(256) {
         let mut pred: [i32; 2] = [0; 2];
-        let buf = DcrDecoder::decode_segment(&mut input, cmp::min(256, width - col));
+        let buf = DcrDecoder::decode_segment(&mut input, cmp::min(256, width - col))?;
         for (i, val) in buf.iter().enumerate() {
           pred[i & 1] += *val;
           if pred[i & 1] < 0 {
@@ -176,22 +177,22 @@ impl<'a> DcrDecoder<'a> {
       }
     }
 
-    out
+    Ok(out)
   }
 
-  fn decode_segment(input: &mut ByteStream, size: usize) -> Vec<i32> {
+  fn decode_segment(input: &mut ByteStream, size: usize) -> std::result::Result<Vec<i32>, ByteStreamError> {
     let mut out: Vec<i32> = vec![0; size];
 
     let mut lens: [usize; 256] = [0; 256];
     for i in (0..size).step_by(2) {
-      lens[i] = (input.peek_u8() & 15) as usize;
-      lens[i + 1] = (input.get_u8() >> 4) as usize;
+      lens[i] = (input.peek_u8()? & 15) as usize;
+      lens[i + 1] = (input.get_u8()? >> 4) as usize;
     }
 
     let mut bitbuf: u64 = 0;
     let mut bits: usize = 0;
     if (size & 7) == 4 {
-      bitbuf = ((input.get_u8() as u64) << 8) | (input.get_u8() as u64);
+      bitbuf = ((input.get_u8()? as u64) << 8) | (input.get_u8()? as u64);
       bits = 16;
     }
 
@@ -199,7 +200,7 @@ impl<'a> DcrDecoder<'a> {
       let len = lens[i];
       if bits < len {
         for j in (0..32).step_by(8) {
-          bitbuf += (input.get_u8() as u64) << (bits + (j ^ 8));
+          bitbuf += (input.get_u8()? as u64) << (bits + (j ^ 8));
         }
         bits += 32;
       }
@@ -211,6 +212,6 @@ impl<'a> DcrDecoder<'a> {
       }
     }
 
-    out
+    Ok(out)
   }
 }

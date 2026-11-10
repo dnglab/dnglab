@@ -17,7 +17,7 @@ use crate::{
   cfa::CFAColor,
   imgop::{Dim2, Point, Rect},
   pixarray::{DisjointRegionMut, ImageRegionMut, PixU16},
-  pumps::{BitPump, BitPumpError, BitPumpMSB, ByteStream},
+  pumps::{BitPump, BitPumpError, BitPumpMSB, ByteStream, ByteStreamError},
 };
 
 /// A single gradient with two points
@@ -288,16 +288,16 @@ impl Strip {
 pub(super) fn decompress_fuji(buf: &PaddedBuf, width: usize, height: usize, _bps: usize, corrected_cfa: &CFA) -> Result<PixU16> {
   let mut stream = ByteStream::new(buf, Endian::Big);
   let header = Header {
-    signature: stream.get_u16(),
-    lossless: stream.get_u8(),
-    raw_type: stream.get_u8(),
-    raw_bits: stream.get_u8(),
-    raw_height: stream.get_u16(),
-    raw_rounded_width: stream.get_u16(),
-    raw_width: stream.get_u16(),
-    block_size: stream.get_u16(),
-    blocks_in_row: stream.get_u8(),
-    total_lines: stream.get_u16(),
+    signature: stream.get_u16()?,
+    lossless: stream.get_u8()?,
+    raw_type: stream.get_u8()?,
+    raw_bits: stream.get_u8()?,
+    raw_height: stream.get_u16()?,
+    raw_rounded_width: stream.get_u16()?,
+    raw_width: stream.get_u16()?,
+    block_size: stream.get_u16()?,
+    blocks_in_row: stream.get_u8()?,
+    total_lines: stream.get_u16()?,
   };
   log::debug!("Header: {:?}", header);
   if !header.is_valid() {
@@ -323,15 +323,17 @@ pub(super) fn decompress_fuji(buf: &PaddedBuf, width: usize, height: usize, _bps
     }
   }
 
-  let block_sizes: Vec<usize> = (0..header.blocks_in_row).map(|_| stream.get_u32() as usize).collect();
+  let block_sizes = (0..header.blocks_in_row)
+    .map(|_| stream.get_u32().map(|size| size as usize))
+    .collect::<std::result::Result<Vec<usize>, _>>()?;
   let raw_offset = header.blocks_in_row as usize * size_of::<u32>();
   let raw_offset_padded = (raw_offset + 0xF) & !0xF;
-  stream.consume_bytes(raw_offset_padded - raw_offset);
+  stream.consume_bytes(raw_offset_padded - raw_offset)?;
 
   // Global Q bases for all strips
   let q_bases: Option<Vec<u8>> = if !header.is_lossless() {
     let total_q_bases = block_sizes.len() * ((header.total_lines as usize + 0xF) & !0xF);
-    Some(stream.get_bytes(total_q_bases))
+    Some(stream.get_bytes(total_q_bases)?)
   } else {
     None
   };
@@ -340,7 +342,7 @@ pub(super) fn decompress_fuji(buf: &PaddedBuf, width: usize, height: usize, _bps
   //eprintln!("First block: {}", stream.get_pos());
 
   // calculating raw block offsets
-  let strips: Vec<Strip> = block_sizes
+  let strips = block_sizes
     .iter()
     .enumerate()
     .map(|(n, &block_size)| {
@@ -351,10 +353,10 @@ pub(super) fn decompress_fuji(buf: &PaddedBuf, width: usize, height: usize, _bps
         header: header.clone(),
         cfa,
       };
-      stream.consume_bytes(block_size);
-      strip
+      stream.consume_bytes(block_size)?;
+      Ok(strip)
     })
-    .collect();
+    .collect::<std::result::Result<Vec<Strip>, ByteStreamError>>()?;
 
   assert!(stream.remaining_bytes() <= 16);
 

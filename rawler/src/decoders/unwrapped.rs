@@ -109,7 +109,7 @@ pub fn decode_unwrapped(file: &RawSource) -> Result<RawImageData> {
       };
       let data = &data[2048..];
       Ok(RawImageData::Integer(
-        dcr::DcrDecoder::decode_kodak65000(data, &table, width, height, false).into_inner(),
+        dcr::DcrDecoder::decode_kodak65000(data, &table, width, height, false)?.into_inner(),
       ))
     }
     32 => decode_ljpeg(data, width, height, false, false),

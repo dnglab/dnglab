@@ -172,7 +172,7 @@ impl<'a> Cr3Decoder<'a> {
 
       //dump_buf("/tmp/ctmd.buf", &buf);
       let mut substream = ByteStream::new(buf, Endian::Little);
-      let ctmd = Ctmd::new(&mut substream);
+      let ctmd = Ctmd::new(&mut substream)?;
       Ok(Some(ctmd))
     } else {
       log::warn!("No CTMD trak found");
@@ -638,11 +638,11 @@ struct CtmdRecord {
 }
 
 impl Ctmd {
-  pub fn new(data: &mut ByteStream) -> Self {
+  pub fn new(data: &mut ByteStream) -> Result<Self> {
     let mut records = HashMap::new();
 
     while data.remaining_bytes() >= 12 {
-      let size = data.get_u32();
+      let size = data.get_u32()?;
       // A record is at least its 12-byte header and fits in what is left.
       // A zeroed record (a file still being copied) or a truncated one ends the list.
       if (size as usize) < 12 || data.remaining_bytes() < size as usize - 4 {
@@ -651,14 +651,14 @@ impl Ctmd {
       }
       let mut rec = CtmdRecord {
         rec_size: size,
-        rec_type: data.get_u16(),
-        reserved1: data.get_u8(),
-        reserved2: data.get_u8(),
-        reserved3: data.get_u8(),
-        reserved4: data.get_u8(),
-        reserved5: data.get_i8(),
-        reserved6: data.get_i8(),
-        payload: data.get_bytes(size as usize - 12),
+        rec_type: data.get_u16()?,
+        reserved1: data.get_u8()?,
+        reserved2: data.get_u8()?,
+        reserved3: data.get_u8()?,
+        reserved4: data.get_u8()?,
+        reserved5: data.get_i8()?,
+        reserved6: data.get_i8()?,
+        payload: data.get_bytes(size as usize - 12)?,
         blocks: HashMap::new(),
       };
       debug!(
@@ -670,12 +670,12 @@ impl Ctmd {
         let mut bs = ByteStream::new(rec.payload.as_slice(), Endian::Little);
         let mut _block_id = 0;
         while bs.remaining_bytes() >= (4 + 2 + 2) {
-          let sz = bs.get_u32() as usize;
-          let tag = bs.get_u16();
-          let _uk = bs.get_u16();
+          let sz = bs.get_u32()? as usize;
+          let tag = bs.get_u16()?;
+          let _uk = bs.get_u16()?;
           if sz >= 8 && bs.remaining_bytes() >= (sz - 8) {
             log::debug!("CTMD BLOCK: size {}, tag {}, remaining: {}", sz, tag, bs.remaining_bytes());
-            let data = bs.get_bytes(sz as usize - 8);
+            let data = bs.get_bytes(sz as usize - 8)?;
             //dump_buf(&format!("/tmp/ctmd_rec{}_block{}_tag0x{:X}_uk{:X}.bin", rec.rec_type, block_id, tag, uk), data.as_slice());
             if [CR3_CTMD_BLOCK_EXIFIFD, CR3_CTMD_BLOCK_MAKERNOTES].contains(&tag) {
               assert_eq!(rec.blocks.contains_key(&tag), false, "Double tag found?!");
@@ -698,7 +698,7 @@ impl Ctmd {
       }
       records.insert(rec.rec_type, rec);
     }
-    Self { records }
+    Ok(Self { records })
   }
 
   pub fn get_as_tiff(&self, record: u16, tag: u16) -> Result<Option<GenericTiffReader>> {
@@ -713,10 +713,10 @@ impl Ctmd {
   pub fn exposure_info(&self) -> Result<Option<CtmdExposureInfo>> {
     if let Some(rec) = self.records.get(&5) {
       let mut buf = ByteStream::new(rec.payload.as_slice(), Endian::Little);
-      let fnumber = Rational::new(buf.get_u16().into(), buf.get_u16().into());
-      let exposure = Rational::new(buf.get_u16().into(), buf.get_u16().into());
-      let iso_speed = buf.get_u32();
-      let unknown = buf.get_bytes(buf.remaining_bytes());
+      let fnumber = Rational::new(buf.get_u16()?.into(), buf.get_u16()?.into());
+      let exposure = Rational::new(buf.get_u16()?.into(), buf.get_u16()?.into());
+      let iso_speed = buf.get_u32()?;
+      let unknown = buf.get_bytes(buf.remaining_bytes())?;
       Ok(Some(CtmdExposureInfo {
         fnumber,
         exposure,
@@ -734,7 +734,7 @@ impl Ctmd {
         return Ok(None);
       }
       let mut buf = ByteStream::new(rec.payload.as_slice(), Endian::Little);
-      let focal_len = Rational::new(buf.get_u16().into(), buf.get_u16().into());
+      let focal_len = Rational::new(buf.get_u16()?.into(), buf.get_u16()?.into());
       if focal_len.d.is_zero() {
         // Canon EOS R_RAW_ISO_100_nocrop_nodual.CR3 has an invalid Rational value
         return Ok(None);
@@ -896,27 +896,30 @@ mod tests {
   use super::*;
 
   #[test]
-  fn ctmd_stops_at_a_zeroed_record() {
+  fn ctmd_stops_at_a_zeroed_record() -> Result<()> {
     let zeros = [0u8; 64];
-    let ctmd = Ctmd::new(&mut ByteStream::new(&zeros, Endian::Little));
+    let ctmd = Ctmd::new(&mut ByteStream::new(&zeros, Endian::Little))?;
     assert!(ctmd.records.is_empty());
+    Ok(())
   }
 
   #[test]
-  fn ctmd_stops_at_a_record_larger_than_the_data() {
+  fn ctmd_stops_at_a_record_larger_than_the_data() -> Result<()> {
     let mut data = vec![0u8; 32];
     data[0..4].copy_from_slice(&1000u32.to_le_bytes());
-    let ctmd = Ctmd::new(&mut ByteStream::new(&data, Endian::Little));
+    let ctmd = Ctmd::new(&mut ByteStream::new(&data, Endian::Little))?;
     assert!(ctmd.records.is_empty());
+    Ok(())
   }
 
   #[test]
-  fn ctmd_reads_a_record_that_fits() {
+  fn ctmd_reads_a_record_that_fits() -> Result<()> {
     let mut data = vec![0u8; 20];
     data[0..4].copy_from_slice(&20u32.to_le_bytes());
     data[4..6].copy_from_slice(&1u16.to_le_bytes());
-    let ctmd = Ctmd::new(&mut ByteStream::new(&data, Endian::Little));
+    let ctmd = Ctmd::new(&mut ByteStream::new(&data, Endian::Little))?;
     assert_eq!(ctmd.records[&1].payload.len(), 8);
+    Ok(())
   }
 
   #[test]

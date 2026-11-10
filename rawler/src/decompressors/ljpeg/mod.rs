@@ -111,11 +111,11 @@ impl SOFInfo {
   }
 
   fn parse_sof(&mut self, input: &mut ByteStream) -> Result<(), String> {
-    let header_length = input.get_u16() as usize;
-    self.precision = input.get_u8() as usize;
-    self.height = input.get_u16() as usize;
-    self.width = input.get_u16() as usize;
-    self.cps = input.get_u8() as usize;
+    let header_length = input.get_u16()? as usize;
+    self.precision = input.get_u8()? as usize;
+    self.height = input.get_u16()? as usize;
+    self.width = input.get_u16()? as usize;
+    self.cps = input.get_u8()? as usize;
 
     if self.precision > 16 {
       return Err("ljpeg: More than 16 bits per channel is not supported.".to_string());
@@ -128,9 +128,9 @@ impl SOFInfo {
     }
 
     for i in 0..self.cps {
-      let id = input.get_u8() as usize;
-      let subs = input.get_u8() as usize;
-      input.get_u8(); // Skip info about quantized
+      let id = input.get_u8()? as usize;
+      let subs = input.get_u8()? as usize;
+      input.get_u8()?; // Skip info about quantized
 
       self.components.push(JpegComponentInfo {
         id,
@@ -147,28 +147,28 @@ impl SOFInfo {
     if self.width == 0 {
       return Err("ljpeg: Trying to parse SOS before SOF".to_string());
     }
-    input.get_u16(); //skip header length
-    let soscps = input.get_u8() as usize;
+    input.get_u16()?; //skip header length
+    let soscps = input.get_u8()? as usize;
     if self.cps != soscps {
       return Err("ljpeg: component number mismatch in SOS".to_string());
     }
     for cs in 0..self.cps {
       // At least some MOS cameras have this broken
-      let readcs = input.get_u8() as usize;
+      let readcs = input.get_u8()? as usize;
       let cs = if self.csfix { cs } else { readcs };
       let component = match self.components.iter_mut().find(|&&mut c| c.id == cs) {
         Some(val) => val,
         None => return Err(format!("ljpeg: invalid component selector {}", cs)),
       };
-      let td = (input.get_u8() as usize) >> 4;
+      let td = (input.get_u8()? as usize) >> 4;
       if td > 3 {
         return Err("ljpeg: Invalid Huffman table selection".to_string());
       }
       component.dc_tbl_num = td;
     }
-    let pred = input.get_u8() as usize;
-    input.get_u8(); // Se + Ah Not used in LJPEG
-    let pt = (input.get_u8() as usize) & 0xf; // Point Transform
+    let pred = input.get_u8()? as usize;
+    input.get_u8()?; // Se + Ah Not used in LJPEG
+    let pt = (input.get_u8()? as usize) & 0xf; // Point Transform
     Ok((pred, pt))
   }
 }
@@ -267,11 +267,11 @@ impl<'a> LjpegDecompressor<'a> {
 
   fn get_next_marker(input: &mut ByteStream, allowskip: bool) -> Result<u8, String> {
     if !allowskip {
-      let fill = input.get_u8();
+      let fill = input.get_u8()?;
       if fill != m(Marker::Fill) {
         return Err(format!("ljpeg get_next_marker() (noskip) expected fill marker 0XFF but got 0x{:X}", fill));
       }
-      let mark = input.get_u8();
+      let mark = input.get_u8()?;
       if mark == m(Marker::Stuff) || mark == m(Marker::Fill) {
         return Err(format!(
           "ljpeg get_next_marker() (noskip) expected marker but found STUFF or FILL (0x{:X})",
@@ -282,14 +282,14 @@ impl<'a> LjpegDecompressor<'a> {
     }
     input.skip_to_marker()?;
 
-    Ok(input.get_u8())
+    Ok(input.get_u8()?)
   }
 
   fn parse_dht(input: &mut ByteStream, init: &mut [bool; 4], bits: &mut [[u32; 17]; 4], huffval: &mut [[u32; 256]; 4]) -> Result<(), String> {
-    let mut length = (input.get_u16() as usize) - 2;
+    let mut length = (input.get_u16()? as usize) - 2;
 
     while length > 0 {
-      let b = input.get_u8() as usize;
+      let b = input.get_u8()? as usize;
       let tc = b >> 4;
       let th = b & 0xf;
 
@@ -302,7 +302,7 @@ impl<'a> LjpegDecompressor<'a> {
 
       let mut acc: usize = 0;
       for i in 0..16 {
-        bits[th][i + 1] = input.get_u8() as u32;
+        bits[th][i + 1] = input.get_u8()? as u32;
         acc += bits[th][i + 1] as usize;
       }
       bits[th][0] = 0;
@@ -316,7 +316,7 @@ impl<'a> LjpegDecompressor<'a> {
       }
 
       for i in 0..acc {
-        huffval[th][i] = input.get_u8() as u32;
+        huffval[th][i] = input.get_u8()? as u32;
       }
 
       init[th] = true;
@@ -330,11 +330,11 @@ impl<'a> LjpegDecompressor<'a> {
     if input.remaining_bytes() < 4 {
       return Err(format!("ljpeg: truncated DRI segment ({} bytes remain)", input.remaining_bytes()));
     }
-    let length = input.get_u16();
+    let length = input.get_u16()?;
     if length != 4 {
       return Err(format!("ljpeg: invalid DRI length {length}"));
     }
-    Ok(input.get_u16() as usize)
+    Ok(input.get_u16()? as usize)
   }
 
   /// Handle special SONY YUV 4:2:0 encoding in ILCE-7RM5

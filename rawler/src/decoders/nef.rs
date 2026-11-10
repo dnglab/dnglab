@@ -697,8 +697,8 @@ impl<'a> NefDecoder<'a> {
     debug!("NEF decode with: endian: {:?}, width: {}, height: {}, bps: {}", endian, width, height, bps);
     let mut out = alloc_image_ok!(width, height, dummy);
     let mut stream = ByteStream::new(meta, endian);
-    let v0 = stream.get_u8();
-    let v1 = stream.get_u8();
+    let v0 = stream.get_u8()?;
+    let v1 = stream.get_u8()?;
     debug!("Nef version v0:{}, v1:{}", v0, v1);
 
     let mut huff_select = 0;
@@ -706,7 +706,7 @@ impl<'a> NefDecoder<'a> {
       if stream.remaining_bytes() < 2110 {
         return Err("NEF: metadata stream too short for v0==73 or v1==88".to_string());
       }
-      stream.consume_bytes(2110);
+      stream.consume_bytes(2110)?;
     }
     if v0 == 70 {
       huff_select = 2;
@@ -719,8 +719,8 @@ impl<'a> NefDecoder<'a> {
     let mut htable = Self::create_hufftable(huff_select)?;
 
     // Setup the predictors
-    let mut pred_up1: [i32; 2] = [stream.get_u16() as i32, stream.get_u16() as i32];
-    let mut pred_up2: [i32; 2] = [stream.get_u16() as i32, stream.get_u16() as i32];
+    let mut pred_up1: [i32; 2] = [stream.get_u16()? as i32, stream.get_u16()? as i32];
+    let mut pred_up2: [i32; 2] = [stream.get_u16()? as i32, stream.get_u16()? as i32];
 
     // Get the linearization curve
     let mut points = [0_u16; 1 << 16];
@@ -738,12 +738,12 @@ impl<'a> NefDecoder<'a> {
     };
     let mut max = 1 << real_bps;
 
-    let csize = stream.get_u16() as usize;
+    let csize = stream.get_u16()? as usize;
     let mut split = 0_usize;
     let step = if csize > 1 { max / (csize - 1) } else { 0 };
     if v0 == 68 && (v1 == 32 || v1 == 64) && step > 0 {
       for i in 0..csize {
-        points[i * step] = stream.get_u16();
+        points[i * step] = stream.get_u16()?;
       }
       for i in 0..max {
         let b_scale = i % step;
@@ -759,7 +759,7 @@ impl<'a> NefDecoder<'a> {
       split = endian.read_u16(meta, 562) as usize;
     } else if v0 != 70 && csize <= 0x4001 {
       for i in 0..csize {
-        points[i] = stream.get_u16();
+        points[i] = stream.get_u16()?;
       }
       max = csize;
     }
