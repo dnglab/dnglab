@@ -188,7 +188,7 @@ fn unpack_generic_msb<'a>(lines: impl LineIteratorMut<'a, u16>, src: &[u8], skip
   let offset = skip_bits / 8;
   let bias = skip_bits % 8;
   let mut pump = BitPumpMSB::new(&src[offset..]);
-  pump.consume_bits(bias as u32);
+  pump.get_bits(bias as u32)?;
   for line in lines {
     for p in line {
       *p = pump.get_bits(bits)? as u16;
