@@ -91,6 +91,52 @@ impl fmt::Display for ProfileEmbedPolicy {
   }
 }
 
+/// DefaultBlackRender, a hint whether the black (e.g. flare) is subtracted while rendering
+///
+/// rawler doesn't subtract black while rendering: the automatic amount is
+/// zero, so both values render the same.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum DefaultBlackRender {
+  /// The raw converter determines the black subtraction, the default if
+  /// the tag is missing
+  #[default]
+  Auto,
+  /// No black subtraction, the tables or tone curve of the profile handle it
+  None,
+  /// Value not defined by the DNG specification
+  Unknown(u32),
+}
+
+impl From<u32> for DefaultBlackRender {
+  fn from(value: u32) -> Self {
+    match value {
+      0 => Self::Auto,
+      1 => Self::None,
+      value => Self::Unknown(value),
+    }
+  }
+}
+
+impl From<DefaultBlackRender> for u32 {
+  fn from(render: DefaultBlackRender) -> Self {
+    match render {
+      DefaultBlackRender::Auto => 0,
+      DefaultBlackRender::None => 1,
+      DefaultBlackRender::Unknown(value) => value,
+    }
+  }
+}
+
+impl fmt::Display for DefaultBlackRender {
+  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    match self {
+      Self::Auto => f.write_str("Auto"),
+      Self::None => f.write_str("None"),
+      Self::Unknown(value) => write!(f, "Unknown ({})", value),
+    }
+  }
+}
+
 /// Illuminants in order of preference for color calculations based on D65.
 /// Color matrices of these illuminants can be adapted to D65.
 pub const D65_PREFERENCE: [Illuminant; 9] = [
@@ -308,7 +354,7 @@ pub struct CameraProfile {
   pub tone_curve: Option<Vec<f32>>,
   /// BaselineExposureOffset in EV
   pub baseline_exposure_offset: Option<f32>,
-  pub default_black_render: Option<u32>,
+  pub default_black_render: Option<DefaultBlackRender>,
   pub dynamic_range: Option<ProfileDynamicRange>,
   pub rgb_tables: Option<RgbTables>,
   /// ProfileGainTableMap2
@@ -353,7 +399,7 @@ pub struct CalibrationSlot<'a> {
   /// CameraCalibration of the slot, only if the calibration applies to the profile
   pub camera_calibration: Option<&'a FlatMatrix>,
   pub baseline_exposure_offset: Option<f32>,
-  pub default_black_render: Option<u32>,
+  pub default_black_render: Option<DefaultBlackRender>,
   /// The profile for all other values
   pub profile: &'a CameraProfile,
 }
@@ -791,6 +837,19 @@ mod tests {
     assert_eq!(map(GainData::U16(vec![0, 13107, 65535])).gain_values(), vec![0.5, 0.9, 2.5]);
     assert_eq!(map(GainData::F16(vec![0x3800, 0x3c00, 0x4000])).gain_values(), vec![0.5, 1.0, 2.0]);
     assert_eq!(map(GainData::F32(vec![0.25, 1.0, 4.0])).gain_values(), vec![0.25, 1.0, 4.0]);
+  }
+
+  #[test]
+  fn default_black_render_values() {
+    for (value, render, name) in [
+      (0, DefaultBlackRender::Auto, "Auto"),
+      (1, DefaultBlackRender::None, "None"),
+      (7, DefaultBlackRender::Unknown(7), "Unknown (7)"),
+    ] {
+      assert_eq!(DefaultBlackRender::from(value), render);
+      assert_eq!(u32::from(render), value);
+      assert_eq!(render.to_string(), name);
+    }
   }
 
   #[test]

@@ -3,6 +3,7 @@
 
 //! Hue/saturation/value mapping tables (ProfileHueSatMapData, ProfileLookTableData)
 
+use super::{decode_overrange, encode_overrange};
 use crate::imgop::{
   hsv::{hsv_to_rgb, rgb_to_hsv},
   srgb::{srgb_apply_gamma, srgb_invert_gamma},
@@ -57,16 +58,23 @@ impl HueSatMap {
     })
   }
 
-  /// Apply the table to linear ProPhoto RGB, the value is limited to 1.0
-  pub fn apply(&self, rgb: [f32; 3]) -> [f32; 3] {
-    let (h, s, v) = rgb_to_hsv(rgb.map(|c| c.max(0.0)));
-    let v_encoded = if self.srgb_encoding { srgb_apply_gamma(v.min(1.0)) } else { v };
+  /// Apply the table to linear ProPhoto RGB
+  ///
+  /// The value is limited to 1.0, except for High Dynamic Range profiles
+  /// (`hdr`). For tables with value divisions, their values are encoded by
+  /// [`encode_overrange`] before and decoded after.
+  pub fn apply(&self, rgb: [f32; 3], hdr: bool) -> [f32; 3] {
+    let overrange = hdr && self.val_divisions > 1;
+    let (h, s, v) = rgb_to_hsv(rgb.map(|c| if overrange { encode_overrange(c) } else { c.max(0.0) }));
+    let white = if hdr { f32::INFINITY } else { 1.0 };
+    let v_encoded = if self.srgb_encoding { srgb_apply_gamma(v.min(white)) } else { v };
     let [hue_shift, sat_scale, val_scale] = self.lookup(h, s, v_encoded);
     let h = h + hue_shift * (6.0 / 360.0);
     let s = (s * sat_scale).min(1.0);
-    let v_encoded = (v_encoded * val_scale).clamp(0.0, 1.0);
+    let v_encoded = (v_encoded * val_scale).clamp(0.0, white);
     let v = if self.srgb_encoding { srgb_invert_gamma(v_encoded) } else { v_encoded };
-    hsv_to_rgb(h, s, v)
+    let rgb = hsv_to_rgb(h, s, v);
+    if overrange { rgb.map(decode_overrange) } else { rgb }
   }
 
   /// Interpolated table entry for hue (0.0 .. 6.0), saturation and encoded value
@@ -125,7 +133,7 @@ mod tests {
       for dims in [[90, 30, 1], [6, 4, 8]] {
         let table = uniform_table(dims, [0.0, 1.0, 1.0], encoding);
         for rgb in [[0.8, 0.2, 0.1], [0.1, 0.7, 0.3], [0.05, 0.03, 0.9], [0.4, 0.4, 0.4]] {
-          assert_rgb_eq(table.apply(rgb), rgb);
+          assert_rgb_eq(table.apply(rgb, false), rgb);
         }
       }
     }
@@ -134,12 +142,15 @@ mod tests {
   #[test]
   fn hue_shift_and_saturation() {
     // 120 degrees turn red into green
-    assert_rgb_eq(uniform_table([4, 2, 1], [120.0, 1.0, 1.0], None).apply([0.8, 0.0, 0.0]), [0.0, 0.8, 0.0]);
+    assert_rgb_eq(uniform_table([4, 2, 1], [120.0, 1.0, 1.0], None).apply([0.8, 0.0, 0.0], false), [0.0, 0.8, 0.0]);
     // Negative shifts wrap around
-    assert_rgb_eq(uniform_table([4, 2, 1], [-120.0, 1.0, 1.0], None).apply([0.8, 0.0, 0.0]), [0.0, 0.0, 0.8]);
-    assert_rgb_eq(uniform_table([4, 2, 1], [0.0, 0.0, 1.0], None).apply([0.8, 0.2, 0.4]), [0.8; 3]);
+    assert_rgb_eq(
+      uniform_table([4, 2, 1], [-120.0, 1.0, 1.0], None).apply([0.8, 0.0, 0.0], false),
+      [0.0, 0.0, 0.8],
+    );
+    assert_rgb_eq(uniform_table([4, 2, 1], [0.0, 0.0, 1.0], None).apply([0.8, 0.2, 0.4], false), [0.8; 3]);
     // The value is limited to 1.0
-    assert_rgb_eq(uniform_table([4, 2, 1], [0.0, 1.0, 2.0], None).apply([0.8, 0.4, 0.2]), [1.0, 0.5, 0.25]);
+    assert_rgb_eq(uniform_table([4, 2, 1], [0.0, 1.0, 2.0], None).apply([0.8, 0.4, 0.2], false), [1.0, 0.5, 0.25]);
   }
 
   #[test]
@@ -151,7 +162,7 @@ mod tests {
     }
     let table = HueSatMap::new([2, 2, 1], &data, None).expect("table");
     // Hue 270 degrees is between cyan and red (wrapped), the shift is 30 degrees
-    let (h, _, _) = rgb_to_hsv(table.apply(hsv_to_rgb(4.5, 1.0, 0.5)));
+    let (h, _, _) = rgb_to_hsv(table.apply(hsv_to_rgb(4.5, 1.0, 0.5), false));
     assert!((h - 5.0).abs() < 1e-5, "{}", h);
   }
 
@@ -163,7 +174,18 @@ mod tests {
       data.extend([0.0, 1.0, scale].repeat(2));
     }
     let table = HueSatMap::new([1, 2, 2], &data, None).expect("table");
-    assert_rgb_eq(table.apply([0.4, 0.2, 0.2]), [0.56, 0.28, 0.28]);
+    assert_rgb_eq(table.apply([0.4, 0.2, 0.2], false), [0.56, 0.28, 0.28]);
+  }
+
+  #[test]
+  fn hdr_values() {
+    // With value divisions, HDR values are encoded for the table
+    let table = uniform_table([6, 4, 8], [0.0, 1.0, 1.0], Some(ENCODING_SRGB));
+    assert_rgb_eq(table.apply([2.0, 1.0, 0.5], true), [2.0, 1.0, 0.5]);
+    // The value scale of a 2.5D table keeps values above 1.0 only for HDR
+    let table = uniform_table([4, 2, 1], [0.0, 1.0, 2.0], None);
+    assert_rgb_eq(table.apply([0.8, 0.4, 0.2], true), [1.6, 0.8, 0.4]);
+    assert_rgb_eq(table.apply([0.8, 0.4, 0.2], false), [1.0, 0.5, 0.25]);
   }
 
   #[test]
