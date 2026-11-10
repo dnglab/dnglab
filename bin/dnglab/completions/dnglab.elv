@@ -74,6 +74,7 @@ set edit:completion:arg-completer[dnglab] = {|@words|
             cand --crop 'Crop of the image: DefaultCrop (best), ActiveArea or none'
             cand --format 'Output image format, defaults to the OUTPUT file extension or tif'
             cand --color-space 'Color space of the image'
+            cand --highlights 'Highlights above white after the BaselineExposure: compress keeps their color with a smooth shoulder, clip clips each channel like DNG readers'
             cand --dcp-file 'Camera profile (DCP) to render the image with, replaces the primary camera profile'
             cand --jpeg-quality 'JPEG quality (1-100)'
             cand --denoise-luma 'Strength of the luma noise reduction (0-4), 0 is off, 1 is a full reduction [default: 0.25]'

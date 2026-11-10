@@ -20,6 +20,7 @@ use rawler::{
   imgop::{
     color::{OutputSpace, TransferFunction},
     denoise::DenoiseStrength,
+    highlights::HighlightMode,
     render::{DemosaicQuality, RenderOptions, RenderTarget, RenderedImage, StepSet, WhiteBalancePlacement, execute, plan},
     sharpen::DEFAULT_SHARPEN,
   },
@@ -68,6 +69,8 @@ fn main() -> Result<(), Box<dyn Error>> {
     // No change of the exposure
     exposure: 0.0,
     auto_exposure: false,
+    // Highlights above white after a positive BaselineExposure keep their color
+    highlights: HighlightMode::Compress,
   };
 
   // Plan the processing operations for this image

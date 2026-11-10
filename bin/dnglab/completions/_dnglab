@@ -73,6 +73,7 @@ _arguments "${_arguments_options[@]}" : \
 '--crop=[Crop of the image\: DefaultCrop (best), ActiveArea or none]:crop:(best activearea none)' \
 '--format=[Output image format, defaults to the OUTPUT file extension or tif]:format:(tif jpeg)' \
 '--color-space=[Color space of the image]:space:(srgb adobergb prophoto)' \
+'--highlights=[Highlights above white after the BaselineExposure\: compress keeps their color with a smooth shoulder, clip clips each channel like DNG readers]:mode:(compress clip)' \
 '--dcp-file=[Camera profile (DCP) to render the image with, replaces the primary camera profile]:FILE:_files' \
 '--jpeg-quality=[JPEG quality (1-100)]:quality:_default' \
 '--denoise-luma=[Strength of the luma noise reduction (0-4), 0 is off, 1 is a full reduction \[default\: 0.25\]]:strength:_default' \

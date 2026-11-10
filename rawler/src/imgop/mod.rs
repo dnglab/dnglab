@@ -11,6 +11,7 @@ pub mod develop;
 pub mod exposure;
 pub mod fuji_rotate;
 pub mod gamma;
+pub mod highlights;
 pub mod hsv;
 pub mod icc;
 pub mod luma;

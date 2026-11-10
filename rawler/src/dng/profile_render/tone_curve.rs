@@ -151,7 +151,7 @@ impl ToneCurve {
 
 /// Map the largest and smallest channel of `rgb` by `curve`, the middle
 /// channel keeps its relative position between them
-fn map_preserving_hue(rgb: [f32; 3], curve: impl Fn(f32) -> f32) -> [f32; 3] {
+pub(crate) fn map_preserving_hue(rgb: [f32; 3], curve: impl Fn(f32) -> f32) -> [f32; 3] {
   let mut order = [0, 1, 2];
   order.sort_by(|a, b| rgb[*b].total_cmp(&rgb[*a]));
   let [max, mid, min] = order;
