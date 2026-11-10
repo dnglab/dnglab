@@ -298,6 +298,17 @@ impl<'a> BitPumpJPEG<'a> {
   }
 }
 
+/// Count and consume the zero bits of a run which ends in the
+/// last bits of the buffer, where a whole block can't be peeked.
+#[cold]
+fn consume_zerobits_tail<P: BitPump + ?Sized>(pump: &mut P, mut count: u32) -> Result<u32, BitPumpError> {
+  while pump.peek_bits(1)? == 0 {
+    pump.consume_bits(1);
+    count += 1;
+  }
+  Ok(count)
+}
+
 pub trait BitPump {
   /// Return the next `num` bits without consuming them.
   ///
@@ -340,7 +351,9 @@ pub trait BitPump {
 
   /// Count the leading zeroes block-wise in 31 bits
   /// per block and returns the count.
-  /// All zero bits are consumed.
+  /// All zero bits are consumed, the 1-bit after them is not.
+  ///
+  /// Fails if the buffer ends before a 1-bit is found.
   #[inline(always)]
   fn consume_zerobits(&mut self) -> Result<u32, BitPumpError> {
     // Take one bit less because leading_zeros() is undefined
@@ -349,7 +362,11 @@ pub trait BitPump {
     let mut count = 0;
     // Count-and-skip all the leading `0`s.
     loop {
-      let batch: u32 = (self.peek_bits(BITS_PER_LOOP)? << 1) | 0x1;
+      let Ok(bits) = self.peek_bits(BITS_PER_LOOP) else {
+        // Fewer bits than a block are left, but the 1-bit may be in them
+        return consume_zerobits_tail(self, count);
+      };
+      let batch: u32 = (bits << 1) | 0x1;
       let n = batch.leading_zeros();
       self.consume_bits(n);
       count += n;
@@ -721,5 +738,36 @@ impl<'a> BitPump for BitPumpReverseBitsMSB<'a> {
   fn consume_bits(&mut self, num: u32) {
     self.nbits -= num;
     self.bits &= (1 << self.nbits) - 1;
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  /// A run of zero bits may end in the last bits of the buffer
+  #[test]
+  fn zerobits_at_end_of_buffer() {
+    // 20 zero bits, a 1-bit and 3 more bits
+    let data = [0x00, 0x00, 0x0d];
+    let mut pump = BitPumpMSB::new(&data);
+    assert_eq!(pump.consume_zerobits(), Ok(20));
+    assert_eq!(pump.get_bits(4), Ok(0b1101));
+    assert_eq!(pump.peek_bits(1), Err(BitPumpError::Eof));
+
+    // The same after a full block of zero bits
+    let data = [0x00, 0x00, 0x00, 0x00, 0x00, 0x01];
+    let mut pump = BitPumpMSB::new(&data);
+    assert_eq!(pump.consume_zerobits(), Ok(47));
+    assert_eq!(pump.get_bits(1), Ok(1));
+  }
+
+  /// A run of zero bits without a 1-bit is an error
+  #[test]
+  fn zerobits_without_end() {
+    for len in 0..12 {
+      let data = vec![0_u8; len];
+      assert_eq!(BitPumpMSB::new(&data).consume_zerobits(), Err(BitPumpError::Eof), "len {len}");
+    }
   }
 }
