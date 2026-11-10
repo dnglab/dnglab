@@ -11,6 +11,7 @@ pub mod bayer;
 pub mod border;
 pub mod lab;
 pub mod tiles;
+pub mod vng;
 pub mod xtrans;
 
 /// Identifies the type of color filter array (CFA) sensor.
@@ -82,6 +83,7 @@ mod tests {
       ppg::PPGDemosaic,
       superpixel::{Superpixel3Channel, Superpixel4Channel},
     },
+    vng::VngDemosaic,
     xtrans::{bilinear::XTransBilinearDemosaic, markesteijn::XTransMarkesteijnDemosaic},
     *,
   };
@@ -117,15 +119,15 @@ mod tests {
   fn demosaic_region() {
     // A band of full rows is demosaiced in place, other areas are copied
     for area in [Rect::new(Point::new(0, 6), Dim2::new(96, 48)), Rect::new(Point::new(5, 3), Dim2::new(70, 50))] {
-      let rgb: [&dyn Demosaic<f32, 3>; 3] = [&PPGDemosaic::new(), &AhdDemosaic::new(), &Superpixel3Channel::new()];
+      let rgb: [&dyn Demosaic<f32, 3>; 4] = [&PPGDemosaic::new(), &AhdDemosaic::new(), &VngDemosaic::new(), &Superpixel3Channel::new()];
       for algorithm in rgb {
         assert_region_equals_copy(algorithm, "RGGB", "RGB", area);
       }
-      let xtrans: [&dyn Demosaic<f32, 3>; 2] = [&XTransBilinearDemosaic::new(), &XTransMarkesteijnDemosaic::new_pass_3()];
+      let xtrans: [&dyn Demosaic<f32, 3>; 3] = [&XTransBilinearDemosaic::new(), &XTransMarkesteijnDemosaic::new_pass_3(), &VngDemosaic::new()];
       for algorithm in xtrans {
         assert_region_equals_copy(algorithm, XTRANS, "RGB", area);
       }
-      let cygm: [&dyn Demosaic<f32, 4>; 2] = [&Bilinear4Channel::new(), &Superpixel4Channel::new()];
+      let cygm: [&dyn Demosaic<f32, 4>; 3] = [&Bilinear4Channel::new(), &Superpixel4Channel::new(), &VngDemosaic::new()];
       for algorithm in cygm {
         assert_region_equals_copy(algorithm, "CYGM", "CYGM", area);
       }
