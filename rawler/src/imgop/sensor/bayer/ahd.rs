@@ -12,6 +12,7 @@ use crate::{
     sensor::{
       Demosaic,
       border::interpolate_border,
+      check_bayer_rgb, check_mosaic,
       lab::rgb_to_lab,
       tiles::{HaloTile, halo_tiles, inner_area, par_tiles},
     },
@@ -50,10 +51,9 @@ const TILE: usize = 256;
 /// The image is processed in tiles with a halo of 5 pixels in parallel, the 5
 /// pixels at the edges are interpolated bilinearly ([`interpolate_border`]).
 ///
-/// # Panics
+/// # Errors
 ///
-/// Panics for CFA patterns that are not RGGB or variants. You need to check
-/// the pattern before calling.
+/// Fails for CFA patterns that are not RGGB or variants.
 pub struct AhdDemosaic {
   /// Size of the cores of the tiles, the area each tile writes
   core: Dim2,
@@ -80,24 +80,22 @@ impl AhdDemosaic {
 }
 
 impl Demosaic<f32, 3> for AhdDemosaic {
-  fn demosaic(&self, pixels: ImageRegion<'_, f32>, cfa: &CFA, colors: &PlaneColor) -> Color2D<f32, 3> {
-    assert_eq!(pixels.channels(), 1, "Mosaic data must have one channel");
-    if !cfa.is_rgb() {
-      panic!("CFA pattern '{}' is not a RGB pattern, can not demosaic with AHD", cfa);
-    }
+  fn demosaic(&self, pixels: ImageRegion<'_, f32>, cfa: &CFA, colors: &PlaneColor) -> crate::Result<Color2D<f32, 3>> {
+    check_mosaic::<3, f32>("AHD", &pixels, cfa, colors)?;
+    check_bayer_rgb("AHD", cfa)?;
     let now = Instant::now();
     // The ROI changes the pattern if not perfectly aligned on the origin pattern
     let roi = pixels.area();
     let cfa_roi = cfa.shift(roi.p.x, roi.p.y);
 
     let mut out = Color2D::<f32, 3>::new(roi.width(), roi.height());
-    interpolate_border(pixels, cfa, colors, &mut out, HALO);
-    let tiles = halo_tiles(roi.d, inner_area(roi.d, HALO), self.core, HALO);
+    interpolate_border(pixels, cfa, colors, &mut out, HALO)?;
+    let tiles = halo_tiles(roi.d, inner_area(roi.d, HALO), self.core, HALO)?;
     par_tiles(ImageRegionMut::from(out.view_mut()), &tiles, Buffers::default, |buffers, tile, region| {
       ahd_tile(pixels, &cfa_roi, tile, buffers, region);
-    });
+    })?;
     log::debug!("AHD debayer time: {:.5}s", now.elapsed().as_secs_f32());
-    out
+    Ok(out)
   }
 }
 
@@ -126,7 +124,8 @@ struct Buffers {
 fn ahd_tile(pixels: ImageRegion<f32>, cfa_roi: &CFA, tile: &HaloTile, buffers: &mut Buffers, region: &mut DisjointRegionMut<f32>) {
   let (tw, th) = (tile.window.d.w, tile.window.d.h);
   let core = tile.core_in_window();
-  assert!(
+  // halo_tiles over the inner area with the same halo gives the whole halo
+  debug_assert!(
     core.p.x == HALO && core.p.y == HALO && core.d.w + 2 * HALO == tw && core.d.h + 2 * HALO == th,
     "Window of {:?} has no halo of {} pixels",
     tile,
@@ -249,7 +248,9 @@ mod tests {
   }
 
   fn demosaic(algorithm: &AhdDemosaic, samples: &[f32], width: usize, height: usize, pattern: &str) -> Color2D<f32, 3> {
-    algorithm.demosaic(ImageView::new(samples, width, height, 1).into(), &CFA::new(pattern), &PlaneColor::new("RGB"))
+    algorithm
+      .demosaic(ImageView::new(samples, width, height, 1).into(), &CFA::new(pattern), &PlaneColor::new("RGB"))
+      .unwrap()
   }
 
   #[test]

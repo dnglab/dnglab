@@ -7,7 +7,7 @@ use std::{ops::Add, time::Instant};
 
 use crate::{
   cfa::{CFA, CFA_COLOR_B, CFA_COLOR_G, CFA_COLOR_R, PlaneColor},
-  imgop::sensor::Demosaic,
+  imgop::sensor::{Demosaic, check_bayer_rgb, check_mosaic},
   pixarray::{Color2D, ImageRegion, RgbF32},
 };
 
@@ -29,17 +29,17 @@ impl PPGDemosaic {
 /// This is a simple algorithm but provides acceptable results. Like the color
 /// differences it interpolates, it works best on white balanced data.
 ///
-/// # Panics
+/// # Errors
 ///
-/// This function panics for CFA pattern that are not RGGB or variants. You need
-/// to check the pattern before calling.
+/// Fails for CFA patterns that are not RGGB or variants.
 impl Demosaic<f32, 3> for PPGDemosaic {
   /// Debayer image by using the PPG (Patterned Pixel Grouping) algorithm.
-  fn demosaic(&self, pixels: ImageRegion<'_, f32>, cfa: &CFA, _colors: &PlaneColor) -> Color2D<f32, 3> {
-    assert_eq!(pixels.channels(), 1, "Mosaic data must have one channel");
-    // PPG can only applied to pure RGGB or variants.
-    if !cfa.is_rgb() {
-      panic!("CFA pattern '{}' is not a RGB pattern, can not demosaic with PPG", cfa);
+  fn demosaic(&self, pixels: ImageRegion<'_, f32>, cfa: &CFA, colors: &PlaneColor) -> crate::Result<Color2D<f32, 3>> {
+    // PPG can only be applied to pure RGGB or variants.
+    check_mosaic::<3, f32>("PPG", &pixels, cfa, colors)?;
+    check_bayer_rgb("PPG", cfa)?;
+    if pixels.dim().is_empty() {
+      return Ok(Color2D::new(pixels.width(), pixels.height()));
     }
     // Measure time
     let now = Instant::now();
@@ -58,7 +58,7 @@ impl Demosaic<f32, 3> for PPGDemosaic {
     interpolate_rb_at_non_green(&mut rgb, &cfa_roi);
 
     log::debug!("PPG total debayer time: {:.5}s", now.elapsed().as_secs_f32());
-    rgb
+    Ok(rgb)
   }
 }
 
@@ -291,6 +291,7 @@ where
         let above = [2, 1].map(|k| match i.checked_sub(k) {
           Some(j) => &before[row_of(j)],
           None => {
+            // Rows 3 and more away from the top are in this band or the one above
             let prev = prev.expect("Band above");
             &prev[row_of(prev.len() / w + i - k)]
           }

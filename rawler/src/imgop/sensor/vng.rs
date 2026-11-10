@@ -12,6 +12,7 @@ use crate::{
     sensor::{
       Demosaic,
       border::interpolate_border,
+      check_mosaic,
       tiles::{HaloTile, halo_tiles, inner_area, par_tiles},
     },
   },
@@ -94,9 +95,9 @@ const DIRECTIONS: [(isize, isize); 8] = [(-1, -1), (-1, 0), (-1, 1), (0, 1), (1,
 /// each color is either only orthogonal or only diagonal to a pixel, both are
 /// the same.
 ///
-/// # Panics
+/// # Errors
 ///
-/// Panics if `colors` doesn't have N planes or a CFA color has no plane.
+/// Fails if `colors` doesn't have N planes or doesn't match the CFA colors.
 pub struct VngDemosaic {
   /// Size of the cores of the tiles, the area each tile writes
   core: Dim2,
@@ -126,23 +127,22 @@ impl<const N: usize> Demosaic<f32, N> for VngDemosaic
 where
   [f32; N]: Default,
 {
-  fn demosaic(&self, pixels: ImageRegion<'_, f32>, cfa: &CFA, colors: &PlaneColor) -> Color2D<f32, N> {
-    assert_eq!(pixels.channels(), 1, "Mosaic data must have one channel");
-    assert_eq!(colors.plane_count(), N, "VNG for {} planes needs {} color planes", N, N);
+  fn demosaic(&self, pixels: ImageRegion<'_, f32>, cfa: &CFA, colors: &PlaneColor) -> crate::Result<Color2D<f32, N>> {
+    check_mosaic::<N, f32>("VNG", &pixels, cfa, colors)?;
     let now = Instant::now();
     // The ROI changes the pattern if not perfectly aligned on the origin pattern
     let roi = pixels.area();
     let cfa_roi = cfa.shift(roi.p.x, roi.p.y);
-    let phases = Phases::new(&cfa_roi, colors, N);
+    let phases = Phases::new(&cfa_roi, colors, N)?;
 
     let mut out = Color2D::<f32, N>::new(roi.width(), roi.height());
-    interpolate_border(pixels, cfa, colors, &mut out, HALO);
-    let tiles = halo_tiles(roi.d, inner_area(roi.d, HALO), self.core, HALO);
+    interpolate_border(pixels, cfa, colors, &mut out, HALO)?;
+    let tiles = halo_tiles(roi.d, inner_area(roi.d, HALO), self.core, HALO)?;
     par_tiles(ImageRegionMut::from(out.view_mut()), &tiles, Buffers::default, |buffers, tile, region| {
       vng_tile::<N>(pixels, &phases, tile, buffers, region);
-    });
+    })?;
     log::debug!("VNG debayer time: {:.5}s", now.elapsed().as_secs_f32());
-    out
+    Ok(out)
   }
 }
 
@@ -179,20 +179,23 @@ struct Phases {
 impl Phases {
   /// Phases of `cfa` with the CFA colors mapped to `planes` planes by `colors`
   ///
-  /// # Panics
-  /// Panics if a CFA color has no plane.
-  fn new(cfa: &CFA, colors: &PlaneColor, planes: usize) -> Self {
+  /// # Errors
+  /// Fails if a CFA color has no plane.
+  fn new(cfa: &CFA, colors: &PlaneColor, planes: usize) -> crate::Result<Self> {
     let plane_map = colors.plane_lookup_table();
     let (rows, cols) = (cfa.height.max(1), cfa.width.max(1));
+    let pattern = (0..rows).flat_map(|row| (0..cols).map(move |col| cfa.color_at(row, col)));
+    if let Some(color) = pattern.into_iter().find(|&color| plane_map[color] >= planes) {
+      return Err(format!("CFA color {} of '{}' has no plane in {} planes", color, cfa, planes).into());
+    }
     let phases = (0..rows)
       .flat_map(|row| (0..cols).map(move |col| (row, col)))
       .map(|(row, col)| {
         // The pattern repeats, color_at wraps the small negative positions
         let plane = |dy: isize, dx: isize| {
           let color = cfa.color_at(row.wrapping_add_signed(dy), col.wrapping_add_signed(dx));
-          let plane = plane_map[color];
-          assert!(plane < planes, "CFA color {} of '{}' has no plane in {} planes", color, cfa, planes);
-          plane
+          // Every color of the pattern has a plane, see above
+          plane_map[color]
         };
         let own = plane(0, 0);
         let mut bilinear = Vec::new();
@@ -236,7 +239,7 @@ impl Phases {
         }
       })
       .collect();
-    Self { rows, cols, phases }
+    Ok(Self { rows, cols, phases })
   }
 
   /// The phases with offsets in a buffer of `width` pixels per row
@@ -284,7 +287,8 @@ struct Buffers<const N: usize> {
 fn vng_tile<const N: usize>(pixels: ImageRegion<f32>, phases: &Phases, tile: &HaloTile, buffers: &mut Buffers<N>, region: &mut DisjointRegionMut<f32>) {
   let (tw, th) = (tile.window.d.w, tile.window.d.h);
   let core = tile.core_in_window();
-  assert!(
+  // halo_tiles over the inner area with the same halo gives the whole halo
+  debug_assert!(
     core.p.x == HALO && core.p.y == HALO && core.d.w + 2 * HALO == tw && core.d.h + 2 * HALO == th,
     "Window of {:?} has no halo of {} pixels",
     tile,
@@ -392,7 +396,9 @@ mod tests {
   where
     [f32; N]: Default,
   {
-    algorithm.demosaic(ImageView::new(samples, width, height, 1).into(), &CFA::new(pattern), &PlaneColor::new(colors))
+    algorithm
+      .demosaic(ImageView::new(samples, width, height, 1).into(), &CFA::new(pattern), &PlaneColor::new(colors))
+      .unwrap()
   }
 
   /// Run `check` for each pattern with the number of planes of its colors
@@ -507,7 +513,7 @@ mod tests {
 
   #[test]
   fn phases_of_bayer_data() {
-    let phases = Phases::new(&CFA::new("RGGB"), &PlaneColor::new("RGB"), 3);
+    let phases = Phases::new(&CFA::new("RGGB"), &PlaneColor::new("RGB"), 3).unwrap();
     assert_eq!((phases.rows, phases.cols), (2, 2));
     let (red, green) = (&phases.phases[0], &phases.phases[1]);
     assert_eq!((red.own, green.own), (0, 1));

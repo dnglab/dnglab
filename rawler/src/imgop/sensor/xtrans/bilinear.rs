@@ -7,7 +7,7 @@ use std::time::Instant;
 
 use crate::{
   cfa::{CFA, PlaneColor},
-  imgop::sensor::Demosaic,
+  imgop::sensor::{Demosaic, check_mosaic},
   pixarray::{Color2D, ImageRegion, RgbF32},
 };
 
@@ -42,18 +42,20 @@ impl Demosaic<f32, 3> for XTransBilinearDemosaic {
   /// - `cfa`: The color filter array describing the X-Trans pattern.
   /// - `colors`: Plane-to-color mapping (unused, assumed RGB).
   ///
-  /// # Panics
-  /// Panics if the CFA pattern is not an RGB pattern.
-  #[allow(unused)]
-  fn demosaic(&self, pixels: ImageRegion<'_, f32>, cfa: &CFA, colors: &PlaneColor) -> Color2D<f32, 3> {
-    assert_eq!(pixels.channels(), 1, "Mosaic data must have one channel");
+  /// # Errors
+  /// Fails if the CFA pattern is not an RGB pattern.
+  fn demosaic(&self, pixels: ImageRegion<'_, f32>, cfa: &CFA, colors: &PlaneColor) -> crate::Result<Color2D<f32, 3>> {
+    check_mosaic::<3, f32>("X-Trans bilinear", &pixels, cfa, colors)?;
     if !cfa.is_rgb() {
-      panic!("CFA pattern '{}' is not a RGB pattern, can not demosaic", cfa);
+      return Err(format!("X-Trans bilinear needs an RGB CFA pattern, not '{}'", cfa).into());
+    }
+    if pixels.dim().is_empty() {
+      return Ok(Color2D::new(pixels.width(), pixels.height()));
     }
     let now = Instant::now();
     let rgb = interpolate_bilinear(pixels, cfa);
     log::debug!("X-Trans bilinear demosaic total time: {:.5}s", now.elapsed().as_secs_f32());
-    rgb
+    Ok(rgb)
   }
 }
 
