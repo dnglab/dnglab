@@ -252,6 +252,10 @@ pub struct RenderOptions {
   pub auto_exposure: bool,
   /// Treatment of the values above white after a positive BaselineExposure
   pub highlights: HighlightMode,
+  /// The output can hold values above white: renders with a High Dynamic
+  /// Range camera profile are linear and not clipped, see
+  /// [`RenderedImage::extended_range`]
+  pub extended_range: bool,
 }
 
 impl Default for RenderOptions {
@@ -267,6 +271,7 @@ impl Default for RenderOptions {
       exposure: 0.0,
       auto_exposure: false,
       highlights: HighlightMode::default(),
+      extended_range: false,
     }
   }
 }
@@ -285,6 +290,9 @@ pub struct RenderedImage {
   /// Opacity of the pixels from the transparency mask, 0.0 (transparent) to
   /// 1.0 (opaque). The values in `data` are not matted.
   pub alpha: Option<Vec<f32>>,
+  /// Linear values of a High Dynamic Range render, they can be above 1.0
+  /// and below 0.0 (colors outside of the color space)
+  pub extended_range: bool,
 }
 
 impl RenderedImage {
@@ -653,6 +661,51 @@ mod tests {
     };
     assert!(!op_names(&plan(&rggb_rawimage(), &linear)?).contains(&"ToneCurve"));
     assert!(!op_names(&plan(&rggb_rawimage(), &linear)?).contains(&"CameraToRgb"));
+    Ok(())
+  }
+
+  #[test]
+  fn plan_keeps_hdr_values_for_extended_range() -> crate::Result<()> {
+    use crate::camera_profile::{CameraProfile, ProfileDynamicRange};
+    use crate::imgop::xyz::Illuminant;
+
+    /// Pixel operations of the color map and whether the result has an extended range
+    fn pixel_ops(rawimage: &RawImage, options: &RenderOptions) -> crate::Result<(Vec<PixelOp>, bool)> {
+      let mut plan = plan(rawimage, options)?;
+      let extended_range = plan.extended_range;
+      let Some(Op::CameraToRgb { ops, .. }) = plan.ops.pop() else {
+        panic!("color map expected");
+      };
+      Ok((ops, extended_range))
+    }
+
+    let mut hdr = rggb_rawimage();
+    hdr.camera_profiles = vec![CameraProfile {
+      calibration_illuminant: [Some(Illuminant::D65), None, None],
+      color_matrix: [Some(vec![1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0]), None, None],
+      dynamic_range: Some(ProfileDynamicRange {
+        version: 1,
+        dynamic_range: 1,
+        hint_max_output_value: 0.0,
+      }),
+      ..Default::default()
+    }];
+    let extended = RenderOptions {
+      extended_range: true,
+      ..Default::default()
+    };
+    // HDR values stay linear and are not clipped
+    let (ops, extended_range) = pixel_ops(&hdr, &extended)?;
+    assert!(extended_range);
+    assert!(!ops.iter().any(|op| matches!(op, PixelOp::Clip | PixelOp::TransferFunction(_))), "{:?}", ops);
+    // An output without the extended range clips them for the transfer function
+    let (ops, extended_range) = pixel_ops(&hdr, &RenderOptions::default())?;
+    assert!(!extended_range);
+    assert_eq!(&ops[ops.len() - 2..], [PixelOp::Clip, PixelOp::TransferFunction(TransferFunction::Srgb)]);
+    // Other profiles are encoded as before
+    let (ops, extended_range) = pixel_ops(&rggb_rawimage(), &extended)?;
+    assert!(!extended_range);
+    assert_eq!(ops.last(), Some(&PixelOp::TransferFunction(TransferFunction::Srgb)));
     Ok(())
   }
 

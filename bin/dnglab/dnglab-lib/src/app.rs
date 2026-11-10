@@ -385,7 +385,7 @@ fn process_raw_command() -> Command {
         .action(ArgAction::SetTrue),
     )
     .arg(
-      arg!(--"format" <format> "Output image format, defaults to the OUTPUT file extension or tif")
+      arg!(--"format" <format> "Output image format, defaults to the OUTPUT file extension or tif. TIFF has 16-bit samples, linear 32-bit floating point samples for High Dynamic Range camera profiles")
         .required(false)
         .value_parser(value_parser!(ProcessedImageFormat)),
     )

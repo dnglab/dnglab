@@ -71,6 +71,8 @@ fn main() -> Result<(), Box<dyn Error>> {
     auto_exposure: false,
     // Highlights above white after a positive BaselineExposure keep their color
     highlights: HighlightMode::Compress,
+    // JPEG has no values above white, High Dynamic Range profiles are clipped
+    extended_range: false,
   };
 
   // Plan the processing operations for this image

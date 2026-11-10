@@ -72,7 +72,7 @@ set edit:completion:arg-completer[dnglab] = {|@words|
             cand --keep-mtime 'Keep mtime, read from EXIF with fallback to original file mtime'
             cand --image-index 'Select a specific image index (or ''all'') if file is a image container'
             cand --crop 'Crop of the image: DefaultCrop (best), ActiveArea or none'
-            cand --format 'Output image format, defaults to the OUTPUT file extension or tif'
+            cand --format 'Output image format, defaults to the OUTPUT file extension or tif. TIFF has 16-bit samples, linear 32-bit floating point samples for High Dynamic Range camera profiles'
             cand --color-space 'Color space of the image'
             cand --highlights 'Highlights above white after the BaselineExposure: compress keeps their color with a smooth shoulder, clip clips each channel like DNG readers'
             cand --dcp-file 'Camera profile (DCP) to render the image with, replaces the primary camera profile'
