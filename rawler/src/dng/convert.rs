@@ -15,6 +15,7 @@ use crate::{
   decoders::{Decoder, RawDecodeParams, RawPhotometricInterpretation, WellKnownIFD, WhiteLevel, validate_image_index},
   dng::{
     DEFAULT_LOSSY_JPEG_QUALITY, PREVIEW_JPEG_QUALITY,
+    dcp::CameraProfileFile,
     opcodes::{OpcodeSelector, OpcodeStage},
     original::OriginalCompressed,
     writer::DngWriter,
@@ -84,6 +85,10 @@ pub struct ConvertParams {
   pub apply_dng_opcodes: ApplyDngOpcodes,
   /// DNG opcodes to remove, they are neither applied nor written to the DNG
   pub remove_dng_opcodes: Vec<OpcodeSelector>,
+  /// Camera profile that replaces the primary camera profile
+  pub dcp: Option<CameraProfileFile>,
+  /// Camera profiles to add as extra camera profiles
+  pub extra_dcp: Vec<CameraProfileFile>,
 }
 
 /// Information surfaced from a completed conversion.
@@ -123,6 +128,8 @@ impl Default for ConvertParams {
       max_dng_backward_version: DngVersion::V1_4,
       apply_dng_opcodes: ApplyDngOpcodes::Auto,
       remove_dng_opcodes: Vec::new(),
+      dcp: None,
+      extra_dcp: Vec::new(),
     }
   }
 }
@@ -291,6 +298,18 @@ impl ConvertParams {
     self.remove_dng_opcodes = remove_dng_opcodes;
     self
   }
+
+  /// Set the camera profile that replaces the primary camera profile.
+  pub fn with_dcp(mut self, dcp: Option<CameraProfileFile>) -> Self {
+    self.dcp = dcp;
+    self
+  }
+
+  /// Set the camera profiles to add as extra camera profiles.
+  pub fn with_extra_dcp(mut self, extra_dcp: Vec<CameraProfileFile>) -> Self {
+    self.extra_dcp = extra_dcp;
+    self
+  }
 }
 
 /// Convert a raw input file into DNG
@@ -345,6 +364,7 @@ where
   validate_image_index(decoder.as_ref(), &raw_params)?;
   let mut rawimage = decoder.raw_image(rawfile, &raw_params, false)?;
   rawimage.remove_opcodes(&params.remove_dng_opcodes);
+  apply_dcp(&mut rawimage, params)?;
   let metadata = decoder.raw_metadata(rawfile, &raw_params)?;
 
   log::info!(
@@ -583,6 +603,20 @@ fn demosaic_to_linear_raw(rawimage: RawImage, fuji_rotation: bool) -> crate::Res
     steps.insert(FujiRotate);
   }
   render_linear_raw(rawimage, &RenderOptions { steps, ..Default::default() })
+}
+
+/// Replace the primary camera profile by the DCP of `params` and add the extra
+/// DCPs, before the image data is processed, so the preview is rendered with them
+fn apply_dcp(rawimage: &mut RawImage, params: &ConvertParams) -> crate::Result<()> {
+  for dcp in params.dcp.iter().chain(&params.extra_dcp) {
+    dcp.check_embedding()?;
+    dcp.check_camera(rawimage);
+  }
+  if let Some(dcp) = &params.dcp {
+    log::debug!("Camera profile '{}' replaces the primary camera profile", dcp.name());
+    rawimage.set_primary_camera_profile(dcp.profile.clone())?;
+  }
+  rawimage.append_camera_profiles(params.extra_dcp.iter().map(|dcp| dcp.profile.clone()))
 }
 
 /// Reduce demosaiced four-color image data to three color planes.

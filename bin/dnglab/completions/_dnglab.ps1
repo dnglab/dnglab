@@ -43,6 +43,8 @@ Register-ArgumentCompleter -Native -CommandName 'dnglab' -ScriptBlock {
             break
         }
         'dnglab;analyze' {
+            [CompletionResult]::new('--export-dcp', '--export-dcp', [CompletionResultType]::ParameterName, 'Write the as-shot camera profile as DCP file')
+            [CompletionResult]::new('--export-dcp-all', '--export-dcp-all', [CompletionResultType]::ParameterName, 'Write all camera profiles as DCP files to DIR')
             [CompletionResult]::new('-d', '-d', [CompletionResultType]::ParameterName, 'Log level')
             [CompletionResult]::new('--loglevel', '--loglevel', [CompletionResultType]::ParameterName, 'Log level')
             [CompletionResult]::new('--profile-path', '--profile-path', [CompletionResultType]::ParameterName, 'Directory with profile TOML files')
@@ -60,6 +62,8 @@ Register-ArgumentCompleter -Native -CommandName 'dnglab' -ScriptBlock {
             [CompletionResult]::new('--structure', '--structure', [CompletionResultType]::ParameterName, 'Write file structure to STDOUT')
             [CompletionResult]::new('--summary', '--summary', [CompletionResultType]::ParameterName, 'Write summary information for file to STDOUT')
             [CompletionResult]::new('--camera-profiles', '--camera-profiles', [CompletionResultType]::ParameterName, 'Write camera profiles to STDOUT (plain text, JSON or YAML)')
+            [CompletionResult]::new('-f', '-f', [CompletionResultType]::ParameterName, 'Override existing DCP files')
+            [CompletionResult]::new('--override', '--override', [CompletionResultType]::ParameterName, 'Override existing DCP files')
             [CompletionResult]::new('--json', '--json', [CompletionResultType]::ParameterName, 'Format metadata as JSON')
             [CompletionResult]::new('--yaml', '--yaml', [CompletionResultType]::ParameterName, 'Format metadata as YAML')
             [CompletionResult]::new('-v', '-v', [CompletionResultType]::ParameterName, 'Print status for every file')
@@ -75,6 +79,7 @@ Register-ArgumentCompleter -Native -CommandName 'dnglab' -ScriptBlock {
             [CompletionResult]::new('--crop', '--crop', [CompletionResultType]::ParameterName, 'Crop of the image: DefaultCrop (best), ActiveArea or none')
             [CompletionResult]::new('--format', '--format', [CompletionResultType]::ParameterName, 'Output image format, defaults to the OUTPUT file extension or tif')
             [CompletionResult]::new('--color-space', '--color-space', [CompletionResultType]::ParameterName, 'Color space of the image')
+            [CompletionResult]::new('--dcp-file', '--dcp-file', [CompletionResultType]::ParameterName, 'Camera profile (DCP) to render the image with, replaces the primary camera profile')
             [CompletionResult]::new('--jpeg-quality', '--jpeg-quality', [CompletionResultType]::ParameterName, 'JPEG quality (1-100)')
             [CompletionResult]::new('--denoise-luma', '--denoise-luma', [CompletionResultType]::ParameterName, 'Strength of the luma noise reduction (0-4), 0 is off, 1 is a full reduction [default: 0.25]')
             [CompletionResult]::new('--denoise-chroma', '--denoise-chroma', [CompletionResultType]::ParameterName, 'Strength of the chroma noise reduction (0-4), 0 is off, 1 is a full reduction [default: 0.5]')
@@ -122,6 +127,8 @@ Register-ArgumentCompleter -Native -CommandName 'dnglab' -ScriptBlock {
             [CompletionResult]::new('--crop', '--crop', [CompletionResultType]::ParameterName, 'DNG default crop')
             [CompletionResult]::new('-j', '-j', [CompletionResultType]::ParameterName, 'Number of files to convert in parallel (0 = auto)')
             [CompletionResult]::new('--jobs', '--jobs', [CompletionResultType]::ParameterName, 'Number of files to convert in parallel (0 = auto)')
+            [CompletionResult]::new('--dcp-file', '--dcp-file', [CompletionResultType]::ParameterName, 'Camera profile (DCP) that replaces the primary camera profile')
+            [CompletionResult]::new('--extra-dcp-file', '--extra-dcp-file', [CompletionResultType]::ParameterName, 'Camera profile (DCP) to embed as extra camera profile, can be repeated')
             [CompletionResult]::new('-d', '-d', [CompletionResultType]::ParameterName, 'Log level')
             [CompletionResult]::new('--loglevel', '--loglevel', [CompletionResultType]::ParameterName, 'Log level')
             [CompletionResult]::new('--profile-path', '--profile-path', [CompletionResultType]::ParameterName, 'Directory with profile TOML files')

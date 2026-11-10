@@ -113,12 +113,20 @@ _dnglab() {
             return 0
             ;;
         dnglab__subcmd__analyze)
-            opts="-d -v -h --raw-pixel --full-pixel --preview-pixel --thumbnail-pixel --raw-checksum --full-checksum --preview-checksum --thumbnail-checksum --srgb --meta --structure --summary --camera-profiles --json --yaml --loglevel --profile-path --config --help"
+            opts="-f -d -v -h --raw-pixel --full-pixel --preview-pixel --thumbnail-pixel --raw-checksum --full-checksum --preview-checksum --thumbnail-checksum --srgb --meta --structure --summary --camera-profiles --export-dcp --export-dcp-all --override --json --yaml --loglevel --profile-path --config --help"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
             fi
             case "${prev}" in
+                --export-dcp)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
+                --export-dcp-all)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
                 --loglevel)
                     COMPREPLY=($(compgen -W "error warn info debug trace" -- "${cur}"))
                     return 0
@@ -173,7 +181,7 @@ _dnglab() {
             return 0
             ;;
         dnglab__subcmd__convert)
-            opts="-p -c -f -r -j -d -v -h --profile --compression --ljpeg92-predictor --lossy-jpeg-quality --jxl-distance --jxl-effort --jxl-decode-speed --dng-preview --dng-thumbnail --dng-force-preview --dng-force-thumbnail --max-dng-backward-version --embed-raw --apply-dng-opcodes --remove-dng-opcodes --artist --copyright --keep-mtime --image-index --crop --override --recursive --jobs --loglevel --profile-path --config --help"
+            opts="-p -c -f -r -j -d -v -h --profile --compression --ljpeg92-predictor --lossy-jpeg-quality --jxl-distance --jxl-effort --jxl-decode-speed --dng-preview --dng-thumbnail --dng-force-preview --dng-force-thumbnail --max-dng-backward-version --embed-raw --apply-dng-opcodes --remove-dng-opcodes --artist --copyright --keep-mtime --image-index --crop --override --recursive --jobs --dcp-file --extra-dcp-file --loglevel --profile-path --config --help"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
@@ -272,6 +280,14 @@ _dnglab() {
                     return 0
                     ;;
                 -j)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
+                --dcp-file)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
+                --extra-dcp-file)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
@@ -783,7 +799,7 @@ _dnglab() {
             return 0
             ;;
         dnglab__subcmd__process__subcmd__raw)
-            opts="-f -r -d -v -h --remove-dng-opcodes --artist --keep-mtime --image-index --crop --crop-transparent --format --color-space --jpeg-quality --denoise-luma --denoise-chroma --sharpen --exposure --auto-exposure --steps --skip-steps --override --recursive --loglevel --profile-path --config --help"
+            opts="-f -r -d -v -h --remove-dng-opcodes --artist --keep-mtime --image-index --crop --crop-transparent --format --color-space --dcp-file --jpeg-quality --denoise-luma --denoise-chroma --sharpen --exposure --auto-exposure --steps --skip-steps --override --recursive --loglevel --profile-path --config --help"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
@@ -815,6 +831,10 @@ _dnglab() {
                     ;;
                 --color-space)
                     COMPREPLY=($(compgen -W "srgb adobergb prophoto" -- "${cur}"))
+                    return 0
+                    ;;
+                --dcp-file)
+                    COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
                 --jpeg-quality)

@@ -7,7 +7,6 @@ use itertools::Itertools;
 use log::debug;
 use serde::{Deserialize, Serialize};
 
-use crate::Result;
 use crate::camera_profile::{CalibrationSlot, CameraCalibration, CameraProfile, D65_PREFERENCE, GainTableMap, RgbTables};
 use crate::cfa::PlaneColor;
 use crate::dng::opcodes::{OpcodeList, OpcodeSelector, OpcodeStage};
@@ -29,6 +28,7 @@ use crate::{
   pixarray::{ImageView, ImageViewMut, PixU16},
   tags::TiffTag,
 };
+use crate::{RawlerError, Result};
 
 pub use crate::imgop::blacklevel::BlackLevel;
 
@@ -690,6 +690,58 @@ impl RawImage {
     self.camera_profiles.first_mut()
   }
 
+  /// Number of color planes of the image data, the size of the camera profile matrices
+  pub fn color_planes(&self) -> usize {
+    match &self.photometric {
+      RawPhotometricInterpretation::Cfa(config) => config.colors.plane_count(),
+      _ => self.cpp,
+    }
+  }
+
+  /// DNG UniqueCameraModel of the camera, also used for DCP files
+  pub fn unique_camera_model(&self) -> String {
+    format!("{} {}", self.clean_make, self.clean_model)
+  }
+
+  /// Replace the primary camera profile by `profile`, or add it if the image has no profile
+  ///
+  /// Extra camera profiles are kept. AsShotProfileName is removed, so `profile`
+  /// is the as-shot profile.
+  pub fn set_primary_camera_profile(&mut self, profile: CameraProfile) -> Result<()> {
+    self.check_camera_profile_planes(&profile)?;
+    match self.camera_profiles.first_mut() {
+      Some(primary) => *primary = profile,
+      None => self.camera_profiles.push(profile),
+    }
+    self.as_shot_profile_name = None;
+    Ok(())
+  }
+
+  /// Append `profiles` to the camera profiles, after the primary profile they
+  /// are extra camera profiles. Nothing is appended if a profile is invalid.
+  pub fn append_camera_profiles(&mut self, profiles: impl IntoIterator<Item = CameraProfile>) -> Result<()> {
+    let profiles: Vec<CameraProfile> = profiles.into_iter().collect();
+    for profile in &profiles {
+      self.check_camera_profile_planes(profile)?;
+    }
+    self.camera_profiles.extend(profiles);
+    Ok(())
+  }
+
+  /// The matrices of `profile` must match the color planes of the image data
+  fn check_camera_profile_planes(&self, profile: &CameraProfile) -> Result<()> {
+    let planes = self.color_planes();
+    match profile.color_planes() {
+      Some(profile_planes) if profile_planes == planes => Ok(()),
+      profile_planes => Err(RawlerError::DecoderFailed(format!(
+        "Camera profile '{}' is for {} color planes, the image has {}",
+        profile.name.as_deref().unwrap_or_default(),
+        profile_planes.unwrap_or_default(),
+        planes
+      ))),
+    }
+  }
+
   /// Index of the camera profile selected by AsShotProfileName
   ///
   /// A name with the prefix "Group: " selects a profile of that group (SDR
@@ -780,6 +832,65 @@ impl RawImage {
 #[cfg(test)]
 mod tests {
   use super::*;
+
+  /// Profile with a color matrix for `planes` color planes
+  fn profile_with_planes(name: &str, planes: usize) -> CameraProfile {
+    let mut profile = CameraProfile {
+      name: Some(name.into()),
+      ..Default::default()
+    };
+    profile.color_matrix[0] = Some(vec![0.5; planes * 3]);
+    profile
+  }
+
+  fn profile_names(rawimage: &RawImage) -> Vec<&str> {
+    rawimage
+      .camera_profiles
+      .iter()
+      .map(|profile| profile.name.as_deref().unwrap_or_default())
+      .collect()
+  }
+
+  #[test]
+  fn replace_camera_profiles() -> Result<()> {
+    let mut camera = Camera::new();
+    camera.cfa = CFA::new("RGGB");
+    let photometric = RawPhotometricInterpretation::Cfa(CFAConfig::new_from_camera(&camera));
+    let mut rawimage = RawImage::new(
+      camera,
+      PixU16::new_with(vec![0; 4 * 4], 4, 4),
+      1,
+      [2.0, 1.0, 1.5, f32::NAN],
+      photometric,
+      Some(BlackLevel::new(&[0_u32; 4], 2, 2, 1)),
+      Some(WhiteLevel::new_bits(12, 1)),
+      false,
+    );
+    assert_eq!(rawimage.color_planes(), 3);
+    // The camera has no color matrix, the profile is added
+    assert!(rawimage.camera_profiles.is_empty());
+    rawimage.set_primary_camera_profile(profile_with_planes("A", 3))?;
+    rawimage.append_camera_profiles([profile_with_planes("B", 3), profile_with_planes("C", 3)])?;
+    assert_eq!(profile_names(&rawimage), ["A", "B", "C"]);
+
+    // The primary profile is replaced and becomes the as-shot profile
+    rawimage.as_shot_profile_name = Some("C".into());
+    rawimage.set_primary_camera_profile(profile_with_planes("D", 3))?;
+    assert_eq!(profile_names(&rawimage), ["D", "B", "C"]);
+    assert_eq!(rawimage.as_shot_profile_name, None);
+    assert_eq!(rawimage.as_shot_camera_profile_index(), Some(0));
+
+    // The color planes must match the image data
+    assert!(rawimage.set_primary_camera_profile(profile_with_planes("E", 4)).is_err());
+    assert!(
+      rawimage
+        .append_camera_profiles([profile_with_planes("F", 3), profile_with_planes("G", 4)])
+        .is_err()
+    );
+    assert!(rawimage.append_camera_profiles([CameraProfile::default()]).is_err());
+    assert_eq!(profile_names(&rawimage), ["D", "B", "C"]);
+    Ok(())
+  }
 
   #[test]
   fn linearize_cfa_image() -> Result<()> {

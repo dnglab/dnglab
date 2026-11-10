@@ -10,7 +10,8 @@ use std::io::{Cursor, Read, Seek, SeekFrom};
 
 use crate::bits::Endian;
 use crate::camera_profile::{
-  CALIBRATION_SLOTS, CameraCalibration, CameraProfile, GainData, GainTableMap, IlluminantData, ProfileDynamicRange, RgbTable, RgbTables, TableData,
+  CALIBRATION_SLOTS, CameraCalibration, CameraProfile, GainData, GainTableMap, IlluminantData, ProfileDynamicRange, ProfileEmbedPolicy, RgbTable, RgbTables,
+  TableData,
 };
 use crate::formats::tiff::{DirectoryWriter, IFD, Rational, SRational, TiffWriter, Value};
 use crate::imgop::matrix::FlatMatrix;
@@ -149,7 +150,7 @@ pub fn read_camera_profile(ifd: &IFD) -> Option<CameraProfile> {
     name: read_string(ifd, DngTag::ProfileName),
     calibration_signature: read_string(ifd, DngTag::ProfileCalibrationSignature),
     copyright: read_string(ifd, DngTag::ProfileCopyright),
-    embed_policy: read_u32(ifd, DngTag::ProfileEmbedPolicy),
+    embed_policy: read_u32(ifd, DngTag::ProfileEmbedPolicy).map(ProfileEmbedPolicy::from),
     group_name: read_string(ifd, DngTag::ProfileGroupName),
     hue_sat_map_encoding: read_u32(ifd, DngTag::ProfileHueSatMapEncoding),
     look_table_encoding: read_u32(ifd, DngTag::ProfileLookTableEncoding),
@@ -222,6 +223,13 @@ pub fn read_extra_camera_profiles<R: Read + Seek>(reader: &mut R, root: &IFD) ->
 }
 
 fn read_extra_camera_profile<R: Read + Seek>(reader: &mut R, offset: u32) -> std::result::Result<CameraProfile, String> {
+  let ifd = read_camera_profile_ifd(reader, offset)?;
+  read_camera_profile(&ifd).ok_or_else(|| "no valid ColorMatrix1".into())
+}
+
+/// Read the IFD of a camera profile at `offset`, which starts with a byte order
+/// mark, the magic number 0x4352 and the offset of the IFD (like a DCP file)
+pub(crate) fn read_camera_profile_ifd<R: Read + Seek>(reader: &mut R, offset: u32) -> std::result::Result<IFD, String> {
   let mut header = [0_u8; 8];
   reader
     .seek(SeekFrom::Start(offset as u64))
@@ -239,8 +247,7 @@ fn read_extra_camera_profile<R: Read + Seek>(reader: &mut R, offset: u32) -> std
   if ifd_offset < 8 {
     return Err(format!("invalid IFD offset {}", ifd_offset));
   }
-  let ifd = IFD::new(reader, ifd_offset, offset, 0, endian, &[]).map_err(|err| err.to_string())?;
-  read_camera_profile(&ifd).ok_or_else(|| "no valid ColorMatrix1".into())
+  IFD::new(reader, ifd_offset, offset, 0, endian, &[]).map_err(|err| err.to_string())
 }
 
 /// Read CameraCalibration1..3 and CameraCalibrationSignature of IFD 0
@@ -305,7 +312,7 @@ pub fn write_camera_profile(ifd: &mut DirectoryWriter, profile: &CameraProfile) 
     }
   }
   if let Some(policy) = profile.embed_policy {
-    ifd.add_tag(DngTag::ProfileEmbedPolicy, policy);
+    ifd.add_tag(DngTag::ProfileEmbedPolicy, u32::from(policy));
   }
   if let Some(offset) = profile.baseline_exposure_offset {
     ifd.add_tag(DngTag::BaselineExposureOffset, srationals(&[offset])[0]);
@@ -324,11 +331,17 @@ pub fn write_camera_profile(ifd: &mut DirectoryWriter, profile: &CameraProfile) 
   }
 }
 
-/// Camera profile for ExtraCameraProfiles: header and IFD, offsets are relative to the start
-pub fn extra_camera_profile_data(profile: &CameraProfile) -> crate::formats::tiff::Result<Vec<u8>> {
+/// Camera profile with header and IFD, offsets are relative to the start
+///
+/// This is the format of ExtraCameraProfiles and of DCP files, which have
+/// the UniqueCameraModel of the camera the profile is made for.
+pub fn camera_profile_data(profile: &CameraProfile, unique_camera_model: Option<&str>) -> crate::formats::tiff::Result<Vec<u8>> {
   let mut buf = Cursor::new(Vec::new());
   let tiff = TiffWriter::new_with_magic(&mut buf, CAMERA_PROFILE_MAGIC)?;
   let mut ifd = DirectoryWriter::new();
+  if let Some(model) = unique_camera_model {
+    write_string(&mut ifd, DngTag::UniqueCameraModel, model);
+  }
   write_camera_profile(&mut ifd, profile);
   tiff.build(ifd)?;
   Ok(buf.into_inner())
@@ -918,6 +931,20 @@ mod tests {
     Ok(())
   }
 
+  /// A DCP file in big-endian byte order starts with "MMCR"
+  #[test]
+  fn big_endian_camera_profile_file() -> crate::Result<()> {
+    use crate::dng::dcp::CameraProfileFile;
+
+    let data = big_endian_camera_profile();
+    assert_eq!(&data[0..4], b"MMCR");
+    let file = CameraProfileFile::read(&mut Cursor::new(&data))?;
+    assert_eq!(file.unique_camera_model, None);
+    assert_eq!(file.profile.name.as_deref(), Some("Test"));
+    assert_eq!(file.profile.color_matrix[0], Some(vec![1.0, 0.0, 0.0, 0.0, 0.5, 0.0, 0.0, 0.0, -0.5]));
+    Ok(())
+  }
+
   #[test]
   fn extra_camera_profile_roundtrip() -> std::result::Result<(), Box<dyn std::error::Error>> {
     let mut profile = CameraProfile {
@@ -927,7 +954,7 @@ mod tests {
     profile.calibration_illuminant[0] = Some(Illuminant::D50);
     profile.color_matrix[0] = Some(vec![0.5; 9]);
     let mut file = vec![0; 2];
-    file.extend(extra_camera_profile_data(&profile)?);
+    file.extend(camera_profile_data(&profile, None)?);
     assert_eq!(read_extra_camera_profile(&mut Cursor::new(&file), 2)?, profile);
     Ok(())
   }

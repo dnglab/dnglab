@@ -26,7 +26,6 @@ use serde::Serialize;
 /// Matrix in rows
 pub type MatrixRows = Vec<Vec<f32>>;
 
-const EMBED_POLICY: [&str; 4] = ["Allow copying", "Embed if used", "Embed never", "No restrictions"];
 const DEFAULT_BLACK_RENDER: [&str; 2] = ["Auto", "None"];
 const TABLE_ENCODING: [&str; 2] = ["Linear", "sRGB"];
 const COMPOSITE_METHOD: [&str; 2] = ["Weighted sum", "Sequential"];
@@ -209,7 +208,7 @@ impl From<&CameraProfile> for CameraProfileSummary {
       name: profile.name.clone(),
       calibration_signature: profile.calibration_signature.clone(),
       copyright: profile.copyright.clone(),
-      embed_policy: profile.embed_policy.map(|code| code_name(&EMBED_POLICY, code)),
+      embed_policy: profile.embed_policy.map(|policy| policy.to_string()),
       group_name: profile.group_name.clone(),
       color_planes: profile.color_planes(),
       baseline_exposure_offset: profile.baseline_exposure_offset,
@@ -608,6 +607,7 @@ fn write_lines(f: &mut Formatter<'_>, lines: &[String]) -> fmt::Result {
 #[cfg(test)]
 mod tests {
   use super::*;
+  use rawler::camera_profile::ProfileEmbedPolicy;
 
   fn identity() -> Vec<f32> {
     vec![1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0]
@@ -616,7 +616,7 @@ mod tests {
   fn profile() -> CameraProfile {
     CameraProfile {
       name: Some("Test".into()),
-      embed_policy: Some(7),
+      embed_policy: Some(ProfileEmbedPolicy::Unknown(7)),
       calibration_illuminant: [Some(Illuminant::Other), Some(Illuminant::D65), None],
       illuminant_data: [Some(IlluminantData::Xy { x: 0.3457, y: 0.3585 }), None, None],
       color_matrix: [Some(identity()), Some(vec![0.5, -0.25, 0.0, -0.00001, 1.0, 0.125, 0.0, 0.0, 1.0]), None],

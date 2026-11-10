@@ -105,6 +105,7 @@ pub mod devtools;
 pub mod dng;
 pub(crate) mod envparams;
 pub mod exif;
+pub(crate) mod fileutils;
 pub mod formats;
 pub mod imgop;
 pub mod lens;
