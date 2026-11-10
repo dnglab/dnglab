@@ -76,7 +76,7 @@ impl<'a> BitPump for BitPumpPanasonic<'a> {
   fn peek_bits(&mut self, num: u32) -> std::result::Result<u32, BitPumpError> {
     check_bits(num, Self::MAX_PEEK_BITS)?;
     if num > self.nbits {
-      if self.buffer.len() < self.pos + 0x4000 {
+      if self.pos >= self.buffer.len() {
         return Err(BitPumpError::Eof);
       }
       self.nbits += 0x4000 * 8;
@@ -88,16 +88,21 @@ impl<'a> BitPump for BitPumpPanasonic<'a> {
     // next block, and a window at the block's end takes zero, as
     // LibRaw's buffer does.
     let byte = ((self.nbits - num) >> 3) ^ 0x3ff0;
-    let block = &self.buffer[self.pos - 0x4000..self.pos];
-    let at = |i: u32| -> u32 {
+    let shift = (self.nbits - num) & 7;
+    // The last block ends with the file and can be shorter than 16 KB
+    let block = &self.buffer[self.pos - 0x4000..self.pos.min(self.buffer.len())];
+    let at = |i: u32| -> std::result::Result<u32, BitPumpError> {
       if i >= 0x4000 {
-        return 0;
+        return Ok(0);
       }
       let i = if self.split { (i + 0x4000 - 0x2008) % 0x4000 } else { i };
-      block[i as usize] as u32
+      block.get(i as usize).map(|&b| b as u32).ok_or(BitPumpError::Eof)
     };
-    let bits = at(byte) | (at(byte + 1) << 8);
-    Ok((bits >> ((self.nbits - num) & 7)) & (0x0ffffffffu32 >> (32 - num)))
+    // The high byte is only read if the bits reach into it. Otherwise it
+    // can be the first byte of the next group, behind the end of the file.
+    let high = if shift + num > 8 { at(byte + 1)? } else { 0 };
+    let bits = at(byte)? | (high << 8);
+    Ok((bits >> shift) & (0x0ffffffffu32 >> (32 - num)))
   }
 
   fn consume_bits(&mut self, num: u32) {
