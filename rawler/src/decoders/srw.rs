@@ -310,6 +310,11 @@ impl<'a> SrwDecoder<'a> {
     // and Loring von Palleske (Samsung) for pointing to the open-source code of
     // Samsung's DNG converter at http://opensource.samsung.com/
 
+    // Each line is decoded in blocks of 16 pixels
+    if !width.is_multiple_of(16) {
+      return Err(RawlerError::DecoderFailed(format!("SRW3: width {} is not a multiple of 16", width)));
+    }
+
     let mut out = alloc_image_ok!(width, height, dummy);
     let mut pump = BitPumpMSB32::new(buf);
 
@@ -390,7 +395,7 @@ impl<'a> SrwDecoder<'a> {
         }
 
         if row < 2 && motion != 7 {
-          panic!("SRW Decoder: At start of image and motion isn't 7. File corrupted?")
+          return Err(RawlerError::DecoderFailed("SRW3: at start of image and motion isn't 7. File corrupted?".into()));
         }
 
         if motion == 7 {
@@ -401,28 +406,24 @@ impl<'a> SrwDecoder<'a> {
           }
         } else {
           // The complex case, we now need to actually lookup one or two lines above
-          if row < 2 {
-            panic!("SRW: Got a previous line lookup on first two lines. File corrupted?");
-          }
           let motion_offset: [isize; 7] = [-4, -2, -2, 0, 0, 2, 4];
           let motion_average: [i32; 7] = [0, 0, 1, 0, 1, 0, 0];
           let slide_offset = motion_offset[motion];
 
           for i in 0..16 {
-            let refpixel: usize = if ((row + i) & 0x1) != 0 {
+            let base: usize = if ((row + i) & 0x1) != 0 {
               // Red or blue pixels use same color two lines up
-              ((img_up2 + col + i) as isize + slide_offset) as usize
+              img_up2 + col + i
             } else {
               // Green pixel N uses Green pixel N from row above (top left or top right)
-              if (i % 2) != 0 {
-                ((img_up + col + i - 1) as isize + slide_offset) as usize
-              } else {
-                ((img_up + col + i + 1) as isize + slide_offset) as usize
-              }
+              if (i % 2) != 0 { img_up + col + i - 1 } else { img_up + col + i + 1 }
             };
+            let refpixel = base
+              .checked_add_signed(slide_offset)
+              .ok_or_else(|| RawlerError::DecoderFailed("SRW3: reference pixel is left of the image. File corrupted?".into()))?;
             // In some cases we use as reference interpolation of this pixel and the next
             out[img + col + i] = if motion_average[motion] != 0 {
-              (out[refpixel] + out[refpixel + 2] + 1) >> 1
+              ((out[refpixel] as u32 + out[refpixel + 2] as u32 + 1) >> 1) as u16
             } else {
               out[refpixel]
             }
@@ -444,7 +445,8 @@ impl<'a> SrwDecoder<'a> {
                 diff_bits[i] = diff_bits_mode[colornum][0] + 1;
               }
               2 => {
-                diff_bits[i] = diff_bits_mode[colornum][0] - 1;
+                // Wraps for 0, which fails the check below
+                diff_bits[i] = diff_bits_mode[colornum][0].wrapping_sub(1);
               }
               3 => {
                 diff_bits[i] = pump.get_bits(4)?;
@@ -454,7 +456,7 @@ impl<'a> SrwDecoder<'a> {
             diff_bits_mode[colornum][0] = diff_bits_mode[colornum][1];
             diff_bits_mode[colornum][1] = diff_bits[i];
             if diff_bits[i] > bit_depth + 1 {
-              panic!("SRW Decoder: Too many difference bits. File corrupted?");
+              return Err(RawlerError::DecoderFailed("SRW3: too many difference bits. File corrupted?".into()));
             }
           }
         }
