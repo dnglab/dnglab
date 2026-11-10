@@ -5,8 +5,8 @@
 //!
 //! The tables are applied in this order to linear ProPhoto RGB (D50), after
 //! the camera values are mapped to it: ProfileHueSatMap, the gain table map
-//! (ProfileGainTableMap2 or ProfileGainTableMap), ProfileLookTable and
-//! ProfileToneCurve.
+//! (ProfileGainTableMap2 or ProfileGainTableMap), ProfileLookTable,
+//! ProfileToneCurve and RGBTables.
 //!
 //! High Dynamic Range profiles (see ProfileDynamicRange) keep values above
 //! 1.0. Their tables and curve are applied to values encoded by
@@ -14,10 +14,12 @@
 
 mod gain_table_map;
 mod hue_sat_map;
+mod rgb_tables;
 mod tone_curve;
 
 pub use gain_table_map::GainTable;
 pub use hue_sat_map::HueSatMap;
+pub use rgb_tables::{RgbTable3d, RgbTablesRender};
 pub use tone_curve::ToneCurve;
 pub(crate) use tone_curve::map_preserving_hue;
 
@@ -47,6 +49,8 @@ pub struct ProfileRender {
   pub look_table: Option<HueSatMap>,
   /// ProfileToneCurve or the default curve, after the curve of a negative BaselineExposure
   pub tone_curve: Option<ToneCurve>,
+  /// RGBTables with the semantic masks of their tables
+  pub rgb_tables: Option<RgbTablesRender>,
   /// Linear gain of a positive BaselineExposure, applied before
   exposure_gain: f32,
   /// Scale of the gain table map input for a negative BaselineExposure
@@ -62,7 +66,8 @@ impl ProfileRender {
   /// `slot`, the gain table map that applies to the profile and the
   /// BaselineExposure `exposure` in EV. `default_tone_curve` is used if the
   /// profile has no ProfileToneCurve. `highlights` is the treatment of the
-  /// values above white after a positive BaselineExposure.
+  /// values above white after a positive BaselineExposure, `rgb_tables` are
+  /// the RGBTables that apply to the profile.
   ///
   /// Returns `None` if there is neither a valid table, a curve nor a negative
   /// exposure.
@@ -72,6 +77,7 @@ impl ProfileRender {
     exposure: f32,
     default_tone_curve: Option<ToneCurve>,
     highlights: HighlightMode,
+    rgb_tables: Option<RgbTablesRender>,
   ) -> Option<Self> {
     let hue_sat_map = profile.and_then(|(profile, slot)| {
       profile
@@ -88,7 +94,7 @@ impl ProfileRender {
     let profile_curve = profile.and_then(|(profile, _)| profile.tone_curve.as_deref()).and_then(ToneCurve::new);
     let tone_curve = ToneCurve::with_exposure(exposure, profile_curve.or(default_tone_curve));
     let gain_table = gain_table_map.and_then(GainTable::new);
-    if hue_sat_map.is_none() && gain_table.is_none() && look_table.is_none() && tone_curve.is_none() {
+    if hue_sat_map.is_none() && gain_table.is_none() && look_table.is_none() && tone_curve.is_none() && rgb_tables.is_none() {
       return None;
     }
     let exposure_gain = exposure.max(0.0).exp2();
@@ -98,6 +104,7 @@ impl ProfileRender {
       gain_table,
       look_table,
       tone_curve,
+      rgb_tables,
       exposure_gain,
       weight_scale: exposure.min(0.0).exp2(),
       hdr,
@@ -151,8 +158,9 @@ impl ProfileRender {
   /// includes the BaselineExposure. With a [`HighlightShoulder`], the values
   /// up to the white point are compressed to 1.0 instead of the clipping.
   ///
-  /// High Dynamic Range profiles are not clipped to 1.0, their tables and
-  /// curve are applied to encoded values.
+  /// RGBTables are applied last, with the weights of their masks at the
+  /// position. High Dynamic Range profiles are not clipped to 1.0, their
+  /// tables and curve are applied to encoded values.
   pub fn apply_pixel(&self, rgb: [f32; 3], u: f32, v: f32) -> [f32; 3] {
     let gain = self.exposure_gain;
     let mut rgb = rgb.map(|c| c.clamp(0.0, gain));
@@ -175,6 +183,9 @@ impl ProfileRender {
     }
     if let Some(curve) = &self.tone_curve {
       rgb = if self.hdr { curve.apply_rgb_overrange(rgb) } else { curve.apply_rgb(rgb) };
+    }
+    if let Some(tables) = &self.rgb_tables {
+      rgb = tables.apply(rgb, u, v, self.hdr);
     }
     rgb
   }
@@ -227,29 +238,29 @@ pub fn prophoto_to_srgb() -> [[f32; 3]; 3] {
 #[cfg(test)]
 mod tests {
   use super::*;
-  use crate::camera_profile::{GainData, ProfileDynamicRange};
+  use crate::camera_profile::{GainData, ProfileDynamicRange, RgbTable, RgbTables, TableData};
   use crate::imgop::{Dim2, Point, matrix::multiply_vector};
   use crate::pixarray::RgbF32;
 
   #[test]
   fn profile_render_of_slot() {
     let mut profile = CameraProfile::default();
-    assert!(ProfileRender::new(Some((&profile, 0)), None, 0.0, None, HighlightMode::Clip).is_none());
+    assert!(ProfileRender::new(Some((&profile, 0)), None, 0.0, None, HighlightMode::Clip, None).is_none());
     // Hue shift of 120 degrees in slot 1, none in slot 0
     profile.hue_sat_map_dims = Some([2, 2, 1]);
     profile.hue_sat_map_data = [Some([0.0, 1.0, 1.0].repeat(4)), Some([120.0, 1.0, 1.0].repeat(4)), None];
-    let render = ProfileRender::new(Some((&profile, 1)), None, 0.0, None, HighlightMode::Clip).expect("render");
+    let render = ProfileRender::new(Some((&profile, 1)), None, 0.0, None, HighlightMode::Clip, None).expect("render");
     assert_eq!(render.apply_pixel([0.5, 0.0, 0.0], 0.5, 0.5), [0.0, 0.5, 0.0]);
     assert_eq!(
-      ProfileRender::new(Some((&profile, 0)), None, 0.0, None, HighlightMode::Clip)
+      ProfileRender::new(Some((&profile, 0)), None, 0.0, None, HighlightMode::Clip, None)
         .expect("render")
         .apply_pixel([0.5, 0.0, 0.0], 0.5, 0.5),
       [0.5, 0.0, 0.0]
     );
     // Slot 2 has no table
-    assert!(ProfileRender::new(Some((&profile, 2)), None, 0.0, None, HighlightMode::Clip).is_none());
+    assert!(ProfileRender::new(Some((&profile, 2)), None, 0.0, None, HighlightMode::Clip, None).is_none());
     profile.tone_curve = Some(vec![0.0, 0.0, 0.5, 0.25, 1.0, 1.0]);
-    let render = ProfileRender::new(Some((&profile, 2)), None, 0.0, None, HighlightMode::Clip).expect("render");
+    let render = ProfileRender::new(Some((&profile, 2)), None, 0.0, None, HighlightMode::Clip, None).expect("render");
     assert!(render.hue_sat_map.is_none() && render.tone_curve.is_some());
   }
 
@@ -275,7 +286,7 @@ mod tests {
   #[test]
   fn gain_table_map_across_image() {
     // Gain 1.0 at the left and 3.0 at the right edge
-    let render = ProfileRender::new(None, Some(&gain_table_map(vec![1.0, 3.0])), 0.0, None, HighlightMode::Clip).expect("render");
+    let render = ProfileRender::new(None, Some(&gain_table_map(vec![1.0, 3.0])), 0.0, None, HighlightMode::Clip, None).expect("render");
     let mut image = RgbF32::new_with(vec![[0.2, 0.1, 0.1]; 4], 2, 2);
     // The map covers the right column only
     render.apply(&mut image, Rect::new(Point::new(1, 0), Dim2::new(1, 2))).expect("three channels");
@@ -292,14 +303,14 @@ mod tests {
     profile.hue_sat_map_dims = Some([1, 2, 1]);
     profile.hue_sat_map_data = [Some([0.0, 1.0, 1.0].repeat(2)), None, None];
     // BaselineExposure of +1 EV, the white point is 2.0
-    let render = ProfileRender::new(Some((&profile, 0)), Some(&gain_table_map(vec![0.5, 0.5])), 1.0, None, HighlightMode::Clip).expect("render");
+    let render = ProfileRender::new(Some((&profile, 0)), Some(&gain_table_map(vec![0.5, 0.5])), 1.0, None, HighlightMode::Clip, None).expect("render");
     assert_eq!(render.exposure_gain(), 2.0);
     // 1.6 is below the white point, the gain table map halves it
     assert_rgb_eq(render.apply_pixel([1.6, 0.8, 0.4], 0.5, 0.5), [0.8, 0.4, 0.2]);
     // Values are limited to the white point, then clipped to 1.0 after the gain table map
-    let render = ProfileRender::new(Some((&profile, 0)), Some(&gain_table_map(vec![0.5, 0.5])), 0.0, None, HighlightMode::Clip).expect("render");
+    let render = ProfileRender::new(Some((&profile, 0)), Some(&gain_table_map(vec![0.5, 0.5])), 0.0, None, HighlightMode::Clip, None).expect("render");
     assert_rgb_eq(render.apply_pixel([3.0, 0.4, 0.4], 0.5, 0.5), [0.5, 0.2, 0.2]);
-    let without_map = ProfileRender::new(Some((&profile, 0)), None, 1.0, None, HighlightMode::Clip).expect("render");
+    let without_map = ProfileRender::new(Some((&profile, 0)), None, 1.0, None, HighlightMode::Clip, None).expect("render");
     assert_rgb_eq(without_map.apply_pixel([1.6, 0.8, 0.4], 0.5, 0.5), [1.0, 0.8, 0.4]);
   }
 
@@ -311,8 +322,8 @@ mod tests {
       ..Default::default()
     };
     // BaselineExposure of +2 EV, the white point is 4.0
-    let compress = ProfileRender::new(Some((&profile, 0)), None, 2.0, None, HighlightMode::Compress).expect("render");
-    let clip = ProfileRender::new(Some((&profile, 0)), None, 2.0, None, HighlightMode::Clip).expect("render");
+    let compress = ProfileRender::new(Some((&profile, 0)), None, 2.0, None, HighlightMode::Compress, None).expect("render");
+    let clip = ProfileRender::new(Some((&profile, 0)), None, 2.0, None, HighlightMode::Clip, None).expect("render");
     assert_rgb_eq(compress.apply_pixel([4.0; 3], 0.5, 0.5), [1.0; 3]);
     // Clipping turns the highlight yellow, the shoulder keeps its hue
     assert_rgb_eq(clip.apply_pixel([4.0, 1.0, 0.2], 0.5, 0.5), [1.0, 1.0, 0.2]);
@@ -322,15 +333,15 @@ mod tests {
     // Values below the knee are unchanged
     assert_rgb_eq(compress.apply_pixel([0.6, 0.4, 0.2], 0.5, 0.5), [0.6, 0.4, 0.2]);
     // Without a positive exposure there is nothing to compress
-    let render = ProfileRender::new(Some((&profile, 0)), None, 0.0, None, HighlightMode::Compress).expect("render");
+    let render = ProfileRender::new(Some((&profile, 0)), None, 0.0, None, HighlightMode::Compress, None).expect("render");
     assert_rgb_eq(render.apply_pixel([3.0, 0.4, 0.4], 0.5, 0.5), [1.0, 0.4, 0.4]);
   }
 
   #[test]
   fn negative_exposure() {
     // Without any table, a negative exposure is rendered as tone curve
-    assert!(ProfileRender::new(None, None, 0.0, None, HighlightMode::Clip).is_none());
-    let render = ProfileRender::new(None, None, -1.0, None, HighlightMode::Clip).expect("render");
+    assert!(ProfileRender::new(None, None, 0.0, None, HighlightMode::Clip, None).is_none());
+    let render = ProfileRender::new(None, None, -1.0, None, HighlightMode::Clip, None).expect("render");
     assert_eq!(render.exposure_gain(), 1.0);
     assert_rgb_eq(render.apply_pixel([1.0; 3], 0.5, 0.5), [1.0; 3]);
     assert_rgb_eq(render.apply_pixel([0.2; 3], 0.5, 0.5), [0.1; 3]);
@@ -338,7 +349,7 @@ mod tests {
     // gain 1.4 between 2.0 (dark) and 1.0 (bright)
     let mut map = gain_table_map(vec![2.0, 1.0]);
     map.points = [1, 1, 2];
-    let render = ProfileRender::new(None, Some(&map), -1.0, None, HighlightMode::Clip).expect("render");
+    let render = ProfileRender::new(None, Some(&map), -1.0, None, HighlightMode::Clip, None).expect("render");
     let curve = ToneCurve::negative_exposure(-1.0).expect("curve");
     assert_rgb_eq(render.apply_pixel([0.6, 0.3, 0.3], 0.5, 0.5), curve.apply_rgb([0.84, 0.42, 0.42]));
   }
@@ -364,7 +375,7 @@ mod tests {
       ..Default::default()
     };
     let map = gain_table_map(vec![2.0, 2.0]);
-    let sdr = ProfileRender::new(Some((&profile, 0)), Some(&map), 0.0, None, HighlightMode::Clip).expect("render");
+    let sdr = ProfileRender::new(Some((&profile, 0)), Some(&map), 0.0, None, HighlightMode::Clip, None).expect("render");
     assert!(!sdr.is_hdr());
     assert_rgb_eq(sdr.apply_pixel([0.8, 0.4, 0.2], 0.5, 0.5), [1.0, 0.8, 0.4]);
     profile.dynamic_range = Some(ProfileDynamicRange {
@@ -372,9 +383,36 @@ mod tests {
       dynamic_range: 1,
       hint_max_output_value: 0.0,
     });
-    let hdr = ProfileRender::new(Some((&profile, 0)), Some(&map), 0.0, None, HighlightMode::Clip).expect("render");
+    let hdr = ProfileRender::new(Some((&profile, 0)), Some(&map), 0.0, None, HighlightMode::Clip, None).expect("render");
     assert!(hdr.is_hdr());
     assert_rgb_eq(hdr.apply_pixel([0.8, 0.4, 0.2], 0.5, 0.5), [1.6, 0.8, 0.4]);
+  }
+
+  #[test]
+  fn rgb_tables_after_tone_curve() {
+    // A background table that maps all colors to gray 0.3
+    let tables = RgbTables {
+      composite_method: 0,
+      tables: vec![RgbTable {
+        semantic_name: None,
+        divisions: 2,
+        gamma_encoding: 0,
+        color_primaries: 4,
+        gamut_extension: 0,
+        data: TableData::F32(vec![0.3; 24]),
+      }],
+    };
+    let render = |profile: Option<(&CameraProfile, usize)>| {
+      ProfileRender::new(profile, None, 0.0, None, HighlightMode::Clip, RgbTablesRender::new(&tables, &[])).expect("render")
+    };
+    // RGBTables alone are a rendering table
+    assert_rgb_eq(render(None).apply_pixel([0.8, 0.5, 0.2], 0.5, 0.5), [0.3; 3]);
+    // The tone curve doesn't change the result of the table
+    let profile = CameraProfile {
+      tone_curve: Some(vec![0.0, 0.0, 0.5, 0.25, 1.0, 1.0]),
+      ..Default::default()
+    };
+    assert_rgb_eq(render(Some((&profile, 0))).apply_pixel([0.5; 3], 0.5, 0.5), [0.3; 3]);
   }
 
   #[test]

@@ -144,6 +144,22 @@ pub const XYZ_TO_SRGB_D65: [[f32; 3]; 3] = [
   [0.0556434, -0.2040259, 1.0572252],
 ];
 
+// Display P3 primaries (DCI-P3 with D65 white)
+#[allow(clippy::excessive_precision)]
+pub const DISPLAYP3_TO_XYZ_D65: [[f32; 3]; 3] = [
+  [0.4865709, 0.2656677, 0.1982173],
+  [0.2289746, 0.6917385, 0.0792869],
+  [0.0000000, 0.0451134, 1.0439444],
+];
+
+// Rec. 2020 / Rec. 2100 primaries, inverse of XYZ_TO_REC2020_D65
+#[allow(clippy::excessive_precision)]
+pub const REC2020_TO_XYZ_D65: [[f32; 3]; 3] = [
+  [0.6369580, 0.1446169, 0.1688810],
+  [0.2627002, 0.6779981, 0.0593017],
+  [0.0000000, 0.0280727, 1.0609851],
+];
+
 // Rec. 2020 / Rec. 2100 primaries, same white point as SRGB_TO_XYZ_D65
 #[allow(clippy::excessive_precision)]
 pub const XYZ_TO_REC2020_D65: [[f32; 3]; 3] = [

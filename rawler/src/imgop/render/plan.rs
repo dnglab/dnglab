@@ -8,7 +8,7 @@ use crate::{
   RawImage,
   dng::{
     opcodes::OpcodeStage,
-    profile_render::{ProfileRender, ToneCurve, prophoto_to_rgb, rgb_to_prophoto},
+    profile_render::{ProfileRender, RgbTablesRender, ToneCurve, prophoto_to_rgb, rgb_to_prophoto},
   },
   imgop::{
     balance::auto_white_balance,
@@ -326,12 +326,26 @@ pub fn plan(rawimage: &RawImage, options: &RenderOptions) -> crate::Result<Plan>
       .as_shot_camera_profile_index()
       .and_then(|index| rawimage.effective_gain_table_map(index))
       .filter(|_| tables);
+    // RGBTables apply to the regions of the semantic masks. The masks are not
+    // rotated, a rotated image keeps only the background table.
+    let rotated = ops.iter().any(|op| matches!(op, Op::FujiRotate { .. }));
+    let rgb_tables = rawimage
+      .as_shot_camera_profile_index()
+      .and_then(|index| rawimage.effective_rgb_tables(index))
+      .filter(|_| tables)
+      .and_then(|rgb_tables| {
+        if rotated && !rawimage.semantic_masks.is_empty() {
+          log::warn!("Semantic masks of RGBTables are not used: the image data is rotated");
+        }
+        RgbTablesRender::new(rgb_tables, if rotated { &[] } else { &rawimage.semantic_masks })
+      });
     let render = ProfileRender::new(
       slot.map(|slot| (slot.profile, slot.slot)),
       gain_table_map,
       exposure,
       default_tone_curve,
       options.highlights,
+      rgb_tables,
     );
     // Without rendering tables, the values above white are compressed before
     // they are clipped for the transfer function
