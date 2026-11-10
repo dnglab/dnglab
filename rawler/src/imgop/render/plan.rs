@@ -26,6 +26,8 @@ use crate::{
 #[derive(Clone, Debug)]
 pub struct Plan {
   pub(super) ops: Vec<Op>,
+  /// The result has linear values of a High Dynamic Range render
+  pub(super) extended_range: bool,
 }
 
 /// Processing operation with its parameters
@@ -240,7 +242,7 @@ pub fn plan(rawimage: &RawImage, options: &RenderOptions) -> crate::Result<Plan>
         clip: None,
       }));
     }
-    return Ok(Plan { ops });
+    return Ok(Plan { ops, extended_range: false });
   }
   // Cropping before the color operations saves their work for the cropped pixels
   if crop_default && !cropped {
@@ -314,6 +316,7 @@ pub fn plan(rawimage: &RawImage, options: &RenderOptions) -> crate::Result<Plan>
       });
     }
   }
+  let mut extended_range = false;
   if steps.contains(Step::Calibrate) && channels > 1 {
     // All operations on the color image are applied in one pass, the gain
     // with the white balance and the transfer function after the rendering
@@ -352,8 +355,12 @@ pub fn plan(rawimage: &RawImage, options: &RenderOptions) -> crate::Result<Plan>
     let shoulder = (render.is_none() && options.highlights == HighlightMode::Compress)
       .then(|| HighlightShoulder::new(gain))
       .flatten();
-    // The output has no values above white
-    if let Some(slot) = slot.filter(|slot| slot.profile.is_hdr()) {
+    // A High Dynamic Range profile is rendered to linear values without
+    // clipping, if the output can hold them
+    extended_range = options.extended_range && slot.is_some_and(|slot| slot.profile.is_hdr());
+    let transfer_function = transfer_function.filter(|_| !extended_range);
+    // Otherwise the output has no values above white
+    if !extended_range && let Some(slot) = slot.filter(|slot| slot.profile.is_hdr()) {
       log::warn!(
         "Camera profile '{}' is a High Dynamic Range profile, values above white are clipped in the output",
         slot.profile.name.as_deref().unwrap_or_default()
@@ -371,7 +378,8 @@ pub fn plan(rawimage: &RawImage, options: &RenderOptions) -> crate::Result<Plan>
     };
     // Encoded values are clipped per channel to the output range. Linear
     // values keep highlights above white and colors outside of the output
-    // space, the conversion to integers clips them.
+    // space, the conversion to integers clips them, unless they are written
+    // as floating point values.
     if let Some(function) = transfer_function {
       pixel_ops.extend(shoulder.map(PixelOp::Highlights));
       pixel_ops.extend([PixelOp::Clip, PixelOp::TransferFunction(function)]);
@@ -395,7 +403,7 @@ pub fn plan(rawimage: &RawImage, options: &RenderOptions) -> crate::Result<Plan>
       ops.push(Op::TransferFunction(function));
     }
   }
-  Ok(Plan { ops })
+  Ok(Plan { ops, extended_range })
 }
 
 /// Demosaic algorithm for a CFA and the number of color planes of its result

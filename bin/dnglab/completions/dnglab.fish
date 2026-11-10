@@ -79,7 +79,7 @@ complete -c dnglab -n "__fish_dnglab_using_subcommand process-raw" -l image-inde
 complete -c dnglab -n "__fish_dnglab_using_subcommand process-raw" -l crop -d 'Crop of the image: DefaultCrop (best), ActiveArea or none' -r -f -a "best\t''
 activearea\t''
 none\t''"
-complete -c dnglab -n "__fish_dnglab_using_subcommand process-raw" -l format -d 'Output image format, defaults to the OUTPUT file extension or tif' -r -f -a "tif\t''
+complete -c dnglab -n "__fish_dnglab_using_subcommand process-raw" -l format -d 'Output image format, defaults to the OUTPUT file extension or tif. TIFF has 16-bit samples, linear 32-bit floating point samples for High Dynamic Range camera profiles' -r -f -a "tif\t''
 jpeg\t''"
 complete -c dnglab -n "__fish_dnglab_using_subcommand process-raw" -l color-space -d 'Color space of the image' -r -f -a "srgb\t''
 adobergb\t''

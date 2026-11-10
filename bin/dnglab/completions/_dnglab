@@ -71,7 +71,7 @@ _arguments "${_arguments_options[@]}" : \
 '--keep-mtime=[Keep mtime, read from EXIF with fallback to original file mtime]:keepmtime:(true false)' \
 '--image-index=[Select a specific image index (or '\''all'\'') if file is a image container]:index:_default' \
 '--crop=[Crop of the image\: DefaultCrop (best), ActiveArea or none]:crop:(best activearea none)' \
-'--format=[Output image format, defaults to the OUTPUT file extension or tif]:format:(tif jpeg)' \
+'--format=[Output image format, defaults to the OUTPUT file extension or tif. TIFF has 16-bit samples, linear 32-bit floating point samples for High Dynamic Range camera profiles]:format:(tif jpeg)' \
 '--color-space=[Color space of the image]:space:(srgb adobergb prophoto)' \
 '--highlights=[Highlights above white after the BaselineExposure\: compress keeps their color with a smooth shoulder, clip clips each channel like DNG readers]:mode:(compress clip)' \
 '--dcp-file=[Camera profile (DCP) to render the image with, replaces the primary camera profile]:FILE:_files' \

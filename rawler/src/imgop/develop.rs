@@ -30,7 +30,8 @@ pub use super::render::ProcessingStep;
 /// File format of a processed raw image
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum ProcessedImageFormat {
-  /// 16-bit TIFF, LZW compressed
+  /// 16-bit TIFF, linear 32-bit floating point for High Dynamic Range camera
+  /// profiles, LZW compressed
   #[default]
   Tiff,
   /// 8-bit JPEG
@@ -199,6 +200,19 @@ fn crop_to_opaque_area(rawimage: &mut RawImage, develop: &mut RawDevelop, crop: 
   }
 }
 
+/// Samples of `channels` per pixel with `alpha` as an extra sample, mapped by
+/// `sample`. Without alpha, `data` is returned unchanged.
+fn with_alpha<T: Copy>(data: Vec<T>, channels: usize, alpha: Option<&[f32]>, sample: impl Fn(f32) -> T) -> Vec<T> {
+  match alpha {
+    Some(alpha) => data
+      .chunks_exact(channels)
+      .zip(alpha)
+      .flat_map(|(pixel, alpha)| pixel.iter().copied().chain(std::iter::once(sample(*alpha))))
+      .collect(),
+    None => data,
+  }
+}
+
 /// Development of raw images with a set of processing steps
 ///
 /// The order of the steps is defined by the rendering, see
@@ -282,12 +296,20 @@ impl RawDevelop {
   /// Develop raw image and write result into TIFF.
   /// If demosaic is disabled or camera raw is monochrome, the TIFF
   /// has only one color channel.
+  ///
+  /// The TIFF has 16-bit samples. A render with a High Dynamic Range camera
+  /// profile has linear 32-bit floating point samples, they keep the values
+  /// above 1.0.
   pub fn develop<W>(&self, rawimage: RawImage, md: &RawMetadata, writer: W) -> crate::Result<()>
   where
     W: io::Write + io::Seek,
   {
     let (make, model, orientation) = (rawimage.clean_make.clone(), rawimage.clean_model.clone(), rawimage.orientation);
-    let image = self.develop_image(rawimage)?;
+    let options = RenderOptions {
+      extended_range: true,
+      ..self.render_options()
+    };
+    let mut image = render(rawimage, &options)?;
 
     let mut tiff = TiffWriter::new(writer)?;
     let mut root_ifd = Self::metadata_ifd(&mut tiff, &make, &model, orientation, md, &image)?;
@@ -295,30 +317,36 @@ impl RawDevelop {
       root_ifd.add_tag_undefined(ExifTag::IccProfile, icc);
     }
 
-    let mut data = convert_from_f32_scaled_u16(&image.data, 0, u16::MAX);
     let mut samples = image.channels;
     // The transparency mask is an extra sample of unassociated alpha, the
     // color values are not matted
-    if let Some(alpha) = &image.alpha {
-      data = data
-        .chunks_exact(image.channels)
-        .zip(alpha)
-        .flat_map(|(pixel, alpha)| pixel.iter().copied().chain(std::iter::once((alpha * u16::MAX as f32).round() as u16)))
-        .collect();
+    if image.alpha.is_some() {
       samples += 1;
       let color_samples = if image.channels == 1 { 1 } else { 3 };
       let extra: Vec<u16> = (color_samples..image.channels).map(|_| 0).chain(std::iter::once(2)).collect();
       root_ifd.add_tag(ExifTag::ExtraSamples, &extra);
     }
-    let (strip_rows, strips) = tiff.write_strips_lzw(&data, samples, image.dim(), 0)?;
+    let dim = image.dim();
+    let (bits, (strip_rows, strips)) = if image.extended_range {
+      let data = with_alpha(std::mem::take(&mut image.data), image.channels, image.alpha.as_deref(), |alpha| alpha);
+      (32_u16, tiff.write_strips_lzw_f32(&data, samples, dim, 0)?)
+    } else {
+      let data = convert_from_f32_scaled_u16(&image.data, 0, u16::MAX);
+      let data = with_alpha(data, image.channels, image.alpha.as_deref(), |alpha| (alpha * u16::MAX as f32).round() as u16);
+      (16_u16, tiff.write_strips_lzw(&data, samples, dim, 0)?)
+    };
     let strip_offsets: Vec<u32> = strips.iter().map(|(offset, _)| *offset).collect();
     let strip_bytes: Vec<u32> = strips.iter().map(|(_, bytes)| *bytes).collect();
     root_ifd.add_tag(TiffCommonTag::Compression, 5);
-    root_ifd.add_tag(TiffCommonTag::Predictor, 1);
+    // Floating point samples have the floating point predictor
+    root_ifd.add_tag(TiffCommonTag::Predictor, if image.extended_range { 3 } else { 1 });
+    if image.extended_range {
+      root_ifd.add_tag(TiffCommonTag::SampleFormat, &vec![3_u16; samples]);
+    }
     root_ifd.add_tag(TiffCommonTag::StripOffsets, &strip_offsets);
     root_ifd.add_tag(TiffCommonTag::StripByteCounts, &strip_bytes);
     // Four channels are written as RGB with an extra channel
-    root_ifd.add_tag(TiffCommonTag::BitsPerSample, &vec![16_u16; samples]);
+    root_ifd.add_tag(TiffCommonTag::BitsPerSample, &vec![bits; samples]);
     root_ifd.add_tag(TiffCommonTag::SamplesPerPixel, [samples as u16]);
     root_ifd.add_tag(TiffCommonTag::PhotometricInt, [if image.channels == 1 { 1_u16 } else { 2 }]);
     root_ifd.add_tag(TiffCommonTag::RowsPerStrip, strip_rows);
@@ -1552,6 +1580,74 @@ mod tests {
       let jpeg = image::load_from_memory(&jpeg).expect("JPEG").into_rgb8();
       assert!(jpeg.get_pixel(3, 12).0.iter().all(|v| *v <= 2), "{:?}", jpeg.get_pixel(3, 12));
       assert!(jpeg.get_pixel(28, 12).0.iter().any(|v| *v > 20), "{:?}", jpeg.get_pixel(28, 12));
+    }
+
+    #[test]
+    fn hdr_profile_in_float_tiff() {
+      use crate::camera_profile::ProfileDynamicRange;
+      use crate::formats::tiff::writer::float_predictor_decode;
+
+      /// BitsPerSample, SampleFormat and Predictor of a TIFF and its decoded
+      /// floating point samples
+      fn read_tiff(tiff: &[u8]) -> (u16, u16, u16, Vec<f32>) {
+        let reader = GenericTiffReader::new_with_buffer(tiff, 0, 0, None).expect("TIFF");
+        let root = reader.root_ifd();
+        let tag = |tag: TiffCommonTag| root.get_entry(tag).map_or(0, |entry| entry.force_u16(0));
+        let (bits, format, predictor) = (
+          tag(TiffCommonTag::BitsPerSample),
+          tag(TiffCommonTag::SampleFormat),
+          tag(TiffCommonTag::Predictor),
+        );
+        if format != 3 {
+          return (bits, format, predictor, Vec::new());
+        }
+        let row_bytes = tag(TiffCommonTag::ImageWidth) as usize * tag(TiffCommonTag::SamplesPerPixel) as usize * 4;
+        let (offsets, counts) = (
+          root.get_entry(TiffCommonTag::StripOffsets).expect("offsets"),
+          root.get_entry(TiffCommonTag::StripByteCounts).expect("counts"),
+        );
+        let mut values = Vec::new();
+        for strip in 0..offsets.count() as usize {
+          let start = offsets.force_u32(strip) as usize;
+          let data = &tiff[start..start + counts.force_u32(strip) as usize];
+          let decoded = weezl::decode::Decoder::with_tiff_size_switch(weezl::BitOrder::Msb, 8)
+            .decode(data)
+            .expect("LZW");
+          for row in decoded.chunks(row_bytes) {
+            values.extend(float_predictor_decode(row.to_vec(), tag(TiffCommonTag::SamplesPerPixel) as usize));
+          }
+        }
+        (bits, format, predictor, values)
+      }
+
+      // +2 EV brighten the highlights above white
+      let mut rawimage = rggb();
+      rawimage.baseline_exposure = Some(SRational::new(2, 1));
+      let mut hdr = rawimage.clone();
+      hdr.camera_profiles[0].dynamic_range = Some(ProfileDynamicRange {
+        version: 1,
+        dynamic_range: 1,
+        hint_max_output_value: 0.0,
+      });
+      let develop = RawDevelop::with_crop(CropMode::None);
+      let metadata = RawMetadata::default();
+      let tiff_of = |rawimage: &RawImage| {
+        let mut tiff = Cursor::new(Vec::new());
+        develop.develop(rawimage.clone(), &metadata, &mut tiff).expect("develop TIFF");
+        read_tiff(&tiff.into_inner())
+      };
+
+      // The HDR profile gives linear floating point samples above 1.0
+      let (bits, format, predictor, values) = tiff_of(&hdr);
+      assert_eq!((bits, format, predictor), (32, 3, 3));
+      assert_eq!(values.len(), 32 * 24 * 3);
+      assert!(values.iter().any(|v| *v > 1.5), "{:?}", values.iter().copied().fold(0.0, f32::max));
+      // The SDR profile gives 16-bit samples
+      assert_eq!(tiff_of(&rawimage).0, 16);
+      // JPEG of the HDR profile is clipped
+      let mut jpeg = Vec::new();
+      develop.develop_jpeg(hdr, &metadata, &mut jpeg, 95).expect("develop JPEG");
+      assert!(image::load_from_memory(&jpeg).is_ok());
     }
 
     #[test]

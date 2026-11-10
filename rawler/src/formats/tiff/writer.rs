@@ -58,30 +58,37 @@ where
     Ok(())
   }
 
-  pub fn write_strips_lzw(&mut self, data: &[u16], cpp: usize, dim: Dim2, mut strip_lines: usize) -> Result<(u32, Vec<(u32, u32)>)> {
-    if strip_lines == 0 {
-      if dim.h > 256 {
-        strip_lines = 256;
-      } else {
-        strip_lines = dim.h; // Use single strip
-      }
-    }
-    let mut tag_data = Vec::with_capacity(dim.h / strip_lines + 1);
+  pub fn write_strips_lzw(&mut self, data: &[u16], cpp: usize, dim: Dim2, strip_lines: usize) -> Result<(u32, Vec<(u32, u32)>)> {
+    let strip_lines = default_strip_lines(dim, strip_lines);
     let strips = data
       .par_chunks(cpp * dim.w * strip_lines)
-      .map(|strip| {
-        let mut encoder = weezl::encode::Encoder::with_tiff_size_switch(weezl::BitOrder::Msb, 8);
-        encoder.encode(strip.as_bytes())
-      })
+      .map(|strip| lzw_encode(strip.as_bytes()))
       .collect::<std::result::Result<Vec<Vec<u8>>, LzwError>>()
       .map_err(|err| TiffError::General(err.to_string()))?;
+    Ok((strip_lines as u32, self.write_strips(strips)?))
+  }
 
+  /// Write `data` of `cpp` 32-bit floating point samples per pixel as LZW
+  /// compressed strips with the floating point predictor (Predictor 3)
+  pub fn write_strips_lzw_f32(&mut self, data: &[f32], cpp: usize, dim: Dim2, strip_lines: usize) -> Result<(u32, Vec<(u32, u32)>)> {
+    let strip_lines = default_strip_lines(dim, strip_lines);
+    let row_samples = (cpp * dim.w).max(1);
+    let strips = data
+      .par_chunks(row_samples * strip_lines)
+      .map(|strip| lzw_encode(&strip.chunks(row_samples).flat_map(|row| float_predictor_row(row, cpp)).collect::<Vec<u8>>()))
+      .collect::<std::result::Result<Vec<Vec<u8>>, LzwError>>()
+      .map_err(|err| TiffError::General(err.to_string()))?;
+    Ok((strip_lines as u32, self.write_strips(strips)?))
+  }
+
+  /// Write encoded strips, returns the offset and size of each strip
+  fn write_strips(&mut self, strips: Vec<Vec<u8>>) -> Result<Vec<(u32, u32)>> {
+    let mut tag_data = Vec::with_capacity(strips.len());
     for strip in strips {
       let offset = self.write_data(&strip)?;
-      let bytes = strip.len() as u32;
-      tag_data.push((offset, bytes));
+      tag_data.push((offset, strip.len() as u32));
     }
-    Ok((strip_lines as u32, tag_data))
+    Ok(tag_data)
   }
 
   pub fn write_data(&mut self, data: &[u8]) -> Result<u32>
@@ -414,4 +421,78 @@ where
     ifd.add_tag_undefined(tag, entry.clone());
   }
   Ok(())
+}
+
+/// Rows per strip: `strip_lines`, or 256 rows if it is 0, a single strip
+/// for images of up to 256 rows
+fn default_strip_lines(dim: Dim2, strip_lines: usize) -> usize {
+  match strip_lines {
+    0 if dim.h > 256 => 256,
+    0 => dim.h.max(1),
+    lines => lines,
+  }
+}
+
+fn lzw_encode(data: &[u8]) -> std::result::Result<Vec<u8>, LzwError> {
+  weezl::encode::Encoder::with_tiff_size_switch(weezl::BitOrder::Msb, 8).encode(data)
+}
+
+/// Bytes of a row of 32-bit floating point samples with the floating point
+/// predictor of TIFF (Predictor 3, Adobe Photoshop TIFF Technical Note 3)
+///
+/// The bytes of the samples are split into planes, the most significant
+/// bytes first. Then each byte is replaced by its difference to the byte of
+/// the previous pixel, `cpp` bytes before it.
+fn float_predictor_row(row: &[f32], cpp: usize) -> Vec<u8> {
+  let samples = row.len();
+  let mut bytes = vec![0_u8; samples * 4];
+  for (i, value) in row.iter().enumerate() {
+    for (plane, byte) in value.to_be_bytes().into_iter().enumerate() {
+      bytes[plane * samples + i] = byte;
+    }
+  }
+  for i in (cpp..bytes.len()).rev() {
+    bytes[i] = bytes[i].wrapping_sub(bytes[i - cpp]);
+  }
+  bytes
+}
+
+/// Samples of a row encoded by [`float_predictor_row`]
+#[cfg(test)]
+pub(crate) fn float_predictor_decode(mut bytes: Vec<u8>, cpp: usize) -> Vec<f32> {
+  for i in cpp..bytes.len() {
+    bytes[i] = bytes[i].wrapping_add(bytes[i - cpp]);
+  }
+  let samples = bytes.len() / 4;
+  (0..samples)
+    .map(|i| f32::from_be_bytes([0, 1, 2, 3].map(|plane| bytes[plane * samples + i])))
+    .collect()
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[test]
+  fn float_predictor() {
+    // One RGB pixel: the planes of the most significant bytes first, then the
+    // differences to the previous byte of the same channel
+    let row = [1.0_f32, 2.0, -0.5];
+    let mut planes: Vec<u8> = (0..4).flat_map(|plane| row.map(|v| v.to_be_bytes()[plane])).collect();
+    for i in (3..planes.len()).rev() {
+      planes[i] = planes[i].wrapping_sub(planes[i - 3]);
+    }
+    assert_eq!(float_predictor_row(&row, 3), planes);
+    // Rows round-trip, including values above 1.0 and negative values
+    for cpp in [1, 3, 4] {
+      let row: Vec<f32> = (0..cpp * 7)
+        .map(|i| (i as f32 * 0.37).sin() * 4.0 + if i % 5 == 0 { 100.0 } else { 0.0 })
+        .collect();
+      let decoded = float_predictor_decode(float_predictor_row(&row, cpp), cpp);
+      assert_eq!(
+        decoded.iter().map(|v| v.to_bits()).collect::<Vec<_>>(),
+        row.iter().map(|v| v.to_bits()).collect::<Vec<_>>()
+      );
+    }
+  }
 }
