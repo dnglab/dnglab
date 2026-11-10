@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: LGPL-2.1
 // Copyright 2026 Daniel Vogelbacher <daniel@chaospixel.com>
 
-use std::time::Instant;
+use web_time::Instant;
 
 use multiversion::multiversion;
 

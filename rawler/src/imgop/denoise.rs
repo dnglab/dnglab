@@ -17,7 +17,8 @@
 //! the color with the most noise would change the most. The mean of each block
 //! of the image is restored at the end.
 
-use std::time::{Duration, Instant};
+use std::time::Duration;
+use web_time::Instant;
 
 use multiversion::multiversion;
 use rayon::prelude::*;

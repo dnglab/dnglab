@@ -13,7 +13,8 @@ use crate::decompressors::crx::{idwt::WaveletTransform, mdat::parse_header, rice
 use itertools::izip;
 use log::debug;
 use rayon::prelude::*;
-use std::{collections::VecDeque, time::Instant};
+use std::collections::VecDeque;
+use web_time::Instant;
 
 /// Maximum value for K during Adaptive Golomb-Rice for K prediction
 pub(super) const PREDICT_K_MAX: u32 = 15;

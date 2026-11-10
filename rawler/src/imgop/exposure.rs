@@ -14,7 +14,7 @@
 //! highlights are clipped. A plain meter would also pull bright scenes towards
 //! gray and lift dark ones, which makes most correct exposures worse.
 
-use std::time::Instant;
+use web_time::Instant;
 
 use rayon::prelude::*;
 

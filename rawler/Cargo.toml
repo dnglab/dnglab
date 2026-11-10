@@ -64,6 +64,7 @@ ureq = {version = "2", default-features = false, features = ["tls"], optional = 
 uuid = {version = "1.0", features = ["serde", "v4"]}
 weezl = "0.1.7"
 zerocopy = {version = "0.8.26", features = ["derive"]}
+web-time = "1.1.0"
 
 [dev-dependencies]
 anyhow = "1.0"
