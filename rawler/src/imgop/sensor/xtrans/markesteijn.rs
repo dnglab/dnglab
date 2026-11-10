@@ -16,7 +16,7 @@ use crate::{
   imgop::{
     Dim2,
     sensor::{
-      Demosaic,
+      Demosaic, check_mosaic, check_xtrans,
       lab::rgb_to_lab,
       tiles::{halo_tiles, inner_area, par_tiles},
     },
@@ -73,10 +73,11 @@ impl XTransMarkesteijnDemosaic {
 
 impl Demosaic<f32, 3> for XTransMarkesteijnDemosaic {
   /// Debayer image by using Markesteijn (1-pass) method.
-  fn demosaic(&self, pixels: ImageRegion<'_, f32>, cfa: &CFA, _colors: &PlaneColor) -> Color2D<f32, 3> {
-    assert_eq!(pixels.channels(), 1, "Mosaic data must have one channel");
-    if !cfa.is_rgb() {
-      panic!("CFA pattern '{}' is not a RGB pattern, can not demosaic with Markesteijn", cfa);
+  fn demosaic(&self, pixels: ImageRegion<'_, f32>, cfa: &CFA, colors: &PlaneColor) -> crate::Result<Color2D<f32, 3>> {
+    check_mosaic::<3, f32>("Markesteijn", &pixels, cfa, colors)?;
+    check_xtrans("Markesteijn", cfa)?;
+    if pixels.dim().is_empty() {
+      return Ok(Color2D::new(pixels.width(), pixels.height()));
     }
     // Measure time
     let now = Instant::now();
@@ -98,7 +99,7 @@ impl Demosaic<f32, 3> for XTransMarkesteijnDemosaic {
 
 const TS: usize = 64; // Tile size, with the halo
 
-fn demosaic_impl(input: &[f32], width: usize, height: usize, cfa: &CFA, passes: usize) -> Color2D<f32, 3> {
+fn demosaic_impl(input: &[f32], width: usize, height: usize, cfa: &CFA, passes: usize) -> crate::Result<Color2D<f32, 3>> {
   let mut output = Color2D::<f32, 3>::new(width, height);
   let ndir: usize = if passes > 1 { 8 } else { 4 };
   // Cascading padding: each stage adds 1 pixel beyond the prior because it reads
@@ -119,7 +120,7 @@ fn demosaic_impl(input: &[f32], width: usize, height: usize, cfa: &CFA, passes: 
   // window, the pixels pad_tile from the edges of the image are interpolated
   // by border_interpolate
   let dim = Dim2::new(width, height);
-  let tiles = halo_tiles(dim, inner_area(dim, pad_tile), Dim2::new(TS - overlap, TS - overlap), pad_tile);
+  let tiles = halo_tiles(dim, inner_area(dim, pad_tile), Dim2::new(TS - overlap, TS - overlap), pad_tile)?;
   par_tiles(
     ImageRegionMut::from(output.view_mut()),
     &tiles,
@@ -146,9 +147,9 @@ fn demosaic_impl(input: &[f32], width: usize, height: usize, cfa: &CFA, passes: 
         region,
       );
     },
-  );
+  )?;
 
-  output
+  Ok(output)
 }
 
 /// Hex neighborhood offset lookup table built from orth/patt tables (matching dcraw/LibRaw).
@@ -359,8 +360,8 @@ fn build_hex_lut(cfa: &CFA) -> HexLut {
 fn compute_green_bounds(input: &[f32], width: usize, height: usize, cfa: &CFA, allhex: &HexLut) -> Vec<[f32; 2]> {
   let npix = width * height;
   let mut bounds = vec![[0.0f32; 2]; npix];
-  for y in 2..height - 2 {
-    for x in 2..width - 2 {
+  for y in 2..height.saturating_sub(2) {
+    for x in 2..width.saturating_sub(2) {
       let idx = y * width + x;
       if cfa.color_at(y, x) == CFA_COLOR_G {
         bounds[idx] = [input[idx], input[idx]];

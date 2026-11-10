@@ -191,7 +191,9 @@ OpcodeList1, replacing an existing FixBadPixelsList:
 
 ### 4. Demosaic, FujiRotate and OpcodeList3
 
-- CFA data is demosaiced and cropped to the ActiveArea.
+- CFA data is demosaiced and cropped to the ActiveArea. An algorithm returns
+  an error for data it can't process, e.g. a CFA of another layout; the
+  planner only picks algorithms that match the CFA.
 - **Tiled algorithms:** AHD, VNG, RCD and Markesteijn interpolate from a
   neighbourhood of pixels. They process the image in tiles in parallel, see
   [`sensor/tiles.rs`](../rawler/src/imgop/sensor/tiles.rs): each tile reads its

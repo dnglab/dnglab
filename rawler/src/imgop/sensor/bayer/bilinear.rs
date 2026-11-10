@@ -10,7 +10,7 @@ use crate::{
   cfa::PlaneColor,
   imgop::{
     Dim2,
-    sensor::{Demosaic, border::interpolate_border},
+    sensor::{Demosaic, border::interpolate_border, check_2x2, check_mosaic},
   },
   pixarray::{Color2D, ImageRegion},
 };
@@ -28,10 +28,10 @@ use crate::{
 /// X-Trans data there is
 /// [`XTransBilinearDemosaic`](crate::imgop::sensor::xtrans::bilinear::XTransBilinearDemosaic).
 ///
-/// # Panics
+/// # Errors
 ///
-/// Panics for CFA patterns that are not 2x2, if `colors` doesn't have N planes
-/// or if a CFA color has no plane.
+/// Fails for CFA patterns that are not 2x2, or if `colors` doesn't have N
+/// planes or doesn't match the CFA colors.
 #[derive(Default)]
 pub struct BilinearDemosaic {}
 
@@ -42,35 +42,30 @@ impl BilinearDemosaic {
 }
 
 impl Demosaic<f32, 3> for BilinearDemosaic {
-  fn demosaic(&self, pixels: ImageRegion<'_, f32>, cfa: &CFA, colors: &PlaneColor) -> Color2D<f32, 3> {
+  fn demosaic(&self, pixels: ImageRegion<'_, f32>, cfa: &CFA, colors: &PlaneColor) -> crate::Result<Color2D<f32, 3>> {
     bilinear(pixels, cfa, colors)
   }
 }
 
 impl Demosaic<f32, 4> for BilinearDemosaic {
-  fn demosaic(&self, pixels: ImageRegion<'_, f32>, cfa: &CFA, colors: &PlaneColor) -> Color2D<f32, 4> {
+  fn demosaic(&self, pixels: ImageRegion<'_, f32>, cfa: &CFA, colors: &PlaneColor) -> crate::Result<Color2D<f32, 4>> {
     bilinear(pixels, cfa, colors)
   }
 }
 
 /// Bilinear demosaic of `pixels` with N planes, see [`BilinearDemosaic`]
-fn bilinear<const N: usize>(pixels: ImageRegion<'_, f32>, cfa: &CFA, colors: &PlaneColor) -> Color2D<f32, N>
+fn bilinear<const N: usize>(pixels: ImageRegion<'_, f32>, cfa: &CFA, colors: &PlaneColor) -> crate::Result<Color2D<f32, N>>
 where
   [f32; N]: Default,
 {
-  assert_eq!(pixels.channels(), 1, "Mosaic data must have one channel");
-  assert!(
-    cfa.width == 2 && cfa.height == 2,
-    "CFA pattern '{}' is not 2x2, can not demosaic it bilinearly",
-    cfa
-  );
-  assert_eq!(colors.plane_count(), N, "Bilinear demosaic for {} planes needs {} color planes", N, N);
+  check_mosaic::<N, f32>("Bilinear demosaic", &pixels, cfa, colors)?;
+  check_2x2("Bilinear demosaic", cfa)?;
   let now = Instant::now();
   let roi = pixels.area();
-  let phases = phases::<N>(&cfa.shift(roi.p.x, roi.p.y), colors, roi.d.w);
+  let phases = phases::<N>(&cfa.shift(roi.p.x, roi.p.y), colors, roi.d.w)?;
 
   let mut out = Color2D::<f32, N>::new(roi.width(), roi.height());
-  interpolate_border(pixels, cfa, colors, &mut out, 1);
+  interpolate_border(pixels, cfa, colors, &mut out, 1)?;
   // Contiguous samples are used in place, others are copied
   let samples = match pixels.image_view() {
     Some(view) => Cow::Borrowed(view.as_slice()),
@@ -78,7 +73,7 @@ where
   };
   interpolate_inner(&samples, roi.d, &phases, &mut out);
   log::debug!("Bilinear debayer time: {:.5}s", now.elapsed().as_secs_f32());
-  out
+  Ok(out)
 }
 
 /// Interpolation of the pixels of one phase of a 2x2 CFA
@@ -94,33 +89,34 @@ struct Phase<const N: usize> {
 
 /// Phases of the 2x2 `cfa`, row by row, for images of `width` pixels per row
 ///
-/// # Panics
-/// Panics if a CFA color has no plane in `colors`.
-fn phases<const N: usize>(cfa: &CFA, colors: &PlaneColor, width: usize) -> Vec<Phase<N>> {
+/// # Errors
+/// Fails if a CFA color has no plane in `colors`.
+fn phases<const N: usize>(cfa: &CFA, colors: &PlaneColor, width: usize) -> crate::Result<Vec<Phase<N>>> {
   let plane_map = colors.plane_lookup_table();
-  let plane = |row: usize, col: usize| {
-    let color = cfa.color_at(row, col);
-    let plane = plane_map[color];
-    assert!(plane < N, "CFA color {} of '{}' has no plane in {} planes", color, cfa, N);
-    plane
-  };
-  (0..4)
-    .map(|phase| {
-      // Rows and columns 2 and 3 are the pattern again, they avoid negative positions
-      let (row, col) = (2 + phase / 2, 2 + phase % 2);
-      let own = plane(row, col);
-      let mut neighbours = Vec::new();
-      let mut counts = [0; N];
-      for (dy, dx) in (-1..=1).flat_map(|dy| (-1..=1).map(move |dx| (dy, dx))) {
-        let p = plane(row.wrapping_add_signed(dy), col.wrapping_add_signed(dx));
-        if p != own {
-          neighbours.push((dy * width as isize + dx, p));
-          counts[p] += 1;
+  if let Some(color) = (0..4).map(|i| cfa.color_at(i / 2, i % 2)).find(|&color| plane_map[color] >= N) {
+    return Err(format!("CFA color {} of '{}' has no plane in {} planes", color, cfa, N).into());
+  }
+  // Every color of the pattern has a plane, see above
+  let plane = |row: usize, col: usize| plane_map[cfa.color_at(row, col)];
+  Ok(
+    (0..4)
+      .map(|phase| {
+        // Rows and columns 2 and 3 are the pattern again, they avoid negative positions
+        let (row, col) = (2 + phase / 2, 2 + phase % 2);
+        let own = plane(row, col);
+        let mut neighbours = Vec::new();
+        let mut counts = [0; N];
+        for (dy, dx) in (-1..=1).flat_map(|dy| (-1..=1).map(move |dx| (dy, dx))) {
+          let p = plane(row.wrapping_add_signed(dy), col.wrapping_add_signed(dx));
+          if p != own {
+            neighbours.push((dy * width as isize + dx, p));
+            counts[p] += 1;
+          }
         }
-      }
-      Phase { own, neighbours, counts }
-    })
-    .collect()
+        Phase { own, neighbours, counts }
+      })
+      .collect(),
+  )
 }
 
 /// Interpolate the pixels of `out` that are not at the edges, `samples` are
@@ -209,11 +205,15 @@ mod tests {
       Rect::new(Point::new(2, 5), Dim2::new(4, 3)),
     ] {
       for pattern in ["RGGB", "BGGR", "GRBG", "GBRG"] {
-        let rgb: Color2D<f32, 3> = BilinearDemosaic::new().demosaic(view.region(area), &CFA::new(pattern), &PlaneColor::new("RGB"));
+        let rgb: Color2D<f32, 3> = BilinearDemosaic::new()
+          .demosaic(view.region(area), &CFA::new(pattern), &PlaneColor::new("RGB"))
+          .unwrap();
         assert_bilinear(&samples, width, area, pattern, "RGB", &rgb);
       }
       for (pattern, colors) in [("CYGM", "CYGM"), ("ERBG", "RGBE")] {
-        let planes: Color2D<f32, 4> = BilinearDemosaic::new().demosaic(view.region(area), &CFA::new(pattern), &PlaneColor::new(colors));
+        let planes: Color2D<f32, 4> = BilinearDemosaic::new()
+          .demosaic(view.region(area), &CFA::new(pattern), &PlaneColor::new(colors))
+          .unwrap();
         assert_bilinear(&samples, width, area, pattern, colors, &planes);
       }
     }
@@ -225,21 +225,25 @@ mod tests {
     for (width, height) in (1..=7).flat_map(|width| (1..=7).map(move |height| (width, height))) {
       let samples = mosaic(width, height);
       let view = ImageView::new(&samples, width, height, 1);
-      let rgb: Color2D<f32, 3> = BilinearDemosaic::new().demosaic(view.into(), &CFA::new("GRBG"), &PlaneColor::new("RGB"));
+      let rgb: Color2D<f32, 3> = BilinearDemosaic::new()
+        .demosaic(view.into(), &CFA::new("GRBG"), &PlaneColor::new("RGB"))
+        .unwrap();
       assert_bilinear(&samples, width, view.rect(), "GRBG", "RGB", &rgb);
-      let planes: Color2D<f32, 4> = BilinearDemosaic::new().demosaic(view.into(), &CFA::new("CYGM"), &PlaneColor::new("CYGM"));
+      let planes: Color2D<f32, 4> = BilinearDemosaic::new()
+        .demosaic(view.into(), &CFA::new("CYGM"), &PlaneColor::new("CYGM"))
+        .unwrap();
       assert_bilinear(&samples, width, view.rect(), "CYGM", "CYGM", &planes);
     }
   }
 
   #[test]
-  #[should_panic(expected = "is not 2x2")]
   fn xtrans_data_is_not_supported() {
     let samples = mosaic(12, 12);
-    let _: Color2D<f32, 3> = BilinearDemosaic::new().demosaic(
+    let result: crate::Result<Color2D<f32, 3>> = BilinearDemosaic::new().demosaic(
       ImageView::new(&samples, 12, 12, 1).into(),
       &CFA::new("GGRGGBGGBGGRBRGRBGGGBGGRGGRGGBRBGBRG"),
       &PlaneColor::new("RGB"),
     );
+    assert!(result.err().is_some_and(|err| err.to_string().contains("needs a 2x2 CFA pattern")));
   }
 }

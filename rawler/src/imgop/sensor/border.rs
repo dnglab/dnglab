@@ -4,6 +4,7 @@
 use crate::{
   CFA,
   cfa::PlaneColor,
+  imgop::sensor::check_mosaic,
   pixarray::{Color2D, ImageRegion},
 };
 
@@ -17,15 +18,23 @@ use crate::{
 /// The CFA pattern is aligned to the top-left pixel of the image the region is
 /// taken from, `colors` maps the CFA colors to the planes of `out`.
 ///
-/// # Panics
-/// Panics if `out` doesn't have the size of `pixels`, if `pixels` has more than
-/// one channel, or if a CFA color has no plane in `colors`.
-pub fn interpolate_border<const N: usize>(pixels: ImageRegion<'_, f32>, cfa: &CFA, colors: &PlaneColor, out: &mut Color2D<f32, N>, border: usize)
+/// # Errors
+/// Fails if `out` doesn't have the size of `pixels`, or for mosaic data and
+/// colors that [`check_mosaic`] rejects.
+pub fn interpolate_border<const N: usize>(
+  pixels: ImageRegion<'_, f32>,
+  cfa: &CFA,
+  colors: &PlaneColor,
+  out: &mut Color2D<f32, N>,
+  border: usize,
+) -> crate::Result<()>
 where
   [f32; N]: Default,
 {
-  assert_eq!(pixels.channels(), 1, "Mosaic data must have one channel");
-  assert_eq!((out.width, out.height), (pixels.width(), pixels.height()), "Output doesn't match {:?}", pixels);
+  check_mosaic::<N, f32>("Border interpolation", &pixels, cfa, colors)?;
+  if (out.width, out.height) != (pixels.width(), pixels.height()) {
+    return Err(format!("Border interpolation: output of {}x{} pixels doesn't match {:?}", out.width, out.height, pixels).into());
+  }
   let (w, h) = (pixels.width(), pixels.height());
   let roi = pixels.area();
   let cfa = cfa.shift(roi.p.x, roi.p.y);
@@ -61,6 +70,7 @@ where
       col += 1;
     }
   }
+  Ok(())
 }
 
 #[cfg(test)]
@@ -117,12 +127,12 @@ mod tests {
       for pattern in ["RGGB", "GBRG"] {
         let (cfa, colors) = (CFA::new(pattern), PlaneColor::new("RGB"));
         let mut out = Color2D::<f32, 3>::new(area.d.w, area.d.h);
-        interpolate_border(view.region(area), &cfa, &colors, &mut out, border);
+        interpolate_border(view.region(area), &cfa, &colors, &mut out, border).unwrap();
         assert_border(&samples, width, area, &cfa, &colors, &out, border);
       }
       let (cfa, colors) = (CFA::new("CYGM"), PlaneColor::new("CYGM"));
       let mut out = Color2D::<f32, 4>::new(area.d.w, area.d.h);
-      interpolate_border(view.region(area), &cfa, &colors, &mut out, border);
+      interpolate_border(view.region(area), &cfa, &colors, &mut out, border).unwrap();
       assert_border(&samples, width, area, &cfa, &colors, &out, border);
     }
   }
@@ -134,7 +144,7 @@ mod tests {
       let samples: Vec<f32> = (0..width * height).map(|i| (i + 1) as f32).collect();
       let view = ImageView::new(&samples, width, height, 1);
       let mut out = Color2D::<f32, 3>::new(width, height);
-      interpolate_border(view.into(), &cfa, &PlaneColor::new("RGB"), &mut out, 3);
+      interpolate_border(view.into(), &cfa, &PlaneColor::new("RGB"), &mut out, 3).unwrap();
       assert_border(&samples, width, view.rect(), &cfa, &PlaneColor::new("RGB"), &out, 3);
     }
   }

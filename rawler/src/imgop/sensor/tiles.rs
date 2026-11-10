@@ -57,30 +57,31 @@ pub fn inner_area(dim: Dim2, border: usize) -> Rect {
 /// window of a tile extends its core by `halo` pixels on each side, clipped to
 /// the image. An empty area has no tiles.
 ///
-/// # Panics
-/// Panics if `area` is not inside of the image or if the width or height of
+/// # Errors
+/// Fails if `area` is not inside of the image or if the width or height of
 /// `core` is zero.
-pub fn halo_tiles(dim: Dim2, area: Rect, core: Dim2, halo: usize) -> Vec<HaloTile> {
-  assert!(
-    area.p.x + area.d.w <= dim.w && area.p.y + area.d.h <= dim.h,
-    "{:?} is outside of {}x{} pixels",
-    area,
-    dim.w,
-    dim.h
-  );
-  area
-    .d
-    .tile_areas(core)
-    .into_iter()
-    .map(|core| {
-      let core = core.translate(area.p);
-      let window = Rect::new_with_points(
-        Point::new(core.p.x.saturating_sub(halo), core.p.y.saturating_sub(halo)),
-        Point::new((core.p.x + core.d.w + halo).min(dim.w), (core.p.y + core.d.h + halo).min(dim.h)),
-      );
-      HaloTile { window, core }
-    })
-    .collect()
+pub fn halo_tiles(dim: Dim2, area: Rect, core: Dim2, halo: usize) -> crate::Result<Vec<HaloTile>> {
+  if area.p.x + area.d.w > dim.w || area.p.y + area.d.h > dim.h {
+    return Err(format!("{:?} is outside of {}x{} pixels", area, dim.w, dim.h).into());
+  }
+  if core.is_empty() {
+    return Err(format!("Tile core {:?} has no pixels", core).into());
+  }
+  Ok(
+    area
+      .d
+      .tile_areas(core)
+      .into_iter()
+      .map(|core| {
+        let core = core.translate(area.p);
+        let window = Rect::new_with_points(
+          Point::new(core.p.x.saturating_sub(halo), core.p.y.saturating_sub(halo)),
+          Point::new((core.p.x + core.d.w + halo).min(dim.w), (core.p.y + core.d.h + halo).min(dim.h)),
+        );
+        HaloTile { window, core }
+      })
+      .collect(),
+  )
 }
 
 /// Run `op` for `tiles` in parallel, each with the core of `output` it writes
@@ -89,20 +90,21 @@ pub fn halo_tiles(dim: Dim2, area: Rect, core: Dim2, halo: usize) -> Vec<HaloTil
 /// gets the scratch state of its worker, which `init` creates and the
 /// following tiles of the worker reuse, e.g. for tile buffers.
 ///
-/// # Panics
-/// Panics if the cores of the tiles overlap or are not inside of `output`.
-pub fn par_tiles<'a, T, S, I, F>(output: ImageRegionMut<'a, T>, tiles: &[HaloTile], init: I, op: F)
+/// # Errors
+/// Fails if the cores of the tiles overlap or are not inside of `output`.
+pub fn par_tiles<'a, T, S, I, F>(output: ImageRegionMut<'a, T>, tiles: &[HaloTile], init: I, op: F) -> crate::Result<()>
 where
   T: Send,
   I: Fn() -> S + Sync + Send,
   F: Fn(&mut S, &HaloTile, &mut DisjointRegionMut<'a, T>) + Sync + Send,
 {
   let cores: Vec<Rect> = tiles.iter().map(|tile| tile.core).collect();
-  let regions = output.split_regions_mut(&cores).expect("Tiles write disjoint areas");
+  let regions = output.split_regions_mut(&cores)?;
   tiles
     .par_iter()
     .zip(regions)
     .for_each_init(init, |state, (tile, mut region)| op(state, tile, &mut region));
+  Ok(())
 }
 
 #[cfg(test)]
@@ -127,7 +129,7 @@ mod tests {
   fn cores_cover_the_area_and_windows_the_halo() {
     let dim = Dim2::new(40, 30);
     let inner = inner_area(dim, 5);
-    let tiles = halo_tiles(dim, inner, Dim2::new(8, 7), 5);
+    let tiles = halo_tiles(dim, inner, Dim2::new(8, 7), 5).unwrap();
     // Each pixel of the area is in exactly one core, no pixel outside of it
     let mut count = Pix2D::<u16>::new(dim.w, dim.h);
     for tile in &tiles {
@@ -155,7 +157,7 @@ mod tests {
   #[test]
   fn windows_are_clipped_to_the_image() {
     let dim = Dim2::new(10, 6);
-    let tiles = halo_tiles(dim, area(0, 0, 10, 6), Dim2::new(4, 4), 2);
+    let tiles = halo_tiles(dim, area(0, 0, 10, 6), Dim2::new(4, 4), 2).unwrap();
     assert_eq!(
       tiles,
       [
@@ -193,20 +195,21 @@ mod tests {
   #[test]
   fn empty_area_has_no_tiles() {
     let dim = Dim2::new(8, 8);
-    assert!(halo_tiles(dim, inner_area(dim, 5), Dim2::new(4, 4), 5).is_empty());
+    assert!(halo_tiles(dim, inner_area(dim, 5), Dim2::new(4, 4), 5).unwrap().is_empty());
   }
 
   #[test]
-  #[should_panic(expected = "is outside of")]
   fn area_must_be_inside_of_the_image() {
-    let _ = halo_tiles(Dim2::new(8, 8), area(4, 4, 5, 4), Dim2::new(4, 4), 1);
+    assert!(halo_tiles(Dim2::new(8, 8), area(4, 4, 5, 4), Dim2::new(4, 4), 1).is_err());
+    // Cores need pixels
+    assert!(halo_tiles(Dim2::new(8, 8), area(0, 0, 8, 8), Dim2::new(0, 4), 1).is_err());
   }
 
   #[test]
   fn par_tiles_write_their_cores() {
     let dim = Dim2::new(23, 17);
     let mut out = Pix2D::<u16>::new(dim.w, dim.h);
-    let tiles = halo_tiles(dim, inner_area(dim, 2), Dim2::new(5, 4), 2);
+    let tiles = halo_tiles(dim, inner_area(dim, 2), Dim2::new(5, 4), 2).unwrap();
     // Each tile writes the index of its first pixel in the image, workers count their tiles
     par_tiles(
       out.view_mut().into(),
@@ -217,7 +220,8 @@ mod tests {
         let index = (tile.core.p.y * dim.w + tile.core.p.x) as u16 + 1;
         region.rows_mut().for_each(|row| row.fill(index));
       },
-    );
+    )
+    .unwrap();
     for tile in &tiles {
       let index = (tile.core.p.y * dim.w + tile.core.p.x) as u16 + 1;
       assert_eq!(*out.at(tile.core.p.y + tile.core.d.h - 1, tile.core.p.x + tile.core.d.w - 1), index);
