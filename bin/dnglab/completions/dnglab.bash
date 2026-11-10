@@ -799,7 +799,7 @@ _dnglab() {
             return 0
             ;;
         dnglab__subcmd__process__subcmd__raw)
-            opts="-f -r -d -v -h --remove-dng-opcodes --artist --keep-mtime --image-index --crop --crop-transparent --format --color-space --dcp-file --jpeg-quality --denoise-luma --denoise-chroma --sharpen --exposure --auto-exposure --steps --skip-steps --override --recursive --loglevel --profile-path --config --help"
+            opts="-f -r -d -v -h --remove-dng-opcodes --artist --keep-mtime --image-index --crop --crop-transparent --format --color-space --highlights --dcp-file --jpeg-quality --denoise-luma --denoise-chroma --sharpen --exposure --auto-exposure --steps --skip-steps --override --recursive --loglevel --profile-path --config --help"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
@@ -831,6 +831,10 @@ _dnglab() {
                     ;;
                 --color-space)
                     COMPREPLY=($(compgen -W "srgb adobergb prophoto" -- "${cur}"))
+                    return 0
+                    ;;
+                --highlights)
+                    COMPREPLY=($(compgen -W "compress clip" -- "${cur}"))
                     return 0
                     ;;
                 --dcp-file)

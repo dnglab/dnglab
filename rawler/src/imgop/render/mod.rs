@@ -25,6 +25,7 @@ use crate::{
     color::{OutputSpace, TransferFunction},
     convert_from_f32_scaled_u16,
     denoise::DenoiseStrength,
+    highlights::HighlightMode,
     icc,
     sharpen::DEFAULT_SHARPEN,
   },
@@ -249,6 +250,8 @@ pub struct RenderOptions {
   pub exposure: f32,
   /// Apply the AutoExposure step
   pub auto_exposure: bool,
+  /// Treatment of the values above white after a positive BaselineExposure
+  pub highlights: HighlightMode,
 }
 
 impl Default for RenderOptions {
@@ -263,6 +266,7 @@ impl Default for RenderOptions {
       sharpen: DEFAULT_SHARPEN,
       exposure: 0.0,
       auto_exposure: false,
+      highlights: HighlightMode::default(),
     }
   }
 }
@@ -392,6 +396,7 @@ mod tests {
     *,
   };
   use crate::imgop::color::{PixelOp, TransferFunction};
+  use crate::imgop::highlights::HighlightShoulder;
   use crate::{
     CFA, RawImageData,
     decoders::Camera,
@@ -499,6 +504,27 @@ mod tests {
       steps: steps.without(ProcessingStep::TransferFunction),
       ..Default::default()
     };
+    assert!(pixel_ops(&linear)?.is_empty());
+    // A positive BaselineExposure compresses the values above white before
+    let mut rawimage = rggb_rawimage();
+    rawimage.baseline_exposure = Some(SRational::new(1, 1));
+    let pixel_ops = |options: &RenderOptions| -> crate::Result<Vec<PixelOp>> {
+      match plan(&rawimage, options)?.ops.pop() {
+        Some(Op::CameraToRgb { ops, .. }) => Ok(ops),
+        _ => panic!("color map expected"),
+      }
+    };
+    let shoulder = HighlightShoulder::new(2.0).expect("shoulder");
+    assert_eq!(
+      pixel_ops(&RenderOptions { steps, ..Default::default() })?,
+      [PixelOp::Highlights(shoulder), PixelOp::Clip, PixelOp::TransferFunction(TransferFunction::Srgb)]
+    );
+    let clip = RenderOptions {
+      steps,
+      highlights: HighlightMode::Clip,
+      ..Default::default()
+    };
+    assert_eq!(pixel_ops(&clip)?, [PixelOp::Clip, PixelOp::TransferFunction(TransferFunction::Srgb)]);
     assert!(pixel_ops(&linear)?.is_empty());
     Ok(())
   }

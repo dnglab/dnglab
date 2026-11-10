@@ -84,6 +84,8 @@ jpeg\t''"
 complete -c dnglab -n "__fish_dnglab_using_subcommand process-raw" -l color-space -d 'Color space of the image' -r -f -a "srgb\t''
 adobergb\t''
 prophoto\t''"
+complete -c dnglab -n "__fish_dnglab_using_subcommand process-raw" -l highlights -d 'Highlights above white after the BaselineExposure: compress keeps their color with a smooth shoulder, clip clips each channel like DNG readers' -r -f -a "compress\t''
+clip\t''"
 complete -c dnglab -n "__fish_dnglab_using_subcommand process-raw" -l dcp-file -d 'Camera profile (DCP) to render the image with, replaces the primary camera profile' -r -F
 complete -c dnglab -n "__fish_dnglab_using_subcommand process-raw" -l jpeg-quality -d 'JPEG quality (1-100)' -r
 complete -c dnglab -n "__fish_dnglab_using_subcommand process-raw" -l denoise-luma -d 'Strength of the luma noise reduction (0-4), 0 is off, 1 is a full reduction [default: 0.25]' -r

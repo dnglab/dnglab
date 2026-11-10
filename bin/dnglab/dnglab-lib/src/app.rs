@@ -14,6 +14,7 @@ use rawler::imgop::{
   color::OutputSpace,
   denoise::DenoiseStrength,
   develop::{ProcessedImageFormat, ProcessingStep},
+  highlights::HighlightMode,
   sharpen::DEFAULT_SHARPEN,
 };
 
@@ -393,6 +394,12 @@ fn process_raw_command() -> Command {
         .required(false)
         .value_parser(value_parser!(OutputSpace))
         .default_value("srgb"),
+    )
+    .arg(
+      arg!(highlights: --highlights <mode> "Highlights above white after the BaselineExposure: compress keeps their color with a smooth shoulder, clip clips each channel like DNG readers")
+        .required(false)
+        .value_parser(value_parser!(HighlightMode))
+        .default_value("compress"),
     )
     .arg(
       arg!(dcp_file: --"dcp-file" <FILE> "Camera profile (DCP) to render the image with, replaces the primary camera profile")

@@ -12,6 +12,7 @@ use crate::{
   imgop::{
     Point, Rect,
     chromatic_adaption::{adapt_xyz2cam_bradford, bradford_adaption_matrix},
+    highlights::HighlightShoulder,
     matrix::{diagonal, identity, invert, multiply, multiply_vector, normalize, pseudo_inverse, transform_1d},
     srgb::{srgb_apply_gamma, srgb_invert_gamma},
     xyz::{
@@ -286,6 +287,8 @@ pub enum PixelOp {
   Matrix([[f32; 3]; 3]),
   /// Rendering tables of a camera profile, see [`ProfileRender::apply_pixel`]
   Profile(ProfileRender),
+  /// Compress the values above white, see [`HighlightShoulder::apply_rgb`]
+  Highlights(HighlightShoulder),
   /// Clip each value to 0.0..=1.0
   Clip,
   /// Encode each value by a transfer function
@@ -300,6 +303,7 @@ impl PixelOp {
     match self {
       Self::Matrix(matrix) => matrix.map(|row| row.iter().zip(&rgb).map(|(m, c)| m * c).sum()),
       Self::Profile(render) => render.apply_pixel(rgb, u, v),
+      Self::Highlights(shoulder) => shoulder.apply_rgb(rgb.map(|c| c.max(0.0))),
       Self::Clip => rgb.map(|c| c.clamp(0.0, 1.0)),
       Self::TransferFunction(function) => rgb.map(|c| function.encode(c)),
     }

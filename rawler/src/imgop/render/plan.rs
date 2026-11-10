@@ -14,6 +14,7 @@ use crate::{
     balance::auto_white_balance,
     color::{CameraToRgb, OutputSpace, PixelOp, TransferFunction, camera_to_output, d65_white_balance},
     denoise::DenoiseStrength,
+    highlights::{HighlightMode, HighlightShoulder},
     matrix::multiply,
     raw::WhiteBalance,
     sensor::SensorType,
@@ -269,7 +270,8 @@ pub fn plan(rawimage: &RawImage, options: &RenderOptions) -> crate::Result<Plan>
   }
 
   // A positive BaselineExposure is applied as linear gain to the scene-linear
-  // data, clipping is done before the transfer function or by the final
+  // data, the values above white are compressed (RenderOptions::highlights)
+  // or clipped before the transfer function, or clipped by the final
   // conversion to integers. A negative BaselineExposure is applied as tone
   // curve that keeps white at 1.0, by the rendering of the camera map or as
   // separate operation without it.
@@ -324,7 +326,18 @@ pub fn plan(rawimage: &RawImage, options: &RenderOptions) -> crate::Result<Plan>
       .as_shot_camera_profile_index()
       .and_then(|index| rawimage.effective_gain_table_map(index))
       .filter(|_| tables);
-    let render = ProfileRender::new(slot.map(|slot| (slot.profile, slot.slot)), gain_table_map, exposure, default_tone_curve);
+    let render = ProfileRender::new(
+      slot.map(|slot| (slot.profile, slot.slot)),
+      gain_table_map,
+      exposure,
+      default_tone_curve,
+      options.highlights,
+    );
+    // Without rendering tables, the values above white are compressed before
+    // they are clipped for the transfer function
+    let shoulder = (render.is_none() && options.highlights == HighlightMode::Compress)
+      .then(|| HighlightShoulder::new(gain))
+      .flatten();
     // The output has no values above white
     if let Some(slot) = slot.filter(|slot| slot.profile.is_hdr()) {
       log::warn!(
@@ -346,6 +359,7 @@ pub fn plan(rawimage: &RawImage, options: &RenderOptions) -> crate::Result<Plan>
     // values keep highlights above white and colors outside of the output
     // space, the conversion to integers clips them.
     if let Some(function) = transfer_function {
+      pixel_ops.extend(shoulder.map(PixelOp::Highlights));
       pixel_ops.extend([PixelOp::Clip, PixelOp::TransferFunction(function)]);
     }
     ops.push(Op::CameraToRgb {
