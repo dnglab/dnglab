@@ -20,6 +20,11 @@ pub(crate) fn decode_panasonic_v7(buf: &[u8], width: usize, height: usize, bps: 
 
   let bytes_per_row = V7_BYTES_PER_BLOCK * blocks_per_row;
 
+  let need = bytes_per_row * height;
+  if buf.len() < need {
+    return Err(format!("RW2 v7: buffer too short ({} < {})", buf.len(), need));
+  }
+
   decompress_lines_fn(
     width,
     height,

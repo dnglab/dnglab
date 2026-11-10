@@ -43,6 +43,11 @@ pub(crate) fn decode_panasonic_v6(buf: &[u8], width: usize, height: usize, bps: 
 
   assert_eq!(width % pixels_per_block, 0);
 
+  let need = bytes_per_row * height;
+  if buf.len() < need {
+    return Err(format!("RW2 v6: buffer too short ({} < {})", buf.len(), need));
+  }
+
   //log::debug!("RW2 V5 decoder: pixels per block: {}, bps: {}", pixels_per_block, bps);
 
   // We decode chunked at pixels_per_block boundary
