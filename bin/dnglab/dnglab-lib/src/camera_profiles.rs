@@ -26,7 +26,6 @@ use serde::Serialize;
 /// Matrix in rows
 pub type MatrixRows = Vec<Vec<f32>>;
 
-const DEFAULT_BLACK_RENDER: [&str; 2] = ["Auto", "None"];
 const TABLE_ENCODING: [&str; 2] = ["Linear", "sRGB"];
 const COMPOSITE_METHOD: [&str; 2] = ["Weighted sum", "Sequential"];
 const RGB_TABLE_GAMMA: [&str; 5] = ["Linear", "sRGB", "1.8", "2.2", "Rec. 2020"];
@@ -212,7 +211,7 @@ impl From<&CameraProfile> for CameraProfileSummary {
       group_name: profile.group_name.clone(),
       color_planes: profile.color_planes(),
       baseline_exposure_offset: profile.baseline_exposure_offset,
-      default_black_render: profile.default_black_render.map(|code| code_name(&DEFAULT_BLACK_RENDER, code)),
+      default_black_render: profile.default_black_render.map(|render| render.to_string()),
       dynamic_range: profile.dynamic_range.map(|range| DynamicRangeSummary {
         hdr: range.is_hdr(),
         hint_max_output_value: Some(range.hint_max_output_value).filter(|value| *value > 0.0),

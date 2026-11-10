@@ -769,7 +769,8 @@ mod tests {
   use super::DngDecoder;
   use crate::RawImage;
   use crate::camera_profile::{
-    CameraCalibration, CameraProfile, GainData, GainTableMap, IlluminantData, ProfileDynamicRange, ProfileEmbedPolicy, RgbTable, RgbTables, TableData,
+    CameraCalibration, CameraProfile, DefaultBlackRender, GainData, GainTableMap, IlluminantData, ProfileDynamicRange, ProfileEmbedPolicy, RgbTable, RgbTables,
+    TableData,
   };
   use crate::cfa::CFA;
   use crate::decoders::{Camera, RawDecodeParams};
@@ -1989,7 +1990,7 @@ mod tests {
       look_table_encoding: Some(0),
       tone_curve: Some(vec![0.0, 0.0, 0.5, 0.25, 1.0, 1.0]),
       baseline_exposure_offset: Some(-0.5),
-      default_black_render: Some(1),
+      default_black_render: Some(DefaultBlackRender::None),
       dynamic_range: Some(ProfileDynamicRange {
         version: 1,
         dynamic_range: 1,

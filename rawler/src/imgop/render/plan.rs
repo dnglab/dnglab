@@ -325,6 +325,13 @@ pub fn plan(rawimage: &RawImage, options: &RenderOptions) -> crate::Result<Plan>
       .and_then(|index| rawimage.effective_gain_table_map(index))
       .filter(|_| tables);
     let render = ProfileRender::new(slot.map(|slot| (slot.profile, slot.slot)), gain_table_map, exposure, default_tone_curve);
+    // The output has no values above white
+    if let Some(slot) = slot.filter(|slot| slot.profile.is_hdr()) {
+      log::warn!(
+        "Camera profile '{}' is a High Dynamic Range profile, values above white are clipped in the output",
+        slot.profile.name.as_deref().unwrap_or_default()
+      );
+    }
     let (map, mut pixel_ops) = match channels {
       3 => {
         let (map, pixel_ops) = camera_map::<3>(rawimage, neutral, wb_before_demosaic, gain, render, options.color_space);

@@ -7,6 +7,10 @@
 //! the camera values are mapped to it: ProfileHueSatMap, the gain table map
 //! (ProfileGainTableMap2 or ProfileGainTableMap), ProfileLookTable and
 //! ProfileToneCurve.
+//!
+//! High Dynamic Range profiles (see ProfileDynamicRange) keep values above
+//! 1.0. Their tables and curve are applied to values encoded by
+//! [`encode_overrange`], which maps 0.0 ..= 16.0 to 0.0 ..= 1.0.
 
 mod gain_table_map;
 mod hue_sat_map;
@@ -44,6 +48,8 @@ pub struct ProfileRender {
   exposure_gain: f32,
   /// Scale of the gain table map input for a negative BaselineExposure
   weight_scale: f32,
+  /// The profile is a High Dynamic Range profile
+  hdr: bool,
 }
 
 impl ProfileRender {
@@ -85,6 +91,7 @@ impl ProfileRender {
       tone_curve,
       exposure_gain: exposure.max(0.0).exp2(),
       weight_scale: exposure.min(0.0).exp2(),
+      hdr: profile.is_some_and(|(profile, _)| profile.is_hdr()),
     })
   }
 
@@ -92,6 +99,11 @@ impl ProfileRender {
   /// before [`Self::apply`], 1.0 otherwise
   pub fn exposure_gain(&self) -> f32 {
     self.exposure_gain
+  }
+
+  /// The tables belong to a High Dynamic Range profile, the result can be above 1.0
+  pub fn is_hdr(&self) -> bool {
+    self.hdr
   }
 
   /// Apply the tables to an image of linear ProPhoto RGB (D50)
@@ -124,25 +136,44 @@ impl ProfileRender {
   /// hue/saturation map is applied before the exposure and the values are
   /// clipped to 1.0 after the gain table map. The gain table map input
   /// includes the BaselineExposure.
+  ///
+  /// High Dynamic Range profiles are not clipped to 1.0, their tables and
+  /// curve are applied to encoded values.
   pub fn apply_pixel(&self, rgb: [f32; 3], u: f32, v: f32) -> [f32; 3] {
     let gain = self.exposure_gain;
     let mut rgb = rgb.map(|c| c.clamp(0.0, gain));
     if let Some(table) = &self.hue_sat_map {
-      rgb = table.apply(rgb.map(|c| c / gain)).map(|c| c * gain);
+      rgb = table.apply(rgb.map(|c| c / gain), self.hdr).map(|c| c * gain);
     }
     if let Some(table) = &self.gain_table {
       let map_gain = table.gain(rgb.map(|c| c * self.weight_scale), u, v);
       rgb = rgb.map(|c| c * map_gain);
     }
-    rgb = rgb.map(|c| c.clamp(0.0, 1.0));
+    let white = if self.hdr { f32::INFINITY } else { 1.0 };
+    rgb = rgb.map(|c| c.clamp(0.0, white));
     if let Some(table) = &self.look_table {
-      rgb = table.apply(rgb);
+      rgb = table.apply(rgb, self.hdr);
     }
     if let Some(curve) = &self.tone_curve {
-      rgb = curve.apply_rgb(rgb);
+      rgb = if self.hdr { curve.apply_rgb_overrange(rgb) } else { curve.apply_rgb(rgb) };
     }
     rgb
   }
+}
+
+/// Encoding of High Dynamic Range values for tables and curves, maps
+/// 0.0 ..= 16.0 smoothly to 0.0 ..= 1.0 (see ProfileDynamicRange)
+pub fn encode_overrange(x: f32) -> f32 {
+  let x = x.max(0.0);
+  x * (256.0 + x) / (256.0 * (1.0 + x))
+}
+
+/// Inverse of [`encode_overrange`]
+///
+/// It is calculated in `f64`, the terms cancel each other for small values.
+pub fn decode_overrange(x: f32) -> f32 {
+  let x = x.max(0.0) as f64;
+  (16.0 * (8.0 * x - 8.0 + (64.0 * x * x - 127.0 * x + 64.0).sqrt())) as f32
 }
 
 /// Linear RGB of `space` to linear ProPhoto RGB (D50)
@@ -177,7 +208,7 @@ pub fn prophoto_to_srgb() -> [[f32; 3]; 3] {
 #[cfg(test)]
 mod tests {
   use super::*;
-  use crate::camera_profile::GainData;
+  use crate::camera_profile::{GainData, ProfileDynamicRange};
   use crate::imgop::{Dim2, Point, matrix::multiply_vector};
   use crate::pixarray::RgbF32;
 
@@ -268,6 +299,40 @@ mod tests {
     let render = ProfileRender::new(None, Some(&map), -1.0, None).expect("render");
     let curve = ToneCurve::negative_exposure(-1.0).expect("curve");
     assert_rgb_eq(render.apply_pixel([0.6, 0.3, 0.3], 0.5, 0.5), curve.apply_rgb([0.84, 0.42, 0.42]));
+  }
+
+  #[test]
+  fn overrange_encoding() {
+    assert_eq!(encode_overrange(0.0), 0.0);
+    assert_eq!(encode_overrange(-1.0), 0.0);
+    assert_eq!(encode_overrange(16.0), 1.0);
+    for i in 0..=640 {
+      let x = i as f32 / 10.0;
+      let decoded = decode_overrange(encode_overrange(x));
+      assert!((decoded - x).abs() <= 1e-4 * x.max(1.0), "{} -> {}", x, decoded);
+    }
+    // Small values keep their precision
+    assert!((decode_overrange(encode_overrange(1e-5)) - 1e-5).abs() < 1e-9);
+  }
+
+  #[test]
+  fn hdr_keeps_values_above_white() {
+    let mut profile = CameraProfile {
+      tone_curve: Some(vec![0.0, 0.0, 1.0, 1.0]),
+      ..Default::default()
+    };
+    let map = gain_table_map(vec![2.0, 2.0]);
+    let sdr = ProfileRender::new(Some((&profile, 0)), Some(&map), 0.0, None).expect("render");
+    assert!(!sdr.is_hdr());
+    assert_rgb_eq(sdr.apply_pixel([0.8, 0.4, 0.2], 0.5, 0.5), [1.0, 0.8, 0.4]);
+    profile.dynamic_range = Some(ProfileDynamicRange {
+      version: 1,
+      dynamic_range: 1,
+      hint_max_output_value: 0.0,
+    });
+    let hdr = ProfileRender::new(Some((&profile, 0)), Some(&map), 0.0, None).expect("render");
+    assert!(hdr.is_hdr());
+    assert_rgb_eq(hdr.apply_pixel([0.8, 0.4, 0.2], 0.5, 0.5), [1.6, 0.8, 0.4]);
   }
 
   #[test]

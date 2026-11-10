@@ -155,7 +155,7 @@ mod tests {
 
   use super::*;
   use crate::CFA;
-  use crate::camera_profile::ProfileEmbedPolicy;
+  use crate::camera_profile::{DefaultBlackRender, ProfileEmbedPolicy};
   use crate::decoders::Camera;
   use crate::imgop::xyz::Illuminant;
   use crate::pixarray::PixU16;
@@ -176,7 +176,7 @@ mod tests {
       look_table_encoding: Some(1),
       tone_curve: Some(vec![0.0, 0.0, 0.5, 0.625, 1.0, 1.0]),
       baseline_exposure_offset: Some(-0.25),
-      default_black_render: Some(1),
+      default_black_render: Some(DefaultBlackRender::None),
       ..Default::default()
     };
     for (slot, illuminant) in [Illuminant::A, Illuminant::D65].into_iter().enumerate() {

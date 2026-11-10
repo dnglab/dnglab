@@ -5,6 +5,7 @@
 
 use rayon::prelude::*;
 
+use super::{decode_overrange, encode_overrange};
 use crate::pixarray::ImageViewMut;
 
 /// Number of intervals of the lookup table
@@ -108,23 +109,33 @@ impl ToneCurve {
     self.table[index] + (self.table[index + 1] - self.table[index]) * fract
   }
 
+  /// Curve value of `x`, values above 1.0 follow the line through the end
+  /// point of the curve with the slope of the curve there
+  fn eval_extended(&self, x: f32) -> f32 {
+    if x > 1.0 {
+      let end = self.table[TABLE_SIZE];
+      let slope = (end - self.table[TABLE_SIZE - 1]) * TABLE_SIZE as f32;
+      end + slope * (x - 1.0)
+    } else {
+      self.eval(x)
+    }
+  }
+
   /// Apply the curve to RGB values, preserving the hue
   ///
   /// The largest and smallest channel are mapped by the curve, the middle
   /// channel keeps its relative position between them.
   pub fn apply_rgb(&self, rgb: [f32; 3]) -> [f32; 3] {
-    let rgb = rgb.map(|c| c.clamp(0.0, 1.0));
-    let mut order = [0, 1, 2];
-    order.sort_by(|a, b| rgb[*b].total_cmp(&rgb[*a]));
-    let [max, mid, min] = order;
-    if rgb[max] <= rgb[min] {
-      return rgb.map(|c| self.eval(c));
-    }
-    let mut result = [0.0; 3];
-    result[max] = self.eval(rgb[max]);
-    result[min] = self.eval(rgb[min]);
-    result[mid] = result[min] + (result[max] - result[min]) * (rgb[mid] - rgb[min]) / (rgb[max] - rgb[min]);
-    result
+    map_preserving_hue(rgb.map(|c| c.clamp(0.0, 1.0)), |c| self.eval(c))
+  }
+
+  /// Apply the curve to RGB values of a High Dynamic Range profile, preserving the hue
+  ///
+  /// Like [`Self::apply_rgb`], but the curve is applied to values encoded by
+  /// [`encode_overrange`]. Encoded values above 1.0 (linear values above
+  /// 16.0) follow the slope at the end of the curve.
+  pub fn apply_rgb_overrange(&self, rgb: [f32; 3]) -> [f32; 3] {
+    map_preserving_hue(rgb.map(encode_overrange), |c| self.eval_extended(c)).map(decode_overrange)
   }
 
   /// Apply the curve to an image: to the RGB values of an image with three
@@ -136,6 +147,22 @@ impl ToneCurve {
       None => image.as_mut_slice().par_iter_mut().for_each(|v| *v = self.eval(*v)),
     }
   }
+}
+
+/// Map the largest and smallest channel of `rgb` by `curve`, the middle
+/// channel keeps its relative position between them
+fn map_preserving_hue(rgb: [f32; 3], curve: impl Fn(f32) -> f32) -> [f32; 3] {
+  let mut order = [0, 1, 2];
+  order.sort_by(|a, b| rgb[*b].total_cmp(&rgb[*a]));
+  let [max, mid, min] = order;
+  if rgb[max] <= rgb[min] {
+    return rgb.map(&curve);
+  }
+  let mut result = [0.0; 3];
+  result[max] = curve(rgb[max]);
+  result[min] = curve(rgb[min]);
+  result[mid] = result[min] + (result[max] - result[min]) * (rgb[mid] - rgb[min]) / (rgb[max] - rgb[min]);
+  result
 }
 
 /// Second derivatives of the natural cubic spline through the points `x`, `y`
@@ -271,5 +298,28 @@ mod tests {
     assert!(ToneCurve::new(&[0.0, 0.0, 1.0]).is_none());
     assert!(ToneCurve::new(&[0.0, 0.0, 0.5, 0.5, 0.5, 0.6, 1.0, 1.0]).is_none());
     assert!(ToneCurve::new(&[0.0, 0.0, f32::NAN, 0.5, 1.0, 1.0]).is_none());
+  }
+
+  #[test]
+  fn overrange_curve() {
+    let assert_close = |result: [f32; 3], expected: [f32; 3]| {
+      for (a, b) in result.iter().zip(expected) {
+        assert!((a - b).abs() <= 1e-4 * b.max(1.0), "{:?} != {:?}", result, expected);
+      }
+    };
+    // The identity curve keeps values, also above 16.0 (encoded above 1.0)
+    let identity = ToneCurve::new(&[0.0, 0.0, 1.0, 1.0]).expect("curve");
+    for rgb in [[4.0, 2.0, 0.5], [40.0, 20.0, 0.1]] {
+      assert_close(identity.apply_rgb_overrange(rgb), rgb);
+    }
+    // The curve is applied to encoded values
+    let lift = ToneCurve::new(&[0.0, 0.0, 0.5, 0.75, 1.0, 1.0]).expect("curve");
+    for x in [0.05, 0.5, 2.0, 8.0] {
+      assert_close(lift.apply_rgb_overrange([x; 3]), [decode_overrange(lift.eval(encode_overrange(x))); 3]);
+    }
+    // Above its end, the curve follows its slope at 1.0
+    let slope = (lift.eval(1.0) - lift.eval(1.0 - 1.0 / TABLE_SIZE as f32)) * TABLE_SIZE as f32;
+    let expected = decode_overrange(1.0 + slope * (encode_overrange(32.0) - 1.0));
+    assert_close(lift.apply_rgb_overrange([32.0; 3]), [expected; 3]);
   }
 }

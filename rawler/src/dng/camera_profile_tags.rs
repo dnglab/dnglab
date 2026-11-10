@@ -10,8 +10,8 @@ use std::io::{Cursor, Read, Seek, SeekFrom};
 
 use crate::bits::Endian;
 use crate::camera_profile::{
-  CALIBRATION_SLOTS, CameraCalibration, CameraProfile, GainData, GainTableMap, IlluminantData, ProfileDynamicRange, ProfileEmbedPolicy, RgbTable, RgbTables,
-  TableData,
+  CALIBRATION_SLOTS, CameraCalibration, CameraProfile, DefaultBlackRender, GainData, GainTableMap, IlluminantData, ProfileDynamicRange, ProfileEmbedPolicy,
+  RgbTable, RgbTables, TableData,
 };
 use crate::formats::tiff::{DirectoryWriter, IFD, Rational, SRational, TiffWriter, Value};
 use crate::imgop::matrix::FlatMatrix;
@@ -155,7 +155,7 @@ pub fn read_camera_profile(ifd: &IFD) -> Option<CameraProfile> {
     hue_sat_map_encoding: read_u32(ifd, DngTag::ProfileHueSatMapEncoding),
     look_table_encoding: read_u32(ifd, DngTag::ProfileLookTableEncoding),
     baseline_exposure_offset: read_f32s(ifd, DngTag::BaselineExposureOffset).and_then(|v| v.first().copied()),
-    default_black_render: read_u32(ifd, DngTag::DefaultBlackRender),
+    default_black_render: read_u32(ifd, DngTag::DefaultBlackRender).map(DefaultBlackRender::from),
     dynamic_range: read_binary(ifd, DngTag::ProfileDynamicRange, decode_dynamic_range),
     rgb_tables: read_binary(ifd, DngTag::RGBTables, decode_rgb_tables),
     gain_table_map: read_binary(ifd, DngTag::ProfileGainTableMap2, decode_gain_table_map),
@@ -318,7 +318,7 @@ pub fn write_camera_profile(ifd: &mut DirectoryWriter, profile: &CameraProfile) 
     ifd.add_tag(DngTag::BaselineExposureOffset, srationals(&[offset])[0]);
   }
   if let Some(render) = profile.default_black_render {
-    ifd.add_tag(DngTag::DefaultBlackRender, render);
+    ifd.add_tag(DngTag::DefaultBlackRender, u32::from(render));
   }
   if let Some(range) = &profile.dynamic_range {
     ifd.add_tag_undefined(DngTag::ProfileDynamicRange, encode_dynamic_range(range, native_endian()));
