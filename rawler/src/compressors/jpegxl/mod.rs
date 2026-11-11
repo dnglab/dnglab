@@ -8,12 +8,20 @@
 //! error. Set the environment variable `RAWLER_LIBJXL` to load libjxl from a
 //! specific path.
 
-mod ffi;
-mod jpegxl_lib;
 mod types;
-
 pub use types::*;
+
+#[cfg(not(target_family = "wasm"))]
+mod ffi;
+#[cfg(not(target_family = "wasm"))]
+mod jpegxl_lib;
+#[cfg(not(target_family = "wasm"))]
 pub use jpegxl_lib::*;
+
+#[cfg(target_family = "wasm")]
+mod jpegxl_dummy;
+#[cfg(target_family = "wasm")]
+pub use jpegxl_dummy::*;
 
 /// Check if libjxl can be used in tests
 ///
