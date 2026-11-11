@@ -240,7 +240,7 @@ fn denoise_region(mut region: ImageRegionMut<'_, f32>, strength: DenoiseStrength
     1 => &PLANES_1,
     3 => &PLANES_3,
     4 => &PLANES_4,
-    _ => return Err(format!("Noise reduction of {} color planes is not supported", channels).into()),
+    _ => return Err(input_error!("Noise reduction of {} color planes is not supported", channels)),
   };
   if !strength.is_active() || width == 0 || height == 0 {
     return Ok(DenoiseStats::default());

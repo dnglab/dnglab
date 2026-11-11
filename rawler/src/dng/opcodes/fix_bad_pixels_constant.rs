@@ -5,7 +5,7 @@
 
 use serde::{Deserialize, Serialize};
 
-use crate::{RawlerError, Result};
+use crate::Result;
 
 use super::{
   OpcodeData, OpcodeImage, OpcodeStage,
@@ -35,10 +35,7 @@ impl FixBadPixelsConstant {
       bayer_phase: reader.u32()?,
     };
     if fix.bayer_phase > 3 {
-      return Err(RawlerError::DecoderFailed(format!(
-        "DNG opcode FixBadPixelsConstant: invalid BayerPhase {}",
-        fix.bayer_phase
-      )));
+      return Err(decoder_error!("DNG opcode FixBadPixelsConstant: invalid BayerPhase {}", fix.bayer_phase));
     }
     Ok(fix)
   }
@@ -54,10 +51,10 @@ impl FixBadPixelsConstant {
     let view = match &mut image.data {
       OpcodeData::Integer(view) if cpp == 1 => view,
       _ => {
-        return Err(RawlerError::DecoderFailed(format!(
+        return Err(decoder_error!(
           "DNG opcode FixBadPixelsConstant in {} requires 16 bit raw data with a single plane",
           stage
-        )));
+        ));
       }
     };
     // A constant above the 16 bit range can't mark a pixel

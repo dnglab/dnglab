@@ -51,7 +51,7 @@ const MAX_FACTOR: f32 = 1e30;
 /// Luma coefficients of `channels` color planes, or an error for other numbers of planes
 fn coefficients(channels: usize, scale: &[f32; 4]) -> crate::Result<[f32; 4]> {
   let Some(coefficients) = luma_coefficients(channels, scale) else {
-    return Err(format!("Exposure of {} color planes is not supported", channels).into());
+    return Err(input_error!("Exposure of {} color planes is not supported", channels));
   };
   Ok(coefficients)
 }

@@ -104,7 +104,7 @@ impl<'a> Cr3Decoder<'a> {
       };
       Ok(decoder)
     } else {
-      Err("It's not a CR3 file: CMT boxes not found.".into())
+      Err(RawlerError::decoder_failed("It's not a CR3 file: CMT boxes not found."))
     }
   }
 
@@ -164,7 +164,7 @@ impl<'a> Cr3Decoder<'a> {
         .minf
         .stbl
         .get_sample_offset(sample_idx as u32 + 1)
-        .ok_or_else(|| RawlerError::DecoderFailed(format!("CTMD sample index {} out of bound", sample_idx)))?;
+        .ok_or_else(|| decoder_error!("CTMD sample index {} out of bound", sample_idx))?;
       debug!("CR3 CTMD mdat offset for sample_idx {}: {}, len: {}", sample_idx, offset, size);
       let buf = rawfile
         .subview(offset as u64, size as u64)
@@ -252,8 +252,10 @@ impl<'a> Decoder for Cr3Decoder<'a> {
   fn raw_image_count(&self) -> Result<usize> {
     let raw_trak_id = rawler_crx_raw_trak()
       .or_else(|| self.get_trak_index(Cr3ImageType::CrxBix))
-      .ok_or("Unable to find trak index")?;
-    let moov_trak = self.moov_trak(raw_trak_id).ok_or(format!("Unable to get MOOV trak {}", raw_trak_id))?;
+      .ok_or_else(|| RawlerError::decoder_failed("Unable to find trak index"))?;
+    let moov_trak = self
+      .moov_trak(raw_trak_id)
+      .ok_or_else(|| decoder_error!("Unable to get MOOV trak {}", raw_trak_id))?;
     Ok(moov_trak.mdia.minf.stbl.stsz.sample_count as usize)
   }
 
@@ -262,11 +264,7 @@ impl<'a> Decoder for Cr3Decoder<'a> {
     let camera = self.camera.supported()?;
     let sample_idx = params.image_index;
     if sample_idx >= self.raw_image_count()? {
-      return Err(RawlerError::DecoderFailed(format!(
-        "Raw image index {} out of range ({})",
-        sample_idx,
-        self.raw_image_count()?
-      )));
+      return Err(decoder_error!("Raw image index {} out of range ({})", sample_idx, self.raw_image_count()?));
     }
 
     let cr3md = self.read_cr3_metadata(file, params)?;
@@ -279,19 +277,23 @@ impl<'a> Decoder for Cr3Decoder<'a> {
 
     let raw_trak_id = rawler_crx_raw_trak()
       .or_else(|| self.get_trak_index(Cr3ImageType::CrxBix))
-      .ok_or("Unable to find trak index")?;
+      .ok_or_else(|| RawlerError::decoder_failed("Unable to find trak index"))?;
 
     // Load trak with raw MDAT section
-    let moov_trak = self.moov_trak(raw_trak_id).ok_or(format!("Unable to get MOOV trak {}", raw_trak_id))?;
+    let moov_trak = self
+      .moov_trak(raw_trak_id)
+      .ok_or_else(|| decoder_error!("Unable to get MOOV trak {}", raw_trak_id))?;
     let (offset, size) = moov_trak
       .mdia
       .minf
       .stbl
       .get_sample_offset(sample_idx as u32 + 1)
-      .ok_or_else(|| RawlerError::DecoderFailed(format!("stbl sample not found")))?;
+      .ok_or_else(|| decoder_error!("stbl sample not found"))?;
     debug!("RAW mdat offset: {}, len: {}", offset, size);
 
-    let cmp1 = self.cmp1_box(raw_trak_id).ok_or(format!("CMP1 box not found for trak {}", raw_trak_id))?;
+    let cmp1 = self
+      .cmp1_box(raw_trak_id)
+      .ok_or_else(|| decoder_error!("CMP1 box not found for trak {}", raw_trak_id))?;
     debug!("cmp1 mdat hdr size: {}", cmp1.mdat_hdr_size);
 
     let mut wb = cr3md.wb.unwrap_or_else(|| {
@@ -317,13 +319,13 @@ impl<'a> Decoder for Cr3Decoder<'a> {
     }
 
     let image = if !dummy {
-      require_feature!("crx", {
+      require_feature!("crx", "the CRX decompression of Canon CR3 files", {
         // Raw data buffer
         let buf = file
           .subview(offset as u64, size as u64)
           .map_err(|e| RawlerError::with_io_error("CR3: failed to read raw data", file.path(), e))?;
         PixU16::new_with(
-          decompress_crx_image(buf, cmp1).map_err(|e| format!("Failed to decode raw: {}", e))?,
+          decompress_crx_image(buf, cmp1).map_err(|e| decoder_error!("Failed to decode raw").context(e))?,
           cmp1.f_width as usize,
           cmp1.f_height as usize,
         )
@@ -416,14 +418,14 @@ impl<'a> Decoder for Cr3Decoder<'a> {
   /// Extract preview image embedded in CR3
   fn preview_image(&self, file: &RawSource, params: &RawDecodeParams) -> Result<Option<DynamicImage>> {
     if rawler_ignore_previews() {
-      return Err(RawlerError::DecoderFailed("Unable to extract preview image".into()));
+      return Err(RawlerError::decoder_failed("Unable to extract preview image"));
     }
 
     let sample_idx = params.image_index;
     let preview_trak_id = self.get_trak_index(Cr3ImageType::PreviewBig).unwrap_or(0);
     let preview_trak = self
       .moov_trak(preview_trak_id)
-      .ok_or_else(|| RawlerError::DecoderFailed(format!("Unable to get preview trak {}", preview_trak_id)))?;
+      .ok_or_else(|| decoder_error!("Unable to get preview trak {}", preview_trak_id))?;
 
     let preview_count = preview_trak.mdia.minf.stbl.stsz.sample_count as usize;
     if sample_idx >= preview_count {
@@ -439,7 +441,7 @@ impl<'a> Decoder for Cr3Decoder<'a> {
       .minf
       .stbl
       .get_sample_offset(sample_idx as u32 + 1)
-      .ok_or_else(|| RawlerError::DecoderFailed(format!("CR3 preview sample {} not found in trak {}", sample_idx, preview_trak_id)))?;
+      .ok_or_else(|| decoder_error!("CR3 preview sample {} not found in trak {}", sample_idx, preview_trak_id))?;
 
     debug!(
       "JPEG preview trak: {}, sample_idx: {}, mdat offset: {}, len: {}",
@@ -507,7 +509,7 @@ impl<'a> Cr3Decoder<'a> {
         md.image_unique_id = Some(
           v.as_slice()
             .try_into()
-            .map_err(|_| RawlerError::DecoderFailed("Invalid ImgUniqueID slice size".into()))?,
+            .map_err(|_| RawlerError::decoder_failed("Invalid ImgUniqueID slice size"))?,
         );
       }
     }

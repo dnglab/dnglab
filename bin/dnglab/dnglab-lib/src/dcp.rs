@@ -16,12 +16,9 @@ use rawler::rawsource::RawSource;
 
 use crate::{AppError, Result};
 
-/// Error of a camera profile operation, without the decoder prefix of [`RawlerError::DecoderFailed`]
+/// Error of a camera profile operation, without the "Decoder failed" prefix of [`AppError::DecoderFailed`]
 fn profile_error(err: RawlerError) -> AppError {
-  AppError::General(match err {
-    RawlerError::DecoderFailed(msg) => msg,
-    err => err.to_string(),
-  })
+  AppError::General(err.to_string())
 }
 
 /// Read the DCP file `path`

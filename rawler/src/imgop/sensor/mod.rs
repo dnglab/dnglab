@@ -81,18 +81,29 @@ pub trait Demosaic<T: SubPixel, const N: usize> {
 /// of the CFA pattern has a plane and each plane occurs in the pattern
 pub(crate) fn check_mosaic<const N: usize, T>(algorithm: &str, pixels: &ImageRegion<'_, T>, cfa: &CFA, colors: &PlaneColor) -> crate::Result<()> {
   if pixels.channels() != 1 {
-    return Err(format!("{}: mosaic data must have one channel, not {}", algorithm, pixels.channels()).into());
+    return Err(input_error!("{}: mosaic data must have one channel, not {}", algorithm, pixels.channels()));
   }
   if colors.plane_count() != N {
-    return Err(format!("{} with {} planes needs {} color planes, not {}", algorithm, N, N, colors.plane_count()).into());
+    return Err(input_error!(
+      "{} with {} planes needs {} color planes, not {}",
+      algorithm,
+      N,
+      N,
+      colors.plane_count()
+    ));
   }
   let plane_map = colors.plane_lookup_table();
   let pattern: Vec<usize> = (0..cfa.height).flat_map(|row| (0..cfa.width).map(move |col| cfa.color_at(row, col))).collect();
   if pattern.iter().any(|&color| plane_map[color] >= N) {
-    return Err(format!("{}: a color of CFA pattern '{}' has no plane in {:?}", algorithm, cfa, colors.colors).into());
+    return Err(input_error!(
+      "{}: a color of CFA pattern '{}' has no plane in {:?}",
+      algorithm,
+      cfa,
+      colors.colors
+    ));
   }
   if let Some(color) = colors.colors.iter().find(|color| !pattern.contains(&(**color as usize))) {
-    return Err(format!("{}: plane color {:?} doesn't occur in CFA pattern '{}'", algorithm, color, cfa).into());
+    return Err(input_error!("{}: plane color {:?} doesn't occur in CFA pattern '{}'", algorithm, color, cfa));
   }
   Ok(())
 }
@@ -100,7 +111,7 @@ pub(crate) fn check_mosaic<const N: usize, T>(algorithm: &str, pixels: &ImageReg
 /// Check that `cfa` is a 2x2 pattern for `algorithm`
 pub(crate) fn check_2x2(algorithm: &str, cfa: &CFA) -> crate::Result<()> {
   if cfa.width != 2 || cfa.height != 2 {
-    return Err(format!("{} needs a 2x2 CFA pattern, not '{}'", algorithm, cfa).into());
+    return Err(input_error!("{} needs a 2x2 CFA pattern, not '{}'", algorithm, cfa));
   }
   Ok(())
 }
@@ -108,7 +119,7 @@ pub(crate) fn check_2x2(algorithm: &str, cfa: &CFA) -> crate::Result<()> {
 /// Check that `cfa` is a 2x2 RGB pattern (Bayer RGB) for `algorithm`
 pub(crate) fn check_bayer_rgb(algorithm: &str, cfa: &CFA) -> crate::Result<()> {
   if cfa.width != 2 || cfa.height != 2 || !cfa.is_rgb() {
-    return Err(format!("{} needs a 2x2 RGB CFA pattern, not '{}'", algorithm, cfa).into());
+    return Err(input_error!("{} needs a 2x2 RGB CFA pattern, not '{}'", algorithm, cfa));
   }
   Ok(())
 }
@@ -116,7 +127,7 @@ pub(crate) fn check_bayer_rgb(algorithm: &str, cfa: &CFA) -> crate::Result<()> {
 /// Check that `cfa` is a 6x6 RGB pattern (X-Trans) for `algorithm`
 pub(crate) fn check_xtrans(algorithm: &str, cfa: &CFA) -> crate::Result<()> {
   if cfa.width != 6 || cfa.height != 6 || !cfa.is_rgb() {
-    return Err(format!("{} needs a 6x6 RGB CFA pattern, not '{}'", algorithm, cfa).into());
+    return Err(input_error!("{} needs a 6x6 RGB CFA pattern, not '{}'", algorithm, cfa));
   }
   Ok(())
 }
@@ -246,6 +257,10 @@ mod tests {
 
   #[test]
   fn invalid_input_is_an_error() {
+    // The algorithms reject the input as invalid
+    fn rejected<T>(result: crate::Result<T>) -> bool {
+      matches!(result, Err(crate::RawlerError::InvalidInput { .. }))
+    }
     let (width, height) = (24, 18);
     let samples: Vec<f32> = (0..width * height * 3).map(|i| (i * 7919 % 1000) as f32 / 1000.0).collect();
     let mosaic = ImageView::new(&samples[..width * height], width, height, 1);
@@ -255,20 +270,20 @@ mod tests {
       let vng = i == 3;
       // X-Trans data for the Bayer algorithms, VNG works for any CFA
       assert_eq!(
-        algorithm.demosaic(mosaic.into(), &CFA::new(XTRANS), &rgb).is_err(),
+        rejected(algorithm.demosaic(mosaic.into(), &CFA::new(XTRANS), &rgb)),
         !vng,
         "Bayer algorithm {}",
         i
       );
-      assert!(algorithm.demosaic(mosaic.into(), &CFA::new("RGGB"), &cygm).is_err(), "Bayer algorithm {}", i);
+      assert!(rejected(algorithm.demosaic(mosaic.into(), &CFA::new("RGGB"), &cygm)), "Bayer algorithm {}", i);
       assert!(
-        algorithm.demosaic(three_channels.into(), &CFA::new("RGGB"), &rgb).is_err(),
+        rejected(algorithm.demosaic(three_channels.into(), &CFA::new("RGGB"), &rgb)),
         "Bayer algorithm {}",
         i
       );
       // Blue has no plane
       assert!(
-        algorithm.demosaic(mosaic.into(), &CFA::new("RGGB"), &PlaneColor::new("RGE")).is_err(),
+        rejected(algorithm.demosaic(mosaic.into(), &CFA::new("RGGB"), &PlaneColor::new("RGE"))),
         "Bayer algorithm {}",
         i
       );
@@ -277,28 +292,28 @@ mod tests {
       let (bilinear, vng) = (i == 0, i == 3);
       // Bayer data for Markesteijn, the X-Trans bilinear and VNG work for any RGB CFA
       assert_eq!(
-        algorithm.demosaic(mosaic.into(), &CFA::new("RGGB"), &rgb).is_err(),
+        rejected(algorithm.demosaic(mosaic.into(), &CFA::new("RGGB"), &rgb)),
         !bilinear && !vng,
         "X-Trans algorithm {}",
         i
       );
-      assert!(algorithm.demosaic(mosaic.into(), &CFA::new(XTRANS), &cygm).is_err(), "X-Trans algorithm {}", i);
+      assert!(rejected(algorithm.demosaic(mosaic.into(), &CFA::new(XTRANS), &cygm)), "X-Trans algorithm {}", i);
       assert!(
-        algorithm.demosaic(three_channels.into(), &CFA::new(XTRANS), &rgb).is_err(),
+        rejected(algorithm.demosaic(three_channels.into(), &CFA::new(XTRANS), &rgb)),
         "X-Trans algorithm {}",
         i
       );
     }
     for (i, (algorithm, _)) in four_color_algorithms().into_iter().enumerate() {
-      assert!(algorithm.demosaic(mosaic.into(), &CFA::new("CYGM"), &rgb).is_err(), "4-color algorithm {}", i);
+      assert!(rejected(algorithm.demosaic(mosaic.into(), &CFA::new("CYGM"), &rgb)), "4-color algorithm {}", i);
       assert!(
-        algorithm.demosaic(three_channels.into(), &CFA::new("CYGM"), &cygm).is_err(),
+        rejected(algorithm.demosaic(three_channels.into(), &CFA::new("CYGM"), &cygm)),
         "4-color algorithm {}",
         i
       );
       // CYGM data with the planes of RGBE
       assert!(
-        algorithm.demosaic(mosaic.into(), &CFA::new("CYGM"), &PlaneColor::new("RGBE")).is_err(),
+        rejected(algorithm.demosaic(mosaic.into(), &CFA::new("CYGM"), &PlaneColor::new("RGBE"))),
         "4-color algorithm {}",
         i
       );

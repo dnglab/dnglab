@@ -59,7 +59,7 @@ impl MaskImage {
   /// Crop the mask to `area`
   pub fn crop(&mut self, area: Rect) -> crate::Result<()> {
     if area.p.x + area.d.w > self.width || area.p.y + area.d.h > self.height {
-      return Err(format!("Crop {:?} exceeds the mask of {}x{} pixels", area, self.width, self.height).into());
+      return Err(input_error!("Crop {:?} exceeds the mask of {}x{} pixels", area, self.width, self.height));
     }
     if area == Rect::new(Point::zero(), self.dim()) {
       return Ok(());
@@ -100,7 +100,13 @@ impl MaskImage {
   /// Extend the mask to `dim` with transparent pixels on the right and bottom
   pub fn pad(&mut self, dim: Dim2) -> crate::Result<()> {
     if dim.w < self.width || dim.h < self.height {
-      return Err(format!("Can't pad the mask of {}x{} pixels to {}x{}", self.width, self.height, dim.w, dim.h).into());
+      return Err(input_error!(
+        "Can't pad the mask of {}x{} pixels to {}x{}",
+        self.width,
+        self.height,
+        dim.w,
+        dim.h
+      ));
     }
     if dim == self.dim() {
       return Ok(());

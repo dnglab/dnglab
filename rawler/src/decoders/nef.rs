@@ -155,7 +155,7 @@ impl<'a> NefDecoder<'a> {
     let raw = tiff
       .find_first_ifd_with_tag(TiffCommonTag::CFAPattern)
       .or_else(|| tiff.find_ifd_with_new_subfile_type(0))
-      .ok_or_else(|| RawlerError::DecoderFailed(format!("Failed to find a suitable IFD in NEF decoder")))?;
+      .ok_or_else(|| decoder_error!("Failed to find a suitable IFD in NEF decoder"))?;
     let bps = fetch_tiff_tag!(raw, TiffCommonTag::BitsPerSample).force_usize(0);
 
     // Make sure we always use a 12/14 bit mode to get correct white/blackpoints
@@ -168,7 +168,7 @@ impl<'a> NefDecoder<'a> {
       warn!("NEF makernote not found");
       None
     }
-    .ok_or("File has not makernotes")?;
+    .ok_or_else(|| RawlerError::decoder_failed("File has not makernotes"))?;
 
     //makernote.dump::<ExifTag>(0).iter().for_each(|line| eprintln!("DUMP: {}", line));
 
@@ -194,7 +194,7 @@ impl<'a> Decoder for NefDecoder<'a> {
         Reverse(dim(TiffCommonTag::ImageWidth) * dim(TiffCommonTag::ImageLength))
       })
       .or_else(|| self.tiff.find_ifd_with_new_subfile_type(0))
-      .ok_or_else(|| RawlerError::DecoderFailed(format!("Failed to find a suitable IFD in NEF decoder")))?;
+      .ok_or_else(|| decoder_error!("Failed to find a suitable IFD in NEF decoder"))?;
     let mut width = fetch_tiff_tag!(raw, TiffCommonTag::ImageWidth).force_usize(0);
     let height = fetch_tiff_tag!(raw, TiffCommonTag::ImageLength).force_usize(0);
     let bps = fetch_tiff_tag!(raw, TiffCommonTag::BitsPerSample).force_usize(0);
@@ -204,7 +204,7 @@ impl<'a> Decoder for NefDecoder<'a> {
     let nef_compression = if let Some(z_makernote) = self.makernote.get_entry(NikonMakernote::Makernotes0x51) {
       // For new Z models, a new tag 0x51 for makernotes appears. This contains
       // The new-old NEFCompression tag. The old tag is unavailable in this models.
-      Some(NefCompression::try_from(crate::bits::LEu16(z_makernote.get_data(), 10)).map_err(RawlerError::from)?)
+      Some(NefCompression::try_from(crate::bits::LEu16(z_makernote.get_data(), 10)).map_err(RawlerError::decoder_failed)?)
     } else {
       self
         .makernote
@@ -212,12 +212,12 @@ impl<'a> Decoder for NefDecoder<'a> {
         .map(|entry| entry.force_u16(0))
         .map(NefCompression::try_from)
         .transpose()
-        .map_err(RawlerError::from)?
+        .map_err(RawlerError::decoder_failed)?
     };
     debug!("TIFF compression flag: {}, NEF compression mode: {:?}", compression, nef_compression);
 
     if matches!(nef_compression, Some(NefCompression::HighEfficency)) || matches!(nef_compression, Some(NefCompression::HighEfficencyStar)) {
-      return Err(RawlerError::DecoderFailed(format!("NEF compression {:?} is not supported", nef_compression)));
+      return Err(decoder_error!("NEF compression {:?} is not supported", nef_compression));
     }
 
     let offset = fetch_tiff_tag!(raw, TiffCommonTag::StripOffsets).force_usize(0);
@@ -234,7 +234,7 @@ impl<'a> Decoder for NefDecoder<'a> {
       let full_size: u32 = match fetch_tiff_tag!(raw, TiffCommonTag::StripByteCounts) {
         Value::Long(data) => data.iter().copied().sum(),
         _ => {
-          return Err("StripByteCounts is not of type LONG".into());
+          return Err(RawlerError::decoder_failed("StripByteCounts is not of type LONG"));
         }
       };
       file.subview_padded(offset as u64, full_size as u64)?
@@ -244,24 +244,24 @@ impl<'a> Decoder for NefDecoder<'a> {
     debug!("WB coeff: {:?}", coeffs);
 
     if self.tiff.little_endian() != (self.makernote.endian == Endian::Little) {
-      return Err(RawlerError::DecoderFailed("NEF: TIFF and makernote endianness mismatch".to_string()));
+      return Err(RawlerError::decoder_failed("NEF: TIFF and makernote endianness mismatch".to_string()));
     }
 
     let image = if camera.model == "NIKON D100" {
       width = 3040;
-      decompress_12be_wcontrol(&src, width, height, dummy)?
+      decompress_12be_wcontrol(&src, width, height, dummy).map_err(RawlerError::decoder_failed)?
     } else if camera.find_hint("coolpixsplit") {
-      decompress_12be_interlaced_unaligned(&src, width, height, dummy)?
+      decompress_12be_interlaced_unaligned(&src, width, height, dummy).map_err(RawlerError::decoder_failed)?
     } else if camera.find_hint("msb32") {
-      decompress_12be_msb32(&src, width, height, dummy)?
+      decompress_12be_msb32(&src, width, height, dummy).map_err(RawlerError::decoder_failed)?
     } else if camera.find_hint("unpacked") {
       // P7800 and others is LE, but data is BE, so we use hints here
       if (self.tiff.little_endian() || camera.find_hint("little_endian")) && !camera.find_hint("big_endian") {
-        decompress_16le(&src, width, height, dummy)?
+        decompress_16le(&src, width, height, dummy).map_err(RawlerError::decoder_failed)?
       } else if camera.find_hint("left_aligned") {
-        decompress_12be_unpacked_left_aligned(&src, width, height, dummy)?
+        decompress_12be_unpacked_left_aligned(&src, width, height, dummy).map_err(RawlerError::decoder_failed)?
       } else {
-        decompress_16be(&src, width, height, dummy)?
+        decompress_16be(&src, width, height, dummy).map_err(RawlerError::decoder_failed)?
       }
     } else if let Some(padding) = self.is_uncompressed(raw)? {
       debug!("NEF uncompressed row padding: {}, little-endian: {}", padding, self.tiff.little_endian());
@@ -269,9 +269,9 @@ impl<'a> Decoder for NefDecoder<'a> {
         16 => {
           // Used by Coolscan scanners
           if self.tiff.little_endian() {
-            decompress_16le(&src, width * cpp, height, dummy)?
+            decompress_16le(&src, width * cpp, height, dummy).map_err(RawlerError::decoder_failed)?
           } else {
-            decompress_16be(&src, width * cpp, height, dummy)?
+            decompress_16be(&src, width * cpp, height, dummy).map_err(RawlerError::decoder_failed)?
           }
         }
         14 => {
@@ -279,28 +279,28 @@ impl<'a> Decoder for NefDecoder<'a> {
             // Models like D6 uses packed instead of unpacked 14le encoding. And D6 uses
             // row padding.
             if matches!(nef_compression, Some(NefCompression::Packed14Bits)) {
-              decompress_14le_padded(&src, width, height, (width * bps / u8::BITS as usize) + padding, dummy)?
+              decompress_14le_padded(&src, width, height, (width * bps / u8::BITS as usize) + padding, dummy).map_err(RawlerError::decoder_failed)?
             } else {
-              decompress_14le_unpacked(&src, width, height, dummy)?
+              decompress_14le_unpacked(&src, width, height, dummy).map_err(RawlerError::decoder_failed)?
             }
           } else {
-            decompress_14be_unpacked(&src, width, height, dummy)?
+            decompress_14be_unpacked(&src, width, height, dummy).map_err(RawlerError::decoder_failed)?
           }
         }
         12 => {
           if (self.tiff.little_endian() || camera.find_hint("little_endian")) && !camera.find_hint("big_endian") {
-            decompress_12le_padded(&src, width, height, (width * bps / u8::BITS as usize) + padding, dummy)?
+            decompress_12le_padded(&src, width, height, (width * bps / u8::BITS as usize) + padding, dummy).map_err(RawlerError::decoder_failed)?
           } else {
-            decompress_12be(&src, width, height, dummy)?
+            decompress_12be(&src, width, height, dummy).map_err(RawlerError::decoder_failed)?
           }
         }
         // Used by Coolscan scanners
-        8 => decompress_8bit(&src, width * cpp, height, dummy)?,
+        8 => decompress_8bit(&src, width * cpp, height, dummy).map_err(RawlerError::decoder_failed)?,
         x => return Err(RawlerError::unsupported(camera, format!("Don't know uncompressed bps {}", x))),
       }
     } else if size == width * height * 3 {
       cpp = 3;
-      Self::decode_snef_compressed(&src, coeffs, width, height, dummy)?
+      Self::decode_snef_compressed(&src, coeffs, width, height, dummy).map_err(RawlerError::decoder_failed)?
     } else if compression == 34713 {
       self.decode_compressed(&src, width, height, bps, dummy)?
     } else {
@@ -308,11 +308,7 @@ impl<'a> Decoder for NefDecoder<'a> {
     };
 
     if image.width != width * cpp {
-      return Err(RawlerError::DecoderFailed(format!(
-        "NEF: decompressed width {} != expected {}",
-        image.width,
-        width * cpp
-      )));
+      return Err(decoder_error!("NEF: decompressed width {} != expected {}", image.width, width * cpp));
     }
     let blacklevel = self.get_blacklevel(camera, bps)?;
     let whitelevel = None;
@@ -423,12 +419,13 @@ impl ScanEncoding {
   /// Encoding of 8 or 16 bit values by the ICC profile in `data`
   fn new(data: &[u8], bps: usize) -> Result<Self> {
     if !matches!(bps, 8 | 16) {
-      return Err(format!("Scan with {} bits per sample is not supported", bps).into());
+      return Err(decoder_error!("Scan with {} bits per sample is not supported", bps));
     }
     let profile = MatrixShaperProfile::parse(data)?;
     let linearization_table = profile.linearization_table(1 << bps)?;
     // The colorants map white RGB values to the D50 white of the PCS
-    let mut camera_profile = CameraProfile::from_forward_matrix_d50(&profile.rgb_to_xyz, &[1.0; 3]).ok_or("ICC profile has invalid colorants")?;
+    let mut camera_profile =
+      CameraProfile::from_forward_matrix_d50(&profile.rgb_to_xyz, &[1.0; 3]).ok_or_else(|| RawlerError::decoder_failed("ICC profile has invalid colorants"))?;
     camera_profile.name = profile.description;
     Ok(Self {
       linearization_table,
@@ -674,7 +671,7 @@ impl<'a> NefDecoder<'a> {
     })
   }
 
-  fn decode_compressed(&self, src: &PaddedBuf, width: usize, height: usize, bps: usize, dummy: bool) -> std::result::Result<PixU16, String> {
+  fn decode_compressed(&self, src: &PaddedBuf, width: usize, height: usize, bps: usize, dummy: bool) -> Result<PixU16> {
     let meta = if let Some(meta) = self.makernote.get_entry(TiffCommonTag::NefMeta2) {
       debug!("Found NefMeta2");
       meta
@@ -682,7 +679,7 @@ impl<'a> NefDecoder<'a> {
       debug!("Fallback NefMeta1");
       fetch_tiff_tag!(self.makernote, TiffCommonTag::NefMeta1)
     };
-    Self::do_decode(src, meta.get_data(), self.makernote.endian, width, height, bps, dummy)
+    Self::do_decode(src, meta.get_data(), self.makernote.endian, width, height, bps, dummy).map_err(RawlerError::decoder_failed)
   }
 
   pub(crate) fn do_decode(

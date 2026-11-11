@@ -14,7 +14,7 @@ use crate::{
     dcp::CameraProfileFile,
     opcodes::{Opcode, OpcodeSelector, OpcodeStage},
   },
-  formats::tiff::{DirectoryWriter, TiffWriter},
+  formats::tiff::{DirectoryWriter, TiffError, TiffWriter},
   imgop::{
     Dim2, Point, Rect,
     color::{OutputSpace, TransferFunction},
@@ -336,7 +336,8 @@ impl RawDevelop {
     };
     let mut image = render(rawimage, &options)?;
 
-    let mut tiff = TiffWriter::new(writer)?;
+    let write_error = |err: TiffError| general_error!("Failed to write the TIFF file").context(err);
+    let mut tiff = TiffWriter::new(writer).map_err(write_error)?;
     let mut root_ifd = Self::metadata_ifd(&mut tiff, &make, &model, orientation, md, &image)?;
     if let Some(icc) = image.icc_profile() {
       root_ifd.add_tag_undefined(ExifTag::IccProfile, icc);
@@ -354,11 +355,11 @@ impl RawDevelop {
     let dim = image.dim();
     let (bits, (strip_rows, strips)) = if image.extended_range {
       let data = with_alpha(std::mem::take(&mut image.data), image.channels, image.alpha.as_deref(), |alpha| alpha);
-      (32_u16, tiff.write_strips_lzw_f32(&data, samples, dim, 0)?)
+      (32_u16, tiff.write_strips_lzw_f32(&data, samples, dim, 0).map_err(write_error)?)
     } else {
       let data = convert_from_f32_scaled_u16(&image.data, 0, u16::MAX);
       let data = with_alpha(data, image.channels, image.alpha.as_deref(), |alpha| (alpha * u16::MAX as f32).round() as u16);
-      (16_u16, tiff.write_strips_lzw(&data, samples, dim, 0)?)
+      (16_u16, tiff.write_strips_lzw(&data, samples, dim, 0).map_err(write_error)?)
     };
     let strip_offsets: Vec<u32> = strips.iter().map(|(offset, _)| *offset).collect();
     let strip_bytes: Vec<u32> = strips.iter().map(|(_, bytes)| *bytes).collect();
@@ -378,7 +379,7 @@ impl RawDevelop {
     root_ifd.add_tag(TiffCommonTag::ImageWidth, image.width as u16);
     root_ifd.add_tag(TiffCommonTag::ImageLength, image.height as u16);
 
-    tiff.build(root_ifd)?;
+    tiff.build(root_ifd).map_err(write_error)?;
 
     Ok(())
   }
@@ -400,27 +401,34 @@ impl RawDevelop {
 
     // EXIF data is a TIFF structure without image data
     let mut exif = Cursor::new(Vec::new());
-    let mut tiff = TiffWriter::new(&mut exif)?;
+    let exif_error = |err: TiffError| general_error!("Failed to write the EXIF data").context(err);
+    let mut tiff = TiffWriter::new(&mut exif).map_err(exif_error)?;
     let root_ifd = Self::metadata_ifd(&mut tiff, &make, &model, orientation, md, &image)?;
-    tiff.build(root_ifd)?;
+    tiff.build(root_ifd).map_err(exif_error)?;
     let exif = exif.into_inner();
 
     let icc = image.icc_profile();
-    let image = image.to_dynamic_image().ok_or("failed to convert to dynamic image")?;
+    let image = image
+      .to_dynamic_image()
+      .ok_or_else(|| general_error!("Failed to convert the image for the JPEG encoder"))?;
 
     let mut encoder = JpegEncoder::new_with_quality(writer, quality);
     if let Some(icc) = icc {
-      encoder.set_icc_profile(icc).map_err(|err| format!("Failed to set JPEG ICC profile: {}", err))?;
+      encoder
+        .set_icc_profile(icc)
+        .map_err(|err| general_error!("Failed to set JPEG ICC profile").context(err))?;
     }
     // The APP1 segment holds 65533 bytes, including the "Exif\0\0" header
     if exif.len() <= 65527 {
       encoder
         .set_exif_metadata(exif)
-        .map_err(|err| format!("Failed to set JPEG EXIF data: {}", err))?;
+        .map_err(|err| general_error!("Failed to set JPEG EXIF data").context(err))?;
     } else {
       log::warn!("EXIF data of {} bytes doesn't fit into JPEG, it is not written", exif.len());
     }
-    image.write_with_encoder(encoder).map_err(|err| format!("Failed to write JPEG: {}", err))?;
+    image
+      .write_with_encoder(encoder)
+      .map_err(|err| general_error!("Failed to write JPEG").context(err))?;
     Ok(())
   }
 
@@ -443,14 +451,15 @@ impl RawDevelop {
     // Add EXIF version 0220
     exif_ifd.add_tag_undefined(ExifTag::ExifVersion, vec![48, 50, 50, 48]);
 
-    md.write_exif_tags(tiff, &mut root_ifd, &mut exif_ifd)?;
+    let exif_error = |err: TiffError| general_error!("Failed to write the EXIF data").context(err);
+    md.write_exif_tags(tiff, &mut root_ifd, &mut exif_ifd).map_err(exif_error)?;
     root_ifd.add_tag(TiffCommonTag::Make, make);
     root_ifd.add_tag(TiffCommonTag::Model, model);
     // The color space of the image, not of the camera: sRGB or uncalibrated
     let srgb = image.color_space == Some(OutputSpace::Srgb) && image.transfer_function == TransferFunction::Srgb;
     exif_ifd.add_tag(ExifTag::ColorSpace, if srgb { 1_u16 } else { 0xffff });
 
-    let exif_offset = exif_ifd.build(tiff)?;
+    let exif_offset = exif_ifd.build(tiff).map_err(exif_error)?;
 
     root_ifd.add_tag(TiffCommonTag::ExifIFDPointer, exif_offset);
     if let Some(orientation) = orientation {

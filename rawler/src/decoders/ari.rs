@@ -1,5 +1,6 @@
 use crate::RawImage;
 use crate::RawLoader;
+use crate::RawlerError;
 use crate::Result;
 use crate::bits::*;
 use crate::decompressors::packed::decompress_12be_msb32;
@@ -48,9 +49,9 @@ impl<'a> Decoder for AriDecoder<'a> {
     let src = file.subview_until_eof_padded(offset as u64)?;
 
     let image = if camera.find_hint("little-endian") {
-      decompress_12le(&src, width, height, dummy)?
+      decompress_12le(&src, width, height, dummy).map_err(RawlerError::decoder_failed)?
     } else {
-      decompress_12be_msb32(&src, width, height, dummy)?
+      decompress_12be_msb32(&src, width, height, dummy).map_err(RawlerError::decoder_failed)?
     };
 
     let cpp = 1;

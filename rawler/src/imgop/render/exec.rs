@@ -7,6 +7,7 @@ use super::{
   RenderedImage,
   plan::{CameraMap, DemosaicAlgorithm, Op, Plan},
 };
+use crate::RawlerError;
 use crate::{
   RawImage, RawImageData,
   dng::opcodes::{OpcodeData, OpcodeImage, OpcodeStage},
@@ -167,7 +168,7 @@ impl Executor {
   /// Raw image for an operation on its image data as read from the file
   fn raw_data(&mut self) -> crate::Result<&mut RawImage> {
     match self.image {
-      Some(_) => Err("Image data is already processed".into()),
+      Some(_) => Err(RawlerError::invalid_input("Image data is already processed")),
       None => Ok(&mut self.rawimage),
     }
   }

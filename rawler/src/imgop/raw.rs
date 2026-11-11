@@ -96,14 +96,14 @@ pub(crate) fn cfa_planes(cfa: &CFA, colors: &PlaneColor) -> crate::Result<Vec<us
   let lookup = colors.plane_lookup_table();
   (0..cfa.height * cfa.width)
     .map(|i| match lookup[cfa.color_at(i / cfa.width, i % cfa.width)] {
-      255 => Err(format!("CFA {} has a color without plane in {:?}", cfa, colors).into()),
+      255 => Err(input_error!("CFA {} has a color without plane in {:?}", cfa, colors)),
       plane => Ok(plane),
     })
     .collect()
 }
 
 fn mosaic_error(channels: usize) -> crate::RawlerError {
-  format!("Mosaic data must have one channel, image has {}", channels).into()
+  input_error!("Mosaic data must have one channel, image has {}", channels)
 }
 
 /// White balance an image of color planes in place, channel i is multiplied
@@ -112,7 +112,7 @@ pub fn white_balance<'a>(image: impl Into<ImageViewMut<'a, f32>>, wb: &WhiteBala
   let mut image = image.into();
   let channels = image.channels();
   if channels > 4 {
-    return Err(format!("White balance supports up to four color planes, image has {}", channels).into());
+    return Err(input_error!("White balance supports up to four color planes, image has {}", channels));
   }
   image.as_mut_slice().par_chunks_mut(channels.max(1)).for_each(|pixel| {
     pixel.iter_mut().enumerate().for_each(|(plane, v)| *v = wb.apply(*v, plane));

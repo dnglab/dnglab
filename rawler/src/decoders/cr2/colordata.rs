@@ -1,5 +1,5 @@
 use crate::{
-  RawlerError, Result,
+  Result,
   formats::tiff::{Entry, Rational, Value},
 };
 
@@ -77,7 +77,7 @@ pub(crate) fn parse_colordata(colordata: &Entry) -> Result<ColorData> {
         // -3 (M10/M3)
         -3 => ColorData::new(data, version, 0x47, Some(0x108), None, None),
 
-        _ => return Err(format!("Unknown2 COLORDATA version: {}", data[0]).into()),
+        _ => return Err(decoder_error!("Unknown2 COLORDATA version: {}", data[0])),
       })
 
       /*
@@ -166,14 +166,11 @@ pub(crate) fn parse_colordata(colordata: &Entry) -> Result<ColorData> {
         // 64 (R5MK2), 65 (R50V), 66 (R6MK3)
         64 | 65 | 66 => ColorData::new(data, version, 0x69, Some(0x17f), Some(0x294), Some(0x295)),
 
-        _ => return Err(format!("Unknown COLORDATA version: {}", data[0]).into()),
+        _ => return Err(decoder_error!("Unknown COLORDATA version: {}", data[0])),
       })
     }
 
-    _ => Err(RawlerError::DecoderFailed(format!(
-      "Invalid COLORDATA tag: type {}",
-      colordata.value_type_name()
-    ))),
+    _ => Err(decoder_error!("Invalid COLORDATA tag: type {}", colordata.value_type_name())),
   }
 }
 

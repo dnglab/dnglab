@@ -192,8 +192,10 @@ OpcodeList1, replacing an existing FixBadPixelsList:
 ### 4. Demosaic, FujiRotate and OpcodeList3
 
 - CFA data is demosaiced and cropped to the ActiveArea. An algorithm returns
-  an error for data it can't process, e.g. a CFA of another layout; the
-  planner only picks algorithms that match the CFA.
+  a `RawlerError::InvalidInput` error for data it can't process, e.g. a CFA of
+  another layout; the planner only picks algorithms that match the CFA. A CFA
+  without an algorithm, e.g. a 2x8 pattern, makes the plan fail with the same
+  error.
 - **Tiled algorithms:** AHD, VNG, RCD and Markesteijn interpolate from a
   neighbourhood of pixels. They process the image in tiles in parallel, see
   [`sensor/tiles.rs`](../rawler/src/imgop/sensor/tiles.rs): each tile reads its

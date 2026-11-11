@@ -12,7 +12,7 @@ use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
 
 use crate::{
-  RawlerError, Result,
+  Result,
   imgop::{Dim2, Point, Rect},
   pixarray::{ImageRegionMut, LineMut, SubPixel},
 };
@@ -36,12 +36,12 @@ impl<'a> ParamReader<'a> {
 
   pub(super) fn take(&mut self, n: usize) -> Result<&'a [u8]> {
     if n > self.remaining() {
-      return Err(RawlerError::DecoderFailed(format!(
+      return Err(decoder_error!(
         "DNG opcode data truncated: {} bytes required at offset {}, but only {} available",
         n,
         self.pos,
         self.remaining()
-      )));
+      ));
     }
     let bytes = &self.data[self.pos..self.pos + n];
     self.pos += n;
@@ -78,12 +78,12 @@ impl<'a> ParamReader<'a> {
   pub(super) fn check_count(&self, count: usize, item_size: usize, what: &str) -> Result<()> {
     match count.checked_mul(item_size) {
       Some(bytes) if bytes <= self.remaining() => Ok(()),
-      _ => Err(RawlerError::DecoderFailed(format!(
+      _ => Err(decoder_error!(
         "DNG opcode {}: {} entries exceed parameter area of {} bytes",
         what,
         count,
         self.remaining()
-      ))),
+      )),
     }
   }
 }
@@ -131,7 +131,7 @@ impl AreaSpec {
 
   /// Validate the area
   fn validate(&self) -> Result<()> {
-    let invalid = |what: &str| Err(RawlerError::DecoderFailed(format!("DNG opcode area {:?} is invalid: {}", self, what)));
+    let invalid = |what: &str| Err(decoder_error!("DNG opcode area {:?} is invalid: {}", self, what));
     if self.planes < 1 {
       return invalid("planes must be at least 1");
     }
@@ -339,12 +339,12 @@ pub(super) fn apply_warp(name: &str, planes: &[WarpPlane], center: (f64, f64), i
   }
   let cpp = image.channels();
   if planes.len() != 1 && planes.len() != cpp {
-    return Err(RawlerError::DecoderFailed(format!(
+    return Err(decoder_error!(
       "DNG opcode {}: {} coefficient sets for an image with {} planes",
       name,
       planes.len(),
       cpp
-    )));
+    ));
   }
   let bounds = stage_bounds(image, stage);
   if bounds.width() == 0 || bounds.height() == 0 {
@@ -366,10 +366,11 @@ pub(super) fn apply_warp(name: &str, planes: &[WarpPlane], center: (f64, f64), i
       warp(region, &src, &geometry, planes, &|v: f32| (v * 65535.0).round().clamp(0.0, 65535.0) as u16);
     }
     (OpcodeData::Integer(_), _) => {
-      return Err(RawlerError::DecoderFailed(format!(
+      return Err(decoder_error!(
         "DNG opcode {} in {} requires image data mapped to linear reference values",
-        name, stage
-      )));
+        name,
+        stage
+      ));
     }
   }
   Ok(())
@@ -530,7 +531,7 @@ pub(super) fn parse_line_table(reader: &mut ParamReader, area: &AreaSpec, axis: 
   let count = reader.u32()?;
   let expected = axis.count(area);
   if count != expected {
-    return Err(RawlerError::DecoderFailed(format!(
+    return Err(decoder_error!(
       "DNG opcode {}: count {} doesn't match the {} affected {}",
       name,
       count,
@@ -539,14 +540,14 @@ pub(super) fn parse_line_table(reader: &mut ParamReader, area: &AreaSpec, axis: 
         TableAxis::Row => "rows",
         TableAxis::Column => "columns",
       }
-    )));
+    ));
   }
   reader.check_count(count as usize, 4, name)?;
   (0..count)
     .map(|_| {
       let value = reader.f32()?;
       if !value.is_finite() {
-        return Err(RawlerError::DecoderFailed(format!("DNG opcode {}: value {} is not finite", name, value)));
+        return Err(decoder_error!("DNG opcode {}: value {} is not finite", name, value));
       }
       Ok(value)
     })
@@ -602,10 +603,11 @@ impl LineTable<'_> {
       (OpcodeData::Float(view), _) => self.map(view.region_mut(rect), bounds, float_fn),
       (OpcodeData::Integer(view), OpcodeStage::List1) => self.map(view.region_mut(rect), bounds, int_fn),
       (OpcodeData::Integer(_), _) => {
-        return Err(RawlerError::DecoderFailed(format!(
+        return Err(decoder_error!(
           "DNG opcode {} in {} requires image data mapped to linear reference values",
-          self.name, stage
-        )));
+          self.name,
+          stage
+        ));
       }
     }
     Ok(())

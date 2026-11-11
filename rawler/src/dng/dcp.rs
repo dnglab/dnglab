@@ -30,7 +30,7 @@ pub struct CameraProfileFile {
 impl CameraProfileFile {
   /// Read a DCP file
   pub fn read<R: Read + Seek>(reader: &mut R) -> Result<Self> {
-    let invalid = |err: String| RawlerError::DecoderFailed(format!("Invalid camera profile file: {}", err));
+    let invalid = |err: String| input_error!("Invalid camera profile file: {}", err);
     let ifd = read_camera_profile_ifd(reader, 0).map_err(invalid)?;
     let profile = read_camera_profile(&ifd).ok_or_else(|| invalid("no valid ColorMatrix1".into()))?;
     Ok(Self {
@@ -48,14 +48,14 @@ impl CameraProfileFile {
 
   /// DCP file data, in the byte order of the host
   pub fn to_bytes(&self) -> Result<Vec<u8>> {
-    Ok(camera_profile_data(&self.profile, self.unique_camera_model.as_deref())?)
+    camera_profile_data(&self.profile, self.unique_camera_model.as_deref()).map_err(|err| general_error!("Can't build camera profile file").context(err))
   }
 
   /// Write the DCP file data to `writer`
   pub fn write<W: Write>(&self, writer: &mut W) -> Result<()> {
     writer
       .write_all(&self.to_bytes()?)
-      .map_err(|err| RawlerError::DecoderFailed(format!("Can't write camera profile file: {}", err)))
+      .map_err(|err| general_error!("Can't write camera profile file").context(err))
   }
 
   /// DCP file of camera profile `index` of `rawimage`
@@ -68,7 +68,7 @@ impl CameraProfileFile {
     let mut profile = rawimage
       .camera_profiles
       .get(index)
-      .ok_or_else(|| RawlerError::DecoderFailed(format!("The image has no camera profile {}", index)))?
+      .ok_or_else(|| input_error!("The image has no camera profile {}", index))?
       .clone();
     // ReductionMatrix is required for more than three color planes, and not allowed otherwise
     profile.reduction_matrix = if profile.color_planes().is_some_and(|planes| planes > 3) {
@@ -110,11 +110,11 @@ impl CameraProfileFile {
     if self.profile.allows_embedding() {
       Ok(())
     } else {
-      Err(RawlerError::DecoderFailed(format!(
+      Err(input_error!(
         "Camera profile '{}' can't be embedded, its ProfileEmbedPolicy is '{}'",
         self.name(),
         self.profile.embed_policy()
-      )))
+      ))
     }
   }
 
@@ -124,11 +124,11 @@ impl CameraProfileFile {
     if self.profile.allows_copying() {
       Ok(())
     } else {
-      Err(RawlerError::DecoderFailed(format!(
+      Err(input_error!(
         "Camera profile '{}' can't be copied, its ProfileEmbedPolicy is '{}'",
         self.name(),
         self.profile.embed_policy()
-      )))
+      ))
     }
   }
 

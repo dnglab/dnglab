@@ -6,7 +6,7 @@
 use serde::{Deserialize, Serialize};
 
 use crate::{
-  RawlerError, Result,
+  Result,
   pixarray::{ImageRegionMut, SubPixel},
 };
 
@@ -51,7 +51,7 @@ impl FixVignetteRadial {
 
   /// Validate the parameters
   fn validate(&self) -> Result<()> {
-    let invalid = |what: &str| Err(RawlerError::DecoderFailed(format!("DNG opcode FixVignetteRadial is invalid: {}", what)));
+    let invalid = |what: &str| Err(decoder_error!("DNG opcode FixVignetteRadial is invalid: {}", what));
     if !self.k.iter().all(|k| k.is_finite()) {
       return invalid("coefficients must be finite");
     }
@@ -93,10 +93,10 @@ impl FixVignetteRadial {
         });
       }
       (OpcodeData::Integer(_), _) => {
-        return Err(RawlerError::DecoderFailed(format!(
+        return Err(decoder_error!(
           "DNG opcode FixVignetteRadial in {} requires image data mapped to linear reference values",
           stage
-        )));
+        ));
       }
     }
     Ok(())

@@ -94,7 +94,7 @@ struct Phase<const N: usize> {
 fn phases<const N: usize>(cfa: &CFA, colors: &PlaneColor, width: usize) -> crate::Result<Vec<Phase<N>>> {
   let plane_map = colors.plane_lookup_table();
   if let Some(color) = (0..4).map(|i| cfa.color_at(i / 2, i % 2)).find(|&color| plane_map[color] >= N) {
-    return Err(format!("CFA color {} of '{}' has no plane in {} planes", color, cfa, N).into());
+    return Err(input_error!("CFA color {} of '{}' has no plane in {} planes", color, cfa, N));
   }
   // Every color of the pattern has a plane, see above
   let plane = |row: usize, col: usize| plane_map[cfa.color_at(row, col)];

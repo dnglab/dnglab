@@ -66,7 +66,7 @@ impl TileCoords {
     // The derivations below need at least two levels; the fixed region count
     // guarantees that.
     if n_levels + 1 != REGIONS {
-      return Err(format!("ARW6: {} coding regions, expected {}", n_levels + 1, REGIONS).into());
+      return Err(decoder_error!("ARW6: {} coding regions, expected {}", n_levels + 1, REGIONS));
     }
     Ok(Self {
       tile_width,

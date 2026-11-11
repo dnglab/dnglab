@@ -1334,8 +1334,12 @@ mod tests {
       Some(WhiteLevel::new_bits(12, 1)),
       false,
     );
-    let error = plan(&rawimage, &RenderOptions::default()).err().map(|err| err.to_string());
-    assert!(error.as_deref().is_some_and(|err| err.contains("is not supported")), "{:?}", error);
+    let error = plan(&rawimage, &RenderOptions::default()).err();
+    assert!(
+      matches!(&error, Some(crate::RawlerError::InvalidInput { message, .. }) if message.contains("is not supported")),
+      "{:?}",
+      error
+    );
   }
 
   #[test]

@@ -68,7 +68,7 @@ pub fn laplacian_sharpen(mut region: ImageRegionMut<'_, f32>, strength: f32, sca
 fn sharpen_region(mut region: ImageRegionMut<'_, f32>, strength: f32, scale: &[f32; 4], collect: bool) -> crate::Result<Option<SharpenStats>> {
   let (width, height, channels) = (region.width(), region.height(), region.channels());
   let Some(coefficients) = luma_coefficients(channels, scale) else {
-    return Err(format!("Sharpening of {} color planes is not supported", channels).into());
+    return Err(input_error!("Sharpening of {} color planes is not supported", channels));
   };
   // Also skips a strength that is not a number
   let active = strength > 0.0;

@@ -18,7 +18,7 @@ fn clamp(i: isize, n: usize) -> usize {
 /// the coarse sub-band lands on the EVEN output rows or on the ODD ones.
 fn idwt53_rows(low: &Plane, high: &Plane, flip: bool) -> Result<Plane> {
   if low.w != high.w {
-    return Err(format!("ARW6: IDWT sub-band widths differ: {} vs {}", low.w, high.w).into());
+    return Err(decoder_error!("ARW6: IDWT sub-band widths differ: {} vs {}", low.w, high.w));
   }
   let w = low.w;
   let (n_low, n_high) = (low.h, high.h);

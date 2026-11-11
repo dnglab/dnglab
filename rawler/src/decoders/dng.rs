@@ -81,10 +81,7 @@ impl<'a> Decoder for DngDecoder<'a> {
     // Raw IFDs use CFA (32803) or LinearRaw (34892), BlackIsZero (1) is accepted for monochrome images
     let photometric_int = fetch_tiff_tag!(raw, TiffCommonTag::PhotometricInt).force_u32(0);
     if ![1, 32803, 34892].contains(&photometric_int) {
-      return Err(RawlerError::DecoderFailed(format!(
-        "DNG: unsupported PhotometricInterpretation {} for raw image",
-        photometric_int
-      )));
+      return Err(decoder_error!("DNG: unsupported PhotometricInterpretation {} for raw image", photometric_int));
     }
 
     let mut cam = self.make_camera(raw, width, height, photometric_int)?;
@@ -117,10 +114,7 @@ impl<'a> Decoder for DngDecoder<'a> {
       32803 => RawPhotometricInterpretation::Cfa(CFAConfig::new_from_camera(&cam)),
       34892 => RawPhotometricInterpretation::LinearRaw,
       _ => {
-        return Err(RawlerError::DecoderFailed(format!(
-          "DNG: unsupported PhotometricInterpretation {} for raw image",
-          photometric_int
-        )));
+        return Err(decoder_error!("DNG: unsupported PhotometricInterpretation {} for raw image", photometric_int));
       }
     };
 
@@ -337,7 +331,7 @@ impl<'a> DngDecoder<'a> {
     if let Some(first) = ifds.first() {
       Ok(first)
     } else {
-      Err(RawlerError::DecoderFailed(format!("TODO: Unsupported DNG compression")))
+      Err(decoder_error!("TODO: Unsupported DNG compression"))
     }
   }
 
@@ -360,7 +354,13 @@ impl<'a> DngDecoder<'a> {
         if mask.dim() == dim {
           Ok(mask)
         } else {
-          Err(format!("it has {}x{} pixels, the raw image {}x{}", mask.width, mask.height, dim.w, dim.h).into())
+          Err(decoder_error!(
+            "it has {}x{} pixels, the raw image {}x{}",
+            mask.width,
+            mask.height,
+            dim.w,
+            dim.h
+          ))
         }
       })
       .map_err(|err| log::warn!("DNG: transparency mask is ignored: {}", err))
@@ -377,7 +377,7 @@ impl<'a> DngDecoder<'a> {
       .into_iter()
       .filter_map(|ifd| {
         let result = read_mask_image(ifd, file, PhotometricInterpretation::PhotometricMask).and_then(|image| {
-          let name = read_string(ifd, DngTag::SemanticName).ok_or("SemanticName is missing")?;
+          let name = read_string(ifd, DngTag::SemanticName).ok_or_else(|| RawlerError::decoder_failed("SemanticName is missing"))?;
           let instance_id = read_string(ifd, DngTag::SemanticInstanceID);
           let sub_area = ifd.get_entry(DngTag::MaskSubArea).and_then(|entry| {
             let area: [u32; 4] = std::array::from_fn(|i| entry.force_u32(i));
@@ -537,7 +537,7 @@ impl<'a> DngDecoder<'a> {
         Value::Short(black) => black.iter().copied().map(Rational::from).collect(),
         Value::Long(black) => black.iter().copied().map(Rational::from).collect(),
         Value::Rational(black) => black.clone(),
-        _ => return Err(format!("Unsupported BlackLevel type: {}", entry.value_type_name()).into()),
+        _ => return Err(decoder_error!("Unsupported BlackLevel type: {}", entry.value_type_name())),
       };
       let mut repeat = (1, 1);
       if let Some(Entry {
@@ -553,14 +553,14 @@ impl<'a> DngDecoder<'a> {
       }
       let (rows, cols) = repeat;
       if rows == 0 || cols == 0 || levels.len() != rows * cols * cpp {
-        return Err(RawlerError::DecoderFailed(format!(
+        return Err(decoder_error!(
           "DNG: BlackLevel has {} values, expected {} for {}x{} pixels with {} samples",
           levels.len(),
           rows * cols * cpp,
           cols,
           rows,
           cpp
-        )));
+        ));
       }
       // Without ActiveArea, the whole image is active
       let [top, left, bottom, right] = self.get_active_area_borders(raw).unwrap_or([0, 0, height, width]);
@@ -596,10 +596,7 @@ impl<'a> DngDecoder<'a> {
         log::warn!("DNG: LinearizationTable is not allowed for floating point or >16 bit data, ignoring it");
         Ok(None)
       }
-      (Some(value), _) => Err(RawlerError::DecoderFailed(format!(
-        "DNG: unsupported LinearizationTable type: {}",
-        value.value_type_name()
-      ))),
+      (Some(value), _) => Err(decoder_error!("DNG: unsupported LinearizationTable type: {}", value.value_type_name())),
     }
   }
 
@@ -742,14 +739,14 @@ fn read_mask_image(ifd: &IFD, file: &RawSource, photometric: PhotometricInterpre
   let bps = ifd.get_entry(TiffCommonTag::BitsPerSample).map(|entry| entry.force_u32(0)).unwrap_or(1);
   let found = PhotometricInterpretation::extract(ifd)?;
   if found != Some(photometric) {
-    return Err(format!("PhotometricInterpretation {:?} instead of {:?}", found, photometric).into());
+    return Err(decoder_error!("PhotometricInterpretation {:?} instead of {:?}", found, photometric));
   }
   if cpp != 1 {
-    return Err(format!("{} samples per pixel", cpp).into());
+    return Err(decoder_error!("{} samples per pixel", cpp));
   }
   let float = SampleFormat::extract(ifd)? == Some(SampleFormat::IEEEFP);
   if !float && !(8..=16).contains(&bps) {
-    return Err(format!("{} bit integer samples are not supported", bps).into());
+    return Err(decoder_error!("{} bit integer samples are not supported", bps));
   }
   let data = plain_image_from_ifd_ext(ifd, file, false, false)?;
   let len = match &data {
@@ -757,7 +754,7 @@ fn read_mask_image(ifd: &IFD, file: &RawSource, photometric: PhotometricInterpre
     RawImageData::Float(samples) => samples.len(),
   };
   if len != width * height {
-    return Err(format!("{} samples for {}x{} pixels", len, width, height).into());
+    return Err(decoder_error!("{} samples for {}x{} pixels", len, width, height));
   }
   Ok(MaskImage::new(width, height, bps, data))
 }
@@ -922,6 +919,46 @@ mod tests {
     let root = dng_decoder(&output.into_inner())?.ifd(WellKnownIFD::Root)?.ok_or("root IFD not found")?;
     let stored = root.get_entry(DngTag::BaselineExposure).map(|entry| entry.value.clone());
     assert_eq!(stored, Some(Value::SRational(vec![exposure])));
+    Ok(())
+  }
+
+  /// Output whose writes fail
+  struct FailingOutput;
+
+  impl std::io::Write for FailingOutput {
+    fn write(&mut self, _buf: &[u8]) -> std::io::Result<usize> {
+      Err(std::io::Error::other("disk full"))
+    }
+
+    fn flush(&mut self) -> std::io::Result<()> {
+      Ok(())
+    }
+  }
+
+  impl std::io::Seek for FailingOutput {
+    fn seek(&mut self, _pos: std::io::SeekFrom) -> std::io::Result<u64> {
+      Ok(0)
+    }
+  }
+
+  #[test]
+  fn failing_dng_write_is_a_general_error() -> TestResult {
+    use crate::dng::convert::{ConvertParams, convert_raw_source};
+    use crate::dng::writer::DngError;
+    use std::error::Error;
+
+    let source = write_dng_with_baseline_exposure(0.5_f32)?;
+    let params = ConvertParams::default().with_preview(false).with_thumbnail(false);
+    let err = convert_raw_source(&RawSource::new_from_slice(&source), &mut FailingOutput, "synthetic.dng", &params)
+      .err()
+      .ok_or("the conversion succeeded")?;
+    assert!(
+      matches!(&err, crate::RawlerError::General { message, .. } if message == "Failed to write the DNG file"),
+      "{:?}",
+      err
+    );
+    let context = err.source().ok_or("the error has no context")?;
+    assert!(context.downcast_ref::<DngError>().is_some(), "{:?}", context);
     Ok(())
   }
 

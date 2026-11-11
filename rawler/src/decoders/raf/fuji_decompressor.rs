@@ -6,6 +6,7 @@
 /// Copyright (C) 2017 Uwe Müssel
 /// Copyright (C) 2017 Roman Lebedev
 /// Copyright (C) 2022 Daniel Vogelbacher
+use crate::RawlerError;
 use multiversion::multiversion;
 use rayon::prelude::*;
 use std::{fmt::Display, mem::size_of};
@@ -301,7 +302,7 @@ pub(super) fn decompress_fuji(buf: &PaddedBuf, width: usize, height: usize, _bps
   };
   log::debug!("Header: {:?}", header);
   if !header.is_valid() {
-    return Err("Fuji header is not valid".into());
+    return Err(RawlerError::decoder_failed("Fuji header is not valid"));
   }
   assert_eq!(
     Dim2::new(width, height),
@@ -318,7 +319,7 @@ pub(super) fn decompress_fuji(buf: &PaddedBuf, width: usize, height: usize, _bps
       let color = corrected_cfa.cfa_color_at(i, j);
       match color {
         CFAColor::RED | CFAColor::GREEN | CFAColor::BLUE => cfa[i][j] = color,
-        _ => return Err(format!("Fuji decompressor: got unexpected CFA color: {:?}", color).into()),
+        _ => return Err(decoder_error!("Fuji decompressor: got unexpected CFA color: {:?}", color)),
       }
     }
   }
@@ -369,12 +370,16 @@ pub(super) fn decompress_fuji(buf: &PaddedBuf, width: usize, height: usize, _bps
   let regions = ImageRegionMut::from(out.view_mut()).split_regions_mut(&areas)?;
 
   // Process each strip
-  strips.par_iter().zip(regions).try_for_each(|(strip, mut region)| {
-    let line_step = (header.total_lines as usize + 0xF) & !0xF;
-    // Each strip has it's own q_bases
-    let q_bases_strip = q_bases.as_ref().map(|buf| &buf[strip.n * line_step..]);
-    strip.decompress_strip(buf, &header, &params, q_bases_strip, &mut region)
-  })?;
+  strips
+    .par_iter()
+    .zip(regions)
+    .try_for_each(|(strip, mut region)| {
+      let line_step = (header.total_lines as usize + 0xF) & !0xF;
+      // Each strip has it's own q_bases
+      let q_bases_strip = q_bases.as_ref().map(|buf| &buf[strip.n * line_step..]);
+      strip.decompress_strip(buf, &header, &params, q_bases_strip, &mut region)
+    })
+    .map_err(RawlerError::decoder_failed)?;
 
   Ok(out)
 }
@@ -847,7 +852,7 @@ impl Params {
   /// Create new parameter
   fn new(header: &Header) -> crate::Result<Self> {
     if (header.block_size % 3 != 0 && header.raw_type == 16) || (header.block_size & 1 != 0 && header.raw_type == 0) {
-      return Err("Invalid FUJI header: block_size is incompatible with raw_type".into());
+      return Err(RawlerError::decoder_failed("Invalid FUJI header: block_size is incompatible with raw_type"));
     }
     let min_value = 0x40;
     let max_value = ((1 << header.raw_bits) - 1) as i32;

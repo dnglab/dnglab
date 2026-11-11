@@ -75,7 +75,7 @@ impl<'a> ArwDecoder<'a> {
       log::warn!("ARW makernote not found");
       None
     }
-    .ok_or("File has not makernotes")?;
+    .ok_or_else(|| RawlerError::decoder_failed("File has not makernotes"))?;
 
     //makernote.dump::<ExifTag>(0).iter().for_each(|line| eprintln!("DUMP: {}", line));
 
@@ -137,9 +137,9 @@ impl<'a> Decoder for ArwDecoder<'a> {
       }
       1 => {
         if camera.model == "DSC-R1" {
-          decompress_14be_unpacked(src, width, height, dummy)?
+          decompress_14be_unpacked(src, width, height, dummy).map_err(RawlerError::decoder_failed)?
         } else {
-          decompress_16le(src, width, height, dummy)?
+          decompress_16le(src, width, height, dummy).map_err(RawlerError::decoder_failed)?
         }
       }
       7 => {
@@ -151,7 +151,12 @@ impl<'a> Decoder for ArwDecoder<'a> {
       32766 => {
         // The ARW6 raw IFD stores the black and white levels halved (and its
         // SonyCurve tag is zeroed; the codec has a built-in curve instead).
-        black = Some(self.get_blacklevel(raw).ok_or("ARW6: no black level in the raw IFD")?.map(|v| v * 2));
+        black = Some(
+          self
+            .get_blacklevel(raw)
+            .ok_or_else(|| RawlerError::decoder_failed("ARW6: no black level in the raw IFD"))?
+            .map(|v| v * 2),
+        );
         white = Some(fetch_tiff_tag!(raw, TiffCommonTag::WhiteLevel).force_u16(0) * 2);
         let strip = file.subview(offset as u64, count as u64)?;
         ArwDecoder::decode_arw6(strip, width, height, dummy)?
@@ -178,13 +183,13 @@ impl<'a> Decoder for ArwDecoder<'a> {
                 have a separate camera mode instead but since the values seem good we don't bother.
               */
               ArwDecoder::levels_to_12bit(&mut white, &mut black);
-              decompress_12le(src, width, height, dummy)?
+              decompress_12le(src, width, height, dummy).map_err(RawlerError::decoder_failed)?
             }
-            _ => return Err(RawlerError::DecoderFailed(format!("ARW2: Don't know how to decode images with {} bps", bps))),
+            _ => return Err(decoder_error!("ARW2: Don't know how to decode images with {} bps", bps)),
           }
         }
       }
-      _ => return Err(RawlerError::DecoderFailed(format!("ARW: Don't know how to decode type {}", compression))),
+      _ => return Err(decoder_error!("ARW: Don't know how to decode type {}", compression)),
     };
 
     let blacklevel = black
@@ -193,7 +198,7 @@ impl<'a> Decoder for ArwDecoder<'a> {
         1 => Ok(BlackLevel::new(&black, camera.cfa.width, camera.cfa.height, cpp)),
         // For YUV data, the blacklevel needs to be multiplicated by 2
         3 => Ok(BlackLevel::new(&[black[0] * 2, black[0] * 2, black[0] * 2], 1, 1, cpp)),
-        _ => Err(RawlerError::DecoderFailed(format!("ARW: Unsupported cpp: {}", cpp))),
+        _ => Err(decoder_error!("ARW: Unsupported cpp: {}", cpp)),
       })
       .transpose()?;
     let whitelevel = white.map(|white| WhiteLevel(vec![white as u32; cpp]));
@@ -201,7 +206,7 @@ impl<'a> Decoder for ArwDecoder<'a> {
     let photometric = match cpp {
       1 => RawPhotometricInterpretation::Cfa(CFAConfig::new_from_camera(camera)),
       3 => RawPhotometricInterpretation::LinearRaw,
-      _ => return Err(RawlerError::DecoderFailed(format!("ARW: Unsupported cpp: {}", cpp))),
+      _ => return Err(decoder_error!("ARW: Unsupported cpp: {}", cpp)),
     };
 
     let mut img = RawImage::new(camera.clone(), image, cpp, params.wb, photometric, blacklevel, whitelevel, dummy);
@@ -242,8 +247,7 @@ impl<'a> Decoder for ArwDecoder<'a> {
     if let Some(preview_off) = root.get_entry(ExifTag::JPEGInterchangeFormat) {
       if let Some(preview_len) = root.get_entry(ExifTag::JPEGInterchangeFormatLength) {
         let buf = file.subview(preview_off.force_u64(0), preview_len.force_u64(0))?;
-        let img = image::load_from_memory_with_format(buf, image::ImageFormat::Jpeg)
-          .map_err(|err| RawlerError::DecoderFailed(format!("Failed to read JPEG image: {:?}", err)))?;
+        let img = image::load_from_memory_with_format(buf, image::ImageFormat::Jpeg).map_err(|err| decoder_error!("Failed to read JPEG image: {:?}", err))?;
         return Ok(Some(img));
       }
     }
@@ -271,7 +275,7 @@ impl<'a> ArwDecoder<'a> {
     self
       .tiff
       .find_first_ifd_with_tag(ExifTag::MakerNotes)
-      .ok_or_else(|| "EXIF IFD not found".into())
+      .ok_or_else(|| RawlerError::decoder_failed("EXIF IFD not found"))
   }
 
   /// Get lens description by analyzing TIFF tags and makernotes
@@ -337,7 +341,7 @@ impl<'a> ArwDecoder<'a> {
     // wonderfullness of the Tiff-based ARW format, let's shoot from the hip
     let data = self.tiff.find_ifds_with_tag(TiffCommonTag::SubIFDs);
     if data.is_empty() {
-      return Err(RawlerError::DecoderFailed("ARW: Couldn't find the data IFD!".to_string()));
+      return Err(RawlerError::decoder_failed("ARW: Couldn't find the data IFD!".to_string()));
     }
     let raw = data[0];
     let width = 3880;
@@ -357,7 +361,7 @@ impl<'a> ArwDecoder<'a> {
     let buf = file.subview_until_eof(priv_offset as u64)?;
     if BEu32(buf, 0) != 0x4D5249 {
       // MRI
-      return Err(format!("Invalid DNGPRIVATEDATA tag: 0x{:X}, expected 0x4D5249 ", BEu32(buf, 0)).into());
+      return Err(decoder_error!("Invalid DNGPRIVATEDATA tag: 0x{:X}, expected 0x4D5249 ", BEu32(buf, 0)));
     }
     let mut currpos: usize = 8;
     let mut wb_coeffs: [f32; 4] = [1.0, 1.0, 1.0, f32::NAN];
@@ -383,7 +387,7 @@ impl<'a> ArwDecoder<'a> {
   fn image_srf(&self, camera: &Camera, file: &RawSource, dummy: bool) -> Result<RawImage> {
     let data = self.tiff.find_ifds_with_tag(TiffCommonTag::ImageWidth);
     if data.is_empty() {
-      return Err(RawlerError::DecoderFailed("ARW: Couldn't find the data IFD!".to_string()));
+      return Err(RawlerError::decoder_failed("ARW: Couldn't find the data IFD!".to_string()));
     }
     let raw = data[0];
 
@@ -409,7 +413,7 @@ impl<'a> ArwDecoder<'a> {
 
       // "Decrypt" the whole image buffer
       let image_data = ArwDecoder::sony_decrypt(buffer, off, len, second_key)?;
-      decompress_16be(&image_data, width, height, dummy)?
+      decompress_16be(&image_data, width, height, dummy).map_err(RawlerError::decoder_failed)?
     };
     let cpp = 1;
     ok_cfa_image(camera.clone(), cpp, [f32::NAN, f32::NAN, f32::NAN, f32::NAN], image, dummy)
@@ -459,41 +463,44 @@ impl<'a> ArwDecoder<'a> {
   }
 
   pub(crate) fn decode_arw2(buf: &[u8], width: usize, height: usize, curve: &LookupTable, dummy: bool) -> Result<PixU16> {
-    Ok(decompress_lines_fn(
-      width,
-      height,
-      dummy,
-      &(|out: &mut [u16], row| {
-        let mut pump = BitPumpLSB::new(&buf[(row * width)..]);
+    Ok(
+      decompress_lines_fn(
+        width,
+        height,
+        dummy,
+        &(|out: &mut [u16], row| {
+          let mut pump = BitPumpLSB::new(&buf[(row * width)..]);
 
-        let mut random = pump.peek_bits(16)?;
-        for out in out.chunks_exact_mut(32) {
-          // Process 32 pixels at a time in interleaved fashion
-          for j in 0..2 {
-            let max = pump.get_bits(11)?;
-            let min = pump.get_bits(11)?;
-            let delta = max - min;
-            // Calculate the size of the data shift needed by how large the delta is
-            // A delta with 11 bits requires a shift of 4, 10 bits of 3, etc
-            let delta_shift: u32 = cmp::max(0, (32 - (delta.leading_zeros() as i32)) - 7) as u32;
-            let imax = pump.get_bits(4)? as usize;
-            let imin = pump.get_bits(4)? as usize;
+          let mut random = pump.peek_bits(16)?;
+          for out in out.chunks_exact_mut(32) {
+            // Process 32 pixels at a time in interleaved fashion
+            for j in 0..2 {
+              let max = pump.get_bits(11)?;
+              let min = pump.get_bits(11)?;
+              let delta = max - min;
+              // Calculate the size of the data shift needed by how large the delta is
+              // A delta with 11 bits requires a shift of 4, 10 bits of 3, etc
+              let delta_shift: u32 = cmp::max(0, (32 - (delta.leading_zeros() as i32)) - 7) as u32;
+              let imax = pump.get_bits(4)? as usize;
+              let imin = pump.get_bits(4)? as usize;
 
-            for i in 0..16 {
-              let val = if i == imax {
-                max
-              } else if i == imin {
-                min
-              } else {
-                cmp::min(0x7ff, (pump.get_bits(7)? << delta_shift) + min)
-              };
-              out[j + (i * 2)] = curve.dither((val << 1) as u16, &mut random);
+              for i in 0..16 {
+                let val = if i == imax {
+                  max
+                } else if i == imin {
+                  min
+                } else {
+                  cmp::min(0x7ff, (pump.get_bits(7)? << delta_shift) + min)
+                };
+                out[j + (i * 2)] = curve.dither((val << 1) as u16, &mut random);
+              }
             }
           }
-        }
-        Ok(())
-      }),
-    )?)
+          Ok(())
+        }),
+      )
+      .map_err(RawlerError::decoder_failed)?,
+    )
   }
 
   /// Some newer cameras like Alpha-1 uses LJPEG compression, but in an awkward way.
@@ -505,7 +512,9 @@ impl<'a> ArwDecoder<'a> {
   /// into two lines.
   /// For resolution-reduced files (cpp=3), pixels are encoded in YCbCr color space.
   pub(crate) fn decode_ljpeg(camera: &Camera, file: &RawSource, raw: &IFD, dummy: bool) -> Result<PixU16> {
-    let offsets = raw.get_entry(TiffCommonTag::TileOffsets).ok_or("Unable to find TileOffsets")?;
+    let offsets = raw
+      .get_entry(TiffCommonTag::TileOffsets)
+      .ok_or_else(|| RawlerError::decoder_failed("Unable to find TileOffsets"))?;
     let width = fetch_tiff_tag!(raw, TiffCommonTag::ImageWidth).force_usize(0);
     let height = fetch_tiff_tag!(raw, TiffCommonTag::ImageLength).force_usize(0);
     let twidth = fetch_tiff_tag!(raw, TiffCommonTag::TileWidth).force_usize(0);
@@ -561,7 +570,8 @@ impl<'a> ArwDecoder<'a> {
           }
           Ok(())
         }),
-      )?;
+      )
+      .map_err(RawlerError::decoder_failed)?;
       // Convert YC'bC'r data to RGB.
       ycbcr_to_rgb(&mut image.data);
       Ok(image)
@@ -603,7 +613,7 @@ impl<'a> ArwDecoder<'a> {
           Ok(())
         }),
       )
-      .map_err(RawlerError::DecoderFailed)
+      .map_err(RawlerError::decoder_failed)
     } else {
       Err(RawlerError::unsupported(
         camera,
@@ -688,7 +698,7 @@ impl<'a> ArwDecoder<'a> {
         levels.force_u32(3) as f32,
       ]))
     } else {
-      Err(RawlerError::DecoderFailed("ARW: Couldn't find GRGB or RGGB levels".to_string()))
+      Err(RawlerError::decoder_failed("ARW: Couldn't find GRGB or RGGB levels".to_string()))
     }
   }
 
@@ -716,7 +726,7 @@ impl<'a> ArwDecoder<'a> {
 
   pub(crate) fn sony_decrypt(buf: &[u8], offset: usize, length: usize, key: u32) -> crate::Result<Vec<u8>> {
     if buf.len() < offset + 4 * (length / 4) {
-      return Err(RawlerError::DecoderFailed("sony_decrypt() failed: buffer to short".into()));
+      return Err(RawlerError::decoder_failed("sony_decrypt() failed: buffer to short"));
     }
     let mut pad: [u32; 128] = [0_u32; 128];
     let mut mkey = key;
@@ -790,12 +800,12 @@ pub enum ArwMakernoteTag {
 fn decode_arq(src: &[u8], width: usize, height: usize, cfa: &crate::cfa::CFA, dummy: bool) -> Result<PixU16> {
   let need = width * height * 8;
   if src.len() < need {
-    return Err(RawlerError::DecoderFailed(format!("ARQ: buffer too short ({} < {})", src.len(), need)));
+    return Err(decoder_error!("ARQ: buffer too short ({} < {})", src.len(), need));
   }
   // Colour (0 = R, 1 = G, 2 = B) of each of the four channels.
   let colors: Vec<usize> = (0..4).map(|ch| cfa.color_at(ch / 2, ch % 2)).collect();
   if colors.iter().filter(|c| **c == 1).count() != 2 || !colors.contains(&0) || !colors.contains(&2) {
-    return Err(RawlerError::DecoderFailed(format!("ARQ: unsupported CFA pattern {}", cfa.name)));
+    return Err(decoder_error!("ARQ: unsupported CFA pattern {}", cfa.name));
   }
   if dummy {
     return Ok(PixU16::new_uninit(width * 3, height));

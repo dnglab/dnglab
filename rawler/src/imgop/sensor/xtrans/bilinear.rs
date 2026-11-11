@@ -47,7 +47,7 @@ impl Demosaic<f32, 3> for XTransBilinearDemosaic {
   fn demosaic(&self, pixels: ImageRegion<'_, f32>, cfa: &CFA, colors: &PlaneColor) -> crate::Result<Color2D<f32, 3>> {
     check_mosaic::<3, f32>("X-Trans bilinear", &pixels, cfa, colors)?;
     if !cfa.is_rgb() {
-      return Err(format!("X-Trans bilinear needs an RGB CFA pattern, not '{}'", cfa).into());
+      return Err(input_error!("X-Trans bilinear needs an RGB CFA pattern, not '{}'", cfa));
     }
     if pixels.dim().is_empty() {
       return Ok(Color2D::new(pixels.width(), pixels.height()));

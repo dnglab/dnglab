@@ -47,7 +47,7 @@ impl<'a> ErfDecoder<'a> {
       warn!("ERF makernote not found");
       None
     }
-    .ok_or("File has not makernotes")?;
+    .ok_or_else(|| RawlerError::decoder_failed("File has not makernotes"))?;
 
     Ok(ErfDecoder {
       tiff,
@@ -64,13 +64,13 @@ impl<'a> Decoder for ErfDecoder<'a> {
     let raw = self
       .tiff
       .find_first_ifd_with_tag(TiffCommonTag::CFAPattern)
-      .ok_or_else(|| RawlerError::DecoderFailed(format!("Failed to find a IFD with CFAPattern tag")))?;
+      .ok_or_else(|| decoder_error!("Failed to find a IFD with CFAPattern tag"))?;
     let width = fetch_tiff_tag!(raw, TiffCommonTag::ImageWidth).force_usize(0);
     let height = fetch_tiff_tag!(raw, TiffCommonTag::ImageLength).force_usize(0);
     let offset = fetch_tiff_tag!(raw, TiffCommonTag::StripOffsets).force_usize(0);
     let src = file.subview_until_eof(offset as u64)?;
 
-    let image = decompress_12be_wcontrol(src, width, height, dummy)?;
+    let image = decompress_12be_wcontrol(src, width, height, dummy).map_err(RawlerError::decoder_failed)?;
     let cpp = 1;
 
     let blacklevel = self.get_blacklevel(camera, cpp);
@@ -103,7 +103,7 @@ impl<'a> ErfDecoder<'a> {
   fn get_wb(&self) -> Result<[f32; 4]> {
     let levels = fetch_tiff_tag!(self.makernote, TiffCommonTag::EpsonWB);
     if levels.count() != 256 {
-      Err(RawlerError::DecoderFailed("ERF: Levels count is off".to_string()))
+      Err(RawlerError::decoder_failed("ERF: Levels count is off".to_string()))
     } else {
       let r = BEu16(levels.get_data(), 48) as f32;
       let b = BEu16(levels.get_data(), 50) as f32;

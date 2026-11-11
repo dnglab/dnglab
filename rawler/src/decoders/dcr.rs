@@ -2,7 +2,6 @@ use std::cmp;
 
 use crate::RawImage;
 use crate::RawLoader;
-use crate::RawlerError;
 use crate::Result;
 use crate::alloc_image_ok;
 use crate::analyze::FormatDump;
@@ -61,7 +60,7 @@ impl<'a> Decoder for DcrDecoder<'a> {
     let raw = self
       .tiff
       .find_first_ifd_with_tag(TiffCommonTag::CFAPattern)
-      .ok_or_else(|| RawlerError::DecoderFailed(format!("Failed to find a IFD with CFAPattern tag")))?;
+      .ok_or_else(|| decoder_error!("Failed to find a IFD with CFAPattern tag"))?;
     let width = fetch_tiff_tag!(raw, TiffCommonTag::ImageWidth).force_usize(0);
     let height = fetch_tiff_tag!(raw, TiffCommonTag::ImageLength).force_usize(0);
     let offset = fetch_tiff_tag!(raw, TiffCommonTag::StripOffsets).force_usize(0);

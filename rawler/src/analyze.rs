@@ -160,7 +160,12 @@ fn file_metadata<P: AsRef<Path>>(path: P, rawfile: &RawSource) -> Result<FileMet
   let fs_meta = metadata(&path).map_err(|e| RawlerError::with_io_error("read metadata", &path, e))?;
   let digest = rawfile.digest();
   Ok(FileMetadata {
-    file_name: path.as_ref().file_name().ok_or("path has no file name")?.to_string_lossy().to_string(),
+    file_name: path
+      .as_ref()
+      .file_name()
+      .ok_or_else(|| RawlerError::invalid_input("path has no file name"))?
+      .to_string_lossy()
+      .to_string(),
     file_size: fs_meta.len(),
     digest: Some(digest.into()),
   })
@@ -272,7 +277,10 @@ pub fn raw_to_srgb<P: AsRef<Path>>(path: P, params: &RawDecodeParams) -> Result<
     .without(ProcessingStep::ToneCurve)
     .without(ProcessingStep::Denoise)
     .without(ProcessingStep::Sharpen);
-  Ok(dev.develop_image(rawimage)?.to_dynamic_image().ok_or("failed to convert to dynamic image")?)
+  dev
+    .develop_image(rawimage)?
+    .to_dynamic_image()
+    .ok_or_else(|| RawlerError::general("failed to convert to dynamic image"))
 }
 
 /// Dump raw pixel data as PGM

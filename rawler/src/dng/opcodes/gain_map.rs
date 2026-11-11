@@ -6,7 +6,7 @@
 use serde::{Deserialize, Serialize};
 
 use crate::{
-  RawlerError, Result,
+  Result,
   imgop::Rect,
   pixarray::{ImageRegionMut, SubPixel},
 };
@@ -73,7 +73,7 @@ impl GainMap {
   /// Validate the parameters. Spacing and origin
   /// are ignored for a map axis with a single point.
   fn validate(&self) -> Result<()> {
-    let invalid = |what: &str| Err(RawlerError::DecoderFailed(format!("DNG opcode GainMap is invalid: {}", what)));
+    let invalid = |what: &str| Err(decoder_error!("DNG opcode GainMap is invalid: {}", what));
     if self.map_points_v < 1 || self.map_points_h < 1 || self.map_planes < 1 {
       return invalid("map points and planes must be at least 1");
     }
@@ -117,10 +117,10 @@ impl GainMap {
         });
       }
       (OpcodeData::Integer(_), _) => {
-        return Err(RawlerError::DecoderFailed(format!(
+        return Err(decoder_error!(
           "DNG opcode GainMap in {} requires image data mapped to linear reference values",
           stage
-        )));
+        ));
       }
     }
     Ok(())

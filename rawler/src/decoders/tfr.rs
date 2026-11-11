@@ -53,7 +53,7 @@ impl<'a> Decoder for TfrDecoder<'a> {
     let raw = self
       .tiff
       .find_first_ifd_with_tag(TiffCommonTag::WhiteLevel)
-      .ok_or_else(|| RawlerError::DecoderFailed(format!("Failed to find a IFD with WhiteLevel tag")))?;
+      .ok_or_else(|| decoder_error!("Failed to find a IFD with WhiteLevel tag"))?;
 
     let whitelevel = raw
       .get_entry(TiffCommonTag::WhiteLevel)
@@ -70,7 +70,7 @@ impl<'a> Decoder for TfrDecoder<'a> {
     let src = file.subview_until_eof(offset as u64)?;
 
     let image = if camera.find_hint("uncompressed") {
-      decompress_16le(src, width, height, dummy)?
+      decompress_16le(src, width, height, dummy).map_err(RawlerError::decoder_failed)?
     } else {
       self.decode_compressed(src, width, height, dummy)?
     };
@@ -100,17 +100,20 @@ impl<'a> Decoder for TfrDecoder<'a> {
     let root_ifd = &self.tiff.root_ifd();
     let buf = root_ifd
       .singlestrip_data_rawsource(file)
-      .map_err(|e| RawlerError::DecoderFailed(format!("Failed to get strip data: {}", e)))?;
-    let compression = root_ifd.get_entry(TiffCommonTag::Compression).ok_or("Missing tag")?.force_usize(0);
+      .map_err(|e| decoder_error!("Failed to get strip data: {}", e))?;
+    let compression = root_ifd
+      .get_entry(TiffCommonTag::Compression)
+      .ok_or_else(|| RawlerError::decoder_failed("Missing tag"))?
+      .force_usize(0);
     let width = fetch_tiff_tag!(root_ifd, TiffCommonTag::ImageWidth).force_usize(0);
     let height = fetch_tiff_tag!(root_ifd, TiffCommonTag::ImageLength).force_usize(0);
     if compression == 1 {
       Ok(Some(DynamicImage::ImageRgb8(
-        ImageBuffer::<Rgb<u8>, Vec<u8>>::from_raw(width as u32, height as u32, buf.to_vec()).ok_or("TFR: failed to create ImageBuffer from raw data")?,
+        ImageBuffer::<Rgb<u8>, Vec<u8>>::from_raw(width as u32, height as u32, buf.to_vec())
+          .ok_or_else(|| RawlerError::decoder_failed("TFR: failed to create ImageBuffer from raw data"))?,
       )))
     } else {
-      let img = image::load_from_memory_with_format(buf, image::ImageFormat::Jpeg)
-        .map_err(|err| RawlerError::DecoderFailed(format!("Failed to read JPEG: {:?}", err)))?;
+      let img = image::load_from_memory_with_format(buf, image::ImageFormat::Jpeg).map_err(|err| decoder_error!("Failed to read JPEG: {:?}", err))?;
       Ok(Some(img))
     }
   }
@@ -176,8 +179,10 @@ impl<'a> TfrDecoder<'a> {
 
   fn decode_compressed(&self, src: &[u8], width: usize, height: usize, dummy: bool) -> Result<PixU16> {
     let mut out = alloc_image_ok!(width, height, dummy);
-    let decompressor = LjpegDecompressor::new_full(src, true, false)?;
-    decompressor.decode(out.pixels_mut(), 0, width, width, height, dummy)?;
+    let decompressor = LjpegDecompressor::new_full(src, true, false).map_err(RawlerError::decoder_failed)?;
+    decompressor
+      .decode(out.pixels_mut(), 0, width, width, height, dummy)
+      .map_err(RawlerError::decoder_failed)?;
     Ok(out)
   }
 }

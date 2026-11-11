@@ -67,7 +67,7 @@ impl<'a> Rw2Decoder<'a> {
       } else {
         tiff
           .find_first_ifd_with_tag(TiffCommonTag::StripOffsets)
-          .ok_or_else(|| RawlerError::DecoderFailed(format!("Failed to find a IFD with StripOffsets tag")))?
+          .ok_or_else(|| decoder_error!("Failed to find a IFD with StripOffsets tag"))?
       }
     };
 
@@ -122,7 +122,7 @@ impl<'a> Decoder for Rw2Decoder<'a> {
           self
             .tiff
             .find_first_ifd_with_tag(TiffCommonTag::StripOffsets)
-            .ok_or_else(|| RawlerError::DecoderFailed(format!("Failed to find a IFD with StripOffsets tag")))?,
+            .ok_or_else(|| decoder_error!("Failed to find a IFD with StripOffsets tag"))?,
           false,
         )
       }
@@ -156,7 +156,7 @@ impl<'a> Decoder for Rw2Decoder<'a> {
         let raw = self
           .tiff
           .find_first_ifd_with_tag(TiffCommonTag::StripOffsets)
-          .ok_or_else(|| RawlerError::DecoderFailed(format!("Failed to find a IFD with StripOffsets tag")))?;
+          .ok_or_else(|| decoder_error!("Failed to find a IFD with StripOffsets tag"))?;
         width = fetch_tiff_tag!(raw, TiffCommonTag::PanaWidth).force_usize(0);
         height = fetch_tiff_tag!(raw, TiffCommonTag::PanaLength).force_usize(0);
         let offset = fetch_tiff_tag!(raw, TiffCommonTag::StripOffsets).force_usize(0);
@@ -165,9 +165,9 @@ impl<'a> Decoder for Rw2Decoder<'a> {
         let src = file.subview_until_eof_padded(offset as u64)?; // TODO add size and check all samples
 
         if src.len() >= width * height * 2 {
-          decompress_12le_unpacked_left_aligned(&src, width, height, dummy)?
+          decompress_12le_unpacked_left_aligned(&src, width, height, dummy).map_err(RawlerError::decoder_failed)?
         } else if src.len() >= width * height * 3 / 2 {
-          decompress_12le_wcontrol(&src, width, height, dummy)?
+          decompress_12le_wcontrol(&src, width, height, dummy).map_err(RawlerError::decoder_failed)?
         } else {
           Rw2Decoder::decode_panasonic(file, &src, width, height, split, raw_format, bps, self.tiff.root_ifd(), dummy)?
         }
@@ -220,8 +220,7 @@ impl<'a> Decoder for Rw2Decoder<'a> {
     }
     if let Some(data) = self.tiff.get_entry(PanasonicTag::JpegData) {
       let buf = data.get_data();
-      let img = image::load_from_memory_with_format(buf, image::ImageFormat::Jpeg)
-        .map_err(|e| RawlerError::DecoderFailed(format!("Unable to load jpeg preview: {:?}", e)))?;
+      let img = image::load_from_memory_with_format(buf, image::ImageFormat::Jpeg).map_err(|e| decoder_error!("Unable to load jpeg preview: {:?}", e))?;
       return Ok(Some(img));
     }
     Ok(None)
@@ -260,7 +259,7 @@ impl<'a> Rw2Decoder<'a> {
       let b = fetch_tiff_tag!(self.tiff, PanasonicTag::PanaWBs2B).force_u32(0) as f32;
       Ok([r, g, g, b])
     } else {
-      Err(RawlerError::DecoderFailed("RW2: Couldn't find WB".to_string()))
+      Err(RawlerError::decoder_failed("RW2: Couldn't find WB".to_string()))
     }
   }
 
@@ -272,7 +271,7 @@ impl<'a> Rw2Decoder<'a> {
         2 => CFA::new("GRBG"),
         3 => CFA::new("GBRG"),
         4 => CFA::new("BGGR"),
-        _ => return Err(format!("RW2: Unknown CFA pattern: {}", pattern).into()),
+        _ => return Err(decoder_error!("RW2: Unknown CFA pattern: {}", pattern)),
       }))
     } else {
       Ok(None)
@@ -389,13 +388,13 @@ impl<'a> Rw2Decoder<'a> {
   ) -> Result<PixU16> {
     log::debug!("width: {}, height: {}, bps: {}", width, height, bps);
     Ok(match raw_format {
-      3 => decode_panasonic_v4(buf, width, height, split, dummy)?,
-      4 => decode_panasonic_v4(buf, width, height, split, dummy)?,
-      5 => decode_panasonic_v5(buf, width, height, bps, dummy)?,
-      6 => decode_panasonic_v6(buf, width, height, bps, dummy)?,
-      7 => decode_panasonic_v7(buf, width, height, bps, dummy)?,
+      3 => decode_panasonic_v4(buf, width, height, split, dummy).map_err(RawlerError::decoder_failed)?,
+      4 => decode_panasonic_v4(buf, width, height, split, dummy).map_err(RawlerError::decoder_failed)?,
+      5 => decode_panasonic_v5(buf, width, height, bps, dummy).map_err(RawlerError::decoder_failed)?,
+      6 => decode_panasonic_v6(buf, width, height, bps, dummy).map_err(RawlerError::decoder_failed)?,
+      7 => decode_panasonic_v7(buf, width, height, bps, dummy).map_err(RawlerError::decoder_failed)?,
       8 => decode_panasonic_v8(file, width, height, bps, ifd, dummy)?,
-      _ => return Err(RawlerError::DecoderFailed(format!("RW2: raw format {} is not supported", raw_format))),
+      _ => return Err(decoder_error!("RW2: raw format {} is not supported", raw_format)),
     })
   }
 }

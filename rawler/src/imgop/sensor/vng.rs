@@ -186,7 +186,7 @@ impl Phases {
     let (rows, cols) = (cfa.height.max(1), cfa.width.max(1));
     let pattern = (0..rows).flat_map(|row| (0..cols).map(move |col| cfa.color_at(row, col)));
     if let Some(color) = pattern.into_iter().find(|&color| plane_map[color] >= planes) {
-      return Err(format!("CFA color {} of '{}' has no plane in {} planes", color, cfa, planes).into());
+      return Err(input_error!("CFA color {} of '{}' has no plane in {} planes", color, cfa, planes));
     }
     let phases = (0..rows)
       .flat_map(|row| (0..cols).map(move |col| (row, col)))

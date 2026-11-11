@@ -124,8 +124,11 @@ impl Raw2DngJob {
               err.to_string()
             );
           }
-          RawlerError::DecoderFailed(msg) => {
-            log::error!("Failed to decode file: {}", msg);
+          RawlerError::DecoderFailed { .. } => {
+            log::error!("Failed to decode file, possibly corrupt: {}", err);
+          }
+          _ => {
+            log::error!("{}", err);
           }
         }
         drop(dng);

@@ -874,7 +874,7 @@ impl<'a, T> ImageViewMut<'a, T> {
     T: Copy,
   {
     if area.p.x + area.d.w > self.width || area.p.y + area.d.h > self.height {
-      return Err(format!("Crop {:?} is outside of {:?}", area, self).into());
+      return Err(input_error!("Crop {:?} is outside of {:?}", area, self));
     }
     let row_len = area.d.w * self.channels;
     let data = self.data;
@@ -1292,7 +1292,7 @@ impl<'a, T> ImageRegionMut<'a, T> {
   pub fn split_regions_mut(self, areas: &[Rect]) -> crate::Result<Vec<DisjointRegionMut<'a, T>>> {
     let dim = self.dim();
     if let Some(area) = areas.iter().find(|area| area.p.x + area.d.w > dim.w || area.p.y + area.d.h > dim.h) {
-      return Err(format!("{:?} is outside of {}x{} pixels", area, dim.w, dim.h).into());
+      return Err(input_error!("{:?} is outside of {}x{} pixels", area, dim.w, dim.h));
     }
     let row_len = self.as_region().row_len();
     let Self {
@@ -1328,7 +1328,7 @@ impl<'a, T> ImageRegionMut<'a, T> {
       for &i in &row_areas {
         let area = areas[i];
         if area.p.x < x {
-          return Err(format!("{:?} overlaps another area", area).into());
+          return Err(input_error!("{:?} overlaps another area", area));
         }
         let (_, tail) = std::mem::take(&mut rest).split_at_mut((area.p.x - x) * channels);
         let (segment, tail) = tail.split_at_mut(area.d.w * channels);

@@ -68,10 +68,7 @@ impl<'a> MrwDecoder<'a> {
       let exif = Jfif::new(file)?;
       Self::new_jfif(file, exif, rawloader)
     } else {
-      Err(crate::RawlerError::DecoderFailed(format!(
-        "MRW decoder can't decode given file: {}",
-        file.path().display()
-      )))
+      Err(decoder_error!("MRW decoder can't decode given file: {}", file.path().display()))
     }
   }
 
@@ -109,7 +106,7 @@ impl<'a> MrwDecoder<'a> {
   pub fn new_jfif(file: &RawSource, jfif: Jfif, rawloader: &'a RawLoader) -> Result<MrwDecoder<'a>> {
     let tiff = jfif
       .exif_ifd()
-      .ok_or(RawlerError::DecoderFailed("No EXIF IFD found in JFIF file".to_string()))?
+      .ok_or(RawlerError::decoder_failed("No EXIF IFD found in JFIF file".to_string()))?
       .clone();
     let camera = rawloader.lookup_camera(&tiff)?;
     let (app1_offset, app1_len) = jfif
@@ -214,11 +211,11 @@ impl<'a> Decoder for MrwDecoder<'a> {
     let src = file.subview_until_eof(self.data_offset as u64)?;
 
     let buffer = if self.bits == 16 {
-      decompress_16le(src, self.raw_width, self.raw_height, dummy)?
+      decompress_16le(src, self.raw_width, self.raw_height, dummy).map_err(RawlerError::decoder_failed)?
     } else if self.packed {
-      decompress_12be(src, self.raw_width, self.raw_height, dummy)?
+      decompress_12be(src, self.raw_width, self.raw_height, dummy).map_err(RawlerError::decoder_failed)?
     } else {
-      decompress_12be_unpacked(src, self.raw_width, self.raw_height, dummy)?
+      decompress_12be_unpacked(src, self.raw_width, self.raw_height, dummy).map_err(RawlerError::decoder_failed)?
     };
 
     let wb_coeffs = if camera.find_hint("swapped_wb") {
@@ -259,7 +256,7 @@ impl<'a> Decoder for MrwDecoder<'a> {
       let buf = file.as_vec()?;
       dump_buf("/tmp/dmp1", &buf);
       let img = image::load_from_memory_with_format(&buf, image::ImageFormat::Jpeg)
-        .map_err(|err| RawlerError::DecoderFailed(format!("Failed to get full image from RAW file: {:?}", err)))?;
+        .map_err(|err| decoder_error!("Failed to get full image from RAW file: {:?}", err))?;
       log::debug!("Got full image from RAW");
       Ok(Some(img))
     } else {

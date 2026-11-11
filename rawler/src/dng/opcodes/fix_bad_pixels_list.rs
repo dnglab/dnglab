@@ -5,7 +5,7 @@
 
 use serde::{Deserialize, Serialize};
 
-use crate::{RawlerError, Result};
+use crate::Result;
 
 use super::{
   OpcodeData, OpcodeImage, OpcodeStage,
@@ -41,10 +41,7 @@ impl FixBadPixelsList {
       rects.push((reader.i32()?, reader.i32()?, reader.i32()?, reader.i32()?));
     }
     if bayer_phase > 3 {
-      return Err(RawlerError::DecoderFailed(format!(
-        "DNG opcode FixBadPixelsList: invalid BayerPhase {}",
-        bayer_phase
-      )));
+      return Err(decoder_error!("DNG opcode FixBadPixelsList: invalid BayerPhase {}", bayer_phase));
     }
     Ok(Self {
       version,
@@ -76,10 +73,10 @@ impl FixBadPixelsList {
     let view = match &mut image.data {
       OpcodeData::Integer(view) if cpp == 1 => view,
       _ => {
-        return Err(RawlerError::DecoderFailed(format!(
+        return Err(decoder_error!(
           "DNG opcode FixBadPixelsList in {} requires 16 bit raw data with a single plane",
           stage
-        )));
+        ));
       }
     };
     if bounds.width() == 0 || bounds.height() == 0 {
