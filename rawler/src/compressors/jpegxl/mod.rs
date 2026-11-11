@@ -8,8 +8,7 @@
 //! error. Set the environment variable `RAWLER_LIBJXL` to load libjxl from a
 //! specific path.
 
-pub mod ffi;
-
+mod ffi;
 mod jpegxl_lib;
 mod types;
 
