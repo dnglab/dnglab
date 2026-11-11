@@ -17,10 +17,10 @@ use super::types::*;
 use super::ffi::*;
 
 /// Environment variable with the path of the libjxl shared library to load
-pub const LIBJXL_ENV: &str = "RAWLER_LIBJXL";
+const LIBJXL_ENV: &str = "RAWLER_LIBJXL";
 
 /// Lowest supported libjxl version
-pub const LIBJXL_MIN_VERSION: (u32, u32, u32) = (0, 11, 0);
+const LIBJXL_MIN_VERSION: (u32, u32, u32) = (0, 11, 0);
 
 #[cfg(target_os = "windows")]
 const LIBJXL_CANDIDATES: &[&str] = &["jxl.dll", "libjxl.dll"];
