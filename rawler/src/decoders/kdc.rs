@@ -69,7 +69,7 @@ impl<'a> Decoder for KdcDecoder<'a> {
         .find_ifds_with_tag(TiffCommonTag::CFAPattern)
         .into_iter()
         .next()
-        .ok_or_else(|| RawlerError::DecoderFailed("KDC DC120: no IFD with CFAPattern".to_string()))?;
+        .ok_or_else(|| RawlerError::decoder_failed("KDC DC120: no IFD with CFAPattern".to_string()))?;
       let off = fetch_tiff_tag!(raw, TiffCommonTag::StripOffsets).force_usize(0);
       let src = file.subview_until_eof(off as u64)?;
       let (image, white) = match fetch_tiff_tag!(raw, TiffCommonTag::Compression).force_usize(0) {
@@ -97,7 +97,7 @@ impl<'a> Decoder for KdcDecoder<'a> {
         .find_ifds_with_tag(TiffCommonTag::CFAPattern)
         .into_iter()
         .next()
-        .ok_or_else(|| RawlerError::DecoderFailed("KDC DC50: no IFD with CFAPattern".to_string()))?;
+        .ok_or_else(|| RawlerError::decoder_failed("KDC DC50: no IFD with CFAPattern".to_string()))?;
       let width = camera.raw_width;
       let height = camera.raw_height;
       let off = fetch_tiff_tag!(raw, TiffCommonTag::StripOffsets).force_usize(0);
@@ -121,13 +121,13 @@ impl<'a> Decoder for KdcDecoder<'a> {
     let raw = self
       .tiff
       .find_first_ifd_with_tag(TiffCommonTag::KdcWidth)
-      .ok_or_else(|| RawlerError::DecoderFailed(format!("Failed to find a IFD with KdcWidth tag")))?;
+      .ok_or_else(|| decoder_error!("Failed to find a IFD with KdcWidth tag"))?;
 
     let width = fetch_tiff_tag!(raw, TiffCommonTag::KdcWidth).force_usize(0) + 80;
     let height = fetch_tiff_tag!(raw, TiffCommonTag::KdcLength).force_usize(0) + 70;
     let offset = fetch_tiff_tag!(raw, TiffCommonTag::KdcOffset);
     if offset.count() < 13 {
-      return Err(RawlerError::DecoderFailed("KDC Decoder: Couldn't find the KDC offset".to_string()));
+      return Err(RawlerError::decoder_failed("KDC Decoder: Couldn't find the KDC offset".to_string()));
     }
     let mut off = offset.force_usize(4) + offset.force_usize(12);
 
@@ -137,7 +137,7 @@ impl<'a> Decoder for KdcDecoder<'a> {
     }
 
     let src = file.subview_until_eof(off as u64)?;
-    let image = decompress_12be(src, width, height, dummy)?;
+    let image = decompress_12be(src, width, height, dummy).map_err(RawlerError::decoder_failed)?;
     let cpp = 1;
     let mut img = ok_cfa_image(camera.clone(), cpp, self.get_wb()?, image, dummy)?;
     img.orientation = Orientation::from_tiff(self.tiff.root_ifd());
@@ -180,7 +180,7 @@ impl<'a> KdcDecoder<'a> {
     let mode = fetch_tiff_tag!(kdc_ifd, TiffCommonTag::KdcWBMode).force_u16(0);
     let levels = fetch_tiff_tag!(kdc_ifd, Self::wb_levels_tag(mode));
     if levels.count() != 3 {
-      return Err(format!("KDC: Levels count is off: {}", levels.count()).into());
+      return Err(decoder_error!("KDC: Levels count is off: {}", levels.count()));
     }
     let green = levels.force_f32(1);
     Ok([levels.force_f32(0) / green, 1.0, levels.force_f32(2) / green, f32::NAN])
@@ -217,12 +217,14 @@ impl<'a> KdcDecoder<'a> {
 
     let swapped_src: Vec<u8> = src.chunks_exact(2).flat_map(|x| [x[1], x[0]]).collect();
 
-    let img = image::load_from_memory_with_format(&swapped_src, image::ImageFormat::Jpeg)
-      .map_err(|err| RawlerError::DecoderFailed(format!("Failed to read JPEG image: {:?}", err)))?;
+    let img =
+      image::load_from_memory_with_format(&swapped_src, image::ImageFormat::Jpeg).map_err(|err| decoder_error!("Failed to read JPEG image: {:?}", err))?;
 
     assert_eq!(width, img.width() as usize);
     assert_eq!(height, img.height() as usize * 2);
-    let buf = img.as_flat_samples_u8().ok_or("KDC: failed to get u8 samples from JPEG")?;
+    let buf = img
+      .as_flat_samples_u8()
+      .ok_or_else(|| RawlerError::decoder_failed("KDC: failed to get u8 samples from JPEG"))?;
     let jpeg = buf.as_slice();
 
     for irow in 0..img.height() as usize {

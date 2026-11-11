@@ -292,34 +292,28 @@ struct RescaleRows {
 impl RescaleRows {
   fn new(black: &BlackLevel, white: &WhiteLevel, active_area: Rect, dim: Dim2, cpp: usize, wb: Option<MosaicWhiteBalance>) -> crate::Result<Self> {
     if black.cpp != cpp && black.cpp != 1 {
-      return Err(format!("Black level has {} samples per pixel, image has {}", black.cpp, cpp).into());
+      return Err(decoder_error!("Black level has {} samples per pixel, image has {}", black.cpp, cpp));
     }
     if white.0.len() != cpp && white.0.len() != 1 {
-      return Err(format!("White level has {} values, image has {} samples per pixel", white.0.len(), cpp).into());
+      return Err(decoder_error!("White level has {} values, image has {} samples per pixel", white.0.len(), cpp));
     }
     if !black.delta_h.is_empty() && black.delta_h.len() != active_area.d.w {
-      return Err(
-        format!(
-          "BlackLevelDeltaH has {} values, ActiveArea is {} pixels wide",
-          black.delta_h.len(),
-          active_area.d.w
-        )
-        .into(),
-      );
+      return Err(decoder_error!(
+        "BlackLevelDeltaH has {} values, ActiveArea is {} pixels wide",
+        black.delta_h.len(),
+        active_area.d.w
+      ));
     }
     if !black.delta_v.is_empty() && black.delta_v.len() != active_area.d.h {
-      return Err(
-        format!(
-          "BlackLevelDeltaV has {} values, ActiveArea is {} pixels high",
-          black.delta_v.len(),
-          active_area.d.h
-        )
-        .into(),
-      );
+      return Err(decoder_error!(
+        "BlackLevelDeltaV has {} values, ActiveArea is {} pixels high",
+        black.delta_v.len(),
+        active_area.d.h
+      ));
     }
     let mosaic = match wb {
       Some((config, wb)) if cpp == 1 => Some((&config.cfa, cfa_planes(&config.cfa, &config.colors)?, wb)),
-      Some(_) => return Err(format!("Mosaic data must have one channel, image has {}", cpp).into()),
+      Some(_) => return Err(decoder_error!("Mosaic data must have one channel, image has {}", cpp)),
       None => None,
     };
     // The linear value 1.0 is the white level minus the maximum black level of each sample
@@ -327,7 +321,7 @@ impl RescaleRows {
       .map(|sample| white.0[sample.min(white.0.len() - 1)] as f32 - black.max_level(sample.min(black.cpp - 1), active_area))
       .collect();
     if let Some(range) = range.iter().find(|range| !range.is_finite() || **range <= 0.0) {
-      return Err(format!("White level must be above the maximum black level, the difference is {}", range).into());
+      return Err(decoder_error!("White level must be above the maximum black level, the difference is {}", range));
     }
 
     let (cfa_width, cfa_height) = mosaic.as_ref().map_or((1, 1), |(cfa, _, _)| (cfa.width, cfa.height));

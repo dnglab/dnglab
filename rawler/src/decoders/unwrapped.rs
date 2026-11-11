@@ -14,7 +14,7 @@ pub fn decode_unwrapped(file: &RawSource) -> Result<RawImageData> {
   let data = &buffer[6..];
 
   if width > 64 || height > 64 {
-    return Err(RawlerError::DecoderFailed(format!("Unwrapped: image {}x{} exceeds 64x64 limit", width, height)));
+    return Err(decoder_error!("Unwrapped: image {}x{} exceeds 64x64 limit", width, height));
   }
 
   match decoder {
@@ -27,34 +27,102 @@ pub fn decode_unwrapped(file: &RawSource) -> Result<RawImageData> {
         LookupTable::new(&t)
       };
       let data = &data[512..];
-      Ok(RawImageData::Integer(decompress_8bit_wtable(data, &table, width, height, false)?.into_inner()))
+      Ok(RawImageData::Integer(
+        decompress_8bit_wtable(data, &table, width, height, false)
+          .map_err(RawlerError::decoder_failed)?
+          .into_inner(),
+      ))
     }
-    1 => Ok(RawImageData::Integer(decompress_10le_lsb16(data, width, height, false)?.into_inner())),
-    2 => Ok(RawImageData::Integer(decompress_10be(data, width, height, false)?.into_inner())),
-    3 => Ok(RawImageData::Integer(decompress_12be(data, width, height, false)?.into_inner())),
-    4 => Ok(RawImageData::Integer(decompress_12be_msb16(data, width, height, false)?.into_inner())),
-    5 => Ok(RawImageData::Integer(decompress_12le_16bitaligned(data, width, height, false)?.into_inner())),
-    6 => Ok(RawImageData::Integer(decompress_12be_msb32(data, width, height, false)?.into_inner())),
-    7 => Ok(RawImageData::Integer(decompress_12le_wcontrol(data, width, height, false)?.into_inner())),
-    8 => Ok(RawImageData::Integer(decompress_12be_wcontrol(data, width, height, false)?.into_inner())),
-    9 => Ok(RawImageData::Integer(decompress_12be_interlaced(data, width, height, false)?.into_inner())),
-    10 => Ok(RawImageData::Integer(
-      decompress_12be_interlaced_unaligned(data, width, height, false)?.into_inner(),
+    1 => Ok(RawImageData::Integer(
+      decompress_10le_lsb16(data, width, height, false)
+        .map_err(RawlerError::decoder_failed)?
+        .into_inner(),
     )),
-    11 => Ok(RawImageData::Integer(decompress_12le(data, width, height, false)?.into_inner())),
-    12 => Ok(RawImageData::Integer(decompress_12le_unpacked(data, width, height, false)?.into_inner())),
-    13 => Ok(RawImageData::Integer(decompress_12be_unpacked(data, width, height, false)?.into_inner())),
+    2 => Ok(RawImageData::Integer(
+      decompress_10be(data, width, height, false).map_err(RawlerError::decoder_failed)?.into_inner(),
+    )),
+    3 => Ok(RawImageData::Integer(
+      decompress_12be(data, width, height, false).map_err(RawlerError::decoder_failed)?.into_inner(),
+    )),
+    4 => Ok(RawImageData::Integer(
+      decompress_12be_msb16(data, width, height, false)
+        .map_err(RawlerError::decoder_failed)?
+        .into_inner(),
+    )),
+    5 => Ok(RawImageData::Integer(
+      decompress_12le_16bitaligned(data, width, height, false)
+        .map_err(RawlerError::decoder_failed)?
+        .into_inner(),
+    )),
+    6 => Ok(RawImageData::Integer(
+      decompress_12be_msb32(data, width, height, false)
+        .map_err(RawlerError::decoder_failed)?
+        .into_inner(),
+    )),
+    7 => Ok(RawImageData::Integer(
+      decompress_12le_wcontrol(data, width, height, false)
+        .map_err(RawlerError::decoder_failed)?
+        .into_inner(),
+    )),
+    8 => Ok(RawImageData::Integer(
+      decompress_12be_wcontrol(data, width, height, false)
+        .map_err(RawlerError::decoder_failed)?
+        .into_inner(),
+    )),
+    9 => Ok(RawImageData::Integer(
+      decompress_12be_interlaced(data, width, height, false)
+        .map_err(RawlerError::decoder_failed)?
+        .into_inner(),
+    )),
+    10 => Ok(RawImageData::Integer(
+      decompress_12be_interlaced_unaligned(data, width, height, false)
+        .map_err(RawlerError::decoder_failed)?
+        .into_inner(),
+    )),
+    11 => Ok(RawImageData::Integer(
+      decompress_12le(data, width, height, false).map_err(RawlerError::decoder_failed)?.into_inner(),
+    )),
+    12 => Ok(RawImageData::Integer(
+      decompress_12le_unpacked(data, width, height, false)
+        .map_err(RawlerError::decoder_failed)?
+        .into_inner(),
+    )),
+    13 => Ok(RawImageData::Integer(
+      decompress_12be_unpacked(data, width, height, false)
+        .map_err(RawlerError::decoder_failed)?
+        .into_inner(),
+    )),
     14 => Ok(RawImageData::Integer(
-      decompress_12be_unpacked_left_aligned(data, width, height, false)?.into_inner(),
+      decompress_12be_unpacked_left_aligned(data, width, height, false)
+        .map_err(RawlerError::decoder_failed)?
+        .into_inner(),
     )),
     15 => Ok(RawImageData::Integer(
-      decompress_12le_unpacked_left_aligned(data, width, height, false)?.into_inner(),
+      decompress_12le_unpacked_left_aligned(data, width, height, false)
+        .map_err(RawlerError::decoder_failed)?
+        .into_inner(),
     )),
-    16 => Ok(RawImageData::Integer(decompress_14le_unpacked(data, width, height, false)?.into_inner())),
-    17 => Ok(RawImageData::Integer(decompress_14be_unpacked(data, width, height, false)?.into_inner())),
-    18 => Ok(RawImageData::Integer(decompress_16le(data, width, height, false)?.into_inner())),
-    19 => Ok(RawImageData::Integer(decompress_16le_skiplines(data, width, height, false)?.into_inner())),
-    20 => Ok(RawImageData::Integer(decompress_16be(data, width, height, false)?.into_inner())),
+    16 => Ok(RawImageData::Integer(
+      decompress_14le_unpacked(data, width, height, false)
+        .map_err(RawlerError::decoder_failed)?
+        .into_inner(),
+    )),
+    17 => Ok(RawImageData::Integer(
+      decompress_14be_unpacked(data, width, height, false)
+        .map_err(RawlerError::decoder_failed)?
+        .into_inner(),
+    )),
+    18 => Ok(RawImageData::Integer(
+      decompress_16le(data, width, height, false).map_err(RawlerError::decoder_failed)?.into_inner(),
+    )),
+    19 => Ok(RawImageData::Integer(
+      decompress_16le_skiplines(data, width, height, false)
+        .map_err(RawlerError::decoder_failed)?
+        .into_inner(),
+    )),
+    20 => Ok(RawImageData::Integer(
+      decompress_16be(data, width, height, false).map_err(RawlerError::decoder_failed)?.into_inner(),
+    )),
     21 => Ok(RawImageData::Integer(arw::ArwDecoder::decode_arw1(data, width, height, false)?.into_inner())),
     22 => {
       let mut curve: [usize; 6] = [0, 0, 0, 0, 0, 4095];
@@ -74,11 +142,15 @@ pub fn decode_unwrapped(file: &RawSource) -> Result<RawImageData> {
       let data = &data[10..];
 
       if length > 5000 {
-        return Err(RawlerError::DecoderFailed(format!("Unwrapped: SRF image length {} exceeds 5000 limit", length)));
+        return Err(decoder_error!("Unwrapped: SRF image length {} exceeds 5000 limit", length));
       }
 
       let image_data = arw::ArwDecoder::sony_decrypt(data, 0, length, key)?;
-      Ok(RawImageData::Integer(decompress_16be(&image_data, width, height, false)?.into_inner()))
+      Ok(RawImageData::Integer(
+        decompress_16be(&image_data, width, height, false)
+          .map_err(RawlerError::decoder_failed)?
+          .into_inner(),
+      ))
     }
     24 => Ok(RawImageData::Integer(
       orf::OrfDecoder::decode_compressed(&buffer, width, height, 12, false)?.into_inner(),
@@ -94,10 +166,14 @@ pub fn decode_unwrapped(file: &RawSource) -> Result<RawImageData> {
     27 => Ok(RawImageData::Integer(srw::SrwDecoder::decode_srw3(data, width, height, false)?.into_inner())),
     28 => Ok(RawImageData::Integer(kdc::KdcDecoder::decode_dc120(data, width, height, false).into_inner())),
     29 => Ok(RawImageData::Integer(
-      rw2::v4decompressor::decode_panasonic_v4(data, width, height, false, false)?.into_inner(),
+      rw2::v4decompressor::decode_panasonic_v4(data, width, height, false, false)
+        .map_err(RawlerError::decoder_failed)?
+        .into_inner(),
     )),
     30 => Ok(RawImageData::Integer(
-      rw2::v4decompressor::decode_panasonic_v4(data, width, height, true, false)?.into_inner(),
+      rw2::v4decompressor::decode_panasonic_v4(data, width, height, true, false)
+        .map_err(RawlerError::decoder_failed)?
+        .into_inner(),
     )),
     31 => {
       let table = {
@@ -166,17 +242,21 @@ pub fn decode_unwrapped(file: &RawSource) -> Result<RawImageData> {
       let coeffs = [LEf32(data, 0), LEf32(data, 4), LEf32(data, 8), LEf32(data, 12)];
       let data = PaddedBuf::new_owned(data[16..].to_vec(), data.len() - 16);
       Ok(RawImageData::Integer(
-        nef::NefDecoder::decode_snef_compressed(&data, coeffs, width, height, false)?.into_inner(),
+        nef::NefDecoder::decode_snef_compressed(&data, coeffs, width, height, false)
+          .map_err(RawlerError::decoder_failed)?
+          .into_inner(),
       ))
     }
-    _ => Err("No such decoder".into()),
+    _ => Err(RawlerError::decoder_failed("No such decoder")),
   }
 }
 
 fn decode_ljpeg(src: &[u8], width: usize, height: usize, dng_bug: bool, csfix: bool) -> Result<RawImageData> {
   let mut out = vec![0u16; width * height];
-  let decompressor = LjpegDecompressor::new_full(src, dng_bug, csfix)?;
-  decompressor.decode(&mut out, 0, width, width, height, false)?;
+  let decompressor = LjpegDecompressor::new_full(src, dng_bug, csfix).map_err(RawlerError::decoder_failed)?;
+  decompressor
+    .decode(&mut out, 0, width, width, height, false)
+    .map_err(RawlerError::decoder_failed)?;
   Ok(RawImageData::Integer(out))
 }
 
@@ -184,6 +264,8 @@ fn decode_nef(data: &[u8], width: usize, height: usize, endian: Endian, bps: usi
   let meta = data;
   let data = &data[4096..];
   Ok(RawImageData::Integer(
-    nef::NefDecoder::do_decode(data, meta, endian, width, height, bps, false)?.into_inner(),
+    nef::NefDecoder::do_decode(data, meta, endian, width, height, bps, false)
+      .map_err(RawlerError::decoder_failed)?
+      .into_inner(),
   ))
 }

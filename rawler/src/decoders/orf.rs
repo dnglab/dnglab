@@ -57,7 +57,7 @@ pub struct OrfDecoder<'a> {
 
 pub fn parse_makernote<R: Read + Seek>(reader: &mut R, exif_ifd: &IFD) -> Result<Option<IFD>> {
   if let Some(exif) = exif_ifd.get_entry(ExifTag::MakerNotes) {
-    let offset = exif.offset().ok_or("MakerNote entry has no offset")? as u32;
+    let offset = exif.offset().ok_or_else(|| RawlerError::decoder_failed("MakerNote entry has no offset"))? as u32;
     log::debug!("Makernote offset: {}", offset);
     match &exif.value {
       Value::Undefined(data) => {
@@ -139,7 +139,7 @@ pub fn parse_makernote<R: Read + Seek>(reader: &mut R, exif_ifd: &IFD) -> Result
         }
         Ok(Some(mainifd))
       }
-      _ => Err(RawlerError::DecoderFailed("EXIF makernote has unknown type".to_string())),
+      _ => Err(RawlerError::decoder_failed("EXIF makernote has unknown type".to_string())),
     }
   } else {
     Ok(None)
@@ -202,7 +202,7 @@ impl<'a> OrfDecoder<'a> {
       log::warn!("ORF makernote not found");
       None
     }
-    .ok_or("File has not makernotes")?;
+    .ok_or_else(|| RawlerError::decoder_failed("File has not makernotes"))?;
 
     //makernote.dump::<ExifTag>(0).iter().for_each(|line| eprintln!("DUMP: {}", line));
 
@@ -226,7 +226,7 @@ impl<'a> Decoder for OrfDecoder<'a> {
     let raw = self
       .tiff
       .find_first_ifd_with_tag(TiffCommonTag::StripOffsets)
-      .ok_or_else(|| RawlerError::DecoderFailed(format!("Failed to find a IFD with StripOffsets tag")))?;
+      .ok_or_else(|| decoder_error!("Failed to find a IFD with StripOffsets tag"))?;
     let width = fetch_tiff_tag!(raw, TiffCommonTag::ImageWidth).force_usize(0);
     let height = fetch_tiff_tag!(raw, TiffCommonTag::ImageLength).force_usize(0);
     let offset = fetch_tiff_tag!(raw, TiffCommonTag::StripOffsets).force_usize(0);
@@ -271,15 +271,15 @@ impl<'a> Decoder for OrfDecoder<'a> {
       let src = file.subview(offset as u64, size as u64)?;
       if self.tiff.little_endian() {
         log::debug!("ORF: decompress_12le_unpacked_left_aligned");
-        decompress_12le_unpacked_left_aligned(&src, width, height, dummy)?
+        decompress_12le_unpacked_left_aligned(&src, width, height, dummy).map_err(RawlerError::decoder_failed)?
       } else {
         log::debug!("ORF: decompress_12be_unpacked_left_aligned");
-        decompress_12be_unpacked_left_aligned(&src, width, height, dummy)?
+        decompress_12be_unpacked_left_aligned(&src, width, height, dummy).map_err(RawlerError::decoder_failed)?
       }
     } else if size >= width * height / 10 * 16 {
       log::debug!("ORF: decompress_12le_wcontrol");
       let src = file.subview(offset as u64, size as u64)?;
-      decompress_12le_wcontrol(&src, width, height, dummy)?
+      decompress_12le_wcontrol(&src, width, height, dummy).map_err(RawlerError::decoder_failed)?
     } else if size >= width * height * 12 / 8 {
       if base_camera.find_hint("interlaced") {
         log::debug!("ORF: decompress_12be_interlaced");
@@ -294,11 +294,11 @@ impl<'a> Decoder for OrfDecoder<'a> {
           second_field_offset - second_field_offset_unaligned
         };
         let src = file.subview(offset as u64, (size + gap) as u64)?;
-        decompress_12be_interlaced(&src, width, height, dummy)?
+        decompress_12be_interlaced(&src, width, height, dummy).map_err(RawlerError::decoder_failed)?
       } else {
         log::debug!("ORF: decompress_12be_msb32");
         let src = file.subview(offset as u64, size as u64)?;
-        decompress_12be_msb32(&src, width, height, dummy)?
+        decompress_12be_msb32(&src, width, height, dummy).map_err(RawlerError::decoder_failed)?
       }
     } else {
       log::debug!("ORF: fallback to decode_compressed");
@@ -344,8 +344,7 @@ impl<'a> Decoder for OrfDecoder<'a> {
     }
     match self.makernote.get_entry(OrfMakernotes::ThumbnailImage).map(|entry| &entry.value) {
       Some(Value::Undefined(jpeg_buf)) => {
-        let img = image::load_from_memory_with_format(jpeg_buf, image::ImageFormat::Jpeg)
-          .map_err(|err| RawlerError::DecoderFailed(format!("Failed to read JPEG: {:?}", err)))?;
+        let img = image::load_from_memory_with_format(jpeg_buf, image::ImageFormat::Jpeg).map_err(|err| decoder_error!("Failed to read JPEG: {:?}", err))?;
         Ok(Some(img))
       }
       _ => Ok(None),
@@ -358,8 +357,7 @@ impl<'a> Decoder for OrfDecoder<'a> {
     }
     match self.read_preview_jpeg(file)? {
       Some(jpeg_buf) => {
-        let img = image::load_from_memory_with_format(jpeg_buf, image::ImageFormat::Jpeg)
-          .map_err(|err| RawlerError::DecoderFailed(format!("Failed to read JPEG: {:?}", err)))?;
+        let img = image::load_from_memory_with_format(jpeg_buf, image::ImageFormat::Jpeg).map_err(|err| decoder_error!("Failed to read JPEG: {:?}", err))?;
         Ok(Some(img))
       }
       None => Ok(None),
@@ -587,7 +585,7 @@ impl<'a> OrfDecoder<'a> {
       _ => {
         let ifd = self.makernote.find_ifds_with_tag(OrfImageProcessing::OrfBlackLevels);
         if ifd.is_empty() {
-          return Err(RawlerError::DecoderFailed("ORF: Couldn't find ImgProc IFD".to_string()));
+          return Err(RawlerError::decoder_failed("ORF: Couldn't find ImgProc IFD".to_string()));
         }
         let wbs = fetch_tiff_tag!(ifd[0], OrfImageProcessing::WB_RBLevels);
         Ok([wbs.force_f32(0), 256.0, 256.0, wbs.force_f32(1)])

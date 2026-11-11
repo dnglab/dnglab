@@ -1,3 +1,4 @@
+use crate::RawlerError;
 use crate::Result;
 use crate::bits::LEu16;
 use crate::{decoders::nef::NikonMakernote, formats::tiff::IFD};
@@ -113,13 +114,23 @@ fn parse_lensdata_0x100(version: u32, buf: &[u8]) -> Result<NefLensDataF> {
     af_aperture: 0,
     focus_position: 0,
     focus_distance: 0,
-    lens_id_number: *buf.get(NefLensData00::LensIDNumber as usize).ok_or(ERRMSG)?,
-    lens_fstops: *buf.get(NefLensData00::LensFStops as usize).ok_or(ERRMSG)?,
-    min_focal_len: *buf.get(NefLensData00::MinFocalLength as usize).ok_or(ERRMSG)?,
-    max_focal_len: *buf.get(NefLensData00::MaxFocalLength as usize).ok_or(ERRMSG)?,
-    max_aperture_at_min_focal: *buf.get(NefLensData00::MaxApertureAtMinFocal as usize).ok_or(ERRMSG)?,
-    max_aperture_at_max_focal: *buf.get(NefLensData00::MaxApertureAtMaxFocal as usize).ok_or(ERRMSG)?,
-    mcu_version: *buf.get(NefLensData00::MCUVersion as usize).ok_or(ERRMSG)?,
+    lens_id_number: *buf
+      .get(NefLensData00::LensIDNumber as usize)
+      .ok_or_else(|| RawlerError::decoder_failed(ERRMSG))?,
+    lens_fstops: *buf.get(NefLensData00::LensFStops as usize).ok_or_else(|| RawlerError::decoder_failed(ERRMSG))?,
+    min_focal_len: *buf
+      .get(NefLensData00::MinFocalLength as usize)
+      .ok_or_else(|| RawlerError::decoder_failed(ERRMSG))?,
+    max_focal_len: *buf
+      .get(NefLensData00::MaxFocalLength as usize)
+      .ok_or_else(|| RawlerError::decoder_failed(ERRMSG))?,
+    max_aperture_at_min_focal: *buf
+      .get(NefLensData00::MaxApertureAtMinFocal as usize)
+      .ok_or_else(|| RawlerError::decoder_failed(ERRMSG))?,
+    max_aperture_at_max_focal: *buf
+      .get(NefLensData00::MaxApertureAtMaxFocal as usize)
+      .ok_or_else(|| RawlerError::decoder_failed(ERRMSG))?,
+    mcu_version: *buf.get(NefLensData00::MCUVersion as usize).ok_or_else(|| RawlerError::decoder_failed(ERRMSG))?,
     effective_max_aperture: 0,
     lens_model: None,
   })
@@ -128,18 +139,36 @@ fn parse_lensdata_0x100(version: u32, buf: &[u8]) -> Result<NefLensDataF> {
 fn parse_lensdata_0x101(version: u32, buf: &[u8]) -> Result<NefLensDataF> {
   Ok(NefLensDataF {
     version,
-    exit_pupil_position: *buf.get(NefLensData01::ExitPupilPosition as usize).ok_or(ERRMSG)?,
-    af_aperture: *buf.get(NefLensData01::AFAperture as usize).ok_or(ERRMSG)?,
-    focus_position: *buf.get(NefLensData01::FocusPosition as usize).ok_or(ERRMSG)?,
-    focus_distance: *buf.get(NefLensData01::FocusDistance as usize).ok_or(ERRMSG)?,
-    lens_id_number: *buf.get(NefLensData01::LensIDNumber as usize).ok_or(ERRMSG)?,
-    lens_fstops: *buf.get(NefLensData01::LensFStops as usize).ok_or(ERRMSG)?,
-    min_focal_len: *buf.get(NefLensData01::MinFocalLength as usize).ok_or(ERRMSG)?,
-    max_focal_len: *buf.get(NefLensData01::MaxFocalLength as usize).ok_or(ERRMSG)?,
-    max_aperture_at_min_focal: *buf.get(NefLensData01::MaxApertureAtMinFocal as usize).ok_or(ERRMSG)?,
-    max_aperture_at_max_focal: *buf.get(NefLensData01::MaxApertureAtMaxFocal as usize).ok_or(ERRMSG)?,
-    mcu_version: *buf.get(NefLensData01::MCUVersion as usize).ok_or(ERRMSG)?,
-    effective_max_aperture: *buf.get(NefLensData01::EffectiveMaxAperture as usize).ok_or(ERRMSG)?,
+    exit_pupil_position: *buf
+      .get(NefLensData01::ExitPupilPosition as usize)
+      .ok_or_else(|| RawlerError::decoder_failed(ERRMSG))?,
+    af_aperture: *buf.get(NefLensData01::AFAperture as usize).ok_or_else(|| RawlerError::decoder_failed(ERRMSG))?,
+    focus_position: *buf
+      .get(NefLensData01::FocusPosition as usize)
+      .ok_or_else(|| RawlerError::decoder_failed(ERRMSG))?,
+    focus_distance: *buf
+      .get(NefLensData01::FocusDistance as usize)
+      .ok_or_else(|| RawlerError::decoder_failed(ERRMSG))?,
+    lens_id_number: *buf
+      .get(NefLensData01::LensIDNumber as usize)
+      .ok_or_else(|| RawlerError::decoder_failed(ERRMSG))?,
+    lens_fstops: *buf.get(NefLensData01::LensFStops as usize).ok_or_else(|| RawlerError::decoder_failed(ERRMSG))?,
+    min_focal_len: *buf
+      .get(NefLensData01::MinFocalLength as usize)
+      .ok_or_else(|| RawlerError::decoder_failed(ERRMSG))?,
+    max_focal_len: *buf
+      .get(NefLensData01::MaxFocalLength as usize)
+      .ok_or_else(|| RawlerError::decoder_failed(ERRMSG))?,
+    max_aperture_at_min_focal: *buf
+      .get(NefLensData01::MaxApertureAtMinFocal as usize)
+      .ok_or_else(|| RawlerError::decoder_failed(ERRMSG))?,
+    max_aperture_at_max_focal: *buf
+      .get(NefLensData01::MaxApertureAtMaxFocal as usize)
+      .ok_or_else(|| RawlerError::decoder_failed(ERRMSG))?,
+    mcu_version: *buf.get(NefLensData01::MCUVersion as usize).ok_or_else(|| RawlerError::decoder_failed(ERRMSG))?,
+    effective_max_aperture: *buf
+      .get(NefLensData01::EffectiveMaxAperture as usize)
+      .ok_or_else(|| RawlerError::decoder_failed(ERRMSG))?,
     lens_model: None,
   })
 }
@@ -147,18 +176,42 @@ fn parse_lensdata_0x101(version: u32, buf: &[u8]) -> Result<NefLensDataF> {
 fn parse_lensdata_0x204(version: u32, buf: &[u8]) -> Result<NefLensDataF> {
   Ok(NefLensDataF {
     version,
-    exit_pupil_position: *buf.get(NefLensData204::ExitPupilPosition as usize).ok_or(ERRMSG)?,
-    af_aperture: *buf.get(NefLensData204::AFAperture as usize).ok_or(ERRMSG)?,
-    focus_position: *buf.get(NefLensData204::FocusPosition as usize).ok_or(ERRMSG)?,
-    focus_distance: *buf.get(NefLensData204::FocusDistance as usize).ok_or(ERRMSG)?,
-    lens_id_number: *buf.get(NefLensData204::LensIDNumber as usize).ok_or(ERRMSG)?,
-    lens_fstops: *buf.get(NefLensData204::LensFStops as usize).ok_or(ERRMSG)?,
-    min_focal_len: *buf.get(NefLensData204::MinFocalLength as usize).ok_or(ERRMSG)?,
-    max_focal_len: *buf.get(NefLensData204::MaxFocalLength as usize).ok_or(ERRMSG)?,
-    max_aperture_at_min_focal: *buf.get(NefLensData204::MaxApertureAtMinFocal as usize).ok_or(ERRMSG)?,
-    max_aperture_at_max_focal: *buf.get(NefLensData204::MaxApertureAtMaxFocal as usize).ok_or(ERRMSG)?,
-    mcu_version: *buf.get(NefLensData204::MCUVersion as usize).ok_or(ERRMSG)?,
-    effective_max_aperture: *buf.get(NefLensData204::EffectiveMaxAperture as usize).ok_or(ERRMSG)?,
+    exit_pupil_position: *buf
+      .get(NefLensData204::ExitPupilPosition as usize)
+      .ok_or_else(|| RawlerError::decoder_failed(ERRMSG))?,
+    af_aperture: *buf
+      .get(NefLensData204::AFAperture as usize)
+      .ok_or_else(|| RawlerError::decoder_failed(ERRMSG))?,
+    focus_position: *buf
+      .get(NefLensData204::FocusPosition as usize)
+      .ok_or_else(|| RawlerError::decoder_failed(ERRMSG))?,
+    focus_distance: *buf
+      .get(NefLensData204::FocusDistance as usize)
+      .ok_or_else(|| RawlerError::decoder_failed(ERRMSG))?,
+    lens_id_number: *buf
+      .get(NefLensData204::LensIDNumber as usize)
+      .ok_or_else(|| RawlerError::decoder_failed(ERRMSG))?,
+    lens_fstops: *buf
+      .get(NefLensData204::LensFStops as usize)
+      .ok_or_else(|| RawlerError::decoder_failed(ERRMSG))?,
+    min_focal_len: *buf
+      .get(NefLensData204::MinFocalLength as usize)
+      .ok_or_else(|| RawlerError::decoder_failed(ERRMSG))?,
+    max_focal_len: *buf
+      .get(NefLensData204::MaxFocalLength as usize)
+      .ok_or_else(|| RawlerError::decoder_failed(ERRMSG))?,
+    max_aperture_at_min_focal: *buf
+      .get(NefLensData204::MaxApertureAtMinFocal as usize)
+      .ok_or_else(|| RawlerError::decoder_failed(ERRMSG))?,
+    max_aperture_at_max_focal: *buf
+      .get(NefLensData204::MaxApertureAtMaxFocal as usize)
+      .ok_or_else(|| RawlerError::decoder_failed(ERRMSG))?,
+    mcu_version: *buf
+      .get(NefLensData204::MCUVersion as usize)
+      .ok_or_else(|| RawlerError::decoder_failed(ERRMSG))?,
+    effective_max_aperture: *buf
+      .get(NefLensData204::EffectiveMaxAperture as usize)
+      .ok_or_else(|| RawlerError::decoder_failed(ERRMSG))?,
     lens_model: None,
   })
 }
@@ -181,18 +234,42 @@ fn parse_lensdata_0x800(version: u32, buf: &[u8]) -> Result<NefLensData> {
     log::debug!("NEF lensdata 0x80X: Found old lensdata block");
     Ok(NefLensData::FMount(NefLensDataF {
       version,
-      exit_pupil_position: *buf.get(NefLensData800::ExitPupilPosition as usize).ok_or(ERRMSG)?,
-      af_aperture: *buf.get(NefLensData800::AFAperture as usize).ok_or(ERRMSG)?,
-      focus_position: *buf.get(NefLensData800::FocusPosition as usize).ok_or(ERRMSG)?,
-      focus_distance: *buf.get(NefLensData800::FocusDistance as usize).ok_or(ERRMSG)?,
-      lens_id_number: *buf.get(NefLensData800::LensIDNumber as usize).ok_or(ERRMSG)?,
-      lens_fstops: *buf.get(NefLensData800::LensFStops as usize).ok_or(ERRMSG)?,
-      min_focal_len: *buf.get(NefLensData800::MinFocalLength as usize).ok_or(ERRMSG)?,
-      max_focal_len: *buf.get(NefLensData800::MaxFocalLength as usize).ok_or(ERRMSG)?,
-      max_aperture_at_min_focal: *buf.get(NefLensData800::MaxApertureAtMinFocal as usize).ok_or(ERRMSG)?,
-      max_aperture_at_max_focal: *buf.get(NefLensData800::MaxApertureAtMaxFocal as usize).ok_or(ERRMSG)?,
-      mcu_version: *buf.get(NefLensData800::MCUVersion as usize).ok_or(ERRMSG)?,
-      effective_max_aperture: *buf.get(NefLensData800::EffectiveMaxAperture as usize).ok_or(ERRMSG)?,
+      exit_pupil_position: *buf
+        .get(NefLensData800::ExitPupilPosition as usize)
+        .ok_or_else(|| RawlerError::decoder_failed(ERRMSG))?,
+      af_aperture: *buf
+        .get(NefLensData800::AFAperture as usize)
+        .ok_or_else(|| RawlerError::decoder_failed(ERRMSG))?,
+      focus_position: *buf
+        .get(NefLensData800::FocusPosition as usize)
+        .ok_or_else(|| RawlerError::decoder_failed(ERRMSG))?,
+      focus_distance: *buf
+        .get(NefLensData800::FocusDistance as usize)
+        .ok_or_else(|| RawlerError::decoder_failed(ERRMSG))?,
+      lens_id_number: *buf
+        .get(NefLensData800::LensIDNumber as usize)
+        .ok_or_else(|| RawlerError::decoder_failed(ERRMSG))?,
+      lens_fstops: *buf
+        .get(NefLensData800::LensFStops as usize)
+        .ok_or_else(|| RawlerError::decoder_failed(ERRMSG))?,
+      min_focal_len: *buf
+        .get(NefLensData800::MinFocalLength as usize)
+        .ok_or_else(|| RawlerError::decoder_failed(ERRMSG))?,
+      max_focal_len: *buf
+        .get(NefLensData800::MaxFocalLength as usize)
+        .ok_or_else(|| RawlerError::decoder_failed(ERRMSG))?,
+      max_aperture_at_min_focal: *buf
+        .get(NefLensData800::MaxApertureAtMinFocal as usize)
+        .ok_or_else(|| RawlerError::decoder_failed(ERRMSG))?,
+      max_aperture_at_max_focal: *buf
+        .get(NefLensData800::MaxApertureAtMaxFocal as usize)
+        .ok_or_else(|| RawlerError::decoder_failed(ERRMSG))?,
+      mcu_version: *buf
+        .get(NefLensData800::MCUVersion as usize)
+        .ok_or_else(|| RawlerError::decoder_failed(ERRMSG))?,
+      effective_max_aperture: *buf
+        .get(NefLensData800::EffectiveMaxAperture as usize)
+        .ok_or_else(|| RawlerError::decoder_failed(ERRMSG))?,
       lens_model: None,
     }))
   } else if new_data_avail {
@@ -203,7 +280,7 @@ fn parse_lensdata_0x800(version: u32, buf: &[u8]) -> Result<NefLensData> {
 
     Ok(NefLensData::ZMount(data))
   } else {
-    Err("NEF lens data 0x80X contains neither old and new data".into())
+    Err(RawlerError::decoder_failed("NEF lens data 0x80X contains neither old and new data"))
   }
 }
 

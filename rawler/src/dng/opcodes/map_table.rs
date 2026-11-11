@@ -5,7 +5,7 @@
 
 use serde::{Deserialize, Serialize};
 
-use crate::{RawlerError, Result};
+use crate::Result;
 
 use super::{
   OpcodeData, OpcodeImage, OpcodeStage,
@@ -30,10 +30,11 @@ impl MapTable {
     let area = AreaSpec::parse(reader)?;
     let count = reader.u32()? as usize;
     if count == 0 || count > MAP_TABLE_MAX_ENTRIES {
-      return Err(RawlerError::DecoderFailed(format!(
+      return Err(decoder_error!(
         "DNG opcode MapTable: table size {} must be 1 to {}",
-        count, MAP_TABLE_MAX_ENTRIES
-      )));
+        count,
+        MAP_TABLE_MAX_ENTRIES
+      ));
     }
     reader.check_count(count, 2, "MapTable")?;
     let mut table = Vec::with_capacity(count);
@@ -58,10 +59,7 @@ impl MapTable {
 
   pub fn apply(&self, image: &mut OpcodeImage<'_>, stage: OpcodeStage) -> Result<()> {
     if self.table.is_empty() || self.table.len() > MAP_TABLE_MAX_ENTRIES {
-      return Err(RawlerError::DecoderFailed(format!(
-        "DNG opcode MapTable: invalid table size {}",
-        self.table.len()
-      )));
+      return Err(decoder_error!("DNG opcode MapTable: invalid table size {}", self.table.len()));
     }
     let Some(rect) = self.area.buffer_rect(image, stage) else {
       return Ok(());
@@ -77,10 +75,10 @@ impl MapTable {
         map_area(view.region_mut(rect), &self.area, &|x: u16| self.lookup(x as usize));
       }
       (OpcodeData::Integer(_), _) => {
-        return Err(RawlerError::DecoderFailed(format!(
+        return Err(decoder_error!(
           "DNG opcode MapTable in {} requires image data mapped to linear reference values",
           stage
-        )));
+        ));
       }
     }
     Ok(())

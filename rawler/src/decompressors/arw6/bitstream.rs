@@ -3,6 +3,7 @@
 
 //! Golomb-Rice entropy decoding of the chunks.
 
+use crate::RawlerError;
 use std::io::Cursor;
 
 use bitstream_io::BitRead;
@@ -50,7 +51,7 @@ fn update_k(reader: &mut BitPump<'_>, k: u32) -> Result<u32> {
   // k is a non-negative Rice parameter, so a decrease at k <= 0 is an
   // impossible state.
   if k == 0 {
-    return Err("ARW6: decrease of Rice parameter k below 0".into());
+    return Err(RawlerError::decoder_failed("ARW6: decrease of Rice parameter k below 0"));
   }
   let k = k - 1;
   // The decrease is a unary run of zeros, but once k hits 0 no terminating 1
@@ -103,7 +104,7 @@ fn decode_line(reader: &mut BitPump<'_>, out: &mut [i32]) -> Result<()> {
       }
       run += reader.read_var::<u32>(exponent)? as usize;
       if run > remaining {
-        return Err("ARW6: zero-run overruns the line".into());
+        return Err(RawlerError::decoder_failed("ARW6: zero-run overruns the line"));
       }
       group_i += run;
       k = 1 + reader.read_unary::<1>()?; // then k climbs
@@ -141,7 +142,7 @@ pub(super) fn decode_component(data: &[u8], width: usize, rows_per_chunk: usize,
     let window_offset = chunk_i * rows_per_chunk;
     let chunk_data = data
       .get(offset..offset + chunk.length)
-      .ok_or_else(|| format!("ARW6: chunk {} runs past the component data", chunk_i))?;
+      .ok_or_else(|| decoder_error!("ARW6: chunk {} runs past the component data", chunk_i))?;
     let mut reader = BitPump::endian(Cursor::new(chunk_data), bitstream_io::BigEndian);
     offset += chunk.length;
     for (orient_i, (span, plane)) in orientations.iter().zip(orient.iter_mut()).enumerate() {

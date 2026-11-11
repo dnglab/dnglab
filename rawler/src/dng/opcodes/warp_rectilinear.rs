@@ -5,7 +5,7 @@
 
 use serde::{Deserialize, Serialize};
 
-use crate::{RawlerError, Result};
+use crate::Result;
 
 use super::{
   OpcodeImage, OpcodeStage,
@@ -69,7 +69,7 @@ impl WarpRectilinear {
 
   /// Validate the parameters
   fn validate(&self) -> Result<()> {
-    let invalid = |what: &str| Err(RawlerError::DecoderFailed(format!("DNG opcode WarpRectilinear is invalid: {}", what)));
+    let invalid = |what: &str| Err(decoder_error!("DNG opcode WarpRectilinear is invalid: {}", what));
     if self.coeffs.is_empty() || self.coeffs.len() > WARP_MAX_PLANES {
       return invalid("number of coefficient sets must be 1 to 4");
     }

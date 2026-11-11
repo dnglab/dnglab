@@ -14,7 +14,7 @@ pub fn fuji_normalize_rotation<'a>(src: impl Into<ImageView<'a, f32>>, fuji_rota
   let src = src.into();
   let pixels = src
     .as_array_slice::<3>()
-    .ok_or_else(|| format!("Fuji rotation requires an RGB image, image has {} channels", src.channels()))?;
+    .ok_or_else(|| input_error!("Fuji rotation requires an RGB image, image has {} channels", src.channels()))?;
   Ok(if extra_rotate {
     // These camera needs an extra rotate 90° CW to align with
     // other cameras.

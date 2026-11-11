@@ -4,6 +4,7 @@
 //! Planning of the processing operations for an image
 
 use super::{BayerDemosaic, DemosaicQuality, ProcessingStep, RenderOptions, RenderTarget, WhiteBalancePlacement, XTransDemosaic};
+use crate::RawlerError;
 use crate::{
   RawImage,
   dng::{
@@ -124,7 +125,7 @@ pub fn plan(rawimage: &RawImage, options: &RenderOptions) -> crate::Result<Plan>
   let mut ops = Vec::new();
   let has_opcodes = |stage| rawimage.opcode_list(stage).is_some();
   if !matches!(rawimage.cpp, 1 | 3 | 4) {
-    return Err(format!("Images with {} color planes are not supported", rawimage.cpp).into());
+    return Err(input_error!("Images with {} color planes are not supported", rawimage.cpp));
   }
 
   // CFA data that is demosaiced, its demosaic algorithm and the number of
@@ -213,7 +214,7 @@ pub fn plan(rawimage: &RawImage, options: &RenderOptions) -> crate::Result<Plan>
     let list3 = has_opcodes(OpcodeStage::List3) && !linear_raw;
     if let (Some(config), Some((algorithm, _))) = (mosaic, demosaic) {
       if crop_to_active_area && rawimage.active_area.is_some() && rawimage.fuji_rotation_width.is_some() {
-        return Err("ActiveArea is not possible when rotation is not normalized".into());
+        return Err(RawlerError::invalid_input("ActiveArea is not possible when rotation is not normalized"));
       }
       // Data of rotated sensors is rotated at full size
       let fuji_rotation_width = rawimage
@@ -435,7 +436,7 @@ fn demosaic_algorithm(config: &CFAConfig, quality: DemosaicQuality, bayer: Bayer
       (DemosaicQuality::Quality, XTransDemosaic::Vng) => Ok((DemosaicAlgorithm::Vng, 3)),
       (DemosaicQuality::Fast | DemosaicQuality::Preview, _) => Ok((DemosaicAlgorithm::XTransBilinear, 3)),
     },
-    _ => Err(format!("Demosaic of CFA pattern '{}' is not supported", config.cfa).into()),
+    _ => Err(input_error!("Demosaic of CFA pattern '{}' is not supported", config.cfa)),
   }
 }
 

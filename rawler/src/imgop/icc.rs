@@ -8,6 +8,7 @@
 //! the color space, adapted to the D50 white of the profile connection space
 //! by Bradford, the tone reproduction curves decode the transfer function.
 
+use crate::RawlerError;
 use moxcms::{ColorProfile, DataColorSpace, ProfileText, ToneReprCurve};
 
 use crate::imgop::{
@@ -41,24 +42,22 @@ impl MatrixShaperProfile {
   /// a color management module, and one LinearizationTable can't decode
   /// different curves per channel.
   pub fn parse(data: &[u8]) -> crate::Result<Self> {
-    let profile = ColorProfile::new_from_slice(data).map_err(|err| format!("Invalid ICC profile: {}", err))?;
+    let profile = ColorProfile::new_from_slice(data).map_err(|err| input_error!("Invalid ICC profile").context(err))?;
     if profile.color_space != DataColorSpace::Rgb || profile.pcs != DataColorSpace::Xyz {
-      return Err(
-        format!(
-          "ICC profile with color space {:?} and PCS {:?} is not supported",
-          profile.color_space, profile.pcs
-        )
-        .into(),
-      );
+      return Err(input_error!(
+        "ICC profile with color space {:?} and PCS {:?} is not supported",
+        profile.color_space,
+        profile.pcs
+      ));
     }
     if profile.lut_a_to_b_perceptual.is_some() || profile.lut_a_to_b_colorimetric.is_some() || profile.lut_a_to_b_saturation.is_some() {
-      return Err("ICC profile with lookup tables is not supported".into());
+      return Err(RawlerError::invalid_input("ICC profile with lookup tables is not supported"));
     }
     let (Some(red), Some(green), Some(blue)) = (&profile.red_trc, &profile.green_trc, &profile.blue_trc) else {
-      return Err("ICC profile has no tone reproduction curves".into());
+      return Err(RawlerError::invalid_input("ICC profile has no tone reproduction curves"));
     };
     if red != green || green != blue {
-      return Err("ICC profile with different curves per channel is not supported".into());
+      return Err(RawlerError::invalid_input("ICC profile with different curves per channel is not supported"));
     }
     let [r, g, b] = [profile.red_colorant, profile.green_colorant, profile.blue_colorant];
     let rgb_to_xyz = [
@@ -72,7 +71,10 @@ impl MatrixShaperProfile {
       .zip(CIE_1931_TRISTIMULUS_D50)
       .any(|(row, white)| (row.iter().sum::<f32>() - white).abs() > COLORANT_WHITE_TOLERANCE)
     {
-      return Err(format!("ICC profile with colorants {:?} doesn't map white to the white of the PCS", rgb_to_xyz).into());
+      return Err(input_error!(
+        "ICC profile with colorants {:?} doesn't map white to the white of the PCS",
+        rgb_to_xyz
+      ));
     }
     let description = profile.description.as_ref().and_then(description_text);
     Ok(Self {
@@ -87,13 +89,16 @@ impl MatrixShaperProfile {
   /// Fails for a curve that isn't monotonic, it can't be a LinearizationTable:
   /// readers interpolate between its neighbor entries.
   pub fn linearization_table(&self, entries: usize) -> crate::Result<Vec<u16>> {
-    let curve = self.curve.make_linear_evaluator().map_err(|err| format!("Invalid ICC curve: {}", err))?;
+    let curve = self
+      .curve
+      .make_linear_evaluator()
+      .map_err(|err| input_error!("Invalid ICC curve").context(err))?;
     let last = entries.saturating_sub(1).max(1) as f32;
     let table: Vec<u16> = (0..entries)
       .map(|i| (curve.evaluate_value(i as f32 / last).clamp(0.0, 1.0) * f32::from(u16::MAX)).round() as u16)
       .collect();
     if table.windows(2).any(|pair| pair[0] > pair[1]) {
-      return Err("ICC curve is not monotonic".into());
+      return Err(RawlerError::invalid_input("ICC curve is not monotonic"));
     }
     Ok(table)
   }

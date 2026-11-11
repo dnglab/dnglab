@@ -48,7 +48,7 @@ impl Demosaic<f32, 3> for Superpixel3Channel {
       "BGGR" => RgbBayerPattern::BGGR,
       "GBRG" => RgbBayerPattern::GBRG,
       "GRBG" => RgbBayerPattern::GRBG,
-      name => return Err(format!("Superpixel needs a Bayer RGB CFA pattern, not '{}'", name).into()),
+      name => return Err(input_error!("Superpixel needs a Bayer RGB CFA pattern, not '{}'", name)),
     };
 
     let out = (0..roi.height() / 2)
@@ -104,7 +104,7 @@ impl Demosaic<f32, 4> for Superpixel4Channel {
     for (index, color) in colormap.iter_mut().zip(colors.plane_colors::<4>()) {
       *index = (0..4)
         .find(|&i| cfa.color_at(i / 2, i % 2) == color as usize)
-        .ok_or_else(|| format!("Superpixel: plane color {:?} doesn't occur in CFA pattern '{}'", color, cfa))?;
+        .ok_or_else(|| input_error!("Superpixel: plane color {:?} doesn't occur in CFA pattern '{}'", color, cfa))?;
     }
 
     let out = (0..roi.height() / 2)

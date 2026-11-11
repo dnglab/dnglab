@@ -58,11 +58,11 @@ pub struct CrwDecoder<'a> {
 
 impl<'a> CrwDecoder<'a> {
   pub fn new(file: &RawSource, rawloader: &'a RawLoader) -> Result<CrwDecoder<'a>> {
-    let ciff = CiffIFD::new_file(file)?;
+    let ciff = CiffIFD::new_file(file).map_err(RawlerError::decoder_failed)?;
 
     let makemodel = fetch_ciff_tag!(ciff, CiffTag::MakeModel).get_strings();
     if makemodel.len() < 2 {
-      return Err(RawlerError::DecoderFailed("CRW: MakeModel tag needs to have 2 strings".to_string()));
+      return Err(RawlerError::decoder_failed("CRW: MakeModel tag needs to have 2 strings".to_string()));
     }
     let camera = rawloader.lookup_camera_with_everything(&makemodel[0], &makemodel[1], "");
 
@@ -75,7 +75,7 @@ impl<'a> Decoder for CrwDecoder<'a> {
     let camera = self.camera.supported()?;
     let image = if camera.model == "Canon PowerShot Pro70" {
       let src = file.subview_until_eof(26)?;
-      decompress_10le_lsb16(src, 1552, 1024, dummy)?
+      decompress_10le_lsb16(src, 1552, 1024, dummy).map_err(RawlerError::decoder_failed)?
     } else {
       let sensorinfo = fetch_ciff_tag!(self.ciff, CiffTag::SensorInfo);
       let width = sensorinfo.get_usize(1);
@@ -224,7 +224,7 @@ impl<'a> CrwDecoder<'a> {
     let lowbits = !camera.find_hint("nolowbits");
     let dectable = fetch_ciff_tag!(self.ciff, CiffTag::DecoderTable).get_usize(0);
     if dectable > 2 {
-      return Err(RawlerError::DecoderFailed(format!("CRW: Unknown decoder table {}", dectable)));
+      return Err(decoder_error!("CRW: Unknown decoder table {}", dectable));
     }
     Self::do_decode(file, lowbits, dectable, width, height, dummy)
   }

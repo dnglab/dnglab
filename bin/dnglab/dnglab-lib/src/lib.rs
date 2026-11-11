@@ -71,8 +71,9 @@ impl From<AddrParseError> for AppError {
 impl From<RawlerError> for AppError {
   fn from(value: RawlerError) -> Self {
     match value {
-      RawlerError::DecoderFailed(_) => Self::DecoderFailed(value.to_string()),
+      RawlerError::DecoderFailed { .. } => Self::DecoderFailed(value.to_string()),
       RawlerError::Unsupported { .. } => Self::UnsupportedFile(value.to_string()),
+      _ => Self::General(value.to_string()),
     }
   }
 }
@@ -108,3 +109,31 @@ impl From<TiffError> for AppError {
 }
 
 pub type Result<T> = std::result::Result<T, AppError>;
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[test]
+  fn rawler_errors_map_to_their_app_errors() {
+    let decoder = AppError::from(RawlerError::decoder_failed("Strip is truncated"));
+    assert!(matches!(&decoder, AppError::DecoderFailed(message) if message == "Strip is truncated"));
+    // The prefix of decoder errors appears once
+    assert_eq!(decoder.to_string(), "Decoder failed: Strip is truncated");
+    let unsupported = RawlerError::Unsupported {
+      what: "Unknown mode".into(),
+      model: "Model".into(),
+      make: "Make".into(),
+      mode: "".into(),
+    };
+    assert!(matches!(AppError::from(unsupported), AppError::UnsupportedFile(_)));
+    for err in [
+      RawlerError::invalid_input("No color plane for blue"),
+      RawlerError::general("Failed to write the DNG file"),
+      RawlerError::feature_disabled("crx", "the CRX decompression"),
+    ] {
+      let text = err.to_string();
+      assert!(matches!(AppError::from(err), AppError::General(message) if message == text), "{}", text);
+    }
+  }
+}

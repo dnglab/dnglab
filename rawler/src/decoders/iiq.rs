@@ -142,7 +142,7 @@ impl TryFrom<usize> for IiqCompression {
       5 => Ok(Self::IIQ_S),
       6 => Ok(Self::IIQ_Sv2),
       8 => Ok(Self::IIQ_L16),
-      _ => Err(RawlerError::DecoderFailed(format!("Unsupported IIQ format: {}", v))),
+      _ => Err(decoder_error!("Unsupported IIQ format: {}", v)),
     }
   }
 }
@@ -251,7 +251,7 @@ impl<'a> Decoder for IiqDecoder<'a> {
     debug!("RAW IIQ Format: {:?}", fmt);
 
     if width == 0 || height == 0 {
-      return Err(RawlerError::DecoderFailed("IIQ: couldn't find width and height".to_string()));
+      return Err(RawlerError::decoder_failed("IIQ: couldn't find width and height".to_string()));
     }
 
     let data = file
@@ -263,11 +263,11 @@ impl<'a> Decoder for IiqDecoder<'a> {
 
     let mut image = match fmt {
       IiqCompression::Raw1 | IiqCompression::Raw2 => return Err(RawlerError::unsupported(camera, format!("IIQ compression {:?}", fmt))),
-      IiqCompression::Uncompressed => Self::decode_uncompressed(data, width, height, 14, dummy)?,
-      IiqCompression::IIQ_L => Self::decode_compressed(data, strips, width, height, 14, dummy)?,
-      IiqCompression::IIQ_L16 => Self::decode_compressed(data, strips, width, height, 16, dummy)?,
-      IiqCompression::IIQ_S => Self::decode_nonlinear(data, strips, width, height, 14, dummy)?,
-      IiqCompression::IIQ_Sv2 => Self::decode_compressed_sv2(data, strips, width, height, 14, dummy)?,
+      IiqCompression::Uncompressed => Self::decode_uncompressed(data, width, height, 14, dummy).map_err(RawlerError::decoder_failed)?,
+      IiqCompression::IIQ_L => Self::decode_compressed(data, strips, width, height, 14, dummy).map_err(RawlerError::decoder_failed)?,
+      IiqCompression::IIQ_L16 => Self::decode_compressed(data, strips, width, height, 16, dummy).map_err(RawlerError::decoder_failed)?,
+      IiqCompression::IIQ_S => Self::decode_nonlinear(data, strips, width, height, 14, dummy).map_err(RawlerError::decoder_failed)?,
+      IiqCompression::IIQ_Sv2 => Self::decode_compressed_sv2(data, strips, width, height, 14, dummy).map_err(RawlerError::decoder_failed)?,
     };
 
     let black = self.blacklevel().unwrap_or(0);
@@ -638,7 +638,7 @@ impl<'a> IiqDecoder<'a> {
         width.1.force_usize(0), //
         height.1.force_usize(0),
       )),
-      _ => Err(RawlerError::DecoderFailed("Unable to find width/height in IIQ makernotes".to_string())),
+      _ => Err(RawlerError::decoder_failed("Unable to find width/height in IIQ makernotes".to_string())),
     }
   }
 
@@ -735,7 +735,7 @@ impl<'a> IiqDecoder<'a> {
         let code = mode.1.force_u32(0);
         Ok(IiqCompression::try_from(code as usize)?)
       }
-      _ => Err(RawlerError::DecoderFailed("Unable to find compression mode in IIQ makernotes".to_string())),
+      _ => Err(RawlerError::decoder_failed("Unable to find compression mode in IIQ makernotes".to_string())),
     }
   }
 
@@ -745,7 +745,7 @@ impl<'a> IiqDecoder<'a> {
         (mode.1.force_u64(0) + 8), //
         mode.0,
       )),
-      _ => Err(RawlerError::DecoderFailed("Unable to find data offset in IIQ makernotes".to_string())),
+      _ => Err(RawlerError::decoder_failed("Unable to find data offset in IIQ makernotes".to_string())),
     }
   }
 
@@ -755,7 +755,7 @@ impl<'a> IiqDecoder<'a> {
         (mode.1.force_u64(0) + 8), //
         mode.0,
       )),
-      _ => Err(RawlerError::DecoderFailed("Unable to find strip offset in IIQ makernotes".to_string())),
+      _ => Err(RawlerError::decoder_failed("Unable to find strip offset in IIQ makernotes".to_string())),
     }
   }
 
@@ -776,14 +776,14 @@ impl<'a> IiqDecoder<'a> {
   fn wb_offset(&self) -> Result<u64> {
     match self.makernotes.get(&IiqTag::WhiteBalance.into()) {
       Some(mode) => Ok((mode.1.force_u64(0) + 8) as u64),
-      _ => Err(RawlerError::DecoderFailed("Unable to find whitebalance offset in IIQ makernotes".to_string())),
+      _ => Err(RawlerError::decoder_failed("Unable to find whitebalance offset in IIQ makernotes".to_string())),
     }
   }
 
   fn blacklevel(&self) -> Result<u16> {
     match self.makernotes.get(&IiqTag::BlackLevel.into()) {
       Some(mode) => Ok(mode.1.force_u16(0)),
-      _ => Err(RawlerError::DecoderFailed("Unable to find blacklevel in IIQ makernotes".to_string())),
+      _ => Err(RawlerError::decoder_failed("Unable to find blacklevel in IIQ makernotes".to_string())),
     }
   }
 

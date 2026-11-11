@@ -192,10 +192,7 @@ pub fn extract_original<W: Write + Seek + Send>(dng: &RawSource, target: &mut W,
   let file = GenericTiffReader::new(&mut dng.reader(), 0, 0, None, &[])?;
 
   if !file.has_entry(DngTag::DNGVersion) {
-    return Err(RawlerError::DecoderFailed(format!(
-      "Input file '{}' is not a valid DNG file",
-      dng.path().display()
-    )));
+    return Err(decoder_error!("Input file '{}' is not a valid DNG file", dng.path().display()));
   }
   if let Some(orig_data) = file.get_entry(DngTag::OriginalRawFileData) {
     if let Value::Undefined(val) = &orig_data.value {
@@ -210,8 +207,8 @@ pub fn extract_original<W: Write + Seek + Send>(dng: &RawSource, target: &mut W,
 
       if digest.ne(&Some(new_digest.into())) {
         if verify_digest {
-          return Err(RawlerError::DecoderFailed(
-            "Embedded original digest and output digest mismatch, data may be corrupt".into(),
+          return Err(RawlerError::decoder_failed(
+            "Embedded original digest and output digest mismatch, data may be corrupt",
           ));
         } else {
           log::warn!("Embedded original digest and output digest mismatch, data may be corrupt, but verify checks are disabled");
@@ -224,12 +221,10 @@ pub fn extract_original<W: Write + Seek + Send>(dng: &RawSource, target: &mut W,
         Err(error) => Err(RawlerError::with_io_error("extract_original", dng.path(), error)),
       }
     } else {
-      Err(RawlerError::DecoderFailed("DNG file contains OriginalRawFileData tag, but is invalid".into()))
+      Err(RawlerError::decoder_failed("DNG file contains OriginalRawFileData tag, but is invalid"))
     }
   } else {
-    Err(RawlerError::DecoderFailed(
-      "No embedded raw file found (missing OriginalRawFileData tag)".into(),
-    ))
+    Err(RawlerError::decoder_failed("No embedded raw file found (missing OriginalRawFileData tag)"))
   }
 }
 

@@ -422,10 +422,9 @@ pub(crate) fn decode_panasonic_v8(rawfile: &RawSource, width: usize, height: usi
       )
     })
     .collect();
-  let strips = ImageRegionMut::from(out.view_mut()).split_regions_mut(&areas).map_err(|err| match err {
-    RawlerError::DecoderFailed(msg) => RawlerError::DecoderFailed(format!("Panasonic V8: invalid strip: {}", msg)),
-    err => err,
-  })?;
+  let strips = ImageRegionMut::from(out.view_mut())
+    .split_regions_mut(&areas)
+    .map_err(|err| decoder_error!("Panasonic V8: invalid strip").context(err))?;
 
   let tables = Tables::new(&params);
 
@@ -433,7 +432,8 @@ pub(crate) fn decode_panasonic_v8(rawfile: &RawSource, width: usize, height: usi
   strips
     .into_par_iter()
     .enumerate()
-    .try_for_each(|(strip_id, mut strip)| decode_strip(bitstreams[strip_id], &params, &tables, strip_id, &mut strip))?;
+    .try_for_each(|(strip_id, mut strip)| decode_strip(bitstreams[strip_id], &params, &tables, strip_id, &mut strip))
+    .map_err(RawlerError::decoder_failed)?;
   Ok(out)
 }
 

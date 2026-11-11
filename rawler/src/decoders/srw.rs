@@ -68,7 +68,7 @@ impl<'a> SrwDecoder<'a> {
       warn!("SRW makernote not found");
       None
     }
-    .ok_or("File has not makernotes")?;
+    .ok_or_else(|| RawlerError::decoder_failed("File has not makernotes"))?;
 
     Ok(SrwDecoder {
       tiff,
@@ -85,7 +85,7 @@ impl<'a> Decoder for SrwDecoder<'a> {
     let raw = self
       .tiff
       .find_first_ifd_with_tag(TiffCommonTag::StripOffsets)
-      .ok_or_else(|| RawlerError::DecoderFailed(format!("Failed to find a IFD with StripOffsets tag")))?;
+      .ok_or_else(|| decoder_error!("Failed to find a IFD with StripOffsets tag"))?;
     let width = fetch_tiff_tag!(raw, TiffCommonTag::ImageWidth).force_usize(0);
     let height = fetch_tiff_tag!(raw, TiffCommonTag::ImageLength).force_usize(0);
     let offset = fetch_tiff_tag!(raw, TiffCommonTag::StripOffsets).force_usize(0);
@@ -95,26 +95,26 @@ impl<'a> Decoder for SrwDecoder<'a> {
 
     let image = match compression {
       32769 => match bits {
-        12 => decompress_12le_unpacked(&src, width, height, dummy)?,
-        14 => decompress_14le_unpacked(&src, width, height, dummy)?,
+        12 => decompress_12le_unpacked(&src, width, height, dummy).map_err(RawlerError::decoder_failed)?,
+        14 => decompress_14le_unpacked(&src, width, height, dummy).map_err(RawlerError::decoder_failed)?,
         x => return Err(RawlerError::unsupported(camera, format!("SRW: Don't know how to handle bps {}", x))),
       },
       32770 => match raw.get_entry(TiffCommonTag::SrwSensorAreas) {
         None => match bits {
           12 => {
             if camera.find_hint("little_endian") {
-              decompress_12le(&src, width, height, dummy)?
+              decompress_12le(&src, width, height, dummy).map_err(RawlerError::decoder_failed)?
             } else {
-              decompress_12be(&src, width, height, dummy)?
+              decompress_12be(&src, width, height, dummy).map_err(RawlerError::decoder_failed)?
             }
           }
-          14 => decompress_14le_unpacked(&src, width, height, dummy)?,
+          14 => decompress_14le_unpacked(&src, width, height, dummy).map_err(RawlerError::decoder_failed)?,
           x => return Err(RawlerError::unsupported(camera, format!("SRW: Don't know how to handle bps {}", x))),
         },
         Some(x) => {
           let coffset = x.force_usize(0);
           if coffset == 0 {
-            return Err(RawlerError::DecoderFailed("SRW1: line offset table can't be at the start of the file".into()));
+            return Err(RawlerError::decoder_failed("SRW1: line offset table can't be at the start of the file"));
           }
           let loffsets = file.subview_until_eof(coffset as u64)?;
           SrwDecoder::decode_srw1(&src, loffsets, width, height, dummy)?
@@ -160,11 +160,11 @@ impl<'a> SrwDecoder<'a> {
       let loffset = loffsets
         .get(row * 4..row * 4 + 4)
         .map(|bytes| LEu32(bytes, 0) as usize)
-        .ok_or_else(|| RawlerError::DecoderFailed(format!("SRW1: line offset table has no offset for row {}", row)))?;
+        .ok_or_else(|| decoder_error!("SRW1: line offset table has no offset for row {}", row))?;
       let mut pump = BitPumpMSB32::new(
         buf
           .get(loffset..)
-          .ok_or_else(|| RawlerError::DecoderFailed(format!("SRW1: offset {} of row {} is behind the end of the data", loffset, row)))?,
+          .ok_or_else(|| decoder_error!("SRW1: offset {} of row {} is behind the end of the data", loffset, row))?,
       );
 
       let img = width * row;
@@ -322,7 +322,7 @@ impl<'a> SrwDecoder<'a> {
 
     // Each line is decoded in blocks of 16 pixels
     if !width.is_multiple_of(16) {
-      return Err(RawlerError::DecoderFailed(format!("SRW3: width {} is not a multiple of 16", width)));
+      return Err(decoder_error!("SRW3: width {} is not a multiple of 16", width));
     }
 
     let mut out = alloc_image_ok!(width, height, dummy);
@@ -369,7 +369,7 @@ impl<'a> SrwDecoder<'a> {
       pump = BitPumpMSB32::new(
         buf
           .get(line_offset..)
-          .ok_or_else(|| RawlerError::DecoderFailed(format!("SRW3: offset {} of row {} is behind the end of the data", line_offset, row)))?,
+          .ok_or_else(|| decoder_error!("SRW3: offset {} of row {} is behind the end of the data", line_offset, row))?,
       );
 
       let img = width * row;
@@ -405,7 +405,7 @@ impl<'a> SrwDecoder<'a> {
         }
 
         if row < 2 && motion != 7 {
-          return Err(RawlerError::DecoderFailed("SRW3: at start of image and motion isn't 7. File corrupted?".into()));
+          return Err(RawlerError::decoder_failed("SRW3: at start of image and motion isn't 7. File corrupted?"));
         }
 
         if motion == 7 {
@@ -430,7 +430,7 @@ impl<'a> SrwDecoder<'a> {
             };
             let refpixel = base
               .checked_add_signed(slide_offset)
-              .ok_or_else(|| RawlerError::DecoderFailed("SRW3: reference pixel is left of the image. File corrupted?".into()))?;
+              .ok_or_else(|| RawlerError::decoder_failed("SRW3: reference pixel is left of the image. File corrupted?"))?;
             // In some cases we use as reference interpolation of this pixel and the next
             out[img + col + i] = if motion_average[motion] != 0 {
               ((out[refpixel] as u32 + out[refpixel + 2] as u32 + 1) >> 1) as u16
@@ -466,7 +466,7 @@ impl<'a> SrwDecoder<'a> {
             diff_bits_mode[colornum][0] = diff_bits_mode[colornum][1];
             diff_bits_mode[colornum][1] = diff_bits[i];
             if diff_bits[i] > bit_depth + 1 {
-              return Err(RawlerError::DecoderFailed("SRW3: too many difference bits. File corrupted?".into()));
+              return Err(RawlerError::decoder_failed("SRW3: too many difference bits. File corrupted?"));
             }
           }
         }
@@ -510,7 +510,7 @@ impl<'a> SrwDecoder<'a> {
     let rggb_blacks = fetch_tiff_tag!(self.makernote, SrwMakernote::SrwRGGBBlacks);
 
     if rggb_levels.count() != 4 || rggb_blacks.count() != 4 {
-      Err(RawlerError::DecoderFailed("SRW: RGGB Levels and Blacks don't have 4 elements".to_string()))
+      Err(RawlerError::decoder_failed("SRW: RGGB Levels and Blacks don't have 4 elements".to_string()))
     } else {
       // The key of the encrypted values cancels out
       Ok([
@@ -527,7 +527,7 @@ impl<'a> SrwDecoder<'a> {
   fn get_blacklevel(&self, camera: &Camera) -> Result<[u32; 4]> {
     let rggb_blacks = fetch_tiff_tag!(self.makernote, SrwMakernote::SrwRGGBBlacks);
     if rggb_blacks.count() != 4 {
-      return Err(RawlerError::DecoderFailed("SRW: RGGB Blacks don't have 4 elements".to_string()));
+      return Err(RawlerError::decoder_failed("SRW: RGGB Blacks don't have 4 elements".to_string()));
     }
     let key = self.makernote.get_entry(SrwMakernote::SrwEncryptionKey);
     Ok(std::array::from_fn(|i| {

@@ -139,7 +139,7 @@ impl ProfileRender {
     let (row_width, channels) = (image.width().max(1), image.channels());
     let pixels = image
       .as_array_slice_mut::<3>()
-      .ok_or_else(|| format!("Rendering tables require three channels, image has {}", channels))?;
+      .ok_or_else(|| input_error!("Rendering tables require three channels, image has {}", channels))?;
     pixels.par_chunks_mut(row_width).enumerate().for_each(|(row, pixels)| {
       for (col, pixel) in pixels.iter_mut().enumerate() {
         let (u, v) = area.relative_position(col, row);

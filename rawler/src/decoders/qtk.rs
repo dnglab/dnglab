@@ -67,10 +67,7 @@ impl<'a> QtkDecoder<'a> {
           Ok(QtkDecoder { rawloader, camera })
         }
       }
-      sig => Err(crate::RawlerError::DecoderFailed(format!(
-        "Unable to use QTK decoder on file with signature: '{:?}'",
-        sig
-      ))),
+      sig => Err(decoder_error!("Unable to use QTK decoder on file with signature: '{:?}'", sig)),
     }
   }
 }

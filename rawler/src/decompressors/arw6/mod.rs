@@ -15,11 +15,11 @@ use bitstream_io::BitReader;
 use itertools::Itertools;
 use rayon::prelude::*;
 
+use crate::Result;
 use crate::alloc_image_ok;
 use crate::bits::clampbits;
 use crate::imgop::{Dim2, Point, Rect};
 use crate::pixarray::{DisjointRegionMut, ImageRegionMut, PixU16};
-use crate::{RawlerError, Result};
 
 use bitstream::decode_component;
 use container::{Region, TileRecord};
@@ -63,10 +63,9 @@ pub(crate) fn decompress_arw6(buf: &[u8], width: usize, height: usize, dummy: bo
   // The tiles are decoded straight into their regions of the image, the
   // split fails if a tile is outside of the image or overlaps another tile.
   let areas: Vec<Rect> = records.iter().map(|rec| Rect::new(Point::new(rec.x, rec.y), Dim2::new(rec.w, rec.h))).collect();
-  let tiles = ImageRegionMut::from(image.view_mut()).split_regions_mut(&areas).map_err(|err| match err {
-    RawlerError::DecoderFailed(msg) => RawlerError::DecoderFailed(format!("ARW6: invalid tile: {}", msg)),
-    err => err,
-  })?;
+  let tiles = ImageRegionMut::from(image.view_mut())
+    .split_regions_mut(&areas)
+    .map_err(|err| decoder_error!("ARW6: invalid tile").context(err))?;
   records.par_iter().zip(tiles).try_for_each(|(rec, mut tile)| {
     let regions = container::parse_tile(rec)?;
     decode_tile_into(rec, &regions, &mut tile)
@@ -93,7 +92,7 @@ fn decode_tile_into(rec: &TileRecord<'_>, regions: &[Region<'_>], tile: &mut Dis
     for region in 1..n_levels {
       let detail = decode_region_comp(regions, &geoms, region, comp)?;
       let [hl, lh, hh] = &detail[..] else {
-        return Err(format!("ARW6: detail region {} did not decode to 3 orientations", region).into());
+        return Err(decoder_error!("ARW6: detail region {} did not decode to 3 orientations", region));
       };
       recon = idwt2d(&recon, lh, hl, hh, geoms[region].vflip)?;
     }
@@ -111,7 +110,7 @@ fn decode_tile_into(rec: &TileRecord<'_>, regions: &[Region<'_>], tile: &mut Dis
       }
     })
     .collect::<Result<Vec<_>>>()?;
-  let [green_lo, chroma_r, chroma_b, green_hi]: [Plane; 4] = planes.try_into().map_err(|_| "ARW6: expected 4 planes")?;
+  let [green_lo, chroma_r, chroma_b, green_hi]: [Plane; 4] = planes.try_into().map_err(|_| decoder_error!("ARW6: expected 4 planes"))?;
   assemble_tile_into(&green_lo, &chroma_r, &chroma_b, &green_hi, rec, tile)
 }
 
@@ -120,7 +119,7 @@ fn decode_tile_into(rec: &TileRecord<'_>, regions: &[Region<'_>], tile: &mut Dis
 fn decode_single_orient(regions: &[Region<'_>], geoms: &[RegionGeometry], region_i: usize, comp_i: usize, what: &str) -> Result<Plane> {
   let [plane]: [Plane; 1] = decode_region_comp(regions, geoms, region_i, comp_i)?
     .try_into()
-    .map_err(|orientations: Vec<Plane>| format!("ARW6: {} decoded to {} orientations instead of one", what, orientations.len()))?;
+    .map_err(|orientations: Vec<Plane>| decoder_error!("ARW6: {} decoded to {} orientations instead of one", what, orientations.len()))?;
   Ok(plane)
 }
 
@@ -130,27 +129,21 @@ fn decode_region_comp(regions: &[Region<'_>], geoms: &[RegionGeometry], region_i
   let region = &regions[region_i];
   let geom = &geoms[region_i];
   if region.components.len() != geom.n_components {
-    return Err(
-      format!(
-        "ARW6: region {} carries {} components, geometry expects {}",
-        region_i,
-        region.components.len(),
-        geom.n_components
-      )
-      .into(),
-    );
+    return Err(decoder_error!(
+      "ARW6: region {} carries {} components, geometry expects {}",
+      region_i,
+      region.components.len(),
+      geom.n_components
+    ));
   }
   let comp = &region.components[comp_i];
   if comp.orient_count != geom.orientations.len() {
-    return Err(
-      format!(
-        "ARW6: region {} component declares {} orientations, geometry expects {}",
-        region_i,
-        comp.orient_count,
-        geom.orientations.len()
-      )
-      .into(),
-    );
+    return Err(decoder_error!(
+      "ARW6: region {} component declares {} orientations, geometry expects {}",
+      region_i,
+      comp.orient_count,
+      geom.orientations.len()
+    ));
   }
   decode_component(comp.data, geom.width, geom.rows_per_chunk, &geom.orientations, &comp.chunks)
 }
@@ -182,17 +175,21 @@ fn assemble_tile_into(
   let h = green_lo.h.min(green_hi.h);
   let w = green_lo.w;
   if green_hi.w < w || chroma_r.h < h || chroma_r.w < w || chroma_b.h < h || chroma_b.w < w {
-    return Err(
-      format!(
-        "ARW6: component size mismatch: green_lo {}x{}, green_hi {}x{}, chroma_r {}x{}, chroma_b {}x{}",
-        green_lo.w, green_lo.h, green_hi.w, green_hi.h, chroma_r.w, chroma_r.h, chroma_b.w, chroma_b.h
-      )
-      .into(),
-    );
+    return Err(decoder_error!(
+      "ARW6: component size mismatch: green_lo {}x{}, green_hi {}x{}, chroma_r {}x{}, chroma_b {}x{}",
+      green_lo.w,
+      green_lo.h,
+      green_hi.w,
+      green_hi.h,
+      chroma_r.w,
+      chroma_r.h,
+      chroma_b.w,
+      chroma_b.h
+    ));
   }
   let full_w = 2 * w;
   if full_w > rec.w || 2 * h > rec.h {
-    return Err(format!("ARW6: {}x{} mosaic exceeds its {}x{} tile", full_w, 2 * h, rec.w, rec.h).into());
+    return Err(decoder_error!("ARW6: {}x{} mosaic exceeds its {}x{} tile", full_w, 2 * h, rec.w, rec.h));
   }
   let greens = diamond_idwt(green_lo, green_hi, h, w);
   // Bayer RGGB layout per 2x2 cell: R at (even row, even col), B at (odd row,

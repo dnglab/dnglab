@@ -18,7 +18,7 @@ use crate::{
     dcp::CameraProfileFile,
     opcodes::{Opcode, OpcodeSelector, OpcodeStage},
     original::OriginalCompressed,
-    writer::DngWriter,
+    writer::{DngError, DngWriter},
   },
   formats::tiff::Entry,
   imgop::{
@@ -410,16 +410,9 @@ where
     }
     if apply {
       log::debug!("Apply {} to the image data", stage);
-      rawimage.apply_opcode_list(stage).map_err(|err| {
-        RawlerError::DecoderFailed(format!(
-          "Can't apply {} to the image data: {}",
-          stage,
-          match err {
-            RawlerError::DecoderFailed(msg) => msg,
-            err => err.to_string(),
-          }
-        ))
-      })?;
+      rawimage
+        .apply_opcode_list(stage)
+        .map_err(|err| decoder_error!("Can't apply {} to the image data", stage).context(err))?;
     }
   }
   // Lossy JPEG and JPEG XL support one or three color planes
@@ -443,19 +436,23 @@ where
     true
   };
 
-  let mut dng = DngWriter::new_with_version(dng, params.dng_version.as_dng_value(), max_backward_version)?;
+  // Errors of the DNG writer, e.g. of the JPEG XL compression, are no decoder errors
+  let write_error = |err: DngError| general_error!("Failed to write the DNG file").context(err);
+  let mut dng = DngWriter::new_with_version(dng, params.dng_version.as_dng_value(), max_backward_version).map_err(write_error)?;
 
   // Write RAW image for subframe type 0
   // If no thumbnail should be written to root IFD, we need to put the raw image into
   // root IFD instead.
   let mut raw = if params.thumbnail { dng.subframe(0) } else { dng.subframe_on_root(0) };
-  raw.raw_image(
-    &rawimage,
-    params.crop,
-    params.compression,
-    params.photometric_conversion,
-    &params.compression_params(),
-  )?;
+  raw
+    .raw_image(
+      &rawimage,
+      params.crop,
+      params.compression,
+      params.photometric_conversion,
+      &params.compression_params(),
+    )
+    .map_err(write_error)?;
   // Check for DNG raw IFD related tags
   if let Some(dng_raw_ifd) = decoder.ifd(WellKnownIFD::VirtualDngRawTags)? {
     // Opcode lists are written by raw_image(), they may have been applied to the image data
@@ -464,7 +461,7 @@ where
       .ifd_mut()
       .copy(dng_raw_ifd.value_iter().filter(|(tag, _)| !opcode_lists.contains(tag) && copy_tag(tag)));
   }
-  raw.finalize()?;
+  raw.finalize().map_err(write_error)?;
 
   // Write preview and thumbnail if requested
   if params.preview || params.thumbnail {
@@ -485,19 +482,19 @@ where
     if params.preview {
       if let Some(image) = select(params.force_preview) {
         let mut preview = dng.subframe(1);
-        preview.preview(image, PREVIEW_JPEG_QUALITY)?;
-        preview.finalize()?;
+        preview.preview(image, PREVIEW_JPEG_QUALITY).map_err(write_error)?;
+        preview.finalize().map_err(write_error)?;
       }
     }
     if params.thumbnail {
       if let Some(image) = select(params.force_thumbnail) {
-        dng.thumbnail(image)?;
+        dng.thumbnail(image).map_err(write_error)?;
       }
     }
   }
   // Write metadata
-  dng.load_base_tags(&rawimage)?;
-  dng.load_metadata(&metadata)?;
+  dng.load_base_tags(&rawimage).map_err(write_error)?;
+  dng.load_metadata(&metadata).map_err(write_error)?;
   if let Some(orientation) = rawimage.orientation {
     dng.root_ifd_mut().add_tag(ExifTag::Orientation, orientation.to_u16());
   }
@@ -534,14 +531,12 @@ where
   }
 
   if let Some(xpacket) = decoder.xpacket(rawfile, &raw_params)? {
-    dng.xpacket(&xpacket)?;
+    dng.xpacket(&xpacket).map_err(write_error)?;
   }
 
   if let Some(handle) = original_compress_thread {
-    let original = handle
-      .join()
-      .map_err(|err| std::io::Error::new(std::io::ErrorKind::Other, format!("Failed to join compression thread: {:?}", err)))??;
-    dng.original_file(&original, original_filename)?;
+    let original = handle.join().map_err(|err| general_error!("Failed to join compression thread: {:?}", err))??;
+    dng.original_file(&original, original_filename).map_err(write_error)?;
   }
 
   if let Some(artist) = &params.artist {
@@ -556,7 +551,7 @@ where
     .root_ifd_mut()
     .add_tag(ExifTag::ModifyDate, chrono::Local::now().format("%Y:%m:%d %H:%M:%S").to_string());
 
-  dng.close()?;
+  dng.close().map_err(write_error)?;
 
   let last_modified = match metadata.last_modified() {
     Ok(Some(last_modified)) => Some(last_modified),
@@ -640,7 +635,7 @@ fn apply_dcp(rawimage: &mut RawImage, params: &ConvertParams) -> crate::Result<(
 /// reduction matrix of the as-shot profile for D65 is preferred, see
 /// [`CameraProfile::reduction_matrices`](crate::camera_profile::CameraProfile::reduction_matrices).
 fn reduce_to_three_planes(rawimage: &mut RawImage) -> crate::Result<()> {
-  let no_matrix = || RawlerError::DecoderFailed("Reducing four color planes requires a color matrix".into());
+  let no_matrix = || RawlerError::decoder_failed("Reducing four color planes requires a color matrix");
   let profile = rawimage.as_shot_camera_profile().ok_or_else(no_matrix)?;
   let reductions = profile.reduction_matrices();
   let (illuminant, matrix) = profile
@@ -748,7 +743,9 @@ fn generate_preview(
         log::warn!("Preview image not found, try to generate sRGB from RAW");
       }
       let image = render(rawimage.clone(), &preview_render_options())?;
-      Ok(image.to_dynamic_image().ok_or("failed to convert to dynamic image")?)
+      image
+        .to_dynamic_image()
+        .ok_or_else(|| RawlerError::general("failed to convert to dynamic image"))
     }
   }
 }

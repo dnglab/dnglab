@@ -61,7 +61,7 @@ use crate::tags::DngTag;
 
 macro_rules! fetch_ciff_tag {
   ($tiff:expr, $tag:expr) => {
-    $tiff.find_entry($tag).ok_or(format!("Couldn't find tag {}", stringify!($tag)).to_string())?
+    $tiff.find_entry($tag).ok_or_else(|| decoder_error!("Couldn't find tag {}", stringify!($tag)))?
   };
 }
 
@@ -70,7 +70,7 @@ macro_rules! fetch_tiff_tag {
     $ifd
       .get_entry($tag)
       .map(|entry| &entry.value)
-      .ok_or(format!("Couldn't find tag {}", stringify!($tag)))?
+      .ok_or_else(|| decoder_error!("Couldn't find tag {}", stringify!($tag)))?
   };
 }
 
@@ -80,11 +80,11 @@ macro_rules! fetch_tiff_tag_variant {
     if let $variant(tmp) = $ifd
       .get_entry($tag)
       .map(|entry| &entry.value)
-      .ok_or(format!("Couldn't find tag {}", stringify!($tag)))?
+      .ok_or_else(|| decoder_error!("Couldn't find tag {}", stringify!($tag)))?
     {
       tmp
     } else {
-      return Err(format!("fetch_tiff_tag_variant!(): tag {} has unepxected datatype", stringify!($tag)).into());
+      return Err(decoder_error!("fetch_tiff_tag_variant!(): tag {} has unepxected datatype", stringify!($tag)));
     }
   };
 }
@@ -175,10 +175,11 @@ pub struct RawDecodeParams {
 pub fn validate_image_index(decoder: &dyn Decoder, params: &RawDecodeParams) -> Result<()> {
   let count = decoder.raw_image_count()?;
   if params.image_index >= count {
-    return Err(RawlerError::DecoderFailed(format!(
+    return Err(decoder_error!(
       "Raw image index {} is out of range, this file contains {} raw image(s)",
-      params.image_index, count
-    )));
+      params.image_index,
+      count
+    ));
   }
   Ok(())
 }
@@ -339,7 +340,7 @@ fn exif_time(date: Option<&str>, tz: Option<FixedOffset>) -> Result<Option<Syste
   let Some(date) = date
     .map(|date| NaiveDateTime::parse_from_str(date, "%Y:%m:%d %H:%M:%S"))
     .transpose()
-    .map_err(|err| RawlerError::DecoderFailed(err.to_string()))?
+    .map_err(|err| RawlerError::decoder_failed(err.to_string()))?
   else {
     return Ok(None);
   };
@@ -348,7 +349,7 @@ fn exif_time(date: Option<&str>, tz: Option<FixedOffset>) -> Result<Option<Syste
     let time = tz
       .from_local_datetime(&date)
       .earliest()
-      .ok_or(RawlerError::DecoderFailed(format!("Failed to convert datetime to local: {:?}", date)))?;
+      .ok_or(decoder_error!("Failed to convert datetime to local: {:?}", date))?;
     return Ok(Some(time.into()));
   }
   match chrono::Local.from_local_datetime(&date).earliest() {
@@ -556,7 +557,7 @@ pub(crate) fn dynamic_image_from_jpeg_interchange_format(ifd: &IFD, rawsource: &
   let offset = fetch_tiff_tag!(ifd, ExifTag::JPEGInterchangeFormat).force_usize(0) as u64;
   let size = fetch_tiff_tag!(ifd, ExifTag::JPEGInterchangeFormatLength).force_usize(0) as u64;
   let buf = rawsource.subview(offset, size)?;
-  image::load_from_memory_with_format(buf, ImageFormat::Jpeg).map_err(|err| RawlerError::DecoderFailed(format!("Failed to read JPEG image: {:?}", err)))
+  image::load_from_memory_with_format(buf, ImageFormat::Jpeg).map_err(|err| decoder_error!("Failed to read JPEG image: {:?}", err))
 }
 
 pub(crate) fn dynamic_image_from_ifd(ifd: &IFD, rawsource: &RawSource) -> Result<DynamicImage> {
@@ -572,13 +573,13 @@ pub(crate) fn dynamic_image_from_ifd(ifd: &IFD, rawsource: &RawSource) -> Result
         match cpp {
           1 => Ok(DynamicImage::ImageLuma8(
             ImageBuffer::<Luma<u8>, Vec<u8>>::from_raw(tiff_width as u32, tiff_height as u32, buf.to_vec())
-              .ok_or(RawlerError::DecoderFailed(format!("Create RGB thumbnail from strip failed")))?,
+              .ok_or(decoder_error!("Create RGB thumbnail from strip failed"))?,
           )),
           3 => Ok(DynamicImage::ImageRgb8(
             ImageBuffer::<Rgb<u8>, Vec<u8>>::from_raw(tiff_width as u32, tiff_height as u32, buf.to_vec())
-              .ok_or(RawlerError::DecoderFailed(format!("Create RGB thumbnail from strip failed")))?,
+              .ok_or(decoder_error!("Create RGB thumbnail from strip failed"))?,
           )),
-          _ => Err(RawlerError::DecoderFailed(format!("Unsupported image with {} samples per pixel", cpp))),
+          _ => Err(decoder_error!("Unsupported image with {} samples per pixel", cpp)),
         }
       }
       9..=16 => {
@@ -589,28 +590,22 @@ pub(crate) fn dynamic_image_from_ifd(ifd: &IFD, rawsource: &RawSource) -> Result
         };
         match cpp {
           1 => Ok(DynamicImage::ImageLuma16(
-            ImageBuffer::<Luma<u16>, Vec<u16>>::from_raw((tiff_width) as u32, tiff_height as u32, samples)
-              .ok_or(RawlerError::DecoderFailed(format!("Create Y image failed")))?,
+            ImageBuffer::<Luma<u16>, Vec<u16>>::from_raw((tiff_width) as u32, tiff_height as u32, samples).ok_or(decoder_error!("Create Y image failed"))?,
           )),
           3 => Ok(DynamicImage::ImageRgb16(
-            ImageBuffer::<Rgb<u16>, Vec<u16>>::from_raw((tiff_width) as u32, tiff_height as u32, samples)
-              .ok_or(RawlerError::DecoderFailed(format!("Create RGB image failed")))?,
+            ImageBuffer::<Rgb<u16>, Vec<u16>>::from_raw((tiff_width) as u32, tiff_height as u32, samples).ok_or(decoder_error!("Create RGB image failed"))?,
           )),
-          _ => Err(RawlerError::DecoderFailed(format!("Unsupported image with {} samples per pixel", cpp))),
+          _ => Err(decoder_error!("Unsupported image with {} samples per pixel", cpp)),
         }
       }
-      _ => Err(RawlerError::DecoderFailed(format!("Unsupported image with {} bits per sample", bits))),
+      _ => Err(decoder_error!("Unsupported image with {} bits per sample", bits)),
     },
     RawImageData::Float(samples) => match cpp {
       3 => Ok(DynamicImage::ImageRgb32F(
         // This may not work, rescaling required.
-        ImageBuffer::<Rgb<f32>, Vec<f32>>::from_raw(tiff_width as u32, tiff_height as u32, samples)
-          .ok_or(RawlerError::DecoderFailed(format!("Create RGB image failed")))?,
+        ImageBuffer::<Rgb<f32>, Vec<f32>>::from_raw(tiff_width as u32, tiff_height as u32, samples).ok_or(decoder_error!("Create RGB image failed"))?,
       )),
-      _ => Err(RawlerError::DecoderFailed(format!(
-        "Unsupported floating point image with {} samples per pixel",
-        cpp
-      ))),
+      _ => Err(decoder_error!("Unsupported floating point image with {} samples per pixel", cpp)),
     },
   }
 }
@@ -696,19 +691,19 @@ pub fn plain_image_from_ifd_ext(ifd: &IFD, rawsource: &RawSource, ljpeg_dng_bug:
         // Deflate is allowed for 32-bit integer data
         (CompressionMethod::Deflate, data_mode) if bits == 32 => {
           let predictor = ifd.get_entry(TiffCommonTag::Predictor).map(|tag| tag.force_u16(0)).unwrap_or(1);
-          let dc = DeflateIntDecompressor::new(cpp, predictor, bits, endian).map_err(RawlerError::DecoderFailed)?;
+          let dc = DeflateIntDecompressor::new(cpp, predictor, bits, endian).map_err(RawlerError::decoder_failed)?;
           match data_mode {
             DataMode::Strips => decode_strips::<f32>(rawsource, ifd, dc, dummy)?,
             DataMode::Tiles => decode_tiles::<f32>(rawsource, ifd, dc, dummy)?,
           }
         }
         _ => {
-          return Err(RawlerError::DecoderFailed(format!(
+          return Err(decoder_error!(
             "Unsupported compression method: {:?}, storage: {:?}, bits: {}",
             compression,
             ifd.data_mode()?,
             bits
-          )));
+          ));
         }
       };
       let pixbuf = reorder_and_crop(pixbuf, ifd, tiff_width, tiff_height, cpp)?;
@@ -740,18 +735,18 @@ pub fn plain_image_from_ifd_ext(ifd: &IFD, rawsource: &RawSource, ljpeg_dng_bug:
         // Deflate is allowed for 8 and 16-bit masks
         (CompressionMethod::Deflate, data_mode) => {
           let predictor = ifd.get_entry(TiffCommonTag::Predictor).map(|tag| tag.force_u16(0)).unwrap_or(1);
-          let dc = DeflateIntDecompressor::new(cpp, predictor, bits, endian).map_err(RawlerError::DecoderFailed)?;
+          let dc = DeflateIntDecompressor::new(cpp, predictor, bits, endian).map_err(RawlerError::decoder_failed)?;
           match data_mode {
             DataMode::Strips => decode_strips::<u16>(rawsource, ifd, dc, dummy)?,
             DataMode::Tiles => decode_tiles::<u16>(rawsource, ifd, dc, dummy)?,
           }
         }
         _ => {
-          return Err(RawlerError::DecoderFailed(format!(
+          return Err(decoder_error!(
             "Unsupported compression method: {:?}, storage: {:?}",
             compression,
             ifd.data_mode()?
-          )));
+          ));
         }
       };
 
@@ -767,7 +762,7 @@ pub fn plain_image_from_ifd_ext(ifd: &IFD, rawsource: &RawSource, ljpeg_dng_bug:
         (CompressionMethod::None, DataMode::Tiles) => decode_tiles::<f32>(rawsource, ifd, PackedDecompressor::new(bits, endian), dummy)?,
         (CompressionMethod::Deflate, data_mode) => {
           let predictor = ifd.get_entry(TiffCommonTag::Predictor).map(|tag| tag.force_u16(0)).unwrap_or(1);
-          let dc = DeflateDecompressor::new(cpp, predictor, bits, endian).map_err(RawlerError::DecoderFailed)?;
+          let dc = DeflateDecompressor::new(cpp, predictor, bits, endian).map_err(RawlerError::decoder_failed)?;
           match data_mode {
             DataMode::Strips => decode_strips::<f32>(rawsource, ifd, dc, dummy)?,
             DataMode::Tiles => decode_tiles::<f32>(rawsource, ifd, dc, dummy)?,
@@ -776,11 +771,11 @@ pub fn plain_image_from_ifd_ext(ifd: &IFD, rawsource: &RawSource, ljpeg_dng_bug:
         (CompressionMethod::JPEGXL, DataMode::Strips) => decode_strips::<f32>(rawsource, ifd, JpegXLDecompressor::new(bits), dummy)?,
         (CompressionMethod::JPEGXL, DataMode::Tiles) => decode_tiles::<f32>(rawsource, ifd, JpegXLDecompressor::new(bits), dummy)?,
         _ => {
-          return Err(RawlerError::DecoderFailed(format!(
+          return Err(decoder_error!(
             "Unsupported compression method: {:?}, storage: {:?}",
             compression,
             ifd.data_mode()?
-          )));
+          ));
         }
       };
 
@@ -788,7 +783,7 @@ pub fn plain_image_from_ifd_ext(ifd: &IFD, rawsource: &RawSource, ljpeg_dng_bug:
       pixbuf = deinterleave(pixbuf, ifd, tiff_width, tiff_height, cpp)?;
       return Ok(RawImageData::Float(pixbuf.into_inner()));
     }
-    _ => Err(RawlerError::DecoderFailed(format!("Unsupported sample format: {:?}", sample_format))),
+    _ => Err(decoder_error!("Unsupported sample format: {:?}", sample_format)),
   }
 }
 
@@ -820,7 +815,7 @@ where
             .min(height),
         ),
       };
-      reorder_sub_tile_blocks(&mut pixbuf, cpp, tile_w, tile_h, block_rows, block_cols).map_err(RawlerError::DecoderFailed)?;
+      reorder_sub_tile_blocks(&mut pixbuf, cpp, tile_w, tile_h, block_rows, block_cols).map_err(RawlerError::decoder_failed)?;
     }
   }
   Ok(pixbuf.into_crop(Rect::new(Point::zero(), Dim2::new(width * cpp, height))))
@@ -836,15 +831,12 @@ where
   let col_ilf = ifd.get_entry(DngTag::ColumnInterleaveFactor).map(|tag| tag.force_usize(0)).unwrap_or(1);
   Ok(match (row_ilf, col_ilf) {
     (0, _) | (_, 0) => {
-      return Err(RawlerError::DecoderFailed(format!(
-        "Invalid interleave factors: rows {}, columns {}",
-        row_ilf, col_ilf
-      )));
+      return Err(decoder_error!("Invalid interleave factors: rows {}, columns {}", row_ilf, col_ilf));
     }
     (1, 1) => pixbuf,
     // DNG 1.7.1 may store JPEG-XL data in 2x2 interleaved format, the fast path
     // requires fields of equal size
-    (2, 2) if cpp == 1 && width.is_multiple_of(2) && height.is_multiple_of(2) => deinterleave2x2(&pixbuf)?,
+    (2, 2) if cpp == 1 && width.is_multiple_of(2) && height.is_multiple_of(2) => deinterleave2x2(&pixbuf).map_err(RawlerError::decoder_failed)?,
     (row_ilf, col_ilf) => {
       let mut pixbuf = pixbuf;
       if row_ilf > 1 && row_ilf < height {
@@ -890,14 +882,20 @@ where
   {
     // Some decompressors performing badly when skip_rows is > 0, because they need to
     // decompress the skipped rows anyway.
-    Ok(decompress_lines_fn(width * cpp, height, dummy, &|line, row| {
-      dc.decompress(src, row, std::iter::once(line), line_width)
-    })?)
+    Ok(
+      decompress_lines_fn(width * cpp, height, dummy, &|line, row| {
+        dc.decompress(src, row, std::iter::once(line), line_width)
+      })
+      .map_err(RawlerError::decoder_failed)?,
+    )
   } else {
-    Ok(decompress_strips_fn(width * cpp, height, rows_per_strip, dummy, &|lines, strip, _row| {
-      let src = strips[strip];
-      dc.decompress(src, 0, lines.chunks_exact_mut(line_width), line_width)
-    })?)
+    Ok(
+      decompress_strips_fn(width * cpp, height, rows_per_strip, dummy, &|lines, strip, _row| {
+        let src = strips[strip];
+        dc.decompress(src, 0, lines.chunks_exact_mut(line_width), line_width)
+      })
+      .map_err(RawlerError::decoder_failed)?,
+    )
   }
 }
 
@@ -938,7 +936,11 @@ where
   let coltiles = (width - 1) / twidth + 1;
   let rowtiles = (height - 1) / tlength + 1;
   if coltiles * rowtiles != tiles_src.len() as usize {
-    return Err(format_args!("DNG: trying to decode {} tiles from {} offsets", coltiles * rowtiles, tiles_src.len()).into());
+    return Err(decoder_error!(
+      "DNG: trying to decode {} tiles from {} offsets",
+      coltiles * rowtiles,
+      tiles_src.len()
+    ));
   }
 
   let mut pixbuf = alloc_image_typed_ok!(T, decode_width * cpp, decode_height, dummy);
@@ -951,7 +953,8 @@ where
   tiles_src
     .par_iter()
     .zip(tiles)
-    .try_for_each(|(src, mut tile)| dc.decompress(src, 0, tile.rows_mut(), line_width))?;
+    .try_for_each(|(src, mut tile)| dc.decompress(src, 0, tile.rows_mut(), line_width))
+    .map_err(RawlerError::decoder_failed)?;
 
   Ok(pixbuf)
 }
@@ -1261,7 +1264,7 @@ impl RawLoader {
 
     match panic::catch_unwind(AssertUnwindSafe(|| self.decode_unsafe(rawfile, params, dummy))) {
       Ok(val) => val,
-      Err(_) => Err(RawlerError::DecoderFailed(format!("Caught a panic while decoding.{}", BUG))),
+      Err(_) => Err(decoder_error!("Caught a panic while decoding.{}", BUG)),
     }
   }
 
@@ -1284,7 +1287,7 @@ impl RawLoader {
   pub fn decode_unwrapped(&self, rawfile: &RawSource) -> Result<RawImageData> {
     match panic::catch_unwind(AssertUnwindSafe(|| unwrapped::decode_unwrapped(rawfile))) {
       Ok(val) => val,
-      Err(_) => Err(RawlerError::DecoderFailed(format!("Caught a panic while decoding.{}", BUG))),
+      Err(_) => Err(decoder_error!("Caught a panic while decoding.{}", BUG)),
     }
   }
 }

@@ -5,7 +5,7 @@
 
 use serde::{Deserialize, Serialize};
 
-use crate::{RawlerError, Result};
+use crate::Result;
 
 use super::{
   OpcodeData, OpcodeImage, OpcodeStage,
@@ -29,10 +29,11 @@ impl MapPolynomial {
     let area = AreaSpec::parse(reader)?;
     let degree = reader.u32()? as usize;
     if degree > MAP_POLYNOMIAL_MAX_DEGREE {
-      return Err(RawlerError::DecoderFailed(format!(
+      return Err(decoder_error!(
         "DNG opcode MapPolynomial: degree {} exceeds maximum of {}",
-        degree, MAP_POLYNOMIAL_MAX_DEGREE
-      )));
+        degree,
+        MAP_POLYNOMIAL_MAX_DEGREE
+      ));
     }
     let mut coeffs = Vec::with_capacity(degree + 1);
     for _ in 0..=degree {
@@ -44,10 +45,10 @@ impl MapPolynomial {
 
   pub(super) fn write_params(&self, buf: &mut Vec<u8>) -> Result<()> {
     if self.coeffs.is_empty() || self.coeffs.len() > MAP_POLYNOMIAL_MAX_DEGREE + 1 {
-      return Err(RawlerError::DecoderFailed(format!(
+      return Err(decoder_error!(
         "DNG opcode MapPolynomial: invalid number of coefficients: {}",
         self.coeffs.len()
-      )));
+      ));
     }
     self.area.write(buf);
     put_u32(buf, (self.coeffs.len() - 1) as u32);
@@ -79,10 +80,10 @@ impl MapPolynomial {
         });
       }
       (OpcodeData::Integer(_), _) => {
-        return Err(RawlerError::DecoderFailed(format!(
+        return Err(decoder_error!(
           "DNG opcode MapPolynomial in {} requires image data mapped to linear reference values",
           stage
-        )));
+        ));
       }
     }
     Ok(())

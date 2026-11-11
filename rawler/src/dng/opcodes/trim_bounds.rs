@@ -6,7 +6,7 @@
 use serde::{Deserialize, Serialize};
 
 use crate::{
-  RawlerError, Result,
+  Result,
   imgop::{Point, Rect},
   pixarray::ImageViewMut,
 };
@@ -44,7 +44,7 @@ impl TrimBounds {
       right: reader.u32()?,
     };
     if trim.is_empty() {
-      return Err(RawlerError::DecoderFailed(format!("DNG opcode TrimBounds: rectangle is empty: {:?}", trim)));
+      return Err(decoder_error!("DNG opcode TrimBounds: rectangle is empty: {:?}", trim));
     }
     Ok(trim)
   }
@@ -62,10 +62,16 @@ impl TrimBounds {
   pub fn apply(&self, image: &mut OpcodeImage<'_>, stage: OpcodeStage) -> Result<()> {
     let bounds = stage_bounds(image, stage);
     if self.is_empty() || self.bottom as usize > bounds.d.h || self.right as usize > bounds.d.w {
-      return Err(RawlerError::DecoderFailed(format!(
+      return Err(decoder_error!(
         "DNG opcode TrimBounds in {}: rectangle (t={}, l={}, b={}, r={}) is empty or exceeds image of {}x{}",
-        stage, self.top, self.left, self.bottom, self.right, bounds.d.w, bounds.d.h
-      )));
+        stage,
+        self.top,
+        self.left,
+        self.bottom,
+        self.right,
+        bounds.d.w,
+        bounds.d.h
+      ));
     }
     let rect = Rect::new_with_points(
       Point::new(self.left as usize, self.top as usize),
@@ -90,10 +96,12 @@ impl TrimBounds {
     if let Some(active_area) = image.active_area
       && active_area.intersect(&trimmed) != Some(active_area)
     {
-      return Err(RawlerError::DecoderFailed(format!(
+      return Err(decoder_error!(
         "DNG opcode TrimBounds in OpcodeList1: ActiveArea {:?} exceeds trimmed image of {}x{}",
-        active_area, rect.d.w, rect.d.h
-      )));
+        active_area,
+        rect.d.w,
+        rect.d.h
+      ));
     }
     // The trimmed image is moved to the start of the image data
     let data = std::mem::replace(&mut image.data, OpcodeData::Float(ImageViewMut::new(&mut [], 0, 0, 1)));

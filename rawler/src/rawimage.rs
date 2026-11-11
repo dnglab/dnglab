@@ -7,6 +7,7 @@ use itertools::Itertools;
 use log::debug;
 use serde::{Deserialize, Serialize};
 
+use crate::Result;
 use crate::camera_profile::{CalibrationSlot, CameraCalibration, CameraProfile, D65_PREFERENCE, GainTableMap, RgbTables};
 use crate::cfa::PlaneColor;
 use crate::dng::opcodes::{Opcode, OpcodeList, OpcodeSelector, OpcodeStage};
@@ -28,7 +29,6 @@ use crate::{
   pixarray::{ImageView, ImageViewMut, PixU16},
   tags::TiffTag,
 };
-use crate::{RawlerError, Result};
 
 pub use crate::imgop::blacklevel::BlackLevel;
 
@@ -748,12 +748,12 @@ impl RawImage {
     let planes = self.color_planes();
     match profile.color_planes() {
       Some(profile_planes) if profile_planes == planes => Ok(()),
-      profile_planes => Err(RawlerError::DecoderFailed(format!(
+      profile_planes => Err(input_error!(
         "Camera profile '{}' is for {} color planes, the image has {}",
         profile.name.as_deref().unwrap_or_default(),
         profile_planes.unwrap_or_default(),
         planes
-      ))),
+      )),
     }
   }
 

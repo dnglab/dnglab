@@ -40,7 +40,7 @@ pub use self::warp_rectilinear2::{WarpRectilinear2, WarpRectilinear2Coeffs};
 use serde::{Deserialize, Serialize};
 
 use crate::{
-  RawImage, RawImageData, RawlerError, Result,
+  RawImage, RawImageData, Result,
   dng::{DNG_READER_VERSION, DngVersionNumber},
   imgop::Rect,
   pixarray::ImageViewMut,
@@ -279,12 +279,12 @@ impl Opcode {
     };
     let parsed = parsed.and_then(|opcode| {
       if reader.remaining() != 0 {
-        return Err(RawlerError::DecoderFailed(format!(
+        return Err(decoder_error!(
           "DNG opcode {}: parameter area has {} bytes, but only {} are used",
           opcode.name(),
           params.len(),
           params.len() - reader.remaining()
-        )));
+        ));
       }
       Ok(opcode)
     });
@@ -384,7 +384,7 @@ impl Opcode {
       Self::DeltaPerColumn(delta_per_column) => delta_per_column.apply(image, stage),
       Self::ScalePerRow(scale_per_row) => scale_per_row.apply(image, stage),
       Self::ScalePerColumn(scale_per_column) => scale_per_column.apply(image, stage),
-      Self::Unknown(_) => Err(RawlerError::DecoderFailed(format!("DNG opcode {} is not supported", self.name()))),
+      Self::Unknown(_) => Err(decoder_error!("DNG opcode {} is not supported", self.name())),
     }
   }
 
@@ -570,13 +570,13 @@ impl OpcodeList {
           log::debug!("Skip optional DNG opcode {} in {}: opcode {}", opcode.name(), stage, reason);
         }
         Some(reason) => {
-          return Err(RawlerError::DecoderFailed(format!(
+          return Err(decoder_error!(
             "Required DNG opcode {} (DNG {}) in {} {}",
             opcode.name(),
             opcode.version(),
             stage,
             reason
-          )));
+          ));
         }
       }
     }

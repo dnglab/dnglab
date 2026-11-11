@@ -4,6 +4,7 @@
 //! Byte structure of the ARW6 strip: tile records, the tile sub-header,
 //! region records and per-component chunk tables.
 
+use crate::RawlerError;
 use std::io::{Cursor, SeekFrom};
 
 use bitstream_io::BitRead;
@@ -92,7 +93,7 @@ fn align_block(reader: &mut BitPump<'_>) -> Result<()> {
 /// `align_block`, or whole-byte reads).
 fn byte_pos(reader: &mut BitPump<'_>) -> Result<usize> {
   if !reader.byte_aligned() {
-    return Err("ARW6: reader not byte-aligned".into());
+    return Err(RawlerError::decoder_failed("ARW6: reader not byte-aligned"));
   }
   Ok((reader.position_in_bits()? / 8) as usize)
 }
@@ -100,12 +101,12 @@ fn byte_pos(reader: &mut BitPump<'_>) -> Result<usize> {
 /// Split the compressed strip into its per-tile records.
 pub(super) fn parse_records(strip: &[u8]) -> Result<Vec<TileRecord<'_>>> {
   if strip.len() < STRIP_HEADER_BYTES {
-    return Err("ARW6: strip too short for its header".into());
+    return Err(RawlerError::decoder_failed("ARW6: strip too short for its header"));
   }
   let count = LEu32(strip, 0) as usize;
   let records_end = STRIP_HEADER_BYTES + count * TILE_RECORD_BYTES;
   if count == 0 || strip.len() < records_end {
-    return Err(format!("ARW6: strip of {} bytes cannot hold {} tile records", strip.len(), count).into());
+    return Err(decoder_error!("ARW6: strip of {} bytes cannot hold {} tile records", strip.len(), count));
   }
   // Each record is [u64 offset][u32 x, y, w, h], all little-endian.
   let record = |i: usize| &strip[STRIP_HEADER_BYTES + i * TILE_RECORD_BYTES..];
@@ -118,7 +119,7 @@ pub(super) fn parse_records(strip: &[u8]) -> Result<Vec<TileRecord<'_>>> {
       let end = if i + 1 < count { offset(i + 1) } else { strip.len() };
       let blob = strip
         .get(start..end)
-        .ok_or_else(|| format!("ARW6: tile {} spans bytes {}..{} of a {}-byte strip", i, start, end, strip.len()))?;
+        .ok_or_else(|| decoder_error!("ARW6: tile {} spans bytes {}..{} of a {}-byte strip", i, start, end, strip.len()))?;
       Ok(TileRecord {
         blob,
         x: LEu32(rec, 8) as usize,
@@ -142,7 +143,11 @@ fn read_sizes(reader: &mut BitPump<'_>, n: usize) -> Result<Vec<usize>> {
 /// block".
 fn region_record_size(count: usize) -> Result<usize> {
   if count > COMPONENT_COUNT_MAX {
-    return Err(format!("ARW6: region record declares {} components, at most {} fit", count, COMPONENT_COUNT_MAX).into());
+    return Err(decoder_error!(
+      "ARW6: region record declares {} components, at most {} fit",
+      count,
+      COMPONENT_COUNT_MAX
+    ));
   }
   Ok(if count < 5 { 1 } else { 2 })
 }
@@ -166,19 +171,16 @@ pub(super) fn parse_tile<'a>(rec: &TileRecord<'a>) -> Result<Vec<Region<'a>>> {
   let mode = reader.read_var::<u32>(2)?; // "mode", purpose unknown (3 in every sample)
   let _unknown4 = reader.read_var::<u32>(10)?; // unknown (512 in every sample)
   if width != w || comp_height != h / 2 || n_channels != N_CHANNELS || decoded_bits != DECODED_BITS || mode != MODE {
-    return Err(
-      format!(
-        "ARW6: tile sub-header mismatch: width={} (record w={}) comp_height={} (record h/2={}) n_channels={} mode={} decoded_bits={}",
-        width,
-        w,
-        comp_height,
-        h / 2,
-        n_channels,
-        mode,
-        decoded_bits
-      )
-      .into(),
-    );
+    return Err(decoder_error!(
+      "ARW6: tile sub-header mismatch: width={} (record w={}) comp_height={} (record h/2={}) n_channels={} mode={} decoded_bits={}",
+      width,
+      w,
+      comp_height,
+      h / 2,
+      n_channels,
+      mode,
+      decoded_bits
+    ));
   }
   let totals = read_sizes(&mut reader, REGIONS)?; // per-region byte-size totals
   seek_byte(&mut reader, TILE_SUBHEADER_BYTES + REGION_TOTALS_BYTES)?; // first per-region record block
@@ -192,7 +194,9 @@ pub(super) fn parse_tile<'a>(rec: &TileRecord<'a>) -> Result<Vec<Region<'a>>> {
     seek_byte(&mut reader, record_start + blocks * BLOCK_BYTES)?; // advance to the next record
   }
   // The component data starts past the record blocks.
-  let bitstream = blob.get(byte_pos(&mut reader)?..).ok_or("ARW6: tile ends inside its region records")?;
+  let bitstream = blob
+    .get(byte_pos(&mut reader)?..)
+    .ok_or_else(|| RawlerError::decoder_failed("ARW6: tile ends inside its region records"))?;
 
   let mut regions: Vec<Region<'_>> = Vec::with_capacity(REGIONS);
   let mut region_base = 0;
@@ -202,7 +206,7 @@ pub(super) fn parse_tile<'a>(rec: &TileRecord<'a>) -> Result<Vec<Region<'a>>> {
     for &size in component_sizes {
       let buf = bitstream
         .get(off..off + size)
-        .ok_or_else(|| format!("ARW6: region {} component data runs past the tile", region_i))?;
+        .ok_or_else(|| decoder_error!("ARW6: region {} component data runs past the tile", region_i))?;
       components.push(parse_component(buf)?);
       off += size;
     }
@@ -246,29 +250,26 @@ fn parse_component(buf: &[u8]) -> Result<Component<'_>> {
   // cross-check the header's declared block counts against what we parsed
   let bitstream_offset = byte_pos(&mut reader)?;
   if bitstream_offset != (1 + table_blocks) * BLOCK_BYTES {
-    return Err(
-      format!(
-        "ARW6: parsed chunk table ends at byte {}, but the component header declares {} table blocks",
-        bitstream_offset, table_blocks
-      )
-      .into(),
-    );
+    return Err(decoder_error!(
+      "ARW6: parsed chunk table ends at byte {}, but the component header declares {} table blocks",
+      bitstream_offset,
+      table_blocks
+    ));
   }
   let chunk_bytes: usize = chunks.iter().map(|chunk| chunk.length).sum();
   if chunk_blocks != chunk_bytes.div_ceil(BLOCK_BYTES) {
-    return Err(
-      format!(
-        "ARW6: chunks total {} bytes ({} blocks), but the component header declares chunk_blocks = {}",
-        chunk_bytes,
-        chunk_bytes.div_ceil(BLOCK_BYTES),
-        chunk_blocks
-      )
-      .into(),
-    );
+    return Err(decoder_error!(
+      "ARW6: chunks total {} bytes ({} blocks), but the component header declares chunk_blocks = {}",
+      chunk_bytes,
+      chunk_bytes.div_ceil(BLOCK_BYTES),
+      chunk_blocks
+    ));
   }
   Ok(Component {
     chunks,
     orient_count,
-    data: buf.get(bitstream_offset..).ok_or("ARW6: component ends inside its chunk table")?,
+    data: buf
+      .get(bitstream_offset..)
+      .ok_or_else(|| RawlerError::decoder_failed("ARW6: component ends inside its chunk table"))?,
   })
 }

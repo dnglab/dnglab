@@ -311,7 +311,7 @@ impl PixelOp {
 }
 
 fn channel_error(expected: usize, channels: usize) -> crate::RawlerError {
-  format!("Expected an image with {} channels, image has {}", expected, channels).into()
+  input_error!("Expected an image with {} channels, image has {}", expected, channels)
 }
 
 /// Map the camera values of `src`, which has N channels, to RGB by `map` and

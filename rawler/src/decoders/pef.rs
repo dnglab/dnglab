@@ -62,7 +62,7 @@ impl<'a> PefDecoder<'a> {
       warn!("PEF makernote not found");
       None
     }
-    .ok_or("File has not makernotes")?;
+    .ok_or_else(|| RawlerError::decoder_failed("File has not makernotes"))?;
 
     let makernote_offset = tiff
       .find_first_ifd_with_tag(ExifTag::MakerNotes)
@@ -117,8 +117,8 @@ impl<'a> Decoder for PefDecoder<'a> {
     let src = file.subview_until_eof(offset as u64)?;
 
     let image = match fetch_tiff_tag!(raw, TiffCommonTag::Compression).get_u32(0) {
-      Ok(Some(1)) => decompress_16be(src, width, height, dummy)?,
-      Ok(Some(32773)) => decompress_12be(src, width, height, dummy)?,
+      Ok(Some(1)) => decompress_16be(src, width, height, dummy).map_err(RawlerError::decoder_failed)?,
+      Ok(Some(32773)) => decompress_12be(src, width, height, dummy).map_err(RawlerError::decoder_failed)?,
       Ok(Some(65535)) => self.decode_compressed(src, width, height, dummy)?,
       Ok(Some(c)) => return Err(RawlerError::unsupported(camera, format!("PEF: Don't know how to read compression {}", c))),
       _ => return Err(RawlerError::unsupported(camera, "PEF: No compression tag found")),
@@ -164,8 +164,7 @@ impl<'a> Decoder for PefDecoder<'a> {
             Err(_) => {
               // Test offset without correction
               let buf = file.subview(offset as u64, len as u64)?;
-              let img = image::load_from_memory_with_format(buf, image::ImageFormat::Jpeg)
-                .map_err(|err| RawlerError::DecoderFailed(format!("Failed to read JPEG: {:?}", err)))?;
+              let img = image::load_from_memory_with_format(buf, image::ImageFormat::Jpeg).map_err(|err| decoder_error!("Failed to read JPEG: {:?}", err))?;
               Some(img)
             }
           }
@@ -325,7 +324,7 @@ impl<'a> PefDecoder<'a> {
       }
     }
 
-    htable.initialize()?;
+    htable.initialize().map_err(RawlerError::decoder_failed)?;
 
     let mut pump = BitPumpMSB::new(src);
     let mut pred_up1: [i32; 2] = [0, 0];

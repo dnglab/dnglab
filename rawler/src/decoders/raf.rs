@@ -84,7 +84,7 @@ pub fn parse_raf_format(file: &RawSource, offset: u32) -> Result<IFD> {
   stream.seek(SeekFrom::Start(offset as u64))?;
   let num = stream.read_u32::<BigEndian>()?; // Directory entries in this IFD
   if num > 4000 {
-    return Err(format_args!("too many entries in IFD ({})", num).into());
+    return Err(decoder_error!("too many entries in IFD ({})", num));
   }
   for _ in 0..num {
     let tag = stream.read_u16::<BigEndian>()?;
@@ -240,7 +240,7 @@ impl<'a> RafDecoder<'a> {
     } else {
       None
     }
-    .ok_or("File has not makernotes")?;
+    .ok_or_else(|| RawlerError::decoder_failed("File has not makernotes"))?;
     //makernotes.dump::<RafMakernotes>(10).iter().for_each(|line| eprintln!("MKND: {}", line));
     Ok(RafDecoder {
       ifd,
@@ -255,7 +255,10 @@ impl<'a> RafDecoder<'a> {
 impl<'a> Decoder for RafDecoder<'a> {
   fn raw_image(&self, file: &RawSource, _params: &RawDecodeParams, dummy: bool) -> Result<RawImage> {
     let base_camera = self.camera.supported()?;
-    let raw = self.ifd.find_first_ifd_with_tag(FujiIFD::StripOffsets).ok_or("No StripOffsets found")?;
+    let raw = self
+      .ifd
+      .find_first_ifd_with_tag(FujiIFD::StripOffsets)
+      .ok_or_else(|| RawlerError::decoder_failed("No StripOffsets found"))?;
     let (width, height) = if raw.has_entry(FujiIFD::RawImageFullWidth) {
       (
         fetch_tiff_tag!(raw, FujiIFD::RawImageFullWidth).force_usize(0),
@@ -267,7 +270,7 @@ impl<'a> Decoder for RafDecoder<'a> {
         .sub_ifds()
         .get(&RAF_TAG_VIRTUAL_RAF_DATA)
         .and_then(|ifds| ifds.get(0))
-        .ok_or("No RAF data IFD found")?;
+        .ok_or_else(|| RawlerError::decoder_failed("No RAF data IFD found"))?;
       let sizes = fetch_tiff_tag!(raf, TiffCommonTag::ImageWidth);
       (sizes.force_usize(1), sizes.force_usize(0))
     };
@@ -308,11 +311,11 @@ impl<'a> Decoder for RafDecoder<'a> {
       // Some fuji SuperCCD cameras include a second raw image next to the first one
       // that is identical but darker to the first. The two combined can produce
       // a higher dynamic range image. Right now we're ignoring it.
-      decompress_16le_skiplines(&src, width, height, dummy)?
+      decompress_16le_skiplines(&src, width, height, dummy).map_err(RawlerError::decoder_failed)?
     } else if base_camera.find_hint("jpeg32") {
       match bps {
-        12 => decompress_12be_msb32(&src, width, height, dummy)?,
-        14 => decompress_14be_msb32(&src, width, height, dummy)?,
+        12 => decompress_12be_msb32(&src, width, height, dummy).map_err(RawlerError::decoder_failed)?,
+        14 => decompress_14be_msb32(&src, width, height, dummy).map_err(RawlerError::decoder_failed)?,
         _ => return Err(RawlerError::unsupported(base_camera, format!("RAF: Don't know how to decode bps {}", bps))),
       }
     } else if base_camera.clean_model == "DBP for GX680" {
@@ -330,13 +333,13 @@ impl<'a> Decoder for RafDecoder<'a> {
       }
     } else {
       match bps {
-        12 => decompress_12le(&src, width, height, dummy)?,
-        14 => decompress_14le_unpacked(&src, width, height, dummy)?,
+        12 => decompress_12le(&src, width, height, dummy).map_err(RawlerError::decoder_failed)?,
+        14 => decompress_14le_unpacked(&src, width, height, dummy).map_err(RawlerError::decoder_failed)?,
         16 => {
           if self.ifd.endian == Endian::Little {
-            decompress_16le(&src, width, height, dummy)?
+            decompress_16le(&src, width, height, dummy).map_err(RawlerError::decoder_failed)?
           } else {
-            decompress_16be(&src, width, height, dummy)?
+            decompress_16be(&src, width, height, dummy).map_err(RawlerError::decoder_failed)?
           }
         }
         _ => {
@@ -471,8 +474,7 @@ impl<'a> Decoder for RafDecoder<'a> {
       return Ok(None);
     }
     let jpeg_buf = self.read_embedded_jpeg(file)?;
-    let img = image::load_from_memory_with_format(jpeg_buf, image::ImageFormat::Jpeg)
-      .map_err(|err| RawlerError::DecoderFailed(format!("Failed to read JPEG: {:?}", err)))?;
+    let img = image::load_from_memory_with_format(jpeg_buf, image::ImageFormat::Jpeg).map_err(|err| decoder_error!("Failed to read JPEG: {:?}", err))?;
     Ok(Some(img))
   }
 
@@ -487,7 +489,10 @@ impl<'a> Decoder for RafDecoder<'a> {
 
 impl<'a> RafDecoder<'a> {
   fn get_wb(&self) -> Result<[f32; 4]> {
-    let raw = self.ifd.find_first_ifd_with_tag(FujiIFD::StripOffsets).ok_or("No StripOffsets found")?;
+    let raw = self
+      .ifd
+      .find_first_ifd_with_tag(FujiIFD::StripOffsets)
+      .ok_or_else(|| RawlerError::decoder_failed("No StripOffsets found"))?;
     match raw.get_entry(FujiIFD::WB_GRBLevels) {
       Some(levels) => Ok([levels.force_f32(1), levels.force_f32(0), levels.force_f32(0), levels.force_f32(2)]),
       None => {
@@ -496,7 +501,7 @@ impl<'a> RafDecoder<'a> {
           .sub_ifds()
           .get(&RAF_TAG_VIRTUAL_RAF_DATA)
           .and_then(|ifds| ifds.get(0))
-          .ok_or("No RAF data IFD found")?;
+          .ok_or_else(|| RawlerError::decoder_failed("No RAF data IFD found"))?;
         let levels = fetch_tiff_tag!(raf, TiffCommonTag::RafOldWB);
         Ok([levels.force_f32(1), levels.force_f32(0), levels.force_f32(0), levels.force_f32(3)])
       }
@@ -558,7 +563,7 @@ impl<'a> RafDecoder<'a> {
             Some(CFA::new(&patname))
           }
           _ => {
-            return Err("Invalid XTransLayout data type".into());
+            return Err(RawlerError::decoder_failed("Invalid XTransLayout data type"));
           }
         }
       } else {
@@ -635,7 +640,7 @@ impl<'a> RafDecoder<'a> {
         Ok((out, cropwidth))
       }
     } else {
-      Err(RawlerError::DecoderFailed("no active_area for fuji_rotate".to_string()))
+      Err(RawlerError::decoder_failed("no active_area for fuji_rotate".to_string()))
     }
   }
 }

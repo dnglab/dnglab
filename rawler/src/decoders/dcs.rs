@@ -41,7 +41,7 @@ impl<'a> Decoder for DcsDecoder<'a> {
     let raw = self
       .tiff
       .find_ifd_with_new_subfile_type(0)
-      .ok_or_else(|| RawlerError::DecoderFailed(format!("Failed to find IFD with subfile type 0")))?;
+      .ok_or_else(|| decoder_error!("Failed to find IFD with subfile type 0"))?;
     let width = fetch_tiff_tag!(raw, TiffCommonTag::ImageWidth).force_usize(0);
     let height = fetch_tiff_tag!(raw, TiffCommonTag::ImageLength).force_usize(0);
     let offset = fetch_tiff_tag!(raw, TiffCommonTag::StripOffsets).force_usize(0);
@@ -56,7 +56,7 @@ impl<'a> Decoder for DcsDecoder<'a> {
       LookupTable::new(&t)
     };
 
-    let image = decompress_8bit_wtable(&src, &table, width, height, dummy)?;
+    let image = decompress_8bit_wtable(&src, &table, width, height, dummy).map_err(RawlerError::decoder_failed)?;
     let cpp = 1;
     let mut img = ok_cfa_image(camera.clone(), cpp, [f32::NAN, f32::NAN, f32::NAN, f32::NAN], image, dummy)?;
     img.orientation = Orientation::from_tiff(self.tiff.root_ifd());

@@ -33,7 +33,12 @@ where
 {
   check_mosaic::<N, f32>("Border interpolation", &pixels, cfa, colors)?;
   if (out.width, out.height) != (pixels.width(), pixels.height()) {
-    return Err(format!("Border interpolation: output of {}x{} pixels doesn't match {:?}", out.width, out.height, pixels).into());
+    return Err(input_error!(
+      "Border interpolation: output of {}x{} pixels doesn't match {:?}",
+      out.width,
+      out.height,
+      pixels
+    ));
   }
   let (w, h) = (pixels.width(), pixels.height());
   let roi = pixels.area();

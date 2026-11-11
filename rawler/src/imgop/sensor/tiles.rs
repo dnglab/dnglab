@@ -62,10 +62,10 @@ pub fn inner_area(dim: Dim2, border: usize) -> Rect {
 /// `core` is zero.
 pub fn halo_tiles(dim: Dim2, area: Rect, core: Dim2, halo: usize) -> crate::Result<Vec<HaloTile>> {
   if area.p.x + area.d.w > dim.w || area.p.y + area.d.h > dim.h {
-    return Err(format!("{:?} is outside of {}x{} pixels", area, dim.w, dim.h).into());
+    return Err(input_error!("{:?} is outside of {}x{} pixels", area, dim.w, dim.h));
   }
   if core.is_empty() {
-    return Err(format!("Tile core {:?} has no pixels", core).into());
+    return Err(input_error!("Tile core {:?} has no pixels", core));
   }
   Ok(
     area
