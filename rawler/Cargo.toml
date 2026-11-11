@@ -61,7 +61,7 @@ serde_arrays = "0.2.0"
 thiserror = "2.0"
 toml = "0.8"
 ureq = {version = "2", default-features = false, features = ["tls"], optional = true}
-uuid = {version = "1.0", features = ["serde", "v4"]}
+uuid = {version = "1.0", features = ["serde", "v4", "js"]}
 weezl = "0.1.7"
 zerocopy = {version = "0.8.26", features = ["derive"]}
 web-time = "1.1.0"
