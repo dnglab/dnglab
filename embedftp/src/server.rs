@@ -22,6 +22,10 @@ pub async fn serve<T>(handle: Handle, server_root: PathBuf, config: Config, env:
 where
   T: FtpCallback + Clone + Send + Sync + 'static,
 {
+  // The paths of the clients are resolved and checked against the root
+  let server_root = tokio::fs::canonicalize(&server_root)
+    .await
+    .map_err(|e| io::Error::new(e.kind(), format!("Invalid server root {}: {}", server_root.display(), e)))?;
   let port = config.server_port;
   let addr = SocketAddr::new(config.server_addr, port);
   let listener = TcpListener::bind(&addr).await?;

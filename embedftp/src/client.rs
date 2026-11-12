@@ -8,14 +8,13 @@ use futures::stream::SplitSink;
 use futures::{SinkExt, StreamExt};
 use glob::glob;
 use log::{debug, error, info, warn};
-use std::ffi::OsString;
 use std::io;
 use std::mem;
 use std::net::{IpAddr, SocketAddr};
 use std::path::{Component, Path, PathBuf, StripPrefixError};
 use std::result;
 use std::sync::Arc;
-use tokio::fs::{File, canonicalize, create_dir, metadata, read_dir, remove_dir_all, remove_file};
+use tokio::fs::{File, canonicalize, create_dir, metadata, read_dir, remove_dir_all, remove_file, symlink_metadata};
 use tokio::io::AsyncWriteExt;
 use tokio::net::tcp::{OwnedReadHalf, OwnedWriteHalf};
 use tokio::net::{TcpListener, TcpStream};
@@ -290,42 +289,70 @@ where
     self.data_writer = None;
   }
 
-  async fn complete_path(&self, path: &Path) -> result::Result<PathBuf, io::Error> {
-    let directory = self.server_root.join(if path.has_root() {
-      path.iter().skip(1).clone().collect()
-    } else {
-      path.to_path_buf()
-    });
-    let dir = canonicalize(&directory).await;
-    if let Ok(ref dir) = dir {
-      if !dir.starts_with(&self.server_root) {
-        return Err(io::ErrorKind::PermissionDenied.into());
+  /// Path of the client as path from the root of the server: "/" and the names below it.
+  /// The path is relative to the working directory or starts at the root, ".." stops at
+  /// the root. None for a path with a prefix like "C:" on Windows.
+  fn virtual_path(&self, path: &Path) -> Option<PathBuf> {
+    let mut result = self.cwd.clone();
+    for component in path.components() {
+      match component {
+        Component::Prefix(_) => return None,
+        Component::RootDir => result = PathBuf::from("/"),
+        Component::CurDir => {}
+        Component::ParentDir => {
+          result.pop();
+        }
+        Component::Normal(name) => result.push(name),
       }
     }
-    dir
+    Some(result)
+  }
+
+  /// Path on the server for a virtual path, links are resolved.
+  /// It's an error if the result is not below the server root.
+  async fn real_path(&self, virtual_path: &Path) -> io::Result<PathBuf> {
+    let names = virtual_path.components().filter(|c| matches!(c, Component::Normal(_)));
+    let path = canonicalize(self.server_root.join(names.collect::<PathBuf>())).await?;
+    if path.starts_with(&self.server_root) {
+      Ok(path)
+    } else {
+      Err(io::ErrorKind::PermissionDenied.into())
+    }
+  }
+
+  /// Path on the server for the path of an existing file or directory of the client
+  async fn resolve(&self, path: &Path) -> io::Result<PathBuf> {
+    let virtual_path = self.virtual_path(path).ok_or(io::ErrorKind::PermissionDenied)?;
+    self.real_path(&virtual_path).await
+  }
+
+  /// Path on the server for the path of a file or directory the client creates.
+  /// The directory of it must exist.
+  async fn resolve_new(&self, path: &Path) -> io::Result<PathBuf> {
+    let virtual_path = self.virtual_path(path).ok_or(io::ErrorKind::PermissionDenied)?;
+    let (Some(parent), Some(name)) = (virtual_path.parent(), virtual_path.file_name()) else {
+      return Err(io::ErrorKind::PermissionDenied.into());
+    };
+    let path = self.real_path(parent).await?.join(name);
+    // A link at the place of the new file is followed, it must not lead out of the root
+    if symlink_metadata(&path).await.is_ok_and(|meta| meta.is_symlink()) {
+      match self.real_path(&virtual_path).await {
+        Ok(_) => {}
+        Err(e) if e.kind() == io::ErrorKind::NotFound => return Err(io::ErrorKind::PermissionDenied.into()),
+        Err(e) => return Err(e),
+      }
+    }
+    Ok(path)
   }
 
   async fn mkd(&mut self, path: PathBuf) -> Result<()> {
-    let fullpath = self.cwd.join(&path);
-    let parent = get_parent(fullpath.clone());
-    if let Some(parent) = parent {
-      let parent = parent.to_path_buf();
-      let res = self.complete_path(&parent).await;
-      if let Ok(mut dir) = res {
-        let is_dir = metadata(&dir).await.map(|m| m.is_dir()).unwrap_or(false);
-        if is_dir {
-          let filename = get_filename(fullpath);
-          if let Some(filename) = filename {
-            dir.push(filename);
-            if create_dir(&dir).await.is_ok() {
-              let mut created = self.strip_prefix(dir).unwrap_or_default();
-              prefix_slash(&mut created);
-              let message = format!("{} created", quote_path(&created));
-              self.send(Answer::new(ResultCode::PATHNAMECreated, &message)).await?;
-              return Ok(());
-            }
-          }
-        }
+    if let Ok(dir) = self.resolve_new(&path).await {
+      if create_dir(&dir).await.is_ok() {
+        let mut created = self.strip_prefix(dir).unwrap_or_default();
+        prefix_slash(&mut created);
+        let message = format!("{} created", quote_path(&created));
+        self.send(Answer::new(ResultCode::PATHNAMECreated, &message)).await?;
+        return Ok(());
       }
     }
     let msg = format!("Couldn't create folder: {}", path.to_string_lossy());
@@ -335,8 +362,7 @@ where
   }
 
   async fn rmd(&mut self, directory: PathBuf) -> Result<()> {
-    let path = self.cwd.join(&directory);
-    let res = self.complete_path(&path).await;
+    let res = self.resolve(&directory).await;
     if let Ok(dir) = res {
       if remove_dir_all(dir).await.is_ok() {
         self
@@ -352,8 +378,7 @@ where
   }
 
   async fn dele(&mut self, file: PathBuf) -> Result<()> {
-    let path = self.cwd.join(&file);
-    let res = self.complete_path(&path).await;
+    let res = self.resolve(&file).await;
     if let Ok(f) = res {
       if remove_file(f).await.is_ok() {
         self.send(Answer::new(ResultCode::RequestedFileActionOkay, "File successfully removed")).await?;
@@ -372,8 +397,7 @@ where
   }
 
   async fn cwd(&mut self, directory: PathBuf) -> Result<()> {
-    let path = self.cwd.join(&directory);
-    let res = self.complete_path(&path).await;
+    let res = self.resolve(&directory).await;
     if let Ok(dir) = res {
       let is_dir = metadata(&dir).await.map(|m| m.is_dir()).unwrap_or(false);
       let res = self.strip_prefix(dir);
@@ -405,8 +429,7 @@ where
       warn!("No opened data connection");
       return Ok(no_data_connection());
     }
-    let path = self.cwd.join(path.unwrap_or_default());
-    let Ok(path) = self.complete_path(&path).await else {
+    let Ok(path) = self.resolve(&path.unwrap_or_default()).await else {
       warn!("No such file or directory");
       return Ok(Answer::new(ResultCode::FileNotFound, "No such file or directory"));
     };
@@ -441,8 +464,7 @@ where
       warn!("No opened data connection");
       return Ok(no_data_connection());
     }
-    let cwd = self.cwd.clone();
-    let Ok(cwd) = self.complete_path(&cwd).await else {
+    let Ok(cwd) = self.resolve(Path::new("")).await else {
       return Ok(Answer::new(ResultCode::FileNotFound, "No such file or directory"));
     };
     let mut out = vec![];
@@ -568,9 +590,8 @@ where
       warn!("No open data connection");
       return Ok(no_data_connection());
     }
-    let path = self.cwd.join(path);
     let not_found = Answer::new(ResultCode::FileNotFound, &format!("\"{}\" doesn't exist", path.display()));
-    let Ok(path) = self.complete_path(&path).await else {
+    let Ok(path) = self.resolve(&path).await else {
       warn!("No path");
       return Ok(not_found);
     };
@@ -607,11 +628,16 @@ where
       warn!("No opened data connection");
       return Ok(no_data_connection());
     }
-    if invalid_path(&path) {
-      warn!("Invalid path for STOR: {:?}", path);
-      return Ok(Answer::new(ResultCode::FileNameNotAllowed, "File name not allowed"));
-    }
-    let path = self.cwd.join(path);
+    let path = match self.resolve_new(&path).await {
+      Ok(path) => path,
+      Err(e) => {
+        warn!("Invalid path for STOR: {:?}, {}", path, e);
+        return Ok(match e.kind() {
+          io::ErrorKind::NotFound => Answer::new(ResultCode::FileNotFound, "No such directory"),
+          _ => Answer::new(ResultCode::FileNameNotAllowed, "File name not allowed"),
+        });
+      }
+    };
     self
       .send(Answer::new(ResultCode::DataConnectionAlreadyOpen, "Starting to send file..."))
       .await?;
@@ -632,7 +658,6 @@ where
 
   /// Put file directly or delegate to a filter
   async fn put_file(&mut self, path: PathBuf, content: Arc<Vec<u8>>) -> Result<()> {
-    let path = PathBuf::from(&self.server_root).join(path.iter().skip(1).collect::<PathBuf>());
     let handled = self.env.stor_file(&path, content.clone()).await?;
     if !handled {
       tokio::fs::write(&path, content.as_ref()).await?;
@@ -710,24 +735,6 @@ fn passive_failed(e: io::Error) -> Answer {
 /// Final reply of a transfer command without a data connection
 fn no_data_connection() -> Answer {
   Answer::new(ResultCode::CantOpenDataConnection, "No opened data connection")
-}
-
-/// Check if the path contains ".."
-fn invalid_path(path: &Path) -> bool {
-  for component in path.components() {
-    if let Component::ParentDir = component {
-      return true;
-    }
-  }
-  false
-}
-
-fn get_parent(path: PathBuf) -> Option<PathBuf> {
-  path.parent().map(|p| p.to_path_buf())
-}
-
-fn get_filename(path: PathBuf) -> Option<OsString> {
-  path.file_name().map(|p| p.to_os_string())
 }
 
 /// Path name for a 257 reply: in double quotes, with the quotes of the name doubled
