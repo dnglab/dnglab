@@ -907,8 +907,13 @@ impl TiffAscii {
     // TODO: fixme multiple strings
     //while nul_range_end < raw.len() {
     nul_range_end = raw[nul_range_end..].iter().position(|&c| c == b'\0').unwrap_or(raw.len()); // default to length if no `\0` present
-    // Invalid UTF-8 sequences become U+FFFD, the valid parts of the string stay
-    strings.push(String::from_utf8_lossy(&raw[0..nul_range_end]).into_owned());
+    // Strings that are no valid UTF-8 are mostly Latin-1, which maps each
+    // byte to the code point of its value
+    let raw = &raw[0..nul_range_end];
+    strings.push(match std::str::from_utf8(raw) {
+      Ok(s) => s.to_owned(),
+      Err(_) => raw.iter().map(|&c| c as char).collect(),
+    });
     //nul_range_end += 1;
     // }
 
@@ -1308,8 +1313,11 @@ mod tests {
   }
 
   #[test]
-  fn ascii_from_invalid_utf8() {
-    assert_eq!(TiffAscii::new_from_raw(b"Caf\xe9\0").first().map(String::as_str), Some("Caf\u{fffd}"));
+  fn ascii_from_invalid_utf8_is_latin1() {
+    assert_eq!(TiffAscii::new_from_raw(b"Caf\xe9\0").first().map(String::as_str), Some("Caf\u{e9}"));
+    assert_eq!(TiffAscii::new_from_raw(b"\xa9 2024").first().map(String::as_str), Some("\u{a9} 2024"));
+    // Valid UTF-8 stays UTF-8
+    assert_eq!(TiffAscii::new_from_raw("Caf\u{e9}\0".as_bytes()).first().map(String::as_str), Some("Caf\u{e9}"));
   }
 
   #[test]

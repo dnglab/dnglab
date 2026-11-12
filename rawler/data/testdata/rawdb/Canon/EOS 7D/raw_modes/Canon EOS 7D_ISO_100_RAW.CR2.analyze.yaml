@@ -118,7 +118,7 @@ data:
             - 0/1
             - 4/16
           gps_satellites: "\u000e"
-          gps_status: "\u0002�"
+          gps_status: "\u0002"
           gps_measure_mode: ""
           gps_dop: 4/17
           gps_speed_ref: ""
