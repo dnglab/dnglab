@@ -1572,8 +1572,7 @@ mod tests {
       .get_entry(DngTag::DNGBackwardVersion)
       .ok_or("DNGBackwardVersion missing")?
       .value
-      .get_data()
-      .as_slice()
+      .get_data()?
       .try_into()
       .map(DngVersionNumber)?;
     let has_active_area = !tiff.find_ifds_with_tag(DngTag::ActiveArea).is_empty();

@@ -107,7 +107,7 @@ impl<'a> MosDecoder<'a> {
   /// rotation of the raw data. Without it the TIFF tag is used.
   fn orientation(&self) -> Option<Orientation> {
     let leaf_rotation = || {
-      let meta = self.tiff.get_entry(TiffCommonTag::LeafMetadata)?.get_data();
+      let meta = self.tiff.get_entry(TiffCommonTag::LeafMetadata)?.get_data().ok()?;
       let degrees = |name| Self::leaf_section(meta, name)?.trim().parse::<i32>().ok();
       let raw_data = degrees("CaptProf_raw_data_rotation");
       match degrees("ImgProf_rotation_angle") {
@@ -121,7 +121,7 @@ impl<'a> MosDecoder<'a> {
   }
 
   fn get_wb(&self) -> Result<[f32; 4]> {
-    let meta = fetch_tiff_tag!(self.tiff, TiffCommonTag::LeafMetadata).get_data();
+    let meta = fetch_tiff_tag!(self.tiff, TiffCommonTag::LeafMetadata).get_data()?;
     if let Some(neutrals) = Self::leaf_section(meta, "NeutObj_neutrals") {
       let nums = neutrals
         .split_terminator('\n')
@@ -135,7 +135,7 @@ impl<'a> MosDecoder<'a> {
   }
 
   fn xmp_tag(tiff: &GenericTiffReader, tag: &str) -> Result<String> {
-    let xmp_bytes = fetch_tiff_tag!(tiff, TiffCommonTag::Xmp).get_data();
+    let xmp_bytes = fetch_tiff_tag!(tiff, TiffCommonTag::Xmp).get_data()?;
     let xmp = String::from_utf8_lossy(xmp_bytes);
     let error = format!("MOS: Couldn't find XMP tag {}", tag);
     let start = xmp.find(&format!("<tiff:{}>", tag)).ok_or_else(|| RawlerError::decoder_failed(error.clone()))?;

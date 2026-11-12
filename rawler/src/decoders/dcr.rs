@@ -133,7 +133,7 @@ pub(super) fn kodak_blacklevel(kodak_ifd: &IFD, curve: &Value, rows: usize, cpp:
 /// coefficients are the reciprocal of the levels.
 pub(super) fn kodak_wb(kodak_ifd: &IFD) -> Option<[f32; 4]> {
   if let Some(levels) = kodak_ifd.get_entry(TiffCommonTag::DcrWB).filter(|levels| levels.count() == 72) {
-    let levels = levels.get_data();
+    let levels = levels.get_data().ok().filter(|levels| levels.len() >= 46)?;
     return Some([
       2048.0 / BEu16(levels, 40) as f32,
       2048.0 / BEu16(levels, 42) as f32,

@@ -75,8 +75,7 @@ impl<'a> MrwDecoder<'a> {
   /// Makernotes for MRW starts with "MLY" ASCII string
   fn get_mly_wb(ifd: &IFD, rawfile: &RawSource, data_offset: u64) -> Result<[u16; 4]> {
     if let Some(makernotes) = ifd.get_entry_recursive(TiffCommonTag::Makernote) {
-      debug_assert_eq!(makernotes.get_data()[0..3], [b'M', b'L', b'Y']);
-      if makernotes.get_data().get(0..3) == Some(b"MLY") {
+      if makernotes.get_data()?.starts_with(b"MLY") {
         let mut buf = Cursor::new(rawfile.as_vec()?);
         let mut wb = [0_u16; 4];
         let mut cam_mul = [1_u16; 4];

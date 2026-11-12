@@ -56,11 +56,11 @@ impl NefLensDataF {
 
 pub(super) fn from_makernote(makernote: &IFD) -> Result<Option<NefLensData>> {
   if let Some(levels) = makernote.get_entry(NikonMakernote::LensData) {
-    let mut buf = levels.get_data().clone();
+    let mut buf = super::super::tag_data(levels, 4)?.to_vec();
 
     let mut version: u32 = 0;
     for i in 0..4 {
-      version = (version << 4) + (buf[i] - b'0') as u32;
+      version = (version << 4) + buf[i].wrapping_sub(b'0') as u32;
     }
 
     let lensdata = match version {

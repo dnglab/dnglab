@@ -53,6 +53,7 @@ use super::Orientation;
 use super::RawDecodeParams;
 use super::RawMetadata;
 use super::ok_cfa_image;
+use super::tag_data;
 
 const SONY_E_MOUNT: &str = "e-mount";
 const SONY_A_MOUNT: &str = "a-mount";
@@ -355,8 +356,10 @@ impl<'a> ArwDecoder<'a> {
     // DNGPrivateTag contains 4 bytes forming a LE u32 offset value.
     let priv_offset = {
       let entry = fetch_tiff_tag!(self.tiff, TiffCommonTag::DNGPrivateArea);
-      assert_eq!(entry.value_type(), 0x1);
-      LEu32(entry.get_data(), 0)
+      if entry.value_type() != 0x1 {
+        return Err(decoder_error!("ARW: DNGPrivateArea has the type {} instead of BYTE", entry.value_type_name()));
+      }
+      LEu32(tag_data(entry, 4)?, 0)
     };
     let buf = file.subview_until_eof(priv_offset as u64)?;
     if BEu32(buf, 0) != 0x4D5249 {
@@ -623,10 +626,7 @@ impl<'a> ArwDecoder<'a> {
   }
 
   fn get_params(&self, file: &RawSource) -> Result<ArwImageParams> {
-    let priv_offset = {
-      let tag = fetch_tiff_tag!(self.tiff, TiffCommonTag::DNGPrivateArea).get_data();
-      LEu32(tag, 0)
-    };
+    let priv_offset = { LEu32(tag_data(fetch_tiff_tag!(self.tiff, TiffCommonTag::DNGPrivateArea), 4)?, 0) };
     let priv_tiff = IFD::new(&mut file.reader(), priv_offset, 0, 0, Endian::Little, &[])?;
 
     //priv_tiff.dump::<ExifTag>(0).iter().for_each(|line| println!("DUMPXX: {}", line));
@@ -634,10 +634,7 @@ impl<'a> ArwDecoder<'a> {
     let sony_offset = fetch_tiff_tag!(priv_tiff, TiffCommonTag::SonyOffset).force_u32(0);
     let sony_length = fetch_tiff_tag!(priv_tiff, TiffCommonTag::SonyLength).force_usize(0);
     // This tag is of type UNDEFINED and contains a 32 bit value
-    let sony_key = {
-      let tag = fetch_tiff_tag!(priv_tiff, TiffCommonTag::SonyKey).get_data();
-      LEu32(tag, 0)
-    };
+    let sony_key = { LEu32(tag_data(fetch_tiff_tag!(priv_tiff, TiffCommonTag::SonyKey), 4)?, 0) };
     let buffer = file.buf();
     let decrypted_buf = ArwDecoder::sony_decrypt(buffer, sony_offset as usize, sony_length, sony_key)?;
 

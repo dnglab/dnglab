@@ -89,11 +89,7 @@ impl<'a> Rw2Decoder<'a> {
     let camera = rawloader.lookup_camera_with_mode(tiff.root_ifd(), mode)?;
 
     let camera_ifd = if let Some(ifd) = tiff.get_entry(PanasonicTag::CameraIFD) {
-      let buf = ifd.get_data();
-      match IFD::new_root(&mut std::io::Cursor::new(buf), 0) {
-        Ok(ifd) => Some(ifd),
-        Err(_) => None,
-      }
+      ifd.get_data().ok().and_then(|buf| IFD::new_root(&mut std::io::Cursor::new(buf), 0).ok())
     } else {
       None
     };
@@ -219,7 +215,7 @@ impl<'a> Decoder for Rw2Decoder<'a> {
       return Ok(None);
     }
     if let Some(data) = self.tiff.get_entry(PanasonicTag::JpegData) {
-      let buf = data.get_data();
+      let buf = data.get_data()?;
       let img = image::load_from_memory_with_format(buf, image::ImageFormat::Jpeg).map_err(|e| decoder_error!("Unable to load jpeg preview: {:?}", e))?;
       return Ok(Some(img));
     }

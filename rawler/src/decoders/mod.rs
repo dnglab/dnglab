@@ -44,6 +44,7 @@ use crate::formats::tiff::GenericTiffReader;
 use crate::formats::tiff::IFD;
 use crate::formats::tiff::PhotometricInterpretation;
 use crate::formats::tiff::SampleFormat;
+use crate::formats::tiff::Value;
 use crate::formats::tiff::ifd::DataMode;
 use crate::formats::tiff::reader::TiffReader;
 use crate::imgop::Dim2;
@@ -848,6 +849,16 @@ where
       pixbuf
     }
   })
+}
+
+/// The bytes of a tag value, an error if it is no byte data or shorter than
+/// `len` bytes
+pub(crate) fn tag_data(value: &Value, len: usize) -> Result<&[u8]> {
+  let data = value.get_data()?;
+  if data.len() < len {
+    return Err(decoder_error!("Tag data has {} bytes, but {} bytes are required", data.len(), len));
+  }
+  Ok(data)
 }
 
 /// Decodes a strip-organised raw image into a flat pixel buffer.

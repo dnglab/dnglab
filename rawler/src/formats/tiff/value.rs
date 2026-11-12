@@ -324,15 +324,15 @@ impl Value {
     }
   }
 
-  pub fn get_data(&self) -> &Vec<u8> {
+  /// The bytes of a BYTE, ASCII, UNDEFINED or unknown value, an error for
+  /// other types
+  pub fn get_data(&self) -> Result<&[u8]> {
     match self {
-      Value::Ascii(data) => data.as_bytes(),
-      Value::Byte(data) => data,
-      Value::Undefined(data) => data,
-      Value::Unknown(_, data) => data,
-      _ => {
-        panic!("Unable to call get_data() on this value type");
-      }
+      Value::Ascii(data) => Ok(data.as_bytes()),
+      Value::Byte(data) => Ok(data),
+      Value::Undefined(data) => Ok(data),
+      Value::Unknown(_, data) => Ok(data),
+      _ => Err(TiffError::FormatMismatch(format!("{} value is no byte data", self.value_type_name()))),
     }
   }
 
@@ -1285,6 +1285,13 @@ mod tests {
     assert!(Value::Rational(vec![Rational::new(1, 2)]).as_embedded().is_err());
     assert!(Value::Short(vec![]).as_embedded().is_err());
     Ok(())
+  }
+
+  #[test]
+  fn get_data_of_byte_types_only() {
+    assert_eq!(Value::Undefined(vec![1, 2]).get_data().ok(), Some(&[1_u8, 2][..]));
+    assert_eq!(Value::Byte(vec![3]).get_data().ok(), Some(&[3_u8][..]));
+    assert!(matches!(Value::Short(vec![1]).get_data(), Err(TiffError::FormatMismatch(_))));
   }
 
   #[test]

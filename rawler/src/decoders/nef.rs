@@ -58,6 +58,7 @@ use super::FormatHint;
 use super::Orientation;
 use super::RawDecodeParams;
 use super::RawMetadata;
+use super::tag_data;
 
 mod decrypt;
 pub mod lensdata;
@@ -204,7 +205,7 @@ impl<'a> Decoder for NefDecoder<'a> {
     let nef_compression = if let Some(z_makernote) = self.makernote.get_entry(NikonMakernote::Makernotes0x51) {
       // For new Z models, a new tag 0x51 for makernotes appears. This contains
       // The new-old NEFCompression tag. The old tag is unavailable in this models.
-      Some(NefCompression::try_from(crate::bits::LEu16(z_makernote.get_data(), 10)).map_err(RawlerError::decoder_failed)?)
+      Some(NefCompression::try_from(crate::bits::LEu16(tag_data(z_makernote, 12)?, 10)).map_err(RawlerError::decoder_failed)?)
     } else {
       self
         .makernote
@@ -524,9 +525,10 @@ impl<'a> NefDecoder<'a> {
     } else if let Some(levels) = self.makernote.get_entry(TiffCommonTag::NefWB0) {
       Ok([levels.force_f32(0), 1.0, 1.0, levels.force_f32(1)])
     } else if let Some(levels) = self.makernote.get_entry(TiffCommonTag::NrwWB) {
-      let data = levels.get_data();
-      if data[0..3] == b"NRW"[..] {
-        let offset = if data[4..8] == b"0100"[..] { 1556 } else { 56 };
+      let data = levels.get_data()?;
+      if data.starts_with(b"NRW") {
+        let offset = if data.get(4..8) == Some(b"0100") { 1556 } else { 56 };
+        let data = tag_data(levels, offset + 16)?;
         Ok([
           (LEu32(data, offset) << 2) as f32,
           (LEu32(data, offset + 4) + LEu32(data, offset + 8)) as f32,
@@ -534,14 +536,25 @@ impl<'a> NefDecoder<'a> {
           (LEu32(data, offset + 12) << 2) as f32,
         ])
       } else {
+        let data = tag_data(levels, 1252)?;
         Ok([BEu16(data, 1248) as f32, 256.0, 256.0, BEu16(data, 1250) as f32])
       }
     } else if let Some(levels) = self.makernote.get_entry(TiffCommonTag::NefWB1) {
       let mut version: u32 = 0;
-      for i in 0..4 {
-        version = (version << 4) + (levels.get_data()[i] - b'0') as u32;
+      for c in tag_data(levels, 4)?[0..4].iter() {
+        version = (version << 4) + c.wrapping_sub(b'0') as u32;
       }
-      let buf = levels.get_data();
+      // Bytes each version reads, the encrypted versions 280 bytes from
+      // offset 4 or 284
+      let len = match version {
+        0x100 => 39 * 2,
+        0x102 => 9 * 2,
+        0x103 => 13 * 2,
+        0x205 => 4 + 280,
+        0x204 | 0x206 => 284 + 280,
+        _ => 4,
+      };
+      let buf = tag_data(levels, len)?;
       debug!("NEF Color balance version: 0x{:x}", version);
 
       match version {
@@ -566,32 +579,14 @@ impl<'a> NefDecoder<'a> {
           BEu16(buf, 12 * 2) as f32,
         ]),
         0x204 | 0x205 | 0x206 => {
-          let serial = fetch_tiff_tag!(self.makernote, TiffCommonTag::NefSerial);
-          let data = serial.get_data();
-          let mut serialno = 0_usize;
-          for i in 0..serial.count() as usize {
-            if data[i] == 0 {
-              break;
-            }
-            serialno = serialno * 10
-              + if data[i] >= 48 && data[i] <= 57 {
-                // "0" to "9"
-                (data[i] - 48) as usize
-              } else {
-                (data[i] % 10) as usize
-              };
-          }
+          let serialno = decrypt::serial_number(fetch_tiff_tag!(self.makernote, TiffCommonTag::NefSerial).get_data()?);
 
           // Get the "decryption" key
           let keydata = fetch_tiff_tag!(self.makernote, TiffCommonTag::NefKey).force_u32(0).to_le_bytes();
           let keyno = (keydata[0] ^ keydata[1] ^ keydata[2] ^ keydata[3]) as usize;
 
           // 0x205 stores encrypted data starting at offset 4; 0x204 and 0x206 at offset 284
-          let src = if version == 0x205 {
-            &levels.get_data()[4..]
-          } else {
-            &levels.get_data()[284..]
-          };
+          let src = if version == 0x205 { &buf[4..] } else { &buf[284..] };
 
           let ci = WB_SERIALMAP[serialno & 0xff] as u32;
           let mut cj = WB_KEYMAP[keyno & 0xff] as u32;
@@ -679,7 +674,7 @@ impl<'a> NefDecoder<'a> {
       debug!("Fallback NefMeta1");
       fetch_tiff_tag!(self.makernote, TiffCommonTag::NefMeta1)
     };
-    Self::do_decode(src, meta.get_data(), self.makernote.endian, width, height, bps, dummy).map_err(RawlerError::decoder_failed)
+    Self::do_decode(src, meta.get_data()?, self.makernote.endian, width, height, bps, dummy).map_err(RawlerError::decoder_failed)
   }
 
   pub(crate) fn do_decode(

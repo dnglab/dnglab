@@ -179,19 +179,19 @@ impl<'a> Decoder for DngDecoder<'a> {
 
     // Opcode extraction
 
-    if let Some(data) = raw.get_entry(DngTag::OpcodeList1).map(|entry| entry.value.get_data()) {
+    if let Some(data) = raw.get_entry(DngTag::OpcodeList1).and_then(|entry| entry.value.get_data().ok()) {
       let opcodes = OpcodeList::parse(data)?;
       log::debug!("OpcodeList1: {:?}", opcodes);
       image.dng_opcodes_1 = Some(opcodes);
     }
 
-    if let Some(data) = raw.get_entry(DngTag::OpcodeList2).map(|entry| entry.value.get_data()) {
+    if let Some(data) = raw.get_entry(DngTag::OpcodeList2).and_then(|entry| entry.value.get_data().ok()) {
       let opcodes = OpcodeList::parse(data)?;
       log::debug!("OpcodeList2: {:?}", opcodes);
       image.dng_opcodes_2 = Some(opcodes);
     }
 
-    if let Some(data) = raw.get_entry(DngTag::OpcodeList3).map(|entry| entry.value.get_data()) {
+    if let Some(data) = raw.get_entry(DngTag::OpcodeList3).and_then(|entry| entry.value.get_data().ok()) {
       let opcodes = OpcodeList::parse(data)?;
       log::debug!("OpcodeList3: {:?}", opcodes);
       image.dng_opcodes_3 = Some(opcodes);

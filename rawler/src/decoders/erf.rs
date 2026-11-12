@@ -27,6 +27,7 @@ use super::Orientation;
 use super::RawDecodeParams;
 use super::RawMetadata;
 use super::RawPhotometricInterpretation;
+use super::tag_data;
 
 #[derive(Debug, Clone)]
 pub struct ErfDecoder<'a> {
@@ -105,8 +106,9 @@ impl<'a> ErfDecoder<'a> {
     if levels.count() != 256 {
       Err(RawlerError::decoder_failed("ERF: Levels count is off".to_string()))
     } else {
-      let r = BEu16(levels.get_data(), 48) as f32;
-      let b = BEu16(levels.get_data(), 50) as f32;
+      let levels = tag_data(levels, 52)?;
+      let r = BEu16(levels, 48) as f32;
+      let b = BEu16(levels, 50) as f32;
       Ok([r * 508.0 * 1.078 / 65536.0, 1.0, b * 382.0 * 1.173 / 65536.0, f32::NAN])
     }
   }
