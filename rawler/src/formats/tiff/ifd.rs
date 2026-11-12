@@ -134,9 +134,12 @@ impl IFD {
 
     let mut entries = BTreeMap::new();
     let mut sub = HashMap::new();
-    let mut next_pos = reader.position()?;
+    let table_start = reader.position()?;
+    let mut next_pos = table_start;
     debug!("Parse entries");
     let mut consecutive_errors = 0;
+    // False if the parsing stopped before the end of the entry table
+    let mut complete = true;
 
     for i in 0..entry_count {
       if i as usize >= MAX_IFD_ENTRIES {
@@ -144,20 +147,23 @@ impl IFD {
           "TIFF: Reached maximum IFD entry limit ({}). Stopping parse to prevent infinite loops.",
           MAX_IFD_ENTRIES
         );
+        complete = false;
         break;
       }
 
       if let Err(e) = reader.goto(next_pos) {
         log::warn!("Truncated IFD: Could not seek to next entry position. Stopping parse. Error: {}", e);
+        complete = false;
         break;
       }
 
-      next_pos += 12;
+      next_pos = next_pos.saturating_add(12);
 
       let tag = match reader.read_u16() {
         Ok(t) => t,
         Err(e) => {
           log::warn!("Truncated IFD: Could not read tag ID (Index {}). Stopping parse. Error: {}", i, e);
+          complete = false;
           break;
         }
       };
@@ -199,16 +205,25 @@ impl IFD {
           // If we fail 5 times in a row, the IFD is likely garbage or physically truncated.
           if consecutive_errors >= 5 {
             log::warn!("Too many consecutive parsing errors ({}). Stopping parse to prevent flood.", consecutive_errors);
+            complete = false;
             break;
           }
         }
       }
     }
 
-    // Some TIFF writers skip the next ifd pointer
-    // If we get an I/O error, we fallback to 0, signaling the end of IFD chains.
-    let next_ifd = match reader.read_u32() {
-      Ok(ptr) => ptr,
+    // The next IFD pointer follows the entry table, a failed entry leaves the
+    // reader elsewhere. If the parsing stopped early, the IFD is damaged and
+    // ends the IFD chain.
+    // Some TIFF writers skip the next ifd pointer: on an I/O error, we
+    // fallback to 0, signaling the end of IFD chains.
+    let table_end = u32::try_from(table_start as u64 + entry_count as u64 * 12).map_err(|_| TiffError::Overflow("IFD entry table exceeds 4 GiB".into()));
+    let next_ifd = match table_end
+      .and_then(|end| reader.goto(end))
+      .and_then(|_| reader.read_u32().map_err(TiffError::from))
+    {
+      Ok(ptr) if complete => ptr,
+      Ok(_) => 0,
       Err(e) => {
         debug!(
           "TIFF IFD reader failed to get next IFD pointer, fallback to 0 and continue. Original error was: {}",
@@ -774,6 +789,30 @@ mod tests {
     }
     data.resize(data.len() + 256, 0);
     data
+  }
+
+  #[test]
+  fn damaged_ifd_ends_the_chain() -> Result<()> {
+    // 6 entries of type LONG, count 2, with data beyond the end of the stream
+    let mut data = vec![0x49, 0x49, 42, 0, 8, 0, 0, 0, 6, 0];
+    for tag in 0x100..0x106_u16 {
+      data.extend_from_slice(&tag.to_le_bytes());
+      data.extend_from_slice(&[4, 0, 2, 0, 0, 0, 0, 0x10, 0, 0]);
+    }
+    data.extend_from_slice(&[0, 0, 0, 0]);
+    let ifd = IFD::new(&mut Cursor::new(data), 8, 0, 0, Endian::Little, &[])?;
+    assert!(ifd.entries.is_empty());
+    assert_eq!(ifd.next_ifd, 0);
+    Ok(())
+  }
+
+  #[test]
+  fn next_ifd_follows_the_entry_table() -> Result<()> {
+    use crate::formats::tiff::tests::ifd_chain;
+    let data = ifd_chain(8, &[26, 0]);
+    let ifd = IFD::new(&mut Cursor::new(data), 8, 0, 0, Endian::Little, &[])?;
+    assert_eq!(ifd.next_ifd, 26);
+    Ok(())
   }
 
   #[test]
