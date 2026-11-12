@@ -16,28 +16,34 @@ pub struct Rational {
 
 impl PartialEq for Rational {
   fn eq(&self, other: &Self) -> bool {
-    let n1: u64 = self.n as u64 * other.d as u64;
-    let n2: u64 = self.d as u64 * other.n as u64;
-    n1.eq(&n2)
+    self.cmp(other).is_eq()
   }
 }
 
 impl Eq for Rational {}
 
-#[allow(clippy::non_canonical_partial_ord_impl)]
 impl PartialOrd for Rational {
   fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-    let n1: u64 = self.n as u64 * other.d as u64;
-    let n2: u64 = self.d as u64 * other.n as u64;
-    Some(n1.cmp(&n2))
+    Some(self.cmp(other))
   }
 }
 
 impl Ord for Rational {
   fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-    let n1: u64 = self.n as u64 * other.d as u64;
-    let n2: u64 = self.d as u64 * other.n as u64;
-    n1.cmp(&n2)
+    cmp_fractions((self.n as i64, self.d as i64), (other.n as i64, other.d as i64))
+  }
+}
+
+/// Order of the fractions `a` and `b` with denominators >= 0 by their value.
+/// Fractions with a denominator of 0 are greater than all others and ordered
+/// by their numerator.
+fn cmp_fractions(a: (i64, i64), b: (i64, i64)) -> std::cmp::Ordering {
+  use std::cmp::Ordering;
+  match (a.1, b.1) {
+    (0, 0) => a.0.cmp(&b.0),
+    (0, _) => Ordering::Greater,
+    (_, 0) => Ordering::Less,
+    _ => (a.0 * b.1).cmp(&(b.0 * a.1)),
   }
 }
 
@@ -191,32 +197,34 @@ impl SRational {
   pub fn as_f32(&self) -> f32 {
     self.n as f32 / self.d as f32
   }
+
+  /// Numerator and denominator with the sign moved to the numerator
+  fn normalized(&self) -> (i64, i64) {
+    if self.d < 0 {
+      (-(self.n as i64), -(self.d as i64))
+    } else {
+      (self.n as i64, self.d as i64)
+    }
+  }
 }
 
 impl PartialEq for SRational {
   fn eq(&self, other: &Self) -> bool {
-    let n1: i64 = self.n as i64 * other.d as i64;
-    let n2: i64 = self.d as i64 * other.n as i64;
-    n1.eq(&n2)
+    self.cmp(other).is_eq()
   }
 }
 
 impl Eq for SRational {}
 
-#[allow(clippy::non_canonical_partial_ord_impl)]
 impl PartialOrd for SRational {
   fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-    let n1: i64 = self.n as i64 * other.d as i64;
-    let n2: i64 = self.d as i64 * other.n as i64;
-    n1.partial_cmp(&n2)
+    Some(self.cmp(other))
   }
 }
 
 impl Ord for SRational {
   fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-    let n1: i64 = self.n as i64 * other.d as i64;
-    let n2: i64 = self.d as i64 * other.n as i64;
-    n1.cmp(&n2)
+    cmp_fractions(self.normalized(), other.normalized())
   }
 }
 
@@ -1250,6 +1258,23 @@ mod tests {
     let a = SRational::new(-200, 1);
     let b = SRational::new(-300, 10);
     assert!(a < b);
+  }
+
+  #[test]
+  fn srational_with_negative_denominator() {
+    assert!(SRational::new(1, -2) < SRational::new(0, 1));
+    assert!(SRational::new(-1, -2) > SRational::new(0, 1));
+    assert_eq!(SRational::new(1, -2), SRational::new(-1, 2));
+    assert_eq!(SRational::new(i32::MIN, -1), SRational::new(i32::MAX, 1).max(SRational::new(i32::MIN, -1)));
+  }
+
+  #[test]
+  fn rational_with_zero_denominator() {
+    assert_ne!(Rational::new(0, 0), Rational::new(5, 1));
+    assert_ne!(Rational::new(1, 0), Rational::new(2, 0));
+    assert_eq!(Rational::new(1, 0), Rational::new(1, 0));
+    assert!(Rational::new(1, 0) > Rational::new(u32::MAX, 1));
+    assert_ne!(SRational::new(0, 0), SRational::new(-5, 1));
   }
 
   #[test]
