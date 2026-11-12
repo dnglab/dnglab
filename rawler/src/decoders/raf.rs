@@ -401,7 +401,7 @@ impl<'a> Decoder for RafDecoder<'a> {
       let rotated_dim = fuji_calc_dimension(image.width, fuji_rot_width.expect("fuji_rot_width must be Some when not rotating for DNG"));
       log::debug!("Image dimension after final rotation: {:?}", rotated_dim);
       //image.active_area = camera.active_area.map(|area| Rect::new_with_borders(rotated_dim, &area));
-      image.crop_area = camera.crop_area.map(|area| Rect::new_with_borders(rotated_dim, &area));
+      image.crop_area = camera.crop_area.and_then(|area| Rect::new_with_borders(rotated_dim, &area));
       image.active_area = None;
       Ok(image)
     } else {

@@ -287,6 +287,24 @@ fn camera_masked_areas(cam: &Camera, dim: Dim2, active_area: Option<Rect>) -> Ve
     .collect()
 }
 
+/// Area of the camera definition inside of `borders` of an image of `dim`
+/// pixels, `None` if the borders exceed the image
+fn camera_area(cam: &Camera, name: &str, dim: Dim2, borders: &[usize; 4]) -> Option<Rect> {
+  let area = Rect::new_with_borders(dim, borders);
+  if area.is_none() {
+    log::warn!(
+      "Camera {} {}: {} borders {:?} exceed the image of {}x{} pixels, ignoring them",
+      cam.clean_make,
+      cam.clean_model,
+      name,
+      borders,
+      dim.w,
+      dim.h
+    );
+  }
+  area
+}
+
 /// Size of the pattern of black levels measured in the masked areas: the CFA
 /// pattern or a single pixel
 fn masked_area_pattern(cam: &Camera) -> (usize, usize) {
@@ -309,7 +327,7 @@ impl RawImage {
     assert_eq!(dummy, !image.is_initialized());
     let pixel_width = image.width / cpp;
 
-    let active_area = cam.active_area.map(|area| Rect::new_with_borders(Dim2::new(pixel_width, image.height), &area));
+    let active_area = cam.active_area.and_then(|area| camera_area(&cam, "active area", Dim2::new(pixel_width, image.height), &area));
 
     let blackareas = camera_masked_areas(&cam, Dim2::new(pixel_width, image.height), active_area);
 
@@ -332,7 +350,7 @@ impl RawImage {
       .or(whitelevel)
       .unwrap_or_else(|| panic!("Need whitelevel in config: {}", cam.clean_model));
 
-    let crop_area = cam.crop_area.map(|area| Rect::new_with_borders(Dim2::new(pixel_width, image.height), &area));
+    let crop_area = cam.crop_area.and_then(|area| camera_area(&cam, "crop area", Dim2::new(pixel_width, image.height), &area));
 
     RawImage {
       camera: cam.clone(),
@@ -389,7 +407,7 @@ impl RawImage {
     //assert_eq!(dummy, !image.is_initialized());
     let pixel_width = sample_width / cpp;
 
-    let active_area = cam.active_area.map(|area| Rect::new_with_borders(Dim2::new(pixel_width, height), &area));
+    let active_area = cam.active_area.and_then(|area| camera_area(&cam, "active area", Dim2::new(pixel_width, height), &area));
 
     let blackareas = camera_masked_areas(&cam, Dim2::new(pixel_width, height), active_area);
 
@@ -418,7 +436,7 @@ impl RawImage {
       .or(whitelevel)
       .unwrap_or_else(|| panic!("Need whitelevel in config: {}", cam.clean_model));
 
-    let crop_area = cam.crop_area.map(|area| Rect::new_with_borders(Dim2::new(pixel_width, height), &area));
+    let crop_area = cam.crop_area.and_then(|area| camera_area(&cam, "crop area", Dim2::new(pixel_width, height), &area));
 
     RawImage {
       camera: cam.clone(),
@@ -1055,6 +1073,37 @@ mod tests {
     );
     assert!(image.blackareas.is_empty());
     assert_eq!(image.blacklevel, BlackLevel::zero(1, 1, 1));
+  }
+
+  #[test]
+  fn camera_areas_larger_than_the_image_are_dropped() {
+    let mut camera = Camera::new();
+    camera.active_area = Some([4, 2, 10, 0]);
+    camera.crop_area = Some([0, 0, 0, 9]);
+    let image = RawImage::new(
+      camera.clone(),
+      PixU16::new_with(vec![0; 12 * 8], 12, 8),
+      1,
+      [f32::NAN; 4],
+      RawPhotometricInterpretation::LinearRaw,
+      Some(BlackLevel::zero(1, 1, 1)),
+      Some(WhiteLevel::new_bits(12, 1)),
+      false,
+    );
+    assert_eq!((image.active_area, image.crop_area), (None, None));
+    let image = RawImage::new_with_data(
+      camera,
+      RawImageData::Integer(vec![0; 12 * 8]),
+      12,
+      8,
+      1,
+      [f32::NAN; 4],
+      RawPhotometricInterpretation::LinearRaw,
+      Some(BlackLevel::zero(1, 1, 1)),
+      Some(WhiteLevel::new_bits(12, 1)),
+      false,
+    );
+    assert_eq!((image.active_area, image.crop_area), (None, None));
   }
 
   /// Image with camera profiles of the given names, group names and HDR flags

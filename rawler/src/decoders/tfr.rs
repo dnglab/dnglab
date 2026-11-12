@@ -75,7 +75,7 @@ impl<'a> Decoder for TfrDecoder<'a> {
       self.decode_compressed(src, width, height, dummy)?
     };
 
-    let crop = Rect::from_tiff(raw).or_else(|| camera.crop_area.map(|area| Rect::new_with_borders(Dim2::new(width, height), &area)));
+    let crop = Rect::from_tiff(raw).or_else(|| camera.crop_area.and_then(|area| Rect::new_with_borders(Dim2::new(width, height), &area)));
 
     //crate::devtools::dump_image_u16(&image.data, width, height, "/tmp/tfrdump.pnm");
 

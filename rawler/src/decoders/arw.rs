@@ -222,9 +222,9 @@ impl<'a> Decoder for ArwDecoder<'a> {
       log::debug!("Found SONYRAWIMAGESIZE tag, using as active_area");
       img.active_area = Some(raw_image_size);
     } else {
-      img.active_area = camera.active_area.map(|area| Rect::new_with_borders(Dim2::new(width, height), &area));
+      img.active_area = camera.active_area.and_then(|area| Rect::new_with_borders(Dim2::new(width, height), &area));
     }
-    img.crop_area = Rect::from_tiff(raw).or_else(|| camera.crop_area.map(|area| Rect::new_with_borders(Dim2::new(width, height), &area)));
+    img.crop_area = Rect::from_tiff(raw).or_else(|| camera.crop_area.and_then(|area| Rect::new_with_borders(Dim2::new(width, height), &area)));
 
     log::debug!("raw dim: {}x{}", width, height);
     log::debug!("crop_area: {:?}", img.crop_area);

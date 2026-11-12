@@ -190,8 +190,12 @@ impl Rect {
     }
   }
 
-  pub fn new_with_borders(dim: Dim2, borders: &[usize; 4]) -> Self {
-    Self::new_with_points(Point::new(borders[0], borders[1]), Point::new(dim.w - borders[2], dim.h - borders[3]))
+  /// Area of `dim` inside of `borders` (left, top, right, bottom), `None` if
+  /// the borders don't fit into `dim`
+  pub fn new_with_borders(dim: Dim2, borders: &[usize; 4]) -> Option<Self> {
+    let right = dim.w.checked_sub(borders[2])?;
+    let bottom = dim.h.checked_sub(borders[3])?;
+    (borders[0] <= right && borders[1] <= bottom).then(|| Self::new_with_points(Point::new(borders[0], borders[1]), Point::new(right, bottom)))
   }
 
   /// DNG used top-left-bottom-right for all rectangles
@@ -439,6 +443,19 @@ mod tests {
     assert!(Rect::new(Point::new(2, 1), Dim2::new(0, 3)).is_empty());
     assert!(Rect::new(Point::new(2, 1), Dim2::new(4, 0)).is_empty());
     assert!(!Rect::new(Point::new(2, 1), Dim2::new(1, 1)).is_empty());
+  }
+
+  #[test]
+  fn rect_with_borders() {
+    let dim = Dim2::new(10, 8);
+    assert_eq!(Rect::new_with_borders(dim, &[1, 2, 3, 4]), Some(Rect::new(Point::new(1, 2), Dim2::new(6, 2))));
+    // Borders that leave no pixels
+    assert_eq!(Rect::new_with_borders(dim, &[4, 4, 6, 4]), Some(Rect::new(Point::new(4, 4), Dim2::new(0, 0))));
+    // Borders that exceed the dimension
+    assert_eq!(Rect::new_with_borders(dim, &[0, 0, 11, 0]), None);
+    assert_eq!(Rect::new_with_borders(dim, &[0, 0, 0, 9]), None);
+    assert_eq!(Rect::new_with_borders(dim, &[6, 0, 5, 0]), None);
+    assert_eq!(Rect::new_with_borders(dim, &[0, 5, 0, 4]), None);
   }
 
   #[test]
