@@ -129,6 +129,20 @@ impl BoxHeader {
     Ok(header)
   }
 
+  /// The `count` of entries of `entry_size` bytes from the reader position,
+  /// an error if they don't fit in the box. The count comes from the file,
+  /// so this is checked before allocating the entries.
+  pub fn check_entries<R: Seek>(&self, mut reader: R, count: u32, entry_size: u64) -> Result<usize> {
+    let available = self.end_offset().saturating_sub(reader.stream_position()?);
+    if count as u64 * entry_size > available {
+      return Err(BmffError::Parse(format!(
+        "Box {:?} at offset {} has {} entries of {} bytes, but only {} bytes are left",
+        self.typ, self.offset, count, entry_size, available
+      )));
+    }
+    Ok(count as usize)
+  }
+
   /// Seek to the end of the box, an error if its fields were read beyond it
   pub fn finish<R: Seek>(&self, mut reader: R) -> Result<()> {
     let pos = reader.stream_position()?;
@@ -452,6 +466,32 @@ mod tests {
     let mut reader = Cursor::new(&data);
     let header = BoxHeader::parse(&mut reader).expect("header");
     assert!(ext_cr3::craw::CrawBox::read_box(&mut reader, header).is_err());
+  }
+
+  #[test]
+  fn entry_counts_must_fit_in_the_box() {
+    // Full box header, then a count of u32::MAX and one entry
+    let entries = |extra: &[u8]| [&[0, 0, 0, 0], &u32::MAX.to_be_bytes()[..], &[0; 16], extra].concat();
+    let check = |typ: &[u8; 4], payload: &[u8]| {
+      let data = boxed(typ, 8 + payload.len() as u32, payload);
+      let mut reader = Cursor::new(data);
+      let header = BoxHeader::parse(&mut reader).expect("header");
+      match typ {
+        b"stsc" => stsc::StscBox::read_box(&mut reader, header).map(|_| ()),
+        b"co64" => co64::Co64Box::read_box(&mut reader, header).map(|_| ()),
+        b"stts" => stts::SttsBox::read_box(&mut reader, header).map(|_| ()),
+        _ => unreachable!(),
+      }
+    };
+    for typ in [b"stsc", b"co64", b"stts"] {
+      assert!(matches!(check(typ, &entries(&[])), Err(BmffError::Parse(msg)) if msg.contains("entries")));
+    }
+    // stsz with a sample size of 0 and u32::MAX sample sizes
+    let payload = [&[0; 8][..], &u32::MAX.to_be_bytes()].concat();
+    let data = boxed(b"stsz", 8 + payload.len() as u32, &payload);
+    let mut reader = Cursor::new(data);
+    let header = BoxHeader::parse(&mut reader).expect("header");
+    assert!(stsz::StszBox::read_box(&mut reader, header).is_err());
   }
 
   #[test]

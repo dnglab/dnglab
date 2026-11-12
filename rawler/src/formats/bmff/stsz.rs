@@ -35,8 +35,9 @@ impl<R: Read + Seek> ReadBox<&mut R> for StszBox {
 
     let sample_size = reader.read_u32::<BigEndian>()?;
     let sample_count = reader.read_u32::<BigEndian>()?;
-    let mut sample_sizes = Vec::with_capacity(sample_count as usize);
+    let mut sample_sizes = Vec::new();
     if sample_size == 0 {
+      sample_sizes.reserve(header.check_entries(&mut *reader, sample_count, 4)?);
       for _ in 0..sample_count {
         let sample_number = reader.read_u32::<BigEndian>()?;
         sample_sizes.push(sample_number);

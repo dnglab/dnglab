@@ -42,7 +42,7 @@ impl<R: Read + Seek> ReadBox<&mut R> for CtmdBox {
     let data_ref_index = reader.read_u16::<BigEndian>()?;
     let rec_count = reader.read_u32::<BigEndian>()?;
 
-    let mut records = Vec::with_capacity(rec_count as usize);
+    let mut records = Vec::with_capacity(header.check_entries(&mut *reader, rec_count, 8)?);
 
     //let mut current = reader.seek(SeekFrom::Current(0))?;
 

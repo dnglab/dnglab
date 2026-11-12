@@ -25,7 +25,7 @@ impl<R: Read + Seek> ReadBox<&mut R> for Co64Box {
     let (version, flags) = read_box_header_ext(reader)?;
 
     let entry_count = reader.read_u32::<BigEndian>()?;
-    let mut entries = Vec::with_capacity(entry_count as usize);
+    let mut entries = Vec::with_capacity(header.check_entries(&mut *reader, entry_count, 8)?);
     for _i in 0..entry_count {
       let chunk_offset = reader.read_u64::<BigEndian>()?;
       entries.push(chunk_offset);
