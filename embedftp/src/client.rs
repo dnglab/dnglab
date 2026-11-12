@@ -146,7 +146,8 @@ where
     } else if self.name.is_some() && self.waiting_password {
       if let Command::Pass(content) = cmd {
         let mut ok = false;
-        if self.config.anonymous {
+        // Any password is fine, but for the anonymous user only
+        if self.config.anonymous && self.name.as_deref() == Some("anonymous") {
           ok = true;
         } else {
           for user in &self.config.users {
