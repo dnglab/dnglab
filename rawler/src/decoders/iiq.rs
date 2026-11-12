@@ -1119,10 +1119,11 @@ impl<'a> IiqDecoder<'a> {
             }
           }
           let i = len[col & 1];
-          pred[col & 1] = if i == 14 {
-            pump.get_bits(16)?
-          } else {
-            pred[col & 1] + pump.get_bits(i)? + 1 - (1 << (i - 1))
+          pred[col & 1] = match i {
+            14 => pump.get_bits(16)?,
+            0 => return Err(format!("IIQ: no code length for column {} of row {}", col, row)),
+            // The prediction wraps around like the int of dcraw, only the low 16 bits are used
+            _ => pred[col & 1].wrapping_add(pump.get_bits(i)?).wrapping_add(1).wrapping_sub(1 << (i - 1)),
           };
           pixout[0] = (pred[col & 1] as u16) << value_shift;
         }
@@ -1292,6 +1293,23 @@ mod tests {
       }
     }
     buf
+  }
+
+  #[test]
+  fn compressed_without_code_length_is_an_error() {
+    // The first bits are 1, the code lengths of the first 8 columns aren't set
+    assert!(IiqDecoder::decode_compressed(&[0xff; 64], &[0; 4], 8, 1, 14, false).is_err());
+  }
+
+  #[test]
+  fn compressed_prediction_wraps_around() -> std::result::Result<(), String> {
+    // Code lengths of 8 for both columns (bits 010 twice), then a difference
+    // of 0 that subtracts 127 from the prediction of 0
+    let mut buf = vec![0; 64];
+    buf[3] = 0x48;
+    let image = IiqDecoder::decode_compressed(&buf, &[0; 4], 8, 1, 14, false)?;
+    assert_eq!(image.pixels()[0], (1_u32.wrapping_sub(128) as u16) << 2);
+    Ok(())
   }
 
   #[test]
