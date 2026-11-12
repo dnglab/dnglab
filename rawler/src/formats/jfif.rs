@@ -177,7 +177,9 @@ impl<R: Read + Seek> ReadSegment<&mut R> for App1 {
       let mut exif_str = [0; 6];
       reader.read_exact(&mut exif_str)?;
       if exif_str == APP1_EXIF_MARKER {
-        let ifd = IFD::new_root(reader, pos as u32 + 2 + 6);
+        // The TIFF structure follows the length field and the marker
+        let base = u32::try_from(pos + 2 + 6).map_err(|_| JfifError::Overflow(format!("EXIF data at {} exceeds 4 GiB", pos)))?;
+        let ifd = IFD::new_root(reader, base);
         reader.seek(SeekFrom::Start(pos + len))?;
 
         /*
