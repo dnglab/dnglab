@@ -56,56 +56,6 @@ impl StblBox {
   }
 }
 
-#[cfg(test)]
-mod tests {
-  use super::*;
-  use crate::formats::bmff::stsc::StscEntry;
-
-  /// Sample tables with the stsc `entries`, chunks at 1000, 2000 and 3000
-  /// and the sample `sizes`
-  fn stbl(entries: &[(u32, u32, u32)], sample_size: u32, sizes: &[u32]) -> StblBox {
-    let mut stbl = StblBox::default();
-    stbl.stsc.entries = entries
-      .iter()
-      .map(|&(first_chunk, samples_per_chunk, first_sample)| StscEntry {
-        first_chunk,
-        samples_per_chunk,
-        sample_description_index: 1,
-        first_sample,
-      })
-      .collect();
-    stbl.stsz.sample_size = sample_size;
-    stbl.stsz.sample_sizes = sizes.to_vec();
-    stbl.co64 = Some(Co64Box {
-      entries: vec![1000, 2000, 3000],
-      ..Default::default()
-    });
-    stbl
-  }
-
-  #[test]
-  fn sample_offsets() {
-    // 2 samples in chunk 1, then 1 sample per chunk
-    let stbl = stbl(&[(1, 2, 1), (2, 1, 3)], 0, &[10, 20, 30, 40]);
-    assert_eq!(stbl.get_sample_offset(1), Some((1000, 10)));
-    assert_eq!(stbl.get_sample_offset(2), Some((1010, 20)));
-    assert_eq!(stbl.get_sample_offset(3), Some((2000, 30)));
-    assert_eq!(stbl.get_sample_offset(4), Some((3000, 40)));
-    // Sample 0, beyond the sizes and beyond the chunks
-    assert_eq!(stbl.get_sample_offset(0), None);
-    assert_eq!(stbl.get_sample_offset(5), None);
-    // Chunk 0, no samples per chunk, no stsc entries
-    assert_eq!(self::stbl(&[(0, 1, 1)], 0, &[10]).get_sample_offset(1), None);
-    assert_eq!(self::stbl(&[(1, 0, 1)], 0, &[10]).get_sample_offset(1), None);
-    assert_eq!(self::stbl(&[], 0, &[10]).get_sample_offset(1), None);
-    // A constant sample size with u32::MAX samples per chunk
-    assert_eq!(
-      self::stbl(&[(1, u32::MAX, 1)], 8, &[8]).get_sample_offset(u32::MAX),
-      Some((1000 + (u32::MAX as usize - 1) * 8, 8))
-    );
-  }
-}
-
 impl<R: Read + Seek> ReadBox<&mut R> for StblBox {
   fn read_box(mut reader: &mut R, header: BoxHeader) -> Result<Self> {
     let mut stsd = None;
@@ -166,5 +116,55 @@ impl<R: Read + Seek> ReadBox<&mut R> for StblBox {
       co64,
       vendor: vendors,
     })
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+  use crate::formats::bmff::stsc::StscEntry;
+
+  /// Sample tables with the stsc `entries`, chunks at 1000, 2000 and 3000
+  /// and the sample `sizes`
+  fn stbl(entries: &[(u32, u32, u32)], sample_size: u32, sizes: &[u32]) -> StblBox {
+    let mut stbl = StblBox::default();
+    stbl.stsc.entries = entries
+      .iter()
+      .map(|&(first_chunk, samples_per_chunk, first_sample)| StscEntry {
+        first_chunk,
+        samples_per_chunk,
+        sample_description_index: 1,
+        first_sample,
+      })
+      .collect();
+    stbl.stsz.sample_size = sample_size;
+    stbl.stsz.sample_sizes = sizes.to_vec();
+    stbl.co64 = Some(Co64Box {
+      entries: vec![1000, 2000, 3000],
+      ..Default::default()
+    });
+    stbl
+  }
+
+  #[test]
+  fn sample_offsets() {
+    // 2 samples in chunk 1, then 1 sample per chunk
+    let stbl = stbl(&[(1, 2, 1), (2, 1, 3)], 0, &[10, 20, 30, 40]);
+    assert_eq!(stbl.get_sample_offset(1), Some((1000, 10)));
+    assert_eq!(stbl.get_sample_offset(2), Some((1010, 20)));
+    assert_eq!(stbl.get_sample_offset(3), Some((2000, 30)));
+    assert_eq!(stbl.get_sample_offset(4), Some((3000, 40)));
+    // Sample 0, beyond the sizes and beyond the chunks
+    assert_eq!(stbl.get_sample_offset(0), None);
+    assert_eq!(stbl.get_sample_offset(5), None);
+    // Chunk 0, no samples per chunk, no stsc entries
+    assert_eq!(self::stbl(&[(0, 1, 1)], 0, &[10]).get_sample_offset(1), None);
+    assert_eq!(self::stbl(&[(1, 0, 1)], 0, &[10]).get_sample_offset(1), None);
+    assert_eq!(self::stbl(&[], 0, &[10]).get_sample_offset(1), None);
+    // A constant sample size with u32::MAX samples per chunk
+    assert_eq!(
+      self::stbl(&[(1, u32::MAX, 1)], 8, &[8]).get_sample_offset(u32::MAX),
+      Some((1000 + (u32::MAX as usize - 1) * 8, 8))
+    );
   }
 }

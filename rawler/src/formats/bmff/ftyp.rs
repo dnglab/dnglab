@@ -25,7 +25,7 @@ impl<R: Read + Seek> ReadBox<&mut R> for FtypBox {
     let minor = reader.read_u32::<BigEndian>()?;
     // The compatible brands follow the major brand and the minor version
     let payload = header.size - header.header_len;
-    if payload < 8 || payload % 4 != 0 {
+    if payload < 8 || !payload.is_multiple_of(4) {
       return Err(BmffError::Parse(format!("invalid ftyp size {}", header.size)));
     }
     let brand_count = (payload - 8) / 4;
