@@ -2,7 +2,7 @@
 // Originally written by Guillaume Gomez under MIT license
 // Copyright 2021 Daniel Vogelbacher <daniel@chaospixel.com>
 
-use std::{net::IpAddr, path::Path, sync::Arc};
+use std::{net::IpAddr, path::Path, sync::Arc, time::Duration};
 
 /// Server configuration
 #[derive(Clone)]
@@ -12,6 +12,15 @@ pub struct Config {
   pub users: Vec<User>,
   pub anonymous: bool,
   pub greeting: String,
+  /// Maximum size of an uploaded file in bytes. An upload is held in memory.
+  pub max_upload_size: u64,
+  /// Maximum number of clients that are connected at the same time
+  pub max_sessions: usize,
+  /// A client that sends no command for this time is disconnected
+  pub idle_timeout: Duration,
+  /// A transfer fails if the client does not open the data connection within this
+  /// time, or if no data is transferred for this time.
+  pub data_timeout: Duration,
 }
 
 /// This callback provides filtering for specific FTP
@@ -38,12 +47,13 @@ impl Config {
     Some(Self {
       server_port: 8054,
       server_addr: "::1".parse().expect("Failed to parse IPv6 addr"),
-      users: vec![User {
-        name: "anonymous".into(),
-        password: "anonymous@example.com".into(),
-      }],
+      users: Vec::new(),
       anonymous: true,
       greeting: String::from("Welcome to this FTP server!"),
+      max_upload_size: 2 * 1024 * 1024 * 1024,
+      max_sessions: 32,
+      idle_timeout: Duration::from_secs(900),
+      data_timeout: Duration::from_secs(120),
     })
   }
 }

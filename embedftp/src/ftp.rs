@@ -68,6 +68,7 @@ pub enum ResultCode {
   CommandNotImplemented = 502,
   BadSequenceOfCommands = 503,
   CommandNotImplementedForThatParameter = 504,
+  NetworkProtocolNotSupported = 522,
   NotLoggedIn = 530,
   NeedAccountForStoringFiles = 532,
   FileNotFound = 550,

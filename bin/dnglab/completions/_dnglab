@@ -172,6 +172,9 @@ _arguments "${_arguments_options[@]}" : \
 '--crop=[DNG default crop]:crop:(best activearea none)' \
 '--port=[FTP listen port]:port:_default' \
 '--listen=[FTP listen address]:addr:_default' \
+'--user=[FTP user name]:name:_default' \
+'--password=[FTP password]:password:_default' \
+'--max-upload-size=[Maximum size of an uploaded file in MiB]:MiB:_default' \
 '--keep-original=[Keep original raw]:keep:(true false)' \
 '-d+[Log level]:level:(error warn info debug trace)' \
 '--loglevel=[Log level]:level:(error warn info debug trace)' \

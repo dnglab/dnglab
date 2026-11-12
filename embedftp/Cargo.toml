@@ -1,6 +1,6 @@
 [package]
 name = "embedftp"
-version = "0.0.1"
+version = "0.1.0"
 edition = "2024"
 authors = ["Guillaume Gomez", "Daniel Vogelbacher"]
 license = "MIT"
@@ -12,7 +12,7 @@ tokio = { version = "1", features = ["full"] }
 tokio-util = { version = "0.7", features = ["full"] }
 bytes = "1.11"
 futures = "0.3.17"
-chrono = "0.4.19"
+chrono = "0.4.31"
 glob = "0.3.0"
 log = "0.4"
 

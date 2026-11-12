@@ -4,7 +4,7 @@
 .SH NAME
 dnglab\-ftpserver \- Convert raw image(s) into dng format
 .SH SYNOPSIS
-\fBdnglab\-ftpserver\fR [\fB\-p\fR|\fB\-\-profile\fR] [\fB\-c\fR|\fB\-\-compression\fR] [\fB\-\-ljpeg92\-predictor\fR] [\fB\-\-lossy\-jpeg\-quality\fR] [\fB\-\-jxl\-distance\fR] [\fB\-\-jxl\-effort\fR] [\fB\-\-jxl\-decode\-speed\fR] [\fB\-\-dng\-preview\fR] [\fB\-\-dng\-thumbnail\fR] [\fB\-\-dng\-force\-preview\fR] [\fB\-\-dng\-force\-thumbnail\fR] [\fB\-\-max\-dng\-backward\-version\fR] [\fB\-\-embed\-raw\fR] [\fB\-\-apply\-dng\-opcodes\fR] [\fB\-\-remove\-dng\-opcodes\fR] [\fB\-\-artist\fR] [\fB\-\-copyright\fR] [\fB\-\-keep\-mtime\fR] [\fB\-\-image\-index\fR] [\fB\-\-crop\fR] [\fB\-f\fR|\fB\-\-override\fR] [\fB\-\-port\fR] [\fB\-\-listen\fR] [\fB\-\-keep\-original\fR] [\fB\-h\fR|\fB\-\-help\fR] <\fIOUTPUT\fR> 
+\fBdnglab\-ftpserver\fR [\fB\-p\fR|\fB\-\-profile\fR] [\fB\-c\fR|\fB\-\-compression\fR] [\fB\-\-ljpeg92\-predictor\fR] [\fB\-\-lossy\-jpeg\-quality\fR] [\fB\-\-jxl\-distance\fR] [\fB\-\-jxl\-effort\fR] [\fB\-\-jxl\-decode\-speed\fR] [\fB\-\-dng\-preview\fR] [\fB\-\-dng\-thumbnail\fR] [\fB\-\-dng\-force\-preview\fR] [\fB\-\-dng\-force\-thumbnail\fR] [\fB\-\-max\-dng\-backward\-version\fR] [\fB\-\-embed\-raw\fR] [\fB\-\-apply\-dng\-opcodes\fR] [\fB\-\-remove\-dng\-opcodes\fR] [\fB\-\-artist\fR] [\fB\-\-copyright\fR] [\fB\-\-keep\-mtime\fR] [\fB\-\-image\-index\fR] [\fB\-\-crop\fR] [\fB\-f\fR|\fB\-\-override\fR] [\fB\-\-port\fR] [\fB\-\-listen\fR] [\fB\-\-user\fR] [\fB\-\-password\fR] [\fB\-\-max\-upload\-size\fR] [\fB\-\-keep\-original\fR] [\fB\-h\fR|\fB\-\-help\fR] <\fIOUTPUT\fR> 
 .SH DESCRIPTION
 Convert raw image(s) into dng format
 .SH OPTIONS
@@ -208,6 +208,16 @@ FTP listen port
 .TP
 \fB\-\-listen\fR \fI<addr>\fR [default: 0.0.0.0]
 FTP listen address
+.TP
+\fB\-\-user\fR \fI<name>\fR
+User name for the FTP login. Requires \-\-password.
+Without \-\-user, any client can log in as user \*(Aqanonymous\*(Aq with any password.
+.TP
+\fB\-\-password\fR \fI<password>\fR
+Password for the FTP login of \-\-user. FTP transfers the password and all data unencrypted.
+.TP
+\fB\-\-max\-upload\-size\fR \fI<MiB>\fR [default: 2048]
+Maximum size of an uploaded file in MiB. Larger uploads are rejected. An upload is held in memory until it is stored.
 .TP
 \fB\-\-keep\-original\fR \fI<keep>\fR [default: true]
 Keep original raw

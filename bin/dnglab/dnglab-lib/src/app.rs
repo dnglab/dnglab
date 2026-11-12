@@ -524,6 +524,30 @@ fn ftpserver_command() -> Command {
     )
     .arg(arg!(ftp_listen: --listen <addr> "FTP listen address").required(false).default_value("0.0.0.0"))
     .arg(
+      arg!(ftp_user: --user <name> "FTP user name")
+        .required(false)
+        .requires("ftp_password")
+        .value_parser(NonEmptyStringValueParser::new())
+        .long_help(
+          "User name for the FTP login. Requires --password.
+Without --user, any client can log in as user 'anonymous' with any password.",
+        ),
+    )
+    .arg(
+      arg!(ftp_password: --password <password> "FTP password")
+        .required(false)
+        .requires("ftp_user")
+        .value_parser(NonEmptyStringValueParser::new())
+        .long_help("Password for the FTP login of --user. FTP transfers the password and all data unencrypted."),
+    )
+    .arg(
+      arg!(ftp_max_upload_size: --"max-upload-size" <MiB> "Maximum size of an uploaded file in MiB")
+        .required(false)
+        .default_value("2048")
+        .value_parser(clap::value_parser!(u64))
+        .long_help("Maximum size of an uploaded file in MiB. Larger uploads are rejected. An upload is held in memory until it is stored."),
+    )
+    .arg(
       arg!(keep_orig: --"keep-original" <keep> "Keep original raw")
         .value_parser(ValueParser::bool())
         .required(false)
