@@ -167,10 +167,7 @@ impl IFD {
               Value::Long(offsets) => {
                 sub_ifd_offsets.insert(tag, offsets.clone());
               }
-              Value::Unknown(tag, offsets) => {
-                sub_ifd_offsets.insert(*tag, vec![offsets[0] as u32]);
-              }
-              Value::Undefined(_) => {
+              Value::Undefined(_) | Value::Unknown(..) => {
                 if let Some(offset) = entry.offset() {
                   sub_ifd_offsets.insert(tag, vec![offset as u32]);
                 } else {
@@ -715,5 +712,29 @@ impl IFD {
       }
     }
     out
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+  use std::io::Cursor;
+
+  /// IFD at offset 8 with the entry `entry` and no next IFD
+  fn ifd_with_entry(entry: [u8; 12]) -> Vec<u8> {
+    let mut data = vec![0x49, 0x49, 42, 0, 8, 0, 0, 0, 1, 0];
+    data.extend_from_slice(&entry);
+    data.extend_from_slice(&[0, 0, 0, 0]);
+    data
+  }
+
+  #[test]
+  fn sub_ifd_of_unknown_type_uses_tag_and_offset() -> Result<()> {
+    // tag 0x14A, type 0 (unknown), count 0
+    let data = ifd_with_entry([0x4a, 0x01, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+    let ifd = IFD::new(&mut Cursor::new(data), 8, 0, 0, Endian::Little, &[0x14a])?;
+    assert!(ifd.sub.contains_key(&0x14a));
+    assert!(!ifd.sub.contains_key(&0));
+    Ok(())
   }
 }
