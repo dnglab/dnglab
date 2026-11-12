@@ -124,13 +124,8 @@ where
           return self.send(Answer::new(ResultCode::Ok, &format!("Data port is now {}", port))).await;
         }
         Command::Pwd => {
-          let msg = self.cwd.to_str().unwrap_or("").to_string(); // small trick
-          if !msg.is_empty() {
-            let message = format!("\"{}\" ", msg);
-            return self.send(Answer::new(ResultCode::PATHNAMECreated, &message)).await;
-          } else {
-            return self.send(Answer::new(ResultCode::FileNotFound, "No such file or directory")).await;
-          }
+          let message = format!("{} is the current directory", quote_path(&self.cwd));
+          return self.send(Answer::new(ResultCode::PATHNAMECreated, &message)).await;
         }
         Command::Retr(file) => return self.retr(file).await,
         Command::Stor(file) => return self.stor(file).await,
@@ -322,8 +317,11 @@ where
           let filename = get_filename(fullpath);
           if let Some(filename) = filename {
             dir.push(filename);
-            if create_dir(dir).await.is_ok() {
-              self.send(Answer::new(ResultCode::PATHNAMECreated, "Folder successfully created!")).await?;
+            if create_dir(&dir).await.is_ok() {
+              let mut created = self.strip_prefix(dir).unwrap_or_default();
+              prefix_slash(&mut created);
+              let message = format!("{} created", quote_path(&created));
+              self.send(Answer::new(ResultCode::PATHNAMECreated, &message)).await?;
               return Ok(());
             }
           }
@@ -730,6 +728,11 @@ fn get_parent(path: PathBuf) -> Option<PathBuf> {
 
 fn get_filename(path: PathBuf) -> Option<OsString> {
   path.file_name().map(|p| p.to_os_string())
+}
+
+/// Path name for a 257 reply: in double quotes, with the quotes of the name doubled
+fn quote_path(path: &Path) -> String {
+  format!("\"{}\"", path.to_string_lossy().replace('"', "\"\""))
 }
 
 fn prefix_slash(path: &mut PathBuf) {
