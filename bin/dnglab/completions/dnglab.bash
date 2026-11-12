@@ -846,7 +846,7 @@ _dnglab() {
                     return 0
                     ;;
                 --format)
-                    COMPREPLY=($(compgen -W "tif jpeg" -- "${cur}"))
+                    COMPREPLY=($(compgen -W "tif jpeg pnm" -- "${cur}"))
                     return 0
                     ;;
                 --color-space)
@@ -890,11 +890,11 @@ _dnglab() {
                     return 0
                     ;;
                 --steps)
-                    COMPREPLY=($(compgen -W "rescale demosaic fujirotate cropactivearea baselineexposure whitebalance autowhitebalance calibrate profilerender tonecurve cropdefault denoise defaultscale exposure autoexposure sharpen transferfunction" -- "${cur}"))
+                    COMPREPLY=($(compgen -W "all rescale demosaic fujirotate cropactivearea baselineexposure whitebalance autowhitebalance calibrate profilerender tonecurve cropdefault denoise defaultscale exposure autoexposure sharpen transferfunction" -- "${cur}"))
                     return 0
                     ;;
                 --skip-steps)
-                    COMPREPLY=($(compgen -W "rescale demosaic fujirotate cropactivearea baselineexposure whitebalance autowhitebalance calibrate profilerender tonecurve cropdefault denoise defaultscale exposure autoexposure sharpen transferfunction" -- "${cur}"))
+                    COMPREPLY=($(compgen -W "all rescale demosaic fujirotate cropactivearea baselineexposure whitebalance autowhitebalance calibrate profilerender tonecurve cropdefault denoise defaultscale exposure autoexposure sharpen transferfunction" -- "${cur}"))
                     return 0
                     ;;
                 --loglevel)

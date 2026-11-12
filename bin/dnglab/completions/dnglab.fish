@@ -80,8 +80,9 @@ complete -c dnglab -n "__fish_dnglab_using_subcommand process-raw" -l image-inde
 complete -c dnglab -n "__fish_dnglab_using_subcommand process-raw" -l crop -d 'Crop of the image: DefaultCrop (best), ActiveArea or none' -r -f -a "best\t''
 activearea\t''
 none\t''"
-complete -c dnglab -n "__fish_dnglab_using_subcommand process-raw" -l format -d 'Output image format, defaults to the OUTPUT file extension or tif. TIFF has 16-bit samples, linear 32-bit floating point samples for High Dynamic Range camera profiles' -r -f -a "tif\t''
-jpeg\t''"
+complete -c dnglab -n "__fish_dnglab_using_subcommand process-raw" -l format -d 'Output image format, defaults to the OUTPUT file extension or tif. TIFF has 16-bit samples, linear 32-bit floating point samples for High Dynamic Range camera profiles. PNM is a 16-bit PGM for one color plane or PPM for three' -r -f -a "tif\t''
+jpeg\t''
+pnm\t''"
 complete -c dnglab -n "__fish_dnglab_using_subcommand process-raw" -l color-space -d 'Color space of the image' -r -f -a "srgb\t''
 adobergb\t''
 prophoto\t''"
@@ -100,7 +101,8 @@ complete -c dnglab -n "__fish_dnglab_using_subcommand process-raw" -l denoise-lu
 complete -c dnglab -n "__fish_dnglab_using_subcommand process-raw" -l denoise-chroma -d 'Strength of the chroma noise reduction (0-4), 0 is off, 1 is a full reduction [default: 0.5]' -r
 complete -c dnglab -n "__fish_dnglab_using_subcommand process-raw" -l sharpen -d 'Strength of the sharpening (0-2), 0 is off, 1 is the classic Laplacian filter [default: 0.2]' -r
 complete -c dnglab -n "__fish_dnglab_using_subcommand process-raw" -l exposure -d 'Change the exposure by this value in EV, e.g. -1.2. A negative value keeps white [default: 0]' -r
-complete -c dnglab -n "__fish_dnglab_using_subcommand process-raw" -l steps -d 'Apply only these processing steps of the rendering, as comma separated list. Without it the default steps are applied' -r -f -a "rescale\t''
+complete -c dnglab -n "__fish_dnglab_using_subcommand process-raw" -l steps -d 'Apply only these processing steps of the rendering, as comma separated list, \'all\' for all steps. Without it the default steps are applied' -r -f -a "all\t''
+rescale\t''
 demosaic\t''
 fujirotate\t''
 cropactivearea\t''
@@ -117,7 +119,8 @@ exposure\t''
 autoexposure\t''
 sharpen\t''
 transferfunction\t''"
-complete -c dnglab -n "__fish_dnglab_using_subcommand process-raw" -l skip-steps -d 'Skip these processing steps of the rendering, as comma separated list (e.g. tonecurve,denoise,sharpen). Takes priority over --steps' -r -f -a "rescale\t''
+complete -c dnglab -n "__fish_dnglab_using_subcommand process-raw" -l skip-steps -d 'Skip these processing steps of the rendering, as comma separated list (e.g. tonecurve,denoise,sharpen). \'all\' skips every step and writes the raw values of the whole raw image. Takes priority over --steps' -r -f -a "all\t''
+rescale\t''
 demosaic\t''
 fujirotate\t''
 cropactivearea\t''

@@ -1,12 +1,14 @@
 // SPDX-License-Identifier: LGPL-2.1
 // Copyright 2021 Daniel Vogelbacher <daniel@chaospixel.com>
 
-use std::path::PathBuf;
+use std::{ffi::OsStr, path::PathBuf};
 
 use clap::{
-  Arg, ArgAction, Command, arg,
-  builder::{NonEmptyStringValueParser, ValueParser},
-  command, value_parser,
+  Arg, ArgAction, Command, ValueEnum, arg,
+  builder::{NonEmptyStringValueParser, PossibleValue, PossibleValuesParser, TypedValueParser, ValueParser},
+  command,
+  error::ErrorKind,
+  value_parser,
 };
 use log::debug;
 use rawler::dng::{ApplyDngOpcodes, CropMode, DngCompression, DngVersion, MAX_JXL_DISTANCE, opcodes::OpcodeSelector};
@@ -111,14 +113,47 @@ fn bad_pixels_arg() -> Arg {
     .value_parser(value_parser!(PathBuf))
 }
 
-/// Argument with a comma separated list of processing steps of the rendering
+/// Value of a list of processing steps that stands for all steps
+const ALL_STEPS: &str = "all";
+
+/// Parser of a processing step of the rendering, or of all steps for `all`
+#[derive(Clone)]
+struct StepsValueParser;
+
+impl StepsValueParser {
+  /// `all` and the names of the processing steps
+  fn values() -> impl Iterator<Item = PossibleValue> {
+    std::iter::once(PossibleValue::new(ALL_STEPS)).chain(ProcessingStep::value_variants().iter().filter_map(ValueEnum::to_possible_value))
+  }
+}
+
+impl TypedValueParser for StepsValueParser {
+  type Value = Vec<ProcessingStep>;
+
+  fn parse_ref(&self, cmd: &Command, arg: Option<&Arg>, value: &OsStr) -> Result<Self::Value, clap::Error> {
+    let name = PossibleValuesParser::new(Self::values()).parse_ref(cmd, arg, value)?;
+    if name == ALL_STEPS {
+      return Ok(ProcessingStep::ALL.to_vec());
+    }
+    <ProcessingStep as ValueEnum>::from_str(&name, false)
+      .map(|step| vec![step])
+      .map_err(|err| clap::Error::raw(ErrorKind::InvalidValue, err))
+  }
+
+  fn possible_values(&self) -> Option<Box<dyn Iterator<Item = PossibleValue> + '_>> {
+    Some(Box::new(Self::values()))
+  }
+}
+
+/// Argument with a comma separated list of processing steps of the rendering,
+/// `all` for all steps
 fn steps_arg(id: &'static str, long: &'static str, help: &'static str) -> Arg {
   Arg::new(id)
     .long(long)
     .value_name("steps")
     .help(help)
     .required(false)
-    .value_parser(value_parser!(ProcessingStep))
+    .value_parser(StepsValueParser)
     .value_delimiter(',')
     .ignore_case(true)
     .action(ArgAction::Append)
@@ -394,7 +429,7 @@ fn process_raw_command() -> Command {
         .action(ArgAction::SetTrue),
     )
     .arg(
-      arg!(--"format" <format> "Output image format, defaults to the OUTPUT file extension or tif. TIFF has 16-bit samples, linear 32-bit floating point samples for High Dynamic Range camera profiles")
+      arg!(--"format" <format> "Output image format, defaults to the OUTPUT file extension or tif. TIFF has 16-bit samples, linear 32-bit floating point samples for High Dynamic Range camera profiles. PNM is a 16-bit PGM for one color plane or PPM for three")
         .required(false)
         .value_parser(value_parser!(ProcessedImageFormat)),
     )
@@ -472,12 +507,12 @@ fn process_raw_command() -> Command {
     .arg(steps_arg(
       "steps",
       "steps",
-      "Apply only these processing steps of the rendering, as comma separated list. Without it the default steps are applied",
+      "Apply only these processing steps of the rendering, as comma separated list, 'all' for all steps. Without it the default steps are applied",
     ))
     .arg(steps_arg(
       "skip_steps",
       "skip-steps",
-      "Skip these processing steps of the rendering, as comma separated list (e.g. tonecurve,denoise,sharpen). Takes priority over --steps",
+      "Skip these processing steps of the rendering, as comma separated list (e.g. tonecurve,denoise,sharpen). 'all' skips every step and writes the raw values of the whole raw image. Takes priority over --steps",
     ))
     .arg(arg!(-f --override "Override existing files").action(ArgAction::SetTrue))
     .arg(arg!(-r --recursive "Process input directory recursive").action(ArgAction::SetTrue))

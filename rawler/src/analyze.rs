@@ -1,6 +1,5 @@
 use std::{fs::metadata, io::Write, path::Path};
 
-use byteorder::{BigEndian, WriteBytesExt};
 use hex::FromHex;
 use image::DynamicImage;
 use itertools::Itertools;
@@ -283,30 +282,10 @@ pub fn raw_to_srgb<P: AsRef<Path>>(path: P, params: &RawDecodeParams) -> Result<
     .ok_or_else(|| RawlerError::general("failed to convert to dynamic image"))
 }
 
-/// Dump raw pixel data as PGM
-pub fn raw_as_pgm(width: usize, height: usize, buf: &[u16], writer: &mut dyn Write) -> std::io::Result<()> {
-  let header = format!("P5 {} {} {}\n", width, height, 65535);
-  writer.write_all(header.as_bytes())?;
-  for px in buf {
-    writer.write_u16::<BigEndian>(*px)?;
-  }
-  Ok(())
-}
-
 /// Dump pixel data as PPM
 pub fn rgb8_as_ppm8(width: usize, height: usize, buf: &[u8], writer: &mut dyn Write) -> std::io::Result<()> {
   let header = format!("P6 {} {} {}\n", width, height, u8::MAX);
   writer.write_all(header.as_bytes())?;
   writer.write_all(buf)?;
-  Ok(())
-}
-
-/// Dump raw pixel data as PPM
-pub fn raw_as_ppm16(width: usize, height: usize, buf: &[u16], writer: &mut dyn Write) -> std::io::Result<()> {
-  let header = format!("P6 {} {} {}\n", width, height, 65535);
-  writer.write_all(header.as_bytes())?;
-  for px in buf {
-    writer.write_u16::<BigEndian>(*px)?;
-  }
   Ok(())
 }
