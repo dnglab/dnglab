@@ -253,7 +253,6 @@ impl<'a> Decoder for MrwDecoder<'a> {
       Ok(None)
     } else if is_exif(file) {
       let buf = file.as_vec()?;
-      dump_buf("/tmp/dmp1", &buf);
       let img = image::load_from_memory_with_format(&buf, image::ImageFormat::Jpeg)
         .map_err(|err| decoder_error!("Failed to get full image from RAW file: {:?}", err))?;
       log::debug!("Got full image from RAW");
