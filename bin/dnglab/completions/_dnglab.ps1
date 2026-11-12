@@ -174,6 +174,7 @@ Register-ArgumentCompleter -Native -CommandName 'dnglab' -ScriptBlock {
             [CompletionResult]::new('--listen', '--listen', [CompletionResultType]::ParameterName, 'FTP listen address')
             [CompletionResult]::new('--user', '--user', [CompletionResultType]::ParameterName, 'FTP user name')
             [CompletionResult]::new('--password', '--password', [CompletionResultType]::ParameterName, 'FTP password')
+            [CompletionResult]::new('--max-upload-size', '--max-upload-size', [CompletionResultType]::ParameterName, 'Maximum size of an uploaded file in MiB')
             [CompletionResult]::new('--keep-original', '--keep-original', [CompletionResultType]::ParameterName, 'Keep original raw')
             [CompletionResult]::new('-d', '-d', [CompletionResultType]::ParameterName, 'Log level')
             [CompletionResult]::new('--loglevel', '--loglevel', [CompletionResultType]::ParameterName, 'Log level')

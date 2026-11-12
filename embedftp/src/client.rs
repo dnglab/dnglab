@@ -15,7 +15,7 @@ use std::path::{Component, Path, PathBuf, StripPrefixError};
 use std::result;
 use std::sync::Arc;
 use tokio::fs::{File, canonicalize, create_dir, metadata, read_dir, remove_dir, remove_file, symlink_metadata};
-use tokio::io::AsyncWriteExt;
+use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::tcp::{OwnedReadHalf, OwnedWriteHalf};
 use tokio::net::{TcpListener, TcpStream};
 use tokio::runtime::Handle;
@@ -649,6 +649,10 @@ where
       .await?;
     let data = match self.receive_data().await {
       Ok(data) => data,
+      Err(e) if e.kind() == io::ErrorKind::FileTooLarge => {
+        warn!("Upload of {:?} exceeds the maximum size", path);
+        return Ok(Answer::new(ResultCode::ExceededStorageAllocation, "File exceeds the maximum upload size"));
+      }
       Err(e) => return Ok(transfer_aborted(e)),
     };
     info!("Received file: {:?}, {} bytes", path, data.len());
@@ -673,9 +677,14 @@ where
 
   /// Receive data from a data connection and take out the reader
   async fn receive_data(&mut self) -> io::Result<Vec<u8>> {
-    let mut reader = self.data_reader.take().ok_or(io::ErrorKind::NotConnected)?;
+    let reader = self.data_reader.take().ok_or(io::ErrorKind::NotConnected)?;
+    let limit = self.config.max_upload_size;
     let mut buf = Vec::new();
-    tokio::io::copy(&mut reader, &mut buf).await?;
+    // One byte more than the limit shows that the file is too large
+    reader.take(limit.saturating_add(1)).read_to_end(&mut buf).await?;
+    if buf.len() as u64 > limit {
+      return Err(io::ErrorKind::FileTooLarge.into());
+    }
     Ok(buf)
   }
 

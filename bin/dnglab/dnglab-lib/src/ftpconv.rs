@@ -81,6 +81,9 @@ pub async fn ftpserver(options: &ArgMatches) -> crate::Result<()> {
 
   config.server_port = *options.get_one("ftp_port").unwrap_or(&2121);
   config.server_addr = options.get_one::<String>("ftp_listen").unwrap_or(&"127.0.0.1".to_string()).parse()?;
+  if let Some(mib) = options.get_one::<u64>("ftp_max_upload_size") {
+    config.max_upload_size = mib.saturating_mul(1024 * 1024);
+  }
 
   match (options.get_one::<String>("ftp_user"), options.get_one::<String>("ftp_password")) {
     (Some(name), Some(password)) => {

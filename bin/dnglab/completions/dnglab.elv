@@ -167,6 +167,7 @@ set edit:completion:arg-completer[dnglab] = {|@words|
             cand --listen 'FTP listen address'
             cand --user 'FTP user name'
             cand --password 'FTP password'
+            cand --max-upload-size 'Maximum size of an uploaded file in MiB'
             cand --keep-original 'Keep original raw'
             cand -d 'Log level'
             cand --loglevel 'Log level'

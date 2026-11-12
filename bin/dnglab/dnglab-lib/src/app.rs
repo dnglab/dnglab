@@ -541,6 +541,13 @@ Without --user, any client can log in as user 'anonymous' with any password.",
         .long_help("Password for the FTP login of --user. FTP transfers the password and all data unencrypted."),
     )
     .arg(
+      arg!(ftp_max_upload_size: --"max-upload-size" <MiB> "Maximum size of an uploaded file in MiB")
+        .required(false)
+        .default_value("2048")
+        .value_parser(clap::value_parser!(u64))
+        .long_help("Maximum size of an uploaded file in MiB. Larger uploads are rejected. An upload is held in memory until it is stored."),
+    )
+    .arg(
       arg!(keep_orig: --"keep-original" <keep> "Keep original raw")
         .value_parser(ValueParser::bool())
         .required(false)

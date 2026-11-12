@@ -12,6 +12,8 @@ pub struct Config {
   pub users: Vec<User>,
   pub anonymous: bool,
   pub greeting: String,
+  /// Maximum size of an uploaded file in bytes. An upload is held in memory.
+  pub max_upload_size: u64,
 }
 
 /// This callback provides filtering for specific FTP
@@ -41,6 +43,7 @@ impl Config {
       users: Vec::new(),
       anonymous: true,
       greeting: String::from("Welcome to this FTP server!"),
+      max_upload_size: 2 * 1024 * 1024 * 1024,
     })
   }
 }
