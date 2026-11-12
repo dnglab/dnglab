@@ -495,6 +495,23 @@ mod tests {
   }
 
   #[test]
+  fn ftyp_brands() {
+    let read = |data: Vec<u8>| {
+      let mut reader = Cursor::new(data);
+      let header = BoxHeader::parse(&mut reader)?;
+      ftyp::FtypBox::read_box(&mut reader, header)
+    };
+    let brands = |ftyp: ftyp::FtypBox| ftyp.compatible_brands.iter().map(ToString::to_string).collect::<Vec<_>>();
+    assert_eq!(brands(read(ftyp()).expect("ftyp")), ["crx ", "isom"]);
+    // Too short for the major brand and the minor version
+    assert!(read(boxed(b"ftyp", 8, &[])).is_err());
+    assert!(read(boxed(b"ftyp", 12, b"crx ")).is_err());
+    // 64-bit size
+    let data = boxed(b"ftyp", 1, &[&32_u64.to_be_bytes()[..], b"crx \x00\x00\x00\x01crx isom"].concat());
+    assert_eq!(brands(read(data).expect("ftyp")), ["crx ", "isom"]);
+  }
+
+  #[test]
   fn undersized_box_in_moov_is_an_error() {
     let mut data = ftyp();
     data.extend(boxed(b"moov", 16, &boxed(b"free", 3, &[])));

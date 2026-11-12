@@ -23,10 +23,12 @@ impl<R: Read + Seek> ReadBox<&mut R> for FtypBox {
   fn read_box(reader: &mut R, header: BoxHeader) -> Result<Self> {
     let major = reader.read_u32::<BigEndian>()?;
     let minor = reader.read_u32::<BigEndian>()?;
-    if header.size % 4 != 0 {
-      return Err(BmffError::Parse("invalid ftyp size".into()));
+    // The compatible brands follow the major brand and the minor version
+    let payload = header.size - header.header_len;
+    if payload < 8 || payload % 4 != 0 {
+      return Err(BmffError::Parse(format!("invalid ftyp size {}", header.size)));
     }
-    let brand_count = (header.size - 16) / 4; // header + major + minor
+    let brand_count = (payload - 8) / 4;
 
     let mut brands = Vec::new();
     for _ in 0..brand_count {
