@@ -47,17 +47,32 @@ pub fn is_ciff(file: &RawSource) -> bool {
 
 impl CiffIFD {
   pub fn new_file(file: &RawSource) -> Result<CiffIFD, String> {
-    let data = file.as_vec().map_err(|err| format!("Failed to read whole file: {:?}", err))?;
-
-    CiffIFD::new(&data, LEu32(&data, 2) as usize, data.len(), 1)
+    let data = file.buf();
+    // The header length is the offset of the root heap
+    let header_len = data.get(2..6).map(|_| LEu32(data, 2) as usize).ok_or("CIFF: file is too short for a header")?;
+    CiffIFD::new(data, header_len, data.len(), 1)
   }
 
+  /// Heap from `start` to `end` in `buf`. It ends with the offset of its
+  /// entry table, which follows the value data.
   pub fn new(buf: &[u8], start: usize, end: usize, depth: u32) -> Result<CiffIFD, String> {
     let mut entries = HashMap::new();
     let mut subifds = Vec::new();
 
-    let valuedata_size = LEu32(buf, end - 4) as usize;
-    let dircount = LEu16(buf, start + valuedata_size) as usize;
+    let out_of_heap = || format!("CIFF: heap {}..{} has no valid entry table", start, end);
+    let table_end = end
+      .checked_sub(4)
+      .filter(|table_end| *table_end >= start && end <= buf.len())
+      .ok_or_else(out_of_heap)?;
+    let valuedata_size = LEu32(buf, table_end) as usize;
+    let table = start
+      .checked_add(valuedata_size)
+      .filter(|table| table.saturating_add(2) <= table_end)
+      .ok_or_else(out_of_heap)?;
+    let dircount = LEu16(buf, table) as usize;
+    if table + 2 + dircount * 10 > table_end {
+      return Err(out_of_heap());
+    }
 
     for i in 0..dircount {
       let entry_offset: usize = start + valuedata_size + 2 + i * 10;
@@ -186,6 +201,33 @@ mod tests {
     }
     data.extend_from_slice(&(values.len() as u32).to_le_bytes());
     data
+  }
+
+  #[test]
+  fn heap_bounds() {
+    let data = heap(&[1, 0, 2, 0], &[(0x1031, 4, 0)]);
+    let ifd = CiffIFD::new(&data, 0, data.len(), 1).expect("heap");
+    assert!(ifd.find_entry(CiffTag::SensorInfo).is_some());
+    // Heaps beyond the buffer, without room for the table offset, or
+    // starting behind their end
+    assert!(CiffIFD::new(&data, 0, data.len() + 1, 1).is_err());
+    assert!(CiffIFD::new(&data, 0, 3, 1).is_err());
+    assert!(CiffIFD::new(&data, 10, 8, 1).is_err());
+    // The table offset or the entry count exceed the heap
+    let mut bad = data.clone();
+    let len = bad.len();
+    bad[len - 4..].copy_from_slice(&u32::MAX.to_le_bytes());
+    assert!(CiffIFD::new(&bad, 0, len, 1).is_err());
+    let mut bad = data.clone();
+    bad[4..6].copy_from_slice(&2_u16.to_le_bytes());
+    assert!(CiffIFD::new(&bad, 0, len, 1).is_err());
+  }
+
+  #[test]
+  fn short_files() {
+    for data in [&b""[..], b"II", b"II\x1a\0"] {
+      assert!(CiffIFD::new_file(&RawSource::new_from_slice(data)).is_err());
+    }
   }
 
   #[test]
