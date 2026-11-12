@@ -14,7 +14,7 @@ use std::net::{IpAddr, SocketAddr};
 use std::path::{Component, Path, PathBuf, StripPrefixError};
 use std::result;
 use std::sync::Arc;
-use tokio::fs::{File, canonicalize, create_dir, metadata, read_dir, remove_dir_all, remove_file, symlink_metadata};
+use tokio::fs::{File, canonicalize, create_dir, metadata, read_dir, remove_dir, remove_file, symlink_metadata};
 use tokio::io::AsyncWriteExt;
 use tokio::net::tcp::{OwnedReadHalf, OwnedWriteHalf};
 use tokio::net::{TcpListener, TcpStream};
@@ -364,7 +364,8 @@ where
   async fn rmd(&mut self, directory: PathBuf) -> Result<()> {
     let res = self.resolve(&directory).await;
     if let Ok(dir) = res {
-      if remove_dir_all(dir).await.is_ok() {
+      // Only an empty directory is removed, and never the root
+      if dir != self.server_root && remove_dir(dir).await.is_ok() {
         self
           .send(Answer::new(ResultCode::RequestedFileActionOkay, "Folder successfully removed"))
           .await?;
