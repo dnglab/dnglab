@@ -33,6 +33,7 @@ use crate::imgop::Point;
 use crate::imgop::Rect;
 use crate::lens::LensDescription;
 use crate::lens::LensResolver;
+use crate::pixarray::PixU16;
 use crate::rawimage::CFAConfig;
 use crate::rawimage::RawPhotometricInterpretation;
 use crate::rawsource::RawSource;
@@ -170,11 +171,11 @@ impl<'a> Decoder for Cr2Decoder<'a> {
       if let Some(canoncol) = raw.get_entry(TiffCommonTag::Cr2StripeWidths) {
         debug!("Found Cr2StripeWidths tag: {:?}", canoncol.value);
         if canoncol.value.force_usize(0) == 0 {
+          set_dimension(&mut ljpegout, width, height)?;
           if cpp == 3 && !dummy {
             self.convert_to_rgb(file, camera, &decompressor, width, height, ljpegout.pixels_mut())?;
             //width /= 3;
           }
-          ljpegout.update_dimension(Dim2::new(width, height));
           (cpp, ljpegout, precision)
           /*
           if camera.find_hint("double_line") {
@@ -227,7 +228,7 @@ impl<'a> Decoder for Cr2Decoder<'a> {
           //(width, height, cpp, out)
         }
       } else {
-        ljpegout.update_dimension(Dim2::new(width, height));
+        set_dimension(&mut ljpegout, width, height)?;
         (cpp, ljpegout, precision)
         // (width, height, cpp, PixU16::new_with(ljpegout.into_inner(), width, height))
       }
@@ -781,6 +782,7 @@ impl<'a> Cr2Decoder<'a> {
     debug!("YUV2RGB: Regular WB: {:?}", self.get_wb(rawfile, cam));
     debug!("YUV2RGB: SRAW WB: {:?}", self.get_sraw_wb(rawfile, cam));
     debug!("Model ID: 0x{:X}", self.model_id.unwrap_or(0));
+    check_yuv_layout(width, image.len())?;
 
     let do_interpolate = std::env::var("RAWLER_CR2_YUV_INTERPOLATE")
       .ok()
@@ -886,6 +888,33 @@ fn normalize_wb(raw_wb: [f32; 4]) -> [f32; 4] {
     }
   });
   [norm[0], (norm[1] + norm[2]) / 2.0, norm[3], f32::NAN]
+}
+
+/// Set the dimension of the decoded `image` to `width` x `height` samples,
+/// an error if the number of samples differs. The dimension, not the data,
+/// gives the number of samples, as an image for a dummy decode has no data.
+fn set_dimension(image: &mut PixU16, width: usize, height: usize) -> Result<()> {
+  let dim = image.dim();
+  if width.checked_mul(height) != Some(dim.w * dim.h) {
+    return Err(decoder_error!(
+      "CR2: image of {}x{} samples does not match the {}x{} decoded samples",
+      width,
+      height,
+      dim.w,
+      dim.h
+    ));
+  }
+  image.update_dimension(Dim2::new(width, height));
+  Ok(())
+}
+
+/// Check that YCbCr data of `len` samples has rows of `width` samples of
+/// 3 components each, as the interpolation and conversion to RGB expect
+fn check_yuv_layout(width: usize, len: usize) -> Result<()> {
+  if width == 0 || width % 3 != 0 || len % width != 0 {
+    return Err(decoder_error!("CR2: sRAW data of {} samples has no rows of {} YCbCr samples", len, width));
+  }
+  Ok(())
 }
 
 /// Copy `len` samples of `input` at `from` to `out` at `to`, an error if
@@ -1087,6 +1116,21 @@ pub enum Cr2MakernoteTag {
 #[cfg(test)]
 mod tests {
   use super::*;
+
+  #[test]
+  fn dimensions() {
+    let mut image = PixU16::new(6, 2);
+    assert!(set_dimension(&mut image, 3, 4).is_ok());
+    assert_eq!(image.dim(), Dim2::new(3, 4));
+    assert!(set_dimension(&mut image, 5, 2).is_err());
+    assert!(set_dimension(&mut image, usize::MAX, 2).is_err());
+    // Images of a dummy decode have no data
+    assert!(set_dimension(&mut PixU16::new_uninit(6, 2), 12, 1).is_ok());
+    assert!(check_yuv_layout(6, 12).is_ok());
+    assert!(check_yuv_layout(0, 12).is_err());
+    assert!(check_yuv_layout(4, 12).is_err());
+    assert!(check_yuv_layout(9, 12).is_err());
+  }
 
   #[test]
   fn stripes() -> Result<()> {
