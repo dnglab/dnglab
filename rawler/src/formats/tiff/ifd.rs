@@ -116,6 +116,7 @@ impl IFD {
 
   pub fn new<R: Read + Seek>(reader: &mut R, offset: u32, base: u32, corr: i32, endian: Endian, sub_tags: &[u16]) -> Result<IFD> {
     reader.seek(SeekFrom::Start(base as u64 + offset as u64))?;
+    // Offsets of sub-IFDs, already corrected
     let mut sub_ifd_offsets = HashMap::new();
     let mut reader = EndianReader::new(reader, endian);
     let entry_count = reader.read_u16()?;
@@ -164,9 +165,12 @@ impl IFD {
 
           if sub_tags.contains(&tag) {
             match &entry.value {
-              Value::Long(offsets) => {
-                sub_ifd_offsets.insert(tag, offsets.clone());
-              }
+              Value::Long(offsets) => match offsets.iter().map(|offset| apply_corr(*offset, corr)).collect::<Result<Vec<_>>>() {
+                Ok(offsets) => {
+                  sub_ifd_offsets.insert(tag, offsets);
+                }
+                Err(err) => log::warn!("Invalid SubIFD offset for tag 0x{:X}, skipping: {}", tag, err),
+              },
               Value::Undefined(_) | Value::Unknown(..) => {
                 if let Some(offset) = entry.offset() {
                   sub_ifd_offsets.insert(tag, vec![offset as u32]);
@@ -217,7 +221,7 @@ impl IFD {
     for subs in sub_ifd_offsets {
       let mut ifds = Vec::new();
       for offset in subs.1 {
-        match apply_corr(offset, corr).and_then(|offset| Self::new(reader, offset, base, corr, endian, &[])) {
+        match Self::new(reader, offset, base, corr, endian, &[]) {
           Ok(ifd) => ifds.push(ifd),
           Err(err) => {
             log::warn!("Error while processing TIFF sub-IFD for tag 0x{:X}, ignoring it: {}", subs.0, err);
@@ -735,6 +739,17 @@ mod tests {
     let ifd = IFD::new(&mut Cursor::new(data), 8, 0, 0, Endian::Little, &[0x14a])?;
     assert!(ifd.sub.contains_key(&0x14a));
     assert!(!ifd.sub.contains_key(&0));
+    Ok(())
+  }
+
+  #[test]
+  fn sub_ifd_of_undefined_type_is_corrected_once() -> Result<()> {
+    // tag 0x927C, type UNDEFINED, count 18, offset 24 + correction 2
+    let mut data = ifd_with_entry([0x7c, 0x92, 7, 0, 18, 0, 0, 0, 24, 0, 0, 0]);
+    // Sub-IFD at 26 with tag 0x200
+    data.extend_from_slice(&[1, 0, 0x00, 0x02, 3, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0]);
+    let ifd = IFD::new(&mut Cursor::new(data), 8, 0, 2, Endian::Little, &[0x927c])?;
+    assert!(ifd.sub[&0x927c][0].has_entry(0x200_u16));
     Ok(())
   }
 }
