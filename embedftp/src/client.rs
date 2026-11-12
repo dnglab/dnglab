@@ -27,7 +27,7 @@ use std::os::unix::prelude::MetadataExt;
 use std::os::windows::fs::MetadataExt;
 
 use crate::codec::FtpCodec;
-use crate::command::{Command, TransferType};
+use crate::command::{Command, ParseError, TransferType};
 use crate::config::{Config, FtpCallback};
 use crate::error::{Error, Result};
 use crate::ftp::{Answer, ResultCode};
@@ -224,6 +224,16 @@ where
       }
     }
     Ok(())
+  }
+
+  /// Answer a command line that is no valid command
+  async fn reject(&mut self, err: ParseError) -> Result<()> {
+    warn!("Rejected command: {:?}", err);
+    let answer = match err {
+      ParseError::Syntax(msg) => Answer::new(ResultCode::InvalidParameterOrArgument, msg),
+      ParseError::Parameter(msg) => Answer::new(ResultCode::CommandNotImplementedForThatParameter, msg),
+    };
+    self.send(answer).await
   }
 
   async fn initiate_data_connection(&mut self) -> Result<()> {
@@ -699,7 +709,10 @@ where
 
   let mut client = Client::new(handle, writer, server_root, config, env, local_addr, remote_addr);
   while let Some(cmd) = reader.try_next().await? {
-    client.handle_cmd(cmd).await?;
+    match cmd {
+      Ok(cmd) => client.handle_cmd(cmd).await?,
+      Err(err) => client.reject(err).await?,
+    }
   }
 
   debug!("Client {} closed connection", remote_addr);

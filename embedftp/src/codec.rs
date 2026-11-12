@@ -2,8 +2,7 @@
 // Originally written by Guillaume Gomez under MIT license
 // Copyright 2021 Daniel Vogelbacher <daniel@chaospixel.com>
 
-use crate::command::Command;
-use crate::error::Error;
+use crate::command::{Command, ParseError};
 use crate::ftp::Answer;
 use bytes::BytesMut;
 use std::io::{self, Write};
@@ -13,14 +12,15 @@ use tokio_util::codec::{Decoder, Encoder};
 pub struct FtpCodec;
 
 impl Decoder for FtpCodec {
-  type Item = Command;
+  /// A line that is no valid command is an item too, the client gets a reply for it.
+  type Item = Result<Command, ParseError>;
   type Error = io::Error;
 
-  fn decode(&mut self, buf: &mut BytesMut) -> io::Result<Option<Command>> {
+  fn decode(&mut self, buf: &mut BytesMut) -> io::Result<Option<Self::Item>> {
     if let Some(index) = find_crlf(buf) {
       let line = buf.split_to(index);
       let _ = buf.split_to(2); // Remove \r\n.
-      Command::new(line.to_vec()).map(Some).map_err(Error::to_io_error)
+      Ok(Some(Command::new(line.to_vec())))
     } else {
       Ok(None)
     }
@@ -94,13 +94,13 @@ mod tests {
     let result = codec.decode(&mut buf);
     assert!(result.is_ok());
     let command = result.expect("Codec failed");
-    assert_eq!(command, Some(Command::Pwd));
+    assert_eq!(command, Some(Ok(Command::Pwd)));
 
     let mut buf = BytesMut::new();
     buf.extend(b"LIST /tmp\r\n");
     let result = codec.decode(&mut buf);
     assert!(result.is_ok());
     let command = result.expect("Codec failed");
-    assert_eq!(command, Some(Command::List(Some(PathBuf::from("/tmp")))));
+    assert_eq!(command, Some(Ok(Command::List(Some(PathBuf::from("/tmp"))))));
   }
 }

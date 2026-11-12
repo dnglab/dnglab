@@ -2,9 +2,31 @@
 // Originally written by Guillaume Gomez under MIT license
 // Copyright 2021 Daniel Vogelbacher <daniel@chaospixel.com>
 
-use crate::error::{Error, Result};
 use std::path::{Path, PathBuf};
-use std::str::{self, FromStr};
+use std::result;
+use std::str::{self, FromStr, Utf8Error};
+use std::string::FromUtf8Error;
+
+/// Reason for the rejection of a command line
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub enum ParseError {
+  /// Syntax error in parameters or arguments
+  Syntax(&'static str),
+  /// Command is not implemented for that parameter
+  Parameter(&'static str),
+}
+
+impl From<Utf8Error> for ParseError {
+  fn from(_: Utf8Error) -> Self {
+    ParseError::Syntax("Parameter is not valid UTF-8")
+  }
+}
+
+impl From<FromUtf8Error> for ParseError {
+  fn from(_: FromUtf8Error) -> Self {
+    ParseError::Syntax("Parameter is not valid UTF-8")
+  }
+}
 
 /// FTP commands and their arguments
 #[derive(Clone, Debug, PartialEq)]
@@ -63,13 +85,13 @@ impl AsRef<str> for Command {
 }
 
 impl Command {
-  pub fn new(input: Vec<u8>) -> Result<Self> {
+  pub fn new(input: Vec<u8>) -> result::Result<Self, ParseError> {
     let (command, data) = match input.iter().position(|&byte| byte == b' ') {
       Some(index) => {
         let (c, d) = input.split_at(index);
         (c.to_ascii_uppercase(), Ok(&d[1..]))
       }
-      None => (input.to_ascii_uppercase(), Err(Error::Msg("no command parameter".to_string()))),
+      None => (input.to_ascii_uppercase(), Err(ParseError::Syntax("Missing parameter"))),
     };
 
     let command = match command.as_slice() {
@@ -85,13 +107,13 @@ impl Command {
           .filter_map(|bytes| str::from_utf8(bytes).ok().and_then(|string| u8::from_str(string).ok()))
           .collect::<Vec<u8>>();
         if addr.len() != 6 {
-          return Err("Invalid address/port".into());
+          return Err(ParseError::Syntax("Invalid address/port"));
         }
 
         let port = ((addr[4] as u16) << 8) | (addr[5] as u16);
         // TODO: check if the port isn't already used already by another connection...
         if port <= 1024 {
-          return Err("Port must be greater than 1024".into());
+          return Err(ParseError::Syntax("Port must be greater than 1024"));
         }
         Command::Port(port)
       }
@@ -102,12 +124,12 @@ impl Command {
       b"STOR" => Command::Stor(data.and_then(|bytes| Ok(Path::new(str::from_utf8(bytes)?).to_path_buf()))?),
       b"SYST" => Command::Syst,
       b"TYPE" => {
-        let error = Err("command not implemented for that parameter".into());
+        let error = Err(ParseError::Parameter("Command not implemented for that parameter"));
         let data = data?;
         if data.is_empty() {
           return error;
         }
-        match TransferType::from(data[0]) {
+        match TransferType::from(data[0].to_ascii_uppercase()) {
           TransferType::Unknown => return error,
           typ => Command::Type(typ),
         }
