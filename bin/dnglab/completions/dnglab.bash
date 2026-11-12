@@ -181,7 +181,7 @@ _dnglab() {
             return 0
             ;;
         dnglab__subcmd__convert)
-            opts="-p -c -f -r -j -d -v -h --profile --compression --ljpeg92-predictor --lossy-jpeg-quality --jxl-distance --jxl-effort --jxl-decode-speed --dng-preview --dng-thumbnail --dng-force-preview --dng-force-thumbnail --max-dng-backward-version --embed-raw --apply-dng-opcodes --remove-dng-opcodes --artist --copyright --keep-mtime --image-index --crop --override --recursive --jobs --dcp-file --extra-dcp-file --bad-pixels --loglevel --profile-path --config --help"
+            opts="-p -c -f -r -j -d -v -h --profile --compression --ljpeg92-predictor --lossy-jpeg-quality --jxl-distance --jxl-effort --jxl-decode-speed --dng-preview --dng-thumbnail --dng-force-preview --dng-force-thumbnail --max-dng-backward-version --embed-raw --apply-dng-opcodes --remove-dng-opcodes --artist --copyright --keep-mtime --image-index --crop --override --recursive --jobs --dcp-file --extra-dcp-file --bad-pixels --dark-frame --dark-frame-black --loglevel --profile-path --config --help"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
@@ -292,6 +292,14 @@ _dnglab() {
                     return 0
                     ;;
                 --bad-pixels)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
+                --dark-frame)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
+                --dark-frame-black)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
@@ -815,7 +823,7 @@ _dnglab() {
             return 0
             ;;
         dnglab__subcmd__process__subcmd__raw)
-            opts="-f -r -d -v -h --remove-dng-opcodes --bad-pixels --artist --keep-mtime --image-index --crop --crop-transparent --format --color-space --highlights --bayer-demosaic --xtrans-demosaic --dcp-file --jpeg-quality --denoise-luma --denoise-chroma --sharpen --exposure --auto-exposure --steps --skip-steps --override --recursive --loglevel --profile-path --config --help"
+            opts="-f -r -d -v -h --remove-dng-opcodes --bad-pixels --dark-frame --dark-frame-black --artist --keep-mtime --image-index --crop --crop-transparent --format --color-space --highlights --bayer-demosaic --xtrans-demosaic --dcp-file --jpeg-quality --denoise-luma --denoise-chroma --sharpen --exposure --auto-exposure --steps --skip-steps --override --recursive --loglevel --profile-path --config --help"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
@@ -826,6 +834,14 @@ _dnglab() {
                     return 0
                     ;;
                 --bad-pixels)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
+                --dark-frame)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
+                --dark-frame-black)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
@@ -890,11 +906,11 @@ _dnglab() {
                     return 0
                     ;;
                 --steps)
-                    COMPREPLY=($(compgen -W "all opcodelist1 rescale opcodelist2 demosaic opcodelist3 fujirotate cropactivearea baselineexposure whitebalance autowhitebalance calibrate profilerender tonecurve cropdefault denoise defaultscale exposure autoexposure sharpen transferfunction" -- "${cur}"))
+                    COMPREPLY=($(compgen -W "all darkframe opcodelist1 rescale opcodelist2 demosaic opcodelist3 fujirotate cropactivearea baselineexposure whitebalance autowhitebalance calibrate profilerender tonecurve cropdefault denoise defaultscale exposure autoexposure sharpen transferfunction" -- "${cur}"))
                     return 0
                     ;;
                 --skip-steps)
-                    COMPREPLY=($(compgen -W "all opcodelist1 rescale opcodelist2 demosaic opcodelist3 fujirotate cropactivearea baselineexposure whitebalance autowhitebalance calibrate profilerender tonecurve cropdefault denoise defaultscale exposure autoexposure sharpen transferfunction" -- "${cur}"))
+                    COMPREPLY=($(compgen -W "all darkframe opcodelist1 rescale opcodelist2 demosaic opcodelist3 fujirotate cropactivearea baselineexposure whitebalance autowhitebalance calibrate profilerender tonecurve cropdefault denoise defaultscale exposure autoexposure sharpen transferfunction" -- "${cur}"))
                     return 0
                     ;;
                 --loglevel)

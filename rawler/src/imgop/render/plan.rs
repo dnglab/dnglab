@@ -3,6 +3,8 @@
 
 //! Planning of the processing operations for an image
 
+use std::sync::Arc;
+
 use super::{BayerDemosaic, DemosaicQuality, ProcessingStep, RenderOptions, RenderTarget, WhiteBalancePlacement, XTransDemosaic};
 use crate::RawlerError;
 use crate::{
@@ -14,6 +16,7 @@ use crate::{
   imgop::{
     balance::auto_white_balance,
     color::{CameraToRgb, OutputSpace, PixelOp, TransferFunction, camera_to_output, d65_white_balance},
+    darkframe::DarkFrame,
     denoise::DenoiseStrength,
     highlights::{HighlightMode, HighlightShoulder},
     matrix::multiply,
@@ -36,6 +39,8 @@ pub struct Plan {
 /// Processing operation with its parameters
 #[derive(Clone, Debug)]
 pub(super) enum Op {
+  /// Subtract the dark signal of a dark frame from the raw data
+  DarkFrame(Arc<DarkFrame>),
   /// Apply a DNG opcode list to the image data. With `crop_to_active_area`,
   /// the image data stays cropped to an ActiveArea that the list changes.
   Opcodes { stage: OpcodeStage, crop_to_active_area: bool },
@@ -172,6 +177,11 @@ pub fn plan(rawimage: &RawImage, options: &RenderOptions) -> crate::Result<Plan>
     });
   let wb_before_demosaic = mosaic_wb.is_some();
 
+  // The dark frame is subtracted from the raw data as read from the file
+  if let Some(dark) = options.dark_frame.as_ref().filter(|_| steps.contains(Step::DarkFrame)) {
+    dark.check_size(rawimage)?;
+    ops.push(Op::DarkFrame(dark.clone()));
+  }
   // OpcodeList1 is applied to the raw image as read from the file
   if has_opcodes(OpcodeStage::List1) {
     ops.push(Op::Opcodes {

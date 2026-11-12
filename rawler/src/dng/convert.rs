@@ -22,6 +22,7 @@ use crate::{
   },
   formats::tiff::Entry,
   imgop::{
+    darkframe::{DarkFrame, subtract_dark_frame},
     matrix::{multiply, transform_1d, transform_2d},
     raw::map_4ch_to_3ch,
     render::{DemosaicQuality, ProcessingStep, RenderOptions, StepSet, render, render_linear_raw},
@@ -92,6 +93,8 @@ pub struct ConvertParams {
   pub dcp: Option<CameraProfileFile>,
   /// Camera profiles to add as extra camera profiles
   pub extra_dcp: Vec<CameraProfileFile>,
+  /// Dark frame to subtract from the raw data, the data stays at stage 1
+  pub dark_frame: Option<Arc<DarkFrame>>,
 }
 
 /// Information surfaced from a completed conversion.
@@ -134,6 +137,7 @@ impl Default for ConvertParams {
       replace_dng_opcodes: Vec::new(),
       dcp: None,
       extra_dcp: Vec::new(),
+      dark_frame: None,
     }
   }
 }
@@ -320,6 +324,12 @@ impl ConvertParams {
     self.extra_dcp = extra_dcp;
     self
   }
+
+  /// Set the dark frame to subtract from the raw data.
+  pub fn with_dark_frame(mut self, dark_frame: Option<Arc<DarkFrame>>) -> Self {
+    self.dark_frame = dark_frame;
+    self
+  }
 }
 
 /// Convert a raw input file into DNG
@@ -377,6 +387,12 @@ where
   rawimage.replace_opcodes(&params.replace_dng_opcodes);
   apply_dcp(&mut rawimage, params)?;
   let metadata = decoder.raw_metadata(rawfile, &raw_params)?;
+  // The dark frame is subtracted from the raw data as read from the file,
+  // before OpcodeList1. The data stays at stage 1.
+  if let Some(dark) = &params.dark_frame {
+    dark.check_image(&rawimage, &metadata);
+    subtract_dark_frame(&mut rawimage, dark)?;
+  }
 
   log::info!(
     "DNG conversion: '{}', make: {}, model: {}, raw-image-count: {}",

@@ -73,6 +73,8 @@ complete -c dnglab -n "__fish_dnglab_using_subcommand analyze" -s v -d 'Print st
 complete -c dnglab -n "__fish_dnglab_using_subcommand analyze" -s h -l help -d 'Print help (see more with \'--help\')'
 complete -c dnglab -n "__fish_dnglab_using_subcommand process-raw" -l remove-dng-opcodes -d 'Remove DNG opcodes, as comma separated [<list>:]<opcode> (e.g. WarpRectilinear,2:GainMap)' -r
 complete -c dnglab -n "__fish_dnglab_using_subcommand process-raw" -l bad-pixels -d 'Bad pixel list in the format of dcraw: column, row and UNIX time per line, relative to the ActiveArea. It is written as FixBadPixelsList to OpcodeList1 and replaces an existing one' -r -F
+complete -c dnglab -n "__fish_dnglab_using_subcommand process-raw" -l dark-frame -d 'Dark frame to subtract from the raw data: a raw file, or a 16-bit TIFF, PGM or PPM file of the raw pixels (e.g. from \'process-raw --skip-steps all\'). It must have the size and the color planes of the raw image' -r -F
+complete -c dnglab -n "__fish_dnglab_using_subcommand process-raw" -l dark-frame-black -d 'Black level of the dark frame: \'auto\' for the black level of a raw file, or of the image for a TIFF, PGM or PPM file. A number is the black level of all samples [default: auto]' -r
 complete -c dnglab -n "__fish_dnglab_using_subcommand process-raw" -l artist -d 'Set the artist tag' -r
 complete -c dnglab -n "__fish_dnglab_using_subcommand process-raw" -l keep-mtime -d 'Keep mtime, read from EXIF with fallback to original file mtime' -r -f -a "true\t''
 false\t''"
@@ -102,6 +104,7 @@ complete -c dnglab -n "__fish_dnglab_using_subcommand process-raw" -l denoise-ch
 complete -c dnglab -n "__fish_dnglab_using_subcommand process-raw" -l sharpen -d 'Strength of the sharpening (0-2), 0 is off, 1 is the classic Laplacian filter [default: 0.2]' -r
 complete -c dnglab -n "__fish_dnglab_using_subcommand process-raw" -l exposure -d 'Change the exposure by this value in EV, e.g. -1.2. A negative value keeps white [default: 0]' -r
 complete -c dnglab -n "__fish_dnglab_using_subcommand process-raw" -l steps -d 'Apply only these processing steps of the rendering, as comma separated list, \'all\' for all steps. Without it the default steps are applied' -r -f -a "all\t''
+darkframe\t''
 opcodelist1\t''
 rescale\t''
 opcodelist2\t''
@@ -123,6 +126,7 @@ autoexposure\t''
 sharpen\t''
 transferfunction\t''"
 complete -c dnglab -n "__fish_dnglab_using_subcommand process-raw" -l skip-steps -d 'Skip these processing steps of the rendering, as comma separated list (e.g. tonecurve,denoise,sharpen). \'all\' skips every step and writes the raw values of the whole raw image. Takes priority over --steps' -r -f -a "all\t''
+darkframe\t''
 opcodelist1\t''
 rescale\t''
 opcodelist2\t''
@@ -203,6 +207,8 @@ complete -c dnglab -n "__fish_dnglab_using_subcommand convert" -s j -l jobs -d '
 complete -c dnglab -n "__fish_dnglab_using_subcommand convert" -l dcp-file -d 'Camera profile (DCP) that replaces the primary camera profile' -r -F
 complete -c dnglab -n "__fish_dnglab_using_subcommand convert" -l extra-dcp-file -d 'Camera profile (DCP) to embed as extra camera profile, can be repeated' -r -F
 complete -c dnglab -n "__fish_dnglab_using_subcommand convert" -l bad-pixels -d 'Bad pixel list in the format of dcraw: column, row and UNIX time per line, relative to the ActiveArea. It is written as FixBadPixelsList to OpcodeList1 and replaces an existing one' -r -F
+complete -c dnglab -n "__fish_dnglab_using_subcommand convert" -l dark-frame -d 'Dark frame to subtract from the raw data: a raw file, or a 16-bit TIFF, PGM or PPM file of the raw pixels (e.g. from \'process-raw --skip-steps all\'). It must have the size and the color planes of the raw image' -r -F
+complete -c dnglab -n "__fish_dnglab_using_subcommand convert" -l dark-frame-black -d 'Black level of the dark frame: \'auto\' for the black level of a raw file, or of the image for a TIFF, PGM or PPM file. A number is the black level of all samples [default: auto]' -r
 complete -c dnglab -n "__fish_dnglab_using_subcommand convert" -s d -l loglevel -d 'Log level' -r -f -a "error\t''
 warn\t''
 info\t''

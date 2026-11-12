@@ -74,6 +74,8 @@ Register-ArgumentCompleter -Native -CommandName 'dnglab' -ScriptBlock {
         'dnglab;process-raw' {
             [CompletionResult]::new('--remove-dng-opcodes', '--remove-dng-opcodes', [CompletionResultType]::ParameterName, 'Remove DNG opcodes, as comma separated [<list>:]<opcode> (e.g. WarpRectilinear,2:GainMap)')
             [CompletionResult]::new('--bad-pixels', '--bad-pixels', [CompletionResultType]::ParameterName, 'Bad pixel list in the format of dcraw: column, row and UNIX time per line, relative to the ActiveArea. It is written as FixBadPixelsList to OpcodeList1 and replaces an existing one')
+            [CompletionResult]::new('--dark-frame', '--dark-frame', [CompletionResultType]::ParameterName, 'Dark frame to subtract from the raw data: a raw file, or a 16-bit TIFF, PGM or PPM file of the raw pixels (e.g. from ''process-raw --skip-steps all''). It must have the size and the color planes of the raw image')
+            [CompletionResult]::new('--dark-frame-black', '--dark-frame-black', [CompletionResultType]::ParameterName, 'Black level of the dark frame: ''auto'' for the black level of a raw file, or of the image for a TIFF, PGM or PPM file. A number is the black level of all samples [default: auto]')
             [CompletionResult]::new('--artist', '--artist', [CompletionResultType]::ParameterName, 'Set the artist tag')
             [CompletionResult]::new('--keep-mtime', '--keep-mtime', [CompletionResultType]::ParameterName, 'Keep mtime, read from EXIF with fallback to original file mtime')
             [CompletionResult]::new('--image-index', '--image-index', [CompletionResultType]::ParameterName, 'Select a specific image index (or ''all'') if file is a image container')
@@ -134,6 +136,8 @@ Register-ArgumentCompleter -Native -CommandName 'dnglab' -ScriptBlock {
             [CompletionResult]::new('--dcp-file', '--dcp-file', [CompletionResultType]::ParameterName, 'Camera profile (DCP) that replaces the primary camera profile')
             [CompletionResult]::new('--extra-dcp-file', '--extra-dcp-file', [CompletionResultType]::ParameterName, 'Camera profile (DCP) to embed as extra camera profile, can be repeated')
             [CompletionResult]::new('--bad-pixels', '--bad-pixels', [CompletionResultType]::ParameterName, 'Bad pixel list in the format of dcraw: column, row and UNIX time per line, relative to the ActiveArea. It is written as FixBadPixelsList to OpcodeList1 and replaces an existing one')
+            [CompletionResult]::new('--dark-frame', '--dark-frame', [CompletionResultType]::ParameterName, 'Dark frame to subtract from the raw data: a raw file, or a 16-bit TIFF, PGM or PPM file of the raw pixels (e.g. from ''process-raw --skip-steps all''). It must have the size and the color planes of the raw image')
+            [CompletionResult]::new('--dark-frame-black', '--dark-frame-black', [CompletionResultType]::ParameterName, 'Black level of the dark frame: ''auto'' for the black level of a raw file, or of the image for a TIFF, PGM or PPM file. A number is the black level of all samples [default: auto]')
             [CompletionResult]::new('-d', '-d', [CompletionResultType]::ParameterName, 'Log level')
             [CompletionResult]::new('--loglevel', '--loglevel', [CompletionResultType]::ParameterName, 'Log level')
             [CompletionResult]::new('--profile-path', '--profile-path', [CompletionResultType]::ParameterName, 'Directory with profile TOML files')

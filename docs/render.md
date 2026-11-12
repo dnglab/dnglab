@@ -23,7 +23,8 @@ example).
 
 ```mermaid
 flowchart TD
-  A[RawImage: integer or float samples, metadata] --> B[OpcodeList1]
+  A[RawImage: integer or float samples, metadata] --> DF[Dark frame]
+  DF --> B[OpcodeList1]
   B --> C[Rescale: linearization, black and white level]
   C --> D[OpcodeList2]
   D --> E[White balance of CFA data]
@@ -61,7 +62,8 @@ spelled out, `plan` and `execute` called separately) show the library use.
 it removes DNG opcodes (`--remove-dng-opcodes`), inserts the opcodes of
 `replace_dng_opcodes` (the FixBadPixelsList of `--bad-pixels`) and replaces the
 primary camera profile with a DCP (`--dcp-file`). With `--crop-transparent` it
-also crops to the largest opaque area of the transparency mask.
+also crops to the largest opaque area of the transparency mask. `--dark-frame`
+gives the dark frame of the `DarkFrame` step.
 
 ## Options
 
@@ -82,6 +84,7 @@ also crops to the largest opaque area of the transparency mask.
 | `auto_exposure` | off | Correct the exposure by an estimate | `--auto-exposure` |
 | `highlights` | `Compress` | Values above white after a positive BaselineExposure: compress or clip | `--highlights` |
 | `extended_range` | off | The output can hold values above white (set by the TIFF writer) | automatic |
+| `dark_frame` | none | Dark frame of the `DarkFrame` step | `--dark-frame`, `--dark-frame-black` |
 
 The processing steps (`ProcessingStep`) can be switched off one by one. A step
 that is not in the set is skipped, which is useful to look at intermediate
@@ -90,12 +93,14 @@ In `--steps` and `--skip-steps`, `all` stands for all steps.
 
 Without the `Rescale` step, the values stay those of the raw data
 ([raw values](#raw-values)). `--skip-steps all` gives the whole raw image as it
-is read from the file. Steps that don't expect
-linear reference values, such as `Demosaic` and the crops, still give useful
-raw values. `WhiteBalance` and `Calibrate` clip at 1.0.
+is read from the file, `--steps darkframe` with `--dark-frame` the raw image
+minus the dark signal. Steps that don't expect linear reference values, such as
+`Demosaic` and the crops, still give useful raw values. `WhiteBalance` and
+`Calibrate` clip at 1.0.
 
 | Step | Effect |
 | --- | --- |
+| `DarkFrame` | Subtract the dark frame from the raw data as read from the file |
 | `OpcodeList1` | Apply OpcodeList1 to the raw data as read from the file |
 | `Rescale` | Map raw values to linear values 0.0 to 1.0 |
 | `OpcodeList2` | Apply OpcodeList2 after `Rescale` |
@@ -171,7 +176,37 @@ Then it pushes the operations below. Most are conditional, and a plan for a
 DNG-like image without opcodes is short, for example
 `RescaleMosaic, Demosaic, Denoise, Sharpen, CameraToRgb`.
 
-### 1. OpcodeList1
+### 1. Dark frame
+
+A dark frame is an exposure without light, with the exposure time, the ISO and
+the temperature of the image. It holds the hot pixels, the dark current and the
+fixed pattern of the sensor. With `--dark-frame` (`RenderOptions::dark_frame`),
+the `DarkFrame` step subtracts its dark signal from the raw data as read from
+the file, see [`darkframe.rs`](../rawler/src/imgop/darkframe.rs):
+
+- Each sample becomes `image - (dark frame - black level of the dark frame)`.
+  The image keeps its black level and its masked areas, like the long exposure
+  noise reduction of cameras.
+- Samples at or above the white level stay unchanged, so clipped highlights
+  stay white. A hot pixel that is at the white level in the dark frame too is
+  subtracted, like cameras do.
+- Integer samples are rounded and limited to 0 to 65535. With a black level of
+  0, values below black are clipped, with a warning.
+- A LinearizationTable is applied to the image first, the data is linear
+  afterwards.
+
+The dark frame is a raw file, or a 16-bit TIFF, PGM or PPM file of the raw
+pixels (32-bit float TIFF too). It must have the size and the color planes of
+the raw image, otherwise the image fails with an error.
+- A raw file has its own black level and LinearizationTable.
+- The samples of an image file are stored like the raw data of the image, as
+  `--skip-steps all` writes them. The LinearizationTable and the black level of
+  the image apply to them.
+- `--dark-frame-black` replaces the black level of the dark frame by a number.
+- A dark frame of another camera, with another ISO or with an exposure time
+  that differs by more than 10 % gives a warning.
+
+### 2. OpcodeList1
 
 The `OpcodeList1` step applies it to the image data as read from the file,
 before anything else.
@@ -182,7 +217,7 @@ OpcodeList1, replacing an existing FixBadPixelsList:
 - the coordinates are shifted from the ActiveArea to the raw image;
 - pixels that died after the capture time are skipped.
 
-### 2. Rescale and OpcodeList2
+### 3. Rescale and OpcodeList2
 
 - The LinearizationTable is applied first.
 - Then the black level of the pattern is subtracted and the result is divided by
@@ -193,7 +228,7 @@ OpcodeList1, replacing an existing FixBadPixelsList:
   pass (`RescaleMosaic`). Otherwise `Rescale` runs, followed by OpcodeList2
   with the `OpcodeList2` step.
 
-### 3. White balance of CFA data
+### 4. White balance of CFA data
 
 - With `WhiteBalancePlacement::BeforeDemosaic`, the default, CFA data is white
   balanced before the demosaic.
@@ -203,7 +238,7 @@ OpcodeList1, replacing an existing FixBadPixelsList:
 - With `AfterDemosaic`, the color map applies the white balance instead, as the
   DNG specification describes it.
 
-### 4. Demosaic, FujiRotate and OpcodeList3
+### 5. Demosaic, FujiRotate and OpcodeList3
 
 - CFA data is demosaiced and cropped to the ActiveArea. An algorithm returns
   a `RawlerError::InvalidInput` error for data it can't process, e.g. a CFA of
@@ -232,13 +267,13 @@ divided out again, without clipping, because DNG readers apply it themselves.
 `dnglab convert` uses this to write LinearRaw DNGs (see
 [Output](#dng-files)).
 
-### 5. Crop
+### 6. Crop
 
 Crop to the DefaultCrop, or to the ActiveArea without one, unless the demosaic
 did it already. Cropping before the color operations saves their work for the
 cropped pixels.
 
-### 6. Image operations on linear values
+### 7. Image operations on linear values
 
 These run only on demosaiced data. Output-referred data (see
 [below](#output-referred-data)) is already rendered and skips the noise
@@ -258,7 +293,7 @@ reduction, the sharpening and the automatic exposure.
 The white balance and the gain are not applied to the data yet. These
 operations get them as a `scale`, to see neutral colors with a white of 1.0.
 
-### 7. Color: from camera values to RGB
+### 8. Color: from camera values to RGB
 
 The `CameraToRgb` operation ([`color.rs`](../rawler/src/imgop/color.rs)) runs
 these steps for each pixel:
@@ -312,7 +347,7 @@ The default tone curve ([`tone_curve.rs`](../rawler/src/dng/profile_render/tone_
 is an S-curve fitted to the tone maps of camera JPEGs. It adds contrast around a
 fixed point and keeps the brightness. Output-referred data doesn't get it.
 
-### 8. Without the Calibrate step
+### 9. Without the Calibrate step
 
 Monochrome images, and color images with `--skip-steps calibrate`, skip the
 color map and get these operations, each where it applies:
@@ -416,7 +451,9 @@ shows (for example after `RawImage::linearize`). The 16-bit outputs
 
 `dnglab convert` stores the raw data at the lowest stage the options allow:
 
-- **Stage 1** (as read from the file): the default.
+- **Stage 1** (as read from the file): the default. The dark frame of
+  `--dark-frame` (`ConvertParams::dark_frame`) is subtracted from it before
+  OpcodeList1, the data stays at stage 1.
 - **Stage 2** (rescaled): with `ConvertParams::apply_scaling`, or when
   OpcodeList2 is applied to the data (`--apply-dng-opcodes`, or opcodes the
   target DNG version can't store).
@@ -460,8 +497,8 @@ exposure. An explicit `--exposure` still applies.
 - `--steps` and `--skip-steps` give intermediate results. For example,
   `--skip-steps baselineexposure,profilerender,tonecurve,transferfunction
   --color-space prophoto` writes linear ProPhoto RGB before the profile render.
-- `--skip-steps all` writes the raw image in raw values, for example
-  `dnglab process-raw --skip-steps all IMG_0001.CR2 raw.pgm`.
+- `--skip-steps all` writes the raw image in raw values, for example a dark
+  frame for `--dark-frame`: `dnglab process-raw --skip-steps all dark.CR2 dark.pgm`.
 - `--highlights clip`, no noise reduction (`--denoise-luma 0 --denoise-chroma 0`)
   and no sharpening (`--sharpen 0`) give results that compare well with other DNG
   readers.

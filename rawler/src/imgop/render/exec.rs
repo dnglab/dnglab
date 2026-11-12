@@ -15,6 +15,7 @@ use crate::{
     Dim2, Point, Rect,
     blacklevel::{rescale, rescale_in_place},
     color::{PixelOp, apply_gain, apply_transfer_function, camera_to_rgb, camera_to_rgb_in_place},
+    darkframe::subtract_dark_frame,
     denoise::wavelet_denoise,
     exposure::{apply_exposure, auto_exposure},
     fuji_rotate::fuji_normalize_rotation,
@@ -176,6 +177,7 @@ impl Executor {
 
   fn apply(&mut self, op: &Op) -> crate::Result<()> {
     match op {
+      Op::DarkFrame(dark) => subtract_dark_frame(self.raw_data()?, dark)?,
       Op::Opcodes { stage, crop_to_active_area } => self.apply_opcodes(*stage, *crop_to_active_area)?,
       Op::Rescale => self.raw_data()?.apply_scaling()?,
       Op::RescaleMosaic { cfa, white_balance } => {

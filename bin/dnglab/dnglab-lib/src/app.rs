@@ -21,6 +21,7 @@ use rawler::imgop::{
   sharpen::DEFAULT_SHARPEN,
 };
 
+use crate::darkframe::dark_frame_black_parser;
 use crate::makedng::{
   CalibrationIlluminantArgParser, ColorMatrixArgParser, DngColorimetricReference, InputSourceUsageMap, LinearizationTableArgParser, WhiteBalanceInput,
   WhitePointArgParser,
@@ -111,6 +112,21 @@ fn bad_pixels_arg() -> Arg {
   arg!(bad_pixels: --"bad-pixels" <FILE> "Bad pixel list in the format of dcraw: column, row and UNIX time per line, relative to the ActiveArea. It is written as FixBadPixelsList to OpcodeList1 and replaces an existing one")
     .required(false)
     .value_parser(value_parser!(PathBuf))
+}
+
+/// Argument with a dark frame, for convert and process-raw
+fn dark_frame_arg() -> Arg {
+  arg!(dark_frame: --"dark-frame" <FILE> "Dark frame to subtract from the raw data: a raw file, or a 16-bit TIFF, PGM or PPM file of the raw pixels (e.g. from 'process-raw --skip-steps all'). It must have the size and the color planes of the raw image")
+    .required(false)
+    .value_parser(value_parser!(PathBuf))
+}
+
+/// Argument with the black level of the dark frame, for convert and process-raw
+fn dark_frame_black_arg() -> Arg {
+  arg!(dark_frame_black: --"dark-frame-black" <black> "Black level of the dark frame: 'auto' for the black level of a raw file, or of the image for a TIFF, PGM or PPM file. A number is the black level of all samples [default: auto]")
+    .required(false)
+    .requires("dark_frame")
+    .value_parser(dark_frame_black_parser)
 }
 
 /// Value of a list of processing steps that stands for all steps
@@ -401,6 +417,8 @@ fn process_raw_command() -> Command {
   Command::new("process-raw")
     .arg(remove_dng_opcodes_arg())
     .arg(bad_pixels_arg())
+    .arg(dark_frame_arg())
+    .arg(dark_frame_black_arg())
     .arg(
       arg!(--"artist" <artist> "Set the artist tag")
         .required(false)
@@ -543,6 +561,8 @@ fn convert_command() -> Command {
         .value_parser(value_parser!(PathBuf)),
     )
     .arg(bad_pixels_arg())
+    .arg(dark_frame_arg())
+    .arg(dark_frame_black_arg())
     .arg(arg!(<INPUT> "Input file or directory").value_parser(clap::value_parser!(PathBuf)))
     .arg(arg!(<OUTPUT> "Output file or existing directory").value_parser(clap::value_parser!(PathBuf)))
 }
