@@ -609,7 +609,8 @@ where
       return Ok(no_data_connection());
     }
     if invalid_path(&path) {
-      return Err(Error::Io(io::ErrorKind::PermissionDenied.into()));
+      warn!("Invalid path for STOR: {:?}", path);
+      return Ok(Answer::new(ResultCode::FileNameNotAllowed, "File name not allowed"));
     }
     let path = self.cwd.join(path);
     self
