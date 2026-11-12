@@ -99,8 +99,8 @@ impl Command {
     let command = match command.as_slice() {
       b"AUTH" => Command::Auth,
       b"CWD" => Command::Cwd(data.and_then(|bytes| Ok(Path::new(str::from_utf8(bytes)?).to_path_buf()))?),
-      b"LIST" => Command::List(data.and_then(|bytes| Ok(Path::new(str::from_utf8(bytes)?).to_path_buf())).ok()),
-      b"NLST" => Command::Nlst(data.and_then(|bytes| Ok(Path::new(str::from_utf8(bytes)?).to_path_buf())).ok()),
+      b"LIST" => Command::List(data.and_then(list_path).ok()),
+      b"NLST" => Command::Nlst(data.and_then(list_path).ok()),
       b"PASV" => Command::Pasv,
       b"EPSV" => Command::Epsv(data.and_then(|bytes| Ok(Some(str::from_utf8(bytes)?.to_owned()))).unwrap_or(None)),
       b"PORT" => {
@@ -147,6 +147,16 @@ impl Command {
     };
     Ok(command)
   }
+}
+
+/// Path parameter of LIST and NLST. Some clients send options of "ls" like "-la"
+/// before the path, they are skipped.
+fn list_path(bytes: &[u8]) -> result::Result<PathBuf, ParseError> {
+  let mut path = str::from_utf8(bytes)?;
+  while path.starts_with('-') {
+    path = path.split_once(' ').map_or("", |(_option, path)| path.trim_start());
+  }
+  Ok(PathBuf::from(path))
 }
 
 fn _to_uppercase(data: &mut [u8]) {
