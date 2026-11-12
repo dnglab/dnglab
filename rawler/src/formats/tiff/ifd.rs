@@ -634,39 +634,41 @@ impl IFD {
         Value::Undefined(data) => {
           let mut off = 0;
           let mut endian = self.endian;
+          // The two bytes at `off`, None if the makernote is shorter
+          let data_at = |off: usize| data.get(off..off + 2);
 
           // Olympus starts the makernote with their own name, sometimes truncated
-          if data[0..5] == b"OLYMP"[..] {
+          if data.starts_with(b"OLYMP") {
             off += 8;
-            if data[0..7] == b"OLYMPUS"[..] {
+            if data.starts_with(b"OLYMPUS") {
               off += 4;
             }
           }
 
           // Epson starts the makernote with its own name
-          if data[0..5] == b"EPSON"[..] {
+          if data.starts_with(b"EPSON") {
             off += 8;
           }
 
           // Fujifilm has 12 extra bytes
-          if data[0..8] == b"FUJIFILM"[..] {
+          if data.starts_with(b"FUJIFILM") {
             off += 12;
           }
 
           // Sony has 12 extra bytes
-          if data[0..9] == b"SONY DSC "[..] {
+          if data.starts_with(b"SONY DSC ") {
             off += 12;
           }
 
           // Pentax makernote starts with AOC\0 - If it's there, skip it
-          if data[0..4] == b"AOC\0"[..] {
+          if data.starts_with(b"AOC\0") {
             off += 4;
           }
 
           // Pentax can also start with PENTAX and in that case uses different offsets
-          if data[0..6] == b"PENTAX"[..] {
+          if data.starts_with(b"PENTAX") {
             off += 8;
-            let endian = if data[off..off + 2] == b"II"[..] { Endian::Little } else { Endian::Big };
+            let endian = if data_at(off) == Some(b"II") { Endian::Little } else { Endian::Big };
             // All offsets in this IFD are relative to the start of this tag,
             // so wie use the offset as correction value.
             let corr = i32::try_from(offset).map_err(|_| TiffError::Overflow(format!("Makernote offset {} is out of range", offset)))?;
@@ -674,18 +676,18 @@ impl IFD {
             return Ok(Some(IFD::new(reader, offset_add(offset, 10)?, self.base, corr, endian, sub_tags)?));
           }
 
-          if data[0..7] == b"Nikon\0\x02"[..] {
+          if data.starts_with(b"Nikon\0\x02") {
             off += 10;
-            let endian = if data[off..off + 2] == b"II"[..] { Endian::Little } else { Endian::Big };
+            let endian = if data_at(off) == Some(b"II") { Endian::Little } else { Endian::Big };
             return Ok(Some(IFD::new(reader, 8, offset_add(offset_add(self.base, offset)?, 10)?, 0, endian, sub_tags)?));
           }
 
           // Some have MM or II to indicate endianness - read that
-          if data[off..off + 2] == b"II"[..] {
+          if data_at(off) == Some(b"II") {
             off += 2;
             endian = Endian::Little;
           }
-          if data[off..off + 2] == b"MM"[..] {
+          if data_at(off) == Some(b"MM") {
             off += 2;
             endian = Endian::Big;
           }
@@ -813,6 +815,36 @@ mod tests {
     let ifd = IFD::new(&mut Cursor::new(data), 8, 0, 0, Endian::Little, &[])?;
     assert_eq!(ifd.next_ifd, 26);
     Ok(())
+  }
+
+  #[test]
+  fn short_makernotes_do_not_panic() {
+    for prefix in [
+      &b""[..],
+      b"OLY",
+      b"OLYMP",
+      b"OLYMPUS",
+      b"EPSON",
+      b"FUJIFILM",
+      b"SONY DSC ",
+      b"AOC\0",
+      b"PENTAX",
+      b"Nikon\0\x02",
+      b"I",
+    ] {
+      // Root IFD with a MakerNotes entry of the prefix, the data after the IFD
+      let count = (prefix.len() as u32).to_le_bytes();
+      let mut data = ifd_with_entry([0x7c, 0x92, 7, 0, count[0], count[1], count[2], count[3], 26, 0, 0, 0]);
+      if prefix.len() <= 4 {
+        data[18..18 + prefix.len()].copy_from_slice(prefix);
+      } else {
+        data.extend_from_slice(prefix);
+      }
+      let ifd = IFD::new(&mut Cursor::new(data.clone()), 8, 0, 0, Endian::Little, &[]).expect("root IFD");
+      for mode in [OffsetMode::Absolute, OffsetMode::RelativeToIFD] {
+        let _ = ifd.parse_makernote(&mut Cursor::new(data.clone()), mode, &[]);
+      }
+    }
   }
 
   #[test]
