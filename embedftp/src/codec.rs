@@ -33,15 +33,12 @@ impl Encoder<Answer> for FtpCodec {
   fn encode(&mut self, answer: Answer, buf: &mut BytesMut) -> io::Result<()> {
     let mut buffer = vec![];
     if !answer.lines.is_empty() {
-      write!(buffer, "{}- {}\r\n", answer.code as u32, answer.message)?;
+      write!(buffer, "{}-{}\r\n", answer.code as u32, answer.message)?;
+      // The space keeps a line apart from a reply code. The feature lines of FEAT require it.
       for line in answer.lines {
-        if let Some(true) = line.chars().next().map(|c| c.is_ascii_digit()) {
-          write!(buffer, " {}\r\n", line)?;
-        } else {
-          write!(buffer, "{}\r\n", line)?;
-        }
+        write!(buffer, " {}\r\n", line)?;
       }
-      write!(buffer, "{} end\r\n", answer.code as u32)?;
+      write!(buffer, "{} End\r\n", answer.code as u32)?;
     } else if answer.message.is_empty() {
       write!(buffer, "{}\r\n", answer.code as u32)?;
     } else {
