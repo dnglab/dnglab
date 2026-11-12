@@ -2,7 +2,7 @@
 // Originally written by Guillaume Gomez under MIT license
 // Copyright 2021 Daniel Vogelbacher <daniel@chaospixel.com>
 
-use chrono::{DateTime, Datelike, Timelike};
+use chrono::{DateTime, TimeDelta, Utc};
 use futures::TryStreamExt;
 use futures::stream::SplitSink;
 use futures::{SinkExt, StreamExt};
@@ -33,8 +33,6 @@ use crate::command::{Command, ParseError, TransferType};
 use crate::config::{Config, FtpCallback};
 use crate::error::Result;
 use crate::ftp::{Answer, ResultCode};
-
-const MONTHS: [&str; 12] = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
 type Writer = SplitSink<Framed<TcpStream, FtpCodec>, Answer>;
 
@@ -862,18 +860,23 @@ async fn add_file_info(path: PathBuf, out: &mut Vec<u8>) {
   // TODO: maybe improve how we get rights in here?
   let rights = if meta.permissions().readonly() { "r--r--r--" } else { "rw-rw-rw-" };
 
+  // Like "ls -l": the time of day for the last six months, the year for other times
+  let now = Utc::now();
+  let time = if time <= now && now - time < TimeDelta::days(180) {
+    time.format("%b %e %H:%M")
+  } else {
+    time.format("%b %e  %Y")
+  };
+
   let file_str = format!(
-    "{is_dir}{rights} {links} {owner} {group} {size} {month} {day} {hour}:{min} {path}{extra}\r\n",
+    "{is_dir}{rights} {links} {owner} {group} {size} {time} {path}{extra}\r\n",
     is_dir = is_dir,
     rights = rights,
     links = 1,           // number of links
     owner = "anonymous", // owner name
     group = "anonymous", // group name
     size = file_size,
-    month = MONTHS[time.month0() as usize],
-    day = time.day(),
-    hour = time.hour(),
-    min = time.minute(),
+    time = time,
     path = path,
     extra = extra
   );
