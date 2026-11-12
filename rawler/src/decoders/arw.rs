@@ -114,6 +114,8 @@ impl<'a> Decoder for ArwDecoder<'a> {
     } else {
       fetch_tiff_tag!(raw, TiffCommonTag::BitsPerSample).force_usize(0)
     };
+    // The decoders below store up to four 16-bit samples per pixel
+    image_bytes(width, height, 64)?;
 
     let params = self.get_params(file)?;
     debug!("Params: {:?}", params);
@@ -163,8 +165,12 @@ impl<'a> Decoder for ArwDecoder<'a> {
         ArwDecoder::decode_arw6(strip, width, height, dummy)?
       }
       32767 => {
-        if (width * height * bps) != count * 8 {
-          height += 8;
+        let bits = width
+          .checked_mul(height)
+          .and_then(|pixels| pixels.checked_mul(bps))
+          .ok_or_else(|| decoder_error!("ARW: image of {}x{} pixels with {} bps overflows", width, height, bps))?;
+        if Some(bits) != count.checked_mul(8) {
+          height = height.checked_add(8).ok_or_else(|| decoder_error!("ARW1: image height {} overflows", height))?;
           // ARW1 data has 12 bits, the white and black levels of the file have 14 bits
           ArwDecoder::levels_to_12bit(&mut white, &mut black);
           ArwDecoder::decode_arw1(src, width, height, dummy)?
@@ -397,11 +403,11 @@ impl<'a> ArwDecoder<'a> {
     let width = fetch_tiff_tag!(raw, TiffCommonTag::ImageWidth).force_usize(0);
     let height = fetch_tiff_tag!(raw, TiffCommonTag::ImageLength).force_usize(0);
 
+    let len = image_bytes(width, height, 16)?;
     let image = if dummy {
       PixU16::new_uninit(width, height)
     } else {
       let buffer = file.buf();
-      let len = width * height * 2;
 
       // Constants taken from dcraw
       let off: usize = 862144;
@@ -763,6 +769,17 @@ impl<'a> ArwDecoder<'a> {
   }
 }
 
+/// Bytes of `width` × `height` pixels of `bits` bits, an error for an image
+/// without pixels or a size that overflows
+fn image_bytes(width: usize, height: usize, bits: usize) -> Result<usize> {
+  width
+    .checked_mul(height)
+    .and_then(|pixels| pixels.checked_mul(bits))
+    .filter(|_| width > 0 && height > 0)
+    .map(|bits| bits.div_ceil(8))
+    .ok_or_else(|| decoder_error!("ARW: invalid image size {}x{}", width, height))
+}
+
 fn normalize_wb(raw_wb: [f32; 4]) -> [f32; 4] {
   debug!("ARW raw wb: {:?}", raw_wb);
   // We never have more then RGB colors so far (no RGBE etc.)
@@ -795,7 +812,7 @@ pub enum ArwMakernoteTag {
 /// Decode uncompressed ARQ data (four 16-bit samples per pixel, channel =
 /// position in the 2x2 CFA block) into RGB, averaging the two green samples.
 fn decode_arq(src: &[u8], width: usize, height: usize, cfa: &crate::cfa::CFA, dummy: bool) -> Result<PixU16> {
-  let need = width * height * 8;
+  let need = image_bytes(width, height, 64)?;
   if src.len() < need {
     return Err(decoder_error!("ARQ: buffer too short ({} < {})", src.len(), need));
   }
@@ -910,5 +927,22 @@ mod arq_tests {
   fn arq_rejects_short_buffer() {
     let cfa = crate::cfa::CFA::new("RGGB");
     assert!(decode_arq(&[0u8; 10], 2, 1, &cfa, false).is_err());
+  }
+
+  #[test]
+  fn arq_rejects_invalid_sizes() {
+    let cfa = crate::cfa::CFA::new("RGGB");
+    assert!(decode_arq(&[], 0, 1, &cfa, false).is_err());
+    assert!(decode_arq(&[], 1, 0, &cfa, false).is_err());
+    assert!(decode_arq(&[], usize::MAX, 2, &cfa, false).is_err());
+  }
+
+  #[test]
+  fn image_bytes_of_valid_and_invalid_sizes() {
+    assert_eq!(image_bytes(3, 2, 12).ok(), Some(9));
+    assert_eq!(image_bytes(3, 1, 12).ok(), Some(5));
+    assert!(image_bytes(0, 2, 16).is_err());
+    assert!(image_bytes(2, 0, 16).is_err());
+    assert!(image_bytes(u32::MAX as usize, u32::MAX as usize, 64).is_err());
   }
 }
