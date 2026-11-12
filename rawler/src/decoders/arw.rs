@@ -287,32 +287,14 @@ impl<'a> ArwDecoder<'a> {
 
   /// Get lens description by analyzing TIFF tags and makernotes
   fn get_lens_description(&self) -> Result<Option<&'static LensDescription>> {
-    // Try tag 0x9416
-    if let Some(Entry {
-      value: Value::Undefined(params),
-      ..
-    }) = self.makernote.get_entry(ArwMakernoteTag::Tag_9416)
-    {
-      let dechiphered_9416 = sony_tag9cxx_decipher(params);
-      let lens_id = LEu16(&dechiphered_9416, 0x004b);
-      debug!("Lens Id tag: {}", lens_id);
-
-      let resolver = LensResolver::new()
-        .with_camera(self.camera.metadata())
-        .with_lens_id((lens_id as u32, 0))
-        .with_mounts(&[SONY_E_MOUNT.into(), SONY_A_MOUNT.into()]);
-      return Ok(resolver.resolve());
-    }
-
-    // Try tag 0x9050
-    if let Some(Entry {
-      value: Value::Undefined(params),
-      ..
-    }) = self.makernote.get_entry(ArwMakernoteTag::Tag_9050)
-    {
-      if params.len() >= 263 + 2 {
-        let dechiphered_9050 = sony_tag9cxx_decipher(params);
-        let lens_id = LEu16(&dechiphered_9050, 263);
+    // Try tags 0x9416, 0x9050 and 0x940C, skipping tags that are too short
+    for (tag, offset) in [(ArwMakernoteTag::Tag_9416, 0x004b), (ArwMakernoteTag::Tag_9050, 263), (ArwMakernoteTag::Tag_940C, 9)] {
+      if let Some(Entry {
+        value: Value::Undefined(params),
+        ..
+      }) = self.makernote.get_entry(tag)
+        && let Some(lens_id) = deciphered_lens_id(params, offset)
+      {
         debug!("Lens Id tag: {}", lens_id);
 
         let resolver = LensResolver::new()
@@ -321,23 +303,6 @@ impl<'a> ArwDecoder<'a> {
           .with_mounts(&[SONY_E_MOUNT.into(), SONY_A_MOUNT.into()]);
         return Ok(resolver.resolve());
       }
-    }
-
-    // Try tag 0x940C
-    if let Some(Entry {
-      value: Value::Undefined(params),
-      ..
-    }) = self.makernote.get_entry(ArwMakernoteTag::Tag_940C)
-    {
-      let dechiphered_940c = sony_tag9cxx_decipher(params);
-      let lens_id = LEu16(&dechiphered_940c, 9);
-      debug!("Lens Id tag: {}", lens_id);
-
-      let resolver = LensResolver::new()
-        .with_camera(self.camera.metadata())
-        .with_lens_id((lens_id as u32, 0))
-        .with_mounts(&[SONY_E_MOUNT.into(), SONY_A_MOUNT.into()]);
-      return Ok(resolver.resolve());
     }
     Ok(None)
   }
@@ -930,6 +895,13 @@ fn sony_tag9cxx_decipher(data: &[u8]) -> Vec<u8> {
   buf
 }
 
+/// Lens ID at `offset` of the enciphered Sony tag `data`, `None` if the tag
+/// is too short
+fn deciphered_lens_id(data: &[u8], offset: usize) -> Option<u16> {
+  let id = sony_tag9cxx_decipher(data.get(offset..offset + 2)?);
+  Some(LEu16(&id, 0))
+}
+
 #[derive(Debug)]
 struct ArwImageParams {
   wb: [f32; 4],
@@ -1094,6 +1066,16 @@ mod arq_tests {
     assert!(ArwDecoder::sony_decrypt(&[0; 16], usize::MAX - 2, 8, 0).is_err());
     assert!(ArwDecoder::sony_decrypt(&[0; 16], 8, 12, 0).is_err());
     assert_eq!(ArwDecoder::sony_decrypt(&[0; 16], 8, 8, 0).map(|out| out.len()).ok(), Some(8));
+  }
+
+  #[test]
+  fn lens_id_of_short_and_long_tags() {
+    let data = [0, 2, 8, 27];
+    // The cipher maps x^3 % 249 to x
+    assert_eq!(deciphered_lens_id(&data, 2), Some(0x0302));
+    assert_eq!(deciphered_lens_id(&data, 3), None);
+    assert_eq!(deciphered_lens_id(&data, 4), None);
+    assert_eq!(deciphered_lens_id(&[], 0x4b), None);
   }
 
   #[test]
