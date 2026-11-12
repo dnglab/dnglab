@@ -144,6 +144,7 @@ where
         Command::Mkd(path) => return self.mkd(path).await,
         Command::Rmd(path) => return self.rmd(path).await,
         Command::Dele(path) => return self.dele(path).await,
+        Command::Size(path) => return self.size(path).await,
         _ => (),
       }
     } else if self.name.is_some() && self.waiting_password {
@@ -230,7 +231,7 @@ where
         }
       }
       Command::Feat => {
-        let features = [String::from("UTF8")];
+        let features = [String::from("SIZE"), String::from("UTF8")];
         self.send(Answer::new_multiline(ResultCode::SystemStatus, "Feature list", &features)).await?;
       }
       Command::NoOp => self.send(Answer::new(ResultCode::Ok, "Doing nothing")).await?,
@@ -409,6 +410,18 @@ where
     warn!("{}", msg);
     self.send(Answer::new(ResultCode::FileNotFound, &msg)).await?;
     Ok(())
+  }
+
+  async fn size(&mut self, file: PathBuf) -> Result<()> {
+    if let Ok(path) = self.resolve(&file).await {
+      if let Ok(meta) = metadata(path).await {
+        if meta.is_file() {
+          return self.send(Answer::new(ResultCode::FileStatus, &meta.len().to_string())).await;
+        }
+      }
+    }
+    let msg = format!("No such file: {}", file.to_string_lossy());
+    self.send(Answer::new(ResultCode::FileNotFound, &msg)).await
   }
 
   fn strip_prefix(&self, dir: PathBuf) -> result::Result<PathBuf, StripPrefixError> {

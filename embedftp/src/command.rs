@@ -48,6 +48,7 @@ pub enum Command {
   Retr(PathBuf),
   Rmd(PathBuf),
   Dele(PathBuf),
+  Size(PathBuf),
   Stor(PathBuf),
   Syst,
   Feat,
@@ -91,6 +92,7 @@ impl AsRef<str> for Command {
       Command::Mkd(_) => "MKD",
       Command::Rmd(_) => "RMD",
       Command::Dele(_) => "DELE",
+      Command::Size(_) => "SIZE",
       Command::NoOp => "NOOP",
       Command::Unknown(_) => "UNKN", // doesn't exist
     }
@@ -168,6 +170,7 @@ impl Command {
       b"MKD" => Command::Mkd(data.and_then(|bytes| Ok(Path::new(str::from_utf8(bytes)?).to_path_buf()))?),
       b"RMD" => Command::Rmd(data.and_then(|bytes| Ok(Path::new(str::from_utf8(bytes)?).to_path_buf()))?),
       b"DELE" => Command::Dele(data.and_then(|bytes| Ok(Path::new(str::from_utf8(bytes)?).to_path_buf()))?),
+      b"SIZE" => Command::Size(data.and_then(|bytes| Ok(Path::new(str::from_utf8(bytes)?).to_path_buf()))?),
       b"USER" => Command::User(data.and_then(|bytes| String::from_utf8(bytes.to_vec()).map_err(Into::into))?),
       b"PASS" => Command::Pass(data.and_then(|bytes| String::from_utf8(bytes.to_vec()).map_err(Into::into))?),
       b"NOOP" => Command::NoOp,
