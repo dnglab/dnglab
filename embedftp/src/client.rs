@@ -114,14 +114,14 @@ where
         Command::Cwd(directory) => return self.cwd(directory).await,
         Command::List(path) => return self.list(path).await,
         Command::Nlst(path) => return self.nlst(path).await,
-        Command::Pasv | Command::Port(_) if self.epsv_all => {
+        Command::Pasv | Command::Port(_) | Command::Eprt(_) if self.epsv_all => {
           return self
             .send(Answer::new(ResultCode::InvalidParameterOrArgument, "Only EPSV is allowed after EPSV ALL"))
             .await;
         }
         Command::Pasv => return self.pasv().await,
         Command::Epsv(proto) => return self.epsv(proto).await,
-        Command::Port(port) => {
+        Command::Port(port) | Command::Eprt(port) => {
           self.data_mode = DataMode::Active(port);
           return self.send(Answer::new(ResultCode::Ok, &format!("Data port is now {}", port))).await;
         }
@@ -257,6 +257,7 @@ where
       ParseError::Syntax(msg) => Answer::new(ResultCode::InvalidParameterOrArgument, msg),
       ParseError::Parameter(msg) => Answer::new(ResultCode::CommandNotImplementedForThatParameter, msg),
       ParseError::TooLong => Answer::new(ResultCode::UnknownCommand, "Command line too long"),
+      ParseError::NetworkProtocol => Answer::new(ResultCode::NetworkProtocolNotSupported, "Network protocol not supported, use (1,2)"),
     };
     self.send(answer).await
   }

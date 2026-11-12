@@ -16,6 +16,8 @@ pub enum ParseError {
   Parameter(&'static str),
   /// The command line is longer than the server accepts
   TooLong,
+  /// The network protocol of EPRT is neither IPv4 nor IPv6
+  NetworkProtocol,
 }
 
 impl From<Utf8Error> for ParseError {
@@ -40,6 +42,7 @@ pub enum Command {
   Mkd(PathBuf),
   NoOp,
   Port(u16),
+  Eprt(u16),
   Pass(String),
   Pasv,
   Epsv(Option<String>),
@@ -76,6 +79,7 @@ impl AsRef<str> for Command {
       Command::Pasv => "PASV",
       Command::Epsv(_) => "EPSV",
       Command::Port(_) => "PORT",
+      Command::Eprt(_) => "EPRT",
       Command::Pwd => "PWD",
       Command::Feat => "FEAT",
       Command::Quit => "QUIT",
@@ -126,12 +130,9 @@ impl Command {
         }
 
         let port = ((addr[4] as u16) << 8) | (addr[5] as u16);
-        // TODO: check if the port isn't already used already by another connection...
-        if port <= 1024 {
-          return Err(ParseError::Syntax("Port must be greater than 1024"));
-        }
-        Command::Port(port)
+        Command::Port(data_port(port)?)
       }
+      b"EPRT" => Command::Eprt(eprt_port(data?)?),
       b"PWD" => Command::Pwd,
       b"FEAT" => Command::Feat,
       b"QUIT" => Command::Quit,
@@ -178,6 +179,32 @@ impl Command {
     };
     Ok(command)
   }
+}
+
+/// Check the port of the client for the data connection in active mode
+fn data_port(port: u16) -> result::Result<u16, ParseError> {
+  // TODO: check if the port isn't already used already by another connection...
+  if port <= 1024 {
+    return Err(ParseError::Syntax("Port must be greater than 1024"));
+  }
+  Ok(port)
+}
+
+/// Port of the EPRT parameter "|protocol|address|port|". Its first character is the
+/// delimiter. The address is not used, the server connects to the address of the client.
+fn eprt_port(bytes: &[u8]) -> result::Result<u16, ParseError> {
+  let syntax = ParseError::Syntax("Invalid address/port");
+  let param = str::from_utf8(bytes)?;
+  let delimiter = param.chars().next().ok_or(syntax)?;
+  // The delimiters at both ends give an empty first and last field
+  let fields: Vec<&str> = param.split(delimiter).collect();
+  let ["", protocol, _address, port, ""] = fields.as_slice() else {
+    return Err(syntax);
+  };
+  if !matches!(*protocol, "1" | "2") {
+    return Err(ParseError::NetworkProtocol);
+  }
+  data_port(port.parse().map_err(|_| syntax)?)
 }
 
 /// Path parameter of LIST and NLST. Some clients send options of "ls" like "-la"
