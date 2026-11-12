@@ -123,8 +123,9 @@ impl Command {
       b"PORT" => {
         let addr = data?
           .split(|&byte| byte == b',')
-          .filter_map(|bytes| str::from_utf8(bytes).ok().and_then(|string| u8::from_str(string).ok()))
-          .collect::<Vec<u8>>();
+          .map(|bytes| str::from_utf8(bytes).ok().and_then(|string| u8::from_str(string).ok()))
+          .collect::<Option<Vec<u8>>>()
+          .unwrap_or_default();
         if addr.len() != 6 {
           return Err(ParseError::Syntax("Invalid address/port"));
         }
