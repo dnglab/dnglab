@@ -54,6 +54,7 @@ use super::Decoder;
 use super::FormatHint;
 use super::RawDecodeParams;
 use super::RawMetadata;
+use super::image_bytes;
 
 const MAX_BITDEPTH: u32 = 16;
 
@@ -248,9 +249,8 @@ impl<'a> Decoder for IiqDecoder<'a> {
     debug!("data offset: {}", data_offset);
     debug!("RAW IIQ Format: {:?}", fmt);
 
-    if width == 0 || height == 0 {
-      return Err(RawlerError::decoder_failed("IIQ: couldn't find width and height".to_string()));
-    }
+    // The decoders store 16 bits per pixel
+    image_bytes("IIQ", width, height, 16)?;
 
     let data = file
       .subview(data_offset, data_len as u64)
