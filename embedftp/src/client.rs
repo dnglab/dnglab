@@ -105,7 +105,10 @@ where
   /// connections, this function returns an error to the
   /// loop. This would terminate the connection.
   async fn handle_cmd(&mut self, cmd: Command) -> Result<()> {
-    debug!("Received command: {:?}", cmd);
+    match &cmd {
+      Command::Pass(_) => debug!("Received command: Pass(***)"),
+      _ => debug!("Received command: {:?}", cmd),
+    }
     if self.is_logged() {
       match cmd {
         Command::Cwd(directory) => return self.cwd(directory).await,
