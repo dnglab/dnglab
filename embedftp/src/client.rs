@@ -10,6 +10,7 @@ use glob::glob;
 use log::{debug, error, info, warn};
 use std::ffi::OsString;
 use std::io;
+use std::mem;
 use std::net::{IpAddr, SocketAddr};
 use std::path::{Component, Path, PathBuf, StripPrefixError};
 use std::result;
@@ -36,14 +37,23 @@ const MONTHS: [&str; 12] = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Au
 
 type Writer = SplitSink<Framed<TcpStream, FtpCodec>, Answer>;
 
+/// How the data connection of the next transfer is opened
+enum DataMode {
+  /// Neither PORT nor PASV or EPSV was received
+  None,
+  /// Active mode: connect to this port of the client
+  Active(u16),
+  /// Passive mode: accept the connection of the client, for a single transfer
+  Passive(TcpListener),
+}
+
 /// Client handler
 struct Client<T>
 where
   T: FtpCallback + Clone + Send,
 {
   cwd: PathBuf,
-  /// Port to use for the next active data transmission.
-  active_data_port: Option<u16>,
+  data_mode: DataMode,
   data_reader: Option<OwnedReadHalf>,
   data_writer: Option<OwnedWriteHalf>,
   #[allow(dead_code)]
@@ -66,7 +76,7 @@ where
   fn new(handle: Handle, writer: Writer, server_root: PathBuf, config: Config, env: T, local_addr: SocketAddr, remote_addr: SocketAddr) -> Self {
     Client {
       cwd: PathBuf::from("/"),
-      active_data_port: None,
+      data_mode: DataMode::None,
       data_reader: None,
       data_writer: None,
       handle,
@@ -102,7 +112,7 @@ where
         Command::Pasv => return self.pasv().await,
         Command::Epsv(proto) => return self.epsv(proto).await,
         Command::Port(port) => {
-          self.active_data_port = Some(port);
+          self.data_mode = DataMode::Active(port);
           return self.send(Answer::new(ResultCode::Ok, &format!("Data port is now {}", port))).await;
         }
         Command::Pwd => {
@@ -236,24 +246,34 @@ where
     self.send(answer).await
   }
 
-  /// Open the data connection of active mode, the one of passive mode is already open.
-  /// Returns false if there is no data connection for a transfer.
+  /// Open the data connection of a transfer: connect to the client in active mode,
+  /// accept the connection of the client in passive mode.
+  /// Returns false if there is no data connection.
   async fn initiate_data_connection(&mut self) -> bool {
-    // only open when we are in active mode
-    if let Some(port) = self.active_data_port {
-      self.close_data_connection();
-      let mut addr = self.remote_addr;
-      addr.set_port(port);
-      match TcpStream::connect(addr).await {
-        Ok(stream) => {
-          let (r, w) = stream.into_split();
-          self.data_writer = Some(w);
-          self.data_reader = Some(r);
-        }
-        Err(e) => error!("Connection failed to {}, {}", addr, e),
+    self.close_data_connection();
+    let stream = match mem::replace(&mut self.data_mode, DataMode::None) {
+      DataMode::None => return false,
+      DataMode::Active(port) => {
+        // The port is used for further transfers, too
+        self.data_mode = DataMode::Active(port);
+        let mut addr = self.remote_addr;
+        addr.set_port(port);
+        TcpStream::connect(addr).await
+      }
+      DataMode::Passive(listener) => listener.accept().await.map(|(stream, _addr)| stream),
+    };
+    match stream {
+      Ok(stream) => {
+        let (r, w) = stream.into_split();
+        self.data_writer = Some(w);
+        self.data_reader = Some(r);
+        true
+      }
+      Err(e) => {
+        error!("Failed to open data connection: {}", e);
+        false
       }
     }
-    self.data_writer.is_some()
   }
 
   /// Close the data connection and send the final reply of a transfer command
@@ -460,90 +480,63 @@ where
     Ok(self.send_data(out).await)
   }
 
-  async fn pasv(&mut self) -> Result<()> {
-    if self.data_writer.is_some() {
-      self.send(Answer::new(ResultCode::DataConnectionAlreadyOpen, "Already listening...")).await?;
-      return Ok(());
-    }
-    self.active_data_port = None;
-    let port = 0; // auto configure port
+  /// Listen on a free port for the data connection of the next transfer
+  async fn listen_passive(&mut self) -> io::Result<u16> {
+    self.close_data_connection();
+    self.data_mode = DataMode::None;
     let mut addr = self.local_addr;
-    addr.set_port(port);
+    addr.set_port(0); // auto configure port
+    let listener = TcpListener::bind(&addr).await?;
+    let port = listener.local_addr()?.port();
+    debug!("Waiting for data clients on port {}...", port);
+    self.data_mode = DataMode::Passive(listener);
+    Ok(port)
+  }
 
+  async fn pasv(&mut self) -> Result<()> {
     // If it's a IPv4 address but mapped into v6 as defined in IETF RFC 4291 section 2.5.5.2,
     // use the canonical value.
-    match &addr.ip().to_canonical() {
-      IpAddr::V4(v4addr) => {
-        let listener = TcpListener::bind(&addr).await?;
-        let port = listener.local_addr()?.port();
+    let IpAddr::V4(v4addr) = self.local_addr.ip().to_canonical() else {
+      return self
+        .send(Answer::new(
+          ResultCode::CantOpenDataConnection,
+          "PASV is not possible for IPv6 connections, use EPSV",
+        ))
+        .await;
+    };
+    let answer = match self.listen_passive().await {
+      Ok(port) => {
         let octets = v4addr.octets();
-
-        self
-          .send(Answer::new(
-            ResultCode::EnteringPassiveMode,
-            &format!(
-              "Entering passive mode ({},{},{},{},{},{}).",
-              octets[0],
-              octets[1],
-              octets[2],
-              octets[3],
-              port >> 8,
-              port & 0xFF
-            ),
-          ))
-          .await?;
-
-        debug!("Waiting for data clients on port {}...", port);
-        {
-          let (stream, _addr) = listener.accept().await?;
-          let (r, w) = stream.into_split();
-          self.data_writer = Some(w);
-          self.data_reader = Some(r);
-        }
+        Answer::new(
+          ResultCode::EnteringPassiveMode,
+          &format!(
+            "Entering passive mode ({},{},{},{},{},{}).",
+            octets[0],
+            octets[1],
+            octets[2],
+            octets[3],
+            port >> 8,
+            port & 0xFF
+          ),
+        )
       }
-      IpAddr::V6(_v6addr) => {
-        return Err(Error::Msg("PASV is not possible for IPv6 connections.".into()));
-      }
-    }
-    Ok(())
+      Err(e) => passive_failed(e),
+    };
+    self.send(answer).await
   }
 
   async fn epsv(&mut self, proto: Option<String>) -> Result<()> {
-    let port = 0;
-
     if let Some(proto) = proto {
       if proto.to_uppercase().eq("ALL") {
         self.data_writer = None;
         return Ok(());
       }
     }
-
-    if self.data_writer.is_some() {
-      self.send(Answer::new(ResultCode::DataConnectionAlreadyOpen, "Already listening...")).await?;
-      return Ok(());
-    }
-
-    self.active_data_port = None;
-
-    let mut addr = self.local_addr;
-    addr.set_port(port);
-    let listener = TcpListener::bind(&addr).await?;
-    let port = listener.local_addr()?.port();
-
-    self
-      .send(Answer::new(ResultCode::ExtendedEnteringPassiveMode, &format!(" (|||{}|)", port,)))
-      .await?;
-
-    debug!("Waiting for data clients on port {}...", port);
-    {
-      let (stream, _addr) = listener.accept().await?;
-      let (r, w) = stream.into_split();
-
-      self.data_writer = Some(w);
-      self.data_reader = Some(r);
-    }
-
-    Ok(())
+    let answer = match self.listen_passive().await {
+      Ok(port) => Answer::new(ResultCode::ExtendedEnteringPassiveMode, &format!(" (|||{}|)", port,)),
+      Err(e) => passive_failed(e),
+    };
+    self.send(answer).await
   }
 
   async fn quit(&mut self) -> Result<()> {
@@ -694,6 +687,12 @@ fn transfer_done() -> Answer {
 fn transfer_aborted(e: io::Error) -> Answer {
   error!("Data connection failed: {}", e);
   Answer::new(ResultCode::ConnectionClosed, "Data connection failed, transfer aborted")
+}
+
+/// Reply of PASV and EPSV without a port to listen on
+fn passive_failed(e: io::Error) -> Answer {
+  error!("Failed to listen for a data connection: {}", e);
+  Answer::new(ResultCode::CantOpenDataConnection, "Unable to listen for a data connection")
 }
 
 /// Final reply of a transfer command without a data connection
