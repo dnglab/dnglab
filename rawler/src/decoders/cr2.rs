@@ -910,7 +910,7 @@ fn set_dimension(image: &mut PixU16, width: usize, height: usize) -> Result<()> 
 /// Check that YCbCr data of `len` samples has rows of `width` samples of
 /// 3 components each, as the interpolation and conversion to RGB expect
 fn check_yuv_layout(width: usize, len: usize) -> Result<()> {
-  if width == 0 || width % 3 != 0 || len % width != 0 {
+  if width == 0 || !width.is_multiple_of(3) || !len.is_multiple_of(width) {
     return Err(decoder_error!("CR2: sRAW data of {} samples has no rows of {} YCbCr samples", len, width));
   }
   Ok(())

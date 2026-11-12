@@ -689,10 +689,13 @@ impl Ctmd {
             let data = bs.get_bytes(sz as usize - 8)?;
             //dump_buf(&format!("/tmp/ctmd_rec{}_block{}_tag0x{:X}_uk{:X}.bin", rec.rec_type, block_id, tag, uk), data.as_slice());
             if [CR3_CTMD_BLOCK_EXIFIFD, CR3_CTMD_BLOCK_MAKERNOTES].contains(&tag) {
-              if rec.blocks.contains_key(&tag) {
-                warn!("CTMD record {} has a second block 0x{:X}, ignoring it", rec.rec_type, tag);
-              } else {
-                rec.blocks.insert(tag, data);
+              match rec.blocks.entry(tag) {
+                std::collections::hash_map::Entry::Occupied(_) => {
+                  warn!("CTMD record {} has a second block 0x{:X}, ignoring it", rec.rec_type, tag)
+                }
+                std::collections::hash_map::Entry::Vacant(block) => {
+                  block.insert(data);
+                }
               }
             }
             _block_id += 1;

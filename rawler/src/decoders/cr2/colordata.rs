@@ -79,7 +79,7 @@ impl ColorData {
 pub(crate) fn parse_colordata(colordata: &Entry) -> Result<ColorData> {
   match &colordata.value {
     Value::Undefined(undef) => {
-      let transmuted: Vec<u16> = undef.chunks_exact(2).map(|v| u16::from_le_bytes([v[0], v[1]])).collect();
+      let transmuted: Vec<u16> = undef.as_chunks::<2>().0.iter().map(|v| u16::from_le_bytes(*v)).collect();
       let data = &transmuted;
       let version = *data.first().ok_or_else(|| decoder_error!("COLORDATA is empty"))? as i16;
 
