@@ -850,11 +850,9 @@ async fn add_file_info(path: PathBuf, out: &mut Vec<u8>) {
   let file_size = meta.size();
   #[cfg(windows)]
   let file_size = meta.file_size();
-  let path = match path.to_str() {
-    Some(path) => match path.split('/').next_back() {
-      Some(path) => path,
-      _ => return,
-    },
+  // A name that is not UTF-8 can't be sent
+  let path = match path.file_name().and_then(|name| name.to_str()) {
+    Some(name) => name,
     _ => return,
   };
   // TODO: maybe improve how we get rights in here?
