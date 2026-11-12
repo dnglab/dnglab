@@ -367,27 +367,7 @@ impl<'a> ArwDecoder<'a> {
       }
       LEu32(tag_data(entry, 4)?, 0)
     };
-    let buf = file.subview_until_eof(priv_offset as u64)?;
-    if BEu32(buf, 0) != 0x4D5249 {
-      // MRI
-      return Err(decoder_error!("Invalid DNGPRIVATEDATA tag: 0x{:X}, expected 0x4D5249 ", BEu32(buf, 0)));
-    }
-    let mut currpos: usize = 8;
-    let mut wb_coeffs: [f32; 4] = [1.0, 1.0, 1.0, f32::NAN];
-    // At most we read 20 bytes from currpos so check we don't step outside that
-    while currpos + 20 < buf.len() {
-      let tag: u32 = BEu32(buf, currpos);
-      let len: usize = LEu32(buf, currpos + 4) as usize;
-      if tag == 0x574247 {
-        // WBG
-        wb_coeffs[0] = LEu16(buf, currpos + 12) as f32;
-        wb_coeffs[1] = LEu16(buf, currpos + 14) as f32;
-        wb_coeffs[2] = LEu16(buf, currpos + 16) as f32;
-        wb_coeffs[3] = LEu16(buf, currpos + 18) as f32;
-        break;
-      }
-      currpos += len + 8;
-    }
+    let wb_coeffs = a100_wb(file.subview_until_eof(priv_offset as u64)?)?;
 
     let cpp = 1;
     ok_cfa_image(camera.clone(), cpp, normalize_wb(wb_coeffs), image, dummy)
@@ -788,6 +768,33 @@ fn copy_rggb_tile(strip: &mut [u16], width: usize, x: usize, tile: &[u16], tile_
   }
 }
 
+/// White balance of the A100 from the MRW blocks of its DNGPrivateData
+fn a100_wb(buf: &[u8]) -> Result<[f32; 4]> {
+  match buf.get(0..4).map(|magic| BEu32(magic, 0)) {
+    // MRI
+    Some(0x4D5249) => {}
+    Some(magic) => return Err(decoder_error!("Invalid DNGPRIVATEDATA tag: 0x{:X}, expected 0x4D5249 ", magic)),
+    None => return Err(decoder_error!("DNGPRIVATEDATA has {} bytes, the tag needs 4", buf.len())),
+  }
+  let mut currpos: usize = 8;
+  let mut wb_coeffs: [f32; 4] = [1.0, 1.0, 1.0, f32::NAN];
+  // At most we read 20 bytes from currpos so check we don't step outside that
+  while currpos.saturating_add(20) < buf.len() {
+    let tag: u32 = BEu32(buf, currpos);
+    let len: usize = LEu32(buf, currpos + 4) as usize;
+    if tag == 0x574247 {
+      // WBG
+      wb_coeffs[0] = LEu16(buf, currpos + 12) as f32;
+      wb_coeffs[1] = LEu16(buf, currpos + 14) as f32;
+      wb_coeffs[2] = LEu16(buf, currpos + 16) as f32;
+      wb_coeffs[3] = LEu16(buf, currpos + 18) as f32;
+      break;
+    }
+    currpos = currpos.saturating_add(len).saturating_add(8);
+  }
+  Ok(wb_coeffs)
+}
+
 /// Black and white levels of ARW6 data from the halved levels of its raw IFD
 fn arw6_levels(black: [u16; 4], white: u16) -> Result<([u16; 4], u16)> {
   let double = |level: u16| level.checked_mul(2).ok_or_else(|| decoder_error!("ARW6: level {} exceeds 16 bits when doubled", level));
@@ -1037,6 +1044,30 @@ mod arq_tests {
     assert_eq!(arw6_levels([256, 257, 258, 259], 8191).ok(), Some(([512, 514, 516, 518], 16382)));
     assert!(arw6_levels([32768, 0, 0, 0], 8191).is_err());
     assert!(arw6_levels([0; 4], 40000).is_err());
+  }
+
+  #[test]
+  fn a100_wb_of_short_and_long_blocks() -> Result<()> {
+    assert!(a100_wb(&[]).is_err());
+    assert!(a100_wb(b"\0MR").is_err());
+    assert!(a100_wb(b"\0MRX").is_err());
+    let default = [1.0, 1.0, 1.0];
+    assert_eq!(a100_wb(b"\0MRI")?[..3], default);
+    // A block that is longer than the data, followed by a WBG block
+    let mut buf = b"\0MRI\0\0\0\0\0PRD".to_vec();
+    buf.extend_from_slice(&u32::MAX.to_le_bytes());
+    buf.extend_from_slice(&[0; 16]);
+    assert_eq!(a100_wb(&buf)?[..3], default);
+    // A WBG block
+    let mut buf = b"\0MRI\0\0\0\0\0WBG".to_vec();
+    buf.extend_from_slice(&12_u32.to_le_bytes());
+    buf.extend_from_slice(&[0; 4]);
+    for coeff in [512_u16, 256, 257, 384] {
+      buf.extend_from_slice(&coeff.to_le_bytes());
+    }
+    buf.push(0);
+    assert_eq!(a100_wb(&buf)?, [512.0, 256.0, 257.0, 384.0]);
+    Ok(())
   }
 
   #[test]
