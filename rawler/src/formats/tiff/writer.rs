@@ -6,7 +6,7 @@ use std::{
   io::{Seek, SeekFrom, Write},
 };
 
-use byteorder::{LittleEndian, NativeEndian, WriteBytesExt};
+use byteorder::{NativeEndian, WriteBytesExt};
 use image::EncodableLayout;
 use rayon::prelude::*;
 use weezl::LzwError;
@@ -102,26 +102,28 @@ where
     Ok(offset)
   }
 
-  pub fn write_data_u16_le(&mut self, data: &[u16]) -> Result<u32>
+  /// Write `data` in the byte order of the TIFF, the host byte order
+  pub fn write_data_u16(&mut self, data: &[u16]) -> Result<u32>
   where
     W: Seek + Write,
   {
     self.pad_word_boundary()?;
     let offset = self.position()?;
     for v in data {
-      self.writer.write_u16::<LittleEndian>(*v)?;
+      self.writer.write_u16::<NativeEndian>(*v)?;
     }
     Ok(offset)
   }
 
-  pub fn write_data_f32_le(&mut self, data: &[f32]) -> Result<u32>
+  /// Write `data` in the byte order of the TIFF, the host byte order
+  pub fn write_data_f32(&mut self, data: &[f32]) -> Result<u32>
   where
     W: Seek + Write,
   {
     self.pad_word_boundary()?;
     let offset = self.position()?;
     for v in data {
-      self.writer.write_f32::<LittleEndian>(*v)?;
+      self.writer.write_f32::<NativeEndian>(*v)?;
     }
     Ok(offset)
   }
@@ -503,6 +505,18 @@ mod tests {
       }
       Ok(self.pos)
     }
+  }
+
+  #[test]
+  fn data_is_written_in_host_byte_order() -> Result<()> {
+    let mut tiff = TiffWriter::new(std::io::Cursor::new(Vec::new()))?;
+    let offset = tiff.write_data_u16(&[0x0102, 0x0304])? as usize;
+    tiff.write_data_f32(&[1.5])?;
+    let data = tiff.writer.into_inner();
+    let expected: Vec<u8> = [0x0102_u16.to_ne_bytes(), 0x0304_u16.to_ne_bytes()].concat();
+    assert_eq!(&data[offset..offset + 4], expected.as_slice());
+    assert_eq!(&data[offset + 4..offset + 8], 1.5_f32.to_ne_bytes().as_slice());
+    Ok(())
   }
 
   #[test]

@@ -1449,7 +1449,7 @@ where
   match rawimage.data {
     RawImageData::Integer(ref data) => {
       for strip in data.chunks(rows_per_strip * rawimage.width * rawimage.cpp) {
-        let offset = subframe.writer.dng.write_data_u16_le(strip)?;
+        let offset = subframe.writer.dng.write_data_u16(strip)?;
         strip_offsets.push(offset);
         strip_sizes.push(std::mem::size_of_val(strip) as u32);
       }
@@ -1459,7 +1459,7 @@ where
     RawImageData::Float(ref data) => {
       subframe.writer.update_backward_version(DNG_VERSION_V1_4, "Floating point image data")?;
       for strip in data.chunks(rows_per_strip * rawimage.width * rawimage.cpp) {
-        let offset = subframe.writer.dng.write_data_f32_le(strip)?;
+        let offset = subframe.writer.dng.write_data_f32(strip)?;
         strip_offsets.push(offset);
         strip_sizes.push(std::mem::size_of_val(strip) as u32);
       }
