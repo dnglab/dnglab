@@ -244,9 +244,11 @@ impl LookupTable {
   //    val
   //  }
 
+  /// Value of the table at `value`, dithered with `rand`. Values beyond the
+  /// table use its last entry, an empty table gives 0.
   #[inline(always)]
   pub fn dither(&self, value: u16, rand: &mut u32) -> u16 {
-    let (_, sbase, sdelta) = self.table[value as usize];
+    let (_, sbase, sdelta) = self.table.get(value as usize).or(self.table.last()).copied().unwrap_or_default();
     let base = sbase as u32;
     let delta = sdelta as u32;
     let pixel = base + ((delta * (*rand & 2047) + 1024) >> 12);
@@ -399,5 +401,16 @@ mod tests {
     }
     let table = LookupTable::new(&[0, 1, 17]);
     assert_eq!(table.table, [(0, 0, 1), (1, 0, 17), (17, 13, 16)]);
+  }
+
+  #[test]
+  fn dither_beyond_the_table() {
+    let table = LookupTable::new(&[100, 200, 300]);
+    for value in [2, 3, u16::MAX] {
+      let mut random = 0;
+      assert_eq!(table.dither(value, &mut random), table.dither(2, &mut 0));
+    }
+    let mut random = 0;
+    assert_eq!(LookupTable::new(&[]).dither(5, &mut random), 0);
   }
 }
