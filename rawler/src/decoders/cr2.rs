@@ -478,9 +478,10 @@ impl<'a> Cr2Decoder<'a> {
       None
     };
     match self.makernote.as_ref().and_then(|mn| mn.get_entry(Cr2MakernoteTag::CameraSettings)) {
+      // The lens ID is at index 22
       Some(Entry {
         value: Value::Short(settings), ..
-      }) => {
+      }) if settings.len() > 22 => {
         let lens_info = settings[22];
         debug!("Lens Info tag: {}", lens_info);
         let resolver = LensResolver::new()
@@ -492,7 +493,7 @@ impl<'a> Cr2Decoder<'a> {
         return Ok(resolver.resolve());
       }
       _ => {
-        log::warn!("Camera settings in makernote not found, no lens data available");
+        log::warn!("Camera settings in makernote not found or too short, no lens data available");
       }
     }
     Ok(None)
