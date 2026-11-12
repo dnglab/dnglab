@@ -377,8 +377,9 @@ where
     let path = self.cwd.join(&directory);
     let res = self.complete_path(&path).await;
     if let Ok(dir) = res {
+      let is_dir = metadata(&dir).await.map(|m| m.is_dir()).unwrap_or(false);
       let res = self.strip_prefix(dir);
-      if let Ok(prefix) = res {
+      if let (true, Ok(prefix)) = (is_dir, res) {
         self.cwd = prefix.to_path_buf();
         prefix_slash(&mut self.cwd);
         self
