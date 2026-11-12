@@ -192,14 +192,15 @@ impl<R: Read + Seek> ReadSegment<&mut R> for App1 {
         }
          */
 
-        if let Ok(ifd) = ifd {
-          return Ok(Self {
-            len,
-            payload: Payload::Exif(ifd),
-          });
-        }
-
-        return Err(JfifError::General("Failed to read exif".into()));
+        // A broken EXIF structure does not affect the other segments
+        let payload = match ifd {
+          Ok(ifd) => Payload::Exif(ifd),
+          Err(err) => {
+            log::warn!("Failed to read the EXIF data of an APP1 segment, ignoring it: {}", err);
+            Payload::Unknown
+          }
+        };
+        return Ok(Self { len, payload });
       } else {
         reader.seek(SeekFrom::Current(-(exif_str.len() as i64)))?;
       }
@@ -270,16 +271,21 @@ impl Jfif {
             }
           }
         }
-        0xFFE1 => match App1::read_segment(&mut reader, symbol) {
-          Ok(app1) => Segment::APP1 { offset: pos, app1 },
-          Err(err) => {
-            log::warn!("Failed to read APP1 (EXIF) segement, maybe corrupt: {:?}", err);
-            // The reader may not have advanced when the segment header is
-            // truncated. Re-entering this arm with the same marker would
-            // spin forever, so keep the segments parsed so far and stop.
-            break;
+        0xFFE1 => {
+          let start = reader.stream_position()?;
+          match App1::read_segment(&mut reader, symbol) {
+            Ok(app1) => Segment::APP1 { offset: pos, app1 },
+            Err(err) => {
+              log::warn!("Failed to read APP1 segment, maybe corrupt: {:?}", err);
+              // A truncated segment header has no length to skip the segment
+              // with, so keep the segments parsed so far and stop.
+              if !skip_segment(&mut reader, start) {
+                break;
+              }
+              Segment::Unknown { offset: pos, marker: symbol }
+            }
           }
-        },
+        }
         0xFFDA => Segment::SOS {
           offset: pos,
           sos: SOS::read_segment(&mut reader, symbol)?,
@@ -438,6 +444,22 @@ mod tests {
       parsed.segments.as_slice(),
       [Segment::SOI { .. }, Segment::APP0 { .. }, Segment::Unknown { marker: 0xFFE0, .. }, Segment::EOI]
     ));
+  }
+
+  #[test]
+  fn broken_exif_keeps_xmp() {
+    // EXIF APP1 without a TIFF header, then XMP APP1
+    let mut data = jpeg(0xE1, 10, b"Exif\0\0XX");
+    data.truncate(data.len() - 2);
+    let xmp = [XMP_MARKER, b"xmp"].concat();
+    data.extend_from_slice(&[0xFF, 0xE1]);
+    data.extend_from_slice(&(xmp.len() as u16 + 2).to_be_bytes());
+    data.extend_from_slice(&xmp);
+    data.extend_from_slice(&[0xFF, 0xD9]);
+    let parsed = Jfif::parse(Cursor::new(data)).expect("parsed");
+    assert!(parsed.exif_ifd().is_none());
+    assert_eq!(parsed.xpacket().map(Vec::as_slice), Some(&b"xmp"[..]));
+    assert!(matches!(parsed.segments.last(), Some(Segment::EOI)));
   }
 
   #[test]
