@@ -776,9 +776,7 @@ impl Value {
             | ((*v.get(2).unwrap_or(&0) as u32) << 16)
             | ((*v.get(3).unwrap_or(&0) as u32) << 24),
         ),
-        _ => {
-          panic!("unsupported: {:?}", self);
-        }
+        Self::Rational(_) | Self::SRational(_) | Self::Double(_) => Err(TiffError::General(format!("{} values can not be embedded", self.value_type_name()))),
       }
     }
   }
