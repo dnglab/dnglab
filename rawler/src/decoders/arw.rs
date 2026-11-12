@@ -435,6 +435,7 @@ impl<'a> ArwDecoder<'a> {
   }
 
   pub(crate) fn decode_arw1(buf: &[u8], width: usize, height: usize, dummy: bool) -> Result<PixU16> {
+    image_bytes(width, height, 16)?;
     let mut out = alloc_image_ok!(width, height, dummy);
     let mut pump = BitPumpMSB::new(buf);
 
@@ -456,9 +457,10 @@ impl<'a> ArwDecoder<'a> {
           pump.get_bits(cmp::min(13, zeros + 1))?;
         }
         let diff: i32 = pump.get_ibits(len)?;
-        sum += diff;
+        // Crafted data overflows the sum, only its low 16 bits are used
+        sum = sum.wrapping_add(diff);
         if len > 0 && (diff & (1 << (len - 1))) == 0 {
-          sum -= (1 << len) - 1;
+          sum = sum.wrapping_sub((1 << len) - 1);
         }
         out[row * width + col] = sum as u16;
         row += 2
@@ -935,6 +937,19 @@ mod arq_tests {
     assert!(decode_arq(&[], 0, 1, &cfa, false).is_err());
     assert!(decode_arq(&[], 1, 0, &cfa, false).is_err());
     assert!(decode_arq(&[], usize::MAX, 2, &cfa, false).is_err());
+  }
+
+  #[test]
+  fn arw1_sum_wraps_around() -> Result<()> {
+    // Each pixel of zeros is a difference of 17 bits that subtracts
+    // 2^17 - 1 from the sum, which overflows i32 after 16384 pixels.
+    ArwDecoder::decode_arw1(&vec![0; 70000], 128, 130, false)?;
+    Ok(())
+  }
+
+  #[test]
+  fn arw1_rejects_an_empty_image() {
+    assert!(ArwDecoder::decode_arw1(&[0; 16], 4, 0, false).is_err());
   }
 
   #[test]
