@@ -16,7 +16,7 @@ use std::result;
 use std::sync::Arc;
 use std::time::Duration;
 use tokio::fs::{File, canonicalize, create_dir, metadata, read_dir, remove_dir, remove_file, symlink_metadata};
-use tokio::io::{AsyncReadExt, AsyncWriteExt};
+use tokio::io::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt};
 use tokio::net::tcp::{OwnedReadHalf, OwnedWriteHalf};
 use tokio::net::{TcpListener, TcpStream};
 use tokio::runtime::Handle;
@@ -260,6 +260,7 @@ where
   /// Returns false if there is no data connection.
   async fn initiate_data_connection(&mut self) -> bool {
     self.close_data_connection();
+    let data_timeout = self.config.data_timeout;
     let stream = match mem::replace(&mut self.data_mode, DataMode::None) {
       DataMode::None => return false,
       DataMode::Active(port) => {
@@ -267,9 +268,16 @@ where
         self.data_mode = DataMode::Active(port);
         let mut addr = self.remote_addr;
         addr.set_port(port);
-        TcpStream::connect(addr).await
+        timeout(data_timeout, TcpStream::connect(addr))
+          .await
+          .map_err(io::Error::from)
+          .and_then(|res| res)
       }
-      DataMode::Passive(listener) => listener.accept().await.map(|(stream, _addr)| stream),
+      DataMode::Passive(listener) => timeout(data_timeout, listener.accept())
+        .await
+        .map_err(io::Error::from)
+        .and_then(|res| res)
+        .map(|(stream, _addr)| stream),
     };
     match stream {
       Ok(stream) => {
@@ -618,8 +626,9 @@ where
     self
       .send(Answer::new(ResultCode::DataConnectionAlreadyOpen, "Starting to send file..."))
       .await?;
+    let data_timeout = self.config.data_timeout;
     let res = match &mut self.data_writer {
-      Some(writer) => tokio::io::copy(&mut file, writer).await,
+      Some(writer) => copy_data(&mut file, writer, data_timeout).await,
       None => Err(io::ErrorKind::NotConnected.into()),
     };
     Ok(res.map_or_else(transfer_aborted, |_| transfer_done()))
@@ -683,7 +692,7 @@ where
     let limit = self.config.max_upload_size;
     let mut buf = Vec::new();
     // One byte more than the limit shows that the file is too large
-    reader.take(limit.saturating_add(1)).read_to_end(&mut buf).await?;
+    copy_data(reader.take(limit.saturating_add(1)), &mut buf, self.config.data_timeout).await?;
     if buf.len() as u64 > limit {
       return Err(io::ErrorKind::FileTooLarge.into());
     }
@@ -698,8 +707,9 @@ where
 
   /// Send bytes to the client, returns the final reply of the transfer
   async fn send_data(&mut self, data: Vec<u8>) -> Answer {
+    let data_timeout = self.config.data_timeout;
     let res = match &mut self.data_writer {
-      Some(writer) => writer.write_all(&data).await,
+      Some(writer) => copy_data(data.as_slice(), writer, data_timeout).await,
       None => Err(io::ErrorKind::NotConnected.into()),
     };
     res.map_or_else(transfer_aborted, |_| transfer_done())
@@ -749,6 +759,25 @@ pub(crate) async fn refuse(stream: TcpStream) {
   let answer = Answer::new(ResultCode::ServiceNotAvailable, "Too many connections, try again later");
   // The reply is a courtesy, the connection is closed in any case
   let _ = timeout(Duration::from_secs(5), writer.send(answer)).await;
+}
+
+/// Copy all data from the reader to the writer.
+/// It's an error if a read or a write takes longer than the timeout.
+async fn copy_data<R, W>(mut reader: R, mut writer: W, data_timeout: Duration) -> io::Result<()>
+where
+  R: AsyncRead + Unpin,
+  W: AsyncWrite + Unpin,
+{
+  let mut buf = vec![0; 64 * 1024];
+  loop {
+    let len = timeout(data_timeout, reader.read(&mut buf)).await??;
+    if len == 0 {
+      break;
+    }
+    timeout(data_timeout, writer.write_all(&buf[..len])).await??;
+  }
+  timeout(data_timeout, writer.flush()).await??;
+  Ok(())
 }
 
 /// Final reply of a completed transfer

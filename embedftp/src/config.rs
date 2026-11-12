@@ -18,6 +18,9 @@ pub struct Config {
   pub max_sessions: usize,
   /// A client that sends no command for this time is disconnected
   pub idle_timeout: Duration,
+  /// A transfer fails if the client does not open the data connection within this
+  /// time, or if no data is transferred for this time.
+  pub data_timeout: Duration,
 }
 
 /// This callback provides filtering for specific FTP
@@ -50,6 +53,7 @@ impl Config {
       max_upload_size: 2 * 1024 * 1024 * 1024,
       max_sessions: 32,
       idle_timeout: Duration::from_secs(900),
+      data_timeout: Duration::from_secs(120),
     })
   }
 }
