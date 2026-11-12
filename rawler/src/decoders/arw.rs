@@ -209,6 +209,9 @@ impl<'a> Decoder for ArwDecoder<'a> {
       })
       .transpose()?;
     let whitelevel = white.map(|white| WhiteLevel(vec![white as u32; cpp]));
+    if whitelevel.is_none() && camera.whitelevel.is_none() {
+      return Err(decoder_error!("ARW: no white level in the file or the camera definition"));
+    }
 
     let photometric = match cpp {
       1 => RawPhotometricInterpretation::Cfa(CFAConfig::new_from_camera(camera)),
