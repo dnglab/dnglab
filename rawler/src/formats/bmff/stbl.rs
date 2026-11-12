@@ -22,28 +22,87 @@ pub struct StblBox {
 impl StblBox {
   pub const TYP: FourCC = FourCC::with(['s', 't', 'b', 'l']);
 
+  /// File offset and size of the sample number `sample`, which starts
+  /// with 1. None if the sample tables have no valid entries for it.
   pub fn get_sample_offset(&self, sample: u32) -> Option<(usize, usize)> {
-    if let Some(co64) = self.co64.as_ref() {
-      assert!(sample > 0, "sample number must be greater than 0");
-      let desc = self.stsc.get_entry_for_sample(sample);
-      // Chunk number for our sample
-      let chunk = desc.first_chunk + (((sample - 1) - (desc.first_sample - 1)) / desc.samples_per_chunk);
-      // Index of sample inside chunk
-      let chunk_sample_idx = (sample - desc.first_sample) % desc.samples_per_chunk;
-      // Offset of chunk
-      let chunk_offset = co64.entries[chunk as usize - 1];
-
-      // Offset of sample in chunk
-      let mut sample_offset = 0;
-      for i in 0..chunk_sample_idx {
-        sample_offset += self.stsz.sample_size(sample - chunk_sample_idx + i);
-      }
-      let sample_size = self.stsz.sample_size(sample);
-
-      Some((chunk_offset as usize + sample_offset as usize, sample_size as usize))
-    } else {
-      None
+    let co64 = self.co64.as_ref()?;
+    let desc = self.stsc.get_entry_for_sample(sample)?;
+    if desc.samples_per_chunk == 0 {
+      return None;
     }
+    // Samples before ours in the run of chunks of this entry
+    let run_sample = sample.checked_sub(desc.first_sample)?;
+    // Chunk number for our sample
+    let chunk = desc.first_chunk.checked_add(run_sample / desc.samples_per_chunk)?;
+    // Index of sample inside chunk
+    let chunk_sample_idx = run_sample % desc.samples_per_chunk;
+    // Offset of chunk
+    let chunk_offset = *co64.entries.get((chunk as usize).checked_sub(1)?)?;
+
+    // Offset of sample in chunk, a constant sample size needs no loop over
+    // up to 2^32 samples
+    let sample_offset = if self.stsz.sample_size > 0 {
+      chunk_sample_idx as u64 * self.stsz.sample_size as u64
+    } else {
+      let mut sample_offset = 0_u64;
+      for i in 0..chunk_sample_idx {
+        sample_offset += self.stsz.sample_size(sample - chunk_sample_idx + i)? as u64;
+      }
+      sample_offset
+    };
+    let sample_size = self.stsz.sample_size(sample)?;
+
+    Some((usize::try_from(chunk_offset.checked_add(sample_offset)?).ok()?, sample_size as usize))
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+  use crate::formats::bmff::stsc::StscEntry;
+
+  /// Sample tables with the stsc `entries`, chunks at 1000, 2000 and 3000
+  /// and the sample `sizes`
+  fn stbl(entries: &[(u32, u32, u32)], sample_size: u32, sizes: &[u32]) -> StblBox {
+    let mut stbl = StblBox::default();
+    stbl.stsc.entries = entries
+      .iter()
+      .map(|&(first_chunk, samples_per_chunk, first_sample)| StscEntry {
+        first_chunk,
+        samples_per_chunk,
+        sample_description_index: 1,
+        first_sample,
+      })
+      .collect();
+    stbl.stsz.sample_size = sample_size;
+    stbl.stsz.sample_sizes = sizes.to_vec();
+    stbl.co64 = Some(Co64Box {
+      entries: vec![1000, 2000, 3000],
+      ..Default::default()
+    });
+    stbl
+  }
+
+  #[test]
+  fn sample_offsets() {
+    // 2 samples in chunk 1, then 1 sample per chunk
+    let stbl = stbl(&[(1, 2, 1), (2, 1, 3)], 0, &[10, 20, 30, 40]);
+    assert_eq!(stbl.get_sample_offset(1), Some((1000, 10)));
+    assert_eq!(stbl.get_sample_offset(2), Some((1010, 20)));
+    assert_eq!(stbl.get_sample_offset(3), Some((2000, 30)));
+    assert_eq!(stbl.get_sample_offset(4), Some((3000, 40)));
+    // Sample 0, beyond the sizes and beyond the chunks
+    assert_eq!(stbl.get_sample_offset(0), None);
+    assert_eq!(stbl.get_sample_offset(5), None);
+    // Chunk 0, no samples per chunk, no stsc entries
+    assert_eq!(self::stbl(&[(0, 1, 1)], 0, &[10]).get_sample_offset(1), None);
+    assert_eq!(self::stbl(&[(1, 0, 1)], 0, &[10]).get_sample_offset(1), None);
+    assert_eq!(self::stbl(&[], 0, &[10]).get_sample_offset(1), None);
+    // A constant sample size with u32::MAX samples per chunk
+    assert_eq!(
+      self::stbl(&[(1, u32::MAX, 1)], 8, &[8]).get_sample_offset(u32::MAX),
+      Some((1000 + (u32::MAX as usize - 1) * 8, 8))
+    );
   }
 }
 

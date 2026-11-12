@@ -20,11 +20,13 @@ pub struct StszBox {
 impl StszBox {
   pub const TYP: FourCC = FourCC::with(['s', 't', 's', 'z']);
 
-  pub fn sample_size(&self, sample: u32) -> u32 {
+  /// The size of the sample number `sample`, which starts with 1. None if
+  /// the box has no size for it.
+  pub fn sample_size(&self, sample: u32) -> Option<u32> {
     if self.sample_size > 0 {
-      self.sample_size
+      Some(self.sample_size)
     } else {
-      self.sample_sizes[sample as usize - 1]
+      self.sample_sizes.get((sample as usize).checked_sub(1)?).copied()
     }
   }
 }
