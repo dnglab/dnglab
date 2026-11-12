@@ -606,24 +606,23 @@ impl IFD {
     }
   }
 
+  /// Return byte slices to tile data
   pub fn tile_data<'a>(&self, rawsource: &'a RawSource) -> Result<Vec<&'a [u8]>> {
-    let offsets = if let Some(Entry { value: Value::Long(data), .. }) = self.get_entry(TiffCommonTag::TileOffsets) {
-      data
-    } else {
-      return Err(TiffError::General("Invalid datatype for TileOffsets".to_string()));
-    };
+    let offsets = self.offset_values(TiffCommonTag::TileOffsets)?;
+    let byte_counts = self.offset_values(TiffCommonTag::TileByteCounts)?;
+    if offsets.len() != byte_counts.len() {
+      return Err(TiffError::General(format!(
+        "Can't get data from tiles: offsets has len {} but sizes has len {}",
+        offsets.len(),
+        byte_counts.len()
+      )));
+    }
 
-    let byte_counts = if let Some(Entry { value: Value::Long(data), .. }) = self.get_entry(TiffCommonTag::TileByteCounts) {
-      data
-    } else {
-      return Err(TiffError::General("Invalid datatype for TileByteCounts".to_string()));
-    };
-
-    let mut tile_slices = Vec::with_capacity(offsets.len());
-    offsets.iter().zip(byte_counts.iter()).for_each(|(offset, size)| {
-      tile_slices.push(rawsource.subview(*offset as u64, *size as u64).map_err(TiffError::Io));
-    });
-    Ok(tile_slices.into_iter().collect::<Result<Vec<_>>>()?)
+    offsets
+      .iter()
+      .zip(byte_counts.iter())
+      .map(|(offset, size)| Ok(rawsource.subview(self.base as u64 + *offset as u64, *size as u64)?))
+      .collect()
   }
 
   /// Check for the data mode (Strips or Tiles)
@@ -897,6 +896,24 @@ mod tests {
     let data = ifd_with_entries(&[[0x11, 0x01, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0x17, 0x01, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0]]);
     let ifd = IFD::new(&mut Cursor::new(data.clone()), 8, 0, 0, Endian::Little, &[])?;
     assert!(ifd.strip_data(&RawSource::new_from_slice(&data)).is_err());
+    Ok(())
+  }
+
+  #[test]
+  fn tile_data_is_relative_to_base() -> Result<()> {
+    // TIFF behind 4 bytes of other data, two SHORT tiles at 38 and 40
+    let mut data = b"XXXX".to_vec();
+    data.extend(ifd_with_entries(&[
+      [0x44, 0x01, 3, 0, 2, 0, 0, 0, 38, 0, 40, 0],
+      [0x45, 0x01, 3, 0, 2, 0, 0, 0, 2, 0, 2, 0],
+    ]));
+    data.extend_from_slice(b"ABCD");
+    let ifd = IFD::new(&mut Cursor::new(data.clone()), 8, 4, 0, Endian::Little, &[])?;
+    assert_eq!(ifd.tile_data(&RawSource::new_from_slice(&data))?, [&b"AB"[..], &b"CD"[..]]);
+    // A byte count is missing
+    let data = ifd_with_entries(&[[0x44, 0x01, 3, 0, 2, 0, 0, 0, 38, 0, 40, 0], [0x45, 0x01, 3, 0, 1, 0, 0, 0, 2, 0, 0, 0]]);
+    let ifd = IFD::new(&mut Cursor::new(data.clone()), 8, 0, 0, Endian::Little, &[])?;
+    assert!(ifd.tile_data(&RawSource::new_from_slice(&data)).is_err());
     Ok(())
   }
 
