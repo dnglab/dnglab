@@ -354,19 +354,22 @@ impl<'a> Decoder for Cr3Decoder<'a> {
         match &iad1.iad1_type {
           // IAD1 (small, used for CRM movie files), the crop is used as ActiveArea
           Iad1Type::Small(small) => {
-            img.crop_area = Some(iad1_rect(
+            img.crop_area = iad1_rect(
               small.crop_left_offset,
               small.crop_top_offset,
               small.crop_right_offset,
               small.crop_bottom_offset,
               dim,
-            ));
+            );
+            if img.crop_area.is_none() {
+              warn!("IAD1 has no valid crop: {:?}", small);
+            }
             img.active_area = img.crop_area;
           }
           // IAD1 (big, used for full size raws)
           Iad1Type::Big(big) => {
             let rect_crop = iad1_rect(big.crop_left_offset, big.crop_top_offset, big.crop_right_offset, big.crop_bottom_offset, dim);
-            img.crop_area = Some(rect_crop);
+            img.crop_area = rect_crop;
 
             // The active area of R5 1.6 crop files ends at row 3513, but the image
             // has 3510 rows, so it is limited to the image.
@@ -378,22 +381,27 @@ impl<'a> Decoder for Cr3Decoder<'a> {
               dim,
             );
             log::debug!("IAD1 active area: {:?}", rect_active);
-            assert!(rect_crop.x() >= rect_active.x());
-            assert!(rect_crop.y() >= rect_active.y());
-            assert!(rect_crop.width() <= rect_active.width());
-            assert!(rect_crop.height() <= rect_active.height());
-
-            // Check if after apply of active_area the crop is out of bounds.
-            // This is know to happen with R5II 1.6 crop raw files.
-            let overflow = (rect_crop.x() - rect_active.x()) + rect_crop.width() > rect_active.width();
-            if camera.find_hint("activearea_bug") && overflow {
-              // In this case, we ignore the active_area in IAD1 and use the crop instead.
-              log::debug!("Raw file has invalid active_area parameters in IAD1, using crop_area instead");
-              img.active_area = Some(rect_crop);
-            } else {
-              assert!(!overflow, "Hit the activearea_bug, maybe you just need to define the hint?");
-              img.active_area = Some(rect_active);
-            }
+            img.active_area = match (rect_crop, rect_active) {
+              (Some(crop), Some(active)) if crop_in_active_area(crop, active) => Some(active),
+              // After applying the active area the crop is out of bounds. This is
+              // known to happen with R5II 1.6 crop raw files, the active_area in
+              // IAD1 is ignored and the crop is used instead.
+              (Some(crop), active) => {
+                if camera.find_hint("activearea_bug") {
+                  log::debug!("Raw file has invalid active_area parameters in IAD1, using crop_area instead");
+                } else {
+                  warn!(
+                    "IAD1 crop {:?} is not inside the active area {:?}, using the crop. Does the camera need the activearea_bug hint?",
+                    crop, active
+                  );
+                }
+                Some(crop)
+              }
+              (None, active) => {
+                warn!("IAD1 has no valid crop: {:?}", big);
+                active
+              }
+            };
 
             // CR3 images have no masked areas: the left and top borders of IAD1
             // are not only optical black, and ColorData has the black level.
@@ -757,10 +765,23 @@ impl Ctmd {
 ///
 /// The coordinates are inclusive: `right` and `bottom` are the last column and
 /// row of the rectangle.
-fn iad1_rect(left: u16, top: u16, right: u16, bottom: u16, dim: Dim2) -> Rect {
+fn iad1_rect(left: u16, top: u16, right: u16, bottom: u16, dim: Dim2) -> Option<Rect> {
   let right = usize::min(dim.w, right as usize + 1);
   let bottom = usize::min(dim.h, bottom as usize + 1);
-  Rect::new_with_points(Point::new(left as usize, top as usize), Point::new(right, bottom))
+  // Empty or inverted after the limit to the image
+  if left as usize >= right || top as usize >= bottom {
+    return None;
+  }
+  Some(Rect::new_with_points(Point::new(left as usize, top as usize), Point::new(right, bottom)))
+}
+
+/// The `crop` is inside the `active` area
+fn crop_in_active_area(crop: Rect, active: Rect) -> bool {
+  crop.x() >= active.x()
+    && crop.y() >= active.y()
+    && crop.width() <= active.width()
+    && crop.height() <= active.height()
+    && (crop.x() - active.x()) + crop.width() <= active.width()
 }
 
 /// BaselineExposure for the HighlightTonePriority value at index 3 of the LightingOpt makernote
@@ -961,13 +982,30 @@ mod tests {
   fn iad1_rect_includes_the_last_column_and_row() {
     // Active area of the EOS 90D, it ends at the last column and row of the image
     let dim = Dim2::new(7128, 4732);
-    assert_eq!(iad1_rect(144, 72, 7127, 4731, dim), Rect::new(Point::new(144, 72), Dim2::new(6984, 4660)));
+    assert_eq!(iad1_rect(144, 72, 7127, 4731, dim), Some(Rect::new(Point::new(144, 72), Dim2::new(6984, 4660))));
   }
 
   #[test]
   fn iad1_rect_is_limited_to_the_image() {
     // Active area of an EOS R5 1.6 crop file, it ends 4 rows below the image
     let dim = Dim2::new(5248, 3510);
-    assert_eq!(iad1_rect(128, 96, 5247, 3513, dim), Rect::new(Point::new(128, 96), Dim2::new(5120, 3414)));
+    assert_eq!(iad1_rect(128, 96, 5247, 3513, dim), Some(Rect::new(Point::new(128, 96), Dim2::new(5120, 3414))));
+  }
+
+  #[test]
+  fn iad1_rect_is_none_when_empty_or_inverted() {
+    let dim = Dim2::new(5248, 3510);
+    assert_eq!(iad1_rect(200, 96, 100, 3509, dim), None);
+    assert_eq!(iad1_rect(128, 3600, 5247, 3700, dim), None);
+    assert_eq!(iad1_rect(6000, 96, 6100, 3509, dim), None);
+  }
+
+  #[test]
+  fn crop_must_be_inside_the_active_area() {
+    let active = Rect::new(Point::new(128, 96), Dim2::new(5120, 3414));
+    assert!(crop_in_active_area(Rect::new(Point::new(140, 100), Dim2::new(5000, 3400)), active));
+    // Left of the active area, and beyond its right edge
+    assert!(!crop_in_active_area(Rect::new(Point::new(100, 100), Dim2::new(5000, 3400)), active));
+    assert!(!crop_in_active_area(Rect::new(Point::new(300, 100), Dim2::new(5000, 3400)), active));
   }
 }
