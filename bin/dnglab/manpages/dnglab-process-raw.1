@@ -52,7 +52,7 @@ none
 Crop to the largest rectangle without transparent pixels of the DNG transparency mask
 .TP
 \fB\-\-format\fR \fI<format>\fR
-Output image format, defaults to the OUTPUT file extension or tif. TIFF has 16\-bit samples, linear 32\-bit floating point samples for High Dynamic Range camera profiles
+Output image format, defaults to the OUTPUT file extension or tif. TIFF has 16\-bit samples, linear 32\-bit floating point samples for High Dynamic Range camera profiles. PNM is a 16\-bit PGM for one color plane or PPM for three
 .br
 
 .br
@@ -62,6 +62,8 @@ Output image format, defaults to the OUTPUT file extension or tif. TIFF has 16\-
 tif
 .IP \(bu 2
 jpeg
+.IP \(bu 2
+pnm
 .RE
 .TP
 \fB\-\-color\-space\fR \fI<space>\fR [default: srgb]
@@ -146,12 +148,14 @@ Change the exposure by this value in EV, e.g. \-1.2. A negative value keeps whit
 Correct the exposure by an estimate from the image, \-\-exposure is added to it
 .TP
 \fB\-\-steps\fR \fI<steps>\fR
-Apply only these processing steps of the rendering, as comma separated list. Without it the default steps are applied
+Apply only these processing steps of the rendering, as comma separated list, \*(Aqall\*(Aq for all steps. Without it the default steps are applied
 .br
 
 .br
 \fIPossible values:\fR
 .RS 14
+.IP \(bu 2
+all
 .IP \(bu 2
 rescale
 .IP \(bu 2
@@ -189,12 +193,14 @@ transferfunction
 .RE
 .TP
 \fB\-\-skip\-steps\fR \fI<steps>\fR
-Skip these processing steps of the rendering, as comma separated list (e.g. tonecurve,denoise,sharpen). Takes priority over \-\-steps
+Skip these processing steps of the rendering, as comma separated list (e.g. tonecurve,denoise,sharpen). \*(Aqall\*(Aq skips every step and writes the raw values of the whole raw image. Takes priority over \-\-steps
 .br
 
 .br
 \fIPossible values:\fR
 .RS 14
+.IP \(bu 2
+all
 .IP \(bu 2
 rescale
 .IP \(bu 2

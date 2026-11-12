@@ -2,7 +2,8 @@
 
 This document describes how rawler turns the image data of a raw file into a
 final image: a 16-bit TIFF, a 32-bit floating point TIFF for High Dynamic Range
-profiles, a JPEG, or the LinearRaw data and preview of a DNG file.
+profiles, a JPEG, a 16-bit PGM/PPM, or the LinearRaw data and preview of a DNG
+file.
 
 The rendering lives in [`rawler/src/imgop/render/`](../rawler/src/imgop/render/).
 It is split into two parts:
@@ -37,6 +38,7 @@ flowchart TD
   O --> T16[16-bit TIFF]
   O --> T32[32-bit float TIFF, HDR profiles]
   O --> JPG[8-bit JPEG]
+  O --> PNM[16-bit PGM/PPM]
   O --> PRV[DNG preview]
 ```
 
@@ -44,8 +46,8 @@ flowchart TD
 
 | Caller | Function | Result |
 | --- | --- | --- |
-| `dnglab process-raw` | `process_raw_image` in [`develop.rs`](../rawler/src/imgop/develop.rs) | TIFF or JPEG file |
-| Library | `RawDevelop::develop`, `develop_jpeg`, `develop_image` | TIFF, JPEG, `RenderedImage` |
+| `dnglab process-raw` | `process_raw_image` in [`develop.rs`](../rawler/src/imgop/develop.rs) | TIFF, JPEG or PGM/PPM file |
+| Library | `RawDevelop::develop`, `develop_jpeg`, `develop_pnm`, `develop_image` | TIFF, JPEG, PGM/PPM, `RenderedImage` |
 | Library | `render`, or `plan` and `execute` | `RenderedImage` |
 | `dnglab convert` | `render_linear_raw` in [`convert.rs`](../rawler/src/dng/convert.rs) | LinearRaw data of the DNG |
 | `dnglab convert` | `render` with the preview options | Preview and thumbnail of the DNG |
@@ -84,6 +86,13 @@ also crops to the largest opaque area of the transparency mask.
 The processing steps (`ProcessingStep`) can be switched off one by one. A step
 that is not in the set is skipped, which is useful to look at intermediate
 results, for example `--skip-steps tonecurve,transferfunction` for linear data.
+In `--steps` and `--skip-steps`, `all` stands for all steps.
+
+Without the `Rescale` step, the values stay those of the raw data
+([raw values](#raw-values)). `--skip-steps all` gives the whole raw image as it
+is read from the file, only OpcodeList1 is applied. Steps that don't expect
+linear reference values, such as `Demosaic` and the crops, still give useful
+raw values. `WhiteBalance` and `Calibrate` clip at 1.0.
 
 | Step | Effect |
 | --- | --- |
@@ -347,16 +356,25 @@ They are handled as follows:
 | `transfer_function` | The transfer function the values are encoded with, `Linear` without one |
 | `alpha` | Opacity from the DNG transparency mask, cropped along with the image |
 | `extended_range` | Linear HDR values that can be above 1.0 |
+| `raw_values` | Values of the raw data, see below |
 
 `icc_profile()` builds the matching ICC profile, with a linear curve for linear
 data.
+
+### Raw values
+
+Without the Rescale step, the values are not mapped to linear reference values.
+`raw_values` is set unless the data is mapped already, which a white level of 1
+shows (for example after `RawImage::linearize`). The 16-bit outputs
+(`RenderedImage::to_u16`) round raw values and keep them, instead of scaling
+0.0 to 1.0 to 0 to 65535. Raw values get no ICC profile.
 
 ### TIFF
 
 `RawDevelop::develop`:
 
 - **16-bit integers**, LZW compressed. Values are clipped to 0.0 to 1.0 and
-  scaled to 0 to 65535.
+  scaled to 0 to 65535, raw values are written as they are.
 - **32-bit floating point** for `extended_range` images, that is HDR profiles:
   - LZW with the floating point predictor (Predictor 3)
   - SampleFormat 3
@@ -376,6 +394,18 @@ data.
   ICC profile.
 - Transparent pixels are matted to black.
 - HDR values are clipped.
+- Raw values are an error, 8 bits can't hold them.
+
+### PGM/PPM
+
+`RawDevelop::develop_pnm`:
+
+- 16-bit PGM (P5) for one channel, PPM (P6) for three, big-endian with a
+  maximum value of 65535. Four channels are an error.
+- The values are those of the 16-bit TIFF.
+- No metadata and no ICC profile. The transparency mask is dropped with a
+  warning.
+- `--skip-steps all` writes the same file as `dnglab analyze --raw-pixel`.
 
 ### DNG files
 
@@ -425,6 +455,8 @@ exposure. An explicit `--exposure` still applies.
 - `--steps` and `--skip-steps` give intermediate results. For example,
   `--skip-steps baselineexposure,profilerender,tonecurve,transferfunction
   --color-space prophoto` writes linear ProPhoto RGB before the profile render.
+- `--skip-steps all` writes the raw image in raw values, for example
+  `dnglab process-raw --skip-steps all IMG_0001.CR2 raw.pgm`.
 - `--highlights clip`, no noise reduction (`--denoise-luma 0 --denoise-chroma 0`)
   and no sharpening (`--sharpen 0`) give results that compare well with other DNG
   readers.

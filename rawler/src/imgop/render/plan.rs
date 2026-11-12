@@ -29,6 +29,8 @@ pub struct Plan {
   pub(super) ops: Vec<Op>,
   /// The result has linear values of a High Dynamic Range render
   pub(super) extended_range: bool,
+  /// The result has the values of the raw data, without the Rescale step
+  pub(super) raw_values: bool,
 }
 
 /// Processing operation with its parameters
@@ -249,8 +251,15 @@ pub fn plan(rawimage: &RawImage, options: &RenderOptions) -> crate::Result<Plan>
         clip: None,
       }));
     }
-    return Ok(Plan { ops, extended_range: false });
+    return Ok(Plan {
+      ops,
+      extended_range: false,
+      raw_values: false,
+    });
   }
+  // Without the Rescale step, the values stay those of the raw data, unless
+  // they are mapped to linear reference values already (a white level of 1)
+  let raw_values = !steps.contains(Step::Rescale) && rawimage.whitelevel.0.iter().any(|white| *white != 1);
   // Cropping before the color operations saves their work for the cropped pixels
   if crop_default && !cropped {
     ops.push(Op::CropDefault);
@@ -410,7 +419,11 @@ pub fn plan(rawimage: &RawImage, options: &RenderOptions) -> crate::Result<Plan>
       ops.push(Op::TransferFunction(function));
     }
   }
-  Ok(Plan { ops, extended_range })
+  Ok(Plan {
+    ops,
+    extended_range,
+    raw_values,
+  })
 }
 
 /// Demosaic algorithm for a CFA and the number of color planes of its result,

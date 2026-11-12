@@ -363,6 +363,9 @@ pub struct RenderedImage {
   /// Linear values of a High Dynamic Range render, they can be above 1.0
   /// and below 0.0 (colors outside of the color space)
   pub extended_range: bool,
+  /// Values of the raw data, not mapped to 0.0 .. 1.0 because the Rescale
+  /// step is skipped
+  pub raw_values: bool,
 }
 
 impl RenderedImage {
@@ -391,20 +394,32 @@ impl RenderedImage {
   }
 
   /// ICC profile of the image data: of its color space, or of gray values for
-  /// an image with one channel. `None` for camera values.
+  /// an image with one channel. `None` for camera values and raw values.
   pub fn icc_profile(&self) -> Option<Vec<u8>> {
     match (self.color_space, self.channels) {
+      _ if self.raw_values => None,
       (Some(space), 3) => Some(icc::rgb_profile(space, self.transfer_function)),
       (None, 1) => Some(icc::gray_profile(self.transfer_function)),
       _ => None,
     }
   }
 
-  /// Image of 16 bit integers, values of 0.0 to 1.0 are scaled to the full range
+  /// Samples as 16 bit integers: values of 0.0 to 1.0 are scaled to the full
+  /// range, raw values are rounded and kept
+  pub fn to_u16(&self) -> Vec<u16> {
+    if self.raw_values {
+      // The conversion saturates at 0 and 65535
+      self.data.iter().map(|v| v.round() as u16).collect()
+    } else {
+      convert_from_f32_scaled_u16(&self.data, 0, u16::MAX)
+    }
+  }
+
+  /// Image of 16 bit integers, see [`Self::to_u16`]
   ///
   /// Images with one, three (RGB) or four (RGBA) channels are supported.
   pub fn to_dynamic_image(&self) -> Option<DynamicImage> {
-    let data = convert_from_f32_scaled_u16(&self.data, 0, u16::MAX);
+    let data = self.to_u16();
     let (width, height) = (self.width as u32, self.height as u32);
     Some(match self.channels {
       1 => DynamicImage::ImageLuma16(ImageBuffer::from_raw(width, height, data)?),

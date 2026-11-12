@@ -5,12 +5,13 @@ use crate::camera_profiles::analyze_camera_profiles;
 use crate::dcp::{export_dcp, export_dcp_all};
 use clap::ArgMatches;
 use log::debug;
+use rawler::analyze::raw_to_srgb;
 use rawler::analyze::{
   analyze_file_structure, analyze_metadata, extract_full_pixels, extract_preview_pixels, extract_raw_pixels, extract_thumbnail_pixels, full_image_digest,
-  preview_digest, raw_as_pgm, raw_pixels_digest, rgb8_as_ppm8, thumbnail_digest,
+  preview_digest, raw_pixels_digest, rgb8_as_ppm8, thumbnail_digest,
 };
-use rawler::analyze::{raw_as_ppm16, raw_to_srgb};
 use rawler::decoders::RawDecodeParams;
+use rawler::imgop::develop::{raw_as_pgm, raw_as_ppm16};
 use serde::Serialize;
 use std::{
   io::{BufWriter, Write},

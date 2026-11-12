@@ -4,6 +4,7 @@ use std::{
   path::Path,
 };
 
+use byteorder::{BigEndian, WriteBytesExt};
 use image::{ImageEncoder, codecs::jpeg::JpegEncoder};
 
 use crate::{
@@ -27,8 +28,6 @@ use crate::{
   tags::{ExifTag, TiffCommonTag},
 };
 
-use super::convert_from_f32_scaled_u16;
-
 pub use super::render::ProcessingStep;
 
 /// File format of a processed raw image
@@ -40,6 +39,8 @@ pub enum ProcessedImageFormat {
   Tiff,
   /// 8-bit JPEG
   Jpeg,
+  /// 16-bit PGM for one color plane, 16-bit PPM for three
+  Pnm,
 }
 
 impl ProcessedImageFormat {
@@ -48,6 +49,7 @@ impl ProcessedImageFormat {
     match self {
       Self::Tiff => "tif",
       Self::Jpeg => "jpg",
+      Self::Pnm => "pnm",
     }
   }
 
@@ -56,6 +58,7 @@ impl ProcessedImageFormat {
     match extension.to_str()?.to_ascii_lowercase().as_str() {
       "tif" | "tiff" => Some(Self::Tiff),
       "jpg" | "jpeg" => Some(Self::Jpeg),
+      "pgm" | "ppm" | "pnm" => Some(Self::Pnm),
       _ => None,
     }
   }
@@ -64,13 +67,14 @@ impl ProcessedImageFormat {
 #[cfg(feature = "clap")]
 impl clap::ValueEnum for ProcessedImageFormat {
   fn value_variants<'a>() -> &'a [Self] {
-    &[Self::Tiff, Self::Jpeg]
+    &[Self::Tiff, Self::Jpeg, Self::Pnm]
   }
 
   fn to_possible_value(&self) -> Option<clap::builder::PossibleValue> {
     Some(match self {
       Self::Tiff => clap::builder::PossibleValue::new("tif").alias("tiff"),
       Self::Jpeg => clap::builder::PossibleValue::new("jpeg").alias("jpg"),
+      Self::Pnm => clap::builder::PossibleValue::new("pnm").aliases(["pgm", "ppm"]),
     })
   }
 }
@@ -182,6 +186,7 @@ pub fn process_raw_image<W: Write + Seek + Send>(raw: &Path, image_file: &mut W,
   match params.format {
     ProcessedImageFormat::Tiff => develop.develop(rawimage, &metadata, image_file)?,
     ProcessedImageFormat::Jpeg => develop.develop_jpeg(rawimage, &metadata, image_file, params.jpeg_quality)?,
+    ProcessedImageFormat::Pnm => develop.develop_pnm(rawimage, image_file)?,
   }
   Ok(())
 }
@@ -215,6 +220,26 @@ fn crop_to_opaque_area(rawimage: &mut RawImage, develop: &mut RawDevelop, crop: 
       within
     ),
   }
+}
+
+/// Dump raw pixel data as PGM
+pub fn raw_as_pgm(width: usize, height: usize, buf: &[u16], writer: &mut dyn Write) -> std::io::Result<()> {
+  let header = format!("P5 {} {} {}\n", width, height, 65535);
+  writer.write_all(header.as_bytes())?;
+  for px in buf {
+    writer.write_u16::<BigEndian>(*px)?;
+  }
+  Ok(())
+}
+
+/// Dump raw pixel data as PPM
+pub fn raw_as_ppm16(width: usize, height: usize, buf: &[u16], writer: &mut dyn Write) -> std::io::Result<()> {
+  let header = format!("P6 {} {} {}\n", width, height, 65535);
+  writer.write_all(header.as_bytes())?;
+  for px in buf {
+    writer.write_u16::<BigEndian>(*px)?;
+  }
+  Ok(())
 }
 
 /// Samples of `channels` per pixel with `alpha` as an extra sample, mapped by
@@ -357,7 +382,7 @@ impl RawDevelop {
       let data = with_alpha(std::mem::take(&mut image.data), image.channels, image.alpha.as_deref(), |alpha| alpha);
       (32_u16, tiff.write_strips_lzw_f32(&data, samples, dim, 0).map_err(write_error)?)
     } else {
-      let data = convert_from_f32_scaled_u16(&image.data, 0, u16::MAX);
+      let data = image.to_u16();
       let data = with_alpha(data, image.channels, image.alpha.as_deref(), |alpha| (alpha * u16::MAX as f32).round() as u16);
       (16_u16, tiff.write_strips_lzw(&data, samples, dim, 0).map_err(write_error)?)
     };
@@ -391,6 +416,9 @@ impl RawDevelop {
   {
     let (make, model, orientation) = (rawimage.clean_make.clone(), rawimage.clean_model.clone(), rawimage.orientation);
     let mut image = self.develop_image(rawimage)?;
+    if image.raw_values {
+      return Err(input_error!("Raw values need 16 bits, they can't be written to an 8-bit JPEG"));
+    }
     // JPEG has no alpha channel, transparent pixels are matted to black
     if let Some(alpha) = image.alpha.take() {
       let channels = image.channels;
@@ -430,6 +458,27 @@ impl RawDevelop {
       .write_with_encoder(encoder)
       .map_err(|err| general_error!("Failed to write JPEG").context(err))?;
     Ok(())
+  }
+
+  /// Develop raw image and write the result as 16-bit PGM (one channel) or
+  /// PPM (three channels), without metadata
+  ///
+  /// The transparency mask is dropped, PGM and PPM have no alpha channel.
+  pub fn develop_pnm<W>(&self, rawimage: RawImage, mut writer: W) -> crate::Result<()>
+  where
+    W: io::Write,
+  {
+    let image = self.develop_image(rawimage)?;
+    if image.alpha.is_some() {
+      log::warn!("PGM and PPM have no alpha channel, the transparency mask is not written");
+    }
+    let data = image.to_u16();
+    match image.channels {
+      1 => raw_as_pgm(image.width, image.height, &data, &mut writer),
+      3 => raw_as_ppm16(image.width, image.height, &data, &mut writer),
+      channels => return Err(input_error!("PGM and PPM hold one or three channels, the image has {}", channels)),
+    }
+    .map_err(|err| general_error!("Failed to write the PGM/PPM file").context(err))
   }
 
   /// IFD 0 with the EXIF data of `image`, developed from a raw image of a

@@ -55,6 +55,7 @@ pub fn execute(rawimage: RawImage, plan: &Plan) -> crate::Result<RenderedImage> 
   let mask = executor.rawimage.transparency_mask.take();
   let mut image = std::mem::take(executor.image());
   image.extended_range = plan.extended_range;
+  image.raw_values = plan.raw_values;
   // The transparency mask is cropped with the image data
   image.alpha = mask
     .filter(|mask| {

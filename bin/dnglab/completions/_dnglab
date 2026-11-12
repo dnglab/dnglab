@@ -72,7 +72,7 @@ _arguments "${_arguments_options[@]}" : \
 '--keep-mtime=[Keep mtime, read from EXIF with fallback to original file mtime]:keepmtime:(true false)' \
 '--image-index=[Select a specific image index (or '\''all'\'') if file is a image container]:index:_default' \
 '--crop=[Crop of the image\: DefaultCrop (best), ActiveArea or none]:crop:(best activearea none)' \
-'--format=[Output image format, defaults to the OUTPUT file extension or tif. TIFF has 16-bit samples, linear 32-bit floating point samples for High Dynamic Range camera profiles]:format:(tif jpeg)' \
+'--format=[Output image format, defaults to the OUTPUT file extension or tif. TIFF has 16-bit samples, linear 32-bit floating point samples for High Dynamic Range camera profiles. PNM is a 16-bit PGM for one color plane or PPM for three]:format:(tif jpeg pnm)' \
 '--color-space=[Color space of the image]:space:(srgb adobergb prophoto)' \
 '--highlights=[Highlights above white after the BaselineExposure\: compress keeps their color with a smooth shoulder, clip clips each channel like DNG readers]:mode:(compress clip)' \
 '--bayer-demosaic=[Demosaic algorithm for Bayer RGB sensors\: ppg is fast, ahd interpolates along edges with fewer artifacts, vng averages the directions with small gradients, rcd interpolates along edges with ratio corrections, bilinear averages the neighbours of each color]:algorithm:(ppg ahd vng rcd bilinear)' \
@@ -83,8 +83,8 @@ _arguments "${_arguments_options[@]}" : \
 '--denoise-chroma=[Strength of the chroma noise reduction (0-4), 0 is off, 1 is a full reduction \[default\: 0.5\]]:strength:_default' \
 '--sharpen=[Strength of the sharpening (0-2), 0 is off, 1 is the classic Laplacian filter \[default\: 0.2\]]:strength:_default' \
 '--exposure=[Change the exposure by this value in EV, e.g. -1.2. A negative value keeps white \[default\: 0\]]:EV:_default' \
-'*--steps=[Apply only these processing steps of the rendering, as comma separated list. Without it the default steps are applied]:steps:(rescale demosaic fujirotate cropactivearea baselineexposure whitebalance autowhitebalance calibrate profilerender tonecurve cropdefault denoise defaultscale exposure autoexposure sharpen transferfunction)' \
-'*--skip-steps=[Skip these processing steps of the rendering, as comma separated list (e.g. tonecurve,denoise,sharpen). Takes priority over --steps]:steps:(rescale demosaic fujirotate cropactivearea baselineexposure whitebalance autowhitebalance calibrate profilerender tonecurve cropdefault denoise defaultscale exposure autoexposure sharpen transferfunction)' \
+'*--steps=[Apply only these processing steps of the rendering, as comma separated list, '\''all'\'' for all steps. Without it the default steps are applied]:steps:(all rescale demosaic fujirotate cropactivearea baselineexposure whitebalance autowhitebalance calibrate profilerender tonecurve cropdefault denoise defaultscale exposure autoexposure sharpen transferfunction)' \
+'*--skip-steps=[Skip these processing steps of the rendering, as comma separated list (e.g. tonecurve,denoise,sharpen). '\''all'\'' skips every step and writes the raw values of the whole raw image. Takes priority over --steps]:steps:(all rescale demosaic fujirotate cropactivearea baselineexposure whitebalance autowhitebalance calibrate profilerender tonecurve cropdefault denoise defaultscale exposure autoexposure sharpen transferfunction)' \
 '-d+[Log level]:level:(error warn info debug trace)' \
 '--loglevel=[Log level]:level:(error warn info debug trace)' \
 '--profile-path=[Directory with profile TOML files]:dir:_files' \

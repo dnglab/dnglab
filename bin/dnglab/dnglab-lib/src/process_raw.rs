@@ -186,10 +186,12 @@ fn generate_job(entry: &FileMap, options: &ArgMatches, dcp: &Option<CameraProfil
       exposure: options.get_one("exposure").copied().unwrap_or(0.0),
       auto_exposure: options.get_flag("auto_exposure"),
       crop_transparent: options.get_flag("crop_transparent"),
-      steps: options.get_many::<ProcessingStep>("steps").map(|values| values.copied().collect()),
+      steps: options
+        .get_many::<Vec<ProcessingStep>>("steps")
+        .map(|values| values.flatten().copied().collect()),
       skip_steps: options
-        .get_many::<ProcessingStep>("skip_steps")
-        .map(|values| values.copied().collect())
+        .get_many::<Vec<ProcessingStep>>("skip_steps")
+        .map(|values| values.flatten().copied().collect())
         .unwrap_or_default(),
       dcp: dcp.clone(),
     };
