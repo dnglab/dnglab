@@ -681,8 +681,11 @@ impl Ctmd {
             let data = bs.get_bytes(sz as usize - 8)?;
             //dump_buf(&format!("/tmp/ctmd_rec{}_block{}_tag0x{:X}_uk{:X}.bin", rec.rec_type, block_id, tag, uk), data.as_slice());
             if [CR3_CTMD_BLOCK_EXIFIFD, CR3_CTMD_BLOCK_MAKERNOTES].contains(&tag) {
-              assert_eq!(rec.blocks.contains_key(&tag), false, "Double tag found?!");
-              rec.blocks.insert(tag, data);
+              if rec.blocks.contains_key(&tag) {
+                warn!("CTMD record {} has a second block 0x{:X}, ignoring it", rec.rec_type, tag);
+              } else {
+                rec.blocks.insert(tag, data);
+              }
             }
             _block_id += 1;
           } else {
@@ -922,6 +925,20 @@ mod tests {
     data[4..6].copy_from_slice(&1u16.to_le_bytes());
     let ctmd = Ctmd::new(&mut ByteStream::new(&data, Endian::Little))?;
     assert_eq!(ctmd.records[&1].payload.len(), 8);
+    Ok(())
+  }
+
+  #[test]
+  fn ctmd_keeps_the_first_of_two_blocks() -> Result<()> {
+    // Record 7 with two makernote blocks of 1 byte
+    let block = |byte: u8| [&9u32.to_le_bytes()[..], &CR3_CTMD_BLOCK_MAKERNOTES.to_le_bytes(), &[0, 0, byte]].concat();
+    let payload = [block(1), block(2)].concat();
+    let mut data = (12 + payload.len() as u32).to_le_bytes().to_vec();
+    data.extend_from_slice(&7u16.to_le_bytes());
+    data.extend_from_slice(&[0; 6]);
+    data.extend_from_slice(&payload);
+    let ctmd = Ctmd::new(&mut ByteStream::new(&data, Endian::Little))?;
+    assert_eq!(ctmd.records[&7].blocks[&CR3_CTMD_BLOCK_MAKERNOTES], [1]);
     Ok(())
   }
 
