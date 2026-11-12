@@ -86,7 +86,8 @@ where
     let mut tag_data = Vec::with_capacity(strips.len());
     for strip in strips {
       let offset = self.write_data(&strip)?;
-      tag_data.push((offset, strip.len() as u32));
+      let len = u32::try_from(strip.len()).map_err(|_| TiffError::Overflow(format!("TIFF strip of {} bytes exceeds 4 GiB", strip.len())))?;
+      tag_data.push((offset, len));
     }
     Ok(tag_data)
   }
@@ -146,8 +147,11 @@ impl<W> TiffWriter<W>
 where
   W: Seek,
 {
+  /// Position in the output, an error beyond the 4 GiB a TIFF offset can
+  /// address
   pub fn position(&mut self) -> Result<u32> {
-    Ok(self.writer.stream_position().map(|v| v as u32)?) // TODO: try_from?
+    let pos = self.writer.stream_position()?;
+    u32::try_from(pos).map_err(|_| TiffError::Overflow(format!("TIFF output exceeds 4 GiB at position {}", pos)))
   }
 }
 
@@ -256,7 +260,7 @@ impl DirectoryWriter {
         tiff.pad_word_boundary()?;
         let offset = tiff.position()?;
         value.write(&mut tiff.writer)?;
-        embedded.replace(offset as u32);
+        embedded.replace(offset);
       } else {
         if value.count() == 0 {
           panic!("TIFF value is empty, tag: {:?}", tag);
@@ -467,6 +471,42 @@ pub(crate) fn float_predictor_decode(mut bytes: Vec<u8>, cpp: usize) -> Vec<f32>
 #[cfg(test)]
 mod tests {
   use super::*;
+
+  /// Output that discards the data and only keeps the position
+  #[derive(Default)]
+  struct PositionOnly {
+    pos: u64,
+  }
+
+  impl Write for PositionOnly {
+    fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
+      self.pos += buf.len() as u64;
+      Ok(buf.len())
+    }
+
+    fn flush(&mut self) -> std::io::Result<()> {
+      Ok(())
+    }
+  }
+
+  impl Seek for PositionOnly {
+    fn seek(&mut self, pos: SeekFrom) -> std::io::Result<u64> {
+      match pos {
+        SeekFrom::Start(pos) => self.pos = pos,
+        SeekFrom::Current(delta) => self.pos = self.pos.saturating_add_signed(delta),
+        SeekFrom::End(_) => return Err(std::io::Error::other("no end")),
+      }
+      Ok(self.pos)
+    }
+  }
+
+  #[test]
+  fn output_beyond_4gib_is_an_error() -> Result<()> {
+    let mut tiff = TiffWriter::new(PositionOnly::default())?;
+    tiff.writer.seek(SeekFrom::Start(5 << 30))?;
+    assert!(matches!(tiff.write_data(&[1, 2, 3, 4]), Err(TiffError::Overflow(_))));
+    Ok(())
+  }
 
   #[test]
   fn unknown_type_is_written_as_undefined() -> Result<()> {
