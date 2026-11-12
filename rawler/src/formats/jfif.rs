@@ -55,7 +55,8 @@ impl<R: Read + Seek> ReadSegment<&mut R> for App0 {
 
     const APP1_JFIF_MARKER: [u8; 5] = [b'J', b'F', b'I', b'F', b'\0'];
 
-    if payload_len(len)? >= APP1_JFIF_MARKER.len() as u64 {
+    let payload = payload_len(len)?;
+    if payload >= APP1_JFIF_MARKER.len() as u64 {
       let mut jfif_str = [0; 5];
       reader.read_exact(&mut jfif_str)?;
       if jfif_str == APP1_JFIF_MARKER {
@@ -65,8 +66,16 @@ impl<R: Read + Seek> ReadSegment<&mut R> for App0 {
         let ydensity = reader.read_u16::<BigEndian>()?;
         let xthumbnail = reader.read_u8()?;
         let ythumbnail = reader.read_u8()?;
-        let thumbnail = if xthumbnail * ythumbnail > 0 {
-          let mut data = vec![0; (3 * xthumbnail * ythumbnail) as usize];
+        // RGB thumbnail after the 14 bytes of the header
+        let thumbnail_len = 3 * xthumbnail as usize * ythumbnail as usize;
+        if 14 + thumbnail_len as u64 > payload {
+          return Err(JfifError::FormatMismatch(format!(
+            "APP0 thumbnail of {}x{} pixels exceeds the segment of {} bytes",
+            xthumbnail, ythumbnail, len
+          )));
+        }
+        let thumbnail = if thumbnail_len > 0 {
+          let mut data = vec![0; thumbnail_len];
           reader.read_exact(&mut data)?;
           Some(data)
         } else {
@@ -363,6 +372,26 @@ mod tests {
     // Marker and a packet of 3 bytes
     let parsed = Jfif::parse(Cursor::new(jpeg(0xE1, 34, &[XMP_MARKER, b"xmp"].concat()))).expect("parsed");
     assert_eq!(parsed.xpacket().map(Vec::as_slice), Some(&b"xmp"[..]));
+  }
+
+  /// APP0 payload of JFIF 1.2 with a thumbnail of `x` * `y` pixels
+  fn jfif_app0(x: u8, y: u8) -> Vec<u8> {
+    let mut payload = b"JFIF\0\x01\x02\0\0\x01\0\x01".to_vec();
+    payload.extend_from_slice(&[x, y]);
+    payload.resize(payload.len() + 3 * x as usize * y as usize, 0x80);
+    payload
+  }
+
+  #[test]
+  fn app0_thumbnail() {
+    let payload = jfif_app0(16, 16);
+    let parsed = Jfif::parse(Cursor::new(jpeg(0xE0, payload.len() as u16 + 2, &payload))).expect("parsed");
+    match &parsed.segments[1] {
+      Segment::APP0 { app0, .. } => assert_eq!(app0.thumbnail.as_ref().map(Vec::len), Some(16 * 16 * 3)),
+      segment => panic!("APP0 expected, got {:?}", segment),
+    }
+    // The thumbnail does not fit in the segment
+    assert!(Jfif::parse(Cursor::new(jpeg(0xE0, 16, &payload))).is_err());
   }
 
   #[test]
