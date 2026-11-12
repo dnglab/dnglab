@@ -2,7 +2,7 @@
 // Originally written by Guillaume Gomez under MIT license
 // Copyright 2021 Daniel Vogelbacher <daniel@chaospixel.com>
 
-use chrono::{Datelike, Timelike, Utc};
+use chrono::{DateTime, Datelike, Timelike};
 use futures::TryStreamExt;
 use futures::stream::SplitSink;
 use futures::{SinkExt, StreamExt};
@@ -14,7 +14,7 @@ use std::net::{IpAddr, SocketAddr};
 use std::path::{Component, Path, PathBuf, StripPrefixError};
 use std::result;
 use std::sync::Arc;
-use std::time::Duration;
+use std::time::{Duration, UNIX_EPOCH};
 use tokio::fs::{File, canonicalize, create_dir, metadata, read_dir, remove_dir, remove_file, symlink_metadata};
 use tokio::io::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt};
 use tokio::net::tcp::{OwnedReadHalf, OwnedWriteHalf};
@@ -841,7 +841,13 @@ async fn add_file_info(path: PathBuf, out: &mut Vec<u8>) {
   };
   let extra = if meta.is_dir() { "/" } else { "" };
   let is_dir = if meta.is_dir() { "d" } else { "-" };
-  let time: chrono::DateTime<Utc> = meta.modified().unwrap_or(std::time::SystemTime::UNIX_EPOCH).into();
+  // A time that chrono can't represent is shown as the epoch
+  let time = meta
+    .modified()
+    .ok()
+    .and_then(|time| time.duration_since(UNIX_EPOCH).ok())
+    .and_then(|since| DateTime::from_timestamp(i64::try_from(since.as_secs()).ok()?, 0))
+    .unwrap_or(DateTime::UNIX_EPOCH);
   #[cfg(unix)]
   let file_size = meta.size();
   #[cfg(windows)]
