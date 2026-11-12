@@ -730,55 +730,20 @@ impl Value {
     }
   }
 
+  /// The value as the 4 bytes of an IFD entry. The writer writes the u32 in
+  /// host byte order, like the values, so the bytes come out as written by
+  /// [`Value::write`].
   pub fn as_embedded(&self) -> Result<u32> {
     if self.count() == 0 {
       return Err(TiffError::General("Embedded data is empty".into()));
     }
     if self.byte_size() > 4 {
-      Err(TiffError::Overflow("Invalid data".to_string()))
-    } else {
-      match self {
-        Self::Byte(v) => Ok(
-          (*v.get(0).unwrap_or(&0) as u32)
-            | ((*v.get(1).unwrap_or(&0) as u32) << 8)
-            | ((*v.get(2).unwrap_or(&0) as u32) << 16)
-            | ((*v.get(3).unwrap_or(&0) as u32) << 24),
-        ),
-        Self::Ascii(v) => {
-          let v = v.as_vec_with_nul();
-          Ok(
-            (*v.get(0).unwrap_or(&0) as u32)
-              | ((*v.get(1).unwrap_or(&0) as u32) << 8)
-              | ((*v.get(2).unwrap_or(&0) as u32) << 16)
-              | ((*v.get(3).unwrap_or(&0) as u32) << 24),
-          )
-        }
-        Self::Short(v) => Ok((v[0] as u32) | ((*v.get(1).unwrap_or(&0) as u32) << 16)),
-        Self::Long(v) => Ok(v[0]),
-        Self::SByte(v) => Ok(
-          (*v.get(0).unwrap_or(&0) as u32)
-            | ((*v.get(1).unwrap_or(&0) as u32) << 8)
-            | ((*v.get(2).unwrap_or(&0) as u32) << 16)
-            | ((*v.get(3).unwrap_or(&0) as u32) << 24),
-        ),
-        Self::Undefined(v) => Ok(
-          (*v.get(0).unwrap_or(&0) as u32)
-            | ((*v.get(1).unwrap_or(&0) as u32) << 8)
-            | ((*v.get(2).unwrap_or(&0) as u32) << 16)
-            | ((*v.get(3).unwrap_or(&0) as u32) << 24),
-        ),
-        Self::SShort(v) => Ok((v[0] as u32) | ((*v.get(1).unwrap_or(&0) as u32) << 16)),
-        Self::SLong(v) => Ok(v[0] as u32),
-        Self::Float(v) => Ok(v[0].to_bits()),
-        Self::Unknown(_, v) => Ok(
-          (*v.get(0).unwrap_or(&0) as u32)
-            | ((*v.get(1).unwrap_or(&0) as u32) << 8)
-            | ((*v.get(2).unwrap_or(&0) as u32) << 16)
-            | ((*v.get(3).unwrap_or(&0) as u32) << 24),
-        ),
-        Self::Rational(_) | Self::SRational(_) | Self::Double(_) => Err(TiffError::General(format!("{} values can not be embedded", self.value_type_name()))),
-      }
+      return Err(TiffError::Overflow("Invalid data".to_string()));
     }
+    let mut bytes = Vec::with_capacity(4);
+    self.write(&mut bytes)?;
+    bytes.resize(4, 0);
+    Ok(u32::from_ne_bytes([bytes[0], bytes[1], bytes[2], bytes[3]]))
   }
 
   pub fn write(&self, w: &mut dyn Write) -> Result<()> {
@@ -1300,10 +1265,33 @@ mod tests {
   }
 
   #[test]
+  fn embedded_values_keep_the_written_bytes() -> Result<()> {
+    for value in [
+      Value::Byte(vec![1, 2, 3]),
+      Value::Short(vec![0x0102, 0x0304]),
+      Value::Short(vec![0x0102]),
+      Value::SShort(vec![-2]),
+      Value::Long(vec![0x01020304]),
+      Value::SLong(vec![-5]),
+      Value::Float(vec![1.5]),
+      Value::Undefined(vec![9]),
+      Value::from("ab"),
+    ] {
+      let mut bytes = Vec::new();
+      value.write(&mut bytes)?;
+      bytes.resize(4, 0);
+      assert_eq!(value.as_embedded()?.to_ne_bytes().as_slice(), bytes, "{:?}", value);
+    }
+    assert!(Value::Rational(vec![Rational::new(1, 2)]).as_embedded().is_err());
+    assert!(Value::Short(vec![]).as_embedded().is_err());
+    Ok(())
+  }
+
+  #[test]
   fn ascii_ends_at_nul() -> Result<()> {
     let value = Value::from("AT\0X");
     assert_eq!(value.count(), 3);
-    assert_eq!(value.as_embedded()?, u32::from_le_bytes(*b"AT\0\0"));
+    assert_eq!(value.as_embedded()?, u32::from_ne_bytes(*b"AT\0\0"));
     let value = Value::from("Artist\0X");
     let mut bytes = Vec::new();
     value.write(&mut bytes)?;
