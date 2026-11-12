@@ -16,6 +16,7 @@ use super::FormatHint;
 use super::Orientation;
 use super::RawDecodeParams;
 use super::RawMetadata;
+use super::image_bytes;
 use super::ok_cfa_image;
 
 #[derive(Debug, Clone)]
@@ -43,6 +44,7 @@ impl<'a> Decoder for MefDecoder<'a> {
     let width = fetch_tiff_tag!(raw, TiffCommonTag::ImageWidth).force_usize(0);
     let height = fetch_tiff_tag!(raw, TiffCommonTag::ImageLength).force_usize(0);
     let offset = fetch_tiff_tag!(raw, TiffCommonTag::StripOffsets).force_usize(0);
+    image_bytes("MEF", width, height, 12)?;
     let src = file.subview_until_eof(offset as u64)?;
 
     let image = decompress_12be(src, width, height, dummy).map_err(RawlerError::decoder_failed)?;
