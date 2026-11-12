@@ -471,15 +471,12 @@ impl<'a> Decoder for Cr3Decoder<'a> {
 
 impl<'a> Cr3Decoder<'a> {
   fn read_lens_id(&self) -> Result<LensId> {
-    let mut id = (0, 0);
-    if let Some(Entry { value: Value::Short(v), .. }) = self.cmt3.get_entry(Cr3MakernoteTag::CameraSettings) {
-      id.0 = v[22] as u32;
-    }
-
-    if let Some(Entry { value: Value::Short(v), .. }) = self.cmt3.get_entry(Cr3MakernoteTag::FileInfo) {
-      id.1 = v[61] as u32;
-    }
-    Ok(id)
+    // The lens ID is at index 22 of CameraSettings and 61 of FileInfo, 0 if missing
+    let value = |tag: Cr3MakernoteTag, index: usize| match self.cmt3.get_entry(tag) {
+      Some(Entry { value: Value::Short(v), .. }) => v.get(index).map_or(0, |v| *v as u32),
+      _ => 0,
+    };
+    Ok((value(Cr3MakernoteTag::CameraSettings, 22), value(Cr3MakernoteTag::FileInfo, 61)))
   }
 
   fn read_lens_name(&self) -> Result<Option<&String>> {
