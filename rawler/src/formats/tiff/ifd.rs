@@ -346,10 +346,11 @@ impl IFD {
           self.sub.insert(tag, subs);
           Ok(self.sub.get(&tag))
         }
-        val => {
-          debug!("Found IFD offset tag, but type mismatch: {:?}", val);
-          todo!()
-        }
+        val => Err(TiffError::FormatMismatch(format!(
+          "Tag 0x{:X} has the type {} and is no IFD offset",
+          tag,
+          val.value_type_name()
+        ))),
       }
     } else {
       Ok(None)
@@ -845,6 +846,16 @@ mod tests {
         let _ = ifd.parse_makernote(&mut Cursor::new(data.clone()), mode, &[]);
       }
     }
+  }
+
+  #[test]
+  fn extend_sub_ifds_needs_offsets() -> Result<()> {
+    use crate::formats::tiff::tests::ifd_chain;
+    let data = ifd_chain(8, &[0]);
+    let mut ifd = IFD::new(&mut Cursor::new(data.clone()), 8, 0, 0, Endian::Little, &[])?;
+    // Tag 0x100 is a SHORT
+    assert!(matches!(ifd.extend_sub_ifds(&mut Cursor::new(data), 0x100), Err(TiffError::FormatMismatch(_))));
+    Ok(())
   }
 
   #[test]
