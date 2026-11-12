@@ -30,11 +30,16 @@ pub trait TiffReader {
     vec![TiffCommonTag::SubIFDs.into(), TiffCommonTag::ExifIFDPointer.into(), ExifTag::GPSInfo.into()]
   }
 
+  /// The first IFD of the chain
+  ///
+  /// `parse_file()` reads at least one IFD or returns an error, so this only
+  /// panics for a reader that was not parsed, like `Default::default()`.
   fn root_ifd(&self) -> &IFD {
-    if self.file().chain.is_empty() {
-      panic!("TIFF must have at least one root IFD but the IFD list is empty");
-    }
-    &self.file().chain[0]
+    self
+      .file()
+      .chain
+      .first()
+      .expect("TIFF must have at least one root IFD but the IFD list is empty")
   }
 
   fn get_entry<T: TiffTag>(&self, tag: T) -> Option<&Entry> {
