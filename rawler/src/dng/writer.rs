@@ -1321,7 +1321,7 @@ fn write_mask_image<W>(dng: &mut TiffWriter<W>, ifd: &mut DirectoryWriter, mask:
 where
   W: Write + Seek,
 {
-  // Samples in little endian byte order, as the TIFF file
+  // Samples in host byte order, as the TIFF file
   let (bps, sample_format, bytes): (u16, u16, Vec<u8>) = match &mask.data {
     RawImageData::Integer(samples) if mask.bps == 8 => (8, 1, samples.iter().map(|v| *v as u8).collect()),
     RawImageData::Integer(samples) => {
@@ -1334,9 +1334,9 @@ where
           ((v as u32 * 65535 + max / 2) / max).min(65535) as u16
         }
       };
-      (16, 1, samples.iter().flat_map(|v| scale(*v).to_le_bytes()).collect())
+      (16, 1, samples.iter().flat_map(|v| scale(*v).to_ne_bytes()).collect())
     }
-    RawImageData::Float(samples) => (32, 3, samples.iter().flat_map(|v| v.to_le_bytes()).collect()),
+    RawImageData::Float(samples) => (32, 3, samples.iter().flat_map(|v| v.to_ne_bytes()).collect()),
   };
   let row_bytes = mask.width * bps as usize / 8;
   let strips: Vec<Vec<u8>> = bytes
