@@ -209,16 +209,6 @@ impl<R: Read + Seek> ReadSegment<&mut R> for App1 {
         let ifd = IFD::new_root(reader, base);
         reader.seek(SeekFrom::Start(pos + len))?;
 
-        /*
-        for i in ifd.dump::<TiffCommonTag>(10) {
-          println!("{}", i);
-        }
-
-        for i in ifd.get_sub_ifds(TiffCommonTag::ExifIFDPointer).unwrap()[0].dump::<ExifTag>(10) {
-          println!("{}", i);
-        }
-         */
-
         // A broken EXIF structure does not affect the other segments
         let payload = match ifd {
           Ok(ifd) => Payload::Exif(ifd),
@@ -378,13 +368,7 @@ impl Jfif {
 
 pub fn is_jfif(file: &RawSource) -> bool {
   match file.subview(0, 4) {
-    Ok(buf) => {
-      let result = buf[0..4] == [0xFF, 0xD8, 0xFF, 0xE0];
-      if !result {
-        //panic!("Failed: {:x} {:x} {:x} {:x}", buf[0], buf[1], buf[2], buf[3]);
-      }
-      result
-    }
+    Ok(buf) => buf[0..4] == [0xFF, 0xD8, 0xFF, 0xE0],
     Err(err) => {
       log::error!("is_jfif(): {:?}", err);
       false
