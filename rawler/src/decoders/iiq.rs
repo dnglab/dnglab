@@ -197,7 +197,7 @@ fn new_makernote(file: &RawSource, moffset: u64) -> std::io::Result<HashMap<u32,
 
   let mut entries: HashMap<u32, (usize, tiff::Value)> = HashMap::with_capacity(entry_count);
 
-  for entry in buf.chunks_exact(16) {
+  for entry in buf.as_chunks::<16>().0 {
     let tag = LEu32(entry, 0);
     let typ = LEu32(entry, 4);
     let byte_count = LEu32(entry, 8) as usize;
