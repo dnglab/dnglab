@@ -108,17 +108,20 @@ impl From<u32> for Rational {
   }
 }
 
-impl From<f32> for Rational {
-  fn from(value: f32) -> Self {
-    if value.is_sign_negative() {
-      panic!("Can not convert {} to Rational type", value);
+/// Exact conversion, an error for negative values, NaN, infinity, and
+/// values whose numerator or denominator exceeds u32
+impl TryFrom<f32> for Rational {
+  type Error = ValueConvertError;
+
+  fn try_from(value: f32) -> std::result::Result<Self, Self::Error> {
+    if value < 0.0 {
+      return Err(ValueConvertError(()));
     }
-    let ratio = num::rational::Ratio::from_float(value).expect("Failed to convert float");
-    // TODO: This is a workaround, need to implement better routine
-    Self::new(
-      ratio.numer().try_into().expect("Rational numerator overflows u32"),
-      ratio.denom().try_into().expect("Rational denominator overflows u32"),
-    )
+    let ratio = num::rational::Ratio::from_float(value).ok_or(ValueConvertError(()))?;
+    Ok(Self::new(
+      ratio.numer().try_into().map_err(|_| ValueConvertError(()))?,
+      ratio.denom().try_into().map_err(|_| ValueConvertError(()))?,
+    ))
   }
 }
 
@@ -1260,6 +1263,17 @@ mod tests {
     assert_eq!(u32::try_from(SRational::new(-5, 1)).ok(), None);
     assert_eq!(i64::try_from(SRational::new(i32::MIN, -1)).ok(), Some(-(i32::MIN as i64)));
     assert_eq!(Value::Rational(vec![Rational::new(1023, 1)]).force_u16(0), 1023);
+  }
+
+  #[test]
+  fn rational_from_f32() {
+    assert_eq!(Rational::try_from(0.5_f32).ok(), Some(Rational::new(1, 2)));
+    assert_eq!(Rational::try_from(3.0_f32).ok(), Some(Rational::new(3, 1)));
+    assert!(Rational::try_from(-1.0_f32).is_err());
+    assert!(Rational::try_from(f32::NAN).is_err());
+    assert!(Rational::try_from(f32::INFINITY).is_err());
+    assert!(Rational::try_from(1e-20_f32).is_err());
+    assert!(Rational::try_from(1e20_f32).is_err());
   }
 
   #[test]
