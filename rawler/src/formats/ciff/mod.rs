@@ -107,12 +107,20 @@ impl CiffEntry {
 
     let (bytesize, data_offset) = match datalocation {
       // Data is offset in value_data
-      0x0000 => (LEu32(buf, offset + 2) as usize, LEu32(buf, offset + 6) as usize + value_data),
+      0x0000 => (
+        LEu32(buf, offset + 2) as usize,
+        (LEu32(buf, offset + 6) as usize)
+          .checked_add(value_data)
+          .ok_or_else(|| format!("CIFF: data offset of tag 0x{:x} overflows", tag))?,
+      ),
       // Data is stored directly in entry
       0x4000 => (8, offset + 2),
       val => return Err(format!("CIFF: Don't know about data location {:x}", val)),
     };
-    let data = &buf[data_offset..data_offset + bytesize];
+    let data = data_offset
+      .checked_add(bytesize)
+      .and_then(|end| buf.get(data_offset..end))
+      .ok_or_else(|| format!("CIFF: data of tag 0x{:x} ({} bytes at {}) is outside of the file", tag, bytesize, data_offset))?;
     let count = bytesize >> CiffEntry::element_shift(typ);
 
     Ok(CiffEntry {
@@ -159,5 +167,37 @@ impl CiffEntry {
   }
   pub fn get_force_u16(&self, idx: usize) -> u16 {
     LEu16(&self.data, idx * 2)
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  /// CIFF heap with the `values` and the `entries` of tag and type, size
+  /// and offset in the values
+  fn heap(values: &[u8], entries: &[(u16, u32, u32)]) -> Vec<u8> {
+    let mut data = values.to_vec();
+    data.extend_from_slice(&(entries.len() as u16).to_le_bytes());
+    for (tag, size, offset) in entries {
+      data.extend_from_slice(&tag.to_le_bytes());
+      data.extend_from_slice(&size.to_le_bytes());
+      data.extend_from_slice(&offset.to_le_bytes());
+    }
+    data.extend_from_slice(&(values.len() as u32).to_le_bytes());
+    data
+  }
+
+  #[test]
+  fn entry_data_outside_of_the_file() {
+    // SHORT entry of 100 bytes at offset 2 of 4 value bytes
+    // The entry follows the values and the entry count
+    let data = heap(&[1, 0, 2, 0], &[(0x1031, 100, 2)]);
+    assert!(CiffEntry::new(&data, 0, 6).is_err());
+    // Offset and size overflow usize
+    let data = heap(&[1, 0, 2, 0], &[(0x1031, u32::MAX, u32::MAX)]);
+    assert!(CiffEntry::new(&data, usize::MAX - 2, 6).is_err());
+    let data = heap(&[1, 0, 2, 0], &[(0x1031, 4, 0)]);
+    assert_eq!(CiffEntry::new(&data, 0, 6).expect("entry").data, [1, 0, 2, 0]);
   }
 }
