@@ -59,6 +59,7 @@ where
   }
 
   pub fn write_strips_lzw(&mut self, data: &[u16], cpp: usize, dim: Dim2, strip_lines: usize) -> Result<(u32, Vec<(u32, u32)>)> {
+    check_image_size(data.len(), cpp, dim)?;
     let strip_lines = default_strip_lines(dim, strip_lines);
     let strips = data
       .par_chunks(cpp * dim.w * strip_lines)
@@ -71,8 +72,9 @@ where
   /// Write `data` of `cpp` 32-bit floating point samples per pixel as LZW
   /// compressed strips with the floating point predictor (Predictor 3)
   pub fn write_strips_lzw_f32(&mut self, data: &[f32], cpp: usize, dim: Dim2, strip_lines: usize) -> Result<(u32, Vec<(u32, u32)>)> {
+    check_image_size(data.len(), cpp, dim)?;
     let strip_lines = default_strip_lines(dim, strip_lines);
-    let row_samples = (cpp * dim.w).max(1);
+    let row_samples = cpp * dim.w;
     let strips = data
       .par_chunks(row_samples * strip_lines)
       .map(|strip| lzw_encode(&strip.chunks(row_samples).flat_map(|row| float_predictor_row(row, cpp)).collect::<Vec<u8>>()))
@@ -429,6 +431,18 @@ where
   Ok(())
 }
 
+/// Check that an image of `dim` with `cpp` samples per pixel is not empty
+/// and has `len` samples
+fn check_image_size(len: usize, cpp: usize, dim: Dim2) -> Result<()> {
+  if cpp == 0 || dim.w == 0 || dim.h == 0 || cpp.checked_mul(dim.w).and_then(|v| v.checked_mul(dim.h)) != Some(len) {
+    return Err(TiffError::General(format!(
+      "Image of {}x{} pixels with {} samples does not match {} samples of data",
+      dim.w, dim.h, cpp, len
+    )));
+  }
+  Ok(())
+}
+
 /// Rows per strip: `strip_lines`, or 256 rows if it is 0, a single strip
 /// for images of up to 256 rows
 fn default_strip_lines(dim: Dim2, strip_lines: usize) -> usize {
@@ -516,6 +530,18 @@ mod tests {
     let expected: Vec<u8> = [0x0102_u16.to_ne_bytes(), 0x0304_u16.to_ne_bytes()].concat();
     assert_eq!(&data[offset..offset + 4], expected.as_slice());
     assert_eq!(&data[offset + 4..offset + 8], 1.5_f32.to_ne_bytes().as_slice());
+    Ok(())
+  }
+
+  #[test]
+  fn lzw_strips_need_a_matching_image() -> Result<()> {
+    let mut tiff = TiffWriter::new(std::io::Cursor::new(Vec::new()))?;
+    assert!(tiff.write_strips_lzw(&[], 1, Dim2::new(0, 4), 0).is_err());
+    assert!(tiff.write_strips_lzw(&[1, 2, 3], 0, Dim2::new(1, 3), 0).is_err());
+    assert!(tiff.write_strips_lzw(&[1, 2, 3], 1, Dim2::new(2, 2), 0).is_err());
+    assert!(tiff.write_strips_lzw_f32(&[], 3, Dim2::new(2, 0), 0).is_err());
+    let (rows, strips) = tiff.write_strips_lzw(&[1, 2, 3, 4], 1, Dim2::new(2, 2), 0)?;
+    assert_eq!((rows, strips.len()), (2, 1));
     Ok(())
   }
 
