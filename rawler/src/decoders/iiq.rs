@@ -433,17 +433,22 @@ impl<'a> IiqDecoder<'a> {
         control_points.iter_mut().flatten().for_each(|point| point[1 + i].y = (v + 2) >> 2);
       }
 
-      let curves: [[Vec<u16>; 2]; 2] = std::array::from_fn(|qr| {
-        std::array::from_fn(|qc| {
-          let cp = &mut control_points[qr][qc];
-          // Some images may overflow 65535 here, but it's also in dcraw...
-          // We clamp here to be <= then the final control point.
-          cp[17].x = clamp(((cp[16].y * 65535) / cp[16].x) as i32, 0, 65535) as usize;
-          cp[17].y = cp[17].x;
-          cp[18] = Point::new(65535, 65535);
-          Spline::new(cp).calculate_curve()
-        })
-      });
+      let mut curves: [[Vec<u16>; 2]; 2] = Default::default();
+      for (qr, qc) in [(0, 0), (0, 1), (1, 0), (1, 1)] {
+        let cp = &mut control_points[qr][qc];
+        // Some images may overflow 65535 here, but it's also in dcraw...
+        // We clamp here to be <= then the final control point.
+        cp[17].x = clamp(((cp[16].y * 65535) / cp[16].x) as i32, 0, 65535) as usize;
+        cp[17].y = cp[17].x;
+        cp[18] = Point::new(65535, 65535);
+        match Spline::new(cp) {
+          Some(spline) => curves[qr][qc] = spline.calculate_curve(),
+          None => {
+            warn!("IIQ: invalid control points of the quadrant linearization, skipping it");
+            return Ok(());
+          }
+        }
+      }
       apply_quadrant_curves(img, split_row, split_col, &curves);
     }
     Ok(())
@@ -495,7 +500,16 @@ impl<'a> IiqDecoder<'a> {
         }
       }
 
-      let curves: [[Vec<u16>; 2]; 2] = std::array::from_fn(|qr| std::array::from_fn(|qc| Spline::new(&control_points[qr][qc]).calculate_curve()));
+      let mut curves: [[Vec<u16>; 2]; 2] = Default::default();
+      for (qr, qc) in [(0, 0), (0, 1), (1, 0), (1, 1)] {
+        match Spline::new(&control_points[qr][qc]) {
+          Some(spline) => curves[qr][qc] = spline.calculate_curve(),
+          None => {
+            warn!("IIQ: invalid control points of the quadrant combined correction, skipping it");
+            return Ok(());
+          }
+        }
+      }
       apply_quadrant_curves(img, split_row, split_col, &curves);
     }
     Ok(())

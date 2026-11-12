@@ -59,17 +59,15 @@ impl Spline {
     assert_eq!(self.num_segments, self.segments.len());
   }
 
-  pub fn new(control_points: &[Point]) -> Self {
-    assert!(control_points.len() >= 2, "Need at least two points to interpolate between");
-    assert_eq!(control_points.first().map(|p| p.x as u16), Some(u16::MIN));
-    assert_eq!(control_points.last().map(|p| p.x as u16), Some(u16::MAX));
-
-    let mut prev = 0;
-    for p in control_points {
-      if p.x < prev {
-        panic!("err, p.x {} must be >= {}", p.x, prev);
-      }
-      prev = p.x;
+  /// Spline through `control_points`, `None` if there are fewer than two, or
+  /// their x coordinates don't start at 0, end at 65535 or decrease
+  pub fn new(control_points: &[Point]) -> Option<Self> {
+    let valid = control_points.len() >= 2
+      && control_points.first().is_some_and(|p| p.x == 0)
+      && control_points.last().is_some_and(|p| p.x == u16::MAX as usize)
+      && control_points.windows(2).all(|p| p[0].x <= p[1].x);
+    if !valid {
+      return None;
     }
 
     // TODO: "The X coordinates must all be strictly increasing"
@@ -94,7 +92,7 @@ impl Spline {
 
     val.prepare();
 
-    val
+    Some(val)
   }
 
   pub fn calculate_curve(self) -> Vec<u16> {
@@ -126,10 +124,26 @@ mod tests {
 
     let points = [Point::new(0, 0), Point::new(u16::MAX as usize, 10)];
 
-    let spline = Spline::new(&points);
+    let spline = Spline::new(&points).ok_or("invalid control points")?;
 
     let _data = spline.calculate_curve();
 
     Ok(())
+  }
+
+  #[test]
+  fn spline_needs_valid_control_points() {
+    let p = |x, y| Point::new(x, y);
+    assert!(Spline::new(&[p(0, 0)]).is_none());
+    // Not starting at 0, not ending at 65535, beyond 65535
+    assert!(Spline::new(&[p(1, 0), p(65535, 10)]).is_none());
+    assert!(Spline::new(&[p(0, 0), p(65534, 10)]).is_none());
+    assert!(Spline::new(&[p(0, 0), p(70000, 5), p(65535, 10)]).is_none());
+    assert!(Spline::new(&[p(0, 0), p(65536, 10)]).is_none());
+    // Decreasing
+    assert!(Spline::new(&[p(0, 0), p(2000, 5), p(1000, 6), p(65535, 10)]).is_none());
+    // Equal x coordinates are allowed
+    let curve = Spline::new(&[p(0, 0), p(1000, 1000), p(1000, 1000), p(65535, 65535)]).map(Spline::calculate_curve);
+    assert_eq!(curve.map(|curve| curve.len()), Some(65536));
   }
 }
