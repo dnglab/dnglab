@@ -51,12 +51,32 @@ pub struct RawEntry<'a> {
 }
 
 impl<'a> RawEntry<'a> {
-  pub fn get_force_u32(&self, idx: usize) -> u32 {
-    self.endian.read_u32(&self.data, idx * 4)
+  /// The u32 at index `idx`, None if the data is too short
+  pub fn get_u32(&self, idx: usize) -> Option<u32> {
+    let start = idx.checked_mul(4)?;
+    Some(self.endian.read_u32(self.data.get(start..start.checked_add(4)?)?, 0))
   }
 
+  /// The u16 at index `idx`, None if the data is too short
+  pub fn get_u16(&self, idx: usize) -> Option<u16> {
+    let start = idx.checked_mul(2)?;
+    Some(self.endian.read_u16(self.data.get(start..start.checked_add(2)?)?, 0))
+  }
+
+  /// The u32 at index `idx`, 0 if the data is too short
+  pub fn get_force_u32(&self, idx: usize) -> u32 {
+    self.get_u32(idx).unwrap_or_else(|| {
+      log::error!("TIFF raw entry index {} is out of range, the data has {} bytes", idx, self.data.len());
+      0
+    })
+  }
+
+  /// The u16 at index `idx`, 0 if the data is too short
   pub fn get_force_u16(&self, idx: usize) -> u16 {
-    self.endian.read_u16(&self.data, idx * 2)
+    self.get_u16(idx).unwrap_or_else(|| {
+      log::error!("TIFF raw entry index {} is out of range, the data has {} bytes", idx, self.data.len());
+      0
+    })
   }
 }
 
@@ -278,6 +298,26 @@ mod tests {
     let tag = reader.read_u16().unwrap();
     let entry = Entry::parse(&mut reader, 0, 0, tag).unwrap();
     assert_eq!(entry.value, Value::Long(vec![0x10, 0x20]));
+  }
+
+  #[test]
+  fn raw_entry_index_out_of_range() {
+    let entry = Entry {
+      tag: 0x100,
+      value: Value::Undefined(vec![1, 2, 3, 4, 5, 6]),
+      embedded: Some(0),
+    };
+    let raw = RawEntry {
+      entry: &entry,
+      endian: Endian::Little,
+      data: vec![1, 2, 3, 4, 5, 6],
+    };
+    assert_eq!(raw.get_u16(2), Some(0x0605));
+    assert_eq!(raw.get_u16(3), None);
+    assert_eq!(raw.get_u32(0), Some(0x04030201));
+    assert_eq!(raw.get_u32(1), None);
+    assert_eq!(raw.get_force_u32(1), 0);
+    assert_eq!(raw.get_force_u16(usize::MAX), 0);
   }
 
   #[test]
