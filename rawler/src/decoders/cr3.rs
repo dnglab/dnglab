@@ -131,14 +131,14 @@ impl<'a> Cr3Decoder<'a> {
 
   /// Get IAD1 box for specific trak
   fn iad1_box(&self, trak_idx: usize) -> Option<&Iad1Box> {
-    let trak = &self.bmff.filebox.moov.traks[trak_idx];
+    let trak = self.moov_trak(trak_idx)?;
     let craw = trak.mdia.minf.stbl.stsd.craw.as_ref();
     craw.and_then(|craw| craw.cdi1.as_ref()).map(|cdi1| &cdi1.iad1)
   }
 
   /// Get CMP1 box for specific trak
   fn cmp1_box(&self, trak_idx: usize) -> Option<&Cmp1Box> {
-    let trak = &self.bmff.filebox.moov.traks[trak_idx];
+    let trak = self.moov_trak(trak_idx)?;
     let craw = trak.mdia.minf.stbl.stsd.craw.as_ref();
     craw.and_then(|craw| craw.cmp1.as_ref())
   }
@@ -607,10 +607,14 @@ impl<'a> Cr3Decoder<'a> {
 
   fn get_trak_index(&self, image_type: Cr3ImageType) -> Option<usize> {
     if let Some(cr3desc) = &self.bmff.filebox.moov.cr3desc {
-      cr3desc.cctp.ccdts.iter().find(|ccdt| ccdt.image_type == image_type as u64).map(|rec| {
-        debug_assert!(rec.trak_index > 0);
-        (rec.trak_index - 1) as usize
-      })
+      // The trak index from the file starts with 1
+      cr3desc
+        .cctp
+        .ccdts
+        .iter()
+        .find(|ccdt| ccdt.image_type == image_type as u64)
+        .and_then(|rec| rec.trak_index.checked_sub(1))
+        .map(|index| index as usize)
     } else {
       None
     }
