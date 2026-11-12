@@ -248,6 +248,7 @@ where
     let answer = match err {
       ParseError::Syntax(msg) => Answer::new(ResultCode::InvalidParameterOrArgument, msg),
       ParseError::Parameter(msg) => Answer::new(ResultCode::CommandNotImplementedForThatParameter, msg),
+      ParseError::TooLong => Answer::new(ResultCode::UnknownCommand, "Command line too long"),
     };
     self.send(answer).await
   }
@@ -701,7 +702,7 @@ where
 {
   let local_addr = stream.local_addr()?;
   let remote_addr = stream.peer_addr()?;
-  let (mut writer, mut reader) = FtpCodec {}.framed(stream).split();
+  let (mut writer, mut reader) = FtpCodec::default().framed(stream).split();
   writer.send(Answer::new(ResultCode::ServiceReadyForNewUser, &config.greeting)).await?;
 
   let mut client = Client::new(handle, writer, server_root, config, env, local_addr, remote_addr);

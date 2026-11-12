@@ -14,6 +14,8 @@ pub enum ParseError {
   Syntax(&'static str),
   /// Command is not implemented for that parameter
   Parameter(&'static str),
+  /// The command line is longer than the server accepts
+  TooLong,
 }
 
 impl From<Utf8Error> for ParseError {
