@@ -7,15 +7,17 @@
  * FIXME: ftp cli says "WARNING! 71 bare linefeeds received in ASCII mode" when retrieving a file.
  */
 
-use log::{debug, error, info};
+use log::{debug, error, info, warn};
 use std::net::SocketAddr;
 use std::path::PathBuf;
+use std::sync::Arc;
 use std::time::Duration;
 use tokio::io;
 use tokio::net::{TcpListener, TcpStream};
 use tokio::runtime::Handle;
+use tokio::sync::Semaphore;
 
-use crate::client::client;
+use crate::client::{client, refuse};
 use crate::config::{Config, FtpCallback};
 
 /// Start the server processing loop
@@ -31,6 +33,8 @@ where
   let addr = SocketAddr::new(config.server_addr, port);
   let listener = TcpListener::bind(&addr).await?;
 
+  let sessions = Arc::new(Semaphore::new(config.max_sessions));
+
   info!("Listening for clients on port {}...", port);
   loop {
     let (stream, addr) = match listener.accept().await {
@@ -42,8 +46,20 @@ where
         continue;
       }
     };
-    info!("New client connected: {}", addr);
-    handle.spawn(handle_client(addr, stream, handle.clone(), server_root.clone(), config.clone(), env.clone()));
+    match sessions.clone().try_acquire_owned() {
+      Ok(permit) => {
+        info!("New client connected: {}", addr);
+        let session = handle_client(addr, stream, handle.clone(), server_root.clone(), config.clone(), env.clone());
+        handle.spawn(async move {
+          session.await;
+          drop(permit);
+        });
+      }
+      Err(_) => {
+        warn!("Too many sessions, refused client {}", addr);
+        handle.spawn(refuse(stream));
+      }
+    }
   }
 }
 

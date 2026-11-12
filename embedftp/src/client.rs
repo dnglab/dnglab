@@ -14,11 +14,13 @@ use std::net::{IpAddr, SocketAddr};
 use std::path::{Component, Path, PathBuf, StripPrefixError};
 use std::result;
 use std::sync::Arc;
+use std::time::Duration;
 use tokio::fs::{File, canonicalize, create_dir, metadata, read_dir, remove_dir, remove_file, symlink_metadata};
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::tcp::{OwnedReadHalf, OwnedWriteHalf};
 use tokio::net::{TcpListener, TcpStream};
 use tokio::runtime::Handle;
+use tokio::time::timeout;
 use tokio_util::codec::{Decoder, Framed};
 
 #[cfg(unix)]
@@ -728,6 +730,14 @@ where
 
   debug!("Client {} closed connection", remote_addr);
   Ok(())
+}
+
+/// Tell a client that the server has no free session
+pub(crate) async fn refuse(stream: TcpStream) {
+  let mut writer = FtpCodec::default().framed(stream);
+  let answer = Answer::new(ResultCode::ServiceNotAvailable, "Too many connections, try again later");
+  // The reply is a courtesy, the connection is closed in any case
+  let _ = timeout(Duration::from_secs(5), writer.send(answer)).await;
 }
 
 /// Final reply of a completed transfer

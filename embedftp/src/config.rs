@@ -14,6 +14,8 @@ pub struct Config {
   pub greeting: String,
   /// Maximum size of an uploaded file in bytes. An upload is held in memory.
   pub max_upload_size: u64,
+  /// Maximum number of clients that are connected at the same time
+  pub max_sessions: usize,
 }
 
 /// This callback provides filtering for specific FTP
@@ -44,6 +46,7 @@ impl Config {
       anonymous: true,
       greeting: String::from("Welcome to this FTP server!"),
       max_upload_size: 2 * 1024 * 1024 * 1024,
+      max_sessions: 32,
     })
   }
 }
