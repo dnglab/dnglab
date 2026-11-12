@@ -186,62 +186,37 @@ impl<'a> Decoder for Cr2Decoder<'a> {
         } else {
           let mut out = alloc_image_plain!(width, height, dummy);
           if !dummy {
-            let mut fieldwidths = Vec::new();
-            debug_assert!(canoncol.value.force_usize(0) > 0);
-            debug_assert!(canoncol.value.force_usize(1) > 0);
-            debug_assert!(canoncol.value.force_usize(2) > 0);
-            for _ in 0..canoncol.value.force_usize(0) {
-              fieldwidths.push(canoncol.value.force_usize(1));
+            // The stripe count comes from the file, there are fewer stripes than samples in a row
+            let stripes = canoncol.value.force_usize(0);
+            if stripes > width {
+              return Err(decoder_error!("CR2: {} stripes for an image width of {}", stripes, width));
             }
+            let mut fieldwidths = vec![canoncol.value.force_usize(1); stripes];
             fieldwidths.push(canoncol.value.force_usize(2));
 
             if decompressor.super_v() == 2 {
               debug!("CR2 v=2 decoder used, h={}", decompressor.super_h());
               // We've decoded 2 lines at a time so we also need to copy two strips at a time
-              let nfields = fieldwidths.len();
-              let fieldwidth = fieldwidths[0];
-              let mut fieldstart = 0;
-              let mut inpos = 0;
-              for _ in 0..nfields {
-                for row in (0..height).step_by(2) {
-                  for col in (0..fieldwidth).step_by(3) {
-                    let outpos = row * width + fieldstart + col;
-                    out[outpos..outpos + 3].copy_from_slice(&ljpegout[inpos..inpos + 3]);
-                    let outpos = (row + 1) * width + fieldstart + col;
-                    let inpos2 = inpos + ljpegwidth;
-                    out[outpos..outpos + 3].copy_from_slice(&ljpegout[inpos2..inpos2 + 3]);
-                    inpos += 3;
-                    if inpos % ljpegwidth == 0 {
-                      // we've used a full input line and we're reading 2 by 2 so skip one
-                      inpos += ljpegwidth;
-                    }
-                  }
-                }
-                fieldstart += fieldwidth;
-              }
+              unstripe_two_rows(
+                ljpegout.pixels(),
+                ljpegwidth,
+                out.pixels_mut(),
+                width,
+                height,
+                fieldwidths[0],
+                fieldwidths.len(),
+              )?;
             } else {
               let sh = decompressor.super_h();
               debug!("CR2 v=1 decoder used, super_h: {}", sh);
-              let mut fieldstart = 0;
-              let mut fieldpos = 0;
-              for fieldwidth in fieldwidths {
-                // fix the inconsistent slice width in sRaw mode, ask Canon.
-                let fieldwidth = fieldwidth / sh * cpp;
-                // The output for full height of a vertical stripe is
-                // composed by the lines of all input stripes N:
-                // outb(line0) = slice[0](line[0])
-                // outb(line1) = slice[1](line[0])
-                // outb(line2) = slice[N-1](line[0])
-                for row in 0..height {
-                  let outpos = row * width + fieldstart;
-                  let inpos = fieldpos + row * fieldwidth;
-                  let outb = &mut out[outpos..outpos + fieldwidth];
-                  let inb = &ljpegout[inpos..inpos + fieldwidth];
-                  outb.copy_from_slice(inb);
-                }
-                fieldstart += fieldwidth;
-                fieldpos += fieldwidth * height;
-              }
+              // fix the inconsistent slice width in sRaw mode, ask Canon.
+              unstripe(
+                ljpegout.pixels(),
+                out.pixels_mut(),
+                width,
+                height,
+                fieldwidths.iter().map(|fieldwidth| fieldwidth / sh * cpp),
+              )?;
             }
           }
           if cpp == 3 && !dummy {
@@ -913,6 +888,63 @@ fn normalize_wb(raw_wb: [f32; 4]) -> [f32; 4] {
   [norm[0], (norm[1] + norm[2]) / 2.0, norm[3], f32::NAN]
 }
 
+/// Copy `len` samples of `input` at `from` to `out` at `to`, an error if
+/// they are out of bounds
+fn copy_samples(out: &mut [u16], to: usize, input: &[u16], from: usize, len: usize) -> Result<()> {
+  let out_of_bounds = || decoder_error!("CR2: stripe of {} samples at {} is outside of the image", len, from);
+  let src = from.checked_add(len).and_then(|end| input.get(from..end)).ok_or_else(out_of_bounds)?;
+  let dst = to.checked_add(len).and_then(|end| out.get_mut(to..end)).ok_or_else(out_of_bounds)?;
+  dst.copy_from_slice(src);
+  Ok(())
+}
+
+/// Put the vertical stripes of `fieldwidths` samples of the decoded LJPEG
+/// data `input` in place in `out`, an image of `width` x `height` samples
+///
+/// The output for full height of a vertical stripe is composed by the lines
+/// of all input stripes N:
+/// outb(line0) = slice[0](line[0])
+/// outb(line1) = slice[1](line[0])
+/// outb(line2) = slice[N-1](line[0])
+fn unstripe(input: &[u16], out: &mut [u16], width: usize, height: usize, fieldwidths: impl Iterator<Item = usize>) -> Result<()> {
+  let mut fieldstart = 0;
+  let mut fieldpos = 0;
+  for fieldwidth in fieldwidths {
+    for row in 0..height {
+      copy_samples(out, row * width + fieldstart, input, fieldpos + row * fieldwidth, fieldwidth)?;
+    }
+    fieldstart += fieldwidth;
+    fieldpos += fieldwidth * height;
+  }
+  Ok(())
+}
+
+/// Put `nfields` vertical stripes of `fieldwidth` samples of the decoded
+/// LJPEG data `input` in place in `out`, an image of `width` x `height`
+/// samples. The LJPEG data has 2 rows of `input_width` samples at a time.
+fn unstripe_two_rows(input: &[u16], input_width: usize, out: &mut [u16], width: usize, height: usize, fieldwidth: usize, nfields: usize) -> Result<()> {
+  if input_width == 0 {
+    return Err(decoder_error!("CR2: LJPEG data has a width of 0"));
+  }
+  let mut fieldstart = 0;
+  let mut inpos = 0;
+  for _ in 0..nfields {
+    for row in (0..height).step_by(2) {
+      for col in (0..fieldwidth).step_by(3) {
+        copy_samples(out, row * width + fieldstart + col, input, inpos, 3)?;
+        copy_samples(out, (row + 1) * width + fieldstart + col, input, inpos + input_width, 3)?;
+        inpos += 3;
+        if inpos % input_width == 0 {
+          // we've used a full input line and we're reading 2 by 2 so skip one
+          inpos += input_width;
+        }
+      }
+    }
+    fieldstart += fieldwidth;
+  }
+  Ok(())
+}
+
 /// Firmware version `fw` as a number with 3 digits for each part, like
 /// 1000006 for "Firmware Version 1.0.6". None if a part is empty or the
 /// number overflows.
@@ -1055,6 +1087,25 @@ pub enum Cr2MakernoteTag {
 #[cfg(test)]
 mod tests {
   use super::*;
+
+  #[test]
+  fn stripes() -> Result<()> {
+    // 2 stripes of 2 and 1 samples of an image of 3 x 2 samples
+    let input = [1, 2, 3, 4, 5, 6];
+    let mut out = [0; 6];
+    unstripe(&input, &mut out, 3, 2, [2, 1].into_iter())?;
+    assert_eq!(out, [1, 2, 5, 3, 4, 6]);
+    // Stripes beyond the decoded data and the image
+    assert!(unstripe(&input, &mut out, 3, 2, [2, 2].into_iter()).is_err());
+    assert!(unstripe(&input, &mut out, 3, 2, [usize::MAX].into_iter()).is_err());
+    // 2 rows at a time, a stripe of 3 samples of an image of 3 x 2 samples
+    let mut out = [0; 6];
+    unstripe_two_rows(&input, 3, &mut out, 3, 2, 3, 1)?;
+    assert_eq!(out, input);
+    assert!(unstripe_two_rows(&input, 0, &mut out, 3, 2, 3, 1).is_err());
+    assert!(unstripe_two_rows(&input, 3, &mut out, 3, 2, 6, 1).is_err());
+    Ok(())
+  }
 
   #[test]
   fn firmware_numbers() {
