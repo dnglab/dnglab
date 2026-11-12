@@ -180,6 +180,13 @@ where
         self.transfer_type = typ;
         self.send(Answer::new(ResultCode::Ok, "Transfer type changed successfully")).await?;
       }
+      Command::Mode => self.send(Answer::new(ResultCode::Ok, "Mode is stream")).await?,
+      Command::Stru => self.send(Answer::new(ResultCode::Ok, "Structure is file")).await?,
+      Command::Allo => {
+        let answer = Answer::new(ResultCode::CommandNotImplementedSuperfluousAtThisSite, "No allocation of storage necessary");
+        self.send(answer).await?
+      }
+      Command::OptsUtf8 => self.send(Answer::new(ResultCode::Ok, "Paths are always UTF-8")).await?,
       Command::User(content) => {
         if content.is_empty() {
           self.send(Answer::new(ResultCode::InvalidParameterOrArgument, "Invalid username")).await?;

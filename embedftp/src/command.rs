@@ -52,6 +52,13 @@ pub enum Command {
   Syst,
   Feat,
   Type(TransferType),
+  /// MODE S, the stream mode
+  Mode,
+  /// STRU F, the file structure
+  Stru,
+  Allo,
+  /// OPTS UTF8 ON
+  OptsUtf8,
   CdUp,
   Unknown(String),
   User(String),
@@ -75,6 +82,10 @@ impl AsRef<str> for Command {
       Command::Stor(_) => "STOR",
       Command::Syst => "SYST",
       Command::Type(_) => "TYPE",
+      Command::Mode => "MODE",
+      Command::Stru => "STRU",
+      Command::Allo => "ALLO",
+      Command::OptsUtf8 => "OPTS",
       Command::User(_) => "USER",
       Command::CdUp => "CDUP",
       Command::Mkd(_) => "MKD",
@@ -134,6 +145,23 @@ impl Command {
         match TransferType::from(data[0].to_ascii_uppercase()) {
           TransferType::Unknown => return error,
           typ => Command::Type(typ),
+        }
+      }
+      // Stream mode and file structure are the only ones, as for most servers
+      b"MODE" => match data? {
+        [b'S' | b's'] => Command::Mode,
+        _ => return Err(ParseError::Parameter("Only the stream mode is implemented")),
+      },
+      b"STRU" => match data? {
+        [b'F' | b'f'] => Command::Stru,
+        _ => return Err(ParseError::Parameter("Only the file structure is implemented")),
+      },
+      b"ALLO" => Command::Allo,
+      b"OPTS" => {
+        if data?.eq_ignore_ascii_case(b"UTF8 ON") {
+          Command::OptsUtf8
+        } else {
+          return Err(ParseError::Syntax("Option not supported"));
         }
       }
       b"CDUP" => Command::CdUp,
