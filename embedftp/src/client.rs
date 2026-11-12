@@ -6,7 +6,7 @@ use chrono::{Datelike, Timelike, Utc};
 use futures::TryStreamExt;
 use futures::stream::SplitSink;
 use futures::{SinkExt, StreamExt};
-use glob::glob;
+use glob::Pattern;
 use log::{debug, error, info, warn};
 use std::io;
 use std::mem;
@@ -31,7 +31,7 @@ use std::os::windows::fs::MetadataExt;
 use crate::codec::FtpCodec;
 use crate::command::{Command, ParseError, TransferType};
 use crate::config::{Config, FtpCallback};
-use crate::error::{Error, Result};
+use crate::error::Result;
 use crate::ftp::{Answer, ResultCode};
 
 const MONTHS: [&str; 12] = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -479,49 +479,58 @@ where
       warn!("No opened data connection");
       return Ok(no_data_connection());
     }
-    let Ok(cwd) = self.resolve(Path::new("")).await else {
-      return Ok(Answer::new(ResultCode::FileNotFound, "No such file or directory"));
+    let names = match self.nlst_names(&path.unwrap_or_default()).await {
+      Ok(names) => names,
+      Err(answer) => return Ok(answer),
     };
     let mut out = vec![];
-
-    let pattern = if let Some(p) = path {
-      if p.is_absolute() {
-        return Ok(Answer::new(ResultCode::InvalidParameterOrArgument, "No such file or directory"));
-      }
-      cwd.join(p)
-    } else {
-      cwd.join("*")
-    };
-
-    let matches = match pattern.to_str().map(|s| glob(s).map_err(|_| Error::from("Invalid glob pattern"))) {
-      Some(Ok(matches)) => matches,
-      _ => return Ok(Answer::new(ResultCode::InvalidParameterOrArgument, "Invalid pattern specified")),
-    };
-
-    for entry in matches {
-      match entry {
-        Ok(path) => match canonicalize(&path).await {
-          Ok(p) => {
-            if p.starts_with(&self.server_root) {
-              add_file_info_nlst(path, &mut out).await;
-            } else {
-              warn!("Entry is out of server root: {:?}, skipping", path);
-            }
-          }
-          Err(e) => {
-            error!("Error while processing NLST command: {:?}", e);
-          }
-        },
-        Err(e) => {
-          error!("Error while processing NLST command: {:?}", e);
-        }
-      }
+    for name in names {
+      out.extend(name.as_bytes());
+      out.extend(b"\r\n");
     }
-
     self
       .send(Answer::new(ResultCode::DataConnectionAlreadyOpen, "Starting to list directory..."))
       .await?;
     Ok(self.send_data(out).await)
+  }
+
+  /// Names for NLST: the entries of the directory, or the entries in the directory of
+  /// the path that match its last component as pattern. A name starts with the
+  /// directory as the client gave it, so it is valid as argument of other commands.
+  async fn nlst_names(&self, path: &Path) -> result::Result<Vec<String>, Answer> {
+    let not_found = || Answer::new(ResultCode::FileNotFound, "No such file or directory");
+    let mut dir = self.resolve(path).await;
+    if let Ok(path) = &dir {
+      if !metadata(path).await.is_ok_and(|meta| meta.is_dir()) {
+        dir = Err(io::ErrorKind::NotADirectory.into());
+      }
+    }
+    let (dir, prefix, pattern) = match dir {
+      Ok(dir) => (dir, path, None),
+      Err(_) => {
+        let name = path.file_name().and_then(|name| name.to_str()).ok_or_else(not_found)?;
+        let pattern = Pattern::new(name).map_err(|_| Answer::new(ResultCode::InvalidParameterOrArgument, "Invalid pattern specified"))?;
+        let parent = path.parent().unwrap_or(Path::new(""));
+        let dir = self.resolve(parent).await.map_err(|_| not_found())?;
+        (dir, parent, Some(pattern))
+      }
+    };
+    let prefix = match prefix.to_string_lossy() {
+      prefix if prefix.is_empty() => String::new(),
+      prefix => format!("{}/", prefix.trim_end_matches('/')),
+    };
+    let mut entries = read_dir(&dir).await.map_err(|_| not_found())?;
+    let mut names = Vec::new();
+    while let Ok(Some(entry)) = entries.next_entry().await {
+      // A name that is not UTF-8 can't be sent
+      if let Ok(name) = entry.file_name().into_string() {
+        if pattern.as_ref().is_none_or(|pattern| pattern.matches(&name)) {
+          names.push(format!("{}{}", prefix, name));
+        }
+      }
+    }
+    names.sort();
+    Ok(names)
   }
 
   /// Listen on a free port for the data connection of the next transfer
@@ -864,23 +873,4 @@ async fn add_file_info(path: PathBuf, out: &mut Vec<u8>) {
   );
   out.extend(file_str.as_bytes());
   //debug!("==> {:?}", &file_str);
-}
-
-// If an error occurs when we try to get file's information, we just return and don't send its info.
-async fn add_file_info_nlst(path: PathBuf, out: &mut Vec<u8>) {
-  let extra = match metadata(&path).await {
-    Ok(meta) if meta.is_dir() => "/",
-    _ => "",
-  };
-  let path = match path.to_str() {
-    Some(path) => match path.split('/').next_back() {
-      Some(path) => path,
-      _ => return,
-    },
-    _ => return,
-  };
-
-  let file_str = format!("{path}{extra}\r\n", path = path, extra = extra);
-  out.extend(file_str.as_bytes());
-  debug!("==> {:?}", &file_str);
 }
