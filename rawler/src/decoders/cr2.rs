@@ -142,7 +142,7 @@ impl<'a> Decoder for Cr2Decoder<'a> {
           LookupTable::new(&t)
         };
 
-        let mut random = ljpegout[0] as u32;
+        let mut random = ljpegout.pixels().first().map_or(0, |pixel| *pixel as u32);
         for p in ljpegout.pixels_mut().iter_mut() {
           *p = table.dither(*p, &mut random);
         }
@@ -243,7 +243,7 @@ impl<'a> Decoder for Cr2Decoder<'a> {
     let photometric = match cpp {
       1 => RawPhotometricInterpretation::Cfa(CFAConfig::new_from_camera(camera)),
       3 => RawPhotometricInterpretation::LinearRaw,
-      _ => todo!(),
+      cpp => return Err(decoder_error!("CR2: {} components per pixel are not supported", cpp)),
     };
 
     let mut camera = camera.clone();
@@ -783,10 +783,13 @@ impl<'a> Cr2Decoder<'a> {
     debug!("Model ID: 0x{:X}", self.model_id.unwrap_or(0));
     check_yuv_layout(width, image.len())?;
 
-    let do_interpolate = std::env::var("RAWLER_CR2_YUV_INTERPOLATE")
-      .ok()
-      .map(|id| id.parse::<bool>().expect("RAWLER_CR2_YUV_INTERPOLATE must by of type bool"))
-      .unwrap_or(true);
+    let do_interpolate = match std::env::var("RAWLER_CR2_YUV_INTERPOLATE") {
+      Ok(value) => value.parse::<bool>().unwrap_or_else(|_| {
+        log::warn!("RAWLER_CR2_YUV_INTERPOLATE must be true or false, not {:?}, using true", value);
+        true
+      }),
+      Err(_) => true,
+    };
     if do_interpolate {
       self.interpolate_yuv(ljpeg, width, height, image);
     }
