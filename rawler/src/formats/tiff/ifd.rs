@@ -556,16 +556,8 @@ impl IFD {
     if !self.has_entry(TiffCommonTag::StripOffsets) {
       return Err(TiffError::General("IFD contains no strip data".into()));
     }
-    let offsets = if let Some(Entry { value: Value::Long(data), .. }) = self.get_entry(TiffCommonTag::StripOffsets) {
-      data
-    } else {
-      return Err(TiffError::General("Invalid datatype for StripOffsets".to_string()));
-    };
-    let sizes = if let Some(Entry { value: Value::Long(data), .. }) = self.get_entry(TiffCommonTag::StripByteCounts) {
-      data
-    } else {
-      return Err(TiffError::General("Invalid datatype for StripByteCounts".to_string()));
-    };
+    let offsets = self.offset_values(TiffCommonTag::StripOffsets)?;
+    let sizes = self.offset_values(TiffCommonTag::StripByteCounts)?;
 
     if offsets.len() != sizes.len() {
       return Err(TiffError::General(format!(
@@ -575,14 +567,20 @@ impl IFD {
       )));
     }
 
+    let Some(&first) = offsets.first() else {
+      return Err(TiffError::General("IFD contains no strip data".into()));
+    };
+
     // Check if all slices are continous
-    let (is_continous, end_off) =
-      offsets.iter().zip(sizes.iter()).fold(
-        (true, offsets[0]),
-        |acc, val| {
-          if acc.0 && acc.1 == *val.0 { (true, acc.1 + *val.1) } else { (false, 0) }
-        },
-      );
+    let mut end_off = first as u64;
+    let mut is_continous = true;
+    for (offset, size) in offsets.iter().zip(sizes.iter()) {
+      if *offset as u64 != end_off {
+        is_continous = false;
+        break;
+      }
+      end_off += *size as u64;
+    }
 
     let mut subviews = Vec::with_capacity(offsets.len());
     for (offset, size) in offsets.iter().zip(sizes.iter()) {
@@ -590,12 +588,22 @@ impl IFD {
     }
 
     let continous = if is_continous {
-      Some(rawsource.subview(self.base as u64 + offsets[0] as u64, (end_off - offsets[0]) as u64)?)
+      Some(rawsource.subview(self.base as u64 + first as u64, end_off - first as u64)?)
     } else {
       None
     };
 
     Ok((subviews, continous))
+  }
+
+  /// Values of an offset or byte count tag, which TIFF allows as SHORT or LONG
+  fn offset_values<T: TiffTag>(&self, tag: T) -> Result<Vec<u32>> {
+    match self.get_entry(tag).map(|entry| &entry.value) {
+      Some(Value::Long(data)) => Ok(data.clone()),
+      Some(Value::Short(data)) => Ok(data.iter().map(|v| *v as u32).collect()),
+      Some(_) => Err(TiffError::General(format!("Invalid datatype for {:?}", tag))),
+      None => Err(TiffError::General(format!("IFD has no {:?} tag", tag))),
+    }
   }
 
   pub fn tile_data<'a>(&self, rawsource: &'a RawSource) -> Result<Vec<&'a [u8]>> {
@@ -754,8 +762,14 @@ mod tests {
 
   /// IFD at offset 8 with the entry `entry` and no next IFD
   fn ifd_with_entry(entry: [u8; 12]) -> Vec<u8> {
-    let mut data = vec![0x49, 0x49, 42, 0, 8, 0, 0, 0, 1, 0];
-    data.extend_from_slice(&entry);
+    ifd_with_entries(&[entry])
+  }
+
+  /// IFD at offset 8 with the `entries` and no next IFD
+  fn ifd_with_entries(entries: &[[u8; 12]]) -> Vec<u8> {
+    let mut data = vec![0x49, 0x49, 42, 0, 8, 0, 0, 0];
+    data.extend_from_slice(&(entries.len() as u16).to_le_bytes());
+    data.extend(entries.iter().flatten());
     data.extend_from_slice(&[0, 0, 0, 0]);
     data
   }
@@ -866,6 +880,23 @@ mod tests {
     let data = ifd_chain(8, &[0]);
     let ifd = IFD::new(&mut Cursor::new(data.clone()), 8, 0, 0, Endian::Little, &[])?;
     assert!(ifd.singlestrip_data_rawsource(&RawSource::new_from_slice(&data)).is_err());
+    Ok(())
+  }
+
+  #[test]
+  fn strip_data_of_short_and_empty_strips() -> Result<()> {
+    // Two SHORT strips of 2 bytes each at 38 and 40
+    let mut data = ifd_with_entries(&[[0x11, 0x01, 3, 0, 2, 0, 0, 0, 38, 0, 40, 0], [0x17, 0x01, 3, 0, 2, 0, 0, 0, 2, 0, 2, 0]]);
+    data.extend_from_slice(b"ABCD");
+    let ifd = IFD::new(&mut Cursor::new(data.clone()), 8, 0, 0, Endian::Little, &[])?;
+    let source = RawSource::new_from_slice(&data);
+    let (strips, continous) = ifd.strip_data(&source)?;
+    assert_eq!(strips, [&b"AB"[..], &b"CD"[..]]);
+    assert_eq!(continous, Some(&b"ABCD"[..]));
+    // StripOffsets and StripByteCounts with a count of 0
+    let data = ifd_with_entries(&[[0x11, 0x01, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0x17, 0x01, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0]]);
+    let ifd = IFD::new(&mut Cursor::new(data.clone()), 8, 0, 0, Endian::Little, &[])?;
+    assert!(ifd.strip_data(&RawSource::new_from_slice(&data)).is_err());
     Ok(())
   }
 
