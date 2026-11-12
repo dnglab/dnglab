@@ -132,22 +132,29 @@ impl<R: Read + Seek> ReadSegment<&mut R> for SOS {
     let mut prev = 0;
 
     loop {
-      let v = reader.read_u8()?;
-      if prev == 0xFF && v == 0xFF {
-        prev = 0;
-        continue;
-      }
-      if prev == 0xFF && (v & !0x7) == 0xD0 {
-        prev = 0;
-        continue;
-      }
-      if prev == 0xFF && v == 0 {
-        prev = 0;
-        continue;
-      }
+      let v = match reader.read_u8() {
+        Ok(v) => v,
+        // A JPEG cut off in the image data keeps the segments before it
+        Err(err) if err.kind() == std::io::ErrorKind::UnexpectedEof => {
+          log::warn!("JFIF image data ends without a marker, the file may be truncated");
+          break;
+        }
+        Err(err) => return Err(err.into()),
+      };
       if prev == 0xFF {
-        reader.seek(SeekFrom::Current(-2))?;
-        break;
+        match v {
+          // A fill byte, the next byte may start a marker
+          0xFF => continue,
+          // A stuffed zero byte or a restart marker RST0 to RST7
+          0x00 | 0xD0..=0xD7 => {
+            prev = 0;
+            continue;
+          }
+          _ => {
+            reader.seek(SeekFrom::Current(-2))?;
+            break;
+          }
+        }
       }
       prev = v;
     }
@@ -460,6 +467,27 @@ mod tests {
     assert!(parsed.exif_ifd().is_none());
     assert_eq!(parsed.xpacket().map(Vec::as_slice), Some(&b"xmp"[..]));
     assert!(matches!(parsed.segments.last(), Some(Segment::EOI)));
+  }
+
+  /// TIFF structure with one IFD of one entry
+  const TIFF: [u8; 26] = [b'I', b'I', 42, 0, 8, 0, 0, 0, 1, 0, 0, 1, 3, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0];
+
+  #[test]
+  fn sos_finds_marker_after_fill_bytes() {
+    let mut data = vec![0xFF, 0xD8, 0xFF, 0xDA, 0x12, 0xFF, 0x00, 0x34, 0xFF, 0xD0, 0x56];
+    data.extend_from_slice(&[0xFF, 0xFF, 0xD9]);
+    let parsed = Jfif::parse(Cursor::new(data)).expect("parsed");
+    assert!(matches!(parsed.segments.as_slice(), [Segment::SOI { .. }, Segment::SOS { .. }, Segment::EOI]));
+  }
+
+  #[test]
+  fn truncated_image_data_keeps_exif() {
+    let mut data = jpeg(0xE1, 2 + 6 + TIFF.len() as u16, &[&b"Exif\0\0"[..], &TIFF].concat());
+    data.truncate(data.len() - 2);
+    data.extend_from_slice(&[0xFF, 0xDA, 0x12, 0x34, 0xFF]);
+    let parsed = Jfif::parse(Cursor::new(data)).expect("parsed");
+    assert!(parsed.exif_ifd().is_some());
+    assert!(matches!(parsed.segments.last(), Some(Segment::SOS { .. })));
   }
 
   #[test]
