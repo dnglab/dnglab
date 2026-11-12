@@ -35,10 +35,17 @@ use crate::{
 /// Processing step of the rendering, see [`StepSet`]
 #[derive(PartialEq, Eq, Debug, Clone, Copy)]
 pub enum ProcessingStep {
-  /// Map raw values to linear reference values, apply OpcodeList2
+  /// Apply OpcodeList1 to the raw data as read from the file
+  OpcodeList1,
+  /// Map raw values to linear reference values
   Rescale,
-  /// Demosaic CFA data, apply OpcodeList3
+  /// Apply OpcodeList2 to the linear reference values, after the Rescale step
+  OpcodeList2,
+  /// Demosaic CFA data
   Demosaic,
+  /// Apply OpcodeList3 after the Demosaic step. The LinearRaw data of
+  /// [`RenderTarget::LinearRaw`] keeps OpcodeList3 for the DNG reader.
+  OpcodeList3,
   /// Rotate images of sensors with a 45° layout (Fujifilm)
   FujiRotate,
   /// Crop to the ActiveArea: CFA data while it is demosaiced, other data
@@ -82,9 +89,12 @@ pub enum ProcessingStep {
 
 impl ProcessingStep {
   /// All steps
-  pub const ALL: [Self; 17] = [
+  pub const ALL: [Self; 20] = [
+    Self::OpcodeList1,
     Self::Rescale,
+    Self::OpcodeList2,
     Self::Demosaic,
+    Self::OpcodeList3,
     Self::FujiRotate,
     Self::CropActiveArea,
     Self::BaselineExposure,
@@ -111,8 +121,11 @@ impl clap::ValueEnum for ProcessingStep {
 
   fn to_possible_value(&self) -> Option<clap::builder::PossibleValue> {
     Some(clap::builder::PossibleValue::new(match self {
+      Self::OpcodeList1 => "opcodelist1",
       Self::Rescale => "rescale",
+      Self::OpcodeList2 => "opcodelist2",
       Self::Demosaic => "demosaic",
+      Self::OpcodeList3 => "opcodelist3",
       Self::FujiRotate => "fujirotate",
       Self::CropActiveArea => "cropactivearea",
       Self::BaselineExposure => "baselineexposure",

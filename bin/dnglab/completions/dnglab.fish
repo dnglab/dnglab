@@ -102,8 +102,11 @@ complete -c dnglab -n "__fish_dnglab_using_subcommand process-raw" -l denoise-ch
 complete -c dnglab -n "__fish_dnglab_using_subcommand process-raw" -l sharpen -d 'Strength of the sharpening (0-2), 0 is off, 1 is the classic Laplacian filter [default: 0.2]' -r
 complete -c dnglab -n "__fish_dnglab_using_subcommand process-raw" -l exposure -d 'Change the exposure by this value in EV, e.g. -1.2. A negative value keeps white [default: 0]' -r
 complete -c dnglab -n "__fish_dnglab_using_subcommand process-raw" -l steps -d 'Apply only these processing steps of the rendering, as comma separated list, \'all\' for all steps. Without it the default steps are applied' -r -f -a "all\t''
+opcodelist1\t''
 rescale\t''
+opcodelist2\t''
 demosaic\t''
+opcodelist3\t''
 fujirotate\t''
 cropactivearea\t''
 baselineexposure\t''
@@ -120,8 +123,11 @@ autoexposure\t''
 sharpen\t''
 transferfunction\t''"
 complete -c dnglab -n "__fish_dnglab_using_subcommand process-raw" -l skip-steps -d 'Skip these processing steps of the rendering, as comma separated list (e.g. tonecurve,denoise,sharpen). \'all\' skips every step and writes the raw values of the whole raw image. Takes priority over --steps' -r -f -a "all\t''
+opcodelist1\t''
 rescale\t''
+opcodelist2\t''
 demosaic\t''
+opcodelist3\t''
 fujirotate\t''
 cropactivearea\t''
 baselineexposure\t''

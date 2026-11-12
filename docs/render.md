@@ -90,14 +90,17 @@ In `--steps` and `--skip-steps`, `all` stands for all steps.
 
 Without the `Rescale` step, the values stay those of the raw data
 ([raw values](#raw-values)). `--skip-steps all` gives the whole raw image as it
-is read from the file, only OpcodeList1 is applied. Steps that don't expect
+is read from the file. Steps that don't expect
 linear reference values, such as `Demosaic` and the crops, still give useful
 raw values. `WhiteBalance` and `Calibrate` clip at 1.0.
 
 | Step | Effect |
 | --- | --- |
-| `Rescale` | Map raw values to linear values 0.0 to 1.0, apply OpcodeList2 |
-| `Demosaic` | Demosaic CFA data, apply OpcodeList3 |
+| `OpcodeList1` | Apply OpcodeList1 to the raw data as read from the file |
+| `Rescale` | Map raw values to linear values 0.0 to 1.0 |
+| `OpcodeList2` | Apply OpcodeList2 after `Rescale` |
+| `Demosaic` | Demosaic CFA data |
+| `OpcodeList3` | Apply OpcodeList3 after `Demosaic`, not for LinearRaw data |
 | `FujiRotate` | Rotate images of sensors with a 45° layout |
 | `CropActiveArea` | Crop to the ActiveArea |
 | `BaselineExposure` | Apply BaselineExposure and BaselineExposureOffset |
@@ -170,7 +173,8 @@ DNG-like image without opcodes is short, for example
 
 ### 1. OpcodeList1
 
-Applied to the image data as read from the file, before anything else.
+The `OpcodeList1` step applies it to the image data as read from the file,
+before anything else.
 
 `--bad-pixels` gives a bad pixel list in the format of dcraw. dnglab turns it
 into a FixBadPixelsList for each input file and inserts it at the start of
@@ -184,9 +188,10 @@ OpcodeList1, replacing an existing FixBadPixelsList:
 - Then the black level of the pattern is subtracted and the result is divided by
   the white level minus the black level. The values are floats from 0.0 to 1.0
   after this step.
-- For CFA data without LinearizationTable, OpcodeList1 and OpcodeList2, the
-  rescale and the white balance run in one pass (`RescaleMosaic`). Otherwise
-  `Rescale` runs, followed by OpcodeList2.
+- For CFA data without LinearizationTable and without an OpcodeList1 or
+  OpcodeList2 that is applied, the rescale and the white balance run in one
+  pass (`RescaleMosaic`). Otherwise `Rescale` runs, followed by OpcodeList2
+  with the `OpcodeList2` step.
 
 ### 3. White balance of CFA data
 
@@ -215,12 +220,12 @@ OpcodeList1, replacing an existing FixBadPixelsList:
   the 3x3 neighbourhood ([`sensor/border.rs`](../rawler/src/imgop/sensor/border.rs)
   for AHD, VNG and RCD).
 - **Partial demosaic:** without operations on the whole stage 3 image (no
-  OpcodeList3 and no Fuji rotation), only the DefaultCrop is demosaiced, plus a
-  margin of 32 pixels for the interpolation.
+  applied OpcodeList3 and no Fuji rotation), only the DefaultCrop is
+  demosaiced, plus a margin of 32 pixels for the interpolation.
 - **Fuji rotation:** Fujifilm images with a 45° sensor layout are rotated after
   the demosaic.
-- **OpcodeList3** is applied after the demosaic, for example WarpRectilinear and
-  GainMap.
+- **OpcodeList3** is applied after the demosaic by the `OpcodeList3` step, for
+  example WarpRectilinear and GainMap.
 
 **`RenderTarget::LinearRaw` ends here.** The white balance of the demosaic is
 divided out again, without clipping, because DNG readers apply it themselves.
