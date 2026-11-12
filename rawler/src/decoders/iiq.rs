@@ -1146,7 +1146,7 @@ impl<'a> IiqDecoder<'a> {
         let mut pump = BitPumpMSB32::new(Self::row_data(buffer, strips, row)?);
         let base_bits = pump.get_bits(16)? & 7; // first 3 bits
         let mut bit_check: [u32; 2] = [0, 0]; // for even and odd pixels
-        let mut prev_pix_value = [0, 0]; // for even and odd pixels
+        let mut prev_pix_value = [0_u32, 0]; // for even and odd pixels
 
         let pix_sub_init = 17 - base_bits;
 
@@ -1160,7 +1160,9 @@ impl<'a> IiqDecoder<'a> {
               if idx >= 32 {
                 // If idx is larger then lookup array, the value
                 // is calculated by re-using the previous value.
-                bit_check[i] = (idx as u32 >> 5) + bit_check[i] - 2;
+                bit_check[i] = ((idx as u32 >> 5) + bit_check[i])
+                  .checked_sub(2)
+                  .ok_or_else(|| format!("IIQ Sv2: invalid bit count in row {}", row))?;
               } else {
                 // Otherwise, just do a lookup.
                 debug_assert!(idx < 32);
@@ -1178,9 +1180,14 @@ impl<'a> IiqDecoder<'a> {
               bit_check[0].saturating_sub(SV2_EXTRA_BITS[x]), // even
               bit_check[1].saturating_sub(SV2_EXTRA_BITS[x]), // odd
             ];
+            let diff_shift = |bit_check: u32| {
+              pix_sub_init
+                .checked_sub(bit_check)
+                .ok_or_else(|| format!("IIQ Sv2: bit count {} in row {} exceeds {}", bit_check, row, pix_sub_init))
+            };
             let diff = [
-              0xFFFF_u32 >> (pix_sub_init - bit_check[0]), // even
-              0xFFFF_u32 >> (pix_sub_init - bit_check[1]), // odd
+              0xFFFF_u32 >> diff_shift(bit_check[0])?, // even
+              0xFFFF_u32 >> diff_shift(bit_check[1])?, // odd
             ];
             // Detector for invalid decompression result
             let mut check_val = 0;
@@ -1190,8 +1197,11 @@ impl<'a> IiqDecoder<'a> {
                 // Just get the value straight out the bit pump
                 pump.get_bits(14)?
               } else {
-                // Otherwise reconstruct the value
-                let tmp = prev_pix_value[i & 1] + (pump.get_bits(nbits)? << corr[i & 1]) - diff[i & 1];
+                // Otherwise reconstruct the value, invalid values wrap
+                // around and the checker finds them
+                let tmp = prev_pix_value[i & 1]
+                  .wrapping_add(pump.get_bits(nbits)? << corr[i & 1])
+                  .wrapping_sub(diff[i & 1]);
                 check_val |= tmp; // Apply to checker
                 tmp
               };
@@ -1210,7 +1220,9 @@ impl<'a> IiqDecoder<'a> {
                   pump.get_bits(14)?
                 } else {
                   // Otherwise reconstruct the value
-                  let tmp = prev_pix_value[i & 1] as i32 + (pump.get_bits(nbits)? << corr[i & 1]) as i32 - diff[i & 1] as i32;
+                  let tmp = (prev_pix_value[i & 1] as i32)
+                    .wrapping_add((pump.get_bits(nbits)? << corr[i & 1]) as i32)
+                    .wrapping_sub(diff[i & 1] as i32);
                   clamp(tmp as i32, 0, 0x3FFF) as u32
                 };
                 cluster[i] = (value as u16) << value_shift;
@@ -1310,6 +1322,17 @@ mod tests {
     let image = IiqDecoder::decode_compressed(&buf, &[0; 4], 8, 1, 14, false)?;
     assert_eq!(image.pixels()[0], (1_u32.wrapping_sub(128) as u16) << 2);
     Ok(())
+  }
+
+  #[test]
+  fn sv2_bit_count_underflow_is_an_error() {
+    // A base of 0 bits, then an index of 32 for the first cluster, which
+    // takes 2 from a bit count of 0
+    let mut buf = vec![0; 64];
+    buf[1] = 0x40;
+    assert!(IiqDecoder::decode_compressed_sv2(&buf, &[0; 4], 8, 1, 14, false).is_err());
+    // Zero data has no invalid bit counts
+    assert!(IiqDecoder::decode_compressed_sv2(&[0; 64], &[0; 4], 8, 1, 14, false).is_ok());
   }
 
   #[test]
