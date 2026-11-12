@@ -531,7 +531,9 @@ impl IFD {
   }
 
   pub fn singlestrip_data_rawsource<'a>(&self, rawsource: &'a RawSource) -> Result<&'a [u8]> {
-    assert!(self.contains_singlestrip_image());
+    if !self.contains_singlestrip_image() {
+      return Err(TiffError::General("IFD contains no single strip image".to_string()));
+    }
 
     let offset = self
       .get_entry(TiffCommonTag::StripOffsets)
@@ -855,6 +857,15 @@ mod tests {
     let mut ifd = IFD::new(&mut Cursor::new(data.clone()), 8, 0, 0, Endian::Little, &[])?;
     // Tag 0x100 is a SHORT
     assert!(matches!(ifd.extend_sub_ifds(&mut Cursor::new(data), 0x100), Err(TiffError::FormatMismatch(_))));
+    Ok(())
+  }
+
+  #[test]
+  fn singlestrip_data_needs_a_single_strip() -> Result<()> {
+    use crate::formats::tiff::tests::ifd_chain;
+    let data = ifd_chain(8, &[0]);
+    let ifd = IFD::new(&mut Cursor::new(data.clone()), 8, 0, 0, Endian::Little, &[])?;
+    assert!(ifd.singlestrip_data_rawsource(&RawSource::new_from_slice(&data)).is_err());
     Ok(())
   }
 
