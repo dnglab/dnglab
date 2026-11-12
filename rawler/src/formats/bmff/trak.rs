@@ -34,7 +34,7 @@ impl<R: Read + Seek> ReadBox<&mut R> for TrakBox {
     while current < header.end_offset() {
       // get box?
 
-      let header = BoxHeader::parse(&mut reader)?;
+      let header = BoxHeader::parse_child(&mut reader, &header)?;
 
       //let ftyp = Some(FtypBox::read_box(&mut file, header)?);
 

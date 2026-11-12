@@ -32,7 +32,7 @@ impl<R: Read + Seek> ReadBox<&mut R> for Cdi1Box {
     while current < header.end_offset() {
       // get box?
 
-      let header = BoxHeader::parse(&mut reader)?;
+      let header = BoxHeader::parse_child(&mut reader, &header)?;
 
       match header.typ {
         Iad1Box::TYP => {

@@ -112,6 +112,23 @@ impl BoxHeader {
     })
   }
 
+  /// Header of a box inside the box `parent`, an error if it ends after
+  /// the parent
+  pub fn parse_child<R: Read + Seek>(reader: R, parent: &BoxHeader) -> Result<Self> {
+    let header = Self::parse(reader)?;
+    if header.end_offset() > parent.end_offset() {
+      return Err(BmffError::Parse(format!(
+        "Box {:?} at offset {} with size {} extends beyond its parent box {:?}, which ends at {}",
+        header.typ,
+        header.offset,
+        header.size,
+        parent.typ,
+        parent.end_offset()
+      )));
+    }
+    Ok(header)
+  }
+
   pub fn end_offset(&self) -> u64 {
     self.offset + self.size
   }
@@ -396,6 +413,15 @@ mod tests {
     let mut data = ftyp();
     data.extend(boxed(b"moov", 16, &[0; 8]));
     assert!(parse_buffer(&data).is_err());
+  }
+
+  #[test]
+  fn box_beyond_its_parent_is_an_error() {
+    // A free box of 16 bytes in a moov box of 16 bytes, followed by 8 bytes
+    let mut data = ftyp();
+    data.extend(boxed(b"moov", 16, &boxed(b"free", 16, &[])));
+    data.extend_from_slice(&[0; 8]);
+    assert!(matches!(parse_buffer(&data), Err(BmffError::Parse(msg)) if msg.contains("beyond its parent")));
   }
 
   #[test]
