@@ -25,6 +25,13 @@ pub enum JfifError {
   Io(#[from] std::io::Error),
 }
 
+/// Bytes of a segment after its length field, which counts itself
+fn payload_len(len: u64) -> Result<u64> {
+  len
+    .checked_sub(2)
+    .ok_or_else(|| JfifError::FormatMismatch(format!("Segment length {} is shorter than the length field", len)))
+}
+
 pub trait ReadSegment<T>: Sized {
   fn read_segment(_: T, symbol: u16) -> Result<Self>;
 }
@@ -48,7 +55,7 @@ impl<R: Read + Seek> ReadSegment<&mut R> for App0 {
 
     const APP1_JFIF_MARKER: [u8; 5] = [b'J', b'F', b'I', b'F', b'\0'];
 
-    if len as usize >= APP1_JFIF_MARKER.len() {
+    if payload_len(len)? >= APP1_JFIF_MARKER.len() as u64 {
       let mut jfif_str = [0; 5];
       reader.read_exact(&mut jfif_str)?;
       if jfif_str == APP1_JFIF_MARKER {
@@ -143,7 +150,8 @@ impl<R: Read + Seek> ReadSegment<&mut R> for App1 {
 
     const APP1_EXIF_MARKER: [u8; 6] = [b'E', b'x', b'i', b'f', b'\0', b'\0'];
 
-    if len as usize >= APP1_EXIF_MARKER.len() {
+    let payload = payload_len(len)?;
+    if payload >= APP1_EXIF_MARKER.len() as u64 {
       let mut exif_str = [0; 6];
       reader.read_exact(&mut exif_str)?;
       if exif_str == APP1_EXIF_MARKER {
@@ -174,12 +182,12 @@ impl<R: Read + Seek> ReadSegment<&mut R> for App1 {
     }
 
     const APP1_XMP_MARKER: &str = concat!("http://ns.adobe.com/xap/1.0/", '\0');
-    if len as usize >= APP1_XMP_MARKER.len() {
+    if payload >= APP1_XMP_MARKER.len() as u64 {
       let mut xmp_str = [0; APP1_XMP_MARKER.len()];
       reader.read_exact(&mut xmp_str)?;
       if xmp_str == APP1_XMP_MARKER.as_bytes() {
         log::debug!("Found APP1 XMP marker");
-        let mut xpacket = vec![0; len as usize - xmp_str.len() - 2];
+        let mut xpacket = vec![0; (payload - xmp_str.len() as u64) as usize];
         reader.read_exact(&mut xpacket)?;
         reader.seek(SeekFrom::Start(pos + len))?;
         return Ok(Self {
@@ -328,6 +336,34 @@ pub fn is_exif(file: &RawSource) -> bool {
 mod tests {
   use super::*;
   use std::io::Cursor;
+
+  /// SOI, the segment `marker` with the length `len` and `payload`, EOI
+  fn jpeg(marker: u8, len: u16, payload: &[u8]) -> Vec<u8> {
+    let mut data = vec![0xFF, 0xD8, 0xFF, marker];
+    data.extend_from_slice(&len.to_be_bytes());
+    data.extend_from_slice(payload);
+    data.extend_from_slice(&[0xFF, 0xD9]);
+    data
+  }
+
+  const XMP_MARKER: &[u8] = b"http://ns.adobe.com/xap/1.0/\0";
+
+  #[test]
+  fn short_xmp_segments() {
+    // The length counts the 2 length bytes, a segment of 29 or 30 bytes has
+    // no room for the marker, which continues behind the segment
+    for len in [29, 30] {
+      if let Ok(parsed) = Jfif::parse(Cursor::new(jpeg(0xE1, len, XMP_MARKER))) {
+        assert!(parsed.xpacket().is_none());
+      }
+    }
+    // Marker and an empty packet
+    let parsed = Jfif::parse(Cursor::new(jpeg(0xE1, 31, XMP_MARKER))).expect("parsed");
+    assert_eq!(parsed.xpacket().map(Vec::len), Some(0));
+    // Marker and a packet of 3 bytes
+    let parsed = Jfif::parse(Cursor::new(jpeg(0xE1, 34, &[XMP_MARKER, b"xmp"].concat()))).expect("parsed");
+    assert_eq!(parsed.xpacket().map(Vec::as_slice), Some(&b"xmp"[..]));
+  }
 
   #[test]
   fn truncated_app1_does_not_loop() {
