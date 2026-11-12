@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
   bits::Endian,
-  formats::tiff::{Rational, SRational, TiffAscii, TiffError, Value, apply_corr, reader::ReadByteOrder},
+  formats::tiff::{Rational, SRational, TiffAscii, TiffError, Value, apply_corr, offset_add, reader::ReadByteOrder},
 };
 
 use super::{Result, reader::EndianReader};
@@ -80,7 +80,11 @@ impl Entry {
   }
 
   pub fn parse<R: Read + Seek>(reader: &mut EndianReader<R>, base: u32, corr: i32, tag: u16) -> Result<Entry> {
-    let pos = reader.position()? - 2; // TODO -2 because tag is already read
+    // The tag is already read
+    let pos = reader
+      .position()?
+      .checked_sub(2)
+      .ok_or_else(|| TiffError::General("TIFF entry starts before the stream".into()))?;
 
     let typ = reader.read_u16()?;
     let count = reader.read_u32()?;
@@ -90,9 +94,12 @@ impl Entry {
 
     let bytesize: u64 = (count as u64) << DATASHIFTS[compat_typ as usize];
     let offset: u32 = if bytesize <= 4 {
-      reader.position()? - base
+      reader
+        .position()?
+        .checked_sub(base)
+        .ok_or_else(|| TiffError::Overflow(format!("TIFF entry is before the base offset {}", base)))?
     } else {
-      apply_corr(reader.read_u32()?, corr)
+      apply_corr(reader.read_u32()?, corr)?
     };
 
     debug!(
@@ -246,7 +253,7 @@ impl Entry {
         }
       }
     };
-    reader.goto(pos + 12)?; // Size of IFD entry
+    reader.goto(offset_add(pos, 12)?)?; // Size of IFD entry
     Ok(entry)
   }
 

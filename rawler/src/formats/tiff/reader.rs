@@ -121,7 +121,7 @@ pub trait TiffReader {
   }
 
   fn read_data<R: Read + Seek>(&self, file: &mut R, uncorr_offset: u32, buffer: &mut [u8]) -> Result<()> {
-    file.seek(SeekFrom::Start(apply_corr(uncorr_offset, self.file().corr) as u64))?;
+    file.seek(SeekFrom::Start(apply_corr(uncorr_offset, self.file().corr)? as u64))?;
     file.read_exact(buffer)?;
     Ok(())
   }
@@ -160,7 +160,7 @@ pub trait TiffReader {
 
     let reader = reader.into_inner();
 
-    next_ifd = apply_corr(next_ifd, self.file().corr);
+    next_ifd = apply_corr(next_ifd, self.file().corr)?;
     let mut chain = Vec::new();
     while next_ifd != 0 {
       // TODO: check if offset is in range

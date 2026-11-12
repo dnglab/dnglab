@@ -286,14 +286,21 @@ pub struct DataOffset {
   pub offset: usize,
 }
 
-fn apply_corr(offset: u32, corr: i32) -> u32 {
-  ((offset as i64) + (corr as i64)) as u32
+/// Apply the correction `corr` to an `offset` from the file
+fn apply_corr(offset: u32, corr: i32) -> Result<u32> {
+  u32::try_from(offset as i64 + corr as i64).map_err(|_| TiffError::Overflow(format!("Offset {} with correction {} is out of range", offset, corr)))
+}
+
+/// `a + b` for offsets from the file, an error on overflow
+fn offset_add(a: u32, b: u32) -> Result<u32> {
+  a.checked_add(b)
+    .ok_or_else(|| TiffError::Overflow(format!("Offset {} + {} exceeds 4 GiB", a, b)))
 }
 
 pub struct DirReader {}
 
-fn read_from_file<R: Read + Seek>(file: &mut R, offset: u32, size: usize) -> Result<Vec<u8>> {
-  file.seek(SeekFrom::Start(offset as u64))?;
+fn read_from_file<R: Read + Seek>(file: &mut R, offset: u64, size: usize) -> Result<Vec<u8>> {
+  file.seek(SeekFrom::Start(offset))?;
   let mut buf = vec![0; size];
   file.read_exact(&mut buf)?;
   Ok(buf)
@@ -306,6 +313,42 @@ mod tests {
   use crate::{formats::tiff::reader::TiffReader, tags::TiffCommonTag};
 
   use super::*;
+
+  /// Little-endian TIFF with the IFD 0 pointer `first` and one IFD for each
+  /// element of `next`. IFD `i` is at offset `8 + 18 * i`, has one SHORT entry
+  /// with the tag `0x100 + i` and the next IFD pointer `next[i]`.
+  pub(crate) fn ifd_chain(first: u32, next: &[u32]) -> Vec<u8> {
+    let mut data = vec![0x49, 0x49, 42, 0];
+    data.extend_from_slice(&first.to_le_bytes());
+    for (i, next) in next.iter().enumerate() {
+      data.extend_from_slice(&1_u16.to_le_bytes());
+      data.extend_from_slice(&(0x100 + i as u16).to_le_bytes());
+      data.extend_from_slice(&3_u16.to_le_bytes());
+      data.extend_from_slice(&1_u32.to_le_bytes());
+      data.extend_from_slice(&[1, 0, 0, 0]);
+      data.extend_from_slice(&next.to_le_bytes());
+    }
+    data
+  }
+
+  #[test]
+  fn offsets_out_of_range_are_errors() {
+    assert_eq!(apply_corr(10, -4).ok(), Some(6));
+    assert!(apply_corr(5, -10).is_err());
+    assert!(apply_corr(u32::MAX, 1).is_err());
+    assert!(offset_add(u32::MAX, 1).is_err());
+  }
+
+  #[test]
+  fn chained_ifds_are_corrected_once() -> std::result::Result<(), Box<dyn std::error::Error>> {
+    // The offsets in the file are 2 bytes less than the real ones
+    let data = ifd_chain(6, &[24, 0]);
+    let root = IFD::new_root_with_correction(&mut Cursor::new(data), 0, 0, 2, 10, &[])?;
+    assert!(root.has_entry(0x100_u16));
+    assert_eq!(root.chain.len(), 1);
+    assert!(root.chain[0].has_entry(0x101_u16));
+    Ok(())
+  }
 
   #[test]
   fn encode_tiff_test() -> std::result::Result<(), Box<dyn std::error::Error>> {

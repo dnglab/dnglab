@@ -4,7 +4,7 @@
 use super::{
   Entry, Result, TiffError, Value, apply_corr,
   entry::RawEntry,
-  read_from_file,
+  offset_add, read_from_file,
   reader::{EndianReader, ReadByteOrder},
 };
 use crate::{
@@ -54,7 +54,7 @@ impl IFD {
   }
 
   pub fn new_root_with_correction<R: Read + Seek>(reader: &mut R, offset: u32, base: u32, corr: i32, max_chain: usize, sub_tags: &[u16]) -> Result<IFD> {
-    reader.seek(SeekFrom::Start((base + offset) as u64))?;
+    reader.seek(SeekFrom::Start(base as u64 + offset as u64))?;
     let endian = match reader.read_u16::<LittleEndian>()? {
       0x4949 => Endian::Little,
       0x4d4d => Endian::Big,
@@ -76,7 +76,7 @@ impl IFD {
     let mut multi_sub_tags = vec![];
     multi_sub_tags.extend_from_slice(sub_tags);
 
-    next_ifd = apply_corr(next_ifd, corr);
+    next_ifd = apply_corr(next_ifd, corr)?;
     let mut root = IFD::new(reader, next_ifd, base, corr, endian, &multi_sub_tags)?;
     if root.entries.is_empty() {
       return Err(TiffError::General("TIFF is invalid, IFD must contain at least one entry".to_string()));
@@ -84,7 +84,6 @@ impl IFD {
     next_ifd = root.next_ifd;
 
     while next_ifd != 0 {
-      next_ifd = apply_corr(next_ifd, corr);
       let ifd = IFD::new(reader, next_ifd, base, corr, endian, &multi_sub_tags)?;
       if ifd.entries.is_empty() {
         return Err(TiffError::General("TIFF is invalid, IFD must contain at least one entry".to_string()));
@@ -101,7 +100,7 @@ impl IFD {
   }
 
   pub fn new<R: Read + Seek>(reader: &mut R, offset: u32, base: u32, corr: i32, endian: Endian, sub_tags: &[u16]) -> Result<IFD> {
-    reader.seek(SeekFrom::Start((base + offset) as u64))?;
+    reader.seek(SeekFrom::Start(base as u64 + offset as u64))?;
     let mut sub_ifd_offsets = HashMap::new();
     let mut reader = EndianReader::new(reader, endian);
     let entry_count = reader.read_u16()?;
@@ -206,7 +205,7 @@ impl IFD {
     for subs in sub_ifd_offsets {
       let mut ifds = Vec::new();
       for offset in subs.1 {
-        match Self::new(reader, apply_corr(offset, corr), base, corr, endian, &[]) {
+        match apply_corr(offset, corr).and_then(|offset| Self::new(reader, offset, base, corr, endian, &[])) {
           Ok(ifd) => ifds.push(ifd),
           Err(err) => {
             log::warn!("Error while processing TIFF sub-IFD for tag 0x{:X}, ignoring it: {}", subs.0, err);
@@ -216,11 +215,18 @@ impl IFD {
       sub.insert(subs.0, ifds);
     }
     EndianReader::new(reader, endian).goto(pos)?; // restore
+    let next_ifd = match next_ifd {
+      0 => 0,
+      next_ifd => apply_corr(next_ifd, corr).unwrap_or_else(|err| {
+        log::warn!("Invalid next IFD offset, ignoring the IFD chain: {}", err);
+        0
+      }),
+    };
     Ok(IFD {
       offset,
       base,
       corr,
-      next_ifd: if next_ifd == 0 { 0 } else { apply_corr(next_ifd, corr) },
+      next_ifd,
       entries,
       endian,
       sub,
@@ -370,10 +376,10 @@ impl IFD {
         endian: self.endian,
         data: read_from_file(
           file,
-          self.base
+          self.base as u64
             + entry
               .offset()
-              .ok_or_else(|| TiffError::General(format!("Entry for tag {:?} has no offset", tag)))? as u32,
+              .ok_or_else(|| TiffError::General(format!("Entry for tag {:?} has no offset", tag)))? as u64,
           entry.byte_size(),
         )?,
       }));
@@ -389,10 +395,10 @@ impl IFD {
         endian: self.endian,
         data: read_from_file(
           file,
-          self.base
+          self.base as u64
             + entry
               .offset()
-              .ok_or_else(|| TiffError::General(format!("Entry for tag {:?} has no offset", tag)))? as u32,
+              .ok_or_else(|| TiffError::General(format!("Entry for tag {:?} has no offset", tag)))? as u64,
           len,
         )?,
       }));
@@ -498,7 +504,7 @@ impl IFD {
       .value
       .force_usize(0);
 
-    Ok(rawsource.subview((self.base + offset) as u64, len as u64)?)
+    Ok(rawsource.subview(self.base as u64 + offset as u64, len as u64)?)
   }
 
   /// Return byte slices to strip data.
@@ -538,11 +544,11 @@ impl IFD {
 
     let mut subviews = Vec::with_capacity(offsets.len());
     for (offset, size) in offsets.iter().zip(sizes.iter()) {
-      subviews.push(rawsource.subview((self.base + *offset) as u64, *size as u64)?);
+      subviews.push(rawsource.subview(self.base as u64 + *offset as u64, *size as u64)?);
     }
 
     let continous = if is_continous {
-      Some(rawsource.subview((self.base + offsets[0]) as u64, (end_off - offsets[0]) as u64)?)
+      Some(rawsource.subview(self.base as u64 + offsets[0] as u64, (end_off - offsets[0]) as u64)?)
     } else {
       None
     };
@@ -624,15 +630,15 @@ impl IFD {
             let endian = if data[off..off + 2] == b"II"[..] { Endian::Little } else { Endian::Big };
             // All offsets in this IFD are relative to the start of this tag,
             // so wie use the offset as correction value.
-            let corr = offset as i32;
+            let corr = i32::try_from(offset).map_err(|_| TiffError::Overflow(format!("Makernote offset {} is out of range", offset)))?;
             // The IFD itself starts 10 bytes after tag offset.
-            return Ok(Some(IFD::new(reader, offset + 10, self.base, corr, endian, sub_tags)?));
+            return Ok(Some(IFD::new(reader, offset_add(offset, 10)?, self.base, corr, endian, sub_tags)?));
           }
 
           if data[0..7] == b"Nikon\0\x02"[..] {
             off += 10;
             let endian = if data[off..off + 2] == b"II"[..] { Endian::Little } else { Endian::Big };
-            return Ok(Some(IFD::new(reader, 8, self.base + offset + 10, 0, endian, sub_tags)?));
+            return Ok(Some(IFD::new(reader, 8, offset_add(offset_add(self.base, offset)?, 10)?, 0, endian, sub_tags)?));
           }
 
           // Some have MM or II to indicate endianness - read that
@@ -645,12 +651,13 @@ impl IFD {
             endian = Endian::Big;
           }
 
+          let ifd_offset = offset_add(offset, off as u32)?;
           match offset_mode {
-            OffsetMode::Absolute => Ok(Some(IFD::new(reader, offset + off as u32, self.base, self.corr, endian, sub_tags)?)),
+            OffsetMode::Absolute => Ok(Some(IFD::new(reader, ifd_offset, self.base, self.corr, endian, sub_tags)?)),
             OffsetMode::RelativeToIFD => {
               // Value offsets are relative to IFD offset
-              let corr = offset + off as u32;
-              Ok(Some(IFD::new(reader, offset + off as u32, self.base, corr as i32, endian, sub_tags)?))
+              let corr = i32::try_from(ifd_offset).map_err(|_| TiffError::Overflow(format!("Makernote offset {} is out of range", ifd_offset)))?;
+              Ok(Some(IFD::new(reader, ifd_offset, self.base, corr, endian, sub_tags)?))
             }
           }
         }
