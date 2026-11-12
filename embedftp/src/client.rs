@@ -236,24 +236,30 @@ where
     self.send(answer).await
   }
 
-  async fn initiate_data_connection(&mut self) -> Result<()> {
+  /// Open the data connection of active mode, the one of passive mode is already open.
+  /// Returns false if there is no data connection for a transfer.
+  async fn initiate_data_connection(&mut self) -> bool {
     // only open when we are in active mode
     if let Some(port) = self.active_data_port {
+      self.close_data_connection();
       let mut addr = self.remote_addr;
       addr.set_port(port);
-      let stream = match TcpStream::connect(addr).await {
-        Ok(stream) => stream,
-        Err(e) => {
-          error!("Connection failed to {}, {}", addr, e);
-          self.send(Answer::new(ResultCode::CantOpenDataConnection, "Unable to connect")).await?;
-          return Ok(());
+      match TcpStream::connect(addr).await {
+        Ok(stream) => {
+          let (r, w) = stream.into_split();
+          self.data_writer = Some(w);
+          self.data_reader = Some(r);
         }
-      };
-      let (r, w) = stream.into_split();
-      self.data_writer = Some(w);
-      self.data_reader = Some(r);
+        Err(e) => error!("Connection failed to {}, {}", addr, e),
+      }
     }
-    Ok(())
+    self.data_writer.is_some()
+  }
+
+  /// Close the data connection and send the final reply of a transfer command
+  async fn finish_transfer(&mut self, answer: Answer) -> Result<()> {
+    self.close_data_connection();
+    self.send(answer).await
   }
 
   fn close_data_connection(&mut self) {
@@ -362,119 +368,96 @@ where
   }
 
   async fn list(&mut self, path: Option<PathBuf>) -> Result<()> {
-    self.initiate_data_connection().await?;
-    if self.data_writer.is_some() {
-      let path = self.cwd.join(path.unwrap_or_default());
-      let directory = PathBuf::from(&path);
-      let res = self.complete_path(&directory).await;
-      if let Ok(path) = res {
-        self
-          .send(Answer::new(ResultCode::DataConnectionAlreadyOpen, "Starting to list directory..."))
-          .await?;
-        let mut out = vec![];
-        let is_dir = metadata(&path).await.map(|m| m.is_dir()).unwrap_or(false);
-        if is_dir {
-          match read_dir(&path).await {
-            Ok(mut dir) => {
-              while let Ok(Some(entry)) = dir.next_entry().await {
-                add_file_info(entry.path(), &mut out).await;
-              }
-            }
-            Err(_) => {
-              self
-                .send(Answer::new(ResultCode::InvalidParameterOrArgument, "No such file or directory"))
-                .await?;
-              return Ok(());
-            }
+    let answer = self.transfer_list(path).await?;
+    self.finish_transfer(answer).await
+  }
+
+  /// Send the listing for LIST, returns the final reply
+  async fn transfer_list(&mut self, path: Option<PathBuf>) -> Result<Answer> {
+    if !self.initiate_data_connection().await {
+      warn!("No opened data connection");
+      return Ok(no_data_connection());
+    }
+    let path = self.cwd.join(path.unwrap_or_default());
+    let Ok(path) = self.complete_path(&path).await else {
+      warn!("No such file or directory");
+      return Ok(Answer::new(ResultCode::FileNotFound, "No such file or directory"));
+    };
+    let mut out = vec![];
+    let is_dir = metadata(&path).await.map(|m| m.is_dir()).unwrap_or(false);
+    if is_dir {
+      match read_dir(&path).await {
+        Ok(mut dir) => {
+          while let Ok(Some(entry)) = dir.next_entry().await {
+            add_file_info(entry.path(), &mut out).await;
           }
-        } else {
-          add_file_info(path, &mut out).await;
         }
-        self.send_data(out).await?;
-      } else {
-        warn!("No such file or directory");
-        self
-          .send(Answer::new(ResultCode::InvalidParameterOrArgument, "No such file or directory"))
-          .await?;
+        Err(_) => return Ok(Answer::new(ResultCode::FileNotFound, "No such file or directory")),
       }
     } else {
-      warn!("No opened data connection");
-      self.send(Answer::new(ResultCode::ConnectionClosed, "No opened data connection")).await?;
+      add_file_info(path, &mut out).await;
     }
-    if self.data_writer.is_some() {
-      self.close_data_connection();
-      self.send(Answer::new(ResultCode::ClosingDataConnection, "Transfer done")).await?;
-    }
-    Ok(())
+    self
+      .send(Answer::new(ResultCode::DataConnectionAlreadyOpen, "Starting to list directory..."))
+      .await?;
+    Ok(self.send_data(out).await)
   }
 
   async fn nlst(&mut self, path: Option<PathBuf>) -> Result<()> {
-    self.initiate_data_connection().await?;
-    if self.data_writer.is_some() {
-      let cwd = self.cwd.clone();
-      let res = self.complete_path(&cwd).await;
-      if let Ok(cwd) = res {
-        let mut out = vec![];
+    let answer = self.transfer_nlst(path).await?;
+    self.finish_transfer(answer).await
+  }
 
-        let pattern = if let Some(p) = path {
-          if p.is_absolute() {
-            self
-              .send(Answer::new(ResultCode::InvalidParameterOrArgument, "No such file or directory"))
-              .await?;
-            self.close_data_connection();
-            return Ok(());
-          }
-          cwd.join(p)
-        } else {
-          cwd.join("*")
-        };
+  /// Send the listing for NLST, returns the final reply
+  async fn transfer_nlst(&mut self, path: Option<PathBuf>) -> Result<Answer> {
+    if !self.initiate_data_connection().await {
+      warn!("No opened data connection");
+      return Ok(no_data_connection());
+    }
+    let cwd = self.cwd.clone();
+    let Ok(cwd) = self.complete_path(&cwd).await else {
+      return Ok(Answer::new(ResultCode::FileNotFound, "No such file or directory"));
+    };
+    let mut out = vec![];
 
-        let matches = match pattern.to_str().map(|s| glob(s).map_err(|_| Error::from("Invalid glob pattern"))) {
-          Some(Ok(matches)) => matches,
-          _ => {
-            self
-              .send(Answer::new(ResultCode::InvalidParameterOrArgument, "Invalid pattern specified"))
-              .await?;
-            return Ok(());
-          }
-        };
+    let pattern = if let Some(p) = path {
+      if p.is_absolute() {
+        return Ok(Answer::new(ResultCode::InvalidParameterOrArgument, "No such file or directory"));
+      }
+      cwd.join(p)
+    } else {
+      cwd.join("*")
+    };
 
-        self
-          .send(Answer::new(ResultCode::DataConnectionAlreadyOpen, "Starting to list directory..."))
-          .await?;
+    let matches = match pattern.to_str().map(|s| glob(s).map_err(|_| Error::from("Invalid glob pattern"))) {
+      Some(Ok(matches)) => matches,
+      _ => return Ok(Answer::new(ResultCode::InvalidParameterOrArgument, "Invalid pattern specified")),
+    };
 
-        for entry in matches {
-          match entry {
-            Ok(path) => match canonicalize(&path).await {
-              Ok(p) => {
-                if p.starts_with(&self.server_root) {
-                  add_file_info_nlst(path, &mut out).await;
-                } else {
-                  warn!("Entry is out of server root: {:?}, skipping", path);
-                }
-              }
-              Err(e) => {
-                error!("Error while processing NLST command: {:?}", e);
-              }
-            },
-            Err(e) => {
-              error!("Error while processing NLST command: {:?}", e);
+    for entry in matches {
+      match entry {
+        Ok(path) => match canonicalize(&path).await {
+          Ok(p) => {
+            if p.starts_with(&self.server_root) {
+              add_file_info_nlst(path, &mut out).await;
+            } else {
+              warn!("Entry is out of server root: {:?}, skipping", path);
             }
           }
+          Err(e) => {
+            error!("Error while processing NLST command: {:?}", e);
+          }
+        },
+        Err(e) => {
+          error!("Error while processing NLST command: {:?}", e);
         }
-
-        self.send_data(out).await?;
-      } else {
-        self.send(Answer::new(ResultCode::FileNotFound, "No such file or directory")).await?;
       }
-    } else {
-      self.send(Answer::new(ResultCode::ConnectionClosed, "No opened data connection")).await?;
     }
-    if self.data_writer.is_some() {
-      self.close_data_connection();
-      self.send(Answer::new(ResultCode::ClosingDataConnection, "Transfer done")).await?;
-    }
-    Ok(())
+
+    self
+      .send(Answer::new(ResultCode::DataConnectionAlreadyOpen, "Starting to list directory..."))
+      .await?;
+    Ok(self.send_data(out).await)
   }
 
   async fn pasv(&mut self) -> Result<()> {
@@ -575,91 +558,75 @@ where
   }
 
   async fn retr(&mut self, path: PathBuf) -> Result<()> {
-    self.initiate_data_connection().await?;
-    // TODO: check if multiple data connection can be opened at the same time.
-    if self.data_writer.is_some() {
-      let path = self.cwd.join(path);
-      let res = self.complete_path(&path).await;
-      if let Ok(path) = res {
-        let is_file = metadata(&path).await.map(|m| m.is_file()).unwrap_or(false);
-        if is_file {
-          self
-            .send(Answer::new(ResultCode::DataConnectionAlreadyOpen, "Starting to send file..."))
-            .await?;
-          let mut file = match File::open(&path).await {
-            Ok(file) => file,
-            Err(e) => {
-              error!("Failed to open file {:?}, {}", path, e);
-              self
-                .send(Answer::new(
-                  ResultCode::LocalErrorInProcessing,
-                  &format!("\"{}\" doesn't exist", path.to_str().ok_or_else(|| Error::Msg("No path".to_string()))?),
-                ))
-                .await?;
-              return Ok(());
-            }
-          };
-          if let Some(writer) = &mut self.data_writer {
-            tokio::io::copy(&mut file, writer).await?;
-          } else {
-            return Err(Error::from("Trying to send data but no data connection is open."));
-          }
-        } else {
-          warn!("No path, not exist");
-          self
-            .send(Answer::new(
-              ResultCode::LocalErrorInProcessing,
-              &format!("\"{}\" doesn't exist", path.to_str().ok_or_else(|| Error::Msg("No path".to_string()))?),
-            ))
-            .await?;
-        }
-      } else {
-        warn!("No path");
-        self
-          .send(Answer::new(
-            ResultCode::LocalErrorInProcessing,
-            &format!("\"{}\" doesn't exist", path.to_str().ok_or_else(|| Error::Msg("No path".to_string()))?),
-          ))
-          .await?;
-      }
-    } else {
+    let answer = self.transfer_retr(path).await?;
+    self.finish_transfer(answer).await
+  }
+
+  /// Send the file for RETR, returns the final reply
+  async fn transfer_retr(&mut self, path: PathBuf) -> Result<Answer> {
+    if !self.initiate_data_connection().await {
       warn!("No open data connection");
-      self.send(Answer::new(ResultCode::ConnectionClosed, "No opened data connection")).await?;
+      return Ok(no_data_connection());
     }
-    if self.data_writer.is_some() {
-      self.close_data_connection();
-      self.send(Answer::new(ResultCode::ClosingDataConnection, "Transfer done")).await?;
+    let path = self.cwd.join(path);
+    let not_found = Answer::new(ResultCode::FileNotFound, &format!("\"{}\" doesn't exist", path.display()));
+    let Ok(path) = self.complete_path(&path).await else {
+      warn!("No path");
+      return Ok(not_found);
+    };
+    let is_file = metadata(&path).await.map(|m| m.is_file()).unwrap_or(false);
+    if !is_file {
+      warn!("No path, not exist");
+      return Ok(not_found);
     }
-    Ok(())
+    let mut file = match File::open(&path).await {
+      Ok(file) => file,
+      Err(e) => {
+        error!("Failed to open file {:?}, {}", path, e);
+        return Ok(not_found);
+      }
+    };
+    self
+      .send(Answer::new(ResultCode::DataConnectionAlreadyOpen, "Starting to send file..."))
+      .await?;
+    let res = match &mut self.data_writer {
+      Some(writer) => tokio::io::copy(&mut file, writer).await,
+      None => Err(io::ErrorKind::NotConnected.into()),
+    };
+    Ok(res.map_or_else(transfer_aborted, |_| transfer_done()))
   }
 
   async fn stor(&mut self, path: PathBuf) -> Result<()> {
-    self.initiate_data_connection().await?;
-    if self.data_reader.is_some() {
-      if invalid_path(&path) {
-        return Err(Error::Io(io::ErrorKind::PermissionDenied.into()));
-      }
-      let path = self.cwd.join(path);
-      self
-        .send(Answer::new(ResultCode::DataConnectionAlreadyOpen, "Starting to send file..."))
-        .await?;
-      let data = self.receive_data().await?;
-      info!("Received file: {:?}, {} bytes", path, data.len());
-      self.close_data_connection();
-      match self.put_file(path, Arc::new(data)).await {
-        Ok(_) => {
-          self.send(Answer::new(ResultCode::ClosingDataConnection, "Transfer done")).await?;
-        }
-        Err(e) => {
-          error!("Failed STOR command: {:?}", e);
-          self.send(Answer::new(ResultCode::LocalErrorInProcessing, "Failed to store the file")).await?;
-        }
-      }
-    } else {
+    let answer = self.transfer_stor(path).await?;
+    self.finish_transfer(answer).await
+  }
+
+  /// Receive and store the file for STOR, returns the final reply
+  async fn transfer_stor(&mut self, path: PathBuf) -> Result<Answer> {
+    if !self.initiate_data_connection().await {
       warn!("No opened data connection");
-      self.send(Answer::new(ResultCode::ConnectionClosed, "No opened data connection")).await?;
+      return Ok(no_data_connection());
     }
-    Ok(())
+    if invalid_path(&path) {
+      return Err(Error::Io(io::ErrorKind::PermissionDenied.into()));
+    }
+    let path = self.cwd.join(path);
+    self
+      .send(Answer::new(ResultCode::DataConnectionAlreadyOpen, "Starting to send file..."))
+      .await?;
+    let data = match self.receive_data().await {
+      Ok(data) => data,
+      Err(e) => return Ok(transfer_aborted(e)),
+    };
+    info!("Received file: {:?}, {} bytes", path, data.len());
+    self.close_data_connection();
+    match self.put_file(path, Arc::new(data)).await {
+      Ok(_) => Ok(transfer_done()),
+      Err(e) => {
+        error!("Failed STOR command: {:?}", e);
+        Ok(Answer::new(ResultCode::LocalErrorInProcessing, "Failed to store the file"))
+      }
+    }
   }
 
   /// Put file directly or delegate to a filter
@@ -673,8 +640,8 @@ where
   }
 
   /// Receive data from a data connection and take out the reader
-  async fn receive_data(&mut self) -> Result<Vec<u8>> {
-    let mut reader = self.data_reader.take().ok_or_else(|| Error::from("No data reader"))?;
+  async fn receive_data(&mut self) -> io::Result<Vec<u8>> {
+    let mut reader = self.data_reader.take().ok_or(io::ErrorKind::NotConnected)?;
     let mut buf = Vec::new();
     tokio::io::copy(&mut reader, &mut buf).await?;
     Ok(buf)
@@ -686,14 +653,13 @@ where
     Ok(())
   }
 
-  /// Send bytes to the client
-  async fn send_data(&mut self, data: Vec<u8>) -> Result<()> {
-    if let Some(writer) = &mut self.data_writer {
-      writer.write_all(&data).await?;
-      Ok(())
-    } else {
-      Err(Error::from("Trying to send data but no data connection is open."))
-    }
+  /// Send bytes to the client, returns the final reply of the transfer
+  async fn send_data(&mut self, data: Vec<u8>) -> Answer {
+    let res = match &mut self.data_writer {
+      Some(writer) => writer.write_all(&data).await,
+      None => Err(io::ErrorKind::NotConnected.into()),
+    };
+    res.map_or_else(transfer_aborted, |_| transfer_done())
   }
 }
 
@@ -717,6 +683,22 @@ where
 
   debug!("Client {} closed connection", remote_addr);
   Ok(())
+}
+
+/// Final reply of a completed transfer
+fn transfer_done() -> Answer {
+  Answer::new(ResultCode::ClosingDataConnection, "Transfer done")
+}
+
+/// Final reply of a transfer that failed on the data connection
+fn transfer_aborted(e: io::Error) -> Answer {
+  error!("Data connection failed: {}", e);
+  Answer::new(ResultCode::ConnectionClosed, "Data connection failed, transfer aborted")
+}
+
+/// Final reply of a transfer command without a data connection
+fn no_data_connection() -> Answer {
+  Answer::new(ResultCode::CantOpenDataConnection, "No opened data connection")
 }
 
 /// Check if the path contains ".."
