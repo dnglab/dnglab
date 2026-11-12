@@ -88,7 +88,7 @@ impl Entry {
     // If we don't know the type assume byte data (undefined)
     let compat_typ = if typ == 0 || typ > TYPE_IFD { 7 } else { typ };
 
-    let bytesize: usize = (count as usize) << DATASHIFTS[compat_typ as usize];
+    let bytesize: u64 = (count as u64) << DATASHIFTS[compat_typ as usize];
     let offset: u32 = if bytesize <= 4 {
       reader.position()? - base
     } else {
@@ -104,6 +104,16 @@ impl Entry {
       // We hit an invalid offset, ignoring this tag
       // This happens for Olympus E-P2 images in ImageProc IFD for example.
       return Err(TiffError::Overflow(format!("Offset {} is invalid for tag 0x{:X}", offset, tag)));
+    }
+
+    // The count comes from the file: check that the data is inside the stream
+    // before allocating memory for it.
+    let stream_len = reader.stream_len()?;
+    if base as u64 + offset as u64 + bytesize > stream_len {
+      return Err(TiffError::Overflow(format!(
+        "Data of tag 0x{:X} ({} bytes at offset {}) exceeds the stream length {}",
+        tag, bytesize, offset, stream_len
+      )));
     }
 
     reader.goto(base + offset)?;
@@ -261,5 +271,15 @@ mod tests {
     let tag = reader.read_u16().unwrap();
     let entry = Entry::parse(&mut reader, 0, 0, tag).unwrap();
     assert_eq!(entry.value, Value::Long(vec![0x10, 0x20]));
+  }
+
+  #[test]
+  fn huge_count_is_rejected_before_allocation() {
+    // tag 0x100, type DOUBLE (12), count 0xFFFFFFFF, offset 12
+    let data = vec![0x00, 0x01, 12, 0, 0xFF, 0xFF, 0xFF, 0xFF, 12, 0, 0, 0, 0, 0, 0, 0];
+    let mut cursor = Cursor::new(data);
+    let mut reader = EndianReader::new(&mut cursor, Endian::Little);
+    let tag = reader.read_u16().unwrap();
+    assert!(matches!(Entry::parse(&mut reader, 0, 0, tag), Err(TiffError::Overflow(_))));
   }
 }
