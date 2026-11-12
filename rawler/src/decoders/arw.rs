@@ -154,13 +154,13 @@ impl<'a> Decoder for ArwDecoder<'a> {
       32766 => {
         // The ARW6 raw IFD stores the black and white levels halved (and its
         // SonyCurve tag is zeroed; the codec has a built-in curve instead).
-        black = Some(
-          self
-            .get_blacklevel(raw)
-            .ok_or_else(|| RawlerError::decoder_failed("ARW6: no black level in the raw IFD"))?
-            .map(|v| v * 2),
-        );
-        white = Some(fetch_tiff_tag!(raw, TiffCommonTag::WhiteLevel).force_u16(0) * 2);
+        let halved_black = self
+          .get_blacklevel(raw)
+          .ok_or_else(|| RawlerError::decoder_failed("ARW6: no black level in the raw IFD"))?;
+        let halved_white = fetch_tiff_tag!(raw, TiffCommonTag::WhiteLevel).force_u16(0);
+        let (arw6_black, arw6_white) = arw6_levels(halved_black, halved_white)?;
+        black = Some(arw6_black);
+        white = Some(arw6_white);
         let strip = file.subview(offset as u64, count as u64)?;
         ArwDecoder::decode_arw6(strip, width, height, dummy)?
       }
@@ -204,7 +204,7 @@ impl<'a> Decoder for ArwDecoder<'a> {
         3 if arq => Ok(BlackLevel::new(&arq_levels(&black, &camera.cfa), 1, 1, cpp)),
         1 => Ok(BlackLevel::new(&black, camera.cfa.width, camera.cfa.height, cpp)),
         // For YUV data, the blacklevel needs to be multiplicated by 2
-        3 => Ok(BlackLevel::new(&[black[0] * 2, black[0] * 2, black[0] * 2], 1, 1, cpp)),
+        3 => Ok(BlackLevel::new(&[u32::from(black[0]) * 2; 3], 1, 1, cpp)),
         _ => Err(decoder_error!("ARW: Unsupported cpp: {}", cpp)),
       })
       .transpose()?;
@@ -788,6 +788,12 @@ fn copy_rggb_tile(strip: &mut [u16], width: usize, x: usize, tile: &[u16], tile_
   }
 }
 
+/// Black and white levels of ARW6 data from the halved levels of its raw IFD
+fn arw6_levels(black: [u16; 4], white: u16) -> Result<([u16; 4], u16)> {
+  let double = |level: u16| level.checked_mul(2).ok_or_else(|| decoder_error!("ARW6: level {} exceeds 16 bits when doubled", level));
+  Ok(([double(black[0])?, double(black[1])?, double(black[2])?, double(black[3])?], double(white)?))
+}
+
 /// Bytes of `width` × `height` pixels of `bits` bits, an error for an image
 /// without pixels or a size that overflows
 fn image_bytes(width: usize, height: usize, bits: usize) -> Result<usize> {
@@ -1024,6 +1030,13 @@ mod arq_tests {
     let mut strip = [0; 12];
     copy_rggb_tile(&mut strip, 4, 3, &tile, 8);
     assert_eq!(strip, [0, 0, 0, 1, 0, 0, 0, 3, 0, 0, 0, 0]);
+  }
+
+  #[test]
+  fn arw6_levels_are_doubled() {
+    assert_eq!(arw6_levels([256, 257, 258, 259], 8191).ok(), Some(([512, 514, 516, 518], 16382)));
+    assert!(arw6_levels([32768, 0, 0, 0], 8191).is_err());
+    assert!(arw6_levels([0; 4], 40000).is_err());
   }
 
   #[test]
