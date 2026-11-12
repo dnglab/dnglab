@@ -18,7 +18,6 @@ use crate::RawlerError;
 use crate::alloc_image_plain;
 use crate::analyze::FormatDump;
 use crate::bits::LookupTable;
-use crate::bits::clampbits;
 use crate::decompressors::ljpeg::*;
 use crate::exif::Exif;
 use crate::formats::tiff::Entry;
@@ -833,47 +832,44 @@ impl<'a> Cr2Decoder<'a> {
     debug!("SRAW hue correction: {:?}", hue);
 
     // Now calculate RGB for each YUV tuple.
-    image.par_chunks_exact_mut(3).for_each(|pix| {
-      let y = pix[0] as i32;
-      let cb = pix[1] as i32 - 16383;
-      let cr = pix[2] as i32 - 16383;
-      match version {
-        0 => {
-          let y = y - 512; // correction for 40D and others
-          let r = c1 * (y + cr);
-          let g = c2 * (y + ((-778 * cb - (cr << 11)) >> 12));
-          let b = c3 * (y + cb);
-          pix[0] = clampbits(r >> 8, 16);
-          pix[1] = clampbits(g >> 8, 16);
-          pix[2] = clampbits(b >> 8, 16);
-        }
-        1 => {
-          // found in EOS 5D Mark II
-          let cb = (cb << 2) + hue;
-          let cr = (cr << 2) + hue;
-          let r = c1 * (y + ((50 * cb + 22929 * cr) >> 14));
-          let g = c2 * (y + ((-5640 * cb - 11751 * cr) >> 14));
-          let b = c3 * (y + ((29040 * cb - 101 * cr) >> 14));
-          pix[0] = clampbits(r >> 8, 16);
-          pix[1] = clampbits(g >> 8, 16);
-          pix[2] = clampbits(b >> 8, 16);
-        }
-        2 => {
-          // found in EOS 5D Mark III and others
-          let r = c1 * (y + cr);
-          let g = c2 * (y + ((-778 * cb - (cr << 11)) >> 12));
-          let b = c3 * (y + cb);
-          pix[0] = clampbits(r >> 8, 16);
-          pix[1] = clampbits(g >> 8, 16);
-          pix[2] = clampbits(b >> 8, 16);
-        }
-        _ => {
-          unreachable!()
-        }
-      }
-    });
+    let coeffs = [c1 as i64, c2 as i64, c3 as i64];
+    image.par_chunks_exact_mut(3).for_each(|pix| ycbcr_to_rgb(version, coeffs, hue as i64, pix));
     Ok(())
   }
+}
+
+/// Convert the YCbCr `pix` to RGB with the sRAW coefficients `coeffs` and
+/// the conversion of `version`
+///
+/// The products are computed in i64: they overflow i32 for the
+/// coefficients of crafted files, which come from the COLORDATA tag.
+fn ycbcr_to_rgb(version: u8, coeffs: [i64; 3], hue: i64, pix: &mut [u16]) {
+  let [c1, c2, c3] = coeffs;
+  let y = pix[0] as i64;
+  let cb = pix[1] as i64 - 16383;
+  let cr = pix[2] as i64 - 16383;
+  let (r, g, b) = match version {
+    0 => {
+      let y = y - 512; // correction for 40D and others
+      (c1 * (y + cr), c2 * (y + ((-778 * cb - (cr << 11)) >> 12)), c3 * (y + cb))
+    }
+    1 => {
+      // found in EOS 5D Mark II
+      let cb = (cb << 2) + hue;
+      let cr = (cr << 2) + hue;
+      (
+        c1 * (y + ((50 * cb + 22929 * cr) >> 14)),
+        c2 * (y + ((-5640 * cb - 11751 * cr) >> 14)),
+        c3 * (y + ((29040 * cb - 101 * cr) >> 14)),
+      )
+    }
+    // found in EOS 5D Mark III and others
+    _ => (c1 * (y + cr), c2 * (y + ((-778 * cb - (cr << 11)) >> 12)), c3 * (y + cb)),
+  };
+  let clamp = |value: i64| (value >> 8).clamp(0, 0xffff) as u16;
+  pix[0] = clamp(r);
+  pix[1] = clamp(g);
+  pix[2] = clamp(b);
 }
 
 fn normalize_wb(raw_wb: [f32; 4]) -> [f32; 4] {
@@ -1116,6 +1112,21 @@ pub enum Cr2MakernoteTag {
 #[cfg(test)]
 mod tests {
   use super::*;
+
+  #[test]
+  fn ycbcr_to_rgb_does_not_overflow() {
+    for version in 0..3 {
+      // Coefficients of 1 << 8 keep the values
+      let mut pix = [1000, 16383, 16383];
+      ycbcr_to_rgb(version, [256; 3], 0, &mut pix);
+      let y = if version == 0 { 488 } else { 1000 };
+      assert_eq!(pix, [y; 3]);
+      // The largest values with coefficients that overflow i32 are clamped
+      let mut pix = [u16::MAX; 3];
+      ycbcr_to_rgb(version, [i32::MAX as i64; 3], 7, &mut pix);
+      assert_eq!([pix[0], pix[2]], [u16::MAX; 2]);
+    }
+  }
 
   #[test]
   fn dimensions() {
