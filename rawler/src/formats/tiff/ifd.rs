@@ -451,20 +451,15 @@ impl IFD {
   }
 
   pub fn get_sub_ifd<T: TiffTag>(&self, tag: T) -> Option<&IFD> {
-    if let Some(ifds) = self.get_sub_ifd_all(tag) {
-      if ifds.len() == 1 {
-        ifds.get(0)
-      } else {
-        log::warn!(
-          "get_sub_ifd() for tag {:?} found more IFDs than expected: {}. Fallback to first IFD!",
-          tag,
-          ifds.len()
-        );
-        ifds.get(0)
-      }
-    } else {
-      None
+    let ifds = self.get_sub_ifd_all(tag)?;
+    if ifds.len() > 1 {
+      log::warn!(
+        "get_sub_ifd() for tag {:?} found more IFDs than expected: {}. Fallback to first IFD!",
+        tag,
+        ifds.len()
+      );
     }
+    ifds.first()
   }
 
   pub fn get_new_sub_file_type(&self) -> Option<u16> {
