@@ -147,13 +147,7 @@ pub trait TiffReader {
     };
     let mut reader = EndianReader::new(file, endian);
     let magic = reader.read_u16()?;
-    if !matches!(
-      magic,
-      42 // TIFF Magic
-      | 85 // Panasonic
-      | 21330 // Olympus
-      | 20306 // Olympus / OM
-    ) {
+    if !is_tiff_magic(magic) {
       return Err(TiffError::General(format!("Invalid magic marker for TIFF: {}", magic)));
     }
     let mut next_ifd = reader.read_u32()?;
@@ -207,10 +201,13 @@ impl TiffReader for GenericTiffReader {
 }
 
 impl GenericTiffReader {
-  /// Check if buffer looks like a TIFF file
+  /// Check if buffer starts with a TIFF header
   pub fn is_tiff<T: AsRef<[u8]>>(buffer: T) -> bool {
-    let buffer = buffer.as_ref();
-    buffer[0] == 0x49 || buffer[0] == 0x4d // TODO
+    match buffer.as_ref().get(0..4) {
+      Some(&[0x49, 0x49, a, b]) => is_tiff_magic(u16::from_le_bytes([a, b])),
+      Some(&[0x4d, 0x4d, a, b]) => is_tiff_magic(u16::from_be_bytes([a, b])),
+      _ => false,
+    }
   }
 
   pub fn little_endian(&self) -> bool {
@@ -241,6 +238,17 @@ impl GenericTiffReader {
     ins.parse_file(file, max_chained, sub_tags)?;
     Ok(ins)
   }
+}
+
+/// Magic numbers of TIFF headers
+fn is_tiff_magic(magic: u16) -> bool {
+  matches!(
+    magic,
+    42 // TIFF Magic
+    | 85 // Panasonic
+    | 21330 // Olympus
+    | 20306 // Olympus / OM
+  )
 }
 
 pub trait ReadByteOrder {
@@ -449,6 +457,17 @@ mod tests {
     cursor.set_position(5 << 30);
     let mut reader = EndianReader::new(&mut cursor, Endian::Little);
     assert!(matches!(reader.position(), Err(TiffError::Overflow(_))));
+  }
+
+  #[test]
+  fn tiff_headers() {
+    assert!(GenericTiffReader::is_tiff(b"II*\0"));
+    assert!(GenericTiffReader::is_tiff(b"MM\0*"));
+    assert!(GenericTiffReader::is_tiff(b"IIRO"));
+    assert!(!GenericTiffReader::is_tiff(b""));
+    assert!(!GenericTiffReader::is_tiff(b"II"));
+    assert!(!GenericTiffReader::is_tiff(b"MM*\0"));
+    assert!(!GenericTiffReader::is_tiff(b"Image"));
   }
 
   #[test]
