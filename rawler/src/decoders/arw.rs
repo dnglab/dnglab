@@ -533,16 +533,23 @@ impl<'a> ArwDecoder<'a> {
     let twidth = fetch_tiff_tag!(raw, TiffCommonTag::TileWidth).force_usize(0);
     let tlength = fetch_tiff_tag!(raw, TiffCommonTag::TileLength).force_usize(0);
     let cpp = fetch_tiff_tag!(raw, TiffCommonTag::SamplesPerPixel).force_usize(0);
-    let coltiles = (width - 1) / twidth + 1;
-    let rowtiles = (height - 1) / tlength + 1;
+    if width == 0 || height == 0 {
+      return Err(decoder_error!("ARW LJPEG: invalid image size {}x{}", width, height));
+    }
+    // The tiles are decoded into buffers of 512x512 pixels
+    if twidth != 512 || tlength != 512 {
+      return Err(RawlerError::unsupported(camera, format!("ARW LJPEG: tiles of {}x{} pixels", twidth, tlength)));
+    }
+    let coltiles = width.div_ceil(twidth);
+    let rowtiles = height.div_ceil(tlength);
 
     log::debug!("Sony ARW LJPEG raw: width: {}, height: {}, cpp: {}", width, height, cpp);
     log::debug!("LJPEG tile parameters: width: {}, length: {}, cpp: {}", twidth, tlength, cpp);
 
-    if coltiles * rowtiles != offsets.count() as usize {
+    if coltiles.checked_mul(rowtiles) != Some(offsets.count() as usize) {
       return Err(RawlerError::unsupported(
         camera,
-        format!("ARW LJPEG: trying to decode {} tiles from {} offsets", coltiles * rowtiles, offsets.count()),
+        format!("ARW LJPEG: trying to decode {}x{} tiles from {} offsets", coltiles, rowtiles, offsets.count()),
       ));
     }
     let buffer = file.buf();
@@ -570,16 +577,7 @@ impl<'a> ArwDecoder<'a> {
 
             decompressor.decode_sony(&mut data, 0, w * cpp, w * cpp, h, dummy)?;
             interpolate_yuv(decompressor.super_h(), decompressor.super_v(), w * cpp, h, &mut data);
-
-            let mut strip = &mut *lines;
-
-            for line in data.chunks_exact(w * cpp) {
-              let base = col * twidth * cpp;
-              strip[base..base + w * cpp].copy_from_slice(line);
-
-              // Now move output strip by one row.
-              strip = &mut strip[width * cpp..];
-            }
+            copy_tile(lines, width * cpp, col * twidth * cpp, &data, w * cpp);
           }
           Ok(())
         }),
@@ -608,20 +606,7 @@ impl<'a> ArwDecoder<'a> {
             let mut data = vec![0; h * w * cpp];
 
             decompressor.decode(&mut data, 0, w * cpp, w * cpp, h, dummy)?;
-
-            let mut strip = &mut *lines;
-            for line in data.chunks_exact(1024) {
-              for (i, chunk) in line.chunks_exact(4).enumerate() {
-                // Unpack chunks of RGGB pixel data into two output lines
-                // so the first line is RGRGRG and the second one is GBGBGB.
-                strip[col * twidth + i * 2 + 0] = chunk[0];
-                strip[col * twidth + i * 2 + 1] = chunk[1];
-                strip[width + col * twidth + i * 2 + 0] = chunk[2];
-                strip[width + col * twidth + i * 2 + 1] = chunk[3];
-              }
-              // Now move output strip by two rows.
-              strip = &mut strip[width * 2..];
-            }
+            copy_rggb_tile(lines, width, col * twidth, &data, w * cpp);
           }
           Ok(())
         }),
@@ -769,6 +754,36 @@ impl<'a> ArwDecoder<'a> {
       Ok(Some(Rect::new(Point::default(), Dim2::new(entry.force_usize(0), entry.force_usize(1)))))
     } else {
       Ok(None)
+    }
+  }
+}
+
+/// Copy the lines of a decoded tile of `tile_width` samples per line into
+/// the lines of `strip`, which have `strip_width` samples, starting at sample
+/// `x`. The parts of the tile outside of the strip are dropped.
+fn copy_tile(strip: &mut [u16], strip_width: usize, x: usize, tile: &[u16], tile_width: usize) {
+  for (dst, src) in strip.chunks_exact_mut(strip_width).zip(tile.chunks_exact(tile_width)) {
+    if let Some(dst) = dst.get_mut(x..) {
+      let len = dst.len().min(src.len());
+      dst[..len].copy_from_slice(&src[..len]);
+    }
+  }
+}
+
+/// Copy a decoded tile of RGGB blocks, in lines of `tile_width` samples,
+/// into the lines of `strip`, which have `width` pixels, starting at pixel
+/// `x`. Each line of the tile becomes two lines of the strip, the first one
+/// is RGRG… and the second one GBGB…. The parts of the tile outside of the
+/// strip are dropped.
+fn copy_rggb_tile(strip: &mut [u16], width: usize, x: usize, tile: &[u16], tile_width: usize) {
+  for (lines, src) in strip.chunks_exact_mut(2 * width).zip(tile.chunks_exact(tile_width)) {
+    let (upper, lower) = lines.split_at_mut(width);
+    let (Some(upper), Some(lower)) = (upper.get_mut(x..), lower.get_mut(x..)) else {
+      continue;
+    };
+    for ((upper, lower), block) in upper.chunks_mut(2).zip(lower.chunks_mut(2)).zip(src.as_chunks::<4>().0) {
+      upper.iter_mut().zip(&block[..2]).for_each(|(dst, src)| *dst = *src);
+      lower.iter_mut().zip(&block[2..]).for_each(|(dst, src)| *dst = *src);
     }
   }
 }
@@ -971,6 +986,44 @@ mod arq_tests {
   fn arw2_rejects_short_data() {
     let curve = ArwDecoder::calculate_curve([0, 1024, 2048, 3072, 3584, 4095]);
     assert!(ArwDecoder::decode_arw2(&[0; 10], 32, 4, &curve, false).is_err());
+  }
+
+  #[test]
+  fn tiles_are_clipped_to_the_strip() {
+    // Tile of 3 lines with 4 samples, at sample 3 of a strip of 2 lines
+    // with 5 samples
+    let tile: Vec<u16> = (1..=12).collect();
+    let mut strip = [0; 10];
+    copy_tile(&mut strip, 5, 3, &tile, 4);
+    assert_eq!(strip, [0, 0, 0, 1, 2, 0, 0, 0, 5, 6]);
+    // A full tile
+    let mut strip = [0; 8];
+    copy_tile(&mut strip, 4, 0, &tile, 4);
+    assert_eq!(strip, [1, 2, 3, 4, 5, 6, 7, 8]);
+    // A tile beyond the strip
+    let mut strip = [0; 8];
+    copy_tile(&mut strip, 4, 6, &tile, 4);
+    assert_eq!(strip, [0; 8]);
+  }
+
+  #[test]
+  fn rggb_tiles_are_clipped_to_the_strip() {
+    // Tile of 2 lines with 2 RGGB blocks each
+    let tile: Vec<u16> = (1..=16).collect();
+    // A full tile in a strip of 4 lines with 6 pixels, at pixel 2
+    let mut strip = [0; 24];
+    copy_rggb_tile(&mut strip, 6, 2, &tile, 8);
+    #[rustfmt::skip]
+    assert_eq!(strip, [
+      0, 0, 1, 2, 5, 6,
+      0, 0, 3, 4, 7, 8,
+      0, 0, 9, 10, 13, 14,
+      0, 0, 11, 12, 15, 16,
+    ]);
+    // At pixel 3 of a strip of 3 lines with 4 pixels: one column, one line pair
+    let mut strip = [0; 12];
+    copy_rggb_tile(&mut strip, 4, 3, &tile, 8);
+    assert_eq!(strip, [0, 0, 0, 1, 0, 0, 0, 3, 0, 0, 0, 0]);
   }
 
   #[test]
