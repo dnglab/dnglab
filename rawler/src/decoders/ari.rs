@@ -134,7 +134,13 @@ mod tests {
       let source = RawSource::new_from_slice(&ari_header(width, height));
       let decoder = crate::get_decoder(&source)?;
       let result = decoder.raw_image(&source, &RawDecodeParams::default(), false);
-      assert!(matches!(result, Err(RawlerError::DecoderFailed { .. })), "{}x{}: {:?}", width, height, result.err());
+      assert!(
+        matches!(result, Err(RawlerError::DecoderFailed { .. })),
+        "{}x{}: {:?}",
+        width,
+        height,
+        result.err()
+      );
     }
     Ok(())
   }

@@ -291,7 +291,11 @@ impl<'a> ArwDecoder<'a> {
   /// Get lens description by analyzing TIFF tags and makernotes
   fn get_lens_description(&self) -> Result<Option<&'static LensDescription>> {
     // Try tags 0x9416, 0x9050 and 0x940C, skipping tags that are too short
-    for (tag, offset) in [(ArwMakernoteTag::Tag_9416, 0x004b), (ArwMakernoteTag::Tag_9050, 263), (ArwMakernoteTag::Tag_940C, 9)] {
+    for (tag, offset) in [
+      (ArwMakernoteTag::Tag_9416, 0x004b),
+      (ArwMakernoteTag::Tag_9050, 263),
+      (ArwMakernoteTag::Tag_940C, 9),
+    ] {
       if let Some(Entry {
         value: Value::Undefined(params),
         ..
@@ -425,7 +429,9 @@ impl<'a> ArwDecoder<'a> {
         height,
         dummy,
         &(|out: &mut [u16], row| {
-          let src = buf.get(row * width..).ok_or_else(|| format!("ARW2: row {} is behind the end of the data", row))?;
+          let src = buf
+            .get(row * width..)
+            .ok_or_else(|| format!("ARW2: row {} is behind the end of the data", row))?;
           let mut pump = BitPumpLSB::new(src);
 
           let mut random = pump.peek_bits(16)?;
@@ -777,7 +783,11 @@ fn a100_wb(buf: &[u8]) -> Result<[f32; 4]> {
 
 /// Black and white levels of ARW6 data from the halved levels of its raw IFD
 fn arw6_levels(black: [u16; 4], white: u16) -> Result<([u16; 4], u16)> {
-  let double = |level: u16| level.checked_mul(2).ok_or_else(|| decoder_error!("ARW6: level {} exceeds 16 bits when doubled", level));
+  let double = |level: u16| {
+    level
+      .checked_mul(2)
+      .ok_or_else(|| decoder_error!("ARW6: level {} exceeds 16 bits when doubled", level))
+  };
   Ok(([double(black[0])?, double(black[1])?, double(black[2])?, double(black[3])?], double(white)?))
 }
 

@@ -302,10 +302,15 @@ impl Camera {
 /// # Panics
 /// Panics if the value isn't an integer in the range of `T`
 fn toml_int<T: TryFrom<i64>>(model: &str, name: &str, val: &Value) -> T {
-  val
-    .as_integer()
-    .and_then(|int| T::try_from(int).ok())
-    .unwrap_or_else(|| panic!("{}: {} must be an integer in the range of {}, not {}", model, name, std::any::type_name::<T>(), val))
+  val.as_integer().and_then(|int| T::try_from(int).ok()).unwrap_or_else(|| {
+    panic!(
+      "{}: {} must be an integer in the range of {}, not {}",
+      model,
+      name,
+      std::any::type_name::<T>(),
+      val
+    )
+  })
 }
 
 /// Array of `N` values of the key `name` in the definition of camera `model`

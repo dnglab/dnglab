@@ -327,7 +327,9 @@ impl RawImage {
     assert_eq!(dummy, !image.is_initialized());
     let pixel_width = image.width / cpp;
 
-    let active_area = cam.active_area.and_then(|area| camera_area(&cam, "active area", Dim2::new(pixel_width, image.height), &area));
+    let active_area = cam
+      .active_area
+      .and_then(|area| camera_area(&cam, "active area", Dim2::new(pixel_width, image.height), &area));
 
     let blackareas = camera_masked_areas(&cam, Dim2::new(pixel_width, image.height), active_area);
 
@@ -350,7 +352,9 @@ impl RawImage {
       .or(whitelevel)
       .unwrap_or_else(|| panic!("Need whitelevel in config: {}", cam.clean_model));
 
-    let crop_area = cam.crop_area.and_then(|area| camera_area(&cam, "crop area", Dim2::new(pixel_width, image.height), &area));
+    let crop_area = cam
+      .crop_area
+      .and_then(|area| camera_area(&cam, "crop area", Dim2::new(pixel_width, image.height), &area));
 
     RawImage {
       camera: cam.clone(),
@@ -407,7 +411,9 @@ impl RawImage {
     //assert_eq!(dummy, !image.is_initialized());
     let pixel_width = sample_width / cpp;
 
-    let active_area = cam.active_area.and_then(|area| camera_area(&cam, "active area", Dim2::new(pixel_width, height), &area));
+    let active_area = cam
+      .active_area
+      .and_then(|area| camera_area(&cam, "active area", Dim2::new(pixel_width, height), &area));
 
     let blackareas = camera_masked_areas(&cam, Dim2::new(pixel_width, height), active_area);
 
@@ -436,7 +442,9 @@ impl RawImage {
       .or(whitelevel)
       .unwrap_or_else(|| panic!("Need whitelevel in config: {}", cam.clean_model));
 
-    let crop_area = cam.crop_area.and_then(|area| camera_area(&cam, "crop area", Dim2::new(pixel_width, height), &area));
+    let crop_area = cam
+      .crop_area
+      .and_then(|area| camera_area(&cam, "crop area", Dim2::new(pixel_width, height), &area));
 
     RawImage {
       camera: cam.clone(),
