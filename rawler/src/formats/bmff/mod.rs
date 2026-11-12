@@ -83,11 +83,18 @@ impl BoxHeader {
 
     let current = reader.stream_position()?;
     let header_len = current - start;
+    let end = reader.seek(SeekFrom::End(0))?;
+    reader.seek(SeekFrom::Start(current))?;
     if size == 0 {
       // ISO/IEC 14496-12: the box extends to the end of the file.
-      let end = reader.seek(SeekFrom::End(0))?;
-      reader.seek(SeekFrom::Start(current))?;
       size = end - start;
+    } else if size > end.saturating_sub(start) {
+      // The size comes from the file, a box beyond its end would make the
+      // readers of its data allocate that size
+      return Err(BmffError::Parse(format!(
+        "Box {:?} at offset {} with size {} extends beyond the end of the file at {}",
+        typ, start, size, end
+      )));
     } else if size < header_len {
       // The box would end before its own header does, so a container
       // loop reading it would never advance.
@@ -362,6 +369,18 @@ mod tests {
     assert_eq!(header.size, 12);
     assert_eq!(header.header_len, 8);
     assert_eq!(header.end_offset(), 12);
+  }
+
+  #[test]
+  fn size_beyond_end_of_file_is_rejected() {
+    let data = boxed(b"CMT1", 13, &[1, 2, 3, 4]);
+    assert!(matches!(BoxHeader::parse(&mut Cursor::new(&data)), Err(BmffError::Parse(_))));
+    // 64-bit size
+    let mut data = boxed(b"CMT1", 1, &u64::MAX.to_be_bytes());
+    data.extend_from_slice(&[1, 2, 3, 4]);
+    assert!(matches!(BoxHeader::parse(&mut Cursor::new(&data)), Err(BmffError::Parse(_))));
+    let data = boxed(b"CMT1", 12, &[1, 2, 3, 4]);
+    assert_eq!(BoxHeader::parse(&mut Cursor::new(&data)).expect("header").end_offset(), 12);
   }
 
   #[test]
