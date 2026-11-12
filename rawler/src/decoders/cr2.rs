@@ -716,13 +716,11 @@ impl<'a> Cr2Decoder<'a> {
       match &sensorinfo.value {
         Value::Short(v) => {
           debug!("Sensor info: {:?}", v);
-          let _w = v[1] as usize;
-          let _h = v[2] as usize;
-          let left = v[5] as usize;
-          let top = v[6] as usize;
-          let right = v[7] as usize;
-          let bottom = v[8] as usize;
-          Ok(Some(Rect::new_with_points(Point::new(left, top), Point::new(right + 1, bottom + 1))))
+          let crop = sensor_info_crop(v);
+          if crop.is_none() {
+            log::warn!("CR2: SensorInfo has no valid crop: {:?}", v);
+          }
+          Ok(crop)
         }
         _ => Err(RawlerError::decoder_failed("Makernote contains invalid type for SensorInfo tag".to_string())),
       }
@@ -910,6 +908,19 @@ fn normalize_wb(raw_wb: [f32; 4]) -> [f32; 4] {
   [norm[0], (norm[1] + norm[2]) / 2.0, norm[3], f32::NAN]
 }
 
+/// Crop of the SensorInfo makernote `values`, at index 5 to 8. Right and
+/// bottom are the last column and row. None if they are missing or before
+/// left and top.
+fn sensor_info_crop(values: &[u16]) -> Option<Rect> {
+  match values.get(5..9) {
+    Some(&[left, top, right, bottom]) if left <= right && top <= bottom => Some(Rect::new_with_points(
+      Point::new(left as usize, top as usize),
+      Point::new(right as usize + 1, bottom as usize + 1),
+    )),
+    _ => None,
+  }
+}
+
 /// First value of custom function `function` in the CustomFunc2 makernote
 ///
 /// The makernote starts with its size and the number of groups. Each group has
@@ -1024,3 +1035,21 @@ pub enum Cr2MakernoteTag {
 }
 
 //const CR2_MODEL_40D: u32 = 0x80000190;
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[test]
+  fn sensor_info_crops() {
+    let values = [0, 5568, 3708, 0, 0, 84, 50, 5567, 3707];
+    assert_eq!(
+      sensor_info_crop(&values),
+      Some(Rect::new_with_points(Point::new(84, 50), Point::new(5568, 3708)))
+    );
+    // Too short, right before left, bottom before top
+    assert_eq!(sensor_info_crop(&values[..8]), None);
+    assert_eq!(sensor_info_crop(&[0, 0, 0, 0, 0, 84, 50, 80, 3707]), None);
+    assert_eq!(sensor_info_crop(&[0, 0, 0, 0, 0, 84, 50, 5567, 40]), None);
+  }
+}
