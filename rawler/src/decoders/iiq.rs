@@ -827,6 +827,7 @@ impl<'a> IiqDecoder<'a> {
         let mut quadrant_combined = None;
         let mut defects = None;
         let mut flats = Vec::new();
+        let unexpected_length = |tag, len| warn!("IIQ: sensor correction 0x{:x} has an unexpected length of {} bytes, ignoring it", tag, len);
 
         //println!("Entry count:{}", entries_count);
         for _ in 0..entries_count {
@@ -839,9 +840,9 @@ impl<'a> IiqDecoder<'a> {
           match tag {
             0x0400 => {
               stream.seek(SeekFrom::Start(offset + tag_offset))?;
-              assert_eq!(len % 4, 0);
+              // Each defect has 8 bytes, like dcraw a remainder is ignored
               let mut defect_list = Vec::new();
-              for _ in 0..(len / 4) {
+              for _ in 0..(len / 8) {
                 let col = stream.read_u16::<LittleEndian>()? as usize;
                 let row = stream.read_u16::<LittleEndian>()? as usize;
                 let typ = stream.read_u16::<LittleEndian>()?;
@@ -872,27 +873,28 @@ impl<'a> IiqDecoder<'a> {
               flats.push(FlatField { typ: tag, head, data });
             }
 
+            0x0419 if (len as usize) < 8 * size_of::<f32>() => unexpected_length(tag, len),
             0x0419 => {
               stream.seek(SeekFrom::Start(offset + tag_offset))?;
-              assert!(len as usize >= 8 * size_of::<f32>());
               let mut data = [f32::NAN; 8];
               for entry in data.iter_mut() {
                 *entry = stream.read_f32::<LittleEndian>()?;
               }
               poly_curve_half = Some(data);
             }
+            0x041a if len as usize != 4 * size_of::<f32>() => unexpected_length(tag, len),
             0x041a => {
               stream.seek(SeekFrom::Start(offset + tag_offset))?;
-              assert_eq!(len as usize, 4 * size_of::<f32>());
               let mut data = [f32::NAN; 4];
               for entry in data.iter_mut() {
                 *entry = stream.read_f32::<LittleEndian>()?;
               }
               poly_curve_full = Some(data);
             }
+            // there is an extra value...
+            0x041f if len as usize != 2 * 2 * 16 * size_of::<u32>() + 4 => unexpected_length(tag, len),
             0x041f => {
               stream.seek(SeekFrom::Start(offset + tag_offset))?;
-              assert_eq!(len as usize, 2 * 2 * 16 * size_of::<u32>() + 4); // there is an extra value...
               let mut data = vec![0_u16; 2 * 2 * 16];
               for entry in data.iter_mut() {
                 *entry = stream.read_u32::<LittleEndian>()? as u16;
@@ -940,7 +942,20 @@ impl<'a> IiqDecoder<'a> {
           q_blacklevel,
         })
       }
-      _ => panic!("No sensor calibration data found."),
+      _ => {
+        warn!("IIQ: no sensor calibration data, only the black level is corrected");
+        Ok(SensorCalibration {
+          poly_curve_half: None,
+          poly_curve_full: None,
+          quadrant_linearization: None,
+          quadrant_multipliers: None,
+          quadrant_combined: None,
+          defects: None,
+          flats: Vec::new(),
+          blacklevel,
+          q_blacklevel,
+        })
+      }
     }
   }
 
