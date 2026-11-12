@@ -2050,7 +2050,7 @@ data:
     rawMetadata:
       exif:
         orientation: 9
-        copyright: "!!!INVALID UTF8!!!"
+        copyright: � Marcel Denkhaus
         artist: ""
         lens_spec: ~
         exposure_time: 1/250

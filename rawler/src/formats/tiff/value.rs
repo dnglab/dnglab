@@ -907,8 +907,8 @@ impl TiffAscii {
     // TODO: fixme multiple strings
     //while nul_range_end < raw.len() {
     nul_range_end = raw[nul_range_end..].iter().position(|&c| c == b'\0').unwrap_or(raw.len()); // default to length if no `\0` present
-    let s = ::std::str::from_utf8(&raw[0..nul_range_end]).unwrap_or("!!!INVALID UTF8!!!");
-    strings.push(String::from(s));
+    // Invalid UTF-8 sequences become U+FFFD, the valid parts of the string stay
+    strings.push(String::from_utf8_lossy(&raw[0..nul_range_end]).into_owned());
     //nul_range_end += 1;
     // }
 
@@ -1305,6 +1305,11 @@ mod tests {
     assert_eq!(bytes, b"Artist\0");
     assert_eq!(value.count(), bytes.len());
     Ok(())
+  }
+
+  #[test]
+  fn ascii_from_invalid_utf8() {
+    assert_eq!(TiffAscii::new_from_raw(b"Caf\xe9\0").first().map(String::as_str), Some("Caf\u{fffd}"));
   }
 
   #[test]
