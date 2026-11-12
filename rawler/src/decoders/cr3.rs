@@ -145,7 +145,7 @@ impl<'a> Cr3Decoder<'a> {
 
   /// Read CTMD records for given sample
   /// Each sample (for movie files) have their own CTMD records
-  fn read_ctmd(&self, rawfile: &RawSource, sample_idx: u32) -> Result<Option<Ctmd>> {
+  fn read_ctmd(&self, rawfile: &RawSource, sample_idx: usize) -> Result<Option<Ctmd>> {
     // Search for a trak which has a CTMD box (there should be only one)
     if let Some(ctmd_trak_index) = self
       .bmff
@@ -163,7 +163,7 @@ impl<'a> Cr3Decoder<'a> {
         .mdia
         .minf
         .stbl
-        .get_sample_offset(sample_idx as u32 + 1)
+        .get_sample_offset(sample_number(sample_idx).ok_or_else(|| decoder_error!("CTMD sample index {} out of bound", sample_idx))?)
         .ok_or_else(|| decoder_error!("CTMD sample index {} out of bound", sample_idx))?;
       debug!("CR3 CTMD mdat offset for sample_idx {}: {}, len: {}", sample_idx, offset, size);
       let buf = rawfile
@@ -551,7 +551,7 @@ impl<'a> Cr3Decoder<'a> {
       md.xpacket = Some(buf.to_vec());
     }
 
-    if let Some(ctmd) = self.read_ctmd(rawfile, params.image_index as u32)? {
+    if let Some(ctmd) = self.read_ctmd(rawfile, params.image_index)? {
       if let Some(rec5) = ctmd.exposure_info()? {
         debug!("CTMD Rec(5): {:?}", rec5);
         md.ctmd_exposure = Some(rec5);
@@ -758,6 +758,12 @@ impl Ctmd {
       Ok(None)
     }
   }
+}
+
+/// Sample number of the sample index `sample_idx`, the numbers start with 1.
+/// None if it exceeds the u32 of the sample tables.
+fn sample_number(sample_idx: usize) -> Option<u32> {
+  u32::try_from(sample_idx).ok()?.checked_add(1)
 }
 
 /// Rectangle of the IAD1 coordinates `left`, `top`, `right` and `bottom`,
@@ -990,6 +996,14 @@ mod tests {
     // Active area of an EOS R5 1.6 crop file, it ends 4 rows below the image
     let dim = Dim2::new(5248, 3510);
     assert_eq!(iad1_rect(128, 96, 5247, 3513, dim), Some(Rect::new(Point::new(128, 96), Dim2::new(5120, 3414))));
+  }
+
+  #[test]
+  fn sample_numbers() {
+    assert_eq!(sample_number(0), Some(1));
+    assert_eq!(sample_number(u32::MAX as usize - 1), Some(u32::MAX));
+    assert_eq!(sample_number(u32::MAX as usize), None);
+    assert_eq!(sample_number(usize::MAX), None);
   }
 
   #[test]
