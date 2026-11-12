@@ -678,9 +678,13 @@ where
 
   let mut client = Client::new(handle, writer, server_root, config, env, local_addr, remote_addr);
   while let Some(cmd) = reader.try_next().await? {
+    let quit = cmd == Ok(Command::Quit);
     match cmd {
       Ok(cmd) => client.handle_cmd(cmd).await?,
       Err(err) => client.reject(err).await?,
+    }
+    if quit {
+      break;
     }
   }
 
