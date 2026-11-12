@@ -250,6 +250,8 @@ activearea\t''
 none\t''"
 complete -c dnglab -n "__fish_dnglab_using_subcommand ftpserver" -l port -d 'FTP listen port' -r
 complete -c dnglab -n "__fish_dnglab_using_subcommand ftpserver" -l listen -d 'FTP listen address' -r
+complete -c dnglab -n "__fish_dnglab_using_subcommand ftpserver" -l user -d 'FTP user name' -r
+complete -c dnglab -n "__fish_dnglab_using_subcommand ftpserver" -l password -d 'FTP password' -r
 complete -c dnglab -n "__fish_dnglab_using_subcommand ftpserver" -l keep-original -d 'Keep original raw' -r -f -a "true\t''
 false\t''"
 complete -c dnglab -n "__fish_dnglab_using_subcommand ftpserver" -s d -l loglevel -d 'Log level' -r -f -a "error\t''

@@ -165,6 +165,8 @@ set edit:completion:arg-completer[dnglab] = {|@words|
             cand --crop 'DNG default crop'
             cand --port 'FTP listen port'
             cand --listen 'FTP listen address'
+            cand --user 'FTP user name'
+            cand --password 'FTP password'
             cand --keep-original 'Keep original raw'
             cand -d 'Log level'
             cand --loglevel 'Log level'

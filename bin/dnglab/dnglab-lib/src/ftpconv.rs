@@ -2,7 +2,7 @@
 // Copyright 2021 Daniel Vogelbacher <daniel@chaospixel.com>
 
 use clap::ArgMatches;
-use embedftp::config::{Config, FtpCallback};
+use embedftp::config::{Config, FtpCallback, User};
 use embedftp::server::serve;
 use rawler::decoders::supported_extensions;
 use rawler::rawsource::RawSource;
@@ -81,6 +81,24 @@ pub async fn ftpserver(options: &ArgMatches) -> crate::Result<()> {
 
   config.server_port = *options.get_one("ftp_port").unwrap_or(&2121);
   config.server_addr = options.get_one::<String>("ftp_listen").unwrap_or(&"127.0.0.1".to_string()).parse()?;
+
+  match (options.get_one::<String>("ftp_user"), options.get_one::<String>("ftp_password")) {
+    (Some(name), Some(password)) => {
+      config.anonymous = false;
+      config.users = vec![User {
+        name: name.clone(),
+        password: password.clone(),
+      }];
+    }
+    _ => {
+      if !config.server_addr.is_loopback() {
+        log::warn!(
+          "The FTP server on {} accepts anonymous logins: any client can read, write and delete files in the output directory. Use --user and --password to require a login.",
+          config.server_addr
+        );
+      }
+    }
+  }
 
   let out_path: &PathBuf = options
     .get_one("OUTPUT")

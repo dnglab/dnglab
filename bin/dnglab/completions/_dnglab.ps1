@@ -172,6 +172,8 @@ Register-ArgumentCompleter -Native -CommandName 'dnglab' -ScriptBlock {
             [CompletionResult]::new('--crop', '--crop', [CompletionResultType]::ParameterName, 'DNG default crop')
             [CompletionResult]::new('--port', '--port', [CompletionResultType]::ParameterName, 'FTP listen port')
             [CompletionResult]::new('--listen', '--listen', [CompletionResultType]::ParameterName, 'FTP listen address')
+            [CompletionResult]::new('--user', '--user', [CompletionResultType]::ParameterName, 'FTP user name')
+            [CompletionResult]::new('--password', '--password', [CompletionResultType]::ParameterName, 'FTP password')
             [CompletionResult]::new('--keep-original', '--keep-original', [CompletionResultType]::ParameterName, 'Keep original raw')
             [CompletionResult]::new('-d', '-d', [CompletionResultType]::ParameterName, 'Log level')
             [CompletionResult]::new('--loglevel', '--loglevel', [CompletionResultType]::ParameterName, 'Log level')
