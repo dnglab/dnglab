@@ -14,6 +14,7 @@ use super::Decoder;
 use super::FormatHint;
 use super::RawDecodeParams;
 use super::RawMetadata;
+use super::image_bytes;
 use super::ok_cfa_image;
 
 pub fn is_ari(file: &RawSource) -> bool {
@@ -47,9 +48,7 @@ impl<'a> Decoder for AriDecoder<'a> {
     let width = LEu32(buffer, ArriRawTag::Width as usize) as usize;
     let height = LEu32(buffer, ArriRawTag::Height as usize) as usize;
     // The image has 12 bits per pixel
-    if width == 0 || height == 0 || width.checked_mul(height).and_then(|pixels| pixels.checked_mul(12)).is_none() {
-      return Err(decoder_error!("ARI: invalid image size {}x{}", width, height));
-    }
+    image_bytes("ARI", width, height, 12)?;
     let src = file.subview_until_eof_padded(offset as u64)?;
 
     let image = if camera.find_hint("little-endian") {

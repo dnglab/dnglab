@@ -851,6 +851,17 @@ where
   })
 }
 
+/// Bytes of `width` × `height` pixels of `bits` bits, an error of `format`
+/// for an image without pixels or a size that overflows
+pub(crate) fn image_bytes(format: &str, width: usize, height: usize, bits: usize) -> Result<usize> {
+  width
+    .checked_mul(height)
+    .and_then(|pixels| pixels.checked_mul(bits))
+    .filter(|_| width > 0 && height > 0)
+    .map(|bits| bits.div_ceil(8))
+    .ok_or_else(|| decoder_error!("{}: invalid image size {}x{}", format, width, height))
+}
+
 /// The bytes of a tag value, an error if it is no byte data or shorter than
 /// `len` bytes
 pub(crate) fn tag_data(value: &Value, len: usize) -> Result<&[u8]> {
@@ -1316,6 +1327,17 @@ mod tests {
   use crate::pixarray::PixU16;
   use crate::rawimage::{BlackLevel, CFAConfig, RawPhotometricInterpretation, WhiteLevel};
   use crate::rawsource::RawSource;
+
+  #[test]
+  fn image_bytes_of_valid_and_invalid_sizes() {
+    assert_eq!(image_bytes("T", 3, 2, 12).ok(), Some(9));
+    assert_eq!(image_bytes("T", 3, 1, 12).ok(), Some(5));
+    assert!(image_bytes("T", 0, 2, 16).is_err());
+    assert!(image_bytes("T", 2, 0, 16).is_err());
+    assert!(image_bytes("T", u32::MAX as usize, u32::MAX as usize, 64).is_err());
+    let err = image_bytes("XYZ", 0, 2, 16).err().map(|err| err.to_string());
+    assert_eq!(err.as_deref(), Some("XYZ: invalid image size 0x2"));
+  }
 
   #[test]
   fn orientation_from_tiff_value() {

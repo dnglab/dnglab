@@ -52,6 +52,7 @@ use super::FormatHint;
 use super::Orientation;
 use super::RawDecodeParams;
 use super::RawMetadata;
+use super::image_bytes;
 use super::ok_cfa_image;
 use super::tag_data;
 
@@ -115,7 +116,7 @@ impl<'a> Decoder for ArwDecoder<'a> {
       fetch_tiff_tag!(raw, TiffCommonTag::BitsPerSample).force_usize(0)
     };
     // The decoders below store up to four 16-bit samples per pixel
-    image_bytes(width, height, 64)?;
+    image_bytes("ARW", width, height, 64)?;
 
     let params = self.get_params(file)?;
     debug!("Params: {:?}", params);
@@ -355,7 +356,7 @@ impl<'a> ArwDecoder<'a> {
     let width = fetch_tiff_tag!(raw, TiffCommonTag::ImageWidth).force_usize(0);
     let height = fetch_tiff_tag!(raw, TiffCommonTag::ImageLength).force_usize(0);
 
-    let len = image_bytes(width, height, 16)?;
+    let len = image_bytes("ARW", width, height, 16)?;
     let image = if dummy {
       PixU16::new_uninit(width, height)
     } else {
@@ -384,7 +385,7 @@ impl<'a> ArwDecoder<'a> {
   }
 
   pub(crate) fn decode_arw1(buf: &[u8], width: usize, height: usize, dummy: bool) -> Result<PixU16> {
-    image_bytes(width, height, 16)?;
+    image_bytes("ARW", width, height, 16)?;
     let mut out = alloc_image_ok!(width, height, dummy);
     let mut pump = BitPumpMSB::new(buf);
 
@@ -791,17 +792,6 @@ fn arw6_levels(black: [u16; 4], white: u16) -> Result<([u16; 4], u16)> {
   Ok(([double(black[0])?, double(black[1])?, double(black[2])?, double(black[3])?], double(white)?))
 }
 
-/// Bytes of `width` × `height` pixels of `bits` bits, an error for an image
-/// without pixels or a size that overflows
-fn image_bytes(width: usize, height: usize, bits: usize) -> Result<usize> {
-  width
-    .checked_mul(height)
-    .and_then(|pixels| pixels.checked_mul(bits))
-    .filter(|_| width > 0 && height > 0)
-    .map(|bits| bits.div_ceil(8))
-    .ok_or_else(|| decoder_error!("ARW: invalid image size {}x{}", width, height))
-}
-
 fn normalize_wb(raw_wb: [f32; 4]) -> [f32; 4] {
   debug!("ARW raw wb: {:?}", raw_wb);
   // We never have more then RGB colors so far (no RGBE etc.)
@@ -834,7 +824,7 @@ pub enum ArwMakernoteTag {
 /// Decode uncompressed ARQ data (four 16-bit samples per pixel, channel =
 /// position in the 2x2 CFA block) into RGB, averaging the two green samples.
 fn decode_arq(src: &[u8], width: usize, height: usize, cfa: &crate::cfa::CFA, dummy: bool) -> Result<PixU16> {
-  let need = image_bytes(width, height, 64)?;
+  let need = image_bytes("ARW", width, height, 64)?;
   if src.len() < need {
     return Err(decoder_error!("ARQ: buffer too short ({} < {})", src.len(), need));
   }
@@ -1089,14 +1079,5 @@ mod arq_tests {
     assert_eq!(deciphered_lens_id(&data, 3), None);
     assert_eq!(deciphered_lens_id(&data, 4), None);
     assert_eq!(deciphered_lens_id(&[], 0x4b), None);
-  }
-
-  #[test]
-  fn image_bytes_of_valid_and_invalid_sizes() {
-    assert_eq!(image_bytes(3, 2, 12).ok(), Some(9));
-    assert_eq!(image_bytes(3, 1, 12).ok(), Some(5));
-    assert!(image_bytes(0, 2, 16).is_err());
-    assert!(image_bytes(2, 0, 16).is_err());
-    assert!(image_bytes(u32::MAX as usize, u32::MAX as usize, 64).is_err());
   }
 }
