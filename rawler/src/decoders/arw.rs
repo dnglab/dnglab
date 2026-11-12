@@ -480,7 +480,8 @@ impl<'a> ArwDecoder<'a> {
         height,
         dummy,
         &(|out: &mut [u16], row| {
-          let mut pump = BitPumpLSB::new(&buf[(row * width)..]);
+          let src = buf.get(row * width..).ok_or_else(|| format!("ARW2: row {} is behind the end of the data", row))?;
+          let mut pump = BitPumpLSB::new(src);
 
           let mut random = pump.peek_bits(16)?;
           for out in out.chunks_exact_mut(32) {
@@ -488,7 +489,8 @@ impl<'a> ArwDecoder<'a> {
             for j in 0..2 {
               let max = pump.get_bits(11)?;
               let min = pump.get_bits(11)?;
-              let delta = max - min;
+              // Like dcraw, no shift for a minimum above the maximum
+              let delta = max.saturating_sub(min);
               // Calculate the size of the data shift needed by how large the delta is
               // A delta with 11 bits requires a shift of 4, 10 bits of 3, etc
               let delta_shift: u32 = cmp::max(0, (32 - (delta.leading_zeros() as i32)) - 7) as u32;
@@ -950,6 +952,25 @@ mod arq_tests {
   #[test]
   fn arw1_rejects_an_empty_image() {
     assert!(ArwDecoder::decode_arw1(&[0; 16], 4, 0, false).is_err());
+  }
+
+  #[test]
+  fn arw2_minimum_above_maximum() -> Result<()> {
+    let curve = ArwDecoder::calculate_curve([0, 1024, 2048, 3072, 3584, 4095]);
+    // A block of 16 pixels with a maximum of 0 and a minimum of 0x7ff, the
+    // other pixels are 0x7ff
+    let mut buf = vec![0; 64];
+    buf[1] = 0xf8;
+    buf[2] = 0x3f;
+    let image = ArwDecoder::decode_arw2(&buf, 32, 1, &curve, false)?;
+    assert!(image.pixels()[2] > image.pixels()[0]);
+    Ok(())
+  }
+
+  #[test]
+  fn arw2_rejects_short_data() {
+    let curve = ArwDecoder::calculate_curve([0, 1024, 2048, 3072, 3584, 4095]);
+    assert!(ArwDecoder::decode_arw2(&[0; 10], 32, 4, &curve, false).is_err());
   }
 
   #[test]
