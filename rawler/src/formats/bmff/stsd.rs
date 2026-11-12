@@ -3,7 +3,7 @@
 // Copyright 2021 Daniel Vogelbacher <daniel@chaospixel.com>
 
 use super::{
-  BoxHeader, FourCC, ReadBox, Result,
+  BmffError, BoxHeader, FourCC, ReadBox, Result,
   ext_cr3::{craw::CrawBox, ctmd::CtmdBox},
   read_box_header_ext,
   vendor::VendorBox,
@@ -48,11 +48,15 @@ impl<R: Read + Seek> ReadBox<&mut R> for StsdBox {
 
       match header.typ {
         CrawBox::TYP => {
-          assert_eq!(craw, None, "Found second CRAW box");
+          if craw.is_some() {
+            return Err(BmffError::Parse("Found second CRAW box".into()));
+          }
           craw = Some(CrawBox::read_box(&mut reader, header)?);
         }
         CtmdBox::TYP => {
-          assert_eq!(ctmd, None, "Found second CTMD box");
+          if ctmd.is_some() {
+            return Err(BmffError::Parse("Found second CTMD box".into()));
+          }
           ctmd = Some(CtmdBox::read_box(&mut reader, header)?);
         }
         // TODO: Multiple CRAW boxes can occour in CRM files?! BMFF Spec says the SampleBox is an array.

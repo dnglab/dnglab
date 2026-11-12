@@ -2,7 +2,7 @@
 // Copyright 2020 Alfred Gutierrez
 // Copyright 2021 Daniel Vogelbacher <daniel@chaospixel.com>
 
-use super::{BoxHeader, FourCC, ReadBox, Result, read_box_header_ext};
+use super::{BmffError, BoxHeader, FourCC, ReadBox, Result, read_box_header_ext};
 use byteorder::{BigEndian, ReadBytesExt};
 use serde::{Deserialize, Serialize};
 use std::io::{Read, Seek};
@@ -35,14 +35,15 @@ impl<R: Read + Seek> ReadBox<&mut R> for MvhdBox {
         reader.read_u32::<BigEndian>()?,
         reader.read_u64::<BigEndian>()?,
       )
-    } else {
-      assert_eq!(version, 0);
+    } else if version == 0 {
       (
         reader.read_u32::<BigEndian>()? as u64,
         reader.read_u32::<BigEndian>()? as u64,
         reader.read_u32::<BigEndian>()?,
         reader.read_u32::<BigEndian>()? as u64,
       )
+    } else {
+      return Err(BmffError::Parse(format!("Unknown version {} of box {:?}", version, header.typ)));
     };
     //let rate = FixedPointU16::new_raw(reader.read_u32::<BigEndian>()?); // TODO
 

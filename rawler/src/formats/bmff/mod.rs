@@ -511,6 +511,37 @@ mod tests {
     assert_eq!(brands(read(data).expect("ftyp")), ["crx ", "isom"]);
   }
 
+  /// Read the box in `data` with `read`
+  fn read<T>(data: Vec<u8>, read: impl Fn(&mut Cursor<Vec<u8>>, BoxHeader) -> Result<T>) -> Result<T> {
+    let mut reader = Cursor::new(data);
+    let header = BoxHeader::parse(&mut reader)?;
+    read(&mut reader, header)
+  }
+
+  #[test]
+  fn unexpected_values_are_errors() {
+    // IAD1 of image type 1
+    let payload = [&[0; 4][..], &[0, 1, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0], &[0; 16]].concat();
+    assert!(
+      read(boxed(b"IAD1", 8 + payload.len() as u32, &payload), |r, h| ext_cr3::iad1::Iad1Box::read_box(
+        r, h
+      ))
+      .is_err()
+    );
+    // mvhd and mdhd of version 2
+    let payload = [&[2, 0, 0, 0][..], &[0; 28]].concat();
+    assert!(read(boxed(b"mvhd", 8 + payload.len() as u32, &payload), |r, h| mvhd::MvhdBox::read_box(r, h)).is_err());
+    assert!(read(boxed(b"mdhd", 8 + payload.len() as u32, &payload), |r, h| mdhd::MdhdBox::read_box(r, h)).is_err());
+    // stsd with two CTMD boxes of 8 header and 8 field bytes
+    let ctmd = boxed(b"CTMD", 20, &[0; 12]);
+    let payload = [&[0; 8][..], &ctmd, &ctmd].concat();
+    assert!(read(boxed(b"stsd", 8 + payload.len() as u32, &payload), |r, h| stsd::StsdBox::read_box(r, h)).is_err());
+    // CTMD with data after its records is fine
+    let ctmd = boxed(b"CTMD", 24, &[0; 16]);
+    let ctmd = read(ctmd, |r, h| ext_cr3::ctmd::CtmdBox::read_box(r, h)).expect("CTMD");
+    assert!(ctmd.records.is_empty());
+  }
+
   #[test]
   fn undersized_box_in_moov_is_an_error() {
     let mut data = ftyp();

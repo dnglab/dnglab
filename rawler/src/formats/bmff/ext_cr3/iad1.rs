@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2021 Daniel Vogelbacher <daniel@chaospixel.com>
 
-use super::super::{BoxHeader, FourCC, ReadBox, Result, read_box_header_ext};
+use super::super::{BmffError, BoxHeader, FourCC, ReadBox, Result, read_box_header_ext};
 use byteorder::{BigEndian, ReadBytesExt};
 use serde::{Deserialize, Serialize};
 use std::io::{Read, Seek};
@@ -110,9 +110,7 @@ impl<R: Read + Seek> ReadBox<&mut R> for Iad1Box {
         active_area_right_offset: reader.read_u16::<BigEndian>()?,
         active_area_bottom_offset: reader.read_u16::<BigEndian>()?,
       }),
-      _ => {
-        panic!("Invalid iad1 type"); // TODO
-      }
+      typ => return Err(BmffError::Parse(format!("Unknown IAD1 image type {}", typ))),
     };
 
     header.finish(&mut *reader)?;

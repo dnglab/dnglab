@@ -59,7 +59,9 @@ impl<R: Read + Seek> ReadBox<&mut R> for CtmdBox {
       //current = reader.seek(SeekFrom::Current(0))?;
     }
 
-    assert!(reader.stream_position()? == header.end_offset());
+    if reader.stream_position()? != header.end_offset() {
+      log::warn!("CTMD box at offset {} has data after its {} records", header.offset, rec_count);
+    }
 
     header.finish(&mut *reader)?;
 
