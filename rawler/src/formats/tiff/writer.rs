@@ -207,8 +207,6 @@ impl DirectoryWriter {
 
   pub fn add_tag_undefined<T: TiffTag>(&mut self, tag: T, data: Vec<u8>) {
     let tag: u16 = tag.into();
-    //let data = data.as_ref();
-    //let offset = self.write_data(data)?;
     self.entries.insert(
       tag,
       Entry {
@@ -284,12 +282,6 @@ impl DirectoryWriter {
 
     Ok(offset)
   }
-
-  /*
-  pub fn add_entry(&mut self, entry: Entry) {
-    self.ifd.insert(tag.into(), entry);
-  }
-   */
 }
 
 impl crate::decoders::RawMetadata {

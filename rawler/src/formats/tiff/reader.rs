@@ -113,16 +113,6 @@ pub trait TiffReader {
     if ifds.is_empty() { None } else { Some(ifds[0]) }
   }
 
-  fn get_first_entry(&self, _tag: u16) -> Option<Entry> {
-    unimplemented!();
-    /*
-    Some(Entry {
-      value: (32 as u16).into(),
-      embedded: None,
-    })
-     */
-  }
-
   fn read_data<R: Read + Seek>(&self, file: &mut R, uncorr_offset: u32, buffer: &mut [u8]) -> Result<()> {
     file.seek(SeekFrom::Start(apply_corr(uncorr_offset, self.file().corr)? as u64))?;
     file.read_exact(buffer)?;

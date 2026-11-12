@@ -274,18 +274,6 @@ pub type Result<T> = std::result::Result<T, TiffError>;
 
 use crate::tags::{DngTag, ExifTag, TiffCommonTag};
 
-/*
-impl From<Value> for Entry {
-  fn from(value: Value) -> Self {
-    Entry { value, embedded: None }
-  }
-}
- */
-
-pub struct DataOffset {
-  pub offset: usize,
-}
-
 /// Apply the correction `corr` to an `offset` from the file
 fn apply_corr(offset: u32, corr: i32) -> Result<u32> {
   u32::try_from(offset as i64 + corr as i64).map_err(|_| TiffError::Overflow(format!("Offset {} with correction {} is out of range", offset, corr)))
@@ -296,8 +284,6 @@ fn offset_add(a: u32, b: u32) -> Result<u32> {
   a.checked_add(b)
     .ok_or_else(|| TiffError::Overflow(format!("Offset {} + {} exceeds 4 GiB", a, b)))
 }
-
-pub struct DirReader {}
 
 fn read_from_file<R: Read + Seek>(file: &mut R, offset: u64, size: usize) -> Result<Vec<u8>> {
   file.seek(SeekFrom::Start(offset))?;
@@ -394,7 +380,7 @@ mod tests {
 
     tiff.build(dir)?;
 
-    //assert!(TiffReader::is_tiff(&mut output) == true);
+    assert!(GenericTiffReader::is_tiff(output.get_ref()));
 
     let mut garbage_output: Vec<u8> = vec![0x4a, 0xee]; // Garbage
     garbage_output.extend_from_slice(&output.into_inner());
