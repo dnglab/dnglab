@@ -326,7 +326,7 @@ mod tests {
     let data = vec![0x00, 0x01, 12, 0, 0xFF, 0xFF, 0xFF, 0xFF, 12, 0, 0, 0, 0, 0, 0, 0];
     let mut cursor = Cursor::new(data);
     let mut reader = EndianReader::new(&mut cursor, Endian::Little);
-    let tag = reader.read_u16().unwrap();
+    let tag = reader.read_u16().expect("tag");
     assert!(matches!(Entry::parse(&mut reader, 0, 0, tag), Err(TiffError::Overflow(_))));
   }
 }
