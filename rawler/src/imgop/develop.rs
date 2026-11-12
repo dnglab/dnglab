@@ -15,7 +15,7 @@ use crate::{
     dcp::CameraProfileFile,
     opcodes::{Opcode, OpcodeSelector, OpcodeStage},
   },
-  formats::tiff::{DirectoryWriter, TiffError, TiffWriter},
+  formats::tiff::{CompressionMethod, DirectoryWriter, Predictor, TiffError, TiffWriter},
   imgop::{
     Dim2, Point, Rect,
     color::{OutputSpace, TransferFunction},
@@ -388,9 +388,12 @@ impl RawDevelop {
     };
     let strip_offsets: Vec<u32> = strips.iter().map(|(offset, _)| *offset).collect();
     let strip_bytes: Vec<u32> = strips.iter().map(|(_, bytes)| *bytes).collect();
-    root_ifd.add_tag(TiffCommonTag::Compression, 5);
+    root_ifd.add_tag(TiffCommonTag::Compression, CompressionMethod::LZW);
     // Floating point samples have the floating point predictor
-    root_ifd.add_tag(TiffCommonTag::Predictor, if image.extended_range { 3 } else { 1 });
+    root_ifd.add_tag(
+      TiffCommonTag::Predictor,
+      if image.extended_range { Predictor::FloatingPoint } else { Predictor::None },
+    );
     if image.extended_range {
       root_ifd.add_tag(TiffCommonTag::SampleFormat, &vec![3_u16; samples]);
     }
