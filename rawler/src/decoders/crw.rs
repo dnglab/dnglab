@@ -234,10 +234,15 @@ impl<'a> CrwDecoder<'a> {
   }
 
   pub(crate) fn do_decode(file: &RawSource, lowbits: bool, dectable: usize, width: usize, height: usize, dummy: bool) -> Result<PixU16> {
+    // The 2 low bits of each pixel are stored before the compressed data
+    let lowbits_len = width
+      .checked_mul(height)
+      .map(|pixels| pixels / 4)
+      .ok_or_else(|| decoder_error!("CRW: image size {}x{} overflows", width, height))?;
     let mut out = alloc_image_ok!(width, height, dummy);
 
     let htables = Self::create_hufftables(dectable);
-    let offset = 540 + (lowbits as usize) * height * width / 4;
+    let offset = 540 + if lowbits { lowbits_len } else { 0 };
     let src = file.subview_until_eof(offset as u64)?;
     let mut pump = BitPumpJPEG::new(src);
 
@@ -290,10 +295,11 @@ impl<'a> CrwDecoder<'a> {
     }
 
     if lowbits {
-      let buffer = file.as_vec()?;
+      // The compressed data follows the low bits, so they are in the file
+      let low = file.subview(26, lowbits_len as u64)?;
       // Add the uncompressed 2 low bits to the decoded 8 high bits
-      for (i, o) in out.pixels_mut().chunks_exact_mut(4).enumerate() {
-        let c = buffer[26 + i] as u16;
+      for (o, &c) in out.pixels_mut().chunks_exact_mut(4).zip(low) {
+        let c = c as u16;
         o[0] = (o[0] << 2) | (c) & 0x03;
         o[1] = (o[1] << 2) | (c >> 2) & 0x03;
         o[2] = (o[2] << 2) | (c >> 4) & 0x03;
