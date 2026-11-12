@@ -93,7 +93,7 @@ impl<'a> Decoder for CrwDecoder<'a> {
           let maxval = wb_raw.into_iter().map(|v| v as i32).min().unwrap_or(0) as f32;
           [wb_raw[0] / maxval, wb_raw[1] / maxval, wb_raw[2] / maxval, wb_raw[3] / maxval]
         }
-        _ => unreachable!(),
+        colors => return Err(decoder_error!("CRW: CFA with {} colors is not supported", colors)),
       }
     };
 
