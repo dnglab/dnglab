@@ -27,6 +27,7 @@ use super::Orientation;
 use super::RawDecodeParams;
 use super::RawMetadata;
 use super::RawPhotometricInterpretation;
+use super::image_bytes;
 use super::tag_data;
 
 #[derive(Debug, Clone)]
@@ -69,6 +70,8 @@ impl<'a> Decoder for ErfDecoder<'a> {
     let width = fetch_tiff_tag!(raw, TiffCommonTag::ImageWidth).force_usize(0);
     let height = fetch_tiff_tag!(raw, TiffCommonTag::ImageLength).force_usize(0);
     let offset = fetch_tiff_tag!(raw, TiffCommonTag::StripOffsets).force_usize(0);
+    // The 12-bit data has less than 2 bytes per pixel
+    image_bytes("ERF", width, height, 16)?;
     let src = file.subview_until_eof(offset as u64)?;
 
     let image = decompress_12be_wcontrol(src, width, height, dummy).map_err(RawlerError::decoder_failed)?;
