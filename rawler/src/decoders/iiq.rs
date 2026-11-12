@@ -16,7 +16,6 @@ use rayon::prelude::*;
 use serde::Deserialize;
 use serde::Serialize;
 use std::collections::HashMap;
-use std::io::Read;
 use std::io::Seek;
 use std::io::SeekFrom;
 use std::mem::size_of;
@@ -185,36 +184,36 @@ fn new_makernote(file: &RawSource, moffset: u64) -> std::io::Result<HashMap<u32,
   // The makernote data starts straight after the TIFF header (8 bytes).
   // If this may change in future, offsets must be revalidated.
   assert_eq!(moffset, 8);
-  let stream = &mut file.reader();
-  stream.seek(SeekFrom::Start(moffset + 8))?; // Skip first 8 bytes of makernote
-  let ifd = stream.read_u32::<LittleEndian>()? as u64;
-  stream.seek(SeekFrom::Start(moffset + ifd))?;
-  let entry_count = stream.read_u32::<LittleEndian>()? as usize; // Skip 8 bytes in IFD
-
-  let _ = stream.read_u32::<LittleEndian>()?; // Skip it
-  let mut buf = vec![0; entry_count * 16];
-  stream.read_exact(&mut buf)?;
+  // Skip first 8 bytes of makernote
+  let ifd = LEu32(file.subview(moffset + 8, 4)?, 0) as u64;
+  // The entry count is followed by 4 bytes that are skipped
+  let entry_count = LEu32(file.subview(moffset + ifd, 4)?, 0) as usize;
+  let size = entry_count
+    .checked_mul(16)
+    .ok_or_else(|| std::io::Error::new(std::io::ErrorKind::InvalidData, format!("IIQ makernote with {} entries", entry_count)))?;
+  // A view of the entries fails for entries beyond the end of the file
+  let buf = file.subview(moffset + ifd + 8, size as u64)?;
 
   let mut entries: HashMap<u32, (usize, tiff::Value)> = HashMap::with_capacity(entry_count);
-  let mut buf = &buf[..];
 
-  for _ in 0..entry_count {
-    let tag = LEu32(buf, 0);
-    let typ = LEu32(buf, 4);
-    let byte_count = LEu32(buf, 8) as usize;
-    let data = LEu32(buf, 12) as usize;
+  for entry in buf.chunks_exact(16) {
+    let tag = LEu32(entry, 0);
+    let typ = LEu32(entry, 4);
+    let byte_count = LEu32(entry, 8) as usize;
+    let data = LEu32(entry, 12) as usize;
     //println!("Tag 0x{:x}, typ: {}, count: {}, data: {}", tag, typ, byte_count, data);
     match typ {
       // Sensor calibration file, it's like a TIFF file and stored with ASCII type
-      1 if tag == <IiqTag as Into<u32>>::into(IiqTag::SensorCorrection) => {
-        entries.insert(tag, (byte_count, tiff::Value::Long(vec![data as u32 + moffset as u32])));
-      }
+      1 if tag == <IiqTag as Into<u32>>::into(IiqTag::SensorCorrection) => match (data as u32).checked_add(moffset as u32) {
+        Some(offset) => {
+          entries.insert(tag, (byte_count, tiff::Value::Long(vec![offset])));
+        }
+        None => warn!("IIQ: offset {} of the sensor correction is out of range, ignoring it", data),
+      },
       // Others should be just ASCII strings
       1 => {
-        let mut v = vec![0; byte_count];
-        stream.seek(SeekFrom::Start(moffset + data as u64))?; // skip header
-        stream.read_exact(&mut v)?;
-        let value = tiff::Value::Ascii(tiff::TiffAscii::new_from_raw(&v));
+        let v = file.subview(moffset + data as u64, byte_count as u64)?;
+        let value = tiff::Value::Ascii(tiff::TiffAscii::new_from_raw(v));
         entries.insert(tag, (byte_count, value));
       }
       // Short values stored as Long
@@ -230,7 +229,6 @@ fn new_makernote(file: &RawSource, moffset: u64) -> std::io::Result<HashMap<u32,
         warn!("Unknow tag 0x{:x}, typ: {}, count: {}, data: {}", tag, typ, byte_count, data);
       }
     }
-    buf = &buf[16..];
   }
   Ok(entries)
 }
@@ -724,20 +722,12 @@ impl<'a> IiqDecoder<'a> {
 
     match (black_col, black_row) {
       (Some(black_col), Some(black_row)) => {
-        let stream = &mut file.reader();
-        let (len, offset) = (black_col.0, black_col.1.force_u64(0));
-        stream.seek(SeekFrom::Start(offset + 8))?;
-        let mut cols = vec![0; len / 2]; // u16 size
-        for entry in cols.iter_mut() {
-          *entry = stream.read_i16::<LittleEndian>()?;
-        }
-        let (len, offset) = (black_row.0, black_row.1.force_u64(0));
-        stream.seek(SeekFrom::Start(offset + 8))?;
-        let mut rows = vec![0; len / 2]; // u16 size
-        for entry in rows.iter_mut() {
-          *entry = stream.read_i16::<LittleEndian>()?;
-        }
-        Ok(Some((cols, rows)))
+        // Levels of i16, a view of them fails for levels beyond the end of the file
+        let levels = |(len, offset): &(usize, tiff::Value)| -> std::io::Result<Vec<i16>> {
+          let data = file.subview(offset.force_u64(0) + 8, (len / 2 * 2) as u64)?;
+          Ok(data.as_chunks::<2>().0.iter().map(|level| i16::from_le_bytes(*level)).collect())
+        };
+        Ok(Some((levels(black_col)?, levels(black_row)?)))
       }
       _ => Ok(None),
     }
@@ -1287,6 +1277,42 @@ impl From<IiqTag> for u32 {
 #[cfg(test)]
 mod tests {
   use super::*;
+
+  /// IIQ file with a makernote of `count` entries, of which `entries` are
+  /// given as (tag, type, byte count, data)
+  fn iiq_makernote(count: u32, entries: &[(u32, u32, u32, u32)]) -> Vec<u8> {
+    // TIFF header, makernote header, IFD offset 12 relative to the makernote
+    let mut buf = vec![0; 16];
+    buf.extend_from_slice(&12_u32.to_le_bytes());
+    buf.extend_from_slice(&count.to_le_bytes());
+    buf.extend_from_slice(&[0; 4]);
+    for (tag, typ, byte_count, data) in entries {
+      for value in [tag, typ, byte_count, data] {
+        buf.extend_from_slice(&value.to_le_bytes());
+      }
+    }
+    buf
+  }
+
+  #[test]
+  fn makernote_entries_beyond_the_file_are_an_error() {
+    let file = RawSource::new_from_slice(&iiq_makernote(u32::MAX, &[]));
+    assert!(new_makernote(&file, 8).is_err());
+    // An ASCII value longer than the file
+    let file = RawSource::new_from_slice(&iiq_makernote(1, &[(0x412, 1, u32::MAX, 0)]));
+    assert!(new_makernote(&file, 8).is_err());
+  }
+
+  #[test]
+  fn makernote_skips_sensor_correction_offsets_out_of_range() -> std::io::Result<()> {
+    let sensor_correction = IiqTag::SensorCorrection as u32;
+    let width = IiqTag::Width as u32;
+    let file = RawSource::new_from_slice(&iiq_makernote(2, &[(sensor_correction, 1, 4, u32::MAX - 3), (width, 4, 4, 100)]));
+    let entries = new_makernote(&file, 8)?;
+    assert!(!entries.contains_key(&sensor_correction));
+    assert_eq!(entries.get(&width).map(|(_, value)| value.force_u32(0)), Some(100));
+    Ok(())
+  }
 
   #[test]
   fn red_blue_flat_field_corrects_red_and_blue_pixels() {
