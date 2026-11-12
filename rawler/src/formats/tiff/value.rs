@@ -53,155 +53,32 @@ impl Display for SRational {
   }
 }
 
-impl TryFrom<Rational> for usize {
-  type Error = TryFromIntError;
+/// Exact conversion of rationals to integers, the quotient is truncated
+/// toward zero. A denominator of 0 or a quotient out of range is an error.
+macro_rules! rational_into_int {
+  ($rational:ty, $wide:ty, $($int:ty),+) => {
+    $(
+      impl TryFrom<$rational> for $int {
+        type Error = ValueConvertError;
 
-  fn try_from(value: Rational) -> std::result::Result<Self, Self::Error> {
-    Ok(((value.n as f32) / (value.d as f32)) as usize) // TODO
-  }
+        fn try_from(value: $rational) -> std::result::Result<Self, Self::Error> {
+          if value.d == 0 {
+            return Err(ValueConvertError(()));
+          }
+          Ok(<$int>::try_from(value.n as $wide / value.d as $wide)?)
+        }
+      }
+    )+
+  };
 }
 
-impl TryFrom<Rational> for u8 {
-  type Error = TryFromIntError;
-
-  fn try_from(value: Rational) -> std::result::Result<Self, Self::Error> {
-    Ok(((value.n as f32) / (value.d as f32)) as u8) // TODO
-  }
-}
-
-impl TryFrom<Rational> for u16 {
-  type Error = TryFromIntError;
-
-  fn try_from(value: Rational) -> std::result::Result<Self, Self::Error> {
-    Ok(((value.n as f32) / (value.d as f32)) as u16) // TODO
-  }
-}
-
-impl TryFrom<Rational> for u32 {
-  type Error = TryFromIntError;
-
-  fn try_from(value: Rational) -> std::result::Result<Self, Self::Error> {
-    Ok(((value.n as f32) / (value.d as f32)) as u32) // TODO
-  }
-}
-
-impl TryFrom<Rational> for u64 {
-  type Error = TryFromIntError;
-
-  fn try_from(value: Rational) -> std::result::Result<Self, Self::Error> {
-    Ok(((value.n as f32) / (value.d as f32)) as u64) // TODO
-  }
-}
-
-impl TryFrom<Rational> for i8 {
-  type Error = TryFromIntError;
-
-  fn try_from(value: Rational) -> std::result::Result<Self, Self::Error> {
-    Ok(((value.n as f32) / (value.d as f32)) as i8) // TODO
-  }
-}
-
-impl TryFrom<Rational> for i16 {
-  type Error = TryFromIntError;
-
-  fn try_from(value: Rational) -> std::result::Result<Self, Self::Error> {
-    Ok(((value.n as f32) / (value.d as f32)) as i16) // TODO
-  }
-}
-
-impl TryFrom<Rational> for i32 {
-  type Error = TryFromIntError;
-
-  fn try_from(value: Rational) -> std::result::Result<Self, Self::Error> {
-    Ok(((value.n as f32) / (value.d as f32)) as i32) // TODO
-  }
-}
-
-impl TryFrom<Rational> for i64 {
-  type Error = TryFromIntError;
-
-  fn try_from(value: Rational) -> std::result::Result<Self, Self::Error> {
-    Ok(((value.n as f32) / (value.d as f32)) as i64) // TODO
-  }
-}
-
+rational_into_int!(Rational, u64, usize, u8, u16, u32, u64, i8, i16, i32, i64);
+rational_into_int!(SRational, i64, usize, u8, u16, u32, u64, i8, i16, i32, i64);
 impl TryFrom<Rational> for f32 {
   type Error = TryFromIntError;
 
   fn try_from(value: Rational) -> std::result::Result<Self, Self::Error> {
     Ok(((value.n as f32) / (value.d as f32)) as f32) // TODO
-  }
-}
-
-impl TryFrom<SRational> for usize {
-  type Error = TryFromIntError;
-
-  fn try_from(value: SRational) -> std::result::Result<Self, Self::Error> {
-    Ok(((value.n as f32) / (value.d as f32)) as usize) // TODO
-  }
-}
-
-impl TryFrom<SRational> for u8 {
-  type Error = TryFromIntError;
-
-  fn try_from(value: SRational) -> std::result::Result<Self, Self::Error> {
-    Ok(((value.n as f32) / (value.d as f32)) as u8) // TODO
-  }
-}
-
-impl TryFrom<SRational> for u16 {
-  type Error = TryFromIntError;
-
-  fn try_from(value: SRational) -> std::result::Result<Self, Self::Error> {
-    Ok(((value.n as f32) / (value.d as f32)) as u16) // TODO
-  }
-}
-
-impl TryFrom<SRational> for u32 {
-  type Error = TryFromIntError;
-
-  fn try_from(value: SRational) -> std::result::Result<Self, Self::Error> {
-    Ok(((value.n as f32) / (value.d as f32)) as u32) // TODO
-  }
-}
-
-impl TryFrom<SRational> for u64 {
-  type Error = TryFromIntError;
-
-  fn try_from(value: SRational) -> std::result::Result<Self, Self::Error> {
-    Ok(((value.n as f32) / (value.d as f32)) as u64) // TODO
-  }
-}
-
-impl TryFrom<SRational> for i8 {
-  type Error = TryFromIntError;
-
-  fn try_from(value: SRational) -> std::result::Result<Self, Self::Error> {
-    Ok(((value.n as f32) / (value.d as f32)) as i8) // TODO
-  }
-}
-
-impl TryFrom<SRational> for i16 {
-  type Error = TryFromIntError;
-
-  fn try_from(value: SRational) -> std::result::Result<Self, Self::Error> {
-    Ok(((value.n as f32) / (value.d as f32)) as i16) // TODO
-  }
-}
-
-impl TryFrom<SRational> for i32 {
-  type Error = TryFromIntError;
-
-  fn try_from(value: SRational) -> std::result::Result<Self, Self::Error> {
-    Ok(((value.n as f32) / (value.d as f32)) as i32) // TODO
-  }
-}
-
-impl TryFrom<SRational> for i64 {
-  type Error = TryFromIntError;
-
-  fn try_from(value: SRational) -> std::result::Result<Self, Self::Error> {
-    Ok(((value.n as f32) / (value.d as f32)) as i64) // TODO
   }
 }
 
@@ -1370,6 +1247,19 @@ mod tests {
     let a = SRational::new(-200, 1);
     let b = SRational::new(-300, 10);
     assert!(a < b);
+  }
+
+  #[test]
+  fn rational_into_int_is_exact() {
+    assert_eq!(u32::try_from(Rational::new(33554433, 1)).ok(), Some(33554433));
+    assert_eq!(u32::try_from(Rational::new(599999999, 200000000)).ok(), Some(2));
+    assert_eq!(u8::try_from(Rational::new(256, 1)).ok(), None);
+    assert_eq!(u32::try_from(Rational::new(1, 0)).ok(), None);
+    assert_eq!(i32::try_from(SRational::new(-7, 2)).ok(), Some(-3));
+    assert_eq!(i32::try_from(SRational::new(7, -2)).ok(), Some(-3));
+    assert_eq!(u32::try_from(SRational::new(-5, 1)).ok(), None);
+    assert_eq!(i64::try_from(SRational::new(i32::MIN, -1)).ok(), Some(-(i32::MIN as i64)));
+    assert_eq!(Value::Rational(vec![Rational::new(1023, 1)]).force_u16(0), 1023);
   }
 
   #[test]
