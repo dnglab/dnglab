@@ -391,12 +391,9 @@ impl<'a> ArwDecoder<'a> {
 
       // Constants taken from dcraw
       let off: usize = 862144;
-      let key_off: usize = 200896;
       let head_off: usize = 164600;
 
-      // Replicate the dcraw contortions to get the "decryption" key
-      let offset = (buffer[key_off] as usize) * 4;
-      let first_key = BEu32(buffer, key_off + offset);
+      let first_key = srf_first_key(buffer)?;
       let head = ArwDecoder::sony_decrypt(buffer, head_off, 40, first_key)?;
       let second_key = LEu32(&head, 22);
 
@@ -697,7 +694,7 @@ impl<'a> ArwDecoder<'a> {
   }
 
   pub(crate) fn sony_decrypt(buf: &[u8], offset: usize, length: usize, key: u32) -> crate::Result<Vec<u8>> {
-    if buf.len() < offset + 4 * (length / 4) {
+    if offset.checked_add(4 * (length / 4)).is_none_or(|end| buf.len() < end) {
       return Err(RawlerError::decoder_failed("sony_decrypt() failed: buffer to short"));
     }
     let mut pad: [u32; 128] = [0_u32; 128];
@@ -766,6 +763,19 @@ fn copy_rggb_tile(strip: &mut [u16], width: usize, x: usize, tile: &[u16], tile_
       lower.iter_mut().zip(&block[2..]).for_each(|(dst, src)| *dst = *src);
     }
   }
+}
+
+/// Key of the header of SRF files, replicating the dcraw contortions to get
+/// the "decryption" key
+fn srf_first_key(buffer: &[u8]) -> Result<u32> {
+  // Constant taken from dcraw
+  const KEY_OFF: usize = 200896;
+  buffer
+    .get(KEY_OFF)
+    .map(|&offset| KEY_OFF + offset as usize * 4)
+    .and_then(|pos| buffer.get(pos..pos + 4))
+    .map(|key| BEu32(key, 0))
+    .ok_or_else(|| decoder_error!("SRF: file of {} bytes is too short for the key", buffer.len()))
 }
 
 /// White balance of the A100 from the MRW blocks of its DNGPrivateData
@@ -1068,6 +1078,20 @@ mod arq_tests {
     buf.push(0);
     assert_eq!(a100_wb(&buf)?, [512.0, 256.0, 257.0, 384.0]);
     Ok(())
+  }
+
+  #[test]
+  fn srf_key_and_decryption_of_short_data() {
+    assert!(srf_first_key(&[0; 1000]).is_err());
+    // The key is at 200896 + 4 * the byte at 200896
+    let mut buffer = vec![0; 200896 + 8];
+    buffer[200896] = 2;
+    assert!(srf_first_key(&buffer).is_err());
+    buffer.extend_from_slice(&[0x12, 0x34, 0x56, 0x78]);
+    assert_eq!(srf_first_key(&buffer).ok(), Some(0x12345678));
+    assert!(ArwDecoder::sony_decrypt(&[0; 16], usize::MAX - 2, 8, 0).is_err());
+    assert!(ArwDecoder::sony_decrypt(&[0; 16], 8, 12, 0).is_err());
+    assert_eq!(ArwDecoder::sony_decrypt(&[0; 16], 8, 8, 0).map(|out| out.len()).ok(), Some(8));
   }
 
   #[test]
