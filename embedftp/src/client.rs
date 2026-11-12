@@ -15,7 +15,7 @@ use std::path::{Component, Path, PathBuf, StripPrefixError};
 use std::result;
 use std::sync::Arc;
 use std::time::{Duration, UNIX_EPOCH};
-use tokio::fs::{File, canonicalize, create_dir, metadata, read_dir, remove_dir, remove_file, symlink_metadata};
+use tokio::fs::{File, canonicalize, create_dir, metadata, read_dir, remove_dir, remove_file, rename, symlink_metadata};
 use tokio::io::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt};
 use tokio::net::tcp::{OwnedReadHalf, OwnedWriteHalf};
 use tokio::net::{TcpListener, TcpStream};
@@ -55,6 +55,8 @@ where
   data_mode: DataMode,
   /// EPSV ALL was received, the client uses no other command to set up data connections.
   epsv_all: bool,
+  /// Path on the server of RNFR, for the RNTO that follows it
+  rename_from: Option<PathBuf>,
   data_reader: Option<OwnedReadHalf>,
   data_writer: Option<OwnedWriteHalf>,
   #[allow(dead_code)]
@@ -79,6 +81,7 @@ where
       cwd: PathBuf::from("/"),
       data_mode: DataMode::None,
       epsv_all: false,
+      rename_from: None,
       data_reader: None,
       data_writer: None,
       handle,
@@ -109,6 +112,8 @@ where
       Command::Pass(_) => debug!("Received command: Pass(***)"),
       _ => debug!("Received command: {:?}", cmd),
     }
+    // Only the command after RNFR completes the rename
+    let rename_from = self.rename_from.take();
     if self.is_logged() {
       match cmd {
         Command::Cwd(directory) => return self.cwd(directory).await,
@@ -145,6 +150,8 @@ where
         Command::Rmd(path) => return self.rmd(path).await,
         Command::Dele(path) => return self.dele(path).await,
         Command::Size(path) => return self.size(path).await,
+        Command::Rnfr(path) => return self.rnfr(path).await,
+        Command::Rnto(path) => return self.rnto(rename_from, path).await,
         _ => (),
       }
     } else if self.name.is_some() && self.waiting_password {
@@ -423,6 +430,35 @@ where
     }
     let msg = format!("No such file: {}", file.to_string_lossy());
     self.send(Answer::new(ResultCode::FileNotFound, &msg)).await
+  }
+
+  async fn rnfr(&mut self, path: PathBuf) -> Result<()> {
+    match self.resolve(&path).await {
+      // The root can't be renamed
+      Ok(from) if from != self.server_root => {
+        self.rename_from = Some(from);
+        let answer = Answer::new(ResultCode::RequestedFileActionPendingFurtherInformation, "Ready for RNTO");
+        self.send(answer).await
+      }
+      _ => {
+        let msg = format!("No such file or directory: {}", path.to_string_lossy());
+        self.send(Answer::new(ResultCode::FileNotFound, &msg)).await
+      }
+    }
+  }
+
+  async fn rnto(&mut self, from: Option<PathBuf>, path: PathBuf) -> Result<()> {
+    let Some(from) = from else {
+      return self.send(Answer::new(ResultCode::BadSequenceOfCommands, "RNFR required first")).await;
+    };
+    if let Ok(to) = self.resolve_new(&path).await {
+      if rename(&from, &to).await.is_ok() {
+        return self.send(Answer::new(ResultCode::RequestedFileActionOkay, "File successfully renamed")).await;
+      }
+    }
+    let msg = format!("Couldn't rename to: {}", path.to_string_lossy());
+    warn!("{}", msg);
+    self.send(Answer::new(ResultCode::FileNameNotAllowed, &msg)).await
   }
 
   fn strip_prefix(&self, dir: PathBuf) -> result::Result<PathBuf, StripPrefixError> {
