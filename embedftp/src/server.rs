@@ -10,6 +10,7 @@
 use log::{debug, error, info};
 use std::net::SocketAddr;
 use std::path::PathBuf;
+use std::time::Duration;
 use tokio::io;
 use tokio::net::{TcpListener, TcpStream};
 use tokio::runtime::Handle;
@@ -32,7 +33,15 @@ where
 
   info!("Listening for clients on port {}...", port);
   loop {
-    let (stream, addr) = listener.accept().await?;
+    let (stream, addr) = match listener.accept().await {
+      Ok(client) => client,
+      Err(err) => {
+        // E.g. no free file descriptor. The server continues with the next client.
+        error!("Failed to accept a client: {}", err);
+        tokio::time::sleep(Duration::from_millis(100)).await;
+        continue;
+      }
+    };
     info!("New client connected: {}", addr);
     handle.spawn(handle_client(addr, stream, handle.clone(), server_root.clone(), config.clone(), env.clone()));
   }
