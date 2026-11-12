@@ -272,7 +272,10 @@ impl DirectoryWriter {
 
     for (tag, entry) in self.entries {
       tiff.writer.write_u16::<NativeEndian>(tag)?;
-      tiff.writer.write_u16::<NativeEndian>(entry.value_type())?;
+      // The count of an unknown type is its number of bytes, which is
+      // valid for UNDEFINED only
+      let value_type = if matches!(entry.value, Value::Unknown(..)) { 7 } else { entry.value_type() };
+      tiff.writer.write_u16::<NativeEndian>(value_type)?;
       tiff.writer.write_u32::<NativeEndian>(entry.count())?;
       tiff
         .writer
@@ -464,6 +467,22 @@ pub(crate) fn float_predictor_decode(mut bytes: Vec<u8>, cpp: usize) -> Vec<f32>
 #[cfg(test)]
 mod tests {
   use super::*;
+
+  #[test]
+  fn unknown_type_is_written_as_undefined() -> Result<()> {
+    let mut output = std::io::Cursor::new(Vec::new());
+    let tiff = TiffWriter::new(&mut output)?;
+    let mut dir = tiff.new_directory();
+    dir.add_untyped_tag(0x100, Value::Unknown(16, vec![1, 2, 3, 4, 5, 6, 7, 8]));
+    tiff.build(dir)?;
+    let reader = super::super::GenericTiffReader::new_with_buffer(output.into_inner(), 0, 0, None)?;
+    use super::super::reader::TiffReader;
+    assert_eq!(
+      reader.root_ifd().get_entry(0x100_u16).map(|entry| &entry.value),
+      Some(&Value::Undefined(vec![1, 2, 3, 4, 5, 6, 7, 8]))
+    );
+    Ok(())
+  }
 
   #[test]
   fn float_predictor() {
