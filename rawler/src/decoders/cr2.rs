@@ -554,9 +554,11 @@ impl<'a> Cr2Decoder<'a> {
         .and_then(|mn| mn.get_entry(Cr2MakernoteTag::FirmwareVer).and_then(|v| v.as_string()))
       {
         Some(fw) => {
-          let str: String = fw.chars().filter(|c| c.is_ascii_digit() || c == &'.').collect();
-          let v: Vec<u8> = str.split('.').map(|v| v.parse().expect("Only digits here")).collect();
-          Some(v.iter().rev().enumerate().map(|(i, v)| 10_u32.pow(i as u32 * 3) * *v as u32).sum())
+          let number = firmware_number(fw);
+          if number.is_none() {
+            log::warn!("CR2: firmware version {:?} is not a version number", fw);
+          }
+          number
         }
         None => None,
       },
@@ -911,6 +913,17 @@ fn normalize_wb(raw_wb: [f32; 4]) -> [f32; 4] {
   [norm[0], (norm[1] + norm[2]) / 2.0, norm[3], f32::NAN]
 }
 
+/// Firmware version `fw` as a number with 3 digits for each part, like
+/// 1000006 for "Firmware Version 1.0.6". None if a part is empty or the
+/// number overflows.
+fn firmware_number(fw: &str) -> Option<u32> {
+  let version: String = fw.chars().filter(|c| c.is_ascii_digit() || c == &'.').collect();
+  version.split('.').rev().enumerate().try_fold(0_u32, |number, (i, part)| {
+    let part: u32 = part.parse().ok()?;
+    number.checked_add(10_u32.checked_pow(i as u32 * 3)?.checked_mul(part)?)
+  })
+}
+
 /// Crop of the SensorInfo makernote `values`, at index 5 to 8. Right and
 /// bottom are the last column and row. None if they are missing or before
 /// left and top.
@@ -1042,6 +1055,17 @@ pub enum Cr2MakernoteTag {
 #[cfg(test)]
 mod tests {
   use super::*;
+
+  #[test]
+  fn firmware_numbers() {
+    assert_eq!(firmware_number("Firmware Version 1.0.6"), Some(1000006));
+    assert_eq!(firmware_number("1.1.1.2"), Some(1001001002));
+    assert_eq!(firmware_number("1.0.300"), Some(1000300));
+    assert_eq!(firmware_number("1..2"), None);
+    assert_eq!(firmware_number("1.0."), None);
+    assert_eq!(firmware_number("Firmware"), None);
+    assert_eq!(firmware_number("1.0.0.0.6"), None);
+  }
 
   #[test]
   fn sensor_info_crops() {
