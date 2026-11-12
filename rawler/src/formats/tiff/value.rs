@@ -3,7 +3,7 @@
 
 use byteorder::{NativeEndian, WriteBytesExt};
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
-use std::{convert::Infallible, ffi::CString, fmt::Display, io::Write, num::TryFromIntError};
+use std::{convert::Infallible, fmt::Display, io::Write, num::TryFromIntError};
 
 use super::{Result, TiffError};
 
@@ -857,7 +857,6 @@ impl Value {
             | ((*v.get(3).unwrap_or(&0) as u32) << 24),
         ),
         Self::Ascii(v) => {
-          //let cstr = CString::new(v.as_str()).unwrap();
           let v = v.as_vec_with_nul();
           Ok(
             (*v.get(0).unwrap_or(&0) as u32)
@@ -902,7 +901,6 @@ impl Value {
         w.write_all(val)?;
       }
       Self::Ascii(val) => {
-        //let cstr = CString::new(val.as_str()).unwrap();
         let bytes = val.as_vec_with_nul();
         w.write_all(&bytes)?;
       }
@@ -1035,15 +1033,18 @@ impl TiffAscii {
     self.strings.first()
   }
 
+  /// Number of bytes of the strings with their NUL terminators
   pub fn count(&self) -> usize {
-    self.strings.iter().map(|s| s.len() + 1).sum::<usize>()
+    self.strings.iter().map(|s| until_nul(s).len() + 1).sum::<usize>()
   }
 
+  /// Bytes of the strings, each one up to an interior NUL and with a NUL
+  /// terminator
   pub fn as_vec_with_nul(&self) -> Vec<u8> {
     let mut out = Vec::new();
     for s in &self.strings {
-      let cstr = CString::new(s.as_bytes()).expect("TIFF string value must not contain null bytes");
-      out.extend_from_slice(cstr.to_bytes_with_nul());
+      out.extend_from_slice(until_nul(s));
+      out.push(0);
     }
     out
   }
@@ -1065,6 +1066,12 @@ impl TiffAscii {
       plain: Vec::from(raw),
     }
   }
+}
+
+/// Bytes of `s` up to the first NUL, a TIFF string ends there
+fn until_nul(s: &str) -> &[u8] {
+  let bytes = s.as_bytes();
+  &bytes[..bytes.iter().position(|&c| c == 0).unwrap_or(bytes.len())]
 }
 
 pub trait IntoTiffValue {
@@ -1363,6 +1370,19 @@ mod tests {
     let a = SRational::new(-200, 1);
     let b = SRational::new(-300, 10);
     assert!(a < b);
+  }
+
+  #[test]
+  fn ascii_ends_at_nul() -> Result<()> {
+    let value = Value::from("AT\0X");
+    assert_eq!(value.count(), 3);
+    assert_eq!(value.as_embedded()?, u32::from_le_bytes(*b"AT\0\0"));
+    let value = Value::from("Artist\0X");
+    let mut bytes = Vec::new();
+    value.write(&mut bytes)?;
+    assert_eq!(bytes, b"Artist\0");
+    assert_eq!(value.count(), bytes.len());
+    Ok(())
   }
 
   #[test]
