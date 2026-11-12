@@ -39,9 +39,16 @@ impl FtpCallback for FtpState {
       let original_filename = path.file_name().and_then(OsStr::to_str).unwrap_or_default();
       let rawfile = RawSource::new_from_shared_vec(data).with_path(original_filename);
       let out_path = path.with_extension("dng");
-      let mut dng = BufWriter::new(File::create(out_path)?);
-      let _info =
-        convert_raw_source(&rawfile, &mut dng, original_filename, &state.params).map_err(|err| std::io::Error::new(std::io::ErrorKind::Other, err))?;
+      let mut dng = BufWriter::new(File::create(&out_path)?);
+      if let Err(err) = convert_raw_source(&rawfile, &mut dng, original_filename, &state.params) {
+        // The upload must not get lost: remove the incomplete DNG, the server stores the original file.
+        log::error!("Failed to convert {}, keeping the original file: {}", path.display(), err);
+        drop(dng);
+        if let Err(err) = std::fs::remove_file(&out_path) {
+          log::warn!("Failed to remove incomplete {}: {}", out_path.display(), err);
+        }
+        return Ok(false);
+      }
       if state.params.keep_mtime {
         if let Err(err) = copy_mtime_from_rawsource(
           &rawfile,
