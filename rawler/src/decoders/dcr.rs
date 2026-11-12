@@ -27,6 +27,7 @@ use super::FormatHint;
 use super::Orientation;
 use super::RawDecodeParams;
 use super::RawMetadata;
+use super::image_bytes;
 use super::ok_cfa_image;
 
 #[derive(Debug, Clone)]
@@ -68,6 +69,9 @@ impl<'a> Decoder for DcrDecoder<'a> {
     let src = file.subview_until_eof_padded(offset as u64)?; // TODO add size and check all samples
 
     let linearization = fetch_tiff_tag!(self.makernote, TiffCommonTag::DcrLinearization);
+    if linearization.count() == 0 {
+      return Err(decoder_error!("DCR: the linearization table is empty"));
+    }
     let curve = {
       let mut points = Vec::new();
       for i in 0..linearization.count() {
@@ -157,6 +161,7 @@ pub(super) fn kodak_wb(kodak_ifd: &IFD) -> Option<[f32; 4]> {
 
 impl<'a> DcrDecoder<'a> {
   pub(crate) fn decode_kodak65000(buf: &[u8], curve: &LookupTable, width: usize, height: usize, dummy: bool) -> Result<PixU16> {
+    image_bytes("DCR", width, height, 16)?;
     let mut out = alloc_image_ok!(width, height, dummy);
     let mut input = ByteStream::new(buf, Endian::Little);
 
@@ -212,5 +217,17 @@ impl<'a> DcrDecoder<'a> {
     }
 
     Ok(out)
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[test]
+  fn kodak65000_rejects_an_empty_image() {
+    let curve = LookupTable::new(&[0, 1]);
+    assert!(DcrDecoder::decode_kodak65000(&[0; 16], &curve, 0, 4, false).is_err());
+    assert!(DcrDecoder::decode_kodak65000(&[0; 16], &curve, 4, 0, false).is_err());
   }
 }
