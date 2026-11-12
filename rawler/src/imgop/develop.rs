@@ -777,7 +777,7 @@ mod tests {
       false,
     );
     rawimage.dng_opcodes_3 = Some(OpcodeList::new(vec![warp_rectilinear(0.5, 0.0)]));
-    let develop = RawDevelop::new_with(&[ProcessingStep::Rescale, ProcessingStep::Demosaic]);
+    let develop = RawDevelop::new_with(&[ProcessingStep::Rescale, ProcessingStep::Demosaic, ProcessingStep::OpcodeList3]);
     let image = develop.develop_image(rawimage)?;
     let pixels = rgb_pixels(&image);
     for (i, pixel) in pixels.iter().enumerate() {
@@ -855,7 +855,7 @@ mod tests {
       constant: 0,
       bayer_phase: 0,
     })]));
-    let image = RawDevelop::new_with(&[ProcessingStep::Rescale]).develop_image(rawimage)?;
+    let image = RawDevelop::new_with(&[ProcessingStep::OpcodeList1, ProcessingStep::Rescale]).develop_image(rawimage)?;
     assert_eq!(image.channels, 1);
     assert_eq!(image.data[6 * 16 + 6], 1300.0 / 4095.0);
     Ok(())

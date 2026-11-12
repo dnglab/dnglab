@@ -125,7 +125,8 @@ pub fn plan(rawimage: &RawImage, options: &RenderOptions) -> crate::Result<Plan>
   let steps = options.steps;
   let linear_raw = options.target == RenderTarget::LinearRaw;
   let mut ops = Vec::new();
-  let has_opcodes = |stage| rawimage.opcode_list(stage).is_some();
+  // Opcode lists that are applied: the image has them and their step is set
+  let has_opcodes = |stage| rawimage.opcode_list(stage).is_some() && steps.contains(opcode_list_step(stage));
   if !matches!(rawimage.cpp, 1 | 3 | 4) {
     return Err(input_error!("Images with {} color planes are not supported", rawimage.cpp));
   }
@@ -424,6 +425,15 @@ pub fn plan(rawimage: &RawImage, options: &RenderOptions) -> crate::Result<Plan>
     extended_range,
     raw_values,
   })
+}
+
+/// Processing step that applies the opcode list of `stage`
+fn opcode_list_step(stage: OpcodeStage) -> ProcessingStep {
+  match stage {
+    OpcodeStage::List1 => ProcessingStep::OpcodeList1,
+    OpcodeStage::List2 => ProcessingStep::OpcodeList2,
+    OpcodeStage::List3 => ProcessingStep::OpcodeList3,
+  }
 }
 
 /// Demosaic algorithm for a CFA and the number of color planes of its result,

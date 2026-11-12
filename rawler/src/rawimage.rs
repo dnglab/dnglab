@@ -673,9 +673,17 @@ impl RawImage {
     use crate::imgop::render::{ProcessingStep as Step, RenderOptions, render_linear_raw};
 
     let options = RenderOptions {
-      steps: [Step::Rescale, Step::Demosaic, Step::CropActiveArea, Step::FujiRotate, Step::WhiteBalance]
-        .into_iter()
-        .collect(),
+      steps: [
+        Step::OpcodeList1,
+        Step::Rescale,
+        Step::OpcodeList2,
+        Step::Demosaic,
+        Step::CropActiveArea,
+        Step::FujiRotate,
+        Step::WhiteBalance,
+      ]
+      .into_iter()
+      .collect(),
       ..Default::default()
     };
     render_linear_raw(self.clone(), &options)

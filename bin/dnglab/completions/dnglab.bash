@@ -890,11 +890,11 @@ _dnglab() {
                     return 0
                     ;;
                 --steps)
-                    COMPREPLY=($(compgen -W "all rescale demosaic fujirotate cropactivearea baselineexposure whitebalance autowhitebalance calibrate profilerender tonecurve cropdefault denoise defaultscale exposure autoexposure sharpen transferfunction" -- "${cur}"))
+                    COMPREPLY=($(compgen -W "all opcodelist1 rescale opcodelist2 demosaic opcodelist3 fujirotate cropactivearea baselineexposure whitebalance autowhitebalance calibrate profilerender tonecurve cropdefault denoise defaultscale exposure autoexposure sharpen transferfunction" -- "${cur}"))
                     return 0
                     ;;
                 --skip-steps)
-                    COMPREPLY=($(compgen -W "all rescale demosaic fujirotate cropactivearea baselineexposure whitebalance autowhitebalance calibrate profilerender tonecurve cropdefault denoise defaultscale exposure autoexposure sharpen transferfunction" -- "${cur}"))
+                    COMPREPLY=($(compgen -W "all opcodelist1 rescale opcodelist2 demosaic opcodelist3 fujirotate cropactivearea baselineexposure whitebalance autowhitebalance calibrate profilerender tonecurve cropdefault denoise defaultscale exposure autoexposure sharpen transferfunction" -- "${cur}"))
                     return 0
                     ;;
                 --loglevel)
