@@ -297,11 +297,13 @@ impl<'a> Decoder for Cr2Decoder<'a> {
     }
 
     if let Some(file_crop) = self.get_sensor_area()? {
-      assert!(
-        img.crop_area.is_none(),
-        "Camera {} has embedded crop params, remove crop from config file!",
-        camera.clean_make
-      );
+      if img.crop_area.is_some() {
+        log::warn!(
+          "Camera {} {} has embedded crop params, the crop from the config file is ignored",
+          camera.clean_make,
+          camera.clean_model
+        );
+      }
       img.crop_area = Some(file_crop);
     } else {
       //panic!("Camera {} has no embedded crops, but all CR2 should contain them?!", self.camera.clean_make);
