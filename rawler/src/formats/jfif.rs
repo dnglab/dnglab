@@ -32,6 +32,18 @@ fn payload_len(len: u64) -> Result<u64> {
     .ok_or_else(|| JfifError::FormatMismatch(format!("Segment length {} is shorter than the length field", len)))
 }
 
+/// Skip the segment whose length field is at `start`, false if the length
+/// is invalid or missing
+fn skip_segment<R: Read + Seek>(reader: &mut R, start: u64) -> bool {
+  fn skip<R: Read + Seek>(reader: &mut R, start: u64) -> Result<()> {
+    reader.seek(SeekFrom::Start(start))?;
+    let len = payload_len(reader.read_u16::<BigEndian>()? as u64)?;
+    reader.seek(SeekFrom::Start(start + 2 + len))?;
+    Ok(())
+  }
+  skip(reader, start).is_ok()
+}
+
 pub trait ReadSegment<T>: Sized {
   fn read_segment(_: T, symbol: u16) -> Result<Self>;
 }
@@ -50,7 +62,7 @@ pub struct App0 {
 
 impl<R: Read + Seek> ReadSegment<&mut R> for App0 {
   fn read_segment(reader: &mut R, _symbol: u16) -> Result<Self> {
-    //let pos = reader.stream_position()?;
+    let pos = reader.stream_position()?;
     let len: u64 = reader.read_u16::<BigEndian>()? as u64;
 
     const APP1_JFIF_MARKER: [u8; 5] = [b'J', b'F', b'I', b'F', b'\0'];
@@ -81,6 +93,7 @@ impl<R: Read + Seek> ReadSegment<&mut R> for App0 {
         } else {
           None
         };
+        reader.seek(SeekFrom::Start(pos + len))?;
         Ok(Self {
           len,
           version,
@@ -241,10 +254,20 @@ impl Jfif {
       let segment = match symbol {
         0xFFD8 => Segment::SOI { offset: pos },
         0xFFD9 => Segment::EOI,
-        0xFFE0 => Segment::APP0 {
-          offset: pos,
-          app0: App0::read_segment(&mut reader, symbol)?,
-        },
+        0xFFE0 => {
+          let start = reader.stream_position()?;
+          match App0::read_segment(&mut reader, symbol) {
+            Ok(app0) => Segment::APP0 { offset: pos, app0 },
+            // Like a JFXX extension, which follows the JFIF APP0
+            Err(err) => {
+              log::debug!("APP0 segment is no JFIF segment, skipping it: {:?}", err);
+              if !skip_segment(&mut reader, start) {
+                break;
+              }
+              Segment::Unknown { offset: pos, marker: symbol }
+            }
+          }
+        }
         0xFFE1 => match App1::read_segment(&mut reader, symbol) {
           Ok(app1) => Segment::APP1 { offset: pos, app1 },
           Err(err) => {
@@ -390,8 +413,29 @@ mod tests {
       Segment::APP0 { app0, .. } => assert_eq!(app0.thumbnail.as_ref().map(Vec::len), Some(16 * 16 * 3)),
       segment => panic!("APP0 expected, got {:?}", segment),
     }
-    // The thumbnail does not fit in the segment
-    assert!(Jfif::parse(Cursor::new(jpeg(0xE0, 16, &payload))).is_err());
+    // The thumbnail does not fit in the segment, which is skipped
+    let parsed = Jfif::parse(Cursor::new(jpeg(0xE0, 16, &payload[..14]))).expect("parsed");
+    assert!(matches!(
+      parsed.segments.as_slice(),
+      [Segment::SOI { .. }, Segment::Unknown { marker: 0xFFE0, .. }, Segment::EOI]
+    ));
+  }
+
+  #[test]
+  fn app0_extension_and_trailing_bytes() {
+    // JFIF APP0 with 2 more bytes than its header, then a JFXX APP0
+    let mut payload = jfif_app0(0, 0);
+    payload.extend_from_slice(&[0xFF, 0xD9]);
+    let mut data = jpeg(0xE0, payload.len() as u16 + 2, &payload);
+    data.truncate(data.len() - 2);
+    data.extend_from_slice(&[0xFF, 0xE0, 0, 8]);
+    data.extend_from_slice(b"JFXX\0\x10");
+    data.extend_from_slice(&[0xFF, 0xD9]);
+    let parsed = Jfif::parse(Cursor::new(data)).expect("parsed");
+    assert!(matches!(
+      parsed.segments.as_slice(),
+      [Segment::SOI { .. }, Segment::APP0 { .. }, Segment::Unknown { marker: 0xFFE0, .. }, Segment::EOI]
+    ));
   }
 
   #[test]
