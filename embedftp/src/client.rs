@@ -716,8 +716,19 @@ where
   let (mut writer, mut reader) = FtpCodec::default().framed(stream).split();
   writer.send(Answer::new(ResultCode::ServiceReadyForNewUser, &config.greeting)).await?;
 
+  let idle_timeout = config.idle_timeout;
   let mut client = Client::new(handle, writer, server_root, config, env, local_addr, remote_addr);
-  while let Some(cmd) = reader.try_next().await? {
+  loop {
+    let Ok(cmd) = timeout(idle_timeout, reader.try_next()).await else {
+      info!("Client {} sent no command for {} seconds", remote_addr, idle_timeout.as_secs());
+      client
+        .send(Answer::new(ResultCode::ServiceNotAvailable, "Idle timeout, closing connection"))
+        .await?;
+      break;
+    };
+    let Some(cmd) = cmd? else {
+      break;
+    };
     let quit = cmd == Ok(Command::Quit);
     match cmd {
       Ok(cmd) => client.handle_cmd(cmd).await?,

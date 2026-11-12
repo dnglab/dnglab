@@ -2,7 +2,7 @@
 // Originally written by Guillaume Gomez under MIT license
 // Copyright 2021 Daniel Vogelbacher <daniel@chaospixel.com>
 
-use std::{net::IpAddr, path::Path, sync::Arc};
+use std::{net::IpAddr, path::Path, sync::Arc, time::Duration};
 
 /// Server configuration
 #[derive(Clone)]
@@ -16,6 +16,8 @@ pub struct Config {
   pub max_upload_size: u64,
   /// Maximum number of clients that are connected at the same time
   pub max_sessions: usize,
+  /// A client that sends no command for this time is disconnected
+  pub idle_timeout: Duration,
 }
 
 /// This callback provides filtering for specific FTP
@@ -47,6 +49,7 @@ impl Config {
       greeting: String::from("Welcome to this FTP server!"),
       max_upload_size: 2 * 1024 * 1024 * 1024,
       max_sessions: 32,
+      idle_timeout: Duration::from_secs(900),
     })
   }
 }
