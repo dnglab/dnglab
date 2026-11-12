@@ -78,8 +78,10 @@ impl<'a> Decoder for CrwDecoder<'a> {
       decompress_10le_lsb16(src, 1552, 1024, dummy).map_err(RawlerError::decoder_failed)?
     } else {
       let sensorinfo = fetch_ciff_tag!(self.ciff, CiffTag::SensorInfo);
-      let width = sensorinfo.get_usize(1);
-      let height = sensorinfo.get_usize(2);
+      let (width, height) = match (sensorinfo.try_u32(1), sensorinfo.try_u32(2)) {
+        (Some(width), Some(height)) => (width as usize, height as usize),
+        _ => return Err(decoder_error!("CRW: SensorInfo has no image size")),
+      };
       self.decode_compressed(camera, file, width, height, dummy)?
     };
 
@@ -222,7 +224,9 @@ impl<'a> CrwDecoder<'a> {
 
   fn decode_compressed(&self, camera: &Camera, file: &RawSource, width: usize, height: usize, dummy: bool) -> Result<PixU16> {
     let lowbits = !camera.find_hint("nolowbits");
-    let dectable = fetch_ciff_tag!(self.ciff, CiffTag::DecoderTable).get_usize(0);
+    let dectable = fetch_ciff_tag!(self.ciff, CiffTag::DecoderTable)
+      .try_u32(0)
+      .ok_or_else(|| decoder_error!("CRW: DecoderTable has no value"))? as usize;
     if dectable > 2 {
       return Err(decoder_error!("CRW: Unknown decoder table {}", dectable));
     }

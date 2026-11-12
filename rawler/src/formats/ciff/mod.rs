@@ -195,7 +195,7 @@ impl CiffEntry {
   pub fn element_shift(typ: u16) -> usize {
     match typ {
       // Byte and ASCII
-      0x0000 | 0x8000 => 0,
+      0x0000 | 0x0800 => 0,
       // Short
       0x1000 => 1,
       // Long, Mix, Sub1 and Sub2
@@ -209,13 +209,29 @@ impl CiffEntry {
     String::from_utf8_lossy(&self.data).split_terminator('\0').map(|x| x.to_string()).collect()
   }
 
-  pub fn get_u32(&self, idx: usize) -> u32 {
+  /// The integer at index `idx`, None if the data is too short or the type
+  /// has no integers
+  pub fn try_u32(&self, idx: usize) -> Option<u32> {
+    let bytes = |size: usize| {
+      let start = idx.checked_mul(size)?;
+      self.data.get(start..start.checked_add(size)?)
+    };
     match self.typ {
-      0x0000 | 0x8000 => self.data[idx] as u32,
-      0x1000 => LEu16(&self.data, idx * 2) as u32,
-      0x1800 | 0x2000 | 0x2800 | 0x3000 => LEu32(&self.data, idx * 4),
-      _ => panic!("{}", format!("Trying to read typ {} for a u32", self.typ)),
+      // Byte and ASCII
+      0x0000 | 0x0800 => bytes(1).map(|b| b[0] as u32),
+      0x1000 => bytes(2).map(|b| LEu16(b, 0) as u32),
+      0x1800 | 0x2000 | 0x2800 | 0x3000 => bytes(4).map(|b| LEu32(b, 0)),
+      _ => None,
     }
+  }
+
+  /// The integer at index `idx`, 0 if the data is too short or the type has
+  /// no integers
+  pub fn get_u32(&self, idx: usize) -> u32 {
+    self.try_u32(idx).unwrap_or_else(|| {
+      log::error!("CIFF tag 0x{:x} of type 0x{:x} has no integer at index {}, using 0", self.tag, self.typ, idx);
+      0
+    })
   }
 
   pub fn get_usize(&self, idx: usize) -> usize {
@@ -224,8 +240,16 @@ impl CiffEntry {
   pub fn get_f32(&self, idx: usize) -> f32 {
     self.get_u32(idx) as f32
   }
+  /// The data at index `idx` read as u16, whatever the type, 0 if the data
+  /// is too short
   pub fn get_force_u16(&self, idx: usize) -> u16 {
-    LEu16(&self.data, idx * 2)
+    match idx.checked_mul(2).and_then(|start| self.data.get(start..start + 2)) {
+      Some(bytes) => LEu16(bytes, 0),
+      None => {
+        log::error!("CIFF tag 0x{:x} has no u16 at index {}, using 0", self.tag, idx);
+        0
+      }
+    }
   }
 }
 
@@ -292,6 +316,21 @@ mod tests {
     let ifd = CiffIFD::new(&data, 0, data.len(), 1).expect("heap");
     assert_eq!(ifd.subifds.len(), 1);
     assert!(ifd.find_entry(CiffTag::SensorInfo).is_some());
+  }
+
+  #[test]
+  fn values_of_entries() {
+    // Tag 0x0805 is ASCII, 0x1031 SHORT, 0x3805 has the type 0x3800
+    let data = heap(b"AB\0\x01\0\x02\0", &[(0x0805, 3, 0), (0x1031, 4, 3), (0x3805, 4, 3)]);
+    let entry = |n: usize| CiffEntry::new(&data, 0, 7 + 2 + n * 10).expect("entry");
+    assert_eq!(entry(0).get_u32(1), b'B' as u32);
+    assert_eq!(entry(0).count, 3);
+    assert_eq!(entry(1).get_u32(1), 2);
+    assert_eq!(entry(1).try_u32(2), None);
+    assert_eq!(entry(1).get_u32(2), 0);
+    assert_eq!(entry(1).get_force_u16(usize::MAX), 0);
+    assert_eq!(entry(2).try_u32(0), None);
+    assert_eq!(entry(2).get_force_u16(1), 2);
   }
 
   #[test]
