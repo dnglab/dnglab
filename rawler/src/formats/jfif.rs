@@ -277,7 +277,11 @@ impl Jfif {
   pub fn parse<R: Read + Seek>(mut reader: R) -> Result<Self> {
     let mut segments = Vec::new();
     let mut pos = reader.stream_position()?;
-    let mut sym = Some(reader.read_u16::<BigEndian>()?);
+    let first = reader.read_u16::<BigEndian>()?;
+    if first != 0xFFD8 {
+      return Err(JfifError::FormatMismatch(format!("First marker must be SOI, but is {:X}", first)));
+    }
+    let mut sym = Some(first);
 
     while let Some(symbol) = sym {
       log::debug!("Found symbol: {:X}", symbol);
@@ -330,9 +334,6 @@ impl Jfif {
           Segment::Unknown { offset: pos, marker: symbol }
         }
       };
-      if segments.is_empty() && sym != Some(0xFFD8) {
-        return Err(JfifError::General("first marker must be SOI".into()));
-      }
       segments.push(segment);
       if symbol == 0xFFD9 {
         break; // EOI reached
@@ -342,11 +343,7 @@ impl Jfif {
         marker
       });
     }
-    if !segments.is_empty() {
-      Ok(Self { segments })
-    } else {
-      Err(JfifError::FormatMismatch("JFIF contains no segements".into()))
-    }
+    Ok(Self { segments })
   }
 
   pub fn new(file: &RawSource) -> Result<Self> {
@@ -548,6 +545,14 @@ mod tests {
       parsed.segments.as_slice(),
       [Segment::SOI { .. }, Segment::Unknown { marker: 0xFFE2, .. }]
     ));
+  }
+
+  #[test]
+  fn first_marker_must_be_soi() {
+    let mut data = jpeg(0xE1, 2, &[]);
+    data.drain(0..2);
+    assert!(matches!(Jfif::parse(Cursor::new(data)), Err(JfifError::FormatMismatch(_))));
+    assert!(Jfif::parse(Cursor::new([0xFF])).is_err());
   }
 
   #[test]
