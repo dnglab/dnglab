@@ -347,7 +347,7 @@ impl<'a> IiqDecoder<'a> {
         match def.typ {
           131 | 137 => {
             debug!("Correct bad colum: {}", def.col);
-            self.fix_bad_column(camera, img, def);
+            Self::fix_bad_column(camera, img, def);
           }
           129 => {
             // single bad pixels are ignored, these can be fixed by
@@ -992,9 +992,14 @@ impl<'a> IiqDecoder<'a> {
     }
   }
 
-  fn fix_bad_column(&self, camera: &Camera, img: &mut PixU16, defect: &Defect) {
+  fn fix_bad_column(camera: &Camera, img: &mut PixU16, defect: &Defect) {
     let col = defect.col;
-    for row in 2..img.height - 2 {
+    // The fix uses the pixels 2 columns left and right
+    if col < 2 || col + 2 >= img.width {
+      warn!("IIQ: bad column {} is at the edge of the image, skipping it", col);
+      return;
+    }
+    for row in 2..img.height.saturating_sub(2) {
       match camera.cfa.color_at(row, col) {
         cfa::CFA_COLOR_G => {
           // Do green pixels. Let's pretend we are in "G" pixel, in the middle:
@@ -1381,6 +1386,30 @@ mod tests {
     assert!(IiqDecoder::decode_compressed_sv2(&buf, &[0; 4], 8, 1, 14, false).is_err());
     // Zero data has no invalid bit counts
     assert!(IiqDecoder::decode_compressed_sv2(&[0; 64], &[0; 4], 8, 1, 14, false).is_ok());
+  }
+
+  #[test]
+  fn bad_columns_at_the_edges_are_skipped() {
+    let mut camera = Camera::new();
+    camera.cfa = cfa::CFA::new("RGGB");
+    let defect = |col| Defect {
+      row: 0,
+      col,
+      typ: 131,
+      reserved: 0,
+    };
+    let pixels: Vec<u16> = (0..8 * 8).map(|i| i as u16 * 10).collect();
+    for col in [0, 1, 6, 7] {
+      let mut img = PixU16::new_with(pixels.clone(), 8, 8);
+      IiqDecoder::fix_bad_column(&camera, &mut img, &defect(col));
+      assert_eq!(img.pixels(), &pixels[..], "column {col}");
+    }
+    let mut img = PixU16::new_with(pixels.clone(), 8, 8);
+    IiqDecoder::fix_bad_column(&camera, &mut img, &defect(4));
+    assert_ne!(img.pixels(), &pixels[..]);
+    // An image of one row
+    let mut img = PixU16::new_with(vec![0; 8], 8, 1);
+    IiqDecoder::fix_bad_column(&camera, &mut img, &defect(4));
   }
 
   #[test]
