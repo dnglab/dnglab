@@ -278,7 +278,9 @@ impl<'a> CrwDecoder<'a> {
         }
         i += 1;
       }
-      diffbuf[0] += carry;
+      // The sums of differences overflow for crafted data only, they wrap like
+      // in release builds
+      diffbuf[0] = diffbuf[0].wrapping_add(carry);
       carry = diffbuf[0];
 
       // Save those differences to 64 pixels adjusting the predictor as we go
@@ -289,7 +291,7 @@ impl<'a> CrwDecoder<'a> {
           base[1] = 512;
         }
         pnum += 1;
-        base[i & 1] += diffbuf[i];
+        base[i & 1] = base[i & 1].wrapping_add(diffbuf[i]);
         pixout[i] = base[i & 1] as u16;
       }
     }
