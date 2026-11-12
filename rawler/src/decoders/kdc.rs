@@ -5,7 +5,6 @@ use crate::RawLoader;
 use crate::RawSource;
 use crate::RawlerError;
 use crate::Result;
-use crate::alloc_image;
 use crate::alloc_image_ok;
 use crate::analyze::FormatDump;
 use crate::decompressors::packed::decompress_12be;
@@ -28,6 +27,7 @@ use super::RawDecodeParams;
 use super::RawMetadata;
 use super::RawPhotometricInterpretation;
 use super::WhiteLevel;
+use super::image_bytes;
 use super::ok_cfa_image;
 
 #[derive(Debug, Clone)]
@@ -73,7 +73,7 @@ impl<'a> Decoder for KdcDecoder<'a> {
       let off = fetch_tiff_tag!(raw, TiffCommonTag::StripOffsets).force_usize(0);
       let src = file.subview_until_eof(off as u64)?;
       let (image, white) = match fetch_tiff_tag!(raw, TiffCommonTag::Compression).force_usize(0) {
-        1 => (Self::decode_dc120(src, width, height, dummy), 0xFF),
+        1 => (Self::decode_dc120(src, width, height, dummy)?, 0xFF),
         7 => (Self::decode_dc120_jpeg(src, width, height, dummy)?, 0xFF << 1),
         c => {
           return Err(RawlerError::unsupported(
@@ -101,11 +101,15 @@ impl<'a> Decoder for KdcDecoder<'a> {
       let width = camera.raw_width;
       let height = camera.raw_height;
       let off = fetch_tiff_tag!(raw, TiffCommonTag::StripOffsets).force_usize(0);
-      let white = camera.whitelevel.clone().expect("KDC needs a whitelevel in camera config")[0];
+      let white = camera
+        .whitelevel
+        .as_ref()
+        .and_then(|levels| levels.first().copied())
+        .ok_or_else(|| decoder_error!("KDC DC50: no white level in the camera definition"))?;
       let cbpp = match raw.get_entry(ExifTag::CompressedBitsPerPixel) {
         Some(Entry {
           value: Value::Rational(data), ..
-        }) if data[0].n == 243 => 2,
+        }) if data.first().is_some_and(|bits| bits.n == 243) => 2,
         _ => 3,
       };
       let src = file.subview_until_eof_padded(off as u64)?;
@@ -136,6 +140,7 @@ impl<'a> Decoder for KdcDecoder<'a> {
       off = if off < 0x15000 { 0x15000 } else { 0x17000 };
     }
 
+    image_bytes("KDC", width, height, 12)?;
     let src = file.subview_until_eof(off as u64)?;
     let image = decompress_12be(src, width, height, dummy).map_err(RawlerError::decoder_failed)?;
     let cpp = 1;
@@ -182,8 +187,13 @@ impl<'a> KdcDecoder<'a> {
     if levels.count() != 3 {
       return Err(decoder_error!("KDC: Levels count is off: {}", levels.count()));
     }
-    let green = levels.force_f32(1);
-    Ok([levels.force_f32(0) / green, 1.0, levels.force_f32(2) / green, f32::NAN])
+    let levels = [0, 1, 2].map(|i| levels.force_f32(i));
+    if !levels.iter().all(|level| level.is_finite() && *level > 0.0) {
+      warn!("KDC: invalid white balance levels {:?}, the white balance is unknown", levels);
+      return Ok([f32::NAN; 4]);
+    }
+    let [red, green, blue] = levels;
+    Ok([red / green, 1.0, blue / green, f32::NAN])
   }
 
   /// Tag with the white balance levels of a white balance mode. Other modes than
@@ -198,18 +208,21 @@ impl<'a> KdcDecoder<'a> {
     }
   }
 
-  pub(crate) fn decode_dc120(src: &[u8], width: usize, height: usize, dummy: bool) -> PixU16 {
-    let mut out = alloc_image!(width, height, dummy);
+  pub(crate) fn decode_dc120(src: &[u8], width: usize, height: usize, dummy: bool) -> Result<PixU16> {
+    let mut out = alloc_image_ok!(width, height, dummy);
 
     let mul: [usize; 4] = [162, 192, 187, 92];
     let add: [usize; 4] = [0, 636, 424, 212];
     for row in 0..height {
       let shift = row * mul[row & 3] + add[row & 3];
       for col in 0..width {
-        out[row * width + col] = src[row * width + ((col + shift) % 848)] as u16;
+        let pixel = src
+          .get(row * width + ((col + shift) % 848))
+          .ok_or_else(|| decoder_error!("KDC DC120: the data ends in row {}", row))?;
+        out[row * width + col] = *pixel as u16;
       }
     }
-    out
+    Ok(out)
   }
 
   pub(crate) fn decode_dc120_jpeg(src: &[u8], width: usize, height: usize, dummy: bool) -> Result<PixU16> {
@@ -220,12 +233,18 @@ impl<'a> KdcDecoder<'a> {
     let img =
       image::load_from_memory_with_format(&swapped_src, image::ImageFormat::Jpeg).map_err(|err| decoder_error!("Failed to read JPEG image: {:?}", err))?;
 
-    assert_eq!(width, img.width() as usize);
-    assert_eq!(height, img.height() as usize * 2);
-    let buf = img
-      .as_flat_samples_u8()
-      .ok_or_else(|| RawlerError::decoder_failed("KDC: failed to get u8 samples from JPEG"))?;
-    let jpeg = buf.as_slice();
+    if width != img.width() as usize || height != img.height() as usize * 2 {
+      return Err(decoder_error!(
+        "KDC DC120: JPEG of {}x{} pixels for an image of {}x{} pixels",
+        img.width(),
+        img.height(),
+        width,
+        height
+      ));
+    }
+    // The pixels are read as RGB, other JPEGs are converted
+    let img = img.into_rgb8();
+    let jpeg = img.as_raw();
 
     for irow in 0..img.height() as usize {
       let row = irow * 2;
@@ -239,5 +258,26 @@ impl<'a> KdcDecoder<'a> {
     }
 
     Ok(out)
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[test]
+  fn dc120_with_short_data_is_an_error() {
+    assert!(KdcDecoder::decode_dc120(&[0; 1000], 848, 976, false).is_err());
+    assert!(KdcDecoder::decode_dc120(&vec![0; 848 * 976], 848, 976, false).is_ok());
+  }
+
+  #[test]
+  fn dc120_jpeg_of_another_size_is_an_error() {
+    let mut jpeg = std::io::Cursor::new(Vec::new());
+    image::RgbImage::new(16, 8).write_to(&mut jpeg, image::ImageFormat::Jpeg).expect("JPEG");
+    // The JPEG data has swapped bytes
+    let swapped: Vec<u8> = jpeg.into_inner().chunks(2).flat_map(|x| x.iter().rev().copied().collect::<Vec<u8>>()).collect();
+    assert!(KdcDecoder::decode_dc120_jpeg(&swapped, 16, 16, false).is_ok());
+    assert!(KdcDecoder::decode_dc120_jpeg(&swapped, 16, 32, false).is_err());
   }
 }

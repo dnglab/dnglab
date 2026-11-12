@@ -164,7 +164,7 @@ pub fn decode_unwrapped(file: &RawSource) -> Result<RawImageData> {
     }
     26 => Ok(RawImageData::Integer(srw::SrwDecoder::decode_srw2(data, width, height, false)?.into_inner())),
     27 => Ok(RawImageData::Integer(srw::SrwDecoder::decode_srw3(data, width, height, false)?.into_inner())),
-    28 => Ok(RawImageData::Integer(kdc::KdcDecoder::decode_dc120(data, width, height, false).into_inner())),
+    28 => Ok(RawImageData::Integer(kdc::KdcDecoder::decode_dc120(data, width, height, false)?.into_inner())),
     29 => Ok(RawImageData::Integer(
       rw2::v4decompressor::decode_panasonic_v4(data, width, height, false, false)
         .map_err(RawlerError::decoder_failed)?
