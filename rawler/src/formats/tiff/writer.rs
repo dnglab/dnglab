@@ -245,13 +245,20 @@ impl DirectoryWriter {
   where
     W: Seek + Write,
   {
+    // Values copied from other files can be empty, TIFF does not allow that
+    self.entries.retain(|tag, entry| {
+      if entry.value.count() == 0 {
+        log::warn!("TIFF value of tag 0x{:X} is empty, the tag is not written", tag);
+      }
+      entry.value.count() > 0
+    });
     if self.entries.is_empty() {
       return Err(TiffError::General("IFD is empty, not allowed by TIFF specification".to_string()));
     }
     for &mut Entry {
       ref mut value,
       ref mut embedded,
-      ref tag,
+      ..
     } in self.entries.values_mut()
     {
       let data_bytes = 4;
@@ -262,9 +269,6 @@ impl DirectoryWriter {
         value.write(&mut tiff.writer)?;
         embedded.replace(offset);
       } else {
-        if value.count() == 0 {
-          panic!("TIFF value is empty, tag: {:?}", tag);
-        }
         embedded.replace(value.as_embedded()?);
       }
     }
@@ -281,9 +285,10 @@ impl DirectoryWriter {
       let value_type = if matches!(entry.value, Value::Unknown(..)) { 7 } else { entry.value_type() };
       tiff.writer.write_u16::<NativeEndian>(value_type)?;
       tiff.writer.write_u32::<NativeEndian>(entry.count())?;
-      tiff
-        .writer
-        .write_u32::<NativeEndian>(entry.embedded.expect("embedded attribute must contain a value"))?;
+      let embedded = entry
+        .embedded
+        .ok_or_else(|| TiffError::General(format!("TIFF value of tag 0x{:X} has no offset", tag)))?;
+      tiff.writer.write_u32::<NativeEndian>(embedded)?;
     }
     tiff.writer.write_u32::<NativeEndian>(self.next_ifd)?; // Next IFD
 
@@ -498,6 +503,27 @@ mod tests {
       }
       Ok(self.pos)
     }
+  }
+
+  #[test]
+  fn empty_values_are_skipped() -> Result<()> {
+    let mut output = std::io::Cursor::new(Vec::new());
+    let tiff = TiffWriter::new(&mut output)?;
+    let mut dir = tiff.new_directory();
+    dir.add_untyped_tag(0x100, Value::Short(vec![]));
+    dir.add_untyped_tag(0x101, Value::Short(vec![7]));
+    tiff.build(dir)?;
+    let reader = super::super::GenericTiffReader::new_with_buffer(output.into_inner(), 0, 0, None)?;
+    use super::super::reader::TiffReader;
+    assert_eq!(reader.root_ifd().entry_count(), 1);
+    assert!(reader.root_ifd().has_entry(0x101_u16));
+    // An IFD of empty values only is empty
+    let mut output = std::io::Cursor::new(Vec::new());
+    let tiff = TiffWriter::new(&mut output)?;
+    let mut dir = tiff.new_directory();
+    dir.add_untyped_tag(0x100, Value::Long(vec![]));
+    assert!(tiff.build(dir).is_err());
+    Ok(())
   }
 
   #[test]
