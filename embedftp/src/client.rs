@@ -273,11 +273,10 @@ where
           .map_err(io::Error::from)
           .and_then(|res| res)
       }
-      DataMode::Passive(listener) => timeout(data_timeout, listener.accept())
+      DataMode::Passive(listener) => timeout(data_timeout, accept_from(&listener, self.remote_addr.ip()))
         .await
         .map_err(io::Error::from)
-        .and_then(|res| res)
-        .map(|(stream, _addr)| stream),
+        .and_then(|res| res),
     };
     match stream {
       Ok(stream) => {
@@ -759,6 +758,18 @@ pub(crate) async fn refuse(stream: TcpStream) {
   let answer = Answer::new(ResultCode::ServiceNotAvailable, "Too many connections, try again later");
   // The reply is a courtesy, the connection is closed in any case
   let _ = timeout(Duration::from_secs(5), writer.send(answer)).await;
+}
+
+/// Accept the data connection of the client. Connections of other hosts are closed,
+/// they could read or supply the data of the transfer.
+async fn accept_from(listener: &TcpListener, client: IpAddr) -> io::Result<TcpStream> {
+  loop {
+    let (stream, addr) = listener.accept().await?;
+    if addr.ip().to_canonical() == client.to_canonical() {
+      return Ok(stream);
+    }
+    warn!("Closed data connection of {}, the client is {}", addr, client);
+  }
 }
 
 /// Copy all data from the reader to the writer.
