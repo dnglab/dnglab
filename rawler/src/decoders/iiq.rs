@@ -558,6 +558,17 @@ impl<'a> IiqDecoder<'a> {
       };
       let wide: usize = head[2] / head[4] + ((head[2] % head[4] != 0) as usize);
       let high: usize = head[3] / head[5] + ((head[3] % head[5] != 0) as usize);
+      // Each cell has a value for each pair of colors
+      let need = wide * high * (nc / 2);
+      if flat.data.len() < need {
+        warn!(
+          "IIQ: flat field 0x{:x} has {} values, but {} are needed, skipping it",
+          flat.typ,
+          flat.data.len(),
+          need
+        );
+        continue;
+      }
       let mut mrow = vec![0.0; nc * wide];
       let mut pump = flat.data.iter();
       let mut mult = [0.0; 4]; // One multiplier per color (R=0, G1=1, ...)
@@ -565,7 +576,8 @@ impl<'a> IiqDecoder<'a> {
       for y in 0..high {
         for x in 0..wide {
           for c in (0..nc).step_by(2) {
-            let num = *pump.next().expect("flat field correction data consumed but tried to get more");
+            // The number of values is checked above
+            let num = pump.next().copied().unwrap_or_default();
             if y == 0 {
               mrow[c * wide + x] = num;
             } else {
@@ -1386,6 +1398,19 @@ mod tests {
     assert!(IiqDecoder::decode_compressed_sv2(&buf, &[0; 4], 8, 1, 14, false).is_err());
     // Zero data has no invalid bit counts
     assert!(IiqDecoder::decode_compressed_sv2(&[0; 64], &[0; 4], 8, 1, 14, false).is_ok());
+  }
+
+  #[test]
+  fn flat_field_with_too_few_values_is_skipped() {
+    // The cells need 4 values, the flat field has 3
+    let flat = FlatField {
+      typ: 0x40b,
+      head: [1, 1, 8, 8, 4, 4, 0, 0],
+      data: vec![2.0; 3],
+    };
+    let mut img = PixU16::new_with(vec![1000; 12 * 12], 12, 12);
+    IiqDecoder::correct_raw_flatfield(&mut img, &cfa::CFA::new("GBRG"), &[flat]);
+    assert!(img.pixels().iter().all(|pix| *pix == 1000));
   }
 
   #[test]
