@@ -25,6 +25,9 @@ const MAX_IFD_ENTRIES: usize = 4096;
 /// Limit for the number of IFDs in a chain
 const MAX_IFD_CHAIN: usize = 256;
 
+/// Limit for the number of sub-IFDs of a tag
+const MAX_SUB_IFDS: usize = 64;
+
 /// Record the IFD at `offset` in a chain, false if the chain loops back to
 /// an IFD in `visited` or reaches `MAX_IFD_CHAIN` IFDs
 pub(super) fn visit_chained_ifd(visited: &mut HashSet<u32>, offset: u32) -> bool {
@@ -218,17 +221,22 @@ impl IFD {
     // Process SubIFDs
     let pos = reader.position()?;
     let reader = reader.into_inner();
-    for subs in sub_ifd_offsets {
+    for (tag, offsets) in sub_ifd_offsets {
+      let mut seen = HashSet::new();
+      let offsets: Vec<u32> = offsets.into_iter().filter(|offset| seen.insert(*offset)).collect();
+      if offsets.len() > MAX_SUB_IFDS {
+        log::warn!("TIFF: tag 0x{:X} has {} sub-IFDs, reading the first {} only", tag, offsets.len(), MAX_SUB_IFDS);
+      }
       let mut ifds = Vec::new();
-      for offset in subs.1 {
+      for offset in offsets.into_iter().take(MAX_SUB_IFDS) {
         match Self::new(reader, offset, base, corr, endian, &[]) {
           Ok(ifd) => ifds.push(ifd),
           Err(err) => {
-            log::warn!("Error while processing TIFF sub-IFD for tag 0x{:X}, ignoring it: {}", subs.0, err);
+            log::warn!("Error while processing TIFF sub-IFD for tag 0x{:X}, ignoring it: {}", tag, err);
           }
         };
       }
-      sub.insert(subs.0, ifds);
+      sub.insert(tag, ifds);
     }
     EndianReader::new(reader, endian).goto(pos)?; // restore
     let next_ifd = match next_ifd {
@@ -750,6 +758,36 @@ mod tests {
     data.extend_from_slice(&[1, 0, 0x00, 0x02, 3, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0]);
     let ifd = IFD::new(&mut Cursor::new(data), 8, 0, 2, Endian::Little, &[0x927c])?;
     assert!(ifd.sub[&0x927c][0].has_entry(0x200_u16));
+    Ok(())
+  }
+
+  /// IFD at 8 with a SubIFDs entry of LONG `offsets`, then 256 zero bytes
+  fn ifd_with_sub_ifds(offsets: &[u32]) -> Vec<u8> {
+    let count = (offsets.len() as u32).to_le_bytes();
+    let mut entry = [0x4a, 0x01, 4, 0, count[0], count[1], count[2], count[3], 26, 0, 0, 0];
+    if offsets.len() == 1 {
+      entry[8..].copy_from_slice(&offsets[0].to_le_bytes());
+    }
+    let mut data = ifd_with_entry(entry);
+    if offsets.len() > 1 {
+      data.extend(offsets.iter().flat_map(|offset| offset.to_le_bytes()));
+    }
+    data.resize(data.len() + 256, 0);
+    data
+  }
+
+  #[test]
+  fn sub_ifds_are_unique_and_limited() -> Result<()> {
+    let start = 26 + 4 * 100;
+    // The same sub-IFD 100 times
+    let data = ifd_with_sub_ifds(&[start; 100]);
+    let ifd = IFD::new(&mut Cursor::new(data), 8, 0, 0, Endian::Little, &[0x14a])?;
+    assert_eq!(ifd.sub[&0x14a].len(), 1);
+    // 100 different empty sub-IFDs
+    let offsets: Vec<u32> = (0..100).map(|i| start + 2 * i).collect();
+    let data = ifd_with_sub_ifds(&offsets);
+    let ifd = IFD::new(&mut Cursor::new(data), 8, 0, 0, Endian::Little, &[0x14a])?;
+    assert_eq!(ifd.sub[&0x14a].len(), MAX_SUB_IFDS);
     Ok(())
   }
 }
