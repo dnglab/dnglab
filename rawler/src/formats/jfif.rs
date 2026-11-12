@@ -44,6 +44,26 @@ fn skip_segment<R: Read + Seek>(reader: &mut R, start: u64) -> bool {
   skip(reader, start).is_ok()
 }
 
+/// The offset and code of the next marker. Fill bytes 0xFF before the
+/// marker are skipped. None at the end of the stream or if the next bytes
+/// are no marker.
+fn read_marker<R: Read + Seek>(reader: &mut R) -> Option<(u64, u16)> {
+  if reader.read_u8().ok()? != 0xFF {
+    log::warn!("JFIF segment does not start with a marker, ignoring the rest of the file");
+    return None;
+  }
+  loop {
+    match reader.read_u8().ok()? {
+      0xFF => continue,
+      0x00 => {
+        log::warn!("JFIF contains a stuffed zero byte outside of image data, ignoring the rest of the file");
+        return None;
+      }
+      code => return Some((reader.stream_position().ok()? - 2, 0xFF00 | code as u16)),
+    }
+  }
+}
+
 pub trait ReadSegment<T>: Sized {
   fn read_segment(_: T, symbol: u16) -> Result<Self>;
 }
@@ -298,11 +318,15 @@ impl Jfif {
           sos: SOS::read_segment(&mut reader, symbol)?,
         },
 
+        // TEM and RST0 to RST7 have no length field
+        0xFF01 | 0xFFD0..=0xFFD7 => Segment::Unknown { offset: pos, marker: symbol },
         _ => {
           log::debug!("Unhandled JFIF segment marker: {:X}", symbol);
-          let len: u64 = reader.read_u16::<BigEndian>()? as u64;
-          reader.seek(SeekFrom::Current(len as i64 - 2))?;
-
+          let start = reader.stream_position()?;
+          if !skip_segment(&mut reader, start) {
+            log::warn!("JFIF segment {:X} at {} has no valid length, ignoring the rest of the file", symbol, pos);
+            break;
+          }
           Segment::Unknown { offset: pos, marker: symbol }
         }
       };
@@ -313,8 +337,10 @@ impl Jfif {
       if symbol == 0xFFD9 {
         break; // EOI reached
       }
-      pos = reader.stream_position()?;
-      sym = reader.read_u16::<BigEndian>().ok();
+      sym = read_marker(&mut reader).map(|(offset, marker)| {
+        pos = offset;
+        marker
+      });
     }
     if !segments.is_empty() {
       Ok(Self { segments })
@@ -488,6 +514,40 @@ mod tests {
     let parsed = Jfif::parse(Cursor::new(data)).expect("parsed");
     assert!(parsed.exif_ifd().is_some());
     assert!(matches!(parsed.segments.last(), Some(Segment::SOS { .. })));
+  }
+
+  #[test]
+  fn markers_without_length_and_fill_bytes() {
+    // RST0, TEM and fill bytes before EOI
+    let data = [0xFF, 0xD8, 0xFF, 0xD0, 0xFF, 0x01, 0xFF, 0xFF, 0xFF, 0xD9];
+    let parsed = Jfif::parse(Cursor::new(data)).expect("parsed");
+    assert!(matches!(
+      parsed.segments.as_slice(),
+      [
+        Segment::SOI { .. },
+        Segment::Unknown { marker: 0xFFD0, .. },
+        Segment::Unknown { marker: 0xFF01, .. },
+        Segment::EOI
+      ]
+    ));
+  }
+
+  #[test]
+  fn invalid_segments_end_the_parse() {
+    // Lengths of 0 and 1 have no room for the length field
+    for len in [0, 1] {
+      let parsed = Jfif::parse(Cursor::new(jpeg(0xE2, len, &[]))).expect("parsed");
+      assert!(matches!(parsed.segments.as_slice(), [Segment::SOI { .. }]));
+    }
+    // A segment of 4 bytes, then bytes that start no marker
+    let mut data = jpeg(0xE2, 4, &[1, 2]);
+    data.truncate(data.len() - 2);
+    data.extend_from_slice(&[0x12, 0x34, 0xFF, 0xD9]);
+    let parsed = Jfif::parse(Cursor::new(data)).expect("parsed");
+    assert!(matches!(
+      parsed.segments.as_slice(),
+      [Segment::SOI { .. }, Segment::Unknown { marker: 0xFFE2, .. }]
+    ));
   }
 
   #[test]
