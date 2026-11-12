@@ -79,6 +79,8 @@ fn main() -> Result<(), Box<dyn Error>> {
     highlights: HighlightMode::Compress,
     // JPEG has no values above white, High Dynamic Range profiles are clipped
     extended_range: false,
+    // No dark frame is subtracted from the raw data
+    dark_frame: None,
   };
 
   // Plan the processing operations for this image

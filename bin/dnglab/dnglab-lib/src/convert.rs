@@ -7,11 +7,13 @@ use rawler::decoders::supported_extensions;
 use std::collections::HashSet;
 use std::fs::create_dir_all;
 use std::path::PathBuf;
+use std::sync::Arc;
 
 use std::time::Instant;
 
 use crate::badpixels::{BadPixelFile, add_bad_pixel_opcodes, bad_pixels_option};
 use crate::convertprofile::{FrameSelection, check_compression_available, resolve_convert_profile};
+use crate::darkframe::dark_frame_option;
 use crate::dcp::{check_embedding, dcp_option, dcp_options};
 use crate::filemap::{FileMap, MapMode};
 use crate::jobs::Job;
@@ -19,6 +21,7 @@ use crate::jobs::raw2dng::{JobResult, Raw2DngJob};
 use crate::{AppError, PKG_VERSION, Result};
 use rawler::dng::convertprofile::ConvertProfile;
 use rawler::dng::dcp::CameraProfileFile;
+use rawler::imgop::darkframe::DarkFrame;
 
 /// Entry point for Clap sub command `convert`
 pub async fn convert(options: &ArgMatches) -> crate::Result<()> {
@@ -34,6 +37,7 @@ pub async fn convert(options: &ArgMatches) -> crate::Result<()> {
     check_embedding(dcp)?;
   }
   let bad_pixels = bad_pixels_option(options, "bad_pixels")?;
+  let dark_frame = dark_frame_option(options, "dark_frame", "dark_frame_black")?;
 
   let proc = {
     let in_path: &PathBuf = options
@@ -61,7 +65,7 @@ pub async fn convert(options: &ArgMatches) -> crate::Result<()> {
         &profile,
         frames,
         (&dcp, &extra_dcp),
-        bad_pixels.as_ref(),
+        (bad_pixels.as_ref(), dark_frame.as_ref()),
         &mut claimed,
       )?);
     }
@@ -81,7 +85,7 @@ pub async fn convert(options: &ArgMatches) -> crate::Result<()> {
           &profile,
           frames,
           (&dcp, &extra_dcp),
-          bad_pixels.as_ref(),
+          (bad_pixels.as_ref(), dark_frame.as_ref()),
           &mut claimed,
         )?);
       }
@@ -136,7 +140,7 @@ fn generate_job(
   profile: &ConvertProfile,
   frames: FrameSelection,
   (dcp, extra_dcp): (&Option<CameraProfileFile>, &[CameraProfileFile]),
-  bad_pixels: Option<&BadPixelFile>,
+  (bad_pixels, dark_frame): (Option<&BadPixelFile>, Option<&Arc<DarkFrame>>),
   claimed: &mut HashSet<PathBuf>,
 ) -> Result<Vec<Raw2DngJob>> {
   let (do_batch, index) = match frames {
@@ -236,7 +240,8 @@ fn generate_job(
       .to_convert_params(format!("{} {}", "DNGLab", PKG_VERSION))
       .with_index(if do_batch { i } else { index })
       .with_dcp(dcp.clone())
-      .with_extra_dcp(extra_dcp.to_vec());
+      .with_extra_dcp(extra_dcp.to_vec())
+      .with_dark_frame(dark_frame.cloned());
     if let Some(file) = bad_pixels {
       add_bad_pixel_opcodes(file, &input, params.index, &mut params.replace_dng_opcodes, &mut params.remove_dng_opcodes);
     }

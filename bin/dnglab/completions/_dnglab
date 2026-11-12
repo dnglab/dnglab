@@ -68,6 +68,8 @@ _arguments "${_arguments_options[@]}" : \
 _arguments "${_arguments_options[@]}" : \
 '*--remove-dng-opcodes=[Remove DNG opcodes, as comma separated \[<list>\:\]<opcode> (e.g. WarpRectilinear,2\:GainMap)]:opcodes:_default' \
 '--bad-pixels=[Bad pixel list in the format of dcraw\: column, row and UNIX time per line, relative to the ActiveArea. It is written as FixBadPixelsList to OpcodeList1 and replaces an existing one]:FILE:_files' \
+'--dark-frame=[Dark frame to subtract from the raw data\: a raw file, or a 16-bit TIFF, PGM or PPM file of the raw pixels (e.g. from '\''process-raw --skip-steps all'\''). It must have the size and the color planes of the raw image]:FILE:_files' \
+'--dark-frame-black=[Black level of the dark frame\: '\''auto'\'' for the black level of a raw file, or of the image for a TIFF, PGM or PPM file. A number is the black level of all samples \[default\: auto\]]:black:_default' \
 '--artist=[Set the artist tag]:artist:_default' \
 '--keep-mtime=[Keep mtime, read from EXIF with fallback to original file mtime]:keepmtime:(true false)' \
 '--image-index=[Select a specific image index (or '\''all'\'') if file is a image container]:index:_default' \
@@ -83,8 +85,8 @@ _arguments "${_arguments_options[@]}" : \
 '--denoise-chroma=[Strength of the chroma noise reduction (0-4), 0 is off, 1 is a full reduction \[default\: 0.5\]]:strength:_default' \
 '--sharpen=[Strength of the sharpening (0-2), 0 is off, 1 is the classic Laplacian filter \[default\: 0.2\]]:strength:_default' \
 '--exposure=[Change the exposure by this value in EV, e.g. -1.2. A negative value keeps white \[default\: 0\]]:EV:_default' \
-'*--steps=[Apply only these processing steps of the rendering, as comma separated list, '\''all'\'' for all steps. Without it the default steps are applied]:steps:(all opcodelist1 rescale opcodelist2 demosaic opcodelist3 fujirotate cropactivearea baselineexposure whitebalance autowhitebalance calibrate profilerender tonecurve cropdefault denoise defaultscale exposure autoexposure sharpen transferfunction)' \
-'*--skip-steps=[Skip these processing steps of the rendering, as comma separated list (e.g. tonecurve,denoise,sharpen). '\''all'\'' skips every step and writes the raw values of the whole raw image. Takes priority over --steps]:steps:(all opcodelist1 rescale opcodelist2 demosaic opcodelist3 fujirotate cropactivearea baselineexposure whitebalance autowhitebalance calibrate profilerender tonecurve cropdefault denoise defaultscale exposure autoexposure sharpen transferfunction)' \
+'*--steps=[Apply only these processing steps of the rendering, as comma separated list, '\''all'\'' for all steps. Without it the default steps are applied]:steps:(all darkframe opcodelist1 rescale opcodelist2 demosaic opcodelist3 fujirotate cropactivearea baselineexposure whitebalance autowhitebalance calibrate profilerender tonecurve cropdefault denoise defaultscale exposure autoexposure sharpen transferfunction)' \
+'*--skip-steps=[Skip these processing steps of the rendering, as comma separated list (e.g. tonecurve,denoise,sharpen). '\''all'\'' skips every step and writes the raw values of the whole raw image. Takes priority over --steps]:steps:(all darkframe opcodelist1 rescale opcodelist2 demosaic opcodelist3 fujirotate cropactivearea baselineexposure whitebalance autowhitebalance calibrate profilerender tonecurve cropdefault denoise defaultscale exposure autoexposure sharpen transferfunction)' \
 '-d+[Log level]:level:(error warn info debug trace)' \
 '--loglevel=[Log level]:level:(error warn info debug trace)' \
 '--profile-path=[Directory with profile TOML files]:dir:_files' \
@@ -131,6 +133,8 @@ _arguments "${_arguments_options[@]}" : \
 '--dcp-file=[Camera profile (DCP) that replaces the primary camera profile]:FILE:_files' \
 '*--extra-dcp-file=[Camera profile (DCP) to embed as extra camera profile, can be repeated]:FILE:_files' \
 '--bad-pixels=[Bad pixel list in the format of dcraw\: column, row and UNIX time per line, relative to the ActiveArea. It is written as FixBadPixelsList to OpcodeList1 and replaces an existing one]:FILE:_files' \
+'--dark-frame=[Dark frame to subtract from the raw data\: a raw file, or a 16-bit TIFF, PGM or PPM file of the raw pixels (e.g. from '\''process-raw --skip-steps all'\''). It must have the size and the color planes of the raw image]:FILE:_files' \
+'--dark-frame-black=[Black level of the dark frame\: '\''auto'\'' for the black level of a raw file, or of the image for a TIFF, PGM or PPM file. A number is the black level of all samples \[default\: auto\]]:black:_default' \
 '-d+[Log level]:level:(error warn info debug trace)' \
 '--loglevel=[Log level]:level:(error warn info debug trace)' \
 '--profile-path=[Directory with profile TOML files]:dir:_files' \

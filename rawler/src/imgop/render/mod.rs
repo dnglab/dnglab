@@ -16,6 +16,8 @@ mod plan;
 pub use exec::{execute, execute_raw};
 pub use plan::{Plan, plan};
 
+use std::sync::Arc;
+
 use image::{DynamicImage, ImageBuffer};
 
 use crate::{
@@ -24,6 +26,7 @@ use crate::{
     Dim2, Rect,
     color::{OutputSpace, TransferFunction},
     convert_from_f32_scaled_u16,
+    darkframe::DarkFrame,
     denoise::DenoiseStrength,
     highlights::HighlightMode,
     icc,
@@ -35,6 +38,9 @@ use crate::{
 /// Processing step of the rendering, see [`StepSet`]
 #[derive(PartialEq, Eq, Debug, Clone, Copy)]
 pub enum ProcessingStep {
+  /// Subtract the dark frame of [`RenderOptions::dark_frame`] from the raw
+  /// data as read from the file, before OpcodeList1
+  DarkFrame,
   /// Apply OpcodeList1 to the raw data as read from the file
   OpcodeList1,
   /// Map raw values to linear reference values
@@ -89,7 +95,8 @@ pub enum ProcessingStep {
 
 impl ProcessingStep {
   /// All steps
-  pub const ALL: [Self; 20] = [
+  pub const ALL: [Self; 21] = [
+    Self::DarkFrame,
     Self::OpcodeList1,
     Self::Rescale,
     Self::OpcodeList2,
@@ -121,6 +128,7 @@ impl clap::ValueEnum for ProcessingStep {
 
   fn to_possible_value(&self) -> Option<clap::builder::PossibleValue> {
     Some(clap::builder::PossibleValue::new(match self {
+      Self::DarkFrame => "darkframe",
       Self::OpcodeList1 => "opcodelist1",
       Self::Rescale => "rescale",
       Self::OpcodeList2 => "opcodelist2",
@@ -337,6 +345,8 @@ pub struct RenderOptions {
   /// Range camera profile are linear and not clipped, see
   /// [`RenderedImage::extended_range`]
   pub extended_range: bool,
+  /// Dark frame of the DarkFrame step
+  pub dark_frame: Option<Arc<DarkFrame>>,
 }
 
 impl Default for RenderOptions {
@@ -355,6 +365,7 @@ impl Default for RenderOptions {
       auto_exposure: false,
       highlights: HighlightMode::default(),
       extended_range: false,
+      dark_frame: None,
     }
   }
 }
@@ -518,6 +529,7 @@ mod tests {
       .ops
       .iter()
       .map(|op| match op {
+        Op::DarkFrame(_) => "DarkFrame",
         Op::Opcodes { stage: OpcodeStage::List1, .. } => "List1",
         Op::Opcodes { stage: OpcodeStage::List2, .. } => "List2",
         Op::Opcodes { stage: OpcodeStage::List3, .. } => "List3",

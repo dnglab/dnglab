@@ -17,6 +17,7 @@ pub mod cameras;
 pub mod config;
 pub mod convert;
 pub mod convertprofile;
+pub mod darkframe;
 pub mod dcp;
 pub mod extract;
 pub mod filemap;

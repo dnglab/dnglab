@@ -2,6 +2,7 @@ use std::{
   ffi::OsStr,
   io::{self, Cursor, Seek, Write},
   path::Path,
+  sync::Arc,
 };
 
 use byteorder::{BigEndian, WriteBytesExt};
@@ -19,6 +20,7 @@ use crate::{
   imgop::{
     Dim2, Point, Rect,
     color::{OutputSpace, TransferFunction},
+    darkframe::DarkFrame,
     denoise::DenoiseStrength,
     highlights::HighlightMode,
     render::{BayerDemosaic, RenderOptions, RenderedImage, XTransDemosaic, render},
@@ -121,6 +123,8 @@ pub struct RawProcessingParams {
   pub skip_steps: Vec<ProcessingStep>,
   /// Camera profile to render the image with, it replaces the primary camera profile
   pub dcp: Option<CameraProfileFile>,
+  /// Dark frame to subtract from the raw data
+  pub dark_frame: Option<Arc<DarkFrame>>,
 }
 
 impl Default for RawProcessingParams {
@@ -148,6 +152,7 @@ impl Default for RawProcessingParams {
       steps: None,
       skip_steps: Vec::new(),
       dcp: None,
+      dark_frame: None,
     }
   }
 }
@@ -165,6 +170,9 @@ pub fn process_raw_image<W: Write + Seek + Send>(raw: &Path, image_file: &mut W,
     rawimage.set_primary_camera_profile(dcp.profile.clone())?;
   }
   let metadata = decoder.raw_metadata(&rawfile, &raw_params)?;
+  if let Some(dark) = &params.dark_frame {
+    dark.check_image(&rawimage, &metadata);
+  }
   let mut develop = RawDevelop {
     color_space: params.color_space,
     bayer_demosaic: params.bayer_demosaic,
@@ -174,6 +182,7 @@ pub fn process_raw_image<W: Write + Seek + Send>(raw: &Path, image_file: &mut W,
     exposure: params.exposure,
     auto_exposure: params.auto_exposure,
     highlights: params.highlights,
+    dark_frame: params.dark_frame.clone(),
     ..RawDevelop::with_crop(params.crop)
   };
   if params.crop_transparent {
@@ -278,6 +287,8 @@ pub struct RawDevelop {
   pub auto_exposure: bool,
   /// Treatment of the values above white after a positive BaselineExposure
   pub highlights: HighlightMode,
+  /// Dark frame of the DarkFrame step
+  pub dark_frame: Option<Arc<DarkFrame>>,
 }
 
 impl Default for RawDevelop {
@@ -298,6 +309,7 @@ impl RawDevelop {
       exposure: 0.0,
       auto_exposure: false,
       highlights: HighlightMode::default(),
+      dark_frame: None,
     }
   }
 
@@ -331,6 +343,7 @@ impl RawDevelop {
       exposure: self.exposure,
       auto_exposure: self.auto_exposure,
       highlights: self.highlights,
+      dark_frame: self.dark_frame.clone(),
       ..Default::default()
     }
   }

@@ -69,6 +69,8 @@ set edit:completion:arg-completer[dnglab] = {|@words|
         &'dnglab;process-raw'= {
             cand --remove-dng-opcodes 'Remove DNG opcodes, as comma separated [<list>:]<opcode> (e.g. WarpRectilinear,2:GainMap)'
             cand --bad-pixels 'Bad pixel list in the format of dcraw: column, row and UNIX time per line, relative to the ActiveArea. It is written as FixBadPixelsList to OpcodeList1 and replaces an existing one'
+            cand --dark-frame 'Dark frame to subtract from the raw data: a raw file, or a 16-bit TIFF, PGM or PPM file of the raw pixels (e.g. from ''process-raw --skip-steps all''). It must have the size and the color planes of the raw image'
+            cand --dark-frame-black 'Black level of the dark frame: ''auto'' for the black level of a raw file, or of the image for a TIFF, PGM or PPM file. A number is the black level of all samples [default: auto]'
             cand --artist 'Set the artist tag'
             cand --keep-mtime 'Keep mtime, read from EXIF with fallback to original file mtime'
             cand --image-index 'Select a specific image index (or ''all'') if file is a image container'
@@ -128,6 +130,8 @@ set edit:completion:arg-completer[dnglab] = {|@words|
             cand --dcp-file 'Camera profile (DCP) that replaces the primary camera profile'
             cand --extra-dcp-file 'Camera profile (DCP) to embed as extra camera profile, can be repeated'
             cand --bad-pixels 'Bad pixel list in the format of dcraw: column, row and UNIX time per line, relative to the ActiveArea. It is written as FixBadPixelsList to OpcodeList1 and replaces an existing one'
+            cand --dark-frame 'Dark frame to subtract from the raw data: a raw file, or a 16-bit TIFF, PGM or PPM file of the raw pixels (e.g. from ''process-raw --skip-steps all''). It must have the size and the color planes of the raw image'
+            cand --dark-frame-black 'Black level of the dark frame: ''auto'' for the black level of a raw file, or of the image for a TIFF, PGM or PPM file. A number is the black level of all samples [default: auto]'
             cand -d 'Log level'
             cand --loglevel 'Log level'
             cand --profile-path 'Directory with profile TOML files'

@@ -4,7 +4,7 @@
 .SH NAME
 dnglab\-process\-raw
 .SH SYNOPSIS
-\fBdnglab\-process\-raw\fR [\fB\-\-remove\-dng\-opcodes\fR] [\fB\-\-bad\-pixels\fR] [\fB\-\-artist\fR] [\fB\-\-keep\-mtime\fR] [\fB\-\-image\-index\fR] [\fB\-\-crop\fR] [\fB\-\-crop\-transparent\fR] [\fB\-\-format\fR] [\fB\-\-color\-space\fR] [\fB\-\-highlights\fR] [\fB\-\-bayer\-demosaic\fR] [\fB\-\-xtrans\-demosaic\fR] [\fB\-\-dcp\-file\fR] [\fB\-\-jpeg\-quality\fR] [\fB\-\-denoise\-luma\fR] [\fB\-\-denoise\-chroma\fR] [\fB\-\-sharpen\fR] [\fB\-\-exposure\fR] [\fB\-\-auto\-exposure\fR] [\fB\-\-steps\fR] [\fB\-\-skip\-steps\fR] [\fB\-f\fR|\fB\-\-override\fR] [\fB\-r\fR|\fB\-\-recursive\fR] [\fB\-h\fR|\fB\-\-help\fR] <\fIINPUT\fR> <\fIOUTPUT\fR> 
+\fBdnglab\-process\-raw\fR [\fB\-\-remove\-dng\-opcodes\fR] [\fB\-\-bad\-pixels\fR] [\fB\-\-dark\-frame\fR] [\fB\-\-dark\-frame\-black\fR] [\fB\-\-artist\fR] [\fB\-\-keep\-mtime\fR] [\fB\-\-image\-index\fR] [\fB\-\-crop\fR] [\fB\-\-crop\-transparent\fR] [\fB\-\-format\fR] [\fB\-\-color\-space\fR] [\fB\-\-highlights\fR] [\fB\-\-bayer\-demosaic\fR] [\fB\-\-xtrans\-demosaic\fR] [\fB\-\-dcp\-file\fR] [\fB\-\-jpeg\-quality\fR] [\fB\-\-denoise\-luma\fR] [\fB\-\-denoise\-chroma\fR] [\fB\-\-sharpen\fR] [\fB\-\-exposure\fR] [\fB\-\-auto\-exposure\fR] [\fB\-\-steps\fR] [\fB\-\-skip\-steps\fR] [\fB\-f\fR|\fB\-\-override\fR] [\fB\-r\fR|\fB\-\-recursive\fR] [\fB\-h\fR|\fB\-\-help\fR] <\fIINPUT\fR> <\fIOUTPUT\fR> 
 .SH DESCRIPTION
 .SH OPTIONS
 .TP
@@ -13,6 +13,12 @@ Remove DNG opcodes, as comma separated [<list>:]<opcode> (e.g. WarpRectilinear,2
 .TP
 \fB\-\-bad\-pixels\fR \fI<FILE>\fR
 Bad pixel list in the format of dcraw: column, row and UNIX time per line, relative to the ActiveArea. It is written as FixBadPixelsList to OpcodeList1 and replaces an existing one
+.TP
+\fB\-\-dark\-frame\fR \fI<FILE>\fR
+Dark frame to subtract from the raw data: a raw file, or a 16\-bit TIFF, PGM or PPM file of the raw pixels (e.g. from \*(Aqprocess\-raw \-\-skip\-steps all\*(Aq). It must have the size and the color planes of the raw image
+.TP
+\fB\-\-dark\-frame\-black\fR \fI<black>\fR
+Black level of the dark frame: \*(Aqauto\*(Aq for the black level of a raw file, or of the image for a TIFF, PGM or PPM file. A number is the black level of all samples [default: auto]
 .TP
 \fB\-\-artist\fR \fI<artist>\fR
 Set the artist tag
@@ -157,6 +163,8 @@ Apply only these processing steps of the rendering, as comma separated list, \*(
 .IP \(bu 2
 all
 .IP \(bu 2
+darkframe
+.IP \(bu 2
 opcodelist1
 .IP \(bu 2
 rescale
@@ -207,6 +215,8 @@ Skip these processing steps of the rendering, as comma separated list (e.g. tone
 .RS 14
 .IP \(bu 2
 all
+.IP \(bu 2
+darkframe
 .IP \(bu 2
 opcodelist1
 .IP \(bu 2
