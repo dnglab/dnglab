@@ -54,6 +54,8 @@ where
 {
   cwd: PathBuf,
   data_mode: DataMode,
+  /// EPSV ALL was received, the client uses no other command to set up data connections.
+  epsv_all: bool,
   data_reader: Option<OwnedReadHalf>,
   data_writer: Option<OwnedWriteHalf>,
   #[allow(dead_code)]
@@ -77,6 +79,7 @@ where
     Client {
       cwd: PathBuf::from("/"),
       data_mode: DataMode::None,
+      epsv_all: false,
       data_reader: None,
       data_writer: None,
       handle,
@@ -109,6 +112,11 @@ where
         Command::Cwd(directory) => return self.cwd(directory).await,
         Command::List(path) => return self.list(path).await,
         Command::Nlst(path) => return self.nlst(path).await,
+        Command::Pasv | Command::Port(_) if self.epsv_all => {
+          return self
+            .send(Answer::new(ResultCode::InvalidParameterOrArgument, "Only EPSV is allowed after EPSV ALL"))
+            .await;
+        }
         Command::Pasv => return self.pasv().await,
         Command::Epsv(proto) => return self.epsv(proto).await,
         Command::Port(port) => {
@@ -528,8 +536,8 @@ where
   async fn epsv(&mut self, proto: Option<String>) -> Result<()> {
     if let Some(proto) = proto {
       if proto.to_uppercase().eq("ALL") {
-        self.data_writer = None;
-        return Ok(());
+        self.epsv_all = true;
+        return self.send(Answer::new(ResultCode::Ok, "Only EPSV is allowed from now on")).await;
       }
     }
     let answer = match self.listen_passive().await {
