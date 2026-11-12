@@ -482,6 +482,14 @@ impl<'a> Cr3Decoder<'a> {
     Ok(id)
   }
 
+  /// The EXIF LensSpecification, which tells lenses sharing an id apart.
+  fn read_lens_spec(&self) -> Option<[Rational; 4]> {
+    if let Some(Entry { value: Value::Rational(v), .. }) = self.cmt2.get_entry(ExifTag::LensSpecification) {
+      return v.clone().try_into().ok();
+    }
+    None
+  }
+
   fn read_lens_name(&self) -> Result<Option<&String>> {
     if let Some(Entry {
       value: crate::formats::tiff::Value::Ascii(lens_id),
@@ -589,13 +597,16 @@ impl<'a> Cr3Decoder<'a> {
       }
     }
 
-    let resolver = LensResolver::new()
+    let mut resolver = LensResolver::new()
       .with_lens_keyname(self.read_lens_name()?)
       .with_camera(self.camera.metadata()) // must follow with_lens_keyname() as it my override key
       .with_lens_id(self.read_lens_id()?)
       .with_aperture(md.ctmd_exposure.as_ref().map(|x| x.fnumber.clone()))
       .with_focal_len(md.ctmd_focallen.clone())
       .with_mounts(&[CANON_CN_MOUNT.into(), CANON_EF_MOUNT.into(), CANON_RF_MOUNT.into()]);
+    if let Some(spec) = self.read_lens_spec() {
+      resolver = resolver.with_lens_info(spec);
+    }
     md.lens_description = resolver.resolve();
 
     debug!("CR3 blacklevels: {:?}", md.blacklevels);
