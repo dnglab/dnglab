@@ -366,10 +366,12 @@ impl<'a> IiqDecoder<'a> {
   fn correct_raw_poly_half(&self, img: &mut PixU16, senscorr: &SensorCalibration) -> Result<()> {
     if let Some(poly) = &senscorr.poly_curve_half {
       debug!("Apply polynom curve half correction");
-      let split_col = self.split_column()?.expect("Must have split column");
+      let (Some(split_col), Some(sensor_temp)) = (self.split_column()?, self.sensor_temp()?) else {
+        warn!("IIQ: the half polynomial curve needs the split column and the sensor temperature, skipping it");
+        return Ok(());
+      };
 
       let mut poly = *poly;
-      let sensor_temp = self.sensor_temp()?.expect("Half polynom curve correction requires the sensor temp.");
       poly[3] += (sensor_temp - poly[7]) * poly[6] + 1.0;
 
       let mut curve = vec![0_u16; 0x10000];
@@ -408,7 +410,9 @@ impl<'a> IiqDecoder<'a> {
   fn correct_raw_q_linearization(&self, img: &mut PixU16, senscorr: &SensorCalibration) -> Result<()> {
     if let Some(table) = &senscorr.quadrant_linearization {
       debug!("Apply quadrant linearization");
-      let (split_col, split_row) = self.split_offsets()?.expect("Must have split values");
+      let Some((split_col, split_row)) = self.quadrant_split("quadrant linearization") else {
+        return Ok(());
+      };
 
       debug!("Split col: {}, row: {}", split_col, split_row);
 
@@ -436,7 +440,11 @@ impl<'a> IiqDecoder<'a> {
         let cp = &mut control_points[qr][qc];
         // Some images may overflow 65535 here, but it's also in dcraw...
         // We clamp here to be <= then the final control point.
-        cp[17].x = clamp(((cp[16].y * 65535) / cp[16].x) as i32, 0, 65535) as usize;
+        let Some(end) = (cp[16].y * 65535).checked_div(cp[16].x) else {
+          warn!("IIQ: the quadrant linearization has a last control point at 0, skipping it");
+          return Ok(());
+        };
+        cp[17].x = clamp(end as i32, 0, 65535) as usize;
         cp[17].y = cp[17].x;
         cp[18] = Point::new(65535, 65535);
         match Spline::new(cp) {
@@ -456,7 +464,9 @@ impl<'a> IiqDecoder<'a> {
   fn correct_raw_q_mul(&self, img: &mut PixU16, senscorr: &SensorCalibration) -> Result<()> {
     if let Some(multipliers) = &senscorr.quadrant_multipliers {
       debug!("Apply quadrant multiplier correction");
-      let (split_col, split_row) = self.split_offsets()?.expect("Must have split values");
+      let Some((split_col, split_row)) = self.quadrant_split("quadrant multiplier correction") else {
+        return Ok(());
+      };
       debug!("Split col: {}, row: {}", split_col, split_row);
 
       let mut qmul = [[f32::NAN; 2]; 2];
@@ -481,7 +491,9 @@ impl<'a> IiqDecoder<'a> {
   fn correct_raw_q_combined(&self, img: &mut PixU16, senscorr: &SensorCalibration) -> Result<()> {
     if let Some((coord_x, coord_y)) = &senscorr.quadrant_combined {
       debug!("Apply quadrant combined correction");
-      let (split_col, split_row) = self.split_offsets()?.expect("Must have split values");
+      let Some((split_col, split_row)) = self.quadrant_split("quadrant combined correction") else {
+        return Ok(());
+      };
 
       debug!("Split col: {}, row: {}", split_col, split_row);
 
@@ -607,12 +619,23 @@ impl<'a> IiqDecoder<'a> {
   /// Apply raw sensor corrections
   fn correct_raw_blacklevel(&self, img: &mut PixU16, calib: &SensorCalibration) -> Result<()> {
     // Remove black level and ajdust individual row/col blacklevel
-    if let Some(q_blacklevel) = &calib.q_blacklevel {
+    let q_blacklevel = calib.q_blacklevel.as_ref().filter(|(cblack, rblack)| {
+      let matches = cblack.len() == img.height * 2 && rblack.len() == img.width * 2;
+      if !matches {
+        warn!(
+          "IIQ: {} row and {} column black levels don't match the image of {}x{} pixels, using the basic black level",
+          cblack.len(),
+          rblack.len(),
+          img.width,
+          img.height
+        );
+      }
+      matches
+    });
+    if let Some((cblack, rblack)) = q_blacklevel
+      && let Some((split_col, split_row)) = self.quadrant_split("black level of the quadrants")
+    {
       let black = calib.blacklevel as i32;
-      let (split_col, split_row) = self.split_offsets()?.expect("Must have split values");
-      let (cblack, rblack) = q_blacklevel;
-      debug_assert_eq!(cblack.len(), img.height * 2);
-      debug_assert_eq!(rblack.len(), img.width * 2);
       img.par_pixel_rows_mut().enumerate().for_each(|(row, line)| {
         let qr = if row >= split_row { 1 } else { 0 };
         for (col, pix) in line.iter_mut().enumerate() {
@@ -704,6 +727,16 @@ impl<'a> IiqDecoder<'a> {
       Some(col) => Ok(Some(col.1.force_usize(0))),
       _ => Ok(None),
     }
+  }
+
+  /// Split column and row of the sensor quadrants for `correction`, with a
+  /// warning if the file doesn't have them
+  fn quadrant_split(&self, correction: &str) -> Option<(usize, usize)> {
+    let split = self.split_offsets().ok().flatten();
+    if split.is_none() {
+      warn!("IIQ: the {} needs the split column and row, skipping it", correction);
+    }
+    split
   }
 
   fn split_offsets(&self) -> Result<Option<(usize, usize)>> {
