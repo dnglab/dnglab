@@ -16,11 +16,28 @@ use byteorder::{LittleEndian, ReadBytesExt};
 use log::debug;
 use serde::{Deserialize, Serialize};
 use std::{
-  collections::{BTreeMap, HashMap},
+  collections::{BTreeMap, HashMap, HashSet},
   io::{Read, Seek, SeekFrom},
 };
 
 const MAX_IFD_ENTRIES: usize = 4096;
+
+/// Limit for the number of IFDs in a chain
+const MAX_IFD_CHAIN: usize = 256;
+
+/// Record the IFD at `offset` in a chain, false if the chain loops back to
+/// an IFD in `visited` or reaches `MAX_IFD_CHAIN` IFDs
+pub(super) fn visit_chained_ifd(visited: &mut HashSet<u32>, offset: u32) -> bool {
+  if visited.len() >= MAX_IFD_CHAIN {
+    log::warn!("TIFF: IFD chain reaches the limit of {} IFDs, ignoring the rest", MAX_IFD_CHAIN);
+    false
+  } else if !visited.insert(offset) {
+    log::warn!("TIFF: IFD chain loops back to offset {}, ignoring the rest", offset);
+    false
+  } else {
+    true
+  }
+}
 
 #[derive(Debug)]
 pub enum OffsetMode {
@@ -77,23 +94,21 @@ impl IFD {
     multi_sub_tags.extend_from_slice(sub_tags);
 
     next_ifd = apply_corr(next_ifd, corr)?;
+    let mut visited = HashSet::from([next_ifd]);
     let mut root = IFD::new(reader, next_ifd, base, corr, endian, &multi_sub_tags)?;
     if root.entries.is_empty() {
       return Err(TiffError::General("TIFF is invalid, IFD must contain at least one entry".to_string()));
     }
     next_ifd = root.next_ifd;
 
-    while next_ifd != 0 {
+    // max_chain limits the IFDs chained to the root, 0 for no limit
+    while next_ifd != 0 && (max_chain == 0 || root.chain.len() < max_chain) && visit_chained_ifd(&mut visited, next_ifd) {
       let ifd = IFD::new(reader, next_ifd, base, corr, endian, &multi_sub_tags)?;
       if ifd.entries.is_empty() {
         return Err(TiffError::General("TIFF is invalid, IFD must contain at least one entry".to_string()));
       }
       next_ifd = ifd.next_ifd;
       root.chain.push(ifd);
-
-      if root.chain.len() > max_chain && max_chain > 0 {
-        break;
-      }
     }
 
     Ok(root)

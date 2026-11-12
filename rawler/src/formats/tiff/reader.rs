@@ -1,14 +1,17 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2021 Daniel Vogelbacher <daniel@chaospixel.com>
 
-use super::{Entry, IFD, Result, TiffError, apply_corr, entry::RawEntry, file::TiffFile};
+use super::{Entry, IFD, Result, TiffError, apply_corr, entry::RawEntry, file::TiffFile, ifd::visit_chained_ifd};
 use crate::{
   bits::Endian,
   tags::{ExifTag, TiffCommonTag, TiffTag},
 };
 use byteorder::{BigEndian, LittleEndian, ReadBytesExt};
 use serde::{Deserialize, Serialize};
-use std::io::{Cursor, Read, Seek, SeekFrom};
+use std::{
+  collections::HashSet,
+  io::{Cursor, Read, Seek, SeekFrom},
+};
 
 pub trait TiffReader {
   fn file(&self) -> &TiffFile;
@@ -162,8 +165,8 @@ pub trait TiffReader {
 
     next_ifd = apply_corr(next_ifd, self.file().corr)?;
     let mut chain = Vec::new();
-    while next_ifd != 0 {
-      // TODO: check if offset is in range
+    let mut visited = HashSet::new();
+    while next_ifd != 0 && visit_chained_ifd(&mut visited, next_ifd) {
       let mut multi_sub_tags = self.wellknown_sub_ifd_tags();
       multi_sub_tags.extend_from_slice(sub_tags);
       let ifd = IFD::new(reader, next_ifd, self.file().base, self.file().corr, endian, &multi_sub_tags)?;
@@ -446,5 +449,30 @@ mod tests {
     cursor.set_position(5 << 30);
     let mut reader = EndianReader::new(&mut cursor, Endian::Little);
     assert!(matches!(reader.position(), Err(TiffError::Overflow(_))));
+  }
+
+  #[test]
+  fn ifd_chain_loops_end() -> Result<()> {
+    use crate::formats::tiff::tests::ifd_chain;
+    // IFD 0 points to itself
+    let reader = GenericTiffReader::new_with_buffer(ifd_chain(8, &[8]), 0, 0, None)?;
+    assert_eq!(reader.chains().len(), 1);
+    // IFD 1 points back to IFD 0
+    let reader = GenericTiffReader::new_with_buffer(ifd_chain(8, &[26, 8]), 0, 0, None)?;
+    assert_eq!(reader.chains().len(), 2);
+    let root = IFD::new_root_with_correction(&mut Cursor::new(ifd_chain(8, &[26, 8])), 0, 0, 0, 0, &[])?;
+    assert_eq!(root.chain.len(), 1);
+    Ok(())
+  }
+
+  #[test]
+  fn ifd_chain_limits() -> Result<()> {
+    use crate::formats::tiff::tests::ifd_chain;
+    let data = ifd_chain(8, &[26, 44, 62, 0]);
+    let root = IFD::new_root_with_correction(&mut Cursor::new(data.clone()), 0, 0, 0, 2, &[])?;
+    assert_eq!(root.chain.len(), 2);
+    let reader = GenericTiffReader::new_with_buffer(data, 0, 0, Some(2))?;
+    assert_eq!(reader.chains().len(), 3);
+    Ok(())
   }
 }
