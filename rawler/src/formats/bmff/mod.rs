@@ -4,7 +4,6 @@
 
 use std::{
   fmt,
-  fs::File,
   io::{self, Cursor, Read, Seek, SeekFrom},
 };
 
@@ -162,30 +161,11 @@ impl BoxHeader {
   pub fn end_offset(&self) -> u64 {
     self.offset + self.size
   }
-
-  pub fn make_view<'a>(&self, buffer: &'a [u8], skip: usize, limit: usize) -> &'a [u8] {
-    let start = (self.offset + self.header_len) as usize + skip;
-    if limit == 0 {
-      &buffer[start..start + (self.size - self.header_len) as usize - skip]
-    } else {
-      &buffer[start..start + limit]
-    }
-  }
-}
-
-pub trait BmffBox: Sized {
-  fn size(&self) -> u64;
-
-  fn data_size(&self) -> u64;
-
-  fn box_offset(&self) -> usize;
-
-  fn box_data_offset(&self) -> usize;
 }
 
 #[derive(Error, Debug)]
 pub enum BmffError {
-  #[error("I/O error while writing DNG")]
+  #[error("I/O error while reading BMFF: {}", _0)]
   Io(#[from] io::Error),
 
   #[error("Parser error: {}", _0)]
@@ -266,11 +246,6 @@ impl FileBox {
       cr3xpacket,
     })
   }
-}
-
-pub fn parse_file(file: &mut File) -> Result<FileBox> {
-  let filebox = FileBox::parse(file)?;
-  Ok(filebox)
 }
 
 pub fn parse_buffer(buf: &[u8]) -> Result<FileBox> {
