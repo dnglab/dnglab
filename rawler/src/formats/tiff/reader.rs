@@ -282,8 +282,11 @@ impl<'a, R: Read + Seek + 'a> EndianReader<'a, R> {
     self.inner
   }
 
+  /// Position in the stream, an error if it is beyond the 4 GiB a TIFF
+  /// offset can address
   pub fn position(&mut self) -> Result<u32> {
-    Ok(self.inner.stream_position().map(|v| v as u32)?)
+    let pos = self.inner.stream_position()?;
+    u32::try_from(pos).map_err(|_| TiffError::Overflow(format!("Stream position {} exceeds 4 GiB", pos)))
   }
 
   /// Length of the stream, the position is kept
@@ -294,13 +297,9 @@ impl<'a, R: Read + Seek + 'a> EndianReader<'a, R> {
     Ok(len)
   }
 
-  // TODO: try_from?
-
   pub fn goto(&mut self, offset: u32) -> Result<()> {
     self.inner.seek(SeekFrom::Start(offset as u64))?;
     Ok(())
-
-    // TODO: try_from?
   }
 }
 
@@ -434,5 +433,18 @@ impl<'a, R: Read + Seek + 'a> ReadByteOrder for EndianReader<'a, R> {
       Endian::Little => self.inner.read_f64_into::<LittleEndian>(dst),
       Endian::Big => self.inner.read_f64_into::<BigEndian>(dst),
     }
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[test]
+  fn position_beyond_4gib_is_an_error() {
+    let mut cursor = Cursor::new(Vec::<u8>::new());
+    cursor.set_position(5 << 30);
+    let mut reader = EndianReader::new(&mut cursor, Endian::Little);
+    assert!(matches!(reader.position(), Err(TiffError::Overflow(_))));
   }
 }
