@@ -5,7 +5,7 @@
 use super::{BmffError, BoxHeader, FourCC, ReadBox, Result, ext_cr3::cr3desc::Cr3DescBox, mvhd::MvhdBox, trak::TrakBox, vendor::VendorBox};
 use log::debug;
 use serde::{Deserialize, Serialize};
-use std::io::{Read, Seek, SeekFrom};
+use std::io::{Read, Seek};
 use uuid::Uuid;
 
 #[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize)]
@@ -69,7 +69,7 @@ impl<R: Read + Seek> ReadBox<&mut R> for MoovBox {
       current = reader.stream_position()?;
     }
 
-    reader.seek(SeekFrom::Start(header.end_offset()))?;
+    header.finish(&mut *reader)?;
 
     Ok(Self {
       header,

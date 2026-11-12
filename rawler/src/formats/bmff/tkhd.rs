@@ -4,7 +4,7 @@
 
 use super::{BoxHeader, FourCC, ReadBox, Result, read_box_header_ext};
 use serde::{Deserialize, Serialize};
-use std::io::{Read, Seek, SeekFrom};
+use std::io::{Read, Seek};
 
 #[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize)]
 pub struct TkhdBox {
@@ -23,7 +23,7 @@ impl<R: Read + Seek> ReadBox<&mut R> for TkhdBox {
 
     // TODO?
 
-    reader.seek(SeekFrom::Start(header.end_offset()))?;
+    header.finish(&mut *reader)?;
 
     Ok(Self { header, version, flags })
   }

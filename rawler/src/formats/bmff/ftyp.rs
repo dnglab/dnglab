@@ -5,7 +5,7 @@
 use super::{BmffError, BoxHeader, FourCC, ReadBox, Result};
 use byteorder::{BigEndian, ReadBytesExt};
 use serde::{Deserialize, Serialize};
-use std::io::{Read, Seek, SeekFrom};
+use std::io::{Read, Seek};
 
 #[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize)]
 pub struct FtypBox {
@@ -34,7 +34,7 @@ impl<R: Read + Seek> ReadBox<&mut R> for FtypBox {
       brands.push(From::from(b));
     }
 
-    reader.seek(SeekFrom::Start(header.end_offset()))?;
+    header.finish(&mut *reader)?;
 
     Ok(Self {
       header,

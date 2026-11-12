@@ -5,7 +5,7 @@ use crate::{formats::bmff::BmffError, formats::tiff::GenericTiffReader};
 
 use super::super::{BoxHeader, FourCC, ReadBox, Result};
 use serde::{Deserialize, Serialize};
-use std::io::{Read, Seek, SeekFrom};
+use std::io::{Read, Seek};
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Cmt2Box {
@@ -25,7 +25,7 @@ impl<R: Read + Seek> ReadBox<&mut R> for Cmt2Box {
     let mut data = vec![0; data_len as usize];
     reader.read_exact(&mut data)?;
 
-    reader.seek(SeekFrom::Start(header.end_offset()))?;
+    header.finish(&mut *reader)?;
 
     let tiff = GenericTiffReader::new_with_buffer(&data, 0, 0, None).map_err(|e| BmffError::Parse(e.to_string()))?;
 

@@ -4,7 +4,7 @@
 use byteorder::{BigEndian, ReadBytesExt};
 use log::debug;
 use serde::{Deserialize, Serialize};
-use std::io::{Read, Seek, SeekFrom};
+use std::io::{Read, Seek};
 
 use super::{
   super::{BmffError, BoxHeader, FourCC, ReadBox, Result, read_box_header_ext},
@@ -55,7 +55,7 @@ impl<R: Read + Seek> ReadBox<&mut R> for CctpBox {
       current = reader.stream_position()?;
     }
 
-    reader.seek(SeekFrom::Start(header.end_offset()))?;
+    header.finish(&mut *reader)?;
 
     Ok(Self {
       header,

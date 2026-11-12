@@ -3,7 +3,7 @@
 
 use super::super::{BoxHeader, ReadBox, Result};
 use serde::{Deserialize, Serialize};
-use std::io::{Read, Seek, SeekFrom};
+use std::io::{Read, Seek};
 
 #[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize)]
 pub struct Cr3XpacketBox {
@@ -17,7 +17,7 @@ impl Cr3XpacketBox {
 
 impl<R: Read + Seek> ReadBox<&mut R> for Cr3XpacketBox {
   fn read_box(reader: &mut R, header: BoxHeader) -> Result<Self> {
-    reader.seek(SeekFrom::Start(header.end_offset()))?;
+    header.finish(&mut *reader)?;
 
     Ok(Self { header })
   }

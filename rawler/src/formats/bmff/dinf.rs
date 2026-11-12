@@ -4,7 +4,7 @@
 
 use super::{BoxHeader, FourCC, ReadBox, Result};
 use serde::{Deserialize, Serialize};
-use std::io::{Read, Seek, SeekFrom};
+use std::io::{Read, Seek};
 
 #[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize)]
 pub struct DinfBox {
@@ -17,7 +17,7 @@ impl DinfBox {
 
 impl<R: Read + Seek> ReadBox<&mut R> for DinfBox {
   fn read_box(reader: &mut R, header: BoxHeader) -> Result<Self> {
-    reader.seek(SeekFrom::Start(header.end_offset()))?;
+    header.finish(&mut *reader)?;
 
     Ok(Self { header })
   }

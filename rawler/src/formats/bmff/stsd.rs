@@ -11,7 +11,7 @@ use super::{
 use byteorder::{BigEndian, ReadBytesExt};
 use log::debug;
 use serde::{Deserialize, Serialize};
-use std::io::{Read, Seek, SeekFrom};
+use std::io::{Read, Seek};
 
 #[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize)]
 pub struct StsdBox {
@@ -66,7 +66,7 @@ impl<R: Read + Seek> ReadBox<&mut R> for StsdBox {
       current = reader.stream_position()?;
     }
 
-    reader.seek(SeekFrom::Start(header.end_offset()))?;
+    header.finish(&mut *reader)?;
 
     Ok(Self {
       header,

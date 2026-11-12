@@ -4,7 +4,7 @@
 use super::super::{BoxHeader, FourCC, ReadBox, Result, read_box_header_ext};
 use byteorder::{BigEndian, ReadBytesExt};
 use serde::{Deserialize, Serialize};
-use std::io::{Read, Seek, SeekFrom};
+use std::io::{Read, Seek};
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Iad1Box {
@@ -115,7 +115,7 @@ impl<R: Read + Seek> ReadBox<&mut R> for Iad1Box {
       }
     };
 
-    reader.seek(SeekFrom::Start(header.end_offset()))?;
+    header.finish(&mut *reader)?;
 
     Ok(Self {
       header,

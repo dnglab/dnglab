@@ -4,7 +4,7 @@
 use super::super::{BoxHeader, FourCC, ReadBox, Result};
 use byteorder::{BigEndian, ReadBytesExt};
 use serde::{Deserialize, Serialize};
-use std::io::{Read, Seek, SeekFrom};
+use std::io::{Read, Seek};
 
 #[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize)]
 pub struct CcdtBox {
@@ -24,7 +24,7 @@ impl<R: Read + Seek> ReadBox<&mut R> for CcdtBox {
     let dual_pixel = reader.read_u32::<BigEndian>()?;
     let trak_index = reader.read_u32::<BigEndian>()?;
 
-    reader.seek(SeekFrom::Start(header.end_offset()))?;
+    header.finish(&mut *reader)?;
 
     Ok(Self {
       header,

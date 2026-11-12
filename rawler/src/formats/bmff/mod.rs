@@ -129,6 +129,22 @@ impl BoxHeader {
     Ok(header)
   }
 
+  /// Seek to the end of the box, an error if its fields were read beyond it
+  pub fn finish<R: Seek>(&self, mut reader: R) -> Result<()> {
+    let pos = reader.stream_position()?;
+    if pos > self.end_offset() {
+      return Err(BmffError::Parse(format!(
+        "Box {:?} at offset {} with size {} is shorter than its {} bytes of fields",
+        self.typ,
+        self.offset,
+        self.size,
+        pos - self.offset
+      )));
+    }
+    reader.seek(SeekFrom::Start(self.end_offset()))?;
+    Ok(())
+  }
+
   pub fn end_offset(&self) -> u64 {
     self.offset + self.size
   }
@@ -422,6 +438,20 @@ mod tests {
     data.extend(boxed(b"moov", 16, &boxed(b"free", 16, &[])));
     data.extend_from_slice(&[0; 8]);
     assert!(matches!(parse_buffer(&data), Err(BmffError::Parse(msg)) if msg.contains("beyond its parent")));
+  }
+
+  #[test]
+  fn box_shorter_than_its_fields_is_an_error() {
+    // mvhd needs 4 + 16 bytes of fields, it has 4
+    let data = boxed(b"mvhd", 12, &[0; 20]);
+    let mut reader = Cursor::new(&data);
+    let header = BoxHeader::parse(&mut reader).expect("header");
+    assert!(matches!(mvhd::MvhdBox::read_box(&mut reader, header), Err(BmffError::Parse(msg)) if msg.contains("shorter")));
+    // CRAW with 12 of its 82 bytes of fields
+    let data = boxed(b"CRAW", 20, &[0; 90]);
+    let mut reader = Cursor::new(&data);
+    let header = BoxHeader::parse(&mut reader).expect("header");
+    assert!(ext_cr3::craw::CrawBox::read_box(&mut reader, header).is_err());
   }
 
   #[test]

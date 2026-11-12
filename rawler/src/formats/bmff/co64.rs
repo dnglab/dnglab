@@ -4,7 +4,7 @@
 
 use byteorder::{BigEndian, ReadBytesExt};
 use serde::{Deserialize, Serialize};
-use std::io::{Read, Seek, SeekFrom};
+use std::io::{Read, Seek};
 
 use super::{BoxHeader, FourCC, ReadBox, Result, read_box_header_ext};
 
@@ -31,7 +31,7 @@ impl<R: Read + Seek> ReadBox<&mut R> for Co64Box {
       entries.push(chunk_offset);
     }
 
-    reader.seek(SeekFrom::Start(header.end_offset()))?;
+    header.finish(&mut *reader)?;
 
     Ok(Self {
       header,

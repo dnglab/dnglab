@@ -5,7 +5,7 @@
 use super::{BoxHeader, FourCC, ReadBox, Result, read_box_header_ext};
 use byteorder::{BigEndian, ReadBytesExt};
 use serde::{Deserialize, Serialize};
-use std::io::{Read, Seek, SeekFrom};
+use std::io::{Read, Seek};
 
 #[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize)]
 pub struct MdhdBox {
@@ -47,7 +47,7 @@ impl<R: Read + Seek> ReadBox<&mut R> for MdhdBox {
     //let language = language_string(language_code); // TODO
     let language = String::from("FIXME");
 
-    reader.seek(SeekFrom::Start(header.end_offset()))?;
+    header.finish(&mut *reader)?;
 
     Ok(Self {
       header,
