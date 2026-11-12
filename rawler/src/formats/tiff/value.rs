@@ -909,10 +909,10 @@ impl TiffAscii {
     nul_range_end = raw[nul_range_end..].iter().position(|&c| c == b'\0').unwrap_or(raw.len()); // default to length if no `\0` present
     // Strings that are no valid UTF-8 are mostly Latin-1, which maps each
     // byte to the code point of its value
-    let raw = &raw[0..nul_range_end];
-    strings.push(match std::str::from_utf8(raw) {
+    let text = &raw[0..nul_range_end];
+    strings.push(match std::str::from_utf8(text) {
       Ok(s) => s.to_owned(),
-      Err(_) => raw.iter().map(|&c| c as char).collect(),
+      Err(_) => text.iter().map(|&c| c as char).collect(),
     });
     //nul_range_end += 1;
     // }
@@ -1310,6 +1310,14 @@ mod tests {
     assert_eq!(bytes, b"Artist\0");
     assert_eq!(value.count(), bytes.len());
     Ok(())
+  }
+
+  #[test]
+  fn ascii_keeps_the_bytes_after_nul() {
+    // Like the Leaf metadata of MOS files, the bytes of the value continue after the string
+    let ascii = TiffAscii::new_from_raw(b"PKTS data");
+    assert_eq!(ascii.first().map(String::as_str), Some("PKTS"));
+    assert_eq!(ascii.as_bytes(), b"PKTS data");
   }
 
   #[test]
