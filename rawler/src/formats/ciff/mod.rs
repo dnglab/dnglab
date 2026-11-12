@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use crate::{bits::*, rawsource::RawSource};
 
@@ -45,6 +45,26 @@ pub fn is_ciff(file: &RawSource) -> bool {
   }
 }
 
+/// Limits of a parse against crafted files, whose entries can all point
+/// to the same data or sub-heap
+struct ParseState {
+  /// Bytes left for the entries and the data they copy
+  budget: usize,
+  /// Sub-heaps already parsed, as start and end
+  visited: HashSet<(usize, usize)>,
+}
+
+impl ParseState {
+  /// Take `bytes` from the budget
+  fn charge(&mut self, bytes: usize) -> Result<(), String> {
+    self.budget = self
+      .budget
+      .checked_sub(bytes)
+      .ok_or("CIFF: the entries need more data than twice the file size, the file may be crafted")?;
+    Ok(())
+  }
+}
+
 impl CiffIFD {
   pub fn new_file(file: &RawSource) -> Result<CiffIFD, String> {
     let data = file.buf();
@@ -56,6 +76,14 @@ impl CiffIFD {
   /// Heap from `start` to `end` in `buf`. It ends with the offset of its
   /// entry table, which follows the value data.
   pub fn new(buf: &[u8], start: usize, end: usize, depth: u32) -> Result<CiffIFD, String> {
+    let mut state = ParseState {
+      budget: buf.len().saturating_mul(2).saturating_add(1024),
+      visited: HashSet::from([(start, end)]),
+    };
+    Self::parse(buf, start, end, depth, &mut state)
+  }
+
+  fn parse(buf: &[u8], start: usize, end: usize, depth: u32, state: &mut ParseState) -> Result<CiffIFD, String> {
     let mut entries = HashMap::new();
     let mut subifds = Vec::new();
 
@@ -76,22 +104,29 @@ impl CiffIFD {
 
     for i in 0..dircount {
       let entry_offset: usize = start + valuedata_size + 2 + i * 10;
-      let e = CiffEntry::new(buf, start, entry_offset)?;
+      state.charge(10)?;
+      let mut e = CiffEntry::header(buf, start, entry_offset)?;
+      let sub_heap = (e.data_offset, e.data_offset + e.bytesize);
       if e.typ == 0x2800 || e.typ == 0x3000 {
         // SubIFDs
-        if depth < 10 {
+        if depth < 10 && state.visited.insert(sub_heap) {
           // Avoid infinite looping IFDs
-          let ifd = CiffIFD::new(buf, e.data_offset, e.data_offset + e.bytesize, depth + 1);
+          let ifd = CiffIFD::parse(buf, sub_heap.0, sub_heap.1, depth + 1, state);
           match ifd {
             Ok(val) => {
               subifds.push(val);
             }
             Err(_) => {
+              // Ignore unparsable IFDs
+              state.charge(e.bytesize)?;
+              e.data = buf[sub_heap.0..sub_heap.1].to_vec();
               entries.insert(e.tag, e);
-            } // Ignore unparsable IFDs
+            }
           }
         }
       } else {
+        state.charge(e.bytesize)?;
+        e.data = buf[sub_heap.0..sub_heap.1].to_vec();
         entries.insert(e.tag, e);
       }
     }
@@ -115,6 +150,13 @@ impl CiffIFD {
 
 impl CiffEntry {
   pub fn new(buf: &[u8], value_data: usize, offset: usize) -> Result<CiffEntry, String> {
+    let mut entry = Self::header(buf, value_data, offset)?;
+    entry.data = buf[entry.data_offset..entry.data_offset + entry.bytesize].to_vec();
+    Ok(entry)
+  }
+
+  /// The entry at `offset` without its data, which is checked to be in `buf`
+  fn header(buf: &[u8], value_data: usize, offset: usize) -> Result<CiffEntry, String> {
     let p = LEu16(buf, offset);
     let tag = p & 0x3fff;
     let datalocation = (p & 0xc000) as usize;
@@ -132,10 +174,12 @@ impl CiffEntry {
       0x4000 => (8, offset + 2),
       val => return Err(format!("CIFF: Don't know about data location {:x}", val)),
     };
-    let data = data_offset
-      .checked_add(bytesize)
-      .and_then(|end| buf.get(data_offset..end))
-      .ok_or_else(|| format!("CIFF: data of tag 0x{:x} ({} bytes at {}) is outside of the file", tag, bytesize, data_offset))?;
+    if data_offset.checked_add(bytesize).is_none_or(|end| end > buf.len()) {
+      return Err(format!(
+        "CIFF: data of tag 0x{:x} ({} bytes at {}) is outside of the file",
+        tag, bytesize, data_offset
+      ));
+    }
     let count = bytesize >> CiffEntry::element_shift(typ);
 
     Ok(CiffEntry {
@@ -144,7 +188,7 @@ impl CiffEntry {
       count,
       bytesize,
       data_offset,
-      data: Vec::from(data),
+      data: Vec::new(),
     })
   }
 
@@ -221,6 +265,33 @@ mod tests {
     let mut bad = data.clone();
     bad[4..6].copy_from_slice(&2_u16.to_le_bytes());
     assert!(CiffIFD::new(&bad, 0, len, 1).is_err());
+  }
+
+  #[test]
+  fn entries_sharing_data_are_limited() {
+    // 1000 entries with the same 1000 bytes
+    let data = heap(&[0; 1000], &[(0x0032, 1000, 0); 1000]);
+    assert!(CiffIFD::new(&data, 0, data.len(), 1).is_err());
+    // A few of them are fine
+    let data = heap(&[0; 1000], &[(0x0032, 1000, 0); 2]);
+    assert!(CiffIFD::new(&data, 0, data.len(), 1).is_ok());
+  }
+
+  #[test]
+  fn sub_heaps_are_parsed_once() {
+    // A heap with 8 sub-heap entries of itself, 8^9 parses without a limit
+    let len = 2 + 8 * 10 + 4;
+    let data = heap(&[], &[(0x300a, len, 0); 8]);
+    let ifd = CiffIFD::new(&data, 0, data.len(), 1).expect("heap");
+    assert!(ifd.subifds.is_empty());
+    // A sub-heap of 2 entries pointing to the same heap is parsed once
+    let inner = heap(&[1, 0, 2, 0], &[(0x1031, 4, 0)]);
+    let mut values = inner.clone();
+    values.resize(values.len() + 2, 0);
+    let data = heap(&values, &[(0x300a, inner.len() as u32, 0), (0x300b, inner.len() as u32, 0)]);
+    let ifd = CiffIFD::new(&data, 0, data.len(), 1).expect("heap");
+    assert_eq!(ifd.subifds.len(), 1);
+    assert!(ifd.find_entry(CiffTag::SensorInfo).is_some());
   }
 
   #[test]
