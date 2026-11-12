@@ -610,7 +610,9 @@ impl<'a> ArwDecoder<'a> {
     let buffer = file.buf();
     let decrypted_buf = ArwDecoder::sony_decrypt(buffer, sony_offset as usize, sony_length, sony_key)?;
 
-    let decrypted_tiff = IFD::new(&mut Cursor::new(decrypted_buf), 0, 0, -(sony_offset as i32), Endian::Little, &[])?;
+    // The offsets of the decrypted IFD are relative to the file
+    let corr = i32::try_from(sony_offset).map_err(|_| decoder_error!("ARW: SR2 offset {} is out of range", sony_offset))?;
+    let decrypted_tiff = IFD::new(&mut Cursor::new(decrypted_buf), 0, 0, -corr, Endian::Little, &[])?;
 
     let wb = self.get_wb(&decrypted_tiff)?;
 
