@@ -542,6 +542,26 @@ mod tests {
     assert!(ctmd.records.is_empty());
   }
 
+  /// stsc box with entries of first chunk and samples per chunk
+  fn stsc_box(entries: &[(u32, u32)]) -> Vec<u8> {
+    let mut payload = vec![0; 4];
+    payload.extend_from_slice(&(entries.len() as u32).to_be_bytes());
+    for (first_chunk, samples_per_chunk) in entries {
+      payload.extend([first_chunk.to_be_bytes(), samples_per_chunk.to_be_bytes(), 1_u32.to_be_bytes()].concat());
+    }
+    boxed(b"stsc", 8 + payload.len() as u32, &payload)
+  }
+
+  #[test]
+  fn stsc_first_samples() {
+    // Chunks 1 to 3 with 2 samples, 4 and 5 with 1, then 3 samples each
+    let stsc = read(stsc_box(&[(1, 2), (4, 1), (6, 3)]), |r, h| stsc::StscBox::read_box(r, h)).expect("stsc");
+    assert_eq!(stsc.entries.iter().map(|entry| entry.first_sample).collect::<Vec<_>>(), [1, 7, 9]);
+    // Chunks out of order and overflowing sample numbers
+    assert!(read(stsc_box(&[(4, 1), (2, 1)]), |r, h| stsc::StscBox::read_box(r, h)).is_err());
+    assert!(read(stsc_box(&[(1, u32::MAX), (3, 1)]), |r, h| stsc::StscBox::read_box(r, h)).is_err());
+  }
+
   #[test]
   fn undersized_box_in_moov_is_an_error() {
     let mut data = ftyp();

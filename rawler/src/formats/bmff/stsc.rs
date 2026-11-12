@@ -2,7 +2,7 @@
 // Copyright 2020 Alfred Gutierrez
 // Copyright 2021 Daniel Vogelbacher <daniel@chaospixel.com>
 
-use super::{BoxHeader, FourCC, ReadBox, Result, read_box_header_ext};
+use super::{BmffError, BoxHeader, FourCC, ReadBox, Result, read_box_header_ext};
 use byteorder::{BigEndian, ReadBytesExt};
 use serde::{Deserialize, Serialize};
 use std::io::{Read, Seek};
@@ -62,7 +62,12 @@ impl<R: Read + Seek> ReadBox<&mut R> for StscBox {
       for _ in 1..entry_count {
         let mut entry = read_entry()?;
         // Now we know the chunk count to calc the amount of samples in holdback
-        entry.first_sample = holdback.first_sample + ((entry.first_chunk - holdback.first_sample) * holdback.samples_per_chunk);
+        entry.first_sample = entry
+          .first_chunk
+          .checked_sub(holdback.first_chunk)
+          .and_then(|chunks| chunks.checked_mul(holdback.samples_per_chunk))
+          .and_then(|samples| samples.checked_add(holdback.first_sample))
+          .ok_or_else(|| BmffError::Parse(format!("stsc entry for chunk {} is out of order or overflows", entry.first_chunk)))?;
         entries.push(holdback);
         holdback = entry;
       }
