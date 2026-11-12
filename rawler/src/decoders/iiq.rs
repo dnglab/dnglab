@@ -918,9 +918,10 @@ impl<'a> IiqDecoder<'a> {
               flats.push(FlatField { typ: tag, head, data });
             }
 
-            0x0419 if (len as usize) < 8 * size_of::<f32>() => unexpected_length(tag, len),
+            // Like in dcraw, the 8 coefficients follow a value of 4 bytes
+            0x0419 if (len as usize) < 4 + 8 * size_of::<f32>() => unexpected_length(tag, len),
             0x0419 => {
-              stream.seek(SeekFrom::Start(offset + tag_offset))?;
+              stream.seek(SeekFrom::Start(offset + tag_offset + 4))?;
               let mut data = [f32::NAN; 8];
               for entry in data.iter_mut() {
                 *entry = stream.read_f32::<LittleEndian>()?;
