@@ -58,6 +58,7 @@ use super::FormatHint;
 use super::Orientation;
 use super::RawDecodeParams;
 use super::RawMetadata;
+use super::image_bytes;
 use super::tag_data;
 
 mod decrypt;
@@ -192,7 +193,7 @@ impl<'a> Decoder for NefDecoder<'a> {
       .into_iter()
       .min_by_key(|ifd| {
         let dim = |tag| ifd.get_entry(tag).map_or(0, |entry| entry.force_usize(0));
-        Reverse(dim(TiffCommonTag::ImageWidth) * dim(TiffCommonTag::ImageLength))
+        Reverse(dim(TiffCommonTag::ImageWidth).saturating_mul(dim(TiffCommonTag::ImageLength)))
       })
       .or_else(|| self.tiff.find_ifd_with_new_subfile_type(0))
       .ok_or_else(|| decoder_error!("Failed to find a suitable IFD in NEF decoder"))?;
@@ -201,6 +202,11 @@ impl<'a> Decoder for NefDecoder<'a> {
     let bps = fetch_tiff_tag!(raw, TiffCommonTag::BitsPerSample).force_usize(0);
     let mut cpp = fetch_tiff_tag!(raw, TiffCommonTag::BitsPerSample).count(); // Linear files don't have SamplesPerPixel
     let compression = fetch_tiff_tag!(raw, TiffCommonTag::Compression).force_usize(0);
+    // CFA images have one sample per pixel, scans three
+    if !matches!(cpp, 1 | 3) {
+      return Err(RawlerError::unsupported(camera, format!("NEF with {} samples per pixel", cpp)));
+    }
+    image_bytes("NEF", width, height, 16 * cpp)?;
 
     let nef_compression = if let Some(z_makernote) = self.makernote.get_entry(NikonMakernote::Makernotes0x51) {
       // For new Z models, a new tag 0x51 for makernotes appears. This contains
@@ -232,13 +238,13 @@ impl<'a> Decoder for NefDecoder<'a> {
     let src = if rows_per_strip == height {
       file.subview_padded(offset as u64, size as u64)?
     } else {
-      let full_size: u32 = match fetch_tiff_tag!(raw, TiffCommonTag::StripByteCounts) {
-        Value::Long(data) => data.iter().copied().sum(),
+      let full_size: u64 = match fetch_tiff_tag!(raw, TiffCommonTag::StripByteCounts) {
+        Value::Long(data) => data.iter().map(|&count| count as u64).sum(),
         _ => {
           return Err(RawlerError::decoder_failed("StripByteCounts is not of type LONG"));
         }
       };
-      file.subview_padded(offset as u64, full_size as u64)?
+      file.subview_padded(offset as u64, full_size)?
     };
 
     let coeffs = normalize_wb(self.get_wb(camera)?);
@@ -316,7 +322,7 @@ impl<'a> Decoder for NefDecoder<'a> {
     let photometric = match cpp {
       1 => RawPhotometricInterpretation::Cfa(CFAConfig::new_from_camera(camera)),
       3 => RawPhotometricInterpretation::LinearRaw,
-      _ => todo!(),
+      _ => return Err(RawlerError::unsupported(camera, format!("NEF with {} samples per pixel", cpp))),
     };
     let mut img = RawImage::new(camera.clone(), image, cpp, coeffs, photometric, blacklevel, whitelevel, dummy);
     img.orientation = Orientation::from_tiff(self.tiff.root_ifd());
@@ -643,13 +649,15 @@ impl<'a> NefDecoder<'a> {
       a.div_ceil(b) // (a + b - 1) / b
     }
 
-    let req_pixels = width * height;
-    let req_input_bits = bps * req_pixels;
+    // A size that overflows can't be uncompressed data of the file
+    let Some(req_input_bits) = width.checked_mul(height).and_then(|pixels| pixels.checked_mul(bps)) else {
+      return Ok(None);
+    };
     let req_input_bytes = div_round_up(req_input_bits, 8);
 
-    Ok(if compression == 1 || size == width * height * bps / 8 {
+    Ok(if compression == 1 || size == req_input_bits / 8 {
       Some(0)
-    } else if size >= req_input_bytes {
+    } else if size >= req_input_bytes && height > 0 {
       // Some models (D6) using row padding, so the row width is slightly larger.
       // This should be no more than 16 extra bytes.
       let total_padding = size - req_input_bytes;
