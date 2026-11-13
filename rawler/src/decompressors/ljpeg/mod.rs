@@ -39,14 +39,21 @@ impl<'a> Decompressor<'a, u16> for LJpegDecompressor {
   /// `line_width` must not exceed the decoded image width.
   ///
   /// # Errors
-  /// Returns `Err` if the LJPEG stream cannot be parsed or decoded.
+  /// Returns `Err` if `line_width` is 0 or a line has another length, or if
+  /// the LJPEG stream cannot be parsed or decoded.
   fn decompress(&self, src: &[u8], skip_rows: usize, lines: impl LineIteratorMut<'a, u16>, line_width: usize) -> std::result::Result<(), String> {
+    if line_width == 0 {
+      return Err("LJPEG: lines of 0 samples can't be decoded".to_string());
+    }
     let decompressor = LjpegDecompressor::new_full(src, self.dng_bug, false)?;
     let mut pixbuf = PixU16::new(decompressor.width(), decompressor.height());
 
     decompressor.decode(pixbuf.pixels_mut(), 0, decompressor.width(), decompressor.width(), decompressor.height(), false)?;
 
     for (dst, src) in lines.zip(pixbuf.pixels().chunks_exact(line_width).skip(skip_rows)) {
+      if dst.len() != line_width {
+        return Err(format!("LJPEG: line of {} samples instead of {}", dst.len(), line_width));
+      }
       dst.copy_from_slice(src);
     }
 
@@ -692,6 +699,17 @@ mod tests {
       assert!(ljpeg.decode_leaf(width, height).is_err(), "{}x{}", width, height);
     }
     assert_eq!(ljpeg.decode_leaf(4, 2)?.pixels(), &[32768; 4 * 2]);
+    Ok(())
+  }
+
+  #[test]
+  fn line_width_must_match_the_lines() -> Result<(), String> {
+    let data = stream(&[dht(0), sof(16, 4, 2, &[(1, 0x11)]), sos(&[(1, 0)], 1, 0)]);
+    let mut out = vec![0; 4 * 2];
+    assert!(LJpegDecompressor::new().decompress(&data, 0, out.chunks_exact_mut(4), 0).is_err());
+    assert!(LJpegDecompressor::new().decompress(&data, 0, out.chunks_exact_mut(2), 4).is_err());
+    LJpegDecompressor::new().decompress(&data, 0, out.chunks_exact_mut(4), 4)?;
+    assert_eq!(out, vec![32768; 4 * 2]);
     Ok(())
   }
 }
