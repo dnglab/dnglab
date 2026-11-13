@@ -12,7 +12,6 @@ use crate::Result;
 use crate::alloc_image_ok;
 use crate::analyze::FormatDump;
 use crate::bits::BEu16;
-use crate::bits::BEu32;
 use crate::bits::Endian;
 use crate::bits::LEu32;
 use crate::bits::LookupTable;
@@ -805,6 +804,10 @@ impl<'a> NefDecoder<'a> {
   // Decodes 12 bit data in an YUY2-like pattern (2 Luma, 1 Chroma per 2 pixels).
   // We un-apply the whitebalance, so output matches lossless.
   pub(crate) fn decode_snef_compressed(src: &PaddedBuf, coeffs: [f32; 4], width: usize, height: usize, dummy: bool) -> std::result::Result<PixU16, String> {
+    let need = image_bytes("NEF", width, height, 3 * 8).map_err(|err| err.to_string())?;
+    if src.len() < need {
+      return Err(format!("NEF: small raw data of {} bytes, {} are needed", src.len(), need));
+    }
     let inv_wb_r = (1024.0 / coeffs[0]) as i32;
     let inv_wb_b = (1024.0 / coeffs[2]) as i32;
 
@@ -831,7 +834,10 @@ impl<'a> NefDecoder<'a> {
       dummy,
       &(|out: &mut [u16], row| {
         let inb = &src[row * width * 3..];
-        let mut random = BEu32(inb, 0);
+        // The seed is the first 4 bytes from the row on, zeros past the end of the data
+        let mut seed = [0; 4];
+        seed.iter_mut().zip(inb).for_each(|(seed, byte)| *seed = *byte);
+        let mut random = u32::from_be_bytes(seed);
         for (o, i) in out.chunks_exact_mut(6).zip(inb.chunks_exact(6)) {
           let g1: u16 = i[0] as u16;
           let g2: u16 = i[1] as u16;
@@ -849,22 +855,30 @@ impl<'a> NefDecoder<'a> {
           let g = snef_curve.dither(clampbits((y1 - 0.337633 * cb - 0.698001 * cr) as i32, 12), &mut random);
           let b = snef_curve.dither(clampbits((y1 + 1.732446 * cb) as i32, 12), &mut random);
           // invert the white balance
-          o[0] = clampbits((inv_wb_r * r as i32 + (1 << 9)) >> 10, 15);
+          o[0] = invert_wb(inv_wb_r, r);
           o[1] = g;
-          o[2] = clampbits((inv_wb_b * b as i32 + (1 << 9)) >> 10, 15);
+          o[2] = invert_wb(inv_wb_b, b);
 
           let r = snef_curve.dither(clampbits((y2 + 1.370705 * cr) as i32, 12), &mut random);
           let g = snef_curve.dither(clampbits((y2 - 0.337633 * cb - 0.698001 * cr) as i32, 12), &mut random);
           let b = snef_curve.dither(clampbits((y2 + 1.732446 * cb) as i32, 12), &mut random);
           // invert the white balance
-          o[3] = clampbits((inv_wb_r * r as i32 + (1 << 9)) >> 10, 15);
+          o[3] = invert_wb(inv_wb_r, r);
           o[4] = g;
-          o[5] = clampbits((inv_wb_b * b as i32 + (1 << 9)) >> 10, 15);
+          o[5] = invert_wb(inv_wb_b, b);
         }
         Ok(())
       }),
     )
   }
+}
+
+/// `value` with the inverse white balance `inv_wb` applied, where 1024 is
+/// 1.0, in 15 bits. The product is computed in i64, the inverse of a tiny
+/// coefficient from the file is close to i32::MAX.
+fn invert_wb(inv_wb: i32, value: u16) -> u16 {
+  let inverted = (inv_wb as i64 * value as i64 + (1 << 9)) >> 10;
+  clampbits(inverted.clamp(i32::MIN as i64, i32::MAX as i64) as i32, 15)
 }
 
 fn normalize_wb(raw_wb: [f32; 4]) -> [f32; 4] {
@@ -972,5 +986,18 @@ mod tests {
     }
     // Metadata that ends before the split row
     assert!(NefDecoder::do_decode(&data, &meta_68_32(32), Endian::Big, 4, 2, 12, false).is_err());
+  }
+
+  #[test]
+  fn small_raw_with_short_data_or_extreme_wb() {
+    let coeffs = [2.0, 1.0, 1.5, f32::NAN];
+    // 2x2 pixels need 12 bytes
+    assert!(NefDecoder::decode_snef_compressed(&PaddedBuf::new_owned(vec![0; 10], 10), coeffs, 2, 2, false).is_err());
+    // No padding after the data, the seed of the last row has 2 bytes left
+    assert!(NefDecoder::decode_snef_compressed(&PaddedBuf::new_owned(vec![0x80; 6], 6), coeffs, 2, 1, false).is_ok());
+    let data = PaddedBuf::new_owned(vec![0xff; 12], 12);
+    assert!(NefDecoder::decode_snef_compressed(&data, [1e-9, 1.0, -1e-9, f32::NAN], 2, 2, false).is_ok());
+    assert_eq!(invert_wb(1024, 1000), 1000);
+    assert_eq!(invert_wb(i32::MAX, u16::MAX), 0x7fff);
   }
 }
