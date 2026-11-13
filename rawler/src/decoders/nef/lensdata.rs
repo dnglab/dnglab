@@ -96,7 +96,7 @@ pub(super) fn from_makernote(makernote: &IFD) -> Result<Option<NefLensData>> {
         parse_lensdata_0x800(version, &buf)?
       }
 
-      _ => todo!("Lensdata version: 0x{:x} not implemented", version),
+      _ => return Err(decoder_error!("NEF lens data version 0x{:x} is not supported", version)),
     };
 
     log::debug!("NEF lens data version: 0x{:x}, lensdata: {:?}", version, lensdata);
@@ -228,8 +228,9 @@ fn parse_lensdata_0x4xx(version: u32, buf: &[u8], model_offset: usize) -> Result
 fn parse_lensdata_0x800(version: u32, buf: &[u8]) -> Result<NefLensData> {
   // This check comes from exiftool. If the buffer contains only zeros,
   // we consider the block as unused. Hopefully we find another method...
-  let old_data_avail = !buf[0x04..0x04 + 16].iter().all(|&x| x == 0);
-  let new_data_avail = !buf[48..].iter().all(|&x| x == 0);
+  let has_data = |range: Option<&[u8]>| range.is_some_and(|data| data.iter().any(|&x| x != 0));
+  let old_data_avail = has_data(buf.get(0x04..0x04 + 16));
+  let new_data_avail = has_data(buf.get(48..));
   if old_data_avail {
     log::debug!("NEF lensdata 0x80X: Found old lensdata block");
     Ok(NefLensData::FMount(NefLensDataF {
@@ -275,7 +276,7 @@ fn parse_lensdata_0x800(version: u32, buf: &[u8]) -> Result<NefLensData> {
   } else if new_data_avail {
     log::debug!("NEF lensdata 0x80X: Found new lensdata block");
     let mut data = NefLensDataZ { version, ..Default::default() };
-    data.lens_id = LEu16(buf, 0x30);
+    data.lens_id = buf.get(0x30..0x32).map(|id| LEu16(id, 0)).ok_or_else(|| RawlerError::decoder_failed(ERRMSG))?;
     log::debug!("NEF lensdata 0x80X: lens_id: {}", data.lens_id);
 
     Ok(NefLensData::ZMount(data))
@@ -357,4 +358,40 @@ enum NefLensData800 {
   MaxApertureAtMaxFocal = 0x12,
   MCUVersion = 0x13,
   EffectiveMaxAperture = 0x14,
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[test]
+  fn lensdata_0x800_of_short_data() {
+    // Too short for the old block, the new block has one byte of the lens ID
+    let mut buf = vec![0; 49];
+    buf[48] = 1;
+    assert!(parse_lensdata_0x800(0x800, &buf).is_err());
+    assert!(parse_lensdata_0x800(0x800, &[0; 8]).is_err());
+    buf.push(2);
+    assert!(matches!(
+      parse_lensdata_0x800(0x800, &buf),
+      Ok(NefLensData::ZMount(NefLensDataZ { lens_id: 0x0201, .. }))
+    ));
+  }
+
+  #[test]
+  fn unknown_lensdata_version_is_an_error() -> std::result::Result<(), Box<dyn std::error::Error>> {
+    use crate::formats::tiff::GenericTiffReader;
+    use crate::formats::tiff::reader::TiffReader;
+    use crate::formats::tiff::writer::TiffWriter;
+    use std::io::Cursor;
+
+    let mut file = Cursor::new(Vec::new());
+    let tiff = TiffWriter::new(&mut file)?;
+    let mut root = tiff.new_directory();
+    root.add_tag_undefined(NikonMakernote::LensData, b"0999\0\0\0\0".to_vec());
+    tiff.build(root)?;
+    let makernote = GenericTiffReader::new(&mut Cursor::new(file.into_inner()), 0, 0, None, &[])?.root_ifd().clone();
+    assert!(from_makernote(&makernote).is_err());
+    Ok(())
+  }
 }
