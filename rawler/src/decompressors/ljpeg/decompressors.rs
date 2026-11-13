@@ -40,6 +40,23 @@ fn decode_ljpeg_predictor<const PREDICTOR: usize>(
       ljpeg.sof.width, ljpeg.sof.height, width, height
     ));
   }
+  if width == 0 || height == 0 {
+    return Err(format!("ljpeg: trying to decode into {}x{}", width, height));
+  }
+  // The last sample written ends the last pixel of all components in the last row
+  let end = (height - 1)
+    .checked_mul(stripwidth)
+    .and_then(|start| start.checked_add(x))
+    .and_then(|start| start.checked_add(width.div_ceil(ncomp) * ncomp));
+  if end.is_none_or(|end| end > out.len()) {
+    return Err(format!(
+      "ljpeg: output of {} samples is too small for {}x{} with a stride of {}",
+      out.len(),
+      width,
+      height,
+      stripwidth
+    ));
+  }
 
   let htables: Vec<&HuffTable> = (0..ncomp).map(|c| ljpeg.htable(c)).collect::<Result<_, _>>()?;
   let mut pump = BitPumpJPEG::new(ljpeg.buffer);
@@ -170,18 +187,26 @@ fn warn_on_scan_end(pump: &BitPumpJPEG<'_>) {
   }
 }
 
+/// Check the size of YUV data with blocks of 2 pixels by `rows` and of
+/// `out` for the samples
+fn check_yuv_size(ljpeg: &LjpegDecompressor, out: &[u16], width: usize, height: usize, rows: usize) -> Result<(), String> {
+  if !ljpeg.sof.width.is_multiple_of(2) || height == 0 || !height.is_multiple_of(rows) {
+    return Err(format!(
+      "ljpeg: YUV data of {}x{} pixels isn't a multiple of blocks of 2x{} pixels",
+      ljpeg.sof.width, height, rows
+    ));
+  }
+  if width.checked_mul(height).is_none_or(|samples| samples > out.len()) {
+    return Err(format!("ljpeg: output of {} samples is too small for {}x{}", out.len(), width, height));
+  }
+  Ok(())
+}
+
 fn set_yuv_420(out: &mut [u16], row: usize, col: usize, width: usize, y1: i32, y2: i32, y3: i32, y4: i32, cb: i32, cr: i32) {
   let pix1 = row * width + col;
   let pix2 = pix1 + 3;
   let pix3 = (row + 1) * width + col;
   let pix4 = pix3 + 3;
-
-  debug_assert!(!y1.is_negative());
-  debug_assert!(!y2.is_negative());
-  debug_assert!(!y3.is_negative());
-  debug_assert!(!y4.is_negative());
-  debug_assert!(!cb.is_negative());
-  debug_assert!(!cr.is_negative());
 
   out[pix1 + 0] = y1 as u16;
   out[pix1 + 1] = cb as u16;
@@ -208,9 +233,7 @@ pub fn decode_sony_ljpeg_420(ljpeg: &LjpegDecompressor, out: &mut [u16], width: 
     ));
   }
 
-  debug_assert_eq!(width % 2, 0);
-  debug_assert_eq!(width % 6, 0); // Ensure we have enough samples for .step_by(6)
-  debug_assert_eq!(height % 2, 0);
+  check_yuv_size(ljpeg, out, width, height, 2)?;
 
   let htable1 = ljpeg.htable(0)?;
   let htable2 = ljpeg.htable(1)?;
@@ -281,9 +304,7 @@ pub fn decode_ljpeg_420(ljpeg: &LjpegDecompressor, out: &mut [u16], width: usize
     ));
   }
 
-  debug_assert_eq!(width % 2, 0);
-  debug_assert_eq!(width % 6, 0); // Ensure we have enough samples for .step_by(6)
-  debug_assert_eq!(height % 2, 0);
+  check_yuv_size(ljpeg, out, width, height, 2)?;
 
   let htable1 = ljpeg.htable(0)?;
   let htable2 = ljpeg.htable(1)?;
@@ -329,11 +350,6 @@ fn set_yuv_422(out: &mut [u16], row: usize, col: usize, width: usize, y1: i32, y
   let pix1 = row * width + col;
   let pix2 = pix1 + 3;
 
-  debug_assert!(!y1.is_negative());
-  debug_assert!(!y2.is_negative());
-  debug_assert!(!cb.is_negative());
-  debug_assert!(!cr.is_negative());
-
   out[pix1 + 0] = y1 as u16;
   out[pix1 + 1] = cb as u16;
   out[pix1 + 2] = cr as u16;
@@ -352,6 +368,7 @@ pub fn decode_ljpeg_422(ljpeg: &LjpegDecompressor, out: &mut [u16], width: usize
       height
     ));
   }
+  check_yuv_size(ljpeg, out, width, height, 1)?;
   let htable1 = ljpeg.htable(0)?;
   let htable2 = ljpeg.htable(1)?;
   let htable3 = ljpeg.htable(2)?;
@@ -394,6 +411,9 @@ pub fn decode_hasselblad(ljpeg: &LjpegDecompressor, out: &mut [u16], width: usiz
   // [p1_length_as_huffman][p2_length_as_huffman][p0_diff_with_length][p1_diff_with_length]|NEXT PIXELS
   let mut pump = BitPumpMSB32::new(ljpeg.buffer);
   let htable = ljpeg.htable(0)?;
+  if width == 0 {
+    return Err("ljpeg: trying to decode Hasselblad data into a width of 0".to_string());
+  }
 
   for line in out.chunks_exact_mut(width) {
     let mut p1: i32 = 0x8000;
@@ -401,8 +421,9 @@ pub fn decode_hasselblad(ljpeg: &LjpegDecompressor, out: &mut [u16], width: usiz
     for o in line.chunks_exact_mut(2) {
       let len1 = htable.huff_len(&mut pump)?;
       let len2 = htable.huff_len(&mut pump)?;
-      p1 += hasselblad_diff(htable, &mut pump, len1)?;
-      p2 += hasselblad_diff(htable, &mut pump, len2)?;
+      // The predictions sum up over the line
+      p1 = p1.wrapping_add(hasselblad_diff(htable, &mut pump, len1)?);
+      p2 = p2.wrapping_add(hasselblad_diff(htable, &mut pump, len2)?);
       o[0] = p1 as u16;
       o[1] = p2 as u16;
     }

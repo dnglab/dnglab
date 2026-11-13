@@ -395,6 +395,10 @@ impl<'a> LjpegDecompressor<'a> {
   }
 
   pub fn decode_leaf(&self, width: usize, height: usize) -> Result<PixU16, String> {
+    // The rows have pairs of samples
+    if width == 0 || height == 0 || !width.is_multiple_of(2) {
+      return Err(format!("MOS: can't decode Leaf data of {}x{} pixels", width, height));
+    }
     let mut offsets = vec![0_usize; 1];
     let mut input = ByteStream::new(self.buffer, Endian::Big);
 
@@ -404,7 +408,7 @@ impl<'a> LjpegDecompressor<'a> {
       }
       offsets.push(input.get_pos());
     }
-    let nstrips = (height - 1) / 8 + 1;
+    let nstrips = height.div_ceil(8);
     if offsets.len() != nstrips {
       return Err(format!("MOS: expecting {} strips found {}", nstrips, offsets.len()));
     }
@@ -602,6 +606,92 @@ mod tests {
     let mut out = vec![0; 4 * 2];
     ljpeg.decode(&mut out, 0, 4, 4, 2, false)?;
     assert_eq!(out, vec![32768; 4 * 2]);
+    Ok(())
+  }
+
+  #[test]
+  fn output_must_hold_the_image() -> Result<(), String> {
+    let data = stream(&[dht(0), sof(16, 4, 2, &[(1, 0x11)]), sos(&[(1, 0)], 1, 0)]);
+    let ljpeg = LjpegDecompressor::new(&data)?;
+    assert!(ljpeg.decode(&mut [0; 4 * 2 - 1], 0, 4, 4, 2, false).is_err());
+    assert!(ljpeg.decode(&mut [0; 4 * 2], 0, 4, 4, 0, false).is_err());
+    assert!(ljpeg.decode(&mut [0; 4 * 2], 0, 4, 0, 2, false).is_err());
+    // A width of 3 samples of 2 components writes 2 pixels of each row
+    let data = stream(&[dht(0), sof(16, 2, 2, &[(1, 0x11), (2, 0x11)]), sos(&[(1, 0), (2, 0)], 1, 0)]);
+    let ljpeg = LjpegDecompressor::new(&data)?;
+    assert!(ljpeg.decode(&mut [0; 3 * 2], 0, 3, 3, 2, false).is_err());
+    ljpeg.decode(&mut [0; 3 * 2 + 1], 0, 3, 3, 2, false)?;
+    Ok(())
+  }
+
+  /// YUV 4:2:0 or 4:2:2 stream with blocks of 2 pixels by `rows`
+  fn yuv_stream(category: u8, width: u16, height: u16, rows: u8, point_transform: u8) -> Vec<u8> {
+    let components = [(1, 0x20 | rows), (2, 0x11), (3, 0x11)];
+    stream(&[
+      dht(category),
+      sof(16, width, height, &components),
+      sos(&[(1, 0), (2, 0), (3, 0)], 1, point_transform),
+    ])
+  }
+
+  #[test]
+  fn yuv_blocks_must_fit_the_image() -> Result<(), String> {
+    for (width, height, rows, valid) in [
+      (2, 2, 2, true),
+      (3, 2, 2, false),
+      (2, 3, 2, false),
+      (2, 0, 2, false),
+      (2, 1, 1, true),
+      (3, 1, 1, false),
+    ] {
+      let ljpeg_data = yuv_stream(0, width, height, rows, 0);
+      let ljpeg = LjpegDecompressor::new(&ljpeg_data)?;
+      let (width, height) = (width as usize * 3, height as usize);
+      let mut out = vec![0; width * height];
+      assert_eq!(
+        ljpeg.decode(&mut out, 0, width, width, height, false).is_ok(),
+        valid,
+        "{}x{} in rows of {}",
+        width,
+        height,
+        rows
+      );
+      if valid {
+        assert!(ljpeg.decode(&mut out[1..], 0, width, width, height, false).is_err());
+      }
+    }
+    Ok(())
+  }
+
+  #[test]
+  fn negative_yuv_samples_wrap() -> Result<(), String> {
+    // A base prediction of 1 and differences of -1
+    let data = yuv_stream(1, 2, 2, 2, 15);
+    let ljpeg = LjpegDecompressor::new(&data)?;
+    let mut out = vec![0; 6 * 2];
+    ljpeg.decode(&mut out, 0, 6, 6, 2, false)?;
+    // Y of the second pixel
+    assert_eq!(out[3], 65535);
+    Ok(())
+  }
+
+  #[test]
+  fn hasselblad_width_of_0_is_an_error() -> Result<(), String> {
+    let data = stream(&[dht(0), sof(16, 4, 2, &[(1, 0x11)]), sos(&[(1, 0)], 8, 0)]);
+    let ljpeg = LjpegDecompressor::new(&data)?;
+    assert!(ljpeg.decode(&mut [0; 4 * 2], 0, 0, 0, 2, false).is_err());
+    ljpeg.decode(&mut [0; 4 * 2], 0, 4, 4, 2, false)?;
+    Ok(())
+  }
+
+  #[test]
+  fn leaf_size_must_fit_pairs_of_samples() -> Result<(), String> {
+    let data = stream(&[dht(0), sof(16, 2, 2, &[(1, 0x11), (2, 0x11)]), sos(&[(1, 0), (2, 0)], 1, 0)]);
+    let ljpeg = LjpegDecompressor::new(&data)?;
+    for (width, height) in [(4, 0), (0, 2), (3, 2)] {
+      assert!(ljpeg.decode_leaf(width, height).is_err(), "{}x{}", width, height);
+    }
+    assert_eq!(ljpeg.decode_leaf(4, 2)?.pixels(), &[32768; 4 * 2]);
     Ok(())
   }
 }
