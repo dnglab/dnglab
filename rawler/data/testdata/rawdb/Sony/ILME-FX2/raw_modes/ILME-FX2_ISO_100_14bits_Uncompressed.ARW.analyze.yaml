@@ -1,0 +1,98 @@
+---
+file:
+  fileSize: 74620928
+  fileName: ILME-FX2_ISO_100_14bits_Uncompressed.ARW
+  digest: 4fbe68e1d4290dce7526d8583e6945b2
+data:
+  metadata:
+    rawParams:
+      rawWidth: 7040
+      rawHeight: 4688
+      bitDepth: 16
+      cropArea:
+        p:
+          x: 12
+          y: 8
+        d:
+          w: 7008
+          h: 4672
+      activeArea:
+        p:
+          x: 0
+          y: 0
+        d:
+          w: 7040
+          h: 4688
+      blacklevels:
+        levels:
+          - 512/1
+          - 512/1
+          - 512/1
+          - 512/1
+        cpp: 1
+        width: 2
+        height: 2
+      whitelevels:
+        - 15360
+      wbCoeffs:
+        - 2.0527344
+        - 1.0
+        - 1.8369141
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ~
+        artist: ~
+        lens_spec:
+          - 280/10
+          - 700/10
+          - 20/10
+          - 20/10
+        exposure_time: 1/640
+        fnumber: 40/10
+        aperture_value: ~
+        brightness_value: 21854/2560
+        iso_speed_ratings: 100
+        iso_speed: ~
+        recommended_exposure_index: 100
+        sensitivity_type: 2
+        exposure_bias: 0/10
+        date_time_original: "2025:12:15 12:56:35"
+        create_date: "2025:12:15 12:56:35"
+        modify_date: "2025:12:15 12:56:35"
+        exposure_program: 1
+        timezone_offset: ~
+        offset_time: "-04:00"
+        offset_time_original: "-04:00"
+        offset_time_digitized: "-04:00"
+        sub_sec_time: "811"
+        sub_sec_time_original: "811"
+        sub_sec_time_digitized: "811"
+        shutter_speed_value: ~
+        max_aperture_value: 512/256
+        subject_distance: ~
+        metering_mode: 5
+        light_source: 1
+        flash: 16
+        focal_length: 630/10
+        image_number: ~
+        color_space: 1
+        flash_energy: ~
+        exposure_mode: 1
+        white_balance: 1
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: FE 28-70mm F2 GM
+        gps: ~
+        user_comment: ~
+      model: ILME-FX2
+      make: Sony
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

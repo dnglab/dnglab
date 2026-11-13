@@ -3281,6 +3281,13 @@ mod sony {
   mod ilce_qx1_raw_modes {
     super::super::rawdb_test_file!("Sony", "ILCE-QX1", ilce_qx1_iso_100_12bits_sony_arw_compressed_arw, "raw_modes/ILCE-QX1_ISO_100_12bits_Sony ARW Compressed.ARW");
   }
+  mod ilme_fx2_raw_modes {
+    super::super::rawdb_test_file!("Sony", "ILME-FX2", ilme_fx2_iso_100_12bits_lossy_arw, "raw_modes/ILME-FX2_ISO_100_12bits_Lossy.ARW");
+    super::super::rawdb_test_file!("Sony", "ILME-FX2", ilme_fx2_iso_100_14bits_lossless_arw, "raw_modes/ILME-FX2_ISO_100_14bits_Lossless.ARW");
+    super::super::rawdb_test_file!("Sony", "ILME-FX2", ilme_fx2_iso_100_14bits_uncompressed_arw, "raw_modes/ILME-FX2_ISO_100_14bits_Uncompressed.ARW");
+    super::super::rawdb_test_file!("Sony", "ILME-FX2", ilme_fx2_iso_100_lossless_m_arw, "raw_modes/ILME-FX2_ISO_100_Lossless_M.ARW");
+    super::super::rawdb_test_file!("Sony", "ILME-FX2", ilme_fx2_iso_100_lossless_s_arw, "raw_modes/ILME-FX2_ISO_100_Lossless_S.ARW");
+  }
   mod ilme_fx3_raw_modes {
     super::super::rawdb_test_file!("Sony", "ILME-FX3", ilme_fx3_iso_20000_14bits_arw, "raw_modes/ILME-FX3_ISO_20000_14bits.ARW");
   }
