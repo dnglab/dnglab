@@ -28,9 +28,10 @@ pub(super) fn nef_decrypt(buf: &mut [u8], start: usize, makernote: &IFD) -> Resu
   let ci = WB_SERIALMAP[serialno & 0xff] as u32;
   let mut cj = WB_KEYMAP[keyno & 0xff] as u32;
   let mut ck = 0x60_u32;
+  // Like the unsigned values of dcraw, the key wraps around for long data
   for i in 0..src.len() {
-    cj += ci * ck;
-    ck += 1;
+    cj = cj.wrapping_add(ci.wrapping_mul(ck));
+    ck = ck.wrapping_add(1);
     src[i] ^= cj as u8;
   }
   Ok(())
@@ -75,5 +76,26 @@ mod tests {
     assert_eq!(serial_number(b""), 0);
     // Long serial numbers wrap around instead of overflowing
     let _ = serial_number(&[b'9'; 64]);
+  }
+
+  #[test]
+  fn long_data_is_decrypted_without_overflow() -> std::result::Result<(), Box<dyn std::error::Error>> {
+    use crate::formats::tiff::GenericTiffReader;
+    use crate::formats::tiff::reader::TiffReader;
+    use crate::formats::tiff::writer::TiffWriter;
+    use std::io::Cursor;
+
+    let mut file = Cursor::new(Vec::new());
+    let tiff = TiffWriter::new(&mut file)?;
+    let mut root = tiff.new_directory();
+    root.add_tag(NikonMakernote::NefSerial, "3012345");
+    root.add_tag(NikonMakernote::NefKey, 0x12345678_u32);
+    tiff.build(root)?;
+    let makernote = GenericTiffReader::new(&mut Cursor::new(file.into_inner()), 0, 0, None, &[])?.root_ifd().clone();
+    // The key sums up to about 255 * n^2 / 2 for n bytes, more than u32
+    let mut buf = vec![0; 100_000];
+    nef_decrypt(&mut buf, 4, &makernote)?;
+    assert!(buf[4..].iter().any(|&b| b != 0));
+    Ok(())
   }
 }
