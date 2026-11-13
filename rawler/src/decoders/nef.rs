@@ -697,7 +697,7 @@ impl<'a> NefDecoder<'a> {
     if !matches!(bps, 12 | 14) {
       return Err(format!("NEF: compressed data with {} bits per sample", bps));
     }
-    if width % 2 != 0 {
+    if !width.is_multiple_of(2) {
       return Err(format!("NEF: compressed image with an odd width of {} pixels", width));
     }
     let mut out = alloc_image_ok!(width, height, dummy);
