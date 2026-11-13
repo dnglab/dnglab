@@ -13,7 +13,10 @@ use crate::decompressors::crx::{idwt::WaveletTransform, mdat::parse_header, rice
 use itertools::izip;
 use log::debug;
 use rayon::prelude::*;
-use std::{collections::VecDeque, time::Instant};
+use std::collections::VecDeque;
+// No clock on wasm32-unknown-unknown: Instant::now() panics there.
+#[cfg(not(all(target_arch = "wasm32", target_os = "unknown")))]
+use std::time::Instant;
 
 /// Maximum value for K during Adaptive Golomb-Rice for K prediction
 pub(super) const PREDICT_K_MAX: u32 = 15;
@@ -207,6 +210,7 @@ impl CodecParams {
   /// Decoding processes all planes in all tiles and assembles the
   /// decoded planes into proper tile output position and CFA pattern.
   pub fn decode(mut self, mdat: &[u8]) -> Result<Vec<u16>> {
+    #[cfg(not(all(target_arch = "wasm32", target_os = "unknown")))]
     let instant = Instant::now();
     debug!("Tile configuration: rows: {}, columns: {}", self.tile_rows, self.tile_cols);
     // Build nested Tiles/Planes/Bands
@@ -264,6 +268,7 @@ impl CodecParams {
       }
       Ok(())
     })?;
+    #[cfg(not(all(target_arch = "wasm32", target_os = "unknown")))]
     debug!("MDAT decoding and CFA build: {} s", instant.elapsed().as_secs_f32());
     Ok(cfa)
   }
