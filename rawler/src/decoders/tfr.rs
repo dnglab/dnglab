@@ -16,6 +16,7 @@ use crate::tags::{DngTag, ExifTag, TiffCommonTag};
 use crate::{RawImage, RawLoader, alloc_image_ok};
 use crate::{RawlerError, Result};
 
+use super::image_bytes;
 use super::{BlackLevel, CFAConfig, CameraLookup, Decoder, FormatHint, Orientation, RawDecodeParams, RawMetadata, RawPhotometricInterpretation, WhiteLevel};
 
 /// 3FR format encapsulation for analyzer
@@ -66,6 +67,8 @@ impl<'a> Decoder for TfrDecoder<'a> {
     let width = fetch_tiff_tag!(raw, TiffCommonTag::ImageWidth).force_usize(0);
     let height = fetch_tiff_tag!(raw, TiffCommonTag::ImageLength).force_usize(0);
     let offset = fetch_tiff_tag!(raw, TiffCommonTag::StripOffsets).force_usize(0);
+    // The decoders below store 16 bits per pixel
+    image_bytes("3FR", width, height, 16)?;
 
     let src = file.subview_until_eof(offset as u64)?;
 
@@ -172,9 +175,7 @@ impl<'a> TfrDecoder<'a> {
   }
 
   fn get_wb(&self) -> Result<[f32; 4]> {
-    let levels = fetch_tiff_tag!(self.tiff, TiffCommonTag::AsShotNeutral);
-    assert_eq!(levels.count(), 3);
-    Ok([1.0 / levels.force_f32(0), 1.0 / levels.force_f32(1), 1.0 / levels.force_f32(2), f32::NAN])
+    as_shot_wb(fetch_tiff_tag!(self.tiff, TiffCommonTag::AsShotNeutral))
   }
 
   fn decode_compressed(&self, src: &[u8], width: usize, height: usize, dummy: bool) -> Result<PixU16> {
@@ -184,5 +185,34 @@ impl<'a> TfrDecoder<'a> {
       .decode(out.pixels_mut(), 0, width, width, height, dummy)
       .map_err(RawlerError::decoder_failed)?;
     Ok(out)
+  }
+}
+
+/// White balance from the AsShotNeutral `levels`, unknown for levels that
+/// are not positive
+fn as_shot_wb(levels: &Value) -> Result<[f32; 4]> {
+  if levels.count() != 3 {
+    return Err(decoder_error!("3FR: AsShotNeutral has {} values, 3 are needed", levels.count()));
+  }
+  let neutral = [0, 1, 2].map(|i| levels.force_f32(i));
+  if !neutral.iter().all(|level| level.is_finite() && *level > 0.0) {
+    log::warn!("3FR: invalid AsShotNeutral {:?}, the white balance is unknown", neutral);
+    return Ok([f32::NAN; 4]);
+  }
+  Ok([1.0 / neutral[0], 1.0 / neutral[1], 1.0 / neutral[2], f32::NAN])
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[test]
+  fn wb_from_as_shot_neutral() -> Result<()> {
+    let wb = as_shot_wb(&Value::from(&[Rational::new(1, 2), Rational::new(1, 1), Rational::new(1, 4)][..]))?;
+    assert_eq!(wb[..3], [2.0, 1.0, 4.0]);
+    assert!(as_shot_wb(&Value::from(&[Rational::new(1, 2), Rational::new(1, 1)][..])).is_err());
+    let wb = as_shot_wb(&Value::from(&[Rational::new(0, 1), Rational::new(1, 1), Rational::new(1, 4)][..]))?;
+    assert!(wb.iter().all(|v| v.is_nan()));
+    Ok(())
   }
 }
