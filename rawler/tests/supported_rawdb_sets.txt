@@ -358,6 +358,7 @@ Sony/ILCA-68/raw_modes
 Sony/ILCA-77M2/raw_modes
 Sony/ILCA-99M2/raw_modes
 Sony/ILME-FX30/raw_modes
+Sony/ILME-FX2/raw_modes
 Sony/ILME-FX3/raw_modes
 Sony/ILCE-1/raw_modes
 Sony/ILCE-1M2/raw_modes
