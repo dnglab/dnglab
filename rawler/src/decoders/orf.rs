@@ -61,25 +61,30 @@ pub fn parse_makernote<R: Read + Seek>(reader: &mut R, exif_ifd: &IFD) -> Result
     log::debug!("Makernote offset: {}", offset);
     match &exif.value {
       Value::Undefined(data) => {
-        let mut off = 0;
+        let mut off: u32 = 0;
         // Olympus starts the makernote with their own name, sometimes truncated
-        if data[0..5] == b"OLYMP"[..] {
+        if data.starts_with(b"OLYMP") {
           off += 8;
-          if data[0..7] == b"OLYMPUS"[..] {
+          if data.starts_with(b"OLYMPUS") {
             off += 4;
           }
         }
         // OM Digital Solutions put their name in front of the TIFF structure, too
-        if data[0..9] == b"OM SYSTEM"[..] {
+        if data.starts_with(b"OM SYSTEM") {
           off += 16;
-          assert_eq!(data[12..14], b"II"[..]);
+          if data.get(12..14) != Some(&b"II"[..]) {
+            return Err(decoder_error!("ORF: OM SYSTEM makernote is not little-endian"));
+          }
         }
         let endian = exif_ifd.endian;
         //assert!(data[off..off + 2] == b"II"[..] || data[off..off + 2] == b"MM"[..], "ORF: must contain endian marker in makernote IFD");
         //let endian = if data[off..off + 2] == b"II"[..] { Endian::Little } else { Endian::Big };
         //off += 4;
 
-        let mut mainifd = IFD::new(reader, offset + off as u32, exif_ifd.base, exif_ifd.corr, endian, &[0x3000])?;
+        let start = offset
+          .checked_add(off)
+          .ok_or_else(|| decoder_error!("ORF: makernote offset {} is out of range", offset))?;
+        let mut mainifd = IFD::new(reader, start, exif_ifd.base, exif_ifd.corr, endian, &[0x3000])?;
 
         // Parse the Olympus Equipment section if it exists
         if let Some(entry) = mainifd.get_entry_raw_with_len(OrfMakernotes::EquipmentIFD, reader, 4)? {
@@ -654,4 +659,38 @@ pub enum OrfCameraSettings {
   PreviewImageValid = 0x0100,
   PreviewImageStart = 0x0101,
   PreviewImageLength = 0x0102,
+}
+
+#[cfg(test)]
+mod tests {
+  use std::io::Cursor;
+
+  use super::*;
+  use crate::formats::tiff::writer::TiffWriter;
+
+  /// TIFF file with an EXIF IFD whose makernote has the given data, and
+  /// the IFD parsed from it
+  fn exif_with_makernote(data: &[u8]) -> std::result::Result<(Vec<u8>, IFD), Box<dyn std::error::Error>> {
+    let mut file = Cursor::new(Vec::new());
+    let tiff = TiffWriter::new(&mut file)?;
+    let mut root = tiff.new_directory();
+    root.add_tag_undefined(ExifTag::MakerNotes, data.to_vec());
+    tiff.build(root)?;
+    let file = file.into_inner();
+    let ifd = GenericTiffReader::new(&mut Cursor::new(&file), 0, 0, None, &[])?.root_ifd().clone();
+    Ok((file, ifd))
+  }
+
+  #[test]
+  fn makernote_with_short_or_big_endian_signature() -> std::result::Result<(), Box<dyn std::error::Error>> {
+    // Shorter than the signatures, it is parsed as an IFD at its start
+    let (file, ifd) = exif_with_makernote(b"OLY\0\0\0\0\0")?;
+    let _ = parse_makernote(&mut Cursor::new(&file), &ifd);
+    // An OM SYSTEM makernote in big-endian byte order
+    let mut data = b"OM SYSTEM\0\0\0MM".to_vec();
+    data.extend_from_slice(&[0; 16]);
+    let (file, ifd) = exif_with_makernote(&data)?;
+    assert!(parse_makernote(&mut Cursor::new(&file), &ifd).is_err());
+    Ok(())
+  }
 }
