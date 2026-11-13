@@ -538,7 +538,7 @@ impl<'a> OrfDecoder<'a> {
       match ifd.get_entry(OrfEquipmentTags::LensType) {
         Some(Entry {
           value: Value::Byte(settings), ..
-        }) => {
+        }) if settings.len() >= 4 => {
           log::debug!("Lens type tag: {:?}", settings);
           let make_id = settings[0];
           let model_id = settings[2];
