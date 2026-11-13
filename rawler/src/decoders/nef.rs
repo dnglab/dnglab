@@ -534,12 +534,9 @@ impl<'a> NefDecoder<'a> {
       if data.starts_with(b"NRW") {
         let offset = if data.get(4..8) == Some(b"0100") { 1556 } else { 56 };
         let data = tag_data(levels, offset + 16)?;
-        Ok([
-          (LEu32(data, offset) << 2) as f32,
-          (LEu32(data, offset + 4) + LEu32(data, offset + 8)) as f32,
-          (LEu32(data, offset + 4) + LEu32(data, offset + 8)) as f32,
-          (LEu32(data, offset + 12) << 2) as f32,
-        ])
+        // The sum of both greens overflows u32 for crafted levels
+        let green = (LEu32(data, offset + 4) as u64 + LEu32(data, offset + 8) as u64) as f32;
+        Ok([(LEu32(data, offset) << 2) as f32, green, green, (LEu32(data, offset + 12) << 2) as f32])
       } else {
         let data = tag_data(levels, 1252)?;
         Ok([BEu16(data, 1248) as f32, 256.0, 256.0, BEu16(data, 1250) as f32])
@@ -886,6 +883,9 @@ fn normalize_wb(raw_wb: [f32; 4]) -> [f32; 4] {
   // We never have more then RGB colors so far (no RGBE etc.)
   // So we combine G1 and G2 to get RGB wb.
   let div = raw_wb[1];
+  if !div.is_normal() {
+    return [f32::NAN; 4];
+  }
   let mut norm = raw_wb;
   norm.iter_mut().for_each(|v| {
     if v.is_normal() {
@@ -999,5 +999,11 @@ mod tests {
     assert!(NefDecoder::decode_snef_compressed(&data, [1e-9, 1.0, -1e-9, f32::NAN], 2, 2, false).is_ok());
     assert_eq!(invert_wb(1024, 1000), 1000);
     assert_eq!(invert_wb(i32::MAX, u16::MAX), 0x7fff);
+  }
+
+  #[test]
+  fn wb_without_green_is_unknown() {
+    assert!(normalize_wb([1.0, 0.0, 0.0, 1.0]).iter().all(|v| v.is_nan()));
+    assert_eq!(normalize_wb([512.0, 256.0, 256.0, 384.0])[..3], [2.0, 1.0, 1.5]);
   }
 }
