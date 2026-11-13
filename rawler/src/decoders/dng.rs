@@ -420,18 +420,20 @@ impl<'a> DngDecoder<'a> {
       .unwrap_or_default();
 
     let active_area = self.get_active_area(raw, width, height);
-    let crop_area = if let Some(crops) = self.get_crop(raw) {
-      if let Some(active_area) = &active_area {
-        let mut full = crops;
-        full.p.x += active_area[0]; // left
-        full.p.y += active_area[1]; // Top
-        Some(full.as_ltrb_offsets(width, height))
-      } else {
-        Some(crops.as_ltrb_offsets(width, height))
+    // The DefaultCrop is relative to the ActiveArea
+    let crop_area = self.get_crop(raw).and_then(|crop| {
+      let [left, top, ..] = active_area.unwrap_or_default();
+      let offsets = crop
+        .p
+        .x
+        .checked_add(left)
+        .zip(crop.p.y.checked_add(top))
+        .and_then(|(x, y)| Rect::new(Point::new(x, y), crop.d).as_ltrb_offsets(width, height));
+      if offsets.is_none() {
+        log::warn!("DNG: DefaultCrop {:?} doesn't fit the image of {}x{} pixels, ignoring it", crop, width, height);
       }
-    } else {
-      None
-    };
+      offsets
+    });
 
     // Only CFA images have a CFA pattern
     let cfa = if photometric_int == 32803 { self.get_cfa(raw)? } else { CFA::default() };
@@ -654,12 +656,15 @@ impl<'a> DngDecoder<'a> {
     }
   }
 
+  /// ActiveArea as offsets from each side (LTRB) of an image of `width` x
+  /// `height` pixels, an area that doesn't fit is ignored with a warning
   fn get_active_area(&self, raw: &IFD, width: usize, height: usize) -> Option<[usize; 4]> {
-    if let Some(rect) = self.get_active_area_borders(raw) {
-      Some(Rect::new_with_dng(&rect).as_ltrb_offsets(width, height))
-    } else {
-      None
+    let rect = self.get_active_area_borders(raw)?;
+    let offsets = Rect::new_with_dng(&rect).and_then(|area| area.as_ltrb_offsets(width, height));
+    if offsets.is_none() {
+      log::warn!("DNG: ActiveArea {:?} doesn't fit the image of {}x{} pixels, ignoring it", rect, width, height);
     }
+    offsets
   }
 
   fn get_crop(&self, raw: &IFD) -> Option<Rect> {
@@ -857,6 +862,24 @@ mod tests {
       assert_eq!(dummy.whitelevel, full.whitelevel);
       assert_eq!(dummy.camera_profiles, full.camera_profiles);
     }
+    Ok(())
+  }
+
+  #[test]
+  fn areas_that_dont_fit_are_ignored() -> TestResult {
+    // Top, left, bottom, right of an inverted ActiveArea and one past the image
+    for area in [[8_u32, 0, 4, 16], [0, 0, 20, 16]] {
+      let image = decode_dng(&write_dng(&synthetic_rawimage(), |ifd| ifd.add_tag(DngTag::ActiveArea, &area[..]))?)?;
+      assert_eq!(image.active_area, None, "{:?}", area);
+    }
+    // A DefaultCrop past the image, relative to the ActiveArea
+    let image = decode_dng(&write_dng(&synthetic_rawimage(), |ifd| {
+      ifd.add_tag(DngTag::ActiveArea, &[2_u32, 2, 16, 16][..]);
+      ifd.add_tag(DngTag::DefaultCropOrigin, &[0_u32, 0][..]);
+      ifd.add_tag(DngTag::DefaultCropSize, &[16_u32, 16][..]);
+    })?)?;
+    assert_eq!(image.active_area, Some(Rect::new(Point::new(2, 2), Dim2::new(14, 14))));
+    assert_eq!(image.crop_area, None);
     Ok(())
   }
 

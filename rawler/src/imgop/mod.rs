@@ -198,9 +198,11 @@ impl Rect {
     (borders[0] <= right && borders[1] <= bottom).then(|| Self::new_with_points(Point::new(borders[0], borders[1]), Point::new(right, bottom)))
   }
 
-  /// DNG used top-left-bottom-right for all rectangles
-  pub fn new_with_dng(rect: &[usize; 4]) -> Rect {
-    Self::new_with_points(Point::new(rect[1], rect[0]), Point::new(rect[3], rect[2]))
+  /// DNG used top-left-bottom-right for all rectangles, `None` if the bottom
+  /// is above the top or the right is left of the left
+  pub fn new_with_dng(rect: &[usize; 4]) -> Option<Rect> {
+    let [top, left, bottom, right] = *rect;
+    (top <= bottom && left <= right).then(|| Self::new_with_points(Point::new(left, top), Point::new(right, bottom)))
   }
 
   /// The rectangle has no pixels: its width or height is zero
@@ -218,14 +220,19 @@ impl Rect {
     [self.p.y, self.p.x, self.p.y + self.d.h, self.p.x + self.d.w]
   }
 
-  /// Return as offsets from each side (LTRB)
-  pub fn as_ltrb_offsets(&self, width: usize, height: usize) -> [usize; 4] {
-    [self.p.x, self.p.y, width - (self.p.x + self.d.w), height - (self.p.y + self.d.h)]
+  /// Return as offsets from each side (LTRB) of an area of `width` x
+  /// `height`, `None` if the rectangle exceeds it
+  pub fn as_ltrb_offsets(&self, width: usize, height: usize) -> Option<[usize; 4]> {
+    let right = width.checked_sub(self.p.x.checked_add(self.d.w)?)?;
+    let bottom = height.checked_sub(self.p.y.checked_add(self.d.h)?)?;
+    Some([self.p.x, self.p.y, right, bottom])
   }
 
-  /// Return as offsets from each side (TLBR)
-  pub fn as_tlbr_offsets(&self, width: usize, height: usize) -> [usize; 4] {
-    [self.p.y, self.p.x, height - (self.p.y + self.d.h), width - (self.p.x + self.d.w)]
+  /// Return as offsets from each side (TLBR) of an area of `width` x
+  /// `height`, `None` if the rectangle exceeds it
+  pub fn as_tlbr_offsets(&self, width: usize, height: usize) -> Option<[usize; 4]> {
+    let [left, top, right, bottom] = self.as_ltrb_offsets(width, height)?;
+    Some([top, left, bottom, right])
   }
 
   // Read Crop params from IFD
@@ -456,6 +463,20 @@ mod tests {
     assert_eq!(Rect::new_with_borders(dim, &[0, 0, 0, 9]), None);
     assert_eq!(Rect::new_with_borders(dim, &[6, 0, 5, 0]), None);
     assert_eq!(Rect::new_with_borders(dim, &[0, 5, 0, 4]), None);
+  }
+
+  #[test]
+  fn rect_offsets_inside_of_an_area() {
+    let rect = Rect::new(Point::new(2, 1), Dim2::new(6, 4));
+    assert_eq!(rect.as_ltrb_offsets(10, 8), Some([2, 1, 2, 3]));
+    assert_eq!(rect.as_tlbr_offsets(10, 8), Some([1, 2, 3, 2]));
+    assert_eq!(rect.as_ltrb_offsets(7, 8), None);
+    assert_eq!(rect.as_ltrb_offsets(10, 4), None);
+    assert_eq!(Rect::new(Point::new(usize::MAX, 0), Dim2::new(1, 1)).as_ltrb_offsets(10, 8), None);
+    // DNG rectangles are top, left, bottom, right
+    assert_eq!(Rect::new_with_dng(&[1, 2, 5, 8]), Some(rect));
+    assert_eq!(Rect::new_with_dng(&[5, 2, 1, 8]), None);
+    assert_eq!(Rect::new_with_dng(&[1, 8, 5, 2]), None);
   }
 
   #[test]
