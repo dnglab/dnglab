@@ -252,6 +252,7 @@ Nikon/D3X/raw_modes
 Nikon/D5500/raw_modes
 Nikon/D500/raw_modes
 Nikon/COOLPIX B700/raw_modes
+Nikon/Coolpix P7700/raw_modes
 Nikon/Coolpix P7800/raw_modes
 Nikon/COOLPIX P1000/raw_modes
 Nikon/E5700/raw_modes

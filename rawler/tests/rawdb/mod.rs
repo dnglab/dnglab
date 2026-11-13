@@ -1423,6 +1423,9 @@ mod nikon {
   mod coolpix_p7100_raw_modes {
     super::super::rawdb_test_file!("Nikon", "Coolpix P7100", coolpix_p7100_iso_100_12bits_uncompressed_nrw, "raw_modes/COOLPIX P7100_ISO_100_12bits_Uncompressed.NRW");
   }
+  mod coolpix_p7700_raw_modes {
+    super::super::rawdb_test_file!("Nikon", "Coolpix P7700", coolpix_p7700_iso_80_12bits_uncompressed_nrw, "raw_modes/COOLPIX P7700_ISO_80_12bits_Uncompressed.NRW");
+  }
   mod coolpix_p7800_raw_modes {
     super::super::rawdb_test_file!("Nikon", "Coolpix P7800", coolpix_p7800_iso_80_12bits_uncompressed_nrw, "raw_modes/COOLPIX P7800_ISO_80_12bits_Uncompressed.NRW");
   }
