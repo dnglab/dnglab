@@ -77,6 +77,14 @@ impl<'a> Decoder for DngDecoder<'a> {
     let height = fetch_tiff_tag!(raw, TiffCommonTag::ImageLength).force_usize(0);
     let cpp = fetch_tiff_tag!(raw, TiffCommonTag::SamplesPerPixel).force_usize(0);
     let bits = fetch_tiff_tag!(raw, TiffCommonTag::BitsPerSample).force_u32(0);
+    if cpp == 0 {
+      return Err(decoder_error!("DNG: raw image without samples per pixel"));
+    }
+    // The samples have up to 32 bits
+    let samples = width
+      .checked_mul(cpp)
+      .ok_or_else(|| decoder_error!("DNG: image of {} samples per pixel overflows", cpp))?;
+    image_bytes("DNG", samples, height, 32)?;
     let orientation = Orientation::from_tiff(self.tiff.root_ifd());
     // Raw IFDs use CFA (32803) or LinearRaw (34892), BlackIsZero (1) is accepted for monochrome images
     let photometric_int = fetch_tiff_tag!(raw, TiffCommonTag::PhotometricInt).force_u32(0);
@@ -105,6 +113,7 @@ impl<'a> Decoder for DngDecoder<'a> {
     let whitelevel = match self.get_whitelevels(raw)? {
       Some(whitelevel) => whitelevel,
       None if SampleFormat::extract(raw)? == Some(SampleFormat::IEEEFP) => WhiteLevel::new(vec![1; cpp]),
+      None if bits > 32 => return Err(decoder_error!("DNG: {} bits per sample without WhiteLevel are not supported", bits)),
       None => WhiteLevel::new_bits(bits, cpp),
     };
     let whitelevel = Some(whitelevel);
@@ -499,9 +508,14 @@ impl<'a> DngDecoder<'a> {
     }
     if let Some(levels) = self.tiff.get_entry(DngTag::AsShotNeutral) {
       // One value per color plane (1, 3 or 4)
+      let neutral: Vec<f32> = (0..(levels.count() as usize).min(4)).map(|i| levels.force_f32(i)).collect();
+      if !neutral.iter().all(|level| level.is_finite() && *level > 0.0) {
+        log::warn!("DNG: invalid AsShotNeutral {:?}, the white balance is unknown", neutral);
+        return Ok([f32::NAN; 4]);
+      }
       let mut wb = [f32::NAN; 4];
-      for (i, coeff) in wb.iter_mut().enumerate().take(levels.count() as usize) {
-        *coeff = 1.0 / levels.force_f32(i);
+      for (coeff, level) in wb.iter_mut().zip(&neutral) {
+        *coeff = 1.0 / level;
       }
       Ok(wb)
     } else if let Some(levels) = self.tiff.get_entry(DngTag::AsShotWhiteXY) {
@@ -862,6 +876,28 @@ mod tests {
       assert_eq!(dummy.whitelevel, full.whitelevel);
       assert_eq!(dummy.camera_profiles, full.camera_profiles);
     }
+    Ok(())
+  }
+
+  #[test]
+  fn invalid_samples_and_bits_are_an_error() -> TestResult {
+    let data = write_dng(&synthetic_rawimage(), |ifd| ifd.add_tag(TiffCommonTag::SamplesPerPixel, 0_u16))?;
+    let err = decode_dng(&data).err().map(|err| err.to_string());
+    assert!(err.as_ref().is_some_and(|err| err.contains("without samples per pixel")), "{:?}", err);
+    // Without WhiteLevel, the white level is computed from the bits per sample
+    let data = write_dng(&synthetic_rawimage(), |ifd| {
+      ifd.add_tag(TiffCommonTag::BitsPerSample, 40_u16);
+      ifd.remove_tag(TiffCommonTag::WhiteLevel);
+    })?;
+    let err = decode_dng(&data).err().map(|err| err.to_string());
+    assert!(err.as_ref().is_some_and(|err| err.contains("40 bits per sample")), "{:?}", err);
+    Ok(())
+  }
+
+  #[test]
+  fn as_shot_neutral_of_zero_is_unknown() -> TestResult {
+    let wb = decode_wb(&[Rational::new(1, 2), Rational::new(0, 1), Rational::new(1, 4)])?;
+    assert!(wb.iter().all(|v| v.is_nan()));
     Ok(())
   }
 
