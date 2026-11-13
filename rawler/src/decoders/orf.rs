@@ -434,8 +434,10 @@ impl<'a> OrfDecoder<'a> {
           }
 
           acarry[s][0] = ((high << nbits) | pump.get_ibits(nbits)?) as i32;
-          let diff = (acarry[s][0] ^ sign) + acarry[s][1];
-          acarry[s][1] = (diff * 3 + acarry[s][1]) >> 5;
+          // Crafted data overflows the differences and predictions, they wrap
+          // around like the int of dcraw, only the low 16 bits are stored
+          let diff = (acarry[s][0] ^ sign).wrapping_add(acarry[s][1]);
+          acarry[s][1] = diff.wrapping_mul(3).wrapping_add(acarry[s][1]) >> 5;
           acarry[s][2] = if acarry[s][0] > 16 { 0 } else { acarry[s][2] + 1 };
 
           if row < 2 || col < 2 {
@@ -451,26 +453,12 @@ impl<'a> OrfDecoder<'a> {
               nw[s] = out[(row - 2) * width + (col + s)] as i32;
               nw[s]
             };
-            left[s] = pred + ((diff << 2) | low);
+            left[s] = pred.wrapping_add((diff << 2) | low);
             out[row * width + (col + s)] = left[s] as u16;
           } else {
             let up: i32 = out[(row - 2) * width + (col + s)] as i32;
-            let left_minus_nw: i32 = left[s] - nw[s];
-            let up_minus_nw: i32 = up - nw[s];
-            // Check if sign is different, and one is not zero
-            let pred = if left_minus_nw * up_minus_nw < 0 {
-              if left_minus_nw.abs() > 32 || up_minus_nw.abs() > 32 {
-                left[s] + up_minus_nw
-              } else {
-                (left[s] + up) >> 1
-              }
-            } else if left_minus_nw.abs() > up_minus_nw.abs() {
-              left[s]
-            } else {
-              up
-            };
-
-            left[s] = pred + ((diff << 2) | low);
+            let pred = predict(left[s], up, nw[s]);
+            left[s] = pred.wrapping_add((diff << 2) | low);
             nw[s] = up;
             out[row * width + (col + s)] = left[s] as u16;
           }
@@ -602,6 +590,25 @@ impl<'a> OrfDecoder<'a> {
   }
 }
 
+/// Prediction of a pixel of compressed ORF data from the pixels left, up and
+/// up left (`nw`) of it with the same color
+fn predict(left: i32, up: i32, nw: i32) -> i32 {
+  let left_minus_nw = left.wrapping_sub(nw);
+  let up_minus_nw = up.wrapping_sub(nw);
+  // Check if sign is different, and one is not zero
+  if (left_minus_nw as i64) * (up_minus_nw as i64) < 0 {
+    if left_minus_nw.unsigned_abs() > 32 || up_minus_nw.unsigned_abs() > 32 {
+      left.wrapping_add(up_minus_nw)
+    } else {
+      left.wrapping_add(up) >> 1
+    }
+  } else if left_minus_nw.unsigned_abs() > up_minus_nw.unsigned_abs() {
+    left
+  } else {
+    up
+  }
+}
+
 fn normalize_wb(raw_wb: [f32; 4]) -> [f32; 4] {
   log::debug!("ORF raw wb: {:?}", raw_wb);
   let div = raw_wb[1];
@@ -682,6 +689,18 @@ mod tests {
     let file = file.into_inner();
     let ifd = GenericTiffReader::new(&mut Cursor::new(&file), 0, 0, None, &[])?.root_ifd().clone();
     Ok((file, ifd))
+  }
+
+  #[test]
+  fn prediction_of_extreme_values() {
+    assert_eq!(predict(100, 120, 110), 110);
+    assert_eq!(predict(100, 200, 110), 190);
+    assert_eq!(predict(100, 90, 110), 90);
+    assert_eq!(predict(100, 105, 110), 100);
+    // Values of crafted data wrap around instead of overflowing
+    for (left, up, nw) in [(i32::MAX, 0, -5), (i32::MIN, 100, 50), (i32::MIN, 0, 0), (i32::MAX, i32::MAX, i32::MIN)] {
+      predict(left, up, nw);
+    }
   }
 
   #[test]
