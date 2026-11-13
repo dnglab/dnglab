@@ -99,13 +99,17 @@ impl HuffTable {
     let mut h = 0;
     let mut pos = 0;
     for len in 0..self.nbits {
+      let run = 1 << (self.nbits - len - 1);
       // Fill for each number of huffman codes of length i (=len+1)
       for _ in 0..self.bits[len as usize + 1] {
+        // The codes must fit into the table (Kraft inequality), and there
+        // is a value for each code
+        let (Some(entries), Some(value), Some(shift)) = (self.hufftable.get_mut(h..h + run), self.huffval.get(pos), self.shiftval.get(pos)) else {
+          return Err(format!("Huffman table: the code lengths {:?} don't fit into a table", &self.bits[1..]));
+        };
         // Fill for all possible extra bits, payload is always the same for fast lookup bases on peek_bits(self.nbits)
-        for _ in 0..(1 << (self.nbits - len - 1)) {
-          self.hufftable[h] = (len as u8 + 1, self.huffval[pos] as u8, self.shiftval[pos] as u8);
-          h += 1;
-        }
+        entries.fill((len as u8 + 1, *value as u8, *shift as u8));
+        h += run;
         pos += 1;
       }
     }
@@ -162,6 +166,8 @@ impl HuffTable {
       // With dng_bug, 16 extra bits are consumed (and don't fit)
       16 => (if self.dng_bug { None } else { Some((bits + 16, -32768)) }, bits as u32),
       len if len as u32 > rest => (None, bits as u32),
+      // Differences above 16 bits are an error of the slow decoder
+      len if len as u32 + shift as u32 > 16 => (None, bits as u32),
       len => {
         let fulllen: i32 = len as i32 + shift as i32;
         let shift: i32 = shift as i32;
@@ -234,6 +240,10 @@ impl HuffTable {
       len => {
         // decode the difference and extend sign bit
         let fulllen: i32 = len as i32 + shift as i32;
+        // Differences have up to 16 bits
+        if fulllen > 16 {
+          return Err(BitPumpError::ExcessiveBits { num: fulllen as u32, max: 16 });
+        }
         let shift: i32 = shift as i32;
         let bits = pump.get_bits(len as u32)? as i32;
         let mut diff: i32 = ((bits << 1) + 1) << shift >> 1;
@@ -293,13 +303,16 @@ mod tests {
   }
 
   /// Reference implementation: run the slow decoder over all possible
-  /// bit sequences DECODE_CACHE_BITS wide.
+  /// bit sequences DECODE_CACHE_BITS wide. Sequences that are an error
+  /// get no entry.
   fn slow_decodecache(tbl: &HuffTable) -> Vec<Option<(u8, i16)>> {
     let mut cache = vec![None; 1 << DECODE_CACHE_BITS];
     let mut pump = MockPump::empty();
     for i in 0..(1 << DECODE_CACHE_BITS) {
       pump.set(i, DECODE_CACHE_BITS);
-      let (bits, decode) = tbl.huff_decode_slow(&mut pump).unwrap();
+      let Ok((bits, decode)) = tbl.huff_decode_slow(&mut pump) else {
+        continue;
+      };
       if pump.validbits() >= 0 {
         cache[i as usize] = Some((bits, decode as i16));
       }
@@ -381,6 +394,35 @@ mod tests {
   fn category_16_has_no_extra_bits() {
     let mut pump = BitPumpJPEG::new(&[0x00, 0x00, 0x00, 0x00]);
     assert_eq!(table_with_category_16(false).huff_decode(&mut pump).unwrap(), -32768);
+  }
+
+  #[test]
+  fn codes_that_dont_fit_are_an_error() {
+    // 3 codes of 1 bit, and 15 like a PEF table from the file
+    for count in [3, 15] {
+      let mut bits = [0; 17];
+      bits[1] = count;
+      assert!(HuffTable::new(bits, [0; 256], false).is_err(), "{count} codes of 1 bit");
+    }
+    // 257 codes of 9 bits fit into the table, but there are only 256 values
+    let mut bits = [0; 17];
+    bits[9] = 257;
+    assert!(HuffTable::new(bits, [0; 256], false).is_err());
+    bits[9] = 256;
+    assert!(HuffTable::new(bits, [0; 256], false).is_ok());
+  }
+
+  #[test]
+  fn categories_above_16_are_an_error() {
+    for category in [17, 32] {
+      let mut bits = [0; 17];
+      bits[1] = 1;
+      let mut huffval = [0; 256];
+      huffval[0] = category;
+      let tbl = HuffTable::new(bits, huffval, false).unwrap();
+      let mut pump = BitPumpJPEG::new(&[0x00; 8]);
+      assert_eq!(tbl.huff_decode(&mut pump), Err(BitPumpError::ExcessiveBits { num: category, max: 16 }));
+    }
   }
 
   #[test]

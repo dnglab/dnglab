@@ -964,6 +964,14 @@ impl TryFrom<u16> for NefCompression {
 mod tests {
   use super::*;
 
+  #[test]
+  fn hufftables_initialize() -> std::result::Result<(), String> {
+    for num in 0..NIKON_TREE.len() {
+      NefDecoder::create_hufftable(num)?;
+    }
+    Ok(())
+  }
+
   /// Metadata of version 68/32 with an empty curve
   fn meta_68_32(len: usize) -> Vec<u8> {
     let mut meta = vec![0; len];

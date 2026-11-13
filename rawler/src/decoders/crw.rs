@@ -340,3 +340,16 @@ fn normalize_wb(raw_wb: [f32; 4]) -> [f32; 4] {
   });
   [norm[0], (norm[1] + norm[2]) / 2.0, norm[3], f32::NAN]
 }
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[test]
+  fn hufftables_initialize() {
+    for num in 0..CRW_FIRST_TREE.len() {
+      let tables = CrwDecoder::create_hufftables(num);
+      assert!(tables.iter().all(|table| table.nbits > 0), "tables {num}");
+    }
+  }
+}
