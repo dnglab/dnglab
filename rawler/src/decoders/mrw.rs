@@ -25,6 +25,7 @@ use super::FormatHint;
 use super::Orientation;
 use super::RawDecodeParams;
 use super::RawMetadata;
+use super::image_bytes;
 use super::ok_cfa_image;
 
 const MRW_MAGIC: u32 = 0x004D524D; // !memcmp (head,"\0MRM",4))?
@@ -76,7 +77,7 @@ impl<'a> MrwDecoder<'a> {
   fn get_mly_wb(ifd: &IFD, rawfile: &RawSource, data_offset: u64) -> Result<[u16; 4]> {
     if let Some(makernotes) = ifd.get_entry_recursive(TiffCommonTag::Makernote) {
       if makernotes.get_data()?.starts_with(b"MLY") {
-        let mut buf = Cursor::new(rawfile.as_vec()?);
+        let mut buf = Cursor::new(rawfile.buf());
         let mut wb = [0_u16; 4];
         let mut cam_mul = [1_u16; 4];
 
@@ -124,7 +125,9 @@ impl<'a> MrwDecoder<'a> {
     // The raw layout comes from the camera definition. For unknown cameras, it is
     // never used, as raw_image() fails for them.
     let raw_def = camera.metadata();
-    let data_offset = (app1_offset + app1_len + raw_def.param_i32("offset_corr").unwrap_or(0) as u64) as usize;
+    let data_offset = (app1_offset + app1_len)
+      .checked_add_signed(raw_def.param_i32("offset_corr").unwrap_or(0) as i64)
+      .ok_or_else(|| decoder_error!("MRW: data offset of the JFIF file is out of range"))? as usize;
     let raw_width = raw_def.raw_width;
     let raw_height = raw_def.raw_height;
     let packed = false;
@@ -145,9 +148,9 @@ impl<'a> MrwDecoder<'a> {
   }
 
   fn new_mrw(file: &RawSource, rawloader: &'a RawLoader) -> Result<MrwDecoder<'a>> {
-    let full = file.as_vec()?;
-    let buf = &full;
-    let data_offset: usize = (BEu32(buf, 4) + 8) as usize;
+    let data_offset = BEu32(file.subview(0, 8)?, 4) as usize + 8;
+    // The blocks before the raw data, a view of them fails if they exceed the file
+    let buf = file.subview(0, data_offset as u64)?;
     let mut raw_height: usize = 0;
     let mut raw_width: usize = 0;
     let bits = 12;
@@ -166,7 +169,7 @@ impl<'a> MrwDecoder<'a> {
           // PRD
           raw_height = BEu16(buf, currpos + 16) as usize;
           raw_width = BEu16(buf, currpos + 18) as usize;
-          packed = buf[currpos + 24] == 12;
+          packed = buf.get(currpos + 24) == Some(&12);
         }
         0x574247 => {
           // WBG
@@ -182,7 +185,7 @@ impl<'a> MrwDecoder<'a> {
         }
         _ => {}
       }
-      currpos += (len + 8) as usize;
+      currpos = currpos.saturating_add(len as usize).saturating_add(8);
     }
 
     let tiff_data = file.subview_until_eof(tiffpos as u64)?;
@@ -207,6 +210,7 @@ impl<'a> MrwDecoder<'a> {
 impl<'a> Decoder for MrwDecoder<'a> {
   fn raw_image(&self, file: &RawSource, _params: &RawDecodeParams, dummy: bool) -> Result<RawImage> {
     let camera = self.camera.supported()?;
+    image_bytes("MRW", self.raw_width, self.raw_height, 16)?;
     let src = file.subview_until_eof(self.data_offset as u64)?;
 
     let buffer = if self.bits == 16 {
@@ -267,6 +271,9 @@ impl<'a> Decoder for MrwDecoder<'a> {
 fn normalize_wb(raw_wb: [f32; 4]) -> [f32; 4] {
   log::debug!("MRW raw wb: {:?}", raw_wb);
   let div = raw_wb[1]; // G1 should be 1024 and we use this as divisor
+  if !div.is_normal() {
+    return [f32::NAN; 4];
+  }
   let mut norm = raw_wb;
   norm.iter_mut().for_each(|v| {
     if v.is_normal() {
@@ -274,4 +281,39 @@ fn normalize_wb(raw_wb: [f32; 4]) -> [f32; 4] {
     }
   });
   [norm[0], (norm[1] + norm[2]) / 2.0, norm[3], f32::NAN]
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  /// MRW file with a data offset and the given blocks
+  fn mrw_file(data_offset: u32, blocks: &[u8]) -> Vec<u8> {
+    let mut buf = b"\0MRM".to_vec();
+    buf.extend_from_slice(&(data_offset - 8).to_be_bytes());
+    buf.extend_from_slice(blocks);
+    buf
+  }
+
+  #[test]
+  fn short_or_invalid_headers_are_an_error() {
+    let loader = crate::global_loader();
+    // Too short for the data offset
+    assert!(MrwDecoder::new(&RawSource::new_from_slice(b"\0MRM\0\0"), loader).is_err());
+    // Data offset behind the end of the file
+    assert!(MrwDecoder::new(&RawSource::new_from_slice(&mrw_file(1000, &[0; 32])), loader).is_err());
+    // A PRD block that ends before its packing flag, and a block length that overflows
+    let mut blocks = b"\0PRD\0\0\0\x10".to_vec();
+    blocks.extend_from_slice(&[0; 13]);
+    assert!(MrwDecoder::new(&RawSource::new_from_slice(&mrw_file(8 + blocks.len() as u32, &blocks)), loader).is_err());
+    let mut blocks = b"\0XYZ\xff\xff\xff\xff".to_vec();
+    blocks.extend_from_slice(&[0; 24]);
+    assert!(MrwDecoder::new(&RawSource::new_from_slice(&mrw_file(8 + blocks.len() as u32, &blocks)), loader).is_err());
+  }
+
+  #[test]
+  fn wb_without_green_is_unknown() {
+    assert!(normalize_wb([0.0; 4]).iter().all(|v| v.is_nan()));
+    assert_eq!(normalize_wb([512.0, 256.0, 256.0, 384.0])[..3], [2.0, 1.0, 1.5]);
+  }
 }
