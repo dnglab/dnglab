@@ -1432,6 +1432,9 @@ mod nikon {
   mod d100_raw_modes {
     super::super::rawdb_test_file!("Nikon", "D100", nikon_d100_iso_400_12bits_uncompressed_nef, "raw_modes/NIKON D100_ISO_400_12bits_Uncompressed.NEF");
   }
+  mod d1h_raw_modes {
+    super::super::rawdb_test_file!("Nikon", "D1H", d1h_iso_200_12bits_uncompressed_nef, "raw_modes/D1H_ISO_200_12bits_Uncompressed.NEF");
+  }
   mod d1x_raw_modes {
     super::super::rawdb_test_file!("Nikon", "D1X", nikon_d1x_iso_125_12bits_lossy_type_1_nef, "raw_modes/NIKON D1X_ISO_125_12bits_Lossy (type 1).NEF");
     super::super::rawdb_test_file!("Nikon", "D1X", nikon_d1x_iso_200_12bits_uncompressed_nef, "raw_modes/NIKON D1X_ISO_200_12bits_Uncompressed.NEF");
