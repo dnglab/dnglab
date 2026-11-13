@@ -695,6 +695,15 @@ impl<'a> NefDecoder<'a> {
     dummy: bool,
   ) -> std::result::Result<PixU16, String> {
     debug!("NEF decode with: endian: {:?}, width: {}, height: {}, bps: {}", endian, width, height, bps);
+    image_bytes("NEF", width, height, 16).map_err(|err| err.to_string())?;
+    // The Huffman tables and curves are for 12 and 14 bits, the pixels are
+    // decoded in pairs
+    if !matches!(bps, 12 | 14) {
+      return Err(format!("NEF: compressed data with {} bits per sample", bps));
+    }
+    if width % 2 != 0 {
+      return Err(format!("NEF: compressed image with an odd width of {} pixels", width));
+    }
     let mut out = alloc_image_ok!(width, height, dummy);
     let mut stream = ByteStream::new(meta, endian);
     let v0 = stream.get_u8()?;
@@ -756,7 +765,10 @@ impl<'a> NefDecoder<'a> {
         let a_scale = step - b_scale;
         points[i] = ((a_scale * points[a_pos] as usize + b_scale * points[b_pos] as usize) / step) as u16;
       }
-      split = endian.read_u16(meta, 562) as usize;
+      split = meta
+        .get(562..564)
+        .map(|split| endian.read_u16(split, 0) as usize)
+        .ok_or_else(|| format!("NEF: metadata of {} bytes has no split row", meta.len()))?;
     } else if v0 != 70 && csize <= 0x4001 {
       for i in 0..csize {
         points[i] = stream.get_u16()?;
@@ -772,14 +784,15 @@ impl<'a> NefDecoder<'a> {
       if split > 0 && row == split {
         htable = Self::create_hufftable(huff_select + 1)?;
       }
-      pred_up1[row & 1] += htable.huff_decode(&mut pump)?;
-      pred_up2[row & 1] += htable.huff_decode(&mut pump)?;
+      // The predictions of crafted data wrap around, they are clamped below
+      pred_up1[row & 1] = pred_up1[row & 1].wrapping_add(htable.huff_decode(&mut pump)?);
+      pred_up2[row & 1] = pred_up2[row & 1].wrapping_add(htable.huff_decode(&mut pump)?);
       let mut pred_left1 = pred_up1[row & 1];
       let mut pred_left2 = pred_up2[row & 1];
       for col in (0..width).step_by(2) {
         if col > 0 {
-          pred_left1 += htable.huff_decode(&mut pump)?;
-          pred_left2 += htable.huff_decode(&mut pump)?;
+          pred_left1 = pred_left1.wrapping_add(htable.huff_decode(&mut pump)?);
+          pred_left2 = pred_left2.wrapping_add(htable.huff_decode(&mut pump)?);
         }
         out[row * width + col + 0] = curve.dither(clampbits(pred_left1, real_bps), &mut random);
         out[row * width + col + 1] = curve.dither(clampbits(pred_left2, real_bps), &mut random);
@@ -930,5 +943,34 @@ impl TryFrom<u16> for NefCompression {
       14 => Self::HighEfficencyStar,
       _ => return Err(format!("unknown nef compression: {}", v)),
     })
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  /// Metadata of version 68/32 with an empty curve
+  fn meta_68_32(len: usize) -> Vec<u8> {
+    let mut meta = vec![0; len];
+    meta[0] = 68;
+    meta[1] = 32;
+    // csize 2 at offset 10, after the predictors
+    meta[11] = 2;
+    meta
+  }
+
+  #[test]
+  fn compressed_with_invalid_parameters_is_an_error() {
+    let meta = meta_68_32(600);
+    let data = [0; 64];
+    for (width, height, bps) in [(0, 2, 12), (2, 0, 12), (4, 2, 16), (4, 2, 0), (3, 2, 12)] {
+      assert!(
+        NefDecoder::do_decode(&data, &meta, Endian::Big, width, height, bps, false).is_err(),
+        "{width}x{height}, {bps} bps"
+      );
+    }
+    // Metadata that ends before the split row
+    assert!(NefDecoder::do_decode(&data, &meta_68_32(32), Endian::Big, 4, 2, 12, false).is_err());
   }
 }
