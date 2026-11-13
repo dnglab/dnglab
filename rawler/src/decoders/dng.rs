@@ -866,6 +866,30 @@ mod tests {
   }
 
   #[test]
+  fn invalid_tiles_and_strips_are_an_error() -> TestResult {
+    // Lossless JPEG is stored in tiles
+    for (tag, value) in [(TiffCommonTag::TileWidth, 0_u32), (TiffCommonTag::TileLength, 0)] {
+      let data = write_dng_with(&synthetic_rawimage(), DngCompression::Lossless, |ifd| ifd.add_tag(tag, value))?;
+      let err = decode_dng(&data).err().map(|err| err.to_string());
+      assert!(err.as_ref().is_some_and(|err| err.contains("Tiles of")), "{:?}: {:?}", tag, err);
+    }
+    // Uncompressed data is stored in strips
+    let data = write_dng(&synthetic_rawimage(), |ifd| ifd.add_tag(TiffCommonTag::RowsPerStrip, 0_u32))?;
+    let err = decode_dng(&data).err().map(|err| err.to_string());
+    assert!(err.as_ref().is_some_and(|err| err.contains("0 rows")), "{:?}", err);
+    // Two strips that aren't contiguous are decoded one by one, 4 rows per
+    // strip need 4 of them
+    let data = write_dng(&synthetic_rawimage(), |ifd| {
+      ifd.add_tag(TiffCommonTag::StripOffsets, &[8_u32, 200][..]);
+      ifd.add_tag(TiffCommonTag::StripByteCounts, &[128_u32, 128][..]);
+      ifd.add_tag(TiffCommonTag::RowsPerStrip, 4_u32);
+    })?;
+    let err = decode_dng(&data).err().map(|err| err.to_string());
+    assert!(err.as_ref().is_some_and(|err| err.contains("Strip 2 is missing")), "{:?}", err);
+    Ok(())
+  }
+
+  #[test]
   fn areas_that_dont_fit_are_ignored() -> TestResult {
     // Top, left, bottom, right of an inverted ActiveArea and one past the image
     for area in [[8_u32, 0, 4, 16], [0, 0, 20, 16]] {
