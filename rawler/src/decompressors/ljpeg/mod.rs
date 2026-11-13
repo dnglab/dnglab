@@ -702,13 +702,18 @@ mod tests {
     Ok(())
   }
 
+  /// Lines of `N` samples
+  fn lines<const N: usize>(out: &mut [u16]) -> impl LineIteratorMut<'_, u16> {
+    out.as_chunks_mut::<N>().0.iter_mut().map(|line| line.as_mut_slice())
+  }
+
   #[test]
   fn line_width_must_match_the_lines() -> Result<(), String> {
     let data = stream(&[dht(0), sof(16, 4, 2, &[(1, 0x11)]), sos(&[(1, 0)], 1, 0)]);
     let mut out = vec![0; 4 * 2];
-    assert!(LJpegDecompressor::new().decompress(&data, 0, out.chunks_exact_mut(4), 0).is_err());
-    assert!(LJpegDecompressor::new().decompress(&data, 0, out.chunks_exact_mut(2), 4).is_err());
-    LJpegDecompressor::new().decompress(&data, 0, out.chunks_exact_mut(4), 4)?;
+    assert!(LJpegDecompressor::new().decompress(&data, 0, lines::<4>(&mut out), 0).is_err());
+    assert!(LJpegDecompressor::new().decompress(&data, 0, lines::<2>(&mut out), 4).is_err());
+    LJpegDecompressor::new().decompress(&data, 0, lines::<4>(&mut out), 4)?;
     assert_eq!(out, vec![32768; 4 * 2]);
     Ok(())
   }

@@ -418,16 +418,17 @@ mod tests {
   }
 
   #[test]
-  fn categories_above_16_are_an_error() {
+  fn categories_above_16_are_an_error() -> Result<(), String> {
     for category in [17, 32] {
       let mut bits = [0; 17];
       bits[1] = 1;
       let mut huffval = [0; 256];
       huffval[0] = category;
-      let tbl = HuffTable::new(bits, huffval, false).unwrap();
+      let tbl = HuffTable::new(bits, huffval, false)?;
       let mut pump = BitPumpJPEG::new(&[0x00; 8]);
       assert_eq!(tbl.huff_decode(&mut pump), Err(BitPumpError::ExcessiveBits { num: category, max: 16 }));
     }
+    Ok(())
   }
 
   #[test]

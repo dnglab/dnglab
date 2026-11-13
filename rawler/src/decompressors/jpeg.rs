@@ -49,8 +49,8 @@ mod tests {
 
   #[test]
   fn line_width_of_0_is_an_error() {
-    let mut out = vec![0_u16; 8];
-    let err = JpegDecompressor::new().decompress(&[], 0, out.chunks_exact_mut(8), 0).err();
+    let mut out = [0_u16; 8];
+    let err = JpegDecompressor::new().decompress(&[], 0, std::iter::once(&mut out[..]), 0).err();
     assert!(err.as_ref().is_some_and(|err| err.contains("0 samples")), "{:?}", err);
   }
 }

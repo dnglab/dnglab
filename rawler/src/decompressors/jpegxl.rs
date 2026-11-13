@@ -333,15 +333,17 @@ mod tests {
 
   #[test]
   fn codestream_must_fill_the_lines() {
-    let mut out = vec![0_u16; 8 * 5];
-    let err = JpegXLDecompressor::new(12).decompress(JXL_12BIT, 0, out.chunks_exact_mut(8), 8).err();
+    let mut out = [0_u16; 8 * 5];
+    let lines = out.as_chunks_mut::<8>().0.iter_mut().map(|line| line.as_mut_slice());
+    let err = JpegXLDecompressor::new(12).decompress(JXL_12BIT, 0, lines, 8).err();
     assert!(err.as_ref().is_some_and(|err| err.contains("returned 0 of 8 samples")), "{:?}", err);
   }
 
   #[test]
   fn skipped_rows_are_not_written() -> std::result::Result<(), String> {
-    let mut out = vec![0_u16; 8 * 3];
-    JpegXLDecompressor::new(12).decompress(JXL_12BIT, 1, out.chunks_exact_mut(8), 8)?;
+    let mut out = [0_u16; 8 * 3];
+    let lines = out.as_chunks_mut::<8>().0.iter_mut().map(|line| line.as_mut_slice());
+    JpegXLDecompressor::new(12).decompress(JXL_12BIT, 1, lines, 8)?;
     assert_eq!(out, samples_12bit()[8..]);
     Ok(())
   }
