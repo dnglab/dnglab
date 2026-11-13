@@ -14,6 +14,7 @@ For every entry in rawler/tests/supported_rawdb_sets.txt this script:
      rawler/tests/rawdb/mod.rs once with one `mod <maker>` per maker, holding
      `super::rawdb_test_file!(...)` invocations for every file from that
      maker.
+  5. With --git-add, stages the testdata files, mod.rs and the sets file.
 
 Env vars:
   RAWDB_CACHE      Required. Local cache root.
@@ -330,10 +331,15 @@ def ensure_file(session: requests.Session, base_url: str, job: FileJob, cache_ro
     return local, "unchanged"
 
 
+def analyze_output_paths(out_base: Path) -> list[Path]:
+    """The 5 testdata files `run_analyze` writes for `out_base`."""
+    return [out_base.with_name(out_base.name + suffix) for _, suffix in ANALYZE_OUTPUTS]
+
+
 def run_analyze(dnglab: Path, raw_file: Path, out_base: Path, verbose: bool, override: bool) -> str:
     """Run the 5 dnglab analyze invocations. Returns "regenerated" or "skipped"."""
     out_base.parent.mkdir(parents=True, exist_ok=True)
-    out_paths = [out_base.with_name(out_base.name + suffix) for _, suffix in ANALYZE_OUTPUTS]
+    out_paths = analyze_output_paths(out_base)
     if not override and all(p.is_file() and p.stat().st_size > 0 for p in out_paths):
         if verbose:
             log(f"  analyze skipped (all 5 testdata files present): {raw_file.name}")
@@ -464,6 +470,20 @@ def write_module(path: Path, content: str) -> None:
     tmp.replace(path)
 
 
+def git_add(paths: list[Path]) -> bool:
+    """Stage `paths` with git add. Paths go through stdin to avoid argv limits."""
+    res = subprocess.run(
+        ["git", "--literal-pathspecs", "add", "--pathspec-from-file=-", "--pathspec-file-nul"],
+        cwd=REPO_ROOT,
+        input=b"\0".join(os.fsencode(p) for p in paths),
+        stderr=subprocess.PIPE,
+    )
+    if res.returncode != 0:
+        log(f"error: git add failed:\n{res.stderr.decode(errors='replace')}")
+        return False
+    return True
+
+
 # ---------------------------------------------------------------- main
 
 
@@ -481,6 +501,8 @@ def main(argv: list[str] | None = None) -> int:
                    help="Force per-pair /api/sets calls even when RAWDB_API_KEY is set.")
     p.add_argument("--override", action="store_true",
                    help="Re-run dnglab analyze even when testdata files already exist.")
+    p.add_argument("--git-add", action="store_true",
+                   help="Stage the testdata files, the test module and the sets file with git add.")
     p.add_argument("--dry-run", action="store_true")
     p.add_argument("-v", "--verbose", action="store_true")
     args = p.parse_args(argv)
@@ -595,6 +617,15 @@ def main(argv: list[str] | None = None) -> int:
     fmt = subprocess.run(["cargo", "fmt", "-p", "rawler"], cwd=REPO_ROOT)
     if fmt.returncode != 0:
         log("warn: cargo fmt failed (non-fatal)")
+
+    if args.git_add:
+        paths = [args.module_out, args.sets]
+        for e in entries:
+            out_base = args.testdata_dir / "rawdb" / e.maker / e.model / e.rel_path
+            paths += analyze_output_paths(out_base)
+        if not git_add(paths):
+            return 1
+        log(f"staged {len(paths)} files with git add")
 
     print_summary(module_written=args.module_out)
     return 0
