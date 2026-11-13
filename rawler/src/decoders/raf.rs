@@ -557,10 +557,14 @@ impl<'a> RafDecoder<'a> {
                 0 => 'R',
                 1 => 'G',
                 2 => 'B',
-                _ => 'X', // Unknown, let CFA::new() fail...
+                _ => 'X', // Unknown, CFA::try_new() fails
               })
               .collect();
-            Some(CFA::new(&patname))
+            let cfa = CFA::try_new(&patname);
+            if cfa.is_none() {
+              log::warn!("RAF: invalid XTransLayout \"{}\", using the CFA of the camera definition", patname);
+            }
+            cfa
           }
           _ => {
             return Err(RawlerError::decoder_failed("Invalid XTransLayout data type"));

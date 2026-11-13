@@ -615,7 +615,7 @@ impl<'a> DngDecoder<'a> {
 
   fn get_cfa(&self, raw: &IFD) -> Result<CFA> {
     let pattern = fetch_tiff_tag!(raw, TiffCommonTag::CFAPattern);
-    let cfa = CFA::new_from_tag(pattern);
+    let cfa = CFA::new_from_tag(pattern).ok_or_else(|| decoder_error!("DNG: CFAPattern with {} values is invalid", pattern.count()))?;
     // If DNG has active area, we need to calulate back the CFA pattern,
     // because for DNG the CFAPattern is relative to ActiveArea and we
     // use (0, 0) as starting point: the pattern is rotated in the opposite
