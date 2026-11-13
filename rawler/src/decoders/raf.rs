@@ -45,6 +45,7 @@ use super::FormatHint;
 use super::Orientation;
 use super::RawDecodeParams;
 use super::RawMetadata;
+use super::image_bytes;
 
 mod dbp;
 mod fuji_decompressor;
@@ -163,7 +164,10 @@ fn parse_raf(file: &RawSource) -> Result<IFD> {
   let offset = stream.read_u32::<BigEndian>()?;
 
   // Main IFD
-  let mut main = IFD::new_root(stream, offset + 12)?;
+  let main_offset = offset
+    .checked_add(12)
+    .ok_or_else(|| decoder_error!("RAF: offset {} of the TIFF structure is out of range", offset))?;
+  let mut main = IFD::new_root(stream, main_offset)?;
 
   //main.dump::<TiffCommonTag>(10).iter().for_each(|line| eprintln!("MAIN: {}", line));
 
@@ -279,6 +283,11 @@ impl<'a> Decoder for RafDecoder<'a> {
       Some(val) => val.force_u32(0) as usize,
       None => 16,
     };
+    // The decoders and the white levels below support these bits per sample
+    if !matches!(bps, 12 | 14 | 16) {
+      return Err(RawlerError::unsupported(base_camera, format!("RAF: Don't know how to decode bps {}", bps)));
+    }
+    image_bytes("RAF", width, height, 16)?;
 
     // Rotation is only used for SuperCCD sensors, so we handle X-Trans CFA only here.
     // Some cameras like X-T20 uses different CFA when compression is enabled, so we
@@ -319,7 +328,9 @@ impl<'a> Decoder for RafDecoder<'a> {
         _ => return Err(RawlerError::unsupported(base_camera, format!("RAF: Don't know how to decode bps {}", bps))),
       }
     } else if base_camera.clean_model == "DBP for GX680" {
-      assert_eq!(bps, 16);
+      if bps != 16 {
+        return Err(RawlerError::unsupported(base_camera, format!("RAF: DBP data with {} bps", bps)));
+      }
       dbp::decode_dbp(&src, width, height, dummy)?
     } else if src.len() < bps * width * height / 8 {
       if !dummy {
@@ -368,7 +379,9 @@ impl<'a> Decoder for RafDecoder<'a> {
         (pix, None)
       } else {
         let alt_layout = self.get_alt_layout();
-        let (pix, t) = self.rotate_image(image.pixels(), base_camera, alt_layout, width, height, dummy)?;
+        // The rotation reads no pixels of a dummy image
+        let pixels = if dummy { &[][..] } else { image.pixels() };
+        let (pix, t) = Self::rotate_image(pixels, base_camera, alt_layout, width, height, dummy)?;
         (pix, Some(t))
       };
 
@@ -512,6 +525,16 @@ impl<'a> RafDecoder<'a> {
     if let Some(fuji) = self.ifd.get_sub_ifd(FujiIFD::FujiIFD) {
       if let Some(Entry { value: Value::Long(black), .. }) = fuji.get_entry_recursive(FujiIFD::BlackLevel) {
         let levels: Vec<u16> = black.iter().copied().map(|v| v as u16).collect();
+        // There is one level for each position of the CFA
+        if levels.len() != cfa.width * cfa.height {
+          log::warn!(
+            "RAF: {} black levels don't match the CFA of {}x{} pixels, ignoring them",
+            levels.len(),
+            cfa.width,
+            cfa.height
+          );
+          return Ok(None);
+        }
         return Ok(Some(BlackLevel::new(&levels, cfa.width, cfa.height, 1)));
       } else {
         log::debug!("Unable to find black level data");
@@ -601,14 +624,28 @@ impl<'a> RafDecoder<'a> {
 
   /// Returns (rotated_pixels, fuji_rotation_width) where fuji_rotation_width is the
   /// split point T for computing the inscribed rectangle after 45° back-rotation.
-  fn rotate_image(&self, src: &[u16], camera: &Camera, alt_layout: bool, width: usize, height: usize, dummy: bool) -> Result<(PixU16, usize)> {
+  fn rotate_image(src: &[u16], camera: &Camera, alt_layout: bool, width: usize, height: usize, dummy: bool) -> Result<(PixU16, usize)> {
     if let Some(active_area) = camera.active_area {
       let x = active_area[0];
       let y = active_area[1];
-      let cropwidth = width - active_area[2] - x;
-      let cropheight = height - active_area[3] - y; // TODO: bug, invalid order of crop index
+      let crop = width
+        .checked_sub(active_area[2])
+        .and_then(|w| w.checked_sub(x))
+        .zip(height.checked_sub(active_area[3]).and_then(|h| h.checked_sub(y))) // TODO: bug, invalid order of crop index
+        .filter(|&(w, h)| w > 0 && h > 0);
+      let Some((cropwidth, cropheight)) = crop else {
+        return Err(decoder_error!(
+          "RAF: image of {}x{} pixels is too small for the active area {:?}",
+          width,
+          height,
+          active_area
+        ));
+      };
 
-      assert_eq!(alt_layout, camera.find_hint("fuji_rotation_alt"));
+      if alt_layout != camera.find_hint("fuji_rotation_alt") {
+        log::warn!("RAF: the layout of the file differs from the camera definition, using the camera definition");
+      }
+      let outside = || decoder_error!("RAF: rotated pixel outside of the image of {}x{} pixels", width, height);
 
       if camera.find_hint("fuji_rotation_alt") {
         let rotatedwidth = cropheight + cropwidth / 2;
@@ -619,9 +656,9 @@ impl<'a> RafDecoder<'a> {
           for row in 0..cropheight {
             let inb = &src[(row + y) * width + x..];
             for col in 0..cropwidth {
-              let out_row = rotatedwidth - (cropheight + 1 - row + (col >> 1));
+              let out_row = rotatedwidth.checked_sub(cropheight + 1 - row + (col >> 1)).ok_or_else(outside)?;
               let out_col = ((col + 1) >> 1) + row;
-              out[out_row * rotatedwidth + out_col] = inb[col];
+              *out.pixels_mut().get_mut(out_row * rotatedwidth + out_col).ok_or_else(outside)? = inb[col];
             }
           }
         }
@@ -637,7 +674,7 @@ impl<'a> RafDecoder<'a> {
             for col in 0..cropwidth {
               let out_row = cropwidth - 1 - col + (row >> 1);
               let out_col = ((row + 1) >> 1) + col;
-              out[out_row * rotatedwidth + out_col] = inb[col];
+              *out.pixels_mut().get_mut(out_row * rotatedwidth + out_col).ok_or_else(outside)? = inb[col];
             }
           }
         }
@@ -654,6 +691,9 @@ fn normalize_wb(raw_wb: [f32; 4]) -> [f32; 4] {
   // We never have more then RGB colors so far (no RGBE etc.)
   // So we combine G1 and G2 to get RGB wb.
   let div = raw_wb[1];
+  if !div.is_normal() {
+    return [f32::NAN; 4];
+  }
   let mut norm = raw_wb;
   norm.iter_mut().for_each(|v| {
     if v.is_normal() {
@@ -809,4 +849,36 @@ pub fn fuji_raw_rotate(img: &PixU16, dummy: bool) -> PixU16 {
     }
   }
   out
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[test]
+  fn rotation_of_images_that_don_t_fit_the_active_area() -> Result<()> {
+    let mut camera = Camera::new();
+    camera.active_area = Some([2, 2, 2, 2]);
+    camera.hints = vec!["fuji_rotation".into()];
+    // Images smaller than the borders of the active area
+    assert!(RafDecoder::rotate_image(&[0; 16], &camera, false, 4, 4, false).is_err());
+    assert!(RafDecoder::rotate_image(&[0; 24], &camera, false, 3, 8, false).is_err());
+    // An area of 4x4 pixels becomes 6x5 pixels
+    let (rotated, split) = RafDecoder::rotate_image(&[7; 64], &camera, false, 8, 8, false)?;
+    assert_eq!((rotated.width, rotated.height, split), (6, 5, 4));
+    // A dummy image has no pixels to read
+    RafDecoder::rotate_image(&[], &camera, false, 8, 8, true)?;
+    // A layout that differs from the camera definition is only a warning,
+    // the alternative layout of an odd width doesn't fit the rotated image
+    camera.hints = vec!["fuji_rotation_alt".into()];
+    RafDecoder::rotate_image(&[7; 64], &camera, false, 8, 8, false)?;
+    assert!(RafDecoder::rotate_image(&[0; 56], &camera, true, 7, 8, false).is_err());
+    Ok(())
+  }
+
+  #[test]
+  fn wb_without_green_is_unknown() {
+    assert!(normalize_wb([1.0, 0.0, 0.0, 1.0]).iter().all(|v| v.is_nan()));
+    assert_eq!(normalize_wb([512.0, 256.0, 256.0, 384.0])[..3], [2.0, 1.0, 1.5]);
+  }
 }
