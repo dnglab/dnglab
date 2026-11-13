@@ -42,6 +42,7 @@ use super::FormatHint;
 use super::Orientation;
 use super::RawDecodeParams;
 use super::RawMetadata;
+use super::image_bytes;
 
 const MFT_MOUNT: &str = "MFT-mount";
 
@@ -248,9 +249,11 @@ impl<'a> Decoder for OrfDecoder<'a> {
       }
     } as usize;
 
+    // The decoders below store 16 bits per pixel
+    image_bytes("ORF", width, height, 16)?;
     let mut size: usize = 0;
     for i in 0..counts.count() {
-      size += counts.force_u32(i as usize) as usize;
+      size = size.saturating_add(counts.force_u32(i as usize) as usize);
     }
 
     let camera = if width >= base_camera.highres_width {
