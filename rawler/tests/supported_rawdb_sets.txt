@@ -286,6 +286,7 @@ Nikon/D4S/raw_modes
 Nikon/D7200/raw_modes
 Nikon/D300/raw_modes
 Nikon/D1/raw_modes
+Nikon/D1H/raw_modes
 Nikon/D200/raw_modes
 Nikon/D1X/raw_modes
 Nikon/D70/raw_modes
