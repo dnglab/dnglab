@@ -161,7 +161,7 @@ impl<'a> Decoder for PefDecoder<'a> {
         let len = length.force_u32(0);
         let offset = start.force_u32(0);
         if len > 0 && offset > 0 {
-          let buf = file.subview((self.makernote_offset + offset) as u64, len as u64)?;
+          let buf = file.subview(self.makernote_offset as u64 + offset as u64, len as u64)?;
           match image::load_from_memory_with_format(buf, image::ImageFormat::Jpeg) {
             Ok(img) => Some(img),
             Err(_) => {
@@ -185,11 +185,18 @@ impl<'a> Decoder for PefDecoder<'a> {
         value: Value::Byte(borders), ..
       }) = self.makernote.get_entry(PefMakernote::PreviewImageBorders)
       {
-        let y = borders[0] as u32;
-        let x = borders[2] as u32;
-        let width = image.width() - x - borders[3] as u32;
-        let height = image.height() - y - borders[1] as u32;
-        return Ok(Some(image.crop_imm(x, y, width, height)));
+        return Ok(Some(match preview_area(borders, image.width(), image.height()) {
+          Some((x, y, width, height)) => image.crop_imm(x, y, width, height),
+          None => {
+            warn!(
+              "PEF: preview borders {:?} don't fit the preview of {}x{} pixels, using it uncropped",
+              borders,
+              image.width(),
+              image.height()
+            );
+            image
+          }
+        }));
       } else {
         return Ok(Some(image));
       }
@@ -241,8 +248,9 @@ impl<'a> PefDecoder<'a> {
     if let Some(Entry {
       value: Value::Byte(settings), ..
     }) = self.makernote.get_entry(PefMakernote::LensRec)
+      && let [lens_type, lens_model, ..] = settings[..]
     {
-      let lens_id = (settings[0] as u32, settings[1] as u32);
+      let lens_id = (lens_type as u32, lens_model as u32);
       debug!("LensRec tag: {:?}", lens_id);
       if [0, 1, 2].contains(&lens_id.0) {
         // 0 = M-42 or no lens
@@ -360,11 +368,27 @@ impl<'a> PefDecoder<'a> {
   }
 }
 
+/// Area (left, top, width, height) of a preview of `width` × `height`
+/// pixels inside of its `borders` (top, bottom, left, right), `None` if the
+/// borders don't fit into the preview
+fn preview_area(borders: &[u8], width: u32, height: u32) -> Option<(u32, u32, u32, u32)> {
+  let [top, bottom, left, right] = <[u8; 4]>::try_from(borders.get(0..4)?).ok()?.map(u32::from);
+  Some((
+    left,
+    top,
+    width.checked_sub(left)?.checked_sub(right)?,
+    height.checked_sub(top)?.checked_sub(bottom)?,
+  ))
+}
+
 fn normalize_wb(raw_wb: [f32; 4]) -> [f32; 4] {
   debug!("PEF raw wb: {:?}", raw_wb);
   // We never have more then RGB colors so far (no RGBE etc.)
   // So we combine G1 and G2 to get RGB wb.
   let div = raw_wb[1];
+  if !div.is_normal() {
+    return [f32::NAN; 4];
+  }
   let mut norm = raw_wb;
   norm.iter_mut().for_each(|v| {
     if v.is_normal() {
@@ -547,6 +571,20 @@ mod tests {
     table.extend(std::iter::repeat_n(0, lengths.len() * 2));
     table.extend_from_slice(lengths);
     table
+  }
+
+  #[test]
+  fn preview_area_inside_of_borders() {
+    assert_eq!(preview_area(&[1, 2, 3, 4], 100, 50), Some((3, 1, 93, 47)));
+    assert_eq!(preview_area(&[1, 2, 3], 100, 50), None);
+    assert_eq!(preview_area(&[0, 0, 60, 50], 100, 50), None);
+    assert_eq!(preview_area(&[40, 20, 0, 0], 100, 50), None);
+  }
+
+  #[test]
+  fn wb_without_green_is_unknown() {
+    assert!(normalize_wb([1.0, 0.0, 0.0, 1.0]).iter().all(|v| v.is_nan()));
+    assert_eq!(normalize_wb([512.0, 256.0, 256.0, 384.0])[..3], [2.0, 1.0, 1.5]);
   }
 
   #[test]
