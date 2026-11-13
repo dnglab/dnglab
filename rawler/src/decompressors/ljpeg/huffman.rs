@@ -181,6 +181,11 @@ impl HuffTable {
     }
   }
 
+  /// True if the table was initialized from code lengths and values
+  pub fn is_initialized(&self) -> bool {
+    self.initialized
+  }
+
   #[inline(always)]
   pub fn huff_decode(&self, pump: &mut dyn BitPump) -> Result<i32, BitPumpError> {
     let code = pump.peek_bits(DECODE_CACHE_BITS)? as usize;

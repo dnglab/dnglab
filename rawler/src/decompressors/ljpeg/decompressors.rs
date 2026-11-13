@@ -41,7 +41,7 @@ fn decode_ljpeg_predictor<const PREDICTOR: usize>(
     ));
   }
 
-  let htables: Vec<&HuffTable> = (0..ncomp).map(|c| &ljpeg.dhts[ljpeg.sof.components[c].dc_tbl_num]).collect();
+  let htables: Vec<&HuffTable> = (0..ncomp).map(|c| ljpeg.htable(c)).collect::<Result<_, _>>()?;
   let mut pump = BitPumpJPEG::new(ljpeg.buffer);
   let base_prediction = 1 << (ljpeg.sof.precision - ljpeg.point_transform - 1);
   // validate_restart_support ensures that a restart interval spans whole rows.
@@ -212,9 +212,9 @@ pub fn decode_sony_ljpeg_420(ljpeg: &LjpegDecompressor, out: &mut [u16], width: 
   debug_assert_eq!(width % 6, 0); // Ensure we have enough samples for .step_by(6)
   debug_assert_eq!(height % 2, 0);
 
-  let htable1 = &ljpeg.dhts[ljpeg.sof.components[0].dc_tbl_num];
-  let htable2 = &ljpeg.dhts[ljpeg.sof.components[1].dc_tbl_num];
-  let htable3 = &ljpeg.dhts[ljpeg.sof.components[2].dc_tbl_num];
+  let htable1 = ljpeg.htable(0)?;
+  let htable2 = ljpeg.htable(1)?;
+  let htable3 = ljpeg.htable(2)?;
   let mut pump = BitPumpJPEG::new(ljpeg.buffer);
 
   let base_prediction = 1 << (ljpeg.sof.precision - ljpeg.point_transform - 1);
@@ -285,9 +285,9 @@ pub fn decode_ljpeg_420(ljpeg: &LjpegDecompressor, out: &mut [u16], width: usize
   debug_assert_eq!(width % 6, 0); // Ensure we have enough samples for .step_by(6)
   debug_assert_eq!(height % 2, 0);
 
-  let htable1 = &ljpeg.dhts[ljpeg.sof.components[0].dc_tbl_num];
-  let htable2 = &ljpeg.dhts[ljpeg.sof.components[1].dc_tbl_num];
-  let htable3 = &ljpeg.dhts[ljpeg.sof.components[2].dc_tbl_num];
+  let htable1 = ljpeg.htable(0)?;
+  let htable2 = ljpeg.htable(1)?;
+  let htable3 = ljpeg.htable(2)?;
   let mut pump = BitPumpJPEG::new(ljpeg.buffer);
 
   let base_prediction = 1 << (ljpeg.sof.precision - ljpeg.point_transform - 1);
@@ -352,9 +352,9 @@ pub fn decode_ljpeg_422(ljpeg: &LjpegDecompressor, out: &mut [u16], width: usize
       height
     ));
   }
-  let htable1 = &ljpeg.dhts[ljpeg.sof.components[0].dc_tbl_num];
-  let htable2 = &ljpeg.dhts[ljpeg.sof.components[1].dc_tbl_num];
-  let htable3 = &ljpeg.dhts[ljpeg.sof.components[2].dc_tbl_num];
+  let htable1 = ljpeg.htable(0)?;
+  let htable2 = ljpeg.htable(1)?;
+  let htable3 = ljpeg.htable(2)?;
   let mut pump = BitPumpJPEG::new(ljpeg.buffer);
 
   let base_prediction = 1 << (ljpeg.sof.precision - ljpeg.point_transform - 1);
@@ -393,7 +393,7 @@ pub fn decode_hasselblad(ljpeg: &LjpegDecompressor, out: &mut [u16], width: usiz
   // Pixels are packed two at a time, not like LJPEG:
   // [p1_length_as_huffman][p2_length_as_huffman][p0_diff_with_length][p1_diff_with_length]|NEXT PIXELS
   let mut pump = BitPumpMSB32::new(ljpeg.buffer);
-  let htable = &ljpeg.dhts[ljpeg.sof.components[0].dc_tbl_num];
+  let htable = ljpeg.htable(0)?;
 
   for line in out.chunks_exact_mut(width) {
     let mut p1: i32 = 0x8000;

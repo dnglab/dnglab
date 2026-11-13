@@ -127,6 +127,8 @@ impl SOFInfo {
       return Err("ljpeg: Header size mismatch.".to_string());
     }
 
+    // The components of an earlier SOF are replaced
+    self.components.clear();
     for i in 0..self.cps {
       let id = input.get_u8()? as usize;
       let subs = input.get_u8()? as usize;
@@ -219,6 +221,10 @@ impl<'a> LjpegDecompressor<'a> {
         let (a, b) = sof.parse_sos(&mut input)?;
         pred = a;
         pt = b;
+        // The base prediction is 2^(precision - point transform - 1)
+        if pt >= sof.precision {
+          return Err(format!("ljpeg: point transform {} for a precision of {} bits", pt, sof.precision));
+        }
         break;
       } else if marker == m(Marker::EOI) {
         // Should never be reached as we stop at SOS
@@ -286,7 +292,9 @@ impl<'a> LjpegDecompressor<'a> {
   }
 
   fn parse_dht(input: &mut ByteStream, init: &mut [bool; 4], bits: &mut [[u32; 17]; 4], huffval: &mut [[u32; 256]; 4]) -> Result<(), String> {
-    let mut length = (input.get_u16()? as usize) - 2;
+    let mut length = (input.get_u16()? as usize)
+      .checked_sub(2)
+      .ok_or_else(|| "ljpeg: invalid DHT length".to_string())?;
 
     while length > 0 {
       let b = input.get_u8()? as usize;
@@ -401,8 +409,8 @@ impl<'a> LjpegDecompressor<'a> {
       return Err(format!("MOS: expecting {} strips found {}", nstrips, offsets.len()));
     }
 
-    let htable1 = &self.dhts[self.sof.components[0].dc_tbl_num];
-    let htable2 = &self.dhts[self.sof.components[1].dc_tbl_num];
+    let htable1 = self.htable(0)?;
+    let htable2 = self.htable(1)?;
     let bpred = 1 << (self.sof.precision - self.point_transform - 1);
     decompress_strips_fn(
       width,
@@ -416,6 +424,20 @@ impl<'a> LjpegDecompressor<'a> {
         Ok(())
       }),
     )
+  }
+
+  /// The Huffman table of `component`
+  fn htable(&self, component: usize) -> Result<&HuffTable, String> {
+    let info = self
+      .sof
+      .components
+      .get(component)
+      .ok_or_else(|| format!("ljpeg: the image has no component {}", component))?;
+    self
+      .dhts
+      .get(info.dc_tbl_num)
+      .filter(|table| table.is_initialized())
+      .ok_or_else(|| format!("ljpeg: Huffman table {} of component {} is not defined", info.dc_tbl_num, component))
   }
 
   fn validate_restart_support(&self) -> Result<(), String> {
@@ -462,5 +484,124 @@ impl<'a> LjpegDecompressor<'a> {
   /// Bits per sample of the frame
   pub fn precision(&self) -> usize {
     self.sof.precision
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  /// Marker segment with its length
+  fn segment(marker: u8, payload: &[u8]) -> Vec<u8> {
+    let mut data = vec![0xff, marker];
+    data.extend_from_slice(&((payload.len() + 2) as u16).to_be_bytes());
+    data.extend_from_slice(payload);
+    data
+  }
+
+  /// DHT of table 0 with a single code of 1 bit for `category`
+  fn dht(category: u8) -> Vec<u8> {
+    let mut payload = vec![0x00, 1];
+    payload.extend_from_slice(&[0; 15]);
+    payload.push(category);
+    segment(0xc4, &payload)
+  }
+
+  /// SOF3 of `width`x`height` with the components (id, sampling factors)
+  fn sof(precision: u8, width: u16, height: u16, components: &[(u8, u8)]) -> Vec<u8> {
+    let mut payload = vec![precision];
+    payload.extend_from_slice(&height.to_be_bytes());
+    payload.extend_from_slice(&width.to_be_bytes());
+    payload.push(components.len() as u8);
+    for (id, sampling) in components {
+      payload.extend_from_slice(&[*id, *sampling, 0]);
+    }
+    segment(0xc3, &payload)
+  }
+
+  /// SOS of the components (id, Huffman table)
+  fn sos(components: &[(u8, u8)], predictor: u8, point_transform: u8) -> Vec<u8> {
+    let mut payload = vec![components.len() as u8];
+    for (id, table) in components {
+      payload.extend_from_slice(&[*id, table << 4]);
+    }
+    payload.extend_from_slice(&[predictor, 0, point_transform]);
+    segment(0xda, &payload)
+  }
+
+  /// LJPEG stream of the segments. The entropy data are zero bits, which
+  /// table 0 of [`dht`] decodes to differences of `category` 0.
+  fn stream(segments: &[Vec<u8>]) -> Vec<u8> {
+    let mut data = vec![0xff, 0xd8];
+    segments.iter().for_each(|segment| data.extend_from_slice(segment));
+    data.extend_from_slice(&[0; 64]);
+    data.extend_from_slice(&[0xff, 0xd9]);
+    data
+  }
+
+  #[test]
+  fn stream_of_zero_differences() -> Result<(), String> {
+    let data = stream(&[dht(0), sof(16, 4, 2, &[(1, 0x11)]), sos(&[(1, 0)], 1, 0)]);
+    let ljpeg = LjpegDecompressor::new(&data)?;
+    let mut out = vec![0; 4 * 2];
+    ljpeg.decode(&mut out, 0, 4, 4, 2, false)?;
+    assert_eq!(out, vec![32768; 4 * 2]);
+    Ok(())
+  }
+
+  #[test]
+  fn dht_length_below_2_is_an_error() {
+    let mut data = stream(&[]);
+    data.splice(2..2, [0xff, 0xc4, 0x00, 0x01]);
+    assert!(LjpegDecompressor::new(&data).is_err());
+  }
+
+  #[test]
+  fn undefined_tables_are_an_error() -> Result<(), String> {
+    let data = stream(&[dht(0), sof(16, 4, 2, &[(1, 0x11)]), sos(&[(1, 1)], 1, 0)]);
+    let ljpeg = LjpegDecompressor::new(&data)?;
+    let err = ljpeg.decode(&mut [0; 4 * 2], 0, 4, 4, 2, false).err();
+    assert!(err.as_ref().is_some_and(|err| err.contains("not defined")), "{:?}", err);
+    Ok(())
+  }
+
+  #[test]
+  fn missing_components_are_an_error() -> Result<(), String> {
+    // A single component with the sampling of YUV 4:2:0 and 4:2:2
+    for sampling in [0x22, 0x21] {
+      let data = stream(&[dht(0), sof(16, 4, 2, &[(1, sampling)]), sos(&[(1, 0)], 1, 0)]);
+      let ljpeg = LjpegDecompressor::new(&data)?;
+      let err = ljpeg.decode(&mut [0; 12 * 2], 0, 12, 12, 2, false).err();
+      assert!(err.as_ref().is_some_and(|err| err.contains("no component 1")), "{:x}: {:?}", sampling, err);
+    }
+    // Leaf data has two components
+    let data = stream(&[dht(0), sof(16, 4, 2, &[(1, 0x11)]), sos(&[(1, 0)], 1, 0)]);
+    let err = LjpegDecompressor::new(&data)?.decode_leaf(4, 2).err();
+    assert!(err.as_ref().is_some_and(|err| err.contains("no component 1")), "{:?}", err);
+    Ok(())
+  }
+
+  #[test]
+  fn point_transform_must_be_below_precision() {
+    for (point_transform, valid) in [(11, true), (12, false), (15, false)] {
+      let data = stream(&[dht(0), sof(12, 4, 2, &[(1, 0x11)]), sos(&[(1, 0)], 1, point_transform)]);
+      assert_eq!(LjpegDecompressor::new(&data).is_ok(), valid, "point transform {}", point_transform);
+    }
+  }
+
+  #[test]
+  fn second_sof_replaces_the_first() -> Result<(), String> {
+    let data = stream(&[
+      dht(0),
+      sof(16, 4, 2, &[(1, 0x11), (2, 0x11)]),
+      sof(16, 4, 2, &[(1, 0x11)]),
+      sos(&[(1, 0)], 1, 0),
+    ]);
+    let ljpeg = LjpegDecompressor::new(&data)?;
+    assert_eq!(ljpeg.components(), 1);
+    let mut out = vec![0; 4 * 2];
+    ljpeg.decode(&mut out, 0, 4, 4, 2, false)?;
+    assert_eq!(out, vec![32768; 4 * 2]);
+    Ok(())
   }
 }
