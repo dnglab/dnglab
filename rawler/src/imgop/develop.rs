@@ -9,7 +9,7 @@ use byteorder::{BigEndian, WriteBytesExt};
 use image::{ImageEncoder, codecs::jpeg::JpegEncoder};
 
 use crate::{
-  RawImage,
+  RawImage, Software,
   decoders::{Orientation, RawDecodeParams, RawMetadata, validate_image_index},
   dng::{
     CropMode,
@@ -87,7 +87,8 @@ pub struct RawProcessingParams {
   pub crop: CropMode,
   pub thumbnail: bool,
   pub artist: Option<String>,
-  pub software: String,
+  /// Application of the Software tag, `None` writes no Software tag
+  pub software: Option<Software>,
   pub index: usize,
   pub keep_mtime: bool,
   /// DNG opcodes to remove before processing
@@ -133,7 +134,7 @@ impl Default for RawProcessingParams {
       crop: CropMode::Best,
       thumbnail: true,
       artist: None,
-      software: "DNGLab".into(),
+      software: None,
       index: 0,
       keep_mtime: false,
       remove_dng_opcodes: Vec::new(),

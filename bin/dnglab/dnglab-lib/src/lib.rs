@@ -28,8 +28,8 @@ pub mod lenses;
 pub mod makedng;
 pub mod process_raw;
 
-const PKG_VERSION: &str = env!("CARGO_PKG_VERSION");
-const PKG_NAME: &str = env!("CARGO_PKG_NAME");
+/// Application of the Software tag of the written files, given by the binary
+pub use rawler::Software;
 
 #[derive(Error, Debug)]
 pub enum AppError {

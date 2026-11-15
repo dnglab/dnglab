@@ -7,7 +7,6 @@ use rawler::decoders::supported_extensions;
 use std::collections::HashSet;
 use std::fs::create_dir_all;
 use std::path::PathBuf;
-use std::sync::Arc;
 
 use std::time::Instant;
 
@@ -18,13 +17,11 @@ use crate::dcp::{check_embedding, dcp_option, dcp_options};
 use crate::filemap::{FileMap, MapMode};
 use crate::jobs::Job;
 use crate::jobs::raw2dng::{JobResult, Raw2DngJob};
-use crate::{AppError, PKG_VERSION, Result};
-use rawler::dng::convertprofile::ConvertProfile;
-use rawler::dng::dcp::CameraProfileFile;
-use rawler::imgop::darkframe::DarkFrame;
+use crate::{AppError, Result, Software};
+use rawler::dng::convert::ConvertParams;
 
-/// Entry point for Clap sub command `convert`
-pub async fn convert(options: &ArgMatches) -> crate::Result<()> {
+/// Entry point for Clap sub command `convert`, the DNG files name `software`
+pub async fn convert(options: &ArgMatches, software: &Software) -> crate::Result<()> {
   let now = Instant::now();
 
   let recursive = options.get_flag("recursive");
@@ -38,6 +35,13 @@ pub async fn convert(options: &ArgMatches) -> crate::Result<()> {
   }
   let bad_pixels = bad_pixels_option(options, "bad_pixels")?;
   let dark_frame = dark_frame_option(options, "dark_frame", "dark_frame_black")?;
+  // Parameters of all jobs, each job sets its image index and bad pixels
+  let params = profile
+    .to_convert_params()
+    .with_software(software.clone())
+    .with_dcp(dcp)
+    .with_extra_dcp(extra_dcp)
+    .with_dark_frame(dark_frame);
 
   let proc = {
     let in_path: &PathBuf = options
@@ -59,15 +63,7 @@ pub async fn convert(options: &ArgMatches) -> crate::Result<()> {
   match proc {
     // We have only one input file, so output must be a file, too.
     MapMode::File(sd) => {
-      jobs.append(&mut generate_job(
-        &sd,
-        options,
-        &profile,
-        frames,
-        (&dcp, &extra_dcp),
-        (bad_pixels.as_ref(), dark_frame.as_ref()),
-        &mut claimed,
-      )?);
+      jobs.append(&mut generate_job(&sd, options, &params, frames, bad_pixels.as_ref(), &mut claimed)?);
     }
     // Input is directory, to process all files
     MapMode::Dir(sd) => {
@@ -79,15 +75,7 @@ pub async fn convert(options: &ArgMatches) -> crate::Result<()> {
         }
       })?;
       for entry in list {
-        jobs.append(&mut generate_job(
-          &entry,
-          options,
-          &profile,
-          frames,
-          (&dcp, &extra_dcp),
-          (bad_pixels.as_ref(), dark_frame.as_ref()),
-          &mut claimed,
-        )?);
+        jobs.append(&mut generate_job(&entry, options, &params, frames, bad_pixels.as_ref(), &mut claimed)?);
       }
     }
   }
@@ -133,14 +121,14 @@ pub async fn convert(options: &ArgMatches) -> crate::Result<()> {
   }
 }
 
-/// Convert given raw file to dng file
+/// Convert given raw file to dng file, with `params` and the image index of
+/// each frame
 fn generate_job(
   entry: &FileMap,
   options: &ArgMatches,
-  profile: &ConvertProfile,
+  params: &ConvertParams,
   frames: FrameSelection,
-  (dcp, extra_dcp): (&Option<CameraProfileFile>, &[CameraProfileFile]),
-  (bad_pixels, dark_frame): (Option<&BadPixelFile>, Option<&Arc<DarkFrame>>),
+  bad_pixels: Option<&BadPixelFile>,
   claimed: &mut HashSet<PathBuf>,
 ) -> Result<Vec<Raw2DngJob>> {
   let (do_batch, index) = match frames {
@@ -236,20 +224,21 @@ fn generate_job(
 
   let mut jobs = Vec::with_capacity(batch_count);
   for (i, out) in final_outputs.into_iter().enumerate() {
-    let mut params = profile
-      .to_convert_params(format!("{} {}", "DNGLab", PKG_VERSION))
-      .with_index(if do_batch { i } else { index })
-      .with_dcp(dcp.clone())
-      .with_extra_dcp(extra_dcp.to_vec())
-      .with_dark_frame(dark_frame.cloned());
+    let mut job_params = params.clone().with_index(if do_batch { i } else { index });
     if let Some(file) = bad_pixels {
-      add_bad_pixel_opcodes(file, &input, params.index, &mut params.replace_dng_opcodes, &mut params.remove_dng_opcodes);
+      add_bad_pixel_opcodes(
+        file,
+        &input,
+        job_params.index,
+        &mut job_params.replace_dng_opcodes,
+        &mut job_params.remove_dng_opcodes,
+      );
     }
     jobs.push(Raw2DngJob {
       input: input.clone(),
       output: out,
       replace,
-      params,
+      params: job_params,
     });
   }
   Ok(jobs)
