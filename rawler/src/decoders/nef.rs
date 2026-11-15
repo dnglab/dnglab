@@ -12,7 +12,6 @@ use crate::Result;
 use crate::alloc_image_ok;
 use crate::analyze::FormatDump;
 use crate::bits::BEu16;
-use crate::bits::BEu32;
 use crate::bits::Endian;
 use crate::bits::LEu32;
 use crate::bits::LookupTable;
@@ -58,6 +57,8 @@ use super::FormatHint;
 use super::Orientation;
 use super::RawDecodeParams;
 use super::RawMetadata;
+use super::image_bytes;
+use super::tag_data;
 
 mod decrypt;
 pub mod lensdata;
@@ -191,7 +192,7 @@ impl<'a> Decoder for NefDecoder<'a> {
       .into_iter()
       .min_by_key(|ifd| {
         let dim = |tag| ifd.get_entry(tag).map_or(0, |entry| entry.force_usize(0));
-        Reverse(dim(TiffCommonTag::ImageWidth) * dim(TiffCommonTag::ImageLength))
+        Reverse(dim(TiffCommonTag::ImageWidth).saturating_mul(dim(TiffCommonTag::ImageLength)))
       })
       .or_else(|| self.tiff.find_ifd_with_new_subfile_type(0))
       .ok_or_else(|| decoder_error!("Failed to find a suitable IFD in NEF decoder"))?;
@@ -200,11 +201,16 @@ impl<'a> Decoder for NefDecoder<'a> {
     let bps = fetch_tiff_tag!(raw, TiffCommonTag::BitsPerSample).force_usize(0);
     let mut cpp = fetch_tiff_tag!(raw, TiffCommonTag::BitsPerSample).count(); // Linear files don't have SamplesPerPixel
     let compression = fetch_tiff_tag!(raw, TiffCommonTag::Compression).force_usize(0);
+    // CFA images have one sample per pixel, scans three
+    if !matches!(cpp, 1 | 3) {
+      return Err(RawlerError::unsupported(camera, format!("NEF with {} samples per pixel", cpp)));
+    }
+    image_bytes("NEF", width, height, 16 * cpp)?;
 
     let nef_compression = if let Some(z_makernote) = self.makernote.get_entry(NikonMakernote::Makernotes0x51) {
       // For new Z models, a new tag 0x51 for makernotes appears. This contains
       // The new-old NEFCompression tag. The old tag is unavailable in this models.
-      Some(NefCompression::try_from(crate::bits::LEu16(z_makernote.get_data(), 10)).map_err(RawlerError::decoder_failed)?)
+      Some(NefCompression::try_from(crate::bits::LEu16(tag_data(z_makernote, 12)?, 10)).map_err(RawlerError::decoder_failed)?)
     } else {
       self
         .makernote
@@ -231,13 +237,13 @@ impl<'a> Decoder for NefDecoder<'a> {
     let src = if rows_per_strip == height {
       file.subview_padded(offset as u64, size as u64)?
     } else {
-      let full_size: u32 = match fetch_tiff_tag!(raw, TiffCommonTag::StripByteCounts) {
-        Value::Long(data) => data.iter().copied().sum(),
+      let full_size: u64 = match fetch_tiff_tag!(raw, TiffCommonTag::StripByteCounts) {
+        Value::Long(data) => data.iter().map(|&count| count as u64).sum(),
         _ => {
           return Err(RawlerError::decoder_failed("StripByteCounts is not of type LONG"));
         }
       };
-      file.subview_padded(offset as u64, full_size as u64)?
+      file.subview_padded(offset as u64, full_size)?
     };
 
     let coeffs = normalize_wb(self.get_wb(camera)?);
@@ -315,7 +321,7 @@ impl<'a> Decoder for NefDecoder<'a> {
     let photometric = match cpp {
       1 => RawPhotometricInterpretation::Cfa(CFAConfig::new_from_camera(camera)),
       3 => RawPhotometricInterpretation::LinearRaw,
-      _ => todo!(),
+      _ => return Err(RawlerError::unsupported(camera, format!("NEF with {} samples per pixel", cpp))),
     };
     let mut img = RawImage::new(camera.clone(), image, cpp, coeffs, photometric, blacklevel, whitelevel, dummy);
     img.orientation = Orientation::from_tiff(self.tiff.root_ifd());
@@ -524,24 +530,33 @@ impl<'a> NefDecoder<'a> {
     } else if let Some(levels) = self.makernote.get_entry(TiffCommonTag::NefWB0) {
       Ok([levels.force_f32(0), 1.0, 1.0, levels.force_f32(1)])
     } else if let Some(levels) = self.makernote.get_entry(TiffCommonTag::NrwWB) {
-      let data = levels.get_data();
-      if data[0..3] == b"NRW"[..] {
-        let offset = if data[4..8] == b"0100"[..] { 1556 } else { 56 };
-        Ok([
-          (LEu32(data, offset) << 2) as f32,
-          (LEu32(data, offset + 4) + LEu32(data, offset + 8)) as f32,
-          (LEu32(data, offset + 4) + LEu32(data, offset + 8)) as f32,
-          (LEu32(data, offset + 12) << 2) as f32,
-        ])
+      let data = levels.get_data()?;
+      if data.starts_with(b"NRW") {
+        let offset = if data.get(4..8) == Some(b"0100") { 1556 } else { 56 };
+        let data = tag_data(levels, offset + 16)?;
+        // The sum of both greens overflows u32 for crafted levels
+        let green = (LEu32(data, offset + 4) as u64 + LEu32(data, offset + 8) as u64) as f32;
+        Ok([(LEu32(data, offset) << 2) as f32, green, green, (LEu32(data, offset + 12) << 2) as f32])
       } else {
+        let data = tag_data(levels, 1252)?;
         Ok([BEu16(data, 1248) as f32, 256.0, 256.0, BEu16(data, 1250) as f32])
       }
     } else if let Some(levels) = self.makernote.get_entry(TiffCommonTag::NefWB1) {
       let mut version: u32 = 0;
-      for i in 0..4 {
-        version = (version << 4) + (levels.get_data()[i] - b'0') as u32;
+      for c in tag_data(levels, 4)?[0..4].iter() {
+        version = (version << 4) + c.wrapping_sub(b'0') as u32;
       }
-      let buf = levels.get_data();
+      // Bytes each version reads, the encrypted versions 280 bytes from
+      // offset 4 or 284
+      let len = match version {
+        0x100 => 39 * 2,
+        0x102 => 9 * 2,
+        0x103 => 13 * 2,
+        0x205 => 4 + 280,
+        0x204 | 0x206 => 284 + 280,
+        _ => 4,
+      };
+      let buf = tag_data(levels, len)?;
       debug!("NEF Color balance version: 0x{:x}", version);
 
       match version {
@@ -566,32 +581,14 @@ impl<'a> NefDecoder<'a> {
           BEu16(buf, 12 * 2) as f32,
         ]),
         0x204 | 0x205 | 0x206 => {
-          let serial = fetch_tiff_tag!(self.makernote, TiffCommonTag::NefSerial);
-          let data = serial.get_data();
-          let mut serialno = 0_usize;
-          for i in 0..serial.count() as usize {
-            if data[i] == 0 {
-              break;
-            }
-            serialno = serialno * 10
-              + if data[i] >= 48 && data[i] <= 57 {
-                // "0" to "9"
-                (data[i] - 48) as usize
-              } else {
-                (data[i] % 10) as usize
-              };
-          }
+          let serialno = decrypt::serial_number(fetch_tiff_tag!(self.makernote, TiffCommonTag::NefSerial).get_data()?);
 
           // Get the "decryption" key
           let keydata = fetch_tiff_tag!(self.makernote, TiffCommonTag::NefKey).force_u32(0).to_le_bytes();
           let keyno = (keydata[0] ^ keydata[1] ^ keydata[2] ^ keydata[3]) as usize;
 
           // 0x205 stores encrypted data starting at offset 4; 0x204 and 0x206 at offset 284
-          let src = if version == 0x205 {
-            &levels.get_data()[4..]
-          } else {
-            &levels.get_data()[284..]
-          };
+          let src = if version == 0x205 { &buf[4..] } else { &buf[284..] };
 
           let ci = WB_SERIALMAP[serialno & 0xff] as u32;
           let mut cj = WB_KEYMAP[keyno & 0xff] as u32;
@@ -648,13 +645,15 @@ impl<'a> NefDecoder<'a> {
       a.div_ceil(b) // (a + b - 1) / b
     }
 
-    let req_pixels = width * height;
-    let req_input_bits = bps * req_pixels;
+    // A size that overflows can't be uncompressed data of the file
+    let Some(req_input_bits) = width.checked_mul(height).and_then(|pixels| pixels.checked_mul(bps)) else {
+      return Ok(None);
+    };
     let req_input_bytes = div_round_up(req_input_bits, 8);
 
-    Ok(if compression == 1 || size == width * height * bps / 8 {
+    Ok(if compression == 1 || size == req_input_bits / 8 {
       Some(0)
-    } else if size >= req_input_bytes {
+    } else if size >= req_input_bytes && height > 0 {
       // Some models (D6) using row padding, so the row width is slightly larger.
       // This should be no more than 16 extra bytes.
       let total_padding = size - req_input_bytes;
@@ -679,7 +678,7 @@ impl<'a> NefDecoder<'a> {
       debug!("Fallback NefMeta1");
       fetch_tiff_tag!(self.makernote, TiffCommonTag::NefMeta1)
     };
-    Self::do_decode(src, meta.get_data(), self.makernote.endian, width, height, bps, dummy).map_err(RawlerError::decoder_failed)
+    Self::do_decode(src, meta.get_data()?, self.makernote.endian, width, height, bps, dummy).map_err(RawlerError::decoder_failed)
   }
 
   pub(crate) fn do_decode(
@@ -692,6 +691,15 @@ impl<'a> NefDecoder<'a> {
     dummy: bool,
   ) -> std::result::Result<PixU16, String> {
     debug!("NEF decode with: endian: {:?}, width: {}, height: {}, bps: {}", endian, width, height, bps);
+    image_bytes("NEF", width, height, 16).map_err(|err| err.to_string())?;
+    // The Huffman tables and curves are for 12 and 14 bits, the pixels are
+    // decoded in pairs
+    if !matches!(bps, 12 | 14) {
+      return Err(format!("NEF: compressed data with {} bits per sample", bps));
+    }
+    if !width.is_multiple_of(2) {
+      return Err(format!("NEF: compressed image with an odd width of {} pixels", width));
+    }
     let mut out = alloc_image_ok!(width, height, dummy);
     let mut stream = ByteStream::new(meta, endian);
     let v0 = stream.get_u8()?;
@@ -753,7 +761,10 @@ impl<'a> NefDecoder<'a> {
         let a_scale = step - b_scale;
         points[i] = ((a_scale * points[a_pos] as usize + b_scale * points[b_pos] as usize) / step) as u16;
       }
-      split = endian.read_u16(meta, 562) as usize;
+      split = meta
+        .get(562..564)
+        .map(|split| endian.read_u16(split, 0) as usize)
+        .ok_or_else(|| format!("NEF: metadata of {} bytes has no split row", meta.len()))?;
     } else if v0 != 70 && csize <= 0x4001 {
       for i in 0..csize {
         points[i] = stream.get_u16()?;
@@ -769,14 +780,15 @@ impl<'a> NefDecoder<'a> {
       if split > 0 && row == split {
         htable = Self::create_hufftable(huff_select + 1)?;
       }
-      pred_up1[row & 1] += htable.huff_decode(&mut pump)?;
-      pred_up2[row & 1] += htable.huff_decode(&mut pump)?;
+      // The predictions of crafted data wrap around, they are clamped below
+      pred_up1[row & 1] = pred_up1[row & 1].wrapping_add(htable.huff_decode(&mut pump)?);
+      pred_up2[row & 1] = pred_up2[row & 1].wrapping_add(htable.huff_decode(&mut pump)?);
       let mut pred_left1 = pred_up1[row & 1];
       let mut pred_left2 = pred_up2[row & 1];
       for col in (0..width).step_by(2) {
         if col > 0 {
-          pred_left1 += htable.huff_decode(&mut pump)?;
-          pred_left2 += htable.huff_decode(&mut pump)?;
+          pred_left1 = pred_left1.wrapping_add(htable.huff_decode(&mut pump)?);
+          pred_left2 = pred_left2.wrapping_add(htable.huff_decode(&mut pump)?);
         }
         out[row * width + col + 0] = curve.dither(clampbits(pred_left1, real_bps), &mut random);
         out[row * width + col + 1] = curve.dither(clampbits(pred_left2, real_bps), &mut random);
@@ -789,6 +801,10 @@ impl<'a> NefDecoder<'a> {
   // Decodes 12 bit data in an YUY2-like pattern (2 Luma, 1 Chroma per 2 pixels).
   // We un-apply the whitebalance, so output matches lossless.
   pub(crate) fn decode_snef_compressed(src: &PaddedBuf, coeffs: [f32; 4], width: usize, height: usize, dummy: bool) -> std::result::Result<PixU16, String> {
+    let need = image_bytes("NEF", width, height, 3 * 8).map_err(|err| err.to_string())?;
+    if src.len() < need {
+      return Err(format!("NEF: small raw data of {} bytes, {} are needed", src.len(), need));
+    }
     let inv_wb_r = (1024.0 / coeffs[0]) as i32;
     let inv_wb_b = (1024.0 / coeffs[2]) as i32;
 
@@ -815,7 +831,10 @@ impl<'a> NefDecoder<'a> {
       dummy,
       &(|out: &mut [u16], row| {
         let inb = &src[row * width * 3..];
-        let mut random = BEu32(inb, 0);
+        // The seed is the first 4 bytes from the row on, zeros past the end of the data
+        let mut seed = [0; 4];
+        seed.iter_mut().zip(inb).for_each(|(seed, byte)| *seed = *byte);
+        let mut random = u32::from_be_bytes(seed);
         for (o, i) in out.chunks_exact_mut(6).zip(inb.chunks_exact(6)) {
           let g1: u16 = i[0] as u16;
           let g2: u16 = i[1] as u16;
@@ -833,17 +852,17 @@ impl<'a> NefDecoder<'a> {
           let g = snef_curve.dither(clampbits((y1 - 0.337633 * cb - 0.698001 * cr) as i32, 12), &mut random);
           let b = snef_curve.dither(clampbits((y1 + 1.732446 * cb) as i32, 12), &mut random);
           // invert the white balance
-          o[0] = clampbits((inv_wb_r * r as i32 + (1 << 9)) >> 10, 15);
+          o[0] = invert_wb(inv_wb_r, r);
           o[1] = g;
-          o[2] = clampbits((inv_wb_b * b as i32 + (1 << 9)) >> 10, 15);
+          o[2] = invert_wb(inv_wb_b, b);
 
           let r = snef_curve.dither(clampbits((y2 + 1.370705 * cr) as i32, 12), &mut random);
           let g = snef_curve.dither(clampbits((y2 - 0.337633 * cb - 0.698001 * cr) as i32, 12), &mut random);
           let b = snef_curve.dither(clampbits((y2 + 1.732446 * cb) as i32, 12), &mut random);
           // invert the white balance
-          o[3] = clampbits((inv_wb_r * r as i32 + (1 << 9)) >> 10, 15);
+          o[3] = invert_wb(inv_wb_r, r);
           o[4] = g;
-          o[5] = clampbits((inv_wb_b * b as i32 + (1 << 9)) >> 10, 15);
+          o[5] = invert_wb(inv_wb_b, b);
         }
         Ok(())
       }),
@@ -851,11 +870,22 @@ impl<'a> NefDecoder<'a> {
   }
 }
 
+/// `value` with the inverse white balance `inv_wb` applied, where 1024 is
+/// 1.0, in 15 bits. The product is computed in i64, the inverse of a tiny
+/// coefficient from the file is close to i32::MAX.
+fn invert_wb(inv_wb: i32, value: u16) -> u16 {
+  let inverted = (inv_wb as i64 * value as i64 + (1 << 9)) >> 10;
+  clampbits(inverted.clamp(i32::MIN as i64, i32::MAX as i64) as i32, 15)
+}
+
 fn normalize_wb(raw_wb: [f32; 4]) -> [f32; 4] {
   debug!("NEF raw wb: {:?}", raw_wb);
   // We never have more then RGB colors so far (no RGBE etc.)
   // So we combine G1 and G2 to get RGB wb.
   let div = raw_wb[1];
+  if !div.is_normal() {
+    return [f32::NAN; 4];
+  }
   let mut norm = raw_wb;
   norm.iter_mut().for_each(|v| {
     if v.is_normal() {
@@ -927,5 +957,61 @@ impl TryFrom<u16> for NefCompression {
       14 => Self::HighEfficencyStar,
       _ => return Err(format!("unknown nef compression: {}", v)),
     })
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[test]
+  fn hufftables_initialize() -> std::result::Result<(), String> {
+    for num in 0..NIKON_TREE.len() {
+      NefDecoder::create_hufftable(num)?;
+    }
+    Ok(())
+  }
+
+  /// Metadata of version 68/32 with an empty curve
+  fn meta_68_32(len: usize) -> Vec<u8> {
+    let mut meta = vec![0; len];
+    meta[0] = 68;
+    meta[1] = 32;
+    // csize 2 at offset 10, after the predictors
+    meta[11] = 2;
+    meta
+  }
+
+  #[test]
+  fn compressed_with_invalid_parameters_is_an_error() {
+    let meta = meta_68_32(600);
+    let data = [0; 64];
+    for (width, height, bps) in [(0, 2, 12), (2, 0, 12), (4, 2, 16), (4, 2, 0), (3, 2, 12)] {
+      assert!(
+        NefDecoder::do_decode(&data, &meta, Endian::Big, width, height, bps, false).is_err(),
+        "{width}x{height}, {bps} bps"
+      );
+    }
+    // Metadata that ends before the split row
+    assert!(NefDecoder::do_decode(&data, &meta_68_32(32), Endian::Big, 4, 2, 12, false).is_err());
+  }
+
+  #[test]
+  fn small_raw_with_short_data_or_extreme_wb() {
+    let coeffs = [2.0, 1.0, 1.5, f32::NAN];
+    // 2x2 pixels need 12 bytes
+    assert!(NefDecoder::decode_snef_compressed(&PaddedBuf::new_owned(vec![0; 10], 10), coeffs, 2, 2, false).is_err());
+    // No padding after the data, the seed of the last row has 2 bytes left
+    assert!(NefDecoder::decode_snef_compressed(&PaddedBuf::new_owned(vec![0x80; 6], 6), coeffs, 2, 1, false).is_ok());
+    let data = PaddedBuf::new_owned(vec![0xff; 12], 12);
+    assert!(NefDecoder::decode_snef_compressed(&data, [1e-9, 1.0, -1e-9, f32::NAN], 2, 2, false).is_ok());
+    assert_eq!(invert_wb(1024, 1000), 1000);
+    assert_eq!(invert_wb(i32::MAX, u16::MAX), 0x7fff);
+  }
+
+  #[test]
+  fn wb_without_green_is_unknown() {
+    assert!(normalize_wb([1.0, 0.0, 0.0, 1.0]).iter().all(|v| v.is_nan()));
+    assert_eq!(normalize_wb([512.0, 256.0, 256.0, 384.0])[..3], [2.0, 1.0, 1.5]);
   }
 }

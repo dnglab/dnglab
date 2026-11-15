@@ -78,8 +78,10 @@ impl<'a> Decoder for CrwDecoder<'a> {
       decompress_10le_lsb16(src, 1552, 1024, dummy).map_err(RawlerError::decoder_failed)?
     } else {
       let sensorinfo = fetch_ciff_tag!(self.ciff, CiffTag::SensorInfo);
-      let width = sensorinfo.get_usize(1);
-      let height = sensorinfo.get_usize(2);
+      let (width, height) = match (sensorinfo.try_u32(1), sensorinfo.try_u32(2)) {
+        (Some(width), Some(height)) => (width as usize, height as usize),
+        _ => return Err(decoder_error!("CRW: SensorInfo has no image size")),
+      };
       self.decode_compressed(camera, file, width, height, dummy)?
     };
 
@@ -91,7 +93,7 @@ impl<'a> Decoder for CrwDecoder<'a> {
           let maxval = wb_raw.into_iter().map(|v| v as i32).min().unwrap_or(0) as f32;
           [wb_raw[0] / maxval, wb_raw[1] / maxval, wb_raw[2] / maxval, wb_raw[3] / maxval]
         }
-        _ => unreachable!(),
+        colors => return Err(decoder_error!("CRW: CFA with {} colors is not supported", colors)),
       }
     };
 
@@ -222,7 +224,9 @@ impl<'a> CrwDecoder<'a> {
 
   fn decode_compressed(&self, camera: &Camera, file: &RawSource, width: usize, height: usize, dummy: bool) -> Result<PixU16> {
     let lowbits = !camera.find_hint("nolowbits");
-    let dectable = fetch_ciff_tag!(self.ciff, CiffTag::DecoderTable).get_usize(0);
+    let dectable = fetch_ciff_tag!(self.ciff, CiffTag::DecoderTable)
+      .try_u32(0)
+      .ok_or_else(|| decoder_error!("CRW: DecoderTable has no value"))? as usize;
     if dectable > 2 {
       return Err(decoder_error!("CRW: Unknown decoder table {}", dectable));
     }
@@ -230,10 +234,15 @@ impl<'a> CrwDecoder<'a> {
   }
 
   pub(crate) fn do_decode(file: &RawSource, lowbits: bool, dectable: usize, width: usize, height: usize, dummy: bool) -> Result<PixU16> {
+    // The 2 low bits of each pixel are stored before the compressed data
+    let lowbits_len = width
+      .checked_mul(height)
+      .map(|pixels| pixels / 4)
+      .ok_or_else(|| decoder_error!("CRW: image size {}x{} overflows", width, height))?;
     let mut out = alloc_image_ok!(width, height, dummy);
 
     let htables = Self::create_hufftables(dectable);
-    let offset = 540 + (lowbits as usize) * height * width / 4;
+    let offset = 540 + if lowbits { lowbits_len } else { 0 };
     let src = file.subview_until_eof(offset as u64)?;
     let mut pump = BitPumpJPEG::new(src);
 
@@ -269,7 +278,9 @@ impl<'a> CrwDecoder<'a> {
         }
         i += 1;
       }
-      diffbuf[0] += carry;
+      // The sums of differences overflow for crafted data only, they wrap like
+      // in release builds
+      diffbuf[0] = diffbuf[0].wrapping_add(carry);
       carry = diffbuf[0];
 
       // Save those differences to 64 pixels adjusting the predictor as we go
@@ -280,16 +291,17 @@ impl<'a> CrwDecoder<'a> {
           base[1] = 512;
         }
         pnum += 1;
-        base[i & 1] += diffbuf[i];
+        base[i & 1] = base[i & 1].wrapping_add(diffbuf[i]);
         pixout[i] = base[i & 1] as u16;
       }
     }
 
     if lowbits {
-      let buffer = file.as_vec()?;
+      // The compressed data follows the low bits, so they are in the file
+      let low = file.subview(26, lowbits_len as u64)?;
       // Add the uncompressed 2 low bits to the decoded 8 high bits
-      for (i, o) in out.pixels_mut().chunks_exact_mut(4).enumerate() {
-        let c = buffer[26 + i] as u16;
+      for (o, &c) in out.pixels_mut().chunks_exact_mut(4).zip(low) {
+        let c = c as u16;
         o[0] = (o[0] << 2) | (c) & 0x03;
         o[1] = (o[1] << 2) | (c >> 2) & 0x03;
         o[2] = (o[2] << 2) | (c >> 4) & 0x03;
@@ -327,4 +339,17 @@ fn normalize_wb(raw_wb: [f32; 4]) -> [f32; 4] {
     }
   });
   [norm[0], (norm[1] + norm[2]) / 2.0, norm[3], f32::NAN]
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[test]
+  fn hufftables_initialize() {
+    for num in 0..CRW_FIRST_TREE.len() {
+      let tables = CrwDecoder::create_hufftables(num);
+      assert!(tables.iter().all(|table| table.nbits > 0), "tables {num}");
+    }
+  }
 }

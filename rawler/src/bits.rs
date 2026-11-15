@@ -219,8 +219,9 @@ impl LookupTable {
       let center = table[i];
       let lower = if i > 0 { table[i - 1] } else { center };
       let upper = if i < (table.len() - 1) { table[i + 1] } else { center };
-      let base = if center == 0 { 0 } else { center - ((upper - lower + 2) / 4) };
-      let delta = upper - lower;
+      // Tables from files may decrease or have steps up to the full range
+      let delta = upper.saturating_sub(lower);
+      let base = (center as u32).saturating_sub((delta as u32 + 2) / 4) as u16;
       tbl[i] = (center, base, delta);
     }
     LookupTable { table: tbl }
@@ -243,9 +244,11 @@ impl LookupTable {
   //    val
   //  }
 
+  /// Value of the table at `value`, dithered with `rand`. Values beyond the
+  /// table use its last entry, an empty table gives 0.
   #[inline(always)]
   pub fn dither(&self, value: u16, rand: &mut u32) -> u16 {
-    let (_, sbase, sdelta) = self.table[value as usize];
+    let (_, sbase, sdelta) = self.table.get(value as usize).or(self.table.last()).copied().unwrap_or_default();
     let base = sbase as u32;
     let delta = sdelta as u32;
     let pixel = base + ((delta * (*rand & 2047) + 1024) >> 12);
@@ -384,5 +387,30 @@ mod tests {
     let mut random = 2047;
 
     assert_eq!(table.dither(1, &mut random), u16::MAX);
+  }
+
+  #[test]
+  fn lookup_table_from_any_table() {
+    // A steep start, a decreasing table, a step over the full range
+    for values in [&[0, 1, 17][..], &[0, 4095, 100, 50], &[0, 65535, 65535]] {
+      let table = LookupTable::new(values);
+      let mut random = 0;
+      for value in 0..values.len() {
+        table.dither(value as u16, &mut random);
+      }
+    }
+    let table = LookupTable::new(&[0, 1, 17]);
+    assert_eq!(table.table, [(0, 0, 1), (1, 0, 17), (17, 13, 16)]);
+  }
+
+  #[test]
+  fn dither_beyond_the_table() {
+    let table = LookupTable::new(&[100, 200, 300]);
+    for value in [2, 3, u16::MAX] {
+      let mut random = 0;
+      assert_eq!(table.dither(value, &mut random), table.dither(2, &mut 0));
+    }
+    let mut random = 0;
+    assert_eq!(LookupTable::new(&[]).dither(5, &mut random), 0);
   }
 }

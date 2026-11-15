@@ -200,8 +200,10 @@ impl Default for CFA {
 }
 
 impl CFA {
+  /// CFA of a CFAPattern tag, `None` for an empty pattern, one of an unknown
+  /// size or with unknown colors
   #[doc(hidden)]
-  pub fn new_from_tag(pat: &Value) -> CFA {
+  pub fn new_from_tag(pat: &Value) -> Option<CFA> {
     let mut patname = String::new();
     for i in 0..pat.count() {
       patname.push(match pat.force_u32(i as usize) {
@@ -214,7 +216,10 @@ impl CFA {
         _ => 'U',
       });
     }
-    CFA::new(&patname)
+    if patname.is_empty() {
+      return None;
+    }
+    CFA::try_new(&patname)
   }
 
   /// Create a new CFA from a string describing it. For simplicity the pattern is specified
@@ -225,21 +230,31 @@ impl CFA {
   /// lead to confusion between different pattern sizes but in practice there are only
   /// a few oddball cameras no one cares about that do anything but 2x2 and 6x6 (and those
   /// work fine with this as well).
+  ///
+  /// # Panics
+  /// Panics for a pattern of an unknown size or with unknown colors, see
+  /// [`Self::try_new`] for patterns from files
   pub fn new(patname: &str) -> CFA {
+    Self::try_new(patname).unwrap_or_else(|| panic!("Invalid CFA pattern \"{}\"", patname))
+  }
+
+  /// CFA of a pattern like [`Self::new`], `None` for a pattern of an unknown
+  /// size or with unknown colors
+  pub fn try_new(patname: &str) -> Option<CFA> {
     let (width, height) = match patname.len() {
       0 => (0, 0),
       4 => (2, 2),
       36 => (6, 6),
       16 => (2, 8),
       144 => (12, 12),
-      _ => panic!("Unknown CFA size \"{}\"", patname),
+      _ => return None,
     };
     let mut pattern = CFAPattern::default();
 
     if width > 0 {
       // copy the pattern into the top left
       for (i, c) in patname.chars().enumerate() {
-        pattern[i / width][i % width] = CFAColor::try_from(c).expect("Invalid CFA pattern") as u8;
+        pattern[i / width][i % width] = CFAColor::try_from(c).ok()? as u8;
       }
 
       // extend the pattern into the full matrix
@@ -250,12 +265,12 @@ impl CFA {
       }
     }
 
-    CFA {
+    Some(CFA {
       name: patname.to_string(),
       pattern,
       width,
       height,
-    }
+    })
   }
 
   /// Remap the color values
@@ -485,5 +500,28 @@ impl Default for PlaneColor {
 impl fmt::Debug for PlaneColor {
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
     write!(f, "PlaneColors {{ {:?} }}", self.colors)
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[test]
+  fn cfa_of_invalid_patterns() {
+    assert_eq!(CFA::try_new("RGGB").map(|cfa| (cfa.width, cfa.height)), Some((2, 2)));
+    assert!(CFA::try_new("RGB").is_none());
+    assert!(CFA::try_new("RGXB").is_none());
+    assert!(CFA::try_new(&"RGB".repeat(12)).is_some());
+    assert!(CFA::new_from_tag(&Value::Byte(vec![0, 1, 1, 2])).is_some());
+    assert!(CFA::new_from_tag(&Value::Byte(vec![0, 1, 2])).is_none());
+    assert!(CFA::new_from_tag(&Value::Byte(vec![0, 1, 9, 2])).is_none());
+    assert!(CFA::new_from_tag(&Value::Byte(Vec::new())).is_none());
+  }
+
+  #[test]
+  #[should_panic(expected = "Invalid CFA pattern")]
+  fn cfa_new_panics_for_invalid_patterns() {
+    CFA::new("RGB");
   }
 }

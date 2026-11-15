@@ -16,7 +16,6 @@ use rayon::prelude::*;
 use serde::Deserialize;
 use serde::Serialize;
 use std::collections::HashMap;
-use std::io::Read;
 use std::io::Seek;
 use std::io::SeekFrom;
 use std::mem::size_of;
@@ -55,6 +54,7 @@ use super::Decoder;
 use super::FormatHint;
 use super::RawDecodeParams;
 use super::RawMetadata;
+use super::image_bytes;
 
 const MAX_BITDEPTH: u32 = 16;
 
@@ -185,36 +185,36 @@ fn new_makernote(file: &RawSource, moffset: u64) -> std::io::Result<HashMap<u32,
   // The makernote data starts straight after the TIFF header (8 bytes).
   // If this may change in future, offsets must be revalidated.
   assert_eq!(moffset, 8);
-  let stream = &mut file.reader();
-  stream.seek(SeekFrom::Start(moffset + 8))?; // Skip first 8 bytes of makernote
-  let ifd = stream.read_u32::<LittleEndian>()? as u64;
-  stream.seek(SeekFrom::Start(moffset + ifd))?;
-  let entry_count = stream.read_u32::<LittleEndian>()? as usize; // Skip 8 bytes in IFD
-
-  let _ = stream.read_u32::<LittleEndian>()?; // Skip it
-  let mut buf = vec![0; entry_count * 16];
-  stream.read_exact(&mut buf)?;
+  // Skip first 8 bytes of makernote
+  let ifd = LEu32(file.subview(moffset + 8, 4)?, 0) as u64;
+  // The entry count is followed by 4 bytes that are skipped
+  let entry_count = LEu32(file.subview(moffset + ifd, 4)?, 0) as usize;
+  let size = entry_count
+    .checked_mul(16)
+    .ok_or_else(|| std::io::Error::new(std::io::ErrorKind::InvalidData, format!("IIQ makernote with {} entries", entry_count)))?;
+  // A view of the entries fails for entries beyond the end of the file
+  let buf = file.subview(moffset + ifd + 8, size as u64)?;
 
   let mut entries: HashMap<u32, (usize, tiff::Value)> = HashMap::with_capacity(entry_count);
-  let mut buf = &buf[..];
 
-  for _ in 0..entry_count {
-    let tag = LEu32(buf, 0);
-    let typ = LEu32(buf, 4);
-    let byte_count = LEu32(buf, 8) as usize;
-    let data = LEu32(buf, 12) as usize;
+  for entry in buf.as_chunks::<16>().0 {
+    let tag = LEu32(entry, 0);
+    let typ = LEu32(entry, 4);
+    let byte_count = LEu32(entry, 8) as usize;
+    let data = LEu32(entry, 12) as usize;
     //println!("Tag 0x{:x}, typ: {}, count: {}, data: {}", tag, typ, byte_count, data);
     match typ {
       // Sensor calibration file, it's like a TIFF file and stored with ASCII type
-      1 if tag == <IiqTag as Into<u32>>::into(IiqTag::SensorCorrection) => {
-        entries.insert(tag, (byte_count, tiff::Value::Long(vec![data as u32 + moffset as u32])));
-      }
+      1 if tag == <IiqTag as Into<u32>>::into(IiqTag::SensorCorrection) => match (data as u32).checked_add(moffset as u32) {
+        Some(offset) => {
+          entries.insert(tag, (byte_count, tiff::Value::Long(vec![offset])));
+        }
+        None => warn!("IIQ: offset {} of the sensor correction is out of range, ignoring it", data),
+      },
       // Others should be just ASCII strings
       1 => {
-        let mut v = vec![0; byte_count];
-        stream.seek(SeekFrom::Start(moffset + data as u64))?; // skip header
-        stream.read_exact(&mut v)?;
-        let value = tiff::Value::Ascii(tiff::TiffAscii::new_from_raw(&v));
+        let v = file.subview(moffset + data as u64, byte_count as u64)?;
+        let value = tiff::Value::Ascii(tiff::TiffAscii::new_from_raw(v));
         entries.insert(tag, (byte_count, value));
       }
       // Short values stored as Long
@@ -230,7 +230,6 @@ fn new_makernote(file: &RawSource, moffset: u64) -> std::io::Result<HashMap<u32,
         warn!("Unknow tag 0x{:x}, typ: {}, count: {}, data: {}", tag, typ, byte_count, data);
       }
     }
-    buf = &buf[16..];
   }
   Ok(entries)
 }
@@ -250,9 +249,8 @@ impl<'a> Decoder for IiqDecoder<'a> {
     debug!("data offset: {}", data_offset);
     debug!("RAW IIQ Format: {:?}", fmt);
 
-    if width == 0 || height == 0 {
-      return Err(RawlerError::decoder_failed("IIQ: couldn't find width and height".to_string()));
-    }
+    // The decoders store 16 bits per pixel
+    image_bytes("IIQ", width, height, 16)?;
 
     let data = file
       .subview(data_offset, data_len as u64)
@@ -349,7 +347,7 @@ impl<'a> IiqDecoder<'a> {
         match def.typ {
           131 | 137 => {
             debug!("Correct bad colum: {}", def.col);
-            self.fix_bad_column(camera, img, def);
+            Self::fix_bad_column(camera, img, def);
           }
           129 => {
             // single bad pixels are ignored, these can be fixed by
@@ -368,10 +366,12 @@ impl<'a> IiqDecoder<'a> {
   fn correct_raw_poly_half(&self, img: &mut PixU16, senscorr: &SensorCalibration) -> Result<()> {
     if let Some(poly) = &senscorr.poly_curve_half {
       debug!("Apply polynom curve half correction");
-      let split_col = self.split_column()?.expect("Must have split column");
+      let (Some(split_col), Some(sensor_temp)) = (self.split_column()?, self.sensor_temp()?) else {
+        warn!("IIQ: the half polynomial curve needs the split column and the sensor temperature, skipping it");
+        return Ok(());
+      };
 
       let mut poly = *poly;
-      let sensor_temp = self.sensor_temp()?.expect("Half polynom curve correction requires the sensor temp.");
       poly[3] += (sensor_temp - poly[7]) * poly[6] + 1.0;
 
       let mut curve = vec![0_u16; 0x10000];
@@ -410,7 +410,9 @@ impl<'a> IiqDecoder<'a> {
   fn correct_raw_q_linearization(&self, img: &mut PixU16, senscorr: &SensorCalibration) -> Result<()> {
     if let Some(table) = &senscorr.quadrant_linearization {
       debug!("Apply quadrant linearization");
-      let (split_col, split_row) = self.split_offsets()?.expect("Must have split values");
+      let Some((split_col, split_row)) = self.quadrant_split("quadrant linearization") else {
+        return Ok(());
+      };
 
       debug!("Split col: {}, row: {}", split_col, split_row);
 
@@ -433,17 +435,26 @@ impl<'a> IiqDecoder<'a> {
         control_points.iter_mut().flatten().for_each(|point| point[1 + i].y = (v + 2) >> 2);
       }
 
-      let curves: [[Vec<u16>; 2]; 2] = std::array::from_fn(|qr| {
-        std::array::from_fn(|qc| {
-          let cp = &mut control_points[qr][qc];
-          // Some images may overflow 65535 here, but it's also in dcraw...
-          // We clamp here to be <= then the final control point.
-          cp[17].x = clamp(((cp[16].y * 65535) / cp[16].x) as i32, 0, 65535) as usize;
-          cp[17].y = cp[17].x;
-          cp[18] = Point::new(65535, 65535);
-          Spline::new(cp).calculate_curve()
-        })
-      });
+      let mut curves: [[Vec<u16>; 2]; 2] = Default::default();
+      for (qr, qc) in [(0, 0), (0, 1), (1, 0), (1, 1)] {
+        let cp = &mut control_points[qr][qc];
+        // Some images may overflow 65535 here, but it's also in dcraw...
+        // We clamp here to be <= then the final control point.
+        let Some(end) = (cp[16].y * 65535).checked_div(cp[16].x) else {
+          warn!("IIQ: the quadrant linearization has a last control point at 0, skipping it");
+          return Ok(());
+        };
+        cp[17].x = clamp(end as i32, 0, 65535) as usize;
+        cp[17].y = cp[17].x;
+        cp[18] = Point::new(65535, 65535);
+        match Spline::new(cp) {
+          Some(spline) => curves[qr][qc] = spline.calculate_curve(),
+          None => {
+            warn!("IIQ: invalid control points of the quadrant linearization, skipping it");
+            return Ok(());
+          }
+        }
+      }
       apply_quadrant_curves(img, split_row, split_col, &curves);
     }
     Ok(())
@@ -453,7 +464,9 @@ impl<'a> IiqDecoder<'a> {
   fn correct_raw_q_mul(&self, img: &mut PixU16, senscorr: &SensorCalibration) -> Result<()> {
     if let Some(multipliers) = &senscorr.quadrant_multipliers {
       debug!("Apply quadrant multiplier correction");
-      let (split_col, split_row) = self.split_offsets()?.expect("Must have split values");
+      let Some((split_col, split_row)) = self.quadrant_split("quadrant multiplier correction") else {
+        return Ok(());
+      };
       debug!("Split col: {}, row: {}", split_col, split_row);
 
       let mut qmul = [[f32::NAN; 2]; 2];
@@ -478,7 +491,9 @@ impl<'a> IiqDecoder<'a> {
   fn correct_raw_q_combined(&self, img: &mut PixU16, senscorr: &SensorCalibration) -> Result<()> {
     if let Some((coord_x, coord_y)) = &senscorr.quadrant_combined {
       debug!("Apply quadrant combined correction");
-      let (split_col, split_row) = self.split_offsets()?.expect("Must have split values");
+      let Some((split_col, split_row)) = self.quadrant_split("quadrant combined correction") else {
+        return Ok(());
+      };
 
       debug!("Split col: {}, row: {}", split_col, split_row);
 
@@ -495,7 +510,16 @@ impl<'a> IiqDecoder<'a> {
         }
       }
 
-      let curves: [[Vec<u16>; 2]; 2] = std::array::from_fn(|qr| std::array::from_fn(|qc| Spline::new(&control_points[qr][qc]).calculate_curve()));
+      let mut curves: [[Vec<u16>; 2]; 2] = Default::default();
+      for (qr, qc) in [(0, 0), (0, 1), (1, 0), (1, 1)] {
+        match Spline::new(&control_points[qr][qc]) {
+          Some(spline) => curves[qr][qc] = spline.calculate_curve(),
+          None => {
+            warn!("IIQ: invalid control points of the quadrant combined correction, skipping it");
+            return Ok(());
+          }
+        }
+      }
       apply_quadrant_curves(img, split_row, split_col, &curves);
     }
     Ok(())
@@ -534,6 +558,17 @@ impl<'a> IiqDecoder<'a> {
       };
       let wide: usize = head[2] / head[4] + ((head[2] % head[4] != 0) as usize);
       let high: usize = head[3] / head[5] + ((head[3] % head[5] != 0) as usize);
+      // Each cell has a value for each pair of colors
+      let need = wide * high * (nc / 2);
+      if flat.data.len() < need {
+        warn!(
+          "IIQ: flat field 0x{:x} has {} values, but {} are needed, skipping it",
+          flat.typ,
+          flat.data.len(),
+          need
+        );
+        continue;
+      }
       let mut mrow = vec![0.0; nc * wide];
       let mut pump = flat.data.iter();
       let mut mult = [0.0; 4]; // One multiplier per color (R=0, G1=1, ...)
@@ -541,7 +576,8 @@ impl<'a> IiqDecoder<'a> {
       for y in 0..high {
         for x in 0..wide {
           for c in (0..nc).step_by(2) {
-            let num = *pump.next().expect("flat field correction data consumed but tried to get more");
+            // The number of values is checked above
+            let num = pump.next().copied().unwrap_or_default();
             if y == 0 {
               mrow[c * wide + x] = num;
             } else {
@@ -595,12 +631,23 @@ impl<'a> IiqDecoder<'a> {
   /// Apply raw sensor corrections
   fn correct_raw_blacklevel(&self, img: &mut PixU16, calib: &SensorCalibration) -> Result<()> {
     // Remove black level and ajdust individual row/col blacklevel
-    if let Some(q_blacklevel) = &calib.q_blacklevel {
+    let q_blacklevel = calib.q_blacklevel.as_ref().filter(|(cblack, rblack)| {
+      let matches = cblack.len() == img.height * 2 && rblack.len() == img.width * 2;
+      if !matches {
+        warn!(
+          "IIQ: {} row and {} column black levels don't match the image of {}x{} pixels, using the basic black level",
+          cblack.len(),
+          rblack.len(),
+          img.width,
+          img.height
+        );
+      }
+      matches
+    });
+    if let Some((cblack, rblack)) = q_blacklevel
+      && let Some((split_col, split_row)) = self.quadrant_split("black level of the quadrants")
+    {
       let black = calib.blacklevel as i32;
-      let (split_col, split_row) = self.split_offsets()?.expect("Must have split values");
-      let (cblack, rblack) = q_blacklevel;
-      debug_assert_eq!(cblack.len(), img.height * 2);
-      debug_assert_eq!(rblack.len(), img.width * 2);
       img.par_pixel_rows_mut().enumerate().for_each(|(row, line)| {
         let qr = if row >= split_row { 1 } else { 0 };
         for (col, pix) in line.iter_mut().enumerate() {
@@ -694,6 +741,16 @@ impl<'a> IiqDecoder<'a> {
     }
   }
 
+  /// Split column and row of the sensor quadrants for `correction`, with a
+  /// warning if the file doesn't have them
+  fn quadrant_split(&self, correction: &str) -> Option<(usize, usize)> {
+    let split = self.split_offsets().ok().flatten();
+    if split.is_none() {
+      warn!("IIQ: the {} needs the split column and row, skipping it", correction);
+    }
+    split
+  }
+
   fn split_offsets(&self) -> Result<Option<(usize, usize)>> {
     let split_col = self.makernotes.get(&IiqTag::SplitCol.into());
     let split_row = self.makernotes.get(&IiqTag::SplitRow.into());
@@ -710,20 +767,12 @@ impl<'a> IiqDecoder<'a> {
 
     match (black_col, black_row) {
       (Some(black_col), Some(black_row)) => {
-        let stream = &mut file.reader();
-        let (len, offset) = (black_col.0, black_col.1.force_u64(0));
-        stream.seek(SeekFrom::Start(offset + 8))?;
-        let mut cols = vec![0; len / 2]; // u16 size
-        for entry in cols.iter_mut() {
-          *entry = stream.read_i16::<LittleEndian>()?;
-        }
-        let (len, offset) = (black_row.0, black_row.1.force_u64(0));
-        stream.seek(SeekFrom::Start(offset + 8))?;
-        let mut rows = vec![0; len / 2]; // u16 size
-        for entry in rows.iter_mut() {
-          *entry = stream.read_i16::<LittleEndian>()?;
-        }
-        Ok(Some((cols, rows)))
+        // Levels of i16, a view of them fails for levels beyond the end of the file
+        let levels = |(len, offset): &(usize, tiff::Value)| -> std::io::Result<Vec<i16>> {
+          let data = file.subview(offset.force_u64(0) + 8, (len / 2 * 2) as u64)?;
+          Ok(data.as_chunks::<2>().0.iter().map(|level| i16::from_le_bytes(*level)).collect())
+        };
+        Ok(Some((levels(black_col)?, levels(black_row)?)))
       }
       _ => Ok(None),
     }
@@ -823,6 +872,7 @@ impl<'a> IiqDecoder<'a> {
         let mut quadrant_combined = None;
         let mut defects = None;
         let mut flats = Vec::new();
+        let unexpected_length = |tag, len| warn!("IIQ: sensor correction 0x{:x} has an unexpected length of {} bytes, ignoring it", tag, len);
 
         //println!("Entry count:{}", entries_count);
         for _ in 0..entries_count {
@@ -835,9 +885,9 @@ impl<'a> IiqDecoder<'a> {
           match tag {
             0x0400 => {
               stream.seek(SeekFrom::Start(offset + tag_offset))?;
-              assert_eq!(len % 4, 0);
+              // Each defect has 8 bytes, like dcraw a remainder is ignored
               let mut defect_list = Vec::new();
-              for _ in 0..(len / 4) {
+              for _ in 0..(len / 8) {
                 let col = stream.read_u16::<LittleEndian>()? as usize;
                 let row = stream.read_u16::<LittleEndian>()? as usize;
                 let typ = stream.read_u16::<LittleEndian>()?;
@@ -868,27 +918,29 @@ impl<'a> IiqDecoder<'a> {
               flats.push(FlatField { typ: tag, head, data });
             }
 
+            // Like in dcraw, the 8 coefficients follow a value of 4 bytes
+            0x0419 if (len as usize) < 4 + 8 * size_of::<f32>() => unexpected_length(tag, len),
             0x0419 => {
-              stream.seek(SeekFrom::Start(offset + tag_offset))?;
-              assert!(len as usize >= 8 * size_of::<f32>());
+              stream.seek(SeekFrom::Start(offset + tag_offset + 4))?;
               let mut data = [f32::NAN; 8];
               for entry in data.iter_mut() {
                 *entry = stream.read_f32::<LittleEndian>()?;
               }
               poly_curve_half = Some(data);
             }
+            0x041a if len as usize != 4 * size_of::<f32>() => unexpected_length(tag, len),
             0x041a => {
               stream.seek(SeekFrom::Start(offset + tag_offset))?;
-              assert_eq!(len as usize, 4 * size_of::<f32>());
               let mut data = [f32::NAN; 4];
               for entry in data.iter_mut() {
                 *entry = stream.read_f32::<LittleEndian>()?;
               }
               poly_curve_full = Some(data);
             }
+            // there is an extra value...
+            0x041f if len as usize != 2 * 2 * 16 * size_of::<u32>() + 4 => unexpected_length(tag, len),
             0x041f => {
               stream.seek(SeekFrom::Start(offset + tag_offset))?;
-              assert_eq!(len as usize, 2 * 2 * 16 * size_of::<u32>() + 4); // there is an extra value...
               let mut data = vec![0_u16; 2 * 2 * 16];
               for entry in data.iter_mut() {
                 *entry = stream.read_u32::<LittleEndian>()? as u16;
@@ -936,13 +988,31 @@ impl<'a> IiqDecoder<'a> {
           q_blacklevel,
         })
       }
-      _ => panic!("No sensor calibration data found."),
+      _ => {
+        warn!("IIQ: no sensor calibration data, only the black level is corrected");
+        Ok(SensorCalibration {
+          poly_curve_half: None,
+          poly_curve_full: None,
+          quadrant_linearization: None,
+          quadrant_multipliers: None,
+          quadrant_combined: None,
+          defects: None,
+          flats: Vec::new(),
+          blacklevel,
+          q_blacklevel,
+        })
+      }
     }
   }
 
-  fn fix_bad_column(&self, camera: &Camera, img: &mut PixU16, defect: &Defect) {
+  fn fix_bad_column(camera: &Camera, img: &mut PixU16, defect: &Defect) {
     let col = defect.col;
-    for row in 2..img.height - 2 {
+    // The fix uses the pixels 2 columns left and right
+    if col < 2 || col + 2 >= img.width {
+      warn!("IIQ: bad column {} is at the edge of the image, skipping it", col);
+      return;
+    }
+    for row in 2..img.height.saturating_sub(2) {
       match camera.cfa.color_at(row, col) {
         cfa::CFA_COLOR_G => {
           // Do green pixels. Let's pretend we are in "G" pixel, in the middle:
@@ -1115,10 +1185,11 @@ impl<'a> IiqDecoder<'a> {
             }
           }
           let i = len[col & 1];
-          pred[col & 1] = if i == 14 {
-            pump.get_bits(16)?
-          } else {
-            pred[col & 1] + pump.get_bits(i)? + 1 - (1 << (i - 1))
+          pred[col & 1] = match i {
+            14 => pump.get_bits(16)?,
+            0 => return Err(format!("IIQ: no code length for column {} of row {}", col, row)),
+            // The prediction wraps around like the int of dcraw, only the low 16 bits are used
+            _ => pred[col & 1].wrapping_add(pump.get_bits(i)?).wrapping_add(1).wrapping_sub(1 << (i - 1)),
           };
           pixout[0] = (pred[col & 1] as u16) << value_shift;
         }
@@ -1141,7 +1212,7 @@ impl<'a> IiqDecoder<'a> {
         let mut pump = BitPumpMSB32::new(Self::row_data(buffer, strips, row)?);
         let base_bits = pump.get_bits(16)? & 7; // first 3 bits
         let mut bit_check: [u32; 2] = [0, 0]; // for even and odd pixels
-        let mut prev_pix_value = [0, 0]; // for even and odd pixels
+        let mut prev_pix_value = [0_u32, 0]; // for even and odd pixels
 
         let pix_sub_init = 17 - base_bits;
 
@@ -1155,7 +1226,9 @@ impl<'a> IiqDecoder<'a> {
               if idx >= 32 {
                 // If idx is larger then lookup array, the value
                 // is calculated by re-using the previous value.
-                bit_check[i] = (idx as u32 >> 5) + bit_check[i] - 2;
+                bit_check[i] = ((idx as u32 >> 5) + bit_check[i])
+                  .checked_sub(2)
+                  .ok_or_else(|| format!("IIQ Sv2: invalid bit count in row {}", row))?;
               } else {
                 // Otherwise, just do a lookup.
                 debug_assert!(idx < 32);
@@ -1173,9 +1246,14 @@ impl<'a> IiqDecoder<'a> {
               bit_check[0].saturating_sub(SV2_EXTRA_BITS[x]), // even
               bit_check[1].saturating_sub(SV2_EXTRA_BITS[x]), // odd
             ];
+            let diff_shift = |bit_check: u32| {
+              pix_sub_init
+                .checked_sub(bit_check)
+                .ok_or_else(|| format!("IIQ Sv2: bit count {} in row {} exceeds {}", bit_check, row, pix_sub_init))
+            };
             let diff = [
-              0xFFFF_u32 >> (pix_sub_init - bit_check[0]), // even
-              0xFFFF_u32 >> (pix_sub_init - bit_check[1]), // odd
+              0xFFFF_u32 >> diff_shift(bit_check[0])?, // even
+              0xFFFF_u32 >> diff_shift(bit_check[1])?, // odd
             ];
             // Detector for invalid decompression result
             let mut check_val = 0;
@@ -1185,8 +1263,11 @@ impl<'a> IiqDecoder<'a> {
                 // Just get the value straight out the bit pump
                 pump.get_bits(14)?
               } else {
-                // Otherwise reconstruct the value
-                let tmp = prev_pix_value[i & 1] + (pump.get_bits(nbits)? << corr[i & 1]) - diff[i & 1];
+                // Otherwise reconstruct the value, invalid values wrap
+                // around and the checker finds them
+                let tmp = prev_pix_value[i & 1]
+                  .wrapping_add(pump.get_bits(nbits)? << corr[i & 1])
+                  .wrapping_sub(diff[i & 1]);
                 check_val |= tmp; // Apply to checker
                 tmp
               };
@@ -1205,7 +1286,9 @@ impl<'a> IiqDecoder<'a> {
                   pump.get_bits(14)?
                 } else {
                   // Otherwise reconstruct the value
-                  let tmp = prev_pix_value[i & 1] as i32 + (pump.get_bits(nbits)? << corr[i & 1]) as i32 - diff[i & 1] as i32;
+                  let tmp = (prev_pix_value[i & 1] as i32)
+                    .wrapping_add((pump.get_bits(nbits)? << corr[i & 1]) as i32)
+                    .wrapping_sub(diff[i & 1] as i32);
                   clamp(tmp as i32, 0, 0x3FFF) as u32
                 };
                 cluster[i] = (value as u16) << value_shift;
@@ -1273,6 +1356,107 @@ impl From<IiqTag> for u32 {
 #[cfg(test)]
 mod tests {
   use super::*;
+
+  /// IIQ file with a makernote of `count` entries, of which `entries` are
+  /// given as (tag, type, byte count, data)
+  fn iiq_makernote(count: u32, entries: &[(u32, u32, u32, u32)]) -> Vec<u8> {
+    // TIFF header, makernote header, IFD offset 12 relative to the makernote
+    let mut buf = vec![0; 16];
+    buf.extend_from_slice(&12_u32.to_le_bytes());
+    buf.extend_from_slice(&count.to_le_bytes());
+    buf.extend_from_slice(&[0; 4]);
+    for (tag, typ, byte_count, data) in entries {
+      for value in [tag, typ, byte_count, data] {
+        buf.extend_from_slice(&value.to_le_bytes());
+      }
+    }
+    buf
+  }
+
+  #[test]
+  fn compressed_without_code_length_is_an_error() {
+    // The first bits are 1, the code lengths of the first 8 columns aren't set
+    assert!(IiqDecoder::decode_compressed(&[0xff; 64], &[0; 4], 8, 1, 14, false).is_err());
+  }
+
+  #[test]
+  fn compressed_prediction_wraps_around() -> std::result::Result<(), String> {
+    // Code lengths of 8 for both columns (bits 010 twice), then a difference
+    // of 0 that subtracts 127 from the prediction of 0
+    let mut buf = vec![0; 64];
+    buf[3] = 0x48;
+    let image = IiqDecoder::decode_compressed(&buf, &[0; 4], 8, 1, 14, false)?;
+    assert_eq!(image.pixels()[0], (1_u32.wrapping_sub(128) as u16) << 2);
+    Ok(())
+  }
+
+  #[test]
+  fn sv2_bit_count_underflow_is_an_error() {
+    // A base of 0 bits, then an index of 32 for the first cluster, which
+    // takes 2 from a bit count of 0
+    let mut buf = vec![0; 64];
+    buf[1] = 0x40;
+    assert!(IiqDecoder::decode_compressed_sv2(&buf, &[0; 4], 8, 1, 14, false).is_err());
+    // Zero data has no invalid bit counts
+    assert!(IiqDecoder::decode_compressed_sv2(&[0; 64], &[0; 4], 8, 1, 14, false).is_ok());
+  }
+
+  #[test]
+  fn flat_field_with_too_few_values_is_skipped() {
+    // The cells need 4 values, the flat field has 3
+    let flat = FlatField {
+      typ: 0x40b,
+      head: [1, 1, 8, 8, 4, 4, 0, 0],
+      data: vec![2.0; 3],
+    };
+    let mut img = PixU16::new_with(vec![1000; 12 * 12], 12, 12);
+    IiqDecoder::correct_raw_flatfield(&mut img, &cfa::CFA::new("GBRG"), &[flat]);
+    assert!(img.pixels().iter().all(|pix| *pix == 1000));
+  }
+
+  #[test]
+  fn bad_columns_at_the_edges_are_skipped() {
+    let mut camera = Camera::new();
+    camera.cfa = cfa::CFA::new("RGGB");
+    let defect = |col| Defect {
+      row: 0,
+      col,
+      typ: 131,
+      reserved: 0,
+    };
+    let pixels: Vec<u16> = (0..8 * 8).map(|i| i as u16 * 10).collect();
+    for col in [0, 1, 6, 7] {
+      let mut img = PixU16::new_with(pixels.clone(), 8, 8);
+      IiqDecoder::fix_bad_column(&camera, &mut img, &defect(col));
+      assert_eq!(img.pixels(), &pixels[..], "column {col}");
+    }
+    let mut img = PixU16::new_with(pixels.clone(), 8, 8);
+    IiqDecoder::fix_bad_column(&camera, &mut img, &defect(4));
+    assert_ne!(img.pixels(), &pixels[..]);
+    // An image of one row
+    let mut img = PixU16::new_with(vec![0; 8], 8, 1);
+    IiqDecoder::fix_bad_column(&camera, &mut img, &defect(4));
+  }
+
+  #[test]
+  fn makernote_entries_beyond_the_file_are_an_error() {
+    let file = RawSource::new_from_slice(&iiq_makernote(u32::MAX, &[]));
+    assert!(new_makernote(&file, 8).is_err());
+    // An ASCII value longer than the file
+    let file = RawSource::new_from_slice(&iiq_makernote(1, &[(0x412, 1, u32::MAX, 0)]));
+    assert!(new_makernote(&file, 8).is_err());
+  }
+
+  #[test]
+  fn makernote_skips_sensor_correction_offsets_out_of_range() -> std::io::Result<()> {
+    let sensor_correction = IiqTag::SensorCorrection as u32;
+    let width = IiqTag::Width as u32;
+    let file = RawSource::new_from_slice(&iiq_makernote(2, &[(sensor_correction, 1, 4, u32::MAX - 3), (width, 4, 4, 100)]));
+    let entries = new_makernote(&file, 8)?;
+    assert!(!entries.contains_key(&sensor_correction));
+    assert_eq!(entries.get(&width).map(|(_, value)| value.force_u32(0)), Some(100));
+    Ok(())
+  }
 
   #[test]
   fn red_blue_flat_field_corrects_red_and_blue_pixels() {

@@ -27,6 +27,7 @@ use super::FormatHint;
 use super::Orientation;
 use super::RawDecodeParams;
 use super::RawMetadata;
+use super::image_bytes;
 use super::ok_cfa_image;
 
 #[derive(Debug, Clone)]
@@ -68,6 +69,9 @@ impl<'a> Decoder for DcrDecoder<'a> {
     let src = file.subview_until_eof_padded(offset as u64)?; // TODO add size and check all samples
 
     let linearization = fetch_tiff_tag!(self.makernote, TiffCommonTag::DcrLinearization);
+    if linearization.count() == 0 {
+      return Err(decoder_error!("DCR: the linearization table is empty"));
+    }
     let curve = {
       let mut points = Vec::new();
       for i in 0..linearization.count() {
@@ -121,11 +125,23 @@ pub(super) fn kodak_blacklevel(kodak_ifd: &IFD, curve: &Value, rows: usize, cpp:
   }
   let (top, bottom) = (curve.force_u16(top) as i32, curve.force_u16(bottom) as i32);
   let delta_v = if top != bottom && rows > 1 {
-    (0..rows).map(|row| SRational::new((bottom - top) * row as i32, rows as i32 - 1)).collect()
+    black_level_deltas(top, bottom, rows).unwrap_or_else(|| {
+      log::warn!("Kodak black level: the changes over {} rows overflow, using the top level", rows);
+      Vec::new()
+    })
   } else {
     Vec::new()
   };
   Some(BlackLevel::new(&[top as u32], 1, 1, cpp).with_deltas(Vec::new(), delta_v))
+}
+
+/// Change of the black level in each of `rows` rows from `top` to `bottom`,
+/// `None` if the fractions don't fit into i32
+fn black_level_deltas(top: i32, bottom: i32, rows: usize) -> Option<Vec<SRational>> {
+  let last = i32::try_from(rows.checked_sub(1)?).ok()?;
+  (0..=last)
+    .map(|row| (bottom - top).checked_mul(row).map(|delta| SRational::new(delta, last)))
+    .collect()
 }
 
 /// As shot white balance from the KodakIFD: the levels set in software or else
@@ -133,13 +149,9 @@ pub(super) fn kodak_blacklevel(kodak_ifd: &IFD, curve: &Value, rows: usize, cpp:
 /// coefficients are the reciprocal of the levels.
 pub(super) fn kodak_wb(kodak_ifd: &IFD) -> Option<[f32; 4]> {
   if let Some(levels) = kodak_ifd.get_entry(TiffCommonTag::DcrWB).filter(|levels| levels.count() == 72) {
-    let levels = levels.get_data();
-    return Some([
-      2048.0 / BEu16(levels, 40) as f32,
-      2048.0 / BEu16(levels, 42) as f32,
-      2048.0 / BEu16(levels, 44) as f32,
-      f32::NAN,
-    ]);
+    let levels = levels.get_data().ok().filter(|levels| levels.len() >= 46)?;
+    let [r, g, b] = [40, 42, 44].map(|pos| BEu16(levels, pos));
+    return (r > 0 && g > 0 && b > 0).then(|| [2048.0 / r as f32, 2048.0 / g as f32, 2048.0 / b as f32, f32::NAN]);
   }
   let tag = match kodak_ifd.get_entry(TiffCommonTag::KodakWhiteBalance)?.force_u16(0) {
     0 => TiffCommonTag::KodakWBDaylight,
@@ -157,6 +169,7 @@ pub(super) fn kodak_wb(kodak_ifd: &IFD) -> Option<[f32; 4]> {
 
 impl<'a> DcrDecoder<'a> {
   pub(crate) fn decode_kodak65000(buf: &[u8], curve: &LookupTable, width: usize, height: usize, dummy: bool) -> Result<PixU16> {
+    image_bytes("DCR", width, height, 16)?;
     let mut out = alloc_image_ok!(width, height, dummy);
     let mut input = ByteStream::new(buf, Endian::Little);
 
@@ -212,5 +225,63 @@ impl<'a> DcrDecoder<'a> {
     }
 
     Ok(out)
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use std::io::Cursor;
+
+  use super::*;
+  use crate::formats::tiff::writer::TiffWriter;
+
+  /// KodakIFD with the given black levels and DcrWB levels
+  fn kodak_ifd(black: Option<(u16, u16)>, wb: Option<[u16; 3]>) -> std::result::Result<IFD, Box<dyn std::error::Error>> {
+    let mut buf = Cursor::new(Vec::new());
+    let tiff = TiffWriter::new(&mut buf)?;
+    let mut root = tiff.new_directory();
+    if let Some((top, bottom)) = black {
+      root.add_tag(TiffCommonTag::KodakBlackLevelTop, top);
+      root.add_tag(TiffCommonTag::KodakBlackLevelBottom, bottom);
+    }
+    if let Some(levels) = wb {
+      let mut data = vec![0; 72];
+      for (i, level) in levels.iter().enumerate() {
+        data[40 + 2 * i..][..2].copy_from_slice(&level.to_be_bytes());
+      }
+      root.add_tag_undefined(TiffCommonTag::DcrWB, data);
+    }
+    tiff.build(root)?;
+    Ok(GenericTiffReader::new(&mut Cursor::new(buf.into_inner()), 0, 0, None, &[])?.root_ifd().clone())
+  }
+
+  #[test]
+  fn kodak_black_level_changes_by_row() -> std::result::Result<(), Box<dyn std::error::Error>> {
+    // The curve maps the raw levels 1 and 2 to 100 and 65535
+    let curve = Value::Short(vec![0, 100, 65535]);
+    let ifd = kodak_ifd(Some((1, 2)), None)?;
+    let blacklevel = kodak_blacklevel(&ifd, &curve, 3000, 1).ok_or("no black level")?;
+    let expected: Vec<SRational> = (0..3000).map(|row| SRational::new(65435 * row, 2999)).collect();
+    assert_eq!(blacklevel, BlackLevel::new(&[100_u32], 1, 1, 1).with_deltas(Vec::new(), expected));
+    // The changes over 70000 rows overflow i32, only the top level is left
+    let blacklevel = kodak_blacklevel(&ifd, &curve, 70000, 1).ok_or("no black level")?;
+    assert_eq!(blacklevel, BlackLevel::new(&[100_u32], 1, 1, 1));
+    assert_eq!(black_level_deltas(0, 1, 0), None);
+    Ok(())
+  }
+
+  #[test]
+  fn kodak_wb_from_dcr_levels() -> std::result::Result<(), Box<dyn std::error::Error>> {
+    let wb = kodak_wb(&kodak_ifd(None, Some([1024, 2048, 4096]))?).ok_or("no white balance")?;
+    assert_eq!(wb[..3], [2.0, 1.0, 0.5]);
+    assert_eq!(kodak_wb(&kodak_ifd(None, Some([1024, 0, 4096]))?), None);
+    Ok(())
+  }
+
+  #[test]
+  fn kodak65000_rejects_an_empty_image() {
+    let curve = LookupTable::new(&[0, 1]);
+    assert!(DcrDecoder::decode_kodak65000(&[0; 16], &curve, 0, 4, false).is_err());
+    assert!(DcrDecoder::decode_kodak65000(&[0; 16], &curve, 4, 0, false).is_err());
   }
 }

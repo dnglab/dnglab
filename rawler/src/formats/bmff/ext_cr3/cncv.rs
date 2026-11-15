@@ -3,7 +3,7 @@
 
 use super::super::{BoxHeader, FourCC, ReadBox, Result};
 use serde::{Deserialize, Serialize};
-use std::io::{Read, Seek, SeekFrom};
+use std::io::{Read, Seek};
 
 #[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize)]
 pub struct CncvBox {
@@ -23,7 +23,7 @@ impl<R: Read + Seek> ReadBox<&mut R> for CncvBox {
 
     let compressor = String::from_utf8_lossy(&buf);
 
-    reader.seek(SeekFrom::Start(header.end_offset()))?;
+    header.finish(&mut *reader)?;
 
     Ok(Self {
       header,

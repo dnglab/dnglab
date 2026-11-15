@@ -18,7 +18,6 @@ use crate::RawlerError;
 use crate::alloc_image_plain;
 use crate::analyze::FormatDump;
 use crate::bits::LookupTable;
-use crate::bits::clampbits;
 use crate::decompressors::ljpeg::*;
 use crate::exif::Exif;
 use crate::formats::tiff::Entry;
@@ -33,6 +32,7 @@ use crate::imgop::Point;
 use crate::imgop::Rect;
 use crate::lens::LensDescription;
 use crate::lens::LensResolver;
+use crate::pixarray::PixU16;
 use crate::rawimage::CFAConfig;
 use crate::rawimage::RawPhotometricInterpretation;
 use crate::rawsource::RawSource;
@@ -142,7 +142,7 @@ impl<'a> Decoder for Cr2Decoder<'a> {
           LookupTable::new(&t)
         };
 
-        let mut random = ljpegout[0] as u32;
+        let mut random = ljpegout.pixels().first().map_or(0, |pixel| *pixel as u32);
         for p in ljpegout.pixels_mut().iter_mut() {
           *p = table.dither(*p, &mut random);
         }
@@ -170,11 +170,11 @@ impl<'a> Decoder for Cr2Decoder<'a> {
       if let Some(canoncol) = raw.get_entry(TiffCommonTag::Cr2StripeWidths) {
         debug!("Found Cr2StripeWidths tag: {:?}", canoncol.value);
         if canoncol.value.force_usize(0) == 0 {
+          set_dimension(&mut ljpegout, width, height)?;
           if cpp == 3 && !dummy {
             self.convert_to_rgb(file, camera, &decompressor, width, height, ljpegout.pixels_mut())?;
             //width /= 3;
           }
-          ljpegout.update_dimension(Dim2::new(width, height));
           (cpp, ljpegout, precision)
           /*
           if camera.find_hint("double_line") {
@@ -186,62 +186,37 @@ impl<'a> Decoder for Cr2Decoder<'a> {
         } else {
           let mut out = alloc_image_plain!(width, height, dummy);
           if !dummy {
-            let mut fieldwidths = Vec::new();
-            debug_assert!(canoncol.value.force_usize(0) > 0);
-            debug_assert!(canoncol.value.force_usize(1) > 0);
-            debug_assert!(canoncol.value.force_usize(2) > 0);
-            for _ in 0..canoncol.value.force_usize(0) {
-              fieldwidths.push(canoncol.value.force_usize(1));
+            // The stripe count comes from the file, there are fewer stripes than samples in a row
+            let stripes = canoncol.value.force_usize(0);
+            if stripes > width {
+              return Err(decoder_error!("CR2: {} stripes for an image width of {}", stripes, width));
             }
+            let mut fieldwidths = vec![canoncol.value.force_usize(1); stripes];
             fieldwidths.push(canoncol.value.force_usize(2));
 
             if decompressor.super_v() == 2 {
               debug!("CR2 v=2 decoder used, h={}", decompressor.super_h());
               // We've decoded 2 lines at a time so we also need to copy two strips at a time
-              let nfields = fieldwidths.len();
-              let fieldwidth = fieldwidths[0];
-              let mut fieldstart = 0;
-              let mut inpos = 0;
-              for _ in 0..nfields {
-                for row in (0..height).step_by(2) {
-                  for col in (0..fieldwidth).step_by(3) {
-                    let outpos = row * width + fieldstart + col;
-                    out[outpos..outpos + 3].copy_from_slice(&ljpegout[inpos..inpos + 3]);
-                    let outpos = (row + 1) * width + fieldstart + col;
-                    let inpos2 = inpos + ljpegwidth;
-                    out[outpos..outpos + 3].copy_from_slice(&ljpegout[inpos2..inpos2 + 3]);
-                    inpos += 3;
-                    if inpos % ljpegwidth == 0 {
-                      // we've used a full input line and we're reading 2 by 2 so skip one
-                      inpos += ljpegwidth;
-                    }
-                  }
-                }
-                fieldstart += fieldwidth;
-              }
+              unstripe_two_rows(
+                ljpegout.pixels(),
+                ljpegwidth,
+                out.pixels_mut(),
+                width,
+                height,
+                fieldwidths[0],
+                fieldwidths.len(),
+              )?;
             } else {
               let sh = decompressor.super_h();
               debug!("CR2 v=1 decoder used, super_h: {}", sh);
-              let mut fieldstart = 0;
-              let mut fieldpos = 0;
-              for fieldwidth in fieldwidths {
-                // fix the inconsistent slice width in sRaw mode, ask Canon.
-                let fieldwidth = fieldwidth / sh * cpp;
-                // The output for full height of a vertical stripe is
-                // composed by the lines of all input stripes N:
-                // outb(line0) = slice[0](line[0])
-                // outb(line1) = slice[1](line[0])
-                // outb(line2) = slice[N-1](line[0])
-                for row in 0..height {
-                  let outpos = row * width + fieldstart;
-                  let inpos = fieldpos + row * fieldwidth;
-                  let outb = &mut out[outpos..outpos + fieldwidth];
-                  let inb = &ljpegout[inpos..inpos + fieldwidth];
-                  outb.copy_from_slice(inb);
-                }
-                fieldstart += fieldwidth;
-                fieldpos += fieldwidth * height;
-              }
+              // fix the inconsistent slice width in sRaw mode, ask Canon.
+              unstripe(
+                ljpegout.pixels(),
+                out.pixels_mut(),
+                width,
+                height,
+                fieldwidths.iter().map(|fieldwidth| fieldwidth / sh * cpp),
+              )?;
             }
           }
           if cpp == 3 && !dummy {
@@ -252,7 +227,7 @@ impl<'a> Decoder for Cr2Decoder<'a> {
           //(width, height, cpp, out)
         }
       } else {
-        ljpegout.update_dimension(Dim2::new(width, height));
+        set_dimension(&mut ljpegout, width, height)?;
         (cpp, ljpegout, precision)
         // (width, height, cpp, PixU16::new_with(ljpegout.into_inner(), width, height))
       }
@@ -268,7 +243,7 @@ impl<'a> Decoder for Cr2Decoder<'a> {
     let photometric = match cpp {
       1 => RawPhotometricInterpretation::Cfa(CFAConfig::new_from_camera(camera)),
       3 => RawPhotometricInterpretation::LinearRaw,
-      _ => todo!(),
+      cpp => return Err(decoder_error!("CR2: {} components per pixel are not supported", cpp)),
     };
 
     let mut camera = camera.clone();
@@ -297,11 +272,13 @@ impl<'a> Decoder for Cr2Decoder<'a> {
     }
 
     if let Some(file_crop) = self.get_sensor_area()? {
-      assert!(
-        img.crop_area.is_none(),
-        "Camera {} has embedded crop params, remove crop from config file!",
-        camera.clean_make
-      );
+      if img.crop_area.is_some() {
+        log::warn!(
+          "Camera {} {} has embedded crop params, the crop from the config file is ignored",
+          camera.clean_make,
+          camera.clean_model
+        );
+      }
       img.crop_area = Some(file_crop);
     } else {
       //panic!("Camera {} has no embedded crops, but all CR2 should contain them?!", self.camera.clean_make);
@@ -476,9 +453,10 @@ impl<'a> Cr2Decoder<'a> {
       None
     };
     match self.makernote.as_ref().and_then(|mn| mn.get_entry(Cr2MakernoteTag::CameraSettings)) {
+      // The lens ID is at index 22
       Some(Entry {
         value: Value::Short(settings), ..
-      }) => {
+      }) if settings.len() > 22 => {
         let lens_info = settings[22];
         debug!("Lens Info tag: {}", lens_info);
         let resolver = LensResolver::new()
@@ -490,7 +468,7 @@ impl<'a> Cr2Decoder<'a> {
         return Ok(resolver.resolve());
       }
       _ => {
-        log::warn!("Camera settings in makernote not found, no lens data available");
+        log::warn!("Camera settings in makernote not found or too short, no lens data available");
       }
     }
     Ok(None)
@@ -551,9 +529,11 @@ impl<'a> Cr2Decoder<'a> {
         .and_then(|mn| mn.get_entry(Cr2MakernoteTag::FirmwareVer).and_then(|v| v.as_string()))
       {
         Some(fw) => {
-          let str: String = fw.chars().filter(|c| c.is_ascii_digit() || c == &'.').collect();
-          let v: Vec<u8> = str.split('.').map(|v| v.parse().expect("Only digits here")).collect();
-          Some(v.iter().rev().enumerate().map(|(i, v)| 10_u32.pow(i as u32 * 3) * *v as u32).sum())
+          let number = firmware_number(fw);
+          if number.is_none() {
+            log::warn!("CR2: firmware version {:?} is not a version number", fw);
+          }
+          number
         }
         None => None,
       },
@@ -716,13 +696,11 @@ impl<'a> Cr2Decoder<'a> {
       match &sensorinfo.value {
         Value::Short(v) => {
           debug!("Sensor info: {:?}", v);
-          let _w = v[1] as usize;
-          let _h = v[2] as usize;
-          let left = v[5] as usize;
-          let top = v[6] as usize;
-          let right = v[7] as usize;
-          let bottom = v[8] as usize;
-          Ok(Some(Rect::new_with_points(Point::new(left, top), Point::new(right + 1, bottom + 1))))
+          let crop = sensor_info_crop(v);
+          if crop.is_none() {
+            log::warn!("CR2: SensorInfo has no valid crop: {:?}", v);
+          }
+          Ok(crop)
         }
         _ => Err(RawlerError::decoder_failed("Makernote contains invalid type for SensorInfo tag".to_string())),
       }
@@ -803,11 +781,15 @@ impl<'a> Cr2Decoder<'a> {
     debug!("YUV2RGB: Regular WB: {:?}", self.get_wb(rawfile, cam));
     debug!("YUV2RGB: SRAW WB: {:?}", self.get_sraw_wb(rawfile, cam));
     debug!("Model ID: 0x{:X}", self.model_id.unwrap_or(0));
+    check_yuv_layout(width, image.len())?;
 
-    let do_interpolate = std::env::var("RAWLER_CR2_YUV_INTERPOLATE")
-      .ok()
-      .map(|id| id.parse::<bool>().expect("RAWLER_CR2_YUV_INTERPOLATE must by of type bool"))
-      .unwrap_or(true);
+    let do_interpolate = match std::env::var("RAWLER_CR2_YUV_INTERPOLATE") {
+      Ok(value) => value.parse::<bool>().unwrap_or_else(|_| {
+        log::warn!("RAWLER_CR2_YUV_INTERPOLATE must be true or false, not {:?}, using true", value);
+        true
+      }),
+      Err(_) => true,
+    };
     if do_interpolate {
       self.interpolate_yuv(ljpeg, width, height, image);
     }
@@ -853,47 +835,44 @@ impl<'a> Cr2Decoder<'a> {
     debug!("SRAW hue correction: {:?}", hue);
 
     // Now calculate RGB for each YUV tuple.
-    image.par_chunks_exact_mut(3).for_each(|pix| {
-      let y = pix[0] as i32;
-      let cb = pix[1] as i32 - 16383;
-      let cr = pix[2] as i32 - 16383;
-      match version {
-        0 => {
-          let y = y - 512; // correction for 40D and others
-          let r = c1 * (y + cr);
-          let g = c2 * (y + ((-778 * cb - (cr << 11)) >> 12));
-          let b = c3 * (y + cb);
-          pix[0] = clampbits(r >> 8, 16);
-          pix[1] = clampbits(g >> 8, 16);
-          pix[2] = clampbits(b >> 8, 16);
-        }
-        1 => {
-          // found in EOS 5D Mark II
-          let cb = (cb << 2) + hue;
-          let cr = (cr << 2) + hue;
-          let r = c1 * (y + ((50 * cb + 22929 * cr) >> 14));
-          let g = c2 * (y + ((-5640 * cb - 11751 * cr) >> 14));
-          let b = c3 * (y + ((29040 * cb - 101 * cr) >> 14));
-          pix[0] = clampbits(r >> 8, 16);
-          pix[1] = clampbits(g >> 8, 16);
-          pix[2] = clampbits(b >> 8, 16);
-        }
-        2 => {
-          // found in EOS 5D Mark III and others
-          let r = c1 * (y + cr);
-          let g = c2 * (y + ((-778 * cb - (cr << 11)) >> 12));
-          let b = c3 * (y + cb);
-          pix[0] = clampbits(r >> 8, 16);
-          pix[1] = clampbits(g >> 8, 16);
-          pix[2] = clampbits(b >> 8, 16);
-        }
-        _ => {
-          unreachable!()
-        }
-      }
-    });
+    let coeffs = [c1 as i64, c2 as i64, c3 as i64];
+    image.par_chunks_exact_mut(3).for_each(|pix| ycbcr_to_rgb(version, coeffs, hue as i64, pix));
     Ok(())
   }
+}
+
+/// Convert the YCbCr `pix` to RGB with the sRAW coefficients `coeffs` and
+/// the conversion of `version`
+///
+/// The products are computed in i64: they overflow i32 for the
+/// coefficients of crafted files, which come from the COLORDATA tag.
+fn ycbcr_to_rgb(version: u8, coeffs: [i64; 3], hue: i64, pix: &mut [u16]) {
+  let [c1, c2, c3] = coeffs;
+  let y = pix[0] as i64;
+  let cb = pix[1] as i64 - 16383;
+  let cr = pix[2] as i64 - 16383;
+  let (r, g, b) = match version {
+    0 => {
+      let y = y - 512; // correction for 40D and others
+      (c1 * (y + cr), c2 * (y + ((-778 * cb - (cr << 11)) >> 12)), c3 * (y + cb))
+    }
+    1 => {
+      // found in EOS 5D Mark II
+      let cb = (cb << 2) + hue;
+      let cr = (cr << 2) + hue;
+      (
+        c1 * (y + ((50 * cb + 22929 * cr) >> 14)),
+        c2 * (y + ((-5640 * cb - 11751 * cr) >> 14)),
+        c3 * (y + ((29040 * cb - 101 * cr) >> 14)),
+      )
+    }
+    // found in EOS 5D Mark III and others
+    _ => (c1 * (y + cr), c2 * (y + ((-778 * cb - (cr << 11)) >> 12)), c3 * (y + cb)),
+  };
+  let clamp = |value: i64| (value >> 8).clamp(0, 0xffff) as u16;
+  pix[0] = clamp(r);
+  pix[1] = clamp(g);
+  pix[2] = clamp(b);
 }
 
 fn normalize_wb(raw_wb: [f32; 4]) -> [f32; 4] {
@@ -908,6 +887,114 @@ fn normalize_wb(raw_wb: [f32; 4]) -> [f32; 4] {
     }
   });
   [norm[0], (norm[1] + norm[2]) / 2.0, norm[3], f32::NAN]
+}
+
+/// Set the dimension of the decoded `image` to `width` x `height` samples,
+/// an error if the number of samples differs. The dimension, not the data,
+/// gives the number of samples, as an image for a dummy decode has no data.
+fn set_dimension(image: &mut PixU16, width: usize, height: usize) -> Result<()> {
+  let dim = image.dim();
+  if width.checked_mul(height) != Some(dim.w * dim.h) {
+    return Err(decoder_error!(
+      "CR2: image of {}x{} samples does not match the {}x{} decoded samples",
+      width,
+      height,
+      dim.w,
+      dim.h
+    ));
+  }
+  image.update_dimension(Dim2::new(width, height));
+  Ok(())
+}
+
+/// Check that YCbCr data of `len` samples has rows of `width` samples of
+/// 3 components each, as the interpolation and conversion to RGB expect
+fn check_yuv_layout(width: usize, len: usize) -> Result<()> {
+  if width == 0 || !width.is_multiple_of(3) || !len.is_multiple_of(width) {
+    return Err(decoder_error!("CR2: sRAW data of {} samples has no rows of {} YCbCr samples", len, width));
+  }
+  Ok(())
+}
+
+/// Copy `len` samples of `input` at `from` to `out` at `to`, an error if
+/// they are out of bounds
+fn copy_samples(out: &mut [u16], to: usize, input: &[u16], from: usize, len: usize) -> Result<()> {
+  let out_of_bounds = || decoder_error!("CR2: stripe of {} samples at {} is outside of the image", len, from);
+  let src = from.checked_add(len).and_then(|end| input.get(from..end)).ok_or_else(out_of_bounds)?;
+  let dst = to.checked_add(len).and_then(|end| out.get_mut(to..end)).ok_or_else(out_of_bounds)?;
+  dst.copy_from_slice(src);
+  Ok(())
+}
+
+/// Put the vertical stripes of `fieldwidths` samples of the decoded LJPEG
+/// data `input` in place in `out`, an image of `width` x `height` samples
+///
+/// The output for full height of a vertical stripe is composed by the lines
+/// of all input stripes N:
+/// outb(line0) = slice[0](line[0])
+/// outb(line1) = slice[1](line[0])
+/// outb(line2) = slice[N-1](line[0])
+fn unstripe(input: &[u16], out: &mut [u16], width: usize, height: usize, fieldwidths: impl Iterator<Item = usize>) -> Result<()> {
+  let mut fieldstart = 0;
+  let mut fieldpos = 0;
+  for fieldwidth in fieldwidths {
+    for row in 0..height {
+      copy_samples(out, row * width + fieldstart, input, fieldpos + row * fieldwidth, fieldwidth)?;
+    }
+    fieldstart += fieldwidth;
+    fieldpos += fieldwidth * height;
+  }
+  Ok(())
+}
+
+/// Put `nfields` vertical stripes of `fieldwidth` samples of the decoded
+/// LJPEG data `input` in place in `out`, an image of `width` x `height`
+/// samples. The LJPEG data has 2 rows of `input_width` samples at a time.
+fn unstripe_two_rows(input: &[u16], input_width: usize, out: &mut [u16], width: usize, height: usize, fieldwidth: usize, nfields: usize) -> Result<()> {
+  if input_width == 0 {
+    return Err(decoder_error!("CR2: LJPEG data has a width of 0"));
+  }
+  let mut fieldstart = 0;
+  let mut inpos = 0;
+  for _ in 0..nfields {
+    for row in (0..height).step_by(2) {
+      for col in (0..fieldwidth).step_by(3) {
+        copy_samples(out, row * width + fieldstart + col, input, inpos, 3)?;
+        copy_samples(out, (row + 1) * width + fieldstart + col, input, inpos + input_width, 3)?;
+        inpos += 3;
+        if inpos % input_width == 0 {
+          // we've used a full input line and we're reading 2 by 2 so skip one
+          inpos += input_width;
+        }
+      }
+    }
+    fieldstart += fieldwidth;
+  }
+  Ok(())
+}
+
+/// Firmware version `fw` as a number with 3 digits for each part, like
+/// 1000006 for "Firmware Version 1.0.6". None if a part is empty or the
+/// number overflows.
+fn firmware_number(fw: &str) -> Option<u32> {
+  let version: String = fw.chars().filter(|c| c.is_ascii_digit() || c == &'.').collect();
+  version.split('.').rev().enumerate().try_fold(0_u32, |number, (i, part)| {
+    let part: u32 = part.parse().ok()?;
+    number.checked_add(10_u32.checked_pow(i as u32 * 3)?.checked_mul(part)?)
+  })
+}
+
+/// Crop of the SensorInfo makernote `values`, at index 5 to 8. Right and
+/// bottom are the last column and row. None if they are missing or before
+/// left and top.
+fn sensor_info_crop(values: &[u16]) -> Option<Rect> {
+  match values.get(5..9) {
+    Some(&[left, top, right, bottom]) if left <= right && top <= bottom => Some(Rect::new_with_points(
+      Point::new(left as usize, top as usize),
+      Point::new(right as usize + 1, bottom as usize + 1),
+    )),
+    _ => None,
+  }
 }
 
 /// First value of custom function `function` in the CustomFunc2 makernote
@@ -1024,3 +1111,81 @@ pub enum Cr2MakernoteTag {
 }
 
 //const CR2_MODEL_40D: u32 = 0x80000190;
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[test]
+  fn ycbcr_to_rgb_does_not_overflow() {
+    for version in 0..3 {
+      // Coefficients of 1 << 8 keep the values
+      let mut pix = [1000, 16383, 16383];
+      ycbcr_to_rgb(version, [256; 3], 0, &mut pix);
+      let y = if version == 0 { 488 } else { 1000 };
+      assert_eq!(pix, [y; 3]);
+      // The largest values with coefficients that overflow i32 are clamped
+      let mut pix = [u16::MAX; 3];
+      ycbcr_to_rgb(version, [i32::MAX as i64; 3], 7, &mut pix);
+      assert_eq!([pix[0], pix[2]], [u16::MAX; 2]);
+    }
+  }
+
+  #[test]
+  fn dimensions() {
+    let mut image = PixU16::new(6, 2);
+    assert!(set_dimension(&mut image, 3, 4).is_ok());
+    assert_eq!(image.dim(), Dim2::new(3, 4));
+    assert!(set_dimension(&mut image, 5, 2).is_err());
+    assert!(set_dimension(&mut image, usize::MAX, 2).is_err());
+    // Images of a dummy decode have no data
+    assert!(set_dimension(&mut PixU16::new_uninit(6, 2), 12, 1).is_ok());
+    assert!(check_yuv_layout(6, 12).is_ok());
+    assert!(check_yuv_layout(0, 12).is_err());
+    assert!(check_yuv_layout(4, 12).is_err());
+    assert!(check_yuv_layout(9, 12).is_err());
+  }
+
+  #[test]
+  fn stripes() -> Result<()> {
+    // 2 stripes of 2 and 1 samples of an image of 3 x 2 samples
+    let input = [1, 2, 3, 4, 5, 6];
+    let mut out = [0; 6];
+    unstripe(&input, &mut out, 3, 2, [2, 1].into_iter())?;
+    assert_eq!(out, [1, 2, 5, 3, 4, 6]);
+    // Stripes beyond the decoded data and the image
+    assert!(unstripe(&input, &mut out, 3, 2, [2, 2].into_iter()).is_err());
+    assert!(unstripe(&input, &mut out, 3, 2, [usize::MAX].into_iter()).is_err());
+    // 2 rows at a time, a stripe of 3 samples of an image of 3 x 2 samples
+    let mut out = [0; 6];
+    unstripe_two_rows(&input, 3, &mut out, 3, 2, 3, 1)?;
+    assert_eq!(out, input);
+    assert!(unstripe_two_rows(&input, 0, &mut out, 3, 2, 3, 1).is_err());
+    assert!(unstripe_two_rows(&input, 3, &mut out, 3, 2, 6, 1).is_err());
+    Ok(())
+  }
+
+  #[test]
+  fn firmware_numbers() {
+    assert_eq!(firmware_number("Firmware Version 1.0.6"), Some(1000006));
+    assert_eq!(firmware_number("1.1.1.2"), Some(1001001002));
+    assert_eq!(firmware_number("1.0.300"), Some(1000300));
+    assert_eq!(firmware_number("1..2"), None);
+    assert_eq!(firmware_number("1.0."), None);
+    assert_eq!(firmware_number("Firmware"), None);
+    assert_eq!(firmware_number("1.0.0.0.6"), None);
+  }
+
+  #[test]
+  fn sensor_info_crops() {
+    let values = [0, 5568, 3708, 0, 0, 84, 50, 5567, 3707];
+    assert_eq!(
+      sensor_info_crop(&values),
+      Some(Rect::new_with_points(Point::new(84, 50), Point::new(5568, 3708)))
+    );
+    // Too short, right before left, bottom before top
+    assert_eq!(sensor_info_crop(&values[..8]), None);
+    assert_eq!(sensor_info_crop(&[0, 0, 0, 0, 0, 84, 50, 80, 3707]), None);
+    assert_eq!(sensor_info_crop(&[0, 0, 0, 0, 0, 84, 50, 5567, 40]), None);
+  }
+}

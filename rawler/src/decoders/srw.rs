@@ -37,6 +37,7 @@ use super::FormatHint;
 use super::Orientation;
 use super::RawDecodeParams;
 use super::RawMetadata;
+use super::image_bytes;
 use super::ok_cfa_image_with_blacklevels;
 
 const NX_MOUNT: &str = "NX-mount";
@@ -91,6 +92,8 @@ impl<'a> Decoder for SrwDecoder<'a> {
     let offset = fetch_tiff_tag!(raw, TiffCommonTag::StripOffsets).force_usize(0);
     let compression = fetch_tiff_tag!(raw, TiffCommonTag::Compression).force_u32(0);
     let bits = fetch_tiff_tag!(raw, TiffCommonTag::BitsPerSample).force_u32(0);
+    // The decoders below store 16 bits per pixel
+    image_bytes("SRW", width, height, 16)?;
     let src = file.subview_until_eof_padded(offset as u64)?;
 
     let image = match compression {
@@ -186,36 +189,40 @@ impl<'a> SrwDecoder<'a> {
           }
         }
 
-        // First decode even pixels
+        // First decode even pixels. The bits of pixels outside the image
+        // are read, but there is no point in decoding them. The differences
+        // of crafted data overflow, they wrap around.
         for c in (0..16).step_by(2) {
           let l = len[c >> 3];
           let adj = pump.get_ibits_sextended(l)?;
-          let predictor = if dir {
-            // Upward prediction
-            out[img_up + col + c]
-          } else {
-            // Left to right prediction
-            if col == 0 { 128 } else { out[img + col - 2] }
-          };
           if col + c < width {
-            // No point in decoding pixels outside the image
-            out[img + col + c] = ((predictor as i32) + adj) as u16;
+            let predictor = if dir {
+              // Upward prediction
+              out[img_up + col + c]
+            } else if col == 0 {
+              128
+            } else {
+              // Left to right prediction
+              out[img + col - 2]
+            };
+            out[img + col + c] = (predictor as i32).wrapping_add(adj) as u16;
           }
         }
         // Now decode odd pixels
         for c in (1..16).step_by(2) {
           let l = len[2 | (c >> 3)];
           let adj = pump.get_ibits_sextended(l)?;
-          let predictor = if dir {
-            // Upward prediction
-            out[img_up2 + col + c]
-          } else {
-            // Left to right prediction
-            if col == 0 { 128 } else { out[img + col - 1] }
-          };
           if col + c < width {
-            // No point in decoding pixels outside the image
-            out[img + col + c] = ((predictor as i32) + adj) as u16;
+            let predictor = if dir {
+              // Upward prediction
+              out[img_up2 + col + c]
+            } else if col == 0 {
+              128
+            } else {
+              // Left to right prediction
+              out[img + col - 1]
+            };
+            out[img + col + c] = (predictor as i32).wrapping_add(adj) as u16;
           }
         }
       }
@@ -224,8 +231,9 @@ impl<'a> SrwDecoder<'a> {
     // SRW1 apparently has red and blue swapped, just changing the CFA pattern to
     // match causes color fringing in high contrast areas because the actual pixel
     // locations would not match the CFA pattern
-    for row in (0..height).step_by(2) {
-      for col in (0..width).step_by(2) {
+    // An odd last row or column has no pixel to swap with
+    for row in (0..height.saturating_sub(1)).step_by(2) {
+      for col in (0..width.saturating_sub(1)).step_by(2) {
         out.pixels_mut().swap(row * width + col + 1, (row + 1) * width + col);
       }
     }
@@ -284,11 +292,12 @@ impl<'a> SrwDecoder<'a> {
     for row in 0..height {
       for col in 0..width {
         let diff = SrwDecoder::srw2_diff(&mut pump, &tbl)?;
+        // The predictions of crafted data overflow, they wrap around
         if col < 2 {
-          vpred[row & 1][col] += diff;
+          vpred[row & 1][col] = vpred[row & 1][col].wrapping_add(diff);
           hpred[col] = vpred[row & 1][col];
         } else {
-          hpred[col & 1] += diff;
+          hpred[col & 1] = hpred[col & 1].wrapping_add(diff);
         }
         out[row * width + col] = hpred[col & 1] as u16;
       }
@@ -392,7 +401,7 @@ impl<'a> SrwDecoder<'a> {
         scale = if (optflags & OPT_QP) == 0 && (col & 63) == 0 {
           let scalevals: [i32; 3] = [0, -2, 2];
           let i = pump.get_bits(2)? as usize;
-          if i < 3 { scale + scalevals[i] } else { pump.get_bits(12)? as i32 }
+          if i < 3 { scale.wrapping_add(scalevals[i]) } else { pump.get_bits(12)? as i32 }
         } else {
           scale // Keep value from previous iteration
         };
@@ -475,7 +484,8 @@ impl<'a> SrwDecoder<'a> {
         for i in 0..16 {
           let len = diff_bits[i >> 2];
           let mut diff = pump.get_ibits_sextended(len)?;
-          diff = diff * (scale * 2 + 1) + scale;
+          // The scale of crafted data grows over many columns, it wraps around
+          diff = diff.wrapping_mul(scale.wrapping_mul(2).wrapping_add(1)).wrapping_add(scale);
 
           // Apply the diff to pixels 0 2 4 6 8 10 12 14 1 3 5 7 9 11 13 15
           let pos = if row % 2 != 0 {
@@ -484,7 +494,7 @@ impl<'a> SrwDecoder<'a> {
             ((i & 0x7) << 1) + (i >> 3)
           } + img
             + col;
-          out[pos] = clampbits((out[pos] as i32) + diff, bit_depth);
+          out[pos] = clampbits((out[pos] as i32).wrapping_add(diff), bit_depth);
         }
       }
     }
@@ -551,4 +561,24 @@ pub enum SrwMakernote {
   SrwEncryptionKey = 0xA020,
   SrwRGGBLevels = 0xA021,
   SrwRGGBBlacks = 0xA028,
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[test]
+  fn srw1_of_narrow_images_and_odd_heights() {
+    // Upward prediction with the maximum difference lengths for an image
+    // narrower than a group of 16 pixels
+    let _ = SrwDecoder::decode_srw1(&[0xff; 256], &[0; 4], 8, 1, false);
+    // An odd height has no row to swap the last one with
+    assert!(SrwDecoder::decode_srw1(&[0; 256], &[0; 12], 16, 3, false).is_ok());
+  }
+
+  #[test]
+  fn srw2_and_srw3_of_empty_images() {
+    let _ = SrwDecoder::decode_srw2(&[0; 64], 0, 2, false);
+    let _ = SrwDecoder::decode_srw3(&[0; 64], 0, 2, false);
+  }
 }

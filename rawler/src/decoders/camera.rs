@@ -98,11 +98,11 @@ impl Camera {
   }
 
   pub fn param_usize(&self, name: &str) -> Option<usize> {
-    self.params.get(name).and_then(|p| p.as_integer()).map(|i| i as usize)
+    self.params.get(name).and_then(|p| p.as_integer()).and_then(|i| usize::try_from(i).ok())
   }
 
   pub fn param_i32(&self, name: &str) -> Option<i32> {
-    self.params.get(name).and_then(|p| p.as_integer()).map(|i| i as i32)
+    self.params.get(name).and_then(|p| p.as_integer()).and_then(|i| i32::try_from(i).ok())
   }
 
   pub fn param_str(&self, name: &str) -> Option<&str> {
@@ -134,6 +134,8 @@ impl Camera {
   }
 
   pub fn update_from_toml(&mut self, ct: &toml::value::Table) {
+    // For messages about invalid values: the keys are sorted, the model may follow them
+    let model = ct.get("model").and_then(|model| model.as_str()).unwrap_or(&self.model).to_string();
     for (name, val) in ct {
       match name.as_ref() {
         n @ "make" => {
@@ -155,26 +157,18 @@ impl Camera {
           self.remark = Some(val.as_str().unwrap_or_else(|| panic!("{} must be a string", n)).to_string());
         }
         n @ "whitepoint" => {
-          let white = val.as_integer().unwrap_or_else(|| panic!("{} must be an integer", n)) as u32;
-          self.whitelevel = Some(vec![white]);
+          self.whitelevel = Some(vec![toml_int(&model, n, val)]);
         }
         n @ "blackpoint" => {
-          let black = val.as_integer().unwrap_or_else(|| panic!("{} must be an integer", n)) as u32;
-          self.blacklevel = Some(vec![black]);
+          self.blacklevel = Some(vec![toml_int(&model, n, val)]);
         }
         n @ "blackareah" => {
-          let vals = val.as_array().unwrap_or_else(|| panic!("{} must be an array", n));
-          self.blackareah = Some((
-            vals[0].as_integer().expect("blackareah[0] must be an integer") as usize,
-            vals[1].as_integer().expect("blackareah[1] must be an integer") as usize,
-          ));
+          let [start, len] = toml_ints(&model, n, val);
+          self.blackareah = Some((start, len));
         }
         n @ "blackareav" => {
-          let vals = val.as_array().unwrap_or_else(|| panic!("{} must be an array", n));
-          self.blackareav = Some((
-            vals[0].as_integer().expect("blackareav[0] must be an integer") as usize,
-            vals[1].as_integer().expect("blackareav[1] must be an integer") as usize,
-          ));
+          let [start, len] = toml_ints(&model, n, val);
+          self.blackareav = Some((start, len));
         }
         "color_matrix" => {
           if let Some(color_matrix) = val.as_table() {
@@ -215,20 +209,10 @@ impl Camera {
           }
         }
         n @ "active_area" => {
-          let crop_vals = val.as_array().unwrap_or_else(|| panic!("{} must be an array", n));
-          let mut crop = [0, 0, 0, 0];
-          for (i, val) in crop_vals.iter().enumerate() {
-            crop[i] = val.as_integer().expect("active_area values must be integers") as usize;
-          }
-          self.active_area = Some(crop);
+          self.active_area = Some(toml_ints(&model, n, val));
         }
         n @ "crop_area" => {
-          let crop_vals = val.as_array().unwrap_or_else(|| panic!("{} must be an array", n));
-          let mut crop = [0, 0, 0, 0];
-          for (i, val) in crop_vals.iter().enumerate() {
-            crop[i] = val.as_integer().expect("crop_area values must be integers") as usize;
-          }
-          self.crop_area = Some(crop);
+          self.crop_area = Some(toml_ints(&model, n, val));
         }
         n @ "color_pattern" => {
           self.cfa = CFA::new(val.as_str().unwrap_or_else(|| panic!("{} must be a string", n)));
@@ -237,45 +221,29 @@ impl Camera {
           self.plane_color = PlaneColor::new(val.as_str().unwrap_or_else(|| panic!("{} must be a string", n)));
         }
         n @ "bps" => {
-          self.bps = Some(val.as_integer().unwrap_or_else(|| panic!("{} must be an integer", n)) as usize);
+          self.bps = Some(toml_int(&model, n, val));
         }
         n @ "real_bps" => {
-          self.real_bps = val.as_integer().unwrap_or_else(|| panic!("{} must be an integer", n)) as usize;
+          self.real_bps = toml_int(&model, n, val);
         }
         n @ "filesize" => {
-          self.filesize = val.as_integer().unwrap_or_else(|| panic!("{} must be an integer", n)) as usize;
+          self.filesize = toml_int(&model, n, val);
         }
         n @ "raw_width" => {
-          self.raw_width = val.as_integer().unwrap_or_else(|| panic!("{} must be an integer", n)) as usize;
+          self.raw_width = toml_int(&model, n, val);
         }
         n @ "raw_height" => {
-          self.raw_height = val.as_integer().unwrap_or_else(|| panic!("{} must be an integer", n)) as usize;
+          self.raw_height = toml_int(&model, n, val);
         }
         n @ "highres_width" => {
-          self.highres_width = val.as_integer().unwrap_or_else(|| panic!("{} must be an integer", n)) as usize;
+          self.highres_width = toml_int(&model, n, val);
         }
         n @ "default_scale" => {
-          let scale_vals = val.as_array().unwrap_or_else(|| panic!("{} must be an array", n));
-          let scale_h = scale_vals[0].as_array().expect("must be array");
-          let scale_v = scale_vals[1].as_array().expect("must be array");
-          let scale = [
-            [
-              scale_h[0].as_integer().expect("must be integer") as u32,
-              scale_h[1].as_integer().expect("must be integer") as u32,
-            ],
-            [
-              scale_v[0].as_integer().expect("must be integer") as u32,
-              scale_v[1].as_integer().expect("must be integer") as u32,
-            ],
-          ];
-          self.default_scale = DefaultScale(scale);
+          let [horizontal, vertical] = toml_array(&model, n, val);
+          self.default_scale = DefaultScale([toml_ints(&model, n, horizontal), toml_ints(&model, n, vertical)]);
         }
         n @ "best_quality_scale" => {
-          let scale_vals = val.as_array().unwrap_or_else(|| panic!("{} must be an array", n));
-          self.best_quality_scale = BestQualityScale([
-            scale_vals[0].as_integer().expect("must be integer") as u32,
-            scale_vals[1].as_integer().expect("must be integer") as u32,
-          ]);
+          self.best_quality_scale = BestQualityScale(toml_ints(&model, n, val));
         }
         n @ "hints" => {
           self.hints = Vec::new();
@@ -327,6 +295,42 @@ impl Camera {
       params: HashMap::new(),
     }
   }
+}
+
+/// Integer of the key `name` in the definition of camera `model`
+///
+/// # Panics
+/// Panics if the value isn't an integer in the range of `T`
+fn toml_int<T: TryFrom<i64>>(model: &str, name: &str, val: &Value) -> T {
+  val.as_integer().and_then(|int| T::try_from(int).ok()).unwrap_or_else(|| {
+    panic!(
+      "{}: {} must be an integer in the range of {}, not {}",
+      model,
+      name,
+      std::any::type_name::<T>(),
+      val
+    )
+  })
+}
+
+/// Array of `N` values of the key `name` in the definition of camera `model`
+///
+/// # Panics
+/// Panics if the value isn't an array of `N` values
+fn toml_array<'a, const N: usize>(model: &str, name: &str, val: &'a Value) -> [&'a Value; N] {
+  let vals = val
+    .as_array()
+    .filter(|vals| vals.len() == N)
+    .unwrap_or_else(|| panic!("{}: {} must be an array of {} values, not {}", model, name, N, val));
+  std::array::from_fn(|i| &vals[i])
+}
+
+/// Array of `N` integers of the key `name` in the definition of camera `model`
+///
+/// # Panics
+/// Panics if the value isn't an array of `N` integers in the range of `T`
+fn toml_ints<T: TryFrom<i64>, const N: usize>(model: &str, name: &str, val: &Value) -> [T; N] {
+  toml_array::<N>(model, name, val).map(|val| toml_int(model, name, val))
 }
 
 /// Camera definition of a decoder.
@@ -392,5 +396,50 @@ mod tests {
   #[should_panic(expected = "must have 3 rows and more than 3 columns")]
   fn reduction_matrix_needs_more_than_three_columns() {
     camera_from_toml("[reduction_matrix]\nD65 = [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0]\n");
+  }
+
+  #[test]
+  fn integers_from_toml() {
+    let camera = camera_from_toml(
+      "model = \"M\"\nwhitepoint = 4095\ncrop_area = [1, 2, 3, 4]\nblackareav = [0, 8]\ndefault_scale = [[2, 1], [1, 1]]\nbest_quality_scale = [3, 2]\n",
+    );
+    assert_eq!(camera.whitelevel, Some(vec![4095]));
+    assert_eq!(camera.crop_area, Some([1, 2, 3, 4]));
+    assert_eq!(camera.blackareav, Some((0, 8)));
+    assert_eq!(camera.default_scale, DefaultScale([[2, 1], [1, 1]]));
+    assert_eq!(camera.best_quality_scale, BestQualityScale([3, 2]));
+  }
+
+  #[test]
+  #[should_panic(expected = "M: crop_area must be an array of 4 values")]
+  fn areas_need_four_values() {
+    camera_from_toml("model = \"M\"\ncrop_area = [1, 2, 3]\n");
+  }
+
+  #[test]
+  #[should_panic(expected = "M: active_area must be an integer in the range of usize, not -2")]
+  fn areas_need_positive_values() {
+    camera_from_toml("model = \"M\"\nactive_area = [0, -2, 0, 0]\n");
+  }
+
+  #[test]
+  #[should_panic(expected = "M: whitepoint must be an integer in the range of u32")]
+  fn levels_need_positive_values() {
+    camera_from_toml("model = \"M\"\nwhitepoint = -1\n");
+  }
+
+  #[test]
+  #[should_panic(expected = "M: default_scale must be an array of 2 values")]
+  fn scales_need_two_values() {
+    camera_from_toml("model = \"M\"\ndefault_scale = [[1, 1]]\n");
+  }
+
+  #[test]
+  fn params_in_range() {
+    let camera = camera_from_toml("[params]\nnegative = -4\nlarge = 4294967296\n");
+    assert_eq!(camera.param_usize("negative"), None);
+    assert_eq!(camera.param_i32("negative"), Some(-4));
+    assert_eq!(camera.param_i32("large"), None);
+    assert_eq!(camera.param_usize("large"), Some(4294967296));
   }
 }

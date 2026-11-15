@@ -1321,7 +1321,7 @@ fn write_mask_image<W>(dng: &mut TiffWriter<W>, ifd: &mut DirectoryWriter, mask:
 where
   W: Write + Seek,
 {
-  // Samples in little endian byte order, as the TIFF file
+  // Samples in host byte order, as the TIFF file
   let (bps, sample_format, bytes): (u16, u16, Vec<u8>) = match &mask.data {
     RawImageData::Integer(samples) if mask.bps == 8 => (8, 1, samples.iter().map(|v| *v as u8).collect()),
     RawImageData::Integer(samples) => {
@@ -1334,9 +1334,9 @@ where
           ((v as u32 * 65535 + max / 2) / max).min(65535) as u16
         }
       };
-      (16, 1, samples.iter().flat_map(|v| scale(*v).to_le_bytes()).collect())
+      (16, 1, samples.iter().flat_map(|v| scale(*v).to_ne_bytes()).collect())
     }
-    RawImageData::Float(samples) => (32, 3, samples.iter().flat_map(|v| v.to_le_bytes()).collect()),
+    RawImageData::Float(samples) => (32, 3, samples.iter().flat_map(|v| v.to_ne_bytes()).collect()),
   };
   let row_bytes = mask.width * bps as usize / 8;
   let strips: Vec<Vec<u8>> = bytes
@@ -1449,7 +1449,7 @@ where
   match rawimage.data {
     RawImageData::Integer(ref data) => {
       for strip in data.chunks(rows_per_strip * rawimage.width * rawimage.cpp) {
-        let offset = subframe.writer.dng.write_data_u16_le(strip)?;
+        let offset = subframe.writer.dng.write_data_u16(strip)?;
         strip_offsets.push(offset);
         strip_sizes.push(std::mem::size_of_val(strip) as u32);
       }
@@ -1459,7 +1459,7 @@ where
     RawImageData::Float(ref data) => {
       subframe.writer.update_backward_version(DNG_VERSION_V1_4, "Floating point image data")?;
       for strip in data.chunks(rows_per_strip * rawimage.width * rawimage.cpp) {
-        let offset = subframe.writer.dng.write_data_f32_le(strip)?;
+        let offset = subframe.writer.dng.write_data_f32(strip)?;
         strip_offsets.push(offset);
         strip_sizes.push(std::mem::size_of_val(strip) as u32);
       }
@@ -1572,8 +1572,7 @@ mod tests {
       .get_entry(DngTag::DNGBackwardVersion)
       .ok_or("DNGBackwardVersion missing")?
       .value
-      .get_data()
-      .as_slice()
+      .get_data()?
       .try_into()
       .map(DngVersionNumber)?;
     let has_active_area = !tiff.find_ifds_with_tag(DngTag::ActiveArea).is_empty();

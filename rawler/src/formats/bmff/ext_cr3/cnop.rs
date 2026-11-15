@@ -3,7 +3,7 @@
 
 use super::super::{BoxHeader, FourCC, ReadBox, Result};
 use serde::{Deserialize, Serialize};
-use std::io::{Read, Seek, SeekFrom};
+use std::io::{Read, Seek};
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct CnopBox {
@@ -22,7 +22,7 @@ impl<R: Read + Seek> ReadBox<&mut R> for CnopBox {
     let mut data = vec![0; data_len as usize];
     reader.read_exact(&mut data)?;
 
-    reader.seek(SeekFrom::Start(header.end_offset()))?;
+    header.finish(&mut *reader)?;
 
     Ok(Self { header, data })
   }

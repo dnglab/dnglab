@@ -324,7 +324,8 @@ fn unpack_f16be<'a>(lines: impl LineIteratorMut<'a, f32>, src: &[u8], skip_rows:
 /// Unpacks 8-bit pixel data with dithering through a lookup table.
 ///
 /// Each input byte is one pixel, passed through the provided [`LookupTable`]
-/// with dithering seeded from the first 4 bytes of each row (LE u32).
+/// with dithering seeded from the first 4 bytes from each row on (LE u32),
+/// with zeros past the end of the data.
 ///
 /// ```text
 ///  Byte 0    Byte 1    Byte 2    ...
@@ -343,7 +344,10 @@ pub(crate) fn decompress_8bit_wtable(buf: &[u8], tbl: &LookupTable, width: usize
     dummy,
     &(|out: &mut [u16], row| {
       let inb = &buf[(row * width)..];
-      let mut random = LEu32(inb, 0);
+      // The last rows of narrow images have fewer than 4 bytes left
+      let mut seed = [0; 4];
+      seed.iter_mut().zip(inb).for_each(|(seed, byte)| *seed = *byte);
+      let mut random = u32::from_le_bytes(seed);
 
       for (o, i) in out.into_iter().zip(inb.into_iter()) {
         *o = tbl.dither(*i as u16, &mut random);
@@ -1449,6 +1453,21 @@ fn get_msb_bits(row: &[u8], bit_pos: usize, bits: u32) -> u32 {
 #[cfg(test)]
 mod tests {
   use super::*;
+
+  #[test]
+  fn wtable_seeds_the_dither_of_narrow_images() -> std::result::Result<(), String> {
+    let table = LookupTable::new(&(0..256).map(|v| v * 64).collect::<Vec<u16>>());
+    let dither = |values: &[u8], mut seed: u32| values.iter().map(|v| table.dither(*v as u16, &mut seed)).collect::<Vec<u16>>();
+    // One pixel per row, the rows have 3, 2 and 1 bytes left
+    let image = decompress_8bit_wtable(&[10, 20, 30], &table, 1, 3, false)?;
+    let expected = [dither(&[10], 0x1e140a), dither(&[20], 0x1e14), dither(&[30], 0x1e)].concat();
+    assert_eq!(image.pixels(), expected);
+    // The first row is seeded with all 4 bytes, as before
+    let image = decompress_8bit_wtable(&[10, 20, 30, 40], &table, 2, 2, false)?;
+    let expected = [dither(&[10, 20], 0x281e140a), dither(&[30, 40], 0x281e)].concat();
+    assert_eq!(image.pixels(), expected);
+    Ok(())
+  }
 
   fn decode_int(src: &[u8], bps: u32, endian: Endian, width: usize, height: usize) -> std::result::Result<Vec<f32>, String> {
     let mut out = vec![0.0_f32; width * height];

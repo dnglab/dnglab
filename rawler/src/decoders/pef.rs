@@ -12,6 +12,7 @@ use super::FormatHint;
 use super::Orientation;
 use super::RawDecodeParams;
 use super::RawMetadata;
+use super::image_bytes;
 use crate::RawImage;
 use crate::RawLoader;
 use crate::RawlerError;
@@ -113,6 +114,8 @@ impl<'a> Decoder for PefDecoder<'a> {
     let width = fetch_tiff_tag!(raw, TiffCommonTag::ImageWidth).force_usize(0);
     let height = fetch_tiff_tag!(raw, TiffCommonTag::ImageLength).force_usize(0);
     let offset = fetch_tiff_tag!(raw, TiffCommonTag::StripOffsets).force_usize(0);
+    // The decoders below store 16 bits per pixel
+    image_bytes("PEF", width, height, 16)?;
 
     let src = file.subview_until_eof(offset as u64)?;
 
@@ -158,7 +161,7 @@ impl<'a> Decoder for PefDecoder<'a> {
         let len = length.force_u32(0);
         let offset = start.force_u32(0);
         if len > 0 && offset > 0 {
-          let buf = file.subview((self.makernote_offset + offset) as u64, len as u64)?;
+          let buf = file.subview(self.makernote_offset as u64 + offset as u64, len as u64)?;
           match image::load_from_memory_with_format(buf, image::ImageFormat::Jpeg) {
             Ok(img) => Some(img),
             Err(_) => {
@@ -182,11 +185,18 @@ impl<'a> Decoder for PefDecoder<'a> {
         value: Value::Byte(borders), ..
       }) = self.makernote.get_entry(PefMakernote::PreviewImageBorders)
       {
-        let y = borders[0] as u32;
-        let x = borders[2] as u32;
-        let width = image.width() - x - borders[3] as u32;
-        let height = image.height() - y - borders[1] as u32;
-        return Ok(Some(image.crop_imm(x, y, width, height)));
+        return Ok(Some(match preview_area(borders, image.width(), image.height()) {
+          Some((x, y, width, height)) => image.crop_imm(x, y, width, height),
+          None => {
+            warn!(
+              "PEF: preview borders {:?} don't fit the preview of {}x{} pixels, using it uncropped",
+              borders,
+              image.width(),
+              image.height()
+            );
+            image
+          }
+        }));
       } else {
         return Ok(Some(image));
       }
@@ -238,8 +248,9 @@ impl<'a> PefDecoder<'a> {
     if let Some(Entry {
       value: Value::Byte(settings), ..
     }) = self.makernote.get_entry(PefMakernote::LensRec)
+      && let [lens_type, lens_model, ..] = settings[..]
     {
-      let lens_id = (settings[0] as u32, settings[1] as u32);
+      let lens_id = (lens_type as u32, lens_model as u32);
       debug!("LensRec tag: {:?}", lens_id);
       if [0, 1, 2].contains(&lens_id.0) {
         // 0 = M-42 or no lens
@@ -259,16 +270,18 @@ impl<'a> PefDecoder<'a> {
 
   fn decode_compressed(&self, src: &[u8], width: usize, height: usize, dummy: bool) -> Result<PixU16> {
     if let Some(huff) = self.makernote.get_entry(PefMakernote::HuffmanTable) {
-      match &huff.value {
-        Value::Undefined(data) => Self::do_decode(src, Some((data, self.tiff.get_endian())), width, height, dummy),
-        _ => todo!(), // should not happen!
-      }
+      Self::do_decode(src, Some((huff.value.get_data()?, self.tiff.get_endian())), width, height, dummy)
     } else {
       Self::do_decode(src, None, width, height, dummy)
     }
   }
 
   pub(crate) fn do_decode(src: &[u8], huff: Option<(&[u8], Endian)>, width: usize, height: usize, dummy: bool) -> Result<PixU16> {
+    image_bytes("PEF", width, height, 16)?;
+    // The pixels are decoded in pairs
+    if !width.is_multiple_of(2) {
+      return Err(decoder_error!("PEF: compressed image with an odd width of {} pixels", width));
+    }
     let mut out = alloc_image_ok!(width, height, dummy);
     let mut htable = HuffTable::empty();
 
@@ -288,6 +301,10 @@ impl<'a> PefDecoder<'a> {
       let mut v1: [u32; 16] = [0; 16];
       for i in 0..depth {
         v1[i] = stream.get_u8()? as u32;
+      }
+      // The codes have up to 12 bits
+      if let Some(len) = v1[..depth].iter().find(|&&len| len > 12) {
+        return Err(decoder_error!("PEF: Huffman code length {} exceeds 12 bits", len));
       }
 
       // Calculate codes and store bitcounts
@@ -332,16 +349,17 @@ impl<'a> PefDecoder<'a> {
     let mut pred_left1: i32;
     let mut pred_left2: i32;
 
+    // The predictions of crafted data wrap around, only the low 16 bits are stored
     for row in 0..height {
-      pred_up1[row & 1] += htable.huff_decode(&mut pump)?;
-      pred_up2[row & 1] += htable.huff_decode(&mut pump)?;
+      pred_up1[row & 1] = pred_up1[row & 1].wrapping_add(htable.huff_decode(&mut pump)?);
+      pred_up2[row & 1] = pred_up2[row & 1].wrapping_add(htable.huff_decode(&mut pump)?);
       pred_left1 = pred_up1[row & 1];
       pred_left2 = pred_up2[row & 1];
       out[row * width + 0] = pred_left1 as u16;
       out[row * width + 1] = pred_left2 as u16;
       for col in (2..width).step_by(2) {
-        pred_left1 += htable.huff_decode(&mut pump)?;
-        pred_left2 += htable.huff_decode(&mut pump)?;
+        pred_left1 = pred_left1.wrapping_add(htable.huff_decode(&mut pump)?);
+        pred_left2 = pred_left2.wrapping_add(htable.huff_decode(&mut pump)?);
         out[row * width + col + 0] = pred_left1 as u16;
         out[row * width + col + 1] = pred_left2 as u16;
       }
@@ -350,11 +368,27 @@ impl<'a> PefDecoder<'a> {
   }
 }
 
+/// Area (left, top, width, height) of a preview of `width` × `height`
+/// pixels inside of its `borders` (top, bottom, left, right), `None` if the
+/// borders don't fit into the preview
+fn preview_area(borders: &[u8], width: u32, height: u32) -> Option<(u32, u32, u32, u32)> {
+  let [top, bottom, left, right] = <[u8; 4]>::try_from(borders.get(0..4)?).ok()?.map(u32::from);
+  Some((
+    left,
+    top,
+    width.checked_sub(left)?.checked_sub(right)?,
+    height.checked_sub(top)?.checked_sub(bottom)?,
+  ))
+}
+
 fn normalize_wb(raw_wb: [f32; 4]) -> [f32; 4] {
   debug!("PEF raw wb: {:?}", raw_wb);
   // We never have more then RGB colors so far (no RGBE etc.)
   // So we combine G1 and G2 to get RGB wb.
   let div = raw_wb[1];
+  if !div.is_normal() {
+    return [f32::NAN; 4];
+  }
   let mut norm = raw_wb;
   norm.iter_mut().for_each(|v| {
     if v.is_normal() {
@@ -523,4 +557,43 @@ pub enum PefMakernote {
   ToneCurves = 0x0403,
   UnknownBlock = 0x0405,
   PrintIM = 0x0e00,
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  /// Huffman table of the makernote with the given code lengths
+  fn huffman_table(lengths: &[u8]) -> Vec<u8> {
+    // The depth is the first value plus 12, modulo 16
+    let mut table = vec![0, (lengths.len() as u8 + 4) & 0xf];
+    table.extend_from_slice(&[0; 12]);
+    table.extend(std::iter::repeat_n(0, lengths.len() * 2));
+    table.extend_from_slice(lengths);
+    table
+  }
+
+  #[test]
+  fn preview_area_inside_of_borders() {
+    assert_eq!(preview_area(&[1, 2, 3, 4], 100, 50), Some((3, 1, 93, 47)));
+    assert_eq!(preview_area(&[1, 2, 3], 100, 50), None);
+    assert_eq!(preview_area(&[0, 0, 60, 50], 100, 50), None);
+    assert_eq!(preview_area(&[40, 20, 0, 0], 100, 50), None);
+  }
+
+  #[test]
+  fn wb_without_green_is_unknown() {
+    assert!(normalize_wb([1.0, 0.0, 0.0, 1.0]).iter().all(|v| v.is_nan()));
+    assert_eq!(normalize_wb([512.0, 256.0, 256.0, 384.0])[..3], [2.0, 1.0, 1.5]);
+  }
+
+  #[test]
+  fn compressed_with_invalid_parameters_is_an_error() {
+    let data = [0; 64];
+    let table = huffman_table(&[13, 1]);
+    assert!(PefDecoder::do_decode(&data, Some((&table, Endian::Big)), 4, 2, false).is_err());
+    for (width, height) in [(0, 2), (2, 0), (3, 2), (1, 2)] {
+      assert!(PefDecoder::do_decode(&data, None, width, height, false).is_err(), "{width}x{height}");
+    }
+  }
 }

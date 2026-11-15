@@ -19,8 +19,11 @@ impl<'a> Decompressor<'a, u16> for JpegDecompressor {
   /// and `ImageLuma8` output is accepted; any other format returns `Err`.
   ///
   /// # Errors
-  /// Returns `Err` if JPEG decoding fails or the decoded image is not RGB-8 or Luma-8.
+  /// Returns `Err` if `line_width` is 0, if JPEG decoding fails or the decoded image is not RGB-8 or Luma-8.
   fn decompress(&self, src: &[u8], skip_rows: usize, lines: impl LineIteratorMut<'a, u16>, line_width: usize) -> std::result::Result<(), String> {
+    if line_width == 0 {
+      return Err("JpegDecompressor: lines of 0 samples can't be decoded".to_string());
+    }
     let img = image::load_from_memory_with_format(src, image::ImageFormat::Jpeg).map_err(|err| format!("Lossy JPEG decompression failed: {:?}", err))?;
     let samples: &[u8] = match &img {
       image::DynamicImage::ImageRgb8(image_buffer) => image_buffer,
@@ -37,5 +40,17 @@ impl<'a> Decompressor<'a, u16> for JpegDecompressor {
 
   fn can_skip_rows(&self) -> bool {
     false
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[test]
+  fn line_width_of_0_is_an_error() {
+    let mut out = [0_u16; 8];
+    let err = JpegDecompressor::new().decompress(&[], 0, std::iter::once(&mut out[..]), 0).err();
+    assert!(err.as_ref().is_some_and(|err| err.contains("0 samples")), "{:?}", err);
   }
 }

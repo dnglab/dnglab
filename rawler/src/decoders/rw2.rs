@@ -42,6 +42,7 @@ use super::FormatHint;
 use super::Orientation;
 use super::RawDecodeParams;
 use super::RawMetadata;
+use super::image_bytes;
 
 pub(crate) mod v4decompressor;
 pub(crate) mod v5decompressor;
@@ -75,7 +76,8 @@ impl<'a> Rw2Decoder<'a> {
     let height = fetch_tiff_tag!(raw, TiffCommonTag::PanaLength).force_usize(0);
 
     let mode = {
-      let ratio = width * 100 / height;
+      // A height of 0 has no ratio, the size check of raw_image() rejects it
+      let ratio = width.saturating_mul(100).checked_div(height).unwrap_or(0);
       if ratio < 125 {
         "1:1"
       } else if ratio < 145 {
@@ -89,11 +91,7 @@ impl<'a> Rw2Decoder<'a> {
     let camera = rawloader.lookup_camera_with_mode(tiff.root_ifd(), mode)?;
 
     let camera_ifd = if let Some(ifd) = tiff.get_entry(PanasonicTag::CameraIFD) {
-      let buf = ifd.get_data();
-      match IFD::new_root(&mut std::io::Cursor::new(buf), 0) {
-        Ok(ifd) => Some(ifd),
-        Err(_) => None,
-      }
+      ifd.get_data().ok().and_then(|buf| IFD::new_root(&mut std::io::Cursor::new(buf), 0).ok())
     } else {
       None
     };
@@ -142,6 +140,7 @@ impl<'a> Decoder for Rw2Decoder<'a> {
         let raw = data[0];
         width = fetch_tiff_tag!(raw, TiffCommonTag::PanaWidth).force_usize(0);
         height = fetch_tiff_tag!(raw, TiffCommonTag::PanaLength).force_usize(0);
+        image_bytes("RW2", width, height, 16)?;
         let offset = fetch_tiff_tag!(raw, TiffCommonTag::PanaOffsets).force_usize(0);
         //let size = fetch_tiff_tag!(raw, TiffCommonTag::StripByteCounts).force_usize(0);
         log::debug!("PanaOffset: {}", offset);
@@ -159,6 +158,7 @@ impl<'a> Decoder for Rw2Decoder<'a> {
           .ok_or_else(|| decoder_error!("Failed to find a IFD with StripOffsets tag"))?;
         width = fetch_tiff_tag!(raw, TiffCommonTag::PanaWidth).force_usize(0);
         height = fetch_tiff_tag!(raw, TiffCommonTag::PanaLength).force_usize(0);
+        image_bytes("RW2", width, height, 16)?;
         let offset = fetch_tiff_tag!(raw, TiffCommonTag::StripOffsets).force_usize(0);
         //let size = fetch_tiff_tag!(raw, TiffCommonTag::StripByteCounts).force_usize(0);
         log::debug!("StripOffset: {}", offset);
@@ -219,7 +219,7 @@ impl<'a> Decoder for Rw2Decoder<'a> {
       return Ok(None);
     }
     if let Some(data) = self.tiff.get_entry(PanasonicTag::JpegData) {
-      let buf = data.get_data();
+      let buf = data.get_data()?;
       let img = image::load_from_memory_with_format(buf, image::ImageFormat::Jpeg).map_err(|e| decoder_error!("Unable to load jpeg preview: {:?}", e))?;
       return Ok(Some(img));
     }
@@ -291,12 +291,8 @@ impl<'a> Rw2Decoder<'a> {
       let r = fetch_tiff_tag!(self.tiff, PanasonicTag::BlackLevelRed).force_u16(0);
       let g = fetch_tiff_tag!(self.tiff, PanasonicTag::BlackLevelGreen).force_u16(0);
       let b = fetch_tiff_tag!(self.tiff, PanasonicTag::BlackLevelBlue).force_u16(0);
-      Ok(Some(BlackLevel::new(
-        &[r + offset, g + offset, g + offset, b + offset],
-        camera.cfa.width,
-        camera.cfa.height,
-        1,
-      )))
+      let [r, g, b] = [r, g, b].map(|level| level.saturating_add(offset));
+      Ok(Some(BlackLevel::new(&[r, g, g, b], camera.cfa.width, camera.cfa.height, 1)))
     } else {
       Ok(None)
     }
@@ -351,10 +347,7 @@ impl<'a> Rw2Decoder<'a> {
       let crop_top = fetch_tiff_tag!(self.tiff, PanasonicTag::CropTop).force_usize(0);
       let crop_right = fetch_tiff_tag!(self.tiff, PanasonicTag::CropRight).force_usize(0);
       let crop_bottom = fetch_tiff_tag!(self.tiff, PanasonicTag::CropBottom).force_usize(0);
-      Ok(Some(Rect::new(
-        Point::new(crop_left, crop_top),
-        Dim2::new(crop_right - crop_left, crop_bottom - crop_top),
-      )))
+      Ok(area_between("crop", crop_left, crop_top, crop_right, crop_bottom))
     } else {
       Ok(None)
     }
@@ -366,10 +359,7 @@ impl<'a> Rw2Decoder<'a> {
       let sensor_top = fetch_tiff_tag!(self.tiff, PanasonicTag::SensorTopBorder).force_usize(0);
       let sensor_right = fetch_tiff_tag!(self.tiff, PanasonicTag::SensorRightBorder).force_usize(0);
       let sensor_bottom = fetch_tiff_tag!(self.tiff, PanasonicTag::SensorBottomBorder).force_usize(0);
-      Ok(Some(Rect::new(
-        Point::new(sensor_left, sensor_top),
-        Dim2::new(sensor_right - sensor_left, sensor_bottom - sensor_top),
-      )))
+      Ok(area_between("sensor area", sensor_left, sensor_top, sensor_right, sensor_bottom))
     } else {
       Ok(None)
     }
@@ -399,9 +389,31 @@ impl<'a> Rw2Decoder<'a> {
   }
 }
 
+/// Area between the borders `left`, `top`, `right` and `bottom`, `None` with
+/// a warning if they are in the wrong order
+fn area_between(name: &str, left: usize, top: usize, right: usize, bottom: usize) -> Option<Rect> {
+  match (right.checked_sub(left), bottom.checked_sub(top)) {
+    (Some(width), Some(height)) => Some(Rect::new(Point::new(left, top), Dim2::new(width, height))),
+    _ => {
+      log::warn!(
+        "RW2: {} with left {}, top {}, right {} and bottom {} is invalid, ignoring it",
+        name,
+        left,
+        top,
+        right,
+        bottom
+      );
+      None
+    }
+  }
+}
+
 fn normalize_wb(raw_wb: [f32; 4]) -> [f32; 4] {
   log::debug!("RW2 raw wb: {:?}", raw_wb);
   let div = raw_wb[1];
+  if !div.is_normal() {
+    return [f32::NAN; 4];
+  }
   let mut norm = raw_wb;
   norm.iter_mut().for_each(|v| {
     if v.is_normal() {
@@ -477,4 +489,22 @@ pub enum PanasonicTag {
 pub enum CameraIfdTag {
   LensTypeMake = 0x1201,
   LensTypeModel = 0x1202,
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[test]
+  fn areas_between_borders() {
+    assert_eq!(area_between("crop", 2, 4, 10, 8), Some(Rect::new(Point::new(2, 4), Dim2::new(8, 4))));
+    assert_eq!(area_between("crop", 10, 4, 2, 8), None);
+    assert_eq!(area_between("crop", 2, 8, 10, 4), None);
+  }
+
+  #[test]
+  fn wb_without_green_is_unknown() {
+    assert!(normalize_wb([1.0, 0.0, 0.0, 1.0]).iter().all(|v| v.is_nan()));
+    assert_eq!(normalize_wb([512.0, 256.0, 256.0, 384.0])[..3], [2.0, 1.0, 1.5]);
+  }
 }

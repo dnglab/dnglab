@@ -3,7 +3,7 @@
 
 use super::super::{BoxHeader, FourCC, ReadBox, Result, read_box_header_ext};
 use serde::{Deserialize, Serialize};
-use std::io::{Read, Seek, SeekFrom};
+use std::io::{Read, Seek};
 
 #[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize)]
 pub struct JpegBox {
@@ -20,7 +20,7 @@ impl<R: Read + Seek> ReadBox<&mut R> for JpegBox {
   fn read_box(reader: &mut R, header: BoxHeader) -> Result<Self> {
     let (version, flags) = read_box_header_ext(reader)?;
 
-    reader.seek(SeekFrom::Start(header.end_offset()))?;
+    header.finish(&mut *reader)?;
 
     Ok(Self { header, version, flags })
   }

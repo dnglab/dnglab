@@ -4,7 +4,7 @@
 
 use byteorder::{BigEndian, ReadBytesExt};
 use serde::{Deserialize, Serialize};
-use std::io::{Read, Seek, SeekFrom};
+use std::io::{Read, Seek};
 
 use super::{BoxHeader, FourCC, ReadBox, Result, read_box_header_ext};
 
@@ -25,13 +25,13 @@ impl<R: Read + Seek> ReadBox<&mut R> for Co64Box {
     let (version, flags) = read_box_header_ext(reader)?;
 
     let entry_count = reader.read_u32::<BigEndian>()?;
-    let mut entries = Vec::with_capacity(entry_count as usize);
+    let mut entries = Vec::with_capacity(header.check_entries(&mut *reader, entry_count, 8)?);
     for _i in 0..entry_count {
       let chunk_offset = reader.read_u64::<BigEndian>()?;
       entries.push(chunk_offset);
     }
 
-    reader.seek(SeekFrom::Start(header.end_offset()))?;
+    header.finish(&mut *reader)?;
 
     Ok(Self {
       header,

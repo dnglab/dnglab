@@ -3,7 +3,7 @@
 
 use byteorder::{NativeEndian, WriteBytesExt};
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
-use std::{convert::Infallible, ffi::CString, fmt::Display, io::Write, num::TryFromIntError};
+use std::{convert::Infallible, fmt::Display, io::Write, num::TryFromIntError};
 
 use super::{Result, TiffError};
 
@@ -16,28 +16,34 @@ pub struct Rational {
 
 impl PartialEq for Rational {
   fn eq(&self, other: &Self) -> bool {
-    let n1: u64 = self.n as u64 * other.d as u64;
-    let n2: u64 = self.d as u64 * other.n as u64;
-    n1.eq(&n2)
+    self.cmp(other).is_eq()
   }
 }
 
 impl Eq for Rational {}
 
-#[allow(clippy::non_canonical_partial_ord_impl)]
 impl PartialOrd for Rational {
   fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-    let n1: u64 = self.n as u64 * other.d as u64;
-    let n2: u64 = self.d as u64 * other.n as u64;
-    Some(n1.cmp(&n2))
+    Some(self.cmp(other))
   }
 }
 
 impl Ord for Rational {
   fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-    let n1: u64 = self.n as u64 * other.d as u64;
-    let n2: u64 = self.d as u64 * other.n as u64;
-    n1.cmp(&n2)
+    cmp_fractions((self.n as i64, self.d as i64), (other.n as i64, other.d as i64))
+  }
+}
+
+/// Order of the fractions `a` and `b` with denominators >= 0 by their value.
+/// Fractions with a denominator of 0 are greater than all others and ordered
+/// by their numerator.
+fn cmp_fractions(a: (i64, i64), b: (i64, i64)) -> std::cmp::Ordering {
+  use std::cmp::Ordering;
+  match (a.1, b.1) {
+    (0, 0) => a.0.cmp(&b.0),
+    (0, _) => Ordering::Greater,
+    (_, 0) => Ordering::Less,
+    _ => (a.0 * b.1).cmp(&(b.0 * a.1)),
   }
 }
 
@@ -53,155 +59,32 @@ impl Display for SRational {
   }
 }
 
-impl TryFrom<Rational> for usize {
-  type Error = TryFromIntError;
+/// Exact conversion of rationals to integers, the quotient is truncated
+/// toward zero. A denominator of 0 or a quotient out of range is an error.
+macro_rules! rational_into_int {
+  ($rational:ty, $wide:ty, $($int:ty),+) => {
+    $(
+      impl TryFrom<$rational> for $int {
+        type Error = ValueConvertError;
 
-  fn try_from(value: Rational) -> std::result::Result<Self, Self::Error> {
-    Ok(((value.n as f32) / (value.d as f32)) as usize) // TODO
-  }
+        fn try_from(value: $rational) -> std::result::Result<Self, Self::Error> {
+          if value.d == 0 {
+            return Err(ValueConvertError(()));
+          }
+          Ok(<$int>::try_from(value.n as $wide / value.d as $wide)?)
+        }
+      }
+    )+
+  };
 }
 
-impl TryFrom<Rational> for u8 {
-  type Error = TryFromIntError;
-
-  fn try_from(value: Rational) -> std::result::Result<Self, Self::Error> {
-    Ok(((value.n as f32) / (value.d as f32)) as u8) // TODO
-  }
-}
-
-impl TryFrom<Rational> for u16 {
-  type Error = TryFromIntError;
-
-  fn try_from(value: Rational) -> std::result::Result<Self, Self::Error> {
-    Ok(((value.n as f32) / (value.d as f32)) as u16) // TODO
-  }
-}
-
-impl TryFrom<Rational> for u32 {
-  type Error = TryFromIntError;
-
-  fn try_from(value: Rational) -> std::result::Result<Self, Self::Error> {
-    Ok(((value.n as f32) / (value.d as f32)) as u32) // TODO
-  }
-}
-
-impl TryFrom<Rational> for u64 {
-  type Error = TryFromIntError;
-
-  fn try_from(value: Rational) -> std::result::Result<Self, Self::Error> {
-    Ok(((value.n as f32) / (value.d as f32)) as u64) // TODO
-  }
-}
-
-impl TryFrom<Rational> for i8 {
-  type Error = TryFromIntError;
-
-  fn try_from(value: Rational) -> std::result::Result<Self, Self::Error> {
-    Ok(((value.n as f32) / (value.d as f32)) as i8) // TODO
-  }
-}
-
-impl TryFrom<Rational> for i16 {
-  type Error = TryFromIntError;
-
-  fn try_from(value: Rational) -> std::result::Result<Self, Self::Error> {
-    Ok(((value.n as f32) / (value.d as f32)) as i16) // TODO
-  }
-}
-
-impl TryFrom<Rational> for i32 {
-  type Error = TryFromIntError;
-
-  fn try_from(value: Rational) -> std::result::Result<Self, Self::Error> {
-    Ok(((value.n as f32) / (value.d as f32)) as i32) // TODO
-  }
-}
-
-impl TryFrom<Rational> for i64 {
-  type Error = TryFromIntError;
-
-  fn try_from(value: Rational) -> std::result::Result<Self, Self::Error> {
-    Ok(((value.n as f32) / (value.d as f32)) as i64) // TODO
-  }
-}
-
+rational_into_int!(Rational, u64, usize, u8, u16, u32, u64, i8, i16, i32, i64);
+rational_into_int!(SRational, i64, usize, u8, u16, u32, u64, i8, i16, i32, i64);
 impl TryFrom<Rational> for f32 {
   type Error = TryFromIntError;
 
   fn try_from(value: Rational) -> std::result::Result<Self, Self::Error> {
     Ok(((value.n as f32) / (value.d as f32)) as f32) // TODO
-  }
-}
-
-impl TryFrom<SRational> for usize {
-  type Error = TryFromIntError;
-
-  fn try_from(value: SRational) -> std::result::Result<Self, Self::Error> {
-    Ok(((value.n as f32) / (value.d as f32)) as usize) // TODO
-  }
-}
-
-impl TryFrom<SRational> for u8 {
-  type Error = TryFromIntError;
-
-  fn try_from(value: SRational) -> std::result::Result<Self, Self::Error> {
-    Ok(((value.n as f32) / (value.d as f32)) as u8) // TODO
-  }
-}
-
-impl TryFrom<SRational> for u16 {
-  type Error = TryFromIntError;
-
-  fn try_from(value: SRational) -> std::result::Result<Self, Self::Error> {
-    Ok(((value.n as f32) / (value.d as f32)) as u16) // TODO
-  }
-}
-
-impl TryFrom<SRational> for u32 {
-  type Error = TryFromIntError;
-
-  fn try_from(value: SRational) -> std::result::Result<Self, Self::Error> {
-    Ok(((value.n as f32) / (value.d as f32)) as u32) // TODO
-  }
-}
-
-impl TryFrom<SRational> for u64 {
-  type Error = TryFromIntError;
-
-  fn try_from(value: SRational) -> std::result::Result<Self, Self::Error> {
-    Ok(((value.n as f32) / (value.d as f32)) as u64) // TODO
-  }
-}
-
-impl TryFrom<SRational> for i8 {
-  type Error = TryFromIntError;
-
-  fn try_from(value: SRational) -> std::result::Result<Self, Self::Error> {
-    Ok(((value.n as f32) / (value.d as f32)) as i8) // TODO
-  }
-}
-
-impl TryFrom<SRational> for i16 {
-  type Error = TryFromIntError;
-
-  fn try_from(value: SRational) -> std::result::Result<Self, Self::Error> {
-    Ok(((value.n as f32) / (value.d as f32)) as i16) // TODO
-  }
-}
-
-impl TryFrom<SRational> for i32 {
-  type Error = TryFromIntError;
-
-  fn try_from(value: SRational) -> std::result::Result<Self, Self::Error> {
-    Ok(((value.n as f32) / (value.d as f32)) as i32) // TODO
-  }
-}
-
-impl TryFrom<SRational> for i64 {
-  type Error = TryFromIntError;
-
-  fn try_from(value: SRational) -> std::result::Result<Self, Self::Error> {
-    Ok(((value.n as f32) / (value.d as f32)) as i64) // TODO
   }
 }
 
@@ -231,17 +114,20 @@ impl From<u32> for Rational {
   }
 }
 
-impl From<f32> for Rational {
-  fn from(value: f32) -> Self {
-    if value.is_sign_negative() {
-      panic!("Can not convert {} to Rational type", value);
+/// Exact conversion, an error for negative values, NaN, infinity, and
+/// values whose numerator or denominator exceeds u32
+impl TryFrom<f32> for Rational {
+  type Error = ValueConvertError;
+
+  fn try_from(value: f32) -> std::result::Result<Self, Self::Error> {
+    if value < 0.0 {
+      return Err(ValueConvertError(()));
     }
-    let ratio = num::rational::Ratio::from_float(value).expect("Failed to convert float");
-    // TODO: This is a workaround, need to implement better routine
-    Self::new(
-      ratio.numer().try_into().expect("Rational numerator overflows u32"),
-      ratio.denom().try_into().expect("Rational denominator overflows u32"),
-    )
+    let ratio = num::rational::Ratio::from_float(value).ok_or(ValueConvertError(()))?;
+    Ok(Self::new(
+      ratio.numer().try_into().map_err(|_| ValueConvertError(()))?,
+      ratio.denom().try_into().map_err(|_| ValueConvertError(()))?,
+    ))
   }
 }
 
@@ -311,32 +197,34 @@ impl SRational {
   pub fn as_f32(&self) -> f32 {
     self.n as f32 / self.d as f32
   }
+
+  /// Numerator and denominator with the sign moved to the numerator
+  fn normalized(&self) -> (i64, i64) {
+    if self.d < 0 {
+      (-(self.n as i64), -(self.d as i64))
+    } else {
+      (self.n as i64, self.d as i64)
+    }
+  }
 }
 
 impl PartialEq for SRational {
   fn eq(&self, other: &Self) -> bool {
-    let n1: i64 = self.n as i64 * other.d as i64;
-    let n2: i64 = self.d as i64 * other.n as i64;
-    n1.eq(&n2)
+    self.cmp(other).is_eq()
   }
 }
 
 impl Eq for SRational {}
 
-#[allow(clippy::non_canonical_partial_ord_impl)]
 impl PartialOrd for SRational {
   fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-    let n1: i64 = self.n as i64 * other.d as i64;
-    let n2: i64 = self.d as i64 * other.n as i64;
-    n1.partial_cmp(&n2)
+    Some(self.cmp(other))
   }
 }
 
 impl Ord for SRational {
   fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-    let n1: i64 = self.n as i64 * other.d as i64;
-    let n2: i64 = self.d as i64 * other.n as i64;
-    n1.cmp(&n2)
+    cmp_fractions(self.normalized(), other.normalized())
   }
 }
 
@@ -436,15 +324,15 @@ impl Value {
     }
   }
 
-  pub fn get_data(&self) -> &Vec<u8> {
+  /// The bytes of a BYTE, ASCII, UNDEFINED or unknown value, an error for
+  /// other types
+  pub fn get_data(&self) -> Result<&[u8]> {
     match self {
-      Value::Ascii(data) => data.as_bytes(),
-      Value::Byte(data) => data,
-      Value::Undefined(data) => data,
-      Value::Unknown(_, data) => data,
-      _ => {
-        panic!("Unable to call get_data() on this value type");
-      }
+      Value::Ascii(data) => Ok(data.as_bytes()),
+      Value::Byte(data) => Ok(data),
+      Value::Undefined(data) => Ok(data),
+      Value::Unknown(_, data) => Ok(data),
+      _ => Err(TiffError::FormatMismatch(format!("{} value is no byte data", self.value_type_name()))),
     }
   }
 
@@ -842,58 +730,20 @@ impl Value {
     }
   }
 
+  /// The value as the 4 bytes of an IFD entry. The writer writes the u32 in
+  /// host byte order, like the values, so the bytes come out as written by
+  /// [`Value::write`].
   pub fn as_embedded(&self) -> Result<u32> {
     if self.count() == 0 {
       return Err(TiffError::General("Embedded data is empty".into()));
     }
     if self.byte_size() > 4 {
-      Err(TiffError::Overflow("Invalid data".to_string()))
-    } else {
-      match self {
-        Self::Byte(v) => Ok(
-          (*v.get(0).unwrap_or(&0) as u32)
-            | ((*v.get(1).unwrap_or(&0) as u32) << 8)
-            | ((*v.get(2).unwrap_or(&0) as u32) << 16)
-            | ((*v.get(3).unwrap_or(&0) as u32) << 24),
-        ),
-        Self::Ascii(v) => {
-          //let cstr = CString::new(v.as_str()).unwrap();
-          let v = v.as_vec_with_nul();
-          Ok(
-            (*v.get(0).unwrap_or(&0) as u32)
-              | ((*v.get(1).unwrap_or(&0) as u32) << 8)
-              | ((*v.get(2).unwrap_or(&0) as u32) << 16)
-              | ((*v.get(3).unwrap_or(&0) as u32) << 24),
-          )
-        }
-        Self::Short(v) => Ok((v[0] as u32) | ((*v.get(1).unwrap_or(&0) as u32) << 16)),
-        Self::Long(v) => Ok(v[0]),
-        Self::SByte(v) => Ok(
-          (*v.get(0).unwrap_or(&0) as u32)
-            | ((*v.get(1).unwrap_or(&0) as u32) << 8)
-            | ((*v.get(2).unwrap_or(&0) as u32) << 16)
-            | ((*v.get(3).unwrap_or(&0) as u32) << 24),
-        ),
-        Self::Undefined(v) => Ok(
-          (*v.get(0).unwrap_or(&0) as u32)
-            | ((*v.get(1).unwrap_or(&0) as u32) << 8)
-            | ((*v.get(2).unwrap_or(&0) as u32) << 16)
-            | ((*v.get(3).unwrap_or(&0) as u32) << 24),
-        ),
-        Self::SShort(v) => Ok((v[0] as u32) | ((*v.get(1).unwrap_or(&0) as u32) << 16)),
-        Self::SLong(v) => Ok(v[0] as u32),
-        Self::Float(v) => Ok(v[0].to_bits()),
-        Self::Unknown(_, v) => Ok(
-          (*v.get(0).unwrap_or(&0) as u32)
-            | ((*v.get(1).unwrap_or(&0) as u32) << 8)
-            | ((*v.get(2).unwrap_or(&0) as u32) << 16)
-            | ((*v.get(3).unwrap_or(&0) as u32) << 24),
-        ),
-        _ => {
-          panic!("unsupported: {:?}", self);
-        }
-      }
+      return Err(TiffError::Overflow("Invalid data".to_string()));
     }
+    let mut bytes = Vec::with_capacity(4);
+    self.write(&mut bytes)?;
+    bytes.resize(4, 0);
+    Ok(u32::from_ne_bytes([bytes[0], bytes[1], bytes[2], bytes[3]]))
   }
 
   pub fn write(&self, w: &mut dyn Write) -> Result<()> {
@@ -902,7 +752,6 @@ impl Value {
         w.write_all(val)?;
       }
       Self::Ascii(val) => {
-        //let cstr = CString::new(val.as_str()).unwrap();
         let bytes = val.as_vec_with_nul();
         w.write_all(&bytes)?;
       }
@@ -1035,15 +884,18 @@ impl TiffAscii {
     self.strings.first()
   }
 
+  /// Number of bytes of the strings with their NUL terminators
   pub fn count(&self) -> usize {
-    self.strings.iter().map(|s| s.len() + 1).sum::<usize>()
+    self.strings.iter().map(|s| until_nul(s).len() + 1).sum::<usize>()
   }
 
+  /// Bytes of the strings, each one up to an interior NUL and with a NUL
+  /// terminator
   pub fn as_vec_with_nul(&self) -> Vec<u8> {
     let mut out = Vec::new();
     for s in &self.strings {
-      let cstr = CString::new(s.as_bytes()).expect("TIFF string value must not contain null bytes");
-      out.extend_from_slice(cstr.to_bytes_with_nul());
+      out.extend_from_slice(until_nul(s));
+      out.push(0);
     }
     out
   }
@@ -1055,8 +907,13 @@ impl TiffAscii {
     // TODO: fixme multiple strings
     //while nul_range_end < raw.len() {
     nul_range_end = raw[nul_range_end..].iter().position(|&c| c == b'\0').unwrap_or(raw.len()); // default to length if no `\0` present
-    let s = ::std::str::from_utf8(&raw[0..nul_range_end]).unwrap_or("!!!INVALID UTF8!!!");
-    strings.push(String::from(s));
+    // Strings that are no valid UTF-8 are mostly Latin-1, which maps each
+    // byte to the code point of its value
+    let text = &raw[0..nul_range_end];
+    strings.push(match std::str::from_utf8(text) {
+      Ok(s) => s.to_owned(),
+      Err(_) => text.iter().map(|&c| c as char).collect(),
+    });
     //nul_range_end += 1;
     // }
 
@@ -1065,6 +922,12 @@ impl TiffAscii {
       plain: Vec::from(raw),
     }
   }
+}
+
+/// Bytes of `s` up to the first NUL, a TIFF string ends there
+fn until_nul(s: &str) -> &[u8] {
+  let bytes = s.as_bytes();
+  &bytes[..bytes.iter().position(|&c| c == 0).unwrap_or(bytes.len())]
 }
 
 pub trait IntoTiffValue {
@@ -1363,6 +1226,106 @@ mod tests {
     let a = SRational::new(-200, 1);
     let b = SRational::new(-300, 10);
     assert!(a < b);
+  }
+
+  #[test]
+  fn srational_with_negative_denominator() {
+    assert!(SRational::new(1, -2) < SRational::new(0, 1));
+    assert!(SRational::new(-1, -2) > SRational::new(0, 1));
+    assert_eq!(SRational::new(1, -2), SRational::new(-1, 2));
+    assert_eq!(SRational::new(i32::MIN, -1), SRational::new(i32::MAX, 1).max(SRational::new(i32::MIN, -1)));
+  }
+
+  #[test]
+  fn rational_with_zero_denominator() {
+    assert_ne!(Rational::new(0, 0), Rational::new(5, 1));
+    assert_ne!(Rational::new(1, 0), Rational::new(2, 0));
+    assert_eq!(Rational::new(1, 0), Rational::new(1, 0));
+    assert!(Rational::new(1, 0) > Rational::new(u32::MAX, 1));
+    assert_ne!(SRational::new(0, 0), SRational::new(-5, 1));
+  }
+
+  #[test]
+  fn rational_into_int_is_exact() {
+    assert_eq!(u32::try_from(Rational::new(33554433, 1)).ok(), Some(33554433));
+    assert_eq!(u32::try_from(Rational::new(599999999, 200000000)).ok(), Some(2));
+    assert_eq!(u8::try_from(Rational::new(256, 1)).ok(), None);
+    assert_eq!(u32::try_from(Rational::new(1, 0)).ok(), None);
+    assert_eq!(i32::try_from(SRational::new(-7, 2)).ok(), Some(-3));
+    assert_eq!(i32::try_from(SRational::new(7, -2)).ok(), Some(-3));
+    assert_eq!(u32::try_from(SRational::new(-5, 1)).ok(), None);
+    assert_eq!(i64::try_from(SRational::new(i32::MIN, -1)).ok(), Some(-(i32::MIN as i64)));
+    assert_eq!(Value::Rational(vec![Rational::new(1023, 1)]).force_u16(0), 1023);
+  }
+
+  #[test]
+  fn rational_from_f32() {
+    assert_eq!(Rational::try_from(0.5_f32).ok(), Some(Rational::new(1, 2)));
+    assert_eq!(Rational::try_from(3.0_f32).ok(), Some(Rational::new(3, 1)));
+    assert!(Rational::try_from(-1.0_f32).is_err());
+    assert!(Rational::try_from(f32::NAN).is_err());
+    assert!(Rational::try_from(f32::INFINITY).is_err());
+    assert!(Rational::try_from(1e-20_f32).is_err());
+    assert!(Rational::try_from(1e20_f32).is_err());
+  }
+
+  #[test]
+  fn embedded_values_keep_the_written_bytes() -> Result<()> {
+    for value in [
+      Value::Byte(vec![1, 2, 3]),
+      Value::Short(vec![0x0102, 0x0304]),
+      Value::Short(vec![0x0102]),
+      Value::SShort(vec![-2]),
+      Value::Long(vec![0x01020304]),
+      Value::SLong(vec![-5]),
+      Value::Float(vec![1.5]),
+      Value::Undefined(vec![9]),
+      Value::from("ab"),
+    ] {
+      let mut bytes = Vec::new();
+      value.write(&mut bytes)?;
+      bytes.resize(4, 0);
+      assert_eq!(value.as_embedded()?.to_ne_bytes().as_slice(), bytes, "{:?}", value);
+    }
+    assert!(Value::Rational(vec![Rational::new(1, 2)]).as_embedded().is_err());
+    assert!(Value::Short(vec![]).as_embedded().is_err());
+    Ok(())
+  }
+
+  #[test]
+  fn get_data_of_byte_types_only() {
+    assert_eq!(Value::Undefined(vec![1, 2]).get_data().ok(), Some(&[1_u8, 2][..]));
+    assert_eq!(Value::Byte(vec![3]).get_data().ok(), Some(&[3_u8][..]));
+    assert!(matches!(Value::Short(vec![1]).get_data(), Err(TiffError::FormatMismatch(_))));
+  }
+
+  #[test]
+  fn ascii_ends_at_nul() -> Result<()> {
+    let value = Value::from("AT\0X");
+    assert_eq!(value.count(), 3);
+    assert_eq!(value.as_embedded()?, u32::from_ne_bytes(*b"AT\0\0"));
+    let value = Value::from("Artist\0X");
+    let mut bytes = Vec::new();
+    value.write(&mut bytes)?;
+    assert_eq!(bytes, b"Artist\0");
+    assert_eq!(value.count(), bytes.len());
+    Ok(())
+  }
+
+  #[test]
+  fn ascii_keeps_the_bytes_after_nul() {
+    // Like the Leaf metadata of MOS files, the bytes of the value continue after the string
+    let ascii = TiffAscii::new_from_raw(b"PKTS data");
+    assert_eq!(ascii.first().map(String::as_str), Some("PKTS"));
+    assert_eq!(ascii.as_bytes(), b"PKTS data");
+  }
+
+  #[test]
+  fn ascii_from_invalid_utf8_is_latin1() {
+    assert_eq!(TiffAscii::new_from_raw(b"Caf\xe9\0").first().map(String::as_str), Some("Caf\u{e9}"));
+    assert_eq!(TiffAscii::new_from_raw(b"\xa9 2024").first().map(String::as_str), Some("\u{a9} 2024"));
+    // Valid UTF-8 stays UTF-8
+    assert_eq!(TiffAscii::new_from_raw("Caf\u{e9}\0".as_bytes()).first().map(String::as_str), Some("Caf\u{e9}"));
   }
 
   #[test]

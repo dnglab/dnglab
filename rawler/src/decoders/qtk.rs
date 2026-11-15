@@ -29,6 +29,7 @@ use super::Decoder;
 use super::FormatHint;
 use super::RawDecodeParams;
 use super::RawMetadata;
+use super::image_bytes;
 use super::ok_cfa_image;
 
 #[derive(Debug, Clone)]
@@ -97,13 +98,14 @@ impl<'a> Decoder for QtkDecoder<'a> {
     }
 
     log::debug!("QTK file w: {}, h: {}, hint: {}", width, height, hint);
+    image_bytes("QTK", width, height, 16)?;
 
     let src = file.subview_until_eof_padded(offset as u64)?;
 
     let image = match file.subview(0, 4)? {
       b"qktk" => Self::decompress_quicktake_100(self, &src, width, height, dummy)?,
       b"qktn" => Self::decompress_quicktake_150(self, &src, width, height, dummy)?,
-      _ => unreachable!(),
+      sig => return Err(decoder_error!("Unable to use QTK decoder on file with signature: '{:?}'", sig)),
     };
 
     let cpp = 1;
@@ -143,7 +145,10 @@ impl<'a> QtkDecoder<'a> {
   }
 
   pub fn decompress_quicktake_100(&self, src: &[u8], width: usize, height: usize, dummy: bool) -> Result<PixU16> {
-    assert!(width > height);
+    // The work buffer below has room for 640x480 pixels and their borders
+    if width <= height || width > 640 || height > 480 {
+      return Err(decoder_error!("QTK: QuickTake 100 image of {}x{} pixels is not supported", width, height));
+    }
     let mut out = alloc_image_ok!(width, height, dummy);
     let mut pump = BitPumpMSB::new(src);
 
@@ -238,5 +243,21 @@ impl<'a> QtkDecoder<'a> {
     });
 
     Ok(out)
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[test]
+  fn quicktake_100_of_unsupported_sizes() -> Result<()> {
+    let decoder = QtkDecoder::new(&RawSource::new_from_slice(b"qktk\0\0"), crate::global_loader())?;
+    let data = vec![0; 640 * 480];
+    for (width, height) in [(480, 480), (641, 480), (640, 481), (2000, 1000)] {
+      assert!(decoder.decompress_quicktake_100(&data, width, height, false).is_err(), "{width}x{height}");
+    }
+    decoder.decompress_quicktake_100(&data, 640, 480, false)?;
+    Ok(())
   }
 }

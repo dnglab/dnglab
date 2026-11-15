@@ -2,10 +2,10 @@
 // Copyright 2020 Alfred Gutierrez
 // Copyright 2021 Daniel Vogelbacher <daniel@chaospixel.com>
 
-use super::{BoxHeader, FourCC, ReadBox, Result, read_box_header_ext};
+use super::{BmffError, BoxHeader, FourCC, ReadBox, Result, read_box_header_ext};
 use byteorder::{BigEndian, ReadBytesExt};
 use serde::{Deserialize, Serialize};
-use std::io::{Read, Seek, SeekFrom};
+use std::io::{Read, Seek};
 
 #[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize)]
 pub struct StscBox {
@@ -26,13 +26,16 @@ pub struct StscEntry {
 impl StscBox {
   pub const TYP: FourCC = FourCC::with(['s', 't', 's', 'c']);
 
-  pub fn get_entry_for_sample(&self, sample: u32) -> &StscEntry {
-    assert!(sample > 0, "Sample numbering starts with 1");
-    assert_eq!(self.entries.is_empty(), false, "stsc box must contains at least one entry");
-    assert_eq!(self.entries[0].first_sample, 1, "First entry must start with first sample");
+  /// The entry of the sample number `sample`, which starts with 1. None for
+  /// sample 0 and for an empty box.
+  pub fn get_entry_for_sample(&self, sample: u32) -> Option<&StscEntry> {
+    // The first entry starts with the first sample, see read_box()
+    if sample == 0 || self.entries.is_empty() {
+      return None;
+    }
     match self.entries.binary_search_by(|entry| entry.first_sample.cmp(&sample)) {
-      Ok(i) => &self.entries[i],
-      Err(i) => &self.entries[i - 1],
+      Ok(i) => self.entries.get(i),
+      Err(i) => self.entries.get(i.checked_sub(1)?),
     }
   }
 }
@@ -42,7 +45,7 @@ impl<R: Read + Seek> ReadBox<&mut R> for StscBox {
     let (version, flags) = read_box_header_ext(reader)?;
 
     let entry_count = reader.read_u32::<BigEndian>()?;
-    let mut entries = Vec::with_capacity(entry_count as usize);
+    let mut entries = Vec::with_capacity(header.check_entries(&mut *reader, entry_count, 12)?);
 
     // Reader for a single stsc entry
     let mut read_entry = || -> Result<StscEntry> {
@@ -62,7 +65,12 @@ impl<R: Read + Seek> ReadBox<&mut R> for StscBox {
       for _ in 1..entry_count {
         let mut entry = read_entry()?;
         // Now we know the chunk count to calc the amount of samples in holdback
-        entry.first_sample = holdback.first_sample + ((entry.first_chunk - holdback.first_sample) * holdback.samples_per_chunk);
+        entry.first_sample = entry
+          .first_chunk
+          .checked_sub(holdback.first_chunk)
+          .and_then(|chunks| chunks.checked_mul(holdback.samples_per_chunk))
+          .and_then(|samples| samples.checked_add(holdback.first_sample))
+          .ok_or_else(|| BmffError::Parse(format!("stsc entry for chunk {} is out of order or overflows", entry.first_chunk)))?;
         entries.push(holdback);
         holdback = entry;
       }
@@ -70,7 +78,7 @@ impl<R: Read + Seek> ReadBox<&mut R> for StscBox {
       entries.push(holdback);
     }
 
-    reader.seek(SeekFrom::Start(header.end_offset()))?;
+    header.finish(&mut *reader)?;
 
     Ok(Self {
       header,

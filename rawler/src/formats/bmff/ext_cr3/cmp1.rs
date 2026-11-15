@@ -4,7 +4,7 @@
 use super::super::{BoxHeader, FourCC, ReadBox, Result};
 use byteorder::{BigEndian, ReadBytesExt};
 use serde::{Deserialize, Serialize};
-use std::io::{Read, Seek, SeekFrom};
+use std::io::{Read, Seek};
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Cmp1Box {
@@ -87,7 +87,7 @@ impl<R: Read + Seek> ReadBox<&mut R> for Cmp1Box {
       }
     }
 
-    reader.seek(SeekFrom::Start(header.end_offset()))?;
+    header.finish(&mut *reader)?;
 
     Ok(Self {
       header,

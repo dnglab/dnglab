@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
   bits::Endian,
-  formats::tiff::{Rational, SRational, TiffAscii, TiffError, Value, apply_corr, reader::ReadByteOrder},
+  formats::tiff::{Rational, SRational, TiffAscii, TiffError, Value, apply_corr, offset_add, reader::ReadByteOrder},
 };
 
 use super::{Result, reader::EndianReader};
@@ -51,12 +51,32 @@ pub struct RawEntry<'a> {
 }
 
 impl<'a> RawEntry<'a> {
-  pub fn get_force_u32(&self, idx: usize) -> u32 {
-    self.endian.read_u32(&self.data, idx * 4)
+  /// The u32 at index `idx`, None if the data is too short
+  pub fn get_u32(&self, idx: usize) -> Option<u32> {
+    let start = idx.checked_mul(4)?;
+    Some(self.endian.read_u32(self.data.get(start..start.checked_add(4)?)?, 0))
   }
 
+  /// The u16 at index `idx`, None if the data is too short
+  pub fn get_u16(&self, idx: usize) -> Option<u16> {
+    let start = idx.checked_mul(2)?;
+    Some(self.endian.read_u16(self.data.get(start..start.checked_add(2)?)?, 0))
+  }
+
+  /// The u32 at index `idx`, 0 if the data is too short
+  pub fn get_force_u32(&self, idx: usize) -> u32 {
+    self.get_u32(idx).unwrap_or_else(|| {
+      log::error!("TIFF raw entry index {} is out of range, the data has {} bytes", idx, self.data.len());
+      0
+    })
+  }
+
+  /// The u16 at index `idx`, 0 if the data is too short
   pub fn get_force_u16(&self, idx: usize) -> u16 {
-    self.endian.read_u16(&self.data, idx * 2)
+    self.get_u16(idx).unwrap_or_else(|| {
+      log::error!("TIFF raw entry index {} is out of range, the data has {} bytes", idx, self.data.len());
+      0
+    })
   }
 }
 
@@ -80,7 +100,11 @@ impl Entry {
   }
 
   pub fn parse<R: Read + Seek>(reader: &mut EndianReader<R>, base: u32, corr: i32, tag: u16) -> Result<Entry> {
-    let pos = reader.position()? - 2; // TODO -2 because tag is already read
+    // The tag is already read
+    let pos = reader
+      .position()?
+      .checked_sub(2)
+      .ok_or_else(|| TiffError::General("TIFF entry starts before the stream".into()))?;
 
     let typ = reader.read_u16()?;
     let count = reader.read_u32()?;
@@ -88,11 +112,14 @@ impl Entry {
     // If we don't know the type assume byte data (undefined)
     let compat_typ = if typ == 0 || typ > TYPE_IFD { 7 } else { typ };
 
-    let bytesize: usize = (count as usize) << DATASHIFTS[compat_typ as usize];
+    let bytesize: u64 = (count as u64) << DATASHIFTS[compat_typ as usize];
     let offset: u32 = if bytesize <= 4 {
-      reader.position()? - base
+      reader
+        .position()?
+        .checked_sub(base)
+        .ok_or_else(|| TiffError::Overflow(format!("TIFF entry is before the base offset {}", base)))?
     } else {
-      apply_corr(reader.read_u32()?, corr)
+      apply_corr(reader.read_u32()?, corr)?
     };
 
     debug!(
@@ -104,6 +131,16 @@ impl Entry {
       // We hit an invalid offset, ignoring this tag
       // This happens for Olympus E-P2 images in ImageProc IFD for example.
       return Err(TiffError::Overflow(format!("Offset {} is invalid for tag 0x{:X}", offset, tag)));
+    }
+
+    // The count comes from the file: check that the data is inside the stream
+    // before allocating memory for it.
+    let stream_len = reader.stream_len()?;
+    if base as u64 + offset as u64 + bytesize > stream_len {
+      return Err(TiffError::Overflow(format!(
+        "Data of tag 0x{:X} ({} bytes at offset {}) exceeds the stream length {}",
+        tag, bytesize, offset, stream_len
+      )));
     }
 
     reader.goto(base + offset)?;
@@ -236,7 +273,7 @@ impl Entry {
         }
       }
     };
-    reader.goto(pos + 12)?; // Size of IFD entry
+    reader.goto(offset_add(pos, 12)?)?; // Size of IFD entry
     Ok(entry)
   }
 
@@ -261,5 +298,35 @@ mod tests {
     let tag = reader.read_u16().unwrap();
     let entry = Entry::parse(&mut reader, 0, 0, tag).unwrap();
     assert_eq!(entry.value, Value::Long(vec![0x10, 0x20]));
+  }
+
+  #[test]
+  fn raw_entry_index_out_of_range() {
+    let entry = Entry {
+      tag: 0x100,
+      value: Value::Undefined(vec![1, 2, 3, 4, 5, 6]),
+      embedded: Some(0),
+    };
+    let raw = RawEntry {
+      entry: &entry,
+      endian: Endian::Little,
+      data: vec![1, 2, 3, 4, 5, 6],
+    };
+    assert_eq!(raw.get_u16(2), Some(0x0605));
+    assert_eq!(raw.get_u16(3), None);
+    assert_eq!(raw.get_u32(0), Some(0x04030201));
+    assert_eq!(raw.get_u32(1), None);
+    assert_eq!(raw.get_force_u32(1), 0);
+    assert_eq!(raw.get_force_u16(usize::MAX), 0);
+  }
+
+  #[test]
+  fn huge_count_is_rejected_before_allocation() {
+    // tag 0x100, type DOUBLE (12), count 0xFFFFFFFF, offset 12
+    let data = vec![0x00, 0x01, 12, 0, 0xFF, 0xFF, 0xFF, 0xFF, 12, 0, 0, 0, 0, 0, 0, 0];
+    let mut cursor = Cursor::new(data);
+    let mut reader = EndianReader::new(&mut cursor, Endian::Little);
+    let tag = reader.read_u16().expect("tag");
+    assert!(matches!(Entry::parse(&mut reader, 0, 0, tag), Err(TiffError::Overflow(_))));
   }
 }

@@ -97,12 +97,12 @@ impl CF2Params {
   fn new(ifd: &IFD) -> Result<Self> {
     let strip_height = fetch_tiff_tag!(ifd, PanasonicTag::CF2StripHeight).force_u32(0);
     let gamma_point = {
-      let mut bs = ByteStream::new(fetch_tiff_tag!(ifd, PanasonicTag::CF2Unknown1).get_data(), Endian::Little);
+      let mut bs = ByteStream::new(fetch_tiff_tag!(ifd, PanasonicTag::CF2Unknown1).get_data()?, Endian::Little);
       let count = bs.get_u16()?;
       (0..count).map(|_| bs.get_u32()).collect::<std::result::Result<_, _>>()?
     };
     let gamma_slope = {
-      let mut bs = ByteStream::new(fetch_tiff_tag!(ifd, PanasonicTag::CF2Unknown2).get_data(), Endian::Little);
+      let mut bs = ByteStream::new(fetch_tiff_tag!(ifd, PanasonicTag::CF2Unknown2).get_data()?, Endian::Little);
       let count = bs.get_u16()?;
       (0..count).map(|_| bs.get_u32()).collect::<std::result::Result<_, _>>()?
     };
@@ -112,26 +112,26 @@ impl CF2Params {
     let huf_init_val2 = fetch_tiff_tag!(ifd, PanasonicTag::CF2HufInitVal2).force_u16(0);
     let huf_init_val3 = fetch_tiff_tag!(ifd, PanasonicTag::CF2HufInitVal3).force_u16(0);
     let huf_table = {
-      let mut bs = ByteStream::new(fetch_tiff_tag!(ifd, PanasonicTag::CF2HufTable).get_data(), Endian::Little);
+      let mut bs = ByteStream::new(fetch_tiff_tag!(ifd, PanasonicTag::CF2HufTable).get_data()?, Endian::Little);
       let count = bs.get_u16()?;
       (0..count)
         .map(|_| Ok((bs.get_u16()?, bs.get_u16()?)))
         .collect::<std::result::Result<_, ByteStreamError>>()?
     };
     let huf_shift_down = {
-      let mut bs = ByteStream::new(fetch_tiff_tag!(ifd, PanasonicTag::CF2HufShiftDown).get_data(), Endian::Little);
+      let mut bs = ByteStream::new(fetch_tiff_tag!(ifd, PanasonicTag::CF2HufShiftDown).get_data()?, Endian::Little);
       let count = bs.get_u16()?;
       (0..count).map(|_| bs.get_u16()).collect::<std::result::Result<_, _>>()?
     };
     let num_of_strips_h = fetch_tiff_tag!(ifd, PanasonicTag::CF2NumberOfStripsH).force_u16(0);
     let num_of_strips_v = fetch_tiff_tag!(ifd, PanasonicTag::CF2NumberOfStripsV).force_u16(0);
     let strip_byte_offsets = {
-      let mut bs = ByteStream::new(fetch_tiff_tag!(ifd, PanasonicTag::CF2StripByteOffsets).get_data(), Endian::Little);
+      let mut bs = ByteStream::new(fetch_tiff_tag!(ifd, PanasonicTag::CF2StripByteOffsets).get_data()?, Endian::Little);
       let count = bs.get_u16()?;
       (0..count).map(|_| bs.get_u32()).collect::<std::result::Result<_, _>>()?
     };
     let strip_line_offsets = {
-      let mut bs = ByteStream::new(fetch_tiff_tag!(ifd, PanasonicTag::CF2StripLineOffsets).get_data(), Endian::Little);
+      let mut bs = ByteStream::new(fetch_tiff_tag!(ifd, PanasonicTag::CF2StripLineOffsets).get_data()?, Endian::Little);
       let count = bs.get_u16()?;
       (0..count)
         .map(|_| {
@@ -143,17 +143,17 @@ impl CF2Params {
         .collect::<std::result::Result<_, ByteStreamError>>()?
     };
     let strip_data_size = {
-      let mut bs = ByteStream::new(fetch_tiff_tag!(ifd, PanasonicTag::CF2StripDataSize).get_data(), Endian::Little);
+      let mut bs = ByteStream::new(fetch_tiff_tag!(ifd, PanasonicTag::CF2StripDataSize).get_data()?, Endian::Little);
       let count = bs.get_u16()?;
       (0..count).map(|_| bs.get_u32()).collect::<std::result::Result<_, _>>()?
     };
     let strip_widths = {
-      let mut bs = ByteStream::new(fetch_tiff_tag!(ifd, PanasonicTag::CF2StripWidths).get_data(), Endian::Little);
+      let mut bs = ByteStream::new(fetch_tiff_tag!(ifd, PanasonicTag::CF2StripWidths).get_data()?, Endian::Little);
       let count = bs.get_u16()?;
       (0..count).map(|_| bs.get_u16()).collect::<std::result::Result<_, _>>()?
     };
     let strip_heights = {
-      let mut bs = ByteStream::new(fetch_tiff_tag!(ifd, PanasonicTag::CF2StripHeights).get_data(), Endian::Little);
+      let mut bs = ByteStream::new(fetch_tiff_tag!(ifd, PanasonicTag::CF2StripHeights).get_data()?, Endian::Little);
       let count = bs.get_u16()?;
       (0..count).map(|_| bs.get_u16()).collect::<std::result::Result<_, _>>()?
     };
@@ -179,6 +179,61 @@ impl CF2Params {
       strip_heights,
       strip_width,
     })
+  }
+
+  /// Check that the parameters describe strips and tables that the decoder
+  /// can use for an image of `width` pixels
+  fn validate(&self, width: usize) -> Result<()> {
+    let strips = self.num_of_strips_h as usize * self.num_of_strips_v as usize;
+    if strips == 0 {
+      return Err(decoder_error!("Panasonic V8: no strips"));
+    }
+    let lens = [
+      self.strip_byte_offsets.len(),
+      self.strip_line_offsets.len(),
+      self.strip_data_size.len(),
+      self.strip_widths.len(),
+      self.strip_heights.len(),
+    ];
+    if lens.iter().any(|&len| len < strips) {
+      return Err(decoder_error!("Panasonic V8: strip tables with {:?} entries for {} strips", lens, strips));
+    }
+    // Each line of a strip holds two rows of pixel pairs
+    if let Some(odd) = self.strip_widths[..strips].iter().find(|&&strip_width| strip_width % 2 != 0) {
+      return Err(decoder_error!("Panasonic V8: strip width {} is odd", odd));
+    }
+    let total_width: usize = self.strip_widths.iter().map(|&strip_width| strip_width as usize).sum();
+    if total_width / self.num_of_strips_v as usize != width {
+      return Err(decoder_error!(
+        "Panasonic V8: strips of {} pixels in {} rows for an image width of {}",
+        total_width,
+        self.num_of_strips_v,
+        width
+      ));
+    }
+    if self.gamma_point.len() < 6 || self.gamma_slope.len() < 6 {
+      return Err(decoder_error!(
+        "Panasonic V8: {} gamma points and {} slopes, 6 are needed",
+        self.gamma_point.len(),
+        self.gamma_slope.len()
+      ));
+    }
+    if self.huf_table.len() > 17 || self.huf_table.iter().any(|&(bits, _)| bits == 0 || bits > 16) {
+      return Err(decoder_error!("Panasonic V8: invalid Huffman table {:?}", self.huf_table));
+    }
+    // Symbols past the table match any input, so the index can be one past
+    // the table, up to the 17th symbol
+    if self.huf_shift_down.len() <= self.huf_table.len().min(16) {
+      return Err(decoder_error!(
+        "Panasonic V8: {} shift down values for {} Huffman symbols",
+        self.huf_shift_down.len(),
+        self.huf_table.len()
+      ));
+    }
+    if self.huf_shift_down.iter().any(|&shift| shift != 0) {
+      return Err(decoder_error!("Panasonic V8: shift down values {:?} are not supported", self.huf_shift_down));
+    }
+    Ok(())
   }
 }
 
@@ -354,7 +409,8 @@ fn calc_gamma(params: &CF2Params, idx: u32) -> u16 {
 
   let point = gamma_points[idx];
   let slope = gamma_slopes[idx];
-  let mut tmp: u32 = x - (slope & 0xFFFF);
+  // Crafted parameters wrap around like in release builds
+  let mut tmp: u32 = x.wrapping_sub(slope & 0xFFFF);
   let result: u16;
 
   if (point & 0x1F) == 31 {
@@ -366,13 +422,13 @@ fn calc_gamma(params: &CF2Params, idx: u32) -> u16 {
       let result = ((slope >> 16) & 0xFFFF) as u16;
       return u16::min(result, clipping);
     } else if (point & 0x1F) != 0 {
-      tmp = (tmp + (1 << ((point & 0x1F) - 1))) >> (point & 0x1F);
+      tmp = tmp.wrapping_add(1 << ((point & 0x1F) - 1)) >> (point & 0x1F);
     }
   } else {
     tmp <<= point & 0xF;
   }
 
-  result = (tmp + ((slope >> 16) & 0xFFFF)) as u16;
+  result = tmp.wrapping_add((slope >> 16) & 0xFFFF) as u16;
   u16::min(result, clipping)
 }
 
@@ -399,11 +455,7 @@ pub(crate) fn decode_panasonic_v8(rawfile: &RawSource, width: usize, height: usi
 
   let params = CF2Params::new(ifd)?;
   log::debug!("pana8: params: {:?}", params);
-
-  assert_eq!(
-    params.strip_widths.iter().map(|x| *x as i32).sum::<i32>() as usize / params.num_of_strips_v as usize,
-    width
-  );
+  params.validate(width)?;
 
   let total_strip_count = (params.num_of_strips_h * params.num_of_strips_v) as usize;
   let mut bitstreams = Vec::with_capacity(total_strip_count);
@@ -464,7 +516,8 @@ fn decode_strip(buf: &[u8], params: &CF2Params, tables: &Tables, strip_id: usize
       // Shiftdown seems to be the count of bits shifted to right during encoding.
       // It's 0 for all existing samples so far, highly interested in samples that has
       let shift_down: u8 = (params.huf_shift_down[ssss as usize] & 0x1F) as u8;
-      assert_eq!(shift_down, 0, "CF2HufShiftDown samples required");
+      // CF2Params::validate() rejects other values, there are no samples with them
+      debug_assert_eq!(shift_down, 0, "CF2HufShiftDown samples required");
 
       // Calculate total required bits to read from bitstream.
       let req_bits: u32 = ssss.saturating_sub(shift_down as u8) as u32;
@@ -516,7 +569,8 @@ fn decode_strip(buf: &[u8], params: &CF2Params, tables: &Tables, strip_id: usize
 
     // Copy line buffer into output image.
     // Line buffer contains two rows packed into one row with double width.
-    assert_eq!(linebuf.len(), 2 * width);
+    // CF2Params::validate() ensures an even strip width
+    debug_assert_eq!(linebuf.len(), 2 * width);
     for col in (0..width).step_by(2) {
       if let Some(gamma_table) = &state.gamma_table {
         debug_assert!(!gamma_table.is_empty());
@@ -533,4 +587,72 @@ fn decode_strip(buf: &[u8], params: &CF2Params, tables: &Tables, strip_id: usize
     }
   }
   Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  /// Parameters of one strip of 4x2 pixels with a linear gamma
+  fn params() -> CF2Params {
+    CF2Params {
+      strip_height: 0,
+      strip_width: 0,
+      gamma_point: vec![65536; 6],
+      gamma_slope: vec![0; 6],
+      gamma_clip_val: 0xffff,
+      huf_init_val0: 0,
+      huf_init_val1: 0,
+      huf_init_val2: 0,
+      huf_init_val3: 0,
+      huf_table: (1..=16).map(|bits| (bits, 0)).chain([(16, 1)]).collect(),
+      huf_shift_down: vec![0; 17],
+      num_of_strips_h: 1,
+      num_of_strips_v: 1,
+      strip_byte_offsets: vec![0],
+      strip_line_offsets: vec![StripLineOffset { cols: 0, rows: 0 }],
+      strip_data_size: vec![0],
+      strip_widths: vec![4],
+      strip_heights: vec![2],
+    }
+  }
+
+  #[test]
+  fn validate_cf2_params() {
+    assert!(params().validate(4).is_ok());
+    let invalid: [fn(&mut CF2Params); 10] = [
+      |p| p.num_of_strips_v = 0,
+      |p| p.num_of_strips_h = 2,
+      |p| p.strip_widths = vec![3],
+      |p| p.strip_widths = vec![6],
+      |p| p.gamma_slope.truncate(5),
+      |p| p.huf_table.push((1, 0)),
+      |p| p.huf_table[0].0 = 0,
+      |p| p.huf_table[0].0 = 17,
+      |p| p.huf_shift_down.truncate(16),
+      |p| p.huf_shift_down[3] = 0x20,
+    ];
+    for (i, change) in invalid.iter().enumerate() {
+      let mut params = params();
+      change(&mut params);
+      assert!(params.validate(4).is_err(), "case {i}");
+    }
+    // A shorter Huffman table needs a shift down value past the table
+    let mut short = params();
+    short.huf_table.truncate(4);
+    short.huf_shift_down.truncate(4);
+    assert!(short.validate(4).is_err());
+    short.huf_shift_down.push(0);
+    assert!(short.validate(4).is_ok());
+  }
+
+  #[test]
+  fn gamma_of_extreme_parameters() {
+    let mut params = params();
+    params.gamma_point = vec![0x10, 0x1e, 0x0f, 0x1f, 0x05, 0x13];
+    params.gamma_slope = vec![0xffff_ffff, 0xffff_0001, 2, 3, 0xffff, 0xffff];
+    for idx in [0, 1, 0x8000, 0xffff, 0x1_ffff] {
+      calc_gamma(&params, idx);
+    }
+  }
 }

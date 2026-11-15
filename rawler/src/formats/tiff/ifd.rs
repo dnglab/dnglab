@@ -4,7 +4,7 @@
 use super::{
   Entry, Result, TiffError, Value, apply_corr,
   entry::RawEntry,
-  read_from_file,
+  offset_add, read_from_file,
   reader::{EndianReader, ReadByteOrder},
 };
 use crate::{
@@ -16,11 +16,31 @@ use byteorder::{LittleEndian, ReadBytesExt};
 use log::debug;
 use serde::{Deserialize, Serialize};
 use std::{
-  collections::{BTreeMap, HashMap},
+  collections::{BTreeMap, HashMap, HashSet},
   io::{Read, Seek, SeekFrom},
 };
 
 const MAX_IFD_ENTRIES: usize = 4096;
+
+/// Limit for the number of IFDs in a chain
+const MAX_IFD_CHAIN: usize = 256;
+
+/// Limit for the number of sub-IFDs of a tag
+const MAX_SUB_IFDS: usize = 64;
+
+/// Record the IFD at `offset` in a chain, false if the chain loops back to
+/// an IFD in `visited` or reaches `MAX_IFD_CHAIN` IFDs
+pub(super) fn visit_chained_ifd(visited: &mut HashSet<u32>, offset: u32) -> bool {
+  if visited.len() >= MAX_IFD_CHAIN {
+    log::warn!("TIFF: IFD chain reaches the limit of {} IFDs, ignoring the rest", MAX_IFD_CHAIN);
+    false
+  } else if !visited.insert(offset) {
+    log::warn!("TIFF: IFD chain loops back to offset {}, ignoring the rest", offset);
+    false
+  } else {
+    true
+  }
+}
 
 #[derive(Debug)]
 pub enum OffsetMode {
@@ -54,7 +74,7 @@ impl IFD {
   }
 
   pub fn new_root_with_correction<R: Read + Seek>(reader: &mut R, offset: u32, base: u32, corr: i32, max_chain: usize, sub_tags: &[u16]) -> Result<IFD> {
-    reader.seek(SeekFrom::Start((base + offset) as u64))?;
+    reader.seek(SeekFrom::Start(base as u64 + offset as u64))?;
     let endian = match reader.read_u16::<LittleEndian>()? {
       0x4949 => Endian::Little,
       0x4d4d => Endian::Big,
@@ -76,32 +96,30 @@ impl IFD {
     let mut multi_sub_tags = vec![];
     multi_sub_tags.extend_from_slice(sub_tags);
 
-    next_ifd = apply_corr(next_ifd, corr);
+    next_ifd = apply_corr(next_ifd, corr)?;
+    let mut visited = HashSet::from([next_ifd]);
     let mut root = IFD::new(reader, next_ifd, base, corr, endian, &multi_sub_tags)?;
     if root.entries.is_empty() {
       return Err(TiffError::General("TIFF is invalid, IFD must contain at least one entry".to_string()));
     }
     next_ifd = root.next_ifd;
 
-    while next_ifd != 0 {
-      next_ifd = apply_corr(next_ifd, corr);
+    // max_chain limits the IFDs chained to the root, 0 for no limit
+    while next_ifd != 0 && (max_chain == 0 || root.chain.len() < max_chain) && visit_chained_ifd(&mut visited, next_ifd) {
       let ifd = IFD::new(reader, next_ifd, base, corr, endian, &multi_sub_tags)?;
       if ifd.entries.is_empty() {
         return Err(TiffError::General("TIFF is invalid, IFD must contain at least one entry".to_string()));
       }
       next_ifd = ifd.next_ifd;
       root.chain.push(ifd);
-
-      if root.chain.len() > max_chain && max_chain > 0 {
-        break;
-      }
     }
 
     Ok(root)
   }
 
   pub fn new<R: Read + Seek>(reader: &mut R, offset: u32, base: u32, corr: i32, endian: Endian, sub_tags: &[u16]) -> Result<IFD> {
-    reader.seek(SeekFrom::Start((base + offset) as u64))?;
+    reader.seek(SeekFrom::Start(base as u64 + offset as u64))?;
+    // Offsets of sub-IFDs, already corrected
     let mut sub_ifd_offsets = HashMap::new();
     let mut reader = EndianReader::new(reader, endian);
     let entry_count = reader.read_u16()?;
@@ -116,9 +134,12 @@ impl IFD {
 
     let mut entries = BTreeMap::new();
     let mut sub = HashMap::new();
-    let mut next_pos = reader.position()?;
+    let table_start = reader.position()?;
+    let mut next_pos = table_start;
     debug!("Parse entries");
     let mut consecutive_errors = 0;
+    // False if the parsing stopped before the end of the entry table
+    let mut complete = true;
 
     for i in 0..entry_count {
       if i as usize >= MAX_IFD_ENTRIES {
@@ -126,20 +147,23 @@ impl IFD {
           "TIFF: Reached maximum IFD entry limit ({}). Stopping parse to prevent infinite loops.",
           MAX_IFD_ENTRIES
         );
+        complete = false;
         break;
       }
 
       if let Err(e) = reader.goto(next_pos) {
         log::warn!("Truncated IFD: Could not seek to next entry position. Stopping parse. Error: {}", e);
+        complete = false;
         break;
       }
 
-      next_pos += 12;
+      next_pos = next_pos.saturating_add(12);
 
       let tag = match reader.read_u16() {
         Ok(t) => t,
         Err(e) => {
           log::warn!("Truncated IFD: Could not read tag ID (Index {}). Stopping parse. Error: {}", i, e);
+          complete = false;
           break;
         }
       };
@@ -150,13 +174,13 @@ impl IFD {
 
           if sub_tags.contains(&tag) {
             match &entry.value {
-              Value::Long(offsets) => {
-                sub_ifd_offsets.insert(tag, offsets.clone());
-              }
-              Value::Unknown(tag, offsets) => {
-                sub_ifd_offsets.insert(*tag, vec![offsets[0] as u32]);
-              }
-              Value::Undefined(_) => {
+              Value::Long(offsets) => match offsets.iter().map(|offset| apply_corr(*offset, corr)).collect::<Result<Vec<_>>>() {
+                Ok(offsets) => {
+                  sub_ifd_offsets.insert(tag, offsets);
+                }
+                Err(err) => log::warn!("Invalid SubIFD offset for tag 0x{:X}, skipping: {}", tag, err),
+              },
+              Value::Undefined(_) | Value::Unknown(..) => {
                 if let Some(offset) = entry.offset() {
                   sub_ifd_offsets.insert(tag, vec![offset as u32]);
                 } else {
@@ -181,16 +205,25 @@ impl IFD {
           // If we fail 5 times in a row, the IFD is likely garbage or physically truncated.
           if consecutive_errors >= 5 {
             log::warn!("Too many consecutive parsing errors ({}). Stopping parse to prevent flood.", consecutive_errors);
+            complete = false;
             break;
           }
         }
       }
     }
 
-    // Some TIFF writers skip the next ifd pointer
-    // If we get an I/O error, we fallback to 0, signaling the end of IFD chains.
-    let next_ifd = match reader.read_u32() {
-      Ok(ptr) => ptr,
+    // The next IFD pointer follows the entry table, a failed entry leaves the
+    // reader elsewhere. If the parsing stopped early, the IFD is damaged and
+    // ends the IFD chain.
+    // Some TIFF writers skip the next ifd pointer: on an I/O error, we
+    // fallback to 0, signaling the end of IFD chains.
+    let table_end = u32::try_from(table_start as u64 + entry_count as u64 * 12).map_err(|_| TiffError::Overflow("IFD entry table exceeds 4 GiB".into()));
+    let next_ifd = match table_end
+      .and_then(|end| reader.goto(end))
+      .and_then(|_| reader.read_u32().map_err(TiffError::from))
+    {
+      Ok(ptr) if complete => ptr,
+      Ok(_) => 0,
       Err(e) => {
         debug!(
           "TIFF IFD reader failed to get next IFD pointer, fallback to 0 and continue. Original error was: {}",
@@ -203,24 +236,36 @@ impl IFD {
     // Process SubIFDs
     let pos = reader.position()?;
     let reader = reader.into_inner();
-    for subs in sub_ifd_offsets {
+    for (tag, offsets) in sub_ifd_offsets {
+      let mut seen = HashSet::new();
+      let offsets: Vec<u32> = offsets.into_iter().filter(|offset| seen.insert(*offset)).collect();
+      if offsets.len() > MAX_SUB_IFDS {
+        log::warn!("TIFF: tag 0x{:X} has {} sub-IFDs, reading the first {} only", tag, offsets.len(), MAX_SUB_IFDS);
+      }
       let mut ifds = Vec::new();
-      for offset in subs.1 {
-        match Self::new(reader, apply_corr(offset, corr), base, corr, endian, &[]) {
+      for offset in offsets.into_iter().take(MAX_SUB_IFDS) {
+        match Self::new(reader, offset, base, corr, endian, &[]) {
           Ok(ifd) => ifds.push(ifd),
           Err(err) => {
-            log::warn!("Error while processing TIFF sub-IFD for tag 0x{:X}, ignoring it: {}", subs.0, err);
+            log::warn!("Error while processing TIFF sub-IFD for tag 0x{:X}, ignoring it: {}", tag, err);
           }
         };
       }
-      sub.insert(subs.0, ifds);
+      sub.insert(tag, ifds);
     }
     EndianReader::new(reader, endian).goto(pos)?; // restore
+    let next_ifd = match next_ifd {
+      0 => 0,
+      next_ifd => apply_corr(next_ifd, corr).unwrap_or_else(|err| {
+        log::warn!("Invalid next IFD offset, ignoring the IFD chain: {}", err);
+        0
+      }),
+    };
     Ok(IFD {
       offset,
       base,
       corr,
-      next_ifd: if next_ifd == 0 { 0 } else { apply_corr(next_ifd, corr) },
+      next_ifd,
       entries,
       endian,
       sub,
@@ -238,55 +283,6 @@ impl IFD {
     self.entries().iter().map(|(tag, entry)| (tag, &entry.value))
   }
 
-  /*
-  pub fn new<R: Read + Seek>(reader: &mut R, offset: u32, base: u32, corr: i32, endian: Endian, sub_tags: &[u16]) -> Result<Self> {
-    reader.seek(SeekFrom::Start((base + offset) as u64))?;
-    let mut sub_ifd_offsets = Vec::new();
-    let mut reader = EndianReader::new(reader, endian);
-    let entry_count = reader.read_u16()?;
-    let mut entries = BTreeMap::new();
-    let mut sub = Vec::new();
-    for _ in 0..entry_count {
-      //let embedded = reader.read_u32()?;
-      let tag = reader.read_u16()?;
-      if tag == LegacyTiffRootTag::SubIFDs.into() || sub_tags.contains(&tag) {
-        let entry = Entry::parse(&mut reader, base, corr, tag)?;
-        match entry.value {
-          Value::Long(offsets) => {
-            sub_ifd_offsets.extend_from_slice(&offsets);
-          }
-          _ => {
-            todo!()
-          }
-        }
-      } else {
-        let entry = Entry::parse(&mut reader, base, corr, tag)?;
-        entries.insert(entry.tag, entry);
-      }
-    }
-    let next_ifd = reader.read_u32()?;
-
-    // Process SubIFDs
-    let pos = reader.position()?;
-    let reader = reader.into_inner();
-    for offset in sub_ifd_offsets {
-      let ifd = IFD::new(reader, apply_corr(offset, corr), base, corr, endian, sub_tags)?;
-      sub.push(ifd);
-    }
-    EndianReader::new(reader, endian).goto(pos)?; // restore
-
-    Ok(Self {
-      offset,
-      base,
-      corr,
-      next_ifd: if next_ifd == 0 { 0 } else { apply_corr(next_ifd, corr) },
-      entries,
-      endian,
-      sub,
-    })
-  }
-   */
-
   /// Extend the IFD with sub-IFDs from a specific tag.
   /// The IFD corrections are used from current IFD.
   pub fn extend_sub_ifds<R: Read + Seek>(&mut self, reader: &mut R, tag: u16) -> Result<Option<&Vec<Self>>> {
@@ -301,10 +297,11 @@ impl IFD {
           self.sub.insert(tag, subs);
           Ok(self.sub.get(&tag))
         }
-        val => {
-          debug!("Found IFD offset tag, but type mismatch: {:?}", val);
-          todo!()
-        }
+        val => Err(TiffError::FormatMismatch(format!(
+          "Tag 0x{:X} has the type {} and is no IFD offset",
+          tag,
+          val.value_type_name()
+        ))),
       }
     } else {
       Ok(None)
@@ -370,10 +367,10 @@ impl IFD {
         endian: self.endian,
         data: read_from_file(
           file,
-          self.base
+          self.base as u64
             + entry
               .offset()
-              .ok_or_else(|| TiffError::General(format!("Entry for tag {:?} has no offset", tag)))? as u32,
+              .ok_or_else(|| TiffError::General(format!("Entry for tag {:?} has no offset", tag)))? as u64,
           entry.byte_size(),
         )?,
       }));
@@ -389,10 +386,10 @@ impl IFD {
         endian: self.endian,
         data: read_from_file(
           file,
-          self.base
+          self.base as u64
             + entry
               .offset()
-              .ok_or_else(|| TiffError::General(format!("Entry for tag {:?} has no offset", tag)))? as u32,
+              .ok_or_else(|| TiffError::General(format!("Entry for tag {:?} has no offset", tag)))? as u64,
           len,
         )?,
       }));
@@ -405,20 +402,15 @@ impl IFD {
   }
 
   pub fn get_sub_ifd<T: TiffTag>(&self, tag: T) -> Option<&IFD> {
-    if let Some(ifds) = self.get_sub_ifd_all(tag) {
-      if ifds.len() == 1 {
-        ifds.get(0)
-      } else {
-        log::warn!(
-          "get_sub_ifd() for tag {:?} found more IFDs than expected: {}. Fallback to first IFD!",
-          tag,
-          ifds.len()
-        );
-        ifds.get(0)
-      }
-    } else {
-      None
+    let ifds = self.get_sub_ifd_all(tag)?;
+    if ifds.len() > 1 {
+      log::warn!(
+        "get_sub_ifd() for tag {:?} found more IFDs than expected: {}. Fallback to first IFD!",
+        tag,
+        ifds.len()
+      );
     }
+    ifds.first()
   }
 
   pub fn get_new_sub_file_type(&self) -> Option<u16> {
@@ -447,27 +439,6 @@ impl IFD {
     self.find_ifds_with_tag(tag).get(0).copied()
   }
 
-  /*
-  pub fn get_ifd<T: TiffTagEnum, R: Read + Seek>(&self, tag: T, reader: &mut R) -> Result<Option<IFD>> {
-    if let Some(offset) = self.get_entry(tag) {
-      match &offset.value {
-        Value::Long(v) => {
-          debug!("IFD offset: {}", v[0]);
-          Ok(Some(IFD::new(reader, apply_corr(v[0], self.corr), self.base, self.corr, self.endian, &[])?))
-        }
-        _ => {
-          return Err(TiffError::General(format!(
-            "TIFF tag {:?} is not of type LONG, thus can not be used as IFD offset in get_ifd().",
-            tag
-          )));
-        }
-      }
-    } else {
-      Ok(None)
-    }
-  }
-   */
-
   pub fn has_entry<T: TiffTag>(&self, tag: T) -> bool {
     self.get_entry(tag).is_some()
   }
@@ -485,7 +456,9 @@ impl IFD {
   }
 
   pub fn singlestrip_data_rawsource<'a>(&self, rawsource: &'a RawSource) -> Result<&'a [u8]> {
-    assert!(self.contains_singlestrip_image());
+    if !self.contains_singlestrip_image() {
+      return Err(TiffError::General("IFD contains no single strip image".to_string()));
+    }
 
     let offset = self
       .get_entry(TiffCommonTag::StripOffsets)
@@ -498,7 +471,7 @@ impl IFD {
       .value
       .force_usize(0);
 
-    Ok(rawsource.subview((self.base + offset) as u64, len as u64)?)
+    Ok(rawsource.subview(self.base as u64 + offset as u64, len as u64)?)
   }
 
   /// Return byte slices to strip data.
@@ -508,16 +481,8 @@ impl IFD {
     if !self.has_entry(TiffCommonTag::StripOffsets) {
       return Err(TiffError::General("IFD contains no strip data".into()));
     }
-    let offsets = if let Some(Entry { value: Value::Long(data), .. }) = self.get_entry(TiffCommonTag::StripOffsets) {
-      data
-    } else {
-      return Err(TiffError::General("Invalid datatype for StripOffsets".to_string()));
-    };
-    let sizes = if let Some(Entry { value: Value::Long(data), .. }) = self.get_entry(TiffCommonTag::StripByteCounts) {
-      data
-    } else {
-      return Err(TiffError::General("Invalid datatype for StripByteCounts".to_string()));
-    };
+    let offsets = self.offset_values(TiffCommonTag::StripOffsets)?;
+    let sizes = self.offset_values(TiffCommonTag::StripByteCounts)?;
 
     if offsets.len() != sizes.len() {
       return Err(TiffError::General(format!(
@@ -527,22 +492,28 @@ impl IFD {
       )));
     }
 
+    let Some(&first) = offsets.first() else {
+      return Err(TiffError::General("IFD contains no strip data".into()));
+    };
+
     // Check if all slices are continous
-    let (is_continous, end_off) =
-      offsets.iter().zip(sizes.iter()).fold(
-        (true, offsets[0]),
-        |acc, val| {
-          if acc.0 && acc.1 == *val.0 { (true, acc.1 + *val.1) } else { (false, 0) }
-        },
-      );
+    let mut end_off = first as u64;
+    let mut is_continous = true;
+    for (offset, size) in offsets.iter().zip(sizes.iter()) {
+      if *offset as u64 != end_off {
+        is_continous = false;
+        break;
+      }
+      end_off += *size as u64;
+    }
 
     let mut subviews = Vec::with_capacity(offsets.len());
     for (offset, size) in offsets.iter().zip(sizes.iter()) {
-      subviews.push(rawsource.subview((self.base + *offset) as u64, *size as u64)?);
+      subviews.push(rawsource.subview(self.base as u64 + *offset as u64, *size as u64)?);
     }
 
     let continous = if is_continous {
-      Some(rawsource.subview((self.base + offsets[0]) as u64, (end_off - offsets[0]) as u64)?)
+      Some(rawsource.subview(self.base as u64 + first as u64, end_off - first as u64)?)
     } else {
       None
     };
@@ -550,24 +521,33 @@ impl IFD {
     Ok((subviews, continous))
   }
 
+  /// Values of an offset or byte count tag, which TIFF allows as SHORT or LONG
+  fn offset_values<T: TiffTag>(&self, tag: T) -> Result<Vec<u32>> {
+    match self.get_entry(tag).map(|entry| &entry.value) {
+      Some(Value::Long(data)) => Ok(data.clone()),
+      Some(Value::Short(data)) => Ok(data.iter().map(|v| *v as u32).collect()),
+      Some(_) => Err(TiffError::General(format!("Invalid datatype for {:?}", tag))),
+      None => Err(TiffError::General(format!("IFD has no {:?} tag", tag))),
+    }
+  }
+
+  /// Return byte slices to tile data
   pub fn tile_data<'a>(&self, rawsource: &'a RawSource) -> Result<Vec<&'a [u8]>> {
-    let offsets = if let Some(Entry { value: Value::Long(data), .. }) = self.get_entry(TiffCommonTag::TileOffsets) {
-      data
-    } else {
-      return Err(TiffError::General("Invalid datatype for TileOffsets".to_string()));
-    };
+    let offsets = self.offset_values(TiffCommonTag::TileOffsets)?;
+    let byte_counts = self.offset_values(TiffCommonTag::TileByteCounts)?;
+    if offsets.len() != byte_counts.len() {
+      return Err(TiffError::General(format!(
+        "Can't get data from tiles: offsets has len {} but sizes has len {}",
+        offsets.len(),
+        byte_counts.len()
+      )));
+    }
 
-    let byte_counts = if let Some(Entry { value: Value::Long(data), .. }) = self.get_entry(TiffCommonTag::TileByteCounts) {
-      data
-    } else {
-      return Err(TiffError::General("Invalid datatype for TileByteCounts".to_string()));
-    };
-
-    let mut tile_slices = Vec::with_capacity(offsets.len());
-    offsets.iter().zip(byte_counts.iter()).for_each(|(offset, size)| {
-      tile_slices.push(rawsource.subview(*offset as u64, *size as u64).map_err(TiffError::Io));
-    });
-    Ok(tile_slices.into_iter().collect::<Result<Vec<_>>>()?)
+    offsets
+      .iter()
+      .zip(byte_counts.iter())
+      .map(|(offset, size)| Ok(rawsource.subview(self.base as u64 + *offset as u64, *size as u64)?))
+      .collect()
   }
 
   /// Check for the data mode (Strips or Tiles)
@@ -589,68 +569,71 @@ impl IFD {
         Value::Undefined(data) => {
           let mut off = 0;
           let mut endian = self.endian;
+          // The two bytes at `off`, None if the makernote is shorter
+          let data_at = |off: usize| data.get(off..off + 2);
 
           // Olympus starts the makernote with their own name, sometimes truncated
-          if data[0..5] == b"OLYMP"[..] {
+          if data.starts_with(b"OLYMP") {
             off += 8;
-            if data[0..7] == b"OLYMPUS"[..] {
+            if data.starts_with(b"OLYMPUS") {
               off += 4;
             }
           }
 
           // Epson starts the makernote with its own name
-          if data[0..5] == b"EPSON"[..] {
+          if data.starts_with(b"EPSON") {
             off += 8;
           }
 
           // Fujifilm has 12 extra bytes
-          if data[0..8] == b"FUJIFILM"[..] {
+          if data.starts_with(b"FUJIFILM") {
             off += 12;
           }
 
           // Sony has 12 extra bytes
-          if data[0..9] == b"SONY DSC "[..] {
+          if data.starts_with(b"SONY DSC ") {
             off += 12;
           }
 
           // Pentax makernote starts with AOC\0 - If it's there, skip it
-          if data[0..4] == b"AOC\0"[..] {
+          if data.starts_with(b"AOC\0") {
             off += 4;
           }
 
           // Pentax can also start with PENTAX and in that case uses different offsets
-          if data[0..6] == b"PENTAX"[..] {
+          if data.starts_with(b"PENTAX") {
             off += 8;
-            let endian = if data[off..off + 2] == b"II"[..] { Endian::Little } else { Endian::Big };
+            let endian = if data_at(off) == Some(b"II") { Endian::Little } else { Endian::Big };
             // All offsets in this IFD are relative to the start of this tag,
             // so wie use the offset as correction value.
-            let corr = offset as i32;
+            let corr = i32::try_from(offset).map_err(|_| TiffError::Overflow(format!("Makernote offset {} is out of range", offset)))?;
             // The IFD itself starts 10 bytes after tag offset.
-            return Ok(Some(IFD::new(reader, offset + 10, self.base, corr, endian, sub_tags)?));
+            return Ok(Some(IFD::new(reader, offset_add(offset, 10)?, self.base, corr, endian, sub_tags)?));
           }
 
-          if data[0..7] == b"Nikon\0\x02"[..] {
+          if data.starts_with(b"Nikon\0\x02") {
             off += 10;
-            let endian = if data[off..off + 2] == b"II"[..] { Endian::Little } else { Endian::Big };
-            return Ok(Some(IFD::new(reader, 8, self.base + offset + 10, 0, endian, sub_tags)?));
+            let endian = if data_at(off) == Some(b"II") { Endian::Little } else { Endian::Big };
+            return Ok(Some(IFD::new(reader, 8, offset_add(offset_add(self.base, offset)?, 10)?, 0, endian, sub_tags)?));
           }
 
           // Some have MM or II to indicate endianness - read that
-          if data[off..off + 2] == b"II"[..] {
+          if data_at(off) == Some(b"II") {
             off += 2;
             endian = Endian::Little;
           }
-          if data[off..off + 2] == b"MM"[..] {
+          if data_at(off) == Some(b"MM") {
             off += 2;
             endian = Endian::Big;
           }
 
+          let ifd_offset = offset_add(offset, off as u32)?;
           match offset_mode {
-            OffsetMode::Absolute => Ok(Some(IFD::new(reader, offset + off as u32, self.base, self.corr, endian, sub_tags)?)),
+            OffsetMode::Absolute => Ok(Some(IFD::new(reader, ifd_offset, self.base, self.corr, endian, sub_tags)?)),
             OffsetMode::RelativeToIFD => {
               // Value offsets are relative to IFD offset
-              let corr = offset + off as u32;
-              Ok(Some(IFD::new(reader, offset + off as u32, self.base, corr as i32, endian, sub_tags)?))
+              let corr = i32::try_from(ifd_offset).map_err(|_| TiffError::Overflow(format!("Makernote offset {} is out of range", ifd_offset)))?;
+              Ok(Some(IFD::new(reader, ifd_offset, self.base, corr, endian, sub_tags)?))
             }
           }
         }
@@ -693,5 +676,184 @@ impl IFD {
       }
     }
     out
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+  use std::io::Cursor;
+
+  /// IFD at offset 8 with the entry `entry` and no next IFD
+  fn ifd_with_entry(entry: [u8; 12]) -> Vec<u8> {
+    ifd_with_entries(&[entry])
+  }
+
+  /// IFD at offset 8 with the `entries` and no next IFD
+  fn ifd_with_entries(entries: &[[u8; 12]]) -> Vec<u8> {
+    let mut data = vec![0x49, 0x49, 42, 0, 8, 0, 0, 0];
+    data.extend_from_slice(&(entries.len() as u16).to_le_bytes());
+    data.extend(entries.iter().flatten());
+    data.extend_from_slice(&[0, 0, 0, 0]);
+    data
+  }
+
+  #[test]
+  fn sub_ifd_of_unknown_type_uses_tag_and_offset() -> Result<()> {
+    // tag 0x14A, type 0 (unknown), count 0
+    let data = ifd_with_entry([0x4a, 0x01, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+    let ifd = IFD::new(&mut Cursor::new(data), 8, 0, 0, Endian::Little, &[0x14a])?;
+    assert!(ifd.sub.contains_key(&0x14a));
+    assert!(!ifd.sub.contains_key(&0));
+    Ok(())
+  }
+
+  #[test]
+  fn sub_ifd_of_undefined_type_is_corrected_once() -> Result<()> {
+    // tag 0x927C, type UNDEFINED, count 18, offset 24 + correction 2
+    let mut data = ifd_with_entry([0x7c, 0x92, 7, 0, 18, 0, 0, 0, 24, 0, 0, 0]);
+    // Sub-IFD at 26 with tag 0x200
+    data.extend_from_slice(&[1, 0, 0x00, 0x02, 3, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0]);
+    let ifd = IFD::new(&mut Cursor::new(data), 8, 0, 2, Endian::Little, &[0x927c])?;
+    assert!(ifd.sub[&0x927c][0].has_entry(0x200_u16));
+    Ok(())
+  }
+
+  /// IFD at 8 with a SubIFDs entry of LONG `offsets`, then 256 zero bytes
+  fn ifd_with_sub_ifds(offsets: &[u32]) -> Vec<u8> {
+    let count = (offsets.len() as u32).to_le_bytes();
+    let mut entry = [0x4a, 0x01, 4, 0, count[0], count[1], count[2], count[3], 26, 0, 0, 0];
+    if offsets.len() == 1 {
+      entry[8..].copy_from_slice(&offsets[0].to_le_bytes());
+    }
+    let mut data = ifd_with_entry(entry);
+    if offsets.len() > 1 {
+      data.extend(offsets.iter().flat_map(|offset| offset.to_le_bytes()));
+    }
+    data.resize(data.len() + 256, 0);
+    data
+  }
+
+  #[test]
+  fn damaged_ifd_ends_the_chain() -> Result<()> {
+    // 6 entries of type LONG, count 2, with data beyond the end of the stream
+    let mut data = vec![0x49, 0x49, 42, 0, 8, 0, 0, 0, 6, 0];
+    for tag in 0x100..0x106_u16 {
+      data.extend_from_slice(&tag.to_le_bytes());
+      data.extend_from_slice(&[4, 0, 2, 0, 0, 0, 0, 0x10, 0, 0]);
+    }
+    data.extend_from_slice(&[0, 0, 0, 0]);
+    let ifd = IFD::new(&mut Cursor::new(data), 8, 0, 0, Endian::Little, &[])?;
+    assert!(ifd.entries.is_empty());
+    assert_eq!(ifd.next_ifd, 0);
+    Ok(())
+  }
+
+  #[test]
+  fn next_ifd_follows_the_entry_table() -> Result<()> {
+    use crate::formats::tiff::tests::ifd_chain;
+    let data = ifd_chain(8, &[26, 0]);
+    let ifd = IFD::new(&mut Cursor::new(data), 8, 0, 0, Endian::Little, &[])?;
+    assert_eq!(ifd.next_ifd, 26);
+    Ok(())
+  }
+
+  #[test]
+  fn short_makernotes_do_not_panic() {
+    for prefix in [
+      &b""[..],
+      b"OLY",
+      b"OLYMP",
+      b"OLYMPUS",
+      b"EPSON",
+      b"FUJIFILM",
+      b"SONY DSC ",
+      b"AOC\0",
+      b"PENTAX",
+      b"Nikon\0\x02",
+      b"I",
+    ] {
+      // Root IFD with a MakerNotes entry of the prefix, the data after the IFD
+      let count = (prefix.len() as u32).to_le_bytes();
+      let mut data = ifd_with_entry([0x7c, 0x92, 7, 0, count[0], count[1], count[2], count[3], 26, 0, 0, 0]);
+      if prefix.len() <= 4 {
+        data[18..18 + prefix.len()].copy_from_slice(prefix);
+      } else {
+        data.extend_from_slice(prefix);
+      }
+      let ifd = IFD::new(&mut Cursor::new(data.clone()), 8, 0, 0, Endian::Little, &[]).expect("root IFD");
+      for mode in [OffsetMode::Absolute, OffsetMode::RelativeToIFD] {
+        let _ = ifd.parse_makernote(&mut Cursor::new(data.clone()), mode, &[]);
+      }
+    }
+  }
+
+  #[test]
+  fn extend_sub_ifds_needs_offsets() -> Result<()> {
+    use crate::formats::tiff::tests::ifd_chain;
+    let data = ifd_chain(8, &[0]);
+    let mut ifd = IFD::new(&mut Cursor::new(data.clone()), 8, 0, 0, Endian::Little, &[])?;
+    // Tag 0x100 is a SHORT
+    assert!(matches!(ifd.extend_sub_ifds(&mut Cursor::new(data), 0x100), Err(TiffError::FormatMismatch(_))));
+    Ok(())
+  }
+
+  #[test]
+  fn singlestrip_data_needs_a_single_strip() -> Result<()> {
+    use crate::formats::tiff::tests::ifd_chain;
+    let data = ifd_chain(8, &[0]);
+    let ifd = IFD::new(&mut Cursor::new(data.clone()), 8, 0, 0, Endian::Little, &[])?;
+    assert!(ifd.singlestrip_data_rawsource(&RawSource::new_from_slice(&data)).is_err());
+    Ok(())
+  }
+
+  #[test]
+  fn strip_data_of_short_and_empty_strips() -> Result<()> {
+    // Two SHORT strips of 2 bytes each at 38 and 40
+    let mut data = ifd_with_entries(&[[0x11, 0x01, 3, 0, 2, 0, 0, 0, 38, 0, 40, 0], [0x17, 0x01, 3, 0, 2, 0, 0, 0, 2, 0, 2, 0]]);
+    data.extend_from_slice(b"ABCD");
+    let ifd = IFD::new(&mut Cursor::new(data.clone()), 8, 0, 0, Endian::Little, &[])?;
+    let source = RawSource::new_from_slice(&data);
+    let (strips, continous) = ifd.strip_data(&source)?;
+    assert_eq!(strips, [&b"AB"[..], &b"CD"[..]]);
+    assert_eq!(continous, Some(&b"ABCD"[..]));
+    // StripOffsets and StripByteCounts with a count of 0
+    let data = ifd_with_entries(&[[0x11, 0x01, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0x17, 0x01, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0]]);
+    let ifd = IFD::new(&mut Cursor::new(data.clone()), 8, 0, 0, Endian::Little, &[])?;
+    assert!(ifd.strip_data(&RawSource::new_from_slice(&data)).is_err());
+    Ok(())
+  }
+
+  #[test]
+  fn tile_data_is_relative_to_base() -> Result<()> {
+    // TIFF behind 4 bytes of other data, two SHORT tiles at 38 and 40
+    let mut data = b"XXXX".to_vec();
+    data.extend(ifd_with_entries(&[
+      [0x44, 0x01, 3, 0, 2, 0, 0, 0, 38, 0, 40, 0],
+      [0x45, 0x01, 3, 0, 2, 0, 0, 0, 2, 0, 2, 0],
+    ]));
+    data.extend_from_slice(b"ABCD");
+    let ifd = IFD::new(&mut Cursor::new(data.clone()), 8, 4, 0, Endian::Little, &[])?;
+    assert_eq!(ifd.tile_data(&RawSource::new_from_slice(&data))?, [&b"AB"[..], &b"CD"[..]]);
+    // A byte count is missing
+    let data = ifd_with_entries(&[[0x44, 0x01, 3, 0, 2, 0, 0, 0, 38, 0, 40, 0], [0x45, 0x01, 3, 0, 1, 0, 0, 0, 2, 0, 0, 0]]);
+    let ifd = IFD::new(&mut Cursor::new(data.clone()), 8, 0, 0, Endian::Little, &[])?;
+    assert!(ifd.tile_data(&RawSource::new_from_slice(&data)).is_err());
+    Ok(())
+  }
+
+  #[test]
+  fn sub_ifds_are_unique_and_limited() -> Result<()> {
+    let start = 26 + 4 * 100;
+    // The same sub-IFD 100 times
+    let data = ifd_with_sub_ifds(&[start; 100]);
+    let ifd = IFD::new(&mut Cursor::new(data), 8, 0, 0, Endian::Little, &[0x14a])?;
+    assert_eq!(ifd.sub[&0x14a].len(), 1);
+    // 100 different empty sub-IFDs
+    let offsets: Vec<u32> = (0..100).map(|i| start + 2 * i).collect();
+    let data = ifd_with_sub_ifds(&offsets);
+    let ifd = IFD::new(&mut Cursor::new(data), 8, 0, 0, Endian::Little, &[0x14a])?;
+    assert_eq!(ifd.sub[&0x14a].len(), MAX_SUB_IFDS);
+    Ok(())
   }
 }

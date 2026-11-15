@@ -17,6 +17,7 @@ use super::FormatHint;
 use super::Orientation;
 use super::RawDecodeParams;
 use super::RawMetadata;
+use super::image_bytes;
 use super::ok_cfa_image;
 
 #[derive(Debug, Clone)]
@@ -45,9 +46,13 @@ impl<'a> Decoder for DcsDecoder<'a> {
     let width = fetch_tiff_tag!(raw, TiffCommonTag::ImageWidth).force_usize(0);
     let height = fetch_tiff_tag!(raw, TiffCommonTag::ImageLength).force_usize(0);
     let offset = fetch_tiff_tag!(raw, TiffCommonTag::StripOffsets).force_usize(0);
+    image_bytes("DCS", width, height, 8)?;
     let src = file.subview_until_eof_padded(offset as u64)?; // TODO add size and check all samples
 
     let linearization = fetch_tiff_tag!(self.tiff, TiffCommonTag::GrayResponse);
+    if linearization.count() < 256 {
+      return Err(decoder_error!("DCS: GrayResponseCurve has {} values, 256 are needed", linearization.count()));
+    }
     let table = {
       let mut t: [u16; 256] = [0; 256];
       for i in 0..256 {
@@ -79,5 +84,48 @@ impl<'a> Decoder for DcsDecoder<'a> {
 
   fn format_hint(&self) -> FormatHint {
     FormatHint::DCS
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use std::io::Cursor;
+
+  use super::*;
+  use crate::formats::tiff::writer::TiffWriter;
+
+  /// DCS460D file with an image of the given size and a gray response curve
+  /// of `curve_len` values
+  fn dcs_file(width: u32, height: u32, curve_len: usize) -> std::result::Result<Vec<u8>, Box<dyn std::error::Error>> {
+    let mut buf = Cursor::new(Vec::new());
+    let tiff = TiffWriter::new(&mut buf)?;
+    let mut root = tiff.new_directory();
+    root.add_tag(TiffCommonTag::Make, "KODAK");
+    root.add_tag(TiffCommonTag::Model, "DCS460D         FILE VERSION 3");
+    root.add_tag(TiffCommonTag::NewSubFileType, 0_u32);
+    root.add_tag(TiffCommonTag::ImageWidth, width);
+    root.add_tag(TiffCommonTag::ImageLength, height);
+    root.add_tag(TiffCommonTag::StripOffsets, 8_u32);
+    root.add_tag(TiffCommonTag::GrayResponse, &vec![0_u16; curve_len]);
+    tiff.build(root)?;
+    Ok(buf.into_inner())
+  }
+
+  #[test]
+  fn invalid_size_or_curve_is_an_error() -> std::result::Result<(), Box<dyn std::error::Error>> {
+    for (width, height, curve_len) in [(0, 4, 256), (4, 0, 256), (4, 4, 255)] {
+      let source = RawSource::new_from_slice(&dcs_file(width, height, curve_len)?);
+      let decoder = crate::get_decoder(&source)?;
+      let result = decoder.raw_image(&source, &RawDecodeParams::default(), false);
+      assert!(
+        matches!(&result, Err(RawlerError::DecoderFailed { message, .. }) if message.starts_with("DCS: ")),
+        "{}x{}, {} values: {:?}",
+        width,
+        height,
+        curve_len,
+        result.err()
+      );
+    }
+    Ok(())
   }
 }

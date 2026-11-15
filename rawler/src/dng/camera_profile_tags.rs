@@ -122,7 +122,9 @@ fn read_dims(ifd: &IFD, tag: DngTag) -> Option<[u32; 3]> {
 /// Table data with 3 values for each entry of `dims`
 fn read_table_data(ifd: &IFD, tag: DngTag, dims: [u32; 3]) -> Option<Vec<f32>> {
   let data = read_f32s(ifd, tag)?;
-  if dims.iter().map(|d| *d as usize).product::<usize>() * 3 == data.len() {
+  // A size that overflows can't match the data
+  let size = dims.iter().try_fold(3_usize, |size, d| size.checked_mul(*d as usize));
+  if size == Some(data.len()) {
     Some(data)
   } else {
     log::warn!("Invalid {:?} size {} for dimensions {:?}", tag, data.len(), dims);
@@ -665,13 +667,9 @@ fn decode_gain_table_map_version(data: &[u8], endian: Endian, version2: bool) ->
     3 => 4,
     _ => return Err(format!("unsupported data type {}", data_type)),
   };
-  if r.remaining() < count * bytes_per_value {
-    return Err(format!(
-      "{} gain values need {} bytes, but only {} available",
-      count,
-      count * bytes_per_value,
-      r.remaining()
-    ));
+  let size = count.checked_mul(bytes_per_value).ok_or("map size overflows")?;
+  if r.remaining() < size {
+    return Err(format!("{} gain values need {} bytes, but only {} available", count, size, r.remaining()));
   }
   let gains = match data_type {
     0 => GainData::U8(r.bytes(count)?.to_vec()),
@@ -891,6 +889,17 @@ mod tests {
     assert!(decode_gain_table_map(&data, Endian::Little).is_err());
   }
 
+  #[test]
+  fn gain_table_map_size_overflows() {
+    // 2^62 points of 4 bytes
+    let map = GainTableMap {
+      points: [1 << 31, 1 << 31, 1],
+      ..gain_table_map(GainData::F32(vec![1.0; 4]))
+    };
+    let data = encode_gain_table_map(&map, Endian::Little);
+    assert_eq!(decode_gain_table_map(&data, Endian::Little), Err("map size overflows".into()));
+  }
+
   /// Camera profile in big-endian byte order with ColorMatrix1, CalibrationIlluminant1 and ProfileName
   fn big_endian_camera_profile() -> Vec<u8> {
     let mut data = b"MM".to_vec();
@@ -956,6 +965,22 @@ mod tests {
     let mut file = vec![0; 2];
     file.extend(camera_profile_data(&profile, None)?);
     assert_eq!(read_extra_camera_profile(&mut Cursor::new(&file), 2)?, profile);
+    Ok(())
+  }
+
+  #[test]
+  fn table_dims_that_overflow_are_ignored() -> std::result::Result<(), Box<dyn std::error::Error>> {
+    let mut profile = CameraProfile {
+      look_table_dims: Some([u32::MAX; 3]),
+      look_table_data: Some(vec![0.5; 12]),
+      ..Default::default()
+    };
+    profile.calibration_illuminant[0] = Some(Illuminant::D50);
+    profile.color_matrix[0] = Some(vec![0.5; 9]);
+    let mut file = vec![0; 2];
+    file.extend(camera_profile_data(&profile, None)?);
+    let read = read_extra_camera_profile(&mut Cursor::new(&file), 2)?;
+    assert_eq!((read.look_table_dims, read.look_table_data), (None, None));
     Ok(())
   }
 

@@ -14,6 +14,7 @@ use super::Decoder;
 use super::FormatHint;
 use super::RawDecodeParams;
 use super::RawMetadata;
+use super::image_bytes;
 use super::ok_cfa_image;
 
 pub fn is_ari(file: &RawSource) -> bool {
@@ -46,6 +47,8 @@ impl<'a> Decoder for AriDecoder<'a> {
     let offset = LEu32(buffer, ArriRawTag::DataOffset as usize) as usize;
     let width = LEu32(buffer, ArriRawTag::Width as usize) as usize;
     let height = LEu32(buffer, ArriRawTag::Height as usize) as usize;
+    // The image has 12 bits per pixel
+    image_bytes("ARI", width, height, 12)?;
     let src = file.subview_until_eof_padded(offset as u64)?;
 
     let image = if camera.find_hint("little-endian") {
@@ -107,4 +110,37 @@ enum ArriRawTag {
 
 fn char_slice_to_string(buf: &[u8]) -> Option<String> {
   Some(buf.iter().take_while(|&&c| c != 0).map(|&c| char::from(c)).collect())
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  /// ARI header of an ALEXA with the given image size
+  fn ari_header(width: u32, height: u32) -> Vec<u8> {
+    let mut buf = vec![0; 0x0a98 + 64];
+    buf[0..4].copy_from_slice(b"ARRI");
+    buf[ArriRawTag::DataOffset as usize..][..4].copy_from_slice(&0x0a98_u32.to_le_bytes());
+    buf[ArriRawTag::Width as usize..][..4].copy_from_slice(&width.to_le_bytes());
+    buf[ArriRawTag::Height as usize..][..4].copy_from_slice(&height.to_le_bytes());
+    buf[668..673].copy_from_slice(b"ALEXA");
+    buf
+  }
+
+  #[test]
+  fn invalid_image_size_is_an_error() -> std::result::Result<(), Box<dyn std::error::Error>> {
+    for (width, height) in [(0, 4), (4, 0), (u32::MAX, u32::MAX)] {
+      let source = RawSource::new_from_slice(&ari_header(width, height));
+      let decoder = crate::get_decoder(&source)?;
+      let result = decoder.raw_image(&source, &RawDecodeParams::default(), false);
+      assert!(
+        matches!(result, Err(RawlerError::DecoderFailed { .. })),
+        "{}x{}: {:?}",
+        width,
+        height,
+        result.err()
+      );
+    }
+    Ok(())
+  }
 }

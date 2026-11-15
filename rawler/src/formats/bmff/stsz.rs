@@ -5,7 +5,7 @@
 use super::{BoxHeader, FourCC, ReadBox, Result, read_box_header_ext};
 use byteorder::{BigEndian, ReadBytesExt};
 use serde::{Deserialize, Serialize};
-use std::io::{Read, Seek, SeekFrom};
+use std::io::{Read, Seek};
 
 #[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize)]
 pub struct StszBox {
@@ -20,11 +20,13 @@ pub struct StszBox {
 impl StszBox {
   pub const TYP: FourCC = FourCC::with(['s', 't', 's', 'z']);
 
-  pub fn sample_size(&self, sample: u32) -> u32 {
+  /// The size of the sample number `sample`, which starts with 1. None if
+  /// the box has no size for it.
+  pub fn sample_size(&self, sample: u32) -> Option<u32> {
     if self.sample_size > 0 {
-      self.sample_size
+      Some(self.sample_size)
     } else {
-      self.sample_sizes[sample as usize - 1]
+      self.sample_sizes.get((sample as usize).checked_sub(1)?).copied()
     }
   }
 }
@@ -35,8 +37,9 @@ impl<R: Read + Seek> ReadBox<&mut R> for StszBox {
 
     let sample_size = reader.read_u32::<BigEndian>()?;
     let sample_count = reader.read_u32::<BigEndian>()?;
-    let mut sample_sizes = Vec::with_capacity(sample_count as usize);
+    let mut sample_sizes = Vec::new();
     if sample_size == 0 {
+      sample_sizes.reserve(header.check_entries(&mut *reader, sample_count, 4)?);
       for _ in 0..sample_count {
         let sample_number = reader.read_u32::<BigEndian>()?;
         sample_sizes.push(sample_number);
@@ -46,7 +49,7 @@ impl<R: Read + Seek> ReadBox<&mut R> for StszBox {
       sample_sizes.push(sample_size);
     }
 
-    reader.seek(SeekFrom::Start(header.end_offset()))?;
+    header.finish(&mut *reader)?;
 
     Ok(Self {
       header,

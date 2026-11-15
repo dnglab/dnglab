@@ -63,8 +63,9 @@ impl<'a> Decompressor<'a, u16> for JpegXLDecompressor {
   ///
   /// # Errors
   /// Returns `Err` if the JXL image cannot be read or rendered, if it holds
-  /// floating point samples or if `bps` is not in the range 8 to 16.
-  fn decompress(&self, src: &[u8], mut skip_rows: usize, lines: impl LineIteratorMut<'a, u16>, line_width: usize) -> std::result::Result<(), String> {
+  /// floating point samples, if `bps` is not in the range 8 to 16 or if the
+  /// image is smaller than `lines`.
+  fn decompress(&self, src: &[u8], skip_rows: usize, lines: impl LineIteratorMut<'a, u16>, line_width: usize) -> std::result::Result<(), String> {
     let image = read_image(src)?;
     let codestream_bits = match image.image_header().metadata.bit_depth {
       BitDepth::IntegerSample { bits_per_sample } if (8..=16).contains(&bits_per_sample) => bits_per_sample,
@@ -77,15 +78,12 @@ impl<'a> Decompressor<'a, u16> for JpegXLDecompressor {
     match self.bps {
       8 if codestream_bits == 8 => {
         let mut tmp = vec![0_u8; line_width];
-
-        for line in lines.skip(skip_rows) {
-          while skip_rows > 0 {
-            let written = stream.write_to_buffer(&mut tmp);
-            assert_eq!(line.len(), written);
-            skip_rows -= 1;
-          }
+        for _ in 0..skip_rows {
+          stream.write_to_buffer(&mut tmp);
+        }
+        for line in lines {
           let written = stream.write_to_buffer(&mut tmp);
-          assert_eq!(line.len(), written);
+          check_line(written, line.len(), line_width)?;
           for (p, x) in line.iter_mut().zip(tmp.iter()) {
             *p = *x as u16; // Only change storage format, you MUST NOT scale up!
           }
@@ -93,14 +91,15 @@ impl<'a> Decompressor<'a, u16> for JpegXLDecompressor {
       }
       8..=16 => {
         let max = (1_u32 << codestream_bits) - 1;
-        for line in lines.skip(skip_rows) {
-          while skip_rows > 0 {
-            let written = stream.write_to_buffer(line);
-            assert_eq!(line.len(), written);
-            skip_rows -= 1;
+        if skip_rows > 0 {
+          let mut tmp = vec![0_u16; line_width];
+          for _ in 0..skip_rows {
+            stream.write_to_buffer(&mut tmp);
           }
+        }
+        for line in lines {
           let written = stream.write_to_buffer(line);
-          assert_eq!(line.len(), written);
+          check_line(written, line.len(), line_width)?;
           if codestream_bits < 16 {
             for p in line.iter_mut() {
               *p = ((*p as u32 * max + 32767) / 65535) as u16;
@@ -116,6 +115,17 @@ impl<'a> Decompressor<'a, u16> for JpegXLDecompressor {
   fn can_skip_rows(&self) -> bool {
     false
   }
+}
+
+/// Check that the image returned a line of `line_width` samples
+fn check_line(written: usize, line: usize, line_width: usize) -> std::result::Result<(), String> {
+  if written != line_width || line != line_width {
+    return Err(format!(
+      "JPEG-XL image returned {} of {} samples for a line of {} samples",
+      written, line_width, line
+    ));
+  }
+  Ok(())
 }
 
 /// Conversion of samples rendered as linear sRGB back to the colour encoding
@@ -318,6 +328,23 @@ mod tests {
     let mut out = vec![0_u16; 8 * 4];
     JpegXLDecompressor::new(12).decompress(JXL_12BIT, 0, out.chunks_exact_mut(8), 8)?;
     assert_eq!(out, samples_12bit());
+    Ok(())
+  }
+
+  #[test]
+  fn codestream_must_fill_the_lines() {
+    let mut out = [0_u16; 8 * 5];
+    let lines = out.as_chunks_mut::<8>().0.iter_mut().map(|line| line.as_mut_slice());
+    let err = JpegXLDecompressor::new(12).decompress(JXL_12BIT, 0, lines, 8).err();
+    assert!(err.as_ref().is_some_and(|err| err.contains("returned 0 of 8 samples")), "{:?}", err);
+  }
+
+  #[test]
+  fn skipped_rows_are_not_written() -> std::result::Result<(), String> {
+    let mut out = [0_u16; 8 * 3];
+    let lines = out.as_chunks_mut::<8>().0.iter_mut().map(|line| line.as_mut_slice());
+    JpegXLDecompressor::new(12).decompress(JXL_12BIT, 1, lines, 8)?;
+    assert_eq!(out, samples_12bit()[8..]);
     Ok(())
   }
 

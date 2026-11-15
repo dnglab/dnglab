@@ -1,14 +1,17 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2021 Daniel Vogelbacher <daniel@chaospixel.com>
 
-use super::{Entry, IFD, Result, TiffError, apply_corr, entry::RawEntry, file::TiffFile};
+use super::{Entry, IFD, Result, TiffError, apply_corr, entry::RawEntry, file::TiffFile, ifd::visit_chained_ifd};
 use crate::{
   bits::Endian,
   tags::{ExifTag, TiffCommonTag, TiffTag},
 };
 use byteorder::{BigEndian, LittleEndian, ReadBytesExt};
 use serde::{Deserialize, Serialize};
-use std::io::{Cursor, Read, Seek, SeekFrom};
+use std::{
+  collections::HashSet,
+  io::{Cursor, Read, Seek, SeekFrom},
+};
 
 pub trait TiffReader {
   fn file(&self) -> &TiffFile;
@@ -27,11 +30,16 @@ pub trait TiffReader {
     vec![TiffCommonTag::SubIFDs.into(), TiffCommonTag::ExifIFDPointer.into(), ExifTag::GPSInfo.into()]
   }
 
+  /// The first IFD of the chain
+  ///
+  /// `parse_file()` reads at least one IFD or returns an error, so this only
+  /// panics for a reader that was not parsed, like `Default::default()`.
   fn root_ifd(&self) -> &IFD {
-    if self.file().chain.is_empty() {
-      panic!("TIFF must have at least one root IFD but the IFD list is empty");
-    }
-    &self.file().chain[0]
+    self
+      .file()
+      .chain
+      .first()
+      .expect("TIFF must have at least one root IFD but the IFD list is empty")
   }
 
   fn get_entry<T: TiffTag>(&self, tag: T) -> Option<&Entry> {
@@ -110,18 +118,8 @@ pub trait TiffReader {
     if ifds.is_empty() { None } else { Some(ifds[0]) }
   }
 
-  fn get_first_entry(&self, _tag: u16) -> Option<Entry> {
-    unimplemented!();
-    /*
-    Some(Entry {
-      value: (32 as u16).into(),
-      embedded: None,
-    })
-     */
-  }
-
   fn read_data<R: Read + Seek>(&self, file: &mut R, uncorr_offset: u32, buffer: &mut [u8]) -> Result<()> {
-    file.seek(SeekFrom::Start(apply_corr(uncorr_offset, self.file().corr) as u64))?;
+    file.seek(SeekFrom::Start(apply_corr(uncorr_offset, self.file().corr)? as u64))?;
     file.read_exact(buffer)?;
     Ok(())
   }
@@ -144,13 +142,7 @@ pub trait TiffReader {
     };
     let mut reader = EndianReader::new(file, endian);
     let magic = reader.read_u16()?;
-    if !matches!(
-      magic,
-      42 // TIFF Magic
-      | 85 // Panasonic
-      | 21330 // Olympus
-      | 20306 // Olympus / OM
-    ) {
+    if !is_tiff_magic(magic) {
       return Err(TiffError::General(format!("Invalid magic marker for TIFF: {}", magic)));
     }
     let mut next_ifd = reader.read_u32()?;
@@ -160,10 +152,10 @@ pub trait TiffReader {
 
     let reader = reader.into_inner();
 
-    next_ifd = apply_corr(next_ifd, self.file().corr);
+    next_ifd = apply_corr(next_ifd, self.file().corr)?;
     let mut chain = Vec::new();
-    while next_ifd != 0 {
-      // TODO: check if offset is in range
+    let mut visited = HashSet::new();
+    while next_ifd != 0 && visit_chained_ifd(&mut visited, next_ifd) {
       let mut multi_sub_tags = self.wellknown_sub_ifd_tags();
       multi_sub_tags.extend_from_slice(sub_tags);
       let ifd = IFD::new(reader, next_ifd, self.file().base, self.file().corr, endian, &multi_sub_tags)?;
@@ -204,10 +196,13 @@ impl TiffReader for GenericTiffReader {
 }
 
 impl GenericTiffReader {
-  /// Check if buffer looks like a TIFF file
+  /// Check if buffer starts with a TIFF header
   pub fn is_tiff<T: AsRef<[u8]>>(buffer: T) -> bool {
-    let buffer = buffer.as_ref();
-    buffer[0] == 0x49 || buffer[0] == 0x4d // TODO
+    match buffer.as_ref().get(0..4) {
+      Some(&[0x49, 0x49, a, b]) => is_tiff_magic(u16::from_le_bytes([a, b])),
+      Some(&[0x4d, 0x4d, a, b]) => is_tiff_magic(u16::from_be_bytes([a, b])),
+      _ => false,
+    }
   }
 
   pub fn little_endian(&self) -> bool {
@@ -238,6 +233,17 @@ impl GenericTiffReader {
     ins.parse_file(file, max_chained, sub_tags)?;
     Ok(ins)
   }
+}
+
+/// Magic numbers of TIFF headers
+fn is_tiff_magic(magic: u16) -> bool {
+  matches!(
+    magic,
+    42 // TIFF Magic
+    | 85 // Panasonic
+    | 21330 // Olympus
+    | 20306 // Olympus / OM
+  )
 }
 
 pub trait ReadByteOrder {
@@ -282,17 +288,24 @@ impl<'a, R: Read + Seek + 'a> EndianReader<'a, R> {
     self.inner
   }
 
+  /// Position in the stream, an error if it is beyond the 4 GiB a TIFF
+  /// offset can address
   pub fn position(&mut self) -> Result<u32> {
-    Ok(self.inner.stream_position().map(|v| v as u32)?)
+    let pos = self.inner.stream_position()?;
+    u32::try_from(pos).map_err(|_| TiffError::Overflow(format!("Stream position {} exceeds 4 GiB", pos)))
   }
 
-  // TODO: try_from?
+  /// Length of the stream, the position is kept
+  pub fn stream_len(&mut self) -> Result<u64> {
+    let pos = self.inner.stream_position()?;
+    let len = self.inner.seek(SeekFrom::End(0))?;
+    self.inner.seek(SeekFrom::Start(pos))?;
+    Ok(len)
+  }
 
   pub fn goto(&mut self, offset: u32) -> Result<()> {
     self.inner.seek(SeekFrom::Start(offset as u64))?;
     Ok(())
-
-    // TODO: try_from?
   }
 }
 
@@ -426,5 +439,54 @@ impl<'a, R: Read + Seek + 'a> ReadByteOrder for EndianReader<'a, R> {
       Endian::Little => self.inner.read_f64_into::<LittleEndian>(dst),
       Endian::Big => self.inner.read_f64_into::<BigEndian>(dst),
     }
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[test]
+  fn position_beyond_4gib_is_an_error() {
+    let mut cursor = Cursor::new(Vec::<u8>::new());
+    cursor.set_position(5 << 30);
+    let mut reader = EndianReader::new(&mut cursor, Endian::Little);
+    assert!(matches!(reader.position(), Err(TiffError::Overflow(_))));
+  }
+
+  #[test]
+  fn tiff_headers() {
+    assert!(GenericTiffReader::is_tiff(b"II*\0"));
+    assert!(GenericTiffReader::is_tiff(b"MM\0*"));
+    assert!(GenericTiffReader::is_tiff(b"IIRO"));
+    assert!(!GenericTiffReader::is_tiff(b""));
+    assert!(!GenericTiffReader::is_tiff(b"II"));
+    assert!(!GenericTiffReader::is_tiff(b"MM*\0"));
+    assert!(!GenericTiffReader::is_tiff(b"Image"));
+  }
+
+  #[test]
+  fn ifd_chain_loops_end() -> Result<()> {
+    use crate::formats::tiff::tests::ifd_chain;
+    // IFD 0 points to itself
+    let reader = GenericTiffReader::new_with_buffer(ifd_chain(8, &[8]), 0, 0, None)?;
+    assert_eq!(reader.chains().len(), 1);
+    // IFD 1 points back to IFD 0
+    let reader = GenericTiffReader::new_with_buffer(ifd_chain(8, &[26, 8]), 0, 0, None)?;
+    assert_eq!(reader.chains().len(), 2);
+    let root = IFD::new_root_with_correction(&mut Cursor::new(ifd_chain(8, &[26, 8])), 0, 0, 0, 0, &[])?;
+    assert_eq!(root.chain.len(), 1);
+    Ok(())
+  }
+
+  #[test]
+  fn ifd_chain_limits() -> Result<()> {
+    use crate::formats::tiff::tests::ifd_chain;
+    let data = ifd_chain(8, &[26, 44, 62, 0]);
+    let root = IFD::new_root_with_correction(&mut Cursor::new(data.clone()), 0, 0, 0, 2, &[])?;
+    assert_eq!(root.chain.len(), 2);
+    let reader = GenericTiffReader::new_with_buffer(data, 0, 0, Some(2))?;
+    assert_eq!(reader.chains().len(), 3);
+    Ok(())
   }
 }

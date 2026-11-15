@@ -52,7 +52,9 @@ use super::FormatHint;
 use super::Orientation;
 use super::RawDecodeParams;
 use super::RawMetadata;
+use super::image_bytes;
 use super::ok_cfa_image;
+use super::tag_data;
 
 const SONY_E_MOUNT: &str = "e-mount";
 const SONY_A_MOUNT: &str = "a-mount";
@@ -113,6 +115,8 @@ impl<'a> Decoder for ArwDecoder<'a> {
     } else {
       fetch_tiff_tag!(raw, TiffCommonTag::BitsPerSample).force_usize(0)
     };
+    // The decoders below store up to four 16-bit samples per pixel
+    image_bytes("ARW", width, height, 64)?;
 
     let params = self.get_params(file)?;
     debug!("Params: {:?}", params);
@@ -151,19 +155,23 @@ impl<'a> Decoder for ArwDecoder<'a> {
       32766 => {
         // The ARW6 raw IFD stores the black and white levels halved (and its
         // SonyCurve tag is zeroed; the codec has a built-in curve instead).
-        black = Some(
-          self
-            .get_blacklevel(raw)
-            .ok_or_else(|| RawlerError::decoder_failed("ARW6: no black level in the raw IFD"))?
-            .map(|v| v * 2),
-        );
-        white = Some(fetch_tiff_tag!(raw, TiffCommonTag::WhiteLevel).force_u16(0) * 2);
+        let halved_black = self
+          .get_blacklevel(raw)
+          .ok_or_else(|| RawlerError::decoder_failed("ARW6: no black level in the raw IFD"))?;
+        let halved_white = fetch_tiff_tag!(raw, TiffCommonTag::WhiteLevel).force_u16(0);
+        let (arw6_black, arw6_white) = arw6_levels(halved_black, halved_white)?;
+        black = Some(arw6_black);
+        white = Some(arw6_white);
         let strip = file.subview(offset as u64, count as u64)?;
         ArwDecoder::decode_arw6(strip, width, height, dummy)?
       }
       32767 => {
-        if (width * height * bps) != count * 8 {
-          height += 8;
+        let bits = width
+          .checked_mul(height)
+          .and_then(|pixels| pixels.checked_mul(bps))
+          .ok_or_else(|| decoder_error!("ARW: image of {}x{} pixels with {} bps overflows", width, height, bps))?;
+        if Some(bits) != count.checked_mul(8) {
+          height = height.checked_add(8).ok_or_else(|| decoder_error!("ARW1: image height {} overflows", height))?;
           // ARW1 data has 12 bits, the white and black levels of the file have 14 bits
           ArwDecoder::levels_to_12bit(&mut white, &mut black);
           ArwDecoder::decode_arw1(src, width, height, dummy)?
@@ -197,11 +205,14 @@ impl<'a> Decoder for ArwDecoder<'a> {
         3 if arq => Ok(BlackLevel::new(&arq_levels(&black, &camera.cfa), 1, 1, cpp)),
         1 => Ok(BlackLevel::new(&black, camera.cfa.width, camera.cfa.height, cpp)),
         // For YUV data, the blacklevel needs to be multiplicated by 2
-        3 => Ok(BlackLevel::new(&[black[0] * 2, black[0] * 2, black[0] * 2], 1, 1, cpp)),
+        3 => Ok(BlackLevel::new(&[u32::from(black[0]) * 2; 3], 1, 1, cpp)),
         _ => Err(decoder_error!("ARW: Unsupported cpp: {}", cpp)),
       })
       .transpose()?;
     let whitelevel = white.map(|white| WhiteLevel(vec![white as u32; cpp]));
+    if whitelevel.is_none() && camera.whitelevel.is_none() {
+      return Err(decoder_error!("ARW: no white level in the file or the camera definition"));
+    }
 
     let photometric = match cpp {
       1 => RawPhotometricInterpretation::Cfa(CFAConfig::new_from_camera(camera)),
@@ -221,9 +232,9 @@ impl<'a> Decoder for ArwDecoder<'a> {
       log::debug!("Found SONYRAWIMAGESIZE tag, using as active_area");
       img.active_area = Some(raw_image_size);
     } else {
-      img.active_area = camera.active_area.map(|area| Rect::new_with_borders(Dim2::new(width, height), &area));
+      img.active_area = camera.active_area.and_then(|area| Rect::new_with_borders(Dim2::new(width, height), &area));
     }
-    img.crop_area = Rect::from_tiff(raw).or_else(|| camera.crop_area.map(|area| Rect::new_with_borders(Dim2::new(width, height), &area)));
+    img.crop_area = Rect::from_tiff(raw).or_else(|| camera.crop_area.and_then(|area| Rect::new_with_borders(Dim2::new(width, height), &area)));
 
     log::debug!("raw dim: {}x{}", width, height);
     log::debug!("crop_area: {:?}", img.crop_area);
@@ -280,32 +291,18 @@ impl<'a> ArwDecoder<'a> {
 
   /// Get lens description by analyzing TIFF tags and makernotes
   fn get_lens_description(&self) -> Result<Option<&'static LensDescription>> {
-    // Try tag 0x9416
-    if let Some(Entry {
-      value: Value::Undefined(params),
-      ..
-    }) = self.makernote.get_entry(ArwMakernoteTag::Tag_9416)
-    {
-      let dechiphered_9416 = sony_tag9cxx_decipher(params);
-      let lens_id = LEu16(&dechiphered_9416, 0x004b);
-      debug!("Lens Id tag: {}", lens_id);
-
-      let resolver = LensResolver::new()
-        .with_camera(self.camera.metadata())
-        .with_lens_id((lens_id as u32, 0))
-        .with_mounts(&[SONY_E_MOUNT.into(), SONY_A_MOUNT.into()]);
-      return Ok(resolver.resolve());
-    }
-
-    // Try tag 0x9050
-    if let Some(Entry {
-      value: Value::Undefined(params),
-      ..
-    }) = self.makernote.get_entry(ArwMakernoteTag::Tag_9050)
-    {
-      if params.len() >= 263 + 2 {
-        let dechiphered_9050 = sony_tag9cxx_decipher(params);
-        let lens_id = LEu16(&dechiphered_9050, 263);
+    // Try tags 0x9416, 0x9050 and 0x940C, skipping tags that are too short
+    for (tag, offset) in [
+      (ArwMakernoteTag::Tag_9416, 0x004b),
+      (ArwMakernoteTag::Tag_9050, 263),
+      (ArwMakernoteTag::Tag_940C, 9),
+    ] {
+      if let Some(Entry {
+        value: Value::Undefined(params),
+        ..
+      }) = self.makernote.get_entry(tag)
+        && let Some(lens_id) = deciphered_lens_id(params, offset)
+      {
         debug!("Lens Id tag: {}", lens_id);
 
         let resolver = LensResolver::new()
@@ -314,23 +311,6 @@ impl<'a> ArwDecoder<'a> {
           .with_mounts(&[SONY_E_MOUNT.into(), SONY_A_MOUNT.into()]);
         return Ok(resolver.resolve());
       }
-    }
-
-    // Try tag 0x940C
-    if let Some(Entry {
-      value: Value::Undefined(params),
-      ..
-    }) = self.makernote.get_entry(ArwMakernoteTag::Tag_940C)
-    {
-      let dechiphered_940c = sony_tag9cxx_decipher(params);
-      let lens_id = LEu16(&dechiphered_940c, 9);
-      debug!("Lens Id tag: {}", lens_id);
-
-      let resolver = LensResolver::new()
-        .with_camera(self.camera.metadata())
-        .with_lens_id((lens_id as u32, 0))
-        .with_mounts(&[SONY_E_MOUNT.into(), SONY_A_MOUNT.into()]);
-      return Ok(resolver.resolve());
     }
     Ok(None)
   }
@@ -355,30 +335,12 @@ impl<'a> ArwDecoder<'a> {
     // DNGPrivateTag contains 4 bytes forming a LE u32 offset value.
     let priv_offset = {
       let entry = fetch_tiff_tag!(self.tiff, TiffCommonTag::DNGPrivateArea);
-      assert_eq!(entry.value_type(), 0x1);
-      LEu32(entry.get_data(), 0)
-    };
-    let buf = file.subview_until_eof(priv_offset as u64)?;
-    if BEu32(buf, 0) != 0x4D5249 {
-      // MRI
-      return Err(decoder_error!("Invalid DNGPRIVATEDATA tag: 0x{:X}, expected 0x4D5249 ", BEu32(buf, 0)));
-    }
-    let mut currpos: usize = 8;
-    let mut wb_coeffs: [f32; 4] = [1.0, 1.0, 1.0, f32::NAN];
-    // At most we read 20 bytes from currpos so check we don't step outside that
-    while currpos + 20 < buf.len() {
-      let tag: u32 = BEu32(buf, currpos);
-      let len: usize = LEu32(buf, currpos + 4) as usize;
-      if tag == 0x574247 {
-        // WBG
-        wb_coeffs[0] = LEu16(buf, currpos + 12) as f32;
-        wb_coeffs[1] = LEu16(buf, currpos + 14) as f32;
-        wb_coeffs[2] = LEu16(buf, currpos + 16) as f32;
-        wb_coeffs[3] = LEu16(buf, currpos + 18) as f32;
-        break;
+      if entry.value_type() != 0x1 {
+        return Err(decoder_error!("ARW: DNGPrivateArea has the type {} instead of BYTE", entry.value_type_name()));
       }
-      currpos += len + 8;
-    }
+      LEu32(tag_data(entry, 4)?, 0)
+    };
+    let wb_coeffs = a100_wb(file.subview_until_eof(priv_offset as u64)?)?;
 
     let cpp = 1;
     ok_cfa_image(camera.clone(), cpp, normalize_wb(wb_coeffs), image, dummy)
@@ -394,20 +356,17 @@ impl<'a> ArwDecoder<'a> {
     let width = fetch_tiff_tag!(raw, TiffCommonTag::ImageWidth).force_usize(0);
     let height = fetch_tiff_tag!(raw, TiffCommonTag::ImageLength).force_usize(0);
 
+    let len = image_bytes("ARW", width, height, 16)?;
     let image = if dummy {
       PixU16::new_uninit(width, height)
     } else {
       let buffer = file.buf();
-      let len = width * height * 2;
 
       // Constants taken from dcraw
       let off: usize = 862144;
-      let key_off: usize = 200896;
       let head_off: usize = 164600;
 
-      // Replicate the dcraw contortions to get the "decryption" key
-      let offset = (buffer[key_off] as usize) * 4;
-      let first_key = BEu32(buffer, key_off + offset);
+      let first_key = srf_first_key(buffer)?;
       let head = ArwDecoder::sony_decrypt(buffer, head_off, 40, first_key)?;
       let second_key = LEu32(&head, 22);
 
@@ -426,6 +385,7 @@ impl<'a> ArwDecoder<'a> {
   }
 
   pub(crate) fn decode_arw1(buf: &[u8], width: usize, height: usize, dummy: bool) -> Result<PixU16> {
+    image_bytes("ARW", width, height, 16)?;
     let mut out = alloc_image_ok!(width, height, dummy);
     let mut pump = BitPumpMSB::new(buf);
 
@@ -447,9 +407,10 @@ impl<'a> ArwDecoder<'a> {
           pump.get_bits(cmp::min(13, zeros + 1))?;
         }
         let diff: i32 = pump.get_ibits(len)?;
-        sum += diff;
+        // Crafted data overflows the sum, only its low 16 bits are used
+        sum = sum.wrapping_add(diff);
         if len > 0 && (diff & (1 << (len - 1))) == 0 {
-          sum -= (1 << len) - 1;
+          sum = sum.wrapping_sub((1 << len) - 1);
         }
         out[row * width + col] = sum as u16;
         row += 2
@@ -469,7 +430,10 @@ impl<'a> ArwDecoder<'a> {
         height,
         dummy,
         &(|out: &mut [u16], row| {
-          let mut pump = BitPumpLSB::new(&buf[(row * width)..]);
+          let src = buf
+            .get(row * width..)
+            .ok_or_else(|| format!("ARW2: row {} is behind the end of the data", row))?;
+          let mut pump = BitPumpLSB::new(src);
 
           let mut random = pump.peek_bits(16)?;
           for out in out.chunks_exact_mut(32) {
@@ -477,7 +441,8 @@ impl<'a> ArwDecoder<'a> {
             for j in 0..2 {
               let max = pump.get_bits(11)?;
               let min = pump.get_bits(11)?;
-              let delta = max - min;
+              // Like dcraw, no shift for a minimum above the maximum
+              let delta = max.saturating_sub(min);
               // Calculate the size of the data shift needed by how large the delta is
               // A delta with 11 bits requires a shift of 4, 10 bits of 3, etc
               let delta_shift: u32 = cmp::max(0, (32 - (delta.leading_zeros() as i32)) - 7) as u32;
@@ -520,16 +485,23 @@ impl<'a> ArwDecoder<'a> {
     let twidth = fetch_tiff_tag!(raw, TiffCommonTag::TileWidth).force_usize(0);
     let tlength = fetch_tiff_tag!(raw, TiffCommonTag::TileLength).force_usize(0);
     let cpp = fetch_tiff_tag!(raw, TiffCommonTag::SamplesPerPixel).force_usize(0);
-    let coltiles = (width - 1) / twidth + 1;
-    let rowtiles = (height - 1) / tlength + 1;
+    if width == 0 || height == 0 {
+      return Err(decoder_error!("ARW LJPEG: invalid image size {}x{}", width, height));
+    }
+    // The tiles are decoded into buffers of 512x512 pixels
+    if twidth != 512 || tlength != 512 {
+      return Err(RawlerError::unsupported(camera, format!("ARW LJPEG: tiles of {}x{} pixels", twidth, tlength)));
+    }
+    let coltiles = width.div_ceil(twidth);
+    let rowtiles = height.div_ceil(tlength);
 
     log::debug!("Sony ARW LJPEG raw: width: {}, height: {}, cpp: {}", width, height, cpp);
     log::debug!("LJPEG tile parameters: width: {}, length: {}, cpp: {}", twidth, tlength, cpp);
 
-    if coltiles * rowtiles != offsets.count() as usize {
+    if coltiles.checked_mul(rowtiles) != Some(offsets.count() as usize) {
       return Err(RawlerError::unsupported(
         camera,
-        format!("ARW LJPEG: trying to decode {} tiles from {} offsets", coltiles * rowtiles, offsets.count()),
+        format!("ARW LJPEG: trying to decode {}x{} tiles from {} offsets", coltiles, rowtiles, offsets.count()),
       ));
     }
     let buffer = file.buf();
@@ -557,16 +529,7 @@ impl<'a> ArwDecoder<'a> {
 
             decompressor.decode_sony(&mut data, 0, w * cpp, w * cpp, h, dummy)?;
             interpolate_yuv(decompressor.super_h(), decompressor.super_v(), w * cpp, h, &mut data);
-
-            let mut strip = &mut *lines;
-
-            for line in data.chunks_exact(w * cpp) {
-              let base = col * twidth * cpp;
-              strip[base..base + w * cpp].copy_from_slice(line);
-
-              // Now move output strip by one row.
-              strip = &mut strip[width * cpp..];
-            }
+            copy_tile(lines, width * cpp, col * twidth * cpp, &data, w * cpp);
           }
           Ok(())
         }),
@@ -595,20 +558,7 @@ impl<'a> ArwDecoder<'a> {
             let mut data = vec![0; h * w * cpp];
 
             decompressor.decode(&mut data, 0, w * cpp, w * cpp, h, dummy)?;
-
-            let mut strip = &mut *lines;
-            for line in data.chunks_exact(1024) {
-              for (i, chunk) in line.chunks_exact(4).enumerate() {
-                // Unpack chunks of RGGB pixel data into two output lines
-                // so the first line is RGRGRG and the second one is GBGBGB.
-                strip[col * twidth + i * 2 + 0] = chunk[0];
-                strip[col * twidth + i * 2 + 1] = chunk[1];
-                strip[width + col * twidth + i * 2 + 0] = chunk[2];
-                strip[width + col * twidth + i * 2 + 1] = chunk[3];
-              }
-              // Now move output strip by two rows.
-              strip = &mut strip[width * 2..];
-            }
+            copy_rggb_tile(lines, width, col * twidth, &data, w * cpp);
           }
           Ok(())
         }),
@@ -623,10 +573,7 @@ impl<'a> ArwDecoder<'a> {
   }
 
   fn get_params(&self, file: &RawSource) -> Result<ArwImageParams> {
-    let priv_offset = {
-      let tag = fetch_tiff_tag!(self.tiff, TiffCommonTag::DNGPrivateArea).get_data();
-      LEu32(tag, 0)
-    };
+    let priv_offset = { LEu32(tag_data(fetch_tiff_tag!(self.tiff, TiffCommonTag::DNGPrivateArea), 4)?, 0) };
     let priv_tiff = IFD::new(&mut file.reader(), priv_offset, 0, 0, Endian::Little, &[])?;
 
     //priv_tiff.dump::<ExifTag>(0).iter().for_each(|line| println!("DUMPXX: {}", line));
@@ -634,14 +581,13 @@ impl<'a> ArwDecoder<'a> {
     let sony_offset = fetch_tiff_tag!(priv_tiff, TiffCommonTag::SonyOffset).force_u32(0);
     let sony_length = fetch_tiff_tag!(priv_tiff, TiffCommonTag::SonyLength).force_usize(0);
     // This tag is of type UNDEFINED and contains a 32 bit value
-    let sony_key = {
-      let tag = fetch_tiff_tag!(priv_tiff, TiffCommonTag::SonyKey).get_data();
-      LEu32(tag, 0)
-    };
+    let sony_key = { LEu32(tag_data(fetch_tiff_tag!(priv_tiff, TiffCommonTag::SonyKey), 4)?, 0) };
     let buffer = file.buf();
     let decrypted_buf = ArwDecoder::sony_decrypt(buffer, sony_offset as usize, sony_length, sony_key)?;
 
-    let decrypted_tiff = IFD::new(&mut Cursor::new(decrypted_buf), 0, 0, -(sony_offset as i32), Endian::Little, &[])?;
+    // The offsets of the decrypted IFD are relative to the file
+    let corr = i32::try_from(sony_offset).map_err(|_| decoder_error!("ARW: SR2 offset {} is out of range", sony_offset))?;
+    let decrypted_tiff = IFD::new(&mut Cursor::new(decrypted_buf), 0, 0, -corr, Endian::Little, &[])?;
 
     let wb = self.get_wb(&decrypted_tiff)?;
 
@@ -725,7 +671,7 @@ impl<'a> ArwDecoder<'a> {
   }
 
   pub(crate) fn sony_decrypt(buf: &[u8], offset: usize, length: usize, key: u32) -> crate::Result<Vec<u8>> {
-    if buf.len() < offset + 4 * (length / 4) {
+    if offset.checked_add(4 * (length / 4)).is_none_or(|end| buf.len() < end) {
       return Err(RawlerError::decoder_failed("sony_decrypt() failed: buffer to short"));
     }
     let mut pad: [u32; 128] = [0_u32; 128];
@@ -766,6 +712,86 @@ impl<'a> ArwDecoder<'a> {
   }
 }
 
+/// Copy the lines of a decoded tile of `tile_width` samples per line into
+/// the lines of `strip`, which have `strip_width` samples, starting at sample
+/// `x`. The parts of the tile outside of the strip are dropped.
+fn copy_tile(strip: &mut [u16], strip_width: usize, x: usize, tile: &[u16], tile_width: usize) {
+  for (dst, src) in strip.chunks_exact_mut(strip_width).zip(tile.chunks_exact(tile_width)) {
+    if let Some(dst) = dst.get_mut(x..) {
+      let len = dst.len().min(src.len());
+      dst[..len].copy_from_slice(&src[..len]);
+    }
+  }
+}
+
+/// Copy a decoded tile of RGGB blocks, in lines of `tile_width` samples,
+/// into the lines of `strip`, which have `width` pixels, starting at pixel
+/// `x`. Each line of the tile becomes two lines of the strip, the first one
+/// is RGRG… and the second one GBGB…. The parts of the tile outside of the
+/// strip are dropped.
+fn copy_rggb_tile(strip: &mut [u16], width: usize, x: usize, tile: &[u16], tile_width: usize) {
+  for (lines, src) in strip.chunks_exact_mut(2 * width).zip(tile.chunks_exact(tile_width)) {
+    let (upper, lower) = lines.split_at_mut(width);
+    let (Some(upper), Some(lower)) = (upper.get_mut(x..), lower.get_mut(x..)) else {
+      continue;
+    };
+    for ((upper, lower), block) in upper.chunks_mut(2).zip(lower.chunks_mut(2)).zip(src.as_chunks::<4>().0) {
+      upper.iter_mut().zip(&block[..2]).for_each(|(dst, src)| *dst = *src);
+      lower.iter_mut().zip(&block[2..]).for_each(|(dst, src)| *dst = *src);
+    }
+  }
+}
+
+/// Key of the header of SRF files, replicating the dcraw contortions to get
+/// the "decryption" key
+fn srf_first_key(buffer: &[u8]) -> Result<u32> {
+  // Constant taken from dcraw
+  const KEY_OFF: usize = 200896;
+  buffer
+    .get(KEY_OFF)
+    .map(|&offset| KEY_OFF + offset as usize * 4)
+    .and_then(|pos| buffer.get(pos..pos + 4))
+    .map(|key| BEu32(key, 0))
+    .ok_or_else(|| decoder_error!("SRF: file of {} bytes is too short for the key", buffer.len()))
+}
+
+/// White balance of the A100 from the MRW blocks of its DNGPrivateData
+fn a100_wb(buf: &[u8]) -> Result<[f32; 4]> {
+  match buf.get(0..4).map(|magic| BEu32(magic, 0)) {
+    // MRI
+    Some(0x4D5249) => {}
+    Some(magic) => return Err(decoder_error!("Invalid DNGPRIVATEDATA tag: 0x{:X}, expected 0x4D5249 ", magic)),
+    None => return Err(decoder_error!("DNGPRIVATEDATA has {} bytes, the tag needs 4", buf.len())),
+  }
+  let mut currpos: usize = 8;
+  let mut wb_coeffs: [f32; 4] = [1.0, 1.0, 1.0, f32::NAN];
+  // At most we read 20 bytes from currpos so check we don't step outside that
+  while currpos.saturating_add(20) < buf.len() {
+    let tag: u32 = BEu32(buf, currpos);
+    let len: usize = LEu32(buf, currpos + 4) as usize;
+    if tag == 0x574247 {
+      // WBG
+      wb_coeffs[0] = LEu16(buf, currpos + 12) as f32;
+      wb_coeffs[1] = LEu16(buf, currpos + 14) as f32;
+      wb_coeffs[2] = LEu16(buf, currpos + 16) as f32;
+      wb_coeffs[3] = LEu16(buf, currpos + 18) as f32;
+      break;
+    }
+    currpos = currpos.saturating_add(len).saturating_add(8);
+  }
+  Ok(wb_coeffs)
+}
+
+/// Black and white levels of ARW6 data from the halved levels of its raw IFD
+fn arw6_levels(black: [u16; 4], white: u16) -> Result<([u16; 4], u16)> {
+  let double = |level: u16| {
+    level
+      .checked_mul(2)
+      .ok_or_else(|| decoder_error!("ARW6: level {} exceeds 16 bits when doubled", level))
+  };
+  Ok(([double(black[0])?, double(black[1])?, double(black[2])?, double(black[3])?], double(white)?))
+}
+
 fn normalize_wb(raw_wb: [f32; 4]) -> [f32; 4] {
   debug!("ARW raw wb: {:?}", raw_wb);
   // We never have more then RGB colors so far (no RGBE etc.)
@@ -798,7 +824,7 @@ pub enum ArwMakernoteTag {
 /// Decode uncompressed ARQ data (four 16-bit samples per pixel, channel =
 /// position in the 2x2 CFA block) into RGB, averaging the two green samples.
 fn decode_arq(src: &[u8], width: usize, height: usize, cfa: &crate::cfa::CFA, dummy: bool) -> Result<PixU16> {
-  let need = width * height * 8;
+  let need = image_bytes("ARW", width, height, 64)?;
   if src.len() < need {
     return Err(decoder_error!("ARQ: buffer too short ({} < {})", src.len(), need));
   }
@@ -872,6 +898,13 @@ fn sony_tag9cxx_decipher(data: &[u8]) -> Vec<u8> {
   buf
 }
 
+/// Lens ID at `offset` of the enciphered Sony tag `data`, `None` if the tag
+/// is too short
+fn deciphered_lens_id(data: &[u8], offset: usize) -> Option<u16> {
+  let id = sony_tag9cxx_decipher(data.get(offset..offset + 2)?);
+  Some(LEu16(&id, 0))
+}
+
 #[derive(Debug)]
 struct ArwImageParams {
   wb: [f32; 4],
@@ -913,5 +946,138 @@ mod arq_tests {
   fn arq_rejects_short_buffer() {
     let cfa = crate::cfa::CFA::new("RGGB");
     assert!(decode_arq(&[0u8; 10], 2, 1, &cfa, false).is_err());
+  }
+
+  #[test]
+  fn arq_rejects_invalid_sizes() {
+    let cfa = crate::cfa::CFA::new("RGGB");
+    assert!(decode_arq(&[], 0, 1, &cfa, false).is_err());
+    assert!(decode_arq(&[], 1, 0, &cfa, false).is_err());
+    assert!(decode_arq(&[], usize::MAX, 2, &cfa, false).is_err());
+  }
+
+  #[test]
+  fn arw1_sum_wraps_around() -> Result<()> {
+    // Each pixel of zeros is a difference of 17 bits that subtracts
+    // 2^17 - 1 from the sum, which overflows i32 after 16384 pixels.
+    ArwDecoder::decode_arw1(&vec![0; 70000], 128, 130, false)?;
+    Ok(())
+  }
+
+  #[test]
+  fn arw1_rejects_an_empty_image() {
+    assert!(ArwDecoder::decode_arw1(&[0; 16], 4, 0, false).is_err());
+  }
+
+  #[test]
+  fn arw2_minimum_above_maximum() -> Result<()> {
+    let curve = ArwDecoder::calculate_curve([0, 1024, 2048, 3072, 3584, 4095]);
+    // A block of 16 pixels with a maximum of 0 and a minimum of 0x7ff, the
+    // other pixels are 0x7ff
+    let mut buf = vec![0; 64];
+    buf[1] = 0xf8;
+    buf[2] = 0x3f;
+    let image = ArwDecoder::decode_arw2(&buf, 32, 1, &curve, false)?;
+    assert!(image.pixels()[2] > image.pixels()[0]);
+    Ok(())
+  }
+
+  #[test]
+  fn arw2_rejects_short_data() {
+    let curve = ArwDecoder::calculate_curve([0, 1024, 2048, 3072, 3584, 4095]);
+    assert!(ArwDecoder::decode_arw2(&[0; 10], 32, 4, &curve, false).is_err());
+  }
+
+  #[test]
+  fn tiles_are_clipped_to_the_strip() {
+    // Tile of 3 lines with 4 samples, at sample 3 of a strip of 2 lines
+    // with 5 samples
+    let tile: Vec<u16> = (1..=12).collect();
+    let mut strip = [0; 10];
+    copy_tile(&mut strip, 5, 3, &tile, 4);
+    assert_eq!(strip, [0, 0, 0, 1, 2, 0, 0, 0, 5, 6]);
+    // A full tile
+    let mut strip = [0; 8];
+    copy_tile(&mut strip, 4, 0, &tile, 4);
+    assert_eq!(strip, [1, 2, 3, 4, 5, 6, 7, 8]);
+    // A tile beyond the strip
+    let mut strip = [0; 8];
+    copy_tile(&mut strip, 4, 6, &tile, 4);
+    assert_eq!(strip, [0; 8]);
+  }
+
+  #[test]
+  fn rggb_tiles_are_clipped_to_the_strip() {
+    // Tile of 2 lines with 2 RGGB blocks each
+    let tile: Vec<u16> = (1..=16).collect();
+    // A full tile in a strip of 4 lines with 6 pixels, at pixel 2
+    let mut strip = [0; 24];
+    copy_rggb_tile(&mut strip, 6, 2, &tile, 8);
+    #[rustfmt::skip]
+    assert_eq!(strip, [
+      0, 0, 1, 2, 5, 6,
+      0, 0, 3, 4, 7, 8,
+      0, 0, 9, 10, 13, 14,
+      0, 0, 11, 12, 15, 16,
+    ]);
+    // At pixel 3 of a strip of 3 lines with 4 pixels: one column, one line pair
+    let mut strip = [0; 12];
+    copy_rggb_tile(&mut strip, 4, 3, &tile, 8);
+    assert_eq!(strip, [0, 0, 0, 1, 0, 0, 0, 3, 0, 0, 0, 0]);
+  }
+
+  #[test]
+  fn arw6_levels_are_doubled() {
+    assert_eq!(arw6_levels([256, 257, 258, 259], 8191).ok(), Some(([512, 514, 516, 518], 16382)));
+    assert!(arw6_levels([32768, 0, 0, 0], 8191).is_err());
+    assert!(arw6_levels([0; 4], 40000).is_err());
+  }
+
+  #[test]
+  fn a100_wb_of_short_and_long_blocks() -> Result<()> {
+    assert!(a100_wb(&[]).is_err());
+    assert!(a100_wb(b"\0MR").is_err());
+    assert!(a100_wb(b"\0MRX").is_err());
+    let default = [1.0, 1.0, 1.0];
+    assert_eq!(a100_wb(b"\0MRI")?[..3], default);
+    // A block that is longer than the data, followed by a WBG block
+    let mut buf = b"\0MRI\0\0\0\0\0PRD".to_vec();
+    buf.extend_from_slice(&u32::MAX.to_le_bytes());
+    buf.extend_from_slice(&[0; 16]);
+    assert_eq!(a100_wb(&buf)?[..3], default);
+    // A WBG block
+    let mut buf = b"\0MRI\0\0\0\0\0WBG".to_vec();
+    buf.extend_from_slice(&12_u32.to_le_bytes());
+    buf.extend_from_slice(&[0; 4]);
+    for coeff in [512_u16, 256, 257, 384] {
+      buf.extend_from_slice(&coeff.to_le_bytes());
+    }
+    buf.push(0);
+    assert_eq!(a100_wb(&buf)?, [512.0, 256.0, 257.0, 384.0]);
+    Ok(())
+  }
+
+  #[test]
+  fn srf_key_and_decryption_of_short_data() {
+    assert!(srf_first_key(&[0; 1000]).is_err());
+    // The key is at 200896 + 4 * the byte at 200896
+    let mut buffer = vec![0; 200896 + 8];
+    buffer[200896] = 2;
+    assert!(srf_first_key(&buffer).is_err());
+    buffer.extend_from_slice(&[0x12, 0x34, 0x56, 0x78]);
+    assert_eq!(srf_first_key(&buffer).ok(), Some(0x12345678));
+    assert!(ArwDecoder::sony_decrypt(&[0; 16], usize::MAX - 2, 8, 0).is_err());
+    assert!(ArwDecoder::sony_decrypt(&[0; 16], 8, 12, 0).is_err());
+    assert_eq!(ArwDecoder::sony_decrypt(&[0; 16], 8, 8, 0).map(|out| out.len()).ok(), Some(8));
+  }
+
+  #[test]
+  fn lens_id_of_short_and_long_tags() {
+    let data = [0, 2, 8, 27];
+    // The cipher maps x^3 % 249 to x
+    assert_eq!(deciphered_lens_id(&data, 2), Some(0x0302));
+    assert_eq!(deciphered_lens_id(&data, 3), None);
+    assert_eq!(deciphered_lens_id(&data, 4), None);
+    assert_eq!(deciphered_lens_id(&[], 0x4b), None);
   }
 }

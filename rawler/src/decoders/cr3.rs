@@ -131,21 +131,21 @@ impl<'a> Cr3Decoder<'a> {
 
   /// Get IAD1 box for specific trak
   fn iad1_box(&self, trak_idx: usize) -> Option<&Iad1Box> {
-    let trak = &self.bmff.filebox.moov.traks[trak_idx];
+    let trak = self.moov_trak(trak_idx)?;
     let craw = trak.mdia.minf.stbl.stsd.craw.as_ref();
     craw.and_then(|craw| craw.cdi1.as_ref()).map(|cdi1| &cdi1.iad1)
   }
 
   /// Get CMP1 box for specific trak
   fn cmp1_box(&self, trak_idx: usize) -> Option<&Cmp1Box> {
-    let trak = &self.bmff.filebox.moov.traks[trak_idx];
+    let trak = self.moov_trak(trak_idx)?;
     let craw = trak.mdia.minf.stbl.stsd.craw.as_ref();
     craw.and_then(|craw| craw.cmp1.as_ref())
   }
 
   /// Read CTMD records for given sample
   /// Each sample (for movie files) have their own CTMD records
-  fn read_ctmd(&self, rawfile: &RawSource, sample_idx: u32) -> Result<Option<Ctmd>> {
+  fn read_ctmd(&self, rawfile: &RawSource, sample_idx: usize) -> Result<Option<Ctmd>> {
     // Search for a trak which has a CTMD box (there should be only one)
     if let Some(ctmd_trak_index) = self
       .bmff
@@ -163,7 +163,7 @@ impl<'a> Cr3Decoder<'a> {
         .mdia
         .minf
         .stbl
-        .get_sample_offset(sample_idx as u32 + 1)
+        .get_sample_offset(sample_number(sample_idx).ok_or_else(|| decoder_error!("CTMD sample index {} out of bound", sample_idx))?)
         .ok_or_else(|| decoder_error!("CTMD sample index {} out of bound", sample_idx))?;
       debug!("CR3 CTMD mdat offset for sample_idx {}: {}, len: {}", sample_idx, offset, size);
       let buf = rawfile
@@ -354,19 +354,22 @@ impl<'a> Decoder for Cr3Decoder<'a> {
         match &iad1.iad1_type {
           // IAD1 (small, used for CRM movie files), the crop is used as ActiveArea
           Iad1Type::Small(small) => {
-            img.crop_area = Some(iad1_rect(
+            img.crop_area = iad1_rect(
               small.crop_left_offset,
               small.crop_top_offset,
               small.crop_right_offset,
               small.crop_bottom_offset,
               dim,
-            ));
+            );
+            if img.crop_area.is_none() {
+              warn!("IAD1 has no valid crop: {:?}", small);
+            }
             img.active_area = img.crop_area;
           }
           // IAD1 (big, used for full size raws)
           Iad1Type::Big(big) => {
             let rect_crop = iad1_rect(big.crop_left_offset, big.crop_top_offset, big.crop_right_offset, big.crop_bottom_offset, dim);
-            img.crop_area = Some(rect_crop);
+            img.crop_area = rect_crop;
 
             // The active area of R5 1.6 crop files ends at row 3513, but the image
             // has 3510 rows, so it is limited to the image.
@@ -378,22 +381,27 @@ impl<'a> Decoder for Cr3Decoder<'a> {
               dim,
             );
             log::debug!("IAD1 active area: {:?}", rect_active);
-            assert!(rect_crop.x() >= rect_active.x());
-            assert!(rect_crop.y() >= rect_active.y());
-            assert!(rect_crop.width() <= rect_active.width());
-            assert!(rect_crop.height() <= rect_active.height());
-
-            // Check if after apply of active_area the crop is out of bounds.
-            // This is know to happen with R5II 1.6 crop raw files.
-            let overflow = (rect_crop.x() - rect_active.x()) + rect_crop.width() > rect_active.width();
-            if camera.find_hint("activearea_bug") && overflow {
-              // In this case, we ignore the active_area in IAD1 and use the crop instead.
-              log::debug!("Raw file has invalid active_area parameters in IAD1, using crop_area instead");
-              img.active_area = Some(rect_crop);
-            } else {
-              assert!(!overflow, "Hit the activearea_bug, maybe you just need to define the hint?");
-              img.active_area = Some(rect_active);
-            }
+            img.active_area = match (rect_crop, rect_active) {
+              (Some(crop), Some(active)) if crop_in_active_area(crop, active) => Some(active),
+              // After applying the active area the crop is out of bounds. This is
+              // known to happen with R5II 1.6 crop raw files, the active_area in
+              // IAD1 is ignored and the crop is used instead.
+              (Some(crop), active) => {
+                if camera.find_hint("activearea_bug") {
+                  log::debug!("Raw file has invalid active_area parameters in IAD1, using crop_area instead");
+                } else {
+                  warn!(
+                    "IAD1 crop {:?} is not inside the active area {:?}, using the crop. Does the camera need the activearea_bug hint?",
+                    crop, active
+                  );
+                }
+                Some(crop)
+              }
+              (None, active) => {
+                warn!("IAD1 has no valid crop: {:?}", big);
+                active
+              }
+            };
 
             // CR3 images have no masked areas: the left and top borders of IAD1
             // are not only optical black, and ColorData has the black level.
@@ -471,15 +479,12 @@ impl<'a> Decoder for Cr3Decoder<'a> {
 
 impl<'a> Cr3Decoder<'a> {
   fn read_lens_id(&self) -> Result<LensId> {
-    let mut id = (0, 0);
-    if let Some(Entry { value: Value::Short(v), .. }) = self.cmt3.get_entry(Cr3MakernoteTag::CameraSettings) {
-      id.0 = v[22] as u32;
-    }
-
-    if let Some(Entry { value: Value::Short(v), .. }) = self.cmt3.get_entry(Cr3MakernoteTag::FileInfo) {
-      id.1 = v[61] as u32;
-    }
-    Ok(id)
+    // The lens ID is at index 22 of CameraSettings and 61 of FileInfo, 0 if missing
+    let value = |tag: Cr3MakernoteTag, index: usize| match self.cmt3.get_entry(tag) {
+      Some(Entry { value: Value::Short(v), .. }) => v.get(index).map_or(0, |v| *v as u32),
+      _ => 0,
+    };
+    Ok((value(Cr3MakernoteTag::CameraSettings, 22), value(Cr3MakernoteTag::FileInfo, 61)))
   }
 
   fn read_lens_name(&self) -> Result<Option<&String>> {
@@ -546,7 +551,7 @@ impl<'a> Cr3Decoder<'a> {
       md.xpacket = Some(buf.to_vec());
     }
 
-    if let Some(ctmd) = self.read_ctmd(rawfile, params.image_index as u32)? {
+    if let Some(ctmd) = self.read_ctmd(rawfile, params.image_index)? {
       if let Some(rec5) = ctmd.exposure_info()? {
         debug!("CTMD Rec(5): {:?}", rec5);
         md.ctmd_exposure = Some(rec5);
@@ -607,10 +612,14 @@ impl<'a> Cr3Decoder<'a> {
 
   fn get_trak_index(&self, image_type: Cr3ImageType) -> Option<usize> {
     if let Some(cr3desc) = &self.bmff.filebox.moov.cr3desc {
-      cr3desc.cctp.ccdts.iter().find(|ccdt| ccdt.image_type == image_type as u64).map(|rec| {
-        debug_assert!(rec.trak_index > 0);
-        (rec.trak_index - 1) as usize
-      })
+      // The trak index from the file starts with 1
+      cr3desc
+        .cctp
+        .ccdts
+        .iter()
+        .find(|ccdt| ccdt.image_type == image_type as u64)
+        .and_then(|rec| rec.trak_index.checked_sub(1))
+        .map(|index| index as usize)
     } else {
       None
     }
@@ -680,8 +689,14 @@ impl Ctmd {
             let data = bs.get_bytes(sz as usize - 8)?;
             //dump_buf(&format!("/tmp/ctmd_rec{}_block{}_tag0x{:X}_uk{:X}.bin", rec.rec_type, block_id, tag, uk), data.as_slice());
             if [CR3_CTMD_BLOCK_EXIFIFD, CR3_CTMD_BLOCK_MAKERNOTES].contains(&tag) {
-              assert_eq!(rec.blocks.contains_key(&tag), false, "Double tag found?!");
-              rec.blocks.insert(tag, data);
+              match rec.blocks.entry(tag) {
+                std::collections::hash_map::Entry::Occupied(_) => {
+                  warn!("CTMD record {} has a second block 0x{:X}, ignoring it", rec.rec_type, tag)
+                }
+                std::collections::hash_map::Entry::Vacant(block) => {
+                  block.insert(data);
+                }
+              }
             }
             _block_id += 1;
           } else {
@@ -748,15 +763,34 @@ impl Ctmd {
   }
 }
 
+/// Sample number of the sample index `sample_idx`, the numbers start with 1.
+/// None if it exceeds the u32 of the sample tables.
+fn sample_number(sample_idx: usize) -> Option<u32> {
+  u32::try_from(sample_idx).ok()?.checked_add(1)
+}
+
 /// Rectangle of the IAD1 coordinates `left`, `top`, `right` and `bottom`,
 /// limited to an image of `dim` pixels
 ///
 /// The coordinates are inclusive: `right` and `bottom` are the last column and
 /// row of the rectangle.
-fn iad1_rect(left: u16, top: u16, right: u16, bottom: u16, dim: Dim2) -> Rect {
+fn iad1_rect(left: u16, top: u16, right: u16, bottom: u16, dim: Dim2) -> Option<Rect> {
   let right = usize::min(dim.w, right as usize + 1);
   let bottom = usize::min(dim.h, bottom as usize + 1);
-  Rect::new_with_points(Point::new(left as usize, top as usize), Point::new(right, bottom))
+  // Empty or inverted after the limit to the image
+  if left as usize >= right || top as usize >= bottom {
+    return None;
+  }
+  Some(Rect::new_with_points(Point::new(left as usize, top as usize), Point::new(right, bottom)))
+}
+
+/// The `crop` is inside the `active` area
+fn crop_in_active_area(crop: Rect, active: Rect) -> bool {
+  crop.x() >= active.x()
+    && crop.y() >= active.y()
+    && crop.width() <= active.width()
+    && crop.height() <= active.height()
+    && (crop.x() - active.x()) + crop.width() <= active.width()
 }
 
 /// BaselineExposure for the HighlightTonePriority value at index 3 of the LightingOpt makernote
@@ -925,6 +959,20 @@ mod tests {
   }
 
   #[test]
+  fn ctmd_keeps_the_first_of_two_blocks() -> Result<()> {
+    // Record 7 with two makernote blocks of 1 byte
+    let block = |byte: u8| [&9u32.to_le_bytes()[..], &CR3_CTMD_BLOCK_MAKERNOTES.to_le_bytes(), &[0, 0, byte]].concat();
+    let payload = [block(1), block(2)].concat();
+    let mut data = (12 + payload.len() as u32).to_le_bytes().to_vec();
+    data.extend_from_slice(&7u16.to_le_bytes());
+    data.extend_from_slice(&[0; 6]);
+    data.extend_from_slice(&payload);
+    let ctmd = Ctmd::new(&mut ByteStream::new(&data, Endian::Little))?;
+    assert_eq!(ctmd.records[&7].blocks[&CR3_CTMD_BLOCK_MAKERNOTES], [1]);
+    Ok(())
+  }
+
+  #[test]
   fn highlight_tone_priority_sets_exposure() {
     let lighting_opt = |priority| Value::Long(vec![64, 0, 3, priority]);
     assert_eq!(highlight_tone_priority_exposure(&lighting_opt(0)), None);
@@ -943,13 +991,38 @@ mod tests {
   fn iad1_rect_includes_the_last_column_and_row() {
     // Active area of the EOS 90D, it ends at the last column and row of the image
     let dim = Dim2::new(7128, 4732);
-    assert_eq!(iad1_rect(144, 72, 7127, 4731, dim), Rect::new(Point::new(144, 72), Dim2::new(6984, 4660)));
+    assert_eq!(iad1_rect(144, 72, 7127, 4731, dim), Some(Rect::new(Point::new(144, 72), Dim2::new(6984, 4660))));
   }
 
   #[test]
   fn iad1_rect_is_limited_to_the_image() {
     // Active area of an EOS R5 1.6 crop file, it ends 4 rows below the image
     let dim = Dim2::new(5248, 3510);
-    assert_eq!(iad1_rect(128, 96, 5247, 3513, dim), Rect::new(Point::new(128, 96), Dim2::new(5120, 3414)));
+    assert_eq!(iad1_rect(128, 96, 5247, 3513, dim), Some(Rect::new(Point::new(128, 96), Dim2::new(5120, 3414))));
+  }
+
+  #[test]
+  fn sample_numbers() {
+    assert_eq!(sample_number(0), Some(1));
+    assert_eq!(sample_number(u32::MAX as usize - 1), Some(u32::MAX));
+    assert_eq!(sample_number(u32::MAX as usize), None);
+    assert_eq!(sample_number(usize::MAX), None);
+  }
+
+  #[test]
+  fn iad1_rect_is_none_when_empty_or_inverted() {
+    let dim = Dim2::new(5248, 3510);
+    assert_eq!(iad1_rect(200, 96, 100, 3509, dim), None);
+    assert_eq!(iad1_rect(128, 3600, 5247, 3700, dim), None);
+    assert_eq!(iad1_rect(6000, 96, 6100, 3509, dim), None);
+  }
+
+  #[test]
+  fn crop_must_be_inside_the_active_area() {
+    let active = Rect::new(Point::new(128, 96), Dim2::new(5120, 3414));
+    assert!(crop_in_active_area(Rect::new(Point::new(140, 100), Dim2::new(5000, 3400)), active));
+    // Left of the active area, and beyond its right edge
+    assert!(!crop_in_active_area(Rect::new(Point::new(100, 100), Dim2::new(5000, 3400)), active));
+    assert!(!crop_in_active_area(Rect::new(Point::new(300, 100), Dim2::new(5000, 3400)), active));
   }
 }

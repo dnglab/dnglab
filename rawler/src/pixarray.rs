@@ -6,11 +6,10 @@ use rayon::prelude::*;
 
 use crate::{
   decompressors::decompress_lines_fn,
-  formats::tiff::Rational,
   imgop::{Dim2, Point, Rect},
 };
 
-pub trait SubPixel: Default + std::fmt::Debug + Clone + Copy + Send + Sync + Into<Rational> {
+pub trait SubPixel: Default + std::fmt::Debug + Clone + Copy + Send + Sync {
   fn as_f32(self) -> f32;
   fn as_u16(self) -> u16;
 }

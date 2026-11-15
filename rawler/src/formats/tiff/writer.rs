@@ -6,7 +6,7 @@ use std::{
   io::{Seek, SeekFrom, Write},
 };
 
-use byteorder::{LittleEndian, NativeEndian, WriteBytesExt};
+use byteorder::{NativeEndian, WriteBytesExt};
 use image::EncodableLayout;
 use rayon::prelude::*;
 use weezl::LzwError;
@@ -59,6 +59,7 @@ where
   }
 
   pub fn write_strips_lzw(&mut self, data: &[u16], cpp: usize, dim: Dim2, strip_lines: usize) -> Result<(u32, Vec<(u32, u32)>)> {
+    check_image_size(data.len(), cpp, dim)?;
     let strip_lines = default_strip_lines(dim, strip_lines);
     let strips = data
       .par_chunks(cpp * dim.w * strip_lines)
@@ -71,8 +72,9 @@ where
   /// Write `data` of `cpp` 32-bit floating point samples per pixel as LZW
   /// compressed strips with the floating point predictor (Predictor 3)
   pub fn write_strips_lzw_f32(&mut self, data: &[f32], cpp: usize, dim: Dim2, strip_lines: usize) -> Result<(u32, Vec<(u32, u32)>)> {
+    check_image_size(data.len(), cpp, dim)?;
     let strip_lines = default_strip_lines(dim, strip_lines);
-    let row_samples = (cpp * dim.w).max(1);
+    let row_samples = cpp * dim.w;
     let strips = data
       .par_chunks(row_samples * strip_lines)
       .map(|strip| lzw_encode(&strip.chunks(row_samples).flat_map(|row| float_predictor_row(row, cpp)).collect::<Vec<u8>>()))
@@ -86,7 +88,8 @@ where
     let mut tag_data = Vec::with_capacity(strips.len());
     for strip in strips {
       let offset = self.write_data(&strip)?;
-      tag_data.push((offset, strip.len() as u32));
+      let len = u32::try_from(strip.len()).map_err(|_| TiffError::Overflow(format!("TIFF strip of {} bytes exceeds 4 GiB", strip.len())))?;
+      tag_data.push((offset, len));
     }
     Ok(tag_data)
   }
@@ -101,26 +104,28 @@ where
     Ok(offset)
   }
 
-  pub fn write_data_u16_le(&mut self, data: &[u16]) -> Result<u32>
+  /// Write `data` in the byte order of the TIFF, the host byte order
+  pub fn write_data_u16(&mut self, data: &[u16]) -> Result<u32>
   where
     W: Seek + Write,
   {
     self.pad_word_boundary()?;
     let offset = self.position()?;
     for v in data {
-      self.writer.write_u16::<LittleEndian>(*v)?;
+      self.writer.write_u16::<NativeEndian>(*v)?;
     }
     Ok(offset)
   }
 
-  pub fn write_data_f32_le(&mut self, data: &[f32]) -> Result<u32>
+  /// Write `data` in the byte order of the TIFF, the host byte order
+  pub fn write_data_f32(&mut self, data: &[f32]) -> Result<u32>
   where
     W: Seek + Write,
   {
     self.pad_word_boundary()?;
     let offset = self.position()?;
     for v in data {
-      self.writer.write_f32::<LittleEndian>(*v)?;
+      self.writer.write_f32::<NativeEndian>(*v)?;
     }
     Ok(offset)
   }
@@ -146,8 +151,11 @@ impl<W> TiffWriter<W>
 where
   W: Seek,
 {
+  /// Position in the output, an error beyond the 4 GiB a TIFF offset can
+  /// address
   pub fn position(&mut self) -> Result<u32> {
-    Ok(self.writer.stream_position().map(|v| v as u32)?) // TODO: try_from?
+    let pos = self.writer.stream_position()?;
+    u32::try_from(pos).map_err(|_| TiffError::Overflow(format!("TIFF output exceeds 4 GiB at position {}", pos)))
   }
 }
 
@@ -207,8 +215,6 @@ impl DirectoryWriter {
 
   pub fn add_tag_undefined<T: TiffTag>(&mut self, tag: T, data: Vec<u8>) {
     let tag: u16 = tag.into();
-    //let data = data.as_ref();
-    //let offset = self.write_data(data)?;
     self.entries.insert(
       tag,
       Entry {
@@ -243,13 +249,20 @@ impl DirectoryWriter {
   where
     W: Seek + Write,
   {
+    // Values copied from other files can be empty, TIFF does not allow that
+    self.entries.retain(|tag, entry| {
+      if entry.value.count() == 0 {
+        log::warn!("TIFF value of tag 0x{:X} is empty, the tag is not written", tag);
+      }
+      entry.value.count() > 0
+    });
     if self.entries.is_empty() {
       return Err(TiffError::General("IFD is empty, not allowed by TIFF specification".to_string()));
     }
     for &mut Entry {
       ref mut value,
       ref mut embedded,
-      ref tag,
+      ..
     } in self.entries.values_mut()
     {
       let data_bytes = 4;
@@ -258,11 +271,8 @@ impl DirectoryWriter {
         tiff.pad_word_boundary()?;
         let offset = tiff.position()?;
         value.write(&mut tiff.writer)?;
-        embedded.replace(offset as u32);
+        embedded.replace(offset);
       } else {
-        if value.count() == 0 {
-          panic!("TIFF value is empty, tag: {:?}", tag);
-        }
         embedded.replace(value.as_embedded()?);
       }
     }
@@ -274,22 +284,20 @@ impl DirectoryWriter {
 
     for (tag, entry) in self.entries {
       tiff.writer.write_u16::<NativeEndian>(tag)?;
-      tiff.writer.write_u16::<NativeEndian>(entry.value_type())?;
+      // The count of an unknown type is its number of bytes, which is
+      // valid for UNDEFINED only
+      let value_type = if matches!(entry.value, Value::Unknown(..)) { 7 } else { entry.value_type() };
+      tiff.writer.write_u16::<NativeEndian>(value_type)?;
       tiff.writer.write_u32::<NativeEndian>(entry.count())?;
-      tiff
-        .writer
-        .write_u32::<NativeEndian>(entry.embedded.expect("embedded attribute must contain a value"))?;
+      let embedded = entry
+        .embedded
+        .ok_or_else(|| TiffError::General(format!("TIFF value of tag 0x{:X} has no offset", tag)))?;
+      tiff.writer.write_u32::<NativeEndian>(embedded)?;
     }
     tiff.writer.write_u32::<NativeEndian>(self.next_ifd)?; // Next IFD
 
     Ok(offset)
   }
-
-  /*
-  pub fn add_entry(&mut self, entry: Entry) {
-    self.ifd.insert(tag.into(), entry);
-  }
-   */
 }
 
 impl crate::decoders::RawMetadata {
@@ -423,6 +431,18 @@ where
   Ok(())
 }
 
+/// Check that an image of `dim` with `cpp` samples per pixel is not empty
+/// and has `len` samples
+fn check_image_size(len: usize, cpp: usize, dim: Dim2) -> Result<()> {
+  if cpp == 0 || dim.w == 0 || dim.h == 0 || cpp.checked_mul(dim.w).and_then(|v| v.checked_mul(dim.h)) != Some(len) {
+    return Err(TiffError::General(format!(
+      "Image of {}x{} pixels with {} samples does not match {} samples of data",
+      dim.w, dim.h, cpp, len
+    )));
+  }
+  Ok(())
+}
+
 /// Rows per strip: `strip_lines`, or 256 rows if it is 0, a single strip
 /// for images of up to 256 rows
 fn default_strip_lines(dim: Dim2, strip_lines: usize) -> usize {
@@ -472,6 +492,103 @@ pub(crate) fn float_predictor_decode(mut bytes: Vec<u8>, cpp: usize) -> Vec<f32>
 #[cfg(test)]
 mod tests {
   use super::*;
+
+  /// Output that discards the data and only keeps the position
+  #[derive(Default)]
+  struct PositionOnly {
+    pos: u64,
+  }
+
+  impl Write for PositionOnly {
+    fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
+      self.pos += buf.len() as u64;
+      Ok(buf.len())
+    }
+
+    fn flush(&mut self) -> std::io::Result<()> {
+      Ok(())
+    }
+  }
+
+  impl Seek for PositionOnly {
+    fn seek(&mut self, pos: SeekFrom) -> std::io::Result<u64> {
+      match pos {
+        SeekFrom::Start(pos) => self.pos = pos,
+        SeekFrom::Current(delta) => self.pos = self.pos.saturating_add_signed(delta),
+        SeekFrom::End(_) => return Err(std::io::Error::other("no end")),
+      }
+      Ok(self.pos)
+    }
+  }
+
+  #[test]
+  fn data_is_written_in_host_byte_order() -> Result<()> {
+    let mut tiff = TiffWriter::new(std::io::Cursor::new(Vec::new()))?;
+    let offset = tiff.write_data_u16(&[0x0102, 0x0304])? as usize;
+    tiff.write_data_f32(&[1.5])?;
+    let data = tiff.writer.into_inner();
+    let expected: Vec<u8> = [0x0102_u16.to_ne_bytes(), 0x0304_u16.to_ne_bytes()].concat();
+    assert_eq!(&data[offset..offset + 4], expected.as_slice());
+    assert_eq!(&data[offset + 4..offset + 8], 1.5_f32.to_ne_bytes().as_slice());
+    Ok(())
+  }
+
+  #[test]
+  fn lzw_strips_need_a_matching_image() -> Result<()> {
+    let mut tiff = TiffWriter::new(std::io::Cursor::new(Vec::new()))?;
+    assert!(tiff.write_strips_lzw(&[], 1, Dim2::new(0, 4), 0).is_err());
+    assert!(tiff.write_strips_lzw(&[1, 2, 3], 0, Dim2::new(1, 3), 0).is_err());
+    assert!(tiff.write_strips_lzw(&[1, 2, 3], 1, Dim2::new(2, 2), 0).is_err());
+    assert!(tiff.write_strips_lzw_f32(&[], 3, Dim2::new(2, 0), 0).is_err());
+    let (rows, strips) = tiff.write_strips_lzw(&[1, 2, 3, 4], 1, Dim2::new(2, 2), 0)?;
+    assert_eq!((rows, strips.len()), (2, 1));
+    Ok(())
+  }
+
+  #[test]
+  fn empty_values_are_skipped() -> Result<()> {
+    let mut output = std::io::Cursor::new(Vec::new());
+    let tiff = TiffWriter::new(&mut output)?;
+    let mut dir = tiff.new_directory();
+    dir.add_untyped_tag(0x100, Value::Short(vec![]));
+    dir.add_untyped_tag(0x101, Value::Short(vec![7]));
+    tiff.build(dir)?;
+    let reader = super::super::GenericTiffReader::new_with_buffer(output.into_inner(), 0, 0, None)?;
+    use super::super::reader::TiffReader;
+    assert_eq!(reader.root_ifd().entry_count(), 1);
+    assert!(reader.root_ifd().has_entry(0x101_u16));
+    // An IFD of empty values only is empty
+    let mut output = std::io::Cursor::new(Vec::new());
+    let tiff = TiffWriter::new(&mut output)?;
+    let mut dir = tiff.new_directory();
+    dir.add_untyped_tag(0x100, Value::Long(vec![]));
+    assert!(tiff.build(dir).is_err());
+    Ok(())
+  }
+
+  #[test]
+  fn output_beyond_4gib_is_an_error() -> Result<()> {
+    let mut tiff = TiffWriter::new(PositionOnly::default())?;
+    tiff.writer.seek(SeekFrom::Start(5 << 30))?;
+    assert!(matches!(tiff.write_data(&[1, 2, 3, 4]), Err(TiffError::Overflow(_))));
+    Ok(())
+  }
+
+  #[test]
+  fn unknown_type_is_written_as_undefined() -> Result<()> {
+    let mut output = std::io::Cursor::new(Vec::new());
+    let tiff = TiffWriter::new(&mut output)?;
+    let mut dir = tiff.new_directory();
+    dir.add_untyped_tag(0x100, Value::Unknown(16, vec![1, 2, 3, 4, 5, 6, 7, 8]));
+    tiff.build(dir)?;
+    let reader = super::super::GenericTiffReader::new_with_buffer(output.into_inner(), 0, 0, None)?;
+    use super::super::reader::TiffReader;
+    assert_eq!(
+      reader.root_ifd().get_entry(0x100_u16).map(|entry| &entry.value),
+      Some(&Value::Undefined(vec![1, 2, 3, 4, 5, 6, 7, 8]))
+    );
+    Ok(())
+  }
 
   #[test]
   fn float_predictor() {

@@ -27,6 +27,8 @@ use super::Orientation;
 use super::RawDecodeParams;
 use super::RawMetadata;
 use super::RawPhotometricInterpretation;
+use super::image_bytes;
+use super::tag_data;
 
 #[derive(Debug, Clone)]
 pub struct ErfDecoder<'a> {
@@ -68,6 +70,8 @@ impl<'a> Decoder for ErfDecoder<'a> {
     let width = fetch_tiff_tag!(raw, TiffCommonTag::ImageWidth).force_usize(0);
     let height = fetch_tiff_tag!(raw, TiffCommonTag::ImageLength).force_usize(0);
     let offset = fetch_tiff_tag!(raw, TiffCommonTag::StripOffsets).force_usize(0);
+    // The 12-bit data has less than 2 bytes per pixel
+    image_bytes("ERF", width, height, 16)?;
     let src = file.subview_until_eof(offset as u64)?;
 
     let image = decompress_12be_wcontrol(src, width, height, dummy).map_err(RawlerError::decoder_failed)?;
@@ -105,8 +109,9 @@ impl<'a> ErfDecoder<'a> {
     if levels.count() != 256 {
       Err(RawlerError::decoder_failed("ERF: Levels count is off".to_string()))
     } else {
-      let r = BEu16(levels.get_data(), 48) as f32;
-      let b = BEu16(levels.get_data(), 50) as f32;
+      let levels = tag_data(levels, 52)?;
+      let r = BEu16(levels, 48) as f32;
+      let b = BEu16(levels, 50) as f32;
       Ok([r * 508.0 * 1.078 / 65536.0, 1.0, b * 382.0 * 1.173 / 65536.0, f32::NAN])
     }
   }

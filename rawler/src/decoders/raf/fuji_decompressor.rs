@@ -304,11 +304,15 @@ pub(super) fn decompress_fuji(buf: &PaddedBuf, width: usize, height: usize, _bps
   if !header.is_valid() {
     return Err(RawlerError::decoder_failed("Fuji header is not valid"));
   }
-  assert_eq!(
-    Dim2::new(width, height),
-    Dim2::new(header.raw_width.into(), header.raw_height.into()),
-    "RAF header specifies different dimensions!"
-  );
+  if Dim2::new(width, height) != Dim2::new(header.raw_width.into(), header.raw_height.into()) {
+    return Err(decoder_error!(
+      "Fuji header specifies {}x{} pixels, the image has {}x{}",
+      header.raw_width,
+      header.raw_height,
+      width,
+      height
+    ));
+  }
 
   let params = Params::new(&header)?;
   log::debug!("Params: {:?}", params);
@@ -359,7 +363,10 @@ pub(super) fn decompress_fuji(buf: &PaddedBuf, width: usize, height: usize, _bps
     })
     .collect::<std::result::Result<Vec<Strip>, ByteStreamError>>()?;
 
-  assert!(stream.remaining_bytes() <= 16);
+  // Only the padding of the data may follow the strips
+  if stream.remaining_bytes() > 16 {
+    return Err(decoder_error!("Fuji compressed data has {} bytes after the strips", stream.remaining_bytes()));
+  }
 
   let mut out = PixU16::new(width, height);
   // Each strip decodes a column of the image

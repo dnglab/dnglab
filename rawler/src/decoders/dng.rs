@@ -77,6 +77,14 @@ impl<'a> Decoder for DngDecoder<'a> {
     let height = fetch_tiff_tag!(raw, TiffCommonTag::ImageLength).force_usize(0);
     let cpp = fetch_tiff_tag!(raw, TiffCommonTag::SamplesPerPixel).force_usize(0);
     let bits = fetch_tiff_tag!(raw, TiffCommonTag::BitsPerSample).force_u32(0);
+    if cpp == 0 {
+      return Err(decoder_error!("DNG: raw image without samples per pixel"));
+    }
+    // The samples have up to 32 bits
+    let samples = width
+      .checked_mul(cpp)
+      .ok_or_else(|| decoder_error!("DNG: image of {} samples per pixel overflows", cpp))?;
+    image_bytes("DNG", samples, height, 32)?;
     let orientation = Orientation::from_tiff(self.tiff.root_ifd());
     // Raw IFDs use CFA (32803) or LinearRaw (34892), BlackIsZero (1) is accepted for monochrome images
     let photometric_int = fetch_tiff_tag!(raw, TiffCommonTag::PhotometricInt).force_u32(0);
@@ -105,6 +113,7 @@ impl<'a> Decoder for DngDecoder<'a> {
     let whitelevel = match self.get_whitelevels(raw)? {
       Some(whitelevel) => whitelevel,
       None if SampleFormat::extract(raw)? == Some(SampleFormat::IEEEFP) => WhiteLevel::new(vec![1; cpp]),
+      None if bits > 32 => return Err(decoder_error!("DNG: {} bits per sample without WhiteLevel are not supported", bits)),
       None => WhiteLevel::new_bits(bits, cpp),
     };
     let whitelevel = Some(whitelevel);
@@ -179,19 +188,19 @@ impl<'a> Decoder for DngDecoder<'a> {
 
     // Opcode extraction
 
-    if let Some(data) = raw.get_entry(DngTag::OpcodeList1).map(|entry| entry.value.get_data()) {
+    if let Some(data) = raw.get_entry(DngTag::OpcodeList1).and_then(|entry| entry.value.get_data().ok()) {
       let opcodes = OpcodeList::parse(data)?;
       log::debug!("OpcodeList1: {:?}", opcodes);
       image.dng_opcodes_1 = Some(opcodes);
     }
 
-    if let Some(data) = raw.get_entry(DngTag::OpcodeList2).map(|entry| entry.value.get_data()) {
+    if let Some(data) = raw.get_entry(DngTag::OpcodeList2).and_then(|entry| entry.value.get_data().ok()) {
       let opcodes = OpcodeList::parse(data)?;
       log::debug!("OpcodeList2: {:?}", opcodes);
       image.dng_opcodes_2 = Some(opcodes);
     }
 
-    if let Some(data) = raw.get_entry(DngTag::OpcodeList3).map(|entry| entry.value.get_data()) {
+    if let Some(data) = raw.get_entry(DngTag::OpcodeList3).and_then(|entry| entry.value.get_data().ok()) {
       let opcodes = OpcodeList::parse(data)?;
       log::debug!("OpcodeList3: {:?}", opcodes);
       image.dng_opcodes_3 = Some(opcodes);
@@ -420,18 +429,20 @@ impl<'a> DngDecoder<'a> {
       .unwrap_or_default();
 
     let active_area = self.get_active_area(raw, width, height);
-    let crop_area = if let Some(crops) = self.get_crop(raw) {
-      if let Some(active_area) = &active_area {
-        let mut full = crops;
-        full.p.x += active_area[0]; // left
-        full.p.y += active_area[1]; // Top
-        Some(full.as_ltrb_offsets(width, height))
-      } else {
-        Some(crops.as_ltrb_offsets(width, height))
+    // The DefaultCrop is relative to the ActiveArea
+    let crop_area = self.get_crop(raw).and_then(|crop| {
+      let [left, top, ..] = active_area.unwrap_or_default();
+      let offsets = crop
+        .p
+        .x
+        .checked_add(left)
+        .zip(crop.p.y.checked_add(top))
+        .and_then(|(x, y)| Rect::new(Point::new(x, y), crop.d).as_ltrb_offsets(width, height));
+      if offsets.is_none() {
+        log::warn!("DNG: DefaultCrop {:?} doesn't fit the image of {}x{} pixels, ignoring it", crop, width, height);
       }
-    } else {
-      None
-    };
+      offsets
+    });
 
     // Only CFA images have a CFA pattern
     let cfa = if photometric_int == 32803 { self.get_cfa(raw)? } else { CFA::default() };
@@ -497,9 +508,14 @@ impl<'a> DngDecoder<'a> {
     }
     if let Some(levels) = self.tiff.get_entry(DngTag::AsShotNeutral) {
       // One value per color plane (1, 3 or 4)
+      let neutral: Vec<f32> = (0..(levels.count() as usize).min(4)).map(|i| levels.force_f32(i)).collect();
+      if !neutral.iter().all(|level| level.is_finite() && *level > 0.0) {
+        log::warn!("DNG: invalid AsShotNeutral {:?}, the white balance is unknown", neutral);
+        return Ok([f32::NAN; 4]);
+      }
       let mut wb = [f32::NAN; 4];
-      for (i, coeff) in wb.iter_mut().enumerate().take(levels.count() as usize) {
-        *coeff = 1.0 / levels.force_f32(i);
+      for (coeff, level) in wb.iter_mut().zip(&neutral) {
+        *coeff = 1.0 / level;
       }
       Ok(wb)
     } else if let Some(levels) = self.tiff.get_entry(DngTag::AsShotWhiteXY) {
@@ -615,7 +631,7 @@ impl<'a> DngDecoder<'a> {
 
   fn get_cfa(&self, raw: &IFD) -> Result<CFA> {
     let pattern = fetch_tiff_tag!(raw, TiffCommonTag::CFAPattern);
-    let cfa = CFA::new_from_tag(pattern);
+    let cfa = CFA::new_from_tag(pattern).ok_or_else(|| decoder_error!("DNG: CFAPattern with {} values is invalid", pattern.count()))?;
     // If DNG has active area, we need to calulate back the CFA pattern,
     // because for DNG the CFAPattern is relative to ActiveArea and we
     // use (0, 0) as starting point: the pattern is rotated in the opposite
@@ -654,12 +670,15 @@ impl<'a> DngDecoder<'a> {
     }
   }
 
+  /// ActiveArea as offsets from each side (LTRB) of an image of `width` x
+  /// `height` pixels, an area that doesn't fit is ignored with a warning
   fn get_active_area(&self, raw: &IFD, width: usize, height: usize) -> Option<[usize; 4]> {
-    if let Some(rect) = self.get_active_area_borders(raw) {
-      Some(Rect::new_with_dng(&rect).as_ltrb_offsets(width, height))
-    } else {
-      None
+    let rect = self.get_active_area_borders(raw)?;
+    let offsets = Rect::new_with_dng(&rect).and_then(|area| area.as_ltrb_offsets(width, height));
+    if offsets.is_none() {
+      log::warn!("DNG: ActiveArea {:?} doesn't fit the image of {}x{} pixels, ignoring it", rect, width, height);
     }
+    offsets
   }
 
   fn get_crop(&self, raw: &IFD) -> Option<Rect> {
@@ -857,6 +876,70 @@ mod tests {
       assert_eq!(dummy.whitelevel, full.whitelevel);
       assert_eq!(dummy.camera_profiles, full.camera_profiles);
     }
+    Ok(())
+  }
+
+  #[test]
+  fn invalid_samples_and_bits_are_an_error() -> TestResult {
+    let data = write_dng(&synthetic_rawimage(), |ifd| ifd.add_tag(TiffCommonTag::SamplesPerPixel, 0_u16))?;
+    let err = decode_dng(&data).err().map(|err| err.to_string());
+    assert!(err.as_ref().is_some_and(|err| err.contains("without samples per pixel")), "{:?}", err);
+    // Without WhiteLevel, the white level is computed from the bits per sample
+    let data = write_dng(&synthetic_rawimage(), |ifd| {
+      ifd.add_tag(TiffCommonTag::BitsPerSample, 40_u16);
+      ifd.remove_tag(TiffCommonTag::WhiteLevel);
+    })?;
+    let err = decode_dng(&data).err().map(|err| err.to_string());
+    assert!(err.as_ref().is_some_and(|err| err.contains("40 bits per sample")), "{:?}", err);
+    Ok(())
+  }
+
+  #[test]
+  fn as_shot_neutral_of_zero_is_unknown() -> TestResult {
+    let wb = decode_wb(&[Rational::new(1, 2), Rational::new(0, 1), Rational::new(1, 4)])?;
+    assert!(wb.iter().all(|v| v.is_nan()));
+    Ok(())
+  }
+
+  #[test]
+  fn invalid_tiles_and_strips_are_an_error() -> TestResult {
+    // Lossless JPEG is stored in tiles
+    for (tag, value) in [(TiffCommonTag::TileWidth, 0_u32), (TiffCommonTag::TileLength, 0)] {
+      let data = write_dng_with(&synthetic_rawimage(), DngCompression::Lossless, |ifd| ifd.add_tag(tag, value))?;
+      let err = decode_dng(&data).err().map(|err| err.to_string());
+      assert!(err.as_ref().is_some_and(|err| err.contains("Tiles of")), "{:?}: {:?}", tag, err);
+    }
+    // Uncompressed data is stored in strips
+    let data = write_dng(&synthetic_rawimage(), |ifd| ifd.add_tag(TiffCommonTag::RowsPerStrip, 0_u32))?;
+    let err = decode_dng(&data).err().map(|err| err.to_string());
+    assert!(err.as_ref().is_some_and(|err| err.contains("0 rows")), "{:?}", err);
+    // Two strips that aren't contiguous are decoded one by one, 4 rows per
+    // strip need 4 of them
+    let data = write_dng(&synthetic_rawimage(), |ifd| {
+      ifd.add_tag(TiffCommonTag::StripOffsets, &[8_u32, 200][..]);
+      ifd.add_tag(TiffCommonTag::StripByteCounts, &[128_u32, 128][..]);
+      ifd.add_tag(TiffCommonTag::RowsPerStrip, 4_u32);
+    })?;
+    let err = decode_dng(&data).err().map(|err| err.to_string());
+    assert!(err.as_ref().is_some_and(|err| err.contains("Strip 2 is missing")), "{:?}", err);
+    Ok(())
+  }
+
+  #[test]
+  fn areas_that_dont_fit_are_ignored() -> TestResult {
+    // Top, left, bottom, right of an inverted ActiveArea and one past the image
+    for area in [[8_u32, 0, 4, 16], [0, 0, 20, 16]] {
+      let image = decode_dng(&write_dng(&synthetic_rawimage(), |ifd| ifd.add_tag(DngTag::ActiveArea, &area[..]))?)?;
+      assert_eq!(image.active_area, None, "{:?}", area);
+    }
+    // A DefaultCrop past the image, relative to the ActiveArea
+    let image = decode_dng(&write_dng(&synthetic_rawimage(), |ifd| {
+      ifd.add_tag(DngTag::ActiveArea, &[2_u32, 2, 16, 16][..]);
+      ifd.add_tag(DngTag::DefaultCropOrigin, &[0_u32, 0][..]);
+      ifd.add_tag(DngTag::DefaultCropSize, &[16_u32, 16][..]);
+    })?)?;
+    assert_eq!(image.active_area, Some(Rect::new(Point::new(2, 2), Dim2::new(14, 14))));
+    assert_eq!(image.crop_area, None);
     Ok(())
   }
 

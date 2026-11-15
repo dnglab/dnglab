@@ -7,7 +7,7 @@ use super::{
 };
 use log::debug;
 use serde::{Deserialize, Serialize};
-use std::io::{Read, Seek, SeekFrom};
+use std::io::{Read, Seek};
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Cdi1Box {
@@ -32,7 +32,7 @@ impl<R: Read + Seek> ReadBox<&mut R> for Cdi1Box {
     while current < header.end_offset() {
       // get box?
 
-      let header = BoxHeader::parse(&mut reader)?;
+      let header = BoxHeader::parse_child(&mut reader, &header)?;
 
       match header.typ {
         Iad1Box::TYP => {
@@ -48,7 +48,7 @@ impl<R: Read + Seek> ReadBox<&mut R> for Cdi1Box {
       current = reader.stream_position()?;
     }
 
-    reader.seek(SeekFrom::Start(header.end_offset()))?;
+    header.finish(&mut *reader)?;
 
     Ok(Self {
       header,

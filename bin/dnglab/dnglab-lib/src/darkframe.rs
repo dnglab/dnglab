@@ -14,7 +14,7 @@ use std::{
 
 use clap::ArgMatches;
 use image::{DynamicImage, ImageReader};
-use rawler::{RawImageData, decoders::RawDecodeParams, imgop::darkframe::DarkFrame, rawimage::BlackLevel, rawsource::RawSource};
+use rawler::{RawImageData, decoders::RawDecodeParams, formats::tiff::Rational, imgop::darkframe::DarkFrame, rawimage::BlackLevel, rawsource::RawSource};
 
 use crate::{AppError, Result};
 
@@ -28,7 +28,7 @@ pub enum DarkFrameBlack {
   /// an image file
   Auto,
   /// This black level for all samples
-  Level(f32),
+  Level(Rational),
 }
 
 /// Parse `auto` or a black level of 0 or more
@@ -37,11 +37,9 @@ pub fn dark_frame_black_parser(value: &str) -> std::result::Result<DarkFrameBlac
     return Ok(DarkFrameBlack::Auto);
   }
   let level: f32 = value.parse().map_err(|err| format!("{}", err))?;
-  if level.is_finite() && level >= 0.0 {
-    Ok(DarkFrameBlack::Level(level))
-  } else {
-    Err(format!("{} is not a black level of 0 or more", value))
-  }
+  Rational::try_from(level)
+    .map(DarkFrameBlack::Level)
+    .map_err(|_| format!("{} is not a black level of 0 or more", value))
 }
 
 /// Read the dark frame of option `id`, with the black level of option `black_id`

@@ -4,7 +4,6 @@
 
 use std::{
   fmt,
-  fs::File,
   io::{self, Cursor, Read, Seek, SeekFrom},
 };
 
@@ -83,11 +82,18 @@ impl BoxHeader {
 
     let current = reader.stream_position()?;
     let header_len = current - start;
+    let end = reader.seek(SeekFrom::End(0))?;
+    reader.seek(SeekFrom::Start(current))?;
     if size == 0 {
       // ISO/IEC 14496-12: the box extends to the end of the file.
-      let end = reader.seek(SeekFrom::End(0))?;
-      reader.seek(SeekFrom::Start(current))?;
       size = end - start;
+    } else if size > end.saturating_sub(start) {
+      // The size comes from the file, a box beyond its end would make the
+      // readers of its data allocate that size
+      return Err(BmffError::Parse(format!(
+        "Box {:?} at offset {} with size {} extends beyond the end of the file at {}",
+        typ, start, size, end
+      )));
     } else if size < header_len {
       // The box would end before its own header does, so a container
       // loop reading it would never advance.
@@ -105,33 +111,61 @@ impl BoxHeader {
     })
   }
 
+  /// Header of a box inside the box `parent`, an error if it ends after
+  /// the parent
+  pub fn parse_child<R: Read + Seek>(reader: R, parent: &BoxHeader) -> Result<Self> {
+    let header = Self::parse(reader)?;
+    if header.end_offset() > parent.end_offset() {
+      return Err(BmffError::Parse(format!(
+        "Box {:?} at offset {} with size {} extends beyond its parent box {:?}, which ends at {}",
+        header.typ,
+        header.offset,
+        header.size,
+        parent.typ,
+        parent.end_offset()
+      )));
+    }
+    Ok(header)
+  }
+
+  /// The `count` of entries of `entry_size` bytes from the reader position,
+  /// an error if they don't fit in the box. The count comes from the file,
+  /// so this is checked before allocating the entries.
+  pub fn check_entries<R: Seek>(&self, mut reader: R, count: u32, entry_size: u64) -> Result<usize> {
+    let available = self.end_offset().saturating_sub(reader.stream_position()?);
+    if count as u64 * entry_size > available {
+      return Err(BmffError::Parse(format!(
+        "Box {:?} at offset {} has {} entries of {} bytes, but only {} bytes are left",
+        self.typ, self.offset, count, entry_size, available
+      )));
+    }
+    Ok(count as usize)
+  }
+
+  /// Seek to the end of the box, an error if its fields were read beyond it
+  pub fn finish<R: Seek>(&self, mut reader: R) -> Result<()> {
+    let pos = reader.stream_position()?;
+    if pos > self.end_offset() {
+      return Err(BmffError::Parse(format!(
+        "Box {:?} at offset {} with size {} is shorter than its {} bytes of fields",
+        self.typ,
+        self.offset,
+        self.size,
+        pos - self.offset
+      )));
+    }
+    reader.seek(SeekFrom::Start(self.end_offset()))?;
+    Ok(())
+  }
+
   pub fn end_offset(&self) -> u64 {
     self.offset + self.size
   }
-
-  pub fn make_view<'a>(&self, buffer: &'a [u8], skip: usize, limit: usize) -> &'a [u8] {
-    let start = (self.offset + self.header_len) as usize + skip;
-    if limit == 0 {
-      &buffer[start..start + (self.size - self.header_len) as usize - skip]
-    } else {
-      &buffer[start..start + limit]
-    }
-  }
-}
-
-pub trait BmffBox: Sized {
-  fn size(&self) -> u64;
-
-  fn data_size(&self) -> u64;
-
-  fn box_offset(&self) -> usize;
-
-  fn box_data_offset(&self) -> usize;
 }
 
 #[derive(Error, Debug)]
 pub enum BmffError {
-  #[error("I/O error while writing DNG")]
+  #[error("I/O error while reading BMFF: {}", _0)]
   Io(#[from] io::Error),
 
   #[error("Parser error: {}", _0)]
@@ -212,11 +246,6 @@ impl FileBox {
       cr3xpacket,
     })
   }
-}
-
-pub fn parse_file(file: &mut File) -> Result<FileBox> {
-  let filebox = FileBox::parse(file)?;
-  Ok(filebox)
 }
 
 pub fn parse_buffer(buf: &[u8]) -> Result<FileBox> {
@@ -365,6 +394,18 @@ mod tests {
   }
 
   #[test]
+  fn size_beyond_end_of_file_is_rejected() {
+    let data = boxed(b"CMT1", 13, &[1, 2, 3, 4]);
+    assert!(matches!(BoxHeader::parse(&mut Cursor::new(&data)), Err(BmffError::Parse(_))));
+    // 64-bit size
+    let mut data = boxed(b"CMT1", 1, &u64::MAX.to_be_bytes());
+    data.extend_from_slice(&[1, 2, 3, 4]);
+    assert!(matches!(BoxHeader::parse(&mut Cursor::new(&data)), Err(BmffError::Parse(_))));
+    let data = boxed(b"CMT1", 12, &[1, 2, 3, 4]);
+    assert_eq!(BoxHeader::parse(&mut Cursor::new(&data)).expect("header").end_offset(), 12);
+  }
+
+  #[test]
   fn size_smaller_than_header_is_rejected() {
     let data = boxed(b"free", 3, &[]);
     assert!(matches!(BoxHeader::parse(&mut Cursor::new(&data)), Err(BmffError::Parse(_))));
@@ -377,6 +418,123 @@ mod tests {
     let mut data = ftyp();
     data.extend(boxed(b"moov", 16, &[0; 8]));
     assert!(parse_buffer(&data).is_err());
+  }
+
+  #[test]
+  fn box_beyond_its_parent_is_an_error() {
+    // A free box of 16 bytes in a moov box of 16 bytes, followed by 8 bytes
+    let mut data = ftyp();
+    data.extend(boxed(b"moov", 16, &boxed(b"free", 16, &[])));
+    data.extend_from_slice(&[0; 8]);
+    assert!(matches!(parse_buffer(&data), Err(BmffError::Parse(msg)) if msg.contains("beyond its parent")));
+  }
+
+  #[test]
+  fn box_shorter_than_its_fields_is_an_error() {
+    // mvhd needs 4 + 16 bytes of fields, it has 4
+    let data = boxed(b"mvhd", 12, &[0; 20]);
+    let mut reader = Cursor::new(&data);
+    let header = BoxHeader::parse(&mut reader).expect("header");
+    assert!(matches!(mvhd::MvhdBox::read_box(&mut reader, header), Err(BmffError::Parse(msg)) if msg.contains("shorter")));
+    // CRAW with 12 of its 82 bytes of fields
+    let data = boxed(b"CRAW", 20, &[0; 90]);
+    let mut reader = Cursor::new(&data);
+    let header = BoxHeader::parse(&mut reader).expect("header");
+    assert!(ext_cr3::craw::CrawBox::read_box(&mut reader, header).is_err());
+  }
+
+  #[test]
+  fn entry_counts_must_fit_in_the_box() {
+    // Full box header, then a count of u32::MAX and one entry
+    let entries = |extra: &[u8]| [&[0, 0, 0, 0], &u32::MAX.to_be_bytes()[..], &[0; 16], extra].concat();
+    let check = |typ: &[u8; 4], payload: &[u8]| {
+      let data = boxed(typ, 8 + payload.len() as u32, payload);
+      let mut reader = Cursor::new(data);
+      let header = BoxHeader::parse(&mut reader).expect("header");
+      match typ {
+        b"stsc" => stsc::StscBox::read_box(&mut reader, header).map(|_| ()),
+        b"co64" => co64::Co64Box::read_box(&mut reader, header).map(|_| ()),
+        b"stts" => stts::SttsBox::read_box(&mut reader, header).map(|_| ()),
+        _ => unreachable!(),
+      }
+    };
+    for typ in [b"stsc", b"co64", b"stts"] {
+      assert!(matches!(check(typ, &entries(&[])), Err(BmffError::Parse(msg)) if msg.contains("entries")));
+    }
+    // stsz with a sample size of 0 and u32::MAX sample sizes
+    let payload = [&[0; 8][..], &u32::MAX.to_be_bytes()].concat();
+    let data = boxed(b"stsz", 8 + payload.len() as u32, &payload);
+    let mut reader = Cursor::new(data);
+    let header = BoxHeader::parse(&mut reader).expect("header");
+    assert!(stsz::StszBox::read_box(&mut reader, header).is_err());
+  }
+
+  #[test]
+  fn ftyp_brands() {
+    let read = |data: Vec<u8>| {
+      let mut reader = Cursor::new(data);
+      let header = BoxHeader::parse(&mut reader)?;
+      ftyp::FtypBox::read_box(&mut reader, header)
+    };
+    let brands = |ftyp: ftyp::FtypBox| ftyp.compatible_brands.iter().map(ToString::to_string).collect::<Vec<_>>();
+    assert_eq!(brands(read(ftyp()).expect("ftyp")), ["crx ", "isom"]);
+    // Too short for the major brand and the minor version
+    assert!(read(boxed(b"ftyp", 8, &[])).is_err());
+    assert!(read(boxed(b"ftyp", 12, b"crx ")).is_err());
+    // 64-bit size
+    let data = boxed(b"ftyp", 1, &[&32_u64.to_be_bytes()[..], b"crx \x00\x00\x00\x01crx isom"].concat());
+    assert_eq!(brands(read(data).expect("ftyp")), ["crx ", "isom"]);
+  }
+
+  /// Read the box in `data` with `read`
+  fn read<T>(data: Vec<u8>, read: impl Fn(&mut Cursor<Vec<u8>>, BoxHeader) -> Result<T>) -> Result<T> {
+    let mut reader = Cursor::new(data);
+    let header = BoxHeader::parse(&mut reader)?;
+    read(&mut reader, header)
+  }
+
+  #[test]
+  fn unexpected_values_are_errors() {
+    // IAD1 of image type 1
+    let payload = [&[0; 4][..], &[0, 1, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0], &[0; 16]].concat();
+    assert!(
+      read(boxed(b"IAD1", 8 + payload.len() as u32, &payload), |r, h| ext_cr3::iad1::Iad1Box::read_box(
+        r, h
+      ))
+      .is_err()
+    );
+    // mvhd and mdhd of version 2
+    let payload = [&[2, 0, 0, 0][..], &[0; 28]].concat();
+    assert!(read(boxed(b"mvhd", 8 + payload.len() as u32, &payload), |r, h| mvhd::MvhdBox::read_box(r, h)).is_err());
+    assert!(read(boxed(b"mdhd", 8 + payload.len() as u32, &payload), |r, h| mdhd::MdhdBox::read_box(r, h)).is_err());
+    // stsd with two CTMD boxes of 8 header and 8 field bytes
+    let ctmd = boxed(b"CTMD", 20, &[0; 12]);
+    let payload = [&[0; 8][..], &ctmd, &ctmd].concat();
+    assert!(read(boxed(b"stsd", 8 + payload.len() as u32, &payload), |r, h| stsd::StsdBox::read_box(r, h)).is_err());
+    // CTMD with data after its records is fine
+    let ctmd = boxed(b"CTMD", 24, &[0; 16]);
+    let ctmd = read(ctmd, |r, h| ext_cr3::ctmd::CtmdBox::read_box(r, h)).expect("CTMD");
+    assert!(ctmd.records.is_empty());
+  }
+
+  /// stsc box with entries of first chunk and samples per chunk
+  fn stsc_box(entries: &[(u32, u32)]) -> Vec<u8> {
+    let mut payload = vec![0; 4];
+    payload.extend_from_slice(&(entries.len() as u32).to_be_bytes());
+    for (first_chunk, samples_per_chunk) in entries {
+      payload.extend([first_chunk.to_be_bytes(), samples_per_chunk.to_be_bytes(), 1_u32.to_be_bytes()].concat());
+    }
+    boxed(b"stsc", 8 + payload.len() as u32, &payload)
+  }
+
+  #[test]
+  fn stsc_first_samples() {
+    // Chunks 1 to 3 with 2 samples, 4 and 5 with 1, then 3 samples each
+    let stsc = read(stsc_box(&[(1, 2), (4, 1), (6, 3)]), |r, h| stsc::StscBox::read_box(r, h)).expect("stsc");
+    assert_eq!(stsc.entries.iter().map(|entry| entry.first_sample).collect::<Vec<_>>(), [1, 7, 9]);
+    // Chunks out of order and overflowing sample numbers
+    assert!(read(stsc_box(&[(4, 1), (2, 1)]), |r, h| stsc::StscBox::read_box(r, h)).is_err());
+    assert!(read(stsc_box(&[(1, u32::MAX), (3, 1)]), |r, h| stsc::StscBox::read_box(r, h)).is_err());
   }
 
   #[test]

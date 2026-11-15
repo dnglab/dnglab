@@ -4,7 +4,7 @@
 
 use super::{BoxHeader, FourCC, ReadBox, Result};
 use serde::Serialize;
-use std::io::{Read, Seek, SeekFrom};
+use std::io::{Read, Seek};
 
 #[derive(Debug, Clone, PartialEq, Default, Serialize)]
 pub struct FreeBox {
@@ -17,7 +17,7 @@ impl FreeBox {
 
 impl<R: Read + Seek> ReadBox<&mut R> for FreeBox {
   fn read_box(reader: &mut R, header: BoxHeader) -> Result<Self> {
-    reader.seek(SeekFrom::Start(header.end_offset()))?;
+    header.finish(&mut *reader)?;
 
     Ok(Self { header })
   }

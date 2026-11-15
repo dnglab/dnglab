@@ -4,7 +4,7 @@
 use super::super::{BoxHeader, FourCC, ReadBox, Result};
 use byteorder::{BigEndian, ReadBytesExt};
 use serde::{Deserialize, Serialize};
-use std::io::{Read, Seek, SeekFrom};
+use std::io::{Read, Seek};
 
 #[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize)]
 pub struct CtmdBox {
@@ -42,7 +42,7 @@ impl<R: Read + Seek> ReadBox<&mut R> for CtmdBox {
     let data_ref_index = reader.read_u16::<BigEndian>()?;
     let rec_count = reader.read_u32::<BigEndian>()?;
 
-    let mut records = Vec::with_capacity(rec_count as usize);
+    let mut records = Vec::with_capacity(header.check_entries(&mut *reader, rec_count, 8)?);
 
     //let mut current = reader.seek(SeekFrom::Current(0))?;
 
@@ -59,9 +59,11 @@ impl<R: Read + Seek> ReadBox<&mut R> for CtmdBox {
       //current = reader.seek(SeekFrom::Current(0))?;
     }
 
-    assert!(reader.stream_position()? == header.end_offset());
+    if reader.stream_position()? != header.end_offset() {
+      log::warn!("CTMD box at offset {} has data after its {} records", header.offset, rec_count);
+    }
 
-    reader.seek(SeekFrom::Start(header.end_offset()))?;
+    header.finish(&mut *reader)?;
 
     Ok(Self {
       header,

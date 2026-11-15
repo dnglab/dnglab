@@ -198,7 +198,7 @@ pub fn extract_original<W: Write + Seek + Send>(dng: &RawSource, target: &mut W,
     if let Value::Undefined(val) = &orig_data.value {
       let digest = file
         .get_entry(DngTag::OriginalRawFileDigest)
-        .map(|entry| entry.value.get_data().as_slice())
+        .and_then(|entry| entry.value.get_data().ok())
         .and_then(|data| OriginalDigest::try_from(data).ok());
       let new_digest = md5::compute(val);
 

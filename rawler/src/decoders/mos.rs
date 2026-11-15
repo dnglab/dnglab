@@ -21,6 +21,7 @@ use super::FormatHint;
 use super::Orientation;
 use super::RawDecodeParams;
 use super::RawMetadata;
+use super::image_bytes;
 use super::ok_cfa_image;
 
 #[derive(Debug, Clone)]
@@ -35,7 +36,8 @@ impl<'a> MosDecoder<'a> {
   pub fn new(_file: &RawSource, tiff: GenericTiffReader, rawloader: &'a RawLoader) -> Result<MosDecoder<'a>> {
     let make = Self::xmp_tag(&tiff, "Make")?;
     let model_full = Self::xmp_tag(&tiff, "Model")?;
-    let model = model_full.split_terminator('(').next().expect("split always yields at least one element");
+    // An empty model has no parts
+    let model = model_full.split_terminator('(').next().unwrap_or("");
     let camera = rawloader.lookup_camera_with_everything(&make, model, "");
 
     Ok(MosDecoder { tiff, rawloader, camera })
@@ -53,6 +55,7 @@ impl<'a> Decoder for MosDecoder<'a> {
     let height = fetch_tiff_tag!(raw, TiffCommonTag::ImageLength).force_usize(0);
     let offset = fetch_tiff_tag!(raw, TiffCommonTag::TileOffsets).force_usize(0);
     let compression = fetch_tiff_tag!(raw, TiffCommonTag::Compression).force_usize(0);
+    image_bytes("MOS", width, height, 16)?;
     let src = file.subview_until_eof(offset as u64)?;
 
     let image = match compression {
@@ -107,7 +110,7 @@ impl<'a> MosDecoder<'a> {
   /// rotation of the raw data. Without it the TIFF tag is used.
   fn orientation(&self) -> Option<Orientation> {
     let leaf_rotation = || {
-      let meta = self.tiff.get_entry(TiffCommonTag::LeafMetadata)?.get_data();
+      let meta = self.tiff.get_entry(TiffCommonTag::LeafMetadata)?.get_data().ok()?;
       let degrees = |name| Self::leaf_section(meta, name)?.trim().parse::<i32>().ok();
       let raw_data = degrees("CaptProf_raw_data_rotation");
       match degrees("ImgProf_rotation_angle") {
@@ -121,27 +124,33 @@ impl<'a> MosDecoder<'a> {
   }
 
   fn get_wb(&self) -> Result<[f32; 4]> {
-    let meta = fetch_tiff_tag!(self.tiff, TiffCommonTag::LeafMetadata).get_data();
+    let meta = fetch_tiff_tag!(self.tiff, TiffCommonTag::LeafMetadata).get_data()?;
     if let Some(neutrals) = Self::leaf_section(meta, "NeutObj_neutrals") {
       let nums = neutrals
         .split_terminator('\n')
         .map(|x| x.parse::<f32>().unwrap_or(f32::NAN))
         .collect::<Vec<f32>>();
-      if nums.len() == 4 {
-        return Ok([nums[0] / nums[1], nums[0] / nums[2], nums[0] / nums[3], f32::NAN]);
+      match nums[..] {
+        [a, b, c, d] if nums.iter().all(|num| num.is_finite() && *num > 0.0) => return Ok([a / b, a / c, a / d, f32::NAN]),
+        [_, _, _, _] => log::warn!("MOS: invalid neutrals {:?}, the white balance is unknown", nums),
+        _ => {}
       }
     }
     Ok([f32::NAN, f32::NAN, f32::NAN, f32::NAN])
   }
 
   fn xmp_tag(tiff: &GenericTiffReader, tag: &str) -> Result<String> {
-    let xmp_bytes = fetch_tiff_tag!(tiff, TiffCommonTag::Xmp).get_data();
+    let xmp_bytes = fetch_tiff_tag!(tiff, TiffCommonTag::Xmp).get_data()?;
     let xmp = String::from_utf8_lossy(xmp_bytes);
-    let error = format!("MOS: Couldn't find XMP tag {}", tag);
-    let start = xmp.find(&format!("<tiff:{}>", tag)).ok_or_else(|| RawlerError::decoder_failed(error.clone()))?;
-    let end = xmp.find(&format!("</tiff:{}>", tag)).ok_or_else(|| RawlerError::decoder_failed(error))?;
+    Self::xmp_value(&xmp, tag).ok_or_else(|| decoder_error!("MOS: Couldn't find XMP tag {}", tag))
+  }
 
-    Ok(xmp[start + tag.len() + 7..end].to_string())
+  /// Text between the XMP tag `tiff:<tag>` and its closing tag
+  fn xmp_value(xmp: &str, tag: &str) -> Option<String> {
+    let open = format!("<tiff:{}>", tag);
+    let start = xmp.find(&open)? + open.len();
+    let end = start + xmp[start..].find(&format!("</tiff:{}>", tag))?;
+    Some(xmp[start..end].to_string())
   }
 
   pub fn decode_compressed(&self, cam: &Camera, src: &[u8], width: usize, height: usize, dummy: bool) -> Result<PixU16> {
@@ -150,6 +159,7 @@ impl<'a> MosDecoder<'a> {
   }
 
   pub(crate) fn do_decode(src: &[u8], interlaced: bool, width: usize, height: usize, dummy: bool) -> Result<PixU16> {
+    image_bytes("MOS", width, height, 16)?;
     if dummy {
       return Ok(PixU16::new_uninit(width, height));
     }
@@ -166,5 +176,27 @@ impl<'a> MosDecoder<'a> {
     } else {
       Ok(ljpegout)
     }
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[test]
+  fn xmp_value_after_its_tag() {
+    let xmp = "<tiff:Make>Leaf</tiff:Make><tiff:Model></tiff:Model>";
+    assert_eq!(MosDecoder::xmp_value(xmp, "Make").as_deref(), Some("Leaf"));
+    assert_eq!(MosDecoder::xmp_value(xmp, "Model").as_deref(), Some(""));
+    // A closing tag before the opening one
+    let xmp = "</tiff:Make><tiff:Make>Leaf</tiff:Make>";
+    assert_eq!(MosDecoder::xmp_value(xmp, "Make").as_deref(), Some("Leaf"));
+    assert_eq!(MosDecoder::xmp_value("</tiff:Make><tiff:Make>", "Make"), None);
+  }
+
+  #[test]
+  fn empty_image_is_an_error() {
+    assert!(MosDecoder::do_decode(&[0; 16], true, 0, 8, false).is_err());
+    assert!(MosDecoder::do_decode(&[0; 16], false, 8, 0, false).is_err());
   }
 }

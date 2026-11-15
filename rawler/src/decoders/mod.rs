@@ -44,6 +44,7 @@ use crate::formats::tiff::GenericTiffReader;
 use crate::formats::tiff::IFD;
 use crate::formats::tiff::PhotometricInterpretation;
 use crate::formats::tiff::SampleFormat;
+use crate::formats::tiff::Value;
 use crate::formats::tiff::ifd::DataMode;
 use crate::formats::tiff::reader::TiffReader;
 use crate::imgop::Dim2;
@@ -850,6 +851,27 @@ where
   })
 }
 
+/// Bytes of `width` × `height` pixels of `bits` bits, an error of `format`
+/// for an image without pixels or a size that overflows
+pub(crate) fn image_bytes(format: &str, width: usize, height: usize, bits: usize) -> Result<usize> {
+  width
+    .checked_mul(height)
+    .and_then(|pixels| pixels.checked_mul(bits))
+    .filter(|_| width > 0 && height > 0)
+    .map(|bits| bits.div_ceil(8))
+    .ok_or_else(|| decoder_error!("{}: invalid image size {}x{}", format, width, height))
+}
+
+/// The bytes of a tag value, an error if it is no byte data or shorter than
+/// `len` bytes
+pub(crate) fn tag_data(value: &Value, len: usize) -> Result<&[u8]> {
+  let data = value.get_data()?;
+  if data.len() < len {
+    return Err(decoder_error!("Tag data has {} bytes, but {} bytes are required", data.len(), len));
+  }
+  Ok(data)
+}
+
 /// Decodes a strip-organised raw image into a flat pixel buffer.
 ///
 /// Reads strip offsets and byte counts from `raw` (TIFF tags `StripOffsets`,
@@ -874,8 +896,20 @@ where
   let width = fetch_tiff_tag!(raw, TiffCommonTag::ImageWidth).force_usize(0);
   let height = fetch_tiff_tag!(raw, TiffCommonTag::ImageLength).force_usize(0);
   let cpp = fetch_tiff_tag!(raw, TiffCommonTag::SamplesPerPixel).force_usize(0);
-  let rows_per_strip = raw.get_entry(TiffCommonTag::RowsPerStrip).map(|tag| tag.force_usize(0)).unwrap_or(height);
-  let line_width = width * cpp;
+  // More rows per strip than the image has are the same as one strip
+  let rows_per_strip = raw
+    .get_entry(TiffCommonTag::RowsPerStrip)
+    .map(|tag| tag.force_usize(0))
+    .unwrap_or(height)
+    .min(height);
+  if rows_per_strip == 0 {
+    return Err(decoder_error!("Strips of 0 rows are invalid"));
+  }
+  // The samples have up to 32 bits
+  let line_width = width
+    .checked_mul(cpp)
+    .ok_or_else(|| decoder_error!("Image of {} samples per pixel overflows", cpp))?;
+  image_bytes("Strips", line_width, height, 32)?;
   // If we have a continous buffer, we can optimize decompression of multiple strips.
   if let Some(src) = cont
     && dc.can_skip_rows()
@@ -883,15 +917,17 @@ where
     // Some decompressors performing badly when skip_rows is > 0, because they need to
     // decompress the skipped rows anyway.
     Ok(
-      decompress_lines_fn(width * cpp, height, dummy, &|line, row| {
+      decompress_lines_fn(line_width, height, dummy, &|line, row| {
         dc.decompress(src, row, std::iter::once(line), line_width)
       })
       .map_err(RawlerError::decoder_failed)?,
     )
   } else {
     Ok(
-      decompress_strips_fn(width * cpp, height, rows_per_strip, dummy, &|lines, strip, _row| {
-        let src = strips[strip];
+      decompress_strips_fn(line_width, height, rows_per_strip, dummy, &|lines, strip, _row| {
+        let src = strips
+          .get(strip)
+          .ok_or_else(|| format!("Strip {} is missing, the image has {} strips", strip, strips.len()))?;
         dc.decompress(src, 0, lines.chunks_exact_mut(line_width), line_width)
       })
       .map_err(RawlerError::decoder_failed)?,
@@ -930,20 +966,36 @@ where
   let cpp = fetch_tiff_tag!(raw, TiffCommonTag::SamplesPerPixel).force_usize(0);
   let twidth = fetch_tiff_tag!(raw, TiffCommonTag::TileWidth).force_usize(0); // * cpp;
   let tlength = fetch_tiff_tag!(raw, TiffCommonTag::TileLength).force_usize(0);
+  if twidth == 0 || tlength == 0 || cpp == 0 {
+    return Err(decoder_error!(
+      "Tiles of {}x{} pixels with {} samples per pixel are invalid",
+      twidth,
+      tlength,
+      cpp
+    ));
+  }
+  image_bytes("Tiles", width, height, 32)?;
 
-  let (decode_width, decode_height) = (((width - 1) / twidth + 1) * twidth, ((height - 1) / tlength + 1) * tlength);
-
-  let coltiles = (width - 1) / twidth + 1;
-  let rowtiles = (height - 1) / tlength + 1;
-  if coltiles * rowtiles != tiles_src.len() as usize {
+  let coltiles = width.div_ceil(twidth);
+  let rowtiles = height.div_ceil(tlength);
+  // The tiles cover the image, the samples have up to 32 bits
+  let (decode_width, decode_height) = coltiles
+    .checked_mul(twidth)
+    .zip(rowtiles.checked_mul(tlength))
+    .ok_or_else(|| decoder_error!("Tiles of {}x{} pixels overflow", twidth, tlength))?;
+  let decode_samples = decode_width
+    .checked_mul(cpp)
+    .ok_or_else(|| decoder_error!("Tiles of {} samples per pixel overflow", cpp))?;
+  image_bytes("Tiles", decode_samples, decode_height, 32)?;
+  if coltiles.checked_mul(rowtiles) != Some(tiles_src.len()) {
     return Err(decoder_error!(
       "DNG: trying to decode {} tiles from {} offsets",
-      coltiles * rowtiles,
+      coltiles.saturating_mul(rowtiles),
       tiles_src.len()
     ));
   }
 
-  let mut pixbuf = alloc_image_typed_ok!(T, decode_width * cpp, decode_height, dummy);
+  let mut pixbuf = alloc_image_typed_ok!(T, decode_samples, decode_height, dummy);
 
   // Each tile decodes into its region of the image
   let view = ImageViewMut::new(&mut pixbuf.data, decode_width, decode_height, cpp);
@@ -1305,6 +1357,17 @@ mod tests {
   use crate::pixarray::PixU16;
   use crate::rawimage::{BlackLevel, CFAConfig, RawPhotometricInterpretation, WhiteLevel};
   use crate::rawsource::RawSource;
+
+  #[test]
+  fn image_bytes_of_valid_and_invalid_sizes() {
+    assert_eq!(image_bytes("T", 3, 2, 12).ok(), Some(9));
+    assert_eq!(image_bytes("T", 3, 1, 12).ok(), Some(5));
+    assert!(image_bytes("T", 0, 2, 16).is_err());
+    assert!(image_bytes("T", 2, 0, 16).is_err());
+    assert!(image_bytes("T", u32::MAX as usize, u32::MAX as usize, 64).is_err());
+    let err = image_bytes("XYZ", 0, 2, 16).err().map(|err| err.to_string());
+    assert_eq!(err.as_deref(), Some("XYZ: invalid image size 0x2"));
+  }
 
   #[test]
   fn orientation_from_tiff_value() {
