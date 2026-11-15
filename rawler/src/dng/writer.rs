@@ -11,7 +11,7 @@ use rayon::prelude::*;
 
 use crate::tags::{DngTag, TiffCommonTag};
 use crate::{
-  CFA, RawImage, RawImageData,
+  CFA, RawImage, RawImageData, Software,
   compressors::{
     deflate,
     jpegxl::{self, LossyTransfer, TileSamples, TileSettings},
@@ -491,7 +491,11 @@ where
     Ok(())
   }
 
-  pub fn preview(&mut self, img: &DynamicImage, quality: f32) -> Result<()> {
+  /// Write `img` as JPEG preview into the IFD of this subframe
+  ///
+  /// `application` rendered the preview from the raw data, `None` for a
+  /// preview of the camera.
+  pub fn preview(&mut self, img: &DynamicImage, quality: f32, application: Option<&Software>) -> Result<()> {
     let now = Instant::now();
     let preview_img = if img.width() > 1024 {
       DynamicImage::ImageRgb8(img.resize(1024, 768, FilterType::Nearest).to_rgb8())
@@ -509,6 +513,9 @@ where
     self.ifd_mut().add_tag(TiffCommonTag::RowsPerStrip, Value::long(preview_img.height()));
     self.ifd_mut().add_tag(TiffCommonTag::SamplesPerPixel, 3_u16);
     self.ifd_mut().add_tag(DngTag::PreviewColorSpace, PreviewColorSpace::SRgb); // Default for color previews, no DNGBackwardVersion 1.2 required
+    if let Some(application) = application {
+      add_preview_application(self.ifd_mut(), application);
+    }
 
     //ifd.add_tag(TiffRootTag::XResolution, Rational { n: 1, d: 1 })?;
     //ifd.add_tag(TiffRootTag::YResolution, Rational { n: 1, d: 1 })?;
@@ -779,7 +786,10 @@ where
   }
 
   /// Write thumbnail image into DNG
-  pub fn thumbnail(&mut self, img: &DynamicImage) -> Result<()> {
+  ///
+  /// `application` rendered the thumbnail from the raw data, `None` for a
+  /// preview of the camera.
+  pub fn thumbnail(&mut self, img: &DynamicImage, application: Option<&Software>) -> Result<()> {
     let thumb_img = img.resize(240, 120, FilterType::Nearest).to_rgb8();
     self.root_ifd.add_tag(TiffCommonTag::NewSubFileType, 1_u32);
     self.root_ifd.add_tag(TiffCommonTag::ImageWidth, thumb_img.width() as u32);
@@ -789,6 +799,9 @@ where
     self.root_ifd.add_tag(TiffCommonTag::SampleFormat, [1_u16, 1, 1]);
     self.root_ifd.add_tag(TiffCommonTag::PhotometricInt, PhotometricInterpretation::RGB);
     self.root_ifd.add_tag(TiffCommonTag::SamplesPerPixel, 3_u16);
+    if let Some(application) = application {
+      add_preview_application(&mut self.root_ifd, application);
+    }
     //ifd.add_tag(TiffRootTag::XResolution, Rational { n: 1, d: 1 })?;
     //ifd.add_tag(TiffRootTag::YResolution, Rational { n: 1, d: 1 })?;
     //ifd.add_tag(TiffRootTag::ResolutionUnit, ResolutionUnit::None.to_u16())?;
@@ -817,6 +830,13 @@ where
   pub fn exif_ifd_mut(&mut self) -> &mut DirectoryWriter {
     &mut self.exif_ifd
   }
+}
+
+/// PreviewApplicationName and PreviewApplicationVersion of the preview of
+/// `ifd`, which `application` rendered
+fn add_preview_application(ifd: &mut DirectoryWriter, application: &Software) {
+  ifd.add_tag(DngTag::PreviewApplicationName, application.name.as_str());
+  ifd.add_tag(DngTag::PreviewApplicationVersion, application.version.as_str());
 }
 
 /// MaskedAreas in top, left, bottom, right order, as SHORT if all values fit
@@ -2552,9 +2572,9 @@ mod tests {
       },
     )?;
     raw.finalize()?;
-    dng.thumbnail(&full_image)?;
+    dng.thumbnail(&full_image, None)?;
     let mut preview = dng.subframe(1);
-    preview.preview(&full_image, PREVIEW_JPEG_QUALITY)?;
+    preview.preview(&full_image, PREVIEW_JPEG_QUALITY, None)?;
     preview.finalize()?;
     dng.load_base_tags(&rawimage)?;
 

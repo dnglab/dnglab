@@ -199,13 +199,13 @@ pub async fn makedng_internal(options: &ArgMatches, dest_path: &Path, software: 
     if let Ok(decoder) = get_decoder(&rawfile) {
       if let Some(preview) = decoder.preview_image(&rawfile, &RawDecodeParams::default())? {
         let mut frame = dng.subframe(1);
-        frame.preview(&preview, 0.7)?;
+        frame.preview(&preview, 0.7, None)?;
         frame.finalize()?;
       }
     } else {
       let image = open_without_limits(preview_input)?;
       let mut frame = dng.subframe(1);
-      frame.preview(&image, 0.7)?;
+      frame.preview(&image, 0.7, None)?;
       frame.finalize()?;
     }
   } else {
@@ -216,11 +216,11 @@ pub async fn makedng_internal(options: &ArgMatches, dest_path: &Path, software: 
     let rawfile = RawSource::new(thumbnail_input)?;
     if let Ok(decoder) = get_decoder(&rawfile) {
       if let Some(preview) = decoder.preview_image(&rawfile, &RawDecodeParams::default())? {
-        dng.thumbnail(&preview)?;
+        dng.thumbnail(&preview, None)?;
       }
     } else {
       let image = open_without_limits(thumbnail_input)?;
-      dng.thumbnail(&image)?;
+      dng.thumbnail(&image, None)?;
     }
   } else {
     eprintln!("No thumbnail input file found");

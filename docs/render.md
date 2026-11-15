@@ -474,6 +474,11 @@ preview options:
 A DCP given with `--dcp-file` replaces the primary profile before this, so the
 preview uses it.
 
+A rendered preview or thumbnail names the application that rendered it, the
+software of `ConvertParams`, in PreviewApplicationName and
+PreviewApplicationVersion of its IFD: the preview sub-IFD or IFD 0. dnglab
+writes "DNGLab" and its version. An embedded preview gets no such tags.
+
 ## Output-referred data
 
 DNGs whose ColorimetricReference is output-referred are already rendered. They

@@ -495,17 +495,19 @@ where
     let embedded = if need_embedded { load(false) } else { None };
     let developed = if need_developed { load(true) } else { None };
     let select = |force: bool| if force { developed.as_ref() } else { embedded.as_ref() };
+    // A rendered image names the application that rendered it
+    let application = |preview: &PreviewImage| params.software.as_ref().filter(|_| preview.rendered);
 
     if params.preview {
       if let Some(image) = select(params.force_preview) {
         let mut preview = dng.subframe(1);
-        preview.preview(image, PREVIEW_JPEG_QUALITY).map_err(write_error)?;
+        preview.preview(&image.image, PREVIEW_JPEG_QUALITY, application(image)).map_err(write_error)?;
         preview.finalize().map_err(write_error)?;
       }
     }
     if params.thumbnail {
       if let Some(image) = select(params.force_thumbnail) {
-        dng.thumbnail(image).map_err(write_error)?;
+        dng.thumbnail(&image.image, application(image)).map_err(write_error)?;
       }
     }
   }
@@ -742,6 +744,13 @@ fn preview_render_options() -> RenderOptions {
   }
 }
 
+/// Preview or thumbnail image of the DNG
+struct PreviewImage {
+  image: DynamicImage,
+  /// The image is rendered from the raw data, not embedded in the raw file
+  rendered: bool,
+}
+
 /// Get a preview image from the decoder, or develop it from raw data.
 ///
 /// If `force_develop` is set, embedded previews are ignored.
@@ -751,10 +760,10 @@ fn generate_preview(
   rawimage: &RawImage,
   params: &RawDecodeParams,
   force_develop: bool,
-) -> crate::Result<DynamicImage> {
+) -> crate::Result<PreviewImage> {
   let embedded = if force_develop { None } else { decoder.preview_image(rawfile, params)? };
   match embedded {
-    Some(image) => Ok(image),
+    Some(image) => Ok(PreviewImage { image, rendered: false }),
     None => {
       if force_develop {
         log::debug!("Generate sRGB preview from RAW");
@@ -762,9 +771,10 @@ fn generate_preview(
         log::warn!("Preview image not found, try to generate sRGB from RAW");
       }
       let image = render(rawimage.clone(), &preview_render_options())?;
-      image
+      let image = image
         .to_dynamic_image()
-        .ok_or_else(|| RawlerError::general("failed to convert to dynamic image"))
+        .ok_or_else(|| RawlerError::general("failed to convert to dynamic image"))?;
+      Ok(PreviewImage { image, rendered: true })
     }
   }
 }
