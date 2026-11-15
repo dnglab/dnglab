@@ -83,7 +83,7 @@ async fn main_async() -> dnglab_lib::Result<()> {
   match matches.subcommand() {
     Some(("analyze", sc)) => analyze::analyze(sc).await,
     Some(("convert", sc)) => convert::convert(sc, &software).await,
-    Some(("makedng", sc)) => makedng::makedng(sc).await,
+    Some(("makedng", sc)) => makedng::makedng(sc, &software).await,
     Some(("process-raw", sc)) => process_raw::process_raw(sc, &software).await,
     Some(("extract", sc)) => extract::extract(sc).await,
     Some(("ftpserver", sc)) => ftpconv::ftpserver(sc, &software).await,

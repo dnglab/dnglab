@@ -28,6 +28,8 @@ use std::path::{Path, PathBuf};
 use std::str::FromStr;
 use std::time::Instant;
 
+use crate::Software;
+
 fn get_input_path<'a>(inputs: &'a [&PathBuf], maps: &[&InputSourceUsageMap], usage: InputUsage) -> std::io::Result<&'a PathBuf> {
   maps
     .iter()
@@ -49,12 +51,13 @@ fn open_without_limits(path: &Path) -> crate::Result<DynamicImage> {
   Ok(reader.decode()?)
 }
 
-pub async fn makedng(options: &ArgMatches) -> crate::Result<()> {
+/// Entry point for Clap sub command `makedng`, the DNG file names `software`
+pub async fn makedng(options: &ArgMatches, software: &Software) -> crate::Result<()> {
   let dest_path: &PathBuf = options
     .get_one("OUTPUT")
     .ok_or_else(|| crate::AppError::InvalidCmdSwitch("Output path is required".into()))?;
 
-  match makedng_internal(options, dest_path).await {
+  match makedng_internal(options, dest_path, software).await {
     Ok(_) => Ok(()),
     Err(err) => {
       if let Err(err) = remove_file(dest_path) {
@@ -65,8 +68,8 @@ pub async fn makedng(options: &ArgMatches) -> crate::Result<()> {
   }
 }
 
-/// Entry point for Clap sub command `makedng`
-pub async fn makedng_internal(options: &ArgMatches, dest_path: &Path) -> crate::Result<()> {
+/// Write the DNG file `dest_path` of the inputs of `options`, it names `software`
+pub async fn makedng_internal(options: &ArgMatches, dest_path: &Path, software: &Software) -> crate::Result<()> {
   let _now = Instant::now();
 
   let inputs: Vec<&PathBuf> = options
@@ -296,6 +299,7 @@ pub async fn makedng_internal(options: &ArgMatches, dest_path: &Path) -> crate::
   // let _xyz = xy_whitepoint_to_wb_coeff(CIE_1931_WHITE_POINT_D50.0, CIE_1931_WHITE_POINT_D50.1, &XYZ_TO_SRGB_D50);
   //eprintln!("XYZ: {:?}", xyz);
 
+  dng.root_ifd_mut().add_tag(TiffCommonTag::Software, software.to_string().as_str());
   dng.close()?;
 
   println!("File saved to: {}", dest_path.display());

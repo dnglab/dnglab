@@ -184,6 +184,7 @@ pub fn process_raw_image<W: Write + Seek + Send>(raw: &Path, image_file: &mut W,
     auto_exposure: params.auto_exposure,
     highlights: params.highlights,
     dark_frame: params.dark_frame.clone(),
+    software: params.software.clone(),
     ..RawDevelop::with_crop(params.crop)
   };
   if params.crop_transparent {
@@ -290,6 +291,9 @@ pub struct RawDevelop {
   pub highlights: HighlightMode,
   /// Dark frame of the DarkFrame step
   pub dark_frame: Option<Arc<DarkFrame>>,
+  /// Application of the Software tag of the TIFF and JPEG files, `None`
+  /// writes no Software tag
+  pub software: Option<Software>,
 }
 
 impl Default for RawDevelop {
@@ -311,6 +315,7 @@ impl RawDevelop {
       auto_exposure: false,
       highlights: HighlightMode::default(),
       dark_frame: None,
+      software: None,
     }
   }
 
@@ -377,7 +382,7 @@ impl RawDevelop {
 
     let write_error = |err: TiffError| general_error!("Failed to write the TIFF file").context(err);
     let mut tiff = TiffWriter::new(writer).map_err(write_error)?;
-    let mut root_ifd = Self::metadata_ifd(&mut tiff, &make, &model, orientation, md, &image)?;
+    let mut root_ifd = self.metadata_ifd(&mut tiff, &make, &model, orientation, md, &image)?;
     if let Some(icc) = image.icc_profile() {
       root_ifd.add_tag_undefined(ExifTag::IccProfile, icc);
     }
@@ -448,7 +453,7 @@ impl RawDevelop {
     let mut exif = Cursor::new(Vec::new());
     let exif_error = |err: TiffError| general_error!("Failed to write the EXIF data").context(err);
     let mut tiff = TiffWriter::new(&mut exif).map_err(exif_error)?;
-    let root_ifd = Self::metadata_ifd(&mut tiff, &make, &model, orientation, md, &image)?;
+    let root_ifd = self.metadata_ifd(&mut tiff, &make, &model, orientation, md, &image)?;
     tiff.build(root_ifd).map_err(exif_error)?;
     let exif = exif.into_inner();
 
@@ -499,8 +504,9 @@ impl RawDevelop {
   }
 
   /// IFD 0 with the EXIF data of `image`, developed from a raw image of a
-  /// camera with `make` and `model`
+  /// camera with `make` and `model`, and the Software tag of [`Self::software`]
   fn metadata_ifd<W>(
+    &self,
     tiff: &mut TiffWriter<W>,
     make: &str,
     model: &str,
@@ -521,6 +527,9 @@ impl RawDevelop {
     md.write_exif_tags(tiff, &mut root_ifd, &mut exif_ifd).map_err(exif_error)?;
     root_ifd.add_tag(TiffCommonTag::Make, make);
     root_ifd.add_tag(TiffCommonTag::Model, model);
+    if let Some(software) = &self.software {
+      root_ifd.add_tag(TiffCommonTag::Software, software.to_string().as_str());
+    }
     // The color space of the image, not of the camera: sRGB or uncalibrated
     let srgb = image.color_space == Some(OutputSpace::Srgb) && image.transfer_function == TransferFunction::Srgb;
     exif_ifd.add_tag(ExifTag::ColorSpace, if srgb { 1_u16 } else { 0xffff });
