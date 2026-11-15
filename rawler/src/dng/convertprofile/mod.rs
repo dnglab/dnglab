@@ -218,8 +218,9 @@ impl ConvertProfile {
   /// Build conversion parameters from this profile
   ///
   /// The image index is always 0, splitting multi-frame
-  /// files according to [`ConvertProfile::multiframe`] is up to the caller.
-  pub fn to_convert_params(&self, software: impl Into<String>) -> ConvertParams {
+  /// files according to [`ConvertProfile::multiframe`] is up to the caller,
+  /// like the software ([`ConvertParams::with_software`]).
+  pub fn to_convert_params(&self) -> ConvertParams {
     ConvertParams {
       embedded: self.embed_raw,
       compression: self.compression,
@@ -235,7 +236,6 @@ impl ConvertProfile {
       force_thumbnail: self.force_thumbnail,
       artist: self.artist.clone(),
       copyright: self.copyright.clone(),
-      software: software.into(),
       keep_mtime: self.keep_mtime,
       max_dng_backward_version: self.max_dng_backward_version,
       apply_dng_opcodes: self.apply_dng_opcodes,
@@ -517,7 +517,7 @@ mod tests {
 
   #[test]
   fn default_profile_matches_default_params() {
-    let params = ConvertProfile::default().to_convert_params("DNGLab");
+    let params = ConvertProfile::default().to_convert_params();
     let default = ConvertParams::default();
     assert_eq!(params.embedded, default.embedded);
     assert_eq!(params.compression, default.compression);
@@ -687,7 +687,7 @@ mod tests {
     registry.load_file(&path).expect("load");
     let profile = registry.get("x").expect("profile");
     assert_eq!(profile.compression, DngCompression::Lossy);
-    assert_eq!(profile.to_convert_params("DNGLab").lossy_jpeg_quality, 50);
+    assert_eq!(profile.to_convert_params().lossy_jpeg_quality, 50);
   }
 
   #[test]
@@ -739,7 +739,7 @@ mod tests {
       "[convertprofile.x]\nversion = 1\ntitle = \"T\"\ncompression = \"jxl\"\nmax_dng_backward_version = \"1.7\"\njxl_distance = 1.0\njxl_effort = 3\njxl_decode_speed = 2\n",
     );
     registry.load_file(&path).expect("load");
-    let params = registry.get("x").expect("profile").to_convert_params("DNGLab");
+    let params = registry.get("x").expect("profile").to_convert_params();
     assert_eq!(params.compression, DngCompression::JpegXl);
     assert_eq!((params.jxl_distance, params.jxl_effort, params.jxl_decode_speed), (1.0, 3, 2));
   }

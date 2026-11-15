@@ -14,9 +14,9 @@ use std::sync::Arc;
 
 use tokio::runtime::Handle;
 
+use crate::Software;
 use crate::convertprofile::{FrameSelection, check_compression_available, resolve_convert_profile};
 use crate::jobs::raw2dng::copy_mtime_from_rawsource;
-use crate::{PKG_NAME, PKG_VERSION};
 use rawler::dng::convert::{ConvertParams, convert_raw_source};
 
 #[derive(Clone)]
@@ -68,8 +68,8 @@ impl FtpCallback for FtpState {
   }
 }
 
-/// Entry point for Clap sub command `ftpconvert`
-pub async fn ftpserver(options: &ArgMatches) -> crate::Result<()> {
+/// Entry point for Clap sub command `ftpconvert`, the DNG files name `software`
+pub async fn ftpserver(options: &ArgMatches, software: &Software) -> crate::Result<()> {
   let mut config = Config::new("foo").ok_or_else(|| anyhow::anyhow!("failed to create FTP config"))?;
 
   let (profile, frames) = resolve_convert_profile(options)?;
@@ -81,7 +81,7 @@ pub async fn ftpserver(options: &ArgMatches) -> crate::Result<()> {
       0
     }
   };
-  let params = profile.to_convert_params(format!("{} {}", PKG_NAME, PKG_VERSION)).with_index(index);
+  let params = profile.to_convert_params().with_software(software.clone()).with_index(index);
   let keep_orig = options.get_flag("keep_orig");
 
   let state = FtpState { params, keep_orig };

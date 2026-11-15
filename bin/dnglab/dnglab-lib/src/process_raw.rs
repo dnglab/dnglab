@@ -27,10 +27,10 @@ use crate::dcp::dcp_option;
 use crate::filemap::{FileMap, MapMode};
 use crate::jobs::Job;
 use crate::jobs::process_raw::{JobResult, Raw2Image};
-use crate::{AppError, PKG_VERSION, Result};
+use crate::{AppError, Result, Software};
 
-/// Entry point for Clap sub command `process-raw`
-pub async fn process_raw(options: &ArgMatches) -> crate::Result<()> {
+/// Entry point for Clap sub command `process-raw`, the image files name `software`
+pub async fn process_raw(options: &ArgMatches, software: &Software) -> crate::Result<()> {
   let now = Instant::now();
 
   let recursive = options.get_flag("recursive");
@@ -54,7 +54,7 @@ pub async fn process_raw(options: &ArgMatches) -> crate::Result<()> {
   match proc {
     // We have only one input file, so output must be a file, too.
     MapMode::File(sd) => {
-      jobs.append(&mut generate_job(&sd, options, &dcp, bad_pixels.as_ref(), dark_frame.as_ref())?);
+      jobs.append(&mut generate_job(&sd, options, software, &dcp, bad_pixels.as_ref(), dark_frame.as_ref())?);
     }
     // Input is directory, to process all files
     MapMode::Dir(sd) => {
@@ -66,7 +66,7 @@ pub async fn process_raw(options: &ArgMatches) -> crate::Result<()> {
         }
       })?;
       for entry in list {
-        jobs.append(&mut generate_job(&entry, options, &dcp, bad_pixels.as_ref(), dark_frame.as_ref())?);
+        jobs.append(&mut generate_job(&entry, options, software, &dcp, bad_pixels.as_ref(), dark_frame.as_ref())?);
       }
     }
   }
@@ -115,6 +115,7 @@ pub async fn process_raw(options: &ArgMatches) -> crate::Result<()> {
 fn generate_job(
   entry: &FileMap,
   options: &ArgMatches,
+  software: &Software,
   dcp: &Option<CameraProfileFile>,
   bad_pixels: Option<&BadPixelFile>,
   dark_frame: Option<&Arc<DarkFrame>>,
@@ -164,7 +165,7 @@ fn generate_job(
         .ok_or_else(|| crate::AppError::InvalidCmdSwitch("crop has no default".into()))?,
       thumbnail: true, //options.get_flag("thumbnail"),
       artist: options.get_one("artist").cloned(),
-      software: format!("{} {}", "DNGLab", PKG_VERSION),
+      software: Some(software.clone()),
       index: if do_batch { i } else { index },
       keep_mtime: options.get_flag("keep_mtime"),
       remove_dng_opcodes: options

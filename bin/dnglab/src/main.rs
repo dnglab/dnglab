@@ -22,6 +22,9 @@ use tokio::runtime::Builder;
 
 const STACK_SIZE_MIB: usize = 4;
 
+/// Name of the application in the Software tag of the written files
+const SOFTWARE_NAME: &str = "DNGLab";
+
 fn main() -> AppResult {
   let runtime = Builder::new_multi_thread()
     .enable_all()
@@ -74,13 +77,16 @@ async fn main_async() -> dnglab_lib::Result<()> {
     .apply()
     .map_err(|e| AppError::General(format!("Invalid fern configuration: {e}")))?;
 
+  // The written files name this binary, not dnglab-lib
+  let software = Software::new(SOFTWARE_NAME, env!("CARGO_PKG_VERSION"));
+
   match matches.subcommand() {
     Some(("analyze", sc)) => analyze::analyze(sc).await,
-    Some(("convert", sc)) => convert::convert(sc).await,
+    Some(("convert", sc)) => convert::convert(sc, &software).await,
     Some(("makedng", sc)) => makedng::makedng(sc).await,
-    Some(("process-raw", sc)) => process_raw::process_raw(sc).await,
+    Some(("process-raw", sc)) => process_raw::process_raw(sc, &software).await,
     Some(("extract", sc)) => extract::extract(sc).await,
-    Some(("ftpserver", sc)) => ftpconv::ftpserver(sc).await,
+    Some(("ftpserver", sc)) => ftpconv::ftpserver(sc, &software).await,
     Some(("lenses", sc)) => lenses::lenses(sc).await,
     Some(("cameras", sc)) => cameras::cameras(sc).await,
     Some(("gui", sc)) => gui::gui(sc).await,

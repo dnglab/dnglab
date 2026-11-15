@@ -11,7 +11,7 @@ use image::DynamicImage;
 
 use crate::camera_profile::{CALIBRATION_SLOTS, d65_preference};
 use crate::{
-  RawImage, RawImageData, RawlerError,
+  RawImage, RawImageData, RawlerError, Software,
   decoders::{Decoder, RawDecodeParams, RawPhotometricInterpretation, WellKnownIFD, WhiteLevel, validate_image_index},
   dng::{
     DEFAULT_LOSSY_JPEG_QUALITY, PREVIEW_JPEG_QUALITY,
@@ -74,7 +74,8 @@ pub struct ConvertParams {
   pub force_thumbnail: bool,
   pub artist: Option<String>,
   pub copyright: Option<String>,
-  pub software: String,
+  /// Application of the Software tag, `None` writes no Software tag
+  pub software: Option<Software>,
   pub index: usize,
   pub keep_mtime: bool,
   /// Value for DNGVersion tag
@@ -127,7 +128,7 @@ impl Default for ConvertParams {
       force_thumbnail: false,
       artist: None,
       copyright: None,
-      software: "DNGLab".into(),
+      software: None,
       index: 0,
       keep_mtime: false,
       dng_version: DngVersion::V1_7_1,
@@ -265,9 +266,9 @@ impl ConvertParams {
     self
   }
 
-  /// Set the software metadata field.
-  pub fn with_software(mut self, software: String) -> Self {
-    self.software = software;
+  /// Set the application of the Software tag.
+  pub fn with_software(mut self, software: Software) -> Self {
+    self.software = Some(software);
     self
   }
 
@@ -561,7 +562,9 @@ where
   if let Some(copyright) = &params.copyright {
     dng.root_ifd_mut().add_tag(ExifTag::Copyright, copyright);
   }
-  dng.root_ifd_mut().add_tag(TiffCommonTag::Software, &params.software);
+  if let Some(software) = &params.software {
+    dng.root_ifd_mut().add_tag(TiffCommonTag::Software, software.to_string().as_str());
+  }
 
   dng
     .root_ifd_mut()

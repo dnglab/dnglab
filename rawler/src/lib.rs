@@ -162,6 +162,31 @@ pub trait ReadTrait: Read + Seek {}
 
 impl<T: Read + Seek> ReadTrait for T {}
 
+/// Application that writes a file, for its Software tag
+///
+/// The application sets it, a library can't know its own caller. It displays as
+/// "name version", the value of the Software tag.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Software {
+  pub name: String,
+  pub version: String,
+}
+
+impl Software {
+  pub fn new(name: impl Into<String>, version: impl Into<String>) -> Self {
+    Self {
+      name: name.into(),
+      version: version.into(),
+    }
+  }
+}
+
+impl std::fmt::Display for Software {
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    write!(f, "{} {}", self.name, self.version)
+  }
+}
+
 /// Error that caused a [`RawlerError`], its context
 pub type ErrorSource = Box<dyn std::error::Error + Send + Sync + 'static>;
 
