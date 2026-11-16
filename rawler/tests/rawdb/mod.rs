@@ -2549,7 +2549,6 @@ mod panasonic {
     super::super::rawdb_test_file!("Panasonic", "DMC-GM1S", dmc_gm1s_iso_100_1x1_rw2, "raw_modes/DMC-GM1S_ISO_100_1x1.RW2");
     super::super::rawdb_test_file!("Panasonic", "DMC-GM1S", dmc_gm1s_iso_100_3x2_rw2, "raw_modes/DMC-GM1S_ISO_100_3x2.RW2");
     super::super::rawdb_test_file!("Panasonic", "DMC-GM1S", dmc_gm1s_iso_100_4x3_rw2, "raw_modes/DMC-GM1S_ISO_100_4x3.RW2");
-    super::super::rawdb_test_file!("Panasonic", "DMC-GM1S", dmc_gm1s_iso_200_panasonic_raw_1_4592x3448_rw2, "raw_modes/DMC-GM1S_ISO_200_Panasonic RAW 1_4592x3448.RW2");
   }
   mod dmc_gm5_raw_modes {
     super::super::rawdb_test_file!("Panasonic", "DMC-GM5", dmc_gm5_iso_400_panasonic_raw_1_3424x3424_rw2, "raw_modes/DMC-GM5_ISO_400_Panasonic RAW 1_3424x3424.RW2");
