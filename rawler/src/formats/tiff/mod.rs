@@ -261,6 +261,11 @@ pub enum TiffError {
   #[error("General error: {}", _0)]
   General(String),
 
+  /// The data or the requested parameters can't be used, e.g. a compression
+  /// that needs a sample format the image doesn't have
+  #[error("Invalid input: {}", _0)]
+  InvalidInput(String),
+
   #[error("Format mismatch: {}", _0)]
   FormatMismatch(String),
 
