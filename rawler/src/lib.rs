@@ -320,7 +320,12 @@ impl From<std::io::Error> for RawlerError {
 
 impl From<TiffError> for RawlerError {
   fn from(err: TiffError) -> Self {
-    Self::decoder_failed("Failed to read TIFF data").context(err)
+    match err {
+      // Only the writer produces this, where it means the caller asked for
+      // something the data can't do, so it must not become a decoder error.
+      TiffError::InvalidInput(message) => Self::invalid_input(message),
+      err => Self::decoder_failed("Failed to read TIFF data").context(err),
+    }
   }
 }
 

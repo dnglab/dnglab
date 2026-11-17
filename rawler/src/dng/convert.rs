@@ -453,8 +453,14 @@ where
     true
   };
 
-  // Errors of the DNG writer, e.g. of the JPEG XL compression, are no decoder errors
-  let write_error = |err: DngError| general_error!("Failed to write the DNG file").context(err);
+  // Errors of the DNG writer, e.g. of the JPEG XL compression, are no decoder
+  // errors. A compression the image data or the version cap doesn't allow is
+  // the caller's request, not a failure of the write, so it keeps that meaning
+  // instead of being flattened into a general error.
+  let write_error = |err: DngError| match err {
+    DngError::InvalidInput(message) => input_error!("{}", message),
+    err => general_error!("Failed to write the DNG file").context(err),
+  };
   let mut dng = DngWriter::new_with_version(dng, params.dng_version.as_dng_value(), max_backward_version).map_err(write_error)?;
 
   // Write RAW image for subframe type 0

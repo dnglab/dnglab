@@ -193,13 +193,13 @@ where
     // The table maps the stored integer values, it must be applied by apply_scaling()
     // before the data is converted to floats.
     if rawimage.linearization_table.is_some() && matches!(rawimage.data, RawImageData::Float(_)) {
-      return Err(DngError::General("LinearizationTable requires integer image data".into()));
+      return Err(DngError::InvalidInput("LinearizationTable requires integer image data".into()));
     }
     if compression == DngCompression::Deflate {
       // Deflate stores floating point data here. The DNG specification allows it for
       // integer data only at 32 bits per sample, which nothing writes or reads.
       if !matches!(rawimage.data, RawImageData::Float(_)) {
-        return Err(DngError::General("Deflate compression requires floating point image data".into()));
+        return Err(DngError::InvalidInput("Deflate compression requires floating point image data".into()));
       }
       self
         .writer
@@ -210,12 +210,14 @@ where
       to_lossy_8bit(rawimage.to_mut())?;
     }
     if compression == DngCompression::JpegXl {
-      // Fail before any processing if libjxl is missing
-      jpegxl::libjxl_version().map_err(DngError::General)?;
+      // A version cap that can't carry JPEG XL is invalid input whether
+      // libjxl is installed or not, so it is checked first
       self.writer.update_backward_version(DNG_VERSION_V1_7, "JPEG XL compression")?;
       if jxl_interleave(&rawimage).is_some() {
         self.writer.update_backward_version(DNG_VERSION_V1_7_1, "ColumnInterleaveFactor")?;
       }
+      // Fail before any processing if libjxl is missing
+      jpegxl::libjxl_version().map_err(DngError::General)?;
       if matches!(rawimage.data, RawImageData::Float(_)) && !jxl_stores_float(&rawimage) {
         float_to_integer(rawimage.to_mut());
       }
@@ -640,7 +642,7 @@ where
       return Ok(());
     }
     if version > self.max_backward_version {
-      return Err(DngError::General(format!(
+      return Err(DngError::InvalidInput(format!(
         "DNG feature '{}' requires DNGBackwardVersion {}, but maximum allowed is {}",
         feature, version, self.max_backward_version
       )));
@@ -905,14 +907,16 @@ fn lossy_linearization_table() -> Vec<u16> {
 fn to_lossy_8bit(rawimage: &mut RawImage) -> Result<()> {
   match rawimage.photometric {
     RawPhotometricInterpretation::Cfa(_) => {
-      return Err(DngError::General("Lossy JPEG compression requires demosaiced (LinearRaw) image data".into()));
+      return Err(DngError::InvalidInput(
+        "Lossy JPEG compression requires demosaiced (LinearRaw) image data".into(),
+      ));
     }
     // A single plane LinearRaw image is the same as BlackIsZero
     RawPhotometricInterpretation::BlackIsZero => rawimage.photometric = RawPhotometricInterpretation::LinearRaw,
     RawPhotometricInterpretation::LinearRaw => {}
   }
   if rawimage.cpp != 1 && rawimage.cpp != 3 {
-    return Err(DngError::General(format!(
+    return Err(DngError::InvalidInput(format!(
       "Lossy JPEG compression requires 1 or 3 samples per pixel, got {}",
       rawimage.cpp
     )));
@@ -1199,14 +1203,14 @@ where
     1 => ExtendedColorType::L8,
     3 => ExtendedColorType::Rgb8,
     cpp => {
-      return Err(DngError::General(format!(
+      return Err(DngError::InvalidInput(format!(
         "Lossy JPEG compression requires 1 or 3 samples per pixel, got {}",
         cpp
       )));
     }
   };
   let RawImageData::Integer(ref data) = rawimage.data else {
-    return Err(DngError::General("Lossy JPEG compression requires 8 bit integer data".into()));
+    return Err(DngError::InvalidInput("Lossy JPEG compression requires 8 bit integer data".into()));
   };
 
   let tiler = ImageTiler::new(data, rawimage.width, rawimage.height, rawimage.cpp, tile_w, tile_h);
@@ -1252,7 +1256,10 @@ where
 {
   let cpp = rawimage.cpp;
   if cpp != 1 && cpp != 3 {
-    return Err(DngError::General(format!("JPEG XL compression requires 1 or 3 samples per pixel, got {}", cpp)));
+    return Err(DngError::InvalidInput(format!(
+      "JPEG XL compression requires 1 or 3 samples per pixel, got {}",
+      cpp
+    )));
   }
   let interleave = jxl_interleave(rawimage);
   let lossless = params.is_lossless();
@@ -1399,7 +1406,7 @@ fn deflate_float_bits(rawimage: &RawImage, bits: u8) -> Result<u16> {
   match bits {
     16 if jxl_stores_float(rawimage) => Ok(16),
     16 | 32 => Ok(32),
-    _ => Err(DngError::General(format!(
+    _ => Err(DngError::InvalidInput(format!(
       "Deflate compression requires 16 or 32 bits per sample, got {}",
       bits
     ))),
@@ -1414,7 +1421,7 @@ where
   W: Write + Seek,
 {
   let RawImageData::Float(ref data) = rawimage.data else {
-    return Err(DngError::General("Deflate compression requires floating point image data".into()));
+    return Err(DngError::InvalidInput("Deflate compression requires floating point image data".into()));
   };
   let bits = deflate_float_bits(rawimage, bits)?;
   let row_len = rawimage.width * rawimage.cpp;
@@ -1549,6 +1556,58 @@ mod tests {
   }
 
   /// Write `rawimage` with the given max backward version and return the DNG bytes
+  /// Compress a synthetic image, to check which errors the preconditions of a
+  /// compression produce.
+  fn write_with_compression(rawimage: &RawImage, compression: DngCompression, max_backward_version: DngVersionNumber) -> Result<Vec<u8>> {
+    let mut buf = Cursor::new(Vec::new());
+    let mut dng = DngWriter::new(&mut buf, max_backward_version)?;
+    let mut frame = dng.subframe(0);
+    frame.raw_image(
+      rawimage,
+      CropMode::None,
+      compression,
+      DngPhotometricConversion::Original,
+      &CompressionParams::default(),
+    )?;
+    frame.finalize()?;
+    dng.close()?;
+    Ok(buf.into_inner())
+  }
+
+  /// A compression the image data or the version cap doesn't allow is the
+  /// caller asking for the impossible, not a failure of the write, so it is
+  /// reported as invalid input. Callers map the two to different results, so
+  /// the distinction has to hold.
+  #[test]
+  fn unusable_compression_is_invalid_input() -> std::result::Result<(), Box<dyn std::error::Error>> {
+    let integer = synthetic_rawimage(None);
+
+    // Deflate stores floating point samples only.
+    let err = write_with_compression(&integer, DngCompression::Deflate, DNG_VERSION_V1_4).expect_err("deflate needs floats");
+    assert!(
+      matches!(&err, DngError::InvalidInput(message) if message.contains("floating point")),
+      "{:?}",
+      err
+    );
+
+    // Lossy JPEG needs demosaiced data, which this mosaic is not.
+    let err = write_with_compression(&integer, DngCompression::Lossy, DNG_VERSION_V1_4).expect_err("lossy needs demosaiced data");
+    assert!(matches!(&err, DngError::InvalidInput(message) if message.contains("demosaiced")), "{:?}", err);
+
+    // JPEG XL needs a DNGBackwardVersion above the cap given here.
+    let err = write_with_compression(&integer, DngCompression::JpegXl, DNG_VERSION_V1_0).expect_err("1.0 can't carry JPEG XL");
+    assert!(
+      matches!(&err, DngError::InvalidInput(message) if message.contains("DNGBackwardVersion")),
+      "{:?}",
+      err
+    );
+
+    // And it survives the conversion to a RawlerError rather than being
+    // flattened into a decoder error.
+    assert!(matches!(crate::RawlerError::from(err), crate::RawlerError::InvalidInput { .. }));
+    Ok(())
+  }
+
   fn write_synthetic_dng(rawimage: &RawImage, cropmode: CropMode, max_backward_version: DngVersionNumber) -> Result<Vec<u8>> {
     let mut buf = Cursor::new(Vec::new());
     let mut dng = DngWriter::new(&mut buf, max_backward_version)?;
@@ -1946,15 +2005,15 @@ mod tests {
     };
     assert_eq!(
       error(&synthetic_rawimage(None), 16, DNG_VERSION_V1_4),
-      "General error: Deflate compression requires floating point image data"
+      "Invalid input: Deflate compression requires floating point image data"
     );
     assert_eq!(
       error(&synthetic_rawimage_f32(), 16, DNG_VERSION_V1_1),
-      "General error: DNG feature 'Deflate compression of floating point data' requires DNGBackwardVersion 1.4.0.0, but maximum allowed is 1.1.0.0"
+      "Invalid input: DNG feature 'Deflate compression of floating point data' requires DNGBackwardVersion 1.4.0.0, but maximum allowed is 1.1.0.0"
     );
     assert_eq!(
       error(&synthetic_rawimage_f32(), 24, DNG_VERSION_V1_4),
-      "General error: Deflate compression requires 16 or 32 bits per sample, got 24"
+      "Invalid input: Deflate compression requires 16 or 32 bits per sample, got 24"
     );
   }
 
