@@ -16,8 +16,12 @@ use crate::tags::{DngTag, ExifTag, TiffCommonTag};
 use crate::{RawImage, RawLoader, alloc_image_ok};
 use crate::{RawlerError, Result};
 
+use super::WellKnownIFD;
 use super::image_bytes;
+use super::makernotes;
 use super::{BlackLevel, CFAConfig, CameraLookup, Decoder, FormatHint, Orientation, RawDecodeParams, RawMetadata, RawPhotometricInterpretation, WhiteLevel};
+use crate::formats::tiff::IFD;
+use std::rc::Rc;
 
 /// 3FR format encapsulation for analyzer
 #[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize)]
@@ -123,6 +127,13 @@ impl<'a> Decoder for TfrDecoder<'a> {
 
   fn format_dump(&self) -> FormatDump {
     FormatDump::Tfr(TfrFormat { tiff: self.tiff.clone() })
+  }
+
+  fn ifd(&self, _file: &RawSource, _params: &RawDecodeParams, wk_ifd: WellKnownIFD) -> Result<Option<Rc<IFD>>> {
+    Ok(match wk_ifd {
+      WellKnownIFD::VirtualMakernotes => makernotes::from_exif(self.format_hint(), self.tiff.find_first_ifd_with_tag(ExifTag::MakerNotes), None).map(Rc::new),
+      _ => None,
+    })
   }
 
   fn format_hint(&self) -> FormatHint {

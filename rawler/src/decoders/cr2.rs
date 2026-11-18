@@ -48,9 +48,12 @@ use super::Orientation;
 use super::RawDecodeParams;
 use super::RawMetadata;
 use super::Result;
+use super::WellKnownIFD;
 use super::WhiteLevel;
 use super::dcr::kodak_blacklevel;
 use super::dcr::kodak_wb;
+use super::makernotes;
+use std::rc::Rc;
 
 mod colordata;
 
@@ -338,6 +341,14 @@ impl<'a> Decoder for Cr2Decoder<'a> {
       let img = image::load_from_memory_with_format(buf, image::ImageFormat::Jpeg).map_err(|err| decoder_error!("Failed to read JPEG image: {:?}", err))?;
       Ok(Some(img))
     }
+  }
+
+  fn ifd(&self, _file: &RawSource, _params: &RawDecodeParams, wk_ifd: WellKnownIFD) -> Result<Option<Rc<IFD>>> {
+    Ok(match wk_ifd {
+      WellKnownIFD::Makernote => self.makernote.clone().map(Rc::new),
+      WellKnownIFD::VirtualMakernotes => makernotes::from_exif(self.format_hint(), Some(&self.exif), self.makernote.as_ref()).map(Rc::new),
+      _ => None,
+    })
   }
 
   fn format_hint(&self) -> FormatHint {

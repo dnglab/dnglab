@@ -45,7 +45,10 @@ use super::FormatHint;
 use super::Orientation;
 use super::RawDecodeParams;
 use super::RawMetadata;
+use super::WellKnownIFD;
 use super::image_bytes;
+use super::makernotes;
+use std::rc::Rc;
 
 mod dbp;
 mod fuji_decompressor;
@@ -493,6 +496,19 @@ impl<'a> Decoder for RafDecoder<'a> {
 
   fn format_dump(&self) -> FormatDump {
     todo!()
+  }
+
+  fn ifd(&self, _file: &RawSource, _params: &RawDecodeParams, wk_ifd: WellKnownIFD) -> Result<Option<Rc<IFD>>> {
+    Ok(match wk_ifd {
+      WellKnownIFD::Makernote => Some(Rc::new(self.makernotes.clone())),
+      WellKnownIFD::VirtualMakernotes => makernotes::from_exif(
+        self.format_hint(),
+        self.ifd.find_first_ifd_with_tag(ExifTag::MakerNotes),
+        Some(&self.makernotes),
+      )
+      .map(Rc::new),
+      _ => None,
+    })
   }
 
   fn format_hint(&self) -> FormatHint {

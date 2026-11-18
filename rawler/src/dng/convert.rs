@@ -489,7 +489,7 @@ where
     )
     .map_err(write_error)?;
   // Check for DNG raw IFD related tags
-  if let Some(dng_raw_ifd) = decoder.ifd(WellKnownIFD::VirtualDngRawTags)? {
+  if let Some(dng_raw_ifd) = decoder.ifd(rawfile, &raw_params, WellKnownIFD::VirtualDngRawTags)? {
     // Opcode lists are written by raw_image(), they may have been applied to the image data
     let opcode_lists = [DngTag::OpcodeList1 as u16, DngTag::OpcodeList2 as u16, DngTag::OpcodeList3 as u16];
     raw
@@ -537,12 +537,12 @@ where
   }
 
   // Check for DNG root IFD related tags
-  if let Some(dng_root_ifd) = decoder.ifd(WellKnownIFD::VirtualDngRootTags)? {
+  if let Some(dng_root_ifd) = decoder.ifd(rawfile, &raw_params, WellKnownIFD::VirtualDngRootTags)? {
     dng.root_ifd_mut().copy(dng_root_ifd.value_iter().filter(|(tag, _)| copy_tag(tag)));
   }
 
   // Check for TIFF root IFD related tags
-  if let Some(tiff_root) = decoder.ifd(WellKnownIFD::Root)? {
+  if let Some(tiff_root) = decoder.ifd(rawfile, &raw_params, WellKnownIFD::Root)? {
     dng.root_ifd_mut().copy(tiff_root.value_iter().filter(|(tag, _)| {
       [
         // Tags from CinemaDNG files
@@ -559,7 +559,7 @@ where
     value: crate::formats::tiff::Value::Short(v),
     ..
   }) = decoder
-    .ifd(WellKnownIFD::VirtualDngRootTags)?
+    .ifd(rawfile, &raw_params, WellKnownIFD::VirtualDngRootTags)?
     .and_then(|ifd| ifd.get_entry(DngTag::MakerNoteSafety).cloned())
   {
     if v.get(0).copied().unwrap_or(0) == 0 {

@@ -17,8 +17,13 @@ use super::FormatHint;
 use super::Orientation;
 use super::RawDecodeParams;
 use super::RawMetadata;
+use super::WellKnownIFD;
 use super::image_bytes;
+use super::makernotes;
 use super::ok_cfa_image;
+use crate::formats::tiff::IFD;
+use crate::tags::ExifTag;
+use std::rc::Rc;
 
 #[derive(Debug, Clone)]
 pub struct DcsDecoder<'a> {
@@ -80,6 +85,13 @@ impl<'a> Decoder for DcsDecoder<'a> {
     let exif = Exif::new(self.tiff.root_ifd())?;
     let mdata = RawMetadata::new(self.camera.metadata(), exif);
     Ok(mdata)
+  }
+
+  fn ifd(&self, _file: &RawSource, _params: &RawDecodeParams, wk_ifd: WellKnownIFD) -> Result<Option<Rc<IFD>>> {
+    Ok(match wk_ifd {
+      WellKnownIFD::VirtualMakernotes => makernotes::from_exif(self.format_hint(), self.tiff.find_first_ifd_with_tag(ExifTag::MakerNotes), None).map(Rc::new),
+      _ => None,
+    })
   }
 
   fn format_hint(&self) -> FormatHint {

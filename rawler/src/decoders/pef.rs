@@ -12,7 +12,9 @@ use super::FormatHint;
 use super::Orientation;
 use super::RawDecodeParams;
 use super::RawMetadata;
+use super::WellKnownIFD;
 use super::image_bytes;
+use super::makernotes;
 use crate::RawImage;
 use crate::RawLoader;
 use crate::RawlerError;
@@ -39,6 +41,7 @@ use crate::rawimage::RawPhotometricInterpretation;
 use crate::rawsource::RawSource;
 use crate::tags::ExifTag;
 use crate::tags::TiffCommonTag;
+use std::rc::Rc;
 
 #[derive(Debug, Clone)]
 pub struct PefDecoder<'a> {
@@ -209,6 +212,19 @@ impl<'a> Decoder for PefDecoder<'a> {
     let exif = Exif::new(self.tiff.root_ifd())?;
     let mdata = RawMetadata::new_with_lens(self.camera.metadata(), exif, self.get_lens_description()?.cloned());
     Ok(mdata)
+  }
+
+  fn ifd(&self, _file: &RawSource, _params: &RawDecodeParams, wk_ifd: WellKnownIFD) -> Result<Option<Rc<IFD>>> {
+    Ok(match wk_ifd {
+      WellKnownIFD::Makernote => Some(Rc::new(self.makernote.clone())),
+      WellKnownIFD::VirtualMakernotes => makernotes::from_exif(
+        self.format_hint(),
+        self.tiff.find_first_ifd_with_tag(ExifTag::MakerNotes),
+        Some(&self.makernote),
+      )
+      .map(Rc::new),
+      _ => None,
+    })
   }
 
   fn format_hint(&self) -> FormatHint {

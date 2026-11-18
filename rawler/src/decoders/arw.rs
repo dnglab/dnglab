@@ -52,9 +52,12 @@ use super::FormatHint;
 use super::Orientation;
 use super::RawDecodeParams;
 use super::RawMetadata;
+use super::WellKnownIFD;
 use super::image_bytes;
+use super::makernotes;
 use super::ok_cfa_image;
 use super::tag_data;
+use std::rc::Rc;
 
 const SONY_E_MOUNT: &str = "e-mount";
 const SONY_A_MOUNT: &str = "a-mount";
@@ -274,6 +277,19 @@ impl<'a> Decoder for ArwDecoder<'a> {
     exif.extend_from_ifd(self.get_exif()?)?; // TODO: is this required?
     let mdata = RawMetadata::new_with_lens(self.camera.metadata(), exif, self.get_lens_description()?.cloned());
     Ok(mdata)
+  }
+
+  fn ifd(&self, _file: &RawSource, _params: &RawDecodeParams, wk_ifd: WellKnownIFD) -> Result<Option<Rc<IFD>>> {
+    Ok(match wk_ifd {
+      WellKnownIFD::Makernote => Some(Rc::new(self.makernote.clone())),
+      WellKnownIFD::VirtualMakernotes => makernotes::from_exif(
+        self.format_hint(),
+        self.tiff.find_first_ifd_with_tag(ExifTag::MakerNotes),
+        Some(&self.makernote),
+      )
+      .map(Rc::new),
+      _ => None,
+    })
   }
 
   fn format_hint(&self) -> FormatHint {

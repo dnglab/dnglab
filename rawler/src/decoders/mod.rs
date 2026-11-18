@@ -111,6 +111,7 @@ pub mod dng;
 pub mod erf;
 pub mod iiq;
 pub mod kdc;
+pub mod makernotes;
 pub mod mef;
 pub mod mos;
 pub mod mrw;
@@ -221,6 +222,10 @@ pub enum WellKnownIFD {
   ExifGps,
   VirtualDngRootTags,
   VirtualDngRawTags,
+  /// The makernote IFD of the camera maker, parsed by the decoder
+  Makernote,
+  /// Container with all makernote data of the file, see [`makernotes`]
+  VirtualMakernotes,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
@@ -401,7 +406,9 @@ pub trait Decoder: Send {
 
   fn format_dump(&self) -> FormatDump;
 
-  fn ifd(&self, _wk_ifd: WellKnownIFD) -> Result<Option<Rc<IFD>>> {
+  /// A well-known IFD of the file. Some IFDs, like the virtual makernotes of
+  /// CR3 files, depend on the image that `params` selects.
+  fn ifd(&self, _file: &RawSource, _params: &RawDecodeParams, _wk_ifd: WellKnownIFD) -> Result<Option<Rc<IFD>>> {
     Ok(None)
   }
 

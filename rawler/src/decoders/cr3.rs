@@ -6,8 +6,10 @@ use log::{debug, warn};
 use num::Zero;
 use std::convert::{TryFrom, TryInto};
 use std::fmt::Debug;
+use std::rc::Rc;
 
 use crate::bits::Endian;
+use crate::decoders::makernotes::{CR3_CTMD_RECORD_BASE, MakernoteSection, VirtualMakernotes};
 use crate::decoders::*;
 #[cfg(feature = "crx")]
 use crate::decompressors::crx::decompress_crx_image;
@@ -470,6 +472,45 @@ impl<'a> Decoder for Cr3Decoder<'a> {
         Ok(None)
       }
     }
+  }
+
+  fn ifd(&self, file: &RawSource, params: &RawDecodeParams, wk_ifd: WellKnownIFD) -> Result<Option<Rc<IFD>>> {
+    Ok(match wk_ifd {
+      WellKnownIFD::Makernote => Some(Rc::new(self.cmt3.root_ifd().clone())),
+      WellKnownIFD::VirtualMakernotes => {
+        let mut container = VirtualMakernotes::new(self.format_hint());
+        if let Some(Cr3DescBox { cmt1, cmt2, cmt3, cmt4, .. }) = self.bmff.filebox.moov.cr3desc.as_ref() {
+          container.add_blob(MakernoteSection::Cr3Cmt1, cmt1.data.clone(), Some(cmt1.tiff.root_ifd().clone()));
+          container.add_blob(MakernoteSection::Cr3Cmt2, cmt2.data.clone(), Some(cmt2.tiff.root_ifd().clone()));
+          container.add_blob(MakernoteSection::Cr3Cmt3, cmt3.data.clone(), Some(cmt3.tiff.root_ifd().clone()));
+          container.add_blob(MakernoteSection::Cr3Cmt4, cmt4.data.clone(), Some(cmt4.tiff.root_ifd().clone()));
+        }
+        if let Some(ctmd) = self.read_ctmd(file, params.image_index)? {
+          for (rec_type, record) in &ctmd.records {
+            if *rec_type > 0xFF {
+              warn!("CTMD record type {} is out of range, ignoring it", rec_type);
+              continue;
+            }
+            let tag = CR3_CTMD_RECORD_BASE + rec_type;
+            // The TIFF blocks of the record as a nested container
+            let mut blocks = VirtualMakernotes::nested();
+            for (block_tag, data) in &record.blocks {
+              let parsed = match GenericTiffReader::new_with_buffer(data, 0, 0, Some(0)) {
+                Ok(tiff) => Some(tiff.root_ifd().clone()),
+                Err(err) => {
+                  warn!("Failed to parse CTMD record {} block 0x{:X}: {}", rec_type, block_tag, err);
+                  None
+                }
+              };
+              blocks.add_blob(*block_tag, data.clone(), parsed);
+            }
+            container.add_blob(tag, record.payload.clone(), blocks.build());
+          }
+        }
+        container.build().map(Rc::new)
+      }
+      _ => None,
+    })
   }
 
   fn format_hint(&self) -> FormatHint {

@@ -42,7 +42,10 @@ use super::FormatHint;
 use super::Orientation;
 use super::RawDecodeParams;
 use super::RawMetadata;
+use super::WellKnownIFD;
 use super::image_bytes;
+use super::makernotes;
+use std::rc::Rc;
 
 const MFT_MOUNT: &str = "MFT-mount";
 
@@ -224,6 +227,15 @@ impl<'a> OrfDecoder<'a> {
       camera_settings,
     })
   }
+
+  /// The makernote with the CameraSettings IFD, as stored in the file
+  fn full_makernote(&self) -> IFD {
+    let mut makernote = self.makernote.clone();
+    if let Some(camera_settings) = &self.camera_settings {
+      makernote.sub.insert(OrfMakernotes::CameraSettingsIFD.into(), vec![camera_settings.clone()]);
+    }
+    makernote
+  }
 }
 
 impl<'a> Decoder for OrfDecoder<'a> {
@@ -370,6 +382,19 @@ impl<'a> Decoder for OrfDecoder<'a> {
       }
       None => Ok(None),
     }
+  }
+
+  fn ifd(&self, _file: &RawSource, _params: &RawDecodeParams, wk_ifd: WellKnownIFD) -> Result<Option<Rc<IFD>>> {
+    Ok(match wk_ifd {
+      WellKnownIFD::Makernote => Some(Rc::new(self.full_makernote())),
+      WellKnownIFD::VirtualMakernotes => makernotes::from_exif(
+        self.format_hint(),
+        self.tiff.find_first_ifd_with_tag(ExifTag::MakerNotes),
+        Some(&self.full_makernote()),
+      )
+      .map(Rc::new),
+      _ => None,
+    })
   }
 
   fn format_hint(&self) -> FormatHint {
