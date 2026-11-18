@@ -178,7 +178,10 @@ impl<'a> Decoder for DngDecoder<'a> {
 
     let photometric = match photometric_int {
       1 => RawPhotometricInterpretation::BlackIsZero,
-      32803 => RawPhotometricInterpretation::Cfa(CFAConfig::new_from_camera(&cam)),
+      32803 => RawPhotometricInterpretation::Cfa(CFAConfig {
+        layout: self.get_cfa_layout(raw)?,
+        ..CFAConfig::new_from_camera(&cam)
+      }),
       34892 => RawPhotometricInterpretation::LinearRaw,
       _ => {
         return Err(decoder_error!("DNG: unsupported PhotometricInterpretation {} for raw image", photometric_int));
@@ -776,7 +779,22 @@ impl<'a> DngDecoder<'a> {
 
   fn get_cfa(&self, raw: &IFD) -> Result<CFA> {
     let pattern = fetch_tiff_tag!(raw, TiffCommonTag::CFAPattern);
-    let cfa = CFA::new_from_tag(pattern).ok_or_else(|| decoder_error!("DNG: CFAPattern with {} values is invalid", pattern.count()))?;
+    // CFARepeatPatternDim is required, without it the size is guessed from the number of values
+    let dim = raw
+      .get_entry(TiffCommonTag::CFARepeatPatternDim)
+      .map(|dim| (dim.force_usize(0), dim.force_usize(1)));
+    if dim.is_none() {
+      log::warn!("DNG: CFARepeatPatternDim is missing, guessing the size of the CFAPattern");
+    }
+    let cfa = CFA::new_from_tag(pattern, dim).ok_or_else(|| match dim {
+      Some((rows, cols)) => decoder_error!(
+        "DNG: CFAPattern with {} values is invalid for CFARepeatPatternDim {}x{}",
+        pattern.count(),
+        rows,
+        cols
+      ),
+      None => decoder_error!("DNG: CFAPattern with {} values is invalid", pattern.count()),
+    })?;
     // If DNG has active area, we need to calulate back the CFA pattern,
     // because for DNG the CFAPattern is relative to ActiveArea and we
     // use (0, 0) as starting point: the pattern is rotated in the opposite
@@ -788,6 +806,20 @@ impl<'a> DngDecoder<'a> {
     } else {
       Ok(cfa)
     }
+  }
+
+  /// CFALayout of the raw IFD relative to the top-left sample, like the
+  /// pattern of [`Self::get_cfa`]. Defaults to a rectangular layout.
+  fn get_cfa_layout(&self, raw: &IFD) -> Result<CFALayout> {
+    let Some(entry) = raw.get_entry(DngTag::CFALayout) else {
+      return Ok(CFALayout::Rectangular);
+    };
+    let value = entry.force_u16(0);
+    let layout = CFALayout::try_from(value).map_err(|_| decoder_error!("DNG: CFALayout {} is invalid", value))?;
+    Ok(match self.get_active_area_borders(raw) {
+      Some([top, left, ..]) => layout.shift(left, top),
+      None => layout,
+    })
   }
 
   /// CFAPlaneColor of the raw IFD, defaults to red, green, blue

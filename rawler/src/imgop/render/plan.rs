@@ -9,6 +9,7 @@ use super::{BayerDemosaic, DemosaicQuality, ProcessingStep, RenderOptions, Rende
 use crate::RawlerError;
 use crate::{
   RawImage,
+  cfa::CFALayout,
   dng::{
     opcodes::OpcodeStage,
     profile_render::{ProfileRender, RgbTablesRender, ToneCurve, prophoto_to_rgb, rgb_to_prophoto},
@@ -450,6 +451,10 @@ fn opcode_list_step(stage: OpcodeStage) -> ProcessingStep {
 /// `bayer` and `xtrans` are the algorithms for Bayer RGB and X-Trans data at
 /// [`DemosaicQuality::Quality`]
 fn demosaic_algorithm(config: &CFAConfig, quality: DemosaicQuality, bayer: BayerDemosaic, xtrans: XTransDemosaic) -> crate::Result<(DemosaicAlgorithm, usize)> {
+  // The algorithms interpolate on a rectangular grid of photosites
+  if config.layout != CFALayout::Rectangular {
+    return Err(input_error!("Demosaic of the staggered CFALayout {:?} is not supported", config.layout));
+  }
   match config.sensor {
     SensorType::Bayer if config.cfa.is_rgb() => match (quality, bayer) {
       (DemosaicQuality::Preview, _) => Ok((DemosaicAlgorithm::Superpixel3, 3)),

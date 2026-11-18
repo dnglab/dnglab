@@ -244,7 +244,8 @@ OpcodeList1, replacing an existing FixBadPixelsList:
   a `RawlerError::InvalidInput` error for data it can't process, e.g. a CFA of
   another layout; the planner only picks algorithms that match the CFA. A CFA
   without an algorithm, e.g. a 2x8 pattern, makes the plan fail with the same
-  error.
+  error. So does a staggered CFALayout of a DNG file, whose photosites are not
+  on a rectangular grid.
 - **Tiled algorithms:** AHD, VNG, RCD and Markesteijn interpolate from a
   neighbourhood of pixels. They process the image in tiles in parallel, see
   [`sensor/tiles.rs`](../rawler/src/imgop/sensor/tiles.rs): each tile reads its
