@@ -57,6 +57,7 @@ use super::image_bytes;
 use super::makernotes;
 use super::ok_cfa_image;
 use super::tag_data;
+use super::tiff_ifd;
 use std::rc::Rc;
 
 const SONY_E_MOUNT: &str = "e-mount";
@@ -96,18 +97,17 @@ impl<'a> ArwDecoder<'a> {
 impl<'a> Decoder for ArwDecoder<'a> {
   fn raw_image(&self, file: &RawSource, _params: &RawDecodeParams, dummy: bool) -> Result<RawImage> {
     let camera = self.camera.supported()?;
-    let data = self.tiff.find_ifds_with_tag(TiffCommonTag::StripOffsets);
-    if data.is_empty() {
+    let raw = self.get_raw_ifd()?;
+    if !raw.has_entry(TiffCommonTag::StripOffsets) {
       let mut img = if camera.model == "DSLR-A100" {
-        self.image_a100(camera, file, dummy)?
+        self.image_a100(camera, raw, file, dummy)?
       } else {
         // try decoding as SRF
-        self.image_srf(camera, file, dummy)?
+        self.image_srf(camera, raw, file, dummy)?
       };
       img.orientation = Orientation::from_tiff(self.tiff.root_ifd());
       return Ok(img);
     }
-    let raw = data[0];
     let width = fetch_tiff_tag!(raw, TiffCommonTag::ImageWidth).force_usize(0);
     let mut height = fetch_tiff_tag!(raw, TiffCommonTag::ImageLength).force_usize(0);
     let offset = fetch_tiff_tag!(raw, TiffCommonTag::StripOffsets).force_usize(0);
@@ -257,13 +257,12 @@ impl<'a> Decoder for ArwDecoder<'a> {
     if params.image_index != 0 {
       return Ok(None);
     }
-    let root = self.tiff.root_ifd();
-    if let Some(preview_off) = root.get_entry(ExifTag::JPEGInterchangeFormat) {
-      if let Some(preview_len) = root.get_entry(ExifTag::JPEGInterchangeFormatLength) {
-        let buf = file.subview(preview_off.force_u64(0), preview_len.force_u64(0))?;
-        let img = image::load_from_memory_with_format(buf, image::ImageFormat::Jpeg).map_err(|err| decoder_error!("Failed to read JPEG image: {:?}", err))?;
-        return Ok(Some(img));
-      }
+    if let Some(root) = self.get_preview_ifd() {
+      let preview_off = fetch_tiff_tag!(root, ExifTag::JPEGInterchangeFormat);
+      let preview_len = fetch_tiff_tag!(root, ExifTag::JPEGInterchangeFormatLength);
+      let buf = file.subview(preview_off.force_u64(0), preview_len.force_u64(0))?;
+      let img = image::load_from_memory_with_format(buf, image::ImageFormat::Jpeg).map_err(|err| decoder_error!("Failed to read JPEG image: {:?}", err))?;
+      return Ok(Some(img));
     }
     Ok(None)
   }
@@ -281,6 +280,9 @@ impl<'a> Decoder for ArwDecoder<'a> {
 
   fn ifd(&self, _file: &RawSource, _params: &RawDecodeParams, wk_ifd: WellKnownIFD) -> Result<Option<Rc<IFD>>> {
     Ok(match wk_ifd {
+      WellKnownIFD::Root | WellKnownIFD::Exif | WellKnownIFD::ExifGps => tiff_ifd(self.tiff.root_ifd(), wk_ifd),
+      WellKnownIFD::Raw => Some(Rc::new(self.get_raw_ifd()?.clone())),
+      WellKnownIFD::Preview => self.get_preview_ifd().cloned().map(Rc::new),
       WellKnownIFD::Makernote => Some(Rc::new(self.makernote.clone())),
       WellKnownIFD::VirtualMakernotes => makernotes::from_exif(
         self.format_hint(),
@@ -298,6 +300,29 @@ impl<'a> Decoder for ArwDecoder<'a> {
 }
 
 impl<'a> ArwDecoder<'a> {
+  /// The IFD with the raw image data. Without an IFD with StripOffsets, it is
+  /// the IFD with SubIFDs for the DSLR-A100, the one with ImageWidth for SRF files.
+  fn get_raw_ifd(&self) -> Result<&IFD> {
+    if let Some(raw) = self.tiff.find_first_ifd_with_tag(TiffCommonTag::StripOffsets) {
+      return Ok(raw);
+    }
+    let tag = if self.camera.metadata().model == "DSLR-A100" {
+      TiffCommonTag::SubIFDs
+    } else {
+      TiffCommonTag::ImageWidth
+    };
+    self
+      .tiff
+      .find_first_ifd_with_tag(tag)
+      .ok_or_else(|| RawlerError::decoder_failed("ARW: Couldn't find the data IFD!".to_string()))
+  }
+
+  /// The root IFD, if it has a JPEG preview
+  fn get_preview_ifd(&self) -> Option<&IFD> {
+    let root = self.tiff.root_ifd();
+    (root.has_entry(ExifTag::JPEGInterchangeFormat) && root.has_entry(ExifTag::JPEGInterchangeFormatLength)).then_some(root)
+  }
+
   fn get_exif(&self) -> Result<&IFD> {
     self
       .tiff
@@ -331,15 +356,10 @@ impl<'a> ArwDecoder<'a> {
     Ok(None)
   }
 
-  fn image_a100(&self, camera: &Camera, file: &RawSource, dummy: bool) -> Result<RawImage> {
+  fn image_a100(&self, camera: &Camera, raw: &IFD, file: &RawSource, dummy: bool) -> Result<RawImage> {
     // We've caught the elusive A100 in the wild, a transitional format
     // between the simple sanity of the MRW custom format and the wordly
     // wonderfullness of the Tiff-based ARW format, let's shoot from the hip
-    let data = self.tiff.find_ifds_with_tag(TiffCommonTag::SubIFDs);
-    if data.is_empty() {
-      return Err(RawlerError::decoder_failed("ARW: Couldn't find the data IFD!".to_string()));
-    }
-    let raw = data[0];
     let width = 3880;
     let height = 2608;
     let offset = fetch_tiff_tag!(raw, TiffCommonTag::SubIFDs).force_usize(0);
@@ -362,13 +382,7 @@ impl<'a> ArwDecoder<'a> {
     ok_cfa_image(camera.clone(), cpp, normalize_wb(wb_coeffs), image, dummy)
   }
 
-  fn image_srf(&self, camera: &Camera, file: &RawSource, dummy: bool) -> Result<RawImage> {
-    let data = self.tiff.find_ifds_with_tag(TiffCommonTag::ImageWidth);
-    if data.is_empty() {
-      return Err(RawlerError::decoder_failed("ARW: Couldn't find the data IFD!".to_string()));
-    }
-    let raw = data[0];
-
+  fn image_srf(&self, camera: &Camera, raw: &IFD, file: &RawSource, dummy: bool) -> Result<RawImage> {
     let width = fetch_tiff_tag!(raw, TiffCommonTag::ImageWidth).force_usize(0);
     let height = fetch_tiff_tag!(raw, TiffCommonTag::ImageLength).force_usize(0);
 

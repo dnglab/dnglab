@@ -61,6 +61,7 @@ use super::WellKnownIFD;
 use super::image_bytes;
 use super::makernotes;
 use super::tag_data;
+use super::tiff_ifd;
 use std::rc::Rc;
 
 mod decrypt;
@@ -188,17 +189,7 @@ impl<'a> NefDecoder<'a> {
 impl<'a> Decoder for NefDecoder<'a> {
   fn raw_image(&self, file: &RawSource, _params: &RawDecodeParams, dummy: bool) -> Result<RawImage> {
     let camera = self.camera.supported()?;
-    // Some models store a small CFA image before the full image
-    let raw = self
-      .tiff
-      .find_ifds_with_tag(TiffCommonTag::CFAPattern)
-      .into_iter()
-      .min_by_key(|ifd| {
-        let dim = |tag| ifd.get_entry(tag).map_or(0, |entry| entry.force_usize(0));
-        Reverse(dim(TiffCommonTag::ImageWidth).saturating_mul(dim(TiffCommonTag::ImageLength)))
-      })
-      .or_else(|| self.tiff.find_ifd_with_new_subfile_type(0))
-      .ok_or_else(|| decoder_error!("Failed to find a suitable IFD in NEF decoder"))?;
+    let raw = self.get_raw_ifd()?;
     let mut width = fetch_tiff_tag!(raw, TiffCommonTag::ImageWidth).force_usize(0);
     let height = fetch_tiff_tag!(raw, TiffCommonTag::ImageLength).force_usize(0);
     let bps = fetch_tiff_tag!(raw, TiffCommonTag::BitsPerSample).force_usize(0);
@@ -388,33 +379,18 @@ impl<'a> Decoder for NefDecoder<'a> {
     if self.scan_encoding().is_some() {
       return Ok(None);
     }
-    // High resolution preview image is stored in JPEGInterchangeFormat tag.
-    // Search for all IFDs and use the best match.
-    let mut ifds = self.tiff.find_ifds_with_filter(|ifd| {
-      if ifd.get_new_sub_file_type() == Some(1) {
-        ifd.get_entry(ExifTag::JPEGInterchangeFormatLength).is_some()
-      } else {
-        false
-      }
-    });
-
-    ifds.sort_by(|a, b| {
-      a.get_entry(ExifTag::JPEGInterchangeFormatLength)
-        .map(|x| x.force_u32(0))
-        .cmp(&b.get_entry(ExifTag::JPEGInterchangeFormatLength).map(|x| x.force_u32(0)))
-    });
-
-    // Take the IFD with the largest JPEG stream size
-    if let Some(jpeg_ifd) = ifds.last() {
-      return Ok(Some(dynamic_image_from_jpeg_interchange_format(jpeg_ifd, file)?));
-    } else {
+    match self.get_preview_jpeg_ifd() {
+      Some(jpeg_ifd) => Ok(Some(dynamic_image_from_jpeg_interchange_format(jpeg_ifd, file)?)),
       // No matching IFDs found, use root IFD (possibly bad resolution)
-      Ok(Some(dynamic_image_from_ifd(self.tiff.root_ifd(), file)?))
+      None => Ok(Some(dynamic_image_from_ifd(self.tiff.root_ifd(), file)?)),
     }
   }
 
   fn ifd(&self, _file: &RawSource, _params: &RawDecodeParams, wk_ifd: WellKnownIFD) -> Result<Option<Rc<IFD>>> {
     Ok(match wk_ifd {
+      WellKnownIFD::Root | WellKnownIFD::Exif | WellKnownIFD::ExifGps => tiff_ifd(self.tiff.root_ifd(), wk_ifd),
+      WellKnownIFD::Raw => Some(Rc::new(self.get_raw_ifd()?.clone())),
+      WellKnownIFD::Preview => Some(Rc::new(self.get_preview_ifd().clone())),
       WellKnownIFD::Makernote => Some(Rc::new(self.makernote.clone())),
       WellKnownIFD::VirtualMakernotes => makernotes::from_exif(
         self.format_hint(),
@@ -457,6 +433,35 @@ impl ScanEncoding {
 }
 
 impl<'a> NefDecoder<'a> {
+  /// The IFD with the raw image data
+  fn get_raw_ifd(&self) -> Result<&IFD> {
+    // Some models store a small CFA image before the full image
+    self
+      .tiff
+      .find_ifds_with_tag(TiffCommonTag::CFAPattern)
+      .into_iter()
+      .min_by_key(|ifd| {
+        let dim = |tag| ifd.get_entry(tag).map_or(0, |entry| entry.force_usize(0));
+        Reverse(dim(TiffCommonTag::ImageWidth).saturating_mul(dim(TiffCommonTag::ImageLength)))
+      })
+      .or_else(|| self.tiff.find_ifd_with_new_subfile_type(0))
+      .ok_or_else(|| decoder_error!("Failed to find a suitable IFD in NEF decoder"))
+  }
+
+  /// The preview IFD (NewSubFileType 1) with the largest JPEG stream in JPEGInterchangeFormat
+  fn get_preview_jpeg_ifd(&self) -> Option<&IFD> {
+    self
+      .tiff
+      .find_ifds_with_filter(|ifd| ifd.get_new_sub_file_type() == Some(1) && ifd.get_entry(ExifTag::JPEGInterchangeFormatLength).is_some())
+      .into_iter()
+      .max_by_key(|ifd| ifd.get_entry(ExifTag::JPEGInterchangeFormatLength).map(|x| x.force_u32(0)))
+  }
+
+  /// The IFD that preview_image() reads, the root IFD if there is no JPEG preview IFD
+  fn get_preview_ifd(&self) -> &IFD {
+    self.get_preview_jpeg_ifd().unwrap_or_else(|| self.tiff.root_ifd())
+  }
+
   /// Encoding of the RGB values stored by the Nikon Scan software of Coolscan
   /// scanners, from the ICC profile in IFD 0
   ///

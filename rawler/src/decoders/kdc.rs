@@ -31,6 +31,7 @@ use super::WhiteLevel;
 use super::image_bytes;
 use super::makernotes::{MakernoteSection, VirtualMakernotes};
 use super::ok_cfa_image;
+use super::tiff_ifd;
 use std::rc::Rc;
 
 #[derive(Debug, Clone)]
@@ -67,12 +68,7 @@ impl<'a> Decoder for KdcDecoder<'a> {
     if camera.clean_model == "DC120" {
       let width = 848;
       let height = 976;
-      let raw = self
-        .tiff
-        .find_ifds_with_tag(TiffCommonTag::CFAPattern)
-        .into_iter()
-        .next()
-        .ok_or_else(|| RawlerError::decoder_failed("KDC DC120: no IFD with CFAPattern".to_string()))?;
+      let raw = self.get_raw_ifd()?;
       let off = fetch_tiff_tag!(raw, TiffCommonTag::StripOffsets).force_usize(0);
       let src = file.subview_until_eof(off as u64)?;
       let (image, white) = match fetch_tiff_tag!(raw, TiffCommonTag::Compression).force_usize(0) {
@@ -95,12 +91,7 @@ impl<'a> Decoder for KdcDecoder<'a> {
     }
 
     if camera.clean_model == "DC50" {
-      let raw = self
-        .tiff
-        .find_ifds_with_tag(TiffCommonTag::CFAPattern)
-        .into_iter()
-        .next()
-        .ok_or_else(|| RawlerError::decoder_failed("KDC DC50: no IFD with CFAPattern".to_string()))?;
+      let raw = self.get_raw_ifd()?;
       let width = camera.raw_width;
       let height = camera.raw_height;
       let off = fetch_tiff_tag!(raw, TiffCommonTag::StripOffsets).force_usize(0);
@@ -125,10 +116,7 @@ impl<'a> Decoder for KdcDecoder<'a> {
       return Ok(img);
     }
 
-    let raw = self
-      .tiff
-      .find_first_ifd_with_tag(TiffCommonTag::KdcWidth)
-      .ok_or_else(|| decoder_error!("Failed to find a IFD with KdcWidth tag"))?;
+    let raw = self.get_raw_ifd()?;
 
     let width = fetch_tiff_tag!(raw, TiffCommonTag::KdcWidth).force_usize(0) + 80;
     let height = fetch_tiff_tag!(raw, TiffCommonTag::KdcLength).force_usize(0) + 70;
@@ -168,6 +156,8 @@ impl<'a> Decoder for KdcDecoder<'a> {
 
   fn ifd(&self, _file: &RawSource, _params: &RawDecodeParams, wk_ifd: WellKnownIFD) -> Result<Option<Rc<IFD>>> {
     Ok(match wk_ifd {
+      WellKnownIFD::Root | WellKnownIFD::Exif | WellKnownIFD::ExifGps => tiff_ifd(self.tiff.root_ifd(), wk_ifd),
+      WellKnownIFD::Raw => Some(Rc::new(self.get_raw_ifd()?.clone())),
       WellKnownIFD::Makernote => self.kdc_ifd.clone().map(Rc::new),
       WellKnownIFD::VirtualMakernotes => {
         let mut container = VirtualMakernotes::new(self.format_hint());
@@ -187,6 +177,21 @@ impl<'a> Decoder for KdcDecoder<'a> {
 }
 
 impl<'a> KdcDecoder<'a> {
+  /// The IFD with the raw image data: the one with CFAPattern for the DC120 and
+  /// DC50, the one with KdcWidth for later models
+  fn get_raw_ifd(&self) -> Result<&IFD> {
+    match self.camera.metadata().clean_model.as_str() {
+      model @ ("DC120" | "DC50") => self
+        .tiff
+        .find_first_ifd_with_tag(TiffCommonTag::CFAPattern)
+        .ok_or_else(|| RawlerError::decoder_failed(format!("KDC {}: no IFD with CFAPattern", model))),
+      _ => self
+        .tiff
+        .find_first_ifd_with_tag(TiffCommonTag::KdcWidth)
+        .ok_or_else(|| decoder_error!("Failed to find a IFD with KdcWidth tag")),
+    }
+  }
+
   fn get_wb(&self) -> Result<[f32; 4]> {
     match self.kdc_ifd.as_ref() {
       Some(ifd) => Self::as_shot_wb(ifd),

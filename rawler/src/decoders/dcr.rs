@@ -31,6 +31,7 @@ use super::WellKnownIFD;
 use super::image_bytes;
 use super::makernotes::{MakernoteSection, VirtualMakernotes};
 use super::ok_cfa_image;
+use super::tiff_ifd;
 use crate::tags::ExifTag;
 use std::rc::Rc;
 
@@ -62,10 +63,7 @@ impl<'a> DcrDecoder<'a> {
 impl<'a> Decoder for DcrDecoder<'a> {
   fn raw_image(&self, file: &RawSource, _params: &RawDecodeParams, dummy: bool) -> Result<RawImage> {
     let camera = self.camera.supported()?;
-    let raw = self
-      .tiff
-      .find_first_ifd_with_tag(TiffCommonTag::CFAPattern)
-      .ok_or_else(|| decoder_error!("Failed to find a IFD with CFAPattern tag"))?;
+    let raw = self.get_raw_ifd()?;
     let width = fetch_tiff_tag!(raw, TiffCommonTag::ImageWidth).force_usize(0);
     let height = fetch_tiff_tag!(raw, TiffCommonTag::ImageLength).force_usize(0);
     let offset = fetch_tiff_tag!(raw, TiffCommonTag::StripOffsets).force_usize(0);
@@ -113,6 +111,8 @@ impl<'a> Decoder for DcrDecoder<'a> {
 
   fn ifd(&self, _file: &RawSource, _params: &RawDecodeParams, wk_ifd: WellKnownIFD) -> Result<Option<Rc<IFD>>> {
     Ok(match wk_ifd {
+      WellKnownIFD::Root | WellKnownIFD::Exif | WellKnownIFD::ExifGps => tiff_ifd(self.tiff.root_ifd(), wk_ifd),
+      WellKnownIFD::Raw => Some(Rc::new(self.get_raw_ifd()?.clone())),
       WellKnownIFD::Makernote => Some(Rc::new(self.makernote.clone())),
       WellKnownIFD::VirtualMakernotes => {
         let mut container = VirtualMakernotes::new(self.format_hint());
@@ -187,6 +187,14 @@ pub(super) fn kodak_wb(kodak_ifd: &IFD) -> Option<[f32; 4]> {
 }
 
 impl<'a> DcrDecoder<'a> {
+  /// The IFD with the raw image data
+  fn get_raw_ifd(&self) -> Result<&IFD> {
+    self
+      .tiff
+      .find_first_ifd_with_tag(TiffCommonTag::CFAPattern)
+      .ok_or_else(|| decoder_error!("Failed to find a IFD with CFAPattern tag"))
+  }
+
   pub(crate) fn decode_kodak65000(buf: &[u8], curve: &LookupTable, width: usize, height: usize, dummy: bool) -> Result<PixU16> {
     image_bytes("DCR", width, height, 16)?;
     let mut out = alloc_image_ok!(width, height, dummy);

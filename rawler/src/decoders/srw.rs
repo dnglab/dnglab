@@ -41,6 +41,7 @@ use super::WellKnownIFD;
 use super::image_bytes;
 use super::makernotes;
 use super::ok_cfa_image_with_blacklevels;
+use super::tiff_ifd;
 use std::rc::Rc;
 
 const NX_MOUNT: &str = "NX-mount";
@@ -86,10 +87,7 @@ impl<'a> SrwDecoder<'a> {
 impl<'a> Decoder for SrwDecoder<'a> {
   fn raw_image(&self, file: &RawSource, _params: &RawDecodeParams, dummy: bool) -> Result<RawImage> {
     let camera = self.camera.supported()?;
-    let raw = self
-      .tiff
-      .find_first_ifd_with_tag(TiffCommonTag::StripOffsets)
-      .ok_or_else(|| decoder_error!("Failed to find a IFD with StripOffsets tag"))?;
+    let raw = self.get_raw_ifd()?;
     let width = fetch_tiff_tag!(raw, TiffCommonTag::ImageWidth).force_usize(0);
     let height = fetch_tiff_tag!(raw, TiffCommonTag::ImageLength).force_usize(0);
     let offset = fetch_tiff_tag!(raw, TiffCommonTag::StripOffsets).force_usize(0);
@@ -154,6 +152,8 @@ impl<'a> Decoder for SrwDecoder<'a> {
 
   fn ifd(&self, _file: &RawSource, _params: &RawDecodeParams, wk_ifd: WellKnownIFD) -> Result<Option<Rc<IFD>>> {
     Ok(match wk_ifd {
+      WellKnownIFD::Root | WellKnownIFD::Exif | WellKnownIFD::ExifGps => tiff_ifd(self.tiff.root_ifd(), wk_ifd),
+      WellKnownIFD::Raw => Some(Rc::new(self.get_raw_ifd()?.clone())),
       WellKnownIFD::Makernote => Some(Rc::new(self.makernote.clone())),
       WellKnownIFD::VirtualMakernotes => makernotes::from_exif(
         self.format_hint(),
@@ -171,6 +171,14 @@ impl<'a> Decoder for SrwDecoder<'a> {
 }
 
 impl<'a> SrwDecoder<'a> {
+  /// The IFD with the raw image data
+  fn get_raw_ifd(&self) -> Result<&IFD> {
+    self
+      .tiff
+      .find_first_ifd_with_tag(TiffCommonTag::StripOffsets)
+      .ok_or_else(|| decoder_error!("Failed to find a IFD with StripOffsets tag"))
+  }
+
   pub fn decode_srw1(buf: &[u8], loffsets: &[u8], width: usize, height: usize, dummy: bool) -> Result<PixU16> {
     let mut out = alloc_image_ok!(width, height, dummy);
 

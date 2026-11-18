@@ -19,6 +19,7 @@ use std::collections::HashMap;
 use std::io::Seek;
 use std::io::SeekFrom;
 use std::mem::size_of;
+use std::rc::Rc;
 
 use crate::Orientation;
 use crate::RawImage;
@@ -34,6 +35,7 @@ use crate::decompressors::decompress_lines_fn;
 use crate::exif::Exif;
 use crate::formats::tiff;
 use crate::formats::tiff::GenericTiffReader;
+use crate::formats::tiff::IFD;
 use crate::formats::tiff::reader::TiffReader;
 use crate::imgop::Dim2;
 use crate::imgop::Point;
@@ -54,7 +56,9 @@ use super::Decoder;
 use super::FormatHint;
 use super::RawDecodeParams;
 use super::RawMetadata;
+use super::WellKnownIFD;
 use super::image_bytes;
+use super::tiff_ifd;
 
 const MAX_BITDEPTH: u32 = 16;
 
@@ -325,6 +329,11 @@ impl<'a> Decoder for IiqDecoder<'a> {
     exif.orientation = self.orientation().map(|orientation| orientation.to_u16());
     let mdata = RawMetadata::new_with_lens(self.camera.metadata(), exif, self.get_lens_description()?.cloned());
     Ok(mdata)
+  }
+
+  fn ifd(&self, _file: &RawSource, _params: &RawDecodeParams, wk_ifd: WellKnownIFD) -> Result<Option<Rc<IFD>>> {
+    // The raw data and the makernote are not described by TIFF IFDs
+    Ok(tiff_ifd(self.tiff.root_ifd(), wk_ifd))
   }
 
   fn format_hint(&self) -> FormatHint {

@@ -67,6 +67,16 @@ impl<'a> DngDecoder<'a> {
       .map(|entry| DngVersionNumber([0, 1, 2, 3].map(|i| entry.value.force_u8(i))))
   }
 
+  /// The first SubIFD with a preview image (NewSubFileType 1)
+  fn get_preview_ifd(&self) -> Option<&IFD> {
+    self
+      .tiff
+      .root_ifd()
+      .get_sub_ifd_all(TiffCommonTag::SubIFDs)?
+      .iter()
+      .find(|ifd| ifd.get_entry(TiffCommonTag::NewSubFileType).map(|entry| entry.force_u32(0)) == Some(1))
+  }
+
   /// EXIF IFD of the file
   fn exif_ifd(&self) -> Option<&IFD> {
     self.tiff.root_ifd().get_sub_ifd_all(ExifTag::ExifOffset).and_then(|list| list.first())
@@ -303,35 +313,17 @@ impl<'a> Decoder for DngDecoder<'a> {
     if params.image_index != 0 {
       return Ok(None);
     }
-    if let Some(sub_ifds) = self.tiff.root_ifd().get_sub_ifd_all(TiffCommonTag::SubIFDs) {
-      let first_ifd = sub_ifds
-        .iter()
-        .find(|ifd| ifd.get_entry(TiffCommonTag::NewSubFileType).map(|entry| entry.force_u32(0)) == Some(1));
-      if let Some(preview_ifd) = first_ifd {
-        return Ok(Some(dynamic_image_from_ifd(preview_ifd, file)?));
-      }
+    if let Some(preview_ifd) = self.get_preview_ifd() {
+      return Ok(Some(dynamic_image_from_ifd(preview_ifd, file)?));
     }
     Ok(None)
   }
 
   fn ifd(&self, file: &RawSource, _params: &RawDecodeParams, wk_ifd: WellKnownIFD) -> Result<Option<Rc<IFD>>> {
     Ok(match wk_ifd {
-      WellKnownIFD::Root => Some(Rc::new(self.tiff.root_ifd().clone())),
+      WellKnownIFD::Root | WellKnownIFD::Exif | WellKnownIFD::ExifGps => tiff_ifd(self.tiff.root_ifd(), wk_ifd),
       WellKnownIFD::Raw => Some(Rc::new(self.get_raw_ifd()?.clone())),
-      WellKnownIFD::Exif => self
-        .tiff
-        .root_ifd()
-        .get_sub_ifd_all(ExifTag::ExifOffset)
-        .and_then(|list| list.get(0))
-        .cloned()
-        .map(Rc::new),
-      WellKnownIFD::ExifGps => self
-        .tiff
-        .root_ifd()
-        .get_sub_ifd_all(ExifTag::GPSInfo)
-        .and_then(|list| list.get(0))
-        .cloned()
-        .map(Rc::new),
+      WellKnownIFD::Preview => self.get_preview_ifd().cloned().map(Rc::new),
       WellKnownIFD::VirtualDngRawTags => {
         let mut ifd = IFD::default();
         // OpcodeList1-3 are returned as stored. DNG conversion writes them from
@@ -379,7 +371,6 @@ impl<'a> Decoder for DngDecoder<'a> {
         }
         container.build().map(Rc::new)
       }
-      _ => return Ok(None),
     })
   }
 

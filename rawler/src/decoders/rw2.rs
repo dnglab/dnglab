@@ -45,6 +45,7 @@ use super::RawMetadata;
 use super::WellKnownIFD;
 use super::image_bytes;
 use super::makernotes::{MakernoteSection, VirtualMakernotes};
+use super::tiff_ifd;
 use std::rc::Rc;
 
 pub(crate) mod v4decompressor;
@@ -114,20 +115,8 @@ impl<'a> Decoder for Rw2Decoder<'a> {
     let width;
     let height;
 
-    let (raw, split) = {
-      let data = self.tiff.find_ifds_with_tag(TiffCommonTag::PanaOffsets);
-      if !data.is_empty() {
-        (data[0], true)
-      } else {
-        (
-          self
-            .tiff
-            .find_first_ifd_with_tag(TiffCommonTag::StripOffsets)
-            .ok_or_else(|| decoder_error!("Failed to find a IFD with StripOffsets tag"))?,
-          false,
-        )
-      }
-    };
+    let raw = self.get_raw_ifd()?;
+    let split = raw.has_entry(TiffCommonTag::PanaOffsets);
 
     let compression = raw.get_entry(PanasonicTag::Compression).map(|entry| entry.force_u16(0)).unwrap_or_default(); // TODO BUG
     //let compression = fetch_tiff_tag!(raw, PanasonicTag::Compression).force_u16(0);
@@ -138,9 +127,7 @@ impl<'a> Decoder for Rw2Decoder<'a> {
     let multishot = raw.get_entry(PanasonicTag::Multishot).map(|entry| entry.force_u32(0) == 65536).unwrap_or(false);
 
     let image = {
-      let data = self.tiff.find_ifds_with_tag(TiffCommonTag::PanaOffsets);
-      if !data.is_empty() {
-        let raw = data[0];
+      if split {
         width = fetch_tiff_tag!(raw, TiffCommonTag::PanaWidth).force_usize(0);
         height = fetch_tiff_tag!(raw, TiffCommonTag::PanaLength).force_usize(0);
         image_bytes("RW2", width, height, 16)?;
@@ -155,10 +142,6 @@ impl<'a> Decoder for Rw2Decoder<'a> {
           Rw2Decoder::decode_panasonic(file, &src, width, height, split, raw_format, bps, self.tiff.root_ifd(), dummy)?
         }
       } else {
-        let raw = self
-          .tiff
-          .find_first_ifd_with_tag(TiffCommonTag::StripOffsets)
-          .ok_or_else(|| decoder_error!("Failed to find a IFD with StripOffsets tag"))?;
         width = fetch_tiff_tag!(raw, TiffCommonTag::PanaWidth).force_usize(0);
         height = fetch_tiff_tag!(raw, TiffCommonTag::PanaLength).force_usize(0);
         image_bytes("RW2", width, height, 16)?;
@@ -247,6 +230,8 @@ impl<'a> Decoder for Rw2Decoder<'a> {
 
   fn ifd(&self, _file: &RawSource, _params: &RawDecodeParams, wk_ifd: WellKnownIFD) -> Result<Option<Rc<IFD>>> {
     Ok(match wk_ifd {
+      WellKnownIFD::Root | WellKnownIFD::Exif | WellKnownIFD::ExifGps => tiff_ifd(self.tiff.root_ifd(), wk_ifd),
+      WellKnownIFD::Raw => Some(Rc::new(self.get_raw_ifd()?.clone())),
       WellKnownIFD::VirtualMakernotes => {
         let mut container = VirtualMakernotes::new(self.format_hint());
         container.add_exif_makernote(self.tiff.find_first_ifd_with_tag(ExifTag::MakerNotes), None);
@@ -265,6 +250,15 @@ impl<'a> Decoder for Rw2Decoder<'a> {
 }
 
 impl<'a> Rw2Decoder<'a> {
+  /// The IFD with the raw image data, the one with PanaOffsets or else the one with StripOffsets
+  fn get_raw_ifd(&self) -> Result<&IFD> {
+    self
+      .tiff
+      .find_first_ifd_with_tag(TiffCommonTag::PanaOffsets)
+      .or_else(|| self.tiff.find_first_ifd_with_tag(TiffCommonTag::StripOffsets))
+      .ok_or_else(|| decoder_error!("Failed to find a IFD with StripOffsets tag"))
+  }
+
   fn get_wb(&self) -> Result<[f32; 4]> {
     if self.tiff.has_entry(PanasonicTag::PanaWBsR) && self.tiff.has_entry(PanasonicTag::PanaWBsB) {
       let r = fetch_tiff_tag!(self.tiff, PanasonicTag::PanaWBsR).force_u32(0) as f32;

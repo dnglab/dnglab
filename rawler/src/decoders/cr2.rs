@@ -53,6 +53,7 @@ use super::WhiteLevel;
 use super::dcr::kodak_blacklevel;
 use super::dcr::kodak_wb;
 use super::makernotes;
+use super::tiff_ifd;
 use std::rc::Rc;
 
 mod colordata;
@@ -99,18 +100,7 @@ impl<'a> Decoder for Cr2Decoder<'a> {
      */
 
     let camera = self.camera.supported()?;
-    let (raw, offset) = {
-      if let Some(raw) = self.tiff.find_first_ifd(TiffCommonTag::Cr2Id) {
-        (raw, fetch_tiff_tag!(raw, TiffCommonTag::StripOffsets).force_usize(0))
-      } else if let Some(raw) = self.tiff.find_first_ifd(TiffCommonTag::CFAPattern) {
-        (raw, fetch_tiff_tag!(raw, TiffCommonTag::StripOffsets).force_usize(0))
-      } else if let Some(off) = self.makernote.as_ref().and_then(|md| md.get_entry(TiffCommonTag::Cr2OldOffset)) {
-        // Old Canon TIF files contains the offset in makernote tags
-        (self.tiff.root_ifd(), off.value.force_usize(0))
-      } else {
-        return Err(RawlerError::decoder_failed("CR2: Couldn't find raw info".to_string()));
-      }
-    };
+    let (raw, offset) = self.get_raw_ifd_with_offset()?;
 
     // We don't have an exact length, so read until end.
     let src = file.subview_until_eof(offset as u64)?;
@@ -345,6 +335,10 @@ impl<'a> Decoder for Cr2Decoder<'a> {
 
   fn ifd(&self, _file: &RawSource, _params: &RawDecodeParams, wk_ifd: WellKnownIFD) -> Result<Option<Rc<IFD>>> {
     Ok(match wk_ifd {
+      WellKnownIFD::Root | WellKnownIFD::Exif | WellKnownIFD::ExifGps => tiff_ifd(self.tiff.root_ifd(), wk_ifd),
+      WellKnownIFD::Raw => Some(Rc::new(self.get_raw_ifd()?.clone())),
+      // The full resolution preview image is in IFD0
+      WellKnownIFD::Preview => Some(Rc::new(self.tiff.root_ifd().clone())),
       WellKnownIFD::Makernote => self.makernote.clone().map(Rc::new),
       WellKnownIFD::VirtualMakernotes => makernotes::from_exif(self.format_hint(), Some(&self.exif), self.makernote.as_ref()).map(Rc::new),
       _ => None,
@@ -364,6 +358,25 @@ enum Cr2Mode {
 }
 
 impl<'a> Cr2Decoder<'a> {
+  /// The IFD with the raw image data and the offset of the data
+  fn get_raw_ifd_with_offset(&self) -> Result<(&IFD, usize)> {
+    if let Some(raw) = self.tiff.find_first_ifd(TiffCommonTag::Cr2Id) {
+      Ok((raw, fetch_tiff_tag!(raw, TiffCommonTag::StripOffsets).force_usize(0)))
+    } else if let Some(raw) = self.tiff.find_first_ifd(TiffCommonTag::CFAPattern) {
+      Ok((raw, fetch_tiff_tag!(raw, TiffCommonTag::StripOffsets).force_usize(0)))
+    } else if let Some(off) = self.makernote.as_ref().and_then(|md| md.get_entry(TiffCommonTag::Cr2OldOffset)) {
+      // Old Canon TIF files contains the offset in makernote tags
+      Ok((self.tiff.root_ifd(), off.value.force_usize(0)))
+    } else {
+      Err(RawlerError::decoder_failed("CR2: Couldn't find raw info".to_string()))
+    }
+  }
+
+  /// The IFD with the raw image data
+  fn get_raw_ifd(&self) -> Result<&IFD> {
+    self.get_raw_ifd_with_offset().map(|(raw, _)| raw)
+  }
+
   fn get_mode(makernote: &Option<IFD>) -> Result<Cr2Mode> {
     if let Some(settings) = makernote.as_ref().and_then(|mn| mn.get_entry(Cr2MakernoteTag::CameraSettings)) {
       match settings.get_u16(46) {

@@ -19,6 +19,7 @@ use crate::{RawlerError, Result};
 use super::WellKnownIFD;
 use super::image_bytes;
 use super::makernotes;
+use super::tiff_ifd;
 use super::{BlackLevel, CFAConfig, CameraLookup, Decoder, FormatHint, Orientation, RawDecodeParams, RawMetadata, RawPhotometricInterpretation, WhiteLevel};
 use crate::formats::tiff::IFD;
 use std::rc::Rc;
@@ -55,10 +56,7 @@ impl<'a> TfrDecoder<'a> {
 impl<'a> Decoder for TfrDecoder<'a> {
   fn raw_image(&self, file: &RawSource, _params: &RawDecodeParams, dummy: bool) -> Result<RawImage> {
     let camera = self.camera.supported()?;
-    let raw = self
-      .tiff
-      .find_first_ifd_with_tag(TiffCommonTag::WhiteLevel)
-      .ok_or_else(|| decoder_error!("Failed to find a IFD with WhiteLevel tag"))?;
+    let raw = self.get_raw_ifd()?;
 
     let whitelevel = raw
       .get_entry(TiffCommonTag::WhiteLevel)
@@ -131,6 +129,10 @@ impl<'a> Decoder for TfrDecoder<'a> {
 
   fn ifd(&self, _file: &RawSource, _params: &RawDecodeParams, wk_ifd: WellKnownIFD) -> Result<Option<Rc<IFD>>> {
     Ok(match wk_ifd {
+      WellKnownIFD::Root | WellKnownIFD::Exif | WellKnownIFD::ExifGps => tiff_ifd(self.tiff.root_ifd(), wk_ifd),
+      WellKnownIFD::Raw => Some(Rc::new(self.get_raw_ifd()?.clone())),
+      // The preview image is in IFD0
+      WellKnownIFD::Preview => Some(Rc::new(self.tiff.root_ifd().clone())),
       WellKnownIFD::VirtualMakernotes => makernotes::from_exif(self.format_hint(), self.tiff.find_first_ifd_with_tag(ExifTag::MakerNotes), None).map(Rc::new),
       _ => None,
     })
@@ -164,6 +166,14 @@ impl<'a> Decoder for TfrDecoder<'a> {
 }
 
 impl<'a> TfrDecoder<'a> {
+  /// The IFD with the raw image data
+  fn get_raw_ifd(&self) -> Result<&IFD> {
+    self
+      .tiff
+      .find_first_ifd_with_tag(TiffCommonTag::WhiteLevel)
+      .ok_or_else(|| decoder_error!("Failed to find a IFD with WhiteLevel tag"))
+  }
+
   /// Get lens description by analyzing TIFF tags and makernotes
   fn get_lens_description(&self) -> Result<Option<&'static LensDescription>> {
     if let Some(exif) = self.tiff.root_ifd().get_sub_ifd(TiffCommonTag::ExifIFDPointer) {
