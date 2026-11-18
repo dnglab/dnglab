@@ -372,7 +372,7 @@ fn camera_area(cam: &Camera, name: &str, dim: Dim2, borders: &[usize; 4]) -> Opt
 
 /// Size of the pattern of black levels measured in the masked areas: the CFA
 /// pattern or a single pixel
-fn masked_area_pattern(cam: &Camera) -> (usize, usize) {
+pub(crate) fn masked_area_pattern(cam: &Camera) -> (usize, usize) {
   if cam.cfa.is_valid() { (cam.cfa.width, cam.cfa.height) } else { (1, 1) }
 }
 

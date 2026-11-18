@@ -24,6 +24,7 @@ use crate::imgop::blacklevel::{MAX_MASKED_AREAS, check_masked_areas};
 use crate::imgop::matrix::*;
 use crate::imgop::xyz::*;
 use crate::mask::{MaskImage, SemanticMask};
+use crate::pixarray::ImageView;
 use crate::rawimage::ColorimetricReference;
 use crate::tags::DngTag;
 use crate::tags::TiffCommonTag;
@@ -167,6 +168,7 @@ impl<'a> Decoder for DngDecoder<'a> {
     }
 
     let blacklevel = self.get_blacklevels(raw, width, height)?;
+    let blacklevel_missing = blacklevel.is_none();
     // Default WhiteLevel is 1.0 for floating point and 2^BitsPerSample-1 for integer data
     let whitelevel = match self.get_whitelevels(raw)? {
       Some(whitelevel) => whitelevel,
@@ -218,6 +220,9 @@ impl<'a> Decoder for DngDecoder<'a> {
     image.default_crop = self.get_default_crop(raw);
     image.default_user_crop = self.get_default_user_crop(raw);
     image.linearization_table = self.get_linearization_table(raw, &image.data)?;
+    if blacklevel_missing && !dummy {
+      self.measure_blacklevel(&mut image);
+    }
     image.baseline_exposure = root.get_entry(DngTag::BaselineExposure).and_then(|entry| match &entry.value {
       Value::SRational(v) => v.first().copied(),
       // The DNG specification requires SRATIONAL, other types are only rounded to it
@@ -752,6 +757,32 @@ impl<'a> DngDecoder<'a> {
     } else {
       Ok(None)
     }
+  }
+
+  /// Without BlackLevel, measure the black level of integer data in its masked
+  /// areas, as the DNG specification allows. The levels are those of the
+  /// LinearizationTable, if any. Without masked areas that cover the whole
+  /// pattern, the black level stays 0.
+  fn measure_blacklevel(&self, image: &mut RawImage) {
+    let RawImageData::Integer(samples) = &image.data else {
+      return;
+    };
+    if image.blackareas.is_empty() {
+      return;
+    }
+    let (pattern_width, pattern_height) = masked_area_pattern(&image.camera);
+    let view = ImageView::new(samples, image.width, image.height, image.cpp);
+    let Some(mut measured) = BlackLevel::from_masked_areas(view, &image.blackareas, pattern_width, pattern_height) else {
+      log::debug!("DNG: BlackLevel is missing and the masked areas don't give one, it is 0");
+      return;
+    };
+    if let Some(table) = image.linearization_table.as_deref().filter(|table| !table.is_empty()) {
+      measured.levels.iter_mut().for_each(|level| {
+        *level = Rational::new(table[(level.n as usize).min(table.len() - 1)] as u32, 1);
+      });
+    }
+    log::debug!("DNG: BlackLevel is missing, measured {:?} in the masked areas", measured.levels);
+    image.blacklevel = measured;
   }
 
   /// LinearizationTable of the raw IFD, it is only valid for integer data up to 16 bits
