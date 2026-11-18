@@ -196,6 +196,8 @@ complete -c dnglab -n "__fish_dnglab_using_subcommand convert" -l apply-dng-opco
 list1\t''
 list2\t''
 list3\t''"
+complete -c dnglab -n "__fish_dnglab_using_subcommand convert" -l staggered -d 'Staggered CFA data (Fujifilm Super CCD): demosaic it to LinearRaw, or keep it with its CFALayout (DNG 1.1)' -r -f -a "demosaic\t''
+keep\t''"
 complete -c dnglab -n "__fish_dnglab_using_subcommand convert" -l remove-dng-opcodes -d 'Remove DNG opcodes, as comma separated [<list>:]<opcode> (e.g. WarpRectilinear,2:GainMap)' -r
 complete -c dnglab -n "__fish_dnglab_using_subcommand convert" -l artist -d 'Set the artist tag' -r
 complete -c dnglab -n "__fish_dnglab_using_subcommand convert" -l copyright -d 'Set the copyright tag' -r
@@ -257,6 +259,8 @@ complete -c dnglab -n "__fish_dnglab_using_subcommand ftpserver" -l apply-dng-op
 list1\t''
 list2\t''
 list3\t''"
+complete -c dnglab -n "__fish_dnglab_using_subcommand ftpserver" -l staggered -d 'Staggered CFA data (Fujifilm Super CCD): demosaic it to LinearRaw, or keep it with its CFALayout (DNG 1.1)' -r -f -a "demosaic\t''
+keep\t''"
 complete -c dnglab -n "__fish_dnglab_using_subcommand ftpserver" -l remove-dng-opcodes -d 'Remove DNG opcodes, as comma separated [<list>:]<opcode> (e.g. WarpRectilinear,2:GainMap)' -r
 complete -c dnglab -n "__fish_dnglab_using_subcommand ftpserver" -l artist -d 'Set the artist tag' -r
 complete -c dnglab -n "__fish_dnglab_using_subcommand ftpserver" -l copyright -d 'Set the copyright tag' -r

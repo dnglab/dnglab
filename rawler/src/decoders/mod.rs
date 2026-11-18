@@ -499,6 +499,38 @@ impl Orientation {
     }
   }
 
+  /// The orientation of applying `self` first and `next` afterwards
+  pub fn then(self, next: Orientation) -> Orientation {
+    // Matrices of the orientations for x to the right and y down
+    let matrix = |orientation: Orientation| -> [[i8; 2]; 2] {
+      match orientation {
+        Orientation::Normal => [[1, 0], [0, 1]],
+        Orientation::HorizontalFlip => [[-1, 0], [0, 1]],
+        Orientation::Rotate180 => [[-1, 0], [0, -1]],
+        Orientation::VerticalFlip => [[1, 0], [0, -1]],
+        Orientation::Transpose => [[0, 1], [1, 0]],
+        Orientation::Rotate90 => [[0, -1], [1, 0]],
+        Orientation::Transverse => [[0, -1], [-1, 0]],
+        Orientation::Rotate270 => [[0, 1], [-1, 0]],
+      }
+    };
+    let (a, b) = (matrix(self), matrix(next));
+    let product = [0, 1].map(|row| [0, 1].map(|col| b[row][0] * a[0][col] + b[row][1] * a[1][col]));
+    [
+      Orientation::Normal,
+      Orientation::HorizontalFlip,
+      Orientation::Rotate180,
+      Orientation::VerticalFlip,
+      Orientation::Transpose,
+      Orientation::Rotate90,
+      Orientation::Transverse,
+      Orientation::Rotate270,
+    ]
+    .into_iter()
+    .find(|orientation| matrix(*orientation) == product)
+    .unwrap_or(Orientation::Normal)
+  }
+
   /// Convert orientation to the Tiff Orientation value
   pub fn to_u16(&self) -> u16 {
     match *self {

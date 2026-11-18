@@ -271,7 +271,8 @@ OpcodeList1, replacing an existing FixBadPixelsList:
     them are the mean of their four neighbours.
   - DefaultCrop and OpcodeList3 refer to the stage 3 grid, the DefaultCrop in
     raw coordinates scaled by the doubling.
-  - Two cameras (`fuji_rotate_90cw`) are rotated by 90° clockwise afterwards.
+  - Two cameras (`fuji_rotate_90cw`) store the image turned by 90°. The RAF
+    decoder makes the turn part of the orientation, so the pixels aren't rotated.
   - Layouts 6 to 9 offset rows and columns, the plan fails for them.
 - **OpcodeList3** is applied after the demosaic by the `OpcodeList3` step, for
   example WarpRectilinear and GainMap.
@@ -483,12 +484,22 @@ shows (for example after `RawImage::linearize`). The 16-bit outputs
 - **Stage 2** (rescaled): with `ConvertParams::apply_scaling`, or when
   OpcodeList2 is applied to the data (`--apply-dng-opcodes`, or opcodes the
   target DNG version can't store).
-- **Stage 3** (LinearRaw): needed for staggered CFA layouts, for lossy compression
+- **Stage 3** (LinearRaw): needed for staggered CFA layouts with `--staggered
+  demosaic` (the default), for lossy compression
   (`-c lossy`) and when OpcodeList3 is applied to the data.
 
 Stage 3 data comes from `render_linear_raw` with the steps Demosaic,
-CropActiveArea and WhiteBalance (plus FujiRotate). The white balance is divided
-out again, because the DNG reader applies it.
+CropActiveArea, FujiRotate and WhiteBalance. The white balance is divided out
+again, because the DNG reader applies it.
+
+Staggered CFA data (`ConvertParams::staggered`, `--staggered`):
+
+- **`demosaic`** (the default): it is demosaiced onto its stage 3 grid and
+  written as LinearRaw, for readers without support for staggered layouts.
+- **`keep`**: it is written at stage 1 with its CFALayout, its 2x4 or 4x2 pattern
+  and the DefaultCrop in raw coordinates, which may have half pixels. This
+  requires DNGBackwardVersion 1.1; with a lower maximum, the data is demosaiced
+  with a warning.
 
 The DNG preview and thumbnail are the embedded preview of the raw file. If the
 raw file has none, or with `--dng-force-preview`, they are rendered with the

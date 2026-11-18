@@ -262,22 +262,3 @@ impl Stagger {
     }
   }
 }
-
-/// Rotate an image of `width` x `height` pixels with `channels` samples per
-/// pixel 90° clockwise
-pub fn rotate_90cw(src: &[f32], width: usize, height: usize, channels: usize) -> Vec<f32> {
-  let mut dst = vec![0.0; src.len()];
-  // The rotated image has `height` pixels per row
-  dst.par_chunks_mut((height * channels).max(1)).enumerate().for_each(|(row, line)| {
-    for (col, pixel) in line.chunks_exact_mut(channels).enumerate() {
-      let src_pos = ((height - 1 - col) * width + row) * channels;
-      pixel.copy_from_slice(&src[src_pos..src_pos + channels]);
-    }
-  });
-  dst
-}
-
-/// Rectangle `rect` of an image of `height` rows after the image is rotated 90° clockwise
-pub fn rotate_rect_90cw(rect: Rect, height: usize) -> Rect {
-  Rect::new(Point::new(height - (rect.p.y + rect.d.h), rect.p.x), Dim2::new(rect.d.h, rect.d.w))
-}

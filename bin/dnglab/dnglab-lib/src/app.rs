@@ -11,7 +11,7 @@ use clap::{
   value_parser,
 };
 use log::debug;
-use rawler::dng::{ApplyDngOpcodes, CropMode, DngCompression, DngVersion, MAX_JXL_DISTANCE, opcodes::OpcodeSelector};
+use rawler::dng::{ApplyDngOpcodes, CropMode, DngCompression, DngVersion, MAX_JXL_DISTANCE, StaggeredOutput, opcodes::OpcodeSelector};
 use rawler::imgop::{
   color::OutputSpace,
   denoise::DenoiseStrength,
@@ -345,6 +345,12 @@ Lossy compression applies OpcodeList1 to the image data.",
         .required(false)
         .value_parser(value_parser!(ApplyDngOpcodes))
         .default_value("auto"),
+    )
+    .arg(
+      arg!(--"staggered" <mode> "Staggered CFA data (Fujifilm Super CCD): demosaic it to LinearRaw, or keep it with its CFALayout (DNG 1.1)")
+        .required(false)
+        .value_parser(value_parser!(StaggeredOutput))
+        .default_value("demosaic"),
     )
     .arg(remove_dng_opcodes_arg())
     .arg(

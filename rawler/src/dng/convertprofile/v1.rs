@@ -9,7 +9,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::dng::{
   ApplyDngOpcodes, CropMode, DEFAULT_JXL_DECODE_SPEED, DEFAULT_JXL_DISTANCE, DEFAULT_JXL_EFFORT, DEFAULT_LOSSY_JPEG_QUALITY, DngCompression, DngVersion,
-  opcodes::OpcodeSelector,
+  StaggeredOutput, opcodes::OpcodeSelector,
 };
 
 /// How to handle files that contain multiple raw images
@@ -68,6 +68,9 @@ pub struct ConvertProfileV1 {
   /// Develop the preview from raw data instead of using an embedded preview
   #[serde(default)]
   pub force_preview: bool,
+  /// DNG output of staggered CFA data: demosaiced to LinearRaw or kept
+  #[serde(default)]
+  pub staggered: StaggeredOutput,
   /// Develop the thumbnail from raw data instead of using an embedded preview
   #[serde(default)]
   pub force_thumbnail: bool,
@@ -138,6 +141,7 @@ impl Default for ConvertProfileV1 {
       add_preview: true,
       add_thumbnail: true,
       force_preview: false,
+      staggered: StaggeredOutput::Demosaic,
       force_thumbnail: false,
       embed_raw: true,
       multiframe: MultiFrameMode::First,

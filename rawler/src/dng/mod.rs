@@ -220,6 +220,32 @@ impl clap::ValueEnum for CropMode {
   }
 }
 
+/// DNG output of staggered CFA data (CFALayout 2 to 5)
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum StaggeredOutput {
+  /// Demosaic the data onto the stage 3 grid and write LinearRaw data, for
+  /// readers without support for staggered layouts
+  #[default]
+  Demosaic,
+  /// Write the staggered CFA data with its CFALayout (DNG 1.1)
+  Keep,
+}
+
+#[cfg(feature = "clap")]
+impl clap::ValueEnum for StaggeredOutput {
+  fn value_variants<'a>() -> &'a [Self] {
+    &[Self::Demosaic, Self::Keep]
+  }
+
+  fn to_possible_value(&self) -> Option<clap::builder::PossibleValue> {
+    Some(match self {
+      Self::Demosaic => clap::builder::PossibleValue::new("demosaic"),
+      Self::Keep => clap::builder::PossibleValue::new("keep"),
+    })
+  }
+}
+
 /// DNG opcode lists that are applied to the image data when converting to DNG.
 /// Lists that are not applied are written to the DNG.
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq, Serialize, Deserialize)]

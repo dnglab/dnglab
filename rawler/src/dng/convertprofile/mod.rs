@@ -240,6 +240,7 @@ impl ConvertProfile {
       max_dng_backward_version: self.max_dng_backward_version,
       apply_dng_opcodes: self.apply_dng_opcodes,
       remove_dng_opcodes: self.remove_dng_opcodes.clone(),
+      staggered: self.staggered,
       ..Default::default()
     }
   }
@@ -472,7 +473,7 @@ impl ConvertProfileRegistry {
 #[cfg(test)]
 mod tests {
   use super::*;
-  use crate::dng::{ApplyDngOpcodes, CropMode};
+  use crate::dng::{ApplyDngOpcodes, CropMode, StaggeredOutput};
 
   /// Temporary directory, removed on drop
   struct TempDir(PathBuf);
@@ -563,6 +564,7 @@ mod tests {
       add_thumbnail: true,
       force_preview: true,
       force_thumbnail: true,
+      staggered: StaggeredOutput::Keep,
       embed_raw: false,
       multiframe: MultiFrameMode::Split,
       keep_mtime: true,
