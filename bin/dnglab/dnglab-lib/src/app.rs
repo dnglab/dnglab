@@ -563,6 +563,7 @@ fn convert_command() -> Command {
     .arg(bad_pixels_arg())
     .arg(dark_frame_arg())
     .arg(dark_frame_black_arg())
+    .arg(arg!(verify_digest: --"verify-digest" "Verify the raw image digest of DNG input files").action(ArgAction::SetTrue))
     .arg(arg!(<INPUT> "Input file or directory").value_parser(clap::value_parser!(PathBuf)))
     .arg(arg!(<OUTPUT> "Output file or existing directory").value_parser(clap::value_parser!(PathBuf)))
 }

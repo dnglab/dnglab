@@ -39,6 +39,7 @@ pub async fn convert(options: &ArgMatches, software: &Software) -> crate::Result
   let params = profile
     .to_convert_params()
     .with_software(software.clone())
+    .with_verify_digest(options.get_flag("verify_digest"))
     .with_dcp(dcp)
     .with_extra_dcp(extra_dcp)
     .with_dark_frame(dark_frame);

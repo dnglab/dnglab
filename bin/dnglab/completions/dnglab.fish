@@ -218,6 +218,7 @@ complete -c dnglab -n "__fish_dnglab_using_subcommand convert" -l profile-path -
 complete -c dnglab -n "__fish_dnglab_using_subcommand convert" -l config -d 'dnglab configuration file' -r -F
 complete -c dnglab -n "__fish_dnglab_using_subcommand convert" -s f -l override -d 'Override existing files'
 complete -c dnglab -n "__fish_dnglab_using_subcommand convert" -s r -l recursive -d 'Process input directory recursive'
+complete -c dnglab -n "__fish_dnglab_using_subcommand convert" -l verify-digest -d 'Verify the raw image digest of DNG input files'
 complete -c dnglab -n "__fish_dnglab_using_subcommand convert" -s v -d 'Print status for every file'
 complete -c dnglab -n "__fish_dnglab_using_subcommand convert" -s h -l help -d 'Print help (see more with \'--help\')'
 complete -c dnglab -n "__fish_dnglab_using_subcommand ftpserver" -s p -l profile -d 'Convert profile name' -r

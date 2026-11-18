@@ -78,6 +78,8 @@ pub struct ConvertParams {
   pub software: Option<Software>,
   pub index: usize,
   pub keep_mtime: bool,
+  /// Check the raw image digest of DNG input files
+  pub verify_digest: bool,
   /// Value for DNGVersion tag
   pub dng_version: DngVersion,
   /// Highest allowed value for DNGBackwardVersion tag
@@ -131,6 +133,7 @@ impl Default for ConvertParams {
       software: None,
       index: 0,
       keep_mtime: false,
+      verify_digest: false,
       dng_version: DngVersion::V1_7_1,
       max_dng_backward_version: DngVersion::V1_4,
       apply_dng_opcodes: ApplyDngOpcodes::Auto,
@@ -284,6 +287,12 @@ impl ConvertParams {
     self
   }
 
+  /// Set whether the raw image digest of DNG input files is checked.
+  pub fn with_verify_digest(mut self, verify_digest: bool) -> Self {
+    self.verify_digest = verify_digest;
+    self
+  }
+
   /// Set the DNGVersion.
   pub fn with_dng_version(mut self, dng_version: DngVersion) -> Self {
     self.dng_version = dng_version;
@@ -381,7 +390,10 @@ where
   W: Write + Seek + Send,
 {
   let decoder = crate::get_decoder(rawfile)?;
-  let raw_params = RawDecodeParams { image_index: params.index };
+  let raw_params = RawDecodeParams {
+    image_index: params.index,
+    verify_digest: params.verify_digest,
+  };
   validate_image_index(decoder.as_ref(), &raw_params)?;
   let mut rawimage = decoder.raw_image(rawfile, &raw_params, false)?;
   rawimage.remove_opcodes(&params.remove_dng_opcodes);

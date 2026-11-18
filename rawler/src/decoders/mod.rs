@@ -159,6 +159,9 @@ pub type ReadableBoxed = Box<dyn Readable>;
 #[derive(Default, Clone, Debug, Hash, Eq, PartialEq)]
 pub struct RawDecodeParams {
   pub image_index: usize,
+  /// Check the raw image digest of DNG files while decoding the raw image,
+  /// a mismatch is an error
+  pub verify_digest: bool,
 }
 
 /// Check that `params.image_index` selects an image the file actually contains.
@@ -1419,7 +1422,13 @@ mod tests {
     let decoder = crate::get_decoder(&source)?;
 
     assert_eq!(decoder.raw_image_count()?, 1);
-    validate_image_index(decoder.as_ref(), &RawDecodeParams { image_index: 0 })?;
+    validate_image_index(
+      decoder.as_ref(),
+      &RawDecodeParams {
+        image_index: 0,
+        ..Default::default()
+      },
+    )?;
     Ok(())
   }
 
@@ -1429,7 +1438,14 @@ mod tests {
     let decoder = crate::get_decoder(&source)?;
 
     for index in [1, 5, usize::MAX] {
-      let err = validate_image_index(decoder.as_ref(), &RawDecodeParams { image_index: index }).expect_err("an out-of-range index must be rejected");
+      let err = validate_image_index(
+        decoder.as_ref(),
+        &RawDecodeParams {
+          image_index: index,
+          ..Default::default()
+        },
+      )
+      .expect_err("an out-of-range index must be rejected");
       assert!(err.to_string().contains("out of range"), "unexpected error for index {}: {}", index, err);
     }
     Ok(())
@@ -1443,10 +1459,23 @@ mod tests {
   fn decode_rejects_out_of_range_index() -> std::result::Result<(), Box<dyn std::error::Error>> {
     let source = RawSource::new_from_slice(&single_image_dng()?);
 
-    let image = crate::decode(&source, &RawDecodeParams { image_index: 0 })?;
+    let image = crate::decode(
+      &source,
+      &RawDecodeParams {
+        image_index: 0,
+        ..Default::default()
+      },
+    )?;
     assert_eq!((image.width, image.height), (16, 16));
 
-    let err = crate::decode(&source, &RawDecodeParams { image_index: 1 }).expect_err("image index 1 must be rejected");
+    let err = crate::decode(
+      &source,
+      &RawDecodeParams {
+        image_index: 1,
+        ..Default::default()
+      },
+    )
+    .expect_err("image index 1 must be rejected");
     assert!(err.to_string().contains("out of range"), "unexpected error: {}", err);
     Ok(())
   }

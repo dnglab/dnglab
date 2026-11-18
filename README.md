@@ -166,6 +166,9 @@ OPTIONS:
 
     -v
             Print more messages
+
+        --verify-digest
+            Verify the raw image digest of DNG input files
 ````
 
 ### analyze subcommand

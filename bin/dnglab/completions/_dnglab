@@ -143,6 +143,7 @@ _arguments "${_arguments_options[@]}" : \
 '--override[Override existing files]' \
 '-r[Process input directory recursive]' \
 '--recursive[Process input directory recursive]' \
+'--verify-digest[Verify the raw image digest of DNG input files]' \
 '-v[Print status for every file]' \
 '-h[Print help (see more with '\''--help'\'')]' \
 '--help[Print help (see more with '\''--help'\'')]' \
