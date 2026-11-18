@@ -12,6 +12,7 @@ use rayon::prelude::*;
 use crate::tags::{DngTag, TiffCommonTag};
 use crate::{
   CFA, RawImage, RawImageData, Software,
+  cfa::CFALayout,
   compressors::{
     deflate,
     jpegxl::{self, LossyTransfer, TileSamples, TileSettings},
@@ -403,13 +404,20 @@ where
         assert!(config.cfa.is_valid());
         assert_eq!(rawimage.cpp, 1);
         let cfa = config.cfa.shift(active_area.p.x, active_area.p.y);
+        // CFARepeatPatternDim is rows, columns
         self
           .ifd_mut()
-          .add_tag(TiffCommonTag::CFARepeatPatternDim, [cfa.width as u16, cfa.height as u16]);
+          .add_tag(TiffCommonTag::CFARepeatPatternDim, [cfa.height as u16, cfa.width as u16]);
         self.ifd_mut().add_tag(TiffCommonTag::CFAPattern, &cfa.flat_pattern()[..]);
         self.ifd_mut().add_tag(TiffCommonTag::PhotometricInt, PhotometricInterpretation::CFA);
         self.ifd_mut().add_tag(DngTag::CFAPlaneColor, &config.colors);
-        self.ifd_mut().add_tag(DngTag::CFALayout, 1_u16); // Square layout
+        // The layout is relative to the ActiveArea, like the pattern. Staggered
+        // layouts can't be described without the DNG 1.1 tag.
+        let layout = config.layout.shift(active_area.p.x, active_area.p.y);
+        if layout != CFALayout::Rectangular {
+          self.writer.update_backward_version(DNG_VERSION_V1_1, "staggered CFALayout")?;
+        }
+        self.ifd_mut().add_tag(DngTag::CFALayout, u16::from(layout));
       }
       RawPhotometricInterpretation::LinearRaw => {
         self.ifd_mut().add_tag(TiffCommonTag::PhotometricInt, PhotometricInterpretation::LinearRaw);

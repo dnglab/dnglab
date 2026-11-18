@@ -9,7 +9,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::Result;
 use crate::camera_profile::{CalibrationSlot, CameraCalibration, CameraProfile, D65_PREFERENCE, GainTableMap, RgbTables};
-use crate::cfa::PlaneColor;
+use crate::cfa::{CFALayout, PlaneColor};
 use crate::dng::opcodes::{Opcode, OpcodeList, OpcodeSelector, OpcodeStage};
 use crate::imgop::blacklevel::{rescale, rescale_in_place};
 use crate::imgop::raw::apply_linearization_table;
@@ -122,6 +122,8 @@ pub struct CFAConfig {
   pub cfa: CFA,
   pub colors: PlaneColor,
   pub sensor: SensorType,
+  /// Layout of the photosites, relative to the top-left sample like `cfa`
+  pub layout: CFALayout,
 }
 
 impl CFAConfig {
@@ -130,6 +132,7 @@ impl CFAConfig {
       cfa: cfa.clone(),
       colors: colors.clone(),
       sensor: SensorType::from_cfa(cfa),
+      layout: CFALayout::Rectangular,
     }
   }
 
@@ -138,6 +141,7 @@ impl CFAConfig {
       cfa: cam.cfa.clone(),
       colors: cam.plane_color.clone(),
       sensor: SensorType::from_cfa(&cam.cfa),
+      layout: CFALayout::Rectangular,
     }
   }
 }

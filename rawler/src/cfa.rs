@@ -200,10 +200,12 @@ impl Default for CFA {
 }
 
 impl CFA {
-  /// CFA of a CFAPattern tag, `None` for an empty pattern, one of an unknown
-  /// size or with unknown colors
+  /// CFA of a CFAPattern tag with the size `dim` (rows, columns) of
+  /// CFARepeatPatternDim, `None` for an empty pattern, one that doesn't match
+  /// the size or with unknown colors. Without `dim`, the size is guessed like
+  /// [`Self::try_new`] does.
   #[doc(hidden)]
-  pub fn new_from_tag(pat: &Value) -> Option<CFA> {
+  pub fn new_from_tag(pat: &Value, dim: Option<(usize, usize)>) -> Option<CFA> {
     let mut patname = String::new();
     for i in 0..pat.count() {
       patname.push(match pat.force_u32(i as usize) {
@@ -219,7 +221,10 @@ impl CFA {
     if patname.is_empty() {
       return None;
     }
-    CFA::try_new(&patname)
+    match dim {
+      Some((rows, cols)) => CFA::try_new_with_size(&patname, cols, rows),
+      None => CFA::try_new(&patname),
+    }
   }
 
   /// Create a new CFA from a string describing it. For simplicity the pattern is specified
@@ -249,6 +254,21 @@ impl CFA {
       144 => (12, 12),
       _ => return None,
     };
+    Self::try_new_with_size(patname, width, height)
+  }
+
+  /// CFA of a pattern like [`Self::new`] with `width` columns and `height` rows
+  ///
+  /// `None` if the pattern doesn't have `width * height` colors, has unknown
+  /// colors, or a size that doesn't divide [`CFA_DIM`]: the pattern is repeated
+  /// to a square of that size.
+  pub fn try_new_with_size(patname: &str, width: usize, height: usize) -> Option<CFA> {
+    if patname.chars().count() != width * height || (width == 0) != (height == 0) {
+      return None;
+    }
+    if width > 0 && (!CFA_DIM.is_multiple_of(width) || !CFA_DIM.is_multiple_of(height)) {
+      return None;
+    }
     let mut pattern = CFAPattern::default();
 
     if width > 0 {
@@ -431,6 +451,76 @@ impl fmt::Debug for CFA {
   }
 }
 
+/// Spatial layout of the CFA photosites, the DNG CFALayout
+///
+/// In staggered layouts, every second (1-based) row or column of the sensor is
+/// offset by half a photosite. The CFA pattern still indexes the stored
+/// samples, only the positions of the photosites differ.
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq, TryFromPrimitive, Serialize, Deserialize)]
+#[repr(u16)]
+pub enum CFALayout {
+  #[default]
+  Rectangular = 1,
+  /// Even columns are offset down by 1/2 row
+  StaggeredA = 2,
+  /// Even columns are offset up by 1/2 row
+  StaggeredB = 3,
+  /// Even rows are offset right by 1/2 column
+  StaggeredC = 4,
+  /// Even rows are offset left by 1/2 column
+  StaggeredD = 5,
+  /// Even rows are offset up by 1/2 row, even columns are offset left by 1/2 column
+  StaggeredE = 6,
+  /// Even rows are offset up by 1/2 row, even columns are offset right by 1/2 column
+  StaggeredF = 7,
+  /// Even rows are offset down by 1/2 row, even columns are offset left by 1/2 column
+  StaggeredG = 8,
+  /// Even rows are offset down by 1/2 row, even columns are offset right by 1/2 column
+  StaggeredH = 9,
+}
+
+impl CFALayout {
+  /// Layout seen from an origin moved right by `x` columns and down by `y` rows
+  ///
+  /// An odd offset turns the even columns or rows into odd ones, which are
+  /// offset in the opposite direction relative to them.
+  pub fn shift(self, x: usize, y: usize) -> Self {
+    use CFALayout::*;
+    let layout = if x % 2 == 1 {
+      match self {
+        StaggeredA => StaggeredB,
+        StaggeredB => StaggeredA,
+        StaggeredE => StaggeredF,
+        StaggeredF => StaggeredE,
+        StaggeredG => StaggeredH,
+        StaggeredH => StaggeredG,
+        layout => layout,
+      }
+    } else {
+      self
+    };
+    if y % 2 == 1 {
+      match layout {
+        StaggeredC => StaggeredD,
+        StaggeredD => StaggeredC,
+        StaggeredE => StaggeredG,
+        StaggeredG => StaggeredE,
+        StaggeredF => StaggeredH,
+        StaggeredH => StaggeredF,
+        layout => layout,
+      }
+    } else {
+      layout
+    }
+  }
+}
+
+impl From<CFALayout> for u16 {
+  fn from(layout: CFALayout) -> Self {
+    layout as u16
+  }
+}
+
 #[derive(Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub struct PlaneColor {
   pub colors: Vec<CFAColor>,
@@ -513,10 +603,10 @@ mod tests {
     assert!(CFA::try_new("RGB").is_none());
     assert!(CFA::try_new("RGXB").is_none());
     assert!(CFA::try_new(&"RGB".repeat(12)).is_some());
-    assert!(CFA::new_from_tag(&Value::Byte(vec![0, 1, 1, 2])).is_some());
-    assert!(CFA::new_from_tag(&Value::Byte(vec![0, 1, 2])).is_none());
-    assert!(CFA::new_from_tag(&Value::Byte(vec![0, 1, 9, 2])).is_none());
-    assert!(CFA::new_from_tag(&Value::Byte(Vec::new())).is_none());
+    assert!(CFA::new_from_tag(&Value::Byte(vec![0, 1, 1, 2]), None).is_some());
+    assert!(CFA::new_from_tag(&Value::Byte(vec![0, 1, 2]), None).is_none());
+    assert!(CFA::new_from_tag(&Value::Byte(vec![0, 1, 9, 2]), None).is_none());
+    assert!(CFA::new_from_tag(&Value::Byte(Vec::new()), None).is_none());
   }
 
   #[test]
