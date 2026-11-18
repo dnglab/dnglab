@@ -81,10 +81,13 @@ impl FixVignetteRadial {
     let (c_x, c_y) = (self.c_x * w, self.c_y * h);
     let scale_v = 1.0 / image.aspect_ratio;
     let radius = (c_y.max(h - c_y) * scale_v).hypot(c_x.max(w - c_x));
+    let range = image.float_range;
     match (&mut image.data, stage) {
-      // Logical range of floating point data is 0.0 to 1.0
+      // Logical range of floating point data is 0.0 to `float_range`
       (OpcodeData::Float(view), _) => {
-        self.apply_gain(view.region_mut(bounds), (c_x, c_y), scale_v, radius, &|v: f32, gain| (v * gain).clamp(0.0, 1.0));
+        self.apply_gain(view.region_mut(bounds), (c_x, c_y), scale_v, radius, &|v: f32, gain| {
+          (v * gain).clamp(0.0, range)
+        });
       }
       // Logical range of 16 bit data in OpcodeList1 is 0 to 65535
       (OpcodeData::Integer(view), OpcodeStage::List1) => {

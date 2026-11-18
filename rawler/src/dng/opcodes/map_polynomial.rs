@@ -58,6 +58,15 @@ impl MapPolynomial {
     Ok(())
   }
 
+  /// Convert the coefficients for stored values multiplied by `scale`: the
+  /// polynomial maps the stored values, so `g(x) = scale * f(x / scale)`.
+  pub(super) fn rescale(&mut self, scale: f64) {
+    for (power, coeff) in self.coeffs.iter_mut().enumerate() {
+      // Keep the values finite, as required by the parser
+      *coeff = (*coeff * scale.powi(1 - power as i32)).clamp(f64::MIN, f64::MAX);
+    }
+  }
+
   /// Evaluate the polynomial (Horner's method)
   pub fn evaluate(&self, x: f64) -> f64 {
     self.coeffs.iter().rev().fold(0.0, |acc, coeff| acc * x + coeff)
@@ -67,10 +76,12 @@ impl MapPolynomial {
     let Some(rect) = self.area.buffer_rect(image, stage) else {
       return Ok(());
     };
+    let range = image.float_range as f64;
     match (&mut image.data, stage) {
-      // Logical range of floating point data is 0.0 to 1.0
+      // Logical range of floating point data is 0.0 to `float_range`, the
+      // polynomial maps the stored values
       (OpcodeData::Float(view), _) => {
-        map_area(view.region_mut(rect), &self.area, &|x: f32| self.evaluate(x as f64).clamp(0.0, 1.0) as f32);
+        map_area(view.region_mut(rect), &self.area, &|x: f32| self.evaluate(x as f64).clamp(0.0, range) as f32);
       }
       // Logical range of 16 bit data in OpcodeList1 is 0 to 65535, the polynomial
       // maps 16 bit sample values.

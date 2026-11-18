@@ -52,6 +52,25 @@ impl MapTable {
     }
   }
 
+  /// Convert the table for stored values multiplied by `scale`, with the
+  /// logical range `old_range` before and `new_range` after
+  ///
+  /// The table maps values normalized to 16 bits. Unless the normalized values
+  /// stay the same, it is resampled to a table for all 16 bit values.
+  pub(super) fn rescale(&mut self, scale: f64, old_range: f64, new_range: f64) {
+    // Factor from the old normalized values to the new ones
+    let factor = scale * old_range / new_range;
+    if (factor - 1.0).abs() < 1e-9 {
+      return;
+    }
+    self.table = (0..MAP_TABLE_MAX_ENTRIES)
+      .map(|index| {
+        let old_index = (index as f64 / factor).round().clamp(0.0, 65535.0) as usize;
+        (self.lookup(old_index) as f64 * factor).round().clamp(0.0, 65535.0) as u16
+      })
+      .collect();
+  }
+
   /// Table entry, the last entry is replicated for indices beyond the table
   fn lookup(&self, index: usize) -> u16 {
     self.table[index.min(self.table.len() - 1)]
@@ -64,11 +83,13 @@ impl MapTable {
     let Some(rect) = self.area.buffer_rect(image, stage) else {
       return Ok(());
     };
+    let range = image.float_range;
     match (&mut image.data, stage) {
-      // Floating point data is mapped through the 16 bit table
+      // Floating point data is mapped through the 16 bit table, normalized
+      // by its logical range
       (OpcodeData::Float(view), _) => {
         map_area(view.region_mut(rect), &self.area, &|x: f32| {
-          self.lookup((x.clamp(0.0, 1.0) * 65535.0).round() as usize) as f32 / 65535.0
+          self.lookup(((x / range).clamp(0.0, 1.0) * 65535.0).round() as usize) as f32 / 65535.0 * range
         });
       }
       (OpcodeData::Integer(view), OpcodeStage::List1) => {

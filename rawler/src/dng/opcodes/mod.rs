@@ -84,6 +84,9 @@ pub struct OpcodeImage<'a> {
   /// Floating point data is mapped from 16 bit data: deltas of opcodes are in
   /// units of 1/65535
   pub scaled_from_integer: bool,
+  /// Logical maximum of floating point data: 1.0, or 2^32-1 for integer
+  /// samples with more than 16 bits in OpcodeList1, which are stored as floats
+  pub float_range: f32,
   /// Pixel aspect ratio (width / height), for warps
   pub aspect_ratio: f64,
   /// Area that TrimBounds in OpcodeList1 cropped the image data to, in the
@@ -486,6 +489,26 @@ impl OpcodeList {
     self.0.insert(position.min(self.0.len()), opcode);
   }
 
+  /// Convert the values of OpcodeList1 for stored values multiplied by `scale`,
+  /// with the logical range `old_range` before and `new_range` after (65535
+  /// for 16 bit integers, 1.0 for floats)
+  ///
+  /// The values of MapPolynomial, the deltas and the constant of
+  /// FixBadPixelsConstant are in units of the stored values, MapTable maps
+  /// values normalized to 16 bits. The other opcodes multiply or move the
+  /// values and stay the same.
+  pub fn rescale_stored_values(&mut self, scale: f64, old_range: f64, new_range: f64) {
+    for opcode in &mut self.0 {
+      match opcode {
+        Opcode::MapPolynomial(op) => op.rescale(scale),
+        Opcode::MapTable(op) => op.rescale(scale, old_range, new_range),
+        Opcode::FixBadPixelsConstant(op) => op.constant = (op.constant as f64 * scale).round().clamp(0.0, u32::MAX as f64) as u32,
+        _ => {}
+      }
+    }
+    self.scale_deltas(scale as f32);
+  }
+
   /// Multiply the values of DeltaPerRow and DeltaPerColumn by `factor`. Their
   /// deltas are in pixel units of the image data, so they change with its
   /// sample format.
@@ -513,6 +536,7 @@ impl OpcodeList {
       crop_area: rawimage.crop_area,
       black_areas: rawimage.blackareas.clone(),
       scaled_from_integer: rawimage.scaled_from_integer,
+      float_range: if rawimage.long_integer { u32::MAX as f32 } else { 1.0 },
       aspect_ratio: rawimage.camera.default_scale.pixel_aspect_ratio(),
       raw_trim: None,
     };
@@ -619,6 +643,7 @@ mod tests {
       crop_area: None,
       black_areas: Vec::new(),
       scaled_from_integer: false,
+      float_range: 1.0,
       aspect_ratio: 1.0,
       raw_trim: None,
     }

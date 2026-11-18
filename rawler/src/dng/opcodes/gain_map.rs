@@ -105,10 +105,11 @@ impl GainMap {
       return Ok(());
     };
     let bounds = stage_bounds(image, stage);
+    let range = image.float_range;
     match (&mut image.data, stage) {
-      // Logical range of floating point data is 0.0 to 1.0
+      // Logical range of floating point data is 0.0 to `float_range`
       (OpcodeData::Float(view), _) => {
-        self.apply_gain(view.region_mut(rect), bounds, &|x: f32, gain| (x * gain).clamp(0.0, 1.0));
+        self.apply_gain(view.region_mut(rect), bounds, &|x: f32, gain| (x * gain).clamp(0.0, range));
       }
       // Logical range of 16 bit data in OpcodeList1 is 0 to 65535
       (OpcodeData::Integer(view), OpcodeStage::List1) => {
