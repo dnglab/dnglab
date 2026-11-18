@@ -563,6 +563,19 @@ pub(crate) fn ok_cfa_image_with_black_white(camera: Camera, cpp: usize, wb_coeff
 }
    */
 
+/// The root, EXIF or GPS IFD of a TIFF structure, `None` for other well-known IFDs
+pub(crate) fn tiff_ifd(root: &IFD, wk_ifd: WellKnownIFD) -> Option<Rc<IFD>> {
+  let sub_ifd = |tag: ExifTag| root.get_sub_ifd_all(tag).and_then(|list| list.first());
+  match wk_ifd {
+    WellKnownIFD::Root => Some(root),
+    WellKnownIFD::Exif => sub_ifd(ExifTag::ExifOffset),
+    WellKnownIFD::ExifGps => sub_ifd(ExifTag::GPSInfo),
+    _ => None,
+  }
+  .cloned()
+  .map(Rc::new)
+}
+
 pub(crate) fn dynamic_image_from_jpeg_interchange_format(ifd: &IFD, rawsource: &RawSource) -> Result<DynamicImage> {
   let offset = fetch_tiff_tag!(ifd, ExifTag::JPEGInterchangeFormat).force_usize(0) as u64;
   let size = fetch_tiff_tag!(ifd, ExifTag::JPEGInterchangeFormatLength).force_usize(0) as u64;

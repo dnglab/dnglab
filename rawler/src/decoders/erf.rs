@@ -31,6 +31,7 @@ use super::WellKnownIFD;
 use super::image_bytes;
 use super::makernotes;
 use super::tag_data;
+use super::tiff_ifd;
 use std::rc::Rc;
 
 #[derive(Debug, Clone)]
@@ -66,10 +67,7 @@ impl<'a> ErfDecoder<'a> {
 impl<'a> Decoder for ErfDecoder<'a> {
   fn raw_image(&self, file: &RawSource, _params: &RawDecodeParams, dummy: bool) -> Result<RawImage> {
     let camera = self.camera.supported()?;
-    let raw = self
-      .tiff
-      .find_first_ifd_with_tag(TiffCommonTag::CFAPattern)
-      .ok_or_else(|| decoder_error!("Failed to find a IFD with CFAPattern tag"))?;
+    let raw = self.get_raw_ifd()?;
     let width = fetch_tiff_tag!(raw, TiffCommonTag::ImageWidth).force_usize(0);
     let height = fetch_tiff_tag!(raw, TiffCommonTag::ImageLength).force_usize(0);
     let offset = fetch_tiff_tag!(raw, TiffCommonTag::StripOffsets).force_usize(0);
@@ -103,6 +101,8 @@ impl<'a> Decoder for ErfDecoder<'a> {
 
   fn ifd(&self, _file: &RawSource, _params: &RawDecodeParams, wk_ifd: WellKnownIFD) -> Result<Option<Rc<IFD>>> {
     Ok(match wk_ifd {
+      WellKnownIFD::Root | WellKnownIFD::Exif | WellKnownIFD::ExifGps => tiff_ifd(self.tiff.root_ifd(), wk_ifd),
+      WellKnownIFD::Raw => Some(Rc::new(self.get_raw_ifd()?.clone())),
       WellKnownIFD::Makernote => Some(Rc::new(self.makernote.clone())),
       WellKnownIFD::VirtualMakernotes => makernotes::from_exif(
         self.format_hint(),
@@ -120,6 +120,14 @@ impl<'a> Decoder for ErfDecoder<'a> {
 }
 
 impl<'a> ErfDecoder<'a> {
+  /// The IFD with the raw image data
+  fn get_raw_ifd(&self) -> Result<&IFD> {
+    self
+      .tiff
+      .find_first_ifd_with_tag(TiffCommonTag::CFAPattern)
+      .ok_or_else(|| decoder_error!("Failed to find a IFD with CFAPattern tag"))
+  }
+
   fn get_wb(&self) -> Result<[f32; 4]> {
     let levels = fetch_tiff_tag!(self.makernote, TiffCommonTag::EpsonWB);
     if levels.count() != 256 {

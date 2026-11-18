@@ -21,6 +21,7 @@ use super::WellKnownIFD;
 use super::image_bytes;
 use super::makernotes;
 use super::ok_cfa_image;
+use super::tiff_ifd;
 use crate::formats::tiff::IFD;
 use crate::tags::ExifTag;
 use std::rc::Rc;
@@ -39,15 +40,20 @@ impl<'a> DcsDecoder<'a> {
 
     Ok(DcsDecoder { camera, tiff, rawloader })
   }
+
+  /// The IFD with the raw image data
+  fn get_raw_ifd(&self) -> Result<&IFD> {
+    self
+      .tiff
+      .find_ifd_with_new_subfile_type(0)
+      .ok_or_else(|| decoder_error!("Failed to find IFD with subfile type 0"))
+  }
 }
 
 impl<'a> Decoder for DcsDecoder<'a> {
   fn raw_image(&self, file: &RawSource, _params: &RawDecodeParams, dummy: bool) -> Result<RawImage> {
     let camera = self.camera.supported()?;
-    let raw = self
-      .tiff
-      .find_ifd_with_new_subfile_type(0)
-      .ok_or_else(|| decoder_error!("Failed to find IFD with subfile type 0"))?;
+    let raw = self.get_raw_ifd()?;
     let width = fetch_tiff_tag!(raw, TiffCommonTag::ImageWidth).force_usize(0);
     let height = fetch_tiff_tag!(raw, TiffCommonTag::ImageLength).force_usize(0);
     let offset = fetch_tiff_tag!(raw, TiffCommonTag::StripOffsets).force_usize(0);
@@ -89,6 +95,8 @@ impl<'a> Decoder for DcsDecoder<'a> {
 
   fn ifd(&self, _file: &RawSource, _params: &RawDecodeParams, wk_ifd: WellKnownIFD) -> Result<Option<Rc<IFD>>> {
     Ok(match wk_ifd {
+      WellKnownIFD::Root | WellKnownIFD::Exif | WellKnownIFD::ExifGps => tiff_ifd(self.tiff.root_ifd(), wk_ifd),
+      WellKnownIFD::Raw => Some(Rc::new(self.get_raw_ifd()?.clone())),
       WellKnownIFD::VirtualMakernotes => makernotes::from_exif(self.format_hint(), self.tiff.find_first_ifd_with_tag(ExifTag::MakerNotes), None).map(Rc::new),
       _ => None,
     })

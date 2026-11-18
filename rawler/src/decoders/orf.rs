@@ -45,6 +45,7 @@ use super::RawMetadata;
 use super::WellKnownIFD;
 use super::image_bytes;
 use super::makernotes;
+use super::tiff_ifd;
 use std::rc::Rc;
 
 const MFT_MOUNT: &str = "MFT-mount";
@@ -241,10 +242,7 @@ impl<'a> OrfDecoder<'a> {
 impl<'a> Decoder for OrfDecoder<'a> {
   fn raw_image(&self, file: &RawSource, _params: &RawDecodeParams, dummy: bool) -> Result<RawImage> {
     let base_camera = self.camera.supported()?;
-    let raw = self
-      .tiff
-      .find_first_ifd_with_tag(TiffCommonTag::StripOffsets)
-      .ok_or_else(|| decoder_error!("Failed to find a IFD with StripOffsets tag"))?;
+    let raw = self.get_raw_ifd()?;
     let width = fetch_tiff_tag!(raw, TiffCommonTag::ImageWidth).force_usize(0);
     let height = fetch_tiff_tag!(raw, TiffCommonTag::ImageLength).force_usize(0);
     let offset = fetch_tiff_tag!(raw, TiffCommonTag::StripOffsets).force_usize(0);
@@ -386,6 +384,8 @@ impl<'a> Decoder for OrfDecoder<'a> {
 
   fn ifd(&self, _file: &RawSource, _params: &RawDecodeParams, wk_ifd: WellKnownIFD) -> Result<Option<Rc<IFD>>> {
     Ok(match wk_ifd {
+      WellKnownIFD::Root | WellKnownIFD::Exif | WellKnownIFD::ExifGps => tiff_ifd(self.tiff.root_ifd(), wk_ifd),
+      WellKnownIFD::Raw => Some(Rc::new(self.get_raw_ifd()?.clone())),
       WellKnownIFD::Makernote => Some(Rc::new(self.full_makernote())),
       WellKnownIFD::VirtualMakernotes => makernotes::from_exif(
         self.format_hint(),
@@ -403,6 +403,14 @@ impl<'a> Decoder for OrfDecoder<'a> {
 }
 
 impl<'a> OrfDecoder<'a> {
+  /// The IFD with the raw image data
+  fn get_raw_ifd(&self) -> Result<&IFD> {
+    self
+      .tiff
+      .find_first_ifd_with_tag(TiffCommonTag::StripOffsets)
+      .ok_or_else(|| decoder_error!("Failed to find a IFD with StripOffsets tag"))
+  }
+
   /* This is probably the slowest decoder of them all.
    * I cannot see any way to effectively speed up the prediction
    * phase, which is by far the slowest part of this algorithm.

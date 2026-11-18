@@ -476,6 +476,10 @@ impl<'a> Decoder for Cr3Decoder<'a> {
 
   fn ifd(&self, file: &RawSource, params: &RawDecodeParams, wk_ifd: WellKnownIFD) -> Result<Option<Rc<IFD>>> {
     Ok(match wk_ifd {
+      // The basic EXIF tags, the EXIF tags and the GPS tags are in separate CMT boxes
+      WellKnownIFD::Root => Some(Rc::new(self.cmt1.root_ifd().clone())),
+      WellKnownIFD::Exif => Some(Rc::new(self.cmt2.root_ifd().clone())),
+      WellKnownIFD::ExifGps => Some(Rc::new(self.cmt4.root_ifd().clone())),
       WellKnownIFD::Makernote => Some(Rc::new(self.cmt3.root_ifd().clone())),
       WellKnownIFD::VirtualMakernotes => {
         let mut container = VirtualMakernotes::new(self.format_hint());
