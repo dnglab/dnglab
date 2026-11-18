@@ -1067,13 +1067,18 @@ impl RawLoader {
         }
       }
 
-      // For each combination of alias and mode (including the base ones) create Camera
+      // For each combination of alias and mode (including the base ones) create Camera.
+      // All of them share the UniqueCameraModel of the base camera, the clean
+      // name of an alias is its LocalizedCameraModel.
+      let base_clean_model = cam.clean_model.clone();
       for (model, clean_model) in camnames {
         for ct in cammodes.clone() {
           let mut mcam = cam.clone();
           mcam.update_from_toml(ct);
           mcam.model = model.clone();
           mcam.clean_model = clean_model.clone();
+          mcam.unique_camera_model = Some(format!("{} {}", mcam.clean_make, base_clean_model));
+          mcam.localized_camera_model = (clean_model != base_clean_model).then(|| format!("{} {}", mcam.clean_make, clean_model));
           cams.push(mcam);
         }
       }

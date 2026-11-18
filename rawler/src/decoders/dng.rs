@@ -157,6 +157,8 @@ impl<'a> Decoder for DngDecoder<'a> {
     {
       cam.clean_make = known_cam.clean_make;
       cam.clean_model = known_cam.clean_model;
+      cam.unique_camera_model = known_cam.unique_camera_model;
+      cam.localized_camera_model = known_cam.localized_camera_model;
       cam.hints.extend_from_slice(&known_cam.hints);
       cam.params.extend(known_cam.params.iter().map(|(k, v)| (k.clone(), v.clone())));
     } else {
@@ -620,6 +622,9 @@ impl<'a> DngDecoder<'a> {
     Ok(Camera {
       clean_make: make.clone(),
       clean_model: model.clone(),
+      // Kept for cameras that are not in the catalog
+      unique_camera_model: read_string(self.tiff.root_ifd(), DngTag::UniqueCameraModel),
+      localized_camera_model: read_string(self.tiff.root_ifd(), DngTag::LocalizedCameraModel),
       make,
       model,
       mode,

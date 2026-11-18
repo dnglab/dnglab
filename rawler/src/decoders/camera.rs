@@ -22,6 +22,10 @@ pub struct Camera {
   pub mode: String,
   pub clean_make: String,
   pub clean_model: String,
+  /// DNG UniqueCameraModel, `None` to build it from the clean make and model
+  pub unique_camera_model: Option<String>,
+  /// DNG LocalizedCameraModel, the market name of an alias of the camera
+  pub localized_camera_model: Option<String>,
   pub remark: Option<String>,
   pub filesize: usize,
   pub raw_width: usize,
@@ -272,6 +276,8 @@ impl Camera {
       mode: "".to_string(),
       clean_make: "".to_string(),
       clean_model: "".to_string(),
+      unique_camera_model: None,
+      localized_camera_model: None,
       remark: None,
       filesize: 0,
       raw_width: 0,
