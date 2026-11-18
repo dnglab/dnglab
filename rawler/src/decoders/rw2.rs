@@ -42,7 +42,10 @@ use super::FormatHint;
 use super::Orientation;
 use super::RawDecodeParams;
 use super::RawMetadata;
+use super::WellKnownIFD;
 use super::image_bytes;
+use super::makernotes::{MakernoteSection, VirtualMakernotes};
+use std::rc::Rc;
 
 pub(crate) mod v4decompressor;
 pub(crate) mod v5decompressor;
@@ -240,6 +243,20 @@ impl<'a> Decoder for Rw2Decoder<'a> {
     }
     let mdata = RawMetadata::new_with_lens(self.camera.metadata(), exif, self.get_lens_description()?.cloned());
     Ok(mdata)
+  }
+
+  fn ifd(&self, _file: &RawSource, _params: &RawDecodeParams, wk_ifd: WellKnownIFD) -> Result<Option<Rc<IFD>>> {
+    Ok(match wk_ifd {
+      WellKnownIFD::VirtualMakernotes => {
+        let mut container = VirtualMakernotes::new(self.format_hint());
+        container.add_exif_makernote(self.tiff.find_first_ifd_with_tag(ExifTag::MakerNotes), None);
+        if let Some(data) = self.tiff.get_entry(PanasonicTag::CameraIFD).and_then(|entry| entry.value.get_data().ok()) {
+          container.add_blob(MakernoteSection::PanasonicCameraIFD, data.to_vec(), self.camera_ifd.clone());
+        }
+        container.build().map(Rc::new)
+      }
+      _ => None,
+    })
   }
 
   fn format_hint(&self) -> FormatHint {

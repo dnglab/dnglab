@@ -57,8 +57,11 @@ use super::FormatHint;
 use super::Orientation;
 use super::RawDecodeParams;
 use super::RawMetadata;
+use super::WellKnownIFD;
 use super::image_bytes;
+use super::makernotes;
 use super::tag_data;
+use std::rc::Rc;
 
 mod decrypt;
 pub mod lensdata;
@@ -408,6 +411,19 @@ impl<'a> Decoder for NefDecoder<'a> {
       // No matching IFDs found, use root IFD (possibly bad resolution)
       Ok(Some(dynamic_image_from_ifd(self.tiff.root_ifd(), file)?))
     }
+  }
+
+  fn ifd(&self, _file: &RawSource, _params: &RawDecodeParams, wk_ifd: WellKnownIFD) -> Result<Option<Rc<IFD>>> {
+    Ok(match wk_ifd {
+      WellKnownIFD::Makernote => Some(Rc::new(self.makernote.clone())),
+      WellKnownIFD::VirtualMakernotes => makernotes::from_exif(
+        self.format_hint(),
+        self.tiff.find_first_ifd_with_tag(ExifTag::MakerNotes),
+        Some(&self.makernote),
+      )
+      .map(Rc::new),
+      _ => None,
+    })
   }
 
   fn format_hint(&self) -> FormatHint {

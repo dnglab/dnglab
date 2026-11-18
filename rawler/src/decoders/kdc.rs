@@ -26,9 +26,12 @@ use super::Orientation;
 use super::RawDecodeParams;
 use super::RawMetadata;
 use super::RawPhotometricInterpretation;
+use super::WellKnownIFD;
 use super::WhiteLevel;
 use super::image_bytes;
+use super::makernotes::{MakernoteSection, VirtualMakernotes};
 use super::ok_cfa_image;
+use std::rc::Rc;
 
 #[derive(Debug, Clone)]
 pub struct KdcDecoder<'a> {
@@ -161,6 +164,21 @@ impl<'a> Decoder for KdcDecoder<'a> {
     let exif = Exif::new(self.tiff.root_ifd())?;
     let mdata = RawMetadata::new(self.camera.metadata(), exif);
     Ok(mdata)
+  }
+
+  fn ifd(&self, _file: &RawSource, _params: &RawDecodeParams, wk_ifd: WellKnownIFD) -> Result<Option<Rc<IFD>>> {
+    Ok(match wk_ifd {
+      WellKnownIFD::Makernote => self.kdc_ifd.clone().map(Rc::new),
+      WellKnownIFD::VirtualMakernotes => {
+        let mut container = VirtualMakernotes::new(self.format_hint());
+        container.add_exif_makernote(self.tiff.find_first_ifd_with_tag(ExifTag::MakerNotes), None);
+        if let (Some(entry), Some(kdc_ifd)) = (self.tiff.root_ifd().get_entry(TiffCommonTag::KdcIFD), &self.kdc_ifd) {
+          container.add_pointer_ifd(MakernoteSection::KdcIFD, entry.force_u32(0), kdc_ifd.clone());
+        }
+        container.build().map(Rc::new)
+      }
+      _ => None,
+    })
   }
 
   fn format_hint(&self) -> FormatHint {

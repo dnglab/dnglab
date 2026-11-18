@@ -1,6 +1,8 @@
 use crate::RawImage;
+use crate::bits::Endian;
 use crate::camera_profile::CameraProfile;
 use crate::cfa::*;
+use crate::decoders::makernotes::VirtualMakernotes;
 use crate::decoders::*;
 use crate::dng::camera_profile_tags::{
   read_camera_calibration, read_camera_profile, read_extra_camera_profiles, read_gain_table_map_v1, read_string, srationals,
@@ -14,6 +16,7 @@ use crate::formats::tiff::ExtractFromIFD;
 use crate::formats::tiff::Rational;
 use crate::formats::tiff::SampleFormat;
 use crate::formats::tiff::Value;
+use crate::formats::tiff::ifd::OffsetMode;
 use crate::imgop::Dim2;
 use crate::imgop::Point;
 use crate::imgop::Rect;
@@ -62,6 +65,47 @@ impl<'a> DngDecoder<'a> {
       .get_entry(tag)
       .filter(|entry| entry.count() == 4)
       .map(|entry| DngVersionNumber([0, 1, 2, 3].map(|i| entry.value.force_u8(i))))
+  }
+
+  /// EXIF IFD of the file
+  fn exif_ifd(&self) -> Option<&IFD> {
+    self.tiff.root_ifd().get_sub_ifd_all(ExifTag::ExifOffset).and_then(|list| list.first())
+  }
+
+  /// Makernote of the EXIF IFD, parsed with absolute offsets
+  fn exif_makernote(&self, file: &RawSource) -> Option<IFD> {
+    let exif = self.exif_ifd()?;
+    match exif.parse_makernote(&mut file.reader(), OffsetMode::Absolute, &[]) {
+      Ok(makernote) => makernote,
+      Err(err) => {
+        log::warn!("Failed to parse the EXIF makernote of the DNG: {}", err);
+        None
+      }
+    }
+  }
+
+  /// Makernote from the `MakN` record of an `Adobe` DNGPrivateData block:
+  /// byte order of the original file, offset of the makernote in it and the
+  /// makernote bytes.
+  fn private_makernote(&self) -> Option<(Endian, u32, &[u8])> {
+    let data = self.tiff.root_ifd().get_entry(DngTag::DNGPrivateData)?.value.get_data().ok()?;
+    // Records follow the signature, each with a type, a big-endian size and the payload
+    let mut records = data.strip_prefix(b"Adobe\0")?;
+    while let (Some(typ), Some(size)) = (records.get(0..4), records.get(4..8)) {
+      let size = u32::from_be_bytes(size.try_into().ok()?) as usize;
+      let payload = records.get(8..8usize.checked_add(size)?)?;
+      if typ == b"MakN" {
+        let endian = match payload.get(0..2)? {
+          b"II" => Endian::Little,
+          b"MM" => Endian::Big,
+          _ => return None,
+        };
+        let offset = u32::from_be_bytes(payload.get(2..6)?.try_into().ok()?);
+        return Some((endian, offset, &payload[6..]));
+      }
+      records = &records[8 + size..];
+    }
+    None
   }
 }
 
@@ -270,7 +314,7 @@ impl<'a> Decoder for DngDecoder<'a> {
     Ok(None)
   }
 
-  fn ifd(&self, wk_ifd: WellKnownIFD) -> Result<Option<Rc<IFD>>> {
+  fn ifd(&self, file: &RawSource, _params: &RawDecodeParams, wk_ifd: WellKnownIFD) -> Result<Option<Rc<IFD>>> {
     Ok(match wk_ifd {
       WellKnownIFD::Root => Some(Rc::new(self.tiff.root_ifd().clone())),
       WellKnownIFD::Raw => Some(Rc::new(self.get_raw_ifd()?.clone())),
@@ -323,6 +367,17 @@ impl<'a> Decoder for DngDecoder<'a> {
         IFD::copy_tag(&mut ifd, self.tiff.root_ifd(), DngTag::DepthUnits);
         IFD::copy_tag(&mut ifd, self.tiff.root_ifd(), DngTag::DepthMeasureType);
         Some(Rc::new(ifd))
+      }
+      WellKnownIFD::Makernote => self.exif_makernote(file).map(Rc::new),
+      WellKnownIFD::VirtualMakernotes => {
+        let mut container = VirtualMakernotes::new(self.format_hint());
+        if self.exif_ifd().is_some_and(|exif| exif.has_entry(ExifTag::MakerNotes)) {
+          container.add_exif_makernote(self.exif_ifd(), self.exif_makernote(file).as_ref());
+        } else if let Some((endian, offset, makernote)) = self.private_makernote() {
+          // The offsets in the makernote refer to the original file, it is not parsed
+          container.add_makernote(endian, Some(offset), makernote.to_vec(), None);
+        }
+        container.build().map(Rc::new)
       }
       _ => return Ok(None),
     })
@@ -1093,7 +1148,10 @@ mod tests {
     let params = ConvertParams::default().with_preview(false).with_thumbnail(false);
     let mut output = Cursor::new(Vec::new());
     convert_raw_source(&RawSource::new_from_slice(&source), &mut output, "synthetic.dng", &params)?;
-    let root = dng_decoder(&output.into_inner())?.ifd(WellKnownIFD::Root)?.ok_or("root IFD not found")?;
+    let output = output.into_inner();
+    let root = dng_decoder(&output)?
+      .ifd(&RawSource::new_from_slice(&output), &RawDecodeParams::default(), WellKnownIFD::Root)?
+      .ok_or("root IFD not found")?;
     let stored = root.get_entry(DngTag::BaselineExposure).map(|entry| entry.value.clone());
     assert_eq!(stored, Some(Value::SRational(vec![exposure])));
     Ok(())
@@ -1874,7 +1932,11 @@ mod tests {
   fn raw_ifd(data: &[u8]) -> TestResult<std::rc::Rc<crate::formats::tiff::IFD>> {
     use crate::decoders::{Decoder, WellKnownIFD};
 
-    Ok(dng_decoder(data)?.ifd(WellKnownIFD::Raw)?.ok_or("raw IFD not found")?)
+    Ok(
+      dng_decoder(data)?
+        .ifd(&RawSource::new_from_slice(data), &RawDecodeParams::default(), WellKnownIFD::Raw)?
+        .ok_or("raw IFD not found")?,
+    )
   }
 
   /// Synthetic image with an ActiveArea at an odd offset, a 2x2 pattern of
@@ -1983,7 +2045,9 @@ mod tests {
 
     let data = dng_with_opcode_lists()?;
     let raw = raw_ifd(&data)?;
-    let tags = dng_decoder(&data)?.ifd(WellKnownIFD::VirtualDngRawTags)?.ok_or("no virtual raw tags")?;
+    let tags = dng_decoder(&data)?
+      .ifd(&RawSource::new_from_slice(&data), &RawDecodeParams::default(), WellKnownIFD::VirtualDngRawTags)?
+      .ok_or("no virtual raw tags")?;
     for tag in [DngTag::OpcodeList1, DngTag::OpcodeList2] {
       let stored = raw.get_entry(tag).map(|entry| &entry.value);
       assert!(stored.is_some(), "{:?} is not stored", tag);

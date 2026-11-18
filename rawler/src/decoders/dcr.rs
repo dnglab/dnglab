@@ -27,8 +27,12 @@ use super::FormatHint;
 use super::Orientation;
 use super::RawDecodeParams;
 use super::RawMetadata;
+use super::WellKnownIFD;
 use super::image_bytes;
+use super::makernotes::{MakernoteSection, VirtualMakernotes};
 use super::ok_cfa_image;
+use crate::tags::ExifTag;
+use std::rc::Rc;
 
 #[derive(Debug, Clone)]
 pub struct DcrDecoder<'a> {
@@ -105,6 +109,21 @@ impl<'a> Decoder for DcrDecoder<'a> {
     let exif = Exif::new(self.tiff.root_ifd())?;
     let mdata = RawMetadata::new(self.camera.metadata(), exif);
     Ok(mdata)
+  }
+
+  fn ifd(&self, _file: &RawSource, _params: &RawDecodeParams, wk_ifd: WellKnownIFD) -> Result<Option<Rc<IFD>>> {
+    Ok(match wk_ifd {
+      WellKnownIFD::Makernote => Some(Rc::new(self.makernote.clone())),
+      WellKnownIFD::VirtualMakernotes => {
+        let mut container = VirtualMakernotes::new(self.format_hint());
+        container.add_exif_makernote(self.tiff.find_first_ifd_with_tag(ExifTag::MakerNotes), None);
+        if let Some(entry) = self.tiff.get_entry(TiffCommonTag::KodakIFD) {
+          container.add_pointer_ifd(MakernoteSection::KodakIFD, entry.force_u32(0), self.makernote.clone());
+        }
+        container.build().map(Rc::new)
+      }
+      _ => None,
+    })
   }
 
   fn format_hint(&self) -> FormatHint {
