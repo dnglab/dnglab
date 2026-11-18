@@ -748,8 +748,23 @@ impl RawImage {
   }
 
   /// DNG UniqueCameraModel of the camera, also used for DCP files
+  ///
+  /// It is the same for all aliases of a camera in the catalog. Cameras
+  /// without one use the clean make and model.
   pub fn unique_camera_model(&self) -> String {
-    format!("{} {}", self.clean_make, self.clean_model)
+    match &self.camera.unique_camera_model {
+      Some(model) => model.clone(),
+      None => format!("{} {}", self.clean_make, self.clean_model),
+    }
+  }
+
+  /// DNG LocalizedCameraModel of the camera, if it differs from [`Self::unique_camera_model`]
+  pub fn localized_camera_model(&self) -> Option<&str> {
+    self
+      .camera
+      .localized_camera_model
+      .as_deref()
+      .filter(|model| *model != self.unique_camera_model())
   }
 
   /// Replace the primary camera profile by `profile`, or add it if the image has no profile

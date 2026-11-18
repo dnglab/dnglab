@@ -761,6 +761,9 @@ where
     self.root_ifd.add_tag(TiffCommonTag::Make, rawimage.clean_make.as_str());
     self.root_ifd.add_tag(TiffCommonTag::Model, rawimage.clean_model.as_str());
     self.root_ifd.add_tag(DngTag::UniqueCameraModel, rawimage.unique_camera_model().as_str());
+    if let Some(model) = rawimage.localized_camera_model() {
+      write_string(&mut self.root_ifd, DngTag::LocalizedCameraModel, model);
+    }
     if let Some(exposure) = rawimage.baseline_exposure {
       self.root_ifd.add_tag(DngTag::BaselineExposure, exposure);
     }
