@@ -31,9 +31,8 @@ use crate::decompressors::Decompressor;
 use crate::decompressors::decompress_lines_fn;
 use crate::decompressors::decompress_strips_fn;
 use crate::decompressors::deflate::{DeflateDecompressor, DeflateIntDecompressor};
-use crate::decompressors::jpeg::JpegDecompressor;
+use crate::decompressors::jpeg::{JpegDecompressor, ModernJpegDecompressor};
 use crate::decompressors::jpegxl::JpegXLDecompressor;
-use crate::decompressors::ljpeg::LJpegDecompressor;
 use crate::decompressors::packed::{PackedDecompressor, PackedIntDecompressor};
 use crate::exif::Exif;
 use crate::formats::ciff;
@@ -668,7 +667,6 @@ pub fn plain_image_from_ifd_ext(ifd: &IFD, rawsource: &RawSource, ljpeg_dng_bug:
   let bits = fetch_tiff_tag!(ifd, TiffCommonTag::BitsPerSample).force_u32(0);
   let sample_format = SampleFormat::extract(ifd)?.unwrap_or(SampleFormat::Uint);
   let compression = CompressionMethod::extract(ifd)?.unwrap_or(CompressionMethod::None);
-  let pi = PhotometricInterpretation::extract(ifd)?.unwrap_or(PhotometricInterpretation::BlackIsZero);
 
   log::debug!(
     "plain_image_from_ifd(): {}x{}, cpp={}, bits={}, compression={:?}, sample_format={:?}, data_mode={:?}, endian={:?}",
@@ -715,20 +713,8 @@ pub fn plain_image_from_ifd_ext(ifd: &IFD, rawsource: &RawSource, ljpeg_dng_bug:
       let mut pixbuf = match (compression, ifd.data_mode()?) {
         (CompressionMethod::None, DataMode::Strips) => decode_strips::<u16>(rawsource, ifd, PackedDecompressor::new(bits, endian), dummy)?,
         (CompressionMethod::None, DataMode::Tiles) => decode_tiles::<u16>(rawsource, ifd, PackedDecompressor::new(bits, endian), dummy)?,
-        (CompressionMethod::ModernJPEG, DataMode::Strips) => {
-          if (pi == PhotometricInterpretation::YCbCr && bits == 8) || (pi == PhotometricInterpretation::BlackIsZero && bits == 8) {
-            decode_strips::<u16>(rawsource, ifd, JpegDecompressor::new(), dummy)?
-          } else {
-            decode_strips::<u16>(rawsource, ifd, LJpegDecompressor::new_with_dng_bug(ljpeg_dng_bug), dummy)?
-          }
-        }
-        (CompressionMethod::ModernJPEG, DataMode::Tiles) => {
-          if (pi == PhotometricInterpretation::YCbCr && bits == 8) || (pi == PhotometricInterpretation::BlackIsZero && bits == 8) {
-            decode_tiles::<u16>(rawsource, ifd, JpegDecompressor::new(), dummy)?
-          } else {
-            decode_tiles::<u16>(rawsource, ifd, LJpegDecompressor::new_with_dng_bug(ljpeg_dng_bug), dummy)?
-          }
-        }
+        (CompressionMethod::ModernJPEG, DataMode::Strips) => decode_strips::<u16>(rawsource, ifd, ModernJpegDecompressor::new(ljpeg_dng_bug), dummy)?,
+        (CompressionMethod::ModernJPEG, DataMode::Tiles) => decode_tiles::<u16>(rawsource, ifd, ModernJpegDecompressor::new(ljpeg_dng_bug), dummy)?,
         (CompressionMethod::LossyJPEG, DataMode::Strips) => decode_strips::<u16>(rawsource, ifd, JpegDecompressor::new(), dummy)?,
         (CompressionMethod::LossyJPEG, DataMode::Tiles) => decode_tiles::<u16>(rawsource, ifd, JpegDecompressor::new(), dummy)?,
         (CompressionMethod::JPEGXL, DataMode::Strips) => decode_strips::<u16>(rawsource, ifd, JpegXLDecompressor::new(bits), dummy)?,
