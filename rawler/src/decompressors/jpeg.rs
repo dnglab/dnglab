@@ -1,5 +1,6 @@
 //! Lossy JPEG decompressor for 8-bit RGB or grayscale image strips and tiles.
 
+use crate::decompressors::ljpeg::{LJpegDecompressor, is_lossless_jpeg};
 use crate::decompressors::{Decompressor, LineIteratorMut};
 
 /// Decompressor for lossy JPEG-compressed image data.
@@ -36,6 +37,37 @@ impl<'a> Decompressor<'a, u16> for JpegDecompressor {
       }
     }
     Ok(())
+  }
+
+  fn can_skip_rows(&self) -> bool {
+    false
+  }
+}
+
+/// Decompressor for JPEG data of TIFF compression 7, which is lossless JPEG
+/// in raw image data and lossy JPEG in previews. The kind is detected for
+/// each strip or tile from its frame header.
+pub struct ModernJpegDecompressor {
+  lossless: LJpegDecompressor,
+}
+
+impl ModernJpegDecompressor {
+  /// `dng_bug` enables the 16-bit lossless JPEG deviation of DNG files with
+  /// DNGVersion < 1.1.0.0
+  pub fn new(dng_bug: bool) -> Self {
+    Self {
+      lossless: LJpegDecompressor::new_with_dng_bug(dng_bug),
+    }
+  }
+}
+
+impl<'a> Decompressor<'a, u16> for ModernJpegDecompressor {
+  fn decompress(&self, src: &[u8], skip_rows: usize, lines: impl LineIteratorMut<'a, u16>, line_width: usize) -> std::result::Result<(), String> {
+    if is_lossless_jpeg(src) {
+      self.lossless.decompress(src, skip_rows, lines, line_width)
+    } else {
+      JpegDecompressor::new().decompress(src, skip_rows, lines, line_width)
+    }
   }
 
   fn can_skip_rows(&self) -> bool {

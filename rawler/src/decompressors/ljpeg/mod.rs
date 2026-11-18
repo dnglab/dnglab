@@ -81,6 +81,43 @@ fn m(marker: Marker) -> u8 {
   marker as u8
 }
 
+/// Check if `src` is a lossless JPEG stream, its first frame header is SOF3.
+/// Baseline and other lossy JPEG streams have other frame headers.
+pub fn is_lossless_jpeg(src: &[u8]) -> bool {
+  if !src.starts_with(&[m(Marker::Fill), m(Marker::SOI)]) {
+    return false;
+  }
+  let mut pos = 2;
+  while pos < src.len() {
+    if src[pos] != m(Marker::Fill) {
+      return false;
+    }
+    pos += 1;
+    // Any number of fill bytes may precede a marker
+    while src.get(pos) == Some(&m(Marker::Fill)) {
+      pos += 1;
+    }
+    let Some(&marker) = src.get(pos) else {
+      return false;
+    };
+    pos += 1;
+    match marker {
+      // Markers without a segment: TEM and RST0-RST7
+      0x01 | 0xd0..=0xd7 => continue,
+      // Frame headers, except DHT, JPG and DAC
+      0xc0..=0xcf if ![0xc4, 0xc8, 0xcc].contains(&marker) => return marker == m(Marker::SOF3),
+      // The scan or the image ends before a frame header
+      0xd8..=0xda => return false,
+      _ => {}
+    }
+    let Some(length) = src.get(pos..pos + 2).map(|bytes| u16::from_be_bytes([bytes[0], bytes[1]]) as usize) else {
+      return false;
+    };
+    pos += length;
+  }
+  false
+}
+
 #[derive(Debug, Copy, Clone)]
 struct JpegComponentInfo {
   // These values are fixed over the whole image, read from the SOF marker.
@@ -215,7 +252,8 @@ impl<'a> LjpegDecompressor<'a> {
       if marker == m(Marker::SOF3) {
         // Start of the frame, giving us the basic info
         sof.parse_sof(&mut input)?;
-        if sof.precision > 16 || sof.precision < 10 {
+        // Lossless JPEG has a precision of 2 to 16 bits
+        if !(2..=16).contains(&sof.precision) {
           return Err(format!("ljpeg: sof.precision {}", sof.precision));
         }
       } else if marker == m(Marker::DHT) {
