@@ -313,6 +313,15 @@ where
       self.ifd_mut().add_tag(DngTag::DefaultCropSize, [crop.d.w as u16, crop.d.h as u16]);
     }
 
+    // DefaultUserCrop is relative to the default crop, which may differ from the source
+    if let Some(user_crop) = &rawimage.default_user_crop {
+      let source = rawimage.crop_area.or(rawimage.active_area).unwrap_or(image_area);
+      match map_default_user_crop(user_crop, source, crop.unwrap_or(active_area)) {
+        Some(user_crop) => self.ifd_mut().add_tag(DngTag::DefaultUserCrop, &user_crop[..]),
+        None => log::warn!("DefaultUserCrop {:?} is outside of the written default crop, it is not written", user_crop),
+      }
+    }
+
     self.ifd_mut().add_tag(ExifTag::PlanarConfiguration, 1_u16);
 
     self.ifd_mut().add_tag(
@@ -910,6 +919,33 @@ fn float_to_integer(rawimage: &mut RawImage) {
 
 /// Slope at the origin of the encoding curve for 8 bit lossy compressed data
 const LOSSY_CURVE_SLOPE: f64 = 1.0 / 128.0;
+
+/// DefaultUserCrop `crop` (top, left, bottom, right) relative to the default
+/// crop `source`, made relative to the written default crop `target`
+///
+/// Returns `None` if no area of the crop is left in `target`.
+fn map_default_user_crop(crop: &[Rational; 4], source: Rect, target: Rect) -> Option<[Rational; 4]> {
+  const DENOMINATOR: u32 = 1_000_000;
+  if source == target {
+    return Some(*crop);
+  }
+  if target.d.w == 0 || target.d.h == 0 {
+    return None;
+  }
+  let [top, left, bottom, right] = crop.map(|v| v.n as f64 / v.d as f64);
+  // Through image coordinates, limited to the target
+  let map = |v: f64, src_pos: usize, src_len: usize, dst_pos: usize, dst_len: usize| {
+    let relative = ((src_pos as f64 + v * src_len as f64 - dst_pos as f64) / dst_len as f64).clamp(0.0, 1.0);
+    (relative * DENOMINATOR as f64).round() as u32
+  };
+  let vertical = |v| map(v, source.p.y, source.d.h, target.p.y, target.d.h);
+  let horizontal = |v| map(v, source.p.x, source.d.w, target.p.x, target.d.w);
+  let [top, left, bottom, right] = [vertical(top), horizontal(left), vertical(bottom), horizontal(right)];
+  if top >= bottom || left >= right {
+    return None;
+  }
+  Some([top, left, bottom, right].map(|n| Rational::new(n, DENOMINATOR)))
+}
 
 /// LinearizationTable for 8 bit lossy compressed data
 ///
