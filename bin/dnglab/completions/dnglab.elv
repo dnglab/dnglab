@@ -140,6 +140,7 @@ set edit:completion:arg-completer[dnglab] = {|@words|
             cand --override 'Override existing files'
             cand -r 'Process input directory recursive'
             cand --recursive 'Process input directory recursive'
+            cand --verify-digest 'Verify the raw image digest of DNG input files'
             cand -v 'Print status for every file'
             cand -h 'Print help (see more with ''--help'')'
             cand --help 'Print help (see more with ''--help'')'

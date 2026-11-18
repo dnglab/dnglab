@@ -177,7 +177,10 @@ pub fn add_bad_pixel_opcodes(file: &BadPixelFile, input: &Path, index: usize, re
 fn bad_pixels_of_image(file: &BadPixelFile, input: &Path, index: usize) -> Result<Option<FixBadPixelsList>> {
   let rawfile = RawSource::new(input)?;
   let decoder = rawler::get_decoder(&rawfile)?;
-  let params = RawDecodeParams { image_index: index };
+  let params = RawDecodeParams {
+    image_index: index,
+    ..Default::default()
+  };
   let rawimage = decoder.raw_image(&rawfile, &params, true)?;
   let capture_time = decoder.raw_metadata(&rawfile, &params)?.capture_time()?.map(unix_time);
   Ok(fix_bad_pixels_list(file, &rawimage, capture_time))

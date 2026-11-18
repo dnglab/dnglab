@@ -57,7 +57,10 @@ impl Display for JobResult {
 
 pub(crate) fn copy_mtime_from_rawsource(rawfile: &RawSource, file: &File, fallback: Option<SystemTime>, params: &RawProcessingParams) -> Result<()> {
   let decoder = rawler::get_decoder(rawfile)?;
-  let raw_params = RawDecodeParams { image_index: params.index };
+  let raw_params = RawDecodeParams {
+    image_index: params.index,
+    ..Default::default()
+  };
   let metadata = decoder.raw_metadata(rawfile, &raw_params)?;
   if let Some(ts) = metadata.last_modified()?.or(fallback) {
     file.set_modified(ts)?;

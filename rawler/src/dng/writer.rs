@@ -36,6 +36,7 @@ use super::{
   CompressionParams, CropMode, DNG_VERSION_V1_0, DNG_VERSION_V1_1, DNG_VERSION_V1_2, DNG_VERSION_V1_4, DNG_VERSION_V1_6, DNG_VERSION_V1_7, DNG_VERSION_V1_7_1,
   DngCompression, DngPhotometricConversion, DngVersionNumber, JxlParams,
   camera_profile_tags::{camera_profile_data, rationals, write_camera_calibration, write_camera_profile, write_gain_table_map_v1, write_string},
+  digest::{self, Digest, PixelType, Samples},
   opcodes::OpcodeStage,
   original::OriginalCompressed,
 };
@@ -459,30 +460,41 @@ where
     }
 
     // Semantic masks cover the field of view of the ActiveArea
-    self.write_masks(&rawimage, rawimage.active_area.unwrap_or(image_area) == active_area)?;
+    let mask_digest = self.write_masks(&rawimage, rawimage.active_area.unwrap_or(image_area) == active_area)?;
 
-    match compression {
+    // Lossy JPEG and JPEG XL data are covered by the digest of the compressed
+    // tiles, other data by the samples with the stored bits per sample
+    let use_new_digest = self.writer.max_backward_version >= DNG_VERSION_V1_4;
+    let digest = match compression {
       DngCompression::Uncompressed => {
         self.ifd_mut().add_tag(TiffCommonTag::Compression, CompressionMethod::None);
         dng_put_raw_uncompressed(self, &rawimage)?;
+        let bits = if matches!(rawimage.data, RawImageData::Float(_)) { 32 } else { 16 };
+        raw_image_digest(&rawimage, bits, use_new_digest, mask_digest)?
       }
       DngCompression::Lossless => {
         self.ifd_mut().add_tag(TiffCommonTag::Compression, CompressionMethod::ModernJPEG);
         dng_put_raw_ljpeg(self, &rawimage, params.ljpeg92_predictor)?;
+        raw_image_digest(&rawimage, rawimage.bps as u32, use_new_digest, mask_digest)?
       }
       DngCompression::Lossy => {
         self.ifd_mut().add_tag(TiffCommonTag::Compression, CompressionMethod::LossyJPEG);
-        dng_put_raw_lossy_jpeg(self, &rawimage, params.lossy_jpeg_quality)?;
+        dng_put_raw_lossy_jpeg(self, &rawimage, params.lossy_jpeg_quality)?
       }
       DngCompression::JpegXl => {
         self.ifd_mut().add_tag(TiffCommonTag::Compression, CompressionMethod::JPEGXL);
-        dng_put_raw_jxl(self, &rawimage, &params.jxl)?;
+        dng_put_raw_jxl(self, &rawimage, &params.jxl)?
       }
       DngCompression::Deflate => {
         self.ifd_mut().add_tag(TiffCommonTag::Compression, CompressionMethod::Deflate);
         dng_put_raw_deflate(self, &rawimage, params.deflate_float_bits)?;
+        let bits = deflate_float_bits(&rawimage, params.deflate_float_bits)?;
+        raw_image_digest(&rawimage, bits as u32, use_new_digest, mask_digest)?
       }
-    }
+    };
+    // RawImageDigest is only written for readers before DNG 1.4
+    let digest_tag = if use_new_digest { DngTag::NewRawImageDigest } else { DngTag::RawImageDigest };
+    self.writer.root_ifd.add_tag(digest_tag, digest);
 
     /*
     for (tag, value) in rawimage.dng_tags.iter() {
@@ -550,7 +562,9 @@ where
   /// Write the masks of `rawimage` into IFDs, which follow the IFD of the image.
   /// `same_field_of_view` is false if the written ActiveArea covers another area
   /// than the ActiveArea of `rawimage`, the semantic masks don't match it then.
-  fn write_masks(&mut self, rawimage: &RawImage, same_field_of_view: bool) -> Result<()> {
+  /// Returns the digest of the transparency mask, if it is written.
+  fn write_masks(&mut self, rawimage: &RawImage, same_field_of_view: bool) -> Result<Option<Digest>> {
+    let mut transparency_digest = None;
     if let Some(mask) = &rawimage.transparency_mask {
       if mask.dim() != Dim2::new(rawimage.width, rawimage.height) {
         log::warn!(
@@ -564,20 +578,21 @@ where
         self.writer.update_backward_version(DNG_VERSION_V1_4, "Transparency mask")?;
         let ifd = self.mask_ifd(4, mask, PhotometricInterpretation::TransparencyMask)?;
         self.mask_ifds.push(ifd);
+        transparency_digest = Some(mask_digest(mask)?);
       } else {
         log::warn!("Transparency mask is not written, it requires DNGBackwardVersion 1.4");
       }
     }
     if rawimage.semantic_masks.is_empty() {
-      return Ok(());
+      return Ok(transparency_digest);
     }
     if self.writer.version < DNG_VERSION_V1_6 {
       log::warn!("Semantic masks are not written, they require DNGVersion 1.6");
-      return Ok(());
+      return Ok(transparency_digest);
     }
     if !same_field_of_view {
       log::warn!("Semantic masks are not written, the written ActiveArea covers another area");
-      return Ok(());
+      return Ok(transparency_digest);
     }
     // Semantic masks don't raise the DNGBackwardVersion, as reading them is optional
     for mask in &rawimage.semantic_masks {
@@ -591,7 +606,7 @@ where
       }
       self.mask_ifds.push(ifd);
     }
-    Ok(())
+    Ok(transparency_digest)
   }
 }
 
@@ -1192,7 +1207,8 @@ where
 ///
 /// Data is split into multiple tiles, each tile is compressed seperately.
 /// The image must hold 8 bit samples with one (grayscale) or three (RGB) planes.
-fn dng_put_raw_lossy_jpeg<W>(subframe: &mut SubFrameWriter<W>, rawimage: &RawImage, quality: u8) -> Result<()>
+/// Returns the digest of the compressed tiles.
+fn dng_put_raw_lossy_jpeg<W>(subframe: &mut SubFrameWriter<W>, rawimage: &RawImage, quality: u8) -> Result<Digest>
 where
   W: Seek + Write,
 {
@@ -1242,15 +1258,16 @@ where
   subframe.ifd_mut().add_tag(TiffCommonTag::TileWidth, tile_w as u16);
   subframe.ifd_mut().add_tag(TiffCommonTag::TileLength, tile_h as u16);
 
-  Ok(())
+  Ok(digest::lossy_digest(jpeg_data.iter().map(Vec::as_slice), None))
 }
 
 /// Compress image with JPEG XL
 ///
 /// CFA data is interleaved into sub-images of the single colours. Data is split
 /// into tiles, each tile is compressed separately. Integer data is stored with
-/// 16 bits per sample, floating point data as half floats.
-fn dng_put_raw_jxl<W>(subframe: &mut SubFrameWriter<W>, rawimage: &RawImage, params: &JxlParams) -> Result<()>
+/// 16 bits per sample, floating point data as half floats. Returns the digest
+/// of the compressed tiles.
+fn dng_put_raw_jxl<W>(subframe: &mut SubFrameWriter<W>, rawimage: &RawImage, params: &JxlParams) -> Result<Digest>
 where
   W: Seek + Write,
 {
@@ -1334,36 +1351,75 @@ where
     subframe.ifd_mut().add_tag(DngTag::JXLDecodeSpeed, params.decode_speed as u32);
   }
 
-  Ok(())
+  Ok(digest::lossy_digest(jxl_data.iter().map(Vec::as_slice), None))
 }
 
 /// Rows per strip of mask IFDs
 const MASK_ROWS_PER_STRIP: usize = 256;
 
+/// Samples of `mask` as they are stored, with their bits per sample
+///
+/// Integer masks are stored with 8 or 16 bits, other bit depths are scaled to
+/// 16 bits, so opaque stays the maximum value. Floating point masks are stored
+/// with 32 bits.
+fn stored_mask_samples(mask: &MaskImage) -> (u16, Cow<'_, RawImageData>) {
+  match &mask.data {
+    RawImageData::Integer(_) if mask.bps == 8 || mask.bps == 16 => (mask.bps as u16, Cow::Borrowed(&mask.data)),
+    RawImageData::Integer(samples) => {
+      let max = ((1_u32 << mask.bps) - 1).max(1);
+      let scaled = samples.iter().map(|v| ((*v as u32 * 65535 + max / 2) / max).min(65535) as u16).collect();
+      (16, Cow::Owned(RawImageData::Integer(scaled)))
+    }
+    RawImageData::Float(_) => (32, Cow::Borrowed(&mask.data)),
+  }
+}
+
+/// Digest of a transparency mask, as it is stored
+fn mask_digest(mask: &MaskImage) -> Result<Digest> {
+  let (bps, data) = stored_mask_samples(mask);
+  let samples = Samples::new(&data, mask.width, mask.height, 1).ok_or_else(|| DngError::General("Mask doesn't match its size".into()))?;
+  let float = matches!(*data, RawImageData::Float(_));
+  Ok(digest::tiled_digest(&samples, PixelType::of_stored(float, bps as u32)))
+}
+
+/// Digest of the samples of `rawimage`, which are stored with `bits` per sample
+///
+/// `use_new` selects the digest of NewRawImageDigest instead of the one of
+/// RawImageDigest, `mask_digest` is the digest of the written transparency mask.
+fn raw_image_digest(rawimage: &RawImage, bits: u32, use_new: bool, mask_digest: Option<Digest>) -> Result<Digest> {
+  // Half floats are covered by the values a reader decodes
+  let half = match &rawimage.data {
+    RawImageData::Float(data) if bits == 16 => Some(RawImageData::Float(data.par_iter().map(|v| half::f16::from_f32(*v).to_f32()).collect())),
+    _ => None,
+  };
+  let data = half.as_ref().unwrap_or(&rawimage.data);
+  let float = matches!(data, RawImageData::Float(_));
+  let samples =
+    Samples::new(data, rawimage.width, rawimage.height, rawimage.cpp).ok_or_else(|| DngError::General("Raw image data doesn't match its size".into()))?;
+  if !use_new && !float && mask_digest.is_none() {
+    return Ok(digest::legacy_digest(&samples, PixelType::of_stored(false, bits)));
+  }
+  let linearization_entries = rawimage.linearization_table.as_ref().map(|table| table.len());
+  let image = digest::tiled_digest(&samples, PixelType::of_stored_tiled(float, bits, linearization_entries));
+  Ok(match mask_digest {
+    Some(mask) => digest::combine(&[image, mask]),
+    None => image,
+  })
+}
+
 /// Write the image data of `mask` to `dng` and its tags to `ifd`
 ///
-/// The data is Deflate compressed without predictor. Integer masks are stored
-/// with 8 or 16 bits, floating point masks with 32 bits.
+/// The data is Deflate compressed without predictor, see [`stored_mask_samples`].
 fn write_mask_image<W>(dng: &mut TiffWriter<W>, ifd: &mut DirectoryWriter, mask: &MaskImage, photometric: PhotometricInterpretation) -> Result<()>
 where
   W: Write + Seek,
 {
   // Samples in host byte order, as the TIFF file
-  let (bps, sample_format, bytes): (u16, u16, Vec<u8>) = match &mask.data {
-    RawImageData::Integer(samples) if mask.bps == 8 => (8, 1, samples.iter().map(|v| *v as u8).collect()),
-    RawImageData::Integer(samples) => {
-      // Other bit depths are scaled to 16 bits, so opaque stays the maximum value
-      let max = ((1_u32 << mask.bps) - 1).max(1);
-      let scale = |v: u16| {
-        if mask.bps == 16 {
-          v
-        } else {
-          ((v as u32 * 65535 + max / 2) / max).min(65535) as u16
-        }
-      };
-      (16, 1, samples.iter().flat_map(|v| scale(*v).to_ne_bytes()).collect())
-    }
-    RawImageData::Float(samples) => (32, 3, samples.iter().flat_map(|v| v.to_ne_bytes()).collect()),
+  let (bps, data) = stored_mask_samples(mask);
+  let (sample_format, bytes): (u16, Vec<u8>) = match &*data {
+    RawImageData::Integer(samples) if bps == 8 => (1, samples.iter().map(|v| *v as u8).collect()),
+    RawImageData::Integer(samples) => (1, samples.iter().flat_map(|v| v.to_ne_bytes()).collect()),
+    RawImageData::Float(samples) => (3, samples.iter().flat_map(|v| v.to_ne_bytes()).collect()),
   };
   let row_bytes = mask.width * bps as usize / 8;
   let strips: Vec<Vec<u8>> = bytes

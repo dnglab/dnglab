@@ -161,7 +161,10 @@ impl Default for RawProcessingParams {
 pub fn process_raw_image<W: Write + Seek + Send>(raw: &Path, image_file: &mut W, params: &RawProcessingParams) -> crate::Result<()> {
   let rawfile = RawSource::new(raw)?;
   let decoder = crate::get_decoder(&rawfile)?;
-  let raw_params = RawDecodeParams { image_index: params.index };
+  let raw_params = RawDecodeParams {
+    image_index: params.index,
+    ..Default::default()
+  };
   validate_image_index(decoder.as_ref(), &raw_params)?;
   let mut rawimage = decoder.raw_image(&rawfile, &raw_params, false)?;
   rawimage.remove_opcodes(&params.remove_dng_opcodes);

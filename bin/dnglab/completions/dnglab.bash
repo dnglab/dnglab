@@ -181,7 +181,7 @@ _dnglab() {
             return 0
             ;;
         dnglab__subcmd__convert)
-            opts="-p -c -f -r -j -d -v -h --profile --compression --ljpeg92-predictor --lossy-jpeg-quality --jxl-distance --jxl-effort --jxl-decode-speed --dng-preview --dng-thumbnail --dng-force-preview --dng-force-thumbnail --max-dng-backward-version --embed-raw --apply-dng-opcodes --remove-dng-opcodes --artist --copyright --keep-mtime --image-index --crop --override --recursive --jobs --dcp-file --extra-dcp-file --bad-pixels --dark-frame --dark-frame-black --loglevel --profile-path --config --help"
+            opts="-p -c -f -r -j -d -v -h --profile --compression --ljpeg92-predictor --lossy-jpeg-quality --jxl-distance --jxl-effort --jxl-decode-speed --dng-preview --dng-thumbnail --dng-force-preview --dng-force-thumbnail --max-dng-backward-version --embed-raw --apply-dng-opcodes --remove-dng-opcodes --artist --copyright --keep-mtime --image-index --crop --override --recursive --jobs --dcp-file --extra-dcp-file --bad-pixels --dark-frame --dark-frame-black --verify-digest --loglevel --profile-path --config --help"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0

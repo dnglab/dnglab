@@ -5,8 +5,10 @@ use crate::decoders::*;
 use crate::dng::camera_profile_tags::{
   read_camera_calibration, read_camera_profile, read_extra_camera_profiles, read_gain_table_map_v1, read_string, srationals,
 };
+use crate::dng::digest::{self, Digest, PixelType, Samples};
 use crate::dng::opcodes::OpcodeList;
 use crate::dng::{DNG_READER_VERSION, DNG_VERSION_V1_1, DngVersionNumber};
+use crate::formats::tiff::CompressionMethod;
 use crate::formats::tiff::Entry;
 use crate::formats::tiff::ExtractFromIFD;
 use crate::formats::tiff::Rational;
@@ -71,7 +73,7 @@ pub struct DngFormat {
 }
 
 impl<'a> Decoder for DngDecoder<'a> {
-  fn raw_image(&self, file: &RawSource, _params: &RawDecodeParams, dummy: bool) -> Result<RawImage> {
+  fn raw_image(&self, file: &RawSource, params: &RawDecodeParams, dummy: bool) -> Result<RawImage> {
     let raw = self.get_raw_ifd()?;
     let width = fetch_tiff_tag!(raw, TiffCommonTag::ImageWidth).force_usize(0);
     let height = fetch_tiff_tag!(raw, TiffCommonTag::ImageLength).force_usize(0);
@@ -162,6 +164,17 @@ impl<'a> Decoder for DngDecoder<'a> {
     if !dummy {
       image.transparency_mask = self.read_transparency_mask(file, Dim2::new(width, height));
       image.semantic_masks = self.read_semantic_masks(file);
+      if params.verify_digest {
+        match self.check_raw_image_digest(file, raw, &image, Dim2::new(width, height), cpp) {
+          Some(true) => log::debug!("DNG: the raw image digest matches the raw image data"),
+          Some(false) => {
+            return Err(decoder_error!(
+              "DNG: the raw image digest doesn't match the raw image data, the file may be damaged"
+            ));
+          }
+          None => log::debug!("DNG: the raw image digest is not verified"),
+        }
+      }
     }
     if let Some(planes) = camera_profiles.first().and_then(CameraProfile::color_planes) {
       image.camera_calibration = read_camera_calibration(root, planes);
@@ -352,6 +365,87 @@ impl<'a> DngDecoder<'a> {
       .into_iter()
       .filter(|ifd| ifd.get_entry(TiffCommonTag::NewSubFileType).map(|e| e.force_u32(0)) == Some(subfile_type))
       .collect()
+  }
+
+  /// Check the NewRawImageDigest, or the RawImageDigest if there is none, of
+  /// the raw image data of `image` with `dim` pixels of `cpp` samples. Returns
+  /// whether it matches, or `None` if there is no digest tag or the digest
+  /// can't be computed.
+  fn check_raw_image_digest(&self, file: &RawSource, raw: &IFD, image: &RawImage, dim: Dim2, cpp: usize) -> Option<bool> {
+    let stored = |tag: DngTag| {
+      self
+        .tiff
+        .root_ifd()
+        .get_entry(tag)
+        .and_then(|entry| entry.value.get_data().ok())
+        .and_then(|data| Digest::try_from(data).ok())
+        .map(|digest| (tag, digest))
+    };
+    let (tag, expected) = stored(DngTag::NewRawImageDigest).or_else(|| stored(DngTag::RawImageDigest))?;
+    let new = tag == DngTag::NewRawImageDigest;
+    let digest = self
+      .raw_image_digest(file, raw, image, dim, cpp, new)
+      .map_err(|err| log::warn!("DNG: can't verify {:?}: {}", tag, err))
+      .ok()??;
+    // Lightroom 1.4 corrupted the first bytes of RawImageDigest
+    if digest != expected && !new && (digest[4..] == expected[4..] || expected[..4] == [8, 0, 0, 0]) {
+      log::debug!("DNG: {:?} has the defect of Lightroom 1.4, it is not checked", tag);
+      return Some(true);
+    }
+    Some(digest == expected)
+  }
+
+  /// Digest of the raw image data for NewRawImageDigest if `new`, otherwise
+  /// for RawImageDigest. Returns `None` if it can't be computed.
+  fn raw_image_digest(&self, file: &RawSource, raw: &IFD, image: &RawImage, dim: Dim2, cpp: usize, new: bool) -> Result<Option<Digest>> {
+    let lossy = |ifd: &IFD| {
+      CompressionMethod::extract(ifd)
+        .ok()
+        .flatten()
+        .is_some_and(|compression| matches!(compression, CompressionMethod::LossyJPEG | CompressionMethod::JPEGXL))
+    };
+    // Lossy JPEG and JPEG XL data are covered by the compressed tiles
+    if lossy(raw) {
+      let tiles = match raw.data_mode()? {
+        DataMode::Strips => raw.strip_data(file)?.0,
+        DataMode::Tiles => raw.tile_data(file)?,
+      };
+      let tables = raw.get_entry(ExifTag::JPEGTables).and_then(|entry| entry.value.get_data().ok());
+      return Ok(Some(digest::lossy_digest(tiles.into_iter(), tables)));
+    }
+    let mask = match (self.subfile_ifds(4).first(), &image.transparency_mask) {
+      (None, _) => None,
+      (Some(ifd), _) if lossy(ifd) => {
+        log::debug!("DNG: the transparency mask is lossy compressed, the raw image digest is not verified");
+        return Ok(None);
+      }
+      (Some(_), None) => {
+        log::debug!("DNG: the transparency mask is ignored, the raw image digest is not verified");
+        return Ok(None);
+      }
+      (Some(_), Some(mask)) => {
+        let float = matches!(mask.data, RawImageData::Float(_));
+        let samples = Samples::new(&mask.data, mask.width, mask.height, 1).ok_or_else(|| decoder_error!("transparency mask doesn't match its size"))?;
+        Some(digest::tiled_digest(&samples, PixelType::of_stored(float, mask.bps)))
+      }
+    };
+    let float = SampleFormat::extract(raw)? == Some(SampleFormat::IEEEFP);
+    let bits = fetch_tiff_tag!(raw, TiffCommonTag::BitsPerSample).force_u32(0);
+    // Integer samples above 16 bits are decoded as f32, which is exact up to 24 bits
+    if !float && bits > 24 {
+      log::debug!("DNG: raw image digest of {} bit integer data is not verified", bits);
+      return Ok(None);
+    }
+    let samples = Samples::new(&image.data, dim.w, dim.h, cpp).ok_or_else(|| decoder_error!("raw image data doesn't match its size"))?;
+    if !new && !float && mask.is_none() {
+      return Ok(Some(digest::legacy_digest(&samples, PixelType::of_stored(false, bits))));
+    }
+    let linearization_entries = image.linearization_table.as_ref().map(|table| table.len());
+    let digest = digest::tiled_digest(&samples, PixelType::of_stored_tiled(float, bits, linearization_entries));
+    Ok(Some(match mask {
+      Some(mask) => digest::combine(&[digest, mask]),
+      None => digest,
+    }))
   }
 
   /// Transparency mask (NewSubFileType 4) of a raw image of `dim` pixels. It
