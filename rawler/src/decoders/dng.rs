@@ -213,6 +213,7 @@ impl<'a> Decoder for DngDecoder<'a> {
     // The masked areas are kept, the black level is that of the BlackLevel tags
     let active_area = image.active_area.unwrap_or_else(|| Rect::new(Point::zero(), Dim2::new(width, height)));
     image.blackareas = self.get_masked_areas(raw, Dim2::new(width, height), active_area);
+    image.default_user_crop = self.get_default_user_crop(raw);
     image.linearization_table = self.get_linearization_table(raw, &image.data)?;
     image.baseline_exposure = root.get_entry(DngTag::BaselineExposure).and_then(|entry| match &entry.value {
       Value::SRational(v) => v.first().copied(),
@@ -353,6 +354,7 @@ impl<'a> Decoder for DngDecoder<'a> {
         IFD::copy_tag(&mut ifd, self.tiff.root_ifd(), DngTag::BaselineNoise);
         IFD::copy_tag(&mut ifd, self.tiff.root_ifd(), DngTag::BaselineSharpness);
         IFD::copy_tag(&mut ifd, self.tiff.root_ifd(), DngTag::LinearResponseLimit);
+        IFD::copy_tag(&mut ifd, self.tiff.root_ifd(), DngTag::ShadowScale);
         IFD::copy_tag(&mut ifd, self.tiff.root_ifd(), DngTag::CameraSerialNumber);
         IFD::copy_tag(&mut ifd, self.tiff.root_ifd(), DngTag::AsShotICCProfile);
         IFD::copy_tag(&mut ifd, self.tiff.root_ifd(), DngTag::AsShotPreProfileMatrix);
@@ -867,6 +869,30 @@ impl<'a> DngDecoder<'a> {
       }
     }
     None
+  }
+
+  /// DefaultUserCrop of the raw IFD: top, left, bottom and right relative to
+  /// the default crop. An invalid crop is ignored.
+  fn get_default_user_crop(&self, raw: &IFD) -> Option<[Rational; 4]> {
+    let entry = raw.get_entry(DngTag::DefaultUserCrop)?;
+    let crop = match &entry.value {
+      Value::Rational(values) if values.len() == 4 && values.iter().all(|v| v.d != 0) => [values[0], values[1], values[2], values[3]],
+      value => {
+        log::warn!(
+          "DNG: ignoring DefaultUserCrop with {} values of type {}, expected 4 RATIONAL",
+          value.count(),
+          value.value_type_name()
+        );
+        return None;
+      }
+    };
+    let [top, left, bottom, right] = crop.map(|v| v.n as f64 / v.d as f64);
+    if top < bottom && bottom <= 1.0 && left < right && right <= 1.0 {
+      Some(crop)
+    } else {
+      log::warn!("DNG: ignoring DefaultUserCrop {:?}, it is not inside the default crop", crop);
+      None
+    }
   }
 
   /// MaskedAreas of the raw IFD of an image of `dim` pixels with the

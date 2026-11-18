@@ -19,7 +19,7 @@ use crate::mask::{MaskImage, SemanticMask};
 use crate::{
   CFA,
   decoders::*,
-  formats::tiff::{SRational, Value},
+  formats::tiff::{Rational, SRational, Value},
   imgop::{
     Dim2, Point, Rect,
     matrix::FlatMatrix,
@@ -180,6 +180,9 @@ pub struct RawImage {
   pub active_area: Option<Rect>,
   /// how much to crop the image to get all the recommended area
   pub crop_area: Option<Rect>,
+  /// DNG DefaultUserCrop: top, left, bottom and right, relative to the
+  /// default crop (`crop_area`, or the active area without one), 0 to 1
+  pub default_user_crop: Option<[Rational; 4]>,
 
   /// Areas of the sensor that is masked to prevent it from receiving light. Used to calculate
   /// black levels and noise.
@@ -392,6 +395,7 @@ impl RawImage {
       dng_opcodes_3: None,
       linearization_table: None,
       baseline_exposure: None,
+      default_user_crop: None,
       colorimetric_reference: ColorimetricReference::default(),
       transparency_mask: None,
       semantic_masks: Vec::new(),
@@ -482,6 +486,7 @@ impl RawImage {
       dng_opcodes_3: None,
       linearization_table: None,
       baseline_exposure: None,
+      default_user_crop: None,
       colorimetric_reference: ColorimetricReference::default(),
       transparency_mask: None,
       semantic_masks: Vec::new(),
