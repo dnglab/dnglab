@@ -195,6 +195,10 @@ pub struct RawImage {
   pub data: RawImageData,
   /// The image data was scaled from 16 bit integer samples to floats by `apply_scaling()`
   pub scaled_from_integer: bool,
+  /// The floating point data holds the stored values of integer samples with
+  /// more than 16 bits, the logical range of OpcodeList1 is 0 to 2^32-1. It is
+  /// cleared when the data is scaled.
+  pub long_integer: bool,
 
   /// Camera profiles, the first one is the primary profile (IFD 0 of a DNG)
   pub camera_profiles: Vec<CameraProfile>,
@@ -390,6 +394,7 @@ impl RawImage {
       dng_tags: HashMap::new(),
       fuji_rotation_width: None,
       scaled_from_integer: false,
+      long_integer: false,
       dng_opcodes_1: None,
       dng_opcodes_2: None,
       dng_opcodes_3: None,
@@ -481,6 +486,7 @@ impl RawImage {
       dng_tags: HashMap::new(),
       fuji_rotation_width: None,
       scaled_from_integer: false,
+      long_integer: false,
       dng_opcodes_1: None,
       dng_opcodes_2: None,
       dng_opcodes_3: None,
@@ -555,6 +561,7 @@ impl RawImage {
   /// The masked areas are removed: with the black level subtracted, their
   /// pixels are no longer useful (DNG spec, MaskedAreas).
   pub(crate) fn reset_levels(&mut self) {
+    self.long_integer = false;
     self.blacklevel = BlackLevel::zero(1, 1, self.cpp);
     self.whitelevel.0.iter_mut().for_each(|x| *x = 1);
     self.blackareas.clear();

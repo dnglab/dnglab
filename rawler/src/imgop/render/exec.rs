@@ -333,6 +333,8 @@ impl Executor {
           crop_area: self.crop_area,
           black_areas: self.rawimage.blackareas.clone(),
           scaled_from_integer: self.rawimage.scaled_from_integer,
+          // The data is mapped to linear reference values
+          float_range: 1.0,
           aspect_ratio: self.rawimage.camera.default_scale.pixel_aspect_ratio(),
           raw_trim: None,
         };

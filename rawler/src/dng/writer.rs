@@ -239,6 +239,18 @@ where
       // floating point data requires DNG 1.4. If we have floats, convert them.
       float_to_integer(rawimage.to_mut());
     }
+    // Readers limit OpcodeList1 on floating point data to 0..1, which the
+    // stored values of integer samples with more than 16 bits exceed
+    let mut deflate_bits = params.deflate_float_bits;
+    if rawimage.long_integer
+      && matches!(rawimage.data, RawImageData::Float(_))
+      && matches!(compression, DngCompression::Uncompressed | DngCompression::Deflate)
+      && rawimage.opcode_list(OpcodeStage::List1).is_some_and(|list| !list.is_empty())
+    {
+      normalize_long_integer(rawimage.to_mut());
+      // Half floats can't hold the precision of the integer samples
+      deflate_bits = 32;
+    }
     // Deltas of DeltaPerRow and DeltaPerColumn are in pixel units of that data,
     // so they must be converted if the stored sample format differs.
     let delta_factor = match (source_integer, matches!(rawimage.data, RawImageData::Integer(_))) {
@@ -504,8 +516,8 @@ where
       }
       DngCompression::Deflate => {
         self.ifd_mut().add_tag(TiffCommonTag::Compression, CompressionMethod::Deflate);
-        dng_put_raw_deflate(self, &rawimage, params.deflate_float_bits)?;
-        let bits = deflate_float_bits(&rawimage, params.deflate_float_bits)?;
+        dng_put_raw_deflate(self, &rawimage, deflate_bits)?;
+        let bits = deflate_float_bits(&rawimage, deflate_bits)?;
         raw_image_digest(&rawimage, bits as u32, use_new_digest, mask_digest)?
       }
     };
@@ -896,6 +908,12 @@ fn float_to_integer(rawimage: &mut RawImage) {
   if let RawImageData::Float(data) = &rawimage.data {
     rawimage.data = RawImageData::Integer(data.iter().map(|p| scale(*p) as u16).collect());
   }
+  // OpcodeList1 works on the stored values
+  let old_range = if rawimage.long_integer { u32::MAX as f64 } else { 1.0 };
+  if let Some(list) = &mut rawimage.dng_opcodes_1 {
+    list.rescale_stored_values(u16::MAX as f64 / max_whitelevel as f64, old_range, u16::MAX as f64);
+  }
+  rawimage.long_integer = false;
   rawimage.whitelevel.0.iter_mut().for_each(|x| *x = scale(*x as f32).round() as u32);
   rawimage.blacklevel.levels.iter_mut().for_each(|x| {
     let level = scale(x.as_f32());
@@ -915,6 +933,41 @@ fn float_to_integer(rawimage: &mut RawImage) {
     };
   });
   rawimage.bps = 16; // Reset bps as integers are scaled to u16 range.
+}
+
+/// Map floating point data of integer samples with more than 16 bits to 0..1
+///
+/// The samples, black levels and OpcodeList1 are divided by the white level,
+/// which becomes 1. Different white levels of the sample planes can't be
+/// stored as integer WhiteLevel of floating point data, the data stays as it
+/// is then.
+fn normalize_long_integer(rawimage: &mut RawImage) {
+  // Small normalized levels need a fine denominator
+  const DENOMINATOR: f64 = 1_000_000_000.0;
+  let white = rawimage.whitelevel.0.first().copied().unwrap_or(1).max(1);
+  if rawimage.whitelevel.0.iter().any(|level| *level != white) {
+    log::warn!(
+      "WhiteLevel {:?} differs between the sample planes, OpcodeList1 is written for the stored integer values",
+      rawimage.whitelevel.0
+    );
+    return;
+  }
+  let scale = 1.0 / white as f64;
+  if let RawImageData::Float(data) = &mut rawimage.data {
+    data.par_iter_mut().for_each(|v| *v = (*v as f64 * scale) as f32);
+  }
+  rawimage.whitelevel.0.iter_mut().for_each(|level| *level = 1);
+  let blacklevel = &mut rawimage.blacklevel;
+  blacklevel.levels.iter_mut().for_each(|level| {
+    *level = Rational::new((level.n as f64 / level.d as f64 * scale * DENOMINATOR).round() as u32, DENOMINATOR as u32);
+  });
+  blacklevel.delta_h.iter_mut().chain(blacklevel.delta_v.iter_mut()).for_each(|delta| {
+    *delta = SRational::new((delta.n as f64 / delta.d as f64 * scale * DENOMINATOR).round() as i32, DENOMINATOR as i32);
+  });
+  if let Some(list) = &mut rawimage.dng_opcodes_1 {
+    list.rescale_stored_values(scale, u32::MAX as f64, 1.0);
+  }
+  rawimage.long_integer = false;
 }
 
 /// Slope at the origin of the encoding curve for 8 bit lossy compressed data
@@ -2216,17 +2269,30 @@ mod tests {
     let to_integer = vec![1000.0 * 65535.0, -2.0 * 65535.0];
     let mut scaled = synthetic_rawimage_f32();
     scaled.scaled_from_integer = true;
-    // OpcodeList1 is unchanged, OpcodeList2 and OpcodeList3 are converted
-    let expect = |stage23: &Vec<f32>, float: bool| ([deltas.clone(), stage23.clone(), stage23.clone()], float);
+    // OpcodeList1 is in units of the stored values, it is converted with them.
+    // OpcodeList2 and OpcodeList3 are converted for the sample format.
+    let expect = |stage1: &Vec<f32>, stage23: &Vec<f32>, float: bool| ([stage1.clone(), stage23.clone(), stage23.clone()], float);
     // Data scaled from 16 bit integers
-    assert_eq!(write_deltas(scaled.clone(), DngCompression::Uncompressed)?, expect(&to_float, true));
-    assert_eq!(write_deltas(scaled, DngCompression::Lossless)?, expect(&deltas, false));
+    assert_eq!(write_deltas(scaled.clone(), DngCompression::Uncompressed)?, expect(&deltas, &to_float, true));
+    assert_eq!(write_deltas(scaled, DngCompression::Lossless)?, expect(&to_integer, &deltas, false));
     // Floating point raw data
-    assert_eq!(write_deltas(synthetic_rawimage_f32(), DngCompression::Uncompressed)?, expect(&deltas, true));
-    assert_eq!(write_deltas(synthetic_rawimage_f32(), DngCompression::Lossless)?, expect(&to_integer, false));
+    assert_eq!(
+      write_deltas(synthetic_rawimage_f32(), DngCompression::Uncompressed)?,
+      expect(&deltas, &deltas, true)
+    );
+    assert_eq!(
+      write_deltas(synthetic_rawimage_f32(), DngCompression::Lossless)?,
+      expect(&to_integer, &to_integer, false)
+    );
     // 16 bit integer raw data
-    assert_eq!(write_deltas(synthetic_rawimage(None), DngCompression::Uncompressed)?, expect(&deltas, false));
-    assert_eq!(write_deltas(synthetic_rawimage(None), DngCompression::Lossless)?, expect(&deltas, false));
+    assert_eq!(
+      write_deltas(synthetic_rawimage(None), DngCompression::Uncompressed)?,
+      expect(&deltas, &deltas, false)
+    );
+    assert_eq!(
+      write_deltas(synthetic_rawimage(None), DngCompression::Lossless)?,
+      expect(&deltas, &deltas, false)
+    );
     Ok(())
   }
 

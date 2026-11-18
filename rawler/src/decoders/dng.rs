@@ -210,6 +210,8 @@ impl<'a> Decoder for DngDecoder<'a> {
       dummy,
     );
     image.orientation = orientation;
+    // Integer samples with more than 16 bits are decoded to floats of the stored values
+    image.long_integer = matches!(image.data, RawImageData::Float(_)) && SampleFormat::extract(raw)? != Some(SampleFormat::IEEEFP);
     // The masked areas are kept, the black level is that of the BlackLevel tags
     let active_area = image.active_area.unwrap_or_else(|| Rect::new(Point::zero(), Dim2::new(width, height)));
     image.blackareas = self.get_masked_areas(raw, Dim2::new(width, height), active_area);

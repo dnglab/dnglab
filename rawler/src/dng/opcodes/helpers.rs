@@ -352,12 +352,13 @@ pub(super) fn apply_warp(name: &str, planes: &[WarpPlane], center: (f64, f64), i
   }
   let geometry = WarpGeometry::new(center, bounds.d, image.aspect_ratio);
   // The image being warped is copied, the warped image is written in place
+  let range = image.float_range;
   match (&mut image.data, stage) {
-    // Logical range of floating point data is 0.0 to 1.0
+    // Logical range of floating point data is 0.0 to `float_range`
     (OpcodeData::Float(view), _) => {
       let region = view.region_mut(bounds);
       let src = region.as_region().to_vec();
-      warp(region, &src, &geometry, planes, &|v: f32| v.clamp(0.0, 1.0));
+      warp(region, &src, &geometry, planes, &|v: f32| v.clamp(0.0, range));
     }
     // Logical range of 16 bit data in OpcodeList1 is 0 to 65535
     (OpcodeData::Integer(view), OpcodeStage::List1) => {
@@ -572,18 +573,22 @@ pub(super) struct LineTable<'a> {
 }
 
 impl LineTable<'_> {
-  /// Add the deltas, clipped to -1..1 for floating point data. Deltas are in pixel units of
-  /// the image data, so for data scaled from 16 bit integers in 1/65535.
+  /// Add the deltas, clipped to the logical range of floating point data, as
+  /// positive and negative values. Deltas are in pixel units of the image
+  /// data, so for data scaled from 16 bit integers in 1/65535.
   pub(super) fn apply_delta(&self, image: &mut OpcodeImage<'_>, stage: OpcodeStage) -> Result<()> {
     let unit = if image.scaled_from_integer { 1.0 / 65535.0 } else { 1.0 };
-    self.apply(image, stage, &|x: f32, delta| (x + delta * unit).clamp(-1.0, 1.0), &|x: u16, delta| {
+    let range = image.float_range;
+    self.apply(image, stage, &|x: f32, delta| (x + delta * unit).clamp(-range, range), &|x: u16, delta| {
       (x as f32 + delta).clamp(0.0, 65535.0).round() as u16
     })
   }
 
-  /// Multiply by the scales, clipped to -1..1 for floating point data
+  /// Multiply by the scales, clipped to the logical range of floating point
+  /// data, as positive and negative values
   pub(super) fn apply_scale(&self, image: &mut OpcodeImage<'_>, stage: OpcodeStage) -> Result<()> {
-    self.apply(image, stage, &|x: f32, scale| (x * scale).clamp(-1.0, 1.0), &|x: u16, scale| {
+    let range = image.float_range;
+    self.apply(image, stage, &|x: f32, scale| (x * scale).clamp(-range, range), &|x: u16, scale| {
       (x as f32 * scale).clamp(0.0, 65535.0).round() as u16
     })
   }
