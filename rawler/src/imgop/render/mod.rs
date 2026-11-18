@@ -541,6 +541,7 @@ mod tests {
         Op::RescaleMosaic { .. } => "RescaleMosaic",
         Op::WhiteBalanceMosaic { .. } => "WhiteBalanceMosaic",
         Op::WhiteBalance(_) => "WhiteBalance",
+        Op::Unstagger(_) => "Unstagger",
         Op::Demosaic { .. } => "Demosaic",
         Op::FujiRotate { .. } => "FujiRotate",
         Op::Denoise { .. } => "Denoise",
@@ -571,6 +572,24 @@ mod tests {
       Some(WhiteLevel::new_bits(12, 1)),
       false,
     )
+  }
+
+  /// [`rggb_rawimage`] with the RGGB CFA of the rotated grid in staggered
+  /// layout 4: every second row offset by half a column
+  fn staggered_rawimage() -> RawImage {
+    use crate::cfa::CFALayout;
+    use crate::imgop::{Dim2, Point, Rect, stagger::Stagger};
+
+    let mut rawimage = rggb_rawimage();
+    let area = Rect::new(Point::zero(), Dim2::new(rawimage.width, rawimage.height));
+    let stagger = Stagger::new(CFALayout::StaggeredC, area).expect("layout").expect("staggered");
+    let (colors, width, height) = stagger.staggered_pattern([[0, 1], [1, 2]]);
+    let cfa = CFA::from_colors(&colors, width, height).expect("pattern");
+    rawimage.photometric = RawPhotometricInterpretation::Cfa(CFAConfig {
+      layout: CFALayout::StaggeredC,
+      ..CFAConfig::new(&cfa, &crate::cfa::PlaneColor::default())
+    });
+    rawimage
   }
 
   /// LinearRaw image whose samples are their index
@@ -1271,11 +1290,10 @@ mod tests {
     ] {
       assert_eq!(algorithm_of(&rawimage, demosaic)?, Some(algorithm), "{:?}", demosaic);
     }
-    // Bayer data of half size for previews, but rotated sensors are rotated at full size
-    let mut bayer = rggb_rawimage();
+    // Bayer data of half size for previews, but staggered data is mapped back at full size
+    let bayer = rggb_rawimage();
     assert_eq!(algorithm_of(&bayer, DemosaicQuality::Preview)?, Some(DemosaicAlgorithm::Superpixel3));
-    bayer.fuji_rotation_width = Some(4);
-    assert_eq!(algorithm_of(&bayer, DemosaicQuality::Preview)?, Some(DemosaicAlgorithm::Ppg));
+    assert_eq!(algorithm_of(&staggered_rawimage(), DemosaicQuality::Preview)?, Some(DemosaicAlgorithm::Ppg));
     // The algorithm for Bayer data is PPG by default, AHD only at Quality, and
     // X-Trans data doesn't use it
     let bayer = rggb_rawimage();
@@ -1339,9 +1357,8 @@ mod tests {
     ] {
       assert_eq!(algorithm_of(&cygm, demosaic)?, Some(algorithm), "{:?}", demosaic);
     }
-    // Images of rotated sensors are rotated after AHD too
-    let mut rotated = rggb_rawimage();
-    rotated.fuji_rotation_width = Some(4);
+    // Staggered data is mapped back after AHD too
+    let rotated = staggered_rawimage();
     let options = RenderOptions {
       bayer_demosaic: BayerDemosaic::Ahd,
       ..Default::default()
