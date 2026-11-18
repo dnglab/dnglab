@@ -34,7 +34,6 @@ use crate::{
       xtrans::{bilinear::XTransBilinearDemosaic, markesteijn::XTransMarkesteijnDemosaic},
     },
     sharpen::laplacian_sharpen,
-    stagger::{rotate_90cw, rotate_rect_90cw},
   },
   pixarray::{ImageRegionMut, ImageView, ImageViewMut},
   rawimage::{BlackLevel, CFAConfig, RawPhotometricInterpretation, WhiteLevel, user_crop_rect},
@@ -251,22 +250,15 @@ impl Executor {
         // The rotated grid has no ActiveArea and DefaultCrop, FujiRotate restores them
         (self.active_area, self.crop_area) = (None, None);
       }
-      Op::FujiRotate { stagger, crop, extra_rotate } => {
+      Op::FujiRotate { stagger, crop } => {
         let image = self.image();
-        let channels = image.channels;
         let stage3 = stagger.stage3();
-        image.data = stagger.to_stage3(&image.data, channels);
+        image.data = stagger.to_stage3(&image.data, image.channels);
         (image.width, image.height) = (stage3.w, stage3.h);
-        let mut crop = *crop;
-        if *extra_rotate {
-          image.data = rotate_90cw(&image.data, stage3.w, stage3.h, channels);
-          (image.width, image.height) = (stage3.h, stage3.w);
-          crop = crop.map(|crop| rotate_rect_90cw(crop, stage3.h));
-        }
         log::debug!("Dimension after the rotation {:?}", image.dim());
         // The image data is the stage 3 image now
         let rect = image.view().rect();
-        (self.active_area, self.crop_area) = (None, crop);
+        (self.active_area, self.crop_area) = (None, *crop);
         (self.stage3_area, self.origin) = (Some(rect), Point::default());
       }
       Op::Denoise { strength, wb } => wavelet_denoise(ImageRegionMut::from(self.image().view_mut()), *strength, wb)?,

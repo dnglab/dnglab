@@ -69,13 +69,8 @@ pub(super) enum Op {
   /// Map staggered CFA data onto the grid rotated by 45°, see [`Stagger`]
   Unstagger(Box<Stagger>),
   /// Map the demosaiced image of the rotated grid onto the stage 3 grid of
-  /// the staggered layout, with `crop` as DefaultCrop on that grid. With
-  /// `extra_rotate`, the image is rotated 90° clockwise afterwards.
-  FujiRotate {
-    stagger: Box<Stagger>,
-    crop: Option<Rect>,
-    extra_rotate: bool,
-  },
+  /// the staggered layout, with `crop` as DefaultCrop on that grid
+  FujiRotate { stagger: Box<Stagger>, crop: Option<Rect> },
   /// Reduce the noise of linear values. `wb` are the white balance coefficients
   /// to reach neutral colors, all ones if they are already white balanced.
   Denoise { strength: DenoiseStrength, wb: [f32; 4] },
@@ -267,11 +262,9 @@ pub fn plan(rawimage: &RawImage, options: &RenderOptions) -> crate::Result<Plan>
       // The demosaiced image of the rotated grid is mapped onto the stage 3 grid
       if let Some(stagger) = stagger.filter(|_| !algorithm.half_size() && steps.contains(Step::FujiRotate)) {
         let crop = stagger.stage3_crop(rawimage.crop_area, rawimage.default_crop.as_ref());
-        let extra_rotate = rawimage.camera.find_hint("fuji_rotate_90cw");
         ops.push(Op::FujiRotate {
           stagger: Box::new(stagger),
           crop,
-          extra_rotate,
         });
       }
     }

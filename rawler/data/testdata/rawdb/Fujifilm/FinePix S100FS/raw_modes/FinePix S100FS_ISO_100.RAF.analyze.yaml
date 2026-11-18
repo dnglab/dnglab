@@ -6,17 +6,23 @@ file:
 data:
   metadata:
     rawParams:
-      rawWidth: 4860
-      rawHeight: 4859
+      rawWidth: 5600
+      rawHeight: 2060
       bitDepth: 16
       cropArea:
         p:
-          x: 46
-          y: 10
+          x: 65
+          y: 7
         d:
-          w: 3866
-          h: 2892
-      activeArea: ~
+          w: 5469
+          h: 2045
+      activeArea:
+        p:
+          x: 0
+          y: 0
+        d:
+          w: 5600
+          h: 2060
       blacklevels:
         levels:
           - 519/1

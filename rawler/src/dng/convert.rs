@@ -35,8 +35,8 @@ use crate::{
 };
 
 use super::{
-  ApplyDngOpcodes, CompressionParams, CropMode, DEFAULT_DEFLATE_FLOAT_BITS, DEFAULT_JXL_DECODE_SPEED, DEFAULT_JXL_DISTANCE, DEFAULT_JXL_EFFORT, DngCompression,
-  DngPhotometricConversion, DngVersion, JxlParams,
+  ApplyDngOpcodes, CompressionParams, CropMode, DEFAULT_DEFLATE_FLOAT_BITS, DEFAULT_JXL_DECODE_SPEED, DEFAULT_JXL_DISTANCE, DEFAULT_JXL_EFFORT,
+  DNG_VERSION_V1_1, DngCompression, DngPhotometricConversion, DngVersion, JxlParams, StaggeredOutput,
 };
 
 /// Opcode list stages in processing order
@@ -99,6 +99,8 @@ pub struct ConvertParams {
   pub extra_dcp: Vec<CameraProfileFile>,
   /// Dark frame to subtract from the raw data, the data stays at stage 1
   pub dark_frame: Option<Arc<DarkFrame>>,
+  /// DNG output of staggered CFA data
+  pub staggered: StaggeredOutput,
 }
 
 /// Information surfaced from a completed conversion.
@@ -143,6 +145,7 @@ impl Default for ConvertParams {
       dcp: None,
       extra_dcp: Vec::new(),
       dark_frame: None,
+      staggered: StaggeredOutput::Demosaic,
     }
   }
 }
@@ -307,6 +310,12 @@ impl ConvertParams {
   }
 
   /// Set the DNG opcode lists to apply to the image data.
+  /// Set the DNG output of staggered CFA data
+  pub fn with_staggered(mut self, staggered: StaggeredOutput) -> Self {
+    self.staggered = staggered;
+    self
+  }
+
   pub fn with_apply_dng_opcodes(mut self, apply_dng_opcodes: ApplyDngOpcodes) -> Self {
     self.apply_dng_opcodes = apply_dng_opcodes;
     self
@@ -418,9 +427,19 @@ where
   log::debug!("Raw image WB coeff: {:?}", rawimage.wb_coeffs);
 
   // Staggered CFA data is demosaiced onto the stage 3 grid before it is
-  // written to DNG. This requires scaling and the demosaic to be applied.
-  let fuji_rotation = matches!(&rawimage.photometric, RawPhotometricInterpretation::Cfa(config) if config.layout != CFALayout::Rectangular);
+  // written to DNG, unless it is kept. This requires scaling and the demosaic
+  // to be applied. The CFALayout requires DNGBackwardVersion 1.1.
   let max_backward_version = params.max_dng_backward_version.as_dng_value();
+  let staggered = matches!(&rawimage.photometric, RawPhotometricInterpretation::Cfa(config) if config.layout != CFALayout::Rectangular);
+  let fuji_rotation = staggered
+    && match params.staggered {
+      StaggeredOutput::Demosaic => true,
+      StaggeredOutput::Keep if max_backward_version < DNG_VERSION_V1_1 => {
+        log::warn!("Staggered CFA data requires DNGBackwardVersion 1.1, it is demosaiced");
+        true
+      }
+      StaggeredOutput::Keep => false,
+    };
   let present = STAGES.map(|stage| rawimage.opcode_list(stage).is_some_and(|list| !list.is_empty()));
   let needs_processing = STAGES.map(|stage| rawimage.opcode_list(stage).is_some_and(|list| list.needs_processing(max_backward_version)));
   let required_stage = required_stage(fuji_rotation, params.apply_scaling, params.compression);
@@ -433,7 +452,7 @@ where
         if fuji_rotation {
           log::debug!("Staggered CFA data is demosaiced before writing to DNG");
         }
-        rawimage = demosaic_to_linear_raw(rawimage, fuji_rotation)?;
+        rawimage = demosaic_to_linear_raw(rawimage)?;
       }
       _ => {}
     }
@@ -641,12 +660,10 @@ fn processing_plan(present: [bool; 3], needs: [bool; 3], apply: ApplyDngOpcodes,
 /// Three-color sensors result in three planes, four-color sensors in four planes.
 /// The CFA data is demosaiced white balanced, the white balance is divided out
 /// again, as DNG readers apply it.
-fn demosaic_to_linear_raw(rawimage: RawImage, fuji_rotation: bool) -> crate::Result<RawImage> {
+fn demosaic_to_linear_raw(rawimage: RawImage) -> crate::Result<RawImage> {
   use ProcessingStep::*;
-  let mut steps: StepSet = [Demosaic, CropActiveArea, WhiteBalance].into_iter().collect();
-  if fuji_rotation {
-    steps.insert(FujiRotate);
-  }
+  // Staggered data is mapped back onto its stage 3 grid
+  let steps: StepSet = [Demosaic, CropActiveArea, FujiRotate, WhiteBalance].into_iter().collect();
   render_linear_raw(rawimage, &RenderOptions { steps, ..Default::default() })
 }
 
@@ -856,7 +873,7 @@ mod tests {
       );
       rawimage.data = RawImageData::Float(vec![0.5; 24 * 24]);
 
-      let rawimage = demosaic_to_linear_raw(rawimage, false)?;
+      let rawimage = demosaic_to_linear_raw(rawimage)?;
 
       assert_eq!(rawimage.cpp, cpp, "{}", pattern);
       assert_eq!(rawimage.photometric, RawPhotometricInterpretation::LinearRaw);
@@ -917,7 +934,7 @@ mod tests {
       ("CYGM", "CYGM", [1.5, 1.2, 1.0, 1.4]),
     ] {
       let rawimage = float_cfa_image(pattern, colors, wb, |_, _, plane| 0.4 / wb[plane]);
-      let rawimage = demosaic_to_linear_raw(rawimage, false)?;
+      let rawimage = demosaic_to_linear_raw(rawimage)?;
       let cpp = rawimage.cpp;
       let center = (12 * 24 + 12) * cpp;
       let pixel = &rawimage.data.as_f32()[center..center + cpp];
@@ -929,7 +946,7 @@ mod tests {
     let gray = |x: usize| if x < 12 { 0.45 } else { 0.1 };
     let error = |wb_coeffs: [f32; 4]| -> crate::Result<f32> {
       let rawimage = float_cfa_image("RGGB", "RGB", wb_coeffs, |x, _, plane| gray(x) / wb[plane]);
-      let rawimage = demosaic_to_linear_raw(rawimage, false)?;
+      let rawimage = demosaic_to_linear_raw(rawimage)?;
       let data = rawimage.data.as_f32();
       Ok(
         (4..20)

@@ -5,7 +5,7 @@ use std::path::PathBuf;
 
 use clap::{ArgMatches, parser::ValueSource};
 use rawler::dng::{
-  ApplyDngOpcodes, CropMode, DngCompression, DngVersion,
+  ApplyDngOpcodes, CropMode, DngCompression, DngVersion, StaggeredOutput,
   convertprofile::{ConvertProfile, ConvertProfileRegistry, MultiFrameMode},
   opcodes::OpcodeSelector,
 };
@@ -151,6 +151,9 @@ fn apply_cli_overrides(profile: &mut ConvertProfile, options: &ArgMatches) {
   }
   if let Some(value) = from_cli::<ApplyDngOpcodes>(options, "apply_dng_opcodes") {
     profile.apply_dng_opcodes = value;
+  }
+  if let Some(value) = from_cli::<StaggeredOutput>(options, "staggered") {
+    profile.staggered = value;
   }
   if let Some(value) = many_from_cli::<OpcodeSelector>(options, "remove_dng_opcodes") {
     profile.remove_dng_opcodes = value;

@@ -574,7 +574,9 @@ impl<'a> RafDecoder<'a> {
   /// photosites is offset by half a photosite, CFALayout 4 or 2. The camera
   /// definition has the CFA pattern of the grid rotated by 45° and the crop of
   /// the image that the rotation back gave before the stage 3 grid was used,
-  /// both are converted to the staggered layout.
+  /// both are converted to the staggered layout. The image of cameras with
+  /// `fuji_rotate_90cw` is turned by 90° clockwise, which becomes part of the
+  /// orientation.
   fn staggered_image(&self, image: PixU16, base_camera: &Camera, rotated_cfa: &CFA, blacklevel: Option<BlackLevel>, dummy: bool) -> Result<RawImage> {
     let alt = base_camera.find_hint("fuji_rotation_alt");
     if self.get_alt_layout() != alt {
@@ -622,7 +624,13 @@ impl<'a> RafDecoder<'a> {
       ..CFAConfig::new_from_camera(&camera)
     });
     let mut rawimage = RawImage::new(camera, image, 1, normalize_wb(self.get_wb()?), photometric, blacklevel, None, dummy);
-    rawimage.orientation = Orientation::from_tiff(&self.ifd);
+    // Some cameras store the image turned by 90°, the EXIF orientation applies after the turn
+    let orientation = Orientation::from_tiff(&self.ifd);
+    rawimage.orientation = if base_camera.find_hint("fuji_rotate_90cw") {
+      Some(Orientation::Rotate90.then(orientation.unwrap_or(Orientation::Normal)))
+    } else {
+      orientation
+    };
     // The crop of the camera definition refers to the image of the earlier rotation
     rawimage.default_crop = base_camera
       .crop_area

@@ -4,7 +4,7 @@
 .SH NAME
 dnglab\-convert \- Convert raw image(s) into dng format
 .SH SYNOPSIS
-\fBdnglab\-convert\fR [\fB\-p\fR|\fB\-\-profile\fR] [\fB\-c\fR|\fB\-\-compression\fR] [\fB\-\-ljpeg92\-predictor\fR] [\fB\-\-lossy\-jpeg\-quality\fR] [\fB\-\-jxl\-distance\fR] [\fB\-\-jxl\-effort\fR] [\fB\-\-jxl\-decode\-speed\fR] [\fB\-\-dng\-preview\fR] [\fB\-\-dng\-thumbnail\fR] [\fB\-\-dng\-force\-preview\fR] [\fB\-\-dng\-force\-thumbnail\fR] [\fB\-\-max\-dng\-backward\-version\fR] [\fB\-\-embed\-raw\fR] [\fB\-\-apply\-dng\-opcodes\fR] [\fB\-\-remove\-dng\-opcodes\fR] [\fB\-\-artist\fR] [\fB\-\-copyright\fR] [\fB\-\-keep\-mtime\fR] [\fB\-\-image\-index\fR] [\fB\-\-crop\fR] [\fB\-f\fR|\fB\-\-override\fR] [\fB\-r\fR|\fB\-\-recursive\fR] [\fB\-j\fR|\fB\-\-jobs\fR] [\fB\-\-dcp\-file\fR] [\fB\-\-extra\-dcp\-file\fR] [\fB\-\-bad\-pixels\fR] [\fB\-\-dark\-frame\fR] [\fB\-\-dark\-frame\-black\fR] [\fB\-\-verify\-digest\fR] [\fB\-h\fR|\fB\-\-help\fR] <\fIINPUT\fR> <\fIOUTPUT\fR> 
+\fBdnglab\-convert\fR [\fB\-p\fR|\fB\-\-profile\fR] [\fB\-c\fR|\fB\-\-compression\fR] [\fB\-\-ljpeg92\-predictor\fR] [\fB\-\-lossy\-jpeg\-quality\fR] [\fB\-\-jxl\-distance\fR] [\fB\-\-jxl\-effort\fR] [\fB\-\-jxl\-decode\-speed\fR] [\fB\-\-dng\-preview\fR] [\fB\-\-dng\-thumbnail\fR] [\fB\-\-dng\-force\-preview\fR] [\fB\-\-dng\-force\-thumbnail\fR] [\fB\-\-max\-dng\-backward\-version\fR] [\fB\-\-embed\-raw\fR] [\fB\-\-apply\-dng\-opcodes\fR] [\fB\-\-staggered\fR] [\fB\-\-remove\-dng\-opcodes\fR] [\fB\-\-artist\fR] [\fB\-\-copyright\fR] [\fB\-\-keep\-mtime\fR] [\fB\-\-image\-index\fR] [\fB\-\-crop\fR] [\fB\-f\fR|\fB\-\-override\fR] [\fB\-r\fR|\fB\-\-recursive\fR] [\fB\-j\fR|\fB\-\-jobs\fR] [\fB\-\-dcp\-file\fR] [\fB\-\-extra\-dcp\-file\fR] [\fB\-\-bad\-pixels\fR] [\fB\-\-dark\-frame\fR] [\fB\-\-dark\-frame\-black\fR] [\fB\-\-verify\-digest\fR] [\fB\-h\fR|\fB\-\-help\fR] <\fIINPUT\fR> <\fIOUTPUT\fR> 
 .SH DESCRIPTION
 Convert raw image(s) into dng format
 .SH OPTIONS
@@ -158,6 +158,19 @@ list1
 list2
 .IP \(bu 2
 list3
+.RE
+.TP
+\fB\-\-staggered\fR \fI<mode>\fR [default: demosaic]
+Staggered CFA data (Fujifilm Super CCD): demosaic it to LinearRaw, or keep it with its CFALayout (DNG 1.1)
+.br
+
+.br
+\fIPossible values:\fR
+.RS 14
+.IP \(bu 2
+demosaic
+.IP \(bu 2
+keep
 .RE
 .TP
 \fB\-\-remove\-dng\-opcodes\fR \fI<opcodes>\fR
