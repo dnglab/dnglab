@@ -10,7 +10,6 @@ pub mod darkframe;
 pub mod denoise;
 pub mod develop;
 pub mod exposure;
-pub mod fuji_rotate;
 pub mod gamma;
 pub mod highlights;
 pub mod hsv;
@@ -25,6 +24,7 @@ pub mod sensor;
 pub mod sharpen;
 pub mod spline;
 pub mod srgb;
+pub mod stagger;
 pub mod xyz;
 pub mod yuv;
 

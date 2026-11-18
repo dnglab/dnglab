@@ -6,7 +6,6 @@
 use std::sync::Arc;
 
 use super::{BayerDemosaic, DemosaicQuality, ProcessingStep, RenderOptions, RenderTarget, WhiteBalancePlacement, XTransDemosaic};
-use crate::RawlerError;
 use crate::{
   RawImage,
   cfa::CFALayout,
@@ -16,6 +15,7 @@ use crate::{
   },
   formats::tiff::Rational,
   imgop::{
+    Dim2, Point, Rect,
     balance::auto_white_balance,
     color::{CameraToRgb, OutputSpace, PixelOp, TransferFunction, camera_to_output, d65_white_balance},
     darkframe::DarkFrame,
@@ -24,6 +24,7 @@ use crate::{
     matrix::multiply,
     raw::WhiteBalance,
     sensor::SensorType,
+    stagger::Stagger,
   },
   rawimage::{CFAConfig, RawPhotometricInterpretation},
 };
@@ -65,8 +66,16 @@ pub(super) enum Op {
     crop_to_active_area: bool,
     crop_default: bool,
   },
-  /// Rotate an RGB image of a sensor with a 45° layout
-  FujiRotate { width: usize, extra_rotate: bool },
+  /// Map staggered CFA data onto the grid rotated by 45°, see [`Stagger`]
+  Unstagger(Box<Stagger>),
+  /// Map the demosaiced image of the rotated grid onto the stage 3 grid of
+  /// the staggered layout, with `crop` as DefaultCrop on that grid. With
+  /// `extra_rotate`, the image is rotated 90° clockwise afterwards.
+  FujiRotate {
+    stagger: Box<Stagger>,
+    crop: Option<Rect>,
+    extra_rotate: bool,
+  },
   /// Reduce the noise of linear values. `wb` are the white balance coefficients
   /// to reach neutral colors, all ones if they are already white balanced.
   Denoise { strength: DenoiseStrength, wb: [f32; 4] },
@@ -146,12 +155,23 @@ pub fn plan(rawimage: &RawImage, options: &RenderOptions) -> crate::Result<Plan>
     RawPhotometricInterpretation::Cfa(config) if steps.contains(Step::Demosaic) && rawimage.cpp == 1 => Some(config),
     _ => None,
   };
-  // Images of rotated sensors are rotated at full size
+  // Staggered CFA data is demosaiced on the grid rotated by 45°, with its CFA there
+  let full = Rect::new(Point::zero(), Dim2::new(rawimage.width, rawimage.height));
+  let stagger = match mosaic {
+    Some(config) => Stagger::new(config.layout, rawimage.active_area.unwrap_or(full))?,
+    None => None,
+  };
+  let demosaic_config = match (&stagger, mosaic) {
+    (Some(stagger), Some(config)) => Some(CFAConfig::new(&stagger.rotated_cfa(&config.cfa)?, &config.colors)),
+    (_, config) => config.cloned(),
+  };
+  // Staggered data is mapped back onto the stage 3 grid at full size
   let quality = match options.demosaic {
-    DemosaicQuality::Preview if rawimage.fuji_rotation_width.is_some() && steps.contains(Step::FujiRotate) => DemosaicQuality::Fast,
+    DemosaicQuality::Preview if stagger.is_some() && steps.contains(Step::FujiRotate) => DemosaicQuality::Fast,
     quality => quality,
   };
-  let demosaic = mosaic
+  let demosaic = demosaic_config
+    .as_ref()
     .map(|config| demosaic_algorithm(config, quality, options.bayer_demosaic, options.xtrans_demosaic))
     .transpose()?;
   let channels = demosaic.map_or(rawimage.cpp, |(_, planes)| planes);
@@ -231,25 +251,28 @@ pub fn plan(rawimage: &RawImage, options: &RenderOptions) -> crate::Result<Plan>
     let crop_to_active_area = matches!(rawimage.photometric, RawPhotometricInterpretation::Cfa(_)) && steps.contains(Step::CropActiveArea);
     // OpcodeList3 of LinearRaw data is kept for the DNG reader
     let list3 = has_opcodes(OpcodeStage::List3) && !linear_raw;
-    if let (Some(config), Some((algorithm, _))) = (mosaic, demosaic) {
-      if crop_to_active_area && rawimage.active_area.is_some() && rawimage.fuji_rotation_width.is_some() {
-        return Err(RawlerError::invalid_input("ActiveArea is not possible when rotation is not normalized"));
+    if let (Some(config), Some((algorithm, _))) = (demosaic_config.as_ref(), demosaic) {
+      // Staggered data is mapped from its ActiveArea onto the rotated grid
+      if let Some(stagger) = &stagger {
+        ops.push(Op::Unstagger(Box::new(stagger.clone())));
       }
-      // Data of rotated sensors is rotated at full size
-      let fuji_rotation_width = rawimage
-        .fuji_rotation_width
-        .filter(|_| !algorithm.half_size() && steps.contains(Step::FujiRotate));
       // Without operations on the whole stage 3 image, only the DefaultCrop is demosaiced
-      cropped = crop_default && fuji_rotation_width.is_none() && !list3;
+      cropped = crop_default && stagger.is_none() && !list3;
       ops.push(Op::Demosaic {
         algorithm,
         cfa: Box::new(config.clone()),
-        crop_to_active_area,
+        crop_to_active_area: crop_to_active_area && stagger.is_none(),
         crop_default: cropped,
       });
-      if let Some(width) = fuji_rotation_width {
+      // The demosaiced image of the rotated grid is mapped onto the stage 3 grid
+      if let Some(stagger) = stagger.filter(|_| !algorithm.half_size() && steps.contains(Step::FujiRotate)) {
+        let crop = stagger.stage3_crop(rawimage.crop_area, rawimage.default_crop.as_ref());
         let extra_rotate = rawimage.camera.find_hint("fuji_rotate_90cw");
-        ops.push(Op::FujiRotate { width, extra_rotate });
+        ops.push(Op::FujiRotate {
+          stagger: Box::new(stagger),
+          crop,
+          extra_rotate,
+        });
       }
     }
     // OpcodeList3 is applied just after demosaicing

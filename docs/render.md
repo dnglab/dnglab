@@ -106,7 +106,7 @@ minus the dark signal. Steps that don't expect linear reference values, such as
 | `OpcodeList2` | Apply OpcodeList2 after `Rescale` |
 | `Demosaic` | Demosaic CFA data |
 | `OpcodeList3` | Apply OpcodeList3 after `Demosaic`, not for LinearRaw data |
-| `FujiRotate` | Rotate images of sensors with a 45° layout |
+| `FujiRotate` | Map staggered CFA data back from the grid rotated by 45° |
 | `CropActiveArea` | Crop to the ActiveArea |
 | `BaselineExposure` | Apply BaselineExposure and BaselineExposureOffset |
 | `WhiteBalance` | Apply the white balance |
@@ -158,8 +158,8 @@ The planner makes these decisions first:
   The LinearRaw data of a DNG conversion (`render_linear_raw` with the default
   options) is demosaiced at `Quality` too.
 
-  Images of rotated sensors (Fujifilm) are demosaiced with `Fast` instead of
-  `Preview`, because they are rotated at full size.
+  Staggered CFA data (Fujifilm Super CCD) is demosaiced with `Fast` instead of
+  `Preview`, because it is mapped back onto the stage 3 grid at full size.
 - **White balance:**
   - It is the as-shot white balance. Without one, it is estimated from the image
     data (`AutoWhiteBalance`, see [`balance.rs`](../rawler/src/imgop/balance.rs)),
@@ -245,8 +245,7 @@ OpcodeList1, replacing an existing FixBadPixelsList:
   a `RawlerError::InvalidInput` error for data it can't process, e.g. a CFA of
   another layout; the planner only picks algorithms that match the CFA. A CFA
   without an algorithm, e.g. a 2x8 pattern, makes the plan fail with the same
-  error. So does a staggered CFALayout of a DNG file, whose photosites are not
-  on a rectangular grid.
+  error. So do the staggered CFALayouts 6 to 9, see below.
 - **Tiled algorithms:** AHD, VNG, RCD and Markesteijn interpolate from a
   neighbourhood of pixels. They process the image in tiles in parallel, see
   [`sensor/tiles.rs`](../rawler/src/imgop/sensor/tiles.rs): each tile reads its
@@ -257,10 +256,23 @@ OpcodeList1, replacing an existing FixBadPixelsList:
   the 3x3 neighbourhood ([`sensor/border.rs`](../rawler/src/imgop/sensor/border.rs)
   for AHD, VNG and RCD).
 - **Partial demosaic:** without operations on the whole stage 3 image (no
-  applied OpcodeList3 and no Fuji rotation), only the DefaultCrop is
+  applied OpcodeList3 and no staggered layout), only the DefaultCrop is
   demosaiced, plus a margin of 32 pixels for the interpolation.
-- **Fuji rotation:** Fujifilm images with a 45° sensor layout are rotated after
-  the demosaic.
+- **Staggered CFA layouts** (CFALayout 2 to 5, the Super CCD sensors of
+  Fujifilm, see [`stagger.rs`](../rawler/src/imgop/stagger.rs)): every second
+  row or column of photosites is offset by half a photosite. The photosites
+  form a full square grid rotated by 45°.
+  - The `Unstagger` operation maps the ActiveArea onto that grid without
+    interpolation, where the CFA is an ordinary 2x2 pattern. The demosaic
+    algorithm is the one of that pattern.
+  - `FujiRotate` maps the demosaiced image back onto the stage 3 grid of DNG
+    readers: the ActiveArea with doubled columns (rows offset) or doubled rows
+    (columns offset). Each photosite is a pixel of that grid, the pixels between
+    them are the mean of their four neighbours.
+  - DefaultCrop and OpcodeList3 refer to the stage 3 grid, the DefaultCrop in
+    raw coordinates scaled by the doubling.
+  - Two cameras (`fuji_rotate_90cw`) are rotated by 90° clockwise afterwards.
+  - Layouts 6 to 9 offset rows and columns, the plan fails for them.
 - **OpcodeList3** is applied after the demosaic by the `OpcodeList3` step, for
   example WarpRectilinear and GainMap.
 
@@ -471,7 +483,7 @@ shows (for example after `RawImage::linearize`). The 16-bit outputs
 - **Stage 2** (rescaled): with `ConvertParams::apply_scaling`, or when
   OpcodeList2 is applied to the data (`--apply-dng-opcodes`, or opcodes the
   target DNG version can't store).
-- **Stage 3** (LinearRaw): needed for Fuji rotation, for lossy compression
+- **Stage 3** (LinearRaw): needed for staggered CFA layouts, for lossy compression
   (`-c lossy`) and when OpcodeList3 is applied to the data.
 
 Stage 3 data comes from `render_linear_raw` with the steps Demosaic,

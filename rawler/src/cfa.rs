@@ -57,6 +57,19 @@ impl TryFrom<char> for CFAColor {
   }
 }
 
+/// Pattern character of a CFA color value, `U` for an unknown value
+fn color_char(color: u32) -> char {
+  match color {
+    0 => 'R',
+    1 => 'G',
+    2 => 'B',
+    3 => 'C',
+    4 => 'M',
+    5 => 'Y',
+    _ => 'U',
+  }
+}
+
 pub const CFA_DIM: usize = 48;
 const CFA_LEN: usize = CFA_DIM * CFA_DIM; // 2304
 
@@ -206,18 +219,7 @@ impl CFA {
   /// [`Self::try_new`] does.
   #[doc(hidden)]
   pub fn new_from_tag(pat: &Value, dim: Option<(usize, usize)>) -> Option<CFA> {
-    let mut patname = String::new();
-    for i in 0..pat.count() {
-      patname.push(match pat.force_u32(i as usize) {
-        0 => 'R',
-        1 => 'G',
-        2 => 'B',
-        3 => 'C',
-        4 => 'M',
-        5 => 'Y',
-        _ => 'U',
-      });
-    }
+    let patname: String = (0..pat.count()).map(|i| color_char(pat.force_u32(i as usize))).collect();
     if patname.is_empty() {
       return None;
     }
@@ -225,6 +227,13 @@ impl CFA {
       Some((rows, cols)) => CFA::try_new_with_size(&patname, cols, rows),
       None => CFA::try_new(&patname),
     }
+  }
+
+  /// CFA of `width` x `height` color values, row by row, see [`CFAColor`].
+  /// `None` for unknown colors or a size that [`Self::try_new_with_size`] rejects.
+  pub fn from_colors(colors: &[u8], width: usize, height: usize) -> Option<CFA> {
+    let name: String = colors.iter().map(|color| color_char(u32::from(*color))).collect();
+    CFA::try_new_with_size(&name, width, height)
   }
 
   /// Create a new CFA from a string describing it. For simplicity the pattern is specified

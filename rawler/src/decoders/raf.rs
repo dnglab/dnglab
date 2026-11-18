@@ -13,11 +13,11 @@ use crate::RawImage;
 use crate::RawLoader;
 use crate::RawlerError;
 use crate::Result;
-use crate::alloc_image;
 use crate::alloc_image_plain;
 use crate::analyze::FormatDump;
 use crate::bits::BEu32;
 use crate::bits::Endian;
+use crate::cfa::CFALayout;
 use crate::decoders::raf::fuji_decompressor::decompress_fuji;
 use crate::decompressors::packed::*;
 use crate::exif::Exif;
@@ -27,14 +27,14 @@ use crate::formats::tiff::*;
 use crate::imgop::Dim2;
 use crate::imgop::Point;
 use crate::imgop::Rect;
-use crate::imgop::fuji_rotate::fuji_calc_dimension;
+use crate::imgop::stagger::Stagger;
 use crate::pixarray::PixU16;
 use crate::rawimage::BlackLevel;
 use crate::rawimage::CFAConfig;
+use crate::rawimage::DefaultCrop;
 use crate::rawimage::RawPhotometricInterpretation;
 use crate::rawimage::WhiteLevel;
 use crate::rawsource::RawSource;
-use crate::tags::DngTag;
 use crate::tags::ExifTag;
 use crate::tags::TiffCommonTag;
 
@@ -363,61 +363,9 @@ impl<'a> Decoder for RafDecoder<'a> {
     let blacklevel = self.get_blacklevel(&corrected_cfa)?;
     log::debug!("RAF Blacklevels: {:?}", blacklevel);
 
-    // For now, we put the rotated data into DNG. Much better solution
-    // would be to support staggered layouts, but this is not used much
-    // and complicated to implement, because we need rectangular CFA patterns like 2x4.
-    // The code path for staggered data is already implemented here, but remains unused.
-    let rotate_for_dng = false;
     let cpp = 1;
     if base_camera.find_hint("fuji_rotation") || base_camera.find_hint("fuji_rotation_alt") {
-      log::debug!("Apply Fuji image rotation");
-      let (rotated, fuji_rot_width) = if rotate_for_dng {
-        let pix = if base_camera.find_hint("fuji_rotation") {
-          fuji_raw_rotate(&image, dummy) // Only required for fuji_rotation
-        } else {
-          image
-        };
-        (pix, None)
-      } else {
-        let alt_layout = self.get_alt_layout();
-        // The rotation reads no pixels of a dummy image
-        let pixels = if dummy { &[][..] } else { image.pixels() };
-        let (pix, t) = Self::rotate_image(pixels, base_camera, alt_layout, width, height, dummy)?;
-        (pix, Some(t))
-      };
-
-      camera.cfa = corrected_cfa;
-      let photometric = RawPhotometricInterpretation::Cfa(CFAConfig::new_from_camera(&camera));
-      let mut image = RawImage::new(
-        base_camera.clone(),
-        rotated,
-        cpp,
-        normalize_wb(self.get_wb()?),
-        photometric,
-        blacklevel,
-        None,
-        dummy,
-      );
-      image.fuji_rotation_width = fuji_rot_width;
-      image.orientation = Orientation::from_tiff(&self.ifd);
-
-      if rotate_for_dng {
-        image.add_dng_tag(TiffCommonTag::CFARepeatPatternDim, [2, 4]);
-        image.add_dng_tag(DngTag::CFALayout, 2_u16);
-        image.add_dng_tag(TiffCommonTag::CFAPattern, &[0_u8, 1, 2, 1, 2, 1, 0, 1][..]);
-
-        todo!();
-        //image.add_dng_tag(DngTag::BlackLevel, image.blacklevel[0]);
-        //image.add_dng_tag(DngTag::BlackLevelRepeatDim, [1_u16, 1_u16]);
-      }
-
-      // Reset crops because we have rotated the data.
-      let rotated_dim = fuji_calc_dimension(image.width, fuji_rot_width.expect("fuji_rot_width must be Some when not rotating for DNG"));
-      log::debug!("Image dimension after final rotation: {:?}", rotated_dim);
-      //image.active_area = camera.active_area.map(|area| Rect::new_with_borders(rotated_dim, &area));
-      image.crop_area = camera.crop_area.and_then(|area| Rect::new_with_borders(rotated_dim, &area));
-      image.active_area = None;
-      Ok(image)
+      self.staggered_image(image, base_camera, &corrected_cfa, blacklevel, dummy)
     } else {
       //ok_image(self.camera.clone(), width, height, cpp, self.get_wb()?, image.into_inner())
 
@@ -620,6 +568,69 @@ impl<'a> RafDecoder<'a> {
     )
   }
 
+  /// Raw image of the staggered CFA data of a Super CCD sensor
+  ///
+  /// Every second row (`fuji_rotation`) or column (`fuji_rotation_alt`) of
+  /// photosites is offset by half a photosite, CFALayout 4 or 2. The camera
+  /// definition has the CFA pattern of the grid rotated by 45° and the crop of
+  /// the image that the rotation back gave before the stage 3 grid was used,
+  /// both are converted to the staggered layout.
+  fn staggered_image(&self, image: PixU16, base_camera: &Camera, rotated_cfa: &CFA, blacklevel: Option<BlackLevel>, dummy: bool) -> Result<RawImage> {
+    let alt = base_camera.find_hint("fuji_rotation_alt");
+    if self.get_alt_layout() != alt {
+      log::warn!("RAF: the layout of the file differs from the camera definition, using the camera definition");
+    }
+    let dim = Dim2::new(image.width, image.height);
+    let area = match base_camera.active_area {
+      Some(borders) => Rect::new_with_borders(dim, &borders),
+      None => Some(Rect::new(Point::zero(), dim)),
+    }
+    .filter(|area| area.d.w >= 2 && area.d.h >= 2)
+    .ok_or_else(|| {
+      decoder_error!(
+        "RAF: image of {}x{} pixels is too small for the active area {:?}",
+        dim.w,
+        dim.h,
+        base_camera.active_area
+      )
+    })?;
+    // The layout of the area, CFAConfig has it relative to the top-left sample
+    let area_layout = if alt { CFALayout::StaggeredA } else { CFALayout::StaggeredC };
+    let layout = area_layout.shift(area.p.x, area.p.y);
+    let stagger = Stagger::new(layout, area)?.ok_or_else(|| decoder_error!("RAF: Super CCD layout is not staggered"))?;
+    let at = |row, col| rotated_cfa.color_at(row, col) as u8;
+    let (colors, width, height) = stagger.staggered_pattern([[at(0, 0), at(0, 1)], [at(1, 0), at(1, 1)]]);
+    let to_sample_origin = ((width - area.p.x % width) % width, (height - area.p.y % height) % height);
+    let cfa = CFA::from_colors(&colors, width, height)
+      .ok_or_else(|| decoder_error!("RAF: CFA pattern {} gives no staggered pattern", rotated_cfa))?
+      .shift(to_sample_origin.0, to_sample_origin.1);
+    // Black levels are given for the positions of the rotated CFA
+    let blacklevel = blacklevel.map(|black| {
+      if black.width == 2 && black.height == 2 && black.cpp == 1 {
+        let level = |row: usize, col: usize| black.levels[row * 2 + col];
+        let (levels, width, height) = stagger.staggered_pattern([[level(0, 0), level(0, 1)], [level(1, 0), level(1, 1)]]);
+        BlackLevel::new(&levels, width, height, 1).shift_pattern(to_sample_origin.0, to_sample_origin.1)
+      } else {
+        black
+      }
+    });
+
+    let mut camera = base_camera.clone();
+    camera.cfa = cfa;
+    let photometric = RawPhotometricInterpretation::Cfa(CFAConfig {
+      layout,
+      ..CFAConfig::new_from_camera(&camera)
+    });
+    let mut rawimage = RawImage::new(camera, image, 1, normalize_wb(self.get_wb()?), photometric, blacklevel, None, dummy);
+    rawimage.orientation = Orientation::from_tiff(&self.ifd);
+    // The crop of the camera definition refers to the image of the earlier rotation
+    rawimage.default_crop = base_camera
+      .crop_area
+      .and_then(|borders| staggered_crop(&stagger, area, &borders, alt, base_camera.find_hint("fuji_rotate_90cw")));
+    rawimage.crop_area = rawimage.default_crop.and_then(|crop| crop.rect(area.d)).map(|crop| crop.translate(area.p));
+    Ok(rawimage)
+  }
+
   fn get_alt_layout(&self) -> bool {
     if let Some(entry) = &self
       .ifd
@@ -642,69 +653,61 @@ impl<'a> RafDecoder<'a> {
     log::debug!("JPEG off: {}, len: {}", jpeg_off, jpeg_len);
     Ok(file.subview(jpeg_off, jpeg_len)?)
   }
+}
 
-  /// Returns (rotated_pixels, fuji_rotation_width) where fuji_rotation_width is the
-  /// split point T for computing the inscribed rectangle after 45° back-rotation.
-  fn rotate_image(src: &[u16], camera: &Camera, alt_layout: bool, width: usize, height: usize, dummy: bool) -> Result<(PixU16, usize)> {
-    if let Some(active_area) = camera.active_area {
-      let x = active_area[0];
-      let y = active_area[1];
-      let crop = width
-        .checked_sub(active_area[2])
-        .and_then(|w| w.checked_sub(x))
-        .zip(height.checked_sub(active_area[3]).and_then(|h| h.checked_sub(y))) // TODO: bug, invalid order of crop index
-        .filter(|&(w, h)| w > 0 && h > 0);
-      let Some((cropwidth, cropheight)) = crop else {
-        return Err(decoder_error!(
-          "RAF: image of {}x{} pixels is too small for the active area {:?}",
-          width,
-          height,
-          active_area
-        ));
-      };
-
-      if alt_layout != camera.find_hint("fuji_rotation_alt") {
-        log::warn!("RAF: the layout of the file differs from the camera definition, using the camera definition");
-      }
-      let outside = || decoder_error!("RAF: rotated pixel outside of the image of {}x{} pixels", width, height);
-
-      if camera.find_hint("fuji_rotation_alt") {
-        let rotatedwidth = cropheight + cropwidth / 2;
-        let rotatedheight = rotatedwidth - 1;
-
-        let mut out = alloc_image_plain!(rotatedwidth, rotatedheight, dummy);
-        if !dummy {
-          for row in 0..cropheight {
-            let inb = &src[(row + y) * width + x..];
-            for col in 0..cropwidth {
-              let out_row = rotatedwidth.checked_sub(cropheight + 1 - row + (col >> 1)).ok_or_else(outside)?;
-              let out_col = ((col + 1) >> 1) + row;
-              *out.pixels_mut().get_mut(out_row * rotatedwidth + out_col).ok_or_else(outside)? = inb[col];
-            }
-          }
-        }
-        Ok((out, cropheight))
-      } else {
-        let rotatedwidth = cropwidth + cropheight / 2;
-        let rotatedheight = rotatedwidth - 1;
-
-        let mut out = alloc_image_plain!(rotatedwidth, rotatedheight, dummy);
-        if !dummy {
-          for row in 0..cropheight {
-            let inb = &src[(row + y) * width + x..];
-            for col in 0..cropwidth {
-              let out_row = cropwidth - 1 - col + (row >> 1);
-              let out_col = ((row + 1) >> 1) + col;
-              *out.pixels_mut().get_mut(out_row * rotatedwidth + out_col).ok_or_else(outside)? = inb[col];
-            }
-          }
-        }
-        Ok((out, cropwidth))
-      }
-    } else {
-      Err(RawlerError::decoder_failed("no active_area for fuji_rotate".to_string()))
-    }
+/// Size of the image that the rotation back of the rotated grid gave before
+/// the stage 3 grid was used: the inscribed rectangle of the grid of
+/// `rotated_width` columns with the split width `split`, always landscape
+fn legacy_rotated_dimension(rotated_width: usize, split: usize) -> Dim2 {
+  let crop_w = (split as f64 * std::f64::consts::SQRT_2).floor() as usize;
+  let crop_h = (rotated_width.saturating_sub(split) as f64 * std::f64::consts::SQRT_2).floor() as usize;
+  if crop_w > crop_h {
+    Dim2::new(crop_w, crop_h)
+  } else {
+    Dim2::new(crop_h, crop_w)
   }
+}
+
+/// DefaultCrop of the staggered `area` for the crop `borders` (left, top,
+/// right, bottom) of a camera definition, in raw coordinates relative to the area
+///
+/// The borders refer to the image that the rotation back gave before the
+/// stage 3 grid was used, see [`legacy_rotated_dimension`]. They are scaled to
+/// the stage 3 grid, and turned back by 90° for `extra_rotate`, which rotates
+/// the stage 3 image clockwise. `None` if no area is left.
+fn staggered_crop(stagger: &Stagger, area: Rect, borders: &[usize; 4], alt: bool, extra_rotate: bool) -> Option<DefaultCrop> {
+  let (w, h) = (area.d.w, area.d.h);
+  let (rotated_width, split) = if alt { (h + w / 2, h) } else { (w + h / 2, w) };
+  let legacy = legacy_rotated_dimension(rotated_width, split);
+  let stage3 = stagger.stage3();
+  let rendered = if extra_rotate { Dim2::new(stage3.h, stage3.w) } else { stage3 };
+  // The earlier image was always landscape
+  let legacy = if (rendered.w >= rendered.h) == (legacy.w >= legacy.h) {
+    legacy
+  } else {
+    Dim2::new(legacy.h, legacy.w)
+  };
+  if legacy.w == 0 || legacy.h == 0 {
+    return None;
+  }
+  let (sx, sy) = (rendered.w as f64 / legacy.w as f64, rendered.h as f64 / legacy.h as f64);
+  let scaled = [borders[0] as f64 * sx, borders[1] as f64 * sy, borders[2] as f64 * sx, borders[3] as f64 * sy].map(|v| v.round() as usize);
+  // The borders of the stage 3 image before the rotation by 90° clockwise
+  let [left, top, right, bottom] = if extra_rotate { [scaled[1], scaled[2], scaled[3], scaled[0]] } else { scaled };
+  let width = stage3.w.checked_sub(left + right).filter(|w| *w > 0)?;
+  let height = stage3.h.checked_sub(top + bottom).filter(|h| *h > 0)?;
+  let (fx, fy) = stagger.full_scale();
+  let raw = |value: usize, scale: usize| {
+    if value.is_multiple_of(scale) {
+      Rational::new((value / scale) as u32, 1)
+    } else {
+      Rational::new(value as u32, scale as u32)
+    }
+  };
+  Some(DefaultCrop {
+    origin: [raw(left, fx), raw(top, fy)],
+    size: [raw(width, fx), raw(height, fy)],
+  })
 }
 
 fn normalize_wb(raw_wb: [f32; 4]) -> [f32; 4] {
@@ -859,43 +862,9 @@ pub enum RafTags {
   RAFData = 0xc000,
 }
 
-pub fn fuji_raw_rotate(img: &PixU16, dummy: bool) -> PixU16 {
-  let mut out = alloc_image!(img.height, img.width, dummy);
-  for row in 0..img.height {
-    for col in 0..img.width {
-      //*x.at_mut(row, col) = out[flip_index(row, col)];
-      //*x.at_mut(row, col) = out[(width - 1 - col) * height + (height - 1 - row)];
-      //*out.at_mut(img.width - 1 - col, img.height - 1 - row) = *img.at(row, col); //   out[row * width + col];
-      *out.at_mut(col, row) = *img.at(row, col); //   out[row * width + col];
-    }
-  }
-  out
-}
-
 #[cfg(test)]
 mod tests {
   use super::*;
-
-  #[test]
-  fn rotation_of_images_that_don_t_fit_the_active_area() -> Result<()> {
-    let mut camera = Camera::new();
-    camera.active_area = Some([2, 2, 2, 2]);
-    camera.hints = vec!["fuji_rotation".into()];
-    // Images smaller than the borders of the active area
-    assert!(RafDecoder::rotate_image(&[0; 16], &camera, false, 4, 4, false).is_err());
-    assert!(RafDecoder::rotate_image(&[0; 24], &camera, false, 3, 8, false).is_err());
-    // An area of 4x4 pixels becomes 6x5 pixels
-    let (rotated, split) = RafDecoder::rotate_image(&[7; 64], &camera, false, 8, 8, false)?;
-    assert_eq!((rotated.width, rotated.height, split), (6, 5, 4));
-    // A dummy image has no pixels to read
-    RafDecoder::rotate_image(&[], &camera, false, 8, 8, true)?;
-    // A layout that differs from the camera definition is only a warning,
-    // the alternative layout of an odd width doesn't fit the rotated image
-    camera.hints = vec!["fuji_rotation_alt".into()];
-    RafDecoder::rotate_image(&[7; 64], &camera, false, 8, 8, false)?;
-    assert!(RafDecoder::rotate_image(&[0; 56], &camera, true, 7, 8, false).is_err());
-    Ok(())
-  }
 
   #[test]
   fn wb_without_green_is_unknown() {

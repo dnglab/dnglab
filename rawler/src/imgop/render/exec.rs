@@ -19,7 +19,6 @@ use crate::{
     darkframe::subtract_dark_frame,
     denoise::wavelet_denoise,
     exposure::{apply_exposure, auto_exposure},
-    fuji_rotate::fuji_normalize_rotation,
     raw::{white_balance, white_balance_mosaic},
     scale::scale_image,
     sensor::{
@@ -35,6 +34,7 @@ use crate::{
       xtrans::{bilinear::XTransBilinearDemosaic, markesteijn::XTransMarkesteijnDemosaic},
     },
     sharpen::laplacian_sharpen,
+    stagger::{rotate_90cw, rotate_rect_90cw},
   },
   pixarray::{ImageRegionMut, ImageView, ImageViewMut},
   rawimage::{BlackLevel, CFAConfig, RawPhotometricInterpretation, WhiteLevel, user_crop_rect},
@@ -232,15 +232,42 @@ impl Executor {
         crop_to_active_area,
         crop_default,
       } => self.demosaic(*algorithm, cfa, *crop_to_active_area, *crop_default)?,
-      Op::FujiRotate { width, extra_rotate } => {
-        // Masks are not rotated
+      Op::Unstagger(stagger) => {
+        // Masks are not mapped
         if self.rawimage.transparency_mask.take().is_some() {
           log::warn!("Transparency mask is dropped: the image data is rotated");
         }
         self.rawimage.drop_semantic_masks("the image data is rotated");
         let image = self.image();
-        *image = fuji_normalize_rotation(image.view(), *width, *extra_rotate)?.into();
-        log::debug!("dimension after rotate {:?}", image.dim());
+        if image.channels != 1 {
+          return Err(RawlerError::invalid_input(format!(
+            "Staggered CFA data with {} samples per pixel is not supported",
+            image.channels
+          )));
+        }
+        image.data = stagger.unstagger(&image.data, image.width);
+        (image.width, image.height) = (stagger.rotated().w, stagger.rotated().h);
+        log::debug!("Staggered CFA data mapped onto the rotated grid of {:?}", stagger.rotated());
+        // The rotated grid has no ActiveArea and DefaultCrop, FujiRotate restores them
+        (self.active_area, self.crop_area) = (None, None);
+      }
+      Op::FujiRotate { stagger, crop, extra_rotate } => {
+        let image = self.image();
+        let channels = image.channels;
+        let stage3 = stagger.stage3();
+        image.data = stagger.to_stage3(&image.data, channels);
+        (image.width, image.height) = (stage3.w, stage3.h);
+        let mut crop = *crop;
+        if *extra_rotate {
+          image.data = rotate_90cw(&image.data, stage3.w, stage3.h, channels);
+          (image.width, image.height) = (stage3.h, stage3.w);
+          crop = crop.map(|crop| rotate_rect_90cw(crop, stage3.h));
+        }
+        log::debug!("Dimension after the rotation {:?}", image.dim());
+        // The image data is the stage 3 image now
+        let rect = image.view().rect();
+        (self.active_area, self.crop_area) = (None, crop);
+        (self.stage3_area, self.origin) = (Some(rect), Point::default());
       }
       Op::Denoise { strength, wb } => wavelet_denoise(ImageRegionMut::from(self.image().view_mut()), *strength, wb)?,
       Op::Exposure { manual, meter_scale, scale } => {

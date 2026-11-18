@@ -138,7 +138,16 @@ impl DefaultCrop {
   /// bounds is moved back into them. `None` for invalid values, an empty
   /// rectangle or one that exceeds the bounds.
   pub fn rect(&self, bounds: Dim2) -> Option<Rect> {
+    self.rect_scaled((1, 1), bounds)
+  }
+
+  /// Rectangle of pixels within `bounds` of an image that is scaled from the
+  /// raw image data by `scale` (horizontal, vertical), like the stage 3 image
+  /// of staggered CFA layouts, see [`Self::rect`]
+  pub fn rect_scaled(&self, scale: (usize, usize), bounds: Dim2) -> Option<Rect> {
     let [x, y, w, h] = self.values()?;
+    let (sx, sy) = (scale.0 as f64, scale.1 as f64);
+    let [x, y, w, h] = [x * sx, y * sy, w * sx, h * sy];
     if w < 0.5 || h < 0.5 || x + w > bounds.w as f64 || y + h > bounds.h as f64 {
       return None;
     }
@@ -266,10 +275,6 @@ pub struct RawImage {
   pub gain_table_map: Option<GainTableMap>,
 
   pub dng_tags: HashMap<u16, Value>,
-
-  /// For Fuji rotated sensors: the split point T used to compute the
-  /// inscribed rectangle after 45° rotation (equivalent to dcraw's fuji_width).
-  pub fuji_rotation_width: Option<usize>,
 
   pub dng_opcodes_1: Option<OpcodeList>,
   pub dng_opcodes_2: Option<OpcodeList>,
@@ -446,7 +451,6 @@ impl RawImage {
       as_shot_profile_name: None,
       gain_table_map: None,
       dng_tags: HashMap::new(),
-      fuji_rotation_width: None,
       scaled_from_integer: false,
       long_integer: false,
       dng_opcodes_1: None,
@@ -539,7 +543,6 @@ impl RawImage {
       as_shot_profile_name: None,
       gain_table_map: None,
       dng_tags: HashMap::new(),
-      fuji_rotation_width: None,
       scaled_from_integer: false,
       long_integer: false,
       dng_opcodes_1: None,

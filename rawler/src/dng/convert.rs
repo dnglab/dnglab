@@ -12,6 +12,7 @@ use image::DynamicImage;
 use crate::camera_profile::{CALIBRATION_SLOTS, d65_preference};
 use crate::{
   RawImage, RawImageData, RawlerError, Software,
+  cfa::CFALayout,
   decoders::{Decoder, RawDecodeParams, RawPhotometricInterpretation, WellKnownIFD, WhiteLevel, validate_image_index},
   dng::{
     DEFAULT_LOSSY_JPEG_QUALITY, PREVIEW_JPEG_QUALITY,
@@ -416,10 +417,9 @@ where
   );
   log::debug!("Raw image WB coeff: {:?}", rawimage.wb_coeffs);
 
-  // If the raw image needs to be rotated, we do this before
-  // writing the image to DNG. This requires scaling and debayer
-  // to be applied.
-  let fuji_rotation = rawimage.camera.find_hint("fuji_rotation") || rawimage.camera.find_hint("fuji_rotation_alt");
+  // Staggered CFA data is demosaiced onto the stage 3 grid before it is
+  // written to DNG. This requires scaling and the demosaic to be applied.
+  let fuji_rotation = matches!(&rawimage.photometric, RawPhotometricInterpretation::Cfa(config) if config.layout != CFALayout::Rectangular);
   let max_backward_version = params.max_dng_backward_version.as_dng_value();
   let present = STAGES.map(|stage| rawimage.opcode_list(stage).is_some_and(|list| !list.is_empty()));
   let needs_processing = STAGES.map(|stage| rawimage.opcode_list(stage).is_some_and(|list| list.needs_processing(max_backward_version)));
@@ -431,7 +431,7 @@ where
       OpcodeStage::List2 if data_stage >= stage => rawimage.apply_scaling()?,
       OpcodeStage::List3 if data_stage >= stage => {
         if fuji_rotation {
-          log::debug!("Raw image requires fuji_rotation before writing to DNG");
+          log::debug!("Staggered CFA data is demosaiced before writing to DNG");
         }
         rawimage = demosaic_to_linear_raw(rawimage, fuji_rotation)?;
       }
