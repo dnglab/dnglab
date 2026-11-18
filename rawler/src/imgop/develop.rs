@@ -26,6 +26,7 @@ use crate::{
     render::{BayerDemosaic, RenderOptions, RenderedImage, XTransDemosaic, render},
     sharpen::DEFAULT_SHARPEN,
   },
+  rawimage::user_crop_rect,
   rawsource::RawSource,
   tags::{ExifTag, TiffCommonTag},
 };
@@ -207,8 +208,8 @@ pub fn process_raw_image<W: Write + Seek + Send>(raw: &Path, image_file: &mut W,
 
 /// Crop the development of `rawimage` to the largest rectangle of opaque pixels
 /// of its transparency mask, within the area that `crop` keeps: the rectangle
-/// replaces the DefaultCrop and `develop` crops to it. Without a transparency
-/// mask or opaque pixel, nothing is changed.
+/// replaces the DefaultCrop and the DefaultUserCrop, and `develop` crops to it.
+/// Without a transparency mask or opaque pixel, nothing is changed.
 fn crop_to_opaque_area(rawimage: &mut RawImage, develop: &mut RawDevelop, crop: CropMode) {
   let Some(mask) = &rawimage.transparency_mask else {
     log::debug!("Image has no transparency mask, it is not cropped to the opaque area");
@@ -216,7 +217,13 @@ fn crop_to_opaque_area(rawimage: &mut RawImage, develop: &mut RawDevelop, crop: 
   };
   let full = Rect::new(Point::zero(), Dim2::new(rawimage.width, rawimage.height));
   let within = match crop {
-    CropMode::Best => rawimage.crop_area.or(rawimage.active_area),
+    CropMode::Best => {
+      let default_crop = rawimage.crop_area.or(rawimage.active_area).unwrap_or(full);
+      match &rawimage.default_user_crop {
+        Some(user_crop) if develop.steps.contains(&ProcessingStep::CropUser) => Some(user_crop_rect(default_crop, user_crop)),
+        _ => Some(default_crop),
+      }
+    }
     CropMode::ActiveArea => rawimage.active_area,
     CropMode::None => None,
   }
@@ -225,6 +232,8 @@ fn crop_to_opaque_area(rawimage: &mut RawImage, develop: &mut RawDevelop, crop: 
     Some(area) => {
       log::debug!("Crop to the opaque area {:?} within {:?}", area, within);
       rawimage.crop_area = Some(area);
+      // The opaque area is within the DefaultUserCrop already
+      rawimage.default_user_crop = None;
       if !develop.steps.contains(&ProcessingStep::CropDefault) {
         develop.steps.push(ProcessingStep::CropDefault);
       }
@@ -323,12 +332,12 @@ impl RawDevelop {
   }
 
   /// Development with all steps, the image is cropped by `crop`: to the
-  /// DefaultCrop, the ActiveArea or not at all
+  /// DefaultCrop and the DefaultUserCrop, the ActiveArea or not at all
   pub fn with_crop(crop: CropMode) -> Self {
     let excluded: &[ProcessingStep] = match crop {
       CropMode::Best => &[],
-      CropMode::ActiveArea => &[ProcessingStep::CropDefault],
-      CropMode::None => &[ProcessingStep::CropActiveArea, ProcessingStep::CropDefault],
+      CropMode::ActiveArea => &[ProcessingStep::CropDefault, ProcessingStep::CropUser],
+      CropMode::None => &[ProcessingStep::CropActiveArea, ProcessingStep::CropDefault, ProcessingStep::CropUser],
     };
     let steps: Vec<ProcessingStep> = ProcessingStep::ALL.into_iter().filter(|step| !excluded.contains(step)).collect();
     Self::new_with(&steps)

@@ -74,7 +74,7 @@ set edit:completion:arg-completer[dnglab] = {|@words|
             cand --artist 'Set the artist tag'
             cand --keep-mtime 'Keep mtime, read from EXIF with fallback to original file mtime'
             cand --image-index 'Select a specific image index (or ''all'') if file is a image container'
-            cand --crop 'Crop of the image: DefaultCrop (best), ActiveArea or none'
+            cand --crop 'Crop of the image: DefaultCrop and DefaultUserCrop (best), ActiveArea or none'
             cand --format 'Output image format, defaults to the OUTPUT file extension or tif. TIFF has 16-bit samples, linear 32-bit floating point samples for High Dynamic Range camera profiles. PNM is a 16-bit PGM for one color plane or PPM for three'
             cand --color-space 'Color space of the image'
             cand --highlights 'Highlights above white after the BaselineExposure: compress keeps their color with a smooth shoulder, clip clips each channel like DNG readers'

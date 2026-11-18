@@ -318,11 +318,22 @@ where
     if let Some(crop) = crop {
       assert!(crop.p.x >= active_area.p.x);
       assert!(crop.p.y >= active_area.p.y);
-      self.ifd_mut().add_tag(
-        DngTag::DefaultCropOrigin,
-        [(crop.p.x - active_area.p.x) as u16, (crop.p.y - active_area.p.y) as u16],
-      );
-      self.ifd_mut().add_tag(DngTag::DefaultCropSize, [crop.d.w as u16, crop.d.h as u16]);
+      let relative = Rect::new(Point::new(crop.p.x - active_area.p.x, crop.p.y - active_area.p.y), crop.d);
+      // The fractional DefaultCrop of the source is kept while it rounds to the written one
+      let bounds = Dim2::new(image_area.d.w - active_area.p.x, image_area.d.h - active_area.p.y);
+      match rawimage
+        .default_crop
+        .filter(|exact| !exact.is_integer() && exact.rect(bounds) == Some(relative))
+      {
+        Some(exact) => {
+          self.ifd_mut().add_tag(DngTag::DefaultCropOrigin, &exact.origin[..]);
+          self.ifd_mut().add_tag(DngTag::DefaultCropSize, &exact.size[..]);
+        }
+        None => {
+          self.ifd_mut().add_tag(DngTag::DefaultCropOrigin, [relative.p.x as u16, relative.p.y as u16]);
+          self.ifd_mut().add_tag(DngTag::DefaultCropSize, [relative.d.w as u16, relative.d.h as u16]);
+        }
+      }
     }
 
     // DefaultUserCrop is relative to the default crop, which may differ from the source
