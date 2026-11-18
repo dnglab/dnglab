@@ -115,6 +115,7 @@ minus the dark signal. Steps that don't expect linear reference values, such as
 | `ProfileRender` | Apply the rendering tables of the camera profile |
 | `ToneCurve` | Apply the default tone curve (a profile tone curve replaces it) |
 | `CropDefault` | Crop to the DefaultCrop |
+| `CropUser` | Narrow the crop of `CropDefault` to the DefaultUserCrop |
 | `Denoise` | Wavelet noise reduction |
 | `DefaultScale` | Scale to square pixels (DefaultScale, BestQualityScale) |
 | `Exposure` | Manual exposure change |
@@ -122,8 +123,8 @@ minus the dark signal. Steps that don't expect linear reference values, such as
 | `Sharpen` | Laplacian sharpening |
 | `TransferFunction` | Encode the values by the transfer function of the output space |
 
-`--crop best` keeps all steps. `activearea` removes `CropDefault`, and `none`
-also removes `CropActiveArea`.
+`--crop best` keeps all steps. `activearea` removes `CropDefault` and
+`CropUser`, and `none` also removes `CropActiveArea`.
 
 ## Design rules
 
@@ -273,6 +274,18 @@ divided out again, without clipping, because DNG readers apply it themselves.
 Crop to the DefaultCrop, or to the ActiveArea without one, unless the demosaic
 did it already. Cropping before the color operations saves their work for the
 cropped pixels.
+
+- **Fractional DefaultCrop:** DNG files may store DefaultCropOrigin and
+  DefaultCropSize as rationals. The crop uses them rounded, like DNG readers:
+  origin and size are rounded, a crop that the rounding moves past the image
+  is moved back into it. A DNG conversion writes the rationals back while the
+  crop is the same.
+- **DefaultUserCrop:** with the `CropUser` step, the crop is narrowed to the
+  DefaultUserCrop of a DNG file, relative to the DefaultCrop. Its edges are
+  rounded to pixels. The partial demosaic covers the user crop then.
+  `--crop-transparent` searches the opaque area within it. A DNG conversion
+  keeps the DefaultCrop and writes the DefaultUserCrop as tag, the developed
+  previews show the user crop.
 
 ### 7. Image operations on linear values
 

@@ -215,6 +215,7 @@ impl<'a> Decoder for DngDecoder<'a> {
     // The masked areas are kept, the black level is that of the BlackLevel tags
     let active_area = image.active_area.unwrap_or_else(|| Rect::new(Point::zero(), Dim2::new(width, height)));
     image.blackareas = self.get_masked_areas(raw, Dim2::new(width, height), active_area);
+    image.default_crop = self.get_default_crop(raw);
     image.default_user_crop = self.get_default_user_crop(raw);
     image.linearization_table = self.get_linearization_table(raw, &image.data)?;
     image.baseline_exposure = root.get_entry(DngTag::BaselineExposure).and_then(|entry| match &entry.value {
@@ -579,14 +580,12 @@ impl<'a> DngDecoder<'a> {
 
     let active_area = self.get_active_area(raw, width, height);
     // The DefaultCrop is relative to the ActiveArea
-    let crop_area = self.get_crop(raw).and_then(|crop| {
+    let crop_area = self.get_default_crop(raw).and_then(|crop| {
       let [left, top, ..] = active_area.unwrap_or_default();
+      let bounds = Dim2::new(width.saturating_sub(left), height.saturating_sub(top));
       let offsets = crop
-        .p
-        .x
-        .checked_add(left)
-        .zip(crop.p.y.checked_add(top))
-        .and_then(|(x, y)| Rect::new(Point::new(x, y), crop.d).as_ltrb_offsets(width, height));
+        .rect(bounds)
+        .and_then(|rect| Rect::new(Point::new(rect.p.x + left, rect.p.y + top), rect.d).as_ltrb_offsets(width, height));
       if offsets.is_none() {
         log::warn!("DNG: DefaultCrop {:?} doesn't fit the image of {}x{} pixels, ignoring it", crop, width, height);
       }
@@ -862,15 +861,26 @@ impl<'a> DngDecoder<'a> {
     offsets
   }
 
-  fn get_crop(&self, raw: &IFD) -> Option<Rect> {
-    if let Some(crops) = raw.get_entry(DngTag::DefaultCropOrigin) {
-      let p = Point::new(crops.force_usize(0), crops.force_usize(1));
-      if let Some(size) = raw.get_entry(DngTag::DefaultCropSize) {
-        let d = Dim2::new(size.force_usize(0), size.force_usize(1));
-        return Some(Rect::new(p, d));
+  /// DefaultCropOrigin and DefaultCropSize of the raw IFD as stored, integers
+  /// or rationals
+  fn get_default_crop(&self, raw: &IFD) -> Option<DefaultCrop> {
+    let values = |tag: DngTag| -> Option<[Rational; 2]> {
+      let entry = raw.get_entry(tag)?;
+      let value = |i: usize| match &entry.value {
+        // A zero denominator is 0, as DNG readers read it (e.g. origin 0/0 of Xiaoyi cameras)
+        Value::Rational(values) => values.get(i).map(|v| if v.d == 0 { Rational::new(0, 1) } else { *v }),
+        value => value.get_u32(i).ok().flatten().map(|v| Rational::new(v, 1)),
+      };
+      let pair = value(0).zip(value(1)).map(|(a, b)| [a, b]);
+      if pair.is_none() {
+        log::warn!("DNG: ignoring {:?} {:?}, expected 2 integers or rationals", tag, entry.value);
       }
-    }
-    None
+      pair
+    };
+    Some(DefaultCrop {
+      origin: values(DngTag::DefaultCropOrigin)?,
+      size: values(DngTag::DefaultCropSize)?,
+    })
   }
 
   /// DefaultUserCrop of the raw IFD: top, left, bottom and right relative to

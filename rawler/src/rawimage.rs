@@ -117,6 +117,57 @@ impl ColorimetricReference {
   }
 }
 
+/// DNG DefaultCropOrigin and DefaultCropSize as stored, horizontal and
+/// vertical, relative to the ActiveArea. The values may be fractional.
+#[derive(Clone, Copy, Debug)]
+pub struct DefaultCrop {
+  pub origin: [Rational; 2],
+  pub size: [Rational; 2],
+}
+
+impl DefaultCrop {
+  fn values(&self) -> Option<[f64; 4]> {
+    let [x, y, w, h] = [self.origin[0], self.origin[1], self.size[0], self.size[1]];
+    let value = |v: Rational| (v.d != 0).then(|| v.n as f64 / v.d as f64);
+    Some([value(x)?, value(y)?, value(w)?, value(h)?])
+  }
+
+  /// Rectangle of pixels within `bounds`, as DNG readers compute it
+  ///
+  /// Origin and size are rounded, a rectangle that the rounding moves past the
+  /// bounds is moved back into them. `None` for invalid values, an empty
+  /// rectangle or one that exceeds the bounds.
+  pub fn rect(&self, bounds: Dim2) -> Option<Rect> {
+    let [x, y, w, h] = self.values()?;
+    if w < 0.5 || h < 0.5 || x + w > bounds.w as f64 || y + h > bounds.h as f64 {
+      return None;
+    }
+    let (w, h) = ((w.round() as usize).min(bounds.w), (h.round() as usize).min(bounds.h));
+    let (x, y) = ((x.round() as usize).min(bounds.w - w), (y.round() as usize).min(bounds.h - h));
+    Some(Rect::new(Point::new(x, y), Dim2::new(w, h)))
+  }
+
+  /// All values are integers
+  pub fn is_integer(&self) -> bool {
+    self.origin.iter().chain(&self.size).all(|v| v.d != 0 && v.n % v.d == 0)
+  }
+}
+
+/// Rectangle of the DefaultUserCrop `user_crop` (top, left, bottom, right
+/// relative to `default_crop`) in the coordinates of `default_crop`'s image
+///
+/// The edges are rounded to pixels, at least one pixel is kept.
+pub fn user_crop_rect(default_crop: Rect, user_crop: &[Rational; 4]) -> Rect {
+  let [top, left, bottom, right] = user_crop.map(|v| if v.d == 0 { 0.0 } else { (v.n as f64 / v.d as f64).clamp(0.0, 1.0) });
+  let edge = |v: f64, len: usize| ((v * len as f64).round() as usize).min(len);
+  let (x0, y0) = (edge(left, default_crop.d.w), edge(top, default_crop.d.h));
+  let x0 = x0.min(default_crop.d.w.saturating_sub(1));
+  let y0 = y0.min(default_crop.d.h.saturating_sub(1));
+  let x1 = edge(right, default_crop.d.w).max(x0 + 1);
+  let y1 = edge(bottom, default_crop.d.h).max(y0 + 1);
+  Rect::new(Point::new(default_crop.p.x + x0, default_crop.p.y + y0), Dim2::new(x1 - x0, y1 - y0))
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct CFAConfig {
   pub cfa: CFA,
@@ -180,6 +231,9 @@ pub struct RawImage {
   pub active_area: Option<Rect>,
   /// how much to crop the image to get all the recommended area
   pub crop_area: Option<Rect>,
+  /// DNG DefaultCropOrigin and DefaultCropSize as stored, `crop_area` is the
+  /// rectangle of pixels they round to
+  pub default_crop: Option<DefaultCrop>,
   /// DNG DefaultUserCrop: top, left, bottom and right, relative to the
   /// default crop (`crop_area`, or the active area without one), 0 to 1
   pub default_user_crop: Option<[Rational; 4]>,
@@ -400,6 +454,7 @@ impl RawImage {
       dng_opcodes_3: None,
       linearization_table: None,
       baseline_exposure: None,
+      default_crop: None,
       default_user_crop: None,
       colorimetric_reference: ColorimetricReference::default(),
       transparency_mask: None,
@@ -492,6 +547,7 @@ impl RawImage {
       dng_opcodes_3: None,
       linearization_table: None,
       baseline_exposure: None,
+      default_crop: None,
       default_user_crop: None,
       colorimetric_reference: ColorimetricReference::default(),
       transparency_mask: None,

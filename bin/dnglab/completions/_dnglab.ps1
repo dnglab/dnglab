@@ -79,7 +79,7 @@ Register-ArgumentCompleter -Native -CommandName 'dnglab' -ScriptBlock {
             [CompletionResult]::new('--artist', '--artist', [CompletionResultType]::ParameterName, 'Set the artist tag')
             [CompletionResult]::new('--keep-mtime', '--keep-mtime', [CompletionResultType]::ParameterName, 'Keep mtime, read from EXIF with fallback to original file mtime')
             [CompletionResult]::new('--image-index', '--image-index', [CompletionResultType]::ParameterName, 'Select a specific image index (or ''all'') if file is a image container')
-            [CompletionResult]::new('--crop', '--crop', [CompletionResultType]::ParameterName, 'Crop of the image: DefaultCrop (best), ActiveArea or none')
+            [CompletionResult]::new('--crop', '--crop', [CompletionResultType]::ParameterName, 'Crop of the image: DefaultCrop and DefaultUserCrop (best), ActiveArea or none')
             [CompletionResult]::new('--format', '--format', [CompletionResultType]::ParameterName, 'Output image format, defaults to the OUTPUT file extension or tif. TIFF has 16-bit samples, linear 32-bit floating point samples for High Dynamic Range camera profiles. PNM is a 16-bit PGM for one color plane or PPM for three')
             [CompletionResult]::new('--color-space', '--color-space', [CompletionResultType]::ParameterName, 'Color space of the image')
             [CompletionResult]::new('--highlights', '--highlights', [CompletionResultType]::ParameterName, 'Highlights above white after the BaselineExposure: compress keeps their color with a smooth shoulder, clip clips each channel like DNG readers')

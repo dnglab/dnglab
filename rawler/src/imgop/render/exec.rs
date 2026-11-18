@@ -11,6 +11,7 @@ use crate::RawlerError;
 use crate::{
   RawImage, RawImageData,
   dng::opcodes::{OpcodeData, OpcodeImage, OpcodeStage},
+  formats::tiff::Rational,
   imgop::{
     Dim2, Point, Rect,
     blacklevel::{rescale, rescale_in_place},
@@ -36,7 +37,7 @@ use crate::{
     sharpen::laplacian_sharpen,
   },
   pixarray::{ImageRegionMut, ImageView, ImageViewMut},
-  rawimage::{BlackLevel, CFAConfig, RawPhotometricInterpretation, WhiteLevel},
+  rawimage::{BlackLevel, CFAConfig, RawPhotometricInterpretation, WhiteLevel, user_crop_rect},
 };
 
 /// Pixels around the DefaultCrop that are demosaiced with it, so the
@@ -49,7 +50,7 @@ const DEMOSAIC_MARGIN: usize = 32;
 ///
 /// The plan must be made for this image by [`plan`](super::plan).
 pub fn execute(rawimage: RawImage, plan: &Plan) -> crate::Result<RenderedImage> {
-  let mut executor = Executor::new(rawimage);
+  let mut executor = Executor::new(rawimage, plan.user_crop);
   for op in &plan.ops {
     executor.apply(op)?;
   }
@@ -81,7 +82,7 @@ pub fn execute(rawimage: RawImage, plan: &Plan) -> crate::Result<RenderedImage> 
 /// Demosaiced CFA data is LinearRaw data, its black and white levels are 0.0
 /// and 1.0. The plan must be made for this image by [`plan`](super::plan).
 pub fn execute_raw(rawimage: RawImage, plan: &Plan) -> crate::Result<RawImage> {
-  let mut executor = Executor::new(rawimage);
+  let mut executor = Executor::new(rawimage, plan.user_crop);
   for op in &plan.ops {
     executor.apply(op)?;
   }
@@ -122,10 +123,12 @@ struct Executor {
   stage3_area: Option<Rect>,
   /// Position of the image data in the coordinates of `stage3_area`
   origin: Point,
+  /// DefaultUserCrop that narrows the DefaultCrop, see [`Plan`]
+  user_crop: Option<[Rational; 4]>,
 }
 
 impl Executor {
-  fn new(rawimage: RawImage) -> Self {
+  fn new(rawimage: RawImage, user_crop: Option<[Rational; 4]>) -> Self {
     Self {
       active_area: rawimage.active_area,
       crop_area: rawimage.crop_area,
@@ -133,6 +136,21 @@ impl Executor {
       image: None,
       stage3_area: None,
       origin: Point::default(),
+      user_crop,
+    }
+  }
+
+  /// Area of the DefaultCrop, or the ActiveArea without one, narrowed by the
+  /// DefaultUserCrop of the plan. That is relative to the whole image data
+  /// without both.
+  fn default_crop(&mut self) -> Option<Rect> {
+    let crop = self.crop_area.or(self.active_area);
+    match self.user_crop {
+      Some(user_crop) => {
+        let crop = crop.unwrap_or_else(|| self.image().view().rect());
+        Some(user_crop_rect(crop, &user_crop))
+      }
+      None => crop,
     }
   }
 
@@ -253,7 +271,8 @@ impl Executor {
         }
       }
       Op::CropDefault => {
-        self.crop(self.crop_area.or(self.active_area))?;
+        let crop = self.default_crop();
+        self.crop(crop)?;
         self.crop_area = None;
       }
       Op::CropActiveArea => self.crop(self.active_area)?,
@@ -372,7 +391,7 @@ impl Executor {
   /// Demosaic the image data, see [`Op::Demosaic`]
   fn demosaic(&mut self, algorithm: DemosaicAlgorithm, cfa: &CFAConfig, crop_to_active_area: bool, crop_default: bool) -> crate::Result<()> {
     let (stage3_area, _) = self.stage3_area();
-    let crop = self.crop_area.or(self.active_area).filter(|_| crop_default);
+    let crop = if crop_default { self.default_crop() } else { None };
     let image = self.image();
     let bounds = if crop_to_active_area { stage3_area } else { image.view().rect() };
     let roi = crop

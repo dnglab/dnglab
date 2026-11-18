@@ -14,6 +14,7 @@ use crate::{
     opcodes::OpcodeStage,
     profile_render::{ProfileRender, RgbTablesRender, ToneCurve, prophoto_to_rgb, rgb_to_prophoto},
   },
+  formats::tiff::Rational,
   imgop::{
     balance::auto_white_balance,
     color::{CameraToRgb, OutputSpace, PixelOp, TransferFunction, camera_to_output, d65_white_balance},
@@ -35,6 +36,8 @@ pub struct Plan {
   pub(super) extended_range: bool,
   /// The result has the values of the raw data, without the Rescale step
   pub(super) raw_values: bool,
+  /// DefaultUserCrop that narrows the DefaultCrop of the crop operations
+  pub(super) user_crop: Option<[Rational; 4]>,
 }
 
 /// Processing operation with its parameters
@@ -221,6 +224,8 @@ pub fn plan(rawimage: &RawImage, options: &RenderOptions) -> crate::Result<Plan>
   }
 
   let crop_default = steps.contains(Step::CropDefault) && !linear_raw;
+  // The DefaultUserCrop narrows the DefaultCrop
+  let user_crop = rawimage.default_user_crop.filter(|_| crop_default && steps.contains(Step::CropUser));
   let mut cropped = false;
   if steps.contains(Step::Demosaic) {
     let crop_to_active_area = matches!(rawimage.photometric, RawPhotometricInterpretation::Cfa(_)) && steps.contains(Step::CropActiveArea);
@@ -267,6 +272,7 @@ pub fn plan(rawimage: &RawImage, options: &RenderOptions) -> crate::Result<Plan>
       ops,
       extended_range: false,
       raw_values: false,
+      user_crop: None,
     });
   }
   // Without the Rescale step, the values stay those of the raw data, unless
@@ -435,6 +441,7 @@ pub fn plan(rawimage: &RawImage, options: &RenderOptions) -> crate::Result<Plan>
     ops,
     extended_range,
     raw_values,
+    user_crop,
   })
 }
 

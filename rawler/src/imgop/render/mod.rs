@@ -74,6 +74,8 @@ pub enum ProcessingStep {
   ToneCurve,
   /// Crop to the DefaultCrop, or the ActiveArea without DefaultCrop
   CropDefault,
+  /// Crop to the DefaultUserCrop within the DefaultCrop, with the CropDefault step
+  CropUser,
   /// Reduce the noise of demosaiced data by [`RenderOptions::denoise`]. Without
   /// effect for output-referred data, which is already rendered.
   Denoise,
@@ -95,7 +97,7 @@ pub enum ProcessingStep {
 
 impl ProcessingStep {
   /// All steps
-  pub const ALL: [Self; 21] = [
+  pub const ALL: [Self; 22] = [
     Self::DarkFrame,
     Self::OpcodeList1,
     Self::Rescale,
@@ -111,6 +113,7 @@ impl ProcessingStep {
     Self::ProfileRender,
     Self::ToneCurve,
     Self::CropDefault,
+    Self::CropUser,
     Self::Denoise,
     Self::DefaultScale,
     Self::Exposure,
@@ -143,6 +146,7 @@ impl clap::ValueEnum for ProcessingStep {
       Self::ProfileRender => "profilerender",
       Self::ToneCurve => "tonecurve",
       Self::CropDefault => "cropdefault",
+      Self::CropUser => "cropuser",
       Self::Denoise => "denoise",
       Self::DefaultScale => "defaultscale",
       Self::Exposure => "exposure",
