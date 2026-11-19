@@ -242,6 +242,8 @@ pub fn plan(rawimage: &RawImage, options: &RenderOptions) -> crate::Result<Plan>
   // The DefaultUserCrop narrows the DefaultCrop
   let user_crop = rawimage.default_user_crop.filter(|_| crop_default && steps.contains(Step::CropUser));
   let mut cropped = false;
+  // Scale from staggered data to the stage 3 grid, once it is mapped onto it
+  let mut stage3_scale = None;
   if steps.contains(Step::Demosaic) {
     let crop_to_active_area = matches!(rawimage.photometric, RawPhotometricInterpretation::Cfa(_)) && steps.contains(Step::CropActiveArea);
     // OpcodeList3 of LinearRaw data is kept for the DNG reader
@@ -260,10 +262,11 @@ pub fn plan(rawimage: &RawImage, options: &RenderOptions) -> crate::Result<Plan>
         crop_default: cropped,
       });
       // The demosaiced image of the rotated grid is mapped onto the stage 3 grid
-      if let Some(stagger) = stagger.filter(|_| !algorithm.half_size() && steps.contains(Step::FujiRotate)) {
+      if let Some(stagger) = stagger.as_ref().filter(|_| !algorithm.half_size() && steps.contains(Step::FujiRotate)) {
         let crop = stagger.stage3_crop(rawimage.crop_area, rawimage.default_crop.as_ref());
+        stage3_scale = Some(stagger.full_scale());
         ops.push(Op::FujiRotate {
-          stagger: Box::new(stagger),
+          stagger: Box::new(stagger.clone()),
           crop,
         });
       }
@@ -315,8 +318,16 @@ pub fn plan(rawimage: &RawImage, options: &RenderOptions) -> crate::Result<Plan>
       });
     }
   }
-  // The image is scaled while its values are linear, CFA data can't be scaled
+  // The image is scaled while its values are linear, CFA data can't be scaled.
+  // The DefaultScale of staggered data refers to its pixels, the stage 3 grid
+  // has the rows or columns doubled. Staggered data on the grid rotated by 45°
+  // is not scaled.
   let (horizontal, vertical) = rawimage.camera.best_quality_scale_factors();
+  let (horizontal, vertical) = match (stage3_scale, &stagger) {
+    (Some((sx, sy)), _) => (horizontal / sx as f64, vertical / sy as f64),
+    (None, Some(_)) => (1.0, 1.0),
+    (None, None) => (horizontal, vertical),
+  };
   if steps.contains(Step::DefaultScale) && !cfa_data && (horizontal, vertical) != (1.0, 1.0) {
     ops.push(Op::Scale { horizontal, vertical });
   }

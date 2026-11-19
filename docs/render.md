@@ -271,6 +271,10 @@ OpcodeList1, replacing an existing FixBadPixelsList:
     them are the mean of their four neighbours.
   - DefaultCrop and OpcodeList3 refer to the stage 3 grid, the DefaultCrop in
     raw coordinates scaled by the doubling.
+  - The DefaultScale refers to the staggered pixels, as in DNG: the RAF decoder
+    gives Super CCD data the doubling as DefaultScale (`1 2` for offset
+    columns, `2 1` for offset rows). `FujiRotate` divides it by the doubling,
+    for the stage 3 grid.
   - Two cameras (`fuji_rotate_90cw`) store the image turned by 90°. The RAF
     decoder makes the turn part of the orientation, so the pixels aren't rotated.
   - Layouts 6 to 9 offset rows and columns, the plan fails for them.
@@ -310,6 +314,8 @@ reduction, the sharpening and the automatic exposure.
   reduction of a luma and several chroma planes, on values stabilized by their
   square root. It runs before scaling, because scaling changes the noise.
 - **DefaultScale**: scale to square pixels and to the best-quality size.
+  Staggered data on the stage 3 grid is scaled by DefaultScale divided by the
+  doubling of the grid, on the grid rotated by 45° (half size) it isn't scaled.
 - **Exposure** ([`exposure.rs`](../rawler/src/imgop/exposure.rs)): the manual
   exposure, plus the estimate of `--auto-exposure`. All planes of a pixel get the
   same factor, so the chromaticity stays. A negative exposure follows a curve
@@ -490,15 +496,17 @@ shows (for example after `RawImage::linearize`). The 16-bit outputs
 
 Stage 3 data comes from `render_linear_raw` with the steps Demosaic,
 CropActiveArea, FujiRotate and WhiteBalance. The white balance is divided out
-again, because the DNG reader applies it.
+again, because the DNG reader applies it. The DefaultScale of staggered data
+is divided by the doubling of the stage 3 grid.
 
 Staggered CFA data (`ConvertParams::staggered`, `--staggered`):
 
 - **`demosaic`** (the default): it is demosaiced onto its stage 3 grid and
   written as LinearRaw, for readers without support for staggered layouts.
 - **`keep`**: it is written at stage 1 with its CFALayout, its 2x4 or 4x2 pattern
-  and the DefaultCrop in raw coordinates, which may have half pixels. This
-  requires DNGBackwardVersion 1.1; with a lower maximum, the data is demosaiced
+  and the DefaultCrop in raw coordinates, which may have half pixels. Its
+  DefaultScale includes the doubling of the stage 3 grid, so that readers give
+  the image its aspect ratio. This requires DNGBackwardVersion 1.1; with a lower maximum, the data is demosaiced
   with a warning.
 
 The DNG preview and thumbnail are the embedded preview of the raw file. If the

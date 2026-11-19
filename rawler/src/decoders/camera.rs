@@ -71,6 +71,18 @@ impl DefaultScale {
     let aspect = (h_n as f64 / h_d as f64) / (v_n as f64 / v_d as f64);
     if aspect.is_finite() && aspect > 0.0 { aspect } else { 1.0 }
   }
+
+  /// Scale multiplied by the integer factors `(horizontal, vertical)`
+  pub fn scaled(&self, (horizontal, vertical): (usize, usize)) -> Self {
+    let [[h_n, h_d], [v_n, v_d]] = self.0;
+    Self([[h_n * horizontal as u32, h_d], [v_n * vertical as u32, v_d]])
+  }
+
+  /// Scale divided by the integer factors `(horizontal, vertical)`
+  pub fn unscaled(&self, (horizontal, vertical): (usize, usize)) -> Self {
+    let divide = |[n, d]: [u32; 2], factor: u32| if n % factor == 0 { [n / factor, d] } else { [n, d * factor] };
+    Self([divide(self.0[0], horizontal as u32), divide(self.0[1], vertical as u32)])
+  }
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize, Deserialize)]

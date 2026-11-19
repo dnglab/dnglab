@@ -574,7 +574,9 @@ impl<'a> RafDecoder<'a> {
   /// photosites is offset by half a photosite, CFALayout 4 or 2. The camera
   /// definition has the CFA pattern of the grid rotated by 45° and the crop of
   /// the image that the rotation back gave before the stage 3 grid was used,
-  /// both are converted to the staggered layout. The image of cameras with
+  /// both are converted to the staggered layout. Like the DefaultScale of DNG,
+  /// the scale of the camera refers to the staggered pixels, the rows or
+  /// columns doubled by the stage 3 grid are part of it. The image of cameras with
   /// `fuji_rotate_90cw` is turned by 90° clockwise, which becomes part of the
   /// orientation.
   fn staggered_image(&self, image: PixU16, base_camera: &Camera, rotated_cfa: &CFA, blacklevel: Option<BlackLevel>, dummy: bool) -> Result<RawImage> {
@@ -619,6 +621,7 @@ impl<'a> RafDecoder<'a> {
 
     let mut camera = base_camera.clone();
     camera.cfa = cfa;
+    camera.default_scale = base_camera.default_scale.scaled(stagger.full_scale());
     let photometric = RawPhotometricInterpretation::Cfa(CFAConfig {
       layout,
       ..CFAConfig::new_from_camera(&camera)
